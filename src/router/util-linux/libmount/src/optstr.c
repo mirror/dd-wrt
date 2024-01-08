@@ -20,14 +20,8 @@
  */
 #include <ctype.h>
 
-#ifdef HAVE_LIBSELINUX
-#include <selinux/selinux.h>
-#include <selinux/context.h>
-#endif
-
 #include "strutils.h"
 #include "mountP.h"
-#include "buffer.h"
 
 /*
  * Option location
@@ -44,78 +38,6 @@ struct libmnt_optloc {
 
 #define mnt_optmap_entry_novalue(e) \
 		(e && (e)->name && !strchr((e)->name, '=') && !((e)->mask & MNT_PREFIX))
-
-/*
- * Parses the first option from @optstr. The @optstr pointer is set to the beginning
- * of the next option.
- *
- * Returns -EINVAL on parse error, 1 at the end of optstr and 0 on success.
- */
-static int mnt_optstr_parse_next(char **optstr,	 char **name, size_t *namesz,
-					char **value, size_t *valsz)
-{
-	int open_quote = 0;
-	char *start = NULL, *stop = NULL, *p, *sep = NULL;
-	char *optstr0;
-
-	assert(optstr);
-	assert(*optstr);
-
-	optstr0 = *optstr;
-
-	if (name)
-		*name = NULL;
-	if (namesz)
-		*namesz = 0;
-	if (value)
-		*value = NULL;
-	if (valsz)
-		*valsz = 0;
-
-	/* trim leading commas as to not invalidate option
-	 * strings with multiple consecutive commas */
-	while (optstr0 && *optstr0 == ',')
-		optstr0++;
-
-	for (p = optstr0; p && *p; p++) {
-		if (!start)
-			start = p;		/* beginning of the option item */
-		if (*p == '"')
-			open_quote ^= 1;	/* reverse the status */
-		if (open_quote)
-			continue;		/* still in quoted block */
-		if (!sep && p > start && *p == '=')
-			sep = p;		/* name and value separator */
-		if (*p == ',')
-			stop = p;		/* terminate the option item */
-		else if (*(p + 1) == '\0')
-			stop = p + 1;		/* end of optstr */
-		if (!start || !stop)
-			continue;
-		if (stop <= start)
-			goto error;
-
-		if (name)
-			*name = start;
-		if (namesz)
-			*namesz = sep ? sep - start : stop - start;
-		*optstr = *stop ? stop + 1 : stop;
-
-		if (sep) {
-			if (value)
-				*value = sep + 1;
-			if (valsz)
-				*valsz = stop - sep - 1;
-		}
-		return 0;
-	}
-
-	return 1;				/* end of optstr */
-
-error:
-	DBG(OPTIONS, ul_debug("parse error: \"%s\"", optstr0));
-	return -EINVAL;
-}
 
 /*
  * Locates the first option that matches @name. The @end is set to the
@@ -136,9 +58,11 @@ static int mnt_optstr_locate_option(char *optstr, const char *name,
 	assert(name);
 
 	namesz = strlen(name);
+	if (!namesz)
+		return 1;
 
 	do {
-		rc = mnt_optstr_parse_next(&optstr, &n, &nsz,
+		rc = ul_optstr_next(&optstr, &n, &nsz,
 					&ol->value, &ol->valsz);
 		if (rc)
 			break;
@@ -172,12 +96,14 @@ int mnt_optstr_next_option(char **optstr, char **name, size_t *namesz,
 {
 	if (!optstr || !*optstr)
 		return -EINVAL;
-	return mnt_optstr_parse_next(optstr, name, namesz, value, valuesz);
+
+	return ul_optstr_next(optstr, name, namesz, value, valuesz);
 }
 
-static int __buffer_append_option(struct ul_buffer *buf,
+int mnt_buffer_append_option(struct ul_buffer *buf,
 			const char *name, size_t namesz,
-			const char *val, size_t valsz)
+			const char *val, size_t valsz,
+			int quoted)
 {
 	int rc = 0;
 
@@ -189,8 +115,14 @@ static int __buffer_append_option(struct ul_buffer *buf,
 		/* we need to append '=' is value is empty string, see
 		 * 727c689908c5e68c92aa1dd65e0d3bdb6d91c1e5 */
 		rc = ul_buffer_append_data(buf, "=", 1);
-		if (!rc && valsz)
-			rc = ul_buffer_append_data(buf, val, valsz);
+		if (!rc && valsz) {
+			if (quoted)
+				rc = ul_buffer_append_data(buf, "\"", 1);
+			if (!rc)
+				rc = ul_buffer_append_data(buf, val, valsz);
+			if (quoted)
+				rc = ul_buffer_append_data(buf, "\"", 1);
+		}
 	}
 	return rc;
 }
@@ -222,9 +154,12 @@ int mnt_optstr_append_option(char **optstr, const char *name, const char *value)
 	ul_buffer_refer_string(&buf, *optstr);
 	ul_buffer_set_chunksize(&buf, osz + nsz + vsz + 3);	/* to call realloc() only once */
 
-	rc = __buffer_append_option(&buf, name, nsz, value, vsz);
+	rc = mnt_buffer_append_option(&buf, name, nsz, value, vsz, 0);
+	if (!rc)
+		*optstr = ul_buffer_get_data(&buf, NULL, NULL);
+	else if (osz == 0)
+		ul_buffer_free_data(&buf);
 
-	*optstr = ul_buffer_get_data(&buf, NULL, NULL);
 	return rc;
 }
 /**
@@ -253,7 +188,7 @@ int mnt_optstr_prepend_option(char **optstr, const char *name, const char *value
 
 	ul_buffer_set_chunksize(&buf, osz + nsz + vsz + 3);   /* to call realloc() only once */
 
-	rc = __buffer_append_option(&buf, name, nsz, value, vsz);
+	rc = mnt_buffer_append_option(&buf, name, nsz, value, vsz, 0);
 	if (*optstr && !rc) {
 		rc = ul_buffer_append_data(&buf, ",", 1);
 		if (!rc)
@@ -261,7 +196,11 @@ int mnt_optstr_prepend_option(char **optstr, const char *name, const char *value
 		free(*optstr);
 	}
 
-	*optstr = ul_buffer_get_data(&buf, NULL, NULL);
+	if (!rc)
+		*optstr = ul_buffer_get_data(&buf, NULL, NULL);
+	else
+		ul_buffer_free_data(&buf);
+
 	return rc;
 }
 
@@ -551,7 +490,7 @@ int mnt_split_optstr(const char *optstr, char **user, char **vfs,
 		if (buf) {
 			if (ul_buffer_is_empty(buf))
 				ul_buffer_set_chunksize(buf, chunsz);
-			rc = __buffer_append_option(buf, name, namesz, val, valsz);
+			rc = mnt_buffer_append_option(buf, name, namesz, val, valsz, 0);
 		}
 		if (rc)
 			break;
@@ -621,7 +560,7 @@ int mnt_optstr_get_options(const char *optstr, char **subset,
 		if (valsz && mnt_optmap_entry_novalue(ent))
 			continue;
 
-		rc = __buffer_append_option(&buf, name, namesz, val, valsz);
+		rc = mnt_buffer_append_option(&buf, name, namesz, val, valsz, 0);
 		if (rc)
 			break;
 	}
@@ -718,6 +657,8 @@ int mnt_optstr_get_flags(const char *optstr, unsigned long *flags,
  *	MS_NOATIME and "foo,bar,noexec"   --returns->  "foo,bar,noatime"
  *
  * Returns: 0 on success or negative number in case of error.
+ *
+ * Deprecated: since v2.39.
  */
 int mnt_optstr_apply_flags(char **optstr, unsigned long flags,
 				const struct libmnt_optmap *map)
@@ -836,296 +777,22 @@ int mnt_optstr_apply_flags(char **optstr, unsigned long flags,
 			} else
 				sz = strlen(ent->name);
 
-			rc = __buffer_append_option(&buf, ent->name, sz, NULL, 0);
+			rc = mnt_buffer_append_option(&buf, ent->name, sz, NULL, 0, 0);
 			if (rc)
-				goto err;
+				break;
 		}
 
-		*optstr = ul_buffer_get_data(&buf, NULL, NULL);
+		if (rc) {
+			ul_buffer_free_data(&buf);
+			goto err;
+		} else
+			*optstr = ul_buffer_get_data(&buf, NULL, NULL);
 	}
 
 	DBG(CXT, ul_debug("new optstr '%s'", *optstr));
 	return rc;
 err:
 	DBG(CXT, ul_debug("failed to apply flags [rc=%d]", rc));
-	return rc;
-}
-
-/*
- * @optstr: string with comma separated list of options
- * @value: pointer to the begin of the context value
- * @valsz: size of the value
- * @next: returns pointer to the next option (optional argument)
- *
- * Translates SELinux context from human to raw format. The function does not
- * modify @optstr and returns zero if libmount is compiled without SELinux
- * support.
- *
- * Returns: 0 on success, a negative number in case of error.
- */
-#ifndef HAVE_LIBSELINUX
-int mnt_optstr_fix_secontext(char **optstr __attribute__ ((__unused__)),
-			     char *value   __attribute__ ((__unused__)),
-			     size_t valsz  __attribute__ ((__unused__)),
-			     char **next   __attribute__ ((__unused__)))
-{
-	return 0;
-}
-#else
-int mnt_optstr_fix_secontext(char **optstr,
-			     char *value,
-			     size_t valsz,
-			     char **next)
-{
-	int rc = 0;
-	char *p, *val, *begin, *end, *raw = NULL;
-	size_t sz;
-
-	if (!optstr || !*optstr || !value || !valsz)
-		return -EINVAL;
-
-	DBG(CXT, ul_debug("fixing SELinux context"));
-
-	begin = value;
-	end = value + valsz;
-
-	/* the selinux contexts are quoted */
-	if (*value == '"') {
-		if (valsz <= 2 || *(value + valsz - 1) != '"')
-			return -EINVAL;		/* improperly quoted option string */
-		value++;
-		valsz -= 2;
-	}
-
-	p = strndup(value, valsz);
-	if (!p)
-		return -ENOMEM;
-
-
-	/* translate the context */
-	rc = selinux_trans_to_raw_context(p, &raw);
-
-	DBG(CXT, ul_debug("SELinux context '%s' translated to '%s'",
-			p, rc == -1 ? "FAILED" : (char *) raw));
-
-	free(p);
-	if (rc == -1 ||	!raw)
-		return -EINVAL;
-
-
-	/* create a quoted string from the raw context */
-	sz = strlen((char *) raw);
-	if (!sz) {
-		freecon(raw);
-		return -EINVAL;
-	}
-
-	p = val = malloc(valsz + 3);
-	if (!val) {
-		freecon(raw);
-		return -ENOMEM;
-	}
-
-	*p++ = '"';
-	memcpy(p, raw, sz);
-	p += sz;
-	*p++ = '"';
-	*p = '\0';
-
-	freecon(raw);
-
-	/* set new context */
-	mnt_optstr_remove_option_at(optstr, begin, end);
-	rc = insert_value(optstr, begin, val, next);
-	free(val);
-
-	return rc;
-}
-#endif
-
-static int set_uint_value(char **optstr, unsigned int num,
-			char *begin, char *end, char **next)
-{
-	char buf[40];
-	snprintf(buf, sizeof(buf), "%u", num);
-
-	mnt_optstr_remove_option_at(optstr, begin, end);
-	return insert_value(optstr, begin, buf, next);
-}
-
-/*
- * @optstr: string with a comma separated list of options
- * @value: pointer to the beginning of the uid value
- * @valsz: size of the value
- * @next: returns pointer to the next option (optional argument)
-
- * Translates "username" or "useruid" to the real UID.
- *
- * For example:
- *	if (!mnt_optstr_get_option(optstr, "uid", &val, &valsz))
- *		mnt_optstr_fix_uid(&optstr, val, valsz, NULL);
- *
- * Returns: 0 on success, a negative number in case of error.
- */
-int mnt_optstr_fix_uid(char **optstr, char *value, size_t valsz, char **next)
-{
-	char *end;
-
-	if (!optstr || !*optstr || !value || !valsz)
-		return -EINVAL;
-
-	DBG(CXT, ul_debug("fixing uid"));
-
-	end = value + valsz;
-
-	if (valsz == 7 && !strncmp(value, "useruid", 7) &&
-	    (*(value + 7) == ',' || !*(value + 7)))
-		return set_uint_value(optstr, getuid(), value, end, next);
-
-	if (!isdigit(*value)) {
-		uid_t id;
-		int rc;
-		char *p = strndup(value, valsz);
-		if (!p)
-			return -ENOMEM;
-		rc = mnt_get_uid(p, &id);
-		free(p);
-
-		if (!rc)
-			return set_uint_value(optstr, id, value, end, next);
-	}
-
-	if (next) {
-		/* no change, let's keep the original value */
-		*next = value + valsz;
-		if (**next == ',')
-			(*next)++;
-	}
-
-	return 0;
-}
-
-/*
- * @optstr: string with a comma separated list of options
- * @value: pointer to the beginning of the uid value
- * @valsz: size of the value
- * @next: returns pointer to the next option (optional argument)
-
- * Translates "groupname" or "usergid" to the real GID.
- *
- * Returns: 0 on success, a negative number in case of error.
- */
-int mnt_optstr_fix_gid(char **optstr, char *value, size_t valsz, char **next)
-{
-	char *end;
-
-	if (!optstr || !*optstr || !value || !valsz)
-		return -EINVAL;
-
-	DBG(CXT, ul_debug("fixing gid"));
-
-	end = value + valsz;
-
-	if (valsz == 7 && !strncmp(value, "usergid", 7) &&
-	    (*(value + 7) == ',' || !*(value + 7)))
-		return set_uint_value(optstr, getgid(), value, end, next);
-
-	if (!isdigit(*value)) {
-		int rc;
-		gid_t id;
-		char *p = strndup(value, valsz);
-		if (!p)
-			return -ENOMEM;
-		rc = mnt_get_gid(p, &id);
-		free(p);
-
-		if (!rc)
-			return set_uint_value(optstr, id, value, end, next);
-
-	}
-
-	if (next) {
-		/* nothing */
-		*next = value + valsz;
-		if (**next == ',')
-			(*next)++;
-	}
-	return 0;
-}
-
-/*
- * Converts "user" to "user=<username>".
- *
- * Returns: 0 on success, negative number in case of error.
- */
-int mnt_optstr_fix_user(char **optstr)
-{
-	char *username;
-	struct libmnt_optloc ol = MNT_INIT_OPTLOC;
-	int rc = 0;
-
-	DBG(CXT, ul_debug("fixing user"));
-
-	rc = mnt_optstr_locate_option(*optstr, "user", &ol);
-	if (rc)
-		return rc == 1 ? 0 : rc;	/* 1: user= not found */
-
-	username = mnt_get_username(getuid());
-	if (!username)
-		return -ENOMEM;
-
-	if (!ol.valsz || (ol.value && strncmp(ol.value, username, ol.valsz) != 0)) {
-		if (ol.valsz)
-			/* remove old value */
-			mnt_optstr_remove_option_at(optstr, ol.value, ol.end);
-
-		rc = insert_value(optstr, ol.value ? ol.value : ol.end,
-				  username, NULL);
-	}
-
-	free(username);
-	return rc;
-}
-
-/*
- * Converts value from @optstr addressed by @name to uid.
- *
- * Returns: 0 on success, 1 if not found, <0 on error
- */
-int mnt_optstr_get_uid(const char *optstr, const char *name, uid_t *uid)
-{
-	char *value = NULL;
-	size_t valsz = 0;
-	char buf[sizeof(stringify_value(UINT64_MAX))];
-	int rc;
-	uint64_t num;
-
-	assert(optstr);
-	assert(name);
-	assert(uid);
-
-	rc = mnt_optstr_get_option(optstr, name, &value, &valsz);
-	if (rc != 0)
-		goto fail;
-
-	if (valsz > sizeof(buf) - 1) {
-		rc = -ERANGE;
-		goto fail;
-	}
-	mem2strcpy(buf, value, valsz, sizeof(buf));
-
-	rc = ul_strtou64(buf, &num, 10);
-	if (rc != 0)
-		goto fail;
-	if (num > ULONG_MAX || (uid_t) num != num) {
-		rc = -ERANGE;
-		goto fail;
-	}
-	*uid = (uid_t) num;
-
-	return 0;
-fail:
-	DBG(UTILS, ul_debug("failed to convert '%s'= to number [rc=%d]", name, rc));
 	return rc;
 }
 
@@ -1143,6 +810,8 @@ fail:
  * The "no" prefix interpretation could be disabled by the "+" prefix, for example
  * "+noauto" matches if @optstr literally contains the "noauto" string.
  *
+ * The alone "no" is error and all matching ends with False.
+ *
  * "xxx,yyy,zzz" : "nozzz"	-> False
  *
  * "xxx,yyy,zzz" : "xxx,noeee"	-> True
@@ -1155,6 +824,17 @@ fail:
  *
  * "bar,zzz"     : "+nofoo"     -> False	(does not contain "nofoo")
  *
+ * "bar,zzz"     : "" or  "+"   -> True		(empty pattern is matching)
+ *
+ * ""            : ""           -> True
+ *
+ * ""            : "foo"        -> False
+ *
+ * ""            : "nofoo"      -> True
+ *
+ * ""            : "no,foo"     -> False	(alone "no" is error)
+ *
+ * "no"          : "+no"        -> True		("no" is an option due to "+")
  *
  * Returns: 1 if pattern is matching, else 0. This function also returns 0
  *          if @pattern is NULL and @optstr is non-NULL.
@@ -1162,17 +842,15 @@ fail:
 int mnt_match_options(const char *optstr, const char *pattern)
 {
 	char *name, *pat = (char *) pattern;
-	char *buf, *patval;
+	char *buf = NULL, *patval;
 	size_t namesz = 0, patvalsz = 0;
 	int match = 1;
 
 	if (!pattern && !optstr)
 		return 1;
+	if (pattern && optstr && !*pattern && !*optstr)
+		return 1;
 	if (!pattern)
-		return 0;
-
-	buf = malloc(strlen(pattern) + 1);
-	if (!buf)
 		return 0;
 
 	/* walk on pattern string
@@ -1180,17 +858,34 @@ int mnt_match_options(const char *optstr, const char *pattern)
 	while (match && !mnt_optstr_next_option(&pat, &name, &namesz,
 						&patval, &patvalsz)) {
 		char *val;
-		size_t sz;
+		size_t sz = 0;
 		int no = 0, rc;
 
 		if (*name == '+')
 			name++, namesz--;
-		else if ((no = (startswith(name, "no") != NULL)))
+		else if ((no = (startswith(name, "no") != NULL))) {
 			name += 2, namesz -= 2;
+			if (!*name || *name == ',') {
+				match = 0;
+				break;	/* alone "no" keyword is error */
+			}
+		}
 
-		xstrncpy(buf, name, namesz + 1);
+		if (optstr && *optstr && *name) {
+			if (!buf) {
+				buf = malloc(strlen(pattern) + 1);
+				if (!buf)
+					return 0;
+			}
 
-		rc = mnt_optstr_get_option(optstr, buf, &val, &sz);
+			xstrncpy(buf, name, namesz + 1);
+			rc = mnt_optstr_get_option(optstr, buf, &val, &sz);
+
+		} else if (!*name) {
+			rc = 0;		/* empty pattern matches */
+		} else {
+			rc = 1;		/* not found in empty string */
+		}
 
 		/* check also value (if the pattern is "foo=value") */
 		if (rc == 0 && patvalsz > 0 &&
@@ -1208,7 +903,6 @@ int mnt_match_options(const char *optstr, const char *pattern)
 			match = 0;
 			break;
 		}
-
 	}
 
 	free(buf);
@@ -1216,8 +910,6 @@ int mnt_match_options(const char *optstr, const char *pattern)
 }
 
 #ifdef TEST_PROGRAM
-#include "xalloc.h"
-
 static int test_append(struct libmnt_test *ts, int argc, char *argv[])
 {
 	const char *value = NULL, *name;
@@ -1226,7 +918,9 @@ static int test_append(struct libmnt_test *ts, int argc, char *argv[])
 
 	if (argc < 3)
 		return -EINVAL;
-	optstr = xstrdup(argv[1]);
+	optstr = strdup(argv[1]);
+	if (!optstr)
+		err_oom();
 	name = argv[2];
 
 	if (argc == 4)
@@ -1247,7 +941,9 @@ static int test_prepend(struct libmnt_test *ts, int argc, char *argv[])
 
 	if (argc < 3)
 		return -EINVAL;
-	optstr = xstrdup(argv[1]);
+	optstr = strdup(argv[1]);
+	if (!optstr)
+		err_oom();
 	name = argv[2];
 
 	if (argc == 4)
@@ -1268,7 +964,9 @@ static int test_split(struct libmnt_test *ts, int argc, char *argv[])
 	if (argc < 2)
 		return -EINVAL;
 
-	optstr = xstrdup(argv[1]);
+	optstr = strdup(argv[1]);
+	if (!optstr)
+		err_oom();
 
 	rc = mnt_split_optstr(optstr, &user, &vfs, &fs, 0, 0);
 	if (!rc) {
@@ -1293,7 +991,9 @@ static int test_flags(struct libmnt_test *ts, int argc, char *argv[])
 	if (argc < 2)
 		return -EINVAL;
 
-	optstr = xstrdup(argv[1]);
+	optstr = strdup(argv[1]);
+	if (!optstr)
+		err_oom();
 
 	rc = mnt_optstr_get_flags(optstr, &fl, mnt_get_builtin_optmap(MNT_LINUX_MAP));
 	if (rc)
@@ -1328,7 +1028,9 @@ static int test_apply(struct libmnt_test *ts, int argc, char *argv[])
 		return -EINVAL;
 	}
 
-	optstr = xstrdup(argv[2]);
+	optstr = strdup(argv[2]);
+	if (!optstr)
+		err_oom();
 	flags = strtoul(argv[3], NULL, 16);
 
 	printf("flags:  0x%08lx\n", flags);
@@ -1348,7 +1050,9 @@ static int test_set(struct libmnt_test *ts, int argc, char *argv[])
 
 	if (argc < 3)
 		return -EINVAL;
-	optstr = xstrdup(argv[1]);
+	optstr = strdup(argv[1]);
+	if (!optstr)
+		err_oom();
 	name = argv[2];
 
 	if (argc == 4)
@@ -1398,7 +1102,9 @@ static int test_remove(struct libmnt_test *ts, int argc, char *argv[])
 
 	if (argc < 3)
 		return -EINVAL;
-	optstr = xstrdup(argv[1]);
+	optstr = strdup(argv[1]);
+	if (!optstr)
+		err_oom();
 	name = argv[2];
 
 	rc = mnt_optstr_remove_option(&optstr, name);
@@ -1416,7 +1122,9 @@ static int test_dedup(struct libmnt_test *ts, int argc, char *argv[])
 
 	if (argc < 3)
 		return -EINVAL;
-	optstr = xstrdup(argv[1]);
+	optstr = strdup(argv[1]);
+	if (!optstr)
+		err_oom();
 	name = argv[2];
 
 	rc = mnt_optstr_deduplicate_option(&optstr, name);
@@ -1426,39 +1134,19 @@ static int test_dedup(struct libmnt_test *ts, int argc, char *argv[])
 	return rc;
 }
 
-static int test_fix(struct libmnt_test *ts, int argc, char *argv[])
+static int test_match(struct libmnt_test *ts, int argc, char *argv[])
 {
-	char *optstr;
-	int rc = 0;
-	char *name, *val, *next;
-	size_t valsz, namesz;
+	char *optstr, *pattern;
 
-	if (argc < 2)
+	if (argc < 3)
 		return -EINVAL;
 
-	next = optstr = xstrdup(argv[1]);
-
-	printf("optstr: %s\n", optstr);
-
-	while (!mnt_optstr_next_option(&next, &name, &namesz, &val, &valsz)) {
-
-		if (!strncmp(name, "uid", 3))
-			rc = mnt_optstr_fix_uid(&optstr, val, valsz, &next);
-		else if (!strncmp(name, "gid", 3))
-			rc = mnt_optstr_fix_gid(&optstr, val, valsz, &next);
-		else if (!strncmp(name, "context", 7))
-			rc = mnt_optstr_fix_secontext(&optstr, val, valsz, &next);
-		if (rc)
-			break;
-	}
-	if (rc)
-		rc = mnt_optstr_fix_user(&optstr);
-
-	printf("fixed:  %s\n", optstr);
-
-	free(optstr);
-	return rc;
-
+	optstr = argv[1];
+	pattern = argv[2];
+	printf("%-6s: \"%s\"\t:\t\"%s\"\n",
+			mnt_match_options(optstr, pattern) == 1 ? "true" : "false",
+			optstr, pattern);
+	return 0;
 }
 
 int main(int argc, char *argv[])
@@ -1470,10 +1158,10 @@ int main(int argc, char *argv[])
 		{ "--get",    test_get,    "<optstr> <name>            search name in optstr" },
 		{ "--remove", test_remove, "<optstr> <name>            remove name in optstr" },
 		{ "--dedup",  test_dedup,  "<optstr> <name>            deduplicate name in optstr" },
+		{ "--match",  test_match,  "<optstr> <pattern>         compare optstr with pattern" },
 		{ "--split",  test_split,  "<optstr>                   split into FS, VFS and userspace" },
 		{ "--flags",  test_flags,  "<optstr>                   convert options to MS_* flags" },
 		{ "--apply",  test_apply,  "--{linux,user} <optstr> <mask>    apply mask to optstr" },
-		{ "--fix",    test_fix,    "<optstr>                   fix uid=, gid=, user, and context=" },
 
 		{ NULL }
 	};

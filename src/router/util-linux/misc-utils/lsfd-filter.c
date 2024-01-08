@@ -21,7 +21,7 @@
 /*
  * Definitions
  */
-#define COL_HEADER_EXTRA_CHARS ":-_%" /* ??? */
+#define COL_HEADER_EXTRA_CHARS ":-_%." /* ??? */
 #define GOT_ERROR(PARSERorFILTER)(*((PARSERorFILTER)->errmsg))
 
 /*
@@ -29,7 +29,7 @@
  */
 
 enum token_type {
-	TOKEN_NAME,		/* [A-Za-z_][-_:%A-Za-z0-9]* */
+	TOKEN_NAME,		/* [A-Za-z_][-_:%.A-Za-z0-9]* */
 	TOKEN_STR,		/* "...", '...' */
 	TOKEN_DEC,		/* [1-9][0-9]+, NOTE: negative value is no dealt. */
 	TOKEN_HEX,		/* 0x[0-9a-f]+ not implemented */
@@ -95,8 +95,7 @@ struct parser {
 	struct libscols_column *(*add_column_by_id)(struct libscols_table *, int, void*);
 	void *data;
 	struct parameter *parameters;
-#define ERRMSG_LEN 128
-	char errmsg[ERRMSG_LEN];
+	char errmsg[128];
 };
 
 enum node_type {
@@ -164,7 +163,7 @@ struct lsfd_filter {
 	struct node  *node;
 	struct parameter *parameters;
 	int nparams;
-	char errmsg[ERRMSG_LEN];
+	char errmsg[ sizeof_member(struct parser, errmsg) ];
 };
 
 /*
@@ -414,7 +413,7 @@ static void parser_read_str(struct parser *parser, struct token *token, char del
 		char c = parser_getc(parser);
 
 		if (c == '\0') {
-			snprintf(parser->errmsg, ERRMSG_LEN,
+			snprintf(parser->errmsg, sizeof(parser->errmsg),
 				 _("error: string literal is not terminated: %s"),
 				 token->val.str? : "");
 			return;
@@ -438,10 +437,11 @@ static void parser_read_str(struct parser *parser, struct token *token, char del
 				return;
 			}
 			escape = false;
-		}
-		else if (c == delimiter)
+		} else if (c == delimiter) {
+			if (token->val.str == NULL)
+				token->val.str = xstrdup("");
 			return;
-		else if (c == '\\')
+		} else if (c == '\\')
 			escape = true;
 		else
 			xstrputc(&token->val.str, c);
@@ -507,7 +507,7 @@ static struct token *parser_read(struct parser *parser)
 		t->type = TOKEN_CLOSE;
 		parser->paren_level--;
 		if (parser->paren_level < 0)
-			snprintf(parser->errmsg, ERRMSG_LEN,
+			snprintf(parser->errmsg, sizeof(parser->errmsg),
 				 _("error: unbalanced parenthesis: %s"), parser->cursor - 1);
 		break;
 	case '!':
@@ -556,7 +556,7 @@ static struct token *parser_read(struct parser *parser)
 			t->val.op2 = OP2_RE_MATCH;
 			break;
 		}
-		snprintf(parser->errmsg, ERRMSG_LEN,
+		snprintf(parser->errmsg, sizeof(parser->errmsg),
 			 _("error: unexpected character %c after ="), c0);
 		break;
 	case '&':
@@ -566,17 +566,17 @@ static struct token *parser_read(struct parser *parser)
 			t->val.op2 = OP2_AND;
 			break;
 		}
-		snprintf(parser->errmsg, ERRMSG_LEN,
+		snprintf(parser->errmsg, sizeof(parser->errmsg),
 			 _("error: unexpected character %c after ="), c0);
 		break;
 	case '|':
 		c0 = parser_getc(parser);
 		if (c0 == '|') {
 			t->type = TOKEN_OP2;
-			t->val.op2= OP2_OR;
+			t->val.op2 = OP2_OR;
 			break;
 		}
-		snprintf(parser->errmsg, ERRMSG_LEN,
+		snprintf(parser->errmsg, sizeof(parser->errmsg),
 			 _("error: unexpected character %c after ="), c0);
 		break;
 	case '"':
@@ -597,19 +597,19 @@ static struct token *parser_read(struct parser *parser)
 			} else if (strcmp(t->val.str, "or") == 0) {
 				free(t->val.str);
 				t->type = TOKEN_OP2;
-				t->val.op2= OP2_OR;
+				t->val.op2 = OP2_OR;
 			} else if (strcmp(t->val.str, "and") == 0) {
 				free(t->val.str);
 				t->type = TOKEN_OP2;
-				t->val.op2= OP2_AND;
+				t->val.op2 = OP2_AND;
 			} else if (strcmp(t->val.str, "eq") == 0) {
 				free(t->val.str);
 				t->type = TOKEN_OP2;
-				t->val.op2= OP2_EQ;
+				t->val.op2 = OP2_EQ;
 			} else if (strcmp(t->val.str, "ne") == 0) {
 				free(t->val.str);
 				t->type = TOKEN_OP2;
-				t->val.op2= OP2_NE;
+				t->val.op2 = OP2_NE;
 			} else if (strcmp(t->val.str, "lt") == 0) {
 				free(t->val.str);
 				t->type = TOKEN_OP2;
@@ -637,11 +637,11 @@ static struct token *parser_read(struct parser *parser)
 			t->type = TOKEN_DEC;
 			xstrputc(&t->val.str, c);
 			if (parser_read_dec(parser, t) != 0)
-				snprintf(parser->errmsg, ERRMSG_LEN,
+				snprintf(parser->errmsg, sizeof(parser->errmsg),
 					 _("error: failed to convert input to number"));
 			break;
 		}
-		snprintf(parser->errmsg, ERRMSG_LEN,
+		snprintf(parser->errmsg, sizeof(parser->errmsg),
 			 _("error: unexpected character %c"), c);
 		break;
 	}
@@ -696,7 +696,7 @@ static struct node *dparser_compile1(struct parser *parser, struct node *last)
 		case TOKEN_FALSE:
 		case TOKEN_OPEN:
 		case TOKEN_OP1:
-			snprintf(parser->errmsg, ERRMSG_LEN,
+			snprintf(parser->errmsg, sizeof(parser->errmsg),
 				 _("error: unexpected token: %s after %s"), t->val.str,
 				 NODE_CLASS(last)->name);
 			token_free(t);
@@ -707,7 +707,7 @@ static struct node *dparser_compile1(struct parser *parser, struct node *last)
 	} else {
 		switch (t->type) {
 		case TOKEN_OP2:
-			snprintf(parser->errmsg, ERRMSG_LEN,
+			snprintf(parser->errmsg, sizeof(parser->errmsg),
 				 _("error: empty left side expression: %s"),
 				 TOKEN_OP2_CLASS(t)->name);
 			token_free(t);
@@ -722,7 +722,7 @@ static struct node *dparser_compile1(struct parser *parser, struct node *last)
 	case TOKEN_NAME: {
 		int col_id = parser->column_name_to_id(t->val.str, parser->data);
 		if (col_id == LSFD_FILTER_UNKNOWN_COL_ID) {
-			snprintf(parser->errmsg, ERRMSG_LEN,
+			snprintf(parser->errmsg, sizeof(parser->errmsg),
 				 _("error: no such column: %s"), t->val.str);
 			token_free(t);
 			return NULL;
@@ -733,7 +733,7 @@ static struct node *dparser_compile1(struct parser *parser, struct node *last)
 		if (!cl) {
 			cl = parser->add_column_by_id(parser->tb, col_id, parser->data);
 			if (!cl) {
-				snprintf(parser->errmsg, ERRMSG_LEN,
+				snprintf(parser->errmsg, sizeof(parser->errmsg),
 					 _("error: cannot add a column to table: %s"), t->val.str);
 				token_free(t);
 				return NULL;
@@ -746,6 +746,10 @@ static struct node *dparser_compile1(struct parser *parser, struct node *last)
 		int ntype;
 		switch (jtype) {
 		case SCOLS_JSON_STRING:
+		case SCOLS_JSON_ARRAY_STRING:
+		case SCOLS_JSON_ARRAY_NUMBER:
+			/* We handles SCOLS_JSON_ARRAY_* as a string
+			 * till we implement operators for arrays. */
 			ntype = NODE_STR;
 			break;
 		case SCOLS_JSON_NUMBER:
@@ -755,7 +759,7 @@ static struct node *dparser_compile1(struct parser *parser, struct node *last)
 			ntype = NODE_BOOL;
 			break;
 		default:
-			snprintf(parser->errmsg, ERRMSG_LEN,
+			snprintf(parser->errmsg, sizeof(parser->errmsg),
 				 _("error: unsupported column data type: %d, column: %s"),
 				 jtype, t->val.str);
 			return NULL;
@@ -800,7 +804,7 @@ static struct node *dparser_compile1(struct parser *parser, struct node *last)
 		}
 
 		if (op1_right == NULL) {
-			snprintf(parser->errmsg, ERRMSG_LEN,
+			snprintf(parser->errmsg, sizeof(parser->errmsg),
 				 _("error: empty right side expression: %s"),
 				 op1_class->name);
 			return NULL;
@@ -830,7 +834,7 @@ static struct node *dparser_compile1(struct parser *parser, struct node *last)
 			return NULL;
 		}
 		if (op2_right == NULL) {
-			snprintf(parser->errmsg, ERRMSG_LEN,
+			snprintf(parser->errmsg, sizeof(parser->errmsg),
 				 _("error: empty right side expression: %s"),
 				 op2_class->name);
 			return NULL;
@@ -870,9 +874,9 @@ static struct node *dparser_compile(struct parser *parser)
 
 		if (node == node0) {
 			if (node == NULL)
-				strncpy(parser->errmsg,
+				xstrncpy(parser->errmsg,
 					_("error: empty filter expression"),
-					ERRMSG_LEN - 1);
+					sizeof(parser->errmsg));
 			return node;
 		}
 		node = node0;
@@ -1072,7 +1076,7 @@ static bool op1_check_type_bool_or_op(struct parser* parser, struct op1_class *o
 				      struct node *node)
 {
 	if (! (node->type == NODE_OP1 || node->type == NODE_OP2 || node->type == NODE_BOOL)) {
-		snprintf(parser->errmsg, ERRMSG_LEN,
+		snprintf(parser->errmsg, sizeof(parser->errmsg),
 			 _("error: unexpected operand type %s for: %s"),
 			 NODE_CLASS(node)->name,
 			 op1_class->name);
@@ -1195,7 +1199,7 @@ static bool op2_check_type_boolean_or_op(struct parser* parser, struct op2_class
 	enum node_type lt = left->type, rt = right->type;
 
 	if (!(lt == NODE_OP1 || lt == NODE_OP2 || lt == NODE_BOOL)) {
-		snprintf(parser->errmsg, ERRMSG_LEN,
+		snprintf(parser->errmsg, sizeof(parser->errmsg),
 			 _("error: unexpected left operand type %s for: %s"),
 			 NODE_CLASS(left)->name,
 			 op2_class->name);
@@ -1203,7 +1207,7 @@ static bool op2_check_type_boolean_or_op(struct parser* parser, struct op2_class
 	}
 
 	if (! (rt == NODE_OP1 || rt == NODE_OP2 || rt == NODE_BOOL)) {
-		snprintf(parser->errmsg, ERRMSG_LEN,
+		snprintf(parser->errmsg, sizeof(parser->errmsg),
 			 _("error: unexpected right operand type %s for: %s"),
 			 NODE_CLASS(right)->name,
 			 op2_class->name);
@@ -1228,7 +1232,7 @@ static bool op2_check_type_num(struct parser* parser, struct op2_class *op2_clas
 			       struct node *left, struct node *right)
 {
 	if (left->type != NODE_NUM) {
-		snprintf(parser->errmsg, ERRMSG_LEN,
+		snprintf(parser->errmsg, sizeof(parser->errmsg),
 			 _("error: unexpected left operand type %s for: %s"),
 			 NODE_CLASS(left)->name,
 			 op2_class->name);
@@ -1236,7 +1240,7 @@ static bool op2_check_type_num(struct parser* parser, struct op2_class *op2_clas
 	}
 
 	if (right->type != NODE_NUM) {
-		snprintf(parser->errmsg, ERRMSG_LEN,
+		snprintf(parser->errmsg, sizeof(parser->errmsg),
 			 _("error: unexpected right operand type %s for: %s"),
 			 NODE_CLASS(right)->name,
 			 op2_class->name);
@@ -1250,7 +1254,7 @@ static bool op2_check_type_re(struct parser* parser, struct op2_class *op2_class
 			      struct node *left, struct node *right)
 {
 	if (left->type != NODE_STR) {
-		snprintf(parser->errmsg, ERRMSG_LEN,
+		snprintf(parser->errmsg, sizeof(parser->errmsg),
 			 _("error: unexpected left operand type %s for: %s"),
 			 NODE_CLASS(left)->name,
 			 op2_class->name);
@@ -1258,14 +1262,14 @@ static bool op2_check_type_re(struct parser* parser, struct op2_class *op2_class
 	}
 
 	if (right->type != NODE_STR) {
-		snprintf(parser->errmsg, ERRMSG_LEN,
+		snprintf(parser->errmsg, sizeof(parser->errmsg),
 			 _("error: unexpected right operand type %s for: %s"),
 			 NODE_CLASS(right)->name,
 			 op2_class->name);
 		return false;
 	}
 	if (PINDEX(right) >= 0) {
-		snprintf(parser->errmsg, ERRMSG_LEN,
+		snprintf(parser->errmsg, sizeof(parser->errmsg),
 			 _("error: string literal is expected as right operand for: %s"),
 			 op2_class->name);
 		return false;
@@ -1281,7 +1285,7 @@ static bool op2_check_type_re(struct parser* parser, struct op2_class *op2_class
 
 		regerror(err, &VAL(right, re), buf, size);
 
-		snprintf(parser->errmsg, ERRMSG_LEN,
+		snprintf(parser->errmsg, sizeof(parser->errmsg),
 			 _("error: could not compile regular expression %s: %s"),
 			 regex, buf);
 		free(buf);
@@ -1309,28 +1313,27 @@ struct lsfd_filter *lsfd_filter_new(const char *const expr, struct libscols_tabl
 		    data);
 
 	node = dparser_compile(&parser);
+	filter = xcalloc(1, sizeof(struct lsfd_filter));
 
-	filter = xmalloc(sizeof(struct lsfd_filter));
-	filter->errmsg[0] = '\0';
 	if (GOT_ERROR(&parser)) {
-		strcpy(filter->errmsg, parser.errmsg);
+		xstrncpy(filter->errmsg, parser.errmsg, sizeof(filter->errmsg));
 		return filter;
 	}
 	assert(node);
 	if (parser.paren_level > 0) {
 		node_free(node);
-		strncpy(filter->errmsg, _("error: unbalanced parenthesis: ("), ERRMSG_LEN - 1);
+		xstrncpy(filter->errmsg, _("error: unbalanced parenthesis: ("), sizeof(filter->errmsg));
 		return filter;
 	}
 	if (*parser.cursor  != '\0') {
 		node_free(node);
-		snprintf(filter->errmsg, ERRMSG_LEN,
+		snprintf(filter->errmsg, sizeof(filter->errmsg),
 			 _("error: garbage at the end of expression: %s"), parser.cursor);
 		return filter;
 	}
 	if (node->type == NODE_STR || node->type == NODE_NUM) {
 		node_free(node);
-		snprintf(filter->errmsg, ERRMSG_LEN,
+		snprintf(filter->errmsg, sizeof(filter->errmsg),
 			 _("error: bool expression is expected: %s"), expr);
 		return filter;
 	}

@@ -21,19 +21,21 @@
 /*
  * ioctl topology values
  */
-static struct topology_val {
+static const struct topology_val {
 
 	long  ioc;
 
 	/* functions to set probing result */
 	int (*set_ulong)(blkid_probe, unsigned long);
 	int (*set_int)(blkid_probe, int);
+	int (*set_u64)(blkid_probe, uint64_t);
 
 } topology_vals[] = {
 	{ BLKALIGNOFF, NULL, blkid_topology_set_alignment_offset },
 	{ BLKIOMIN, blkid_topology_set_minimum_io_size },
 	{ BLKIOOPT, blkid_topology_set_optimal_io_size },
-	{ BLKPBSZGET, blkid_topology_set_physical_sector_size }
+	{ BLKPBSZGET, blkid_topology_set_physical_sector_size },
+	{ BLKGETDISKSEQ, .set_u64 = blkid_topology_set_diskseq },
 	/* we read BLKSSZGET in topology.c */
 };
 
@@ -43,17 +45,24 @@ static int probe_ioctl_tp(blkid_probe pr,
 	size_t i;
 
 	for (i = 0; i < ARRAY_SIZE(topology_vals); i++) {
-		struct topology_val *val = &topology_vals[i];
+		const struct topology_val *val = &topology_vals[i];
 		int rc = 1;
-		unsigned int data;
+		union {
+			unsigned long ul;
+			int i;
+			uint64_t u64;
+		} data;
 
 		if (ioctl(pr->fd, val->ioc, &data) == -1)
 			goto nothing;
 
 		if (val->set_int)
-			rc = val->set_int(pr, (int) data);
+			rc = val->set_int(pr, data.i);
+		else if (val->set_ulong)
+			rc = val->set_ulong(pr, data.ul);
 		else
-			rc = val->set_ulong(pr, (unsigned long) data);
+			rc = val->set_u64(pr, data.u64);
+
 		if (rc)
 			goto err;
 	}

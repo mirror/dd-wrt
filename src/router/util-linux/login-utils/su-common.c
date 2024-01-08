@@ -68,6 +68,7 @@
 
 #include "logindefs.h"
 #include "su-common.h"
+#include "shells.h"
 
 #include "debug.h"
 
@@ -164,7 +165,7 @@ struct su_context {
 };
 
 
-static sig_atomic_t volatile caught_signal = false;
+static sig_atomic_t volatile caught_signal = 0;
 
 /* Signal handler for parent process.  */
 static void
@@ -342,6 +343,8 @@ static int supam_conv(	int num_msg,
 	return misc_conv(num_msg, msg, resp, data);
 #elif defined(HAVE_SECURITY_OPENPAM_H)
 	return openpam_ttyconv(num_msg, msg, resp, data);
+#else
+	return PAM_CONV_ERR;
 #endif
 }
 
@@ -542,6 +545,8 @@ static void create_watching_parent(struct su_context *su)
 		/* create pty */
 		if (ul_pty_setup(su->pty))
 			err(EXIT_FAILURE, _("failed to create pseudo-terminal"));
+		if (ul_pty_signals_setup(su->pty))
+			err(EXIT_FAILURE, _("failed to initialize signals handler"));
 	}
 #endif
 	fflush(stdout);			/* ??? */
@@ -865,18 +870,14 @@ static void run_shell(
  */
 static bool is_restricted_shell(const char *shell)
 {
-	char *line;
-
-	setusershell();
-	while ((line = getusershell()) != NULL) {
-		if (*line != '#' && !strcmp(line, shell)) {
-			endusershell();
-			return false;
-		}
+	if (is_known_shell(shell)) {
+		return false;
 	}
-	endusershell();
-
+#ifdef USE_VENDORDIR
+	DBG(MISC, ul_debug("%s is restricted shell (not in e.g. vendor shells file, /etc/shells, ...)", shell));
+#else
 	DBG(MISC, ul_debug("%s is restricted shell (not in /etc/shells)", shell));
+#endif
 	return true;
 }
 

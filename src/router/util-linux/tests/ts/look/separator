@@ -22,8 +22,8 @@
 #
 # for example:
 #
-#	cat words.raw | egrep --invert-match "'s$" | \
-#		egrep  "^[[:alnum:]'&!,./-]+$" | \
+#	cat words.raw | grep -E --invert-match "'s$" | \
+#		grep -E "^[[:alnum:]'&!,./-]+$" | \
 #		sort --ignore-case --dictionary-order | \
 #		uniq >  words
 #
@@ -31,7 +31,7 @@
 TS_TOPDIR="${0%/*}/../.."
 TS_DESC="separator"
 
-. $TS_TOPDIR/functions.sh
+. "$TS_TOPDIR"/functions.sh
 ts_init "$*"
 
 ts_check_test_command "$TS_CMD_LOOK"

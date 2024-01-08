@@ -61,7 +61,7 @@ static int get_minix_version(const unsigned char *data, int *other_endian)
 	if (!version)
 		return -1;
 
-#if defined(WORDS_BIGENDIAN)
+#if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
 	endian = *other_endian ? "LE" : "BE";
 #else
 	endian = *other_endian ? "BE" : "LE";
@@ -148,7 +148,10 @@ static int probe_minix(blkid_probe pr,
 		return 1;
 
 	blkid_probe_sprintf_version(pr, "%d", version);
+	blkid_probe_set_fsblocksize(pr, block_size);
 	blkid_probe_set_block_size(pr, block_size);
+	blkid_probe_set_fsendianness(pr, !swabme ?
+			BLKID_ENDIANNESS_NATIVE : BLKID_ENDIANNESS_OTHER);
 	return 0;
 }
 

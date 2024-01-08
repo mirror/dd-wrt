@@ -19,6 +19,7 @@
 #include "canonicalize.h"
 #include "pathnames.h"
 #include "all-io.h"
+#include "strutils.h"
 
 /*
  * Converts private "dm-N" names to "/dev/mapper/<name>"
@@ -110,8 +111,7 @@ char *absolute_path(const char *path)
 	if (!res)
 		return NULL;
 
-	memcpy(p, cwd, csz);
-	p += csz;
+	p = mempcpy(p, cwd, csz);
 	*p++ = '/';
 	memcpy(p, path, psz + 1);
 
@@ -227,7 +227,7 @@ done:
 	close(pipes[0]);
 
 	/* We make a best effort to reap child */
-	waitpid(pid, NULL, 0);
+	ignore_result( waitpid(pid, NULL, 0) );
 
 	errno = errsv;
 	return canonical;

@@ -1,4 +1,6 @@
 /*
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * Copyright (C) 2014 Ondrej Oprala <ooprala@redhat.com>
  * Copyright (C) 2014 Karel Zak <kzak@redhat.com>
  *
@@ -173,7 +175,7 @@ static inline void ul_debug_print_masks(
 	for (d = flagnames; d && d->name; d++) {
 		if (!d->help)
 			continue;
-		fprintf(stderr, "   %-8s [0x%04x] : %s\n",
+		fprintf(stderr, "   %-8s [0x%06x] : %s\n",
 				d->name, d->mask, d->help);
 	}
 }

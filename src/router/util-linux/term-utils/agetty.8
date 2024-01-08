@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: agetty
 .\"    Author: [see the "AUTHOR(S)" section]
-.\" Generator: Asciidoctor 2.0.15
-.\"      Date: 2022-08-04
+.\" Generator: Asciidoctor 2.0.20
+.\"      Date: 2023-12-01
 .\"    Manual: System Administration
-.\"    Source: util-linux 2.38.1
+.\"    Source: util-linux 2.39.3
 .\"  Language: English
 .\"
-.TH "AGETTY" "8" "2022-08-04" "util\-linux 2.38.1" "System Administration"
+.TH "AGETTY" "8" "2023-12-01" "util\-linux 2.39.3" "System Administration"
 .ie \n(.g .ds Aq \(aq
 .el       .ds Aq '
 .ss \n[.ss] 0
@@ -155,14 +155,14 @@ Baud rates should be specified in descending order, so that the null character (
 .sp
 This argument is optional and unnecessary for \fBvirtual terminals\fP.
 .sp
-The default for \fBserial terminals\fP is keep the current baud rate (see \fB\-\-keep\-baud\fP) and if unsuccessful then default to \(aq9600\(aq.
+The default for \fBserial terminals\fP is keep the current baud rate (see \fB\-\-keep\-baud\fP) and if unsuccessful then default to \*(Aq9600\*(Aq.
 .RE
 .sp
 \fIterm\fP
 .RS 4
 The value to be used for the \fBTERM\fP environment variable. This overrides whatever \fBinit\fP(1) may have set, and is inherited by login and the shell.
 .sp
-The default is \(aqvt100\(aq, or \(aqlinux\(aq for Linux on a virtual terminal, or \(aqhurd\(aq for GNU Hurd on a virtual terminal.
+The default is \*(Aqvt100\*(Aq, or \*(Aqlinux\*(Aq for Linux on a virtual terminal, or \*(Aqhurd\*(Aq for GNU Hurd on a virtual terminal.
 .RE
 .SH "OPTIONS"
 .sp
@@ -280,7 +280,7 @@ Do not print a newline before writing out \fI/etc/issue\fP.
 .RS 4
 Options and arguments that are passed to \fBlogin\fP(1). Where \(rsu is replaced by the login name. For example:
 .sp
-\fB\-\-login\-options \(aq\-h darkstar \-\- \(rsu\(aq\fP
+\fB\-\-login\-options \*(Aq\-h darkstar \-\- \(rsu\*(Aq\fP
 .sp
 See \fB\-\-autologin\fP, \fB\-\-login\-program\fP and \fB\-\-remote\fP.
 .sp
@@ -329,7 +329,7 @@ Do not print hints about Num, Caps and Scroll Locks.
 .sp
 \fB\-\-nohostname\fP
 .RS 4
-By default the hostname will be printed. With this option enabled, no hostname at all will be shown.
+By default the hostname will be printed. With this option enabled, no hostname at all will be shown. This setting is also possible to able by LOGIN_PLAIN_PROMPT option in the \fI/etc/login.defs\fP configuration file (see below for more details).
 .RE
 .sp
 \fB\-\-long\-hostname\fP
@@ -339,12 +339,12 @@ By default the hostname is only printed until the first dot. With this option en
 .sp
 \fB\-\-erase\-chars\fP \fIstring\fP
 .RS 4
-This option specifies additional characters that should be interpreted as a backspace ("ignore the previous character") when the user types the login name. The default additional \(aqerase\(aq has been \(aq#\(aq, but since util\-linux 2.23 no additional erase characters are enabled by default.
+This option specifies additional characters that should be interpreted as a backspace ("ignore the previous character") when the user types the login name. The default additional \*(Aqerase\*(Aq has been \*(Aq#\*(Aq, but since util\-linux 2.23 no additional erase characters are enabled by default.
 .RE
 .sp
 \fB\-\-kill\-chars\fP \fIstring\fP
 .RS 4
-This option specifies additional characters that should be interpreted as a kill ("ignore all previous characters") when the user types the login name. The default additional \(aqkill\(aq has been \(aq@\(aq, but since util\-linux 2.23 no additional kill characters are enabled by default.
+This option specifies additional characters that should be interpreted as a kill ("ignore all previous characters") when the user types the login name. The default additional \*(Aqkill\*(Aq has been \*(Aq@\*(Aq, but since util\-linux 2.23 no additional kill characters are enabled by default.
 .RE
 .sp
 \fB\-\-chdir\fP \fIdirectory\fP
@@ -375,6 +375,16 @@ Display help text and exit.
 \fB\-V\fP, \fB\-\-version\fP
 .RS 4
 Print version and exit.
+.RE
+.SH "CONFIG FILE ITEMS"
+.sp
+\fBagetty\fP reads the \fI/etc/login.defs\fP configuration file (see \fBlogin.defs\fP(5)).
+Note that the configuration file could be distributed with another package (usually shadow\-utils).
+The following configuration items are relevant for \fBagetty\fP:
+.sp
+\fBLOGIN_PLAIN_PROMPT\fP (boolean)
+.RS 4
+Tell \fBagetty\fP that printing the hostname should be suppressed in the login: prompt. This is an alternative to the \fB\-\-nohostname\fP command line option. The default value is \fIno\fP.
 .RE
 .SH "EXAMPLE"
 .sp
@@ -411,7 +421,7 @@ For a Hayes modem with a fixed 115200 bps interface to the machine (the example 
 .RS 3
 .ll -.6i
 .sp
-\fB/sbin/agetty \-\-wait\-cr \-\-init\-string \(aqATE0Q1&D2&C1S0=1\(rs015\(aq 115200 ttyS1\fP
+\fB/sbin/agetty \-\-wait\-cr \-\-init\-string \*(AqATE0Q1&D2&C1S0=1\(rs015\*(Aq 115200 ttyS1\fP
 .br
 .RE
 .ll
@@ -461,7 +471,7 @@ Translate the human\-readable \fIname\fP to an escape sequence and insert it (fo
 .sp
 s
 .RS 4
-Insert the system name (the name of the operating system). Same as \(aquname \-s\(aq. See also the \(rsS escape code.
+Insert the system name (the name of the operating system). Same as \*(Aquname \-s\*(Aq. See also the \(rsS escape code.
 .RE
 .sp
 S or S{VARIABLE}

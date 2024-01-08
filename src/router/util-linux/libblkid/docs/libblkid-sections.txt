@@ -63,6 +63,10 @@ blkid_probe_set_hint
 blkid_probe_set_sectorsize
 blkid_probe_step_back
 blkid_reset_probe
+BLKID_PROBE_OK
+BLKID_PROBE_NONE
+BLKID_PROBE_ERROR
+BLKID_PROBE_AMBIGUOUS
 </SECTION>
 
 <SECTION>
@@ -147,6 +151,7 @@ blkid_probe_enable_topology
 blkid_probe_get_topology
 blkid_topology_get_alignment_offset
 blkid_topology_get_dax
+blkid_topology_get_diskseq
 blkid_topology_get_logical_sector_size
 blkid_topology_get_minimum_io_size
 blkid_topology_get_optimal_io_size
@@ -190,6 +195,7 @@ BLKID_PROBREQ_UUIDRAW
 BLKID_PROBREQ_VERSION
 BLKID_SUBLKS_BADCSUM
 BLKID_SUBLKS_DEFAULT
+BLKID_SUBLKS_FSINFO
 BLKID_SUBLKS_LABEL
 BLKID_SUBLKS_LABELRAW
 BLKID_SUBLKS_MAGIC

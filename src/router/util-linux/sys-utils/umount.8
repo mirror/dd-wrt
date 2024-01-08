@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: umount
 .\"    Author: [see the "AUTHOR(S)" section]
-.\" Generator: Asciidoctor 2.0.15
-.\"      Date: 2022-08-04
+.\" Generator: Asciidoctor 2.0.20
+.\"      Date: 2023-11-21
 .\"    Manual: System Administration
-.\"    Source: util-linux 2.38.1
+.\"    Source: util-linux 2.39.3
 .\"  Language: English
 .\"
-.TH "UMOUNT" "8" "2022-08-04" "util\-linux 2.38.1" "System Administration"
+.TH "UMOUNT" "8" "2023-11-21" "util\-linux 2.39.3" "System Administration"
 .ie \n(.g .ds Aq \(aq
 .el       .ds Aq '
 .ss \n[.ss] 0
@@ -40,7 +40,7 @@ umount \- unmount filesystems
 .sp
 The \fBumount\fP command detaches the mentioned filesystem(s) from the file hierarchy. A filesystem is specified by giving the directory where it has been mounted. Giving the special device on which the filesystem lives may also work, but is obsolete, mainly because it will fail in case this device was mounted on more than one directory.
 .sp
-Note that a filesystem cannot be unmounted when it is \(aqbusy\(aq \- for example, when there are open files on it, or when some process has its working directory there, or when a swap file on it is in use. The offending process could even be \fBumount\fP itself \- it opens libc, and libc in its turn may open for example locale files. A lazy unmount avoids this problem, but it may introduce other issues. See \fB\-\-lazy\fP description below.
+Note that a filesystem cannot be unmounted when it is \*(Aqbusy\*(Aq \- for example, when there are open files on it, or when some process has its working directory there, or when a swap file on it is in use. The offending process could even be \fBumount\fP itself \- it opens libc, and libc in its turn may open for example locale files. A lazy unmount avoids this problem, but it may introduce other issues. See \fB\-\-lazy\fP description below.
 .SH "OPTIONS"
 .sp
 \fB\-a\fP, \fB\-\-all\fP
@@ -69,7 +69,7 @@ When the unmounted device was a loop device, also free this loop device. This op
 .sp
 \fB\-\-fake\fP
 .RS 4
-Causes everything to be done except for the actual system call or umount helper execution; this \(aqfakes\(aq unmounting the filesystem. It can be used to remove entries from the deprecated \fI/etc/mtab\fP that were unmounted earlier with the \fB\-n\fP option.
+Causes everything to be done except for the actual system call or umount helper execution; this \*(Aqfakes\*(Aq unmounting the filesystem. It can be used to remove entries from the deprecated \fI/etc/mtab\fP that were unmounted earlier with the \fB\-n\fP option.
 .RE
 .sp
 \fB\-f\fP, \fB\-\-force\fP
@@ -186,11 +186,6 @@ Note that \fI/etc/mtab\fP is currently deprecated and \fBhelper=\fP and other us
 \fBLIBMOUNT_FSTAB\fP=<path>
 .RS 4
 overrides the default location of the \fIfstab\fP file (ignored for \fBsuid\fP)
-.RE
-.sp
-\fBLIBMOUNT_MTAB\fP=<path>
-.RS 4
-overrides the default location of the \fImtab\fP file (ignored for \fBsuid\fP)
 .RE
 .sp
 \fBLIBMOUNT_DEBUG\fP=all

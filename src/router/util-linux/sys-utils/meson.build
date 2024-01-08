@@ -55,7 +55,7 @@ fstrim_sources = files(
 dmesg_sources = files(
   'dmesg.c',
 ) + \
-  monotonic_c
+  monotonic_c + pager_c
 
 ctrlaltdel_sources = files(
   'ctrlaltdel.c',
@@ -72,6 +72,10 @@ blkdiscard_sources = files(
 
 blkzone_sources = files(
   'blkzone.c',
+)
+
+blkpr_sources = files(
+  'blkpr.c',
 )
 
 ldattach_sources = files(

@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: swapon
 .\"    Author: [see the "AUTHOR(S)" section]
-.\" Generator: Asciidoctor 2.0.15
-.\"      Date: 2022-05-11
+.\" Generator: Asciidoctor 2.0.20
+.\"      Date: 2023-12-01
 .\"    Manual: System Administration
-.\"    Source: util-linux 2.38.1
+.\"    Source: util-linux 2.39.3
 .\"  Language: English
 .\"
-.TH "SWAPON" "8" "2022-05-11" "util\-linux 2.38.1" "System Administration"
+.TH "SWAPON" "8" "2023-12-01" "util\-linux 2.39.3" "System Administration"
 .ie \n(.g .ds Aq \(aq
 .el       .ds Aq '
 .ss \n[.ss] 0
@@ -48,6 +48,11 @@ Calls to \fBswapon\fP normally occur in the system boot scripts making all swap 
 \fB\-a\fP, \fB\-\-all\fP
 .RS 4
 All devices marked as "swap" in \fI/etc/fstab\fP are made available, except for those with the "noauto" option. Devices that are already being used as swap are silently skipped.
+.RE
+.sp
+\fB\-T\fP, \fB\-\-fstab\fP \fIpath\fP
+.RS 4
+Specifies an alternative fstab file for compatibility with \fBmount\fP(8). If \fIpath\fP is a directory, then the files in the directory are sorted by \fBstrverscmp\fP(3); files that start with "." or without an .fstab extension are ignored. The option can be specified more than once. This option is mostly designed for initramfs or chroot scripts where additional configuration is specified beyond standard system configuration.
 .RE
 .sp
 \fB\-d\fP, \fB\-\-discard\fP[\fB=\fP\fIpolicy\fP]

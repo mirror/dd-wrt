@@ -100,24 +100,70 @@ static int fstype_cmp(const void *v1, const void *v2)
 	return strcmp(s1, s2);
 }
 
-int mnt_stat_mountpoint(const char *target, struct stat *st)
+/* This very simplified stat() alternative uses cached VFS data and does not
+ * directly ask the filesystem for details. It requires a kernel that supports
+ * statx(). It's usable only for file type, rdev and ino!
+ */
+static int safe_stat(const char *target, struct stat *st, int nofollow)
 {
-#ifdef AT_NO_AUTOMOUNT
-	return fstatat(AT_FDCWD, target, st, AT_NO_AUTOMOUNT);
-#else
-	return stat(target, st);
+	assert(target);
+	assert(st);
+
+	memset(st, 0, sizeof(struct stat));
+
+#if defined(HAVE_STATX) && defined(HAVE_STRUCT_STATX) && defined(AT_STATX_DONT_SYNC)
+	{
+		int rc;
+		struct statx stx = { 0 };
+
+		rc = statx(AT_FDCWD, target,
+				/* flags */
+				AT_STATX_DONT_SYNC
+					| AT_NO_AUTOMOUNT
+					| (nofollow ? AT_SYMLINK_NOFOLLOW : 0),
+				/* mask */
+				STATX_TYPE
+					| STATX_MODE
+					| STATX_INO,
+				&stx);
+		if (rc == 0) {
+			st->st_ino  = stx.stx_ino;
+			st->st_dev  = makedev(stx.stx_dev_major, stx.stx_dev_minor);
+			st->st_rdev = makedev(stx.stx_rdev_major, stx.stx_rdev_minor);
+			st->st_mode = stx.stx_mode;
+		}
+
+		if (rc == 0 ||
+		    (errno != EOPNOTSUPP && errno != ENOSYS && errno != EINVAL))
+			return rc;
+	}
 #endif
+
+#ifdef AT_NO_AUTOMOUNT
+	return fstatat(AT_FDCWD, target, st,
+			AT_NO_AUTOMOUNT | (nofollow ? AT_SYMLINK_NOFOLLOW : 0));
+#endif
+	return nofollow ? lstat(target, st) : stat(target, st);
 }
 
-int mnt_lstat_mountpoint(const char *target, struct stat *st)
+int mnt_safe_stat(const char *target, struct stat *st)
 {
-#ifdef AT_NO_AUTOMOUNT
-	return fstatat(AT_FDCWD, target, st, AT_NO_AUTOMOUNT | AT_SYMLINK_NOFOLLOW);
-#else
-	return lstat(target, st);
-#endif
+	return safe_stat(target, st, 0);
 }
 
+int mnt_safe_lstat(const char *target, struct stat *st)
+{
+	return safe_stat(target, st, 1);
+}
+
+/* Don't use access() or stat() here, we need a way how to check the path
+ * without trigger an automount or hangs on NFS, etc. */
+int mnt_is_path(const char *target)
+{
+	struct stat st;
+
+	return safe_stat(target, &st, 0) == 0;
+}
 
 /*
  * Note that the @target has to be an absolute path (so at least "/").  The
@@ -597,12 +643,14 @@ int mnt_get_uid(const char *username, uid_t *uid)
 		return -ENOMEM;
 
 	if (!getpwnam_r(username, &pwd, buf, UL_GETPW_BUFSIZ, &pw) && pw) {
-		*uid= pw->pw_uid;
+		*uid = pw->pw_uid;
 		rc = 0;
 	} else {
 		DBG(UTILS, ul_debug(
 			"cannot convert '%s' username to UID", username));
-		rc = errno ? -errno : -EINVAL;
+		if (errno == 0)
+			errno = EINVAL;
+		rc = -errno;;
 	}
 
 	free(buf);
@@ -624,15 +672,145 @@ int mnt_get_gid(const char *groupname, gid_t *gid)
 		return -ENOMEM;
 
 	if (!getgrnam_r(groupname, &grp, buf, UL_GETPW_BUFSIZ, &gr) && gr) {
-		*gid= gr->gr_gid;
+		*gid = gr->gr_gid;
 		rc = 0;
 	} else {
 		DBG(UTILS, ul_debug(
 			"cannot convert '%s' groupname to GID", groupname));
-		rc = errno ? -errno : -EINVAL;
+		if (errno == 0)
+			errno = EINVAL;
+		rc = -errno;;
 	}
 
 	free(buf);
+	return rc;
+}
+
+static int parse_uid_numeric(const char *value, uid_t *uid)
+{
+	uint64_t num;
+	int rc;
+
+	assert(value);
+	assert(uid);
+
+	rc = ul_strtou64(value, &num, 10);
+	if (rc != 0)
+		goto fail;
+
+	if (num > ULONG_MAX || (uid_t) num != num) {
+		rc = -(errno = ERANGE);
+		goto fail;
+	}
+	*uid = (uid_t) num;
+
+	return 0;
+fail:
+	DBG(UTILS, ul_debug("failed to convert '%s' to number [rc=%d, errno=%d]", value, rc, errno));
+	return rc;
+}
+
+/* Parse user_len-sized user; returns <0 on error, or 0 on success */
+int mnt_parse_uid(const char *user, size_t user_len, uid_t *uid)
+{
+	char *user_tofree = NULL;
+	int rc;
+
+	assert(user);
+	assert(user_len);
+	assert(uid);
+
+	if (user[user_len] != '\0') {
+		user = user_tofree = strndup(user, user_len);
+		if (!user)
+			return -ENOMEM;
+	}
+
+	rc = mnt_get_uid(user, uid);
+	if (rc != 0 && isdigit(*user))
+		rc = parse_uid_numeric(user, uid);
+
+	free(user_tofree);
+	return rc;
+}
+
+static int parse_gid_numeric(const char *value, gid_t *gid)
+{
+	uint64_t num;
+	int rc;
+
+	assert(value);
+	assert(gid);
+
+	rc = ul_strtou64(value, &num, 10);
+	if (rc != 0)
+		goto fail;
+
+	if (num > ULONG_MAX || (gid_t) num != num) {
+		rc = -(errno = ERANGE);
+		goto fail;
+	}
+	*gid = (gid_t) num;
+
+	return 0;
+fail:
+	DBG(UTILS, ul_debug("failed to convert '%s' to number [rc=%d, errno=%d]", value, rc, errno));
+	return rc;
+}
+
+/* POSIX-parse group_len-sized group; -1 and errno set, or 0 on success */
+int mnt_parse_gid(const char *group, size_t group_len, gid_t *gid)
+{
+	char *group_tofree = NULL;
+	int rc;
+
+	assert(group);
+	assert(group_len);
+	assert(gid);
+
+	if (group[group_len] != '\0') {
+		group = group_tofree = strndup(group, group_len);
+		if (!group)
+			return -ENOMEM;
+	}
+
+	rc = mnt_get_gid(group, gid);
+	if (rc != 0 && isdigit(*group))
+		rc = parse_gid_numeric(group, gid);
+
+	free(group_tofree);
+	return rc;
+}
+
+int mnt_parse_mode(const char *mode, size_t mode_len, mode_t *uid)
+{
+	char buf[sizeof(stringify_value(UINT32_MAX))];
+	uint32_t num;
+	int rc;
+
+	assert(mode);
+	assert(mode_len);
+	assert(uid);
+
+	if (mode_len > sizeof(buf) - 1) {
+		rc = -(errno = ERANGE);
+		goto fail;
+	}
+	mem2strcpy(buf, mode, mode_len, sizeof(buf));
+
+	rc = ul_strtou32(buf, &num, 8);
+	if (rc != 0)
+		goto fail;
+	if (num > 07777) {
+		rc = -(errno = ERANGE);
+		goto fail;
+	}
+	*uid = (mode_t) num;
+
+	return 0;
+fail:
+	DBG(UTILS, ul_debug("failed to convert '%.*s' to mode [rc=%d, errno=%d]",
+				(int) mode_len, mode, rc, errno));
 	return rc;
 }
 
@@ -712,52 +890,19 @@ static int try_write(const char *filename, const char *directory)
 
 /**
  * mnt_has_regular_mtab:
- * @mtab: returns path to mtab
- * @writable: returns 1 if the file is writable
+ * @mtab: returns NULL
+ * @writable: returns 0
  *
- * If the file does not exist and @writable argument is not NULL, then it will
- * try to create the file.
+ * Returns: 0
  *
- * Returns: 1 if /etc/mtab is a regular file, and 0 in case of error (check
- *          errno for more details).
+ * Deprecated: libmount does not use /etc/mtab at all since v2.39.
  */
 int mnt_has_regular_mtab(const char **mtab, int *writable)
 {
-	struct stat st;
-	int rc;
-	const char *filename = mtab && *mtab ? *mtab : mnt_get_mtab_path();
-
 	if (writable)
 		*writable = 0;
-	if (mtab && !*mtab)
-		*mtab = filename;
-
-	DBG(UTILS, ul_debug("mtab: %s", filename));
-
-	rc = lstat(filename, &st);
-
-	if (rc == 0) {
-		/* file exists */
-		if (S_ISREG(st.st_mode)) {
-			if (writable)
-				*writable = !try_write(filename, NULL);
-			DBG(UTILS, ul_debug("%s: writable", filename));
-			return 1;
-		}
-		goto done;
-	}
-
-	/* try to create the file */
-	if (writable) {
-		*writable = !try_write(filename, NULL);
-		if (*writable) {
-			DBG(UTILS, ul_debug("%s: writable", filename));
-			return 1;
-		}
-	}
-
-done:
-	DBG(UTILS, ul_debug("%s: irregular/non-writable", filename));
+	if (mtab)
+		*mtab = NULL;
 	return 0;
 }
 
@@ -846,10 +991,13 @@ const char *mnt_get_fstab_path(void)
 /**
  * mnt_get_mtab_path:
  *
- * This function returns the *default* location of the mtab file. The result does
- * not have to be writable. See also mnt_has_regular_mtab().
+ * This function returns the *default* location of the mtab file.
+ *
  *
  * Returns: path to /etc/mtab or $LIBMOUNT_MTAB.
+ *
+ * Deprecated: libmount uses /proc/self/mountinfo only.
+ *
  */
 const char *mnt_get_mtab_path(void)
 {
@@ -933,7 +1081,7 @@ char *mnt_get_mountpoint(const char *path)
 	if (*mnt == '/' && *(mnt + 1) == '\0')
 		goto done;
 
-	if (mnt_stat_mountpoint(mnt, &st))
+	if (mnt_safe_stat(mnt, &st))
 		goto err;
 	base = st.st_dev;
 
@@ -942,7 +1090,7 @@ char *mnt_get_mountpoint(const char *path)
 
 		if (!p)
 			break;
-		if (mnt_stat_mountpoint(*mnt ? mnt : "/", &st))
+		if (mnt_safe_stat(*mnt ? mnt : "/", &st))
 			goto err;
 		dir = st.st_dev;
 		if (dir != base) {
@@ -1138,79 +1286,6 @@ done:
 	return 1;
 }
 
-/*
- * Initialize MNT_PATH_TMPTGT; mkdir, create a new namespace and
- * mark (bind mount) the directory as private.
- */
-int mnt_tmptgt_unshare(int *old_ns_fd)
-{
-#ifdef USE_LIBMOUNT_SUPPORT_NAMESPACES
-	int rc = 0, fd = -1;
-
-	assert(old_ns_fd);
-
-	*old_ns_fd = -1;
-
-	/* remember the current namespace */
-	fd = open("/proc/self/ns/mnt", O_RDONLY | O_CLOEXEC);
-	if (fd < 0)
-		goto fail;
-
-	/* create new namespace */
-	if (unshare(CLONE_NEWNS) != 0)
-		goto fail;
-
-	/* create directory */
-	rc = ul_mkdir_p(MNT_PATH_TMPTGT, S_IRWXU);
-	if (rc)
-		goto fail;
-
-	/* try to set top-level directory as private, this is possible if
-	 * MNT_RUNTIME_TOPDIR (/run) is a separated filesystem. */
-	if (mount("none", MNT_RUNTIME_TOPDIR, NULL, MS_PRIVATE, NULL) != 0) {
-
-		/* failed; create a mountpoint from MNT_PATH_TMPTGT */
-		if (mount(MNT_PATH_TMPTGT, MNT_PATH_TMPTGT, "none", MS_BIND, NULL) != 0)
-			goto fail;
-		if (mount("none", MNT_PATH_TMPTGT, NULL, MS_PRIVATE, NULL) != 0)
-			goto fail;
-	}
-
-	DBG(UTILS, ul_debug(MNT_PATH_TMPTGT " unshared"));
-	*old_ns_fd = fd;
-	return 0;
-fail:
-	if (rc == 0)
-		rc = errno ? -errno : -EINVAL;
-
-	mnt_tmptgt_cleanup(fd);
-	DBG(UTILS, ul_debug(MNT_PATH_TMPTGT " unshare failed"));
-	return rc;
-#else
-	return -ENOSYS;
-#endif
-}
-
-/*
- * Clean up MNT_PATH_TMPTGT; umount and switch back to old namespace
- */
-int mnt_tmptgt_cleanup(int old_ns_fd)
-{
-#ifdef USE_LIBMOUNT_SUPPORT_NAMESPACES
-	umount(MNT_PATH_TMPTGT);
-
-	if (old_ns_fd >= 0) {
-		setns(old_ns_fd, CLONE_NEWNS);
-		close(old_ns_fd);
-	}
-
-	DBG(UTILS, ul_debug(MNT_PATH_TMPTGT " cleanup done"));
-	return 0;
-#else
-	return -ENOSYS;
-#endif
-}
-
 #ifdef TEST_PROGRAM
 static int test_match_fstype(struct libmnt_test *ts, int argc, char *argv[])
 {
@@ -1365,6 +1440,79 @@ static int test_statfs_type(struct libmnt_test *ts, int argc, char *argv[])
 	return rc;
 }
 
+static int tests_parse_uid(struct libmnt_test *ts, int argc, char *argv[])
+{
+	char *str = argv[1];
+	uid_t uid = (uid_t) -1;
+	int rc;
+
+	rc = mnt_parse_uid(str, strlen(str), &uid);
+	if (rc != 0)
+		printf("failed: rc=%d: %m\n", rc);
+	else
+		printf("'%s' --> %lu\n", str, (unsigned long) uid);
+
+	return rc;
+}
+
+static int tests_parse_gid(struct libmnt_test *ts, int argc, char *argv[])
+{
+	char *str = argv[1];
+	gid_t gid = (gid_t) -1;
+	int rc;
+
+	rc = mnt_parse_gid(str, strlen(str), &gid);
+	if (rc != 0)
+		printf("failed: rc=%d: %m\n", rc);
+	else
+		printf("'%s' --> %lu\n", str, (unsigned long) gid);
+
+	return rc;
+}
+
+static int tests_parse_mode(struct libmnt_test *ts, int argc, char *argv[])
+{
+	char *str = argv[1];
+	mode_t mod = (mode_t) -1;
+	int rc;
+
+	rc = mnt_parse_mode(str, strlen(str), &mod);
+	if (rc != 0)
+		printf("failed: rc=%d: %m\n", rc);
+	else {
+		char modstr[11];
+
+		xstrmode(mod, modstr);
+		printf("'%s' --> %04o [%s]\n", str, (unsigned int) mod, modstr);
+	}
+	return rc;
+}
+
+static int tests_stat(struct libmnt_test *ts, int argc, char *argv[])
+{
+	char *path = argv[1];
+	struct stat st;
+	int rc;
+
+	if (strcmp(argv[0], "--lstat") == 0)
+		rc = mnt_safe_lstat(path, &st);
+	else
+		rc = mnt_safe_stat(path, &st);
+	if (rc)
+		printf("%s: failed: rc=%d: %m\n", path, rc);
+	else {
+		printf("%s: \n", path);
+		printf(" S_ISDIR: %s\n", S_ISDIR(st.st_mode) ? "y" : "n");
+		printf(" S_ISREG: %s\n", S_ISREG(st.st_mode) ? "y" : "n");
+		printf(" S_IFLNK: %s\n", S_ISLNK(st.st_mode) ? "y" : "n");
+
+		printf("   devno: %lu (%d:%d)\n", (unsigned long) st.st_dev,
+					  major(st.st_dev), minor(st.st_dev));
+		printf("     ino: %lu\n", (unsigned long) st.st_ino);
+
+	}
+	return rc;
+}
 
 int main(int argc, char *argv[])
 {
@@ -1380,7 +1528,11 @@ int main(int argc, char *argv[])
 	{ "--guess-root",    test_guess_root,      "[<maj:min>]" },
 	{ "--mkdir",         test_mkdir,           "<path>" },
 	{ "--statfs-type",   test_statfs_type,     "<path>" },
-
+	{ "--parse-uid",     tests_parse_uid,      "<username|uid>" },
+	{ "--parse-gid",     tests_parse_gid,      "<groupname|gid>" },
+	{ "--parse-mode",    tests_parse_mode,     "<number>" },
+	{ "--stat",          tests_stat,           "<path>" },
+	{ "--lstat",         tests_stat,           "<path>" },
 	{ NULL }
 	};
 

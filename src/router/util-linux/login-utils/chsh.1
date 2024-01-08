@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: chsh
 .\"    Author: [see the "AUTHOR(S)" section]
-.\" Generator: Asciidoctor 2.0.15
-.\"      Date: 2022-05-11
+.\" Generator: Asciidoctor 2.0.20
+.\"      Date: 2023-11-21
 .\"    Manual: User Commands
-.\"    Source: util-linux 2.38.1
+.\"    Source: util-linux 2.39.3
 .\"  Language: English
 .\"
-.TH "CHSH" "1" "2022-05-11" "util\-linux 2.38.1" "User Commands"
+.TH "CHSH" "1" "2023-11-21" "util\-linux 2.39.3" "User Commands"
 .ie \n(.g .ds Aq \(aq
 .el       .ds Aq '
 .ss \n[.ss] 0
@@ -31,7 +31,7 @@
 chsh \- change your login shell
 .SH "SYNOPSIS"
 .sp
-\fBchsh\fP [\fB\-s\fP \fIshell\fP] [\fB\-l\fP] [\fB\-h\fP] [\fB\-v\fP] [\fIusername\fP]
+\fBchsh\fP [\fB\-s\fP \fIshell\fP] [\fB\-l\fP] [\fB\-h\fP] [\fB\-V\fP] [\fIusername\fP]
 .SH "DESCRIPTION"
 .sp
 \fBchsh\fP is used to change your login shell. If a shell is not given on the command line, \fBchsh\fP prompts for one.
@@ -47,6 +47,18 @@ Specify your login shell.
 \fB\-l\fP, \fB\-\-list\-shells\fP
 .RS 4
 Print the list of shells listed in \fI/etc/shells\fP and exit.
+.RE
+.sp
+\fB\-h\fP, \fB\-\-help\fP
+.RS 4
+Display help text and exit. The short options \fB\-h\fP have been used since version 2.30; old versions use
+deprecated \fB\-u\fP.
+.RE
+.sp
+\fB\-V\fP, \fB\-\-version\fP
+.RS 4
+Print version and exit. The short options \fB\-V\fP have been used since version 2.39; old versions use
+deprecated \fB\-v\fP.
 .RE
 .sp
 \fB\-h\fP, \fB\-\-help\fP

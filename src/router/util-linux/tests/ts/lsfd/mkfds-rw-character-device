@@ -17,10 +17,10 @@
 TS_TOPDIR="${0%/*}/../.."
 TS_DESC="character device with O_RDWR"
 
-. $TS_TOPDIR/functions.sh
+. "$TS_TOPDIR"/functions.sh
 ts_init "$*"
 
-. $TS_SELF/lsfd-functions.bash
+. "$TS_SELF"/lsfd-functions.bash
 
 ts_check_test_command "$TS_CMD_LSFD"
 
@@ -43,8 +43,8 @@ EXPR=
 	lsfd_compare_dev "${TS_CMD_LSFD}" $target "${EXPR}"
 
 	kill -CONT ${PID}
-	wait ${MKFDS_PID}
     fi
+    wait ${MKFDS_PID}
 } > $TS_OUTPUT 2>&1
 
 ts_finalize

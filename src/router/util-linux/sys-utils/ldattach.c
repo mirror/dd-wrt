@@ -257,7 +257,7 @@ static int my_cfsetspeed(struct termios *ts, int speed)
 static void handler(int s)
 {
 	dbg("got SIG %i -> exiting", s);
-	exit(EXIT_SUCCESS);
+	_exit(EXIT_SUCCESS);
 }
 
 static void gsm0710_set_conf(int tty_fd)
@@ -303,8 +303,8 @@ int main(int argc, char **argv)
 		{"help", no_argument, NULL, 'h'},
 		{"version", no_argument, NULL, 'V'},
 		{"debug", no_argument, NULL, 'd'},
-	        {"intro-command", no_argument, NULL, 'c'},
-	        {"pause", no_argument, NULL, 'p'},
+	        {"intro-command", required_argument, NULL, 'c'},
+	        {"pause", required_argument, NULL, 'p'},
 		{NULL, 0, NULL, 0}
 	};
 

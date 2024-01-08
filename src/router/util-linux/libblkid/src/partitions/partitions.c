@@ -234,6 +234,11 @@ int blkid_probe_set_partitions_flags(blkid_probe pr, int flags)
 	return 0;
 }
 
+int blkid_probe_get_partitions_flags(blkid_probe pr)
+{
+	return pr->chains[BLKID_CHAIN_PARTS].flags;
+}
+
 /**
  * blkid_probe_reset_partitions_filter:
  * @pr: prober
@@ -550,6 +555,7 @@ static int idinfo_probe(blkid_probe pr, const struct blkid_idinfo *id,
 	if (id->probefunc) {
 		DBG(LOWPROBE, ul_debug(
 			"%s: ---> call probefunc()", id->name));
+		errno = 0;
 		rc = id->probefunc(pr, mag);
 		if (rc < 0) {
 			/* reset after error */
@@ -1144,7 +1150,7 @@ int blkid_partitions_set_ptuuid(blkid_probe pr, unsigned char *uuid)
 
 /* set PTUUID variable for non-binary API for tables where
  * the ID is just a string */
-int blkid_partitions_strcpy_ptuuid(blkid_probe pr, char *str)
+int blkid_partitions_strcpy_ptuuid(blkid_probe pr, const char *str)
 {
 	struct blkid_chain *chn = blkid_probe_get_chain(pr);
 

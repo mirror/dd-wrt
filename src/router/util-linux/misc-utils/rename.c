@@ -48,17 +48,38 @@ static int tty_cbreak = 0;
 static int all = 0;
 static int last = 0;
 
-static int string_replace(char *from, char *to, char *s, char *orig, char **newname)
+/* Find the first place in `orig` where we'll perform a replacement. NULL if
+   there are no replacements to do. */
+static char *find_initial_replace(char *from, char *to, char *orig)
+{
+	char *search_start = orig;
+
+	if (strchr(from, '/') == NULL && strchr(to, '/') == NULL) {
+		/* We only want to search in the final path component. Don't
+		   include the final '/' in that component; if `from` is empty,
+		   we want it to first match after the '/', not before. */
+		search_start = strrchr(orig, '/');
+
+		if (search_start == NULL)
+			search_start = orig;
+		else
+			search_start++;
+	}
+
+	return strstr(search_start, from);
+}
+
+static int string_replace(char *from, char *to, char *orig, char **newname)
 {
 	char *p, *q, *where;
 	size_t count = 0, fromlen = strlen(from);
 
-	p = where = strstr(s, from);
+	p = where = find_initial_replace(from, to, orig);
 	if (where == NULL)
 		return 1;
 	count++;
-	while ((all || last) && p) {
-		p = strstr(p + (last ? 1 : fromlen), from);
+	while ((all || last) && p && *p) {
+		p = strstr(p + (last ? 1 : max(fromlen, (size_t) 1)), from);
 		if (p) {
 			if (all)
 				count++;
@@ -75,8 +96,13 @@ static int string_replace(char *from, char *to, char *s, char *orig, char **newn
 		p = to;
 		while (*p)
 			*q++ = *p++;
-		p = where + fromlen;
-		where = strstr(p, from);
+		if (fromlen > 0) {
+			p = where + fromlen;
+			where = strstr(p, from);
+		} else {
+			p = where;
+			where += 1;
+		}
 	}
 	while (*p)
 		*q++ = *p++;
@@ -152,7 +178,7 @@ static int do_symlink(char *from, char *to, char *s, int verbose, int noact,
 	}
 	target[ssz] = '\0';
 
-	if (string_replace(from, to, target, target, &newname) != 0)
+	if (string_replace(from, to, target, &newname) != 0)
 		ret = 0;
 
 	if (ret == 1 && (nooverwrite || interactive) && lstat(newname, &sb) != 0)
@@ -186,7 +212,7 @@ static int do_symlink(char *from, char *to, char *s, int verbose, int noact,
 static int do_file(char *from, char *to, char *s, int verbose, int noact,
                    int nooverwrite, int interactive)
 {
-	char *newname = NULL, *file=NULL;
+	char *newname = NULL;
 	int ret = 1;
 	struct stat sb;
 
@@ -203,11 +229,7 @@ static int do_file(char *from, char *to, char *s, int verbose, int noact,
 		warn(_("stat of %s failed"), s);
 		return 2;
 	}
-	if (strchr(from, '/') == NULL && strchr(to, '/') == NULL)
-		file = strrchr(s, '/');
-	if (file == NULL)
-		file = s;
-	if (string_replace(from, to, file, s, &newname) != 0)
+	if (string_replace(from, to, s, &newname) != 0)
 		return 0;
 
 	if ((nooverwrite || interactive) && access(newname, F_OK) != 0)

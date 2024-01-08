@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: setterm
 .\"    Author: [see the "AUTHOR(S)" section]
-.\" Generator: Asciidoctor 2.0.15
-.\"      Date: 2022-05-11
+.\" Generator: Asciidoctor 2.0.20
+.\"      Date: 2023-11-21
 .\"    Manual: User Commands
-.\"    Source: util-linux 2.38.1
+.\"    Source: util-linux 2.39.3
 .\"  Language: English
 .\"
-.TH "SETTERM" "1" "2022-05-11" "util\-linux 2.38.1" "User Commands"
+.TH "SETTERM" "1" "2023-11-21" "util\-linux 2.39.3" "User Commands"
 .ie \n(.g .ds Aq \(aq
 .el       .ds Aq '
 .ss \n[.ss] 0
@@ -45,7 +45,7 @@ A \fI16\-color\fP can be an \fI8\-color\fP, or \fBgrey\fP, or \fBbright\fP follo
 .sp
 The various color options may be set independently, at least on virtual consoles, though the results of setting multiple modes (for example, \fB\-\-underline\fP and \fB\-\-half\-bright\fP) are hardware\-dependent.
 .sp
-The optional arguments are recommended with \(aq=\(aq (equals sign) and not space between the option and the argument. For example \-\-option=argument. \fBsetterm\fP can interpret the next non\-option argument as an optional argument too.
+The optional arguments are recommended with \*(Aq=\*(Aq (equals sign) and not space between the option and the argument. For example \-\-option=argument. \fBsetterm\fP can interpret the next non\-option argument as an optional argument too.
 .sp
 \fB\-\-appcursorkeys\fP on|off
 .RS 4
@@ -131,7 +131,7 @@ Sets the foreground text color.
 Turns dim (half\-brightness) mode on or off. Except on a virtual console, \fB\-\-half\-bright off\fP turns off all attributes (bold, half\-brightness, blink, reverse).
 .RE
 .sp
-\fB\-\-hbcolor\fP [bright] \fI16\-color\fP
+\fB\-\-hbcolor\fP \fI16\-color\fP
 .RS 4
 Sets the color for half\-bright characters.
 .RE
@@ -210,7 +210,7 @@ Displays the terminal reset string, which typically resets the terminal to its p
 .sp
 \fB\-\-resize\fP
 .RS 4
-Reset terminal size by assessing maximum row and column. This is useful when actual geometry and kernel terminal driver are not in sync. Most notable use case is with serial consoles, that do not use \fBioctl\fP(3p) but just byte streams and breaks.
+Reset terminal size by assessing maximum row and column. This is useful when actual geometry and kernel terminal driver are not in sync. Most notable use case is with serial consoles, that do not use \fBioctl\fP(2) but just byte streams and breaks.
 .RE
 .sp
 \fB\-\-reverse\fP on|off
@@ -233,7 +233,7 @@ Sets tab stops at the given horizontal cursor positions, in the range \fB1\-160\
 Overrides the \fBTERM\fP environment variable.
 .RE
 .sp
-\fB\-\-ulcolor\fP [bright] \fI16\-color\fP
+\fB\-\-ulcolor\fP \fI16\-color\fP
 .RS 4
 Sets the color for underlined characters. Virtual consoles only.
 .RE

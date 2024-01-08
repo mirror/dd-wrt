@@ -1,4 +1,9 @@
 /*
+ * SPDX-License-Identifier: GPL-2.0-or-later
+ *
+ * This file may be redistributed under the terms of the GNU Public
+ * License.
+ *
  * Based on linux-perf/git scm
  *
  * Some modifications and simplifications for util-linux
@@ -109,7 +114,7 @@ static int wait_or_whine(pid_t pid)
 		if (waiting < 0) {
 			if (errno == EINTR)
 				continue;
-			err(EXIT_FAILURE, _("waitpid failed (%s)"), strerror(errno));
+			ul_sig_err(EXIT_FAILURE, "waitpid failed");
 		}
 		if (waiting != pid)
 			return -1;
@@ -158,8 +163,6 @@ static void wait_for_pager(void)
 	if (pager_process.pid == 0)
 		return;
 
-	fflush(stdout);
-	fflush(stderr);
 	/* signal EOF to pager */
 	close(STDOUT_FILENO);
 	close(STDERR_FILENO);
@@ -234,8 +237,11 @@ static void __setup_pager(void)
 
 	/* original process continues, but writes to the pipe */
 	dup2(pager_process.in, STDOUT_FILENO);
-	if (isatty(STDERR_FILENO))
+	setvbuf(stdout, NULL, _IOLBF, 0);
+	if (isatty(STDERR_FILENO)) {
 		dup2(pager_process.in, STDERR_FILENO);
+		setvbuf(stderr, NULL, _IOLBF, 0);
+	}
 	close(pager_process.in);
 
 	memset(&sa, 0, sizeof(sa));

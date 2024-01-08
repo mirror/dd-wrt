@@ -56,6 +56,7 @@ struct libmnt_cache {
 	size_t			nents;
 	size_t			nallocs;
 	int			refcount;
+	int			probe_sb_extra;	/* extra BLKID_SUBLKS_* flags */
 
 	/* blkid_evaluate_tag() works in two ways:
 	 *
@@ -68,7 +69,7 @@ struct libmnt_cache {
 	 */
 	blkid_cache		bc;
 
-	struct libmnt_table	*mtab;
+	struct libmnt_table	*mountinfo;
 };
 
 /**
@@ -141,7 +142,7 @@ void mnt_unref_cache(struct libmnt_cache *cache)
 		cache->refcount--;
 		/*DBG(CACHE, ul_debugobj(cache, "unref=%d", cache->refcount));*/
 		if (cache->refcount <= 0) {
-			mnt_unref_table(cache->mtab);
+			mnt_unref_table(cache->mountinfo);
 
 			mnt_free_cache(cache);
 		}
@@ -151,25 +152,42 @@ void mnt_unref_cache(struct libmnt_cache *cache)
 /**
  * mnt_cache_set_targets:
  * @cache: cache pointer
- * @mtab: table with already canonicalized mountpoints
+ * @mountinfo: table with already canonicalized mountpoints
  *
- * Add to @cache reference to @mtab. This can be used to avoid unnecessary paths
+ * Add to @cache reference to @mountinfo. This can be used to avoid unnecessary paths
  * canonicalization in mnt_resolve_target().
  *
  * Returns: negative number in case of error, or 0 o success.
  */
 int mnt_cache_set_targets(struct libmnt_cache *cache,
-				struct libmnt_table *mtab)
+				struct libmnt_table *mountinfo)
 {
 	if (!cache)
 		return -EINVAL;
 
-	mnt_ref_table(mtab);
-	mnt_unref_table(cache->mtab);
-	cache->mtab = mtab;
+	mnt_ref_table(mountinfo);
+	mnt_unref_table(cache->mountinfo);
+	cache->mountinfo = mountinfo;
 	return 0;
 }
 
+/**
+ * mnt_cache_set_sbprobe:
+ * @cache: cache pointer
+ * @flags: BLKID_SUBLKS_* flags
+ *
+ * Add extra flags to the libblkid prober. Don't use if not sure.
+ *
+ * Returns: negative number in case of error, or 0 o success.
+ */
+int mnt_cache_set_sbprobe(struct libmnt_cache *cache, int flags)
+{
+	if (!cache)
+		return -EINVAL;
+
+	cache->probe_sb_extra = flags;
+	return 0;
+}
 
 /* note that the @key could be the same pointer as @value */
 static int cache_add_entry(struct libmnt_cache *cache, char *key,
@@ -346,7 +364,7 @@ int mnt_cache_read_tags(struct libmnt_cache *cache, const char *devname)
 	blkid_probe_enable_superblocks(pr, 1);
 	blkid_probe_set_superblocks_flags(pr,
 			BLKID_SUBLKS_LABEL | BLKID_SUBLKS_UUID |
-			BLKID_SUBLKS_TYPE);
+			BLKID_SUBLKS_TYPE | cache->probe_sb_extra);
 
 	blkid_probe_enable_partitions(pr, 1);
 	blkid_probe_set_partitions_flags(pr, BLKID_PARTS_ENTRY_DETAILS);
@@ -556,8 +574,8 @@ char *mnt_resolve_path(const char *path, struct libmnt_cache *cache)
  * @cache: cache for results or NULL.
  *
  * Like mnt_resolve_path(), unless @cache is not NULL and
- * mnt_cache_set_targets(cache, mtab) was called: if @path is found in the
- * cached @mtab and the matching entry was provided by the kernel, assume that
+ * mnt_cache_set_targets(cache, mountinfo) was called: if @path is found in the
+ * cached @mountinfo and the matching entry was provided by the kernel, assume that
  * @path is already canonicalized. By avoiding a call to realpath(2) on
  * known mount points, there is a lower risk of stepping on a stale mount
  * point, which can result in an application freeze. This is also faster in
@@ -570,9 +588,12 @@ char *mnt_resolve_target(const char *path, struct libmnt_cache *cache)
 {
 	char *p = NULL;
 
+	if (!path)
+		return NULL;
+
 	/*DBG(CACHE, ul_debugobj(cache, "resolving target %s", path));*/
 
-	if (!cache || !cache->mtab)
+	if (!cache || !cache->mountinfo)
 		return mnt_resolve_path(path, cache);
 
 	p = (char *) cache_find_path(cache, path);
@@ -584,7 +605,7 @@ char *mnt_resolve_target(const char *path, struct libmnt_cache *cache)
 		struct libmnt_fs *fs = NULL;
 
 		mnt_reset_iter(&itr, MNT_ITER_BACKWARD);
-		while (mnt_table_next_fs(cache->mtab, &itr, &fs) == 0) {
+		while (mnt_table_next_fs(cache->mountinfo, &itr, &fs) == 0) {
 
 			if (!mnt_fs_is_kernel(fs)
 			     || mnt_fs_is_swaparea(fs)

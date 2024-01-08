@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: lsblk
 .\"    Author: [see the "AUTHOR(S)" section]
-.\" Generator: Asciidoctor 2.0.15
-.\"      Date: 2022-08-04
+.\" Generator: Asciidoctor 2.0.20
+.\"      Date: 2023-12-01
 .\"    Manual: System Administration
-.\"    Source: util-linux 2.38.1
+.\"    Source: util-linux 2.39.3
 .\"  Language: English
 .\"
-.TH "LSBLK" "8" "2022-08-04" "util\-linux 2.38.1" "System Administration"
+.TH "LSBLK" "8" "2023-12-01" "util\-linux 2.39.3" "System Administration"
 .ie \n(.g .ds Aq \(aq
 .el       .ds Aq '
 .ss \n[.ss] 0
@@ -36,9 +36,11 @@ lsblk \- list block devices
 .sp
 \fBlsblk\fP lists information about all available or the specified block devices. The \fBlsblk\fP command reads the \fBsysfs\fP filesystem and \fBudev db\fP to gather information. If the udev db is not available or \fBlsblk\fP is compiled without udev support, then it tries to read LABELs, UUIDs and filesystem types from the block device. In this case root permissions are necessary.
 .sp
-The command prints all block devices (except RAM disks) in a tree\-like format by default. Use \fBlsblk \-\-help\fP to get a list of all available columns.
+By default, the command prints all block devices (except RAM disks) in a tree\-like format. The same device can be repeated in the tree if it relates to other devices. The \fB\-\-merge\fP option is recommended for more complicated setups to gather groups of devices and describe complex N:M relationships.
 .sp
 The default output, as well as the default output from options like \fB\-\-fs\fP and \fB\-\-topology\fP, is subject to change. So whenever possible, you should avoid using default outputs in your scripts. Always explicitly define expected columns by using \fB\-\-output\fP \fIcolumns\-list\fP and \fB\-\-list\fP in environments where a stable output is required.
+.sp
+Use \fBlsblk \-\-help\fP to get a list of all available columns.
 .sp
 Note that \fBlsblk\fP might be executed in time when \fBudev\fP does not have all information about recently added or modified devices yet. In this case it is recommended to use \fBudevadm settle\fP before \fBlsblk\fP to synchronize with udev.
 .sp
@@ -123,6 +125,16 @@ Group parents of sub\-trees to provide more readable output for RAIDs and Multi\
 Output info about device owner, group and mode. This option is equivalent to \fB\-o NAME,SIZE,OWNER,GROUP,MODE\fP.
 .RE
 .sp
+\fB\-N\fP, \fB\-\-nvme\fP
+.RS 4
+Output info about NVMe devices only.
+.RE
+.sp
+\fB\-v\fP, \fB\-\-virtio\fP
+.RS 4
+Output info about virtio devices only.
+.RE
+.sp
 \fB\-n\fP, \fB\-\-noheadings\fP
 .RS 4
 Do not print a header line.
@@ -130,7 +142,7 @@ Do not print a header line.
 .sp
 \fB\-o\fP, \fB\-\-output\fP \fIlist\fP
 .RS 4
-Specify which output columns to print. Use \fB\-\-help\fP to get a list of all supported columns. The columns may affect tree\-like output. The default is to use tree for the column \(aqNAME\(aq (see also \fB\-\-tree\fP).
+Specify which output columns to print. Use \fB\-\-help\fP to get a list of all supported columns. The columns may affect tree\-like output. The default is to use tree for the column \*(AqNAME\*(Aq (see also \fB\-\-tree\fP).
 .sp
 The default list of columns may be extended if \fIlist\fP is specified in the format \fI+list\fP (e.g., \fBlsblk \-o +UUID\fP).
 .RE
@@ -265,7 +277,7 @@ For partitions, some information (e.g., queue attributes) is inherited from the 
 The \fBlsblk\fP command needs to be able to look up each block device by major:minor numbers, which is done by using \fI/sys/dev/block\fP. This sysfs block directory appeared in kernel 2.6.27 (October 2008). In case of problems with a new enough kernel, check that \fBCONFIG_SYSFS\fP was enabled at the time of the kernel build.
 .SH "AUTHORS"
 .sp
-.MTO "mbroz\(atredhat.com" "Milan Broz" ","
+.MTO "gmazyland\(atgmail.com" "Milan Broz" ","
 .MTO "kzak\(atredhat.com" "Karel Zak" ""
 .SH "SEE ALSO"
 .sp

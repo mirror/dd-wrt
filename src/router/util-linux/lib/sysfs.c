@@ -2,7 +2,7 @@
  * No copyright is claimed.  This code is in the public domain; do with
  * it what you wish.
  *
- * Written by Karel Zak <kzak@redhat.com>
+ * Copyright (C) 2011 Karel Zak <kzak@redhat.com>
  */
 #include <ctype.h>
 #include <libgen.h>
@@ -17,6 +17,7 @@
 #include "all-io.h"
 #include "debug.h"
 #include "strutils.h"
+#include "buffer.h"
 
 static void sysfs_blkdev_deinit_path(struct path_cxt *pc);
 static int  sysfs_blkdev_enoent_redirect(struct path_cxt *pc, const char *path, int *dirfd);
@@ -155,8 +156,8 @@ struct path_cxt *sysfs_blkdev_get_parent(struct path_cxt *pc)
 }
 
 /*
- * Redirects ENOENT errors to the parent, if the path is to the queue/
- * sysfs directory. For example
+ * Redirects ENOENT errors to the parent.
+ * For example
  *
  *	/sys/dev/block/8:1/queue/logical_block_size redirects to
  *	/sys/dev/block/8:0/queue/logical_block_size
@@ -165,7 +166,7 @@ static int sysfs_blkdev_enoent_redirect(struct path_cxt *pc, const char *path, i
 {
 	struct sysfs_blkdev *blk = ul_path_get_dialect(pc);
 
-	if (blk && blk->parent && path && strncmp(path, "queue/", 6) == 0) {
+	if (blk && blk->parent && path) {
 		*dirfd = ul_path_get_dirfd(blk->parent);
 		if (*dirfd >= 0) {
 			DBG(CXT, ul_debugobj(pc, "%s redirected to parent", path));
@@ -381,31 +382,35 @@ static char *get_subsystem(char *chain, char *buf, size_t bufsz)
 }
 
 /*
- * Returns complete path to the device, the patch contains all subsystems
+ * Returns complete path to the device, the path contains all subsystems
  * used for the device.
  */
 char *sysfs_blkdev_get_devchain(struct path_cxt *pc, char *buf, size_t bufsz)
 {
 	/* read /sys/dev/block/<maj>:<min> symlink */
-	ssize_t sz = ul_path_readlink(pc, buf, bufsz, NULL);
-	const char *prefix;
-	size_t psz = 0;
+	ssize_t ssz;
+	size_t sz = 0;
+	struct ul_buffer tmp = UL_INIT_BUFFER;
+	const char *p;
+	char *res = NULL;
 
-	if (sz <= 0 || sz + sizeof(_PATH_SYS_DEVBLOCK "/") > bufsz)
+	ssz = ul_path_readlink(pc, buf, bufsz, NULL);
+	if (ssz <= 0)
 		return NULL;
 
-	sz++;
-	prefix = ul_path_get_prefix(pc);
-	if (prefix)
-		psz = strlen(prefix);
+	if ((p = ul_path_get_prefix(pc)))
+		ul_buffer_append_string(&tmp, p);
 
-	/* create absolute patch from the link */
-	memmove(buf + psz + sizeof(_PATH_SYS_DEVBLOCK "/") - 1, buf, sz);
-	if (prefix)
-		memcpy(buf, prefix, psz);
+	ul_buffer_append_string(&tmp, _PATH_SYS_DEVBLOCK "/");
+	ul_buffer_append_data(&tmp, buf, ssz);
 
-	memcpy(buf + psz, _PATH_SYS_DEVBLOCK "/", sizeof(_PATH_SYS_DEVBLOCK "/") - 1);
-	return buf;
+	p = ul_buffer_get_data(&tmp, &sz, NULL);
+	if (p && sz < bufsz) {
+		memcpy(buf, p, sz);
+		res = buf;
+	}
+	ul_buffer_free_data(&tmp);
+	return res;
 }
 
 /*
@@ -435,47 +440,80 @@ int sysfs_blkdev_next_subsystem(struct path_cxt *pc __attribute__((unused)),
 	return 1;
 }
 
+#define REMOVABLE_FILENAME	"/removable"
 
-static int is_hotpluggable_subsystem(const char *name)
+/*
+ * For example:
+ *
+ * chain: /sys/dev/block/../../devices/pci0000:00/0000:00:1a.0/usb1/1-1/1-1.2/ \
+ *                           1-1.2:1.0/host65/target65:0:0/65:0:0:0/block/sdb
+ */
+static int sysfs_devchain_is_removable(char *chain)
 {
-	static const char * const hotplug_subsystems[] = {
-		"usb",
-		"ieee1394",
-		"pcmcia",
-		"mmc",
-		"ccw"
-	};
-	size_t i;
+	size_t len;
+	char buf[20];
+	char *p;
 
-	for (i = 0; i < ARRAY_SIZE(hotplug_subsystems); i++)
-		if (strcmp(name, hotplug_subsystems[i]) == 0)
-			return 1;
+	if (!chain || !*chain)
+		return 0;
+
+	len = strlen(chain);
+	if (len + sizeof(REMOVABLE_FILENAME) > PATH_MAX)
+		return 0;
+
+	do {
+		int fd, rc;
+
+		/* append "/removable" to the path */
+		memcpy(chain + len, REMOVABLE_FILENAME, sizeof(REMOVABLE_FILENAME));
+
+		/* try to read it */
+		fd = open(chain, O_RDONLY);
+		if (fd != -1) {
+			rc = read_all(fd, buf, sizeof(buf));
+			close(fd);
+
+			if (rc > 0) {
+				if (strncmp(buf, "fixed", min(rc, 5)) == 0) {
+					return 0;
+				} else if (strncmp(buf, "removable", min(rc, 9)) == 0) {
+					return 1;
+				}
+			}
+		}
+
+		/* remove last subsystem from chain */
+		chain[len] = '\0';
+		p = strrchr(chain, '/');
+		if (p) {
+			*p = '\0';
+			len = p - chain;
+		}
+
+	} while (p);
 
 	return 0;
 }
 
 int sysfs_blkdev_is_hotpluggable(struct path_cxt *pc)
 {
-	char buf[PATH_MAX], *chain, *sub;
-	int rc = 0;
-
-
-	/* check /sys/dev/block/<maj>:<min>/removable attribute */
-	if (ul_path_read_s32(pc, &rc, "removable") == 0 && rc == 1)
-		return 1;
+	char buf[PATH_MAX], *chain;
 
 	chain = sysfs_blkdev_get_devchain(pc, buf, sizeof(buf));
+	return sysfs_devchain_is_removable(chain);
+}
 
-	while (chain && sysfs_blkdev_next_subsystem(pc, chain, &sub) == 0) {
-		rc = is_hotpluggable_subsystem(sub);
-		if (rc) {
-			free(sub);
-			break;
-		}
-		free(sub);
-	}
+int sysfs_blkdev_is_removable(struct path_cxt *pc)
+{
+	int rc = 0;
 
-	return rc;
+	// FIXME usb is not actually removable
+
+	/* check /sys/dev/block/<maj>:<min>/removable attribute */
+	if (ul_path_read_s32(pc, &rc, "removable") == 0)
+		return rc;
+
+	return 0;
 }
 
 static int get_dm_wholedisk(struct path_cxt *pc, char *diskname,
@@ -1072,6 +1110,49 @@ char *sysfs_chrdev_devno_to_devname(dev_t devno, char *buf, size_t bufsiz)
 
 }
 
+enum sysfs_byteorder sysfs_get_byteorder(struct path_cxt *pc)
+{
+	int rc;
+	char buf[BUFSIZ];
+	enum sysfs_byteorder ret;
+
+	rc = ul_path_read_buffer(pc, buf, sizeof(buf), _PATH_SYS_CPU_BYTEORDER);
+	if (rc < 0)
+		goto unknown;
+
+	if (strncmp(buf, "little", sizeof(buf)) == 0) {
+		ret = SYSFS_BYTEORDER_LITTLE;
+		goto out;
+	} else if (strncmp(buf, "big", sizeof(buf)) == 0) {
+		ret = SYSFS_BYTEORDER_BIG;
+		goto out;
+	}
+
+unknown:
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+	ret = SYSFS_BYTEORDER_LITTLE;
+#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+	ret = SYSFS_BYTEORDER_BIG;
+#else
+#error Unknown byte order
+#endif
+
+out:
+	return ret;
+}
+
+int sysfs_get_address_bits(struct path_cxt *pc)
+{
+	int rc;
+	int address_bits;
+
+	rc = ul_path_scanf(pc, _PATH_SYS_ADDRESS_BITS, "%d", &address_bits);
+	if (rc < 0)
+		return rc;
+	if (address_bits < 0)
+		return -EINVAL;
+	return address_bits;
+}
 
 
 #ifdef TEST_PROGRAM_SYSFS
@@ -1134,6 +1215,7 @@ int main(int argc, char *argv[])
 	}
 
 	printf(" HOTPLUG: %s\n", sysfs_blkdev_is_hotpluggable(pc) ? "yes" : "no");
+	printf(" REMOVABLE: %s\n", sysfs_blkdev_is_removable(pc) ? "yes" : "no");
 	printf(" SLAVES: %d\n", ul_path_count_dirents(pc, "slaves"));
 
 	if (!is_part) {
@@ -1157,7 +1239,7 @@ int main(int argc, char *argv[])
 
 
 	chain = sysfs_blkdev_get_devchain(pc, path, sizeof(path));
-	printf(" SUBSUSTEMS:\n");
+	printf(" SUBSYSTEMS:\n");
 
 	while (chain && sysfs_blkdev_next_subsystem(pc, chain, &sub) == 0) {
 		printf("\t%s\n", sub);

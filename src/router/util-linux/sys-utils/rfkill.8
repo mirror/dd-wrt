@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: rfkill
 .\"    Author: [see the "AUTHOR(S)" section]
-.\" Generator: Asciidoctor 2.0.15
-.\"      Date: 2022-05-11
+.\" Generator: Asciidoctor 2.0.20
+.\"      Date: 2023-11-21
 .\"    Manual: System Administration
-.\"    Source: util-linux 2.38.1
+.\"    Source: util-linux 2.39.3
 .\"  Language: English
 .\"
-.TH "RFKILL" "8" "2022-05-11" "util\-linux 2.38.1" "System Administration"
+.TH "RFKILL" "8" "2023-11-21" "util\-linux 2.39.3" "System Administration"
 .ie \n(.g .ds Aq \(aq
 .el       .ds Aq '
 .ss \n[.ss] 0
@@ -89,7 +89,7 @@ Listen for rfkill events and display them on stdout.
 .sp
 \fBlist\fP [\fIid\fP|\fItype\fP ...]
 .RS 4
-List the current state of all available devices. The command output format is deprecated, see the \fBDESCRIPTION\fP section. It is a good idea to check with \fBlist\fP command \fIid\fP or \fItype\fP scope is appropriate before setting \fBblock\fP or \fBunblock\fP. Special \fIall\fP type string will match everything. Use of multiple \fIID\fP or \fItype\fP arguments is supported.
+List the current state of all available devices. The command output format is deprecated, see the \fBDESCRIPTION\fP section. It is a good idea to check with \fBlist\fP command \fIid\fP or \fItype\fP scope is appropriate before setting \fBblock\fP or \fBunblock\fP. Special \fIall\fP type string will match everything. Use of multiple \fIID\fP or \fItype\fP arguments is supported. Possible types are all, {wlan | wifi}, bluetooth, {uwb | ultrawideband}, wimax, wwan, gps, fm, nfc.
 .RE
 .sp
 \fBblock\fP \fIid\fP|\fItype\fP [...]
@@ -137,7 +137,7 @@ for the Debian project (and may be used by others).
 .sp
 \fBpowertop\fP(8),
 \fBsystemd\-rfkill\fP(8),
-.URL "https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/Documentation/driver\-api/rfkill.rst" "Linux kernel documentation" ""
+.URL "https://docs.kernel.org/driver\-api/rfkill.html" "Linux kernel documentation" ""
 .SH "REPORTING BUGS"
 .sp
 For bug reports, use the issue tracker at \c

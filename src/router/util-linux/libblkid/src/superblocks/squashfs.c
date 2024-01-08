@@ -17,15 +17,25 @@
 #include "superblocks.h"
 
 struct sqsh_super_block {
-	uint32_t	s_magic;
-	uint32_t	inodes;
-	uint32_t	bytes_used_2;
-	uint32_t	uid_start_2;
-	uint32_t	guid_start_2;
-	uint32_t	inode_table_start_2;
-	uint32_t	directory_table_start_2;
-	uint16_t	s_major;
-	uint16_t	s_minor;
+	uint32_t	magic;
+	uint32_t	inode_count;
+	uint32_t	mod_time;
+	uint32_t	block_size;
+	uint32_t	frag_count;
+	uint16_t	compressor;
+	uint16_t	block_log;
+	uint16_t	flags;
+	uint16_t	id_count;
+	uint16_t	version_major;
+	uint16_t	version_minor;
+	uint64_t	root_inode;
+	uint64_t	bytes_used;
+	uint64_t	id_table;
+	uint64_t	xattr_table;
+	uint64_t	inode_table;
+	uint64_t	dir_table;
+	uint64_t	frag_table;
+	uint64_t	export_table;
 } __attribute__((packed));
 
 static int probe_squashfs(blkid_probe pr, const struct blkid_idmag *mag)
@@ -38,12 +48,15 @@ static int probe_squashfs(blkid_probe pr, const struct blkid_idmag *mag)
 	if (!sq)
 		return errno ? -errno : 1;
 
-	vermaj = le16_to_cpu(sq->s_major);
-	vermin = le16_to_cpu(sq->s_minor);
+	vermaj = le16_to_cpu(sq->version_major);
+	vermin = le16_to_cpu(sq->version_minor);
 	if (vermaj < 4)
 		return 1;
 
 	blkid_probe_sprintf_version(pr, "%u.%u", vermaj, vermin);
+	blkid_probe_set_fsblocksize(pr, le32_to_cpu(sq->block_size));
+	blkid_probe_set_block_size(pr, le32_to_cpu(sq->block_size));
+	blkid_probe_set_fssize(pr, le64_to_cpu(sq->bytes_used));
 
 	return 0;
 }
@@ -53,17 +66,20 @@ static int probe_squashfs3(blkid_probe pr, const struct blkid_idmag *mag)
 	struct sqsh_super_block *sq;
 	uint16_t vermaj;
 	uint16_t vermin;
+	enum BLKID_ENDIANNESS endianness;
 
 	sq = blkid_probe_get_sb(pr, mag, struct sqsh_super_block);
 	if (!sq)
 		return errno ? -errno : 1;
 
 	if (strcmp(mag->magic, "sqsh") == 0) {
-		vermaj = be16_to_cpu(sq->s_major);
-		vermin = be16_to_cpu(sq->s_minor);
+		vermaj = be16_to_cpu(sq->version_major);
+		vermin = be16_to_cpu(sq->version_minor);
+		endianness = BLKID_ENDIANNESS_BIG;
 	} else {
-		vermaj = le16_to_cpu(sq->s_major);
-		vermin = le16_to_cpu(sq->s_minor);
+		vermaj = le16_to_cpu(sq->version_major);
+		vermin = le16_to_cpu(sq->version_minor);
+		endianness = BLKID_ENDIANNESS_LITTLE;
 	}
 
 	if (vermaj > 3)
@@ -71,7 +87,9 @@ static int probe_squashfs3(blkid_probe pr, const struct blkid_idmag *mag)
 
 	blkid_probe_sprintf_version(pr, "%u.%u", vermaj, vermin);
 
+	blkid_probe_set_fsblocksize(pr, 1024);
 	blkid_probe_set_block_size(pr, 1024);
+	blkid_probe_set_fsendianness(pr, endianness);
 
 	return 0;
 }

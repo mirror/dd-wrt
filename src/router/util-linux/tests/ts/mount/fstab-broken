@@ -18,7 +18,7 @@
 TS_TOPDIR="${0%/*}/../.."
 TS_DESC="broken fstab"
 
-. $TS_TOPDIR/functions.sh
+. "$TS_TOPDIR"/functions.sh
 ts_init "$*"
 
 ts_check_test_command "$TS_CMD_MOUNT"
@@ -26,6 +26,7 @@ ts_check_test_command "$TS_CMD_UMOUNT"
 ts_check_test_command "$TS_CMD_FINDMNT"
 
 ts_skip_nonroot
+ts_skip_docker
 
 # Let's use the same mountpoint for all subtests
 MNT=$TS_MOUNTPOINT

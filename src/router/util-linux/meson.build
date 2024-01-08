@@ -1,5 +1,6 @@
 project('util-linux', 'c',
-        version : '2.37',
+        version : run_command('tools/git-version-gen', check: true).stdout(),
+        meson_version: '>=0.57.0',
         license : 'GPLv2+')
 
 pkgconfig = import('pkgconfig')
@@ -21,11 +22,10 @@ sysconfstaticdir = join_paths(prefixdir, 'lib')
 docdir = join_paths(prefixdir, get_option('datadir'), 'doc', 'util-linux')
 mandir = join_paths(prefixdir, get_option('mandir'))
 runstatedir = '/run'
-execprefixdir = '/usr'
-usrbin_exec_dir = join_paths(execprefixdir, 'bin')
-usrsbin_exec_dir = join_paths(execprefixdir, 'sbin')
-sysconfdir = '/etc'
-localstatedir = '/var'
+execprefixdir = prefixdir
+sysconfdir = join_paths(prefixdir, get_option('sysconfdir'))
+usrbin_exec_dir = join_paths(execprefixdir, bindir)
+usrsbin_exec_dir = join_paths(execprefixdir, sbindir)
 bash_completion = dependency('bash-completion', required : get_option('build-bash-completion'))
 
 vendordir = get_option('vendordir')
@@ -35,18 +35,19 @@ add_project_arguments('-D_GNU_SOURCE', language : 'c')
 cc = meson.get_compiler('c')
 
 conf = configuration_data()
+conf.set_quoted('PACKAGE', meson.project_name())
+conf.set_quoted('PACKAGE_VERSION', meson.project_version())
 package_string = '@0@ @1@'.format(meson.project_name(), meson.project_version())
 conf.set_quoted('PACKAGE_STRING', package_string)
-conf.set_quoted('PACKAGE_VERSION', meson.project_version())
 
 codes = [''' {print $1}  ''',
          ''' {sub("-.*","",$2); print $2} ''',
-         ''' {sub("-.*","",$3); print $3 ~ /^@<:@0-9@:>@+$/ ? $3 : 0} ''']
+         ''' {sub("-.*","",$3); print $3 ~ /^[0-9]+$/ ? $3 : 0} ''']
 pc_version = []
 foreach code : codes
   res = run_command('bash', '-c',
                     '''echo '@0@' | awk -F. '@1@' '''.format(
-                      meson.project_version(), code))
+                      meson.project_version(), code), check: true)
   pc_version += res.stdout().strip()
 endforeach
 pc_version = '.'.join(pc_version)
@@ -57,6 +58,7 @@ conf.set_quoted('LIBBLKID_DATE', libblkid_date)
 conf.set('bindir', bindir)
 conf.set('sbindir', sbindir)
 conf.set('runstatedir', runstatedir)
+conf.set('sysconfdir', sysconfdir)
 conf.set('usrsbin_execdir', usrsbin_exec_dir)
 conf.set('docdir', docdir)
 conf.set_quoted('_PATH_SYSCONFSTATICDIR', sysconfstaticdir)
@@ -75,8 +77,17 @@ build_libuuid = not get_option('build-libuuid').disabled()
 conf.set('HAVE_LIBUUID', build_libuuid ? 1 : false)
 summary('libuuid', build_libuuid ? 'enabled' : 'disabled', section : 'components')
 
+have_mountfd_api = cc.sizeof('struct mount_attr', prefix : '#include <linux/mount.h>') > 0
+conf.set('HAVE_STRUCT_MOUNT_ATTR', have_mountfd_api ? 1 : false)
+conf.set('HAVE_MOUNTFD_API', have_mountfd_api ? 1 : false)
+
+have_struct_statx = cc.sizeof('struct statx', prefix : '#include <sys/stat.h>') > 0
+conf.set('HAVE_STRUCT_STATX', have_struct_statx ? 1 : false)
+
 build_libmount = not get_option('build-libmount').disabled()
 conf.set('HAVE_LIBMOUNT', build_libmount ? 1 : false)
+conf.set('USE_LIBMOUNT_SUPPORT_NAMESPACES', 1)
+conf.set('USE_LIBMOUNT_MOUNTFD_SUPPORT', have_mountfd_api ? 1 : false)
 summary('libmount', build_libmount ? 'enabled' : 'disabled', section : 'components')
 
 build_libsmartcols = not get_option('build-libsmartcols').disabled()
@@ -150,6 +161,8 @@ headers = '''
         unistd.h
         utmp.h
         utmpx.h
+        asm-generic/fcntl.h
+        asm/fcntl.h
         asm/io.h
         linux/blkzoned.h
         linux/capability.h
@@ -157,10 +170,15 @@ headers = '''
         linux/compiler.h
         linux/falloc.h
         linux/fd.h
+        linux/fs.h
 	linux/fiemap.h
 	linux/gsmmux.h
+        linux/if_alg.h
+        linux/kcmp.h
         linux/net_namespace.h
         linux/nsfs.h
+        linux/mount.h
+        linux/pr.h
         linux/securebits.h
         linux/tiocl.h
         linux/version.h
@@ -181,6 +199,7 @@ headers = '''
         sys/mkdev.h
         sys/mount.h
         sys/param.h
+        sys/pidfd.h
         sys/prctl.h
         sys/resource.h
 	sys/sendfile.h
@@ -188,6 +207,7 @@ headers = '''
         sys/socket.h
         sys/sockio.h
         sys/stat.h
+        sys/statfs.h
         sys/swap.h
         sys/syscall.h
         sys/sysmacros.h
@@ -197,6 +217,7 @@ headers = '''
         sys/types.h
         sys/ucred.h
         sys/un.h
+        sys/vfs.h
 	sys/xattr.h
 '''.split()
 
@@ -205,11 +226,6 @@ lib_m = cc.find_library('m')
 lib_tinfo = dependency(
   'tinfo',
   required : get_option('tinfo'))
-
-lib_tinfo_static = dependency(
-  'tinfo',
-  static : true,
-  required : need_static_libs ? get_option('tinfo') : disabler())
 
 lib_ncursesw = dependency(
   'ncursesw',
@@ -267,6 +283,18 @@ lib_readline_static = dependency(
   static : true,
   required : need_static_libs ? get_option('readline') : disabler())
 
+if meson.version().version_compare('>= 0.59.0')
+  lib_intl = dependency(
+    'intl',
+    required : get_option('nls'))
+  conf.set('ENABLE_NLS', lib_intl.found() ? 1 : false)
+else
+  if get_option('nls').enabled()
+    error('nls is not supported with meson before 0.59.0')
+  endif
+  lib_intl = dependency('', required : false)
+endif
+
 lib_user = dependency(
   'libuser',
   version : '>= 0.58',
@@ -291,6 +319,7 @@ lib_systemd = dependency(
   'libsystemd',
   required : get_option('systemd'))
 conf.set('HAVE_LIBSYSTEMD', lib_systemd.found() ? 1 : false)
+conf.set('USE_SYSTEMD', lib_systemd.found() ? 1 : false)
 
 lib_udev = dependency(
   'libudev',
@@ -299,10 +328,21 @@ conf.set('HAVE_LIBUDEV', lib_udev.found() ? 1 : false)
 
 lib_crypt = cc.find_library('crypt')
 
-lib_pam = cc.find_library('pam')
+lib_pam = cc.find_library('pam', required : get_option('build-login'))
+if not lib_pam.found()
+  lib_pam = cc.find_library('pam', required : get_option('build-chfn-chsh'))
+endif
+if not lib_pam.found()
+  lib_pam = cc.find_library('pam', required : get_option('build-su'))
+endif
+if not lib_pam.found()
+  lib_pam = cc.find_library('pam', required : get_option('build-runuser'))
+endif
 if lib_pam.found()
   lib_pam_misc = cc.find_library('pam_misc')
   lib_pam = [lib_pam, lib_pam_misc]
+else
+  lib_pam_misc = declare_dependency()
 endif
 
 lib_cryptsetup = dependency(
@@ -311,9 +351,11 @@ lib_cryptsetup = dependency(
 conf.set('HAVE_CRYPTSETUP', lib_cryptsetup.found() ? 1 : false)
 
 if not get_option('cryptsetup').disabled() and get_option('cryptsetup-dlopen').enabled()
-  lib_dl = cc.find_library(
-    'libdl',
-    required : true)
+  if meson.version().version_compare('>= 0.62.0')
+    lib_dl = dependency('dl')
+  else
+    lib_dl = cc.find_library('dl')
+  endif
   conf.set('CRYPTSETUP_VIA_DLOPEN', 1)
   summary('cryptsetup support (dlopen)',
           'enabled',
@@ -330,7 +372,8 @@ have = cc.has_function(
 conf.set('HAVE_CRYPT_ACTIVATE_BY_SIGNED_KEY', have ? 1 : false)
 
 lib_cap_ng = dependency(
-  'libcap-ng')
+  'libcap-ng',
+  required : get_option('build-setpriv'))
 
 lib_selinux = dependency(
   'libselinux',
@@ -349,7 +392,7 @@ lib_econf = dependency(
 conf.set('HAVE_LIBECONF', lib_econf.found() ? 1 : false)
 
 lib_audit = dependency(
-  'libaudit',
+  'audit',
   required : get_option('audit'))
 conf.set('HAVE_LIBAUDIT', lib_audit.found() ? 1 : false)
 
@@ -379,20 +422,23 @@ endforeach
 have = cc.has_header('sched.h')
 conf.set10('HAVE_DECL_CPU_ALLOC', have)
 # We get -1 if the size cannot be determined
-have_cpu_set_t = cc.sizeof('cpu_set_t', prefix : '#include <sched.h>') > 0
+have_cpu_set_t = cc.sizeof('cpu_set_t', prefix : '#define _GNU_SOURCE\n#include <sched.h>') > 0
 conf.set('HAVE_CPU_SET_T', have_cpu_set_t ? 1 : false)
 
-have = cc.has_header_symbol('stdlib.h', 'environ')
+have = cc.has_header_symbol('unistd.h', 'environ', args : '-D_GNU_SOURCE')
 conf.set10('HAVE_ENVIRON_DECL', have)
 
-have = cc.has_header_symbol('signal.h', 'sighandler_t')
+have = cc.has_header_symbol('signal.h', 'sighandler_t', args : '-D_GNU_SOURCE')
 conf.set('HAVE_SIGHANDLER_T', have ? 1 : false)
 
-have = cc.has_header_symbol('string.h', 'strsignal')
+have = cc.has_function('strsignal')
 conf.set10('HAVE_STRSIGNAL_DECL', have)
 
 have = cc.sizeof('union semun', prefix : '#include <sys/sem.h>') > 0
 conf.set('HAVE_UNION_SEMUN', have ? 1 : false)
+
+have = cc.has_type('loff_t', prefix : '#include <sys/types.h>')
+conf.set('HAVE_LOFF_T', have ? 1 : false)
 
 have = cc.compiles('''
    #define _GNU_SOURCE 1
@@ -440,9 +486,21 @@ have = cc.compiles('''
   name : 'langinfo.h defines _NL_ABALTMON_x constants')
 conf.set('HAVE_LANGINFO_NL_ABALTMON', have ? 1 : false)
 
+have = cc.compiles('''
+   #define _GNU_SOURCE 1
+   #include <langinfo.h>
+   int main(void) {
+        char *str;
+        str = nl_langinfo (_NL_TIME_WEEK_1STDAY);
+        return 0;
+   }
+   ''',
+  name : 'langinfo.h defines _NL_TIME_WEEK_1STDAY constant')
+conf.set('HAVE_DECL__NL_TIME_WEEK_1STDAY', have ? 1 : false)
+
 funcs = '''
         clearenv
-	close_range
+        close_range
         __fpurge
         fpurge
         __fpending
@@ -452,9 +510,14 @@ funcs = '''
         err
         errx
         explicit_bzero
-        fmemopen
+        fnmatch
         fseeko
+        fsconfig
+        fsmount
+        fsopen
+        fspick
         fsync
+        getttynam
         utimensat
         getdomainname
         getdtablesize
@@ -466,12 +529,17 @@ funcs = '''
         inotify_init
         jrand48
         lchown
+        lgetxattr
+        llistxattr
         llseek
-	newlocale
+        newlocale
         mempcpy
         mkostemp
+        move_mount
+        mount_setattr
         nanosleep
         ntp_gettime
+        open_tree
         personality
         pidfd_open
         pidfd_send_signal
@@ -481,7 +549,7 @@ funcs = '''
         rpmatch
         scandirat
         setprogname
-	sendfile
+        sendfile
         setns
         setresgid
         setresuid
@@ -489,10 +557,11 @@ funcs = '''
         sched_setscheduler
         sigqueue
         srandom
+        statx
         strnchr
         strndup
         strnlen
-	strtod_l
+        strtod_l
         sysconf
         sysinfo
         swapon
@@ -500,8 +569,8 @@ funcs = '''
         timegm
         unshare
         usleep
-	uselocale
-	utimensat
+        uselocale
+        utimensat
         vwarnx
         warn
         warnx
@@ -552,6 +621,11 @@ have = cc.has_member('struct tm', 'tm_gmtoff',
                      ''')
 conf.set('HAVE_TM_GMTOFF', have ? 1 : false)
 
+
+
+have = cc.sizeof('enum fsconfig_command', prefix : '#include <linux/mount.h>') > 0
+conf.set('HAVE_ENUM_FSCONFIG_COMMAND', have ? 1 : false)
+
 have = cc.has_member('struct termios', 'c_line',
                      prefix : '#include <termios.h>')
 conf.set('HAVE_STRUCT_TERMIOS_C_LINE', have ? 1 : false)
@@ -560,13 +634,23 @@ have = cc.has_member('struct stat', 'st_mtim.tv_nsec',
                      prefix : '#include <sys/stat.h>')
 conf.set('HAVE_STRUCT_STAT_ST_MTIM_TV_NSEC', have ? 1 : false)
 
+have = cc.has_member('struct statx', 'stx_mnt_id',
+                     prefix : '#include <sys/stat.h>')
+conf.set('HAVE_STRUCT_STATX_STX_MNT_ID', have ? 1 : false)
+
 # replacement for AC_STRUCT_TIMEZONE
 have = cc.has_member('struct tm', 'tm_zone',
                      prefix : '#include <time.h>')
 conf.set('HAVE_STRUCT_TM_TM_ZONE', have ? 1 : false)
 
-have = cc.sizeof('tzname', prefix : '#include <time.h>') > 0
+have = cc.has_header_symbol('time.h', 'tzname', args: '-D_GNU_SOURCE')
 conf.set('HAVE_DECL_TZNAME', have ? 1 : false)
+
+have = cc.has_header_symbol('linux/blkzoned.h', 'BLK_ZONE_REP_CAPACITY')
+conf.set('HAVE_DECL_BLK_ZONE_REP_CAPACITY', have ? 1 : false)
+
+have = cc.has_header_symbol('linux/pr.h', 'PR_REP_CAPACITY')
+conf.set('HAVE_DECL_PR_REP_CAPACITY', have ? 1 : false)
 
 code = '''
 #include <time.h>
@@ -577,8 +661,7 @@ int main(void) {
   return tzname ? 0 : 1;
 }
 '''.format(have ? 1 : 0)
-result = cc.run(code, name : 'using tzname[]')
-have = result.compiled() and result.returncode() == 0
+have = cc.compiles(code, name : 'using tzname[]')
 conf.set('HAVE_TZNAME', have ? 1 : false)
 
 socket_libs = []
@@ -604,7 +687,7 @@ thread_libs = dependency('threads')
 
 have = cc.has_function('timer_create')
 if not have
-  realtime_libs = cc.find_library('rt', required : true)
+  realtime_libs = [cc.find_library('rt', required : true)]
   have = cc.has_function('timer_create',
                          dependencies : realtime_libs)
   if not have
@@ -623,7 +706,7 @@ rtas_libs = cc.find_library('rtas', required : false)
 conf.set('HAVE_LIBRTAS', rtas_libs.found() ? 1 : false)
 
 math_libs = []
-if not cc.has_function('isnan')
+if not cc.has_header_symbol('math.h', 'isnan')
   lib = cc.find_library('m', required : true)
   if (cc.has_function('isnan', dependencies : lib) and
       cc.has_function('__isnan', dependencies : lib))
@@ -641,9 +724,14 @@ int main(void) {
     return (*__progname != 0);
 }
 '''
-result = cc.run(code, name : 'using __progname')
-have = result.compiled() and result.returncode() == 0
+have = cc.compiles(code, name : 'using __progname')
 conf.set('HAVE___PROGNAME', have ? 1 : false)
+
+have = conf.get('HAVE_PTY_H') != false and conf.get('HAVE_SYS_SIGNALFD_H') != false
+conf.set('HAVE_PTY', have ? 1 : false)
+
+have_opal_get_status= cc.has_header_symbol('linux/sed-opal.h', 'IOC_OPAL_GET_STATUS')
+conf.set('HAVE_OPAL_GET_STATUS', have_opal_get_status ? 1 : false)
 
 build_plymouth_support = get_option('build-plymouth-support')
 have_tiocglcktrmios = cc.has_header_symbol(
@@ -709,6 +797,7 @@ conf.set('USE_HWCLOCK_CMOS', use_hwclock_cmos ? 1 : false)
 
 conf.set('HAVE_TLS', get_option('use-tls') ? 1 : false)
 conf.set('PG_BELL', get_option('pg-bell') ? 1 : false)
+conf.set('USE_COLORS_BY_DEFAULT', get_option('colors-default') ? 1 : false)
 
 ############################################################
 
@@ -722,8 +811,11 @@ conf.set_quoted('FS_SEARCH_PATH', fs_search_path)
 
 systemdsystemunitdir = ''
 if systemd.found()
-  systemdsystemunitdir = systemd.get_pkgconfig_variable('systemdsystemunitdir')
+  systemdsystemunitdir = systemd.get_variable(pkgconfig : 'systemdsystemunitdir')
 endif
+
+sysvinit = get_option('sysvinit').enabled()
+sysvinitrcdir = sysconfdir + '/init.d'
 
 chfn_chsh_password = get_option('chfn-chsh-password') or lib_user.found()
 conf.set('CHFN_CHSH_PASSWORD', chfn_chsh_password ? 1 : false)
@@ -746,11 +838,44 @@ bison_gen = generator(
 meson_make_symlink = meson.current_source_dir() + '/tools/meson-make-symlink.sh'
 meson_make_manpage_stub = meson.current_source_dir() + '/tools/meson-make-manpage-stub.sh'
 
-config_h = configure_file(
+configure_file(
   output : 'config.h',
   configuration : conf)
 
-add_project_arguments('-include', 'config.h', language : 'c')
+add_project_arguments('-include', meson.current_build_dir() / 'config.h', language : 'c')
+
+compiler_flags = [
+  '-fno-common',
+
+  '-Waddress-of-packed-member',
+  '-Wdiscarded-qualifiers',
+  '-Wembedded-directive',
+  '-Wextra-semi',
+  '-Wformat-security',
+  '-Wimplicit-function-declaration',
+  '-Wmissing-declarations',
+  '-Wmissing-parameter-type',
+  '-Wmissing-prototypes',
+  '-Wnested-externs',
+  '-Wno-missing-field-initializers',
+  '-Wold-style-definition',
+  '-Wpointer-arith',
+  '-Wredundant-decls',
+  '-Wsign-compare',
+  '-Wstrict-prototypes',
+  '-Wtype-limits',
+  '-Wuninitialized',
+  '-Wunused-but-set-parameter',
+  '-Wunused-but-set-variable',
+  '-Wunused-parameter',
+  '-Wunused-result',
+  '-Wunused-variable',
+]
+foreach compiler_flag : compiler_flags
+  if cc.has_argument(compiler_flag)
+    add_project_arguments(compiler_flag, language : 'c')
+  endif
+endforeach
 
 manadocs = []
 manlinks = {}
@@ -789,20 +914,23 @@ exe = executable(
   chfn_sources,
   chfn_chsh_sources,
   include_directories : includes,
-  link_with : lib_common,
+  link_with : [lib_common, logindefs_c],
   dependencies : chfn_chsh_deps,
   install_dir : usrbin_exec_dir,
+  install_mode : 'rwsr-xr-x',
   install : opt,
   build_by_default : opt)
 
 exe2 = executable(
   'chsh',
   'login-utils/chsh.c',
+  'lib/shells.c',
   chfn_chsh_sources,
   include_directories : includes,
   link_with : lib_common,
   dependencies : chfn_chsh_deps,
   install_dir : usrbin_exec_dir,
+  install_mode : 'rwsr-xr-x',
   install : opt,
   build_by_default : opt)
 if opt and not is_disabler(exe)
@@ -814,13 +942,6 @@ endif
 exe = executable(
   'test_islocal',
   test_islocal_sources,
-  include_directories : includes,
-  c_args : '-DTEST_PROGRAM')
-exes += exe
-
-exe = executable(
-  'test_logindefs',
-  test_logindefs_sources,
   include_directories : includes,
   c_args : '-DTEST_PROGRAM')
 exes += exe
@@ -888,16 +1009,16 @@ exe = executable(
   'login-utils/su.c',
   'login-utils/su-common.c',
   'login-utils/su-common.h',
-  'login-utils/logindefs.c',
-  'login-utils/logindefs.h',
+  'lib/shells.c',
   pty_session_c,
   monotonic_c,
   include_directories : includes,
-  link_with : lib_common,
+  link_with : [lib_common, logindefs_c],
   dependencies : [lib_pam,
                   lib_pam_misc,
                   lib_util,
                   realtime_libs],
+  install_mode : 'rwsr-xr-x',
   install : opt,
   build_by_default : opt)
 if opt and not is_disabler(exe)
@@ -913,22 +1034,23 @@ exe = executable(
   include_directories : includes,
   dependencies : [lib_crypt],
   install_dir : usrbin_exec_dir,
+  install_mode : 'rwsr-xr-x',
   install : opt,
   build_by_default : opt)
 if opt and not is_disabler(exe)
   exes += exe
   manadocs += ['login-utils/newgrp.1.adoc']
+  bashcompletions += ['newgrp']
 endif
 
 opt = not get_option('build-lslogins').disabled()
 exe = executable(
   'lslogins',
   'login-utils/lslogins.c',
-  'login-utils/logindefs.c',
-  'login-utils/logindefs.h',
   include_directories : includes,
   link_with : [lib_common,
-               lib_smartcols],
+               lib_smartcols,
+               logindefs_c],
   dependencies : [lib_selinux,
                   lib_systemd],
   install_dir : usrbin_exec_dir,
@@ -957,6 +1079,9 @@ if opt and not is_disabler(exe)
                            'vipw',
                            join_paths(usrbin_exec_dir, 'vigr'))
   manadocs += ['login-utils/vipw.8.adoc']
+  meson.add_install_script(meson_make_symlink,
+                           'vipw.8',
+                           join_paths(mandir, 'man8/vigr.8'))
 endif
 
 opt = not get_option('build-runuser').disabled()
@@ -965,12 +1090,11 @@ exe = executable(
   'login-utils/runuser.c',
   'login-utils/su-common.c',
   'login-utils/su-common.h',
-  'login-utils/logindefs.c',
-  'login-utils/logindefs.h',
+  'lib/shells.c',
   pty_session_c,
   monotonic_c,
   include_directories : includes,
-  link_with : lib_common,
+  link_with : [lib_common, logindefs_c],
   dependencies : [lib_pam,
                   lib_pam_misc,
                   lib_util,
@@ -1364,6 +1488,16 @@ manadocs += ['sys-utils/blkzone.8.adoc']
 bashcompletions += ['blkzone']
 
 exe = executable(
+  'blkpr',
+  blkpr_sources,
+  include_directories : includes,
+  link_with : [lib_common],
+  install_dir : sbindir,
+  install : true)
+exes += exe
+manadocs += ['sys-utils/blkpr.8.adoc']
+
+exe = executable(
   'ldattach',
   ldattach_sources,
   include_directories : includes,
@@ -1389,6 +1523,7 @@ exe = executable(
   'setarch',
   setarch_sources,
   include_directories : includes,
+  link_with : [lib_common],
   install_dir : usrbin_exec_dir,
   install : true)
 exes += exe
@@ -1516,6 +1651,7 @@ exe = executable(
                lib_smartcols,
                lib_mount],
   dependencies : lib_selinux,
+  install_mode : 'rwsr-xr-x',
   install : opt,
   build_by_default : opt)
 exe2 = executable(
@@ -1524,6 +1660,7 @@ exe2 = executable(
   include_directories : includes,
   link_with : [lib_common,
                lib_mount],
+  install_mode : 'rwsr-xr-x',
   install : opt,
   build_by_default : opt)
 if opt and not is_disabler(exe)
@@ -1752,7 +1889,7 @@ if opt and not is_disabler(exe)
   exes += exe
 endif
 
-opt = not get_option('build-setpriv').disabled()
+opt = not get_option('build-setpriv').disabled() and lib_cap_ng.found()
 exe = executable(
   'setpriv',
   setpriv_sources,
@@ -2226,7 +2363,7 @@ exe = executable(
   'agetty',
   agetty_sources,
   include_directories : includes,
-  link_with : [lib_common],
+  link_with : [lib_common, logindefs_c],
   dependencies : BSD ? lib_util : [],
   install_dir : sbindir,
   install : opt,
@@ -2274,6 +2411,7 @@ exe = executable(
   include_directories : includes,
   link_with : [lib_common],
   install_dir : usrbin_exec_dir,
+  install_mode : [ 'rwxr-sr-x', 'root', 'tty' ],
   install : opt,
   build_by_default : opt)
 if opt
@@ -2292,11 +2430,13 @@ exe = executable(
   include_directories : includes,
   link_with : [lib_common],
   install_dir : usrbin_exec_dir,
+  install_mode : [ 'rwxr-sr-x', 'root', 'tty' ],
   install : opt,
   build_by_default : opt)
 if opt
   exes += exe
   manadocs += ['term-utils/write.1.adoc']
+  bashcompletions += ['write']
 endif
 
 # chgrp tty $(DESTDIR)$(usrbin_execdir)/write
@@ -2307,7 +2447,7 @@ exe = executable(
   'login',
   login_sources,
   include_directories : includes,
-  link_with : [lib_common],
+  link_with : [lib_common, logindefs_c],
   dependencies : [lib_pam,
                   lib_audit,
                   lib_selinux],
@@ -2399,6 +2539,7 @@ exe = executable(
   'namei',
   namei_sources,
   include_directories : includes,
+  dependencies : [lib_selinux],
   install_dir : usrbin_exec_dir,
   install : true)
 exes += exe
@@ -2580,6 +2721,15 @@ if not is_disabler(exe)
   exes += exe
 endif
 
+exe = executable(
+  'test_blkid_fuzz_sample',
+  'libblkid/src/fuzz.c',
+  include_directories: includes,
+  link_with: lib_blkid)
+if not is_disabler(exe)
+  exes += exe
+endif
+
 ############################################################
 
 exe = executable(
@@ -2689,6 +2839,20 @@ if not is_disabler(exe)
   bashcompletions += ['hardlink']
 endif
 
+opt = not get_option('build-pipesz').disabled()
+exe = executable(
+  'pipesz',
+  pipesz_sources,
+  include_directories : includes,
+  link_with : [lib_common],
+  install_dir : usrbin_exec_dir,
+  install : true)
+if opt and not is_disabler(exe)
+  exes += exe
+  manadocs += ['misc-utils/pipesz.1.adoc']
+  bashcompletions += ['pipesz']
+endif
+
 exe = executable(
   'test_cal',
   cal_sources,
@@ -2699,6 +2863,34 @@ exe = executable(
   dependencies : [curses_libs])
 if not is_disabler(exe)
   exes += exe
+endif
+
+exe = executable(
+  'fadvise',
+  fadvise_sources,
+  include_directories : includes,
+  link_with : [lib_common],
+  install_dir : usrbin_exec_dir,
+  install : true)
+if not is_disabler(exe)
+  exes += exe
+  manadocs += ['misc-utils/fadvise.1.adoc']
+  bashcompletions += ['fadvise']
+endif
+
+if LINUX and conf.get('HAVE_PIDFD_OPEN') != false
+  exe = executable(
+    'waitpid',
+    waitpid_sources,
+    include_directories : includes,
+    link_with : [lib_common],
+    install_dir : usrbin_exec_dir,
+    install : true)
+  if not is_disabler(exe)
+    exes += exe
+    manadocs += ['misc-utils/waitpid.1.adoc']
+    bashcompletions += ['waitpid']
+  endif
 endif
 
 ############################################################
@@ -2807,51 +2999,55 @@ exe = executable(
   include_directories : dir_include)
 exes += exe
 
-# XXX: HAVE_OPENAT && HAVE_DIRFD
-exe = executable(
-  'test_procfs',
-  'lib/procfs.c',
-  c_args : ['-DTEST_PROGRAM_PROCFS'],
-  include_directories : dir_include,
-  link_with : lib_common)
-exes += exe
+if conf.get('HAVE_OPENAT') != false and conf.get('HAVE_DIRFD') != false
+  exe = executable(
+    'test_procfs',
+    'lib/procfs.c',
+    c_args : ['-DTEST_PROGRAM_PROCFS'],
+    include_directories : dir_include,
+    link_with : lib_common)
+  exes += exe
 
-# XXX: HAVE_OPENAT && HAVE_DIRFD
-exe = executable(
-  'test_path',
-  'lib/path.c',
-  'lib/fileutils.c',
-  have_cpu_set_t ? 'lib/cpuset.c' : [],
-  c_args : ['-DTEST_PROGRAM_PATH'],
-  include_directories : dir_include,
-  link_with : lib_common)
-exes += exe
+  exe = executable(
+    'test_path',
+    'lib/path.c',
+    'lib/fileutils.c',
+    have_cpu_set_t ? 'lib/cpuset.c' : [],
+    c_args : ['-DTEST_PROGRAM_PATH'],
+    include_directories : dir_include,
+    link_with : lib_common)
+  exes += exe
+endif
 
-# XXX: HAVE_PTY
-exe = executable(
-  'test_pty',
-  pty_session_c,
-  monotonic_c,
-  c_args : ['-DTEST_PROGRAM_PTY'],
-  include_directories : dir_include,
-  link_with : [lib_common],
-  dependencies : [lib_m,
-                  realtime_libs,
-                  lib_util])
-exes += exe
+if conf.get('HAVE_PTY') != false
+  exe = executable(
+    'test_pty',
+    pty_session_c,
+    monotonic_c,
+    c_args : ['-DTEST_PROGRAM_PTY'],
+    include_directories : dir_include,
+    link_with : [lib_common],
+    dependencies : [lib_m,
+                    realtime_libs,
+                    lib_util])
+  exes += exe
+endif
 
-# XXX: LINUX
-exe = executable(
-  'test_cpuset',
-  'lib/cpuset.c',
-  c_args : ['-DTEST_PROGRAM_CPUSET'],
-  include_directories : dir_include)
-exes += exe
+if LINUX
+  exe = executable(
+    'test_cpuset',
+    'lib/cpuset.c',
+    c_args : ['-DTEST_PROGRAM_CPUSET'],
+    include_directories : dir_include)
+  exes += exe
+endif
 
 exe = executable(
   'test_sysfs',
   'lib/sysfs.c',
   'lib/path.c',
+  'lib/buffer.c',
+  'lib/mbsalign.c',
   'lib/fileutils.c',
   have_cpu_set_t ? 'lib/cpuset.c' : [],
   c_args : ['-DTEST_PROGRAM_SYSFS'],
@@ -2901,6 +3097,15 @@ exe = executable(
   include_directories : dir_include,
   link_with : lib_common)
 exes += exe
+
+exe = executable(
+  'test_logindefs',
+  'lib/logindefs.c',
+  c_args : ['-DTEST_PROGRAM'],
+  include_directories : dir_include,
+  link_with : [lib_common, logindefs_c])
+exes += exe
+
 
 ############################################################
 
@@ -3072,16 +3277,31 @@ exe = executable(
   include_directories : includes)
 exes += exe
 
+if LINUX
+  exe = executable(
+    'test_mkfds',
+    'tests/helpers/test_mkfds.c',
+    include_directories : includes)
+  exes += exe
+endif
+
+exe = executable(
+  'test_enosys',
+  'tests/helpers/test_enosys.c',
+  include_directories : includes)
+exes += exe
+
 ############################################################
 
-# XXX: HAVE_OPENAT
-exe = executable(
-  'sample-scols-tree',
-  'libsmartcols/samples/tree.c',
-  include_directories : includes,
-  link_with : [lib_smartcols, lib_common])
-if not is_disabler(exe)
-  exes += exe
+if conf.get('HAVE_OPENAT') != false
+  exe = executable(
+    'sample-scols-tree',
+    'libsmartcols/samples/tree.c',
+    include_directories : includes,
+    link_with : [lib_smartcols, lib_common])
+  if not is_disabler(exe)
+    exes += exe
+  endif
 endif
 
 exe = executable(
@@ -3158,7 +3378,7 @@ configure_file(output : 'meson.conf',
                           '''asan=@0@
 PYTHON=@1@
 '''.format(get_option('b_sanitize')=='address' ? 'yes' : '',
-           python.path())])
+           python.full_path())])
 
 run_sh = find_program('tests/run.sh')
 run_target(
@@ -3211,9 +3431,12 @@ if asciidoctor.found()
 	  '-a', 'package-docdir=' + docdir,
 	  '--base-dir=' + meson.current_source_dir(),
           '--destination-dir=' + meson.current_build_dir(),
+          '--load-path', '@SOURCE_ROOT@/tools',
+          '--require', 'asciidoctor-includetracker',
 	  '@INPUT@'],
       input : input,
       output : [page],
+      depfile : page + '.deps',
       install: true,
       install_dir : mandirn)
   endforeach

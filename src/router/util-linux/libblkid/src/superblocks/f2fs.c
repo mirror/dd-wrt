@@ -9,6 +9,7 @@
 #include <string.h>
 
 #include "superblocks.h"
+#include "crc32.h"
 
 #define F2FS_MAGIC		"\x10\x20\xF5\xF2"
 #define F2FS_MAGIC_OFF		0
@@ -55,6 +56,33 @@ struct f2fs_super_block {					/* According to version 1.1 */
 #endif
 } __attribute__((packed));
 
+static int f2fs_validate_checksum(blkid_probe pr, size_t sb_off,
+		const struct f2fs_super_block *sb)
+{
+	uint32_t csum_off = le32_to_cpu(sb->checksum_offset);
+	if (!csum_off)
+		return 1;
+	if (csum_off % sizeof(uint32_t) != 0)
+		return 0;
+	if (csum_off + sizeof(uint32_t) > 4096)
+		return 0;
+
+	unsigned char *csum_data = blkid_probe_get_buffer(pr,
+			sb_off + csum_off, sizeof(uint32_t));
+	if (!csum_data)
+		return 0;
+
+	uint32_t expected = le32_to_cpu(*(uint32_t *) csum_data);
+
+	unsigned char *csummed = blkid_probe_get_buffer(pr, sb_off, csum_off);
+	if (!csummed)
+		return 0;
+
+	uint32_t csum = ul_crc32(0xF2F52010, csummed, csum_off);
+
+	return blkid_probe_verify_csum(pr, csum, expected);
+}
+
 static int probe_f2fs(blkid_probe pr, const struct blkid_idmag *mag)
 {
 	struct f2fs_super_block *sb;
@@ -71,6 +99,9 @@ static int probe_f2fs(blkid_probe pr, const struct blkid_idmag *mag)
 	if (vermaj == 1 && vermin == 0)
 		return 0;
 
+	if (!f2fs_validate_checksum(pr, mag->kboff << 10, sb))
+		return 1;
+
 	if (*((unsigned char *) sb->volume_name))
 		blkid_probe_set_utf8label(pr, (unsigned char *) sb->volume_name,
 						sizeof(sb->volume_name),
@@ -78,8 +109,12 @@ static int probe_f2fs(blkid_probe pr, const struct blkid_idmag *mag)
 
 	blkid_probe_set_uuid(pr, sb->uuid);
 	blkid_probe_sprintf_version(pr, "%u.%u", vermaj, vermin);
-	if (le32_to_cpu(sb->log_blocksize) < 32)
-		blkid_probe_set_block_size(pr, 1U << le32_to_cpu(sb->log_blocksize));
+	if (le32_to_cpu(sb->log_blocksize) < 32){
+		uint32_t blocksize = 1U << le32_to_cpu(sb->log_blocksize);
+		blkid_probe_set_fsblocksize(pr, blocksize);
+		blkid_probe_set_block_size(pr, blocksize);
+		blkid_probe_set_fssize(pr, le64_to_cpu(sb->block_count) * blocksize);
+	}
 	return 0;
 }
 

@@ -7,6 +7,7 @@ MAN_SECTIONS = 1 3 5 8
 CLEANFILES = $(PO_STAMPS)
 
 EXTRA_DIST = README.md $(PO_FILES) po4a.cfg util-linux-man.pot
+DISTCLEANFILES = util-linux-man.pot $(PO_FILES)
 
 if ENABLE_POMAN
 util-linux-man.pot: Makefile
@@ -14,7 +15,7 @@ util-linux-man.pot: Makefile
 
 po4a-gen.stamp: $(PO_FILES)
 	@echo 'po4a: generate man-pages translations'
-	$(AM_V_GEN) $(PO4A) po4a.cfg
+	$(AM_V_GEN) $(PO4A) --srcdir $(srcdir) $(srcdir)/po4a.cfg
 	@touch po4a-gen.stamp
 
 # We need to call po4a --force only on 'make dist', otherwise .po and .pot
@@ -24,7 +25,7 @@ po4a-gen.stamp: $(PO_FILES)
 # only.
 util-linux-man.pot:
 	@echo 'po4a: force pot-update'
-	$(AM_V_GEN) $(PO4A) --force po4a.cfg
+	$(AM_V_GEN) $(PO4A) --force --srcdir $(srcdir) $(srcdir)/po4a.cfg
 
 gen-trans: $(PO_STAMPS)
 
@@ -33,13 +34,20 @@ asciidoc_man_cmd = $(ASCIIDOCTOR) \
 	-a 'release-version=$(VERSION)' \
 	-a 'package-docdir=$(docdir)' \
 	-a 'VERSION=$(VERSION)' \
-	-a 'ADJTIME_PATH=$(ADJTIME_PATH)'
+	-a 'ADJTIME_PATH=$(ADJTIME_PATH)' \
+	--load-path '$(top_srcdir)/tools' \
+	--require asciidoctor-unicodeconverter
+
+if HAVE_ASCIIDOCTOR_FAILURE_LEVEL
+asciidoc_man_cmd += --failure-level ERROR
+endif
 
 gen-mans: gen-trans
-	@for l in $(PO_LANGS); do \
+	@set -e; \
+	  for l in $(PO_LANGS); do \
 	  gendir="$(abs_builddir)/$$l"; \
 	  genfiles=`echo $${gendir}/*.adoc`; \
-	  if test "$$genfiles" != '$${gendir}/*.adoc'; then \
+	  if test "$$genfiles" != "$${gendir}/*.adoc"; then \
 	    for file in $${genfiles}; do \
 	      manname=`echo $$file | sed -e 's|^.*/||' -e 's|\.adoc||'`;  \
 	      test -f $${gendir}/$${manname} || { \
@@ -64,7 +72,7 @@ install-data-local: gen-mans
 	  mansrcdir="$(abs_builddir)/$$l"; \
 	  for s in $(MAN_SECTIONS); do \
 	    installfiles=`echo $${mansrcdir}/*.$$s`; \
-	    if test "$$installfiles" != '$${mansrcdir}/*.$$s'; then \
+	    if test "$$installfiles" != "$${mansrcdir}/*.$$s"; then \
 	      installdir="$(DESTDIR)$(mandir)/$$l/man$$s"; \
 	      $(MKDIR_P) "$${installdir}" || exit 1; \
 	      for file in $$installfiles; do \
@@ -81,7 +89,7 @@ uninstall-local:
 	  mansrcdir="$(abs_builddir)/$$l"; \
 	  for s in $(MAN_SECTIONS); do \
 	    installfiles=`echo $${mansrcdir}/*.$$s`; \
-	    if test "$$installfiles" != '$${mansrcdir}/*.$$s'; then \
+	    if test "$$installfiles" != "$${mansrcdir}/*.$$s"; then \
 	      installdir="$(DESTDIR)$(mandir)/$$l/man$$s"; \
 	      for file in $$installfiles; do \
 	        manname=`echo $$file | sed -e 's|^.*/||'`;  \

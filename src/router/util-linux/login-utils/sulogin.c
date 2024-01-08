@@ -108,7 +108,7 @@ static void tcinit(struct console *con)
 	struct termios *tio = &con->tio;
 	const int fd = con->fd;
 #if defined(TIOCGSERIAL)
-	struct serial_struct serinfo;
+	struct serial_struct serinfo = { .flags = 0 };
 #endif
 #ifdef USE_PLYMOUTH_SUPPORT
 	struct termios lock;
@@ -132,18 +132,18 @@ static void tcinit(struct console *con)
 	errno = 0;
 #endif
 
-#if defined(TIOCGSERIAL)
+#ifdef TIOCGSERIAL
 	if (ioctl(fd, TIOCGSERIAL,  &serinfo) >= 0)
 		con->flags |= CON_SERIAL;
 	errno = 0;
-#else
-# if defined(KDGKBMODE)
-	if (ioctl(fd, KDGKBMODE, &mode) < 0)
-		con->flags |= CON_SERIAL;
-	errno = 0;
-# endif
 #endif
 
+#ifdef KDGKBMODE
+	if (!(con->flags & CON_SERIAL)
+	    && ioctl(fd, KDGKBMODE, &mode) < 0)
+		con->flags |= CON_SERIAL;
+	errno = 0;
+#endif
 	if (tcgetattr(fd, tio) < 0) {
 		int saveno = errno;
 #if defined(KDGKBMODE) || defined(TIOCGSERIAL)
@@ -274,18 +274,18 @@ static void tcfinal(struct console *con)
 	if (con->flags & CON_EIO)
 		return;
 	if ((con->flags & CON_SERIAL) == 0) {
-		xsetenv("TERM", "linux", 1);
+		xsetenv("TERM", "linux", 0);
 		return;
 	}
 	if (con->flags & CON_NOTTY) {
-		xsetenv("TERM", "dumb", 1);
+		xsetenv("TERM", "dumb", 0);
 		return;
 	}
 
 #if defined (__s390__) || defined (__s390x__)
-	xsetenv("TERM", "dumb", 1);
+	xsetenv("TERM", "dumb", 0);
 #else
-	xsetenv("TERM", "vt102", 1);
+	xsetenv("TERM", "vt102", 0);
 #endif
 	tio->c_iflag |= (IXON | IXOFF);
 	tio->c_lflag |= (ICANON | ISIG | ECHO|ECHOE|ECHOK|ECHOKE);
@@ -342,12 +342,12 @@ static void tcfinal(struct console *con)
 static void alrm_handler(int sig __attribute__((unused)))
 {
 	/* Timeout expired */
-	alarm_rised++;
+	alarm_rised = 1;
 }
 
 static void chld_handler(int sig __attribute__((unused)))
 {
-	sigchild++;
+	sigchild = 1;
 }
 
 static void mask_signal(int signal, void (*handler)(int),
@@ -944,7 +944,15 @@ int main(int argc, char **argv)
 			opt_e = 1;
 			break;
 		case 'V':
-			print_version(EXIT_SUCCESS);
+		{
+			static const char *features[] = {
+#ifdef USE_SULOGIN_EMERGENCY_MOUNT
+				"emergency-mount",
+#endif
+				NULL
+			};
+			print_version_with_features(EXIT_SUCCESS, features);
+		}
 		case 'h':
 			usage();
 		default:

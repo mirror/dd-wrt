@@ -181,7 +181,13 @@ See also *--move-use-fsync*.
 +
 In the example below, the first command creates a 100MiB free area before the first partition and moves the data it contains (e.g., a filesystem), the next command creates a new partition from the free space (at offset 2048), and the last command reorders partitions to match disk order (the original sdc1 will become sdc2).
 +
-*echo '+100M,' | sfdisk --move-data /dev/sdc -N 1* *echo '2048,' | sfdisk /dev/sdc --append* *sfdisk /dev/sdc --reorder*
+____
+*echo '+100M,' | sfdisk --move-data /dev/sdc -N 1*
+
+*echo '2048,' | sfdisk /dev/sdc --append*
+
+*sfdisk /dev/sdc --reorder*
+____
 
 *--move-use-fsync*::
 Use the *fsync*(2) system call after each write when moving data to a new location by *--move-data*.
@@ -235,15 +241,15 @@ Specify the partition table type. For example *dos* or *gpt*.
 *label-id*::
 Specify the partition table identifier. It should be a hexadecimal number (with a 0x prefix) for MBR and a UUID for GPT.
 *first-lba*::
-Specify the first usable sector for GPT partitions.
+Specify the first usable sector for GPT partitions. This header is ignored if the script and device sector size differ. In this case *sfdisk* uses label specific default.
 *last-lba*::
-Specify the last usable sector for GPT partitions.
+Specify the last usable sector for GPT partitions. This header is ignored if the script and device sector size differ. In this case *sfdisk* uses label specific default.
 *table-length*::
 Specify the maximal number of GPT partitions.
 *grain*::
 Specify minimal size in bytes used to calculate partitions alignment. The default is 1MiB and it's strongly recommended to use the default. Do not modify this variable if you're not sure.
 *sector-size*::
-Specify sector size. This header is informative only and it is not used when *sfdisk* creates a new partition table, in this case the real device specific value is always used and sector size from the dump is ignored.
+Specify sector size. *sfdisk* always uses device sector size. Since version 2.39 *sfdisk* recalculates sizes from dump if the script and device sector size differ.
 
 Note that it is only possible to use header lines before the first partition is specified in the input.
 
@@ -360,6 +366,8 @@ ____
 *sfdisk /dev/sda < sda.dump*
 ____
 
+Note that sfdisk completely restores partition types and partition UUIDs. This could potentially become problematic if you duplicate the same layout to different disks, as it may result in duplicate UUIDs within your system.
+
 === Full binary backup
 
 If you want to do a full binary backup of all sectors where the partition table is stored, then use the *--backup-pt-sectors* command. It writes the sectors to _~/sfdisk-<device>-<offset>.bak_ files. The default name of the backup file can be changed with the *--backup-file* option. The backup files contain only raw data from the _device_. For example:
@@ -435,7 +443,7 @@ The same as the previous example, but without script use.
 *sfdisk --delete /dev/sdc 2*::
 Delete 2nd partition.
 
-*echo "+,+" | sfdisk -N 3 --move-data /dev/sdc*::
+*echo "\+,+" | sfdisk -N 3 --move-data /dev/sdc*::
 Enlarge 3rd partition in both directions, move start to use free space before the partition and enlarge the size to use all free space after to the partition, and move partition data too.
 
 == AUTHORS

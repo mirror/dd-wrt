@@ -6,7 +6,7 @@ defs.set('LIBFDISK_MAJOR_VERSION', pc_version.split('.')[0])
 defs.set('LIBFDISK_MINOR_VERSION', pc_version.split('.')[1])
 defs.set('LIBFDISK_PATCH_VERSION', pc_version.split('.')[2])
 
-libfdisk_h = configure_file(
+configure_file(
   input : 'src/libfdisk.h.in',
   output : 'libfdisk.h',
   configuration : defs,
@@ -57,7 +57,7 @@ lib__fdisk = static_library(
   dependencies : build_libfdisk ? [] : disabler())
 
 lib_fdisk_static = static_library(
-  'fdisk',
+  'fdisk_static',
   link_whole : lib__fdisk,
   link_with : [lib_common,
                lib_blkid.get_static_lib(),
@@ -74,10 +74,14 @@ lib_fdisk = library(
                lib_blkid,
                lib_uuid],
   install : build_libfdisk)
+fdisk_dep = declare_dependency(link_with: lib_fdisk, include_directories: '.')
 
 if build_libfdisk
   pkgconfig.generate(lib_fdisk,
                      description : 'fdisk library',
                      subdirs : 'libfdisk',
                      version : pc_version)
+  if meson.version().version_compare('>=0.54.0')
+    meson.override_dependency('fdisk', fdisk_dep)
+  endif
 endif

@@ -366,3 +366,12 @@ MOUNT_2_37 {
 MOUNT_2_38 {
 	mnt_fs_is_regularfs;
 } MOUNT_2_37;
+
+MOUNT_2_39 {
+	mnt_cache_set_sbprobe;
+	mnt_context_enable_onlyonce;
+	mnt_context_is_lazy;
+	mnt_context_enable_noautofs;
+	mnt_table_enable_noautofs;
+	mnt_table_is_noautofs;
+} MOUNT_2_38;

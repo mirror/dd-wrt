@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: unshare
 .\"    Author: [see the "AUTHOR(S)" section]
-.\" Generator: Asciidoctor 2.0.15
-.\"      Date: 2022-05-11
+.\" Generator: Asciidoctor 2.0.20
+.\"      Date: 2023-11-21
 .\"    Manual: User Commands
-.\"    Source: util-linux 2.38.1
+.\"    Source: util-linux 2.39.3
 .\"  Language: English
 .\"
-.TH "UNSHARE" "1" "2022-05-11" "util\-linux 2.38.1" "User Commands"
+.TH "UNSHARE" "1" "2023-11-21" "util\-linux 2.39.3" "User Commands"
 .ie \n(.g .ds Aq \(aq
 .el       .ds Aq '
 .ss \n[.ss] 0
@@ -152,9 +152,11 @@ Just before running the program, mount the proc filesystem at \fImountpoint\fP (
 Run the program only after the current effective user ID has been mapped to \fIuid\fP. If this option is specified multiple times, the last occurrence takes precedence. This option implies \fB\-\-user\fP.
 .RE
 .sp
-\fB\-\-map\-users=\fP\fIouteruid,inneruid,count\fP|\fBauto\fP
+\fB\-\-map\-users=\fP\fIinneruid:outeruid:count\fP|\fBauto\fP
 .RS 4
 Run the program only after the block of user IDs of size \fIcount\fP beginning at \fIouteruid\fP has been mapped to the block of user IDs beginning at \fIinneruid\fP. This mapping is created with \fBnewuidmap\fP(1). If the range of user IDs overlaps with the mapping specified by \fB\-\-map\-user\fP, then a "hole" will be removed from the mapping. This may result in the highest user ID of the mapping not being mapped. The special value \fBauto\fP will map the first block of user IDs owned by the effective user from \fI/etc/subuid\fP to a block starting at user ID 0. If this option is specified multiple times, the last occurrence takes precedence. This option implies \fB\-\-user\fP.
+.sp
+Before util\-linux version 2.39, this option expected a comma\-separated argument of the form \fIouteruid,inneruid,count\fP but that format is now deprecated for consistency with the ordering used in \fI/proc/[pid]/uid_map\fP and the \fIX\-mount.idmap\fP mount option.
 .RE
 .sp
 \fB\-\-map\-group=\fP\fIgid|name\fP
@@ -162,9 +164,11 @@ Run the program only after the block of user IDs of size \fIcount\fP beginning a
 Run the program only after the current effective group ID has been mapped to \fIgid\fP. If this option is specified multiple times, the last occurrence takes precedence. This option implies \fB\-\-setgroups=deny\fP and \fB\-\-user\fP.
 .RE
 .sp
-\fB\-\-map\-groups=\fP\fIoutergid,innergid,count\fP|\fBauto\fP
+\fB\-\-map\-groups=\fP\fIinnergid:outergid:count\fP|\fBauto\fP
 .RS 4
 Run the program only after the block of group IDs of size \fIcount\fP beginning at \fIoutergid\fP has been mapped to the block of group IDs beginning at \fIinnergid\fP. This mapping is created with \fBnewgidmap\fP(1). If the range of group IDs overlaps with the mapping specified by \fB\-\-map\-group\fP, then a "hole" will be removed from the mapping. This may result in the highest group ID of the mapping not being mapped. The special value \fBauto\fP will map the first block of user IDs owned by the effective user from \fI/etc/subgid\fP to a block starting at group ID 0. If this option is specified multiple times, the last occurrence takes precedence. This option implies \fB\-\-user\fP.
+.sp
+Before util\-linux version 2.39, this option expected a comma\-separated argument of the form \fIoutergid,innergid,count\fP but that format is now deprecated for consistency with the ordering used in \fI/proc/[pid]/gid_map\fP and the \fIX\-mount.idmap\fP mount option.
 .RE
 .sp
 \fB\-\-map\-auto\fP
@@ -258,7 +262,7 @@ $ id \-u; id \-g
 1000
 1000
 $ unshare \-\-user \-\-map\-root\-user \(rs
-        sh \-c \(aq\(aqwhoami; cat /proc/self/uid_map /proc/self/gid_map\(aq\(aq
+        sh \-c \*(Aqwhoami; cat /proc/self/uid_map /proc/self/gid_map\*(Aq
 root
          0       1000          1
          0       1000          1
@@ -323,20 +327,17 @@ The following commands demonstrate the use of the \fB\-\-kill\-child\fP option w
 .if n .RS 4
 .nf
 .fam C
-# set +m                # Don\(aqt print job status messages
-
+# set +m                # Don\*(Aqt print job status messages
 
 # unshare \-\-pid \-\-fork \-\-mount\-proc \-\-kill\-child \-\- \(rs
-
-
-       bash \-\-norc \-c \(aq\(aq(sleep 555 &) && (ps a &) && sleep 999\(aq\(aq &
+       bash \-\-norc \-c \*(Aq(sleep 555 &) && (ps a &) && sleep 999\*(Aq &
 [1] 53456
 #     PID TTY      STAT   TIME COMMAND
       1 pts/3    S+     0:00 sleep 999
       3 pts/3    S+     0:00 sleep 555
       5 pts/3    R+     0:00 ps a
 
-# ps h \-o \(aqcomm\(aq $!     # Show that background job is unshare(1)
+# ps h \-o \*(Aqcomm\*(Aq $!     # Show that background job is unshare(1)
 unshare
 # kill $!               # Kill unshare(1)
 # pidof sleep
@@ -350,9 +351,7 @@ The \fBpidof\fP(1) command prints no output, because the \fBsleep\fP processes h
 .nf
 .fam C
 # unshare \-\-pid \-\-fork \-\-mount\-proc \-\- \(rs
-
-
-       bash \-\-norc \-c \(aq\(aq(sleep 555 &) && (ps a &) && sleep 999\(aq\(aq &
+       bash \-\-norc \-c \*(Aq(sleep 555 &) && (ps a &) && sleep 999\*(Aq &
 [1] 53479
 #     PID TTY      STAT   TIME COMMAND
       1 pts/3    S+     0:00 sleep 999
@@ -384,8 +383,8 @@ up 9 years, 28 weeks, 1 day, 2 hours, 50 minutes
 .MTO "kzak\(atredhat.com" "Karel Zak" ""
 .SH "SEE ALSO"
 .sp
-\fBnewuidmap\fP(1)
-\fBnewgidmap\fP(1)
+\fBnewuidmap\fP(1),
+\fBnewgidmap\fP(1),
 \fBclone\fP(2),
 \fBunshare\fP(2),
 \fBnamespaces\fP(7),

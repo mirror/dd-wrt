@@ -1,4 +1,6 @@
 /*
+ * SPDX-License-Identifier: GPL-2.0-or-later
+ *
  * cramfs_common - cramfs common code
  *
  * Copyright (c) 2008 Roy Peled, the.roy.peled  -at-  gmail
@@ -13,9 +15,7 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- *
  */
-
 #ifndef __CRAMFS_H
 #define __CRAMFS_H
 
@@ -36,11 +36,7 @@
 #define CRAMFS_OFFSET_WIDTH 26
 
 #ifndef HOST_IS_BIG_ENDIAN
-#ifdef WORDS_BIGENDIAN
-#define HOST_IS_BIG_ENDIAN 1
-#else
-#define HOST_IS_BIG_ENDIAN 0
-#endif
+#define HOST_IS_BIG_ENDIAN (__BYTE_ORDER__ == __ORDER_BIG_ENDIAN__)
 #endif
 
 /*

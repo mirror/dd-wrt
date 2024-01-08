@@ -42,6 +42,9 @@
 #include "namespace.h"
 #include "exec_shell.h"
 #include "optutils.h"
+#include "xalloc.h"
+#include "all-io.h"
+#include "env.h"
 
 static struct namespace_file {
 	int nstype;
@@ -89,12 +92,13 @@ static void __attribute__((__noreturn__)) usage(void)
 	fputs(_(" -C, --cgroup[=<file>]  enter cgroup namespace\n"), out);
 	fputs(_(" -U, --user[=<file>]    enter user namespace\n"), out);
 	fputs(_(" -T, --time[=<file>]    enter time namespace\n"), out);
-	fputs(_(" -S, --setuid <uid>     set uid in entered namespace\n"), out);
-	fputs(_(" -G, --setgid <gid>     set gid in entered namespace\n"), out);
+	fputs(_(" -S, --setuid[=<uid>]   set uid in entered namespace\n"), out);
+	fputs(_(" -G, --setgid[=<gid>]   set gid in entered namespace\n"), out);
 	fputs(_("     --preserve-credentials do not touch uids or gids\n"), out);
 	fputs(_(" -r, --root[=<dir>]     set the root directory\n"), out);
 	fputs(_(" -w, --wd[=<dir>]       set the working directory\n"), out);
-	fputs(_(" -W. --wdns <dir>       set the working directory in namespace\n"), out);
+	fputs(_(" -W, --wdns <dir>       set the working directory in namespace\n"), out);
+	fputs(_(" -e, --env              inherit environment variables from target process\n"), out);
 	fputs(_(" -F, --no-fork          do not fork before exec'ing <program>\n"), out);
 #ifdef HAVE_LIBSELINUX
 	fputs(_(" -Z, --follow-context   set SELinux context according to --target PID\n"), out);
@@ -110,6 +114,8 @@ static void __attribute__((__noreturn__)) usage(void)
 static pid_t namespace_target_pid = 0;
 static int root_fd = -1;
 static int wd_fd = -1;
+static int env_fd = -1;
+static int uid_gid_fd = -1;
 
 static void open_target_fd(int *fd, const char *type, const char *path)
 {
@@ -246,6 +252,7 @@ int main(int argc, char *argv[])
 		{ "root", optional_argument, NULL, 'r' },
 		{ "wd", optional_argument, NULL, 'w' },
 		{ "wdns", optional_argument, NULL, 'W' },
+		{ "env", no_argument, NULL, 'e' },
 		{ "no-fork", no_argument, NULL, 'F' },
 		{ "preserve-credentials", no_argument, NULL, OPT_PRESERVE_CRED },
 #ifdef HAVE_LIBSELINUX
@@ -261,12 +268,13 @@ int main(int argc, char *argv[])
 
 	struct namespace_file *nsfile;
 	int c, pass, namespaces = 0, setgroups_nerrs = 0, preserve_cred = 0;
-	bool do_rd = false, do_wd = false, force_uid = false, force_gid = false;
-	bool do_all = false;
+	bool do_rd = false, do_wd = false, do_uid = false, force_uid = false,
+	     do_gid = false, force_gid = false, do_env = false, do_all = false;
 	int do_fork = -1; /* unknown yet */
 	char *wdns = NULL;
 	uid_t uid = 0;
 	gid_t gid = 0;
+	struct ul_env_list *envls;
 #ifdef HAVE_LIBSELINUX
 	bool selinux = 0;
 #endif
@@ -277,7 +285,7 @@ int main(int argc, char *argv[])
 	close_stdout_atexit();
 
 	while ((c =
-		getopt_long(argc, argv, "+ahVt:m::u::i::n::p::C::U::T::S:G:r::w::W:FZ",
+		getopt_long(argc, argv, "+ahVt:m::u::i::n::p::C::U::T::S:G:r::w::W::eFZ",
 			    longopts, NULL)) != -1) {
 
 		err_exclusive_options(c, longopts, excl, excl_st);
@@ -339,11 +347,17 @@ int main(int argc, char *argv[])
 				namespaces |= CLONE_NEWTIME;
 			break;
 		case 'S':
-			uid = strtoul_or_err(optarg, _("failed to parse uid"));
+			if (strcmp(optarg, "follow") == 0)
+				do_uid = true;
+			else
+				uid = strtoul_or_err(optarg, _("failed to parse uid"));
 			force_uid = true;
 			break;
 		case 'G':
-			gid = strtoul_or_err(optarg, _("failed to parse gid"));
+			if (strcmp(optarg, "follow") == 0)
+				do_gid = true;
+			else
+				gid = strtoul_or_err(optarg, _("failed to parse gid"));
 			force_gid = true;
 			break;
 		case 'F':
@@ -363,6 +377,9 @@ int main(int argc, char *argv[])
 			break;
 		case 'W':
 			wdns = optarg;
+			break;
+		case 'e':
+			do_env = true;
 			break;
 		case OPT_PRESERVE_CRED:
 			preserve_cred = 1;
@@ -420,6 +437,10 @@ int main(int argc, char *argv[])
 		open_target_fd(&root_fd, "root", NULL);
 	if (do_wd)
 		open_target_fd(&wd_fd, "cwd", NULL);
+	if (do_env)
+		open_target_fd(&env_fd, "environ", NULL);
+	if (do_uid || do_gid)
+		open_target_fd(&uid_gid_fd, "", NULL);
 
 	/*
 	 * Update namespaces variable to contain all requested namespaces
@@ -508,6 +529,32 @@ int main(int argc, char *argv[])
 
 		close(wd_fd);
 		wd_fd = -1;
+	}
+
+	/* Pass environment variables of the target process to the spawned process */
+	if (env_fd >= 0) {
+		if ((envls = env_from_fd(env_fd)) == NULL)
+			err(EXIT_FAILURE, _("failed to get environment variables"));
+		clearenv();
+		if (env_list_setenv(envls) < 0)
+			err(EXIT_FAILURE, _("failed to set environment variables"));
+		env_list_free(envls);
+		close(env_fd);
+	}
+
+	if (uid_gid_fd >= 0) {
+		struct stat st;
+
+		if (fstat(uid_gid_fd, &st) > 0)
+			err(EXIT_FAILURE, _("can not get process stat"));
+
+		close(uid_gid_fd);
+		uid_gid_fd = -1;
+
+		if (do_uid)
+			uid = st.st_uid;
+		if (do_gid)
+			gid = st.st_gid;
 	}
 
 	if (do_fork == 1)

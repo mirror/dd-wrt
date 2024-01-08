@@ -97,7 +97,7 @@ static int __probe_ntfs(blkid_probe pr, const struct blkid_idmag *mag, int save_
 	 */
 	sector_size = le16_to_cpu(ns->bpb.sector_size);
 
-	if (sector_size < 256 || sector_size > 4096)
+	if (sector_size < 256 || sector_size > 4096 || !is_power_of_2(sector_size))
 		return 1;
 
 	switch (ns->bpb.sectors_per_cluster) {
@@ -135,11 +135,15 @@ static int __probe_ntfs(blkid_probe pr, const struct blkid_idmag *mag, int save_
 		}
 	}
 
-	if (ns->clusters_per_mft_record > 0)
+	if (ns->clusters_per_mft_record > 0) {
 		mft_record_size = ns->clusters_per_mft_record *
 				  sectors_per_cluster * sector_size;
-	else
-		mft_record_size = 1 << (0 - ns->clusters_per_mft_record);
+	} else {
+		int8_t mft_record_size_shift = 0 - ns->clusters_per_mft_record;
+		if (mft_record_size_shift < 0 || mft_record_size_shift >= 31)
+			return 1;
+		mft_record_size = 1 << mft_record_size_shift;
+	}
 
 	nr_clusters = le64_to_cpu(ns->number_of_sectors) / sectors_per_cluster;
 
@@ -211,7 +215,10 @@ static int __probe_ntfs(blkid_probe pr, const struct blkid_idmag *mag, int save_
 		attr_off += attr_len;
 	}
 
+
+	blkid_probe_set_fsblocksize(pr, sector_size * sectors_per_cluster);
 	blkid_probe_set_block_size(pr, sector_size);
+	blkid_probe_set_fssize(pr, le64_to_cpu(ns->number_of_sectors) * sector_size);
 
 	blkid_probe_sprintf_uuid(pr,
 			(unsigned char *) &ns->volume_serial,

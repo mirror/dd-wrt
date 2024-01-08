@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: nsenter
 .\"    Author: [see the "AUTHOR(S)" section]
-.\" Generator: Asciidoctor 2.0.15
-.\"      Date: 2022-05-11
+.\" Generator: Asciidoctor 2.0.20
+.\"      Date: 2023-12-01
 .\"    Manual: User Commands
-.\"    Source: util-linux 2.38.1
+.\"    Source: util-linux 2.39.3
 .\"  Language: English
 .\"
-.TH "NSENTER" "1" "2022-05-11" "util\-linux 2.38.1" "User Commands"
+.TH "NSENTER" "1" "2023-12-01" "util\-linux 2.39.3" "User Commands"
 .ie \n(.g .ds Aq \(aq
 .el       .ds Aq '
 .ss \n[.ss] 0
@@ -185,12 +185,16 @@ Enter the time namespace. If no file is specified, enter the time namespace of t
 .sp
 \fB\-G\fP, \fB\-\-setgid\fP \fIgid\fP
 .RS 4
-Set the group ID which will be used in the entered namespace and drop supplementary groups. \fBnsenter\fP always sets GID for user namespaces, the default is 0.
+Set the group ID which will be used in the entered namespace and drop supplementary groups.
+\fBnsenter\fP always sets GID for user namespaces, the default is 0.
+If the argument "follow" is specified the GID of the target process is used.
 .RE
 .sp
 \fB\-S\fP, \fB\-\-setuid\fP \fIuid\fP
 .RS 4
-Set the user ID which will be used in the entered namespace. \fBnsenter\fP always sets UID for user namespaces, the default is 0.
+Set the user ID which will be used in the entered namespace.
+\fBnsenter\fP always sets UID for user namespaces, the default is 0.
+If the argument "follow" is specified the UID of the target process is used.
 .RE
 .sp
 \fB\-\-preserve\-credentials\fP
@@ -211,6 +215,11 @@ Set the working directory. If no directory is specified, set the working directo
 \fB\-W\fP, \fB\-\-wdns\fP[=\fIdirectory\fP]
 .RS 4
 Set the working directory. The \fIdirectory\fP is open after switch to the requested namespaces and after \fBchroot\fP(2) call. The options \fB\-\-wd\fP and \fB\-\-wdns\fP are mutually exclusive.
+.RE
+.sp
+\fB\-e\fP, \fB\-\-env\fP
+.RS 4
+Pass environment variables from the target process to the new process being created. If this option is not provided, the environment variables will remain the same as in the current namespace..
 .RE
 .sp
 \fB\-F\fP, \fB\-\-no\-fork\fP

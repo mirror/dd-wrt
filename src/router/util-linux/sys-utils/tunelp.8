@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: tunelp
 .\"    Author: [see the "AUTHOR(S)" section]
-.\" Generator: Asciidoctor 2.0.15
-.\"      Date: 2022-05-11
+.\" Generator: Asciidoctor 2.0.20
+.\"      Date: 2023-10-23
 .\"    Manual: System Administration
-.\"    Source: util-linux 2.38.1
+.\"    Source: util-linux 2.39.3
 .\"  Language: English
 .\"
-.TH "TUNELP" "8" "2022-05-11" "util\-linux 2.38.1" "System Administration"
+.TH "TUNELP" "8" "2023-10-23" "util\-linux 2.39.3" "System Administration"
 .ie \n(.g .ds Aq \(aq
 .el       .ds Aq '
 .ss \n[.ss] 0
@@ -51,7 +51,7 @@ is the amount of time in jiffies that the driver waits if the printer doesn\(cqt
 .sp
 \fB\-c\fP, \fB\-\-chars\fP \fIcharacters\fP
 .RS 4
-is the number of times to try to output a character to the printer before sleeping for \fB\-t\fP \fITIME\fP. It is the number of times around a loop that tries to send a character to the printer. 120 appears to be a good value for most printers in polling mode. 1000 is the default, because there are some printers that become jerky otherwise, but you \fImust\fP set this to \(aq1\(aq to handle the maximal CPU efficiency if you are using interrupts. If you have a very fast printer, a value of 10 might make more sense even if in polling mode. If you have a \fIreally\fP old printer, you can increase this further.
+is the number of times to try to output a character to the printer before sleeping for \fB\-t\fP \fITIME\fP. It is the number of times around a loop that tries to send a character to the printer. 120 appears to be a good value for most printers in polling mode. 1000 is the default, because there are some printers that become jerky otherwise, but you \fImust\fP set this to \*(Aq1\*(Aq to handle the maximal CPU efficiency if you are using interrupts. If you have a very fast printer, a value of 10 might make more sense even if in polling mode. If you have a \fIreally\fP old printer, you can increase this further.
 .sp
 Setting \fB\-t\fP \fITIME\fP to 0 is equivalent to setting \fB\-c\fP \fICHARS\fP to infinity.
 .RE

@@ -31,26 +31,16 @@ else
 endif
 
 if lib_selinux.found()
-  chfn_chsh_sources += files(
-    'selinux_utils.c',
-    'selinux_utils.h',
-  )
+  chfn_chsh_sources += selinux_utils_c
   chfn_chsh_deps += [lib_selinux]
 endif
 
 chfn_sources = files(
   'chfn.c',
-  'logindefs.c',
-  'logindefs.h',
 )
 
 test_islocal_sources = files(
   'islocal.c',
-)
-
-test_logindefs_sources = files(
-  'logindefs.c',
-  'logindefs.h',
 )
 
 test_consoles_sources = files(
@@ -64,8 +54,6 @@ last_sources = files(
 
 login_sources = files(
   'login.c',
-  'logindefs.c',
-  'logindefs.h',
 )
 
 sulogin_sources = files(

@@ -2,7 +2,7 @@
  * lsblk(8) - list block devices
  *
  * Copyright (C) 2010-2018 Red Hat, Inc. All rights reserved.
- * Written by Milan Broz <mbroz@redhat.com>
+ * Written by Milan Broz <gmazyland@gmail.com>
  *            Karel Zak <kzak@redhat.com>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -66,9 +66,12 @@ static int column_id_to_number(int id);
 /* column IDs */
 enum {
 	COL_ALIOFF = 0,
+	COL_IDLINK,
+	COL_ID,
 	COL_DALIGN,
 	COL_DAX,
 	COL_DGRAN,
+	COL_DISKSEQ,
 	COL_DMAX,
 	COL_DZERO,
 	COL_FSAVAIL,
@@ -88,11 +91,13 @@ enum {
 	COL_MINIO,
 	COL_MODE,
 	COL_MODEL,
+	COL_MQ,
 	COL_NAME,
 	COL_OPTIO,
 	COL_OWNER,
 	COL_PARTFLAGS,
 	COL_PARTLABEL,
+	COL_PARTN,
 	COL_PARTTYPE,
 	COL_PARTTYPENAME,
 	COL_PARTUUID,
@@ -163,9 +168,12 @@ struct colinfo {
 /* columns descriptions */
 static struct colinfo infos[] = {
 	[COL_ALIOFF] = { "ALIGNMENT", 6, SCOLS_FL_RIGHT, N_("alignment offset"), COLTYPE_NUM },
+	[COL_ID] = { "ID", 0.1, SCOLS_FL_NOEXTREMES, N_("udev ID (based on ID-LINK)") },
+	[COL_IDLINK] = { "ID-LINK", 0.1, SCOLS_FL_NOEXTREMES, N_("the shortest udev /dev/disk/by-id link name") },
 	[COL_DALIGN] = { "DISC-ALN", 6, SCOLS_FL_RIGHT, N_("discard alignment offset"), COLTYPE_NUM },
 	[COL_DAX] = { "DAX", 1, SCOLS_FL_RIGHT, N_("dax-capable device"), COLTYPE_BOOL },
 	[COL_DGRAN] = { "DISC-GRAN", 6, SCOLS_FL_RIGHT, N_("discard granularity"), COLTYPE_SIZE },
+	[COL_DISKSEQ] = { "DISK-SEQ", 1, SCOLS_FL_RIGHT, N_("disk sequence number"), COLTYPE_NUM },
 	[COL_DMAX] = { "DISC-MAX", 6, SCOLS_FL_RIGHT, N_("discard max bytes"), COLTYPE_SIZE },
 	[COL_DZERO] = { "DISC-ZERO", 1, SCOLS_FL_RIGHT, N_("discard zeroes data"), COLTYPE_BOOL },
 	[COL_FSAVAIL] = { "FSAVAIL", 5, SCOLS_FL_RIGHT, N_("filesystem size available"), COLTYPE_SIZE },
@@ -185,11 +193,13 @@ static struct colinfo infos[] = {
 	[COL_MINIO] = { "MIN-IO", 6, SCOLS_FL_RIGHT, N_("minimum I/O size"), COLTYPE_NUM },
 	[COL_MODEL] = { "MODEL", 0.1, SCOLS_FL_TRUNC, N_("device identifier") },
 	[COL_MODE] = { "MODE", 10, 0, N_("device node permissions") },
+	[COL_MQ] = { "MQ", 3, SCOLS_FL_RIGHT, N_("device queues") },
 	[COL_NAME] = { "NAME", 0.25, SCOLS_FL_NOEXTREMES, N_("device name") },
 	[COL_OPTIO] = { "OPT-IO", 6, SCOLS_FL_RIGHT, N_("optimal I/O size"), COLTYPE_NUM },
 	[COL_OWNER] = { "OWNER", 0.1, SCOLS_FL_TRUNC, N_("user name"), },
 	[COL_PARTFLAGS] = { "PARTFLAGS", 36,  0, N_("partition flags") },
 	[COL_PARTLABEL] = { "PARTLABEL", 0.1, 0, N_("partition LABEL") },
+	[COL_PARTN] = { "PARTN", 2, SCOLS_FL_RIGHT, N_("partition number as read from the partition table"), COLTYPE_NUM },
 	[COL_PARTTYPENAME]  = { "PARTTYPENAME",  0.1,  0, N_("partition type name") },
 	[COL_PARTTYPE] = { "PARTTYPE", 36,  0, N_("partition type code or UUID") },
 	[COL_PARTUUID] = { "PARTUUID", 36,  0, N_("partition UUID") },
@@ -211,8 +221,8 @@ static struct colinfo infos[] = {
 	[COL_START] = { "START", 5, SCOLS_FL_RIGHT, N_("partition start offset"), COLTYPE_NUM },
 	[COL_STATE] = { "STATE", 7, SCOLS_FL_TRUNC, N_("state of the device") },
 	[COL_SUBSYS] = { "SUBSYSTEMS", 0.1, SCOLS_FL_NOEXTREMES, N_("de-duplicated chain of subsystems") },
-	[COL_TARGETS] = { "MOUNTPOINTS", 0.10, SCOLS_FL_WRAP,  N_("all locations where device is mounted") },
-	[COL_TARGET] = { "MOUNTPOINT", 0.10, SCOLS_FL_TRUNC, N_("where the device is mounted") },
+	[COL_TARGETS] = { "MOUNTPOINTS", 0.10, SCOLS_FL_WRAP | SCOLS_FL_NOEXTREMES,  N_("all locations where device is mounted") },
+	[COL_TARGET] = { "MOUNTPOINT", 0.10, SCOLS_FL_TRUNC | SCOLS_FL_NOEXTREMES, N_("where the device is mounted") },
 	[COL_TRANSPORT] = { "TRAN", 6, 0, N_("device transport type") },
 	[COL_TYPE] = { "TYPE", 4, 0, N_("device type") },
 	[COL_UUID] = { "UUID", 36,  0, N_("filesystem UUID") },
@@ -461,7 +471,7 @@ static char *get_type(struct lsblk_device *dev)
 }
 
 /* Thanks to lsscsi code for idea of detection logic used here */
-static char *get_transport(struct lsblk_device *dev)
+static const char *get_transport(struct lsblk_device *dev)
 {
 	struct path_cxt *sysfs = dev->sysfs;
 	char *attr = NULL;
@@ -510,10 +520,14 @@ static char *get_transport(struct lsblk_device *dev)
 			trans = "ata";
 		free(attr);
 
-	} else if (strncmp(dev->name, "nvme", 4) == 0)
+	} else if (strncmp(dev->name, "nvme", 4) == 0) {
 		trans = "nvme";
+	} else if (strncmp(dev->name, "vd", 2) == 0)
+		trans = "virtio";
+	else if (strncmp(dev->name, "mmcblk", 6) == 0)
+		trans = "mmc";
 
-	return trans ? xstrdup(trans) : NULL;
+	return trans;
 }
 
 static char *get_subsystems(struct lsblk_device *dev)
@@ -689,21 +703,20 @@ static int is_removable_device(struct lsblk_device *dev, struct lsblk_device *pa
 
 	if (dev->removable != -1)
 		goto done;
-	if (ul_path_scanf(dev->sysfs, "removable", "%d", &dev->removable) == 1)
-		goto done;
 
-	if (parent) {
+	dev->removable = sysfs_blkdev_is_removable(dev->sysfs);
+
+	if (!dev->removable && parent) {
 		pc = sysfs_blkdev_get_parent(dev->sysfs);
 		if (!pc)
 			goto done;
 
-		/* dev is partition and parent is whole-disk  */
 		if (pc == parent->sysfs)
+			/* dev is partition and parent is whole-disk  */
 			dev->removable = is_removable_device(parent, NULL);
-
-		/* parent is something else, use sysfs parent */
-		else if (ul_path_scanf(pc, "removable", "%d", &dev->removable) != 1)
-			dev->removable = 0;
+		else
+			/* parent is something else, use sysfs parent */
+			dev->removable = sysfs_blkdev_is_removable(pc);
 	}
 done:
 	if (dev->removable == -1)
@@ -738,6 +751,23 @@ static void device_read_bytes(struct lsblk_device *dev, char *path, char **str,
 		if (sortdata)
 			*sortdata = x;
 	}
+}
+
+static void process_mq(struct lsblk_device *dev, char **str)
+{
+	unsigned int queues = 0;
+
+	DBG(DEV, ul_debugobj(dev, "%s: process mq", dev->name));
+
+	queues = ul_path_count_dirents(dev->sysfs, "mq");
+	if (!queues) {
+		*str = xstrdup("1");
+		DBG(DEV, ul_debugobj(dev, "%s: no mq supported, use a single queue", dev->name));
+		return;
+	}
+
+	DBG(DEV, ul_debugobj(dev, "%s: has %d queues", dev->name, queues));
+	xasprintf(str, "%3u", queues);
 }
 
 /*
@@ -922,10 +952,28 @@ static char *device_get_data(
 		if (prop && prop->partflags)
 			str = xstrdup(prop->partflags);
 		break;
+	case COL_PARTN:
+		prop = lsblk_device_get_properties(dev);
+		if (prop && prop->partn)
+			str = xstrdup(prop->partn);
+		break;
 	case COL_WWN:
 		prop = lsblk_device_get_properties(dev);
 		if (prop && prop->wwn)
 			str = xstrdup(prop->wwn);
+		break;
+	case COL_IDLINK:
+		prop = lsblk_device_get_properties(dev);
+		if (prop && prop->idlink)
+			str = xstrdup(prop->idlink);
+		break;
+	case COL_ID:
+		prop = lsblk_device_get_properties(dev);
+		if (prop && prop->idlink) {
+			/* skip bus/subsystem prefix */
+			const char *p = strchr(prop->idlink, '-');
+			str = p && *(p + 1) ? xstrdup(p+1) : xstrdup(prop->idlink);
+		}
 		break;
 	case COL_RA:
 		ul_path_read_string(dev->sysfs, &str, "queue/read_ahead_kb");
@@ -966,8 +1014,13 @@ static char *device_get_data(
 		}
 		break;
 	case COL_REV:
-		if (!device_is_partition(dev) && dev->nslaves == 0)
-			ul_path_read_string(dev->sysfs, &str, "device/rev");
+		if (!device_is_partition(dev) && dev->nslaves == 0) {
+			prop = lsblk_device_get_properties(dev);
+			if (prop && prop->revision)
+				str = xstrdup(prop->revision);
+			else
+				ul_path_read_string(dev->sysfs, &str, "device/rev");
+		}
 		break;
 	case COL_VENDOR:
 		if (!device_is_partition(dev) && dev->nslaves == 0)
@@ -1039,8 +1092,12 @@ static char *device_get_data(
 		break;
 	}
 	case COL_TRANSPORT:
-		str = get_transport(dev);
+	{
+		const char *trans = get_transport(dev);
+		if (trans)
+			str = xstrdup(trans);
 		break;
+	}
 	case COL_SUBSYS:
 		str = get_subsystems(dev);
 		break;
@@ -1123,6 +1180,14 @@ static char *device_get_data(
 		break;
 	case COL_DAX:
 		ul_path_read_string(dev->sysfs, &str, "queue/dax");
+		break;
+	case COL_MQ:
+		process_mq(dev, &str);
+		break;
+	case COL_DISKSEQ:
+		ul_path_read_string(dev->sysfs, &str, "diskseq");
+		if (sortdata)
+			str2u64(str, sortdata);
 		break;
 	};
 
@@ -1330,6 +1395,26 @@ static int initialize_device(struct lsblk_device *dev,
 	if (lsblk->scsi && sysfs_blkdev_scsi_get_hctl(dev->sysfs, NULL, NULL, NULL, NULL)) {
 		DBG(DEV, ul_debugobj(dev, "non-scsi device -- ignore"));
 		return -1;
+	}
+
+	/* ignore non-NVMe devices */
+	if (lsblk->nvme) {
+		const char *transport = get_transport(dev);
+
+		if (!transport || strcmp(transport, "nvme")) {
+			DBG(DEV, ul_debugobj(dev, "non-nvme device -- ignore"));
+			return -1;
+		}
+	}
+
+	/* ignore non-virtio devices */
+	if (lsblk->virtio) {
+		const char *transport = get_transport(dev);
+
+		if (!transport || strcmp(transport, "virtio")) {
+			DBG(DEV, ul_debugobj(dev, "non-virtio device -- ignore"));
+			return -1;
+		}
 	}
 
 	DBG(DEV, ul_debugobj(dev, "%s: context successfully initialized", dev->name));
@@ -1908,6 +1993,8 @@ static void __attribute__((__noreturn__)) usage(void)
 	fputs(_(" -O, --output-all     output all columns\n"), out);
 	fputs(_(" -P, --pairs          use key=\"value\" output format\n"), out);
 	fputs(_(" -S, --scsi           output info about SCSI devices\n"), out);
+	fputs(_(" -N, --nvme           output info about NVMe devices\n"), out);
+	fputs(_(" -v, --virtio         output info about virtio devices\n"), out);
 	fputs(_(" -T, --tree[=<column>] use tree format output\n"), out);
 	fputs(_(" -a, --all            print all devices\n"), out);
 	fputs(_(" -b, --bytes          print SIZE in bytes rather than in human readable format\n"), out);
@@ -1993,6 +2080,8 @@ int main(int argc, char *argv[])
 		{ "paths",      no_argument,       NULL, 'p' },
 		{ "pairs",      no_argument,       NULL, 'P' },
 		{ "scsi",       no_argument,       NULL, 'S' },
+		{ "nvme",       no_argument,       NULL, 'N' },
+		{ "virtio",     no_argument,       NULL, 'v' },
 		{ "sort",	required_argument, NULL, 'x' },
 		{ "sysroot",    required_argument, NULL, OPT_SYSROOT },
 		{ "shell",      no_argument,       NULL, 'y' },
@@ -2026,7 +2115,7 @@ int main(int argc, char *argv[])
 	lsblk_init_debug();
 
 	while((c = getopt_long(argc, argv,
-				"AabdDzE:e:fhJlnMmo:OpPiI:rstVST::w:x:y",
+				"AabdDzE:e:fhJlNnMmo:OpPiI:rstVvST::w:x:y",
 				longopts, NULL)) != -1) {
 
 		err_exclusive_options(c, longopts, excl, excl_st);
@@ -2147,6 +2236,28 @@ int main(int argc, char *argv[])
 			add_uniq_column(COL_REV);
 			add_uniq_column(COL_SERIAL);
 			add_uniq_column(COL_TRANSPORT);
+			break;
+		case 'N':
+			lsblk->nodeps = 1;
+			lsblk->nvme = 1;
+			add_uniq_column(COL_NAME);
+			add_uniq_column(COL_TYPE);
+			add_uniq_column(COL_MODEL);
+			add_uniq_column(COL_SERIAL);
+			add_uniq_column(COL_REV);
+			add_uniq_column(COL_TRANSPORT);
+			add_uniq_column(COL_RQ_SIZE);
+			add_uniq_column(COL_MQ);
+			break;
+		case 'v':
+			lsblk->nodeps = 1;
+			lsblk->virtio = 1;
+			add_uniq_column(COL_NAME);
+			add_uniq_column(COL_TYPE);
+			add_uniq_column(COL_TRANSPORT);
+			add_uniq_column(COL_SIZE);
+			add_uniq_column(COL_RQ_SIZE);
+			add_uniq_column(COL_MQ);
 			break;
 		case 'T':
 			force_tree = 1;

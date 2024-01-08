@@ -15,15 +15,15 @@
 TS_TOPDIR="${0%/*}/../.."
 TS_DESC="setarch"
 
-. $TS_TOPDIR/functions.sh
+. "$TS_TOPDIR"/functions.sh
 ts_init "$*"
 
 ts_check_test_command "$TS_CMD_SETARCH"
+ts_skip_docker
 
 ARCH=$(uname -m)
 
 ts_init_subtest options
-test -e /.dockerenv && ts_skip "unsupported in docker environment"
 ts_log_both "###### unknown arch"
 $TS_CMD_SETARCH qubit -v echo "success" >> $TS_OUTPUT 2>> $TS_ERRLOG
 echo "exit: $?" >>$TS_OUTPUT
@@ -88,5 +88,22 @@ ts_init_subtest uname26-version
 	fi
 ts_finalize_subtest
 fi # conditional subtest
+
+ts_init_subtest show
+echo "###### --show" >>$TS_OUTPUT
+
+show() {
+	echo -n "$1: " >> $TS_OUTPUT
+	$TS_CMD_SETARCH --show=$1 >> $TS_OUTPUT 2> $TS_ERRLOG
+}
+
+show 0x00000000
+show 0x00800000
+show 0x00880000
+show 0x00000008
+show 0x08000008
+show 0x000040ff
+
+ts_finalize_subtest
 
 ts_finalize

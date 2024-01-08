@@ -14,6 +14,9 @@ mkswap_sources = files(
   'mkswap.c',
 ) + \
   ismounted_c
+if lib_selinux.found()
+  mkswap_sources += selinux_utils_c
+endif
 
 swaplabel_sources = files(
   'swaplabel.c',
@@ -66,7 +69,8 @@ fdisk_sources = files(
   'fdisk.h',
   'fdisk-menu.c',
   'fdisk-list.c',
-  'fdisk-list.h')
+  'fdisk-list.h') + \
+  pager_c
 
 sfdisk_sources = files(
   'sfdisk.c',

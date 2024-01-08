@@ -20,6 +20,7 @@
 
 #include <errno.h>
 #include <getopt.h>
+#include <poll.h>
 #include <sched.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -40,6 +41,7 @@
 #include "caputils.h"
 #include "closestream.h"
 #include "namespace.h"
+#include "pidfd-utils.h"
 #include "exec_shell.h"
 #include "xalloc.h"
 #include "pathnames.h"
@@ -389,48 +391,30 @@ struct map_range {
 #define UID_BUFSIZ  sizeof(stringify_value(ULONG_MAX))
 
 /**
- * uint_to_id() - Convert a string into a user/group ID
- * @name: The string representation of the ID
- * @sz: The length of @name, without an (optional) nul-terminator
- *
- * This converts a (possibly not nul-terminated_ string into user or group ID.
- * No name lookup is performed.
- *
- * Return: @name as a numeric ID
- */
-static int uint_to_id(const char *name, size_t sz)
-{
-	char buf[UID_BUFSIZ];
-
-	mem2strcpy(buf, name, sz, sizeof(buf));
-	return strtoul_or_err(buf, _("could not parse ID"));
-}
-
-/**
  * get_map_range() - Parse a mapping range from a string
- * @s: A string of the format outer,inner,count
+ * @s: A string of the format inner:outer:count or outer,inner,count
  *
- * Parse a string of the form outer,inner,count into a new mapping range.
+ * Parse a string of the form inner:outer:count or outer,inner,count into
+ * a new mapping range.
  *
  * Return: A new &struct map_range
  */
 static struct map_range *get_map_range(const char *s)
 {
-	int n, map[3];
+	int end;
 	struct map_range *ret;
 
-	n = string_to_idarray(s, map, ARRAY_SIZE(map), uint_to_id);
-	if (n < 0)
-		errx(EXIT_FAILURE, _("too many elements for mapping '%s'"), s);
-	if (n != ARRAY_SIZE(map))
-		errx(EXIT_FAILURE, _("mapping '%s' contains only %d elements"),
-		     s, n);
-
 	ret = xmalloc(sizeof(*ret));
-	ret->outer = map[0];
-	ret->inner = map[1];
-	ret->count = map[2];
-	return ret;
+
+	if (sscanf(s, "%u:%u:%u%n", &ret->inner, &ret->outer, &ret->count,
+		   &end) >= 3 && !s[end])
+		return ret; /* inner:outer:count */
+
+	if (sscanf(s, "%u,%u,%u%n", &ret->outer, &ret->inner, &ret->count,
+		   &end) >= 3 && !s[end])
+		return ret; /* outer,inner,count */
+
+	errx(EXIT_FAILURE, _("invalid mapping '%s'"), s);
 }
 
 /**
@@ -450,7 +434,7 @@ static struct map_range *read_subid_range(char *filename, uid_t uid)
 	struct map_range *map;
 
 	map = xmalloc(sizeof(*map));
-	map->inner = 0;
+	map->inner = -1;
 
 	pw = xgetpwuid(uid, &pwbuf);
 	if (!pw)
@@ -498,7 +482,7 @@ static struct map_range *read_subid_range(char *filename, uid_t uid)
 		return map;
 	}
 
-	err(EXIT_FAILURE, _("no line matching user \"%s\" in %s"),
+	errx(EXIT_FAILURE, _("no line matching user \"%s\" in %s"),
 	pw->pw_name, filename);
 }
 
@@ -551,10 +535,10 @@ map_ids(const char *idmapper, int ppid, unsigned int outer, unsigned int inner,
 	push_ul(ppid);
 	if ((int)inner == -1) {
 		/*
-		 * If we don't have a "single" mapping, then we can just use
-		 * map directly
+		 * If we don't have a "single" mapping, then we can just use map
+		 * directly, starting inner IDs from zero for an auto mapping
 		 */
-		push_ul(map->inner);
+		push_ul(map->inner + 1 ? map->inner : 0);
 		push_ul(map->outer);
 		push_ul(map->count);
 		push_str(NULL);
@@ -563,9 +547,14 @@ map_ids(const char *idmapper, int ppid, unsigned int outer, unsigned int inner,
 		errexec(idmapper);
 	}
 
-	/* If the mappings overlap, remove an ID from map */
-	if ((outer >= map->outer && outer <= map->outer + map->count) ||
-	    (inner >= map->inner && inner <= map->inner + map->count))
+	/*
+	 * Start inner IDs from zero for an auto mapping; otherwise, if the two
+	 * fixed mappings overlap, remove an ID from map
+	 */
+	if (map->inner + 1 == 0)
+		map->inner = 0;
+	else if ((outer >= map->outer && outer <= map->outer + map->count) ||
+		 (inner >= map->inner && inner <= map->inner + map->count))
 		map->count--;
 
 	/* Determine where the splits between lo, mid, and hi will be */
@@ -688,9 +677,9 @@ static void __attribute__((__noreturn__)) usage(void)
 	fputs(_(" -r, --map-root-user       map current user to root (implies --user)\n"), out);
 	fputs(_(" -c, --map-current-user    map current user to itself (implies --user)\n"), out);
 	fputs(_(" --map-auto                map users and groups automatically (implies --user)\n"), out);
-	fputs(_(" --map-users=<outeruid>,<inneruid>,<count>\n"
+	fputs(_(" --map-users=<inneruid>:<outeruid>:<count>\n"
 		"                           map count users from outeruid to inneruid (implies --user)\n"), out);
-	fputs(_(" --map-groups=<outergid>,<innergid>,<count>\n"
+	fputs(_(" --map-groups=<innergid>:<outergid>:<count>\n"
 		"                           map count groups from outergid to innergid (implies --user)\n"), out);
 	fputs(USAGE_SEPARATOR, out);
 	fputs(_(" --kill-child[=<signame>]  when dying, kill the forked child (implies --fork)\n"
@@ -779,6 +768,9 @@ int main(int argc, char *argv[])
 	const char *newdir = NULL;
 	pid_t pid_bind = 0, pid_idmap = 0;
 	pid_t pid = 0;
+#ifdef UL_HAVE_PIDFD
+	int fd_parent_pid = -1;
+#endif
 	int fd_idmap, fd_bind = -1;
 	sigset_t sigset, oldsigset;
 	int status;
@@ -937,7 +929,7 @@ int main(int argc, char *argv[])
 
 	if ((force_monotonic || force_boottime) && !(unshare_flags & CLONE_NEWTIME))
 		errx(EXIT_FAILURE, _("options --monotonic and --boottime require "
-			"unsharing of a time namespace (-t)"));
+			"unsharing of a time namespace (-T)"));
 
 	/* clear any inherited settings */
 	signal(SIGCHLD, SIG_DFL);
@@ -968,9 +960,16 @@ int main(int argc, char *argv[])
 			sigaddset(&sigset, SIGTERM) != 0 ||
 			sigprocmask(SIG_BLOCK, &sigset, &oldsigset) != 0)
 			err(EXIT_FAILURE, _("sigprocmask block failed"));
-
-		/* force child forking before mountspace binding
-		 * so pid_for_children is populated */
+#ifdef UL_HAVE_PIDFD
+		if (kill_child_signo != 0) {
+			/* make a connection to the original process (parent) */
+			fd_parent_pid = pidfd_open(getpid(), 0);
+			if (0 > fd_parent_pid)
+				err(EXIT_FAILURE, _("pidfd_open failed"));
+		}
+#endif
+		/* force child forking before mountspace binding so
+		 * pid_for_children is populated */
 		pid = fork();
 
 		switch(pid) {
@@ -1022,8 +1021,32 @@ int main(int argc, char *argv[])
 		err(EXIT_FAILURE, _("child exit failed"));
 	}
 
-	if (kill_child_signo != 0 && prctl(PR_SET_PDEATHSIG, kill_child_signo) < 0)
-		err(EXIT_FAILURE, "prctl failed");
+	if (kill_child_signo != 0) {
+		if (prctl(PR_SET_PDEATHSIG, kill_child_signo) < 0)
+			err(EXIT_FAILURE, "prctl failed");
+#ifdef UL_HAVE_PIDFD
+		/* Use poll() to check that there is still the original parent. */
+		if (fd_parent_pid != -1) {
+			struct pollfd pollfds[1] = {
+				{ .fd = fd_parent_pid, .events = POLLIN	}
+			};
+			int nfds = poll(pollfds, 1, 0);
+
+			if (0 > nfds)
+				err(EXIT_FAILURE, "poll parent pidfd failed");
+
+			/* If the child was re-parented before prctl(2) was called, the
+			 * new parent will likely not be interested in the precise exit
+			 * status of the orphan.
+			 */
+			if (nfds)
+				exit(EXIT_FAILURE);
+
+			close(fd_parent_pid);
+			fd_parent_pid = -1;
+		}
+#endif
+	}
 
         if (mapuser != (uid_t) -1 && !usermap)
 		map_id(_PATH_PROC_UIDMAP, mapuser, real_euid);

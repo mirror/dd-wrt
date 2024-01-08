@@ -95,7 +95,7 @@ Alternate path for wtmp.
 *--lastlog* _path_::
 Alternate path for *lastlog*(8).
 
-*y-*, *--shell*::
+*-y*, *--shell*::
 The column name will be modified to contain only characters allowed for shell variable identifiers. This is usable, for example, with *--export*. Note that this feature has been automatically enabled for *--export* in version 2.37, but due to compatibility issues, now it's necessary to request this behavior by *--shell*.
 
 *-Z*, *--context*::
@@ -118,6 +118,19 @@ if a serious error occurs (e.g., a corrupt log).
 == NOTES
 
 The default UID thresholds are read from _/etc/login.defs_.
+
+=== Password status
+
+Multiple fields describe password status.
+
+*"Password is locked"*::
+The password is prefixed by '!!', and the user cannot login although the password is set or empty. This is common for new accounts without a set password.
+
+*"Password not required (empty)"*::
+The password is not set (hash is missing); this is common for locked system accounts. Not requiring a password does not mean the user can log-in without a password. It depends on the password "lock" status.
+
+*"Login by password disabled"*::
+'yes' means that there is no valid password. The password hash is missing, or the hash method is unknown or contains invalid chars.
 
 == HISTORY
 

@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: pivot_root
 .\"    Author: [see the "AUTHOR(S)" section]
-.\" Generator: Asciidoctor 2.0.15
-.\"      Date: 2022-05-11
+.\" Generator: Asciidoctor 2.0.20
+.\"      Date: 2023-10-23
 .\"    Manual: System Administration
-.\"    Source: util-linux 2.38.1
+.\"    Source: util-linux 2.39.3
 .\"  Language: English
 .\"
-.TH "PIVOT_ROOT" "8" "2022-05-11" "util\-linux 2.38.1" "System Administration"
+.TH "PIVOT_ROOT" "8" "2023-10-23" "util\-linux 2.39.3" "System Administration"
 .ie \n(.g .ds Aq \(aq
 .el       .ds Aq '
 .ss \n[.ss] 0
@@ -90,7 +90,7 @@ mount \-o ro 10.0.0.1:/my_root /mnt
 killall portmap   # portmap keeps old root busy
 cd /mnt
 pivot_root . old_root
-exec chroot . sh \-c \(aqumount /old_root; exec /sbin/init\(aq \(rs
+exec chroot . sh \-c \*(Aqumount /old_root; exec /sbin/init\*(Aq \(rs
   <dev/console >dev/console 2>&1
 .fam
 .fi

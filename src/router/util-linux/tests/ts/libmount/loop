@@ -19,7 +19,7 @@
 TS_TOPDIR="${0%/*}/../.."
 TS_DESC="losetup-loop"
 
-. $TS_TOPDIR/functions.sh
+. "$TS_TOPDIR"/functions.sh
 ts_init "$*"
 
 ts_check_test_command "$TS_CMD_MOUNT"
@@ -135,6 +135,15 @@ $TS_CMD_MOUNT -oloop=$LODEV "$BACKFILE" "$TS_MOUNTPOINT" 2>&1 \
 	| sed 's/:.*:/: <target>/; s/for .*/for <source>/' > $TS_OUTPUT
 $TS_CMD_LOSETUP --detach $LODEV >> $TS_OUTPUT 2>> $TS_ERRLOG
 rm "$BACKFILE"-2
+udevadm settle
+ts_log "Success"
+ts_finalize_subtest
+
+ts_init_subtest "explicit-rw"
+[ -d "$TS_MOUNTPOINT" ] || mkdir -p $TS_MOUNTPOINT
+$TS_CMD_MOUNT -o rw "$BACKFILE" "$TS_MOUNTPOINT" >> $TS_OUTPUT 2>> $TS_ERRLOG
+$TS_CMD_FINDMNT -no FS-OPTIONS --mountpoint "$TS_MOUNTPOINT" >> $TS_OUTPUT 2>> $TS_ERRLOG
+$TS_CMD_UMOUNT "$TS_MOUNTPOINT" >> $TS_OUTPUT 2>> $TS_ERRLOG
 udevadm settle
 ts_log "Success"
 ts_finalize_subtest

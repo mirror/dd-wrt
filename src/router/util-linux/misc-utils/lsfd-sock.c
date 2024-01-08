@@ -27,11 +27,13 @@
 #include "libsmartcols.h"
 
 #include "lsfd.h"
+#include "lsfd-sock.h"
 
-struct sock {
-	struct file file;
-	char *protoname;
-};
+static void attach_sock_xinfo(struct file *file)
+{
+	struct sock *sock = (struct sock *)file;
+	sock->xinfo = get_sock_xinfo(file->stat.st_ino);
+}
 
 static bool sock_fill_column(struct proc *proc __attribute__((__unused__)),
 			     struct file *file,
@@ -43,29 +45,68 @@ static bool sock_fill_column(struct proc *proc __attribute__((__unused__)),
 	struct sock *sock = (struct sock *)file;
 	switch(column_id) {
 	case COL_TYPE:
-		if (scols_line_set_data(ln, column_index, "SOCK"))
-			err(EXIT_FAILURE, _("failed to add output data"));
-		return true;
-	case COL_PROTONAME:
+		if (!sock->protoname)
+			return false;
+		/* FALL THROUGH */
+	case COL_SOCK_PROTONAME:
 		if (sock->protoname)
 			if (scols_line_set_data(ln, column_index, sock->protoname))
 				err(EXIT_FAILURE, _("failed to add output data"));
 		return true;
 	case COL_NAME:
-		if (sock->protoname
-		    && file->name && strncmp(file->name, "socket:", 7) == 0) {
-			xasprintf(&str, "%s:%s", sock->protoname, file->name + 7);
-			break;
+		if (sock->xinfo
+		    && sock->xinfo->class && sock->xinfo->class->get_name) {
+			str = sock->xinfo->class->get_name(sock->xinfo, sock);
+			if (str)
+				break;
 		}
 		return false;
 	case COL_SOURCE:
 		if (major(file->stat.st_dev) == 0
 		    && strncmp(file->name, "socket:", 7) == 0) {
-			str = strdup("sockfs");
+			str = xstrdup("sockfs");
 			break;
 		}
 		return false;
+	case COL_SOCK_NETNS:
+		if (sock->xinfo) {
+			xasprintf(&str, "%llu",
+				  (unsigned long long)sock->xinfo->netns_inode);
+			break;
+		}
+		return false;
+	case COL_SOCK_TYPE:
+		if (sock->xinfo
+		    && sock->xinfo->class && sock->xinfo->class->get_type) {
+			str = sock->xinfo->class->get_type(sock->xinfo, sock);
+			if (str)
+				break;
+		}
+		return false;
+	case COL_SOCK_STATE:
+		if (sock->xinfo
+		    && sock->xinfo->class && sock->xinfo->class->get_state) {
+			str = sock->xinfo->class->get_state(sock->xinfo, sock);
+			if (str)
+				break;
+		}
+		return false;
+	case COL_SOCK_LISTENING:
+		str = xstrdup((sock->xinfo
+			       && sock->xinfo->class
+			       && sock->xinfo->class->get_listening
+			       && sock->xinfo->class->get_listening(sock->xinfo, sock))
+			      ? "1"
+			      : "0");
+		break;
 	default:
+		if (sock->xinfo && sock->xinfo->class
+		    && sock->xinfo->class->fill_column) {
+			if (sock->xinfo->class->fill_column(proc, sock->xinfo, sock, ln,
+							    column_id, column_index,
+							    &str))
+				break;
+		}
 		return false;
 	}
 
@@ -92,7 +133,7 @@ static void init_sock_content(struct file *file)
 
 		assert(file->proc);
 
-		if (fd >= 0)
+		if (is_opened_file(file))
 			sprintf(path, "/proc/%d/fd/%d", file->proc->pid, fd);
 		else
 			sprintf(path, "/proc/%d/map_files/%"PRIx64 "-%" PRIx64,
@@ -117,10 +158,23 @@ static void free_sock_content(struct file *file)
 	}
 }
 
+static void initialize_sock_class(void)
+{
+	initialize_sock_xinfos();
+}
+
+static void finalize_sock_class(void)
+{
+	finalize_sock_xinfos();
+}
+
 const struct file_class sock_class = {
 	.super = &file_class,
 	.size = sizeof(struct sock),
 	.fill_column = sock_fill_column,
+	.attach_xinfo = attach_sock_xinfo,
 	.initialize_content = init_sock_content,
 	.free_content = free_sock_content,
+	.initialize_class = initialize_sock_class,
+	.finalize_class = finalize_sock_class,
 };

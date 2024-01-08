@@ -17,7 +17,7 @@
 TS_TOPDIR="${0%/*}/../.."
 TS_DESC="AF_UNIX socket pair created with socketpair(2)"
 
-. $TS_TOPDIR/functions.sh
+. "$TS_TOPDIR"/functions.sh
 ts_init "$*"
 
 ts_check_test_command "$TS_CMD_LSFD"
@@ -37,12 +37,12 @@ EXPR=
     coproc MKFDS { "$TS_HELPER_MKFDS" socketpair $FD0 $FD1 socktype=DGRAM; }
     if read -u ${MKFDS[0]} PID; then
 	EXPR='(PID == '"${PID}"') and ((FD == '"$FD0"') or (FD == '"$FD1"'))'
-	${TS_CMD_LSFD} -n -o ASSOC,MODE,TYPE,SOURCE,PROTONAME -Q "${EXPR}" | sed -e 's/UNIX-DGRAM/UNIX/'
-	echo 'ASSOC,MODE,TYPE,SOURCE,PROTONAME': $?
+	${TS_CMD_LSFD} -n -o ASSOC,MODE,STTYPE,SOURCE,SOCK.PROTONAME -Q "${EXPR}" | sed -e 's/UNIX-DGRAM/UNIX/'
+	echo 'ASSOC,MODE,STTYPE,SOURCE,SOCK.PROTONAME': ${PIPESTATUS[0]}
 
 	kill -CONT ${PID}
-	wait ${MKFDS_PID}
     fi
+    wait ${MKFDS_PID}
 } > $TS_OUTPUT 2>&1
 
 ts_finalize

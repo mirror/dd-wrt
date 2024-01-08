@@ -19,7 +19,7 @@ TS_TOPDIR="${0%/*}/../.."
 TS_DESC="call mount.<type>"
 MOUNTER="/sbin/mount.mytest"
 
-. $TS_TOPDIR/functions.sh
+. "$TS_TOPDIR"/functions.sh
 ts_init "$*"
 
 ts_check_test_command "$TS_CMD_MOUNT"
@@ -35,7 +35,25 @@ echo "$0 called with \"$*\""
 EOF
 chmod +x $MOUNTER
 
+ts_init_subtest "basic"
 $TS_CMD_MOUNT -t mytest /foo /bar &> $TS_OUTPUT
+ts_finalize_subtest
+
+ts_init_subtest "options"
+$TS_CMD_MOUNT -t mytest -o foo,defaults /foo /bar &> $TS_OUTPUT
+ts_finalize_subtest
+
+ts_init_subtest "multi-types"
+$TS_CMD_MOUNT -t mytest,invalid /foo /bar &> $TS_OUTPUT
+ts_finalize_subtest
+
+ts_init_subtest "user"
+$TS_CMD_MOUNT -t mytest -ouser,abc /foo /bar &> $TS_OUTPUT
+ts_finalize_subtest
+
+ts_init_subtest "username"
+$TS_CMD_MOUNT -t mytest -ouser=name,abc /foo /bar &> $TS_OUTPUT
+ts_finalize_subtest
 
 rm -f $MOUNTER
 

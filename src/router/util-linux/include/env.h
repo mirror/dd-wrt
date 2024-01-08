@@ -1,3 +1,7 @@
+/*
+ * No copyright is claimed.  This code is in the public domain; do with
+ * it what you wish.
+ */
 #ifndef UTIL_LINUX_ENV_H
 #define UTIL_LINUX_ENV_H
 
@@ -11,6 +15,7 @@ extern void __sanitize_env(struct ul_env_list **org);
 
 extern int env_list_setenv(struct ul_env_list *ls);
 extern void env_list_free(struct ul_env_list *ls);
+extern struct ul_env_list *env_from_fd(int pid);
 
 extern char *safe_getenv(const char *arg);
 
@@ -32,4 +37,3 @@ static inline int remote_entry(char **argv, int remove, int last)
 }
 
 #endif /* UTIL_LINUX_ENV_H */
-

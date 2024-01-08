@@ -4,7 +4,7 @@
 TS_TOPDIR="${0%/*}/../.."
 TS_DESC="context-py (utab)"
 
-. $TS_TOPDIR/functions.sh
+. "$TS_TOPDIR"/functions.sh
 ts_init "$*"
 
 ts_check_test_command "$TS_CMD_FDISK"
@@ -59,10 +59,6 @@ ts_log "Create filesystem"
 mkfs.ext4 -L "$LABEL" -U "$UUID" $DEVICE &> /dev/null
 
 ts_log "Do tests..."
-
-export LIBMOUNT_MTAB=$TS_OUTPUT.mtab
-rm -f $LIBMOUNT_MTAB
-ln -s /proc/mounts $LIBMOUNT_MTAB
 
 export LIBMOUNT_UTAB=$TS_OUTPUT.utab
 rm -f $LIBMOUNT_UTAB

@@ -5,7 +5,7 @@
 TS_TOPDIR="${0%/*}/../.."
 TS_DESC="all (fstab)"
 
-. $TS_TOPDIR/functions.sh
+. "$TS_TOPDIR"/functions.sh
 ts_init "$*"
 
 ts_check_test_command "$TS_CMD_MOUNT"
@@ -118,6 +118,17 @@ $TS_CMD_MOUNT --all --fstab $MY_FSTAB -o ro >> $TS_OUTPUT 2>> $TS_ERRLOG
 udevadm settle
 $TS_CMD_UMOUNT ${MOUNTPOINT}{A,B,C,D}
 [ $? == 0 ] || ts_log "umount failed"
+ts_finalize_subtest
+
+
+ts_init_subtest "relative-path"
+cd "$TS_OUTDIR" > /dev/null
+$TS_CMD_MOUNT --all --fstab $(basename "$MY_FSTAB") >> $TS_OUTPUT 2>> $TS_ERRLOG
+[ $? == 0 ] || ts_log "mount failed"
+udevadm settle
+$TS_CMD_UMOUNT ${MOUNTPOINT}{A,B,C,D}
+[ $? == 0 ] || ts_log "umount failed"
+cd - > /dev/null
 ts_finalize_subtest
 
 

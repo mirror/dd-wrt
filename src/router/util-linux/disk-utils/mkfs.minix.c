@@ -1,11 +1,15 @@
 /*
+ * SPDX-License-Identifier: GPL-2.0-or-later
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
  * mkfs.minix.c - make a linux (minix) file-system.
  *
  * (C) 1991 Linus Torvalds. This file may be redistributed as per
  * the Linux copyright.
- */
-
-/*
+*
  * DD.MM.YY
  *
  * 24.11.91  -	Time began. Used the fsck sources to get started.
@@ -157,9 +161,9 @@ static void __attribute__((__noreturn__)) usage(void)
 static inline time_t mkfs_minix_time(time_t *t)
 {
 	const char *str = getenv("MKFS_MINIX_TEST_SECOND_SINCE_EPOCH");
-	time_t sec;
+	uint64_t sec;
 
-	if (str && sscanf(str, "%ld", &sec) == 1)
+	if (str && sscanf(str, "%"SCNd64, &sec) == 1)
 		return sec;
 	return time(t);
 }

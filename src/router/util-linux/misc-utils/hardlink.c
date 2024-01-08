@@ -38,7 +38,7 @@
 #include <ctype.h>		/* tolower() */
 #include <sys/ioctl.h>
 
-#if defined(HAVE_LINUX_FIEMAP_H)
+#if defined(HAVE_LINUX_FIEMAP_H) && defined(HAVE_SYS_VFS_H)
 # include <linux/fs.h>
 # include <linux/fiemap.h>
 # ifdef FICLONE
@@ -66,6 +66,7 @@
 #endif
 
 static int quiet;		/* don't print anything */
+static int rootbasesz;		/* size of the directory for nftw() */
 
 #ifdef USE_REFLINK
 enum {
@@ -96,6 +97,7 @@ struct file {
 	struct link {
 		struct link *next;
 		int basename;
+		int dirname;
 #if __STDC_VERSION__ >= 199901L
 		char path[];
 #elif __GNUC__
@@ -174,6 +176,7 @@ static struct options {
 	unsigned int respect_mode:1;
 	unsigned int respect_owner:1;
 	unsigned int respect_name:1;
+	unsigned int respect_dir:1;
 	unsigned int respect_time:1;
 	unsigned int respect_xattrs:1;
 	unsigned int maximise:1;
@@ -186,10 +189,10 @@ static struct options {
 	size_t cache_size;
 } opts = {
 	/* default setting */
-#ifdef __APPLE__
-	.method = "memcmp",
-#else
+#ifdef USE_FILEEQ_CRYPTOAPI
 	.method = "sha256",
+#else
+	.method = "memcmp",
 #endif
 	.respect_mode = TRUE,
 	.respect_owner = TRUE,
@@ -215,7 +218,7 @@ static void *files_by_ino;
  * The last signal we received. We store the signal here in order to be able
  * to break out of loops gracefully and to return from our nftw() handler.
  */
-static int last_signal;
+static volatile sig_atomic_t last_signal;
 
 
 #define is_log_enabled(_level)  (quiet == 0 && (_level) <= (unsigned int)opts.verbosity)
@@ -310,6 +313,41 @@ static int compare_nodes(const void *_a, const void *_b)
 	return diff;
 }
 
+/* Compare only filenames */
+static inline int filename_strcmp(const struct file *a, const struct file *b)
+{
+	return strcmp(	a->links->path + a->links->basename,
+			b->links->path + b->links->basename);
+}
+
+/**
+ * Compare only directory names (ignores root directory and basename (filename))
+ *
+ * The complete path conrains three fragments:
+ *
+ * <rootdir> is specified on hardlink command line
+ * <dirname> is all betweehn rootdir and filename
+ * <filename> is last component (aka basename)
+ */
+static inline int dirname_strcmp(const struct file *a, const struct file *b)
+{
+	int diff = 0;
+	int asz = a->links->basename - a->links->dirname,
+	    bsz = b->links->basename - b->links->dirname;
+
+	diff = CMP(asz, bsz);
+
+	if (diff == 0) {
+		const char *a_start, *b_start;
+
+		a_start = a->links->path + a->links->dirname;
+		b_start = b->links->path + b->links->dirname;
+
+		diff = strncmp(a_start, b_start, asz);
+	}
+	return diff;
+}
+
 /**
  * compare_nodes_ino - Node comparison function
  * @_a: The first node (a #struct file)
@@ -332,8 +370,9 @@ static int compare_nodes_ino(const void *_a, const void *_b)
 	 * contain only links with the same basename to keep the rest simple.
 	 */
 	if (diff == 0 && opts.respect_name)
-		diff = strcmp(a->links->path + a->links->basename,
-			      b->links->path + b->links->basename);
+		diff = filename_strcmp(a, b);
+	if (diff == 0 && opts.respect_dir)
+		diff = dirname_strcmp(a, b);
 
 	return diff;
 }
@@ -609,9 +648,8 @@ static int file_may_link_to(const struct file *a, const struct file *b)
 		(!opts.respect_owner || a->st.st_uid == b->st.st_uid) &&
 		(!opts.respect_owner || a->st.st_gid == b->st.st_gid) &&
 		(!opts.respect_time || a->st.st_mtime == b->st.st_mtime) &&
-		(!opts.respect_name
-		 || strcmp(a->links->path + a->links->basename,
-			   b->links->path + b->links->basename) == 0) &&
+		(!opts.respect_name || filename_strcmp(a, b) == 0) &&
+		(!opts.respect_dir || dirname_strcmp(a, b) == 0) &&
 		(!opts.respect_xattrs || file_xattrs_equal(a, b)));
 }
 
@@ -835,6 +873,7 @@ static int inserter(const char *fpath, const struct stat *sb,
 
 	fil->st = *sb;
 	fil->links->basename = ftwbuf->base;
+	fil->links->dirname = rootbasesz;
 	fil->links->next = NULL;
 
 	memcpy(fil->links->path, fpath, pathlen);
@@ -1122,35 +1161,36 @@ static void __attribute__((__noreturn__)) usage(void)
 	fputs(_("Consolidate duplicate files using hardlinks.\n"), out);
 
 	fputs(USAGE_OPTIONS, out);
-	fputs(_(" -v, --verbose              verbose output (repeat for more verbosity)\n"), out);
-	fputs(_(" -q, --quiet                quiet mode - don't print anything\n"), out);
-	fputs(_(" -n, --dry-run              don't actually link anything\n"), out);
-	fputs(_(" -y, --method <name>        file content comparison method\n"), out);
-
-	fputs(_(" -f, --respect-name         filenames have to be identical\n"), out);
-	fputs(_(" -p, --ignore-mode          ignore changes of file mode\n"), out);
-	fputs(_(" -o, --ignore-owner         ignore owner changes\n"), out);
-	fputs(_(" -t, --ignore-time          ignore timestamps (when testing for equality)\n"), out);
 	fputs(_(" -c, --content              compare only file contents, same as -pot\n"), out);
+	fputs(_(" -b, --io-size <size>       I/O buffer size for file reading\n"
+	        "                              (speedup, using more RAM)\n"), out);
+	fputs(_(" -d, --respect-dir          directory names have to be identical\n"), out);
+	fputs(_(" -f, --respect-name         filenames have to be identical\n"), out);
+	fputs(_(" -i, --include <regex>      regular expression to include files/dirs\n"), out);
+	fputs(_(" -m, --maximize             maximize the hardlink count, remove the file with\n"
+	        "                              lowest hardlink count\n"), out);
+	fputs(_(" -M, --minimize             reverse the meaning of -m\n"), out);
+	fputs(_(" -n, --dry-run              don't actually link anything\n"), out);
+	fputs(_(" -o, --ignore-owner         ignore owner changes\n"), out);
+	fputs(_(" -O, --keep-oldest          keep the oldest file of multiple equal files\n"
+		"                              (lower precedence than minimize/maximize)\n"), out);
+	fputs(_(" -p, --ignore-mode          ignore changes of file mode\n"), out);
+	fputs(_(" -q, --quiet                quiet mode - don't print anything\n"), out);
+	fputs(_(" -r, --cache-size <size>    memory limit for cached file content data\n"), out);
+	fputs(_(" -s, --minimum-size <size>  minimum size for files.\n"), out);
+	fputs(_(" -S, --maximum-size <size>  maximum size for files.\n"), out);
+	fputs(_(" -t, --ignore-time          ignore timestamps (when testing for equality)\n"), out);
+	fputs(_(" -v, --verbose              verbose output (repeat for more verbosity)\n"), out);
+	fputs(_(" -x, --exclude <regex>      regular expression to exclude files\n"), out);
 #ifdef USE_XATTR
 	fputs(_(" -X, --respect-xattrs       respect extended attributes\n"), out);
 #endif
+	fputs(_(" -y, --method <name>        file content comparison method\n"), out);
+
 #ifdef USE_REFLINK
 	fputs(_("     --reflink[=<when>]     create clone/CoW copies (auto, always, never)\n"), out);
 	fputs(_("     --skip-reflinks        skip already cloned files (enabled on --reflink)\n"), out);
 #endif
-	fputs(_(" -m, --maximize             maximize the hardlink count, remove the file with\n"
-	        "                              lowest hardlink count\n"), out);
-	fputs(_(" -M, --minimize             reverse the meaning of -m\n"), out);
-	fputs(_(" -O, --keep-oldest          keep the oldest file of multiple equal files\n"
-		"                              (lower precedence than minimize/maximize)\n"), out);
-	fputs(_(" -x, --exclude <regex>      regular expression to exclude files\n"), out);
-	fputs(_(" -i, --include <regex>      regular expression to include files/dirs\n"), out);
-	fputs(_(" -s, --minimum-size <size>  minimum size for files.\n"), out);
-	fputs(_(" -S, --maximum-size <size>  maximum size for files.\n"), out);
-	fputs(_(" -b, --io-size <size>       I/O buffer size for file reading (speedup, using more RAM)\n"), out);
-	fputs(_(" -r, --cache-size <size>    memory limit for cached file content data\n"), out);
-
 	fputs(USAGE_SEPARATOR, out);
 	printf(USAGE_HELP_OPTIONS(28));
 	printf(USAGE_MAN_TAIL("hardlink(1)"));
@@ -1169,13 +1209,14 @@ static int parse_options(int argc, char *argv[])
 		OPT_REFLINK = CHAR_MAX + 1,
 		OPT_SKIP_RELINKS
 	};
-	static const char optstr[] = "VhvnfpotXcmMOx:y:i:r:S:s:b:q";
+	static const char optstr[] = "VhvndfpotXcmMOx:y:i:r:S:s:b:q";
 	static const struct option long_options[] = {
 		{"version", no_argument, NULL, 'V'},
 		{"help", no_argument, NULL, 'h'},
 		{"verbose", no_argument, NULL, 'v'},
 		{"dry-run", no_argument, NULL, 'n'},
 		{"respect-name", no_argument, NULL, 'f'},
+		{"respect-dir", no_argument, NULL, 'd'},
 		{"ignore-mode", no_argument, NULL, 'p'},
 		{"ignore-owner", no_argument, NULL, 'o'},
 		{"ignore-time", no_argument, NULL, 't'},
@@ -1203,7 +1244,7 @@ static int parse_options(int argc, char *argv[])
 		{0}
 	};
 	int excl_st[ARRAY_SIZE(excl)] = UL_EXCL_STATUS_INIT;
-	int c;
+	int c, content_only = 0;
 
 	while ((c = getopt_long(argc, argv, optstr, long_options, NULL)) != -1) {
 
@@ -1234,6 +1275,9 @@ static int parse_options(int argc, char *argv[])
 		case 'f':
 			opts.respect_name = TRUE;
 			break;
+		case 'd':
+			opts.respect_dir = TRUE;
+			break;
 		case 'v':
 			opts.verbosity++;
 			break;
@@ -1241,11 +1285,7 @@ static int parse_options(int argc, char *argv[])
 			quiet = TRUE;
 			break;
 		case 'c':
-			opts.respect_mode = FALSE;
-			opts.respect_name = FALSE;
-			opts.respect_owner = FALSE;
-			opts.respect_time = FALSE;
-			opts.respect_xattrs = FALSE;
+			content_only = 1;
 			break;
 		case 'n':
 			opts.dry_run = 1;
@@ -1294,11 +1334,31 @@ static int parse_options(int argc, char *argv[])
 		case 'h':
 			usage();
 		case 'V':
-			print_version(EXIT_SUCCESS);
+		{
+			static const char *features[] = {
+#ifdef USE_REFLINK
+				"reflink",
+#endif
+#ifdef USE_FILEEQ_CRYPTOAPI
+				"cryptoapi",
+#endif
+				NULL
+			};
+			print_version_with_features(EXIT_SUCCESS, features);
+		}
 		default:
-			errtryhelp(EXIT_FAILURE);}
+			errtryhelp(EXIT_FAILURE);
+		}
 	}
 
+	if (content_only) {
+		opts.respect_mode = FALSE;
+		opts.respect_name = FALSE;
+		opts.respect_dir = FALSE;
+		opts.respect_owner = FALSE;
+		opts.respect_time = FALSE;
+		opts.respect_xattrs = FALSE;
+	}
 	return 0;
 }
 
@@ -1320,7 +1380,8 @@ static void sighandler(int i)
 	if (last_signal != SIGINT)
 		last_signal = i;
 	if (i == SIGINT)
-		putchar('\n');
+		/* can't use stdio on signal handler */
+		ignore_result(write(STDOUT_FILENO, "\n", sizeof("\n")-1));
 }
 
 int main(int argc, char *argv[])
@@ -1378,9 +1439,12 @@ int main(int argc, char *argv[])
 			warn(_("cannot get realpath: %s"), argv[optind]);
 			continue;
 		}
+		if (opts.respect_dir)
+			rootbasesz = strlen(path);
 		if (nftw(path, inserter, 20, FTW_PHYS) == -1)
 			warn(_("cannot process %s"), path);
 		free(path);
+		rootbasesz = 0;
 	}
 
 	twalk(files, visitor);

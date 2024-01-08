@@ -878,9 +878,9 @@ static int gpt_mknew_header(struct fdisk_context *cxt,
 	if (!has_id) {
 		struct gpt_guid guid;
 
-		uuid_generate_random((unsigned char *) &header->disk_guid);
-		guid = header->disk_guid;
+		uuid_generate_random((unsigned char *) &guid);
 		swap_efi_guid(&guid);
+		header->disk_guid = guid;
 	}
 	return 0;
 }
@@ -1017,11 +1017,6 @@ static unsigned char *gpt_read_entries(struct fdisk_context *cxt,
 
 	if (gpt_sizeof_entries(header, &sz))
 		return NULL;
-
-	if (sz > (size_t) SSIZE_MAX) {
-		DBG(GPT, ul_debug("entries array too large to read()"));
-		return NULL;
-	}
 
 	ret = calloc(1, sz);
 	if (!ret)
@@ -2024,6 +2019,19 @@ static int gpt_set_partition(struct fdisk_context *cxt, size_t n,
 	return rc;
 }
 
+static int gpt_read(struct fdisk_context *cxt, off_t offset, void *buf, size_t count)
+{
+	if (offset != lseek(cxt->dev_fd, offset, SEEK_SET))
+		return -errno;
+
+	if (read_all(cxt->dev_fd, buf, count))
+		return -errno;
+
+	DBG(GPT, ul_debug("  read OK [offset=%zu, size=%zu]",
+				(size_t) offset, count));
+	return 0;
+}
+
 static int gpt_write(struct fdisk_context *cxt, off_t offset, void *buf, size_t count)
 {
 	if (offset != lseek(cxt->dev_fd, offset, SEEK_SET))
@@ -2032,7 +2040,8 @@ static int gpt_write(struct fdisk_context *cxt, off_t offset, void *buf, size_t 
 	if (write_all(cxt->dev_fd, buf, count))
 		return -errno;
 
-	fsync(cxt->dev_fd);
+	if (fsync(cxt->dev_fd) != 0)
+		return -errno;
 
 	DBG(GPT, ul_debug("  write OK [offset=%zu, size=%zu]",
 				(size_t) offset, count));
@@ -2079,6 +2088,8 @@ static int gpt_write_header(struct fdisk_context *cxt,
 static int gpt_write_pmbr(struct fdisk_context *cxt)
 {
 	struct gpt_legacy_mbr *pmbr;
+	struct gpt_legacy_mbr *current;
+	int rc;
 
 	assert(cxt);
 	assert(cxt->firstsector);
@@ -2107,6 +2118,25 @@ static int gpt_write_pmbr(struct fdisk_context *cxt)
 		pmbr->partition_record[0].size_in_lba =
 			cpu_to_le32((uint32_t) (cxt->total_sectors - 1ULL));
 
+	/* Read the current PMBR and compare it with the new, don't write if
+	 * the same. */
+	current = malloc(sizeof(*current));
+	if (!current)
+		goto do_write;
+
+	rc = gpt_read(cxt, GPT_PMBR_LBA * cxt->sector_size,
+		      current, sizeof(*current));
+	if (!rc)
+		rc = memcmp(pmbr, current, sizeof(*current));
+
+	free(current);
+
+	if (!rc) {
+		DBG(GPT, ul_debug("Same MBR on disk => don't write it"));
+		return 0;
+	}
+
+ do_write:
 	/* pMBR covers the first sector (LBA) of the disk */
 	return gpt_write(cxt, GPT_PMBR_LBA * cxt->sector_size,
 			 pmbr, cxt->sector_size);
@@ -2591,9 +2621,9 @@ static int gpt_add_partition(
 		 */
 		struct gpt_guid guid;
 
-		uuid_generate_random((unsigned char *) &e->partition_guid);
-		guid = e->partition_guid;
+		uuid_generate_random((unsigned char *) &guid);
 		swap_efi_guid(&guid);
+		e->partition_guid = guid;
 	}
 
 	if (pa && pa->name && *pa->name)

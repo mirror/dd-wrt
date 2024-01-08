@@ -30,6 +30,7 @@
 #include <unistd.h>
 #include <getopt.h>
 #include <ctype.h>
+#include <search.h>
 
 #include <linux/sched.h>
 #include <sys/syscall.h>
@@ -94,6 +95,17 @@ static struct list_head chrdrvs;
 static struct list_head blkdrvs;
 
 /*
+ * IPC table
+ */
+
+#define IPC_TABLE_SIZE 997
+struct ipc_table {
+	struct list_head tables[IPC_TABLE_SIZE];
+};
+
+static struct ipc_table ipc_table;
+
+/*
  * Column related stuffs
  */
 
@@ -107,69 +119,211 @@ struct colinfo {
 };
 
 /* columns descriptions */
-static struct colinfo infos[] = {
-	[COL_ASSOC]   = { "ASSOC",    0, SCOLS_FL_RIGHT, SCOLS_JSON_STRING,
-		N_("association between file and process") },
-	[COL_BLKDRV]  = { "BLKDRV",   0, SCOLS_FL_RIGHT, SCOLS_JSON_STRING,
-		N_("block device driver name resolved by /proc/devices") },
-	[COL_CHRDRV]  = { "CHRDRV",   0, SCOLS_FL_RIGHT, SCOLS_JSON_STRING,
-		N_("character device driver name resolved by /proc/devices") },
-	[COL_COMMAND] = { "COMMAND",0.3, SCOLS_FL_TRUNC, SCOLS_JSON_STRING,
-		N_("command of the process opening the file") },
-	[COL_DELETED] = { "DELETED",  0, SCOLS_FL_RIGHT, SCOLS_JSON_BOOLEAN,
-		N_("reachability from the file system") },
-	[COL_DEV]     = { "DEV",      0, SCOLS_FL_RIGHT, SCOLS_JSON_STRING,
-		N_("ID of device containing file") },
-	[COL_DEVTYPE] = { "DEVTYPE",  0, SCOLS_FL_RIGHT, SCOLS_JSON_STRING,
-		N_("device type (blk, char, or nodev)") },
-	[COL_FLAGS]   = { "FLAGS",    0, SCOLS_FL_RIGHT, SCOLS_JSON_STRING,
-		N_("flags specified when opening the file") },
-	[COL_FD]      = { "FD",       0, SCOLS_FL_RIGHT, SCOLS_JSON_NUMBER,
-		N_("file descriptor for the file") },
-	[COL_FUID]    = { "FUID",     0, SCOLS_FL_RIGHT, SCOLS_JSON_NUMBER,
-		N_("user ID number of the file's owner") },
-	[COL_INODE]   = { "INODE",    0, SCOLS_FL_RIGHT, SCOLS_JSON_NUMBER,
-		N_("inode number") },
-	[COL_KTHREAD] = { "KTHREAD",    0, SCOLS_FL_RIGHT, SCOLS_JSON_BOOLEAN,
-		N_("opened by a kernel thread") },
-	[COL_MAJMIN]  = { "MAJ:MIN",  0, SCOLS_FL_RIGHT, SCOLS_JSON_STRING,
-		N_("device ID for special, or ID of device containing file") },
-	[COL_MAPLEN]  = { "MAPLEN",   0, SCOLS_FL_RIGHT, SCOLS_JSON_NUMBER,
-		N_("length of file mapping (in page)") },
-	[COL_MISCDEV] = { "MISCDEV",  0, SCOLS_FL_RIGHT, SCOLS_JSON_STRING,
-		N_("misc character device name resolved by /proc/misc") },
-	[COL_MNT_ID]  = { "MNTID",    0, SCOLS_FL_RIGHT, SCOLS_JSON_NUMBER,
-		N_("mount id") },
-	[COL_MODE]    = { "MODE",     0, SCOLS_FL_RIGHT, SCOLS_JSON_STRING,
-		N_("access mode (rwx)") },
-	[COL_NAME]    = { "NAME",   0.4, SCOLS_FL_TRUNC, SCOLS_JSON_STRING,
-		N_("name of the file") },
-	[COL_NLINK]   = { "NLINK",    0, SCOLS_FL_RIGHT, SCOLS_JSON_NUMBER,
-		N_("link count") },
-	[COL_OWNER]   = { "OWNER",     0, SCOLS_FL_RIGHT, SCOLS_JSON_STRING,
-		N_("owner of the file") },
-	[COL_PID]     = { "PID",      5, SCOLS_FL_RIGHT, SCOLS_JSON_NUMBER,
-		N_("PID of the process opening the file") },
-	[COL_PARTITION]={ "PARTITION",0, SCOLS_FL_RIGHT, SCOLS_JSON_STRING,
-		N_("block device name resolved by /proc/partition") },
-	[COL_POS]     = { "POS",      5, SCOLS_FL_RIGHT, SCOLS_JSON_NUMBER,
-		N_("file position") },
-	[COL_PROTONAME]={ "PROTONAME",0, SCOLS_FL_RIGHT, SCOLS_JSON_STRING,
-		N_("protocol name") },
-	[COL_RDEV]    = { "RDEV",     0, SCOLS_FL_RIGHT, SCOLS_JSON_STRING,
-		N_("device ID (if special file)") },
-	[COL_SIZE]    = { "SIZE",     4, SCOLS_FL_RIGHT, SCOLS_JSON_NUMBER,
-		N_("file size"), },
-	[COL_SOURCE] = { "SOURCE",  0, SCOLS_FL_RIGHT, SCOLS_JSON_STRING,
-		N_("file system, partition, or device containing file") },
-	[COL_TID]    = { "TID",       5, SCOLS_FL_RIGHT, SCOLS_JSON_NUMBER,
-		N_("thread ID of the process opening the file") },
-	[COL_TYPE]    = { "TYPE",     0, SCOLS_FL_RIGHT, SCOLS_JSON_STRING,
-		N_("file type") },
-	[COL_UID]     = { "UID",      0, SCOLS_FL_RIGHT, SCOLS_JSON_NUMBER,
-		N_("user ID number of the process") },
-	[COL_USER]    = { "USER",     0, SCOLS_FL_RIGHT, SCOLS_JSON_STRING,
-		N_("user of the process") },
+static const struct colinfo infos[] = {
+	[COL_AINODECLASS]      = { "AINODECLASS",
+				   0,   SCOLS_FL_RIGHT, SCOLS_JSON_STRING,
+				   N_("class of anonymous inode") },
+	[COL_ASSOC]            = { "ASSOC",
+				   0,   SCOLS_FL_RIGHT, SCOLS_JSON_STRING,
+				   N_("association between file and process") },
+	[COL_BLKDRV]           = { "BLKDRV",
+				   0,   SCOLS_FL_RIGHT, SCOLS_JSON_STRING,
+				   N_("block device driver name resolved by /proc/devices") },
+	[COL_CHRDRV]           = { "CHRDRV",
+				   0,   SCOLS_FL_RIGHT, SCOLS_JSON_STRING,
+				   N_("character device driver name resolved by /proc/devices") },
+	[COL_COMMAND]          = { "COMMAND",
+				   0.3, SCOLS_FL_TRUNC, SCOLS_JSON_STRING,
+				   N_("command of the process opening the file") },
+	[COL_DELETED]          = { "DELETED",
+				   0,   SCOLS_FL_RIGHT, SCOLS_JSON_BOOLEAN,
+				   N_("reachability from the file system") },
+	[COL_DEV]              = { "DEV",
+				   0,   SCOLS_FL_RIGHT, SCOLS_JSON_STRING,
+				   N_("ID of device containing file") },
+	[COL_DEVTYPE]          = { "DEVTYPE",
+				   0,   SCOLS_FL_RIGHT, SCOLS_JSON_STRING,
+				   N_("device type (blk, char, or nodev)") },
+	[COL_ENDPOINTS]        = { "ENDPOINTS",
+				   0,   SCOLS_FL_WRAP,  SCOLS_JSON_ARRAY_STRING,
+				   N_("IPC endpoints information communicated with the fd") },
+	[COL_FLAGS]            = { "FLAGS",
+				   0,   SCOLS_FL_RIGHT, SCOLS_JSON_STRING,
+				   N_("flags specified when opening the file") },
+	[COL_FD]               = { "FD",
+				   0,   SCOLS_FL_RIGHT, SCOLS_JSON_NUMBER,
+				   N_("file descriptor for the file") },
+	[COL_FUID]             = { "FUID",
+				   0,   SCOLS_FL_RIGHT, SCOLS_JSON_NUMBER,
+				   N_("user ID number of the file's owner") },
+	[COL_INODE]            = { "INODE",
+				   0,   SCOLS_FL_RIGHT, SCOLS_JSON_NUMBER,
+				   N_("inode number") },
+	[COL_INET_LADDR]       = { "INET.LADDR",
+				   0,   SCOLS_FL_RIGHT, SCOLS_JSON_STRING,
+				   N_("local IP address") },
+	[COL_INET_RADDR]       = { "INET.RADDR",
+				   0,   SCOLS_FL_RIGHT, SCOLS_JSON_STRING,
+				   N_("remote IP address") },
+	[COL_INET6_LADDR]      = { "INET6.LADDR",
+				   0,   SCOLS_FL_RIGHT, SCOLS_JSON_STRING,
+				   N_("local IPv6 address") },
+	[COL_INET6_RADDR]      = { "INET6.RADDR",
+				   0,   SCOLS_FL_RIGHT, SCOLS_JSON_STRING,
+				   N_("remote IPv6 address") },
+	[COL_KNAME]            = { "KNAME",
+				   0.4, SCOLS_FL_TRUNC, SCOLS_JSON_STRING,
+				   N_("name of the file (raw)") },
+	[COL_KTHREAD]          = { "KTHREAD",
+				   0,   SCOLS_FL_RIGHT, SCOLS_JSON_BOOLEAN,
+				   N_("opened by a kernel thread") },
+	[COL_MAJMIN]           = { "MAJ:MIN",
+				   0,   SCOLS_FL_RIGHT, SCOLS_JSON_STRING,
+				   N_("device ID for special, or ID of device containing file") },
+	[COL_MAPLEN]           = { "MAPLEN",
+				   0,   SCOLS_FL_RIGHT, SCOLS_JSON_NUMBER,
+				   N_("length of file mapping (in page)") },
+	[COL_MISCDEV]          = { "MISCDEV",
+				   0,   SCOLS_FL_RIGHT, SCOLS_JSON_STRING,
+				   N_("misc character device name resolved by /proc/misc") },
+	[COL_MNT_ID]           = { "MNTID",
+				   0,   SCOLS_FL_RIGHT, SCOLS_JSON_NUMBER,
+				   N_("mount id") },
+	[COL_MODE]             = { "MODE",
+				   0,   SCOLS_FL_RIGHT, SCOLS_JSON_STRING,
+				   N_("access mode (rwx)") },
+	[COL_NAME]             = { "NAME",
+				   0.4, SCOLS_FL_TRUNC, SCOLS_JSON_STRING,
+				   N_("name of the file (cooked)") },
+	[COL_NETLINK_GROUPS]   = { "NETLINK.GROUPS",
+				   0,   SCOLS_FL_RIGHT, SCOLS_JSON_NUMBER,
+				   N_("netlink multicast groups") },
+	[COL_NETLINK_LPORT]    = { "NETLINK.LPORT",
+				   0,   SCOLS_FL_RIGHT, SCOLS_JSON_NUMBER,
+				   N_("netlink local port id") },
+	[COL_NETLINK_PROTOCOL] = { "NETLINK.PROTOCOL",
+				   0,   SCOLS_FL_RIGHT, SCOLS_JSON_STRING,
+				   N_("netlink protocol") },
+	[COL_NLINK]            = { "NLINK",
+				   0,   SCOLS_FL_RIGHT, SCOLS_JSON_NUMBER,
+				   N_("link count") },
+	[COL_NS_NAME]          = { "NS.NAME",
+				   0,   SCOLS_FL_RIGHT, SCOLS_JSON_STRING,
+				   N_("name of the namespace (NS.TYPE:[INODE])") },
+	[COL_NS_TYPE]          = { "NS.TYPE",
+				   0,   SCOLS_FL_RIGHT, SCOLS_JSON_STRING,
+				   N_("type of the namespace") },
+	[COL_OWNER]            = { "OWNER",
+				   0,   SCOLS_FL_RIGHT, SCOLS_JSON_STRING,
+				   N_("owner of the file") },
+	[COL_PACKET_IFACE]     = { "PACKET.IFACE",
+				   0,   SCOLS_FL_RIGHT,SCOLS_JSON_STRING,
+				   N_("net interface associated with the packet socket") },
+	[COL_PACKET_PROTOCOL]  = { "PACKET.PROTOCOL",
+				   0,   SCOLS_FL_RIGHT,SCOLS_JSON_STRING,
+				   N_("L3 protocol associated with the packet socket") },
+	[COL_PARTITION]        = { "PARTITION",
+				   0,   SCOLS_FL_RIGHT, SCOLS_JSON_STRING,
+				   N_("block device name resolved by /proc/partition") },
+	[COL_PID]              = { "PID",
+				   5,   SCOLS_FL_RIGHT, SCOLS_JSON_NUMBER,
+				   N_("PID of the process opening the file") },
+	[COL_PIDFD_COMM]       = { "PIDFD.COMM",
+				   0.2, SCOLS_FL_TRUNC, SCOLS_JSON_STRING,
+				   N_("command of the process targeted by the pidfd") },
+	[COL_PIDFD_NSPID]      = { "PIDFD.NSPID",
+				   0.2, SCOLS_FL_TRUNC, SCOLS_JSON_STRING,
+				   N_("NSpid field in fdinfo of the pidfd") },
+	[COL_PIDFD_PID]        = { "PIDFD.PID",
+				   5,   SCOLS_FL_RIGHT, SCOLS_JSON_NUMBER,
+				   N_("PID of the process targeted by the pidfd") },
+	[COL_PING_ID]          = { "PING.ID",
+				   0,   SCOLS_FL_RIGHT, SCOLS_JSON_NUMBER,
+				   N_("ICMP echo request ID") },
+	[COL_POS]              = { "POS",
+				   5,   SCOLS_FL_RIGHT, SCOLS_JSON_NUMBER,
+				   N_("file position") },
+	[COL_RAW_PROTOCOL]     = { "RAW.PROTOCOL",
+				   0,   SCOLS_FL_RIGHT, SCOLS_JSON_NUMBER,
+				   N_("protocol number of the raw socket") },
+	[COL_RDEV]             = { "RDEV",
+				   0,   SCOLS_FL_RIGHT, SCOLS_JSON_STRING,
+				   N_("device ID (if special file)") },
+	[COL_SIZE]             = { "SIZE",
+				   4,   SCOLS_FL_RIGHT, SCOLS_JSON_NUMBER,
+				   N_("file size"), },
+	[COL_SOCK_LISTENING]   = { "SOCK.LISTENING",
+				   0,   SCOLS_FL_RIGHT, SCOLS_JSON_BOOLEAN,
+				   N_("listening socket") },
+	[COL_SOCK_NETNS]       = { "SOCK.NETNS",
+				   0,   SCOLS_FL_RIGHT, SCOLS_JSON_NUMBER,
+				   N_("inode identifying network namespace where the socket belongs to") },
+	[COL_SOCK_PROTONAME]   = { "SOCK.PROTONAME",
+				   0,   SCOLS_FL_RIGHT, SCOLS_JSON_STRING,
+				   N_("protocol name") },
+	[COL_SOCK_STATE]       = { "SOCK.STATE",
+				   0,   SCOLS_FL_RIGHT, SCOLS_JSON_STRING,
+				   N_("State of socket") },
+	[COL_SOCK_TYPE]        = { "SOCK.TYPE",
+				   0,   SCOLS_FL_RIGHT, SCOLS_JSON_STRING,
+				   N_("Type of socket") },
+	[COL_SOURCE]           = { "SOURCE",
+				   0,   SCOLS_FL_RIGHT, SCOLS_JSON_STRING,
+				   N_("file system, partition, or device containing file") },
+	[COL_STTYPE]           = { "STTYPE",
+				   0,   SCOLS_FL_RIGHT, SCOLS_JSON_STRING,
+				   N_("file type (raw)") },
+	[COL_TCP_LADDR]        = { "TCP.LADDR",
+				   0,   SCOLS_FL_RIGHT, SCOLS_JSON_STRING,
+				   N_("local TCP address (INET address:TCP port)") },
+	[COL_TCP_RADDR]        = { "TCP.RADDR",
+				   0,   SCOLS_FL_RIGHT, SCOLS_JSON_STRING,
+				   N_("remote TCP address (INET address:TCP port)") },
+	[COL_TCP_LPORT]        = { "TCP.LPORT",
+				   0,   SCOLS_FL_RIGHT, SCOLS_JSON_NUMBER,
+				   N_("local TCP port") },
+	[COL_TCP_RPORT]        = { "TCP.RPORT",
+				   0,   SCOLS_FL_RIGHT, SCOLS_JSON_NUMBER,
+				   N_("remote TCP port") },
+	[COL_TID]              = { "TID",
+				   5,   SCOLS_FL_RIGHT, SCOLS_JSON_NUMBER,
+				   N_("thread ID of the process opening the file") },
+	[COL_TYPE]             = { "TYPE",
+				   0,   SCOLS_FL_RIGHT, SCOLS_JSON_STRING,
+				   N_("file type (cooked)") },
+	[COL_UDP_LADDR]        = { "UDP.LADDR",
+				   0,   SCOLS_FL_RIGHT, SCOLS_JSON_STRING,
+				   N_("local UDP address (INET address:UDP port)") },
+	[COL_UDP_RADDR]        = { "UDP.RADDR",
+				   0,   SCOLS_FL_RIGHT, SCOLS_JSON_STRING,
+				   N_("remote UDP address (INET address:UDP port)") },
+	[COL_UDP_LPORT]        = { "UDP.LPORT",
+				   0,   SCOLS_FL_RIGHT, SCOLS_JSON_NUMBER,
+				   N_("local UDP port") },
+	[COL_UDP_RPORT]        = { "UDP.RPORT",
+				   0,   SCOLS_FL_RIGHT, SCOLS_JSON_NUMBER,
+				   N_("remote UDP port") },
+	[COL_UDPLITE_LADDR]    = { "UDPLITE.LADDR",
+				   0,   SCOLS_FL_RIGHT, SCOLS_JSON_STRING,
+				   N_("local UDPLite address (INET address:UDPLite port)") },
+	[COL_UDPLITE_RADDR]    = { "UDPLITE.RADDR",
+				   0,   SCOLS_FL_RIGHT, SCOLS_JSON_STRING,
+				   N_("remote UDPLite address (INET address:UDPLite port)") },
+	[COL_UDPLITE_LPORT]    = { "UDPLITE.LPORT",
+				   0,   SCOLS_FL_RIGHT, SCOLS_JSON_NUMBER,
+				   N_("local UDPLite port") },
+	[COL_UDPLITE_RPORT]    = { "UDPLITE.RPORT",
+				   0,   SCOLS_FL_RIGHT, SCOLS_JSON_NUMBER,
+				   N_("remote UDPLite port") },
+	[COL_UID]              = { "UID",
+				   0,   SCOLS_FL_RIGHT, SCOLS_JSON_NUMBER,
+				   N_("user ID number of the process") },
+	[COL_UNIX_PATH]        = { "UNIX.PATH",
+				   0.4, SCOLS_FL_TRUNC, SCOLS_JSON_STRING,
+				   N_("filesystem pathname for UNIX domain socket") },
+	[COL_USER]             = { "USER",
+				   0,   SCOLS_FL_RIGHT, SCOLS_JSON_STRING,
+				   N_("user of the process") },
 };
 
 static const int default_columns[] = {
@@ -211,7 +365,7 @@ struct counter_spec {
 	const char *expr;
 };
 
-static struct counter_spec default_counter_specs[] = {
+static const struct counter_spec default_counter_specs[] = {
 	{
 		.name = N_("processes"),
 		.expr = "ASSOC == 'cwd'",
@@ -250,31 +404,31 @@ static struct counter_spec default_counter_specs[] = {
 	},
 	{
 		.name = N_("regular files"),
-		.expr = "(FD >= 0) && (TYPE == 'REG')",
+		.expr = "(FD >= 0) && (STTYPE == 'REG')",
 	},
 	{
 		.name = N_("directories"),
-		.expr = "(FD >= 0) && (TYPE == 'DIR')",
+		.expr = "(FD >= 0) && (STTYPE == 'DIR')",
 	},
 	{
 		.name = N_("sockets"),
-		.expr = "(FD >= 0) && (TYPE == 'SOCK')",
+		.expr = "(FD >= 0) && (STTYPE == 'SOCK')",
 	},
 	{
 		.name = N_("fifos/pipes"),
-		.expr = "(FD >= 0) && (TYPE == 'FIFO')",
+		.expr = "(FD >= 0) && (STTYPE == 'FIFO')",
 	},
 	{
 		.name = N_("character devices"),
-		.expr = "(FD >= 0) && (TYPE == 'CHR')",
+		.expr = "(FD >= 0) && (STTYPE == 'CHR')",
 	},
 	{
 		.name = N_("block devices"),
-		.expr = "(FD >= 0) && (TYPE == 'BLK')",
+		.expr = "(FD >= 0) && (STTYPE == 'BLK')",
 	},
 	{
 		.name = N_("unknown types"),
-		.expr = "(FD >= 0) && (TYPE == 'UNKN')",
+		.expr = "(FD >= 0) && (STTYPE == 'UNKN')",
 	}
 };
 
@@ -288,14 +442,28 @@ struct lsfd_control {
 			notrunc : 1,
 			threads : 1,
 			show_main : 1,		/* print main table */
-			show_summary : 1;	/* print summary/counters */
+			show_summary : 1,	/* print summary/counters */
+			sockets_only : 1;	/* display only SOCKETS */
 
 	struct lsfd_filter *filter;
 	struct lsfd_counter **counters;		/* NULL terminated array. */
 };
 
-static void xstrappend(char **a, const char *b);
-static void xstrputc(char **a, char c);
+static void *proc_tree;			/* for tsearch/tfind */
+
+static int proc_tree_compare(const void *a, const void *b)
+{
+	return ((struct proc *)a)->pid - ((struct proc *)b)->pid;
+}
+
+struct proc *get_proc(pid_t pid)
+{
+	struct proc key = { .pid = pid };
+	struct proc **node = tfind(&key, &proc_tree, proc_tree_compare);
+	if (node)
+		return *node;
+	return NULL;
+}
 
 static int column_name_to_id(const char *name, size_t namesz)
 {
@@ -337,8 +505,16 @@ static struct libscols_column *add_column(struct libscols_table *tb, const struc
 	int flags = col->flags;
 
 	cl = scols_table_new_column(tb, col->name, col->whint, flags);
-	if (cl)
+	if (cl) {
 		scols_column_set_json_type(cl, col->json_type);
+		if (col->flags & SCOLS_FL_WRAP) {
+			scols_column_set_wrapfunc(cl,
+						  scols_wrapnl_chunksize,
+						  scols_wrapnl_nextchunk,
+						  NULL);
+			scols_column_set_safechars(cl, "\n");
+		}
+	}
 
 	return cl;
 }
@@ -392,6 +568,8 @@ static void add_mnt_ns(ino_t id)
 
 static const struct file_class *stat2class(struct stat *sb)
 {
+	dev_t dev;
+
 	assert(sb);
 
 	switch (sb->st_mode & S_IFMT) {
@@ -404,8 +582,16 @@ static const struct file_class *stat2class(struct stat *sb)
 	case S_IFIFO:
 		return &fifo_class;
 	case S_IFLNK:
-	case S_IFREG:
 	case S_IFDIR:
+		return &file_class;
+	case S_IFREG:
+		dev = sb->st_dev;
+		if (major(dev) != 0)
+			return &file_class;
+
+		if (is_nsfs_dev(dev))
+			return &nsfs_file_class;
+
 		return &file_class;
 	default:
 		break;
@@ -525,7 +711,8 @@ static void read_fdinfo(struct file *file, FILE *fdinfo)
 static struct file *collect_file_symlink(struct path_cxt *pc,
 					 struct proc *proc,
 					 const char *name,
-					 int assoc)
+					 int assoc,
+					 bool sockets_only)
 {
 	char sym[PATH_MAX] = { '\0' };
 	struct stat sb;
@@ -543,10 +730,20 @@ static struct file *collect_file_symlink(struct path_cxt *pc,
 		f = copy_file(prev);
 		f->association = assoc;
 	} else {
+		const struct file_class *class;
+
 		if (ul_path_stat(pc, &sb, 0, name) < 0)
 			return NULL;
 
-		f = new_file(proc, stat2class(&sb));
+		class = stat2class(&sb);
+		if (sockets_only
+		    /* A nsfs is not a socket but the nsfs can be used to
+		     * collect information from other network namespaces.
+		     * Besed on the information, various columns of sockets.
+		     */
+		    && (class != &sock_class)&& (class != &nsfs_file_class))
+			return NULL;
+		f = new_file(proc, class);
 		file_set_path(f, &sb, sym, assoc);
 	}
 
@@ -554,6 +751,8 @@ static struct file *collect_file_symlink(struct path_cxt *pc,
 
 	if (is_association(f, NS_MNT))
 		proc->ns_mnt = f->stat.st_ino;
+	else if (is_association(f, NS_NET))
+		load_sock_xinfo(pc, name, f->stat.st_ino);
 
 	else if (assoc >= 0) {
 		/* file-descriptor based association */
@@ -561,6 +760,9 @@ static struct file *collect_file_symlink(struct path_cxt *pc,
 
 		if (ul_path_stat(pc, &sb, AT_SYMLINK_NOFOLLOW, name) == 0)
 			f->mode = sb.st_mode;
+
+		if (is_nsfs_dev(f->stat.st_dev))
+			load_sock_xinfo(pc, name, f->stat.st_ino);
 
 		fdinfo = ul_path_fopenf(pc, "r", "fdinfo/%d", assoc);
 		if (fdinfo) {
@@ -574,7 +776,8 @@ static struct file *collect_file_symlink(struct path_cxt *pc,
 
 /* read symlinks from /proc/#/fd
  */
-static void collect_fd_files(struct path_cxt *pc, struct proc *proc)
+static void collect_fd_files(struct path_cxt *pc, struct proc *proc,
+			     bool sockets_only)
 {
 	DIR *sub = NULL;
 	struct dirent *d = NULL;
@@ -587,11 +790,11 @@ static void collect_fd_files(struct path_cxt *pc, struct proc *proc)
 			continue;
 
 		snprintf(path, sizeof(path), "fd/%ju", (uintmax_t) num);
-		collect_file_symlink(pc, proc, path, num);
+		collect_file_symlink(pc, proc, path, num, sockets_only);
 	}
 }
 
-static void parse_maps_line(char *buf, struct proc *proc)
+static void parse_maps_line(struct path_cxt *pc, char *buf, struct proc *proc)
 {
 	uint64_t start, end, offset, ino;
 	unsigned long major, minor;
@@ -600,12 +803,6 @@ static void parse_maps_line(char *buf, struct proc *proc)
 	struct file *f, *prev;
 	char *path, modestr[5];
 	dev_t devno;
-
-	/* ignore non-path entries */
-	path = strchr(buf, '/');
-	if (!path)
-		return;
-	rtrim_whitespace((unsigned char *) path);
 
 	/* read rest of the map */
 	if (sscanf(buf, "%"SCNx64		/* start */
@@ -617,6 +814,10 @@ static void parse_maps_line(char *buf, struct proc *proc)
 
 			&start, &end, modestr, &offset,
 			&major, &minor, &ino) != 7)
+		return;
+
+	/* Skip private anonymous mappings. */
+	if (major == 0 && minor == 0 && ino == 0)
 		return;
 
 	devno = makedev(major, minor);
@@ -632,14 +833,34 @@ static void parse_maps_line(char *buf, struct proc *proc)
 	if (prev && prev->stat.st_dev == devno && prev->stat.st_ino == ino) {
 		f = copy_file(prev);
 		f->association = -assoc;
-	} else {
+	} else if ((path = strchr(buf, '/'))) {
+		rtrim_whitespace((unsigned char *) path);
 		if (stat(path, &sb) < 0)
-			return;
+			/* If a file is mapped but deleted from the file system,
+			 * "stat by the file name" may not work. In that case,
+			 */
+			goto try_map_files;
 		f = new_file(proc, stat2class(&sb));
 		if (!f)
 			return;
 
 		file_set_path(f, &sb, path, -assoc);
+	} else {
+		/* As used in tcpdump, AF_PACKET socket can be mmap'ed. */
+		char map_file[sizeof("map_files/0000000000000000-ffffffffffffffff")];
+		char sym[PATH_MAX] = { '\0' };
+
+	try_map_files:
+		snprintf(map_file, sizeof(map_file), "map_files/%"PRIx64"-%"PRIx64, start, end);
+		if (ul_path_stat(pc, &sb, 0, map_file) < 0)
+			return;
+		if (ul_path_readlink(pc, sym, sizeof(sym), map_file) < 0)
+			return;
+		f = new_file(proc, stat2class(&sb));
+		if (!f)
+			return;
+
+		file_set_path(f, &sb, sym, -assoc);
 	}
 
 	if (modestr[0] == 'r')
@@ -666,7 +887,7 @@ static void collect_mem_files(struct path_cxt *pc, struct proc *proc)
 		return;
 
 	while (fgets(buf, sizeof(buf), fp))
-		parse_maps_line(buf, proc);
+		parse_maps_line(pc, buf, proc);
 
 	fclose(fp);
 }
@@ -675,31 +896,37 @@ static void collect_outofbox_files(struct path_cxt *pc,
 				   struct proc *proc,
 				   enum association assocs[],
 				   const char *names[],
-				   size_t count)
+				   size_t count,
+				   bool sockets_only)
 {
 	size_t i;
 
 	for (i = 0; i < count; i++)
-		collect_file_symlink(pc, proc, names[assocs[i]], assocs[i] * -1);
+		collect_file_symlink(pc, proc, names[assocs[i]], assocs[i] * -1,
+				     sockets_only);
 }
 
-static void collect_execve_file(struct path_cxt *pc, struct proc *proc)
+static void collect_execve_file(struct path_cxt *pc, struct proc *proc,
+				bool sockets_only)
 {
 	enum association assocs[] = { ASSOC_EXE };
 	const char *names[] = {
 		[ASSOC_EXE]  = "exe",
 	};
-	collect_outofbox_files(pc, proc, assocs, names, ARRAY_SIZE(assocs));
+	collect_outofbox_files(pc, proc, assocs, names, ARRAY_SIZE(assocs),
+			       sockets_only);
 }
 
-static void collect_fs_files(struct path_cxt *pc, struct proc *proc)
+static void collect_fs_files(struct path_cxt *pc, struct proc *proc,
+			     bool sockets_only)
 {
 	enum association assocs[] = { ASSOC_EXE, ASSOC_CWD, ASSOC_ROOT };
 	const char *names[] = {
 		[ASSOC_CWD]  = "cwd",
 		[ASSOC_ROOT] = "root",
 	};
-	collect_outofbox_files(pc, proc, assocs, names, ARRAY_SIZE(assocs));
+	collect_outofbox_files(pc, proc, assocs, names, ARRAY_SIZE(assocs),
+			       sockets_only);
 }
 
 static void collect_namespace_files(struct path_cxt *pc, struct proc *proc)
@@ -728,7 +955,9 @@ static void collect_namespace_files(struct path_cxt *pc, struct proc *proc)
 		[ASSOC_NS_USER]   = "ns/user",
 		[ASSOC_NS_UTS]    = "ns/uts",
 	};
-	collect_outofbox_files(pc, proc, assocs, names, ARRAY_SIZE(assocs));
+	collect_outofbox_files(pc, proc, assocs, names, ARRAY_SIZE(assocs),
+			       /* Namespace information is alwasys needed. */
+			       false);
 }
 
 static struct nodev *new_nodev(unsigned long minor, const char *filesystem)
@@ -812,6 +1041,55 @@ static void add_nodevs(FILE *mnt)
 	}
 }
 
+static void initialize_ipc_table(void)
+{
+	for (int i = 0; i < IPC_TABLE_SIZE; i++)
+		INIT_LIST_HEAD(ipc_table.tables + i);
+}
+
+static void free_ipc(struct ipc *ipc)
+{
+	if (ipc->class->free)
+		ipc->class->free(ipc);
+	free(ipc);
+}
+
+static void finalize_ipc_table(void)
+{
+	for (int i = 0; i < IPC_TABLE_SIZE; i++)
+		list_free(&ipc_table.tables[i], struct ipc, ipcs, free_ipc);
+}
+
+struct ipc *get_ipc(struct file *file)
+{
+	int slot;
+	struct list_head *e;
+	const struct ipc_class *ipc_class;
+
+	if (!file->class->get_ipc_class)
+		return NULL;
+
+	ipc_class = file->class->get_ipc_class(file);
+	if (!ipc_class)
+		return NULL;
+
+	slot = ipc_class->get_hash(file) % IPC_TABLE_SIZE;
+	list_for_each (e, &ipc_table.tables[slot]) {
+		struct ipc *ipc = list_entry(e, struct ipc, ipcs);
+		if (ipc->class != ipc_class)
+			continue;
+		if (ipc_class->is_suitable_ipc(ipc, file))
+			return ipc;
+	}
+	return NULL;
+}
+
+void add_ipc(struct ipc *ipc, unsigned int hash)
+{
+	int slot = hash % IPC_TABLE_SIZE;
+	list_add(&ipc->ipcs, &ipc_table.tables[slot]);
+}
+
 static void fill_column(struct proc *proc,
 			struct file *file,
 			struct libscols_line *ln,
@@ -874,6 +1152,12 @@ static void convert(struct list_head *procs, struct lsfd_control *ctl)
 
 static void delete(struct list_head *procs, struct lsfd_control *ctl)
 {
+	struct list_head *p;
+
+	list_for_each (p, procs) {
+		struct proc *proc = list_entry(p, struct proc, procs);
+		tdelete(proc, &proc_tree, proc_tree_compare);
+	}
 	list_free(procs, struct proc, procs, free_proc);
 
 	scols_unref_table(ctl->tb);
@@ -1114,13 +1398,11 @@ static void read_process(struct lsfd_control *ctl, struct path_cxt *pc,
 		free(pat);
 	}
 
-	collect_execve_file(pc, proc);
+	collect_execve_file(pc, proc, ctl->sockets_only);
 
 	if (proc->pid == proc->leader->pid
 	    || kcmp(proc->leader->pid, proc->pid, KCMP_FS, 0, 0) != 0)
-		collect_fs_files(pc, proc);
-
-	collect_namespace_files(pc, proc);
+		collect_fs_files(pc, proc, ctl->sockets_only);
 
 	if (proc->ns_mnt == 0 || !has_mnt_ns(proc->ns_mnt)) {
 		FILE *mnt = ul_path_fopen(pc, "r", "mountinfo");
@@ -1132,20 +1414,25 @@ static void read_process(struct lsfd_control *ctl, struct path_cxt *pc,
 		}
 	}
 
+	collect_namespace_files(pc, proc);
+
 	/* If kcmp is not available,
 	 * there is no way to no whether threads share resources.
 	 * In such cases, we must pay the costs: call collect_mem_files()
 	 * and collect_fd_files().
 	 */
-	if (proc->pid == proc->leader->pid
-	    || kcmp(proc->leader->pid, proc->pid, KCMP_VM, 0, 0) != 0)
+	if ((!ctl->sockets_only)
+	    && (proc->pid == proc->leader->pid
+		|| kcmp(proc->leader->pid, proc->pid, KCMP_VM, 0, 0) != 0))
 		collect_mem_files(pc, proc);
 
 	if (proc->pid == proc->leader->pid
 	    || kcmp(proc->leader->pid, proc->pid, KCMP_FILES, 0, 0) != 0)
-		collect_fd_files(pc, proc);
+		collect_fd_files(pc, proc, ctl->sockets_only);
 
 	list_add_tail(&proc->procs, &ctl->procs);
+	if (tsearch(proc, &proc_tree, proc_tree_compare) == NULL)
+		errx(EXIT_FAILURE, _("failed to allocate memory"));
 
 	/* The tasks collecting overwrites @pc by /proc/<task-pid>/. Keep it as
 	 * the last path based operation in read_process()
@@ -1252,28 +1539,30 @@ static void __attribute__((__noreturn__)) usage(void)
 	fprintf(out, _(" %s [options]\n"), program_invocation_short_name);
 
 	fputs(USAGE_OPTIONS, out);
-	fputs(_(" -l, --threads         list in threads level\n"), out);
-	fputs(_(" -J, --json            use JSON output format\n"), out);
-	fputs(_(" -n, --noheadings      don't print headings\n"), out);
-	fputs(_(" -o, --output <list>   output columns\n"), out);
-	fputs(_(" -r, --raw             use raw output format\n"), out);
-	fputs(_(" -u, --notruncate      don't truncate text in columns\n"), out);
-	fputs(_(" -p, --pid  <pid(s)>   collect information only specified processes\n"), out);
-	fputs(_(" -Q, --filter <expr>   apply display filter\n"), out);
-	fputs(_("     --debug-filter    dump the internal data structure of filter and exit\n"), out);
-	fputs(_(" -C, --counter <name>:<expr>\n"
-		"                       define custom counter for --summary output\n"), out);
-	fputs(_("     --dump-counters   dump counter definitions\n"), out);
-	fputs(_("     --summary[=when]  print summary information (only, append, or never)\n"), out);
+	fputs(_(" -l,      --threads           list in threads level\n"), out);
+	fputs(_(" -J,      --json              use JSON output format\n"), out);
+	fputs(_(" -n,      --noheadings        don't print headings\n"), out);
+	fputs(_(" -o,      --output <list>     output columns\n"), out);
+	fputs(_(" -r,      --raw               use raw output format\n"), out);
+	fputs(_(" -u,      --notruncate        don't truncate text in columns\n"), out);
+	fputs(_(" -p,      --pid  <pid(s)>     collect information only specified processes\n"), out);
+	fputs(_(" -i[4|6], --inet[=4|6]        list only IPv4 and/or IPv6 sockets\n"), out);
+	fputs(_(" -Q,      --filter <expr>     apply display filter\n"), out);
+	fputs(_("          --debug-filter      dump the internal data structure of filter and exit\n"), out);
+	fputs(_(" -C,      --counter <name>:<expr>\n"
+		"                              define custom counter for --summary output\n"), out);
+	fputs(_("          --dump-counters     dump counter definitions\n"), out);
+	fputs(_("          --summary[=<when>]  print summary information (only, append, or never)\n"), out);
 
 	fputs(USAGE_SEPARATOR, out);
-	printf(USAGE_HELP_OPTIONS(23));
+	printf(USAGE_HELP_OPTIONS(30));
 
 	fprintf(out, USAGE_COLUMNS);
 
 	for (i = 0; i < ARRAY_SIZE(infos); i++)
-		fprintf(out, " %11s  %-10s%s\n", infos[i].name,
+		fprintf(out, " %16s  %-10s%s\n", infos[i].name,
 			infos[i].json_type == SCOLS_JSON_STRING?  "<string>":
+			infos[i].json_type == SCOLS_JSON_ARRAY_STRING?  "<string>":
 			infos[i].json_type == SCOLS_JSON_NUMBER?  "<number>":
 			"<boolean>",
 			_(infos[i].help));
@@ -1281,18 +1570,6 @@ static void __attribute__((__noreturn__)) usage(void)
 	printf(USAGE_MAN_TAIL("lsfd(1)"));
 
 	exit(EXIT_SUCCESS);
-}
-
-static void xstrappend(char **a, const char *b)
-{
-	if (strappend(a, b) < 0)
-		err(EXIT_FAILURE, _("failed to allocate memory for string"));
-}
-
-static void xstrputc(char **a, char c)
-{
-	char b[] = {c, '\0'};
-	xstrappend(a, b);
 }
 
 static void append_filter_expr(char **a, const char *b, bool and)
@@ -1314,6 +1591,8 @@ static void append_filter_expr(char **a, const char *b, bool and)
 		xstrappend(a, "or(");
 	xstrappend(a, b);
 	xstrappend(a, ")");
+
+	free(tmp);
 }
 
 static struct lsfd_filter *new_filter(const char *expr, bool debug, const char *err_prefix, struct lsfd_control *ctl)
@@ -1381,7 +1660,7 @@ static void free_counter_spec(struct counter_spec *counter_spec)
 	free(counter_spec);
 }
 
-static struct lsfd_counter *new_counter(struct counter_spec *spec, struct lsfd_control *ctl)
+static struct lsfd_counter *new_counter(const struct counter_spec *spec, struct lsfd_control *ctl)
 {
 	struct lsfd_filter *filter;
 
@@ -1416,7 +1695,7 @@ static struct lsfd_counter **new_default_counters(struct lsfd_control *ctl)
 
 	counters = xcalloc(len + 1, sizeof(struct lsfd_counter *));
 	for (i = 0; i < len; i++) {
-		struct counter_spec *spec = default_counter_specs + i;
+		const struct counter_spec *spec = default_counter_specs + i;
 		counters[i] = new_counter(spec, ctl);
 	}
 	assert(counters[len] == NULL);
@@ -1431,7 +1710,7 @@ static void dump_default_counter_specs(void)
 
 	puts("default counter specs:");
 	for (i = 0; i < len; i++) {
-		struct counter_spec *spec = default_counter_specs + i;
+		const struct counter_spec *spec = default_counter_specs + i;
 		printf("\t%s:%s\n", spec->name, spec->expr);
 	}
 }
@@ -1506,6 +1785,45 @@ static void emit_summary(struct lsfd_control *ctl, struct lsfd_counter **counter
 	scols_unref_table(tb);
 }
 
+static void attach_xinfos(struct list_head *procs)
+{
+	struct list_head *p;
+
+	list_for_each (p, procs) {
+		struct proc *proc = list_entry(p, struct proc, procs);
+		struct list_head *f;
+
+		list_for_each (f, &proc->files) {
+			struct file *file = list_entry(f, struct file, files);
+			if (file->class->attach_xinfo)
+				file->class->attach_xinfo(file);
+		}
+	}
+}
+
+/* Filter expressions for implementing -i option.
+ *
+ * To list up the protocol names, use the following command line
+ *
+ *   cd linux/net;
+ *   find . -type f -exec grep -A 1 --color=auto -nH --null -e 'struct proto .*{' \{\} +
+ *
+ */
+#define INET_SUBEXP_BEGIN "(SOCK.PROTONAME =~ \"^("
+#define INET4_REG         "TCP|UDP|RAW|PING|UDP-Lite|SCTP|DCCP|L2TP/IP|SMC"
+#define INET6_REG         "TCPv6|UDPv6|RAWv6|PINGv6|UDPLITEv6|SCTPv6|DCCPv6|L2TP/IPv6|SMC6"
+#define INET_SUBEXP_END   ")$\")"
+
+static const char *inet4_subexpr = INET_SUBEXP_BEGIN
+	INET4_REG
+	INET_SUBEXP_END;
+static const char *inet6_subexpr = INET_SUBEXP_BEGIN
+	INET6_REG
+	INET_SUBEXP_END;
+static const char *inet46_subexpr = INET_SUBEXP_BEGIN
+	INET4_REG "|" INET6_REG
+	INET_SUBEXP_END;
+
 int main(int argc, char *argv[])
 {
 	int c;
@@ -1539,6 +1857,7 @@ int main(int argc, char *argv[])
 		{ "threads",    no_argument, NULL, 'l' },
 		{ "notruncate", no_argument, NULL, 'u' },
 		{ "pid",        required_argument, NULL, 'p' },
+		{ "inet",       optional_argument, NULL, 'i' },
 		{ "filter",     required_argument, NULL, 'Q' },
 		{ "debug-filter",no_argument, NULL, OPT_DEBUG_FILTER },
 		{ "summary",    optional_argument, NULL,  OPT_SUMMARY },
@@ -1552,7 +1871,7 @@ int main(int argc, char *argv[])
 	textdomain(PACKAGE);
 	close_stdout_atexit();
 
-	while ((c = getopt_long(argc, argv, "no:JrVhluQ:p:C:s", longopts, NULL)) != -1) {
+	while ((c = getopt_long(argc, argv, "no:JrVhluQ:p:i::C:s", longopts, NULL)) != -1) {
 		switch (c) {
 		case 'n':
 			ctl.noheadings = 1;
@@ -1575,6 +1894,24 @@ int main(int argc, char *argv[])
 		case 'p':
 			parse_pids(optarg, &pids, &n_pids);
 			break;
+		case 'i': {
+			const char *subexpr = NULL;
+
+			ctl.sockets_only = 1;
+			if (optarg == NULL)
+				subexpr = inet46_subexpr;
+			else if (strcmp(optarg, "4") == 0)
+				subexpr = inet4_subexpr;
+			else if (strcmp(optarg, "6") == 0)
+				subexpr = inet6_subexpr;
+			else
+				errx(EXIT_FAILURE,
+				     _("unknown -i/--inet argument: %s"),
+				     optarg);
+
+			append_filter_expr(&filter_expr, subexpr, true);
+			break;
+		}
 		case 'Q':
 			append_filter_expr(&filter_expr, optarg, true);
 			break;
@@ -1610,6 +1947,8 @@ int main(int argc, char *argv[])
 			errtryhelp(EXIT_FAILURE);
 		}
 	}
+	if (argv[optind])
+		errtryhelp(EXIT_FAILURE);
 
 #define INITIALIZE_COLUMNS(COLUMN_SPEC)				\
 	for (i = 0; i < ARRAY_SIZE(COLUMN_SPEC); i++)	\
@@ -1687,9 +2026,12 @@ int main(int argc, char *argv[])
 	initialize_nodevs();
 	initialize_classes();
 	initialize_devdrvs();
+	initialize_ipc_table();
 
 	collect_processes(&ctl, pids, n_pids);
 	free(pids);
+
+	attach_xinfos(&ctl.procs);
 
 	convert(&ctl.procs, &ctl);
 
@@ -1703,6 +2045,7 @@ int main(int argc, char *argv[])
 	/* cleanup */
 	delete(&ctl.procs, &ctl);
 
+	finalize_ipc_table();
 	finalize_devdrvs();
 	finalize_classes();
 	finalize_nodevs();

@@ -3,7 +3,7 @@ dir_libsmartcols = include_directories('.', 'src')
 defs = configuration_data()
 defs.set('LIBSMARTCOLS_VERSION', pc_version)
 
-libsmartcols_h = configure_file(
+configure_file(
   input : 'src/libsmartcols.h.in',
   output : 'libsmartcols.h',
   configuration : defs,
@@ -42,6 +42,7 @@ lib_smartcols = both_libraries(
   link_with : lib_common,
   dependencies : build_libsmartcols ? [] : disabler(),
   install : build_libsmartcols)
+smartcols_dep = declare_dependency(link_with: lib_smartcols, include_directories: '.')
 
 lib_smartcols_static = lib_smartcols.get_static_lib()
 
@@ -50,4 +51,7 @@ if build_libsmartcols
                      description : 'table or tree library',
                      subdirs : 'libsmartcols',
                      version : pc_version)
+  if meson.version().version_compare('>=0.54.0')
+    meson.override_dependency('smartcols', smartcols_dep)
+  endif
 endif

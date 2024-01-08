@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: mount
 .\"    Author: [see the "AUTHOR(S)" section]
-.\" Generator: Asciidoctor 2.0.15
-.\"      Date: 2022-08-04
+.\" Generator: Asciidoctor 2.0.20
+.\"      Date: 2023-12-01
 .\"    Manual: System Administration
-.\"    Source: util-linux 2.38.1
+.\"    Source: util-linux 2.39.3
 .\"  Language: English
 .\"
-.TH "MOUNT" "8" "2022-08-04" "util\-linux 2.38.1" "System Administration"
+.TH "MOUNT" "8" "2023-12-01" "util\-linux 2.39.3" "System Administration"
 .ie \n(.g .ds Aq \(aq
 .el       .ds Aq '
 .ss \n[.ss] 0
@@ -82,7 +82,7 @@ The same filesystem may be mounted more than once, and in some cases (e.g., netw
 .sp
 The listing mode is maintained for backward compatibility only.
 .sp
-For more robust and customizable output use \fBfindmnt\fP(8), \fBespecially in your scripts\fP. Note that control characters in the mountpoint name are replaced with \(aq?\(aq.
+For more robust and customizable output use \fBfindmnt\fP(8), \fBespecially in your scripts\fP. Note that control characters in the mountpoint name are replaced with \*(Aq?\*(Aq.
 .sp
 The following command lists all mounted filesystems (of type \fItype\fP):
 .RS 3
@@ -133,7 +133,7 @@ Don\(cqt forget that there is no guarantee that UUIDs and labels are really uniq
 .sp
 The recommended setup is to use tags (e.g. \fBUUID\fP=\fIuuid\fP) rather than \fI/dev/disk/by\-{label,uuid,id,partuuid,partlabel}\fP udev symlinks in the \fI/etc/fstab\fP file. Tags are more readable, robust and portable. The \fBmount\fP(8) command internally uses udev symlinks, so the use of symlinks in \fI/etc/fstab\fP has no advantage over tags. For more details see \fBlibblkid\fP(3).
 .sp
-The \fIproc\fP filesystem is not associated with a special device, and when mounting it, an arbitrary keyword \- for example, \fIproc\fP \- can be used instead of a device specification. (The customary choice \fInone\fP is less fortunate: the error message \(aqnone already mounted\(aq from \fBmount\fP can be confusing.)
+The \fIproc\fP filesystem is not associated with a special device, and when mounting it, an arbitrary keyword \- for example, \fIproc\fP \- can be used instead of a device specification. (The customary choice \fInone\fP is less fortunate: the error message \*(Aqnone already mounted\*(Aq from \fBmount\fP can be confusing.)
 .SS "The files /etc/fstab, /etc/mtab and /proc/mounts"
 .sp
 The file \fI/etc/fstab\fP (see \fBfstab\fP(5)), may contain lines describing what devices are usually mounted where, using which options. The default location of the \fBfstab\fP(5) file can be overridden with the \fB\-\-fstab\fP \fIpath\fP command\-line option (see below for more details).
@@ -203,6 +203,8 @@ Note that \fBmount\fP is very strict about non\-root users and all paths specifi
 Since util\-linux 2.35, \fBmount\fP does not exit when user permissions are inadequate according to libmount\(cqs internal security rules. Instead, it drops suid permissions and continues as regular non\-root user. This behavior supports use\-cases where root permissions are not necessary (e.g., fuse filesystems, user namespaces, etc).
 .sp
 For more details, see \fBfstab\fP(5). Only the user that mounted a filesystem can unmount it again. If any user should be able to unmount it, then use \fBusers\fP instead of \fBuser\fP in the \fIfstab\fP line. The \fBowner\fP option is similar to the \fBuser\fP option, with the restriction that the user must be the owner of the special file. This may be useful e.g. for \fI/dev/fd\fP if a login script makes the console user owner of this device. The \fBgroup\fP option is similar, with the restriction that the user must be a member of the group of the special file.
+.sp
+The \fBuser\fP mount option is accepted if no username is specified. If used in the format \fBuser=someone\fP, the option is silently ignored and visible only for external mount helpers (/sbin/mount.<type>) for compatibility with some network filesystems.
 .SS "Bind mount operation"
 .sp
 Remount part of the file hierarchy somewhere else. The call is:
@@ -271,7 +273,7 @@ The alternative (classic) way to create a read\-only bind mount is to use the re
 .sp
 Note that a read\-only bind will create a read\-only mountpoint (VFS entry), but the original filesystem superblock will still be writable, meaning that the \fIolddir\fP will be writable, but the \fInewdir\fP will be read\-only.
 .sp
-It\(cqs also possible to change nosuid, nodev, noexec, noatime, nodiratime, relatime and nosymfollow VFS entry flags via a "remount,bind" operation. The other flags (for example filesystem\-specific flags) are silently ignored. It\(cqs impossible to change mount options recursively (for example with \fB\-o rbind,ro\fP).
+It\(cqs also possible to change nosuid, nodev, noexec, noatime, nodiratime, relatime and nosymfollow VFS entry flags via a "remount,bind" operation. The other flags (for example filesystem\-specific flags) are silently ignored. The classic \fBmount\fP(2) system call does not allow to change mount options recursively (for example with \fB\-o rbind,ro\fP). The recursive semantic is possible with a new \fBmount_setattr\fP(2) kernel system call and it\(cqs supported since libmount from util\-linux v2.39 by a new experimental "recursive" option argument (e.g. \fB\-o rbind,ro=recursive\fP). For more details see the \fBFILESYSTEM\-INDEPENDENT MOUNT OPTIONS\fP section.
 .sp
 Since util\-linux 2.31, \fBmount\fP ignores the \fBbind\fP flag from \fI/etc/fstab\fP on a \fBremount\fP operation (if \fB\-o remount\fP is specified on command line). This is necessary to fully control mount options on remount by command line. In previous versions the bind flag has been always applied and it was impossible to re\-define mount options without interaction with the bind semantic. This \fBmount\fP behavior does not affect situations when "remount,bind" is specified in the \fI/etc/fstab\fP file.
 .SS "The move operation"
@@ -368,7 +370,7 @@ Note that it is a bad practice to use \fBmount \-a\fP for \fIfstab\fP checking. 
 .sp
 \fB\-B\fP, \fB\-\-bind\fP
 .RS 4
-Remount a subtree somewhere else (so that its contents are available in both places). See above, under \fBBind mounts\fP.
+Remount a subtree somewhere else (so that its contents are available in both places). See above, under \fBBind mount operation\fP.
 .RE
 .sp
 \fB\-c\fP, \fB\-\-no\-canonicalize\fP
@@ -385,7 +387,11 @@ Note that \fBmount\fP does not pass this option to the \fB/sbin/mount.\fP\fItype
 .sp
 \fB\-f, \-\-fake\fP
 .RS 4
-Causes everything to be done except for the actual system call; if it\(cqs not obvious, this "fakes" mounting the filesystem. This option is useful in conjunction with the \fB\-v\fP flag to determine what the \fBmount\fP command is trying to do. It can also be used to add entries for devices that were mounted earlier with the \fB\-n\fP option. The \fB\-f\fP option checks for an existing record in \fI/etc/mtab\fP and fails when the record already exists (with a regular non\-fake mount, this check is done by the kernel).
+Causes everything to be done except for the mount\-related system calls. The \-\-fake option was originally designed to write an entry to /etc/mtab without actually mounting.
+.sp
+The /etc/mtab is no longer maintained in userspace, and starting from version 2.39, the mount operation can be a complex chain of operations with dependencies between the syscalls. The \-\-fake option forces libmount to skip all mount source preparation, mount option analysis, and the actual mounting process.
+.sp
+The difference between fake and non\-fake execution is huge. This is the reason why the \-\-fake option has minimal significance for the current mount(8) implementation and it is maintained mostly for backward compatibility.
 .RE
 .sp
 \fB\-i, \-\-internal\-only\fP
@@ -450,7 +456,14 @@ Use the specified mount options. The \fIopts\fP argument is a comma\-separated l
 .sp
 \fBmount LABEL=mydisk \-o noatime,nodev,nosuid\fP
 .sp
+Note that the order of the options matters, as the last option wins if there are conflicting ones. The options from the command line also overwrite options from fstab by default.
+.sp
 For more details, see the \fBFILESYSTEM\-INDEPENDENT MOUNT OPTIONS\fP and \fBFILESYSTEM\-SPECIFIC MOUNT OPTIONS\fP sections.
+.RE
+.sp
+\fB\-\-onlyonce\fP
+.RS 4
+Forces mount command to check if the filesystem is already mounted. This behavior is the default for \fB\-\-all\fP; otherwise, it depends on the kernel filesystem driver. Some filesystems may be mounted more than once on the same mount point (e.g. tmpfs).
 .RE
 .sp
 \fB\-\-options\-mode\fP \fImode\fP
@@ -470,7 +483,7 @@ Use options from \fIfstab\fP/\fImtab\fP even if both \fIdevice\fP and \fIdir\fP 
 .sp
 \fB\-R\fP, \fB\-\-rbind\fP
 .RS 4
-Remount a subtree and all possible submounts somewhere else (so that its contents are available in both places). See above, the subsection \fBBind mounts\fP.
+Remount a subtree and all possible submounts somewhere else (so that its contents are available in both places). See above, the subsection \fBBind mount operation\fP.
 .RE
 .sp
 \fB\-r\fP, \fB\-\-read\-only\fP
@@ -515,7 +528,7 @@ Note that \fBmount\fP does not pass the option \fB\-\-fstab\fP to the \fB/sbin/m
 .RS 4
 The argument following the \fB\-t\fP is used to indicate the filesystem type. The filesystem types which are currently supported depend on the running kernel. See \fI/proc/filesystems\fP and \fI/lib/modules/$(uname \-r)/kernel/fs\fP for a complete list of the filesystems. The most common are ext2, ext3, ext4, xfs, btrfs, vfat, sysfs, proc, nfs and cifs.
 .sp
-The programs \fBmount\fP and \fBumount\fP(8) support filesystem subtypes. The subtype is defined by a \(aq.subtype\(aq suffix. For example \(aqfuse.sshfs\(aq. It\(cqs recommended to use subtype notation rather than add any prefix to the mount source (for example \(aqsshfs#example.com\(aq is deprecated).
+The programs \fBmount\fP and \fBumount\fP(8) support filesystem subtypes. The subtype is defined by a \*(Aq.subtype\*(Aq suffix. For example \*(Aqfuse.sshfs\*(Aq. It\(cqs recommended to use subtype notation rather than add any prefix to the mount source (for example \*(Aqsshfs#example.com\*(Aq is deprecated).
 .sp
 If no \fB\-t\fP option is given, or if the \fBauto\fP type is specified, \fBmount\fP will try to guess the desired type. \fBmount\fP uses the \fBlibblkid\fP(3) library for guessing the filesystem type; if that does not turn up anything that looks familiar, \fBmount\fP will try to read the file \fI/etc/filesystems\fP, or, if that does not exist, \fI/proc/filesystems\fP. All of the filesystem types listed there will be tried, except for those that are labeled "nodev" (e.g. \fIdevpts\fP, \fIproc\fP and \fInfs\fP). If \fI/etc/filesystems\fP ends in a line with a single *, mount will read \fI/proc/filesystems\fP afterwards. While trying, all filesystem types will be mounted with the mount option \fBsilent\fP.
 .sp
@@ -566,6 +579,52 @@ Some of these options are only useful when they appear in the \fI/etc/fstab\fP f
 .sp
 Some of these options could be enabled or disabled by default in the system kernel. To check the current setting see the options in \fI/proc/mounts\fP. Note that filesystems also have per\-filesystem specific default mount options (see for example \fBtune2fs \-l\fP output for ext\fIN\fP filesystems).
 .sp
+The options \fBnosuid\fP, \fBnoexec\fP, \fBnodiratime\fP, \fBrelatime\fP, \fBnoatime\fP, \fBstrictatime\fP, and \fBnosymfollow\fP are interpreted only by the abstract VFS kernel layer and applied to the mountpoint node rather than to the filesystem itself. Try:
+.RS 3
+.ll -.6i
+.sp
+.if n .RS 4
+.nf
+.fam C
+findmnt \-o TARGET,VFS\-OPTIONS,FS\-OPTIONS
+.fam
+.fi
+.if n .RE
+.br
+.RE
+.ll
+.sp
+to get a complete overview of filesystems and VFS options.
+.sp
+The read\-only setting (\fBro\fP or \fBrw\fP) is interpreted by VFS and the filesystem
+and depends on how the option is specified on the \fBmount\fP(8) command line. The
+default is to interpret it on the filesystem level. The operation "\-o bind,remount,ro"
+is applied only to the VFS mountpoint, and operation "\-o remount,ro" is applied to
+VFS and filesystem superblock. This semantic allows create a read\-only
+mountpoint but keeps the filesystem writable from another mountpoint.
+.sp
+Since v2.39 libmount can use a new kernel mount interface to set the VFS
+options recursive. For backward compatibility, this feature is not enabled by
+default, although recursive operation (e.g. rbind) has been requested. The new
+option argument "recursive" could be specified, for example:
+.RS 3
+.ll -.6i
+.sp
+.if n .RS 4
+.nf
+.fam C
+mount \-orbind,ro=recursive,noexec=recursive,nosuid /foo /bar
+.fam
+.fi
+.if n .RE
+.br
+.RE
+.ll
+.sp
+recursively binds filesystems from /foo to /bar, /bar, and all submounts will
+be read\-only and noexec, but only /bar itself will be "nosuid". The "recursive"
+optional argument for VFS mount options is an EXPERIMENTAL feature.
+.sp
 The following options apply to any filesystem that is being mounted (but not every filesystem actually honors them \- e.g., the \fBsync\fP option today has an effect only for ext2, ext3, ext4, fat, vfat, ufs and xfs):
 .sp
 \fBasync\fP
@@ -603,7 +662,7 @@ The \fBfscontext=\fP option works for all filesystems, regardless of their xattr
 .sp
 You can set the default security context for unlabeled files using \fBdefcontext=\fP option. This overrides the value set for unlabeled files in the policy and requires a filesystem that supports xattr labeling.
 .sp
-The \fBrootcontext=\fP option allows you to explicitly label the root inode of a FS being mounted before that FS or inode becomes visible to userspace. This was found to be useful for things like stateless Linux.
+The \fBrootcontext=\fP option allows you to explicitly label the root inode of a FS being mounted before that FS or inode becomes visible to userspace. This was found to be useful for things like stateless Linux. The special value \fB@target\fP can be used to assign the current context of the target mountpoint location.
 .sp
 Note that the kernel rejects any remount request that includes the context option, \fBeven\fP when unchanged from the current context.
 .sp
@@ -613,7 +672,7 @@ Note that the kernel rejects any remount request that includes the context optio
 .ll -.6i
 .sp
 mount \-t tmpfs none /mnt \-o \(rs
-\(aqcontext="system_u:object_r:tmp_t:s0:c127,c456",noexec\(aq
+\*(Aqcontext="system_u:object_r:tmp_t:s0:c127,c456",noexec\*(Aq
 .br
 .RE
 .ll
@@ -699,7 +758,7 @@ Do not report errors for this device if it does not exist.
 .sp
 \fBrelatime\fP
 .RS 4
-Update inode access times relative to modify or change time. Access time is only updated if the previous access time was earlier than the current modify or change time. (Similar to \fBnoatime\fP, but it doesn\(cqt break \fBmutt\fP(1) or other applications that need to know if a file has been read since the last time it was modified.)
+Update inode access times relative to modify or change time. Access time is only updated if the previous access time was earlier than or equal to the current modify or change time. (Similar to \fBnoatime\fP, but it doesn\(cqt break \fBmutt\fP(1) or other applications that need to know if a file has been read since the last time it was modified.)
 .sp
 Since Linux 2.6.30, the kernel defaults to the behavior provided by this option (unless \fBnoatime\fP was specified), and the \fBstrictatime\fP option is required to obtain traditional semantics. In addition, since Linux 2.6.30, the file\(cqs last access time is always updated if it is more than 1 day old.
 .RE
@@ -806,7 +865,16 @@ Allow an ordinary user to mount the filesystem if that user is the owner of the 
 .RS 4
 Attempt to remount an already\-mounted filesystem. This is commonly used to change the mount flags for a filesystem, especially to make a readonly filesystem writable. It does not change device or mount point.
 .sp
-The remount operation together with the \fBbind\fP flag has special semantics. See above, the subsection \fBBind mounts\fP.
+The remount operation together with the \fBbind\fP flag has special semantics. See above, the subsection \fBBind mount operation\fP.
+.sp
+The default kernel behavior for VFS mount flags (nodev,nosuid,noexec,ro) is to
+reset all unspecified flags on remount. That\(cqs why \fBmount\fP(8) tries to
+keep the current setting according to \fIfstab\fP or \fI/proc/self/mountinfo\fP. This
+default behavior is possible to change by \fB\-\-options\-mode\fP. The recursive
+change of the mount flags (supported since v2.39 on systems with \fBmount_setattr\fP(2)
+syscall), for example, \fBmount \-o remount,ro=recursive\fP, do not use
+"reset\-unspecified" behavior, and it works as a simple add/remove operation
+and unspecified flags are not modified.
 .sp
 The remount functionality follows the standard way the \fBmount\fP command works with options from \fIfstab\fP. This means that \fBmount\fP does not read \fIfstab\fP (or \fImtab\fP) only when both \fIdevice\fP and \fIdir\fP are specified.
 .sp
@@ -816,7 +884,7 @@ After this call all old mount options are replaced and arbitrary stuff from \fIf
 .sp
 \fBmount \-o remount,rw /dir\fP
 .sp
-After this call, \fBmount\fP reads \fIfstab\fP and merges these options with the options from the command line (\fB\-o\fP). If no mountpoint is found in \fIfstab\fP, then a remount with unspecified source is allowed.
+After this call, \fBmount\fP reads \fIfstab\fP and merges these options with the options from the command line (\fB\-o\fP). If no mountpoint is found in \fIfstab\fP, then it defaults to mount options from \fI/proc/self/mountinfo\fP.
 .sp
 \fBmount\fP allows the use of \fB\-\-all\fP to remount all already mounted filesystems which match a specified filter (\fB\-O\fP and \fB\-t\fP). For example:
 .sp
@@ -867,6 +935,36 @@ The same as \fBX\-\fP* options, but stored permanently in user space. This means
 Note that before util\-linux v2.30 the x\-* options have not been maintained by libmount and stored in user space (functionality was the same as for X\-* now), but due to the growing number of use\-cases (in initrd, systemd etc.) the functionality has been extended to keep existing \fIfstab\fP configurations usable without a change.
 .RE
 .sp
+\fBX\-mount.auto\-fstypes\fP=\fIlist\fP
+.RS 4
+Specifies allowed or forbidden filesystem types for automatic filesystem
+detection.
+.sp
+The \fIlist\fP is a comma\-separated list of the filesystem names. The
+automatic filesystem detection is triggered by the "auto" filesystem type or
+when the filesystem type is not specified.
+.sp
+Thy \fIlist\fP follows how mount
+evaluates type patterns (see \fB\-t\fP for more details). Only specified filesystem
+types are allowed, or all specified types are forbidden if the list is prefixed
+by "no".
+.sp
+For example, X\-mount.auto\-fstypes="ext4,btrfs" accepts only ext4 and
+btrfs, and X\-mount.auto\-fstypes="novfat,xfs" accepts all filesystems except vfat
+and xfs.
+.sp
+Note that comma is used as a separator between mount options, it means
+that auto\-fstypes values have to be properly quoted, don’t forget that the shell
+strips off quotes and thus double quoting is required. For example:
+.RE
+.RS 3
+.ll -.6i
+.sp
+mount \-t auto \-o\(cqX\-mount.auto\-fstypes="noext2,ext3"\*(Aq  /dev/sdc1 /mnt/test
+.br
+.RE
+.ll
+.sp
 \fBX\-mount.mkdir\fP[=\fImode\fP]
 .RS 4
 Allow to make a target directory (mountpoint) if it does not exist yet. The optional argument \fImode\fP specifies the filesystem access mode used for \fBmkdir\fP(2) in octal notation. The default mode is 0755. This functionality is supported only for root users or when \fBmount\fP is executed without suid permissions. The option is also supported as \fBx\-mount.mkdir\fP, but this notation is deprecated since v2.30. See also \fB\-\-mkdir\fP command line option.
@@ -874,7 +972,69 @@ Allow to make a target directory (mountpoint) if it does not exist yet. The opti
 .sp
 \fBX\-mount.subdir=\fP\fIdirectory\fP
 .RS 4
-Allow mounting sub\-directory from a filesystem instead of the root directory. For now, this feature is implemented by temporary filesystem root directory mount in unshared namespace and then bind the sub\-directory to the final mount point and umount the root of the filesystem. The sub\-directory mount shows up atomically for the rest of the system although it is implemented by multiple \fBmount\fP(2) syscalls. This feature is EXPERIMENTAL.
+Allow mounting sub\-directory from a filesystem instead of the root directory. For now, this feature is implemented by temporary filesystem root directory mount in unshared namespace and then bind the sub\-directory to the final mount point and umount the root of the filesystem. The sub\-directory mount shows up atomically for the rest of the system although it is implemented by multiple \fBmount\fP(2) syscalls.
+.sp
+Note that this feature will not work in session with an unshared private mount namespace (after \fBunshare \-\-mount\fP) on old kernels or with \fBmount\fP(8) without support for file\-descriptors\-based mount kernel API. In this case, you need \fBunshare \-\-mount \-\-propagation shared\fP.
+.sp
+This feature is EXPERIMENTAL.
+.RE
+.sp
+\fBX\-mount.owner\fP=\fIusername\fP|\fIUID\fP, \fBX\-mount.group\fP=\fIgroup\fP|\fIGID\fP
+.RS 4
+Set \fImountpoint\fP\*(Aqs ownership after mounting. Names resolved in the target mount namespace, see \fB\-N\fP.
+.RE
+.sp
+\fBX\-mount.mode\fP=\fImode\fP
+.RS 4
+Set \fImountpoint\fP\*(Aqs mode after mounting.
+.RE
+.sp
+\fBX\-mount.idmap\fP=\fIid\-type\fP:\fIid\-mount\fP:\fIid\-host\fP:\fIid\-range\fP [\fIid\-type\fP:\fIid\-mount\fP:\fIid\-host\fP:\fIid\-range\fP], \fBX\-mount.idmap\fP=\fIfile\fP
+.RS 4
+Use this option to create an idmapped mount.
+An idmapped mount allows to change ownership of all files located under a mount according to the ID\-mapping associated with a user namespace.
+The ownership change is tied to the lifetime and localized to the relevant mount.
+The relevant ID\-mapping can be specified in two ways:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.  sp -1
+.  IP \(bu 2.3
+.\}
+A user can specify the ID\-mapping directly.
+.sp
+The ID\-mapping must be specified using the syntax \fIid\-type\fP:\fIid\-mount\fP:\fIid\-host\fP:\fIid\-range\fP.
+Specifying \fBu\fP as the \fIid\-type\fP prefix creates a UID\-mapping, \fBg\fP creates a GID\-mapping and omitting \fIid\-type\fP or specifying \fBb\fP creates both a UID\- and GID\-mapping.
+The \fIid\-mount\fP parameter indicates the starting ID in the new mount.
+The \fIid\-host\fP parameter indicates the starting ID in the filesystem.
+The \fIid\-range\fP parameter indicates how many IDs are to be mapped.
+It is possible to specify multiple ID\-mappings.
+The individual ID\-mappings must be separated by spaces.
+.sp
+For example, the ID\-mapping \fBX\-mount.idmap=u:1000:0:1 g:1001:1:2 5000:1000:2\fP creates an idmapped mount where
+UID 0 is mapped to UID 1000, GID 1 is mapped to GUID 1001, GID 2 is mapped to GID 1002, UID and GID 1000 are mapped to 5000, and UID and GID 1001 are mapped to 5001 in the mount.
+.sp
+When an ID\-mapping is specified directly a new user namespace will be allocated with the requested ID\-mapping.
+The newly created user namespace will be attached to the mount.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.  sp -1
+.  IP \(bu 2.3
+.\}
+A user can specify a user namespace file.
+.sp
+The user namespace will then be attached to the mount and the ID\-mapping of the user namespace will become the ID\-mapping of the mount.
+.sp
+For example, \fBX\-mount.idmap=/proc/PID/ns/user\fP will attach the user namespace of the process PID to the mount.
+.RE
 .RE
 .sp
 \fBnosymfollow\fP
@@ -960,7 +1120,7 @@ Set the owner and group of the files in the filesystem (default: uid=gid=0).
 .sp
 \fBownmask=\fP\fIvalue\fP and \fBothmask=\fP\fIvalue\fP
 .RS 4
-Set the permission mask for ADFS \(aqowner\(aq permissions and \(aqother\(aq permissions, respectively (default: 0700 and 0077, respectively). See also \fI/usr/src/linux/Documentation/filesystems/adfs.rst\fP.
+Set the permission mask for ADFS \*(Aqowner\*(Aq permissions and \*(Aqother\*(Aq permissions, respectively (default: 0700 and 0077, respectively). See also \fI/usr/src/linux/Documentation/filesystems/adfs.rst\fP.
 .RE
 .SS "Mount options for affs"
 .sp
@@ -1001,7 +1161,7 @@ Prefix used before volume name, when following a link.
 .sp
 \fBvolume=\fP\fIstring\fP
 .RS 4
-Prefix (of length at most 30) used before \(aq/\(aq when following a symbolic link.
+Prefix (of length at most 30) used before \*(Aq/\*(Aq when following a symbolic link.
 .RE
 .sp
 \fBreserved=\fP\fIvalue\fP
@@ -1115,7 +1275,7 @@ Other users can change timestamp.
 .RE
 .RE
 .sp
-The default is set from \(aqdmask\(aq option. (If the directory is writable, \fButime\fP(2) is also allowed. I.e. ~dmask & 022)
+The default is set from \*(Aqdmask\*(Aq option. (If the directory is writable, \fButime\fP(2) is also allowed. I.e. ~dmask & 022)
 .sp
 Normally \fButime\fP(2) checks that the current process is owner of the file, or that it has the \fBCAP_FOWNER\fP capability. But FAT filesystems don\(cqt have UID/GID on disk, so the normal check is too inflexible. With this option you can relax it.
 .sp
@@ -1250,7 +1410,7 @@ Various misguided attempts to force Unix or DOS conventions onto a FAT filesyste
 .sp
 \fBcreator=\fP\fIcccc\fP\fB, type=\fP\fIcccc\fP
 .RS 4
-Set the creator/type values as shown by the MacOS finder used for creating new files. Default values: \(aq????\(aq.
+Set the creator/type values as shown by the MacOS finder used for creating new files. Default values: \*(Aq????\*(Aq.
 .RE
 .sp
 \fBuid=\fP\fIn\fP\fB, gid=\fP\fIn\fP
@@ -1333,7 +1493,7 @@ Give all files in the filesystem the indicated user or group id, possibly overri
 .sp
 \fBmap=\fP{\fBn\fP[\fBormal\fP]|\fBo\fP[\fBff\fP]|\fBa\fP[\fBcorn\fP]}
 .RS 4
-For non\-Rock Ridge volumes, normal name translation maps upper to lower case ASCII, drops a trailing \(aq;1\(aq, and converts \(aq;\(aq to \(aq.\(aq. With \fBmap=off\fP no name translation is done. See \fBnorock\fP. (Default: \fBmap=normal\fP.) \fBmap=acorn\fP is like \fBmap=normal\fP but also apply Acorn extensions if present.
+For non\-Rock Ridge volumes, normal name translation maps upper to lower case ASCII, drops a trailing \*(Aq;1\*(Aq, and converts \*(Aq;\*(Aq to \*(Aq.\*(Aq. With \fBmap=off\fP no name translation is done. See \fBnorock\fP. (Default: \fBmap=normal\fP.) \fBmap=acorn\fP is like \fBmap=normal\fP but also apply Acorn extensions if present.
 .RE
 .sp
 \fBmode=\fP\fIvalue\fP
@@ -1438,7 +1598,7 @@ Use UTF\-8 for converting file names.
 .sp
 \fBuni_xlate=\fP{\fB0\fP|\fB1\fP|\fB2\fP}
 .RS 4
-For 0 (or \(aqno\(aq or \(aqfalse\(aq), do not use escape sequences for unknown Unicode characters. For 1 (or \(aqyes\(aq or \(aqtrue\(aq) or 2, use vfat\-style 4\-byte escape sequences starting with ":". Here 2 gives a little\-endian encoding and 1 a byteswapped bigendian encoding.
+For 0 (or \*(Aqno\*(Aq or \*(Aqfalse\*(Aq), do not use escape sequences for unknown Unicode characters. For 1 (or \*(Aqyes\*(Aq or \*(Aqtrue\*(Aq) or 2, use vfat\-style 4\-byte escape sequences starting with ":". Here 2 gives a little\-endian encoding and 1 a byteswapped bigendian encoding.
 .RE
 .sp
 \fBposix=[0|1]\fP
@@ -1714,7 +1874,7 @@ read\-write mount and will result in an error.
 The "xino" feature composes a unique object identifier from the real object st_ino and an underlying fsid index. The "xino" feature uses the high inode number bits for fsid, because the underlying filesystems rarely use the high inode number bits. In case the underlying inode number does overflow into the high xino bits, overlay filesystem will fall back to the non xino behavior for that inode.
 .sp
 For a detailed description of the effect of this option please refer to \c
-.URL "https://www.kernel.org/doc/html/latest/filesystems/overlayfs.html?highlight=overlayfs" "" ""
+.URL "https://docs.kernel.org/filesystems/overlayfs.html" "" ""
 .RE
 .sp
 \fBmetacopy=\fP{\fBon\fP|\fBoff\fP}
@@ -1790,7 +1950,7 @@ Disable journaling. This will provide slight performance improvements in some si
 .sp
 \fBnotail\fP
 .RS 4
-By default, reiserfs stores small files and \(aqfile tails\(aq directly into its tree. This confuses some utilities such as \fBlilo\fP(8). This option is used to disable packing of files into the tree.
+By default, reiserfs stores small files and \*(Aqfile tails\*(Aq directly into its tree. This confuses some utilities such as \fBlilo\fP(8). This option is used to disable packing of files into the tree.
 .RE
 .sp
 \fBreplayonly\fP
@@ -2089,7 +2249,7 @@ First of all, the mount options for \fIfat\fP are recognized. The \fBdotsOK\fP o
 .sp
 \fBuni_xlate\fP
 .RS 4
-Translate unhandled Unicode characters to special escaped sequences. This lets you backup and restore filenames that are created with any Unicode characters. Without this option, a \(aq?\(aq is used when no translation is possible. The escape character is \(aq:\(aq because it is otherwise invalid on the vfat filesystem. The escape sequence that gets used, where u is the Unicode character, is: \(aq:\(aq, (u & 0x3f), ((u>>6) & 0x3f), (u>>12).
+Translate unhandled Unicode characters to special escaped sequences. This lets you backup and restore filenames that are created with any Unicode characters. Without this option, a \*(Aq?\*(Aq is used when no translation is possible. The escape character is \*(Aq:\*(Aq because it is otherwise invalid on the vfat filesystem. The escape sequence that gets used, where u is the Unicode character, is: \*(Aq:\*(Aq, (u & 0x3f), ((u>>6) & 0x3f), (u>>12).
 .RE
 .sp
 \fBposix\fP
@@ -2228,7 +2388,7 @@ One further possible type is a mount via the loop device. For example, the comma
 .sp
 will set up the loop device \fI/dev/loop3\fP to correspond to the file \fI/tmp/disk.img\fP, and then mount this device on \fI/mnt\fP.
 .sp
-If no explicit loop device is mentioned (but just an option \(aq\fB\-o loop\fP\(aq is given), then \fBmount\fP will try to find some unused loop device and use that, for example
+If no explicit loop device is mentioned (but just an option \*(Aq\fB\-o loop\fP\*(Aq is given), then \fBmount\fP will try to find some unused loop device and use that, for example
 .RS 3
 .ll -.6i
 .sp
@@ -2311,14 +2471,14 @@ where the \fIsuffix\fP is the filesystem type and the \fB\-sfnvoN\fP options hav
 The command \fBmount\fP does not pass the mount options \fBunbindable\fP, \fBrunbindable\fP, \fBprivate\fP, \fBrprivate\fP, \fBslave\fP, \fBrslave\fP, \fBshared\fP, \fBrshared\fP, \fBauto\fP, \fBnoauto\fP, \fBcomment\fP, \fBx\-\fP*, \fBloop\fP, \fBoffset\fP and \fBsizelimit\fP to the mount.<suffix> helpers. All other options are used in a comma\-separated list as an argument to the \fB\-o\fP option.
 .SH "ENVIRONMENT"
 .sp
+\fBLIBMOUNT_FORCE_MOUNT2\fP={always|never|auto}
+.RS 4
+force to use classic mount(2) system call (requires support for new file descriptors based mount API). The default is \fBauto\fP; in this case, libmount tries to be smart and use classic mount(2) only for well\-known issues. If the new mount API is unavailable, libmount can still use traditional mount(2), although LIBMOUNT_FORCE_MOUNT2 is set to \fBnever\fP.
+.RE
+.sp
 \fBLIBMOUNT_FSTAB\fP=<path>
 .RS 4
 overrides the default location of the \fIfstab\fP file (ignored for suid)
-.RE
-.sp
-\fBLIBMOUNT_MTAB\fP=<path>
-.RS 4
-overrides the default location of the \fImtab\fP file (ignored for suid)
 .RE
 .sp
 \fBLIBMOUNT_DEBUG\fP=all

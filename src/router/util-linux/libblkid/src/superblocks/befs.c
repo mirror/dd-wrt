@@ -502,6 +502,9 @@ static int probe_befs(blkid_probe pr, const struct blkid_idmag *mag)
 	    block_size != 1U << block_shift)
 		return BLKID_PROBE_NONE;
 
+	if (FS32_TO_CPU(bs->ag_shift, fs_le) > 64)
+		return BLKID_PROBE_NONE;
+
 	ret = get_uuid(pr, bs, &volume_id, fs_le);
 
 	if (ret != 0)
@@ -521,7 +524,10 @@ static int probe_befs(blkid_probe pr, const struct blkid_idmag *mag)
 					sizeof(volume_id), "%016" PRIx64,
 					FS64_TO_CPU(volume_id, fs_le));
 
+	blkid_probe_set_fsblocksize(pr, block_size);
 	blkid_probe_set_block_size(pr, block_size);
+	blkid_probe_set_fsendianness(pr,
+			fs_le ? BLKID_ENDIANNESS_LITTLE : BLKID_ENDIANNESS_BIG);
 
 	return BLKID_PROBE_OK;
 }

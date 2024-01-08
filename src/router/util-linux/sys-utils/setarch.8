@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: setarch
 .\"    Author: [see the "AUTHOR(S)" section]
-.\" Generator: Asciidoctor 2.0.15
-.\"      Date: 2022-05-11
+.\" Generator: Asciidoctor 2.0.20
+.\"      Date: 2023-11-21
 .\"    Manual: System Administration
-.\"    Source: util-linux 2.38.1
+.\"    Source: util-linux 2.39.3
 .\"  Language: English
 .\"
-.TH "SETARCH" "8" "2022-05-11" "util\-linux 2.38.1" "System Administration"
+.TH "SETARCH" "8" "2023-11-21" "util\-linux 2.39.3" "System Administration"
 .ie \n(.g .ds Aq \(aq
 .el       .ds Aq '
 .ss \n[.ss] 0
@@ -48,6 +48,13 @@ Since version 2.33 the \fIarch\fP command line argument is optional and \fBsetar
 \fB\-\-list\fP
 .RS 4
 List the architectures that \fBsetarch\fP knows about. Whether \fBsetarch\fP can actually set each of these architectures depends on the running kernel.
+.RE
+.sp
+\fB\-\-show[=personality]\fP
+.RS 4
+Show the currently active personality and flags.
+If the \fBpersonality\fP argument is provided, it is shown instead of the current one.
+\fBpersonality\fP is a hexadecimal number with values was described in \fBsys/personality.h\fP.
 .RE
 .sp
 \fB\-\-uname\-2.6\fP
@@ -107,12 +114,12 @@ This makes \fBselect\fP(2), \fBpselect\fP(2), and \fBppoll\fP(2) system calls pr
 .sp
 \fB\-X\fP, \fB\-\-read\-implies\-exec\fP
 .RS 4
-If this is set then \fBmmap\fP(3p) \fBPROT_READ\fP will also add the \fBPROT_EXEC\fP bit \- as expected by legacy x86 binaries. Notice that the ELF loader will automatically set this bit when it encounters a legacy binary. Turns on \fBREAD_IMPLIES_EXEC\fP.
+If this is set then \fBmmap\fP(2) \fBPROT_READ\fP will also add the \fBPROT_EXEC\fP bit \- as expected by legacy x86 binaries. Notice that the ELF loader will automatically set this bit when it encounters a legacy binary. Turns on \fBREAD_IMPLIES_EXEC\fP.
 .RE
 .sp
 \fB\-Z\fP, \fB\-\-mmap\-page\-zero\fP
 .RS 4
-SVr4 bug emulation that will set \fBmmap\fP(3p) page zero as read\-only. Use when \fIprogram\fP depends on this behavior, and the source code is not available to be fixed. Turns on \fBMMAP_PAGE_ZERO\fP.
+SVr4 bug emulation that will set \fBmmap\fP(2) page zero as read\-only. Use when \fIprogram\fP depends on this behavior, and the source code is not available to be fixed. Turns on \fBMMAP_PAGE_ZERO\fP.
 .RE
 .sp
 \fB\-h\fP, \fB\-\-help\fP

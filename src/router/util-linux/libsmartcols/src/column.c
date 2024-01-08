@@ -23,7 +23,7 @@
 #include <ctype.h>
 
 #include "mbsalign.h"
-
+#include "strutils.h"
 #include "smartcolsP.h"
 
 /**
@@ -105,13 +105,11 @@ struct libscols_column *scols_copy_column(const struct libscols_column *cl)
 		goto err;
 
 	ret->width	= cl->width;
-	ret->width_min	= cl->width_min;
-	ret->width_max	= cl->width_max;
-	ret->width_avg	= cl->width_avg;
 	ret->width_hint	= cl->width_hint;
 	ret->flags	= cl->flags;
-	ret->is_extreme = cl->is_extreme;
 	ret->is_groups  = cl->is_groups;
+
+	memcpy(&ret->wstat, &cl->wstat, sizeof(cl->wstat));
 
 	return ret;
 err:
@@ -169,7 +167,7 @@ int scols_column_set_flags(struct libscols_column *cl, int flags)
 			cl->table->ntreecols--;
 	}
 
-	DBG(COL, ul_debugobj(cl, "setting flags from 0%x to 0%x", cl->flags, flags));
+	DBG(COL, ul_debugobj(cl, "setting flags from 0x%04x to 0x%04x", cl->flags, flags));
 	cl->flags = flags;
 	return 0;
 }
@@ -341,10 +339,13 @@ const char *scols_column_get_name_as_shellvar(struct libscols_column *cl)
  */
 int scols_column_set_color(struct libscols_column *cl, const char *color)
 {
-	if (color && isalpha(*color)) {
-		color = color_sequence_from_colorname(color);
-		if (!color)
+	if (color && !color_is_sequence(color)) {
+		char *seq = color_get_sequence(color);
+		if (!seq)
 			return -EINVAL;
+		free(cl->color);
+		cl->color = seq;
+		return 0;
 	}
 	return strdup_to_struct_member(cl, color, color);
 }
@@ -641,3 +642,96 @@ int scols_column_is_customwrap(const struct libscols_column *cl)
 		&& cl->wrap_chunksize
 		&& cl->wrap_nextchunk ? 1 : 0;
 }
+
+/**
+ * scols_column_set_properties:
+ * @cl: a pointer to a struct libscols_column instance
+ * @opts: options string
+ *
+ * Set properties from string, the string is comma seprated list, like
+ * "trunc,right,json=number", ...
+ *
+ * Returns: 0 on success, <0 on error
+ *
+ * Since: 2.39
+ */
+int scols_column_set_properties(struct libscols_column *cl, const char *opts)
+{
+	char *str = (char *) opts;
+	char *name, *value;
+	size_t namesz, valuesz;
+	unsigned int flags = 0;
+	int rc = 0;
+
+	DBG(COL, ul_debugobj(cl, "apply properties '%s'", opts));
+
+	while (rc == 0
+	       && !ul_optstr_next(&str, &name, &namesz, &value, &valuesz)) {
+
+		if (strncmp(name, "trunc", namesz) == 0)
+			flags |= SCOLS_FL_TRUNC;
+
+		else if (strncmp(name, "tree", namesz) == 0)
+			flags |= SCOLS_FL_TREE;
+
+		else if (strncmp(name, "right", namesz) == 0)
+			flags |= SCOLS_FL_RIGHT;
+
+		else if (strncmp(name, "strictwidth", namesz) == 0)
+			flags |= SCOLS_FL_STRICTWIDTH;
+
+		else if (strncmp(name, "noextremes", namesz) == 0)
+			flags |= SCOLS_FL_STRICTWIDTH;
+
+		else if (strncmp(name, "hidden", namesz) == 0)
+			flags |= SCOLS_FL_HIDDEN;
+
+		else if (strncmp(name, "wrap", namesz) == 0)
+			flags |= SCOLS_FL_WRAP;
+
+		else if (value && strncmp(name, "json", namesz) == 0) {
+
+			if (strncmp(value, "string", valuesz) == 0)
+				rc = scols_column_set_json_type(cl, SCOLS_JSON_STRING);
+			else if (strncmp(value, "number", valuesz) == 0)
+				rc = scols_column_set_json_type(cl, SCOLS_JSON_NUMBER);
+			else if (strncmp(value, "array-string", valuesz) == 0)
+				rc = scols_column_set_json_type(cl, SCOLS_JSON_ARRAY_STRING);
+			else if (strncmp(value, "array-number", valuesz) == 0)
+				rc = scols_column_set_json_type(cl, SCOLS_JSON_ARRAY_NUMBER);
+			else if (strncmp(value, "boolean", valuesz) == 0)
+				rc = scols_column_set_json_type(cl, SCOLS_JSON_BOOLEAN);
+
+		} else if (value && strncmp(name, "width", namesz) == 0) {
+
+			char *end = NULL;
+			double x = strtod(value, &end);
+			if (errno || str == end)
+				return -EINVAL;
+
+			rc = scols_column_set_whint(cl, x);
+
+		} else if (value && strncmp(name, "color", namesz) == 0) {
+
+			char *x = strndup(value, valuesz);
+			if (x) {
+				scols_column_set_color(cl, x);
+				free(x);
+			}
+
+		} else if (value && strncmp(name, "name", namesz) == 0) {
+
+			char *x = strndup(value, valuesz);
+			if (x) {
+				scols_column_set_name(cl, x);
+				free(x);
+			}
+		}
+	}
+
+	if (!rc && flags)
+		rc = scols_column_set_flags(cl, flags);
+
+	return rc;
+}
+

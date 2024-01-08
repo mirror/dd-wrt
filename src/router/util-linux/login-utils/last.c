@@ -267,23 +267,11 @@ static int uread(FILE *fp, struct utmpx *u,  int *quit, const char *filename)
 
 #ifndef FUZZ_TARGET
 /*
- *	Print a short date.
- */
-static char *showdate(void)
-{
-	static char s[CTIME_BUFSIZ];
-
-	ctime_r(&lastdate, s);
-	s[16] = 0;
-	return s;
-}
-
-/*
  *	SIGINT handler
  */
 static void int_handler(int sig __attribute__((unused)))
 {
-	errx(EXIT_FAILURE, _("Interrupted %s"), showdate());
+	ul_sig_err(EXIT_FAILURE, "Interrupted");
 }
 
 /*
@@ -291,7 +279,7 @@ static void int_handler(int sig __attribute__((unused)))
  */
 static void quit_handler(int sig __attribute__((unused)))
 {
-	warnx(_("Interrupted %s"), showdate());
+	ul_sig_warn("Interrupted");
 	signal(SIGQUIT, quit_handler);
 }
 #endif
@@ -404,7 +392,6 @@ static int list(const struct last_control *ctl, struct utmpx *p, time_t logout_t
 	char		final[512];
 	char		utline[sizeof(p->ut_line) + 1];
 	char		domain[256];
-	char		*s;
 	int		mins, hours, days;
 	int		r, len;
 	struct last_timefmt *fmt;
@@ -560,8 +547,7 @@ static int list(const struct last_control *ctl, struct utmpx *p, time_t logout_t
 	/*
 	 *	Print out "final" string safely.
 	 */
-	for (s = final; *s; s++)
-		fputc_careful(*s, stdout, '*');
+	fputs_careful(final, stdout, '*', false, 0);
 
 	if (len < 0 || (size_t)len >= sizeof(final))
 		putchar('\n');
@@ -614,12 +600,14 @@ static int is_phantom(const struct last_control *ctl, struct utmpx *ut)
 {
 	struct passwd *pw;
 	char path[sizeof(ut->ut_line) + 16];
+	char user[sizeof(ut->ut_user) + 1];
 	int ret = 0;
 
 	if (ut->ut_tv.tv_sec < ctl->boot_time.tv_sec)
 		return 1;
-	ut->ut_user[sizeof(ut->ut_user) - 1] = '\0';
-	pw = getpwnam(ut->ut_user);
+
+	mem2strcpy(user, ut->ut_user, sizeof(ut->ut_user), sizeof(user));
+	pw = getpwnam(user);
 	if (!pw)
 		return 1;
 	snprintf(path, sizeof(path), "/proc/%u/loginuid", ut->ut_pid);
@@ -1055,10 +1043,10 @@ int main(int argc, char **argv)
 			ctl.until = (time_t) (p / 1000000);
 			break;
 		case 'w':
-			if (ctl.name_len < sizeof(((struct utmpx *) 0)->ut_user))
-				ctl.name_len = sizeof(((struct utmpx *) 0)->ut_user);
-			if (ctl.domain_len < sizeof(((struct utmpx *) 0)->ut_host))
-				ctl.domain_len = sizeof(((struct utmpx *) 0)->ut_host);
+			if (ctl.name_len < sizeof_member(struct utmpx, ut_user))
+				ctl.name_len = sizeof_member(struct utmpx, ut_user);
+			if (ctl.domain_len < sizeof_member(struct utmpx, ut_host))
+				ctl.domain_len = sizeof_member(struct utmpx, ut_host);
 			break;
 		case '0': case '1': case '2': case '3': case '4':
 		case '5': case '6': case '7': case '8': case '9':

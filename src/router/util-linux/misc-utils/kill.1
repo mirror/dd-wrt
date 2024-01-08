@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: kill
 .\"    Author: [see the "AUTHOR(S)" section]
-.\" Generator: Asciidoctor 2.0.15
-.\"      Date: 2022-05-11
+.\" Generator: Asciidoctor 2.0.20
+.\"      Date: 2023-11-21
 .\"    Manual: User Commands
-.\"    Source: util-linux 2.38.1
+.\"    Source: util-linux 2.39.3
 .\"  Language: English
 .\"
-.TH "KILL" "1" "2022-05-11" "util\-linux 2.38.1" "User Commands"
+.TH "KILL" "1" "2023-11-21" "util\-linux 2.39.3" "User Commands"
 .ie \n(.g .ds Aq \(aq
 .el       .ds Aq '
 .ss \n[.ss] 0
@@ -68,7 +68,7 @@ All processes with a PID larger than 1 are signaled.
 .sp
 \fB\-\fP\fIn\fP
 .RS 4
-where \fIn\fP is larger than 1. All processes in process group \fIn\fP are signaled. When an argument of the form \(aq\-n\(aq is given, and it is meant to denote a process group, either a signal must be specified first, or the argument must be preceded by a \(aq\-\-\(aq option, otherwise it will be taken as the signal to send.
+where \fIn\fP is larger than 1. All processes in process group \fIn\fP are signaled. When an argument of the form \*(Aq\-n\*(Aq is given, and it is meant to denote a process group, either a signal must be specified first, or the argument must be preceded by a \*(Aq\-\-\*(Aq option, otherwise it will be taken as the signal to send.
 .RE
 .RE
 .sp
@@ -101,6 +101,11 @@ Do not restrict the command\-name\-to\-PID conversion to processes with the same
 \fB\-p\fP, \fB\-\-pid\fP
 .RS 4
 Only print the process ID (PID) of the named processes, do not send any signals.
+.RE
+.sp
+\fB\-r\fP, \fB\-\-require\-handler\fP
+.RS 4
+Do not send the signal if it is not caught in userspace by the signalled process.
 .RE
 .sp
 \fB\-\-verbose\fP

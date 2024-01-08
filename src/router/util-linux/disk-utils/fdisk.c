@@ -1,13 +1,15 @@
 /*
+ * SPDX-License-Identifier: GPL-1.0-or-later
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 1 of the License, or
+ * (at your option) any later version.
+ *
  * Copyright (C) 1992  A. V. Le Blanc (LeBlanc@mcc.ac.uk)
  * Copyright (C) 2012  Davidlohr Bueso <dave@gnu.org>
  *
  * Copyright (C) 2007-2013 Karel Zak <kzak@redhat.com>
- *
- * This program is free software.  You can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation: either version 1 or
- * (at your option) any later version.
  */
 #include <unistd.h>
 #include <stdio.h>
@@ -928,7 +930,7 @@ int main(int argc, char **argv)
 		{ "type",           required_argument, NULL, 't' },
 		{ "units",          optional_argument, NULL, 'u' },
 		{ "version",        no_argument,       NULL, 'V' },
-		{ "output",         no_argument,       NULL, 'o' },
+		{ "output",         required_argument, NULL, 'o' },
 		{ "protect-boot",   no_argument,       NULL, 'B' },
 		{ "wipe",           required_argument, NULL, 'w' },
 		{ "wipe-partitions",required_argument, NULL, 'W' },

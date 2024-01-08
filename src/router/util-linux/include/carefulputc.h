@@ -1,31 +1,83 @@
 #ifndef UTIL_LINUX_CAREFULPUTC_H
 #define UTIL_LINUX_CAREFULPUTC_H
 
-/*
- * A putc() for use in write and wall (that sometimes are sgid tty).
- * It avoids control characters in our locale, and also ASCII control
- * characters.   Note that the locale of the recipient is unknown.
-*/
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
+#ifdef HAVE_WIDECHAR
+#include <wctype.h>
+#include <wchar.h>
+#endif
+#include <stdbool.h>
 
 #include "cctype.h"
 
-static inline int fputc_careful(int c, FILE *fp, const char fail)
+/*
+ * A puts() for use in write and wall (that sometimes are sgid tty).
+ * It avoids control and invalid characters.
+ * The locale of the recipient is nominally unknown,
+ * but it's a solid bet that it's compatible with the author's.
+ * Use soft_width=0 to disable wrapping.
+ */
+static inline int fputs_careful(const char * s, FILE *fp, const char ctrl, bool cr_lf, int soft_width)
 {
-	int ret;
+	int ret = 0, col = 0;
 
-	if (isprint(c) || c == '\a' || c == '\t' || c == '\r' || c == '\n')
-		ret = putc(c, fp);
-	else if (!c_isascii(c))
-		ret = fprintf(fp, "\\%3o", (unsigned char)c);
-	else {
-		ret = putc(fail, fp);
-		if (ret != EOF)
-			ret = putc(c ^ 0x40, fp);
+	for (size_t slen = strlen(s); *s; ++s, --slen) {
+		if (*s == '\t')
+			col += (7 - (col % 8)) - 1;
+		else if (*s == '\r')
+			col = -1;
+		else if (*s == '\a')
+			--col;
+
+		if ((soft_width && col >= soft_width) || *s == '\n') {
+			if (soft_width) {
+				fprintf(fp, "%*s", soft_width - col, "");
+				col = 0;
+			}
+			ret = fputs(cr_lf ? "\r\n" : "\n", fp);
+			if (*s == '\n' || ret < 0)
+				goto wrote;
+		}
+
+		if (isprint(*s) || *s == '\a' || *s == '\t' || *s == '\r') {
+			ret = putc(*s, fp);
+			++col;
+		} else if (!c_isascii(*s)) {
+#ifdef HAVE_WIDECHAR
+			wchar_t w;
+			size_t clen = mbtowc(&w, s, slen);
+			switch(clen) {
+				case (size_t)-2:  // incomplete
+				case (size_t)-1:  // EILSEQ
+					mbtowc(NULL, NULL, 0);
+				nonprint:
+					col += ret = fprintf(fp, "\\%3hho", *s);
+					break;
+				default:
+					if(!iswprint(w))
+						goto nonprint;
+					ret = fwrite(s, 1, clen, fp);
+					if (soft_width)
+						col += wcwidth(w);
+					s += clen - 1;
+					slen -= clen - 1;
+					break;
+			}
+#else
+			col += ret = fprintf(fp, "\\%3hho", *s);
+#endif
+		} else {
+			ret = fputs((char[]){ ctrl, *s ^ 0x40, '\0' }, fp);
+			col += 2;
+		}
+
+	wrote:
+		if (ret < 0)
+			return EOF;
 	}
-	return (ret < 0) ? EOF : 0;
+	return 0;
 }
 
 static inline void fputs_quoted_case(const char *data, FILE *out, int dir)

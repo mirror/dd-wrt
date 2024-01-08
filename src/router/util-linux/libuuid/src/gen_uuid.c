@@ -209,6 +209,8 @@ static int get_node_id(unsigned char *node_id)
 
 /* Assume that the gettimeofday() has microsecond granularity */
 #define MAX_ADJUSTMENT 10
+/* Reserve a clock_seq value for the 'continuous clock' implementation */
+#define CLOCK_SEQ_CONT 0
 
 /*
  * Get clock from global sequence clock counter.
@@ -227,7 +229,6 @@ static int get_clock(uint32_t *clock_high, uint32_t *clock_low,
 	struct timeval			tv;
 	uint64_t			clock_reg;
 	mode_t				save_umask;
-	int				len;
 	int				ret = 0;
 
 	if (state_fd == -1)
@@ -272,11 +273,18 @@ static int get_clock(uint32_t *clock_high, uint32_t *clock_low,
 			last.tv_usec = tv2;
 			adjustment = a;
 		}
+		// reset in case of reserved CLOCK_SEQ_CONT
+		if (clock_seq == CLOCK_SEQ_CONT) {
+			last.tv_sec = 0;
+			last.tv_usec = 0;
+		}
 	}
 
 	if ((last.tv_sec == 0) && (last.tv_usec == 0)) {
-		ul_random_get_bytes(&clock_seq, sizeof(clock_seq));
-		clock_seq &= 0x3FFF;
+		do {
+			ul_random_get_bytes(&clock_seq, sizeof(clock_seq));
+			clock_seq &= 0x3FFF;
+		} while (clock_seq == CLOCK_SEQ_CONT);
 		gettimeofday(&last, NULL);
 		last.tv_sec--;
 	}
@@ -286,7 +294,9 @@ try_again:
 	if ((tv.tv_sec < last.tv_sec) ||
 	    ((tv.tv_sec == last.tv_sec) &&
 	     (tv.tv_usec < last.tv_usec))) {
-		clock_seq = (clock_seq+1) & 0x3FFF;
+		do {
+			clock_seq = (clock_seq+1) & 0x3FFF;
+		} while (clock_seq == CLOCK_SEQ_CONT);
 		adjustment = 0;
 		last = tv;
 	} else if ((tv.tv_sec == last.tv_sec) &&
@@ -313,14 +323,10 @@ try_again:
 
 	if (state_fd >= 0) {
 		rewind(state_f);
-		len = fprintf(state_f,
-			      "clock: %04x tv: %016ld %08ld adj: %08d\n",
+		fprintf(state_f,
+			      "clock: %04x tv: %016ld %08ld adj: %08d                   \n",
 			      clock_seq, (long)last.tv_sec, (long)last.tv_usec, adjustment);
 		fflush(state_f);
-		if (ftruncate(state_fd, len) < 0) {
-			fprintf(state_f, "                   \n");
-			fflush(state_f);
-		}
 		rewind(state_f);
 		flock(state_fd, LOCK_UN);
 	}
@@ -329,6 +335,64 @@ try_again:
 	*clock_low = clock_reg;
 	*ret_clock_seq = clock_seq;
 	return ret;
+}
+
+/*
+ * Get current time in 100ns ticks.
+ */
+static uint64_t get_clock_counter(void)
+{
+	struct timeval tv;
+	uint64_t clock_reg;
+
+	gettimeofday(&tv, NULL);
+	clock_reg = tv.tv_usec*10;
+	clock_reg += ((uint64_t) tv.tv_sec) * 10000000ULL;
+
+	return clock_reg;
+}
+
+/*
+ * Get continuous clock value.
+ *
+ * Return -1 if there is no further clock counter available,
+ * otherwise return 0.
+ *
+ * This implementation doesn't deliver clock counters based on
+ * the current time because last_clock_reg is only incremented
+ * by the number of requested UUIDs.
+ * max_clock_offset is used to limit the offset of last_clock_reg.
+ */
+static int get_clock_cont(uint32_t *clock_high,
+			  uint32_t *clock_low,
+			  int num,
+			  uint32_t max_clock_offset)
+{
+	/* 100ns based time offset according to RFC 4122. 4.1.4. */
+	const uint64_t reg_offset = (((uint64_t) 0x01B21DD2) << 32) + 0x13814000;
+	static uint64_t last_clock_reg = 0;
+	uint64_t clock_reg;
+
+	if (last_clock_reg == 0)
+		last_clock_reg = get_clock_counter();
+
+	clock_reg = get_clock_counter();
+	if (max_clock_offset) {
+		uint64_t clock_offset = max_clock_offset * 10000000ULL;
+		if (last_clock_reg < (clock_reg - clock_offset))
+			last_clock_reg = clock_reg - clock_offset;
+	}
+
+	clock_reg += MAX_ADJUSTMENT;
+
+	if ((last_clock_reg + num) >= clock_reg)
+		return -1;
+
+	*clock_high = (last_clock_reg + reg_offset) >> 32;
+	*clock_low = last_clock_reg + reg_offset;
+	last_clock_reg += num;
+
+	return 0;
 }
 
 #if defined(HAVE_UUIDD) && defined(HAVE_SYS_UN_H)
@@ -403,7 +467,7 @@ static int get_uuid_via_daemon(int op __attribute__((__unused__)),
 }
 #endif
 
-int __uuid_generate_time(uuid_t out, int *num)
+static int __uuid_generate_time_internal(uuid_t out, int *num, uint32_t cont_offset)
 {
 	static unsigned char node_id[6];
 	static int has_init = 0;
@@ -423,7 +487,14 @@ int __uuid_generate_time(uuid_t out, int *num)
 		}
 		has_init = 1;
 	}
-	ret = get_clock(&clock_mid, &uu.time_low, &uu.clock_seq, num);
+	if (cont_offset) {
+		ret = get_clock_cont(&clock_mid, &uu.time_low, *num, cont_offset);
+		uu.clock_seq = CLOCK_SEQ_CONT;
+		if (ret != 0)	/* fallback to previous implpementation */
+			ret = get_clock(&clock_mid, &uu.time_low, &uu.clock_seq, num);
+	} else {
+		ret = get_clock(&clock_mid, &uu.time_low, &uu.clock_seq, num);
+	}
 	uu.clock_seq |= 0x8000;
 	uu.time_mid = (uint16_t) clock_mid;
 	uu.time_hi_and_version = ((clock_mid >> 16) & 0x0FFF) | 0x1000;
@@ -431,6 +502,20 @@ int __uuid_generate_time(uuid_t out, int *num)
 	uuid_pack(&uu, out);
 	return ret;
 }
+
+int __uuid_generate_time(uuid_t out, int *num)
+{
+	return __uuid_generate_time_internal(out, num, 0);
+}
+
+int __uuid_generate_time_cont(uuid_t out, int *num, uint32_t cont_offset)
+{
+	return __uuid_generate_time_internal(out, num, cont_offset);
+}
+
+#define CS_MIN		(1<<6)
+#define CS_MAX		(1<<18)
+#define CS_FACTOR	2
 
 /*
  * Generate time-based UUID and store it to @out
@@ -442,25 +527,32 @@ int __uuid_generate_time(uuid_t out, int *num)
  */
 static int uuid_generate_time_generic(uuid_t out) {
 #ifdef HAVE_TLS
+	/* thread local cache for uuidd based requests */
 	THREAD_LOCAL int		num = 0;
-	THREAD_LOCAL int		cache_size = 1;
+	THREAD_LOCAL int		cache_size = CS_MIN;
+	THREAD_LOCAL int		last_used = 0;
 	THREAD_LOCAL struct uuid	uu;
 	THREAD_LOCAL time_t		last_time = 0;
 	time_t				now;
 
-	if (num > 0) {
+	if (num > 0) { /* expire cache */
 		now = time(NULL);
-		if (now > last_time+1)
+		if (now > last_time+1) {
+			last_used = cache_size - num;
 			num = 0;
+		}
 	}
-	if (num <= 0) {
+	if (num <= 0) { /* fill cache */
 		/*
 		 * num + OP_BULK provides a local cache in each application.
 		 * Start with a small cache size to cover short running applications
-		 * and increment the cache size over the runntime.
+		 * and adjust the cache size over the runntime.
 		 */
-		if (cache_size < 1000000)
-			cache_size *= 10;
+		if ((last_used == cache_size) && (cache_size < CS_MAX))
+			cache_size *= CS_FACTOR;
+		else if ((last_used < (cache_size / CS_FACTOR)) && (cache_size > CS_MIN))
+			cache_size /= CS_FACTOR;
+
 		num = cache_size;
 
 		if (get_uuid_via_daemon(UUIDD_OP_BULK_TIME_UUID,
@@ -470,9 +562,11 @@ static int uuid_generate_time_generic(uuid_t out) {
 			num--;
 			return 0;
 		}
+		/* request to daemon failed, reset cache */
 		num = 0;
+		cache_size = CS_MIN;
 	}
-	if (num > 0) {
+	if (num > 0) { /* serve uuid from cache */
 		uu.time_low++;
 		if (uu.time_low == 0) {
 			uu.time_mid++;
@@ -481,6 +575,8 @@ static int uuid_generate_time_generic(uuid_t out) {
 		}
 		num--;
 		uuid_pack(&uu, out);
+		if (num == 0)
+			last_used = cache_size;
 		return 0;
 	}
 #else

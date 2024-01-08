@@ -17,10 +17,11 @@
 TS_TOPDIR="${0%/*}/../.."
 TS_DESC="color"
 
-. $TS_TOPDIR/functions.sh
+. "$TS_TOPDIR"/functions.sh
 ts_init "$*"
 
 ts_check_test_command "$TS_CMD_CAL"
+ts_inhibit_custom_colorscheme
 
 has_ncurses=$( ts_has_ncurses_support )
 if [ "$has_ncurses" != "yes" ]; then
@@ -74,6 +75,20 @@ if [ "$USETERM" == "yes" ]; then
 	$TS_CMD_CAL --color=always 31 12 9999
 fi
 $TS_CMD_CAL --color=always -3 31 12 9999 >> $TS_OUTPUT
+ts_finalize_subtest
+
+ts_init_subtest "vertical"
+if [ "$USETERM" == "yes" ]; then
+	$TS_CMD_CAL --color=always 15 2 2023
+fi
+$TS_CMD_CAL --color=always --vertical 15 2 2023 >> $TS_OUTPUT
+ts_finalize_subtest
+
+ts_init_subtest "vertical-week"
+if [ "$USETERM" == "yes" ]; then
+	$TS_CMD_CAL --color=always 15 2 2023
+fi
+$TS_CMD_CAL --color=always --vertical --week=15 15 2 2023 >> $TS_OUTPUT
 ts_finalize_subtest
 
 

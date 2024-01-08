@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: whereis
 .\"    Author: [see the "AUTHOR(S)" section]
-.\" Generator: Asciidoctor 2.0.15
-.\"      Date: 2022-05-11
+.\" Generator: Asciidoctor 2.0.20
+.\"      Date: 2023-11-21
 .\"    Manual: User Commands
-.\"    Source: util-linux 2.38.1
+.\"    Source: util-linux 2.39.3
 .\"  Language: English
 .\"
-.TH "WHEREIS" "1" "2022-05-11" "util\-linux 2.38.1" "User Commands"
+.TH "WHEREIS" "1" "2023-11-21" "util\-linux 2.39.3" "User Commands"
 .ie \n(.g .ds Aq \(aq
 .el       .ds Aq '
 .ss \n[.ss] 0
@@ -34,7 +34,7 @@ whereis \- locate the binary, source, and manual page files for a command
 \fBwhereis\fP [options] [\fB\-BMS\fP \fIdirectory\fP... \fB\-f\fP] \fIname\fP...
 .SH "DESCRIPTION"
 .sp
-\fBwhereis\fP locates the binary, source and manual files for the specified command names. The supplied names are first stripped of leading pathname components. Prefixes of \fBs.\fP resulting from use of source code control are also dealt with. \fBwhereis\fP then attempts to locate the desired program in the standard Linux places, and in the places specified by \fB$PATH\fP and \fB$MANPATH\fP.
+\fBwhereis\fP locates the binary, source and manual files for the specified command names. The supplied names are \fBfirst stripped of leading pathname components\fP. Prefixes of \fBs.\fP resulting from use of source code control are also dealt with. \fBwhereis\fP then attempts to locate the desired program in the standard Linux places, and in the places specified by \fB$PATH\fP and \fB$MANPATH\fP.
 .sp
 The search restrictions (options \fB\-b\fP, \fB\-m\fP and \fB\-s\fP) are cumulative and apply to the subsequent \fIname\fP patterns on the command line. Any new search restriction resets the search mask. For example,
 .RS 3
@@ -76,7 +76,7 @@ Search for sources.
 .sp
 \fB\-u\fP
 .RS 4
-Only show the command names that have unusual entries. A command is said to be unusual if it does not have just one entry of each explicitly requested type. Thus \(aq\fBwhereis \-m \-u *\fP\(aq asks for those files in the current directory which have no documentation file, or more than one.
+Only show the command names that have unusual entries. A command is said to be unusual if it does not have just one entry of each explicitly requested type. Thus \*(Aq\fBwhereis \-m \-u *\fP\*(Aq asks for those files in the current directory which have no documentation file, or more than one.
 .RE
 .sp
 \fB\-B\fP \fIlist\fP
@@ -104,6 +104,24 @@ Terminates the directory list and signals the start of filenames. It \fImust\fP 
 Output the list of effective lookup paths that \fBwhereis\fP is using. When none of \fB\-B\fP, \fB\-M\fP, or \fB\-S\fP is specified, the option will output the hard\-coded paths that the command was able to find on the system.
 .RE
 .sp
+\fB\-g\fP
+.RS 4
+Interpret the next names as a \fBglob(7)\fP patterns. \fBwhereis\fP always compares only filenames (aka basename) and never complete path. Using directory names in the pattern has no effect. Don’t forget that the shell interprets the pattern when specified on the command line without quotes. It’s necessary to use quotes for the \fIname\fP, for example:
+.RE
+.RS 3
+.ll -.6i
+.sp
+.if n .RS 4
+.nf
+.fam C
+whereis \-g \*(Aqfind*\*(Aq
+.fam
+.fi
+.if n .RE
+.br
+.RE
+.ll
+.sp
 \fB\-h\fP, \fB\-\-help\fP
 .RS 4
 Display help text and exit.
@@ -125,8 +143,15 @@ enables debug output.
 .SH "EXAMPLES"
 .sp
 To find all files in \fI/usr/bin\fP which are not documented in \fI/usr/man/man1\fP or have no source in \fI/usr/src\fP:
+.RS 3
+.ll -.6i
 .sp
-\fBcd /usr/bin\fP \fBwhereis \-u \-ms \-M /usr/man/man1 \-S /usr/src \-f *\fP
+\fBcd /usr/bin\fP
+.br
+\fBwhereis \-u \-ms \-M /usr/man/man1 \-S /usr/src \-f *\fP
+.br
+.RE
+.ll
 .SH "REPORTING BUGS"
 .sp
 For bug reports, use the issue tracker at \c

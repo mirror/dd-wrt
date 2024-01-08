@@ -73,8 +73,16 @@ UL_DEBUG_DEFINE_MASKNAMES(lsns) = UL_DEBUG_EMPTY_MASKNAMES;
 #define DBG(m, x)       __UL_DBG(lsns, LSNS_DEBUG_, m, x)
 #define ON_DBG(m, x)    __UL_DBG_CALL(lsns, LSNS_DEBUG_, m, x)
 
+#define lsns_ioctl(fildes, request, ...) __extension__ ({ \
+	int ret = ioctl(fildes, request, ##__VA_ARGS__); \
+	if (ret == -1 && errno == ENOTTY) \
+		warnx("Unsupported ioctl %s", #request); \
+	ret; })
+
 #define UL_DEBUG_CURRENT_MASK	UL_DEBUG_MASK(lsns)
 #include "debugobj.h"
+
+#define EXIT_UNSUPPORTED_IOCTL 2
 
 static struct idcache *uid_cache = NULL;
 
@@ -210,6 +218,7 @@ struct lsns {
 	unsigned int raw	: 1,
 		     json	: 1,
 		     tree	: 2,
+		     persist	: 1,
 		     no_trunc	: 1,
 		     no_headings: 1,
 		     no_wrap    : 1;
@@ -305,7 +314,7 @@ static int get_ns_ino(int dir, const char *nsname, ino_t *ino, ino_t *pino, ino_
 	if (fd < 0)
 		return -errno;
 	if (strcmp(nsname, "pid") == 0 || strcmp(nsname, "user") == 0) {
-		if ((pfd = ioctl(fd, NS_GET_PARENT)) < 0) {
+		if ((pfd = lsns_ioctl(fd, NS_GET_PARENT)) < 0) {
 			if (errno == EPERM)
 				goto user;
 			close(fd);
@@ -320,7 +329,7 @@ static int get_ns_ino(int dir, const char *nsname, ino_t *ino, ino_t *pino, ino_
 		close(pfd);
 	}
  user:
-	if ((ofd = ioctl(fd, NS_GET_USERNS)) < 0) {
+	if ((ofd = lsns_ioctl(fd, NS_GET_USERNS)) < 0) {
 		if (errno == EPERM)
 			goto out;
 		close(fd);
@@ -705,6 +714,10 @@ static int clone_type_to_lsns_type(int clone_type)
 		return LSNS_ID_PID;
 	case CLONE_NEWNET:
 		return LSNS_ID_NET;
+#ifdef CLONE_NEWTIME
+	case CLONE_NEWTIME:
+		return LSNS_ID_TIME;
+#endif
 	default:
 		return -1;
 	}
@@ -718,14 +731,14 @@ static struct lsns_namespace *add_namespace_for_nsfd(struct lsns *ls, int fd, in
 	struct lsns_namespace *ns;
 	int clone_type, lsns_type;
 
-	clone_type = ioctl(fd, NS_GET_NSTYPE);
+	clone_type = lsns_ioctl(fd, NS_GET_NSTYPE);
 	if (clone_type < 0)
 		return NULL;
 	lsns_type = clone_type_to_lsns_type(clone_type);
-	if (lsns_type < 0)
+	if (lsns_type < 0 || ls->fltr_types[lsns_type] == 0)
 		return NULL;
 
-	fd_owner = ioctl(fd, NS_GET_USERNS);
+	fd_owner = lsns_ioctl(fd, NS_GET_USERNS);
 	if (fd_owner < 0)
 		goto parent;
 	if (fstat(fd_owner, &st_owner) < 0)
@@ -733,7 +746,7 @@ static struct lsns_namespace *add_namespace_for_nsfd(struct lsns *ls, int fd, in
 	ino_owner = st_owner.st_ino;
 
  parent:
-	fd_parent = ioctl(fd, NS_GET_PARENT);
+	fd_parent = lsns_ioctl(fd, NS_GET_PARENT);
 	if (fd_parent < 0)
 		goto add_ns;
 	if (fstat(fd_parent, &st_parent) < 0)
@@ -742,7 +755,7 @@ static struct lsns_namespace *add_namespace_for_nsfd(struct lsns *ls, int fd, in
 
  add_ns:
 	ns = add_namespace(ls, lsns_type, ino, ino_parent, ino_owner);
-	ioctl(fd, NS_GET_OWNER_UID, &ns->uid_fallback);
+	lsns_ioctl(fd, NS_GET_OWNER_UID, &ns->uid_fallback);
 	add_uid(uid_cache, ns->uid_fallback);
 
 	if ((lsns_type == LSNS_ID_USER || lsns_type == LSNS_ID_PID)
@@ -788,7 +801,7 @@ static void interpolate_missing_namespaces(struct lsns *ls, struct lsns_namespac
 	if (fd_orphan < 0)
 		return;
 
-	fd_missing = ioctl(fd_orphan, cmd[rela]);
+	fd_missing = lsns_ioctl(fd_orphan, cmd[rela]);
 	close(fd_orphan);
 	if (fd_missing < 0)
 		return;
@@ -858,6 +871,42 @@ static void read_related_namespaces(struct lsns *ls)
 	}
 }
 
+static int read_persistent_namespaces(struct lsns *ls)
+{
+	struct libmnt_iter *itr = mnt_new_iter(MNT_ITER_FORWARD);
+	struct libmnt_fs *fs = NULL;
+
+	while (mnt_table_next_fs(ls->tab, itr, &fs) == 0) {
+		const char *root;
+		char *p, *end = NULL;
+		ino_t ino;
+		int fd;
+
+		if (!mnt_fs_match_fstype(fs, "nsfs"))
+			continue;
+		root = mnt_fs_get_root(fs);
+		if (!root || !(p = strchr(root, '[')))
+			continue;
+
+		errno = 0;
+		ino = strtoumax(++p, &end, 10);
+		if (!end || *end != ']' || errno != 0)
+			continue;
+		if (get_namespace(ls, ino))
+			continue;
+
+		fd = open(mnt_fs_get_target(fs), O_RDONLY);
+		if (fd < 0)
+			continue;
+
+		add_namespace_for_nsfd(ls, fd, ino);
+		close(fd);
+	}
+
+	mnt_free_iter(itr);
+	return 0;
+}
+
 #endif /* USE_NS_GET_API */
 
 static int read_namespaces(struct lsns *ls)
@@ -885,6 +934,8 @@ static int read_namespaces(struct lsns *ls)
 	}
 
 #ifdef USE_NS_GET_API
+	read_persistent_namespaces(ls);
+
 	if (ls->tree == LSNS_TREE_OWNER || ls->tree == LSNS_TREE_PARENT)
 		read_related_namespaces(ls);
 #endif
@@ -1150,6 +1201,8 @@ static int show_namespaces(struct lsns *ls)
 
 		if (ls->fltr_pid != 0 && !namespace_has_process(ns, ls->fltr_pid))
 			continue;
+		if (ls->persist && ns->nprocs != 0)
+			continue;
 
 		if (!ns->ns_outline)
 			show_namespace(ls, tab, ns, ns->proc);
@@ -1199,6 +1252,28 @@ static int show_namespace_processes(struct lsns *ls, struct lsns_namespace *ns)
 	return 0;
 }
 
+static void free_lsns_process(struct lsns_process *lsns_p)
+{
+	free(lsns_p);
+}
+
+static void free_netnsid_caches(struct netnsid_cache *cache)
+{
+	free(cache);
+}
+
+static void free_lsns_namespace(struct lsns_namespace *lsns_n)
+{
+	free(lsns_n);
+}
+
+static void free_all(struct lsns *ls)
+{
+	list_free(&ls->processes, struct lsns_process, processes, free_lsns_process);
+	list_free(&netnsids_cache, struct netnsid_cache, netnsids, free_netnsid_caches);
+	list_free(&ls->namespaces, struct lsns_namespace, namespaces, free_lsns_namespace);
+}
+
 static void __attribute__((__noreturn__)) usage(void)
 {
 	FILE *out = stdout;
@@ -1218,6 +1293,7 @@ static void __attribute__((__noreturn__)) usage(void)
 	fputs(_(" -n, --noheadings       don't print headings\n"), out);
 	fputs(_(" -o, --output <list>    define which output columns to use\n"), out);
 	fputs(_("     --output-all       output all columns\n"), out);
+	fputs(_(" -P, --persistent       namespaces without processes\n"), out);
 	fputs(_(" -p, --task <pid>       print process namespaces\n"), out);
 	fputs(_(" -r, --raw              use the raw output format\n"), out);
 	fputs(_(" -u, --notruncate       don't truncate text in columns\n"), out);
@@ -1253,6 +1329,7 @@ int main(int argc, char *argv[])
 		{ "help",	no_argument,       NULL, 'h' },
 		{ "output",     required_argument, NULL, 'o' },
 		{ "output-all", no_argument,       NULL, OPT_OUTPUT_ALL },
+		{ "persistent", no_argument,       NULL, 'P' },
 		{ "notruncate", no_argument,       NULL, 'u' },
 		{ "version",    no_argument,       NULL, 'V' },
 		{ "noheadings", no_argument,       NULL, 'n' },
@@ -1266,6 +1343,7 @@ int main(int argc, char *argv[])
 
 	static const ul_excl_t excl[] = {	/* rows and cols in ASCII order */
 		{ 'J','r' },
+		{ 'P','p' },
 		{ 'l','T' },
 		{ 0 }
 	};
@@ -1285,7 +1363,7 @@ int main(int argc, char *argv[])
 	INIT_LIST_HEAD(&netnsids_cache);
 
 	while ((c = getopt_long(argc, argv,
-				"Jlp:o:nruhVt:T::W", long_opts, NULL)) != -1) {
+				"JlPp:o:nruhVt:T::W", long_opts, NULL)) != -1) {
 
 		err_exclusive_options(c, long_opts, excl, excl_st);
 
@@ -1302,6 +1380,9 @@ int main(int argc, char *argv[])
 		case OPT_OUTPUT_ALL:
 			for (ncolumns = 0; ncolumns < ARRAY_SIZE(infos); ncolumns++)
 				columns[ncolumns] = ncolumns;
+			break;
+		case 'P':
+			ls.persist = 1;
 			break;
 		case 'p':
 			ls.fltr_pid = strtos32_or_err(optarg, _("invalid PID argument"));
@@ -1408,11 +1489,9 @@ int main(int argc, char *argv[])
 	if (has_column(COL_NETNSID))
 		netlink_fd = socket(AF_NETLINK, SOCK_RAW, NETLINK_ROUTE);
 #endif
-	if (has_column(COL_NSFS)) {
-		ls.tab = mnt_new_table_from_file(_PATH_PROC_MOUNTINFO);
-		if (!ls.tab)
-			err(MNT_EX_FAIL, _("failed to parse %s"), _PATH_PROC_MOUNTINFO);
-	}
+	ls.tab = mnt_new_table_from_file(_PATH_PROC_MOUNTINFO);
+	if (!ls.tab)
+		err(MNT_EX_FAIL, _("failed to parse %s"), _PATH_PROC_MOUNTINFO);
 
 	r = read_processes(&ls);
 	if (!r)
@@ -1432,5 +1511,12 @@ int main(int argc, char *argv[])
 	if (netlink_fd >= 0)
 		close(netlink_fd);
 	free_idcache(uid_cache);
-	return r == 0 ? EXIT_SUCCESS : EXIT_FAILURE;
+
+	free_all(&ls);
+
+	switch (r) {
+		case 0: return EXIT_SUCCESS;
+		case -ENOTTY: return EXIT_UNSUPPORTED_IOCTL;
+		default: return EXIT_FAILURE;
+	}
 }

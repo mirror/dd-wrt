@@ -18,7 +18,7 @@
 TS_TOPDIR="${0%/*}/../.."
 TS_DESC="subdir check"
 
-. $TS_TOPDIR/functions.sh
+. "$TS_TOPDIR"/functions.sh
 ts_init "$*"
 
 ts_check_test_command "$TS_CMD_RENAME"
@@ -64,5 +64,32 @@ find rename_path_a rename_path_b >> $TS_OUTPUT 2>> $TS_ERRLOG
 rm -f rename_path_a/test2 rename_path_b/test2
 
 rmdir rename_path_a rename_path_b
+
+ln -s some/nonexistent/path rename_link
+$TS_CMD_RENAME -s -v t/p _ rename_link >> $TS_OUTPUT 2>> $TS_ERRLOG
+$TS_CMD_RENAME -s -v exist / rename_link >> $TS_OUTPUT 2>> $TS_ERRLOG
+$TS_CMD_RENAME -s -v e x rename_link >> $TS_OUTPUT 2>> $TS_ERRLOG
+readlink rename_link >> $TS_OUTPUT 2>> $TS_ERRLOG
+rm rename_link
+
+echo "== empty 'from' ==" >> $TS_OUTPUT
+
+touch rename_test
+$TS_CMD_RENAME -v '' _ rename_test >> $TS_OUTPUT 2>> $TS_ERRLOG
+rm -f *rename_test
+
+touch rename_test
+$TS_CMD_RENAME -v '' _ ./rename_test >> $TS_OUTPUT 2>> $TS_ERRLOG
+rm -f *rename_test
+
+touch rename_test
+mkdir rename_subdir
+$TS_CMD_RENAME -v '' rename_subdir/ rename_test >> $TS_OUTPUT 2>> $TS_ERRLOG
+rm -rf rename_subdir
+
+touch rename_test
+mkdir rename_subdir
+$TS_CMD_RENAME -v '' rename_subdir/ ./rename_test >> $TS_OUTPUT 2>> $TS_ERRLOG
+rm -rf rename_subdir
 
 ts_finalize

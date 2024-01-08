@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: irqtop
 .\"    Author: [see the "AUTHOR(S)" section]
-.\" Generator: Asciidoctor 2.0.15
-.\"      Date: 2022-08-04
+.\" Generator: Asciidoctor 2.0.20
+.\"      Date: 2023-12-01
 .\"    Manual: User Commands
-.\"    Source: util-linux 2.38.1
+.\"    Source: util-linux 2.39.3
 .\"  Language: English
 .\"
-.TH "IRQTOP" "1" "2022-08-04" "util\-linux 2.38.1" "User Commands"
+.TH "IRQTOP" "1" "2023-12-01" "util\-linux 2.39.3" "User Commands"
 .ie \n(.g .ds Aq \(aq
 .el       .ds Aq '
 .ss \n[.ss] 0
@@ -47,6 +47,11 @@ Specify which output columns to print. Use \fB\-\-help\fP to get a list of all s
 \fB\-c\fP, \fB\-\-cpu\-stat\fP \fImode\fP
 .RS 4
 Show per\-cpu statistics by specified mode. Available modes are: \fBauto\fP, \fBenable\fP, \fBdisable\fP. The default option \fBauto\fP detects the width of window, then shows the per\-cpu statistics if the width of window is large enouth to show a full line of statistics.
+.RE
+.sp
+\fB\-C\fP, \fB\-\-cpu\-list\fP \fIlist\fP
+.RS 4
+Specify cpus in list format to show.
 .RE
 .sp
 \fB\-d\fP, \fB\-\-delay\fP \fIseconds\fP

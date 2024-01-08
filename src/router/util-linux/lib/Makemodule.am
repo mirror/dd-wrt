@@ -18,6 +18,7 @@ libcommon_la_SOURCES = \
 	lib/color-names.c \
 	lib/crc32.c \
 	lib/crc32c.c \
+	lib/crc64.c \
 	lib/c_strtod.c \
 	lib/encode.c \
 	lib/env.c \
@@ -29,15 +30,16 @@ libcommon_la_SOURCES = \
 	lib/mbsalign.c \
 	lib/mbsedit.c\
 	lib/md5.c \
-	lib/pager.c \
 	lib/pwdutils.c \
 	lib/randutils.c \
 	lib/sha1.c \
+	lib/sha256.c \
 	lib/signames.c \
 	lib/strutils.c \
 	lib/strv.c \
 	lib/timeutils.c \
-	lib/ttyutils.c
+	lib/ttyutils.c \
+	lib/xxhash.c
 
 if LINUX
 libcommon_la_SOURCES += \
@@ -94,7 +96,8 @@ check_PROGRAMS += \
 	test_strutils \
 	test_ttyutils \
 	test_timeutils \
-	test_c_strtod
+	test_c_strtod \
+	test_logindefs
 
 
 if LINUX
@@ -172,7 +175,7 @@ if LINUX
 test_cpuset_SOURCES = lib/cpuset.c
 test_cpuset_CFLAGS = $(AM_CFLAGS) -DTEST_PROGRAM_CPUSET
 
-test_sysfs_SOURCES = lib/sysfs.c lib/path.c lib/fileutils.c
+test_sysfs_SOURCES = lib/sysfs.c lib/path.c lib/fileutils.c lib/buffer.c lib/mbsalign.c
 if HAVE_CPU_SET_T
 test_sysfs_SOURCES += lib/cpuset.c
 endif
@@ -221,4 +224,12 @@ test_loopdev_SOURCES = lib/loopdev.c \
 		       $(test_sysfs_SOURCES) \
 		       $(test_canonicalize_SOURCES)
 test_loopdev_CFLAGS = $(AM_CFLAGS) -DTEST_PROGRAM_LOOPDEV
+endif
+
+
+test_logindefs_SOURCES = lib/logindefs.c
+test_logindefs_CPPFLAGS = -DTEST_PROGRAM $(AM_CPPFLAGS)
+test_logindefs_LDADD = $(LDADD) libcommon.la
+if HAVE_ECONF
+test_logindefs_LDADD += -leconf
 endif

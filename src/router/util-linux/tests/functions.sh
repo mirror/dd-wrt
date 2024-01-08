@@ -14,6 +14,7 @@
 # GNU General Public License for more details.
 #
 
+TS_EXIT_NOTSUPP=2
 
 function ts_abspath {
 	cd $1
@@ -76,6 +77,9 @@ function ts_report {
 
 function ts_check_test_command {
 	case "$1" in
+	"")
+		ts_failed "invalid test_command requested"
+		;;
 	*/*)
 		# paths
 		if [ ! -x "$1" ]; then
@@ -98,6 +102,7 @@ function ts_check_test_command {
 
 function ts_check_prog {
 	local cmd=$1
+	[ -z "$cmd" ] && ts_failed "invalid prog requested"
 	type "$cmd" >/dev/null 2>&1 || ts_skip "missing in PATH: $cmd"
 }
 
@@ -117,6 +122,30 @@ function ts_check_losetup {
 	ts_skip "no loop-device support"
 }
 
+function ts_check_wcsspn {
+	# https://gitlab.com/qemu-project/qemu/-/issues/1248
+	if [ -e "$TS_HELPER_SYSINFO" ] &&
+		[ "$("$TS_HELPER_SYSINFO" wcsspn-ok)" = "0" ]; then
+
+		ts_skip "non-functional widestring functions"
+	fi
+}
+
+function ts_check_native_byteorder {
+	if [ "$QEMU_USER" == "1" ] && [ ! -e /sys/kernel/cpu_byteorder ]; then
+		ts_skip "non-native byteorder"
+	fi
+}
+
+function ts_check_enotty {
+	# https://lore.kernel.org/qemu-devel/20230426070659.80649-1-thomas@t-8ch.de/
+	if [ -e "$TS_HELPER_SYSINFO" ] &&
+		[ "$("$TS_HELPER_SYSINFO" enotty-ok)" = "0" ]; then
+
+		ts_skip "broken ENOTTY return"
+	fi
+}
+
 function ts_report_skip {
 	ts_report " SKIPPED ($1)"
 }
@@ -131,6 +160,12 @@ function ts_skip {
 function ts_skip_nonroot {
 	if [ $UID -ne 0 ]; then
 		ts_skip "no root permissions"
+	fi
+}
+
+function ts_skip_qemu_user {
+	if [ "$QEMU_USER" == "1" ]; then
+		ts_skip "running under qemu-user emulation"
 	fi
 }
 
@@ -429,7 +464,7 @@ function ts_init_suid {
 	TS_SUID_USER[$ct]=$(stat --printf="%U" $PROG)
 	TS_SUID_GROUP[$ct]=$(stat --printf="%G" $PROG)
 
-	chown root.root $PROG &> /dev/null
+	chown root:root $PROG &> /dev/null
 	chmod u+s $PROG &> /dev/null
 }
 
@@ -618,7 +653,7 @@ function ts_cleanup_on_exit {
 	for idx in $(seq 0 $((${#TS_SUID_PROGS[*]} - 1))); do
 		PROG=${TS_SUID_PROGS[$idx]}
 		chmod a-s $PROG &> /dev/null
-		chown ${TS_SUID_USER[$idx]}.${TS_SUID_GROUP[$idx]} $PROG &> /dev/null
+		chown ${TS_SUID_USER[$idx]}:${TS_SUID_GROUP[$idx]} $PROG &> /dev/null
 	done
 
 	for dev in "${TS_LOOP_DEVS[@]}"; do
@@ -654,7 +689,7 @@ function ts_device_init {
 	local dev
 
 	img=$(ts_image_init $1 $2)
-	dev=$($TS_CMD_LOSETUP --show -f "$img")
+	dev=$($TS_CMD_LOSETUP --show --partscan -f "$img")
 	if [ "$?" != "0" -o "$dev" = "" ]; then
 		ts_die "Cannot init device"
 	fi
@@ -742,7 +777,7 @@ function ts_device_has {
 
 function ts_is_uuid()
 {
-	printf "%s\n" "$1" | egrep -q '^[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$'
+	printf "%s\n" "$1" | grep -E -q '^[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$'
 	return $?
 }
 
@@ -838,7 +873,9 @@ function ts_fdisk_clean {
 
 	# remove non comparable parts of fdisk output
 	if [ -n "${DEVNAME}" ]; then
-		sed -i -e "s@${DEVNAME}@<removed>@;" $TS_OUTPUT $TS_ERRLOG
+		# escape "@" with "\@" in $DEVNAME. This way sed correctly
+		# replaces paths containing "@" characters
+		sed -i -e "s@${DEVNAME//\@/\\\@}@<removed>@;" $TS_OUTPUT $TS_ERRLOG
 	fi
 
 	sed -i \
@@ -1073,15 +1110,6 @@ function ts_init_socket_to_file {
 	fi
 }
 
-function ts_has_mtab_support {
-	grep -q '#define USE_LIBMOUNT_SUPPORT_MTAB' ${top_builddir}/config.h
-	if [ $? == 0 ]; then
-		echo "yes"
-	else
-		echo "no"
-	fi
-}
-
 function ts_has_ncurses_support {
 	grep -q '#define HAVE_LIBNCURSES' ${top_builddir}/config.h
 	if [ $? == 0 ]; then
@@ -1103,4 +1131,39 @@ function ts_get_asan_rt_path {
 	if [ -n "$rt_path" -a -f "$rt_path" ]; then
 		echo "$rt_path"
 	fi
+}
+
+function ts_skip_exitcode_not_supported {
+	if [ $? -eq $TS_EXIT_NOTSUPP ]; then
+		ts_skip "functionality not implemented by system"
+	fi
+}
+
+function ts_inhibit_custom_colorscheme {
+	export XDG_CONFIG_HOME=/dev/null
+}
+
+function ts_is_virt {
+	type "systemd-detect-virt" >/dev/null 2>&1
+	if [ $? -ne 0 ]; then
+		return 1
+	fi
+
+	virt="$(systemd-detect-virt)"
+	for arg in "$@"; do
+		if [ "$virt" = "$arg" ]; then
+			return 0;
+		fi
+	done
+	return 1
+}
+
+function ts_check_enosys_syscalls {
+	ts_check_test_command "$TS_HELPER_ENOSYS"
+	"$TS_HELPER_ENOSYS" ${@/#/-s } true 2> /dev/null
+	[ $? -ne 0 ] && ts_skip "test_enosys does not work: $*"
+}
+
+function ts_skip_docker {
+	test -e /.dockerenv && ts_skip "unsupported in docker environment"
 }

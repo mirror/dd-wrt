@@ -17,14 +17,19 @@
 TS_TOPDIR="${0%/*}/../.."
 TS_DESC="block device with O_RDONLY"
 
-. $TS_TOPDIR/functions.sh
+. "$TS_TOPDIR"/functions.sh
 ts_init "$*"
 ts_skip_nonroot
+ts_skip_docker
 
-. $TS_SELF/lsfd-functions.bash
+# losetup cannot find an unused loop device.
+ts_skip_qemu_user
+
+. "$TS_SELF"/lsfd-functions.bash
 
 ts_check_test_command "$TS_CMD_LSFD"
 
+ts_check_test_command "$TS_CMD_LOSETUP"
 ts_check_test_command "$TS_HELPER_MKFDS"
 
 ts_cd "$TS_OUTDIR"
@@ -68,8 +73,8 @@ EXPR=
 	lsfd_compare_dev "${TS_CMD_LSFD}" "${LSFD_LOOP_BDEV}" "${EXPR}"
 
 	kill -CONT ${PID}
-	wait ${MKFDS_PID}
     fi
+    wait ${MKFDS_PID}
 } > $TS_OUTPUT 2>&1
 
 ts_finalize

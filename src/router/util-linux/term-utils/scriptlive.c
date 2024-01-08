@@ -40,7 +40,7 @@
 #include "monotonic.h"
 
 
-#define SCRIPT_MIN_DELAY 0.0001		/* from original sripreplay.pl */
+#define SCRIPT_MIN_DELAY 0.0001		/* from original scriptreplay.pl */
 
 struct scriptlive {
 	struct ul_pty *pty;
@@ -294,6 +294,8 @@ main(int argc, char *argv[])
 
 	if (ul_pty_setup(ss.pty))
 		err(EXIT_FAILURE, _("failed to create pseudo-terminal"));
+	if (ul_pty_signals_setup(ss.pty))
+		err(EXIT_FAILURE, _("failed to initialize signals handler"));
 
 	fflush(stdout);			/* ??? */
 

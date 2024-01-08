@@ -67,13 +67,15 @@ enum {
 
 struct column_control {
 	int	mode;		/* COLUMN_MODE_* */
-	size_t	termwidth;
+	size_t	termwidth;	/* -1 uninilialized, 0 unlimited, >0 width (default is 80) */
 
 	struct libscols_table *tab;
 
 	char **tab_colnames;	/* array with column names */
 	const char *tab_name;	/* table name */
 	const char *tab_order;	/* --table-order */
+
+	char **tab_columns;	/* array from --table-column */
 
 	const char *tab_colright;	/* --table-right */
 	const char *tab_coltrunc;	/* --table-trunc */
@@ -96,6 +98,8 @@ struct column_control {
 	unsigned int greedy :1,
 		     json :1,
 		     header_repeat :1,
+		     hide_unnamed :1,
+		     maxout : 1,
 		     keep_empty_lines :1,	/* --keep-empty-lines */
 		     tab_noheadings :1;
 };
@@ -196,7 +200,10 @@ static char **split_or_error(const char *str, const char *errmsg)
 	if (!res) {
 		if (errno == ENOMEM)
 			err_oom();
-		errx(EXIT_FAILURE, "%s: '%s'", errmsg, str);
+		if (errmsg)
+			errx(EXIT_FAILURE, "%s: '%s'", errmsg, str);
+		else
+			return NULL;
 	}
 	return res;
 }
@@ -216,56 +223,74 @@ static void init_table(struct column_control *ctl)
 	} else
 		scols_table_enable_noencoding(ctl->tab, 1);
 
-	if (ctl->tab_colnames) {
+	scols_table_enable_maxout(ctl->tab, ctl->maxout ? 1 : 0);
+
+	if (ctl->tab_columns) {
+		char **opts;
+
+		STRV_FOREACH(opts, ctl->tab_columns) {
+			struct libscols_column *cl;
+
+			cl = scols_table_new_column(ctl->tab, NULL, 0, 0);
+			scols_column_set_properties(cl, *opts);
+		}
+
+	} else if (ctl->tab_colnames) {
 		char **name;
 
 		STRV_FOREACH(name, ctl->tab_colnames)
 			scols_table_new_column(ctl->tab, *name, 0, 0);
+	} else
+		scols_table_enable_noheadings(ctl->tab, 1);
+
+	if (ctl->tab_colnames || ctl->tab_columns) {
 		if (ctl->header_repeat)
 			scols_table_enable_header_repeat(ctl->tab, 1);
 		scols_table_enable_noheadings(ctl->tab, !!ctl->tab_noheadings);
-	} else
-		scols_table_enable_noheadings(ctl->tab, 1);
-}
-
-static struct libscols_column *string_to_column(struct column_control *ctl, const char *str)
-{
-	uint32_t colnum = 0;
-
-	if (isdigit_string(str))
-		colnum = strtou32_or_err(str, _("failed to parse column")) - 1;
-	else {
-		char **name;
-
-		STRV_FOREACH(name, ctl->tab_colnames) {
-			if (strcasecmp(*name, str) == 0)
-				break;
-			colnum++;
-		}
-		if (!name || !*name)
-			errx(EXIT_FAILURE, _("undefined column name '%s'"), str);
 	}
 
-	return scols_table_get_column(ctl->tab, colnum);
 }
 
-static struct libscols_column *get_last_visible_column(struct column_control *ctl)
+static struct libscols_column *get_last_visible_column(struct column_control *ctl, int n)
 {
 	struct libscols_iter *itr;
-	struct libscols_column *cl, *last = NULL;
+	struct libscols_column *cl, *res = NULL;
 
-	itr = scols_new_iter(SCOLS_ITER_FORWARD);
+	itr = scols_new_iter(SCOLS_ITER_BACKWARD);
 	if (!itr)
 		err_oom();
 
 	while (scols_table_next_column(ctl->tab, itr, &cl) == 0) {
 		if (scols_column_get_flags(cl) & SCOLS_FL_HIDDEN)
 			continue;
-		last = cl;
+		if (n == 0) {
+			res = cl;
+			break;
+		}
+		n--;
 	}
 
 	scols_free_iter(itr);
-	return last;
+	return res;
+}
+
+static struct libscols_column *string_to_column(struct column_control *ctl, const char *str)
+{
+	struct libscols_column *cl;
+
+	if (isdigit_string(str)) {
+		uint32_t n = strtou32_or_err(str, _("failed to parse column")) - 1;
+
+		cl = scols_table_get_column(ctl->tab, n);
+	} else if (strcmp(str, "-1") == 0)
+		cl = get_last_visible_column(ctl, 0);
+	else
+		cl = scols_table_get_column_by_name(ctl->tab, str);
+
+	if (!cl)
+		errx(EXIT_FAILURE, _("undefined column name '%s'"), str);
+
+	return cl;
 }
 
 static int column_set_flag(struct libscols_column *cl, int fl)
@@ -273,6 +298,32 @@ static int column_set_flag(struct libscols_column *cl, int fl)
 	int cur = scols_column_get_flags(cl);
 
 	return scols_column_set_flags(cl, cur | fl);
+}
+
+static int has_unnamed(const char *list)
+{
+	char **all, **one;
+	int rc = 0;
+
+	if (!list)
+		return 0;
+	if (strcmp(list, "-") == 0)
+		return 1;
+	if (!strchr(list, ','))
+		return 0;
+
+	all = split_or_error(list, NULL);
+	if (all) {
+		STRV_FOREACH(one, all) {
+			if (strcmp(*one, "-") == 0) {
+				rc = 1;
+				break;
+			}
+		}
+		strv_free(all);
+	}
+
+	return rc;
 }
 
 static void apply_columnflag_from_list(struct column_control *ctl, const char *list,
@@ -294,16 +345,34 @@ static void apply_columnflag_from_list(struct column_control *ctl, const char *l
 		while (scols_table_next_column(ctl->tab, itr, &cl) == 0)
 			column_set_flag(cl, flag);
 		scols_free_iter(itr);
+		return;
 	}
 
 	all = split_or_error(list, errmsg);
 
 	/* apply to columns specified by name */
 	STRV_FOREACH(one, all) {
-		if (flag == SCOLS_FL_HIDDEN && strcmp(*one, "-") == 0) {
+		int low = 0, up = 0;
+
+		if (strcmp(*one, "-") == 0) {
 			unnamed = 1;
 			continue;
 		}
+
+		/* parse range (N-M) */
+		if (strchr(*one, '-') && parse_range(*one, &low, &up, 0) == 0) {
+			for (; low <= up; low++) {
+				if (low < 0)
+					cl = get_last_visible_column(ctl, (low * -1) -1);
+				else
+					cl = scols_table_get_column(ctl->tab, low-1);
+				if (cl)
+					column_set_flag(cl, flag);
+			}
+			continue;
+		}
+
+		/* one item in the list */
 		cl = string_to_column(ctl, *one);
 		if (cl)
 			column_set_flag(cl, flag);
@@ -402,8 +471,14 @@ static void create_tree(struct column_control *ctl)
 
 static void modify_table(struct column_control *ctl)
 {
-	scols_table_set_termwidth(ctl->tab, ctl->termwidth);
-	scols_table_set_termforce(ctl->tab, SCOLS_TERMFORCE_ALWAYS);
+	if (ctl->termwidth > 0) {
+		scols_table_set_termwidth(ctl->tab, ctl->termwidth);
+		scols_table_set_termforce(ctl->tab, SCOLS_TERMFORCE_ALWAYS);
+	}
+
+	if (ctl->tab_colhide)
+		apply_columnflag_from_list(ctl, ctl->tab_colhide,
+				SCOLS_FL_HIDDEN , _("failed to parse --table-hide list"));
 
 	if (ctl->tab_colright)
 		apply_columnflag_from_list(ctl, ctl->tab_colright,
@@ -421,12 +496,8 @@ static void modify_table(struct column_control *ctl)
 		apply_columnflag_from_list(ctl, ctl->tab_colwrap,
 				SCOLS_FL_WRAP , _("failed to parse --table-wrap list"));
 
-	if (ctl->tab_colhide)
-		apply_columnflag_from_list(ctl, ctl->tab_colhide,
-				SCOLS_FL_HIDDEN , _("failed to parse --table-hide list"));
-
 	if (!ctl->tab_colnoextrem) {
-		struct libscols_column *cl = get_last_visible_column(ctl);
+		struct libscols_column *cl = get_last_visible_column(ctl, 0);
 		if (cl)
 			column_set_flag(cl, SCOLS_FL_NOEXTREMES);
 	}
@@ -442,52 +513,47 @@ static void modify_table(struct column_control *ctl)
 
 static int add_line_to_table(struct column_control *ctl, wchar_t *wcs0)
 {
-	wchar_t *wcdata, *sv = NULL, *wcs = wcs0;
-	size_t n = 0, nchars = 0, skip = 0, len;
+	wchar_t *sv = NULL, *wcs = wcs0, *all = NULL;
+	size_t n = 0;
 	struct libscols_line *ln = NULL;
+
 
 	if (!ctl->tab)
 		init_table(ctl);
 
-	len = wcslen(wcs0);
+	if (ctl->maxncols) {
+		all = wcsdup(wcs0);
+		if (!all)
+			err(EXIT_FAILURE, _("failed to allocate input line"));
+	}
 
 	do {
 		char *data;
-
-		if (ctl->maxncols && n + 1 == ctl->maxncols) {
-			if (nchars + skip < len)
-				wcdata = wcs0 + (nchars + skip);
-			else
-				wcdata = NULL;
-		} else {
-			wcdata = local_wcstok(ctl, wcs, &sv);
-
-			/* For the default separator ('greedy' mode) it uses
-			 * strtok() and it skips leading white chars. In this
-			 * case we need to remember size of the ignored white
-			 * chars due to wcdata calculation in maxncols case */
-			if (wcdata && ctl->greedy
-			    && n == 0 && nchars == 0 && wcdata > wcs)
-				skip = wcdata - wcs;
-		}
+		wchar_t *wcdata = local_wcstok(ctl, wcs, &sv);
 
 		if (!wcdata)
 			break;
+
+		if (ctl->maxncols && n + 1 == ctl->maxncols) {
+			/* Use rest of the string as column data */
+			size_t skip = wcdata - wcs0;
+			wcdata = all + skip;
+		}
+
 		if (scols_table_get_ncols(ctl->tab) < n + 1) {
-			if (scols_table_is_json(ctl->tab))
+			if (scols_table_is_json(ctl->tab) && !ctl->hide_unnamed)
 				errx(EXIT_FAILURE, _("line %zu: for JSON the name of the "
 					"column %zu is required"),
 					scols_table_get_nlines(ctl->tab) + 1,
 					n + 1);
-			scols_table_new_column(ctl->tab, NULL, 0, 0);
+			scols_table_new_column(ctl->tab, NULL, 0,
+					ctl->hide_unnamed ? SCOLS_FL_HIDDEN : 0);
 		}
 		if (!ln) {
 			ln = scols_table_new_line(ctl->tab, NULL);
 			if (!ln)
 				err(EXIT_FAILURE, _("failed to allocate output line"));
 		}
-
-		nchars += wcslen(wcdata) + 1;
 
 		data = wcs_to_mbs(wcdata);
 		if (!data)
@@ -500,6 +566,7 @@ static int add_line_to_table(struct column_control *ctl, wchar_t *wcs0)
 			break;
 	} while (1);
 
+	free(all);
 	return 0;
 }
 
@@ -682,10 +749,12 @@ static void __attribute__((__noreturn__)) usage(void)
 	fputs(_(" -t, --table                      create a table\n"), out);
 	fputs(_(" -n, --table-name <name>          table name for JSON output\n"), out);
 	fputs(_(" -O, --table-order <columns>      specify order of output columns\n"), out);
+	fputs(_(" -C, --table-column <properties>  define column\n"), out);
 	fputs(_(" -N, --table-columns <names>      comma separated columns names\n"), out);
 	fputs(_(" -l, --table-columns-limit <num>  maximal number of input columns\n"), out);
 	fputs(_(" -E, --table-noextreme <columns>  don't count long text from the columns to column width\n"), out);
 	fputs(_(" -d, --table-noheadings           don't print header\n"), out);
+	fputs(_(" -m, --table-maxout               fill all available space\n"), out);
 	fputs(_(" -e, --table-header-repeat        repeat header for each page\n"), out);
 	fputs(_(" -H, --table-hide <columns>       don't print the columns\n"), out);
 	fputs(_(" -R, --table-right <columns>      right align text in these columns\n"), out);
@@ -736,9 +805,11 @@ int main(int argc, char **argv)
 		{ "separator",           required_argument, NULL, 's' },
 		{ "table",               no_argument,       NULL, 't' },
 		{ "table-columns",       required_argument, NULL, 'N' },
+		{ "table-column",        required_argument, NULL, 'C' },
 		{ "table-columns-limit", required_argument, NULL, 'l' },
 		{ "table-hide",          required_argument, NULL, 'H' },
 		{ "table-name",          required_argument, NULL, 'n' },
+		{ "table-maxout",        no_argument,       NULL, 'm' },
 		{ "table-noextreme",     required_argument, NULL, 'E' },
 		{ "table-noheadings",    no_argument,       NULL, 'd' },
 		{ "table-order",         required_argument, NULL, 'O' },
@@ -754,6 +825,7 @@ int main(int argc, char **argv)
 		{ NULL,	0, NULL, 0 },
 	};
 	static const ul_excl_t excl[] = {       /* rows and cols in ASCII order */
+		{ 'C','N' },
 		{ 'J','x' },
 		{ 't','x' },
 		{ 0 }
@@ -768,13 +840,20 @@ int main(int argc, char **argv)
 	ctl.output_separator = "  ";
 	ctl.input_separator = mbs_to_wcs("\t ");
 
-	while ((c = getopt_long(argc, argv, "c:dE:eH:hi:Jl:LN:n:O:o:p:R:r:s:T:tVW:x", longopts, NULL)) != -1) {
+	while ((c = getopt_long(argc, argv, "C:c:dE:eH:hi:Jl:LN:n:mO:o:p:R:r:s:T:tVW:x", longopts, NULL)) != -1) {
 
 		err_exclusive_options(c, longopts, excl, excl_st);
 
 		switch(c) {
+		case 'C':
+			if (strv_extend(&ctl.tab_columns, optarg))
+				err_oom();
+			break;
 		case 'c':
-			ctl.termwidth = strtou32_or_err(optarg, _("invalid columns argument"));
+			if (strcmp(optarg, "unlimited") == 0)
+				ctl.termwidth = 0;
+			else
+				ctl.termwidth = strtou32_or_err(optarg, _("invalid columns argument"));
 			break;
 		case 'd':
 			ctl.tab_noheadings = 1;
@@ -787,6 +866,7 @@ int main(int argc, char **argv)
 			break;
 		case 'H':
 			ctl.tab_colhide = optarg;
+			ctl.hide_unnamed = has_unnamed(ctl.tab_colhide);
 			break;
 		case 'i':
 			ctl.tree_id = optarg;
@@ -808,6 +888,9 @@ int main(int argc, char **argv)
 			break;
 		case 'n':
 			ctl.tab_name = optarg;
+			break;
+		case 'm':
+			ctl.maxout = 1;
 			break;
 		case 'O':
 			ctl.tab_order = optarg;
@@ -868,11 +951,11 @@ int main(int argc, char **argv)
 	if (ctl.mode != COLUMN_MODE_TABLE
 	    && (ctl.tab_order || ctl.tab_name || ctl.tab_colwrap ||
 		ctl.tab_colhide || ctl.tab_coltrunc || ctl.tab_colnoextrem ||
-		ctl.tab_colright || ctl.tab_colnames))
+		ctl.tab_colright || ctl.tab_colnames || ctl.tab_columns))
 		errx(EXIT_FAILURE, _("option --table required for all --table-*"));
 
-	if (ctl.tab_colnames == NULL && ctl.json)
-		errx(EXIT_FAILURE, _("option --table-columns required for --json"));
+	if (!ctl.tab_colnames && !ctl.tab_columns && ctl.json)
+		errx(EXIT_FAILURE, _("option --table-columns or --table-column required for --json"));
 
 	if (!*argv)
 		eval += read_input(&ctl, stdin);
@@ -901,6 +984,12 @@ int main(int argc, char **argv)
 		if (ctl.tab && scols_table_get_nlines(ctl.tab)) {
 			modify_table(&ctl);
 			eval = scols_print_table(ctl.tab);
+
+			scols_unref_table(ctl.tab);
+			if (ctl.tab_colnames)
+				strv_free(ctl.tab_colnames);
+			if (ctl.tab_columns)
+				strv_free(ctl.tab_columns);
 		}
 		break;
 	case COLUMN_MODE_FILLCOLS:
@@ -913,6 +1002,8 @@ int main(int argc, char **argv)
 		simple_print(&ctl);
 		break;
 	}
+
+	free(ctl.input_separator);
 
 	return eval == 0 ? EXIT_SUCCESS : EXIT_FAILURE;
 }

@@ -103,6 +103,8 @@ struct lscpu_cputype {
 			has_addresses : 1;
 
 	size_t nr_socket_on_cluster; /* the number of sockets if the is_cluster is 1 */
+
+	char	*isa;	/* loongarch */
 };
 
 /* dispatching modes */
@@ -206,6 +208,7 @@ struct lscpu_cxt {
 
 	struct path_cxt	*syscpu; /* _PATH_SYS_CPU path handler */
 	struct path_cxt *procfs; /* /proc path handler */
+	struct path_cxt *rootfs; /* / path handler */
 
 	size_t ncputypes;
 	struct lscpu_cputype **cputypes;

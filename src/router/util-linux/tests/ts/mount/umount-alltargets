@@ -5,7 +5,7 @@
 TS_TOPDIR="${0%/*}/../.."
 TS_DESC="umount-all-targets"
 
-. $TS_TOPDIR/functions.sh
+. "$TS_TOPDIR"/functions.sh
 ts_init "$*"
 
 ts_check_test_command "$TS_CMD_MOUNT"
@@ -17,11 +17,6 @@ ts_check_prog "mkfs.ext2"
 
 $TS_CMD_UMOUNT --help | grep -q all-targets
 [ $? -eq 1 ] && ts_skip "all-targets unsupported"
-
-has_mtab=$( ts_has_mtab_support )
-if [ "$has_mtab" == "yes" ]; then
-	[ -L /etc/mtab ] || ts_skip "regular mtab"
-fi
 
 # set global variable TS_DEVICE
 ts_scsi_debug_init dev_size_mb=50
@@ -112,11 +107,11 @@ ts_finalize_subtest
 ts_init_subtest "all-targets-recursive"
 multi_mount ${TS_DEVICE}1 $MOUNTPOINT
 [ -d "${MOUNTPOINT}1/subA" ] || mkdir -p ${MOUNTPOINT}1/subA
-$TS_CMD_MOUNT ${TS_DEVICE}2 ${MOUNTPOINT}1/subA
+$TS_CMD_MOUNT ${TS_DEVICE}2 ${MOUNTPOINT}1/subA &> /dev/null
 [ -d "${MOUNTPOINT}1/subA/subAB" ] || mkdir -p ${MOUNTPOINT}1/subA/subAB
-$TS_CMD_MOUNT ${TS_DEVICE}3 ${MOUNTPOINT}1/subA/subAB
+$TS_CMD_MOUNT ${TS_DEVICE}3 ${MOUNTPOINT}1/subA/subAB &> /dev/null
 [ -d "${MOUNTPOINT}1/subB" ] || mkdir -p ${MOUNTPOINT}1/subB
-$TS_CMD_MOUNT ${TS_DEVICE}4 ${MOUNTPOINT}1/subB
+$TS_CMD_MOUNT ${TS_DEVICE}4 ${MOUNTPOINT}1/subB &> /dev/null
 $TS_CMD_UMOUNT --recursive --all-targets ${TS_DEVICE}1 >> $TS_OUTPUT 2>> $TS_ERRLOG
 [ $? == 0 ] || ts_log "umount failed"
 ts_finalize_subtest

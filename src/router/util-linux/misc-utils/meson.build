@@ -46,10 +46,13 @@ lsfd_sources = files (
   'lsfd-filter.c',
   'lsfd-counter.h',
   'lsfd-counter.c',
+  'lsfd-decode-file-flags.c',
   'lsfd-file.c',
   'lsfd-cdev.c',
   'lsfd-bdev.c',
   'lsfd-sock.c',
+  'lsfd-sock.h',
+  'lsfd-sock-xinfo.c',
   'lsfd-unkn.c',
   'lsfd-fifo.c',
 )
@@ -88,6 +91,16 @@ if build_uuidd and systemd.found()
   install_data(
     uuidd_socket,
     install_dir : systemdsystemunitdir)
+endif
+if build_uuidd and sysvinit
+  uuidd_rc = configure_file(
+    input : 'uuidd.rc.in',
+    output : 'uuidd.rc',
+    configuration : conf)
+  install_data(
+    uuidd_rc,
+    install_mode : 'rwxr-xr-x',
+    install_dir : sysvinitrcdir)
 endif
 
 blkid_sources = files(
@@ -139,4 +152,16 @@ hardlink_sources = files(
 
 cal_sources = files(
   'cal.c',
+)
+
+pipesz_sources = files(
+  'pipesz.c',
+)
+
+fadvise_sources = files(
+  'fadvise.c',
+)
+
+waitpid_sources = files(
+  'waitpid.c',
 )

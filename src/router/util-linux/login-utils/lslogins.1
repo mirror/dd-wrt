@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: lslogins
 .\"    Author: [see the "AUTHOR(S)" section]
-.\" Generator: Asciidoctor 2.0.15
-.\"      Date: 2022-05-11
+.\" Generator: Asciidoctor 2.0.20
+.\"      Date: 2023-11-30
 .\"    Manual: User Commands
-.\"    Source: util-linux 2.38.1
+.\"    Source: util-linux 2.39.3
 .\"  Language: English
 .\"
-.TH "LSLOGINS" "1" "2022-05-11" "util\-linux 2.38.1" "User Commands"
+.TH "LSLOGINS" "1" "2023-11-30" "util\-linux 2.39.3" "User Commands"
 .ie \n(.g .ds Aq \(aq
 .el       .ds Aq '
 .ss \n[.ss] 0
@@ -65,7 +65,7 @@ Output data in the format of NAME=VALUE. See also option \fB\-\-shell\fP.
 .sp
 \fB\-f\fP, \fB\-\-failed\fP
 .RS 4
-Display data about the users\(aq last failed login attempts.
+Display data about the users\*(Aq last failed login attempts.
 .RE
 .sp
 \fB\-G\fP, \fB\-\-supp\-groups\fP
@@ -82,7 +82,7 @@ Note that the relation between user and group may be invisible for the primary g
 .sp
 \fB\-L\fP, \fB\-\-last\fP
 .RS 4
-Display data containing information about the users\(aq last login sessions.
+Display data containing information about the users\*(Aq last login sessions.
 .RE
 .sp
 \fB\-l\fP, \fB\-\-logins\fP=\fIlogins\fP
@@ -160,14 +160,14 @@ Alternate path for wtmp.
 Alternate path for \fBlastlog\fP(8).
 .RE
 .sp
-\fBy\-\fP, \fB\-\-shell\fP
+\fB\-y\fP, \fB\-\-shell\fP
 .RS 4
 The column name will be modified to contain only characters allowed for shell variable identifiers. This is usable, for example, with \fB\-\-export\fP. Note that this feature has been automatically enabled for \fB\-\-export\fP in version 2.37, but due to compatibility issues, now it\(cqs necessary to request this behavior by \fB\-\-shell\fP.
 .RE
 .sp
 \fB\-Z\fP, \fB\-\-context\fP
 .RS 4
-Display the users\(aq security context.
+Display the users\*(Aq security context.
 .RE
 .sp
 \fB\-z\fP, \fB\-\-print0\fP
@@ -193,6 +193,24 @@ if a serious error occurs (e.g., a corrupt log).
 .SH "NOTES"
 .sp
 The default UID thresholds are read from \fI/etc/login.defs\fP.
+.SS "Password status"
+.sp
+Multiple fields describe password status.
+.sp
+\fB"Password is locked"\fP
+.RS 4
+The password is prefixed by \*(Aq!!\*(Aq, and the user cannot login although the password is set or empty. This is common for new accounts without a set password.
+.RE
+.sp
+\fB"Password not required (empty)"\fP
+.RS 4
+The password is not set (hash is missing); this is common for locked system accounts. Not requiring a password does not mean the user can log\-in without a password. It depends on the password "lock" status.
+.RE
+.sp
+\fB"Login by password disabled"\fP
+.RS 4
+\*(Aqyes\*(Aq means that there is no valid password. The password hash is missing, or the hash method is unknown or contains invalid chars.
+.RE
 .SH "HISTORY"
 .sp
 The \fBlslogins\fP utility is inspired by the \fBlogins\fP utility, which first appeared in FreeBSD 4.10.

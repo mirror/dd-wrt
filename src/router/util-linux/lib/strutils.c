@@ -12,6 +12,7 @@
 #include <errno.h>
 #include <sys/stat.h>
 #include <string.h>
+#include <strings.h>
 #include <assert.h>
 
 #include "c.h"
@@ -326,13 +327,16 @@ int ul_strtos64(const char *str, int64_t *num, int base)
 {
 	char *end = NULL;
 
-	errno = 0;
 	if (str == NULL || *str == '\0')
-		return -EINVAL;
+		return -(errno = EINVAL);
+
+	errno = 0;
 	*num = (int64_t) strtoimax(str, &end, base);
 
-	if (errno || str == end || (end && *end))
-		return -EINVAL;
+	if (errno != 0)
+		return -errno;
+	if (str == end || (end && *end))
+		return -(errno = EINVAL);
 	return 0;
 }
 
@@ -341,13 +345,13 @@ int ul_strtou64(const char *str, uint64_t *num, int base)
 	char *end = NULL;
 	int64_t tmp;
 
-	errno = 0;
 	if (str == NULL || *str == '\0')
-		return -EINVAL;
+		return -(errno = EINVAL);
 
 	/* we need to ignore negative numbers, note that for invalid negative
 	 * number strtoimax() returns negative number too, so we do not
 	 * need to check errno here */
+	errno = 0;
 	tmp = (int64_t) strtoimax(str, &end, base);
 	if (tmp < 0)
 		errno = ERANGE;
@@ -356,8 +360,10 @@ int ul_strtou64(const char *str, uint64_t *num, int base)
 		*num = strtoumax(str, &end, base);
 	}
 
-	if (errno || str == end || (end && *end))
-		return -EINVAL;
+	if (errno != 0)
+		return -errno;
+	if (str == end || (end && *end))
+		return -(errno = EINVAL);
 	return 0;
 }
 
@@ -391,7 +397,7 @@ int ul_strtou32(const char *str, uint32_t *num, int base)
  * Convert strings to numbers in defined range and print message on error.
  *
  * These functions are used when we read input from users (getopt() etc.). It's
- * better to consolidate the code and keep it all based on 64-bit numbers then
+ * better to consolidate the code and keep it all based on 64-bit numbers than
  * implement it for 32 and 16-bit numbers too.
  */
 int64_t str2num_or_err(const char *str, int base, const char *errmesg,
@@ -471,48 +477,6 @@ err:
 	errx(STRTOXX_EXIT_CODE, "%s: '%s'", errmesg, str);
 }
 
-long strtol_or_err(const char *str, const char *errmesg)
-{
-	long num;
-	char *end = NULL;
-
-	errno = 0;
-	if (str == NULL || *str == '\0')
-		goto err;
-	num = strtol(str, &end, 10);
-
-	if (errno || str == end || (end && *end))
-		goto err;
-
-	return num;
-err:
-	if (errno == ERANGE)
-		err(STRTOXX_EXIT_CODE, "%s: '%s'", errmesg, str);
-
-	errx(STRTOXX_EXIT_CODE, "%s: '%s'", errmesg, str);
-}
-
-unsigned long strtoul_or_err(const char *str, const char *errmesg)
-{
-	unsigned long num;
-	char *end = NULL;
-
-	errno = 0;
-	if (str == NULL || *str == '\0')
-		goto err;
-	num = strtoul(str, &end, 10);
-
-	if (errno || str == end || (end && *end))
-		goto err;
-
-	return num;
-err:
-	if (errno == ERANGE)
-		err(STRTOXX_EXIT_CODE, "%s: '%s'", errmesg, str);
-
-	errx(STRTOXX_EXIT_CODE, "%s: '%s'", errmesg, str);
-}
-
 uintmax_t strtosize_or_err(const char *str, const char *errmesg)
 {
 	uintmax_t num;
@@ -534,6 +498,15 @@ void strtotimeval_or_err(const char *str, struct timeval *tv, const char *errmes
 	user_input = strtold_or_err(str, errmesg);
 	tv->tv_sec = (time_t) user_input;
 	tv->tv_usec = (suseconds_t)((user_input - tv->tv_sec) * 1000000);
+}
+
+void strtotimespec_or_err(const char *str, struct timespec *ts, const char *errmesg)
+{
+	long double user_input;
+
+	user_input = strtold_or_err(str, errmesg);
+	ts->tv_sec = (time_t) user_input;
+	ts->tv_nsec = (long)((user_input - ts->tv_sec) * 1000000000);
 }
 
 time_t strtotime_or_err(const char *str, const char *errmesg)
@@ -761,11 +734,16 @@ int string_add_to_idarray(const char *list, int ary[], size_t arysz,
  * as a position in the 'ary' bit array. It means that the 'id' has to be in
  * range <0..N> where N < sizeof(ary) * NBBY.
  *
+ * If allow_range is enabled:
+ * An item ending in '+' also sets all bits in <0..N>.
+ * An item beginning with '+' also sets all bits in <N..allow_minus>.
+ *
  * Returns: 0 on success, <0 on error.
  */
 int string_to_bitarray(const char *list,
 		     char *ary,
-		     int (*name2bit)(const char *, size_t))
+		     int (*name2bit)(const char *, size_t),
+		     size_t allow_range)
 {
 	const char *begin = NULL, *p;
 
@@ -774,7 +752,7 @@ int string_to_bitarray(const char *list,
 
 	for (p = list; p && *p; p++) {
 		const char *end = NULL;
-		int bit;
+		int bit, set_lower = 0, set_higher = 0;
 
 		if (!begin)
 			begin = p;		/* begin of the level name */
@@ -786,11 +764,26 @@ int string_to_bitarray(const char *list,
 			continue;
 		if (end <= begin)
 			return -1;
+		if (allow_range) {
+			if (*(end - 1) == '+') {
+				end--;
+				set_lower = 1;
+			} else if (*begin == '+') {
+				begin++;
+				set_higher = 1;
+			}
+		}
 
 		bit = name2bit(begin, end - begin);
 		if (bit < 0)
 			return bit;
 		setbit(ary, bit);
+		if (set_lower)
+			while (--bit >= 0)
+				setbit(ary, bit);
+		else if (set_higher)
+			while (++bit < (int) allow_range)
+				setbit(ary, bit);
 		begin = NULL;
 		if (end && !*end)
 			break;
@@ -1154,7 +1147,80 @@ int ul_stralnumcmp(const char *p1, const char *p2)
 	return c1 - c2;
 }
 
+/*
+ * Parses the first option from @optstr. The @optstr pointer is set to the beginning
+ * of the next option. The options string looks like 'aaa,bbb=data,foo,bar="xxx"'.
+ *
+ * Note this function is used by libmount to parse mount options. Be careful when modify.
+ *
+ * Returns -EINVAL on parse error, 1 at the end of optstr and 0 on success.
+ */
+int ul_optstr_next(char **optstr, char **name, size_t *namesz,
+		   char **value, size_t *valsz)
+{
+	int open_quote = 0;
+	char *start = NULL, *stop = NULL, *p, *sep = NULL;
+	char *optstr0;
+
+	assert(optstr);
+	assert(*optstr);
+
+	optstr0 = *optstr;
+
+	if (name)
+		*name = NULL;
+	if (namesz)
+		*namesz = 0;
+	if (value)
+		*value = NULL;
+	if (valsz)
+		*valsz = 0;
+
+	/* trim leading commas as to not invalidate option
+	 * strings with multiple consecutive commas */
+	while (optstr0 && *optstr0 == ',')
+		optstr0++;
+
+	for (p = optstr0; p && *p; p++) {
+		if (!start)
+			start = p;		/* beginning of the option item */
+		if (*p == '"')
+			open_quote ^= 1;	/* reverse the status */
+		if (open_quote)
+			continue;		/* still in quoted block */
+		if (!sep && p > start && *p == '=')
+			sep = p;		/* name and value separator */
+		if (*p == ',' && (p == optstr0 || *(p - 1) != '\\'))
+			stop = p;		/* terminate the option item */
+		else if (*(p + 1) == '\0')
+			stop = p + 1;		/* end of optstr */
+		if (!start || !stop)
+			continue;
+		if (stop <= start)
+			return -EINVAL;
+
+		if (name)
+			*name = start;
+		if (namesz)
+			*namesz = sep ? sep - start : stop - start;
+		*optstr = *stop ? stop + 1 : stop;
+
+		if (sep) {
+			if (value)
+				*value = sep + 1;
+			if (valsz)
+				*valsz = stop - sep - 1;
+		}
+		return 0;
+	}
+
+	return 1;				/* end of optstr */
+}
+
 #ifdef TEST_PROGRAM_STRUTILS
+
+#include "cctype.h"
+
 struct testS {
 	char *name;
 	char *value;
@@ -1255,6 +1321,26 @@ done:
 	return EXIT_SUCCESS;
 }
 
+static int test_strutils_cstrcasecmp(int argc, char *argv[])
+{
+	char *a, *b;
+
+	if (argc < 3)
+		return EXIT_FAILURE;
+
+	a = argv[1];
+	b = argv[2];
+
+	if (!a || !b)
+		return EXIT_FAILURE;
+
+	printf("cmp    '%s' '%s' = %d\n", a, b, strcasecmp(a, b));
+	printf("c_cmp  '%s' '%s' = %d\n", a, b, c_strcasecmp(a, b));
+	printf("c_ncmp '%s' '%s' = %d\n", a, b, c_strncasecmp(a, b, strlen(a)));
+
+	return EXIT_SUCCESS;
+}
+
 int main(int argc, char *argv[])
 {
 	if (argc == 3 && strcmp(argv[1], "--size") == 0) {
@@ -1270,9 +1356,12 @@ int main(int argc, char *argv[])
 		printf("%s\n", ul_stralnumcmp(argv[2], argv[3]) == 0 ?
 				"match" : "dismatch");
 		return EXIT_SUCCESS;
+
+	} else if (argc == 4 && strcmp(argv[1], "--cstrcasecmp") == 0) {
+		return test_strutils_cstrcasecmp(argc - 1, argv + 1);
+
 	} else if (argc == 3 && strcmp(argv[1], "--normalize") == 0) {
 		return test_strutils_normalize(argc - 1, argv + 1);
-
 
 	} else if (argc == 3 && strcmp(argv[1], "--strtos64") == 0) {
 		printf("'%s'-->%jd\n", argv[2], strtos64_or_err(argv[2], "strtos64 failed"));
@@ -1302,6 +1391,7 @@ int main(int argc, char *argv[])
 				"       %1$s --cmp-paths <path> <path>\n"
 				"       %1$s --strdup-member <str> <str>\n"
 				"       %1$s --stralnumcmp <str> <str>\n"
+				"       %1$s --cstrcasecmp <str> <str>\n"
 				"       %1$s --normalize <str>\n"
 				"       %1$s --strto{s,u}{16,32,64} <str>\n",
 				argv[0]);

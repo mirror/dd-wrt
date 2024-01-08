@@ -83,7 +83,6 @@
 #include "xalloc.h"
 #include "widechar.h"
 #include "closestream.h"
-#include "rpmatch.h"
 #include "env.h"
 
 #ifdef TEST_PROGRAM
@@ -238,7 +237,7 @@ static void __attribute__((__noreturn__)) usage(void)
 	printf(_(" %s [options] <file>...\n"), program_invocation_short_name);
 
 	printf("%s", USAGE_SEPARATOR);
-	printf("%s\n", _("A file perusal filter for CRT viewing."));
+	printf("%s\n", _("Display the contents of a file in a terminal."));
 
 	printf("%s", USAGE_OPTIONS);
 	printf("%s\n", _(" -d, --silent          display help instead of ringing bell"));
@@ -357,11 +356,11 @@ static void env_argscan(struct more_control *ctl, const char *s)
 	env_argv = xmalloc(sizeof(char *) * size);
 	env_argv[0] = _("MORE environment variable");	/* program name */
 	for (tok = strtok_r(str, delim, &key); tok; tok = strtok_r(NULL, delim, &key)) {
-		env_argv[env_argc++] = tok;
-		if (size < env_argc) {
+		if (size == env_argc) {
 			size *= 2;
 			env_argv = xrealloc(env_argv, sizeof(char *) * size);
 		}
+		env_argv[env_argc++] = tok;
 	}
 
 	argscan(ctl, env_argc, env_argv);
@@ -2052,8 +2051,11 @@ int main(int argc, char **argv)
 	if (!(strcmp(program_invocation_short_name, "page")))
 		ctl.no_scroll++;
 
+	ctl.exit_on_eof = getenv("POSIXLY_CORRECT") ? 0 : 1;
+
 	if ((s = getenv("MORE")) != NULL)
 		env_argscan(&ctl, s);
+
 	argscan(&ctl, argc, argv);
 
 	/* clear any inherited settings */

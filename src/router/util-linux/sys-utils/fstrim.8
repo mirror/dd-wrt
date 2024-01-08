@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: fstrim
 .\"    Author: [see the "AUTHOR(S)" section]
-.\" Generator: Asciidoctor 2.0.15
-.\"      Date: 2022-05-11
+.\" Generator: Asciidoctor 2.0.20
+.\"      Date: 2023-11-21
 .\"    Manual: System Administration
-.\"    Source: util-linux 2.38.1
+.\"    Source: util-linux 2.39.3
 .\"  Language: English
 .\"
-.TH "FSTRIM" "8" "2022-05-11" "util\-linux 2.38.1" "System Administration"
+.TH "FSTRIM" "8" "2023-11-21" "util\-linux 2.39.3" "System Administration"
 .ie \n(.g .ds Aq \(aq
 .el       .ds Aq '
 .ss \n[.ss] 0
@@ -31,14 +31,14 @@
 fstrim \- discard unused blocks on a mounted filesystem
 .SH "SYNOPSIS"
 .sp
-\fBfstrim\fP [\fB\-Aa\fP] [\fB\-o\fP \fIoffset\fP] [\fB\-l\fP \fIlength\fP] [\fB\-m\fP \fIminimum\-size\fP] [\fB\-v\fP \fImountpoint\fP]
+\fBfstrim\fP [\fB\-Aav\fP] [\fB\-o\fP \fIoffset\fP] [\fB\-l\fP \fIlength\fP] [\fB\-m\fP \fIminimum\-size\fP] [\fImountpoint\fP]
 .SH "DESCRIPTION"
 .sp
 \fBfstrim\fP is used on a mounted filesystem to discard (or "trim") blocks which are not in use by the filesystem. This is useful for solid\-state drives (SSDs) and thinly\-provisioned storage.
 .sp
 By default, \fBfstrim\fP will discard all unused blocks in the filesystem. Options may be used to modify this behavior based on range or size, as explained below.
 .sp
-The \fImountpoint\fP argument is the pathname of the directory where the filesystem is mounted.
+The \fImountpoint\fP argument is the pathname of the directory where the filesystem is mounted and is required when \fB\fI\-A\fP\fP, \fB\fI\-a\fP\fP, \fB\fI\-\-fstab\fP\fP, or \fB\fI\-\-all\fP\fP are unspecified.
 .sp
 Running \fBfstrim\fP frequently, or even using \fBmount \-o discard\fP, might negatively affect the lifetime of poor\-quality SSD devices. For most desktop and server systems a sufficient trimming frequency is once a week. Note that not all devices support a queued trim, so each trim command incurs a performance penalty on whatever else might be trying to use the disk at the time.
 .SH "OPTIONS"
@@ -82,6 +82,16 @@ Filesystems with "X\-fstrim.notrim" mount option in fstab are skipped.
 \fB\-m, \-\-minimum\fP \fIminimum\-size\fP
 .RS 4
 Minimum contiguous free range to discard, in bytes. (This value is internally rounded up to a multiple of the filesystem block size.) Free ranges smaller than this will be ignored and \fBfstrim\fP will adjust the minimum if it\(cqs smaller than the device\(cqs minimum, and report that (fstrim_range.minlen) back to userspace. By increasing this value, the \fBfstrim\fP operation will complete more quickly for filesystems with badly fragmented freespace, although not all blocks will be discarded. The default value is zero, discarding every free block.
+.RE
+.sp
+\fB\-t\fP, \fB\-\-types\fP \fIlist\fP
+.RS 4
+Specifies allowed or forbidden filesystem types when used with \fB\-\-all\fP or
+\fB\-\-fstab\fP.  The \fIlist\fP is a comma\-separated list of the filesystem names. The
+\fIlist\fP follows how \fBmount \-t\fP evaluates type patterns. Only specified
+filesystem types are allowed. All specified types are forbidden if the list is
+prefixed by "no" or each filesystem prefixed by "no" is forbidden. If the
+option is not used, then all filesystems (except "autofs") are allowed.
 .RE
 .sp
 \fB\-v, \-\-verbose\fP

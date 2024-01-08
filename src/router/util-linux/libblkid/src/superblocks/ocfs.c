@@ -129,10 +129,12 @@ static int probe_ocfs(blkid_probe pr, const struct blkid_idmag *mag)
 		blkid_probe_set_value(pr, "SEC_TYPE",
 				(unsigned char *) "ntocfs", sizeof("ntocfs"));
 
-	blkid_probe_set_label(pr, (unsigned char *) ovl.label,
-				ocfslabellen(ovl));
-	blkid_probe_set_value(pr, "MOUNT", (unsigned char *) ovh.mount,
-				ocfsmountlen(ovh));
+	if (ocfslabellen(ovl) < sizeof(ovl.label))
+		blkid_probe_set_label(pr, (unsigned char *) ovl.label,
+					ocfslabellen(ovl));
+	if (ocfsmountlen(ovh) < sizeof(ovh.mount))
+		blkid_probe_set_value(pr, "MOUNT", (unsigned char *) ovh.mount,
+					ocfsmountlen(ovh));
 	blkid_probe_set_uuid(pr, ovl.vol_id);
 	blkid_probe_sprintf_version(pr, "%u.%u", maj, min);
 	return 0;
@@ -153,8 +155,10 @@ static int probe_ocfs2(blkid_probe pr, const struct blkid_idmag *mag)
 		le16_to_cpu(osb->s_major_rev_level),
 		le16_to_cpu(osb->s_minor_rev_level));
 
-	if (le32_to_cpu(osb->s_blocksize_bits) < 32)
+	if (le32_to_cpu(osb->s_blocksize_bits) < 32){
+		blkid_probe_set_fsblocksize(pr, 1U << le32_to_cpu(osb->s_blocksize_bits));
 		blkid_probe_set_block_size(pr, 1U << le32_to_cpu(osb->s_blocksize_bits));
+	}
 
 	return 0;
 }

@@ -15,445 +15,133 @@
  * @title: Mount context
  * @short_description: high-level API to mount operation.
  */
-
-#ifdef HAVE_LIBSELINUX
-#include <selinux/selinux.h>
-#include <selinux/context.h>
-#endif
-
 #include <sys/wait.h>
 #include <sys/mount.h>
 
-#include "linux_version.h"
 #include "mountP.h"
 #include "strutils.h"
 
-/*
- * Kernel supports only one MS_PROPAGATION flag change by one mount(2) syscall,
- * to bypass this restriction we call mount(2) per flag. It's really not a perfect
- * solution, but it's the same like to execute multiple mount(8) commands.
- *
- * We use cxt->addmounts (additional mounts) list to keep order of the requested
- * flags changes.
- */
-struct libmnt_addmount *mnt_new_addmount(void)
+#if defined(HAVE_SMACK)
+static int is_option(const char *name, const char *const *names)
 {
-	struct libmnt_addmount *ad = calloc(1, sizeof(*ad));
-	if (!ad)
-		return NULL;
+	const char *const *p;
 
-	INIT_LIST_HEAD(&ad->mounts);
-	return ad;
-}
-
-void mnt_free_addmount(struct libmnt_addmount *ad)
-{
-	if (!ad)
-		return;
-	list_del(&ad->mounts);
-	free(ad);
-}
-
-static int mnt_context_append_additional_mount(struct libmnt_context *cxt,
-					       struct libmnt_addmount *ad)
-{
-	assert(cxt);
-	assert(ad);
-
-	if (!list_empty(&ad->mounts))
-		return -EINVAL;
-
-	DBG(CXT, ul_debugobj(cxt,
-			"mount: add additional flag: 0x%08lx",
-			ad->mountflags));
-
-	list_add_tail(&ad->mounts, &cxt->addmounts);
-	return 0;
-}
-
-/*
- * add additional mount(2) syscall requests when necessary to set propagation flags
- * after regular mount(2).
- */
-static int init_propagation(struct libmnt_context *cxt)
-{
-	char *name;
-	char *opts = (char *) mnt_fs_get_vfs_options(cxt->fs);
-	size_t namesz;
-	struct libmnt_optmap const *maps[1];
-	int rec_count = 0;
-
-	if (!opts)
-		return 0;
-
-	DBG(CXT, ul_debugobj(cxt, "mount: initialize additional propagation mounts"));
-
-	maps[0] = mnt_get_builtin_optmap(MNT_LINUX_MAP);
-
-	while (!mnt_optstr_next_option(&opts, &name, &namesz, NULL, NULL)) {
-		const struct libmnt_optmap *ent;
-		struct libmnt_addmount *ad;
-		int rc;
-
-		if (!mnt_optmap_get_entry(maps, 1, name, namesz, &ent) || !ent)
-			continue;
-
-		DBG(CXT, ul_debugobj(cxt, " checking %s", ent->name));
-
-		/* Note that MS_REC may be used for more flags, so we have to keep
-		 * track about number of recursive options to keep the MS_REC in the
-		 * mountflags if necessary.
-		 */
-		if (ent->id & MS_REC)
-			rec_count++;
-
-		if (!(ent->id & MS_PROPAGATION))
-			continue;
-
-		ad = mnt_new_addmount();
-		if (!ad)
-			return -ENOMEM;
-
-		ad->mountflags = ent->id;
-		DBG(CXT, ul_debugobj(cxt, " adding extra mount(2) call for %s", ent->name));
-		rc = mnt_context_append_additional_mount(cxt, ad);
-		if (rc)
-			return rc;
-
-		DBG(CXT, ul_debugobj(cxt, " removing %s from primary mount(2) call", ent->name));
-		cxt->mountflags &= ~ent->id;
-
-		if (ent->id & MS_REC)
-			rec_count--;
-	}
-
-	if (rec_count)
-		cxt->mountflags |= MS_REC;
-
-	return 0;
-}
-
-/*
- * add additional mount(2) syscall request to implement "bind,<flags>", the first regular
- * mount(2) is the "bind" operation, the second is "remount,bind,<flags>" call.
- */
-static int init_bind_remount(struct libmnt_context *cxt)
-{
-	struct libmnt_addmount *ad;
-	int rc;
-
-	assert(cxt);
-	assert(cxt->mountflags & MS_BIND);
-	assert(!(cxt->mountflags & MS_REMOUNT));
-
-	DBG(CXT, ul_debugobj(cxt, "mount: initialize additional ro,bind mount"));
-
-	ad = mnt_new_addmount();
-	if (!ad)
-		return -ENOMEM;
-
-	ad->mountflags = cxt->mountflags;
-	ad->mountflags |= (MS_REMOUNT | MS_BIND);
-
-	rc = mnt_context_append_additional_mount(cxt, ad);
-	if (rc)
-		return rc;
-
-	return 0;
-}
-
-#if defined(HAVE_LIBSELINUX) || defined(HAVE_SMACK)
-struct libmnt_optname {
-	const char *name;
-	size_t namesz;
-};
-
-#define DEF_OPTNAME(n)		{ .name = n, .namesz = sizeof(n) - 1 }
-#define DEF_OPTNAME_LAST	{ .name = NULL }
-
-static int is_option(const char *name, size_t namesz,
-		     const struct libmnt_optname *names)
-{
-	const struct libmnt_optname *p;
-
-	for (p = names; p && p->name; p++) {
-		if (p->namesz == namesz
-		    && strncmp(name, p->name, namesz) == 0)
+	for (p = names; p && *p; p++) {
+		if (strcmp(name, *p) == 0)
 			return 1;
 	}
-
 	return 0;
 }
-#endif /* HAVE_LIBSELINUX || HAVE_SMACK */
+#endif /* HAVE_SMACK */
 
 /*
  * this has to be called after mnt_context_evaluate_permissions()
  */
 static int fix_optstr(struct libmnt_context *cxt)
 {
-	int rc = 0;
+	struct libmnt_optlist *ol;
+	struct libmnt_opt *opt;
 	struct libmnt_ns *ns_old;
-	char *next;
-	char *name, *val;
-	size_t namesz, valsz;
-	struct libmnt_fs *fs;
-#ifdef HAVE_LIBSELINUX
-	int se_fix = 0, se_rem = 0;
-	static const struct libmnt_optname selinux_options[] = {
-		DEF_OPTNAME("context"),
-		DEF_OPTNAME("fscontext"),
-		DEF_OPTNAME("defcontext"),
-		DEF_OPTNAME("rootcontext"),
-		DEF_OPTNAME("seclabel"),
-		DEF_OPTNAME_LAST
-	};
-#endif
-#ifdef HAVE_SMACK
-	int sm_rem = 0;
-	static const struct libmnt_optname smack_options[] = {
-		DEF_OPTNAME("smackfsdef"),
-		DEF_OPTNAME("smackfsfloor"),
-		DEF_OPTNAME("smackfshat"),
-		DEF_OPTNAME("smackfsroot"),
-		DEF_OPTNAME("smackfstransmute"),
-		DEF_OPTNAME_LAST
-	};
-#endif
+	const char *val;
+	int rc = 0;
+
 	assert(cxt);
 	assert((cxt->flags & MNT_FL_MOUNTFLAGS_MERGED));
 
-	if (!cxt->fs || (cxt->flags & MNT_FL_MOUNTOPTS_FIXED))
+	if (cxt->flags & MNT_FL_MOUNTOPTS_FIXED)
 		return 0;
 
-	fs = cxt->fs;
+	DBG(CXT, ul_debugobj(cxt, "--> preparing options"));
 
-	DBG(CXT, ul_debugobj(cxt, "mount: fixing options, current "
-		"vfs: '%s' fs: '%s' user: '%s', optstr: '%s'",
-		fs->vfs_optstr, fs->fs_optstr, fs->user_optstr, fs->optstr));
+	ol = mnt_context_get_optlist(cxt);
+	if (!ol)
+		return -EINVAL;
 
-	/*
-	 * The "user" options is our business (so we can modify the option),
-	 * the exception is command line for /sbin/mount.<type> helpers. Let's
-	 * save the original user=<name> to call the helpers with an unchanged
-	 * "user" setting.
-	 */
-	if (cxt->user_mountflags & MNT_MS_USER) {
-		if (!mnt_optstr_get_option(fs->user_optstr,
-					"user", &val, &valsz) && val) {
-			cxt->orig_user = strndup(val, valsz);
-			if (!cxt->orig_user) {
+	ns_old = mnt_context_switch_origin_ns(cxt);
+	if (!ns_old)
+		return -MNT_ERR_NAMESPACE;
+
+	/* Fix user (convert "user" to "user=username") */
+	if (mnt_context_is_restricted(cxt)) {
+		opt = mnt_optlist_get_opt(ol, MNT_MS_USER, cxt->map_userspace);
+		if (opt) {
+			char *name = mnt_get_username(getuid());
+
+			if (!name)
 				rc = -ENOMEM;
-				goto done;
+			else {
+				rc = mnt_opt_set_value(opt, name);
+				free(name);
 			}
+			if (rc)
+				goto done;
 		}
-		cxt->flags |= MNT_FL_SAVED_USER;
 	}
 
-	/*
-	 * Sync mount options with mount flags
-	 */
-	DBG(CXT, ul_debugobj(cxt, "mount: fixing vfs optstr"));
-	rc = mnt_optstr_apply_flags(&fs->vfs_optstr, cxt->mountflags,
-				mnt_get_builtin_optmap(MNT_LINUX_MAP));
-	if (rc)
-		goto done;
+	/* Fix UID */
+	opt = mnt_optlist_get_named(ol, "uid", NULL);
+	if (opt && (val = mnt_opt_get_value(opt)) && !isdigit_string(val)) {
+		uid_t id;
 
-	DBG(CXT, ul_debugobj(cxt, "mount: fixing user optstr"));
-	rc = mnt_optstr_apply_flags(&fs->user_optstr, cxt->user_mountflags,
-				mnt_get_builtin_optmap(MNT_USERSPACE_MAP));
-	if (rc)
-		goto done;
-
-	if (fs->vfs_optstr && *fs->vfs_optstr == '\0') {
-		free(fs->vfs_optstr);
-		fs->vfs_optstr = NULL;
-	}
-	if (fs->user_optstr && *fs->user_optstr == '\0') {
-		free(fs->user_optstr);
-		fs->user_optstr = NULL;
-	}
-	if (cxt->mountflags & MS_PROPAGATION) {
-		rc = init_propagation(cxt);
-		if (rc)
-			return rc;
-	}
-	if ((cxt->mountflags & MS_BIND)
-	    && (cxt->mountflags & MNT_BIND_SETTABLE)
-	    && !(cxt->mountflags & MS_REMOUNT)) {
-		rc = init_bind_remount(cxt);
-		if (rc)
-			return rc;
-	}
-
-	next = fs->fs_optstr;
-
-#ifdef HAVE_LIBSELINUX
-	if (!is_selinux_enabled())
-		/* Always remove SELinux garbage if SELinux disabled */
-		se_rem = 1;
-	else if (cxt->mountflags & MS_REMOUNT)
-		/*
-		 * Linux kernel < 2.6.39 does not support remount operation
-		 * with any selinux specific mount options.
-		 *
-		 * Kernel 2.6.39 commits:  ff36fe2c845cab2102e4826c1ffa0a6ebf487c65
-		 *                         026eb167ae77244458fa4b4b9fc171209c079ba7
-		 * fix this odd behavior, so we don't have to care about it in
-		 * userspace.
-		 */
-		se_rem = get_linux_version() < KERNEL_VERSION(2, 6, 39);
-	else
-		/* For normal mount, contexts are translated */
-		se_fix = 1;
-
-	if (!se_rem) {
-		/* de-duplicate SELinux options */
-		const struct libmnt_optname *p;
-		for (p = selinux_options; p && p->name; p++)
-			mnt_optstr_deduplicate_option(&fs->fs_optstr, p->name);
-	}
-#endif
-#ifdef HAVE_SMACK
-	if (access("/sys/fs/smackfs", F_OK) != 0)
-		sm_rem = 1;
-#endif
-	while (!mnt_optstr_next_option(&next, &name, &namesz, &val, &valsz)) {
-
-		if (namesz == 3 && !strncmp(name, "uid", 3))
-			rc = mnt_optstr_fix_uid(&fs->fs_optstr, val, valsz, &next);
-		else if (namesz == 3 && !strncmp(name, "gid", 3))
-			rc = mnt_optstr_fix_gid(&fs->fs_optstr, val, valsz, &next);
-#ifdef HAVE_LIBSELINUX
-		else if ((se_rem || se_fix)
-			 && is_option(name, namesz, selinux_options)) {
-
-			if (se_rem) {
-				/* remove context= option */
-				next = name;
-				rc = mnt_optstr_remove_option_at(&fs->fs_optstr,
-						name,
-						val ? val + valsz :
-						      name + namesz);
-			} else if (se_fix && val && valsz)
-				/* translate selinux contexts */
-				rc = mnt_optstr_fix_secontext(&fs->fs_optstr,
-							val, valsz, &next);
-		}
-#endif
-#ifdef HAVE_SMACK
-		else if (sm_rem && is_option(name, namesz, smack_options)) {
-
-			next = name;
-			rc = mnt_optstr_remove_option_at(&fs->fs_optstr,
-					name,
-					val ? val + valsz : name + namesz);
-		}
-#endif
+		if (strcmp(val, "useruid") == 0)	/* UID of the current user */
+			id = getuid();
+		else
+			rc = mnt_get_uid(val, &id);	/* UID for the username */
+		if (!rc)
+			rc = mnt_opt_set_u64value(opt, id);
 		if (rc)
 			goto done;
 	}
 
+	/* Fix GID */
+	opt = mnt_optlist_get_named(ol, "gid", NULL);
+	if (opt && (val = mnt_opt_get_value(opt)) && !isdigit_string(val)) {
+		gid_t id;
 
-	if (!rc && mnt_context_is_restricted(cxt) && (cxt->user_mountflags & MNT_MS_USER)) {
-		ns_old = mnt_context_switch_origin_ns(cxt);
-		if (!ns_old)
-			return -MNT_ERR_NAMESPACE;
-
-		rc = mnt_optstr_fix_user(&fs->user_optstr);
-
-		if (!mnt_context_switch_ns(cxt, ns_old))
-			return -MNT_ERR_NAMESPACE;
+		if (strcmp(val, "usergid") == 0)	/* UID of the current user */
+			id = getgid();
+		else
+			rc = mnt_get_gid(val, &id);	/* UID for the groupname */
+		if (!rc)
+			rc = mnt_opt_set_u64value(opt, id);
+		if (rc)
+			goto done;
 	}
 
-	/* refresh merged optstr */
-	free(fs->optstr);
-	fs->optstr = NULL;
-	fs->optstr = mnt_fs_strdup_options(fs);
-done:
-	cxt->flags |= MNT_FL_MOUNTOPTS_FIXED;
+	if (!mnt_context_switch_ns(cxt, ns_old))
+		return -MNT_ERR_NAMESPACE;
 
-	DBG(CXT, ul_debugobj(cxt, "fixed options [rc=%d]: "
-		"vfs: '%s' fs: '%s' user: '%s', optstr: '%s'", rc,
-		fs->vfs_optstr, fs->fs_optstr, fs->user_optstr, fs->optstr));
+#ifdef HAVE_SMACK
+	/* Fix Smack */
+	if (access("/sys/fs/smackfs", F_OK) != 0) {
+		struct libmnt_iter itr;
+
+		static const char *const smack_options[] = {
+			"smackfsdef",
+			"smackfsfloor",
+			"smackfshat",
+			"smackfsroot",
+			"smackfstransmute",
+			NULL,
+		};
+		mnt_reset_iter(&itr, MNT_ITER_FORWARD);
+
+		while (mnt_optlist_next_opt(ol, &itr, &opt) == 0) {
+			if (!is_option(mnt_opt_get_name(opt), smack_options))
+				continue;
+			rc = mnt_optlist_remove_opt(ol, opt);
+			if (rc)
+				goto done;
+		}
+	}
+#endif
+	rc = mnt_context_call_hooks(cxt, MNT_STAGE_PREP_OPTIONS);
+done:
+	DBG(CXT, ul_debugobj(cxt, "<-- preparing options done [rc=%d]", rc));
+	cxt->flags |= MNT_FL_MOUNTOPTS_FIXED;
 
 	if (rc)
 		rc = -MNT_ERR_MOUNTOPT;
-	return rc;
-}
-
-/*
- * Converts the already evaluated and fixed options to the form that is compatible
- * with /sbin/mount.type helpers.
- */
-static int generate_helper_optstr(struct libmnt_context *cxt, char **optstr)
-{
-	struct libmnt_optmap const *maps[2];
-	char *next, *name, *val;
-	size_t namesz, valsz;
-	int rc = 0;
-
-	assert(cxt);
-	assert(cxt->fs);
-	assert(optstr);
-
-	DBG(CXT, ul_debugobj(cxt, "mount: generate helper mount options"));
-
-	*optstr = mnt_fs_strdup_options(cxt->fs);
-	if (!*optstr)
-		return -ENOMEM;
-
-	if ((cxt->user_mountflags & MNT_MS_USER) ||
-	    (cxt->user_mountflags & MNT_MS_USERS)) {
-		/*
-		 * This is unnecessary for real user-mounts as mount.<type>
-		 * helpers always have to follow fstab rather than mount
-		 * options on the command line.
-		 *
-		 * However, if you call mount.<type> as root, then the helper follows
-		 * the command line. If there is (for example) "user,exec" in fstab,
-		 * then we have to manually append the "exec" back to the options
-		 * string, because there is nothing like MS_EXEC (we only have
-		 * MS_NOEXEC in mount flags and we don't care about the original
-		 * mount string in libmount for VFS options).
-		 *
-		 * This use-case makes sense for MS_SECURE flags only (see
-		 * mnt_optstr_get_flags() and mnt_context_merge_mflags()).
-		 */
-		if (!(cxt->mountflags & MS_NOEXEC))
-			mnt_optstr_append_option(optstr, "exec", NULL);
-		if (!(cxt->mountflags & MS_NOSUID))
-			mnt_optstr_append_option(optstr, "suid", NULL);
-		if (!(cxt->mountflags & MS_NODEV))
-			mnt_optstr_append_option(optstr, "dev", NULL);
-	}
-
-	if (cxt->flags & MNT_FL_SAVED_USER)
-		rc = mnt_optstr_set_option(optstr, "user", cxt->orig_user);
-	if (rc)
-		goto err;
-
-	/* remove userspace options with MNT_NOHLPS flag */
-	maps[0] = mnt_get_builtin_optmap(MNT_USERSPACE_MAP);
-	maps[1] = mnt_get_builtin_optmap(MNT_LINUX_MAP);
-	next = *optstr;
-
-	while (!mnt_optstr_next_option(&next, &name, &namesz, &val, &valsz)) {
-		const struct libmnt_optmap *ent;
-
-		mnt_optmap_get_entry(maps, 2, name, namesz, &ent);
-		if (ent && ent->id && (ent->mask & MNT_NOHLPS)) {
-			next = name;
-			rc = mnt_optstr_remove_option_at(optstr, name,
-					val ? val + valsz : name + namesz);
-			if (rc)
-				goto err;
-		}
-	}
-
-	return rc;
-err:
-	free(*optstr);
-	*optstr = NULL;
 	return rc;
 }
 
@@ -466,7 +154,11 @@ err:
  */
 static int evaluate_permissions(struct libmnt_context *cxt)
 {
-	unsigned long u_flags = 0;
+	struct libmnt_optlist *ol;
+	struct libmnt_opt *opt = NULL;
+
+	unsigned long user_flags = 0;	/* userspace mount flags */
+	int rc;
 
 	assert(cxt);
 	assert((cxt->flags & MNT_FL_MOUNTFLAGS_MERGED));
@@ -476,15 +168,73 @@ static int evaluate_permissions(struct libmnt_context *cxt)
 
 	DBG(CXT, ul_debugobj(cxt, "mount: evaluating permissions"));
 
-	mnt_context_get_user_mflags(cxt, &u_flags);
+	ol = mnt_context_get_optlist(cxt);
+	if (!ol)
+		return -EINVAL;
+
+	/* get userspace mount flags (user[=<name>] etc.*/
+	rc = mnt_optlist_get_flags(ol, &user_flags, cxt->map_userspace, 0);
+	if (rc)
+		return rc;
+
+	/*
+	* Ignore user=<name> (if <name> is set). Let's keep it hidden
+	* for normal library operations, but visible for /sbin/mount.<type>
+	* helpers.
+	*/
+	if (user_flags & MNT_MS_USER
+	    && (opt = mnt_optlist_get_opt(ol, MNT_MS_USER, cxt->map_userspace))
+	    && mnt_opt_has_value(opt)) {
+		DBG(CXT, ul_debugobj(cxt, "perms: user=<name> detected, ignore"));
+
+		cxt->flags |= MNT_FL_SAVED_USER;
+
+		mnt_opt_set_external(opt, 1);
+		user_flags &= ~MNT_MS_USER;
+	}
 
 	if (!mnt_context_is_restricted(cxt)) {
 		/*
 		 * superuser mount
+		 *
+		 * Let's convert user, users, owenr and groups to MS_* flags
+		 * to be compatible with non-root execution.
+		 *
+		 * The old deprecated way is to use mnt_optstr_get_flags().
 		 */
-		cxt->user_mountflags &= ~MNT_MS_OWNER;
-		cxt->user_mountflags &= ~MNT_MS_GROUP;
+		if (user_flags & (MNT_MS_OWNER | MNT_MS_GROUP))
+			rc = mnt_optlist_remove_flags(ol,
+					MNT_MS_OWNER | MNT_MS_GROUP, cxt->map_userspace);
+
+		if (!rc && (user_flags & MNT_MS_OWNER))
+			rc = mnt_optlist_insert_flags(ol,
+					MS_OWNERSECURE, cxt->map_linux,
+					MNT_MS_OWNER, cxt->map_userspace);
+
+		if (!rc && (user_flags & MNT_MS_GROUP))
+			rc = mnt_optlist_insert_flags(ol,
+					MS_OWNERSECURE, cxt->map_linux,
+					MNT_MS_GROUP, cxt->map_userspace);
+
+		if (!rc && (user_flags & MNT_MS_USER)
+		    && (opt = mnt_optlist_get_opt(ol, MNT_MS_USER, cxt->map_userspace))
+		    && !mnt_opt_has_value(opt))
+			rc = mnt_optlist_insert_flags(ol, MS_SECURE, cxt->map_linux,
+					MNT_MS_USER, cxt->map_userspace);
+
+		if (!rc && (user_flags & MNT_MS_USERS))
+			rc = mnt_optlist_insert_flags(ol, MS_SECURE, cxt->map_linux,
+					MNT_MS_USERS, cxt->map_userspace);
+
+		DBG(CXT, ul_debugobj(cxt, "perms: superuser [rc=%d]", rc));
+		if (rc)
+			return rc;
+
+		if (user_flags & (MNT_MS_OWNER | MNT_MS_GROUP |
+				  MNT_MS_USER | MNT_MS_USERS))
+			mnt_optlist_merge_opts(ol);
 	} else {
+
 		/*
 		 * user mount
 		 */
@@ -495,22 +245,17 @@ static int evaluate_permissions(struct libmnt_context *cxt)
 		}
 
 		/*
-		 * MS_OWNERSECURE and MS_SECURE mount options are already
-		 * applied by mnt_optstr_get_flags() in mnt_context_merge_mflags()
-		 * if "user" (but no user=<name> !) options is set.
-		 *
-		 * Let's ignore all user=<name> (if <name> is set) requests.
+		 * Insert MS_SECURE between system flags on position where is MNT_MS_USER
 		 */
-		if (cxt->user_mountflags & MNT_MS_USER) {
-			size_t valsz = 0;
+		if ((user_flags & MNT_MS_USER)
+		    && (rc = mnt_optlist_insert_flags(ol, MS_SECURE, cxt->map_linux,
+						    MNT_MS_USER, cxt->map_userspace)))
+			return rc;
 
-			if (!mnt_optstr_get_option(cxt->fs->user_optstr,
-					"user", NULL, &valsz) && valsz) {
-
-				DBG(CXT, ul_debugobj(cxt, "perms: user=<name> detected, ignore"));
-				cxt->user_mountflags &= ~MNT_MS_USER;
-			}
-		}
+		if ((user_flags & MNT_MS_USERS)
+		    && (rc = mnt_optlist_insert_flags(ol, MS_SECURE, cxt->map_linux,
+						    MNT_MS_USERS, cxt->map_userspace)))
+			return rc;
 
 		/*
 		 * MS_OWNER: Allow owners to mount when fstab contains the
@@ -519,11 +264,13 @@ static int evaluate_permissions(struct libmnt_context *cxt)
 		 * the console the possibility of mounting a floppy.  MS_GROUP:
 		 * Allow members of device group to mount. (Martin Dickopp)
 		 */
-		if (u_flags & (MNT_MS_OWNER | MNT_MS_GROUP)) {
+		if (user_flags & (MNT_MS_OWNER | MNT_MS_GROUP)) {
 			struct stat sb;
 			struct libmnt_cache *cache = NULL;
 			char *xsrc = NULL;
 			const char *srcpath = mnt_fs_get_srcpath(cxt->fs);
+
+			DBG(CXT, ul_debugobj(cxt, "perms: owner/group"));
 
 			if (!srcpath) {					/* Ah... source is TAG */
 				cache = mnt_context_get_cache(cxt);
@@ -539,19 +286,36 @@ static int evaluate_permissions(struct libmnt_context *cxt)
 
 			if (strncmp(srcpath, "/dev/", 5) == 0 &&
 			    stat(srcpath, &sb) == 0 &&
-			    (((u_flags & MNT_MS_OWNER) && getuid() == sb.st_uid) ||
-			     ((u_flags & MNT_MS_GROUP) && mnt_in_group(sb.st_gid))))
+			    (((user_flags & MNT_MS_OWNER) && getuid() == sb.st_uid) ||
+			     ((user_flags & MNT_MS_GROUP) && mnt_in_group(sb.st_gid)))) {
 
-				cxt->user_mountflags |= MNT_MS_USER;
+				/* insert MS_OWNERSECURE between system flags */
+				if (user_flags & MNT_MS_OWNER)
+					mnt_optlist_insert_flags(ol,
+							MS_OWNERSECURE, cxt->map_linux,
+							MNT_MS_OWNER, cxt->map_userspace);
+				if (user_flags & MNT_MS_GROUP)
+					mnt_optlist_insert_flags(ol,
+							MS_OWNERSECURE, cxt->map_linux,
+							MNT_MS_GROUP, cxt->map_userspace);
+
+				/* continue as like "user" was specified */
+				user_flags |= MNT_MS_USER;
+				mnt_optlist_append_flags(ol, MNT_MS_USER, cxt->map_userspace);
+			}
 
 			if (!cache)
 				free(xsrc);
 		}
 
-		if (!(cxt->user_mountflags & (MNT_MS_USER | MNT_MS_USERS))) {
-			DBG(CXT, ul_debugobj(cxt, "permissions evaluation ends with -EPERMS"));
+		if (!(user_flags & (MNT_MS_USER | MNT_MS_USERS))) {
+			DBG(CXT, ul_debugobj(cxt, "perms: evaluation ends with -EPERMS [flags=0x%08lx]", user_flags));
 			return -EPERM;
 		}
+
+		/* we have modified some flags (noexec, ...), let's cleanup the
+		 * options to remove duplicate stuff etc.*/
+		mnt_optlist_merge_opts(ol);
 	}
 
 	return 0;
@@ -613,8 +377,8 @@ int mnt_context_mount_setopt(struct libmnt_context *cxt, int c, char *arg)
 
 static int exec_helper(struct libmnt_context *cxt)
 {
-	char *o = NULL, *namespace = NULL;
 	struct libmnt_ns *ns_tgt = mnt_context_get_target_ns(cxt);
+	char *namespace = NULL;
 	int rc;
 	pid_t pid;
 
@@ -625,14 +389,9 @@ static int exec_helper(struct libmnt_context *cxt)
 
 	DBG(CXT, ul_debugobj(cxt, "mount: executing helper %s", cxt->helper));
 
-	rc = generate_helper_optstr(cxt, &o);
-	if (rc)
-		return -EINVAL;
-
 	if (ns_tgt->fd != -1
 	    && asprintf(&namespace, "/proc/%i/fd/%i",
 			getpid(), ns_tgt->fd) == -1) {
-		free(o);
 		return -ENOMEM;
 	}
 
@@ -643,7 +402,23 @@ static int exec_helper(struct libmnt_context *cxt)
 	case 0:
 	{
 		const char *args[14], *type;
+		struct libmnt_optlist *ol = mnt_context_get_optlist(cxt);
+		struct libmnt_opt *opt;
+		const char *o = NULL;
 		int i = 0;
+
+		if (!ol)
+			_exit(EXIT_FAILURE);
+
+		/* Call helper with original user=<name> (aka "saved user")
+		 * or remove the username at all.
+		 */
+		opt = mnt_optlist_get_opt(ol, MNT_MS_USER, cxt->map_userspace);
+		if (opt && !(cxt->flags & MNT_FL_SAVED_USER))
+			mnt_opt_set_value(opt, NULL);
+
+		if (mnt_optlist_get_optstr(ol, &o, NULL, MNT_OL_FLTR_HELPERS))
+			_exit(EXIT_FAILURE);
 
 		if (drop_permissions() != 0)
 			_exit(EXIT_FAILURE);
@@ -711,68 +486,7 @@ static int exec_helper(struct libmnt_context *cxt)
 		break;
 	}
 
-	free(o);
 	free(namespace);
-	return rc;
-}
-
-static int do_mount_additional(struct libmnt_context *cxt,
-			       const char *target,
-			       unsigned long flags,
-			       int *syserr)
-{
-	struct list_head *p;
-
-	assert(cxt);
-	assert(target);
-
-	if (syserr)
-		*syserr = 0;
-
-	list_for_each(p, &cxt->addmounts) {
-		int rc;
-		struct libmnt_addmount *ad =
-				list_entry(p, struct libmnt_addmount, mounts);
-
-		DBG(CXT, ul_debugobj(cxt, "mount(2) changing flag: 0x%08lx %s",
-				ad->mountflags,
-				ad->mountflags & MS_REC ? " (recursive)" : ""));
-
-		rc = mount("none", target, NULL,
-				ad->mountflags | (flags & MS_SILENT), NULL);
-		if (rc) {
-			if (syserr)
-				*syserr = -errno;
-			DBG(CXT, ul_debugobj(cxt,
-					"mount(2) failed [errno=%d %m]",
-					errno));
-			return rc;
-		}
-	}
-
-	return 0;
-}
-
-static int do_mount_subdir(struct libmnt_context *cxt,
-			   const char *root,
-			   const char *subdir,
-			   const char *target)
-{
-	char *src = NULL;
-	int rc = 0;
-
-	if (asprintf(&src, "%s/%s", root, subdir) < 0)
-		return -ENOMEM;
-
-	DBG(CXT, ul_debugobj(cxt, "mount subdir %s to %s", src, target));
-	if (mount(src, target, NULL, MS_BIND | MS_REC, NULL) != 0)
-		rc = -MNT_ERR_APPLYFLAGS;
-
-	DBG(CXT, ul_debugobj(cxt, "umount old root %s", root));
-	if (umount(root) != 0)
-		rc = -MNT_ERR_APPLYFLAGS;
-
-	free(src);
 	return rc;
 }
 
@@ -786,13 +500,15 @@ static int do_mount_subdir(struct libmnt_context *cxt,
  */
 static int do_mount(struct libmnt_context *cxt, const char *try_type)
 {
-	int rc = 0, old_ns_fd = -1;
-	const char *src, *target, *type;
-	unsigned long flags;
+	int rc = 0;
+	char *org_type = NULL;
+	struct libmnt_optlist *ol = NULL;
 
 	assert(cxt);
 	assert(cxt->fs);
 	assert((cxt->flags & MNT_FL_MOUNTFLAGS_MERGED));
+
+	mnt_context_reset_status(cxt);
 
 	if (try_type) {
 		rc = mnt_context_prepare_helper(cxt, "mount", try_type);
@@ -800,117 +516,50 @@ static int do_mount(struct libmnt_context *cxt, const char *try_type)
 			return rc;
 	}
 
-	flags = cxt->mountflags;
-	src = mnt_fs_get_srcpath(cxt->fs);
-	target = mnt_fs_get_target(cxt->fs);
+	if (cxt->helper)
+		return exec_helper(cxt);
 
-	if (cxt->helper) {
-		rc = exec_helper(cxt);
+	if (try_type) {
+		ol = mnt_context_get_optlist(cxt);
+		assert(ol);
 
-		if (mnt_context_helper_executed(cxt)
-		    && mnt_context_get_helper_status(cxt) == 0
-		    && !list_empty(&cxt->addmounts)
-		    && do_mount_additional(cxt, target, flags, NULL))
-
-			return -MNT_ERR_APPLYFLAGS;
-		return rc;
-	}
-
-	if (!target)
-		return -EINVAL;
-	if (!src) {
-		/* unnecessary, should be already resolved in
-		 * mnt_context_prepare_srcpath(), but to be sure... */
-		DBG(CXT, ul_debugobj(cxt, "WARNING: source is NULL -- using \"none\"!"));
-		src = "none";
-	}
-	type = try_type ? : mnt_fs_get_fstype(cxt->fs);
-
-	if (try_type)
-		flags |= MS_SILENT;
-
-
-	if (mnt_context_is_fake(cxt)) {
-		/*
-		 * fake
-		 */
-		cxt->syscall_status = 0;
-
-		DBG(CXT, ul_debugobj(cxt, "FAKE mount(2) "
-				"[source=%s, target=%s, type=%s, "
-				" mountflags=0x%08lx, mountdata=%s]",
-				src, target, type,
-				flags, cxt->mountdata ? "yes" : "<none>"));
-
-	} else if (mnt_context_propagation_only(cxt)) {
-		/*
-		 * propagation flags *only*
-		 */
-		if (do_mount_additional(cxt, target, flags, &cxt->syscall_status))
-			return -MNT_ERR_APPLYFLAGS;
-	} else {
-		/*
-		 * regular mount
-		 */
-
-		/* create unhared temporary target */
-		if (cxt->subdir) {
-			rc = mnt_tmptgt_unshare(&old_ns_fd);
-			if (rc)
-				return rc;
-			target = MNT_PATH_TMPTGT;
-		}
-
-		DBG(CXT, ul_debugobj(cxt, "mount(2) "
-			"[source=%s, target=%s, type=%s, "
-			" mountflags=0x%08lx, mountdata=%s]",
-			src, target, type,
-			flags, cxt->mountdata ? "yes" : "<none>"));
-
-		if (mount(src, target, type, flags, cxt->mountdata)) {
-			cxt->syscall_status = -errno;
-			DBG(CXT, ul_debugobj(cxt, "mount(2) failed [errno=%d %m]",
-							-cxt->syscall_status));
-			rc = -cxt->syscall_status;
-			goto done;
-		}
-		DBG(CXT, ul_debugobj(cxt, "  mount(2) success"));
-		cxt->syscall_status = 0;
-
-		/*
-		 * additional mounts for extra propagation flags
-		 */
-		if (!list_empty(&cxt->addmounts)
-		    && do_mount_additional(cxt, target, flags, NULL)) {
-
-			/* TODO: call umount? */
-			rc = -MNT_ERR_APPLYFLAGS;
-			goto done;
-		}
-
-		/*
-		 * bind subdir to the real target, umount temporary target
-		 */
-		if (cxt->subdir) {
-			target = mnt_fs_get_target(cxt->fs);
-			rc = do_mount_subdir(cxt, MNT_PATH_TMPTGT, cxt->subdir, target);
-			if (rc)
+		mnt_optlist_append_flags(ol, MS_SILENT, cxt->map_linux);
+		if (mnt_fs_get_fstype(cxt->fs)) {
+			org_type = strdup(mnt_fs_get_fstype(cxt->fs));
+			if (!org_type) {
+				rc = -ENOMEM;
 				goto done;
-			mnt_tmptgt_cleanup(old_ns_fd);
-			old_ns_fd = -1;
+			}
 		}
+		mnt_fs_set_fstype(cxt->fs, try_type);
 	}
 
-	if (try_type && cxt->update) {
+
+	/*
+	 * mount(2) or others syscalls
+	 */
+	if (!rc)
+		rc = mnt_context_call_hooks(cxt, MNT_STAGE_MOUNT);
+
+	if (rc == 0 && mnt_context_is_fake(cxt)) {
+		DBG(CXT, ul_debugobj(cxt, "FAKE (-f) set status=0"));
+		cxt->syscall_status = 0;
+	}
+
+	if (org_type && rc != 0)
+		__mnt_fs_set_fstype_ptr(cxt->fs, org_type);
+	org_type  = NULL;
+
+	if (rc == 0 && try_type && cxt->update) {
 		struct libmnt_fs *fs = mnt_update_get_fs(cxt->update);
 		if (fs)
 			rc = mnt_fs_set_fstype(fs, try_type);
 	}
 
 done:
-	if (old_ns_fd >= 0)
-		mnt_tmptgt_cleanup(old_ns_fd);
-
+	if (try_type && ol)
+		mnt_optlist_remove_flags(ol, MS_SILENT, cxt->map_linux);
+	free(org_type);
 	return rc;
 }
 
@@ -1020,6 +669,71 @@ static int do_mount_by_pattern(struct libmnt_context *cxt, const char *pattern)
 	return rc;
 }
 
+static int prepare_target(struct libmnt_context *cxt)
+{
+	const char *tgt, *prefix;
+	int rc = 0;
+	struct libmnt_ns *ns_old;
+
+	assert(cxt);
+	assert(cxt->fs);
+	assert((cxt->flags & MNT_FL_MOUNTFLAGS_MERGED));
+
+	DBG(CXT, ul_debugobj(cxt, "--> preparing target path"));
+
+	tgt = mnt_fs_get_target(cxt->fs);
+	if (!tgt)
+		return 0;
+
+	/* apply prefix */
+	prefix = mnt_context_get_target_prefix(cxt);
+	if (prefix) {
+		const char *p = *tgt == '/' ? tgt + 1 : tgt;
+
+		if (!*p)
+			/* target is "/", use "/prefix" */
+			rc = mnt_fs_set_target(cxt->fs, prefix);
+		else {
+			char *path = NULL;
+
+			if (asprintf(&path, "%s/%s", prefix, p) <= 0)
+				rc = -ENOMEM;
+			else {
+				rc = mnt_fs_set_target(cxt->fs, path);
+				free(path);
+			}
+		}
+		if (rc)
+			return rc;
+		tgt = mnt_fs_get_target(cxt->fs);
+	}
+
+	ns_old = mnt_context_switch_target_ns(cxt);
+	if (!ns_old)
+		return -MNT_ERR_NAMESPACE;
+
+	/* canonicalize the path */
+	if (rc == 0) {
+		struct libmnt_cache *cache = mnt_context_get_cache(cxt);
+
+		if (cache) {
+			char *path = mnt_resolve_path(tgt, cache);
+			if (path && strcmp(path, tgt) != 0)
+				rc = mnt_fs_set_target(cxt->fs, path);
+		}
+	}
+
+	if (rc == 0)
+		rc = mnt_context_call_hooks(cxt, MNT_STAGE_PREP_TARGET);
+
+	if (!mnt_context_switch_ns(cxt, ns_old))
+		return -MNT_ERR_NAMESPACE;
+
+	DBG(CXT, ul_debugobj(cxt, "final target '%s' [rc=%d]",
+				mnt_fs_get_target(cxt->fs), rc));
+	return rc;
+}
+
 /**
  * mnt_context_prepare_mount:
  * @cxt: context
@@ -1054,6 +768,8 @@ int mnt_context_prepare_mount(struct libmnt_context *cxt)
 	rc = mnt_context_apply_fstab(cxt);
 	if (!rc)
 		rc = mnt_context_merge_mflags(cxt);
+	if (!rc && cxt->fs && cxt->optlist)
+		rc = mnt_fs_follow_optlist(cxt->fs, cxt->optlist);
 	if (!rc)
 		rc = evaluate_permissions(cxt);
 	if (!rc)
@@ -1063,13 +779,27 @@ int mnt_context_prepare_mount(struct libmnt_context *cxt)
 	if (!rc)
 		rc = mnt_context_guess_fstype(cxt);
 	if (!rc)
-		rc = mnt_context_prepare_target(cxt);
+		rc = prepare_target(cxt);
 	if (!rc)
 		rc = mnt_context_prepare_helper(cxt, "mount", NULL);
+
+	if (!rc && mnt_context_is_onlyonce(cxt)) {
+		int mounted = 0;
+		rc = mnt_context_is_fs_mounted(cxt, cxt->fs, &mounted);
+		if (rc == 0 && mounted == 1) {
+			rc = -MNT_ERR_ONLYONCE;
+			goto end;
+		}
+	}
+
+	if (!rc)
+		rc = mnt_context_call_hooks(cxt, MNT_STAGE_PREP);
+
 	if (rc) {
 		DBG(CXT, ul_debugobj(cxt, "mount: preparing failed"));
 		goto end;
 	}
+
 	cxt->flags |= MNT_FL_PREPARED;
 
 end:
@@ -1105,26 +835,28 @@ end:
 int mnt_context_do_mount(struct libmnt_context *cxt)
 {
 	const char *type;
-	int res;
+	int res = 0, rc = 0;
 	struct libmnt_ns *ns_old;
 
 	assert(cxt);
 	assert(cxt->fs);
 	assert(cxt->helper_exec_status == 1);
-	assert(cxt->syscall_status == 1);
 	assert((cxt->flags & MNT_FL_MOUNTFLAGS_MERGED));
 	assert((cxt->flags & MNT_FL_PREPARED));
 	assert((cxt->action == MNT_ACT_MOUNT));
 
 	DBG(CXT, ul_debugobj(cxt, "mount: do mount"));
 
-	if (!(cxt->flags & MNT_FL_MOUNTDATA))
-		cxt->mountdata = (char *) mnt_fs_get_fs_options(cxt->fs);
-
 	ns_old = mnt_context_switch_target_ns(cxt);
 	if (!ns_old)
 		return -MNT_ERR_NAMESPACE;
 
+	/* before mount stage */
+	rc = mnt_context_call_hooks(cxt, MNT_STAGE_MOUNT_PRE);
+	if (rc)
+		return rc;
+
+	/* mount stage */
 	type = mnt_fs_get_fstype(cxt->fs);
 	if (type) {
 		if (strchr(type, ','))
@@ -1135,55 +867,17 @@ int mnt_context_do_mount(struct libmnt_context *cxt)
 	} else
 		res = do_mount_by_pattern(cxt, cxt->fstype_pattern);
 
-#ifdef USE_LIBMOUNT_SUPPORT_MTAB
-	if (mnt_context_get_status(cxt)
-	    && !mnt_context_is_fake(cxt)
-	    && !cxt->helper
-	    && mnt_context_mtab_writable(cxt)) {
-
-		int is_rdonly = -1;
-
-		DBG(CXT, ul_debugobj(cxt, "checking for RDONLY mismatch"));
-
-		/*
-		 * Mounted by mount(2), do some post-mount checks
-		 *
-		 * Kernel can be used to use MS_RDONLY for bind mounts, but the
-		 * read-only request could be silently ignored. Check it to
-		 * avoid 'ro' in mtab and 'rw' in /proc/mounts.
-		 */
-		if ((cxt->mountflags & MS_BIND)
-		    && (cxt->mountflags & MS_RDONLY)) {
-
-			if (is_rdonly < 0)
-				is_rdonly = mnt_is_readonly(mnt_context_get_target(cxt));
-			if (!is_rdonly)
-				mnt_context_set_mflags(cxt, cxt->mountflags & ~MS_RDONLY);
-		}
-
-
-		/* Kernel can silently add MS_RDONLY flag when mounting file
-		 * system that does not have write support. Check this to avoid
-		 * 'ro' in /proc/mounts and 'rw' in mtab.
-		 */
-		if (!(cxt->mountflags & (MS_RDONLY | MS_MOVE))
-		    && !mnt_context_propagation_only(cxt)) {
-
-			if (is_rdonly < 0)
-				is_rdonly = mnt_is_readonly(mnt_context_get_target(cxt));
-			if (is_rdonly)
-				mnt_context_set_mflags(cxt, cxt->mountflags | MS_RDONLY);
-		}
+	/* after mount stage */
+	if (res == 0) {
+		rc = mnt_context_call_hooks(cxt, MNT_STAGE_MOUNT_POST);
+		if (rc)
+			return rc;
 	}
-#endif
-
-	/* Cleanup will be immediate on failure, and deferred to umount on success */
-	if (mnt_context_is_veritydev(cxt))
-		mnt_context_deferred_delete_veritydev(cxt);
 
 	if (!mnt_context_switch_ns(cxt, ns_old))
 		return -MNT_ERR_NAMESPACE;
 
+	DBG(CXT, ul_debugobj(cxt, "mnt_context_do_mount() done [rc=%d]", res));
 	return res;
 }
 
@@ -1201,7 +895,7 @@ static struct libmnt_fs *get_already_mounted_source(struct libmnt_context *cxt)
 
 	src = mnt_fs_get_srcpath(cxt->fs);
 
-	if (src && mnt_context_get_mtab(cxt, &tb) == 0) {
+	if (src && mnt_context_get_mountinfo(cxt, &tb) == 0) {
 		struct libmnt_iter itr;
 		struct libmnt_fs *fs;
 
@@ -1314,7 +1008,6 @@ int mnt_context_mount(struct libmnt_context *cxt)
 	assert(cxt);
 	assert(cxt->fs);
 	assert(cxt->helper_exec_status == 1);
-	assert(cxt->syscall_status == 1);
 
 	ns_old = mnt_context_switch_target_ns(cxt);
 	if (!ns_old)
@@ -1357,8 +1050,16 @@ again:
 			goto again;
 		}
 	}
+
+	if (rc == 0)
+		rc = mnt_context_call_hooks(cxt, MNT_STAGE_POST);
+
+	mnt_context_deinit_hooksets(cxt);
+
 	if (!mnt_context_switch_ns(cxt, ns_old))
-		return -MNT_ERR_NAMESPACE;
+		rc = -MNT_ERR_NAMESPACE;
+
+	DBG(CXT, ul_debugobj(cxt, "mnt_context_mount() done [rc=%d]", rc));
 	return rc;
 }
 
@@ -1399,7 +1100,7 @@ int mnt_context_next_mount(struct libmnt_context *cxt,
 			   int *mntrc,
 			   int *ignored)
 {
-	struct libmnt_table *fstab, *mtab;
+	struct libmnt_table *fstab, *mountinfo;
 	const char *o, *tgt;
 	int rc, mounted = 0;
 
@@ -1410,6 +1111,9 @@ int mnt_context_next_mount(struct libmnt_context *cxt,
 
 	if (!cxt || !fs || !itr)
 		return -EINVAL;
+
+	/* ingore --onlyonce, it's default behavior for --all */
+	mnt_context_enable_onlyonce(cxt, 0);
 
 	rc = mnt_context_get_fstab(cxt, &fstab);
 	if (rc)
@@ -1454,7 +1158,7 @@ int mnt_context_next_mount(struct libmnt_context *cxt,
 	/* ignore already mounted filesystems */
 	rc = mnt_context_is_fs_mounted(cxt, *fs, &mounted);
 	if (rc) {
-		if (mnt_table_is_empty(cxt->mtab)) {
+		if (mnt_table_is_empty(cxt->mountinfo)) {
 			DBG(CXT, ul_debugobj(cxt, "next-mount: no mount table [rc=%d], ignore", rc));
 			rc = 0;
 			if (ignored)
@@ -1479,11 +1183,11 @@ int mnt_context_next_mount(struct libmnt_context *cxt,
 		mnt_context_save_template(cxt);
 	}
 
-	/* reset context, but protect mtab */
-	mtab = cxt->mtab;
-	cxt->mtab = NULL;
+	/* reset context, but protect mountinfo */
+	mountinfo = cxt->mountinfo;
+	cxt->mountinfo = NULL;
 	mnt_reset_context(cxt);
-	cxt->mtab = mtab;
+	cxt->mountinfo = mountinfo;
 
 	if (mnt_context_is_fork(cxt)) {
 		rc = mnt_fork_context(cxt);
@@ -1570,7 +1274,7 @@ int mnt_context_next_remount(struct libmnt_context *cxt,
 			   int *mntrc,
 			   int *ignored)
 {
-	struct libmnt_table *mtab;
+	struct libmnt_table *mountinfo;
 	const char *tgt;
 	int rc;
 
@@ -1582,11 +1286,11 @@ int mnt_context_next_remount(struct libmnt_context *cxt,
 	if (!cxt || !fs || !itr)
 		return -EINVAL;
 
-	rc = mnt_context_get_mtab(cxt, &mtab);
+	rc = mnt_context_get_mountinfo(cxt, &mountinfo);
 	if (rc)
 		return rc;
 
-	rc = mnt_table_next_fs(mtab, itr, fs);
+	rc = mnt_table_next_fs(mountinfo, itr, fs);
 	if (rc != 0)
 		return rc;	/* more filesystems (or error) */
 
@@ -1623,10 +1327,10 @@ int mnt_context_next_remount(struct libmnt_context *cxt,
 		mnt_context_save_template(cxt);
 	}
 
-	/* restore original, but protect mtab */
-	cxt->mtab = NULL;
+	/* restore original, but protect mountinfo */
+	cxt->mountinfo = NULL;
 	mnt_reset_context(cxt);
-	cxt->mtab = mtab;
+	cxt->mountinfo = mountinfo;
 
 	rc = mnt_context_set_target(cxt, tgt);
 	if (!rc) {
@@ -1668,7 +1372,7 @@ static int is_shared_tree(struct libmnt_context *cxt, const char *dir)
 
 	if (!dir)
 		return 0;
-	if (mnt_context_get_mtab(cxt, &tb) || !tb)
+	if (mnt_context_get_mountinfo(cxt, &tb) || !tb)
 		goto done;
 
 	mnt = strdup(dir);
@@ -1761,7 +1465,7 @@ int mnt_context_get_mount_excode(
 			if (buf)
 				snprintf(buf, bufsz, restricted ?
 						_("failed to determine filesystem type") :
-						_("no filesystem type specified"));
+						_("no valid filesystem type specified"));
 			return MNT_EX_USAGE;
 		case -MNT_ERR_NOSOURCE:
 			if (uflags & MNT_MS_NOFAIL)
@@ -1805,6 +1509,10 @@ int mnt_context_get_mount_excode(
 			if (buf)
 				snprintf(buf, bufsz, _("failed to switch namespace"));
 			return MNT_EX_SYSERR;
+		case -MNT_ERR_ONLYONCE:
+			if (buf)
+				snprintf(buf, bufsz, _("filesystem already mounted"));
+			return MNT_EX_FAIL;
 		default:
 			return mnt_context_get_generic_excode(rc, buf, bufsz, _("mount failed: %m"));
 		}
@@ -1812,8 +1520,14 @@ int mnt_context_get_mount_excode(
 	} else if (mnt_context_get_syscall_errno(cxt) == 0) {
 		/*
 		 * mount(2) syscall success, but something else failed
-		 * (probably error in mtab processing).
+		 * (probably error in utab processing).
 		 */
+		if (rc == -MNT_ERR_APPLYFLAGS) {
+			if (buf)
+				snprintf(buf, bufsz, _("filesystem was mounted, but failed to apply flags"));
+			return MNT_EX_USAGE;
+		}
+
 		if (rc == -MNT_ERR_LOCK) {
 			if (buf)
 				snprintf(buf, bufsz, _("filesystem was mounted, but failed to update userspace mount table"));
@@ -1824,7 +1538,24 @@ int mnt_context_get_mount_excode(
 			if (buf)
 				snprintf(buf, bufsz, _("filesystem was mounted, but failed to switch namespace back"));
 			return MNT_EX_SYSERR;
+		}
 
+		if (rc == -MNT_ERR_CHOWN) {
+			if (buf)
+				snprintf(buf, bufsz, _("filesystem was mounted, but failed to change ownership: %m"));
+			return MNT_EX_SYSERR;
+		}
+
+		if (rc == -MNT_ERR_CHMOD) {
+			if (buf)
+				snprintf(buf, bufsz, _("filesystem was mounted, but failed to change mode: %m"));
+			return MNT_EX_SYSERR;
+		}
+
+		if (rc == -MNT_ERR_IDMAP) {
+			if (buf)
+				snprintf(buf, bufsz, _("filesystem was mounted, but failed to attach idmapping"));
+			return MNT_EX_SYSERR;
 		}
 
 		if (rc < 0)
@@ -1836,7 +1567,7 @@ int mnt_context_get_mount_excode(
 	}
 
 	/*
-	 * mount(2) errors
+	 * mount(2) and other mount related syscalls errors
 	 */
 	syserr = mnt_context_get_syscall_errno(cxt);
 
@@ -1846,10 +1577,13 @@ int mnt_context_get_mount_excode(
 		if (!buf)
 			break;
 		if (geteuid() == 0) {
-			if (mnt_stat_mountpoint(tgt, &st) || !S_ISDIR(st.st_mode))
-				snprintf(buf, bufsz, _("mount point is not a directory"));
-			else
+
+			if (mnt_safe_stat(tgt, &st) == 0
+			    && ((mflags & MS_BIND && S_ISREG(st.st_mode))
+				|| S_ISDIR(st.st_mode)))
 				snprintf(buf, bufsz, _("permission denied"));
+			else
+				snprintf(buf, bufsz, _("mount point is not a directory"));
 		} else
 			snprintf(buf, bufsz, _("must be superuser to use mount"));
 		break;
@@ -1872,13 +1606,13 @@ int mnt_context_get_mount_excode(
 			snprintf(buf, bufsz, _("%s already mounted or mount point busy"), src);
 		break;
 	case ENOENT:
-		if (tgt && mnt_lstat_mountpoint(tgt, &st)) {
+		if (tgt && mnt_safe_lstat(tgt, &st)) {
 			if (buf)
 				snprintf(buf, bufsz, _("mount point does not exist"));
-		} else if (tgt && mnt_stat_mountpoint(tgt, &st)) {
+		} else if (tgt && mnt_safe_stat(tgt, &st)) {
 			if (buf)
 				snprintf(buf, bufsz, _("mount point is a symbolic link to nowhere"));
-		} else if (src && stat(src, &st)) {
+		} else if (src && !mnt_is_path(src)) {
 			if (uflags & MNT_MS_NOFAIL)
 				return MNT_EX_SUCCESS;
 			if (buf)
@@ -1890,10 +1624,10 @@ int mnt_context_get_mount_excode(
 		break;
 
 	case ENOTDIR:
-		if (mnt_stat_mountpoint(tgt, &st) || ! S_ISDIR(st.st_mode)) {
+		if (mnt_safe_stat(tgt, &st) || ! S_ISDIR(st.st_mode)) {
 			if (buf)
 				snprintf(buf, bufsz, _("mount point is not a directory"));
-		} else if (src && stat(src, &st) && errno == ENOTDIR) {
+		} else if (src && !mnt_is_path(src)) {
 			if (uflags & MNT_MS_NOFAIL)
 				return MNT_EX_SUCCESS;
 			if (buf)
@@ -1952,7 +1686,7 @@ int mnt_context_get_mount_excode(
 			return MNT_EX_SUCCESS;
 		if (!buf)
 			break;
-		if (src && stat(src, &st))
+		if (src && mnt_safe_stat(src, &st))
 			snprintf(buf, bufsz, _("%s is not a block device, and stat(2) fails?"), src);
 		else if (src && S_ISBLK(st.st_mode))
 			snprintf(buf, bufsz,
@@ -1998,7 +1732,7 @@ int mnt_context_get_mount_excode(
 
 	case EBADMSG:
 		/* Bad CRC for classic filesystems (e.g. extN or XFS) */
-		if (buf && src && stat(src, &st) == 0
+		if (buf && src && mnt_safe_stat(src, &st) == 0
 		    && (S_ISBLK(st.st_mode) || S_ISREG(st.st_mode))) {
 			snprintf(buf, bufsz, _("cannot mount; probably corrupted filesystem on %s"), src);
 			break;
@@ -2016,3 +1750,117 @@ int mnt_context_get_mount_excode(
 	return MNT_EX_FAIL;
 }
 
+#ifdef TEST_PROGRAM
+
+static int test_perms(struct libmnt_test *ts, int argc, char *argv[])
+{
+	struct libmnt_context *cxt;
+	struct libmnt_optlist *ls;
+	int rc;
+
+	cxt = mnt_new_context();
+	if (!cxt)
+		return -ENOMEM;
+
+	cxt->restricted = 1;		/* emulate suid mount(8) */
+	mnt_context_get_fs(cxt);	/* due to assert() in evaluate_permissions() */
+
+	if (argc < 2) {
+		 warn("missing fstab options");
+		 return -EPERM;
+	}
+	if (argc == 3 && strcmp(argv[2], "--root") == 0)
+		cxt->restricted = 0;
+
+	ls = mnt_context_get_optlist(cxt);
+	if (!ls)
+		return -ENOMEM;
+	rc = mnt_optlist_set_optstr(ls, argv[1], NULL);
+	if (rc) {
+		warn("cannot apply fstab options");
+		return rc;
+	}
+	cxt->flags |= MNT_FL_TAB_APPLIED;	/* emulate mnt_context_apply_fstab() */
+
+	mnt_context_merge_mflags(cxt);
+
+	rc = evaluate_permissions(cxt);
+	if (rc) {
+		warn("evaluate permission failed [rc=%d]", rc);
+		return rc;
+	}
+	printf("user can mount\n");
+
+	mnt_free_context(cxt);
+	return 0;
+}
+
+static int test_fixopts(struct libmnt_test *ts, int argc, char *argv[])
+{
+	struct libmnt_context *cxt;
+	struct libmnt_optlist *ls;
+	unsigned long flags = 0;
+	const char *p;
+	int rc;
+
+	cxt = mnt_new_context();
+	if (!cxt)
+		return -ENOMEM;
+
+	cxt->restricted = 1;		/* emulate suid mount(8) */
+	mnt_context_get_fs(cxt);	/* to fill fs->*_optstr */
+
+	if (argc < 2) {
+		 warn("missing fstab options");
+		 return -EPERM;
+	}
+	if (argc == 3 && strcmp(argv[2], "--root") == 0)
+		cxt->restricted = 0;
+
+	ls = mnt_context_get_optlist(cxt);
+	if (!ls)
+		return -ENOMEM;
+	rc = mnt_optlist_set_optstr(ls, argv[1], NULL);
+	if (rc) {
+		warn("cannot apply fstab options");
+		return rc;
+	}
+	cxt->flags |= MNT_FL_TAB_APPLIED;	/* emulate mnt_context_apply_fstab() */
+
+	mnt_context_merge_mflags(cxt);
+
+	rc = evaluate_permissions(cxt);
+	if (rc) {
+		warn("evaluate permission failed [rc=%d]", rc);
+		return rc;
+	}
+	rc = fix_optstr(cxt);
+	if (rc) {
+		warn("fix options failed [rc=%d]", rc);
+		return rc;
+	}
+
+	mnt_optlist_get_optstr(ls, &p, NULL, 0);
+
+	mnt_optlist_get_flags(ls, &flags, cxt->map_linux, 0);
+	printf("options (dfl): '%s' [mount flags: %08lx]\n", p, flags);
+
+	mnt_optlist_get_optstr(ls, &p, NULL, MNT_OL_FLTR_ALL);
+	printf("options (ex.): '%s'\n", p);
+
+	mnt_free_context(cxt);
+	return 0;
+}
+
+int main(int argc, char *argv[])
+{
+	struct libmnt_test tss[] = {
+	{ "--perms",		test_perms,    "<fstab-options> [--root]" },
+	{ "--fix-options",	test_fixopts,  "<fstab-options> [--root]" },
+
+	{ NULL }};
+
+	return mnt_run_test(tss, argc, argv);
+}
+
+#endif /* TEST_PROGRAM */

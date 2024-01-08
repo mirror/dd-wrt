@@ -1,6 +1,7 @@
 
 dist_noinst_HEADERS += \
 	include/all-io.h \
+	include/audit-arch.h \
 	include/bitops.h \
 	include/blkdev.h \
 	include/buffer.h \
@@ -15,6 +16,7 @@ dist_noinst_HEADERS += \
 	include/cpuset.h \
 	include/crc32.h \
 	include/crc32c.h \
+	include/crc64.h \
 	include/c_strtod.h \
 	include/debug.h \
 	include/debugobj.h \
@@ -32,6 +34,7 @@ dist_noinst_HEADERS += \
 	include/pwdutils.h \
 	include/linux_version.h \
 	include/list.h \
+	include/logindefs.h \
 	include/loopdev.h \
 	include/mangle.h \
 	include/match.h \
@@ -40,6 +43,7 @@ dist_noinst_HEADERS += \
 	include/md5.h \
 	include/minix.h \
 	include/monotonic.h \
+	include/mount-api-utils.h \
 	include/namespace.h \
 	include/nls.h \
 	include/optutils.h \
@@ -59,6 +63,8 @@ dist_noinst_HEADERS += \
 	include/randutils.h \
 	include/rpmatch.h \
 	include/sha1.h \
+	include/sha256.h \
+	include/shells.h \
 	include/signames.h \
 	include/selinux-utils.h \
 	include/statfs_magic.h \
@@ -71,4 +77,5 @@ dist_noinst_HEADERS += \
 	include/timeutils.h \
 	include/ttyutils.h \
 	include/widechar.h \
-	include/xalloc.h
+	include/xalloc.h \
+	include/xxhash.h

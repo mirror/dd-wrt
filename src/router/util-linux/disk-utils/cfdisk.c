@@ -1,4 +1,11 @@
 /*
+ * SPDX-License-Identifier: GPL-2.0-or-later
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
  * cfdisk.c - Display or manipulate a disk partition table.
  *
  *     Copyright (C) 2014-2015 Karel Zak <kzak@redhat.com>
@@ -6,11 +13,6 @@
  *
  *     The original cfdisk was inspired by the fdisk program
  *           by A. V. Le Blanc (leblanc@mcc.ac.uk.
- *
- * cfdisk is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
  */
 #include <stdlib.h>
 #include <stdio.h>
@@ -124,12 +126,14 @@ enum {
 	CFDISK_CL_FREESPACE,
 	CFDISK_CL_INFO
 };
+#ifdef HAVE_USE_DEFAULT_COLORS
 static const int color_pairs[][2] = {
 	/* color            foreground, background */
 	[CFDISK_CL_WARNING]   = { COLOR_RED, -1 },
 	[CFDISK_CL_FREESPACE] = { COLOR_GREEN, -1 },
 	[CFDISK_CL_INFO]      = { COLOR_BLUE, -1 }
 };
+#endif
 
 struct cfdisk;
 

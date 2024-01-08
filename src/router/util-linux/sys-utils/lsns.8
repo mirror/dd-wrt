@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: lsns
 .\"    Author: [see the "AUTHOR(S)" section]
-.\" Generator: Asciidoctor 2.0.15
-.\"      Date: 2022-07-20
+.\" Generator: Asciidoctor 2.0.20
+.\"      Date: 2023-11-21
 .\"    Manual: System Administration
-.\"    Source: util-linux 2.38.1
+.\"    Source: util-linux 2.39.3
 .\"  Language: English
 .\"
-.TH "LSNS" "8" "2022-07-20" "util\-linux 2.38.1" "System Administration"
+.TH "LSNS" "8" "2023-11-21" "util\-linux 2.39.3" "System Administration"
 .ie \n(.g .ds Aq \(aq
 .el       .ds Aq '
 .ss \n[.ss] 0
@@ -70,6 +70,12 @@ The default list of columns may be extended if \fIlist\fP is specified in the fo
 Output all available columns.
 .RE
 .sp
+\fB\-P\fP, \fB\-\-persistent\fP
+.RS 4
+Display only the namespaces without processes (aka persistent namespaces), created by bind mounting
+/proc/pid/ns/type files to a filesystem path.
+.RE
+.sp
 \fB\-p\fP, \fB\-\-task\fP \fIPID\fP
 .RS 4
 Display only the namespaces held by the process with this \fIPID\fP.
@@ -108,6 +114,24 @@ Display help text and exit.
 \fB\-V\fP, \fB\-\-version\fP
 .RS 4
 Print version and exit.
+.RE
+.SH "EXIT STATUS"
+.sp
+The \fBlsns\fP utility exits with one of the following values:
+.sp
+\fB0\fP
+.RS 4
+Success.
+.RE
+.sp
+\fB1\fP
+.RS 4
+General error.
+.RE
+.sp
+\fB2\fP
+.RS 4
+An ioctl was unknown to the kernel.
 .RE
 .SH "AUTHORS"
 .sp

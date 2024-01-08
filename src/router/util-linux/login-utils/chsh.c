@@ -44,6 +44,7 @@
 #include "xalloc.h"
 
 #include "ch-common.h"
+#include "shells.h"
 
 #ifdef HAVE_LIBSELINUX
 # include <selinux/selinux.h>
@@ -74,33 +75,12 @@ static void __attribute__((__noreturn__)) usage(void)
 	fputs(USAGE_OPTIONS, fp);
 	fputs(_(" -s, --shell <shell>  specify login shell\n"), fp);
 	fputs(_(" -l, --list-shells    print list of shells and exit\n"), fp);
+
 	fputs(USAGE_SEPARATOR, fp);
-	printf( " -u, --help           %s\n", USAGE_OPTSTR_HELP);
-	printf( " -v, --version        %s\n", USAGE_OPTSTR_VERSION);
+	printf(USAGE_HELP_OPTIONS(22));
+
 	printf(USAGE_MAN_TAIL("chsh(1)"));
 	exit(EXIT_SUCCESS);
-}
-
-/*
- *  is_known_shell() -- if the given shell appears in /etc/shells,
- *	return true.  if not, return false.
- */
-static int is_known_shell(const char *shell_name)
-{
-	char *s, ret = 0;
-
-	if (!shell_name)
-		return 0;
-
-	setusershell();
-	while ((s = getusershell())) {
-		if (strcmp(shell_name, s) == 0) {
-			ret = 1;
-			break;
-		}
-	}
-	endusershell();
-	return ret;
 }
 
 /*
@@ -126,14 +106,15 @@ static void parse_argv(int argc, char **argv, struct sinfo *pinfo)
 		{"shell",       required_argument, NULL, 's'},
 		{"list-shells", no_argument,       NULL, 'l'},
 		{"help",        no_argument,       NULL, 'h'},
-		{"version",     no_argument,       NULL, 'v'},
+		{"version",     no_argument,       NULL, 'V'},
 		{NULL, 0, NULL, 0},
 	};
 	int c;
 
-	while ((c = getopt_long(argc, argv, "s:lhuv", long_options, NULL)) != -1) {
+	while ((c = getopt_long(argc, argv, "s:lhuvV", long_options, NULL)) != -1) {
 		switch (c) {
-		case 'v':
+		case 'v': /* deprecated */
+		case 'V':
 			print_version(EXIT_SUCCESS);
 		case 'u': /* deprecated */
 		case 'h':

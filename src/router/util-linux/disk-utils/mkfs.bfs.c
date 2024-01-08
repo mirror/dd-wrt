@@ -1,9 +1,17 @@
 /*
- *  mkfs.bfs - Create SCO BFS filesystem - aeb, 1999-09-07
+ * SPDX-License-Identifier: GPL-2.0-or-later
  *
- *	Usage: mkfs.bfs [-N nr-of-inodes] [-V volume-name] [-F fsname] device
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * mkfs.bfs - Create SCO BFS filesystem - aeb, 1999-09-07
+ *
+ * Copyright (C) 1999 Andries E. Brouwe
+ *
+ * Usage: mkfs.bfs [-N nr-of-inodes] [-V volume-name] [-F fsname] device
  */
-
 #include <errno.h>
 #include <fcntl.h>
 #include <getopt.h>
@@ -22,6 +30,7 @@
 #include "strutils.h"
 #include "xalloc.h"
 #include "bitops.h"
+#include "exitcodes.h"
 
 #define BFS_ROOT_INO		2
 #define BFS_NAMELEN		14
@@ -84,6 +93,7 @@ static void __attribute__((__noreturn__)) usage(void)
 		       " -v, --verbose       explain what is being done\n"
 		       " -c                  this option is silently ignored\n"
 		       " -l                  this option is silently ignored\n"
+		       " --lock[=<mode>]     use exclusive device lock (yes, no or nonblock)\n"
 		       ));
 	printf(USAGE_HELP_OPTIONS(21));
 
@@ -94,6 +104,7 @@ static void __attribute__((__noreturn__)) usage(void)
 int main(int argc, char **argv)
 {
 	char *device, *volume, *fsname;
+	char *lockmode = 0;
 	long inodes;
 	unsigned long long total_blocks, ino_bytes, ino_blocks, data_blocks;
 	unsigned long long user_specified_total_blocks = 0;
@@ -107,7 +118,10 @@ int main(int argc, char **argv)
 	time_t now;
 	int c, i, len;
 
-	enum { VERSION_OPTION = CHAR_MAX + 1 };
+	enum {
+	    VERSION_OPTION = CHAR_MAX + 1,
+	    OPT_LOCK
+	};
 	static const struct option longopts[] = {
 		{"inodes", required_argument, NULL, 'N'},
 		{"vname", required_argument, NULL, 'V'},
@@ -115,6 +129,7 @@ int main(int argc, char **argv)
 		{"verbose", no_argument, NULL, 'v'},
 		{"version", no_argument, NULL, VERSION_OPTION},
 		{"help", no_argument, NULL, 'h'},
+		{"lock", optional_argument, NULL, OPT_LOCK},
 		{NULL, 0, NULL, 0}
 	};
 
@@ -162,6 +177,15 @@ int main(int argc, char **argv)
 			/* when called via mkfs we may get options c,l,v */
 			break;
 
+                case OPT_LOCK:
+			lockmode = "1";
+			if (optarg) {
+				if (*optarg == '=')
+					optarg++;
+				lockmode = optarg;
+			}
+			break;
+
 		case VERSION_OPTION:
 			print_version(EXIT_SUCCESS);
 		case 'h':
@@ -184,6 +208,9 @@ int main(int argc, char **argv)
 	fd = open_blkdev_or_file(&statbuf, device, O_RDWR);
 	if (fd < 0)
 		err(EXIT_FAILURE, _("cannot open %s"), device);
+
+	if (blkdev_lock(fd, device, lockmode) != 0)
+		exit(MKFS_EX_ERROR);
 
 	if (optind == argc - 1)
 		user_specified_total_blocks =

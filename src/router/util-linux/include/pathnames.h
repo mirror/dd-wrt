@@ -119,6 +119,8 @@
 #define _PATH_SYS_DEVCHAR	"/sys/dev/char"
 #define _PATH_SYS_CLASS		"/sys/class"
 #define _PATH_SYS_SCSI		"/sys/bus/scsi"
+#define _PATH_SYS_CPU_BYTEORDER	"/sys/kernel/cpu_byteorder"
+#define _PATH_SYS_ADDRESS_BITS	"/sys/kernel/address_bits"
 
 #define _PATH_SYS_SELINUX	"/sys/fs/selinux"
 #define _PATH_SYS_APPARMOR	"/sys/kernel/security/apparmor"
@@ -197,6 +199,10 @@
 /* util clamp */
 #define _PATH_PROC_UCLAMP_MIN	_PATH_PROC_KERNEL "/sched_util_clamp_min"
 #define _PATH_PROC_UCLAMP_MAX	_PATH_PROC_KERNEL "/sched_util_clamp_max"
+
+/* sysctl fs paths */
+#define _PATH_PROC_SYS_FS	"/proc/sys/fs"
+#define _PATH_PROC_PIPE_MAX_SIZE	_PATH_PROC_SYS_FS "/pipe-max-size"
 
 /* irqtop paths */
 #define _PATH_PROC_INTERRUPTS	"/proc/interrupts"

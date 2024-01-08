@@ -102,7 +102,7 @@ This option sets the adoption date of the Gregorian calendar reform. Calendar da
 * _gregorian_ - display Gregorian calendars exclusively. This special placeholder sets the reform date below the smallest year that *cal* can use; meaning all calendar output uses the Gregorian calendar system. This is called the proleptic Gregorian calendar, because dates prior to the calendar system's creation use extrapolated values.
 * _iso_ - alias of _gregorian_. The ISO 8601 standard for the representation of dates and times in information interchange requires using the proleptic Gregorian calendar.
 * _julian_ - display Julian calendars exclusively. This special placeholder sets the reform date above the largest year that *cal* can use; meaning all calendar output uses the Julian calendar system.
-
++
 See *DESCRIPTION* above.
 
 *-y*, *--year*::
@@ -116,6 +116,9 @@ Display week numbers in the calendar (US or ISO-8601). See the *NOTES* section f
 
 *--color*[=_when_]::
 Colorize the output. The optional argument _when_ can be *auto*, *never* or *always*. If the _when_ argument is omitted, it defaults to *auto*. The colors can be disabled; for the current built-in default see the *--help* output. See also the *COLORS* section.
+
+*-c, --columns*=_columns_::
+Number of columns to use. *auto* uses as many as fit the terminal.
 
 include::man-common/help-version.adoc[]
 
@@ -145,6 +148,27 @@ A year starts on January 1. The first day of the week is determined by the local
 The week numbering depends on the choice of the first day of the week. If it is Sunday then the customary North American numbering is used, where 1 January is in week number 1. If it is Monday (*-m*) then the ISO 8601 standard week numbering is used, where the first Thursday is in week number 1.
 
 include::man-common/colors.adoc[]
+The logical color names supported by *cal* are:
+
+*today*::
+The current day.
+
+*weeknumber*::
+The number of the week.
+
+*header*::
+The header of a month.
+
+*workday*::
+Days that fall within the work-week.
+
+*weekend*::
+Days that fall outside the work-week.
+
+For example:
+____
+echo -e 'weekend 35\ntoday 1;41\nheader yellow' > $HOME/.config/terminal-colors.d/cal.scheme
+____
 
 == HISTORY
 
@@ -155,6 +179,10 @@ A *cal* command appeared in Version 6 AT&T UNIX.
 The default *cal* output uses 3 September 1752 as the Gregorian calendar reform date. The historical reform dates for the other locales, including its introduction in October 1582, are not implemented.
 
 Alternative calendars, such as the Umm al-Qura, the Solar Hijri, the Ge'ez, or the lunisolar Hindu, are not supported.
+
+== SEE ALSO
+
+*terminal-colors.d*(5)
 
 include::man-common/bugreports.adoc[]
 

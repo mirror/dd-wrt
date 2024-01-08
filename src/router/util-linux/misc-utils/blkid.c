@@ -402,14 +402,11 @@ static int append_str(char **res, size_t *sz, const char *a, const char *b)
 	*res = str = xrealloc(str, len + 1);
 	str += *sz;
 
-	if (a) {
-		memcpy(str, a, asz);
-		str += asz;
-	}
-	if (b) {
-		memcpy(str, b, bsz);
-		str += bsz;
-	}
+	if (a)
+		str = mempcpy(str, a, asz);
+	if (b)
+		str = mempcpy(str, b, bsz);
+
 	*str = '\0';
 	*sz = len;
 	return 0;
@@ -720,7 +717,7 @@ int main(int argc, char **argv)
 	while ((c = getopt_long (argc, argv,
 			    "c:DdgH:hilL:n:ko:O:ps:S:t:u:U:w:Vv", longopts, NULL)) != -1) {
 
-		err_exclusive_options(c, NULL, excl, excl_st);
+		err_exclusive_options(c, longopts, excl, excl_st);
 
 		switch (c) {
 		case 'c':
@@ -921,8 +918,8 @@ int main(int argc, char **argv)
 			blkid_probe_set_superblocks_flags(pr,
 				BLKID_SUBLKS_LABEL | BLKID_SUBLKS_UUID |
 				BLKID_SUBLKS_TYPE | BLKID_SUBLKS_SECTYPE |
-				BLKID_SUBLKS_USAGE | BLKID_SUBLKS_VERSION);
-
+				BLKID_SUBLKS_USAGE | BLKID_SUBLKS_VERSION |
+				BLKID_SUBLKS_FSINFO);
 
 			if (fltr_usage &&
 			    blkid_probe_filter_superblocks_usage(pr, fltr_flag, fltr_usage))

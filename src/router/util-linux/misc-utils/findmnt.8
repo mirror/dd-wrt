@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: findmnt
 .\"    Author: [see the "AUTHOR(S)" section]
-.\" Generator: Asciidoctor 2.0.15
-.\"      Date: 2022-05-11
+.\" Generator: Asciidoctor 2.0.20
+.\"      Date: 2023-12-01
 .\"    Manual: System Administration
-.\"    Source: util-linux 2.38.1
+.\"    Source: util-linux 2.39.3
 .\"  Language: English
 .\"
-.TH "FINDMNT" "8" "2022-05-11" "util\-linux 2.38.1" "System Administration"
+.TH "FINDMNT" "8" "2023-12-01" "util\-linux 2.39.3" "System Administration"
 .ie \n(.g .ds Aq \(aq
 .el       .ds Aq '
 .ss \n[.ss] 0
@@ -44,7 +44,7 @@ The device may be specified by device name, major:minor numbers, filesystem labe
 .sp
 The command\-line option \fB\-\-target\fP accepts any file or directory and then \fBfindmnt\fP displays the filesystem for the given path.
 .sp
-The command prints all mounted filesystems in the tree\-like format by default.
+The command prints all mounted filesystems in the tree\-like format by default. The default output, is subject to change. So whenever possible, you should avoid using default output in your scripts. Always explicitly define expected columns by using \fB\-\-output columns\-list\fP in environments where a stable output is required.
 .sp
 The relationship between block devices and filesystems is not always one\-to\-one. The filesystem may use more block devices. This is why \fBfindmnt\fP provides  SOURCE and SOURCES (pl.) columns. The column SOURCES displays all devices where it is possible to find the same filesystem  UUID (or another tag specified in \fIfstab\fP when executed with \fB\-\-fstab\fP and \fB\-\-evaluate\fP).
 .SH "OPTIONS"

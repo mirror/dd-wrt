@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: setpriv
 .\"    Author: [see the "AUTHOR(S)" section]
-.\" Generator: Asciidoctor 2.0.15
-.\"      Date: 2022-05-11
+.\" Generator: Asciidoctor 2.0.20
+.\"      Date: 2023-10-23
 .\"    Manual: User Commands
-.\"    Source: util-linux 2.38.1
+.\"    Source: util-linux 2.39.3
 .\"  Language: English
 .\"
-.TH "SETPRIV" "1" "2022-05-11" "util\-linux 2.38.1" "User Commands"
+.TH "SETPRIV" "1" "2023-10-23" "util\-linux 2.39.3" "User Commands"
 .ie \n(.g .ds Aq \(aq
 .el       .ds Aq '
 .ss \n[.ss] 0
@@ -143,7 +143,7 @@ Set or clear securebits. The argument is a comma\-separated list. The valid secu
 .sp
 \fB\-\-pdeathsig keep\fP|\fBclear\fP|\fB<signal>\fP
 .RS 4
-Keep, clear or set the parent death signal. Some LSMs, most notably SELinux and AppArmor, clear the signal when the process\(aq credentials change. Using \fB\-\-pdeathsig keep\fP will restore the parent death signal after changing credentials to remedy that situation.
+Keep, clear or set the parent death signal. Some LSMs, most notably SELinux and AppArmor, clear the signal when the process\*(Aq credentials change. Using \fB\-\-pdeathsig keep\fP will restore the parent death signal after changing credentials to remedy that situation.
 .RE
 .sp
 \fB\-\-selinux\-label\fP \fIlabel\fP
@@ -183,7 +183,7 @@ If you\(cqre looking for behavior similar to \fBsu\fP(1)/\fBrunuser\fP(1), or \f
 .sp
 \fBsetpriv \-\-reuid=1000 \-\-regid=1000 \-\-init\-groups\fP
 .sp
-If you want to mimic daemontools\(aq \fBsetuid\fP(8), try:
+If you want to mimic daemontools\*(Aq \fBsetuid\fP(8), try:
 .sp
 \fBsetpriv \-\-reuid=1000 \-\-regid=1000 \-\-clear\-groups\fP
 .SH "AUTHORS"

@@ -233,10 +233,16 @@ found:
 			(unsigned char *) &ufs->fs_magic))
 		return 1;
 
+	uint32_t bsize = 0;
 	if (!is_be)
-		blkid_probe_set_block_size(pr, le32_to_cpu(ufs->fs_fsize));
+		bsize = le32_to_cpu(ufs->fs_fsize);
 	else
-		blkid_probe_set_block_size(pr, be32_to_cpu(ufs->fs_fsize));
+		bsize = be32_to_cpu(ufs->fs_fsize);
+
+	blkid_probe_set_fsblocksize(pr, bsize);
+	blkid_probe_set_block_size(pr, bsize);
+	blkid_probe_set_fsendianness(pr, is_be ?
+			BLKID_ENDIANNESS_BIG : BLKID_ENDIANNESS_LITTLE);
 
 	return 0;
 }

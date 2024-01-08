@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: mesg
 .\"    Author: [see the "AUTHOR(S)" section]
-.\" Generator: Asciidoctor 2.0.15
-.\"      Date: 2022-05-11
+.\" Generator: Asciidoctor 2.0.20
+.\"      Date: 2023-11-21
 .\"    Manual: User Commands
-.\"    Source: util-linux 2.38.1
+.\"    Source: util-linux 2.39.3
 .\"  Language: English
 .\"
-.TH "MESG" "1" "2022-05-11" "util\-linux 2.38.1" "User Commands"
+.TH "MESG" "1" "2023-11-21" "util\-linux 2.39.3" "User Commands"
 .ie \n(.g .ds Aq \(aq
 .el       .ds Aq '
 .ss \n[.ss] 0
@@ -38,7 +38,7 @@ The \fBmesg\fP utility is invoked by a user to control write access others have 
 .sp
 Traditionally, write access is allowed by default. However, as users become more conscious of various security risks, there is a trend to remove write access by default, at least for the primary login shell. To make sure your ttys are set the way you want them to be set, \fBmesg\fP should be executed in your login scripts.
 .sp
-The \fBmesg\fP utility silently exits with error status 2 if not executed on terminal. In this case execute \fBmesg\fP is pointless. The command line option \fB\-\-verbose\fP forces mesg to print a warning in this situation. This behaviour has been introduced in version 2.33.
+The \fBmesg\fP utility silently exits with error status 2 if not executed on a terminal. In this case executing \fBmesg\fP is pointless. The command line option \fB\-\-verbose\fP forces \fBmesg\fP to print a warning in this situation. This behaviour has been introduced in version 2.33.
 .SH "ARGUMENTS"
 .sp
 \fBn\fP
@@ -88,10 +88,11 @@ An error has occurred.
 .RE
 .SH "FILES"
 .sp
-\fI/dev/[pt]ty[pq]?\fP
+\fI/dev/[pt]ty*\fP, \fI/dev/pts/[0\-9]*\fP
 .SH "HISTORY"
 .sp
-A \fBmesg\fP command appeared in Version 6 AT&T UNIX.
+\fBmesg\fP (I) appears in the UNIX Programmer\(cqs Manual.
+It used to invert the current state with no argument before Version 7 AT&T UNIX.
 .SH "SEE ALSO"
 .sp
 \fBlogin\fP(1),

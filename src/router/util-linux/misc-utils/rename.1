@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: rename
 .\"    Author: [see the "AUTHOR(S)" section]
-.\" Generator: Asciidoctor 2.0.15
-.\"      Date: 2022-05-11
+.\" Generator: Asciidoctor 2.0.20
+.\"      Date: 2023-11-21
 .\"    Manual: User Commands
-.\"    Source: util-linux 2.38.1
+.\"    Source: util-linux 2.39.3
 .\"  Language: English
 .\"
-.TH "RENAME" "1" "2022-05-11" "util\-linux 2.38.1" "User Commands"
+.TH "RENAME" "1" "2023-11-21" "util\-linux 2.39.3" "User Commands"
 .ie \n(.g .ds Aq \(aq
 .el       .ds Aq '
 .ss \n[.ss] 0
@@ -39,7 +39,7 @@ rename \- rename files
 .sp
 \fB\-s\fP, \fB\-\-symlink\fP
 .RS 4
-Do not rename a symlink but its target.
+Do not rename a symlink but change where it points.
 .RE
 .sp
 \fB\-v\fP, \fB\-\-verbose\fP
@@ -84,6 +84,11 @@ Print version and exit.
 .SH "WARNING"
 .sp
 The renaming has no safeguards by default or without any one of the options \fB\-\-no\-overwrite\fP, \fB\-\-interactive\fP or \fB\-\-no\-act\fP. If the user has permission to rewrite file names, the command will perform the action without any questions. For example, the result can be quite drastic when the command is run as root in the \fI/lib\fP directory. Always make a backup before running the command, unless you truly know what you are doing.
+.SH "EDGE CASES"
+.sp
+If the \fIexpression\fP is empty, then by default \fIreplacement\fP will be added to the start of the filename. With \fB\-\-all\fP, \fIreplacement\fP will be inserted in between every two characters of the filename, as well as at the start and end.
+.sp
+Normally, only the final path component of a filename is updated. (Or with \fB\-\-symlink\fP, only the final path component of the link.) But if either \fIexpression\fP or \fIreplacement\fP contains a \fI/\fP, the full path is updated. This can cause a file to be moved between folders. Creating folders, and moving files between filesystems, is not supported.
 .SH "INTERACTIVE MODE"
 .sp
 As most standard utilities rename can be used with a terminal device (tty in short) in canonical mode, where the line is buffered by the tty and you press ENTER to validate the user input. If you put your tty in cbreak mode however, rename requires only a single key press to answer the prompt. To set cbreak mode, run for example:
@@ -91,7 +96,7 @@ As most standard utilities rename can be used with a terminal device (tty in sho
 .if n .RS 4
 .nf
 .fam C
-sh \-c \(aqstty \-icanon min 1; "$0" "$@"; stty icanon\(aq rename \-i from to files
+sh \-c \*(Aqstty \-icanon min 1; "$0" "$@"; stty icanon\*(Aq rename \-i from to files
 .fam
 .fi
 .if n .RE
@@ -149,7 +154,7 @@ will fix the extension of your html files. Provide an empty string for shortenin
 .if n .RS 4
 .nf
 .fam C
-rename \(aq_with_long_name\(aq \(aq\(aq file_with_long_name.*
+rename \*(Aq_with_long_name\*(Aq \*(Aq\*(Aq file_with_long_name.*
 .fam
 .fi
 .if n .RE

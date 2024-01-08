@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: fsck
 .\"    Author: [see the "AUTHOR(S)" section]
-.\" Generator: Asciidoctor 2.0.15
-.\"      Date: 2022-05-11
+.\" Generator: Asciidoctor 2.0.20
+.\"      Date: 2023-11-21
 .\"    Manual: System Administration
-.\"    Source: util-linux 2.38.1
+.\"    Source: util-linux 2.39.3
 .\"  Language: English
 .\"
-.TH "FSCK" "8" "2022-05-11" "util\-linux 2.38.1" "System Administration"
+.TH "FSCK" "8" "2023-11-21" "util\-linux 2.39.3" "System Administration"
 .ie \n(.g .ds Aq \(aq
 .el       .ds Aq '
 .ss \n[.ss] 0
@@ -34,7 +34,7 @@ fsck \- check and repair a Linux filesystem
 \fBfsck\fP [\fB\-lsAVRTMNP\fP] [\fB\-r\fP [\fIfd\fP]] [\fB\-C\fP [\fIfd\fP]] [\fB\-t\fP \fIfstype\fP] [\fIfilesystem\fP...] [\fB\-\-\fP] [\fIfs\-specific\-options\fP]
 .SH "DESCRIPTION"
 .sp
-\fBfsck\fP is used to check and optionally repair one or more Linux filesystems. \fIfilesystem\fP can be a device name (e.g., \fI/dev/hdc1\fP, \fI/dev/sdb2\fP), a mount point (e.g., \fI/\fP, \fI/usr\fP, \fI/home\fP), or an filesystem label or UUID specifier (e.g., UUID=8868abf6\-88c5\-4a83\-98b8\-bfc24057f7bd or LABEL=root). Normally, the \fBfsck\fP program will try to handle filesystems on different physical disk drives in parallel to reduce the total amount of time needed to check all of them.
+\fBfsck\fP is used to check and optionally repair one or more Linux filesystems. \fIfilesystem\fP can be a device name (e.g., \fI/dev/hdc1\fP, \fI/dev/sdb2\fP), a mount point (e.g., \fI/\fP, \fI/usr\fP, \fI/home\fP), or a filesystem label or UUID specifier (e.g., UUID=8868abf6\-88c5\-4a83\-98b8\-bfc24057f7bd or LABEL=root). Normally, the \fBfsck\fP program will try to handle filesystems on different physical disk drives in parallel to reduce the total amount of time needed to check all of them.
 .sp
 If no filesystems are specified on the command line, and the \fB\-A\fP option is not specified, \fBfsck\fP will default to checking filesystems in \fI/etc/fstab\fP serially. This is equivalent to the \fB\-As\fP options.
 .sp
@@ -110,7 +110,7 @@ Serialize \fBfsck\fP operations. This is a good idea if you are checking multipl
 .sp
 \fB\-t\fP \fIfslist\fP
 .RS 4
-Specifies the type(s) of filesystem to be checked. When the \fB\-A\fP flag is specified, only filesystems that match \fIfslist\fP are checked. The \fIfslist\fP parameter is a comma\-separated list of filesystems and options specifiers. All of the filesystems in this comma\-separated list may be prefixed by a negation operator \(aq\fBno\fP\(aq or \(aq\fB!\fP\(aq, which requests that only those filesystems not listed in \fIfslist\fP will be checked. If none of the filesystems in \fIfslist\fP is prefixed by a negation operator, then only those listed filesystems will be checked.
+Specifies the type(s) of filesystem to be checked. When the \fB\-A\fP flag is specified, only filesystems that match \fIfslist\fP are checked. The \fIfslist\fP parameter is a comma\-separated list of filesystems and options specifiers. All of the filesystems in this comma\-separated list may be prefixed by a negation operator \*(Aq\fBno\fP\*(Aq or \*(Aq\fB!\fP\*(Aq, which requests that only those filesystems not listed in \fIfslist\fP will be checked. If none of the filesystems in \fIfslist\fP is prefixed by a negation operator, then only those listed filesystems will be checked.
 .sp
 Options specifiers may be included in the comma\-separated \fIfslist\fP. They must have the format \fBopts=\fP\fIfs\-option\fP. If an options specifier is present, then only filesystems which contain \fIfs\-option\fP in their mount options field of \fI/etc/fstab\fP will be checked. If the options specifier is prefixed by a negation operator, then only those filesystems that do not have \fIfs\-option\fP in their mount options field of \fI/etc/fstab\fP will be checked.
 .sp

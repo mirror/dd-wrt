@@ -1,3 +1,7 @@
+/*
+ * No copyright is claimed.  This code is in the public domain; do with
+ * it what you wish.
+ **/
 #ifndef UTIL_LINUX_FILEUTILS
 #define UTIL_LINUX_FILEUTILS
 
@@ -77,19 +81,30 @@ static inline struct dirent *xreaddir(DIR *dp)
 	return d;
 }
 
+
 #ifdef HAVE_SYS_SYSCALL_H
 # include <sys/syscall.h>
-# if defined(SYS_close_range)
+
+# if !defined(HAVE_CLOSE_RANGE) && defined(SYS_close_range)
 #  include <sys/types.h>
-#  ifndef HAVE_CLOSE_RANGE
 static inline int close_range(unsigned int first, unsigned int last, int flags)
 {
 	return syscall(SYS_close_range, first, last, flags);
 }
-#  endif
 #  define HAVE_CLOSE_RANGE 1
 # endif	/* SYS_close_range */
+
+# if !defined(HAVE_STATX) && defined(HAVE_STRUCT_STATX) && defined(SYS_statx)
+static inline int statx(int fd, const char *restrict path, int flags,
+		    unsigned int mask, struct statx *stx)
+{
+	return syscall(SYS_statx, fd, path, flags, mask, stx);
+}
+#  define HAVE_STATX 1
+# endif /* SYS_statx */
+
 #endif	/* HAVE_SYS_SYSCALL_H */
+
 
 extern void ul_close_all_fds(unsigned int first, unsigned int last);
 

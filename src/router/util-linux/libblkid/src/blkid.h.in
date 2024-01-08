@@ -281,6 +281,7 @@ extern int blkid_probe_enable_superblocks(blkid_probe pr, int enable)
 #define BLKID_SUBLKS_VERSION	(1 << 8) /* read FS type from superblock */
 #define BLKID_SUBLKS_MAGIC	(1 << 9) /* define SBMAGIC and SBMAGIC_OFFSET */
 #define BLKID_SUBLKS_BADCSUM	(1 << 10) /* allow a bad checksum */
+#define BLKID_SUBLKS_FSINFO	(1 << 11) /* read and define fs properties from superblock */
 
 #define BLKID_SUBLKS_DEFAULT	(BLKID_SUBLKS_LABEL | BLKID_SUBLKS_UUID | \
 				 BLKID_SUBLKS_TYPE | BLKID_SUBLKS_SECTYPE)
@@ -331,6 +332,8 @@ extern unsigned long blkid_topology_get_logical_sector_size(blkid_topology tp)
 extern unsigned long blkid_topology_get_physical_sector_size(blkid_topology tp)
 			__ul_attribute__((nonnull));
 extern unsigned long blkid_topology_get_dax(blkid_topology tp)
+			__ul_attribute__((nonnull));
+extern uint64_t blkid_topology_get_diskseq(blkid_topology tp)
 			__ul_attribute__((nonnull));
 
 /*
@@ -416,6 +419,32 @@ extern int blkid_do_safeprobe(blkid_probe pr)
 			__ul_attribute__((nonnull));
 extern int blkid_do_fullprobe(blkid_probe pr)
 			__ul_attribute__((nonnull));
+
+/**
+ * BLKID_PROBE_OK:
+ *
+ * probing return value; superblock (RAID, partiton table, ...) succesfully detected
+ */
+#define BLKID_PROBE_OK	0
+/**
+ * BLKID_PROBE_NONE:
+ *
+ * probing return value; found nothing
+ */
+#define BLKID_PROBE_NONE	1
+/**
+ * BLKID_PROBE_ERROR:
+ *
+ * probing return value; probing ends with en error (see errno for more details)
+ */
+#define BLKID_PROBE_ERROR	-1
+/**
+ * BLKID_PROBE_AMBIGUOUS:
+ *
+ * probing return value; more than one probing result, in this case, it's not
+ * safe to use the device automaticaly and user intervention is recommended
+ */
+#define BLKID_PROBE_AMBIGUOUS	-2
 
 extern int blkid_probe_numof_values(blkid_probe pr)
 			__ul_attribute__((nonnull));

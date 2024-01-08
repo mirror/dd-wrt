@@ -61,7 +61,7 @@ struct nilfs_super_block {
 	uint32_t	s_c_interval;
 	uint32_t	s_c_block_max;
 	uint32_t	s_reserved[192];
-};
+} __attribute__((__packed__));
 
 #define NILFS_SB_MAGIC		0x3434
 #define NILFS_SB_OFFSET		0x400
@@ -157,8 +157,10 @@ static int probe_nilfs2(blkid_probe pr,
 				(unsigned char *) &sb->s_magic))
 		return 1;
 
-	if (le32_to_cpu(sb->s_log_block_size) < 32)
+	if (le32_to_cpu(sb->s_log_block_size) < 32){
+		blkid_probe_set_fsblocksize(pr, 1024U << le32_to_cpu(sb->s_log_block_size));
 		blkid_probe_set_block_size(pr, 1024U << le32_to_cpu(sb->s_log_block_size));
+	}
 
 	return 0;
 }

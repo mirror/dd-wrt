@@ -17,7 +17,7 @@
 TS_TOPDIR="${0%/*}/../.."
 TS_DESC="symbolic link itself opened with O_PATH"
 
-. $TS_TOPDIR/functions.sh
+. "$TS_TOPDIR"/functions.sh
 ts_init "$*"
 
 ts_check_test_command "$TS_CMD_LSFD"
@@ -38,8 +38,8 @@ EXPR=
 	echo 'ASSOC,MODE,TYPE,NAME,FLAGS': $?
 
 	kill -CONT ${PID}
-	wait ${MKFDS_PID}
     fi
+    wait ${MKFDS_PID}
 } > $TS_OUTPUT 2>&1
 
 ts_finalize

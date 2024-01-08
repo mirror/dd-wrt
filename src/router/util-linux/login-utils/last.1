@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: last
 .\"    Author: [see the "AUTHOR(S)" section]
-.\" Generator: Asciidoctor 2.0.15
-.\"      Date: 2022-05-11
+.\" Generator: Asciidoctor 2.0.20
+.\"      Date: 2023-12-01
 .\"    Manual: User Commands
-.\"    Source: util-linux 2.38.1
+.\"    Source: util-linux 2.39.3
 .\"  Language: English
 .\"
-.TH "LAST" "1" "2022-05-11" "util\-linux 2.38.1" "User Commands"
+.TH "LAST" "1" "2023-12-01" "util\-linux 2.39.3" "User Commands"
 .ie \n(.g .ds Aq \(aq
 .el       .ds Aq '
 .ss \n[.ss] 0
@@ -220,6 +220,8 @@ T}
 The files \fIwtmp\fP and \fIbtmp\fP might not be found. The system only logs information in these files if they are present. This is a local configuration issue. If you want the files to be used, they can be created with a simple \fBtouch\fP(1) command (for example, \fBtouch /var/log/wtmp\fP).
 .sp
 An empty entry is a valid type of wtmp entry. It means that an empty file or file with zeros is not interpreted as an error.
+.sp
+The utmp file format uses fixed sizes of strings, which means that very long strings are impossible to store in the file and impossible to display by \fBlast\fP. The usual limits are 32 bytes for a user and line name and 256 bytes for a hostname.
 .SH "AUTHORS"
 .sp
 .MTO "miquels\(atcistron.nl" "Miquel van Smoorenburg" ""

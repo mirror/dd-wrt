@@ -1,4 +1,11 @@
 /*
+ * SPDX-License-Identifier: GPL-2.0-or-later
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
  * mkswap.c - set up a linux swap device
  *
  * Copyright (C) 1991 Linus Torvalds
@@ -42,6 +49,7 @@
 #include "closestream.h"
 #include "ismounted.h"
 #include "optutils.h"
+#include "bitops.h"
 
 #ifdef HAVE_LIBUUID
 # include <uuid.h>
@@ -54,6 +62,12 @@
 #define MIN_GOODPAGES	10
 
 #define SELINUX_SWAPFILE_TYPE	"swapfile_t"
+
+enum ENDIANNESS {
+	ENDIANNESS_NATIVE,
+	ENDIANNESS_LITTLE,
+	ENDIANNESS_BIG,
+};
 
 struct mkswap_control {
 	struct swap_header_v1_2	*hdr;		/* swap header */
@@ -75,11 +89,23 @@ struct mkswap_control {
 
 	size_t			nbad_extents;
 
+	enum ENDIANNESS         endianness;
+
 	unsigned int		check:1,	/* --check */
 				verbose:1,      /* --verbose */
 				quiet:1,        /* --quiet */
 				force:1;	/* --force */
 };
+
+static uint32_t cpu32_to_endianness(uint32_t v, enum ENDIANNESS e)
+{
+	switch (e) {
+		case ENDIANNESS_NATIVE: return v;
+		case ENDIANNESS_LITTLE: return cpu_to_le32(v);
+		case ENDIANNESS_BIG: return cpu_to_be32(v);
+	}
+	abort();
+}
 
 static void init_signature_page(struct mkswap_control *ctl)
 {
@@ -172,6 +198,9 @@ static void __attribute__((__noreturn__)) usage(void)
 	fputs(_(" -L, --label LABEL         specify label\n"), out);
 	fputs(_(" -v, --swapversion NUM     specify swap-space version number\n"), out);
 	fputs(_(" -U, --uuid UUID           specify the uuid to use\n"), out);
+	fprintf(out,
+	      _(" -e, --endianness=<value>  specify the endianness to use "
+	                                    "(%s, %s or %s)\n"), "native", "little", "big");
 	fputs(_("     --verbose             verbose output\n"), out);
 
 	fprintf(out,
@@ -323,8 +352,9 @@ static unsigned long long get_size(const struct mkswap_control *ctl)
 	fd = open(ctl->devname, O_RDONLY);
 	if (fd < 0)
 		err(EXIT_FAILURE, _("cannot open %s"), ctl->devname);
-	if (blkdev_get_size(fd, &size) == 0)
-		size /= ctl->pagesize;
+	if (blkdev_get_size(fd, &size) < 0)
+		err(EXIT_FAILURE, _("cannot determine size of %s"), ctl->devname);
+	size /= ctl->pagesize;
 
 	close(fd);
 	return size;
@@ -458,7 +488,7 @@ static void write_header_to_device(struct mkswap_control *ctl)
 
 int main(int argc, char **argv)
 {
-	struct mkswap_control ctl = { .fd = -1 };
+	struct mkswap_control ctl = { .fd = -1, .endianness = ENDIANNESS_NATIVE };
 	int c, permMask;
 	uint64_t sz;
 	int version = SWAP_VERSION;
@@ -479,6 +509,7 @@ int main(int argc, char **argv)
 		{ "label",       required_argument, NULL, 'L' },
 		{ "swapversion", required_argument, NULL, 'v' },
 		{ "uuid",        required_argument, NULL, 'U' },
+		{ "endianness",  required_argument, NULL, 'e' },
 		{ "version",     no_argument,       NULL, 'V' },
 		{ "help",        no_argument,       NULL, 'h' },
 		{ "lock",        optional_argument, NULL, OPT_LOCK },
@@ -497,7 +528,7 @@ int main(int argc, char **argv)
 	textdomain(PACKAGE);
 	close_stdout_atexit();
 
-	while((c = getopt_long(argc, argv, "cfp:qL:v:U:Vh", longopts, NULL)) != -1) {
+	while((c = getopt_long(argc, argv, "cfp:qL:v:U:e:Vh", longopts, NULL)) != -1) {
 
 		err_exclusive_options(c, longopts, excl, excl_st);
 
@@ -530,6 +561,18 @@ int main(int argc, char **argv)
 			warnx(_("warning: ignoring -U (UUIDs are unsupported by %s)"),
 				program_invocation_short_name);
 #endif
+			break;
+		case 'e':
+			if (strcmp(optarg, "native") == 0) {
+				ctl.endianness = ENDIANNESS_NATIVE;
+			} else if (strcmp(optarg, "little") == 0) {
+				ctl.endianness = ENDIANNESS_LITTLE;
+			} else if (strcmp(optarg, "big") == 0) {
+				ctl.endianness = ENDIANNESS_BIG;
+			} else {
+				errx(EXIT_FAILURE,
+					_("invalid endianness %s is not supported"), optarg);
+			}
 			break;
 		case 'V':
 			print_version(EXIT_SUCCESS);
@@ -637,9 +680,9 @@ int main(int argc, char **argv)
 	wipe_device(&ctl);
 
 	assert(ctl.hdr);
-	ctl.hdr->version = version;
-	ctl.hdr->last_page = ctl.npages - 1;
-	ctl.hdr->nr_badpages = ctl.nbadpages;
+	ctl.hdr->version = cpu32_to_endianness(version, ctl.endianness);
+	ctl.hdr->last_page = cpu32_to_endianness(ctl.npages - 1, ctl.endianness);
+	ctl.hdr->nr_badpages = cpu32_to_endianness(ctl.nbadpages, ctl.endianness);
 
 	if ((ctl.npages - MIN_GOODPAGES) < ctl.nbadpages)
 		errx(EXIT_FAILURE, _("Unable to set up swap-space: unreadable"));
@@ -661,7 +704,8 @@ int main(int argc, char **argv)
 
 #ifdef HAVE_LIBSELINUX
 	if (S_ISREG(ctl.devstat.st_mode) && is_selinux_enabled() > 0) {
-		char *context_string, *oldcontext;
+		const char *context_string;
+		char *oldcontext;
 		context_t newcontext;
 
 		if (fgetfilecon(ctl.fd, &oldcontext) < 0) {

@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: uclampset
 .\"    Author: [see the "AUTHOR(S)" section]
-.\" Generator: Asciidoctor 2.0.15
-.\"      Date: 2022-05-11
+.\" Generator: Asciidoctor 2.0.20
+.\"      Date: 2023-12-01
 .\"    Manual: User Commands
-.\"    Source: util-linux 2.38.1
+.\"    Source: util-linux 2.39.3
 .\"  Language: English
 .\"
-.TH "UCLAMPSET" "1" "2022-05-11" "util\-linux 2.38.1" "User Commands"
+.TH "UCLAMPSET" "1" "2023-12-01" "util\-linux 2.39.3" "User Commands"
 .ie \n(.g .ds Aq \(aq
 .el       .ds Aq '
 .ss \n[.ss] 0
@@ -42,7 +42,7 @@ Utilization clamping is a new feature added in v5.3. It gives a hint to the sche
 .sp
 The utilization of the task affects frequency selection and task placement. Only schedutil cpufreq governor understands handling util clamp hints at the time of writing. Consult your kernel docs for further info about other cpufreq governors support.
 .sp
-If you\(cqre running on asymmetric heterogeneous system like Arm\(cqs big.LITTLE. Utilization clamping can help bias task placement. If the task is boosted such that \fIutil_min\fP value is higher than the little cores\(aq capacity, then the scheduler will do its best to place it on a big core.
+If you\(cqre running on asymmetric heterogeneous system like Arm\(cqs big.LITTLE. Utilization clamping can help bias task placement. If the task is boosted such that \fIutil_min\fP value is higher than the little cores\*(Aq capacity, then the scheduler will do its best to place it on a big core.
 .sp
 Similarly, if \fIutil_max\fP is smaller than or equal the capacity of the little cores, then the scheduler can still choose to place it there even if the actual utilization of the task is at max.
 .sp

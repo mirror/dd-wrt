@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: column
 .\"    Author: [see the "AUTHOR(S)" section]
-.\" Generator: Asciidoctor 2.0.15
-.\"      Date: 2022-08-04
+.\" Generator: Asciidoctor 2.0.20
+.\"      Date: 2023-11-21
 .\"    Manual: User Commands
-.\"    Source: util-linux 2.38.1
+.\"    Source: util-linux 2.39.3
 .\"  Language: English
 .\"
-.TH "COLUMN" "1" "2022-08-04" "util\-linux 2.38.1" "User Commands"
+.TH "COLUMN" "1" "2023-11-21" "util\-linux 2.39.3" "User Commands"
 .ie \n(.g .ds Aq \(aq
 .el       .ds Aq '
 .ss \n[.ss] 0
@@ -54,7 +54,12 @@ Determine the number of columns the input contains and create a table. This mode
 Input is taken from \fIfile\fP, or otherwise from standard input. Empty lines are ignored and all invalid multibyte sequences are encoded by x<hex> convention.
 .SH "OPTIONS"
 .sp
-The argument \fIcolumns\fP for \fB\-\-table\-\fP* options is a comma separated list of the column names as defined by \fB\-\-table\-columns\fP or it\(cqs column number in order as specified by input. It\(cqs possible to mix names and numbers. The special placeholder \(aq0\(aq (e.g. \-R0) may be used to specify all columns.
+The argument \fIcolumns\fP for \fB\-\-table\-\fP* options is a comma separated list of the
+column names as defined by \fB\-\-table\-columns\fP, or names defined by
+\fB\-\-table\-column\fP or it\(cqs column number in order as specified by input. It\(cqs
+possible to mix names and numbers. The special placeholder \*(Aq0\*(Aq (e.g. \-R0) may
+be used to specify all columns and \*(Aq\-1\*(Aq (e.g. \-R \-1) to specify the last visible column.
+It\(cqs possible to use ranges like \*(Aq1\-5\*(Aq when addressing columns by numbers.
 .sp
 \fB\-J, \-\-json\fP
 .RS 4
@@ -64,6 +69,8 @@ Use JSON output format to print the table, the option \fB\-\-table\-columns\fP i
 \fB\-c, \-\-output\-width\fP \fIwidth\fP
 .RS 4
 Output is formatted to a width specified as number of characters. The original name of this option is \fB\-\-columns\fP; this name is deprecated since v2.30. Note that input longer than \fIwidth\fP is not truncated by default. The default is a terminal width and the 80 columns in non\-interactive mode. The column headers are never truncated.
+.sp
+The placeholder "unlimited" (or 0) is possible to use to not restrict output width. This is recommended for example when output to the files rather than on terminal.
 .RE
 .sp
 \fB\-d, \-\-table\-noheadings\fP
@@ -86,9 +93,67 @@ Specify the possible input item delimiters (default is whitespace).
 Determine the number of columns the input contains and create a table. Columns are delimited with whitespace, by default, or with the characters supplied using the \fB\-\-output\-separator\fP option. Table output is useful for pretty\-printing.
 .RE
 .sp
+\fB\-C, \-\-table\-column\fP \fIproperties\fP
+.RS 4
+Define one column by comma separated list of column attributes.
+This option can be used more than once, every use defines just one column.
+The properties replace some of \fB\-\-table\-\fP options. For example \fB\-\-table\-column
+name=FOO,right\fP define one column where text is aligned to right. The option is
+mutually exclusive to \fB\-\-table\-columns\fP.
+.sp
+The currently supported attributes are:
+.sp
+\fBname=string\fP
+.RS 4
+Specifies column name.
+.RE
+.sp
+\fBtrunc\fP
+.RS 4
+The column text can be truncated when necessary. The same as \fB\-\-table\-truncate\fP.
+.RE
+.sp
+\fBright\fP
+.RS 4
+Right align text in the specified columns. The same as \fB\-\-table\-right\fP.
+.RE
+.sp
+\fBwidth=number\fP
+.RS 4
+Specifies column width. The width is used as a hint only. The width is strictly followed
+only when \fBstrictwidth\fP attribute is used too.
+.RE
+.sp
+\fBstrictwidth\fP
+.RS 4
+Strictly follow column \fBwidth=\fP setting.
+.RE
+.sp
+\fBnoextreme\fP
+.RS 4
+Specify columns where is possible to ignore unusually long cells. See \fB\-\-table\-noextreme\fP for more details.
+.RE
+.sp
+\fBwrap\fP
+.RS 4
+Specify columns where is possible to use multi\-line cell for long text when necessary. See \fB\-\-table\-wrap\fP.
+.RE
+.sp
+\fBhide\fP
+.RS 4
+Don\(cqt print specified columns. See \fB\-\-table\-hide\fP.
+.RE
+.sp
+\fBjson=type\fP
+.RS 4
+Define column type for JSON output, Supported are string, number and boolean.
+.RE
+.RE
+.sp
 \fB\-N, \-\-table\-columns\fP \fInames\fP
 .RS 4
-Specify the columns names by comma separated list of names. The names are used for the table header or to address column in option arguments.
+Specify the columns names by comma separated list of names. The names are used
+for the table header or to address column in option argument. See also \fB\-\-table\-column\fP.
 .RE
 .sp
 \fB\-l, \-\-table\-columns\-limit\fP \fInumber\fP
@@ -125,7 +190,7 @@ Specify columns where is possible to use multi\-line cell for long text when nec
 .sp
 \fB\-H, \-\-table\-hide\fP \fIcolumns\fP
 .RS 4
-Don\(cqt print specified columns. The special placeholder \(aq\-\(aq may be used to hide all unnamed columns (see \fB\-\-table\-columns\fP).
+Don\(cqt print specified columns. The special placeholder \*(Aq\-\*(Aq may be used to hide all unnamed columns (see \fB\-\-table\-columns\fP).
 .RE
 .sp
 \fB\-O, \-\-table\-order\fP \fIcolumns\fP
@@ -136,6 +201,11 @@ Specify columns order on output.
 \fB\-n, \-\-table\-name\fP \fIname\fP
 .RS 4
 Specify the table name used for JSON output. The default is "table".
+.RE
+.sp
+\fB\-m, \-\-table\-maxout\fP
+.RS 4
+Fill all available space on output.
 .RE
 .sp
 \fB\-L, \-\-keep\-empty\-lines\fP
@@ -185,7 +255,7 @@ Version 2.23 changed the \fB\-s\fP option to be non\-greedy, for example:
 .if n .RS 4
 .nf
 .fam C
-printf "a:b:c\(rsn1::3\(rsn" | column \-t \-s \(aq:\(aq
+printf "a:b:c\(rsn1::3\(rsn" | column \-t \-s \*(Aq:\*(Aq
 .fam
 .fi
 .if n .RE
@@ -220,7 +290,7 @@ Print fstab with header line and align number to the right:
 .if n .RS 4
 .nf
 .fam C
-sed \(aqs/#.*//\(aq /etc/fstab | column \-\-table \-\-table\-columns SOURCE,TARGET,TYPE,OPTIONS,PASS,FREQ \-\-table\-right PASS,FREQ
+sed \*(Aqs/#.*//\*(Aq /etc/fstab | column \-\-table \-\-table\-columns SOURCE,TARGET,TYPE,OPTIONS,PASS,FREQ \-\-table\-right PASS,FREQ
 .fam
 .fi
 .if n .RE
@@ -230,7 +300,7 @@ Print fstab and hide unnamed columns:
 .if n .RS 4
 .nf
 .fam C
-sed \(aqs/#.*//\(aq /etc/fstab | column \-\-table \-\-table\-columns SOURCE,TARGET,TYPE \-\-table\-hide \-
+sed \*(Aqs/#.*//\*(Aq /etc/fstab | column \-\-table \-\-table\-columns SOURCE,TARGET,TYPE \-\-table\-hide \-
 .fam
 .fi
 .if n .RE
@@ -240,7 +310,7 @@ Print a tree:
 .if n .RS 4
 .nf
 .fam C
-echo \-e \(aq1 0 A\(rsn2 1 AA\(rsn3 1 AB\(rsn4 2 AAA\(rsn5 2 AAB\(aq | column \-\-tree\-id 1 \-\-tree\-parent 2 \-\-tree 3
+echo \-e \*(Aq1 0 A\(rsn2 1 AA\(rsn3 1 AB\(rsn4 2 AAA\(rsn5 2 AAB\*(Aq | column \-\-tree\-id 1 \-\-tree\-parent 2 \-\-tree 3
 1  0  A
 2  1  |\-AA
 4  2  | |\-AAA

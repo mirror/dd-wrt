@@ -15,6 +15,7 @@ libmount_la_SOURCES = \
 	libmount/src/iter.c \
 	libmount/src/lock.c \
 	libmount/src/optmap.c \
+	libmount/src/optlist.c \
 	libmount/src/optstr.c \
 	libmount/src/tab.c \
 	libmount/src/tab_diff.c \
@@ -27,10 +28,18 @@ libmount_la_SOURCES = \
 if LINUX
 libmount_la_SOURCES += \
 	libmount/src/context.c \
-	libmount/src/context_loopdev.c \
-	libmount/src/context_veritydev.c \
 	libmount/src/context_mount.c \
 	libmount/src/context_umount.c \
+	libmount/src/hooks.c \
+	libmount/src/hook_mount.c \
+	libmount/src/hook_mount_legacy.c \
+	libmount/src/hook_mkdir.c \
+	libmount/src/hook_selinux.c \
+	libmount/src/hook_subdir.c \
+	libmount/src/hook_owner.c \
+	libmount/src/hook_idmap.c \
+	libmount/src/hook_loopdev.c \
+	libmount/src/hook_veritydev.c \
 	libmount/src/monitor.c
 
 if HAVE_BTRFS
@@ -70,6 +79,7 @@ check_PROGRAMS += \
 	test_mount_cache \
 	test_mount_lock \
 	test_mount_optstr \
+	test_mount_optlist \
 	test_mount_tab \
 	test_mount_tab_diff \
 	test_mount_tab_update \
@@ -77,7 +87,7 @@ check_PROGRAMS += \
 	test_mount_version \
 	test_mount_debug
 if LINUX
-check_PROGRAMS += test_mount_context
+check_PROGRAMS += test_mount_context test_mount_context_mount
 check_PROGRAMS += test_mount_monitor
 endif
 
@@ -107,6 +117,11 @@ test_mount_context_CFLAGS = $(libmount_tests_cflags)
 test_mount_context_LDFLAGS = $(libmount_tests_ldflags)
 test_mount_context_LDADD = $(libmount_tests_ldadd)
 
+test_mount_context_mount_SOURCES = libmount/src/context_mount.c
+test_mount_context_mount_CFLAGS = $(libmount_tests_cflags)
+test_mount_context_mount_LDFLAGS = $(libmount_tests_ldflags)
+test_mount_context_mount_LDADD = $(libmount_tests_ldadd)
+
 test_mount_lock_SOURCES = libmount/src/lock.c
 test_mount_lock_CFLAGS = $(libmount_tests_cflags)
 test_mount_lock_LDFLAGS = $(libmount_tests_ldflags)
@@ -116,6 +131,11 @@ test_mount_optstr_SOURCES = libmount/src/optstr.c
 test_mount_optstr_CFLAGS = $(libmount_tests_cflags)
 test_mount_optstr_LDFLAGS = $(libmount_tests_ldflags)
 test_mount_optstr_LDADD = $(libmount_tests_ldadd)
+
+test_mount_optlist_SOURCES = libmount/src/optlist.c
+test_mount_optlist_CFLAGS = $(libmount_tests_cflags)
+test_mount_optlist_LDFLAGS = $(libmount_tests_ldflags)
+test_mount_optlist_LDADD = $(libmount_tests_ldadd)
 
 test_mount_tab_SOURCES = libmount/src/tab.c
 test_mount_tab_CFLAGS = $(libmount_tests_cflags)

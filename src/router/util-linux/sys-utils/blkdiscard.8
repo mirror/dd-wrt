@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: blkdiscard
 .\"    Author: [see the "AUTHOR(S)" section]
-.\" Generator: Asciidoctor 2.0.15
-.\"      Date: 2022-05-11
+.\" Generator: Asciidoctor 2.0.20
+.\"      Date: 2023-11-21
 .\"    Manual: System Administration
-.\"    Source: util-linux 2.38.1
+.\"    Source: util-linux 2.39.3
 .\"  Language: English
 .\"
-.TH "BLKDISCARD" "8" "2022-05-11" "util\-linux 2.38.1" "System Administration"
+.TH "BLKDISCARD" "8" "2023-11-21" "util\-linux 2.39.3" "System Administration"
 .ie \n(.g .ds Aq \(aq
 .el       .ds Aq '
 .ss \n[.ss] 0
@@ -65,6 +65,11 @@ The number of bytes to discard (counting from the starting point). The provided 
 The number of bytes to discard within one iteration. The default is to discard all by one ioctl call.
 .RE
 .sp
+\fB\-q\fP, \fB\-\-quiet\fP
+.RS 4
+Suppress warning messages.
+.RE
+.sp
 \fB\-s\fP, \fB\-\-secure\fP
 .RS 4
 Perform a secure discard. A secure discard is the same as a regular discard except that all copies of the discarded blocks that were possibly created by garbage collection must also be erased. This requires support from the device.
@@ -89,9 +94,28 @@ Display help text and exit.
 .RS 4
 Print version and exit.
 .RE
+.SH "EXIT STATUS"
+.sp
+\fBblkdiscard\fP has the following exit status values:
+.sp
+\fB0\fP
+.RS 4
+success
+.RE
+.sp
+\fB1\fP
+.RS 4
+failure; incorrect invocation, permissions or any other generic error
+.RE
+.sp
+\fB2\fP
+.RS 4
+failure; since v2.39, the device does not support discard operation
+.RE
 .SH "AUTHORS"
 .sp
-.MTO "lczerner\(atredhat.com" "Lukas Czerner" ""
+.MTO "lczerner\(atredhat.com" "Lukas Czerner" ","
+.MTO "kzak\(atredhat.com" "Karel Zak" ""
 .SH "SEE ALSO"
 .sp
 \fBfstrim\fP(8)

@@ -1,9 +1,18 @@
+
+/*
+ * No copyright is claimed.  This code is in the public domain; do with
+ * it what you wish.
+ */
 #ifndef UTIL_LINUX_FILEEQ
 #define UTIL_LINUX_FILEEQ
 
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdbool.h>
+
+#if defined(__linux__) && defined(HAVE_LINUX_IF_ALG_H)
+# define USE_FILEEQ_CRYPTOAPI 1
+#endif
 
 /* Number of bytes from the beginning of the file we always
  * compare by memcmp() */

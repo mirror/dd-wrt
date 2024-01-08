@@ -184,6 +184,8 @@ Since util-linux 2.35, *mount* does not exit when user permissions are inadequat
 
 For more details, see *fstab*(5). Only the user that mounted a filesystem can unmount it again. If any user should be able to unmount it, then use *users* instead of *user* in the _fstab_ line. The *owner* option is similar to the *user* option, with the restriction that the user must be the owner of the special file. This may be useful e.g. for _/dev/fd_ if a login script makes the console user owner of this device. The *group* option is similar, with the restriction that the user must be a member of the group of the special file.
 
+The *user* mount option is accepted if no username is specified. If used in the format *user=someone*, the option is silently ignored and visible only for external mount helpers (/sbin/mount.<type>) for compatibility with some network filesystems.
+
 === Bind mount operation
 
 Remount part of the file hierarchy somewhere else. The call is:
@@ -234,7 +236,7 @@ ____
 
 Note that a read-only bind will create a read-only mountpoint (VFS entry), but the original filesystem superblock will still be writable, meaning that the _olddir_ will be writable, but the _newdir_ will be read-only.
 
-It's also possible to change nosuid, nodev, noexec, noatime, nodiratime, relatime and nosymfollow VFS entry flags via a "remount,bind" operation. The other flags (for example filesystem-specific flags) are silently ignored. It's impossible to change mount options recursively (for example with *-o rbind,ro*).
+It's also possible to change nosuid, nodev, noexec, noatime, nodiratime, relatime and nosymfollow VFS entry flags via a "remount,bind" operation. The other flags (for example filesystem-specific flags) are silently ignored. The classic *mount*(2) system call does not allow to change mount options recursively (for example with *-o rbind,ro*). The recursive semantic is possible with a new *mount_setattr*(2) kernel system call and it's supported since libmount from util-linux v2.39 by a new experimental "recursive" option argument (e.g. *-o rbind,ro=recursive*). For more details see the *FILESYSTEM-INDEPENDENT MOUNT OPTIONS* section.
 
 Since util-linux 2.31, *mount* ignores the *bind* flag from _/etc/fstab_ on a *remount* operation (if *-o remount* is specified on command line). This is necessary to fully control mount options on remount by command line. In previous versions the bind flag has been always applied and it was impossible to re-define mount options without interaction with the bind semantic. This *mount* behavior does not affect situations when "remount,bind" is specified in the _/etc/fstab_ file.
 
@@ -312,7 +314,7 @@ Since version 2.35 it is possible to use the command line option *-o* to alter m
 Note that it is a bad practice to use *mount -a* for _fstab_ checking. The recommended solution is *findmnt --verify*.
 
 *-B*, *--bind*::
-Remount a subtree somewhere else (so that its contents are available in both places). See above, under *Bind mounts*.
+Remount a subtree somewhere else (so that its contents are available in both places). See above, under *Bind mount operation*.
 
 *-c*, *--no-canonicalize*::
 Don't canonicalize paths. The *mount* command canonicalizes all paths (from the command line or _fstab_) by default. This option can be used together with the *-f* flag for already canonicalized absolute paths. The option is designed for mount helpers which call *mount -i*. It is strongly recommended to not use this command-line option for normal mount operations.
@@ -323,7 +325,11 @@ Note that *mount* does not pass this option to the **/sbin/mount.**__type__ help
 (Used in conjunction with *-a*.) Fork off a new incarnation of *mount* for each device. This will do the mounts on different devices or different NFS servers in parallel. This has the advantage that it is faster; also NFS timeouts proceed in parallel. A disadvantage is that the order of the mount operations is undefined. Thus, you cannot use this option if you want to mount both _/usr_ and _/usr/spool_.
 
 *-f, --fake*::
-Causes everything to be done except for the actual system call; if it's not obvious, this "fakes" mounting the filesystem. This option is useful in conjunction with the *-v* flag to determine what the *mount* command is trying to do. It can also be used to add entries for devices that were mounted earlier with the *-n* option. The *-f* option checks for an existing record in _/etc/mtab_ and fails when the record already exists (with a regular non-fake mount, this check is done by the kernel).
+Causes everything to be done except for the mount-related system calls. The --fake option was originally designed to write an entry to /etc/mtab without actually mounting.
++
+The /etc/mtab is no longer maintained in userspace, and starting from version 2.39, the mount operation can be a complex chain of operations with dependencies between the syscalls. The --fake option forces libmount to skip all mount source preparation, mount option analysis, and the actual mounting process.
++
+The difference between fake and non-fake execution is huge. This is the reason why the --fake option has minimal significance for the current mount(8) implementation and it is maintained mostly for backward compatibility.
 
 *-i, --internal-only*::
 Don't call the **/sbin/mount.**__filesystem__ helper even if it exists.
@@ -370,7 +376,12 @@ Use the specified mount options. The _opts_ argument is a comma-separated list. 
 +
 *mount LABEL=mydisk -o noatime,nodev,nosuid*
 +
+Note that the order of the options matters, as the last option wins if there are conflicting ones. The options from the command line also overwrite options from fstab by default.
++
 For more details, see the *FILESYSTEM-INDEPENDENT MOUNT OPTIONS* and *FILESYSTEM-SPECIFIC MOUNT OPTIONS* sections.
+
+*--onlyonce*::
+Forces mount command to check if the filesystem is already mounted. This behavior is the default for *--all*; otherwise, it depends on the kernel filesystem driver. Some filesystems may be mounted more than once on the same mount point (e.g. tmpfs).
 
 *--options-mode* _mode_::
 Controls how to combine options from _fstab_/_mtab_ with options from the command line. _mode_ can be one of *ignore*, *append*, *prepend* or *replace*. For example, *append* means that options from _fstab_ are appended to options from the command line. The default value is *prepend* -- it means command line options are evaluated after _fstab_ options. Note that the last option wins if there are conflicting ones.
@@ -382,7 +393,7 @@ Source of default options. _source_ is a comma-separated list of *fstab*, *mtab*
 Use options from _fstab_/_mtab_ even if both _device_ and _dir_ are specified.
 
 *-R*, *--rbind*::
-Remount a subtree and all possible submounts somewhere else (so that its contents are available in both places). See above, the subsection *Bind mounts*.
+Remount a subtree and all possible submounts somewhere else (so that its contents are available in both places). See above, the subsection *Bind mount operation*.
 
 *-r*, *--read-only*::
 Mount the filesystem read-only. A synonym is *-o ro*.
@@ -451,6 +462,34 @@ Some of these options are only useful when they appear in the _/etc/fstab_ file.
 
 Some of these options could be enabled or disabled by default in the system kernel. To check the current setting see the options in _/proc/mounts_. Note that filesystems also have per-filesystem specific default mount options (see for example *tune2fs -l* output for ext__N__ filesystems).
 
+The options *nosuid*, *noexec*, *nodiratime*, *relatime*, *noatime*, *strictatime*, and *nosymfollow* are interpreted only by the abstract VFS kernel layer and applied to the mountpoint node rather than to the filesystem itself. Try:  
+____
+
+ findmnt -o TARGET,VFS-OPTIONS,FS-OPTIONS
+____
+
+to get a complete overview of filesystems and VFS options.
+
+The read-only setting (*ro* or *rw*) is interpreted by VFS and the filesystem
+and depends on how the option is specified on the *mount*(8) command line. The
+default is to interpret it on the filesystem level. The operation "-o bind,remount,ro"
+is applied only to the VFS mountpoint, and operation "-o remount,ro" is applied to
+VFS and filesystem superblock. This semantic allows create a read-only
+mountpoint but keeps the filesystem writable from another mountpoint.
+
+Since v2.39 libmount can use a new kernel mount interface to set the VFS
+options recursive. For backward compatibility, this feature is not enabled by
+default, although recursive operation (e.g. rbind) has been requested. The new
+option argument "recursive" could be specified, for example:
+____
+
+ mount -orbind,ro=recursive,noexec=recursive,nosuid /foo /bar
+____
+
+recursively binds filesystems from /foo to /bar, /bar, and all submounts will
+be read-only and noexec, but only /bar itself will be "nosuid". The "recursive"
+optional argument for VFS mount options is an EXPERIMENTAL feature. 
+
 The following options apply to any filesystem that is being mounted (but not every filesystem actually honors them - e.g., the *sync* option today has an effect only for ext2, ext3, ext4, fat, vfat, ufs and xfs):
 
 *async*::
@@ -477,7 +516,7 @@ The *fscontext=* option works for all filesystems, regardless of their xattr sup
 +
 You can set the default security context for unlabeled files using *defcontext=* option. This overrides the value set for unlabeled files in the policy and requires a filesystem that supports xattr labeling.
 +
-The *rootcontext=* option allows you to explicitly label the root inode of a FS being mounted before that FS or inode becomes visible to userspace. This was found to be useful for things like stateless Linux.
+The *rootcontext=* option allows you to explicitly label the root inode of a FS being mounted before that FS or inode becomes visible to userspace. This was found to be useful for things like stateless Linux. The special value *@target* can be used to assign the current context of the target mountpoint location.
 +
 Note that the kernel rejects any remount request that includes the context option, *even* when unchanged from the current context.
 +
@@ -537,7 +576,7 @@ The filesystem resides on a device that requires network access (used to prevent
 Do not report errors for this device if it does not exist.
 
 *relatime*::
-Update inode access times relative to modify or change time. Access time is only updated if the previous access time was earlier than the current modify or change time. (Similar to *noatime*, but it doesn't break *mutt*(1) or other applications that need to know if a file has been read since the last time it was modified.)
+Update inode access times relative to modify or change time. Access time is only updated if the previous access time was earlier than or equal to the current modify or change time. (Similar to *noatime*, but it doesn't break *mutt*(1) or other applications that need to know if a file has been read since the last time it was modified.)
 +
 Since Linux 2.6.30, the kernel defaults to the behavior provided by this option (unless *noatime* was specified), and the *strictatime* option is required to obtain traditional semantics. In addition, since Linux 2.6.30, the file's last access time is always updated if it is more than 1 day old.
 
@@ -583,7 +622,16 @@ Allow an ordinary user to mount the filesystem if that user is the owner of the 
 *remount*::
 Attempt to remount an already-mounted filesystem. This is commonly used to change the mount flags for a filesystem, especially to make a readonly filesystem writable. It does not change device or mount point.
 +
-The remount operation together with the *bind* flag has special semantics. See above, the subsection *Bind mounts*.
+The remount operation together with the *bind* flag has special semantics. See above, the subsection *Bind mount operation*.
++
+The default kernel behavior for VFS mount flags (nodev,nosuid,noexec,ro) is to
+reset all unspecified flags on remount. That's why *mount*(8) tries to
+keep the current setting according to _fstab_ or _/proc/self/mountinfo_. This
+default behavior is possible to change by *--options-mode*. The recursive
+change of the mount flags (supported since v2.39 on systems with *mount_setattr*(2)
+syscall), for example, *mount -o remount,ro=recursive*, do not use
+"reset-unspecified" behavior, and it works as a simple add/remove operation
+and unspecified flags are not modified.
 +
 The remount functionality follows the standard way the *mount* command works with options from _fstab_. This means that *mount* does not read _fstab_ (or _mtab_) only when both _device_ and _dir_ are specified.
 +
@@ -593,8 +641,9 @@ After this call all old mount options are replaced and arbitrary stuff from _fst
 +
 *mount -o remount,rw /dir*
 +
-After this call, *mount* reads _fstab_ and merges these options with the options from the command line (*-o*). If no mountpoint is found in _fstab_, then a remount with unspecified source is allowed.
+After this call, *mount* reads _fstab_ and merges these options with the options from the command line (*-o*). If no mountpoint is found in _fstab_, then it defaults to mount options from _/proc/self/mountinfo_.
 +
+
 *mount* allows the use of *--all* to remount all already mounted filesystems which match a specified filter (*-O* and *-t*). For example:
 +
 *mount --all -o remount,ro -t vfat*
@@ -627,11 +676,72 @@ The same as *X-** options, but stored permanently in user space. This means the 
 +
 Note that before util-linux v2.30 the x-* options have not been maintained by libmount and stored in user space (functionality was the same as for X-* now), but due to the growing number of use-cases (in initrd, systemd etc.) the functionality has been extended to keep existing _fstab_ configurations usable without a change.
 
+*X-mount.auto-fstypes*=_list_::
+Specifies allowed or forbidden filesystem types for automatic filesystem
+detection.
++
+The _list_ is a comma-separated list of the filesystem names. The
+automatic filesystem detection is triggered by the "auto" filesystem type or
+when the filesystem type is not specified.
++
+Thy _list_ follows how mount
+evaluates type patterns (see *-t* for more details). Only specified filesystem
+types are allowed, or all specified types are forbidden if the list is prefixed
+by "no". 
++
+For example, X-mount.auto-fstypes="ext4,btrfs" accepts only ext4 and
+btrfs, and X-mount.auto-fstypes="novfat,xfs" accepts all filesystems except vfat
+and xfs.
++
+Note that comma is used as a separator between mount options, it means
+that auto-fstypes values have to be properly quoted, don’t forget that the shell
+strips off quotes and thus double quoting is required. For example:
+____
+mount -t auto -o'X-mount.auto-fstypes="noext2,ext3"'  /dev/sdc1 /mnt/test
+____
+
 *X-mount.mkdir*[=_mode_]::
 Allow to make a target directory (mountpoint) if it does not exist yet. The optional argument _mode_ specifies the filesystem access mode used for *mkdir*(2) in octal notation. The default mode is 0755. This functionality is supported only for root users or when *mount* is executed without suid permissions. The option is also supported as *x-mount.mkdir*, but this notation is deprecated since v2.30. See also *--mkdir* command line option.
 
 **X-mount.subdir=**__directory__::
-Allow mounting sub-directory from a filesystem instead of the root directory. For now, this feature is implemented by temporary filesystem root directory mount in unshared namespace and then bind the sub-directory to the final mount point and umount the root of the filesystem. The sub-directory mount shows up atomically for the rest of the system although it is implemented by multiple *mount*(2) syscalls. This feature is EXPERIMENTAL.
+Allow mounting sub-directory from a filesystem instead of the root directory. For now, this feature is implemented by temporary filesystem root directory mount in unshared namespace and then bind the sub-directory to the final mount point and umount the root of the filesystem. The sub-directory mount shows up atomically for the rest of the system although it is implemented by multiple *mount*(2) syscalls.
++
+Note that this feature will not work in session with an unshared private mount namespace (after *unshare --mount*) on old kernels or with *mount*(8) without support for file-descriptors-based mount kernel API. In this case, you need *unshare --mount --propagation shared*.
++
+This feature is EXPERIMENTAL.
+
+*X-mount.owner*=_username_|_UID_, *X-mount.group*=_group_|_GID_::
+Set _mountpoint_'s ownership after mounting. Names resolved in the target mount namespace, see *-N*.
+
+*X-mount.mode*=_mode_::
+Set _mountpoint_'s mode after mounting.
+
+*X-mount.idmap*=__id-type__:__id-mount__:__id-host__:__id-range__ [__id-type__:__id-mount__:__id-host__:__id-range__], *X-mount.idmap*=__file__::
+Use this option to create an idmapped mount.
+An idmapped mount allows to change ownership of all files located under a mount according to the ID-mapping associated with a user namespace.
+The ownership change is tied to the lifetime and localized to the relevant mount.
+The relevant ID-mapping can be specified in two ways:
++
+* A user can specify the ID-mapping directly.
++
+The ID-mapping must be specified using the syntax __id-type__:__id-mount__:__id-host__:__id-range__.
+Specifying *u* as the __id-type__ prefix creates a UID-mapping, *g* creates a GID-mapping and omitting __id-type__ or specifying *b* creates both a UID- and GID-mapping.
+The __id-mount__ parameter indicates the starting ID in the new mount.
+The __id-host__ parameter indicates the starting ID in the filesystem.
+The __id-range__ parameter indicates how many IDs are to be mapped.
+It is possible to specify multiple ID-mappings.
+The individual ID-mappings must be separated by spaces.
++
+For example, the ID-mapping *X-mount.idmap=u:1000:0:1 g:1001:1:2 5000:1000:2* creates an idmapped mount where
+UID 0 is mapped to UID 1000, GID 1 is mapped to GUID 1001, GID 2 is mapped to GID 1002, UID and GID 1000 are mapped to 5000, and UID and GID 1001 are mapped to 5001 in the mount.
++
+When an ID-mapping is specified directly a new user namespace will be allocated with the requested ID-mapping.
+The newly created user namespace will be attached to the mount.
+* A user can specify a user namespace file.
++
+The user namespace will then be attached to the mount and the ID-mapping of the user namespace will become the ID-mapping of the mount.
++
+For example, *X-mount.idmap=/proc/PID/ns/user* will attach the user namespace of the process PID to the mount.
 
 *nosymfollow*::
 Do not follow symlinks when resolving paths. Symlinks can still be created, and *readlink*(1), *readlink*(2), *realpath*(1), and *realpath*(3) all still work properly.
@@ -1104,7 +1214,7 @@ read-write mount and will result in an error.
 *xino=*{**on**|**off**|**auto**}::
 The "xino" feature composes a unique object identifier from the real object st_ino and an underlying fsid index. The "xino" feature uses the high inode number bits for fsid, because the underlying filesystems rarely use the high inode number bits. In case the underlying inode number does overflow into the high xino bits, overlay filesystem will fall back to the non xino behavior for that inode.
 +
-For a detailed description of the effect of this option please refer to https://www.kernel.org/doc/html/latest/filesystems/overlayfs.html?highlight=overlayfs
+For a detailed description of the effect of this option please refer to https://docs.kernel.org/filesystems/overlayfs.html
 
 *metacopy=*{**on**|**off**}::
 When metadata only copy up feature is enabled, overlayfs will only copy up metadata (as opposed to whole file), when a metadata specific operation like chown/chmod is performed. Full file will be copied up later when file is opened for WRITE operation.
@@ -1504,11 +1614,11 @@ The command *mount* does not pass the mount options *unbindable*, *runbindable*,
 
 == ENVIRONMENT
 
+*LIBMOUNT_FORCE_MOUNT2*={always|never|auto}::
+force to use classic mount(2) system call (requires support for new file descriptors based mount API). The default is *auto*; in this case, libmount tries to be smart and use classic mount(2) only for well-known issues. If the new mount API is unavailable, libmount can still use traditional mount(2), although LIBMOUNT_FORCE_MOUNT2 is set to *never*.
+
 *LIBMOUNT_FSTAB*=<path>::
 overrides the default location of the _fstab_ file (ignored for suid)
-
-*LIBMOUNT_MTAB*=<path>::
-overrides the default location of the _mtab_ file (ignored for suid)
 
 *LIBMOUNT_DEBUG*=all::
 enables libmount debug output

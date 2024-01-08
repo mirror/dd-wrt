@@ -31,6 +31,7 @@
 #include <sys/socket.h>
 #include <langinfo.h>
 #include <grp.h>
+#include <pwd.h>
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <ifaddrs.h>
@@ -47,6 +48,8 @@
 #include "ttyutils.h"
 #include "color-names.h"
 #include "env.h"
+
+#include "logindefs.h"
 
 #ifdef USE_PLYMOUTH_SUPPORT
 # include "plymouth-ctrl.h"
@@ -144,8 +147,10 @@
 #endif
 
 /* Login prompt. */
-#define LOGIN		"login: "
-#define LOGIN_ARGV_MAX	16		/* Numbers of args for login */
+#define LOGIN_PROMPT		"login: "
+
+/* Numbers of args for login(1) */
+#define LOGIN_ARGV_MAX	16
 
 /*
  * agetty --reload
@@ -493,12 +498,19 @@ int main(int argc, char **argv)
 	if (options.flags & F_NOPROMPT) {	/* --skip-login */
 		eval_issue_file(&issue, &options, &termios);
 		print_issue_file(&issue, &options, &termios);
+
 	} else {				/* regular (auto)login */
+		if ((options.flags & F_NOHOSTNAME) == 0 &&
+		    getlogindefs_bool("LOGIN_PLAIN_PROMPT", 0) == 1)
+			/* /etc/login.defs enbles --nohostname too */
+			options.flags |= F_NOHOSTNAME;
+
 		if (options.autolog) {
 			/* Autologin prompt */
 			eval_issue_file(&issue, &options, &termios);
 			do_prompt(&issue, &options, &termios);
-			printf(_("%s%s (automatic login)\n"), LOGIN, options.autolog);
+			printf(_("%s%s (automatic login)\n"), LOGIN_PROMPT,
+					options.autolog);
 		} else {
 			/* Read the login name. */
 			debug("reading login name\n");
@@ -546,8 +558,7 @@ int main(int argc, char **argv)
 		if (username) {
 			if (options.autolog)
 				login_argv[login_argc++] = "-f";
-			else
-				login_argv[login_argc++] = "--";
+			login_argv[login_argc++] = "--";
 			login_argv[login_argc++] = username;
 		}
 	}
@@ -605,16 +616,13 @@ static char *replace_u(char *str, char *username)
 		if (!tp)
 			log_err(_("failed to allocate memory: %m"));
 
-		if (p != str) {
+		if (p != str)
 			/* copy chars before \u */
-			memcpy(tp, str, p - str);
-			tp += p - str;
-		}
-		if (usz) {
+			tp = mempcpy(tp, str, p - str);
+		if (usz)
 			/* copy username */
-			memcpy(tp, username, usz);
-			tp += usz;
-		}
+			tp = mempcpy(tp, username, usz);
+
 		if (*(p + 2))
 			/* copy chars after \u + \0 */
 			memcpy(tp, p + 2, sz - (p - str) - 1);
@@ -2066,7 +2074,8 @@ again:
 		if (!wait_for_term_input(STDIN_FILENO)) {
 			eval_issue_file(ie, op, tp);
 			if (issue_is_changed(ie)) {
-				if (op->flags & F_VCONSOLE)
+				if ((op->flags & F_VCONSOLE)
+				    && (op->flags & F_NOCLEAR) == 0)
 					termio_clear(STDOUT_FILENO);
 				goto again;
 			}
@@ -2136,7 +2145,8 @@ again:
 	}
 	if (!op->autolog) {
 		/* Always show login prompt. */
-		write_all(STDOUT_FILENO, LOGIN, sizeof(LOGIN) - 1);
+		write_all(STDOUT_FILENO, LOGIN_PROMPT,
+				sizeof(LOGIN_PROMPT) - 1);
 	}
 }
 
@@ -2207,7 +2217,8 @@ static char *get_logname(struct issue *ie, struct options *op, struct termios *t
 			if (!issue_is_changed(ie))
 				goto no_reload;
 			tcflush(STDIN_FILENO, TCIFLUSH);
-			if (op->flags & F_VCONSOLE)
+			if ((op->flags & F_VCONSOLE)
+			    && (op->flags & F_NOCLEAR) == 0)
 				termio_clear(STDOUT_FILENO);
 			bp = logname;
 			*bp = '\0';
@@ -2725,9 +2736,12 @@ static void output_special_char(struct issue *ie,
 		char escname[UL_COLORNAME_MAXSZ];
 
 		if (get_escape_argument(fp, escname, sizeof(escname))) {
-			const char *esc = color_sequence_from_colorname(escname);
-			if (esc)
+			char *esc = color_get_sequence(escname);
+
+			if (esc) {
 				fputs(esc, ie->output);
+				free(esc);
+			}
 		} else
 			fputs("\033", ie->output);
 		break;
@@ -2960,8 +2974,7 @@ static ssize_t append(char *dest, size_t len, const char  *sep, const char *src)
 
 	p = dest + dsz;
 	if (ssz) {
-		memcpy(p, sep, ssz);
-		p += ssz;
+		p = mempcpy(p, sep, ssz);
 	}
 	memcpy(p, src, sz);
 	*(p + sz) = '\0';

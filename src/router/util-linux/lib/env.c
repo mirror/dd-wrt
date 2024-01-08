@@ -19,6 +19,7 @@
 #include <sys/types.h>
 
 #include "env.h"
+#include "all-io.h"
 
 #ifndef HAVE_ENVIRON_DECL
 extern char **environ;
@@ -78,6 +79,32 @@ static struct ul_env_list *env_list_add(struct ul_env_list *ls0, const char *str
 	ls->env = p;
 
 	ls->next = ls0;
+	return ls;
+}
+
+/*
+ * Use env_from_fd() to read environment from @fd.
+ *
+ * @fd must be /proc/<pid>/environ file.
+*/
+struct ul_env_list *env_from_fd(int fd)
+{
+	char *buf = NULL, *p;
+	ssize_t rc = 0;
+	struct ul_env_list *ls = NULL;
+
+	if ((rc = read_all_alloc(fd, &buf)) < 1)
+		return NULL;
+	buf[rc] = '\0';
+	p = buf;
+
+	while (rc > 0) {
+		ls = env_list_add(ls, p);
+		p += strlen(p) + 1;
+		rc -= strlen(p) + 1;
+	}
+
+	free(buf);
 	return ls;
 }
 
@@ -161,9 +188,7 @@ void sanitize_env(void)
 
 char *safe_getenv(const char *arg)
 {
-	uid_t ruid = getuid();
-
-	if (ruid != 0 || (ruid != geteuid()) || (getgid() != getegid()))
+	if ((getuid() != geteuid()) || (getgid() != getegid()))
 		return NULL;
 #ifdef HAVE_PRCTL
 	if (prctl(PR_GET_DUMPABLE, 0, 0, 0, 0) == 0)

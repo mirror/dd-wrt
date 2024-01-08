@@ -19,8 +19,10 @@
 TS_TOPDIR="${0%/*}/../.."
 TS_DESC="gecos"
 
-. $TS_TOPDIR/functions.sh
+. "$TS_TOPDIR"/functions.sh
 ts_init "$*"
+
+export LIBUSER_CONF=/dev/null
 
 ts_skip_nonroot
 ts_check_test_command "$TS_CMD_CHFN"

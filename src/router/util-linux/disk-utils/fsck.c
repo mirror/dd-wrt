@@ -1,4 +1,12 @@
 /*
+ *
+ * SPDX-License-Identifier: GPL-2.0-or-later
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
  * fsck --- A generic, parallelizing front-end for the fsck program.
  * It will automatically try to run fsck programs in parallel if the
  * devices are on separate spindles.  It is based on the same ideas as
@@ -20,11 +28,7 @@
  *	         2001, 2002, 2003, 2004, 2005 by  Theodore Ts'o.
  *
  * Copyright (C) 2009-2014 Karel Zak <kzak@redhat.com>
- *
- * This file may be redistributed under the terms of the GNU Public
- * License.
  */
-
 #define _XOPEN_SOURCE 600 /* for inclusion of sa_handler in Solaris */
 
 #include <sys/types.h>
@@ -149,7 +153,7 @@ static FILE *report_stats_file;
 static int num_running;
 static int max_running;
 
-static volatile int cancel_requested;
+static volatile sig_atomic_t cancel_requested;
 static int kill_sent;
 static char *fstype;
 static struct fsck_instance *instance_list;
@@ -729,6 +733,8 @@ static int kill_all(int signum)
 
 	for (inst = instance_list; inst; inst = inst->next) {
 		if (inst->flags & FLAG_DONE)
+			continue;
+		if (inst->pid <= 0)
 			continue;
 		kill(inst->pid, signum);
 		n++;
@@ -1420,7 +1426,7 @@ static void __attribute__((__noreturn__)) usage(void)
 
 static void signal_cancel(int sig __attribute__((__unused__)))
 {
-	cancel_requested++;
+	cancel_requested = 1;
 }
 
 static void parse_argv(int argc, char *argv[])
@@ -1627,6 +1633,16 @@ int main(int argc, char *argv[])
 	strutils_set_exitcode(FSCK_EX_USAGE);
 	mnt_init_debug(0);		/* init libmount debug mask */
 	mntcache = mnt_new_cache();	/* no fatal error if failed */
+
+	if (mntcache)
+		/* Force libblkid to accept also filesystems with bad
+		 * checksums. This feature is helpful for "fsck /dev/foo," but
+		 * if it evaluates LABEL/UUIDs from fstab, then libmount may
+		 * use cached data from udevd and udev accepts only properly
+		 * detected filesystems.
+		 */
+		mnt_cache_set_sbprobe(mntcache, BLKID_SUBLKS_BADCSUM);
+
 
 	parse_argv(argc, argv);
 

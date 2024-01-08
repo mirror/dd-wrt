@@ -104,10 +104,14 @@ Enter the cgroup namespace. If no file is specified, enter the cgroup namespace 
 Enter the time namespace. If no file is specified, enter the time namespace of the target process. If _file_ is specified, enter the time namespace specified by _file_.
 
 *-G*, *--setgid* _gid_::
-Set the group ID which will be used in the entered namespace and drop supplementary groups. *nsenter* always sets GID for user namespaces, the default is 0.
+Set the group ID which will be used in the entered namespace and drop supplementary groups.
+*nsenter* always sets GID for user namespaces, the default is 0.
+If the argument "follow" is specified the GID of the target process is used.
 
 *-S*, *--setuid* _uid_::
-Set the user ID which will be used in the entered namespace. *nsenter* always sets UID for user namespaces, the default is 0.
+Set the user ID which will be used in the entered namespace.
+*nsenter* always sets UID for user namespaces, the default is 0.
+If the argument "follow" is specified the UID of the target process is used.
 
 *--preserve-credentials*::
 Don't modify UID and GID when enter user namespace. The default is to drops supplementary groups and sets GID and UID to 0.
@@ -120,6 +124,9 @@ Set the working directory. If no directory is specified, set the working directo
 
 *-W*, *--wdns*[=_directory_]::
 Set the working directory. The _directory_ is open after switch to the requested namespaces and after *chroot*(2) call. The options *--wd* and *--wdns* are mutually exclusive.
+
+*-e*, *--env*::
+Pass environment variables from the target process to the new process being created. If this option is not provided, the environment variables will remain the same as in the current namespace..
 
 *-F*, *--no-fork*::
 Do not fork before exec'ing the specified program. By default, when entering a PID namespace, *nsenter* calls *fork* before calling *exec* so that any children will also be in the newly entered PID namespace.

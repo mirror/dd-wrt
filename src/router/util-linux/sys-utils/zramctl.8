@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: zramctl
 .\"    Author: [see the "AUTHOR(S)" section]
-.\" Generator: Asciidoctor 2.0.15
-.\"      Date: 2022-05-11
+.\" Generator: Asciidoctor 2.0.20
+.\"      Date: 2023-11-21
 .\"    Manual: System Administration
-.\"    Source: util-linux 2.38.1
+.\"    Source: util-linux 2.39.3
 .\"  Language: English
 .\"
-.TH "ZRAMCTL" "8" "2022-05-11" "util\-linux 2.38.1" "System Administration"
+.TH "ZRAMCTL" "8" "2023-11-21" "util\-linux 2.39.3" "System Administration"
 .ie \n(.g .ds Aq \(aq
 .el       .ds Aq '
 .ss \n[.ss] 0
@@ -62,6 +62,8 @@ Note that \fIzramdev\fP node specified on command line has to already exist. The
 \fB\-a\fP, \fB\-\-algorithm lzo\fP|\fBlz4\fP|\fBlz4hc\fP|\fBdeflate\fP|\fB842\fP|\fBzstd\fP
 .RS 4
 Set the compression algorithm to be used for compressing data in the zram device.
+.sp
+The \fBlist of supported algorithms could be inaccurate\fP as it depends on the current kernel configuration. A basic overview can be obtained by using the command "cat /sys/block/zram0/comp_algorithm"; however, please note that this list might also be incomplete. This is due to the fact that ZRAM utilizes the Crypto API, and if certain algorithms were built as modules, it becomes impossible to enumerate all of them.
 .RE
 .sp
 \fB\-f\fP, \fB\-\-find\fP
@@ -147,7 +149,7 @@ The following commands set up a zram device with a size of one gigabyte and use 
 .MTO "kzak\(atredhat.com" "Karel Zak" ""
 .SH "SEE ALSO"
 .sp
-.URL "http://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/tree/Documentation/admin\-guide/blockdev/zram.rst" "Linux kernel documentation" ""
+.URL "https://docs.kernel.org/admin\-guide/blockdev/zram.html" "Linux kernel documentation" ""
 .SH "REPORTING BUGS"
 .sp
 For bug reports, use the issue tracker at \c

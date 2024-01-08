@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 2010-2018 Red Hat, Inc. All rights reserved.
- * Written by Milan Broz <mbroz@redhat.com>
+ * Written by Milan Broz <gmazyland@gmail.com>
  *            Karel Zak <kzak@redhat.com>
  */
 #ifndef UTIL_LINUX_LSBLK_H
@@ -51,6 +51,8 @@ struct lsblk {
 	unsigned int merge:1;           /* merge sub-trees */
 	unsigned int nodeps:1;		/* don't print slaves/holders */
 	unsigned int scsi:1;		/* print only device with HCTL (SCSI) */
+	unsigned int nvme:1;		/* print NVMe device only */
+	unsigned int virtio:1;		/* print virtio device only */
 	unsigned int paths:1;		/* print devnames with "/dev" prefix */
 	unsigned int sort_hidden:1;	/* sort column not between output columns */
 	unsigned int dedup_hidden :1;	/* deduplication column not between output columns */
@@ -72,9 +74,12 @@ struct lsblk_devprop {
 	char *partuuid;		/* partition UUID */
 	char *partlabel;	/* partition label */
 	char *partflags;	/* partition flags */
+	char *partn;		/* partition number */
 	char *wwn;		/* storage WWN */
 	char *serial;		/* disk serial number */
 	char *model;		/* disk model */
+	char *idlink;		/* /dev/disk/by-id/<name> */
+	char *revision;		/* firmware revision/version */
 
 	/* lsblk specific (for --sysroot only)  */
 	char *owner;		/* user name */

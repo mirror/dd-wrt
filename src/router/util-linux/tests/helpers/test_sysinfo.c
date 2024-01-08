@@ -1,4 +1,6 @@
 /*
+ * SPDX-License-Identifier: GPL-2.0-or-later
+ *
  * Copyright (C) 2007 Karel Zak <kzak@redhat.com>
  *
  * This file is part of util-linux.
@@ -21,6 +23,12 @@
 #include <limits.h>
 #include <stdint.h>
 #include <inttypes.h>
+#include <wchar.h>
+#include <errno.h>
+#include <sys/ioctl.h>
+#include <sys/mount.h>
+
+#include "mount-api-utils.h"
 
 typedef struct {
 	const char	*name;
@@ -35,7 +43,7 @@ static int hlp_wordsize(void)
 
 static int hlp_endianness(void)
 {
-#if !defined(WORDS_BIGENDIAN)
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 	printf("LE\n");
 #else
 	printf("BE\n");
@@ -90,6 +98,33 @@ static int hlp_ulong_max32(void)
 	return 0;
 }
 
+static int hlp_wcsspn_ok(void)
+{
+	printf("%d\n", wcsspn(L"FOO", L"F") == 1);
+	return 0;
+}
+
+static int hlp_enotty_ok(void)
+{
+	errno = 0;
+	ioctl(STDOUT_FILENO, 0);
+
+	printf("%d\n", errno != ENOSYS);
+	return 0;
+}
+
+static int hlp_fsopen_ok(void)
+{
+#ifdef FSOPEN_CLOEXEC
+	errno = 0;
+	fsopen(NULL, FSOPEN_CLOEXEC);
+#else
+	errno = ENOSYS;
+#endif
+	printf("%d\n", errno != ENOSYS);
+	return 0;
+}
+
 static mntHlpfnc hlps[] =
 {
 	{ "WORDSIZE",	hlp_wordsize	},
@@ -101,6 +136,9 @@ static mntHlpfnc hlps[] =
 	{ "ULONG_MAX32",hlp_ulong_max32	},
 	{ "UINT64_MAX", hlp_u64_max     },
 	{ "byte-order", hlp_endianness  },
+	{ "wcsspn-ok",  hlp_wcsspn_ok   },
+	{ "enotty-ok",  hlp_enotty_ok   },
+	{ "fsopen-ok",  hlp_fsopen_ok   },
 	{ NULL, NULL }
 };
 

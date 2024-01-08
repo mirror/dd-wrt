@@ -1,4 +1,13 @@
-
+/*
+ * SPDX-License-Identifier: GPL-2.0-or-later
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * Copyright (C) 2014 Karel Zak <kzak@redhat.com>
+ */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -122,7 +131,7 @@ static const struct menu menu_generic = {
 		MENU_BENT ('q', N_("quit without saving changes")),
 		MENU_XENT ('r', N_("return to main menu")),
 
-		MENU_ENT_NEST('r', N_("return from BSD to DOS"), FDISK_DISKLABEL_BSD, FDISK_DISKLABEL_DOS),
+		MENU_ENT_NEST('r', N_("return from BSD to DOS (MBR)"), FDISK_DISKLABEL_BSD, FDISK_DISKLABEL_DOS),
 
 		MENU_ENT_NEST('r', N_("return from protective/hybrid MBR to GPT"), FDISK_DISKLABEL_DOS, FDISK_DISKLABEL_GPT),
 
@@ -138,7 +147,7 @@ static const struct menu menu_createlabel = {
 		MENU_SEP(N_("Create a new label")),
 		MENU_ENT('g', N_("create a new empty GPT partition table")),
 		MENU_ENT('G', N_("create a new empty SGI (IRIX) partition table")),
-		MENU_ENT('o', N_("create a new empty DOS partition table")),
+		MENU_ENT('o', N_("create a new empty MBR (DOS) partition table")),
 		MENU_ENT('s', N_("create a new empty Sun partition table")),
 
 		/* backward compatibility -- be sensitive to 'g', but don't
@@ -433,8 +442,10 @@ int process_fdisk_menu(struct fdisk_context **cxt0)
 		/* Map ^C and ^D in main menu to 'q' */
 		if (is_interactive
 		    && fdisk_label_is_changed(fdisk_get_label(cxt, NULL))) {
+			/* TRANSLATORS: these yes no questions use rpmatch(),
+			 * and should be translated.  */
 			rc = get_user_reply(
-				_("\nAll unwritten changes will be lost, do you really want to quit? "),
+				_("\nAll unwritten changes will be lost, do you really want to quit? (y/n)"),
 				buf, sizeof(buf));
 			if (rc || !rpmatch(buf))
 				return 0;

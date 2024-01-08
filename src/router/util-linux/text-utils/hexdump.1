@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: hexdump
 .\"    Author: [see the "AUTHOR(S)" section]
-.\" Generator: Asciidoctor 2.0.15
-.\"      Date: 2022-05-11
+.\" Generator: Asciidoctor 2.0.20
+.\"      Date: 2023-12-01
 .\"    Manual: User Commands
-.\"    Source: util-linux 2.38.1
+.\"    Source: util-linux 2.39.3
 .\"  Language: English
 .\"
-.TH "HEXDUMP" "1" "2022-05-11" "util\-linux 2.38.1" "User Commands"
+.TH "HEXDUMP" "1" "2023-12-01" "util\-linux 2.39.3" "User Commands"
 .ie \n(.g .ds Aq \(aq
 .el       .ds Aq '
 .ss \n[.ss] 0
@@ -229,7 +229,7 @@ Output characters in the default character set. Non\-printing characters are dis
 .sp
 \fB_p\fP
 .RS 4
-Output characters in the default character set. Non\-printing characters are displayed as a single \(aq\fB.\fP\(aq.
+Output characters in the default character set. Non\-printing characters are displayed as a single \*(Aq\fB.\fP\*(Aq.
 .RE
 .sp
 \fB_u\fP
@@ -418,7 +418,7 @@ It is an error to specify a byte count as well as multiple conversion characters
 .sp
 If, as a result of the specification of the \fB\-n\fP option or end\-of\-file being reached, input data only partially satisfies a format string, the input block is zero\-padded sufficiently to display all available data (i.e., any format units overlapping the end of data will display some number of the zero bytes).
 .sp
-Further output by such format strings is replaced by an equivalent number of spaces. An equivalent number of spaces is defined as the number of spaces output by an \fBs\fP conversion character with the same field width and precision as the original conversion character or conversion string but with any \(aq\fB+\fP\(aq, \(aq \(aq, \(aq\fB#\fP\(aq conversion flag characters removed, and referencing a NULL string.
+Further output by such format strings is replaced by an equivalent number of spaces. An equivalent number of spaces is defined as the number of spaces output by an \fBs\fP conversion character with the same field width and precision as the original conversion character or conversion string but with any \*(Aq\fB+\fP\*(Aq, \*(Aq \*(Aq, \*(Aq\fB#\fP\*(Aq conversion flag characters removed, and referencing a NULL string.
 .sp
 If no format strings are specified, the default display is very similar to the \fB\-x\fP output format (the \fB\-x\fP option causes more space to be used between format units than in the default output).
 .SH "EXIT STATUS"
