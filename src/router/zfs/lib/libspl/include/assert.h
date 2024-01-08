@@ -67,6 +67,9 @@ libspl_assert(const char *buf, const char *file, const char *func, int line)
 #define	VERIFY(cond) (void) ((!(cond)))
 #define	verify(cond) (void) ((!(cond)))
 
+#define	PANIC(fmt, a...)						\
+	libspl_assertf(__FILE__, __FUNCTION__, __LINE__, fmt, ## a)
+
 #define	VERIFY3B(LEFT, OP, RIGHT)					\
 do {									\
 	const boolean_t __left __attribute__((unused)) = \
@@ -105,12 +108,16 @@ do {									\
 		(uint64_t)(LEFT);	\
 } while (0)
 #else
+
 #define	VERIFY(cond)							\
 	(void) ((!(cond)) &&						\
 	    libspl_assert(#cond, "unknown", __FUNCTION__, __LINE__))
 #define	verify(cond)							\
 	(void) ((!(cond)) &&						\
 	    libspl_assert(#cond, "unknown", __FUNCTION__, __LINE__))
+
+#define	PANIC(fmt, a...)						\
+	libspl_assertf("unknown", __FUNCTION__, __LINE__, fmt, ## a)
 
 #define	VERIFY3B(LEFT, OP, RIGHT)					\
 do {									\
