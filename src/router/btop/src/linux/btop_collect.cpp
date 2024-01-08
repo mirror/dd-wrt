@@ -1526,11 +1526,14 @@ namespace Mem {
 		ifstream meminfo(Shared::procPath / "meminfo");
 		int64_t totalMem;
 		if (meminfo.good()) {
-			meminfo.ignore(SSmax, ':');
-			meminfo >> totalMem;
-			totalMem <<= 10;
+			for (string label; meminfo.peek() != 'D' and meminfo >> label;) {
+				if (label == "MemTotal:") {
+					meminfo >> totalMem;
+					totalMem <<= 10;
+				}
+			}
 		}
-		if (not meminfo.good() or totalMem == 0)
+		if (totalMem == 0)
 			throw std::runtime_error("Could not get total memory size from /proc/meminfo");
 
 		return totalMem;
@@ -1544,7 +1547,7 @@ namespace Mem {
 		auto zfs_arc_cached = Config::getB("zfs_arc_cached");
 		auto totalMem = get_totalMem();
 		auto& mem = current_mem;
-
+		
 		mem.stats.at("swap_total") = 0;
 
 		//? Read ZFS ARC info from /proc/spl/kstat/zfs/arcstats
