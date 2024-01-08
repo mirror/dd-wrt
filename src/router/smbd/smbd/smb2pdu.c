@@ -8477,7 +8477,7 @@ int smb2_ioctl(struct ksmbd_work *work)
      * the flag DUPLICATE_EXTENTS_DATA_EX_SOURCE_ATOMIC is set.
      */
 		cloned = vfs_clone_file_range(fp_in->filp, src_off,
-					      fp_out->filp, dst_off, length, 0);
+					      fp_out->filp, dst_off, length);
 		if (cloned == -EXDEV || cloned == -EOPNOTSUPP) {
 			ret = -EOPNOTSUPP;
 			goto dup_ext_out;
