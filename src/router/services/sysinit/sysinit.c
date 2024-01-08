@@ -2680,141 +2680,141 @@ void start_restore_defaults(void)
 	nvram_set("os_version", SVN_REVISION);
 	nvram_set("os_date", __DATE__);
 
-nvram_unset("shutdown");
+	nvram_unset("shutdown");
 #ifdef HAVE_SPUTNIK_APD
-/*
+	/*
 	 * Added for Sputnik Agent 
 	 */
-nvram_unset("sputnik_mjid");
-nvram_unset("sputnik_rereg");
+	nvram_unset("sputnik_mjid");
+	nvram_unset("sputnik_rereg");
 #endif
 #ifdef HAVE_FREERADIUS
-nvram_unset("cert_running");
+	nvram_unset("cert_running");
 #endif
-nvram_unset("probe_working");
-nvram_unset("probe_blacklist");
+	nvram_unset("probe_working");
+	nvram_unset("probe_blacklist");
 
-if (!nvram_exists("overclocking") && nvram_exists("clkfreq")) {
-	char *clk = nvram_safe_get("clkfreq");
-	char dup[64];
+	if (!nvram_exists("overclocking") && nvram_exists("clkfreq")) {
+		char *clk = nvram_safe_get("clkfreq");
+		char dup[64];
 
-	strcpy(dup, clk);
-	int j;
-	for (j = 0; j < strlen(dup); j++)
-		if (dup[j] == ',')
-			dup[j] = 0;
+		strcpy(dup, clk);
+		int j;
+		for (j = 0; j < strlen(dup); j++)
+			if (dup[j] == ',')
+				dup[j] = 0;
 
-	nvram_set("overclocking", dup);
-}
-cprintf("start overclocking\n");
-start_overclocking();
-cprintf("done()");
-if (nvram_exists("http_username")) {
-	if (nvram_match("http_username", "")) {
+		nvram_set("overclocking", dup);
+	}
+	cprintf("start overclocking\n");
+	start_overclocking();
+	cprintf("done()");
+	if (nvram_exists("http_username")) {
+		if (nvram_match("http_username", "")) {
 #ifdef HAVE_POWERNOC
-		nvram_set("http_username", "bJz7PcC1rCRJQ"); // admin
+			nvram_set("http_username", "bJz7PcC1rCRJQ"); // admin
 #else
-		nvram_set("http_username", DEFAULT_USER); // root
+			nvram_set("http_username", DEFAULT_USER); // root
 #endif
-	}
-}
-nvram_unset("flash_active");
-nvram_seti("service_running", 0);
-nvram_seti("ntp_success", 0);
-nvram_seti("wanup", 0);
-nvram_seti("sysup", 0);
-nvram_seti("ddns_once", 0);
-nvram_unset("rc_opt_run");
-
-nvram_unset("ipv6_get_dns");
-nvram_unset("ipv6_get_domain");
-nvram_unset("ipv6_get_sip_name");
-nvram_unset("ipv6_get_sip_servers");
-// convert old dhcp start
-char *dhcp_start = nvram_safe_get("dhcp_start");
-if (strlen(dhcp_start) < 4) {
-	char *lan = nvram_safe_get("lan_ipaddr");
-	int ip1 = get_single_ip(lan, 0);
-	int ip2 = get_single_ip(lan, 1);
-	int ip3 = get_single_ip(lan, 2);
-	char merge[64];
-	sprintf(merge, "%d.%d.%d.%s", ip1, ip2, ip3, dhcp_start);
-	nvram_set("dhcp_start", merge);
-}
-
-cprintf("check CFE nv\n");
-if (check_now_boot() == PMON_BOOT)
-	check_pmon_nv();
-else
-	check_cfe_nv();
-cprintf("restore defaults\n");
-
-glob_t globbuf;
-char globstring[1024];
-char firststyle[32] = "";
-int globresult;
-
-sprintf(globstring, "/www/style/*");
-globresult = glob(globstring, GLOB_NOSORT, NULL, &globbuf);
-int i, found = 0;
-for (i = 0; i < globbuf.gl_pathc; i++) {
-	char *style;
-	style = strrchr(globbuf.gl_pathv[i], '/') + 1;
-#ifdef HAVE_PWC
-	if (strcmp(style, "pwc"))
-#endif
-		if (firststyle[0] == '\0')
-			strcpy(firststyle, style);
-
-	if (!strcmp(nvram_safe_get("router_style"), style)) {
-		found = 1;
-	}
-}
-if (found == 0 && firststyle[0] != '\0') {
-	nvram_set("router_style", firststyle);
-	if (!restore_defaults) {
-		nvram_async_commit();
-	}
-}
-globfree(&globbuf);
-
-/*
-	 * Commit values 
-	 */
-if (restore_defaults) {
-	int i;
-
-	unset_nvram();
-	setWifiPass();
-	nvram_async_commit();
-	cprintf("done\n");
-	for (i = 0; i < MAX_NVPARSE; i++) {
-		del_wds_wsec(0, i);
-		del_wds_wsec(1, i);
-	}
-}
-#ifdef HAVE_PERU
-char *dis = getUEnv("rndis");
-if (dis) {
-	if (!strcmp(dis, "1")) {
-		nvram_default_get("wlan0_rxantenna", "7");
-		nvram_default_get("wlan0_txantenna", "7");
-		char *ssid = nvram_safe_get("wlan0_ssid");
-		if (!strcmp(ssid, "dd-wrt"))
-			nvram_set("wlan0_ssid", "Antaira");
-	} else {
-		nvram_default_get("wlan0_rxantenna", "3");
-		nvram_default_get("wlan0_txantenna", "3");
-		nvram_default_get("wlan1_rxantenna", "7");
-		nvram_default_get("wlan1_txantenna", "7");
-		char *ssid = nvram_safe_get("wlan0_ssid");
-		if (!strcmp(ssid, "dd-wrt")) {
-			nvram_set("wlan0_ssid", "Antaira_N");
-			nvram_set("wlan1_ssid", "Antaira");
 		}
 	}
-} else
-	eval("ubootenv", "set", "rndis", "1");
+	nvram_unset("flash_active");
+	nvram_seti("service_running", 0);
+	nvram_seti("ntp_success", 0);
+	nvram_seti("wanup", 0);
+	nvram_seti("sysup", 0);
+	nvram_seti("ddns_once", 0);
+	nvram_unset("rc_opt_run");
+
+	nvram_unset("ipv6_get_dns");
+	nvram_unset("ipv6_get_domain");
+	nvram_unset("ipv6_get_sip_name");
+	nvram_unset("ipv6_get_sip_servers");
+	// convert old dhcp start
+	char *dhcp_start = nvram_safe_get("dhcp_start");
+	if (strlen(dhcp_start) < 4) {
+		char *lan = nvram_safe_get("lan_ipaddr");
+		int ip1 = get_single_ip(lan, 0);
+		int ip2 = get_single_ip(lan, 1);
+		int ip3 = get_single_ip(lan, 2);
+		char merge[64];
+		sprintf(merge, "%d.%d.%d.%s", ip1, ip2, ip3, dhcp_start);
+		nvram_set("dhcp_start", merge);
+	}
+
+	cprintf("check CFE nv\n");
+	if (check_now_boot() == PMON_BOOT)
+		check_pmon_nv();
+	else
+		check_cfe_nv();
+	cprintf("restore defaults\n");
+
+	glob_t globbuf;
+	char globstring[1024];
+	char firststyle[32] = "";
+	int globresult;
+
+	sprintf(globstring, "/www/style/*");
+	globresult = glob(globstring, GLOB_NOSORT, NULL, &globbuf);
+	int i, found = 0;
+	for (i = 0; i < globbuf.gl_pathc; i++) {
+		char *style;
+		style = strrchr(globbuf.gl_pathv[i], '/') + 1;
+#ifdef HAVE_PWC
+		if (strcmp(style, "pwc"))
+#endif
+			if (firststyle[0] == '\0')
+				strcpy(firststyle, style);
+
+		if (!strcmp(nvram_safe_get("router_style"), style)) {
+			found = 1;
+		}
+	}
+	if (found == 0 && firststyle[0] != '\0') {
+		nvram_set("router_style", firststyle);
+		if (!restore_defaults) {
+			nvram_async_commit();
+		}
+	}
+	globfree(&globbuf);
+
+	/*
+	 * Commit values 
+	 */
+	if (restore_defaults) {
+		int i;
+
+		unset_nvram();
+		setWifiPass();
+		nvram_async_commit();
+		cprintf("done\n");
+		for (i = 0; i < MAX_NVPARSE; i++) {
+			del_wds_wsec(0, i);
+			del_wds_wsec(1, i);
+		}
+	}
+#ifdef HAVE_PERU
+	char *dis = getUEnv("rndis");
+	if (dis) {
+		if (!strcmp(dis, "1")) {
+			nvram_default_get("wlan0_rxantenna", "7");
+			nvram_default_get("wlan0_txantenna", "7");
+			char *ssid = nvram_safe_get("wlan0_ssid");
+			if (!strcmp(ssid, "dd-wrt"))
+				nvram_set("wlan0_ssid", "Antaira");
+		} else {
+			nvram_default_get("wlan0_rxantenna", "3");
+			nvram_default_get("wlan0_txantenna", "3");
+			nvram_default_get("wlan1_rxantenna", "7");
+			nvram_default_get("wlan1_txantenna", "7");
+			char *ssid = nvram_safe_get("wlan0_ssid");
+			if (!strcmp(ssid, "dd-wrt")) {
+				nvram_set("wlan0_ssid", "Antaira_N");
+				nvram_set("wlan1_ssid", "Antaira");
+			}
+		}
+	} else
+		eval("ubootenv", "set", "rndis", "1");
 
 #endif
 }
