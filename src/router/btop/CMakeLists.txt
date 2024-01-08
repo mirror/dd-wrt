@@ -3,12 +3,9 @@
 # CMake configuration for btop
 #
 
-cmake_minimum_required(VERSION 3.24)
+cmake_minimum_required(VERSION 3.20)
 
 # Disable in-source builds since they would override the Makefile
-if("${CMAKE_CURRENT_SOURCE_DIR}" STREQUAL "${CMAKE_CURRENT_BINARY_DIR}")
-  message(FATAL_ERROR "In-source builds are not allowed")
-endif()
 
 project("btop"
   VERSION 1.2.13
@@ -60,20 +57,12 @@ add_executable(btop
   src/btop_tools.cpp
 )
 
-if(APPLE)
-  target_sources(btop PRIVATE src/osx/btop_collect.cpp src/osx/sensors.cpp src/osx/smc.cpp)
-elseif(CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
-  target_sources(btop PRIVATE src/freebsd/btop_collect.cpp)
-elseif(LINUX)
   target_sources(btop PRIVATE src/linux/btop_collect.cpp)
-else()
-  message(FATAL_ERROR "${CMAKE_SYSTEM_NAME} is not supported")
-endif()
 
-check_include_file_cxx(ranges CXX_HAVE_RANGES)
-if(NOT CXX_HAVE_RANGES)
-  message(FATAL_ERROR "The compiler doesn't support <ranges>")
-endif()
+#check_include_file_cxx(ranges CXX_HAVE_RANGES)
+#if(NOT CXX_HAVE_RANGES)
+#  message(FATAL_ERROR "The compiler doesn't support <ranges>")
+#endif()
 
 # Check for and enable LTO
 check_ipo_supported(RESULT ipo_supported)
