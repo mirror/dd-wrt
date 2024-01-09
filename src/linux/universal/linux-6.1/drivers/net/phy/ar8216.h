@@ -504,6 +504,10 @@ struct ar8xxx_priv {
 
 	struct list_head list;
 	unsigned int use_count;
+	u32 state[8];
+	u32 disabled[8];
+	s32 ledstate;
+	u32 ledregs[4];
 
 	/* all fields below are cleared on reset */
 	struct_group(ar8xxx_priv_volatile,
@@ -522,10 +526,6 @@ struct ar8xxx_priv {
 		int monitor_port;
 		u8 port_vlan_prio[AR8X16_MAX_PORTS];
 	);
-	u32 state[8];
-	u32 disabled[8];
-	s32 ledstate;
-	u32 ledregs[4];
 };
 
 u32
