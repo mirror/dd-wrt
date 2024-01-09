@@ -983,8 +983,7 @@ static void handle_pppoe(void)
 
 static void handle_speedtest(void)
 {
-// use minimum of 2 threads
-	cpucount = 4;
+	int cpucount = 4;
 	char nr[32];
 	sprintf(nr, "%d", cpucount);
 	char *args[] = { "speedtest_cli", "1", nr, "1", nr, NULL };
