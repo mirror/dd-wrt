@@ -176,7 +176,7 @@ do {									\
 #define	VERIFY0(RIGHT)	do {						\
 		const int64_t _verify0_right = (int64_t)(RIGHT);	\
 		if (unlikely(!(0 == _verify0_right)))			\
-		    spl_panic("unknown", __FUNCTION__, __LINE__,		\
+		    spl_panic("unknown", __FUNCTION__, __LINE__,	\
 		    "VERIFY0(" #RIGHT ") "				\
 		    "failed (0 == %lld)\n",				\
 		    (long long)_verify0_right);				\
