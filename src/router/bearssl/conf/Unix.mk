@@ -38,7 +38,7 @@ MKDIR = mkdir -p
 
 # C compiler and flags.
 #CC = 
-CFLAGS = -W -Wall $(COPTS) $(MIPS16_OPT) -flto -fPIC
+CFLAGS = -W -Wall $(COPTS) $(MIPS16_OPT) $(LTO) -fPIC -ffunction-sections -fdata-sections
 CCOUT = -c -o 
 
 # Static library building tool.
