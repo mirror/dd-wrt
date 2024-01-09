@@ -1095,6 +1095,7 @@ ar8327_sw_set_leds(struct switch_dev *dev, const struct switch_attr *attr,
 {
 	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
 	if (priv->ledstate == -1) {
+	    printk("read LED state\n");
 	    priv->ledregs[0] = ar8xxx_read(priv, AR8327_REG_LED_CTRL0);
 	    priv->ledregs[1] = ar8xxx_read(priv, AR8327_REG_LED_CTRL1);
 	    priv->ledregs[2] = ar8xxx_read(priv, AR8327_REG_LED_CTRL2);
@@ -1102,12 +1103,14 @@ ar8327_sw_set_leds(struct switch_dev *dev, const struct switch_attr *attr,
 	    priv->ledstate = 1;
 	}
 	if (!!val->value.i) {
+	        printk("enable leds\n");		
 		ar8xxx_write(priv, AR8327_REG_LED_CTRL0, priv->ledregs[0]);
 		ar8xxx_write(priv, AR8327_REG_LED_CTRL1, priv->ledregs[1]);
 		ar8xxx_write(priv, AR8327_REG_LED_CTRL2, priv->ledregs[2]);
 		ar8xxx_write(priv, AR8327_REG_LED_CTRL3, priv->ledregs[3]);
 		priv->ledstate = 1;
 	} else {
+	        printk("disable leds\n");		
 		ar8xxx_write(priv, AR8327_REG_LED_CTRL0, 0);
 		ar8xxx_write(priv, AR8327_REG_LED_CTRL1, 0);
 		ar8xxx_write(priv, AR8327_REG_LED_CTRL2, 0);
