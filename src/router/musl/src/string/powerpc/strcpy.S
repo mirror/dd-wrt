@@ -15,8 +15,7 @@
    You should have received a copy of the GNU Lesser General Public
    License along with the GNU C Library; if not, see
    <https://www.gnu.org/licenses/>.  */
-
-#include <sysdep.h>
+#include "sysdep.h"
 
 /* See strlen.s for comments on how the end-of-string testing works.  */
 

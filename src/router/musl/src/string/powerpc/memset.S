@@ -16,8 +16,8 @@
    License along with the GNU C Library; if not, see
    <https://www.gnu.org/licenses/>.  */
 
-#include <sysdep.h>
-#include <rtld-global-offsets.h>
+#include "sysdep.h"
+//#include <rtld-global-offsets.h>
 
 /* void * [r3] memset (void *s [r3], int c [r4], size_t n [r5]));
    Returns 's'.

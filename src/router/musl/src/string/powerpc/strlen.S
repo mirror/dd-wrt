@@ -16,7 +16,7 @@
    License along with the GNU C Library; if not, see
    <https://www.gnu.org/licenses/>.  */
 
-#include <sysdep.h>
+#include "sysdep.h"
 
 /* The algorithm here uses the following techniques:
 
