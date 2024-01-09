@@ -118,3 +118,4 @@ _GLOBAL(longjmp)
 _GLOBAL(current_stack_pointer)
 	PPC_LL	r3,0(r1)
 	blr
+.section  .note.GNU-stack, "", %progbits

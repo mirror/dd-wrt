@@ -207,3 +207,5 @@ dst_error:
 	.long	95b,dst_error
 	.long	96b,dst_error
 	.long	97b,dst_error
+
+.section  .note.GNU-stack, "", %progbits

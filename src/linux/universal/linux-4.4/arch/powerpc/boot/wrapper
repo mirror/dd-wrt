@@ -181,7 +181,7 @@ ld_version()
 LD_VERSION=$(${CROSS}ld --version | ld_version)
 LD_NO_DL_MIN_VERSION=$(echo 2.26 | ld_version)
 if [ "$LD_VERSION" -ge "$LD_NO_DL_MIN_VERSION" ] ; then
-	nodl="--no-dynamic-linker"
+	nodl="--no-dynamic-linker -z noexecstack --no-warn-rwx-segments"
 fi
 
 platformo=$object/"$platform".o

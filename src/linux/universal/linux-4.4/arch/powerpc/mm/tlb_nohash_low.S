@@ -497,3 +497,4 @@ _GLOBAL(loadcam_multi)
 	mtlr	r8
 	blr
 #endif
+.section  .note.GNU-stack, "", %progbits

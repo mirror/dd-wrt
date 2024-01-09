@@ -1360,3 +1360,4 @@ swapper_pg_dir:
  */
 abatron_pteptrs:
 	.space	8
+.section  .note.GNU-stack, "", %progbits

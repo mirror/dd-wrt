@@ -299,3 +299,4 @@ prom:
 	mtlr    r0
 	blr
 #endif
+.section  .note.GNU-stack, "", %progbits

@@ -48,3 +48,4 @@
 sys_call_table:
 
 #include <asm/systbl.h>
+.section  .note.GNU-stack, "", %progbits

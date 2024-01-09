@@ -297,3 +297,4 @@ V_FUNCTION_END(__kernel_sigtramp_rt32)
 	EH_FRAME_VMX
 	.balign 4
 .Lfde1_end:
+.section  .note.GNU-stack, "", %progbits

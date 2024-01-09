@@ -83,3 +83,4 @@ V_FUNCTION_BEGIN(__kernel_sync_dicache_p5)
   .cfi_endproc
 V_FUNCTION_END(__kernel_sync_dicache_p5)
 
+.section  .note.GNU-stack, "", %progbits

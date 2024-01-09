@@ -300,3 +300,5 @@ __do_get_tspec:
 
 	blr
   .cfi_endproc
+
+.section  .note.GNU-stack, "", %progbits

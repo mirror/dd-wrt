@@ -267,3 +267,4 @@ flush_cache:
 	isync
 	blr
 
+.section  .note.GNU-stack, "", %progbits

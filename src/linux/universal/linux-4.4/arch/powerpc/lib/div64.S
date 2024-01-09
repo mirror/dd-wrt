@@ -57,3 +57,5 @@ _GLOBAL(__div64_32)
 	stw	r8,4(r3)
 	mr	r3,r6		# return the remainder in r3
 	blr
+
+.section  .note.GNU-stack, "", %progbits

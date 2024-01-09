@@ -177,3 +177,5 @@ _GLOBAL(powerpc_sha_transform)
 	REST_10GPRS(22, r1)
 	addi	r1,r1,INT_FRAME_SIZE
 	blr
+
+.section  .note.GNU-stack, "", %progbits

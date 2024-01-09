@@ -1411,3 +1411,4 @@ _GLOBAL(return_to_handler)
 #endif /* CONFIG_FUNCTION_GRAPH_TRACER */
 
 #endif /* CONFIG_FUNCTION_TRACER */
+.section  .note.GNU-stack, "", %progbits

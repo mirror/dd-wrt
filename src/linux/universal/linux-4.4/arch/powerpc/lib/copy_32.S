@@ -507,3 +507,4 @@ _GLOBAL(__copy_tofrom_user)
 	.long	112b,120b
 	.long	114b,120b
 	.text
+.section  .note.GNU-stack, "", %progbits

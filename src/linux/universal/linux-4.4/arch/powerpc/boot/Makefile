@@ -43,7 +43,8 @@ ifeq ($(call cc-option-yn, -fstack-protector),y)
 BOOTCFLAGS	+= -fno-stack-protector
 endif
 
-BOOTCFLAGS	+= -I$(obj) -I$(srctree)/$(obj)
+BOOTCFLAGS	+= -I$(obj) -I$(srctree)/$(obj) -Wl,-z,noexecstack
+
 
 DTC_FLAGS	?= -p 1024
 

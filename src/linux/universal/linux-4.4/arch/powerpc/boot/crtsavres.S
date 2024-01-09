@@ -231,3 +231,4 @@ _GLOBAL(_rest32gpr_31_x)
 	mr	1,11
 	blr
 #endif
+.section  .note.GNU-stack, "", %progbits

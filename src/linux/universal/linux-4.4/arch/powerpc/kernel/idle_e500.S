@@ -95,3 +95,4 @@ _GLOBAL(power_save_ppc32_restore)
 #endif
 
 	b	transfer_to_handler_cont
+.section  .note.GNU-stack, "", %progbits

@@ -233,3 +233,4 @@ _GLOBAL(__setup_cpu_e5500)
 	mtlr	r5
 	blr
 #endif
+.section  .note.GNU-stack, "", %progbits

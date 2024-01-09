@@ -11,3 +11,5 @@ vdso32_start:
 vdso32_end:
 
 	.previous
+
+.section  .note.GNU-stack, "", %progbits

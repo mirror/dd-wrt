@@ -100,3 +100,4 @@ udelay:
 	cmpw	0,r6,r9
 	blt	2b
 3:	blr
+.section  .note.GNU-stack, "", %progbits

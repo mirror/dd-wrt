@@ -545,3 +545,4 @@ _restvr_31:
 #endif /* CONFIG_PPC64 */
 
 #endif
+.section  .note.GNU-stack, "", %progbits

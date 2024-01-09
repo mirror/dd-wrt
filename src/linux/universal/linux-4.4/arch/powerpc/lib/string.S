@@ -164,3 +164,4 @@ _GLOBAL(__arch_clear_user)
 	PPC_LONG	8b,92b
 	.text
 #endif
+.section  .note.GNU-stack, "", %progbits
