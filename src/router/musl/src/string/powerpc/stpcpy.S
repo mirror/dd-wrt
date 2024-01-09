@@ -114,9 +114,13 @@ L(u1):	stbu	rALT, 1(rDEST)
 	blr
 END (__stpcpy)
 
-#define weak __attribute__((__weak__))
-#define hidden __attribute__((__visibility__("hidden")))
-#define weak_alias(old, new) \
-	extern __typeof(old) new __attribute__((__weak__, __alias__(#old)))
+#ifndef ASM_LINE_SEP
+# define ASM_LINE_SEP ;
+#endif
+
+
+# define weak_alias(original, alias)					\
+  .weak C_SYMBOL_NAME (alias) ASM_LINE_SEP				\
+  C_SYMBOL_NAME (alias) = C_SYMBOL_NAME (original)
 
 weak_alias(__stpcpy, stpcpy);
