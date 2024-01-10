@@ -452,7 +452,7 @@ static void detect_wireless_devices(int mask)
 	}
 #endif
 #ifdef HAVE_MT7615
-	if ((mask & RADIO_MT76)) {
+	if ((mask & RADIO_MT76) && !nvram_match("nomt76", "1")) {
 		insmod("thermal_sys");
 		insmod("hwmon");
 		fprintf(stderr, "load Medatek MT76 Driver\n");
@@ -538,7 +538,7 @@ static void detect_wireless_devices(int mask)
 	}
 #endif
 #ifdef HAVE_IWLWIFI
-	if ((mask & RADIO_IWLWIFI) && !nvram_match("nomt76", "1")) {
+	if ((mask & RADIO_IWLWIFI)) {
 		insmod("libipw");
 		if (!detectchange("ipw2100") && !detectchange("ipw2200"))
 			rmmod("libipw");
