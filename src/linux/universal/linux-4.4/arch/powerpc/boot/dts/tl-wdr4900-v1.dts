@@ -53,12 +53,12 @@
 				};
 
 				kernel@60000 {
-					reg = <0x00060000 0x00180000>;
+					reg = <0x00060000 0x001D0000>;
 					label = "kernel";
 				};
 
-				rootfs@1e0000 {
-					reg = <0x001e0000 0x00de0000>;
+				rootfs@230000 {
+					reg = <0x00230000 0x00e30000>;
 					label = "rootfs";
 				};
 
