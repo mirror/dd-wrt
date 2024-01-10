@@ -313,10 +313,11 @@ static inline int tlog_setlevel(tlog_level level) {return 0;}
 /* enalbe log to screen */
 static inline void tlog_setlogscreen(int enable) {}
 
+typedef void (*tlog_early_print_func)(struct tlog_loginfo *loginfo, const char *format, va_list ap);
 static inline void tlog_reg_early_printf_callback(tlog_early_print_func callback) {}
 
 /* enalbe early log to screen */
-extern void tlog_set_early_printf(int enable, int no_prefix, int color);
+#define tlog_set_early_printf(enable, no_prefix, color)  do { } while(0)
 
 /* Get log level in string */
 extern const char *tlog_get_level_string(tlog_level level);
@@ -389,7 +390,7 @@ static void tlog_logscreen(tlog_log *log, int enable) {return;}
 
 /* register output callback */
 typedef int (*tlog_output_func)(struct tlog_log *log, const char *buff, int bufflen);
-extern int tlog_reg_output_func(tlog_log *log, tlog_output_func output);
+static inline int tlog_reg_output_func(tlog_log *log, tlog_output_func output) { return 0; }
 
 /* set private data */
 extern void tlog_set_private(tlog_log *log, void *private_data);

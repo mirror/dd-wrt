@@ -612,12 +612,12 @@ static int _smartdns_init(void)
 		tlog(TLOG_ERROR, "init timer failed.");
 		goto errout;
 	}
-
+#ifdef HAVE_OPENSSL
 	if (_smartdns_init_ssl() != 0) {
 		tlog(TLOG_ERROR, "init ssl failed.");
 		goto errout;
 	}
-
+#endif
 	if (_smartdns_init_load_from_resolv() != 0) {
 		tlog(TLOG_ERROR, "no dns server found, exit...");
 		goto errout;
