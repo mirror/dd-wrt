@@ -8,7 +8,6 @@
  * You can do whatever you want with this file.
  */
 
-#include <linux/string.h>
 #include "xz_private.h"
 
 /*
