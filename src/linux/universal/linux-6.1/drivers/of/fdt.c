@@ -336,6 +336,17 @@ static int unflatten_dt_nodes(const void *blob,
 		return -EINVAL;
 	}
 
+    /* CONFIG_CMDLINE_OVERRIDE is used to fallback to a different
+     * device tree option of chosen/bootargs-override. This is
+     * helpful on boards where u-boot sets bootargs, and is unable
+     * to be modified.
+     */
+#ifdef CONFIG_CMDLINE_OVERRIDE
+	p = of_get_flat_dt_prop(node, "bootargs-override", &l);
+	if (p != NULL && l > 0)
+		strlcpy(data, p, min((int)l, COMMAND_LINE_SIZE));
+#endif
+
 	/*
 	 * Reverse the child list. Some drivers assumes node order matches .dts
 	 * node order

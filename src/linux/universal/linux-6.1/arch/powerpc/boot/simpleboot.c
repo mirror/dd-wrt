@@ -65,6 +65,11 @@ void platform_init(unsigned long r3, unsigned long r4, unsigned long r5,
 	if (sizeof(void *) == 4 && memsize64 >= 0x100000000ULL)
 		memsize64 = 0xffffffff;
 
+	/* Reserve upper 1 MB of memory for CPU1 spin-table */
+	if (memsize64 > 0x100000) {
+		memsize64 = memsize64 - 0x100000;
+	}
+
 	/* finally, setup the timebase */
 	node = fdt_node_offset_by_prop_value(_dtb_start, -1, "device_type",
 					     "cpu", sizeof("cpu"));

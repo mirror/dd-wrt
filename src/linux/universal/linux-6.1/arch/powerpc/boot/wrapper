@@ -341,6 +341,14 @@ adder875-redboot)
     platformo="$object/fixed-head.o $object/redboot-8xx.o"
     binary=y
     ;;
+simpleboot-br200-wp|\
+simpleboot-ws-ap3715i|\
+simpleboot-ws-ap3825i|\
+simpleboot-tl-wdr4900-v1)
+    platformo="$object/fixed-head.o $object/simpleboot.o"
+    link_address='0x1000000'
+    binary=y
+    ;;
 simpleboot-*)
     platformo="$object/fixed-head.o $object/simpleboot.o"
     binary=y

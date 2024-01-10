@@ -179,6 +179,9 @@ src-plat-$(CONFIG_PPC_PSERIES) += pseries-head.S
 src-plat-$(CONFIG_PPC_POWERNV) += pseries-head.S
 src-plat-$(CONFIG_PPC_IBM_CELL_BLADE) += pseries-head.S
 src-plat-$(CONFIG_MVME7100) += motload-head.S mvme7100.c
+src-plat-$(CONFIG_BR200_WP) += simpleboot.c fixed-head.S
+src-plat-$(CONFIG_TL_WDR4900_V1) += simpleboot.c fixed-head.S
+src-plat-$(CONFIG_WS_AP3825I) += simpleboot.c fixed-head.S
 
 src-plat-$(CONFIG_PPC_MICROWATT) += fixed-head.S microwatt.c
 
@@ -359,7 +362,10 @@ image-$(CONFIG_TQM8548)			+= cuImage.tqm8548
 image-$(CONFIG_TQM8555)			+= cuImage.tqm8555
 image-$(CONFIG_TQM8560)			+= cuImage.tqm8560
 image-$(CONFIG_KSI8560)			+= cuImage.ksi8560
-
+image-$(CONFIG_BR200_WP)		+= simpleImage.br200-wp
+image-$(CONFIG_TL_WDR4900_V1)		+= simpleImage.tl-wdr4900-v1
+image-$(CONFIG_WS_AP3715I)		+= simpleImage.ws-ap3715i
+image-$(CONFIG_WS_AP3825I)		+= simpleImage.ws-ap3825i
 # Board ports in arch/powerpc/platform/86xx/Kconfig
 image-$(CONFIG_MVME7100)                += dtbImage.mvme7100
 
