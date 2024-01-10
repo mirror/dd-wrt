@@ -538,7 +538,7 @@ static void detect_wireless_devices(int mask)
 	}
 #endif
 #ifdef HAVE_IWLWIFI
-	if ((mask & RADIO_IWLWIFI)) {
+	if ((mask & RADIO_IWLWIFI) && !nvram_match("nomt76", "1")) {
 		insmod("libipw");
 		if (!detectchange("ipw2100") && !detectchange("ipw2200"))
 			rmmod("libipw");
