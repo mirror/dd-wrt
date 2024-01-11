@@ -681,9 +681,12 @@ static int print_sta_handler(struct nl_msg *msg, void *arg)
 
 	printf("\n\tcurrent time:\t%llu ms\n", now_ms);
 
-	if (sinfo[NL80211_STA_INFO_RADIONAME])
+	if (sinfo[NL80211_STA_INFO_RADIONAME]) {
+		char *radio = nla_data(sinfo[NL80211_STA_INFO_RADIONAME]);
+		if (*radio)
 		printf("\n\tRadio Name:\t%s",
-			nla_data(sinfo[NL80211_STA_INFO_RADIONAME]));
+			radio);
+	}
 	return NL_SKIP;
 }
 
