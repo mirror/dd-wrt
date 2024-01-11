@@ -21,4 +21,7 @@ struct md5_state {
 	u64 byte_count;
 };
 
+int md5_update(struct shash_desc *desc, const u8 *data, unsigned int len);
+int md5_final(struct shash_desc *desc, u8 *out);
+
 #endif

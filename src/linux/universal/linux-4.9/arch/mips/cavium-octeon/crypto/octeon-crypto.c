@@ -44,6 +44,23 @@ unsigned long octeon_crypto_enable(struct octeon_cop2_state *state)
 }
 EXPORT_SYMBOL_GPL(octeon_crypto_enable);
 
+unsigned long octeon_crypto_enable_no_irq_save(struct octeon_cop2_state *state)
+{
+	int status;
+
+	status = read_c0_status();
+	write_c0_status(status | ST0_CU2);
+	if (KSTK_STATUS(current) & ST0_CU2) {
+		octeon_cop2_save(&(current->thread.cp2));
+		KSTK_STATUS(current) &= ~ST0_CU2;
+		status &= ~ST0_CU2;
+	} else if (status & ST0_CU2) {
+		octeon_cop2_save(state);
+	}
+	return status & ST0_CU2;
+}
+EXPORT_SYMBOL_GPL(octeon_crypto_enable_no_irq_save);
+
 /**
  * Disable access to Octeon's COP2 crypto hardware in the kernel. This must be
  * called after an octeon_crypto_enable() before any context switch or return to
@@ -66,3 +83,14 @@ void octeon_crypto_disable(struct octeon_cop2_state *state,
 	preempt_enable();
 }
 EXPORT_SYMBOL_GPL(octeon_crypto_disable);
+
+void octeon_crypto_disable_no_irq_save(struct octeon_cop2_state *state,
+			   unsigned long crypto_flags)
+{
+	if (crypto_flags & ST0_CU2)
+		octeon_cop2_restore(state);
+	else
+		write_c0_status(read_c0_status() & ~ST0_CU2);
+	local_irq_restore(flags);
+}
+EXPORT_SYMBOL_GPL(octeon_crypto_disable_no_irq_save);

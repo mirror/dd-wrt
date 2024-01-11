@@ -86,6 +86,10 @@ static int octeon_md5_update(struct shash_desc *desc, const u8 *data,
 	struct octeon_cop2_state state;
 	unsigned long flags;
 
+	if (in_interrupt()) {
+		return md5_update(desc, data, len);
+	}
+
 	mctx->byte_count += len;
 
 	if (avail > len) {
@@ -97,7 +101,7 @@ static int octeon_md5_update(struct shash_desc *desc, const u8 *data,
 	memcpy((char *)mctx->block + (sizeof(mctx->block) - avail), data,
 	       avail);
 
-	flags = octeon_crypto_enable(&state);
+	flags = octeon_crypto_enable_no_irq_save(&state);
 	octeon_md5_store_hash(mctx);
 
 	octeon_md5_transform(mctx->block);
@@ -111,7 +115,7 @@ static int octeon_md5_update(struct shash_desc *desc, const u8 *data,
 	}
 
 	octeon_md5_read_hash(mctx);
-	octeon_crypto_disable(&state, flags);
+	octeon_crypto_disable_no_irq_save(&state, flags);
 
 	memcpy(mctx->block, data, len);
 
@@ -127,9 +131,13 @@ static int octeon_md5_final(struct shash_desc *desc, u8 *out)
 	struct octeon_cop2_state state;
 	unsigned long flags;
 
+	if (in_interrupt()) {
+		return md5_final(desc, out);
+	}
+
 	*p++ = 0x80;
 
-	flags = octeon_crypto_enable(&state);
+	flags = octeon_crypto_enable_no_irq_save(&state);
 	octeon_md5_store_hash(mctx);
 
 	if (padding < 0) {
@@ -145,7 +153,7 @@ static int octeon_md5_final(struct shash_desc *desc, u8 *out)
 	octeon_md5_transform(mctx->block);
 
 	octeon_md5_read_hash(mctx);
-	octeon_crypto_disable(&state, flags);
+	octeon_crypto_disable_no_irq_save(&state, flags);
 
 	memcpy(out, mctx->hash, sizeof(mctx->hash));
 	memset(mctx, 0, sizeof(*mctx));

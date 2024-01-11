@@ -134,6 +134,9 @@ static int octeon_sha1_update(struct shash_desc *desc, const u8 *data,
 	struct sha1_state *sctx = shash_desc_ctx(desc);
 	struct octeon_cop2_state state;
 	unsigned long flags;
+	if (in_interrupt()) {
+		return sha1_update(desc, data, len);
+	}
 
 	/*
 	 * Small updates never reach the crypto engine, so the generic sha1 is
@@ -143,13 +146,13 @@ static int octeon_sha1_update(struct shash_desc *desc, const u8 *data,
 	if ((sctx->count % SHA1_BLOCK_SIZE) + len < SHA1_BLOCK_SIZE)
 		return crypto_sha1_update(desc, data, len);
 
-	flags = octeon_crypto_enable(&state);
+	flags = octeon_crypto_enable_no_irq_save(&state);
 	octeon_sha1_store_hash(sctx);
 
 	__octeon_sha1_update(sctx, data, len);
 
 	octeon_sha1_read_hash(sctx);
-	octeon_crypto_disable(&state, flags);
+	octeon_crypto_disable_no_irq_save(&state, flags);
 
 	return 0;
 }
@@ -166,6 +169,9 @@ static int octeon_sha1_final(struct shash_desc *desc, u8 *out)
 	unsigned long flags;
 	unsigned int index;
 	__be64 bits;
+	if (in_interrupt()) {
+		return sha1_finup(desc, NULL, 0, out)
+	}
 
 	/* Save number of bits. */
 	bits = cpu_to_be64(sctx->count << 3);
@@ -174,7 +180,7 @@ static int octeon_sha1_final(struct shash_desc *desc, u8 *out)
 	index = sctx->count & 0x3f;
 	pad_len = (index < 56) ? (56 - index) : ((64 + 56) - index);
 
-	flags = octeon_crypto_enable(&state);
+	flags = octeon_crypto_enable_no_irq_save(&state);
 	octeon_sha1_store_hash(sctx);
 
 	__octeon_sha1_update(sctx, padding, pad_len);
@@ -183,7 +189,7 @@ static int octeon_sha1_final(struct shash_desc *desc, u8 *out)
 	__octeon_sha1_update(sctx, (const u8 *)&bits, sizeof(bits));
 
 	octeon_sha1_read_hash(sctx);
-	octeon_crypto_disable(&state, flags);
+	octeon_crypto_disable_no_irq_save(&state, flags);
 
 	/* Store state in digest */
 	memcpy(dst, sctx->state, sizeof(__be32) * 5);

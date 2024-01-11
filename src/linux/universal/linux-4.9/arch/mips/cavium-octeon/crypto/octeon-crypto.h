@@ -21,6 +21,10 @@ extern unsigned long octeon_crypto_enable(struct octeon_cop2_state *state);
 extern void octeon_crypto_disable(struct octeon_cop2_state *state,
 				  unsigned long flags);
 
+extern unsigned long octeon_crypto_enable_no_irq_save(struct octeon_cop2_state *state);
+extern void octeon_crypto_disable_no_irq_save(struct octeon_cop2_state *state,
+				  unsigned long flags);
+
 #define octeon_prefetch_prefx(X, address, offset)     \
 	asm volatile("pref %[type], %[off](%[rbase])" \
 		     :                                \

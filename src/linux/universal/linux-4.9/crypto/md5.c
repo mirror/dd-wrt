@@ -49,7 +49,7 @@ static int md5_init(struct shash_desc *desc)
 	return 0;
 }
 
-static int md5_update(struct shash_desc *desc, const u8 *data, unsigned int len)
+int md5_update(struct shash_desc *desc, const u8 *data, unsigned int len)
 {
 	struct md5_state *mctx = shash_desc_ctx(desc);
 	const u32 avail = sizeof(mctx->block) - (mctx->byte_count & 0x3f);
@@ -80,8 +80,9 @@ static int md5_update(struct shash_desc *desc, const u8 *data, unsigned int len)
 
 	return 0;
 }
+EXPORT_SYMBOL(md5_update);
 
-static int md5_final(struct shash_desc *desc, u8 *out)
+int md5_final(struct shash_desc *desc, u8 *out)
 {
 	struct md5_state *mctx = shash_desc_ctx(desc);
 	const unsigned int offset = mctx->byte_count & 0x3f;
@@ -108,6 +109,7 @@ static int md5_final(struct shash_desc *desc, u8 *out)
 
 	return 0;
 }
+EXPORT_SYMBOL(md5_final);
 
 static int md5_export(struct shash_desc *desc, void *out)
 {

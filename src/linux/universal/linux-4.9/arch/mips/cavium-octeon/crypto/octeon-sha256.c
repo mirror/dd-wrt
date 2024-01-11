@@ -138,7 +138,9 @@ static int octeon_sha256_update(struct shash_desc *desc, const u8 *data,
 	struct sha256_state *sctx = shash_desc_ctx(desc);
 	struct octeon_cop2_state state;
 	unsigned long flags;
-
+	if (in_interrupt()) {
+		return sha256_update(desc, data, len);
+	}
 	/*
 	 * Small updates never reach the crypto engine, so the generic sha256 is
 	 * faster because of the heavyweight octeon_crypto_enable() /
@@ -147,13 +149,13 @@ static int octeon_sha256_update(struct shash_desc *desc, const u8 *data,
 	if ((sctx->count % SHA256_BLOCK_SIZE) + len < SHA256_BLOCK_SIZE)
 		return crypto_sha256_update(desc, data, len);
 
-	flags = octeon_crypto_enable(&state);
+	flags = octeon_crypto_enable_no_irq_save(&state);
 	octeon_sha256_store_hash(sctx);
 
 	__octeon_sha256_update(sctx, data, len);
 
 	octeon_sha256_read_hash(sctx);
-	octeon_crypto_disable(&state, flags);
+	octeon_crypto_disable_no_irq_save(&state, flags);
 
 	return 0;
 }
@@ -171,6 +173,10 @@ static int octeon_sha256_final(struct shash_desc *desc, u8 *out)
 	unsigned int index;
 	__be64 bits;
 
+	if (in_interrupt()) {
+		return sha256_finup(desc, NULL, 0, out)
+	}
+	
 	/* Save number of bits. */
 	bits = cpu_to_be64(sctx->count << 3);
 
@@ -178,7 +184,7 @@ static int octeon_sha256_final(struct shash_desc *desc, u8 *out)
 	index = sctx->count & 0x3f;
 	pad_len = (index < 56) ? (56 - index) : ((64 + 56) - index);
 
-	flags = octeon_crypto_enable(&state);
+	flags = octeon_crypto_enable_no_irq_save(&state);
 	octeon_sha256_store_hash(sctx);
 
 	__octeon_sha256_update(sctx, padding, pad_len);
@@ -187,7 +193,7 @@ static int octeon_sha256_final(struct shash_desc *desc, u8 *out)
 	__octeon_sha256_update(sctx, (const u8 *)&bits, sizeof(bits));
 
 	octeon_sha256_read_hash(sctx);
-	octeon_crypto_disable(&state, flags);
+	octeon_crypto_disable_no_irq_save(&state, flags);
 
 	/* Store state in digest */
 	memcpy(dst, sctx->state, sizeof(__be32) * 8);
