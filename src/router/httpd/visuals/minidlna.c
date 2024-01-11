@@ -52,8 +52,7 @@ EJ_VISIBLE void ej_dlna_sharepaths(webs_t wp, int argc, char_t **argv)
 	websWrite(wp, "	<input type=\"hidden\" name=\"dlna_shares_count\" id=\"dlna_shares_count\" value=\"%d\">\n", rows);
 	rows = 5;
 
-	websWrite(wp,
-		  "	<input type=\"hidden\" name=\"dlna_shares_count_limit\" id=\"dlna_shares_count_limit\" value=\"%d\">\n",
+	websWrite(wp, "	<input type=\"hidden\" name=\"dlna_shares_count_limit\" id=\"dlna_shares_count_limit\" value=\"%d\">\n",
 		  rows);
 	rows = 0;
 
