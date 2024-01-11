@@ -1524,7 +1524,7 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 
 			if (nvram_nmatch("ng-only", "%s_net_mode", prefix) || nvram_nmatch("n2-only", "%s_net_mode", prefix) ||
 			    nvram_nmatch("bg-mixed", "%s_net_mode", prefix) || nvram_nmatch("ng-mixed", "%s_net_mode", prefix) ||
-			    nvram_nmatch("b-only", "%s_net_mode", prefix) || nvram_nmatch("g-only", "%s_net_mode", prefix)) {
+			    nvram_nmatch("b-only", "%s_net_mode", prefix) || nvram_nmatch("g-only", "%s_net_mode", prefix) || nvram_nmatch("axg-only", "%s_net_mode", prefix)) {
 				checkband = 2;
 			}
 			if (nvram_nmatch("a-only", "%s_net_mode", prefix) || nvram_nmatch("na-only", "%s_net_mode", prefix) ||
@@ -2042,6 +2042,15 @@ static void show_netmode(webs_t wp, char *prefix)
 				  nvram_match(wl_net_mode, "n2-only") ? "selected=\\\"selected\\\"" : "");
 		} else {
 			websWrite(wp, "document.write(\"<option value=\\\"n-only\\\" %s>\" + wl_basic.n + \"</option>\");\n",
+				  nvram_match(wl_net_mode, "n-only") ? "selected=\\\"selected\\\"" : "");
+		}
+	}
+	if (has_ax(prefix) && has_2ghz(prefix)) {
+		if (has_5ghz(prefix)) {
+			websWrite(wp, "document.write(\"<option value=\\\"axg-only\\\" %s>\" + wl_basic.axg + \"</option>\");\n",
+				  nvram_match(wl_net_mode, "n2-only") ? "selected=\\\"selected\\\"" : "");
+		} else {
+			websWrite(wp, "document.write(\"<option value=\\\"axg-only\\\" %s>\" + wl_basic.ax + \"</option>\");\n",
 				  nvram_match(wl_net_mode, "n-only") ? "selected=\\\"selected\\\"" : "");
 		}
 	}
@@ -3261,7 +3270,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 #endif
 	if (has_ax(prefix)) {
 		char *netmode = nvram_nget("%s_net_mode", prefix);
-		if (!strcmp(netmode, "mixed") || !strcmp(netmode, "xacn-mixed") || !strcmp(netmode, "ax-only")) {
+		if (!strcmp(netmode, "mixed") || !strcmp(netmode, "xacn-mixed") || !strcmp(netmode, "ax-only") || !strcmp(netmode, "axg-only")) {
 			char color[32];
 			sprintf(color, "%s_he_bss_color", prefix);
 			showInputNum(wp, "wl_basic.he_bss_color", color, 2, 2, 0);
@@ -3398,7 +3407,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 	if (has_ldpc(prefix)) {
 		char *netmode = nvram_nget("%s_net_mode", prefix);
 		if ((strcmp(netmode, "mixed") && //
-		     strcmp(netmode, "ac-only") && strcmp(netmode, "acn-mixed") && strcmp(netmode, "ax-only") &&
+		     strcmp(netmode, "ac-only") && strcmp(netmode, "acn-mixed") && strcmp(netmode, "ax-only") && strcmp(netmode, "axg-only") &&
 		     strcmp(netmode, "xacn-mixed")))
 			showRadioInv(wp, "wl_basic.ldpc", wl_ldpc);
 	}
@@ -3546,7 +3555,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		if ((nvram_nmatch("n-only", "%s_net_mode", prefix) || nvram_nmatch("ng-only", "%s_net_mode", prefix) ||
 		     nvram_nmatch("n2-only", "%s_net_mode", prefix) || nvram_nmatch("mixed", "%s_net_mode", prefix) ||
 		     nvram_nmatch("n5-only", "%s_net_mode", prefix) || nvram_nmatch("ac-only", "%s_net_mode", prefix) ||
-		     nvram_nmatch("acn-mixed", "%s_net_mode", prefix) || nvram_nmatch("ax-only", "%s_net_mode", prefix) ||
+		     nvram_nmatch("acn-mixed", "%s_net_mode", prefix) || nvram_nmatch("ax-only", "%s_net_mode", prefix) || nvram_nmatch("axg-only", "%s_net_mode", prefix) ||
 		     nvram_nmatch("xacn-mixed", "%s_net_mode", prefix) || nvram_nmatch("na-only", "%s_net_mode", prefix))) {
 			websWrite(wp, "document.write(\"<option value=\\\"2040\\\" %s >\" + share.dynamicturbo + \"</option>\");\n",
 				  nvram_matchi(wl_width, 2040) ? "selected=\\\"selected\\\"" : "");
@@ -3556,7 +3565,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 	    (nvram_nmatch("n-only", "%s_net_mode", prefix) || nvram_nmatch("ng-only", "%s_net_mode", prefix) ||
 	     nvram_nmatch("n2-only", "%s_net_mode", prefix) || nvram_nmatch("mixed", "%s_net_mode", prefix) ||
 	     nvram_nmatch("n5-only", "%s_net_mode", prefix) || nvram_nmatch("ac-only", "%s_net_mode", prefix) ||
-	     nvram_nmatch("acn-mixed", "%s_net_mode", prefix) || nvram_nmatch("ax-only", "%s_net_mode", prefix) ||
+	     nvram_nmatch("acn-mixed", "%s_net_mode", prefix) || nvram_nmatch("ax-only", "%s_net_mode", prefix) || nvram_nmatch("axg-only", "%s_net_mode", prefix) ||
 	     nvram_nmatch("xacn-mixed", "%s_net_mode", prefix) || nvram_nmatch("na-only", "%s_net_mode", prefix))) {
 		if (!is_mac80211(prefix) || is_ath5k(prefix))
 			websWrite(wp, "document.write(\"<option value=\\\"40\\\" %s >\" + share.turbo + \"</option>\");\n",
@@ -3861,7 +3870,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		     nvram_nmatch("mixed", "%s_net_mode", prefix) || nvram_nmatch("n2-only", "%s_net_mode", prefix) ||
 		     nvram_nmatch("n5-only", "%s_net_mode", prefix) || nvram_nmatch("acn-mixed", "%s_net_mode", prefix) ||
 		     nvram_nmatch("ac-only", "%s_net_mode", prefix) || nvram_nmatch("xacn-mixed", "%s_net_mode", prefix) ||
-		     nvram_nmatch("ax-only", "%s_net_mode", prefix) || nvram_nmatch("na-only", "%s_net_mode", prefix))) {
+		     nvram_nmatch("ax-only", "%s_net_mode", prefix) || nvram_nmatch("na-only", "%s_net_mode", prefix) || nvram_nmatch("axg-only", "%s_net_mode", prefix))) {
 			show_channel(wp, prefix, prefix, 1);
 			websWrite(wp, "<div class=\"setting\">\n");
 			show_caption(wp, "label", "wl_basic.channel_width", NULL);
@@ -4459,6 +4468,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 				     nvram_nmatch("ac-only", "%s_net_mode", prefix) ||
 				     nvram_nmatch("acn-mixed", "%s_net_mode", prefix) ||
 				     nvram_nmatch("ax-only", "%s_net_mode", prefix) ||
+				     nvram_nmatch("axg-only", "%s_net_mode", prefix) ||
 				     nvram_nmatch("xacn-mixed", "%s_net_mode", prefix) ||
 				     nvram_nmatch("na-only", "%s_net_mode", prefix)))
 					websWrite(
@@ -4471,7 +4481,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		     (nvram_nmatch("n-only", "%s_net_mode", prefix) || nvram_nmatch("ng-only", "%s_net_mode", prefix) ||
 		      nvram_nmatch("n2-only", "%s_net_mode", prefix) || nvram_nmatch("mixed", "%s_net_mode", prefix) ||
 		      nvram_nmatch("n5-only", "%s_net_mode", prefix) || nvram_nmatch("ac-only", "%s_net_mode", prefix) ||
-		      nvram_nmatch("acn-mixed", "%s_net_mode", prefix) || nvram_nmatch("ax-only", "%s_net_mode", prefix) ||
+		      nvram_nmatch("acn-mixed", "%s_net_mode", prefix) || nvram_nmatch("ax-only", "%s_net_mode", prefix) || nvram_nmatch("axg-only", "%s_net_mode", prefix) ||
 		      nvram_nmatch("xacn-mixed", "%s_net_mode", prefix) || nvram_nmatch("na-only", "%s_net_mode", prefix)))) {
 			if (!is_mac80211(prefix) || is_ath5k(prefix))
 				websWrite(wp, "document.write(\"<option value=\\\"40\\\" %s >\" + share.turbo + \"</option>\");\n",
@@ -4531,7 +4541,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		    (nvram_nmatch("n-only", "%s_net_mode", prefix) || nvram_nmatch("ng-only", "%s_net_mode", prefix) ||
 		     nvram_nmatch("mixed", "%s_net_mode", prefix) || nvram_nmatch("n2-only", "%s_net_mode", prefix) ||
 		     nvram_nmatch("n5-only", "%s_net_mode", prefix) || nvram_nmatch("ac-only", "%s_net_mode", prefix) ||
-		     nvram_nmatch("acn-mixed", "%s_net_mode", prefix) || nvram_nmatch("ax-only", "%s_net_mode", prefix) ||
+		     nvram_nmatch("acn-mixed", "%s_net_mode", prefix) || nvram_nmatch("ax-only", "%s_net_mode", prefix) || nvram_nmatch("axg-only", "%s_net_mode", prefix) ||
 		     nvram_nmatch("xacn-mixed", "%s_net_mode", prefix) || nvram_nmatch("na-only", "%s_net_mode", prefix))) {
 			show_channel(wp, prefix, prefix, 1);
 			websWrite(wp, "<div class=\"setting\">\n");
@@ -5050,7 +5060,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 #endif
 	if (has_ax(prefix)) {
 		char *netmode = nvram_nget("%s_net_mode", prefix);
-		if (!strcmp(netmode, "mixed") || !strcmp(netmode, "xacn-mixed") || !strcmp(netmode, "ax-only")) {
+		if (!strcmp(netmode, "mixed") || !strcmp(netmode, "xacn-mixed") || !strcmp(netmode, "ax-only") || !strcmp(netmode, "axg-only")) {
 			char color[32];
 			sprintf(color, "%s_he_bss_color", prefix);
 			showInputNum(wp, "wl_basic.he_bss_color", color, 2, 2, 0);
@@ -5059,7 +5069,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 	if (has_ldpc(prefix)) {
 		char *netmode = nvram_nget("%s_net_mode", prefix);
 		if ((strcmp(netmode, "mixed") && //
-		     strcmp(netmode, "ac-only") && strcmp(netmode, "acn-mixed") && strcmp(netmode, "ax-only") &&
+		     strcmp(netmode, "ac-only") && strcmp(netmode, "acn-mixed") && strcmp(netmode, "ax-only") && strcmp(netmode, "axg-only") &&
 		     strcmp(netmode, "xacn-mixed")))
 			showRadioInv(wp, "wl_basic.ldpc", wl_ldpc);
 	}
