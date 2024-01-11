@@ -456,8 +456,6 @@ static void detect_wireless_devices(int mask)
 		insmod("thermal_sys");
 		insmod("hwmon");
 		fprintf(stderr, "load Medatek MT76 Driver\n");
-		int wificnt = 0;
-		int total = 0;
 		insmod("nls_base usb-common usbcore ehci-hcd ehci-platform ehci-fsl ehci-pci usb-uhci uhci-hcd usb-ohci ohci-hcd ohci-pci xhci-hcd xhci-pci xhci-plat-hcd xhci-mtk dwc_otg usb-libusual fsl-mph-dr-of phy-mxs-usb extcon-core extcon ci_hdrc ci13xxx_imx usbmisc_imx ci_hdrc_imx phy-qcom-dwc3 dwc3-of-simple dwc3 dwc3-qcom phy-qcom-hsusb phy-qcom-ssusb phy-qcom-ipq806x-usb phy-qcom-ipq806x-sata phy-qcom-ipq4019-usb");
 		insmod("mt76");
 		insmod("mt76-usb");
@@ -465,76 +463,29 @@ static void detect_wireless_devices(int mask)
 		insmod("mt76-connac-lib");
 		insmod("mt7615-common");
 		insmod("mt7663-usb-sdio-common");
-		wificnt += detectchange("mt7615e");
-		wificnt += detectchange("mt7663u");
-		wificnt += detectchange("mt7663s");
-/*		if (!wificnt) {
-			rmmod("mt7615_common");
-			rmmod("mt7615-common");
-			rmmod("mt7663-usb-sdio-common");
-			rmmod("mt7663_usb_sdio_common");
-			rmmod("mt76-sdio");
-		}*/
-		total += wificnt;
-		wificnt = 0;
+		insmod("mt7615e");
+		insmod("mt7663u");
+		insmod("mt7663s");
 		insmod("mt76x02-lib");
 		insmod("mt76x02-usb");
 		insmod("mt76x2-common");
-		wificnt += detectchange("mt76x2e");
-		wificnt += detectchange("mt76x2u");
-		total += wificnt;
-		wificnt = 0;
+		insmod("mt76x2e");
+		insmod("mt76x2u");
 		insmod("mt76x0-common");
-		wificnt += detectchange("mt76x0e");
-		wificnt += detectchange("mt76x0u");
-/*		if (!wificnt) {
-			rmmod("mt76x0-common");
-			rmmod("mt76x2-common");
-			rmmod("mt76x02-usb");
-			rmmod("mt76x02-lib");
-		}*/
-		total += wificnt;
-		wificnt = 0;
-		wificnt += detectchange("mt7603e");
-		wificnt += detectchange("mt7915e");
-		total += wificnt;
-		wificnt = 0;
+		insmod("mt76x0e");
+		insmod("mt76x0u");
+		insmod("mt7603e");
+		insmod("mt7915e");
 		insmod("mt7921-common");
 		insmod("mt76-sdio");
-		wificnt += detectchange("mt7921e");
-		wificnt += detectchange("mt7921s");
-/*		if (!wificnt) {
-			rmmod("mt7921s");
-			rmmod("mt7921e");
-			rmmod("mt76-sdio");
-			rmmod("mt7921-common");
-		}*/
-		total += wificnt;
-		wificnt = 0;
-		wificnt += detectchange("mt7996e");
-		if (!wificnt) {
-			rmmod("mt7996e");
-		}
-		total += wificnt;
-/*		if (!total) {
-			rmmod("mt76-usb");
-			rmmod("mt76_usb");
-			rmmod("mt76-connac-lib");
-			rmmod("mt76");
-		}*/
-		wificnt = 0;
+		insmod("mt7921e");
+		insmod("mt7921s");
+		insmod("mt7996e");
 		insmod("rt2x00lib");
 		insmod("rt2x00mmio");
 		insmod("rt2x00pci");
 		insmod("rt2800lib");
 		insmod("rt2800mmio");
-/*		if (!detectchange("rt2800pci")) {
-			rmmod("rt2800mmio");
-			rmmod("rt2800lib");
-			rmmod("rt2x00pci");
-			rmmod("rt2x00mmio");
-			rmmod("rt2x00lib");
-		}*/
 	}
 #endif
 #ifdef HAVE_IWLWIFI
