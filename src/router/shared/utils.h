@@ -1368,7 +1368,7 @@ static inline int is_mvebu(const char *prefix)
 	return 0;
 }
 #endif
-#ifdef HAVE_MT76
+#if defined(HAVE_MT76) || defined(HAVE_ATH11K)
 extern int is_mt7615(const char *prefix);
 extern int is_mt7915(const char *prefix);
 extern int is_mt7921(const char *prefix);
