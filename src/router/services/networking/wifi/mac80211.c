@@ -779,6 +779,7 @@ void setupHostAP_generic_ath9k(char *prefix, FILE *fp, int isrepeater, int aoss)
 			if (nvram_matchi(bw, 2040)) {
 				fprintf(fp, "dynamic_ht40=1\n");
 			} else {
+				fprintf(fp, "noscan=1\n");			    
 				fprintf(fp, "dynamic_ht40=0\n");
 			}
 		}
@@ -1175,7 +1176,7 @@ void setupHostAP_generic_ath9k(char *prefix, FILE *fp, int isrepeater, int aoss)
 					fprintf(fp, "vht_oper_chwidth=0\n");
 					break;
 				}
-				if (!strcmp(netmode, "ax-only") || !strcmp(netmode, "xacn-mixed")) {
+				if (!strcmp(netmode, "ax-only") || !strcmp(netmode, "xacn-mixed") || !strcmp(netmode, "mixed")) {
 					switch (usebw) {
 					case 40:
 						fprintf(fp, "he_oper_chwidth=0\n");
