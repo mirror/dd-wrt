@@ -27,21 +27,20 @@
 #include <asm/octeon/octeon.h>
 #include "octeon-crypto.h"
 
-#define DES_BLOCK_MASK	(~(DES_BLOCK_SIZE - 1))
-#define DES3_KEY_SIZE	(DES_KEY_SIZE * 3)
+#define DES_BLOCK_MASK (~(DES_BLOCK_SIZE - 1))
+#define DES3_KEY_SIZE (DES_KEY_SIZE * 3)
 struct octeon_des_ctx {
 	u8 key[DES3_KEY_SIZE];
 };
 
 static int octeon_3des_set_key(struct crypto_tfm *tfm, const u8 *key,
-			     unsigned int key_len)
+			       unsigned int key_len)
 {
 	struct octeon_des_ctx *ctx = crypto_tfm_ctx(tfm);
 	u32 tmp[DES_EXPKEY_WORDS];
 
 	/* check for weak keys */
-	if (!des_ekey(tmp, key) &&
-	    (tfm->crt_flags & CRYPTO_TFM_REQ_WEAK_KEY)) {
+	if (!des_ekey(tmp, key) && (tfm->crt_flags & CRYPTO_TFM_REQ_WEAK_KEY)) {
 		tfm->crt_flags |= CRYPTO_TFM_RES_WEAK_KEY;
 		return -EINVAL;
 	}
@@ -51,8 +50,8 @@ static int octeon_3des_set_key(struct crypto_tfm *tfm, const u8 *key,
 }
 
 static int octeon_3des_cbc_decrypt(struct blkcipher_desc *desc,
-			     struct scatterlist *dst,
-			     struct scatterlist *src, unsigned int nbytes)
+				   struct scatterlist *dst,
+				   struct scatterlist *src, unsigned int nbytes)
 {
 	struct octeon_des_ctx *ctx = crypto_blkcipher_ctx(desc->tfm);
 	struct blkcipher_walk walk;
@@ -60,7 +59,7 @@ static int octeon_3des_cbc_decrypt(struct blkcipher_desc *desc,
 	unsigned long flags;
 	int err, i, todo;
 	__be64 *iv;
-	__be64 *key	= (__be64*)ctx->key;
+	__be64 *key = (__be64 *)ctx->key;
 	__be64 *dataout;
 	__be64 *data;
 
@@ -68,20 +67,20 @@ static int octeon_3des_cbc_decrypt(struct blkcipher_desc *desc,
 	err = blkcipher_walk_virt(desc, &walk);
 	desc->flags &= ~CRYPTO_TFM_REQ_MAY_SLEEP;
 	flags = octeon_crypto_enable(&state);
-	write_octeon_64bit_3des_key(key[0],0);
-	write_octeon_64bit_3des_key(key[1],1);
-	write_octeon_64bit_3des_key(key[2],2);
-	iv = (__be64*)walk.iv;
+	write_octeon_64bit_3des_key(key[0], 0);
+	write_octeon_64bit_3des_key(key[1], 1);
+	write_octeon_64bit_3des_key(key[2], 2);
+	iv = (__be64 *)walk.iv;
 	write_octeon_64bit_3des_iv(*iv);
 
 	while ((nbytes = walk.nbytes)) {
 		todo = nbytes & DES_BLOCK_MASK;
-		dataout = (__be64*)walk.dst.virt.addr;
-		data = (__be64*)walk.src.virt.addr;
-		for (i=0;i<todo/DES_BLOCK_SIZE;i++) {
-	    		write_octeon_64bit_3des_enc_cbc(*data++);
-    			*dataout++ = read_octeon_64bit_3des_result();
-    		}
+		dataout = (__be64 *)walk.dst.virt.addr;
+		data = (__be64 *)walk.src.virt.addr;
+		for (i = 0; i < todo / DES_BLOCK_SIZE; i++) {
+			write_octeon_64bit_3des_enc_cbc(*data++);
+			*dataout++ = read_octeon_64bit_3des_result();
+		}
 		nbytes &= DES_BLOCK_SIZE - 1;
 		err = blkcipher_walk_done(desc, &walk, nbytes);
 	}
@@ -89,10 +88,9 @@ static int octeon_3des_cbc_decrypt(struct blkcipher_desc *desc,
 	return 0;
 }
 
-
 static int octeon_3des_cbc_encrypt(struct blkcipher_desc *desc,
-			     struct scatterlist *dst,
-			     struct scatterlist *src, unsigned int nbytes)
+				   struct scatterlist *dst,
+				   struct scatterlist *src, unsigned int nbytes)
 {
 	struct octeon_des_ctx *ctx = crypto_blkcipher_ctx(desc->tfm);
 	struct blkcipher_walk walk;
@@ -100,7 +98,7 @@ static int octeon_3des_cbc_encrypt(struct blkcipher_desc *desc,
 	unsigned long flags;
 	int err, i, todo;
 	__be64 *iv;
-	__be64 *key	= (__be64*)ctx->key;
+	__be64 *key = (__be64 *)ctx->key;
 	__be64 *dataout;
 	__be64 *data;
 
@@ -108,20 +106,20 @@ static int octeon_3des_cbc_encrypt(struct blkcipher_desc *desc,
 	err = blkcipher_walk_virt(desc, &walk);
 	desc->flags &= ~CRYPTO_TFM_REQ_MAY_SLEEP;
 	flags = octeon_crypto_enable(&state);
-	write_octeon_64bit_3des_key(key[0],0);
-	write_octeon_64bit_3des_key(key[1],1);
-	write_octeon_64bit_3des_key(key[2],2);
-	iv = (__be64*)walk.iv;
+	write_octeon_64bit_3des_key(key[0], 0);
+	write_octeon_64bit_3des_key(key[1], 1);
+	write_octeon_64bit_3des_key(key[2], 2);
+	iv = (__be64 *)walk.iv;
 	write_octeon_64bit_3des_iv(*iv);
 
 	while ((nbytes = walk.nbytes)) {
 		todo = nbytes & DES_BLOCK_MASK;
-		dataout = (__be64*)walk.dst.virt.addr;
-		data = (__be64*)walk.src.virt.addr;
-		for (i=0;i<todo/DES_BLOCK_SIZE;i++) {
-	    		write_octeon_64bit_3des_dec_cbc(*data++);
-    			*dataout++ = read_octeon_64bit_3des_result();
-    		}
+		dataout = (__be64 *)walk.dst.virt.addr;
+		data = (__be64 *)walk.src.virt.addr;
+		for (i = 0; i < todo / DES_BLOCK_SIZE; i++) {
+			write_octeon_64bit_3des_dec_cbc(*data++);
+			*dataout++ = read_octeon_64bit_3des_result();
+		}
 		nbytes &= DES_BLOCK_SIZE - 1;
 		err = blkcipher_walk_done(desc, &walk, nbytes);
 	}
@@ -134,38 +132,36 @@ static void octeon_3des_encrypt(struct crypto_tfm *tfm, u8 *out, const u8 *in)
 	struct octeon_cop2_state state;
 	unsigned long flags;
 	struct octeon_des_ctx *ctx = crypto_tfm_ctx(tfm);
-	__be64 *data = (__be64*)in;
-	__be64 *dataout = (__be64*)out;
-	__be64 *key	= (__be64*)ctx->key;
+	__be64 *data = (__be64 *)in;
+	__be64 *dataout = (__be64 *)out;
+	__be64 *key = (__be64 *)ctx->key;
 	flags = octeon_crypto_enable(&state);
-	write_octeon_64bit_3des_key(key[0],0);
-	write_octeon_64bit_3des_key(key[1],1);
-	write_octeon_64bit_3des_key(key[2],2);
+	write_octeon_64bit_3des_key(key[0], 0);
+	write_octeon_64bit_3des_key(key[1], 1);
+	write_octeon_64bit_3des_key(key[2], 2);
 
-        write_octeon_64bit_3des_enc(*data++);
-        *dataout = read_octeon_64bit_3des_result();
+	write_octeon_64bit_3des_enc(*data++);
+	*dataout = read_octeon_64bit_3des_result();
 
 	octeon_crypto_disable(&state, flags);
 }
-
 
 static void octeon_3des_decrypt(struct crypto_tfm *tfm, u8 *out, const u8 *in)
 {
 	struct octeon_cop2_state state;
 	unsigned long flags;
 	struct octeon_des_ctx *ctx = crypto_tfm_ctx(tfm);
-	__be64 *data = (__be64*)in;
-	__be64 *dataout = (__be64*)out;
-	__be64 *key	= (__be64*)ctx->key;
-
+	__be64 *data = (__be64 *)in;
+	__be64 *dataout = (__be64 *)out;
+	__be64 *key = (__be64 *)ctx->key;
 
 	flags = octeon_crypto_enable(&state);
-	write_octeon_64bit_3des_key(key[0],0);
-	write_octeon_64bit_3des_key(key[1],1);
-	write_octeon_64bit_3des_key(key[2],2);
+	write_octeon_64bit_3des_key(key[0], 0);
+	write_octeon_64bit_3des_key(key[1], 1);
+	write_octeon_64bit_3des_key(key[2], 2);
 
-        write_octeon_64bit_3des_dec(*data++);
-        *dataout = read_octeon_64bit_3des_result();
+	write_octeon_64bit_3des_dec(*data++);
+	*dataout = read_octeon_64bit_3des_result();
 	octeon_crypto_disable(&state, flags);
 }
 

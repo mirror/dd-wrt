@@ -169,24 +169,23 @@ static int octeon_md5_import(struct shash_desc *desc, const void *in)
 	return 0;
 }
 
-static struct shash_alg alg = {
-	.digestsize	=	MD5_DIGEST_SIZE,
-	.init		=	octeon_md5_init,
-	.update		=	octeon_md5_update,
-	.final		=	octeon_md5_final,
-	.export		=	octeon_md5_export,
-	.import		=	octeon_md5_import,
-	.descsize	=	sizeof(struct md5_state),
-	.statesize	=	sizeof(struct md5_state),
-	.base		=	{
-		.cra_name	=	"md5",
-		.cra_driver_name=	"octeon-md5",
-		.cra_priority	=	OCTEON_CR_OPCODE_PRIORITY,
-		.cra_flags	=	CRYPTO_ALG_TYPE_SHASH,
-		.cra_blocksize	=	MD5_HMAC_BLOCK_SIZE,
-		.cra_module	=	THIS_MODULE,
-	}
-};
+static struct shash_alg alg = { .digestsize = MD5_DIGEST_SIZE,
+				.init = octeon_md5_init,
+				.update = octeon_md5_update,
+				.final = octeon_md5_final,
+				.export = octeon_md5_export,
+				.import = octeon_md5_import,
+				.descsize = sizeof(struct md5_state),
+				.statesize = sizeof(struct md5_state),
+				.base = {
+					.cra_name = "md5",
+					.cra_driver_name = "octeon-md5",
+					.cra_priority =
+						OCTEON_CR_OPCODE_PRIORITY,
+					.cra_flags = CRYPTO_ALG_TYPE_SHASH,
+					.cra_blocksize = MD5_HMAC_BLOCK_SIZE,
+					.cra_module = THIS_MODULE,
+				} };
 
 static int __init md5_mod_init(void)
 {

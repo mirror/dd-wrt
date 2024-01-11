@@ -136,7 +136,7 @@ static void __octeon_sha512_update(struct sha512_state *sctx, const u8 *data,
 		octeon_sha512_transform(sctx->buf);
 
 		for (i = part_len; i + SHA512_BLOCK_SIZE <= len;
-			i += SHA512_BLOCK_SIZE)
+		     i += SHA512_BLOCK_SIZE)
 			octeon_sha512_transform(&data[i]);
 
 		index = 0;
@@ -177,7 +177,9 @@ static int octeon_sha512_update(struct shash_desc *desc, const u8 *data,
 static int octeon_sha512_final(struct shash_desc *desc, u8 *hash)
 {
 	struct sha512_state *sctx = shash_desc_ctx(desc);
-	static u8 padding[128] = { 0x80, };
+	static u8 padding[128] = {
+		0x80,
+	};
 	struct octeon_cop2_state state;
 	__be64 *dst = (__be64 *)hash;
 	unsigned int pad_len;
@@ -191,7 +193,7 @@ static int octeon_sha512_final(struct shash_desc *desc, u8 *hash)
 
 	/* Pad out to 112 mod 128. */
 	index = sctx->count[0] & 0x7f;
-	pad_len = (index < 112) ? (112 - index) : ((128+112) - index);
+	pad_len = (index < 112) ? (112 - index) : ((128 + 112) - index);
 
 	flags = octeon_crypto_enable(&state);
 	octeon_sha512_store_hash(sctx);

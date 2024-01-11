@@ -161,7 +161,9 @@ static int octeon_sha256_update(struct shash_desc *desc, const u8 *data,
 static int octeon_sha256_final(struct shash_desc *desc, u8 *out)
 {
 	struct sha256_state *sctx = shash_desc_ctx(desc);
-	static const u8 padding[64] = { 0x80, };
+	static const u8 padding[64] = {
+		0x80,
+	};
 	struct octeon_cop2_state state;
 	__be32 *dst = (__be32 *)out;
 	unsigned int pad_len;
@@ -174,7 +176,7 @@ static int octeon_sha256_final(struct shash_desc *desc, u8 *out)
 
 	/* Pad out to 56 mod 64. */
 	index = sctx->count & 0x3f;
-	pad_len = (index < 56) ? (56 - index) : ((64+56) - index);
+	pad_len = (index < 56) ? (56 - index) : ((64 + 56) - index);
 
 	flags = octeon_crypto_enable(&state);
 	octeon_sha256_store_hash(sctx);

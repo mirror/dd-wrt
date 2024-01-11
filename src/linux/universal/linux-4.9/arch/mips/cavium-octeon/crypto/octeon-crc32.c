@@ -32,7 +32,6 @@
 #include <asm/octeon/octeon.h>
 #include "octeon-crypto.h"
 
-
 extern void octeon_cop2_crc_save(struct octeon_cop2_state *);
 extern void octeon_cop2_crc_restore(struct octeon_cop2_state *);
 
@@ -52,7 +51,8 @@ static unsigned long octeon_crypto_crc_enable(struct octeon_cop2_state *state)
 	return status & ST0_CU2;
 }
 
-static void octeon_crypto_crc_disable(struct octeon_cop2_state *state, unsigned long crypto_flags)
+static void octeon_crypto_crc_disable(struct octeon_cop2_state *state,
+				      unsigned long crypto_flags)
 {
 	if (crypto_flags & ST0_CU2)
 		octeon_cop2_crc_restore(state);
@@ -164,8 +164,8 @@ static u32 crc32c_octeon_le_hw(u32 crc, const u8 *p, unsigned int len)
 	return crc;
 }
 
-#define CHKSUM_BLOCK_SIZE	1
-#define CHKSUM_DIGEST_SIZE	4
+#define CHKSUM_BLOCK_SIZE 1
+#define CHKSUM_DIGEST_SIZE 4
 
 struct chksum_ctx {
 	u32 key;
@@ -190,7 +190,8 @@ static int chksum_init(struct shash_desc *desc)
  * If your algorithm starts with ~0, then XOR with ~0 before you set
  * the seed.
  */
-static int chksum_setkey(struct crypto_shash *tfm, const u8 *key, unsigned int keylen)
+static int chksum_setkey(struct crypto_shash *tfm, const u8 *key,
+			 unsigned int keylen)
 {
 	struct chksum_ctx *mctx = crypto_shash_ctx(tfm);
 
@@ -202,7 +203,8 @@ static int chksum_setkey(struct crypto_shash *tfm, const u8 *key, unsigned int k
 	return 0;
 }
 
-static int chksum_update(struct shash_desc *desc, const u8 *data, unsigned int length)
+static int chksum_update(struct shash_desc *desc, const u8 *data,
+			 unsigned int length)
 {
 	struct chksum_desc_ctx *ctx = shash_desc_ctx(desc);
 
@@ -224,21 +226,24 @@ static int __chksum_finup(u32 crc, const u8 *data, unsigned int len, u8 *out)
 	return 0;
 }
 
-static int chksum_finup(struct shash_desc *desc, const u8 *data, unsigned int len, u8 *out)
+static int chksum_finup(struct shash_desc *desc, const u8 *data,
+			unsigned int len, u8 *out)
 {
 	struct chksum_desc_ctx *ctx = shash_desc_ctx(desc);
 
 	return __chksum_finup(ctx->crc, data, len, out);
 }
 
-static int chksum_digest(struct shash_desc *desc, const u8 *data, unsigned int length, u8 *out)
+static int chksum_digest(struct shash_desc *desc, const u8 *data,
+			 unsigned int length, u8 *out)
 {
 	struct chksum_ctx *mctx = crypto_shash_ctx(desc->tfm);
 
 	return __chksum_finup(mctx->key, data, length, out);
 }
 
-static int chksumc_update(struct shash_desc *desc, const u8 *data, unsigned int length)
+static int chksumc_update(struct shash_desc *desc, const u8 *data,
+			  unsigned int length)
 {
 	struct chksum_desc_ctx *ctx = shash_desc_ctx(desc);
 	ctx->crc = crc32c_octeon_le_hw(ctx->crc, data, length);
@@ -259,14 +264,16 @@ static int __chksumc_finup(u32 crc, const u8 *data, unsigned int len, u8 *out)
 	return 0;
 }
 
-static int chksumc_finup(struct shash_desc *desc, const u8 *data, unsigned int len, u8 *out)
+static int chksumc_finup(struct shash_desc *desc, const u8 *data,
+			 unsigned int len, u8 *out)
 {
 	struct chksum_desc_ctx *ctx = shash_desc_ctx(desc);
 
 	return __chksumc_finup(ctx->crc, data, len, out);
 }
 
-static int chksumc_digest(struct shash_desc *desc, const u8 *data, unsigned int length, u8 *out)
+static int chksumc_digest(struct shash_desc *desc, const u8 *data,
+			  unsigned int length, u8 *out)
 {
 	struct chksum_ctx *mctx = crypto_shash_ctx(desc->tfm);
 
@@ -289,49 +296,47 @@ static int crc32c_cra_init(struct crypto_tfm *tfm)
 	return 0;
 }
 
-static struct shash_alg crc32_alg = {
-	.digestsize = CHKSUM_DIGEST_SIZE,
-	.setkey = chksum_setkey,
-	.init = chksum_init,
-	.update = chksum_update,
-	.final = chksum_final,
-	.finup = chksum_finup,
-	.digest = chksum_digest,
-	.descsize = sizeof(struct chksum_desc_ctx),
-	.base = {
-		 .cra_name = "crc32",
-		 .cra_driver_name = "octeon-crc32",
-		 .cra_priority = 300,
-		 .cra_flags = CRYPTO_ALG_OPTIONAL_KEY,
-		 .cra_blocksize = CHKSUM_BLOCK_SIZE,
-		 .cra_alignmask = 3,
-		 .cra_ctxsize = sizeof(struct chksum_ctx),
-		 .cra_module = THIS_MODULE,
-		 .cra_init = crc32_cra_init,
-		  }
-};
+static struct shash_alg
+	crc32_alg = { .digestsize = CHKSUM_DIGEST_SIZE,
+		      .setkey = chksum_setkey,
+		      .init = chksum_init,
+		      .update = chksum_update,
+		      .final = chksum_final,
+		      .finup = chksum_finup,
+		      .digest = chksum_digest,
+		      .descsize = sizeof(struct chksum_desc_ctx),
+		      .base = {
+			      .cra_name = "crc32",
+			      .cra_driver_name = "octeon-crc32",
+			      .cra_priority = 300,
+			      .cra_flags = CRYPTO_ALG_OPTIONAL_KEY,
+			      .cra_blocksize = CHKSUM_BLOCK_SIZE,
+			      .cra_alignmask = 3,
+			      .cra_ctxsize = sizeof(struct chksum_ctx),
+			      .cra_module = THIS_MODULE,
+			      .cra_init = crc32_cra_init,
+		      } };
 
-static struct shash_alg crc32c_alg = {
-	.digestsize = CHKSUM_DIGEST_SIZE,
-	.setkey = chksum_setkey,
-	.init = chksum_init,
-	.update = chksumc_update,
-	.final = chksumc_final,
-	.finup = chksumc_finup,
-	.digest = chksumc_digest,
-	.descsize = sizeof(struct chksum_desc_ctx),
-	.base = {
-		 .cra_name = "crc32c",
-		 .cra_driver_name = "octeon-crc32c",
-		 .cra_priority = 300,
-		 .cra_flags = CRYPTO_ALG_OPTIONAL_KEY,
-		 .cra_blocksize = CHKSUM_BLOCK_SIZE,
-		 .cra_alignmask = 3,
-		 .cra_ctxsize = sizeof(struct chksum_ctx),
-		 .cra_module = THIS_MODULE,
-		 .cra_init = crc32c_cra_init,
-		  }
-};
+static struct shash_alg
+	crc32c_alg = { .digestsize = CHKSUM_DIGEST_SIZE,
+		       .setkey = chksum_setkey,
+		       .init = chksum_init,
+		       .update = chksumc_update,
+		       .final = chksumc_final,
+		       .finup = chksumc_finup,
+		       .digest = chksumc_digest,
+		       .descsize = sizeof(struct chksum_desc_ctx),
+		       .base = {
+			       .cra_name = "crc32c",
+			       .cra_driver_name = "octeon-crc32c",
+			       .cra_priority = 300,
+			       .cra_flags = CRYPTO_ALG_OPTIONAL_KEY,
+			       .cra_blocksize = CHKSUM_BLOCK_SIZE,
+			       .cra_alignmask = 3,
+			       .cra_ctxsize = sizeof(struct chksum_ctx),
+			       .cra_module = THIS_MODULE,
+			       .cra_init = crc32c_cra_init,
+		       } };
 
 static int __init crc32_mod_init(void)
 {
