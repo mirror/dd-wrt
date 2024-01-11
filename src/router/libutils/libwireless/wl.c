@@ -3665,7 +3665,7 @@ IS_DRIVER(ath11k, "pci:ath11k_pci");
 #ifdef HAVE_BRCMFMAC
 IS_DRIVER(brcmfmac, "pci:brcmfmac");
 #endif
-#ifdef HAVE_MT76
+#if defined(HAVE_MT76) || defined(HAVE_ATH11K)
 IS_DRIVER(mt7615, "pci:mt7615e");
 IS_DRIVER(mt7915, "pci:mt7915e");
 IS_DRIVER(mt7921, "pci:mt7921e");
