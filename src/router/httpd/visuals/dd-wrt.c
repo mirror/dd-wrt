@@ -3492,7 +3492,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		nvram_default_get(wl_shortgi, "1");
 		showRadio(wp, "wl_basic.shortgi", wl_shortgi);
 	}
-	if (has_5ghz(prefix) && has_ac(prefix)) {
+	if ((has_5ghz(prefix) && has_ac(prefix)) || has_ax(prefix)) {
 		if (has_subeamforming(prefix)) {
 			nvram_default_get(wl_subf, "0");
 			showRadio(wp, "wl_basic.subf", wl_subf);
@@ -5148,7 +5148,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		nvram_default_get(wl_shortgi, "1");
 		showRadio(wp, "wl_basic.shortgi", wl_shortgi);
 	}
-	if (has_5ghz(prefix) && has_ac(prefix)) {
+	if ((has_5ghz(prefix) && has_ac(prefix)) || has_ax(prefix)) {
 		if (has_subeamforming(prefix)) {
 			nvram_default_get(wl_subf, "0");
 			showRadio(wp, "wl_basic.subf", wl_subf);
