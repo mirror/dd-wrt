@@ -54,6 +54,9 @@ static __always_inline void ghash_do_update(int blocks, u64 dg[],
 					    struct ghash_key *key,
 					    const char *head)
 {
+	struct octeon_cop2_state state;
+	unsigned long flags;
+	flags = octeon_crypto_enable(&state);
 	write_octeon_64bit_gfm_poly((uint64_t)0xe100);
 	write_octeon_64bit_gfm_resinp(dg[0], 0);
 	write_octeon_64bit_gfm_resinp(dg[1], 1);
@@ -74,13 +77,12 @@ static __always_inline void ghash_do_update(int blocks, u64 dg[],
 	} while (--blocks);
 	dg[0] = read_octeon_64bit_gfm_resinp(0);
 	dg[1] = read_octeon_64bit_gfm_resinp(1);
+	octeon_crypto_disable(&state, flags);
 }
 
 static int ghash_update(struct shash_desc *desc, const u8 *src,
 			unsigned int len)
 {
-	struct octeon_cop2_state state;
-	unsigned long flags;
 	struct ghash_desc_ctx *ctx = shash_desc_ctx(desc);
 	unsigned int partial = ctx->count % GHASH_BLOCK_SIZE;
 	ctx->count += len;
@@ -100,10 +102,8 @@ static int ghash_update(struct shash_desc *desc, const u8 *src,
 		blocks = len / GHASH_BLOCK_SIZE;
 		len %= GHASH_BLOCK_SIZE;
 
-		flags = octeon_crypto_enable(&state);
 		ghash_do_update(blocks, ctx->digest, src, key,
 				partial ? ctx->buf : NULL);
-		octeon_crypto_disable(&state, flags);
 
 		src += blocks * GHASH_BLOCK_SIZE;
 		partial = 0;
@@ -115,8 +115,6 @@ static int ghash_update(struct shash_desc *desc, const u8 *src,
 
 static int ghash_final(struct shash_desc *desc, u8 *dst)
 {
-	struct octeon_cop2_state state;
-	unsigned long flags;
 	struct ghash_desc_ctx *ctx = shash_desc_ctx(desc);
 	unsigned int partial = ctx->count % GHASH_BLOCK_SIZE;
 
@@ -125,9 +123,7 @@ static int ghash_final(struct shash_desc *desc, u8 *dst)
 
 		memset(ctx->buf + partial, 0, GHASH_BLOCK_SIZE - partial);
 
-		flags = octeon_crypto_enable(&state);
 		ghash_do_update(1, ctx->digest, ctx->buf, key, NULL);
-		octeon_crypto_disable(&state, flags);
 	}
 	memcpy(dst, ctx->digest, 16);
 	memzero_explicit(ctx, sizeof(*ctx));
@@ -175,9 +171,12 @@ static struct shash_alg ghash_alg = {
 static __always_inline void __octeon_aes_encrypt(u32 *rk, u8 *out, u8 *in,
 						 u32 keylen)
 {
+	struct octeon_cop2_state state;
+	unsigned long flags;
 	__be64 *dataout = (__be64 *)out;
 	__be64 *data = (__be64 *)in;
 	__be64 *key = (__be64 *)rk;
+	flags = octeon_crypto_enable(&state);
 	write_octeon_64bit_aes_key(key[0], 0);
 	write_octeon_64bit_aes_key(key[1], 1);
 	write_octeon_64bit_aes_key(key[2], 2);
@@ -187,13 +186,12 @@ static __always_inline void __octeon_aes_encrypt(u32 *rk, u8 *out, u8 *in,
 	write_octeon_64bit_aes_enc1(*data);
 	*dataout++ = read_octeon_64bit_aes_result(0);
 	*dataout = read_octeon_64bit_aes_result(1);
+	octeon_crypto_disable(&state, flags);
 }
 
 static int gcm_setkey(struct crypto_aead *tfm, const u8 *inkey,
 		      unsigned int keylen)
 {
-	struct octeon_cop2_state state;
-	unsigned long flags;
 	struct gcm_aes_ctx *ctx = crypto_aead_ctx(tfm);
 	u8 key[GHASH_BLOCK_SIZE];
 	int ret, i;
@@ -205,10 +203,8 @@ static int gcm_setkey(struct crypto_aead *tfm, const u8 *inkey,
 	for (i = 0; i < ctx->aes_key.key_length / 4; i++)
 		ctx->aes_key.key_enc[i] = cpu_to_le32(ctx->aes_key.key_enc[i]);
 	ctx->aes_key.key_length = ctx->aes_key.key_length / 8 - 1;
-	flags = octeon_crypto_enable(&state);
 	__octeon_aes_encrypt(ctx->aes_key.key_enc, key, (u8[AES_BLOCK_SIZE]){},
 			     ctx->aes_key.key_length);
-	octeon_crypto_disable(&state, flags);
 
 	return __ghash_setkey(&ctx->ghash_key, key, sizeof(be128));
 }
@@ -307,8 +303,6 @@ static void gcm_final(struct aead_request *req, struct gcm_aes_ctx *ctx,
 
 static int gcm_encrypt(struct aead_request *req)
 {
-	struct octeon_cop2_state state;
-	unsigned long flags;
 	struct crypto_aead *aead = crypto_aead_reqtfm(req);
 	struct gcm_aes_ctx *ctx = crypto_aead_ctx(aead);
 	struct skcipher_walk walk;
@@ -318,7 +312,6 @@ static int gcm_encrypt(struct aead_request *req)
 	u64 dg[2] = {};
 	int err;
 
-	flags = octeon_crypto_enable(&state);
 	if (req->assoclen)
 		gcm_calculate_auth_mac(req, dg);
 
@@ -384,11 +377,9 @@ static int gcm_encrypt(struct aead_request *req)
 	}
 
 	if (err) {
-		octeon_crypto_disable(&state, flags);
 		return err;
 	}
 	gcm_final(req, ctx, dg, tag, req->cryptlen);
-	octeon_crypto_disable(&state, flags);
 
 	/* copy authtag to end of dst */
 	scatterwalk_map_and_copy(tag, req->dst, req->assoclen + req->cryptlen,
@@ -399,8 +390,6 @@ static int gcm_encrypt(struct aead_request *req)
 
 static int gcm_decrypt(struct aead_request *req)
 {
-	struct octeon_cop2_state state;
-	unsigned long flags;
 	struct crypto_aead *aead = crypto_aead_reqtfm(req);
 	struct gcm_aes_ctx *ctx = crypto_aead_ctx(aead);
 	unsigned int authsize = crypto_aead_authsize(aead);
@@ -411,7 +400,6 @@ static int gcm_decrypt(struct aead_request *req)
 	u64 dg[2] = {};
 	int err;
 
-	flags = octeon_crypto_enable(&state);
 	if (req->assoclen)
 		gcm_calculate_auth_mac(req, dg);
 
@@ -477,11 +465,9 @@ static int gcm_decrypt(struct aead_request *req)
 	}
 
 	if (err) {
-		octeon_crypto_disable(&state, flags);
 		return err;
 	}
 	gcm_final(req, ctx, dg, tag, req->cryptlen - authsize);
-	octeon_crypto_disable(&state, flags);
 
 	/* compare calculated auth tag with the stored one */
 	scatterwalk_map_and_copy(buf, req->src,

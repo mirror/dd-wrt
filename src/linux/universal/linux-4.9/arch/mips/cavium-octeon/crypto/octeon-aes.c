@@ -55,10 +55,12 @@ static int octeon_crypto_aes_cbc_decrypt(struct blkcipher_desc *desc,
 					 struct scatterlist *src,
 					 unsigned int nbytes)
 {
-	struct crypto_aes_ctx *ctx = crypto_blkcipher_ctx(desc->tfm);
-	struct blkcipher_walk walk;
 	struct octeon_cop2_state state;
 	unsigned long flags;
+	struct octeon_cop2_state state;
+	unsigned long flags;
+	struct crypto_aes_ctx *ctx = crypto_blkcipher_ctx(desc->tfm);
+	struct blkcipher_walk walk;
 	int err, i, todo;
 	__be64 *iv;
 	__be64 *dataout;
@@ -72,17 +74,20 @@ static int octeon_crypto_aes_cbc_decrypt(struct blkcipher_desc *desc,
 	iv = (__be64 *)walk.iv;
 	write_octeon_64bit_aes_iv(iv[0], 0);
 	write_octeon_64bit_aes_iv(iv[1], 1);
+	octeon_crypto_disable(&state, flags);
 
 	while ((nbytes = walk.nbytes)) {
 		todo = nbytes & AES_BLOCK_MASK;
 		dataout = (__be64 *)walk.dst.virt.addr;
 		data = (__be64 *)walk.src.virt.addr;
+		flags = octeon_crypto_enable(&state);
 		for (i = 0; i < todo / AES_BLOCK_SIZE; i++) {
 			write_octeon_64bit_aes_dec_cbc0(*data++);
 			write_octeon_64bit_aes_dec_cbc1(*data++);
 			*dataout++ = read_octeon_64bit_aes_result(0);
 			*dataout++ = read_octeon_64bit_aes_result(1);
 		}
+		octeon_crypto_disable(&state, flags);
 		nbytes &= AES_BLOCK_SIZE - 1;
 		err = blkcipher_walk_done(desc, &walk, nbytes);
 	}
@@ -112,21 +117,23 @@ static int octeon_crypto_aes_cbc_encrypt(struct blkcipher_desc *desc,
 	iv = (__be64 *)walk.iv;
 	write_octeon_64bit_aes_iv(iv[0], 0);
 	write_octeon_64bit_aes_iv(iv[1], 1);
+	octeon_crypto_disable(&state, flags);
 
 	while ((nbytes = walk.nbytes)) {
 		todo = nbytes & AES_BLOCK_MASK;
 		dataout = (__be64 *)walk.dst.virt.addr;
 		data = (__be64 *)walk.src.virt.addr;
+		flags = octeon_crypto_enable(&state);
 		for (i = 0; i < todo / AES_BLOCK_SIZE; i++) {
 			write_octeon_64bit_aes_enc_cbc0(*data++);
 			write_octeon_64bit_aes_enc_cbc1(*data++);
 			*dataout++ = read_octeon_64bit_aes_result(0);
 			*dataout++ = read_octeon_64bit_aes_result(1);
 		}
+		octeon_crypto_disable(&state, flags);
 		nbytes &= AES_BLOCK_SIZE - 1;
 		err = blkcipher_walk_done(desc, &walk, nbytes);
 	}
-	octeon_crypto_disable(&state, flags);
 	return 0;
 }
 
