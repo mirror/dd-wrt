@@ -1214,7 +1214,46 @@ void setupHostAP_generic_ath9k(char *prefix, FILE *fp, int isrepeater, int aoss)
 			fprintf(fp, "supported_rates=10 20 55 60 90 110 120 180 240 360 480 540\n");
 		} else if (!strcmp(netmode, "mixed")) {
 			if (has_ax(prefix)) {
+				if (nvram_match(mubf, "1")) {
+					fprintf(fp, "he_mu_beamformer=1\n");
+				}
+				if (nvram_match(subf, "1")) {
+					fprintf(fp, "he_su_beamformer=1\n");
+					fprintf(fp, "he_su_beamformee=1\n");
+				}
 				fprintf(fp, "ieee80211ax=1\n");
+				char color[32];
+				sprintf(color, "%s_he_bss_color", prefix);
+				int c = nvram_default_geti(color, 0);
+				fprintf(fp, "he_default_pe_duration=4\n");
+				fprintf(fp, "he_rts_threshold=1023\n");
+				fprintf(fp, "he_mu_edca_qos_info_param_count=0\n");
+				fprintf(fp, "he_mu_edca_qos_info_q_ack=0\n");
+				fprintf(fp, "he_mu_edca_qos_info_queue_request=0\n");
+				fprintf(fp, "he_mu_edca_qos_info_txop_request=0\n");
+				fprintf(fp, "he_mu_edca_ac_be_aifsn=8\n");
+				fprintf(fp, "he_mu_edca_ac_be_aci=0\n");
+				fprintf(fp, "he_mu_edca_ac_be_ecwmin=9\n");
+				fprintf(fp, "he_mu_edca_ac_be_ecwmax=10\n");
+				fprintf(fp, "he_mu_edca_ac_be_timer=255\n");
+				fprintf(fp, "he_mu_edca_ac_bk_aifsn=15\n");
+				fprintf(fp, "he_mu_edca_ac_bk_aci=1\n");
+				fprintf(fp, "he_mu_edca_ac_bk_ecwmin=9\n");
+				fprintf(fp, "he_mu_edca_ac_bk_ecwmax=10\n");
+				fprintf(fp, "he_mu_edca_ac_bk_timer=255\n");
+				fprintf(fp, "he_mu_edca_ac_vi_ecwmin=5\n");
+				fprintf(fp, "he_mu_edca_ac_vi_ecwmax=7\n");
+				fprintf(fp, "he_mu_edca_ac_vi_aifsn=5\n");
+				fprintf(fp, "he_mu_edca_ac_vi_aci=2\n");
+				fprintf(fp, "he_mu_edca_ac_vi_timer=255\n");
+				fprintf(fp, "he_mu_edca_ac_vo_aifsn=5\n");
+				fprintf(fp, "he_mu_edca_ac_vo_aci=3\n");
+				fprintf(fp, "he_mu_edca_ac_vo_ecwmin=5\n");
+				fprintf(fp, "he_mu_edca_ac_vo_ecwmax=7\n");
+				fprintf(fp, "he_mu_edca_ac_vo_timer=255\n");
+				if (color > 0 && color < 64) {
+					fprintf(fp, "he_bss_color=\n", color);
+				}
 			}
 			fprintf(fp, "hw_mode=g\n");
 			fprintf(fp, "basic_rates=10 20 55 60 110 120 240\n");
