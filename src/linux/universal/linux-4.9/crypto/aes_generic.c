@@ -1326,7 +1326,7 @@ EXPORT_SYMBOL_GPL(crypto_aes_set_key);
 	f_rl(bo, bi, 3, k);	\
 } while (0)
 
-static void aes_encrypt(struct crypto_tfm *tfm, u8 *out, const u8 *in)
+void aes_encrypt(struct crypto_tfm *tfm, u8 *out, const u8 *in)
 {
 	const struct crypto_aes_ctx *ctx = crypto_tfm_ctx(tfm);
 	const __le32 *src = (const __le32 *)in;
@@ -1366,7 +1366,7 @@ static void aes_encrypt(struct crypto_tfm *tfm, u8 *out, const u8 *in)
 	dst[2] = cpu_to_le32(b0[2]);
 	dst[3] = cpu_to_le32(b0[3]);
 }
-
+EXPORT_SYMBOL(aes_encrypt);
 /* decrypt a block of text */
 
 #define i_rn(bo, bi, n, k)	do {				\
@@ -1398,7 +1398,7 @@ static void aes_encrypt(struct crypto_tfm *tfm, u8 *out, const u8 *in)
 	i_rl(bo, bi, 3, k);	\
 } while (0)
 
-static void aes_decrypt(struct crypto_tfm *tfm, u8 *out, const u8 *in)
+void aes_decrypt(struct crypto_tfm *tfm, u8 *out, const u8 *in)
 {
 	const struct crypto_aes_ctx *ctx = crypto_tfm_ctx(tfm);
 	const __le32 *src = (const __le32 *)in;
@@ -1438,6 +1438,7 @@ static void aes_decrypt(struct crypto_tfm *tfm, u8 *out, const u8 *in)
 	dst[2] = cpu_to_le32(b0[2]);
 	dst[3] = cpu_to_le32(b0[3]);
 }
+EXPORT_SYMBOL(aes_decrypt);
 
 static struct crypto_alg aes_alg = {
 	.cra_name		=	"aes",

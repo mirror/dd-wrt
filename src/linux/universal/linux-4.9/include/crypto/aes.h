@@ -36,4 +36,7 @@ int crypto_aes_set_key(struct crypto_tfm *tfm, const u8 *in_key,
 		unsigned int key_len);
 int crypto_aes_expand_key(struct crypto_aes_ctx *ctx, const u8 *in_key,
 		unsigned int key_len);
+void aes_encrypt(struct crypto_tfm *tfm, u8 *out, const u8 *in);
+void aes_decrypt(struct crypto_tfm *tfm, u8 *out, const u8 *in);
+
 #endif
