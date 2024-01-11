@@ -468,13 +468,13 @@ static void detect_wireless_devices(int mask)
 		wificnt += detectchange("mt7615e");
 		wificnt += detectchange("mt7663u");
 		wificnt += detectchange("mt7663s");
-		if (!wificnt) {
+/*		if (!wificnt) {
 			rmmod("mt7615_common");
 			rmmod("mt7615-common");
 			rmmod("mt7663-usb-sdio-common");
 			rmmod("mt7663_usb_sdio_common");
 			rmmod("mt76-sdio");
-		}
+		}*/
 		total += wificnt;
 		wificnt = 0;
 		insmod("mt76x02-lib");
@@ -487,12 +487,12 @@ static void detect_wireless_devices(int mask)
 		insmod("mt76x0-common");
 		wificnt += detectchange("mt76x0e");
 		wificnt += detectchange("mt76x0u");
-		if (!wificnt) {
+/*		if (!wificnt) {
 			rmmod("mt76x0-common");
 			rmmod("mt76x2-common");
 			rmmod("mt76x02-usb");
 			rmmod("mt76x02-lib");
-		}
+		}*/
 		total += wificnt;
 		wificnt = 0;
 		wificnt += detectchange("mt7603e");
@@ -503,12 +503,12 @@ static void detect_wireless_devices(int mask)
 		insmod("mt76-sdio");
 		wificnt += detectchange("mt7921e");
 		wificnt += detectchange("mt7921s");
-		if (!wificnt) {
+/*		if (!wificnt) {
 			rmmod("mt7921s");
 			rmmod("mt7921e");
 			rmmod("mt76-sdio");
 			rmmod("mt7921-common");
-		}
+		}*/
 		total += wificnt;
 		wificnt = 0;
 		wificnt += detectchange("mt7996e");
@@ -516,25 +516,25 @@ static void detect_wireless_devices(int mask)
 			rmmod("mt7996e");
 		}
 		total += wificnt;
-		if (!total) {
+/*		if (!total) {
 			rmmod("mt76-usb");
 			rmmod("mt76_usb");
 			rmmod("mt76-connac-lib");
 			rmmod("mt76");
-		}
+		}*/
 		wificnt = 0;
 		insmod("rt2x00lib");
 		insmod("rt2x00mmio");
 		insmod("rt2x00pci");
 		insmod("rt2800lib");
 		insmod("rt2800mmio");
-		if (!detectchange("rt2800pci")) {
+/*		if (!detectchange("rt2800pci")) {
 			rmmod("rt2800mmio");
 			rmmod("rt2800lib");
 			rmmod("rt2x00pci");
 			rmmod("rt2x00mmio");
 			rmmod("rt2x00lib");
-		}
+		}*/
 	}
 #endif
 #ifdef HAVE_IWLWIFI
