@@ -72,19 +72,21 @@ static int octeon_3des_cbc_decrypt(struct blkcipher_desc *desc,
 	write_octeon_64bit_3des_key(key[2], 2);
 	iv = (__be64 *)walk.iv;
 	write_octeon_64bit_3des_iv(*iv);
+	octeon_crypto_disable(&state, flags);
 
 	while ((nbytes = walk.nbytes)) {
 		todo = nbytes & DES_BLOCK_MASK;
 		dataout = (__be64 *)walk.dst.virt.addr;
 		data = (__be64 *)walk.src.virt.addr;
+	flags = octeon_crypto_enable(&state);
 		for (i = 0; i < todo / DES_BLOCK_SIZE; i++) {
 			write_octeon_64bit_3des_enc_cbc(*data++);
 			*dataout++ = read_octeon_64bit_3des_result();
 		}
+	octeon_crypto_disable(&state, flags);
 		nbytes &= DES_BLOCK_SIZE - 1;
 		err = blkcipher_walk_done(desc, &walk, nbytes);
 	}
-	octeon_crypto_disable(&state, flags);
 	return 0;
 }
 
@@ -111,19 +113,21 @@ static int octeon_3des_cbc_encrypt(struct blkcipher_desc *desc,
 	write_octeon_64bit_3des_key(key[2], 2);
 	iv = (__be64 *)walk.iv;
 	write_octeon_64bit_3des_iv(*iv);
+	octeon_crypto_disable(&state, flags);
 
 	while ((nbytes = walk.nbytes)) {
 		todo = nbytes & DES_BLOCK_MASK;
 		dataout = (__be64 *)walk.dst.virt.addr;
 		data = (__be64 *)walk.src.virt.addr;
+	flags = octeon_crypto_enable(&state);
 		for (i = 0; i < todo / DES_BLOCK_SIZE; i++) {
 			write_octeon_64bit_3des_dec_cbc(*data++);
 			*dataout++ = read_octeon_64bit_3des_result();
 		}
+	octeon_crypto_disable(&state, flags);
 		nbytes &= DES_BLOCK_SIZE - 1;
 		err = blkcipher_walk_done(desc, &walk, nbytes);
 	}
-	octeon_crypto_disable(&state, flags);
 	return 0;
 }
 
