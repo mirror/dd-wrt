@@ -3152,6 +3152,7 @@ wl_basic.ac="AC Only";
 wl_basic.ad="AD Only";
 wl_basic.acn="AC / N Mixed";
 wl_basic.ax="AX Only";
+wl_basic.axg="AX Only (2.4 Ghz)";
 wl_basic.xacn="AX / AC / N Mixed";
 wl_basic.na="N / A Mixed";
 wl_basic.ng="N / G Mixed";

@@ -2760,6 +2760,7 @@ wl_basic.na="NA-Gemischt";
 wl_basic.ac="Nur-AC";
 wl_basic.acn="AC/N-Gemischt";
 wl_basic.ax="Nur-AX";
+wl_basic.axg="Nur-AX (2.4 Ghz)";
 wl_basic.xacn="AX / AC / N-Gemischt";
 wl_basic.ng="NG-Gemischt";
 wl_basic.n5="Nur-N (5 GHz)";
