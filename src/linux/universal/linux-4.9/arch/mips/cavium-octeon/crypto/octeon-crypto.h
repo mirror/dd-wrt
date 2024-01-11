@@ -39,10 +39,6 @@ extern void octeon_crypto_disable_no_irq_save(struct octeon_cop2_state *state,
 	octeon_prefetch_prefx(7, address, offset)
 
 #define octeon_prefetch(address, offset) octeon_prefetch_pref0(address, offset)
-#define CVMX_SYNCI(address, offset)                             \
-	asm volatile("synci " CVMX_TMP_STR(offset) "(%[rbase])" \
-		     :                                          \
-		     : [rbase] "d"(address))
 #define octeon_prefetch0(address) octeon_prefetch(address, 0)
 #define octeon_prefetch128(address) octeon_prefetch(address, 128)
 

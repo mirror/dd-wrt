@@ -155,7 +155,7 @@ static int octeon_sha512_update(struct shash_desc *desc, const u8 *data,
 	struct octeon_cop2_state state;
 	unsigned long flags;
 	if (in_interrupt()) {
-		return sha512_update(desc, data, len);
+		return crypto_sha512_update(desc, data, len);
 	}
 
 	/*
@@ -190,7 +190,7 @@ static int octeon_sha512_final(struct shash_desc *desc, u8 *hash)
 	unsigned int index;
 	__be64 bits[2];
 	if (in_interrupt()) {
-		return sha512_finup(desc, NULL, 0, out)
+		return crypto_sha512_finup(desc, NULL, 0, hash);
 	}
 
 	/* Save number of bits. */

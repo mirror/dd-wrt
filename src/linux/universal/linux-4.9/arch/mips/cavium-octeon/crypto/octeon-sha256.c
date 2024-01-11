@@ -139,7 +139,7 @@ static int octeon_sha256_update(struct shash_desc *desc, const u8 *data,
 	struct octeon_cop2_state state;
 	unsigned long flags;
 	if (in_interrupt()) {
-		return sha256_update(desc, data, len);
+		return crypto_sha256_update(desc, data, len);
 	}
 	/*
 	 * Small updates never reach the crypto engine, so the generic sha256 is
@@ -174,7 +174,7 @@ static int octeon_sha256_final(struct shash_desc *desc, u8 *out)
 	__be64 bits;
 
 	if (in_interrupt()) {
-		return sha256_finup(desc, NULL, 0, out)
+		return crypto_sha256_finup(desc, NULL, 0, out);
 	}
 	
 	/* Save number of bits. */

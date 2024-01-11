@@ -57,8 +57,6 @@ static int octeon_crypto_aes_cbc_decrypt(struct blkcipher_desc *desc,
 {
 	struct octeon_cop2_state state;
 	unsigned long flags;
-	struct octeon_cop2_state state;
-	unsigned long flags;
 	struct crypto_aes_ctx *ctx = crypto_blkcipher_ctx(desc->tfm);
 	struct blkcipher_walk walk;
 	int err, i, todo;

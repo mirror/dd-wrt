@@ -19,6 +19,7 @@
  * any later version.
  */
 
+#include <crypto/internal/hash.h>
 #include <crypto/md5.h>
 #include <linux/init.h>
 #include <linux/types.h>
@@ -27,7 +28,6 @@
 #include <asm/byteorder.h>
 #include <linux/cryptohash.h>
 #include <asm/octeon/octeon.h>
-#include <crypto/internal/hash.h>
 
 #include "octeon-crypto.h"
 

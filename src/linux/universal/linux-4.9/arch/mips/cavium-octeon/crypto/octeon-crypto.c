@@ -91,6 +91,5 @@ void octeon_crypto_disable_no_irq_save(struct octeon_cop2_state *state,
 		octeon_cop2_restore(state);
 	else
 		write_c0_status(read_c0_status() & ~ST0_CU2);
-	local_irq_restore(flags);
 }
 EXPORT_SYMBOL_GPL(octeon_crypto_disable_no_irq_save);
