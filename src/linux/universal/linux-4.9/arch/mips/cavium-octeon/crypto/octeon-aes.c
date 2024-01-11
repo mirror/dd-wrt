@@ -29,20 +29,28 @@
 
 #define AES_BLOCK_MASK (~(AES_BLOCK_SIZE - 1))
 
+struct octeon_crypto_aes_ctx {
+	struct crypto_aes_ctx fallback;
+	u32 key[AES_MAX_KEYLENGTH_U32];
+	u32 key_length;
+};
+
+
+
 static int octeon_crypto_aes_set_key(struct crypto_tfm *tfm, const u8 *in_key,
 				     unsigned int key_len)
 {
-	struct crypto_aes_ctx *ctx = crypto_tfm_ctx(tfm);
-	memset(ctx->key_enc, 0, sizeof(ctx->key_enc));
-	memcpy(ctx->key_enc, in_key, key_len);
+	struct octeon_crypto_aes_ctx *ctx = crypto_tfm_ctx(tfm);
+	memset(ctx->key, 0, sizeof(ctx->key));
+	memcpy(ctx->key, in_key, key_len);
 	ctx->key_length = key_len / 8 - 1;
-	return 0;
+	return crypto_aes_set_key(tfm, in_key, key_len);
 }
 
 static __always_inline void
-octeon_crypto_aes_write_key(struct crypto_aes_ctx *ctx)
+octeon_crypto_aes_write_key(struct octeon_crypto_aes_ctx *ctx)
 {
-	__be64 *key = (__be64 *)ctx->key_enc;
+	__be64 *key = (__be64 *)ctx->key;
 	write_octeon_64bit_aes_key(key[0], 0);
 	write_octeon_64bit_aes_key(key[1], 1);
 	write_octeon_64bit_aes_key(key[2], 2);
@@ -57,7 +65,7 @@ static int octeon_crypto_aes_cbc_decrypt(struct blkcipher_desc *desc,
 {
 	struct octeon_cop2_state state;
 	unsigned long flags;
-	struct crypto_aes_ctx *ctx = crypto_blkcipher_ctx(desc->tfm);
+	struct octeon_crypto_aes_ctx *ctx = crypto_blkcipher_ctx(desc->tfm);
 	struct blkcipher_walk walk;
 	int err, i, todo;
 	__be64 *iv;
@@ -98,7 +106,7 @@ static int octeon_crypto_aes_cbc_encrypt(struct blkcipher_desc *desc,
 					 struct scatterlist *src,
 					 unsigned int nbytes)
 {
-	struct crypto_aes_ctx *ctx = crypto_blkcipher_ctx(desc->tfm);
+	struct octeon_crypto_aes_ctx *ctx = crypto_blkcipher_ctx(desc->tfm);
 	struct blkcipher_walk walk;
 	struct octeon_cop2_state state;
 	unsigned long flags;
@@ -140,17 +148,20 @@ static void octeon_crypto_aes_encrypt(struct crypto_tfm *tfm, u8 *out,
 {
 	struct octeon_cop2_state state;
 	unsigned long flags;
-	struct crypto_aes_ctx *ctx = crypto_tfm_ctx(tfm);
+	struct octeon_crypto_aes_ctx *ctx = crypto_tfm_ctx(tfm);
 	__be64 *data = (__be64 *)in;
 	__be64 *dataout = (__be64 *)out;
-	flags = octeon_crypto_enable(&state);
+	if (in_interrupt()) {
+		aes_encrypt(tfm, out, in);
+	}
+	flags = octeon_crypto_enable_no_irq_save(&state);
 	octeon_crypto_aes_write_key(ctx);
 	write_octeon_64bit_aes_enc0(*data++);
 	write_octeon_64bit_aes_enc1(*data);
 	*dataout++ = read_octeon_64bit_aes_result(0);
 	*dataout = read_octeon_64bit_aes_result(1);
 
-	octeon_crypto_disable(&state, flags);
+	octeon_crypto_disable_no_irq_save(&state, flags);
 }
 
 static void octeon_crypto_aes_decrypt(struct crypto_tfm *tfm, u8 *out,
@@ -158,18 +169,21 @@ static void octeon_crypto_aes_decrypt(struct crypto_tfm *tfm, u8 *out,
 {
 	struct octeon_cop2_state state;
 	unsigned long flags;
-	struct crypto_aes_ctx *ctx = crypto_tfm_ctx(tfm);
+	struct octeon_crypto_aes_ctx *ctx = crypto_tfm_ctx(tfm);
 	__be64 *data = (__be64 *)in;
 	__be64 *dataout = (__be64 *)out;
+	if (in_interrupt()) {
+		aes_decrypt(tfm, out, in);
+	}
 
-	flags = octeon_crypto_enable(&state);
+	flags = octeon_crypto_enable_no_irq_save(&state);
 	octeon_crypto_aes_write_key(ctx);
 
 	write_octeon_64bit_aes_dec0(*data++);
 	write_octeon_64bit_aes_dec1(*data);
 	*dataout++ = read_octeon_64bit_aes_result(0);
 	*dataout = read_octeon_64bit_aes_result(1);
-	octeon_crypto_disable(&state, flags);
+	octeon_crypto_disable_no_irq_save(&state, flags);
 }
 
 static int ablk_cbc_init(struct crypto_tfm *tfm)
@@ -184,7 +198,7 @@ static struct crypto_alg octeon_algs[] = { {
 	.cra_flags		= CRYPTO_ALG_TYPE_BLKCIPHER |
 				  CRYPTO_ALG_INTERNAL,
 	.cra_blocksize		= AES_BLOCK_SIZE,
-	.cra_ctxsize		= sizeof(struct crypto_aes_ctx),
+	.cra_ctxsize		= sizeof(struct octeon_crypto_aes_ctx),
 	.cra_alignmask		= 0,
 	.cra_type		= &crypto_blkcipher_type,
 	.cra_module		= THIS_MODULE,
@@ -226,7 +240,7 @@ static struct crypto_alg octeon_algs[] = { {
 	.cra_priority		=	300,
 	.cra_flags		=	CRYPTO_ALG_TYPE_CIPHER,
 	.cra_blocksize		=	AES_BLOCK_SIZE,
-	.cra_ctxsize		=	sizeof(struct crypto_aes_ctx),
+	.cra_ctxsize		=	sizeof(struct octeon_crypto_aes_ctx),
 	.cra_alignmask		=	0,
 	.cra_module		=	THIS_MODULE,
 	.cra_u			=	{
