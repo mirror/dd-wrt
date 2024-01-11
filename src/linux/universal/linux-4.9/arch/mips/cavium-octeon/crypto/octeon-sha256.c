@@ -176,7 +176,7 @@ static int octeon_sha256_final(struct shash_desc *desc, u8 *out)
 	if (in_interrupt()) {
 		return crypto_sha256_finup(desc, NULL, 0, out);
 	}
-	
+
 	/* Save number of bits. */
 	bits = cpu_to_be64(sctx->count << 3);
 

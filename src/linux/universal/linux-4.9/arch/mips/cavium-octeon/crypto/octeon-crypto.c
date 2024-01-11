@@ -85,7 +85,7 @@ void octeon_crypto_disable(struct octeon_cop2_state *state,
 EXPORT_SYMBOL_GPL(octeon_crypto_disable);
 
 void octeon_crypto_disable_no_irq_save(struct octeon_cop2_state *state,
-			   unsigned long crypto_flags)
+				       unsigned long crypto_flags)
 {
 	if (crypto_flags & ST0_CU2)
 		octeon_cop2_restore(state);
