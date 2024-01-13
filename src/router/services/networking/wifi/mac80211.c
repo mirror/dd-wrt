@@ -1176,7 +1176,7 @@ void setupHostAP_generic_ath9k(char *prefix, FILE *fp, int isrepeater, int aoss)
 					fprintf(fp, "vht_oper_chwidth=0\n");
 					break;
 				}
-				if (has_ax(prefix) && !strcmp(netmode, "ax-only") || !strcmp(netmode, "xacn-mixed") || !strcmp(netmode, "mixed")) {
+				if (has_ax(prefix) && (!strcmp(netmode, "ax-only") || !strcmp(netmode, "xacn-mixed") || !strcmp(netmode, "mixed"))) {
 					switch (usebw) {
 					case 40:
 						fprintf(fp, "he_oper_chwidth=0\n");
