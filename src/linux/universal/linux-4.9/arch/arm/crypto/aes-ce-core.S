@@ -126,29 +126,29 @@
 	 *   r3        : number of rounds
 	 */
 	.align		6
-aes_encrypt:
+arm_aes_encrypt:
 	add		ip, r2, #32		@ 3rd round key
-.Laes_encrypt_tweak:
+.Larm_aes_encrypt_tweak:
 	do_block	enc_dround, enc_fround
-ENDPROC(aes_encrypt)
+ENDPROC(arm_aes_encrypt)
 
 	.align		6
-aes_decrypt:
+arm_aes_decrypt:
 	add		ip, r2, #32		@ 3rd round key
 	do_block	dec_dround, dec_fround
-ENDPROC(aes_decrypt)
+ENDPROC(arm_aes_decrypt)
 
 	.align		6
-aes_encrypt_3x:
+arm_aes_encrypt_3x:
 	add		ip, r2, #32		@ 3rd round key
 	do_block	enc_dround_3x, enc_fround_3x
-ENDPROC(aes_encrypt_3x)
+ENDPROC(arm_aes_encrypt_3x)
 
 	.align		6
-aes_decrypt_3x:
+arm_aes_decrypt_3x:
 	add		ip, r2, #32		@ 3rd round key
 	do_block	dec_dround_3x, dec_fround_3x
-ENDPROC(aes_decrypt_3x)
+ENDPROC(arm_aes_decrypt_3x)
 
 	.macro		prepare_key, rk, rounds
 	add		ip, \rk, \rounds, lsl #4
@@ -171,7 +171,7 @@ ENTRY(ce_aes_ecb_encrypt)
 	bmi		.Lecbenc1x
 	vld1.8		{q0-q1}, [r1, :64]!
 	vld1.8		{q2}, [r1, :64]!
-	bl		aes_encrypt_3x
+	bl		arm_aes_encrypt_3x
 	vst1.8		{q0-q1}, [r0, :64]!
 	vst1.8		{q2}, [r0, :64]!
 	b		.Lecbencloop3x
@@ -180,7 +180,7 @@ ENTRY(ce_aes_ecb_encrypt)
 	beq		.Lecbencout
 .Lecbencloop:
 	vld1.8		{q0}, [r1, :64]!
-	bl		aes_encrypt
+	bl		arm_aes_encrypt
 	vst1.8		{q0}, [r0, :64]!
 	subs		r4, r4, #1
 	bne		.Lecbencloop
@@ -197,7 +197,7 @@ ENTRY(ce_aes_ecb_decrypt)
 	bmi		.Lecbdec1x
 	vld1.8		{q0-q1}, [r1, :64]!
 	vld1.8		{q2}, [r1, :64]!
-	bl		aes_decrypt_3x
+	bl		arm_aes_decrypt_3x
 	vst1.8		{q0-q1}, [r0, :64]!
 	vst1.8		{q2}, [r0, :64]!
 	b		.Lecbdecloop3x
@@ -206,7 +206,7 @@ ENTRY(ce_aes_ecb_decrypt)
 	beq		.Lecbdecout
 .Lecbdecloop:
 	vld1.8		{q0}, [r1, :64]!
-	bl		aes_decrypt
+	bl		arm_aes_decrypt
 	vst1.8		{q0}, [r0, :64]!
 	subs		r4, r4, #1
 	bne		.Lecbdecloop
@@ -228,7 +228,7 @@ ENTRY(ce_aes_cbc_encrypt)
 .Lcbcencloop:
 	vld1.8		{q1}, [r1, :64]!	@ get next pt block
 	veor		q0, q0, q1		@ ..and xor with iv
-	bl		aes_encrypt
+	bl		arm_aes_encrypt
 	vst1.8		{q0}, [r0, :64]!
 	subs		r4, r4, #1
 	bne		.Lcbcencloop
@@ -249,7 +249,7 @@ ENTRY(ce_aes_cbc_decrypt)
 	vmov		q3, q0
 	vmov		q4, q1
 	vmov		q5, q2
-	bl		aes_decrypt_3x
+	bl		arm_aes_decrypt_3x
 	veor		q0, q0, q6
 	veor		q1, q1, q3
 	veor		q2, q2, q4
@@ -265,7 +265,7 @@ ENTRY(ce_aes_cbc_decrypt)
 	vld1.8		{q0}, [r1, :64]!	@ get next ct block
 	veor		q14, q15, q6		@ combine prev ct with last key
 	vmov		q6, q0
-	bl		aes_decrypt
+	bl		arm_aes_decrypt
 	vst1.8		{q0}, [r0, :64]!
 	subs		r4, r4, #1
 	bne		.Lcbcdecloop
@@ -302,7 +302,7 @@ ENTRY(ce_aes_ctr_encrypt)
 	vmov		s11, ip
 	vld1.8		{q3-q4}, [r1, :64]!
 	vld1.8		{q5}, [r1, :64]!
-	bl		aes_encrypt_3x
+	bl		arm_aes_encrypt_3x
 	veor		q0, q0, q3
 	veor		q1, q1, q4
 	veor		q2, q2, q5
@@ -316,7 +316,7 @@ ENTRY(ce_aes_ctr_encrypt)
 	beq		.Lctrout
 .Lctrloop:
 	vmov		q0, q6
-	bl		aes_encrypt
+	bl		arm_aes_encrypt
 	subs		r4, r4, #1
 	bmi		.Lctrhalfblock		@ blocks < 0 means 1/2 block
 	vld1.8		{q3}, [r1, :64]!
@@ -387,7 +387,7 @@ ce_aes_xts_init:
 	ldr		r6, [sp, #24]		@ load AES key 2
 	prepare_key	r6, r3
 	add		ip, r6, #32		@ 3rd round key of key 2
-	b		.Laes_encrypt_tweak	@ tail call
+	b		.Larm_aes_encrypt_tweak	@ tail call
 ENDPROC(ce_aes_xts_init)
 
 ENTRY(ce_aes_xts_encrypt)
@@ -412,7 +412,7 @@ ENTRY(ce_aes_xts_encrypt)
 	next_tweak	q5, q4, q7, q6
 	veor		q1, q1, q4
 	veor		q2, q2, q5
-	bl		aes_encrypt_3x
+	bl		arm_aes_encrypt_3x
 	veor		q0, q0, q3
 	veor		q1, q1, q4
 	veor		q2, q2, q5
@@ -428,7 +428,7 @@ ENTRY(ce_aes_xts_encrypt)
 .Lxtsencloop:
 	vld1.8		{q0}, [r1, :64]!
 	veor		q0, q0, q3
-	bl		aes_encrypt
+	bl		arm_aes_encrypt
 	veor		q0, q0, q3
 	vst1.8		{q0}, [r0, :64]!
 	subs		r4, r4, #1
@@ -463,7 +463,7 @@ ENTRY(ce_aes_xts_decrypt)
 	next_tweak	q5, q4, q7, q6
 	veor		q1, q1, q4
 	veor		q2, q2, q5
-	bl		aes_decrypt_3x
+	bl		arm_aes_decrypt_3x
 	veor		q0, q0, q3
 	veor		q1, q1, q4
 	veor		q2, q2, q5
@@ -480,7 +480,7 @@ ENTRY(ce_aes_xts_decrypt)
 	vld1.8		{q0}, [r1, :64]!
 	veor		q0, q0, q3
 	add		ip, r2, #32		@ 3rd round key
-	bl		aes_decrypt
+	bl		arm_aes_decrypt
 	veor		q0, q0, q3
 	vst1.8		{q0}, [r0, :64]!
 	subs		r4, r4, #1

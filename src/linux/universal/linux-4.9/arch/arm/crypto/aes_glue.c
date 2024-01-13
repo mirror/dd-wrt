@@ -13,19 +13,19 @@ EXPORT_SYMBOL(AES_decrypt);
 EXPORT_SYMBOL(private_AES_set_encrypt_key);
 EXPORT_SYMBOL(private_AES_set_decrypt_key);
 
-static void aes_encrypt(struct crypto_tfm *tfm, u8 *dst, const u8 *src)
+static void arm_aes_encrypt(struct crypto_tfm *tfm, u8 *dst, const u8 *src)
 {
 	struct AES_CTX *ctx = crypto_tfm_ctx(tfm);
 	AES_encrypt(src, dst, &ctx->enc_key);
 }
 
-static void aes_decrypt(struct crypto_tfm *tfm, u8 *dst, const u8 *src)
+static void arm_aes_decrypt(struct crypto_tfm *tfm, u8 *dst, const u8 *src)
 {
 	struct AES_CTX *ctx = crypto_tfm_ctx(tfm);
 	AES_decrypt(src, dst, &ctx->dec_key);
 }
 
-static int aes_set_key(struct crypto_tfm *tfm, const u8 *in_key,
+static int arm_aes_set_key(struct crypto_tfm *tfm, const u8 *in_key,
 		unsigned int key_len)
 {
 	struct AES_CTX *ctx = crypto_tfm_ctx(tfm);
@@ -71,9 +71,9 @@ static struct crypto_alg aes_alg = {
 		.cipher	= {
 			.cia_min_keysize	= AES_MIN_KEY_SIZE,
 			.cia_max_keysize	= AES_MAX_KEY_SIZE,
-			.cia_setkey		= aes_set_key,
-			.cia_encrypt		= aes_encrypt,
-			.cia_decrypt		= aes_decrypt
+			.cia_setkey		= arm_aes_set_key,
+			.cia_encrypt		= arm_aes_encrypt,
+			.cia_decrypt		= arm_aes_decrypt
 		}
 	}
 };
