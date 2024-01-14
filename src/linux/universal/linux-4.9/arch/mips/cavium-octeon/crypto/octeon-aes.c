@@ -56,6 +56,11 @@ octeon_crypto_aes_write_key(struct octeon_crypto_aes_ctx *ctx)
 	write_octeon_64bit_aes_keylength(ctx->key_length);
 }
 
+struct octeon_crypto_tfm {
+	struct crypto_tfm fakectx;
+	struct octeon_crypto_aes_ctx ctx;
+};
+
 static int octeon_crypto_aes_cbc_decrypt(struct blkcipher_desc *desc,
 					 struct scatterlist *dst,
 					 struct scatterlist *src,
@@ -64,8 +69,7 @@ static int octeon_crypto_aes_cbc_decrypt(struct blkcipher_desc *desc,
 	struct octeon_cop2_state state;
 	unsigned long flags;
 	struct octeon_crypto_aes_ctx *ctx = crypto_blkcipher_ctx(desc->tfm);
-	struct crypto_tfm_ctx crypto;
-	crypto.__crt_ctx = ctx;
+	struct octeon_crypto_tfm crypto;
 	struct blkcipher_walk walk;
 	int err, i, todo;
 	__be64 *iv;
@@ -73,20 +77,21 @@ static int octeon_crypto_aes_cbc_decrypt(struct blkcipher_desc *desc,
 	__be64 *data;
 	union {
 		size_t t[16 / sizeof(size_t)];
-		__be64 c;
+		__be64 c[2];
 	} tmp;
 
 	if (in_interrupt()) {
+		crypto.ctx = *ctx;
 		blkcipher_walk_init(&walk, dst, src, nbytes);
 		err = blkcipher_walk_virt(desc, &walk);
 		desc->flags &= ~CRYPTO_TFM_REQ_MAY_SLEEP;
 		iv = (__be64 *)walk.iv;
 		while ((nbytes = walk.nbytes)) {
+			__be64 c;
 			todo = nbytes & AES_BLOCK_MASK;
 			dataout = (__be64 *)walk.dst.virt.addr;
 			data = (__be64 *)walk.src.virt.addr;
-			__be64 c;
-			aes_decrypt(&crypto, tmp.c, data);
+			aes_decrypt((struct crypto_tfm*)&crypto, (u8*)tmp.c, (u8*)data);
 			for (i = 0; i < todo / AES_BLOCK_SIZE; i++) {
 				c = *data++;
 				*dataout++ = tmp.c[0] ^ iv[0];
@@ -135,8 +140,7 @@ static int octeon_crypto_aes_cbc_encrypt(struct blkcipher_desc *desc,
 					 unsigned int nbytes)
 {
 	struct octeon_crypto_aes_ctx *ctx = crypto_blkcipher_ctx(desc->tfm);
-	struct crypto_tfm_ctx crypto;
-	crypto.__crt_ctx = ctx;
+	struct octeon_crypto_tfm crypto;
 	struct blkcipher_walk walk;
 	struct octeon_cop2_state state;
 	unsigned long flags;
@@ -146,6 +150,7 @@ static int octeon_crypto_aes_cbc_encrypt(struct blkcipher_desc *desc,
 	__be64 *data;
 
 	if (in_interrupt()) {
+		crypto.ctx = *ctx;
 		blkcipher_walk_init(&walk, dst, src, nbytes);
 		err = blkcipher_walk_virt(desc, &walk);
 		desc->flags &= ~CRYPTO_TFM_REQ_MAY_SLEEP;
@@ -158,7 +163,7 @@ static int octeon_crypto_aes_cbc_encrypt(struct blkcipher_desc *desc,
 				*dataout++ = *data++ ^ iv[0];
 				*dataout++ = *data++ ^ iv[1];
 			}
-			aes_encrypt(&crypto, dataout, dataout);
+			aes_encrypt((struct crypto_tfm *)&crypto, (u8*)dataout, (u8*)dataout);
 			iv = dataout;
 			nbytes &= AES_BLOCK_SIZE - 1;
 			err = blkcipher_walk_done(desc, &walk, nbytes);
