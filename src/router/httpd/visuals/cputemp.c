@@ -581,7 +581,7 @@ EJ_VISIBLE int ej_get_cputemp(webs_t wp, int argc, char_t **argv)
 	for (a = 0; a < 16; a++) {
 		char sysfs[64];
 		sprintf(sysfs, "/sys/class/hwmon%d/", a);
-		if (checkhwmon(p))
+		if (checkhwmon(sysfs))
 			continue; // already handled in specific way
 
 		for (b = 0; b < 16; b++) {
