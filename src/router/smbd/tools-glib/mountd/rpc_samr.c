@@ -86,6 +86,8 @@ static int samr_connect5_invoke(struct ksmbd_rpc_pipe *pipe)
 
 	if (ndr_read_uniq_vstring_ptr(dce, &server_name))
 		return KSMBD_RPC_EINVALID_PARAMETER;
+	ndr_free_uniq_vstring_ptr(&server_name);
+
 	// Access mask
 	if (ndr_read_int32(dce, NULL))
 		return KSMBD_RPC_EINVALID_PARAMETER;
@@ -229,6 +231,7 @@ static int samr_lookup_domain_return(struct ksmbd_rpc_pipe *pipe)
 			smb_write_sid(dce, &sid);
 		}
 	}
+	ndr_free_uniq_vstring_ptr(&dce->sm_req.name);
 
 	return KSMBD_RPC_OK;
 }
@@ -816,10 +819,24 @@ int rpc_samr_init(void)
 	return 0;
 }
 
+static void free_ch_entry(gpointer k, gpointer s, gpointer user_data)
+{
+	g_free(s);
+}
+
+static void samr_ch_clear_table(void)
+{
+	g_rw_lock_writer_lock(&ch_table_lock);
+	g_hash_table_foreach(ch_table, free_ch_entry, NULL);
+	g_rw_lock_writer_unlock(&ch_table_lock);
+}
+
 void rpc_samr_destroy(void)
 {
-	if (ch_table)
+	if (ch_table) {
+		samr_ch_clear_table();
 		g_hash_table_destroy(ch_table);
+	}
 	g_rw_lock_clear(&ch_table_lock);
 	num_domain_entries = 0;
 	g_free(domain_name);
