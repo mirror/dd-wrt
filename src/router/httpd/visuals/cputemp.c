@@ -132,18 +132,20 @@ EJ_VISIBLE void ej_get_cputemp(webs_t wp, int argc, char_t **argv)
 #ifdef HAVE_MVEBU
 	if (getRouterBrand() == ROUTER_WRT_1900AC) {
 		show_temp(wp, 0, 1, "CPU %d.%d &#176;C");
-		show_temp(wp, 2, 1, " / WL0 %d.%d &#176;C");
-		show_temp(wp, 2, 2, " / WL1 %d.%d &#176;C");
+		show_temp(wp, 2, 1, " / WLAN0 %d.%d &#176;C");
+		show_temp(wp, 2, 2, " / WLAN1 %d.%d &#176;C");
 	} else {
 		int cpuresult = show_temp(wp, 0, 1, "CPU %d.%d &#176;C");
 		if (!cpuresult) {
 			show_temp(wp, 1, 1, "DDR %d.%d &#176;C");
-			show_temp(wp, 2, 1, " / WL0 %d.%d &#176;C");
+			show_temp(wp, 1, 2, "WIFI %d.%d &#176;C");
+			show_temp(wp, 2, 1, " / WLAN0 %d.%d &#176;C");
 		} else {
 			show_temp(wp, 1, 1, " / DDR %d.%d &#176;C");
-			show_temp(wp, 2, 1, " / WL0 %d.%d &#176;C");
+			show_temp(wp, 1, 2, "WIFI %d.%d &#176;C");
+			show_temp(wp, 2, 1, " / WLAN1 %d.%d &#176;C");
 		}
-		show_temp(wp, 2, 2, " / WL1 %d.%d &#176;C");
+		show_temp(wp, 3, 1, " / WLAN1 %d.%d &#176;C");
 	}
 	return;
 #endif
