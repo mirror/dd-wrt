@@ -350,7 +350,7 @@ static int gcm_encrypt(struct aead_request *req)
 	if (walk.nbytes) {
 		u8 buf[GHASH_BLOCK_SIZE];
 		unsigned int nbytes = walk.nbytes;
-		__be16 *dst = walk.dst.virt.addr;
+		u8 *dst = walk.dst.virt.addr;
 		u8 *head = NULL;
 		__octeon_aes_encrypt(ctx->aes_key.key_enc, (u8 *)ks, iv,
 				     ctx->aes_key.key_length);
@@ -361,11 +361,11 @@ static int gcm_encrypt(struct aead_request *req)
 					     ctx->aes_key.key_length);
 		}
 
-		crypto_xor_cpy((u8 *)dst, walk.src.virt.addr, ks, walk.nbytes);
+		crypto_xor_cpy(dst, walk.src.virt.addr, (u8*)ks, walk.nbytes);
 
 		if (walk.nbytes > GHASH_BLOCK_SIZE) {
 			head = dst;
-			dst += GHASH_BLOCK_SIZE / 8;
+			dst += GHASH_BLOCK_SIZE;
 			nbytes %= GHASH_BLOCK_SIZE;
 		}
 
@@ -456,8 +456,8 @@ static int gcm_decrypt(struct aead_request *req)
 		}
 
 		memcpy(buf, src, nbytes);
-		memset(buf + nbytes, 0, GHASH_BLOCK_SIZE - nbytes);
-		ghash_do_update(!!nbytes, dg, buf, &ctx->ghash_key, head);
+		memset(((u8*)buf) + nbytes, 0, GHASH_BLOCK_SIZE - nbytes);
+		ghash_do_update(!!nbytes, dg, (u8*)buf, &ctx->ghash_key, head);
 
 		crypto_xor_cpy(walk.dst.virt.addr, walk.src.virt.addr, iv,
 			       walk.nbytes);
