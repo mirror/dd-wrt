@@ -307,7 +307,7 @@ static int gcm_encrypt(struct aead_request *req)
 	struct gcm_aes_ctx *ctx = crypto_aead_ctx(aead);
 	struct skcipher_walk walk;
 	u8 iv[AES_BLOCK_SIZE];
-	u8 ks[2 * AES_BLOCK_SIZE];
+	u64 ks[2 * AES_BLOCK_SIZE / 8];
 	u8 tag[AES_BLOCK_SIZE];
 	u64 dg[2] = {};
 	int err;
@@ -326,17 +326,18 @@ static int gcm_encrypt(struct aead_request *req)
 
 	while (walk.nbytes >= (2 * AES_BLOCK_SIZE)) {
 		const int blocks = walk.nbytes / (2 * AES_BLOCK_SIZE) * 2;
-		u8 *dst = walk.dst.virt.addr;
-		u8 *src = walk.src.virt.addr;
+		__be16 *dst = walk.dst.virt.addr;
+		__be16 *src = walk.src.virt.addr;
 		int remaining = blocks;
 		do {
-			__octeon_aes_encrypt(ctx->aes_key.key_enc, ks, iv,
+			__octeon_aes_encrypt(ctx->aes_key.key_enc, (u8 *)ks, iv,
 					     ctx->aes_key.key_length);
-			crypto_xor_cpy(dst, src, ks, AES_BLOCK_SIZE);
+			dst[0] = src[0] ^ ks[0];
+			dst[1] = src[1] ^ ks[1];
 			crypto_inc(iv, AES_BLOCK_SIZE);
 
-			dst += AES_BLOCK_SIZE;
-			src += AES_BLOCK_SIZE;
+			dst += 2;
+			src += 2;
 		} while (--remaining > 0);
 
 		ghash_do_update(blocks, dg, walk.dst.virt.addr, &ctx->ghash_key,
@@ -349,23 +350,22 @@ static int gcm_encrypt(struct aead_request *req)
 	if (walk.nbytes) {
 		u8 buf[GHASH_BLOCK_SIZE];
 		unsigned int nbytes = walk.nbytes;
-		u8 *dst = walk.dst.virt.addr;
+		__be16 *dst = walk.dst.virt.addr;
 		u8 *head = NULL;
-		__octeon_aes_encrypt(ctx->aes_key.key_enc, ks, iv,
+		__octeon_aes_encrypt(ctx->aes_key.key_enc, (u8 *)ks, iv,
 				     ctx->aes_key.key_length);
 		if (walk.nbytes > AES_BLOCK_SIZE) {
 			crypto_inc(iv, AES_BLOCK_SIZE);
 			__octeon_aes_encrypt(ctx->aes_key.key_enc,
-					     ks + AES_BLOCK_SIZE, iv,
+					     ((u8 *)ks) + AES_BLOCK_SIZE, iv,
 					     ctx->aes_key.key_length);
 		}
 
-		crypto_xor_cpy(walk.dst.virt.addr, walk.src.virt.addr, ks,
-			       walk.nbytes);
+		crypto_xor_cpy((u8 *)dst, walk.src.virt.addr, ks, walk.nbytes);
 
 		if (walk.nbytes > GHASH_BLOCK_SIZE) {
 			head = dst;
-			dst += GHASH_BLOCK_SIZE;
+			dst += GHASH_BLOCK_SIZE / 8;
 			nbytes %= GHASH_BLOCK_SIZE;
 		}
 
@@ -396,7 +396,7 @@ static int gcm_decrypt(struct aead_request *req)
 	struct skcipher_walk walk;
 	u8 iv[2 * AES_BLOCK_SIZE];
 	u8 tag[AES_BLOCK_SIZE];
-	u8 buf[2 * GHASH_BLOCK_SIZE];
+	u64 buf[2 * GHASH_BLOCK_SIZE / 8];
 	u64 dg[2] = {};
 	int err;
 
@@ -414,19 +414,20 @@ static int gcm_decrypt(struct aead_request *req)
 
 	while (walk.nbytes >= (2 * AES_BLOCK_SIZE)) {
 		int blocks = walk.nbytes / (2 * AES_BLOCK_SIZE) * 2;
-		u8 *dst = walk.dst.virt.addr;
-		u8 *src = walk.src.virt.addr;
+		__be64 *dst = walk.dst.virt.addr;
+		__be64 *src = walk.src.virt.addr;
 
 		ghash_do_update(blocks, dg, walk.src.virt.addr, &ctx->ghash_key,
 				NULL);
 
 		do {
-			__octeon_aes_encrypt(ctx->aes_key.key_enc, buf, iv,
-					     ctx->aes_key.key_length);
-			crypto_xor_cpy(dst, src, buf, AES_BLOCK_SIZE);
+			__octeon_aes_encrypt(ctx->aes_key.key_enc, (u8 *)buf,
+					     iv, ctx->aes_key.key_length);
+			dst[0] = src[0] ^ buf[0];
+			dst[1] = src[1] ^ buf[1];
 			crypto_inc(iv, AES_BLOCK_SIZE);
-			dst += AES_BLOCK_SIZE;
-			src += AES_BLOCK_SIZE;
+			dst += 2;
+			src += 2;
 		} while (--blocks > 0);
 
 		err = skcipher_walk_done(&walk,
