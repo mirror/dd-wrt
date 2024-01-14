@@ -2184,7 +2184,7 @@ status_router.net_conntrack="Aktywne połączenia IP";
 status_router.notavail="Niedostępne";
 status_router.legend6="Wykorzystanie pamięci";
 status_router.inpvolt="Napięcie wejściowe płyty";
-status_router.cputemp="Temperatury";
+status_router.cputemp="Czujniki";
 
 //help container
 

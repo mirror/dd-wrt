@@ -1626,7 +1626,7 @@ status_router.net_conntrack="Број активних IP сесија";
 status_router.notavail="Није Доступно";
 status_router.legend6="Искоришћеност простора";
 status_router.inpvolt="Улазни напон плоче";
-status_router.cputemp="Температура CPU-а";
+status_router.cputemp="Сензори";
 
 //help container
 hstatus_router.right2="Карактеристично име рутера које се подешава у <i>Подешавања</i> табу.";

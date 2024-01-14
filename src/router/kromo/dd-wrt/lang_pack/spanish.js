@@ -1435,7 +1435,7 @@ status_router.net_conntrack="Conexiones IP Activas";
 status_router.notavail="No disponible";
 status_router.legend6="Espacio Usado";
 status_router.inpvolt="Voltaje de entrada de la placa";
-status_router.cputemp="Temperatura";
+status_router.cputemp="Sensores";
 
 //help container
 hstatus_router.right2="Este es el nombre específico para el router, el cual estableces en la pestaña <i>Setup</i>.";

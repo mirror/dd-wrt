@@ -1614,7 +1614,7 @@ status_router.net_conntrack="Aktivne IP povezave";
 status_router.notavail="Ni na voljo";
 status_router.legend6="Uporaba prostora";
 status_router.inpvolt="Napajalna napetost";
-status_router.cputemp="Temperatura";
+status_router.cputemp="Senzorij";
 
 //help container
 

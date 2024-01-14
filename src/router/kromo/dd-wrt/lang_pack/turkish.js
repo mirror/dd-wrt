@@ -1482,7 +1482,7 @@ status_router.net_conntrack="Etkin IP Bağlantıları";
 status_router.notavail="Yok";
 status_router.legend6="Boşluk Kullanımı";
 status_router.inpvolt="Kart Giriş Voltajı";
-status_router.cputemp="CPU Sıcaklığı";
+status_router.cputemp="Sensörler";
 
 //help container
 hstatus_router.right2="Bu, <i>Kurulum</i> sekmesinde ayarladığınız yönlendiriciye özgü addır.";

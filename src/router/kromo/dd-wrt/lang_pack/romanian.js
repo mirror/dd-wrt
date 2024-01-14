@@ -1572,7 +1572,7 @@ status_router.net_conntrack="Conexiuni IP active";
 status_router.notavail="Indisponibil";
 status_router.legend6="Utilizare spațiu";
 status_router.inpvolt="Voltaj de intrare placă";
-status_router.cputemp="Temperatură";
+status_router.cputemp="Senzori";
 
 //help container
 hstatus_router.right2="Acesta este numele specific al ruterului, pe care îl puteți modifica în pagina <i>Instalare</i>.";

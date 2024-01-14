@@ -2152,7 +2152,7 @@ status_router.net_conntrack="Aktivní IP Spojení";
 status_router.notavail="Není k dispozici";
 status_router.legend6="Využité místo";
 status_router.inpvolt="Vstupní napájení desky";
-status_router.cputemp="Teploty";
+status_router.cputemp="Szenory";
 
 //help container
 //

@@ -2395,7 +2395,7 @@ status_router.net_conntrack="Active IP Connections";
 status_router.notavail="Not Available";
 status_router.legend6="NVRAM / CIFS / JFFS2 Usage";
 status_router.inpvolt="Board Input Voltage";
-status_router.cputemp="Temperatures";
+status_router.cputemp="Sensors";
 
 //help container
 var hstatus_router=new Object();

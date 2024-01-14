@@ -2118,7 +2118,7 @@ status_router.net_conntrack="Aktive IP-Verbindungen";
 status_router.notavail="Nicht verfügbar";
 status_router.legend6="Verwendung";
 status_router.inpvolt="Spannung am Platineneingang";
-status_router.cputemp="Temperaturen";
+status_router.cputemp="Sensoren";
 
 //help container
 

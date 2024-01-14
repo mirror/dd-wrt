@@ -1208,7 +1208,7 @@ status_router.net_conntrack="Nb de connexions actives";
 status_router.notavail="Indisponible";
 status_router.legend6="Partitions disponibles";
 status_router.inpvolt="Tension";
-status_router.cputemp="Température CPU";
+status_router.cputemp="Capteurs";
 
 //help container
 hstatus_router.right2="Nom du routeur que vous avez configuré dans l'onglet <em>Configuration</em>.";

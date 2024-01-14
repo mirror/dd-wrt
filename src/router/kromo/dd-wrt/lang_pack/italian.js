@@ -1866,7 +1866,7 @@ status_router.net_conntrack="Connessioni IP Attive";
 status_router.notavail="Non disponibile";
 status_router.legend6="Uso Memorie";
 status_router.inpvolt="Tensione in input";
-status_router.cputemp="Temperature";
+status_router.cputemp="Sensori";
 
 //help container
 //var hstatus_router=new Object();

@@ -1452,7 +1452,7 @@ status_router.net_conntrack="Aktivnih IP Veza";
 status_router.notavail="Nije dostupno";
 status_router.legend6="Upotreba Prostora";
 status_router.inpvolt="Narinuti Napon";
-status_router.cputemp="Temperatura";
+status_router.cputemp="Senzori";
 
 //help container
 

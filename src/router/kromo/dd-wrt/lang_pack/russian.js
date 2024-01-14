@@ -1586,7 +1586,7 @@ status_router.net_conntrack="Активные IP-соединения";
 status_router.notavail="Недоступно";
 status_router.legend6="Использование дискового пространства";
 status_router.inpvolt="Напряжение питания";
-status_router.cputemp="Температура процессора";
+status_router.cputemp="Датчики";
 //help container
 hstatus_router.right2="Это имя роутера, которое задается на вкладке <i>Установка</i>.";
 hstatus_router.right4="Это MAC-адрес роутера, который видит ваш провайдер.";

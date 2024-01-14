@@ -1395,7 +1395,7 @@ status_router.net_conntrack="Aktiva IP Sessioner";
 status_router.notavail="Ej tillgänglig";
 status_router.legend6="Använt Utrymme";
 status_router.inpvolt="Inkommande Spänning";
-status_router.cputemp="Temperatur";
+status_router.cputemp="Sensorer";
 
 //help container
 hstatus_router.right2="Routerns specifika namn, Som du ställer in i inställnigar (fliken).";

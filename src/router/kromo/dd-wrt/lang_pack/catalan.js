@@ -1523,7 +1523,7 @@ status_router.net_conntrack="Connexions IP Actives";
 status_router.notavail="No disponible";
 status_router.legend6="Utilització d'Espai";
 status_router.inpvolt="Voltatge d'Entrada de Placa";
-status_router.cputemp="Temperatura";
+status_router.cputemp="Sensors";
 
 //help container
 hstatus_router.right2="Aquest és el nom específic del encamindor, el qual establiu en la pestanya <i>Inici</i>.";

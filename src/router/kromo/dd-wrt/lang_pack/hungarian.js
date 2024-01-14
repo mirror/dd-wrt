@@ -1154,7 +1154,7 @@ status_router.net_ipcontrkmax="IP-szűrő maximális portjai";
 status_router.net_conntrack="Aktíve IP kapcsolatok";
 status_router.notavail="Nem elérhető";
 status_router.inpvolt="Alaplapi bemenő feszültség";
-status_router.cputemp="CPU hőmérséklete";
+status_router.cputemp="Érzékelők";
 
 //help container
 
