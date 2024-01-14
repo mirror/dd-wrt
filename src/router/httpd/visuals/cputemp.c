@@ -133,7 +133,7 @@ EJ_VISIBLE void ej_read_sensors(webs_t wp, int argc, char_t **argv)
 			}
 			if (sensors[cnt].method)
 				sensor = sensors[cnt].method();
-			if (wp && scale != -1) {
+			if (wp && scale != -1 && sensor != -1) {
 				if (scale > 1) {
 					websWrite(wp, "{cpu_temp%d::%d.%d &#176;C}", cnt, sensor / scale,
 						  (sensor % scale) / (scale / 10));
@@ -151,10 +151,14 @@ static int showsensor(webs_t wp, const char *path, int (*method)(void), const ch
 	if (alreadyshowed(path))
 		return 1;
 	FILE *fp = fopen(path, "rb");
-	if (fp) {
+	if (fp || method) {
 		int sensor;
-		fscanf(fp, "%d", &sensor);
-		fclose(fp);
+		if (fp) {
+			fscanf(fp, "%d", &sensor);
+			fclose(fp);
+		}
+		if (method)
+			sensor = method();
 		if (!scale)
 			scale = getscale(path);
 		if (!scale) {
@@ -167,10 +171,11 @@ static int showsensor(webs_t wp, const char *path, int (*method)(void), const ch
 			else
 				scale = 1;
 		}
-		if (wp) {
+		if (wp && sensor != -1) {
+			int count = addsensor(path, method, scale);
 			websWrite(wp, "<div class=\"setting\">\n");
 			websWrite(wp, "<div class=\"label\">%s</div>\n", name);
-			websWrite(wp, "<span id=\"cpu_temp%d\">", addsensor(path, method, scale));
+			websWrite(wp, "<span id=\"cpu_temp%d\">", count);
 			if (scale > 1) {
 				websWrite(wp, "%d.%d &#176;C\n", sensor / scale, (sensor % scale) / (scale / 10));
 			} else {
@@ -179,6 +184,8 @@ static int showsensor(webs_t wp, const char *path, int (*method)(void), const ch
 			websWrite(wp, "</span>&nbsp;\n");
 			websWrite(wp, "</div>\n");
 		}
+		if (sensor == -1)
+			return 0;
 		return 1;
 	}
 	return 0;
@@ -267,34 +274,34 @@ static int getwifi(int idx)
 	unsigned int result[3] = { 0, 0, 0 };
 	static int tempavg[3] = { 0, 0, 0 };
 	static unsigned int tempavg_max = 0;
+	int i = idx;
 
 	int ttcount = 0;
 	int cc = get_wl_instances();
-	for (i = 0; i < cc; i++) {
-		strcpy(buf, "phy_tempsense");
-		char *ifname = get_wl_instance_name(i);
-		if (nvram_nmatch("disabled", "wl%d_net_mode", i) || (ret = wl_ioctl(ifname, WLC_GET_VAR, buf, sizeof(buf)))) {
-			present[i] = 0;
-			continue;
-		}
-		ret_int[i] = *(unsigned int *)buf;
-		present[i] = 1;
-
-		ret_int[i] *= 10;
-		if (tempcount == -2) {
-			if (!ttcount)
-				ttcount = tempcount + 1;
-			tempavg[i] = ret_int[i];
-			if (tempavg[i] < 0)
-				tempavg[i] = 0;
-		} else {
-			if (tempavg[i] < 100 && ret_int[i] > 0)
-				tempavg[i] = ret_int[i];
-			if (tempavg[i] > 2000 && ret_int[i] > 0)
-				tempavg[i] = ret_int[i];
-			tempavg[i] = (tempavg[i] * 4 + ret_int[i]) / 5;
-		}
+	strcpy(buf, "phy_tempsense");
+	char *ifname = get_wl_instance_name(i);
+	if (nvram_nmatch("disabled", "wl%d_net_mode", i) || (ret = wl_ioctl(ifname, WLC_GET_VAR, buf, sizeof(buf)))) {
+		present[i] = 0;
+		return -1;
 	}
+	ret_int[i] = *(unsigned int *)buf;
+	present[i] = 1;
+
+	ret_int[i] *= 10;
+	if (tempcount == -2) {
+		if (!ttcount)
+			ttcount = tempcount + 1;
+		tempavg[i] = ret_int[i];
+		if (tempavg[i] < 0)
+			tempavg[i] = 0;
+	} else {
+		if (tempavg[i] < 100 && ret_int[i] > 0)
+			tempavg[i] = ret_int[i];
+		if (tempavg[i] > 2000 && ret_int[i] > 0)
+			tempavg[i] = ret_int[i];
+		tempavg[i] = (tempavg[i] * 4 + ret_int[i]) / 5;
+	}
+
 	if (ttcount)
 		tempcount = ttcount;
 	for (i = 0; i < cc; i++) {
@@ -649,7 +656,7 @@ EJ_VISIBLE int ej_get_cputemp(webs_t wp, int argc, char_t **argv)
 				char name[64];
 				sprintf(name, "WLAN%d", i);
 				if (!checkhwmon(s_path))
-				showsensor(wp, s_path, NULL, name, 1000);
+					showsensor(wp, s_path, NULL, name, 1000);
 				cpufound = 1;
 			}
 exit_error:;
