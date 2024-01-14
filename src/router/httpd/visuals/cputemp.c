@@ -97,6 +97,7 @@ static int addsensor(char *path, int (*method)(void), int scale)
 	sensors[cnt].method = method;
 	sensors[cnt].shown = 1;
 	sensors[cnt + 1].path = NULL;
+	sensors[cnt + 1].method = NULL;
 	return cnt;
 }
 
@@ -215,7 +216,7 @@ static int show_temp(webs_t wp, char *name)
 		snprintf(sysfs, 64, "/sys/devices/virtual/thermal/thermal_zone%d/temp", mon);
 		char sensorname[32];
 		snprintf(sensorname, 32, "%s%d", name, mon);
-		showsensor(wp, sysfs, NULL, name, 1000);
+		showsensor(wp, sysfs, NULL, sensorname, 1000);
 	}
 	return 1;
 }
