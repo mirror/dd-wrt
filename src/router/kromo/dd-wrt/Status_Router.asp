@@ -144,8 +144,8 @@ addEvent(window, "unload", function() {
 									<div class="label"><% tran("status_router.sys_load"); %></div>
 									<span id="uptime_load"></span>&nbsp;
 								</div>
-								<% show_cpu_temperature(); %>
 							</fieldset><br />
+							<% show_cpu_temperature(); %>
 							<fieldset>
 								<legend><% tran("status_router.legend3"); %></legend>
 								<div class="setting">
