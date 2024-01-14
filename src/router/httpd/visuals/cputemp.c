@@ -356,7 +356,7 @@ EJ_VISIBLE int ej_get_cputemp(webs_t wp, int argc, char_t **argv)
 			show_temp(wp, 1, 2, "WLAN");
 			show_temp(wp, 2, 1, "WLAN1");
 		}
-		show_temp(wp, 3, 1, "WLAN1");
+		show_temp(wp, 3, 1, "WLAN2");
 	}
 	return 0;
 #endif
