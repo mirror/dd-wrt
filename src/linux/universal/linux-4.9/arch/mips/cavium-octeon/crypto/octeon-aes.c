@@ -80,20 +80,20 @@ static int octeon_crypto_aes_cbc_decrypt(struct blkcipher_desc *desc,
 		blkcipher_walk_init(&walk, dst, src, nbytes);
 		err = blkcipher_walk_virt(desc, &walk);
 		desc->flags &= ~CRYPTO_TFM_REQ_MAY_SLEEP;
-		iv8 = (u8 *)walk.iv;
+		iv = (__be64 *)walk.iv;
 		while ((nbytes = walk.nbytes)) {
 			todo = nbytes & AES_BLOCK_MASK;
 			dataout = (__be64 *)walk.dst.virt.addr;
 			data = (__be64 *)walk.src.virt.addr;
 			__be64 c;
-			aes_decrypt(&crypto, tmp.c, datau);
+			aes_decrypt(&crypto, tmp.c, data);
 			for (i = 0; i < todo / AES_BLOCK_SIZE; i++) {
 				c = *data++;
 				*dataout++ = tmp.c[0] ^ iv[0];
 				iv[0] = c;
 				c = *data++;
 				*dataout++ = tmp.c[1] ^ iv[1];
-				iv[0] = c;
+				iv[1] = c;
 			}
 			nbytes &= AES_BLOCK_SIZE - 1;
 			err = blkcipher_walk_done(desc, &walk, nbytes);
