@@ -25,22 +25,46 @@ struct SENSORS {
 	char *path;
 	int scale;
 	int (*method) (void);
+	int shown;
 };
 static struct SENSORS *sensors = NULL;
 
-/* {cpu_temp::<% get_cputemp(); %>} */
+static void sensorreset(void)
+{
+	int cnt = 0;
+	if (sensors) {
+		while (sensors[cnt].path || sensors[cnt].method) {
+			sensors[cnt].shown = 0;
+			cnt++;
+		}
+	}
+}
+static int alreadyshowed(char *path)
+{
+	int cnt = 0;
+	if (sensors) {
+		while (sensors[cnt].path || sensors[cnt].method) {
+			if (sensors[cnt].path && sensors[cnt].shown && !strcmp(sensors[cnt].path, path))
+			    return 1;
+			cnt++;
+		}
+	}
+	return 0;
+}
 
 static int addsensor(char *path, int (*method) (void), int scale)
 {
 	int cnt = 0;
 	if (sensors) {
-		while (sensors[cnt].path) {
+		while (sensors[cnt].path || sensors[cnt].method) {
 			if (sensors[cnt].method) {
 				cnt++;
 				continue;
 			}
-			if (!strcmp(sensors[cnt].path, path))
+			if (!strcmp(sensors[cnt].path, path)) {
+				sensors[cnt].shown = 1;
 				return cnt;	// already added
+			}
 			cnt++;
 		}
 	}
@@ -48,6 +72,7 @@ static int addsensor(char *path, int (*method) (void), int scale)
 	sensors[cnt].path = strdup(path);
 	sensors[cnt].scale = scale;
 	sensors[cnt].method = method;
+	sensors[cnt].shown = 1;
 	sensors[cnt + 1].path = NULL;
 	return cnt;
 }
@@ -56,9 +81,11 @@ static int getscale(char *path)
 {
 	int cnt = 0;
 	if (sensors) {
-		while (sensors[cnt].path) {
-			if (sensors[cnt].method)
+		while (sensors[cnt].path || sensors[cnt].method) {
+			if (sensors[cnt].method) {
+				cnt++;
 				continue;
+			}
 			if (!strcmp(sensors[cnt].path, path))
 				return sensors[cnt - 1].scale;
 			cnt++;
@@ -71,7 +98,7 @@ EJ_VISIBLE void ej_read_sensors(webs_t wp, int argc, char_t ** argv)
 {
 	int cnt = 0;
 	if (sensors) {
-		while (sensors[cnt].path) {
+		while (sensors[cnt].path || sensors[cnt].method) {
 			int scale = sensors[cnt].scale;
 			int sensor = -1;
 			if (sensors[cnt].path) {
@@ -99,7 +126,8 @@ EJ_VISIBLE void ej_read_sensors(webs_t wp, int argc, char_t ** argv)
 
 static int showsensor(webs_t wp, const char *path, int (*method) (void), const char *name, int scale)
 {
-
+	if (alreadyshowed(path))
+	    return 1;
 	FILE *fp = fopen(path, "rb");
 	if (fp) {
 		int sensor;
@@ -157,7 +185,7 @@ static int show_temp(webs_t wp, char *name)
 	for (mon = 0; mon < 11; mon++) {
 		snprintf(sysfs, 64, "/sys/devices/virtual/thermal/thermal_zone%d/temp", mon);
 		char sensorname[32];
-		snprintf(sensorname, 32, "%s%d", mon);
+		snprintf(sensorname, 32, "%s%d", name, mon);
 		showsensor(wp, sysfs, NULL, name, 1000);
 	}
 	return 1;
@@ -279,6 +307,7 @@ EJ_VISIBLE int ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 	FILE *fp = NULL;
 	FILE *fpsys = NULL;
 	char *path;
+	sensorreset();
 #ifdef HAVE_MVEBU
 	if (getRouterBrand() == ROUTER_WRT_1900AC) {
 		show_temp(wp, 0, 1, "CPU");
@@ -441,21 +470,21 @@ EJ_VISIBLE int ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 	if (!fp) {
 		TEMP_MUL = 100;
 
-		char path[64];
+		char s_path[64];
 		int idx = 0;
 		int hascore = 0;
 		char tempp[64];
-		if (getCoreTemp(path, sizeof(path), &idx, 0)) {
+		if (getCoreTemp(s_path, sizeof(s_path), &idx, 0)) {
 			char maxp[64];
-			sprintf(tempp, "%s/temp%d_input", path, idx);
+			sprintf(tempp, "%s/temp%d_input", s_path, idx);
 			hascore = 1;
-			show_sensor(wp, tempp, NULL, "CPU", 1000);
+			showsensor(wp, tempp, NULL, "CPU", 1000);
 			TEMP_MUL = 1000;
-		} else if (getCoreTemp(path, sizeof(path), &idx, 1)) {
+		} else if (getCoreTemp(s_path, sizeof(s_path), &idx, 1)) {
 			char maxp[64];
-			sprintf(tempp, "%s/temp%d_input", path, idx);
+			sprintf(tempp, "%s/temp%d_input", s_path, idx);
 			hascore = 1;
-			show_sensor(wp, tempp, NULL, "CPU", 1000);
+			showsensor(wp, tempp, NULL, "CPU", 1000);
 			TEMP_MUL = 1000;
 		}
 		if (TEMP_MUL == 100) {
@@ -486,7 +515,7 @@ EJ_VISIBLE int ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 						TEMP_MUL *= 10;
 				} else
 					TEMP_MUL = 1;
-				show_sensor(wp, path, NULL, "CPU", TEMP_MUL);
+				showsensor(wp, path, NULL, "CPU", TEMP_MUL);
 			}
 		}
 		fp = NULL;
@@ -510,6 +539,7 @@ EJ_VISIBLE int ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 		}
 	}
 #else
+	path = "/sys/class/hwmon/hwmon0/temp1_input";
 	fp = fopen("/sys/devices/platform/i2c-0/0-0048/temp1_input", "rb");
 #endif
 #endif
@@ -518,15 +548,52 @@ EJ_VISIBLE int ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 	if (fp != NULL) {
 		cpufound = 1;
 		fp = NULL;
-		show_sensor(wp, path, NULL, "CPU", TEMP_MUL);
+		showsensor(wp, path, NULL, "CPU", TEMP_MUL);
 	}
 	if (fpsys != NULL) {
-		if (cpufound) {
-			websWrite(wp, " / ");
-		}
 		cpufound = 1;
 		fclose(fpsys);
-		show_sensor(wp, path, NULL, "SYS", SYSTEMP_MUL);
+		showsensor(wp, path, NULL, "SYS", SYSTEMP_MUL);
+	}
+	int a,b;
+	for (a=0;a<16;a++) {
+		char sysfs[64];
+		sprintf(sysfs,"/sys/class/hwmon%d", a);
+		for (b=0;b<16;b++) {
+			char n[64];
+			sprintf(n,"%s/temp%d_label",sysfs, b);
+			char p[64];
+			sprintf(p,"%s/temp%d_input",sysfs, b);
+			fp = fopen(n, "rb");
+			if (fp) {
+				char sname[64];
+				fscanf(fp, "%s", sname);
+				fclose(fp);
+				showsensor(wp, p, NULL, sname, 0);
+				continue;
+			}
+			sprintf(n,"%s/name",sysfs);
+			fp = fopen(n, "rb");
+			if (fp) {
+				char sname[64];
+				fscanf(fp, "%s", sname);
+				fclose(fp);
+				showsensor(wp, p, NULL, sname, 0);
+			}
+		}
+		for (b=0;b<16;b++) {
+			char n[64];
+			char p[64];
+			sprintf(p,"%s/in%d_input",sysfs, b);
+			sprintf(n,"%s/in%d_label",sysfs, b);
+			fp = fopen(n, "rb");
+			if (fp) {
+				char sname[64];
+				fscanf(fp, "%s", sname);
+				fclose(fp);
+				showsensor(wp, p, NULL, sname, 0);
+			}
+		}
 	}
 #endif
 	FILE *fp2 = NULL;
@@ -556,7 +623,7 @@ EJ_VISIBLE int ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 				fclose(fp2);
 				char name[64];
 				sprintf(name, "WLAN%d", i);
-				show_sensor(wp, s_path, NULL, name, 1000);
+				showsensor(wp, s_path, NULL, name, 1000);
 				cpufound = 1;
 			}
 		      exit_error:;
