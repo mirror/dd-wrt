@@ -39,6 +39,29 @@ static void sensorreset(void)
 		}
 	}
 }
+static int checkhwmon(char *sysfs)
+{
+	char *sub = strstr(sysfs, "hwmon");
+	if (!sub)
+		return 0;
+	sub = strdup(sub);
+	char *idx = strchr(sub, '/');
+	if (!idx) {
+		free(sub);
+		return 0;
+	}
+	*idx = 0;
+	int cnt = 0;
+	while (sensors[cnt].path || sensors[cnt].method) {
+		if (sensors[cnt].path && strstr(sensors[cnt].path, sub)) {
+			free(sub);
+			return 1;
+		}
+		cnt++;
+	}
+	free(sub);
+	return 0;
+}
 static int alreadyshowed(char *path)
 {
 	int cnt = 0;
@@ -557,12 +580,15 @@ EJ_VISIBLE int ej_get_cputemp(webs_t wp, int argc, char_t **argv)
 	int a, b;
 	for (a = 0; a < 16; a++) {
 		char sysfs[64];
-		sprintf(sysfs, "/sys/class/hwmon%d", a);
+		sprintf(sysfs, "/sys/class/hwmon%d/", a);
+		if (checkhwmon(p))
+			continue; // already handled in specific way
+
 		for (b = 0; b < 16; b++) {
 			char n[64];
-			sprintf(n, "%s/temp%d_label", sysfs, b);
+			sprintf(n, "%stemp%d_label", sysfs, b);
 			char p[64];
-			sprintf(p, "%s/temp%d_input", sysfs, b);
+			sprintf(p, "%stemp%d_input", sysfs, b);
 			fp = fopen(n, "rb");
 			if (fp) {
 				char sname[64];
@@ -571,7 +597,7 @@ EJ_VISIBLE int ej_get_cputemp(webs_t wp, int argc, char_t **argv)
 				showsensor(wp, p, NULL, sname, 0);
 				continue;
 			}
-			sprintf(n, "%s/name", sysfs);
+			sprintf(n, "%sname", sysfs);
 			fp = fopen(n, "rb");
 			if (fp) {
 				char sname[64];
@@ -583,8 +609,8 @@ EJ_VISIBLE int ej_get_cputemp(webs_t wp, int argc, char_t **argv)
 		for (b = 0; b < 16; b++) {
 			char n[64];
 			char p[64];
-			sprintf(p, "%s/in%d_input", sysfs, b);
-			sprintf(n, "%s/in%d_label", sysfs, b);
+			sprintf(p, "%sin%d_input", sysfs, b);
+			sprintf(n, "%sin%d_label", sysfs, b);
 			fp = fopen(n, "rb");
 			if (fp) {
 				char sname[64];
@@ -622,6 +648,7 @@ EJ_VISIBLE int ej_get_cputemp(webs_t wp, int argc, char_t **argv)
 				fclose(fp2);
 				char name[64];
 				sprintf(name, "WLAN%d", i);
+				if (!checkhwmon(s_path)
 				showsensor(wp, s_path, NULL, name, 1000);
 				cpufound = 1;
 			}
