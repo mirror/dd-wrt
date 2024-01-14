@@ -24,7 +24,7 @@
 struct SENSORS {
 	char *path;
 	int scale;
-	int (*method) (void);
+	int (*method)(void);
 	int shown;
 };
 static struct SENSORS *sensors = NULL;
@@ -45,14 +45,14 @@ static int alreadyshowed(char *path)
 	if (sensors) {
 		while (sensors[cnt].path || sensors[cnt].method) {
 			if (sensors[cnt].path && sensors[cnt].shown && !strcmp(sensors[cnt].path, path))
-			    return 1;
+				return 1;
 			cnt++;
 		}
 	}
 	return 0;
 }
 
-static int addsensor(char *path, int (*method) (void), int scale)
+static int addsensor(char *path, int (*method)(void), int scale)
 {
 	int cnt = 0;
 	if (sensors) {
@@ -63,7 +63,7 @@ static int addsensor(char *path, int (*method) (void), int scale)
 			}
 			if (!strcmp(sensors[cnt].path, path)) {
 				sensors[cnt].shown = 1;
-				return cnt;	// already added
+				return cnt; // already added
 			}
 			cnt++;
 		}
@@ -94,7 +94,7 @@ static int getscale(char *path)
 	return 0;
 }
 
-EJ_VISIBLE void ej_read_sensors(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_read_sensors(webs_t wp, int argc, char_t **argv)
 {
 	int cnt = 0;
 	if (sensors) {
@@ -112,22 +112,21 @@ EJ_VISIBLE void ej_read_sensors(webs_t wp, int argc, char_t ** argv)
 				sensor = sensors[cnt].method();
 			if (wp && scale != -1) {
 				if (scale > 1) {
-					websWrite(wp, "{cpu_temp%d::%d.%d &#176;C}", cnt, sensor / scale, (sensor % scale) / (scale / 10));
+					websWrite(wp, "{cpu_temp%d::%d.%d &#176;C}", cnt, sensor / scale,
+						  (sensor % scale) / (scale / 10));
 				} else {
 					websWrite(wp, "{cpu_temp%d::%d &#176;C}", cnt, sensor);
 				}
 			}
 			cnt++;
-
 		}
 	}
-
 }
 
-static int showsensor(webs_t wp, const char *path, int (*method) (void), const char *name, int scale)
+static int showsensor(webs_t wp, const char *path, int (*method)(void), const char *name, int scale)
 {
 	if (alreadyshowed(path))
-	    return 1;
+		return 1;
 	FILE *fp = fopen(path, "rb");
 	if (fp) {
 		int sensor;
@@ -300,7 +299,7 @@ static int getwifi2(void)
 }
 #endif
 
-EJ_VISIBLE int ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE int ej_get_cputemp(webs_t wp, int argc, char_t **argv)
 {
 	int i, cpufound = 0;
 	int disable_wifitemp = 0;
@@ -503,7 +502,7 @@ EJ_VISIBLE int ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 				path = "/sys/class/hwmon/hwmon1/temp1_max";
 				fp = fopen(path, "rb");
 			}
-			if (fp) {	// some heuristic to detect unit
+			if (fp) { // some heuristic to detect unit
 				char temp[32];
 				fscanf(fp, "%s", &temp[0]);
 				fclose(fp);
@@ -555,15 +554,15 @@ EJ_VISIBLE int ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 		fclose(fpsys);
 		showsensor(wp, path, NULL, "SYS", SYSTEMP_MUL);
 	}
-	int a,b;
-	for (a=0;a<16;a++) {
+	int a, b;
+	for (a = 0; a < 16; a++) {
 		char sysfs[64];
-		sprintf(sysfs,"/sys/class/hwmon%d", a);
-		for (b=0;b<16;b++) {
+		sprintf(sysfs, "/sys/class/hwmon%d", a);
+		for (b = 0; b < 16; b++) {
 			char n[64];
-			sprintf(n,"%s/temp%d_label",sysfs, b);
+			sprintf(n, "%s/temp%d_label", sysfs, b);
 			char p[64];
-			sprintf(p,"%s/temp%d_input",sysfs, b);
+			sprintf(p, "%s/temp%d_input", sysfs, b);
 			fp = fopen(n, "rb");
 			if (fp) {
 				char sname[64];
@@ -572,7 +571,7 @@ EJ_VISIBLE int ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 				showsensor(wp, p, NULL, sname, 0);
 				continue;
 			}
-			sprintf(n,"%s/name",sysfs);
+			sprintf(n, "%s/name", sysfs);
 			fp = fopen(n, "rb");
 			if (fp) {
 				char sname[64];
@@ -581,11 +580,11 @@ EJ_VISIBLE int ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 				showsensor(wp, p, NULL, sname, 0);
 			}
 		}
-		for (b=0;b<16;b++) {
+		for (b = 0; b < 16; b++) {
 			char n[64];
 			char p[64];
-			sprintf(p,"%s/in%d_input",sysfs, b);
-			sprintf(n,"%s/in%d_label",sysfs, b);
+			sprintf(p, "%s/in%d_input", sysfs, b);
+			sprintf(n, "%s/in%d_label", sysfs, b);
 			fp = fopen(n, "rb");
 			if (fp) {
 				char sname[64];
@@ -626,7 +625,7 @@ EJ_VISIBLE int ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 				showsensor(wp, s_path, NULL, name, 1000);
 				cpufound = 1;
 			}
-		      exit_error:;
+exit_error:;
 		}
 	}
 #endif
@@ -639,7 +638,7 @@ EJ_VISIBLE int ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 #endif
 }
 
-EJ_VISIBLE void ej_show_cpu_temperature(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_show_cpu_temperature(webs_t wp, int argc, char_t **argv)
 {
 	static int notavailable = -1;
 
@@ -648,7 +647,8 @@ EJ_VISIBLE void ej_show_cpu_temperature(webs_t wp, int argc, char_t ** argv)
 	if (!notavailable) {
 		websWrite(wp, "<fieldset>\n");
 		{
-			websWrite(wp, "<legend><script type=\"text/javascript\">Capture(status_router.cputemp);</script></legend>\n");
+			websWrite(wp,
+				  "<legend><script type=\"text/javascript\">Capture(status_router.cputemp);</script></legend>\n");
 			ej_get_cputemp(wp, argc, argv);
 		}
 		websWrite(wp, "</fieldset><br />\n");
