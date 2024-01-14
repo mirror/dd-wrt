@@ -21,63 +21,146 @@
  */
 #ifdef HAVE_CPUTEMP
 
-#if defined(HAVE_MVEBU) || defined(HAVE_OCTEON)
-static int show_temp(webs_t wp, int mon, int input, char *fmt)
+struct SENSORS {
+	char *path;
+	int scale;
+	int (*method) (void);
+};
+static struct SENSORS *sensors = NULL;
+
+/* {cpu_temp::<% get_cputemp(); %>} */
+
+static int addsensor(char *path, int (*method) (void), int scale)
 {
-	char sysfs[64];
-	snprintf(sysfs, 64, "/sys/class/hwmon/hwmon%d/temp%d_input", mon, input);
-	FILE *tempfp = fopen(sysfs, "rb");
-	if (tempfp) {
-		int cpu;
-		fscanf(tempfp, "%d", &cpu);
-		fclose(tempfp);
-		if (cpu > 0) {
-			websWrite(wp, fmt, cpu / 1000, (cpu % 1000) / 100);
-			return 1;
+	int cnt = 0;
+	if (sensors) {
+		while (sensors[cnt].path) {
+			if (sensors[cnt].method) {
+				cnt++;
+				continue;
+			}
+			if (!strcmp(sensors[cnt].path, path))
+				return cnt;	// already added
+			cnt++;
+		}
+	}
+	sensors = realloc(sensors, sizeof(struct SENSORS) * (cnt + 2));
+	sensors[cnt].path = strdup(path);
+	sensors[cnt].scale = scale;
+	sensors[cnt].method = method;
+	sensors[cnt + 1].path = NULL;
+	return cnt;
+}
+
+static int getscale(char *path)
+{
+	int cnt = 0;
+	if (sensors) {
+		while (sensors[cnt].path) {
+			if (sensors[cnt].method)
+				continue;
+			if (!strcmp(sensors[cnt].path, path))
+				return sensors[cnt - 1].scale;
+			cnt++;
 		}
 	}
 	return 0;
 }
 
-#elif defined(HAVE_ALPINE)
-static int show_temp(webs_t wp, int mon, int input, char *fmt)
+EJ_VISIBLE void ej_read_sensors(webs_t wp, int argc, char_t ** argv)
 {
-	char sysfs[64];
-	snprintf(sysfs, 64, "/sys/class/hwmon/hwmon%d/temp%d_input", mon, input);
-	FILE *tempfp = fopen(sysfs, "rb");
-	if (tempfp) {
-		int cpu;
-		fscanf(tempfp, "%d", &cpu);
-		fclose(tempfp);
-		websWrite(wp, fmt, cpu, 0);
+	int cnt = 0;
+	if (sensors) {
+		while (sensors[cnt].path) {
+			int scale = sensors[cnt].scale;
+			int sensor = -1;
+			if (sensors[cnt].path) {
+				FILE *fp = fopen(sensors[cnt].path, "rb");
+				if (fp) {
+					fscanf(fp, "%d", &sensor);
+					fclose(fp);
+				}
+			}
+			if (sensors[cnt].method)
+				sensor = sensors[cnt].method();
+			if (wp && scale != -1) {
+				if (scale > 1) {
+					websWrite(wp, "{cpu_temp%d::%d.%d &#176;C}", cnt, sensor / scale, (sensor % scale) / (scale / 10));
+				} else {
+					websWrite(wp, "{cpu_temp%d::%d &#176;C}", cnt, sensor);
+				}
+			}
+			cnt++;
+
+		}
+	}
+
+}
+
+static int showsensor(webs_t wp, const char *path, int (*method) (void), const char *name, int scale)
+{
+
+	FILE *fp = fopen(path, "rb");
+	if (fp) {
+		int sensor;
+		fscanf(fp, "%d", &sensor);
+		fclose(fp);
+		if (!scale)
+			scale = getscale(path);
+		if (!scale) {
+			if (sensor > 10000)
+				scale = 1000;
+			else if (sensor > 1000)
+				scale = 100;
+			else if (sensor > 100)
+				scale = 10;
+			else
+				scale = 1;
+		}
+		if (wp) {
+			websWrite(wp, "<div class=\"setting\">\n");
+			websWrite(wp, "<div class=\"label\">%s</div>\n", name);
+			websWrite(wp, "<span id=\"cpu_temp%d\">", addsensor(path, method, scale));
+			if (scale > 1) {
+				websWrite(wp, "%d.%d &#176;C\n", sensor / scale, (sensor % scale) / (scale / 10));
+			} else {
+				websWrite(wp, "%d.0 &#176;C\n", sensor);
+			}
+			websWrite(wp, "</span>&nbsp;\n");
+			websWrite(wp, "</div>\n");
+		}
 		return 1;
 	}
 	return 0;
 }
+
+#if defined(HAVE_MVEBU) || defined(HAVE_OCTEON)
+static int show_temp(webs_t wp, int mon, int input, const char *name)
+{
+	char sysfs[64];
+	snprintf(sysfs, 64, "/sys/class/hwmon/hwmon%d/temp%d_input", mon, input);
+	return showsensor(wp, sysfs, NULL, name, 1000);
+}
+
+#elif defined(HAVE_ALPINE)
+static int show_temp(webs_t wp, int mon, int input, char *name)
+{
+	char sysfs[64];
+	snprintf(sysfs, 64, "/sys/class/hwmon/hwmon%d/temp%d_input", mon, input);
+	return showsensor(wp, sysfs, NULL, name, 1000);
+}
 #elif defined(HAVE_IPQ806X)
-static int show_temp(webs_t wp, char *fmt)
+static int show_temp(webs_t wp, char *name)
 {
 	char sysfs[64];
 	int mon;
-	int temperature = -255;
 	for (mon = 0; mon < 11; mon++) {
 		snprintf(sysfs, 64, "/sys/devices/virtual/thermal/thermal_zone%d/temp", mon);
-		FILE *tempfp = fopen(sysfs, "rb");
-		if (tempfp) {
-			if (temperature == -255)
-				temperature = 0;
-			int cpu;
-			fscanf(tempfp, "%d", &cpu);
-			fclose(tempfp);
-			temperature += cpu;
-		}
+		char sensorname[32];
+		snprintf(sensorname, 32, "%s%d", mon);
+		showsensor(wp, sysfs, NULL, name, 1000);
 	}
-	if (temperature != -255) {
-		temperature /= mon;
-		websWrite(wp, fmt, temperature / 1000, temperature % 1000);
-		return 1;
-	}
-	return 0;
+	return 1;
 }
 #endif
 
@@ -123,42 +206,109 @@ int getCoreTemp(char *p, size_t len, int *ridx, int acpi)
 
 #endif
 
-EJ_VISIBLE void ej_get_cputemp(webs_t wp, int argc, char_t **argv)
+#ifdef HAVE_BCMMODERN
+static int getwifi(int idx)
+{
+	static int tempcount = -2;
+	char buf[WLC_IOCTL_SMLEN];
+	int ret;
+	unsigned int ret_int[3] = { 0, 0, 0 };
+	unsigned int present[3] = { 0, 0, 0 };
+	unsigned int result[3] = { 0, 0, 0 };
+	static int tempavg[3] = { 0, 0, 0 };
+	static unsigned int tempavg_max = 0;
+
+	int ttcount = 0;
+	int cc = get_wl_instances();
+	for (i = 0; i < cc; i++) {
+		strcpy(buf, "phy_tempsense");
+		char *ifname = get_wl_instance_name(i);
+		if (nvram_nmatch("disabled", "wl%d_net_mode", i) || (ret = wl_ioctl(ifname, WLC_GET_VAR, buf, sizeof(buf)))) {
+			present[i] = 0;
+			continue;
+		}
+		ret_int[i] = *(unsigned int *)buf;
+		present[i] = 1;
+
+		ret_int[i] *= 10;
+		if (tempcount == -2) {
+			if (!ttcount)
+				ttcount = tempcount + 1;
+			tempavg[i] = ret_int[i];
+			if (tempavg[i] < 0)
+				tempavg[i] = 0;
+		} else {
+			if (tempavg[i] < 100 && ret_int[i] > 0)
+				tempavg[i] = ret_int[i];
+			if (tempavg[i] > 2000 && ret_int[i] > 0)
+				tempavg[i] = ret_int[i];
+			tempavg[i] = (tempavg[i] * 4 + ret_int[i]) / 5;
+		}
+	}
+	if (ttcount)
+		tempcount = ttcount;
+	for (i = 0; i < cc; i++) {
+		result[i] = (tempavg[i] / 2) + 200;
+	}
+	if (present[idx])
+		return result[idx];
+	else
+		return -1;
+}
+
+static int getwifi0(void)
+{
+	return getwifi(0);
+}
+
+static int getwifi1(void)
+{
+	return getwifi(1);
+}
+
+static int getwifi2(void)
+{
+	return getwifi(2);
+}
+#endif
+
+EJ_VISIBLE int ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 {
 	int i, cpufound = 0;
 	int disable_wifitemp = 0;
 	FILE *fp = NULL;
 	FILE *fpsys = NULL;
+	char *path;
 #ifdef HAVE_MVEBU
 	if (getRouterBrand() == ROUTER_WRT_1900AC) {
-		show_temp(wp, 0, 1, "CPU %d.%d &#176;C");
-		show_temp(wp, 2, 1, "DDR %d.%d &#176;C");
-		show_temp(wp, 2, 2, "WLAN %d.%d &#176;C");
-		show_temp(wp, 3, 1, " / WLAN0 %d.%d &#176;C");
-		show_temp(wp, 4, 1, " / WLAN1 %d.%d &#176;C");
+		show_temp(wp, 0, 1, "CPU");
+		show_temp(wp, 2, 1, "DDR");
+		show_temp(wp, 2, 2, "WLAN");
+		show_temp(wp, 3, 1, "WLAN0");
+		show_temp(wp, 4, 1, "WLAN1");
 	} else {
-		int cpuresult = show_temp(wp, 0, 1, "CPU %d.%d &#176;C");
+		int cpuresult = show_temp(wp, 0, 1, "CPU");
 		if (!cpuresult) {
-			show_temp(wp, 1, 1, "DDR %d.%d &#176;C");
-			show_temp(wp, 1, 2, "WLAN %d.%d &#176;C");
-			show_temp(wp, 2, 1, " / WLAN0 %d.%d &#176;C");
+			show_temp(wp, 1, 1, "DDR");
+			show_temp(wp, 1, 2, "WLAN");
+			show_temp(wp, 2, 1, "WLAN0");
 		} else {
-			show_temp(wp, 1, 1, " / DDR %d.%d &#176;C");
-			show_temp(wp, 1, 2, "WIFI %d.%d &#176;C");
-			show_temp(wp, 2, 1, " / WLAN1 %d.%d &#176;C");
+			show_temp(wp, 1, 1, "DDR");
+			show_temp(wp, 1, 2, "WLAN");
+			show_temp(wp, 2, 1, "WLAN1");
 		}
-		show_temp(wp, 3, 1, " / WLAN1 %d.%d &#176;C");
+		show_temp(wp, 3, 1, "WLAN1");
 	}
-	return;
+	return 0;
 #endif
 #ifdef HAVE_OCTEON
-	cpufound |= show_temp(wp, 0, 1, "BOARD %d.%d &#176;C");
-	cpufound |= show_temp(wp, 1, 1, " / CPU %d.%d &#176;C");
-	cpufound |= show_temp(wp, 0, 2, " / PHY1 %d.%d &#176;C");
-	cpufound |= show_temp(wp, 1, 2, " / PHY2 %d.%d &#176;C");
+	cpufound |= show_temp(wp, 0, 1, "BOARD");
+	cpufound |= show_temp(wp, 1, 1, "CPU");
+	cpufound |= show_temp(wp, 0, 2, "PHY1");
+	cpufound |= show_temp(wp, 1, 2, "PHY2");
 #endif
 #ifdef HAVE_ALPINE
-	show_temp(wp, 1, 1, "CPU %d.%d &#176;C");
+	show_temp(wp, 1, 1, "CPU");
 	cpufound = 1;
 #elif defined(HAVE_IPQ806X)
 	char *wifiname0 = getWifiDeviceName("wlan0", NULL);
@@ -167,7 +317,7 @@ EJ_VISIBLE void ej_get_cputemp(webs_t wp, int argc, char_t **argv)
 	//              disable_wifitemp = 1;
 	//      }
 	if (wifiname0) {
-		cpufound = show_temp(wp, "CPU %d.%d &#176;C");
+		cpufound = show_temp(wp, "Thermal Zone");
 	} else {
 		disable_wifitemp = 1;
 	}
@@ -225,20 +375,24 @@ EJ_VISIBLE void ej_get_cputemp(webs_t wp, int argc, char_t **argv)
 	cputemp = 0;
 	fp = fopen("/proc/dmu/temperature", "rb");
 	if (fp) {
-		fscanf(fp, "%d", &cputemp);
 		fclose(fp);
+		showsensor(wp, "/proc/dmu/temperature", NULL, "CPU", 10);
 		fp = NULL;
-		websWrite(wp, "CPU %d.%d &#176;C / ", cputemp / 10, cputemp % 10);
 	}
 #endif
 	if (!present[0] && !present[1] && !present[2] && cputemp)
-		websWrite(wp, "%s", live_translate(wp, "status_router.notavail")); // no
+		return 1;
 	else {
 		for (i = 0; i < cc; i++) {
 			if (present[i]) {
-				if (i && present[i - 1])
-					websWrite(wp, " / ");
-				websWrite(wp, "WL%d %d.%d &#176;C", i, result[i] / 10, result[i] % 10);
+				char wl[32];
+				sprintf(wl, "WL%d", i);
+				if (i == 0)
+					showsensor(wp, NULL, getwifi0, wl, 10);
+				if (i == 1)
+					showsensor(wp, NULL, getwifi1, wl, 10);
+				if (i == 2)
+					showsensor(wp, NULL, getwifi2, wl, 10);
 			}
 		}
 	}
@@ -249,25 +403,34 @@ EJ_VISIBLE void ej_get_cputemp(webs_t wp, int argc, char_t **argv)
 	TEMP_MUL = 100;
 	if (getRouterBrand() == ROUTER_BOARD_GATEWORX_SWAP)
 		TEMP_MUL = 200;
-
-	fp = fopen("/sys/devices/platform/IXP4XX-I2C.0/i2c-adapter:i2c-0/0-0028/temp_input", "rb");
-	if (!fp)
-		fp = fopen("/sys/devices/platform/IXP4XX-I2C.0/i2c-0/0-0028/temp1_input", "rb");
+	char *path = "/sys/devices/platform/IXP4XX-I2C.0/i2c-adapter:i2c-0/0-0028/temp_input";
+	fp = fopen(path, "rb");
+	if (!fp) {
+		path = "/sys/devices/platform/IXP4XX-I2C.0/i2c-0/0-0028/temp1_input";
+		fp = fopen(path, "rb");
+	}
 #elif HAVE_LAGUNA
 	TEMP_MUL = 10;
-	fp = fopen("/sys/bus/i2c/devices/0-0029/temp0_input", "rb");
+	path = "/sys/bus/i2c/devices/0-0029/temp0_input";
+	fp = fopen(path, "rb");
 #elif HAVE_UNIWIP
-	fp = fopen("/sys/bus/i2c/devices/0-0049/temp1_input", "rb");
+	path = "/sys/bus/i2c/devices/0-0049/temp1_input";
+	fp = fopen(path, "rb");
 #elif HAVE_VENTANA
 	SYSTEMP_MUL = 10;
-	fp = fopen("/sys/class/hwmon/hwmon1/temp1_input", "rb");
-	if (!fp)
-		fp = fopen("/sys/class/hwmon/hwmon0/temp1_input", "rb");
-	fpsys = fopen("/sys/class/hwmon/hwmon0/temp0_input", "rb");
+	path = "/sys/class/hwmon/hwmon1/temp1_input";
+	fp = fopen(path, "rb");
+	if (!fp) {
+		path = "/sys/class/hwmon/hwmon0/temp1_input";
+		fp = fopen(path, "rb");
+	}
+	char *pathsys = "/sys/class/hwmon/hwmon0/temp0_input";
+	fpsys = fopen(pathsys, "rb");
 #ifdef HAVE_NEWPORT
 	if (!fpsys) {
 		SYSTEMP_MUL = 1000;
-		fpsys = fopen("/sys/class/hwmon/hwmon0/temp2_input", "rb");
+		pathsys = "/sys/class/hwmon/hwmon0/temp2_input";
+		fpsys = fopen(path, "rb");
 	}
 #endif
 
@@ -286,23 +449,32 @@ EJ_VISIBLE void ej_get_cputemp(webs_t wp, int argc, char_t **argv)
 			char maxp[64];
 			sprintf(tempp, "%s/temp%d_input", path, idx);
 			hascore = 1;
+			show_sensor(wp, tempp, NULL, "CPU", 1000);
 			TEMP_MUL = 1000;
 		} else if (getCoreTemp(path, sizeof(path), &idx, 1)) {
 			char maxp[64];
 			sprintf(tempp, "%s/temp%d_input", path, idx);
 			hascore = 1;
+			show_sensor(wp, tempp, NULL, "CPU", 1000);
 			TEMP_MUL = 1000;
 		}
 		if (TEMP_MUL == 100) {
+			path = "/sys/class/hwmon/hwmon0/temp1_max";
 			if (!fp)
-				fp = fopen("/sys/class/hwmon/hwmon0/temp1_max", "rb");
-			if (!fp)
-				fp = fopen("/sys/class/hwmon/hwmon0/device/temp1_max", "rb");
-			if (!fp)
-				fp = fopen("/sys/class/hwmon/hwmon0/temp2_max", "rb");
-			if (!fp)
-				fp = fopen("/sys/class/hwmon/hwmon1/temp1_max", "rb");
-			if (fp) { // some heuristic to detect unit
+				fp = fopen(path, "rb");
+			if (!fp) {
+				path = "/sys/class/hwmon/hwmon0/device/temp1_max";
+				fp = fopen(path, "rb");
+			}
+			if (!fp) {
+				path = "/sys/class/hwmon/hwmon0/temp2_max";
+				fp = fopen(path, "rb");
+			}
+			if (!fp) {
+				path = "/sys/class/hwmon/hwmon1/temp1_max";
+				fp = fopen(path, "rb");
+			}
+			if (fp) {	// some heuristic to detect unit
 				char temp[32];
 				fscanf(fp, "%s", &temp[0]);
 				fclose(fp);
@@ -314,19 +486,28 @@ EJ_VISIBLE void ej_get_cputemp(webs_t wp, int argc, char_t **argv)
 						TEMP_MUL *= 10;
 				} else
 					TEMP_MUL = 1;
+				show_sensor(wp, path, NULL, "CPU", TEMP_MUL);
 			}
 		}
 		fp = NULL;
-		if (hascore)
-			fp = fopen(tempp, "rb");
-		if (!fp)
-			fp = fopen("/sys/class/hwmon/hwmon0/temp1_input", "rb");
-		if (!fp)
-			fp = fopen("/sys/class/hwmon/hwmon0/device/temp1_input", "rb");
-		if (!fp)
-			fp = fopen("/sys/class/hwmon/hwmon0/temp2_input", "rb");
-		if (!fp)
-			fp = fopen("/sys/class/hwmon/hwmon1/temp1_input", "rb");
+		if (!hascore) {
+			if (!fp) {
+				path = "/sys/class/hwmon/hwmon0/temp1_input";
+				fp = fopen(path, "rb");
+			}
+			if (!fp) {
+				path = "/sys/class/hwmon/hwmon0/device/temp1_input";
+				fp = fopen(path, "rb");
+			}
+			if (!fp) {
+				path = "/sys/class/hwmon/hwmon0/temp2_input";
+				fp = fopen(path, "rb");
+			}
+			if (!fp) {
+				path = "/sys/class/hwmon/hwmon1/temp1_input";
+				fp = fopen(path, "rb");
+			}
+		}
 	}
 #else
 	fp = fopen("/sys/devices/platform/i2c-0/0-0048/temp1_input", "rb");
@@ -336,35 +517,16 @@ EJ_VISIBLE void ej_get_cputemp(webs_t wp, int argc, char_t **argv)
 #ifndef HAVE_IPQ806X
 	if (fp != NULL) {
 		cpufound = 1;
-		int temp;
-		fscanf(fp, "%d", &temp);
-		fclose(fp);
 		fp = NULL;
-		int high = temp / TEMP_MUL;
-		int low;
-		if (TEMP_MUL > 10)
-			low = (temp - (high * TEMP_MUL)) / (TEMP_MUL / 10);
-		else
-			low = 0;
-		websWrite(wp, "CPU %d.%d &#176;C", high,
-			  low); // no i2c lm75 found
+		show_sensor(wp, path, NULL, "CPU", TEMP_MUL);
 	}
 	if (fpsys != NULL) {
 		if (cpufound) {
 			websWrite(wp, " / ");
 		}
 		cpufound = 1;
-		int temp;
-		fscanf(fpsys, "%d", &temp);
 		fclose(fpsys);
-		int high = temp / SYSTEMP_MUL;
-		int low;
-		if (SYSTEMP_MUL > 10)
-			low = (temp - (high * SYSTEMP_MUL)) / (SYSTEMP_MUL / 10);
-		else
-			low = 0;
-		websWrite(wp, "SYS %d.%d &#176;C", high,
-			  low); // no i2c lm75 found
+		show_sensor(wp, path, NULL, "SYS", SYSTEMP_MUL);
 	}
 #endif
 	FILE *fp2 = NULL;
@@ -377,54 +539,52 @@ EJ_VISIBLE void ej_get_cputemp(webs_t wp, int argc, char_t **argv)
 				continue;
 			}
 #endif
-			char path[64];
+			char s_path[64];
 			int scan = 0;
 			for (scan = 0; scan < 20; scan++) {
-				sprintf(path, "/sys/class/ieee80211/phy%d/device/hwmon/hwmon%d/temp1_input", i, scan);
-				fp2 = fopen(path, "rb");
+				sprintf(s_path, "/sys/class/ieee80211/phy%d/device/hwmon/hwmon%d/temp1_input", i, scan);
+				fp2 = fopen(s_path, "rb");
 				if (fp2)
 					break;
-				sprintf(path, "/sys/class/ieee80211/phy%d/hwmon%d/temp1_input", i, scan);
-				fp2 = fopen(path, "rb");
+				sprintf(s_path, "/sys/class/ieee80211/phy%d/hwmon%d/temp1_input", i, scan);
+				fp2 = fopen(s_path, "rb");
 				if (fp2)
 					break;
 			}
 
 			if (fp2 != NULL) {
-				int temp;
-				fscanf(fp2, "%d", &temp);
 				fclose(fp2);
-				if (temp < 0)
-					goto exit_error;
-				if (cpufound) {
-					websWrite(wp, " / ");
-				}
-				int temperature = temp / 1000;
-				if (temperature < 0 || temperature > 200)
-					websWrite(wp, "wlan%d %s", i, live_translate(wp, "status_router.notavail"));
-				else
-					websWrite(wp, "wlan%d %d &#176;C", i, temp / 1000);
+				char name[64];
+				sprintf(name, "WLAN%d", i);
+				show_sensor(wp, s_path, NULL, name, 1000);
 				cpufound = 1;
 			}
-exit_error:;
+		      exit_error:;
 		}
 	}
 #endif
 	if (fp)
 		fclose(fp);
-	if (!cpufound)
-		websWrite(wp, "%s", live_translate(wp, "status_router.notavail")); // no
-
+	if (!cpufound) {
+		return 1;
+	}
+	return 0;
 #endif
 }
 
-EJ_VISIBLE void ej_show_cpu_temperature(webs_t wp, int argc, char_t **argv)
+EJ_VISIBLE void ej_show_cpu_temperature(webs_t wp, int argc, char_t ** argv)
 {
-	websWrite(wp, "<div class=\"setting\">\n");
-	show_caption(wp, "label", "status_router.cputemp", NULL);
-	websWrite(wp, "<span id=\"cpu_temp\">");
-	ej_get_cputemp(wp, argc, argv);
-	websWrite(wp, "</span>&nbsp;\n");
-	websWrite(wp, "</div>\n");
+	static int notavailable = -1;
+
+	if (notavailable == -1)
+		notavailable = ej_get_cputemp(NULL, argc, argv);
+	if (!notavailable) {
+		websWrite(wp, "<fieldset>\n");
+		{
+			websWrite(wp, "<legend><script type=\"text/javascript\">Capture(status_router.cputemp);</script></legend>\n");
+			ej_get_cputemp(wp, argc, argv);
+		}
+		websWrite(wp, "</fieldset><br />\n");
+	}
 }
 #endif
