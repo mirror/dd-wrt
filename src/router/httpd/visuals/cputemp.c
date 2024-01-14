@@ -648,7 +648,7 @@ EJ_VISIBLE int ej_get_cputemp(webs_t wp, int argc, char_t **argv)
 				fclose(fp2);
 				char name[64];
 				sprintf(name, "WLAN%d", i);
-				if (!checkhwmon(s_path)
+				if (!checkhwmon(s_path))
 				showsensor(wp, s_path, NULL, name, 1000);
 				cpufound = 1;
 			}
