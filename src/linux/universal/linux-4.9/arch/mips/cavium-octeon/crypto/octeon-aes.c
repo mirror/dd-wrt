@@ -35,8 +35,6 @@ struct octeon_crypto_aes_ctx {
 	u32 key_length;
 };
 
-
-
 static int octeon_crypto_aes_set_key(struct crypto_tfm *tfm, const u8 *in_key,
 				     unsigned int key_len)
 {
@@ -66,38 +64,68 @@ static int octeon_crypto_aes_cbc_decrypt(struct blkcipher_desc *desc,
 	struct octeon_cop2_state state;
 	unsigned long flags;
 	struct octeon_crypto_aes_ctx *ctx = crypto_blkcipher_ctx(desc->tfm);
+	struct crypto_tfm_ctx crypto;
+	crypto.__crt_ctx = ctx;
 	struct blkcipher_walk walk;
 	int err, i, todo;
 	__be64 *iv;
 	__be64 *dataout;
 	__be64 *data;
+	union {
+		size_t t[16 / sizeof(size_t)];
+		__be64 c;
+	} tmp;
 
-	blkcipher_walk_init(&walk, dst, src, nbytes);
-	err = blkcipher_walk_virt(desc, &walk);
-	desc->flags &= ~CRYPTO_TFM_REQ_MAY_SLEEP;
-	flags = octeon_crypto_enable(&state);
-	octeon_crypto_aes_write_key(ctx);
-	iv = (__be64 *)walk.iv;
-	write_octeon_64bit_aes_iv(iv[0], 0);
-	write_octeon_64bit_aes_iv(iv[1], 1);
-	octeon_crypto_disable(&state, flags);
-
-	while ((nbytes = walk.nbytes)) {
-		todo = nbytes & AES_BLOCK_MASK;
-		dataout = (__be64 *)walk.dst.virt.addr;
-		data = (__be64 *)walk.src.virt.addr;
-		flags = octeon_crypto_enable(&state);
-		for (i = 0; i < todo / AES_BLOCK_SIZE; i++) {
-			write_octeon_64bit_aes_dec_cbc0(*data++);
-			write_octeon_64bit_aes_dec_cbc1(*data++);
-			*dataout++ = read_octeon_64bit_aes_result(0);
-			*dataout++ = read_octeon_64bit_aes_result(1);
+	if (in_interrupt()) {
+		blkcipher_walk_init(&walk, dst, src, nbytes);
+		err = blkcipher_walk_virt(desc, &walk);
+		desc->flags &= ~CRYPTO_TFM_REQ_MAY_SLEEP;
+		iv8 = (u8 *)walk.iv;
+		while ((nbytes = walk.nbytes)) {
+			todo = nbytes & AES_BLOCK_MASK;
+			dataout = (__be64 *)walk.dst.virt.addr;
+			data = (__be64 *)walk.src.virt.addr;
+			__be64 c;
+			aes_decrypt(&crypto, tmp.c, datau);
+			for (i = 0; i < todo / AES_BLOCK_SIZE; i++) {
+				c = *data++;
+				*dataout++ = tmp.c[0] ^ iv[0];
+				iv[0] = c;
+				c = *data++;
+				*dataout++ = tmp.c[1] ^ iv[1];
+				iv[0] = c;
+			}
+			nbytes &= AES_BLOCK_SIZE - 1;
+			err = blkcipher_walk_done(desc, &walk, nbytes);
 		}
-		octeon_crypto_disable(&state, flags);
-		nbytes &= AES_BLOCK_SIZE - 1;
-		err = blkcipher_walk_done(desc, &walk, nbytes);
+
+	} else {
+		blkcipher_walk_init(&walk, dst, src, nbytes);
+		err = blkcipher_walk_virt(desc, &walk);
+		desc->flags &= ~CRYPTO_TFM_REQ_MAY_SLEEP;
+		flags = octeon_crypto_enable_no_irq_save(&state);
+		octeon_crypto_aes_write_key(ctx);
+		iv = (__be64 *)walk.iv;
+		write_octeon_64bit_aes_iv(iv[0], 0);
+		write_octeon_64bit_aes_iv(iv[1], 1);
+		octeon_crypto_disable_no_irq_save(&state, flags);
+
+		while ((nbytes = walk.nbytes)) {
+			todo = nbytes & AES_BLOCK_MASK;
+			dataout = (__be64 *)walk.dst.virt.addr;
+			data = (__be64 *)walk.src.virt.addr;
+			flags = octeon_crypto_enable_no_irq_save(&state);
+			for (i = 0; i < todo / AES_BLOCK_SIZE; i++) {
+				write_octeon_64bit_aes_dec_cbc0(*data++);
+				write_octeon_64bit_aes_dec_cbc1(*data++);
+				*dataout++ = read_octeon_64bit_aes_result(0);
+				*dataout++ = read_octeon_64bit_aes_result(1);
+			}
+			octeon_crypto_disable_no_irq_save(&state, flags);
+			nbytes &= AES_BLOCK_SIZE - 1;
+			err = blkcipher_walk_done(desc, &walk, nbytes);
+		}
 	}
-	octeon_crypto_disable(&state, flags);
 	return 0;
 }
 
@@ -107,6 +135,8 @@ static int octeon_crypto_aes_cbc_encrypt(struct blkcipher_desc *desc,
 					 unsigned int nbytes)
 {
 	struct octeon_crypto_aes_ctx *ctx = crypto_blkcipher_ctx(desc->tfm);
+	struct crypto_tfm_ctx crypto;
+	crypto.__crt_ctx = ctx;
 	struct blkcipher_walk walk;
 	struct octeon_cop2_state state;
 	unsigned long flags;
@@ -115,30 +145,50 @@ static int octeon_crypto_aes_cbc_encrypt(struct blkcipher_desc *desc,
 	__be64 *dataout;
 	__be64 *data;
 
-	blkcipher_walk_init(&walk, dst, src, nbytes);
-	err = blkcipher_walk_virt(desc, &walk);
-	desc->flags &= ~CRYPTO_TFM_REQ_MAY_SLEEP;
-	flags = octeon_crypto_enable(&state);
-	octeon_crypto_aes_write_key(ctx);
-	iv = (__be64 *)walk.iv;
-	write_octeon_64bit_aes_iv(iv[0], 0);
-	write_octeon_64bit_aes_iv(iv[1], 1);
-	octeon_crypto_disable(&state, flags);
-
-	while ((nbytes = walk.nbytes)) {
-		todo = nbytes & AES_BLOCK_MASK;
-		dataout = (__be64 *)walk.dst.virt.addr;
-		data = (__be64 *)walk.src.virt.addr;
-		flags = octeon_crypto_enable(&state);
-		for (i = 0; i < todo / AES_BLOCK_SIZE; i++) {
-			write_octeon_64bit_aes_enc_cbc0(*data++);
-			write_octeon_64bit_aes_enc_cbc1(*data++);
-			*dataout++ = read_octeon_64bit_aes_result(0);
-			*dataout++ = read_octeon_64bit_aes_result(1);
+	if (in_interrupt()) {
+		blkcipher_walk_init(&walk, dst, src, nbytes);
+		err = blkcipher_walk_virt(desc, &walk);
+		desc->flags &= ~CRYPTO_TFM_REQ_MAY_SLEEP;
+		iv = (__be64 *)walk.iv;
+		while ((nbytes = walk.nbytes)) {
+			todo = nbytes & AES_BLOCK_MASK;
+			dataout = (__be64 *)walk.dst.virt.addr;
+			data = (__be64 *)walk.src.virt.addr;
+			for (i = 0; i < todo / AES_BLOCK_SIZE; i++) {
+				*dataout++ = *data++ ^ iv[0];
+				*dataout++ = *data++ ^ iv[1];
+			}
+			aes_encrypt(&crypto, dataout, dataout);
+			iv = dataout;
+			nbytes &= AES_BLOCK_SIZE - 1;
+			err = blkcipher_walk_done(desc, &walk, nbytes);
 		}
-		octeon_crypto_disable(&state, flags);
-		nbytes &= AES_BLOCK_SIZE - 1;
-		err = blkcipher_walk_done(desc, &walk, nbytes);
+	} else {
+		blkcipher_walk_init(&walk, dst, src, nbytes);
+		err = blkcipher_walk_virt(desc, &walk);
+		desc->flags &= ~CRYPTO_TFM_REQ_MAY_SLEEP;
+		flags = octeon_crypto_enable_no_irq_save(&state);
+		octeon_crypto_aes_write_key(ctx);
+		iv = (__be64 *)walk.iv;
+		write_octeon_64bit_aes_iv(iv[0], 0);
+		write_octeon_64bit_aes_iv(iv[1], 1);
+		octeon_crypto_disable_no_irq_save(&state, flags);
+
+		while ((nbytes = walk.nbytes)) {
+			todo = nbytes & AES_BLOCK_MASK;
+			dataout = (__be64 *)walk.dst.virt.addr;
+			data = (__be64 *)walk.src.virt.addr;
+			flags = octeon_crypto_enable_no_irq_save(&state);
+			for (i = 0; i < todo / AES_BLOCK_SIZE; i++) {
+				write_octeon_64bit_aes_enc_cbc0(*data++);
+				write_octeon_64bit_aes_enc_cbc1(*data++);
+				*dataout++ = read_octeon_64bit_aes_result(0);
+				*dataout++ = read_octeon_64bit_aes_result(1);
+			}
+			octeon_crypto_disable_no_irq_save(&state, flags);
+			nbytes &= AES_BLOCK_SIZE - 1;
+			err = blkcipher_walk_done(desc, &walk, nbytes);
+		}
 	}
 	return 0;
 }
