@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r7509 | brainslayer | 2024-01-15 22:42:51 +0600 (Mon, 15 Jan 2024) | 1 line
+
+normally we reduce memory footprint for ath10k on mips targets. we handle this now dynamic depending on the available memory. this will increase performance on most targets
+------------------------------------------------------------------------
 r7508 | brainslayer | 2024-01-15 00:39:15 +0600 (Mon, 15 Jan 2024) | 1 line
 
 correct units
