@@ -42,10 +42,17 @@ static void sensorreset(void)
 static int checkhwmon(char *sysfs)
 {
 	char *sub = strstr(sysfs, "hwmon");
+	if (!sensors)
+		return 0;
 	if (!sub)
 		return 0;
 	sub = strdup(sub);
 	char *idx = strchr(sub, '/');
+	if (!idx) {
+		free(sub);
+		return 0;
+	}
+	idx = strchr(idx+1, '/');
 	if (!idx) {
 		free(sub);
 		return 0;
@@ -149,10 +156,8 @@ EJ_VISIBLE void ej_read_sensors(webs_t wp, int argc, char_t **argv)
 
 static int showsensor(webs_t wp, const char *path, int (*method)(void), const char *name, int scale)
 {
-	fprintf(stderr, "%s:%d %s\n", __func__, __LINE__, path);
 	if (alreadyshowed(path))
 		return 1;
-	fprintf(stderr, "%s:%d\n", __func__, __LINE__);
 	FILE *fp = fopen(path, "rb");
 	if (fp || method) {
 		int sensor;
