@@ -1,4 +1,12 @@
 ------------------------------------------------------------------------
+r7512 | brainslayer | 2024-01-15 23:20:13 +0600 (Mon, 15 Jan 2024) | 1 line
+
+format code
+------------------------------------------------------------------------
+r7511 | brainslayer | 2024-01-15 23:18:22 +0600 (Mon, 15 Jan 2024) | 1 line
+
+fix typo
+------------------------------------------------------------------------
 r7510 | brainslayer | 2024-01-15 23:03:42 +0600 (Mon, 15 Jan 2024) | 1 line
 
 normally we reduce memory footprint for ath10k on mips targets. we handle this now dynamic depending on the available memory. this will increase performance on most targets
