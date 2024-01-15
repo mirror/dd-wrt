@@ -149,8 +149,10 @@ EJ_VISIBLE void ej_read_sensors(webs_t wp, int argc, char_t **argv)
 
 static int showsensor(webs_t wp, const char *path, int (*method)(void), const char *name, int scale)
 {
+	fprintf(stderr, "%s:%d %s\n", __func__, __LINE__, path);
 	if (alreadyshowed(path))
 		return 1;
+	fprintf(stderr, "%s:%d\n", __func__, __LINE__);
 	FILE *fp = fopen(path, "rb");
 	if (fp || method) {
 		int sensor;
