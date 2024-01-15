@@ -146,7 +146,7 @@ EJ_VISIBLE void ej_read_sensors(webs_t wp, int argc, char_t **argv)
 					websWrite(wp, "{cpu_temp%d::%d.%d &#176;C}", cnt, sensor / scale,
 						  (sensor % scale) / (scale / 10));
 				} else {
-					websWrite(wp, "{cpu_temp%d::%d &#176;C}", cnt, sensor);
+					websWrite(wp, "{cpu_temp%d::%d.0 &#176;C}", cnt, sensor);
 				}
 			}
 			cnt++;
@@ -212,7 +212,7 @@ static int show_temp(webs_t wp, int mon, int input, char *name)
 {
 	char sysfs[64];
 	snprintf(sysfs, 64, "/sys/class/hwmon/hwmon%d/temp%d_input", mon, input);
-	return showsensor(wp, sysfs, NULL, name, 1000);
+	return showsensor(wp, sysfs, NULL, name, 1);
 }
 #elif defined(HAVE_IPQ806X)
 static int show_temp(webs_t wp, char *name)
