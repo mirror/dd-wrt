@@ -948,37 +948,6 @@ int crypto_tfm_in_queue(struct crypto_queue *queue, struct crypto_tfm *tfm)
 }
 EXPORT_SYMBOL_GPL(crypto_tfm_in_queue);
 
-static inline void crypto_inc_byte(u8 *a, unsigned int size)
-{
-	u8 *b = (a + size);
-	u8 c;
-
-	for (; size; size--) {
-		c = *--b + 1;
-		*b = c;
-		if (c)
-			break;
-	}
-}
-
-void crypto_inc(u8 *a, unsigned int size)
-{
-	__be32 *b = (__be32 *)(a + size);
-	u32 c;
-
-	if (IS_ENABLED(CONFIG_HAVE_EFFICIENT_UNALIGNED_ACCESS) ||
-	    !((unsigned long)b & (__alignof__(*b) - 1)))
-		for (; size >= 4; size -= 4) {
-			c = be32_to_cpu(*--b) + 1;
-			*b = cpu_to_be32(c);
-			if (c)
-				return;
-		}
-
-	crypto_inc_byte(a, size);
-}
-EXPORT_SYMBOL_GPL(crypto_inc);
-
 void __crypto_xor(u8 *dst, const u8 *src1, const u8 *src2, unsigned int len)
 {
 	int relalign = 0;
