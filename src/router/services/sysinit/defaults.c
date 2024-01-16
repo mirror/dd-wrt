@@ -2028,29 +2028,7 @@ struct nvram_param srouter_defaults[] = {
 	{ "remote_management", "1" },	/* Remote Management [1|0] */
 #elif HAVE_GGEW
 	{ "remote_management", "0" },	/* Remote Management [1|0] */
-#elif HAVE_AXTEL
-	{ "remote_management", "1" },	/* Remote Management [1|0] */
-#elif HAVE_MAGICBOX
-	{ "remote_management", "1" },	/* Remote Management [1|0] */
-#elif HAVE_RB600
-	{ "remote_management", "0" },	/* Remote Management [1|0] */
-#elif HAVE_XSCALE
-	{ "remote_management", "1" },	/* Remote Management [1|0] */
-#elif HAVE_FONERA
-	{ "remote_management", "1" },	/* Remote Management [1|0] */
-#elif HAVE_LS2
-	{ "remote_management", "1" },	/* Remote Management [1|0] */
-#elif HAVE_LS5
-	{ "remote_management", "1" },	/* Remote Management [1|0] */
-#elif HAVE_WHRAG108
-	{ "remote_management", "1" },	/* Remote Management [1|0] */
 #elif HAVE_TW6600
-	{ "remote_management", "1" },	/* Remote Management [1|0] */
-#elif HAVE_CA8
-	{ "remote_management", "1" },	/* Remote Management [1|0] */
-#elif HAVE_RB500
-	{ "remote_management", "1" },	/* Remote Management [1|0] */
-#elif HAVE_X86
 	{ "remote_management", "1" },	/* Remote Management [1|0] */
 #else
 	{ "remote_management", "0" },	/* Remote Management [1|0] */
@@ -2398,18 +2376,6 @@ struct nvram_param srouter_defaults[] = {
 	{ "sshd_enable", "1" },
 #elif HAVE_SKYTRON
 	{ "sshd_enable", "1" },
-#elif HAVE_MAGICBOX
-	{ "sshd_enable", "1" },
-#elif HAVE_RB600
-	{ "sshd_enable", "0" },
-#elif HAVE_WHRAG108
-	{ "sshd_enable", "1" },
-#elif HAVE_TW6600
-	{ "sshd_enable", "0" },
-#elif HAVE_CA8
-	{ "sshd_enable", "1" },
-#elif HAVE_X86
-	{ "sshd_enable", "1" },
 #elif HAVE_NEWMEDIA
 	{ "sshd_enable", "1" },
 #elif HAVE_MAKSAT
@@ -2430,28 +2396,12 @@ struct nvram_param srouter_defaults[] = {
 	{ "sshd_rsa_host_key", "" },
 	{ "sshd_dss_host_key", "" },
 	{ "sshd_authorized_keys", "" },
-#ifdef HAVE_MAGICBOX
-	{ "remote_mgt_ssh", "1" },
-#elif HAVE_RB600
+#ifdef HAVE_GGEW
 	{ "remote_mgt_ssh", "0" },
-#elif HAVE_GGEW
-	{ "remote_mgt_ssh", "0" },
-#elif HAVE_FONERA
-	{ "remote_mgt_ssh", "1" },
-#elif HAVE_LS2
-	{ "remote_mgt_ssh", "1" },
-#elif HAVE_LS5
-	{ "remote_mgt_ssh", "1" },
 #elif HAVE_MAKSAT
-	{ "remote_mgt_ssh", "1" },
-#elif HAVE_WHRAG108
 	{ "remote_mgt_ssh", "1" },
 #elif HAVE_TW6600
 	{ "remote_mgt_ssh", "0" },
-#elif HAVE_CA8
-	{ "remote_mgt_ssh", "1" },
-#elif HAVE_X86
-	{ "remote_mgt_ssh", "1" },
 #else
 	{ "remote_mgt_ssh", "0" },
 #endif
