@@ -5,9 +5,12 @@ Released under the GNU GPLv2+, see the COPYING file
 in the source distribution for its full text.
 */
 
+#include "config.h" // IWYU pragma: keep
+
 #include "MemorySwapMeter.h"
 
 #include <assert.h>
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdlib.h>
 
@@ -53,9 +56,9 @@ static void MemorySwapMeter_init(Meter* this) {
    }
 
    if (!data->memoryMeter)
-      data->memoryMeter = Meter_new(this->pl, 0, (const MeterClass*) Class(MemoryMeter));
+      data->memoryMeter = Meter_new(this->host, 0, (const MeterClass*) Class(MemoryMeter));
    if (!data->swapMeter)
-      data->swapMeter = Meter_new(this->pl, 0, (const MeterClass*) Class(SwapMeter));
+      data->swapMeter = Meter_new(this->host, 0, (const MeterClass*) Class(SwapMeter));
 
    if (Meter_initFn(data->memoryMeter))
       Meter_init(data->memoryMeter);

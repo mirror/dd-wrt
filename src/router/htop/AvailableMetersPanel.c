@@ -5,6 +5,8 @@ Released under the GNU GPLv2+, see the COPYING file
 in the source distribution for its full text.
 */
 
+#include "config.h" // IWYU pragma: keep
+
 #include "AvailableMetersPanel.h"
 
 #include <assert.h>
@@ -23,6 +25,7 @@ in the source distribution for its full text.
 #include "Object.h"
 #include "Platform.h"
 #include "ProvideCurses.h"
+#include "Settings.h"
 #include "XUtils.h"
 
 
@@ -58,33 +61,32 @@ static HandlerResult AvailableMetersPanel_eventHandler(Panel* super, int ch) {
       case KEY_F(5):
       case 'l':
       case 'L':
-      {
          AvailableMetersPanel_addMeter(header, this->meterPanels[0], Platform_meterTypes[type], param, 0);
          result = HANDLED;
          update = true;
          break;
-      }
       case 0x0a:
       case 0x0d:
       case KEY_ENTER:
       case KEY_F(6):
       case 'r':
       case 'R':
-      {
          AvailableMetersPanel_addMeter(header, this->meterPanels[this->columns - 1], Platform_meterTypes[type], param, this->columns - 1);
          result = (KEY_LEFT << 16) | SYNTH_KEY;
          update = true;
          break;
-      }
    }
+
    if (update) {
-      this->settings->changed = true;
-      this->settings->lastUpdate++;
+      Settings* settings = this->host->settings;
+      settings->changed = true;
+      settings->lastUpdate++;
       Header_calculateHeight(header);
       Header_updateData(header);
       Header_draw(header);
       ScreenManager_resize(this->scr);
    }
+
    return result;
 }
 
@@ -97,12 +99,12 @@ const PanelClass AvailableMetersPanel_class = {
 };
 
 // Handle (&CPUMeter_class) entries in the AvailableMetersPanel
-static void AvailableMetersPanel_addCPUMeters(Panel* super, const MeterClass* type, const ProcessList* pl) {
-   if (pl->existingCPUs > 1) {
+static void AvailableMetersPanel_addCPUMeters(Panel* super, const MeterClass* type, const Machine* host) {
+   if (host->existingCPUs > 1) {
       Panel_add(super, (Object*) ListItem_new("CPU average", 0));
-      for (unsigned int i = 1; i <= pl->existingCPUs; i++) {
+      for (unsigned int i = 1; i <= host->existingCPUs; i++) {
          char buffer[50];
-         xSnprintf(buffer, sizeof(buffer), "%s %d", type->uiName, Settings_cpuId(pl->settings, i - 1));
+         xSnprintf(buffer, sizeof(buffer), "%s %d", type->uiName, Settings_cpuId(host->settings, i - 1));
          Panel_add(super, (Object*) ListItem_new(buffer, i));
       }
    } else {
@@ -128,10 +130,11 @@ static void AvailableMetersPanel_addDynamicMeter(ATTR_UNUSED ht_key_t key, void*
 }
 
 // Handle (&DynamicMeter_class) entries in the AvailableMetersPanel
-static void AvailableMetersPanel_addDynamicMeters(Panel* super, const ProcessList* pl, unsigned int offset) {
+static void AvailableMetersPanel_addDynamicMeters(Panel* super, const Settings* settings, unsigned int offset) {
    DynamicIterator iter = { .super = super, .id = 1, .offset = offset };
-   assert(pl->dynamicMeters != NULL);
-   Hashtable_foreach(pl->dynamicMeters, AvailableMetersPanel_addDynamicMeter, &iter);
+   Hashtable* dynamicMeters = settings->dynamicColumns;
+   assert(dynamicMeters != NULL);
+   Hashtable_foreach(dynamicMeters, AvailableMetersPanel_addDynamicMeter, &iter);
 }
 
 // Handle remaining Platform Meter entries in the AvailableMetersPanel
@@ -140,13 +143,13 @@ static void AvailableMetersPanel_addPlatformMeter(Panel* super, const MeterClass
    Panel_add(super, (Object*) ListItem_new(label, offset << 16));
 }
 
-AvailableMetersPanel* AvailableMetersPanel_new(Settings* settings, Header* header, size_t columns, MetersPanel** meterPanels, ScreenManager* scr, const ProcessList* pl) {
+AvailableMetersPanel* AvailableMetersPanel_new(Machine* host, Header* header, size_t columns, MetersPanel** meterPanels, ScreenManager* scr) {
    AvailableMetersPanel* this = AllocThis(AvailableMetersPanel);
    Panel* super = (Panel*) this;
    FunctionBar* fuBar = FunctionBar_newEnterEsc("Add   ", "Done   ");
    Panel_init(super, 1, 1, 1, 1, Class(ListItem), true, fuBar);
 
-   this->settings = settings;
+   this->host = host;
    this->header = header;
    this->columns = columns;
    this->meterPanels = meterPanels;
@@ -161,11 +164,11 @@ AvailableMetersPanel* AvailableMetersPanel_new(Settings* settings, Header* heade
       const MeterClass* type = Platform_meterTypes[i];
       assert(type != &CPUMeter_class);
       if (type == &DynamicMeter_class)
-         AvailableMetersPanel_addDynamicMeters(super, pl, i);
+         AvailableMetersPanel_addDynamicMeters(super, host->settings, i);
       else
          AvailableMetersPanel_addPlatformMeter(super, type, i);
    }
-   AvailableMetersPanel_addCPUMeters(super, &CPUMeter_class, pl);
+   AvailableMetersPanel_addCPUMeters(super, &CPUMeter_class, host);
 
    return this;
 }

@@ -7,8 +7,6 @@ Released under the GNU GPLv2+, see the COPYING file
 in the source distribution for its full text.
 */
 
-#include "config.h"
-
 #include <stdbool.h>
 
 #include "Macros.h"
@@ -68,6 +66,7 @@ typedef enum ColorElements_ {
    TASKS_RUNNING,
    SWAP,
    SWAP_CACHE,
+   SWAP_FRONTSWAP,
    PROCESS,
    PROCESS_SHADOW,
    PROCESS_TAG,
@@ -85,6 +84,7 @@ typedef enum ColorElements_ {
    PROCESS_THREAD_BASENAME,
    PROCESS_COMM,
    PROCESS_THREAD_COMM,
+   PROCESS_PRIV,
    BAR_BORDER,
    BAR_SHADOW,
    GRAPH_1,
@@ -94,6 +94,7 @@ typedef enum ColorElements_ {
    MEMORY_BUFFERS_TEXT,
    MEMORY_CACHE,
    MEMORY_SHARED,
+   MEMORY_COMPRESSED,
    HUGEPAGE_1,
    HUGEPAGE_2,
    HUGEPAGE_3,
@@ -128,6 +129,8 @@ typedef enum ColorElements_ {
    PRESSURE_STALL_TEN,
    PRESSURE_STALL_SIXTY,
    PRESSURE_STALL_THREEHUNDRED,
+   FILE_DESCRIPTOR_USED,
+   FILE_DESCRIPTOR_MAX,
    ZFS_MFU,
    ZFS_MRU,
    ZFS_ANON,
@@ -135,7 +138,8 @@ typedef enum ColorElements_ {
    ZFS_OTHER,
    ZFS_COMPRESSED,
    ZFS_RATIO,
-   ZRAM,
+   ZRAM_COMPRESSED,
+   ZRAM_UNCOMPRESSED,
    DYNAMIC_GRAY,
    DYNAMIC_DARKGRAY,
    DYNAMIC_RED,
@@ -191,7 +195,7 @@ void CRT_setMouse(bool enabled);
 #define CRT_setMouse(enabled)
 #endif
 
-void CRT_init(const Settings* settings, bool allowUnicode);
+void CRT_init(const Settings* settings, bool allowUnicode, bool retainScreenOnExit);
 
 void CRT_done(void);
 

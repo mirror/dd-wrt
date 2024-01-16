@@ -9,13 +9,11 @@ Released under the GNU GPLv2+, see the COPYING file
 in the source distribution for its full text.
 */
 
-#include "config.h" // IWYU pragma: keep
-
 #include <stdbool.h>
 
+#include "Machine.h"
 #include "Object.h"
 #include "Process.h"
-#include "Settings.h"
 
 
 #define PROCESS_FLAG_LINUX_CGROUP    0x00000800
@@ -38,6 +36,7 @@ typedef struct PCPProcess_ {
    unsigned long long int cutime;
    unsigned long long int cstime;
    long m_share;
+   long m_priv;
    long m_pss;
    long m_swap;
    long m_psswp;
@@ -73,6 +72,8 @@ typedef struct PCPProcess_ {
    double io_rate_read_bps;
    double io_rate_write_bps;
    char* cgroup;
+   char* cgroup_short;
+   char* container_short;
    long int autogroup_id;
    int autogroup_nice;
    unsigned int oom;
@@ -93,7 +94,7 @@ extern const ProcessFieldData Process_fields[LAST_PROCESSFIELD];
 
 extern const ProcessClass PCPProcess_class;
 
-Process* PCPProcess_new(const Settings* settings);
+Process* PCPProcess_new(const Machine* host);
 
 void Process_delete(Object* cast);
 

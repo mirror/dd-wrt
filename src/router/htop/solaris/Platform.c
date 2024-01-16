@@ -7,6 +7,8 @@ Released under the GNU GPLv2+, see the COPYING file
 in the source distribution for its full text.
 */
 
+#include "config.h" // IWYU pragma: keep
+
 #include "solaris/Platform.h"
 
 #include <kstat.h>
@@ -34,10 +36,12 @@ in the source distribution for its full text.
 #include "HostnameMeter.h"
 #include "SysArchMeter.h"
 #include "UptimeMeter.h"
+#include "XUtils.h"
+
+#include "solaris/SolarisMachine.h"
+
 #include "zfs/ZfsArcMeter.h"
 #include "zfs/ZfsCompressedArcMeter.h"
-#include "SolarisProcess.h"
-#include "SolarisProcessList.h"
 
 
 const ScreenDefaults Platform_defaultScreens[] = {
@@ -173,7 +177,7 @@ void Platform_getLoadAverage(double* one, double* five, double* fifteen) {
    *fifteen = plat_loadavg[LOADAVG_15MIN];
 }
 
-int Platform_getMaxPid(void) {
+pid_t Platform_getMaxPid(void) {
    int vproc = 32778; // Reasonable Solaris default
 
    kstat_ctl_t* kc = kstat_open();
@@ -194,15 +198,16 @@ int Platform_getMaxPid(void) {
 }
 
 double Platform_setCPUValues(Meter* this, unsigned int cpu) {
-   const SolarisProcessList* spl = (const SolarisProcessList*) this->pl;
-   unsigned int cpus = this->pl->existingCPUs;
+   const Machine* host = this->host;
+   const SolarisMachine* shost = (const SolarisMachine*) host;
+   unsigned int cpus = host->existingCPUs;
    const CPUData* cpuData = NULL;
 
    if (cpus == 1) {
       // single CPU box has everything in spl->cpus[0]
-      cpuData = &(spl->cpus[0]);
+      cpuData = &(shost->cpus[0]);
    } else {
-      cpuData = &(spl->cpus[cpu]);
+      cpuData = &(shost->cpus[cpu]);
    }
 
    if (!cpuData->online) {
@@ -215,18 +220,17 @@ double Platform_setCPUValues(Meter* this, unsigned int cpu) {
 
    v[CPU_METER_NICE]   = cpuData->nicePercent;
    v[CPU_METER_NORMAL] = cpuData->userPercent;
-   if (this->pl->settings->detailedCPUTime) {
+   if (super->settings->detailedCPUTime) {
       v[CPU_METER_KERNEL]  = cpuData->systemPercent;
       v[CPU_METER_IRQ]     = cpuData->irqPercent;
       this->curItems = 4;
-      percent = v[0] + v[1] + v[2] + v[3];
    } else {
-      v[2] = cpuData->systemAllPercent;
+      v[CPU_METER_KERNEL] = cpuData->systemAllPercent;
       this->curItems = 3;
-      percent = v[0] + v[1] + v[2];
    }
 
-   percent = isnan(percent) ? 0.0 : CLAMP(percent, 0.0, 100.0);
+   percent = sumPositiveValues(v, this->curItems);
+   percent = MINIMUM(percent, 100.0);
 
    v[CPU_METER_FREQUENCY] = cpuData->frequency;
    v[CPU_METER_TEMPERATURE] = NAN;
@@ -235,32 +239,34 @@ double Platform_setCPUValues(Meter* this, unsigned int cpu) {
 }
 
 void Platform_setMemoryValues(Meter* this) {
-   const ProcessList* pl = this->pl;
-   this->total = pl->totalMem;
-   this->values[MEMORY_METER_USED] = pl->usedMem;
-   this->values[MEMORY_METER_BUFFERS] = pl->buffersMem;
+   const Machine* host = this->host;
+   this->total = host->totalMem;
+   this->values[MEMORY_METER_USED] = host->usedMem;
    // this->values[MEMORY_METER_SHARED] = "shared memory, like tmpfs and shm"
-   this->values[MEMORY_METER_CACHE] = pl->cachedMem;
+   // this->values[MEMORY_METER_COMPRESSED] = "compressed memory, like zswap on linux"
+   this->values[MEMORY_METER_BUFFERS] = host->buffersMem;
+   this->values[MEMORY_METER_CACHE] = host->cachedMem;
    // this->values[MEMORY_METER_AVAILABLE] = "available memory"
 }
 
 void Platform_setSwapValues(Meter* this) {
-   const ProcessList* pl = this->pl;
-   this->total = pl->totalSwap;
-   this->values[SWAP_METER_USED] = pl->usedSwap;
-   this->values[SWAP_METER_CACHE] = NAN;
+   const Machine* host = this->host;
+   this->total = host->totalSwap;
+   this->values[SWAP_METER_USED] = host->usedSwap;
+   // this->values[SWAP_METER_CACHE] = "pages that are both in swap and RAM, like SwapCached on linux"
+   // this->values[SWAP_METER_FRONTSWAP] = "pages that are accounted to swap but stored elsewhere, like frontswap on linux"
 }
 
 void Platform_setZfsArcValues(Meter* this) {
-   const SolarisProcessList* spl = (const SolarisProcessList*) this->pl;
+   const SolarisMachine* shost = (SolarisMachine*) this->host;
 
-   ZfsArcMeter_readStats(this, &(spl->zfs));
+   ZfsArcMeter_readStats(this, &shost->zfs);
 }
 
 void Platform_setZfsCompressedArcValues(Meter* this) {
-   const SolarisProcessList* spl = (const SolarisProcessList*) this->pl;
+   const SolarisMachine* shost = (SolarisMachine*) this->host;
 
-   ZfsCompressedArcMeter_readStats(this, &(spl->zfs));
+   ZfsCompressedArcMeter_readStats(this, &shost->zfs);
 }
 
 static int Platform_buildenv(void* accum, struct ps_prochandle* Phandle, uintptr_t addr, const char* str) {
@@ -311,6 +317,11 @@ char* Platform_getProcessEnv(pid_t pid) {
 FileLocks_ProcessData* Platform_getProcessLocks(pid_t pid) {
    (void)pid;
    return NULL;
+}
+
+void Platform_getFileDescriptors(double* used, double* max) {
+   *used = NAN;
+   *max = NAN;
 }
 
 bool Platform_getDiskIO(DiskIOData* data) {

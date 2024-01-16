@@ -7,18 +7,15 @@ Released under the GNU GPLv2+, see the COPYING file
 in the source distribution for its full text.
 */
 
-#include "config.h" // IWYU pragma: keep
-
 #include <stdbool.h>
 #include <sys/types.h>
 
 #include "Header.h"
+#include "Machine.h"
 #include "Object.h"
 #include "Panel.h"
 #include "Process.h"
-#include "ProcessList.h"
 #include "Settings.h"
-#include "UsersTable.h"
 
 
 typedef enum {
@@ -36,29 +33,28 @@ typedef enum {
 struct MainPanel_; // IWYU pragma: keep
 
 typedef struct State_ {
-   Settings* settings;
-   UsersTable* ut;
-   ProcessList* pl;
+   Machine* host;
    struct MainPanel_* mainPanel;
    Header* header;
-   bool pauseProcessUpdate;
-   bool hideProcessSelection;
+   bool pauseUpdate;
+   bool hideSelection;
    bool hideMeters;
 } State;
 
 static inline bool State_hideFunctionBar(const State* st) {
-   return st->settings->hideFunctionBar == 2 || (st->settings->hideFunctionBar == 1 && st->hideProcessSelection);
+   const Settings* settings = st->host->settings;
+   return settings->hideFunctionBar == 2 || (settings->hideFunctionBar == 1 && st->hideSelection);
 }
 
 typedef Htop_Reaction (*Htop_Action)(State* st);
 
-Object* Action_pickFromVector(State* st, Panel* list, int x, bool followProcess);
+Object* Action_pickFromVector(State* st, Panel* list, int x, bool follow);
 
 bool Action_setUserOnly(const char* userName, uid_t* userId);
 
 Htop_Reaction Action_setSortKey(Settings* settings, ProcessField sortKey);
 
-Htop_Reaction Action_setScreenTab(Settings* settings, int x);
+Htop_Reaction Action_setScreenTab(State* st, int x);
 
 Htop_Reaction Action_follow(State* st);
 

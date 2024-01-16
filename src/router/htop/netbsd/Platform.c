@@ -9,6 +9,8 @@ Released under the GNU GPLv2+, see the COPYING file
 in the source distribution for its full text.
 */
 
+#include "config.h" // IWYU pragma: keep
+
 #include "netbsd/Platform.h"
 
 #include <errno.h>
@@ -38,13 +40,13 @@ in the source distribution for its full text.
 #include "ClockMeter.h"
 #include "DateMeter.h"
 #include "DateTimeMeter.h"
+#include "FileDescriptorMeter.h"
 #include "HostnameMeter.h"
 #include "LoadAverageMeter.h"
 #include "Macros.h"
 #include "MemoryMeter.h"
 #include "MemorySwapMeter.h"
 #include "Meter.h"
-#include "ProcessList.h"
 #include "Settings.h"
 #include "SignalsPanel.h"
 #include "SwapMeter.h"
@@ -52,8 +54,9 @@ in the source distribution for its full text.
 #include "TasksMeter.h"
 #include "UptimeMeter.h"
 #include "XUtils.h"
+#include "generic/fdstat_sysctl.h"
+#include "netbsd/NetBSDMachine.h"
 #include "netbsd/NetBSDProcess.h"
-#include "netbsd/NetBSDProcessList.h"
 
 /*
  * The older proplib APIs will be deprecated in NetBSD 10, but we still
@@ -179,6 +182,7 @@ const MeterClass* const Platform_meterTypes[] = {
    &BlankMeter_class,
    &DiskIOMeter_class,
    &NetworkIOMeter_class,
+   &FileDescriptorMeter_class,
    NULL
 };
 
@@ -227,22 +231,23 @@ void Platform_getLoadAverage(double* one, double* five, double* fifteen) {
    *fifteen = (double) loadAverage.ldavg[2] / loadAverage.fscale;
 }
 
-int Platform_getMaxPid(void) {
+pid_t Platform_getMaxPid(void) {
    // https://nxr.netbsd.org/xref/src/sys/sys/ansi.h#__pid_t
    // pid is assigned as a 32bit Integer.
    return INT32_MAX;
 }
 
 double Platform_setCPUValues(Meter* this, int cpu) {
-   const NetBSDProcessList* npl = (const NetBSDProcessList*) this->pl;
-   const CPUData* cpuData = &npl->cpuData[cpu];
+   const Machine* host = this->host;
+   const NetBSDMachine* nhost = (const NetBSDMachine*) host;
+   const CPUData* cpuData = &nhost->cpuData[cpu];
    double total = cpuData->totalPeriod == 0 ? 1 : cpuData->totalPeriod;
    double totalPercent;
    double* v = this->values;
 
    v[CPU_METER_NICE] = cpuData->nicePeriod / total * 100.0;
    v[CPU_METER_NORMAL] = cpuData->userPeriod / total * 100.0;
-   if (this->pl->settings->detailedCPUTime) {
+   if (host->settings->detailedCPUTime) {
       v[CPU_METER_KERNEL]  = cpuData->sysPeriod / total * 100.0;
       v[CPU_METER_IRQ]     = cpuData->intrPeriod / total * 100.0;
       v[CPU_METER_SOFTIRQ] = 0.0;
@@ -251,14 +256,12 @@ double Platform_setCPUValues(Meter* this, int cpu) {
       v[CPU_METER_IOWAIT]  = 0.0;
       v[CPU_METER_FREQUENCY] = NAN;
       this->curItems = 8;
-      totalPercent = v[0] + v[1] + v[2] + v[3];
    } else {
-      v[2] = cpuData->sysAllPeriod / total * 100.0;
-      v[3] = 0.0; // No steal nor guest on NetBSD
-      totalPercent = v[0] + v[1] + v[2];
+      v[CPU_METER_KERNEL] = cpuData->sysAllPeriod / total * 100.0;
+      v[CPU_METER_IRQ] = 0.0; // No steal nor guest on NetBSD
       this->curItems = 4;
    }
-
+   totalPercent = v[CPU_METER_NICE] + v[CPU_METER_NORMAL] + v[CPU_METER_KERNEL] + v[CPU_METER_IRQ];
    totalPercent = CLAMP(totalPercent, 0.0, 100.0);
 
    v[CPU_METER_FREQUENCY] = cpuData->frequency;
@@ -268,20 +271,22 @@ double Platform_setCPUValues(Meter* this, int cpu) {
 }
 
 void Platform_setMemoryValues(Meter* this) {
-   const ProcessList* pl = this->pl;
-   this->total = pl->totalMem;
-   this->values[MEMORY_METER_USED] = pl->usedMem;
-   this->values[MEMORY_METER_BUFFERS] = pl->buffersMem;
+   const Machine* host = this->host;
+   this->total = host->totalMem;
+   this->values[MEMORY_METER_USED] = host->usedMem;
    // this->values[MEMORY_METER_SHARED] = "shared memory, like tmpfs and shm"
-   this->values[MEMORY_METER_CACHE] = pl->cachedMem;
+   // this->values[MEMORY_METER_COMPRESSED] = "compressed memory, like zswap on linux"
+   this->values[MEMORY_METER_BUFFERS] = host->buffersMem;
+   this->values[MEMORY_METER_CACHE] = host->cachedMem;
    // this->values[MEMORY_METER_AVAILABLE] = "available memory"
 }
 
 void Platform_setSwapValues(Meter* this) {
-   const ProcessList* pl = this->pl;
-   this->total = pl->totalSwap;
-   this->values[SWAP_METER_USED] = pl->usedSwap;
-   this->values[SWAP_METER_CACHE] = NAN;
+   const Machine* host = this->host;
+   this->total = host->totalSwap;
+   this->values[SWAP_METER_USED] = host->usedSwap;
+   // this->values[SWAP_METER_CACHE] = "pages that are both in swap and RAM, like SwapCached on linux"
+   // this->values[SWAP_METER_FRONTSWAP] = "pages that are accounted to swap but stored elsewhere, like frontswap on linux"
 }
 
 char* Platform_getProcessEnv(pid_t pid) {
@@ -341,6 +346,10 @@ end:
 FileLocks_ProcessData* Platform_getProcessLocks(pid_t pid) {
    (void)pid;
    return NULL;
+}
+
+void Platform_getFileDescriptors(double* used, double* max) {
+   Generic_getFileDescriptors_sysctl(used, max);
 }
 
 bool Platform_getDiskIO(DiskIOData* data) {
@@ -408,7 +417,7 @@ bool Platform_getNetworkIO(NetworkIOData* data) {
       if (ifa->ifa_flags & IFF_LOOPBACK)
          continue;
 
-      const struct if_data* ifd = (const struct if_data *)ifa->ifa_data;
+      const struct if_data* ifd = (const struct if_data*)ifa->ifa_data;
 
       data->bytesReceived += ifd->ifi_ibytes;
       data->packetsReceived += ifd->ifi_ipackets;
