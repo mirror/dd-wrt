@@ -34,9 +34,12 @@ static void sensorreset(void)
 	int cnt = 0;
 	if (sensors) {
 		while (sensors[cnt].path || sensors[cnt].method) {
-			sensors[cnt].shown = 0;
+			if (sensors[cnt].path)
+				free(sensors[cnt].path);
 			cnt++;
 		}
+		free(sensors);
+		sensors = NULL;
 	}
 }
 static int checkhwmon(char *sysfs)
@@ -52,7 +55,7 @@ static int checkhwmon(char *sysfs)
 		free(sub);
 		return 0;
 	}
-	idx = strchr(idx+1, '/');
+	idx = strchr(idx + 1, '/');
 	if (!idx) {
 		free(sub);
 		return 0;
