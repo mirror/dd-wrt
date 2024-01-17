@@ -370,9 +370,14 @@ static int ksmbd_neg_token_alloc(void *context, size_t hdrlen,
 {
 	struct ksmbd_conn *conn = context;
 
+	if (!vlen)
+		return -EINVAL;
+
 	conn->mechToken = kmalloc(vlen + 1, GFP_KERNEL);
 	if (!conn->mechToken)
 		return -ENOMEM;
+
+	conn->mechTokenLen = (unsigned int)vlen;
 
 	memcpy(conn->mechToken, value, vlen);
 	conn->mechToken[vlen] = '\0';
