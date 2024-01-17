@@ -627,7 +627,7 @@ EJ_VISIBLE int ej_get_cputemp(webs_t wp, int argc, char_t **argv)
 			fp = fopen(n, "rb");
 			if (fp) {
 				char sname[64];
-				fscanf(fp, "%s", sname);
+				fscanf(fp, "%s temp%d", sname, b);
 				fclose(fp);
 				cpufound |= showsensor(wp, p, NULL, sname, 0, CELSIUS);
 			}
@@ -652,6 +652,7 @@ EJ_VISIBLE int ej_get_cputemp(webs_t wp, int argc, char_t **argv)
 				sprintf(sname, "%s %s", driver, sname);
 				cpufound |= showsensor(wp, p, NULL, sname, 1000, VOLT); // volt
 			} else {
+				char sname[64];
 				sprintf(sname, "%s in%d", driver, b);
 				cpufound |= showsensor(wp, p, NULL, sname, 1000, VOLT); // volt
 			}
@@ -677,6 +678,7 @@ EJ_VISIBLE int ej_get_cputemp(webs_t wp, int argc, char_t **argv)
 				sprintf(sname, "%s %s", driver, sname);
 				cpufound |= showsensor(wp, p, NULL, sname, 1, RPM); // rpm
 			} else {
+				char sname[64];
 				sprintf(sname, "%s fan%d", driver, b);
 				cpufound |= showsensor(wp, p, NULL, sname, 1, RPM); // rpm
 			}
