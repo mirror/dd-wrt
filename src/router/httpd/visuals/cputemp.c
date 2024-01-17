@@ -21,7 +21,6 @@
  */
 #ifdef HAVE_CPUTEMP
 
-
 #define CELSIUS 0
 #define VOLT 1
 #define RPM 2
@@ -627,15 +626,27 @@ EJ_VISIBLE int ej_get_cputemp(webs_t wp, int argc, char_t **argv)
 			fp = fopen(n, "rb");
 			if (fp) {
 				char sname[64];
-				fscanf(fp, "%s temp%d", sname, b);
+				fscanf(fp, "%s", sname);
 				fclose(fp);
-				cpufound |= showsensor(wp, p, NULL, sname, 0, CELSIUS);
+				sprintf(n, "%sdevice/model", sysfs);
+				fp = fopen(n, "rb");
+				if (fp) {
+					char dname[64];
+					fgets(dname, 63, fp);
+					fclose(fp);
+					sprintf(sname, "%s %s", dname, sname);
+					cpufound |= showsensor(wp, p, NULL, sname, 0, CELSIUS);
+
+				} else {
+					sprintf(sname, "%s temp%d", sname, b);
+					cpufound |= showsensor(wp, p, NULL, sname, 0, CELSIUS);
+				}
 			}
 		}
 		for (b = 0; b < 16; b++) {
-			char n[64]={0};
-			char p[64]={0};
-			char driver[64]={0};
+			char n[64] = { 0 };
+			char p[64] = { 0 };
+			char driver[64] = { 0 };
 			sprintf(n, "%sname", sysfs);
 			fp = fopen(n, "rb");
 			if (fp) {
@@ -659,9 +670,9 @@ EJ_VISIBLE int ej_get_cputemp(webs_t wp, int argc, char_t **argv)
 		}
 
 		for (b = 0; b < 16; b++) {
-			char n[64]={0};
-			char p[64]={0};
-			char driver[64]={0};
+			char n[64] = { 0 };
+			char p[64] = { 0 };
+			char driver[64] = { 0 };
 			sprintf(n, "%sname", sysfs);
 			fp = fopen(n, "rb");
 			if (fp) {
