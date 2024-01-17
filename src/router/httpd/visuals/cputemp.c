@@ -161,7 +161,10 @@ EJ_VISIBLE void ej_read_sensors(webs_t wp, int argc, char_t **argv)
 					websWrite(wp, "{cpu_temp%d::%d.%d %s}", cnt, sensor / scale,
 						  (sensor % scale) / (scale / 10), unit);
 				} else {
-					websWrite(wp, "{cpu_temp%d::%d.0 %s}", cnt, sensor, unit);
+					if (sensors[cnt].type == RPM)
+						websWrite(wp, "{cpu_temp%d::%d %s}", cnt, sensor, unit);
+					else
+						websWrite(wp, "{cpu_temp%d::%d.0 %s}", cnt, sensor, unit);
 				}
 			}
 			cnt++;
@@ -207,7 +210,10 @@ static int showsensor(webs_t wp, const char *path, int (*method)(void), const ch
 			if (scale > 1) {
 				websWrite(wp, "%d.%d %s\n", sensor / scale, (sensor % scale) / (scale / 10), unit);
 			} else {
-				websWrite(wp, "%d.0 %s\n", sensor, unit);
+				if (type == RPM)
+					websWrite(wp, "%d %s\n", sensor, unit);
+				else
+					websWrite(wp, "%d.0 %s\n", sensor, unit);
 			}
 			websWrite(wp, "</span>&nbsp;\n");
 			websWrite(wp, "</div>\n");
