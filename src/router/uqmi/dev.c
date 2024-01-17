@@ -62,6 +62,34 @@ qmi_get_service_idx(QmiService svc)
 	return -1;
 }
 
+static bool qmi_message_is_response(struct qmi_msg *msg)
+{
+	if (msg->qmux.service == QMI_SERVICE_CTL) {
+		if (msg->flags & QMI_CTL_FLAG_RESPONSE)
+			return true;
+	}
+	else {
+		if (msg->flags & QMI_SERVICE_FLAG_RESPONSE)
+			return true;
+	}
+
+	return false;
+}
+
+static bool qmi_message_is_indication(struct qmi_msg *msg)
+{
+	if (msg->qmux.service == QMI_SERVICE_CTL) {
+		if (msg->flags & QMI_CTL_FLAG_INDICATION)
+			return true;
+	}
+	else {
+		if (msg->flags & QMI_SERVICE_FLAG_INDICATION)
+			return true;
+	}
+
+	return false;
+}
+
 static void __qmi_request_complete(struct qmi_dev *qmi, struct qmi_request *req, struct qmi_msg *msg)
 {
 	void *tlv_buf;
@@ -96,7 +124,25 @@ static void qmi_process_msg(struct qmi_dev *qmi, struct qmi_msg *msg)
 	struct qmi_request *req;
 	uint16_t tid;
 
-	if (msg->flags != QMI_CTL_FLAG_RESPONSE && msg->flags != QMI_SERVICE_FLAG_RESPONSE)
+	if (qmi_message_is_indication(msg)) {
+		if (msg->qmux.service == QMI_SERVICE_CTL) {
+			struct qmi_msg sync_msg = {0};
+			qmi_set_ctl_sync_request(&sync_msg);
+			/* A SYNC indication might be sent on boot in order to indicate
+			 * that all Client IDs have been deallocated by the modem:
+			 * cancel all requests, as they will not be answered. */
+			if (msg->ctl.message == sync_msg.ctl.message) {
+				while (!list_empty(&qmi->req)) {
+					req = list_first_entry(&qmi->req, struct qmi_request, list);
+					qmi_request_cancel(qmi, req);
+				}
+			}
+		}
+
+		return;
+	}
+
+	if (!qmi_message_is_response(msg))
 		return;
 
 	if (msg->qmux.service == QMI_SERVICE_CTL)
