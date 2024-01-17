@@ -358,23 +358,23 @@ EJ_VISIBLE int ej_get_cputemp(webs_t wp, int argc, char_t **argv)
 	sensorreset();
 #ifdef HAVE_MVEBU
 	if (getRouterBrand() == ROUTER_WRT_1900AC) {
-		show_temp(wp, 0, 1, "CPU");
-		show_temp(wp, 2, 1, "DDR");
-		show_temp(wp, 2, 2, "WLAN");
-		show_temp(wp, 3, 1, "WLAN0");
-		show_temp(wp, 4, 1, "WLAN1");
+		cpufound |= show_temp(wp, 0, 1, "CPU");
+		cpufound |= show_temp(wp, 2, 1, "DDR");
+		cpufound |= show_temp(wp, 2, 2, "WLAN");
+		cpufound |= show_temp(wp, 3, 1, "WLAN0");
+		cpufound |= show_temp(wp, 4, 1, "WLAN1");
 	} else {
 		int cpuresult = show_temp(wp, 0, 1, "CPU");
 		if (!cpuresult) {
-			show_temp(wp, 1, 1, "DDR");
-			show_temp(wp, 1, 2, "WLAN");
-			show_temp(wp, 2, 1, "WLAN0");
+			cpufound |= show_temp(wp, 1, 1, "DDR");
+			cpufound |= show_temp(wp, 1, 2, "WLAN");
+			cpufound |= show_temp(wp, 2, 1, "WLAN0");
 		} else {
-			show_temp(wp, 1, 1, "DDR");
-			show_temp(wp, 1, 2, "WLAN");
-			show_temp(wp, 2, 1, "WLAN1");
+			cpufound |= show_temp(wp, 1, 1, "DDR");
+			cpufound |= show_temp(wp, 1, 2, "WLAN");
+			cpufound |= show_temp(wp, 2, 1, "WLAN1");
 		}
-		show_temp(wp, 3, 1, "WLAN2");
+		cpufound |= show_temp(wp, 3, 1, "WLAN2");
 	}
 	return 0;
 #endif
@@ -385,13 +385,12 @@ EJ_VISIBLE int ej_get_cputemp(webs_t wp, int argc, char_t **argv)
 	cpufound |= show_temp(wp, 1, 2, "PHY2");
 #endif
 #ifdef HAVE_ALPINE
-	show_temp(wp, 1, 1, "CPU");
-	cpufound = 1;
+	cpufound |= show_temp(wp, 1, 1, "CPU");
 #elif defined(HAVE_IPQ806X)
 	char *wifiname0 = getWifiDeviceName("wlan0", NULL);
 	char *wifiname1 = getWifiDeviceName("wlan1", NULL);
 	if (wifiname0) {
-		cpufound = show_temp(wp, "Thermal Zone");
+		cpufound |= show_temp(wp, "Thermal Zone");
 	}
 #endif
 #ifdef HAVE_BCMMODERN
@@ -436,7 +435,6 @@ EJ_VISIBLE int ej_get_cputemp(webs_t wp, int argc, char_t **argv)
 	for (i = 0; i < cc; i++) {
 		result[i] = (tempavg[i] / 2) + 200;
 	}
-	cpufound = 1;
 
 #ifdef HAVE_QTN
 	result[1] = rpc_get_temperature() / 100000;
@@ -448,7 +446,7 @@ EJ_VISIBLE int ej_get_cputemp(webs_t wp, int argc, char_t **argv)
 	fp = fopen("/proc/dmu/temperature", "rb");
 	if (fp) {
 		fclose(fp);
-		showsensor(wp, "/proc/dmu/temperature", NULL, "CPU", 10, 0);
+		cputfound |= showsensor(wp, "/proc/dmu/temperature", NULL, "CPU", 10, 0);
 		fp = NULL;
 	}
 #endif
@@ -460,11 +458,11 @@ EJ_VISIBLE int ej_get_cputemp(webs_t wp, int argc, char_t **argv)
 				char wl[32];
 				sprintf(wl, "WL%d", i);
 				if (i == 0)
-					showsensor(wp, NULL, getwifi0, wl, 10, 0);
+					cpufound |= showsensor(wp, NULL, getwifi0, wl, 10, 0);
 				if (i == 1)
-					showsensor(wp, NULL, getwifi1, wl, 10, 0);
+					cpufound |= showsensor(wp, NULL, getwifi1, wl, 10, 0);
 				if (i == 2)
-					showsensor(wp, NULL, getwifi2, wl, 10, 0);
+					cpufound |= showsensor(wp, NULL, getwifi2, wl, 10, 0);
 			}
 		}
 	}
@@ -589,14 +587,12 @@ EJ_VISIBLE int ej_get_cputemp(webs_t wp, int argc, char_t **argv)
 
 #ifndef HAVE_IPQ806X
 	if (fp != NULL) {
-		cpufound = 1;
 		fp = NULL;
-		showsensor(wp, path, NULL, "CPU", TEMP_MUL, 0);
+		cpufound |= showsensor(wp, path, NULL, "CPU", TEMP_MUL, 0);
 	}
 	if (fpsys != NULL) {
-		cpufound = 1;
 		fclose(fpsys);
-		showsensor(wp, path, NULL, "SYS", SYSTEMP_MUL, 0);
+		cpufound |= showsensor(wp, path, NULL, "SYS", SYSTEMP_MUL, 0);
 	}
 	int a, b;
 	for (a = 0; a < 16; a++) {
@@ -669,8 +665,7 @@ EJ_VISIBLE int ej_get_cputemp(webs_t wp, int argc, char_t **argv)
 			char name[64];
 			sprintf(name, "WLAN%d", i);
 			if (!checkhwmon(s_path))
-				showsensor(wp, s_path, NULL, name, 1000, 0);
-			cpufound = 1;
+				cpufound |= showsensor(wp, s_path, NULL, name, 1000, 0);
 		}
 exit_error:;
 	}
