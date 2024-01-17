@@ -79,6 +79,8 @@ static int checkhwmon(char *sysfs)
 }
 static int alreadyshowed(char *path)
 {
+	if (!path)
+		return 0;
 	int cnt = 0;
 	if (sensors) {
 		while (sensors[cnt].path || sensors[cnt].method) {
@@ -95,11 +97,15 @@ static int addsensor(char *path, int (*method)(void), int scale, int type)
 	int cnt = 0;
 	if (sensors) {
 		while (sensors[cnt].path || sensors[cnt].method) {
-			if (sensors[cnt].method) {
+			if (method && sensors[cnt].method == method) {
+				sensors[cnt].shown = 1;
+				return cnt; // already added
+			}
+			if (path && sensors[cnt].method) {
 				cnt++;
 				continue;
 			}
-			if (!strcmp(sensors[cnt].path, path)) {
+			if (path && !strcmp(sensors[cnt].path, path)) {
 				sensors[cnt].shown = 1;
 				return cnt; // already added
 			}
@@ -107,7 +113,10 @@ static int addsensor(char *path, int (*method)(void), int scale, int type)
 		}
 	}
 	sensors = realloc(sensors, sizeof(struct SENSORS) * (cnt + 2));
-	sensors[cnt].path = strdup(path);
+	if (path)
+		sensors[cnt].path = strdup(path);
+	else
+		sensors[cnt].path = NULL;
 	sensors[cnt].scale = scale;
 	sensors[cnt].method = method;
 	sensors[cnt].shown = 1;
@@ -185,8 +194,11 @@ static int showsensor(webs_t wp, const char *path, int (*method)(void), const ch
 		}
 		if (method)
 			sensor = method();
-		if (!scale)
-			scale = getscale(path);
+		else {
+			if (!scale)
+				scale = getscale(path);
+		}
+
 		if (!scale) {
 			if (sensor > 10000)
 				scale = 1000;
@@ -304,22 +316,22 @@ static int getwifi(int idx)
 	char buf[WLC_IOCTL_SMLEN];
 	int ret;
 	unsigned int ret_int[3] = { 0, 0, 0 };
-	unsigned int present[3] = { 0, 0, 0 };
 	unsigned int result[3] = { 0, 0, 0 };
 	static int tempavg[3] = { 0, 0, 0 };
 	static unsigned int tempavg_max = 0;
 	int i = idx;
-
-	int ttcount = 0;
-	int cc = get_wl_instances();
+	static int ttcount = 0;
+	static int lastidx = 0;
+	if (idx < lastidx) {
+		if (ttcount)
+			tempcount = ttcount;
+	}
 	strcpy(buf, "phy_tempsense");
 	char *ifname = get_wl_instance_name(i);
 	if (nvram_nmatch("disabled", "wl%d_net_mode", i) || (ret = wl_ioctl(ifname, WLC_GET_VAR, buf, sizeof(buf)))) {
-		present[i] = 0;
 		return -1;
 	}
 	ret_int[i] = *(unsigned int *)buf;
-	present[i] = 1;
 
 	ret_int[i] *= 10;
 	if (tempcount == -2) {
@@ -335,16 +347,8 @@ static int getwifi(int idx)
 			tempavg[i] = ret_int[i];
 		tempavg[i] = (tempavg[i] * 4 + ret_int[i]) / 5;
 	}
-
-	if (ttcount)
-		tempcount = ttcount;
-	for (i = 0; i < cc; i++) {
-		result[i] = (tempavg[i] / 2) + 200;
-	}
-	if (present[idx])
-		return result[idx];
-	else
-		return -1;
+	lastidx = idx;
+	return (tempavg[i] / 2) + 200;
 }
 
 static int getwifi0(void)
@@ -354,7 +358,11 @@ static int getwifi0(void)
 
 static int getwifi1(void)
 {
+#ifdef HAVE_QTN
+	return rpc_get_temperature() / 100000;
+#else
 	return getwifi(1);
+#endif
 }
 
 static int getwifi2(void)
@@ -408,16 +416,9 @@ EJ_VISIBLE int ej_get_cputemp(webs_t wp, int argc, char_t **argv)
 	}
 #endif
 #ifdef HAVE_BCMMODERN
-	static int tempcount = -2;
 	char buf[WLC_IOCTL_SMLEN];
 	int ret;
-	unsigned int ret_int[3] = { 0, 0, 0 };
 	unsigned int present[3] = { 0, 0, 0 };
-	unsigned int result[3] = { 0, 0, 0 };
-	static int tempavg[3] = { 0, 0, 0 };
-	static unsigned int tempavg_max = 0;
-
-	int ttcount = 0;
 	int cc = get_wl_instances();
 	for (i = 0; i < cc; i++) {
 		strcpy(buf, "phy_tempsense");
@@ -426,37 +427,12 @@ EJ_VISIBLE int ej_get_cputemp(webs_t wp, int argc, char_t **argv)
 			present[i] = 0;
 			continue;
 		}
-		ret_int[i] = *(unsigned int *)buf;
 		present[i] = 1;
-
-		ret_int[i] *= 10;
-		if (tempcount == -2) {
-			if (!ttcount)
-				ttcount = tempcount + 1;
-			tempavg[i] = ret_int[i];
-			if (tempavg[i] < 0)
-				tempavg[i] = 0;
-		} else {
-			if (tempavg[i] < 100 && ret_int[i] > 0)
-				tempavg[i] = ret_int[i];
-			if (tempavg[i] > 2000 && ret_int[i] > 0)
-				tempavg[i] = ret_int[i];
-			tempavg[i] = (tempavg[i] * 4 + ret_int[i]) / 5;
-		}
 	}
-	if (ttcount)
-		tempcount = ttcount;
-	for (i = 0; i < cc; i++) {
-		result[i] = (tempavg[i] / 2) + 200;
-	}
-
 #ifdef HAVE_QTN
-	result[1] = rpc_get_temperature() / 100000;
 	present[1] = 1;
 #endif
-	int cputemp = 1;
 #ifdef HAVE_NORTHSTAR
-	cputemp = 0;
 	fp = fopen("/proc/dmu/temperature", "rb");
 	if (fp) {
 		fclose(fp);
@@ -464,7 +440,7 @@ EJ_VISIBLE int ej_get_cputemp(webs_t wp, int argc, char_t **argv)
 		fp = NULL;
 	}
 #endif
-	if (!present[0] && !present[1] && !present[2] && cputemp)
+	if (!present[0] && !present[1] && !present[2] && !cpufound)
 		return 1;
 	else {
 		for (i = 0; i < cc; i++) {
@@ -736,11 +712,11 @@ exit_error:;
 #endif
 	if (fp)
 		fclose(fp);
+#endif
 	if (!cpufound) {
 		return 1;
 	}
 	return 0;
-#endif
 }
 
 EJ_VISIBLE void ej_show_cpu_temperature(webs_t wp, int argc, char_t **argv)
