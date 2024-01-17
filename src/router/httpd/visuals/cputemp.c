@@ -21,6 +21,11 @@
  */
 #ifdef HAVE_CPUTEMP
 
+
+#define CELSIUS 0
+#define VOLT 1
+#define RPM 2
+
 struct SENSORS {
 	char *path;
 	int scale;
@@ -148,8 +153,10 @@ EJ_VISIBLE void ej_read_sensors(webs_t wp, int argc, char_t **argv)
 				sensor = sensors[cnt].method();
 			if (wp && scale != -1 && sensor != -1) {
 				char *unit = "&#176;C";
-				if (sensors[cnt].type)
+				if (sensors[cnt].type == VOLT)
 					unit = "Volt";
+				if (sensors[cnt].type == RPM)
+					unit = "rpm";
 
 				if (scale > 1) {
 					websWrite(wp, "{cpu_temp%d::%d.%d %s}", cnt, sensor / scale,
@@ -191,8 +198,10 @@ static int showsensor(webs_t wp, const char *path, int (*method)(void), const ch
 		if (wp && sensor != -1) {
 			int count = addsensor(path, method, scale, type);
 			char *unit = "&#176;C";
-			if (type)
+			if (type == VOLT)
 				unit = "Volt";
+			if (type == RPM)
+				unit = "rpm";
 			websWrite(wp, "<div class=\"setting\">\n");
 			websWrite(wp, "<div class=\"label\">%s</div>\n", name);
 			websWrite(wp, "<span id=\"cpu_temp%d\">", count);
@@ -216,7 +225,7 @@ static int show_temp(webs_t wp, int mon, int input, const char *name)
 {
 	char sysfs[64];
 	snprintf(sysfs, 64, "/sys/class/hwmon/hwmon%d/temp%d_input", mon, input);
-	return showsensor(wp, sysfs, NULL, name, 1000, 0);
+	return showsensor(wp, sysfs, NULL, name, 1000, CELSIUS);
 }
 
 #elif defined(HAVE_ALPINE)
@@ -224,7 +233,7 @@ static int show_temp(webs_t wp, int mon, int input, char *name)
 {
 	char sysfs[64];
 	snprintf(sysfs, 64, "/sys/class/hwmon/hwmon%d/temp%d_input", mon, input);
-	return showsensor(wp, sysfs, NULL, name, 1, 0);
+	return showsensor(wp, sysfs, NULL, name, 1, CELSIUS);
 }
 #elif defined(HAVE_IPQ806X)
 static int show_temp(webs_t wp, char *name)
@@ -235,7 +244,7 @@ static int show_temp(webs_t wp, char *name)
 		snprintf(sysfs, 64, "/sys/devices/virtual/thermal/thermal_zone%d/temp", mon);
 		char sensorname[32];
 		snprintf(sensorname, 32, "%s%d", name, mon);
-		showsensor(wp, sysfs, NULL, sensorname, 1000, 0);
+		showsensor(wp, sysfs, NULL, sensorname, 1000, CELSIUS);
 	}
 	return 1;
 }
@@ -446,7 +455,7 @@ EJ_VISIBLE int ej_get_cputemp(webs_t wp, int argc, char_t **argv)
 	fp = fopen("/proc/dmu/temperature", "rb");
 	if (fp) {
 		fclose(fp);
-		cputfound |= showsensor(wp, "/proc/dmu/temperature", NULL, "CPU", 10, 0);
+		cputfound |= showsensor(wp, "/proc/dmu/temperature", NULL, "CPU", 10, CELSIUS);
 		fp = NULL;
 	}
 #endif
@@ -458,11 +467,11 @@ EJ_VISIBLE int ej_get_cputemp(webs_t wp, int argc, char_t **argv)
 				char wl[32];
 				sprintf(wl, "WL%d", i);
 				if (i == 0)
-					cpufound |= showsensor(wp, NULL, getwifi0, wl, 10, 0);
+					cpufound |= showsensor(wp, NULL, getwifi0, wl, 10, CELSIUS);
 				if (i == 1)
-					cpufound |= showsensor(wp, NULL, getwifi1, wl, 10, 0);
+					cpufound |= showsensor(wp, NULL, getwifi1, wl, 10, CELSIUS);
 				if (i == 2)
-					cpufound |= showsensor(wp, NULL, getwifi2, wl, 10, 0);
+					cpufound |= showsensor(wp, NULL, getwifi2, wl, 10, CELSIUS);
 			}
 		}
 	}
@@ -519,13 +528,13 @@ EJ_VISIBLE int ej_get_cputemp(webs_t wp, int argc, char_t **argv)
 			char maxp[64];
 			sprintf(tempp, "%s/temp%d_input", s_path, idx);
 			hascore = 1;
-			cpufound |= showsensor(wp, tempp, NULL, "CPU", 1000, 0);
+			cpufound |= showsensor(wp, tempp, NULL, "CPU", 1000, CELSIUS);
 			TEMP_MUL = 1000;
 		} else if (getCoreTemp(s_path, sizeof(s_path), &idx, 1)) {
 			char maxp[64];
 			sprintf(tempp, "%s/temp%d_input", s_path, idx);
 			hascore = 1;
-			cpufound |= showsensor(wp, tempp, NULL, "CPU", 1000, 0);
+			cpufound |= showsensor(wp, tempp, NULL, "CPU", 1000, CELSIUS);
 			TEMP_MUL = 1000;
 		}
 		if (TEMP_MUL == 100) {
@@ -556,7 +565,7 @@ EJ_VISIBLE int ej_get_cputemp(webs_t wp, int argc, char_t **argv)
 						TEMP_MUL *= 10;
 				} else
 					TEMP_MUL = 1;
-				cpufound |= showsensor(wp, path, NULL, "CPU", TEMP_MUL, 0);
+				cpufound |= showsensor(wp, path, NULL, "CPU", TEMP_MUL, CELSIUS);
 			}
 		}
 		fp = NULL;
@@ -588,11 +597,11 @@ EJ_VISIBLE int ej_get_cputemp(webs_t wp, int argc, char_t **argv)
 #ifndef HAVE_IPQ806X
 	if (fp != NULL) {
 		fp = NULL;
-		cpufound |= showsensor(wp, path, NULL, "CPU", TEMP_MUL, 0);
+		cpufound |= showsensor(wp, path, NULL, "CPU", TEMP_MUL, CELSIUS);
 	}
 	if (fpsys != NULL) {
 		fclose(fpsys);
-		cpufound |= showsensor(wp, path, NULL, "SYS", SYSTEMP_MUL, 0);
+		cpufound |= showsensor(wp, path, NULL, "SYS", SYSTEMP_MUL, CELSIUS);
 	}
 	int a, b;
 	for (a = 0; a < 16; a++) {
@@ -611,7 +620,7 @@ EJ_VISIBLE int ej_get_cputemp(webs_t wp, int argc, char_t **argv)
 				char sname[64];
 				fscanf(fp, "%s", sname);
 				fclose(fp);
-				cpufound |= showsensor(wp, p, NULL, sname, 0, 0);
+				cpufound |= showsensor(wp, p, NULL, sname, 0, CELSIUS);
 				continue;
 			}
 			sprintf(n, "%sname", sysfs);
@@ -620,12 +629,19 @@ EJ_VISIBLE int ej_get_cputemp(webs_t wp, int argc, char_t **argv)
 				char sname[64];
 				fscanf(fp, "%s", sname);
 				fclose(fp);
-				cpufound |= showsensor(wp, p, NULL, sname, 0, 0);
+				cpufound |= showsensor(wp, p, NULL, sname, 0, CELSIUS);
 			}
 		}
 		for (b = 0; b < 16; b++) {
-			char n[64];
-			char p[64];
+			char n[64]={0};
+			char p[64]={0};
+			char driver[64]={0};
+			sprintf(n, "%sname", sysfs);
+			fp = fopen(n, "rb");
+			if (fp) {
+				fscanf(fp, "%s", driver);
+				fclose(fp);
+			}
 			sprintf(p, "%sin%d_input", sysfs, b);
 			sprintf(n, "%sin%d_label", sysfs, b);
 			fp = fopen(n, "rb");
@@ -633,7 +649,36 @@ EJ_VISIBLE int ej_get_cputemp(webs_t wp, int argc, char_t **argv)
 				char sname[64];
 				fscanf(fp, "%s", sname);
 				fclose(fp);
-				cpufound |= showsensor(wp, p, NULL, sname, 1000, 1); // volt
+				sprintf(sname, "%s %s", driver, sname);
+				cpufound |= showsensor(wp, p, NULL, sname, 1000, VOLT); // volt
+			} else {
+				sprintf(sname, "%s in%d", driver, b);
+				cpufound |= showsensor(wp, p, NULL, sname, 1000, VOLT); // volt
+			}
+		}
+
+		for (b = 0; b < 16; b++) {
+			char n[64]={0};
+			char p[64]={0};
+			char driver[64]={0};
+			sprintf(n, "%sname", sysfs);
+			fp = fopen(n, "rb");
+			if (fp) {
+				fscanf(fp, "%s", driver);
+				fclose(fp);
+			}
+			sprintf(p, "%sfan%d_input", sysfs, b);
+			sprintf(n, "%sfan%d_label", sysfs, b);
+			fp = fopen(n, "rb");
+			if (fp) {
+				char sname[64];
+				fscanf(fp, "%s", sname);
+				fclose(fp);
+				sprintf(sname, "%s %s", driver, sname);
+				cpufound |= showsensor(wp, p, NULL, sname, 1, RPM); // rpm
+			} else {
+				sprintf(sname, "%s fan%d", driver, b);
+				cpufound |= showsensor(wp, p, NULL, sname, 1, RPM); // rpm
 			}
 		}
 	}
@@ -665,7 +710,7 @@ EJ_VISIBLE int ej_get_cputemp(webs_t wp, int argc, char_t **argv)
 			char name[64];
 			sprintf(name, "WLAN%d", i);
 			if (!checkhwmon(s_path))
-				cpufound |= showsensor(wp, s_path, NULL, name, 1000, 0);
+				cpufound |= showsensor(wp, s_path, NULL, name, 1000, CELSIUS);
 		}
 exit_error:;
 	}
