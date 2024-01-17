@@ -460,7 +460,7 @@ EJ_VISIBLE int ej_get_cputemp(webs_t wp, int argc, char_t **argv)
 	fp = fopen("/proc/dmu/temperature", "rb");
 	if (fp) {
 		fclose(fp);
-		cputfound |= showsensor(wp, "/proc/dmu/temperature", NULL, "CPU", 10, CELSIUS);
+		cpufound |= showsensor(wp, "/proc/dmu/temperature", NULL, "CPU", 10, CELSIUS);
 		fp = NULL;
 	}
 #endif
