@@ -4367,8 +4367,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		}
 	}
 
-#ifdef HAVE_MADWIFI
-#ifndef HAVE_NOCOUNTRYSEL
+#if !defined(HAVE_NOCOUNTRYSEL) && defined(HAVE_MADWIFI)
 	if (!nvram_matchi("nocountrysel", 1)) {
 		char wl_regdomain[32];
 #ifdef HAVE_ATH9K
@@ -4382,7 +4381,6 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 			}
 		}
 	}
-#endif // ! HAVE MAKSAT \
 #endif
 
 // RELAYD OPTIONAL SETTINGS
