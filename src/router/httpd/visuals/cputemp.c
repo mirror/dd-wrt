@@ -371,7 +371,7 @@ static int getwifi2(void)
 }
 #endif
 
-EJ_VISIBLE int ej_get_cputemp(webs_t wp, int argc, char_t **argv)
+static int get_cputemp(webs_t wp, int argc, char_t **argv)
 {
 	int i, cpufound = 0;
 	FILE *fp = NULL;
@@ -724,13 +724,13 @@ EJ_VISIBLE void ej_show_cpu_temperature(webs_t wp, int argc, char_t **argv)
 	static int notavailable = -1;
 
 	if (notavailable == -1)
-		notavailable = ej_get_cputemp(NULL, argc, argv);
+		notavailable = get_cputemp(NULL, argc, argv);
 	if (!notavailable) {
 		websWrite(wp, "<fieldset>\n");
 		{
 			websWrite(wp,
 				  "<legend><script type=\"text/javascript\">Capture(status_router.cputemp);</script></legend>\n");
-			ej_get_cputemp(wp, argc, argv);
+			get_cputemp(wp, argc, argv);
 		}
 		websWrite(wp, "</fieldset><br />\n");
 	}

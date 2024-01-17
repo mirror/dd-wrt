@@ -48,7 +48,7 @@ EJ_VISIBLE void ej_get_voltage(webs_t wp, int argc, char_t **argv)
 	int high = temp / 1000;
 	int low = (temp - (high * 1000)) / 100;
 
-	websWrite(wp, "%d.%d V", high, low); // no i2c lm75 found
+	websWrite(wp, "%d.%d Volt", high, low); // no i2c lm75 found
 }
 
 EJ_VISIBLE void ej_show_voltage(webs_t wp, int argc, char_t **argv)
