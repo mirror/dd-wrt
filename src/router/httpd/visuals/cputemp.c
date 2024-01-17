@@ -343,7 +343,6 @@ static int getwifi2(void)
 EJ_VISIBLE int ej_get_cputemp(webs_t wp, int argc, char_t **argv)
 {
 	int i, cpufound = 0;
-	int disable_wifitemp = 0;
 	FILE *fp = NULL;
 	FILE *fpsys = NULL;
 	char *path;
@@ -382,13 +381,8 @@ EJ_VISIBLE int ej_get_cputemp(webs_t wp, int argc, char_t **argv)
 #elif defined(HAVE_IPQ806X)
 	char *wifiname0 = getWifiDeviceName("wlan0", NULL);
 	char *wifiname1 = getWifiDeviceName("wlan1", NULL);
-	//      if ((wifiname0 && !strcmp(wifiname0, "QCA99X0 802.11ac")) || (wifiname1 && !strcmp(wifiname1, "QCA99X0 802.11ac"))) {
-	//              disable_wifitemp = 1;
-	//      }
 	if (wifiname0) {
 		cpufound = show_temp(wp, "Thermal Zone");
-	} else {
-		disable_wifitemp = 1;
 	}
 #endif
 #ifdef HAVE_BCMMODERN
@@ -641,37 +635,35 @@ EJ_VISIBLE int ej_get_cputemp(webs_t wp, int argc, char_t **argv)
 #endif
 	FILE *fp2 = NULL;
 #if defined(HAVE_ATH10K) || defined(HAVE_MT76)
-	if (!disable_wifitemp) {
-		int c = getdevicecount();
-		for (i = 0; i < c; i++) {
+	int c = getdevicecount();
+	for (i = 0; i < c; i++) {
 #if !defined(HAVE_MT76)
-			if (nvram_nmatch("disabled", "wlan%d_net_mode", i)) {
-				continue;
-			}
-#endif
-			char s_path[64];
-			int scan = 0;
-			for (scan = 0; scan < 20; scan++) {
-				sprintf(s_path, "/sys/class/ieee80211/phy%d/device/hwmon/hwmon%d/temp1_input", i, scan);
-				fp2 = fopen(s_path, "rb");
-				if (fp2)
-					break;
-				sprintf(s_path, "/sys/class/ieee80211/phy%d/hwmon%d/temp1_input", i, scan);
-				fp2 = fopen(s_path, "rb");
-				if (fp2)
-					break;
-			}
-
-			if (fp2 != NULL) {
-				fclose(fp2);
-				char name[64];
-				sprintf(name, "WLAN%d", i);
-				if (!checkhwmon(s_path))
-					showsensor(wp, s_path, NULL, name, 1000);
-				cpufound = 1;
-			}
-exit_error:;
+		if (nvram_nmatch("disabled", "wlan%d_net_mode", i)) {
+			continue;
 		}
+#endif
+		char s_path[64];
+		int scan = 0;
+		for (scan = 0; scan < 20; scan++) {
+			sprintf(s_path, "/sys/class/ieee80211/phy%d/device/hwmon/hwmon%d/temp1_input", i, scan);
+			fp2 = fopen(s_path, "rb");
+			if (fp2)
+				break;
+			sprintf(s_path, "/sys/class/ieee80211/phy%d/hwmon%d/temp1_input", i, scan);
+			fp2 = fopen(s_path, "rb");
+			if (fp2)
+				break;
+		}
+
+		if (fp2 != NULL) {
+			fclose(fp2);
+			char name[64];
+			sprintf(name, "WLAN%d", i);
+			if (!checkhwmon(s_path))
+				showsensor(wp, s_path, NULL, name, 1000);
+			cpufound = 1;
+		}
+exit_error:;
 	}
 #endif
 	if (fp)
