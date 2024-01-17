@@ -4367,6 +4367,24 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		}
 	}
 
+#ifdef HAVE_MADWIFI
+#ifndef HAVE_NOCOUNTRYSEL
+	if (!nvram_matchi("nocountrysel", 1)) {
+		char wl_regdomain[32];
+#ifdef HAVE_ATH9K
+		if (!strcmp(prefix, "wlan0"))
+#endif
+		{
+			sprintf(wl_regdomain, "%s_regdomain", prefix);
+			if (1 || nvram_nmatch("1", "%s_regulatory", prefix) || !issuperchannel()) {
+				char *list = getCountryList(COUNTRYLIST);
+				showOptionsLabel(wp, "wl_basic.regdom_label", wl_regdomain, list, nvram_safe_get(wl_regdomain));
+			}
+		}
+	}
+#endif // ! HAVE MAKSAT \
+#endif
+
 // RELAYD OPTIONAL SETTINGS
 #ifdef HAVE_RELAYD
 	if (nvram_match(wl_mode, "wet")) {
@@ -4964,21 +4982,6 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		char *fw_names[] = { "DD-WRT", "VANILLA" };
 		showOptionsNames(wp, "wl_basic.fw_type", fw_type, "ddwrt vanilla", fw_names, nvram_default_get(fw_type, "ddwrt"));
 	}
-#ifndef HAVE_NOCOUNTRYSEL
-	if (!nvram_matchi("nocountrysel", 1)) {
-		char wl_regdomain[32];
-#ifdef HAVE_ATH9K
-		if (!strcmp(prefix, "wlan0"))
-#endif
-		{
-			sprintf(wl_regdomain, "%s_regdomain", prefix);
-			if (1 || nvram_nmatch("1", "%s_regulatory", prefix) || !issuperchannel()) {
-				char *list = getCountryList(COUNTRYLIST);
-				showOptionsLabel(wp, "wl_basic.regdom_label", wl_regdomain, list, nvram_safe_get(wl_regdomain));
-			}
-		}
-	}
-#endif // ! HAVE MAKSAT \
 	// power adjustment
 	sprintf(power, "%s_txpwrdbm", prefix);
 	// sprintf (maxpower, "%s_maxpower", prefix);
