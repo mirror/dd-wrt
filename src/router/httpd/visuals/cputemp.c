@@ -652,7 +652,7 @@ exit_error:;
 
 				} else {
 					sprintf(sname, "%s temp%d", sname, b);
-					if (!checkhwmon(name))
+					if (!checkhwmon(sname))
 						cpufound |= showsensor(wp, p, NULL, sname, 0, CELSIUS);
 				}
 			}
