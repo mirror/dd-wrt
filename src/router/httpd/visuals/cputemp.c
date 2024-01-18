@@ -463,7 +463,7 @@ static int get_cputemp(webs_t wp, int argc, char_t **argv)
 	TEMP_MUL = 100;
 	if (getRouterBrand() == ROUTER_BOARD_GATEWORX_SWAP)
 		TEMP_MUL = 200;
-	char *path = "/sys/devices/platform/IXP4XX-I2C.0/i2c-adapter:i2c-0/0-0028/temp_input";
+	path = "/sys/devices/platform/IXP4XX-I2C.0/i2c-adapter:i2c-0/0-0028/temp_input";
 	fp = fopen(path, "rb");
 	if (!fp) {
 		path = "/sys/devices/platform/IXP4XX-I2C.0/i2c-0/0-0028/temp1_input";
