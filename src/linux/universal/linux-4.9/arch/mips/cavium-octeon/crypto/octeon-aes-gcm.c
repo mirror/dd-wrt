@@ -307,7 +307,7 @@ static int gcm_encrypt(struct aead_request *req)
 	struct gcm_aes_ctx *ctx = crypto_aead_ctx(aead);
 	struct skcipher_walk walk;
 	u8 iv[AES_BLOCK_SIZE];
-	u64 ks[2 * AES_BLOCK_SIZE / 8];
+	u8 ks[2 * AES_BLOCK_SIZE];
 	u8 tag[AES_BLOCK_SIZE];
 	u64 dg[2] = {};
 	int err;
@@ -326,18 +326,17 @@ static int gcm_encrypt(struct aead_request *req)
 
 	while (walk.nbytes >= (2 * AES_BLOCK_SIZE)) {
 		const int blocks = walk.nbytes / (2 * AES_BLOCK_SIZE) * 2;
-		__be16 *dst = walk.dst.virt.addr;
-		__be16 *src = walk.src.virt.addr;
+		u8 *dst = walk.dst.virt.addr;
+		u8 *src = walk.src.virt.addr;
 		int remaining = blocks;
 		do {
-			__octeon_aes_encrypt(ctx->aes_key.key_enc, (u8 *)ks, iv,
+			__octeon_aes_encrypt(ctx->aes_key.key_enc, ks, iv,
 					     ctx->aes_key.key_length);
-			dst[0] = src[0] ^ ks[0];
-			dst[1] = src[1] ^ ks[1];
+			crypto_xor_cpy(dst, src, ks, AES_BLOCK_SIZE);
 			crypto_inc(iv, AES_BLOCK_SIZE);
 
-			dst += 2;
-			src += 2;
+			dst += AES_BLOCK_SIZE;
+			src += AES_BLOCK_SIZE;
 		} while (--remaining > 0);
 
 		ghash_do_update(blocks, dg, walk.dst.virt.addr, &ctx->ghash_key,
@@ -396,7 +395,7 @@ static int gcm_decrypt(struct aead_request *req)
 	struct skcipher_walk walk;
 	u8 iv[2 * AES_BLOCK_SIZE];
 	u8 tag[AES_BLOCK_SIZE];
-	u64 buf[2 * GHASH_BLOCK_SIZE / 8];
+	u8 buf[2 * GHASH_BLOCK_SIZE];
 	u64 dg[2] = {};
 	int err;
 
@@ -414,20 +413,19 @@ static int gcm_decrypt(struct aead_request *req)
 
 	while (walk.nbytes >= (2 * AES_BLOCK_SIZE)) {
 		int blocks = walk.nbytes / (2 * AES_BLOCK_SIZE) * 2;
-		__be64 *dst = walk.dst.virt.addr;
-		__be64 *src = walk.src.virt.addr;
+		u8 *dst = walk.dst.virt.addr;
+		u8 *src = walk.src.virt.addr;
 
 		ghash_do_update(blocks, dg, walk.src.virt.addr, &ctx->ghash_key,
 				NULL);
 
 		do {
-			__octeon_aes_encrypt(ctx->aes_key.key_enc, (u8 *)buf,
-					     iv, ctx->aes_key.key_length);
-			dst[0] = src[0] ^ buf[0];
-			dst[1] = src[1] ^ buf[1];
+			__octeon_aes_encrypt(ctx->aes_key.key_enc, buf, iv,
+					     ctx->aes_key.key_length);
+			crypto_xor_cpy(dst, src, buf, AES_BLOCK_SIZE);
 			crypto_inc(iv, AES_BLOCK_SIZE);
-			dst += 2;
-			src += 2;
+			dst += AES_BLOCK_SIZE;
+			src += AES_BLOCK_SIZE;
 		} while (--blocks > 0);
 
 		err = skcipher_walk_done(&walk,

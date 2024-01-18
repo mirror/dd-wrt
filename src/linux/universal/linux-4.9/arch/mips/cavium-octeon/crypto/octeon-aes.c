@@ -91,8 +91,7 @@ static int octeon_crypto_aes_cbc_decrypt(struct blkcipher_desc *desc,
 			todo = nbytes & AES_BLOCK_MASK;
 			dataout = (__be64 *)walk.dst.virt.addr;
 			data = (__be64 *)walk.src.virt.addr;
-			aes_decrypt((struct crypto_tfm *)&crypto, (u8 *)tmp.c,
-				    (u8 *)data);
+			aes_decrypt((struct crypto_tfm*)&crypto, (u8*)tmp.c, (u8*)data);
 			for (i = 0; i < todo / AES_BLOCK_SIZE; i++) {
 				c = *data++;
 				*dataout++ = tmp.c[0] ^ iv[0];
@@ -164,8 +163,7 @@ static int octeon_crypto_aes_cbc_encrypt(struct blkcipher_desc *desc,
 				*dataout++ = *data++ ^ iv[0];
 				*dataout++ = *data++ ^ iv[1];
 			}
-			aes_encrypt((struct crypto_tfm *)&crypto, (u8 *)dataout,
-				    (u8 *)dataout);
+			aes_encrypt((struct crypto_tfm *)&crypto, (u8*)dataout, (u8*)dataout);
 			iv = dataout;
 			nbytes &= AES_BLOCK_SIZE - 1;
 			err = blkcipher_walk_done(desc, &walk, nbytes);
