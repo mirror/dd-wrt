@@ -437,7 +437,6 @@ static int get_cputemp(webs_t wp, int argc, char_t **argv)
 	if (fp) {
 		fclose(fp);
 		cpufound |= showsensor(wp, "/proc/dmu/temperature", NULL, "CPU", 10, CELSIUS);
-		fp = NULL;
 	}
 #endif
 	if (!present[0] && !present[1] && !present[2] && !cpufound)
@@ -538,7 +537,6 @@ static int get_cputemp(webs_t wp, int argc, char_t **argv)
 				char temp[32];
 				fscanf(fp, "%s", &temp[0]);
 				fclose(fp);
-				fp = NULL;
 				int l = strlen(temp);
 				if (l > 2) {
 					TEMP_MUL = 1;
@@ -575,9 +573,42 @@ static int get_cputemp(webs_t wp, int argc, char_t **argv)
 #endif
 #endif
 
+	FILE *fp2 = NULL;
+#if defined(HAVE_ATH10K) || defined(HAVE_MT76)
+	int c = getdevicecount();
+	for (i = 0; i < c; i++) {
+#if !defined(HAVE_MT76)
+		if (nvram_nmatch("disabled", "wlan%d_net_mode", i)) {
+			continue;
+		}
+#endif
+		char s_path[64];
+		int scan = 0;
+		for (scan = 0; scan < 20; scan++) {
+			sprintf(s_path, "/sys/class/ieee80211/phy%d/device/hwmon/hwmon%d/temp1_input", i, scan);
+			fp2 = fopen(s_path, "rb");
+			if (fp2)
+				break;
+			sprintf(s_path, "/sys/class/ieee80211/phy%d/hwmon%d/temp1_input", i, scan);
+			fp2 = fopen(s_path, "rb");
+			if (fp2)
+				break;
+		}
+
+		if (fp2 != NULL) {
+			fclose(fp2);
+			char name[64];
+			sprintf(name, "WLAN%d", i);
+			if (!checkhwmon(s_path))
+				cpufound |= showsensor(wp, s_path, NULL, name, 1000, CELSIUS);
+		}
+exit_error:;
+	}
+#endif
+
 #ifndef HAVE_IPQ806X
 	if (fp != NULL) {
-		fp = NULL;
+		fclose(fp);
 		cpufound |= showsensor(wp, path, NULL, "CPU", TEMP_MUL, CELSIUS);
 	}
 	if (fpsys != NULL) {
@@ -621,7 +652,8 @@ static int get_cputemp(webs_t wp, int argc, char_t **argv)
 
 				} else {
 					sprintf(sname, "%s temp%d", sname, b);
-					cpufound |= showsensor(wp, p, NULL, sname, 0, CELSIUS);
+					if (!checkhwmon(name))
+						cpufound |= showsensor(wp, p, NULL, sname, 0, CELSIUS);
 				}
 			}
 		}
@@ -633,7 +665,6 @@ static int get_cputemp(webs_t wp, int argc, char_t **argv)
 			fp = fopen(n, "rb");
 			if (fp) {
 				fscanf(fp, "%s", driver);
-				fclose(fp);
 			}
 			sprintf(p, "%sin%d_input", sysfs, b);
 			sprintf(n, "%sin%d_label", sysfs, b);
@@ -678,40 +709,6 @@ static int get_cputemp(webs_t wp, int argc, char_t **argv)
 		}
 	}
 #endif
-	FILE *fp2 = NULL;
-#if defined(HAVE_ATH10K) || defined(HAVE_MT76)
-	int c = getdevicecount();
-	for (i = 0; i < c; i++) {
-#if !defined(HAVE_MT76)
-		if (nvram_nmatch("disabled", "wlan%d_net_mode", i)) {
-			continue;
-		}
-#endif
-		char s_path[64];
-		int scan = 0;
-		for (scan = 0; scan < 20; scan++) {
-			sprintf(s_path, "/sys/class/ieee80211/phy%d/device/hwmon/hwmon%d/temp1_input", i, scan);
-			fp2 = fopen(s_path, "rb");
-			if (fp2)
-				break;
-			sprintf(s_path, "/sys/class/ieee80211/phy%d/hwmon%d/temp1_input", i, scan);
-			fp2 = fopen(s_path, "rb");
-			if (fp2)
-				break;
-		}
-
-		if (fp2 != NULL) {
-			fclose(fp2);
-			char name[64];
-			sprintf(name, "WLAN%d", i);
-			if (!checkhwmon(s_path))
-				cpufound |= showsensor(wp, s_path, NULL, name, 1000, CELSIUS);
-		}
-exit_error:;
-	}
-#endif
-	if (fp)
-		fclose(fp);
 #endif
 	if (!cpufound) {
 		return 1;
