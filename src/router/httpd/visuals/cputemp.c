@@ -606,7 +606,7 @@ exit_error:;
 	}
 #endif
 
-#ifndef HAVE_IPQ806X
+#if !defined(HAVE_IPQ806X) && !defined(HAVE_PB42) && !defined(HAVE_LSX)
 	if (fp != NULL) {
 		fclose(fp);
 		cpufound |= showsensor(wp, path, NULL, "CPU", TEMP_MUL, CELSIUS);
