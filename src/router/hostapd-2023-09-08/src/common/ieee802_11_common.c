@@ -432,7 +432,7 @@ static ParseRes __ieee802_11_parse_elems(const u8 *start, size_t len,
 		switch (id) {
 		case WLAN_EID_SSID:
 			if (elen > SSID_MAX_LEN) {
-				wpa_printf(MSG_DEBUG,
+				wpa_printf(MSG_INFO,
 					   "Ignored too long SSID element (elen=%u)",
 					   elen);
 				break;
@@ -661,13 +661,12 @@ static ParseRes __ieee802_11_parse_elems(const u8 *start, size_t len,
 	}
 
 	if (!for_each_element_completed(elem, start, len)) {
-		if (show_errors) {
-			wpa_printf(MSG_DEBUG,
-				   "IEEE 802.11 element parse failed @%d",
-				   (int) (start + len - (const u8 *) elem));
-			wpa_hexdump(MSG_MSGDUMP, "IEs", start, len);
-		}
-		return ParseFailed;
+		wpa_printf(MSG_INFO,
+			   "IEEE 802.11 element (%d) parse failed @%d",
+			   elem->id, (int) (start + len - (const u8 *) elem));
+		//wpa_hexdump(MSG_MSGDUMP, "IEs", start, len);
+//		return ParseFailed;
+		return ParseOk;
 	}
 
 done:
