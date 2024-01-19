@@ -666,7 +666,7 @@ static ParseRes __ieee802_11_parse_elems(const u8 *start, size_t len,
 			   elem->id, (int) (start + len - (const u8 *) elem));
 		//wpa_hexdump(MSG_MSGDUMP, "IEs", start, len);
 //		return ParseFailed;
-		return ParseOk;
+		return ParseOK;
 	}
 
 done:
