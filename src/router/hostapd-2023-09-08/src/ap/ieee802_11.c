@@ -4310,7 +4310,7 @@ static int check_assoc_ies(struct hostapd_data *hapd, struct sta_info *sta,
 {
 	struct ieee802_11_elems elems;
 
-	if (ieee802_11_parse_elems(ies, ies_len, &elems, 1) == ParseFailed) {
+	if (ieee802_11_parse_elems_log(hapd, ies, ies_len, &elems, 1) == ParseFailed) {
 		hostapd_logger(hapd, sta->addr, HOSTAPD_MODULE_IEEE80211,
 			       HOSTAPD_LEVEL_INFO,
 			       "Station sent an invalid association request");

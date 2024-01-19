@@ -408,7 +408,7 @@ static int ieee802_11_parse_extension(const u8 *pos, size_t elen,
 }
 
 
-static ParseRes __ieee802_11_parse_elems(const u8 *start, size_t len,
+static ParseRes __ieee802_11_parse_elems(void *ctx, const u8 *start, size_t len,
 					 struct ieee802_11_elems *elems,
 					 int show_errors)
 {
@@ -473,8 +473,14 @@ static ParseRes __ieee802_11_parse_elems(const u8 *start, size_t len,
 		case WLAN_EID_VENDOR_SPECIFIC:
 			if (ieee802_11_parse_vendor_specific(pos, elen,
 							     elems,
-							     show_errors))
+							     show_errors)) {
 				unknown++;
+			   if (ctx) {
+			   	hostapd_logger(ctx, NULL, HOSTAPD_MODULE_IEEE80211,
+			       HOSTAPD_LEVEL_INFO,"parse vendor failed (id=%d elen=%d)",
+				   id, elen);
+			    }
+			}
 			break;
 		case WLAN_EID_RSN:
 			elems->rsn_ie = pos;
@@ -650,6 +656,13 @@ static ParseRes __ieee802_11_parse_elems(const u8 *start, size_t len,
 			wpa_printf(MSG_MSGDUMP, "IEEE 802.11 element parse "
 				   "ignored unknown element (id=%d elen=%d)",
 				   id, elen);
+			   if (ctx) {
+			   	hostapd_logger(ctx, NULL, HOSTAPD_MODULE_IEEE80211,
+			       HOSTAPD_LEVEL_INFO,"IEEE 802.11 element parse "
+				   "ignored unknown element (id=%d elen=%d)",
+				   id, elen);
+
+			    }
 			break;
 		}
 
@@ -664,6 +677,13 @@ static ParseRes __ieee802_11_parse_elems(const u8 *start, size_t len,
 		wpa_printf(MSG_INFO,
 			   "IEEE 802.11 element (%d) parse failed @%d",
 			   elem->id, (int) (start + len - (const u8 *) elem));
+			   if (ctx) {
+			   	hostapd_logger(ctx, NULL, HOSTAPD_MODULE_IEEE80211,
+			       HOSTAPD_LEVEL_INFO,
+			   "IEEE 802.11 element (%d) parse failed @%d",
+			   elem->id, (int) (start + len - (const u8 *) elem));
+			    }
+
 		//wpa_hexdump(MSG_MSGDUMP, "IEs", start, len);
 //		return ParseFailed;
 		return ParseOK;
@@ -688,7 +708,17 @@ ParseRes ieee802_11_parse_elems(const u8 *start, size_t len,
 {
 	os_memset(elems, 0, sizeof(*elems));
 
-	return __ieee802_11_parse_elems(start, len, elems, show_errors);
+	return __ieee802_11_parse_elems(NULL, start, len, elems, show_errors);
+}
+
+
+ParseRes ieee802_11_parse_elems_log(void *ctx, const u8 *start, size_t len,
+				struct ieee802_11_elems *elems,
+				int show_errors)
+{
+	os_memset(elems, 0, sizeof(*elems));
+
+	return __ieee802_11_parse_elems(ctx, start, len, elems, show_errors);
 }
 
 
@@ -1087,7 +1117,7 @@ ParseRes ieee802_11_parse_link_assoc_req(const u8 *start, size_t len,
 			   sub_elem_len);
 
 		if (sub_elem_len)
-			res = __ieee802_11_parse_elems(pos, sub_elem_len,
+			res = __ieee802_11_parse_elems(NULL, pos, sub_elem_len,
 						       elems, show_errors);
 		else
 			res = ParseOK;
