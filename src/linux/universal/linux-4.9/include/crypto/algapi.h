@@ -17,6 +17,8 @@
 #include <linux/kernel.h>
 #include <linux/skbuff.h>
 
+#include <asm/unaligned.h>
+
 struct crypto_aead;
 struct crypto_instance;
 struct module;
