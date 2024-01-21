@@ -493,7 +493,6 @@ static struct aead_alg gcm_aes_alg = {
 	.base.cra_blocksize = 1,
 	.base.cra_ctxsize = sizeof(struct gcm_aes_ctx),
 	.base.cra_module = THIS_MODULE,
-	.base.cra_flags = CRYPTO_ALG_ASYNC,
 };
 
 static int __init ghash_ce_mod_init(void)

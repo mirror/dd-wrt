@@ -107,7 +107,6 @@ static int octeon_crypto_aes_cbc_decrypt(struct blkcipher_desc *desc,
 	} else {
 		blkcipher_walk_init(&walk, dst, src, nbytes);
 		err = blkcipher_walk_virt(desc, &walk);
-		desc->flags &= ~CRYPTO_TFM_REQ_MAY_SLEEP;
 		flags = octeon_crypto_enable_no_irq_save(&state);
 		octeon_crypto_aes_write_key(ctx);
 		iv = (__be64 *)walk.iv;
@@ -171,7 +170,6 @@ static int octeon_crypto_aes_cbc_encrypt(struct blkcipher_desc *desc,
 	} else {
 		blkcipher_walk_init(&walk, dst, src, nbytes);
 		err = blkcipher_walk_virt(desc, &walk);
-		desc->flags &= ~CRYPTO_TFM_REQ_MAY_SLEEP;
 		flags = octeon_crypto_enable_no_irq_save(&state);
 		octeon_crypto_aes_write_key(ctx);
 		iv = (__be64 *)walk.iv;
@@ -293,7 +291,7 @@ static struct crypto_alg octeon_algs[] = { {
 	.cra_name		=	"aes",
 	.cra_driver_name	=	"octeon-aes",
 	.cra_priority		=	300,
-	.cra_flags		=	CRYPTO_ALG_TYPE_CIPHER|CRYPTO_ALG_ASYNC,
+	.cra_flags		=	CRYPTO_ALG_TYPE_CIPHER,
 	.cra_blocksize		=	AES_BLOCK_SIZE,
 	.cra_ctxsize		=	sizeof(struct octeon_crypto_aes_ctx),
 	.cra_alignmask		=	0,
