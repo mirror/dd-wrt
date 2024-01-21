@@ -21,7 +21,6 @@
  */
 
 #include <linux/crc32.h>
-#include <linux/unaligned/access_ok.h>
 #include <linux/cpufeature.h>
 #include <linux/init.h>
 #include <linux/kernel.h>
