@@ -155,7 +155,7 @@ static struct shash_alg ghash_alg = {
 	.base.cra_name = "ghash",
 	.base.cra_driver_name = "octeon-ghash",
 	.base.cra_priority = 200,
-	.base.cra_flags = CRYPTO_ALG_TYPE_SHASH,
+	.base.cra_flags = CRYPTO_ALG_TYPE_SHASH|CRYPTO_ALG_TYPE_ASYNC,
 	.base.cra_blocksize = GHASH_BLOCK_SIZE,
 	.base.cra_ctxsize = sizeof(struct ghash_key),
 	.base.cra_module = THIS_MODULE,
@@ -493,6 +493,7 @@ static struct aead_alg gcm_aes_alg = {
 	.base.cra_blocksize = 1,
 	.base.cra_ctxsize = sizeof(struct gcm_aes_ctx),
 	.base.cra_module = THIS_MODULE,
+	.base.cra_flags = CRYPTO_ALG_ASYNC,
 };
 
 static int __init ghash_ce_mod_init(void)
