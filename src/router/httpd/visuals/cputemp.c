@@ -439,6 +439,10 @@ static int get_cputemp(webs_t wp, int argc, char_t **argv)
 		cpufound |= showsensor(wp, "/proc/dmu/temperature", NULL, "CPU", 10, CELSIUS);
 	}
 #endif
+#ifdef HAVE_BRCMFMAC
+	cpufound |= showsensor(wp, "/sys/class/hwmon/hwmon0/temp1_input", NULL, "WLAN0", 1000, CELSIUS);
+	cpufound |= showsensor(wp, "/sys/class/hwmon/hwmon1/temp1_input", NULL, "WLAN1", 1000, CELSIUS);
+#else
 	if (!present[0] && !present[1] && !present[2] && !cpufound)
 		return 1;
 	else {
@@ -455,6 +459,7 @@ static int get_cputemp(webs_t wp, int argc, char_t **argv)
 			}
 		}
 	}
+#endif
 #else
 	int TEMP_MUL = 1000;
 	int SYSTEMP_MUL = 1000;
