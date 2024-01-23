@@ -5204,6 +5204,8 @@ static int wpa_driver_nl80211_set_ap(void *priv,
 	}
 
 	if (params->ftm_responder) {
+		wpa_printf(MSG_DEBUG, "nl80211: FTM Responder");
+
 		struct nlattr *ftm;
 
 		if (!(drv->capa.flags & WPA_DRIVER_FLAGS_FTM_RESPONDER)) {
@@ -5226,11 +5228,14 @@ static int wpa_driver_nl80211_set_ap(void *priv,
 		nla_nest_end(msg, ftm);
 	}
 
-	if (params->freq && nl80211_put_freq_params(msg, params->freq) < 0)
+	if (params->freq && nl80211_put_freq_params(msg, params->freq) < 0) {
+		wpa_printf(MSG_DEBUG, "nl80211: freq_params failed");
 		goto fail;
+	}
 
 #ifdef CONFIG_IEEE80211AX
 	if (params->he_spr_ctrl) {
+		wpa_printf(MSG_DEBUG, "nl80211: set he_spr_ctrl");
 		struct nlattr *spr;
 
 		spr = nla_nest_start(msg, NL80211_ATTR_HE_OBSS_PD);
@@ -5265,6 +5270,7 @@ static int wpa_driver_nl80211_set_ap(void *priv,
 
 	if (params->freq && params->freq->he_enabled) {
 		struct nlattr *bss_color;
+		wpa_printf(MSG_DEBUG, "nl80211: set he enabled");
 
 		bss_color = nla_nest_start(msg, NL80211_ATTR_HE_BSS_COLOR);
 		if (!bss_color ||
@@ -5286,17 +5292,23 @@ static int wpa_driver_nl80211_set_ap(void *priv,
 	}
 
 	if (params->unsol_bcast_probe_resp_interval &&
-	    nl80211_unsol_bcast_probe_resp(bss, msg, params) < 0)
+	    nl80211_unsol_bcast_probe_resp(bss, msg, params) < 0) {
+		wpa_printf(MSG_DEBUG, "nl80211: unsol_bcast_probe_resp");
 		goto fail;
+	}
 
-	if (nl80211_mbssid(msg, params) < 0)
+	if (nl80211_mbssid(msg, params) < 0) {
+		wpa_printf(MSG_DEBUG, "nl80211: mbssid fail");
 		goto fail;
+	}
 #endif /* CONFIG_IEEE80211AX */
 
 #ifdef CONFIG_SAE
 	if (wpa_key_mgmt_sae(params->key_mgmt_suites) &&
-	    nl80211_put_sae_pwe(msg, params->sae_pwe) < 0)
+	    nl80211_put_sae_pwe(msg, params->sae_pwe) < 0) {
+		wpa_printf(MSG_DEBUG, "nl80211: sae fail");
 		goto fail;
+	}
 #endif /* CONFIG_SAE */
 
 #ifdef CONFIG_FILS
@@ -5320,8 +5332,8 @@ static int wpa_driver_nl80211_set_ap(void *priv,
 
 	ret = send_and_recv_msgs_connect_handle(drv, msg, bss, 1);
 	if (ret) {
-		wpa_printf(MSG_DEBUG, "nl80211: Beacon set failed: %d (%s)",
-			   ret, strerror(-ret));
+		wpa_printf(MSG_DEBUG, "nl80211: Beacon set failed: %d (%s) (max %d)",
+			   ret, strerror(-ret), NL80211_ATTR_MAX);
 	} else {
 		link->beacon_set = 1;
 		nl80211_set_bss(bss, params->cts_protect, params->preamble,
