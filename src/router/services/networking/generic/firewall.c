@@ -581,18 +581,18 @@ static void create_spec_forward(char *wan_iface, char *proto, char *src, char *w
 
 			if (!strcmp(nvram_safe_get("lan_ipaddr"), ip)) {
 				snprintf(buff, sizeof(buff), "-I INPUT -p %s -m %s -s %s -d %s --dport %s -j %s\n", proto, proto,
-					 src, ip, from, log_accept);
+					 src, ip, to, log_accept);
 			} else {
 				snprintf(buff, sizeof(buff), "-A FORWARD -p %s -m %s -s %s -d %s --dport %s -j %s\n", proto, proto,
-					 src, ip, from, log_accept);
+					 src, ip, to, log_accept);
 			}
 		} else {
 			if (!strcmp(nvram_safe_get("lan_ipaddr"), ip)) {
 				snprintf(buff, sizeof(buff), "-I INPUT -p %s -m %s -s %s -d %s --dport %s -j %s\n", proto, proto,
-					 src, ip, from, log_drop);
+					 src, ip, to, log_drop);
 			} else {
 				snprintf(buff, sizeof(buff), "-A FORWARD -p %s -m %s -s %s -d %s --dport %s -j %s\n", proto, proto,
-					 src, ip, from, log_drop);
+					 src, ip, to, log_drop);
 			}
 		}
 	} else {
@@ -605,18 +605,18 @@ static void create_spec_forward(char *wan_iface, char *proto, char *src, char *w
 						       proto, proto, from, ip, to);
 			if (!strcmp(nvram_safe_get("lan_ipaddr"), ip)) {
 				snprintf(buff, sizeof(buff), "-I INPUT -i %s -p %s -m %s -d %s --dport %s -j %s\n", wan_iface,
-					 proto, proto, ip, from, log_accept);
+					 proto, proto, ip, to, log_accept);
 			} else {
 				snprintf(buff, sizeof(buff), "-A FORWARD -i %s -p %s -m %s -d %s --dport %s -j %s\n", wan_iface,
-					 proto, proto, ip, from, log_accept);
+					 proto, proto, ip, to, log_accept);
 			}
 		} else {
 			if (!strcmp(nvram_safe_get("lan_ipaddr"), ip)) {
 				snprintf(buff, sizeof(buff), "-I INPUT -i %s -p %s -m %s -d %s --dport %s -j %s\n", wan_iface,
-					 proto, proto, ip, from, log_drop);
+					 proto, proto, ip, to, log_drop);
 			} else {
 				snprintf(buff, sizeof(buff), "-A FORWARD -i %s -p %s -m %s -d %s --dport %s -j %s\n", wan_iface,
-					 proto, proto, ip, from, log_drop);
+					 proto, proto, ip, to, log_drop);
 			}
 		}
 	}
