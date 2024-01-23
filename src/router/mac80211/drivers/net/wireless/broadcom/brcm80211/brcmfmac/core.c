@@ -15,6 +15,8 @@
 #include <net/ipv6.h>
 #include <brcmu_utils.h>
 #include <brcmu_wifi.h>
+#include <linux/hwmon.h>
+#include <linux/hwmon-sysfs.h>
 
 #include "core.h"
 #include "bus.h"
@@ -1277,6 +1279,47 @@ static const struct file_operations fops_turboqam = {
 	.llseek = default_llseek,
 };
 
+static ssize_t brcmf_thermal_show_temp(struct device *dev,
+					struct device_attribute *attr,
+					char *buf)
+{
+	struct brcmf_if *ifp = dev_get_drvdata(dev);
+	int temperature;
+	brcmf_fil_iovar_int_get(ifp, "phy_tempsense", &temperature);
+
+	/* display in millidegree celcius */
+	return sprintf(buf, "%u\n", temperature * 1000);
+}
+
+static SENSOR_DEVICE_ATTR(temp1_input, 0444, brcmf_thermal_show_temp,
+			  NULL, 0);
+
+static struct attribute *brcmf_hwmon_attrs[] = {
+	&sensor_dev_attr_temp1_input.dev_attr.attr,
+	NULL,
+};
+ATTRIBUTE_GROUPS(brcmf_hwmon);
+
+int brcmf_thermal_init(struct brcmf_if *ifp)
+{
+	struct wiphy *wiphy = ifp->drvr->wiphy;
+	struct device *hwmon;
+	const char *name;
+
+	if (!IS_REACHABLE(CONFIG_HWMON))
+		return 0;
+
+	name = devm_kasprintf(&wiphy->dev, GFP_KERNEL, "brcmf_%s",
+			      wiphy_name(wiphy));
+	hwmon = devm_hwmon_device_register_with_groups(&wiphy->dev, name, ifp,
+						       brcmf_hwmon_groups);
+	if (IS_ERR(hwmon))
+		return PTR_ERR(hwmon);
+
+	return 0;
+}
+EXPORT_SYMBOL_GPL(brcmf_thermal_init);
+
 static int brcmf_bus_started(struct brcmf_pub *drvr, struct cfg80211_ops *ops)
 {
 	int ret = -1;
@@ -1360,7 +1403,7 @@ static int brcmf_bus_started(struct brcmf_pub *drvr, struct cfg80211_ops *ops)
 	brcmf_feat_debugfs_create(drvr);
 	brcmf_proto_debugfs_create(drvr);
 	brcmf_bus_debugfs_create(bus_if);
-
+	brcmf_thermal_init(ifp);
 	return 0;
 
 fail:

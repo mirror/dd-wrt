@@ -1,6 +1,6 @@
-EXTRA_CFLAGS += -g3 -Wno-unused-function -Wno-unused-variable
-ccflags-y := -g3 -Wno-unused-function -Wno-unused-variable
-ccflags-m := -g3 -Wno-unused-function -Wno-unused-variable
+EXTRA_CFLAGS += -Wno-unused-function -Wno-unused-variable
+ccflags-y := -Wno-unused-function -Wno-unused-variable
+ccflags-m := -Wno-unused-function -Wno-unused-variable
 
 
 obj-$(CPTCFG_MAC80211) += mac80211.o

@@ -58,6 +58,8 @@
 
 #define MCU_UNI_EVENT_ROC  0x27
 
+#define MT7921_SKU_RATE_NUM		161
+
 enum {
 	UNI_ROC_ACQUIRE,
 	UNI_ROC_ABORT,
@@ -388,6 +390,8 @@ int mt7921_mcu_get_rx_rate(struct mt7921_phy *phy, struct ieee80211_vif *vif,
 			   struct ieee80211_sta *sta, struct rate_info *rate);
 int mt7921_mcu_fw_log_2_host(struct mt7921_dev *dev, u8 ctrl);
 void mt7921_mcu_rx_event(struct mt7921_dev *dev, struct sk_buff *skb);
+int mt7921_mcu_set_txpower_sku(struct mt7915_phy *phy);
+int mt7921_mcu_get_txpower_sku(struct mt7915_phy *phy, s8 *txpower, int len);
 
 static inline void mt7921_irq_enable(struct mt7921_dev *dev, u32 mask)
 {

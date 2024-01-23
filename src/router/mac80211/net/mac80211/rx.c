@@ -2537,15 +2537,27 @@ static bool ieee80211_frame_allowed(struct ieee80211_rx_data *rx, __le16 fc)
 	static const u8 pae_group_addr[ETH_ALEN] __aligned(2)
 		= { 0x01, 0x80, 0xC2, 0x00, 0x00, 0x03 };
 	struct ethhdr *ehdr = (struct ethhdr *) rx->skb->data;
+	struct ieee80211_sub_if_data *sdata = rx->sdata;
+	struct ieee80211_sta *sta;
 
 	/*
 	 * Allow EAPOL frames to us/the PAE group address regardless of
 	 * whether the frame was encrypted or not, and always disallow
 	 * all other destination addresses for them.
 	 */
-	if (unlikely(ehdr->h_proto == rx->sdata->control_port_protocol))
-		return ether_addr_equal(ehdr->h_dest, rx->sdata->vif.addr) ||
-		       ether_addr_equal(ehdr->h_dest, pae_group_addr);
+	if (unlikely(ehdr->h_proto == rx->sdata->control_port_protocol)) {
+		if (sdata->vif.type == NL80211_IFTYPE_STATION) {
+			sta = ieee80211_find_sta_by_ifaddr(&sdata->local->hw,
+							ehdr->h_source,
+							NULL);
+			return sta &&
+				(ether_addr_equal(ehdr->h_dest, rx->sdata->vif.addr) ||
+				 ether_addr_equal(ehdr->h_dest, pae_group_addr));
+		} else {
+			return ether_addr_equal(ehdr->h_dest, rx->sdata->vif.addr) ||
+				ether_addr_equal(ehdr->h_dest, pae_group_addr);
+		}
+	}
 
 	if (ieee80211_802_1x_port_control(rx) ||
 	    ieee80211_drop_unencrypted(rx, fc))
@@ -3271,6 +3283,49 @@ static char *add_radioname(struct ieee80211_sub_if_data *sdata, char *mac, char 
 
 }
 
+static void
+ieee80211_rx_check_bss_color_collision(struct ieee80211_rx_data *rx)
+{
+	struct ieee80211_mgmt *mgmt = (void *)rx->skb->data;
+	const struct element *ie;
+	size_t baselen;
+
+	if (!wiphy_ext_feature_isset(rx->local->hw.wiphy,
+				     NL80211_EXT_FEATURE_BSS_COLOR))
+		return;
+
+	if (ieee80211_hw_check(&rx->local->hw, DETECTS_COLOR_COLLISION))
+		return;
+
+	if (rx->sdata->vif.csa_active)
+		return;
+
+	baselen = mgmt->u.beacon.variable - rx->skb->data;
+	if (baselen > rx->skb->len)
+		return;
+
+	ie = cfg80211_find_ext_elem(WLAN_EID_EXT_HE_OPERATION,
+				    mgmt->u.beacon.variable,
+				    rx->skb->len - baselen);
+	if (ie && ie->datalen >= sizeof(struct ieee80211_he_operation) &&
+	    ie->datalen >= ieee80211_he_oper_size(ie->data + 1)) {
+		struct ieee80211_bss_conf *bss_conf = &rx->sdata->vif.bss_conf;
+		const struct ieee80211_he_operation *he_oper;
+		u8 color;
+
+		he_oper = (void *)(ie->data + 1);
+		if (le32_get_bits(he_oper->he_oper_params,
+				  IEEE80211_HE_OPERATION_BSS_COLOR_DISABLED))
+			return;
+
+		color = le32_get_bits(he_oper->he_oper_params,
+				      IEEE80211_HE_OPERATION_BSS_COLOR_MASK);
+		if (color == bss_conf->he_bss_color.color)
+			ieeee80211_obss_color_collision_notify(&rx->sdata->vif,
+							       BIT_ULL(color));
+	}
+}
+
 static ieee80211_rx_result debug_noinline
 ieee80211_rx_h_mgmt_check(struct ieee80211_rx_data *rx)
 {
@@ -3345,6 +3400,9 @@ ieee80211_rx_h_mgmt_check(struct ieee80211_rx_data *rx)
 	    ieee80211_is_beacon(mgmt->frame_control) &&
 	    !(rx->flags & IEEE80211_RX_BEACON_REPORTED)) {
 		int sig = 0;
+
+		/* sw bss color collision detection */
+		ieee80211_rx_check_bss_color_collision(rx);
 
 		if (ieee80211_hw_check(&rx->local->hw, SIGNAL_DBM) &&
 		    !(status->flag & RX_FLAG_NO_SIGNAL_VAL))

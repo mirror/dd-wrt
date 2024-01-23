@@ -354,6 +354,12 @@ enum ieee80211_sta_rx_bandwidth ieee80211_sta_cap_rx_bw(struct sta_info *sta)
 				IEEE80211_STA_RX_BW_40 :
 				IEEE80211_STA_RX_BW_20;
 
+	/* If 40MHz support is not indicated in HT cap, we need not check other
+	 * vht caps for 80 & 160MHz. STA bandwidth can be set to 20MHz.
+	 */
+	if (!(sta->sta.ht_cap.cap & IEEE80211_HT_CAP_SUP_WIDTH_20_40))
+		return IEEE80211_STA_RX_BW_20;
+
 	cap_width = vht_cap->cap & IEEE80211_VHT_CAP_SUPP_CHAN_WIDTH_MASK;
 
 	if (cap_width == IEEE80211_VHT_CAP_SUPP_CHAN_WIDTH_160MHZ ||

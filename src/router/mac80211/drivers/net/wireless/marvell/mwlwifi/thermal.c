@@ -84,9 +84,17 @@ static ssize_t mwl_thermal_show_temp(struct device *dev,
 	}
 
 	temperature = priv->temperature;
+	if (priv->chip_type == MWL8864) {
+		/* unit is in fahrenheit for this chipset */
+		temperature -= 32;
+		temperature *= 10;
+		temperature /= 18;
+		ret = snprintf(buf, PAGE_SIZE, "%d\n", temperature * 1000);
+	} else {
+		ret = snprintf(buf, PAGE_SIZE, "%d\n", temperature * 100);
+	}
 
 	/* display in millidegree celcius */
-	ret = snprintf(buf, PAGE_SIZE, "%d\n", temperature * 1000);
 out:
 	return ret;
 }
@@ -123,9 +131,6 @@ int mwl_thermal_register(struct mwl_priv *priv)
 	struct thermal_cooling_device *cdev;
 	struct device *hwmon_dev;
 	int ret;
-
-	if (priv->chip_type != MWL8897)
-		return 0;
 
 	cdev = thermal_cooling_device_register("mwlwifi_thermal", priv,
 					       &mwl_thermal_ops);

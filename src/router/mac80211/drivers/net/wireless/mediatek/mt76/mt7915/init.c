@@ -403,6 +403,18 @@ mt7915_init_wiphy(struct mt7915_phy *phy)
 			IEEE80211_VHT_CAP_MAX_A_MPDU_LENGTH_EXPONENT_MASK;
 		phy->mt76->sband_2g.sband.ht_cap.ampdu_density =
 			IEEE80211_HT_MPDU_DENSITY_4;
+
+		if (is_mt7915(&dev->mt76)) {
+			phy->mt76->sband_2g.sband.vht_cap.cap |=
+				IEEE80211_VHT_CAP_MAX_MPDU_LENGTH_7991 |
+				IEEE80211_VHT_CAP_MAX_A_MPDU_LENGTH_EXPONENT_MASK;
+
+		} else {
+			phy->mt76->sband_2g.sband.vht_cap.cap |=
+				IEEE80211_VHT_CAP_MAX_MPDU_LENGTH_11454 |
+				IEEE80211_VHT_CAP_MAX_A_MPDU_LENGTH_EXPONENT_MASK;
+		}
+
 	}
 	if (phy->mt76->cap.has_5ghz) {
 		struct ieee80211_sta_vht_cap *vht_cap;

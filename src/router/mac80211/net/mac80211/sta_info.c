@@ -737,6 +737,7 @@ static int sta_info_insert_finish(struct sta_info *sta) __acquires(RCU)
 
 	if (ieee80211_vif_is_mesh(&sdata->vif))
 		mesh_accept_plinks_update(sdata);
+	ieee80211_check_fast_xmit(sta);
 
 	return 0;
  out_remove:
@@ -2179,6 +2180,13 @@ static void sta_stats_decode_rate(struct ieee80211_local *local, u32 rate,
 		int rate_idx = STA_STATS_GET(LEGACY_IDX, rate);
 
 		sband = local->hw.wiphy->bands[band];
+
+		if (!sband) {
+			wiphy_warn(local->hw.wiphy,
+				    "Invalid band %d\n",
+				    band);
+			break;
+		}
 
 		if (WARN_ON_ONCE(!sband->bitrates))
 			break;

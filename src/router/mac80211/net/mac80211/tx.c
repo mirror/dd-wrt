@@ -3075,7 +3075,7 @@ void ieee80211_check_fast_xmit(struct sta_info *sta)
 	    sdata->vif.type == NL80211_IFTYPE_STATION)
 		goto out;
 
-	if (!test_sta_flag(sta, WLAN_STA_AUTHORIZED))
+	if (!test_sta_flag(sta, WLAN_STA_AUTHORIZED) || !sta->uploaded)
 		goto out;
 
 	if (test_sta_flag(sta, WLAN_STA_PS_STA) ||
@@ -4302,6 +4302,8 @@ void __ieee80211_subif_start_xmit(struct sk_buff *skb,
 		return;
 	}
 
+	sk_pacing_shift_update(skb->sk, sdata->local->hw.tx_sk_pacing_shift);
+
 	rcu_read_lock();
 
 	if (ieee80211_vif_is_mesh(&sdata->vif) &&
@@ -4326,8 +4328,6 @@ void __ieee80211_subif_start_xmit(struct sk_buff *skb,
 
 	if (sta) {
 		struct ieee80211_fast_tx *fast_tx;
-
-		sk_pacing_shift_update(skb->sk, sdata->local->hw.tx_sk_pacing_shift);
 
 		fast_tx = rcu_dereference(sta->fast_tx);
 
@@ -4512,12 +4512,6 @@ out:
 netdev_tx_t ieee80211_subif_start_xmit(struct sk_buff *skb,
 				       struct net_device *dev)
 {
-#if defined(sk_pacing_shift) || LINUX_VERSION_IS_GEQ(4,15,0)
-	if (skb->sk && sk_fullsock(skb->sk) &&
-	    skb->sk->sk_pacing_shift != 6)
-		skb->sk->sk_pacing_shift = 6;
-#endif
-
 	if (unlikely(ieee80211_multicast_to_unicast(skb, dev))) {
 		struct sk_buff_head queue;
 
@@ -4689,6 +4683,57 @@ out_free:
 	kfree_skb(skb);
 }
 
+void ieee80211_8023_xmit_ap(struct ieee80211_sub_if_data *sdata,
+			    struct net_device *dev, struct sta_info *sta,
+			    struct ieee80211_key *key, struct sk_buff *skb)
+{
+	struct ieee80211_tx_info *info = IEEE80211_SKB_CB(skb);
+	struct ieee80211_local *local = sdata->local;
+	struct ieee80211_sta *pubsta = NULL;
+	struct ieee80211_tx_control control = {};
+	unsigned long flags;
+	int q;
+	u16 q_map;
+
+	memset(info, 0, sizeof(*info));
+
+	if (unlikely(skb->sk &&
+		     skb_shinfo(skb)->tx_flags & SKBTX_WIFI_STATUS))
+		info->ack_frame_id = ieee80211_store_ack_skb(local, skb,
+							     &info->flags, NULL);
+
+	info->flags |= IEEE80211_TX_CTL_HW_80211_ENCAP;
+	info->control.vif = &sdata->vif;
+
+	if (key)
+		info->control.hw_key = &key->conf;
+
+	q_map = skb_get_queue_mapping(skb);
+	q = sdata->vif.hw_queue[q_map];
+
+	if (sta) {
+		sta->tx_stats.bytes[q_map] += skb->len;
+		sta->tx_stats.packets[q_map]++;
+	}
+
+	spin_lock_irqsave(&local->queue_stop_reason_lock, flags);
+
+	if (local->queue_stop_reasons[q] || !skb_queue_empty(&local->pending[q])) {
+		skb_queue_tail(&local->pending[q], skb);
+		spin_unlock_irqrestore(&local->queue_stop_reason_lock, flags);
+		return;
+	}
+
+	spin_unlock_irqrestore(&local->queue_stop_reason_lock, flags);
+		
+	if (sta && sta->uploaded)
+		pubsta = &sta->sta;
+
+	control.sta = pubsta;
+
+	drv_tx(local, &control, skb);
+}
+
 netdev_tx_t ieee80211_subif_start_xmit_8023(struct sk_buff *skb,
 					    struct net_device *dev)
 {
@@ -4723,6 +4768,13 @@ netdev_tx_t ieee80211_subif_start_xmit_8023(struct sk_buff *skb,
 		goto skip_offload;
 
 	sk_pacing_shift_update(skb->sk, sdata->local->hw.tx_sk_pacing_shift);
+
+	if (sdata->vif.type == NL80211_IFTYPE_AP) {
+		ieee80211_8023_xmit_ap(sdata, dev, sta, key, skb);
+		goto out;
+	}
+
+
 	ieee80211_8023_xmit(sdata, dev, sta, key, skb);
 	goto out;
 
