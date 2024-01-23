@@ -307,6 +307,8 @@ static int validate_nla(const struct nlattr *nla, int maxtype,
 
 	case NLA_UNSPEC:
 		if (validate & NL_VALIDATE_UNSPEC) {
+			pr_warn_ratelimited("netlink: '%s': attribute type %d has an invalid type.\n",
+					    current->comm, type);
 			NL_SET_ERR_MSG_ATTR(extack, nla,
 					    "Unsupported attribute");
 			return -EINVAL;
