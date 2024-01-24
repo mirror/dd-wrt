@@ -334,6 +334,13 @@ static int ip2cclass(char *ipaddr, char *new, int count)
 	return snprintf(new, count, "%d.%d.%d.", ip[0], ip[1], ip[2]);
 }
 
+static void addsuspense(char *buff)
+{
+	count += strlen(buff) + 1;
+	suspense = realloc(suspense, count);
+	strcat(suspense, buff);
+}
+
 static void parse_port_forward(char *wan_iface, char *wanaddr, char *lan_cclass, char *wordlist, int dmzenable)
 {
 	char var[256], *next;
@@ -395,10 +402,7 @@ static void parse_port_forward(char *wan_iface, char *wanaddr, char *lan_cclass,
 						 wan_iface, ip, from, to, log_drop);
 				}
 			}
-
-			count += strlen(buff) + 1;
-			suspense = realloc(suspense, count);
-			strcat(suspense, buff);
+			addsuspense(buff);
 		}
 
 		if (!strcmp(proto, "udp") || !strcmp(proto, "both")) {
@@ -419,9 +423,7 @@ static void parse_port_forward(char *wan_iface, char *wanaddr, char *lan_cclass,
 						 wan_iface, ip, from, to, log_drop);
 				}
 			}
-			count += strlen(buff) + 1;
-			suspense = realloc(suspense, count);
-			strcat(suspense, buff);
+			addsuspense(buff);
 		}
 	}
 }
@@ -540,27 +542,19 @@ static void parse_upnp_forward(char *wanface, char *wanaddr, char *lan_cclass)
 			if (flag_dis == 0) {
 				save2file_A_prerouting("-i %s -p tcp -d %s --dport %s -j DNAT --to-destination %s%d:%s", wanface,
 						       wanaddr, wan_port0, lan_cclass, get_single_ip(lan_ipaddr, 3), lan_port0);
-				snprintf(buff, sizeof(buff), "-A upnp -i %s -p tcp -m tcp -d %s%d --dport %s -j %s\n", wanface,
-					 lan_cclass, get_single_ip(lan_ipaddr, 3), lan_port0, log_accept);
-			} else
-				snprintf(buff, sizeof(buff), "-A upnp -i %s -p tcp -m tcp -d %s%d --dport %s -j %s\n", wanface,
-					 lan_cclass, get_single_ip(lan_ipaddr, 3), lan_port0, log_drop);
-			count += strlen(buff) + 1;
-			suspense = realloc(suspense, count);
-			strcat(suspense, buff);
+			}
+			snprintf(buff, sizeof(buff), "-A upnp -i %s -p tcp -m tcp -d %s%d --dport %s -j %s\n", wanface, lan_cclass,
+				 get_single_ip(lan_ipaddr, 3), lan_port0, flag_dis ? log_accept : log_drop);
+			addsuspense(buff);
 		}
 		if (!strcmp(proto, "udp") || !strcmp(proto, "both")) {
 			if (flag_dis == 0) {
 				save2file_A_prerouting("-i %s -p udp -d %s --dport %s -j DNAT --to-destination %s%d:%s", wanface,
 						       wanaddr, wan_port0, lan_cclass, get_single_ip(lan_ipaddr, 3), lan_port0);
-				snprintf(buff, sizeof(buff), "-A upnp -i %s -p udp -m udp -d %s%d --dport %s -j %s\n", wanface,
-					 lan_cclass, get_single_ip(lan_ipaddr, 3), lan_port0, log_accept);
-			} else
-				snprintf(buff, sizeof(buff), "-A upnp -i %s -p udp -m udp -d %s%d --dport %s -j %s\n", wanface,
-					 lan_cclass, get_single_ip(lan_ipaddr, 3), lan_port0, log_drop);
-			count += strlen(buff) + 1;
-			suspense = realloc(suspense, count);
-			strcat(suspense, buff);
+			}
+			snprintf(buff, sizeof(buff), "-A upnp -i %s -p udp -m udp -d %s%d --dport %s -j %s\n", wanface, lan_cclass,
+				 get_single_ip(lan_ipaddr, 3), lan_port0, flag_dis ? log_accept : log_drop);
+			addsuspense(buff);
 		}
 	}
 }
@@ -578,23 +572,19 @@ static void create_spec_forward(char *wan_iface, char *proto, char *src, char *w
 			    (!strcmp(wan_proto, "l2tp") && nvram_matchi("wan_dualaccess", 1)))
 				save2file_A_prerouting("-i %s -p %s -m %s --dport %s -j DNAT --to-destination %s:%s", wan_iface,
 						       proto, proto, from, ip, to);
-
-			if (!strcmp(nvram_safe_get("lan_ipaddr"), ip)) {
-				snprintf(buff, sizeof(buff), "-I INPUT -p %s -m %s -s %s -d %s --dport %s -j %s\n", proto, proto,
-					 src, ip, to, log_accept);
-			} else {
-				snprintf(buff, sizeof(buff), "-A FORWARD -p %s -m %s -s %s -d %s --dport %s -j %s\n", proto, proto,
-					 src, ip, to, log_accept);
-			}
-		} else {
-			if (!strcmp(nvram_safe_get("lan_ipaddr"), ip)) {
-				snprintf(buff, sizeof(buff), "-I INPUT -p %s -m %s -s %s -d %s --dport %s -j %s\n", proto, proto,
-					 src, ip, to, log_drop);
-			} else {
-				snprintf(buff, sizeof(buff), "-A FORWARD -p %s -m %s -s %s -d %s --dport %s -j %s\n", proto, proto,
-					 src, ip, to, log_drop);
-			}
 		}
+
+		if (!strcmp(nvram_safe_get("lan_ipaddr"), ip)) {
+			snprintf(buff, sizeof(buff), "-I INPUT -p %s -m %s -s %s -d %s --dport %s -j %s\n", proto, proto, src, ip,
+				 to, !disabled ? log_accept : log_drop);
+		} else {
+			snprintf(buff, sizeof(buff), "-A FORWARD -p %s -m %s -s %s -d %s --dport %s -j %s\n", proto, proto, src, ip,
+				 to, !disabled ? log_accept : log_drop);
+			addsuspense(buff);
+			snprintf(buff, sizeof(buff), "-A INPUT -p %s -m %s -s %s --dport %s -j %s\n", proto, proto, src, from,
+				 !disabled ? log_accept : log_drop);
+		}
+
 	} else {
 		if (disabled == 0) {
 			save2file_A_prerouting("-p %s -m %s -d %s --dport %s -j DNAT --to-destination %s:%s", proto, proto, wanaddr,
@@ -603,26 +593,19 @@ static void create_spec_forward(char *wan_iface, char *proto, char *src, char *w
 			    (!strcmp(wan_proto, "l2tp") && nvram_matchi("wan_dualaccess", 1)))
 				save2file_A_prerouting("-i %s -p %s -m %s --dport %s -j DNAT --to-destination %s:%s", wan_iface,
 						       proto, proto, from, ip, to);
-			if (!strcmp(nvram_safe_get("lan_ipaddr"), ip)) {
-				snprintf(buff, sizeof(buff), "-I INPUT -i %s -p %s -m %s -d %s --dport %s -j %s\n", wan_iface,
-					 proto, proto, ip, to, log_accept);
-			} else {
-				snprintf(buff, sizeof(buff), "-A FORWARD -i %s -p %s -m %s -d %s --dport %s -j %s\n", wan_iface,
-					 proto, proto, ip, to, log_accept);
-			}
+		}
+		if (!strcmp(nvram_safe_get("lan_ipaddr"), ip)) {
+			snprintf(buff, sizeof(buff), "-I INPUT -i %s -p %s -m %s -d %s --dport %s -j %s\n", wan_iface, proto, proto,
+				 ip, to, !disabled ? log_accept : log_drop);
 		} else {
-			if (!strcmp(nvram_safe_get("lan_ipaddr"), ip)) {
-				snprintf(buff, sizeof(buff), "-I INPUT -i %s -p %s -m %s -d %s --dport %s -j %s\n", wan_iface,
-					 proto, proto, ip, to, log_drop);
-			} else {
-				snprintf(buff, sizeof(buff), "-A FORWARD -i %s -p %s -m %s -d %s --dport %s -j %s\n", wan_iface,
-					 proto, proto, ip, to, log_drop);
-			}
+			snprintf(buff, sizeof(buff), "-A FORWARD -i %s -p %s -m %s -d %s --dport %s -j %s\n", wan_iface, proto,
+				 proto, ip, to, !disabled ? log_accept : log_drop);
+			addsuspense(buff);
+			snprintf(buff, sizeof(buff), "-I INPUT -i %s -p %s -m %s --dport %s -j %s\n", wan_iface, proto, proto, from,
+				 !disabled ? log_accept : log_drop);
 		}
 	}
-	count += strlen(buff) + 1;
-	suspense = realloc(suspense, count);
-	strcat(suspense, buff);
+	addsuspense(buff);
 }
 
 static void parse_spec_forward(char *wan_iface, char *wanaddr, char *wordlist)
@@ -685,9 +668,7 @@ static void create_ip_forward(int mode, char *wan_iface, char *src_ip, char *des
 			save2file_A_prerouting("-i %s -d %s -j DNAT --to-destination %s", wan_iface, src_ip, dest_ip);
 
 			snprintf(buff, sizeof(buff), "-A FORWARD -i %s -d %s -j %s\n", wan_iface, dest_ip, log_accept);
-			count += strlen(buff) + 1;
-			suspense = realloc(suspense, count);
-			strcat(suspense, buff);
+			addsuspense(buff);
 		}
 		if (mode == ANT_IPF_POSTROUTING) {
 			save2file_A_postrouting("-o %s -s %s -j SNAT --to-source %s", wan_iface, dest_ip, src_ip);
@@ -695,9 +676,7 @@ static void create_ip_forward(int mode, char *wan_iface, char *src_ip, char *des
 	} else {
 		if (mode == ANT_IPF_PREROUTING) {
 			snprintf(buff, sizeof(buff), "-A FORWARD -i %s -d %s -j %s\n", wan_iface, dest_ip, log_drop);
-			count += strlen(buff) + 1;
-			suspense = realloc(suspense, count);
-			strcat(suspense, buff);
+			addsuspense(buff);
 		}
 	}
 }
