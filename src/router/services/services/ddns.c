@@ -240,6 +240,7 @@ static int init_ddns(FILE *fp)
 			else
 				fprintf(fp, "password = \"%s\"\n", nvram_safe_get(_passwd));
 			if (flag == 4) {
+				// should be really allow tracking of device names?
 				fprintf(fp, "user-agent =\"NewMedia-NET GmbH %s/%s info@dd-wrt.com\"\n", nvram_safe_get("DD_BOARD"), nvram_safe_get("os_version"));
 			}
 			char *next;
@@ -282,6 +283,7 @@ static int init_ddns(FILE *fp)
 				fprintf(fp, "password = \"%s\"\n", nvram_safe_get(_passwd));
 
 			if (flag == 4) {
+				// should be really allow tracking of device names?
 				fprintf(fp, "user-agent =\"NewMedia-NET GmbH %s/%s info@dd-wrt.com\"\n", nvram_safe_get("DD_BOARD"), nvram_safe_get("os_version"));
 			}
 			char *next;
