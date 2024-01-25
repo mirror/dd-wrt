@@ -239,7 +239,9 @@ static int init_ddns(FILE *fp)
 				fprintf(fp, "password = \"nopasswd\"\n");
 			else
 				fprintf(fp, "password = \"%s\"\n", nvram_safe_get(_passwd));
-
+			if (flag == 4) {
+				fprintf(fp, "user-agent =\"NewMedia-NET GmbH %s/%s info@dd-wrt.com\"\n", nvram_safe_get("DD_BOARD"), nvram_safe_get("os_version"));
+			}
 			char *next;
 			char var[128];
 			char *hn = nvram_safe_get(_hostname);
@@ -279,6 +281,9 @@ static int init_ddns(FILE *fp)
 			else
 				fprintf(fp, "password = \"%s\"\n", nvram_safe_get(_passwd));
 
+			if (flag == 4) {
+				fprintf(fp, "user-agent =\"NewMedia-NET GmbH %s/%s info@dd-wrt.com\"\n", nvram_safe_get("DD_BOARD"), nvram_safe_get("os_version"));
+			}
 			char *next;
 			char var[128];
 			char *hn = nvram_safe_get(_hostname);
