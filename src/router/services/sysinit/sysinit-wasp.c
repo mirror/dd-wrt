@@ -677,6 +677,30 @@ out:;
 		eval("ln", "-s", "/tmp/archerc7-board.bin", "/tmp/ath10k-board.bin");
 	}
 	fclose(out);
+#elif defined(HAVE_DAP2680)
+	fp = fopen("/dev/mtdblock/5", "rb");
+		eval("rm", "-f", "/tmp/board1.bin");
+	FILE *out = fopen("/tmp/board1.bin", "wb");
+	if (fp) {
+		fseek(fp, 20480, SEEK_SET);
+		int i;
+		for (i = 0; i < 6; i++)
+			putc(getc(fp), out);
+		char eabuf[32];
+		char macaddr[32];
+		get_hwaddr("eth0", macaddr);
+		MAC_ADD(macaddr);
+		MAC_ADD(macaddr);
+		ether_atoe(macaddr, mac);
+
+		for (i = 0; i < 6; i++)
+			putc(mac[i], out);
+		fseek(fp, 20492, SEEK_SET);
+		for (i = 0; i < 12052; i++)
+			putc(getc(fp), out);
+		fclose(fp);
+	}
+	fclose(out);
 #elif defined(HAVE_ARCHERC7) || defined(HAVE_DIR859) || defined(HAVE_DAP3662)
 	fp = fopen("/dev/mtdblock/5", "rb");
 	FILE *out = fopen("/tmp/archerc7-board.bin", "wb");
