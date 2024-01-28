@@ -745,6 +745,12 @@ static void getledconfig(struct ledconfig *cfg)
 		cfg->usb_gpio = GPIO_LOW | 0xd;
 		cfg->ses_gpio = GPIO_LOW | 0x10;
 		break;
+#elif HAVE_DAP2680
+	case ROUTER_BOARD_WHRHPGN:
+		cfg->diag_gpio = GPIO_LOW | 0x14; // red
+		cfg->diag_gpio_disabled = GPIO_LOW | 0x13; //
+		cfg->power_gpio = GPIO_LOW | 0x13; // green
+		break;
 #elif HAVE_DAP3662
 	case ROUTER_BOARD_WHRHPGN:
 		cfg->diag_gpio = GPIO_LOW | 0xe; // red

@@ -1549,6 +1549,13 @@ generic:;
 	nvram_default_get("wlan1_rxantenna", "3");
 	nvram_default_get("wlan1_txantenna", "3");
 	return ROUTER_BOARD_WHRHPGN;
+#elif HAVE_DAP2680
+	setRouter("Dlink DAP2680");
+	nvram_default_get("wlan0_rxantenna", "7");
+	nvram_default_get("wlan0_txantenna", "7");
+	nvram_default_get("wlan1_rxantenna", "7");
+	nvram_default_get("wlan1_txantenna", "7");
+	return ROUTER_BOARD_WHRHPGN;
 #elif HAVE_DAP2660
 	setRouter("Dlink DAP2660");
 	nvram_default_get("wlan0_rxantenna", "3");
