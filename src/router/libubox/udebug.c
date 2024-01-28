@@ -610,6 +610,7 @@ int udebug_entry_vprintf(struct udebug_buf *buf, const char *fmt, va_list ap)
 	struct udebug_ptr *ptr;
 	uint32_t ofs;
 	uint32_t len;
+	va_list ap2;
 	char *str;
 
 	if (!hdr)
@@ -621,7 +622,9 @@ int udebug_entry_vprintf(struct udebug_buf *buf, const char *fmt, va_list ap)
 		return -1;
 
 	str = udebug_buf_alloc(buf, ofs, UDEBUG_MIN_ALLOC_LEN);
-	len = vsnprintf(str, UDEBUG_MIN_ALLOC_LEN, fmt, ap);
+	va_copy(ap2, ap);
+	len = vsnprintf(str, UDEBUG_MIN_ALLOC_LEN, fmt, ap2);
+	va_end(ap2);
 	if (len <= UDEBUG_MIN_ALLOC_LEN)
 		goto out;
 
