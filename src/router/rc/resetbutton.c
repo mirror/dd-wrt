@@ -404,6 +404,11 @@ static int getbuttonstate()
 {
 	return !get_gpio(11);
 }
+#elif defined(HAVE_DAP2680)
+static int getbuttonstate()
+{
+	return !get_gpio(18);
+}
 #elif defined(HAVE_DAP3320)
 static int getbuttonstate()
 {
