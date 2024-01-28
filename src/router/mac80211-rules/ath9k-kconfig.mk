@@ -424,7 +424,9 @@ ifeq ($(CONFIG_ATH10K),y)
 	rm -rf $(INSTALLDIR)/ath9k/lib/firmware/ath10k/QCA988X/hw1.0
 ifneq ($(CONFIG_QCA99X0),y)
 	rm -rf $(INSTALLDIR)/ath9k/lib/firmware/ath10k/QCA99X0
+ifneq ($(CONFIG_QCA9984),y)
 	rm -rf $(INSTALLDIR)/ath9k/lib/firmware/ath10k/QCA9984
+endif
 else
 ifeq ($(CONFIG_G10),y)
 	cp $(MAC80211_PATH)/ath10k-firmware*/g10-boarddata/* $(INSTALLDIR)/ath9k/lib/firmware/ath10k/QCA99X0/hw2.0
