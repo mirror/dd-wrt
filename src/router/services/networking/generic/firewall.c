@@ -580,9 +580,6 @@ static void create_spec_forward(char *wan_iface, char *proto, char *src, char *w
 		} else {
 			snprintf(buff, sizeof(buff), "-A FORWARD -p %s -m %s -s %s -d %s --dport %s -j %s\n", proto, proto, src, ip,
 				 to, !disabled ? log_accept : log_drop);
-			addsuspense(buff);
-			snprintf(buff, sizeof(buff), "-A INPUT -p %s -m %s -s %s --dport %s -j %s\n", proto, proto, src, from,
-				 !disabled ? log_accept : log_drop);
 		}
 
 	} else {
@@ -600,9 +597,6 @@ static void create_spec_forward(char *wan_iface, char *proto, char *src, char *w
 		} else {
 			snprintf(buff, sizeof(buff), "-A FORWARD -i %s -p %s -m %s -d %s --dport %s -j %s\n", wan_iface, proto,
 				 proto, ip, to, !disabled ? log_accept : log_drop);
-			addsuspense(buff);
-			snprintf(buff, sizeof(buff), "-I INPUT -i %s -p %s -m %s --dport %s -j %s\n", wan_iface, proto, proto, from,
-				 !disabled ? log_accept : log_drop);
 		}
 	}
 	addsuspense(buff);
