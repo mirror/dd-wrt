@@ -2118,6 +2118,9 @@ int __init ar7240_platform_init(void)
 	
 	#else
 	#ifdef CONFIG_DAP2330
+//	pll-data = <0x82000000 0x80000101 0x80001313>;
+
+	ath79_setup_ar934x_eth_rx_delay(3, 3);
 	mdiobus_register_board_info(dap2330_mdio0_info,
 				    ARRAY_SIZE(dap2330_mdio0_info));
 
@@ -2125,9 +2128,13 @@ int __init ar7240_platform_init(void)
 	ar71xx_eth0_data.mii_bus_dev = &ar71xx_mdio0_device.dev;
 	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
 	ar71xx_eth0_data.phy_mask = BIT(4);
-	ar71xx_eth0_pll_data.pll_10 = 0x81001313;
-	ar71xx_eth0_pll_data.pll_100 = 0x81000101;
-	ar71xx_eth0_pll_data.pll_1000 = 0x8f000000;
+//	ar71xx_eth0_pll_data.pll_10 = 0x81001313;
+//	ar71xx_eth0_pll_data.pll_100 = 0x81000101;
+//	ar71xx_eth0_pll_data.pll_1000 = 0x8f000000;
+
+	ar71xx_eth0_pll_data.pll_10 = 0x80001313;
+	ar71xx_eth0_pll_data.pll_100 = 0x80000101;
+	ar71xx_eth0_pll_data.pll_1000 = 0x82000000;
 	ar71xx_add_device_eth(0);
 	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, mac0, 1);
 	ar71xx_init_mac(ar71xx_eth1_data.mac_addr, mac1, 0);
