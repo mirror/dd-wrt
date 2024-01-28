@@ -2078,6 +2078,11 @@ ifeq ($(CONFIG_DAP2660),y)
 	cd tools/alpha_pack && ./v2image -v -i $(TOP)/$(ARCH)-uclibc/raw.img -o $(TOP)/$(ARCH)-uclibc/web-dap2660.img -d /dev/mtdblock/1 -s wapac09_dkbs_dap2660 -c -b
 	./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/webflash-dap2660.trx $(ARCH)-uclibc/web-dap2660.img
 endif
+ifeq ($(CONFIG_DAP2680),y)
+	cd tools/alpha_pack2 && ./packimgs -v -o $(TOP)/$(ARCH)-uclibc/raw.img -i $(TOP)/$(ARCH)-uclibc/vmlinux.lzma -i $(TOP)/$(ARCH)-uclibc/root.fs
+	cd tools/alpha_pack2 && ./v2image -v -i $(TOP)/$(ARCH)-uclibc/raw.img -o $(TOP)/$(ARCH)-uclibc/web-dap2680.img -d /dev/mtdblock/1 -s wapac36_dkbs_dap2680 -c -b
+	./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/webflash-dap2680.trx $(ARCH)-uclibc/web-dap2680.img
+endif
 ifeq ($(CONFIG_DAP2230),y)
 	cd tools/alpha_pack && ./packimgs -v -o $(TOP)/$(ARCH)-uclibc/raw.img -i $(TOP)/$(ARCH)-uclibc/vmlinux.lzma -i $(TOP)/$(ARCH)-uclibc/root.fs
 	cd tools/alpha_pack && ./v2image -v -i $(TOP)/$(ARCH)-uclibc/raw.img -o $(TOP)/$(ARCH)-uclibc/web-dap2230.img -d /dev/mtdblock/1 -s wapn31_dkbs_dap2230 -c -b
