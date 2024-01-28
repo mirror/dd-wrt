@@ -49,6 +49,14 @@ define kernelfeatures
 	if [ "$(CONFIG_WIREGUARD)" = "y" ]; then \
 		sed -i 's/\# CONFIG_NET_FOU is not set/CONFIG_NET_FOU=m/g' $(LINUXDIR)/.config; \
 		sed -i 's/\# CONFIG_NETFILTER_XT_MATCH_ADDRTYPE is not set/CONFIG_NETFILTER_XT_MATCH_ADDRTYPE=m/g' $(LINUXDIR)/.config; \
+		echo "CONFIG_XFRM=y" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_XFRM_ALGO=m" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_XFRM_USER is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_XFRM_SUB_POLICY is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_XFRM_MIGRATE is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_XFRM_STATISTICS is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_NETFILTER_XT_MATCH_POLICY is not set" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_XFRM_IPCOMP=m" >> $(LINUXDIR)/.config; \
 	fi
 	if [ "$(CONFIG_SCREEN)" = "y" ]; then \
 		sed -i 's/\# CONFIG_USB_SERIAL_FTDI_SIO is not set/CONFIG_USB_SERIAL_FTDI_SIO=y/g' $(LINUXDIR)/.config; \
