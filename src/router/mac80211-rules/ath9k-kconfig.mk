@@ -444,6 +444,9 @@ endif
 ifneq ($(CONFIG_QCA9888),y)
 	rm -rf $(INSTALLDIR)/ath9k/lib/firmware/ath10k/QCA9888
 endif
+ifneq ($(CONFIG_QCA9884),y)
+	rm -rf $(INSTALLDIR)/ath9k/lib/firmware/ath10k/QCA9984
+endif
 	mv $(INSTALLDIR)/ath9k/lib/firmware/ath10k/QCA988X/hw2.0/board.bin $(INSTALLDIR)/ath9k/lib/ath10k
 	cd $(INSTALLDIR)/ath9k/lib/firmware/ath10k/QCA988X/hw2.0 && ln -s /tmp/ath10k-board.bin board.bin 
 ifeq ($(CONFIG_R9000),y)
