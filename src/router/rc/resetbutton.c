@@ -337,6 +337,26 @@ static int getbuttonstate()
 {
 	return !get_gpio(19);
 }
+#elif defined(HAVE_DAP2680)
+static int getbuttonstate()
+{
+	return !get_gpio(18);
+}
+#elif defined(HAVE_DAP3320)
+static int getbuttonstate()
+{
+	return !get_gpio(12);
+}
+#elif defined(HAVE_DAP2330)
+static int getbuttonstate()
+{
+	return !get_gpio(17);
+}
+#elif defined(HAVE_DAP2230)
+static int getbuttonstate()
+{
+	return !get_gpio(17);
+}
 #elif defined(HAVE_DIR869)
 static int getbuttonstate()
 {
@@ -403,26 +423,6 @@ static int getbuttonstate()
 static int getbuttonstate()
 {
 	return !get_gpio(11);
-}
-#elif defined(HAVE_DAP2680)
-static int getbuttonstate()
-{
-	return !get_gpio(18);
-}
-#elif defined(HAVE_DAP3320)
-static int getbuttonstate()
-{
-	return !get_gpio(12);
-}
-#elif defined(HAVE_DAP2330)
-static int getbuttonstate()
-{
-	return !get_gpio(17);
-}
-#elif defined(HAVE_DAP2230)
-static int getbuttonstate()
-{
-	return !get_gpio(17);
 }
 #elif defined(HAVE_WR941V6)
 static int getbuttonstate()
