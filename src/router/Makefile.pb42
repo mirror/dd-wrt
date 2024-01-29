@@ -2071,31 +2071,43 @@ endif
 ifeq ($(CONFIG_DAP3662),y)
 	cd tools/alpha_pack && ./packimgs -v -o $(TOP)/$(ARCH)-uclibc/raw.img -i $(TOP)/$(ARCH)-uclibc/vmlinux.lzma -i $(TOP)/$(ARCH)-uclibc/root.fs
 	cd tools/alpha_pack && ./v2image -v -i $(TOP)/$(ARCH)-uclibc/raw.img -o $(TOP)/$(ARCH)-uclibc/web-dap3662.img -d /dev/mtdblock/1 -s wapac11_dkbs_dap3662 -c -b
+	cd tools/alpha_pack2 && ./encimg -i $(TOP)/$(ARCH)-uclibc/raw.img -s wapac36_dkbs_dap2680 -e
+	cd tools/alpha_pack && ./v2image -v -i $(TOP)/$(ARCH)-uclibc/raw.img -o $(TOP)/$(ARCH)-uclibc/web-dap3662-enc.img -d /dev/mtdblock/1 -s wapac11_dkbs_dap3662 -c -b
 	./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/webflash-dap3662.trx $(ARCH)-uclibc/web-dap3662.img
 endif
 ifeq ($(CONFIG_DAP2660),y)
 	cd tools/alpha_pack && ./packimgs -v -o $(TOP)/$(ARCH)-uclibc/raw.img -i $(TOP)/$(ARCH)-uclibc/vmlinux.lzma -i $(TOP)/$(ARCH)-uclibc/root.fs
 	cd tools/alpha_pack && ./v2image -v -i $(TOP)/$(ARCH)-uclibc/raw.img -o $(TOP)/$(ARCH)-uclibc/web-dap2660.img -d /dev/mtdblock/1 -s wapac09_dkbs_dap2660 -c -b
+	cd tools/alpha_pack2 && ./encimg -i $(TOP)/$(ARCH)-uclibc/raw.img -s wapac36_dkbs_dap2680 -e
+	cd tools/alpha_pack && ./v2image -v -i $(TOP)/$(ARCH)-uclibc/raw.img -o $(TOP)/$(ARCH)-uclibc/web-dap2660-enc.img -d /dev/mtdblock/1 -s wapac09_dkbs_dap2660 -c -b
 	./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/webflash-dap2660.trx $(ARCH)-uclibc/web-dap2660.img
 endif
 ifeq ($(CONFIG_DAP2680),y)
 	cd tools/alpha_pack2 && ./packimgs -v -o $(TOP)/$(ARCH)-uclibc/raw.img -i $(TOP)/$(ARCH)-uclibc/vmlinux.lzma -i $(TOP)/$(ARCH)-uclibc/root.fs
 	cd tools/alpha_pack2 && ./v2image -v -i $(TOP)/$(ARCH)-uclibc/raw.img -o $(TOP)/$(ARCH)-uclibc/web-dap2680.img -d /dev/mtdblock/1 -s wapac36_dkbs_dap2680 -c -b
+	cd tools/alpha_pack2 && ./encimg -i $(TOP)/$(ARCH)-uclibc/raw.img -s wapac36_dkbs_dap2680 -e
+	cd tools/alpha_pack2 && ./v2image -v -i $(TOP)/$(ARCH)-uclibc/raw.img -o $(TOP)/$(ARCH)-uclibc/web-dap2680-enc.img -d /dev/mtdblock/1 -s wapac36_dkbs_dap2680 -c -b
 	./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/webflash-dap2680.trx $(ARCH)-uclibc/web-dap2680.img
 endif
 ifeq ($(CONFIG_DAP2230),y)
 	cd tools/alpha_pack && ./packimgs -v -o $(TOP)/$(ARCH)-uclibc/raw.img -i $(TOP)/$(ARCH)-uclibc/vmlinux.lzma -i $(TOP)/$(ARCH)-uclibc/root.fs
 	cd tools/alpha_pack && ./v2image -v -i $(TOP)/$(ARCH)-uclibc/raw.img -o $(TOP)/$(ARCH)-uclibc/web-dap2230.img -d /dev/mtdblock/1 -s wapn31_dkbs_dap2230 -c -b
+	cd tools/alpha_pack2 && ./encimg -i $(TOP)/$(ARCH)-uclibc/raw.img -s wapac36_dkbs_dap2680 -e
+	cd tools/alpha_pack && ./v2image -v -i $(TOP)/$(ARCH)-uclibc/raw.img -o $(TOP)/$(ARCH)-uclibc/web-dap2230-enc.img -d /dev/mtdblock/1 -s wapn31_dkbs_dap2230 -c -b
 	./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/webflash-dap2230.trx $(ARCH)-uclibc/web-dap2230.img
 endif
 ifeq ($(CONFIG_DAP3320),y)
 	cd tools/alpha_pack && ./packimgs -v -o $(TOP)/$(ARCH)-uclibc/raw.img -i $(TOP)/$(ARCH)-uclibc/vmlinux.lzma -i $(TOP)/$(ARCH)-uclibc/root.fs
 	cd tools/alpha_pack && ./v2image -v -i $(TOP)/$(ARCH)-uclibc/raw.img -o $(TOP)/$(ARCH)-uclibc/web-dap3320.img -d /dev/mtdblock/1 -s wapn29_dkbs_dap3320 -c -b
+	cd tools/alpha_pack2 && ./encimg -i $(TOP)/$(ARCH)-uclibc/raw.img -s wapac36_dkbs_dap2680 -e
+	cd tools/alpha_pack && ./v2image -v -i $(TOP)/$(ARCH)-uclibc/raw.img -o $(TOP)/$(ARCH)-uclibc/web-dap3320-enc.img -d /dev/mtdblock/1 -s wapn29_dkbs_dap3320 -c -b
 	./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/webflash-dap3320.trx $(ARCH)-uclibc/web-dap3320.img
 endif
 ifeq ($(CONFIG_DAP2330),y)
 	cd tools/alpha_pack && ./packimgs -v -o $(TOP)/$(ARCH)-uclibc/raw.img -i $(TOP)/$(ARCH)-uclibc/vmlinux.lzma -i $(TOP)/$(ARCH)-uclibc/root.fs
 	cd tools/alpha_pack && ./v2image -v -i $(TOP)/$(ARCH)-uclibc/raw.img -o $(TOP)/$(ARCH)-uclibc/web-dap2330.img -d /dev/mtdblock/1 -s wapn24_dkbs_dap2330 -c -b
+	cd tools/alpha_pack2 && ./encimg -i $(TOP)/$(ARCH)-uclibc/raw.img -s wapac36_dkbs_dap2680 -e
+	cd tools/alpha_pack && ./v2image -v -i $(TOP)/$(ARCH)-uclibc/raw.img -o $(TOP)/$(ARCH)-uclibc/web-dap2330-enc.img -d /dev/mtdblock/1 -s wapn24_dkbs_dap2330 -c -b
 	./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/webflash-dap2330.trx $(ARCH)-uclibc/web-dap2330.img
 endif
 ifeq ($(CONFIG_RAMBUTAN),y)
