@@ -679,9 +679,9 @@ out:;
 	fclose(out);
 #elif defined(HAVE_DAP2680)
 	fp = fopen("/dev/mtdblock/5", "rb");
-		eval("rm", "-f", "/tmp/board1.bin");
+	eval("rm", "-f", "/tmp/board1.bin");
 	FILE *out = fopen("/tmp/board1.bin", "wb");
-	if (fp) {
+	if (fp && out) {
 		fseek(fp, 20480, SEEK_SET);
 		int i;
 		for (i = 0; i < 6; i++)
@@ -699,8 +699,8 @@ out:;
 		for (i = 0; i < 12052; i++)
 			putc(getc(fp), out);
 		fclose(fp);
+		fclose(out);
 	}
-	fclose(out);
 #elif defined(HAVE_ARCHERC7) || defined(HAVE_DIR859) || defined(HAVE_DAP3662)
 	fp = fopen("/dev/mtdblock/5", "rb");
 	FILE *out = fopen("/tmp/archerc7-board.bin", "wb");
