@@ -107,7 +107,7 @@ int wl_hwaddr(char *name, unsigned char *hwaddr)
 	int s;
 	if (is_wil6210(name))
 		name = "giwifi0";
-#ifdef HAVE_DIR862
+#if defined(HAVE_DIR862) && !defined(HAVE_DAP2680)
 	if (!strcmp(name, "wlan1"))
 		name = "wlan0";
 #endif
