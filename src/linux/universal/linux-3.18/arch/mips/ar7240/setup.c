@@ -668,7 +668,7 @@ void disable_early_printk(void)
 static int ramsize;
 
 #define AR71XX_MEM_SIZE_MIN	(2 * 1024 * 1024)
-#define AR71XX_MEM_SIZE_MAX	(128 * 1024 * 1024)
+#define AR71XX_MEM_SIZE_MAX	(256 * 1024 * 1024)
 
 static void __init ar71xx_detect_mem_size(void)
 {
