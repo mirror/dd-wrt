@@ -308,6 +308,23 @@ static int get_eirp(struct wifi_channels *wifi_channels, int freq)
 	return 0;
 }
 
+static int get_channel_eirp(struct wifi_channels *wifi_channels, int freq)
+{
+	int i = 0;
+	struct wifi_channels *chan = NULL;
+	while (1) {
+		chan = &wifi_channels[i++];
+		if (chan->freq == CHANNEL_DISABLED)
+			continue;
+		if (chan->freq == CHANNEL_EOF)
+			break;
+		if (chan->freq == freq) {
+			return chan->max_eirp;
+		}
+	}
+	return 40;
+}
+
 struct wifi_channels *get_chan(struct wifi_channels *wifi_channels, int freq, const char *interface)
 {
 	struct wifi_channels *chan = NULL;
@@ -396,11 +413,14 @@ static int freq_quality(struct wifi_channels *wifi_channels, int _max_eirp, int 
 		}
 	}*/
 	int eirp = get_eirp(wifi_channels, f->freq);
+	int channeleirp = get_channel_eirp(wifi_channels, f->freq);
 	//      fprintf(stderr, "eirp %d\n", eirp);
 	//      fprintf(stderr, "lowest noise %d\n", s->lowest_noise);
 	//      fprintf(stderr, "noise %d\n", f->noise);
 	//      fprintf(stderr, "max_eirp %d\n", _max_eirp);
 	/* subtract noise delta to lowest noise. */
+	if (eirp > channeleirp)
+	    eirp = channeleirp;
 	c -= (f->noise - s->lowest_noise);
 	/* add max capable delta output power */
 	c += (_max_eirp - eirp);
