@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r7538 | brainslayer | 2024-01-30 17:33:58 +0600 (Tue, 30 Jan 2024) | 1 line
+
+kickout events are used for sta mode in the same way
+------------------------------------------------------------------------
 r7537 | brainslayer | 2024-01-30 13:32:29 +0600 (Tue, 30 Jan 2024) | 1 line
 
 use proper build numbers
