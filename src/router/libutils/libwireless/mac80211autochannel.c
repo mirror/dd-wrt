@@ -402,8 +402,8 @@ static int freq_quality(struct wifi_channels *wifi_channels, int _max_eirp, int 
 	//      fprintf(stderr, "max_eirp %d\n", _max_eirp);
 	/* subtract noise delta to lowest noise. */
 	c -= (f->noise - s->lowest_noise);
-	/* subtract max capable output power (regulatory limited by hw caps) delta from maximum eirp possible */
-	c -= (_max_eirp - eirp);
+	/* add max capable delta output power */
+	c += (_max_eirp - eirp);
 
 	f->eirp = eirp;
 	if (c < 0)
