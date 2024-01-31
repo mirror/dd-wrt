@@ -192,7 +192,7 @@ static int ieee802_11_parse_vendor_specific(const u8 *pos, size_t elen,
 			   "information element ignored (vendor OUI "
 			   "%02x:%02x:%02x len=%lu)",
 			   pos[0], pos[1], pos[2], (unsigned long) elen);
-		return -1;
+		return 0;
 	}
 
 	return 0;
