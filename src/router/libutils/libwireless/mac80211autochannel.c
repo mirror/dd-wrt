@@ -423,7 +423,7 @@ static int freq_quality(struct wifi_channels *wifi_channels, int _max_eirp, int 
 	    eirp = channeleirp;
 	c -= (f->noise - s->lowest_noise);
 	/* add max capable delta output power */
-	c += (_max_eirp - eirp);
+	c += (eirp - _max_eirp);
 
 	f->eirp = eirp;
 	if (c < 0)
