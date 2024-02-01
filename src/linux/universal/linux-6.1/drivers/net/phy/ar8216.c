@@ -2894,7 +2894,7 @@ ar8xxx_mdiodev_probe(struct mdio_device *mdiodev)
 	priv->mii_bus = mdiodev->bus;
 	priv->pdev = &mdiodev->dev;
 	priv->chip = (const struct ar8xxx_chip *) match->data;
-	priv->ledstate = -1;
+	priv->ledstate = 0;
 
 	ret = of_property_read_u32(priv->pdev->of_node, "qca,mib-poll-interval",
 				   &priv->mib_poll_interval);

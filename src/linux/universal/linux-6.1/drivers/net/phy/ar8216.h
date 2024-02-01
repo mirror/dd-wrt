@@ -506,7 +506,7 @@ struct ar8xxx_priv {
 	unsigned int use_count;
 	u32 state[8];
 	u32 disabled[8];
-	s32 ledstate;
+	u32 ledstate;
 	u32 ledregs[4];
 
 	/* all fields below are cleared on reset */

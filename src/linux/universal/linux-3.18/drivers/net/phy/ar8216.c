@@ -2318,7 +2318,7 @@ ar8xxx_phy_probe(struct phy_device *phydev)
 	if (ret)
 		goto free_priv;
 
-	priv->ledstate = -1;
+	priv->ledstate = 0;
 	swdev = &priv->dev;
 	swdev->alias = dev_name(&priv->mii_bus->dev);
 	ret = register_switch(swdev, NULL);
