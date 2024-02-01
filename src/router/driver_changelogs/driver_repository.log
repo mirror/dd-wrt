@@ -1,4 +1,12 @@
 ------------------------------------------------------------------------
+r7545 | brainslayer | 2024-02-01 15:21:46 +0600 (Thu, 01 Feb 2024) | 1 line
+
+experimental change to enhance client support for wave2 chipsets
+------------------------------------------------------------------------
+r7544 | brainslayer | 2024-02-01 15:10:17 +0600 (Thu, 01 Feb 2024) | 1 line
+
+experimental change to enhance client support for wave2 chipsets
+------------------------------------------------------------------------
 r7543 | brainslayer | 2024-02-01 14:34:53 +0600 (Thu, 01 Feb 2024) | 1 line
 
 fix bmiss event
