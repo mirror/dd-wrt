@@ -316,9 +316,9 @@ static int ej_show_roaming_single(webs_t wp, int argc, char_t **argv, char *pref
 		websWrite(wp, "] HWAddr [%s]</legend>\n", nvram_safe_get(mac));
 		show_roaming(wp, prefix);
 		websWrite(wp, "</fieldset>\n<br />\n");
+		if (nvram_nmatch("ap", "%s_mode", prefix) || nvram_nmatch("wdsap", "%s_mode", prefix))
+			cnt++;
 	}
-	if (nvram_nmatch("ap", "%s_mode", prefix) || nvram_nmatch("wdsap", "%s_mode", prefix))
-		cnt++;
 	foreach(var, vifs, next)
 	{
 		if (nvram_nmatch("disabled", "%s_mode", var))
