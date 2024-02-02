@@ -381,6 +381,14 @@ struct beacon_info {
 	u8 *ie_meshid_ptr;
 	u8 *ie_meshcfg_ptr;
 	u8 *ie_meshchsw_ptr;
+	u8 *ie_vendor_ptr;
+	u8 *ie_fast_bss_transition_ptr;
+	u8 *ie_neighbor_report_ptr;
+	u8 *ie_measure_request_ptr;
+	u8 *ie_measure_report_ptr;
+	u8 *ie_erp_info_ptr;
+	u8 *ie_mmie_ptr;
+
 	u8 ie_wmm_len;
 	u8 ie_wsc_len;
 	u8 ie_rsn_len;
@@ -392,6 +400,13 @@ struct beacon_info {
 	u8 ie_meshid_len;
 	u8 ie_meshcfg_len;
 	u8 ie_meshchsw_len;
+	u8 ie_vendor_len;
+	u8 ie_fast_bss_transition_len;
+	u8 ie_neighbor_report_len;
+	u8 ie_measure_request_len;
+	u8 ie_measure_report_len;
+	u8 ie_erp_info_len;
+	u8 ie_mmie_len;
 };
 
 struct mwl_vif {

@@ -546,7 +546,34 @@ static void mwl_fwcmd_parse_beacon(struct mwl_priv *priv,
 					beacon_info->ie_wsc_len = (elen + 2);
 					beacon_info->ie_wsc_ptr = (pos - 2);
 				}
+			} else {
+				beacon_info->ie_vendor_len = (elen + 2);
+				beacon_info->ie_vendor_ptr = (pos - 2);
 			}
+			break;
+		case WLAN_EID_NEIGHBOR_REPORT:
+			beacon_info->ie_neighbor_report_len = (elen + 2);
+			beacon_info->ie_neighbor_report_ptr = (pos - 2);
+			break;
+		case WLAN_EID_FAST_BSS_TRANSITION:
+			beacon_info->ie_fast_bss_transition_len = (elen + 2);
+			beacon_info->ie_fast_bss_transition_ptr = (pos - 2);
+			break;
+		case WLAN_EID_MEASURE_REQUEST:
+			beacon_info->ie_measure_request_len = (elen + 2);
+			beacon_info->ie_measure_request_ptr = (pos - 2);
+			break;
+		case WLAN_EID_MEASURE_REPORT:
+			beacon_info->ie_measure_report_len = (elen + 2);
+			beacon_info->ie_measure_report_ptr = (pos - 2);
+			break;
+		case WLAN_EID_ERP_INFO:
+			beacon_info->ie_erp_info_len = (elen + 2);
+			beacon_info->ie_erp_info_ptr = (pos - 2);
+			break;
+		case WLAN_EID_MMIE:
+			beacon_info->ie_mmie_len = (elen + 2);
+			beacon_info->ie_mmie_ptr = (pos - 2);
 			break;
 		default:
 			break;
@@ -614,6 +641,35 @@ static int mwl_fwcmd_set_ies(struct mwl_priv *priv, struct mwl_vif *mwl_vif)
 	       beacon->ie_mde_ptr, beacon->ie_mde_len);
 	ie_list_len_proprietary += mwl_vif->beacon_info.ie_mde_len;
 
+	memcpy(pcmd->ie_list_proprietary + ie_list_len_proprietary,
+	       beacon->ie_vendor_ptr, beacon->ie_vendor_len);
+	ie_list_len_proprietary += mwl_vif->beacon_info.ie_vendor_len;
+
+
+	memcpy(pcmd->ie_list_proprietary + ie_list_len_proprietary,
+	       beacon->ie_neighbor_report_ptr, beacon->ie_neighbor_report_len);
+	ie_list_len_proprietary += mwl_vif->beacon_info.ie_neighbor_report_len;
+
+	memcpy(pcmd->ie_list_proprietary + ie_list_len_proprietary,
+	       beacon->ie_fast_bss_transition_ptr, beacon->ie_fast_bss_transition_len);
+	ie_list_len_proprietary += mwl_vif->beacon_info.ie_fast_bss_transition_len;
+
+	memcpy(pcmd->ie_list_proprietary + ie_list_len_proprietary,
+	       beacon->ie_measure_request_ptr, beacon->ie_measure_request_len);
+	ie_list_len_proprietary += mwl_vif->beacon_info.ie_measure_request_len;
+
+	memcpy(pcmd->ie_list_proprietary + ie_list_len_proprietary,
+	       beacon->ie_measure_report_ptr, beacon->ie_measure_report_len);
+	ie_list_len_proprietary += mwl_vif->beacon_info.ie_measure_report_len;
+
+	memcpy(pcmd->ie_list_proprietary + ie_list_len_proprietary,
+	       beacon->ie_erp_info_ptr, beacon->ie_erp_info_len);
+	ie_list_len_proprietary += mwl_vif->beacon_info.ie_erp_info_len;
+
+	memcpy(pcmd->ie_list_proprietary + ie_list_len_proprietary,
+	       beacon->ie_mmie_ptr, beacon->ie_mmie_len);
+	ie_list_len_proprietary += mwl_vif->beacon_info.ie_mmie_len;
+	
 	pcmd->ie_list_len_proprietary = cpu_to_le16(ie_list_len_proprietary);
 
 	if (mwl_hif_exec_cmd(priv->hw, HOSTCMD_CMD_SET_IES)) {

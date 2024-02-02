@@ -550,6 +550,8 @@ static ssize_t mwl_debugfs_vif_read(struct file *file, char __user *ubuf,
 			  beacon_info->ie_ht_len, "HT:");
 		dump_data(p, size, &len, beacon_info->ie_vht_ptr,
 			  beacon_info->ie_vht_len, "VHT:");
+		dump_data(p, size, &len, beacon_info->ie_vendor_ptr,
+			  beacon_info->ie_vendor_len, "VENDOR:");
 		if (vif->type == NL80211_IFTYPE_MESH_POINT) {
 			dump_data(p, size, &len, beacon_info->ie_meshid_ptr,
 				  beacon_info->ie_meshid_len, "MESHID:");
