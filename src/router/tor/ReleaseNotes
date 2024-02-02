@@ -2,6 +2,29 @@ This document summarizes new features and bugfixes in each stable
 release of Tor. If you want to see more detailed descriptions of the
 changes in each development snapshot, see the ChangeLog file.
 
+Changes in version 0.4.8.10 - 2023-12-08
+  This is a security release fixing a high severity bug (TROVE-2023-007)
+  affecting Exit relays supporting Conflux. We strongly recommend to update as
+  soon as possible.
+
+  o Major bugfixes (TROVE-2023-007, exit):
+    - Improper error propagation from a safety check in conflux leg
+      linking lead to a desynchronization of which legs were part of a
+      conflux set, ultimately causing a UAF and NULL pointer dereference
+      crash on Exit relays. Fixes bug 40897; bugfix on 0.4.8.1-alpha.
+
+  o Minor features (fallbackdir):
+    - Regenerate fallback directories generated on December 08, 2023.
+
+  o Minor features (geoip data):
+    - Update the geoip files to match the IPFire Location Database, as
+      retrieved on 2023/12/08.
+
+  o Minor bugfixes (bridges, statistics):
+    - Correctly report statistics for client count over Pluggable
+      transport. Fixes bug 40871; bugfix on 0.4.8.4
+
+
 Changes in version 0.4.8.9 - 2023-11-09
   This is another security release fixing a high severity bug affecting onion
   services which is tracked by TROVE-2023-006. We are also releasing a guard

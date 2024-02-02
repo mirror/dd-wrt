@@ -115,6 +115,8 @@ conflux_leg_t *
 conflux_get_leg(conflux_t *cfx, const circuit_t *circ)
 {
   conflux_leg_t *leg_found = NULL;
+  tor_assert(cfx);
+  tor_assert(cfx->legs);
 
   // Find the leg that the cell is written on
   CONFLUX_FOR_EACH_LEG_BEGIN(cfx, leg) {

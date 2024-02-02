@@ -360,13 +360,19 @@ channel_tls_handle_incoming(or_connection_t *orconn)
   /* Register it */
   channel_register(chan);
 
+  char *transport_name = NULL;
+  if (channel_tls_get_transport_name_method(TLS_CHAN_TO_BASE(orconn->chan),
+        &transport_name) < 0) {
+    transport_name = NULL;
+  }
   /* Start tracking TLS connections in the DoS subsystem as soon as possible,
    * so we can protect against attacks that use partially open connections.
    */
   geoip_note_client_seen(GEOIP_CLIENT_CONNECT,
-                         &TO_CONN(orconn)->addr, NULL,
+                         &TO_CONN(orconn)->addr, transport_name,
                          time(NULL));
-  dos_new_client_conn(orconn, NULL);
+  dos_new_client_conn(orconn, transport_name);
+  tor_free(transport_name);
 
   return chan;
 }

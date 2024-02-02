@@ -56,6 +56,11 @@
 #define NUM_LEGS_SET_MAX (UINT8_MAX)
 #define NUM_LEGS_SET_DEFAULT (2)
 
+/* For "cfx_max_legs_set" */
+#define MAX_LEGS_SET_MIN (3)
+#define MAX_LEGS_SET_MAX (UINT8_MAX)
+#define MAX_LEGS_SET_DEFAULT (8)
+
 /* For "cfx_send_pct". */
 #define CFX_SEND_PCT_MIN (0)
 #define CFX_SEND_PCT_MAX (255)
@@ -81,6 +86,8 @@ static uint8_t max_prebuilt_set = MAX_PREBUILT_SET_DEFAULT;
 STATIC uint32_t max_unlinked_leg_retry = MAX_UNLINKED_LEG_RETRY_DEFAULT;
 /* Number of legs per set. */
 static uint8_t num_legs_set = NUM_LEGS_SET_DEFAULT;
+/* Maximum number of legs per set allowed at exits */
+static uint8_t max_legs_set = MAX_LEGS_SET_DEFAULT;
 /* The low Exit relay threshold, as a ratio between 0 and 1, used as a limit to
  * decide the amount of pre-built set we build depending on how many Exit relay
  * supports conflux in our current consensus. */
@@ -223,6 +230,13 @@ conflux_params_get_num_legs_set(void)
   return num_legs_set;
 }
 
+/** Return the maximum number of legs per set. */
+uint8_t
+conflux_params_get_max_legs_set(void)
+{
+  return max_legs_set;
+}
+
 /** Return the drain percent we must hit before switching */
 uint8_t
 conflux_params_get_drain_pct(void)
@@ -274,6 +288,11 @@ conflux_params_new_consensus(const networkstatus_t *ns)
     networkstatus_get_param(ns, "cfx_num_legs_set",
                             NUM_LEGS_SET_DEFAULT,
                             NUM_LEGS_SET_MIN, NUM_LEGS_SET_MAX);
+
+  max_legs_set =
+    networkstatus_get_param(ns, "cfx_max_legs_set",
+                            MAX_LEGS_SET_DEFAULT,
+                            MAX_LEGS_SET_MIN, MAX_LEGS_SET_MAX);
 
   /* Params used by conflux.c */
   cfx_send_pct = networkstatus_get_param(ns, "cfx_send_pct",

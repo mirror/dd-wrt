@@ -22,19 +22,6 @@ typedef enum {
  CONFLUX_ALG_CWNDRTT = 2,
 } conflux_alg_t;
 
-/**
- * Maximum number of linked circuits.
- *
- * We want to experiment with 3 guards, so we need at least 3 here.
- *
- * However, we need 1 more than this, to support using a test circuit to probe
- * for a faster path, for applications that *require* a specific latency target
- * (like VoIP).
- *
- * We may also want to raise this for traffic analysis defense evaluation.
- */
-#define CONFLUX_MAX_CIRCS 4
-
 /** XXX: Cached consensus params+scheduling alg */
 struct conflux_params_t {
   conflux_alg_t alg;
