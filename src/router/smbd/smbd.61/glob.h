@@ -9,7 +9,6 @@
 
 #include <linux/ctype.h>
 
-#include "buffer_pool.h"
 #include "unicode.h"
 #include "vfs_cache.h"
 
