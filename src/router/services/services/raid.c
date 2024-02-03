@@ -346,18 +346,18 @@ void start_raid(void)
 			writeprocsys("dev/raid/speed_limit_max", nvram_default_get("dev.raid.speed_limit_max", "10000000"));
 			sysprintf("mkdir -p \"/tmp/mnt/%s\"", poolname);
 			if (nvram_nmatch("ext4", "raidfs%d", i)) {
-				sysprintf("fsck.ext4 -p -y /dev/md%d", i);
+				sysprintf("fsck.ext4 -p /dev/md%d", i);
 				sysprintf(
 					"mount -t ext4 /dev/md%d -o init_itable=0,nobarrier,noatime,nobh,nodiratime,barrier=0 \"/tmp/mnt/%s\"",
 					i, poolname);
 			}
 			if (nvram_nmatch("ext2", "raidfs%d", i)) {
-				sysprintf("fsck.ext2 -p -y /dev/md%d", i);
+				sysprintf("fsck.ext2 -p /dev/md%d", i);
 				sysprintf("mount -t ext2 /dev/md%d -o nobarrier,noatime,nobh,nodiratime,barrier=0 \"/tmp/mnt/%s\"",
 					  i, poolname);
 			}
 			if (nvram_nmatch("ext3", "raidfs%d", i)) {
-				sysprintf("fsck.ext3 -p -y /dev/md%d", i);
+				sysprintf("fsck.ext3 -p /dev/md%d", i);
 				sysprintf("mount -t ext3 /dev/md%d -o nobarrier,noatime,nobh,nodiratime,barrier=0 \"/tmp/mnt/%s\"",
 					  i, poolname);
 			}
