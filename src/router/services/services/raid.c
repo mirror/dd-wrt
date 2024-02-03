@@ -120,22 +120,22 @@ void start_raid(void)
 	int cpucount = 1;
 #endif
 	if (todo) {
-		eval("stopservice", "cron");
-		eval("stopservice", "samba3");
-		eval("stopservice", "nfs");
-		eval("stopservice", "rsync");
-		eval("stopservice", "dlna");
-		eval("stopservice", "ftpsrv");
+		eval("service", "cron", "stop");
+		eval("service", "samba3", "stop");
+		eval("service", "nfs", "stop");
+		eval("service", "rsync", "stop");
+		eval("service", "dlna", "stop");
+		eval("service", "ftpsrv", "stop");
 #ifdef HAVE_WEBSERVER
-		eval("stopservice", "lighttpd");
+		eval("service", "lighttpd", "stop");
 #endif
 #ifdef HAVE_TRANSMISSION
-		eval("stopservice", "transmission");
+		eval("service", "transmission", "stop");
 #endif
 #ifdef HAVE_PLEX
-		eval("stopservice", "plex");
+		eval("service", "plex", "stop");
 #endif
-		eval("stopservice", "run_rc_usb");
+		eval("service", "run_rc_usb", "stop");
 	}
 	if (md) {
 		insmod("libcrc32c crc32c_generic crc32_generic");
@@ -427,20 +427,20 @@ void start_raid(void)
 		i++;
 	}
 	if (todo) {
-		eval("restart_f", "cron");
-		eval("restart_f", "samba3");
-		eval("restart_f", "nfs");
-		eval("restart_f", "rsync");
-		eval("restart_f", "ftpsrv");
-		eval("restart_f", "dlna");
+		eval("service", "cron", "start");
+		eval("service", "samba3", "start");
+		eval("service", "nfs", "start");
+		eval("service", "rsync", "start");
+		eval("service", "ftpsrv", "start");
+		eval("service", "dlna", "start");
 #ifdef HAVE_WEBSERVER
-		eval("restart_f", "lighttpd");
+		eval("service", "lighttpd", "start");
 #endif
 #ifdef HAVE_TRANSMISSION
-		eval("restart_f", "transmission");
+		eval("service", "transmission", "start");
 #endif
 #ifdef HAVE_PLEX
-		eval("restart_f", "plex");
+		eval("service", "plex", "start");
 #endif
 	}
 }
