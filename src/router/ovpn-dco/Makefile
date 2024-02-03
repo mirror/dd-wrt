@@ -26,7 +26,6 @@ ELFLAG := $(EL8FLAG) $(EL9FLAG)
 
 NOSTDINC_FLAGS += \
 	-I$(PWD)/include/ \
-	$(CFLAGS) $(ELFLAG) \
 	-include $(PWD)/linux-compat.h \
 	-I$(PWD)/compat-include/
 
