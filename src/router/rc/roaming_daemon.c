@@ -38,24 +38,6 @@
 #include <utils.h>
 #include <wlutils.h>
 
-static int open_site_survey(void);
-
-struct site_survey_list *site_survey_lists;
-
-static int open_site_survey(void)
-{
-	FILE *fp;
-	site_survey_lists =
-		calloc(sizeof(struct site_survey_list) * SITE_SURVEY_NUM, 1);
-
-	if ((fp = fopen(SITE_SURVEY_DB, "r"))) {
-		fread(&site_survey_lists[0],
-		      sizeof(struct site_survey_list) * SITE_SURVEY_NUM, 1, fp);
-		fclose(fp);
-		return 1;
-	}
-	return 0;
-}
 
 #include "regexp/regexp.c"
 
@@ -64,6 +46,7 @@ static int roaming_daemon(void)
 	nvram_seti("roaming_enable", 0);
 	nvram_set("roaming_ssid", "");
 	char *ifname = getSTA();
+	struct site_survey_list *site_survey_lists;
 
 	if (!ifname)
 		ifname = getWET();
@@ -110,8 +93,7 @@ static int roaming_daemon(void)
 		return -1;
 	}
 	while (1) {
-		eval("site_survey"); // call site survey to get scan results
-		open_site_survey();
+		site_survey_lists = open_site_survey(NULL);
 		char *bestssid = NULL;
 		int bestrssi = -255;
 
