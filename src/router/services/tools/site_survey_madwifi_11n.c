@@ -102,7 +102,7 @@ static int copy_essid(char buf[], size_t bufsize, const u_int8_t *essid, size_t 
 #define sys_restart() kill(1, SIGHUP)
 
 static int write_site_survey(void);
-static int open_site_survey(void);
+static int local_open_site_survey(void);
 
 static struct site_survey_list *site_survey_lists;
 
@@ -308,7 +308,7 @@ skip:;
 	} while (len >= sizeof(struct ieee80211req_scan_result));
 	free(buf);
 	write_site_survey();
-	open_site_survey();
+	local_open_site_survey();
 	for (i = 0; i < SITE_SURVEY_NUM && site_survey_lists[i].BSSID[0] && site_survey_lists[i].channel != 0; i++) {
 		if (site_survey_lists[i].SSID[0] == 0) {
 			strcpy(site_survey_lists[i].SSID, "hidden");
@@ -336,7 +336,7 @@ static int write_site_survey(void)
 	return 1;
 }
 
-static int open_site_survey(void)
+static int local_open_site_survey(void)
 {
 	FILE *fp;
 	bzero(site_survey_lists, sizeof(site_survey_lists));

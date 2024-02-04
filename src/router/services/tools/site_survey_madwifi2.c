@@ -98,7 +98,7 @@ static int copy_essid(char buf[], size_t bufsize, const u_int8_t *essid, size_t 
 #define sys_restart() kill(1, SIGHUP)
 
 int write_site_survey(void);
-static int open_site_survey(void);
+static int local_open_site_survey(void);
 int write_site_survey(void);
 
 struct site_survey_list *site_survey_lists;
@@ -159,7 +159,7 @@ int site_survey_main(int argc, char *argv[])
 	} while (len >= sizeof(struct ieee80211req_scan_result));
 
 	write_site_survey();
-	open_site_survey();
+	local_open_site_survey();
 	for (i = 0; i < SITE_SURVEY_NUM && site_survey_lists[i].frequency && site_survey_lists[i].channel != 0; i++) {
 		fprintf(stderr,
 			"[%2d] SSID[%20s] BSSID[%s] channel[%2d] frequency[%4d] rssi[%d] noise[%d] beacon[%d] cap[%x] dtim[%d] rate[%d]\n",
@@ -184,7 +184,7 @@ int write_site_survey(void)
 	return 1;
 }
 
-static int open_site_survey(void)
+static int local_open_site_survey(void)
 {
 	FILE *fp;
 

@@ -35,7 +35,7 @@
 #define sys_restart() kill(1, SIGHUP)
 
 int write_site_survey(void);
-static int open_site_survey(void);
+static int local_open_site_survey(void);
 int write_site_survey(void);
 
 struct site_survey_list *site_survey_lists;
@@ -643,7 +643,7 @@ int site_survey_main(int argc, char *argv[])
 		bss_info = (wl_bss_info_t *)((uint32)bss_info + bss_info->length);
 	}
 	write_site_survey();
-	open_site_survey();
+	local_open_site_survey();
 	// modded by ascott and fractal, may 17th, 2012 to show "hidden" SSIDS
 	for (i = 0; i < SITE_SURVEY_NUM && site_survey_lists[i].frequency; i++) {
 		if (site_survey_lists[i].SSID[0] == 0) {
@@ -677,7 +677,7 @@ int write_site_survey(void)
 	return TRUE;
 }
 
-static int open_site_survey(void)
+static int local_open_site_survey(void)
 {
 	FILE *fp;
 
