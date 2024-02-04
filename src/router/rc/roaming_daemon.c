@@ -94,6 +94,8 @@ static int roaming_daemon(void)
 	}
 	while (1) {
 		site_survey_lists = open_site_survey(NULL);
+		if (!site_survey_lists)
+		    goto next;
 		char *bestssid = NULL;
 		int bestrssi = -255;
 
@@ -131,6 +133,7 @@ static int roaming_daemon(void)
 			eval("killall", "wpa_supplicant");
 			eval("supplicant", ifname, bestssid);
 		}
+		next:;
 		sleep(60);
 	}
 }
