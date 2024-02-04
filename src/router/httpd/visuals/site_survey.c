@@ -253,20 +253,26 @@ static char *speedstr(int speed, char *buf, size_t len)
 	return buf;
 }
 
-static struct site_survey_list *site_survey_lists;
 
-static int open_site_survey(void)
+static struct site_survey_list *open_site_survey(char *name)
 {
 	FILE *fp;
-	site_survey_lists = malloc(sizeof(struct site_survey_list) * SITE_SURVEY_NUM);
-	bzero(site_survey_lists, sizeof(struct site_survey_list) * SITE_SURVEY_NUM);
+
+	if (name == NULL || *(name) == 0)
+		eval("site_survey");
+	else {
+		eval("site_survey", name);
+	}
+
+	struct site_survey_list local_site_survey_lists = malloc(sizeof(struct site_survey_list) * SITE_SURVEY_NUM);
+	bzero(local_site_survey_lists, sizeof(struct site_survey_list) * SITE_SURVEY_NUM);
 
 	if ((fp = fopen(SITE_SURVEY_DB, "r"))) {
-		fread(&site_survey_lists[0], sizeof(struct site_survey_list) * SITE_SURVEY_NUM, 1, fp);
+		fread(&local_site_survey_lists[0], sizeof(struct site_survey_list) * SITE_SURVEY_NUM, 1, fp);
 		fclose(fp);
-		return TRUE;
+		return local_site_survey_lists;
 	}
-	return FALSE;
+	return NULL;
 }
 
 static char *dtim_period(int dtim, char *mem)
@@ -278,48 +284,19 @@ static char *dtim_period(int dtim, char *mem)
 	return mem;
 }
 
-#ifdef FBNFW
-
-EJ_VISIBLE void ej_list_fbn(webs_t wp, int argc, char_t **argv)
-{
-	int i;
-
-	eval("site_survey");
-
-	open_site_survey();
-	for (i = 0; i < SITE_SURVEY_NUM; i++) {
-		if (site_survey_lists[i].SSID[0] == 0 || site_survey_lists[i].BSSID[0] == 0 ||
-		    (site_survey_lists[i].channel & 0xff) == 0)
-			break;
-
-		if (startswith(site_survey_lists[i].SSID, "www.fbn-dd.de")) {
-			websWrite(wp, "<option value=\"");
-			tf_webWriteJS(wp, site_survey_lists[i].SSID);
-			websWrite(wp, "\">");
-			tf_webWriteJS(wp, site_survey_lists[i].SSID);
-			websWrite(wp, "</option>\n");
-		}
-	}
-	debug_free(site_survey_lists)
-}
-
-#endif
 EJ_VISIBLE void ej_dump_site_survey(webs_t wp, int argc, char_t **argv)
 {
 	int i;
 	char *rates = NULL;
 	char *name;
 	char speedbuf[32];
-
+	struct site_survey_list *site_survey_lists;
 	name = argv[0];
-	if (name == NULL || *(name) == 0)
-		eval("site_survey");
-	else {
-		eval("site_survey", name);
-	}
+	
 
-	open_site_survey();
-
+	site_survey_lists = open_site_survey(name);
+	if (site_survey_lists)
+	    return;
 	for (i = 0; i < SITE_SURVEY_NUM; i++) {
 		char rates[64];
 

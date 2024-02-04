@@ -27,6 +27,28 @@
 #include <sys/socket.h>
 #include <linux/if.h>
 
+
+struct site_survey_list *open_site_survey(char *name)
+{
+	FILE *fp;
+
+	if (name == NULL || *(name) == 0)
+		eval("site_survey");
+	else {
+		eval("site_survey", name);
+	}
+
+	struct site_survey_list local_site_survey_lists = malloc(sizeof(struct site_survey_list) * SITE_SURVEY_NUM);
+	bzero(local_site_survey_lists, sizeof(struct site_survey_list) * SITE_SURVEY_NUM);
+
+	if ((fp = fopen(SITE_SURVEY_DB, "r"))) {
+		fread(&local_site_survey_lists[0], sizeof(struct site_survey_list) * SITE_SURVEY_NUM, 1, fp);
+		fclose(fp);
+		return local_site_survey_lists;
+	}
+	return NULL;
+}
+
 int getValueFromPath(char *path, int dev, char *fmt, int *err)
 {
 	char *globstring;

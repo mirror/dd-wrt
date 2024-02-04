@@ -341,6 +341,7 @@ extern int has_mumimo(const char *prefix);
 #define CAP_MTIKWDS 0x20
 #define CAP_AX 0x40
 
+
 struct site_survey_list {
 	char SSID[33];
 	char BSSID[18];
@@ -359,6 +360,8 @@ struct site_survey_list {
 	int16 numsta;
 	char radioname[16]; /* in dd-wrt typically the router name from setup page */
 };
+
+struct site_survey_list *open_site_survey(char *name);
 
 struct wifi_interface {
 	int freq;
