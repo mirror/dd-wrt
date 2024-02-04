@@ -38,7 +38,7 @@ struct site_survey_list *open_site_survey(char *name)
 		eval("site_survey", name);
 	}
 
-	struct site_survey_list local_site_survey_lists = malloc(sizeof(struct site_survey_list) * SITE_SURVEY_NUM);
+	struct site_survey_list *local_site_survey_lists = malloc(sizeof(struct site_survey_list) * SITE_SURVEY_NUM);
 	bzero(local_site_survey_lists, sizeof(struct site_survey_list) * SITE_SURVEY_NUM);
 
 	if ((fp = fopen(SITE_SURVEY_DB, "r"))) {
