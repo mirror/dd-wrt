@@ -273,7 +273,7 @@ EJ_VISIBLE void ej_dump_site_survey(webs_t wp, int argc, char_t **argv)
 	
 
 	site_survey_lists = open_site_survey(name);
-	if (site_survey_lists)
+	if (!site_survey_lists)
 	    return;
 	for (i = 0; i < SITE_SURVEY_NUM; i++) {
 		char rates[64];
