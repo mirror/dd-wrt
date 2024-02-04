@@ -1616,7 +1616,7 @@ nla_put_failure:
 }
 
 static int write_site_survey(void);
-static int open_site_survey(void);
+static int local_open_site_survey(void);
 
 void mac80211_site_survey(char *interface)
 {
@@ -1638,7 +1638,7 @@ void mac80211_site_survey(char *interface)
 	eval("iw", "dev", interface, "scan");
 	mac80211_scan(&unl, interface);
 	write_site_survey();
-	open_site_survey();
+	local_open_site_survey();
 	for (i = 0; i < SITE_SURVEY_NUM && site_survey_lists[i].frequency; i++) {
 		if (site_survey_lists[i].SSID[0] == 0) {
 			strcpy(site_survey_lists[i].SSID, "hidden");
@@ -1672,7 +1672,7 @@ static int write_site_survey(void)
 	return 1;
 }
 
-static int open_site_survey(void)
+static int local_open_site_survey(void)
 {
 	FILE *fp;
 	bzero(site_survey_lists, sizeof(site_survey_lists) * SITE_SURVEY_NUM);
