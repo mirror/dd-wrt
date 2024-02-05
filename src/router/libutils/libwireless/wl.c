@@ -27,7 +27,6 @@
 #include <sys/socket.h>
 #include <linux/if.h>
 
-
 struct site_survey_list *open_site_survey(char *name)
 {
 	FILE *fp;

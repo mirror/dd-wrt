@@ -421,7 +421,7 @@ static int freq_quality(struct wifi_channels *wifi_channels, int _max_eirp, int 
 	//      fprintf(stderr, "max_eirp %d\n", _max_eirp);
 	/* subtract noise delta to lowest noise. */
 	if (eirp > channeleirp)
-	    eirp = channeleirp;
+		eirp = channeleirp;
 	c -= (f->noise - s->lowest_noise);
 	/* add max capable delta output power */
 	c += (eirp - _max_eirp);
@@ -432,7 +432,7 @@ static int freq_quality(struct wifi_channels *wifi_channels, int _max_eirp, int 
 		if (list[i].BSSID[0] == 0 || (list[i].channel & 0xff) == 0)
 			break;
 		if (list[i].frequency == f->freq)
-		    c-=5; // reduce quality if another network has been found on the same channel
+			c -= 5; // reduce quality if another network has been found on the same channel
 	}
 
 	if (c < 0)
@@ -517,7 +517,7 @@ struct mac80211_ac *mac80211autochannel(const char *interface, char *freq_range,
 	/* get maximum eirp possible in channel list */
 	if (getsurveystats(&frequencies, &wifi_channels, interface, freq_range, scans, bw))
 		goto out;
-	if (!(list=open_site_survey(interface)))
+	if (!(list = open_site_survey(interface)))
 		goto out;
 	_max_eirp = get_max_eirp(wifi_channels);
 	bzero(&sdata, sizeof(sdata));
