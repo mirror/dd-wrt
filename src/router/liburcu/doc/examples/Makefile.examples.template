@@ -1,0 +1,33 @@
+# Copyright (C) 2013  Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
+#
+# THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
+# OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
+#
+# Permission is hereby granted to use or copy this program for any
+# purpose,  provided the above notices are retained on all copies.
+# Permission to modify the code and to distribute modified code is
+# granted, provided the above notices are retained, and a notice that
+# the code was modified is included with the above copyright notice.
+#
+# This makefile is purposefully kept simple to support GNU and BSD make.
+
+LOCAL_CFLAGS := -g -O2 -Wall
+AM_V_P := :
+
+all: $(BINARY)
+
+$(BINARY): $(OBJECTS)
+	@verbose="$(AM_V_P)"; if [ "x$$verbose" = "x" ]; then verbose=":"; fi; \
+		if $$verbose; then set -x; else echo "  CCLD     $@"; fi; \
+		$(CC) $(LOCAL_CFLAGS) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
+		-o $@ $(OBJECTS) $(LIBS)
+
+$(OBJECTS): $(SOURCES) $(DEPS)
+	@verbose="$(AM_V_P)"; if [ "x$$verbose" = "x" ]; then verbose=":"; fi; \
+		if $$verbose; then set -x; else echo "  CC       $@"; fi; \
+		$(CC) $(LOCAL_CFLAGS) $(AM_CFLAGS) $(CFLAGS) $(AM_CPPFLAGS) $(CPPFLAGS) \
+		-c -o $@ $(SOURCES)
+
+.PHONY: clean
+clean:
+	rm -f *.o $(BINARY)
