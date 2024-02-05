@@ -1,6 +1,6 @@
 ACLOCAL_AMFLAGS=-I m4
 
-SUBDIRS = include src doc tests extras
+SUBDIRS = include src doc extras
 
 dist_doc_DATA = LICENSE \
 		README.md
