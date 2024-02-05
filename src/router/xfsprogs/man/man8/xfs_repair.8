@@ -184,6 +184,10 @@ usual 0. This option cannot be used together with
 .B \-V
 Prints the version number and exits.
 .SS Checks Performed
+The correctness of the crc32c checksum implementation will be tested
+before examining the filesystem.
+If the test fails, the program will abort.
+
 Inconsistencies corrected include the following:
 .IP 1.
 Inode and inode blockmap (addressing) checks:

@@ -170,9 +170,9 @@ _("Unable to find realtime device path."));
 
 	/* Open the raw devices. */
 	ctx->datadev = disk_open(ctx->fsinfo.fs_name);
-	if (error) {
-		str_errno(ctx, ctx->fsinfo.fs_name);
-		return error;
+	if (!ctx->datadev) {
+		str_error(ctx, ctx->mntpoint, _("Unable to open data device."));
+		return ECANCELED;
 	}
 
 	ctx->nr_io_threads = disk_heads(ctx->datadev);
@@ -184,16 +184,18 @@ _("Unable to find realtime device path."));
 
 	if (ctx->fsinfo.fs_log) {
 		ctx->logdev = disk_open(ctx->fsinfo.fs_log);
-		if (error) {
-			str_errno(ctx, ctx->fsinfo.fs_name);
-			return error;
+		if (!ctx->logdev) {
+			str_error(ctx, ctx->mntpoint,
+				_("Unable to open external log device."));
+			return ECANCELED;
 		}
 	}
 	if (ctx->fsinfo.fs_rt) {
 		ctx->rtdev = disk_open(ctx->fsinfo.fs_rt);
-		if (error) {
-			str_errno(ctx, ctx->fsinfo.fs_name);
-			return error;
+		if (!ctx->rtdev) {
+			str_error(ctx, ctx->mntpoint,
+				_("Unable to open realtime device."));
+			return ECANCELED;
 		}
 	}
 

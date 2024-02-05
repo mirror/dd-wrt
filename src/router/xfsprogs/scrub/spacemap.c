@@ -8,6 +8,7 @@
 #include <string.h>
 #include <pthread.h>
 #include <sys/statvfs.h>
+#include <linux/fsmap.h>
 #include "libfrog/workqueue.h"
 #include "libfrog/paths.h"
 #include "xfs_scrub.h"
@@ -47,11 +48,10 @@ scrub_iterate_fsmap(
 	int			i;
 	int			error;
 
-	head = malloc(fsmap_sizeof(FSMAP_NR));
+	head = calloc(1, fsmap_sizeof(FSMAP_NR));
 	if (!head)
 		return errno;
 
-	memset(head, 0, sizeof(*head));
 	memcpy(head->fmh_keys, keys, sizeof(struct fsmap) * 2);
 	head->fmh_count = FSMAP_NR;
 

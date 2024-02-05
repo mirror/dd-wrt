@@ -110,6 +110,7 @@ do_message(int flags, int code, const char *fmt, ...)
 		fprintf(stderr,
 			_("Aborting XFS copy -- logfile error -- reason: %s\n"),
 			strerror(errno));
+		rcu_unregister_thread();
 		pthread_exit(NULL);
 	}
 }
@@ -224,6 +225,7 @@ begin_reader(void *arg)
 {
 	thread_args	*args = arg;
 
+	rcu_register_thread();
 	for (;;) {
 		pthread_mutex_lock(&args->wait);
 		if (do_write(args, NULL))
@@ -243,6 +245,7 @@ handle_error:
 	if (--glob_masks.num_working == 0)
 		pthread_mutex_unlock(&mainwait);
 	pthread_mutex_unlock(&glob_masks.mutex);
+	rcu_unregister_thread();
 	pthread_exit(NULL);
 	return NULL;
 }
@@ -468,7 +471,7 @@ read_ag_header(int fd, xfs_agnumber_t agno, wbuf *buf, ag_header_t *ag,
 	read_wbuf(fd, buf, mp);
 	ASSERT(buf->length >= length);
 
-	ag->xfs_sb = (xfs_dsb_t *) (buf->data + diff);
+	ag->xfs_sb = (struct xfs_dsb *) (buf->data + diff);
 	ASSERT(be32_to_cpu(ag->xfs_sb->sb_magicnum) == XFS_SB_MAGIC);
 	ag->xfs_agf = (xfs_agf_t *) (buf->data + diff + sectorsize);
 	ASSERT(be32_to_cpu(ag->xfs_agf->agf_magicnum) == XFS_AGF_MAGIC);
@@ -512,9 +515,9 @@ write_wbuf(void)
 
 static void
 sb_update_uuid(
-	xfs_sb_t	*sb,		/* Original fs superblock */
-	ag_header_t	*ag_hdr,	/* AG hdr to update for this copy */
-	thread_args	*tcarg)		/* Args for this thread, with UUID */
+	struct xfs_mount	*mp,
+	ag_header_t		*ag_hdr, /* AG hdr to update for this copy */
+	thread_args		*tcarg)	 /* Args for this thread, with UUID */
 {
 	/*
 	 * If this filesystem has CRCs, the original UUID is stamped into
@@ -523,24 +526,24 @@ sb_update_uuid(
 	 * we must copy the original sb_uuid to the sb_meta_uuid slot and set
 	 * the incompat flag for the feature on this copy.
 	 */
-	if (xfs_sb_version_hascrc(sb) && !xfs_sb_version_hasmetauuid(sb) &&
-	    !uuid_equal(&tcarg->uuid, &sb->sb_uuid)) {
+	if (xfs_has_crc(mp) && !xfs_has_metauuid(mp) &&
+	    !uuid_equal(&tcarg->uuid, &mp->m_sb.sb_uuid)) {
 		uint32_t feat;
 
 		feat = be32_to_cpu(ag_hdr->xfs_sb->sb_features_incompat);
 		feat |= XFS_SB_FEAT_INCOMPAT_META_UUID;
 		ag_hdr->xfs_sb->sb_features_incompat = cpu_to_be32(feat);
 		platform_uuid_copy(&ag_hdr->xfs_sb->sb_meta_uuid,
-				   &sb->sb_uuid);
+				   &mp->m_sb.sb_uuid);
 	}
 
 	/* Copy the (possibly new) fs-identifier UUID into sb_uuid */
 	platform_uuid_copy(&ag_hdr->xfs_sb->sb_uuid, &tcarg->uuid);
 
 	/* We may have changed the UUID, so update the superblock CRC */
-	if (xfs_sb_version_hascrc(sb))
-		xfs_update_cksum((char *)ag_hdr->xfs_sb, sb->sb_sectsize,
-							 XFS_SB_CRC_OFF);
+	if (xfs_has_crc(mp))
+		xfs_update_cksum((char *)ag_hdr->xfs_sb, mp->m_sb.sb_sectsize,
+				XFS_SB_CRC_OFF);
 }
 
 int
@@ -569,7 +572,7 @@ main(int argc, char **argv)
 	xfs_mount_t	*mp;
 	xfs_mount_t	mbuf;
 	struct xlog	xlog;
-	xfs_buf_t	*sbp;
+	struct xfs_buf	*sbp;
 	xfs_sb_t	*sb;
 	xfs_agnumber_t	num_ags, agno;
 	xfs_agblock_t	bno;
@@ -745,7 +748,7 @@ main(int argc, char **argv)
 	/* Do it again, now with proper length and verifier */
 	libxfs_buf_relse(sbp);
 
-	error = -libxfs_buf_read(mbuf.m_ddev_targp, XFS_SB_DADDR,
+	error = -libxfs_buf_read_uncached(mbuf.m_ddev_targp, XFS_SB_DADDR,
 			1 << (sb->sb_sectlog - BBSHIFT), 0, &sbp,
 			&xfs_sb_buf_ops);
 	if (error) {
@@ -1039,7 +1042,7 @@ main(int argc, char **argv)
 				  pos - btree_buf.position);
 
 			if (be32_to_cpu(block->bb_magic) !=
-			    (xfs_sb_version_hascrc(&mp->m_sb) ?
+			    (xfs_has_crc(mp) ?
 			     XFS_ABTB_CRC_MAGIC : XFS_ABTB_MAGIC)) {
 				do_log(_("Bad btree magic 0x%x\n"),
 				        be32_to_cpu(block->bb_magic));
@@ -1221,7 +1224,7 @@ main(int argc, char **argv)
 			/* do each thread in turn, each has its own UUID */
 
 			for (j = 0, tcarg = targ; j < num_targets; j++)  {
-				sb_update_uuid(sb, &ag_hdr, tcarg);
+				sb_update_uuid(mp, &ag_hdr, tcarg);
 				do_write(tcarg, NULL);
 				tcarg++;
 			}
@@ -1277,7 +1280,7 @@ write_log_header(int fd, wbuf *buf, xfs_mount_t *mp)
 	}
 
 	offset = libxfs_log_header(p, &buf->owner->uuid,
-			xfs_sb_version_haslogv2(&mp->m_sb) ? 2 : 1,
+			xfs_has_logv2(mp) ? 2 : 1,
 			mp->m_sb.sb_logsunit, XLOG_FMT, NULLCOMMITLSN,
 			NULLCOMMITLSN, next_log_chunk, buf);
 	do_write(buf->owner, NULL);
@@ -1362,7 +1365,7 @@ format_log(
 	 * all existing metadata LSNs are valid (behind the current LSN) on the
 	 * target fs.
 	 */
-	if (xfs_sb_version_hascrc(&mp->m_sb))
+	if (xfs_has_crc(mp))
 		cycle = mp->m_log->l_curr_cycle + 1;
 
 	/*
@@ -1370,7 +1373,7 @@ format_log(
 	 * write fails, mark the target inactive so the failure is reported.
 	 */
 	libxfs_log_clear(NULL, buf->data, logstart, length, &buf->owner->uuid,
-			 xfs_sb_version_haslogv2(&mp->m_sb) ? 2 : 1,
+			 xfs_has_logv2(mp) ? 2 : 1,
 			 mp->m_sb.sb_logsunit, XLOG_FMT, cycle, true);
 	if (do_write(buf->owner, buf))
 		target[tcarg->id].state = INACTIVE;
@@ -1385,7 +1388,7 @@ format_logs(
 	wbuf			logbuf;
 	int			logsize;
 
-	if (xfs_sb_version_hascrc(&mp->m_sb)) {
+	if (xfs_has_crc(mp)) {
 		logsize = XFS_FSB_TO_B(mp, mp->m_sb.sb_logblocks);
 		if (!wbuf_init(&logbuf, logsize, w_buf.data_align,
 			       w_buf.min_io_size, w_buf.id))
@@ -1393,14 +1396,14 @@ format_logs(
 	}
 
 	for (i = 0, tcarg = targ; i < num_targets; i++)  {
-		if (xfs_sb_version_hascrc(&mp->m_sb))
+		if (xfs_has_crc(mp))
 			format_log(mp, tcarg, &logbuf);
 		else
 			clear_log(mp, tcarg);
 		tcarg++;
 	}
 
-	if (xfs_sb_version_hascrc(&mp->m_sb))
+	if (xfs_has_crc(mp))
 		free(logbuf.data);
 
 	return 0;

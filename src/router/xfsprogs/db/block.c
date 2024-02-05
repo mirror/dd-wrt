@@ -62,7 +62,7 @@ ablock_f(
 	xfs_fileoff_t		bno;
 	xfs_fsblock_t		dfsbno;
 	int			haveattr;
-	int			nex;
+	xfs_extnum_t		nex;
 	char			*p;
 	struct xfs_dinode	*dip = iocur_top->data;
 
@@ -162,7 +162,7 @@ dblock_f(
 	xfs_fileoff_t	bno;
 	xfs_fsblock_t	dfsbno;
 	int		nb;
-	int		nex;
+	xfs_extnum_t	nex;
 	char		*p;
 	typnm_t		type;
 

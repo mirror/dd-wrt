@@ -34,22 +34,8 @@ bool can_scrub_symlink(struct scrub_ctx *ctx);
 bool can_scrub_parent(struct scrub_ctx *ctx);
 bool xfs_can_repair(struct scrub_ctx *ctx);
 
-int scrub_inode_fields(struct scrub_ctx *ctx, uint64_t ino, uint32_t gen,
-		struct action_list *alist);
-int scrub_data_fork(struct scrub_ctx *ctx, uint64_t ino, uint32_t gen,
-		struct action_list *alist);
-int scrub_attr_fork(struct scrub_ctx *ctx, uint64_t ino, uint32_t gen,
-		struct action_list *alist);
-int scrub_cow_fork(struct scrub_ctx *ctx, uint64_t ino, uint32_t gen,
-		struct action_list *alist);
-int scrub_dir(struct scrub_ctx *ctx, uint64_t ino, uint32_t gen,
-		struct action_list *alist);
-int scrub_attr(struct scrub_ctx *ctx, uint64_t ino, uint32_t gen,
-		struct action_list *alist);
-int scrub_symlink(struct scrub_ctx *ctx, uint64_t ino, uint32_t gen,
-		struct action_list *alist);
-int scrub_parent(struct scrub_ctx *ctx, uint64_t ino, uint32_t gen,
-		struct action_list *alist);
+int scrub_file(struct scrub_ctx *ctx, int fd, const struct xfs_bulkstat *bstat,
+		unsigned int type, struct action_list *alist);
 
 /* Repair parameters are the scrub inputs and retry count. */
 struct action_item {
@@ -71,7 +57,8 @@ struct action_item {
 /* Complain if still broken even after fix. */
 #define XRM_COMPLAIN_IF_UNFIXED	(1U << 1)
 
-enum check_outcome xfs_repair_metadata(struct scrub_ctx *ctx, int fd,
-		struct action_item *aitem, unsigned int repair_flags);
+enum check_outcome xfs_repair_metadata(struct scrub_ctx *ctx,
+		struct xfs_fd *xfdp, struct action_item *aitem,
+		unsigned int repair_flags);
 
 #endif /* XFS_SCRUB_SCRUB_H_ */

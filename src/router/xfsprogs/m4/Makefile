@@ -24,6 +24,7 @@ LSRCFILES = \
 	package_services.m4 \
 	package_types.m4 \
 	package_icu.m4 \
+	package_urcu.m4 \
 	package_utilies.m4 \
 	package_uuiddev.m4 \
 	multilib.m4 \

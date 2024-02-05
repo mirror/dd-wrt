@@ -78,6 +78,8 @@ and
 .B XFS_IOC_FREESP64
 operations are all identical.
 
+These ioctls are no longer supported as of Linux 5.17.
+
 .TP
 .B XFS_IOC_FSSETDM
 Set the di_dmevmask and di_dmstate fields in an XFS on-disk inode.
@@ -102,6 +104,7 @@ This command is restricted to root or to processes with device
 management capabilities.
 Its sole purpose is to allow backup and restore programs to restore the
 aforementioned critical on-disk inode fields.
+This ioctl is not supported as of Linux 5.5.
 
 .TP
 .B XFS_IOC_DIOINFO
@@ -316,6 +319,7 @@ functions (see
 .BR open_by_handle (3)).
 They are all subject to change and should not be called directly
 by applications.
+XFS_IOC_FSSETDM_BY_HANDLE is not supported as of Linux 5.5.
 
 .SS Filesystem Operations
 In order to effect one of the following operations, the pathname
@@ -333,7 +337,7 @@ for more information.
 .TP
 .B XFS_IOC_FSGEOMETRY
 See
-.BR ioctl_xfs_fsop_geometry (2)
+.BR ioctl_xfs_fsgeometry (2)
 for more information.
 
 .TP
@@ -393,7 +397,7 @@ as they are not of general use to applications.
 
 .SH SEE ALSO
 .BR ioctl_xfs_fsgetxattr (2),
-.BR ioctl_xfs_fsop_geometry (2),
+.BR ioctl_xfs_fsgeometry (2),
 .BR ioctl_xfs_fsbulkstat (2),
 .BR ioctl_xfs_scrub_metadata (2),
 .BR ioctl_xfs_fsinumbers (2),

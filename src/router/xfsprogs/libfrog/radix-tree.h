@@ -60,4 +60,7 @@ radix_tree_gang_lookup_tag(struct radix_tree_root *root, void **results,
 int radix_tree_tagged(struct radix_tree_root *root, unsigned int tag);
 #endif
 
+static inline int radix_tree_preload(int gfp_mask) { return 0; }
+static inline void radix_tree_preload_end(void) { }
+
 #endif /* __LIBFROG_RADIX_TREE_H__ */

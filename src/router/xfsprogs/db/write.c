@@ -127,7 +127,7 @@ write_f(
 
 	if (invalid_data &&
 	    iocur_top->typ->crc_off == TYP_F_NO_CRC_OFF &&
-	    xfs_sb_version_hascrc(&mp->m_sb)) {
+	    xfs_has_crc(mp)) {
 		dbprintf(_("Cannot recalculate CRCs on this type of object\n"));
 		return 0;
 	}
@@ -151,7 +151,7 @@ write_f(
 	local_ops.verify_read = stashed_ops->verify_read;
 	iocur_top->bp->b_ops = &local_ops;
 
-	if (!xfs_sb_version_hascrc(&mp->m_sb)) {
+	if (!xfs_has_crc(mp)) {
 		local_ops.verify_write = xfs_dummy_verify;
 	} else if (corrupt) {
 		local_ops.verify_write = xfs_dummy_verify;
@@ -479,7 +479,7 @@ convert_oct(
 		if (arg[count] == '\0')
 			break;
 
-		if ((arg[count] < '0') && (arg[count] > '7'))
+		if ((arg[count] < '0') || (arg[count] > '7'))
 			break;
 	}
 
@@ -553,7 +553,7 @@ convert_arg(
 
 			/* do octal conversion */
 			if (*ostr == '\\') {
-				if (*(ostr + 1) >= '0' || *(ostr + 1) <= '7') {
+				if (*(ostr + 1) >= '0' && *(ostr + 1) <= '7') {
 					ret = convert_oct(ostr + 1, &octval);
 					*rbuf++ = octval;
 					ostr += ret + 1;

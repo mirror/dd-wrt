@@ -202,6 +202,7 @@ check_xattr_ns_names(
 	if (error) {
 		if (errno == ESTALE)
 			errno = 0;
+		error = errno;
 		if (errno)
 			str_errno(ctx, descr_render(dsc));
 	}
@@ -278,7 +279,12 @@ check_inode_names(
 			goto out;
 	}
 
-	/* Open the dir, let the kernel try to reconnect it to the root. */
+	/*
+	 * Warn about naming problems in the directory entries.  Opening the
+	 * dir by handle means the kernel will try to reconnect it to the root.
+	 * If the reconnection fails due to corruption in the parents we get
+	 * ESTALE, which is why we skip phase 5 if we found corruption.
+	 */
 	if (S_ISDIR(bstat->bs_mode)) {
 		fd = scrub_open_handle(handle);
 		if (fd < 0) {
@@ -288,10 +294,7 @@ check_inode_names(
 			str_errno(ctx, descr_render(&dsc));
 			goto out;
 		}
-	}
 
-	/* Warn about naming problems in the directory entries. */
-	if (fd >= 0 && S_ISDIR(bstat->bs_mode)) {
 		error = check_dirent_names(ctx, &dsc, &fd, bstat);
 		if (error)
 			goto out;

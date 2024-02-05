@@ -246,9 +246,9 @@ const field_t	dir3sf_flds[] = {
 
 #define	E3OFF(f)	bitize(offsetof(xfs_dir2_sf_entry_t, f))
 const field_t	dir3_sf_entry_flds[] = {
-	{ "namelen", FLDT_UINT8D, OI(EOFF(namelen)), C1, 0, TYP_NONE },
-	{ "offset", FLDT_DIR2_SF_OFF, OI(EOFF(offset)), C1, 0, TYP_NONE },
-	{ "name", FLDT_CHARNS, OI(EOFF(name)), dir2_sf_entry_name_count,
+	{ "namelen", FLDT_UINT8D, OI(E3OFF(namelen)), C1, 0, TYP_NONE },
+	{ "offset", FLDT_DIR2_SF_OFF, OI(E3OFF(offset)), C1, 0, TYP_NONE },
+	{ "name", FLDT_CHARNS, OI(E3OFF(name)), dir2_sf_entry_name_count,
 	  FLD_COUNT, TYP_NONE },
 	{ "inumber", FLDT_DIR2_INOU, dir3_sf_entry_inumber_offset, C1,
 	  FLD_OFFSET, TYP_NONE },

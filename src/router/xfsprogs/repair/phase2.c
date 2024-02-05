@@ -34,7 +34,7 @@ zero_log(
 	x.logBBsize = XFS_FSB_TO_BB(mp, mp->m_sb.sb_logblocks);
 	x.logBBstart = XFS_FSB_TO_DADDR(mp, mp->m_sb.sb_logstart);
 	x.lbsize = BBSIZE;
-	if (xfs_sb_version_hassector(&mp->m_sb))
+	if (xfs_has_sector(mp))
 		x.lbsize <<= (mp->m_sb.sb_logsectlog - BBSHIFT);
 
 	log->l_dev = mp->m_logdev_targp;
@@ -42,13 +42,13 @@ zero_log(
 	log->l_logBBstart = x.logBBstart;
 	log->l_sectBBsize  = BTOBB(x.lbsize);
 	log->l_mp = mp;
-	if (xfs_sb_version_hassector(&mp->m_sb)) {
+	if (xfs_has_sector(mp)) {
 		log->l_sectbb_log = mp->m_sb.sb_logsectlog - BBSHIFT;
 		ASSERT(log->l_sectbb_log <= mp->m_sectbb_log);
 		/* for larger sector sizes, must have v2 or external log */
 		ASSERT(log->l_sectbb_log == 0 ||
 			log->l_logBBstart == 0 ||
-			xfs_sb_version_haslogv2(&mp->m_sb));
+			xfs_has_logv2(mp));
 		ASSERT(mp->m_sb.sb_logsectlog >= BBSHIFT);
 	}
 	log->l_sectbb_mask = (1 << log->l_sectbb_log) - 1;
@@ -111,7 +111,7 @@ zero_log(
 			XFS_FSB_TO_DADDR(mp, mp->m_sb.sb_logstart),
 			(xfs_extlen_t)XFS_FSB_TO_BB(mp, mp->m_sb.sb_logblocks),
 			&mp->m_sb.sb_uuid,
-			xfs_sb_version_haslogv2(&mp->m_sb) ? 2 : 1,
+			xfs_has_logv2(mp) ? 2 : 1,
 			mp->m_sb.sb_logsunit, XLOG_FMT, XLOG_INIT_CYCLE, true);
 
 		/* update the log data structure with new state */
@@ -127,8 +127,217 @@ zero_log(
 	 * Finally, seed the max LSN from the current state of the log if this
 	 * is a v5 filesystem.
 	 */
-	if (xfs_sb_version_hascrc(&mp->m_sb))
-		libxfs_max_lsn = log->l_last_sync_lsn;
+	if (xfs_has_crc(mp))
+		libxfs_max_lsn = atomic64_read(&log->l_last_sync_lsn);
+}
+
+static bool
+set_inobtcount(
+	struct xfs_mount	*mp,
+	struct xfs_sb		*new_sb)
+{
+	if (!xfs_has_crc(mp)) {
+		printf(
+	_("Inode btree count feature only supported on V5 filesystems.\n"));
+		exit(0);
+	}
+
+	if (!xfs_has_finobt(mp)) {
+		printf(
+	_("Inode btree count feature requires free inode btree.\n"));
+		exit(0);
+	}
+
+	if (xfs_has_inobtcounts(mp)) {
+		printf(_("Filesystem already has inode btree counts.\n"));
+		exit(0);
+	}
+
+	printf(_("Adding inode btree counts to filesystem.\n"));
+	new_sb->sb_features_ro_compat |= XFS_SB_FEAT_RO_COMPAT_INOBTCNT;
+	new_sb->sb_features_incompat |= XFS_SB_FEAT_INCOMPAT_NEEDSREPAIR;
+	return true;
+}
+
+static bool
+set_bigtime(
+	struct xfs_mount	*mp,
+	struct xfs_sb		*new_sb)
+{
+	if (!xfs_has_crc(mp)) {
+		printf(
+	_("Large timestamp feature only supported on V5 filesystems.\n"));
+		exit(0);
+	}
+
+	if (xfs_has_bigtime(mp)) {
+		printf(_("Filesystem already supports large timestamps.\n"));
+		exit(0);
+	}
+
+	printf(_("Adding large timestamp support to filesystem.\n"));
+	new_sb->sb_features_incompat |= (XFS_SB_FEAT_INCOMPAT_NEEDSREPAIR |
+					 XFS_SB_FEAT_INCOMPAT_BIGTIME);
+	return true;
+}
+
+static bool
+set_nrext64(
+	struct xfs_mount	*mp,
+	struct xfs_sb		*new_sb)
+{
+	if (!xfs_has_crc(mp)) {
+		printf(
+	_("Nrext64 only supported on V5 filesystems.\n"));
+		exit(0);
+	}
+
+	if (xfs_has_large_extent_counts(mp)) {
+		printf(_("Filesystem already supports nrext64.\n"));
+		exit(0);
+	}
+
+	printf(_("Adding nrext64 to filesystem.\n"));
+	new_sb->sb_features_incompat |= XFS_SB_FEAT_INCOMPAT_NREXT64;
+	new_sb->sb_features_incompat |= XFS_SB_FEAT_INCOMPAT_NEEDSREPAIR;
+	return true;
+}
+
+struct check_state {
+	struct xfs_sb		sb;
+	uint64_t		features;
+	bool			finobt_nores;
+};
+
+static inline void
+capture_old_state(
+	struct check_state	*old_state,
+	const struct xfs_mount	*mp)
+{
+	memcpy(&old_state->sb, &mp->m_sb, sizeof(struct xfs_sb));
+	old_state->finobt_nores = mp->m_finobt_nores;
+	old_state->features = mp->m_features;
+}
+
+static inline void
+restore_old_state(
+	struct xfs_mount		*mp,
+	const struct check_state	*old_state)
+{
+	memcpy(&mp->m_sb, &old_state->sb, sizeof(struct xfs_sb));
+	mp->m_finobt_nores = old_state->finobt_nores;
+	mp->m_features = old_state->features;
+	libxfs_compute_all_maxlevels(mp);
+	libxfs_trans_init(mp);
+}
+
+static inline void
+install_new_state(
+	struct xfs_mount	*mp,
+	struct xfs_sb		*new_sb)
+{
+	memcpy(&mp->m_sb, new_sb, sizeof(struct xfs_sb));
+	mp->m_features |= libxfs_sb_version_to_features(new_sb);
+	libxfs_compute_all_maxlevels(mp);
+	libxfs_trans_init(mp);
+}
+
+/*
+ * Make sure we can actually upgrade this (v5) filesystem without running afoul
+ * of root inode or log size requirements that would prevent us from mounting
+ * the filesystem.  If everything checks out, commit the new geometry.
+ */
+static void
+install_new_geometry(
+	struct xfs_mount	*mp,
+	struct xfs_sb		*new_sb)
+{
+	struct check_state	old;
+	xfs_ino_t		rootino;
+	int			min_logblocks;
+
+	capture_old_state(&old, mp);
+	install_new_state(mp, new_sb);
+
+	/*
+	 * The existing log must be large enough to satisfy the new minimum log
+	 * size requirements.
+	 */
+	min_logblocks = libxfs_log_calc_minimum_size(mp);
+	if (old.sb.sb_logblocks < min_logblocks) {
+		printf(
+	_("Filesystem log too small to upgrade filesystem; need %u blocks, have %u.\n"),
+				min_logblocks, old.sb.sb_logblocks);
+		exit(1);
+	}
+
+	/*
+	 * The root inode must be where xfs_repair will expect it to be with
+	 * the new geometry.
+	 */
+	rootino = libxfs_ialloc_calc_rootino(mp, new_sb->sb_unit);
+	if (old.sb.sb_rootino != rootino) {
+		printf(
+	_("Cannot upgrade filesystem, root inode (%llu) cannot be moved to %llu.\n"),
+				(unsigned long long)old.sb.sb_rootino,
+				(unsigned long long)rootino);
+		exit(1);
+	}
+
+	/*
+	 * Restore the old state to get everything back to a clean state,
+	 * upgrade the featureset one more time, and recompute the btree max
+	 * levels for this filesystem.
+	 */
+	restore_old_state(mp, &old);
+	install_new_state(mp, new_sb);
+}
+
+/* Perform the user's requested upgrades on filesystem. */
+static void
+upgrade_filesystem(
+	struct xfs_mount	*mp)
+{
+	struct xfs_sb		new_sb;
+	struct xfs_buf		*bp;
+	bool			dirty = false;
+	int			error;
+
+	memcpy(&new_sb, &mp->m_sb, sizeof(struct xfs_sb));
+
+	if (add_inobtcount)
+		dirty |= set_inobtcount(mp, &new_sb);
+	if (add_bigtime)
+		dirty |= set_bigtime(mp, &new_sb);
+	if (add_nrext64)
+		dirty |= set_nrext64(mp, &new_sb);
+	if (!dirty)
+		return;
+
+	install_new_geometry(mp, &new_sb);
+	if (no_modify)
+		return;
+
+	bp = libxfs_getsb(mp);
+	if (!bp || bp->b_error)
+		do_error(
+	_("couldn't get superblock for feature upgrade, err=%d\n"),
+				bp ? bp->b_error : ENOMEM);
+
+	libxfs_sb_to_disk(bp->b_addr, &mp->m_sb);
+
+	/*
+	 * Write the primary super to disk immediately so that needsrepair will
+	 * be set if repair doesn't complete.
+	 */
+	error = -libxfs_bwrite(bp);
+	if (error)
+		do_error(
+	_("filesystem feature upgrade failed, err=%d\n"),
+				error);
+
+	libxfs_buf_relse(bp);
+	features_changed = true;
 }
 
 /*
@@ -160,6 +369,14 @@ phase2(
 		do_log(_("Phase 2 - using external log on %s\n"), x.logname);
 	} else
 		do_log(_("Phase 2 - using internal log\n"));
+
+	/*
+	 * Now that we've set up the buffer cache the way we want it, try to
+	 * grab our own reference to the primary sb so that the hooks will not
+	 * have to call out to the buffer cache.
+	 */
+	if (mp->m_buf_writeback_fn)
+		retain_primary_sb(mp);
 
 	/* Zero log if applicable */
 	do_log(_("        - zero log...\n"));
@@ -235,4 +452,10 @@ phase2(
 				do_warn(_("would correct\n"));
 		}
 	}
+
+	/*
+	 * Upgrade the filesystem now that we've done a preliminary check of
+	 * the superblocks, the AGs, the log, and the metadata inodes.
+	 */
+	upgrade_filesystem(mp);
 }

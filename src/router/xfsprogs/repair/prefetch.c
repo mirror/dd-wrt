@@ -34,7 +34,7 @@ static int		pf_max_fsbs;
 static int		pf_batch_bytes;
 static int		pf_batch_fsbs;
 
-static void		pf_read_inode_dirs(prefetch_args_t *, xfs_buf_t *);
+static void		pf_read_inode_dirs(prefetch_args_t *, struct xfs_buf *);
 
 /*
  * Buffer priorities for the libxfs cache
@@ -153,7 +153,7 @@ pf_queue_io(
 
 	pftrace("getbuf %c %p (%llu) in AG %d (fsbno = %lu) added to queue"
 		"(inode_bufs_queued = %d, last_bno = %lu)", B_IS_INODE(flag) ?
-		'I' : 'M', bp, (long long)XFS_BUF_ADDR(bp), args->agno, fsbno,
+		'I' : 'M', bp, (long long)xfs_buf_daddr(bp), args->agno, fsbno,
 		args->inode_bufs_queued, args->last_bno_read);
 
 	pf_start_processing(args);
@@ -271,7 +271,7 @@ pf_scan_lbtree(
 					int			isadir,
 					prefetch_args_t		*args))
 {
-	xfs_buf_t		*bp;
+	struct xfs_buf		*bp;
 	int			rc;
 	int			error;
 
@@ -350,7 +350,7 @@ pf_scanfunc_bmap(
 static void
 pf_read_btinode(
 	prefetch_args_t		*args,
-	xfs_dinode_t		*dino,
+	struct xfs_dinode	*dino,
 	int			isadir)
 {
 	xfs_bmdr_block_t	*dib;
@@ -390,18 +390,18 @@ pf_read_btinode(
 static void
 pf_read_exinode(
 	prefetch_args_t		*args,
-	xfs_dinode_t		*dino)
+	struct xfs_dinode	*dino)
 {
 	pf_read_bmbt_reclist(args, (xfs_bmbt_rec_t *)XFS_DFORK_DPTR(dino),
-			be32_to_cpu(dino->di_nextents));
+			xfs_dfork_data_extents(dino));
 }
 
 static void
 pf_read_inode_dirs(
 	prefetch_args_t		*args,
-	xfs_buf_t		*bp)
+	struct xfs_buf		*bp)
 {
-	xfs_dinode_t		*dino;
+	struct xfs_dinode	*dino;
 	int			icnt = 0;
 	int			hasdir = 0;
 	int			isadir;
@@ -411,7 +411,9 @@ pf_read_inode_dirs(
 	if (error)
 		return;
 
-	for (icnt = 0; icnt < (bp->b_bcount >> mp->m_sb.sb_inodelog); icnt++) {
+	for (icnt = 0;
+	     icnt < (BBTOB(bp->b_length) >> mp->m_sb.sb_inodelog);
+	     icnt++) {
 		dino = xfs_make_iptr(mp, bp, icnt);
 
 		/*
@@ -439,7 +441,7 @@ pf_read_inode_dirs(
 		if (be16_to_cpu(dino->di_magic) != XFS_DINODE_MAGIC)
 			continue;
 
-		if (!libxfs_dinode_good_version(&mp->m_sb, dino->di_version))
+		if (!libxfs_dinode_good_version(mp, dino->di_version))
 			continue;
 
 		if (be64_to_cpu(dino->di_size) <= XFS_DFORK_DSIZE(dino, mp))
@@ -471,7 +473,7 @@ pf_batch_read(
 	pf_which_t		which,
 	void			*buf)
 {
-	xfs_buf_t		*bplist[MAX_BUFS];
+	struct xfs_buf		*bplist[MAX_BUFS];
 	unsigned int		num;
 	off64_t			first_off, last_off, next_off;
 	int			len, size;
@@ -521,23 +523,23 @@ pf_batch_read(
 		 * otherwise, find as many close together blocks and
 		 * read them in one read
 		 */
-		first_off = LIBXFS_BBTOOFF64(XFS_BUF_ADDR(bplist[0]));
-		last_off = LIBXFS_BBTOOFF64(XFS_BUF_ADDR(bplist[num-1])) +
-			XFS_BUF_SIZE(bplist[num-1]);
+		first_off = LIBXFS_BBTOOFF64(xfs_buf_daddr(bplist[0]));
+		last_off = LIBXFS_BBTOOFF64(xfs_buf_daddr(bplist[num-1])) +
+			BBTOB(bplist[num-1]->b_length);
 		while (num > 1 && last_off - first_off > pf_max_bytes) {
 			num--;
-			last_off = LIBXFS_BBTOOFF64(XFS_BUF_ADDR(bplist[num-1])) +
-				XFS_BUF_SIZE(bplist[num-1]);
+			last_off = LIBXFS_BBTOOFF64(xfs_buf_daddr(bplist[num-1])) +
+				BBTOB(bplist[num-1]->b_length);
 		}
 		if (num < ((last_off - first_off) >> (mp->m_sb.sb_blocklog + 3))) {
 			/*
 			 * not enough blocks for one big read, so determine
 			 * the number of blocks that are close enough.
 			 */
-			last_off = first_off + XFS_BUF_SIZE(bplist[0]);
+			last_off = first_off + BBTOB(bplist[0]->b_length);
 			for (i = 1; i < num; i++) {
-				next_off = LIBXFS_BBTOOFF64(XFS_BUF_ADDR(bplist[i])) +
-						XFS_BUF_SIZE(bplist[i]);
+				next_off = LIBXFS_BBTOOFF64(xfs_buf_daddr(bplist[i])) +
+						BBTOB(bplist[i]->b_length);
 				if (next_off - last_off > pf_batch_bytes)
 					break;
 				last_off = next_off;
@@ -547,7 +549,7 @@ pf_batch_read(
 
 		for (i = 0; i < num; i++) {
 			if (btree_delete(args->io_queue, XFS_DADDR_TO_FSB(mp,
-					XFS_BUF_ADDR(bplist[i]))) == NULL)
+					xfs_buf_daddr(bplist[i]))) == NULL)
 				do_error(_("prefetch corruption\n"));
 		}
 
@@ -563,8 +565,8 @@ pf_batch_read(
 		}
 #ifdef XR_PF_TRACE
 		pftrace("reading bbs %llu to %llu (%d bufs) from %s queue in AG %d (last_bno = %lu, inode_bufs = %d)",
-			(long long)XFS_BUF_ADDR(bplist[0]),
-			(long long)XFS_BUF_ADDR(bplist[num-1]), num,
+			(long long)xfs_buf_daddr(bplist[0]),
+			(long long)xfs_buf_daddr(bplist[num-1]), num,
 			(which != PF_SECONDARY) ? "pri" : "sec", args->agno,
 			args->last_bno_read, args->inode_bufs_queued);
 #endif
@@ -590,13 +592,13 @@ pf_batch_read(
 
 		if (len > 0) {
 			/*
-			 * go through the xfs_buf_t list copying from the
-			 * read buffer into the xfs_buf_t's and release them.
+			 * go through the struct xfs_buf list copying from the
+			 * read buffer into the struct xfs_buf's and release them.
 			 */
 			for (i = 0; i < num; i++) {
 
-				pbuf = ((char *)buf) + (LIBXFS_BBTOOFF64(XFS_BUF_ADDR(bplist[i])) - first_off);
-				size = XFS_BUF_SIZE(bplist[i]);
+				pbuf = ((char *)buf) + (LIBXFS_BBTOOFF64(xfs_buf_daddr(bplist[i])) - first_off);
+				size = BBTOB(bplist[i]->b_length);
 				if (len < size)
 					break;
 				memcpy(bplist[i]->b_addr, pbuf, size);
@@ -617,7 +619,7 @@ pf_batch_read(
 			pftrace("putbuf %c %p (%llu) in AG %d",
 				B_IS_INODE(libxfs_buf_priority(bplist[i])) ?
 								      'I' : 'M',
-				bplist[i], (long long)XFS_BUF_ADDR(bplist[i]),
+				bplist[i], (long long)xfs_buf_daddr(bplist[i]),
 				args->agno);
 			libxfs_buf_relse(bplist[i]);
 		}
@@ -658,6 +660,7 @@ pf_io_worker(
 	if (buf == NULL)
 		return NULL;
 
+	rcu_register_thread();
 	pthread_mutex_lock(&args->lock);
 	while (!args->queuing_done || !btree_is_empty(args->io_queue)) {
 		pftrace("waiting to start prefetch I/O for AG %d", args->agno);
@@ -680,6 +683,7 @@ pf_io_worker(
 	free(buf);
 
 	pftrace("finished prefetch I/O for AG %d", args->agno);
+	rcu_unregister_thread();
 
 	return NULL;
 }
@@ -724,6 +728,8 @@ pf_queuing_worker(
 	struct xfs_ino_geometry	*igeo = M_IGEO(mp);
 	unsigned long long	cluster_mask;
 
+	rcu_register_thread();
+
 	cluster_mask = (1ULL << igeo->inodes_per_cluster) - 1;
 
 	for (i = 0; i < PF_THREAD_COUNT; i++) {
@@ -737,7 +743,7 @@ pf_queuing_worker(
 			args->io_threads[i] = 0;
 			if (i == 0) {
 				pf_skip_prefetch_thread(args);
-				return NULL;
+				goto out;
 			}
 			/*
 			 * since we have at least one I/O thread, use them for
@@ -777,7 +783,6 @@ pf_queuing_worker(
 			 * Start processing as well, in case everything so
 			 * far was already prefetched and the queue is empty.
 			 */
-			
 			pf_start_io_workers(args);
 			pf_start_processing(args);
 			sem_wait(&args->ra_count);
@@ -839,6 +844,8 @@ pf_queuing_worker(
 	if (next_args)
 		pf_create_prefetch_thread(next_args);
 
+out:
+	rcu_unregister_thread();
 	return NULL;
 }
 
@@ -869,7 +876,7 @@ init_prefetch(
 	xfs_mount_t		*pmp)
 {
 	mp = pmp;
-	mp_fd = libxfs_device_to_fd(mp->m_ddev_targp->dev);
+	mp_fd = libxfs_device_to_fd(mp->m_ddev_targp->bt_bdev);
 	pf_max_bytes = sysconf(_SC_PAGE_SIZE) << 7;
 	pf_max_bbs = pf_max_bytes >> BBSHIFT;
 	pf_max_fsbs = pf_max_bytes >> mp->m_sb.sb_blocklog;

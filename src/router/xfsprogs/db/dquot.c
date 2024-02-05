@@ -32,8 +32,8 @@ const field_t	dqblk_hfld[] = {
 	{ NULL }
 };
 
-#define	DDOFF(f)	bitize(offsetof(xfs_dqblk_t, dd_ ## f))
-#define	DDSZC(f)	szcount(xfs_dqblk_t, dd_ ## f)
+#define	DDOFF(f)	bitize(offsetof(struct xfs_dqblk, dd_ ## f))
+#define	DDSZC(f)	szcount(struct xfs_dqblk, dd_ ## f)
 const field_t	dqblk_flds[] = {
 	{ "diskdq", FLDT_DISK_DQUOT, OI(DDOFF(diskdq)), C1, 0, TYP_NONE },
 	{ "fill", FLDT_CHARS, OI(DDOFF(fill)), CI(DDSZC(fill)), FLD_SKIPALL,
@@ -48,7 +48,7 @@ const field_t	dqblk_flds[] = {
 const field_t	disk_dquot_flds[] = {
 	{ "magic", FLDT_UINT16X, OI(DOFF(magic)), C1, 0, TYP_NONE },
 	{ "version", FLDT_UINT8X, OI(DOFF(version)), C1, 0, TYP_NONE },
-	{ "flags", FLDT_UINT8X, OI(DOFF(flags)), C1, 0, TYP_NONE },
+	{ "type", FLDT_UINT8X, OI(DOFF(type)), C1, 0, TYP_NONE },
 	{ "id", FLDT_DQID, OI(DOFF(id)), C1, 0, TYP_NONE },
 	{ "blk_hardlimit", FLDT_QCNT, OI(DOFF(blk_hardlimit)), C1, 0,
 	  TYP_NONE },
@@ -60,8 +60,8 @@ const field_t	disk_dquot_flds[] = {
 	  TYP_NONE },
 	{ "bcount", FLDT_QCNT, OI(DOFF(bcount)), C1, 0, TYP_NONE },
 	{ "icount", FLDT_QCNT, OI(DOFF(icount)), C1, 0, TYP_NONE },
-	{ "itimer", FLDT_INT32D, OI(DOFF(itimer)), C1, 0, TYP_NONE },
-	{ "btimer", FLDT_INT32D, OI(DOFF(btimer)), C1, 0, TYP_NONE },
+	{ "itimer", FLDT_QTIMER, OI(DOFF(itimer)), C1, 0, TYP_NONE },
+	{ "btimer", FLDT_QTIMER, OI(DOFF(btimer)), C1, 0, TYP_NONE },
 	{ "iwarns", FLDT_QWARNCNT, OI(DOFF(iwarns)), C1, 0, TYP_NONE },
 	{ "bwarns", FLDT_QWARNCNT, OI(DOFF(bwarns)), C1, 0, TYP_NONE },
 	{ "pad0", FLDT_UINT32X, OI(DOFF(pad0)), C1, FLD_SKIPALL, TYP_NONE },
@@ -70,7 +70,7 @@ const field_t	disk_dquot_flds[] = {
 	{ "rtb_softlimit", FLDT_QCNT, OI(DOFF(rtb_softlimit)), C1, 0,
 	  TYP_NONE },
 	{ "rtbcount", FLDT_QCNT, OI(DOFF(rtbcount)), C1, 0, TYP_NONE },
-	{ "rtbtimer", FLDT_INT32D, OI(DOFF(rtbtimer)), C1, 0, TYP_NONE },
+	{ "rtbtimer", FLDT_QTIMER, OI(DOFF(rtbtimer)), C1, 0, TYP_NONE },
 	{ "rtbwarns", FLDT_QWARNCNT, OI(DOFF(rtbwarns)), C1, 0, TYP_NONE },
 	{ "pad", FLDT_UINT16X, OI(DOFF(pad)), C1, FLD_SKIPALL, TYP_NONE },
 	{ NULL }
@@ -92,7 +92,7 @@ dquot_f(
 	int		doprj;
 	xfs_dqid_t	id;
 	xfs_ino_t	ino;
-	int		nex;
+	xfs_extnum_t	nex;
 	char		*p;
 	int		perblock;
 	xfs_fileoff_t	qbno;
@@ -138,7 +138,7 @@ dquot_f(
 		dbprintf(_("bad %s id for dquot %s\n"), s, argv[optind]);
 		return 0;
 	}
-	perblock = (int)(mp->m_sb.sb_blocksize / sizeof(xfs_dqblk_t));
+	perblock = (int)(mp->m_sb.sb_blocksize / sizeof(struct xfs_dqblk));
 	qbno = (xfs_fileoff_t)id / perblock;
 	qoff = (int)(id % perblock);
 	push_cur();
@@ -153,7 +153,7 @@ dquot_f(
 	set_cur(&typtab[TYP_DQBLK], XFS_FSB_TO_DADDR(mp, bm.startblock), blkbb,
 		DB_RING_IGN, NULL);
 	iocur_top->dquot_buf = 1;
-	off_cur(qoff * (int)sizeof(xfs_dqblk_t), sizeof(xfs_dqblk_t));
+	off_cur(qoff * (int)sizeof(struct xfs_dqblk), sizeof(struct xfs_dqblk));
 	ring_add();
 	return 0;
 }

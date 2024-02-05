@@ -417,15 +417,63 @@ restore_f(
 	return 0;
 }
 
+time64_t
+decode_timer(
+	const struct fs_disk_quota *d,
+	__s32			timer_lo,
+	__s8			timer_hi)
+{
+	if (d->d_fieldmask & FS_DQ_BIGTIME)
+		return (uint32_t)timer_lo | (int64_t)timer_hi << 32;
+	return timer_lo;
+}
+
+static inline void
+encode_timer(
+	const struct fs_disk_quota *d,
+	__s32			*timer_lo,
+	__s8			*timer_hi,
+	time64_t		timer)
+{
+	*timer_lo = timer;
+	if (d->d_fieldmask & FS_DQ_BIGTIME)
+		*timer_hi = timer >> 32;
+	else
+		*timer_hi = 0;
+}
+
+static inline bool want_bigtime(time64_t timer)
+{
+	return timer > INT32_MAX || timer < INT32_MIN;
+}
+
+static void
+encode_timers(
+	struct fs_disk_quota	*d,
+	time64_t		btimer,
+	time64_t		itimer,
+	time64_t		rtbtimer)
+{
+	d->d_fieldmask &= ~FS_DQ_BIGTIME;
+	if (want_bigtime(btimer) || want_bigtime(itimer) ||
+	    want_bigtime(rtbtimer))
+		d->d_fieldmask |= FS_DQ_BIGTIME;
+
+	encode_timer(d, &d->d_btimer, &d->d_btimer_hi, btimer);
+	encode_timer(d, &d->d_itimer, &d->d_itimer_hi, itimer);
+	encode_timer(d, &d->d_rtbtimer, &d->d_rtbtimer_hi, rtbtimer);
+}
+
 static void
 set_timer(
-	uint32_t	id,
-	uint		type,
-	uint		mask,
-	char		*dev,
-	uint		value)
+	uint32_t		id,
+	uint			type,
+	uint			mask,
+	char			*dev,
+	time64_t		value)
 {
-	fs_disk_quota_t	d;
+	struct fs_disk_quota	d;
+	time64_t		btimer, itimer, rtbtimer;
 
 	memset(&d, 0, sizeof(d));
 
@@ -446,23 +494,28 @@ set_timer(
 
 		time(&now);
 
+		btimer = decode_timer(&d, d.d_btimer, d.d_btimer_hi);
+		itimer = decode_timer(&d, d.d_itimer, d.d_itimer_hi);
+		rtbtimer = decode_timer(&d, d.d_rtbtimer, d.d_rtbtimer_hi);
+
 		/* Only set grace time if user is already past soft limit */
 		if (d.d_blk_softlimit && d.d_bcount > d.d_blk_softlimit)
-			d.d_btimer = now + value;
+			btimer = now + value;
 		if (d.d_ino_softlimit && d.d_icount > d.d_ino_softlimit)
-			d.d_itimer = now + value;
+			itimer = now + value;
 		if (d.d_rtb_softlimit && d.d_rtbcount > d.d_rtb_softlimit)
-			d.d_rtbtimer = now + value;
+			rtbtimer = now + value;
 	} else {
-		d.d_btimer = value;
-		d.d_itimer = value;
-		d.d_rtbtimer = value;
+		btimer = value;
+		itimer = value;
+		rtbtimer = value;
 	}
 
 	d.d_version = FS_DQUOT_VERSION;
 	d.d_flags = type;
 	d.d_fieldmask = mask;
 	d.d_id = id;
+	encode_timers(&d, btimer, itimer, rtbtimer);
 
 	if (xfsquotactl(XFS_SETQLIM, dev, type, id, (void *)&d) < 0) {
 		exitcode = 1;
@@ -476,7 +529,7 @@ timer_f(
 	int		argc,
 	char		**argv)
 {
-	uint		value;
+	time64_t	value;
 	char		*name = NULL;
 	uint32_t	id = 0;
 	int		c, flags = 0, type = 0, mask = 0;

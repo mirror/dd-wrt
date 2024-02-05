@@ -266,7 +266,7 @@ sb_logzero(uuid_t *uuidp)
 	 * The log must always move forward on v5 superblocks. Bump it to the
 	 * next cycle.
 	 */
-	if (xfs_sb_version_hascrc(&mp->m_sb))
+	if (xfs_has_crc(mp))
 		cycle = mp->m_log->l_curr_cycle + 1;
 
 	dbprintf(_("Clearing log and setting UUID\n"));
@@ -275,7 +275,7 @@ sb_logzero(uuid_t *uuidp)
 			XFS_FSB_TO_DADDR(mp, mp->m_sb.sb_logstart),
 			(xfs_extlen_t)XFS_FSB_TO_BB(mp, mp->m_sb.sb_logblocks),
 			uuidp,
-			xfs_sb_version_haslogv2(&mp->m_sb) ? 2 : 1,
+			xfs_has_logv2(mp) ? 2 : 1,
 			mp->m_sb.sb_logsunit, XLOG_FMT, cycle, true);
 	if (error) {
 		dbprintf(_("ERROR: cannot clear the log\n"));
@@ -376,6 +376,11 @@ uuid_f(
 
 		if ((x.isreadonly & LIBXFS_ISREADONLY) || !expert_mode) {
 			dbprintf(_("%s: not in expert mode, writing disabled\n"),
+				progname);
+			return 0;
+		}
+		if (xfs_sb_version_needsrepair(&mp->m_sb)) {
+			dbprintf(_("%s: filesystem needs xfs_repair\n"),
 				progname);
 			return 0;
 		}
@@ -543,6 +548,12 @@ label_f(
 			return 0;
 		}
 
+		if (xfs_sb_version_needsrepair(&mp->m_sb)) {
+			dbprintf(_("%s: filesystem needs xfs_repair\n"),
+				progname);
+			return 0;
+		}
+
 		dbprintf(_("writing all SBs\n"));
 		for (ag = 0; ag < mp->m_sb.sb_agcount; ag++)
 			if ((p = do_label(ag, argv[1])) == NULL) {
@@ -622,71 +633,79 @@ do_version(xfs_agnumber_t agno, uint16_t version, uint32_t features)
 
 static char *
 version_string(
-	xfs_sb_t	*sbp)
+	struct xfs_mount	*mp)
 {
-	static char	s[1024];
+	static char		s[1024];
 
-	if (XFS_SB_VERSION_NUM(sbp) == XFS_SB_VERSION_1)
+	if (XFS_SB_VERSION_NUM(&mp->m_sb) == XFS_SB_VERSION_1)
 		strcpy(s, "V1");
-	else if (XFS_SB_VERSION_NUM(sbp) == XFS_SB_VERSION_2)
+	else if (XFS_SB_VERSION_NUM(&mp->m_sb) == XFS_SB_VERSION_2)
 		strcpy(s, "V2");
-	else if (XFS_SB_VERSION_NUM(sbp) == XFS_SB_VERSION_3)
+	else if (XFS_SB_VERSION_NUM(&mp->m_sb) == XFS_SB_VERSION_3)
 		strcpy(s, "V3");
-	else if (XFS_SB_VERSION_NUM(sbp) == XFS_SB_VERSION_4)
+	else if (XFS_SB_VERSION_NUM(&mp->m_sb) == XFS_SB_VERSION_4)
 		strcpy(s, "V4");
-	else if (XFS_SB_VERSION_NUM(sbp) == XFS_SB_VERSION_5)
+	else if (XFS_SB_VERSION_NUM(&mp->m_sb) == XFS_SB_VERSION_5)
 		strcpy(s, "V5");
 
 	/*
 	 * We assume the state of these features now, so macros don't exist for
 	 * them any more.
 	 */
-	if (sbp->sb_versionnum & XFS_SB_VERSION_NLINKBIT)
+	if (xfs_has_nlink(mp))
 		strcat(s, ",NLINK");
-	if (sbp->sb_versionnum & XFS_SB_VERSION_SHAREDBIT)
+	if (mp->m_sb.sb_versionnum & XFS_SB_VERSION_SHAREDBIT)
 		strcat(s, ",SHARED");
-	if (sbp->sb_versionnum & XFS_SB_VERSION_DIRV2BIT)
+	if (mp->m_sb.sb_versionnum & XFS_SB_VERSION_DIRV2BIT)
 		strcat(s, ",DIRV2");
 
-	if (xfs_sb_version_hasattr(sbp))
+	if (xfs_has_attr(mp))
 		strcat(s, ",ATTR");
-	if (xfs_sb_version_hasquota(sbp))
+	if (xfs_has_quota(mp))
 		strcat(s, ",QUOTA");
-	if (xfs_sb_version_hasalign(sbp))
+	if (xfs_has_align(mp))
 		strcat(s, ",ALIGN");
-	if (xfs_sb_version_hasdalign(sbp))
+	if (xfs_has_dalign(mp))
 		strcat(s, ",DALIGN");
-	if (xfs_sb_version_haslogv2(sbp))
+	if (xfs_has_logv2(mp))
 		strcat(s, ",LOGV2");
 	/* This feature is required now as well */
-	if (sbp->sb_versionnum & XFS_SB_VERSION_EXTFLGBIT)
+	if (xfs_has_extflg(mp))
 		strcat(s, ",EXTFLG");
-	if (xfs_sb_version_hassector(sbp))
+	if (xfs_has_sector(mp))
 		strcat(s, ",SECTOR");
-	if (xfs_sb_version_hasasciici(sbp))
+	if (xfs_has_asciici(mp))
 		strcat(s, ",ASCII_CI");
-	if (xfs_sb_version_hasmorebits(sbp))
+	if (mp->m_sb.sb_versionnum & XFS_SB_VERSION_MOREBITSBIT)
 		strcat(s, ",MOREBITS");
-	if (xfs_sb_version_hasattr2(sbp))
+	if (xfs_has_attr2(mp))
 		strcat(s, ",ATTR2");
-	if (xfs_sb_version_haslazysbcount(sbp))
+	if (xfs_has_lazysbcount(mp))
 		strcat(s, ",LAZYSBCOUNT");
-	if (xfs_sb_version_hasprojid32bit(sbp))
+	if (xfs_has_projid32(mp))
 		strcat(s, ",PROJID32BIT");
-	if (xfs_sb_version_hascrc(sbp))
+	if (xfs_has_crc(mp))
 		strcat(s, ",CRC");
-	if (xfs_sb_version_hasftype(sbp))
+	if (xfs_has_ftype(mp))
 		strcat(s, ",FTYPE");
-	if (xfs_sb_version_hasfinobt(sbp))
+	if (xfs_has_finobt(mp))
 		strcat(s, ",FINOBT");
-	if (xfs_sb_version_hassparseinodes(sbp))
+	if (xfs_has_sparseinodes(mp))
 		strcat(s, ",SPARSE_INODES");
-	if (xfs_sb_version_hasmetauuid(sbp))
+	if (xfs_has_metauuid(mp))
 		strcat(s, ",META_UUID");
-	if (xfs_sb_version_hasrmapbt(sbp))
+	if (xfs_has_rmapbt(mp))
 		strcat(s, ",RMAPBT");
-	if (xfs_sb_version_hasreflink(sbp))
+	if (xfs_has_reflink(mp))
 		strcat(s, ",REFLINK");
+	if (xfs_has_inobtcounts(mp))
+		strcat(s, ",INOBTCNT");
+	if (xfs_has_bigtime(mp))
+		strcat(s, ",BIGTIME");
+	if (xfs_has_needsrepair(mp))
+		strcat(s, ",NEEDSREPAIR");
+	if (xfs_has_large_extent_counts(mp))
+		strcat(s, ",NREXT64");
 	return s;
 }
 
@@ -703,6 +722,7 @@ version_f(
 {
 	uint16_t	version = 0;
 	uint32_t	features = 0;
+	unsigned long	old_mfeatures = 0;
 	xfs_agnumber_t	ag;
 
 	if (argc == 2) {	/* WRITE VERSION */
@@ -751,7 +771,7 @@ version_f(
 				version = 0x0034 | XFS_SB_VERSION_LOGV2BIT;
 				break;
 			case XFS_SB_VERSION_4:
-				if (xfs_sb_version_haslogv2(&mp->m_sb))
+				if (xfs_has_logv2(mp))
 					dbprintf(
 		_("version 2 log format is already in use\n"));
 				else
@@ -770,7 +790,7 @@ version_f(
 			return 0;
 		} else if (!strcasecmp(argv[1], "attr1")) {
 
-			if (xfs_sb_version_hasattr2(&mp->m_sb)) {
+			if (xfs_has_attr2(mp)) {
 				if (!(mp->m_sb.sb_features2 &=
 						~XFS_SB_VERSION2_ATTR2BIT))
 					mp->m_sb.sb_versionnum &=
@@ -785,7 +805,7 @@ version_f(
 			version = mp->m_sb.sb_versionnum;
 			features = mp->m_sb.sb_features2;
 		} else if (!strcasecmp(argv[1], "projid32bit")) {
-			xfs_sb_version_addprojid32bit(&mp->m_sb);
+			xfs_sb_version_addprojid32(&mp->m_sb);
 			version = mp->m_sb.sb_versionnum;
 			features = mp->m_sb.sb_features2;
 		} else {
@@ -804,6 +824,8 @@ version_f(
 				}
 			mp->m_sb.sb_versionnum = version;
 			mp->m_sb.sb_features2 = features;
+			mp->m_features &= ~XFS_FEAT_ATTR2;
+			mp->m_features |= libxfs_sb_version_to_features(&mp->m_sb);
 		}
 	}
 
@@ -814,14 +836,17 @@ version_f(
 		features = mp->m_sb.sb_features2;
 		mp->m_sb.sb_versionnum = strtoul(argv[1], &sp, 0);
 		mp->m_sb.sb_features2 = strtoul(argv[2], &sp, 0);
+		old_mfeatures = mp->m_features;
+		mp->m_features = libxfs_sb_version_to_features(&mp->m_sb);
 	}
 
 	dbprintf(_("versionnum [0x%x+0x%x] = %s\n"), mp->m_sb.sb_versionnum,
-			mp->m_sb.sb_features2, version_string(&mp->m_sb));
+			mp->m_sb.sb_features2, version_string(mp));
 
 	if (argc == 3) {	/* now reset... */
 		mp->m_sb.sb_versionnum = version;
 		mp->m_sb.sb_features2 = features;
+		mp->m_features = old_mfeatures;
 		return 0;
 	}
 

@@ -25,12 +25,16 @@
 
 #include "libxfs.h"		/* for now */
 
+#ifndef HAVE_LIBURCU_ATOMIC64
+pthread_mutex_t	atomic64_lock = PTHREAD_MUTEX_INITIALIZER;
+#endif
+
 char *progname = "libxfs";	/* default, changed by each tool */
 
 struct cache *libxfs_bcache;	/* global buffer cache */
 int libxfs_bhash_size;		/* #buckets in bcache */
 
-int	use_xfs_buf_lock;	/* global flag: use xfs_buf_t locks for MT */
+int	use_xfs_buf_lock;	/* global flag: use xfs_buf locks for MT */
 
 /*
  * dev_map - map open devices to fd.
@@ -121,10 +125,14 @@ retry:
 	}
 
 	if (!readonly && setblksize && (statb.st_mode & S_IFMT) == S_IFBLK) {
-		if (setblksize == 1)
+		if (setblksize == 1) {
 			/* use the default blocksize */
 			(void)platform_set_blocksize(fd, path, statb.st_rdev, XFS_MIN_SECTORSIZE, 0);
-		else {
+		} else if (dio) {
+			/* try to use the given explicit blocksize */
+			(void)platform_set_blocksize(fd, path, statb.st_rdev,
+					setblksize, 0);
+		} else {
 			/* given an explicit blocksize to use */
 			if (platform_set_blocksize(fd, path, statb.st_rdev, setblksize, 1))
 			    exit(1);
@@ -222,44 +230,55 @@ check_open(char *path, int flags, char **rawfile, char **blockfile)
 }
 
 /*
- * Initialize/destroy all of the zone allocators we use.
+ * Initialize/destroy all of the cache allocators we use.
  */
 static void
-init_zones(void)
+init_caches(void)
 {
-	/* initialise zone allocation */
-	xfs_buf_zone = kmem_zone_init(sizeof(struct xfs_buf), "xfs_buffer");
-	xfs_inode_zone = kmem_zone_init(sizeof(struct xfs_inode), "xfs_inode");
-	xfs_ifork_zone = kmem_zone_init(sizeof(struct xfs_ifork), "xfs_ifork");
-	xfs_ili_zone = kmem_zone_init(
+	int	error;
+
+	/* initialise cache allocation */
+	xfs_buf_cache = kmem_cache_init(sizeof(struct xfs_buf), "xfs_buffer");
+	xfs_inode_cache = kmem_cache_init(sizeof(struct xfs_inode), "xfs_inode");
+	xfs_ifork_cache = kmem_cache_init(sizeof(struct xfs_ifork), "xfs_ifork");
+	xfs_ili_cache = kmem_cache_init(
 			sizeof(struct xfs_inode_log_item),"xfs_inode_log_item");
-	xfs_buf_item_zone = kmem_zone_init(
+	xfs_buf_item_cache = kmem_cache_init(
 			sizeof(struct xfs_buf_log_item), "xfs_buf_log_item");
-	xfs_da_state_zone = kmem_zone_init(
+	error = xfs_defer_init_item_caches();
+	if (error) {
+		fprintf(stderr, "Could not allocate defer init item caches.\n");
+		abort();
+	}
+	xfs_da_state_cache = kmem_cache_init(
 			sizeof(struct xfs_da_state), "xfs_da_state");
-	xfs_btree_cur_zone = kmem_zone_init(
-			sizeof(struct xfs_btree_cur), "xfs_btree_cur");
-	xfs_bmap_free_item_zone = kmem_zone_init(
+	error = xfs_btree_init_cur_caches();
+	if (error) {
+		fprintf(stderr, "Could not allocate btree cursor caches.\n");
+		abort();
+	}
+	xfs_extfree_item_cache = kmem_cache_init(
 			sizeof(struct xfs_extent_free_item),
-			"xfs_bmap_free_item");
-	xfs_trans_zone = kmem_zone_init(
+			"xfs_extfree_item");
+	xfs_trans_cache = kmem_cache_init(
 			sizeof(struct xfs_trans), "xfs_trans");
 }
 
 static int
-destroy_zones(void)
+destroy_caches(void)
 {
 	int	leaked = 0;
 
-	leaked += kmem_zone_destroy(xfs_buf_zone);
-	leaked += kmem_zone_destroy(xfs_ili_zone);
-	leaked += kmem_zone_destroy(xfs_inode_zone);
-	leaked += kmem_zone_destroy(xfs_ifork_zone);
-	leaked += kmem_zone_destroy(xfs_buf_item_zone);
-	leaked += kmem_zone_destroy(xfs_da_state_zone);
-	leaked += kmem_zone_destroy(xfs_btree_cur_zone);
-	leaked += kmem_zone_destroy(xfs_bmap_free_item_zone);
-	leaked += kmem_zone_destroy(xfs_trans_zone);
+	leaked += kmem_cache_destroy(xfs_buf_cache);
+	leaked += kmem_cache_destroy(xfs_ili_cache);
+	leaked += kmem_cache_destroy(xfs_inode_cache);
+	leaked += kmem_cache_destroy(xfs_ifork_cache);
+	leaked += kmem_cache_destroy(xfs_buf_item_cache);
+	leaked += kmem_cache_destroy(xfs_da_state_cache);
+	xfs_defer_destroy_item_caches();
+	xfs_btree_destroy_cur_caches();
+	leaked += kmem_cache_destroy(xfs_extfree_item_cache);
+	leaked += kmem_cache_destroy(xfs_trans_cache);
 
 	return leaked;
 }
@@ -310,6 +329,8 @@ libxfs_init(libxfs_init_t *a)
 	fd = -1;
 	flags = (a->isreadonly | a->isdirect);
 
+	rcu_init();
+	rcu_register_thread();
 	radix_tree_init();
 
 	if (a->volname) {
@@ -394,7 +415,7 @@ libxfs_init(libxfs_init_t *a)
 				   &libxfs_bcache_operations);
 	use_xfs_buf_lock = a->usebuflock;
 	xfs_dir_startup();
-	init_zones();
+	init_caches();
 	rval = 1;
 done:
 	if (dpath[0])
@@ -405,8 +426,10 @@ done:
 		unlink(rtpath);
 	if (fd >= 0)
 		close(fd);
-	if (!rval)
+	if (!rval) {
 		libxfs_close_devices(a);
+		rcu_unregister_thread();
+	}
 
 	return rval;
 }
@@ -417,33 +440,45 @@ done:
  */
 static int
 rtmount_init(
-	xfs_mount_t	*mp,	/* file system mount structure */
-	int		flags)
+	xfs_mount_t	*mp)	/* file system mount structure */
 {
 	struct xfs_buf	*bp;	/* buffer for last block of subvolume */
-	struct xfs_sb	*sbp;	/* filesystem superblock copy in mount */
 	xfs_daddr_t	d;	/* address of last block of subvolume */
 	int		error;
 
-	sbp = &mp->m_sb;
-	if (sbp->sb_rblocks == 0)
+	if (mp->m_sb.sb_rblocks == 0)
 		return 0;
-	if (mp->m_rtdev_targp->dev == 0 && !(flags & LIBXFS_MOUNT_DEBUGGER)) {
+
+	if (xfs_has_reflink(mp)) {
+		fprintf(stderr,
+	_("%s: Reflink not compatible with realtime device. Please try a newer xfsprogs.\n"),
+				progname);
+		return -1;
+	}
+
+	if (xfs_has_rmapbt(mp)) {
+		fprintf(stderr,
+	_("%s: Reverse mapping btree not compatible with realtime device. Please try a newer xfsprogs.\n"),
+				progname);
+		return -1;
+	}
+
+	if (mp->m_rtdev_targp->bt_bdev == 0 && !xfs_is_debugger(mp)) {
 		fprintf(stderr, _("%s: filesystem has a realtime subvolume\n"),
 			progname);
 		return -1;
 	}
-	mp->m_rsumlevels = sbp->sb_rextslog + 1;
+	mp->m_rsumlevels = mp->m_sb.sb_rextslog + 1;
 	mp->m_rsumsize =
 		(uint)sizeof(xfs_suminfo_t) * mp->m_rsumlevels *
-		sbp->sb_rbmblocks;
-	mp->m_rsumsize = roundup(mp->m_rsumsize, sbp->sb_blocksize);
+		mp->m_sb.sb_rbmblocks;
+	mp->m_rsumsize = roundup(mp->m_rsumsize, mp->m_sb.sb_blocksize);
 	mp->m_rbmip = mp->m_rsumip = NULL;
 
 	/*
 	 * Allow debugger to be run without the realtime device present.
 	 */
-	if (flags & LIBXFS_MOUNT_DEBUGGER)
+	if (xfs_is_debugger(mp))
 		return 0;
 
 	/*
@@ -467,115 +502,111 @@ rtmount_init(
 	return 0;
 }
 
-static int
-libxfs_initialize_perag(
-	xfs_mount_t	*mp,
-	xfs_agnumber_t	agcount,
-	xfs_agnumber_t	*maxagi)
+static bool
+xfs_set_inode_alloc_perag(
+	struct xfs_perag	*pag,
+	xfs_ino_t		ino,
+	xfs_agnumber_t		max_metadata)
 {
-	xfs_agnumber_t	index, max_metadata;
-	xfs_agnumber_t	first_initialised = 0;
-	xfs_perag_t	*pag;
+	if (!xfs_is_inode32(pag->pag_mount)) {
+		set_bit(XFS_AGSTATE_ALLOWS_INODES, &pag->pag_opstate);
+		clear_bit(XFS_AGSTATE_PREFERS_METADATA, &pag->pag_opstate);
+		return false;
+	}
+
+	if (ino > XFS_MAXINUMBER_32) {
+		clear_bit(XFS_AGSTATE_ALLOWS_INODES, &pag->pag_opstate);
+		clear_bit(XFS_AGSTATE_PREFERS_METADATA, &pag->pag_opstate);
+		return false;
+	}
+
+	set_bit(XFS_AGSTATE_ALLOWS_INODES, &pag->pag_opstate);
+	if (pag->pag_agno < max_metadata)
+		set_bit(XFS_AGSTATE_PREFERS_METADATA, &pag->pag_opstate);
+	else
+		clear_bit(XFS_AGSTATE_PREFERS_METADATA, &pag->pag_opstate);
+	return true;
+}
+
+/*
+ * Set parameters for inode allocation heuristics, taking into account
+ * filesystem size and inode32/inode64 mount options; i.e. specifically
+ * whether or not XFS_MOUNT_SMALL_INUMS is set.
+ *
+ * Inode allocation patterns are altered only if inode32 is requested
+ * (XFS_MOUNT_SMALL_INUMS), and the filesystem is sufficiently large.
+ * If altered, XFS_MOUNT_32BITINODES is set as well.
+ *
+ * An agcount independent of that in the mount structure is provided
+ * because in the growfs case, mp->m_sb.sb_agcount is not yet updated
+ * to the potentially higher ag count.
+ *
+ * Returns the maximum AG index which may contain inodes.
+ *
+ * NOTE: userspace has no concept of "inode32" and so xfs_has_small_inums
+ * is always false, and much of this code is a no-op.
+ */
+xfs_agnumber_t
+xfs_set_inode_alloc(
+	struct xfs_mount *mp,
+	xfs_agnumber_t	agcount)
+{
+	xfs_agnumber_t	index;
+	xfs_agnumber_t	maxagi = 0;
+	xfs_sb_t	*sbp = &mp->m_sb;
+	xfs_agnumber_t	max_metadata;
 	xfs_agino_t	agino;
 	xfs_ino_t	ino;
-	xfs_sb_t	*sbp = &mp->m_sb;
-	int		error = -ENOMEM;
 
 	/*
-	 * Walk the current per-ag tree so we don't try to initialise AGs
-	 * that already exist (growfs case). Allocate and insert all the
-	 * AGs we don't find ready for initialisation.
+	 * Calculate how much should be reserved for inodes to meet
+	 * the max inode percentage.  Used only for inode32.
 	 */
-	for (index = 0; index < agcount; index++) {
-		pag = xfs_perag_get(mp, index);
-		if (pag) {
-			xfs_perag_put(pag);
-			continue;
-		}
-		if (!first_initialised)
-			first_initialised = index;
+	if (M_IGEO(mp)->maxicount) {
+		uint64_t	icount;
 
-		pag = kmem_zalloc(sizeof(*pag), KM_MAYFAIL);
-		if (!pag)
-			goto out_unwind;
-		pag->pag_agno = index;
-		pag->pag_mount = mp;
-
-		if (radix_tree_insert(&mp->m_perag_tree, index, pag)) {
-			error = -EEXIST;
-			goto out_unwind;
-		}
+		icount = sbp->sb_dblocks * sbp->sb_imax_pct;
+		do_div(icount, 100);
+		icount += sbp->sb_agblocks - 1;
+		do_div(icount, sbp->sb_agblocks);
+		max_metadata = icount;
+	} else {
+		max_metadata = agcount;
 	}
 
-	/*
-	 * If we mount with the inode64 option, or no inode overflows
-	 * the legacy 32-bit address space clear the inode32 option.
-	 */
-	agino = XFS_AGB_TO_AGINO(mp, sbp->sb_agblocks - 1);
+	/* Get the last possible inode in the filesystem */
+	agino =	XFS_AGB_TO_AGINO(mp, sbp->sb_agblocks - 1);
 	ino = XFS_AGINO_TO_INO(mp, agcount - 1, agino);
 
-	if ((mp->m_flags & XFS_MOUNT_SMALL_INUMS) && ino > XFS_MAXINUMBER_32)
-		mp->m_flags |= XFS_MOUNT_32BITINODES;
+	/*
+	 * If user asked for no more than 32-bit inodes, and the fs is
+	 * sufficiently large, set XFS_MOUNT_32BITINODES if we must alter
+	 * the allocator to accommodate the request.
+	 */
+	if (xfs_has_small_inums(mp) && ino > XFS_MAXINUMBER_32)
+		set_bit(XFS_OPSTATE_INODE32, &mp->m_opstate);
 	else
-		mp->m_flags &= ~XFS_MOUNT_32BITINODES;
+		clear_bit(XFS_OPSTATE_INODE32, &mp->m_opstate);
 
-	if (mp->m_flags & XFS_MOUNT_32BITINODES) {
-		/*
-		 * Calculate how much should be reserved for inodes to meet
-		 * the max inode percentage.
-		 */
-		if (M_IGEO(mp)->maxicount) {
-			uint64_t	icount;
+	for (index = 0; index < agcount; index++) {
+		struct xfs_perag	*pag;
 
-			icount = sbp->sb_dblocks * sbp->sb_imax_pct;
-			do_div(icount, 100);
-			icount += sbp->sb_agblocks - 1;
-			do_div(icount, sbp->sb_agblocks);
-			max_metadata = icount;
-		} else {
-			max_metadata = agcount;
-		}
+		ino = XFS_AGINO_TO_INO(mp, index, agino);
 
-		for (index = 0; index < agcount; index++) {
-			ino = XFS_AGINO_TO_INO(mp, index, agino);
-			if (ino > XFS_MAXINUMBER_32) {
-				index++;
-				break;
-			}
-
-			pag = xfs_perag_get(mp, index);
-			pag->pagi_inodeok = 1;
-			if (index < max_metadata)
-				pag->pagf_metadata = 1;
-			xfs_perag_put(pag);
-		}
-	} else {
-		for (index = 0; index < agcount; index++) {
-			pag = xfs_perag_get(mp, index);
-			pag->pagi_inodeok = 1;
-			xfs_perag_put(pag);
-		}
+		pag = xfs_perag_get(mp, index);
+		if (xfs_set_inode_alloc_perag(pag, ino, max_metadata))
+			maxagi++;
+		xfs_perag_put(pag);
 	}
 
-	if (maxagi)
-		*maxagi = index;
-
-	mp->m_ag_prealloc_blocks = xfs_prealloc_blocks(mp);
-	return 0;
-
-out_unwind:
-	kmem_free(pag);
-	for (; index > first_initialised; index--) {
-		pag = radix_tree_delete(&mp->m_perag_tree, index);
-		kmem_free(pag);
-	}
-	return error;
+	return xfs_is_inode32(mp) ? maxagi : agcount;
 }
 
 static struct xfs_buftarg *
 libxfs_buftarg_alloc(
 	struct xfs_mount	*mp,
-	dev_t			dev)
+	dev_t			dev,
+	unsigned long		write_fails)
 {
 	struct xfs_buftarg	*btp;
 
@@ -586,11 +617,30 @@ libxfs_buftarg_alloc(
 		exit(1);
 	}
 	btp->bt_mount = mp;
-	btp->dev = dev;
+	btp->bt_bdev = dev;
 	btp->flags = 0;
+	if (write_fails) {
+		btp->writes_left = write_fails;
+		btp->flags |= XFS_BUFTARG_INJECT_WRITE_FAIL;
+	}
+	pthread_mutex_init(&btp->lock, NULL);
 
 	return btp;
 }
+
+enum libxfs_write_failure_nums {
+	WF_DATA = 0,
+	WF_LOG,
+	WF_RT,
+	WF_MAX_OPTS,
+};
+
+static char *wf_opts[] = {
+	[WF_DATA]		= "ddev",
+	[WF_LOG]		= "logdev",
+	[WF_RT]			= "rtdev",
+	[WF_MAX_OPTS]		= NULL,
+};
 
 void
 libxfs_buftarg_init(
@@ -599,9 +649,49 @@ libxfs_buftarg_init(
 	dev_t			logdev,
 	dev_t			rtdev)
 {
+	char			*p = getenv("LIBXFS_DEBUG_WRITE_CRASH");
+	unsigned long		dfail = 0, lfail = 0, rfail = 0;
+
+	/* Simulate utility crash after a certain number of writes. */
+	while (p && *p) {
+		char *val;
+
+		switch (getsubopt(&p, wf_opts, &val)) {
+		case WF_DATA:
+			if (!val) {
+				fprintf(stderr,
+		_("ddev write fail requires a parameter\n"));
+				exit(1);
+			}
+			dfail = strtoul(val, NULL, 0);
+			break;
+		case WF_LOG:
+			if (!val) {
+				fprintf(stderr,
+		_("logdev write fail requires a parameter\n"));
+				exit(1);
+			}
+			lfail = strtoul(val, NULL, 0);
+			break;
+		case WF_RT:
+			if (!val) {
+				fprintf(stderr,
+		_("rtdev write fail requires a parameter\n"));
+				exit(1);
+			}
+			rfail = strtoul(val, NULL, 0);
+			break;
+		default:
+			fprintf(stderr, _("unknown write fail type %s\n"),
+					val);
+			exit(1);
+			break;
+		}
+	}
+
 	if (mp->m_ddev_targp) {
 		/* should already have all buftargs initialised */
-		if (mp->m_ddev_targp->dev != dev ||
+		if (mp->m_ddev_targp->bt_bdev != dev ||
 		    mp->m_ddev_targp->bt_mount != mp) {
 			fprintf(stderr,
 				_("%s: bad buftarg reinit, ddev\n"),
@@ -615,14 +705,14 @@ libxfs_buftarg_init(
 					progname);
 				exit(1);
 			}
-		} else if (mp->m_logdev_targp->dev != logdev ||
+		} else if (mp->m_logdev_targp->bt_bdev != logdev ||
 			   mp->m_logdev_targp->bt_mount != mp) {
 			fprintf(stderr,
 				_("%s: bad buftarg reinit, logdev\n"),
 				progname);
 			exit(1);
 		}
-		if (rtdev && (mp->m_rtdev_targp->dev != rtdev ||
+		if (rtdev && (mp->m_rtdev_targp->bt_bdev != rtdev ||
 			      mp->m_rtdev_targp->bt_mount != mp)) {
 			fprintf(stderr,
 				_("%s: bad buftarg reinit, rtdev\n"),
@@ -632,12 +722,55 @@ libxfs_buftarg_init(
 		return;
 	}
 
-	mp->m_ddev_targp = libxfs_buftarg_alloc(mp, dev);
+	mp->m_ddev_targp = libxfs_buftarg_alloc(mp, dev, dfail);
 	if (!logdev || logdev == dev)
 		mp->m_logdev_targp = mp->m_ddev_targp;
 	else
-		mp->m_logdev_targp = libxfs_buftarg_alloc(mp, logdev);
-	mp->m_rtdev_targp = libxfs_buftarg_alloc(mp, rtdev);
+		mp->m_logdev_targp = libxfs_buftarg_alloc(mp, logdev, lfail);
+	mp->m_rtdev_targp = libxfs_buftarg_alloc(mp, rtdev, rfail);
+}
+
+/* Compute maximum possible height for per-AG btree types for this fs. */
+static inline void
+xfs_agbtree_compute_maxlevels(
+	struct xfs_mount	*mp)
+{
+	unsigned int		levels;
+
+	levels = max(mp->m_alloc_maxlevels, M_IGEO(mp)->inobt_maxlevels);
+	levels = max(levels, mp->m_rmap_maxlevels);
+	mp->m_agbtree_maxlevels = max(levels, mp->m_refc_maxlevels);
+}
+
+/* Compute maximum possible height of all btrees. */
+void
+libxfs_compute_all_maxlevels(
+	struct xfs_mount	*mp)
+{
+	xfs_alloc_compute_maxlevels(mp);
+	xfs_bmap_compute_maxlevels(mp, XFS_DATA_FORK);
+	xfs_bmap_compute_maxlevels(mp, XFS_ATTR_FORK);
+	xfs_ialloc_setup_geometry(mp);
+	xfs_rmapbt_compute_maxlevels(mp);
+	xfs_refcountbt_compute_maxlevels(mp);
+
+	xfs_agbtree_compute_maxlevels(mp);
+}
+
+/*
+ * precalculate the low space thresholds for dynamic speculative preallocation.
+ */
+static void
+xfs_set_low_space_thresholds(
+	struct xfs_mount	*mp)
+{
+	uint64_t		dblocks = mp->m_sb.sb_dblocks;
+	int			i;
+
+	do_div(dblocks, 100);
+
+	for (i = 0; i < XFS_LOWSP_MAX; i++)
+		mp->m_low_space[i] = dblocks * (i + 1);
 }
 
 /*
@@ -652,38 +785,39 @@ libxfs_mount(
 	dev_t			dev,
 	dev_t			logdev,
 	dev_t			rtdev,
-	int			flags)
+	unsigned int		flags)
 {
 	struct xfs_buf		*bp;
 	struct xfs_sb		*sbp;
 	xfs_daddr_t		d;
-	bool			debugger = (flags & LIBXFS_MOUNT_DEBUGGER);
 	int			error;
 
+	mp->m_features = xfs_sb_version_to_features(sb);
+	if (flags & LIBXFS_MOUNT_DEBUGGER)
+		xfs_set_debugger(mp);
+	if (flags & LIBXFS_MOUNT_REPORT_CORRUPTION)
+		xfs_set_reporting_corruption(mp);
 	libxfs_buftarg_init(mp, dev, logdev, rtdev);
 
 	mp->m_finobt_nores = true;
-	mp->m_flags = (LIBXFS_MOUNT_32BITINODES|LIBXFS_MOUNT_32BITINOOPT);
+	xfs_set_inode32(mp);
 	mp->m_sb = *sb;
 	INIT_RADIX_TREE(&mp->m_perag_tree, GFP_KERNEL);
-	sbp = &(mp->m_sb);
+	sbp = &mp->m_sb;
+	spin_lock_init(&mp->m_sb_lock);
+	spin_lock_init(&mp->m_agirotor_lock);
 
 	xfs_sb_mount_common(mp, sb);
 
 	/*
 	 * Set whether we're using stripe alignment.
 	 */
-	if (xfs_sb_version_hasdalign(&mp->m_sb)) {
+	if (xfs_has_dalign(mp)) {
 		mp->m_dalign = sbp->sb_unit;
 		mp->m_swidth = sbp->sb_width;
 	}
 
-	xfs_alloc_compute_maxlevels(mp);
-	xfs_bmap_compute_maxlevels(mp, XFS_DATA_FORK);
-	xfs_bmap_compute_maxlevels(mp, XFS_ATTR_FORK);
-	xfs_ialloc_setup_geometry(mp);
-	xfs_rmapbt_compute_maxlevels(mp);
-	xfs_refcountbt_compute_maxlevels(mp);
+	libxfs_compute_all_maxlevels(mp);
 
 	/*
 	 * Check that the data (and log if separate) are an ok size.
@@ -691,7 +825,7 @@ libxfs_mount(
 	d = (xfs_daddr_t) XFS_FSB_TO_BB(mp, mp->m_sb.sb_dblocks);
 	if (XFS_BB_TO_FSB(mp, d) != mp->m_sb.sb_dblocks) {
 		fprintf(stderr, _("%s: size check failed\n"), progname);
-		if (!(flags & LIBXFS_MOUNT_DEBUGGER))
+		if (!xfs_is_debugger(mp))
 			return NULL;
 	}
 
@@ -726,9 +860,6 @@ libxfs_mount(
 
 	xfs_da_mount(mp);
 
-	if (xfs_sb_version_hasattr2(&mp->m_sb))
-		mp->m_flags |= LIBXFS_MOUNT_ATTR2;
-
 	/* Initialize the precomputed transaction reservations values */
 	xfs_trans_init(mp);
 
@@ -740,13 +871,13 @@ libxfs_mount(
 			XFS_FSS_TO_BB(mp, 1), 0, &bp, NULL);
 	if (error) {
 		fprintf(stderr, _("%s: data size check failed\n"), progname);
-		if (!debugger)
+		if (!xfs_is_debugger(mp))
 			return NULL;
 	} else
 		libxfs_buf_relse(bp);
 
-	if (mp->m_logdev_targp->dev &&
-	    mp->m_logdev_targp->dev != mp->m_ddev_targp->dev) {
+	if (mp->m_logdev_targp->bt_bdev &&
+	    mp->m_logdev_targp->bt_bdev != mp->m_ddev_targp->bt_bdev) {
 		d = (xfs_daddr_t) XFS_FSB_TO_BB(mp, mp->m_sb.sb_logblocks);
 		if (XFS_BB_TO_FSB(mp, d) != mp->m_sb.sb_logblocks ||
 		    libxfs_buf_read(mp->m_logdev_targp,
@@ -754,15 +885,17 @@ libxfs_mount(
 				0, &bp, NULL)) {
 			fprintf(stderr, _("%s: log size checks failed\n"),
 					progname);
-			if (!debugger)
+			if (!xfs_is_debugger(mp))
 				return NULL;
 		}
 		if (bp)
 			libxfs_buf_relse(bp);
 	}
 
+	xfs_set_low_space_thresholds(mp);
+
 	/* Initialize realtime fields in the mount structure */
-	if (rtmount_init(mp, flags)) {
+	if (rtmount_init(mp)) {
 		fprintf(stderr, _("%s: realtime device init failed\n"),
 			progname);
 			return NULL;
@@ -782,7 +915,7 @@ libxfs_mount(
 		if (error) {
 			fprintf(stderr, _("%s: read of AG %u failed\n"),
 						progname, sbp->sb_agcount);
-			if (!debugger)
+			if (!xfs_is_debugger(mp))
 				return NULL;
 			fprintf(stderr, _("%s: limiting reads to AG 0\n"),
 								progname);
@@ -791,12 +924,14 @@ libxfs_mount(
 			libxfs_buf_relse(bp);
 	}
 
-	error = libxfs_initialize_perag(mp, sbp->sb_agcount, &mp->m_maxagi);
+	error = libxfs_initialize_perag(mp, sbp->sb_agcount, sbp->sb_dblocks,
+			&mp->m_maxagi);
 	if (error) {
 		fprintf(stderr, _("%s: perag init failed\n"),
 			progname);
 		exit(1);
 	}
+	xfs_set_perag_data_loaded(mp);
 
 	return mp;
 }
@@ -855,7 +990,7 @@ _("%s: Flushing the %s failed, err=%d!\n"),
  * Flush all dirty buffers to stable storage and report on writes that didn't
  * make it to stable storage.
  */
-static int
+int
 libxfs_flush_mount(
 	struct xfs_mount	*mp)
 {
@@ -863,13 +998,13 @@ libxfs_flush_mount(
 	int			err2;
 
 	/*
-	 * Purge the buffer cache to write all dirty buffers to disk and free
-	 * all incore buffers.  Buffers that fail write verification will cause
-	 * the CORRUPT_WRITE flag to be set in the buftarg.  Buffers that
-	 * cannot be written will cause the LOST_WRITE flag to be set in the
-	 * buftarg.
+	 * Flush the buffer cache to write all dirty buffers to disk.  Buffers
+	 * that fail write verification will cause the CORRUPT_WRITE flag to be
+	 * set in the buftarg.  Buffers that cannot be written will cause the
+	 * LOST_WRITE flag to be set in the buftarg.  Once that's done,
+	 * instruct the disks to persist their write caches.
 	 */
-	libxfs_bcache_purge();
+	libxfs_bcache_flush();
 
 	/* Flush all kernel and disk write caches, and report failures. */
 	if (mp->m_ddev_targp) {
@@ -902,18 +1037,24 @@ int
 libxfs_umount(
 	struct xfs_mount	*mp)
 {
-	struct xfs_perag	*pag;
-	int			agno;
 	int			error;
 
 	libxfs_rtmount_destroy(mp);
 
+	/*
+	 * Purge the buffer cache to write all dirty buffers to disk and free
+	 * all incore buffers, then pick up the outcome when we tell the disks
+	 * to persist their write caches.
+	 */
+	libxfs_bcache_purge();
 	error = libxfs_flush_mount(mp);
 
-	for (agno = 0; agno < mp->m_maxagi; agno++) {
-		pag = radix_tree_delete(&mp->m_perag_tree, agno);
-		kmem_free(pag);
-	}
+	/*
+	 * Only try to free the per-AG structures if we set them up in the
+	 * first place.
+	 */
+	if (xfs_is_perag_data_loaded(mp))
+		libxfs_free_perag(mp);
 
 	kmem_free(mp->m_attr_geo);
 	kmem_free(mp->m_dir_geo);
@@ -937,11 +1078,12 @@ libxfs_destroy(
 
 	libxfs_close_devices(li);
 
-	/* Free everything from the buffer cache before freeing buffer zone */
+	/* Free everything from the buffer cache before freeing buffer cache */
 	libxfs_bcache_purge();
 	libxfs_bcache_free();
 	cache_destroy(libxfs_bcache);
-	leaked = destroy_zones();
+	leaked = destroy_caches();
+	rcu_unregister_thread();
 	if (getenv("LIBXFS_LEAK_CHECK") && leaked)
 		exit(1);
 }

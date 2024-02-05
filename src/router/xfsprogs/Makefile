@@ -69,14 +69,6 @@ ifneq ("$(XGETTEXT)","")
 TOOL_SUBDIRS += po
 endif
 
-# If we are on OS X, use glibtoolize from MacPorts, as OS X doesn't have
-# libtoolize binary itself.
-LIBTOOLIZE_TEST=$(shell libtoolize --version >/dev/null 2>&1 && echo found)
-LIBTOOLIZE_BIN=libtoolize
-ifneq ("$(LIBTOOLIZE_TEST)","found")
-LIBTOOLIZE_BIN=glibtoolize
-endif
-
 # include is listed last so it is processed last in clean rules.
 SUBDIRS = $(LIBFROG_SUBDIR) $(LIB_SUBDIRS) $(TOOL_SUBDIRS) include
 
@@ -111,14 +103,8 @@ else
 clean:	# if configure hasn't run, nothing to clean
 endif
 
-
-# Recent versions of libtool require the -i option for copying auxiliary
-# files (config.sub, config.guess, install-sh, ltmain.sh), while older
-# versions will copy those files anyway, and don't understand -i.
-LIBTOOLIZE_INSTALL = `$(LIBTOOLIZE_BIN) -n -i >/dev/null 2>/dev/null && echo -i`
-
 configure: configure.ac
-	$(LIBTOOLIZE_BIN) -c $(LIBTOOLIZE_INSTALL) -f
+	libtoolize -c -i -f
 	cp include/install-sh .
 	aclocal -I m4
 	autoconf

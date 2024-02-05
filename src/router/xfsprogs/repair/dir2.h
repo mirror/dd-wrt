@@ -12,14 +12,14 @@ struct bmap_ext;
 
 int
 process_dir2(
-	xfs_mount_t	*mp,
-	xfs_ino_t	ino,
-	xfs_dinode_t	*dip,
-	int		ino_discovery,
-	int		*dirty,
-	char		*dirname,
-	xfs_ino_t	*parent,
-	struct blkmap	*blkmap);
+	xfs_mount_t		*mp,
+	xfs_ino_t		ino,
+	struct xfs_dinode	*dip,
+	int			ino_discovery,
+	int			*dirty,
+	char			*dirname,
+	xfs_ino_t		*parent,
+	struct blkmap		*blkmap);
 
 void
 process_sf_dir2_fixi8(
@@ -27,7 +27,7 @@ process_sf_dir2_fixi8(
 	struct xfs_dir2_sf_hdr	*sfp,
 	xfs_dir2_sf_entry_t	**next_sfep);
 
-int
+bool
 dir2_is_badino(
 	xfs_ino_t	ino);
 

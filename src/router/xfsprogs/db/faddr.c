@@ -69,7 +69,7 @@ fa_attrblock(
 	bmap_ext_t	bm;
 	uint32_t	bno;
 	xfs_fsblock_t	dfsbno;
-	int		nex;
+	xfs_extnum_t	nex;
 
 	bno = (uint32_t)getbitval(obj, bit, bitsz(bno), BVUNSIGNED);
 	if (bno == 0) {
@@ -97,7 +97,7 @@ fa_cfileoffa(
 	bmap_ext_t	bm;
 	xfs_fileoff_t	bno;
 	xfs_fsblock_t	dfsbno;
-	int		nex;
+	xfs_extnum_t	nex;
 
 	bno = (xfs_fileoff_t)getbitval(obj, bit, BMBT_STARTOFF_BITLEN,
 		BVUNSIGNED);
@@ -127,8 +127,8 @@ fa_cfileoffd(
 	bmap_ext_t	*bmp;
 	xfs_fileoff_t	bno;
 	xfs_fsblock_t	dfsbno;
-	int		nb;
-	int		nex;
+	xfs_extnum_t	nb;
+	xfs_extnum_t	nex;
 
 	bno = (xfs_fileoff_t)getbitval(obj, bit, BMBT_STARTOFF_BITLEN,
 		BVUNSIGNED);
@@ -183,7 +183,7 @@ fa_dfiloffa(
 	bmap_ext_t	bm;
 	xfs_fileoff_t	bno;
 	xfs_fsblock_t	dfsbno;
-	int		nex;
+	xfs_extnum_t	nex;
 
 	bno = (xfs_fileoff_t)getbitval(obj, bit, bitsz(bno), BVUNSIGNED);
 	if (bno == NULLFILEOFF) {
@@ -212,8 +212,8 @@ fa_dfiloffd(
 	bmap_ext_t	*bmp;
 	xfs_fileoff_t	bno;
 	xfs_fsblock_t	dfsbno;
-	int		nb;
-	int		nex;
+	xfs_extnum_t	nb;
+	xfs_extnum_t	nex;
 
 	bno = (xfs_fileoff_t)getbitval(obj, bit, bitsz(bno), BVUNSIGNED);
 	if (bno == NULLFILEOFF) {
@@ -266,7 +266,7 @@ fa_dirblock(
 	bmap_ext_t	*bmp;
 	uint32_t	bno;
 	xfs_fsblock_t	dfsbno;
-	int		nex;
+	xfs_extnum_t	nex;
 
 	bno = (uint32_t)getbitval(obj, bit, bitsz(bno), BVUNSIGNED);
 	if (bno == 0) {
@@ -353,7 +353,8 @@ fa_ino4(
 	xfs_ino_t	ino;
 
 	ASSERT(next == TYP_INODE);
-	ino = (xfs_ino_t)getbitval(obj, bit, bitsz(XFS_INO32_SIZE), BVUNSIGNED);
+	ino = (xfs_ino_t)getbitval(obj, bit, bitize(XFS_INO32_SIZE),
+			BVUNSIGNED);
 	if (ino == NULLFSINO) {
 		dbprintf(_("null inode number, cannot set new addr\n"));
 		return;
@@ -370,7 +371,8 @@ fa_ino8(
 	xfs_ino_t	ino;
 
 	ASSERT(next == TYP_INODE);
-	ino = (xfs_ino_t)getbitval(obj, bit, bitsz(XFS_INO64_SIZE), BVUNSIGNED);
+	ino = (xfs_ino_t)getbitval(obj, bit, bitize(XFS_INO64_SIZE),
+			BVUNSIGNED);
 	if (ino == NULLFSINO) {
 		dbprintf(_("null inode number, cannot set new addr\n"));
 		return;

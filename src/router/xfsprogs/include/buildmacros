@@ -95,9 +95,10 @@ INSTALL_MAN = \
 	@for d in $(MAN_PAGES); do \
 		first=true; \
 		for m in `$(AWK) \
-			'/^\.S[h|H] NAME/ {ok=1; next} ok {print; exit}' $$d \
+			'/^\.S[h|H] NAME/ {ok=1; next} /^\.so/ {printf("so %s\n", FILENAME); exit} ok {print; exit}' $$d \
 			| $(SED) \
 				-e 's/^\.Nm //' -e 's/,/ /g' -e 's/\\-.*//' \
+				-e 's/^so \([_a-zA-Z]*\)\.[0-9]/\1/g' \
 				-e 's/\\\f[0-9]//g' -e 's/  / /g;q'`; \
 		do \
 			[ -z "$$m" -o "$$m" = "\\" ] && continue; \

@@ -24,16 +24,45 @@ static int rmap_maxrecs(struct xfs_mount *mp, int blocklen, int leaf)
 
 struct btmap {
 	const char	*tag;
+	unsigned int	(*maxlevels)(void);
 	int		(*maxrecs)(struct xfs_mount *mp, int blocklen,
 				   int leaf);
 } maps[] = {
-	{"bnobt", libxfs_allocbt_maxrecs},
-	{"cntbt", libxfs_allocbt_maxrecs},
-	{"inobt", libxfs_inobt_maxrecs},
-	{"finobt", libxfs_inobt_maxrecs},
-	{"bmapbt", libxfs_bmbt_maxrecs},
-	{"refcountbt", refc_maxrecs},
-	{"rmapbt", rmap_maxrecs},
+	{
+		.tag		= "bnobt",
+		.maxlevels	= libxfs_allocbt_maxlevels_ondisk,
+		.maxrecs	= libxfs_allocbt_maxrecs,
+	},
+	{
+		.tag		= "cntbt",
+		.maxlevels	= libxfs_allocbt_maxlevels_ondisk,
+		.maxrecs	= libxfs_allocbt_maxrecs,
+	},
+	{
+		.tag		= "inobt",
+		.maxlevels	= libxfs_iallocbt_maxlevels_ondisk,
+		.maxrecs	= libxfs_inobt_maxrecs,
+	},
+	{
+		.tag		= "finobt",
+		.maxlevels	= libxfs_iallocbt_maxlevels_ondisk,
+		.maxrecs	= libxfs_inobt_maxrecs,
+	},
+	{
+		.tag		= "bmapbt",
+		.maxlevels	= libxfs_bmbt_maxlevels_ondisk,
+		.maxrecs	= libxfs_bmbt_maxrecs,
+	},
+	{
+		.tag		= "refcountbt",
+		.maxlevels	= libxfs_refcountbt_maxlevels_ondisk,
+		.maxrecs	= refc_maxrecs,
+	},
+	{
+		.tag		= "rmapbt",
+		.maxlevels	= libxfs_rmapbt_maxlevels_ondisk,
+		.maxrecs	= rmap_maxrecs,
+	},
 };
 
 static void
@@ -55,9 +84,10 @@ btheight_help(void)
 "   -n -- Number of records we want to store.\n"
 "   -w max -- Show only the best case scenario.\n"
 "   -w min -- Show only the worst case scenario.\n"
+"   -w absmax -- Print the maximum possible btree height for all filesystems.\n"
 "\n"
 " Supported btree types:\n"
-"   "
+"   all "
 ));
 	for (i = 0, m = maps; i < ARRAY_SIZE(maps); i++, m++)
 		printf("%s ", m->tag);
@@ -107,7 +137,7 @@ calc_height(
 
 static int
 construct_records_per_block(
-	char		*tag,
+	const char	*tag,
 	int		blocksize,
 	unsigned int	*records_per_block)
 {
@@ -232,16 +262,37 @@ out:
 #define REPORT_DEFAULT	(-1U)
 #define REPORT_MAX	(1 << 0)
 #define REPORT_MIN	(1 << 1)
+#define REPORT_ABSMAX	(1 << 2)
+
+static void
+report_absmax(const char *tag)
+{
+	struct btmap	*m;
+	int		i;
+
+	for (i = 0, m = maps; i < ARRAY_SIZE(maps); i++, m++) {
+		if (!strcmp(m->tag, tag)) {
+			printf("%s: %u\n", tag, m->maxlevels());
+			return;
+		}
+	}
+	printf(_("%s: Don't know how to report max height.\n"), tag);
+}
 
 static void
 report(
-	char			*tag,
+	const char		*tag,
 	unsigned int		report_what,
 	unsigned long long	nr_records,
 	unsigned int		blocksize)
 {
 	unsigned int		records_per_block[2];
 	int			ret;
+
+	if (report_what == REPORT_ABSMAX) {
+		report_absmax(tag);
+		return;
+	}
 
 	ret = construct_records_per_block(tag, blocksize, records_per_block);
 	if (ret)
@@ -297,6 +348,19 @@ _("%s: worst case per %u-byte block: %u records (leaf) / %u keyptrs (node)\n"),
 	}
 }
 
+static void
+report_all(
+	unsigned int		report_what,
+	unsigned long long	nr_records,
+	unsigned int		blocksize)
+{
+	struct btmap		*m;
+	int			i;
+
+	for (i = 0, m = maps; i < ARRAY_SIZE(maps); i++, m++)
+		report(m->tag, report_what, nr_records, blocksize);
+}
+
 static int
 btheight_f(
 	int		argc,
@@ -331,6 +395,8 @@ btheight_f(
 				report_what = REPORT_MIN;
 			else if (!strcmp(optarg, "max"))
 				report_what = REPORT_MAX;
+			else if (!strcmp(optarg, "absmax"))
+				report_what = REPORT_ABSMAX;
 			else {
 				btheight_help();
 				return 0;
@@ -342,20 +408,20 @@ btheight_f(
 		}
 	}
 
-	if (nr_records == 0) {
+	if (report_what != REPORT_ABSMAX && nr_records == 0) {
 		fprintf(stderr,
 _("Number of records must be greater than zero.\n"));
 		return 0;
 	}
 
-	if (blocksize > INT_MAX) {
+	if (report_what != REPORT_ABSMAX && blocksize > INT_MAX) {
 		fprintf(stderr,
 _("The largest block size this command will consider is %u bytes.\n"),
 			INT_MAX);
 		return 0;
 	}
 
-	if (blocksize < 128) {
+	if (report_what != REPORT_ABSMAX && blocksize < 128) {
 		fprintf(stderr,
 _("The smallest block size this command will consider is 128 bytes.\n"));
 		return 0;
@@ -364,6 +430,13 @@ _("The smallest block size this command will consider is 128 bytes.\n"));
 	if (argc == optind) {
 		btheight_help();
 		return 0;
+	}
+
+	for (i = optind; i < argc; i++) {
+		if (!strcmp(argv[i], "all")) {
+			report_all(report_what, nr_records, blocksize);
+			return 0;
+		}
 	}
 
 	for (i = optind; i < argc; i++)

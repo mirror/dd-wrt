@@ -10,12 +10,12 @@ LSRCFILES = xfs_bmap.sh xfs_freeze.sh xfs_mkfile.sh
 HFILES = init.h io.h
 CFILES = init.c \
 	attr.c bmap.c bulkstat.c crc32cselftest.c cowextsize.c encrypt.c \
-	file.c freeze.c fsync.c getrusage.c imap.c inject.c label.c link.c \
-	mmap.c open.c parent.c pread.c prealloc.c pwrite.c reflink.c \
+	file.c freeze.c fsuuid.c fsync.c getrusage.c imap.c inject.c label.c \
+	link.c mmap.c open.c parent.c pread.c prealloc.c pwrite.c reflink.c \
 	resblks.c scrub.c seek.c shutdown.c stat.c swapext.c sync.c \
 	truncate.c utimes.c
 
-LLDLIBS = $(LIBXCMD) $(LIBHANDLE) $(LIBFROG) $(LIBPTHREAD)
+LLDLIBS = $(LIBXCMD) $(LIBHANDLE) $(LIBFROG) $(LIBPTHREAD) $(LIBUUID)
 LTDEPENDENCIES = $(LIBXCMD) $(LIBHANDLE) $(LIBFROG)
 LLDFLAGS = -static-libtool-libs
 
@@ -104,10 +104,9 @@ LLDLIBS += $(LIBDEVMAPPER)
 LCFLAGS += -DHAVE_DEVMAPPER
 endif
 
-# On linux we get fsmap from the system or define it ourselves
-# so include this unconditionally.  If this reverts to only
-# the autoconf check w/o local definition, test HAVE_GETFSMAP
+ifeq ($(HAVE_GETFSMAP),yes)
 CFILES += fsmap.c
+endif
 
 ifeq ($(HAVE_STATFS_FLAGS),yes)
 LCFLAGS += -DHAVE_STATFS_FLAGS

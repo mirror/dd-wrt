@@ -65,12 +65,12 @@ xfs_dir3_leafn_check(
 
 	if (leafhdr.magic == XFS_DIR3_LEAFN_MAGIC) {
 		struct xfs_dir3_leaf_hdr *leaf3 = bp->b_addr;
-		if (be64_to_cpu(leaf3->info.blkno) != bp->b_bn)
+		if (be64_to_cpu(leaf3->info.blkno) != xfs_buf_daddr(bp))
 			return __this_address;
 	} else if (leafhdr.magic != XFS_DIR2_LEAFN_MAGIC)
 		return __this_address;
 
-	return xfs_dir3_leaf_check_int(dp->i_mount, &leafhdr, leaf);
+	return xfs_dir3_leaf_check_int(dp->i_mount, &leafhdr, leaf, false);
 }
 
 static inline void
@@ -102,12 +102,12 @@ xfs_dir3_free_verify(
 	if (!xfs_verify_magic(bp, hdr->magic))
 		return __this_address;
 
-	if (xfs_sb_version_hascrc(&mp->m_sb)) {
+	if (xfs_has_crc(mp)) {
 		struct xfs_dir3_blk_hdr *hdr3 = bp->b_addr;
 
 		if (!uuid_equal(&hdr3->uuid, &mp->m_sb.sb_meta_uuid))
 			return __this_address;
-		if (be64_to_cpu(hdr3->blkno) != bp->b_bn)
+		if (be64_to_cpu(hdr3->blkno) != xfs_buf_daddr(bp))
 			return __this_address;
 		if (!xfs_log_check_lsn(mp, be64_to_cpu(hdr3->lsn)))
 			return __this_address;
@@ -125,7 +125,7 @@ xfs_dir3_free_read_verify(
 	struct xfs_mount	*mp = bp->b_mount;
 	xfs_failaddr_t		fa;
 
-	if (xfs_sb_version_hascrc(&mp->m_sb) &&
+	if (xfs_has_crc(mp) &&
 	    !xfs_buf_verify_cksum(bp, XFS_DIR3_FREE_CRC_OFF))
 		xfs_verifier_error(bp, -EFSBADCRC, __this_address);
 	else {
@@ -150,7 +150,7 @@ xfs_dir3_free_write_verify(
 		return;
 	}
 
-	if (!xfs_sb_version_hascrc(&mp->m_sb))
+	if (!xfs_has_crc(mp))
 		return;
 
 	if (bip)
@@ -182,7 +182,7 @@ xfs_dir3_free_header_check(
 	firstdb = (xfs_dir2_da_to_db(mp->m_dir_geo, fbno) -
 		   xfs_dir2_byte_to_db(mp->m_dir_geo, XFS_DIR2_FREE_OFFSET)) *
 			maxbests;
-	if (xfs_sb_version_hascrc(&mp->m_sb)) {
+	if (xfs_has_crc(mp)) {
 		struct xfs_dir3_free_hdr *hdr3 = bp->b_addr;
 
 		if (be32_to_cpu(hdr3->firstdb) != firstdb)
@@ -244,7 +244,7 @@ xfs_dir2_free_hdr_from_disk(
 	struct xfs_dir3_icfree_hdr	*to,
 	struct xfs_dir2_free		*from)
 {
-	if (xfs_sb_version_hascrc(&mp->m_sb)) {
+	if (xfs_has_crc(mp)) {
 		struct xfs_dir3_free	*from3 = (struct xfs_dir3_free *)from;
 
 		to->magic = be32_to_cpu(from3->hdr.hdr.magic);
@@ -271,7 +271,7 @@ xfs_dir2_free_hdr_to_disk(
 	struct xfs_dir2_free		*to,
 	struct xfs_dir3_icfree_hdr	*from)
 {
-	if (xfs_sb_version_hascrc(&mp->m_sb)) {
+	if (xfs_has_crc(mp)) {
 		struct xfs_dir3_free	*to3 = (struct xfs_dir3_free *)to;
 
 		ASSERT(from->magic == XFS_DIR3_FREE_MAGIC);
@@ -338,12 +338,12 @@ xfs_dir3_free_get_buf(
 	memset(bp->b_addr, 0, sizeof(struct xfs_dir3_free_hdr));
 	memset(&hdr, 0, sizeof(hdr));
 
-	if (xfs_sb_version_hascrc(&mp->m_sb)) {
+	if (xfs_has_crc(mp)) {
 		struct xfs_dir3_free_hdr *hdr3 = bp->b_addr;
 
 		hdr.magic = XFS_DIR3_FREE_MAGIC;
 
-		hdr3->hdr.blkno = cpu_to_be64(bp->b_bn);
+		hdr3->hdr.blkno = cpu_to_be64(xfs_buf_daddr(bp));
 		hdr3->hdr.owner = cpu_to_be64(dp->i_ino);
 		uuid_copy(&hdr3->hdr.uuid, &mp->m_sb.sb_meta_uuid);
 	} else
@@ -438,7 +438,7 @@ xfs_dir2_leaf_to_node(
 	leaf = lbp->b_addr;
 	ltp = xfs_dir2_leaf_tail_p(args->geo, leaf);
 	if (be32_to_cpu(ltp->bestcount) >
-				(uint)dp->i_d.di_size / args->geo->blksize) {
+				(uint)dp->i_disk_size / args->geo->blksize) {
 		xfs_buf_mark_corrupt(lbp);
 		return -EFSCORRUPTED;
 	}
@@ -2012,9 +2012,7 @@ xfs_dir2_node_addname(
 	/*
 	 * Allocate and initialize the state (btree cursor).
 	 */
-	state = xfs_da_state_alloc();
-	state->args = args;
-	state->mp = args->dp->i_mount;
+	state = xfs_da_state_alloc(args);
 	/*
 	 * Look up the name.  We're not supposed to find it, but
 	 * this gives us the insertion point.
@@ -2083,9 +2081,8 @@ xfs_dir2_node_lookup(
 	/*
 	 * Allocate and initialize the btree cursor.
 	 */
-	state = xfs_da_state_alloc();
-	state->args = args;
-	state->mp = args->dp->i_mount;
+	state = xfs_da_state_alloc(args);
+
 	/*
 	 * Fill in the path to the entry in the cursor.
 	 */
@@ -2136,9 +2133,7 @@ xfs_dir2_node_removename(
 	/*
 	 * Allocate and initialize the btree cursor.
 	 */
-	state = xfs_da_state_alloc();
-	state->args = args;
-	state->mp = args->dp->i_mount;
+	state = xfs_da_state_alloc(args);
 
 	/* Look up the entry we're deleting, set up the cursor. */
 	error = xfs_da3_node_lookup_int(state, &rval);
@@ -2203,9 +2198,7 @@ xfs_dir2_node_replace(
 	/*
 	 * Allocate and initialize the btree cursor.
 	 */
-	state = xfs_da_state_alloc();
-	state->args = args;
-	state->mp = args->dp->i_mount;
+	state = xfs_da_state_alloc(args);
 
 	/*
 	 * We have to save new inode number and ftype since

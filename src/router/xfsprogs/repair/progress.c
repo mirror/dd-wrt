@@ -182,6 +182,7 @@ progress_rpt_thread (void *p)
 		do_error (_("progress_rpt: cannot malloc progress msg buffer\n"));
 
 	running = 1;
+	rcu_register_thread();
 
 	/*
 	 * Specify a repeating timer that fires each MSG_INTERVAL seconds.
@@ -286,7 +287,8 @@ progress_rpt_thread (void *p)
 		do_warn(_("cannot delete timer\n"));
 
 	free (msgbuf);
-	return (NULL);
+	rcu_unregister_thread();
+	return NULL;
 }
 
 int

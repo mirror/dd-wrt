@@ -118,6 +118,12 @@ to the file. Specifying a fixed allocsize value turns off
 the dynamic behavior.
 .TP
 .BR attr2 | noattr2
+Note: These options have been
+.B deprecated
+as of kernel v5.10; The noattr2 option will be removed no
+earlier than in September 2025 and attr2 option will be immutable
+default.
+.sp
 The options enable/disable an "opportunistic" improvement to
 be made in the way inline extended attributes are stored
 on-disk.  When the new form is used for the first time when
@@ -132,6 +138,23 @@ by the filesystem.
 .sp
 CRC enabled filesystems always use the attr2 format, and so
 will reject the noattr2 mount option if it is set.
+.TP
+.BR dax=value
+Set CPU direct access (DAX) behavior for the current filesystem. This mount
+option accepts the following values:
+
+"dax=inode" DAX will be enabled only on regular files with FS_XFLAG_DAX applied.
+
+"dax=never" DAX will not be enabled for any files. FS_XFLAG_DAX will be ignored.
+
+"dax=always" DAX will be enabled for all regular files, regardless of the
+FS_XFLAG_DAX state.
+
+If no option is used when mounting a filesystem stored on a DAX capable device,
+dax=inode will be used as default.
+
+For details regarding DAX behavior in kernel, please refer to kernel's
+documentation at filesystems/dax.txt
 .TP
 .BR discard | nodiscard
 Enable/disable the issuing of commands to let the block
@@ -159,6 +182,13 @@ across the entire filesystem rather than just on directories
 configured to use it.
 .TP
 .BR ikeep | noikeep
+Note: These options have been
+.B deprecated
+as of kernel v5.10; The noikeep option will be removed no
+earlier than in September 2025 and ikeep option will be
+immutable default.
+
+.sp
 When ikeep is specified, XFS does not delete empty inode
 clusters and keeps them around on disk.  When noikeep is
 specified, empty inode clusters are returned to the free

@@ -171,6 +171,24 @@ stat_f(
 	return 0;
 }
 
+static void
+statfs_help(void)
+{
+        printf(_(
+"\n"
+" Display file system status.\n"
+"\n"
+" Options:\n"
+" -c -- Print fs summary count data.\n"
+" -g -- Print fs geometry data.\n"
+" -s -- Print statfs data.\n"
+"\n"));
+}
+
+#define REPORT_STATFS		(1 << 0)
+#define REPORT_GEOMETRY		(1 << 1)
+#define REPORT_FSCOUNTS		(1 << 2)
+
 static int
 statfs_f(
 	int			argc,
@@ -179,55 +197,95 @@ statfs_f(
 	struct xfs_fsop_counts	fscounts;
 	struct xfs_fsop_geom	fsgeo;
 	struct statfs		st;
+	unsigned int		flags = 0;
+	int			c;
 	int			ret;
 
-	printf(_("fd.path = \"%s\"\n"), file->name);
-	if (platform_fstatfs(file->fd, &st) < 0) {
-		perror("fstatfs");
-		exitcode = 1;
-	} else {
-		printf(_("statfs.f_bsize = %lld\n"), (long long) st.f_bsize);
-		printf(_("statfs.f_blocks = %lld\n"), (long long) st.f_blocks);
-		printf(_("statfs.f_bavail = %lld\n"), (long long) st.f_bavail);
-		printf(_("statfs.f_files = %lld\n"), (long long) st.f_files);
-		printf(_("statfs.f_ffree = %lld\n"), (long long) st.f_ffree);
-#ifdef HAVE_STATFS_FLAGS
-		printf(_("statfs.f_flags = 0x%llx\n"), (long long) st.f_flags);
-#endif
+	while ((c = getopt(argc, argv, "cgs")) != EOF) {
+		switch (c) {
+		case 'c':
+			flags |= REPORT_FSCOUNTS;
+			break;
+		case 'g':
+			flags |= REPORT_GEOMETRY;
+			break;
+		case 's':
+			flags |= REPORT_STATFS;
+			break;
+		default:
+			exitcode = 1;
+			return command_usage(&statfs_cmd);
+		}
 	}
+
+	if (!flags)
+		flags = REPORT_STATFS | REPORT_GEOMETRY | REPORT_FSCOUNTS;
+
+	printf(_("fd.path = \"%s\"\n"), file->name);
+	if (flags & REPORT_STATFS) {
+		ret = platform_fstatfs(file->fd, &st);
+		if (ret < 0) {
+			perror("fstatfs");
+			exitcode = 1;
+		} else {
+			printf(_("statfs.f_bsize = %lld\n"),
+					(long long) st.f_bsize);
+			printf(_("statfs.f_blocks = %lld\n"),
+					(long long) st.f_blocks);
+			printf(_("statfs.f_bavail = %lld\n"),
+					(long long) st.f_bavail);
+			printf(_("statfs.f_files = %lld\n"),
+					(long long) st.f_files);
+			printf(_("statfs.f_ffree = %lld\n"),
+					(long long) st.f_ffree);
+#ifdef HAVE_STATFS_FLAGS
+			printf(_("statfs.f_flags = 0x%llx\n"),
+					(long long) st.f_flags);
+#endif
+		}
+	}
+
 	if (file->flags & IO_FOREIGN)
 		return 0;
-	ret = -xfrog_geometry(file->fd, &fsgeo);
-	if (ret) {
-		xfrog_perror(ret, "XFS_IOC_FSGEOMETRY");
-		exitcode = 1;
-	} else {
-		printf(_("geom.bsize = %u\n"), fsgeo.blocksize);
-		printf(_("geom.agcount = %u\n"), fsgeo.agcount);
-		printf(_("geom.agblocks = %u\n"), fsgeo.agblocks);
-		printf(_("geom.datablocks = %llu\n"),
-			(unsigned long long) fsgeo.datablocks);
-		printf(_("geom.rtblocks = %llu\n"),
-			(unsigned long long) fsgeo.rtblocks);
-		printf(_("geom.rtextents = %llu\n"),
-			(unsigned long long) fsgeo.rtextents);
-		printf(_("geom.rtextsize = %u\n"), fsgeo.rtextsize);
-		printf(_("geom.sunit = %u\n"), fsgeo.sunit);
-		printf(_("geom.swidth = %u\n"), fsgeo.swidth);
+
+	if (flags & REPORT_GEOMETRY) {
+		ret = -xfrog_geometry(file->fd, &fsgeo);
+		if (ret) {
+			xfrog_perror(ret, "XFS_IOC_FSGEOMETRY");
+			exitcode = 1;
+		} else {
+			printf(_("geom.bsize = %u\n"), fsgeo.blocksize);
+			printf(_("geom.agcount = %u\n"), fsgeo.agcount);
+			printf(_("geom.agblocks = %u\n"), fsgeo.agblocks);
+			printf(_("geom.datablocks = %llu\n"),
+				(unsigned long long) fsgeo.datablocks);
+			printf(_("geom.rtblocks = %llu\n"),
+				(unsigned long long) fsgeo.rtblocks);
+			printf(_("geom.rtextents = %llu\n"),
+				(unsigned long long) fsgeo.rtextents);
+			printf(_("geom.rtextsize = %u\n"), fsgeo.rtextsize);
+			printf(_("geom.sunit = %u\n"), fsgeo.sunit);
+			printf(_("geom.swidth = %u\n"), fsgeo.swidth);
+		}
 	}
-	if ((xfsctl(file->name, file->fd, XFS_IOC_FSCOUNTS, &fscounts)) < 0) {
-		perror("XFS_IOC_FSCOUNTS");
-		exitcode = 1;
-	} else {
-		printf(_("counts.freedata = %llu\n"),
-			(unsigned long long) fscounts.freedata);
-		printf(_("counts.freertx = %llu\n"),
-			(unsigned long long) fscounts.freertx);
-		printf(_("counts.freeino = %llu\n"),
-			(unsigned long long) fscounts.freeino);
-		printf(_("counts.allocino = %llu\n"),
-			(unsigned long long) fscounts.allocino);
+
+	if (flags & REPORT_FSCOUNTS) {
+		ret = ioctl(file->fd, XFS_IOC_FSCOUNTS, &fscounts);
+		if (ret < 0) {
+			perror("XFS_IOC_FSCOUNTS");
+			exitcode = 1;
+		} else {
+			printf(_("counts.freedata = %llu\n"),
+				(unsigned long long) fscounts.freedata);
+			printf(_("counts.freertx = %llu\n"),
+				(unsigned long long) fscounts.freertx);
+			printf(_("counts.freeino = %llu\n"),
+				(unsigned long long) fscounts.freeino);
+			printf(_("counts.allocino = %llu\n"),
+				(unsigned long long) fscounts.allocino);
+		}
 	}
+
 	return 0;
 }
 
@@ -407,9 +465,13 @@ stat_init(void)
 
 	statfs_cmd.name = "statfs";
 	statfs_cmd.cfunc = statfs_f;
+	statfs_cmd.argmin = 0;
+	statfs_cmd.argmax = -1;
+	statfs_cmd.args = _("[-c] [-g] [-s]");
 	statfs_cmd.flags = CMD_NOMAP_OK | CMD_FOREIGN_OK;
 	statfs_cmd.oneline =
 		_("statistics on the filesystem of the currently open file");
+	statfs_cmd.help = statfs_help;
 
 	add_command(&stat_cmd);
 	add_command(&statx_cmd);

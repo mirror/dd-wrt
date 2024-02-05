@@ -156,9 +156,10 @@ static inline void list_splice_init(struct list_head *list,
 	const typeof( ((type *)0)->member ) *__mptr = (ptr);	\
 	(type *)( (char *)__mptr - offsetof(type,member) );})
 
-void list_sort(void *priv, struct list_head *head,
-	       int (*cmp)(void *priv, struct list_head *a,
-			  struct list_head *b));
+typedef int (*list_cmp_func_t)(void *priv, const struct list_head *a,
+		const struct list_head *b);
+
+void list_sort(void *priv, struct list_head *head, list_cmp_func_t cmp);
 
 #define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
 

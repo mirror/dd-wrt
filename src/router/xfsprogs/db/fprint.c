@@ -112,22 +112,50 @@ fp_sarray(
 	return 1;
 }
 
-/*ARGSUSED*/
+static void
+fp_time64(
+	time64_t		sec)
+{
+	time_t			tt = sec;
+	time64_t		tt_sec = tt;
+	char			*c;
+
+	/*
+	 * Stupid time_t shenanigans -- POSIX.1-2017 only requires that this
+	 * type represent a time in seconds.  Since we have no idea if our
+	 * time64_t filesystem timestamps can actually be represented by the C
+	 * library, we resort to converting the input value from time64_t to
+	 * time_t and back to time64_t to check for information loss.  If so,
+	 * we print the raw value; otherwise we print a human-readable value.
+	 */
+	if (tt_sec != sec)
+		goto raw;
+
+	c = ctime(&tt);
+	if (!c)
+		goto raw;
+
+	dbprintf("%24.24s", c);
+	return;
+raw:
+	dbprintf("%lld", sec);
+}
+
 int
 fp_time(
-	void	*obj,
-	int	bit,
-	int	count,
-	char	*fmtstr,
-	int	size,
-	int	arg,
-	int	base,
-	int	array)
+	void			*obj,
+	int			bit,
+	int			count,
+	char			*fmtstr,
+	int			size,
+	int			arg,
+	int			base,
+	int			array)
 {
-	int	bitpos;
-	char	*c;
-	int	i;
-	time_t  t;
+	struct timespec64	tv;
+	xfs_timestamp_t		*ts;
+	int			bitpos;
+	int			i;
 
 	ASSERT(bitoffs(bit) == 0);
 	for (i = 0, bitpos = bit;
@@ -135,10 +163,88 @@ fp_time(
 	     i++, bitpos += size) {
 		if (array)
 			dbprintf("%d:", i + base);
-		t = (time_t)getbitval((char *)obj + byteize(bitpos), 0,
-				sizeof(int32_t) * 8, BVSIGNED);
-		c = ctime(&t);
-		dbprintf("%24.24s", c);
+
+		ts = obj + byteize(bitpos);
+		tv = libxfs_inode_from_disk_ts(obj, *ts);
+
+		fp_time64(tv.tv_sec);
+
+		if (i < count - 1)
+			dbprintf(" ");
+	}
+	return 1;
+}
+
+int
+fp_nsec(
+	void			*obj,
+	int			bit,
+	int			count,
+	char			*fmtstr,
+	int			size,
+	int			arg,
+	int			base,
+	int			array)
+{
+	struct timespec64	tv;
+	xfs_timestamp_t		*ts;
+	int			bitpos;
+	int			i;
+
+	ASSERT(bitoffs(bit) == 0);
+	for (i = 0, bitpos = bit;
+	     i < count && !seenint();
+	     i++, bitpos += size) {
+		if (array)
+			dbprintf("%d:", i + base);
+
+		ts = obj + byteize(bitpos);
+		tv = libxfs_inode_from_disk_ts(obj, *ts);
+
+		dbprintf("%u", tv.tv_nsec);
+
+		if (i < count - 1)
+			dbprintf(" ");
+	}
+	return 1;
+}
+
+int
+fp_qtimer(
+	void			*obj,
+	int			bit,
+	int			count,
+	char			*fmtstr,
+	int			size,
+	int			arg,
+	int			base,
+	int			array)
+{
+	struct xfs_disk_dquot	*ddq = obj;
+	time64_t		sec;
+	__be32			*t;
+	int			bitpos;
+	int			i;
+
+	ASSERT(bitoffs(bit) == 0);
+	for (i = 0, bitpos = bit;
+	     i < count && !seenint();
+	     i++, bitpos += size) {
+		if (array)
+			dbprintf("%d:", i + base);
+
+		t = obj + byteize(bitpos);
+		sec = libxfs_dquot_from_disk_ts(ddq, *t);
+
+		/*
+		 * Display the raw value if it's the default grace expiration
+		 * period (root dquot) or if the quota has not expired.
+		 */
+		if (ddq->d_id == 0 || sec == 0)
+			dbprintf("%lld", sec);
+		else
+			fp_time64(sec);
+
 		if (i < count - 1)
 			dbprintf(" ");
 	}

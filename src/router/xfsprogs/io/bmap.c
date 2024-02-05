@@ -33,7 +33,6 @@ bmap_help(void)
 " -a -- prints the attribute fork map instead of the data fork.\n"
 " -c -- prints the copy-on-write fork map instead of the data fork.\n"
 "       This works only if the kernel was compiled in debug mode.\n"
-" -d -- suppresses a DMAPI read event, offline portions shown as holes.\n"
 " -e -- print delayed allocation extents.\n"
 " -l -- also displays the length of each extent in 512-byte blocks.\n"
 " -n -- query n extents.\n"
@@ -67,7 +66,7 @@ bmap_f(
 	int			c;
 	int			egcnt;
 
-	while ((c = getopt(argc, argv, "acdeln:pv")) != EOF) {
+	while ((c = getopt(argc, argv, "aceln:pv")) != EOF) {
 		switch (c) {
 		case 'a':	/* Attribute fork. */
 			bmv_iflags |= BMV_IF_ATTRFORK;
@@ -86,10 +85,6 @@ bmap_f(
 		case 'n':	/* number of extents specified */
 			nflag = atoi(optarg);
 			break;
-		case 'd':
-		/* do not recall possibly offline DMAPI files */
-			bmv_iflags |= BMV_IF_NO_DMAPI_READ;
-			break;
 		case 'p':
 		/* report unwritten preallocated blocks */
 			pflag = 1;
@@ -103,7 +98,7 @@ bmap_f(
 		}
 	}
 	if (aflag || cflag)
-		bmv_iflags &= ~(BMV_IF_PREALLOC|BMV_IF_NO_DMAPI_READ);
+		bmv_iflags &= ~BMV_IF_PREALLOC;
 
 	if (vflag) {
 		c = -xfrog_geometry(file->fd, &fsgeo);
@@ -123,7 +118,7 @@ bmap_f(
 			return 0;
 		}
 
-		if (fsx.fsx_xflags == FS_XFLAG_REALTIME) {
+		if (fsx.fsx_xflags & FS_XFLAG_REALTIME) {
 			/*
 			 * ag info not applicable to rt, continue
 			 * without ag output.
@@ -154,19 +149,10 @@ bmap_f(
  *	EINVAL, check the length with fstat() and return "no extents"
  *	if the length == 0.
  *
- *	Why not do the xfsctl(FS_IOC_FSGETXATTR[A]) first?  Two reasons:
- *	(1)	The extent count may be wrong for a file with delayed
- *		allocation blocks.  The XFS_IOC_GETBMAPX forces the real
- *		allocation and fixes up the extent count.
- *	(2)	For XFS_IOC_GETBMAP[X] on a DMAPI file that has been moved
- *		offline by a DMAPI application (e.g., DMF) the
- *		FS_IOC_FSGETXATTR only reflects the extents actually online.
- *		Doing XFS_IOC_GETBMAPX call first forces that data blocks online
- *		and then everything proceeds normally (see PV #545725).
- *
- *		If you don't want this behavior on a DMAPI offline file,
- *		try the "-d" option which sets the BMV_IF_NO_DMAPI_READ
- *		iflag for XFS_IOC_GETBMAPX.
+ *	Why not do the xfsctl(FS_IOC_FSGETXATTR[A]) first?
+ *	The extent count may be wrong for a file with delayed
+ *	allocation blocks.  The XFS_IOC_GETBMAPX forces the real
+ *	allocation and fixes up the extent count.
  */
 
 	do {	/* loop a miximum of two times */
@@ -441,7 +427,7 @@ bmap_init(void)
 	bmap_cmd.argmin = 0;
 	bmap_cmd.argmax = -1;
 	bmap_cmd.flags = CMD_NOMAP_OK;
-	bmap_cmd.args = _("[-adlpv] [-n nx]");
+	bmap_cmd.args = _("[-acelpv] [-n nx]");
 	bmap_cmd.oneline = _("print block mapping for an XFS file");
 	bmap_cmd.help = bmap_help;
 

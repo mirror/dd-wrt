@@ -10,6 +10,7 @@
 #include <sys/types.h>
 #include <sys/statvfs.h>
 #include <strings.h>
+#include <unicode/uclean.h>
 #include <unicode/ustring.h>
 #include <unicode/unorm2.h>
 #include <unicode/uspoof.h>
@@ -68,7 +69,7 @@ struct name_entry {
 
 	xfs_ino_t		ino;
 
-	/* Raw UTF8 name */
+	/* Raw dirent name */
 	size_t			namelen;
 	char			name[0];
 };
@@ -627,6 +628,20 @@ unicrash_add(
 	uc->buckets[bucket] = new_entry;
 
 	while (entry != NULL) {
+		/*
+		 * If we see the same byte sequence then someone's modifying
+		 * the namespace while we're scanning it.  Update the existing
+		 * entry's inode mapping and erase the new entry from existence.
+		 */
+		if (new_entry->namelen == entry->namelen &&
+		    !memcmp(new_entry->name, entry->name, entry->namelen)) {
+			entry->ino = new_entry->ino;
+			uc->buckets[bucket] = new_entry->next;
+			name_entry_free(new_entry);
+			*badflags = 0;
+			return;
+		}
+
 		/* Same normalization? */
 		if (new_entry->normstrlen == entry->normstrlen &&
 		    !u_strcmp(new_entry->normstr, entry->normstr) &&
@@ -721,4 +736,21 @@ unicrash_check_fs_label(
 		return 0;
 	return __unicrash_check_name(uc, dsc, _("filesystem label"),
 			label, 0);
+}
+
+/* Load libicu and initialize it. */
+bool
+unicrash_load(void)
+{
+	UErrorCode		uerr = U_ZERO_ERROR;
+
+	u_init(&uerr);
+	return U_FAILURE(uerr);
+}
+
+/* Unload libicu once we're done with it. */
+void
+unicrash_unload(void)
+{
+	u_cleanup();
 }

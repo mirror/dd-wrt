@@ -402,7 +402,7 @@ If the cursor points at an inode, dump the extended attribute block mapping btre
 Dump all keys and pointers in intermediate btree nodes, and all records in leaf btree nodes.
 .RE
 .TP
-.BI "btheight [\-b " blksz "] [\-n " recs "] [\-w " max "|\-w " min "] btree types..."
+.BI "btheight [\-b " blksz "] [\-n " recs "] [\-w " max "|" min "|" absmax "] btree types..."
 For a given number of btree records and a btree type, report the number of
 records and blocks for each level of the btree, and the total number of blocks.
 The btree type must be given after the options.
@@ -420,6 +420,9 @@ The supported btree types are:
 .IR refcountbt ,
 and
 .IR rmapbt .
+The magic value
+.I all
+can be used to walk through all btree types.
 
 Options are as follows:
 .RS 1.0i
@@ -431,6 +434,9 @@ The default is the filesystem block size.
 .B \-n
 is used to specify the number of records to store.
 This argument is required.
+.TP
+.B \-w absmax
+shows the maximum possible height for the given btree types.
 .TP
 .B \-w max
 shows only the best case scenario, which is when the btree blocks are
@@ -572,6 +578,25 @@ print the current debug option bits. These are for the use of the implementor.
 .TP
 .BI "dquot [" \-g | \-p | \-u ] " id"
 Set current address to a group, project or user quota block for the given ID. Defaults to user quota.
+.TP
+.BI "dump_iunlinked [-a " agno " ] [-b " bucket " ] [-q] [-v]"
+Dump the contents of unlinked buckets.
+
+Options include:
+.RS 1.0i
+.TP 0.4i
+.B \-a
+Print only this AG's unlinked buckets.
+.TP 0.4i
+.B \-b
+Print only this bucket within each AGI.
+.TP 0.4i
+.B \-q
+Only print the essentials.
+.TP 0.4i
+.B \-v
+Print resource usage of each file on the unlinked lists.
+.RE
 .TP
 .BI "echo [" arg "] ..."
 Echo the arguments to the output.
@@ -757,10 +782,47 @@ Skip write verifiers but perform CRC recalculation; allows invalid data to be
 written to disk to test detection of invalid data.
 .RE
 .TP
-.BI hash " string
+.BI hash [-d]" strings
 Prints the hash value of
 .I string
 using the hash function of the XFS directory and attribute implementation.
+
+If the
+.B \-d
+option is specified, the directory-specific hash function is used.
+This only makes a difference on filesystems with ascii case-insensitive
+lookups enabled.
+.TP
+.BI "hashcoll [-a] [-s seed] [-n " nr "] [-p " path "] -i | " names...
+Create directory entries or extended attributes names that all have the same
+hash value.
+The metadump name obfuscation algorithm is used here.
+Names are written to standard output, with a NULL between each name for use
+with xargs -0.
+.RS 1.0i
+.PD 0
+.TP 0.4i
+.TP 0.4i
+.B \-a
+Create extended attribute names.
+.TP 0.4i
+.B \-i
+Read the first name to create from standard input.
+Up to 255 bytes are read.
+If this option is not specified, first names are taken from the command line.
+.TP 0.4i
+.BI \-n " nr"
+Create this many duplicated names.
+The default is to create one name.
+.TP 0.4i
+.BI \-p " path"
+Create directory entries or extended attributes in this file instead of
+writing the names to standard output.
+.TP 0.4i
+.BI \-s " seed"
+Seed the random number generator with this value.
+.PD
+.RE
 .TP
 .BI "help [" command ]
 Print help for one or all commands.
@@ -777,6 +839,17 @@ prints when querying a filesystem.
 Set the current inode number. If no
 .I inode#
 is given, print the current inode number.
+.TP
+.BI "iunlink [-n " nr " ]"
+Allocate inodes and put them on the unlinked list.
+
+Options include:
+.RS 1.0i
+.TP 0.4i
+.B \-n
+Create this number of unlinked inodes.
+If not specified, 1 inode will be created.
+.RE
 .TP
 .BI "label [" label ]
 Set the filesystem label. The filesystem label can be used by
@@ -806,6 +879,22 @@ This makes it easier to find discrepancies in the reservation calculations
 between xfsprogs and the kernel, which will help when diagnosing minimum
 log size calculation errors.
 .TP
+.BI "ls [\-i] [" paths "]..."
+List the contents of a directory.
+If a path resolves to a directory, the directory will be listed.
+If no paths are supplied and the IO cursor points at a directory inode,
+the contents of that directory will be listed.
+
+The output format is:
+directory cookie, inode number, file type, hash, name length, name.
+.RS 1.0i
+.TP 0.4i
+.B \-i
+Resolve each of the given paths to an inode number and print that number.
+If no paths are given and the IO cursor points to an inode, print the inode
+number.
+.RE
+.TP
 .BI "metadump [\-egow] " filename
 Dumps metadata to a file. See
 .BR xfs_metadump (8)
@@ -830,6 +919,10 @@ specifies that only setuid and setgid files are printed.
 See the
 .B print
 command.
+.TP
+.BI "path " dir_path
+Walk the directory tree to an inode using the supplied path.
+Absolute and relative paths are supported.
 .TP
 .B pop
 Pop location from the stack.
@@ -886,6 +979,29 @@ The possible data types are:
 .BR inobt ", " inode ", " log ", " refcntbt ", " rmapbt ", " rtbitmap ,
 .BR rtsummary ", " sb ", " symlink " and " text .
 See the TYPES section below for more information on these data types.
+.TP
+.BI "timelimit [" OPTIONS ]
+Print the minimum and maximum supported values for inode timestamps,
+quota expiration timers, and quota grace periods supported by this
+filesystem.
+Options include:
+.RS 1.0i
+.TP 0.4i
+.B \--bigtime
+Print the time limits of an XFS filesystem with the
+.B bigtime
+feature enabled.
+.TP 0.4i
+.B \--classic
+Print the time limits of a classic XFS filesystem.
+.TP 0.4i
+.B \--compact
+Print all limits as raw values on a single line.
+.TP 0.4i
+.B \--pretty
+Print the timestamps in the current locale's date and time format instead of
+raw seconds since the Unix epoch.
+.RE
 .TP
 .BI "uuid [" uuid " | " generate " | " rewrite " | " restore ]
 Set the filesystem universally unique identifier (UUID).

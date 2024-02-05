@@ -18,10 +18,9 @@ ifeq ($(ENABLE_EDITLINE),yes)
 LLDLIBS += $(LIBEDITLINE) $(LIBTERMCAP)
 endif
 
-# On linux we get fsmap from the system or define it ourselves
-# so include this unconditionally.  If this reverts to only
-# the autoconf check w/o local definition, test HAVE_GETFSMAP
+ifeq ($(HAVE_GETFSMAP),yes)
 CFILES += freesp.c
+endif
 
 default: depend $(LTCOMMAND)
 

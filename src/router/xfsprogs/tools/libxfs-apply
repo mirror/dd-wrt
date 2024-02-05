@@ -30,21 +30,22 @@ fail()
 	exit
 }
 
-# filterdiff 0.3.4 is the first version that handles git diff metadata (almost)
-# correctly. It just doesn't work properly in prior versions, so those versions
-# can't be used to extract the commit message prior to the diff. Hence just
-# abort and tell the user to upgrade if an old version is detected. We need to
+# filterdiff didn't start handling git diff metadata correctly until some time
+# after 0.3.4. The handling in 0.3.4 was buggy and broken, requiring working
+# around that bugs to use it. Now that 0.4.2 has fixed all those bugs, the
+# work-arounds for 0.3.4 do not work. Hence set 0.4.2 as the minimum required
+# version and tell the user to upgrade if an old version is detected. We need to
 # check against x.y.z version numbers here.
 _version=`filterdiff --version | cut -d " " -f 5`
 _major=`echo $_version | cut -d "." -f 1`
 _minor=`echo $_version | cut -d "." -f 2`
 _patch=`echo $_version | cut -d "." -f 3`
 if [ $_major -eq 0 ]; then
-	if [ $_minor -lt 3 ]; then
-		fail "filterdiff $_version found. 0.3.4 or greater is required."
+	if [ $_minor -lt 4 ]; then
+		fail "filterdiff $_version found. 0.4.2 or greater is required."
 	fi
-	if [ $_minor -eq 3 -a $_patch -le 3 ]; then
-		fail "filterdiff $_version found. 0.3.4 or greater is required."
+	if [ $_minor -eq 4 -a $_patch -lt 2 ]; then
+		fail "filterdiff $_version found. 0.4.2 or greater is required."
 	fi
 fi
 
@@ -158,8 +159,7 @@ filter_kernel_patch()
 			--addoldprefix=a/fs/xfs/ \
 			--addnewprefix=b/fs/xfs/ \
 			$_patch | \
-		sed -e 's, [ab]\/fs\/xfs\/\(\/dev\/null\), \1,' \
-		    -e '/^diff --git/d'
+		sed -e 's, [ab]\/fs\/xfs\/\(\/dev\/null\), \1,'
 
 
 	rm -f $_libxfs_files
@@ -187,10 +187,17 @@ filter_xfsprogs_patch()
 			--addoldprefix=a/ \
 			--addnewprefix=b/ \
 			$_patch | \
-		sed -e 's, [ab]\/\(\/dev\/null\), \1,' \
-		    -e '/^diff --git/d'
+		sed -e 's, [ab]\/\(\/dev\/null\), \1,'
 
 	rm -f $_libxfs_files
+}
+
+add_header()
+{
+	local hdr="$1"
+	local hdrfile="$2"
+
+	tail -n 1 "$hdrfile" | grep -q "^${hdr}$" || echo "$hdr" >> "$hdrfile"
 }
 
 fixup_header_format()
@@ -201,29 +208,22 @@ fixup_header_format()
 	local _diff=`mktemp`
 	local _new_hdr=$_hdr.new
 
-	# there's a bug in filterdiff that leaves a line at the end of the
-	# header in the filtered git show output like:
-	#
-	# difflibxfs/xfs_alloc.c b/fs/xfs/libxfs/xfs_alloc.c
-	#
-	# split the header on that (convenient!)
-	sed -e /^difflib/q $_patch > $_hdr
+	# Split the header on the first ^diff --git line (convenient!)
+	sed -e /^diff/q $_patch > $_hdr
 	cat $_patch | awk '
-		BEGIN { difflib_seen = 0; index_seen = 0 }
-		/^difflib/ { difflib_seen++; next }
+		BEGIN { diff_seen = 0; index_seen = 0 }
+		/^diff/ { diff_seen++; next }
 		/^index/ { if (++index_seen == 1) { next } }
-		// { if (difflib_seen) { print $0 } }' > $_diff
+		// { if (diff_seen) { print $0 } }' > $_diff
 
 	# the header now has the format:
 	# commit 0d5a75e9e23ee39cd0d8a167393dcedb4f0f47b2
 	# Author: Eric Sandeen <sandeen@sandeen.net>
 	# Date:   Wed Jun 1 17:38:15 2016 +1000
-	# 
+	#
 	#     xfs: make several functions static
 	#....
 	#     Signed-off-by: Dave Chinner <david@fromorbit.com>
-	#
-	#difflibxfs/xfs_alloc.c b/fs/xfs/libxfs/xfs_alloc.c
 	#
 	# We want to format it like a normal patch with a line to say what repo
 	# and commit it was sourced from:
@@ -280,13 +280,13 @@ fixup_header_format()
 	sed -i '${/^[[:space:]]*$/d;}' $_hdr.new
 
 	# Add Signed-off-by: header if specified
-	if [ ! -z ${SIGNED_OFF_BY+x} ]; then 
-		echo "Signed-off-by: $SIGNED_OFF_BY" >> $_hdr.new
+	if [ ! -z ${SIGNED_OFF_BY+x} ]; then
+		add_header "Signed-off-by: $SIGNED_OFF_BY" $_hdr.new
 	else	# get it from git config if present
 		SOB_NAME=`git config --get user.name`
 		SOB_EMAIL=`git config --get user.email`
 		if [ ! -z ${SOB_NAME+x} ]; then
-			echo "Signed-off-by: $SOB_NAME <$SOB_EMAIL>" >> $_hdr.new
+			add_header "Signed-off-by: $SOB_NAME <$SOB_EMAIL>" $_hdr.new
 		fi
 	fi
 

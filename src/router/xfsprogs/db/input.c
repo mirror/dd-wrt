@@ -227,6 +227,7 @@ fetchline(void)
 		el_set(el, EL_SIGNAL, 1);
 		el_set(el, EL_PROMPT, el_get_prompt);
 		el_set(el, EL_HIST, history, (const char *)hist);
+		el_set(el, EL_EDITOR, "emacs");
 	}
 
 	if (inputstacksize == 1) {

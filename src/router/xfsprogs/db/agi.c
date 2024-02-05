@@ -48,6 +48,8 @@ const field_t	agi_flds[] = {
 	{ "lsn", FLDT_UINT64X, OI(OFF(lsn)), C1, 0, TYP_NONE },
 	{ "free_root", FLDT_AGBLOCK, OI(OFF(free_root)), C1, 0, TYP_FINOBT },
 	{ "free_level", FLDT_UINT32D, OI(OFF(free_level)), C1, 0, TYP_NONE },
+	{ "ino_blocks", FLDT_UINT32D, OI(OFF(iblocks)), C1, 0, TYP_NONE },
+	{ "fino_blocks", FLDT_UINT32D, OI(OFF(fblocks)), C1, 0, TYP_NONE },
 	{ NULL }
 };
 

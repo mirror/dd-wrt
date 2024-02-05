@@ -6,6 +6,8 @@ xfs_admin \- change parameters of an XFS filesystem
 [
 .B \-eflpu
 ] [
+.BI \-O " featurelist"
+] [
 .BR "\-c 0" | 1
 ] [
 .B \-L
@@ -13,6 +15,9 @@ xfs_admin \- change parameters of an XFS filesystem
 ] [
 .B \-U
 .I uuid
+] [
+.B \-r
+.I rtdev
 ]
 .I device
 [
@@ -51,6 +56,8 @@ for a detailed description of the XFS log.
 Enables unwritten extent support on a filesystem that does not
 already have this enabled (for legacy filesystems, it can't be
 disabled anymore at mkfs time).
+.IP
+This option only applies to the deprecated V4 format.
 .TP
 .B \-f
 Specifies that the filesystem image to be processed is stored in a
@@ -64,12 +71,16 @@ option).
 .B \-j
 Enables version 2 log format (journal format supporting larger
 log buffers).
+.IP
+This option only applies to the deprecated V4 format.
 .TP
 .B \-l
 Print the current filesystem label.
 .TP
 .B \-p
 Enable 32bit project identifier support (PROJID32BIT feature).
+.IP
+This option only applies to the deprecated V4 format.
 .TP
 .B \-u
 Print the current filesystem UUID (Universally Unique IDentifier).
@@ -79,6 +90,8 @@ Enable (1) or disable (0) lazy-counters in the filesystem.
 .IP
 Lazy-counters may not be disabled on Version 5 superblock filesystems
 (i.e. those with metadata CRCs enabled).
+.IP
+In other words, this option only applies to the deprecated V4 format.
 .IP
 This operation may take quite a bit of time on large filesystems as the
 entire filesystem needs to be scanned when this option is changed.
@@ -103,6 +116,48 @@ The filesystem label can be cleared using the special "\c
 " value for
 .IR label .
 .TP
+.BI \-O " feature1" = "status" , "feature2" = "status..."
+Add or remove features on an existing V5 filesystem.
+The features should be specified as a comma-separated list.
+.I status
+should be either 0 to disable the feature or 1 to enable the feature.
+Note, however, that most features cannot be disabled.
+.IP
+.B NOTE:
+Administrators must ensure the filesystem is clean by running
+.B xfs_repair -n
+to inspect the filesystem before performing the upgrade.
+If corruption is found, recovery procedures (e.g. reformat followed by
+restoration from backup; or running
+.B xfs_repair
+without the
+.BR -n )
+must be followed to clean the filesystem.
+.IP
+Supported features are as follows:
+.RS 0.7i
+.TP 0.4i
+.B inobtcount
+Keep a count the number of blocks in each inode btree in the AGI.
+This reduces mount time by speeding up metadata space reservation calculations.
+The filesystem cannot be downgraded after this feature is enabled.
+Once enabled, the filesystem will not be writable by older kernels.
+This feature was added to Linux 5.10.
+.TP 0.4i
+.B bigtime
+Upgrade a filesystem to support larger timestamps up to the year 2486.
+The filesystem cannot be downgraded after this feature is enabled.
+Once enabled, the filesystem will not be mountable by older kernels.
+This feature was added to Linux 5.10.
+.TP 0.4i
+.B nrext64
+Upgrade a filesystem to support large per-inode extent counters. The maximum
+data fork extent count will be 2^48 - 1, while the maximum attribute fork
+extent count will be 2^32 - 1. The filesystem cannot be downgraded after this
+feature is enabled. Once enabled, the filesystem will not be mountable by
+older kernels.  This feature was added to Linux 5.19.
+.RE
+.TP
 .BI \-U " uuid"
 Set the UUID of the filesystem to
 .IR uuid .
@@ -122,6 +177,11 @@ not be able to mount the filesystem.  To remove this incompatible flag, use
 .BR restore ,
 which will restore the original UUID and remove the incompatible
 feature flag as needed.
+.TP
+.BI \-r " rtdev"
+Specifies the device special file where the filesystem's realtime section
+resides.
+Only for those filesystems which use a realtime section.
 .TP
 .B \-V
 Prints the version number and exits.

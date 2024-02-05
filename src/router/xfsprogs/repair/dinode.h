@@ -20,7 +20,7 @@ convert_extent(
 int
 process_bmbt_reclist(xfs_mount_t	*mp,
 		xfs_bmbt_rec_t		*rp,
-		int			*numrecs,
+		xfs_extnum_t		*numrecs,
 		int			type,
 		xfs_ino_t		ino,
 		xfs_rfsblock_t		*tot,
@@ -33,7 +33,7 @@ int
 scan_bmbt_reclist(
 	xfs_mount_t		*mp,
 	xfs_bmbt_rec_t		*rp,
-	int			*numrecs,
+	xfs_extnum_t		*numrecs,
 	int			type,
 	xfs_ino_t		ino,
 	xfs_rfsblock_t		*tot,
@@ -44,7 +44,7 @@ update_rootino(xfs_mount_t *mp);
 
 int
 process_dinode(xfs_mount_t *mp,
-		xfs_dinode_t *dino,
+		struct xfs_dinode *dino,
 		xfs_agnumber_t agno,
 		xfs_agino_t ino,
 		int was_free,
@@ -58,13 +58,13 @@ process_dinode(xfs_mount_t *mp,
 
 int
 verify_dinode(xfs_mount_t *mp,
-		xfs_dinode_t *dino,
+		struct xfs_dinode *dino,
 		xfs_agnumber_t agno,
 		xfs_agino_t ino);
 
 int
 verify_uncertain_dinode(xfs_mount_t *mp,
-		xfs_dinode_t *dino,
+		struct xfs_dinode *dino,
 		xfs_agnumber_t agno,
 		xfs_agino_t ino);
 

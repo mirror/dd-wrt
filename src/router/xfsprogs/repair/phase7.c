@@ -148,9 +148,9 @@ phase7(
 
 	destroy_work_queue(&wq);
 
-	quotacheck_verify(mp, XFS_DQ_USER);
-	quotacheck_verify(mp, XFS_DQ_GROUP);
-	quotacheck_verify(mp, XFS_DQ_PROJ);
+	quotacheck_verify(mp, XFS_DQTYPE_USER);
+	quotacheck_verify(mp, XFS_DQTYPE_GROUP);
+	quotacheck_verify(mp, XFS_DQTYPE_PROJ);
 
 	quotacheck_teardown();
 

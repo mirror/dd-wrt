@@ -28,7 +28,7 @@ extern int rmap_store_ag_btree_rec(struct xfs_mount *, xfs_agnumber_t);
 extern size_t rmap_record_count(struct xfs_mount *, xfs_agnumber_t);
 extern int rmap_init_cursor(xfs_agnumber_t, struct xfs_slab_cursor **);
 extern void rmap_avoid_check(void);
-extern int rmaps_verify_btree(struct xfs_mount *, xfs_agnumber_t);
+void rmaps_verify_btree(struct xfs_mount *mp, xfs_agnumber_t agno);
 
 extern int64_t rmap_diffkeys(struct xfs_rmap_irec *kp1,
 		struct xfs_rmap_irec *kp2);
@@ -39,7 +39,7 @@ extern int compute_refcounts(struct xfs_mount *, xfs_agnumber_t);
 extern size_t refcount_record_count(struct xfs_mount *, xfs_agnumber_t);
 extern int init_refcount_cursor(xfs_agnumber_t, struct xfs_slab_cursor **);
 extern void refcount_avoid_check(void);
-extern int check_refcounts(struct xfs_mount *, xfs_agnumber_t);
+void check_refcounts(struct xfs_mount *mp, xfs_agnumber_t agno);
 
 extern void record_inode_reflink_flag(struct xfs_mount *, struct xfs_dinode *,
 	xfs_agnumber_t, xfs_agino_t, xfs_ino_t);
@@ -47,5 +47,8 @@ extern int fix_inode_reflink_flags(struct xfs_mount *, xfs_agnumber_t);
 
 extern void fix_freelist(struct xfs_mount *, xfs_agnumber_t, bool);
 extern void rmap_store_agflcount(struct xfs_mount *, xfs_agnumber_t, int);
+
+xfs_extlen_t estimate_rmapbt_blocks(struct xfs_perag *pag);
+xfs_extlen_t estimate_refcountbt_blocks(struct xfs_perag *pag);
 
 #endif /* RMAP_H_ */

@@ -39,8 +39,8 @@ struct qc_dquots {
 	pthread_mutex_t		lock;
 	struct avl64tree_desc	tree;
 
-	/* One of XFS_DQ_{USER,GROUP,PROJ} */
-	uint16_t		type;
+	/* One of XFS_DQTYPE_USER/PROJ/GROUP */
+	xfs_dqtype_t		type;
 };
 
 #define qc_dquots_foreach(dquots, pos, n) \
@@ -68,13 +68,13 @@ struct qc_rec {
 
 static const char *
 qflags_typestr(
-	unsigned int		type)
+	xfs_dqtype_t		type)
 {
-	if (type & XFS_DQ_USER)
+	if (type & XFS_DQTYPE_USER)
 		return _("user quota");
-	else if (type & XFS_DQ_GROUP)
+	else if (type & XFS_DQTYPE_GROUP)
 		return _("group quota");
-	else if (type & XFS_DQ_PROJ)
+	else if (type & XFS_DQTYPE_PROJ)
 		return _("project quota");
 	return NULL;
 }
@@ -162,18 +162,16 @@ qc_count_rtblocks(
 	struct xfs_iext_cursor	icur;
 	struct xfs_bmbt_irec	got;
 	xfs_filblks_t		count = 0;
-	struct xfs_ifork	*ifp = XFS_IFORK_PTR(ip, XFS_DATA_FORK);
+	struct xfs_ifork	*ifp = xfs_ifork_ptr(ip, XFS_DATA_FORK);
 	int			error;
 
-	if (!(ifp->if_flags & XFS_IFEXTENTS)) {
-		error = -libxfs_iread_extents(NULL, ip, XFS_DATA_FORK);
-		if (error) {
-			do_warn(
+	error = -libxfs_iread_extents(NULL, ip, XFS_DATA_FORK);
+	if (error) {
+		do_warn(
 _("could not read ino %"PRIu64" extents, err=%d\n"),
-				ip->i_ino, error);
-			chkd_flags = 0;
-			return 0;
-		}
+			ip->i_ino, error);
+		chkd_flags = 0;
+		return 0;
 	}
 
 	for_each_xfs_iext(ifp, &icur, &got)
@@ -222,23 +220,60 @@ quotacheck_adjust(
 	/* Count the file's blocks. */
 	if (XFS_IS_REALTIME_INODE(ip))
 		rtblks = qc_count_rtblocks(ip);
-	blocks = ip->i_d.di_nblocks - rtblks;
+	blocks = ip->i_nblocks - rtblks;
 
 	if (user_dquots)
 		qc_adjust(user_dquots, i_uid_read(VFS_I(ip)), blocks, rtblks);
 	if (group_dquots)
 		qc_adjust(group_dquots, i_gid_read(VFS_I(ip)), blocks, rtblks);
 	if (proj_dquots)
-		qc_adjust(proj_dquots, ip->i_d.di_projid, blocks, rtblks);
+		qc_adjust(proj_dquots, ip->i_projid, blocks, rtblks);
 
 	libxfs_irele(ip);
+}
+
+/* Check the ondisk dquot's id and type match what the incore dquot expects. */
+static bool
+qc_dquot_check_type(
+	struct xfs_mount	*mp,
+	xfs_dqtype_t		type,
+	xfs_dqid_t		id,
+	struct xfs_disk_dquot	*ddq)
+{
+	uint8_t			ddq_type;
+
+	ddq_type = ddq->d_type & XFS_DQTYPE_REC_MASK;
+
+	if (be32_to_cpu(ddq->d_id) != id)
+		return false;
+
+	/*
+	 * V5 filesystems always expect an exact type match.  V4 filesystems
+	 * expect an exact match for user dquots and for non-root group and
+	 * project dquots.
+	 */
+	if (xfs_has_crc(mp) || type == XFS_DQTYPE_USER || id)
+		return ddq_type == type;
+
+	/*
+	 * V4 filesystems support either group or project quotas, but not both
+	 * at the same time.  The non-user quota file can be switched between
+	 * group and project quota uses depending on the mount options, which
+	 * means that we can encounter the other type when we try to load quota
+	 * defaults.  Quotacheck will soon reset the the entire quota file
+	 * (including the root dquot) anyway, but don't log scary corruption
+	 * reports to dmesg.
+	 */
+	return ddq_type == XFS_DQTYPE_GROUP || ddq_type == XFS_DQTYPE_PROJ;
 }
 
 /* Compare this on-disk dquot against whatever we observed. */
 static void
 qc_check_dquot(
+	struct xfs_mount	*mp,
 	struct xfs_disk_dquot	*ddq,
-	struct qc_dquots	*dquots)
+	struct qc_dquots	*dquots,
+	xfs_dqid_t		dqid)
 {
 	struct qc_rec		*qrec;
 	struct qc_rec		empty = {
@@ -252,24 +287,51 @@ qc_check_dquot(
 	if (!qrec)
 		qrec = &empty;
 
+	if (!qc_dquot_check_type(mp, dquots->type, dqid, ddq)) {
+		const char	*dqtypestr;
+
+		dqtypestr = qflags_typestr(ddq->d_type & XFS_DQTYPE_REC_MASK);
+		if (dqtypestr)
+			do_warn(_("%s id %u saw type %s id %u\n"),
+					qflags_typestr(dquots->type), dqid,
+					dqtypestr, be32_to_cpu(ddq->d_id));
+		else
+			do_warn(_("%s id %u saw type %x id %u\n"),
+					qflags_typestr(dquots->type), dqid,
+					ddq->d_type & XFS_DQTYPE_REC_MASK,
+					be32_to_cpu(ddq->d_id));
+		chkd_flags = 0;
+	}
+
 	if (be64_to_cpu(ddq->d_bcount) != qrec->bcount) {
 		do_warn(_("%s id %u has bcount %llu, expected %"PRIu64"\n"),
 				qflags_typestr(dquots->type), id,
-				be64_to_cpu(ddq->d_bcount), qrec->bcount);
+				(unsigned long long)be64_to_cpu(ddq->d_bcount),
+				qrec->bcount);
 		chkd_flags = 0;
 	}
 
 	if (be64_to_cpu(ddq->d_rtbcount) != qrec->rtbcount) {
 		do_warn(_("%s id %u has rtbcount %llu, expected %"PRIu64"\n"),
 				qflags_typestr(dquots->type), id,
-				be64_to_cpu(ddq->d_rtbcount), qrec->rtbcount);
+				(unsigned long long)be64_to_cpu(ddq->d_rtbcount),
+				qrec->rtbcount);
 		chkd_flags = 0;
 	}
 
 	if (be64_to_cpu(ddq->d_icount) != qrec->icount) {
 		do_warn(_("%s id %u has icount %llu, expected %"PRIu64"\n"),
 				qflags_typestr(dquots->type), id,
-				be64_to_cpu(ddq->d_icount), qrec->icount);
+				(unsigned long long)be64_to_cpu(ddq->d_icount),
+				qrec->icount);
+		chkd_flags = 0;
+	}
+
+	if ((ddq->d_type & XFS_DQTYPE_BIGTIME) &&
+	    !xfs_has_bigtime(mp)) {
+		do_warn(
+	_("%s id %u is marked bigtime but file system does not support large timestamps\n"),
+				qflags_typestr(dquots->type), id);
 		chkd_flags = 0;
 	}
 
@@ -318,11 +380,11 @@ _("cannot read %s inode %"PRIu64", block %"PRIu64", disk block %"PRIu64", err=%d
 		}
 
 		dqb = bp->b_addr;
-		dqid = map->br_startoff * dqperchunk;
+		dqid = (map->br_startoff + bno) * dqperchunk;
 		for (dqnr = 0;
 		     dqnr < dqperchunk && dqid <= UINT_MAX;
 		     dqnr++, dqb++, dqid++)
-			qc_check_dquot(&dqb->dd_diskdq, dquots);
+			qc_check_dquot(mp, &dqb->dd_diskdq, dquots, dqid);
 		libxfs_buf_relse(bp);
 	}
 
@@ -333,7 +395,7 @@ _("cannot read %s inode %"PRIu64", block %"PRIu64", disk block %"PRIu64", err=%d
 void
 quotacheck_verify(
 	struct xfs_mount	*mp,
-	unsigned int		type)
+	xfs_dqtype_t		type)
 {
 	struct xfs_bmbt_irec	map;
 	struct xfs_iext_cursor	icur;
@@ -345,15 +407,15 @@ quotacheck_verify(
 	int			error;
 
 	switch (type) {
-	case XFS_DQ_USER:
+	case XFS_DQTYPE_USER:
 		ino = mp->m_sb.sb_uquotino;
 		dquots = user_dquots;
 		break;
-	case XFS_DQ_GROUP:
+	case XFS_DQTYPE_GROUP:
 		ino = mp->m_sb.sb_gquotino;
 		dquots = group_dquots;
 		break;
-	case XFS_DQ_PROJ:
+	case XFS_DQTYPE_PROJ:
 		ino = mp->m_sb.sb_pquotino;
 		dquots = proj_dquots;
 		break;
@@ -376,16 +438,14 @@ quotacheck_verify(
 		return;
 	}
 
-	ifp = XFS_IFORK_PTR(ip, XFS_DATA_FORK);
-	if (!(ifp->if_flags & XFS_IFEXTENTS)) {
-		error = -libxfs_iread_extents(NULL, ip, XFS_DATA_FORK);
-		if (error) {
-			do_warn(
+	ifp = xfs_ifork_ptr(ip, XFS_DATA_FORK);
+	error = -libxfs_iread_extents(NULL, ip, XFS_DATA_FORK);
+	if (error) {
+		do_warn(
 	_("could not read %s inode %"PRIu64" extents, err=%d\n"),
-				qflags_typestr(type), ip->i_ino, error);
-			chkd_flags = 0;
-			goto err;
-		}
+			qflags_typestr(type), ip->i_ino, error);
+		chkd_flags = 0;
+		goto err;
 	}
 
 	/* Walk each extent of the quota inode and compare counters. */
@@ -427,24 +487,24 @@ err:
 static inline bool
 qc_has_quotafile(
 	struct xfs_mount	*mp,
-	unsigned int		type)
+	xfs_dqtype_t		type)
 {
 	bool			lost;
 	xfs_ino_t		ino;
 	unsigned int		qflag;
 
 	switch (type) {
-	case XFS_DQ_USER:
+	case XFS_DQTYPE_USER:
 		lost = lost_uquotino;
 		ino = mp->m_sb.sb_uquotino;
 		qflag = XFS_UQUOTA_CHKD;
 		break;
-	case XFS_DQ_GROUP:
+	case XFS_DQTYPE_GROUP:
 		lost = lost_gquotino;
 		ino = mp->m_sb.sb_gquotino;
 		qflag = XFS_GQUOTA_CHKD;
 		break;
-	case XFS_DQ_PROJ:
+	case XFS_DQTYPE_PROJ:
 		lost = lost_pquotino;
 		ino = mp->m_sb.sb_pquotino;
 		qflag = XFS_PQUOTA_CHKD;
@@ -465,7 +525,7 @@ qc_has_quotafile(
 /* Initialize an incore dquot tree. */
 static struct qc_dquots *
 qc_dquots_init(
-	uint16_t		type)
+	xfs_dqtype_t		type)
 {
 	struct qc_dquots	*dquots;
 
@@ -493,22 +553,22 @@ quotacheck_setup(
 	if (!fs_quotas || lost_quotas || noquota)
 		return 0;
 
-	if (qc_has_quotafile(mp, XFS_DQ_USER)) {
-		user_dquots = qc_dquots_init(XFS_DQ_USER);
+	if (qc_has_quotafile(mp, XFS_DQTYPE_USER)) {
+		user_dquots = qc_dquots_init(XFS_DQTYPE_USER);
 		if (!user_dquots)
 			goto err;
 		chkd_flags |= XFS_UQUOTA_CHKD;
 	}
 
-	if (qc_has_quotafile(mp, XFS_DQ_GROUP)) {
-		group_dquots = qc_dquots_init(XFS_DQ_GROUP);
+	if (qc_has_quotafile(mp, XFS_DQTYPE_GROUP)) {
+		group_dquots = qc_dquots_init(XFS_DQTYPE_GROUP);
 		if (!group_dquots)
 			goto err;
 		chkd_flags |= XFS_GQUOTA_CHKD;
 	}
 
-	if (qc_has_quotafile(mp, XFS_DQ_PROJ)) {
-		proj_dquots = qc_dquots_init(XFS_DQ_PROJ);
+	if (qc_has_quotafile(mp, XFS_DQTYPE_PROJ)) {
+		proj_dquots = qc_dquots_init(XFS_DQTYPE_PROJ);
 		if (!proj_dquots)
 			goto err;
 		chkd_flags |= XFS_PQUOTA_CHKD;

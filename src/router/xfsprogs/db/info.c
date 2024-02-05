@@ -29,7 +29,7 @@ info_f(
 {
 	struct xfs_fsop_geom	geo;
 
-	libxfs_fs_geometry(&mp->m_sb, &geo, XFS_FS_GEOM_MAX_STRUCT_VER);
+	libxfs_fs_geometry(mp, &geo, XFS_FS_GEOM_MAX_STRUCT_VER);
 	xfs_report_geom(&geo, fsdevice, x.logname, x.rtname);
 	return 0;
 }
@@ -62,27 +62,28 @@ agresv_help(void)
 
 static void
 print_agresv_info(
-	xfs_agnumber_t	agno)
+	struct xfs_perag *pag)
 {
 	struct xfs_buf	*bp;
 	struct xfs_agf	*agf;
+	xfs_agnumber_t	agno = pag->pag_agno;
 	xfs_extlen_t	ask = 0;
 	xfs_extlen_t	used = 0;
 	xfs_extlen_t	free = 0;
 	xfs_extlen_t	length = 0;
 	int		error;
 
-	error = -libxfs_refcountbt_calc_reserves(mp, NULL, agno, &ask, &used);
+	error = -libxfs_refcountbt_calc_reserves(mp, NULL, pag, &ask, &used);
 	if (error)
 		xfrog_perror(error, "refcountbt");
-	error = -libxfs_finobt_calc_reserves(mp, NULL, agno, &ask, &used);
+	error = -libxfs_finobt_calc_reserves(pag, NULL, &ask, &used);
 	if (error)
 		xfrog_perror(error, "finobt");
-	error = -libxfs_rmapbt_calc_reserves(mp, NULL, agno, &ask, &used);
+	error = -libxfs_rmapbt_calc_reserves(mp, NULL, pag, &ask, &used);
 	if (error)
 		xfrog_perror(error, "rmapbt");
 
-	error = -libxfs_read_agf(mp, NULL, agno, 0, &bp);
+	error = -libxfs_read_agf(pag, NULL, 0, &bp);
 	if (error)
 		xfrog_perror(error, "AGF");
 	agf = bp->b_addr;
@@ -103,6 +104,7 @@ agresv_f(
 	int			argc,
 	char			**argv)
 {
+	struct xfs_perag	*pag;
 	xfs_agnumber_t		agno;
 	int			i;
 
@@ -125,13 +127,15 @@ agresv_f(
 				continue;
 			}
 
-			print_agresv_info(a);
+			pag = libxfs_perag_get(mp, a);
+			print_agresv_info(pag);
+			libxfs_perag_put(pag);
 		}
 		return 0;
 	}
 
-	for (agno = 0; agno < mp->m_sb.sb_agcount; agno++)
-		print_agresv_info(agno);
+	for_each_perag(mp, agno, pag)
+		print_agresv_info(pag);
 
 	return 0;
 }

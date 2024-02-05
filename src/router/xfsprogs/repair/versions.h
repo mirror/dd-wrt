@@ -34,11 +34,11 @@ extern xfs_extlen_t	fs_ino_alignment;
  * modify superblock to reflect current state of global fs
  * feature vars above
  */
-void			update_sb_version(xfs_mount_t *mp);
+void update_sb_version(struct xfs_mount *mp);
 
 /*
  * parse current sb to set above feature vars
  */
-int			parse_sb_version(xfs_sb_t *sb);
+int parse_sb_version(struct xfs_mount *mp);
 
 #endif /* _XR_VERSIONS_H */

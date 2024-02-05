@@ -28,6 +28,7 @@
 #include "xfs_da_format.h"
 #include "xfs_da_btree.h"
 #include "xfs_dir2_priv.h"
+#include "xfs_health.h"
 
 /*
  * Calculate the worst case log unit reservation for a given superblock
@@ -44,7 +45,7 @@ xfs_log_calc_unit_res(
 	int			iclog_size;
 	uint			num_headers;
 
-	if (xfs_sb_version_haslogv2(&mp->m_sb)) {
+	if (xfs_has_logv2(mp)) {
 		iclog_size = XLOG_MAX_RECORD_BSIZE;
 		iclog_header_size = BBTOB(iclog_size / XLOG_HEADER_CYCLE_SIZE);
 	} else {
@@ -125,7 +126,7 @@ xfs_log_calc_unit_res(
 	unit_bytes += iclog_header_size;
 
 	/* for roundoff padding for transaction data and one for commit record */
-	if (xfs_sb_version_haslogv2(&mp->m_sb) && mp->m_sb.sb_logsunit > 1) {
+	if (xfs_has_logv2(mp) && mp->m_sb.sb_logsunit > 1) {
 		/* log su roundoff */
 		unit_bytes += 2 * mp->m_sb.sb_logsunit;
 	} else {
@@ -156,7 +157,7 @@ xfs_flags2diflags(
 {
 	/* can't set PREALLOC this way, just preserve it */
 	uint16_t		di_flags =
-		(ip->i_d.di_flags & XFS_DIFLAG_PREALLOC);
+		(ip->i_diflags & XFS_DIFLAG_PREALLOC);
 
 	if (xflags & FS_XFLAG_IMMUTABLE)
 		di_flags |= XFS_DIFLAG_IMMUTABLE;
@@ -197,7 +198,9 @@ xfs_flags2diflags2(
 	unsigned int		xflags)
 {
 	uint64_t		di_flags2 =
-		(ip->i_d.di_flags2 & XFS_DIFLAG2_REFLINK);
+		(ip->i_diflags2 & (XFS_DIFLAG2_REFLINK |
+				   XFS_DIFLAG2_BIGTIME |
+				   XFS_DIFLAG2_NREXT64));
 
 	if (xflags & FS_XFLAG_DAX)
 		di_flags2 |= XFS_DIFLAG2_DAX;
@@ -207,47 +210,57 @@ xfs_flags2diflags2(
 	return di_flags2;
 }
 
+/* Propagate di_flags from a parent inode to a child inode. */
+static void
+xfs_inode_propagate_flags(
+	struct xfs_inode	*ip,
+	const struct xfs_inode	*pip)
+{
+	unsigned int		di_flags = 0;
+	umode_t			mode = VFS_I(ip)->i_mode;
+
+	if ((mode & S_IFMT) == S_IFDIR) {
+		if (pip->i_diflags & XFS_DIFLAG_RTINHERIT)
+			di_flags |= XFS_DIFLAG_RTINHERIT;
+		if (pip->i_diflags & XFS_DIFLAG_EXTSZINHERIT) {
+			di_flags |= XFS_DIFLAG_EXTSZINHERIT;
+			ip->i_extsize = pip->i_extsize;
+		}
+	} else {
+		if ((pip->i_diflags & XFS_DIFLAG_RTINHERIT) &&
+		    xfs_has_realtime(ip->i_mount))
+			di_flags |= XFS_DIFLAG_REALTIME;
+		if (pip->i_diflags & XFS_DIFLAG_EXTSZINHERIT) {
+			di_flags |= XFS_DIFLAG_EXTSIZE;
+			ip->i_extsize = pip->i_extsize;
+		}
+	}
+	if (pip->i_diflags & XFS_DIFLAG_PROJINHERIT)
+		di_flags |= XFS_DIFLAG_PROJINHERIT;
+	ip->i_diflags |= di_flags;
+}
+
 /*
- * Allocate an inode on disk and return a copy of its in-core version.
- * Set mode, nlink, and rdev appropriately within the inode.
- * The uid and gid for the inode are set according to the contents of
- * the given cred structure.
- *
- * This was once shared with the kernel, but has diverged to the point
- * where it's no longer worth the hassle of maintaining common code.
+ * Initialise a newly allocated inode and return the in-core inode to the
+ * caller locked exclusively.
  */
 static int
-libxfs_ialloc(
-	xfs_trans_t	*tp,
-	xfs_inode_t	*pip,
-	mode_t		mode,
-	nlink_t		nlink,
-	xfs_dev_t	rdev,
-	struct cred	*cr,
-	struct fsxattr	*fsx,
-	xfs_buf_t	**ialloc_context,
-	xfs_inode_t	**ipp)
+libxfs_init_new_inode(
+	struct xfs_trans	*tp,
+	struct xfs_inode	*pip,
+	xfs_ino_t		ino,
+	umode_t			mode,
+	xfs_nlink_t		nlink,
+	dev_t			rdev,
+	struct cred		*cr,
+	struct fsxattr		*fsx,
+	struct xfs_inode	**ipp)
 {
-	xfs_ino_t	ino;
-	xfs_inode_t	*ip;
-	uint		flags;
-	int		error;
+	struct xfs_inode	*ip;
+	unsigned int		flags;
+	int			error;
 
-	/*
-	 * Call the space management code to pick
-	 * the on-disk inode to be allocated.
-	 */
-	error = xfs_dialloc(tp, pip ? pip->i_ino : 0, mode,
-			    ialloc_context, &ino);
-	if (error != 0)
-		return error;
-	if (*ialloc_context || ino == NULLFSINO) {
-		*ipp = NULL;
-		return 0;
-	}
-	ASSERT(*ialloc_context == NULL);
-
-	error = libxfs_iget(tp->t_mountp, tp, ino, 0, &ip);
+	error = libxfs_iget(tp->t_mountp, tp, ino, XFS_IGET_CREATE, &ip);
 	if (error != 0)
 		return error;
 	ASSERT(ip != NULL);
@@ -256,32 +269,30 @@ libxfs_ialloc(
 	set_nlink(VFS_I(ip), nlink);
 	i_uid_write(VFS_I(ip), cr->cr_uid);
 	i_gid_write(VFS_I(ip), cr->cr_gid);
-	ip->i_d.di_projid = pip ? 0 : fsx->fsx_projid;
+	ip->i_projid = pip ? 0 : fsx->fsx_projid;
 	xfs_trans_ichgtime(tp, ip, XFS_ICHGTIME_CHG | XFS_ICHGTIME_MOD);
 
 	if (pip && (VFS_I(pip)->i_mode & S_ISGID)) {
-		VFS_I(ip)->i_gid = VFS_I(pip)->i_gid;
+		if (!(cr->cr_flags & CRED_FORCE_GID))
+			VFS_I(ip)->i_gid = VFS_I(pip)->i_gid;
 		if ((VFS_I(pip)->i_mode & S_ISGID) && (mode & S_IFMT) == S_IFDIR)
 			VFS_I(ip)->i_mode |= S_ISGID;
 	}
 
-	ip->i_d.di_size = 0;
+	ip->i_disk_size = 0;
 	ip->i_df.if_nextents = 0;
-	ASSERT(ip->i_d.di_nblocks == 0);
-	ip->i_d.di_extsize = pip ? 0 : fsx->fsx_extsize;
-	ip->i_d.di_dmevmask = 0;
-	ip->i_d.di_dmstate = 0;
-	ip->i_d.di_flags = pip ? 0 : xfs_flags2diflags(ip, fsx->fsx_xflags);
+	ASSERT(ip->i_nblocks == 0);
+	ip->i_extsize = pip ? 0 : fsx->fsx_extsize;
+	ip->i_diflags = pip ? 0 : xfs_flags2diflags(ip, fsx->fsx_xflags);
 
-	if (xfs_sb_version_has_v3inode(&ip->i_mount->m_sb)) {
-		ASSERT(ip->i_d.di_ino == ino);
-		ASSERT(uuid_equal(&ip->i_d.di_uuid, &mp->m_sb.sb_meta_uuid));
+	if (xfs_has_v3inodes(ip->i_mount)) {
 		VFS_I(ip)->i_version = 1;
-		ip->i_d.di_flags2 = pip ? 0 : xfs_flags2diflags2(ip,
-				fsx->fsx_xflags);
-		ip->i_d.di_crtime.tv_sec = (int32_t)VFS_I(ip)->i_mtime.tv_sec;
-		ip->i_d.di_crtime.tv_nsec = (int32_t)VFS_I(ip)->i_mtime.tv_nsec;
-		ip->i_d.di_cowextsize = pip ? 0 : fsx->fsx_cowextsize;
+		ip->i_diflags2 = ip->i_mount->m_ino_geo.new_diflags2;
+		if (!pip)
+			ip->i_diflags2 = xfs_flags2diflags2(ip,
+							fsx->fsx_xflags);
+		ip->i_crtime = VFS_I(ip)->i_mtime; /* struct copy */
+		ip->i_cowextsize = pip ? 0 : fsx->fsx_cowextsize;
 	}
 
 	flags = XFS_ILOG_CORE;
@@ -299,33 +310,11 @@ libxfs_ialloc(
 		break;
 	case S_IFREG:
 	case S_IFDIR:
-		if (pip && (pip->i_d.di_flags & XFS_DIFLAG_ANY)) {
-			uint	di_flags = 0;
-
-			if ((mode & S_IFMT) == S_IFDIR) {
-				if (pip->i_d.di_flags & XFS_DIFLAG_RTINHERIT)
-					di_flags |= XFS_DIFLAG_RTINHERIT;
-				if (pip->i_d.di_flags & XFS_DIFLAG_EXTSZINHERIT) {
-					di_flags |= XFS_DIFLAG_EXTSZINHERIT;
-					ip->i_d.di_extsize = pip->i_d.di_extsize;
-				}
-			} else {
-				if (pip->i_d.di_flags & XFS_DIFLAG_RTINHERIT) {
-					di_flags |= XFS_DIFLAG_REALTIME;
-				}
-				if (pip->i_d.di_flags & XFS_DIFLAG_EXTSZINHERIT) {
-					di_flags |= XFS_DIFLAG_EXTSIZE;
-					ip->i_d.di_extsize = pip->i_d.di_extsize;
-				}
-			}
-			if (pip->i_d.di_flags & XFS_DIFLAG_PROJINHERIT)
-				di_flags |= XFS_DIFLAG_PROJINHERIT;
-			ip->i_d.di_flags |= di_flags;
-		}
+		if (pip && (pip->i_diflags & XFS_DIFLAG_ANY))
+			xfs_inode_propagate_flags(ip, pip);
 		/* FALLTHROUGH */
 	case S_IFLNK:
 		ip->i_df.if_format = XFS_DINODE_FMT_EXTENTS;
-		ip->i_df.if_flags = XFS_IFEXTENTS;
 		ip->i_df.if_bytes = 0;
 		ip->i_df.if_u1.if_root = NULL;
 		break;
@@ -349,10 +338,10 @@ libxfs_ialloc(
 int
 libxfs_iflush_int(
 	xfs_inode_t			*ip,
-	xfs_buf_t			*bp)
+	struct xfs_buf			*bp)
 {
 	struct xfs_inode_log_item	*iip;
-	xfs_dinode_t			*dip;
+	struct xfs_dinode		*dip;
 	xfs_mount_t			*mp;
 
 	ASSERT(ip->i_df.if_format != XFS_DINODE_FMT_BTREE ||
@@ -364,7 +353,6 @@ libxfs_iflush_int(
 	/* set *dip = inode's place in the buffer */
 	dip = xfs_buf_offset(bp, ip->i_imap.im_boffset);
 
-	ASSERT(ip->i_d.di_magic == XFS_DINODE_MAGIC);
 	if (XFS_ISREG(ip)) {
 		ASSERT( (ip->i_df.if_format == XFS_DINODE_FMT_EXTENTS) ||
 			(ip->i_df.if_format == XFS_DINODE_FMT_BTREE) );
@@ -373,11 +361,11 @@ libxfs_iflush_int(
 			(ip->i_df.if_format == XFS_DINODE_FMT_BTREE)   ||
 			(ip->i_df.if_format == XFS_DINODE_FMT_LOCAL) );
 	}
-	ASSERT(ip->i_df.if_nextents+ip->i_afp->if_nextents <= ip->i_d.di_nblocks);
-	ASSERT(ip->i_d.di_forkoff <= mp->m_sb.sb_inodesize);
+	ASSERT(ip->i_df.if_nextents+ip.i_af->if_nextents <= ip->i_nblocks);
+	ASSERT(ip->i_forkoff <= mp->m_sb.sb_inodesize);
 
 	/* bump the change count on v3 inodes */
-	if (xfs_sb_version_has_v3inode(&mp->m_sb))
+	if (xfs_has_v3inodes(mp))
 		VFS_I(ip)->i_version++;
 
 	/*
@@ -387,7 +375,8 @@ libxfs_iflush_int(
 	if (ip->i_df.if_format == XFS_DINODE_FMT_LOCAL &&
 	    xfs_ifork_verify_local_data(ip))
 		return -EFSCORRUPTED;
-	if (ip->i_afp && ip->i_afp->if_format == XFS_DINODE_FMT_LOCAL &&
+	if (xfs_inode_has_attr_fork(ip) &&
+	    ip->i_af.if_format == XFS_DINODE_FMT_LOCAL &&
 	    xfs_ifork_verify_local_attr(ip))
 		return -EFSCORRUPTED;
 
@@ -400,7 +389,7 @@ libxfs_iflush_int(
 	xfs_inode_to_disk(ip, dip, iip->ili_item.li_lsn);
 
 	xfs_iflush_fork(ip, dip, iip, XFS_DATA_FORK);
-	if (XFS_IFORK_Q(ip))
+	if (xfs_inode_has_attr_fork(ip))
 		xfs_iflush_fork(ip, dip, iip, XFS_ATTR_FORK);
 
 	/* generate the checksum. */
@@ -521,53 +510,30 @@ error0:	/* Cancel bmap, cancel trans */
  * other in repair - now there is just the one.
  */
 int
-libxfs_inode_alloc(
-	xfs_trans_t	**tp,
-	xfs_inode_t	*pip,
-	mode_t		mode,
-	nlink_t		nlink,
-	xfs_dev_t	rdev,
-	struct cred	*cr,
-	struct fsxattr	*fsx,
-	xfs_inode_t	**ipp)
+libxfs_dir_ialloc(
+	struct xfs_trans	**tpp,
+	struct xfs_inode	*dp,
+	mode_t			mode,
+	nlink_t			nlink,
+	xfs_dev_t		rdev,
+	struct cred		*cr,
+	struct fsxattr		*fsx,
+	struct xfs_inode	**ipp)
 {
-	xfs_buf_t	*ialloc_context;
-	xfs_inode_t	*ip;
-	int		error;
+	xfs_ino_t		parent_ino = dp ? dp->i_ino : 0;
+	xfs_ino_t		ino;
+	int			error;
 
-	ialloc_context = (xfs_buf_t *)0;
-	error = libxfs_ialloc(*tp, pip, mode, nlink, rdev, cr, fsx,
-			   &ialloc_context, &ip);
-	if (error) {
-		*ipp = NULL;
+	/*
+	 * Call the space management code to pick the on-disk inode to be
+	 * allocated.
+	 */
+	error = xfs_dialloc(tpp, parent_ino, mode, &ino);
+	if (error)
 		return error;
-	}
-	if (!ialloc_context && !ip) {
-		*ipp = NULL;
-		return -ENOSPC;
-	}
 
-	if (ialloc_context) {
-
-		xfs_trans_bhold(*tp, ialloc_context);
-
-		error = xfs_trans_roll(tp);
-		if (error) {
-			fprintf(stderr, _("%s: cannot duplicate transaction: %s\n"),
-				progname, strerror(error));
-			exit(1);
-		}
-		xfs_trans_bjoin(*tp, ialloc_context);
-		error = libxfs_ialloc(*tp, pip, mode, nlink, rdev, cr,
-				   fsx, &ialloc_context, &ip);
-		if (!ip)
-			error = -ENOSPC;
-		if (error)
-			return error;
-	}
-
-	*ipp = ip;
-	return error;
+	return libxfs_init_new_inode(*tpp, dp, ino, mode, nlink, rdev, cr,
+				fsx, ipp);
 }
 
 void
@@ -596,7 +562,7 @@ xfs_verifier_error(
 	xfs_alert(NULL, "Metadata %s detected at %p, %s block 0x%llx/0x%x",
 		  bp->b_error == -EFSBADCRC ? "CRC error" : "corruption",
 		  failaddr ? failaddr : __return_address,
-		  bp->b_ops->name, bp->b_bn, BBTOB(bp->b_length));
+		  bp->b_ops->name, xfs_buf_daddr(bp), BBTOB(bp->b_length));
 }
 
 /*
@@ -629,7 +595,7 @@ xfs_buf_corruption_error(
 	xfs_failaddr_t		fa)
 {
 	xfs_alert(NULL, "Metadata corruption detected at %p, %s block 0x%llx",
-		  fa, bp->b_ops->name, bp->b_bn);
+		  fa, bp->b_ops->name, xfs_buf_daddr(bp));
 }
 
 /*
@@ -677,12 +643,15 @@ void
 xfs_log_item_init(
 	struct xfs_mount	*mp,
 	struct xfs_log_item	*item,
-	int			type)
+	int			type,
+	const struct xfs_item_ops *ops)
 {
 	item->li_mountp = mp; 
 	item->li_type = type;
+	item->li_ops = ops;
 
 	INIT_LIST_HEAD(&item->li_trans);
+	INIT_LIST_HEAD(&item->li_bio_list);
 }   
 
 static struct xfs_buftarg *

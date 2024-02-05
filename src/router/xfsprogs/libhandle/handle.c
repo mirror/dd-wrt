@@ -107,7 +107,8 @@ path_to_fshandle(
 		}
 
 		fdhp->fsfd = fd;
-		strncpy(fdhp->fspath, fspath, sizeof(fdhp->fspath));
+		strncpy(fdhp->fspath, fspath, sizeof(fdhp->fspath) - 1);
+		fdhp->fspath[sizeof(fdhp->fspath) - 1] = 0;
 		memcpy(fdhp->fsh, *fshanp, FSIDSIZE);
 
 		fdhp->fnxt = fdhash_head;
@@ -234,8 +235,10 @@ obj_to_handle(
 {
 	char		hbuf [MAXHANSIZ];
 	int		ret;
-	uint32_t	handlen;
-	xfs_fsop_handlereq_t hreq;
+	uint32_t	handlen = 0;
+	struct xfs_fsop_handlereq hreq = { };
+
+	memset(hbuf, 0, MAXHANSIZ);
 
 	if (opcode == XFS_IOC_FD_TO_HANDLE) {
 		hreq.fd      = obj.fd;
@@ -274,7 +277,7 @@ open_by_fshandle(
 {
 	int		fsfd;
 	char		*path;
-	xfs_fsop_handlereq_t hreq;
+	struct xfs_fsop_handlereq hreq = { };
 
 	if ((fsfd = handle_to_fsfd(fshanp, &path)) < 0)
 		return -1;
@@ -381,7 +384,7 @@ attr_list_by_handle(
 {
 	int		error, fd;
 	char		*path;
-	xfs_fsop_attrlist_handlereq_t alhreq;
+	struct xfs_fsop_attrlist_handlereq alhreq = { };
 
 	if ((fd = handle_to_fsfd(hanp, &path)) < 0)
 		return -1;
@@ -433,30 +436,15 @@ parentpaths_by_handle(
 	return -1;
 }
 
+/* Deprecated in kernel */
 int
 fssetdm_by_handle(
 	void		*hanp,
 	size_t		hlen,
 	struct fsdmidata *fsdmidata)
 {
-	int		fd;
-	char		*path;
-	xfs_fsop_setdm_handlereq_t dmhreq;
-
-	if ((fd = handle_to_fsfd(hanp, &path)) < 0)
-		return -1;
-
-	dmhreq.hreq.fd       = 0;
-	dmhreq.hreq.path     = NULL;
-	dmhreq.hreq.oflags   = O_LARGEFILE;
-	dmhreq.hreq.ihandle  = hanp;
-	dmhreq.hreq.ihandlen = hlen;
-	dmhreq.hreq.ohandle  = NULL;
-	dmhreq.hreq.ohandlen = NULL;
-
-	dmhreq.data = fsdmidata;
-
-	return xfsctl(path, fd, XFS_IOC_FSSETDM_BY_HANDLE, &dmhreq);
+	errno = EOPNOTSUPP;
+	return -1;
 }
 
 /*ARGSUSED1*/

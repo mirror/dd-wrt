@@ -25,6 +25,8 @@ int unicrash_check_xattr_name(struct unicrash *uc, struct descr *dsc,
 		const char *attrname);
 int unicrash_check_fs_label(struct unicrash *uc, struct descr *dsc,
 		const char *label);
+bool unicrash_load(void);
+void unicrash_unload(void);
 #else
 # define unicrash_dir_init(u, c, b)		(0)
 # define unicrash_xattr_init(u, c, b)		(0)
@@ -33,6 +35,8 @@ int unicrash_check_fs_label(struct unicrash *uc, struct descr *dsc,
 # define unicrash_check_dir_name(u, d, n)	(0)
 # define unicrash_check_xattr_name(u, d, n)	(0)
 # define unicrash_check_fs_label(u, d, n)	(0)
+# define unicrash_load()			(0)
+# define unicrash_unload()			do { } while (0)
 #endif /* HAVE_LIBICU */
 
 #endif /* XFS_SCRUB_UNICRASH_H_ */

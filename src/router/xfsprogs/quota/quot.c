@@ -173,16 +173,19 @@ quot_bulkstat_mount(
 
 static int
 qcompare(
-	du_t		*p1,
-	du_t		*p2)
+	const void	*p1,
+	const void	*p2)
 {
-	if (p1->blocks > p2->blocks)
+	du_t		*d1 = (struct du *)p1;
+	du_t		*d2 = (struct du *)p2;
+
+	if (d1->blocks > d2->blocks)
 		return -1;
-	if (p1->blocks < p2->blocks)
+	if (d1->blocks < d2->blocks)
 		return 1;
-	if (p1->id > p2->id)
+	if (d1->id > d2->id)
 		return 1;
-	else if (p1->id < p2->id)
+	else if (d1->id < d2->id)
 		return -1;
 	return 0;
 }
@@ -204,8 +207,7 @@ quot_report_mount_any_type(
 
 	fprintf(fp, _("%s (%s) %s:\n"),
 		mount->fs_name, mount->fs_dir, type_to_string(type));
-	qsort(dp, count, sizeof(dp[0]),
-		(int (*)(const void *, const void *))qcompare);
+	qsort(dp, count, sizeof(dp[0]), qcompare);
 	for (; dp < &dp[count]; dp++) {
 		if (dp->blocks == 0)
 			return;

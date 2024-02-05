@@ -116,7 +116,7 @@ openfile(
 	}
 
 	if (!geom || !platform_test_xfs_fd(fd))
-		return fd;
+		goto set_fspath;
 
 	if (flags & IO_PATH) {
 		/* Can't call ioctl() on O_PATH fds */
@@ -150,6 +150,7 @@ openfile(
 		}
 	}
 
+set_fspath:
 	if (fs_path) {
 		fsp = fs_table_lookup(path, FS_MOUNT_POINT);
 		if (!fsp)

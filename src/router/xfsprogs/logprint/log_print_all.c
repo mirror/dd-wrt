@@ -16,7 +16,7 @@ xlog_print_find_oldest(
 	struct xlog	*log,
 	xfs_daddr_t	*last_blk)
 {
-	xfs_buf_t	*bp;
+	struct xfs_buf	*bp;
 	xfs_daddr_t	first_blk;
 	uint		first_half_cycle, last_half_cycle;
 	int		error = 0;
@@ -172,7 +172,7 @@ xlog_recover_print_buffer(
 			printf(_("		UIDs 0x%lx-0x%lx\n"),
 			       (unsigned long)be32_to_cpu(ddq->d_id),
 			       (unsigned long)be32_to_cpu(ddq->d_id) +
-			       (BBTOB(f->blf_len) / sizeof(xfs_dqblk_t)) - 1);
+			       (BBTOB(f->blf_len) / sizeof(struct xfs_dqblk)) - 1);
 		} else {
 			printf(_("	BUF DATA\n"));
 			if (!print_buffer) continue;
@@ -186,18 +186,18 @@ xlog_recover_print_quotaoff(
 	struct xlog_recover_item *item)
 {
 	xfs_qoff_logformat_t	*qoff_f;
-	char			str[32] = { 0 };
 
 	qoff_f = (xfs_qoff_logformat_t *)item->ri_buf[0].i_addr;
+
 	ASSERT(qoff_f);
+	printf(_("\tQUOTAOFF: #regs:%d   type:"), qoff_f->qf_size);
 	if (qoff_f->qf_flags & XFS_UQUOTA_ACCT)
-		strcat(str, "USER QUOTA");
+		printf(" USER");
 	if (qoff_f->qf_flags & XFS_GQUOTA_ACCT)
-		strcat(str, "GROUP QUOTA");
+		printf(" GROUP");
 	if (qoff_f->qf_flags & XFS_PQUOTA_ACCT)
-		strcat(str, "PROJECT QUOTA");
-	printf(_("\tQUOTAOFF: #regs:%d   type:%s\n"),
-	       qoff_f->qf_size, str);
+		printf(" PROJECT");
+	printf("\n");
 }
 
 STATIC void
@@ -240,22 +240,36 @@ STATIC void
 xlog_recover_print_inode_core(
 	struct xfs_log_dinode	*di)
 {
+	xfs_extnum_t		nextents;
+	xfs_aextnum_t		anextents;
+
 	printf(_("	CORE inode:\n"));
 	if (!print_inode)
 		return;
+
+	if (di->di_flags2 & XFS_DIFLAG2_NREXT64) {
+		nextents = di->di_big_nextents;
+		anextents = di->di_big_anextents;
+	} else {
+		nextents = di->di_nextents;
+		anextents = di->di_anextents;
+	}
+
 	printf(_("		magic:%c%c  mode:0x%x  ver:%d  format:%d\n"),
 	       (di->di_magic>>8) & 0xff, di->di_magic & 0xff,
 	       di->di_mode, di->di_version, di->di_format);
 	printf(_("		uid:%d  gid:%d  nlink:%d projid:0x%04x%04x\n"),
 	       di->di_uid, di->di_gid, di->di_nlink,
 	       di->di_projid_hi, di->di_projid_lo);
-	printf(_("		atime:%d  mtime:%d  ctime:%d\n"),
-	       di->di_atime.t_sec, di->di_mtime.t_sec, di->di_ctime.t_sec);
+	printf(_("		atime:%lld  mtime:%lld  ctime:%lld\n"),
+			xlog_extract_dinode_ts(di->di_atime),
+			xlog_extract_dinode_ts(di->di_mtime),
+			xlog_extract_dinode_ts(di->di_ctime));
 	printf(_("		flushiter:%d\n"), di->di_flushiter);
 	printf(_("		size:0x%llx  nblks:0x%llx  exsize:%d  "
-	     "nextents:%d  anextents:%d\n"), (unsigned long long)
+	     "nextents:%" PRIu64 "  anextents:%" PRIu32 "\n"), (unsigned long long)
 	       di->di_size, (unsigned long long)di->di_nblocks,
-	       di->di_extsize, di->di_nextents, (int)di->di_anextents);
+	       di->di_extsize, nextents, anextents);
 	printf(_("		forkoff:%d  dmevmask:0x%x  dmstate:%d  flags:0x%x  "
 	     "gen:%u\n"),
 	       (int)di->di_forkoff, di->di_dmevmask, (int)di->di_dmstate,
@@ -402,6 +416,12 @@ xlog_recover_print_logitem(
 	case XFS_LI_EFI:
 		xlog_recover_print_efi(item);
 		break;
+	case XFS_LI_ATTRD:
+		xlog_recover_print_attrd(item);
+		break;
+	case XFS_LI_ATTRI:
+		xlog_recover_print_attri(item);
+		break;
 	case XFS_LI_RUD:
 		xlog_recover_print_rud(item);
 		break;
@@ -453,6 +473,12 @@ xlog_recover_print_item(
 		break;
 	case XFS_LI_EFI:
 		printf("EFI");
+		break;
+	case XFS_LI_ATTRD:
+		printf("ATTRD");
+		break;
+	case XFS_LI_ATTRI:
+		printf("ATTRI");
 		break;
 	case XFS_LI_RUD:
 		printf("RUD");

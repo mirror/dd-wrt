@@ -54,8 +54,11 @@ print_mapping(
 	for (i = 0, p = pflags; p->prot != PROT_NONE; i++, p++)
 		buffer[i] = (map->prot & p->prot) ? p->mode : '-';
 
-	if (map->map_sync)
+#ifdef HAVE_MAP_SYNC
+	if ((map->flags & (MAP_SYNC | MAP_SHARED_VALIDATE)) ==
+			  (MAP_SYNC | MAP_SHARED_VALIDATE))
 		sprintf(&buffer[i], " S");
+#endif
 
 	printf("%c%03d%c 0x%lx - 0x%lx %s  %14s (%lld : %ld)\n",
 		braces? '[' : ' ', index, braces? ']' : ' ',
@@ -147,7 +150,9 @@ mmap_help(void)
 " -r -- map with PROT_READ protection\n"
 " -w -- map with PROT_WRITE protection\n"
 " -x -- map with PROT_EXEC protection\n"
+#ifdef HAVE_MAP_SYNC
 " -S -- map with MAP_SYNC and MAP_SHARED_VALIDATE flags\n"
+#endif
 " -s <size> -- first do mmap(size)/munmap(size), try to reserve some free space\n"
 " If no protection mode is specified, all are used by default.\n"
 "\n"));
@@ -201,18 +206,14 @@ mmap_f(
 			prot |= PROT_EXEC;
 			break;
 		case 'S':
+#ifdef HAVE_MAP_SYNC
 			flags = MAP_SYNC | MAP_SHARED_VALIDATE;
-
-			/*
-			 * If MAP_SYNC and MAP_SHARED_VALIDATE aren't defined
-			 * in the system headers we will have defined them
-			 * both as 0.
-			 */
-			if (!flags) {
-				printf("MAP_SYNC not supported\n");
-				return 0;
-			}
 			break;
+#else
+			printf("MAP_SYNC not supported\n");
+			exitcode = 1;
+			return command_usage(&mmap_cmd);
+#endif
 		case 's':
 			length2 = cvtnum(blocksize, sectsize, optarg);
 			break;
@@ -289,7 +290,7 @@ mmap_f(
 	mapping->offset = offset;
 	mapping->name = filename;
 	mapping->prot = prot;
-	mapping->map_sync = (flags == (MAP_SYNC | MAP_SHARED_VALIDATE));
+	mapping->flags = flags;
 	return 0;
 }
 

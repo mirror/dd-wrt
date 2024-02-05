@@ -36,15 +36,6 @@ no matter what the filesystem's block size is.
 If this option is specified, information about the file's
 attribute fork is printed instead of the default data fork.
 .TP
-.B \-d
-If portions of the file have been migrated offline by
-a DMAPI application, a DMAPI read event will be generated to
-bring those portions back online before the disk block map is
-printed.  However if the
-.B \-d
-option is used, no DMAPI read event will be generated for a
-DMAPI file and offline portions will be reported as holes.
-.TP
 .B \-e
 If this option is used,
 .B xfs_bmap

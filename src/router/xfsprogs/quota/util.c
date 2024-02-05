@@ -18,11 +18,12 @@
 
 char *
 time_to_string(
-	time_t		origin,
+	time64_t	origin,
 	uint		flags)
 {
 	static char	timestamp[32];
-	time_t		now, timer;
+	time64_t	timer;
+	time_t		now;
 	uint		days, hours, minutes, seconds;
 
 	if (flags & ABSOLUTE_FLAG) {

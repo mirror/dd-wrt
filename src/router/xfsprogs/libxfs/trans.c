@@ -30,7 +30,7 @@ static int __xfs_trans_commit(struct xfs_trans *tp, bool regrant);
  * Simple transaction interface
  */
 
-kmem_zone_t	*xfs_trans_zone;
+struct kmem_cache	*xfs_trans_cache;
 
 /*
  * Initialize the precomputed transaction reservation values
@@ -124,7 +124,7 @@ static void
 xfs_trans_free(
 	struct xfs_trans	*tp)
 {
-	kmem_cache_free(xfs_trans_zone, tp);
+	kmem_cache_free(xfs_trans_cache, tp);
 }
 
 /*
@@ -141,7 +141,7 @@ xfs_trans_dup(
 {
 	struct xfs_trans	*ntp;
 
-	ntp = kmem_zone_zalloc(xfs_trans_zone, 0);
+	ntp = kmem_cache_zalloc(xfs_trans_cache, 0);
 
 	/*
 	 * Initialize the new transaction structure.
@@ -149,7 +149,7 @@ xfs_trans_dup(
 	ntp->t_mountp = tp->t_mountp;
 	INIT_LIST_HEAD(&ntp->t_items);
 	INIT_LIST_HEAD(&ntp->t_dfops);
-	ntp->t_firstblock = NULLFSBLOCK;
+	ntp->t_highest_agno = NULLAGNUMBER;
 
 	ASSERT(tp->t_flags & XFS_TRANS_PERM_LOG_RES);
 
@@ -230,6 +230,7 @@ xfs_trans_reserve(
 			error = -ENOSPC;
 			goto undo_blocks;
 		}
+		tp->t_rtx_res += rtextents;
 	}
 
 	return 0;
@@ -258,11 +259,11 @@ libxfs_trans_alloc(
 	struct xfs_trans	*tp;
 	int			error;
 
-	tp = kmem_zone_zalloc(xfs_trans_zone, 0);
+	tp = kmem_cache_zalloc(xfs_trans_cache, 0);
 	tp->t_mountp = mp;
 	INIT_LIST_HEAD(&tp->t_items);
 	INIT_LIST_HEAD(&tp->t_dfops);
-	tp->t_firstblock = NULLFSBLOCK;
+	tp->t_highest_agno = NULLAGNUMBER;
 
 	error = xfs_trans_reserve(tp, resp, blocks, rtextents);
 	if (error) {
@@ -317,13 +318,30 @@ void
 libxfs_trans_cancel(
 	struct xfs_trans	*tp)
 {
+	bool			dirty;
+
 	trace_xfs_trans_cancel(tp, _RET_IP_);
 
 	if (tp == NULL)
 		return;
+	dirty = (tp->t_flags & XFS_TRANS_DIRTY);
 
-	if (tp->t_flags & XFS_TRANS_PERM_LOG_RES)
+	/*
+	 * It's never valid to cancel a transaction with deferred ops attached,
+	 * because the transaction is effectively dirty.  Complain about this
+	 * loudly before freeing the in-memory defer items.
+	 */
+	if (!list_empty(&tp->t_dfops)) {
+		ASSERT(list_empty(&tp->t_dfops));
+		ASSERT(tp->t_flags & XFS_TRANS_PERM_LOG_RES);
+		dirty = true;
 		xfs_defer_cancel(tp);
+	}
+
+	if (dirty) {
+		fprintf(stderr, _("Cancelling dirty transaction!\n"));
+		abort();
+	}
 
 	xfs_trans_free_items(tp);
 	xfs_trans_free(tp);
@@ -336,7 +354,7 @@ xfs_buf_item_put(
 	struct xfs_buf		*bp = bip->bli_buf;
 
 	bp->b_log_item = NULL;
-	kmem_cache_free(xfs_buf_item_zone, bip);
+	kmem_cache_free(xfs_buf_item_cache, bip);
 }
 
 /* from xfs_trans_buf.c */
@@ -395,7 +413,7 @@ libxfs_trans_bjoin(
 void
 libxfs_trans_bhold_release(
 	xfs_trans_t		*tp,
-	xfs_buf_t		*bp)
+	struct xfs_buf		*bp)
 {
 	struct xfs_buf_log_item *bip = bp->b_log_item;
 
@@ -461,12 +479,12 @@ libxfs_trans_get_buf_map(
 	return 0;
 }
 
-xfs_buf_t *
+struct xfs_buf *
 libxfs_trans_getsb(
-	xfs_trans_t		*tp,
-	struct xfs_mount	*mp)
+	struct xfs_trans	*tp)
 {
-	xfs_buf_t		*bp;
+	struct xfs_mount	*mp = tp->t_mountp;
+	struct xfs_buf		*bp;
 	struct xfs_buf_log_item	*bip;
 	int			len = XFS_FSS_TO_BB(mp, 1);
 	DEFINE_SINGLE_BUF_MAP(map, XFS_SB_DADDR, len);
@@ -604,7 +622,7 @@ libxfs_trans_brelse(
 void
 libxfs_trans_bhold(
 	xfs_trans_t		*tp,
-	xfs_buf_t		*bp)
+	struct xfs_buf		*bp)
 {
 	struct xfs_buf_log_item	*bip = bp->b_log_item;
 
@@ -661,7 +679,7 @@ libxfs_trans_log_buf(
 void
 libxfs_trans_binval(
 	xfs_trans_t		*tp,
-	xfs_buf_t		*bp)
+	struct xfs_buf		*bp)
 {
 	struct xfs_buf_log_item	*bip = bp->b_log_item;
 
@@ -695,7 +713,7 @@ libxfs_trans_binval(
 void
 libxfs_trans_inode_alloc_buf(
 	xfs_trans_t		*tp,
-	xfs_buf_t		*bp)
+	struct xfs_buf		*bp)
 {
 	struct xfs_buf_log_item	*bip = bp->b_log_item;
 
@@ -721,7 +739,7 @@ libxfs_trans_ordered_buf(
 	bool			ret;
 
 	ret = test_bit(XFS_LI_DIRTY, &bip->bli_item.li_flags);
-	libxfs_trans_log_buf(tp, bp, 0, bp->b_bcount);
+	libxfs_trans_log_buf(tp, bp, 0, BBTOB(bp->b_length));
 	return ret;
 }
 
@@ -765,6 +783,19 @@ _("Transaction block reservation exceeded! %u > %u\n"),
 		tp->t_ifree_delta += delta;
 		break;
 	case XFS_TRANS_SB_FREXTENTS:
+		/*
+		 * Track the number of rt extents allocated in the transaction.
+		 * Make sure it does not exceed the number reserved.
+		 */
+		if (delta < 0) {
+			tp->t_rtx_res_used += (uint)-delta;
+			if (tp->t_rtx_res_used > tp->t_rtx_res) {
+				fprintf(stderr,
+_("Transaction rt block reservation exceeded! %u > %u\n"),
+					tp->t_rtx_res_used, tp->t_rtx_res);
+				ASSERT(0);
+			}
+		}
 		tp->t_frextents_delta += delta;
 		break;
 	default:
@@ -780,8 +811,12 @@ xfs_inode_item_put(
 {
 	struct xfs_inode		*ip = iip->ili_inode;
 
+	ASSERT(iip->ili_item.li_buf == NULL);
+
 	ip->i_itemp = NULL;
-	kmem_cache_free(xfs_ili_zone, iip);
+
+	list_del_init(&iip->ili_item.li_bio_list);
+	kmem_cache_free(xfs_ili_cache, iip);
 }
 
 
@@ -795,47 +830,35 @@ static void
 inode_item_done(
 	struct xfs_inode_log_item	*iip)
 {
-	xfs_dinode_t			*dip;
-	xfs_inode_t			*ip;
-	xfs_mount_t			*mp;
-	xfs_buf_t			*bp;
+	struct xfs_buf			*bp;
 	int				error;
 
-	ip = iip->ili_inode;
-	mp = iip->ili_item.li_mountp;
-	ASSERT(ip != NULL);
+	ASSERT(iip->ili_inode != NULL);
 
 	if (!(iip->ili_fields & XFS_ILOG_ALL))
-		goto free;
+		goto free_item;
 
-	/*
-	 * Get the buffer containing the on-disk inode.
-	 */
-	error = xfs_imap_to_bp(mp, NULL, &ip->i_imap, &dip, &bp, 0);
-	if (error) {
-		fprintf(stderr, _("%s: warning - imap_to_bp failed (%d)\n"),
-			progname, error);
-		goto free;
-	}
+	bp = iip->ili_item.li_buf;
+	iip->ili_item.li_buf = NULL;
 
 	/*
 	 * Flush the inode and disassociate it from the transaction regardless
 	 * of whether the flush succeed or not. If we fail the flush, make sure
 	 * we still release the buffer reference we currently hold.
 	 */
-	error = libxfs_iflush_int(ip, bp);
+	error = libxfs_iflush_int(iip->ili_inode, bp);
 	bp->b_transp = NULL;	/* remove xact ptr */
 
 	if (error) {
 		fprintf(stderr, _("%s: warning - iflush_int failed (%d)\n"),
 			progname, error);
-		libxfs_buf_relse(bp);
 		goto free;
 	}
 
 	libxfs_buf_mark_dirty(bp);
-	libxfs_buf_relse(bp);
 free:
+	libxfs_buf_relse(bp);
+free_item:
 	xfs_inode_item_put(iip);
 }
 
@@ -843,9 +866,9 @@ static void
 buf_item_done(
 	xfs_buf_log_item_t	*bip)
 {
-	xfs_buf_t		*bp;
+	struct xfs_buf		*bp;
 	int			hold;
-	extern kmem_zone_t	*xfs_buf_item_zone;
+	extern struct kmem_cache	*xfs_buf_item_cache;
 
 	bp = bip->bli_buf;
 	ASSERT(bp != NULL);
@@ -887,7 +910,7 @@ static void
 buf_item_unlock(
 	xfs_buf_log_item_t	*bip)
 {
-	xfs_buf_t		*bp = bip->bli_buf;
+	struct xfs_buf		*bp = bip->bli_buf;
 	uint			hold;
 
 	/* Clear the buffer's association with this transaction. */
@@ -929,6 +952,90 @@ xfs_trans_free_items(
 }
 
 /*
+ * Sort transaction items prior to running precommit operations. This will
+ * attempt to order the items such that they will always be locked in the same
+ * order. Items that have no sort function are moved to the end of the list
+ * and so are locked last.
+ *
+ * This may need refinement as different types of objects add sort functions.
+ *
+ * Function is more complex than it needs to be because we are comparing 64 bit
+ * values and the function only returns 32 bit values.
+ */
+static int
+xfs_trans_precommit_sort(
+	void			*unused_arg,
+	const struct list_head	*a,
+	const struct list_head	*b)
+{
+	struct xfs_log_item	*lia = container_of(a,
+					struct xfs_log_item, li_trans);
+	struct xfs_log_item	*lib = container_of(b,
+					struct xfs_log_item, li_trans);
+	int64_t			diff;
+
+	/*
+	 * If both items are non-sortable, leave them alone. If only one is
+	 * sortable, move the non-sortable item towards the end of the list.
+	 */
+	if (!lia->li_ops->iop_sort && !lib->li_ops->iop_sort)
+		return 0;
+	if (!lia->li_ops->iop_sort)
+		return 1;
+	if (!lib->li_ops->iop_sort)
+		return -1;
+
+	diff = lia->li_ops->iop_sort(lia) - lib->li_ops->iop_sort(lib);
+	if (diff < 0)
+		return -1;
+	if (diff > 0)
+		return 1;
+	return 0;
+}
+
+/*
+ * Run transaction precommit functions.
+ *
+ * If there is an error in any of the callouts, then stop immediately and
+ * trigger a shutdown to abort the transaction. There is no recovery possible
+ * from errors at this point as the transaction is dirty....
+ */
+static int
+xfs_trans_run_precommits(
+	struct xfs_trans	*tp)
+{
+	//struct xfs_mount	*mp = tp->t_mountp;
+	struct xfs_log_item	*lip, *n;
+	int			error = 0;
+
+	/*
+	 * Sort the item list to avoid ABBA deadlocks with other transactions
+	 * running precommit operations that lock multiple shared items such as
+	 * inode cluster buffers.
+	 */
+	list_sort(NULL, &tp->t_items, xfs_trans_precommit_sort);
+
+	/*
+	 * Precommit operations can remove the log item from the transaction
+	 * if the log item exists purely to delay modifications until they
+	 * can be ordered against other operations. Hence we have to use
+	 * list_for_each_entry_safe() here.
+	 */
+	list_for_each_entry_safe(lip, n, &tp->t_items, li_trans) {
+		if (!test_bit(XFS_LI_DIRTY, &lip->li_flags))
+			continue;
+		if (lip->li_ops->iop_precommit) {
+			error = lip->li_ops->iop_precommit(tp, lip);
+			if (error)
+				break;
+		}
+	}
+	if (error)
+		xfs_force_shutdown(mp, SHUTDOWN_CORRUPT_INCORE);
+	return error;
+}
+
+/*
  * Commit the changes represented by this transaction
  */
 static int
@@ -944,6 +1051,13 @@ __xfs_trans_commit(
 	if (tp == NULL)
 		return 0;
 
+	error = xfs_trans_run_precommits(tp);
+	if (error) {
+		if (tp->t_flags & XFS_TRANS_PERM_LOG_RES)
+			xfs_defer_cancel(tp);
+		goto out_unreserve;
+	}
+
 	/*
 	 * Finish deferred items on final commit. Only permanent transactions
 	 * should ever have deferred ops.
@@ -952,6 +1066,11 @@ __xfs_trans_commit(
 		     !(tp->t_flags & XFS_TRANS_PERM_LOG_RES));
 	if (!regrant && (tp->t_flags & XFS_TRANS_PERM_LOG_RES)) {
 		error = xfs_defer_finish_noroll(&tp);
+		if (error)
+			goto out_unreserve;
+
+		/* Run precommits from final tx in defer chain. */
+		error = xfs_trans_run_precommits(tp);
 		if (error)
 			goto out_unreserve;
 	}
@@ -989,4 +1108,37 @@ libxfs_trans_commit(
 	struct xfs_trans	*tp)
 {
 	return __xfs_trans_commit(tp, false);
+}
+
+/*
+ * Allocate an transaction, lock and join the inode to it, and reserve quota.
+ *
+ * The caller must ensure that the on-disk dquots attached to this inode have
+ * already been allocated and initialized.  The caller is responsible for
+ * releasing ILOCK_EXCL if a new transaction is returned.
+ */
+int
+libxfs_trans_alloc_inode(
+	struct xfs_inode	*ip,
+	struct xfs_trans_res	*resv,
+	unsigned int		dblocks,
+	unsigned int		rblocks,
+	bool			force,
+	struct xfs_trans	**tpp)
+{
+	struct xfs_trans	*tp;
+	struct xfs_mount	*mp = ip->i_mount;
+	int			error;
+
+	error = libxfs_trans_alloc(mp, resv, dblocks,
+			rblocks / mp->m_sb.sb_rextsize,
+			force ? XFS_TRANS_RESERVE : 0, &tp);
+	if (error)
+		return error;
+
+	xfs_ilock(ip, XFS_ILOCK_EXCL);
+	xfs_trans_ijoin(tp, ip, 0);
+
+	*tpp = tp;
+	return 0;
 }

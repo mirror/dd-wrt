@@ -159,20 +159,20 @@ dump_inode(
 
 	if (attrfork)
 		prefix = "a.bmbt";
-	else if (xfs_sb_version_hascrc(&mp->m_sb))
+	else if (xfs_has_crc(mp))
 		prefix = "u3.bmbt";
 	else
 		prefix = "u.bmbt";
 
 	dip = iocur_top->data;
 	if (attrfork) {
-		if (!dip->di_anextents ||
+		if (!xfs_dfork_attr_extents(dip) ||
 		    dip->di_aformat != XFS_DINODE_FMT_BTREE) {
 			dbprintf(_("attr fork not in btree format\n"));
 			return 0;
 		}
 	} else {
-		if (!dip->di_nextents ||
+		if (!xfs_dfork_data_extents(dip) ||
 		    dip->di_format != XFS_DINODE_FMT_BTREE) {
 			dbprintf(_("data fork not in btree format\n"));
 			return 0;
@@ -448,7 +448,7 @@ btdump_f(
 {
 	bool		aflag = false;
 	bool		iflag = false;
-	bool		crc = xfs_sb_version_hascrc(&mp->m_sb);
+	bool		crc = xfs_has_crc(mp);
 	int		c;
 
 	if (cur_typ == NULL) {

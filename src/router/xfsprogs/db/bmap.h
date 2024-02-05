@@ -15,8 +15,9 @@ typedef struct bmap_ext {
 } bmap_ext_t;
 
 extern void	bmap(xfs_fileoff_t offset, xfs_filblks_t len, int whichfork,
-		     int *nexp, bmap_ext_t *bep);
+		     xfs_extnum_t *nexp, bmap_ext_t *bep);
 extern void	bmap_init(void);
 extern void	convert_extent(struct xfs_bmbt_rec *rp, xfs_fileoff_t *op,
 			       xfs_fsblock_t *sp, xfs_filblks_t *cp, int *fp);
-extern void	make_bbmap(struct bbmap *bbmap, int nex, bmap_ext_t *bmp);
+extern void	make_bbmap(struct bbmap *bbmap, xfs_extnum_t nex,
+			   bmap_ext_t *bmp);

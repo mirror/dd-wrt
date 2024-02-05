@@ -3084,7 +3084,7 @@ msgstr "%llu Spezialdateien\n"
 #: .././estimate/xfs_estimate.c:191
 #, c-format
 msgid "%s will take about %.1f megabytes\n"
-msgstr "%s wird etwa %.lf Megabytes einnehmen\n"
+msgstr "%s wird etwa %.1f Megabytes einnehmen\n"
 
 #: .././estimate/xfs_estimate.c:198
 #, c-format
@@ -4670,7 +4670,6 @@ msgid ""
 " Holes are marked by replacing the startblock..endblock with 'hole'.\n"
 " All the file offsets and disk blocks are in units of 512-byte blocks.\n"
 " -a -- prints the attribute fork map instead of the data fork.\n"
-" -d -- suppresses a DMAPI read event, offline portions shown as holes.\n"
 " -l -- also displays the length of each extent in 512-byte blocks.\n"
 " Note: the bmap for non-regular files can be obtained provided the file\n"
 " was opened appropriately (in particular, must be opened read-only).\n"
@@ -4694,8 +4693,6 @@ msgstr ""
 " Alle Datei-Offsets und Plattenblöcke sind Einheiten aus 512-Byte-Blöcken.\n"
 " -a -- gibt die Attributs-Verzweigungs-Karte statt der\n"
 "       Daten-Verzweigung aus.\n"
-" -d -- unterdrückt ein DMAPI-Lese-Ereignis, Offline-Teile werden als Löcher\n"
-"       betrachtet.\n"
 " -l -- zeigt außerdem die Länge von jedem Bereich in 512-Byte Blöcken.\n"
 " Anmerkung: Das »bmap« für irreguläre Dateien kann bereitgestellt werden,\n"
 " statt der Datei die passend geöffnet wurde (im Einzelnen darf sie\n"
@@ -11773,11 +11770,6 @@ msgstr ""
 #, c-format
 msgid "component of symlink in inode %llu too long\n"
 msgstr "Bestandteil des symbolischen Verweises in Inode %llu zu lang\n"
-
-#: .././repair/dinode.c:1611
-#, c-format
-msgid "inode %llu has bad inode type (IFMNT)\n"
-msgstr "Inode %llu hat falschen Inode-Typ (IFMNT)\n"
 
 #: .././repair/dinode.c:1621
 #, c-format

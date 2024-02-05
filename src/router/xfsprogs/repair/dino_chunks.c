@@ -22,16 +22,16 @@
  * means only the basic inode info is checked, no fork checks.
  */
 static int
-check_aginode_block(xfs_mount_t	*mp,
-			xfs_agnumber_t	agno,
-			xfs_agblock_t	agbno)
+check_aginode_block(
+	xfs_mount_t		*mp,
+	xfs_agnumber_t		agno,
+	xfs_agblock_t		agbno)
 {
-
-	xfs_dinode_t	*dino_p;
-	int		i;
-	int		cnt = 0;
-	xfs_buf_t	*bp;
-	int		error;
+	struct xfs_dinode	*dino_p;
+	int			i;
+	int			cnt = 0;
+	struct xfs_buf		*bp;
+	int			error;
 
 	/*
 	 * it's ok to read these possible inode blocks in one at
@@ -229,8 +229,7 @@ verify_inode_chunk(xfs_mount_t		*mp,
 		/*
 		 * ok, put the record into the tree, if no conflict.
 		 */
-		if (find_uncertain_inode_rec(agno,
-				XFS_AGB_TO_AGINO(mp, start_agbno)))
+		if (find_inode_rec(mp, agno, XFS_AGB_TO_AGINO(mp, start_agbno)))
 			return(0);
 
 		start_agino = XFS_AGB_TO_AGINO(mp, start_agbno);
@@ -597,10 +596,11 @@ process_inode_chunk(
 {
 	xfs_ino_t		parent;
 	ino_tree_node_t		*ino_rec;
-	xfs_buf_t		**bplist;
-	xfs_dinode_t		*dino;
+	struct xfs_buf		**bplist;
+	struct xfs_dinode	*dino;
 	int			icnt;
 	int			status;
+	int			bp_found;
 	int			is_used;
 	int			ino_dirty;
 	int			irec_offset;
@@ -614,6 +614,7 @@ process_inode_chunk(
 	int			bp_index;
 	int			cluster_offset;
 	struct xfs_ino_geometry	*igeo = M_IGEO(mp);
+	bool			can_punch_sparse = false;
 	int			error;
 
 	ASSERT(first_irec != NULL);
@@ -625,6 +626,10 @@ process_inode_chunk(
 	cluster_count = XFS_INODES_PER_CHUNK / M_IGEO(mp)->inodes_per_cluster;
 	if (cluster_count == 0)
 		cluster_count = 1;
+
+	if (xfs_has_sparseinodes(mp) &&
+	    M_IGEO(mp)->inodes_per_cluster >= XFS_INODES_PER_HOLEMASK_BIT)
+		can_punch_sparse = true;
 
 	/*
 	 * get all blocks required to read in this chunk (may wind up
@@ -638,10 +643,10 @@ process_inode_chunk(
 	ino_rec = first_irec;
 	irec_offset = 0;
 
-	bplist = malloc(cluster_count * sizeof(xfs_buf_t *));
+	bplist = malloc(cluster_count * sizeof(struct xfs_buf *));
 	if (bplist == NULL)
 		do_error(_("failed to allocate %zd bytes of memory\n"),
-			cluster_count * sizeof(xfs_buf_t *));
+			cluster_count * sizeof(struct xfs_buf *));
 
 	for (bp_index = 0; bp_index < cluster_count; bp_index++) {
 		/*
@@ -680,8 +685,8 @@ process_inode_chunk(
 		}
 
 		pftrace("readbuf %p (%llu, %d) in AG %d", bplist[bp_index],
-			(long long)XFS_BUF_ADDR(bplist[bp_index]),
-			bplist[bp_index]->b_bcount, agno);
+			(long long)xfs_buf_daddr(bplist[bp_index]),
+			bplist[bp_index]->b_length, agno);
 
 		bplist[bp_index]->b_ops = &xfs_inode_buf_ops;
 
@@ -700,6 +705,7 @@ next_readbuf:
 	cluster_offset = 0;
 	icnt = 0;
 	status = 0;
+	bp_found = 0;
 	bp_index = 0;
 
 	/*
@@ -725,8 +731,10 @@ next_readbuf:
 						(agno == 0 &&
 						(mp->m_sb.sb_rootino == agino ||
 						 mp->m_sb.sb_rsumino == agino ||
-						 mp->m_sb.sb_rbmino == agino)))
+						 mp->m_sb.sb_rbmino == agino))) {
 					status++;
+					bp_found++;
+				}
 			}
 
 			irec_offset++;
@@ -749,9 +757,33 @@ next_readbuf:
 				irec_offset = 0;
 			}
 			if (cluster_offset == M_IGEO(mp)->inodes_per_cluster) {
+				if (can_punch_sparse &&
+				    bplist[bp_index] != NULL &&
+				    bp_found == 0) {
+					/*
+					 * We didn't find any good inodes in
+					 * this cluster, blow it away before
+					 * moving on to the next one.
+					 */
+					libxfs_buf_relse(bplist[bp_index]);
+					bplist[bp_index] = NULL;
+				}
 				bp_index++;
 				cluster_offset = 0;
+				bp_found = 0;
 			}
+		}
+
+		if (can_punch_sparse &&
+		    bp_index < cluster_count &&
+		    bplist[bp_index] != NULL &&
+		    bp_found == 0) {
+			/*
+			 * We didn't find any good inodes in this cluster, blow
+			 * it away.
+			 */
+			libxfs_buf_relse(bplist[bp_index]);
+			bplist[bp_index] = NULL;
 		}
 
 		/*
@@ -792,6 +824,25 @@ next_readbuf:
 		if (is_inode_sparse(ino_rec, irec_offset))
 			goto process_next;
 
+		/*
+		 * Repair skips reading the cluster buffer if the first inode
+		 * in the cluster is marked as sparse.  If subsequent inodes in
+		 * the cluster buffer are /not/ marked sparse, there won't be
+		 * a buffer, so we need to avoid the null pointer dereference.
+		 */
+		if (bplist[bp_index] == NULL) {
+			do_warn(
+	_("imap claims inode %" PRIu64 " is present, but inode cluster is sparse, "),
+						ino);
+			if (!no_modify)
+				do_warn(_("correcting imap\n"));
+			else
+				do_warn(_("would correct imap\n"));
+			set_inode_sparse(ino_rec, irec_offset);
+			set_inode_free(ino_rec, irec_offset);
+			goto process_next;
+		}
+
 		/* make inode pointer */
 		dino = xfs_make_iptr(mp, bplist[bp_index], cluster_offset);
 
@@ -820,13 +871,11 @@ next_readbuf:
 		 */
 		if (is_used)  {
 			if (is_inode_free(ino_rec, irec_offset))  {
-				if (verbose || no_modify)  {
-					do_warn(
+				do_warn(
 	_("imap claims in-use inode %" PRIu64 " is free, "),
 						ino);
-				}
 
-				if (verbose || !no_modify)
+				if (!no_modify)
 					do_warn(_("correcting imap\n"));
 				else
 					do_warn(_("would correct imap\n"));
@@ -933,7 +982,7 @@ process_next:
 
 				pftrace("put/writebuf %p (%llu) in AG %d",
 					bplist[bp_index], (long long)
-					XFS_BUF_ADDR(bplist[bp_index]), agno);
+					xfs_buf_daddr(bplist[bp_index]), agno);
 
 				if (dirty && !no_modify) {
 					libxfs_buf_mark_dirty(bplist[bp_index]);
@@ -1083,6 +1132,7 @@ check_uncertain_aginodes(xfs_mount_t *mp, xfs_agnumber_t agno)
 	xfs_agino_t		i;
 	xfs_agino_t		agino;
 	int			got_some;
+	struct xfs_perag	*pag;
 
 	nrec = NULL;
 	got_some = 0;
@@ -1106,6 +1156,7 @@ check_uncertain_aginodes(xfs_mount_t *mp, xfs_agnumber_t agno)
 
 	do_warn(_("found inodes not in the inode allocation tree\n"));
 
+	pag = libxfs_perag_get(mp, agno);
 	do {
 		/*
 		 * check every confirmed (which in this case means
@@ -1117,7 +1168,7 @@ check_uncertain_aginodes(xfs_mount_t *mp, xfs_agnumber_t agno)
 
 			agino = i + irec->ino_startnum;
 
-			if (!libxfs_verify_agino(mp, agno, agino))
+			if (!libxfs_verify_agino(pag, agino))
 				continue;
 
 			if (nrec != NULL && nrec->ino_startnum <= agino &&
@@ -1126,7 +1177,7 @@ check_uncertain_aginodes(xfs_mount_t *mp, xfs_agnumber_t agno)
 				continue;
 
 			if ((nrec = find_inode_rec(mp, agno, agino)) == NULL)
-				if (libxfs_verify_agino(mp, agno, agino))
+				if (libxfs_verify_agino(pag, agino))
 					if (verify_aginode_chunk(mp, agno,
 							agino, &start))
 						got_some = 1;
@@ -1137,6 +1188,7 @@ check_uncertain_aginodes(xfs_mount_t *mp, xfs_agnumber_t agno)
 
 		irec = findfirst_uncertain_inode_rec(agno);
 	} while (irec != NULL);
+	libxfs_perag_put(pag);
 
 	if (got_some)
 		do_warn(_("found inodes not in the inode allocation tree\n"));
@@ -1177,6 +1229,7 @@ process_uncertain_aginodes(xfs_mount_t *mp, xfs_agnumber_t agno)
 	int			cnt;
 	int			got_some;
 	struct xfs_ino_geometry	*igeo = M_IGEO(mp);
+	struct xfs_perag	*pag;
 
 #ifdef XR_INODE_TRACE
 	fprintf(stderr, "in process_uncertain_aginodes, agno = %d\n", agno);
@@ -1191,6 +1244,7 @@ process_uncertain_aginodes(xfs_mount_t *mp, xfs_agnumber_t agno)
 
 	nrec = NULL;
 
+	pag = libxfs_perag_get(mp, agno);
 	do  {
 		/*
 		 * check every confirmed inode
@@ -1208,7 +1262,7 @@ process_uncertain_aginodes(xfs_mount_t *mp, xfs_agnumber_t agno)
 			 * good tree), bad inode numbers, and inode numbers
 			 * pointing to bogus inodes
 			 */
-			if (!libxfs_verify_agino(mp, agno, agino))
+			if (!libxfs_verify_agino(pag, agino))
 				continue;
 
 			if (nrec != NULL && nrec->ino_startnum <= agino &&
@@ -1233,10 +1287,12 @@ process_uncertain_aginodes(xfs_mount_t *mp, xfs_agnumber_t agno)
 			 * process the inode record we just added
 			 * to the good inode tree.  The inode
 			 * processing may add more records to the
-			 * uncertain inode lists.
+			 * uncertain inode lists.  always process the
+			 * extended attribute structure because we might
+			 * decide that some inodes are still in use
 			 */
 			if (process_inode_chunk(mp, agno, igeo->ialloc_inos,
-						nrec, 1, 0, 0, &bogus))  {
+						nrec, 1, 0, 1, &bogus))  {
 				/* XXX - i/o error, we've got a problem */
 				abort();
 			}
@@ -1252,6 +1308,7 @@ process_uncertain_aginodes(xfs_mount_t *mp, xfs_agnumber_t agno)
 
 		irec = findfirst_uncertain_inode_rec(agno);
 	} while (irec != NULL);
+	libxfs_perag_put(pag);
 
 	if (got_some)
 		do_warn(_("found inodes not in the inode allocation tree\n"));

@@ -55,8 +55,7 @@ scrub_iterate_filemaps(
 		map->bmv_length = ULLONG_MAX;
 	else
 		map->bmv_length = BTOBB(key->bm_length);
-	map->bmv_iflags = BMV_IF_NO_DMAPI_READ | BMV_IF_PREALLOC |
-			  BMV_IF_NO_HOLES;
+	map->bmv_iflags = BMV_IF_PREALLOC | BMV_IF_NO_HOLES;
 	switch (whichfork) {
 	case XFS_ATTR_FORK:
 		getxattr_type = XFS_IOC_FSGETXATTRA;

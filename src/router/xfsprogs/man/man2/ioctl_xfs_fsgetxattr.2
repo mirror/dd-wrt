@@ -104,6 +104,7 @@ will be returned.
 .B XFS_XFLAG_APPEND
 The file is append-only - it can only be opened in append mode for
 writing.
+For directories, this means that files cannot be unlinked from this directory.
 Only the superuser or a process possessing the CAP_LINUX_IMMUTABLE
 capability can set or clear this flag.
 .TP

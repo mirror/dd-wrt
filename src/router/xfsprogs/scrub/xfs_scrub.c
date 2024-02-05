@@ -282,6 +282,34 @@ phase_start(
 	return error;
 }
 
+static inline unsigned long long
+kbytes(unsigned long long x)
+{
+	return (x + 1023) / 1024;
+}
+
+static void
+report_mem_usage(
+	const char			*phase,
+	const struct phase_rusage	*pi)
+{
+#if defined(HAVE_MALLINFO2) || defined(HAVE_MALLINFO)
+# ifdef HAVE_MALLINFO2
+	struct mallinfo2		mall_now = mallinfo2();
+# else
+	struct mallinfo			mall_now = mallinfo();
+# endif
+	fprintf(stdout, _("%sMemory used: %lluk/%lluk (%lluk/%lluk), "),
+		phase,
+		kbytes(mall_now.arena), kbytes(mall_now.hblkhd),
+		kbytes(mall_now.uordblks), kbytes(mall_now.fordblks));
+#else
+	fprintf(stdout, _("%sMemory used: %lluk, "),
+		phase,
+		kbytes(((char *) sbrk(0)) - ((char *) pi->brk_start)));
+#endif
+}
+
 /* Report usage stats. */
 static int
 phase_end(
@@ -289,9 +317,6 @@ phase_end(
 	unsigned int		phase)
 {
 	struct rusage		ruse_now;
-#ifdef HAVE_MALLINFO
-	struct mallinfo		mall_now;
-#endif
 	struct timeval		time_now;
 	char			phasebuf[DESCR_BUFSZ];
 	double			dt;
@@ -323,21 +348,7 @@ phase_end(
 	else
 		phasebuf[0] = 0;
 
-#define kbytes(x)	(((unsigned long)(x) + 1023) / 1024)
-#ifdef HAVE_MALLINFO
-
-	mall_now = mallinfo();
-	fprintf(stdout, _("%sMemory used: %luk/%luk (%luk/%luk), "),
-		phasebuf,
-		kbytes(mall_now.arena), kbytes(mall_now.hblkhd),
-		kbytes(mall_now.uordblks), kbytes(mall_now.fordblks));
-#else
-	fprintf(stdout, _("%sMemory used: %luk, "),
-		phasebuf,
-		(unsigned long) kbytes(((char *) sbrk(0)) -
-				       ((char *) pi->brk_start)));
-#endif
-#undef kbytes
+	report_mem_usage(phasebuf, pi);
 
 	fprintf(stdout, _("time: %5.2f/%5.2f/%5.2fs\n"),
 		timeval_subtract(&time_now, &pi->time),
@@ -582,6 +593,13 @@ report_outcome(
 	}
 }
 
+/* Compile-time features discoverable via version strings */
+#ifdef HAVE_LIBICU
+# define XFS_SCRUB_HAVE_UNICODE	"+"
+#else
+# define XFS_SCRUB_HAVE_UNICODE	"-"
+#endif
+
 int
 main(
 	int			argc,
@@ -592,6 +610,7 @@ main(
 	char			*mtab = NULL;
 	FILE			*progress_fp = NULL;
 	struct fs_path		*fsp;
+	int			vflag = 0;
 	int			c;
 	int			fd;
 	int			ret = SCRUB_RET_SUCCESS;
@@ -603,6 +622,12 @@ main(
 	setlocale(LC_ALL, "");
 	bindtextdomain(PACKAGE, LOCALEDIR);
 	textdomain(PACKAGE);
+	if (unicrash_load()) {
+		fprintf(stderr,
+	_("%s: couldn't initialize Unicode library.\n"),
+				progname);
+		goto out;
+	}
 
 	pthread_mutex_init(&ctx.lock, NULL);
 	ctx.mode = SCRUB_MODE_REPAIR;
@@ -664,16 +689,26 @@ main(
 			verbose = true;
 			break;
 		case 'V':
-			fprintf(stdout, _("%s version %s\n"), progname,
-					VERSION);
-			fflush(stdout);
-			return SCRUB_RET_SUCCESS;
+			vflag++;
+			break;
 		case 'x':
 			scrub_data = true;
 			break;
 		default:
 			usage();
 		}
+	}
+
+	if (vflag) {
+		if (vflag == 1)
+			fprintf(stdout, _("%s version %s\n"),
+					progname, VERSION);
+		else
+			fprintf(stdout, _("%s version %s %sUnicode\n"),
+					progname, VERSION,
+					XFS_SCRUB_HAVE_UNICODE);
+		fflush(stdout);
+		return SCRUB_RET_SUCCESS;
 	}
 
 	/* Override thread count if debugger */
@@ -788,6 +823,7 @@ out:
 	phase_end(&all_pi, 0);
 	if (progress_fp)
 		fclose(progress_fp);
+	unicrash_unload();
 
 	/*
 	 * If we're being run as a service, the return code must fit the LSB

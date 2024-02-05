@@ -8,6 +8,7 @@
 
 #include "libxfs.h"
 #include <linux/fiemap.h>
+#include <linux/fsmap.h>
 #include "libfrog/fsgeom.h"
 #include "command.h"
 #include "init.h"
@@ -283,7 +284,6 @@ init(
 			speced = 1;
 			break;
 		case 'g':
-			histcount = 0;
 			gflag++;
 			break;
 		case 'h':

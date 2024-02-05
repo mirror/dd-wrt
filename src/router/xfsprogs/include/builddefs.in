@@ -22,11 +22,13 @@ LDFLAGS =
 
 LIBRT = @librt@
 LIBUUID = @libuuid@
+LIBURCU = @liburcu@
 LIBPTHREAD = @libpthread@
 LIBTERMCAP = @libtermcap@
 LIBEDITLINE = @libeditline@
 LIBBLKID = @libblkid@
 LIBDEVMAPPER = @libdevmapper@
+LIBINIH = @libinih@
 LIBXFS = $(TOPDIR)/libxfs/libxfs.la
 LIBFROG = $(TOPDIR)/libfrog/libfrog.la
 LIBXCMD = $(TOPDIR)/libxcmd/libxcmd.la
@@ -49,11 +51,14 @@ PKG_SBIN_DIR	= @sbindir@
 PKG_ROOT_SBIN_DIR = @root_sbindir@
 PKG_ROOT_LIB_DIR= @root_libdir@@libdirsuffix@
 PKG_LIB_DIR	= @libdir@@libdirsuffix@
+PKG_LIB_SCRIPT_DIR	= @libdir@
 PKG_INC_DIR	= @includedir@/xfs
 DK_INC_DIR	= @includedir@/disk
 PKG_MAN_DIR	= @mandir@
 PKG_DOC_DIR	= @datadir@/doc/@pkg_name@
 PKG_LOCALE_DIR	= @datadir@/locale
+PKG_DATA_DIR	= @datadir@/@pkg_name@
+MKFS_CFG_DIR	= @datadir@/@pkg_name@/mkfs
 
 CC		= @cc@
 BUILD_CC	= @BUILD_CC@
@@ -110,6 +115,7 @@ HAVE_STATFS_FLAGS = @have_statfs_flags@
 HAVE_MAP_SYNC = @have_map_sync@
 HAVE_DEVMAPPER = @have_devmapper@
 HAVE_MALLINFO = @have_mallinfo@
+HAVE_MALLINFO2 = @have_mallinfo2@
 HAVE_LIBATTR = @have_libattr@
 HAVE_LIBICU = @have_libicu@
 HAVE_OPENAT = @have_openat@
@@ -120,11 +126,15 @@ HAVE_SYSTEMD = @have_systemd@
 SYSTEMD_SYSTEM_UNIT_DIR = @systemd_system_unit_dir@
 HAVE_CROND = @have_crond@
 CROND_DIR = @crond_dir@
+HAVE_UDEV = @have_udev@
+UDEV_RULE_DIR = @udev_rule_dir@
+HAVE_LIBURCU_ATOMIC64 = @have_liburcu_atomic64@
 
 GCCFLAGS = -funsigned-char -fno-strict-aliasing -Wall
 #	   -Wbitwise -Wno-transparent-union -Wno-old-initializer -Wno-decl
 
-PCFLAGS = -D_GNU_SOURCE $(GCCFLAGS)
+# _LGPL_SOURCE is for liburcu to work correctly with GPL/LGPL programs
+PCFLAGS = -D_LGPL_SOURCE -D_GNU_SOURCE $(GCCFLAGS)
 ifeq ($(HAVE_UMODE_T),yes)
 PCFLAGS += -DHAVE_UMODE_T
 endif
@@ -156,6 +166,10 @@ endif
 
 #LIBICU_LIBS = @libicu_LIBS@
 #LIBICU_CFLAGS = @libicu_CFLAGS@
+
+ifeq ($(HAVE_LIBURCU_ATOMIC64),yes)
+PCFLAGS += -DHAVE_LIBURCU_ATOMIC64
+endif
 
 SANITIZER_CFLAGS += @addrsan_cflags@ @threadsan_cflags@ @ubsan_cflags@
 SANITIZER_LDFLAGS += @addrsan_ldflags@ @threadsan_ldflags@ @ubsan_ldflags@

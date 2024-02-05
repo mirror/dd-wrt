@@ -40,7 +40,7 @@ extern char *mtab_file;
 extern void fs_table_initialise(int, char *[], int, char *[]);
 extern void fs_table_destroy(void);
 
-extern void fs_table_insert_project_path(char *__dir, uint __projid);
+extern int fs_table_insert_project_path(char *__dir, uint __projid);
 
 
 extern fs_path_t *fs_table_lookup(const char *__dir, uint __flags);

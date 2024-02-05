@@ -81,7 +81,6 @@ char * gettmpname(char *fname);
 char * getparent(char *fname);
 int fsrprintf(const char *fmt, ...);
 int read_fd_bmap(int, struct xfs_bstat *, int *);
-int cmp(const void *, const void *);
 static void tmp_init(char *mnt);
 static char * tmp_next(char *mnt);
 static void tmp_close(char *mnt);
@@ -578,6 +577,23 @@ fsrall_cleanup(int timeout)
 }
 
 /*
+ * To compare bstat structs for qsort.
+ */
+static int
+cmp(const void *s1, const void *s2)
+{
+	const struct xfs_bulkstat	*bs1 = s1;
+	const struct xfs_bulkstat	*bs2 = s2;
+
+	ASSERT((bs1->bs_version == XFS_BULKSTAT_VERSION_V1 &&
+		bs2->bs_version == XFS_BULKSTAT_VERSION_V1) ||
+		(bs1->bs_version == XFS_BULKSTAT_VERSION_V5 &&
+		bs2->bs_version == XFS_BULKSTAT_VERSION_V5));
+
+	return (bs2->bs_extents64 - bs1->bs_extents64);
+}
+
+/*
  * fsrfs -- reorganize a file system
  */
 static int
@@ -639,7 +655,7 @@ fsrfs(char *mntdir, xfs_ino_t startino, int targetrange)
 		for (p = buf, endp = (buf + buflenout); p < endp ; p++) {
 			/* Do some obvious checks now */
 			if (((p->bs_mode & S_IFMT) != S_IFREG) ||
-			     (p->bs_extents < 2))
+			     (p->bs_extents64 < 2))
 				continue;
 
 			ret = -xfrog_bulkstat_v5_to_v1(&fsxfd, &bs1, p);
@@ -694,17 +710,6 @@ out0:
 	xfd_close(&fsxfd);
 	free(fshandlep);
 	return 0;
-}
-
-/*
- * To compare bstat structs for qsort.
- */
-int
-cmp(const void *s1, const void *s2)
-{
-	return( ((struct xfs_bstat *)s2)->bs_extents -
-	        ((struct xfs_bstat *)s1)->bs_extents);
-
 }
 
 /*

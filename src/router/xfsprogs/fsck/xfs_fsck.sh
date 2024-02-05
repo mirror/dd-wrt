@@ -31,10 +31,12 @@ repair2fsck_code() {
 
 AUTO=false
 FORCE=false
+REPAIR=false
 while getopts ":aApyf" c
 do
 	case $c in
-	a|A|p|y)	AUTO=true;;
+	a|A|p)		AUTO=true;;
+	y)		REPAIR=true;;
 	f)      	FORCE=true;;
 	esac
 done
@@ -64,7 +66,32 @@ fi
 
 if $FORCE; then
 	xfs_repair -e $DEV
-	repair2fsck_code $?
+	error=$?
+	if [ $error -eq 2 ] && [ $REPAIR = true ]; then
+		echo "Replaying log for $DEV"
+		mkdir -p /tmp/repair_mnt || exit 1
+		for x in $(cat /proc/cmdline); do
+			case $x in
+				root=*)
+					ROOT="${x#root=}"
+				;;
+				rootflags=*)
+					ROOTFLAGS="-o ${x#rootflags=}"
+				;;
+			esac
+		done
+		test -b "$ROOT" || ROOT=$(blkid -t "$ROOT" -o device)
+		if [ $(basename $DEV) = $(basename $ROOT) ]; then
+			mount $DEV /tmp/repair_mnt $ROOTFLAGS || exit 1
+		else
+			mount $DEV /tmp/repair_mnt || exit 1
+		fi
+		umount /tmp/repair_mnt
+		xfs_repair -e $DEV
+		error=$?
+		rm -d /tmp/repair_mnt
+	fi
+	repair2fsck_code $error
 	exit $?
 fi
 

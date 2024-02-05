@@ -462,7 +462,8 @@ remove_extents(
 	if (type & XFS_GROUP_QUOTA) {
 		if (remove_qtype_extents(dir, XFS_GROUP_QUOTA) < 0)
 			return;
-	} else if (type & XFS_PROJ_QUOTA) {
+	}
+	if (type & XFS_PROJ_QUOTA) {
 		if (remove_qtype_extents(dir, XFS_PROJ_QUOTA) < 0)
 			return;
 	}

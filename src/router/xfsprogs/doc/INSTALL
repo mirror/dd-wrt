@@ -28,6 +28,11 @@ Linux Instructions
    (on an RPM based system) or the uuid-dev package (on a Debian system)
    as some of the commands make use of the UUID library provided by these.
 
+   If your distro does not provide a libinih package, you can download and build
+   it from source from the upstream repository found at:
+
+	https://github.com/benhoyt/inih
+
    To build the package and install it manually, use the following steps:
 
 	# make

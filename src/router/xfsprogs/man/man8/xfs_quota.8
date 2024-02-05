@@ -128,7 +128,7 @@ To most users, disk quotas are either of no concern or a fact of life
 that cannot be avoided.
 There are two possible quotas that can be imposed \- a limit can be set
 on the amount of space a user can occupy, and there may be a limit on
-the number of files (inodes) he can own.
+the number of files (inodes) they can own.
 .PP
 The
 .B quota
@@ -167,10 +167,10 @@ the file, not only are the recent changes lost, but possibly much, or even
 all, of the contents that previously existed.
 .br
 There are several possible safe exits for a user caught in this situation.
-He can use the editor shell escape command to examine his file space
+They can use the editor shell escape command to examine their file space
 and remove surplus files.  Alternatively, using
 .BR sh (1),
-he can suspend
+they can suspend
 the editor, remove some files, then resume it.
 A third possibility is to write the file to some other filesystem (perhaps
 to a file on
@@ -178,6 +178,12 @@ to a file on
 where the user's quota has not been exceeded.
 Then after rectifying the quota situation, the file can be moved back to the
 filesystem it belongs on.
+.SS Default Quotas
+The XFS quota subsystem allows a default quota to be enforced
+for any user, group or project which does not have a quota limit
+explicitly set.
+These limits are stored in and displayed as ID 0's limits, although they
+do not actually limit ID 0.
 .SH USER COMMANDS
 .TP
 .B print
@@ -387,7 +393,7 @@ option outputs the numeric ID instead of the name. The
 .B \-L
 and
 .B \-U
-options specify lower and upper ID bounds to report on.  If upper/lower
+options specify lower and/or upper ID bounds to report on.  If upper/lower
 bounds are specified, then by default only the IDs will be displayed
 in output; with the
 .B \-l
@@ -440,7 +446,14 @@ option reports state on all filesystems and not just the current path.
 .I name
 .br
 Set quota block limits (bhard/bsoft), inode count limits (ihard/isoft)
-and/or realtime block limits (rtbhard/rtbsoft). The
+and/or realtime block limits (rtbhard/rtbsoft) to N, where N is a
+number representing bytes or inodes.
+For block limits, a number with a s/b/k/m/g/t/p/e multiplication suffix
+as described in
+.BR mkfs.xfs (8)
+is also accepted.
+For inode limits, no suffixes are allowed.
+The
 .B \-d
 option (defaults) can be used to set the default value
 that will be used, otherwise a specific
@@ -552,6 +565,8 @@ report an error.
 [
 .BR \-g " | " \-p " | " \-u
 ] [
+.BR \-L " | " \-U
+] [
 .B \-f
 .I file
 ]
@@ -559,6 +574,11 @@ report an error.
 Dump out quota limit information for backup utilities, either to
 standard output (default) or to a
 .IR file .
+The
+.B \-L
+and
+.B \-U
+options specify lower and/or upper ID bounds to dump.
 This is only the limits, not the usage information, of course.
 .HP
 .B restore
@@ -720,17 +740,8 @@ Same as above without a need for configuration files.
 .in -5
 .fi
 .SH CAVEATS
-XFS implements delayed allocation (aka. allocate-on-flush) and this
-has implications for the quota subsystem.
-Since quota accounting can only be done when blocks are actually
-allocated, it is possible to issue (buffered) writes into a file
-and not see the usage immediately updated.
-Only when the data is actually written out, either via one of the
-kernels flushing mechanisms, or via a manual
-.BR sync (2),
-will the usage reported reflect what has actually been written.
 .PP
-In addition, the XFS allocation mechanism will always reserve the
+The XFS allocation mechanism will always reserve the
 maximum amount of space required before proceeding with an allocation.
 If insufficient space for this reservation is available, due to the
 block quota limit being reached for example, this may result in the

@@ -65,7 +65,7 @@ struct getbmapx {
 
 /*	bmv_iflags values - set by XFS_IOC_GETBMAPX caller.	*/
 #define BMV_IF_ATTRFORK		0x1	/* return attr fork rather than data */
-#define BMV_IF_NO_DMAPI_READ	0x2	/* Do not generate DMAPI read event  */
+#define BMV_IF_NO_DMAPI_READ	0x2	/* Deprecated */
 #define BMV_IF_PREALLOC		0x4	/* rtn status BMV_OF_PREALLOC if req */
 #define BMV_IF_DELALLOC		0x8	/* rtn status BMV_OF_DELALLOC if req */
 #define BMV_IF_NO_HOLES		0x10	/* Do not return holes */
@@ -91,21 +91,6 @@ struct getbmapx {
 #define XFS_FMR_OWN_REFC	FMR_OWNER('X', 6) /* refcount tree */
 #define XFS_FMR_OWN_COW		FMR_OWNER('X', 7) /* cow staging */
 #define XFS_FMR_OWN_DEFECTIVE	FMR_OWNER('X', 8) /* bad blocks */
-
-/*
- * Structure for XFS_IOC_FSSETDM.
- * For use by backup and restore programs to set the XFS on-disk inode
- * fields di_dmevmask and di_dmstate.  These must be set to exactly and
- * only values previously obtained via xfs_bulkstat!  (Specifically the
- * struct xfs_bstat fields bs_dmevmask and bs_dmstate.)
- */
-#ifndef HAVE_FSDMIDATA
-struct fsdmidata {
-	__u32		fsd_dmevmask;	/* corresponds to di_dmevmask */
-	__u16		fsd_padding;
-	__u16		fsd_dmstate;	/* corresponds to di_dmstate  */
-};
-#endif
 
 /*
  * File segment locking set data type for 64 bit access.
@@ -249,6 +234,9 @@ typedef struct xfs_fsop_resblks {
 #define XFS_FSOP_GEOM_FLAGS_SPINODES	(1 << 18) /* sparse inode chunks   */
 #define XFS_FSOP_GEOM_FLAGS_RMAPBT	(1 << 19) /* reverse mapping btree */
 #define XFS_FSOP_GEOM_FLAGS_REFLINK	(1 << 20) /* files can share blocks */
+#define XFS_FSOP_GEOM_FLAGS_BIGTIME	(1 << 21) /* 64-bit nsec timestamps */
+#define XFS_FSOP_GEOM_FLAGS_INOBTCNT	(1 << 22) /* inobt btree counter */
+#define XFS_FSOP_GEOM_FLAGS_NREXT64	(1 << 23) /* large extent counters */
 
 /*
  * Minimum and maximum sizes need for growth checks.
@@ -266,6 +254,10 @@ typedef struct xfs_fsop_resblks {
  */
 #define XFS_MIN_AG_BYTES	(1ULL << 24)	/* 16 MB */
 #define XFS_MAX_AG_BYTES	(1ULL << 40)	/* 1 TB */
+#define XFS_MAX_AG_BLOCKS	(XFS_MAX_AG_BYTES / XFS_MIN_BLOCKSIZE)
+#define XFS_MAX_CRC_AG_BLOCKS	(XFS_MAX_AG_BYTES / XFS_MIN_CRC_BLOCKSIZE)
+
+#define XFS_MAX_AGNUMBER	((xfs_agnumber_t)(NULLAGNUMBER - 1))
 
 /* keep the maximum size under 2^31 by a small amount */
 #define XFS_MAX_LOG_BYTES \
@@ -388,7 +380,7 @@ struct xfs_bulkstat {
 	uint32_t	bs_extsize_blks; /* extent size hint, blocks	*/
 
 	uint32_t	bs_nlink;	/* number of links		*/
-	uint32_t	bs_extents;	/* number of extents		*/
+	uint32_t	bs_extents;	/* 32-bit data fork extent counter */
 	uint32_t	bs_aextents;	/* attribute number of extents	*/
 	uint16_t	bs_version;	/* structure version		*/
 	uint16_t	bs_forkoff;	/* inode fork offset in bytes	*/
@@ -397,8 +389,9 @@ struct xfs_bulkstat {
 	uint16_t	bs_checked;	/* checked inode metadata	*/
 	uint16_t	bs_mode;	/* type and mode		*/
 	uint16_t	bs_pad2;	/* zeroed			*/
+	uint64_t	bs_extents64;	/* 64-bit data fork extent counter */
 
-	uint64_t	bs_pad[7];	/* zeroed			*/
+	uint64_t	bs_pad[6];	/* zeroed			*/
 };
 
 #define XFS_BULKSTAT_VERSION_V1	(1)
@@ -470,17 +463,28 @@ struct xfs_bulk_ireq {
  * Only return results from the specified @agno.  If @ino is zero, start
  * with the first inode of @agno.
  */
-#define XFS_BULK_IREQ_AGNO	(1 << 0)
+#define XFS_BULK_IREQ_AGNO	(1U << 0)
 
 /*
  * Return bulkstat information for a single inode, where @ino value is a
  * special value, not a literal inode number.  See the XFS_BULK_IREQ_SPECIAL_*
  * values below.  Not compatible with XFS_BULK_IREQ_AGNO.
  */
-#define XFS_BULK_IREQ_SPECIAL	(1 << 1)
+#define XFS_BULK_IREQ_SPECIAL	(1U << 1)
 
-#define XFS_BULK_IREQ_FLAGS_ALL	(XFS_BULK_IREQ_AGNO | \
-				 XFS_BULK_IREQ_SPECIAL)
+/*
+ * Return data fork extent count via xfs_bulkstat->bs_extents64 field and assign
+ * 0 to xfs_bulkstat->bs_extents when the flag is set.  Otherwise, use
+ * xfs_bulkstat->bs_extents for returning data fork extent count and set
+ * xfs_bulkstat->bs_extents64 to 0. In the second case, return -EOVERFLOW and
+ * assign 0 to xfs_bulkstat->bs_extents if data fork extent count is larger than
+ * XFS_MAX_EXTCNT_DATA_FORK_OLD.
+ */
+#define XFS_BULK_IREQ_NREXT64	(1U << 2)
+
+#define XFS_BULK_IREQ_FLAGS_ALL	(XFS_BULK_IREQ_AGNO |	 \
+				 XFS_BULK_IREQ_SPECIAL | \
+				 XFS_BULK_IREQ_NREXT64)
 
 /* Operate on the root directory inode. */
 #define XFS_BULK_IREQ_SPECIAL_ROOT	(1)
@@ -558,15 +562,9 @@ typedef struct xfs_fsop_handlereq {
 
 /*
  * Compound structures for passing args through Handle Request interfaces
- * xfs_fssetdm_by_handle, xfs_attrlist_by_handle, xfs_attrmulti_by_handle
- * - ioctls: XFS_IOC_FSSETDM_BY_HANDLE, XFS_IOC_ATTRLIST_BY_HANDLE, and
- *	     XFS_IOC_ATTRMULTI_BY_HANDLE
+ * xfs_attrlist_by_handle, xfs_attrmulti_by_handle
+ * - ioctls: XFS_IOC_ATTRLIST_BY_HANDLE, and XFS_IOC_ATTRMULTI_BY_HANDLE
  */
-
-typedef struct xfs_fsop_setdm_handlereq {
-	struct xfs_fsop_handlereq	hreq;	/* handle information	*/
-	struct fsdmidata		__user *data;	/* DMAPI data	*/
-} xfs_fsop_setdm_handlereq_t;
 
 /*
  * Flags passed in xfs_attr_multiop.am_flags for the attr ioctl interface.
@@ -594,12 +592,12 @@ typedef struct xfs_attrlist_cursor {
 struct xfs_attrlist {
 	__s32	al_count;	/* number of entries in attrlist */
 	__s32	al_more;	/* T/F: more attrs (do call again) */
-	__s32	al_offset[1];	/* byte offsets of attrs [var-sized] */
+	__s32	al_offset[];	/* byte offsets of attrs [var-sized] */
 };
 
 struct xfs_attrlist_ent {	/* data from attr_list() */
 	__u32	a_valuelen;	/* number bytes in value of attr */
-	char	a_name[1];	/* attr name (NULL terminated) */
+	char	a_name[];	/* attr name (NULL terminated) */
 };
 
 typedef struct xfs_fsop_attrlist_handlereq {
@@ -716,34 +714,34 @@ struct xfs_scrub_metadata {
 #define XFS_SCRUB_TYPE_NR	25
 
 /* i: Repair this metadata. */
-#define XFS_SCRUB_IFLAG_REPAIR		(1 << 0)
+#define XFS_SCRUB_IFLAG_REPAIR		(1u << 0)
 
 /* o: Metadata object needs repair. */
-#define XFS_SCRUB_OFLAG_CORRUPT		(1 << 1)
+#define XFS_SCRUB_OFLAG_CORRUPT		(1u << 1)
 
 /*
  * o: Metadata object could be optimized.  It's not corrupt, but
  *    we could improve on it somehow.
  */
-#define XFS_SCRUB_OFLAG_PREEN		(1 << 2)
+#define XFS_SCRUB_OFLAG_PREEN		(1u << 2)
 
 /* o: Cross-referencing failed. */
-#define XFS_SCRUB_OFLAG_XFAIL		(1 << 3)
+#define XFS_SCRUB_OFLAG_XFAIL		(1u << 3)
 
 /* o: Metadata object disagrees with cross-referenced metadata. */
-#define XFS_SCRUB_OFLAG_XCORRUPT	(1 << 4)
+#define XFS_SCRUB_OFLAG_XCORRUPT	(1u << 4)
 
 /* o: Scan was not complete. */
-#define XFS_SCRUB_OFLAG_INCOMPLETE	(1 << 5)
+#define XFS_SCRUB_OFLAG_INCOMPLETE	(1u << 5)
 
 /* o: Metadata object looked funny but isn't corrupt. */
-#define XFS_SCRUB_OFLAG_WARNING		(1 << 6)
+#define XFS_SCRUB_OFLAG_WARNING		(1u << 6)
 
 /*
  * o: IFLAG_REPAIR was set but metadata object did not need fixing or
  *    optimization and has therefore not been altered.
  */
-#define XFS_SCRUB_OFLAG_NO_REPAIR_NEEDED (1 << 7)
+#define XFS_SCRUB_OFLAG_NO_REPAIR_NEEDED (1u << 7)
 
 #define XFS_SCRUB_FLAGS_IN	(XFS_SCRUB_IFLAG_REPAIR)
 #define XFS_SCRUB_FLAGS_OUT	(XFS_SCRUB_OFLAG_CORRUPT | \
@@ -777,15 +775,15 @@ struct xfs_scrub_metadata {
  * For 'documentation' purposed more than anything else,
  * the "cmd #" field reflects the IRIX fcntl number.
  */
-#define XFS_IOC_ALLOCSP		_IOW ('X', 10, struct xfs_flock64)
-#define XFS_IOC_FREESP		_IOW ('X', 11, struct xfs_flock64)
+/*	XFS_IOC_ALLOCSP ------- deprecated 10	 */
+/*	XFS_IOC_FREESP -------- deprecated 11	 */
 #define XFS_IOC_DIOINFO		_IOR ('X', 30, struct dioattr)
 #define XFS_IOC_FSGETXATTR	FS_IOC_FSGETXATTR
 #define XFS_IOC_FSSETXATTR	FS_IOC_FSSETXATTR
-#define XFS_IOC_ALLOCSP64	_IOW ('X', 36, struct xfs_flock64)
-#define XFS_IOC_FREESP64	_IOW ('X', 37, struct xfs_flock64)
+/*	XFS_IOC_ALLOCSP64 ----- deprecated 36	 */
+/*	XFS_IOC_FREESP64 ------ deprecated 37	 */
 #define XFS_IOC_GETBMAP		_IOWR('X', 38, struct getbmap)
-#define XFS_IOC_FSSETDM		_IOW ('X', 39, struct fsdmidata)
+/*      XFS_IOC_FSSETDM ------- deprecated 39    */
 #define XFS_IOC_RESVSP		_IOW ('X', 40, struct xfs_flock64)
 #define XFS_IOC_UNRESVSP	_IOW ('X', 41, struct xfs_flock64)
 #define XFS_IOC_RESVSP64	_IOW ('X', 42, struct xfs_flock64)
@@ -827,7 +825,7 @@ struct xfs_scrub_metadata {
 #define XFS_IOC_FREEZE		     _IOWR('X', 119, int)	/* aka FIFREEZE */
 #define XFS_IOC_THAW		     _IOWR('X', 120, int)	/* aka FITHAW */
 
-#define XFS_IOC_FSSETDM_BY_HANDLE    _IOW ('X', 121, struct xfs_fsop_setdm_handlereq)
+/*      XFS_IOC_FSSETDM_BY_HANDLE -- deprecated 121      */
 #define XFS_IOC_ATTRLIST_BY_HANDLE   _IOW ('X', 122, struct xfs_fsop_attrlist_handlereq)
 #define XFS_IOC_ATTRMULTI_BY_HANDLE  _IOW ('X', 123, struct xfs_fsop_attrmulti_handlereq)
 #define XFS_IOC_FSGEOMETRY_V4	     _IOR ('X', 124, struct xfs_fsop_geom_v4)

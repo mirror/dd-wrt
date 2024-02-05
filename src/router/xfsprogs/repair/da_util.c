@@ -330,7 +330,7 @@ _("%s block used/count inconsistency - %d/%hu\n"),
 	/*
 	 * hash values monotonically increasing ???
 	 */
-	if (cursor->level[this_level].hashval >=
+	if (cursor->level[this_level].hashval >
 				be32_to_cpu(nodehdr.btree[entry].hashval)) {
 		do_warn(
 _("%s block hashvalue inconsistency, expected > %u / saw %u\n"),

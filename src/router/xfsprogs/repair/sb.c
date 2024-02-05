@@ -12,7 +12,6 @@
 #include "protos.h"
 #include "err_protos.h"
 #include "xfs_multidisk.h"
-#include "libfrog/topology.h"
 
 #define BSIZE	(1024 * 1024)
 
@@ -142,7 +141,7 @@ __find_secondary_sb(
 		 */
 		for (i = 0; !done && i < bsize; i += BBSIZE)  {
 			c_bufsb = (char *)sb + i;
-			libxfs_sb_from_disk(&bufsb, (xfs_dsb_t *)c_bufsb);
+			libxfs_sb_from_disk(&bufsb, (struct xfs_dsb *)c_bufsb);
 
 			if (verify_sb(c_bufsb, &bufsb, 0) != XR_OK)
 				continue;
@@ -522,7 +521,7 @@ verify_sb(char *sb_buf, xfs_sb_t *sb, int is_primary_sb)
 void
 write_primary_sb(xfs_sb_t *sbp, int size)
 {
-	xfs_dsb_t	*buf;
+	struct xfs_dsb	*buf;
 
 	if (no_modify)
 		return;
@@ -559,7 +558,7 @@ int
 get_sb(xfs_sb_t *sbp, xfs_off_t off, int size, xfs_agnumber_t agno)
 {
 	int error, rval;
-	xfs_dsb_t *buf;
+	struct xfs_dsb *buf;
 
 	buf = memalign(libxfs_device_alignment(), size);
 	if (buf == NULL) {

@@ -29,7 +29,7 @@ static const cmdinfo_t crc_cmd =
 void
 crc_init(void)
 {
-	if (xfs_sb_version_hascrc(&mp->m_sb))
+	if (xfs_has_crc(mp))
 		add_command(&crc_cmd);
 }
 
@@ -114,7 +114,7 @@ crc_f(
 	}
 
 	/* Search for a CRC field */
-	fl = flist_find_ftyp(fields, FLDT_CRC);
+	fl = flist_find_ftyp(fields, FLDT_CRC, iocur_top->data, 0);
 	if (!fl) {
 		dbprintf(_("No CRC field found for type %s\n"), cur_typ->name);
 		return 0;

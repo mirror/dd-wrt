@@ -6,6 +6,10 @@
 #ifndef __LIBFROG_BULKSTAT_H__
 #define __LIBFROG_BULKSTAT_H__
 
+/* This is the minimum reasonable size of a bulkstat request. */
+#define LIBFROG_BULKSTAT_CHUNKSIZE \
+		(NBBY * sizeof_field(struct xfs_inumbers, xi_allocmask))
+
 /* Bulkstat wrappers */
 struct xfs_bstat;
 int xfrog_bulkstat_single(struct xfs_fd *xfd, uint64_t ino, unsigned int flags,

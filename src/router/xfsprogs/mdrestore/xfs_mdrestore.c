@@ -89,7 +89,7 @@ perform_restore(
 	if (fread(block_buffer, mb_count << mbp->mb_blocklog, 1, src_f) != 1)
 		fatal("error reading from metadump file\n");
 
-	libxfs_sb_from_disk(&sb, (xfs_dsb_t *)block_buffer);
+	libxfs_sb_from_disk(&sb, (struct xfs_dsb *)block_buffer);
 
 	if (sb.sb_magicnum != XFS_SB_MAGIC)
 		fatal("bad magic number for primary superblock\n");
@@ -104,7 +104,7 @@ perform_restore(
 	    sb.sb_sectsize > max_indices * block_size)
 		fatal("bad sector size %u in metadump image\n", sb.sb_sectsize);
 
-	((xfs_dsb_t*)block_buffer)->sb_inprogress = 1;
+	((struct xfs_dsb*)block_buffer)->sb_inprogress = 1;
 
 	if (is_target_file)  {
 		/* ensure regular files are correctly sized */
@@ -163,7 +163,7 @@ perform_restore(
 
 	memset(block_buffer, 0, sb.sb_sectsize);
 	sb.sb_inprogress = 0;
-	libxfs_sb_to_disk((xfs_dsb_t *)block_buffer, &sb);
+	libxfs_sb_to_disk((struct xfs_dsb *)block_buffer, &sb);
 	if (xfs_sb_version_hascrc(&sb)) {
 		xfs_update_cksum(block_buffer, sb.sb_sectsize,
 				 offsetof(struct xfs_sb, sb_crc));

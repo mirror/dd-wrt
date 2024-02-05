@@ -47,7 +47,10 @@ typedef struct fs_disk_quota {
 	__s32		d_btimer;	/* similar to above; for disk blocks */
 	__u16		d_iwarns;	/* # warnings issued wrt num inodes */
 	__u16		d_bwarns;	/* # warnings issued wrt disk blocks */
-	__s32		d_padding2;	/* padding2 - for future use */
+	__s8		d_itimer_hi;	/* upper 8 bits of timer values */
+	__s8		d_btimer_hi;
+	__s8		d_rtbtimer_hi;
+	__s8		d_padding2;	/* padding2 - for future use */
 	__u64		d_rtb_hardlimit;/* absolute limit on realtime blks */
 	__u64		d_rtb_softlimit;/* preferred limit on RT disk blks */
 	__u64		d_rtbcount;	/* # realtime blocks owned */
@@ -92,6 +95,21 @@ typedef struct fs_disk_quota {
 #define FS_DQ_IWARNS	(1<<10)
 #define FS_DQ_RTBWARNS	(1<<11)
 #define FS_DQ_WARNS_MASK	(FS_DQ_BWARNS | FS_DQ_IWARNS | FS_DQ_RTBWARNS)
+
+/*
+ * Accounting values.  These can only be set for filesystem with
+ * non-transactional quotas that require quotacheck(8) in userspace.
+ */
+#define FS_DQ_BCOUNT		(1<<12)
+#define FS_DQ_ICOUNT		(1<<13)
+#define FS_DQ_RTBCOUNT		(1<<14)
+#define FS_DQ_ACCT_MASK		(FS_DQ_BCOUNT | FS_DQ_ICOUNT | FS_DQ_RTBCOUNT)
+
+/*
+ * Quota expiration timestamps are 40-bit signed integers, with the upper 8
+ * bits encoded in the _hi fields.
+ */
+#define FS_DQ_BIGTIME		(1<<15)
 
 /*
  * Various flags related to quotactl(2).  Only relevant to XFS filesystems.

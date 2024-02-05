@@ -3,11 +3,13 @@
 #
 AC_DEFUN([AC_HAVE_FADVISE],
   [ AC_MSG_CHECKING([for fadvise ])
-    AC_TRY_COMPILE([
+    AC_COMPILE_IFELSE(
+    [	AC_LANG_PROGRAM([[
 #define _GNU_SOURCE
 #include <fcntl.h>
-    ], [
-	posix_fadvise(0, 1, 0, POSIX_FADV_NORMAL);
+	]], [[
+posix_fadvise(0, 1, 0, POSIX_FADV_NORMAL);
+	]])
     ],	have_fadvise=yes
 	AC_MSG_RESULT(yes),
 	AC_MSG_RESULT(no))
@@ -19,11 +21,13 @@ AC_DEFUN([AC_HAVE_FADVISE],
 #
 AC_DEFUN([AC_HAVE_MADVISE],
   [ AC_MSG_CHECKING([for madvise ])
-    AC_TRY_COMPILE([
+    AC_COMPILE_IFELSE(
+    [	AC_LANG_PROGRAM([[
 #define _GNU_SOURCE
 #include <sys/mman.h>
-    ], [
-	posix_madvise(0, 0, MADV_NORMAL);
+	]], [[
+posix_madvise(0, 0, MADV_NORMAL);
+	]])
     ],	have_madvise=yes
 	AC_MSG_RESULT(yes),
 	AC_MSG_RESULT(no))
@@ -35,11 +39,13 @@ AC_DEFUN([AC_HAVE_MADVISE],
 #
 AC_DEFUN([AC_HAVE_MINCORE],
   [ AC_MSG_CHECKING([for mincore ])
-    AC_TRY_COMPILE([
+    AC_COMPILE_IFELSE(
+    [	AC_LANG_PROGRAM([[
 #define _GNU_SOURCE
 #include <sys/mman.h>
-    ], [
-	mincore(0, 0, 0);
+	]], [[
+mincore(0, 0, 0);
+	]])
     ],	have_mincore=yes
 	AC_MSG_RESULT(yes),
 	AC_MSG_RESULT(no))
@@ -51,11 +57,13 @@ AC_DEFUN([AC_HAVE_MINCORE],
 #
 AC_DEFUN([AC_HAVE_SENDFILE],
   [ AC_MSG_CHECKING([for sendfile ])
-    AC_TRY_COMPILE([
+    AC_COMPILE_IFELSE(
+    [	AC_LANG_PROGRAM([[
 #define _GNU_SOURCE
 #include <sys/sendfile.h>
-    ], [
-         sendfile(0, 0, 0, 0);
+	]], [[
+sendfile(0, 0, 0, 0);
+	]])
     ],	have_sendfile=yes
 	AC_MSG_RESULT(yes),
 	AC_MSG_RESULT(no))
@@ -67,11 +75,13 @@ AC_DEFUN([AC_HAVE_SENDFILE],
 #
 AC_DEFUN([AC_HAVE_GETMNTENT],
   [ AC_MSG_CHECKING([for getmntent ])
-    AC_TRY_COMPILE([
+    AC_COMPILE_IFELSE(
+    [	AC_LANG_PROGRAM([[
 #include <stdio.h>
 #include <mntent.h>
-    ], [
-         getmntent(0);
+	]], [[
+getmntent(0);
+	]])
     ], have_getmntent=yes
        AC_MSG_RESULT(yes),
        AC_MSG_RESULT(no))
@@ -83,12 +93,14 @@ AC_DEFUN([AC_HAVE_GETMNTENT],
 #
 AC_DEFUN([AC_HAVE_FALLOCATE],
   [ AC_MSG_CHECKING([for fallocate])
-    AC_TRY_LINK([
+    AC_LINK_IFELSE(
+    [	AC_LANG_PROGRAM([[
 #define _GNU_SOURCE
 #include <fcntl.h>
 #include <linux/falloc.h>
-    ], [
-         fallocate(0, 0, 0, 0);
+	]], [[
+fallocate(0, 0, 0, 0);
+	]])
     ], have_fallocate=yes
        AC_MSG_RESULT(yes),
        AC_MSG_RESULT(no))
@@ -100,13 +112,16 @@ AC_DEFUN([AC_HAVE_FALLOCATE],
 #
 AC_DEFUN([AC_HAVE_FIEMAP],
   [ AC_MSG_CHECKING([for fiemap])
-    AC_TRY_LINK([
+    AC_LINK_IFELSE(
+    [	AC_LANG_PROGRAM([[
 #define _GNU_SOURCE
 #include <linux/fs.h>
 #include <linux/fiemap.h>
-    ], [
-         struct fiemap *fiemap;
-         ioctl(0, FS_IOC_FIEMAP, (unsigned long)fiemap);
+#include <sys/ioctl.h>
+	]], [[
+struct fiemap *fiemap;
+ioctl(0, FS_IOC_FIEMAP, (unsigned long)fiemap);
+	]])
     ], have_fiemap=yes
        AC_MSG_RESULT(yes),
        AC_MSG_RESULT(no))
@@ -118,12 +133,14 @@ AC_DEFUN([AC_HAVE_FIEMAP],
 #
 AC_DEFUN([AC_HAVE_PREADV],
   [ AC_MSG_CHECKING([for preadv])
-    AC_TRY_LINK([
+    AC_LINK_IFELSE(
+    [	AC_LANG_PROGRAM([[
 #define _BSD_SOURCE
 #define _DEFAULT_SOURCE
 #include <sys/uio.h>
-    ], [
-         preadv(0, 0, 0, 0);
+	]], [[
+preadv(0, 0, 0, 0);
+	]])
     ], have_preadv=yes
        AC_MSG_RESULT(yes),
        AC_MSG_RESULT(no))
@@ -135,11 +152,13 @@ AC_DEFUN([AC_HAVE_PREADV],
 #
 AC_DEFUN([AC_HAVE_PWRITEV2],
   [ AC_MSG_CHECKING([for pwritev2])
-    AC_TRY_LINK([
-#define _BSD_SOURCE
+    AC_LINK_IFELSE(
+    [	AC_LANG_PROGRAM([[
+#define _GNU_SOURCE
 #include <sys/uio.h>
-    ], [
-         pwritev2(0, 0, 0, 0, 0);
+	]], [[
+pwritev2(0, 0, 0, 0, 0);
+	]])
     ], have_pwritev2=yes
        AC_MSG_RESULT(yes),
        AC_MSG_RESULT(no))
@@ -151,12 +170,14 @@ AC_DEFUN([AC_HAVE_PWRITEV2],
 #
 AC_DEFUN([AC_HAVE_COPY_FILE_RANGE],
   [ AC_MSG_CHECKING([for copy_file_range])
-    AC_TRY_LINK([
+    AC_LINK_IFELSE(
+    [	AC_LANG_PROGRAM([[
 #define _GNU_SOURCE
 #include <sys/syscall.h>
 #include <unistd.h>
-    ], [
-         syscall(__NR_copy_file_range, 0, 0, 0, 0, 0, 0);
+	]], [[
+syscall(__NR_copy_file_range, 0, 0, 0, 0, 0, 0);
+	]])
     ], have_copy_file_range=yes
        AC_MSG_RESULT(yes),
        AC_MSG_RESULT(no))
@@ -168,11 +189,13 @@ AC_DEFUN([AC_HAVE_COPY_FILE_RANGE],
 #
 AC_DEFUN([AC_HAVE_SYNC_FILE_RANGE],
   [ AC_MSG_CHECKING([for sync_file_range])
-    AC_TRY_LINK([
+    AC_LINK_IFELSE(
+    [	AC_LANG_PROGRAM([[
 #define _GNU_SOURCE
 #include <fcntl.h>
-    ], [
-         sync_file_range(0, 0, 0, 0);
+	]], [[
+sync_file_range(0, 0, 0, 0);
+	]])
     ], have_sync_file_range=yes
        AC_MSG_RESULT(yes),
        AC_MSG_RESULT(no))
@@ -184,11 +207,13 @@ AC_DEFUN([AC_HAVE_SYNC_FILE_RANGE],
 #
 AC_DEFUN([AC_HAVE_SYNCFS],
   [ AC_MSG_CHECKING([for syncfs])
-    AC_TRY_LINK([
+    AC_LINK_IFELSE(
+    [	AC_LANG_PROGRAM([[
 #define _GNU_SOURCE
 #include <unistd.h>
-    ], [
-         syncfs(0);
+	]], [[
+syncfs(0);
+	]])
     ], have_syncfs=yes
        AC_MSG_RESULT(yes),
        AC_MSG_RESULT(no))
@@ -200,10 +225,12 @@ AC_DEFUN([AC_HAVE_SYNCFS],
 #
 AC_DEFUN([AC_HAVE_READDIR],
   [ AC_MSG_CHECKING([for readdir])
-    AC_TRY_LINK([
+    AC_LINK_IFELSE(
+    [	AC_LANG_PROGRAM([[
 #include <dirent.h>
-    ], [
-         readdir(0);
+	]], [[
+readdir(0);
+	]])
     ], have_readdir=yes
        AC_MSG_RESULT(yes),
        AC_MSG_RESULT(no))
@@ -304,15 +331,17 @@ AC_DEFUN([AC_NEED_INTERNAL_FSCRYPT_ADD_KEY_ARG],
 #
 AC_DEFUN([AC_HAVE_GETFSMAP],
   [ AC_MSG_CHECKING([for GETFSMAP])
-    AC_TRY_LINK([
+    AC_LINK_IFELSE(
+    [	AC_LANG_PROGRAM([[
 #define _GNU_SOURCE
 #include <sys/syscall.h>
 #include <unistd.h>
 #include <linux/fs.h>
 #include <linux/fsmap.h>
-    ], [
-         unsigned long x = FS_IOC_GETFSMAP;
-         struct fsmap_head fh;
+	]], [[
+unsigned long x = FS_IOC_GETFSMAP;
+struct fsmap_head fh;
+	]])
     ], have_getfsmap=yes
        AC_MSG_RESULT(yes),
        AC_MSG_RESULT(no))
@@ -338,11 +367,12 @@ AC_DEFUN([AC_HAVE_STATFS_FLAGS],
 #
 AC_DEFUN([AC_HAVE_MAP_SYNC],
   [ AC_MSG_CHECKING([for MAP_SYNC])
-    AC_TRY_COMPILE([
-#include <asm-generic/mman.h>
-#include <asm-generic/mman-common.h>
-    ], [
-        int flags = MAP_SYNC | MAP_SHARED_VALIDATE;
+    AC_COMPILE_IFELSE(
+    [	AC_LANG_PROGRAM([[
+#include <sys/mman.h>
+	]], [[
+int flags = MAP_SYNC | MAP_SHARED_VALIDATE;
+	]])
     ], have_map_sync=yes
 	AC_MSG_RESULT(yes),
 	AC_MSG_RESULT(no))
@@ -354,17 +384,39 @@ AC_DEFUN([AC_HAVE_MAP_SYNC],
 #
 AC_DEFUN([AC_HAVE_MALLINFO],
   [ AC_MSG_CHECKING([for mallinfo ])
-    AC_TRY_COMPILE([
+    AC_COMPILE_IFELSE(
+    [	AC_LANG_PROGRAM([[
 #include <malloc.h>
-    ], [
-         struct mallinfo test;
+	]], [[
+struct mallinfo test;
 
-         test.arena = 0; test.hblkhd = 0; test.uordblks = 0; test.fordblks = 0;
-         test = mallinfo();
+test.arena = 0; test.hblkhd = 0; test.uordblks = 0; test.fordblks = 0;
+test = mallinfo();
+	]])
     ], have_mallinfo=yes
        AC_MSG_RESULT(yes),
        AC_MSG_RESULT(no))
     AC_SUBST(have_mallinfo)
+  ])
+
+#
+# Check if we have a mallinfo2 libc call
+#
+AC_DEFUN([AC_HAVE_MALLINFO2],
+  [ AC_MSG_CHECKING([for mallinfo2 ])
+    AC_COMPILE_IFELSE(
+    [	AC_LANG_PROGRAM([[
+#include <malloc.h>
+        ]], [[
+struct mallinfo2 test;
+
+test.arena = 0; test.hblkhd = 0; test.uordblks = 0; test.fordblks = 0;
+test = mallinfo2();
+        ]])
+    ], have_mallinfo2=yes
+       AC_MSG_RESULT(yes),
+       AC_MSG_RESULT(no))
+    AC_SUBST(have_mallinfo2)
   ])
 
 #
@@ -400,10 +452,14 @@ AC_DEFUN([AC_HAVE_FSTATAT],
 #
 AC_DEFUN([AC_HAVE_SG_IO],
   [ AC_MSG_CHECKING([for struct sg_io_hdr ])
-    AC_TRY_COMPILE([#include <scsi/sg.h>],
-    [
-         struct sg_io_hdr hdr;
-         ioctl(0, SG_IO, &hdr);
+    AC_COMPILE_IFELSE(
+    [	AC_LANG_PROGRAM([[
+#include <scsi/sg.h>
+#include <sys/ioctl.h>
+	]], [[
+struct sg_io_hdr hdr;
+ioctl(0, SG_IO, &hdr);
+	]])
     ], have_sg_io=yes
        AC_MSG_RESULT(yes),
        AC_MSG_RESULT(no))
@@ -415,10 +471,14 @@ AC_DEFUN([AC_HAVE_SG_IO],
 #
 AC_DEFUN([AC_HAVE_HDIO_GETGEO],
   [ AC_MSG_CHECKING([for struct hd_geometry ])
-    AC_TRY_COMPILE([#include <linux/hdreg.h>],
-    [
-         struct hd_geometry hdr;
-         ioctl(0, HDIO_GETGEO, &hdr);
+    AC_COMPILE_IFELSE(
+    [	AC_LANG_PROGRAM([[
+#include <linux/hdreg.h>
+#include <sys/ioctl.h>
+	]], [[
+struct hd_geometry hdr;
+ioctl(0, HDIO_GETGEO, &hdr);
+	]])
     ], have_hdio_getgeo=yes
        AC_MSG_RESULT(yes),
        AC_MSG_RESULT(no))

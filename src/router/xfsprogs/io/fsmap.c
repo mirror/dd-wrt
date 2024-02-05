@@ -4,6 +4,7 @@
  * Author: Darrick J. Wong <darrick.wong@oracle.com>
  */
 #include "platform_defs.h"
+#include <linux/fsmap.h>
 #include "command.h"
 #include "init.h"
 #include "libfrog/paths.h"
@@ -116,7 +117,8 @@ dump_map_machine(
 	struct fsmap		*p;
 	char			*fork;
 
-	printf(_("EXT,MAJOR,MINOR,PSTART,PEND,OWNER,OSTART,OEND,LENGTH\n"));
+	if (*nr == 0)
+		printf(_("EXT,MAJOR,MINOR,PSTART,PEND,OWNER,OSTART,OEND,LENGTH\n"));
 	for (i = 0, p = head->fmh_recs; i < head->fmh_entries; i++, p++) {
 		printf("%llu,%u,%u,%lld,%lld,", i + (*nr),
 			major(p->fmr_device), minor(p->fmr_device),
@@ -195,7 +197,7 @@ dump_map_verbose(
 		    p->fmr_flags & FMR_OF_ATTR_FORK ||
 		    p->fmr_flags & FMR_OF_SHARED)
 			flg = 1;
-		if (sunit &&
+		if (sunit && p->fmr_device == xfs_data_dev &&
 		    (p->fmr_physical  % sunit != 0 ||
 		     ((p->fmr_physical + p->fmr_length) % sunit) != 0 ||
 		     p->fmr_physical % swidth != 0 ||
@@ -271,7 +273,7 @@ dump_map_verbose(
 		 * If striping enabled, determine if extent starts/ends
 		 * on a stripe unit boundary.
 		 */
-		if (sunit) {
+		if (sunit && p->fmr_device == xfs_data_dev) {
 			if (p->fmr_physical  % sunit != 0)
 				flg |= FLG_BSU;
 			if (((p->fmr_physical +
@@ -371,13 +373,11 @@ fsmap_f(
 	char			**argv)
 {
 	struct fsmap		*p;
-	struct fsmap_head	*nhead;
 	struct fsmap_head	*head;
 	struct fsmap		*l, *h;
 	struct xfs_fsop_geom	fsgeo;
 	long long		start = 0;
 	long long		end = -1;
-	int			nmap_size;
 	int			map_size;
 	int			nflag = 0;
 	int			vflag = 0;
@@ -490,34 +490,6 @@ fsmap_f(
 	h->fmr_owner = ULLONG_MAX;
 	h->fmr_flags = UINT_MAX;
 	h->fmr_offset = ULLONG_MAX;
-
-	/* Count mappings */
-	if (!nflag) {
-		head->fmh_count = 0;
-		i = ioctl(file->fd, FS_IOC_GETFSMAP, head);
-		if (i < 0) {
-			fprintf(stderr, _("%s: xfsctl(XFS_IOC_GETFSMAP)"
-				" iflags=0x%x [\"%s\"]: %s\n"),
-				progname, head->fmh_iflags, file->name,
-				strerror(errno));
-			exitcode = 1;
-			free(head);
-			return 0;
-		}
-		if (head->fmh_entries > map_size + 2) {
-			map_size = 11ULL * head->fmh_entries / 10;
-			nmap_size = map_size > (1 << 24) ? (1 << 24) : map_size;
-			nhead = realloc(head, fsmap_sizeof(nmap_size));
-			if (nhead == NULL) {
-				fprintf(stderr,
-					_("%s: cannot realloc %zu bytes\n"),
-					progname, fsmap_sizeof(nmap_size));
-			} else {
-				head = nhead;
-				map_size = nmap_size;
-			}
-		}
-	}
 
 	/*
 	 * If this is an XFS filesystem, remember the data device.

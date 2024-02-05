@@ -75,3 +75,45 @@ AC_DEFUN([AC_CONFIG_CROND_DIR],
 	AC_SUBST(have_crond)
 	AC_SUBST(crond_dir)
 ])
+
+#
+# Figure out where to put udev rule files
+#
+AC_DEFUN([AC_CONFIG_UDEV_RULE_DIR],
+[
+	AC_REQUIRE([PKG_PROG_PKG_CONFIG])
+	AC_ARG_WITH([udev_rule_dir],
+	  [AS_HELP_STRING([--with-udev-rule-dir@<:@=DIR@:>@],
+		[Install udev rules into DIR.])],
+	  [],
+	  [with_udev_rule_dir=yes])
+	AS_IF([test "x${with_udev_rule_dir}" != "xno"],
+	  [
+		AS_IF([test "x${with_udev_rule_dir}" = "xyes"],
+		  [
+			PKG_CHECK_MODULES([udev], [udev],
+			  [
+				with_udev_rule_dir="$($PKG_CONFIG --variable=udev_dir udev)/rules.d"
+			  ], [
+				with_udev_rule_dir=""
+			  ])
+			m4_pattern_allow([^PKG_(MAJOR|MINOR|BUILD|REVISION)$])
+		  ])
+		AC_MSG_CHECKING([for udev rule dir])
+		udev_rule_dir="${with_udev_rule_dir}"
+		AS_IF([test -n "${udev_rule_dir}"],
+		  [
+			AC_MSG_RESULT(${udev_rule_dir})
+			have_udev="yes"
+		  ],
+		  [
+			AC_MSG_RESULT(no)
+			have_udev="no"
+		  ])
+	  ],
+	  [
+		have_udev="disabled"
+	  ])
+	AC_SUBST(have_udev)
+	AC_SUBST(udev_rule_dir)
+])

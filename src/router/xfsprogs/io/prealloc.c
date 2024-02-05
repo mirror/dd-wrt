@@ -43,6 +43,7 @@ static cmdinfo_t fpunch_cmd;
 static cmdinfo_t fcollapse_cmd;
 static cmdinfo_t finsert_cmd;
 static cmdinfo_t fzero_cmd;
+static cmdinfo_t funshare_cmd;
 #endif
 
 static int
@@ -68,6 +69,17 @@ offset_length(
 	}
 	return 1;
 }
+
+/*
+ * These ioctls were withdrawn in Linux 5.17, but we'll keep them around for
+ * a few releases.
+ */
+#ifndef XFS_IOC_ALLOCSP64
+# define XFS_IOC_ALLOCSP64	_IOW ('X', 36, struct xfs_flock64)
+#endif
+#ifndef XFS_IOC_FREESP64
+# define XFS_IOC_FREESP64	_IOW ('X', 37, struct xfs_flock64)
+#endif
 
 static int
 allocsp_f(
@@ -345,16 +357,24 @@ funshare_f(
 	char		**argv)
 {
 	xfs_flock64_t	segment;
+	int		c;
 	int		mode = FALLOC_FL_UNSHARE_RANGE;
-	int		index = 1;
 
-	if (!offset_length(argv[index], argv[index + 1], &segment)) {
+	while ((c = getopt(argc, argv, "")) != EOF) {
+		switch (c) {
+		default:
+			command_usage(&funshare_cmd);
+		}
+	}
+	if (optind != argc - 2)
+		return command_usage(&funshare_cmd);
+
+	if (!offset_length(argv[optind], argv[optind + 1], &segment)) {
 		exitcode = 1;
 		return 0;
 	}
 
-	if (fallocate(file->fd, mode,
-			segment.l_start, segment.l_len)) {
+	if (fallocate(file->fd, mode, segment.l_start, segment.l_len)) {
 		perror("fallocate");
 		exitcode = 1;
 		return 0;
@@ -467,14 +487,14 @@ prealloc_init(void)
 	_("zeroes space and eliminates holes by preallocating");
 	add_command(&fzero_cmd);
 
-	fzero_cmd.name = "funshare";
-	fzero_cmd.cfunc = funshare_f;
-	fzero_cmd.argmin = 2;
-	fzero_cmd.argmax = 2;
-	fzero_cmd.flags = CMD_NOMAP_OK | CMD_FOREIGN_OK;
-	fzero_cmd.args = _("off len");
-	fzero_cmd.oneline =
+	funshare_cmd.name = "funshare";
+	funshare_cmd.cfunc = funshare_f;
+	funshare_cmd.argmin = 2;
+	funshare_cmd.argmax = 2;
+	funshare_cmd.flags = CMD_NOMAP_OK | CMD_FOREIGN_OK;
+	funshare_cmd.args = _("off len");
+	funshare_cmd.oneline =
 	_("unshares shared blocks within the range");
-	add_command(&fzero_cmd);
+	add_command(&funshare_cmd);
 #endif	/* HAVE_FALLOCATE */
 }

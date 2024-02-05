@@ -41,3 +41,15 @@ AC_DEFUN([AC_MULTILIB],
   fi
   AC_SUBST(libdirsuffix)
 ])
+
+dnl AC_MULTIARCH creates a variable libdirsuffix containing the suffix of the
+dnl libdir to follow the Debian multiarch spec.  (i.e. "/$multiarch")
+AC_DEFUN([AC_MULTIARCH],
+[
+  if test -n "$1"; then
+    libdirsuffix="/$1"
+    AC_MSG_CHECKING([multiarch triplet])
+    AC_MSG_RESULT([$multiarch])
+  fi
+  AC_SUBST(libdirsuffix)
+])

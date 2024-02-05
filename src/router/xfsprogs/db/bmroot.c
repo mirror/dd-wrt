@@ -61,7 +61,7 @@ bmroota_key_count(
 {
 	xfs_bmdr_block_t	*block;
 #ifdef DEBUG
-	xfs_dinode_t		*dip = obj;
+	struct xfs_dinode	*dip = obj;
 #endif
 
 	ASSERT(bitoffs(startoff) == 0);
@@ -80,7 +80,7 @@ bmroota_key_offset(
 {
 	xfs_bmdr_block_t	*block;
 #ifdef DEBUG
-	xfs_dinode_t		*dip = obj;
+	struct xfs_dinode	*dip = obj;
 #endif
 	xfs_bmdr_key_t		*kp;
 
@@ -100,7 +100,7 @@ bmroota_ptr_count(
 {
 	xfs_bmdr_block_t	*block;
 #ifdef DEBUG
-	xfs_dinode_t		*dip = obj;
+	struct xfs_dinode	*dip = obj;
 #endif
 
 	ASSERT(bitoffs(startoff) == 0);
@@ -118,7 +118,7 @@ bmroota_ptr_offset(
 	int			idx)
 {
 	xfs_bmdr_block_t	*block;
-	xfs_dinode_t		*dip;
+	struct xfs_dinode	*dip;
 	xfs_bmdr_ptr_t		*pp;
 
 	ASSERT(bitoffs(startoff) == 0);
@@ -138,7 +138,7 @@ bmroota_size(
 	int			startoff,
 	int			idx)
 {
-	xfs_dinode_t		*dip;
+	struct xfs_dinode	*dip;
 #ifdef DEBUG
 	xfs_bmdr_block_t	*block;
 #endif
@@ -161,7 +161,7 @@ bmrootd_key_count(
 {
 	xfs_bmdr_block_t	*block;
 #ifdef DEBUG
-	xfs_dinode_t		*dip = obj;
+	struct xfs_dinode	*dip = obj;
 #endif
 
 	ASSERT(bitoffs(startoff) == 0);
@@ -196,7 +196,7 @@ bmrootd_ptr_count(
 {
 	xfs_bmdr_block_t	*block;
 #ifdef DEBUG
-	xfs_dinode_t		*dip = obj;
+	struct xfs_dinode	*dip = obj;
 #endif
 
 	ASSERT(bitoffs(startoff) == 0);
@@ -215,7 +215,7 @@ bmrootd_ptr_offset(
 {
 	xfs_bmdr_block_t	*block;
 	xfs_bmdr_ptr_t		*pp;
-	xfs_dinode_t		*dip;
+	struct xfs_dinode	*dip;
 
 	ASSERT(bitoffs(startoff) == 0);
 	ASSERT(obj == iocur_top->data);
@@ -233,7 +233,7 @@ bmrootd_size(
 	int			startoff,
 	int			idx)
 {
-	xfs_dinode_t		*dip;
+	struct xfs_dinode	*dip;
 
 	ASSERT(bitoffs(startoff) == 0);
 	ASSERT(obj == iocur_top->data);

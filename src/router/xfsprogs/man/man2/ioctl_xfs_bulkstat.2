@@ -94,6 +94,13 @@ field.
 This flag may not be set at the same time as the
 .B XFS_BULK_IREQ_AGNO
 flag.
+.TP
+.B XFS_BULK_IREQ_NREXT64
+If this is set, data fork extent count is returned via bs_extents64 field and
+0 is assigned to bs_extents.  Otherwise, data fork extent count is returned
+via bs_extents field and bs_extents64 is assigned a value of 0. In the second
+case, bs_extents is set to (2^31 - 1) if data fork extent count is larger than
+2^31. This flag may be set independently of whether other flags have been set.
 .RE
 .PP
 .I hdr.icount
@@ -161,8 +168,9 @@ struct xfs_bulkstat {
 	uint16_t                bs_checked;
 	uint16_t                bs_mode;
 	uint16_t                bs_pad2;
+	uint64_t                bs_extents64;
 
-	uint64_t                bs_pad[7];
+	uint64_t                bs_pad[6];
 };
 .fi
 .in

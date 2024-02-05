@@ -96,6 +96,7 @@ init(
 		x.volname = fsdevice;
 	else
 		x.dname = fsdevice;
+	x.isdirect = LIBXFS_DIRECT;
 
 	x.bcache_flags = CACHE_MISCOMPARE_PURGE;
 	if (!libxfs_init(&x)) {
@@ -152,7 +153,7 @@ init(
 	 * xfs_check needs corrected incore superblock values
 	 */
 	if (sbp->sb_rootino != NULLFSINO &&
-	    xfs_sb_version_haslazysbcount(&mp->m_sb)) {
+	    xfs_has_lazysbcount(mp)) {
 		int error = -libxfs_initialize_perag_data(mp, sbp->sb_agcount);
 		if (error) {
 			fprintf(stderr,
@@ -161,9 +162,9 @@ init(
 		}
 	}
 
-	if (xfs_sb_version_hassparseinodes(&mp->m_sb))
+	if (xfs_has_sparseinodes(mp))
 		type_set_tab_spcrc();
-	else if (xfs_sb_version_hascrc(&mp->m_sb))
+	else if (xfs_has_crc(mp))
 		type_set_tab_crc();
 
 	push_cur();

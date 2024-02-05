@@ -267,7 +267,7 @@ project_f(
 	int		argc,
 	char		**argv)
 {
-	int		c, type = 0, ispath = 0;
+	int		c, type = 0, ispath = 0, error = 0;
 
 	while ((c = getopt(argc, argv, "cd:p:sC")) != EOF) {
 		switch (c) {
@@ -281,7 +281,13 @@ project_f(
 			break;
 		case 'p':
 			ispath = 1;
-			fs_table_insert_project_path(optarg, -1);
+			error = fs_table_insert_project_path(optarg, -1);
+			if (error) {
+				fprintf(stderr,
+_("%s: cannot setup path for project dir %s: %s\n"),
+					progname, optarg, strerror(error));
+				return 0;
+			}
 			break;
 		case 's':
 			type = SETUP_PROJECT;

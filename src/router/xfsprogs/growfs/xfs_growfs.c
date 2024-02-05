@@ -78,7 +78,7 @@ main(int argc, char **argv)
 		switch (c) {
 		case 'D':
 			dsize = strtoll(optarg, NULL, 10);
-			/* fall through */
+			fallthrough;
 		case 'd':
 			dflag = 1;
 			break;
@@ -91,7 +91,7 @@ main(int argc, char **argv)
 			break;
 		case 'L':
 			lsize = strtoll(optarg, NULL, 10);
-			/* fall through */
+			fallthrough;
 		case 'l':
 			lflag = 1;
 			break;
@@ -107,7 +107,7 @@ main(int argc, char **argv)
 			break;
 		case 'R':
 			rsize = strtoll(optarg, NULL, 10);
-			/* fall through */
+			fallthrough;
 		case 'r':
 			rflag = 1;
 			break;
@@ -246,12 +246,11 @@ main(int argc, char **argv)
 			error = 1;
 		}
 
-		if (!error && dsize < geo.datablocks) {
-			fprintf(stderr, _("data size %lld too small,"
-				" old size is %lld\n"),
+		if (!error && dsize < geo.datablocks)
+			fprintf(stderr,
+_("[EXPERIMENTAL] try to shrink unused space %lld, old size is %lld\n"),
 				(long long)dsize, (long long)geo.datablocks);
-			error = 1;
-		} else if (!error &&
+		if (!error &&
 			   dsize == geo.datablocks && maxpct == geo.imaxpct) {
 			if (dflag)
 				fprintf(stderr, _(

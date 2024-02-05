@@ -12,8 +12,7 @@
  * sentinel head node, "prev" links not maintained.
  */
 static struct list_head *merge(void *priv,
-				int (*cmp)(void *priv, struct list_head *a,
-					struct list_head *b),
+			        list_cmp_func_t cmp,
 				struct list_head *a, struct list_head *b)
 {
 	struct list_head head, *tail = &head;
@@ -41,8 +40,7 @@ static struct list_head *merge(void *priv,
  * throughout.
  */
 static void merge_and_restore_back_links(void *priv,
-				int (*cmp)(void *priv, struct list_head *a,
-					struct list_head *b),
+				list_cmp_func_t cmp,
 				struct list_head *head,
 				struct list_head *a, struct list_head *b)
 {
@@ -96,9 +94,7 @@ static void merge_and_restore_back_links(void *priv,
  * @b. If @a and @b are equivalent, and their original relative
  * ordering is to be preserved, @cmp must return 0.
  */
-void list_sort(void *priv, struct list_head *head,
-		int (*cmp)(void *priv, struct list_head *a,
-			struct list_head *b))
+void list_sort(void *priv, struct list_head *head, list_cmp_func_t cmp)
 {
 	struct list_head *part[MAX_LIST_LENGTH_BITS+1]; /* sorted partial lists
 						-- last slot is a sentinel */

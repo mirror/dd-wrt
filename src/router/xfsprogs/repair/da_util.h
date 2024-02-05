@@ -8,7 +8,7 @@
 #define	_XR_DA_UTIL_H
 
 struct da_level_state  {
-	xfs_buf_t	*bp;		/* block bp */
+	struct xfs_buf	*bp;		/* block bp */
 	xfs_dablk_t	bno;		/* file block number */
 	xfs_dahash_t	hashval;	/* last verified hashval */
 	int		index;		/* current index in block */
@@ -19,7 +19,7 @@ typedef struct da_bt_cursor {
 	int			active;	/* highest level in tree (# levels-1) */
 	xfs_ino_t		ino;
 	xfs_dablk_t		greatest_bno;
-	xfs_dinode_t		*dip;
+	struct xfs_dinode	*dip;
 	struct da_level_state	level[XFS_DA_NODE_MAXDEPTH];
 	struct blkmap		*blkmap;
 } da_bt_cursor_t;

@@ -57,6 +57,7 @@ dump_bulkstat(
 	printf("\tbs_sick = 0x%"PRIx16"\n", bstat->bs_sick);
 	printf("\tbs_checked = 0x%"PRIx16"\n", bstat->bs_checked);
 	printf("\tbs_mode = 0%"PRIo16"\n", bstat->bs_mode);
+	printf("\tbs_extents64 = %"PRIu64"\n", bstat->bs_extents64);
 };
 
 static void
@@ -67,6 +68,7 @@ bulkstat_help(void)
 "\n"
 "   -a <agno>  Only iterate this AG.\n"
 "   -d         Print debugging output.\n"
+"   -q         Be quiet, no output.\n"
 "   -e <ino>   Stop after this inode.\n"
 "   -n <nr>    Ask for this many results at once.\n"
 "   -s <ino>   Inode to start with.\n"
@@ -104,11 +106,12 @@ bulkstat_f(
 	uint32_t		ver = 0;
 	bool			has_agno = false;
 	bool			debug = false;
+	bool			quiet = false;
 	unsigned int		i;
 	int			c;
 	int			ret;
 
-	while ((c = getopt(argc, argv, "a:de:n:s:v:")) != -1) {
+	while ((c = getopt(argc, argv, "a:de:n:qs:v:")) != -1) {
 		switch (c) {
 		case 'a':
 			agno = cvt_u32(optarg, 10);
@@ -134,6 +137,9 @@ bulkstat_f(
 				perror(optarg);
 				return 1;
 			}
+			break;
+		case 'q':
+			quiet = true;
 			break;
 		case 's':
 			startino = cvt_u64(optarg, 10);
@@ -198,6 +204,8 @@ _("bulkstat: startino=%lld flags=0x%x agno=%u ret=%d icount=%u ocount=%u\n"),
 		for (i = 0; i < breq->hdr.ocount; i++) {
 			if (breq->bulkstat[i].bs_ino > endino)
 				break;
+			if (quiet)
+				continue;
 			dump_bulkstat(&breq->bulkstat[i]);
 		}
 	}

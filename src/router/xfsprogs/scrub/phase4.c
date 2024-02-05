@@ -30,8 +30,8 @@ repair_ag(
 	struct scrub_ctx		*ctx = (struct scrub_ctx *)wq->wq_ctx;
 	bool				*aborted = priv;
 	struct action_list		*alist;
-	size_t				unfixed;
-	size_t				new_unfixed;
+	unsigned long long		unfixed;
+	unsigned long long		new_unfixed;
 	unsigned int			flags = 0;
 	int				ret;
 
@@ -40,7 +40,7 @@ repair_ag(
 
 	/* Repair anything broken until we fail to make progress. */
 	do {
-		ret = action_list_process(ctx, ctx->mnt.fd, alist, flags);
+		ret = action_list_process(ctx, -1, alist, flags);
 		if (ret) {
 			*aborted = true;
 			return;
@@ -55,7 +55,7 @@ repair_ag(
 
 	/* Try once more, but this time complain if we can't fix things. */
 	flags |= ALP_COMPLAIN_IF_UNFIXED;
-	ret = action_list_process(ctx, ctx->mnt.fd, alist, flags);
+	ret = action_list_process(ctx, -1, alist, flags);
 	if (ret)
 		*aborted = true;
 }
@@ -95,15 +95,32 @@ repair_everything(
 	if (aborted)
 		return ECANCELED;
 
-	pthread_mutex_lock(&ctx->lock);
-	if (ctx->corruptions_found == 0 && ctx->unfixable_errors == 0 &&
-	    want_fstrim) {
-		fstrim(ctx);
-		progress_add(1);
-	}
-	pthread_mutex_unlock(&ctx->lock);
-
 	return 0;
+}
+
+/* Decide if we have any repair work to do. */
+static inline bool
+have_action_items(
+	struct scrub_ctx	*ctx)
+{
+	xfs_agnumber_t		agno;
+
+	for (agno = 0; agno < ctx->mnt.fsgeom.agcount; agno++) {
+		if (action_list_length(&ctx->action_lists[agno]) > 0)
+			return true;
+	}
+
+	return false;
+}
+
+/* Trim the unused areas of the filesystem if the caller asked us to. */
+static void
+trim_filesystem(
+	struct scrub_ctx	*ctx)
+{
+	if (want_fstrim)
+		fstrim(ctx);
+	progress_add(1);
 }
 
 /* Fix everything that needs fixing. */
@@ -112,6 +129,9 @@ phase4_func(
 	struct scrub_ctx	*ctx)
 {
 	int			ret;
+
+	if (!have_action_items(ctx))
+		goto maybe_trim;
 
 	/*
 	 * Check the summary counters early.  Normally we do this during phase
@@ -123,7 +143,20 @@ phase4_func(
 	if (ret)
 		return ret;
 
-	return repair_everything(ctx);
+	ret = repair_everything(ctx);
+	if (ret)
+		return ret;
+
+	/*
+	 * If errors remain on the filesystem, do not trim anything.  We don't
+	 * have any threads running, so it's ok to skip the ctx lock here.
+	 */
+	if (ctx->corruptions_found || ctx->unfixable_errors != 0)
+		return 0;
+
+maybe_trim:
+	trim_filesystem(ctx);
+	return 0;
 }
 
 /* Estimate how much work we're going to do. */
@@ -135,7 +168,7 @@ phase4_estimate(
 	int			*rshift)
 {
 	xfs_agnumber_t		agno;
-	size_t			need_fixing = 0;
+	unsigned long long	need_fixing = 0;
 
 	for (agno = 0; agno < ctx->mnt.fsgeom.agcount; agno++)
 		need_fixing += action_list_length(&ctx->action_lists[agno]);

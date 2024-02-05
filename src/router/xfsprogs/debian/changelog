@@ -1,3 +1,189 @@
+xfsprogs (6.5.0-1) unstable; urgency=low
+
+  * New upstream release
+
+ -- Nathan Scott <nathans@debian.org>  Wed, 12 Oct 2023 14:00:00 +0200
+
+xfsprogs (6.4.0-1) unstable; urgency=low
+
+  * New upstream release
+
+ -- Nathan Scott <nathans@debian.org>  Wed, 19 Jul 2023 14:00:00 -0400
+
+xfsprogs (6.3.0-1) unstable; urgency=low
+
+  * New upstream release
+
+ -- Nathan Scott <nathans@debian.org>  Mon, 22 May 2023 11:45:00 -0400
+
+xfsprogs (6.2.0-1) unstable; urgency=low
+
+  * New upstream release
+
+ -- Nathan Scott <nathans@debian.org>  Fri, 24 Mar 2023 10:30:00 -0400
+
+xfsprogs (6.1.1-1) unstable; urgency=low
+
+  * New upstream release
+
+ -- Nathan Scott <nathans@debian.org>  Fri, 13 Jan 2023 19:03:00 +0100
+
+xfsprogs (6.0.1-1) unstable; urgency=low
+
+  * New upstream release
+
+ -- Nathan Scott <nathans@debian.org>  Fri, 23 Dec 2022 12:00:00 +0100
+
+xfsprogs (6.0.0-1) unstable; urgency=low
+
+  * New upstream release
+
+ -- Nathan Scott <nathans@debian.org>  Fri, 11 Nov 2022 11:29:37 +0100
+
+xfsprogs (5.19.0-1) unstable; urgency=medium
+
+  * New upstream release
+
+ -- Nathan Scott <nathans@debian.org>  Fri, 12 Aug 2022 13:40:25 -0500
+
+xfsprogs (5.18.0-1) unstable; urgency=medium
+
+  * New upstream release
+
+ -- Nathan Scott <nathans@debian.org>  Fri, 03 Jun 2022 15:18:30 -0400
+
+xfsprogs (5.16.0-1) unstable; urgency=medium
+
+  * New upstream release
+
+  [ Bastian Germann ]
+  * debian: Generate .gitcensus instead of .census (Closes: #999743)
+
+ -- Nathan Scott <nathans@debian.org>  Wed, 04 May 2022 14:50:48 -0400
+
+xfsprogs (5.15.0-1) unstable; urgency=medium
+
+  * New upstream release
+
+ -- Nathan Scott <nathans@debian.org>  Wed, 06 Apr 2022 16:31:00 -0400
+
+xfsprogs (5.14.2-1) unstable; urgency=medium
+
+  * New upstream release
+  * Move rogue fallthrough macro out of linux.h (Closes: #1000974)
+
+ -- Nathan Scott <nathans@debian.org>  Mon, 06 Dec 2021 14:26:57 -0500
+
+xfsprogs (5.14.1-1) unstable; urgency=medium
+
+  * New upstream release
+
+ -- Nathan Scott <nathans@debian.org>  Thu, 02 Dec 2021 15:26:38 -0500
+
+xfsprogs (5.14.0-1) unstable; urgency=medium
+
+  * New upstream release
+
+ -- Nathan Scott <nathans@debian.org>  Fri, 19 Nov 2021 10:51:02 -0500
+
+xfsprogs (5.14.0-rc1-1) unstable; urgency=medium
+
+  [ Dave Chinner ]
+  * New build dependency: liburcu-dev
+
+  [ Helmut Grohne ]
+  * Fix FTCBFS (Closes: #794158)
+    + Pass --build and --host to configure
+
+  [ Boian Bonev ]
+  * Fix FTBFS (Closes: #997656)
+    + Keep custom install-sh after autogen
+
+ -- Bastian Germann <bage@debian.org>  Sun, 14 Nov 2021 23:18:22 +0100
+
+xfsprogs (5.13.0-1) unstable; urgency=medium
+
+  * New upstream release
+
+ -- Nathan Scott <nathans@debian.org>  Fri, 20 Aug 2021 12:03:31 -0400
+
+xfsprogs (5.12.0-1) unstable; urgency=medium
+
+  * New upstream release
+
+ -- Nathan Scott <nathans@debian.org>  Fri, 21 May 2021 15:52:00 -0400
+
+xfsprogs (5.11.0-1) unstable; urgency=medium
+
+  * New upstream release
+
+ -- Nathan Scott <nathans@debian.org>  Fri, 12 Mar 2021 14:08:29 -0500
+
+xfsprogs (5.11.0-rc0-1) experimental; urgency=medium
+
+  [ Steve Langasek ]
+  * Regenerate config.guess using debhelper
+
+  [ Bastian Germann ]
+  * Build-depend on libinih-dev with udeb package
+
+ -- Bastian Germann <bastiangermann@fishpost.de>  Sat, 20 Feb 2021 11:57:31 +0100
+
+xfsprogs (5.10.0-3) unstable; urgency=medium
+
+  * Drop unused dh-python from Build-Depends (Closes: #981361)
+  * Only build for Linux
+  * Prevent installing duplicate changelog (Closes: #570704)
+
+ -- Bastian Germann <bastiangermann@fishpost.de>  Fri, 05 Feb 2021 00:18:31 +0100
+
+xfsprogs (5.10.0-2) unstable; urgency=low
+
+  * Team upload
+  * debian: cryptographically verify upstream tarball (Closes: #979644)
+  * debian: remove dependency on essential util-linux
+  * debian: remove "Priority: extra"
+  * debian: use Package-Type over its predecessor
+  * debian: add missing copyright info (Closes: #979653)
+
+ -- Bastian Germann <bastiangermann@fishpost.de>  Thu, 14 Jan 2021 18:59:14 +0100
+
+xfsprogs (5.10.0-1) unstable; urgency=low
+
+  * New upstream release
+
+ -- Nathan Scott <nathans@debian.org>  Fri, 11 Dec 2020 17:16:52 -0500
+
+xfsprogs (5.10.0-rc1-1) unstable; urgency=low
+
+  * New upstream prerelease
+
+ -- Nathan Scott <nathans@debian.org>  Fri, 04 Dec 2020 12:19:10 -0500
+
+xfsprogs (5.10.0-rc0-1) unstable; urgency=low
+
+  * New upstream prerelease
+
+ -- Nathan Scott <nathans@debian.org>  Mon, 16 Nov 2020 14:26:14 -0600
+
+xfsprogs (5.9.0-1) unstable; urgency=low
+
+  * New upstream release
+
+ -- Nathan Scott <nathans@debian.org>  Tue, 20 Oct 2020 11:38:49 -0400
+
+xfsprogs (5.9.0-rc1-1) unstable; urgency=low
+
+  * New upstream prerelease
+
+ -- Nathan Scott <nathans@debian.org>  Tue, 13 Oct 2020 12:18:43 -0400
+
+xfsprogs (5.9.0-rc0-1) unstable; urgency=low
+
+  * New upstream prerelease
+
+ -- Nathan Scott <nathans@debian.org>  Thu, 17 Sep 2020 09:11:13 -0500
+
 xfsprogs (5.8.0-1) unstable; urgency=low
 
   * New upstream release

@@ -9,7 +9,6 @@
 #include <sys/statvfs.h>
 #include "platform_defs.h"
 #include "xfs_arch.h"
-#include "xfs_format.h"
 #include "libfrog/paths.h"
 #include "libfrog/workqueue.h"
 #include "xfs_scrub.h"
@@ -116,7 +115,7 @@ out_free:
 }
 
 /*
- * Estimate the number of blocks and inodes in the filesystem.  Returns 0
+ * Estimate the number of blocks and used inodes in the filesystem.  Returns 0
  * or a positive error number.
  */
 int
@@ -126,42 +125,21 @@ scrub_scan_estimate_blocks(
 	unsigned long long		*d_bfree,
 	unsigned long long		*r_blocks,
 	unsigned long long		*r_bfree,
-	unsigned long long		*f_files,
-	unsigned long long		*f_free)
+	unsigned long long		*f_files_used)
 {
 	struct xfs_fsop_counts		fc;
-	struct xfs_fsop_resblks		rb;
-	struct statvfs			sfs;
 	int				error;
-
-	/* Grab the fstatvfs counters, since it has to report accurately. */
-	error = fstatvfs(ctx->mnt.fd, &sfs);
-	if (error)
-		return errno;
 
 	/* Fetch the filesystem counters. */
 	error = ioctl(ctx->mnt.fd, XFS_IOC_FSCOUNTS, &fc);
 	if (error)
 		return errno;
 
-	/*
-	 * XFS reserves some blocks to prevent hard ENOSPC, so add those
-	 * blocks back to the free data counts.
-	 */
-	error = ioctl(ctx->mnt.fd, XFS_IOC_GET_RESBLKS, &rb);
-	if (error)
-		return errno;
-
-	sfs.f_bfree += rb.resblks_avail;
-
-	*d_blocks = sfs.f_blocks;
-	if (ctx->mnt.fsgeom.logstart > 0)
-		*d_blocks += ctx->mnt.fsgeom.logblocks;
-	*d_bfree = sfs.f_bfree;
+	*d_blocks = ctx->mnt.fsgeom.datablocks;
+	*d_bfree = fc.freedata;
 	*r_blocks = ctx->mnt.fsgeom.rtblocks;
-	*r_bfree = fc.freertx;
-	*f_files = sfs.f_files;
-	*f_free = sfs.f_ffree;
+	*r_bfree = fc.freertx * ctx->mnt.fsgeom.rtextsize;
+	*f_files_used = fc.allocino - fc.freeino;
 
 	return 0;
 }

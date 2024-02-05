@@ -35,7 +35,7 @@ xfs_dir2_leaf_hdr_from_disk(
 	struct xfs_dir3_icleaf_hdr	*to,
 	struct xfs_dir2_leaf		*from)
 {
-	if (xfs_sb_version_hascrc(&mp->m_sb)) {
+	if (xfs_has_crc(mp)) {
 		struct xfs_dir3_leaf *from3 = (struct xfs_dir3_leaf *)from;
 
 		to->forw = be32_to_cpu(from3->hdr.info.hdr.forw);
@@ -66,7 +66,7 @@ xfs_dir2_leaf_hdr_to_disk(
 	struct xfs_dir2_leaf		*to,
 	struct xfs_dir3_icleaf_hdr	*from)
 {
-	if (xfs_sb_version_hascrc(&mp->m_sb)) {
+	if (xfs_has_crc(mp)) {
 		struct xfs_dir3_leaf *to3 = (struct xfs_dir3_leaf *)to;
 
 		ASSERT(from->magic == XFS_DIR3_LEAF1_MAGIC ||
@@ -106,12 +106,12 @@ xfs_dir3_leaf1_check(
 
 	if (leafhdr.magic == XFS_DIR3_LEAF1_MAGIC) {
 		struct xfs_dir3_leaf_hdr *leaf3 = bp->b_addr;
-		if (be64_to_cpu(leaf3->info.blkno) != bp->b_bn)
+		if (be64_to_cpu(leaf3->info.blkno) != xfs_buf_daddr(bp))
 			return __this_address;
 	} else if (leafhdr.magic != XFS_DIR2_LEAF1_MAGIC)
 		return __this_address;
 
-	return xfs_dir3_leaf_check_int(dp->i_mount, &leafhdr, leaf);
+	return xfs_dir3_leaf_check_int(dp->i_mount, &leafhdr, leaf, false);
 }
 
 static inline void
@@ -137,28 +137,33 @@ xfs_failaddr_t
 xfs_dir3_leaf_check_int(
 	struct xfs_mount		*mp,
 	struct xfs_dir3_icleaf_hdr	*hdr,
-	struct xfs_dir2_leaf		*leaf)
+	struct xfs_dir2_leaf		*leaf,
+	bool				expensive_checking)
 {
 	struct xfs_da_geometry		*geo = mp->m_dir_geo;
 	xfs_dir2_leaf_tail_t		*ltp;
 	int				stale;
 	int				i;
+	bool				isleaf1 = (hdr->magic == XFS_DIR2_LEAF1_MAGIC ||
+						   hdr->magic == XFS_DIR3_LEAF1_MAGIC);
 
 	ltp = xfs_dir2_leaf_tail_p(geo, leaf);
 
 	/*
 	 * XXX (dgc): This value is not restrictive enough.
 	 * Should factor in the size of the bests table as well.
-	 * We can deduce a value for that from di_size.
+	 * We can deduce a value for that from i_disk_size.
 	 */
 	if (hdr->count > geo->leaf_max_ents)
 		return __this_address;
 
 	/* Leaves and bests don't overlap in leaf format. */
-	if ((hdr->magic == XFS_DIR2_LEAF1_MAGIC ||
-	     hdr->magic == XFS_DIR3_LEAF1_MAGIC) &&
+	if (isleaf1 &&
 	    (char *)&hdr->ents[hdr->count] > (char *)xfs_dir2_leaf_bests_p(ltp))
 		return __this_address;
+
+	if (!expensive_checking)
+		return NULL;
 
 	/* Check hash value order, count stale entries.  */
 	for (i = stale = 0; i < hdr->count; i++) {
@@ -169,6 +174,10 @@ xfs_dir3_leaf_check_int(
 		}
 		if (hdr->ents[i].address == cpu_to_be32(XFS_DIR2_NULL_DATAPTR))
 			stale++;
+		if (isleaf1 && xfs_dir2_dataptr_to_db(geo,
+				be32_to_cpu(hdr->ents[i].address)) >=
+				be32_to_cpu(ltp->bestcount))
+			return __this_address;
 	}
 	if (hdr->stale != stale)
 		return __this_address;
@@ -193,7 +202,7 @@ xfs_dir3_leaf_verify(
 		return fa;
 
 	xfs_dir2_leaf_hdr_from_disk(mp, &leafhdr, bp->b_addr);
-	return xfs_dir3_leaf_check_int(mp, &leafhdr, bp->b_addr);
+	return xfs_dir3_leaf_check_int(mp, &leafhdr, bp->b_addr, true);
 }
 
 static void
@@ -203,7 +212,7 @@ xfs_dir3_leaf_read_verify(
 	struct xfs_mount	*mp = bp->b_mount;
 	xfs_failaddr_t		fa;
 
-	if (xfs_sb_version_hascrc(&mp->m_sb) &&
+	if (xfs_has_crc(mp) &&
 	     !xfs_buf_verify_cksum(bp, XFS_DIR3_LEAF_CRC_OFF))
 		xfs_verifier_error(bp, -EFSBADCRC, __this_address);
 	else {
@@ -228,7 +237,7 @@ xfs_dir3_leaf_write_verify(
 		return;
 	}
 
-	if (!xfs_sb_version_hascrc(&mp->m_sb))
+	if (!xfs_has_crc(mp))
 		return;
 
 	if (bip)
@@ -302,7 +311,7 @@ xfs_dir3_leaf_init(
 
 	ASSERT(type == XFS_DIR2_LEAF1_MAGIC || type == XFS_DIR2_LEAFN_MAGIC);
 
-	if (xfs_sb_version_hascrc(&mp->m_sb)) {
+	if (xfs_has_crc(mp)) {
 		struct xfs_dir3_leaf_hdr *leaf3 = bp->b_addr;
 
 		memset(leaf3, 0, sizeof(*leaf3));
@@ -310,7 +319,7 @@ xfs_dir3_leaf_init(
 		leaf3->info.hdr.magic = (type == XFS_DIR2_LEAF1_MAGIC)
 					 ? cpu_to_be16(XFS_DIR3_LEAF1_MAGIC)
 					 : cpu_to_be16(XFS_DIR3_LEAFN_MAGIC);
-		leaf3->info.blkno = cpu_to_be64(bp->b_bn);
+		leaf3->info.blkno = cpu_to_be64(xfs_buf_daddr(bp));
 		leaf3->info.owner = cpu_to_be64(owner);
 		uuid_copy(&leaf3->info.uuid, &mp->m_sb.sb_meta_uuid);
 	} else {

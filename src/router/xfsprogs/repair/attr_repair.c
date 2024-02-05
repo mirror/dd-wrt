@@ -205,19 +205,19 @@ valuecheck(
  */
 static int
 process_shortform_attr(
-	struct xfs_mount *mp,
-	xfs_ino_t	ino,
-	xfs_dinode_t	*dip,
-	int		*repair)
+	struct xfs_mount		*mp,
+	xfs_ino_t			ino,
+	struct xfs_dinode		*dip,
+	int				*repair)
 {
-	xfs_attr_shortform_t	*asf;
-	xfs_attr_sf_entry_t	*currententry, *nextentry, *tempentry;
-	int			i, junkit;
-	int			currentsize, remainingspace;
+	struct xfs_attr_shortform	*asf;
+	struct xfs_attr_sf_entry	*currententry, *nextentry, *tempentry;
+	int				i, junkit;
+	int				currentsize, remainingspace;
 
 	*repair = 0;
 
-	asf = (xfs_attr_shortform_t *) XFS_DFORK_APTR(dip);
+	asf = (struct xfs_attr_shortform *) XFS_DFORK_APTR(dip);
 
 	/* Assumption: hdr.totsize is less than a leaf block and was checked
 	 * by lclinode for valid sizes. Check the count though.
@@ -250,7 +250,7 @@ process_shortform_attr(
 		junkit = 0;
 
 		/* don't go off the end if the hdr.count was off */
-		if ((currentsize + (sizeof(xfs_attr_sf_entry_t) - 1)) >
+		if ((currentsize + (sizeof(struct xfs_attr_sf_entry) - 1)) >
 						be16_to_cpu(asf->hdr.totsize))
 			break; /* get out and reset count and totSize */
 
@@ -314,7 +314,7 @@ process_shortform_attr(
 					currententry->valuelen);
 
 		remainingspace = remainingspace -
-					XFS_ATTR_SF_ENTSIZE(currententry);
+					xfs_attr_sf_entsize(currententry);
 
 		if (junkit) {
 			if (!no_modify) {
@@ -322,9 +322,9 @@ process_shortform_attr(
 				do_warn(
 	_("removing attribute entry %d for inode %" PRIu64 "\n"),
 					i, ino);
-				tempentry = (xfs_attr_sf_entry_t *)
+				tempentry = (struct xfs_attr_sf_entry *)
 					((intptr_t) currententry +
-					 XFS_ATTR_SF_ENTSIZE(currententry));
+					 xfs_attr_sf_entsize(currententry));
 				memmove(currententry,tempentry,remainingspace);
 				asf->hdr.count -= 1;
 				i--; /* no worries, it will wrap back to 0 */
@@ -338,9 +338,9 @@ process_shortform_attr(
 		}
 
 		/* Let's get ready for the next entry... */
-		nextentry = (xfs_attr_sf_entry_t *)((intptr_t) nextentry +
-			 		XFS_ATTR_SF_ENTSIZE(currententry));
-		currentsize = currentsize + XFS_ATTR_SF_ENTSIZE(currententry);
+		nextentry = (struct xfs_attr_sf_entry *)((intptr_t) nextentry +
+			 		xfs_attr_sf_entsize(currententry));
+		currentsize = currentsize + xfs_attr_sf_entsize(currententry);
 
 	} /* end the loop */
 
@@ -388,12 +388,12 @@ rmtval_get(xfs_mount_t *mp, xfs_ino_t ino, blkmap_t *blkmap,
 		xfs_dablk_t blocknum, int valuelen, char* value)
 {
 	xfs_fsblock_t	bno;
-	xfs_buf_t	*bp;
+	struct xfs_buf	*bp;
 	int		clearit = 0, i = 0, length = 0, amountdone = 0;
 	int		hdrsize = 0;
 	int		error;
 
-	if (xfs_sb_version_hascrc(&mp->m_sb))
+	if (xfs_has_crc(mp))
 		hdrsize = sizeof(struct xfs_attr3_rmt_hdr);
 
 	/* ASSUMPTION: valuelen is a valid number, so use it for looping */
@@ -424,9 +424,9 @@ rmtval_get(xfs_mount_t *mp, xfs_ino_t ino, blkmap_t *blkmap,
 			break;
 		}
 
-		ASSERT(mp->m_sb.sb_blocksize == bp->b_bcount);
+		ASSERT(mp->m_sb.sb_blocksize == BBTOB(bp->b_length));
 
-		length = min(bp->b_bcount - hdrsize, valuelen - amountdone);
+		length = min(BBTOB(bp->b_length) - hdrsize, valuelen - amountdone);
 		memmove(value, bp->b_addr + hdrsize, length);
 		amountdone += length;
 		value += length;
@@ -579,6 +579,26 @@ process_leaf_attr_block(
 	firstb = mp->m_sb.sb_blocksize;
 	stop = xfs_attr3_leaf_hdr_size(leaf);
 
+	/*
+	 * Empty leaf blocks at offset zero can occur as a race between
+	 * setxattr and the system going down, so we only take action if we're
+	 * running in modify mode.  See xfs_attr3_leaf_verify for details of
+	 * how we've screwed this up many times.
+	 */
+	if (!leafhdr.count && da_bno == 0) {
+		if (no_modify) {
+			do_log(
+	_("would clear empty leaf attr block 0, inode %" PRIu64 "\n"),
+					ino);
+			return 0;
+		}
+
+		do_warn(
+	_("will clear empty leaf attr block 0, inode %" PRIu64 "\n"),
+				ino);
+		return 1;
+	}
+
 	/* does the count look sorta valid? */
 	if (!leafhdr.count ||
 	    leafhdr.count * sizeof(xfs_attr_leaf_entry_t) + stop >
@@ -730,7 +750,7 @@ process_leaf_attr_level(xfs_mount_t	*mp,
 {
 	int			repair;
 	xfs_attr_leafblock_t	*leaf;
-	xfs_buf_t		*bp;
+	struct xfs_buf		*bp;
 	xfs_ino_t		ino;
 	xfs_fsblock_t		dev_bno;
 	xfs_dablk_t		da_bno;
@@ -879,14 +899,14 @@ error_out:
  */
 static int
 process_node_attr(
-	xfs_mount_t	*mp,
-	xfs_ino_t	ino,
-	xfs_dinode_t	*dip,
-	blkmap_t	*blkmap)
+	xfs_mount_t		*mp,
+	xfs_ino_t		ino,
+	struct xfs_dinode	*dip,
+	blkmap_t		*blkmap)
 {
-	xfs_dablk_t			bno;
-	int				error = 0;
-	da_bt_cursor_t			da_cursor;
+	xfs_dablk_t		bno;
+	int			error = 0;
+	da_bt_cursor_t		da_cursor;
 
 	/*
 	 * try again -- traverse down left-side of tree until we hit
@@ -935,14 +955,14 @@ __check_attr_header(
 		do_warn(
 _("expected owner inode %" PRIu64 ", got %llu, attr block %" PRIu64 "\n"),
 			ino, (unsigned long long)be64_to_cpu(info->owner),
-			bp->b_bn);
+			xfs_buf_daddr(bp));
 		return 1;
 	}
 	/* verify block number */
-	if (be64_to_cpu(info->blkno) != bp->b_bn) {
+	if (be64_to_cpu(info->blkno) != xfs_buf_daddr(bp)) {
 		do_warn(
 _("expected block %" PRIu64 ", got %llu, inode %" PRIu64 "attr block\n"),
-			bp->b_bn, (unsigned long long)be64_to_cpu(info->blkno),
+			xfs_buf_daddr(bp), (unsigned long long)be64_to_cpu(info->blkno),
 			ino);
 		return 1;
 	}
@@ -950,7 +970,7 @@ _("expected block %" PRIu64 ", got %llu, inode %" PRIu64 "attr block\n"),
 	if (platform_uuid_compare(&info->uuid, &mp->m_sb.sb_meta_uuid) != 0) {
 		do_warn(
 _("wrong FS UUID, inode %" PRIu64 " attr block %" PRIu64 "\n"),
-			ino, bp->b_bn);
+			ino, xfs_buf_daddr(bp));
 		return 1;
 	}
 
@@ -1083,7 +1103,7 @@ process_longform_attr(
 	bno = blkmap_get(blkmap, 0);
 	if (bno == NULLFSBLOCK) {
 		if (dip->di_aformat == XFS_DINODE_FMT_EXTENTS &&
-				be16_to_cpu(dip->di_anextents) == 0)
+				xfs_dfork_attr_extents(dip) == 0)
 			return(0); /* the kernel can handle this state */
 		do_warn(
 	_("block 0 of inode %" PRIu64 " attribute fork is missing\n"),
@@ -1107,6 +1127,15 @@ process_longform_attr(
 			ino);
 		return 1;
 	}
+
+	if (bp->b_error == -EFSCORRUPTED) {
+		do_warn(
+	_("corrupt block 0 of inode %" PRIu64 " attribute fork\n"),
+			ino);
+		libxfs_buf_relse(bp);
+		return 1;
+	}
+
 	if (bp->b_error == -EFSBADCRC)
 		(*repair)++;
 
@@ -1194,18 +1223,18 @@ xfs_acl_from_disk(
  */
 int
 process_attributes(
-	xfs_mount_t	*mp,
-	xfs_ino_t	ino,
-	xfs_dinode_t	*dip,
-	blkmap_t	*blkmap,
-	int		*repair)  /* returned if we did repair */
+	xfs_mount_t		*mp,
+	xfs_ino_t		ino,
+	struct xfs_dinode	*dip,
+	blkmap_t		*blkmap,
+	int			*repair)  /* returned if we did repair */
 {
-	int		err;
-	__u8		aformat = dip->di_aformat;
+	int			err;
+	__u8			aformat = dip->di_aformat;
 #ifdef DEBUG
-	xfs_attr_shortform_t *asf;
+	struct xfs_attr_shortform *asf;
 
-	asf = (xfs_attr_shortform_t *) XFS_DFORK_APTR(dip);
+	asf = (struct xfs_attr_shortform *) XFS_DFORK_APTR(dip);
 #endif
 
 	if (aformat == XFS_DINODE_FMT_LOCAL) {

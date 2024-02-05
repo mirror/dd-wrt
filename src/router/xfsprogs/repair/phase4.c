@@ -173,11 +173,7 @@ _("unable to add AG %u metadata reverse-mapping data.\n"), agno);
 		do_error(
 _("unable to merge AG %u metadata reverse-mapping data.\n"), agno);
 
-	error = rmaps_verify_btree(wq->wq_ctx, agno);
-	if (error)
-		do_error(
-_("%s while checking reverse-mappings"),
-			 strerror(-error));
+	rmaps_verify_btree(wq->wq_ctx, agno);
 }
 
 static void
@@ -212,17 +208,11 @@ _("%s while fixing inode reflink flags.\n"),
 
 static void
 check_refcount_btrees(
-	struct workqueue*wq,
-	xfs_agnumber_t	agno,
-	void		*arg)
+	struct workqueue	*wq,
+	xfs_agnumber_t		agno,
+	void			*arg)
 {
-	int		error;
-
-	error = check_refcounts(wq->wq_ctx, agno);
-	if (error)
-		do_error(
-_("%s while checking reference counts"),
-			 strerror(-error));
+	check_refcounts(wq->wq_ctx, agno);
 }
 
 static void
@@ -240,7 +230,7 @@ process_rmap_data(
 		queue_work(&wq, check_rmap_btrees, i, NULL);
 	destroy_work_queue(&wq);
 
-	if (!xfs_sb_version_hasreflink(&mp->m_sb))
+	if (!xfs_has_reflink(mp))
 		return;
 
 	create_work_queue(&wq, mp, platform_nproc());
@@ -317,7 +307,7 @@ phase4(xfs_mount_t *mp)
 				do_warn(
 				_("unknown block state, ag %d, blocks %u-%u\n"),
 					i, j, j + blen - 1);
-				/* fall through .. */
+				fallthrough;
 			case XR_E_UNKNOWN:
 			case XR_E_FREE:
 			case XR_E_INUSE:
@@ -349,7 +339,7 @@ phase4(xfs_mount_t *mp)
 			do_warn(
 	_("unknown rt extent state, extent %" PRIu64 "\n"),
 				bno);
-			/* fall through .. */
+			fallthrough;
 		case XR_E_UNKNOWN:
 		case XR_E_FREE1:
 		case XR_E_FREE:
@@ -372,7 +362,7 @@ phase4(xfs_mount_t *mp)
 			if (rt_start == 0)  {
 				rt_start = bno;
 				rt_len = 1;
-			} else if (rt_len == MAXEXTLEN)  {
+			} else if (rt_len == XFS_MAX_BMBT_EXTLEN)  {
 				/*
 				 * large extent case
 				 */

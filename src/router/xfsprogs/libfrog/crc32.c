@@ -29,10 +29,15 @@
  * match the hardware acceleration available on Intel CPUs.
  */
 
+/*
+ * Do not include platform_defs.h here; this will break cross builds if the
+ * build host does not have liburcu-dev installed.
+ */
+#include <stdio.h>
+#include <sys/types.h>
 #include <inttypes.h>
 #include <asm/types.h>
 #include <sys/time.h>
-#include "platform_defs.h"
 /* For endian conversion routines */
 #include "xfs_arch.h"
 #include "crc32defs.h"
@@ -181,24 +186,3 @@ u32 __pure crc32c_le(u32 crc, unsigned char const *p, size_t len)
 			(const u32 (*)[256])crc32ctable_le, CRC32C_POLY_LE);
 }
 #endif
-
-
-#ifdef CRC32_SELFTEST
-# include "crc32cselftest.h"
-
-/*
- * make sure we always return 0 for a successful test run, and non-zero for a
- * failed run. The build infrastructure is looking for this information to
- * determine whether to allow the build to proceed.
- */
-int main(int argc, char **argv)
-{
-	int errors;
-
-	printf("CRC_LE_BITS = %d\n", CRC_LE_BITS);
-
-	errors = crc32c_test();
-
-	return errors != 0;
-}
-#endif /* CRC32_SELFTEST */

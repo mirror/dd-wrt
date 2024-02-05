@@ -111,162 +111,100 @@ generate_rtinfo(xfs_mount_t	*mp,
 		sumcompute[offs]++;
 	}
 
+	if (mp->m_sb.sb_frextents != sb_frextents) {
+		do_warn(_("sb_frextents %" PRIu64 ", counted %" PRIu64 "\n"),
+				mp->m_sb.sb_frextents, sb_frextents);
+	}
+
 	return(0);
 }
 
-#if 0
-/*
- * returns 1 if bad, 0 if good
- */
-int
-check_summary(xfs_mount_t *mp)
+static void
+check_rtfile_contents(
+	struct xfs_mount	*mp,
+	const char		*filename,
+	xfs_ino_t		ino,
+	void			*buf,
+	xfs_fileoff_t		filelen)
 {
-	xfs_rfsblock_t	bno;
-	xfs_suminfo_t	*csp;
-	xfs_suminfo_t	*fsp;
-	int		log;
-	int		error = 0;
+	struct xfs_bmbt_irec	map;
+	struct xfs_buf		*bp;
+	struct xfs_inode	*ip;
+	xfs_fileoff_t		bno = 0;
+	int			error;
 
-	error = 0;
-	csp = sumcompute;
-	fsp = sumfile;
-	for (log = 0; log < mp->m_rsumlevels; log++) {
-		for (bno = 0;
-		     bno < mp->m_sb.sb_rbmblocks;
-		     bno++, csp++, fsp++) {
-			if (*csp != *fsp) {
-				do_warn(
-	_("rt summary mismatch, size %d block %llu, file: %d, computed: %d\n"),
-						log, bno, *fsp, *csp);
-				error = 1;
-			}
-		}
+	error = -libxfs_iget(mp, NULL, ino, 0, &ip);
+	if (error) {
+		do_warn(_("unable to open %s file, err %d\n"), filename, error);
+		return;
 	}
 
-	return(error);
-}
+	if (ip->i_disk_size != XFS_FSB_TO_B(mp, filelen)) {
+		do_warn(_("expected %s file size %llu, found %llu\n"),
+				filename,
+				(unsigned long long)XFS_FSB_TO_B(mp, filelen),
+				(unsigned long long)ip->i_disk_size);
+	}
 
-/*
- * examine the real-time bitmap file and compute summary
- * info off it.  Should probably be changed to compute
- * the summary information off the incore computed bitmap
- * instead of the realtime bitmap file
- */
-void
-process_rtbitmap(xfs_mount_t	*mp,
-		xfs_dinode_t	*dino,
-		blkmap_t	*blkmap)
-{
-	int		error;
-	int		bit;
-	int		bitsperblock;
-	int		bmbno;
-	int		end_bmbno;
-	xfs_fsblock_t	bno;
-	xfs_buf_t	*bp;
-	xfs_rtblock_t	extno;
-	int		i;
-	int		len;
-	int		log;
-	int		offs;
-	int		prevbit;
-	int		start_bmbno;
-	int		start_bit;
-	xfs_rtword_t	*words;
+	while (bno < filelen)  {
+		xfs_filblks_t	maplen;
+		int		nmap = 1;
 
-	ASSERT(mp->m_rbmip == NULL);
-
-	bitsperblock = mp->m_sb.sb_blocksize * NBBY;
-	prevbit = 0;
-	extno = 0;
-	error = 0;
-
-	end_bmbno = howmany(be64_to_cpu(dino->di_size),
-						mp->m_sb.sb_blocksize);
-
-	for (bmbno = 0; bmbno < end_bmbno; bmbno++) {
-		bno = blkmap_get(blkmap, bmbno);
-
-		if (bno == NULLFSBLOCK) {
-			do_warn(_("can't find block %d for rtbitmap inode\n"),
-					bmbno);
-			error = 1;
-			continue;
-		}
-		error = -libxfs_buf_read(mp->m_dev, XFS_FSB_TO_DADDR(mp, bno),
-				XFS_FSB_TO_BB(mp, 1), 0, NULL, &bp);
+		/* Read up to 1MB at a time. */
+		maplen = min(filelen - bno, XFS_B_TO_FSBT(mp, 1048576));
+		error = -libxfs_bmapi_read(ip, bno, maplen, &map, &nmap, 0);
 		if (error) {
-			do_warn(_("can't read block %d for rtbitmap inode\n"),
-					bmbno);
-			error = 1;
-			continue;
-		}
-		words = (xfs_rtword_t *)bp->b_un.b_addr;
-		for (bit = 0;
-		     bit < bitsperblock && extno < mp->m_sb.sb_rextents;
-		     bit++, extno++) {
-			if (xfs_isset(words, bit)) {
-				set_rtbmap(extno, XR_E_FREE);
-				sb_frextents++;
-				if (prevbit == 0) {
-					start_bmbno = bmbno;
-					start_bit = bit;
-					prevbit = 1;
-				}
-			} else if (prevbit == 1) {
-				len = (bmbno - start_bmbno) * bitsperblock +
-					(bit - start_bit);
-				log = XFS_RTBLOCKLOG(len);
-				offs = XFS_SUMOFFS(mp, log, start_bmbno);
-				sumcompute[offs]++;
-				prevbit = 0;
-			}
-		}
-		libxfs_buf_relse(bp);
-		if (extno == mp->m_sb.sb_rextents)
+			do_warn(_("unable to read %s mapping, err %d\n"),
+					filename, error);
 			break;
-	}
-	if (prevbit == 1) {
-		len = (bmbno - start_bmbno) * bitsperblock + (bit - start_bit);
-		log = XFS_RTBLOCKLOG(len);
-		offs = XFS_SUMOFFS(mp, log, start_bmbno);
-		sumcompute[offs]++;
-	}
-}
-
-/*
- * copy the real-time summary file data into memory
- */
-void
-process_rtsummary(xfs_mount_t	*mp,
-		xfs_dinode_t	*dino,
-		blkmap_t	*blkmap)
-{
-	xfs_fsblock_t	bno;
-	xfs_buf_t	*bp;
-	char		*bytes;
-	int		sumbno;
-
-	for (sumbno = 0; sumbno < blkmap->count; sumbno++) {
-		bno = blkmap_get(blkmap, sumbno);
-		if (bno == NULLFSBLOCK) {
-			do_warn(_("block %d for rtsummary inode is missing\n"),
-					sumbno);
-			error++;
-			continue;
 		}
-		error = -libxfs_buf_read(mp->m_dev, XFS_FSB_TO_DADDR(mp, bno),
-				XFS_FSB_TO_BB(mp, 1), 0, NULL, &bp);
+
+		if (map.br_startblock == HOLESTARTBLOCK) {
+			do_warn(_("hole in %s file at dblock 0x%llx\n"),
+					filename, (unsigned long long)bno);
+			break;
+		}
+
+		error = -libxfs_buf_read_uncached(mp->m_dev,
+				XFS_FSB_TO_DADDR(mp, map.br_startblock),
+				XFS_FSB_TO_BB(mp, map.br_blockcount),
+				0, &bp, NULL);
 		if (error) {
-			do_warn(_("can't read block %d for rtsummary inode\n"),
-					sumbno);
-			error++;
-			continue;
+			do_warn(_("unable to read %s at dblock 0x%llx, err %d\n"),
+					filename, (unsigned long long)bno, error);
+			break;
 		}
-		bytes = bp->b_un.b_addr;
-		memmove((char *)sumfile + sumbno * mp->m_sb.sb_blocksize, bytes,
-			mp->m_sb.sb_blocksize);
+
+		if (memcmp(bp->b_addr, buf, mp->m_sb.sb_blocksize))
+			do_warn(_("discrepancy in %s at dblock 0x%llx\n"),
+					filename, (unsigned long long)bno);
+
+		buf += XFS_FSB_TO_B(mp, map.br_blockcount);
+		bno += map.br_blockcount;
 		libxfs_buf_relse(bp);
 	}
+
+	libxfs_irele(ip);
 }
-#endif
+
+void
+check_rtbitmap(
+	struct xfs_mount	*mp)
+{
+	if (need_rbmino)
+		return;
+
+	check_rtfile_contents(mp, "rtbitmap", mp->m_sb.sb_rbmino, btmcompute,
+			mp->m_sb.sb_rbmblocks);
+}
+
+void
+check_rtsummary(
+	struct xfs_mount	*mp)
+{
+	if (need_rsumino)
+		return;
+
+	check_rtfile_contents(mp, "rtsummary", mp->m_sb.sb_rsumino, sumcompute,
+			XFS_B_TO_FSB(mp, mp->m_rsumsize));
+}

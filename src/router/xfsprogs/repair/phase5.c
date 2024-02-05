@@ -162,14 +162,19 @@ build_agi(
 	for (i = 0; i < XFS_AGI_UNLINKED_BUCKETS; i++)
 		agi->agi_unlinked[i] = cpu_to_be32(NULLAGINO);
 
-	if (xfs_sb_version_hascrc(&mp->m_sb))
+	if (xfs_has_crc(mp))
 		platform_uuid_copy(&agi->agi_uuid, &mp->m_sb.sb_meta_uuid);
 
-	if (xfs_sb_version_hasfinobt(&mp->m_sb)) {
+	if (xfs_has_finobt(mp)) {
 		agi->agi_free_root =
 				cpu_to_be32(btr_fino->newbt.afake.af_root);
 		agi->agi_free_level =
 				cpu_to_be32(btr_fino->newbt.afake.af_levels);
+	}
+
+	if (xfs_has_inobtcounts(mp)) {
+		agi->agi_iblocks = cpu_to_be32(btr_ino->newbt.afake.af_blocks);
+		agi->agi_fblocks = cpu_to_be32(btr_fino->newbt.afake.af_blocks);
 	}
 
 	libxfs_buf_mark_dirty(agi_buf);
@@ -260,7 +265,7 @@ build_agf_agfl(
 			cpu_to_be32(btr_cnt->newbt.afake.af_levels);
 	agf->agf_freeblks = cpu_to_be32(btr_bno->freeblks);
 
-	if (xfs_sb_version_hasrmapbt(&mp->m_sb)) {
+	if (xfs_has_rmapbt(mp)) {
 		agf->agf_roots[XFS_BTNUM_RMAP] =
 				cpu_to_be32(btr_rmap->newbt.afake.af_root);
 		agf->agf_levels[XFS_BTNUM_RMAP] =
@@ -269,7 +274,7 @@ build_agf_agfl(
 				cpu_to_be32(btr_rmap->newbt.afake.af_blocks);
 	}
 
-	if (xfs_sb_version_hasreflink(&mp->m_sb)) {
+	if (xfs_has_reflink(mp)) {
 		agf->agf_refcount_root =
 				cpu_to_be32(btr_refc->newbt.afake.af_root);
 		agf->agf_refcount_level =
@@ -281,7 +286,7 @@ build_agf_agfl(
 	/*
 	 * Count and record the number of btree blocks consumed if required.
 	 */
-	if (xfs_sb_version_haslazysbcount(&mp->m_sb)) {
+	if (xfs_has_lazysbcount(mp)) {
 		unsigned int blks;
 		/*
 		 * Don't count the root blocks as they are already
@@ -289,7 +294,7 @@ build_agf_agfl(
 		 */
 		blks = btr_bno->newbt.afake.af_blocks +
 			btr_cnt->newbt.afake.af_blocks - 2;
-		if (xfs_sb_version_hasrmapbt(&mp->m_sb))
+		if (xfs_has_rmapbt(mp))
 			blks += btr_rmap->newbt.afake.af_blocks - 1;
 		agf->agf_btreeblks = cpu_to_be32(blks);
 #ifdef XR_BLD_FREE_TRACE
@@ -306,7 +311,7 @@ build_agf_agfl(
 			XFS_BTNUM_CNT);
 #endif
 
-	if (xfs_sb_version_hascrc(&mp->m_sb))
+	if (xfs_has_crc(mp))
 		platform_uuid_copy(&agf->agf_uuid, &mp->m_sb.sb_meta_uuid);
 
 	/* initialise the AGFL, then fill it if there are blocks left over. */
@@ -322,7 +327,7 @@ build_agf_agfl(
 	/* setting to 0xff results in initialisation to NULLAGBLOCK */
 	memset(agfl, 0xff, mp->m_sb.sb_sectsize);
 	freelist = xfs_buf_to_agfl_bno(agfl_buf);
-	if (xfs_sb_version_hascrc(&mp->m_sb)) {
+	if (xfs_has_crc(mp)) {
 		agfl->agfl_magicnum = cpu_to_be32(XFS_AGFL_MAGIC);
 		agfl->agfl_seqno = cpu_to_be32(agno);
 		platform_uuid_copy(&agfl->agfl_uuid, &mp->m_sb.sb_meta_uuid);
@@ -335,7 +340,7 @@ build_agf_agfl(
 	freelist = xfs_buf_to_agfl_bno(agfl_buf);
 	fill_agfl(btr_bno, freelist, &agfl_idx);
 	fill_agfl(btr_cnt, freelist, &agfl_idx);
-	if (xfs_sb_version_hasrmapbt(&mp->m_sb))
+	if (xfs_has_rmapbt(mp))
 		fill_agfl(btr_rmap, freelist, &agfl_idx);
 
 	/* Set the AGF counters for the AGFL. */
@@ -390,7 +395,7 @@ build_agf_agfl(
 static void
 sync_sb(xfs_mount_t *mp)
 {
-	xfs_buf_t	*bp;
+	struct xfs_buf	*bp;
 
 	bp = libxfs_getsb(mp);
 	if (!bp)
@@ -428,7 +433,7 @@ keep_fsinos(xfs_mount_t *mp)
 static void
 phase5_func(
 	struct xfs_mount	*mp,
-	xfs_agnumber_t		agno,
+	struct xfs_perag	*pag,
 	struct bitmap		*lost_blocks)
 {
 	struct repair_ctx	sc = { .mp = mp, };
@@ -438,9 +443,12 @@ phase5_func(
 	struct bt_rebuild	btr_fino;
 	struct bt_rebuild	btr_rmap;
 	struct bt_rebuild	btr_refc;
+	xfs_agnumber_t		agno = pag->pag_agno;
 	int			extra_blocks = 0;
 	uint			num_freeblocks;
 	xfs_agblock_t		num_extents;
+	unsigned int		est_agfreeblocks = 0;
+	unsigned int		total_btblocks;
 
 	if (verbose)
 		do_log(_("        - agno = %d\n"), agno);
@@ -468,12 +476,20 @@ _("unable to rebuild AG %u.  Not enough free space in on-disk AG.\n"),
 			agno);
 	}
 
-	init_ino_cursors(&sc, agno, num_freeblocks, &sb_icount_ag[agno],
+	/*
+	 * Estimate the number of free blocks in this AG after rebuilding
+	 * all btrees.
+	 */
+	total_btblocks = estimate_agbtree_blocks(pag, num_extents);
+	if (num_freeblocks > total_btblocks)
+		est_agfreeblocks = num_freeblocks - total_btblocks;
+
+	init_ino_cursors(&sc, pag, est_agfreeblocks, &sb_icount_ag[agno],
 			&sb_ifree_ag[agno], &btr_ino, &btr_fino);
 
-	init_rmapbt_cursor(&sc, agno, num_freeblocks, &btr_rmap);
+	init_rmapbt_cursor(&sc, pag, est_agfreeblocks, &btr_rmap);
 
-	init_refc_cursor(&sc, agno, num_freeblocks, &btr_refc);
+	init_refc_cursor(&sc, pag, est_agfreeblocks, &btr_refc);
 
 	num_extents = count_bno_extents_blocks(agno, &num_freeblocks);
 	/*
@@ -501,7 +517,7 @@ _("unable to rebuild AG %u.  Not enough free space in on-disk AG.\n"),
 	/*
 	 * track blocks that we might really lose
 	 */
-	init_freespace_cursors(&sc, agno, num_freeblocks, &num_extents,
+	init_freespace_cursors(&sc, pag, est_agfreeblocks, &num_extents,
 			&extra_blocks, &btr_bno, &btr_cnt);
 
 	/*
@@ -532,12 +548,12 @@ _("unable to rebuild AG %u.  Not enough free space in on-disk AG.\n"),
 #endif
 	ASSERT(btr_bno.freeblks == btr_cnt.freeblks);
 
-	if (xfs_sb_version_hasrmapbt(&mp->m_sb)) {
+	if (xfs_has_rmapbt(mp)) {
 		build_rmap_tree(&sc, agno, &btr_rmap);
 		sb_fdblocks_ag[agno] += btr_rmap.newbt.afake.af_blocks - 1;
 	}
 
-	if (xfs_sb_version_hasreflink(&mp->m_sb))
+	if (xfs_has_reflink(mp))
 		build_refcount_tree(&sc, agno, &btr_refc);
 
 	/*
@@ -557,11 +573,11 @@ _("unable to rebuild AG %u.  Not enough free space in on-disk AG.\n"),
 	finish_rebuild(mp, &btr_bno, lost_blocks);
 	finish_rebuild(mp, &btr_cnt, lost_blocks);
 	finish_rebuild(mp, &btr_ino, lost_blocks);
-	if (xfs_sb_version_hasfinobt(&mp->m_sb))
+	if (xfs_has_finobt(mp))
 		finish_rebuild(mp, &btr_fino, lost_blocks);
-	if (xfs_sb_version_hasrmapbt(&mp->m_sb))
+	if (xfs_has_rmapbt(mp))
 		finish_rebuild(mp, &btr_rmap, lost_blocks);
-	if (xfs_sb_version_hasreflink(&mp->m_sb))
+	if (xfs_has_reflink(mp))
 		finish_rebuild(mp, &btr_refc, lost_blocks);
 
 	/*
@@ -582,14 +598,22 @@ inject_lost_extent(
 {
 	struct xfs_mount	*mp = arg;
 	struct xfs_trans	*tp;
+	struct xfs_perag	*pag;
+	xfs_agnumber_t		agno;
+	xfs_agblock_t		agbno;
 	int			error;
 
 	error = -libxfs_trans_alloc_rollable(mp, 16, &tp);
 	if (error)
 		return error;
 
-	error = -libxfs_free_extent(tp, start, length,
+	agno = XFS_FSB_TO_AGNO(mp, start);
+	agbno = XFS_FSB_TO_AGBNO(mp, start);
+	pag = libxfs_perag_get(mp, agno);
+	error = -libxfs_free_extent(tp, pag, agbno, length,
 			&XFS_RMAP_OINFO_ANY_OWNER, XFS_AG_RESV_NONE);
+	libxfs_perag_put(pag);
+
 	if (error)
 		return error;
 
@@ -597,9 +621,20 @@ inject_lost_extent(
 }
 
 void
+check_rtmetadata(
+	struct xfs_mount	*mp)
+{
+	rtinit(mp);
+	generate_rtinfo(mp, btmcompute, sumcompute);
+	check_rtbitmap(mp);
+	check_rtsummary(mp);
+}
+
+void
 phase5(xfs_mount_t *mp)
 {
 	struct bitmap		*lost_blocks = NULL;
+	struct xfs_perag	*pag;
 	xfs_agnumber_t		agno;
 	int			error;
 
@@ -646,8 +681,8 @@ phase5(xfs_mount_t *mp)
 	if (error)
 		do_error(_("cannot alloc lost block bitmap\n"));
 
-	for (agno = 0; agno < mp->m_sb.sb_agcount; agno++)
-		phase5_func(mp, agno, lost_blocks);
+	for_each_perag(mp, agno, pag)
+		phase5_func(mp, pag, lost_blocks);
 
 	print_final_rpt();
 
@@ -664,8 +699,7 @@ phase5(xfs_mount_t *mp)
 	if (mp->m_sb.sb_rblocks)  {
 		do_log(
 		_("        - generate realtime summary info and bitmap...\n"));
-		rtinit(mp);
-		generate_rtinfo(mp, btmcompute, sumcompute);
+		check_rtmetadata(mp);
 	}
 
 	do_log(_("        - reset superblock...\n"));

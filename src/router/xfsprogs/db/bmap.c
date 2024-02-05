@@ -19,7 +19,7 @@
 static int		bmap_f(int argc, char **argv);
 static int		bmap_one_extent(xfs_bmbt_rec_t *ep,
 					xfs_fileoff_t *offp, xfs_fileoff_t eoff,
-					int *idxp, bmap_ext_t *bep);
+					xfs_extnum_t *idxp, bmap_ext_t *bep);
 static xfs_fsblock_t	select_child(xfs_fileoff_t off, xfs_bmbt_key_t *kp,
 				     xfs_bmbt_ptr_t *pp, int nrecs);
 
@@ -32,22 +32,22 @@ bmap(
 	xfs_fileoff_t		offset,
 	xfs_filblks_t		len,
 	int			whichfork,
-	int			*nexp,
+	xfs_extnum_t		*nexp,
 	bmap_ext_t		*bep)
 {
 	struct xfs_btree_block	*block;
 	xfs_fsblock_t		bno;
 	xfs_fileoff_t		curoffset;
-	xfs_dinode_t		*dip;
+	struct xfs_dinode	*dip;
 	xfs_fileoff_t		eoffset;
 	xfs_bmbt_rec_t		*ep;
 	enum xfs_dinode_fmt	fmt;
 	int			fsize;
 	xfs_bmbt_key_t		*kp;
-	int			n;
+	xfs_extnum_t		n;
 	int			nex;
 	xfs_fsblock_t		nextbno;
-	int			nextents;
+	xfs_extnum_t		nextents;
 	xfs_bmbt_ptr_t		*pp;
 	xfs_bmdr_block_t	*rblock;
 	typnm_t			typ;
@@ -68,7 +68,7 @@ bmap(
 	ASSERT(fmt == XFS_DINODE_FMT_LOCAL || fmt == XFS_DINODE_FMT_EXTENTS ||
 		fmt == XFS_DINODE_FMT_BTREE);
 	if (fmt == XFS_DINODE_FMT_EXTENTS) {
-		nextents = XFS_DFORK_NEXTENTS(dip, whichfork);
+		nextents = xfs_dfork_nextents(dip, whichfork);
 		xp = (xfs_bmbt_rec_t *)XFS_DFORK_PTR(dip, whichfork);
 		for (ep = xp; ep < &xp[nextents] && n < nex; ep++) {
 			if (!bmap_one_extent(ep, &curoffset, eoffset, &n, bep))
@@ -121,20 +121,20 @@ bmap(
 
 static int
 bmap_f(
-	int		argc,
-	char		**argv)
+	int			argc,
+	char			**argv)
 {
-	int		afork = 0;
-	bmap_ext_t	be;
-	int		c;
-	xfs_fileoff_t	co, cosave;
-	int		dfork = 0;
-	xfs_dinode_t	*dip;
-	xfs_fileoff_t	eo;
-	xfs_filblks_t	len;
-	int		nex;
-	char		*p;
-	int		whichfork;
+	int			afork = 0;
+	bmap_ext_t		be;
+	int			c;
+	xfs_fileoff_t		co, cosave;
+	int			dfork = 0;
+	struct xfs_dinode	*dip;
+	xfs_fileoff_t		eo;
+	xfs_filblks_t		len;
+	xfs_extnum_t		nex;
+	char			*p;
+	int			whichfork;
 
 	if (iocur_top->ino == NULLFSINO) {
 		dbprintf(_("no current inode\n"));
@@ -158,9 +158,9 @@ bmap_f(
 		push_cur();
 		set_cur_inode(iocur_top->ino);
 		dip = iocur_top->data;
-		if (be32_to_cpu(dip->di_nextents))
+		if (xfs_dfork_data_extents(dip))
 			dfork = 1;
-		if (be16_to_cpu(dip->di_anextents))
+		if (xfs_dfork_attr_extents(dip))
 			afork = 1;
 		pop_cur();
 	}
@@ -223,13 +223,13 @@ bmap_one_extent(
 	xfs_bmbt_rec_t		*ep,
 	xfs_fileoff_t		*offp,
 	xfs_fileoff_t		eoff,
-	int			*idxp,
+	xfs_extnum_t		*idxp,
 	bmap_ext_t		*bep)
 {
 	xfs_filblks_t		c;
 	xfs_fileoff_t		curoffset;
 	int			f;
-	int			idx;
+	xfs_extnum_t		idx;
 	xfs_fileoff_t		o;
 	xfs_fsblock_t		s;
 
@@ -276,10 +276,10 @@ convert_extent(
 void
 make_bbmap(
 	bbmap_t		*bbmap,
-	int		nex,
+	xfs_extnum_t	nex,
 	bmap_ext_t	*bmp)
 {
-	int		i;
+	xfs_extnum_t	i;
 
 	for (i = 0; i < nex; i++) {
 		bbmap->b[i].bm_bn = XFS_FSB_TO_DADDR(mp, bmp[i].startblock);

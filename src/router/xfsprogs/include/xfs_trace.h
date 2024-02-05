@@ -34,10 +34,28 @@
 #define trace_xfs_alloc_small_done(a)		((void) 0)
 #define trace_xfs_alloc_small_error(a)		((void) 0)
 #define trace_xfs_alloc_vextent_badargs(a)	((void) 0)
+#define trace_xfs_alloc_vextent_skip_deadlock(...)	((void) 0)
+#define trace_xfs_alloc_vextent_finish(...)	((void) 0)
+#define trace_xfs_alloc_vextent_this_ag(...)	((void) 0)
+#define trace_xfs_alloc_vextent_first_ag(...)	((void) 0)
+#define trace_xfs_alloc_vextent_start_ag(...)	((void) 0)
+#define trace_xfs_alloc_vextent_near_bno(...)	((void) 0)
+#define trace_xfs_alloc_vextent_exact_bno(...)	((void) 0)
 #define trace_xfs_alloc_vextent_nofix(a)	((void) 0)
 #define trace_xfs_alloc_vextent_noagbp(a)	((void) 0)
 #define trace_xfs_alloc_vextent_loopfailed(a)	((void) 0)
 #define trace_xfs_alloc_vextent_allfailed(a)	((void) 0)
+
+#define trace_xfs_attr_defer_add(...)		((void) 0)
+#define trace_xfs_attr_defer_replace(...)	((void) 0)
+#define trace_xfs_attr_defer_remove(...)	((void) 0)
+#define trace_xfs_attr_sf_addname_return(...)	((void) 0)
+#define trace_xfs_attr_set_iter_return(...)	((void) 0)
+#define trace_xfs_attr_leaf_addname_return(...)	((void) 0)
+#define trace_xfs_attr_node_addname_return(...)	((void) 0)
+#define trace_xfs_attr_remove_iter_return(...)	((void) 0)
+#define trace_xfs_attr_rmtval_alloc(...)	((void) 0)
+#define trace_xfs_attr_rmtval_remove_return(...) ((void) 0)
 
 #define trace_xfs_log_recover_item_add_cont(a,b,c,d)	((void) 0)
 #define trace_xfs_log_recover_item_add(a,b,c,d)	((void) 0)
@@ -62,6 +80,11 @@
 
 #define trace_xfs_iext_insert(a,b,c,d)		((void) 0)
 #define trace_xfs_iext_remove(a,b,c,d)		((void) 0)
+
+#define trace_xfs_defer_add_item(a,b,c)		((void) 0)
+#define trace_xfs_defer_cancel_item(a,b,c)	((void) 0)
+#define trace_xfs_defer_finish_item(a,b,c)	((void) 0)
+#define trace_xfs_defer_relog_intent(a,b)	((void) 0)
 
 #define trace_xfs_dir2_grow_inode(a,b)		((void) 0)
 #define trace_xfs_dir2_shrink_inode(a,b)	((void) 0)
@@ -167,9 +190,13 @@
 
 /* set c = c to avoid unused var warnings */
 #define trace_xfs_write_extent(a,b,c,d)	((c) = (c))
-#define trace_xfs_perag_get(a,b,c,d)	((c) = (c))
-#define trace_xfs_perag_get_tag(a,b,c,d) ((c) = (c))
-#define trace_xfs_perag_put(a,b,c,d)	((c) = (c))
+#define trace_xfs_perag_get(c,d)		((c) = (c))
+#define trace_xfs_perag_get_tag(c,d)		((c) = (c))
+#define trace_xfs_perag_hold(...)		((void) 0)
+#define trace_xfs_perag_grab(...)		((void) 0)
+#define trace_xfs_perag_grab_tag(...)		((void) 0)
+#define trace_xfs_perag_put(c,d)		((c) = (c))
+#define trace_xfs_perag_rele(...)		((void) 0)
 
 #define trace_xfs_trans_alloc(a,b)		((void) 0)
 #define trace_xfs_trans_cancel(a,b)		((void) 0)
@@ -186,6 +213,8 @@
 #define trace_xfs_trans_read_buf_recur(a)	((void) 0)
 #define trace_xfs_trans_read_buf(a)		((void) 0)
 #define trace_xfs_trans_commit(a,b)		((void) 0)
+#define trace_xfs_trans_resv_calc_minlogsize(a,b,c) ((void) 0)
+#define trace_xfs_log_get_max_trans_res(a,b)	((void) 0)
 
 #define trace_xfs_defer_cancel(a,b)		((void) 0)
 #define trace_xfs_defer_pending_commit(a,b)	((void) 0)
@@ -306,10 +335,5 @@
 #define trace_xfs_rmap_delete_error(...)	((void) 0)
 
 #define trace_xfs_fs_mark_healthy(a,b)		((void) 0)
-
-/* set c = c to avoid unused var warnings */
-#define trace_xfs_perag_get(a,b,c,d)		((c) = (c))
-#define trace_xfs_perag_get_tag(a,b,c,d)	((c) = (c))
-#define trace_xfs_perag_put(a,b,c,d)		((c) = (c))
 
 #endif /* __TRACE_H__ */

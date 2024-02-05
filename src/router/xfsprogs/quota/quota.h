@@ -3,6 +3,8 @@
  * Copyright (c) 2005 Silicon Graphics, Inc.
  * All Rights Reserved.
  */
+#ifndef XFS_QUOTA_QUOTA_H_
+#define XFS_QUOTA_QUOTA_H_
 
 #include "xqm.h"
 #include "libfrog/paths.h"
@@ -40,7 +42,7 @@ enum {
  */
 extern char *type_to_string(uint __type);
 extern char *form_to_string(uint __form);
-extern char *time_to_string(time_t __time, uint __flags);
+extern char *time_to_string(time64_t __time, uint __flags);
 extern char *bbs_to_string(uint64_t __v, char *__c, uint __size);
 extern char *num_to_string(uint64_t __v, char *__c, uint __size);
 extern char *pct_to_string(uint64_t __v, uint64_t __t, char *__c, uint __s);
@@ -73,3 +75,8 @@ extern char *uid_to_name(uint32_t __uid);
 extern char *gid_to_name(uint32_t __gid);
 extern char *prid_to_name(uint32_t __prid);
 extern bool isdigits_only(const char *);
+
+time64_t decode_timer(const struct fs_disk_quota *d, __s32 timer_lo,
+		__s8 timer_hi);
+
+#endif /* XFS_QUOTA_QUOTA_H_ */

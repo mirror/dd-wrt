@@ -97,7 +97,7 @@ typedef struct xfs_cap_set {
  * External functions
  */
 struct blkmap;
-extern int process_attributes (xfs_mount_t *, xfs_ino_t, xfs_dinode_t *,
+extern int process_attributes (xfs_mount_t *, xfs_ino_t, struct xfs_dinode *,
 				struct blkmap *, int *);
 
 #endif /* _XR_ATTRREPAIR_H */

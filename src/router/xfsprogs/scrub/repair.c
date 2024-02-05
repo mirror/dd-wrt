@@ -37,7 +37,7 @@
 /* Sort action items in severity order. */
 static int
 PRIO(
-	struct action_item	*aitem,
+	const struct action_item *aitem,
 	int			order)
 {
 	if (aitem->flags & XFS_SCRUB_OFLAG_CORRUPT)
@@ -54,7 +54,7 @@ PRIO(
 /* Sort the repair items in dependency order. */
 static int
 xfs_action_item_priority(
-	struct action_item	*aitem)
+	const struct action_item	*aitem)
 {
 	switch (aitem->type) {
 	case XFS_SCRUB_TYPE_SB:
@@ -95,11 +95,11 @@ xfs_action_item_priority(
 static int
 xfs_action_item_compare(
 	void				*priv,
-	struct list_head		*a,
-	struct list_head		*b)
+	const struct list_head		*a,
+	const struct list_head		*b)
 {
-	struct action_item		*ra;
-	struct action_item		*rb;
+	const struct action_item	*ra;
+	const struct action_item	*rb;
 
 	ra = container_of(a, struct action_item, list);
 	rb = container_of(b, struct action_item, list);
@@ -133,7 +133,7 @@ action_list_find_mustfix(
 			alist->nr--;
 			list_move_tail(&aitem->list, &immediate_alist->list);
 			immediate_alist->nr++;
-			/* fall through */
+			fallthrough;
 		case XFS_SCRUB_TYPE_BNOBT:
 		case XFS_SCRUB_TYPE_CNTBT:
 		case XFS_SCRUB_TYPE_REFCNTBT:
@@ -189,7 +189,7 @@ action_list_init(
 }
 
 /* Number of repairs in this list. */
-size_t
+unsigned long long
 action_list_length(
 	struct action_list		*alist)
 {
@@ -230,9 +230,22 @@ action_list_process(
 	struct action_list		*alist,
 	unsigned int			repair_flags)
 {
+	struct xfs_fd			xfd;
+	struct xfs_fd			*xfdp = &ctx->mnt;
 	struct action_item		*aitem;
 	struct action_item		*n;
 	enum check_outcome		fix;
+
+	/*
+	 * If the caller passed us a file descriptor for a scrub, use it
+	 * instead of scrub-by-handle because this enables the kernel to skip
+	 * costly inode btree lookups.
+	 */
+	if (fd >= 0) {
+		memcpy(&xfd, xfdp, sizeof(xfd));
+		xfd.fd = fd;
+		xfdp = &xfd;
+	}
 
 	if (!alist->sorted) {
 		list_sort(NULL, &alist->list, xfs_action_item_compare);
@@ -240,7 +253,7 @@ action_list_process(
 	}
 
 	list_for_each_entry_safe(aitem, n, &alist->list, list) {
-		fix = xfs_repair_metadata(ctx, fd, aitem, repair_flags);
+		fix = xfs_repair_metadata(ctx, xfdp, aitem, repair_flags);
 		switch (fix) {
 		case CHECK_DONE:
 			if (!(repair_flags & ALP_NOPROGRESS))
@@ -284,7 +297,7 @@ action_list_process_or_defer(
 {
 	int				ret;
 
-	ret = action_list_process(ctx, ctx->mnt.fd, alist,
+	ret = action_list_process(ctx, -1, alist,
 			ALP_REPAIR_ONLY | ALP_NOPROGRESS);
 	if (ret)
 		return ret;

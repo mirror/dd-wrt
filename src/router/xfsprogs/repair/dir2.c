@@ -20,40 +20,50 @@
  * Known bad inode list.  These are seen when the leaf and node
  * block linkages are incorrect.
  */
-typedef struct dir2_bad {
+struct dir2_bad {
 	xfs_ino_t	ino;
 	struct dir2_bad	*next;
-} dir2_bad_t;
+};
 
-static dir2_bad_t *dir2_bad_list;
+static struct dir2_bad	*dir2_bad_list;
+pthread_mutex_t		dir2_bad_list_lock = PTHREAD_MUTEX_INITIALIZER;
 
 static void
 dir2_add_badlist(
 	xfs_ino_t	ino)
 {
-	dir2_bad_t	*l;
+	struct dir2_bad	*l;
 
-	if ((l = malloc(sizeof(dir2_bad_t))) == NULL) {
+	l = malloc(sizeof(*l));
+	if (!l) {
 		do_error(
 _("malloc failed (%zu bytes) dir2_add_badlist:ino %" PRIu64 "\n"),
-			sizeof(dir2_bad_t), ino);
+			sizeof(*l), ino);
 		exit(1);
 	}
+	pthread_mutex_lock(&dir2_bad_list_lock);
 	l->next = dir2_bad_list;
 	dir2_bad_list = l;
 	l->ino = ino;
+	pthread_mutex_unlock(&dir2_bad_list_lock);
 }
 
-int
+bool
 dir2_is_badino(
 	xfs_ino_t	ino)
 {
-	dir2_bad_t	*l;
+	struct dir2_bad	*l;
+	bool		ret = false;
 
-	for (l = dir2_bad_list; l; l = l->next)
-		if (l->ino == ino)
-			return 1;
-	return 0;
+	pthread_mutex_lock(&dir2_bad_list_lock);
+	for (l = dir2_bad_list; l; l = l->next) {
+		if (l->ino == ino) {
+			ret = true;
+			break;
+		}
+	}
+	pthread_mutex_unlock(&dir2_bad_list_lock);
+	return ret;
 }
 
 /*
@@ -84,7 +94,7 @@ process_sf_dir2_fixi8(
 	memmove(oldsfp, newsfp, oldsize);
 	newsfp->count = oldsfp->count;
 	newsfp->i8count = 0;
-	ino = libxfs_dir2_sf_get_parent_ino(sfp);
+	ino = libxfs_dir2_sf_get_parent_ino(oldsfp);
 	libxfs_dir2_sf_put_parent_ino(newsfp, ino);
 	oldsfep = xfs_dir2_sf_firstentry(oldsfp);
 	newsfep = xfs_dir2_sf_firstentry(newsfp);
@@ -107,8 +117,8 @@ process_sf_dir2_fixi8(
  */
 static void
 process_sf_dir2_fixoff(
-	xfs_mount_t	*mp,
-	xfs_dinode_t	*dip)
+	xfs_mount_t		*mp,
+	struct xfs_dinode	*dip)
 {
 	int			i;
 	int			offset;
@@ -135,14 +145,14 @@ process_sf_dir2_fixoff(
 /* ARGSUSED */
 static int
 process_sf_dir2(
-	xfs_mount_t	*mp,
-	xfs_ino_t	ino,
-	xfs_dinode_t	*dip,
-	int		ino_discovery,
-	int		*dino_dirty,	/* out - 1 if dinode buffer dirty */
-	char		*dirname,	/* directory pathname */
-	xfs_ino_t	*parent,	/* out - NULLFSINO if entry not exist */
-	int		*repair)	/* out - 1 if dir was fixed up */
+	xfs_mount_t		*mp,
+	xfs_ino_t		ino,
+	struct xfs_dinode	*dip,
+	int			ino_discovery,
+	int			*dino_dirty, /* out: 1 if dinode buffer dirty */
+	char			*dirname,    /* directory pathname */
+	xfs_ino_t		*parent,     /* out: NULLFSINO if no entry */
+	int			*repair)     /* out: 1 if dir was fixed up */
 {
 	int			bad_offset;
 	int			bad_sfnamelen;
@@ -554,18 +564,18 @@ _("bad .. entry in directory inode %" PRIu64 ", points to self, "),
 /* ARGSUSED */
 static int
 process_dir2_data(
-	xfs_mount_t	*mp,
-	xfs_ino_t	ino,
-	xfs_dinode_t	*dip,
-	int		ino_discovery,
-	char		*dirname,	/* directory pathname */
-	xfs_ino_t	*parent,	/* out - NULLFSINO if entry not exist */
-	struct xfs_buf	*bp,
-	int		*dot,		/* out - 1 if there is a dot, else 0 */
-	int		*dotdot,	/* out - 1 if there's a dotdot, else 0 */
-	xfs_dablk_t	da_bno,
-	char		*endptr,
-	int		*dirty)
+	xfs_mount_t		*mp,
+	xfs_ino_t		ino,
+	struct xfs_dinode	*dip,
+	int			ino_discovery,
+	char			*dirname, /* directory pathname */
+	xfs_ino_t		*parent,  /* out: NULLFSINO if entry not exist*/
+	struct xfs_buf		*bp,
+	int			*dot,	  /* out: 1 if there's a dot else 0 */
+	int			*dotdot,  /* out: 1 if there's a dotdot else 0*/
+	xfs_dablk_t		da_bno,
+	char			*endptr,
+	int			*dirty)
 {
 	int			badbest;
 	xfs_dir2_data_free_t	*bf;
@@ -950,17 +960,17 @@ _("bad bestfree table in block %u in directory inode %" PRIu64 ": "),
 /* ARGSUSED */
 static int
 process_block_dir2(
-	xfs_mount_t	*mp,
-	xfs_ino_t	ino,
-	xfs_dinode_t	*dip,
-	int		ino_discovery,
-	int		*dino_dirty,	/* out - 1 if dinode buffer dirty */
-	char		*dirname,	/* directory pathname */
-	xfs_ino_t	*parent,	/* out - NULLFSINO if entry not exist */
-	blkmap_t	*blkmap,
-	int		*dot,		/* out - 1 if there is a dot, else 0 */
-	int		*dotdot,	/* out - 1 if there's a dotdot, else 0 */
-	int		*repair)	/* out - 1 if something was fixed */
+	xfs_mount_t		*mp,
+	xfs_ino_t		ino,
+	struct xfs_dinode	*dip,
+	int			ino_discovery,
+	int			*dino_dirty, /* out: 1 if dinode buffer dirty */
+	char			*dirname,    /* directory pathname */
+	xfs_ino_t		*parent,     /* out: NULLFSINO if no entry */
+	blkmap_t		*blkmap,
+	int			*dot,	     /* out: 1 if there's a dot else 0 */
+	int			*dotdot,     /* out: 1 if there's a dotdot else 0 */
+	int			*repair)     /* out: 1 if something was fixed */
 {
 	struct xfs_dir2_data_hdr *block;
 	xfs_dir2_leaf_entry_t	*blp;
@@ -1237,11 +1247,11 @@ error_out:
  */
 static int
 process_node_dir2(
-	xfs_mount_t	*mp,
-	xfs_ino_t	ino,
-	xfs_dinode_t	*dip,
-	blkmap_t	*blkmap,
-	int		*repair)
+	xfs_mount_t		*mp,
+	xfs_ino_t		ino,
+	struct xfs_dinode	*dip,
+	blkmap_t		*blkmap,
+	int			*repair)
 {
 	xfs_dablk_t		bno;
 	da_bt_cursor_t		da_cursor;
@@ -1297,17 +1307,17 @@ process_node_dir2(
  */
 static int
 process_leaf_node_dir2(
-	xfs_mount_t	*mp,
-	xfs_ino_t	ino,
-	xfs_dinode_t	*dip,
-	int		ino_discovery,
-	char		*dirname,	/* directory pathname */
-	xfs_ino_t	*parent,	/* out - NULLFSINO if entry not exist */
-	blkmap_t	*blkmap,
-	int		*dot,		/* out - 1 if there is a dot, else 0 */
-	int		*dotdot,	/* out - 1 if there's a dotdot, else 0 */
-	int		*repair,	/* out - 1 if something was fixed */
-	int		isnode)		/* node directory not leaf */
+	xfs_mount_t		*mp,
+	xfs_ino_t		ino,
+	struct xfs_dinode	*dip,
+	int			ino_discovery,
+	char			*dirname, /* directory pathname */
+	xfs_ino_t		*parent,  /* out: NULLFSINO if no entry */
+	blkmap_t		*blkmap,
+	int			*dot,	  /* out: 1 if there's a dot else 0 */
+	int			*dotdot,  /* out: 1 if there's a dotdot else 0*/
+	int			*repair,  /* out: 1 if something was fixed */
+	int			isnode)	  /* node directory not leaf */
 {
 	bmap_ext_t		*bmp;
 	struct xfs_buf		*bp;
@@ -1348,7 +1358,7 @@ _("can't read block %" PRIu64 " for directory inode %" PRIu64 "\n"),
 		}
 		if (bp->b_error == -EFSCORRUPTED) {
 			do_warn(
-_("corrupt directory data block %lu for inode %" PRIu64 "\n"),
+_("corrupt directory data block %" PRIu64 " for inode %" PRIu64 "\n"),
 				dbno, ino);
 			libxfs_buf_relse(bp);
 			continue;
@@ -1395,20 +1405,20 @@ _("bad directory block magic # %#x in block %" PRIu64 " for directory inode %" P
  */
 int
 process_dir2(
-	xfs_mount_t	*mp,
-	xfs_ino_t	ino,
-	xfs_dinode_t	*dip,
-	int		ino_discovery,
-	int		*dino_dirty,
-	char		*dirname,
-	xfs_ino_t	*parent,
-	blkmap_t	*blkmap)
+	xfs_mount_t		*mp,
+	xfs_ino_t		ino,
+	struct xfs_dinode	*dip,
+	int			ino_discovery,
+	int			*dino_dirty,
+	char			*dirname,
+	xfs_ino_t		*parent,
+	blkmap_t		*blkmap)
 {
-	int		dot;
-	int		dotdot;
-	xfs_fileoff_t	last;
-	int		repair;
-	int		res;
+	int			dot;
+	int			dotdot;
+	xfs_fileoff_t		last;
+	int			repair;
+	int			res;
 
 	*parent = NULLFSINO;
 	dot = dotdot = 0;

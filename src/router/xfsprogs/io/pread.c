@@ -113,7 +113,7 @@ alloc_buffer(
 	return 0;
 }
 
-void
+static void
 __dump_buffer(
 	void		*buf,
 	off64_t		offset,

@@ -60,14 +60,16 @@ becomes available for additional file storage.
 .SH OPTIONS
 .TP
 .BI "\-d | \-D " size
-Specifies that the data section of the filesystem should be grown. If the
+Specifies that the data section of the filesystem should be resized. If the
 .B \-D
 .I size
-option is given, the data section is grown to that
+option is given, the data section is changed to that
 .IR size ,
 otherwise the data section is grown to the largest size possible with the
 .B \-d
-option. The size is expressed in filesystem blocks.
+option. The size is expressed in filesystem blocks. A filesystem with only
+1 AG cannot be shrunk further, and a filesystem cannot be shrunk to the point
+where it would only have 1 AG.
 .TP
 .B \-e
 Allows the real-time extent size to be specified. In

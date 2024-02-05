@@ -65,11 +65,17 @@ static char *o_opts[] = {
  */
 enum c_opt_nums {
 	CONVERT_LAZY_COUNT = 0,
+	CONVERT_INOBTCOUNT,
+	CONVERT_BIGTIME,
+	CONVERT_NREXT64,
 	C_MAX_OPTS,
 };
 
 static char *c_opts[] = {
 	[CONVERT_LAZY_COUNT]	= "lazycount",
+	[CONVERT_INOBTCOUNT]	= "inobtcount",
+	[CONVERT_BIGTIME]	= "bigtime",
+	[CONVERT_NREXT64]	= "nrext64",
 	[C_MAX_OPTS]		= NULL,
 };
 
@@ -302,6 +308,33 @@ process_args(int argc, char **argv)
 					lazy_count = (int)strtol(val, NULL, 0);
 					convert_lazy_count = 1;
 					break;
+				case CONVERT_INOBTCOUNT:
+					if (!val)
+						do_abort(
+		_("-c inobtcount requires a parameter\n"));
+					if (strtol(val, NULL, 0) != 1)
+						do_abort(
+		_("-c inobtcount only supports upgrades\n"));
+					add_inobtcount = true;
+					break;
+				case CONVERT_BIGTIME:
+					if (!val)
+						do_abort(
+		_("-c bigtime requires a parameter\n"));
+					if (strtol(val, NULL, 0) != 1)
+						do_abort(
+		_("-c bigtime only supports upgrades\n"));
+					add_bigtime = true;
+					break;
+				case CONVERT_NREXT64:
+					if (!val)
+						do_abort(
+		_("-c nrext64 requires a parameter\n"));
+					if (strtol(val, NULL, 0) != 1)
+						do_abort(
+		_("-c nrext64 only supports upgrades\n"));
+					add_nrext64 = true;
+					break;
 				default:
 					unknown('c', val);
 					break;
@@ -362,6 +395,10 @@ process_args(int argc, char **argv)
 
 	if (report_corrected && no_modify)
 		usage();
+
+	p = getenv("XFS_REPAIR_FAIL_AFTER_PHASE");
+	if (p)
+		fail_after_phase = (int)strtol(p, NULL, 0);
 }
 
 void __attribute__((noreturn))
@@ -614,7 +651,7 @@ format_log_max_lsn(
 	xfs_daddr_t		logblocks;
 	int			logversion;
 
-	if (!xfs_sb_version_hascrc(&mp->m_sb))
+	if (!xfs_has_crc(mp))
 		return;
 
 	/*
@@ -634,7 +671,7 @@ format_log_max_lsn(
 	new_cycle = max_cycle + 3;
 	logstart = XFS_FSB_TO_DADDR(mp, mp->m_sb.sb_logstart);
 	logblocks = XFS_FSB_TO_BB(mp, mp->m_sb.sb_logblocks);
-	logversion = xfs_sb_version_haslogv2(&mp->m_sb) ? 2 : 1;
+	logversion = xfs_has_logv2(mp) ? 2 : 1;
 
 	do_warn(_("Maximum metadata LSN (%d:%d) is ahead of log (%d:%d).\n"),
 		max_cycle, max_block, log->l_curr_cycle, log->l_curr_block);
@@ -712,13 +749,216 @@ check_fs_vs_host_sectsize(
 	}
 }
 
+/*
+ * If we set up a writeback function to set NEEDSREPAIR while the filesystem is
+ * dirty, there's a chance that calling libxfs_getsb could deadlock the buffer
+ * cache while trying to get the primary sb buffer if the first non-sb write to
+ * the filesystem is the result of a cache shake.  Retain a reference to the
+ * primary sb buffer to avoid all that.
+ */
+static struct xfs_buf *primary_sb_bp;	/* buffer for superblock */
+
+int
+retain_primary_sb(
+	struct xfs_mount	*mp)
+{
+	int			error;
+
+	error = -libxfs_buf_read(mp->m_ddev_targp, XFS_SB_DADDR,
+			XFS_FSS_TO_BB(mp, 1), 0, &primary_sb_bp,
+			&xfs_sb_buf_ops);
+	if (error)
+		return error;
+
+	libxfs_buf_unlock(primary_sb_bp);
+	return 0;
+}
+
+static void
+drop_primary_sb(void)
+{
+	if (!primary_sb_bp)
+		return;
+
+	libxfs_buf_lock(primary_sb_bp);
+	libxfs_buf_relse(primary_sb_bp);
+	primary_sb_bp = NULL;
+}
+
+static int
+get_primary_sb(
+	struct xfs_mount	*mp,
+	struct xfs_buf		**bpp)
+{
+	int			error;
+
+	*bpp = NULL;
+
+	if (!primary_sb_bp) {
+		error = retain_primary_sb(mp);
+		if (error)
+			return error;
+	}
+
+	libxfs_buf_lock(primary_sb_bp);
+	xfs_buf_hold(primary_sb_bp);
+	*bpp = primary_sb_bp;
+	return 0;
+}
+
+/* Clear needsrepair after a successful repair run. */
+static void
+clear_needsrepair(
+	struct xfs_mount	*mp)
+{
+	struct xfs_buf		*bp;
+	int			error;
+
+	/*
+	 * If we're going to clear NEEDSREPAIR, we need to make absolutely sure
+	 * that everything is ok with the ondisk filesystem.  Make sure any
+	 * dirty buffers are sent to disk and that the disks have persisted
+	 * writes to stable storage.  If that fails, leave NEEDSREPAIR in
+	 * place.
+	 */
+	error = -libxfs_flush_mount(mp);
+	if (error) {
+		do_warn(
+	_("Cannot clear needsrepair due to flush failure, err=%d.\n"),
+			error);
+		goto drop;
+	}
+
+	/* Clear needsrepair from the superblock. */
+	error = get_primary_sb(mp, &bp);
+	if (error) {
+		do_warn(
+	_("Cannot clear needsrepair from primary super, err=%d.\n"), error);
+	} else {
+		mp->m_sb.sb_features_incompat &=
+				~XFS_SB_FEAT_INCOMPAT_NEEDSREPAIR;
+		libxfs_sb_to_disk(bp->b_addr, &mp->m_sb);
+		libxfs_buf_mark_dirty(bp);
+	}
+	if (bp)
+		libxfs_buf_relse(bp);
+drop:
+	drop_primary_sb();
+}
+
+static void
+update_sb_crc_only(
+	struct xfs_buf		*bp)
+{
+	xfs_buf_update_cksum(bp, XFS_SB_CRC_OFF);
+}
+
+/* Forcibly write the primary superblock with the NEEDSREPAIR flag set. */
+static void
+force_needsrepair(
+	struct xfs_mount	*mp)
+{
+	struct xfs_buf_ops	fake_ops;
+	struct xfs_buf		*bp;
+	int			error;
+
+	if (!xfs_has_crc(mp) ||
+	    xfs_sb_version_needsrepair(&mp->m_sb))
+		return;
+
+	error = get_primary_sb(mp, &bp);
+	if (error) {
+		do_log(
+	_("couldn't get superblock to set needsrepair, err=%d\n"), error);
+	} else {
+		/*
+		 * It's possible that we need to set NEEDSREPAIR before we've
+		 * had a chance to fix the summary counters in the primary sb.
+		 * With the exception of those counters, phase 1 already
+		 * ensured that the geometry makes sense.
+		 *
+		 * Bad summary counters in the primary super can cause the
+		 * write verifier to fail, so substitute a dummy that only sets
+		 * the CRC.  In the event of a crash, NEEDSREPAIR will prevent
+		 * the kernel from mounting our potentially damaged filesystem
+		 * until repair is run again, so it's ok to bypass the usual
+		 * verification in this one case.
+		 */
+		fake_ops = xfs_sb_buf_ops; /* struct copy */
+		fake_ops.verify_write = update_sb_crc_only;
+
+		mp->m_sb.sb_features_incompat |=
+				XFS_SB_FEAT_INCOMPAT_NEEDSREPAIR;
+		libxfs_sb_to_disk(bp->b_addr, &mp->m_sb);
+
+		/* Force the primary super to disk immediately. */
+		bp->b_ops = &fake_ops;
+		error = -libxfs_bwrite(bp);
+		bp->b_ops = &xfs_sb_buf_ops;
+		if (error)
+			do_log(_("couldn't force needsrepair, err=%d\n"), error);
+	}
+	if (bp)
+		libxfs_buf_relse(bp);
+}
+
+/*
+ * Intercept the first non-super write to the filesystem so we can set
+ * NEEDSREPAIR to protect the filesystem from mount in case of a crash.
+ */
+static void
+repair_capture_writeback(
+	struct xfs_buf		*bp)
+{
+	struct xfs_mount	*mp = bp->b_mount;
+	static pthread_mutex_t	wb_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+	/*
+	 * This write hook ignores any buffer that looks like a superblock to
+	 * avoid hook recursion when setting NEEDSREPAIR.  Higher level code
+	 * modifying an sb must control the flag manually.
+	 */
+	if (bp->b_ops == &xfs_sb_buf_ops || xfs_buf_daddr(bp) == XFS_SB_DADDR)
+		return;
+
+	pthread_mutex_lock(&wb_mutex);
+
+	/*
+	 * If someone else already dropped the hook, then needsrepair has
+	 * already been set on the filesystem and we can unlock.
+	 */
+	if (mp->m_buf_writeback_fn != repair_capture_writeback)
+		goto unlock;
+
+	/*
+	 * If we get here, the buffer being written is not a superblock, and
+	 * needsrepair needs to be set.  The hook is kept in place to plug all
+	 * other writes until the sb write finishes.
+	 */
+	force_needsrepair(mp);
+
+	/* We only set needsrepair once, so clear the hook now. */
+	mp->m_buf_writeback_fn = NULL;
+unlock:
+	pthread_mutex_unlock(&wb_mutex);
+}
+
+static inline void
+phase_end(int phase)
+{
+	timestamp(PHASE_END, phase, NULL);
+
+	/* Fail if someone injected an post-phase error. */
+	if (fail_after_phase && phase == fail_after_phase)
+		platform_crash();
+}
+
 int
 main(int argc, char **argv)
 {
 	xfs_mount_t	*temp_mp;
 	xfs_mount_t	*mp;
-	xfs_dsb_t	*dsb;
-	xfs_buf_t	*sbp;
+	struct xfs_buf	*sbp;
 	xfs_mount_t	xfs_m;
 	struct xlog	log = {0};
 	char		*msgbuf;
@@ -742,7 +982,7 @@ main(int argc, char **argv)
 	msgbuf = malloc(DURATION_BUF_SIZE);
 
 	timestamp(PHASE_START, 0, NULL);
-	timestamp(PHASE_END, 0, NULL);
+	phase_end(0);
 
 	/* -f forces this, but let's be nice and autodetect it, as well. */
 	if (!isa_file) {
@@ -765,7 +1005,7 @@ main(int argc, char **argv)
 
 	/* do phase1 to make sure we have a superblock */
 	phase1(temp_mp);
-	timestamp(PHASE_END, 1, NULL);
+	phase_end(1);
 
 	if (no_modify && primary_sb_modified)  {
 		do_warn(_("Primary superblock would have been modified.\n"
@@ -807,7 +1047,11 @@ main(int argc, char **argv)
 
 	/* Spit out function & line on these corruption macros */
 	if (verbose > 2)
-		mp->m_flags |= LIBXFS_MOUNT_WANT_CORRUPTED;
+		xfs_set_reporting_corruption(mp);
+
+	/* Capture the first writeback so that we can set needsrepair. */
+	if (xfs_has_crc(mp))
+		mp->m_buf_writeback_fn = repair_capture_writeback;
 
 	/*
 	 * set XFS-independent status vars from the mount/sb structure
@@ -979,7 +1223,7 @@ main(int argc, char **argv)
 	/* initialize random globals now that we know the fs geometry */
 	inodes_per_block = mp->m_sb.sb_inopblock;
 
-	if (parse_sb_version(&mp->m_sb))  {
+	if (parse_sb_version(mp))  {
 		do_warn(
 	_("Found unsupported filesystem features.  Exiting now.\n"));
 		return(1);
@@ -987,23 +1231,26 @@ main(int argc, char **argv)
 
 	/* make sure the per-ag freespace maps are ok so we can mount the fs */
 	phase2(mp, phase2_threads);
-	timestamp(PHASE_END, 2, NULL);
+	phase_end(2);
 
 	if (do_prefetch)
 		init_prefetch(mp);
 
 	phase3(mp, phase2_threads);
-	timestamp(PHASE_END, 3, NULL);
+	phase_end(3);
 
 	phase4(mp);
-	timestamp(PHASE_END, 4, NULL);
+	phase_end(4);
 
-	if (no_modify)
+	if (no_modify) {
 		printf(_("No modify flag set, skipping phase 5\n"));
-	else {
+
+		if (mp->m_sb.sb_rblocks > 0)
+			check_rtmetadata(mp);
+	} else {
 		phase5(mp);
 	}
-	timestamp(PHASE_END, 5, NULL);
+	phase_end(5);
 
 	/*
 	 * Done with the block usage maps, toss them...
@@ -1013,10 +1260,10 @@ main(int argc, char **argv)
 
 	if (!bad_ino_btree)  {
 		phase6(mp);
-		timestamp(PHASE_END, 6, NULL);
+		phase_end(6);
 
 		phase7(mp, phase2_threads);
-		timestamp(PHASE_END, 7, NULL);
+		phase_end(7);
 	} else  {
 		do_warn(
 _("Inode allocation btrees are too corrupted, skipping phases 6 and 7\n"));
@@ -1103,26 +1350,38 @@ _("Warning:  project quota information would be cleared.\n"
 	if (!sbp)
 		do_error(_("couldn't get superblock\n"));
 
-	dsb = sbp->b_addr;
-
 	if ((mp->m_sb.sb_qflags & XFS_ALL_QUOTA_CHKD) != quotacheck_results()) {
 		do_warn(_("Note - quota info will be regenerated on next "
 			"quota mount.\n"));
-		dsb->sb_qflags &= cpu_to_be16(~(XFS_UQUOTA_CHKD |
-						XFS_GQUOTA_CHKD |
-						XFS_PQUOTA_CHKD |
-						XFS_OQUOTA_CHKD));
+		mp->m_sb.sb_qflags &= ~(XFS_UQUOTA_CHKD | XFS_GQUOTA_CHKD |
+					XFS_PQUOTA_CHKD | XFS_OQUOTA_CHKD);
+		libxfs_sb_to_disk(sbp->b_addr, &mp->m_sb);
 	}
 
 	if (copied_sunit) {
 		do_warn(
 _("Note - stripe unit (%d) and width (%d) were copied from a backup superblock.\n"
   "Please reset with mount -o sunit=<value>,swidth=<value> if necessary\n"),
-			be32_to_cpu(dsb->sb_unit), be32_to_cpu(dsb->sb_width));
+			mp->m_sb.sb_unit, mp->m_sb.sb_width);
 	}
 
 	libxfs_buf_mark_dirty(sbp);
 	libxfs_buf_relse(sbp);
+
+	/*
+	 * If we upgraded V5 filesystem features, we need to update the
+	 * secondary superblocks to include the new feature bits.  Don't set
+	 * NEEDSREPAIR on the secondaries.
+	 */
+	if (features_changed) {
+		mp->m_sb.sb_features_incompat &=
+				~XFS_SB_FEAT_INCOMPAT_NEEDSREPAIR;
+		error = -libxfs_update_secondary_sbs(mp);
+		if (error)
+			do_error(_("upgrading features of secondary supers"));
+		mp->m_sb.sb_features_incompat |=
+				XFS_SB_FEAT_INCOMPAT_NEEDSREPAIR;
+	}
 
 	/*
 	 * Done. Flush all cached buffers and inodes first to ensure all
@@ -1132,11 +1391,14 @@ _("Note - stripe unit (%d) and width (%d) were copied from a backup superblock.\
 	libxfs_bcache_flush();
 	format_log_max_lsn(mp);
 
+	if (xfs_sb_version_needsrepair(&mp->m_sb))
+		clear_needsrepair(mp);
+
 	/* Report failure if anything failed to get written to our fs. */
 	error = -libxfs_umount(mp);
 	if (error)
 		do_error(
-	_("File system metadata writeout failed, err=%d.  Re-run xfs_repair."),
+	_("File system metadata writeout failed, err=%d.  Re-run xfs_repair.\n"),
 				error);
 
 	libxfs_destroy(&x);

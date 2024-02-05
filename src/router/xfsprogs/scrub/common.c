@@ -288,8 +288,6 @@ scrub_nproc_workqueue(
  * Sleep for 100us * however many -b we got past the initial one.
  * This is an (albeit clumsy) way to throttle scrub activity.
  */
-#define NSEC_PER_SEC	1000000000ULL
-#define NSEC_PER_USEC	1000ULL
 void
 background_sleep(void)
 {

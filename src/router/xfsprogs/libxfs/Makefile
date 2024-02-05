@@ -20,6 +20,12 @@ PKGHFILES = xfs_fs.h \
 	xfs_log_format.h
 
 HFILES = \
+	libxfs_io.h \
+	libxfs_api_defs.h \
+	init.h \
+	libxfs_priv.h \
+	linux-err.h \
+	topology.h \
 	xfs_ag_resv.h \
 	xfs_alloc.h \
 	xfs_alloc_btree.h \
@@ -48,10 +54,6 @@ HFILES = \
 	xfs_shared.h \
 	xfs_trans_resv.h \
 	xfs_trans_space.h \
-	libxfs_io.h \
-	libxfs_api_defs.h \
-	init.h \
-	libxfs_priv.h \
 	xfs_dir2_priv.h
 
 CFILES = cache.c \
@@ -60,6 +62,7 @@ CFILES = cache.c \
 	kmem.c \
 	logitem.c \
 	rdwr.c \
+	topology.c \
 	trans.c \
 	util.c \
 	xfs_ag.c \
@@ -102,7 +105,6 @@ CFILES = cache.c \
 
 #
 # Tracing flags:
-# -DIO_DEBUG		reads and writes of buffers
 # -DMEM_DEBUG		all zone memory use
 # -DLI_DEBUG		log item (ino/buf) manipulation
 # -DXACT_DEBUG		transaction state changes

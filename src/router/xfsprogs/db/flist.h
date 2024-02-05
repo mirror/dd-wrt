@@ -38,4 +38,5 @@ extern int	flist_parse(const struct field *fields, flist_t *fl, void *obj,
 			    int startoff);
 extern void	flist_print(flist_t *fl);
 extern flist_t	*flist_scan(char *name);
-extern flist_t	*flist_find_ftyp(const field_t *fields, fldt_t  type);
+extern flist_t	*flist_find_ftyp(const field_t *fields, fldt_t  type, void *obj,
+		int startoff);

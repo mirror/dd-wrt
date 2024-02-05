@@ -89,6 +89,10 @@ extern char	*rt_name;		/* Name of realtime device */
 extern int	rt_spec;		/* Realtime dev specified as option */
 extern int	convert_lazy_count;	/* Convert lazy-count mode on/off */
 extern int	lazy_count;		/* What to set if to if converting */
+extern bool	features_changed;	/* did we change superblock feature bits? */
+extern bool	add_inobtcount;		/* add inode btree counts to AGI */
+extern bool	add_bigtime;		/* add support for timestamps up to 2486 */
+extern bool	add_nrext64;
 
 /* misc status variables */
 
@@ -154,11 +158,15 @@ struct aglock {
 	pthread_mutex_t	lock __attribute__((__aligned__(64)));
 };
 extern struct aglock	*ag_locks;
+extern struct aglock	rt_lock;
 
 extern int		report_interval;
 extern uint64_t		*prog_rpt_done;
 
 extern int		ag_stride;
 extern int		thread_count;
+
+/* If nonzero, simulate failure after this phase. */
+extern int		fail_after_phase;
 
 #endif /* _XFS_REPAIR_GLOBAL_H */

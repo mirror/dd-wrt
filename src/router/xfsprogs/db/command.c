@@ -131,6 +131,7 @@ init_commands(void)
 	logformat_init();
 	io_init();
 	metadump_init();
+	namei_init();
 	output_init();
 	print_init();
 	quit_init();
@@ -139,4 +140,6 @@ init_commands(void)
 	write_init();
 	dquot_init();
 	fuzz_init();
+	timelimit_init();
+	iunlink_init();
 }

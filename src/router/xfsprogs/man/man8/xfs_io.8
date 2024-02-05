@@ -219,10 +219,10 @@ dump the contents of the buffer after reading,
 by default only the count of bytes actually read is dumped.
 .TP
 .B \-F
-read the buffers in a forwards sequential direction.
+read the buffers in a forward sequential direction.
 .TP
 .B \-B
-read the buffers in a reserve sequential direction.
+read the buffers in a reverse sequential direction.
 .TP
 .B \-R
 read the buffers in the give range in a random order.
@@ -305,10 +305,10 @@ is used when the data to write is not coming from a file.
 The default buffer fill pattern value is 0xcdcdcdcd.
 .TP
 .B \-F
-write the buffers in a forwards sequential direction.
+write the buffers in a forward sequential direction.
 .TP
 .B \-B
-write the buffers in a reserve sequential direction.
+write the buffers in a reverse sequential direction.
 .TP
 .B \-R
 write the buffers in the give range in a random order.
@@ -396,6 +396,8 @@ manual page.
 and
 .B freesp
 do exactly the same thing.
+
+These commands are no longer supported as of Linux 5.17.
 .TP
 .BI "freesp " size " 0"
 See the
@@ -1143,7 +1145,7 @@ for the current memory mapping.
 
 .SH FILESYSTEM COMMANDS
 .TP
-.BI "bulkstat [ \-a " agno " ] [ \-d ] [ \-e " endino " ] [ \-n " batchsize " ] [ \-s " startino " ] [ \-v " version" ]
+.BI "bulkstat [ \-a " agno " ] [ \-d ] [ \-e " endino " ] [ \-n " batchsize " ] [ \-q ] [ \-s " startino " ] [ \-v " version" ]
 Display raw stat information about a bunch of inodes in an XFS filesystem.
 Options are as follows:
 .RS 1.0i
@@ -1163,6 +1165,10 @@ Defaults to stopping when the system call stops returning results.
 .BI \-n " batchsize"
 Retrieve at most this many records per call.
 Defaults to 4,096.
+.TP
+.BI \-q
+Run quietly.
+Does not parse or output retrieved bulkstat information.
 .TP
 .BI \-s " startino"
 Display inode allocation records starting with this inode.
@@ -1235,11 +1241,29 @@ down, matching XFS behavior when critical corruption is encountered.
 .PD
 .RE
 .TP
-.B statfs
-Selected statistics from
+.B statfs [ -c ] [ -g ] [ -s ]
+Report selected statistics on the filesystem where the current file resides.
+The default behavior is to enable all three reporting options:
+.RS 1.0i
+.PD 0
+.TP
+.BI \-c
+Display
+.B XFS_IOC_FSCOUNTERS
+summary counter data.
+.TP
+.BI \-g
+Display
+.B XFS_IOC_FSGEOMETRY
+filesystem geometry data.
+.TP
+.BI \-s
+Display
 .BR statfs (2)
-and the XFS_IOC_FSGEOMETRY
-system call on the filesystem where the current file resides.
+data.
+.TP
+.RE
+.PD
 .TP
 .BI "inode  [ [ -n ] " number " ] [ -v ]"
 The inode command queries physical information about an inode. With
@@ -1431,6 +1455,9 @@ This option is not compatible with the
 flag.
 .RE
 .PD
+.TP
+.B fsuuid
+Print the mounted filesystem UUID.
 
 
 .SH OTHER COMMANDS

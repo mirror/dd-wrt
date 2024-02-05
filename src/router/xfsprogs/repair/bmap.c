@@ -38,10 +38,10 @@ blkmap_alloc(
 #if (BITS_PER_LONG == 32)	/* on 64-bit platforms this is never true */
 	if (nex > BLKMAP_NEXTS_MAX) {
 		do_warn(
-	_("Number of extents requested in blkmap_alloc (%d) overflows 32 bits.\n"
+	_("Number of extents requested in blkmap_alloc (%llu) overflows 32 bits.\n"
 	  "If this is not a corruption, then you will need a 64 bit system\n"
 	  "to repair this filesystem.\n"),
-			nex);
+			(unsigned long long)nex);
 		return NULL;
 	}
 #endif
@@ -51,8 +51,8 @@ blkmap_alloc(
 	if (!blkmap || blkmap->naexts < nex) {
 		blkmap = realloc(blkmap, BLKMAP_SIZE(nex));
 		if (!blkmap) {
-			do_warn(_("malloc failed in blkmap_alloc (%zu bytes)\n"),
-				BLKMAP_SIZE(nex));
+			do_warn(_("malloc failed in blkmap_alloc (%llu bytes)\n"),
+				(unsigned long long)BLKMAP_SIZE(nex));
 			return NULL;
 		}
 		pthread_setspecific(key, blkmap);

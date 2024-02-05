@@ -389,6 +389,8 @@ fs_table_initialise_mounts(
 			return errno;
 
 	while ((mnt = getmntent(mtp)) != NULL) {
+		if (!strcmp(mnt->mnt_type, "autofs"))
+			continue;
 		if (!realpath(mnt->mnt_dir, rmnt_dir))
 			continue;
 		if (!realpath(mnt->mnt_fsname, rmnt_fsname))
@@ -544,7 +546,7 @@ out_error:
 		progname, strerror(error));
 }
 
-void
+int
 fs_table_insert_project_path(
 	char		*dir,
 	prid_t		prid)
@@ -559,9 +561,5 @@ fs_table_insert_project_path(
 	else
 		error = ENOENT;
 
-	if (error) {
-		fprintf(stderr, _("%s: cannot setup path for project dir %s: %s\n"),
-				progname, dir, strerror(error));
-		exit(1);
-	}
+	return error;
 }

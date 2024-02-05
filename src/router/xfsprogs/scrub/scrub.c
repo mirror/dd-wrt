@@ -122,6 +122,7 @@ scrub_warn_incomplete_scrub(
 static enum check_outcome
 xfs_check_metadata(
 	struct scrub_ctx		*ctx,
+	struct xfs_fd			*xfdp,
 	struct xfs_scrub_metadata	*meta,
 	bool				is_inode)
 {
@@ -135,7 +136,7 @@ xfs_check_metadata(
 
 	dbg_printf("check %s flags %xh\n", descr_render(&dsc), meta->sm_flags);
 retry:
-	error = -xfrog_scrub_metadata(&ctx->mnt, meta);
+	error = -xfrog_scrub_metadata(xfdp, meta);
 	if (debug_tweak_on("XFS_SCRUB_FORCE_REPAIR") && !error)
 		meta->sm_flags |= XFS_SCRUB_OFLAG_CORRUPT;
 	switch (error) {
@@ -153,7 +154,7 @@ _("Filesystem is shut down, aborting."));
 	case EIO:
 	case ENOMEM:
 		/* Abort on I/O errors or insufficient memory. */
-		str_errno(ctx, descr_render(&dsc));
+		str_liberror(ctx, error, descr_render(&dsc));
 		return CHECK_ABORT;
 	case EDEADLOCK:
 	case EBUSY:
@@ -164,10 +165,10 @@ _("Filesystem is shut down, aborting."));
 		 * and the other two should be reported via sm_flags.
 		 */
 		str_liberror(ctx, error, _("Kernel bug"));
-		/* fall through */
+		return CHECK_DONE;
 	default:
 		/* Operational error. */
-		str_errno(ctx, descr_render(&dsc));
+		str_liberror(ctx, error, descr_render(&dsc));
 		return CHECK_DONE;
 	}
 
@@ -222,6 +223,16 @@ _("Optimization is possible."));
 
 		return CHECK_REPAIR;
 	}
+
+	/*
+	 * This metadata object itself looks ok, but we noticed inconsistencies
+	 * when comparing it with the other filesystem metadata.  If we're in
+	 * repair mode we need to queue it for a "repair" so that phase 4 will
+	 * re-examine the object as repairs progress to see if the kernel will
+	 * deem it completely consistent at some point.
+	 */
+	if (xref_failed(meta) && ctx->mode == SCRUB_MODE_REPAIR)
+		return CHECK_REPAIR;
 
 	/* Everything is ok. */
 	return CHECK_DONE;
@@ -306,7 +317,7 @@ scrub_meta_type(
 	background_sleep();
 
 	/* Check the item. */
-	fix = xfs_check_metadata(ctx, &meta, false);
+	fix = xfs_check_metadata(ctx, &ctx->mnt, &meta, false);
 	progress_add(1);
 
 	switch (fix) {
@@ -316,7 +327,7 @@ scrub_meta_type(
 		ret = scrub_save_repair(ctx, alist, &meta);
 		if (ret)
 			return ret;
-		/* fall through */
+		fallthrough;
 	case CHECK_DONE:
 		return 0;
 	default:
@@ -436,115 +447,48 @@ scrub_estimate_ag_work(
 }
 
 /*
- * Scrub inode metadata.  If errors occur, this function will log them and
- * return nonzero.
+ * Scrub file metadata of some sort.  If errors occur, this function will log
+ * them and return nonzero.
  */
-static int
-__scrub_file(
+int
+scrub_file(
 	struct scrub_ctx		*ctx,
-	uint64_t			ino,
-	uint32_t			gen,
+	int				fd,
+	const struct xfs_bulkstat	*bstat,
 	unsigned int			type,
 	struct action_list		*alist)
 {
 	struct xfs_scrub_metadata	meta = {0};
+	struct xfs_fd			xfd;
+	struct xfs_fd			*xfdp = &ctx->mnt;
 	enum check_outcome		fix;
 
 	assert(type < XFS_SCRUB_TYPE_NR);
 	assert(xfrog_scrubbers[type].type == XFROG_SCRUB_TYPE_INODE);
 
 	meta.sm_type = type;
-	meta.sm_ino = ino;
-	meta.sm_gen = gen;
+	meta.sm_ino = bstat->bs_ino;
+	meta.sm_gen = bstat->bs_gen;
+
+	/*
+	 * If the caller passed us a file descriptor for a scrub, use it
+	 * instead of scrub-by-handle because this enables the kernel to skip
+	 * costly inode btree lookups.
+	 */
+	if (fd >= 0) {
+		memcpy(&xfd, xfdp, sizeof(xfd));
+		xfd.fd = fd;
+		xfdp = &xfd;
+	}
 
 	/* Scrub the piece of metadata. */
-	fix = xfs_check_metadata(ctx, &meta, true);
+	fix = xfs_check_metadata(ctx, xfdp, &meta, true);
 	if (fix == CHECK_ABORT)
 		return ECANCELED;
 	if (fix == CHECK_DONE)
 		return 0;
 
 	return scrub_save_repair(ctx, alist, &meta);
-}
-
-int
-scrub_inode_fields(
-	struct scrub_ctx	*ctx,
-	uint64_t		ino,
-	uint32_t		gen,
-	struct action_list	*alist)
-{
-	return __scrub_file(ctx, ino, gen, XFS_SCRUB_TYPE_INODE, alist);
-}
-
-int
-scrub_data_fork(
-	struct scrub_ctx	*ctx,
-	uint64_t		ino,
-	uint32_t		gen,
-	struct action_list	*alist)
-{
-	return __scrub_file(ctx, ino, gen, XFS_SCRUB_TYPE_BMBTD, alist);
-}
-
-int
-scrub_attr_fork(
-	struct scrub_ctx	*ctx,
-	uint64_t		ino,
-	uint32_t		gen,
-	struct action_list	*alist)
-{
-	return __scrub_file(ctx, ino, gen, XFS_SCRUB_TYPE_BMBTA, alist);
-}
-
-int
-scrub_cow_fork(
-	struct scrub_ctx	*ctx,
-	uint64_t		ino,
-	uint32_t		gen,
-	struct action_list	*alist)
-{
-	return __scrub_file(ctx, ino, gen, XFS_SCRUB_TYPE_BMBTC, alist);
-}
-
-int
-scrub_dir(
-	struct scrub_ctx	*ctx,
-	uint64_t		ino,
-	uint32_t		gen,
-	struct action_list	*alist)
-{
-	return __scrub_file(ctx, ino, gen, XFS_SCRUB_TYPE_DIR, alist);
-}
-
-int
-scrub_attr(
-	struct scrub_ctx	*ctx,
-	uint64_t		ino,
-	uint32_t		gen,
-	struct action_list	*alist)
-{
-	return __scrub_file(ctx, ino, gen, XFS_SCRUB_TYPE_XATTR, alist);
-}
-
-int
-scrub_symlink(
-	struct scrub_ctx	*ctx,
-	uint64_t		ino,
-	uint32_t		gen,
-	struct action_list	*alist)
-{
-	return __scrub_file(ctx, ino, gen, XFS_SCRUB_TYPE_SYMLINK, alist);
-}
-
-int
-scrub_parent(
-	struct scrub_ctx	*ctx,
-	uint64_t		ino,
-	uint32_t		gen,
-	struct action_list	*alist)
-{
-	return __scrub_file(ctx, ino, gen, XFS_SCRUB_TYPE_PARENT, alist);
 }
 
 /*
@@ -667,7 +611,7 @@ xfs_can_repair(
 enum check_outcome
 xfs_repair_metadata(
 	struct scrub_ctx		*ctx,
-	int				fd,
+	struct xfs_fd			*xfdp,
 	struct action_item		*aitem,
 	unsigned int			repair_flags)
 {
@@ -705,7 +649,7 @@ xfs_repair_metadata(
 		str_info(ctx, descr_render(&dsc),
 				_("Attempting optimization."));
 
-	error = -xfrog_scrub_metadata(&ctx->mnt, &meta);
+	error = -xfrog_scrub_metadata(xfdp, &meta);
 	switch (error) {
 	case 0:
 		/* No operational errors encountered. */
@@ -741,7 +685,7 @@ _("Filesystem is shut down, aborting."));
 		if (is_unoptimized(&oldm) ||
 		    debug_tweak_on("XFS_SCRUB_FORCE_REPAIR"))
 			return CHECK_DONE;
-		/* fall through */
+		fallthrough;
 	case EINVAL:
 		/* Kernel doesn't know how to repair this? */
 		str_corrupt(ctx, descr_render(&dsc),
@@ -761,7 +705,7 @@ _("Read-only filesystem; cannot make changes."));
 		/* Don't care if preen fails due to low resources. */
 		if (is_unoptimized(&oldm) && !needs_repair(&oldm))
 			return CHECK_DONE;
-		/* fall through */
+		fallthrough;
 	default:
 		/*
 		 * Operational error.  If the caller doesn't want us
@@ -787,6 +731,23 @@ _("Read-only filesystem; cannot make changes."));
 			return CHECK_RETRY;
 		str_corrupt(ctx, descr_render(&dsc),
 _("Repair unsuccessful; offline repair required."));
+	} else if (xref_failed(&meta)) {
+		/*
+		 * This metadata object itself looks ok, but we still noticed
+		 * inconsistencies when comparing it with the other filesystem
+		 * metadata.  If we're in "final warning" mode, advise the
+		 * caller to run xfs_repair; otherwise, we'll keep trying to
+		 * reverify the cross-referencing as repairs progress.
+		 */
+		if (repair_flags & XRM_COMPLAIN_IF_UNFIXED) {
+			str_info(ctx, descr_render(&dsc),
+ _("Seems correct but cross-referencing failed; offline repair recommended."));
+		} else {
+			if (verbose)
+				str_info(ctx, descr_render(&dsc),
+ _("Seems correct but cross-referencing failed; will keep checking."));
+			return CHECK_RETRY;
+		}
 	} else {
 		/* Clean operation, no corruption detected. */
 		if (needs_repair(&oldm))

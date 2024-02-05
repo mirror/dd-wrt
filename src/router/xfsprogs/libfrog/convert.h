@@ -16,7 +16,7 @@ extern uint16_t	cvt_u16(char *s, int base);
 
 extern long long cvtnum(size_t blocksize, size_t sectorsize, const char *s);
 extern void cvtstr(double value, char *str, size_t sz);
-extern unsigned long cvttime(char *s);
+extern time64_t cvttime(char *s);
 
 extern uid_t	uid_from_string(char *user);
 extern gid_t	gid_from_string(char *group);

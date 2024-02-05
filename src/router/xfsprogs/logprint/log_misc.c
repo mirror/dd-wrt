@@ -54,11 +54,47 @@ print_stars(void)
 	   "***********************************\n");
 }	/* print_stars */
 
+void
+print_hex_dump(char *ptr, int len) {
+	int i = 0;
+
+	for (i = 0; i < len; i++) {
+		if (i % 16 == 0)
+			printf("%08x ", i);
+
+		printf("%02x", ptr[i]);
+
+		if ((i+1)%16 == 0)
+			printf("\n");
+		else if ((i+1)%2 == 0)
+			printf(" ");
+	}
+	printf("\n");
+}
+
+bool
+is_printable(char *ptr, int len) {
+	int i = 0;
+
+	for (i = 0; i < len; i++)
+		if (!isprint(ptr[i]) )
+			return false;
+	return true;
+}
+
+void
+print_or_dump(char *ptr, int len) {
+	if (is_printable(ptr, len))
+		printf("%.*s\n", len, ptr);
+	else
+		print_hex_dump(ptr, len);
+}
+
 /*
  * Given a pointer to a data segment, print out the data as if it were
  * a log operation header.
  */
-static void
+void
 xlog_print_op_header(xlog_op_header_t	*op_head,
 		     int		i,
 		     char		**ptr)
@@ -369,7 +405,7 @@ xlog_print_trans_buffer(char **ptr, int len, int *i, int num_ops)
 		else {
 			printf("\n");
 			printf(_("ver: %d  flags: 0x%x  id: %d  \n"),
-				dq->d_version, dq->d_flags,
+				dq->d_version, dq->d_type,
 				be32_to_cpu(dq->d_id));
 			printf(_("blk limits  hard: %llu  soft: %llu\n"),
 			       (unsigned long long)
@@ -440,20 +476,33 @@ static void
 xlog_print_trans_inode_core(
 	struct xfs_log_dinode	*ip)
 {
+    xfs_extnum_t		nextents;
+
     printf(_("INODE CORE\n"));
     printf(_("magic 0x%hx mode 0%ho version %d format %d\n"),
 	   ip->di_magic, ip->di_mode, (int)ip->di_version,
 	   (int)ip->di_format);
-    printf(_("nlink %hd uid %d gid %d\n"),
+    printf(_("nlink %" PRIu32 " uid %d gid %d\n"),
 	   ip->di_nlink, ip->di_uid, ip->di_gid);
-    printf(_("atime 0x%x mtime 0x%x ctime 0x%x\n"),
-	   ip->di_atime.t_sec, ip->di_mtime.t_sec, ip->di_ctime.t_sec);
-    printf(_("size 0x%llx nblocks 0x%llx extsize 0x%x nextents 0x%x\n"),
+    printf(_("atime 0x%llx mtime 0x%llx ctime 0x%llx\n"),
+		xlog_extract_dinode_ts(ip->di_atime),
+		xlog_extract_dinode_ts(ip->di_mtime),
+		xlog_extract_dinode_ts(ip->di_ctime));
+
+    if (ip->di_flags2 & XFS_DIFLAG2_NREXT64)
+	nextents = ip->di_big_nextents;
+    else
+	nextents = ip->di_nextents;
+    printf(_("size 0x%llx nblocks 0x%llx extsize 0x%x nextents 0x%llx\n"),
 	   (unsigned long long)ip->di_size, (unsigned long long)ip->di_nblocks,
-	   ip->di_extsize, ip->di_nextents);
-    printf(_("naextents 0x%x forkoff %d dmevmask 0x%x dmstate 0x%hx\n"),
-	   ip->di_anextents, (int)ip->di_forkoff, ip->di_dmevmask,
-	   ip->di_dmstate);
+	   ip->di_extsize, (unsigned long long)nextents);
+
+    if (ip->di_flags2 & XFS_DIFLAG2_NREXT64)
+	nextents = ip->di_big_anextents;
+    else
+	nextents = ip->di_anextents;
+    printf(_("naextents 0x%llx forkoff %d dmevmask 0x%x dmstate 0x%hx\n"),
+	   (unsigned long long)nextents, (int)ip->di_forkoff, ip->di_dmevmask, ip->di_dmstate);
     printf(_("flags 0x%x gen 0x%x\n"),
 	   ip->di_flags, ip->di_gen);
     if (ip->di_version == 3) {
@@ -695,7 +744,7 @@ xlog_print_trans_dquot(char **ptr, int len, int *i, int num_ops)
 	ASSERT(be32_to_cpu(head->oh_len) == sizeof(struct xfs_disk_dquot));
 	memmove(&ddq, *ptr, sizeof(struct xfs_disk_dquot));
 	printf(_("DQUOT: magic 0x%hx flags 0%ho\n"),
-	       be16_to_cpu(ddq.d_magic), ddq.d_flags);
+	       be16_to_cpu(ddq.d_magic), ddq.d_type);
 	*ptr += be32_to_cpu(head->oh_len);
     }
     if (head && head->oh_flags & XLOG_CONTINUE_TRANS)
@@ -738,6 +787,16 @@ xlog_print_trans_icreate(
  *
  ******************************************************************************
  */
+
+time64_t
+xlog_extract_dinode_ts(
+	const xfs_log_timestamp_t	its)
+{
+	struct xfs_log_legacy_timestamp	*lits;
+
+	lits = (struct xfs_log_legacy_timestamp *)&its;
+	return (time64_t)lits->t_sec;
+}
 
 void
 xlog_print_lseek(struct xlog *log, int fd, xfs_daddr_t blkno, int whence)
@@ -946,6 +1005,17 @@ xlog_print_record(
 		    }
 		    case XFS_LI_EFD: {
 			skip = xlog_print_trans_efd(&ptr,
+					be32_to_cpu(op_head->oh_len));
+			break;
+		    }
+		    case XFS_LI_ATTRI: {
+			skip = xlog_print_trans_attri(&ptr,
+					be32_to_cpu(op_head->oh_len),
+					&i);
+			break;
+		    }
+		    case XFS_LI_ATTRD: {
+			skip = xlog_print_trans_attrd(&ptr,
 					be32_to_cpu(op_head->oh_len));
 			break;
 		    }

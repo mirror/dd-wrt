@@ -9,12 +9,23 @@
 #include "xfs_multidisk.h"
 #include "libxcmd.h"
 #include "libfrog/fsgeom.h"
-#include "libfrog/topology.h"
 #include "libfrog/convert.h"
+#include "libfrog/crc32cselftest.h"
+#include "libfrog/dahashselftest.h"
+#include "proto.h"
+#include <ini.h>
 
 #define TERABYTES(count, blog)	((uint64_t)(count) << (40 - (blog)))
 #define GIGABYTES(count, blog)	((uint64_t)(count) << (30 - (blog)))
 #define MEGABYTES(count, blog)	((uint64_t)(count) << (20 - (blog)))
+
+/*
+ * Realistically, the log should never be smaller than 64MB.  Studies by the
+ * kernel maintainer in early 2022 have shown a dramatic reduction in long tail
+ * latency of the xlog grant head waitqueue when running a heavy metadata
+ * update workload when the log size is at least 64MB.
+ */
+#define XFS_MIN_REALISTIC_LOG_BLOCKS(blog)	(MEGABYTES(64, (blog)))
 
 /*
  * Use this macro before we have superblock and mount structure to
@@ -45,6 +56,11 @@ enum {
 };
 
 enum {
+	C_OPTFILE = 0,
+	C_MAX_OPTS,
+};
+
+enum {
 	D_AGCOUNT = 0,
 	D_FILE,
 	D_NAME,
@@ -72,6 +88,7 @@ enum {
 	I_ATTR,
 	I_PROJID32BIT,
 	I_SPINODES,
+	I_NREXT64,
 	I_MAX_OPTS,
 };
 
@@ -98,6 +115,12 @@ enum {
 };
 
 enum {
+	P_FILE = 0,
+	P_SLASHES,
+	P_MAX_OPTS,
+};
+
+enum {
 	R_EXTSIZE = 0,
 	R_SIZE,
 	R_DEV,
@@ -119,11 +142,16 @@ enum {
 	M_UUID,
 	M_RMAPBT,
 	M_REFLINK,
+	M_INOBTCNT,
+	M_BIGTIME,
 	M_MAX_OPTS,
 };
 
-/* Just define the max options array size manually right now */
-#define MAX_SUBOPTS	D_MAX_OPTS
+/*
+ * Just define the max options array size manually to the largest
+ * enum right now, leaving room for a NULL terminator at the end
+ */
+#define MAX_SUBOPTS	(D_MAX_OPTS + 1)
 
 #define SUBOPT_NEEDS_VAL	(-1LL)
 #define MAX_CONFLICTS	8
@@ -136,6 +164,12 @@ enum {
  *
  * name MANDATORY
  *   Name is a single char, e.g., for '-d file', name is 'd'.
+ *
+ * ini_section MANDATORY
+ *   This field is required to connect each opt_params (that is to say, each
+ *   option class) to a section in the config file. The only option class this
+ *   is not required for is the config file specification class itself.
+ *   The section name is a string, not longer than MAX_INI_NAME_LEN.
  *
  * subopts MANDATORY
  *   Subopts is a list of strings naming suboptions. In the example above,
@@ -195,6 +229,8 @@ enum {
  */
 struct opt_params {
 	const char	name;
+#define MAX_INI_NAME_LEN	32
+	const char	ini_section[MAX_INI_NAME_LEN];
 	const char	*subopts[MAX_SUBOPTS];
 
 	struct subopt_param {
@@ -222,8 +258,10 @@ static struct opt_params sopts;
 
 static struct opt_params bopts = {
 	.name = 'b',
+	.ini_section = "block",
 	.subopts = {
 		[B_SIZE] = "size",
+		[B_MAX_OPTS] = NULL,
 	},
 	.subopt_params = {
 		{ .index = B_SIZE,
@@ -237,8 +275,32 @@ static struct opt_params bopts = {
 	},
 };
 
+/*
+ * Config file specification. Usage is:
+ *
+ * mkfs.xfs -c options=<name>
+ *
+ * A subopt is used for the filename so in future we can extend the behaviour
+ * of the config file (e.g. specified defaults rather than options) if we ever
+ * have a need to do that sort of thing.
+ */
+static struct opt_params copts = {
+	.name = 'c',
+	.subopts = {
+		[C_OPTFILE] = "options",
+		[C_MAX_OPTS] = NULL,
+	},
+	.subopt_params = {
+		{ .index = C_OPTFILE,
+		  .conflicts = { { NULL, LAST_CONFLICT } },
+		  .defaultval = SUBOPT_NEEDS_VAL,
+		},
+	},
+};
+
 static struct opt_params dopts = {
 	.name = 'd',
+	.ini_section = "data",
 	.subopts = {
 		[D_AGCOUNT] = "agcount",
 		[D_FILE] = "file",
@@ -256,6 +318,7 @@ static struct opt_params dopts = {
 		[D_EXTSZINHERIT] = "extszinherit",
 		[D_COWEXTSIZE] = "cowextsize",
 		[D_DAXINHERIT] = "daxinherit",
+		[D_MAX_OPTS] = NULL,
 	},
 	.subopt_params = {
 		{ .index = D_AGCOUNT,
@@ -349,7 +412,7 @@ static struct opt_params dopts = {
 		},
 		{ .index = D_RTINHERIT,
 		  .conflicts = { { NULL, LAST_CONFLICT } },
-		  .minval = 1,
+		  .minval = 0,
 		  .maxval = 1,
 		  .defaultval = 1,
 		},
@@ -383,6 +446,7 @@ static struct opt_params dopts = {
 
 static struct opt_params iopts = {
 	.name = 'i',
+	.ini_section = "inode",
 	.subopts = {
 		[I_ALIGN] = "align",
 		[I_MAXPCT] = "maxpct",
@@ -391,6 +455,8 @@ static struct opt_params iopts = {
 		[I_ATTR] = "attr",
 		[I_PROJID32BIT] = "projid32bit",
 		[I_SPINODES] = "sparse",
+		[I_NREXT64] = "nrext64",
+		[I_MAX_OPTS] = NULL,
 	},
 	.subopt_params = {
 		{ .index = I_ALIGN,
@@ -439,11 +505,18 @@ static struct opt_params iopts = {
 		  .maxval = 1,
 		  .defaultval = 1,
 		},
+		{ .index = I_NREXT64,
+		  .conflicts = { { NULL, LAST_CONFLICT } },
+		  .minval = 0,
+		  .maxval = 1,
+		  .defaultval = 1,
+		}
 	},
 };
 
 static struct opt_params lopts = {
 	.name = 'l',
+	.ini_section = "log",
 	.subopts = {
 		[L_AGNUM] = "agnum",
 		[L_INTERNAL] = "internal",
@@ -456,6 +529,7 @@ static struct opt_params lopts = {
 		[L_FILE] = "file",
 		[L_NAME] = "name",
 		[L_LAZYSBCNTR] = "lazy-count",
+		[L_MAX_OPTS] = NULL,
 	},
 	.subopt_params = {
 		{ .index = L_AGNUM,
@@ -543,10 +617,12 @@ static struct opt_params lopts = {
 
 static struct opt_params nopts = {
 	.name = 'n',
+	.ini_section = "naming",
 	.subopts = {
 		[N_SIZE] = "size",
 		[N_VERSION] = "version",
 		[N_FTYPE] = "ftype",
+		[N_MAX_OPTS] = NULL,
 	},
 	.subopt_params = {
 		{ .index = N_SIZE,
@@ -572,8 +648,31 @@ static struct opt_params nopts = {
 	},
 };
 
+static struct opt_params popts = {
+	.name = 'p',
+	.ini_section = "proto",
+	.subopts = {
+		[P_FILE] = "file",
+		[P_SLASHES] = "slashes_are_spaces",
+		[P_MAX_OPTS] = NULL,
+	},
+	.subopt_params = {
+		{ .index = P_FILE,
+		  .conflicts = { { NULL, LAST_CONFLICT } },
+		  .defaultval = SUBOPT_NEEDS_VAL,
+		},
+		{ .index = P_SLASHES,
+		  .conflicts = { { NULL, LAST_CONFLICT } },
+		  .minval = 0,
+		  .maxval = 1,
+		  .defaultval = 1,
+		},
+	},
+};
+
 static struct opt_params ropts = {
 	.name = 'r',
+	.ini_section = "realtime",
 	.subopts = {
 		[R_EXTSIZE] = "extsize",
 		[R_SIZE] = "size",
@@ -581,6 +680,7 @@ static struct opt_params ropts = {
 		[R_FILE] = "file",
 		[R_NAME] = "name",
 		[R_NOALIGN] = "noalign",
+		[R_MAX_OPTS] = NULL,
 	},
 	.subopt_params = {
 		{ .index = R_EXTSIZE,
@@ -624,9 +724,11 @@ static struct opt_params ropts = {
 
 static struct opt_params sopts = {
 	.name = 's',
+	.ini_section = "sector",
 	.subopts = {
 		[S_SIZE] = "size",
 		[S_SECTSIZE] = "sectsize",
+		[S_MAX_OPTS] = NULL,
 	},
 	.subopt_params = {
 		{ .index = S_SIZE,
@@ -654,12 +756,16 @@ static struct opt_params sopts = {
 
 static struct opt_params mopts = {
 	.name = 'm',
+	.ini_section = "metadata",
 	.subopts = {
 		[M_CRC] = "crc",
 		[M_FINOBT] = "finobt",
 		[M_UUID] = "uuid",
 		[M_RMAPBT] = "rmapbt",
 		[M_REFLINK] = "reflink",
+		[M_INOBTCNT] = "inobtcount",
+		[M_BIGTIME] = "bigtime",
+		[M_MAX_OPTS] = NULL,
 	},
 	.subopt_params = {
 		{ .index = M_CRC,
@@ -685,6 +791,18 @@ static struct opt_params mopts = {
 		  .defaultval = 1,
 		},
 		{ .index = M_REFLINK,
+		  .conflicts = { { NULL, LAST_CONFLICT } },
+		  .minval = 0,
+		  .maxval = 1,
+		  .defaultval = 1,
+		},
+		{ .index = M_INOBTCNT,
+		  .conflicts = { { NULL, LAST_CONFLICT } },
+		  .minval = 0,
+		  .maxval = 1,
+		  .defaultval = 1,
+		},
+		{ .index = M_BIGTIME,
 		  .conflicts = { { NULL, LAST_CONFLICT } },
 		  .minval = 0,
 		  .maxval = 1,
@@ -740,13 +858,19 @@ struct sb_feat_args {
 	bool	spinodes;		/* XFS_SB_FEAT_INCOMPAT_SPINODES */
 	bool	rmapbt;			/* XFS_SB_FEAT_RO_COMPAT_RMAPBT */
 	bool	reflink;		/* XFS_SB_FEAT_RO_COMPAT_REFLINK */
+	bool	inobtcnt;		/* XFS_SB_FEAT_RO_COMPAT_INOBTCNT */
+	bool	bigtime;		/* XFS_SB_FEAT_INCOMPAT_BIGTIME */
 	bool	nodalign;
 	bool	nortalign;
+	bool	nrext64;
 };
 
 struct cli_params {
 	int	sectorsize;
 	int	blocksize;
+
+	char	*cfgfile;
+	char	*protofile;
 
 	/* parameters that depend on sector/block size being validated. */
 	char	*dsize;
@@ -765,6 +889,8 @@ struct cli_params {
 	int64_t	logagno;
 	int	loginternal;
 	int	lsunit;
+	int	is_supported;
+	int	proto_slashes_are_spaces;
 
 	/* parameters where 0 is not a valid value */
 	int64_t	agcount;
@@ -862,13 +988,15 @@ usage( void )
 {
 	fprintf(stderr, _("Usage: %s\n\
 /* blocksize */		[-b size=num]\n\
-/* metadata */		[-m crc=0|1,finobt=0|1,uuid=xxx,rmapbt=0|1,reflink=0|1]\n\
+/* config file */	[-c options=xxx]\n\
+/* metadata */		[-m crc=0|1,finobt=0|1,uuid=xxx,rmapbt=0|1,reflink=0|1,\n\
+			    inobtcount=0|1,bigtime=0|1]\n\
 /* data subvol */	[-d agcount=n,agsize=n,file,name=xxx,size=num,\n\
 			    (sunit=value,swidth=value|su=num,sw=num|noalign),\n\
 			    sectsize=num\n\
 /* force overwrite */	[-f]\n\
 /* inode size */	[-i perblock=n|size=num,maxpct=n,attr=0|1|2,\n\
-			    projid32bit=0|1,sparse=0|1]\n\
+			    projid32bit=0|1,sparse=0|1,nrext64=0|1]\n\
 /* no discard */	[-K]\n\
 /* log subvol */	[-l agnum=n,internal,size=num,logdev=xxx,version=n\n\
 			    sunit=value|su=num,sectsize=num,lazy-count=0|1]\n\
@@ -944,11 +1072,22 @@ respec(
 
 static void
 unknown(
-	char		opt,
-	char		*s)
+	const char	opt,
+	const char	*s)
 {
 	fprintf(stderr, _("unknown option -%c %s\n"), opt, s);
 	usage();
+}
+
+static void
+invalid_cfgfile_opt(
+	const char	*filename,
+	const char	*section,
+	const char	*name,
+	const char	*value)
+{
+	fprintf(stderr, _("%s: invalid config file option: [%s]: %s=%s\n"),
+		filename, section, name, value);
 }
 
 static void
@@ -1356,23 +1495,32 @@ getnum(
  */
 static char *
 getstr(
-	char			*str,
+	const char		*str,
 	struct opt_params	*opts,
 	int			index)
 {
+	char			*ret;
+
 	check_opt(opts, index, true);
 
 	/* empty strings for string options are not valid */
 	if (!str || *str == '\0')
 		reqval(opts->name, opts->subopts, index);
-	return str;
+
+	ret = strdup(str);
+	if (!ret) {
+		fprintf(stderr, _("Out of memory while saving suboptions.\n"));
+		exit(1);
+	}
+
+	return ret;
 }
 
 static int
 block_opts_parser(
 	struct opt_params	*opts,
 	int			subopt,
-	char			*value,
+	const char		*value,
 	struct cli_params	*cli)
 {
 	switch (subopt) {
@@ -1386,10 +1534,27 @@ block_opts_parser(
 }
 
 static int
+cfgfile_opts_parser(
+	struct opt_params	*opts,
+	int			subopt,
+	const char		*value,
+	struct cli_params	*cli)
+{
+	switch (subopt) {
+	case C_OPTFILE:
+		cli->cfgfile = getstr(value, opts, subopt);
+		break;
+	default:
+		return -EINVAL;
+	}
+	return 0;
+}
+
+static int
 data_opts_parser(
 	struct opt_params	*opts,
 	int			subopt,
-	char			*value,
+	const char		*value,
 	struct cli_params	*cli)
 {
 	switch (subopt) {
@@ -1429,6 +1594,8 @@ data_opts_parser(
 	case D_RTINHERIT:
 		if (getnum(value, opts, subopt))
 			cli->fsx.fsx_xflags |= FS_XFLAG_RTINHERIT;
+		else
+			cli->fsx.fsx_xflags &= ~FS_XFLAG_RTINHERIT;
 		break;
 	case D_PROJINHERIT:
 		cli->fsx.fsx_projid = getnum(value, opts, subopt);
@@ -1436,11 +1603,17 @@ data_opts_parser(
 		break;
 	case D_EXTSZINHERIT:
 		cli->fsx.fsx_extsize = getnum(value, opts, subopt);
-		cli->fsx.fsx_xflags |= FS_XFLAG_EXTSZINHERIT;
+		if (cli->fsx.fsx_extsize)
+			cli->fsx.fsx_xflags |= FS_XFLAG_EXTSZINHERIT;
+		else
+			cli->fsx.fsx_xflags &= ~FS_XFLAG_EXTSZINHERIT;
 		break;
 	case D_COWEXTSIZE:
 		cli->fsx.fsx_cowextsize = getnum(value, opts, subopt);
-		cli->fsx.fsx_xflags |= FS_XFLAG_COWEXTSIZE;
+		if (cli->fsx.fsx_cowextsize)
+			cli->fsx.fsx_xflags |= FS_XFLAG_COWEXTSIZE;
+		else
+			cli->fsx.fsx_xflags &= ~FS_XFLAG_COWEXTSIZE;
 		break;
 	case D_DAXINHERIT:
 		if (getnum(value, opts, subopt))
@@ -1458,7 +1631,7 @@ static int
 inode_opts_parser(
 	struct opt_params	*opts,
 	int			subopt,
-	char			*value,
+	const char		*value,
 	struct cli_params	*cli)
 {
 	switch (subopt) {
@@ -1483,6 +1656,9 @@ inode_opts_parser(
 	case I_SPINODES:
 		cli->sb_feat.spinodes = getnum(value, opts, subopt);
 		break;
+	case I_NREXT64:
+		cli->sb_feat.nrext64 = getnum(value, opts, subopt);
+		break;
 	default:
 		return -EINVAL;
 	}
@@ -1493,7 +1669,7 @@ static int
 log_opts_parser(
 	struct opt_params	*opts,
 	int			subopt,
-	char			*value,
+	const char		*value,
 	struct cli_params	*cli)
 {
 	switch (subopt) {
@@ -1539,7 +1715,7 @@ static int
 meta_opts_parser(
 	struct opt_params	*opts,
 	int			subopt,
-	char			*value,
+	const char		*value,
 	struct cli_params	*cli)
 {
 	switch (subopt) {
@@ -1563,6 +1739,12 @@ meta_opts_parser(
 	case M_REFLINK:
 		cli->sb_feat.reflink = getnum(value, opts, subopt);
 		break;
+	case M_INOBTCNT:
+		cli->sb_feat.inobtcnt = getnum(value, opts, subopt);
+		break;
+	case M_BIGTIME:
+		cli->sb_feat.bigtime = getnum(value, opts, subopt);
+		break;
 	default:
 		return -EINVAL;
 	}
@@ -1573,7 +1755,7 @@ static int
 naming_opts_parser(
 	struct opt_params	*opts,
 	int			subopt,
-	char			*value,
+	const char		*value,
 	struct cli_params	*cli)
 {
 	switch (subopt) {
@@ -1588,6 +1770,7 @@ naming_opts_parser(
 		} else {
 			cli->sb_feat.dir_version = getnum(value, opts, subopt);
 		}
+		free((char *)value);
 		break;
 	case N_FTYPE:
 		cli->sb_feat.dirftype = getnum(value, opts, subopt);
@@ -1599,10 +1782,40 @@ naming_opts_parser(
 }
 
 static int
+proto_opts_parser(
+	struct opt_params	*opts,
+	int			subopt,
+	const char		*value,
+	struct cli_params	*cli)
+{
+	switch (subopt) {
+	case P_SLASHES:
+		cli->proto_slashes_are_spaces = getnum(value, opts, subopt);
+		break;
+	case P_FILE:
+		fallthrough;
+	default:
+		if (cli->protofile) {
+			if (subopt < 0)
+				subopt = P_FILE;
+			respec(opts->name, opts->subopts, subopt);
+		}
+		cli->protofile = strdup(value);
+		if (!cli->protofile) {
+			fprintf(stderr,
+ _("Out of memory while saving protofile option.\n"));
+			exit(1);
+		}
+		break;
+	}
+	return 0;
+}
+
+static int
 rtdev_opts_parser(
 	struct opt_params	*opts,
 	int			subopt,
-	char			*value,
+	const char		*value,
 	struct cli_params	*cli)
 {
 	switch (subopt) {
@@ -1632,7 +1845,7 @@ static int
 sector_opts_parser(
 	struct opt_params	*opts,
 	int			subopt,
-	char			*value,
+	const char		*value,
 	struct cli_params	*cli)
 {
 	switch (subopt) {
@@ -1648,22 +1861,23 @@ sector_opts_parser(
 }
 
 static struct subopts {
-	char		opt;
 	struct opt_params *opts;
 	int		(*parser)(struct opt_params	*opts,
 				  int			subopt,
-				  char			*value,
+				  const char		*value,
 				  struct cli_params	*cli);
 } subopt_tab[] = {
-	{ 'b', &bopts, block_opts_parser },
-	{ 'd', &dopts, data_opts_parser },
-	{ 'i', &iopts, inode_opts_parser },
-	{ 'l', &lopts, log_opts_parser },
-	{ 'm', &mopts, meta_opts_parser },
-	{ 'n', &nopts, naming_opts_parser },
-	{ 'r', &ropts, rtdev_opts_parser },
-	{ 's', &sopts, sector_opts_parser },
-	{ '\0', NULL, NULL },
+	{ &bopts, block_opts_parser },
+	{ &copts, cfgfile_opts_parser },
+	{ &dopts, data_opts_parser },
+	{ &iopts, inode_opts_parser },
+	{ &lopts, log_opts_parser },
+	{ &mopts, meta_opts_parser },
+	{ &nopts, naming_opts_parser },
+	{ &popts, proto_opts_parser },
+	{ &ropts, rtdev_opts_parser },
+	{ &sopts, sector_opts_parser },
+	{ NULL, NULL },
 };
 
 static void
@@ -1677,7 +1891,7 @@ parse_subopts(
 	int		ret = 0;
 
 	while (sop->opts) {
-		if (sop->opt == opt)
+		if (sop->opts->name == opt)
 			break;
 		sop++;
 	}
@@ -1698,6 +1912,45 @@ parse_subopts(
 		if (ret)
 			unknown(opt, value);
 	}
+}
+
+static bool
+parse_cfgopt(
+	const char	*section,
+	const char	*name,
+	const char	*value,
+	struct cli_params *cli)
+{
+	struct subopts	*sop = &subopt_tab[0];
+	char		**subopts;
+	int		ret = 0;
+	int		i;
+
+	while (sop->opts) {
+		if (sop->opts->ini_section[0] != '\0' &&
+		    strcasecmp(section, sop->opts->ini_section) == 0)
+			break;
+		sop++;
+	}
+
+	/* Config files with unknown sections get caught here. */
+	if (!sop->opts)
+		goto invalid_opt;
+
+	subopts = (char **)sop->opts->subopts;
+	for (i = 0; i < MAX_SUBOPTS; i++) {
+		if (!subopts[i])
+			break;
+		if (strcasecmp(name, subopts[i]) == 0) {
+			ret = (sop->parser)(sop->opts, i, value, cli);
+			if (ret)
+				goto invalid_opt;
+			return true;
+		}
+	}
+invalid_opt:
+	invalid_cfgfile_opt(cli->cfgfile, section, name, value);
+	return false;
 }
 
 static void
@@ -1751,8 +2004,14 @@ validate_sectorsize(
 		if (!ft->lsectorsize)
 			ft->lsectorsize = dft->sectorsize;
 
-		/* Older kernels may not have physical/logical distinction */
-		if (!ft->psectorsize)
+		/*
+		 * Older kernels may not have physical/logical distinction.
+		 *
+		 * Some architectures have a page size > XFS_MAX_SECTORSIZE.
+		 * In that case, a ramdisk or persistent memory device may
+		 * advertise a physical sector size that is too big to use.
+		 */
+		if (!ft->psectorsize || ft->psectorsize > XFS_MAX_SECTORSIZE)
 			ft->psectorsize = ft->lsectorsize;
 
 		cfg->sectorsize = ft->psectorsize;
@@ -1891,6 +2150,17 @@ validate_sb_features(
 	struct mkfs_params	*cfg,
 	struct cli_params	*cli)
 {
+	if (cli->sb_feat.nci) {
+		/*
+		 * The ascii-ci feature is deprecated in the upstream Linux
+		 * kernel.  In September 2025 it will be turned off by default
+		 * in the kernel and in September 2030 support will be removed
+		 * entirely.
+		 */
+		fprintf(stdout,
+_("ascii-ci filesystems are deprecated and will not be supported by future versions.\n"));
+	}
+
 	/*
 	 * Now we have blocks and sector sizes set up, check parameters that are
 	 * no longer optional for CRC enabled filesystems.  Catch them up front
@@ -1951,6 +2221,15 @@ _("Directory ftype field always enabled on CRC enabled filesystems\n"));
 
 	} else {	/* !crcs_enabled */
 		/*
+		 * The V4 filesystem format is deprecated in the upstream Linux
+		 * kernel.  In September 2025 it will be turned off by default
+		 * in the kernel and in September 2030 support will be removed
+		 * entirely.
+		 */
+		fprintf(stdout,
+_("V4 filesystems are deprecated and will not be supported by future versions.\n"));
+
+		/*
 		 * The kernel doesn't support crc=0,finobt=1 filesystems.
 		 * If crcs are not enabled and the user has not explicitly
 		 * turned finobt on, then silently turn it off to avoid an
@@ -1973,7 +2252,7 @@ _("sparse inodes not supported without CRC support\n"));
 		}
 		cli->sb_feat.spinodes = false;
 
-		if (cli->sb_feat.rmapbt) {
+		if (cli->sb_feat.rmapbt && cli_opt_set(&mopts, M_RMAPBT)) {
 			fprintf(stderr,
 _("rmapbt not supported without CRC support\n"));
 			usage();
@@ -1986,6 +2265,53 @@ _("reflink not supported without CRC support\n"));
 			usage();
 		}
 		cli->sb_feat.reflink = false;
+
+		if (cli->sb_feat.inobtcnt && cli_opt_set(&mopts, M_INOBTCNT)) {
+			fprintf(stderr,
+_("inode btree counters not supported without CRC support\n"));
+			usage();
+		}
+		cli->sb_feat.inobtcnt = false;
+
+		if (cli->sb_feat.bigtime && cli_opt_set(&mopts, M_BIGTIME)) {
+			fprintf(stderr,
+_("timestamps later than 2038 not supported without CRC support\n"));
+			usage();
+		}
+		cli->sb_feat.bigtime = false;
+
+		if (cli->sb_feat.nrext64 &&
+		    cli_opt_set(&iopts, I_NREXT64)) {
+			fprintf(stderr,
+_("64 bit extent count not supported without CRC support\n"));
+			usage();
+		}
+		cli->sb_feat.nrext64 = false;
+	}
+
+	if (!cli->sb_feat.finobt) {
+		if (cli->sb_feat.inobtcnt && cli_opt_set(&mopts, M_INOBTCNT)) {
+			fprintf(stderr,
+_("inode btree counters not supported without finobt support\n"));
+			usage();
+		}
+		cli->sb_feat.inobtcnt = false;
+	}
+
+	if (cli->xi->rtname) {
+		if (cli->sb_feat.reflink && cli_opt_set(&mopts, M_REFLINK)) {
+			fprintf(stderr,
+_("reflink not supported with realtime devices\n"));
+			usage();
+		}
+		cli->sb_feat.reflink = false;
+
+		if (cli->sb_feat.rmapbt && cli_opt_set(&mopts, M_RMAPBT)) {
+			fprintf(stderr,
+_("rmapbt not supported with realtime devices\n"));
+			usage();
+		}
+		cli->sb_feat.rmapbt = false;
 	}
 
 	if ((cli->fsx.fsx_xflags & FS_XFLAG_COWEXTSIZE) &&
@@ -1993,20 +2319,6 @@ _("reflink not supported without CRC support\n"));
 		fprintf(stderr,
 _("cowextsize not supported without reflink support\n"));
 		usage();
-	}
-
-	if (cli->sb_feat.reflink && cli->xi->rtname) {
-		fprintf(stderr,
-_("reflink not supported with realtime devices\n"));
-		usage();
-		cli->sb_feat.reflink = false;
-	}
-
-	if (cli->sb_feat.rmapbt && cli->xi->rtname) {
-		fprintf(stderr,
-_("rmapbt not supported with realtime devices\n"));
-		usage();
-		cli->sb_feat.rmapbt = false;
 	}
 
 	/*
@@ -2201,15 +2513,16 @@ validate_extsize_hint(
 		fprintf(stderr,
 _("illegal extent size hint %lld, must be less than %u.\n"),
 				(long long)cli->fsx.fsx_extsize,
-				min(MAXEXTLEN, mp->m_sb.sb_agblocks / 2));
+				min(XFS_MAX_BMBT_EXTLEN, mp->m_sb.sb_agblocks / 2));
 		usage();
 	}
 
 	/*
-	 * Now we do it again with a realtime file so that we know the hint and
-	 * flag that get passed on to realtime files will be correct.
+	 * If the value is to be passed on to realtime files, revalidate with
+	 * a realtime file so that we know the hint and flag that get passed on
+	 * to realtime files will be correct.
 	 */
-	if (mp->m_sb.sb_rextsize == 0)
+	if (!(cli->fsx.fsx_xflags & FS_XFLAG_RTINHERIT))
 		return;
 
 	flags = XFS_DIFLAG_REALTIME;
@@ -2223,7 +2536,7 @@ _("illegal extent size hint %lld, must be less than %u.\n"),
 		fprintf(stderr,
 _("illegal extent size hint %lld, must be less than %u and a multiple of %u.\n"),
 				(long long)cli->fsx.fsx_extsize,
-				min(MAXEXTLEN, mp->m_sb.sb_agblocks / 2),
+				min(XFS_MAX_BMBT_EXTLEN, mp->m_sb.sb_agblocks / 2),
 				mp->m_sb.sb_rextsize);
 		usage();
 	}
@@ -2252,7 +2565,69 @@ validate_cowextsize_hint(
 		fprintf(stderr,
 _("illegal CoW extent size hint %lld, must be less than %u.\n"),
 				(long long)cli->fsx.fsx_cowextsize,
-				min(MAXEXTLEN, mp->m_sb.sb_agblocks / 2));
+				min(XFS_MAX_BMBT_EXTLEN, mp->m_sb.sb_agblocks / 2));
+		usage();
+	}
+}
+
+/* Complain if this filesystem is not a supported configuration. */
+static void
+validate_supported(
+	struct xfs_mount	*mp,
+	struct cli_params	*cli)
+{
+	/* Undocumented option to enable unsupported tiny filesystems. */
+	if (!cli->is_supported) {
+		printf(
+ _("Filesystems formatted with --unsupported are not supported!!\n"));
+		return;
+	}
+
+	/*
+	 * fstests has a large number of tests that create tiny filesystems to
+	 * perform specific regression and resource depletion tests in a
+	 * controlled environment.  Avoid breaking fstests by allowing
+	 * unsupported configurations if TEST_DIR, TEST_DEV, and QA_CHECK_FS
+	 * are all set.
+	 */
+	if (getenv("TEST_DIR") && getenv("TEST_DEV") && getenv("QA_CHECK_FS"))
+		return;
+
+	/*
+	 * We don't support filesystems smaller than 300MB anymore.  Tiny
+	 * filesystems have never been XFS' design target.  This limit has been
+	 * carefully calculated to prevent formatting with a log smaller than
+	 * the "realistic" size.
+	 *
+	 * If the realistic log size is 64MB, there are four AGs, and the log
+	 * AG should be at least 1/8 free after formatting, this gives us:
+	 *
+	 * 64MB * (8 / 7) * 4 = 293MB
+	 */
+	if (mp->m_sb.sb_dblocks < MEGABYTES(300, mp->m_sb.sb_blocklog)) {
+		fprintf(stderr,
+ _("Filesystem must be larger than 300MB.\n"));
+		usage();
+	}
+
+	/*
+	 * For best performance, we don't allow unrealistically small logs.
+	 * See the comment for XFS_MIN_REALISTIC_LOG_BLOCKS.
+	 */
+	if (mp->m_sb.sb_logblocks <
+			XFS_MIN_REALISTIC_LOG_BLOCKS(mp->m_sb.sb_blocklog)) {
+		fprintf(stderr,
+ _("Log size must be at least 64MB.\n"));
+		usage();
+	}
+
+	/*
+	 * Filesystems should not have fewer than two AGs, because we need to
+	 * have redundant superblocks.
+	 */
+	if (mp->m_sb.sb_agcount < 2) {
+		fprintf(stderr,
+ _("Filesystem must have at least 2 superblocks for redundancy!\n"));
 		usage();
 	}
 }
@@ -2303,28 +2678,22 @@ _("both data su and data sw options must be specified\n"));
 			usage();
 		}
 
-		if (dsu % cfg->sectorsize) {
-			fprintf(stderr,
-_("data su must be a multiple of the sector size (%d)\n"), cfg->sectorsize);
-			usage();
-		}
-
-		dsunit  = (int)BTOBBT(dsu);
-		big_dswidth = (long long int)dsunit * dsw;
-		if (big_dswidth > INT_MAX) {
+		big_dswidth = (long long int)dsu * dsw;
+		if (BTOBBT(big_dswidth) > INT_MAX) {
 			fprintf(stderr,
 _("data stripe width (%lld) is too large of a multiple of the data stripe unit (%d)\n"),
-				big_dswidth, dsunit);
+				big_dswidth, dsu);
 			usage();
 		}
-		dswidth = big_dswidth;
-	}
 
-	if ((dsunit && !dswidth) || (!dsunit && dswidth) ||
-	    (dsunit && (dswidth % dsunit != 0))) {
-		fprintf(stderr,
-_("data stripe width (%d) must be a multiple of the data stripe unit (%d)\n"),
-			dswidth, dsunit);
+		if (!libxfs_validate_stripe_geometry(NULL, dsu, big_dswidth,
+						     cfg->sectorsize, false))
+			usage();
+
+		dsunit = BTOBBT(dsu);
+		dswidth = BTOBBT(big_dswidth);
+	} else if (!libxfs_validate_stripe_geometry(NULL, BBTOB(dsunit),
+			BBTOB(dswidth), cfg->sectorsize, false)) {
 		usage();
 	}
 
@@ -2342,11 +2711,26 @@ _("data stripe width (%d) must be a multiple of the data stripe unit (%d)\n"),
 
 	/* if no stripe config set, use the device default */
 	if (!dsunit) {
-		/* Ignore nonsense from device.  XXX add more validation */
-		if (ft->dsunit && ft->dswidth == 0) {
+		/* Ignore nonsense from device report. */
+		if (!libxfs_validate_stripe_geometry(NULL, BBTOB(ft->dsunit),
+				BBTOB(ft->dswidth), 0, true)) {
 			fprintf(stderr,
-_("%s: Volume reports stripe unit of %d bytes and stripe width of 0, ignoring.\n"),
-				progname, BBTOB(ft->dsunit));
+_("%s: Volume reports invalid stripe unit (%d) and stripe width (%d), ignoring.\n"),
+				progname, BBTOB(ft->dsunit), BBTOB(ft->dswidth));
+			ft->dsunit = 0;
+			ft->dswidth = 0;
+		} else if (cfg->dblocks < GIGABYTES(1, cfg->blocklog)) {
+			/*
+			 * Don't use automatic stripe detection if the device
+			 * size is less than 1GB because the performance gains
+			 * on such a small system are not worth the risk that
+			 * we'll end up with an undersized log.
+			 */
+			if (ft->dsunit || ft->dswidth)
+				fprintf(stderr,
+_("%s: small data volume, ignoring data volume stripe unit %d and stripe width %d\n"),
+						progname, ft->dsunit,
+						ft->dswidth);
 			ft->dsunit = 0;
 			ft->dswidth = 0;
 		} else {
@@ -2530,10 +2914,10 @@ _("size %s specified for data subvolume is too large, maximum is %lld blocks\n")
 		cfg->dblocks = DTOBT(xi->dsize, cfg->blocklog);
 	}
 
-	if (cfg->dblocks < XFS_MIN_DATA_BLOCKS) {
+	if (cfg->dblocks < XFS_MIN_DATA_BLOCKS(cfg)) {
 		fprintf(stderr,
-_("size %lld of data subvolume is too small, minimum %d blocks\n"),
-			(long long)cfg->dblocks, XFS_MIN_DATA_BLOCKS);
+_("size %lld of data subvolume is too small, minimum %lld blocks\n"),
+			(long long)cfg->dblocks, XFS_MIN_DATA_BLOCKS(cfg));
 		usage();
 	}
 
@@ -2794,11 +3178,12 @@ _("agsize rounded to %lld, sunit = %d\n"),
 
 		if (cli_opt_set(&dopts, D_AGCOUNT) ||
 		    cli_opt_set(&dopts, D_AGSIZE)) {
-			fprintf(stderr, _(
+			printf(_(
 "Warning: AG size is a multiple of stripe width.  This can cause performance\n\
 problems by aligning all AGs on the same disk.  To avoid this, run mkfs with\n\
 an AG size that is one stripe unit smaller or larger, for example %llu.\n"),
 				(unsigned long long)cfg->agsize - dsunit);
+			fflush(stdout);
 			goto validate;
 		}
 
@@ -2951,6 +3336,10 @@ sb_set_features(
 		sbp->sb_features_ro_compat |= XFS_SB_FEAT_RO_COMPAT_RMAPBT;
 	if (fp->reflink)
 		sbp->sb_features_ro_compat |= XFS_SB_FEAT_RO_COMPAT_REFLINK;
+	if (fp->inobtcnt)
+		sbp->sb_features_ro_compat |= XFS_SB_FEAT_RO_COMPAT_INOBTCNT;
+	if (fp->bigtime)
+		sbp->sb_features_incompat |= XFS_SB_FEAT_INCOMPAT_BIGTIME;
 
 	/*
 	 * Sparse inode chunk support has two main inode alignment requirements.
@@ -2967,6 +3356,8 @@ sb_set_features(
 		sbp->sb_features_incompat |= XFS_SB_FEAT_INCOMPAT_SPINODES;
 	}
 
+	if (fp->nrext64)
+		sbp->sb_features_incompat |= XFS_SB_FEAT_INCOMPAT_NREXT64;
 }
 
 /*
@@ -2975,9 +3366,10 @@ sb_set_features(
 static void
 align_log_size(
 	struct mkfs_params	*cfg,
-	int			sunit)
+	int			sunit,
+	int			max_logblocks)
 {
-	uint64_t	tmp_logblocks;
+	uint64_t		tmp_logblocks;
 
 	/* nothing to do if it's already aligned. */
 	if ((cfg->logblocks % sunit) == 0)
@@ -2994,7 +3386,8 @@ _("log size %lld is not a multiple of the log stripe unit %d\n"),
 
 	/* If the log is too large, round down instead of round up */
 	if ((tmp_logblocks > XFS_MAX_LOG_BLOCKS) ||
-	    ((tmp_logblocks << cfg->blocklog) > XFS_MAX_LOG_BYTES)) {
+	    ((tmp_logblocks << cfg->blocklog) > XFS_MAX_LOG_BYTES) ||
+	    tmp_logblocks > max_logblocks) {
 		tmp_logblocks = (cfg->logblocks / sunit) * sunit;
 	}
 	cfg->logblocks = tmp_logblocks;
@@ -3008,17 +3401,16 @@ static void
 align_internal_log(
 	struct mkfs_params	*cfg,
 	struct xfs_mount	*mp,
-	int			sunit)
+	int			sunit,
+	int			max_logblocks)
 {
-	uint64_t		logend;
-
 	/* round up log start if necessary */
 	if ((cfg->logstart % sunit) != 0)
 		cfg->logstart = ((cfg->logstart + (sunit - 1)) / sunit) * sunit;
 
 	/* If our log start overlaps the next AG's metadata, fail. */
-	if (XFS_FSB_TO_AGBNO(mp, cfg->logstart) <= XFS_AGFL_BLOCK(mp)) {
-			fprintf(stderr,
+	if (!libxfs_verify_fsbno(mp, cfg->logstart)) {
+		fprintf(stderr,
 _("Due to stripe alignment, the internal log start (%lld) cannot be aligned\n"
   "within an allocation group.\n"),
 			(long long) cfg->logstart);
@@ -3026,11 +3418,19 @@ _("Due to stripe alignment, the internal log start (%lld) cannot be aligned\n"
 	}
 
 	/* round up/down the log size now */
-	align_log_size(cfg, sunit);
+	align_log_size(cfg, sunit, max_logblocks);
+
+	/*
+	 * If the end of the log has been rounded past the end of the AG,
+	 * reduce logblocks by a stripe unit to try to get it back under EOAG.
+	 */
+	if (!libxfs_verify_fsbext(mp, cfg->logstart, cfg->logblocks) &&
+	    cfg->logblocks > sunit) {
+		cfg->logblocks -= sunit;
+	}
 
 	/* check the aligned log still starts and ends in the same AG. */
-	logend = cfg->logstart + cfg->logblocks - 1;
-	if (XFS_FSB_TO_AGNO(mp, cfg->logstart) != XFS_FSB_TO_AGNO(mp, logend)) {
+	if (!libxfs_verify_fsbext(mp, cfg->logstart, cfg->logblocks)) {
 		fprintf(stderr,
 _("Due to stripe alignment, the internal log size (%lld) is too large.\n"
   "Must fit within an allocation group.\n"),
@@ -3063,13 +3463,57 @@ validate_log_size(uint64_t logblocks, int blocklog, int min_logblocks)
 }
 
 static void
+adjust_ag0_internal_logblocks(
+	struct mkfs_params	*cfg,
+	struct xfs_mount	*mp,
+	int			min_logblocks,
+	int			*max_logblocks)
+{
+	int			backoff = 0;
+	int			ichunk_blocks;
+
+	/*
+	 * mkfs will trip over the write verifiers if the log is allocated in
+	 * AG 0 and consumes enough space that we cannot allocate a non-sparse
+	 * inode chunk for the root directory.  The inode allocator requires
+	 * that the AG have enough free space for the chunk itself plus enough
+	 * to fix up the freelist with aligned blocks if we need to fill the
+	 * allocation from the AGFL.
+	 */
+	ichunk_blocks = XFS_INODES_PER_CHUNK * cfg->inodesize >> cfg->blocklog;
+	backoff = ichunk_blocks * 4;
+
+	/*
+	 * We try to align inode allocations to the data device stripe unit,
+	 * so ensure there's enough space to perform an aligned allocation.
+	 * The inode geometry structure isn't set up yet, so compute this by
+	 * hand.
+	 */
+	backoff = max(backoff, cfg->dsunit * 2);
+
+	*max_logblocks -= backoff;
+
+	/* If the specified log size is too big, complain. */
+	if (cli_opt_set(&lopts, L_SIZE) && cfg->logblocks > *max_logblocks) {
+		fprintf(stderr,
+_("internal log size %lld too large, must be less than %d\n"),
+			(long long)cfg->logblocks,
+			*max_logblocks);
+		usage();
+	}
+
+	cfg->logblocks = min(cfg->logblocks, *max_logblocks);
+}
+
+static void
 calculate_log_size(
 	struct mkfs_params	*cfg,
 	struct cli_params	*cli,
 	struct xfs_mount	*mp)
 {
 	struct xfs_sb		*sbp = &mp->m_sb;
-	int			min_logblocks;
+	int			min_logblocks;	/* absolute minimum */
+	int			max_logblocks;	/* absolute max for this AG */
 	struct xfs_mount	mount;
 
 	/* we need a temporary mount to calculate the minimum log size. */
@@ -3095,7 +3539,7 @@ calculate_log_size(
 	if (!cfg->loginternal) {
 		if (min_logblocks > cfg->logblocks) {
 			fprintf(stderr,
-_("external log device %lld too small, must be at least %lld blocks\n"),
+_("external log device size %lld blocks too small, must be at least %lld blocks\n"),
 				(long long)cfg->logblocks,
 				(long long)min_logblocks);
 			usage();
@@ -3103,52 +3547,48 @@ _("external log device %lld too small, must be at least %lld blocks\n"),
 		cfg->logstart = 0;
 		cfg->logagno = 0;
 		if (cfg->lsunit)
-			align_log_size(cfg, cfg->lsunit);
+			align_log_size(cfg, cfg->lsunit, XFS_MAX_LOG_BLOCKS);
 
 		validate_log_size(cfg->logblocks, cfg->blocklog, min_logblocks);
 		return;
 	}
 
+	/*
+	 * Make sure the log fits wholly within an AG
+	 *
+	 * XXX: If agf->freeblks ends up as 0 because the log uses all
+	 * the free space, it causes the kernel all sorts of problems
+	 * with per-ag reservations. Right now just back it off one
+	 * block, but there's a whole can of worms here that needs to be
+	 * opened to decide what is the valid maximum size of a log in
+	 * an AG.
+	 */
+	max_logblocks = libxfs_alloc_ag_max_usable(mp) - 1;
+	if (max_logblocks < min_logblocks) {
+		fprintf(stderr,
+_("max log size %d smaller than min log size %d, filesystem is too small\n"),
+				max_logblocks,
+				min_logblocks);
+		usage();
+	}
+
 	/* internal log - if no size specified, calculate automatically */
 	if (!cfg->logblocks) {
-		if (cfg->dblocks < GIGABYTES(1, cfg->blocklog)) {
-			/* tiny filesystems get minimum sized logs. */
+		/* Use a 2048:1 fs:log ratio for most filesystems */
+		cfg->logblocks = (cfg->dblocks << cfg->blocklog) / 2048;
+		cfg->logblocks = cfg->logblocks >> cfg->blocklog;
+
+		/* But don't go below a reasonable size */
+		cfg->logblocks = max(cfg->logblocks,
+				XFS_MIN_REALISTIC_LOG_BLOCKS(cfg->blocklog));
+
+		/* And for a tiny filesystem, use the absolute minimum size */
+		if (cfg->dblocks < MEGABYTES(300, cfg->blocklog))
 			cfg->logblocks = min_logblocks;
-		} else if (cfg->dblocks < GIGABYTES(16, cfg->blocklog)) {
 
-			/*
-			 * For small filesystems, we want to use the
-			 * XFS_MIN_LOG_BYTES for filesystems smaller than 16G if
-			 * at all possible, ramping up to 128MB at 256GB.
-			 */
-			cfg->logblocks = min(XFS_MIN_LOG_BYTES >> cfg->blocklog,
-					min_logblocks * XFS_DFL_LOG_FACTOR);
-		} else {
-			/*
-			 * With a 2GB max log size, default to maximum size
-			 * at 4TB. This keeps the same ratio from the older
-			 * max log size of 128M at 256GB fs size. IOWs,
-			 * the ratio of fs size to log size is 2048:1.
-			 */
-			cfg->logblocks = (cfg->dblocks << cfg->blocklog) / 2048;
-			cfg->logblocks = cfg->logblocks >> cfg->blocklog;
-		}
-
-		/* Ensure the chosen size meets minimum log size requirements */
+		/* Ensure the chosen size fits within log size requirements */
 		cfg->logblocks = max(min_logblocks, cfg->logblocks);
-
-		/*
-		 * Make sure the log fits wholly within an AG
-		 *
-		 * XXX: If agf->freeblks ends up as 0 because the log uses all
-		 * the free space, it causes the kernel all sorts of problems
-		 * with per-ag reservations. Right now just back it off one
-		 * block, but there's a whole can of worms here that needs to be
-		 * opened to decide what is the valid maximum size of a log in
-		 * an AG.
-		 */
-		cfg->logblocks = min(cfg->logblocks,
-				     libxfs_alloc_ag_max_usable(mp) - 1);
+		cfg->logblocks = min(cfg->logblocks, max_logblocks);
 
 		/* and now clamp the size to the maximum supported size */
 		cfg->logblocks = min(cfg->logblocks, XFS_MAX_LOG_BLOCKS);
@@ -3156,6 +3596,13 @@ _("external log device %lld too small, must be at least %lld blocks\n"),
 			cfg->logblocks = XFS_MAX_LOG_BYTES >> cfg->blocklog;
 
 		validate_log_size(cfg->logblocks, cfg->blocklog, min_logblocks);
+	} else if (cfg->logblocks > max_logblocks) {
+		/* check specified log size */
+		fprintf(stderr,
+_("internal log size %lld too large, must be less than %d\n"),
+			(long long)cfg->logblocks,
+			max_logblocks);
+		usage();
 	}
 
 	if (cfg->logblocks > sbp->sb_agblocks - libxfs_prealloc_blocks(mp)) {
@@ -3177,6 +3624,10 @@ _("log ag number %lld too large, must be less than %lld\n"),
 	} else
 		cfg->logagno = (xfs_agnumber_t)(sbp->sb_agcount / 2);
 
+	if (cfg->logagno == 0)
+		adjust_ag0_internal_logblocks(cfg, mp, min_logblocks,
+				&max_logblocks);
+
 	cfg->logstart = XFS_AGB_TO_FSB(mp, cfg->logagno,
 				       libxfs_prealloc_blocks(mp));
 
@@ -3184,9 +3635,9 @@ _("log ag number %lld too large, must be less than %lld\n"),
 	 * Align the logstart at stripe unit boundary.
 	 */
 	if (cfg->lsunit) {
-		align_internal_log(cfg, mp, cfg->lsunit);
+		align_internal_log(cfg, mp, cfg->lsunit, max_logblocks);
 	} else if (cfg->dsunit) {
-		align_internal_log(cfg, mp, cfg->dsunit);
+		align_internal_log(cfg, mp, cfg->dsunit, max_logblocks);
 	}
 	validate_log_size(cfg->logblocks, cfg->blocklog, min_logblocks);
 }
@@ -3213,6 +3664,7 @@ start_superblock_setup(
 	sbp->sb_agblocks = (xfs_agblock_t)cfg->agsize;
 	sbp->sb_agblklog = (uint8_t)log2_roundup(cfg->agsize);
 	sbp->sb_agcount = (xfs_agnumber_t)cfg->agcount;
+	sbp->sb_dblocks = (xfs_rfsblock_t)cfg->dblocks;
 
 	sbp->sb_inodesize = (uint16_t)cfg->inodesize;
 	sbp->sb_inodelog = (uint8_t)cfg->inodelog;
@@ -3235,11 +3687,14 @@ start_superblock_setup(
 	} else
 		sbp->sb_logsunit = 0;
 
+	/* log reservation calculations depend on rt geometry */
+	sbp->sb_rblocks = cfg->rtblocks;
+	sbp->sb_rextsize = cfg->rtextblocks;
+	mp->m_features |= libxfs_sb_version_to_features(sbp);
 }
 
 static void
 initialise_mount(
-	struct mkfs_params	*cfg,
 	struct xfs_mount	*mp,
 	struct xfs_sb		*sbp)
 {
@@ -3272,14 +3727,12 @@ finish_superblock_setup(
 	}
 
 	sbp->sb_dblocks = cfg->dblocks;
-	sbp->sb_rblocks = cfg->rtblocks;
 	sbp->sb_rextents = cfg->rtextents;
 	platform_uuid_copy(&sbp->sb_uuid, &cfg->uuid);
 	/* Only in memory; libxfs expects this as if read from disk */
 	platform_uuid_copy(&sbp->sb_meta_uuid, &cfg->uuid);
 	sbp->sb_logstart = cfg->logstart;
 	sbp->sb_rootino = sbp->sb_rbmino = sbp->sb_rsumino = NULLFSINO;
-	sbp->sb_rextsize = cfg->rtextblocks;
 	sbp->sb_agcount = (xfs_agnumber_t)cfg->agcount;
 	sbp->sb_rbmblocks = cfg->rtbmblocks;
 	sbp->sb_logblocks = (xfs_extlen_t)cfg->logblocks;
@@ -3297,6 +3750,7 @@ finish_superblock_setup(
 	sbp->sb_qflags = 0;
 	sbp->sb_unit = cfg->dsunit;
 	sbp->sb_width = cfg->dswidth;
+	mp->m_features |= libxfs_sb_version_to_features(sbp);
 
 }
 
@@ -3316,8 +3770,8 @@ alloc_write_buf(
 				error);
 		exit(1);
 	}
-	bp->b_bn = daddr;
-	bp->b_maps[0].bm_bn = daddr;
+
+	xfs_buf_set_daddr(bp, daddr);
 	return bp;
 }
 
@@ -3407,7 +3861,7 @@ prepare_devices(
 			 lsunit, XLOG_FMT, XLOG_INIT_CYCLE, false);
 
 	/* finally, check we can write the last block in the realtime area */
-	if (mp->m_rtdev_targp->dev && cfg->rtblocks > 0) {
+	if (mp->m_rtdev_targp->bt_bdev && cfg->rtblocks > 0) {
 		buf = alloc_write_buf(mp->m_rtdev_targp,
 				XFS_FSB_TO_BB(mp, cfg->rtblocks - 1LL),
 				BTOBB(cfg->blocksize));
@@ -3418,16 +3872,10 @@ prepare_devices(
 
 }
 
-/*
- * XXX: this code is mostly common with the kernel growfs code.
- * These initialisations should be pulled into libxfs to keep the
- * kernel/userspace header initialisation code the same.
- */
 static void
 initialise_ag_headers(
 	struct mkfs_params	*cfg,
 	struct xfs_mount	*mp,
-	struct xfs_sb		*sbp,
 	xfs_agnumber_t		agno,
 	int			*worst_freelist,
 	struct list_head	*buffer_list)
@@ -3566,13 +4014,71 @@ check_root_ino(
 	}
 }
 
+/*
+ * INI file format option parser.
+ *
+ * This is called by the file parser library for every valid option it finds in
+ * the config file. The option is already broken down into a
+ * {section,name,value} tuple, so all we need to do is feed it to the correct
+ * suboption parser function and translate the return value.
+ *
+ * Returns 0 on failure, 1 for success.
+ */
+static int
+cfgfile_parse_ini(
+	void			*user,
+	const char		*section,
+	const char		*name,
+	const char		*value)
+{
+	struct cli_params	*cli = user;
+
+	if (!parse_cfgopt(section, name, value, cli))
+		return 0;
+	return 1;
+}
+
+static void
+cfgfile_parse(
+	struct cli_params	*cli)
+{
+	int			error;
+
+	if (!cli->cfgfile)
+		return;
+
+	error = ini_parse(cli->cfgfile, cfgfile_parse_ini, cli);
+	if (error) {
+		if (error > 0) {
+			fprintf(stderr,
+		_("%s: Unrecognised input on line %d. Aborting.\n"),
+				cli->cfgfile, error);
+		} else if (error == -1) {
+			fprintf(stderr,
+		_("Unable to open config file %s. Aborting.\n"),
+				cli->cfgfile);
+		} else if (error == -2) {
+			fprintf(stderr,
+		_("Memory allocation failure parsing %s. Aborting.\n"),
+				cli->cfgfile);
+		} else {
+			fprintf(stderr,
+		_("Unknown error %d opening config file %s. Aborting.\n"),
+				error, cli->cfgfile);
+		}
+		exit(1);
+	}
+	printf(_("Parameters parsed from config file %s successfully\n"),
+		cli->cfgfile);
+}
+
 int
 main(
 	int			argc,
 	char			**argv)
 {
 	xfs_agnumber_t		agno;
-	xfs_buf_t		*buf;
+	struct xfs_buf		*buf;
 	int			c;
 	char			*dfile = NULL;
 	char			*logfile = NULL;
@@ -3581,7 +4087,6 @@ main(
 	int			discard = 1;
 	int			force_overwrite = 0;
 	int			quiet = 0;
-	char			*protofile = NULL;
 	char			*protostring = NULL;
 	int			worst_freelist = 0;
 
@@ -3597,8 +4102,20 @@ main(
 	struct cli_params	cli = {
 		.xi = &xi,
 		.loginternal = 1,
+		.is_supported	= 1,
 	};
 	struct mkfs_params	cfg = {};
+
+	struct option		long_options[] = {
+	{
+		.name		= "unsupported",
+		.has_arg	= no_argument,
+		.flag		= &cli.is_supported,
+		.val		= 0,
+	},
+	{NULL, 0, NULL, 0 },
+	};
+	int			option_index = 0;
 
 	/* build time defaults */
 	struct mkfs_default_params	dft = {
@@ -3617,11 +4134,18 @@ main(
 			.dirftype = true,
 			.finobt = true,
 			.spinodes = true,
-			.rmapbt = false,
+			.rmapbt = true,
 			.reflink = true,
+			.inobtcnt = true,
 			.parent_pointers = false,
 			.nodalign = false,
 			.nortalign = false,
+			.bigtime = true,
+			.nrext64 = true,
+			/*
+			 * When we decide to enable a new feature by default,
+			 * please remember to update the mkfs conf files.
+			 */
 		},
 	};
 
@@ -3652,18 +4176,23 @@ main(
 	memcpy(&cli.sb_feat, &dft.sb_feat, sizeof(cli.sb_feat));
 	memcpy(&cli.fsx, &dft.fsx, sizeof(cli.fsx));
 
-	while ((c = getopt(argc, argv, "b:d:i:l:L:m:n:KNp:qr:s:CfV")) != EOF) {
+	while ((c = getopt_long(argc, argv, "b:c:d:i:l:L:m:n:KNp:qr:s:CfV",
+					long_options, &option_index)) != EOF) {
 		switch (c) {
+		case 0:
+			break;
 		case 'C':
 		case 'f':
 			force_overwrite = 1;
 			break;
 		case 'b':
+		case 'c':
 		case 'd':
 		case 'i':
 		case 'l':
 		case 'm':
 		case 'n':
+		case 'p':
 		case 'r':
 		case 's':
 			parse_subopts(c, optarg, &cli);
@@ -3678,11 +4207,6 @@ main(
 			break;
 		case 'K':
 			discard = 0;
-			break;
-		case 'p':
-			if (protofile)
-				respec('p', NULL, 0);
-			protofile = optarg;
 			break;
 		case 'q':
 			quiet = 1;
@@ -3702,7 +4226,15 @@ main(
 	} else
 		dfile = xi.dname;
 
-	protostring = setup_proto(protofile);
+	/*
+	 * Now we have all the options parsed, we can read in the option file
+	 * specified on the command line via "-c options=xxx". Once we have all
+	 * the options from this file parsed, we can then proceed with parameter
+	 * and bounds checking and making the filesystem.
+	 */
+	cfgfile_parse(&cli);
+
+	protostring = setup_proto(cli.protofile);
 
 	/*
 	 * Extract as much of the valid config as we can from the CLI input
@@ -3768,7 +4300,7 @@ main(
 	 * provided functions to determine on-disk format information.
 	 */
 	start_superblock_setup(&cfg, mp, sbp);
-	initialise_mount(&cfg, mp, sbp);
+	initialise_mount(mp, sbp);
 
 	/*
 	 * With the mount set up, we can finally calculate the log size
@@ -3782,14 +4314,30 @@ main(
 	validate_extsize_hint(mp, &cli);
 	validate_cowextsize_hint(mp, &cli);
 
+	validate_supported(mp, &cli);
+
 	/* Print the intended geometry of the fs. */
 	if (!quiet || dry_run) {
 		struct xfs_fsop_geom	geo;
 
-		libxfs_fs_geometry(sbp, &geo, XFS_FS_GEOM_MAX_STRUCT_VER);
+		libxfs_fs_geometry(mp, &geo, XFS_FS_GEOM_MAX_STRUCT_VER);
 		xfs_report_geom(&geo, dfile, logfile, rtfile);
 		if (dry_run)
 			exit(0);
+	}
+
+	/* Make sure our checksum algorithm really works. */
+	if (crc32c_test(CRC32CTEST_QUIET) != 0) {
+		fprintf(stderr,
+ _("crc32c self-test failed, will not create a filesystem here.\n"));
+		return 1;
+	}
+
+	/* Make sure our dir/attr hash algorithm really works. */
+	if (dahash_test(DAHASHTEST_QUIET) != 0) {
+		fprintf(stderr,
+ _("xfs dir/attr self-test failed, will not create a filesystem here.\n"));
+		return 1;
 	}
 
 	/*
@@ -3821,7 +4369,7 @@ main(
 	 */
 	INIT_LIST_HEAD(&buffer_list);
 	for (agno = 0; agno < cfg.agcount; agno++) {
-		initialise_ag_headers(&cfg, mp, sbp, agno, &worst_freelist,
+		initialise_ag_headers(&cfg, mp, agno, &worst_freelist,
 				&buffer_list);
 
 		if (agno % 16)
@@ -3852,7 +4400,7 @@ main(
 	/*
 	 * Allocate the root inode and anything else in the proto file.
 	 */
-	parse_proto(mp, &cli.fsx, &protostring);
+	parse_proto(mp, &cli.fsx, &protostring, cli.proto_slashes_are_spaces);
 
 	/*
 	 * Protect ourselves against possible stupidity

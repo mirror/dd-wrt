@@ -17,7 +17,9 @@
 #include "bitops.h"
 #include "kmem.h"
 #include "libfrog/radix-tree.h"
+#include "libfrog/bitmask.h"
 #include "atomic.h"
+#include "spinlock.h"
 
 #include "xfs_types.h"
 #include "xfs_fs.h"
@@ -41,7 +43,6 @@ struct iomap;
 #define __round_mask(x, y) ((__typeof__(x))((y)-1))
 #define round_up(x, y) ((((x)-1) | __round_mask(x, y))+1)
 #define unlikely(x) (x)
-#define timespec64 timespec
 
 /*
  * This mirrors the kernel include for xfs_buf.h - it's implicitly included in
@@ -62,12 +63,12 @@ struct iomap;
 #include "xfs_bmap_btree.h"
 #include "xfs_alloc_btree.h"
 #include "xfs_ialloc_btree.h"
+#include "xfs_attr.h"
 #include "xfs_attr_sf.h"
 #include "xfs_inode_fork.h"
 #include "xfs_inode_buf.h"
 #include "xfs_alloc.h"
 #include "xfs_btree.h"
-#include "xfs_btree_trace.h"
 #include "xfs_bmap.h"
 #include "xfs_trace.h"
 #include "xfs_trans.h"
@@ -106,7 +107,7 @@ typedef struct libxfs_xinit {
 	int             risfile;        /* realtime "subvolume" is a reg file */
 	int             rcreat;         /* try to create realtime subvolume */
 	int		setblksize;	/* attempt to set device blksize */
-	int		usebuflock;	/* lock xfs_buf_t's - for MT usage */
+	int		usebuflock;	/* lock xfs_buf's - for MT usage */
 				/* output results */
 	dev_t           ddev;           /* device for data subvolume */
 	dev_t           logdev;         /* device for log subvolume */
@@ -215,5 +216,62 @@ int libxfs_rtfree_extent(struct xfs_trans *, xfs_rtblock_t, xfs_extlen_t);
 bool libxfs_verify_rtbno(struct xfs_mount *mp, xfs_rtblock_t rtbno);
 
 #include "xfs_attr.h"
+#include "topology.h"
+
+/*
+ * Superblock helpers for programs that act on independent superblock
+ * structures.  These used to be part of xfs_format.h.
+ */
+static inline bool xfs_sb_version_haslazysbcount(struct xfs_sb *sbp)
+{
+	return (XFS_SB_VERSION_NUM(sbp) == XFS_SB_VERSION_5) ||
+	       (xfs_sb_version_hasmorebits(sbp) &&
+		(sbp->sb_features2 & XFS_SB_VERSION2_LAZYSBCOUNTBIT));
+}
+
+static inline bool xfs_sb_version_hascrc(struct xfs_sb *sbp)
+{
+	return XFS_SB_VERSION_NUM(sbp) == XFS_SB_VERSION_5;
+}
+
+static inline bool xfs_sb_version_hasmetauuid(struct xfs_sb *sbp)
+{
+	return (XFS_SB_VERSION_NUM(sbp) == XFS_SB_VERSION_5) &&
+		(sbp->sb_features_incompat & XFS_SB_FEAT_INCOMPAT_META_UUID);
+}
+
+static inline bool xfs_sb_version_hasalign(struct xfs_sb *sbp)
+{
+	return (XFS_SB_VERSION_NUM(sbp) == XFS_SB_VERSION_5 ||
+		(sbp->sb_versionnum & XFS_SB_VERSION_ALIGNBIT));
+}
+
+static inline bool xfs_sb_version_hasdalign(struct xfs_sb *sbp)
+{
+	return (sbp->sb_versionnum & XFS_SB_VERSION_DALIGNBIT);
+}
+
+static inline bool xfs_sb_version_haslogv2(struct xfs_sb *sbp)
+{
+	return XFS_SB_VERSION_NUM(sbp) == XFS_SB_VERSION_5 ||
+	       (sbp->sb_versionnum & XFS_SB_VERSION_LOGV2BIT);
+}
+
+static inline bool xfs_sb_version_hassector(struct xfs_sb *sbp)
+{
+	return (sbp->sb_versionnum & XFS_SB_VERSION_SECTORBIT);
+}
+
+static inline bool xfs_sb_version_needsrepair(struct xfs_sb *sbp)
+{
+	return XFS_SB_VERSION_NUM(sbp) == XFS_SB_VERSION_5 &&
+		(sbp->sb_features_incompat & XFS_SB_FEAT_INCOMPAT_NEEDSREPAIR);
+}
+
+static inline bool xfs_sb_version_hassparseinodes(struct xfs_sb *sbp)
+{
+	return XFS_SB_VERSION_NUM(sbp) == XFS_SB_VERSION_5 &&
+		xfs_sb_has_incompat_feature(sbp, XFS_SB_FEAT_INCOMPAT_SPINODES);
+}
 
 #endif	/* __LIBXFS_H__ */

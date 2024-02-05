@@ -34,6 +34,10 @@ add_command(
 	const cmdinfo_t	*ci)
 {
 	cmdtab = realloc((void *)cmdtab, ++ncmds * sizeof(*cmdtab));
+	if (!cmdtab) {
+		perror(_("adding libxcmd command"));
+		exit(1);
+	}
 	cmdtab[ncmds - 1] = *ci;
 	qsort(cmdtab, ncmds, sizeof(*cmdtab), compare);
 }

@@ -214,7 +214,7 @@ ffn(const char *path, const struct stat *stb, int flags, struct FTW *f)
 		nfiles++;
 		break;
 	case S_IFLNK:			/* symbolic links */
-		if (stb->st_size >= (INODESIZE - (sizeof(xfs_dinode_t)+4)))
+		if (stb->st_size >= (INODESIZE - (sizeof(struct xfs_dinode)+4)))
 			fullblocks+=FBLOCKS(stb->st_size + blocksize-1);
 		nslinks++;
 		break;

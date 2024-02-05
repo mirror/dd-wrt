@@ -271,14 +271,14 @@ cvtstr(
 #define DAYS_TO_SECONDS(d)	((d) * HOURS_TO_SECONDS(24))
 #define WEEKS_TO_SECONDS(w)	((w) * DAYS_TO_SECONDS(7))
 
-unsigned long
+time64_t
 cvttime(
 	char		*s)
 {
-	unsigned long	i;
+	time64_t	i;
 	char		*sp;
 
-	i = strtoul(s, &sp, 0);
+	i = strtoll(s, &sp, 0);
 	if (i == 0 && sp == s)
 		return 0;
 	if (*sp == '\0')

@@ -408,11 +408,14 @@ flist_split(
  */
 flist_t *
 flist_find_ftyp(
-	const field_t *fields,
-	fldt_t	type)
+	const field_t	*fields,
+	fldt_t		type,
+	void		*obj,
+	int		startoff)
 {
 	flist_t	*fl;
 	const field_t	*f;
+	int		count;
 	const ftattr_t  *fa;
 
 	for (f = fields; f->name; f++) {
@@ -420,11 +423,14 @@ flist_find_ftyp(
 		fl->fld = f;
 		if (f->ftyp == type)
 			return fl;
+		count = fcount(f, obj, startoff);
+		if (!count)
+			continue;
 		fa = &ftattrtab[f->ftyp];
 		if (fa->subfld) {
 			flist_t *nfl;
 
-			nfl = flist_find_ftyp(fa->subfld, type);
+			nfl = flist_find_ftyp(fa->subfld, type, obj, startoff);
 			if (nfl) {
 				fl->child = nfl;
 				return fl;

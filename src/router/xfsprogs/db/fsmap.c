@@ -16,11 +16,11 @@ struct fsmap_info {
 
 static int
 fsmap_fn(
-	struct xfs_btree_cur	*cur,
-	struct xfs_rmap_irec	*rec,
-	void			*priv)
+	struct xfs_btree_cur		*cur,
+	const struct xfs_rmap_irec	*rec,
+	void				*priv)
 {
-	struct fsmap_info	*info = priv;
+	struct fsmap_info		*info = priv;
 
 	dbprintf(_("%llu: %u/%u len %u owner %lld offset %llu bmbt %d attrfork %d extflag %d\n"),
 		info->nr, info->agno, rec->rm_startblock,
@@ -41,12 +41,12 @@ fsmap(
 	struct fsmap_info	info;
 	xfs_agnumber_t		start_ag;
 	xfs_agnumber_t		end_ag;
-	xfs_agnumber_t		agno;
 	xfs_daddr_t		eofs;
 	struct xfs_rmap_irec	low = {0};
 	struct xfs_rmap_irec	high = {0};
 	struct xfs_btree_cur	*bt_cur;
 	struct xfs_buf		*agbp;
+	struct xfs_perag	*pag;
 	int			error;
 
 	eofs = XFS_FSB_TO_BB(mp, mp->m_sb.sb_dblocks);
@@ -63,29 +63,32 @@ fsmap(
 	end_ag = XFS_FSB_TO_AGNO(mp, end_fsb);
 
 	info.nr = 0;
-	for (agno = start_ag; agno <= end_ag; agno++) {
-		if (agno == end_ag)
+	for_each_perag_range(mp, start_ag, end_ag, pag) {
+		if (pag->pag_agno == end_ag)
 			high.rm_startblock = XFS_FSB_TO_AGBNO(mp, end_fsb);
 
-		error = -libxfs_alloc_read_agf(mp, NULL, agno, 0, &agbp);
+		error = -libxfs_alloc_read_agf(pag, NULL, 0, &agbp);
 		if (error) {
+			libxfs_perag_put(pag);
 			dbprintf(_("Error %d while reading AGF.\n"), error);
 			return;
 		}
 
-		bt_cur = libxfs_rmapbt_init_cursor(mp, NULL, agbp, agno);
+		bt_cur = libxfs_rmapbt_init_cursor(mp, NULL, agbp, pag);
 		if (!bt_cur) {
 			libxfs_buf_relse(agbp);
+			libxfs_perag_put(pag);
 			dbprintf(_("Not enough memory.\n"));
 			return;
 		}
 
-		info.agno = agno;
+		info.agno = pag->pag_agno;
 		error = -libxfs_rmap_query_range(bt_cur, &low, &high,
 				fsmap_fn, &info);
 		if (error) {
 			libxfs_btree_del_cursor(bt_cur, XFS_BTREE_ERROR);
 			libxfs_buf_relse(agbp);
+			libxfs_perag_put(pag);
 			dbprintf(_("Error %d while querying fsmap btree.\n"),
 				error);
 			return;
@@ -94,7 +97,7 @@ fsmap(
 		libxfs_btree_del_cursor(bt_cur, XFS_BTREE_NOERROR);
 		libxfs_buf_relse(agbp);
 
-		if (agno == start_ag)
+		if (pag->pag_agno == start_ag)
 			low.rm_startblock = 0;
 	}
 }
@@ -109,7 +112,7 @@ fsmap_f(
 	xfs_fsblock_t		start_fsb = 0;
 	xfs_fsblock_t		end_fsb = NULLFSBLOCK;
 
-	if (!xfs_sb_version_hasrmapbt(&mp->m_sb)) {
+	if (!xfs_has_rmapbt(mp)) {
 		dbprintf(_("Filesystem does not support reverse mapping btree.\n"));
 		return 0;
 	}

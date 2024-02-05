@@ -16,7 +16,7 @@ crc32cselftest_f(
 	int		argc,
 	char		**argv)
 {
-	return crc32c_test() != 0;
+	return crc32c_test(0) != 0;
 }
 
 static const cmdinfo_t	crc32cselftest_cmd = {
