@@ -484,7 +484,6 @@ struct call_rcu_data *get_cpu_call_rcu_data(int cpu)
 	if (pcpu_crdp == NULL)
 		return NULL;
 	if (!warned && cpus_array_len > 0 && (cpu < 0 || cpus_array_len <= cpu)) {
-		fprintf(stderr, "[error] liburcu: get CPU # out of range\n");
 		warned = 1;
 	}
 	if (cpu < 0 || cpus_array_len <= cpu)

@@ -29,8 +29,6 @@
 
 #define urcu_die(cause)								\
 do {										\
-	fprintf(stderr, "(" __FILE__ ":%s@%u) Unrecoverable error: %s\n",	\
-		__func__, __LINE__, strerror(cause));				\
 	abort();								\
 } while (0)
 
