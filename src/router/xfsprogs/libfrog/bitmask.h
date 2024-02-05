@@ -6,8 +6,8 @@
 #ifndef __LIBFROG_BITMASK_H_
 #define __LIBFROG_BITMASK_H_
 
-#define BIT_MASK(nr)	(1UL << ((nr) % BITS_PER_LONG))
-#define BIT_WORD(nr)	((nr) / BITS_PER_LONG)
+#define BIT_MASK(nr)	(1UL << ((nr) % __BITS_PER_LONG))
+#define BIT_WORD(nr)	((nr) / __BITS_PER_LONG)
 
 static inline void set_bit(int nr, volatile unsigned long *addr)
 {

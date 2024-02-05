@@ -8,9 +8,13 @@
 #include <string.h>
 #include <errno.h>
 #include <stdint.h>
+#include <unistd.h>
 #include "platform_defs.h"
 #include "radix-tree.h"
 
+#ifndef __BITS_PER_LONG
+	#define __BITS_PER_LONG (sizeof(long)*8)
+#endif
 #ifndef ARRAY_SIZE
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
 #endif
@@ -21,7 +25,7 @@
 
 #ifdef RADIX_TREE_TAGS
 #define RADIX_TREE_TAG_LONGS	\
-	((RADIX_TREE_MAP_SIZE + BITS_PER_LONG - 1) / BITS_PER_LONG)
+	((RADIX_TREE_MAP_SIZE + __BITS_PER_LONG - 1) / __BITS_PER_LONG)
 #endif
 
 struct radix_tree_node {
@@ -824,7 +828,7 @@ static unsigned long __maxindex(unsigned int height)
 
 	if (shift < 0)
 		return ~0UL;
-	if (shift >= BITS_PER_LONG)
+	if (shift >= __BITS_PER_LONG)
 		return 0UL;
 	return ~0UL >> shift;
 }

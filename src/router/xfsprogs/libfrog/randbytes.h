@@ -5,6 +5,7 @@
  */
 #ifndef __LIBFROG_RANDBYTES_H__
 #define __LIBFROG_RANDBYTES_H__
+#include <stdint.h>
 
 extern uint8_t randbytes_test_buf[];
 

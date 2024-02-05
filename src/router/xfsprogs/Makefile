@@ -47,7 +47,10 @@ CONFIGURE = aclocal.m4 configure config.guess config.sub install-sh ltmain.sh
 LSRCFILES = configure.ac release.sh README VERSION $(CONFIGURE)
 SRCTARINC = m4/libtool.m4 m4/lt~obsolete.m4 m4/ltoptions.m4 m4/ltsugar.m4 \
            m4/ltversion.m4 po/xfsprogs.pot .gitcensus $(CONFIGURE)
-LDIRT =
+LDIRT = config.log .ltdep .dep config.status config.cache confdefs.h \
+	conftest* built .census install.* install-dev.* *.gz *.xz \
+	autom4te.cache/* libtool include/builddefs include/platform_defs.h
+
 ifeq ($(HAVE_BUILDDEFS), yes)
 LDIRDIRT = $(SRCDIR)
 LDIRT += $(SRCTAR) $(SRCTARXZ)
@@ -59,7 +62,8 @@ HDR_SUBDIRS = include libxfs
 LIBFROG_SUBDIR = libfrog
 DLIB_SUBDIRS = libxlog libxcmd libhandle
 LIB_SUBDIRS = libxfs $(DLIB_SUBDIRS)
-TOOL_SUBDIRS = db fsck growfs io mkfs repair
+TOOL_SUBDIRS = copy db estimate fsck fsr growfs io logprint mkfs quota \
+		mdrestore repair rtcp m4 man doc debian spaceman
 
 ifeq ("$(ENABLE_SCRUB)","yes")
 TOOL_SUBDIRS += scrub
@@ -109,8 +113,8 @@ configure: configure.ac
 	aclocal -I m4
 	autoconf
 
-include/builddefs:
-#	./configure $$LOCAL_CONFIGURE_OPTIONS
+include/builddefs: configure
+	./configure $$LOCAL_CONFIGURE_OPTIONS
 
 include/platform_defs.h: include/builddefs
 ## Recover from the removal of $@

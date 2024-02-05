@@ -5,7 +5,7 @@
  */
 #ifndef __LIBFROG_UTIL_H__
 #define __LIBFROG_UTIL_H__
-
+#include <sys/param.h>
 unsigned int	log2_roundup(unsigned int i);
 
 #endif /* __LIBFROG_UTIL_H__ */

@@ -35,7 +35,7 @@ typedef	struct blkmap {
  * memory than we think we needed, and hence walk off the end of the array and
  * corrupt memory.
  */
-#if BITS_PER_LONG == 32
+#if __BITS_PER_LONG == 32
 #define BLKMAP_NEXTS_MAX	((INT_MAX / sizeof(bmap_ext_t)) - 1)
 #else
 #define BLKMAP_NEXTS_MAX	INT_MAX

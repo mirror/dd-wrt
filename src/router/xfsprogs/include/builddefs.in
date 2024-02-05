@@ -22,13 +22,13 @@ LDFLAGS =
 
 LIBRT = @librt@
 LIBUUID = @libuuid@
-LIBURCU = @liburcu@
+LIBURCU = -lurcu -lurcu-memb
 LIBPTHREAD = @libpthread@
 LIBTERMCAP = @libtermcap@
 LIBEDITLINE = @libeditline@
 LIBBLKID = @libblkid@
 LIBDEVMAPPER = @libdevmapper@
-LIBINIH = @libinih@
+LIBINIH = 
 LIBXFS = $(TOPDIR)/libxfs/libxfs.la
 LIBFROG = $(TOPDIR)/libfrog/libfrog.la
 LIBXCMD = $(TOPDIR)/libxcmd/libxcmd.la

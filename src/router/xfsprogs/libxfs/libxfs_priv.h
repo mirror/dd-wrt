@@ -296,7 +296,7 @@ div64_u64_rem(uint64_t dividend, uint64_t divisor, uint64_t *remainder)
 #define BITS_TO_LONGS(nr)       DIV_ROUND_UP(nr, NBBY * sizeof(long))
 #define DECLARE_BITMAP(name,bits) \
 	unsigned long name[BITS_TO_LONGS(bits)]
-#define BITMAP_FIRST_WORD_MASK(start) (~0UL << ((start) & (BITS_PER_LONG - 1)))
+#define BITMAP_FIRST_WORD_MASK(start) (~0UL << ((start) & (__BITS_PER_LONG - 1)))
 
 /*
  * This is a common helper function for find_next_bit and
@@ -312,18 +312,18 @@ _find_next_bit(const unsigned long *addr, unsigned long nbits,
 	if (!nbits || start >= nbits)
 		return nbits;
 
-	tmp = addr[start / BITS_PER_LONG] ^ invert;
+	tmp = addr[start / __BITS_PER_LONG] ^ invert;
 
 	/* Handle 1st word. */
 	tmp &= BITMAP_FIRST_WORD_MASK(start);
-	start = round_down(start, BITS_PER_LONG);
+	start = round_down(start, __BITS_PER_LONG);
 
 	while (!tmp) {
-		start += BITS_PER_LONG;
+		start += __BITS_PER_LONG;
 		if (start >= nbits)
 			return nbits;
 
-		tmp = addr[start / BITS_PER_LONG] ^ invert;
+		tmp = addr[start / __BITS_PER_LONG] ^ invert;
 	}
 
 	return min(start + ffs(tmp), nbits);

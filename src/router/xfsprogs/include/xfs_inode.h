@@ -23,7 +23,7 @@ struct inode;
 #define I_DIRTY_TIME		0
 #define I_DIRTY_TIME_EXPIRED	0
 
-static inline bool IS_I_VERSION(const struct inode *inode) { return false; }
+static inline bool IS_I_VERSION2(const struct inode *inode) { return false; }
 #define inode_maybe_inc_iversion(inode,flags)	(0)
 
 /*

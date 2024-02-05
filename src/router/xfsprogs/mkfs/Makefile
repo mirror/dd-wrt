@@ -8,7 +8,7 @@ include $(TOPDIR)/include/builddefs
 LTCOMMAND = mkfs.xfs
 
 HFILES =
-CFILES = proto.c xfs_mkfs.c
+CFILES = proto.c xfs_mkfs.c ini.c
 CFGFILES = \
 	dax_x86_64.conf \
 	lts_4.19.conf \

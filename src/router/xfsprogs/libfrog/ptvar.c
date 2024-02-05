@@ -10,6 +10,7 @@
 #include <assert.h>
 #include <pthread.h>
 #include <unistd.h>
+#include <errno.h>
 #include "platform_defs.h"
 #include "ptvar.h"
 

@@ -102,7 +102,7 @@ xfs_trans_log_inode(
 	 * unconditionally.
 	 */
 	if (!test_and_set_bit(XFS_LI_DIRTY, &iip->ili_item.li_flags)) {
-		if (IS_I_VERSION(inode) &&
+		if (IS_I_VERSION2(inode) &&
 		    inode_maybe_inc_iversion(inode, flags & XFS_ILOG_CORE))
 			flags |= XFS_ILOG_IVERSION;
 	}
