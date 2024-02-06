@@ -177,7 +177,7 @@ am__DEPENDENCIES_1 = $(top_builddir)/compat/libcompatsquid.la
 am__DEPENDENCIES_2 =
 basic_sspi_auth_DEPENDENCIES = $(top_builddir)/lib/libsspwin32.la \
 	$(top_builddir)/lib/libmiscencoding.la $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_2)
+	$(am__DEPENDENCIES_2) $(am__DEPENDENCIES_2)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
 am__v_lt_0 = --silent
@@ -537,7 +537,6 @@ EXT_LIBECAP_CFLAGS = @EXT_LIBECAP_CFLAGS@
 EXT_LIBECAP_LIBS = @EXT_LIBECAP_LIBS@
 FALSE = @FALSE@
 FGREP = @FGREP@
-FILECMD = @FILECMD@
 GREP = @GREP@
 HAVE_CXX17 = @HAVE_CXX17@
 INCLTDL = @INCLTDL@
@@ -760,6 +759,7 @@ basic_sspi_auth_LDADD = \
 	$(top_builddir)/lib/libmiscencoding.la \
 	$(COMPAT_LIB) \
 	-lnetapi32 -ladvapi32 \
+	$(LIBNETTLE_LIBS) \
 	$(XTRA_LIBS)
 
 man_MANS = basic_sspi_auth.8

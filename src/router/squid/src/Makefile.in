@@ -106,7 +106,8 @@ check_PROGRAMS = tests/testBoilerplate$(EXEEXT) \
 	tests/testIpAddress$(EXEEXT) tests/testIcmp$(EXEEXT) \
 	tests/testNetDb$(EXEEXT) tests/testCacheManager$(EXEEXT) \
 	tests/testStatHist$(EXEEXT) tests/testConfigParser$(EXEEXT) \
-	tests/testEvent$(EXEEXT) tests/testEventLoop$(EXEEXT)
+	tests/testEvent$(EXEEXT) tests/testEventLoop$(EXEEXT) \
+	tests/testIoManip$(EXEEXT)
 @ENABLE_LOADABLE_MODULES_TRUE@am__append_1 = $(INCLTDL)
 @ENABLE_AUTH_TRUE@am__append_2 = auth
 @ENABLE_SSL_TRUE@am__append_3 = ssl
@@ -249,7 +250,7 @@ am__squid_SOURCES_DIST = AclRegs.cc AuthReg.cc BandwidthBucket.cc \
 	ClientDelayConfig.cc ClientDelayConfig.h dns_internal.cc \
 	htcp.cc htcp.h SquidIpc.h ipc.cc ipc_win32.cc SnmpRequest.h \
 	snmp_core.h snmp_core.cc snmp_agent.h snmp_agent.cc unlinkd.h \
-	unlinkd.cc win32.cc WinSvc.cc AccessLogEntry.cc \
+	unlinkd.cc win32.cc windows_service.cc AccessLogEntry.cc \
 	AccessLogEntry.h AsyncEngine.cc AsyncEngine.h AuthReg.h \
 	BodyPipe.cc BodyPipe.h CacheDigest.cc CacheDigest.h \
 	CacheManager.h CachePeer.cc CachePeer.h ClientInfo.h \
@@ -329,7 +330,7 @@ am__objects_7 = snmp_core.$(OBJEXT) snmp_agent.$(OBJEXT)
 @ENABLE_SNMP_TRUE@am__objects_8 = $(am__objects_7)
 @ENABLE_UNLINKD_TRUE@am__objects_9 = unlinkd.$(OBJEXT)
 @ENABLE_WIN32SPECIFIC_TRUE@am__objects_10 = win32.$(OBJEXT)
-@ENABLE_WIN32SPECIFIC_TRUE@am__objects_11 = WinSvc.$(OBJEXT)
+@ENABLE_WIN32SPECIFIC_TRUE@am__objects_11 = windows_service.$(OBJEXT)
 am__objects_12 = LoadableModule.$(OBJEXT) LoadableModules.$(OBJEXT)
 @ENABLE_LOADABLE_MODULES_TRUE@am__objects_13 = $(am__objects_12)
 am_squid_OBJECTS = $(am__objects_1) $(am__objects_3) $(am__objects_4) \
@@ -392,8 +393,9 @@ am__EXTRA_squid_SOURCES_DIST = BandwidthBucket.cc BandwidthBucket.h \
 	ClientDelayConfig.cc ClientDelayConfig.h LoadableModule.cc \
 	LoadableModule.h LoadableModules.cc LoadableModules.h \
 	SnmpRequest.h snmp_core.h snmp_core.cc snmp_agent.h \
-	snmp_agent.cc unlinkd.h unlinkd.cc win32.h win32.cc WinSvc.h \
-	WinSvc.cc ConfigOption.h htcp.cc htcp.h ipc.cc ipc_win32.cc
+	snmp_agent.cc unlinkd.h unlinkd.cc win32.h win32.cc \
+	windows_service.h windows_service.cc ConfigOption.h htcp.cc \
+	htcp.h ipc.cc ipc_win32.cc
 am__objects_14 = globals.$(OBJEXT) hier_code.$(OBJEXT) \
 	icp_opcode.$(OBJEXT) lookup_t.$(OBJEXT) repl_modules.$(OBJEXT) \
 	swap_log_op.$(OBJEXT)
@@ -1046,6 +1048,18 @@ tests_testIcmp_DEPENDENCIES = icmp/libicmpcore.la ip/libip.la \
 tests_testIcmp_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX \
 	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CXXLD) \
 	$(AM_CXXFLAGS) $(CXXFLAGS) $(tests_testIcmp_LDFLAGS) \
+	$(LDFLAGS) -o $@
+am_tests_testIoManip_OBJECTS = tests/testIoManip.$(OBJEXT)
+nodist_tests_testIoManip_OBJECTS = tests/stub_SBuf.$(OBJEXT) \
+	tests/stub_debug.$(OBJEXT) tests/stub_libmem.$(OBJEXT) \
+	tests/stub_libtime.$(OBJEXT)
+tests_testIoManip_OBJECTS = $(am_tests_testIoManip_OBJECTS) \
+	$(nodist_tests_testIoManip_OBJECTS)
+tests_testIoManip_DEPENDENCIES = base/libbase.la $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_4) $(am__DEPENDENCIES_1)
+tests_testIoManip_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX \
+	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CXXLD) \
+	$(AM_CXXFLAGS) $(CXXFLAGS) $(tests_testIoManip_LDFLAGS) \
 	$(LDFLAGS) -o $@
 am_tests_testIpAddress_OBJECTS = tests/testIpAddress.$(OBJEXT)
 nodist_tests_testIpAddress_OBJECTS = tests/stub_SBuf.$(OBJEXT) \
@@ -1850,12 +1864,12 @@ am__depfiles_remade = ./$(DEPDIR)/AccessLogEntry.Po \
 	./$(DEPDIR)/StoreFileSystem.Po ./$(DEPDIR)/StoreIOState.Po \
 	./$(DEPDIR)/StoreStats.Po ./$(DEPDIR)/StoreSwapLogData.Po \
 	./$(DEPDIR)/StrList.Po ./$(DEPDIR)/String.Po \
-	./$(DEPDIR)/Transients.Po ./$(DEPDIR)/WinSvc.Po \
-	./$(DEPDIR)/XactionInitiator.Po ./$(DEPDIR)/cache_cf.Po \
-	./$(DEPDIR)/cache_manager.Po ./$(DEPDIR)/carp.Po \
-	./$(DEPDIR)/cbdata.Po ./$(DEPDIR)/cf_gen.Po \
-	./$(DEPDIR)/clientStream.Po ./$(DEPDIR)/client_db.Po \
-	./$(DEPDIR)/client_side.Po ./$(DEPDIR)/client_side_reply.Po \
+	./$(DEPDIR)/Transients.Po ./$(DEPDIR)/XactionInitiator.Po \
+	./$(DEPDIR)/cache_cf.Po ./$(DEPDIR)/cache_manager.Po \
+	./$(DEPDIR)/carp.Po ./$(DEPDIR)/cbdata.Po \
+	./$(DEPDIR)/cf_gen.Po ./$(DEPDIR)/clientStream.Po \
+	./$(DEPDIR)/client_db.Po ./$(DEPDIR)/client_side.Po \
+	./$(DEPDIR)/client_side_reply.Po \
 	./$(DEPDIR)/client_side_request.Po ./$(DEPDIR)/comm.Plo \
 	./$(DEPDIR)/delay_pools.Po ./$(DEPDIR)/dlink.Po \
 	./$(DEPDIR)/dns_internal.Po ./$(DEPDIR)/errorpage.Po \
@@ -1889,8 +1903,8 @@ am__depfiles_remade = ./$(DEPDIR)/AccessLogEntry.Po \
 	./$(DEPDIR)/unlinkd.Po ./$(DEPDIR)/unlinkd_daemon.Po \
 	./$(DEPDIR)/urn.Po ./$(DEPDIR)/wccp.Po ./$(DEPDIR)/wccp2.Po \
 	./$(DEPDIR)/whois.Po ./$(DEPDIR)/win32.Po \
-	./$(DEPDIR)/wordlist.Po tests/$(DEPDIR)/SBufFindTest.Po \
-	tests/$(DEPDIR)/TestSwapDir.Po \
+	./$(DEPDIR)/windows_service.Po ./$(DEPDIR)/wordlist.Po \
+	tests/$(DEPDIR)/SBufFindTest.Po tests/$(DEPDIR)/TestSwapDir.Po \
 	tests/$(DEPDIR)/stub_CacheDigest.Po \
 	tests/$(DEPDIR)/stub_CachePeer.Po \
 	tests/$(DEPDIR)/stub_CollapsedForwarding.Po \
@@ -1965,7 +1979,8 @@ am__depfiles_remade = ./$(DEPDIR)/AccessLogEntry.Po \
 	tests/$(DEPDIR)/testHttpReply.Po \
 	tests/$(DEPDIR)/testHttpRequest.Po \
 	tests/$(DEPDIR)/testHttpRequestMethod.Po \
-	tests/$(DEPDIR)/testIcmp.Po tests/$(DEPDIR)/testIpAddress.Po \
+	tests/$(DEPDIR)/testIcmp.Po tests/$(DEPDIR)/testIoManip.Po \
+	tests/$(DEPDIR)/testIpAddress.Po \
 	tests/$(DEPDIR)/testLookupTable.Po tests/$(DEPDIR)/testMath.Po \
 	tests/$(DEPDIR)/testMem.Po tests/$(DEPDIR)/testNetDb.Po \
 	tests/$(DEPDIR)/testPackableStream.Po \
@@ -2045,6 +2060,8 @@ SOURCES = $(libsquid_la_SOURCES) $(cf_gen_SOURCES) $(squid_SOURCES) \
 	$(tests_testHttpRequest_SOURCES) \
 	$(nodist_tests_testHttpRequest_SOURCES) \
 	$(tests_testIcmp_SOURCES) $(nodist_tests_testIcmp_SOURCES) \
+	$(tests_testIoManip_SOURCES) \
+	$(nodist_tests_testIoManip_SOURCES) \
 	$(tests_testIpAddress_SOURCES) \
 	$(nodist_tests_testIpAddress_SOURCES) \
 	$(tests_testLookupTable_SOURCES) \
@@ -2083,7 +2100,8 @@ DIST_SOURCES = $(libsquid_la_SOURCES) $(cf_gen_SOURCES) \
 	$(tests_testHttp1Parser_SOURCES) \
 	$(tests_testHttpReply_SOURCES) \
 	$(am__tests_testHttpRequest_SOURCES_DIST) \
-	$(tests_testIcmp_SOURCES) $(tests_testIpAddress_SOURCES) \
+	$(tests_testIcmp_SOURCES) $(tests_testIoManip_SOURCES) \
+	$(tests_testIpAddress_SOURCES) \
 	$(tests_testLookupTable_SOURCES) $(tests_testMath_SOURCES) \
 	$(tests_testMem_SOURCES) $(tests_testNetDb_SOURCES) \
 	$(tests_testRandomUuid_SOURCES) $(tests_testRefCount_SOURCES) \
@@ -2435,7 +2453,6 @@ EXT_LIBECAP_CFLAGS = @EXT_LIBECAP_CFLAGS@
 EXT_LIBECAP_LIBS = @EXT_LIBECAP_LIBS@
 FALSE = @FALSE@
 FGREP = @FGREP@
-FILECMD = @FILECMD@
 GREP = @GREP@
 HAVE_CXX17 = @HAVE_CXX17@
 INCLTDL = @INCLTDL@
@@ -2727,13 +2744,13 @@ DELAY_POOL_ALL_SOURCE = \
 WIN32_ALL_SOURCE = \
 	win32.h \
 	win32.cc \
-	WinSvc.h \
-	WinSvc.cc
+	windows_service.h \
+	windows_service.cc
 
 @ENABLE_WIN32SPECIFIC_FALSE@WIN32_SOURCE = 
 @ENABLE_WIN32SPECIFIC_TRUE@WIN32_SOURCE = win32.cc
 @ENABLE_WIN32SPECIFIC_FALSE@WINSVC_SOURCE = 
-@ENABLE_WIN32SPECIFIC_TRUE@WINSVC_SOURCE = WinSvc.cc
+@ENABLE_WIN32SPECIFIC_TRUE@WINSVC_SOURCE = windows_service.cc
 @ENABLE_WIN32_IPC_FALSE@IPC_SOURCE = SquidIpc.h ipc.cc
 @ENABLE_WIN32_IPC_TRUE@IPC_SOURCE = SquidIpc.h ipc_win32.cc
 noinst_LTLIBRARIES = libsquid.la
@@ -5001,6 +5018,22 @@ tests_testEventLoop_LDADD = \
 	$(XTRA_LIBS)
 
 tests_testEventLoop_LDFLAGS = $(LIBADD_DL)
+tests_testIoManip_SOURCES = \
+	tests/testIoManip.cc
+
+nodist_tests_testIoManip_SOURCES = \
+	tests/stub_SBuf.cc \
+	tests/stub_debug.cc \
+	tests/stub_libmem.cc \
+	tests/stub_libtime.cc
+
+tests_testIoManip_LDADD = \
+	base/libbase.la \
+	$(LIBCPPUNIT_LIBS) \
+	$(COMPAT_LIB) \
+	$(XTRA_LIBS)
+
+tests_testIoManip_LDFLAGS = $(LIBADD_DL)
 all: $(BUILT_SOURCES)
 	$(MAKE) $(AM_MAKEFLAGS) all-recursive
 
@@ -5463,6 +5496,12 @@ tests/testIcmp.$(OBJEXT): tests/$(am__dirstamp) \
 tests/testIcmp$(EXEEXT): $(tests_testIcmp_OBJECTS) $(tests_testIcmp_DEPENDENCIES) $(EXTRA_tests_testIcmp_DEPENDENCIES) tests/$(am__dirstamp)
 	@rm -f tests/testIcmp$(EXEEXT)
 	$(AM_V_CXXLD)$(tests_testIcmp_LINK) $(tests_testIcmp_OBJECTS) $(tests_testIcmp_LDADD) $(LIBS)
+tests/testIoManip.$(OBJEXT): tests/$(am__dirstamp) \
+	tests/$(DEPDIR)/$(am__dirstamp)
+
+tests/testIoManip$(EXEEXT): $(tests_testIoManip_OBJECTS) $(tests_testIoManip_DEPENDENCIES) $(EXTRA_tests_testIoManip_DEPENDENCIES) tests/$(am__dirstamp)
+	@rm -f tests/testIoManip$(EXEEXT)
+	$(AM_V_CXXLD)$(tests_testIoManip_LINK) $(tests_testIoManip_OBJECTS) $(tests_testIoManip_LDADD) $(LIBS)
 tests/testIpAddress.$(OBJEXT): tests/$(am__dirstamp) \
 	tests/$(DEPDIR)/$(am__dirstamp)
 
@@ -5675,7 +5714,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/StrList.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/String.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Transients.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/WinSvc.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/XactionInitiator.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cache_cf.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cache_manager.Po@am__quote@ # am--include-marker
@@ -5753,6 +5791,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wccp2.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/whois.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/win32.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/windows_service.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wordlist.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/SBufFindTest.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/TestSwapDir.Po@am__quote@ # am--include-marker
@@ -5848,6 +5887,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/testHttpRequest.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/testHttpRequestMethod.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/testIcmp.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/testIoManip.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/testIpAddress.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/testLookupTable.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/testMath.Po@am__quote@ # am--include-marker
@@ -6459,6 +6499,13 @@ tests/testEventLoop.log: tests/testEventLoop$(EXEEXT)
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
+tests/testIoManip.log: tests/testIoManip$(EXEEXT)
+	@p='tests/testIoManip$(EXEEXT)'; \
+	b='tests/testIoManip'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
 testHeaders.log: testHeaders
 	@p='testHeaders'; \
 	b='testHeaders'; \
@@ -6669,7 +6716,6 @@ distclean: distclean-recursive
 	-rm -f ./$(DEPDIR)/StrList.Po
 	-rm -f ./$(DEPDIR)/String.Po
 	-rm -f ./$(DEPDIR)/Transients.Po
-	-rm -f ./$(DEPDIR)/WinSvc.Po
 	-rm -f ./$(DEPDIR)/XactionInitiator.Po
 	-rm -f ./$(DEPDIR)/cache_cf.Po
 	-rm -f ./$(DEPDIR)/cache_manager.Po
@@ -6747,6 +6793,7 @@ distclean: distclean-recursive
 	-rm -f ./$(DEPDIR)/wccp2.Po
 	-rm -f ./$(DEPDIR)/whois.Po
 	-rm -f ./$(DEPDIR)/win32.Po
+	-rm -f ./$(DEPDIR)/windows_service.Po
 	-rm -f ./$(DEPDIR)/wordlist.Po
 	-rm -f tests/$(DEPDIR)/SBufFindTest.Po
 	-rm -f tests/$(DEPDIR)/TestSwapDir.Po
@@ -6842,6 +6889,7 @@ distclean: distclean-recursive
 	-rm -f tests/$(DEPDIR)/testHttpRequest.Po
 	-rm -f tests/$(DEPDIR)/testHttpRequestMethod.Po
 	-rm -f tests/$(DEPDIR)/testIcmp.Po
+	-rm -f tests/$(DEPDIR)/testIoManip.Po
 	-rm -f tests/$(DEPDIR)/testIpAddress.Po
 	-rm -f tests/$(DEPDIR)/testLookupTable.Po
 	-rm -f tests/$(DEPDIR)/testMath.Po
@@ -6986,7 +7034,6 @@ maintainer-clean: maintainer-clean-recursive
 	-rm -f ./$(DEPDIR)/StrList.Po
 	-rm -f ./$(DEPDIR)/String.Po
 	-rm -f ./$(DEPDIR)/Transients.Po
-	-rm -f ./$(DEPDIR)/WinSvc.Po
 	-rm -f ./$(DEPDIR)/XactionInitiator.Po
 	-rm -f ./$(DEPDIR)/cache_cf.Po
 	-rm -f ./$(DEPDIR)/cache_manager.Po
@@ -7064,6 +7111,7 @@ maintainer-clean: maintainer-clean-recursive
 	-rm -f ./$(DEPDIR)/wccp2.Po
 	-rm -f ./$(DEPDIR)/whois.Po
 	-rm -f ./$(DEPDIR)/win32.Po
+	-rm -f ./$(DEPDIR)/windows_service.Po
 	-rm -f ./$(DEPDIR)/wordlist.Po
 	-rm -f tests/$(DEPDIR)/SBufFindTest.Po
 	-rm -f tests/$(DEPDIR)/TestSwapDir.Po
@@ -7159,6 +7207,7 @@ maintainer-clean: maintainer-clean-recursive
 	-rm -f tests/$(DEPDIR)/testHttpRequest.Po
 	-rm -f tests/$(DEPDIR)/testHttpRequestMethod.Po
 	-rm -f tests/$(DEPDIR)/testIcmp.Po
+	-rm -f tests/$(DEPDIR)/testIoManip.Po
 	-rm -f tests/$(DEPDIR)/testIpAddress.Po
 	-rm -f tests/$(DEPDIR)/testLookupTable.Po
 	-rm -f tests/$(DEPDIR)/testMath.Po

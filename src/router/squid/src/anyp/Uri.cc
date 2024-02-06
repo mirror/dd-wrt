@@ -71,7 +71,7 @@ AnyP::Uri::Encode(const SBuf &buf, const CharacterSet &ignore)
     while (!tk.atEnd()) {
         // TODO: Add Tokenizer::parseOne(void).
         const auto ch = tk.remaining()[0];
-        output.appendf("%%%02X", static_cast<unsigned int>(ch)); // TODO: Optimize using a table
+        output.appendf("%%%02X", static_cast<unsigned int>(static_cast<unsigned char>(ch))); // TODO: Optimize using a table
         (void)tk.skip(ch);
 
         if (tk.prefix(goodSection, ignore))
@@ -173,6 +173,10 @@ urlInitialize(void)
     assert(0 == matchDomainName("*.foo.com", ".x.foo.com", mdnHonorWildcards));
     assert(0 == matchDomainName("*.foo.com", ".foo.com", mdnHonorWildcards));
     assert(0 != matchDomainName("*.foo.com", "foo.com", mdnHonorWildcards));
+
+    assert(0 != matchDomainName("foo.com", ""));
+    assert(0 != matchDomainName("foo.com", "", mdnHonorWildcards));
+    assert(0 != matchDomainName("foo.com", "", mdnRejectSubsubDomains));
 
     /* more cases? */
 }
@@ -748,6 +752,8 @@ matchDomainName(const char *h, const char *d, MatchDomainNameFlags flags)
         return -1;
 
     dl = strlen(d);
+    if (dl == 0)
+        return 1;
 
     /*
      * Start at the ends of the two strings and work towards the

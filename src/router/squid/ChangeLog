@@ -1,3 +1,55 @@
+Changes in squid-6.7 (4 Feb 2024)
+
+	- Bug 5337: workaround for crash on startup if -a option is used
+	- Bug 5274: Successful tunnels logged as TCP_TUNNEL/500
+	- Fix crash when NTLM and Negotiate helpers are queried with no HTTP request
+	- Fix SslBump memory leak when mimicking certificates with Authority Key Identifier
+	- Fix memory leak on SslBump certificates with Authority Key Identifier extension
+	- Fix a possible integer overflow in FTP Gateway
+	- Extend cache_log_message to Bug 5187 and job invalidation BUGs
+	- Remove incorrect beta version warning
+	- MS Windows portability improvements
+	- ... and some documentation improvements
+
+Changes in squid-6.6 (5 Dec 2023):
+
+	- Bug 5328: Fix ESI build with libxml2 v2.12.0
+	- Bug 5319: QOS Netfilter MARK preservation is always disabled
+	- Bug 5318: peer_digest.cc:399: "fetch->pd && receivedData.data"
+	- Bug 5317: FATAL attempt to read data from memory
+	- Bug 5154: Do not open IPv6 sockets when IPv6 is disabled
+	- FTP: Ignore credentials with a NUL-prefixed username
+	- log_db_daemon: Fix DSN construction
+	- Limit the number of allowed X-Forwarded-For hops
+	- Do not update StoreEntry expiration after errorAppendEntry()
+	- improve handling of response sending errors
+
+Changes in squid-6.5 (5 Nov 2023):
+
+	- Bug 5309: frequent "lowestOffset () <= target_offset" assertion
+	- Bug 4977: Remove mem_hdr::freeDataUpto() assertion
+	- Fix handling of expanding HTTP header values
+	- Fix RFC 1123 date parsing
+	- Gracefully shutdown when helper process startup fails
+
+Changes in squid-6.4 (22 Oct 2023):
+
+	- Regression: Restore support for legacy cache_object cache manager requests
+	- Regression: Do not use static initialization to register modules
+	- Bug 5301: cachemgr.cgi not showing new manager interface URLs
+	- Bug 5300: cachemgr.cgi assertion
+	- Fix stack buffer overflow when parsing Digest Authorization
+	- Fix userinfo percent-encoding
+	- Fix store_client caller memory leak on certain errors
+	- Fix validation of certificates with CN=*
+	- Fix handling of large stored response headers
+	- Miss if a HTTP/304 update would exceed reply_header_max_size
+	- RFC 9112: Improve HTTP chunked encoding compliance
+	- HTTP: Improve handling of empty lines received prior to request-line
+	- Y2038: improve printing of time settings
+	- Extend cache_log_message to problematic from-helper annotations
+	- ... and several Continuous Integration improvements
+
 Changes in squid-6.3 (03 Sep 2023):
 
 	- Bug 5294: ERR_CANNOT_FORWARD returned instead of ERR_DNS_FAIL

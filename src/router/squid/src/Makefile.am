@@ -124,11 +124,11 @@ endif
 WIN32_ALL_SOURCE = \
 	win32.h \
 	win32.cc \
-	WinSvc.h \
-	WinSvc.cc
+	windows_service.h \
+	windows_service.cc
 if ENABLE_WIN32SPECIFIC
 WIN32_SOURCE = win32.cc
-WINSVC_SOURCE = WinSvc.cc
+WINSVC_SOURCE = windows_service.cc
 else
 WIN32_SOURCE =
 WINSVC_SOURCE =
@@ -2761,6 +2761,21 @@ tests_testEventLoop_LDADD = \
 	$(XTRA_LIBS)
 tests_testEventLoop_LDFLAGS = $(LIBADD_DL)
 
+check_PROGRAMS += tests/testIoManip
+tests_testIoManip_SOURCES = \
+	tests/testIoManip.cc
+nodist_tests_testIoManip_SOURCES = \
+	tests/stub_SBuf.cc \
+	tests/stub_debug.cc \
+	tests/stub_libmem.cc \
+	tests/stub_libtime.cc
+tests_testIoManip_LDADD = \
+	base/libbase.la \
+	$(LIBCPPUNIT_LIBS) \
+	$(COMPAT_LIB) \
+	$(XTRA_LIBS)
+tests_testIoManip_LDFLAGS = $(LIBADD_DL)
+
 ## Run the unit tests. check_PROGRAMS only builds the binaries.
 TESTS += $(check_PROGRAMS) testHeaders
 
@@ -2772,4 +2787,3 @@ testHeaders: $(srcdir)/*.h $(srcdir)/DiskIO/*.h $(srcdir)/DiskIO/*/*.h
 
 CLEANFILES += testHeaders
 .PHONY: testHeaders
-

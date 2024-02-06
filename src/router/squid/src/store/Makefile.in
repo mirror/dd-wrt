@@ -167,7 +167,8 @@ CONFIG_CLEAN_VPATH_FILES =
 LTLIBRARIES = $(noinst_LTLIBRARIES)
 libstore_la_LIBADD =
 am_libstore_la_OBJECTS = Controller.lo Disk.lo Disks.lo LocalSearch.lo \
-	SwapMeta.lo SwapMetaIn.lo SwapMetaOut.lo SwapMetaView.lo
+	ParsingBuffer.lo SwapMeta.lo SwapMetaIn.lo SwapMetaOut.lo \
+	SwapMetaView.lo
 libstore_la_OBJECTS = $(am_libstore_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -190,8 +191,9 @@ depcomp = $(SHELL) $(top_srcdir)/cfgaux/depcomp
 am__maybe_remake_depfiles = depfiles
 am__depfiles_remade = ./$(DEPDIR)/Controller.Plo ./$(DEPDIR)/Disk.Plo \
 	./$(DEPDIR)/Disks.Plo ./$(DEPDIR)/LocalSearch.Plo \
-	./$(DEPDIR)/SwapMeta.Plo ./$(DEPDIR)/SwapMetaIn.Plo \
-	./$(DEPDIR)/SwapMetaOut.Plo ./$(DEPDIR)/SwapMetaView.Plo
+	./$(DEPDIR)/ParsingBuffer.Plo ./$(DEPDIR)/SwapMeta.Plo \
+	./$(DEPDIR)/SwapMetaIn.Plo ./$(DEPDIR)/SwapMetaOut.Plo \
+	./$(DEPDIR)/SwapMetaView.Plo
 am__mv = mv -f
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
@@ -567,7 +569,6 @@ EXT_LIBECAP_CFLAGS = @EXT_LIBECAP_CFLAGS@
 EXT_LIBECAP_LIBS = @EXT_LIBECAP_LIBS@
 FALSE = @FALSE@
 FGREP = @FGREP@
-FILECMD = @FILECMD@
 GREP = @GREP@
 HAVE_CXX17 = @HAVE_CXX17@
 INCLTDL = @INCLTDL@
@@ -789,6 +790,8 @@ libstore_la_SOURCES = \
 	Disks.h \
 	LocalSearch.cc \
 	LocalSearch.h \
+	ParsingBuffer.cc \
+	ParsingBuffer.h \
 	Storage.h \
 	SwapMeta.cc \
 	SwapMeta.h \
@@ -868,6 +871,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Disk.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Disks.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LocalSearch.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ParsingBuffer.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SwapMeta.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SwapMetaIn.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SwapMetaOut.Plo@am__quote@ # am--include-marker
@@ -1279,6 +1283,7 @@ distclean: distclean-recursive
 	-rm -f ./$(DEPDIR)/Disk.Plo
 	-rm -f ./$(DEPDIR)/Disks.Plo
 	-rm -f ./$(DEPDIR)/LocalSearch.Plo
+	-rm -f ./$(DEPDIR)/ParsingBuffer.Plo
 	-rm -f ./$(DEPDIR)/SwapMeta.Plo
 	-rm -f ./$(DEPDIR)/SwapMetaIn.Plo
 	-rm -f ./$(DEPDIR)/SwapMetaOut.Plo
@@ -1332,6 +1337,7 @@ maintainer-clean: maintainer-clean-recursive
 	-rm -f ./$(DEPDIR)/Disk.Plo
 	-rm -f ./$(DEPDIR)/Disks.Plo
 	-rm -f ./$(DEPDIR)/LocalSearch.Plo
+	-rm -f ./$(DEPDIR)/ParsingBuffer.Plo
 	-rm -f ./$(DEPDIR)/SwapMeta.Plo
 	-rm -f ./$(DEPDIR)/SwapMetaIn.Plo
 	-rm -f ./$(DEPDIR)/SwapMetaOut.Plo

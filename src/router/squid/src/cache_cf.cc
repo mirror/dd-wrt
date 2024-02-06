@@ -1007,6 +1007,18 @@ configDoConfigure(void)
                (uint32_t)Config.maxRequestBufferSize, (uint32_t)Config.maxRequestHeaderSize);
     }
 
+    // Warn about the dangers of exceeding String limits when manipulating HTTP
+    // headers. Technically, we do not concatenate _requests_, so we could relax
+    // their check, but we keep the two checks the same for simplicity sake.
+    const auto safeRawHeaderValueSizeMax = (String::SizeMaxXXX()+1)/3;
+    // TODO: static_assert(safeRawHeaderValueSizeMax >= 64*1024); // no WARNINGs for default settings
+    if (Config.maxRequestHeaderSize > safeRawHeaderValueSizeMax)
+        debugs(3, DBG_CRITICAL, "WARNING: Increasing request_header_max_size beyond " << safeRawHeaderValueSizeMax <<
+               " bytes makes Squid more vulnerable to denial-of-service attacks; configured value: " << Config.maxRequestHeaderSize << " bytes");
+    if (Config.maxReplyHeaderSize > safeRawHeaderValueSizeMax)
+        debugs(3, DBG_CRITICAL, "WARNING: Increasing reply_header_max_size beyond " << safeRawHeaderValueSizeMax <<
+               " bytes makes Squid more vulnerable to denial-of-service attacks; configured value: " << Config.maxReplyHeaderSize << " bytes");
+
     /*
      * Disable client side request pipelining if client_persistent_connections OFF.
      * Waste of resources queueing any pipelined requests when the first will close the connection.
@@ -2948,7 +2960,8 @@ parse_TokenOrQuotedString(char **var)
 static void
 dump_time_t(StoreEntry * entry, const char *name, time_t var)
 {
-    storeAppendPrintf(entry, "%s %d seconds\n", name, (int) var);
+    PackableStream os(*entry);
+    os << name << ' ' << var << " seconds\n";
 }
 
 void
@@ -2970,10 +2983,11 @@ free_time_t(time_t * var)
 static void
 dump_time_msec(StoreEntry * entry, const char *name, time_msec_t var)
 {
+    PackableStream os(*entry);
     if (var % 1000)
-        storeAppendPrintf(entry, "%s %" PRId64 " milliseconds\n", name, var);
+        os << name << ' ' << var << " milliseconds\n";
     else
-        storeAppendPrintf(entry, "%s %d seconds\n", name, (int)(var/1000) );
+        os << name << ' ' << (var/1000) << " seconds\n";
 }
 
 static void
@@ -4374,7 +4388,7 @@ public:
 
 Ssl::BumpMode sslBumpCfgRr::lastDeprecatedRule = Ssl::bumpEnd;
 
-RunnerRegistrationEntry(sslBumpCfgRr);
+DefineRunnerRegistrator(sslBumpCfgRr);
 
 void
 sslBumpCfgRr::finalizeConfig()
