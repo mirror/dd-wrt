@@ -3,7 +3,7 @@
 #include "tlog.h"
 /*
  * tinylog
- * Copyright (C) 2018-2023 Nick Peng <pymumu@gmail.com>
+ * Copyright (C) 2018-2024 Nick Peng <pymumu@gmail.com>
  * https://github.com/pymumu/tinylog
  */
 #ifndef _GNU_SOURCE

@@ -1,6 +1,6 @@
 /*************************************************************************
  *
- * Copyright (C) 2018-2023 Ruilin Peng (Nick) <pymumu@gmail.com>.
+ * Copyright (C) 2018-2024 Ruilin Peng (Nick) <pymumu@gmail.com>.
  *
  * smartdns is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,6 +22,10 @@
 #ifdef __cplusplus
 extern "C" {
 #endif /*__cplusplus */
+
+void smartdns_exit(int status);
+
+void smartdns_restart(void);
 
 #ifdef TEST
 

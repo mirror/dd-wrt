@@ -1,6 +1,6 @@
 /*************************************************************************
  *
- * Copyright (C) 2018-2023 Ruilin Peng (Nick) <pymumu@gmail.com>.
+ * Copyright (C) 2018-2024 Ruilin Peng (Nick) <pymumu@gmail.com>.
  *
  * smartdns is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -69,6 +69,8 @@ int is_private_addr(const unsigned char *addr, int addr_len);
 
 int getaddr_by_host(const char *host, struct sockaddr *addr, socklen_t *addr_len);
 
+int get_raw_addr_by_ip(const char *ip, unsigned char *raw_addr, int *raw_addr_len);
+
 int getsocket_inet(int fd, struct sockaddr *addr, socklen_t *addr_len);
 
 int fill_sockaddr_by_ip(unsigned char *ip, int ip_len, int port, struct sockaddr *addr, socklen_t *addr_len);
@@ -80,6 +82,8 @@ int check_is_ipaddr(const char *ip);
 int check_is_ipv4(const char *ip);
 
 int check_is_ipv6(const char *ip);
+
+int parser_mac_address(const char *in_mac, uint8_t mac[6]);
 
 int parse_uri(const char *value, char *scheme, char *host, int *port, char *path);
 
@@ -99,13 +103,17 @@ int ipset_add(const char *ipset_name, const unsigned char addr[], int addr_len, 
 
 int ipset_del(const char *ipset_name, const unsigned char addr[], int addr_len);
 
+int netlink_get_neighbors(int family,
+						  int (*callback)(const uint8_t *net_addr, int net_addr_len, const uint8_t mac[6], void *arg),
+						  void *arg);
+
 void SSL_CRYPTO_thread_setup(void);
 
 void SSL_CRYPTO_thread_cleanup(void);
 
 unsigned char *SSL_SHA256(const unsigned char *d, size_t n, unsigned char *md);
 
-int SSL_base64_decode(const char *in, unsigned char *out);
+int SSL_base64_decode(const char *in, unsigned char *out, int max_outlen);
 
 int SSL_base64_encode(const void *in, int in_len, char *out);
 

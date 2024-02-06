@@ -1,6 +1,6 @@
 /*************************************************************************
  *
- * Copyright (C) 2018-2023 Ruilin Peng (Nick) <pymumu@gmail.com>.
+ * Copyright (C) 2018-2024 Ruilin Peng (Nick) <pymumu@gmail.com>.
  *
  * smartdns is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,6 +23,7 @@
 #include "dns_cache.h"
 #include "dns_client.h"
 #include "dns_conf.h"
+#include "dns_plugin.h"
 #include "dns_server.h"
 #include "fast_ping.h"
 #include "hashtable.h"
@@ -64,6 +65,8 @@ typedef enum {
 } smartdns_run_monitor_ret;
 
 static int verbose_screen;
+static int exit_status;
+static int exit_restart;
 
 int capget(struct __user_cap_header_struct *header, struct __user_cap_data_struct *cap);
 int capset(struct __user_cap_header_struct *header, struct __user_cap_data_struct *cap);
@@ -174,18 +177,28 @@ static void _help(void)
 	printf("%s", help);
 }
 
-static void _show_version(void)
+static void _smartdns_get_version(char *str_ver, int str_ver_len)
 {
-	char str_ver[256] = {0};
+	char commit_ver[TMP_BUFF_LEN_32] = {0};
+#ifdef COMMIT_VERION
+	snprintf(commit_ver, sizeof(commit_ver), " (%s)", COMMIT_VERION);
+#endif
+
 #ifdef SMARTDNS_VERION
 	const char *ver = SMARTDNS_VERION;
-	snprintf(str_ver, sizeof(str_ver), "%s", ver);
+	snprintf(str_ver, str_ver_len, "%s%s", ver, commit_ver);
 #else
 	struct tm tm;
 	get_compiled_time(&tm);
-	snprintf(str_ver, sizeof(str_ver), "1.%.4d%.2d%.2d-%.2d%.2d", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday,
-			 tm.tm_hour, tm.tm_min);
+	snprintf(str_ver, str_ver_len, "1.%.4d%.2d%.2d-%.2d%.2d%s", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday,
+			 tm.tm_hour, tm.tm_min, commit_ver);
 #endif
+}
+
+static void _show_version(void)
+{
+	char str_ver[256] = {0};
+	_smartdns_get_version(str_ver, sizeof(str_ver));
 	printf("smartdns %s\n", str_ver);
 }
 
@@ -263,7 +276,8 @@ static int _smartdns_prepare_server_flags(struct client_dns_server_flags *flags,
 	case DNS_SERVER_HTTPS: {
 		struct client_dns_server_flag_https *flag_http = &flags->https;
 		if (server->spki[0] != 0) {
-			flag_http->spi_len = dns_client_spki_decode(server->spki, (unsigned char *)flag_http->spki);
+			flag_http->spi_len =
+				dns_client_spki_decode(server->spki, (unsigned char *)flag_http->spki, sizeof(flag_http->spki));
 			if (flag_http->spi_len <= 0) {
 				tlog(TLOG_ERROR, "decode spki failed, %s:%d", server->server, server->port);
 				return -1;
@@ -278,7 +292,8 @@ static int _smartdns_prepare_server_flags(struct client_dns_server_flags *flags,
 	case DNS_SERVER_TLS: {
 		struct client_dns_server_flag_tls *flag_tls = &flags->tls;
 		if (server->spki[0] != 0) {
-			flag_tls->spi_len = dns_client_spki_decode(server->spki, (unsigned char *)flag_tls->spki);
+			flag_tls->spi_len =
+				dns_client_spki_decode(server->spki, (unsigned char *)flag_tls->spki, sizeof(flag_tls->spki));
 			if (flag_tls->spi_len <= 0) {
 				tlog(TLOG_ERROR, "decode spki failed, %s:%d", server->server, server->port);
 				return -1;
@@ -399,18 +414,36 @@ static int _proxy_add_servers(void)
 	return 0;
 }
 
-static int _smartdns_set_ecs_ip(void)
+static int _smartdns_plugin_init(void)
 {
 	int ret = 0;
-	if (dns_conf_ipv4_ecs.enable) {
-		ret |= dns_client_set_ecs(dns_conf_ipv4_ecs.ip, dns_conf_ipv4_ecs.subnet);
+	unsigned long i = 0;
+	struct dns_conf_plugin *plugin = NULL;
+	struct hlist_node *tmp = NULL;
+
+	ret = dns_server_plugin_init();
+	if (ret != 0) {
+		tlog(TLOG_ERROR, "init plugin failed.");
+		goto errout;
 	}
 
-	if (dns_conf_ipv6_ecs.enable) {
-		ret |= dns_client_set_ecs(dns_conf_ipv6_ecs.ip, dns_conf_ipv6_ecs.subnet);
+	hash_for_each_safe(dns_conf_plugin_table.plugins, i, tmp, plugin, node)
+	{
+		ret = dns_plugin_add(plugin->file, plugin->argc, plugin->args, plugin->args_len);
+		if (ret != 0) {
+			goto errout;
+		}
 	}
 
-	return ret;
+	return 0;
+errout:
+	return -1;
+}
+
+static int _smartdns_plugin_exit(void)
+{
+	dns_server_plugin_exit();
+	return 0;
 }
 
 #ifdef HAVE_OPENSSL
@@ -599,14 +632,16 @@ errout:
 static int _smartdns_init(void)
 {
 	int ret = 0;
+	char str_ver[256] = {0};
 
 	if (_smartdns_init_log() != 0) {
 		tlog(TLOG_ERROR, "init log failed.");
 		goto errout;
 	}
 
-	tlog(TLOG_NOTICE, "smartdns starting...(Copyright (C) Nick Peng <pymumu@gmail.com>, build: %s %s)", __DATE__,
-		 __TIME__);
+	_smartdns_get_version(str_ver, sizeof(str_ver));
+
+	tlog(TLOG_NOTICE, "smartdns starting...(Copyright (C) Nick Peng <pymumu@gmail.com>, build: %s)", str_ver);
 
 	if (dns_timer_init() != 0) {
 		tlog(TLOG_ERROR, "init timer failed.");
@@ -658,9 +693,10 @@ static int _smartdns_init(void)
 		goto errout;
 	}
 
-	ret = _smartdns_set_ecs_ip();
+	ret = _smartdns_plugin_init();
 	if (ret != 0) {
-		tlog(TLOG_WARN, "set ecs ip address failed.");
+		tlog(TLOG_ERROR, "init plugin failed.");
+		goto errout;
 	}
 
 	return 0;
@@ -676,6 +712,7 @@ static int _smartdns_run(void)
 
 static void _smartdns_exit(void)
 {
+	_smartdns_plugin_exit();
 	dns_client_exit();
 	proxy_exit();
 	fast_ping_exit();
@@ -953,6 +990,29 @@ static void _smartdns_print_error_tip(void)
 	}
 }
 
+void smartdns_exit(int status)
+{
+	dns_server_stop();
+	exit_status = status;
+}
+
+void smartdns_restart(void)
+{
+	dns_server_stop();
+	exit_restart = 1;
+}
+
+static int smartdns_enter_monitor_mode(int argc, char *argv[], int no_deamon)
+{
+	setenv("SMARTDNS_RESTART_ON_CRASH", "1", 1);
+	if (no_deamon == 1) {
+		setenv("SMARTDNS_NO_DAEMON", "1", 1);
+	}
+	execv(argv[0], argv);
+	tlog(TLOG_ERROR, "execv failed, %s", strerror(errno));
+	return -1;
+}
+
 #ifdef TEST
 
 static smartdns_post_func _smartdns_post = NULL;
@@ -1062,6 +1122,16 @@ int main(int argc, char *argv[])
 		}
 	}
 
+	if (getenv("SMARTDNS_RESTART_ON_CRASH") != NULL) {
+		restart_when_crash = 1;
+		unsetenv("SMARTDNS_RESTART_ON_CRASH");
+	}
+
+	if (getenv("SMARTDNS_NO_DAEMON") != NULL) {
+		is_run_as_daemon = 0;
+		unsetenv("SMARTDNS_NO_DAEMON");
+	}
+
 	smartdns_run_monitor_ret init_ret = _smartdns_run_monitor(restart_when_crash, is_run_as_daemon);
 	if (init_ret != SMARTDNS_RUN_MONITOR_OK) {
 		if (init_ret == SMARTDNS_RUN_MONITOR_EXIT) {
@@ -1079,6 +1149,10 @@ int main(int argc, char *argv[])
 	if (ret != 0) {
 		fprintf(stderr, "load config failed.\n");
 		goto errout;
+	}
+
+	if (dns_restart_on_crash && restart_when_crash == 0) {
+		return smartdns_enter_monitor_mode(argc, argv, dns_no_daemon || !is_run_as_daemon);
 	}
 
 	if (dns_no_daemon || restart_when_crash) {
@@ -1152,8 +1226,20 @@ int main(int argc, char *argv[])
 
 	smartdns_test_notify(1);
 	ret = _smartdns_run();
-	tlog(TLOG_INFO, "smartdns exit...");
-	_smartdns_exit();
+	if (ret == 0 && exit_status != 0) {
+		ret = exit_status;
+	}
+
+	if (exit_restart == 0) {
+		tlog(TLOG_INFO, "smartdns exit...");
+		_smartdns_exit();
+	} else {
+		tlog(TLOG_INFO, "smartdns restart...");
+		_smartdns_exit();
+		if (restart_when_crash == 0) {
+			execve(argv[0], argv, environ);
+		}
+	}
 	return ret;
 errout:
 	if (is_run_as_daemon) {

@@ -1,6 +1,6 @@
 /*************************************************************************
  *
- * Copyright (C) 2018-2023 Ruilin Peng (Nick) <pymumu@gmail.com>.
+ * Copyright (C) 2018-2024 Ruilin Peng (Nick) <pymumu@gmail.com>.
  *
  * smartdns is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -215,10 +215,6 @@ struct dns_client {
 	atomic_t dns_server_num;
 	atomic_t dns_server_prohibit_num;
 
-	/* ECS */
-	struct dns_client_ecs ecs_ipv4;
-	struct dns_client_ecs ecs_ipv6;
-
 	/* query domain hash table, key: sid + domain */
 	pthread_mutex_t domain_map_lock;
 	DECLARE_HASHTABLE(domain_map, 6);
@@ -243,6 +239,8 @@ struct dns_query_struct {
 	struct list_head dns_request_list;
 	atomic_t refcnt;
 	struct dns_server_group *server_group;
+
+	struct dns_conf_group *conf;
 
 	/* query id, hash key sid + domain*/
 	char domain[DNS_MAX_CNAME_LEN];
@@ -283,11 +281,10 @@ static LIST_HEAD(pending_servers);
 static pthread_mutex_t pending_server_mutex = PTHREAD_MUTEX_INITIALIZER;
 static int dns_client_has_bootstrap_dns = 0;
 
+static void _dns_client_retry_dns_query(struct dns_query_struct *query);
 static int _dns_client_send_udp(struct dns_server_info *server_info, void *packet, int len);
 static void _dns_client_clear_wakeup_event(void);
 static void _dns_client_do_wakeup_event(void);
-static int _dns_client_setup_ecs(char *ip, int subnet, struct dns_client_ecs *ecs_ipv4,
-								 struct dns_client_ecs *ecs_ipv6);
 
 #ifdef HAVE_OPENSSL
 static ssize_t _ssl_read(struct dns_server_info *server, void *buff, int num)
@@ -622,7 +619,7 @@ static struct dns_server_group *_dns_client_get_dnsserver_group(const char *grou
 		goto use_default;
 	} else {
 		if (list_empty(&group->head)) {
-			tlog(TLOG_INFO, "group %s not exist, use default group.", group_name);
+			tlog(TLOG_DEBUG, "group %s not exist, use default group.", group_name);
 			goto use_default;
 		}
 	}
@@ -895,11 +892,11 @@ static void _dns_client_group_remove_all(void)
 }
 
 #ifdef HAVE_OPENSSL
-int dns_client_spki_decode(const char *spki, unsigned char *spki_data_out)
+int dns_client_spki_decode(const char *spki, unsigned char *spki_data_out, int spki_data_out_max_len)
 {
 	int spki_data_len = -1;
 
-	spki_data_len = SSL_base64_decode(spki, spki_data_out);
+	spki_data_len = SSL_base64_decode(spki, spki_data_out, spki_data_out_max_len);
 
 	if (spki_data_len != SHA256_DIGEST_LENGTH) {
 		return -1;
@@ -1056,6 +1053,46 @@ errout:
 }
 #endif
 
+static int _dns_client_setup_ecs(char *ip, int subnet, struct dns_client_ecs *ecs)
+{
+	struct sockaddr_storage addr;
+	socklen_t addr_len = sizeof(addr);
+	if (getaddr_by_host(ip, (struct sockaddr *)&addr, &addr_len) != 0) {
+		return -1;
+	}
+
+	switch (addr.ss_family) {
+	case AF_INET: {
+		struct sockaddr_in *addr_in = NULL;
+		addr_in = (struct sockaddr_in *)&addr;
+		memcpy(&ecs->ecs.addr, &addr_in->sin_addr.s_addr, 4);
+		ecs->ecs.source_prefix = subnet;
+		ecs->ecs.scope_prefix = 0;
+		ecs->ecs.family = DNS_OPT_ECS_FAMILY_IPV4;
+		ecs->enable = 1;
+	} break;
+	case AF_INET6: {
+		struct sockaddr_in6 *addr_in6 = NULL;
+		addr_in6 = (struct sockaddr_in6 *)&addr;
+		if (IN6_IS_ADDR_V4MAPPED(&addr_in6->sin6_addr)) {
+			ecs->ecs.source_prefix = subnet;
+			ecs->ecs.scope_prefix = 0;
+			ecs->ecs.family = DNS_OPT_ECS_FAMILY_IPV4;
+			ecs->enable = 1;
+		} else {
+			memcpy(&ecs->ecs.addr, addr_in6->sin6_addr.s6_addr, 16);
+			ecs->ecs.source_prefix = subnet;
+			ecs->ecs.scope_prefix = 0;
+			ecs->ecs.family = DNS_ADDR_FAMILY_IPV6;
+			ecs->enable = 1;
+		}
+	} break;
+	default:
+		return -1;
+	}
+	return 0;
+}
+
 static int _dns_client_server_add_ecs(struct dns_server_info *server_info, struct client_dns_server_flags *flags)
 {
 	int ret = 0;
@@ -1065,11 +1102,11 @@ static int _dns_client_server_add_ecs(struct dns_server_info *server_info, struc
 	}
 
 	if (flags->ipv4_ecs.enable) {
-		ret = _dns_client_setup_ecs(flags->ipv4_ecs.ip, flags->ipv4_ecs.subnet, &server_info->ecs_ipv4, NULL);
+		ret = _dns_client_setup_ecs(flags->ipv4_ecs.ip, flags->ipv4_ecs.subnet, &server_info->ecs_ipv4);
 	}
 
 	if (flags->ipv6_ecs.enable) {
-		ret |= _dns_client_setup_ecs(flags->ipv6_ecs.ip, flags->ipv6_ecs.subnet, NULL, &server_info->ecs_ipv6);
+		ret |= _dns_client_setup_ecs(flags->ipv6_ecs.ip, flags->ipv6_ecs.subnet, &server_info->ecs_ipv6);
 	}
 
 	return ret;
@@ -1866,17 +1903,21 @@ static int _dns_client_recv(struct dns_server_info *server_info, unsigned char *
 	if (query->callback) {
 		ret = query->callback(query->domain, DNS_QUERY_RESULT, server_info, packet, inpacket, inpacket_len,
 							  query->user_ptr);
-		if (request_num == 0 && ret == 0) {
-			/* if all server replied, or done, stop query, release resource */
-			_dns_client_query_remove(query);
-		}
 
-		if (ret == 0) {
-			query->has_result = 1;
-		} else {
+		if (ret == DNS_CLIENT_ACTION_RETRY || ret == DNS_CLIENT_ACTION_DROP) {
 			/* remove this result */
 			_dns_replied_check_remove(query, from, from_len);
 			atomic_inc(&query->dns_request_sent);
+			if (ret == DNS_CLIENT_ACTION_RETRY) {
+				/* retry immdiately */
+				_dns_client_retry_dns_query(query);
+			}
+		} else {
+			query->has_result = 1;
+			if (request_num == 0) {
+				/* if all server replied, or done, stop query, release resource */
+				_dns_client_query_remove(query);
+			}
 		}
 	}
 
@@ -1923,6 +1964,10 @@ static int _dns_client_create_socket_udp_proxy(struct dns_server_info *server_in
 
 	set_fd_nonblock(fd, 1);
 	set_sock_keepalive(fd, 30, 3, 5);
+	if (dns_socket_buff_size > 0) {
+		setsockopt(fd, SOL_SOCKET, SO_SNDBUF, &dns_socket_buff_size, sizeof(dns_socket_buff_size));
+		setsockopt(fd, SOL_SOCKET, SO_RCVBUF, &dns_socket_buff_size, sizeof(dns_socket_buff_size));
+	}
 
 	ret = proxy_conn_connect(proxy);
 	if (ret != 0) {
@@ -2022,6 +2067,11 @@ static int _dns_client_create_socket_udp(struct dns_server_info *server_info)
 		setsockopt(server_info->fd, IPPROTO_IPV6, IPV6_RECVHOPLIMIT, &on, sizeof(on));
 		setsockopt(server_info->fd, IPPROTO_IPV6, IPV6_2292HOPLIMIT, &on, sizeof(on));
 		setsockopt(server_info->fd, IPPROTO_IPV6, IPV6_HOPLIMIT, &on, sizeof(on));
+	}
+
+	if (dns_socket_buff_size > 0) {
+		setsockopt(server_info->fd, SOL_SOCKET, SO_SNDBUF, &dns_socket_buff_size, sizeof(dns_socket_buff_size));
+		setsockopt(server_info->fd, SOL_SOCKET, SO_RCVBUF, &dns_socket_buff_size, sizeof(dns_socket_buff_size));
 	}
 
 	return 0;
@@ -2164,6 +2214,10 @@ static int _DNS_client_create_socket_tcp(struct dns_server_info *server_info)
 	setsockopt(fd, IPPROTO_TCP, TCP_THIN_DUPACK, &yes, sizeof(yes));
 	setsockopt(fd, IPPROTO_TCP, TCP_THIN_LINEAR_TIMEOUTS, &yes, sizeof(yes));
 	set_sock_keepalive(fd, 30, 3, 5);
+	if (dns_socket_buff_size > 0) {
+		setsockopt(fd, SOL_SOCKET, SO_SNDBUF, &dns_socket_buff_size, sizeof(dns_socket_buff_size));
+		setsockopt(fd, SOL_SOCKET, SO_RCVBUF, &dns_socket_buff_size, sizeof(dns_socket_buff_size));
+	}
 
 	if (proxy) {
 		ret = proxy_conn_connect(proxy);
@@ -2285,6 +2339,10 @@ static int _DNS_client_create_socket_tls(struct dns_server_info *server_info, ch
 	set_sock_keepalive(fd, 30, 3, 5);
 	setsockopt(fd, SOL_SOCKET, SO_PRIORITY, &priority, sizeof(priority));
 	setsockopt(fd, IPPROTO_IP, IP_TOS, &ip_tos, sizeof(ip_tos));
+	if (dns_socket_buff_size > 0) {
+		setsockopt(fd, SOL_SOCKET, SO_SNDBUF, &dns_socket_buff_size, sizeof(dns_socket_buff_size));
+		setsockopt(fd, SOL_SOCKET, SO_RCVBUF, &dns_socket_buff_size, sizeof(dns_socket_buff_size));
+	}
 
 	if (proxy) {
 		ret = proxy_conn_connect(proxy);
@@ -2450,7 +2508,16 @@ static int _dns_client_process_udp_proxy(struct dns_server_info *server_info, st
 
 	len = proxy_conn_recvfrom(server_info->proxy, inpacket, sizeof(inpacket), 0, (struct sockaddr *)&from, &from_len);
 	if (len < 0) {
-		tlog(TLOG_ERROR, "recvfrom failed, %s\n", strerror(errno));
+		if (errno == EAGAIN || errno == EWOULDBLOCK) {
+			return 0;
+		}
+
+		if (errno == ECONNREFUSED || errno == ENETUNREACH || errno == EHOSTUNREACH) {
+			tlog(TLOG_DEBUG, "recvfrom %s failed, %s\n", server_info->ip, strerror(errno));
+			goto errout;
+		}
+
+		tlog(TLOG_ERROR, "recvfrom %s failed, %s\n", server_info->ip, strerror(errno));
 		goto errout;
 	} else if (len == 0) {
 		pthread_mutex_lock(&client.server_list_lock);
@@ -2527,6 +2594,7 @@ static int _dns_client_process_udp(struct dns_server_info *server_info, struct e
 			return 0;
 		}
 
+		server_info->prohibit = 1;
 		if (errno == ECONNREFUSED || errno == ENETUNREACH || errno == EHOSTUNREACH) {
 			tlog(TLOG_DEBUG, "recvfrom %s failed, %s\n", server_info->ip, strerror(errno));
 			goto errout;
@@ -2617,7 +2685,8 @@ static int _dns_client_socket_ssl_send(struct dns_server_info *server, const voi
 		errno = EAGAIN;
 		ret = -SSL_ERROR_WANT_WRITE;
 		break;
-	case SSL_ERROR_SSL:
+	case SSL_ERROR_SSL: {
+		char buff[256];
 		ssl_err = ERR_get_error();
 		int ssl_reason = ERR_GET_REASON(ssl_err);
 		if (ssl_reason == SSL_R_UNINITIALIZED || ssl_reason == SSL_R_PROTOCOL_IS_SHUTDOWN ||
@@ -2627,10 +2696,10 @@ static int _dns_client_socket_ssl_send(struct dns_server_info *server, const voi
 			return -1;
 		}
 
-		tlog(TLOG_ERROR, "SSL write fail error no:  %s(%d)\n", ERR_reason_error_string(ssl_err), ssl_reason);
+		tlog(TLOG_ERROR, "server %s SSL write fail error: %s", server->ip, ERR_error_string(ssl_err, buff));
 		errno = EFAULT;
 		ret = -1;
-		break;
+	} break;
 	case SSL_ERROR_SYSCALL:
 		tlog(TLOG_DEBUG, "SSL syscall failed, %s", strerror(errno));
 		return ret;
@@ -2673,7 +2742,9 @@ static int _dns_client_socket_ssl_recv(struct dns_server_info *server, void *buf
 		errno = EAGAIN;
 		ret = -SSL_ERROR_WANT_WRITE;
 		break;
-	case SSL_ERROR_SSL:
+	case SSL_ERROR_SSL: {
+		char buff[256];
+
 		ssl_err = ERR_get_error();
 		int ssl_reason = ERR_GET_REASON(ssl_err);
 		if (ssl_reason == SSL_R_UNINITIALIZED) {
@@ -2691,11 +2762,10 @@ static int _dns_client_socket_ssl_recv(struct dns_server_info *server, void *buf
 		}
 #endif
 
-		tlog(TLOG_WARN, "SSL read fail error no: %s(%lx), reason: %d\n", ERR_reason_error_string(ssl_err), ssl_err,
-			 ssl_reason);
+		tlog(TLOG_ERROR, "server %s SSL read fail error: %s", server->ip, ERR_error_string(ssl_err, buff));
 		errno = EFAULT;
 		ret = -1;
-		break;
+	} break;
 	case SSL_ERROR_SYSCALL:
 		if (errno == 0) {
 			return 0;
@@ -3986,31 +4056,31 @@ static int _dns_client_send_query(struct dns_query_struct *query)
 
 static int _dns_client_query_setup_default_ecs(struct dns_query_struct *query)
 {
-	int add_ipv4_ecs = 0;
-	int add_ipv6_ecs = 0;
+	struct dns_conf_group *conf = query->conf;
+	struct dns_edns_client_subnet *ecs_conf = NULL;
 
-	if (query->qtype == DNS_T_A && client.ecs_ipv4.enable) {
-		add_ipv4_ecs = 1;
-	} else if (query->qtype == DNS_T_AAAA && client.ecs_ipv6.enable) {
-		add_ipv6_ecs = 1;
+	if (query->qtype == DNS_T_A && conf->ipv4_ecs.enable) {
+		ecs_conf = &conf->ipv4_ecs;
+	} else if (query->qtype == DNS_T_AAAA && conf->ipv6_ecs.enable) {
+		ecs_conf = &conf->ipv6_ecs;
 	} else {
-		if (client.ecs_ipv4.enable) {
-			add_ipv4_ecs = 1;
-		} else if (client.ecs_ipv6.enable) {
-			add_ipv6_ecs = 1;
+		if (conf->ipv4_ecs.enable) {
+			ecs_conf = &conf->ipv4_ecs;
+		} else if (conf->ipv6_ecs.enable) {
+			ecs_conf = &conf->ipv6_ecs;
 		}
 	}
 
-	if (add_ipv6_ecs) {
-		memcpy(&query->ecs, &client.ecs_ipv6, sizeof(query->ecs));
+	if (ecs_conf == NULL) {
 		return 0;
 	}
 
-	if (add_ipv4_ecs) {
-		memcpy(&query->ecs, &client.ecs_ipv4, sizeof(query->ecs));
-		return 0;
+	struct dns_client_ecs ecs;
+	if (_dns_client_setup_ecs(ecs_conf->ip, ecs_conf->subnet, &ecs) != 0) {
+		return -1;
 	}
 
+	memcpy(&query->ecs, &ecs, sizeof(query->ecs));
 	return 0;
 }
 
@@ -4079,6 +4149,19 @@ static int _dns_client_query_parser_options(struct dns_query_struct *query, stru
 	}
 
 	return 0;
+}
+
+static void _dns_client_retry_dns_query(struct dns_query_struct *query)
+{
+	if (atomic_dec_and_test(&query->retry_count) || (query->has_result != 0)) {
+		_dns_client_query_remove(query);
+		if (query->has_result == 0) {
+			tlog(TLOG_DEBUG, "retry query %s, type: %d, id: %d failed", query->domain, query->qtype, query->sid);
+		}
+	} else {
+		tlog(TLOG_DEBUG, "retry query %s, type: %d, id: %d", query->domain, query->qtype, query->sid);
+		_dns_client_send_query(query);
+	}
 }
 
 static int _dns_client_add_hashmap(struct dns_query_struct *query)
@@ -4165,6 +4248,12 @@ int dns_client_query(const char *domain, int qtype, dns_client_callback callback
 	query->server_group = _dns_client_get_dnsserver_group(group_name);
 	if (query->server_group == NULL) {
 		tlog(TLOG_ERROR, "get dns server group %s failed.", group_name);
+		goto errout;
+	}
+
+	query->conf = dns_server_get_rule_group(options->conf_group_name);
+	if (query->conf == NULL) {
+		tlog(TLOG_ERROR, "get dns config group %s failed.", options->conf_group_name);
 		goto errout;
 	}
 
@@ -4487,16 +4576,7 @@ static void _dns_client_period_run(unsigned int msec)
 		if (atomic_read(&query->retry_count) == 1) {
 			_dns_client_check_udp_nat(query);
 		}
-
-		if (atomic_dec_and_test(&query->retry_count) || (query->has_result != 0)) {
-			_dns_client_query_remove(query);
-			if (query->has_result == 0) {
-				tlog(TLOG_DEBUG, "retry query %s, type: %d, id: %d failed", query->domain, query->qtype, query->sid);
-			}
-		} else {
-			tlog(TLOG_DEBUG, "retry query %s, type: %d, id: %d", query->domain, query->qtype, query->sid);
-			_dns_client_send_query(query);
-		}
+		_dns_client_retry_dns_query(query);
 		_dns_client_query_release(query);
 	}
 
@@ -4589,51 +4669,6 @@ static void *_dns_client_work(void *arg)
 	client.epoll_fd = -1;
 
 	return NULL;
-}
-
-static int _dns_client_setup_ecs(char *ip, int subnet, struct dns_client_ecs *ecs_ipv4, struct dns_client_ecs *ecs_ipv6)
-{
-	struct sockaddr_storage addr;
-	socklen_t addr_len = sizeof(addr);
-	if (getaddr_by_host(ip, (struct sockaddr *)&addr, &addr_len) != 0) {
-		return -1;
-	}
-
-	switch (addr.ss_family) {
-	case AF_INET: {
-		struct sockaddr_in *addr_in = NULL;
-		addr_in = (struct sockaddr_in *)&addr;
-		memcpy(&ecs_ipv4->ecs.addr, &addr_in->sin_addr.s_addr, 4);
-		ecs_ipv4->ecs.source_prefix = subnet;
-		ecs_ipv4->ecs.scope_prefix = 0;
-		ecs_ipv4->ecs.family = DNS_OPT_ECS_FAMILY_IPV4;
-		ecs_ipv4->enable = 1;
-	} break;
-	case AF_INET6: {
-		struct sockaddr_in6 *addr_in6 = NULL;
-		addr_in6 = (struct sockaddr_in6 *)&addr;
-		if (IN6_IS_ADDR_V4MAPPED(&addr_in6->sin6_addr)) {
-			ecs_ipv4->ecs.source_prefix = subnet;
-			ecs_ipv4->ecs.scope_prefix = 0;
-			ecs_ipv4->ecs.family = DNS_OPT_ECS_FAMILY_IPV4;
-			ecs_ipv4->enable = 1;
-		} else {
-			memcpy(&ecs_ipv6->ecs.addr, addr_in6->sin6_addr.s6_addr, 16);
-			ecs_ipv6->ecs.source_prefix = subnet;
-			ecs_ipv6->ecs.scope_prefix = 0;
-			ecs_ipv6->ecs.family = DNS_ADDR_FAMILY_IPV6;
-			ecs_ipv6->enable = 1;
-		}
-	} break;
-	default:
-		return -1;
-	}
-	return 0;
-}
-
-int dns_client_set_ecs(char *ip, int subnet)
-{
-	return _dns_client_setup_ecs(ip, subnet, &client.ecs_ipv4, &client.ecs_ipv6);
 }
 
 static int _dns_client_create_wakeup_event(void)

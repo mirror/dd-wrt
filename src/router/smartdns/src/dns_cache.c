@@ -1,6 +1,6 @@
 /*************************************************************************
  *
- * Copyright (C) 2018-2023 Ruilin Peng (Nick) <pymumu@gmail.com>.
+ * Copyright (C) 2018-2024 Ruilin Peng (Nick) <pymumu@gmail.com>.
  *
  * smartdns is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -39,7 +39,9 @@ struct dns_cache_head {
 	struct hash_table cache_hash;
 	struct list_head cache_list;
 	atomic_t num;
+	atomic_t mem_size;
 	int size;
+	long max_mem_size;
 	pthread_mutex_t lock;
 	dns_cache_callback timeout_callback;
 };
@@ -49,7 +51,7 @@ typedef int (*dns_cache_read_callback)(struct dns_cache_record *cache_record, st
 static int is_cache_init;
 static struct dns_cache_head dns_cache_head;
 
-int dns_cache_init(int size, dns_cache_callback timeout_callback)
+int dns_cache_init(int size, int mem_size, dns_cache_callback timeout_callback)
 {
 	int bits = 0;
 	pthread_mutexattr_t mta;
@@ -68,7 +70,12 @@ int dns_cache_init(int size, dns_cache_callback timeout_callback)
 
 	hash_table_init(dns_cache_head.cache_hash, bits, malloc);
 	atomic_set(&dns_cache_head.num, 0);
+	atomic_set(&dns_cache_head.mem_size, 0);
 	dns_cache_head.size = size;
+	dns_cache_head.max_mem_size = mem_size;
+	if (mem_size > 0) {
+		dns_cache_head.size = INT32_MAX;
+	}
 	dns_cache_head.timeout_callback = timeout_callback;
 	pthread_mutexattr_init(&mta);
 	pthread_mutexattr_settype(&mta, PTHREAD_MUTEX_RECURSIVE);
@@ -91,6 +98,7 @@ static void _dns_cache_delete(struct dns_cache *dns_cache)
 	list_del_init(&dns_cache->list);
 	pthread_mutex_unlock(&dns_cache_head.lock);
 	atomic_dec(&dns_cache_head.num);
+	atomic_sub(sizeof(*dns_cache), &dns_cache_head.mem_size);
 	if (dns_cache->cache_data) {
 		dns_cache_data_put(dns_cache->cache_data);
 	}
@@ -158,6 +166,7 @@ struct dns_cache_data *dns_cache_new_data_packet(void *packet, size_t packet_len
 	cache_packet->head.size = packet_len;
 	cache_packet->head.magic = MAGIC_CACHE_DATA;
 	atomic_set(&cache_packet->head.ref, 1);
+	atomic_add(data_size, &dns_cache_head.mem_size);
 
 	return (struct dns_cache_data *)cache_packet;
 }
@@ -314,6 +323,7 @@ static int _dns_cache_insert(struct dns_cache_info *info, struct dns_cache_data 
 	}
 
 	memset(dns_cache, 0, sizeof(*dns_cache));
+	atomic_add(sizeof(*dns_cache), &dns_cache_head.mem_size);
 	key = hash_string(info->domain);
 	key = jhash(&info->qtype, sizeof(info->qtype), key);
 	key = hash_string_initval(info->dns_group_name, key);
@@ -333,7 +343,8 @@ static int _dns_cache_insert(struct dns_cache_info *info, struct dns_cache_data 
 	list_add_tail(&dns_cache->list, head);
 
 	/* Release extra cache, remove oldest cache record */
-	if (atomic_inc_return(&dns_cache_head.num) > dns_cache_head.size) {
+	if (atomic_inc_return(&dns_cache_head.num) > dns_cache_head.size ||
+		(dns_cache_head.max_mem_size > 0 && atomic_read(&dns_cache_head.mem_size) > dns_cache_head.max_mem_size)) {
 		struct dns_cache *del_cache = NULL;
 		del_cache = _dns_cache_first();
 		if (del_cache) {
@@ -496,6 +507,19 @@ void dns_cache_data_get(struct dns_cache_data *cache_data)
 	return;
 }
 
+void dns_cache_flush(void)
+{
+	struct dns_cache *dns_cache = NULL;
+	struct dns_cache *tmp = NULL;
+
+	pthread_mutex_lock(&dns_cache_head.lock);
+	list_for_each_entry_safe(dns_cache, tmp, &dns_cache_head.cache_list, list)
+	{
+		_dns_cache_remove(dns_cache);
+	}
+	pthread_mutex_unlock(&dns_cache_head.lock);
+}
+
 void dns_cache_data_put(struct dns_cache_data *cache_data)
 {
 	if (cache_data == NULL) {
@@ -506,6 +530,7 @@ void dns_cache_data_put(struct dns_cache_data *cache_data)
 		return;
 	}
 
+	atomic_sub(cache_data->head.size + sizeof(*cache_data), &dns_cache_head.mem_size);
 	free(cache_data);
 }
 
@@ -517,6 +542,11 @@ int dns_cache_is_visited(struct dns_cache *dns_cache)
 int dns_cache_total_num(void)
 {
 	return atomic_read(&dns_cache_head.num);
+}
+
+long dns_cache_total_memsize(void)
+{
+	return atomic_read(&dns_cache_head.mem_size);
 }
 
 void dns_cache_delete(struct dns_cache *dns_cache)
@@ -569,9 +599,10 @@ static int _dns_cache_read_to_cache(struct dns_cache_record *cache_record, struc
 		info->replace_time = now;
 	}
 
-	expired_time = dns_conf_serve_expired_prefetch_time;
+	struct dns_conf_group *rule_group = dns_server_get_rule_group(info->dns_group_name);
+	expired_time = rule_group->dns_serve_expired_prefetch_time;
 	if (expired_time == 0) {
-		expired_time = dns_conf_serve_expired_ttl / 2;
+		expired_time = rule_group->dns_serve_expired_ttl / 2;
 		if (expired_time == 0 || expired_time > EXPIRED_DOMAIN_PREFETCH_TIME) {
 			expired_time = EXPIRED_DOMAIN_PREFETCH_TIME;
 		}
@@ -852,19 +883,11 @@ int dns_cache_print(const char *file)
 
 void dns_cache_destroy(void)
 {
-	struct dns_cache *dns_cache = NULL;
-	struct dns_cache *tmp = NULL;
-
 	if (is_cache_init == 0) {
 		return;
 	}
 
-	pthread_mutex_lock(&dns_cache_head.lock);
-	list_for_each_entry_safe(dns_cache, tmp, &dns_cache_head.cache_list, list)
-	{
-		_dns_cache_remove(dns_cache);
-	}
-	pthread_mutex_unlock(&dns_cache_head.lock);
+	dns_cache_flush();
 
 	pthread_mutex_destroy(&dns_cache_head.lock);
 	hash_table_free(dns_cache_head.cache_hash, free);

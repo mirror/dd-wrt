@@ -1,6 +1,6 @@
 /*************************************************************************
  *
- * Copyright (C) 2018-2023 Ruilin Peng (Nick) <pymumu@gmail.com>.
+ * Copyright (C) 2018-2024 Ruilin Peng (Nick) <pymumu@gmail.com>.
  *
  * smartdns is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -68,6 +68,32 @@ typedef int (*dns_result_callback)(const struct dns_result *result, void *user_p
 /* query domain */
 int dns_server_query(const char *domain, int qtype, struct dns_server_query_option *server_query_option,
 					 dns_result_callback callback, void *user_ptr);
+
+struct dns_request;
+
+struct sockaddr *dns_server_request_get_remote_addr(struct dns_request *request);
+
+struct sockaddr *dns_server_request_get_local_addr(struct dns_request *request);
+
+const char *dns_server_request_get_group_name(struct dns_request *request);
+
+const char *dns_server_request_get_domain(struct dns_request *request);
+
+int dns_server_request_get_qtype(struct dns_request *request);
+
+int dns_server_request_get_qclass(struct dns_request *request);
+
+int dns_server_request_get_id(struct dns_request *request);
+
+int dns_server_request_get_rcode(struct dns_request *request);
+
+void dns_server_request_get(struct dns_request *request);
+
+void dns_server_request_put(struct dns_request *request);
+
+void dns_server_request_set_private(struct dns_request *request, void *private_data);
+
+void *dns_server_request_get_private(struct dns_request *request);
 
 #ifdef __cplusplus
 }

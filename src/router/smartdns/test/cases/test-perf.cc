@@ -1,6 +1,6 @@
 /*************************************************************************
  *
- * Copyright (C) 2018-2023 Ruilin Peng (Nick) <pymumu@gmail.com>.
+ * Copyright (C) 2018-2024 Ruilin Peng (Nick) <pymumu@gmail.com>.
  *
  * smartdns is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -63,9 +63,10 @@ TEST_F(Perf, no_speed_check)
 server 127.0.0.1:61053
 speed-check-mode none
 log-level error
+socket-buff-size 1M
 )""");
 	std::string file = "/tmp/smartdns-perftest-domain.list" + smartdns::GenerateRandomString(5);
-	std::string cmd = "dnsperf -p 60053";
+	std::string cmd = "dnsperf -p 60053 -b 1024";
 	cmd += " -d ";
 	cmd += file;
 	std::ofstream ofs(file);

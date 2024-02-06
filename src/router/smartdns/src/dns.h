@@ -1,6 +1,6 @@
 /*************************************************************************
  *
- * Copyright (C) 2018-2023 Ruilin Peng (Nick) <pymumu@gmail.com>.
+ * Copyright (C) 2018-2024 Ruilin Peng (Nick) <pymumu@gmail.com>.
  *
  * smartdns is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -31,7 +31,7 @@ extern "C" {
 #define DNS_PACKSIZE (512 * 16)
 #define DNS_DEFAULT_PACKET_SIZE 512
 #define DNS_MAX_ALPN_LEN 32
-#define DNS_MAX_ECH_LEN 256
+#define DNS_MAX_ECH_LEN 512
 
 #define DNS_OPT_FLAG_DO 0x8000
 
@@ -149,12 +149,12 @@ struct dns_head {
 struct dns_packet_dict_item {
 	unsigned short pos;
 	unsigned int hash;
-};
+} __attribute__((packed));
 
 struct dns_packet_dict {
 	short dict_count;
 	struct dns_packet_dict_item names[DNS_PACKET_DICT_SIZE];
-};
+} __attribute__((packed));
 
 /* packet head */
 struct dns_packet {
@@ -179,7 +179,7 @@ struct dns_rrs {
 	unsigned short len;
 	int type;
 	unsigned char data[0];
-};
+} __attribute__((packed));
 
 /* packet encode/decode context */
 struct dns_context {
@@ -325,6 +325,7 @@ struct dns_https_param *dns_get_HTTPS_svcparm_next(struct dns_rrs *rrs, struct d
 /*
  * Packet operation
  */
+int dns_decode_head_only(struct dns_packet *packet, int maxsize, unsigned char *data, int size);
 int dns_decode(struct dns_packet *packet, int maxsize, unsigned char *data, int size);
 int dns_encode(unsigned char *data, int size, struct dns_packet *packet);
 

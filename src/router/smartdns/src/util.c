@@ -1,6 +1,6 @@
 /*************************************************************************
  *
- * Copyright (C) 2018-2023 Ruilin Peng (Nick) <pymumu@gmail.com>.
+ * Copyright (C) 2018-2024 Ruilin Peng (Nick) <pymumu@gmail.com>.
  *
  * smartdns is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -117,6 +117,7 @@ struct daemon_msg {
 static int ipset_fd;
 static int pidfile_fd;
 static int daemon_fd;
+static int netlink_neighbor_fd;
 
 unsigned long get_tick_count(void)
 {
@@ -275,6 +276,52 @@ errout:
 	if (result) {
 		freeaddrinfo(result);
 	}
+	return -1;
+}
+
+int get_raw_addr_by_ip(const char *ip, unsigned char *raw_addr, int *raw_addr_len)
+{
+	struct sockaddr_storage addr;
+	socklen_t addr_len = sizeof(addr);
+
+	if (getaddr_by_host(ip, (struct sockaddr *)&addr, &addr_len) != 0) {
+		goto errout;
+	}
+
+	switch (addr.ss_family) {
+	case AF_INET: {
+		struct sockaddr_in *addr_in = NULL;
+		addr_in = (struct sockaddr_in *)&addr;
+		if (*raw_addr_len < DNS_RR_A_LEN) {
+			goto errout;
+		}
+		memcpy(raw_addr, &addr_in->sin_addr.s_addr, DNS_RR_A_LEN);
+		*raw_addr_len = DNS_RR_A_LEN;
+	} break;
+	case AF_INET6: {
+		struct sockaddr_in6 *addr_in6 = NULL;
+		addr_in6 = (struct sockaddr_in6 *)&addr;
+		if (IN6_IS_ADDR_V4MAPPED(&addr_in6->sin6_addr)) {
+			if (*raw_addr_len < DNS_RR_A_LEN) {
+				goto errout;
+			}
+			memcpy(raw_addr, addr_in6->sin6_addr.s6_addr + 12, DNS_RR_A_LEN);
+			*raw_addr_len = DNS_RR_A_LEN;
+		} else {
+			if (*raw_addr_len < DNS_RR_AAAA_LEN) {
+				goto errout;
+			}
+			memcpy(raw_addr, addr_in6->sin6_addr.s6_addr, DNS_RR_AAAA_LEN);
+			*raw_addr_len = DNS_RR_AAAA_LEN;
+		}
+	} break;
+	default:
+		goto errout;
+		break;
+	}
+
+	return 0;
+errout:
 	return -1;
 }
 
@@ -695,7 +742,7 @@ static int _ipset_socket_init(void)
 		return 0;
 	}
 
-	ipset_fd = socket(AF_NETLINK, SOCK_RAW, NETLINK_NETFILTER);
+	ipset_fd = socket(AF_NETLINK, SOCK_RAW | SOCK_CLOEXEC, NETLINK_NETFILTER);
 
 	if (ipset_fd < 0) {
 		return -1;
@@ -804,6 +851,109 @@ int ipset_del(const char *ipset_name, const unsigned char addr[], int addr_len)
 	return _ipset_operate(ipset_name, addr, addr_len, 0, IPSET_DEL);
 }
 
+int netlink_get_neighbors(int family,
+						  int (*callback)(const uint8_t *net_addr, int net_addr_len, const uint8_t mac[6], void *arg),
+						  void *arg)
+{
+	if (netlink_neighbor_fd <= 0) {
+		netlink_neighbor_fd = socket(AF_NETLINK, SOCK_RAW | SOCK_CLOEXEC | SOCK_NONBLOCK, NETLINK_ROUTE);
+		if (netlink_neighbor_fd < 0) {
+			return -1;
+		}
+	}
+
+	struct nlmsghdr *nlh;
+	struct ndmsg *ndm;
+	char buf[1024 * 16];
+	struct iovec iov = {buf, sizeof(buf)};
+	struct sockaddr_nl sa;
+	struct msghdr msg;
+	int len;
+	int ret = 0;
+
+	memset(&msg, 0, sizeof(msg));
+	msg.msg_name = &sa;
+	msg.msg_namelen = sizeof(sa);
+	msg.msg_iov = &iov;
+	msg.msg_iovlen = 1;
+
+	nlh = (struct nlmsghdr *)buf;
+	nlh->nlmsg_len = NLMSG_LENGTH(sizeof(struct ndmsg));
+	nlh->nlmsg_type = RTM_GETNEIGH;
+	nlh->nlmsg_flags = NLM_F_REQUEST | NLM_F_DUMP;
+	nlh->nlmsg_seq = time(NULL);
+	nlh->nlmsg_pid = getpid();
+
+	ndm = NLMSG_DATA(nlh);
+	ndm->ndm_family = family;
+
+	if (send(netlink_neighbor_fd, buf, NLMSG_SPACE(sizeof(struct ndmsg)), 0) < 0) {
+		return -1;
+	}
+
+	while ((len = recvmsg(netlink_neighbor_fd, &msg, 0)) > 0) {
+		if (ret != 0) {
+			continue;
+		}
+
+		unsigned int rtalen = len;
+		for (nlh = (struct nlmsghdr *)buf; NLMSG_OK(nlh, rtalen); nlh = NLMSG_NEXT(nlh, rtalen)) {
+			ndm = NLMSG_DATA(nlh);
+			struct rtattr *rta = RTM_RTA(ndm);
+			const uint8_t *mac = NULL;
+			const uint8_t *net_addr = NULL;
+			int net_addr_len = 0;
+
+			for (; RTA_OK(rta, rtalen); rta = RTA_NEXT(rta, rtalen)) {
+				if (rta->rta_type == NDA_DST) {
+					if (ndm->ndm_family == AF_INET) {
+						struct in_addr *addr = RTA_DATA(rta);
+						if (IN_MULTICAST(ntohl(addr->s_addr))) {
+							continue;
+						}
+
+						if (ntohl(addr->s_addr) == 0) {
+							continue;
+						}
+
+						net_addr = (uint8_t *)&addr->s_addr;
+						net_addr_len = IPV4_ADDR_LEN;
+					} else if (ndm->ndm_family == AF_INET6) {
+						struct in6_addr *addr = RTA_DATA(rta);
+						if (IN6_IS_ADDR_MC_NODELOCAL(addr)) {
+							continue;
+						}
+						if (IN6_IS_ADDR_MC_LINKLOCAL(addr)) {
+							continue;
+						}
+						if (IN6_IS_ADDR_MC_SITELOCAL(addr)) {
+							continue;
+						}
+
+						if (IN6_IS_ADDR_UNSPECIFIED(addr)) {
+							continue;
+						}
+
+						net_addr = addr->s6_addr;
+						net_addr_len = IPV6_ADDR_LEN;
+					}
+				} else if (rta->rta_type == NDA_LLADDR) {
+					mac = RTA_DATA(rta);
+				}
+			}
+
+			if (net_addr != NULL && mac != NULL) {
+				ret = callback(net_addr, net_addr_len, mac, arg);
+				if (ret != 0) {
+					break;
+				}
+			}
+		}
+	}
+
+	return ret;
+}
+
 unsigned char *SSL_SHA256(const unsigned char *d, size_t n, unsigned char *md)
 {
 	static unsigned char m[SHA256_DIGEST_LENGTH];
@@ -826,10 +976,14 @@ unsigned char *SSL_SHA256(const unsigned char *d, size_t n, unsigned char *md)
 	return (md);
 }
 
-int SSL_base64_decode(const char *in, unsigned char *out)
+int SSL_base64_decode(const char *in, unsigned char *out, int max_outlen)
 {
 	size_t inlen = strlen(in);
 	int outlen = 0;
+
+	if (max_outlen < (int)inlen / 4 * 3) {
+		goto errout;
+	}
 
 	if (inlen == 0) {
 		return 0;
@@ -1845,6 +1999,29 @@ errout:
 	return DAEMON_RET_ERR;
 }
 
+int parser_mac_address(const char *in_mac, uint8_t mac[6])
+{
+	int fileld_num = 0;
+
+	if (in_mac == NULL) {
+		return -1;
+	}
+
+	fileld_num =
+		sscanf(in_mac, "%2hhx:%2hhx:%2hhx:%2hhx:%2hhx:%2hhx", &mac[0], &mac[1], &mac[2], &mac[3], &mac[4], &mac[5]);
+	if (fileld_num == 6) {
+		return 0;
+	}
+
+	fileld_num =
+		sscanf(in_mac, "%2hhx-%2hhx-%2hhx-%2hhx-%2hhx-%2hhx", &mac[0], &mac[1], &mac[2], &mac[3], &mac[4], &mac[5]);
+	if (fileld_num == 6) {
+		return 0;
+	}
+
+	return -1;
+}
+
 #if defined(DEBUG) || defined(TEST)
 struct _dns_read_packet_info {
 	int data_len;
@@ -2062,10 +2239,6 @@ static int _dns_debug_display(struct dns_packet *packet)
 			case DNS_T_CNAME: {
 				char cname[DNS_MAX_CNAME_LEN];
 				char name[DNS_MAX_CNAME_LEN] = {0};
-				if (dns_conf_force_no_cname) {
-					continue;
-				}
-
 				dns_get_CNAME(rrs, name, DNS_MAX_CNAME_LEN, &ttl, cname, DNS_MAX_CNAME_LEN);
 				printf("domain: %s TTL: %d CNAME: %s\n", name, ttl, cname);
 			} break;

@@ -1,6 +1,6 @@
 /*************************************************************************
  *
- * Copyright (C) 2018-2023 Ruilin Peng (Nick) <pymumu@gmail.com>.
+ * Copyright (C) 2018-2024 Ruilin Peng (Nick) <pymumu@gmail.com>.
  *
  * smartdns is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -132,7 +132,7 @@ typedef enum DNS_CACHE_TMOUT_ACTION {
 
 typedef dns_cache_tmout_action_t (*dns_cache_callback)(struct dns_cache *dns_cache);
 
-int dns_cache_init(int size, dns_cache_callback timeout_callback);
+int dns_cache_init(int size, int mem_size, dns_cache_callback timeout_callback);
 
 int dns_cache_replace(struct dns_cache_key *key, int rcode, int ttl, int speed, int timeout, int update_time,
 					  struct dns_cache_data *cache_data);
@@ -143,6 +143,8 @@ int dns_cache_insert(struct dns_cache_key *key, int rcode, int ttl, int speed, i
 struct dns_cache *dns_cache_lookup(struct dns_cache_key *key);
 
 int dns_cache_total_num(void);
+
+long dns_cache_total_memsize(void);
 
 int dns_cache_update_timer(struct dns_cache_key *key, int timeout);
 
@@ -165,6 +167,8 @@ struct dns_cache_data *dns_cache_get_data(struct dns_cache *dns_cache);
 void dns_cache_data_get(struct dns_cache_data *cache_data);
 
 void dns_cache_data_put(struct dns_cache_data *cache_data);
+
+void dns_cache_flush(void);
 
 void dns_cache_destroy(void);
 
