@@ -291,6 +291,7 @@ struct dns_response_mode_rule {
 	enum response_mode_type mode;
 };
 
+#ifdef HAVE_OPENSSL
 struct dns_https_record {
 	int enable;
 	char target[DNS_MAX_CNAME_LEN];
@@ -316,7 +317,7 @@ struct dns_https_record_rule {
 	struct dns_https_record record;
 	struct dns_https_filter filter;
 };
-
+#endif
 struct dns_group_table {
 	DECLARE_HASHTABLE(group, 8);
 };

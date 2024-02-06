@@ -3902,6 +3902,7 @@ static int _dns_server_process_answer_AAAA(struct dns_rrs *rrs, struct dns_reque
 	return ret;
 }
 
+#ifdef HAVE_OPENSSL
 static int _dns_server_process_answer_HTTPS(struct dns_rrs *rrs, struct dns_request *request, const char *domain,
 											char *cname, unsigned int result_flag)
 {
@@ -4020,6 +4021,7 @@ static int _dns_server_process_answer_HTTPS(struct dns_rrs *rrs, struct dns_requ
 
 	return 0;
 }
+#endif
 
 static int _dns_server_process_answer(struct dns_request *request, const char *domain, struct dns_packet *packet,
 									  unsigned int result_flag, int *need_passthrouh)
@@ -4118,6 +4120,7 @@ static int _dns_server_process_answer(struct dns_request *request, const char *d
 				request->ttl_cname = _dns_server_get_conf_ttl(request, ttl);
 				tlog(TLOG_DEBUG, "name: %s ttl: %d cname: %s\n", domain_name, ttl, cname);
 			} break;
+#ifdef HAVE_OPENSSL
 			case DNS_T_HTTPS: {
 				ret = _dns_server_process_answer_HTTPS(rrs, request, domain, cname, result_flag);
 				if (ret == -1) {
@@ -4131,6 +4134,7 @@ static int _dns_server_process_answer(struct dns_request *request, const char *d
 					_dns_server_request_complete(request);
 				}
 			} break;
+#endif
 			case DNS_T_SOA: {
 				/* if DNS64 enabled, skip check SOA. */
 				if (_dns_server_is_dns64_request(request)) {
@@ -6077,6 +6081,7 @@ errout:
 	return -1;
 }
 
+#ifdef HAVE_OPENSSL
 static int _dns_server_process_https_svcb(struct dns_request *request)
 {
 	struct dns_https_record_rule *https_record_rule = _dns_server_get_dns_rule(request, DOMAIN_RULE_HTTPS);
@@ -6125,6 +6130,7 @@ static int _dns_server_process_https_svcb(struct dns_request *request)
 
 	return -1;
 }
+#endif
 
 static int _dns_server_qtype_soa(struct dns_request *request)
 {
@@ -6887,9 +6893,11 @@ static int _dns_server_do_query(struct dns_request *request, int skip_notify_eve
 		goto clean_exit;
 	}
 
+#ifdef HAVE_OPENSSL
 	if (_dns_server_process_https_svcb(request) != 0) {
 		goto clean_exit;
 	}
+#endif
 
 	if (_dns_server_process_smartdns_domain(request) == 0) {
 		goto clean_exit;
@@ -7766,6 +7774,7 @@ static int _dns_server_tcp_process_one_request(struct dns_server_conn_tcp_client
 	/* Handling multiple requests */
 	for (;;) {
 		ret = RECV_ERROR_FAIL;
+#ifdef HAVE_OPENSSL
 		if (tcpclient->head.type == DNS_CONN_TYPE_HTTPS_CLIENT) {
 			if ((total_len - proceed_len) <= 0) {
 				ret = RECV_ERROR_AGAIN;
@@ -7837,7 +7846,9 @@ static int _dns_server_tcp_process_one_request(struct dns_server_conn_tcp_client
 			}
 
 			proceed_len += len;
-		} else {
+		} else 
+#endif
+		{
 			if ((total_len - proceed_len) <= (int)sizeof(unsigned short)) {
 				ret = RECV_ERROR_AGAIN;
 				goto out;

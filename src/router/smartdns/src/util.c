@@ -976,6 +976,7 @@ unsigned char *SSL_SHA256(const unsigned char *d, size_t n, unsigned char *md)
 	return (md);
 }
 
+#ifdef HAVE_OPENSSL
 int SSL_base64_decode(const char *in, unsigned char *out, int max_outlen)
 {
 	size_t inlen = strlen(in);
@@ -1003,7 +1004,6 @@ int SSL_base64_decode(const char *in, unsigned char *out, int max_outlen)
 errout:
 	return -1;
 }
-#ifdef HAVE_OPENSSL
 int SSL_base64_encode(const void *in, int in_len, char *out)
 {
 	int outlen = 0;

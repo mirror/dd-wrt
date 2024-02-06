@@ -328,9 +328,11 @@ static void *_new_dns_rule_ext(enum domain_rule domain_rule, int ext_size)
 	case DOMAIN_RULE_CNAME:
 		size = sizeof(struct dns_cname_rule);
 		break;
+#ifdef HAVE_OPENSSL
 	case DOMAIN_RULE_HTTPS:
 		size = sizeof(struct dns_https_record_rule);
 		break;
+#endif
 	case DOMAIN_RULE_TTL:
 		size = sizeof(struct dns_ttl_rule);
 		break;
@@ -2558,6 +2560,7 @@ errout:
 	return -1;
 }
 
+#ifdef HAVE_OPENSSL
 static int _conf_domain_rule_https_copy_alpn(char *alpn_data, int max_alpn_len, const char *alpn_str)
 {
 	const char *ptr = NULL;
@@ -2754,6 +2757,7 @@ errout:
 	tlog(TLOG_ERROR, "add https-record %s:%s failed", domain, value);
 	return -1;
 }
+#endif
 
 static void _config_speed_check_mode_clear(struct dns_domain_check_orders *check_orders)
 {
@@ -4901,7 +4905,11 @@ static int _conf_domain_rules(void *data, int argc, char *argv[])
 	optind = 1;
 	optind_last = 1;
 	while (1) {
+#ifdef HAVE_OPENSSL
 		opt = getopt_long_only(argc, argv, "c:a:p:t:n:d:A:r:g:h:", long_options, NULL);
+#else
+		opt = getopt_long_only(argc, argv, "c:a:p:t:n:d:A:r:g:", long_options, NULL);
+#endif		
 		if (opt == -1) {
 			break;
 		}
@@ -4946,6 +4954,7 @@ static int _conf_domain_rules(void *data, int argc, char *argv[])
 
 			break;
 		}
+#ifdef HAVE_OPENSSL
 		case 'h': {
 			const char *https_record = optarg;
 			if (https_record == NULL) {
@@ -4959,6 +4968,7 @@ static int _conf_domain_rules(void *data, int argc, char *argv[])
 
 			break;
 		}
+#endif
 		case 'p': {
 			const char *ipsetname = optarg;
 			if (ipsetname == NULL) {
@@ -5949,7 +5959,9 @@ static struct config_item _config_item[] = {
 	CONF_CUSTOM("address", _config_address, NULL),
 	CONF_CUSTOM("cname", _config_cname, NULL),
 	CONF_CUSTOM("srv-record", _config_srv_record, NULL),
+#ifdef HAVE_OPENSSL
 	CONF_CUSTOM("https-record", _config_https_record, NULL),
+#endif
 	CONF_CUSTOM("proxy-server", _config_proxy_server, NULL),
 	CONF_YESNO_FUNC("ipset-timeout", _dns_conf_group_yesno,
 					(void *)offsetof(struct dns_conf_group, ipset_nftset.ipset_timeout_enable)),
