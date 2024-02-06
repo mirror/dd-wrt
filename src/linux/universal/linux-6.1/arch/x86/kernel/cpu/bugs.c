@@ -594,7 +594,7 @@ static void __init srbds_select_mitigation(void)
 {
 	u64 ia32_cap;
 
-	if (!boot_cpu_has_bug(X86_BUG_SRBDS))
+//	if (!boot_cpu_has_bug(X86_BUG_SRBDS))
 		return;
 
 	/*
@@ -733,7 +733,7 @@ static void __init gds_select_mitigation(void)
 {
 	u64 mcu_ctrl;
 
-	if (!boot_cpu_has_bug(X86_BUG_GDS))
+//	if (!boot_cpu_has_bug(X86_BUG_GDS))
 		return;
 
 	if (boot_cpu_has(X86_FEATURE_HYPERVISOR)) {
@@ -840,6 +840,7 @@ static bool smap_works_speculatively(void)
 
 static void __init spectre_v1_select_mitigation(void)
 {
+	return;
 	if (!boot_cpu_has_bug(X86_BUG_SPECTRE_V1) || cpu_mitigations_off()) {
 		spectre_v1_mitigation = SPECTRE_V1_MITIGATION_NONE;
 		return;
@@ -967,7 +968,7 @@ static void __init retbleed_select_mitigation(void)
 {
 	bool mitigate_smt = false;
 
-	if (!boot_cpu_has_bug(X86_BUG_RETBLEED) || cpu_mitigations_off())
+//	if (!boot_cpu_has_bug(X86_BUG_RETBLEED) || cpu_mitigations_off())
 		return;
 
 	switch (retbleed_cmd) {
@@ -1528,8 +1529,8 @@ static void __init spectre_v2_select_mitigation(void)
 	 * If the CPU is not affected and the command line mode is NONE or AUTO
 	 * then nothing to do.
 	 */
-	if (!boot_cpu_has_bug(X86_BUG_SPECTRE_V2) &&
-	    (cmd == SPECTRE_V2_CMD_NONE || cmd == SPECTRE_V2_CMD_AUTO))
+//	if (!boot_cpu_has_bug(X86_BUG_SPECTRE_V2) &&
+//	    (cmd == SPECTRE_V2_CMD_NONE || cmd == SPECTRE_V2_CMD_AUTO))
 		return;
 
 	switch (cmd) {
