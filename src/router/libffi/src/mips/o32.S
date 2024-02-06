@@ -43,6 +43,7 @@
 
 	.abicalls
 	.set hardfloat
+	.set nomips16
 	.text
 	.align	2
 	.globl	ffi_call_O32
