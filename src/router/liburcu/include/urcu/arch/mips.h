@@ -30,11 +30,16 @@
 extern "C" {
 #endif
 
-#define cmm_mb()			__asm__ __volatile__ (		    \
-					"	.set	mips2		\n" \
-					"	sync			\n" \
-					"	.set	mips0		\n" \
-					:::"memory")
+#define cmm_mb()	__asm__ __volatile__(			\
+		".set	push\n\t"		\
+		".set	noreorder\n\t"		\
+		".set	nomips16\n\t"		\
+		".set	mips2\n\t"		\
+		"sync\n\t"			\
+		".set	pop"			\
+		: /* no output */		\
+		: /* no input */		\
+		: "memory")
 
 #ifdef __cplusplus
 }
