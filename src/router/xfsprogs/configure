@@ -699,6 +699,7 @@ have_sendfile
 have_mincore
 have_madvise
 have_fadvise
+liburcu
 libpthread
 libuuid
 librt
@@ -14310,6 +14311,9 @@ $as_echo "$multiarch" >&6; }
 
 
 
+#AC_PACKAGE_NEED_INI_H
+#AC_PACKAGE_NEED_LIBINIH
+
  for ac_header in uuid.h sys/uuid.h uuid/uuid.h
 do :
   as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
@@ -14486,6 +14490,69 @@ else
 fi
 
     libpthread=-lpthread
+
+
+
+ for ac_header in urcu.h
+do :
+  ac_fn_c_check_header_mongrel "$LINENO" "urcu.h" "ac_cv_header_urcu_h" "$ac_includes_default"
+if test "x$ac_cv_header_urcu_h" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_URCU_H 1
+_ACEOF
+
+fi
+
+done
+
+    if test $ac_cv_header_urcu_h = no; then
+       for ac_header in urcu.h
+do :
+  ac_fn_c_check_header_mongrel "$LINENO" "urcu.h" "ac_cv_header_urcu_h" "$ac_includes_default"
+if test "x$ac_cv_header_urcu_h" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_URCU_H 1
+_ACEOF
+
+else
+
+       echo
+       echo 'FATAL ERROR: could not find a valid urcu header.'
+       exit 1
+fi
+
+done
+
+    fi
+
+ { $as_echo "$as_me:${as_lineno-$LINENO}: checking for liburcu" >&5
+$as_echo_n "checking for liburcu... " >&6; }
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#define _GNU_SOURCE
+#include <urcu.h>
+
+int
+main ()
+{
+
+rcu_init();
+
+  ;
+  return 0;
+}
+
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  liburcu=-lurcu
+       { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
 
 
