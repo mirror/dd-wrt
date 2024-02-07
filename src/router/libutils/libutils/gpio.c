@@ -394,6 +394,10 @@ void set_gpio(int gpio, int value)
 
 int get_gpio(int gpio)
 {
+	int brand = getRouterBrand();
+	if (brand == ROUTER_HABANERO) {
+			return get_linux_gpio(gpio);
+	}
 	return get_linux_gpio(gpio + 443);
 }
 
@@ -463,6 +467,8 @@ void set_gpio(int gpio, int value)
 				set_linux_gpio(gpio, value);
 			break;
 		}
+	} else if (brand == ROUTER_HABANERO) {
+			set_linux_gpio(gpio, value);
 	} else {
 		if (gpio <= 64)
 			set_linux_gpio(gpio + 443, value);
