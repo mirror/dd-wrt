@@ -191,9 +191,7 @@ include rules/e2fsprogs.mk
 include rules/ncurses.mk
 include rules/iftop.mk
 include rules/iptraf.mk
-ifeq ($(CONFIG_SQUID),y)
 include rules/squid.mk
-endif
 include rules/proftpd.mk
 include rules/zabbix.mk
 include rules/ippd.mk
