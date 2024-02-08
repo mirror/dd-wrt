@@ -584,7 +584,7 @@ static int write_main(int argc, char *argv[])
 	int mul = 1; // temporarily use 1 instead of 4 until we
 
 	// found a a solution
-	if ((info.freeram + info.bufferram) >= (trx.len + 4 * 1024 * 1024)) {
+	if (info.freeram >= (trx.len + 8 * 1024 * 1024)) {
 		dd_loginfo("flash",
 			   "The free memory is enough, writing image once.\n");
 		/* 
