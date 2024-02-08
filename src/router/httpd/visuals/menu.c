@@ -251,7 +251,7 @@ static struct menucontext *init_menu(webs_t wp)
 
 	m->menu[MENU_STATUS][4] = NULL; // status - sputnik
 	m->menu[MENU_STATUS][5] = NULL; // status - vpn
-	m->menu[MENU_STATUS][7] = NULL; // status - syslog
+//	m->menu[MENU_STATUS][7] = NULL; // status - syslog
 	m->menu[MENU_STATUS][8] = NULL; // status - info
 #endif /*HAVE_ANTAIRA */
 	return m;
