@@ -429,6 +429,7 @@ else
 endif
 ifeq ($(CONFIG_E355AC),y)
 	echo CONFIG_E355AC=y >> $(LINUXDIR)/.config
+	echo CONFIG_UBNTFIX=y >> $(LINUXDIR)/.config
 else
 	echo "# CONFIG_E355AC is not set" >> $(LINUXDIR)/.config
 endif
@@ -534,7 +535,9 @@ endif
 ifeq ($(CONFIG_UBNTM),y)
 	echo CONFIG_UBNTFIX=y >> $(LINUXDIR)/.config
 else
+ifneq ($(CONFIG_E355AC),y)
 	echo "# CONFIG_UBNTFIX is not set" >> $(LINUXDIR)/.config
+endif
 endif
 ifeq ($(CONFIG_DAP3662),y)
 	echo CONFIG_DAP3662=y >> $(LINUXDIR)/.config
@@ -696,6 +699,10 @@ ifneq ($(CONFIG_ATH10K),y)
 	sed -i 's/\CONFIG_THERMAL=m/# CONFIG_THERMAL is not set/g' $(LINUXDIR)/.config
 	sed -i 's/\CONFIG_HWMON=y/# CONFIG_HWMON is not set/g' $(LINUXDIR)/.config
 	sed -i 's/\CONFIG_HWMON=m/# CONFIG_HWMON is not set/g' $(LINUXDIR)/.config
+endif
+ifeq ($(CONFIG_OPTIMIZE_FOR_SPEED),y)
+	sed -i 's/\CONFIG_CC_OPTIMIZE_FOR_SIZE=y/# CONFIG_CC_OPTIMIZE_FOR_SIZE is not set/g' $(LINUXDIR)/.config
+	sed -i 's/\# CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE is not set/CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE=y/g' $(LINUXDIR)/.config
 endif
 
 	rm -f $(LINUXDIR)/symtab.h
