@@ -98,7 +98,7 @@ glibinc = include_directories('glib')
 gobjectinc = include_directories('gobject')
 gmoduleinc = include_directories('gmodule')
 gioinc = include_directories('gio')
-girepoinc = include_directories('girepository')
+#girepoinc = include_directories('girepository')
 
 glib_prefix = get_option('prefix')
 glib_bindir = join_paths(glib_prefix, get_option('bindir'))
@@ -2558,9 +2558,9 @@ subdir('gobject')
 subdir('gthread')
 subdir('gmodule')
 subdir('gio')
-subdir('girepository')
-subdir('fuzzing')
-subdir('tests')
+#subdir('girepository')
+#subdir('fuzzing')
+#subdir('tests')
 
 # xgettext is optional (on Windows for instance)
 if find_program('xgettext', required : get_option('nls')).found()
@@ -2589,16 +2589,8 @@ endif
 
 configure_file(output : 'config.h', configuration : glib_conf)
 
-rst2man = find_program('rst2man', 'rst2man.py', required: get_option('man-pages'))
-if rst2man.found()
-  rst2man_flags = [
-    '--syntax-highlight=none',
-  ]
-  man1_dir = join_paths(glib_prefix, get_option('mandir'), 'man1')
-endif
 
 gnome = import('gnome')
-subdir('docs/reference')
 
 summary({
   'host cpu' : host_machine.cpu_family(),
@@ -2656,11 +2648,9 @@ endif
 
 summary({
   'xattr' : xattr_dep.length() > 0,
-  'man-pages' : get_option('man-pages'),
   'dtrace' : get_option('dtrace'),
   'systemtap' : enable_systemtap,
   'sysprof' : libsysprof_capture_dep.found(),
-  'documentation' : get_option('documentation'),
   'bsymbolic_functions' : get_option('bsymbolic_functions'),
   'force_posix_threads' : get_option('force_posix_threads'),
   'tests' : get_option('tests'),
