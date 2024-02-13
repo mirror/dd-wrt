@@ -42,19 +42,18 @@
 #include "gsocketconnectable.h"
 
 /**
- * SECTION:gproxyaddressenumerator
- * @short_description: Proxy wrapper enumerator for socket addresses
- * @include: gio/gio.h
+ * GProxyAddressEnumerator:
  *
- * #GProxyAddressEnumerator is a wrapper around #GSocketAddressEnumerator which
- * takes the #GSocketAddress instances returned by the #GSocketAddressEnumerator
- * and wraps them in #GProxyAddress instances, using the given
- * #GProxyAddressEnumerator:proxy-resolver.
+ * `GProxyAddressEnumerator` is a wrapper around
+ * [class@Gio.SocketAddressEnumerator] which takes the [class@Gio.SocketAddress]
+ * instances returned by the [class@Gio.SocketAddressEnumerator]
+ * and wraps them in [class@Gio.ProxyAddress] instances, using the given
+ * [property@Gio.ProxyAddressEnumerator:proxy-resolver].
  *
  * This enumerator will be returned (for example, by
- * g_socket_connectable_enumerate()) as appropriate when a proxy is configured;
- * there should be no need to manually wrap a #GSocketAddressEnumerator instance
- * with one.
+ * [method@Gio.SocketConnectable.enumerate]) as appropriate when a proxy is
+ * configured; there should be no need to manually wrap a
+ * [class@Gio.SocketAddressEnumerator] instance with one.
  */
 
 #define GET_PRIVATE(o) (G_PROXY_ADDRESS_ENUMERATOR (o)->priv)
@@ -344,9 +343,14 @@ complete_async (GTask *task)
       priv->last_error = NULL;
     }
   else if (!priv->ever_enumerated)
-    g_task_return_new_error (task, G_IO_ERROR, G_IO_ERROR_FAILED, _("Unspecified proxy lookup failure"));
+    {
+      g_task_return_new_error_literal (task, G_IO_ERROR, G_IO_ERROR_FAILED,
+                                       _("Unspecified proxy lookup failure"));
+    }
   else
-    g_task_return_pointer (task, NULL, NULL);
+    {
+      g_task_return_pointer (task, NULL, NULL);
+    }
 
   priv->ever_enumerated = TRUE;
 
@@ -751,11 +755,14 @@ g_proxy_address_enumerator_class_init (GProxyAddressEnumeratorClass *proxy_enume
   enumerator_class->next_async = g_proxy_address_enumerator_next_async;
   enumerator_class->next_finish = g_proxy_address_enumerator_next_finish;
 
+  /**
+   * GProxyAddressEnumerator:uri:
+   *
+   * The destination URI. Use `none://` for a generic socket.
+   */
   g_object_class_install_property (object_class,
 				   PROP_URI,
-				   g_param_spec_string ("uri",
-							P_("URI"),
-							P_("The destination URI, use none:// for generic socket"),
+				   g_param_spec_string ("uri", NULL, NULL,
 							NULL,
 							G_PARAM_READWRITE |
 							G_PARAM_CONSTRUCT_ONLY |
@@ -771,19 +778,20 @@ g_proxy_address_enumerator_class_init (GProxyAddressEnumeratorClass *proxy_enume
    */
   g_object_class_install_property (object_class,
 				   PROP_DEFAULT_PORT,
-				   g_param_spec_uint ("default-port",
-                                                      P_("Default port"),
-                                                      P_("The default port to use if uri does not specify one"),
+				   g_param_spec_uint ("default-port", NULL, NULL,
                                                       0, 65535, 0,
                                                       G_PARAM_READWRITE |
                                                       G_PARAM_CONSTRUCT_ONLY |
                                                       G_PARAM_STATIC_STRINGS));
 
+  /**
+   * GProxyAddressEnumerator:connectable:
+   *
+   * The connectable being enumerated.
+   */
   g_object_class_install_property (object_class,
 				   PROP_CONNECTABLE,
-				   g_param_spec_object ("connectable",
-							P_("Connectable"),
-							P_("The connectable being enumerated."),
+				   g_param_spec_object ("connectable", NULL, NULL,
 							G_TYPE_SOCKET_CONNECTABLE,
 							G_PARAM_READWRITE |
 							G_PARAM_CONSTRUCT_ONLY |
@@ -798,9 +806,7 @@ g_proxy_address_enumerator_class_init (GProxyAddressEnumeratorClass *proxy_enume
    */
   g_object_class_install_property (object_class,
                                    PROP_PROXY_RESOLVER,
-                                   g_param_spec_object ("proxy-resolver",
-                                                        P_("Proxy resolver"),
-                                                        P_("The proxy resolver to use."),
+                                   g_param_spec_object ("proxy-resolver", NULL, NULL,
                                                         G_TYPE_PROXY_RESOLVER,
                                                         G_PARAM_READWRITE |
                                                         G_PARAM_CONSTRUCT |

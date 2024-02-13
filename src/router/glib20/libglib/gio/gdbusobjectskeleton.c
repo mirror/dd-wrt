@@ -34,15 +34,15 @@
 #include "glibintl.h"
 
 /**
- * SECTION:gdbusobjectskeleton
- * @short_description: Service-side D-Bus object
- * @include: gio/gio.h
+ * GDBusObjectSkeleton:
  *
- * A #GDBusObjectSkeleton instance is essentially a group of D-Bus
+ * A `GDBusObjectSkeleton` instance is essentially a group of D-Bus
  * interfaces. The set of exported interfaces on the object may be
  * dynamic and change at runtime.
  *
- * This type is intended to be used with #GDBusObjectManager.
+ * This type is intended to be used with [iface@Gio.DBusObjectManager].
+ *
+ * Since: 2.30
  */
 
 struct _GDBusObjectSkeletonPrivate
@@ -157,9 +157,7 @@ g_dbus_object_skeleton_class_init (GDBusObjectSkeletonClass *klass)
    */
   g_object_class_install_property (gobject_class,
                                    PROP_G_OBJECT_PATH,
-                                   g_param_spec_string ("g-object-path",
-                                                        "Object Path",
-                                                        "The object path where the object is exported",
+                                   g_param_spec_string ("g-object-path", NULL, NULL,
                                                         NULL,
                                                         G_PARAM_READABLE |
                                                         G_PARAM_WRITABLE |

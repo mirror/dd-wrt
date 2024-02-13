@@ -31,27 +31,26 @@
 
 
 /**
- * SECTION:gmountoperation
- * @short_description: Object used for authentication and user interaction
- * @include: gio/gio.h
+ * GMountOperation:
  *
- * #GMountOperation provides a mechanism for interacting with the user.
+ * `GMountOperation` provides a mechanism for interacting with the user.
  * It can be used for authenticating mountable operations, such as loop
  * mounting files, hard drive partitions or server locations. It can
  * also be used to ask the user questions or show a list of applications
  * preventing unmount or eject operations from completing.
  *
- * Note that #GMountOperation is used for more than just #GMount
- * objects – for example it is also used in g_drive_start() and
- * g_drive_stop().
+ * Note that `GMountOperation` is used for more than just [iface@Gio.Mount]
+ * objects – for example it is also used in [method@Gio.Drive.start] and
+ * [method@Gio.Drive.stop].
  *
  * Users should instantiate a subclass of this that implements all the
  * various callbacks to show the required dialogs, such as
- * #GtkMountOperation. If no user interaction is desired (for example
- * when automounting filesystems at login time), usually %NULL can be
- * passed, see each method taking a #GMountOperation for details.
+ * [`GtkMountOperation`](https://docs.gtk.org/gtk4/class.MountOperation.html).
+ * If no user interaction is desired (for example when automounting
+ * filesystems at login time), usually `NULL` can be passed, see each method
+ * taking a `GMountOperation` for details.
  *
- * The term ‘TCRYPT’ is used to mean ‘compatible with TrueCrypt and VeraCrypt’.
+ * Throughout the API, the term ‘TCRYPT’ is used to mean ‘compatible with TrueCrypt and VeraCrypt’.
  * [TrueCrypt](https://en.wikipedia.org/wiki/TrueCrypt) is a discontinued system for
  * encrypting file containers, partitions or whole disks, typically used with Windows.
  * [VeraCrypt](https://www.veracrypt.fr/) is a maintained fork of TrueCrypt with various
@@ -480,9 +479,7 @@ g_mount_operation_class_init (GMountOperationClass *klass)
    */ 
   g_object_class_install_property (object_class,
                                    PROP_USERNAME,
-                                   g_param_spec_string ("username",
-                                                        P_("Username"),
-                                                        P_("The user name"),
+                                   g_param_spec_string ("username", NULL, NULL,
                                                         NULL,
                                                         G_PARAM_READWRITE|
                                                         G_PARAM_STATIC_NAME|G_PARAM_STATIC_NICK|G_PARAM_STATIC_BLURB));
@@ -495,9 +492,7 @@ g_mount_operation_class_init (GMountOperationClass *klass)
    */ 
   g_object_class_install_property (object_class,
                                    PROP_PASSWORD,
-                                   g_param_spec_string ("password",
-                                                        P_("Password"),
-                                                        P_("The password"),
+                                   g_param_spec_string ("password", NULL, NULL,
                                                         NULL,
                                                         G_PARAM_READWRITE|
                                                         G_PARAM_STATIC_NAME|G_PARAM_STATIC_NICK|G_PARAM_STATIC_BLURB));
@@ -509,9 +504,7 @@ g_mount_operation_class_init (GMountOperationClass *klass)
    */
   g_object_class_install_property (object_class,
                                    PROP_ANONYMOUS,
-                                   g_param_spec_boolean ("anonymous",
-                                                         P_("Anonymous"),
-                                                         P_("Whether to use an anonymous user"),
+                                   g_param_spec_boolean ("anonymous", NULL, NULL,
                                                          FALSE,
                                                          G_PARAM_READWRITE|
                                                          G_PARAM_STATIC_NAME|G_PARAM_STATIC_NICK|G_PARAM_STATIC_BLURB));
@@ -523,9 +516,7 @@ g_mount_operation_class_init (GMountOperationClass *klass)
    */ 
   g_object_class_install_property (object_class,
                                    PROP_DOMAIN,
-                                   g_param_spec_string ("domain",
-                                                        P_("Domain"),
-                                                        P_("The domain of the mount operation"),
+                                   g_param_spec_string ("domain", NULL, NULL,
                                                         NULL,
                                                         G_PARAM_READWRITE|
                                                         G_PARAM_STATIC_NAME|G_PARAM_STATIC_NICK|G_PARAM_STATIC_BLURB));
@@ -537,9 +528,7 @@ g_mount_operation_class_init (GMountOperationClass *klass)
    */ 
   g_object_class_install_property (object_class,
                                    PROP_PASSWORD_SAVE,
-                                   g_param_spec_enum ("password-save",
-                                                      P_("Password save"),
-                                                      P_("How passwords should be saved"),
+                                   g_param_spec_enum ("password-save", NULL, NULL,
                                                       G_TYPE_PASSWORD_SAVE,
                                                       G_PASSWORD_SAVE_NEVER,
                                                       G_PARAM_READWRITE|
@@ -553,9 +542,7 @@ g_mount_operation_class_init (GMountOperationClass *klass)
    */ 
   g_object_class_install_property (object_class,
                                    PROP_CHOICE,
-                                   g_param_spec_int ("choice",
-                                                     P_("Choice"),
-                                                     P_("The users choice"),
+                                   g_param_spec_int ("choice", NULL, NULL,
                                                      0, G_MAXINT, 0,
                                                      G_PARAM_READWRITE|
                                                      G_PARAM_STATIC_NAME|G_PARAM_STATIC_NICK|G_PARAM_STATIC_BLURB));
@@ -570,9 +557,7 @@ g_mount_operation_class_init (GMountOperationClass *klass)
    */
   g_object_class_install_property (object_class,
                                    PROP_IS_TCRYPT_HIDDEN_VOLUME,
-                                   g_param_spec_boolean ("is-tcrypt-hidden-volume",
-                                                         P_("TCRYPT Hidden Volume"),
-                                                         P_("Whether to unlock a TCRYPT hidden volume. See https://www.veracrypt.fr/en/Hidden%20Volume.html."),
+                                   g_param_spec_boolean ("is-tcrypt-hidden-volume", NULL, NULL,
                                                          FALSE,
                                                          G_PARAM_READWRITE|
                                                          G_PARAM_STATIC_NAME|G_PARAM_STATIC_NICK|G_PARAM_STATIC_BLURB));
@@ -590,9 +575,7 @@ g_mount_operation_class_init (GMountOperationClass *klass)
   */
   g_object_class_install_property (object_class,
                                    PROP_IS_TCRYPT_SYSTEM_VOLUME,
-                                   g_param_spec_boolean ("is-tcrypt-system-volume",
-                                                         P_("TCRYPT System Volume"),
-                                                         P_("Whether to unlock a TCRYPT system volume. Only supported for unlocking Windows system volumes. See https://www.veracrypt.fr/en/System%20Encryption.html."),
+                                   g_param_spec_boolean ("is-tcrypt-system-volume", NULL, NULL,
                                                          FALSE,
                                                          G_PARAM_READWRITE|
                                                          G_PARAM_STATIC_NAME|G_PARAM_STATIC_NICK|G_PARAM_STATIC_BLURB));
@@ -607,9 +590,7 @@ g_mount_operation_class_init (GMountOperationClass *klass)
   */
   g_object_class_install_property (object_class,
                                    PROP_PIM,
-                                   g_param_spec_uint ("pim",
-                                                      P_("PIM"),
-                                                      P_("The VeraCrypt PIM value"),
+                                   g_param_spec_uint ("pim", NULL, NULL,
                                                       0, G_MAXUINT, 0,
                                                       G_PARAM_READWRITE|
                                                       G_PARAM_STATIC_NAME|G_PARAM_STATIC_NICK|G_PARAM_STATIC_BLURB));

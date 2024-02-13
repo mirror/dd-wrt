@@ -63,17 +63,14 @@
 #endif
 
 /**
- * SECTION:gdesktopappinfo
- * @title: GDesktopAppInfo
- * @short_description: Application information from desktop files
- * @include: gio/gdesktopappinfo.h
+ * GDesktopAppInfo:
  *
- * #GDesktopAppInfo is an implementation of #GAppInfo based on
+ * `GDesktopAppInfo` is an implementation of [iface@Gio.AppInfo] based on
  * desktop files.
  *
  * Note that `<gio/gdesktopappinfo.h>` belongs to the UNIX-specific
  * GIO interfaces, thus you have to use the `gio-unix-2.0.pc` pkg-config
- * file when using it.
+ * file or the `GioUnix-2.0` GIR namespace when using it.
  */
 
 #define DEFAULT_APPLICATIONS_GROUP  "Default Applications"
@@ -95,11 +92,6 @@ static gboolean g_desktop_app_info_ensure_saved       (GDesktopAppInfo  *info,
                                                        GError          **error);
 static gboolean g_desktop_app_info_load_file (GDesktopAppInfo *self);
 
-/**
- * GDesktopAppInfo:
- *
- * Information about an installed application from a desktop file.
- */
 struct _GDesktopAppInfo
 {
   GObject parent_instance;
@@ -365,7 +357,7 @@ get_lowercase_current_desktops (void)
 {
   static gchar **result;
 
-  if (g_once_init_enter (&result))
+  if (g_once_init_enter_pointer (&result))
     {
       char **tmp = get_valid_current_desktops (NULL);
       gsize i, j;
@@ -377,7 +369,7 @@ get_lowercase_current_desktops (void)
             tmp[i][j] = g_ascii_tolower (tmp[i][j]);
         }
 
-      g_once_init_leave (&result, tmp);
+      g_once_init_leave_pointer (&result, tmp);
     }
 
   return (const gchar **) result;
@@ -388,11 +380,11 @@ get_current_desktops (const gchar *value)
 {
   static gchar **result;
 
-  if (g_once_init_enter (&result))
+  if (g_once_init_enter_pointer (&result))
     {
       char **tmp = get_valid_current_desktops (value);
 
-      g_once_init_leave (&result, tmp);
+      g_once_init_leave_pointer (&result, tmp);
     }
 
   return (const gchar **) result;
@@ -432,7 +424,6 @@ add_to_table_if_appropriate (GHashTable      *apps,
 
 enum
 {
-  DESKTOP_KEY_Comment,
   DESKTOP_KEY_Exec,
   DESKTOP_KEY_GenericName,
   DESKTOP_KEY_Keywords,
@@ -452,13 +443,14 @@ const gchar desktop_key_match_category[N_DESKTOP_KEYS] = {
   [DESKTOP_KEY_Exec]             = 2,
   [DESKTOP_KEY_Keywords]         = 3,
   [DESKTOP_KEY_GenericName]      = 4,
-  [DESKTOP_KEY_X_GNOME_FullName] = 5,
-  [DESKTOP_KEY_Comment]          = 6
+  [DESKTOP_KEY_X_GNOME_FullName] = 5
 };
 
 typedef enum {
   /* Lower numbers have higher priority.
-   * Prefix match should put before substring match.
+   * Prefix match should put before substring match, independently of
+   * category relevance, i.e. a prefix match in 'Keyword' category will
+   * come before a substring match in a more relevant category like 'Name'.
    */
   MATCH_TYPE_PREFIX = 1,
   MATCH_TYPE_SUBSTRING = 2
@@ -485,8 +477,6 @@ desktop_key_get_name (guint key_id)
 {
   switch (key_id)
     {
-    case DESKTOP_KEY_Comment:
-      return "Comment";
     case DESKTOP_KEY_Exec:
       return "Exec";
     case DESKTOP_KEY_GenericName:
@@ -576,7 +566,10 @@ compare_results (gconstpointer a,
     }
   else
     {
-      if (ra->category == rb->category)
+      /* We prioritize prefix matches over category relevance e.g. a prefix match in 'Keyword'
+       * category is better than a substring match in a more relevance category like 'Name'.
+       */
+      if (ra->match_type != rb->match_type)
         return ra->match_type - rb->match_type;
 
       return ra->category - rb->category;
@@ -590,10 +583,10 @@ compare_categories (gconstpointer a,
   const struct search_result *ra = a;
   const struct search_result *rb = b;
 
-  /* Also compare match types so we can put prefix match in a group while
-   * substring match in another group.
+  /* We prioritize prefix matches over category relevance e.g. a prefix match in 'Keyword'
+   * category is better than a substring match in a more relevance category like 'Name'.
    */
-  if (ra->category == rb->category)
+  if (ra->match_type != rb->match_type)
     return ra->match_type - rb->match_type;
 
   return ra->category - rb->category;
@@ -1788,7 +1781,7 @@ g_desktop_app_info_class_init (GDesktopAppInfoClass *klass)
    */
   g_object_class_install_property (gobject_class,
                                    PROP_FILENAME,
-                                   g_param_spec_string ("filename", "Filename", "", NULL,
+                                   g_param_spec_string ("filename", NULL, NULL, NULL,
                                                         G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 }
 
@@ -3011,7 +3004,7 @@ g_desktop_app_info_launch_uris_with_spawn (GDesktopAppInfo            *info,
           g_free (program);
         }
 
-      if (g_once_init_enter (&gio_launch_desktop_path))
+      if (g_once_init_enter_pointer (&gio_launch_desktop_path))
         {
           const gchar *tmp = NULL;
           gboolean is_setuid = GLIB_PRIVATE_CALL (g_check_setuid) ();
@@ -3027,7 +3020,7 @@ g_desktop_app_info_launch_uris_with_spawn (GDesktopAppInfo            *info,
           /* Fall back on usual searching in $PATH */
           if (tmp == NULL)
             tmp = "gio-launch-desktop";
-          g_once_init_leave (&gio_launch_desktop_path, tmp);
+          g_once_init_leave_pointer (&gio_launch_desktop_path, tmp);
         }
 
       wrapped_argv = g_new (char *, argc + 2);

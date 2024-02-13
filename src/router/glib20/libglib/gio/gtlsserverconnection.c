@@ -30,12 +30,10 @@
 #include "glibintl.h"
 
 /**
- * SECTION:gtlsserverconnection
- * @short_description: TLS server-side connection
- * @include: gio/gio.h
+ * GTlsServerConnection:
  *
- * #GTlsServerConnection is the server-side subclass of #GTlsConnection,
- * representing a server-side TLS connection.
+ * `GTlsServerConnection` is the server-side subclass of
+ * [class@Gio.TlsConnection], representing a server-side TLS connection.
  *
  * Since: 2.28
  */
@@ -55,9 +53,7 @@ g_tls_server_connection_default_init (GTlsServerConnectionInterface *iface)
    * Since: 2.28
    */
   g_object_interface_install_property (iface,
-				       g_param_spec_enum ("authentication-mode",
-							  P_("Authentication Mode"),
-							  P_("The client authentication mode"),
+				       g_param_spec_enum ("authentication-mode", NULL, NULL,
 							  G_TYPE_TLS_AUTHENTICATION_MODE,
 							  G_TLS_AUTHENTICATION_NONE,
 							  G_PARAM_READWRITE |

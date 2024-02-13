@@ -4034,9 +4034,9 @@ gio_win32_appinfo_init (gboolean do_wait)
       /* Trigger initial tree build. Fake data pointer. */
       g_thread_pool_push (gio_win32_appinfo_threadpool, (gpointer) keys_updated, NULL);
       /* Increment the DLL refcount */
-      GetModuleHandleExA (GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_PIN,
-                          (const char *) gio_win32_appinfo_init,
-                          &gio_dll_extra);
+      GetModuleHandleEx (GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_PIN,
+                         (LPCWSTR) gio_win32_appinfo_init,
+                         &gio_dll_extra);
       /* gio DLL cannot be unloaded now */
 
       g_once_init_leave (&initialized, TRUE);
@@ -4253,7 +4253,7 @@ g_win32_app_info_get_name (GAppInfo *appinfo)
   else if (info->app && info->app->canonical_name_u8)
     return info->app->canonical_name_u8;
   else
-    return P_("Unnamed");
+    return _("Unnamed");
 }
 
 static const char *
@@ -5213,11 +5213,11 @@ g_win32_app_info_launch_internal (GWin32AppInfo      *info,
     {
       if (info->app->is_uwp || info->handler == NULL)
         g_set_error (error, G_IO_ERROR, G_IO_ERROR_FAILED,
-                     P_("The app ‘%s’ in the application object has no verbs"),
+                     _("The app ‘%s’ in the application object has no verbs"),
                      g_win32_appinfo_application_get_some_name (info->app));
       else if (info->handler->verbs->len == 0)
         g_set_error (error, G_IO_ERROR, G_IO_ERROR_FAILED,
-                     P_("The app ‘%s’ and the handler ‘%s’ in the application object have no verbs"),
+                     _("The app ‘%s’ and the handler ‘%s’ in the application object have no verbs"),
                      g_win32_appinfo_application_get_some_name (info->app),
                      info->handler->handler_id_folded);
 

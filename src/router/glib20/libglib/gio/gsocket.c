@@ -83,46 +83,44 @@
 #endif
 
 /**
- * SECTION:gsocket
- * @short_description: Low-level socket object
- * @include: gio/gio.h
- * @see_also: #GInitable, [<gnetworking.h>][gio-gnetworking.h]
+ * GSocket:
  *
- * A #GSocket is a low-level networking primitive. It is a more or less
+ * A `GSocket` is a low-level networking primitive. It is a more or less
  * direct mapping of the BSD socket API in a portable GObject based API.
  * It supports both the UNIX socket implementations and winsock2 on Windows.
  *
- * #GSocket is the platform independent base upon which the higher level
+ * `GSocket` is the platform independent base upon which the higher level
  * network primitives are based. Applications are not typically meant to
- * use it directly, but rather through classes like #GSocketClient,
- * #GSocketService and #GSocketConnection. However there may be cases where
- * direct use of #GSocket is useful.
+ * use it directly, but rather through classes like [class@Gio.SocketClient],
+ * [class@Gio.SocketService] and [class@Gio.SocketConnection]. However there may
+ * be cases where direct use of `GSocket` is useful.
  *
- * #GSocket implements the #GInitable interface, so if it is manually constructed
- * by e.g. g_object_new() you must call g_initable_init() and check the
- * results before using the object. This is done automatically in
- * g_socket_new() and g_socket_new_from_fd(), so these functions can return
- * %NULL.
+ * `GSocket` implements the [iface@Gio.Initable] interface, so if it is manually
+ * constructed by e.g. [ctor@GObject.Object.new] you must call
+ * [method@Gio.Initable.init] and check the results before using the object.
+ * This is done automatically in [ctor@Gio.Socket.new] and
+ * [ctor@Gio.Socket.new_from_fd], so these functions can return `NULL`.
  *
  * Sockets operate in two general modes, blocking or non-blocking. When
  * in blocking mode all operations (which don’t take an explicit blocking
  * parameter) block until the requested operation
  * is finished or there is an error. In non-blocking mode all calls that
- * would block return immediately with a %G_IO_ERROR_WOULD_BLOCK error.
- * To know when a call would successfully run you can call g_socket_condition_check(),
- * or g_socket_condition_wait(). You can also use g_socket_create_source() and
- * attach it to a #GMainContext to get callbacks when I/O is possible.
+ * would block return immediately with a `G_IO_ERROR_WOULD_BLOCK` error.
+ * To know when a call would successfully run you can call
+ * [method@Gio.Socket.condition_check], or [method@Gio.Socket.condition_wait].
+ * You can also use [method@Gio.Socket.create_source] and attach it to a
+ * [type@GLib.MainContext] to get callbacks when I/O is possible.
  * Note that all sockets are always set to non blocking mode in the system, and
- * blocking mode is emulated in GSocket.
+ * blocking mode is emulated in `GSocket`.
  *
  * When working in non-blocking mode applications should always be able to
- * handle getting a %G_IO_ERROR_WOULD_BLOCK error even when some other
+ * handle getting a `G_IO_ERROR_WOULD_BLOCK` error even when some other
  * function said that I/O was possible. This can easily happen in case
  * of a race condition in the application, but it can also happen for other
  * reasons. For instance, on Windows a socket is always seen as writable
- * until a write returns %G_IO_ERROR_WOULD_BLOCK.
+ * until a write returns `G_IO_ERROR_WOULD_BLOCK`.
  *
- * #GSockets can be either connection oriented or datagram based.
+ * `GSocket`s can be either connection oriented or datagram based.
  * For connection oriented types you must first establish a connection by
  * either connecting to an address or accepting a connection from another
  * address. For connectionless socket types the target/source address is
@@ -130,15 +128,33 @@
  *
  * All socket file descriptors are set to be close-on-exec.
  *
- * Note that creating a #GSocket causes the signal %SIGPIPE to be
+ * Note that creating a `GSocket` causes the signal `SIGPIPE` to be
  * ignored for the remainder of the program. If you are writing a
- * command-line utility that uses #GSocket, you may need to take into
+ * command-line utility that uses `GSocket`, you may need to take into
  * account the fact that your program will not automatically be killed
- * if it tries to write to %stdout after it has been closed.
+ * if it tries to write to `stdout` after it has been closed.
  *
- * Like most other APIs in GLib, #GSocket is not inherently thread safe. To use
- * a #GSocket concurrently from multiple threads, you must implement your own
+ * Like most other APIs in GLib, `GSocket` is not inherently thread safe. To use
+ * a `GSocket` concurrently from multiple threads, you must implement your own
  * locking.
+ *
+ * ## Nagle’s algorithm
+ *
+ * Since GLib 2.80, `GSocket` will automatically set the `TCP_NODELAY` option on
+ * all `G_SOCKET_TYPE_STREAM` sockets. This disables
+ * [Nagle’s algorithm](https://en.wikipedia.org/wiki/Nagle%27s_algorithm) as it
+ * typically does more harm than good on modern networks.
+ *
+ * If your application needs Nagle’s algorithm enabled, call
+ * [method@Gio.Socket.set_option] after constructing a `GSocket` to enable it:
+ * ```c
+ * socket = g_socket_new (…, G_SOCKET_TYPE_STREAM, …);
+ * if (socket != NULL)
+ *   {
+ *     g_socket_set_option (socket, IPPROTO_TCP, TCP_NODELAY, FALSE, &local_error);
+ *     // handle error if needed
+ *   }
+ * ```
  *
  * Since: 2.22
  */
@@ -751,6 +767,8 @@ g_socket_constructed (GObject *object)
       /* See note about SIGPIPE below. */
       g_socket_set_option (socket, SOL_SOCKET, SO_NOSIGPIPE, TRUE, NULL);
 #endif
+      if (socket->priv->type == G_SOCKET_TYPE_STREAM)
+        g_socket_set_option (socket, IPPROTO_TCP, TCP_NODELAY, TRUE, NULL);
     }
 }
 
@@ -954,40 +972,60 @@ g_socket_class_init (GSocketClass *klass)
   gobject_class->set_property = g_socket_set_property;
   gobject_class->get_property = g_socket_get_property;
 
+  /**
+   * GSocket:family:
+   *
+   * The socket’s address family.
+   *
+   * Since: 2.22
+   */
   g_object_class_install_property (gobject_class, PROP_FAMILY,
-				   g_param_spec_enum ("family",
-						      P_("Socket family"),
-						      P_("The sockets address family"),
+				   g_param_spec_enum ("family", NULL, NULL,
 						      G_TYPE_SOCKET_FAMILY,
 						      G_SOCKET_FAMILY_INVALID,
 						      G_PARAM_CONSTRUCT_ONLY |
                                                       G_PARAM_READWRITE |
                                                       G_PARAM_STATIC_STRINGS));
 
+  /**
+   * GSocket:type:
+   *
+   * The socket’s type.
+   *
+   * Since: 2.22
+   */
   g_object_class_install_property (gobject_class, PROP_TYPE,
-				   g_param_spec_enum ("type",
-						      P_("Socket type"),
-						      P_("The sockets type"),
+				   g_param_spec_enum ("type", NULL, NULL,
 						      G_TYPE_SOCKET_TYPE,
 						      G_SOCKET_TYPE_STREAM,
 						      G_PARAM_CONSTRUCT_ONLY |
                                                       G_PARAM_READWRITE |
                                                       G_PARAM_STATIC_STRINGS));
 
+  /**
+   * GSocket:protocol:
+   *
+   * The ID of the protocol to use, or `-1` for unknown.
+   *
+   * Since: 2.22
+   */
   g_object_class_install_property (gobject_class, PROP_PROTOCOL,
-				   g_param_spec_enum ("protocol",
-						      P_("Socket protocol"),
-						      P_("The id of the protocol to use, or -1 for unknown"),
+				   g_param_spec_enum ("protocol", NULL, NULL,
 						      G_TYPE_SOCKET_PROTOCOL,
 						      G_SOCKET_PROTOCOL_UNKNOWN,
 						      G_PARAM_CONSTRUCT_ONLY |
                                                       G_PARAM_READWRITE |
                                                       G_PARAM_STATIC_STRINGS));
 
+  /**
+   * GSocket:fd:
+   *
+   * The socket’s file descriptor.
+   *
+   * Since: 2.22
+   */
   g_object_class_install_property (gobject_class, PROP_FD,
-				   g_param_spec_int ("fd",
-						     P_("File descriptor"),
-						     P_("The sockets file descriptor"),
+				   g_param_spec_int ("fd", NULL, NULL,
 						     G_MININT,
 						     G_MAXINT,
 						     -1,
@@ -995,44 +1033,69 @@ g_socket_class_init (GSocketClass *klass)
                                                      G_PARAM_READWRITE |
                                                      G_PARAM_STATIC_STRINGS));
 
+  /**
+   * GSocket:blocking:
+   *
+   * Whether I/O on this socket is blocking.
+   *
+   * Since: 2.22
+   */
   g_object_class_install_property (gobject_class, PROP_BLOCKING,
-				   g_param_spec_boolean ("blocking",
-							 P_("blocking"),
-							 P_("Whether or not I/O on this socket is blocking"),
+				   g_param_spec_boolean ("blocking", NULL, NULL,
 							 TRUE,
 							 G_PARAM_READWRITE |
                                                          G_PARAM_STATIC_STRINGS));
 
+  /**
+   * GSocket:listen-backlog:
+   *
+   * The number of outstanding connections in the listen queue.
+   *
+   * Since: 2.22
+   */
   g_object_class_install_property (gobject_class, PROP_LISTEN_BACKLOG,
-				   g_param_spec_int ("listen-backlog",
-						     P_("Listen backlog"),
-						     P_("Outstanding connections in the listen queue"),
+				   g_param_spec_int ("listen-backlog", NULL, NULL,
 						     0,
 						     SOMAXCONN,
 						     10,
 						     G_PARAM_READWRITE |
                                                      G_PARAM_STATIC_STRINGS));
 
+  /**
+   * GSocket:keepalive:
+   *
+   * Whether to keep the connection alive by sending periodic pings.
+   *
+   * Since: 2.22
+   */
   g_object_class_install_property (gobject_class, PROP_KEEPALIVE,
-				   g_param_spec_boolean ("keepalive",
-							 P_("Keep connection alive"),
-							 P_("Keep connection alive by sending periodic pings"),
+				   g_param_spec_boolean ("keepalive", NULL, NULL,
 							 FALSE,
 							 G_PARAM_READWRITE |
                                                          G_PARAM_STATIC_STRINGS));
 
+  /**
+   * GSocket:local-address:
+   *
+   * The local address the socket is bound to.
+   *
+   * Since: 2.22
+   */
   g_object_class_install_property (gobject_class, PROP_LOCAL_ADDRESS,
-				   g_param_spec_object ("local-address",
-							P_("Local address"),
-							P_("The local address the socket is bound to"),
+				   g_param_spec_object ("local-address", NULL, NULL,
 							G_TYPE_SOCKET_ADDRESS,
 							G_PARAM_READABLE |
                                                         G_PARAM_STATIC_STRINGS));
 
+  /**
+   * GSocket:remote-address:
+   *
+   * The remote address the socket is connected to.
+   *
+   * Since: 2.22
+   */
   g_object_class_install_property (gobject_class, PROP_REMOTE_ADDRESS,
-				   g_param_spec_object ("remote-address",
-							P_("Remote address"),
-							P_("The remote address the socket is connected to"),
+				   g_param_spec_object ("remote-address", NULL, NULL,
 							G_TYPE_SOCKET_ADDRESS,
 							G_PARAM_READABLE |
                                                         G_PARAM_STATIC_STRINGS));
@@ -1045,9 +1108,7 @@ g_socket_class_init (GSocketClass *klass)
    * Since: 2.26
    */
   g_object_class_install_property (gobject_class, PROP_TIMEOUT,
-				   g_param_spec_uint ("timeout",
-						      P_("Timeout"),
-						      P_("The timeout in seconds on socket I/O"),
+				   g_param_spec_uint ("timeout", NULL, NULL,
 						      0,
 						      G_MAXUINT,
 						      0,
@@ -1062,9 +1123,7 @@ g_socket_class_init (GSocketClass *klass)
    * Since: 2.32
    */
   g_object_class_install_property (gobject_class, PROP_BROADCAST,
-				   g_param_spec_boolean ("broadcast",
-							 P_("Broadcast"),
-							 P_("Whether to allow sending to broadcast addresses"),
+				   g_param_spec_boolean ("broadcast", NULL, NULL,
 							 FALSE,
 							 G_PARAM_READWRITE |
                                                          G_PARAM_STATIC_STRINGS));
@@ -1077,9 +1136,7 @@ g_socket_class_init (GSocketClass *klass)
    * Since: 2.32
    */
   g_object_class_install_property (gobject_class, PROP_TTL,
-				   g_param_spec_uint ("ttl",
-						      P_("TTL"),
-						      P_("Time-to-live of outgoing unicast packets"),
+				   g_param_spec_uint ("ttl", NULL, NULL,
 						      0, G_MAXUINT, 0,
 						      G_PARAM_READWRITE |
 						      G_PARAM_STATIC_STRINGS));
@@ -1092,9 +1149,7 @@ g_socket_class_init (GSocketClass *klass)
    * Since: 2.32
    */
   g_object_class_install_property (gobject_class, PROP_MULTICAST_LOOPBACK,
-				   g_param_spec_boolean ("multicast-loopback",
-							 P_("Multicast loopback"),
-							 P_("Whether outgoing multicast packets loop back to the local host"),
+				   g_param_spec_boolean ("multicast-loopback", NULL, NULL,
 							 TRUE,
 							 G_PARAM_READWRITE |
                                                          G_PARAM_STATIC_STRINGS));
@@ -1107,9 +1162,7 @@ g_socket_class_init (GSocketClass *klass)
    * Since: 2.32
    */
   g_object_class_install_property (gobject_class, PROP_MULTICAST_TTL,
-				   g_param_spec_uint ("multicast-ttl",
-						      P_("Multicast TTL"),
-						      P_("Time-to-live of outgoing multicast packets"),
+				   g_param_spec_uint ("multicast-ttl", NULL, NULL,
 						      0, G_MAXUINT, 1,
 						      G_PARAM_READWRITE |
 						      G_PARAM_STATIC_STRINGS));
@@ -3179,8 +3232,8 @@ g_socket_get_available_bytes (GSocket *socket)
 #else
   if (socket->priv->type == G_SOCKET_TYPE_DATAGRAM)
     {
-      if (G_UNLIKELY (g_once_init_enter (&buf)))
-        g_once_init_leave (&buf, g_malloc (bufsize));
+      if (G_UNLIKELY (g_once_init_enter_pointer (&buf)))
+        g_once_init_leave_pointer (&buf, g_malloc (bufsize));
 
       /* On datagram sockets, FIONREAD ioctl is not reliable because many
        * systems add internal header size to the reported size, making it
@@ -3313,6 +3366,69 @@ g_socket_receive_with_timeout (GSocket       *socket,
 }
 
 /**
+ * g_socket_receive_bytes:
+ * @socket: a #GSocket
+ * @size: the number of bytes you want to read from the socket
+ * @timeout_us: the timeout to wait for, in microseconds, or `-1` to block
+ *   indefinitely
+ * @cancellable: (nullable): a %GCancellable, or `NULL`
+ * @error: return location for a #GError, or `NULL`
+ *
+ * Receives data (up to @size bytes) from a socket.
+ *
+ * This function is a variant of [method@Gio.Socket.receive] which returns a
+ * [struct@GLib.Bytes] rather than a plain buffer.
+ *
+ * Pass `-1` to @timeout_us to block indefinitely until data is received (or
+ * the connection is closed, or there is an error). Pass `0` to use the default
+ * timeout from [property@Gio.Socket:timeout], or pass a positive number to wait
+ * for that many microseconds for data before returning `G_IO_ERROR_TIMED_OUT`.
+ *
+ * Returns: (transfer full): a bytes buffer containing the
+ *   received bytes, or `NULL` on error
+ * Since: 2.80
+ */
+GBytes *
+g_socket_receive_bytes (GSocket       *socket,
+                        gsize          size,
+                        gint64         timeout_us,
+                        GCancellable  *cancellable,
+                        GError       **error)
+{
+  guint8 *data;
+  gssize res;
+  GBytes *buf;
+
+  g_return_val_if_fail (G_IS_SOCKET (socket), NULL);
+  g_return_val_if_fail (cancellable == NULL || G_IS_CANCELLABLE (cancellable), NULL);
+  g_return_val_if_fail (error == NULL || *error == NULL, NULL);
+
+  data = g_new0 (guint8, size);
+  res = g_socket_receive_with_timeout (socket, data, size, timeout_us, cancellable, error);
+  if (res < 0)
+    {
+      g_free (data);
+      return NULL;
+    }
+
+  if ((gsize) res == size)
+    {
+      buf = g_bytes_new_take (g_steal_pointer (&data), (gsize) res);
+    }
+  else
+    {
+      GBytes *sub_buf;
+
+      buf = g_bytes_new_take (g_steal_pointer (&data), size);
+      sub_buf = g_bytes_new_from_bytes (buf, 0, (gsize) res);
+      g_bytes_unref (buf);
+      buf = g_steal_pointer (&sub_buf);
+    }
+
+  return g_steal_pointer (&buf);
+}
+
+/**
  * g_socket_receive:
  * @socket: a #GSocket
  * @buffer: (array length=size) (element-type guint8) (out caller-allocates):
@@ -3391,6 +3507,85 @@ g_socket_receive_with_blocking (GSocket       *socket,
 {
   return g_socket_receive_with_timeout (socket, (guint8 *) buffer, size,
                                         blocking ? -1 : 0, cancellable, error);
+}
+
+/**
+ * g_socket_receive_bytes_from:
+ * @socket: a #GSocket
+ * @address: (out) (optional): return location for a #GSocketAddress
+ * @size: the number of bytes you want to read from the socket
+ * @timeout_us: the timeout to wait for, in microseconds, or `-1` to block
+ *   indefinitely
+ * @cancellable: (nullable): a #GCancellable, or `NULL`
+ * @error: return location for a #GError, or `NULL`
+ *
+ * Receive data (up to @size bytes) from a socket.
+ *
+ * This function is a variant of [method@Gio.Socket.receive_from] which returns
+ * a [struct@GLib.Bytes] rather than a plain buffer.
+ *
+ * If @address is non-%NULL then @address will be set equal to the
+ * source address of the received packet.
+ *
+ * The @address is owned by the caller.
+ *
+ * Pass `-1` to @timeout_us to block indefinitely until data is received (or
+ * the connection is closed, or there is an error). Pass `0` to use the default
+ * timeout from [property@Gio.Socket:timeout], or pass a positive number to wait
+ * for that many microseconds for data before returning `G_IO_ERROR_TIMED_OUT`.
+ *
+ * Returns: (transfer full): a bytes buffer containing the
+ *   received bytes, or `NULL` on error
+ * Since: 2.80
+ */
+GBytes *
+g_socket_receive_bytes_from (GSocket         *socket,
+                             GSocketAddress **address,
+                             gsize            size,
+                             gint64           timeout_us,
+                             GCancellable    *cancellable,
+                             GError         **error)
+{
+  GInputVector v;
+  gssize res;
+  GBytes *buf;
+
+  g_return_val_if_fail (G_IS_SOCKET (socket), NULL);
+  g_return_val_if_fail (address == NULL || *address == NULL, NULL);
+  g_return_val_if_fail (cancellable == NULL || G_IS_CANCELLABLE (cancellable), NULL);
+  g_return_val_if_fail (error == NULL || *error == NULL, NULL);
+
+  v.buffer = g_new0 (guint8, size);
+  v.size = size;
+
+  res = g_socket_receive_message_with_timeout (socket,
+                                               address,
+                                               &v, 1,
+                                               NULL, 0, NULL,
+                                               timeout_us,
+                                               cancellable,
+                                               error);
+  if (res < 0)
+    {
+      g_free (v.buffer);
+      return NULL;
+    }
+
+  if ((gsize) res == size)
+    {
+      buf = g_bytes_new_take (g_steal_pointer (&v.buffer), (gsize) res);
+    }
+  else
+    {
+      GBytes *sub_buf;
+
+      buf = g_bytes_new_take (g_steal_pointer (&v.buffer), size);
+      sub_buf = g_bytes_new_from_bytes (buf, 0, (gsize) res);
+      g_bytes_unref (buf);
+      buf = g_steal_pointer (&sub_buf);
+    }
+
+  return g_steal_pointer (&buf);
 }
 
 /**
@@ -4062,7 +4257,7 @@ socket_source_dispatch (GSource     *source,
 #endif
 
   timeout = g_source_get_ready_time (source);
-  if (timeout >= 0 && timeout < g_source_get_time (source) &&
+  if (timeout >= 0 && timeout <= g_source_get_time (source) &&
       !g_socket_is_closed (socket_source->socket))
     {
       socket->priv->timed_out = TRUE;

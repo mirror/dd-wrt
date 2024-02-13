@@ -17,16 +17,13 @@
  */
 
 /**
- * SECTION:gsubprocesslauncher
- * @title: GSubprocess Launcher
- * @short_description: Environment options for launching a child process
- * @include: gio/gio.h
+ * GSubprocessLauncher:
  *
  * This class contains a set of options for launching child processes,
  * such as where its standard input and output will be directed, the
  * argument list, the environment, and more.
  *
- * While the #GSubprocess class has high level functions covering
+ * While the [class@Gio.Subprocess] class has high level functions covering
  * popular cases, use of this class allows access to more advanced
  * options.  It can also be used to launch multiple subprocesses with
  * a similar configuration.
@@ -179,8 +176,15 @@ g_subprocess_launcher_class_init (GSubprocessLauncherClass *class)
   gobject_class->set_property = g_subprocess_launcher_set_property;
   gobject_class->dispose = g_subprocess_launcher_dispose;
 
+  /**
+   * GSubprocessLauncher:flags:
+   *
+   * [flags@Gio.SubprocessFlags] for launched processes.
+   *
+   * Since: 2.40
+   */
   g_object_class_install_property (gobject_class, 1,
-                                   g_param_spec_flags ("flags", "Flags", "GSubprocessFlags for launched processes",
+                                   g_param_spec_flags ("flags", NULL, NULL,
                                                        G_TYPE_SUBPROCESS_FLAGS, 0, G_PARAM_WRITABLE |
                                                        G_PARAM_STATIC_STRINGS | G_PARAM_CONSTRUCT_ONLY));
 }
@@ -403,7 +407,7 @@ assign_fd (gint *fd_ptr, gint fd)
 /**
  * g_subprocess_launcher_set_stdin_file_path:
  * @self: a #GSubprocessLauncher
- * @path: (type filename) (nullable: a filename or %NULL
+ * @path: (type filename) (nullable): a filename or %NULL
  *
  * Sets the file path to use as the stdin for spawned processes.
  *

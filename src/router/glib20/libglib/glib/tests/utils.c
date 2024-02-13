@@ -211,8 +211,27 @@ test_prgname_thread_safety (void)
 static void
 test_tmpdir (void)
 {
+  char **envp = NULL;
+
   g_test_bug ("https://bugzilla.gnome.org/show_bug.cgi?id=627969");
-  g_assert_cmpstr (g_get_tmp_dir (), !=, "");
+  g_test_summary ("Test that g_get_tmp_dir() returns a correct default if TMPDIR is set to the empty string");
+
+  if (g_test_subprocess ())
+    {
+      g_assert_cmpstr (g_get_tmp_dir (), !=, "");
+      return;
+    }
+
+  envp = g_get_environ ();
+
+  envp = g_environ_setenv (g_steal_pointer (&envp), "TMPDIR", "", TRUE);
+  envp = g_environ_unsetenv (g_steal_pointer (&envp), "TMP");
+  envp = g_environ_unsetenv (g_steal_pointer (&envp), "TEMP");
+
+  g_test_trap_subprocess_with_envp (NULL, (const gchar * const *) envp,
+                                    0, G_TEST_SUBPROCESS_DEFAULT);
+  g_test_trap_assert_passed ();
+  g_strfreev (envp);
 }
 
 #if defined(__GNUC__) && (__GNUC__ >= 4)
@@ -451,7 +470,9 @@ test_find_program (void)
   g_assert (res != NULL);
   g_free (res);
 
-  cwd = g_get_current_dir ();
+  /* Resolve any symlinks in the CWD as that breaks the test e.g.
+   * with the FreeBSD /home/ -> /usr/home symlink. */
+  cwd = realpath (".", NULL);
   absolute_path = g_find_program_in_path ("sh");
   relative_path = g_strdup (absolute_path);
   for (i = 0; cwd[i] != '\0'; i++)
@@ -1306,11 +1327,6 @@ main (int   argc,
       char *argv[])
 {
   argv0 = argv[0];
-
-  /* for tmpdir test, need to do this early before g_get_any_init */
-  g_setenv ("TMPDIR", "", TRUE);
-  g_unsetenv ("TMP");
-  g_unsetenv ("TEMP");
 
   /* g_test_init() only calls g_set_prgname() if g_get_prgname()
    * returns %NULL, but g_get_prgname() on Windows never returns NULL.

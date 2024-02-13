@@ -38,9 +38,7 @@
 
 
 /**
- * SECTION:gcontenttype
- * @short_description: Platform-specific content typing
- * @include: gio/gio.h
+ * GContentType:
  *
  * A content type is a platform specific string that defines the type
  * of a file. On UNIX it is a
@@ -1276,7 +1274,7 @@ component_match (Enumerator  *e,
                  gint         depth,
                  const gchar *name)
 {
-  gchar *case_folded, *key;
+  gchar *case_folded, *key, *utf8_name;
   gboolean found;
 
   if (strcmp (name, e->components[depth]) == 0)
@@ -1285,11 +1283,16 @@ component_match (Enumerator  *e,
   if (!e->ignore_case)
     return FALSE;
 
-  case_folded = g_utf8_casefold (name, -1);
+  utf8_name = g_filename_to_utf8 (name, -1, NULL, NULL, NULL);
+  if (utf8_name == NULL)
+    utf8_name = g_utf8_make_valid (name, -1);
+
+  case_folded = g_utf8_casefold (utf8_name, -1);
   key = g_utf8_collate_key (case_folded, -1);
 
   found = strcmp (key, e->case_components[depth]) == 0;
 
+  g_free (utf8_name);
   g_free (case_folded);
   g_free (key);
 

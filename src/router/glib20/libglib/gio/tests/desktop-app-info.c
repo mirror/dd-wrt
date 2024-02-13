@@ -596,6 +596,7 @@ wait_for_file (const gchar *want_this,
 static void
 test_actions (void)
 {
+  GTestDBus *bus = NULL;
   const char *expected[] = { "frob", "tweak", "twiddle", "broken", NULL };
   const gchar * const *actions;
   GDesktopAppInfo *appinfo;
@@ -604,6 +605,10 @@ test_actions (void)
   gchar *frob_path;
   gchar *tweak_path;
   gchar *twiddle_path;
+
+  /* Set up a test session bus to keep D-Bus traffic off the real session bus. */
+  bus = g_test_dbus_new (G_TEST_DBUS_NONE);
+  g_test_dbus_up (bus);
 
   appinfo = g_desktop_app_info_new_from_filename (g_test_get_filename (G_TEST_DIST, "appinfo-test-actions.desktop", NULL));
   g_assert_nonnull (appinfo);
@@ -651,6 +656,9 @@ test_actions (void)
   g_free (tweak_path);
   g_free (twiddle_path);
   g_object_unref (appinfo);
+
+  g_test_dbus_down (bus);
+  g_clear_object (&bus);
 }
 
 static gchar *
@@ -881,26 +889,24 @@ test_search (void)
   assert_search ("frobni", "frobnicator.desktop\n", TRUE, FALSE, NULL, NULL);
 
   /* Obvious multi-word search */
-  assert_search ("gno hel", "yelp.desktop\n", TRUE, TRUE, NULL, NULL);
+  assert_search ("doc hel", "yelp.desktop\n", TRUE, TRUE, NULL, NULL);
 
   /* Repeated search terms should do nothing... */
-  assert_search ("files file fil fi f", "nautilus.desktop\n"
-                                        "gedit.desktop\n", TRUE, TRUE, NULL, NULL);
+  assert_search ("files file fil fi f", "nautilus.desktop\n", TRUE, TRUE, NULL, NULL);
 
   /* "con" will match "connect" and "contacts" on name with prefix match in
-   * first group, then match "Dconf Editor" and "Desktop Icons" with substring
-   * match in next group.
+   * first group, then second group is a Keyword prefix match for "configuration" in dconf-editor.desktop
+   * and third group is a substring match for "Desktop Icons" in Name of nautilus-classic.desktop.
    */
   assert_search ("con", "gnome-contacts.desktop nautilus-connect-server.desktop\n"
-                        "dconf-editor.desktop nautilus-classic.desktop\n", TRUE, TRUE, NULL, NULL);
+                        "dconf-editor.desktop\n"
+                        "nautilus-classic.desktop\n", TRUE, TRUE, NULL, NULL);
 
   /* "gnome" will match "eye of gnome" from the user's directory, plus
-   * matching "GNOME Clocks" X-GNOME-FullName.  It's only a comment on
-   * yelp and gnome-contacts, though.
+   * matching "GNOME Clocks" X-GNOME-FullName.
    */
   assert_search ("gnome", "eog.desktop\n"
-                          "org.gnome.clocks.desktop\n"
-                          "yelp.desktop gnome-contacts.desktop\n", TRUE, TRUE, NULL, NULL);
+                          "org.gnome.clocks.desktop\n", TRUE, TRUE, NULL, NULL);
 
   /* eog has exec name 'false' in usr only */
   assert_search ("false", "eog.desktop\n", TRUE, FALSE, NULL, NULL);
@@ -912,9 +918,9 @@ test_search (void)
   assert_search ("nonsearchable", "", TRUE, FALSE, NULL, NULL);
 
   /* "gnome con" will match only gnome contacts; via the name for
-   * "contacts" and the comment for "gnome"
+   * "contacts" and keywords for "friend"
    */
-  assert_search ("gnome con", "gnome-contacts.desktop\n", TRUE, TRUE, NULL, NULL);
+  assert_search ("friend con", "gnome-contacts.desktop\n", TRUE, TRUE, NULL, NULL);
 
   /* make sure we get the correct kde4- prefix on the application IDs
    * from subdirectories
@@ -937,8 +943,7 @@ test_search (void)
 
   /* make sure localised searching works properly */
   assert_search ("foliumi", "nautilus.desktop\n"
-                            "kde4-konqbrowser.desktop\n"
-                            "eog.desktop\n", TRUE, FALSE, "en_US.UTF-8", "eo");
+                            "kde4-konqbrowser.desktop\n", TRUE, FALSE, "en_US.UTF-8", "eo");
   /* the user's eog.desktop has no translations... */
   assert_search ("foliumi", "nautilus.desktop\n"
                             "kde4-konqbrowser.desktop\n", TRUE, TRUE, "en_US.UTF-8", "eo");

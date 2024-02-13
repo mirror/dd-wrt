@@ -462,16 +462,6 @@ g_memory_buffer_put_string (GMemoryBuffer  *mbuf,
   return g_memory_buffer_write (mbuf, str, strlen (str));
 }
 
-
-/**
- * SECTION:gdbusmessage
- * @short_description: D-Bus Message
- * @include: gio/gio.h
- *
- * A type for representing D-Bus messages that can be sent or received
- * on a #GDBusConnection.
- */
-
 typedef struct _GDBusMessageClass GDBusMessageClass;
 
 /**
@@ -490,8 +480,8 @@ struct _GDBusMessageClass
 /**
  * GDBusMessage:
  *
- * The #GDBusMessage structure contains only private data and should
- * only be accessed using the provided API.
+ * A type for representing D-Bus messages that can be sent or received
+ * on a [class@Gio.DBusConnection].
  *
  * Since: 2.26
  */
@@ -508,6 +498,7 @@ struct _GDBusMessage
   guint32 serial;
   GHashTable *headers;
   GVariant *body;
+  GVariant *arg0_cache;  /* (nullable) (owned) */
 #ifdef G_OS_UNIX
   GUnixFDList *fd_list;
 #endif
@@ -530,6 +521,7 @@ g_dbus_message_finalize (GObject *object)
     g_hash_table_unref (message->headers);
   if (message->body != NULL)
     g_variant_unref (message->body);
+  g_clear_pointer (&message->arg0_cache, g_variant_unref);
 #ifdef G_OS_UNIX
   if (message->fd_list != NULL)
     g_object_unref (message->fd_list);
@@ -577,9 +569,7 @@ g_dbus_message_class_init (GDBusMessageClass *klass)
    */
   g_object_class_install_property (gobject_class,
                                    PROP_LOCKED,
-                                   g_param_spec_boolean ("locked",
-                                                         P_("Locked"),
-                                                         P_("Whether the message is locked"),
+                                   g_param_spec_boolean ("locked", NULL, NULL,
                                                          FALSE,
                                                          G_PARAM_READABLE |
                                                          G_PARAM_STATIC_NAME |
@@ -1168,6 +1158,7 @@ g_dbus_message_set_body (GDBusMessage  *message,
   if (body == NULL)
     {
       message->body = NULL;
+      message->arg0_cache = NULL;
       g_dbus_message_set_signature (message, NULL);
     }
   else
@@ -1177,6 +1168,12 @@ g_dbus_message_set_body (GDBusMessage  *message,
       gchar *signature;
 
       message->body = g_variant_ref_sink (body);
+
+      if (g_variant_is_of_type (message->body, G_VARIANT_TYPE_TUPLE) &&
+          g_variant_n_children (message->body) > 0)
+        message->arg0_cache = g_variant_get_child_value (message->body, 0);
+      else
+        message->arg0_cache = NULL;
 
       type_string = g_variant_get_type_string (body);
       type_string_len = strlen (type_string);
@@ -1286,17 +1283,225 @@ get_type_fixed_size (const GVariantType *type)
     }
 }
 
+static const char *
+message_type_to_string (GDBusMessageType message_type)
+{
+  switch (message_type)
+    {
+    case G_DBUS_MESSAGE_TYPE_INVALID:
+      return "INVALID";
+    case G_DBUS_MESSAGE_TYPE_METHOD_CALL:
+      return "METHOD_CALL";
+    case G_DBUS_MESSAGE_TYPE_METHOD_RETURN:
+      return "METHOD_RETURN";
+    case G_DBUS_MESSAGE_TYPE_ERROR:
+      return "ERROR";
+    case G_DBUS_MESSAGE_TYPE_SIGNAL:
+      return "SIGNAL";
+    default:
+      return "unknown-type";
+    }
+}
+
+static const char *
+message_header_field_to_string (GDBusMessageHeaderField field)
+{
+  switch (field)
+    {
+    case G_DBUS_MESSAGE_HEADER_FIELD_INVALID:
+      return "INVALID";
+    case G_DBUS_MESSAGE_HEADER_FIELD_PATH:
+      return "PATH";
+    case G_DBUS_MESSAGE_HEADER_FIELD_INTERFACE:
+      return "INTERFACE";
+    case G_DBUS_MESSAGE_HEADER_FIELD_MEMBER:
+      return "MEMBER";
+    case G_DBUS_MESSAGE_HEADER_FIELD_ERROR_NAME:
+      return "ERROR_NAME";
+    case G_DBUS_MESSAGE_HEADER_FIELD_REPLY_SERIAL:
+      return "REPLY_SERIAL";
+    case G_DBUS_MESSAGE_HEADER_FIELD_DESTINATION:
+      return "DESTINATION";
+    case G_DBUS_MESSAGE_HEADER_FIELD_SENDER:
+      return "SENDER";
+    case G_DBUS_MESSAGE_HEADER_FIELD_SIGNATURE:
+      return "SIGNATURE";
+    case G_DBUS_MESSAGE_HEADER_FIELD_NUM_UNIX_FDS:
+      return "NUM_UNIX_FDS";
+    default:
+      return "unknown-field";
+    }
+}
+
+static gboolean
+validate_header (GDBusMessage             *message,
+                 GDBusMessageHeaderField   field,
+                 GVariant                 *header_value,
+                 const GVariantType       *expected_type,
+                 GError                  **error)
+{
+  g_assert (header_value != NULL);
+
+  if (!g_variant_is_of_type (header_value, expected_type))
+    {
+      char *expected_type_string = g_variant_type_dup_string (expected_type);
+      g_set_error (error,
+                   G_IO_ERROR,
+                   G_IO_ERROR_INVALID_ARGUMENT,
+                   _("%s message: %s header field is invalid; expected a value of type ‘%s’"),
+                   message_type_to_string (message->type),
+                   message_header_field_to_string (field),
+                   expected_type_string);
+      g_free (expected_type_string);
+      return FALSE;
+    }
+
+  return TRUE;
+}
+
+static gboolean
+require_header (GDBusMessage             *message,
+                GDBusMessageHeaderField   field,
+                GError                  **error)
+{
+  GVariant *header_value = g_dbus_message_get_header (message, field);
+
+  if (header_value == NULL)
+    {
+      g_set_error (error,
+                   G_IO_ERROR,
+                   G_IO_ERROR_INVALID_ARGUMENT,
+                   _("%s message: %s header field is missing or invalid"),
+                   message_type_to_string (message->type),
+                   message_header_field_to_string (field));
+      return FALSE;
+    }
+
+  return TRUE;
+}
+
+/* Implement the validation rules given in
+ * https://dbus.freedesktop.org/doc/dbus-specification.html#message-protocol-header-fields */
 static gboolean
 validate_headers (GDBusMessage  *message,
                   GError       **error)
 {
   gboolean ret;
+  GHashTableIter headers_iter;
+  gpointer key;
+  GVariant *header_value;
 
   g_return_val_if_fail (G_IS_DBUS_MESSAGE (message), FALSE);
   g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
   ret = FALSE;
 
+  /* Validate the types of all known headers. */
+  g_hash_table_iter_init (&headers_iter, message->headers);
+  while (g_hash_table_iter_next (&headers_iter, &key, (gpointer) &header_value))
+    {
+      GDBusMessageHeaderField field_type = GPOINTER_TO_INT (key);
+
+      switch (field_type)
+        {
+        case G_DBUS_MESSAGE_HEADER_FIELD_INVALID:
+          /* The invalid header must be rejected as per
+           * https://dbus.freedesktop.org/doc/dbus-specification.html#message-protocol-header-fields */
+          g_set_error (error,
+                       G_IO_ERROR,
+                       G_IO_ERROR_INVALID_ARGUMENT,
+                       _("%s message: INVALID header field supplied"),
+                       message_type_to_string (message->type));
+          goto out;
+        case G_DBUS_MESSAGE_HEADER_FIELD_PATH:
+          if (!validate_header (message, field_type, header_value, G_VARIANT_TYPE_OBJECT_PATH, error))
+            goto out;
+          if (g_strcmp0 (g_variant_get_string (header_value, NULL), "/org/freedesktop/DBus/Local") == 0)
+            {
+              g_set_error (error,
+                           G_IO_ERROR,
+                           G_IO_ERROR_INVALID_ARGUMENT,
+                           _("%s message: PATH header field is using the reserved value /org/freedesktop/DBus/Local"),
+                           message_type_to_string (message->type));
+              goto out;
+            }
+          break;
+        case G_DBUS_MESSAGE_HEADER_FIELD_INTERFACE:
+          if (!validate_header (message, field_type, header_value, G_VARIANT_TYPE_STRING, error))
+            goto out;
+          if (!g_dbus_is_interface_name (g_variant_get_string (header_value, NULL)))
+            {
+              g_set_error (error,
+                           G_IO_ERROR,
+                           G_IO_ERROR_INVALID_ARGUMENT,
+                           _("%s message: INTERFACE header field does not contain a valid interface name"),
+                           message_type_to_string (message->type));
+              goto out;
+            }
+          if (g_strcmp0 (g_variant_get_string (header_value, NULL), "org.freedesktop.DBus.Local") == 0)
+            {
+              g_set_error (error,
+                           G_IO_ERROR,
+                           G_IO_ERROR_INVALID_ARGUMENT,
+                           _("%s message: INTERFACE header field is using the reserved value org.freedesktop.DBus.Local"),
+                           message_type_to_string (message->type));
+              goto out;
+            }
+          break;
+        case G_DBUS_MESSAGE_HEADER_FIELD_MEMBER:
+          if (!validate_header (message, field_type, header_value, G_VARIANT_TYPE_STRING, error))
+            goto out;
+          if (!g_dbus_is_member_name (g_variant_get_string (header_value, NULL)))
+            {
+              g_set_error (error,
+                           G_IO_ERROR,
+                           G_IO_ERROR_INVALID_ARGUMENT,
+                           _("%s message: MEMBER header field does not contain a valid member name"),
+                           message_type_to_string (message->type));
+              goto out;
+            }
+          break;
+        case G_DBUS_MESSAGE_HEADER_FIELD_ERROR_NAME:
+          if (!validate_header (message, field_type, header_value, G_VARIANT_TYPE_STRING, error))
+            goto out;
+          if (!g_dbus_is_error_name (g_variant_get_string (header_value, NULL)))
+            {
+              g_set_error (error,
+                           G_IO_ERROR,
+                           G_IO_ERROR_INVALID_ARGUMENT,
+                           _("%s message: ERROR_NAME header field does not contain a valid error name"),
+                           message_type_to_string (message->type));
+              goto out;
+            }
+          break;
+        case G_DBUS_MESSAGE_HEADER_FIELD_REPLY_SERIAL:
+          if (!validate_header (message, field_type, header_value, G_VARIANT_TYPE_UINT32, error))
+            goto out;
+          break;
+        case G_DBUS_MESSAGE_HEADER_FIELD_DESTINATION:
+          if (!validate_header (message, field_type, header_value, G_VARIANT_TYPE_STRING, error))
+            goto out;
+          break;
+        case G_DBUS_MESSAGE_HEADER_FIELD_SENDER:
+          if (!validate_header (message, field_type, header_value, G_VARIANT_TYPE_STRING, error))
+            goto out;
+          break;
+        case G_DBUS_MESSAGE_HEADER_FIELD_SIGNATURE:
+          if (!validate_header (message, field_type, header_value, G_VARIANT_TYPE_SIGNATURE, error))
+            goto out;
+          break;
+        case G_DBUS_MESSAGE_HEADER_FIELD_NUM_UNIX_FDS:
+          if (!validate_header (message, field_type, header_value, G_VARIANT_TYPE_UINT32, error))
+            goto out;
+          break;
+        default:
+          /* Ignore unknown fields as per
+           * https://dbus.freedesktop.org/doc/dbus-specification.html#message-protocol-header-fields. */
+          continue;
+        }
+    }
+
+  /* Check for message-type-specific required headers. */
   switch (message->type)
     {
     case G_DBUS_MESSAGE_TYPE_INVALID:
@@ -1305,102 +1510,29 @@ validate_headers (GDBusMessage  *message,
                            G_IO_ERROR_INVALID_ARGUMENT,
                            _("type is INVALID"));
       goto out;
-      break;
 
     case G_DBUS_MESSAGE_TYPE_METHOD_CALL:
-      {
-        GVariant *path_variant = g_dbus_message_get_header (message, G_DBUS_MESSAGE_HEADER_FIELD_PATH);
-        GVariant *member_variant = g_dbus_message_get_header (message, G_DBUS_MESSAGE_HEADER_FIELD_MEMBER);
-
-        if (path_variant == NULL ||
-            !g_variant_is_of_type (path_variant, G_VARIANT_TYPE_OBJECT_PATH) ||
-            member_variant == NULL ||
-            !g_variant_is_of_type (member_variant, G_VARIANT_TYPE_STRING) ||
-            !g_dbus_is_member_name (g_variant_get_string (member_variant, NULL)))
-          {
-            g_set_error_literal (error,
-                                 G_IO_ERROR,
-                                 G_IO_ERROR_INVALID_ARGUMENT,
-                                 _("METHOD_CALL message: PATH or MEMBER header field is missing or invalid"));
-            goto out;
-          }
-      }
+      if (!require_header (message, G_DBUS_MESSAGE_HEADER_FIELD_PATH, error) ||
+          !require_header (message, G_DBUS_MESSAGE_HEADER_FIELD_MEMBER, error))
+        goto out;
       break;
 
     case G_DBUS_MESSAGE_TYPE_METHOD_RETURN:
-      {
-        GVariant *reply_serial_variant = g_dbus_message_get_header (message, G_DBUS_MESSAGE_HEADER_FIELD_REPLY_SERIAL);
-
-        if (reply_serial_variant == NULL ||
-            !g_variant_is_of_type (reply_serial_variant, G_VARIANT_TYPE_UINT32))
-          {
-            g_set_error_literal (error,
-                                 G_IO_ERROR,
-                                 G_IO_ERROR_INVALID_ARGUMENT,
-                                 _("METHOD_RETURN message: REPLY_SERIAL header field is missing or invalid"));
-            goto out;
-          }
-      }
+      if (!require_header (message, G_DBUS_MESSAGE_HEADER_FIELD_REPLY_SERIAL, error))
+        goto out;
       break;
 
     case G_DBUS_MESSAGE_TYPE_ERROR:
-      {
-        GVariant *error_name_variant = g_dbus_message_get_header (message, G_DBUS_MESSAGE_HEADER_FIELD_ERROR_NAME);
-        GVariant *reply_serial_variant = g_dbus_message_get_header (message, G_DBUS_MESSAGE_HEADER_FIELD_REPLY_SERIAL);
-
-        if (error_name_variant == NULL ||
-            !g_variant_is_of_type (error_name_variant, G_VARIANT_TYPE_STRING) ||
-            !g_dbus_is_error_name (g_variant_get_string (error_name_variant, NULL)) ||
-            reply_serial_variant == NULL ||
-            !g_variant_is_of_type (reply_serial_variant, G_VARIANT_TYPE_UINT32))
-          {
-            g_set_error_literal (error,
-                                 G_IO_ERROR,
-                                 G_IO_ERROR_INVALID_ARGUMENT,
-                                 _("ERROR message: REPLY_SERIAL or ERROR_NAME header field is missing or invalid"));
-            goto out;
-          }
-      }
+      if (!require_header (message, G_DBUS_MESSAGE_HEADER_FIELD_ERROR_NAME, error) ||
+          !require_header (message, G_DBUS_MESSAGE_HEADER_FIELD_REPLY_SERIAL, error))
+        goto out;
       break;
 
     case G_DBUS_MESSAGE_TYPE_SIGNAL:
-      {
-        GVariant *path_variant = g_dbus_message_get_header (message, G_DBUS_MESSAGE_HEADER_FIELD_PATH);
-        GVariant *interface_variant = g_dbus_message_get_header (message, G_DBUS_MESSAGE_HEADER_FIELD_INTERFACE);
-        GVariant *member_variant = g_dbus_message_get_header (message, G_DBUS_MESSAGE_HEADER_FIELD_MEMBER);
-
-        if (path_variant == NULL ||
-            !g_variant_is_of_type (path_variant, G_VARIANT_TYPE_OBJECT_PATH) ||
-            interface_variant == NULL ||
-            !g_variant_is_of_type (interface_variant, G_VARIANT_TYPE_STRING) ||
-            !g_dbus_is_interface_name (g_variant_get_string (interface_variant, NULL)) ||
-            member_variant == NULL ||
-            !g_variant_is_of_type (member_variant, G_VARIANT_TYPE_STRING) ||
-            !g_dbus_is_member_name (g_variant_get_string (member_variant, NULL)))
-          {
-            g_set_error_literal (error,
-                                 G_IO_ERROR,
-                                 G_IO_ERROR_INVALID_ARGUMENT,
-                                 _("SIGNAL message: PATH, INTERFACE or MEMBER header field is missing or invalid"));
-            goto out;
-          }
-        if (g_strcmp0 (g_dbus_message_get_path (message), "/org/freedesktop/DBus/Local") == 0)
-          {
-            g_set_error_literal (error,
-                                 G_IO_ERROR,
-                                 G_IO_ERROR_INVALID_ARGUMENT,
-                                 _("SIGNAL message: The PATH header field is using the reserved value /org/freedesktop/DBus/Local"));
-            goto out;
-          }
-        if (g_strcmp0 (g_dbus_message_get_interface (message), "org.freedesktop.DBus.Local") == 0)
-          {
-            g_set_error_literal (error,
-                                 G_IO_ERROR,
-                                 G_IO_ERROR_INVALID_ARGUMENT,
-                                 _("SIGNAL message: The INTERFACE header field is using the reserved value org.freedesktop.DBus.Local"));
-            goto out;
-          }
-      }
+      if (!require_header (message, G_DBUS_MESSAGE_HEADER_FIELD_PATH, error) ||
+          !require_header (message, G_DBUS_MESSAGE_HEADER_FIELD_INTERFACE, error) ||
+          !require_header (message, G_DBUS_MESSAGE_HEADER_FIELD_MEMBER, error))
+        goto out;
       break;
 
     default:
@@ -2362,6 +2494,14 @@ g_dbus_message_new_from_blob (guchar                *blob,
                                                  2,
                                                  &local_error);
           g_variant_type_free (variant_type);
+
+          if (message->body != NULL &&
+              g_variant_is_of_type (message->body, G_VARIANT_TYPE_TUPLE) &&
+              g_variant_n_children (message->body) > 0)
+            message->arg0_cache = g_variant_get_child_value (message->body, 0);
+          else
+            message->arg0_cache = NULL;
+
           if (message->body == NULL)
             goto fail;
         }
@@ -3393,6 +3533,9 @@ g_dbus_message_set_signature (GDBusMessage  *message,
  *
  * Convenience to get the first item in the body of @message.
  *
+ * See [method@Gio.DBusMessage.get_arg0_path] for returning object-path-typed
+ * arg0 values.
+ *
  * Returns: (nullable): The string item or %NULL if the first item in the body of
  * @message is not a string.
  *
@@ -3401,22 +3544,38 @@ g_dbus_message_set_signature (GDBusMessage  *message,
 const gchar *
 g_dbus_message_get_arg0 (GDBusMessage  *message)
 {
-  const gchar *ret;
-
   g_return_val_if_fail (G_IS_DBUS_MESSAGE (message), NULL);
 
-  ret = NULL;
+  if (message->arg0_cache != NULL &&
+      g_variant_is_of_type (message->arg0_cache, G_VARIANT_TYPE_STRING))
+    return g_variant_get_string (message->arg0_cache, NULL);
 
-  if (message->body != NULL && g_variant_is_of_type (message->body, G_VARIANT_TYPE_TUPLE))
-    {
-      GVariant *item;
-      item = g_variant_get_child_value (message->body, 0);
-      if (g_variant_is_of_type (item, G_VARIANT_TYPE_STRING))
-        ret = g_variant_get_string (item, NULL);
-      g_variant_unref (item);
-    }
+  return NULL;
+}
 
-  return ret;
+/**
+ * g_dbus_message_get_arg0_path:
+ * @message: A `GDBusMessage`.
+ *
+ * Convenience to get the first item in the body of @message.
+ *
+ * See [method@Gio.DBusMessage.get_arg0] for returning string-typed arg0 values.
+ *
+ * Returns: (nullable): The object path item or `NULL` if the first item in the
+ *   body of @message is not an object path.
+ *
+ * Since: 2.80
+ */
+const gchar *
+g_dbus_message_get_arg0_path (GDBusMessage  *message)
+{
+  g_return_val_if_fail (G_IS_DBUS_MESSAGE (message), NULL);
+
+  if (message->arg0_cache != NULL &&
+      g_variant_is_of_type (message->arg0_cache, G_VARIANT_TYPE_OBJECT_PATH))
+    return g_variant_get_string (message->arg0_cache, NULL);
+
+  return NULL;
 }
 
 /* ---------------------------------------------------------------------------------------------------- */
@@ -3594,7 +3753,7 @@ _sort_keys_func (gconstpointer a,
  * The contents of the description has no ABI guarantees, the contents
  * and formatting is subject to change at any time. Typical output
  * looks something like this:
- * |[
+ * ```
  * Type:    method-call
  * Flags:   none
  * Version: 0
@@ -3607,9 +3766,9 @@ _sort_keys_func (gconstpointer a,
  * Body: ()
  * UNIX File Descriptors:
  *   (none)
- * ]|
+ * ```
  * or
- * |[
+ * ```
  * Type:    method-return
  * Flags:   no-reply-expected
  * Version: 0
@@ -3622,9 +3781,9 @@ _sort_keys_func (gconstpointer a,
  * Body: ()
  * UNIX File Descriptors:
  *   fd 12: dev=0:10,mode=020620,ino=5,uid=500,gid=5,rdev=136:2,size=0,atime=1273085037,mtime=1273085851,ctime=1272982635
- * ]|
+ * ```
  *
- * Returns: (not nullable): A string that should be freed with g_free().
+ * Returns: (not nullable): A string that should be freed with [func@GLib.free].
  *
  * Since: 2.26
  */
@@ -3859,6 +4018,7 @@ g_dbus_message_copy (GDBusMessage  *message,
    * to just ref (as opposed to deep-copying) the GVariant instances
    */
   ret->body = message->body != NULL ? g_variant_ref (message->body) : NULL;
+  ret->arg0_cache = message->arg0_cache != NULL ? g_variant_ref (message->arg0_cache) : NULL;
   g_hash_table_iter_init (&iter, message->headers);
   while (g_hash_table_iter_next (&iter, &header_key, (gpointer) &header_value))
     g_hash_table_insert (ret->headers, header_key, g_variant_ref (header_value));

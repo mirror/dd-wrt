@@ -31,16 +31,13 @@
 #include "glibintl.h"
 
 /**
- * SECTION:gdtlsserverconnection
- * @short_description: DTLS server-side connection
- * @include: gio/gio.h
+ * GDtlsServerConnection:
  *
- * #GDtlsServerConnection is the server-side subclass of #GDtlsConnection,
- * representing a server-side DTLS connection.
+ * `GDtlsServerConnection` is the server-side subclass of
+ * [iface@Gio.DtlsConnection], representing a server-side DTLS connection.
  *
  * Since: 2.48
  */
-
 G_DEFINE_INTERFACE (GDtlsServerConnection, g_dtls_server_connection,
                     G_TYPE_DTLS_CONNECTION)
 
@@ -57,9 +54,7 @@ g_dtls_server_connection_default_init (GDtlsServerConnectionInterface *iface)
    * Since: 2.48
    */
   g_object_interface_install_property (iface,
-                                       g_param_spec_enum ("authentication-mode",
-                                                          P_("Authentication Mode"),
-                                                          P_("The client authentication mode"),
+                                       g_param_spec_enum ("authentication-mode", NULL, NULL,
                                                           G_TYPE_TLS_AUTHENTICATION_MODE,
                                                           G_TLS_AUTHENTICATION_NONE,
                                                           G_PARAM_READWRITE |

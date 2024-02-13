@@ -82,12 +82,13 @@ class RstCodeGenerator:
 
     def _generate_header(self, iface):
         """Generates the header and preamble of the document."""
-        header_len = len(iface.name)
+        iface_name = iface.name_without_prefix
+        header_len = len(iface_name)
         res = [
             f".. _{iface.name}:",
             "",
             "=" * header_len,
-            iface.name,
+            iface_name,
             "=" * header_len,
             "",
             "-----------",
@@ -142,7 +143,7 @@ class RstCodeGenerator:
             else:
                 access = "readable"
             res += [
-                ".. _{title}:",
+                f".. _{title}:",
                 "",
                 title,
                 "^" * len(title),
@@ -218,7 +219,7 @@ class RstCodeGenerator:
         for m in iface.methods:
             title = f"{iface.name}.{m.name}"
             res += [
-                ".. _{title}:",
+                f".. _{title}:",
                 "",
                 title,
                 "^" * len(title),
@@ -296,7 +297,7 @@ class RstCodeGenerator:
         for s in iface.signals:
             title = f"{iface.name}::{s.name}"
             res += [
-                ".. _{title}:",
+                f".. _{title}:",
                 "",
                 title,
                 "^" * len(title),

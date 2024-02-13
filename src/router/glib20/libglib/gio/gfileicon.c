@@ -33,15 +33,13 @@
 
 
 /**
- * SECTION:gfileicon
- * @short_description: Icons pointing to an image file
- * @include: gio/gio.h
- * @see_also: #GIcon, #GLoadableIcon
+ * GFileIcon:
  * 
- * #GFileIcon specifies an icon by pointing to an image file
+ * `GFileIcon` specifies an icon by pointing to an image file
  * to be used as icon.
  * 
- **/
+ * It implements [iface@Gio.LoadableIcon].
+ */
 
 static void g_file_icon_icon_iface_init          (GIconIface          *iface);
 static void g_file_icon_loadable_icon_iface_init (GLoadableIconIface  *iface);
@@ -155,9 +153,7 @@ g_file_icon_class_init (GFileIconClass *klass)
    * The file containing the icon.
    */
   g_object_class_install_property (gobject_class, PROP_FILE,
-                                   g_param_spec_object ("file",
-                                                        P_("file"),
-                                                        P_("The file containing the icon"),
+                                   g_param_spec_object ("file", NULL, NULL,
                                                         G_TYPE_FILE,
                                                         G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_NAME | G_PARAM_STATIC_BLURB | G_PARAM_STATIC_NICK));
 }

@@ -63,35 +63,28 @@
    G_DBUS_SERVER_FLAGS_AUTHENTICATION_REQUIRE_SAME_USER)
 
 /**
- * SECTION:gdbusserver
- * @short_description: Helper for accepting connections
- * @include: gio/gio.h
+ * GDBusServer:
  *
- * #GDBusServer is a helper for listening to and accepting D-Bus
+ * `GDBusServer` is a helper for listening to and accepting D-Bus
  * connections. This can be used to create a new D-Bus server, allowing two
  * peers to use the D-Bus protocol for their own specialized communication.
  * A server instance provided in this way will not perform message routing or
- * implement the org.freedesktop.DBus interface.
+ * implement the
+ * [`org.freedesktop.DBus` interface](https://dbus.freedesktop.org/doc/dbus-specification.html#message-bus-messages).
  *
  * To just export an object on a well-known name on a message bus, such as the
- * session or system bus, you should instead use g_bus_own_name().
+ * session or system bus, you should instead use [func@Gio.bus_own_name].
  *
  * An example of peer-to-peer communication with GDBus can be found
  * in [gdbus-example-peer.c](https://gitlab.gnome.org/GNOME/glib/-/blob/HEAD/gio/tests/gdbus-example-peer.c).
  *
- * Note that a minimal #GDBusServer will accept connections from any
- * peer. In many use-cases it will be necessary to add a #GDBusAuthObserver
- * that only accepts connections that have successfully authenticated
- * as the same user that is running the #GDBusServer. Since GLib 2.68 this can
- * be achieved more simply by passing the
- * %G_DBUS_SERVER_FLAGS_AUTHENTICATION_REQUIRE_SAME_USER flag to the server.
- */
-
-/**
- * GDBusServer:
- *
- * The #GDBusServer structure contains only private data and
- * should only be accessed using the provided API.
+ * Note that a minimal `GDBusServer` will accept connections from any
+ * peer. In many use-cases it will be necessary to add a
+ * [class@Gio.DBusAuthObserver] that only accepts connections that have
+ * successfully authenticated as the same user that is running the
+ * `GDBusServer`. Since GLib 2.68 this can be achieved more simply by passing
+ * the `G_DBUS_SERVER_FLAGS_AUTHENTICATION_REQUIRE_SAME_USER` flag to the
+ * server.
  *
  * Since: 2.26
  */
@@ -305,9 +298,7 @@ g_dbus_server_class_init (GDBusServerClass *klass)
    */
   g_object_class_install_property (gobject_class,
                                    PROP_FLAGS,
-                                   g_param_spec_flags ("flags",
-                                                       P_("Flags"),
-                                                       P_("Flags for the server"),
+                                   g_param_spec_flags ("flags", NULL, NULL,
                                                        G_TYPE_DBUS_SERVER_FLAGS,
                                                        G_DBUS_SERVER_FLAGS_NONE,
                                                        G_PARAM_READABLE |
@@ -328,9 +319,7 @@ g_dbus_server_class_init (GDBusServerClass *klass)
    */
   g_object_class_install_property (gobject_class,
                                    PROP_GUID,
-                                   g_param_spec_string ("guid",
-                                                        P_("GUID"),
-                                                        P_("The guid of the server"),
+                                   g_param_spec_string ("guid", NULL, NULL,
                                                         NULL,
                                                         G_PARAM_READABLE |
                                                         G_PARAM_WRITABLE |
@@ -348,9 +337,7 @@ g_dbus_server_class_init (GDBusServerClass *klass)
    */
   g_object_class_install_property (gobject_class,
                                    PROP_ADDRESS,
-                                   g_param_spec_string ("address",
-                                                        P_("Address"),
-                                                        P_("The address to listen on"),
+                                   g_param_spec_string ("address", NULL, NULL,
                                                         NULL,
                                                         G_PARAM_READABLE |
                                                         G_PARAM_WRITABLE |
@@ -368,9 +355,7 @@ g_dbus_server_class_init (GDBusServerClass *klass)
    */
   g_object_class_install_property (gobject_class,
                                    PROP_CLIENT_ADDRESS,
-                                   g_param_spec_string ("client-address",
-                                                        P_("Client Address"),
-                                                        P_("The address clients can use"),
+                                   g_param_spec_string ("client-address", NULL, NULL,
                                                         NULL,
                                                         G_PARAM_READABLE |
                                                         G_PARAM_STATIC_NAME |
@@ -386,9 +371,7 @@ g_dbus_server_class_init (GDBusServerClass *klass)
    */
   g_object_class_install_property (gobject_class,
                                    PROP_ACTIVE,
-                                   g_param_spec_boolean ("active",
-                                                         P_("Active"),
-                                                         P_("Whether the server is currently active"),
+                                   g_param_spec_boolean ("active", NULL, NULL,
                                                          FALSE,
                                                          G_PARAM_READABLE |
                                                          G_PARAM_STATIC_NAME |
@@ -404,9 +387,7 @@ g_dbus_server_class_init (GDBusServerClass *klass)
    */
   g_object_class_install_property (gobject_class,
                                    PROP_AUTHENTICATION_OBSERVER,
-                                   g_param_spec_object ("authentication-observer",
-                                                        P_("Authentication Observer"),
-                                                        P_("Object used to assist in the authentication process"),
+                                   g_param_spec_object ("authentication-observer", NULL, NULL,
                                                         G_TYPE_DBUS_AUTH_OBSERVER,
                                                         G_PARAM_READABLE |
                                                         G_PARAM_WRITABLE |

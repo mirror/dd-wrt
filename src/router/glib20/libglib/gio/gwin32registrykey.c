@@ -347,23 +347,21 @@ G_DEFINE_BOXED_TYPE (GWin32RegistryValueIter, g_win32_registry_value_iter,
                      g_win32_registry_value_iter_free)
 
 /**
- * SECTION:gwin32registrykey
- * @title: GWin32RegistryKey
- * @short_description: W32 registry access helper
- * @include: gio/win32/gwin32registrykey.h
+ * GWin32RegistryKey:
  *
- * #GWin32RegistryKey represents a single Windows Registry key.
+ * `GWin32RegistryKey` represents a single Windows Registry key.
  *
- * #GWin32RegistryKey is used by a number of helper functions that read
+ * `GWin32RegistryKey` is used by a number of helper functions that read
  * Windows Registry. All keys are opened with read-only access, and at
  * the moment there is no API for writing into registry keys or creating
  * new ones.
  *
- * #GWin32RegistryKey implements the #GInitable interface, so if it is manually
- * constructed by e.g. g_object_new() you must call g_initable_init() and check
- * the results before using the object. This is done automatically
- * in g_win32_registry_key_new() and g_win32_registry_key_get_child(), so these
- * functions can return %NULL.
+ * `GWin32RegistryKey` implements the [iface@Gio.Initable] interface, so if it
+ * is manually constructed by e.g. [ctor@GObject.Object.new] you must call
+ * [method@Gio.Initable.init] and check the results before using the object.
+ * This is done automatically in [ctor@Gio.Win32RegistryKey.new] and
+ * [method@Gio.Win32RegistryKey.get_child], so these functions can return
+ * `NULL`.
  *
  * To increase efficiency, a UTF-16 variant is available for all functions
  * that deal with key or value names in the registry. Use these to perform
@@ -372,17 +370,17 @@ G_DEFINE_BOXED_TYPE (GWin32RegistryValueIter, g_win32_registry_value_iter,
  * of UTF-16 functions avoids the overhead of converting names to UTF-8 and
  * back.
  *
- * All functions operate in current user's context (it is not possible to
- * access registry tree of a different user).
+ * All functions operate in the current user’s context (it is not possible to
+ * access the registry tree of a different user).
  *
- * Key paths must use '\\' as a separator, '/' is not supported. Key names
- * must not include '\\', because it's used as a separator. Value names
- * can include '\\'.
+ * Key paths must use `\\` as a separator, `/` is not supported. Key names
+ * must not include `\\`, because it’s used as a separator. Value names
+ * can include `\\`.
  *
  * Key and value names are not case sensitive.
  *
- * Full key name (excluding the pre-defined ancestor's name) can't exceed
- * 255 UTF-16 characters, give or take. Value name can't exceed 16383 UTF-16
+ * A full key name (excluding the pre-defined ancestor’s name) can’t exceed
+ * 255 UTF-16 characters, give or take. A value name can’t exceed 16383 UTF-16
  * characters. Tree depth is limited to 512 levels.
  **/
 
@@ -1747,7 +1745,7 @@ static void
 _g_win32_registry_key_reread (GWin32RegistryKey        *key,
                               GWin32RegistryKeyPrivate *buf)
 {
-  if (g_once_init_enter (&nt_query_key))
+  if (g_once_init_enter_pointer (&nt_query_key))
     {
       NtQueryKeyFunc func;
       HMODULE ntdll = GetModuleHandleW (L"ntdll.dll");
@@ -1757,7 +1755,7 @@ _g_win32_registry_key_reread (GWin32RegistryKey        *key,
       else
         func = NULL;
 
-      g_once_init_leave (&nt_query_key, func);
+      g_once_init_leave_pointer (&nt_query_key, func);
     }
 
   /* Assume that predefined keys never get renamed. Also, their handles probably
@@ -1875,7 +1873,7 @@ g_win32_registry_get_os_dirs_w (void)
 {
   static gunichar2 **mui_os_dirs = NULL;
 
-  if (g_once_init_enter (&mui_os_dirs))
+  if (g_once_init_enter_pointer (&mui_os_dirs))
     {
       gunichar2 **new_mui_os_dirs;
       gunichar2 *system32 = NULL;
@@ -1915,7 +1913,7 @@ g_win32_registry_get_os_dirs_w (void)
 
       new_mui_os_dirs[array_index++] = NULL;
 
-      g_once_init_leave (&mui_os_dirs, new_mui_os_dirs);
+      g_once_init_leave_pointer (&mui_os_dirs, new_mui_os_dirs);
     }
 
   return (const gunichar2 * const *) mui_os_dirs;
@@ -1936,7 +1934,7 @@ g_win32_registry_get_os_dirs (void)
 {
   static gchar **mui_os_dirs = NULL;
 
-  if (g_once_init_enter (&mui_os_dirs))
+  if (g_once_init_enter_pointer (&mui_os_dirs))
     {
       gchar **new_mui_os_dirs;
       gsize array_index;
@@ -1960,7 +1958,7 @@ g_win32_registry_get_os_dirs (void)
             g_critical ("Failed to convert to a system directory #%zu to UTF-8", array_index);
         }
 
-      g_once_init_leave (&mui_os_dirs, new_mui_os_dirs);
+      g_once_init_leave_pointer (&mui_os_dirs, new_mui_os_dirs);
     }
 
   return (const gchar * const *) mui_os_dirs;
@@ -2504,7 +2502,7 @@ g_win32_registry_key_watch (GWin32RegistryKey                   *key,
       return FALSE;
     }
 
-  if (g_once_init_enter (&nt_notify_change_multiple_keys))
+  if (g_once_init_enter_pointer (&nt_notify_change_multiple_keys))
   {
     NtNotifyChangeMultipleKeysFunc func;
     HMODULE ntdll = GetModuleHandleW (L"ntdll.dll");
@@ -2514,7 +2512,7 @@ g_win32_registry_key_watch (GWin32RegistryKey                   *key,
     else
       func = NULL;
 
-    g_once_init_leave (&nt_notify_change_multiple_keys, func);
+    g_once_init_leave_pointer (&nt_notify_change_multiple_keys, func);
   }
 
   if (nt_notify_change_multiple_keys== NULL)
@@ -2697,9 +2695,7 @@ g_win32_registry_key_class_init (GWin32RegistryKeyClass *klass)
    */
   g_object_class_install_property (gobject_class,
                                    PROP_PATH,
-                                   g_param_spec_string ("path",
-                                                        "Path",
-                                                        "Path to the key in the registry",
+                                   g_param_spec_string ("path", NULL, NULL,
                                                         NULL,
                                                         G_PARAM_READWRITE |
                                                         G_PARAM_CONSTRUCT_ONLY |
@@ -2714,9 +2710,7 @@ g_win32_registry_key_class_init (GWin32RegistryKeyClass *klass)
    */
   g_object_class_install_property (gobject_class,
                                    PROP_PATH_UTF16,
-                                   g_param_spec_pointer ("path-utf16",
-                                                        "Path (UTF-16)",
-                                                        "Path to the key in the registry, in UTF-16",
+                                   g_param_spec_pointer ("path-utf16", NULL, NULL,
                                                         G_PARAM_READWRITE |
                                                         G_PARAM_CONSTRUCT_ONLY |
                                                         G_PARAM_STATIC_STRINGS));

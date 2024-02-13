@@ -5,7 +5,6 @@
 #include <errno.h>
 #ifdef G_OS_UNIX
 #include <unistd.h>
-#include <sys/ptrace.h>
 #else
 #include <io.h>
 #endif
@@ -276,7 +275,7 @@ sleep_and_kill (int argc, char **argv)
   /* Run sleep "forever" in a shell; this will trigger PTRACE_EVENT_EXEC */
   g_ptr_array_add (args, g_strdup ("sh"));
   g_ptr_array_add (args, g_strdup ("-c"));
-  g_ptr_array_add (args, g_strdup ("sleep infinity"));
+  g_ptr_array_add (args, g_strdup ("exec sleep infinity"));
   g_ptr_array_add (args, NULL);
   launcher = g_subprocess_launcher_new (G_SUBPROCESS_FLAGS_NONE);
   proc = g_subprocess_launcher_spawnv (launcher, (const gchar **) args->pdata, &local_error);

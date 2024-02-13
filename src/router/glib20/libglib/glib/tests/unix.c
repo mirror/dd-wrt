@@ -1,5 +1,6 @@
 /* 
  * Copyright (C) 2011 Red Hat, Inc.
+ * Copyright 2023 Collabora Ltd.
  *
  * SPDX-License-Identifier: LicenseRef-old-glib-tests
  *
@@ -25,12 +26,196 @@
 
 #include "config.h"
 
+#include "glib-private.h"
 #include "glib-unix.h"
 #include "gstdio.h"
 
 #include <string.h>
 #include <pwd.h>
 #include <unistd.h>
+
+#include "testutils.h"
+
+static void
+async_signal_safe_message (const char *message)
+{
+  if (write (2, message, strlen (message)) < 0 ||
+      write (2, "\n", 1) < 0)
+    {
+      /* ignore: not much we can do */
+    }
+}
+
+static void
+test_closefrom (void)
+{
+  /* Enough file descriptors to be confident that we're operating on
+   * all of them */
+  const int N_FDS = 20;
+  int *fds;
+  int fd;
+  int i;
+  pid_t child;
+  int wait_status;
+
+  /* The loop that populates @fds with pipes assumes this */
+  g_assert (N_FDS % 2 == 0);
+
+  g_test_summary ("Test g_closefrom(), g_fdwalk_set_cloexec()");
+  g_test_bug ("https://gitlab.gnome.org/GNOME/glib/-/issues/3247");
+
+  for (fd = 0; fd <= 2; fd++)
+    {
+      int flags;
+
+      g_assert_no_errno ((flags = fcntl (fd, F_GETFD)));
+      g_assert_no_errno (fcntl (fd, F_SETFD, flags & ~FD_CLOEXEC));
+    }
+
+  fds = g_new0 (int, N_FDS);
+
+  for (i = 0; i < N_FDS; i += 2)
+    {
+      GError *error = NULL;
+      int pipefd[2];
+      int res;
+
+      /* Intentionally neither O_CLOEXEC nor FD_CLOEXEC */
+      res = g_unix_open_pipe (pipefd, 0, &error);
+      g_assert (res);
+      g_assert_no_error (error);
+      g_clear_error (&error);
+      fds[i] = pipefd[0];
+      fds[i + 1] = pipefd[1];
+    }
+
+  child = fork ();
+
+  /* Child process exits with status = 100 + the first wrong fd,
+   * or 0 if all were correct */
+  if (child == 0)
+    {
+      for (i = 0; i < N_FDS; i++)
+        {
+          int flags = fcntl (fds[i], F_GETFD);
+
+          if (flags == -1)
+            {
+              async_signal_safe_message ("fd should not have been closed");
+              _exit (100 + fds[i]);
+            }
+
+          if (flags & FD_CLOEXEC)
+            {
+              async_signal_safe_message ("fd should not have been close-on-exec yet");
+              _exit (100 + fds[i]);
+            }
+        }
+
+      g_fdwalk_set_cloexec (3);
+
+      for (i = 0; i < N_FDS; i++)
+        {
+          int flags = fcntl (fds[i], F_GETFD);
+
+          if (flags == -1)
+            {
+              async_signal_safe_message ("fd should not have been closed");
+              _exit (100 + fds[i]);
+            }
+
+          if (!(flags & FD_CLOEXEC))
+            {
+              async_signal_safe_message ("fd should have been close-on-exec");
+              _exit (100 + fds[i]);
+            }
+        }
+
+      g_closefrom (3);
+
+      for (fd = 0; fd <= 2; fd++)
+        {
+          int flags = fcntl (fd, F_GETFD);
+
+          if (flags == -1)
+            {
+              async_signal_safe_message ("fd should not have been closed");
+              _exit (100 + fd);
+            }
+
+          if (flags & FD_CLOEXEC)
+            {
+              async_signal_safe_message ("fd should not have been close-on-exec");
+              _exit (100 + fd);
+            }
+        }
+
+      for (i = 0; i < N_FDS; i++)
+        {
+          if (fcntl (fds[i], F_GETFD) != -1 || errno != EBADF)
+            {
+              async_signal_safe_message ("fd should have been closed");
+              _exit (100 + fds[i]);
+            }
+        }
+
+      _exit (0);
+    }
+
+  g_assert_no_errno (waitpid (child, &wait_status, 0));
+
+  if (WIFEXITED (wait_status))
+    {
+      int exit_status = WEXITSTATUS (wait_status);
+
+      if (exit_status != 0)
+        g_test_fail_printf ("File descriptor %d in incorrect state", exit_status - 100);
+    }
+  else
+    {
+      g_test_fail_printf ("Unexpected wait status %d", wait_status);
+    }
+
+  for (i = 0; i < N_FDS; i++)
+    {
+      GError *error = NULL;
+
+      g_close (fds[i], &error);
+      g_assert_no_error (error);
+      g_clear_error (&error);
+    }
+
+  g_free (fds);
+
+  if (g_test_undefined ())
+    {
+      g_test_trap_subprocess ("/glib-unix/closefrom/subprocess/einval",
+                              0, G_TEST_SUBPROCESS_DEFAULT);
+      g_test_trap_assert_passed ();
+    }
+}
+
+static void
+test_closefrom_subprocess_einval (void)
+{
+  int res;
+  int errsv;
+
+  g_log_set_always_fatal (G_LOG_FATAL_MASK);
+  g_log_set_fatal_mask ("GLib", G_LOG_FATAL_MASK);
+
+  errno = 0;
+  res = g_closefrom (-1);
+  errsv = errno;
+  g_assert_cmpint (res, ==, -1);
+  g_assert_cmpint (errsv, ==, EINVAL);
+
+  errno = 0;
+  res = g_fdwalk_set_cloexec (-42);
+  errsv = errno;
+  g_assert_cmpint (res, ==, -1);
+  g_assert_cmpint (errsv, ==, EINVAL);
+}
 
 static void
 test_pipe (void)
@@ -120,6 +305,116 @@ test_pipe_stdio_overwrite (void)
 
   g_close (stdin_fd, &error);
   g_assert_no_error (error);
+}
+
+static void
+test_pipe_struct (void)
+{
+  GError *error = NULL;
+  GUnixPipe pair = G_UNIX_PIPE_INIT;
+  char buf[1024];
+  gssize bytes_read;
+  gboolean res;
+  int read_end = -1;    /* owned */
+  int write_end = -1;   /* unowned */
+  int errsv;
+
+  g_test_summary ("Test GUnixPipe structure");
+
+  res = g_unix_pipe_open (&pair, O_CLOEXEC, &error);
+  g_assert_no_error (error);
+  g_assert_true (res);
+
+  read_end = g_unix_pipe_steal (&pair, G_UNIX_PIPE_END_READ);
+  g_assert_cmpint (read_end, >=, 0);
+  g_assert_cmpint (g_unix_pipe_steal (&pair, G_UNIX_PIPE_END_READ), ==, -1);
+  g_assert_cmpint (g_unix_pipe_get (&pair, G_UNIX_PIPE_END_READ), ==, -1);
+  write_end = g_unix_pipe_get (&pair, G_UNIX_PIPE_END_WRITE);
+  g_assert_cmpint (write_end, >=, 0);
+  g_assert_cmpint (g_unix_pipe_get (&pair, G_UNIX_PIPE_END_WRITE), ==, write_end);
+
+  g_assert_cmpint (write (write_end, "hello", sizeof ("hello")), ==, sizeof ("hello"));
+  memset (buf, 0, sizeof (buf));
+  bytes_read = read (read_end, buf, sizeof(buf) - 1);
+  g_assert_cmpint (bytes_read, ==, sizeof ("hello"));
+  buf[bytes_read] = '\0';
+
+  /* This is one of the few errno values guaranteed by Standard C.
+   * We set it here to check that g_unix_pipe_clear doesn't alter errno. */
+  errno = EILSEQ;
+
+  g_unix_pipe_clear (&pair);
+  errsv = errno;
+  g_assert_cmpint (errsv, ==, EILSEQ);
+
+  g_assert_cmpint (pair.fds[0], ==, -1);
+  g_assert_cmpint (pair.fds[1], ==, -1);
+
+  /* The read end wasn't closed, because it was stolen first */
+  g_clear_fd (&read_end, &error);
+  g_assert_no_error (error);
+
+  /* The write end was closed, because it wasn't stolen */
+  assert_fd_was_closed (write_end);
+
+  g_assert_cmpstr (buf, ==, "hello");
+}
+
+static void
+test_pipe_struct_auto (void)
+{
+#ifdef g_autofree
+  int i;
+
+  g_test_summary ("Test g_auto(GUnixPipe)");
+
+  /* Let g_auto close the read end, the write end, neither, or both */
+  for (i = 0; i < 4; i++)
+    {
+      int read_end = -1;    /* unowned */
+      int write_end = -1;   /* unowned */
+      int errsv;
+
+        {
+          g_auto(GUnixPipe) pair = G_UNIX_PIPE_INIT;
+          GError *error = NULL;
+          gboolean res;
+
+          res = g_unix_pipe_open (&pair, O_CLOEXEC, &error);
+          g_assert_no_error (error);
+          g_assert_true (res);
+
+          read_end = pair.fds[G_UNIX_PIPE_END_READ];
+          g_assert_cmpint (read_end, >=, 0);
+          write_end = pair.fds[G_UNIX_PIPE_END_WRITE];
+          g_assert_cmpint (write_end, >=, 0);
+
+          if (i & 1)
+            {
+              /* This also exercises g_unix_pipe_close() with error */
+              res = g_unix_pipe_close (&pair, G_UNIX_PIPE_END_READ, &error);
+              g_assert_no_error (error);
+              g_assert_true (res);
+            }
+
+          /* This also exercises g_unix_pipe_close() without error */
+          if (i & 2)
+            g_unix_pipe_close (&pair, G_UNIX_PIPE_END_WRITE, NULL);
+
+          /* This is one of the few errno values guaranteed by Standard C.
+           * We set it here to check that a g_auto(GUnixPipe) close doesn't
+           * alter errno. */
+          errno = EILSEQ;
+        }
+
+      errsv = errno;
+      g_assert_cmpint (errsv, ==, EILSEQ);
+      assert_fd_was_closed (read_end);
+      assert_fd_was_closed (write_end);
+    }
+#else
+  g_test_skip ("g_auto not supported by compiler");
+#endif
 }
 
 static void
@@ -499,9 +794,14 @@ main (int   argc,
 {
   g_test_init (&argc, &argv, NULL);
 
+  g_test_add_func ("/glib-unix/closefrom", test_closefrom);
+  g_test_add_func ("/glib-unix/closefrom/subprocess/einval",
+                   test_closefrom_subprocess_einval);
   g_test_add_func ("/glib-unix/pipe", test_pipe);
   g_test_add_func ("/glib-unix/pipe/fd-cloexec", test_pipe_fd_cloexec);
   g_test_add_func ("/glib-unix/pipe-stdio-overwrite", test_pipe_stdio_overwrite);
+  g_test_add_func ("/glib-unix/pipe-struct", test_pipe_struct);
+  g_test_add_func ("/glib-unix/pipe-struct-auto", test_pipe_struct_auto);
   g_test_add_func ("/glib-unix/error", test_error);
   g_test_add_func ("/glib-unix/nonblocking", test_nonblocking);
   g_test_add_func ("/glib-unix/sighup", test_sighup);

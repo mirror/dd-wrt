@@ -65,24 +65,12 @@ typedef struct _GPermission                   GPermission;
 typedef struct _GMenuModel                    GMenuModel;
 typedef struct _GNotification                 GNotification;
 
-/**
- * GDrive:
- *
- * Opaque drive object.
- **/
 typedef struct _GDrive                        GDrive; /* Dummy typedef */
 typedef struct _GFileEnumerator               GFileEnumerator;
 typedef struct _GFileMonitor                  GFileMonitor;
 typedef struct _GFilterInputStream            GFilterInputStream;
 typedef struct _GFilterOutputStream           GFilterOutputStream;
 
-/**
- * GFile:
- *
- * A handle to an object implementing the #GFileIface interface.
- * Generally stores a location within the file system. Handles do not
- * necessarily represent files or directories that currently exist.
- **/
 typedef struct _GFile                         GFile; /* Dummy typedef */
 typedef struct _GFileInfo                     GFileInfo;
 
@@ -94,7 +82,6 @@ typedef struct _GFileInfo                     GFileInfo;
 typedef struct _GFileAttributeMatcher         GFileAttributeMatcher;
 typedef struct _GFileAttributeInfo            GFileAttributeInfo;
 typedef struct _GFileAttributeInfoList        GFileAttributeInfoList;
-typedef struct _GFileDescriptorBased          GFileDescriptorBased;
 typedef struct _GFileInputStream              GFileInputStream;
 typedef struct _GFileOutputStream             GFileOutputStream;
 typedef struct _GFileIOStream                 GFileIOStream;
@@ -117,6 +104,9 @@ typedef struct _GIOExtension                  GIOExtension;
  * GIOSchedulerJob:
  *
  * Opaque class for defining and scheduling IO jobs.
+ *
+ * Deprecated: 2.36: Use [struct@GLib.ThreadPool] or
+ *   [method@Gio.Task.run_in_thread]
  **/
 typedef struct _GIOSchedulerJob               GIOSchedulerJob;
 typedef struct _GIOStreamAdapter              GIOStreamAdapter;
@@ -125,11 +115,6 @@ typedef struct _GBytesIcon                    GBytesIcon;
 typedef struct _GMemoryInputStream            GMemoryInputStream;
 typedef struct _GMemoryOutputStream           GMemoryOutputStream;
 
-/**
- * GMount:
- *
- * A handle to an object implementing the #GMountIface interface.
- **/
 typedef struct _GMount                        GMount; /* Dummy typedef */
 typedef struct _GMountOperation               GMountOperation;
 typedef struct _GNetworkAddress               GNetworkAddress;
@@ -142,88 +127,24 @@ typedef struct _GPollableInputStream          GPollableInputStream; /* Dummy typ
 typedef struct _GPollableOutputStream         GPollableOutputStream; /* Dummy typedef */
 typedef struct _GResolver                     GResolver;
 
-/**
- * GResource:
- *
- * A resource bundle.
- *
- * Since: 2.32
- */
 typedef struct _GResource                     GResource;
 typedef struct _GSeekable                     GSeekable;
 typedef struct _GSimpleAsyncResult            GSimpleAsyncResult;
 
-/**
- * GSocket:
- *
- * A lowlevel network socket object.
- *
- * Since: 2.22
- **/
 typedef struct _GSocket                       GSocket;
 
-/**
- * GSocketControlMessage:
- *
- * Base class for socket-type specific control messages that can be sent and
- * received over #GSocket.
- **/
 typedef struct _GSocketControlMessage         GSocketControlMessage;
-/**
- * GSocketClient:
- *
- * A helper class for network clients to make connections.
- *
- * Since: 2.22
- **/
 typedef struct _GSocketClient                               GSocketClient;
-/**
- * GSocketConnection:
- *
- * A socket connection GIOStream object for connection-oriented sockets.
- *
- * Since: 2.22
- **/
 typedef struct _GSocketConnection                           GSocketConnection;
-/**
- * GSocketListener:
- *
- * A helper class for network servers to listen for and accept connections.
- *
- * Since: 2.22
- **/
 typedef struct _GSocketListener                             GSocketListener;
-/**
- * GSocketService:
- *
- * A helper class for handling accepting incoming connections in the
- * glib mainloop.
- *
- * Since: 2.22
- **/
 typedef struct _GSocketService                              GSocketService;
 typedef struct _GSocketAddress                GSocketAddress;
 typedef struct _GSocketAddressEnumerator      GSocketAddressEnumerator;
 typedef struct _GSocketConnectable            GSocketConnectable;
 typedef struct _GSrvTarget                    GSrvTarget;
 typedef struct _GTask                         GTask;
-/**
- * GTcpConnection:
- *
- * A #GSocketConnection for TCP/IP connections.
- *
- * Since: 2.22
- **/
 typedef struct _GTcpConnection                              GTcpConnection;
 typedef struct _GTcpWrapperConnection                       GTcpWrapperConnection;
-/**
- * GThreadedSocketService:
- *
- * A helper class for handling accepting incoming connections in the
- * glib mainloop and handling them in a thread.
- *
- * Since: 2.22
- **/
 typedef struct _GThreadedSocketService                      GThreadedSocketService;
 typedef struct _GDtlsConnection               GDtlsConnection;
 typedef struct _GDtlsClientConnection         GDtlsClientConnection; /* Dummy typedef */
@@ -239,23 +160,11 @@ typedef struct _GTlsPassword                  GTlsPassword;
 typedef struct _GTlsServerConnection          GTlsServerConnection; /* Dummy typedef */
 typedef struct _GVfs                          GVfs; /* Dummy typedef */
 
-/**
- * GProxyResolver:
- *
- * A helper class to enumerate proxies base on URI.
- *
- * Since: 2.26
- **/
 typedef struct _GProxyResolver                GProxyResolver;
 typedef struct _GProxy			      GProxy;
 typedef struct _GProxyAddress		      GProxyAddress;
 typedef struct _GProxyAddressEnumerator	      GProxyAddressEnumerator;
 
-/**
- * GVolume:
- *
- * Opaque mountable volume object.
- **/
 typedef struct _GVolume                       GVolume; /* Dummy typedef */
 typedef struct _GVolumeMonitor                GVolumeMonitor;
 
@@ -370,6 +279,8 @@ typedef void (* GFileMeasureProgressCallback) (gboolean reporting,
  *
  * Returns: %TRUE if this function should be called again to
  *    complete the job, %FALSE if the job is complete (or cancelled)
+ * Deprecated: 2.36: Use [struct@GLib.ThreadPool] or
+ *   [method@Gio.Task.run_in_thread]
  **/
 typedef gboolean (*GIOSchedulerJobFunc) (GIOSchedulerJob *job,
 					 GCancellable    *cancellable,
@@ -638,21 +549,7 @@ typedef GType (*GDBusProxyTypeFunc) (GDBusObjectManagerClient   *manager,
 
 typedef struct _GTestDBus GTestDBus;
 
-/**
- * GSubprocess:
- *
- * A child process.
- *
- * Since: 2.40
- */
 typedef struct _GSubprocess                   GSubprocess;
-/**
- * GSubprocessLauncher:
- *
- * Options for launching a child process.
- *
- * Since: 2.40
- */
 typedef struct _GSubprocessLauncher           GSubprocessLauncher;
 
 G_END_DECLS

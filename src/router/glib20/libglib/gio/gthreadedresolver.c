@@ -30,6 +30,7 @@
 
 #include "glib/glib-private.h"
 #include "gthreadedresolver.h"
+#include "gthreadedresolver-private.h"
 #include "gnetworkingprivate.h"
 
 #include "gcancellable.h"
@@ -1104,7 +1105,7 @@ g_resolver_records_from_res_query (const gchar      *rrname,
 #elif defined(G_OS_WIN32)
 
 static GVariant *
-parse_dns_srv (DNS_RECORD *rec)
+parse_dns_srv (DNS_RECORDA *rec)
 {
   return g_variant_new ("(qqqs)",
                         (guint16)rec->Data.SRV.wPriority,
@@ -1114,7 +1115,7 @@ parse_dns_srv (DNS_RECORD *rec)
 }
 
 static GVariant *
-parse_dns_soa (DNS_RECORD *rec)
+parse_dns_soa (DNS_RECORDA *rec)
 {
   return g_variant_new ("(ssuuuuu)",
                         rec->Data.SOA.pNamePrimaryServer,
@@ -1127,13 +1128,13 @@ parse_dns_soa (DNS_RECORD *rec)
 }
 
 static GVariant *
-parse_dns_ns (DNS_RECORD *rec)
+parse_dns_ns (DNS_RECORDA *rec)
 {
   return g_variant_new ("(s)", rec->Data.NS.pNameHost);
 }
 
 static GVariant *
-parse_dns_mx (DNS_RECORD *rec)
+parse_dns_mx (DNS_RECORDA *rec)
 {
   return g_variant_new ("(qs)",
                         (guint16)rec->Data.MX.wPreference,
@@ -1141,7 +1142,7 @@ parse_dns_mx (DNS_RECORD *rec)
 }
 
 static GVariant *
-parse_dns_txt (DNS_RECORD *rec)
+parse_dns_txt (DNS_RECORDA *rec)
 {
   GVariant *record;
   GPtrArray *array;
@@ -1179,10 +1180,10 @@ static GList *
 g_resolver_records_from_DnsQuery (const gchar  *rrname,
                                   WORD          dnstype,
                                   DNS_STATUS    status,
-                                  DNS_RECORD   *results,
+                                  DNS_RECORDA  *results,
                                   GError      **error)
 {
-  DNS_RECORD *rec;
+  DNS_RECORDA *rec;
   gpointer record;
   GList *records;
 
@@ -1342,11 +1343,18 @@ do_lookup_records (const gchar          *rrname,
 #else
 
   DNS_STATUS status;
-  DNS_RECORD *results = NULL;
+  DNS_RECORDA *results = NULL;
   WORD dnstype;
 
+  /* Work around differences in Windows SDK and mingw-w64 headers */
+#ifdef _MSC_VER
+  typedef DNS_RECORDW * PDNS_RECORD_UTF8_;
+#else
+  typedef DNS_RECORDA * PDNS_RECORD_UTF8_;
+#endif
+
   dnstype = g_resolver_record_type_to_dnstype (record_type);
-  status = DnsQuery_A (rrname, dnstype, DNS_QUERY_STANDARD, NULL, &results, NULL);
+  status = DnsQuery_UTF8 (rrname, dnstype, DNS_QUERY_STANDARD, NULL, (PDNS_RECORD_UTF8_*)&results, NULL);
   records = g_resolver_records_from_DnsQuery (rrname, dnstype, status, results, error);
   if (results != NULL)
     DnsRecordListFree (results, DnsFreeRecordList);
@@ -1422,9 +1430,16 @@ lookup_records_finish (GResolver     *resolver,
 static gboolean
 timeout_cb (gpointer user_data)
 {
-  GTask *task = G_TASK (user_data);
-  LookupData *data = g_task_get_task_data (task);
+  GWeakRef *weak_task = user_data;
+  GTask *task = NULL;  /* (owned) */
+  LookupData *data;
   gboolean should_return;
+
+  task = g_weak_ref_get (weak_task);
+  if (task == NULL)
+    return G_SOURCE_REMOVE;
+
+  data = g_task_get_task_data (task);
 
   g_mutex_lock (&data->lock);
 
@@ -1434,14 +1449,18 @@ timeout_cb (gpointer user_data)
   g_mutex_unlock (&data->lock);
 
   if (should_return)
-    g_task_return_new_error (task, G_IO_ERROR, G_IO_ERROR_TIMED_OUT,
-                             _("Socket I/O timed out"));
+    {
+      g_task_return_new_error_literal (task, G_IO_ERROR, G_IO_ERROR_TIMED_OUT,
+                                       _("Socket I/O timed out"));
+    }
 
   /* Signal completion of the task. */
   g_mutex_lock (&data->lock);
   data->has_returned = TRUE;
   g_cond_broadcast (&data->cond);
   g_mutex_unlock (&data->lock);
+
+  g_object_unref (task);
 
   return G_SOURCE_REMOVE;
 }
@@ -1452,9 +1471,16 @@ static gboolean
 cancelled_cb (GCancellable *cancellable,
               gpointer      user_data)
 {
-  GTask *task = G_TASK (user_data);
-  LookupData *data = g_task_get_task_data (task);
+  GWeakRef *weak_task = user_data;
+  GTask *task = NULL;  /* (owned) */
+  LookupData *data;
   gboolean should_return;
+
+  task = g_weak_ref_get (weak_task);
+  if (task == NULL)
+    return G_SOURCE_REMOVE;
+
+  data = g_task_get_task_data (task);
 
   g_mutex_lock (&data->lock);
 
@@ -1473,7 +1499,16 @@ cancelled_cb (GCancellable *cancellable,
   g_cond_broadcast (&data->cond);
   g_mutex_unlock (&data->lock);
 
+  g_object_unref (task);
+
   return G_SOURCE_REMOVE;
+}
+
+static void
+weak_ref_clear_and_free (GWeakRef *weak_ref)
+{
+  g_weak_ref_clear (weak_ref);
+  g_free (weak_ref);
 }
 
 static void
@@ -1490,17 +1525,23 @@ run_task_in_thread_pool_async (GThreadedResolver *self,
 
   if (timeout_ms != 0)
     {
+      GWeakRef *weak_task = g_new0 (GWeakRef, 1);
+      g_weak_ref_set (weak_task, task);
+
       data->timeout_source = g_timeout_source_new (timeout_ms);
       g_source_set_static_name (data->timeout_source, "[gio] threaded resolver timeout");
-      g_source_set_callback (data->timeout_source, G_SOURCE_FUNC (timeout_cb), task, NULL);
+      g_source_set_callback (data->timeout_source, G_SOURCE_FUNC (timeout_cb), g_steal_pointer (&weak_task), (GDestroyNotify) weak_ref_clear_and_free);
       g_source_attach (data->timeout_source, GLIB_PRIVATE_CALL (g_get_worker_context) ());
     }
 
   if (cancellable != NULL)
     {
+      GWeakRef *weak_task = g_new0 (GWeakRef, 1);
+      g_weak_ref_set (weak_task, task);
+
       data->cancellable_source = g_cancellable_source_new (cancellable);
       g_source_set_static_name (data->cancellable_source, "[gio] threaded resolver cancellable");
-      g_source_set_callback (data->cancellable_source, G_SOURCE_FUNC (cancelled_cb), task, NULL);
+      g_source_set_callback (data->cancellable_source, G_SOURCE_FUNC (cancelled_cb), g_steal_pointer (&weak_task), (GDestroyNotify) weak_ref_clear_and_free);
       g_source_attach (data->cancellable_source, GLIB_PRIVATE_CALL (g_get_worker_context) ());
     }
 
@@ -1552,6 +1593,7 @@ threaded_resolver_worker_cb (gpointer task_data,
         }
 
       g_clear_pointer (&addresses, g_resolver_free_addresses);
+      g_clear_error (&local_error);
     }
     break;
   case LOOKUP_BY_ADDRESS:
@@ -1573,6 +1615,7 @@ threaded_resolver_worker_cb (gpointer task_data,
         }
 
       g_clear_pointer (&name, g_free);
+      g_clear_error (&local_error);
     }
     break;
   case LOOKUP_RECORDS:
@@ -1595,6 +1638,7 @@ threaded_resolver_worker_cb (gpointer task_data,
         }
 
       g_clear_pointer (&records, free_records);
+      g_clear_error (&local_error);
     }
     break;
   default:

@@ -66,9 +66,9 @@ custom_marshal_VOID__INVOCATIONHINT (GClosure     *closure,
 static GType
 test_enum_get_type (void)
 {
-  static gsize static_g_define_type_id = 0;
+  static GType static_g_define_type_id = 0;
 
-  if (g_once_init_enter (&static_g_define_type_id))
+  if (g_once_init_enter_pointer (&static_g_define_type_id))
     {
       static const GEnumValue values[] = {
         { TEST_ENUM_NEGATIVE, "TEST_ENUM_NEGATIVE", "negative" },
@@ -79,7 +79,7 @@ test_enum_get_type (void)
       };
       GType g_define_type_id =
         g_enum_register_static (g_intern_static_string ("TestEnum"), values);
-      g_once_init_leave (&static_g_define_type_id, g_define_type_id);
+      g_once_init_leave_pointer (&static_g_define_type_id, g_define_type_id);
     }
 
   return static_g_define_type_id;
@@ -88,9 +88,9 @@ test_enum_get_type (void)
 static GType
 test_unsigned_enum_get_type (void)
 {
-  static gsize static_g_define_type_id = 0;
+  static GType static_g_define_type_id = 0;
 
-  if (g_once_init_enter (&static_g_define_type_id))
+  if (g_once_init_enter_pointer (&static_g_define_type_id))
     {
       static const GEnumValue values[] = {
         { TEST_UNSIGNED_ENUM_FOO, "TEST_UNSIGNED_ENUM_FOO", "foo" },
@@ -99,7 +99,7 @@ test_unsigned_enum_get_type (void)
       };
       GType g_define_type_id =
         g_enum_register_static (g_intern_static_string ("TestUnsignedEnum"), values);
-      g_once_init_leave (&static_g_define_type_id, g_define_type_id);
+      g_once_init_leave_pointer (&static_g_define_type_id, g_define_type_id);
     }
 
   return static_g_define_type_id;
@@ -2045,6 +2045,44 @@ test_emitv (void)
   g_array_unref (values);
 }
 
+typedef struct
+{
+  GWeakRef wr;
+  gulong handler;
+} TestWeakRefDisconnect;
+
+static void
+weak_ref_disconnect_notify (gpointer  data,
+                            GObject  *where_object_was)
+{
+  TestWeakRefDisconnect *state = data;
+  g_assert_null (g_weak_ref_get (&state->wr));
+  state->handler = 0;
+}
+
+static void
+test_weak_ref_disconnect (void)
+{
+  TestWeakRefDisconnect state;
+  GObject *test;
+
+  test = g_object_new (test_get_type (), NULL);
+  g_weak_ref_init (&state.wr, test);
+  state.handler = g_signal_connect_data (test,
+                                         "simple",
+                                         G_CALLBACK (dont_reach),
+                                         &state,
+                                         (GClosureNotify) weak_ref_disconnect_notify,
+                                         0);
+  g_assert_cmpint (state.handler, >, 0);
+
+  g_object_unref (test);
+
+  g_assert_cmpint (state.handler, ==, 0);
+  g_assert_null (g_weak_ref_get (&state.wr));
+  g_weak_ref_clear (&state.wr);
+}
+
 /* --- */
 
 int
@@ -2083,6 +2121,7 @@ main (int argc,
   g_test_add_data_func ("/gobject/signals/invalid-name/first-char", "7zip", test_signals_invalid_name);
   g_test_add_data_func ("/gobject/signals/invalid-name/empty", "", test_signals_invalid_name);
   g_test_add_func ("/gobject/signals/is-valid-name", test_signal_is_valid_name);
+  g_test_add_func ("/gobject/signals/weak-ref-disconnect", test_weak_ref_disconnect);
 
   return g_test_run ();
 }

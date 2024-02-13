@@ -1,124 +1,29 @@
-if get_option('gtk_doc')
-  subdir('xml')
 
-  ignore_headers = [
-    'gallocator.h',
-    'gdatasetprivate.h',
-    'glibintl.h',
-    'gbsearcharray.h',
-    'glib-private.h',
-    'gmoduleconf.h',
-    'grcboxprivate.h',
-    'gstdioprivate.h',
-    'gthreadprivate.h',
-    'gunibreak.h',
-    'gunicomp.h',
-    'gunidecomp.h',
-    'gunichartables.h',
-    'glib_probes.h',
-    'glib_trace.h',
-    'libcharset.h',
-    'gdebug.h',
-    'gprintfint.h',
-    'gmirroringtable.h',
-    'gscripttable.h',
-    'gtrace-private.h',
-    'glib-mirroring-tab',
-    'gnulib',
-    'gbytesprivate.h',
-    'gvariant-internal.h',
-    'gvariant-serialiser.h',
-    'gvariant-core.h',
-    'gvarianttypeinfo.h',
-    'gwakeup.h',
-    'gtranslit-data.h',
-    'glib-init.h',
-    'gconstructor.h',
-    'valgrind.h',
-    'gutilsprivate.h',
-    'gvalgrind.h',
-    'dirent.h',
-    'glib-unixprivate.h',
-    'glib-visibility.h',
-    'gmodule-visibility.h',
-  ]
-
-  docpath = join_paths(glib_datadir, 'gtk-doc', 'html')
-  version_conf = configuration_data()
-  version_conf.set('GLIB_VERSION', meson.project_version())
-  configure_file(
-    input: 'version.xml.in',
-    output: 'version.xml',
-    configuration: version_conf
-  )
-
-  configure_file(
-    input: 'glib-sections.txt.in',
-    output: 'glib-sections.txt',
-    command: [gen_visibility_macros, meson.project_version(), 'doc-sections', '@INPUT@', '@OUTPUT@'],
-  )
-
-  gnome.gtkdoc('glib',
-               main_xml : 'glib-docs.xml',
-               namespace : 'g',
-               mode : 'none',
-               src_dir : [ 'glib', 'gmodule' ],
-               dependencies : libglib_dep,
-               scan_args : [
-                 '--ignore-decorators=' + ignore_decorators + '|' + ignore_decorators.replace('GLIB', 'GMODULE'),
-                 '--ignore-headers=' + ' '.join(ignore_headers),
-               ],
-               content_files : [
-                 'cross.xml',
-                 'running.xml',
-                 'building.xml',
-                 'changes.xml',
-                 'compiling.xml',
-                 'programming.xml',
-                 'resources.xml',
-                 'regex-syntax.xml',
-                 'glib-gettextize.xml',
-                 'gtester.xml',
-                 'gtester-report.xml',
-                 'gvariant-varargs.xml',
-                 'gvariant-text.xml',
-               ],
-               expand_content_files : [
-                 'compiling.xml',
-               ],
-               html_assets : [
-                 'file-name-encodings.png',
-                 'mainloop-states.gif',
-                 'Sorted_binary_tree_breadth-first_traversal.svg',
-                 'Sorted_binary_tree_inorder.svg',
-                 'Sorted_binary_tree_postorder.svg',
-                 'Sorted_binary_tree_preorder.svg',
-               ],
-               fixxref_args: [
-                 '--html-dir=' + docpath,
-               ],
-               install: true,
-               check: true)
-endif
-
-if get_option('man')
+if get_option('man-pages').enabled()
   manpages = ['glib-gettextize', 'gtester', 'gtester-report']
   foreach page : manpages
     custom_target(page + '-man',
-      input: page + '.xml',
+      input: page + '.rst',
       output: page + '.1',
-      command: xsltproc_command,
+      command: [
+        rst2man,
+        rst2man_flags,
+        '@INPUT@',
+      ],
+      capture: true,
       install: true,
-      install_dir: man1_dir)
+      install_dir: man1_dir,
+      install_tag: 'doc',
+    )
   endforeach
 endif
 
-if get_option('gtk_doc')
+if get_option('documentation')
   # GVariant specification is currently standalone
   rst2html5 = find_program('rst2html5', 'rst2html5.py', required: false)
 
   if rst2html5.found()
-    spec_path = glib_datadir / 'doc' / 'glib-2.0'
+    spec_path = docs_dir
 
     figures = files(
       'gvariant-byte-boundaries.svg',
@@ -144,6 +49,121 @@ if get_option('gtk_doc')
     install_data(figures,
       install_dir : spec_path,
       install_tag : 'doc',
+    )
+  endif
+endif
+
+if get_option('documentation') and enable_gir
+  expand_content_files = [
+    'atomic.md',
+    'base64.md',
+    'building.md',
+    'character-set.md',
+    'checked-math.md',
+    'compiling.md',
+    'cross-compiling.md',
+    'datalist-and-dataset.md',
+    'error-reporting.md',
+    'file-utils.md',
+    'gvariant-format-strings.md',
+    'gvariant-text-format.md',
+    'i18n.md',
+    'logging.md',
+    'main-loop.md',
+    'memory.md',
+    'memory-slices.md',
+    'numerical.md',
+    'random.md',
+    'reference-counting.md',
+    'running.md',
+    'testing.md',
+    'threads.md',
+    'threads-deprecated.md',
+    'markup.md',
+    'misc-utils.md',
+    'goption.md',
+    'host-utils.md',
+    'data-structures.md',
+    'programming.md',
+    'resources.md',
+    'shell.md',
+    'spawn.md',
+    'string-utils.md',
+    'types.md',
+    'unicode.md',
+    'uuid.md',
+    'version.md',
+    'warnings.md',
+  ]
+  expand_content_unix_files = [
+    'unix.md',
+  ]
+  expand_content_win32_files = [
+    'windows.md',
+  ]
+
+  glib_toml = configure_file(input: 'glib.toml.in', output: 'glib.toml', configuration: toml_conf)
+
+  custom_target('glib-docs',
+    input: [ glib_toml, glib_gir[0] ],
+    output: 'glib',
+    command: [
+      gidocgen,
+      'generate',
+      gidocgen_common_args,
+      '--config=@INPUT0@',
+      '--output-dir=@OUTPUT@',
+      '--content-dir=@0@'.format(meson.current_source_dir()),
+      '@INPUT1@',
+    ],
+    build_by_default: true,
+    depend_files: expand_content_files,
+    install: true,
+    install_dir: docs_dir,
+    install_tag: 'doc',
+  )
+
+  if host_system == 'windows'
+    glib_win32_toml = configure_file(input: 'glib-win32.toml.in', output: 'glib-win32.toml', configuration: toml_conf)
+
+    custom_target('glib-win32-docs',
+      input: [ glib_win32_toml, glib_win32_gir[0] ],
+      output: 'glib-win32',
+      command: [
+        gidocgen,
+        'generate',
+        gidocgen_common_args,
+        '--config=@INPUT0@',
+        '--output-dir=@OUTPUT@',
+        '--content-dir=@0@'.format(meson.current_source_dir()),
+        '@INPUT1@',
+      ],
+      build_by_default: true,
+      depend_files: expand_content_win32_files,
+      install: true,
+      install_dir: docs_dir,
+      install_tag: 'doc',
+    )
+  else
+    glib_unix_toml = configure_file(input: 'glib-unix.toml.in', output: 'glib-unix.toml', configuration: toml_conf)
+
+    custom_target('glib-unix-docs',
+      input: [ glib_unix_toml, glib_unix_gir[0] ],
+      output: 'glib-unix',
+      command: [
+        gidocgen,
+        'generate',
+        gidocgen_common_args,
+        '--config=@INPUT0@',
+        '--output-dir=@OUTPUT@',
+        '--content-dir=@0@'.format(meson.current_source_dir()),
+        '@INPUT1@',
+      ],
+      build_by_default: true,
+      depend_files: expand_content_unix_files,
+      install: true,
+      install_dir: docs_dir,
+      install_tag: 'doc',
     )
   endif
 endif

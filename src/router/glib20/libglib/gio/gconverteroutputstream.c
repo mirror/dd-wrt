@@ -33,17 +33,14 @@
 
 
 /**
- * SECTION:gconverteroutputstream
- * @short_description: Converter Output Stream
- * @include: gio/gio.h
- * @see_also: #GOutputStream, #GConverter
+ * GConverterOutputStream:
  *
- * Converter output stream implements #GOutputStream and allows
+ * Converter output stream implements [class@Gio.OutputStream] and allows
  * conversion of data of various types during reading.
  *
- * As of GLib 2.34, #GConverterOutputStream implements
- * #GPollableOutputStream.
- **/
+ * As of GLib 2.34, `GConverterOutputStream` implements
+ * [iface@Gio.PollableOutputStream].
+ */
 
 #define INITIAL_BUFFER_SIZE 4096
 
@@ -132,11 +129,14 @@ g_converter_output_stream_class_init (GConverterOutputStreamClass *klass)
   istream_class->write_fn = g_converter_output_stream_write;
   istream_class->flush = g_converter_output_stream_flush;
 
+  /**
+   * GConverterOutputStream:converter:
+   *
+   * The converter object.
+   */
   g_object_class_install_property (object_class,
 				   PROP_CONVERTER,
-				   g_param_spec_object ("converter",
-							P_("Converter"),
-							P_("The converter object"),
+				   g_param_spec_object ("converter", NULL, NULL,
 							G_TYPE_CONVERTER,
 							G_PARAM_READWRITE|
 							G_PARAM_CONSTRUCT_ONLY|

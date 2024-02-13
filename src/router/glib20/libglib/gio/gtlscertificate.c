@@ -29,25 +29,13 @@
 #include "glibintl.h"
 
 /**
- * SECTION:gtlscertificate
- * @title: GTlsCertificate
- * @short_description: TLS certificate
- * @include: gio/gio.h
- * @see_also: #GTlsConnection
+ * GTlsCertificate:
  *
  * A certificate used for TLS authentication and encryption.
  * This can represent either a certificate only (eg, the certificate
  * received by a client from a server), or the combination of
  * a certificate and a private key (which is needed when acting as a
- * #GTlsServerConnection).
- *
- * Since: 2.28
- */
-
-/**
- * GTlsCertificate:
- *
- * Abstract base class for TLS certificate types.
+ * [iface@Gio.TlsServerConnection]).
  *
  * Since: 2.28
  */
@@ -147,9 +135,7 @@ g_tls_certificate_class_init (GTlsCertificateClass *class)
    * Since: 2.72
    */
   g_object_class_install_property (gobject_class, PROP_PKCS12_DATA,
-				   g_param_spec_boxed ("pkcs12-data",
-						       P_("PKCS #12 data"),
-						       P_("The PKCS #12 data used for construction"),
+				   g_param_spec_boxed ("pkcs12-data", NULL, NULL,
 						       G_TYPE_BYTE_ARRAY,
 						       G_PARAM_WRITABLE |
 						       G_PARAM_CONSTRUCT_ONLY |
@@ -163,9 +149,7 @@ g_tls_certificate_class_init (GTlsCertificateClass *class)
    * Since: 2.72
    */
   g_object_class_install_property (gobject_class, PROP_PASSWORD,
-                                   g_param_spec_string ("password",
-                                                        P_("Password"),
-                                                        P_("Password used when constructing from bytes"),
+                                   g_param_spec_string ("password", NULL, NULL,
                                                         NULL,
                                                         G_PARAM_WRITABLE |
                                                           G_PARAM_CONSTRUCT_ONLY |
@@ -180,9 +164,7 @@ g_tls_certificate_class_init (GTlsCertificateClass *class)
    * Since: 2.28
    */
   g_object_class_install_property (gobject_class, PROP_CERTIFICATE,
-				   g_param_spec_boxed ("certificate",
-						       P_("Certificate"),
-						       P_("The DER representation of the certificate"),
+				   g_param_spec_boxed ("certificate", NULL, NULL,
 						       G_TYPE_BYTE_ARRAY,
 						       G_PARAM_READWRITE |
 						       G_PARAM_CONSTRUCT_ONLY |
@@ -197,9 +179,7 @@ g_tls_certificate_class_init (GTlsCertificateClass *class)
    * Since: 2.28
    */
   g_object_class_install_property (gobject_class, PROP_CERTIFICATE_PEM,
-				   g_param_spec_string ("certificate-pem",
-							P_("Certificate (PEM)"),
-							P_("The PEM representation of the certificate"),
+				   g_param_spec_string ("certificate-pem", NULL, NULL,
 							NULL,
 							G_PARAM_READWRITE |
 							G_PARAM_CONSTRUCT_ONLY |
@@ -228,9 +208,7 @@ g_tls_certificate_class_init (GTlsCertificateClass *class)
    * Since: 2.28
    */
   g_object_class_install_property (gobject_class, PROP_PRIVATE_KEY,
-				   g_param_spec_boxed ("private-key",
-						       P_("Private key"),
-						       P_("The DER representation of the certificate’s private key"),
+				   g_param_spec_boxed ("private-key", NULL, NULL,
 						       G_TYPE_BYTE_ARRAY,
 						       G_PARAM_READWRITE |
 						       G_PARAM_CONSTRUCT_ONLY |
@@ -260,9 +238,7 @@ g_tls_certificate_class_init (GTlsCertificateClass *class)
    * Since: 2.28
    */
   g_object_class_install_property (gobject_class, PROP_PRIVATE_KEY_PEM,
-				   g_param_spec_string ("private-key-pem",
-							P_("Private key (PEM)"),
-							P_("The PEM representation of the certificate’s private key"),
+				   g_param_spec_string ("private-key-pem", NULL, NULL,
 							NULL,
 							G_PARAM_READWRITE |
 							G_PARAM_CONSTRUCT_ONLY |
@@ -290,9 +266,7 @@ g_tls_certificate_class_init (GTlsCertificateClass *class)
    * Since: 2.28
    */
   g_object_class_install_property (gobject_class, PROP_ISSUER,
-				   g_param_spec_object ("issuer",
-							P_("Issuer"),
-							P_("The certificate for the issuing entity"),
+				   g_param_spec_object ("issuer", NULL, NULL,
 							G_TYPE_TLS_CERTIFICATE,
 							G_PARAM_READWRITE |
 							G_PARAM_CONSTRUCT_ONLY |
@@ -310,9 +284,7 @@ g_tls_certificate_class_init (GTlsCertificateClass *class)
    * Since: 2.68
    */
   g_object_class_install_property (gobject_class, PROP_PKCS11_URI,
-                                   g_param_spec_string ("pkcs11-uri",
-                                                        P_("PKCS #11 URI"),
-                                                        P_("The PKCS #11 URI"),
+                                   g_param_spec_string ("pkcs11-uri", NULL, NULL,
                                                         NULL,
                                                         G_PARAM_READWRITE |
                                                           G_PARAM_CONSTRUCT_ONLY |
@@ -327,9 +299,7 @@ g_tls_certificate_class_init (GTlsCertificateClass *class)
    * Since: 2.68
    */
   g_object_class_install_property (gobject_class, PROP_PRIVATE_KEY_PKCS11_URI,
-                                   g_param_spec_string ("private-key-pkcs11-uri",
-                                                        P_("PKCS #11 URI"),
-                                                        P_("The PKCS #11 URI for a private key"),
+                                   g_param_spec_string ("private-key-pkcs11-uri", NULL, NULL,
                                                         NULL,
                                                         G_PARAM_READWRITE |
                                                           G_PARAM_CONSTRUCT_ONLY |
@@ -344,9 +314,7 @@ g_tls_certificate_class_init (GTlsCertificateClass *class)
    * Since: 2.70
    */
   g_object_class_install_property (gobject_class, PROP_NOT_VALID_BEFORE,
-                                   g_param_spec_boxed ("not-valid-before",
-                                                       P_("Not Valid Before"),
-                                                       P_("Cert should not be considered valid before this time."),
+                                   g_param_spec_boxed ("not-valid-before", NULL, NULL,
                                                        G_TYPE_DATE_TIME,
                                                        G_PARAM_READABLE |
                                                          G_PARAM_STATIC_STRINGS));
@@ -360,9 +328,7 @@ g_tls_certificate_class_init (GTlsCertificateClass *class)
    * Since: 2.70
    */
   g_object_class_install_property (gobject_class, PROP_NOT_VALID_AFTER,
-                                   g_param_spec_boxed ("not-valid-after",
-                                                       P_("Not Valid after"),
-                                                       P_("Cert should not be considered valid after this time."),
+                                   g_param_spec_boxed ("not-valid-after", NULL, NULL,
                                                        G_TYPE_DATE_TIME,
                                                        G_PARAM_READABLE |
                                                          G_PARAM_STATIC_STRINGS));
@@ -376,9 +342,7 @@ g_tls_certificate_class_init (GTlsCertificateClass *class)
    * Since: 2.70
    */
   g_object_class_install_property (gobject_class, PROP_SUBJECT_NAME,
-                                   g_param_spec_string ("subject-name",
-                                                        P_("Subject Name"),
-                                                        P_("The subject name from the certificate."),
+                                   g_param_spec_string ("subject-name", NULL, NULL,
                                                         NULL,
                                                         G_PARAM_READABLE |
                                                           G_PARAM_STATIC_STRINGS));
@@ -391,9 +355,7 @@ g_tls_certificate_class_init (GTlsCertificateClass *class)
    * Since: 2.70
    */
   g_object_class_install_property (gobject_class, PROP_ISSUER_NAME,
-                                   g_param_spec_string ("issuer-name",
-                                                        P_("Issuer Name"),
-                                                        P_("The issuer from the certificate."),
+                                   g_param_spec_string ("issuer-name", NULL, NULL,
                                                         NULL,
                                                         G_PARAM_READABLE |
                                                           G_PARAM_STATIC_STRINGS));
@@ -407,9 +369,7 @@ g_tls_certificate_class_init (GTlsCertificateClass *class)
    * Since: 2.70
    */
   g_object_class_install_property (gobject_class, PROP_DNS_NAMES,
-                                   g_param_spec_boxed ("dns-names",
-                                                       P_("DNS Names"),
-                                                       P_("DNS Names listed on the cert."),
+                                   g_param_spec_boxed ("dns-names", NULL, NULL,
                                                        G_TYPE_PTR_ARRAY,
                                                        G_PARAM_READABLE |
                                                          G_PARAM_STATIC_STRINGS));
@@ -423,9 +383,7 @@ g_tls_certificate_class_init (GTlsCertificateClass *class)
    * Since: 2.70
    */
   g_object_class_install_property (gobject_class, PROP_IP_ADDRESSES,
-                                   g_param_spec_boxed ("ip-addresses",
-                                                       P_("IP Addresses"),
-                                                       P_("IP Addresses listed on the cert."),
+                                   g_param_spec_boxed ("ip-addresses", NULL, NULL,
                                                        G_TYPE_PTR_ARRAY,
                                                        G_PARAM_READABLE |
                                                          G_PARAM_STATIC_STRINGS));

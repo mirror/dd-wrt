@@ -40,14 +40,13 @@
 #include "gthread.h"
 
 /**
- * SECTION:gregex
- * @title: Perl-compatible regular expressions
- * @short_description: matches strings against regular expressions
- * @see_also: [Regular expression syntax][glib-regex-syntax]
+ * GRegex:
  *
- * The g_regex_*() functions implement regular
- * expression pattern matching using syntax and semantics similar to
- * Perl regular expression.
+ * A `GRegex` is the "compiled" form of a regular expression pattern.
+ *
+ * `GRegex` implements regular expression pattern matching using syntax and
+ * semantics similar to Perl regular expression. See the
+ * [PCRE documentation](man:pcrepattern(3)) for the syntax definition.
  *
  * Some functions accept a @start_position argument, setting it differs
  * from just passing over a shortened string and setting %G_REGEX_MATCH_NOTBOL
@@ -81,23 +80,23 @@
  * The behaviour of the dot, circumflex, and dollar metacharacters are
  * affected by newline characters, the default is to recognize any newline
  * character (the same characters recognized by "\R"). This can be changed
- * with %G_REGEX_NEWLINE_CR, %G_REGEX_NEWLINE_LF and %G_REGEX_NEWLINE_CRLF
- * compile options, and with %G_REGEX_MATCH_NEWLINE_ANY,
- * %G_REGEX_MATCH_NEWLINE_CR, %G_REGEX_MATCH_NEWLINE_LF and
- * %G_REGEX_MATCH_NEWLINE_CRLF match options. These settings are also
- * relevant when compiling a pattern if %G_REGEX_EXTENDED is set, and an
+ * with `G_REGEX_NEWLINE_CR`, `G_REGEX_NEWLINE_LF` and `G_REGEX_NEWLINE_CRLF`
+ * compile options, and with `G_REGEX_MATCH_NEWLINE_ANY`,
+ * `G_REGEX_MATCH_NEWLINE_CR`, `G_REGEX_MATCH_NEWLINE_LF` and
+ * `G_REGEX_MATCH_NEWLINE_CRLF` match options. These settings are also
+ * relevant when compiling a pattern if `G_REGEX_EXTENDED` is set, and an
  * unescaped "#" outside a character class is encountered. This indicates
  * a comment that lasts until after the next newline.
  *
- * Creating and manipulating the same #GRegex structure from different
- * threads is not a problem as #GRegex does not modify its internal
- * state between creation and destruction, on the other hand #GMatchInfo
+ * Creating and manipulating the same `GRegex` structure from different
+ * threads is not a problem as `GRegex` does not modify its internal
+ * state between creation and destruction, on the other hand `GMatchInfo`
  * is not threadsafe.
  *
  * The regular expressions low-level functionalities are obtained through
- * the excellent
- * [PCRE](http://www.pcre.org/)
- * library written by Philip Hazel.
+ * the excellent [PCRE](http://www.pcre.org/) library written by Philip Hazel.
+ *
+ * Since: 2.14
  */
 
 #define G_REGEX_PCRE_GENERIC_MASK (PCRE2_ANCHORED       | \
@@ -253,6 +252,13 @@ struct _GRegex
   GRegexMatchFlags orig_match_opts; /* options used as default match options, gregex values */
   uint32_t jit_options;         /* options which were enabled for jit compiler */
   JITStatus jit_status;         /* indicates the status of jit compiler for this compiled regex */
+  /* The jit_status here does _not_ correspond to whether we used the JIT in the last invocation,
+   * which may be affected by match_options or a JIT_STACK_LIMIT error, but whether it was ever
+   * enabled for the current regex AND current set of jit_options.
+   * JIT_STATUS_DEFAULT means enablement was never tried,
+   * JIT_STATUS_ENABLED means it was tried and successful (even if we're not currently using it),
+   * and JIT_STATUS_DISABLED means it was tried and failed (so we shouldn't try again).
+   */
 };
 
 /* TRUE if ret is an error code, FALSE otherwise. */
@@ -919,35 +925,47 @@ enable_jit_with_match_options (GMatchInfo  *match_info,
 
   /* no new options enabled */
   if (new_jit_options == old_jit_options)
-    return match_info->regex->jit_status;
+    {
+      g_assert (match_info->regex->jit_status != JIT_STATUS_DEFAULT);
+      return match_info->regex->jit_status;
+    }
 
   retval = pcre2_jit_compile (match_info->regex->pcre_re, new_jit_options);
-  switch (retval)
+  if (retval == 0)
     {
-    case 0: /* JIT enabled successfully */
+      match_info->regex->jit_status = JIT_STATUS_ENABLED;
+
       match_info->regex->jit_options = new_jit_options;
       /* Set min stack size for JIT to 32KiB and max to 512KiB */
       match_info->jit_stack = pcre2_jit_stack_create (1 << 15, 1 << 19, NULL);
       pcre2_jit_stack_assign (match_info->match_context, NULL, match_info->jit_stack);
-      return JIT_STATUS_ENABLED;
-    case PCRE2_ERROR_NOMEMORY:
-      g_debug ("JIT compilation was requested with G_REGEX_OPTIMIZE, "
-               "but JIT was unable to allocate executable memory for the "
-               "compiler. Falling back to interpretive code.");
-      return JIT_STATUS_DISABLED;
-    case PCRE2_ERROR_JIT_BADOPTION:
-      g_debug ("JIT compilation was requested with G_REGEX_OPTIMIZE, "
-               "but JIT support is not available. Falling back to "
-               "interpretive code.");
-      return JIT_STATUS_DISABLED;
-      break;
-    default:
-      g_debug ("JIT compilation was requested with G_REGEX_OPTIMIZE, "
-               "but request for JIT support had unexpectedly failed (error %d). "
-               "Falling back to interpretive code.", retval);
-      return JIT_STATUS_DISABLED;
-      break;
     }
+  else
+    {
+      match_info->regex->jit_status = JIT_STATUS_DISABLED;
+
+      switch (retval)
+        {
+        case PCRE2_ERROR_NOMEMORY:
+          g_debug ("JIT compilation was requested with G_REGEX_OPTIMIZE, "
+                   "but JIT was unable to allocate executable memory for the "
+                   "compiler. Falling back to interpretive code.");
+          break;
+        case PCRE2_ERROR_JIT_BADOPTION:
+          g_debug ("JIT compilation was requested with G_REGEX_OPTIMIZE, "
+                   "but JIT support is not available. Falling back to "
+                   "interpretive code.");
+          break;
+        default:
+          g_debug ("JIT compilation was requested with G_REGEX_OPTIMIZE, "
+                   "but request for JIT support had unexpectedly failed (error %d). "
+                   "Falling back to interpretive code.",
+                   retval);
+          break;
+        }
+    }
+
+  return match_info->regex->jit_status;
 
   g_assert_not_reached ();
 }
@@ -3377,7 +3395,7 @@ g_regex_replace_literal (const GRegex      *regex,
  * @string_len: the length of @string, in bytes, or -1 if @string is nul-terminated
  * @start_position: starting index of the string to match, in bytes
  * @match_options: options for the match
- * @eval: a function to call for each match
+ * @eval: (scope call): a function to call for each match
  * @user_data: user data to pass to the function
  * @error: location to store the error occurring, or %NULL to ignore errors
  *

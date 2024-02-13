@@ -40,27 +40,24 @@
 
 
 /**
- * SECTION:gsocketconnection
- * @short_description: A socket connection
- * @include: gio/gio.h
- * @see_also: #GIOStream, #GSocketClient, #GSocketListener
+ * GSocketConnection:
  *
- * #GSocketConnection is a #GIOStream for a connected socket. They
- * can be created either by #GSocketClient when connecting to a host,
- * or by #GSocketListener when accepting a new client.
+ * `GSocketConnection` is a [class@Gio.IOStream] for a connected socket. They
+ * can be created either by [class@Gio.SocketClient] when connecting to a host,
+ * or by [class@Gio.SocketListener] when accepting a new client.
  *
- * The type of the #GSocketConnection object returned from these calls
+ * The type of the `GSocketConnection` object returned from these calls
  * depends on the type of the underlying socket that is in use. For
- * instance, for a TCP/IP connection it will be a #GTcpConnection.
+ * instance, for a TCP/IP connection it will be a [class@Gio.TcpConnection].
  *
  * Choosing what type of object to construct is done with the socket
- * connection factory, and it is possible for 3rd parties to register
+ * connection factory, and it is possible for third parties to register
  * custom socket connection types for specific combination of socket
- * family/type/protocol using g_socket_connection_factory_register_type().
+ * family/type/protocol using [func@Gio.SocketConnection.factory_register_type].
  *
- * To close a #GSocketConnection, use g_io_stream_close(). Closing both
- * substreams of the #GIOStream separately will not close the underlying
- * #GSocket.
+ * To close a `GSocketConnection`, use [method@Gio.IOStream.close]. Closing both
+ * substreams of the [class@Gio.IOStream] separately will not close the
+ * underlying [class@Gio.Socket].
  *
  * Since: 2.22
  */
@@ -179,6 +176,10 @@ static gboolean g_socket_connection_connect_callback (GSocket      *socket,
  *
  * This clears the #GSocket:blocking flag on @connection's underlying
  * socket if it is currently set.
+ *
+ * If #GSocket:timeout is set, the operation will time out and return
+ * %G_IO_ERROR_TIMED_OUT after that period. Otherwise, it will continue
+ * indefinitely until operating system timeouts (if any) are hit.
  *
  * Use g_socket_connection_connect_finish() to retrieve the result.
  *
@@ -448,11 +449,16 @@ g_socket_connection_class_init (GSocketConnectionClass *klass)
   stream_class->close_async = g_socket_connection_close_async;
   stream_class->close_finish = g_socket_connection_close_finish;
 
+  /**
+   * GSocketConnection:socket:
+   *
+   * The underlying [class@Gio.Socket].
+   *
+   * Since: 2.22
+   */
   g_object_class_install_property (gobject_class,
                                    PROP_SOCKET,
-                                   g_param_spec_object ("socket",
-			                                P_("Socket"),
-			                                P_("The underlying GSocket"),
+                                   g_param_spec_object ("socket", NULL, NULL,
                                                         G_TYPE_SOCKET,
                                                         G_PARAM_CONSTRUCT_ONLY |
                                                         G_PARAM_READWRITE |

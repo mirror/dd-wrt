@@ -31,13 +31,9 @@
 
 
 /**
- * SECTION:gpermission
- * @title: GPermission
- * @short_description: An object representing the permission
- *     to perform a certain action
- * @include: gio/gio.h
+ * GPermission:
  *
- * A #GPermission represents the status of the caller's permission to
+ * A `GPermission` represents the status of the caller’s permission to
  * perform a certain action.
  *
  * You can query if the action is currently allowed and if it is
@@ -47,18 +43,11 @@
  * There is also an API to actually acquire the permission and one to
  * release it.
  *
- * As an example, a #GPermission might represent the ability for the
- * user to write to a #GSettings object.  This #GPermission object could
- * then be used to decide if it is appropriate to show a "Click here to
- * unlock" button in a dialog and to provide the mechanism to invoke
+ * As an example, a `GPermission` might represent the ability for the
+ * user to write to a [class@Gio.Settings] object.  This `GPermission` object
+ * could then be used to decide if it is appropriate to show a “Click here to
+ * unlock” button in a dialog and to provide the mechanism to invoke
  * when that button is clicked.
- **/
-
-/**
- * GPermission:
- *
- * #GPermission is an opaque data structure and can only be accessed
- * using the following functions.
  **/
 
 struct _GPermissionPrivate
@@ -444,9 +433,7 @@ g_permission_class_init (GPermissionClass *class)
    * @permission represents the permission to perform.
    */
    g_object_class_install_property (object_class, PROP_ALLOWED,
-     g_param_spec_boolean ("allowed",
-                           P_("Is allowed"),
-                           P_("If the caller is allowed to perform the action"),
+     g_param_spec_boolean ("allowed", NULL, NULL,
                            FALSE,
                            G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
 
@@ -457,9 +444,7 @@ g_permission_class_init (GPermissionClass *class)
    * g_permission_acquire().
    */
    g_object_class_install_property (object_class, PROP_CAN_ACQUIRE,
-     g_param_spec_boolean ("can-acquire",
-                           P_("Can acquire"),
-                           P_("If calling g_permission_acquire() makes sense"),
+     g_param_spec_boolean ("can-acquire", NULL, NULL,
                            FALSE,
                            G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
 
@@ -470,9 +455,7 @@ g_permission_class_init (GPermissionClass *class)
    * g_permission_release().
    */
    g_object_class_install_property (object_class, PROP_CAN_RELEASE,
-     g_param_spec_boolean ("can-release",
-                           P_("Can release"),
-                           P_("If calling g_permission_release() makes sense"),
+     g_param_spec_boolean ("can-release", NULL, NULL,
                            FALSE,
                            G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
 }

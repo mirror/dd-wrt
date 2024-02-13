@@ -34,25 +34,21 @@
 
 
 /**
- * SECTION:gbufferedinputstream
- * @short_description: Buffered Input Stream
- * @include: gio/gio.h
- * @see_also: #GFilterInputStream, #GInputStream
+ * GBufferedInputStream:
  *
  * Buffered input stream implements #GFilterInputStream and provides
  * for buffered reads.
  *
- * By default, #GBufferedInputStream's buffer size is set at 4 kilobytes.
+ * By default, `GBufferedInputStream`'s buffer size is set at 4 kilobytes.
  *
- * To create a buffered input stream, use g_buffered_input_stream_new(),
- * or g_buffered_input_stream_new_sized() to specify the buffer's size at
+ * To create a buffered input stream, use [ctor@Gio.BufferedInputStream.new],
+ * or [ctor@Gio.BufferedInputStream.new_sized] to specify the buffer's size at
  * construction.
  *
  * To get the size of a buffer within a buffered input stream, use
- * g_buffered_input_stream_get_buffer_size(). To change the size of a
- * buffered input stream's buffer, use
- * g_buffered_input_stream_set_buffer_size(). Note that the buffer's size
- * cannot be reduced below the size of the data within the buffer.
+ * [method@Gio.BufferedInputStream.get_buffer_size]. To change the size of a
+ * buffered input stream's buffer, use [method@Gio.BufferedInputStream.set_buffer_size].
+ * Note that the buffer's size cannot be reduced below the size of the data within the buffer.
  */
 
 
@@ -161,11 +157,14 @@ g_buffered_input_stream_class_init (GBufferedInputStreamClass *klass)
   bstream_class->fill_async = g_buffered_input_stream_real_fill_async;
   bstream_class->fill_finish = g_buffered_input_stream_real_fill_finish;
 
+  /**
+   * GBufferedInputStream:buffer-size:
+   *
+   * The size of the backend buffer, in bytes.
+   */
   g_object_class_install_property (object_class,
                                    PROP_BUFSIZE,
-                                   g_param_spec_uint ("buffer-size",
-                                                      P_("Buffer Size"),
-                                                      P_("The size of the backend buffer"),
+                                   g_param_spec_uint ("buffer-size", NULL, NULL,
                                                       1,
                                                       G_MAXUINT,
                                                       DEFAULT_BUFFER_SIZE,

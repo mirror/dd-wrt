@@ -39,19 +39,6 @@ G_BEGIN_DECLS
 GIO_AVAILABLE_IN_ALL
 G_DECLARE_FINAL_TYPE (GThreadedResolver, g_threaded_resolver, G, THREADED_RESOLVER, GResolver)
 
-/* Used for a private test API */
-#ifdef G_OS_UNIX
-GIO_AVAILABLE_IN_ALL
-GList *g_resolver_records_from_res_query (const gchar      *rrname,
-                                          gint              rrtype,
-                                          const guint8     *answer,
-                                          gssize            len,
-                                          gint              herr,
-                                          GError          **error);
-GIO_AVAILABLE_IN_ALL
-gint g_resolver_record_type_to_rrtype (GResolverRecordType type);
-#endif
-
 G_END_DECLS
 
 #endif /* __G_RESOLVER_H__ */

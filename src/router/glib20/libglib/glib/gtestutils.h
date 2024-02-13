@@ -54,7 +54,7 @@ typedef void (*GTestFixtureFunc) (gpointer      fixture,
                                              gint64 __n1 = (n1), __n2 = (n2); \
                                              if (__n1 cmp __n2) ; else \
                                                g_assertion_message_cmpint (G_LOG_DOMAIN, __FILE__, __LINE__, G_STRFUNC, \
-                                                 #n1 " " #cmp " " #n2, __n1, #cmp, __n2, 'i'); \
+                                                 #n1 " " #cmp " " #n2, (guint64)__n1, #cmp, (guint64)__n2, 'i'); \
                                         } G_STMT_END
 #define g_assert_cmpuint(n1, cmp, n2)   G_STMT_START { \
                                              guint64 __n1 = (n1), __n2 = (n2); \
@@ -515,6 +515,11 @@ GLIB_AVAILABLE_IN_2_38
 void     g_test_trap_subprocess         (const char           *test_path,
                                          guint64               usec_timeout,
                                          GTestSubprocessFlags  test_flags);
+GLIB_AVAILABLE_IN_2_80
+void     g_test_trap_subprocess_with_envp (const char           *test_path,
+                                           const char * const   *envp,
+                                           guint64               usec_timeout,
+                                           GTestSubprocessFlags  test_flags);
 
 GLIB_AVAILABLE_IN_ALL
 gboolean g_test_trap_has_passed         (void);

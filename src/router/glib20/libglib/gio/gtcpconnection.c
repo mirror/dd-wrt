@@ -13,13 +13,9 @@
  */
 
 /**
- * SECTION:gtcpconnection
- * @title: GTcpConnection
- * @short_description: A TCP GSocketConnection
- * @include: gio/gio.h
- * @see_also: #GSocketConnection.
+ * GTcpConnection:
  *
- * This is the subclass of #GSocketConnection that is created
+ * This is the subclass of [class@Gio.SocketConnection] that is created
  * for TCP/IP sockets.
  *
  * Since: 2.22
@@ -132,10 +128,15 @@ g_tcp_connection_class_init (GTcpConnectionClass *class)
   stream_class->close_fn = g_tcp_connection_close;
   stream_class->close_async = g_tcp_connection_close_async;
 
+  /**
+   * GTcpConnection:graceful-disconnect:
+   *
+   * Whether [method@Gio.IOStream.close] does a graceful disconnect.
+   *
+   * Since: 2.22
+   */
   g_object_class_install_property (gobject_class, PROP_GRACEFUL_DISCONNECT,
-				   g_param_spec_boolean ("graceful-disconnect",
-							 P_("Graceful Disconnect"),
-							 P_("Whether or not close does a graceful disconnect"),
+				   g_param_spec_boolean ("graceful-disconnect", NULL, NULL,
 							 FALSE,
 							 G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
@@ -206,6 +207,8 @@ async_close_finish (GTask    *task,
     g_task_return_error (task, error);
   else
     g_task_return_boolean (task, TRUE);
+
+  g_object_unref (task);
 }
 
 
@@ -231,7 +234,6 @@ close_read_ready (GSocket        *socket,
       else
 	{
 	  async_close_finish (task, error);
-	  g_object_unref (task);
 	  return FALSE;
 	}
     }

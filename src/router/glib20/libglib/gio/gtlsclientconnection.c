@@ -31,19 +31,10 @@
 #include "glibintl.h"
 
 /**
- * SECTION:gtlsclientconnection
- * @short_description: TLS client-side connection
- * @include: gio/gio.h
- *
- * #GTlsClientConnection is the client-side subclass of
- * #GTlsConnection, representing a client-side TLS connection.
- */
-
-/**
  * GTlsClientConnection:
  *
- * Abstract base class for the backend-specific client connection
- * type.
+ * `GTlsClientConnection` is the client-side subclass of
+ * [class@Gio.TlsConnection], representing a client-side TLS connection.
  *
  * Since: 2.28
  */
@@ -78,9 +69,7 @@ g_tls_client_connection_default_init (GTlsClientConnectionInterface *iface)
    * Deprecated: 2.72: Do not attempt to ignore validation errors.
    */
   g_object_interface_install_property (iface,
-				       g_param_spec_flags ("validation-flags",
-							   P_("Validation flags"),
-							   P_("What certificate validation to perform"),
+				       g_param_spec_flags ("validation-flags", NULL, NULL,
 							   G_TYPE_TLS_CERTIFICATE_FLAGS,
 							   G_TLS_CERTIFICATE_VALIDATE_ALL,
 							   G_PARAM_READWRITE |
@@ -109,9 +98,7 @@ g_tls_client_connection_default_init (GTlsClientConnectionInterface *iface)
    * Since: 2.28
    */
   g_object_interface_install_property (iface,
-				       g_param_spec_object ("server-identity",
-							    P_("Server identity"),
-							    P_("GSocketConnectable identifying the server"),
+				       g_param_spec_object ("server-identity", NULL, NULL,
 							    G_TYPE_SOCKET_CONNECTABLE,
 							    G_PARAM_READWRITE |
 							    G_PARAM_CONSTRUCT |
@@ -128,9 +115,7 @@ g_tls_client_connection_default_init (GTlsClientConnectionInterface *iface)
    * Deprecated: 2.56: SSL 3.0 is insecure.
    */
   g_object_interface_install_property (iface,
-				       g_param_spec_boolean ("use-ssl3",
-							     P_("Use fallback"),
-							     P_("Use fallback version of SSL/TLS rather than most recent version"),
+				       g_param_spec_boolean ("use-ssl3", NULL, NULL,
 							     FALSE,
 							     G_PARAM_READWRITE |
 							     G_PARAM_CONSTRUCT |
@@ -151,9 +136,7 @@ g_tls_client_connection_default_init (GTlsClientConnectionInterface *iface)
    * Since: 2.28
    */
   g_object_interface_install_property (iface,
-				       g_param_spec_pointer ("accepted-cas",
-							     P_("Accepted CAs"),
-							     P_("Distinguished names of the CAs the server accepts certificates from"),
+				       g_param_spec_pointer ("accepted-cas", NULL, NULL,
 							     G_PARAM_READABLE |
 							     G_PARAM_STATIC_STRINGS));
 }

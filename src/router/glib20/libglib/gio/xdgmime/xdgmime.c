@@ -6,23 +6,7 @@
  * Copyright (C) 2003,2004  Red Hat, Inc.
  * Copyright (C) 2003,2004  Jonathan Blandford <jrb@alum.mit.edu>
  *
- * Licensed under the Academic Free License version 2.0
- * Or under the following terms:
- * 
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
- * Boston, MA 02111-1307, USA.
+ * SPDX-License-Identifier: LGPL-2.1-or-later or AFL-2.0
  */
 
 #ifdef HAVE_CONFIG_H
@@ -143,7 +127,7 @@ xdg_dir_time_list_free (XdgDirTimeList *list)
 
 static int
 xdg_mime_init_from_directory (const char *directory,
-                              void       *user_data)
+                              void       *user_data __attribute__((__unused__)))
 {
   char *file_name;
   struct stat st;
@@ -835,13 +819,16 @@ xdg_mime_is_super_type (const char *mime)
 
 int
 _xdg_mime_mime_type_subclass (const char *mime,
-			      const char *base)
+			      const char *base,
+			      const char ***seen)
 {
-  const char *umime, *ubase;
-  const char **parents;
+  const char *umime, *ubase, *parent;
+  const char **parents, **first_seen = NULL, **new_seen;
+
+  int i, ret = 0;
 
   if (_caches)
-    return _xdg_mime_cache_mime_type_subclass (mime, base);
+    return _xdg_mime_cache_mime_type_subclass (mime, base, NULL);
 
   umime = _xdg_mime_unalias_mime_type (mime);
   ubase = _xdg_mime_unalias_mime_type (base);
@@ -864,15 +851,42 @@ _xdg_mime_mime_type_subclass (const char *mime,
   if (strcmp (ubase, "application/octet-stream") == 0 &&
       strncmp (umime, "inode/", 6) != 0)
     return 1;
-  
+
+  if (!seen)
+    {
+      first_seen = calloc (1, sizeof (char *));
+      seen = &first_seen;
+    }
+
   parents = _xdg_mime_parent_list_lookup (parent_list, umime);
   for (; parents && *parents; parents++)
     {
-      if (_xdg_mime_mime_type_subclass (*parents, ubase))
-	return 1;
+      parent = *parents;
+
+      /* Detect and avoid buggy circular relationships */
+      for (i = 0; (*seen)[i] != NULL; i++)
+        if (parent == (*seen)[i])
+          goto next_parent;
+      new_seen = realloc (*seen, (i + 2) * sizeof (char *));
+      if (!new_seen)
+        goto done;
+      new_seen[i] = parent;
+      new_seen[i + 1] = NULL;
+      *seen = new_seen;
+
+      if (_xdg_mime_mime_type_subclass (parent, ubase, seen))
+        {
+          ret = 1;
+          goto done;
+        }
+
+    next_parent:
+      continue;
     }
 
-  return 0;
+done:
+  free (first_seen);
+  return ret;
 }
 
 int
@@ -881,7 +895,7 @@ xdg_mime_mime_type_subclass (const char *mime,
 {
   xdg_mime_init ();
 
-  return _xdg_mime_mime_type_subclass (mime, base);
+  return _xdg_mime_mime_type_subclass (mime, base, NULL);
 }
 
 char **
@@ -890,6 +904,8 @@ xdg_mime_list_mime_parents (const char *mime)
   const char **parents;
   char **result;
   int i, n;
+
+  xdg_mime_init ();
 
   if (_caches)
     return _xdg_mime_cache_list_mime_parents (mime);

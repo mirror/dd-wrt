@@ -28,24 +28,14 @@
 #include "glistmodel.h"
 
 /**
- * SECTION:gliststore
- * @title: GListStore
- * @short_description: A simple implementation of #GListModel
- * @include: gio/gio.h
+ * GListStore:
  *
- * #GListStore is a simple implementation of #GListModel that stores all
- * items in memory.
+ * `GListStore` is a simple implementation of [iface@Gio.ListModel] that stores
+ * all items in memory.
  *
  * It provides insertions, deletions, and lookups in logarithmic time
  * with a fast path for the common case of iterating the list linearly.
  */
-
-/**
- * GListStore:
- *
- * #GListStore is an opaque data structure and can only be accessed
- * using the following functions.
- **/
 
 struct _GListStore
 {
@@ -165,7 +155,7 @@ g_list_store_class_init (GListStoreClass *klass)
    * Since: 2.44
    **/
   properties[PROP_ITEM_TYPE] =
-    g_param_spec_gtype ("item-type", "", "", G_TYPE_OBJECT,
+    g_param_spec_gtype ("item-type", NULL, NULL, G_TYPE_OBJECT,
                         G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
   /**
@@ -176,7 +166,7 @@ g_list_store_class_init (GListStoreClass *klass)
    * Since: 2.74
    **/
   properties[PROP_N_ITEMS] =
-    g_param_spec_uint ("n-items", "", "", 0, G_MAXUINT, 0,
+    g_param_spec_uint ("n-items", NULL, NULL, 0, G_MAXUINT, 0,
                        G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
   g_object_class_install_properties (object_class, N_PROPERTIES, properties);

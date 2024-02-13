@@ -31,23 +31,20 @@
 #include "glibintl.h"
 
 /**
- * SECTION:gfilemonitor
- * @short_description: File Monitor
- * @include: gio/gio.h
+ * GFileMonitor:
  *
  * Monitors a file or directory for changes.
  *
- * To obtain a #GFileMonitor for a file or directory, use
- * g_file_monitor(), g_file_monitor_file(), or
- * g_file_monitor_directory().
+ * To obtain a `GFileMonitor` for a file or directory, use
+ * [method@Gio.File.monitor], [method@Gio.File.monitor_file], or
+ * [method@Gio.File.monitor_directory].
  *
  * To get informed about changes to the file or directory you are
- * monitoring, connect to the #GFileMonitor::changed signal. The
- * signal will be emitted in the
- * [thread-default main context][g-main-context-push-thread-default]
- * of the thread that the monitor was created in
- * (though if the global default main context is blocked, this may
- * cause notifications to be blocked even if the thread-default
+ * monitoring, connect to the [signal@Gio.FileMonitor::changed] signal. The
+ * signal will be emitted in the thread-default main context (see
+ * [method@GLib.MainContext.push_thread_default]) of the thread that the monitor
+ * was created in (though if the global default main context is blocked, this
+ * may cause notifications to be blocked even if the thread-default
  * context is still running).
  **/
 
@@ -191,17 +188,23 @@ g_file_monitor_class_init (GFileMonitorClass *klass)
                               G_TYPE_FROM_CLASS (klass),
                               _g_cclosure_marshal_VOID__OBJECT_OBJECT_ENUMv);
 
+  /**
+   * GFileMonitor:rate-limit:
+   *
+   * The limit of the monitor to watch for changes, in milliseconds.
+   */
   g_object_class_install_property (object_class, PROP_RATE_LIMIT,
-                                   g_param_spec_int ("rate-limit",
-                                                     P_("Rate limit"),
-                                                     P_("The limit of the monitor to watch for changes, in milliseconds"),
+                                   g_param_spec_int ("rate-limit", NULL, NULL,
                                                      0, G_MAXINT, DEFAULT_RATE_LIMIT_MSECS, G_PARAM_READWRITE |
                                                      G_PARAM_EXPLICIT_NOTIFY | G_PARAM_STATIC_STRINGS));
 
+  /**
+   * GFileMonitor:cancelled:
+   *
+   * Whether the monitor has been cancelled.
+   */
   g_object_class_install_property (object_class, PROP_CANCELLED,
-                                   g_param_spec_boolean ("cancelled",
-                                                         P_("Cancelled"),
-                                                         P_("Whether the monitor has been cancelled"),
+                                   g_param_spec_boolean ("cancelled", NULL, NULL,
                                                          FALSE, G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 }
 

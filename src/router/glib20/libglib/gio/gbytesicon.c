@@ -33,16 +33,13 @@
 
 
 /**
- * SECTION:gbytesicon
- * @short_description: An icon stored in memory as a GBytes
- * @include: gio/gio.h
- * @see_also: #GIcon, #GLoadableIcon, #GBytes
+ * GBytesIcon:
  *
- * #GBytesIcon specifies an image held in memory in a common format (usually
- * png) to be used as icon.
+ * `GBytesIcon` specifies an image held in memory in a common format (usually
+ * PNG) to be used as icon.
  *
  * Since: 2.38
- **/
+ */
 
 typedef GObjectClass GBytesIconClass;
 
@@ -130,9 +127,7 @@ g_bytes_icon_class_init (GBytesIconClass *klass)
    * The bytes containing the icon.
    */
   g_object_class_install_property (gobject_class, PROP_BYTES,
-                                   g_param_spec_boxed ("bytes",
-                                                       P_("bytes"),
-                                                       P_("The bytes containing the icon"),
+                                   g_param_spec_boxed ("bytes", NULL, NULL,
                                                        G_TYPE_BYTES,
                                                        G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 }

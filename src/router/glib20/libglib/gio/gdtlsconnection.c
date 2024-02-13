@@ -36,42 +36,32 @@
 #include "gmarshal-internal.h"
 
 /**
- * SECTION:gdtlsconnection
- * @short_description: DTLS connection type
- * @include: gio/gio.h
- *
- * #GDtlsConnection is the base DTLS connection class type, which wraps
- * a #GDatagramBased and provides DTLS encryption on top of it. Its
- * subclasses, #GDtlsClientConnection and #GDtlsServerConnection,
- * implement client-side and server-side DTLS, respectively.
- *
- * For TLS support, see #GTlsConnection.
- *
- * As DTLS is datagram based, #GDtlsConnection implements #GDatagramBased,
- * presenting a datagram-socket-like API for the encrypted connection. This
- * operates over a base datagram connection, which is also a #GDatagramBased
- * (#GDtlsConnection:base-socket).
- *
- * To close a DTLS connection, use g_dtls_connection_close().
- *
- * Neither #GDtlsServerConnection or #GDtlsClientConnection set the peer address
- * on their base #GDatagramBased if it is a #GSocket — it is up to the caller to
- * do that if they wish. If they do not, and g_socket_close() is called on the
- * base socket, the #GDtlsConnection will not raise a %G_IO_ERROR_NOT_CONNECTED
- * error on further I/O.
- *
- * Since: 2.48
- */
-
-/**
  * GDtlsConnection:
  *
- * Abstract base class for the backend-specific #GDtlsClientConnection
- * and #GDtlsServerConnection types.
+ * `GDtlsConnection` is the base DTLS connection class type, which wraps
+ * a [iface@Gio.DatagramBased] and provides DTLS encryption on top of it. Its
+ * subclasses, [iface@Gio.DtlsClientConnection] and
+ * [iface@Gio.DtlsServerConnection], implement client-side and server-side DTLS,
+ * respectively.
+ *
+ * For TLS support, see [class@Gio.TlsConnection].
+ *
+ * As DTLS is datagram based, `GDtlsConnection` implements
+ * [iface@Gio.DatagramBased], presenting a datagram-socket-like API for the
+ * encrypted connection. This operates over a base datagram connection, which is
+ * also a `GDatagramBased` ([property@Gio.DtlsConnection:base-socket]).
+ *
+ * To close a DTLS connection, use [method@Gio.DtlsConnection.close].
+ *
+ * Neither [iface@Gio.DtlsServerConnection] or [iface@Gio.DtlsClientConnection]
+ * set the peer address on their base [iface@Gio.DatagramBased] if it is a
+ * [class@Gio.Socket] — it is up to the caller to do that if they wish. If they
+ * do not, and [method@Gio.Socket.close] is called on the base socket, the
+ * `GDtlsConnection` will not raise a `G_IO_ERROR_NOT_CONNECTED` error on
+ * further I/O.
  *
  * Since: 2.48
  */
-
 G_DEFINE_INTERFACE (GDtlsConnection, g_dtls_connection, G_TYPE_DATAGRAM_BASED)
 
 enum {
@@ -106,9 +96,7 @@ g_dtls_connection_default_init (GDtlsConnectionInterface *iface)
    * Since: 2.48
    */
   g_object_interface_install_property (iface,
-                                       g_param_spec_object ("base-socket",
-                                                            P_("Base Socket"),
-                                                            P_("The GDatagramBased that the connection wraps"),
+                                       g_param_spec_object ("base-socket", NULL, NULL,
                                                             G_TYPE_DATAGRAM_BASED,
                                                             G_PARAM_READWRITE |
                                                             G_PARAM_CONSTRUCT_ONLY |
@@ -136,9 +124,7 @@ g_dtls_connection_default_init (GDtlsConnectionInterface *iface)
    * Since: 2.48
    */
   g_object_interface_install_property (iface,
-                                       g_param_spec_object ("database",
-                                                            P_("Database"),
-                                                            P_("Certificate database to use for looking up or verifying certificates"),
+                                       g_param_spec_object ("database", NULL, NULL,
                                                             G_TYPE_TLS_DATABASE,
                                                             G_PARAM_READWRITE |
                                                             G_PARAM_STATIC_STRINGS));
@@ -152,9 +138,7 @@ g_dtls_connection_default_init (GDtlsConnectionInterface *iface)
    * Since: 2.48
    */
   g_object_interface_install_property (iface,
-                                       g_param_spec_object ("interaction",
-                                                            P_("Interaction"),
-                                                            P_("Optional object for user interaction"),
+                                       g_param_spec_object ("interaction", NULL, NULL,
                                                             G_TYPE_TLS_INTERACTION,
                                                             G_PARAM_READWRITE |
                                                             G_PARAM_STATIC_STRINGS));
@@ -167,9 +151,7 @@ g_dtls_connection_default_init (GDtlsConnectionInterface *iface)
    * Since: 2.48
    */
   g_object_interface_install_property (iface,
-                                       g_param_spec_boolean ("require-close-notify",
-                                                             P_("Require close notify"),
-                                                             P_("Whether to require proper TLS close notification"),
+                                       g_param_spec_boolean ("require-close-notify", NULL, NULL,
                                                              TRUE,
                                                              G_PARAM_READWRITE |
                                                              G_PARAM_CONSTRUCT |
@@ -185,9 +167,7 @@ g_dtls_connection_default_init (GDtlsConnectionInterface *iface)
    * Deprecated: 2.60: The rehandshake mode is ignored.
    */
   g_object_interface_install_property (iface,
-                                       g_param_spec_enum ("rehandshake-mode",
-                                                          P_("Rehandshake mode"),
-                                                          P_("When to allow rehandshaking"),
+                                       g_param_spec_enum ("rehandshake-mode", NULL, NULL,
                                                           G_TYPE_TLS_REHANDSHAKE_MODE,
                                                           G_TLS_REHANDSHAKE_NEVER,
                                                           G_PARAM_READWRITE |
@@ -203,9 +183,7 @@ g_dtls_connection_default_init (GDtlsConnectionInterface *iface)
    * Since: 2.48
    */
   g_object_interface_install_property (iface,
-                                       g_param_spec_object ("certificate",
-                                                            P_("Certificate"),
-                                                            P_("The connection’s certificate"),
+                                       g_param_spec_object ("certificate", NULL, NULL,
                                                             G_TYPE_TLS_CERTIFICATE,
                                                             G_PARAM_READWRITE |
                                                             G_PARAM_STATIC_STRINGS));
@@ -222,9 +200,7 @@ g_dtls_connection_default_init (GDtlsConnectionInterface *iface)
    * Since: 2.48
    */
   g_object_interface_install_property (iface,
-                                       g_param_spec_object ("peer-certificate",
-                                                            P_("Peer Certificate"),
-                                                            P_("The connection’s peer’s certificate"),
+                                       g_param_spec_object ("peer-certificate", NULL, NULL,
                                                             G_TYPE_TLS_CERTIFICATE,
                                                             G_PARAM_READABLE |
                                                             G_PARAM_STATIC_STRINGS));
@@ -249,9 +225,7 @@ g_dtls_connection_default_init (GDtlsConnectionInterface *iface)
    * Since: 2.48
    */
   g_object_interface_install_property (iface,
-                                       g_param_spec_flags ("peer-certificate-errors",
-                                                           P_("Peer Certificate Errors"),
-                                                           P_("Errors found with the peer’s certificate"),
+                                       g_param_spec_flags ("peer-certificate-errors", NULL, NULL,
                                                            G_TYPE_TLS_CERTIFICATE_FLAGS,
                                                            0,
                                                            G_PARAM_READABLE |
@@ -266,9 +240,7 @@ g_dtls_connection_default_init (GDtlsConnectionInterface *iface)
    * Since: 2.60
    */
   g_object_interface_install_property (iface,
-                                       g_param_spec_boxed ("advertised-protocols",
-                                                           P_("Advertised Protocols"),
-                                                           P_("Application-layer protocols available on this connection"),
+                                       g_param_spec_boxed ("advertised-protocols", NULL, NULL,
                                                            G_TYPE_STRV,
                                                            G_PARAM_READWRITE |
                                                            G_PARAM_STATIC_STRINGS));
@@ -281,9 +253,7 @@ g_dtls_connection_default_init (GDtlsConnectionInterface *iface)
    * Since: 2.60
    */
   g_object_interface_install_property (iface,
-                                       g_param_spec_string ("negotiated-protocol",
-                                                            P_("Negotiated Protocol"),
-                                                            P_("Application-layer protocol negotiated for this connection"),
+                                       g_param_spec_string ("negotiated-protocol", NULL, NULL,
                                                             NULL,
                                                             G_PARAM_READABLE |
                                                             G_PARAM_STATIC_STRINGS));
@@ -296,9 +266,7 @@ g_dtls_connection_default_init (GDtlsConnectionInterface *iface)
    * Since: 2.70
    */
   g_object_interface_install_property (iface,
-                                       g_param_spec_enum ("protocol-version",
-                                                          P_("Protocol Version"),
-                                                          P_("DTLS protocol version negotiated for this connection"),
+                                       g_param_spec_enum ("protocol-version", NULL, NULL,
                                                           G_TYPE_TLS_PROTOCOL_VERSION,
                                                           G_TLS_PROTOCOL_VERSION_UNKNOWN,
                                                           G_PARAM_READABLE |
@@ -312,9 +280,7 @@ g_dtls_connection_default_init (GDtlsConnectionInterface *iface)
    * Since: 2.70
    */
   g_object_interface_install_property (iface,
-                                       g_param_spec_string ("ciphersuite-name",
-                                                            P_("Ciphersuite Name"),
-                                                            P_("Name of ciphersuite negotiated for this connection"),
+                                       g_param_spec_string ("ciphersuite-name", NULL, NULL,
                                                             NULL,
                                                             G_PARAM_READABLE |
                                                             G_PARAM_STATIC_STRINGS));

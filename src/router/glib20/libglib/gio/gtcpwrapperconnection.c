@@ -21,28 +21,17 @@
  */
 
 /**
- * SECTION:gtcpwrapperconnection
- * @title: GTcpWrapperConnection
- * @short_description: Wrapper for non-GSocketConnection-based,
- *     GSocket-based GIOStreams
- * @include: gio/gio.h
- * @see_also: #GSocketConnection.
+ * GTcpWrapperConnection:
  *
- * A #GTcpWrapperConnection can be used to wrap a #GIOStream that is
- * based on a #GSocket, but which is not actually a
- * #GSocketConnection. This is used by #GSocketClient so that it can
- * always return a #GSocketConnection, even when the connection it has
- * actually created is not directly a #GSocketConnection.
+ * A `GTcpWrapperConnection` can be used to wrap a [class@Gio.IOStream] that is
+ * based on a [class@Gio.Socket], but which is not actually a
+ * [class@Gio.SocketConnection]. This is used by [class@Gio.SocketClient] so
+ * that it can always return a [class@Gio.SocketConnection], even when the
+ * connection it has actually created is not directly a
+ * [class@Gio.SocketConnection].
  *
  * Since: 2.28
  */
-
-/**
- * GTcpWrapperConnection:
- *
- * #GTcpWrapperConnection is an opaque data structure and can only be accessed
- * using the following functions.
- **/
 
 #include "config.h"
 
@@ -142,11 +131,16 @@ g_tcp_wrapper_connection_class_init (GTcpWrapperConnectionClass *klass)
   stream_class->get_input_stream = g_tcp_wrapper_connection_get_input_stream;
   stream_class->get_output_stream = g_tcp_wrapper_connection_get_output_stream;
 
+  /**
+   * GTcpWrapperConnection:base-io-stream:
+   *
+   * The wrapped [class@Gio.IOStream].
+   *
+   * Since: 2.28
+   */
   g_object_class_install_property (gobject_class,
                                    PROP_BASE_IO_STREAM,
-                                   g_param_spec_object ("base-io-stream",
-			                                P_("Base IO Stream"),
-			                                P_("The wrapped GIOStream"),
+                                   g_param_spec_object ("base-io-stream", NULL, NULL,
                                                         G_TYPE_IO_STREAM,
                                                         G_PARAM_CONSTRUCT_ONLY |
                                                         G_PARAM_READWRITE |

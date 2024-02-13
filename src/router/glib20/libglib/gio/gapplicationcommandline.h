@@ -67,8 +67,9 @@ struct _GApplicationCommandLineClass
   void                  (* printerr_literal)    (GApplicationCommandLine *cmdline,
                                                  const gchar             *message);
   GInputStream *        (* get_stdin)           (GApplicationCommandLine *cmdline);
+  void                  (* done)                (GApplicationCommandLine *cmdline);
 
-  gpointer padding[11];
+  gpointer padding[10];
 };
 
 GIO_AVAILABLE_IN_ALL
@@ -97,6 +98,13 @@ const gchar *           g_application_command_line_get_cwd              (GApplic
 GIO_AVAILABLE_IN_ALL
 gboolean                g_application_command_line_get_is_remote        (GApplicationCommandLine   *cmdline);
 
+GIO_AVAILABLE_IN_2_80
+void                    g_application_command_line_print_literal        (GApplicationCommandLine   *cmdline,
+                                                                         const gchar               *message);
+GIO_AVAILABLE_IN_2_80
+void                    g_application_command_line_printerr_literal     (GApplicationCommandLine   *cmdline,
+                                                                         const gchar               *message);
+
 GIO_AVAILABLE_IN_ALL
 void                    g_application_command_line_print                (GApplicationCommandLine   *cmdline,
                                                                          const gchar               *format,
@@ -118,6 +126,9 @@ GVariant *              g_application_command_line_get_platform_data    (GApplic
 GIO_AVAILABLE_IN_2_36
 GFile *                 g_application_command_line_create_file_for_arg  (GApplicationCommandLine   *cmdline,
                                                                          const gchar               *arg);
+
+GIO_AVAILABLE_IN_2_80
+void                    g_application_command_line_done                 (GApplicationCommandLine   *cmdline);
 
 G_END_DECLS
 

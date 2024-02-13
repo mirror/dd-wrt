@@ -30,14 +30,6 @@
 
 G_BEGIN_DECLS
 
-/**
- * GStrvBuilder:
- *
- * A helper object to build a %NULL-terminated string array
- * by appending. See g_strv_builder_new().
- *
- * Since: 2.68
- */
 typedef struct _GStrvBuilder GStrvBuilder;
 
 GLIB_AVAILABLE_IN_2_68
@@ -60,6 +52,10 @@ void g_strv_builder_addv (GStrvBuilder *builder,
 GLIB_AVAILABLE_IN_2_70
 void g_strv_builder_add_many (GStrvBuilder *builder,
                               ...) G_GNUC_NULL_TERMINATED;
+
+GLIB_AVAILABLE_IN_2_80
+void g_strv_builder_take (GStrvBuilder *builder,
+                          char *value);
 
 GLIB_AVAILABLE_IN_2_68
 GStrv g_strv_builder_end (GStrvBuilder *builder);

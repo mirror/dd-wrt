@@ -31,16 +31,15 @@
 
 
 /**
- * SECTION:gthemedicon
- * @short_description: Icon theming support
- * @include: gio/gio.h
- * @see_also: #GIcon, #GLoadableIcon
+ * GThemedIcon:
  *
- * #GThemedIcon is an implementation of #GIcon that supports icon themes.
- * #GThemedIcon contains a list of all of the icons present in an icon
- * theme, so that icons can be looked up quickly. #GThemedIcon does
+ * `GThemedIcon` is an implementation of [iface@Gio.Icon] that supports icon
+ * themes.
+ *
+ * `GThemedIcon` contains a list of all of the icons present in an icon
+ * theme, so that icons can be looked up quickly. `GThemedIcon` does
  * not provide actual pixmaps for icons, just the icon names.
- * Ideally something like gtk_icon_theme_choose_icon() should be used to
+ * Ideally something like [method@Gtk.IconTheme.choose_icon] should be used to
  * resolve the list of names so that fallback icons work nicely with
  * themes that inherit other themes.
  **/
@@ -180,9 +179,7 @@ g_themed_icon_class_init (GThemedIconClass *klass)
    * The icon name.
    */
   g_object_class_install_property (gobject_class, PROP_NAME,
-                                   g_param_spec_string ("name",
-                                                        P_("name"),
-                                                        P_("The name of the icon"),
+                                   g_param_spec_string ("name", NULL, NULL,
                                                         NULL,
                                                         G_PARAM_CONSTRUCT_ONLY | G_PARAM_WRITABLE | G_PARAM_STATIC_NAME | G_PARAM_STATIC_BLURB | G_PARAM_STATIC_NICK));
 
@@ -192,9 +189,7 @@ g_themed_icon_class_init (GThemedIconClass *klass)
    * A %NULL-terminated array of icon names.
    */
   g_object_class_install_property (gobject_class, PROP_NAMES,
-                                   g_param_spec_boxed ("names",
-                                                       P_("names"),
-                                                       P_("An array containing the icon names"),
+                                   g_param_spec_boxed ("names", NULL, NULL,
                                                        G_TYPE_STRV,
                                                        G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_NAME | G_PARAM_STATIC_BLURB | G_PARAM_STATIC_NICK));
 
@@ -218,9 +213,7 @@ g_themed_icon_class_init (GThemedIconClass *klass)
    * ]|
    */
   g_object_class_install_property (gobject_class, PROP_USE_DEFAULT_FALLBACKS,
-                                   g_param_spec_boolean ("use-default-fallbacks",
-                                                         P_("use default fallbacks"),
-                                                         P_("Whether to use default fallbacks found by shortening the name at “-” characters. Ignores names after the first if multiple names are given."),
+                                   g_param_spec_boolean ("use-default-fallbacks", NULL, NULL,
                                                          FALSE,
                                                          G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_NAME | G_PARAM_STATIC_BLURB | G_PARAM_STATIC_NICK));
 }

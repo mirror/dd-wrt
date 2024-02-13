@@ -242,6 +242,7 @@ xdp_dbus_generated = custom_target('xdp-dbus',
              'org.freedesktop.portal.Trash.xml'],
     output : ['xdp-dbus.h', 'xdp-dbus.c'],
     depend_files : gdbus_codegen_built_files,
+    depends : gdbus_codegen_built_targets,
     command : [python, gdbus_codegen,
                '--interface-prefix', 'org.freedesktop.portal.',
                '--output-directory', '@OUTDIR@',
@@ -254,6 +255,7 @@ gdbus_daemon_generated = custom_target('gdbus-daemon-generated',
     input : ['dbus-daemon.xml'],
     output : ['gdbus-daemon-generated.h', 'gdbus-daemon-generated.c'],
     depend_files : gdbus_codegen_built_files,
+    depends : gdbus_codegen_built_targets,
     command : [python, gdbus_codegen,
                '--interface-prefix', 'org.',
                '--output-directory', '@OUTDIR@',
@@ -339,7 +341,6 @@ local_sources = files(
 
 platform_deps = []
 internal_deps = []
-appinfo_sources = []
 contenttype_sources = []
 portal_sources = []
 unix_sources = []
@@ -392,7 +393,7 @@ if host_system != 'windows'
   if glib_have_cocoa
     settings_sources += files('gnextstepsettingsbackend.m')
     contenttype_sources += files('gosxcontenttype.m')
-    appinfo_sources += files('gosxappinfo.m')
+    unix_sources += files('gosxappinfo.m')
     framework_dep = dependency('appleframeworks', modules : ['Foundation', 'CoreFoundation', 'AppKit'])
     platform_deps += [framework_dep]
     if glib_have_os_x_9_or_later
@@ -401,7 +402,7 @@ if host_system != 'windows'
     application_headers += files('gosxappinfo.h')
   else
     contenttype_sources += files('gcontenttype.c')
-    appinfo_sources += files('gdesktopappinfo.c')
+    unix_sources += files('gdesktopappinfo.c')
     gio_unix_include_headers += files('gdesktopappinfo.h')
     launch_desktop_sources = files('gio-launch-desktop.c')
 
@@ -431,7 +432,7 @@ if host_system != 'windows'
     )
   endif
 else
-  appinfo_sources += files('gwin32appinfo.c')
+  win32_sources += files('gwin32appinfo.c')
   contenttype_sources += files('gcontenttype-win32.c')
   platform_deps += [cc.find_library('shlwapi'),
                     cc.find_library('dnsapi'),
@@ -456,13 +457,15 @@ else
     'gwin32sid.h',
   )
 
-  gio_win_rc = configure_file(
-    input: 'gio.rc.in',
-    output: 'gio.rc',
-    configuration: glibconfig_conf,
-  )
-  gio_win_res = windows.compile_resources(gio_win_rc)
-  win32_sources += [gio_win_res]
+  if glib_build_shared
+    gio_win_rc = configure_file(
+      input: 'gio.rc.in',
+      output: 'gio.rc',
+      configuration: glibconfig_conf,
+    )
+    gio_win_res = windows.compile_resources(gio_win_rc)
+    win32_sources += [gio_win_res]
+  endif
 
   gio_win32_include_headers = files(
     'gregistrysettingsbackend.h',
@@ -472,7 +475,7 @@ else
   install_headers(gio_win32_include_headers, subdir : 'gio-win32-2.0/gio')
 endif
 
-gio_sources = files(
+gio_base_sources = files(
   'gappinfo.c',
   'gasynchelper.c',
   'gasyncinitable.c',
@@ -603,11 +606,12 @@ gio_sources = files(
   'gliststore.c',
 )
 
+gio_sources = gio_base_sources
+
 if glib_build_shared
   gio_sources += files ('../glib/gtrace.c')
 endif
 
-gio_sources += appinfo_sources
 gio_sources += contenttype_sources
 gio_sources += gdbus_daemon_sources
 gio_sources += unix_sources
@@ -879,10 +883,8 @@ libgio_dep = declare_dependency(link_with : libgio,
 pkg.generate(libgio,
   requires : ['glib-2.0', 'gobject-2.0'],
   variables : [
-    'datadir=' + '${prefix}' / get_option('datadir'),
     'schemasdir=' + '${datadir}' / schemas_subdir,
     'dtdsdir=' + '${datadir}' / dtds_subdir,
-    'bindir=' + '${prefix}' / get_option('bindir'),
     'giomoduledir=' + pkgconfig_giomodulesdir,
     'gio=' + '${bindir}' / 'gio',
     'gio_querymodules=' + pkgconfig_multiarch_bindir / 'gio-querymodules',
@@ -969,7 +971,7 @@ gio_tool_sources = [
   'gio-tool-tree.c',
 ]
 
-executable('gio', gio_tool_sources,
+gio_tool = executable('gio', gio_tool_sources,
   install : true,
   install_tag : 'bin',
   c_args : gio_c_args,
@@ -1070,20 +1072,11 @@ endif
 
 if multiarch_bindir != get_option('bindir')
   foreach exe : ['gio-querymodules', 'glib-compile-schemas']
-    if meson.version().version_compare('>=0.61.0')
-      install_symlink(
-        exe,
-        install_dir : get_option('bindir'),
-        pointing_to : get_option('prefix') / multiarch_bindir / exe,
-      )
-    else
-      warning(
-        'Please use Meson >= 0.61.0 or create a symlink @1@ -> @2@ in packaging'.format(
-          get_option('prefix') / get_option('bindir') / exe,
-          get_option('prefix') / multiarch_bindir / exe,
-        )
-      )
-    endif
+    install_symlink(
+      exe,
+      install_dir : get_option('bindir'),
+      pointing_to : get_option('prefix') / multiarch_bindir / exe,
+    )
   endforeach
 endif
 

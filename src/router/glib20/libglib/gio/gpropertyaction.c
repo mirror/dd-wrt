@@ -28,17 +28,14 @@
 #include "glibintl.h"
 
 /**
- * SECTION:gpropertyaction
- * @title: GPropertyAction
- * @short_description: A GAction reflecting a GObject property
- * @include: gio/gio.h
+ * GPropertyAction:
  *
- * A #GPropertyAction is a way to get a #GAction with a state value
- * reflecting and controlling the value of a #GObject property.
+ * A `GPropertyAction` is a way to get a [iface@Gio.Action] with a state value
+ * reflecting and controlling the value of a [class@GObject.Object] property.
  *
  * The state of the action will correspond to the value of the property.
  * Changing it will change the property (assuming the requested value
- * matches the requirements as specified in the #GParamSpec).
+ * matches the requirements as specified in the [type@GObject.ParamSpec]).
  *
  * Only the most common types are presently supported.  Booleans are
  * mapped to booleans, strings to strings, signed/unsigned integers to
@@ -46,16 +43,16 @@
  *
  * If the property is an enum then the state will be string-typed and
  * conversion will automatically be performed between the enum value and
- * "nick" string as per the #GEnumValue table.
+ * ‘nick’ string as per the [type@GObject.EnumValue] table.
  *
  * Flags types are not currently supported.
  *
  * Properties of object types, boxed types and pointer types are not
  * supported and probably never will be.
  *
- * Properties of #GVariant types are not currently supported.
+ * Properties of [type@GLib.Variant] types are not currently supported.
  *
- * If the property is boolean-valued then the action will have a NULL
+ * If the property is boolean-valued then the action will have a `NULL`
  * parameter type, and activating the action (with no parameter) will
  * toggle the value of the property.
  *
@@ -64,26 +61,27 @@
  *
  * The general idea here is to reduce the number of locations where a
  * particular piece of state is kept (and therefore has to be synchronised
- * between). #GPropertyAction does not have a separate state that is kept
- * in sync with the property value -- its state is the property value.
+ * between). `GPropertyAction` does not have a separate state that is kept
+ * in sync with the property value — its state is the property value.
  *
- * For example, it might be useful to create a #GAction corresponding to
- * the "visible-child-name" property of a #GtkStack so that the current
- * page can be switched from a menu.  The active radio indication in the
- * menu is then directly determined from the active page of the
- * #GtkStack.
+ * For example, it might be useful to create a [iface@Gio.Action] corresponding
+ * to the `visible-child-name` property of a [`GtkStack`](https://docs.gtk.org/gtk4/class.Stack.html)
+ * so that the current page can be switched from a menu.  The active radio
+ * indication in the menu is then directly determined from the active page of
+ * the `GtkStack`.
  *
- * An anti-example would be binding the "active-id" property on a
- * #GtkComboBox.  This is because the state of the combobox itself is
- * probably uninteresting and is actually being used to control
- * something else.
+ * An anti-example would be binding the `active-id` property on a
+ * [`GtkComboBox`](https://docs.gtk.org/gtk4/class.ComboBox.html). This is
+ * because the state of the combo box itself is probably uninteresting and is
+ * actually being used to control something else.
  *
- * Another anti-example would be to bind to the "visible-child-name"
- * property of a #GtkStack if this value is actually stored in
- * #GSettings.  In that case, the real source of the value is
- * #GSettings.  If you want a #GAction to control a setting stored in
- * #GSettings, see g_settings_create_action() instead, and possibly
- * combine its use with g_settings_bind().
+ * Another anti-example would be to bind to the `visible-child-name`
+ * property of a [`GtkStack`](https://docs.gtk.org/gtk4/class.Stack.html) if
+ * this value is actually stored in [class@Gio.Settings].  In that case, the
+ * real source of the value is* [class@Gio.Settings].  If you want
+ * a [iface@Gio.Action] to control a setting stored in [class@Gio.Settings],
+ * see [method@Gio.Settings.create_action] instead, and possibly combine its
+ * use with [method@Gio.Settings.bind].
  *
  * Since: 2.38
  **/
@@ -97,14 +95,6 @@ struct _GPropertyAction
   const GVariantType *state_type;
   gboolean            invert_boolean;
 };
-
-/**
- * GPropertyAction:
- *
- * This type is opaque.
- *
- * Since: 2.38
- **/
 
 typedef GObjectClass GPropertyActionClass;
 
@@ -313,6 +303,15 @@ g_property_action_set_property_name (GPropertyAction *paction,
   GParamSpec *pspec;
   gchar *detailed;
 
+  /* In case somebody is constructing GPropertyAction without passing
+   * a property name
+   */
+  if (G_UNLIKELY (property_name == NULL || property_name[0] == '\0'))
+    {
+      g_critical ("Attempted to use an empty property name for GPropertyAction");
+      return;
+    }
+
   pspec = g_object_class_find_property (G_OBJECT_GET_CLASS (paction->object), property_name);
 
   if (pspec == NULL)
@@ -408,12 +407,24 @@ g_property_action_get_property (GObject    *object,
 }
 
 static void
+g_property_action_dispose (GObject *object)
+{
+  GPropertyAction *paction = G_PROPERTY_ACTION (object);
+
+  if (paction->object != NULL)
+    {
+      g_signal_handlers_disconnect_by_func (paction->object, g_property_action_notify, paction);
+      g_clear_object (&paction->object);
+    }
+
+  G_OBJECT_CLASS (g_property_action_parent_class)->dispose (object);
+}
+
+static void
 g_property_action_finalize (GObject *object)
 {
   GPropertyAction *paction = G_PROPERTY_ACTION (object);
 
-  g_signal_handlers_disconnect_by_func (paction->object, g_property_action_notify, paction);
-  g_object_unref (paction->object);
   g_free (paction->name);
 
   G_OBJECT_CLASS (g_property_action_parent_class)
@@ -445,6 +456,7 @@ g_property_action_class_init (GPropertyActionClass *class)
 
   object_class->set_property = g_property_action_set_property;
   object_class->get_property = g_property_action_get_property;
+  object_class->dispose = g_property_action_dispose;
   object_class->finalize = g_property_action_finalize;
 
   /**
@@ -456,9 +468,7 @@ g_property_action_class_init (GPropertyActionClass *class)
    * Since: 2.38
    **/
   g_object_class_install_property (object_class, PROP_NAME,
-                                   g_param_spec_string ("name",
-                                                        P_("Action Name"),
-                                                        P_("The name used to invoke the action"),
+                                   g_param_spec_string ("name", NULL, NULL,
                                                         NULL,
                                                         G_PARAM_READWRITE |
                                                         G_PARAM_CONSTRUCT_ONLY |
@@ -473,9 +483,7 @@ g_property_action_class_init (GPropertyActionClass *class)
    * Since: 2.38
    **/
   g_object_class_install_property (object_class, PROP_PARAMETER_TYPE,
-                                   g_param_spec_boxed ("parameter-type",
-                                                       P_("Parameter Type"),
-                                                       P_("The type of GVariant passed to activate()"),
+                                   g_param_spec_boxed ("parameter-type", NULL, NULL,
                                                        G_TYPE_VARIANT_TYPE,
                                                        G_PARAM_READABLE |
                                                        G_PARAM_STATIC_STRINGS));
@@ -491,9 +499,7 @@ g_property_action_class_init (GPropertyActionClass *class)
    * Since: 2.38
    **/
   g_object_class_install_property (object_class, PROP_ENABLED,
-                                   g_param_spec_boolean ("enabled",
-                                                         P_("Enabled"),
-                                                         P_("If the action can be activated"),
+                                   g_param_spec_boolean ("enabled", NULL, NULL,
                                                          TRUE,
                                                          G_PARAM_READABLE |
                                                          G_PARAM_STATIC_STRINGS));
@@ -507,9 +513,7 @@ g_property_action_class_init (GPropertyActionClass *class)
    * Since: 2.38
    **/
   g_object_class_install_property (object_class, PROP_STATE_TYPE,
-                                   g_param_spec_boxed ("state-type",
-                                                       P_("State Type"),
-                                                       P_("The type of the state kept by the action"),
+                                   g_param_spec_boxed ("state-type", NULL, NULL,
                                                        G_TYPE_VARIANT_TYPE,
                                                        G_PARAM_READABLE |
                                                        G_PARAM_STATIC_STRINGS));
@@ -522,9 +526,7 @@ g_property_action_class_init (GPropertyActionClass *class)
    * Since: 2.38
    **/
   g_object_class_install_property (object_class, PROP_STATE,
-                                   g_param_spec_variant ("state",
-                                                         P_("State"),
-                                                         P_("The state the action is in"),
+                                   g_param_spec_variant ("state", NULL, NULL,
                                                          G_VARIANT_TYPE_ANY,
                                                          NULL,
                                                          G_PARAM_READABLE |
@@ -540,9 +542,7 @@ g_property_action_class_init (GPropertyActionClass *class)
    * Since: 2.38
    **/
   g_object_class_install_property (object_class, PROP_OBJECT,
-                                   g_param_spec_object ("object",
-                                                        P_("Object"),
-                                                        P_("The object with the property to wrap"),
+                                   g_param_spec_object ("object", NULL, NULL,
                                                         G_TYPE_OBJECT,
                                                         G_PARAM_WRITABLE |
                                                         G_PARAM_CONSTRUCT_ONLY |
@@ -559,9 +559,7 @@ g_property_action_class_init (GPropertyActionClass *class)
    * Since: 2.38
    **/
   g_object_class_install_property (object_class, PROP_PROPERTY_NAME,
-                                   g_param_spec_string ("property-name",
-                                                        P_("Property name"),
-                                                        P_("The name of the property to wrap"),
+                                   g_param_spec_string ("property-name", NULL, NULL,
                                                         NULL,
                                                         G_PARAM_WRITABLE |
                                                         G_PARAM_CONSTRUCT_ONLY |
@@ -576,9 +574,7 @@ g_property_action_class_init (GPropertyActionClass *class)
    * Since: 2.46
    */
   g_object_class_install_property (object_class, PROP_INVERT_BOOLEAN,
-                                   g_param_spec_boolean ("invert-boolean",
-                                                         P_("Invert boolean"),
-                                                         P_("Whether to invert the value of a boolean property"),
+                                   g_param_spec_boolean ("invert-boolean", NULL, NULL,
                                                          FALSE,
                                                          G_PARAM_READWRITE |
                                                          G_PARAM_CONSTRUCT_ONLY |

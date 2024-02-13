@@ -60,43 +60,6 @@
 
 
 /**
- * SECTION:fileutils
- * @title: File Utilities
- * @short_description: various file-related functions
- *
- * Do not use these APIs unless you are porting a POSIX application to Windows.
- * A more high-level file access API is provided as GIO — see the documentation
- * for #GFile.
- *
- * There is a group of functions which wrap the common POSIX functions
- * dealing with filenames (g_open(), g_rename(), g_mkdir(), g_stat(),
- * g_unlink(), g_remove(), g_fopen(), g_freopen()). The point of these
- * wrappers is to make it possible to handle file names with any Unicode
- * characters in them on Windows without having to use ifdefs and the
- * wide character API in the application code.
- *
- * On some Unix systems, these APIs may be defined as identical to their POSIX
- * counterparts. For this reason, you must check for and include the necessary
- * header files (such as `fcntl.h`) before using functions like g_creat(). You
- * must also define the relevant feature test macros.
- *
- * The pathname argument should be in the GLib file name encoding.
- * On POSIX this is the actual on-disk encoding which might correspond
- * to the locale settings of the process (or the `G_FILENAME_ENCODING`
- * environment variable), or not.
- *
- * On Windows the GLib file name encoding is UTF-8. Note that the
- * Microsoft C library does not use UTF-8, but has separate APIs for
- * current system code page and wide characters (UTF-16). The GLib
- * wrappers call the wide character API if present (on modern Windows
- * systems), otherwise convert to/from the system code page.
- *
- * Another group of functions allows to open and read directories
- * in the GLib file name encoding. These are g_dir_open(),
- * g_dir_read_name(), g_dir_rewind(), g_dir_close().
- */
-
-/**
  * GFileError:
  * @G_FILE_ERROR_EXIST: Operation not permitted; only the owner of
  *     the file (or other resource) or processes with special privileges
@@ -750,9 +713,9 @@ get_contents_stdio (const gchar  *filename,
               g_set_error (error,
                            G_FILE_ERROR,
                            G_FILE_ERROR_NOMEM,
-                           g_dngettext (GETTEXT_PACKAGE, "Could not allocate %lu byte to read file “%s”", "Could not allocate %lu bytes to read file “%s”", (gulong)total_allocated),
-                           (gulong) total_allocated,
-			   display_filename);
+                           g_dngettext (GETTEXT_PACKAGE, "Could not allocate %" G_GSIZE_MODIFIER "u byte to read file “%s”", "Could not allocate %" G_GSIZE_MODIFIER "u bytes to read file “%s”", total_allocated),
+                           total_allocated,
+                           display_filename);
               g_free (display_filename);
 
               goto error;
@@ -830,7 +793,19 @@ get_contents_regfile (const gchar  *filename,
   gsize size;
   gsize alloc_size;
   gchar *display_filename;
-  
+
+  if ((G_MAXOFFSET >= G_MAXSIZE) && (stat_buf->st_size > (goffset) (G_MAXSIZE - 1)))
+    {
+      display_filename = g_filename_display_name (filename);
+      g_set_error (error,
+                   G_FILE_ERROR,
+                   G_FILE_ERROR_FAILED,
+                   _("File “%s” is too large"),
+                   display_filename);
+      g_free (display_filename);
+      goto error;
+    }
+
   size = stat_buf->st_size;
 
   alloc_size = size + 1;
@@ -842,9 +817,9 @@ get_contents_regfile (const gchar  *filename,
       g_set_error (error,
                    G_FILE_ERROR,
                    G_FILE_ERROR_NOMEM,
-                           g_dngettext (GETTEXT_PACKAGE, "Could not allocate %lu byte to read file “%s”", "Could not allocate %lu bytes to read file “%s”", (gulong)alloc_size),
-                   (gulong) alloc_size, 
-		   display_filename);
+                   g_dngettext (GETTEXT_PACKAGE, "Could not allocate %" G_GSIZE_MODIFIER "u byte to read file “%s”", "Could not allocate %" G_GSIZE_MODIFIER "u bytes to read file “%s”", alloc_size),
+                   alloc_size,
+                   display_filename);
       g_free (display_filename);
       goto error;
     }
@@ -891,7 +866,7 @@ get_contents_regfile (const gchar  *filename,
 
   return TRUE;
 
- error:
+error:
 
   close (fd);
   
@@ -1137,6 +1112,36 @@ fd_should_be_fsynced (int                    fd,
 #else  /* if !HAVE_FSYNC */
   return FALSE;
 #endif  /* !HAVE_FSYNC */
+}
+
+static gboolean
+truncate_file (int          fd,
+               off_t        length,
+               const char  *dest_file,
+               GError     **error)
+{
+  while (
+#ifdef G_OS_WIN32
+    g_win32_ftruncate (fd, length) < 0
+#else
+    ftruncate (fd, length) < 0
+#endif
+    )
+    {
+      int saved_errno = errno;
+
+      if (saved_errno == EINTR)
+        continue;
+
+      if (error != NULL)
+        set_file_error (error,
+                        dest_file,
+                        _("Failed to write file “%s”: ftruncate() failed: %s"),
+                        saved_errno);
+      return FALSE;
+    }
+
+  return TRUE;
 }
 
 /* closes @fd once it’s finished (on success or error) */
@@ -1475,6 +1480,8 @@ consistent_out:
         }
 
       do_fsync = fd_should_be_fsynced (direct_fd, filename, flags);
+      if (!truncate_file (direct_fd, 0, filename, error))
+        return FALSE;
       if (!write_to_file (contents, length, g_steal_fd (&direct_fd), filename,
                           do_fsync, error))
         return FALSE;

@@ -35,35 +35,27 @@
 #endif
 
 /**
- * SECTION:gunixsocketaddress
- * @short_description: UNIX GSocketAddress
- * @include: gio/gunixsocketaddress.h
+ * GUnixSocketAddress:
  *
- * Support for UNIX-domain (also known as local) sockets.
+ * Support for UNIX-domain (also known as local) sockets, corresponding to
+ * `struct sockaddr_un`.
  *
  * UNIX domain sockets are generally visible in the filesystem.
  * However, some systems support abstract socket names which are not
  * visible in the filesystem and not affected by the filesystem
  * permissions, visibility, etc. Currently this is only supported
  * under Linux. If you attempt to use abstract sockets on other
- * systems, function calls may return %G_IO_ERROR_NOT_SUPPORTED
- * errors. You can use g_unix_socket_address_abstract_names_supported()
+ * systems, function calls may return `G_IO_ERROR_NOT_SUPPORTED`
+ * errors. You can use [func@Gio.UnixSocketAddress.abstract_names_supported]
  * to see if abstract names are supported.
  *
- * Since GLib 2.72, #GUnixSocketAddress is available on all platforms. It
+ * Since GLib 2.72, `GUnixSocketAddress` is available on all platforms. It
  * requires underlying system support (such as Windows 10 with `AF_UNIX`) at
  * run time.
  *
  * Before GLib 2.72, `<gio/gunixsocketaddress.h>` belonged to the UNIX-specific
  * GIO interfaces, thus you had to use the `gio-unix-2.0.pc` pkg-config file
  * when using it. This is no longer necessary since GLib 2.72.
- */
-
-/**
- * GUnixSocketAddress:
- *
- * A UNIX-domain (local) socket address, corresponding to a
- * struct sockaddr_un.
  */
 
 enum
@@ -275,23 +267,35 @@ g_unix_socket_address_class_init (GUnixSocketAddressClass *klass)
   gsocketaddress_class->to_native = g_unix_socket_address_to_native;
   gsocketaddress_class->get_native_size = g_unix_socket_address_get_native_size;
 
+  /**
+   * GUnixSocketAddress:path:
+   *
+   * Unix socket path.
+   *
+   * Since: 2.22
+   */
   g_object_class_install_property (gobject_class,
 				   PROP_PATH,
-				   g_param_spec_string ("path",
-							P_("Path"),
-							P_("UNIX socket path"),
+				   g_param_spec_string ("path", NULL, NULL,
 							NULL,
 							G_PARAM_READWRITE |
 							G_PARAM_CONSTRUCT_ONLY |
 							G_PARAM_STATIC_STRINGS));
+
+  /**
+   * GUnixSocketAddress:path-as-array:
+   *
+   * Unix socket path, as a byte array.
+   *
+   * Since: 2.22
+   */
   g_object_class_install_property (gobject_class, PROP_PATH_AS_ARRAY,
-				   g_param_spec_boxed ("path-as-array",
-						       P_("Path array"),
-						       P_("UNIX socket path, as byte array"),
+				   g_param_spec_boxed ("path-as-array", NULL, NULL,
 						       G_TYPE_BYTE_ARRAY,
 						       G_PARAM_READWRITE |
 						       G_PARAM_CONSTRUCT_ONLY |
 						       G_PARAM_STATIC_STRINGS));
+
   /**
    * GUnixSocketAddress:abstract:
    *
@@ -302,17 +306,21 @@ g_unix_socket_address_class_init (GUnixSocketAddressClass *klass)
    * abstract addresses.
    */
   g_object_class_install_property (gobject_class, PROP_ABSTRACT,
-				   g_param_spec_boolean ("abstract",
-							 P_("Abstract"),
-							 P_("Whether or not this is an abstract address"),
+				   g_param_spec_boolean ("abstract", NULL, NULL,
 							 FALSE,
 							 G_PARAM_READWRITE |
 							 G_PARAM_CONSTRUCT_ONLY |
 							 G_PARAM_STATIC_STRINGS));
+
+  /**
+   * GUnixSocketAddress:address-type:
+   *
+   * The type of Unix socket address.
+   *
+   * Since: 2.22
+   */
   g_object_class_install_property (gobject_class, PROP_ADDRESS_TYPE,
-				   g_param_spec_enum ("address-type",
-						      P_("Address type"),
-						      P_("The type of UNIX socket address"),
+				   g_param_spec_enum ("address-type", NULL, NULL,
 						      G_TYPE_UNIX_SOCKET_ADDRESS_TYPE,
 						      G_UNIX_SOCKET_ADDRESS_PATH,
 						      G_PARAM_READWRITE |

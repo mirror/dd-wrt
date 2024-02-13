@@ -27,21 +27,18 @@
 #include "gmessages.h"
 
 /**
- * SECTION:gstrvbuilder
- * @title: GStrvBuilder
- * @short_description: Helper to create NULL-terminated string arrays.
+ * GStrvBuilder:
  *
- * #GStrvBuilder is a method of easily building dynamically sized
- * NULL-terminated string arrays.
+ * `GStrvBuilder` is a helper object to build a %NULL-terminated string arrays.
  *
  * The following example shows how to build a two element array:
  *
- * |[<!-- language="C" -->
+ * ```c
  *   g_autoptr(GStrvBuilder) builder = g_strv_builder_new ();
  *   g_strv_builder_add (builder, "hello");
  *   g_strv_builder_add (builder, "world");
  *   g_auto(GStrv) array = g_strv_builder_end (builder);
- * ]|
+ * ```
  *
  * Since: 2.68
  */
@@ -157,6 +154,24 @@ g_strv_builder_add_many (GStrvBuilder *builder,
   while ((str = va_arg (var_args, gchar *)) != NULL)
     g_strv_builder_add (builder, str);
   va_end (var_args);
+}
+
+/**
+ * g_strv_builder_take:
+ * @builder: a #GStrvBuilder
+ * @value: (transfer full): a string.
+ *     Ownership of the string is transferred to the #GStrvBuilder
+ *
+ * Add a string to the end of the array. After @value belongs to the
+ * #GStrvBuilder and may no longer be modified by the caller.
+ *
+ * Since 2.80
+ */
+void
+g_strv_builder_take (GStrvBuilder *builder,
+                     char         *value)
+{
+  g_ptr_array_add (&builder->array, value);
 }
 
 /**

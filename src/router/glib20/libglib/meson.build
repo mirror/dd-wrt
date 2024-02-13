@@ -1,7 +1,7 @@
 project('glib', 'c',
-  version : '2.78.0',
+  version : '2.79.2',
   # NOTE: See the policy in docs/meson-version.md before changing the Meson dependency
-  meson_version : '>= 0.60.0',
+  meson_version : '>= 1.2.0',
   default_options : [
     'buildtype=debugoptimized',
     'warning_level=3',
@@ -65,6 +65,17 @@ if host_system == 'darwin'
   endif
 endif
 
+linux_libc = ''
+if host_system == 'linux'
+  musl_test_code = '''#include <stdlib.h>
+  #if defined __GLIBC__ || defined __UCLIBC__
+  #error "Not in glibc or uclibc"
+  #endif'''
+  if cc.compiles(musl_test_code, name : 'building for musl libc')
+    linux_libc = 'musl'
+  endif
+endif
+
 glib_version = meson.project_version()
 glib_api_version = '2.0'
 version_arr = glib_version.split('.')
@@ -87,6 +98,7 @@ glibinc = include_directories('glib')
 gobjectinc = include_directories('gobject')
 gmoduleinc = include_directories('gmodule')
 gioinc = include_directories('gio')
+girepoinc = include_directories('girepository')
 
 glib_prefix = get_option('prefix')
 glib_bindir = join_paths(glib_prefix, get_option('bindir'))
@@ -159,6 +171,10 @@ common_test_env = [
   'MALLOC_CHECK_=2',
 ]
 
+if get_option('werror')
+  common_test_env += 'LINT_WARNINGS_ARE_ERRORS=1'
+endif
+
 # Note: this may cause the tests output not to be printed when running in
 # verbose mode, see https://github.com/mesonbuild/meson/issues/11185
 # Can be changed it to 'exitcode' if required during development.
@@ -179,6 +195,13 @@ add_test_setup('unstable_tests',
   # Empty test setup, used for having different results set for flaky tests
   # Sadly we can't use (https://github.com/mesonbuild/meson/issues/10934):
   #suites: ['flaky', 'unstable']
+)
+
+add_test_setup('thorough',
+  exclude_suites: ['flaky', 'failing', 'performance'],
+  env: common_test_env,
+  timeout_multiplier: 20,
+  exe_wrapper: [find_program('./.gitlab-ci/thorough-test-wrapper.sh', required: true)],
 )
 
 # Allow the tests to be easily run under valgrind using --setup=valgrind
@@ -211,6 +234,10 @@ add_project_arguments('-D_GNU_SOURCE', language: 'c')
 
 if host_system == 'qnx'
   add_project_arguments('-D_QNX_SOURCE', language: 'c')
+endif
+
+if host_system == 'windows'
+  add_project_arguments(['-DUNICODE', '-D_UNICODE'], language: 'c')
 endif
 
 # Disable strict aliasing;
@@ -359,6 +386,7 @@ headers = [
   'fstab.h',
   'grp.h',
   'inttypes.h',
+  'libproc.h',
   'limits.h',
   'locale.h',
   'mach/mach_time.h',
@@ -397,6 +425,7 @@ headers = [
   'sys/vfstab.h',
   'sys/vmount.h',
   'sys/wait.h',
+  'syslog.h',
   'termios.h',
   'unistd.h',
   'values.h',
@@ -482,6 +511,7 @@ struct_members = [
                            #include <dirent.h>''' ],
   [ 'statvfs', 'f_basetype', '#include <sys/statvfs.h>' ],
   [ 'statvfs', 'f_fstypename', '#include <sys/statvfs.h>' ],
+  [ 'statvfs', 'f_type', '#include <sys/statvfs.h>' ],
   [ 'tm', 'tm_gmtoff', '#include <time.h>' ],
   [ 'tm', '__tm_gmtoff', '#include <time.h>' ],
 ]
@@ -493,7 +523,16 @@ foreach m : struct_members
   else
     header_check_prefix = header_check_prefix + '#include <sys/stat.h>'
   endif
-  if cc.has_member('struct ' + m[0], m[1], prefix : header_check_prefix)
+  # Reimplement cc.has_member() to workaround compiler warning
+  # FIXME: https://github.com/mesonbuild/meson/pull/12818
+  code = header_check_prefix + '''
+    void bar(void) {
+        struct ''' + m[0] + ''' foo;
+        (void) ( foo.''' + m[1] + ''' );
+        (void) foo;
+    }
+    '''
+  if cc.compiles(code, name : 'type "struct ' + m[0] + '" has member "' + m[1] + '"')
     define = 'HAVE_STRUCT_@0@_@1@'.format(m[0].to_upper(), m[1].underscorify().to_upper())
     glib_conf.set(define, 1)
     glib_conf_prefix = glib_conf_prefix + '#define @0@ 1\n'.format(define)
@@ -629,6 +668,7 @@ functions = [
   'free_aligned_sized',
   'free_sized',
   'fsync',
+  'ftruncate64',
   'getauxval',
   'getc_unlocked',
   'getfsstat',
@@ -987,6 +1027,7 @@ static __uint128_t v1 = 100;
 static __uint128_t v2 = 10;
 static __uint128_t u;
 u = v1 / v2;
+(void) u;
 }'''
 if cc.compiles(uint128_t_src, name : '__uint128_t available')
   glib_conf.set('HAVE_UINT128_T', 1)
@@ -1082,7 +1123,7 @@ if cc.compiles('''#include <fcntl.h>
                   #include <sys/types.h>
                   #include <sys/stat.h>
                   void some_func (void) {
-                    open(0, O_DIRECTORY, 0);
+                    open(".", O_DIRECTORY, 0);
                   }''', name : 'open() option O_DIRECTORY')
   glib_conf.set('HAVE_OPEN_O_DIRECTORY', 1)
 endif
@@ -1187,7 +1228,6 @@ int
 doit()
 {
   char buffer[32];
-  va_list args;
   int r;
 
   r = snprintf(buffer, 5, "1234567");
@@ -1274,6 +1314,7 @@ endif
 if cc.links('''#include <langinfo.h>
                int main (int argc, char ** argv) {
                  char *codeset = nl_langinfo (CODESET);
+                 (void) codeset;
                  return 0;
                }''', name : 'nl_langinfo and CODESET')
   glib_conf.set('HAVE_LANGINFO_CODESET', 1)
@@ -1281,6 +1322,7 @@ if cc.links('''#include <langinfo.h>
 endif
 
 # Check for nl_langinfo and LC_TIME parts that are needed in gdatetime.c
+have_langinfo_time = false
 if cc.links('''#include <langinfo.h>
                int main (int argc, char ** argv) {
                  char *str;
@@ -1293,10 +1335,31 @@ if cc.links('''#include <langinfo.h>
                  str = nl_langinfo (ABMON_12);
                  str = nl_langinfo (DAY_1);
                  str = nl_langinfo (ABDAY_7);
+                 (void) str;
                  return 0;
                }''', name : 'nl_langinfo (PM_STR)')
+  have_langinfo_time = true
   glib_conf.set('HAVE_LANGINFO_TIME', 1)
 endif
+
+# Linux glibc supports ERA, but FreeBSD and macOS don’t
+if cc.links('''#include <langinfo.h>
+               int main (int argc, char **argv) {
+                 char *str;
+                 str = nl_langinfo (ERA);
+                 str = nl_langinfo (ERA_D_T_FMT);
+                 str = nl_langinfo (ERA_D_FMT);
+                 str = nl_langinfo (ERA_T_FMT);
+                 str = nl_langinfo (_NL_TIME_ERA_NUM_ENTRIES);
+                 (void) str;
+                 return 0;
+               }''', name : 'nl_langinfo (ERA)')
+  glib_conf.set('HAVE_LANGINFO_ERA', 1)
+  if not have_langinfo_time
+    error('nl_langinfo(ERA) is supported but more basic nl_langinfo() functionality like PM_STR is not')
+  endif
+endif
+
 if cc.links('''#include <langinfo.h>
                int main (int argc, char ** argv) {
                  char *str;
@@ -1310,9 +1373,13 @@ if cc.links('''#include <langinfo.h>
                  str = nl_langinfo (_NL_CTYPE_OUTDIGIT7_MB);
                  str = nl_langinfo (_NL_CTYPE_OUTDIGIT8_MB);
                  str = nl_langinfo (_NL_CTYPE_OUTDIGIT9_MB);
+                 (void) str;
                  return 0;
                }''', name : 'nl_langinfo (_NL_CTYPE_OUTDIGITn_MB)')
   glib_conf.set('HAVE_LANGINFO_OUTDIGIT', 1)
+  if not have_langinfo_time
+    error('nl_langinfo(_NL_CTYPE_OUTDIGITn_MB) is supported but more basic nl_langinfo() functionality like PM_STR is not')
+  endif
 endif
 
 # Check for nl_langinfo and alternative month names
@@ -1334,9 +1401,13 @@ if cc.links('''#ifndef _GNU_SOURCE
                  str = nl_langinfo (ALTMON_10);
                  str = nl_langinfo (ALTMON_11);
                  str = nl_langinfo (ALTMON_12);
+                 (void) str;
                  return 0;
                }''', name : 'nl_langinfo (ALTMON_n)')
   glib_conf.set('HAVE_LANGINFO_ALTMON', 1)
+  if not have_langinfo_time
+    error('nl_langinfo(ALTMON_n) is supported but more basic nl_langinfo() functionality like PM_STR is not')
+  endif
 endif
 
 # Check for nl_langinfo and abbreviated alternative month names
@@ -1358,18 +1429,26 @@ if cc.links('''#ifndef _GNU_SOURCE
                  str = nl_langinfo (_NL_ABALTMON_10);
                  str = nl_langinfo (_NL_ABALTMON_11);
                  str = nl_langinfo (_NL_ABALTMON_12);
+                 (void) str;
                  return 0;
                }''', name : 'nl_langinfo (_NL_ABALTMON_n)')
   glib_conf.set('HAVE_LANGINFO_ABALTMON', 1)
+  if not have_langinfo_time
+    error('nl_langinfo(_NL_ABALTMON_n) is supported but more basic nl_langinfo() functionality like PM_STR is not')
+  endif
 endif
 
 # Check for nl_langinfo and _NL_TIME_CODESET
 if cc.links('''#include <langinfo.h>
                int main (int argc, char ** argv) {
                  char *codeset = nl_langinfo (_NL_TIME_CODESET);
+                 (void) codeset;
                  return 0;
                }''', name : 'nl_langinfo and _NL_TIME_CODESET')
   glib_conf.set('HAVE_LANGINFO_TIME_CODESET', 1)
+  if not have_langinfo_time
+    error('nl_langinfo(_NL_TIME_CODESET) is supported but more basic nl_langinfo() functionality like PM_STR is not')
+  endif
 endif
 
 # Check if C compiler supports the 'signed' keyword
@@ -1434,6 +1513,7 @@ if cc.compiles('''#include <sys/types.h>
                   #include <inttypes.h>
                   void some_func (void) {
                     uintmax_t i = (uintmax_t) -1;
+                    (void) i;
                   }''', name : 'uintmax_t in inttypes.h')
   glib_conf.set('HAVE_INTTYPES_H_WITH_UINTMAX', 1)
   found_uintmax_t = true
@@ -1446,6 +1526,7 @@ if cc.compiles('''#include <sys/types.h>
                   #include <stdint.h>
                   void some_func (void) {
                     uintmax_t i = (uintmax_t) -1;
+                    (void) i;
                   }''', name : 'uintmax_t in stdint.h')
   glib_conf.set('HAVE_STDINT_H_WITH_UINTMAX', 1)
   found_uintmax_t = true
@@ -1495,6 +1576,7 @@ if long_long_size == long_size
                     int main () {
                       int64_t i1 = 1;
                       long *i2 = &i1;
+                      (void) i2;
                       return 1;
                     }''', name : 'int64_t is long')
     int64_t_typedef = 'long'
@@ -1507,9 +1589,12 @@ if long_long_size == long_size
                       int main () {
                         int64_t i1 = 1;
                         long long *i2 = &i1;
+                        (void) i2;
                         return 1;
                       }''', name : 'int64_t is long long')
     int64_t_typedef = 'long long'
+  else
+    error('Cannot detect int64_t typedef')
   endif
 endif
 
@@ -1649,7 +1734,7 @@ if cc.get_id() == 'gcc' or cc.get_id() == 'clang'
     g_sizet_compatibility += { type_name: size_compatibility and
       cc.compiles(
         '''#include <stddef.h>
-        size_t f (size_t *i) { return *i + 1; }
+        static size_t f (size_t *i) { return *i + 1; }
         int main (void) {
           unsigned ''' + type_name + ''' i = 0;
           f (&i);
@@ -1998,6 +2083,9 @@ else
   if cc.has_header_symbol('pthread.h', 'pthread_getname_np', prefix : pthread_prefix)
     glib_conf.set('HAVE_PTHREAD_GETNAME_NP', 1)
   endif
+  if cc.has_header_symbol('pthread.h', 'pthread_getaffinity_np', prefix : pthread_prefix)
+    glib_conf.set('HAVE_PTHREAD_GETAFFINITY_NP', 1)
+  endif
 
   # Assume that pthread_setname_np is available in some form; same as configure
   if cc.links(pthread_prefix + '''
@@ -2105,7 +2193,7 @@ if not pcre2.found()
   # static flags are automatically enabled by the subproject if it's built
   # with default_library=static
   use_pcre2_static_flag = false
-elif host_system == 'windows'
+elif host_system == 'windows' and pcre2.type_name() != 'internal'
   pcre2_static = cc.links('''#define PCRE2_STATIC
                              #define PCRE2_CODE_UNIT_WIDTH 8
                              #include <pcre2.h>
@@ -2185,6 +2273,10 @@ libmount_dep = []
 if host_system == 'linux'
   libmount_dep = dependency('mount', version : '>=2.23', required : get_option('libmount'))
   glib_conf.set('HAVE_LIBMOUNT', libmount_dep.found())
+
+  if libmount_dep.found() and cc.has_function('mnt_monitor_veil_kernel', dependencies: libmount_dep)
+    glib_conf.set('HAVE_MNT_MONITOR_VEIL_KERNEL', 1)
+  endif
 endif
 
 if host_system == 'windows'
@@ -2424,6 +2516,10 @@ with open(output, "w") as f:
   enable_dtrace = true
 endif
 
+if cc.has_header_symbol('sys/ptrace.h', 'PTRACE_O_EXITKILL')
+  glib_conf.set('HAVE_PTRACE_O_EXITKILL', 1)
+endif
+
 # systemtap
 want_systemtap = get_option('systemtap')
 enable_systemtap = false
@@ -2440,15 +2536,31 @@ if want_systemtap and enable_dtrace
   enable_systemtap = true
 endif
 
+# introspection
+gir_scanner = find_program('g-ir-scanner', required: get_option('introspection'))
+enable_gir = get_option('introspection').allowed() and gir_scanner.found() and meson.can_run_host_binaries()
+
+if get_option('introspection').enabled() and not meson.can_run_host_binaries()
+  error('Running binaries on the build host needs to be supported to build with -Dintrospection=enabled')
+endif
+
+gir_args = [
+  '--quiet',
+]
+
 pkg = import('pkgconfig')
 windows = import('windows')
+gnome = import('gnome')
+
 subdir('tools')
 subdir('glib')
 subdir('gobject')
 subdir('gthread')
 subdir('gmodule')
 subdir('gio')
+subdir('girepository')
 subdir('fuzzing')
+subdir('tests')
 
 # xgettext is optional (on Windows for instance)
 if find_program('xgettext', required : get_option('nls')).found()
@@ -2477,19 +2589,10 @@ endif
 
 configure_file(output : 'config.h', configuration : glib_conf)
 
-if get_option('man')
-  xsltproc = find_program('xsltproc', required : true)
-  xsltproc_command = [
-    xsltproc,
-    '--nonet',
-    '--stringparam', 'man.output.quietly', '1',
-    '--stringparam', 'funcsynopsis.style', 'ansi',
-    '--stringparam', 'man.th.extra1.suppress', '1',
-    '--stringparam', 'man.authors.section.enabled', '0',
-    '--stringparam', 'man.copyright.section.enabled', '0',
-    '-o', '@OUTPUT@',
-    'http://docbook.sourceforge.net/release/xsl/current/manpages/docbook.xsl',
-    '@INPUT@',
+rst2man = find_program('rst2man', 'rst2man.py', required: get_option('man-pages'))
+if rst2man.found()
+  rst2man_flags = [
+    '--syntax-highlight=none',
   ]
   man1_dir = join_paths(glib_prefix, get_option('mandir'), 'man1')
 endif
@@ -2512,6 +2615,12 @@ if build_machine.system() != host_system
     'build cpu' : build_machine.cpu_family(),
     'build endian' : build_machine.endian(),
     'build system' : build_machine.system(),
+  }, section: 'Build environment')
+endif
+
+if linux_libc != ''
+  summary({
+    'linux_libc' : linux_libc
   }, section: 'Build environment')
 endif
 
@@ -2547,11 +2656,11 @@ endif
 
 summary({
   'xattr' : xattr_dep.length() > 0,
-  'man' : get_option('man'),
+  'man-pages' : get_option('man-pages'),
   'dtrace' : get_option('dtrace'),
   'systemtap' : enable_systemtap,
   'sysprof' : libsysprof_capture_dep.found(),
-  'gtk_doc' : get_option('gtk_doc'),
+  'documentation' : get_option('documentation'),
   'bsymbolic_functions' : get_option('bsymbolic_functions'),
   'force_posix_threads' : get_option('force_posix_threads'),
   'tests' : get_option('tests'),
@@ -2563,4 +2672,5 @@ summary({
   'glib_checks' : get_option('glib_checks'),
   'libelf' : get_option('libelf'),
   'multiarch' : get_option('multiarch'),
+  'introspection' : enable_gir,
 }, section: 'Options')

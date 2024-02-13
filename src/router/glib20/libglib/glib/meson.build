@@ -145,18 +145,18 @@ endif
 
 glib_headers = files(
   'glib.h',
-  'glib-unix.h',
   'glib-object.h',
 )
 install_headers(glib_headers, install_dir : glib_includedir)
 
+if host_system != 'windows'
+  glib_unix_headers = files('glib-unix.h')
+  install_headers(glib_unix_headers, install_dir : glib_includedir)
+endif
+
 if host_system == 'windows'
   install_headers([ 'msvc_recommended_pragmas.h' ], install_dir : glib_includedir)
 endif
-
-# Expose as variable to be used by gobject-introspection
-# when it includes GLib as a subproject
-glib_unix_h = files('glib-unix.h')
 
 glib_deprecated_headers = files(
   'deprecated/gallocator.h',
@@ -247,13 +247,17 @@ glib_sub_headers = files(
   'gvarianttype.h',
   'gvariant.h',
   'gversion.h',
-  'gwin32.h',
   'gprintf.h',
 )
 
 install_headers(glib_sub_headers, install_dir : glib_sub_includedir)
 
-deprecated_sources = files(
+if host_system == 'windows'
+  glib_win32_headers = files('gwin32.h')
+  install_headers(glib_win32_headers, install_dir : glib_sub_includedir)
+endif
+
+glib_deprecated_sources = files(
   'deprecated/gallocator.c',
   'deprecated/gcache.c',
   'deprecated/gcompletion.c',
@@ -277,6 +281,7 @@ glib_sources += files(
   'gdataset.c',
   'gdate.c',
   'gdatetime.c',
+  'gdatetime-private.c',
   'gdir.c',
   'genviron.c',
   'gerror.c',
@@ -326,7 +331,6 @@ glib_sources += files(
   'gtimer.c',
   'gtimezone.c',
   'gtrace.c',
-  'gtrace-private.h',
   'gtranslit.c',
   'gtrashstack.c',
   'gtree.c',
@@ -336,9 +340,7 @@ glib_sources += files(
   'gunicollate.c',
   'gunidecomp.c',
   'guri.c',
-  'guriprivate.h',
   'gutils.c',
-  'gutilsprivate.h',
   'guuid.c',
   'gvariant.c',
   'gvariant-core.c',
@@ -369,7 +371,7 @@ if host_system == 'windows'
     glib_sources += files('dirent/wdirent.c')
   endif
 else
-  glib_sources += files('glib-unix.c', 'glib-unixprivate.h', 'gspawn.c', 'giounix.c')
+  glib_sources += files('glib-unix.c', 'gspawn.c', 'giounix.c')
   platform_deps = []
 endif
 
@@ -407,7 +409,7 @@ endif
 glib_c_args = ['-DG_LOG_DOMAIN="GLib"'] + glib_c_args_internal + pcre2_static_args
 libglib = library('glib-2.0',
   glib_dtrace_obj, glib_dtrace_hdr,
-  sources : [deprecated_sources, glib_sources],
+  sources : [glib_deprecated_sources, glib_sources],
   version : library_version,
   soversion : soversion,
   darwin_versions : darwin_versions,
@@ -445,8 +447,6 @@ pkg.generate(libglib,
   subdirs : ['glib-2.0'],
   extra_cflags : ['-I${libdir}/glib-2.0/include'] + win32_cflags,
   variables : [
-    'bindir=' + '${prefix}' / get_option('bindir'),
-    'datadir=' + '${prefix}' / get_option('datadir'),
     'glib_genmarshal=' + '${bindir}' / 'glib-genmarshal',
     'gobject_query=' + '${bindir}' / 'gobject-query',
     'glib_mkenums=' + '${bindir}' / 'glib-mkenums',

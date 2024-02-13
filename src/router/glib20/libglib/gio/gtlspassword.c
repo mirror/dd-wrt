@@ -30,15 +30,6 @@
 #include <string.h>
 
 /**
- * SECTION:gtlspassword
- * @title: GTlsPassword
- * @short_description: TLS Passwords for prompting
- * @include: gio/gio.h
- *
- * Holds a password used in TLS.
- */
-
-/**
  * GTlsPassword:
  *
  * An abstract interface representing a password used in TLS. Often used in
@@ -196,27 +187,42 @@ g_tls_password_class_init (GTlsPasswordClass *klass)
   gobject_class->set_property = g_tls_password_set_property;
   gobject_class->finalize = g_tls_password_finalize;
 
+  /**
+   * GTlsPassword:flags:
+   *
+   * Flags about the password.
+   *
+   * Since: 2.30
+   */
   g_object_class_install_property (gobject_class, PROP_FLAGS,
-				   g_param_spec_flags ("flags",
-						       P_("Flags"),
-						       P_("Flags about the password"),
+				   g_param_spec_flags ("flags", NULL, NULL,
 						       G_TYPE_TLS_PASSWORD_FLAGS,
 						       G_TLS_PASSWORD_NONE,
 						       G_PARAM_READWRITE |
 						       G_PARAM_STATIC_STRINGS));
 
+  /**
+   * GTlsPassword:description:
+   *
+   * Description of what the password is for.
+   *
+   * Since: 2.30
+   */
   g_object_class_install_property (gobject_class, PROP_DESCRIPTION,
-				   g_param_spec_string ("description",
-							P_("Description"),
-							P_("Description of what the password is for"),
+				   g_param_spec_string ("description", NULL, NULL,
 							NULL,
 							G_PARAM_READWRITE |
 							G_PARAM_STATIC_STRINGS));
 
+  /**
+   * GTlsPassword:warning:
+   *
+   * Warning about the password.
+   *
+   * Since: 2.30
+   */
   g_object_class_install_property (gobject_class, PROP_WARNING,
-				   g_param_spec_string ("warning",
-							P_("Warning"),
-							P_("Warning about the password"),
+				   g_param_spec_string ("warning", NULL, NULL,
 							NULL,
 							G_PARAM_READWRITE |
 							G_PARAM_STATIC_STRINGS));
@@ -245,7 +251,7 @@ g_tls_password_new (GTlsPasswordFlags  flags,
 /**
  * g_tls_password_get_value: (virtual get_value)
  * @password: a #GTlsPassword object
- * @length: (optional): location to place the length of the password.
+ * @length: (optional) (out caller-allocates): location to place the length of the password.
  *
  * Get the password value. If @length is not %NULL then it will be
  * filled in with the length of the password value. (Note that the
@@ -300,7 +306,7 @@ g_tls_password_set_value (GTlsPassword  *password,
 }
 
 /**
- * g_tls_password_set_value_full:
+ * g_tls_password_set_value_full: (virtual set_value)
  * @password: a #GTlsPassword object
  * @value: (array length=length): the value for the password
  * @length: the length of the password, or -1
@@ -316,7 +322,6 @@ g_tls_password_set_value (GTlsPassword  *password,
  * calculated automatically. (Note that the terminating nul is not
  * considered part of the password in this case.)
  *
- * Virtual: set_value
  * Since: 2.30
  */
 void

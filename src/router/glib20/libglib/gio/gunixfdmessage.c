@@ -15,33 +15,22 @@
  */
 
 /**
- * SECTION:gunixfdmessage
- * @title: GUnixFDMessage
- * @short_description: A GSocketControlMessage containing a GUnixFDList
- * @include: gio/gunixfdmessage.h
- * @see_also: #GUnixConnection, #GUnixFDList, #GSocketControlMessage
+ * GUnixFDMessage:
  *
- * This #GSocketControlMessage contains a #GUnixFDList.
- * It may be sent using g_socket_send_message() and received using
- * g_socket_receive_message() over UNIX sockets (ie: sockets in the
- * %G_SOCKET_FAMILY_UNIX family). The file descriptors are copied
+ * This [class@Gio.SocketControlMessage] contains a [class@Gio.UnixFDList].
+ * It may be sent using [method@Gio.Socket.send_message] and received using
+ * [method@Gio.Socket.receive_message] over UNIX sockets (ie: sockets in the
+ * `G_SOCKET_FAMILY_UNIX` family). The file descriptors are copied
  * between processes by the kernel.
  *
  * For an easier way to send and receive file descriptors over
- * stream-oriented UNIX sockets, see g_unix_connection_send_fd() and
- * g_unix_connection_receive_fd().
+ * stream-oriented UNIX sockets, see [method@Gio.UnixConnection.send_fd] and
+ * [method@Gio.UnixConnection.receive_fd].
  *
  * Note that `<gio/gunixfdmessage.h>` belongs to the UNIX-specific GIO
  * interfaces, thus you have to use the `gio-unix-2.0.pc` pkg-config
- * file when using it.
+ * file or the `GioUnix-2.0` GIR namespace when using it.
  */
-
-/**
- * GUnixFDMessage:
- *
- * #GUnixFDMessage is an opaque data structure and can only be accessed
- * using the following functions.
- **/
 
 #include "config.h"
 
@@ -224,9 +213,15 @@ g_unix_fd_message_class_init (GUnixFDMessageClass *class)
   object_class->set_property = g_unix_fd_message_set_property;
   object_class->get_property = g_unix_fd_message_get_property;
 
+  /**
+   * GUnixFDMessage:fd-list:
+   *
+   * The [class@Gio.UnixFDList] object to send with the message.
+   *
+   * Since: 2.22
+   */
   g_object_class_install_property (object_class, 1,
-    g_param_spec_object ("fd-list", "file descriptor list",
-                         "The GUnixFDList object to send with the message",
+    g_param_spec_object ("fd-list", NULL, NULL,
                          G_TYPE_UNIX_FD_LIST, G_PARAM_STATIC_STRINGS |
                          G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 }

@@ -31,24 +31,14 @@
 #include "gtask.h"
 
 /**
- * SECTION:gnetworkmonitor
- * @title: GNetworkMonitor
- * @short_description: Network status monitor
- * @include: gio/gio.h
+ * GNetworkMonitor:
  *
- * #GNetworkMonitor provides an easy-to-use cross-platform API
+ * `GNetworkMonitor` provides an easy-to-use cross-platform API
  * for monitoring network connectivity. On Linux, the available
  * implementations are based on the kernel's netlink interface and
  * on NetworkManager.
  *
  * There is also an implementation for use inside Flatpak sandboxes.
- */
-
-/**
- * GNetworkMonitor:
- *
- * #GNetworkMonitor monitors the status of network connections and
- * indicates when a possibly-user-visible change has occurred.
  *
  * Since: 2.32
  */
@@ -94,7 +84,7 @@ static GNetworkMonitor *network_monitor_default_singleton = NULL;  /* (owned) (a
 GNetworkMonitor *
 g_network_monitor_get_default (void)
 {
-  if (g_once_init_enter (&network_monitor_default_singleton))
+  if (g_once_init_enter_pointer (&network_monitor_default_singleton))
     {
       GNetworkMonitor *singleton;
 
@@ -102,7 +92,7 @@ g_network_monitor_get_default (void)
                                             "GIO_USE_NETWORK_MONITOR",
                                             NULL);
 
-      g_once_init_leave (&network_monitor_default_singleton, singleton);
+      g_once_init_leave_pointer (&network_monitor_default_singleton, singleton);
     }
 
   return network_monitor_default_singleton;
@@ -362,9 +352,7 @@ g_network_monitor_default_init (GNetworkMonitorInterface *iface)
    * Since: 2.32
    */
   g_object_interface_install_property (iface,
-                                       g_param_spec_boolean ("network-available",
-                                                             P_("Network available"),
-                                                             P_("Whether the network is available"),
+                                       g_param_spec_boolean ("network-available", NULL, NULL,
                                                              FALSE,
                                                              G_PARAM_READABLE |
                                                              G_PARAM_STATIC_STRINGS));
@@ -397,9 +385,7 @@ g_network_monitor_default_init (GNetworkMonitorInterface *iface)
    * Since: 2.46
    */
   g_object_interface_install_property (iface,
-                                       g_param_spec_boolean ("network-metered",
-                                                             P_("Network metered"),
-                                                             P_("Whether the network is metered"),
+                                       g_param_spec_boolean ("network-metered", NULL, NULL,
                                                              FALSE,
                                                              G_PARAM_READABLE |
                                                              G_PARAM_STATIC_STRINGS));
@@ -414,9 +400,7 @@ g_network_monitor_default_init (GNetworkMonitorInterface *iface)
    * Since: 2.44
    */
   g_object_interface_install_property (iface,
-                                       g_param_spec_enum ("connectivity",
-                                                          P_("Network connectivity"),
-                                                          P_("Level of network connectivity"),
+                                       g_param_spec_enum ("connectivity", NULL, NULL,
                                                           G_TYPE_NETWORK_CONNECTIVITY,
                                                           G_NETWORK_CONNECTIVITY_FULL,
                                                           G_PARAM_READABLE |

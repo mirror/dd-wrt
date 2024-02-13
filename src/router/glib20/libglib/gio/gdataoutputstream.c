@@ -30,16 +30,11 @@
 
 
 /**
- * SECTION:gdataoutputstream
- * @short_description: Data Output Stream
- * @include: gio/gio.h
- * @see_also: #GOutputStream
- * 
- * Data output stream implements #GOutputStream and includes functions for 
- * writing data directly to an output stream.
+ * GDataOutputStream:
  *
- **/
-
+ * Data output stream implements [class@Gio.OutputStream] and includes functions
+ * for writing data directly to an output stream.
+ */
 
 
 struct _GDataOutputStreamPrivate {
@@ -99,9 +94,7 @@ g_data_output_stream_class_init (GDataOutputStreamClass *klass)
    */
   g_object_class_install_property (object_class,
                                    PROP_BYTE_ORDER,
-                                   g_param_spec_enum ("byte-order",
-                                                      P_("Byte order"),
-                                                      P_("The byte order"),
+                                   g_param_spec_enum ("byte-order", NULL, NULL,
                                                       G_TYPE_DATA_STREAM_BYTE_ORDER,
                                                       G_DATA_STREAM_BYTE_ORDER_BIG_ENDIAN,
                                                       G_PARAM_READWRITE|G_PARAM_STATIC_NAME|G_PARAM_STATIC_BLURB));

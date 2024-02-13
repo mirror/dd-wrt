@@ -36,12 +36,9 @@
 #include "glibintl.h"
 
 /**
- * SECTION:gwin32inputstream
- * @short_description: Streaming input operations for Windows file handles
- * @include: gio/gwin32inputstream.h
- * @see_also: #GInputStream
+ * GWin32InputStream:
  *
- * #GWin32InputStream implements #GInputStream for reading from a
+ * `GWin32InputStream` implements [class@Gio.InputStream] for reading from a
  * Windows file handle.
  *
  * Note that `<gio/gwin32inputstream.h>` belongs to the Windows-specific GIO
@@ -261,9 +258,7 @@ g_win32_input_stream_class_init (GWin32InputStreamClass *klass)
    * Since: 2.26
    */
   props[PROP_HANDLE] =
-    g_param_spec_pointer ("handle",
-                          P_("File handle"),
-                          P_("The file handle to read from"),
+    g_param_spec_pointer ("handle", NULL, NULL,
                           G_PARAM_READABLE |
                           G_PARAM_WRITABLE |
                           G_PARAM_CONSTRUCT_ONLY |
@@ -277,9 +272,7 @@ g_win32_input_stream_class_init (GWin32InputStreamClass *klass)
    * Since: 2.26
    */
   props[PROP_CLOSE_HANDLE] =
-    g_param_spec_boolean ("close-handle",
-                          P_("Close file handle"),
-                          P_("Whether to close the file handle when the stream is closed"),
+    g_param_spec_boolean ("close-handle", NULL, NULL,
                           TRUE,
                           G_PARAM_READABLE |
                           G_PARAM_WRITABLE |

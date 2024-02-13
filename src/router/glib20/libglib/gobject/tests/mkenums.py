@@ -100,6 +100,7 @@ class TestMkenums(unittest.TestCase):
 
         env = os.environ.copy()
         env["LC_ALL"] = "C.UTF-8"
+        env["G_DEBUG"] = "fatal-warnings"
         print("Environment:", env)
 
         # We want to ensure consistent line endings...
@@ -782,6 +783,32 @@ comment: {standard_bottom_comment}
             "ENUM_VALUE_PUBLIC",
             "public",
             "7",
+        )
+
+    def test_comma_in_enum_value(self):
+        """Test use of comma in enum value."""
+        h_contents = """
+        typedef enum {
+          ENUM_VALUE_WITH_COMMA = ',',
+        } TestCommaEnum;
+        """
+
+        result = self.runMkenumsWithHeader(h_contents)
+        self.assertEqual("", result.err)
+        self.assertSingleEnum(
+            result,
+            "TestCommaEnum",
+            "test_comma_enum",
+            "TEST_COMMA_ENUM",
+            "COMMA_ENUM",
+            "TEST",
+            "",
+            "enum",
+            "Enum",
+            "ENUM",
+            "ENUM_VALUE_WITH_COMMA",
+            "comma",
+            44,
         )
 
 

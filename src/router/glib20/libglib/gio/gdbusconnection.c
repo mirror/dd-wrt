@@ -131,59 +131,62 @@
    G_DBUS_CONNECTION_FLAGS_AUTHENTICATION_REQUIRE_SAME_USER)
 
 /**
- * SECTION:gdbusconnection
- * @short_description: D-Bus Connections
- * @include: gio/gio.h
+ * GDBusConnection:
  *
- * The #GDBusConnection type is used for D-Bus connections to remote
- * peers such as a message buses. It is a low-level API that offers a
- * lot of flexibility. For instance, it lets you establish a connection
- * over any transport that can by represented as a #GIOStream.
+ * The `GDBusConnection` type is used for D-Bus connections to remote
+ * peers such as a message buses.
+ *
+ * It is a low-level API that offers a lot of flexibility. For instance,
+ * it lets you establish a connection over any transport that can by represented
+ * as a [class@Gio.IOStream].
  *
  * This class is rarely used directly in D-Bus clients. If you are writing
- * a D-Bus client, it is often easier to use the g_bus_own_name(),
- * g_bus_watch_name() or g_dbus_proxy_new_for_bus() APIs.
+ * a D-Bus client, it is often easier to use the [func@Gio.bus_own_name],
+ * [func@Gio.bus_watch_name] or [func@Gio.DBusProxy.new_for_bus] APIs.
  *
  * As an exception to the usual GLib rule that a particular object must not
- * be used by two threads at the same time, #GDBusConnection's methods may be
- * called from any thread. This is so that g_bus_get() and g_bus_get_sync()
- * can safely return the same #GDBusConnection when called from any thread.
+ * be used by two threads at the same time, `GDBusConnection`s methods may be
+ * called from any thread. This is so that [func@Gio.bus_get] and
+ * [func@Gio.bus_get_sync] can safely return the same `GDBusConnection` when
+ * called from any thread.
  *
- * Most of the ways to obtain a #GDBusConnection automatically initialize it
- * (i.e. connect to D-Bus): for instance, g_dbus_connection_new() and
- * g_bus_get(), and the synchronous versions of those methods, give you an
- * initialized connection. Language bindings for GIO should use
- * g_initable_new() or g_async_initable_new_async(), which also initialize the
- * connection.
+ * Most of the ways to obtain a `GDBusConnection` automatically initialize it
+ * (i.e. connect to D-Bus): for instance, [func@Gio.DBusConnection.new] and
+ * [func@Gio.bus_get], and the synchronous versions of those methods, give you
+ * an initialized connection. Language bindings for GIO should use
+ * [func@Gio.Initable.new] or [func@Gio.AsyncInitable.new_async], which also
+ * initialize the connection.
  *
- * If you construct an uninitialized #GDBusConnection, such as via
- * g_object_new(), you must initialize it via g_initable_init() or
- * g_async_initable_init_async() before using its methods or properties.
- * Calling methods or accessing properties on a #GDBusConnection that has not
+ * If you construct an uninitialized `GDBusConnection`, such as via
+ * [ctor@GObject.Object.new], you must initialize it via [method@Gio.Initable.init] or
+ * [method@Gio.AsyncInitable.init_async] before using its methods or properties.
+ * Calling methods or accessing properties on a `GDBusConnection` that has not
  * completed initialization successfully is considered to be invalid, and leads
  * to undefined behaviour. In particular, if initialization fails with a
- * #GError, the only valid thing you can do with that #GDBusConnection is to
- * free it with g_object_unref().
+ * `GError`, the only valid thing you can do with that `GDBusConnection` is to
+ * free it with [method@GObject.Object.unref].
  *
- * ## An example D-Bus server # {#gdbus-server}
+ * ## An example D-Bus server
  *
  * Here is an example for a D-Bus server:
  * [gdbus-example-server.c](https://gitlab.gnome.org/GNOME/glib/-/blob/HEAD/gio/tests/gdbus-example-server.c)
  *
- * ## An example for exporting a subtree # {#gdbus-subtree-server}
+ * ## An example for exporting a subtree
  *
  * Here is an example for exporting a subtree:
  * [gdbus-example-subtree.c](https://gitlab.gnome.org/GNOME/glib/-/blob/HEAD/gio/tests/gdbus-example-subtree.c)
  *
- * ## An example for file descriptor passing # {#gdbus-unix-fd-client}
+ * ## An example for file descriptor passing
  *
  * Here is an example for passing UNIX file descriptors:
  * [gdbus-unix-fd-client.c](https://gitlab.gnome.org/GNOME/glib/-/blob/HEAD/gio/tests/gdbus-example-unix-fd-client.c)
  *
- * ## An example for exporting a GObject # {#gdbus-export}
+ * ## An example for exporting a GObject
  *
  * Here is an example for exporting a #GObject:
  * [gdbus-example-export.c](https://gitlab.gnome.org/GNOME/glib/-/blob/HEAD/gio/tests/gdbus-example-export.c)
+ *
+ * Since: 2.26
  */
 
 /* ---------------------------------------------------------------------------------------------------- */
@@ -312,14 +315,6 @@ enum {
     FLAG_CLOSED = 1 << 2
 };
 
-/**
- * GDBusConnection:
- *
- * The #GDBusConnection structure contains only private data and
- * should only be accessed using the provided API.
- *
- * Since: 2.26
- */
 struct _GDBusConnection
 {
   /*< private >*/
@@ -820,9 +815,7 @@ g_dbus_connection_class_init (GDBusConnectionClass *klass)
    */
   g_object_class_install_property (gobject_class,
                                    PROP_STREAM,
-                                   g_param_spec_object ("stream",
-                                                        P_("IO Stream"),
-                                                        P_("The underlying streams used for I/O"),
+                                   g_param_spec_object ("stream", NULL, NULL,
                                                         G_TYPE_IO_STREAM,
                                                         G_PARAM_READABLE |
                                                         G_PARAM_WRITABLE |
@@ -841,9 +834,7 @@ g_dbus_connection_class_init (GDBusConnectionClass *klass)
    */
   g_object_class_install_property (gobject_class,
                                    PROP_ADDRESS,
-                                   g_param_spec_string ("address",
-                                                        P_("Address"),
-                                                        P_("D-Bus address specifying potential socket endpoints"),
+                                   g_param_spec_string ("address", NULL, NULL,
                                                         NULL,
                                                         G_PARAM_WRITABLE |
                                                         G_PARAM_CONSTRUCT_ONLY |
@@ -860,9 +851,7 @@ g_dbus_connection_class_init (GDBusConnectionClass *klass)
    */
   g_object_class_install_property (gobject_class,
                                    PROP_FLAGS,
-                                   g_param_spec_flags ("flags",
-                                                       P_("Flags"),
-                                                       P_("Flags"),
+                                   g_param_spec_flags ("flags", NULL, NULL,
                                                        G_TYPE_DBUS_CONNECTION_FLAGS,
                                                        G_DBUS_CONNECTION_FLAGS_NONE,
                                                        G_PARAM_READABLE |
@@ -902,9 +891,7 @@ g_dbus_connection_class_init (GDBusConnectionClass *klass)
    */
   g_object_class_install_property (gobject_class,
                                    PROP_GUID,
-                                   g_param_spec_string ("guid",
-                                                        P_("GUID"),
-                                                        P_("GUID of the server peer"),
+                                   g_param_spec_string ("guid", NULL, NULL,
                                                         NULL,
                                                         G_PARAM_READABLE |
                                                         G_PARAM_WRITABLE |
@@ -923,9 +910,7 @@ g_dbus_connection_class_init (GDBusConnectionClass *klass)
    */
   g_object_class_install_property (gobject_class,
                                    PROP_UNIQUE_NAME,
-                                   g_param_spec_string ("unique-name",
-                                                        P_("unique-name"),
-                                                        P_("Unique name of bus connection"),
+                                   g_param_spec_string ("unique-name", NULL, NULL,
                                                         NULL,
                                                         G_PARAM_READABLE |
                                                         G_PARAM_STATIC_NAME |
@@ -941,9 +926,7 @@ g_dbus_connection_class_init (GDBusConnectionClass *klass)
    */
   g_object_class_install_property (gobject_class,
                                    PROP_CLOSED,
-                                   g_param_spec_boolean ("closed",
-                                                         P_("Closed"),
-                                                         P_("Whether the connection is closed"),
+                                   g_param_spec_boolean ("closed", NULL, NULL,
                                                          FALSE,
                                                          G_PARAM_READABLE |
                                                          G_PARAM_STATIC_NAME |
@@ -964,9 +947,7 @@ g_dbus_connection_class_init (GDBusConnectionClass *klass)
    */
   g_object_class_install_property (gobject_class,
                                    PROP_EXIT_ON_CLOSE,
-                                   g_param_spec_boolean ("exit-on-close",
-                                                         P_("Exit on close"),
-                                                         P_("Whether the process is terminated when the connection is closed"),
+                                   g_param_spec_boolean ("exit-on-close", NULL, NULL,
                                                          FALSE,
                                                          G_PARAM_READABLE |
                                                          G_PARAM_WRITABLE |
@@ -984,9 +965,7 @@ g_dbus_connection_class_init (GDBusConnectionClass *klass)
    */
   g_object_class_install_property (gobject_class,
                                    PROP_CAPABILITY_FLAGS,
-                                   g_param_spec_flags ("capabilities",
-                                                       P_("Capabilities"),
-                                                       P_("Capabilities"),
+                                   g_param_spec_flags ("capabilities", NULL, NULL,
                                                        G_TYPE_DBUS_CAPABILITY_FLAGS,
                                                        G_DBUS_CAPABILITY_FLAGS_NONE,
                                                        G_PARAM_READABLE |
@@ -1003,9 +982,7 @@ g_dbus_connection_class_init (GDBusConnectionClass *klass)
    */
   g_object_class_install_property (gobject_class,
                                    PROP_AUTHENTICATION_OBSERVER,
-                                   g_param_spec_object ("authentication-observer",
-                                                        P_("Authentication Observer"),
-                                                        P_("Object used to assist in the authentication process"),
+                                   g_param_spec_object ("authentication-observer", NULL, NULL,
                                                         G_TYPE_DBUS_AUTH_OBSERVER,
                                                         G_PARAM_WRITABLE |
                                                         G_PARAM_CONSTRUCT_ONLY |
@@ -1851,7 +1828,7 @@ send_message_data_deliver_error (GTask      *task,
   send_message_with_reply_cleanup (task, TRUE);
   CONNECTION_UNLOCK (connection);
 
-  g_task_return_new_error (task, domain, code, "%s", message);
+  g_task_return_new_error_literal (task, domain, code, message);
   g_object_unref (task);
 }
 
@@ -2409,10 +2386,10 @@ cancel_method_on_close (gpointer key, gpointer value, gpointer user_data)
   if (data->delivered)
     return FALSE;
 
-  g_task_return_new_error (task,
-                           G_IO_ERROR,
-                           G_IO_ERROR_CLOSED,
-                           _("The connection is closed"));
+  g_task_return_new_error_literal (task,
+                                   G_IO_ERROR,
+                                   G_IO_ERROR_CLOSED,
+                                   _("The connection is closed"));
 
   /* Ask send_message_with_reply_cleanup not to remove the element from the
    * hash table - we're in the middle of a foreach; that would be unsafe.
@@ -2665,7 +2642,26 @@ initable_init (GInitable     *initable,
       g_propagate_error (error, g_error_copy (connection->initialization_error));
     }
 
-  g_atomic_int_or (&connection->atomic_flags, FLAG_INITIALIZED);
+  /* Don't cache canceled errors. Otherwise other concurrent users of the same connection
+   * object will be canceled as well. */
+  if (g_error_matches (connection->initialization_error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
+    {
+      if (connection->worker != NULL)
+        {
+          _g_dbus_worker_stop (connection->worker);
+          connection->worker = NULL;
+          if (alive_connections != NULL)
+            g_warn_if_fail (g_hash_table_remove (alive_connections, connection));
+        }
+      g_clear_error (&connection->initialization_error);
+      g_clear_object (&connection->stream);
+      g_clear_object (&connection->auth);
+      g_clear_object (&connection->credentials);
+      g_clear_pointer (&connection->guid, g_free);
+      connection->capabilities = 0;
+    }
+  else
+    g_atomic_int_or (&connection->atomic_flags, FLAG_INITIALIZED);
   g_mutex_unlock (&connection->init_lock);
 
   return ret;
@@ -3872,16 +3868,22 @@ schedule_callbacks (GDBusConnection *connection,
   const gchar *member;
   const gchar *path;
   const gchar *arg0;
+  const gchar *arg0_path;
 
   interface = NULL;
   member = NULL;
   path = NULL;
   arg0 = NULL;
+  arg0_path = NULL;
 
   interface = g_dbus_message_get_interface (message);
   member = g_dbus_message_get_member (message);
   path = g_dbus_message_get_path (message);
   arg0 = g_dbus_message_get_arg0 (message);
+  arg0_path = g_dbus_message_get_arg0_path (message);
+
+  /* These two are mutually exclusive through the type system. */
+  g_assert (arg0 == NULL || arg0_path == NULL);
 
 #if 0
   g_print ("In schedule_callbacks:\n"
@@ -3915,17 +3917,15 @@ schedule_callbacks (GDBusConnection *connection,
 
       if (signal_data->arg0 != NULL)
         {
-          if (arg0 == NULL)
-            continue;
-
           if (signal_data->flags & G_DBUS_SIGNAL_FLAGS_MATCH_ARG0_NAMESPACE)
             {
-              if (!namespace_rule_matches (signal_data->arg0, arg0))
+              if (arg0 == NULL || !namespace_rule_matches (signal_data->arg0, arg0))
                 continue;
             }
           else if (signal_data->flags & G_DBUS_SIGNAL_FLAGS_MATCH_ARG0_PATH)
             {
-              if (!path_rule_matches (signal_data->arg0, arg0))
+              if ((arg0 == NULL || !path_rule_matches (signal_data->arg0, arg0)) &&
+                  (arg0_path == NULL || !path_rule_matches (signal_data->arg0, arg0_path)))
                 continue;
             }
           else if (!g_str_equal (signal_data->arg0, arg0))

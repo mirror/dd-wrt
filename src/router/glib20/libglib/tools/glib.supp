@@ -867,7 +867,7 @@
 {
 	g_get_system_data_dirs
 	Memcheck:Leak
-	match-leak-kinds:reachable
+	match-leak-kinds:definite,reachable
 	fun:malloc
 	...
 	fun:g_build_system_data_dirs
@@ -878,7 +878,7 @@
 {
 	g_get_user_data_dir
 	Memcheck:Leak
-	match-leak-kinds:reachable
+	match-leak-kinds:definite,reachable
 	fun:realloc
 	...
 	fun:g_build_user_data_dir
@@ -889,11 +889,21 @@
 {
 	g_get_home_dir
 	Memcheck:Leak
-	match-leak-kinds:reachable
+	match-leak-kinds:definite,reachable
 	fun:malloc
 	...
 	fun:g_build_home_dir
 	fun:g_get_home_dir
+}
+
+# gcontenttype.c caches a one-time allocation global array of @global_mime_dirs.
+{
+	content_type_mime_dirs_realloc
+	Memcheck:Leak
+	match-leak-kinds:reachable
+	fun:realloc
+	...
+	fun:_g_content_type_set_mime_dirs_locked
 }
 
 # gdesktopappinfo.c caches a one-time allocation global table of @desktop_file_dirs.
@@ -1267,4 +1277,48 @@
 	fun:calloc
 	...
 	fun:xdg_mime_init
+}
+
+# One-time allocations for default log writer lock and domains
+{
+	should_drop_message_rw_lock
+	Memcheck:Leak
+	match-leak-kinds: reachable
+	fun:malloc
+	fun:g_rw_lock_impl_new
+	fun:g_rw_lock_get_impl
+	fun:g_rw_lock_reader_lock
+	fun:should_drop_message
+}
+
+{
+	should_drop_message_strdup
+	Memcheck:Leak
+	match-leak-kinds: reachable
+	fun:malloc
+	fun:g_malloc
+	fun:g_strdup
+	fun:g_strdup_inline
+	fun:should_drop_message
+}
+
+{
+	g_log_writer_default_set_debug_strdup
+	Memcheck:Leak
+	match-leak-kinds: reachable
+	fun:malloc
+	fun:g_malloc
+	fun:g_strdup_inline
+	fun:g_log_writer_default_set_debug_domains
+}
+
+{
+	g_log_writer_default_set_debug_rw_lock
+	Memcheck:Leak
+	match-leak-kinds: reachable
+	fun:malloc
+	fun:g_rw_lock_impl_new
+	fun:g_rw_lock_get_impl
+	fun:g_rw_lock_writer_lock
+	fun:g_log_writer_default_set_debug_domains
 }

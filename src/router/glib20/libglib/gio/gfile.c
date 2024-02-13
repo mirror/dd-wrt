@@ -86,94 +86,99 @@ typedef off_t loff_t;
 
 
 /**
- * SECTION:gfile
- * @short_description: File and Directory Handling
- * @include: gio/gio.h
- * @see_also: #GFileInfo, #GFileEnumerator
+ * GFile:
  *
- * #GFile is a high level abstraction for manipulating files on a
- * virtual file system. #GFiles are lightweight, immutable objects
+ * `GFile` is a high level abstraction for manipulating files on a
+ * virtual file system. `GFile`s are lightweight, immutable objects
  * that do no I/O upon creation. It is necessary to understand that
- * #GFile objects do not represent files, merely an identifier for a
+ * `GFile` objects do not represent files, merely an identifier for a
  * file. All file content I/O is implemented as streaming operations
- * (see #GInputStream and #GOutputStream).
+ * (see [class@Gio.InputStream] and [class@Gio.OutputStream]).
  *
- * To construct a #GFile, you can use:
- * - g_file_new_for_path() if you have a path.
- * - g_file_new_for_uri() if you have a URI.
- * - g_file_new_for_commandline_arg() for a command line argument.
- * - g_file_new_tmp() to create a temporary file from a template.
- * - g_file_new_tmp_async() to asynchronously create a temporary file.
- * - g_file_new_tmp_dir_async() to asynchronously create a temporary directory.
- * - g_file_parse_name() from a UTF-8 string gotten from g_file_get_parse_name().
- * - g_file_new_build_filename() or g_file_new_build_filenamev() to create a file from path elements.
+ * To construct a `GFile`, you can use:
  *
- * One way to think of a #GFile is as an abstraction of a pathname. For
+ * - [func@Gio.File.new_for_path] if you have a path.
+ * - [func@Gio.File.new_for_uri] if you have a URI.
+ * - [func@Gio.File.new_for_commandline_arg] or
+ *   [func@Gio.File.new_for_commandline_arg_and_cwd] for a command line
+ *   argument.
+ * - [func@Gio.File.new_tmp] to create a temporary file from a template.
+ * - [func@Gio.File.new_tmp_async] to asynchronously create a temporary file.
+ * - [func@Gio.File.new_tmp_dir_async] to asynchronously create a temporary
+ *   directory.
+ * - [func@Gio.File.parse_name] from a UTF-8 string gotten from
+ *   [method@Gio.File.get_parse_name].
+ * - [func@Gio.File.new_build_filename] or [func@Gio.File.new_build_filenamev]
+ *   to create a file from path elements.
+ *
+ * One way to think of a `GFile` is as an abstraction of a pathname. For
  * normal files the system pathname is what is stored internally, but as
- * #GFiles are extensible it could also be something else that corresponds
+ * `GFile`s are extensible it could also be something else that corresponds
  * to a pathname in a userspace implementation of a filesystem.
  *
- * #GFiles make up hierarchies of directories and files that correspond to
+ * `GFile`s make up hierarchies of directories and files that correspond to
  * the files on a filesystem. You can move through the file system with
- * #GFile using g_file_get_parent() to get an identifier for the parent
- * directory, g_file_get_child() to get a child within a directory,
- * g_file_resolve_relative_path() to resolve a relative path between two
- * #GFiles. There can be multiple hierarchies, so you may not end up at
- * the same root if you repeatedly call g_file_get_parent() on two different
- * files.
+ * `GFile` using [method@Gio.File.get_parent] to get an identifier for the
+ * parent directory, [method@Gio.File.get_child] to get a child within a
+ * directory, and [method@Gio.File.resolve_relative_path] to resolve a relative
+ * path between two `GFile`s. There can be multiple hierarchies, so you may not
+ * end up at the same root if you repeatedly call [method@Gio.File.get_parent]
+ * on two different files.
  *
- * All #GFiles have a basename (get with g_file_get_basename()). These names
- * are byte strings that are used to identify the file on the filesystem
+ * All `GFile`s have a basename (get with [method@Gio.File.get_basename]). These
+ * names are byte strings that are used to identify the file on the filesystem
  * (relative to its parent directory) and there is no guarantees that they
  * have any particular charset encoding or even make any sense at all. If
  * you want to use filenames in a user interface you should use the display
  * name that you can get by requesting the
- * %G_FILE_ATTRIBUTE_STANDARD_DISPLAY_NAME attribute with g_file_query_info().
- * This is guaranteed to be in UTF-8 and can be used in a user interface.
- * But always store the real basename or the #GFile to use to actually
- * access the file, because there is no way to go from a display name to
- * the actual name.
+ * `G_FILE_ATTRIBUTE_STANDARD_DISPLAY_NAME` attribute with
+ * [method@Gio.File.query_info]. This is guaranteed to be in UTF-8 and can be
+ * used in a user interface. But always store the real basename or the `GFile`
+ * to use to actually access the file, because there is no way to go from a
+ * display name to the actual name.
  *
- * Using #GFile as an identifier has the same weaknesses as using a path
+ * Using `GFile` as an identifier has the same weaknesses as using a path
  * in that there may be multiple aliases for the same file. For instance,
- * hard or soft links may cause two different #GFiles to refer to the same
+ * hard or soft links may cause two different `GFile`s to refer to the same
  * file. Other possible causes for aliases are: case insensitive filesystems,
  * short and long names on FAT/NTFS, or bind mounts in Linux. If you want to
- * check if two #GFiles point to the same file you can query for the
- * %G_FILE_ATTRIBUTE_ID_FILE attribute. Note that #GFile does some trivial
+ * check if two `GFile`s point to the same file you can query for the
+ * `G_FILE_ATTRIBUTE_ID_FILE` attribute. Note that `GFile` does some trivial
  * canonicalization of pathnames passed in, so that trivial differences in
  * the path string used at creation (duplicated slashes, slash at end of
- * path, "." or ".." path segments, etc) does not create different #GFiles.
+ * path, `.` or `..` path segments, etc) does not create different `GFile`s.
  *
- * Many #GFile operations have both synchronous and asynchronous versions
+ * Many `GFile` operations have both synchronous and asynchronous versions
  * to suit your application. Asynchronous versions of synchronous functions
- * simply have _async() appended to their function names. The asynchronous
- * I/O functions call a #GAsyncReadyCallback which is then used to finalize
- * the operation, producing a GAsyncResult which is then passed to the
- * function's matching _finish() operation.
+ * simply have `_async()` appended to their function names. The asynchronous
+ * I/O functions call a [callback@Gio.AsyncReadyCallback] which is then used to
+ * finalize the operation, producing a [iface@Gio.AsyncResult] which is then
+ * passed to the function’s matching `_finish()` operation.
  *
  * It is highly recommended to use asynchronous calls when running within a
  * shared main loop, such as in the main thread of an application. This avoids
  * I/O operations blocking other sources on the main loop from being dispatched.
  * Synchronous I/O operations should be performed from worker threads. See the
- * [introduction to asynchronous programming section][async-programming] for
- * more.
+ * [introduction to asynchronous programming section](overview.html#asynchronous-programming)
+ * for more.
  *
- * Some #GFile operations almost always take a noticeable amount of time, and
+ * Some `GFile` operations almost always take a noticeable amount of time, and
  * so do not have synchronous analogs. Notable cases include:
- * - g_file_mount_mountable() to mount a mountable file.
- * - g_file_unmount_mountable_with_operation() to unmount a mountable file.
- * - g_file_eject_mountable_with_operation() to eject a mountable file.
  *
- * ## Entity Tags # {#gfile-etag}
+ * - [method@Gio.File.mount_mountable] to mount a mountable file.
+ * - [method@Gio.File.unmount_mountable_with_operation] to unmount a mountable
+ *   file.
+ * - [method@Gio.File.eject_mountable_with_operation] to eject a mountable file.
  *
- * One notable feature of #GFiles are entity tags, or "etags" for
+ * ## Entity Tags
+ *
+ * One notable feature of `GFile`s are entity tags, or ‘etags’ for
  * short. Entity tags are somewhat like a more abstract version of the
  * traditional mtime, and can be used to quickly determine if the file
  * has been modified from the version on the file system. See the
  * HTTP 1.1 
  * [specification](http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html)
- * for HTTP Etag headers, which are a very similar concept.
+ * for HTTP `ETag` headers, which are a very similar concept.
  */
 
 static void               g_file_real_query_info_async            (GFile                  *file,
@@ -747,14 +752,13 @@ g_file_dup (GFile *file)
 }
 
 /**
- * g_file_hash:
+ * g_file_hash: (virtual hash)
  * @file: (type GFile): #gconstpointer to a #GFile
  *
  * Creates a hash value for a #GFile.
  *
  * This call does no blocking I/O.
  *
- * Virtual: hash
  * Returns: 0 if @file is not a valid #GFile, otherwise an
  *   integer that can be used as hash value for the #GFile.
  *   This function is intended for easily hashing a #GFile to
@@ -939,7 +943,7 @@ g_file_get_child_for_display_name (GFile      *file,
 }
 
 /**
- * g_file_has_prefix:
+ * g_file_has_prefix: (virtual prefix_matches)
  * @file: input #GFile
  * @prefix: input #GFile
  *
@@ -958,7 +962,6 @@ g_file_get_child_for_display_name (GFile      *file,
  * filesystem point of view), because the prefix of @file is an alias
  * of @prefix.
  *
- * Virtual: prefix_matches
  * Returns:  %TRUE if the @file's parent, grandparent, etc is @prefix,
  *   %FALSE otherwise.
  */
@@ -1674,7 +1677,7 @@ g_file_find_enclosing_mount_finish (GFile         *file,
 
 
 /**
- * g_file_read:
+ * g_file_read: (virtual read_fn)
  * @file: #GFile to read
  * @cancellable: (nullable): a #GCancellable
  * @error: a #GError, or %NULL
@@ -1691,7 +1694,6 @@ g_file_find_enclosing_mount_finish (GFile         *file,
  * error will be returned. Other errors are possible too, and depend
  * on what kind of filesystem the file is on.
  *
- * Virtual: read_fn
  * Returns: (transfer full): #GFileInputStream or %NULL on error.
  *   Free the returned object with g_object_unref().
  */
@@ -1836,7 +1838,7 @@ g_file_create (GFile             *file,
 /**
  * g_file_replace:
  * @file: input #GFile
- * @etag: (nullable): an optional [entity tag][gfile-etag]
+ * @etag: (nullable): an optional [entity tag](#entity-tags)
  *   for the current #GFile, or #NULL to ignore
  * @make_backup: %TRUE if a backup should be created
  * @flags: a set of #GFileCreateFlags
@@ -2041,7 +2043,7 @@ g_file_create_readwrite (GFile             *file,
 /**
  * g_file_replace_readwrite:
  * @file: a #GFile
- * @etag: (nullable): an optional [entity tag][gfile-etag]
+ * @etag: (nullable): an optional [entity tag](#entity-tags)
  *   for the current #GFile, or #NULL to ignore
  * @make_backup: %TRUE if a backup should be created
  * @flags: a set of #GFileCreateFlags
@@ -2305,7 +2307,7 @@ g_file_create_finish (GFile         *file,
 /**
  * g_file_replace_async:
  * @file: input #GFile
- * @etag: (nullable): an [entity tag][gfile-etag] for the current #GFile,
+ * @etag: (nullable): an [entity tag](#entity-tags) for the current #GFile,
  *   or %NULL to ignore
  * @make_backup: %TRUE if a backup should be created
  * @flags: a set of #GFileCreateFlags
@@ -2529,7 +2531,7 @@ g_file_create_readwrite_finish (GFile         *file,
 /**
  * g_file_replace_readwrite_async:
  * @file: input #GFile
- * @etag: (nullable): an [entity tag][gfile-etag] for the current #GFile,
+ * @etag: (nullable): an [entity tag](#entity-tags) for the current #GFile,
  *   or %NULL to ignore
  * @make_backup: %TRUE if a backup should be created
  * @flags: a set of #GFileCreateFlags
@@ -2743,10 +2745,12 @@ open_source_for_copy (GFile           *source,
 static gboolean
 should_copy (GFileAttributeInfo *info,
              gboolean            copy_all_attributes,
-             gboolean            skip_perms)
+             gboolean            skip_perms,
+             gboolean            skip_modified_time)
 {
-  if (skip_perms && strcmp(info->name, "unix::mode") == 0)
-        return FALSE;
+  if ((skip_perms && strcmp(info->name, "unix::mode") == 0) ||
+      (skip_modified_time && strncmp(info->name, "time::modified", 14) == 0))
+    return FALSE;
 
   if (copy_all_attributes)
     return info->flags & G_FILE_ATTRIBUTE_INFO_COPY_WHEN_MOVED;
@@ -2789,6 +2793,7 @@ g_file_build_attribute_list_for_copy (GFile                  *file,
   int i;
   gboolean copy_all_attributes;
   gboolean skip_perms;
+  gboolean skip_modified_time;
 
   g_return_val_if_fail (G_IS_FILE (file), NULL);
   g_return_val_if_fail (cancellable == NULL || G_IS_CANCELLABLE (cancellable), NULL);
@@ -2796,6 +2801,7 @@ g_file_build_attribute_list_for_copy (GFile                  *file,
 
   copy_all_attributes = flags & G_FILE_COPY_ALL_METADATA;
   skip_perms = (flags & G_FILE_COPY_TARGET_DEFAULT_PERMS) != 0;
+  skip_modified_time = (flags & G_FILE_COPY_TARGET_DEFAULT_MODIFIED_TIME) != 0;
 
   /* Ignore errors here, if the target supports no attributes there is
    * nothing to copy.  We still honor the cancellable though.
@@ -2823,7 +2829,7 @@ g_file_build_attribute_list_for_copy (GFile                  *file,
     {
       for (i = 0; i < attributes->n_infos; i++)
         {
-          if (should_copy (&attributes->infos[i], copy_all_attributes, skip_perms))
+          if (should_copy (&attributes->infos[i], copy_all_attributes, skip_perms, skip_modified_time))
             {
               if (first)
                 first = FALSE;
@@ -2839,7 +2845,7 @@ g_file_build_attribute_list_for_copy (GFile                  *file,
     {
       for (i = 0; i < namespaces->n_infos; i++)
         {
-          if (should_copy (&namespaces->infos[i], copy_all_attributes, FALSE))
+          if (should_copy (&namespaces->infos[i], copy_all_attributes, FALSE, FALSE))
             {
               if (first)
                 first = FALSE;
@@ -4093,7 +4099,7 @@ g_file_make_directory (GFile         *file,
 }
 
 /**
- * g_file_make_directory_async:
+ * g_file_make_directory_async: (virtual make_directory_async)
  * @file: input #GFile
  * @io_priority: the [I/O priority][io-priority] of the request
  * @cancellable: (nullable): optional #GCancellable object,
@@ -4104,7 +4110,6 @@ g_file_make_directory (GFile         *file,
  *
  * Asynchronously creates a directory.
  *
- * Virtual: make_directory_async
  * Since: 2.38
  */
 void
@@ -4127,7 +4132,7 @@ g_file_make_directory_async (GFile               *file,
 }
 
 /**
- * g_file_make_directory_finish:
+ * g_file_make_directory_finish: (virtual make_directory_finish)
  * @file: input #GFile
  * @result: a #GAsyncResult
  * @error: a #GError, or %NULL
@@ -4135,7 +4140,6 @@ g_file_make_directory_async (GFile               *file,
  * Finishes an asynchronous directory creation, started with
  * g_file_make_directory_async().
  *
- * Virtual: make_directory_finish
  * Returns: %TRUE on successful directory creation, %FALSE otherwise.
  * Since: 2.38
  */
@@ -4367,7 +4371,7 @@ g_file_real_make_symbolic_link_async (GFile               *file,
 }
 
 /**
- * g_file_make_symbolic_link_async:
+ * g_file_make_symbolic_link_async: (virtual make_symbolic_link_async)
  * @file: a #GFile with the name of the symlink to create
  * @symlink_value: (type filename): a string with the path for the target
  *   of the new symlink
@@ -4381,7 +4385,6 @@ g_file_real_make_symbolic_link_async (GFile               *file,
  * Asynchronously creates a symbolic link named @file which contains the
  * string @symlink_value.
  *
- * Virtual: make_symbolic_link_async
  * Since: 2.74
  */
 void
@@ -4418,7 +4421,7 @@ g_file_real_make_symbolic_link_finish (GFile         *file,
 }
 
 /**
- * g_file_make_symbolic_link_finish:
+ * g_file_make_symbolic_link_finish: (virtual make_symbolic_link_finish)
  * @file: input #GFile
  * @result: a #GAsyncResult
  * @error: a #GError, or %NULL
@@ -4426,7 +4429,6 @@ g_file_real_make_symbolic_link_finish (GFile         *file,
  * Finishes an asynchronous symbolic link creation, started with
  * g_file_make_symbolic_link_async().
  *
- * Virtual: make_symbolic_link_finish
  * Returns: %TRUE on successful directory creation, %FALSE otherwise.
  * Since: 2.74
  */
@@ -4448,7 +4450,7 @@ g_file_make_symbolic_link_finish (GFile         *file,
 }
 
 /**
- * g_file_delete:
+ * g_file_delete: (virtual delete_file)
  * @file: input #GFile
  * @cancellable: (nullable): optional #GCancellable object,
  *   %NULL to ignore
@@ -4476,7 +4478,6 @@ g_file_make_symbolic_link_finish (GFile         *file,
  * triggering the cancellable object from another thread. If the operation
  * was cancelled, the error %G_IO_ERROR_CANCELLED will be returned.
  *
- * Virtual: delete_file
  * Returns: %TRUE if the file was deleted. %FALSE otherwise.
  */
 gboolean
@@ -4505,7 +4506,7 @@ g_file_delete (GFile         *file,
 }
 
 /**
- * g_file_delete_async:
+ * g_file_delete_async: (virtual delete_file_async)
  * @file: input #GFile
  * @io_priority: the [I/O priority][io-priority] of the request
  * @cancellable: (nullable): optional #GCancellable object,
@@ -4518,7 +4519,6 @@ g_file_delete (GFile         *file,
  * only be deleted if it is empty.  This has the same semantics as
  * g_unlink().
  *
- * Virtual: delete_file_async
  * Since: 2.34
  */
 void
@@ -4541,14 +4541,13 @@ g_file_delete_async (GFile               *file,
 }
 
 /**
- * g_file_delete_finish:
+ * g_file_delete_finish: (virtual delete_file_finish)
  * @file: input #GFile
  * @result: a #GAsyncResult
  * @error: a #GError, or %NULL
  *
  * Finishes deleting a file started with g_file_delete_async().
  *
- * Virtual: delete_file_finish
  * Returns: %TRUE if the file was deleted. %FALSE otherwise.
  * Since: 2.34
  **/
@@ -4570,7 +4569,7 @@ g_file_delete_finish (GFile         *file,
 }
 
 /**
- * g_file_trash:
+ * g_file_trash: (virtual trash)
  * @file: #GFile to send to trash
  * @cancellable: (nullable): optional #GCancellable object,
  *   %NULL to ignore
@@ -4587,7 +4586,6 @@ g_file_delete_finish (GFile         *file,
  * triggering the cancellable object from another thread. If the operation
  * was cancelled, the error %G_IO_ERROR_CANCELLED will be returned.
  *
- * Virtual: trash
  * Returns: %TRUE on successful trash, %FALSE otherwise.
  */
 gboolean
@@ -4616,7 +4614,7 @@ g_file_trash (GFile         *file,
 }
 
 /**
- * g_file_trash_async:
+ * g_file_trash_async: (virtual trash_async)
  * @file: input #GFile
  * @io_priority: the [I/O priority][io-priority] of the request
  * @cancellable: (nullable): optional #GCancellable object,
@@ -4627,7 +4625,6 @@ g_file_trash (GFile         *file,
  *
  * Asynchronously sends @file to the Trash location, if possible.
  *
- * Virtual: trash_async
  * Since: 2.38
  */
 void
@@ -4650,7 +4647,7 @@ g_file_trash_async (GFile               *file,
 }
 
 /**
- * g_file_trash_finish:
+ * g_file_trash_finish: (virtual trash_finish)
  * @file: input #GFile
  * @result: a #GAsyncResult
  * @error: a #GError, or %NULL
@@ -4658,7 +4655,6 @@ g_file_trash_async (GFile               *file,
  * Finishes an asynchronous file trashing operation, started with
  * g_file_trash_async().
  *
- * Virtual: trash_finish
  * Returns: %TRUE on successful trash, %FALSE otherwise.
  * Since: 2.38
  */
@@ -5794,7 +5790,7 @@ g_file_eject_mountable_with_operation_finish (GFile         *file,
 }
 
 /**
- * g_file_monitor_directory:
+ * g_file_monitor_directory: (virtual monitor_dir)
  * @file: input #GFile
  * @flags: a set of #GFileMonitorFlags
  * @cancellable: (nullable): optional #GCancellable object,
@@ -5814,10 +5810,8 @@ g_file_eject_mountable_with_operation_finish (GFile         *file,
  * directory for changes made via hard links; if you want to do this then
  * you must register individual watches with g_file_monitor().
  *
- * Virtual: monitor_dir
  * Returns: (transfer full): a #GFileMonitor for the given @file,
- *   or %NULL on error.
- *   Free the returned object with g_object_unref().
+ *   or %NULL on error. Free the returned object with g_object_unref().
  */
 GFileMonitor *
 g_file_monitor_directory (GFile              *file,
@@ -6774,8 +6768,6 @@ g_file_real_set_display_name_finish (GFile         *file,
 typedef struct {
   GFileQueryInfoFlags flags;
   GFileInfo *info;
-  gboolean res;
-  GError *error;
 } SetInfoAsyncData;
 
 static void
@@ -6783,8 +6775,6 @@ set_info_data_free (SetInfoAsyncData *data)
 {
   if (data->info)
     g_object_unref (data->info);
-  if (data->error)
-    g_error_free (data->error);
   g_free (data);
 }
 
@@ -6795,13 +6785,16 @@ set_info_async_thread (GTask        *task,
                        GCancellable *cancellable)
 {
   SetInfoAsyncData *data = task_data;
+  GError *error = NULL;
 
-  data->error = NULL;
-  data->res = g_file_set_attributes_from_info (G_FILE (object),
-                                               data->info,
-                                               data->flags,
-                                               cancellable,
-                                               &data->error);
+  if (g_file_set_attributes_from_info (G_FILE (object),
+                                       data->info,
+                                       data->flags,
+                                       cancellable,
+                                       &error))
+    g_task_return_boolean (task, TRUE);
+  else
+    g_task_return_error (task, error);
 }
 
 static void
@@ -6844,10 +6837,7 @@ g_file_real_set_attributes_finish (GFile         *file,
   if (info)
     *info = g_object_ref (data->info);
 
-  if (error != NULL && data->error)
-    *error = g_error_copy (data->error);
-
-  return data->res;
+  return g_task_propagate_boolean (G_TASK (res), error);
 }
 
 static void
@@ -7731,9 +7721,9 @@ query_default_handler_query_app_info_for_type_cb (GObject      *object,
     }
   else if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND))
     {
-      g_task_return_new_error (task,
-                               G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED,
-                               "%s", error->message);
+      g_task_return_new_error_literal (task,
+                                       G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED,
+                                       error->message);
     }
   else
     {
@@ -7784,10 +7774,10 @@ query_default_handler_query_info_cb (GObject      *object,
     }
   else
     {
-      g_task_return_new_error (task,
-                               G_IO_ERROR,
-                               G_IO_ERROR_NOT_SUPPORTED,
-                               _("No application is registered as handling this file"));
+      g_task_return_new_error_literal (task,
+                                       G_IO_ERROR,
+                                       G_IO_ERROR_NOT_SUPPORTED,
+                                       _("No application is registered as handling this file"));
     }
 
   g_object_unref (info);
@@ -8324,11 +8314,11 @@ g_file_load_contents_finish (GFile         *file,
  * @file: input #GFile
  * @contents: (element-type guint8) (array length=length): a string containing the new contents for @file
  * @length: the length of @contents in bytes
- * @etag: (nullable): the old [entity-tag][gfile-etag] for the document,
+ * @etag: (nullable): the old [entity-tag](#entity-tags) for the document,
  *   or %NULL
  * @make_backup: %TRUE if a backup should be created
  * @flags: a set of #GFileCreateFlags
- * @new_etag: (out) (optional) (nullable): a location to a new [entity tag][gfile-etag]
+ * @new_etag: (out) (optional) (nullable): a location to a new [entity tag](#entity-tags)
  *   for the document. This should be freed with g_free() when no longer
  *   needed, or %NULL
  * @cancellable: optional #GCancellable object, %NULL to ignore
@@ -8531,7 +8521,7 @@ replace_contents_open_callback (GObject      *obj,
  * @file: input #GFile
  * @contents: (element-type guint8) (array length=length): string of contents to replace the file with
  * @length: the length of @contents in bytes
- * @etag: (nullable): a new [entity tag][gfile-etag] for the @file, or %NULL
+ * @etag: (nullable): a new [entity tag](#entity-tags) for the @file, or %NULL
  * @make_backup: %TRUE if a backup should be created
  * @flags: a set of #GFileCreateFlags
  * @cancellable: optional #GCancellable object, %NULL to ignore
@@ -8581,7 +8571,7 @@ g_file_replace_contents_async  (GFile               *file,
  * g_file_replace_contents_bytes_async:
  * @file: input #GFile
  * @contents: a #GBytes
- * @etag: (nullable): a new [entity tag][gfile-etag] for the @file, or %NULL
+ * @etag: (nullable): a new [entity tag](#entity-tags) for the @file, or %NULL
  * @make_backup: %TRUE if a backup should be created
  * @flags: a set of #GFileCreateFlags
  * @cancellable: optional #GCancellable object, %NULL to ignore
@@ -8636,7 +8626,7 @@ g_file_replace_contents_bytes_async  (GFile               *file,
  * g_file_replace_contents_finish:
  * @file: input #GFile
  * @res: a #GAsyncResult
- * @new_etag: (out) (optional) (nullable): a location of a new [entity tag][gfile-etag]
+ * @new_etag: (out) (optional) (nullable): a location of a new [entity tag](#entity-tags)
  *   for the document. This should be freed with g_free() when it is no
  *   longer needed, or %NULL
  * @error: a #GError, or %NULL
@@ -8835,7 +8825,7 @@ g_file_real_measure_disk_usage_finish (GFile         *file,
  * @file: a #GFile
  * @flags: #GFileMeasureFlags
  * @cancellable: (nullable): optional #GCancellable
- * @progress_callback: (nullable): a #GFileMeasureProgressCallback
+ * @progress_callback: (nullable) (scope call): a #GFileMeasureProgressCallback
  * @progress_data: user_data for @progress_callback
  * @disk_usage: (out) (optional): the number of bytes of disk space used
  * @num_dirs: (out) (optional): the number of directories encountered

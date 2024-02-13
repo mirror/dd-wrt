@@ -31,21 +31,12 @@
 #include "glibintl.h"
 
 /**
- * SECTION:ginetaddressmask
- * @short_description: An IPv4/IPv6 address mask
- * @include: gio/gio.h
- *
- * #GInetAddressMask represents a range of IPv4 or IPv6 addresses
- * described by a base address and a length indicating how many bits
- * of the base address are relevant for matching purposes. These are
- * often given in string form. Eg, "10.0.0.0/8", or "fe80::/10".
- */
-
-/**
  * GInetAddressMask:
  *
- * A combination of an IPv4 or IPv6 base address and a length,
- * representing a range of IP addresses.
+ * `GInetAddressMask` represents a range of IPv4 or IPv6 addresses
+ * described by a base address and a length indicating how many bits
+ * of the base address are relevant for matching purposes. These are
+ * often given in string form. For example, `10.0.0.0/8`, or `fe80::/10`.
  *
  * Since: 2.32
  */
@@ -144,25 +135,42 @@ g_inet_address_mask_class_init (GInetAddressMaskClass *klass)
   gobject_class->get_property = g_inet_address_mask_get_property;
   gobject_class->dispose = g_inet_address_mask_dispose;
 
+  /**
+   * GInetAddressMask:family:
+   *
+   * The address family (IPv4 or IPv6).
+   *
+   * Since: 2.32
+   */
   g_object_class_install_property (gobject_class, PROP_FAMILY,
-                                   g_param_spec_enum ("family",
-						      P_("Address family"),
-						      P_("The address family (IPv4 or IPv6)"),
+                                   g_param_spec_enum ("family", NULL, NULL,
 						      G_TYPE_SOCKET_FAMILY,
 						      G_SOCKET_FAMILY_INVALID,
 						      G_PARAM_READABLE |
                                                       G_PARAM_STATIC_STRINGS));
+
+  /**
+   * GInetAddressMask:address:
+   *
+   * The base address.
+   *
+   * Since: 2.32
+   */
   g_object_class_install_property (gobject_class, PROP_ADDRESS,
-                                   g_param_spec_object ("address",
-							P_("Address"),
-							P_("The base address"),
+                                   g_param_spec_object ("address", NULL, NULL,
 							G_TYPE_INET_ADDRESS,
 							G_PARAM_READWRITE |
 							G_PARAM_STATIC_STRINGS));
+
+  /**
+   * GInetAddressMask:length:
+   *
+   * The prefix length, in bytes.
+   *
+   * Since: 2.32
+   */
   g_object_class_install_property (gobject_class, PROP_LENGTH,
-                                   g_param_spec_uint ("length",
-						      P_("Length"),
-						      P_("The prefix length"),
+                                   g_param_spec_uint ("length", NULL, NULL,
 						      0, 128, 0,
 						      G_PARAM_READWRITE |
 						      G_PARAM_STATIC_STRINGS));

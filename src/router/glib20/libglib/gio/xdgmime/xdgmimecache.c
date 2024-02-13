@@ -5,23 +5,7 @@
  *
  * Copyright (C) 2005  Matthias Clasen <mclasen@redhat.com>
  *
- * Licensed under the Academic Free License version 2.0
- * Or under the following terms:
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
- * Boston, MA 02111-1307, USA.
+ * SPDX-License-Identifier: LGPL-2.1-or-later or AFL-2.0
  */
 
 #ifdef HAVE_CONFIG_H
@@ -92,6 +76,13 @@ struct _XdgMimeCache
 #define GET_UINT16(cache,offset) (ntohs(*(xdg_uint16_t*)((cache) + (offset))))
 #define GET_UINT32(cache,offset) (ntohl(*(xdg_uint32_t*)((cache) + (offset))))
 
+// Validates that it is safe to call GET_UINT32() at
+// cache->buffer[offset + (n * record_size)]. Ensures that offset is aligned to
+// a 4-byte boundary, and that offset+(n*record_size) does not overflow.
+// `record_size` values are known constants and never 0.
+#define OUT_OF_BOUNDS(offset,n,record_size,max) \
+  (((offset) & 0x3) || (offset) > (max) || (n) > ((max) - (offset)) / (record_size))
+
 XdgMimeCache *
 _xdg_mime_cache_ref (XdgMimeCache *cache)
 {
@@ -132,7 +123,8 @@ _xdg_mime_cache_new_from_file (const char *file_name)
   if (fd < 0)
     return NULL;
   
-  if (fstat (fd, &st) < 0 || st.st_size < 4)
+  // A valid cache must be at least 40 bytes for the header.
+  if (fstat (fd, &st) < 0 || st.st_size < 40)
     goto done;
 
   buffer = (char *) mmap (NULL, st.st_size, PROT_READ, MAP_SHARED, fd, 0);
@@ -225,6 +217,8 @@ cache_magic_matchlet_compare (XdgMimeCache *cache,
 {
   xdg_uint32_t n_children = GET_UINT32 (cache->buffer, offset + 24);
   xdg_uint32_t child_offset = GET_UINT32 (cache->buffer, offset + 28);
+  if (OUT_OF_BOUNDS (child_offset, n_children, 32, cache->size))
+    return FALSE;
 
   xdg_uint32_t i;
   
@@ -255,6 +249,8 @@ cache_magic_compare_to_data (XdgMimeCache *cache,
   xdg_uint32_t mimetype_offset = GET_UINT32 (cache->buffer, offset + 4);
   xdg_uint32_t n_matchlets = GET_UINT32 (cache->buffer, offset + 8);
   xdg_uint32_t matchlet_offset = GET_UINT32 (cache->buffer, offset + 12);
+  if (OUT_OF_BOUNDS (matchlet_offset, n_matchlets, 32, cache->size))
+    return NULL;
 
   xdg_uint32_t i;
 
@@ -287,8 +283,13 @@ cache_magic_lookup_data (XdgMimeCache *cache,
   *prio = 0;
 
   list_offset = GET_UINT32 (cache->buffer, 24);
+  if (OUT_OF_BOUNDS (list_offset, 1, 12, cache->size))
+    return NULL;
+
   n_entries = GET_UINT32 (cache->buffer, list_offset);
   offset = GET_UINT32 (cache->buffer, list_offset + 8);
+  if (OUT_OF_BOUNDS (offset, n_entries, 16, cache->size))
+    return NULL;
   
   for (j = 0; j < n_entries; j++)
     {
@@ -320,7 +321,12 @@ cache_alias_lookup (const char *alias)
         continue;
 
       list_offset = GET_UINT32 (cache->buffer, 4);
+      if (OUT_OF_BOUNDS (list_offset, 1, 4, cache->size))
+        continue;
+
       n_entries = GET_UINT32 (cache->buffer, list_offset);
+      if (OUT_OF_BOUNDS (list_offset + 4, n_entries, 8, cache->size))
+        continue;
 
       min = 0; 
       max = n_entries - 1;
@@ -361,6 +367,8 @@ cache_glob_lookup_literal (const char *file_name,
   const char *ptr;
   int i, min, max, mid, cmp;
 
+  assert (n_mime_types > 0);
+
   for (i = 0; _caches[i]; i++)
     {
       XdgMimeCache *cache = _caches[i];
@@ -372,7 +380,12 @@ cache_glob_lookup_literal (const char *file_name,
         continue;
 
       list_offset = GET_UINT32 (cache->buffer, 12);
+      if (OUT_OF_BOUNDS (list_offset, 1, 4, cache->size))
+        continue;
+
       n_entries = GET_UINT32 (cache->buffer, list_offset);
+      if (OUT_OF_BOUNDS (list_offset + 4, n_entries, 12, cache->size))
+        continue;
 
       min = 0; 
       max = n_entries - 1;
@@ -433,7 +446,12 @@ cache_glob_lookup_fnmatch (const char *file_name,
         continue;
 
       list_offset = GET_UINT32 (cache->buffer, 20);
+      if (OUT_OF_BOUNDS (list_offset, 1, 4, cache->size))
+        continue;
+
       n_entries = GET_UINT32 (cache->buffer, list_offset);
+      if (OUT_OF_BOUNDS (list_offset + 4, n_entries, 12, cache->size))
+        continue;
 
       for (j = 0; j < n_entries && n < n_mime_types; j++)
 	{
@@ -504,6 +522,8 @@ cache_glob_node_lookup_suffix (XdgMimeCache  *cache,
           n = 0;
           n_children = GET_UINT32 (cache->buffer, offset + 12 * mid + 4);
           child_offset = GET_UINT32 (cache->buffer, offset + 12 * mid + 8);
+          if (OUT_OF_BOUNDS (child_offset, n_children, 12, cache->size))
+            continue;
       
           if (len > 0)
             {
@@ -565,8 +585,13 @@ cache_glob_lookup_suffix (const char *file_name,
         continue;
 
       list_offset = GET_UINT32 (cache->buffer, 16);
+      if (OUT_OF_BOUNDS (list_offset, 1, 8, cache->size))
+        continue;
+
       n_entries = GET_UINT32 (cache->buffer, list_offset);
       offset = GET_UINT32 (cache->buffer, list_offset + 4);
+      if (OUT_OF_BOUNDS (offset, n_entries, 12, cache->size))
+        continue;
 
       n += cache_glob_node_lookup_suffix (cache,
 					  n_entries, offset,
@@ -707,6 +732,9 @@ _xdg_mime_cache_get_max_buffer_extents (void)
         continue;
 
       offset = GET_UINT32 (cache->buffer, 24);
+      if (OUT_OF_BOUNDS (offset, 1, 8, cache->size))
+        continue;
+
       max_extent = MAX (max_extent, GET_UINT32 (cache->buffer, offset + 4));
     }
 
@@ -751,8 +779,8 @@ cache_get_mime_type_for_data (const void *data,
       /* Pick glob-result R where mime_type inherits from R */
       for (n = 0; n < n_mime_types; n++)
         {
-          if (mime_types[n] && _xdg_mime_cache_mime_type_subclass(mime_types[n], mime_type))
-              return mime_types[n];
+          if (mime_types[n] && _xdg_mime_cache_mime_type_subclass (mime_types[n], mime_type, NULL))
+            return mime_types[n];
         }
       if (n == 0)
         {
@@ -901,13 +929,15 @@ is_super_type (const char *mime)
 
 int
 _xdg_mime_cache_mime_type_subclass (const char *mime,
-				    const char *base)
+				    const char *base,
+				    const char ***seen)
 {
-  const char *umime, *ubase;
+  const char *umime, *ubase, *parent;
+  const char **first_seen = NULL, **new_seen;
 
   xdg_uint32_t j;
-  int i, min, max, med, cmp;
-  
+  int i, k, min, max, med, cmp, ret = 0;
+
   umime = _xdg_mime_cache_unalias_mime_type (mime);
   ubase = _xdg_mime_cache_unalias_mime_type (base);
 
@@ -932,7 +962,13 @@ _xdg_mime_cache_mime_type_subclass (const char *mime,
   if (strcmp (ubase, "application/octet-stream") == 0 &&
       strncmp (umime, "inode/", 6) != 0)
     return 1;
- 
+
+  if (!seen)
+    {
+      first_seen = calloc (1, sizeof (char *));
+      seen = &first_seen;
+    }
+
   for (i = 0; _caches[i]; i++)
     {
       XdgMimeCache *cache = _caches[i];
@@ -944,7 +980,12 @@ _xdg_mime_cache_mime_type_subclass (const char *mime,
         continue;
 
       list_offset = GET_UINT32 (cache->buffer, 8);
+      if (OUT_OF_BOUNDS (list_offset, 1, 4, cache->size))
+        continue;
+
       n_entries = GET_UINT32 (cache->buffer, list_offset);
+      if (OUT_OF_BOUNDS (list_offset + 4, n_entries, 8, cache->size))
+        continue;
 
       min = 0; 
       max = n_entries - 1;
@@ -966,10 +1007,27 @@ _xdg_mime_cache_mime_type_subclass (const char *mime,
 	      for (j = 0; j < n_parents; j++)
 		{
 		  parent_offset = GET_UINT32 (cache->buffer, offset + 4 + 4 * j);
-		  if (strcmp (cache->buffer + parent_offset, mime) != 0 &&
-		      strcmp (cache->buffer + parent_offset, umime) != 0 &&
-		      _xdg_mime_cache_mime_type_subclass (cache->buffer + parent_offset, ubase))
-		    return 1;
+		  parent = cache->buffer + parent_offset;
+
+		  /* Detect and avoid buggy circular relationships */
+		  for (k = 0; (*seen)[k] != NULL; k++)
+		    if (parent == (*seen)[k])
+		      goto next_parent;
+		  new_seen = realloc (*seen, (k + 2) * sizeof (char *));
+		  if (!new_seen)
+		    goto done;
+		  new_seen[k] = parent;
+		  new_seen[k + 1] = NULL;
+		  *seen = new_seen;
+
+		  if (_xdg_mime_cache_mime_type_subclass (parent, ubase, seen))
+		    {
+		      ret = 1;
+		      goto done;
+		    }
+
+		next_parent:
+		  continue;
 		}
 
 	      break;
@@ -977,7 +1035,9 @@ _xdg_mime_cache_mime_type_subclass (const char *mime,
 	}
     }
 
-  return 0;
+done:
+  free (first_seen);
+  return ret;
 }
 
 const char *
@@ -1014,7 +1074,12 @@ _xdg_mime_cache_list_mime_parents (const char *mime)
         continue;
 
       list_offset = GET_UINT32 (cache->buffer, 8);
+      if (OUT_OF_BOUNDS (list_offset, 1, 4, cache->size))
+        continue;
+
       n_entries = GET_UINT32 (cache->buffer, list_offset);
+      if (OUT_OF_BOUNDS (list_offset + 4, n_entries, 8, cache->size))
+        continue;
 
       for (j = 0; j < n_entries; j++)
 	{
@@ -1056,7 +1121,7 @@ _xdg_mime_cache_list_mime_parents (const char *mime)
 }
 
 static const char *
-cache_lookup_icon (const char *mime, int header)
+cache_lookup_icon (const char *mime, size_t header)
 {
   const char *ptr;
   int i, min, max, mid, cmp;
@@ -1071,8 +1136,16 @@ cache_lookup_icon (const char *mime, int header)
       if (cache->buffer == NULL)
         continue;
 
+      if (OUT_OF_BOUNDS (header, 1, 4, cache->size))
+        continue;
+
       list_offset = GET_UINT32 (cache->buffer, header);
+      if (OUT_OF_BOUNDS (list_offset, 1, 4, cache->size))
+        continue;
+
       n_entries = GET_UINT32 (cache->buffer, list_offset);
+      if (OUT_OF_BOUNDS (list_offset + 4, n_entries, 8, cache->size))
+        continue;
 
       min = 0; 
       max = n_entries - 1;
@@ -1127,6 +1200,9 @@ dump_glob_node (XdgMimeCache *cache,
   mime_offset = GET_UINT32 (cache->buffer, offset + 4);
   n_children = GET_UINT32 (cache->buffer, offset + 8);
   child_offset = GET_UINT32 (cache->buffer, offset + 12);
+  if (OUT_OF_BOUNDS (child_offset, n_children, 20, cache->size))
+    return;
+
   for (i = 0; i < depth; i++)
     printf (" ");
   printf ("%c", character);
@@ -1151,12 +1227,18 @@ _xdg_mime_cache_glob_dump (void)
     xdg_uint32_t n_entries;
     xdg_uint32_t offset;
 
-      if (cache->buffer == NULL)
-        continue;
+    if (cache->buffer == NULL)
+      continue;
 
     list_offset = GET_UINT32 (cache->buffer, 16);
+    if (OUT_OF_BOUNDS (list_offset, 1, 8, cache->size))
+      return;
+
     n_entries = GET_UINT32 (cache->buffer, list_offset);
     offset = GET_UINT32 (cache->buffer, list_offset + 4);
+    if (OUT_OF_BOUNDS (offset, n_entries, 20, cache->size))
+      return;
+
     for (j = 0; j < n_entries; j++)
 	    dump_glob_node (cache, offset + 20 * j, 0);
   }

@@ -36,11 +36,11 @@
 #include "glibintl.h"
 
 /**
- * SECTION:gdbusinterfaceskeleton
- * @short_description: Service-side D-Bus interface
- * @include: gio/gio.h
+ * GDBusInterfaceSkeleton:
  *
  * Abstract base class for D-Bus interfaces on the service side.
+ *
+ * Since: 2.30
  */
 
 struct _GDBusInterfaceSkeletonPrivate
@@ -192,9 +192,7 @@ g_dbus_interface_skeleton_class_init (GDBusInterfaceSkeletonClass *klass)
    */
   g_object_class_install_property (gobject_class,
                                    PROP_G_FLAGS,
-                                   g_param_spec_flags ("g-flags",
-                                                       "g-flags",
-                                                       "Flags for the interface skeleton",
+                                   g_param_spec_flags ("g-flags", NULL, NULL,
                                                        G_TYPE_DBUS_INTERFACE_SKELETON_FLAGS,
                                                        G_DBUS_INTERFACE_SKELETON_FLAGS_NONE,
                                                        G_PARAM_READABLE |
@@ -568,6 +566,8 @@ dispatch_in_thread_func (GTask        *task,
 
   if (object != NULL)
     g_object_unref (object);
+
+  g_task_return_boolean (task, TRUE);
 }
 
 static void
