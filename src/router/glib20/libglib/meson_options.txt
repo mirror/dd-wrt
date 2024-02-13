@@ -40,14 +40,7 @@ option('libmount',
 option('man',
        type : 'boolean',
        value : false,
-       description : 'generate man pages (requires xsltproc)',
-       deprecated : 'man-pages')
-
-option('man-pages',
-       type : 'feature',
-       value : 'auto',
-       description : 'generate man pages (requires rst2man)',
-       deprecated : { 'true': 'enabled', 'false': 'disabled' })
+       description : 'generate man pages (requires xsltproc)')
 
 option('dtrace',
        type : 'boolean',
@@ -69,16 +62,10 @@ option('sysprof',
        value : 'disabled',
        description : 'include tracing support for sysprof')
 
-option('documentation',
-       type : 'boolean',
-       value : false,
-       description : 'Build API reference and tools documentation')
-
 option('gtk_doc',
        type : 'boolean',
        value : false,
-       description : 'use gtk-doc to build documentation',
-       deprecated : 'documentation')
+       description : 'use gtk-doc to build documentation')
 
 option('bsymbolic_functions',
        type : 'boolean',
