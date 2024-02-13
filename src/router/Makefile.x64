@@ -87,7 +87,7 @@ export TOOLCHAIN := $(shell cd $(dir $(shell which $(CROSS_COMPILE)gcc))/.. && p
 #export CFLAGS += -DBCMWPA2 
 #endif
 
-export BASEOPT:=-O2 -fno-unwind-tables -fno-asynchronous-unwind-tables
+export BASEOPT:=-Oz -fno-unwind-tables -fno-asynchronous-unwind-tables
 #export ARCH:= mipsel
 
 export LINUXVER = $(shell cat $(LINUXDIR)/include/config/kernel.release 2> /dev/null)
@@ -418,6 +418,7 @@ endif
 #	mv $(TARGETDIR)/usr/lib/services.so $(TARGETDIR)/lib
 	export STRIP_KMOD="$(LINUXDIR)/scripts/strip-kmod.sh" && \
 	export STRIP="sstrip" && \
+	export NO_RENAME="1" && \
 	$(LINUXDIR)/scripts/rstrip.sh $(TARGETDIR)
 
 	cd grub && ./configure --host=i386-linux --target=i386-linux CC="/xfs/toolchains/staging_dir_i386.4.2.1/bin/i386-linux-gcc" LDFLAGS="-static" CFLAGS="-Os -DNEED_PRINTF"
@@ -438,11 +439,11 @@ endif
 	cp grub/menu_serial.lst $(ARCH)-uclibc/root.grub/boot/grub/menu.lst
 	cp $(LINUXDIR)/arch/x86_64/boot/bzImage $(ARCH)-uclibc/root.grub/boot/vmlinuz
 
-	-PATH="$(INSTALLDIR)/grub/usr/local/sbin:$(INSTALLDIR)/grub/usr/local/bin:$(PATH)" ./gen_image.sh $(ARCH)-uclibc/dd-wrt_serial.image.src 16 $(ARCH)-uclibc/root.grub 320 $(ARCH)-uclibc/root.fs 128
-	-PATH="$(INSTALLDIR)/grub/usr/local/sbin:$(INSTALLDIR)/grub/usr/local/bin:$(PATH)" ./gen_image.sh $(ARCH)-uclibc/dd-wrt_serial_2GB.image.src 16 $(ARCH)-uclibc/root.grub 320 $(ARCH)-uclibc/root.fs 1780
+	-PATH="$(INSTALLDIR)/grub/usr/local/sbin:$(INSTALLDIR)/grub/usr/local/bin:$(PATH)" ./gen_image.sh $(ARCH)-uclibc/dd-wrt_serial.image.src 32 $(ARCH)-uclibc/root.grub 400 $(ARCH)-uclibc/root.fs 128
+	-PATH="$(INSTALLDIR)/grub/usr/local/sbin:$(INSTALLDIR)/grub/usr/local/bin:$(PATH)" ./gen_image.sh $(ARCH)-uclibc/dd-wrt_serial_2GB.image.src 32 $(ARCH)-uclibc/root.grub 400 $(ARCH)-uclibc/root.fs 1780
 	cp grub/menu_vga.lst $(ARCH)-uclibc/root.grub/boot/grub/menu.lst
-	-PATH="$(INSTALLDIR)/grub/usr/local/sbin:$(INSTALLDIR)/grub/usr/local/bin:$(PATH)" ./gen_image.sh $(ARCH)-uclibc/dd-wrt_vga.image.src 16 $(ARCH)-uclibc/root.grub 320 $(ARCH)-uclibc/root.fs 128
-	-PATH="$(INSTALLDIR)/grub/usr/local/sbin:$(INSTALLDIR)/grub/usr/local/bin:$(PATH)" ./gen_image.sh $(ARCH)-uclibc/dd-wrt_vga_2GB.image.src 16 $(ARCH)-uclibc/root.grub 320 $(ARCH)-uclibc/root.fs 1780
+	-PATH="$(INSTALLDIR)/grub/usr/local/sbin:$(INSTALLDIR)/grub/usr/local/bin:$(PATH)" ./gen_image.sh $(ARCH)-uclibc/dd-wrt_vga.image.src 32 $(ARCH)-uclibc/root.grub 400 $(ARCH)-uclibc/root.fs 128
+	-PATH="$(INSTALLDIR)/grub/usr/local/sbin:$(INSTALLDIR)/grub/usr/local/bin:$(PATH)" ./gen_image.sh $(ARCH)-uclibc/dd-wrt_vga_2GB.image.src 32 $(ARCH)-uclibc/root.grub 400 $(ARCH)-uclibc/root.fs 1780
 
 	dd if=$(ARCH)-uclibc/dd-wrt_vga.image.src of=$(ARCH)-uclibc/dd-wrt_vga.image bs=1048576 conv=sync
 	dd if=$(ARCH)-uclibc/dd-wrt_serial.image.src of=$(ARCH)-uclibc/dd-wrt_serial.image bs=1048576 conv=sync
