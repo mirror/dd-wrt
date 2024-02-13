@@ -204,4 +204,7 @@ static inline const char *kbasename(const char *path)
 	return tail ? tail + 1 : path;
 }
 
+void memcpy_and_pad(void *dest, size_t dest_len, const void *src, size_t count,
+		    int pad);
+
 #endif /* _LINUX_STRING_H_ */
