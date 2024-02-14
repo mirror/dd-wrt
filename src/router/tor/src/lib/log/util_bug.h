@@ -44,17 +44,6 @@
 /* Replace assert() with a variant that sends failures to the log before
  * calling assert() normally.
  */
-#ifdef NDEBUG
-/* Nobody should ever want to build with NDEBUG set.  99% of our asserts will
- * be outside the critical path anyway, so it's silly to disable bug-checking
- * throughout the entire program just because a few asserts are slowing you
- * down.  Profile, optimize the critical path, and keep debugging on.
- *
- * And I'm not just saying that because some of our asserts check
- * security-critical properties.
- */
-#error "Sorry; we don't support building with NDEBUG."
-#endif /* defined(NDEBUG) */
 
 #if defined(TOR_UNIT_TESTS) && defined(__GNUC__)
 /* We define this GCC macro as a replacement for PREDICT_UNLIKELY() in this
