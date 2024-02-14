@@ -1,4 +1,4 @@
-lsof-configure:
+lsof-configure: libtirpc
 	cd lsof && aclocal
 	cd lsof && autoconf
 	cd lsof && autoheader
@@ -11,7 +11,7 @@ lsof-configure:
 		LIBTIRPC_CFLAGS="-I$(TOP)/libtirpc/tirpc" \
 		LIBTIRPC_LIBS="-L$(TOP)/libtirpc/src/.libs -ltirpc"
 
-lsof:
+lsof: libtirpc
 	$(MAKE) -C lsof all
 
 lsof-clean:
