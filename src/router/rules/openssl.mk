@@ -123,7 +123,7 @@ openssl-configure:
 			--prefix=/usr \
 			--libdir=/usr/lib \
 			--openssldir=/etc/ssl \
-			$(COPTS) $(MIPS16_OPT) $(OPENSSL_CMAKEFLAGS) -DNDEBUG -D_GNU_SOURCE \
+			$(COPTS) $(MIPS16_OPT) $(OPENSSL_CMAKEFLAGS) -Os -DNDEBUG -D_GNU_SOURCE \
 			$(TARGET_LDFLAGS) -ldl -lrt -L$(TOP)/libucontext -lucontext \
 			$(OPENSSL_NO_CIPHERS) \
 			$(OPENSSL_OPTIONS)
