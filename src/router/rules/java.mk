@@ -5,6 +5,7 @@ java-configure: zlib
 	CCASFLAGS="$(COPTS) -DNEED_PRINTF" \
 	--with-gmp="$(TOP)/gmp" \
 	--prefix=/usr \
+	--disable-Werror \
 	--without-x \
 	--disable-gtk-peer \
 	--disable-qt-peer \
@@ -60,7 +61,7 @@ java: zlib
 
 java-clean:
 	make -C $(TOP)/java/classpath clean
-#	make -C $(TOP)/java/jamvm clean
+	make -C $(TOP)/java/jamvm clean
 	-make -C $(TOP)/java/cacao clean
 	
 	
