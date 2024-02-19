@@ -2360,6 +2360,40 @@ void ath9k_start_supplicant(int count, char *prefix)
 	char *netmode = nvram_default_get(net, "mixed");
 	if (!strcmp(netmode, "disabled"))
 		return;
+	char bw[32];
+	int isath5k = 0;
+	int isath10k = 0;
+	int ismt7615 = 0;
+	int ismt7915 = 0;
+	int ismt7921 = 0;
+	isath5k = is_ath5k(dev);
+	isath10k = is_ath10k(dev);
+	ismt7615 = is_mt7615(dev);
+	ismt7915 = is_mt7915(dev);
+	ismt7921 = is_mt7921(dev);
+	// set channelbw ht40 is also 20!
+	sprintf(bw, "%s_channelbw", dev);
+	char *driver = "ath9k";
+	int bwmax = 20;
+	int bwmin = 2;
+	if (isath5k) {
+		driver = "ath5k";
+		bwmax = 40;
+	} else if (isath10k)
+		driver = "ath10k";
+	else if (isath10k)
+		driver = "ath11k";
+	else if (ismt7615 || ismt7915 || ismt7921) {
+		bwmin = 5;
+		driver = "mt76";
+	}
+	int chanbw = nvram_geti(bw);
+	if (chanbw < bwmin)
+		chanbw = bwmin;
+	if (chanbw > bwmax)
+		chanbw = bwmax;
+	setchanbw(wif, driver, chanbw);
+
 	apm = nvram_safe_get(wl);
 	sprintf(wifivifs, "%s_vifs", prefix);
 	sprintf(power, "%s_txpwrdbm", prefix);
@@ -2589,38 +2623,5 @@ skip:;
 		sysprintf("echo %d > /sys/kernel/debug/ieee80211/%s/airtime_flags", nvram_default_matchi(atf, 1, 1) ? 3 : 0, wif);
 	}
 	MAC80211DEBUG();
-	char bw[32];
-	int isath5k = 0;
-	int isath10k = 0;
-	int ismt7615 = 0;
-	int ismt7915 = 0;
-	int ismt7921 = 0;
-	isath5k = is_ath5k(dev);
-	isath10k = is_ath10k(dev);
-	ismt7615 = is_mt7615(dev);
-	ismt7915 = is_mt7915(dev);
-	ismt7921 = is_mt7921(dev);
-	// set channelbw ht40 is also 20!
-	sprintf(bw, "%s_channelbw", dev);
-	char *driver = "ath9k";
-	int bwmax = 20;
-	int bwmin = 2;
-	if (isath5k) {
-		driver = "ath5k";
-		bwmax = 40;
-	} else if (isath10k)
-		driver = "ath10k";
-	else if (isath10k)
-		driver = "ath11k";
-	else if (ismt7615 || ismt7915 || ismt7921) {
-		bwmin = 5;
-		driver = "mt76";
-	}
-	int chanbw = nvram_geti(bw);
-	if (chanbw < bwmin)
-		chanbw = bwmin;
-	if (chanbw > bwmax)
-		chanbw = bwmax;
-	setchanbw(wif, driver, chanbw);
 }
 #endif
