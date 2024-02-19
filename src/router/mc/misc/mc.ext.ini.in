@@ -26,8 +26,8 @@
 # Section [Include/xxxx] can be located as before as after sections that point to it.
 #
 # Sections are processed from top to bottom, thus the order is important.
-# If there are more than one sections with the same name in this file, the first
-# section will be used.
+# Multiple sections with the same name are allowed, they are merged together.
+# Sections may contain the same key multiple times; the last entry wins.
 #
 # [Default] should be a catch-all action and come last.
 #
@@ -57,8 +57,12 @@
 #            the literal | and | has a special meaning (or), and () have a special meaning
 #            and \( \) stand for literal ( ).
 #
+#            An unescaped backslash \ is handled as invalid escape sequences in glib = 2.77.3 and
+#            glib >= 2.79 (https://gitlab.gnome.org/GNOME/glib/-/issues/3094), therefore backslash
+#            must be escaped.
+#
 #            Example:
-#                Regex=\.t(ar\.lzma|lz)$
+#                Regex=\\.t(ar\\.lzma|lz)$
 #            matches *.tar.lzma or *.tlz.
 #
 #        RegexIgnoreCase [true|false]
@@ -188,7 +192,7 @@ Version=4.0
 
 ### GIT Repo ###
 [gitfs changeset]
-Regex=^\[git\]
+Regex=^\\[git\\]
 Open=%cd %p/changesetfs://
 View=%cd %p/patchsetfs://
 
@@ -200,7 +204,7 @@ View=%cd %p/patchsetfs://
 
 # .tgz, .tpz, .tar.gz, .tar.z, .tar.Z
 [tar.gzip]
-Regex=\.t([gp]?z|ar\.g?[zZ])$
+Regex=\\.t([gp]?z|ar\\.g?[zZ])$
 Include=tar.gz
 
 [ipk]
@@ -217,13 +221,13 @@ Shell=.tar.bz
 View=%view{ascii} @EXTHELPERSDIR@/archive.sh view tar.bzip
 
 [tar.bzip2]
-Regex=\.t(ar\.bz2|bz2?|b2)$
+Regex=\\.t(ar\\.bz2|bz2?|b2)$
 Open=%cd %p/utar://
 View=%view{ascii} @EXTHELPERSDIR@/archive.sh view tar.bzip2
 
 # .tar.lzma, .tlz
 [tar.lzma]
-Regex=\.t(ar\.lzma|lz)$
+Regex=\\.t(ar\\.lzma|lz)$
 Open=%cd %p/utar://
 View=%view{ascii} @EXTHELPERSDIR@/archive.sh view tar.lzma
 
@@ -234,19 +238,25 @@ View=%view{ascii} @EXTHELPERSDIR@/archive.sh view tar.lz
 
 # .tar.lz4, .tlz4
 [tar.lz4]
-Regex=\.t(ar\.lz4|lz4)$
+Regex=\\.t(ar\\.lz4|lz4)$
 Open=%cd %p/utar://
 View=%view{ascii} @EXTHELPERSDIR@/archive.sh view tar.lz4
 
+# .tar.lzo, .tzo
+[tar.lzo]
+Regex=\\.t(ar\\.lzo|zo)$
+Open=%cd %p/utar://
+View=%view{ascii} @EXTHELPERSDIR@/archive.sh view tar.lzo
+
 # .tar.xz, .txz
 [tar.xz]
-Regex=\.t(ar\.xz|xz)$
+Regex=\\.t(ar\\.xz|xz)$
 Open=%cd %p/utar://
 View=%view{ascii} @EXTHELPERSDIR@/archive.sh view tar.xz
 
 # .tar.zst, .tzst
 [tar.zst]
-Regex=\.t(ar\.zst|zst)$
+Regex=\\.t(ar\\.zst|zst)$
 Open=%cd %p/utar://
 View=%view{ascii} @EXTHELPERSDIR@/archive.sh view tar.zst
 
@@ -258,7 +268,7 @@ View=%view{ascii} @EXTHELPERSDIR@/archive.sh view tar.F
 
 # .qpr/.qpk - QNX Neutrino package installer files
 [tar.qpr]
-Regex=\.qp[rk]$
+Regex=\\.qp[rk]$
 Open=%cd %p/utar://
 View=%view{ascii} @EXTHELPERSDIR@/archive.sh view tar.qpr
 
@@ -269,7 +279,7 @@ Open=%cd %p/utar://
 View=%view{ascii} @EXTHELPERSDIR@/archive.sh view tar
 
 [arj]
-Regex=\.a(rj|[0-9][0-9])$
+Regex=\\.a(rj|[0-9][0-9])$
 RegexIgnoreCase=true
 Open=%cd %p/uarj://
 View=%view{ascii} @EXTHELPERSDIR@/archive.sh view arj
@@ -287,7 +297,7 @@ Open=%cd %p/uha://
 View=%view{ascii} @EXTHELPERSDIR@/archive.sh view ha
 
 [rar]
-Regex=\.r(ar|[0-9][0-9])$
+Regex=\\.r(ar|[0-9][0-9])$
 RegexIgnoreCase=true
 Open=%cd %p/urar://
 View=%view{ascii} @EXTHELPERSDIR@/archive.sh view rar
@@ -314,6 +324,11 @@ Shell=.cpio.lz4
 Open=%cd %p/ucpio://
 View=%view{ascii} @EXTHELPERSDIR@/archive.sh view cpio.lz4
 
+[cpio.lzo]
+Shell=.cpio.lzo
+Open=%cd %p/ucpio://
+View=%view{ascii} @EXTHELPERSDIR@/archive.sh view cpio.lzo
+
 [cpio.xz]
 Shell=.cpio.xz
 Open=%cd %p/ucpio://
@@ -335,7 +350,7 @@ ShellIgnoreCase=true
 Include=cpio
 
 [initrd]
-Regex=^(initramfs.*\.img|initrd(-.+)?\.img(-.+)?)$
+Regex=^(initramfs.*\\.img|initrd(-.+)?\\.img(-.+)?)$
 Include=cpio
 
 [7zip]
@@ -345,32 +360,32 @@ Open=%cd %p/u7z://
 View=%view{ascii} @EXTHELPERSDIR@/archive.sh view 7z
 
 [patch]
-Regex=\.(diff|patch)$
+Regex=\\.(diff|patch)$
 Open=%cd %p/patchfs://
 View=%view{ascii} @EXTHELPERSDIR@/misc.sh view cat
 
 [patch.gz]
-Regex=\.(diff|patch)\.(gz|Z)$
+Regex=\\.(diff|patch)\\.(gz|Z)$
 Open=%cd %p/patchfs://
 View=%view{ascii} @EXTHELPERSDIR@/archive.sh view gz
 
 [patch.bz2]
-Regex=\.(diff|patch)\.bz2$
+Regex=\\.(diff|patch)\\.bz2$
 Open=%cd %p/patchfs://
 View=%view{ascii} @EXTHELPERSDIR@/archive.sh view bz2
 
 [patch.xz]
-Regex=\.(diff|patch)\.xz$
+Regex=\\.(diff|patch)\\.xz$
 Open=%cd %p/patchfs://
 View=%view{ascii} @EXTHELPERSDIR@/archive.sh view xz
 
 [patch.zst]
-Regex=\.(diff|patch)\.zst$
+Regex=\\.(diff|patch)\\.zst$
 Open=%cd %p/patchfs://
 View=%view{ascii} @EXTHELPERSDIR@/archive.sh view zst
 
 [ls-lR]
-Regex=(^|\.)ls-?lR(\.gz|Z|bz2)$
+Regex=(^|\\.)ls-?lR(\\.gz|Z|bz2)$
 Open=%cd %p/lslR://
 
 [trpm]
@@ -380,7 +395,7 @@ View=%view{ascii} @EXTHELPERSDIR@/package.sh view trpm
 
 # RPM packages (SuSE uses *.spm for source packages)
 [src.rpm]
-Regex=\.(src\.rpm|spm)$
+Regex=\\.(src\\.rpm|spm)$
 Open=%cd %p/rpm://
 View=%view{ascii} @EXTHELPERSDIR@/package.sh view src.rpm
 
@@ -390,7 +405,7 @@ Open=%cd %p/rpm://
 View=%view{ascii} @EXTHELPERSDIR@/package.sh view rpm
 
 [deb]
-Regex=\.u?deb$
+Regex=\\.u?deb$
 Open=%cd %p/deb://
 View=%view{ascii} @EXTHELPERSDIR@/package.sh view deb
 
@@ -411,7 +426,7 @@ Open=%cd %p/iso9660://
 View=%view{ascii} @EXTHELPERSDIR@/misc.sh view iso9660
 
 [ar]
-Regex=\.s?a$
+Regex=\\.s?a$
 Open=%cd %p/uar://
 #Open=%view{ascii} ar tv %f
 View=%view{ascii} @EXTHELPERSDIR@/misc.sh view ar
@@ -425,12 +440,12 @@ View=%view{ascii} @EXTHELPERSDIR@/misc.sh view lib
 ### Sources ###
 
 [C/C++]
-Regex=\.(c|cc|cpp|cxx|c\+\+)$
+Regex=\\.(c|cc|cpp|cxx|c\\+\\+)$
 RegexIgnoreCase=true
 Include=editor
 
 [C/C++ header]
-Regex=\.(h|hh|hpp|hxx|h\+\+)$
+Regex=\\.(h|hh|hpp|hxx|h\\+\\+)$
 RegexIgnoreCase=true
 Include=editor
 
@@ -440,7 +455,7 @@ ShellIgnoreCase=true
 Include=editor
 
 [Assembler]
-Regex=\.(s|asm)$
+Regex=\\.(s|asm)$
 RegexIgnoreCase=true
 Include=editor
 
@@ -452,19 +467,19 @@ Include=editor
 
 # .so libraries
 [so]
-Regex=\.(so|so\.[0-9\.]*)$
+Regex=\\.(so|so\\.[0-9\\.]*)$
 View=%view{ascii} @EXTHELPERSDIR@/misc.sh view so
 
 # .dylib libraries
 [dylib]
-Regex=\.(dylib|dylib\.[0-9\.]*)$
+Regex=\\.(dylib|dylib\\.[0-9\\.]*)$
 View=%view{ascii} @EXTHELPERSDIR@/misc.sh view dylib
 
 
 ### Documentation ###
 
 #[Texinfo]
-#Regex=\.(te?xi|texinfo)$
+#Regex=\\.(te?xi|texinfo)$
 
 [info-by-shell]
 Shell=.info
@@ -497,27 +512,32 @@ View=%view{ascii,nroff} @EXTHELPERSDIR@/text.sh view nroff.ms %var{PAGER:more}
 # Manual page
 
 [man.lz]
-Regex=([^0-9]|^[^\.]*)\.([1-9][A-Za-z]*|[ln])\.lz$
+Regex=([^0-9]|^[^\\.]*)\\.([1-9][A-Za-z]*|[ln])\\.lz$
 Open=@EXTHELPERSDIR@/text.sh open man.lz %var{PAGER:more}
 View=%view{ascii,nroff} @EXTHELPERSDIR@/text.sh view man.lz %var{PAGER:more}
 
 [man.lz4]
-Regex=([^0-9]|^[^\.]*)\.([1-9][A-Za-z]*|[ln])\.lz4$
+Regex=([^0-9]|^[^\\.]*)\\.([1-9][A-Za-z]*|[ln])\\.lz4$
 Open=@EXTHELPERSDIR@/text.sh open man.lz4 %var{PAGER:more}
 View=%view{ascii,nroff} @EXTHELPERSDIR@/text.sh view man.lz4 %var{PAGER:more}
 
 [man.lzma]
-Regex=([^0-9]|^[^\.]*)\.([1-9][A-Za-z]*|[ln])\.lzma$
+Regex=([^0-9]|^[^\\.]*)\\.([1-9][A-Za-z]*|[ln])\\.lzma$
 Open=@EXTHELPERSDIR@/text.sh open man.lzma %var{PAGER:more}
 View=%view{ascii,nroff} @EXTHELPERSDIR@/text.sh view man.lzma %var{PAGER:more}
 
+[man.lzo]
+Regex=([^0-9]|^[^\\.]*)\\.([1-9][A-Za-z]*|[ln])\\.lzo$
+Open=@EXTHELPERSDIR@/text.sh open man.lzo %var{PAGER:more}
+View=%view{ascii,nroff} @EXTHELPERSDIR@/text.sh view man.lzo %var{PAGER:more}
+
 [man.xz]
-Regex=([^0-9]|^[^\.]*)\.([1-9][A-Za-z]*|[ln])\.xz$
+Regex=([^0-9]|^[^\\.]*)\\.([1-9][A-Za-z]*|[ln])\\.xz$
 Open=@EXTHELPERSDIR@/text.sh open man.xz %var{PAGER:more}
 View=%view{ascii,nroff} @EXTHELPERSDIR@/text.sh view man.xz %var{PAGER:more}
 
 [man.zst]
-Regex=([^0-9]|^[^\.]*)\.([1-9][A-Za-z]*|[ln])\.zst$
+Regex=([^0-9]|^[^\\.]*)\\.([1-9][A-Za-z]*|[ln])\\.zst$
 Open=@EXTHELPERSDIR@/text.sh open man.zst %var{PAGER:more}
 View=%view{ascii,nroff} @EXTHELPERSDIR@/text.sh view man.zst %var{PAGER:more}
 
@@ -556,17 +576,26 @@ ShellIgnoreCase=true
 View=%view{ascii} @EXTHELPERSDIR@/image.sh view svg
 Open=@EXTHELPERSDIR@/image.sh open svg
 
+[webp]
+Shell=.webp
+View=%view{ascii} @EXTHELPERSDIR@/image.sh view webp
+Open=@EXTHELPERSDIR@/image.sh open webp
+
+[avif]
+Shell=.avif
+View=%view{ascii} @EXTHELPERSDIR@/image.sh view avif
+Open=@EXTHELPERSDIR@/image.sh open avif
 
 ### Sound files ###
 
 [sound]
-Regex=\.(wav|snd|voc|au|smp|aiff|snd|m4a|ape|aac|wv|spx|flac)$
+Regex=\\.(wav|snd|voc|au|smp|aiff|snd|m4a|ape|aac|wv|spx|flac)$
 RegexIgnoreCase=true
 Open=@EXTHELPERSDIR@/sound.sh open common
 View=%view{ascii} @EXTHELPERSDIR@/sound.sh view common
 
 [mod]
-Regex=\.(mod|s3m|xm|it|mtm|669|stm|ult|far)$
+Regex=\\.(mod|s3m|xm|it|mtm|669|stm|ult|far)$
 RegexIgnoreCase=true
 Open=@EXTHELPERSDIR@/sound.sh open mod
 
@@ -582,7 +611,7 @@ Open=@EXTHELPERSDIR@/sound.sh open mp3
 View=%view{ascii} @EXTHELPERSDIR@/sound.sh view mp3
 
 [ogg]
-Regex=\.og[gax]$
+Regex=\\.og[gax]$
 RegexIgnoreCase=true
 Open=@EXTHELPERSDIR@/sound.sh open ogg
 View=%view{ascii} @EXTHELPERSDIR@/sound.sh view ogg
@@ -594,7 +623,7 @@ Open=@EXTHELPERSDIR@/sound.sh open opus
 View=%view{ascii} @EXTHELPERSDIR@/sound.sh view opus
 
 [midi]
-Regex=\.(midi?|rmid?)$
+Regex=\\.(midi?|rmid?)$
 RegexIgnoreCase=true
 Open=@EXTHELPERSDIR@/sound.sh open midi
 
@@ -606,7 +635,7 @@ View=%view{ascii} @EXTHELPERSDIR@/sound.sh view wma
 
 # Play list
 [playlist]
-Regex=\.(m3u|pls)$
+Regex=\\.(m3u|pls)$
 RegexIgnoreCase=true
 Open=@EXTHELPERSDIR@/sound.sh open playlist
 
@@ -619,7 +648,7 @@ ShellIgnoreCase=true
 Include=video
 
 [asf]
-Regex=\.as[fx]$
+Regex=\\.as[fx]$
 RegexIgnoreCase=true
 Include=video
 
@@ -634,12 +663,12 @@ ShellIgnoreCase=true
 Include=video
 
 [mov]
-Regex=\.(mov|qt)$
+Regex=\\.(mov|qt)$
 RegexIgnoreCase=true
 Include=video
 
 [mp4]
-Regex=\.(mp4|m4v|mpe?g)$
+Regex=\\.(mp4|m4v|mpe?g)$
 RegexIgnoreCase=true
 Include=video
 
@@ -665,7 +694,7 @@ ShellIgnoreCase=true
 Include=video
 
 [fli]
-Regex=\.fl[icv]$
+Regex=\\.fl[icv]$
 RegexIgnoreCase=true
 Include=video
 
@@ -675,7 +704,7 @@ ShellIgnoreCase=true
 Include=video
 
 [realaudio]
-Regex=\.ra?m$
+Regex=\\.ra?m$
 RegexIgnoreCase=true
 Open=@EXTHELPERSDIR@/video.sh open ram
 
@@ -688,7 +717,7 @@ Include=video
 ### Documents ###
 
 [html]
-Regex=\.html?$
+Regex=\\.html?$
 RegexIgnoreCase=true
 Open=@EXTHELPERSDIR@/web.sh open html
 View=%view{ascii} @EXTHELPERSDIR@/web.sh view html
@@ -700,7 +729,7 @@ Open=@EXTHELPERSDIR@/doc.sh open ooffice
 
 # StarOffice 6 and OpenOffice.org formats
 [OpenOffice.org]
-Regex=\.(odt|fodt|ott|sxw|stw|ods|fods|ots|sxc|stc|odp|fodp|otp|sxi|sti|odg|fodg|otg|sxd|std|odb|odf|sxm|odm|sxg)$
+Regex=\\.(odt|fodt|ott|sxw|stw|ods|fods|ots|sxc|stc|odp|fodp|otp|sxi|sti|odg|fodg|otg|sxd|std|odb|odf|sxm|odm|sxg)$
 RegexIgnoreCase=true
 Open=@EXTHELPERSDIR@/doc.sh open ooffice
 View=%view{ascii} @EXTHELPERSDIR@/doc.sh view odt
@@ -722,21 +751,21 @@ Open=@EXTHELPERSDIR@/doc.sh open msdoc
 
 # Microsoft Word Document
 [msdoc-by-shell]
-Regex=\.(do[ct]|wri|docx)$
+Regex=\\.(do[ct]|wri|docx)$
 RegexIgnoreCase=true
 Open=@EXTHELPERSDIR@/doc.sh open msdoc
 View=%view{ascii} @EXTHELPERSDIR@/doc.sh view msdoc
 
 # Microsoft Excel Worksheet
 [msxls-by-shell]
-Regex=\.(xl[sw]|xlsx)$
+Regex=\\.(xl[sw]|xlsx)$
 RegexIgnoreCase=true
 Open=@EXTHELPERSDIR@/doc.sh open msxls
 View=%view{ascii} @EXTHELPERSDIR@/doc.sh view msxls
 
 # Microsoft PowerPoint Presentation
 [msppt]
-Regex=\.(pp[ts]|pptx)$
+Regex=\\.(pp[ts]|pptx)$
 RegexIgnoreCase=true
 Open=@EXTHELPERSDIR@/doc.sh open msppt
 View=%view{ascii} @EXTHELPERSDIR@/doc.sh view msppt
@@ -753,25 +782,25 @@ ShellIgnoreCase=true
 Include=editor
 
 [markdown]
-Regex=\.mk?d$
+Regex=\\.mk?d$
 RegexIgnoreCase=true
 Include=editor
 
 [djvu]
-Regex=\.djvu?$
+Regex=\\.djvu?$
 RegexIgnoreCase=true
 Open=@EXTHELPERSDIR@/doc.sh open djvu
 View=%view{ascii} @EXTHELPERSDIR@/doc.sh view djvu
 
 # Comic Books
 [cbr]
-Regex=\.cb[zr]$
+Regex=\\.cb[zr]$
 RegexIgnoreCase=true
 Open=@EXTHELPERSDIR@/doc.sh open comic
 
 # Epup, mobi, fb2
 [ebook]
-Regex=\.(epub|mobi|fb2)$
+Regex=\\.(epub|mobi|fb2)$
 RegexIgnoreCase=true
 Open=@EXTHELPERSDIR@/doc.sh open ebook
 View=%view{ascii} @EXTHELPERSDIR@/doc.sh view ebook
@@ -790,11 +819,11 @@ Open=xmkmf -a
 
 # Makefile.PL (MakeMaker)
 [Makefile.pl]
-Regex=^Makefile\.(PL|pl)$
+Regex=^Makefile\\.(PL|pl)$
 Open=%var{PERL:perl} %f
 
 [Makefile]
-Regex=^[Mm]akefile
+Regex=^[Mm]akefile$
 Open=make -f %f %{Enter parameters}
 
 [dbf]
@@ -805,7 +834,7 @@ View=%view{ascii} @EXTHELPERSDIR@/misc.sh view dbf
 
 # REXX script
 [rexx]
-Regex=\.(rexx?|cmd)$
+Regex=\\.(rexx?|cmd)$
 Open=rexx %f %{Enter parameters};echo "Press ENTER";read y
 
 # Disk images for Commodore computers (VIC20, C64, C128)
@@ -873,6 +902,12 @@ Shell=.lz4
 ShellIgnoreCase=true
 Open=@EXTHELPERSDIR@/archive.sh view lz4 %var{PAGER:more}
 View=%view{ascii} @EXTHELPERSDIR@/archive.sh view lz4
+
+[lzo]
+Shell=.lzo
+ShellIgnoreCase=true
+Open=@EXTHELPERSDIR@/archive.sh view lzo %var{PAGER:more}
+View=%view{ascii} @EXTHELPERSDIR@/archive.sh view lzo
 
 [wim]
 Shell=.wim

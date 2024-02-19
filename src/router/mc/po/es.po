@@ -13,7 +13,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: https://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2023-08-13 21:07+0200\n"
+"POT-Creation-Date: 2024-01-27 09:33+0100\n"
 "PO-Revision-Date: 2010-12-29 10:19+0000\n"
 "Last-Translator: Slava Zanko <slavazanko@gmail.com>, 2011\n"
 "Language-Team: Spanish (http://app.transifex.com/mc/mc/language/es/)\n"
@@ -740,7 +740,8 @@ msgid ""
 "                 errdhotfocus\n"
 "   Menus:        menunormal, menuhot, menusel, menuhotsel, menuinactive\n"
 "   Popup menus:  pmenunormal, pmenusel, pmenutitle\n"
-"   Editor:       editnormal, editbold, editmarked, editwhitespace,\n"
+"   Editor:       editnormal, editbold, editmarked, editwhitespace, "
+"editnonprintable,\n"
 "                 editlinestate, editbg, editframe, editframeactive\n"
 "                 editframedrag\n"
 "   Viewer:       viewnormal,viewbold, viewunderline, viewselected\n"
@@ -762,8 +763,9 @@ msgstr ""
 "   Menús:             menunormal, menuhot, menusel, menuhotsel, "
 "menuinactive\n"
 "   Menús emergentes:  pmenunormal, pmenusel, pmenutitle\n"
-"   Editor:            editnormal, editbold, editmarked, editwhitespace,\n"
-"                      editlinestate, editbg, editframe, editframeactive\n"
+"   Editor:            editnormal, editbold, editmarked, editwhitespace, "
+"editnonprintable,\n"
+"                      editlinestate, editbg, editframe, editframeactive,\n"
 "                      editframedrag\n"
 "   Visor:             viewnormal, viewbold, viewunderline, viewselected\n"
 "   Ayuda:             helpnormal, helpitalic, helpbold, helplink, helpslink\n"
@@ -1635,8 +1637,8 @@ msgstr ""
 "Un editor de texto amigable\n"
 "para Midnight Commander."
 
-msgid "Copyright (C) 1996-2023 the Free Software Foundation"
-msgstr "Copyright (C) 1996-2023 the Free Software Foundation"
+msgid "Copyright (C) 1996-2024 the Free Software Foundation"
+msgstr "Copyright (C) 1996-2024 the Free Software Foundation"
 
 msgid "About"
 msgstr "Acerca de..."
@@ -3178,7 +3180,7 @@ msgid "E&xternal panelize"
 msgstr "búsqueda e&Xterna..."
 
 msgid "Show directory s&izes"
-msgstr "mostrar &Tamaños de los directorios"
+msgstr "mostrar &Tamaños de directorios"
 
 msgid "Command &history"
 msgstr "&Historia de órdenes"
@@ -3241,7 +3243,7 @@ msgstr "Paneles:"
 msgid "You have %zu opened screen. Quit anyway?"
 msgid_plural "You have %zu opened screens. Quit anyway?"
 msgstr[0] "Hay %zu pantalla abierta. ¿Desea realmente salir?"
-msgstr[1] "Hay %zu pantallas abiertas. ¿Desea realmente salir?"
+msgstr[1] "Hay %zu de pantallas abiertas. ¿Desea realmente salir?"
 msgstr[2] "Hay %zu pantallas abiertas. ¿Desea realmente salir?"
 
 msgid "The Midnight Commander"
@@ -3343,7 +3345,7 @@ msgstr "Terminado"
 msgid "Finished (ignored %zu directory)"
 msgid_plural "Finished (ignored %zu directories)"
 msgstr[0] "Terminado (%zu directorio ignorado)"
-msgstr[1] "Terminado (%zu directorios ignorados)"
+msgstr[1] "Terminado (%zu de directorios ignorados)"
 msgstr[2] "Terminado (%zu directorios ignorados)"
 
 #, c-format
@@ -3515,7 +3517,7 @@ msgstr "Tamaño:        %s"
 msgid " (%lu block)"
 msgid_plural " (%lu blocks)"
 msgstr[0] " (%lu bloque)"
-msgstr[1] " (%lu bloques)"
+msgstr[1] " (%lu de bloques)"
 msgstr[2] " (%lu bloques)"
 
 #, c-format
@@ -3695,7 +3697,7 @@ msgstr "<readlink falló>"
 msgid "%s in %d file"
 msgid_plural "%s in %d files"
 msgstr[0] "%s en %d archivo"
-msgstr[1] "%s en %d archivos"
+msgstr[1] "%s en %d de archivos"
 msgstr[2] "%s en %d archivos"
 
 msgid "Panelize"
@@ -4178,66 +4180,30 @@ msgstr ""
 "Sistema de archivos virtual EXTFS:\n"
 "%s"
 
+msgid ""
+"EXTFS virtual file system:\n"
+"wrong file name"
+msgstr ""
+"Sistema de archivos virtual EXTFS:\n"
+"nombre de archivo incorrecto"
+
+msgid ""
+"EXTFS virtual file system:\n"
+"wrong archive name"
+msgstr ""
+"Sistema de archivos virtual EXTFS:\n"
+"nombre de archivador incorrecto"
+
+msgid ""
+"EXTFS virtual file system:\n"
+"cannot build command"
+msgstr ""
+"Sistema de archivos virtual EXTFS:\n"
+"imposible construir comando"
+
 #, c-format
 msgid "Warning: cannot open %s directory\n"
 msgstr "Atención: imposible abrir el directorio %s\n"
-
-#, c-format
-msgid "fish: Disconnecting from %s"
-msgstr "fish: Desconectando de %s"
-
-msgid "fish: Waiting for initial line..."
-msgstr "fish: Esperando línea de inicio..."
-
-msgid "Sorry, we cannot do password authenticated connections for now."
-msgstr "Lo siento, las conexiones con contraseña aún no son posibles."
-
-#, c-format
-msgid "fish: Password is required for %s"
-msgstr "fish: Contraseña requerida para %s"
-
-msgid "fish: Sending password..."
-msgstr "fish: Enviando contraseña de usuario"
-
-msgid "fish: Sending initial line..."
-msgstr "fish: Enviando línea de inicio..."
-
-msgid "fish: Handshaking version..."
-msgstr "fish: Negociando versión..."
-
-msgid "fish: Getting host info..."
-msgstr "fish: Obteniendo información del servidor..."
-
-#, c-format
-msgid "fish: Reading directory %s..."
-msgstr "fish: Leyendo el directorio %s..."
-
-#, c-format
-msgid "%s: done."
-msgstr "%s: Hecho."
-
-#, c-format
-msgid "%s: failure"
-msgstr "%s: Fallo."
-
-#, c-format
-msgid "fish: store %s: sending command..."
-msgstr "fish: Guardar %s: enviando comando..."
-
-msgid "fish: Local read failed, sending zeros"
-msgstr "fish: Fallo de lectura local, enviando ceros"
-
-msgid "fish: storing file"
-msgstr "fish: Guardando archivo"
-
-msgid "Aborting transfer..."
-msgstr "Abortando transferencia."
-
-msgid "Error reported after abort."
-msgstr "Error denunciado tras abortar."
-
-msgid "Aborted transfer would be successful."
-msgstr "Abortada transferencia con éxito."
 
 #, c-format
 msgid "ftpfs: Disconnecting from %s"
@@ -4348,6 +4314,14 @@ msgstr "(chdir)"
 
 msgid "ftpfs: failed; nowhere to fallback to"
 msgstr "ftpfs: Falló; no hay dónde replegarse"
+
+#, c-format
+msgid "%s: failure"
+msgstr "%s: Fallo."
+
+#, c-format
+msgid "%s: done."
+msgstr "%s: Hecho."
 
 msgid "ftpfs: storing file"
 msgstr "ftpfs: Guardando archivo"
@@ -4502,6 +4476,52 @@ msgstr "sftp: (Ctrl-G para cancelar) Listando... %s"
 
 msgid "sftp: Listing done."
 msgstr "sftp: Listado completo."
+
+#, c-format
+msgid "shell: Disconnecting from %s"
+msgstr "shell: Desconectando de %s"
+
+msgid "shell: Waiting for initial line..."
+msgstr "shell: Esperando línea de inicio..."
+
+msgid "Sorry, we cannot do password authenticated connections for now."
+msgstr "Lo siento, las conexiones con contraseña aún no son posibles."
+
+#, c-format
+msgid "shell: Password is required for %s"
+msgstr "shell: Contraseña requerida para %s"
+
+msgid "shell: Sending password..."
+msgstr "shell: Enviando contraseña de usuario"
+
+msgid "shell: Sending initial line..."
+msgstr "shell: Enviando línea de inicio..."
+
+msgid "shell: Getting host info..."
+msgstr "shell: Obteniendo información del servidor..."
+
+#, c-format
+msgid "shell: Reading directory %s..."
+msgstr "shell: Leyendo el directorio %s..."
+
+#, c-format
+msgid "shell: store %s: sending command..."
+msgstr "shell: Guardar %s: enviando comando..."
+
+msgid "shell: Local read failed, sending zeros"
+msgstr "shell: Fallo de lectura local, enviando ceros"
+
+msgid "shell: storing file"
+msgstr "shell: Guardando archivo"
+
+msgid "Aborting transfer..."
+msgstr "Abortando transferencia."
+
+msgid "Error reported after abort."
+msgstr "Error denunciado tras abortar."
+
+msgid "Aborted transfer would be successful."
+msgstr "Abortada transferencia con éxito."
 
 msgid "Inconsistent tar archive"
 msgstr "Archivo de tipo tar inconsistente"

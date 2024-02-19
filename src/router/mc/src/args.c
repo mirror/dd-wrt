@@ -1,7 +1,7 @@
 /*
    Handle command line arguments.
 
-   Copyright (C) 2009-2023
+   Copyright (C) 2009-2024
    Free Software Foundation, Inc.
 
    Written by:
@@ -345,7 +345,7 @@ mc_args_new_color_group (void)
                                                      "                 errdhotfocus\n"
                                                      "   Menus:        menunormal, menuhot, menusel, menuhotsel, menuinactive\n"
                                                      "   Popup menus:  pmenunormal, pmenusel, pmenutitle\n"
-                                                     "   Editor:       editnormal, editbold, editmarked, editwhitespace,\n"
+                                                     "   Editor:       editnormal, editbold, editmarked, editwhitespace, editnonprintable,\n"
                                                      "                 editlinestate, editbg, editframe, editframeactive\n"
                                                      "                 editframedrag\n"
                                                      "   Viewer:       viewnormal,viewbold, viewunderline, viewselected\n"

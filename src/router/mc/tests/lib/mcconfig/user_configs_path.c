@@ -1,7 +1,7 @@
 /*
    libmc - check mcconfig submodule. Get full paths to user's config files.
 
-   Copyright (C) 2011-2023
+   Copyright (C) 2011-2024
    Free Software Foundation, Inc.
 
    Written by:
@@ -118,7 +118,7 @@ static const struct test_user_config_paths_ds
     },
     { /* 10. */
         CONF_DATA,
-        FISH_PREFIX
+        VFS_SHELL_PREFIX
     },
     { /* 11. */
         CONF_DATA,

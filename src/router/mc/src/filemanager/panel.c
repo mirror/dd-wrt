@@ -1,7 +1,7 @@
 /*
    Panel managing.
 
-   Copyright (C) 1994-2023
+   Copyright (C) 1994-2024
    Free Software Foundation, Inc.
 
    Written by:
@@ -2353,8 +2353,7 @@ goto_parent_dir (WPanel * panel)
                 mc_build_filename (vfs_path_as_str (panel->panelized_descr->root_vpath), fname->str,
                                    (char *) NULL);
 
-            fname = g_string_new (fname2);
-            g_free (fname2);
+            fname = g_string_new_take (fname2);
         }
 
         bname = x_basename (fname->str);
@@ -2923,6 +2922,7 @@ static gboolean
 do_enter_on_file_entry (WPanel * panel, file_entry_t * fe)
 {
     const char *fname = fe->fname->str;
+    char *fname_quoted;
     vfs_path_t *full_name_vpath;
     gboolean ok;
 
@@ -2973,12 +2973,14 @@ do_enter_on_file_entry (WPanel * panel, file_entry_t * fe)
         return confirm_execute || (ret == 0);
     }
 
+    fname_quoted = name_quote (fname, FALSE);
+    if (fname_quoted != NULL)
     {
-        char *tmp, *cmd;
+        char *cmd;
 
-        tmp = name_quote (fname, FALSE);
-        cmd = g_strconcat (".", PATH_SEP_STR, tmp, (char *) NULL);
-        g_free (tmp);
+        cmd = g_strconcat ("." PATH_SEP_STR, fname_quoted, (char *) NULL);
+        g_free (fname_quoted);
+
         shell_execute (cmd, 0);
         g_free (cmd);
     }
@@ -5240,8 +5242,7 @@ panel_panelize_cd (void)
 
             tmp_vpath =
                 vfs_path_append_new (pdescr->root_vpath, plist->list[i].fname->str, (char *) NULL);
-            list->list[i].fname = g_string_new (vfs_path_as_str (tmp_vpath));
-            vfs_path_free (tmp_vpath, TRUE);
+            list->list[i].fname = g_string_new_take (vfs_path_free (tmp_vpath, FALSE));
         }
         list->list[i].f.link_to_dir = plist->list[i].f.link_to_dir;
         list->list[i].f.stale_link = plist->list[i].f.stale_link;

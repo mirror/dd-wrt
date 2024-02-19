@@ -1,7 +1,7 @@
 /*
    lib - Quote file names
 
-   Copyright (C) 2011-2023
+   Copyright (C) 2011-2024
    Free Software Foundation, Inc.
 
    Written by:
@@ -91,6 +91,8 @@ static const struct data_source2
     const char *expected_string;
 } data_source2[] =
 {
+    {NULL, NULL},
+    {"", NULL},
     {"-", "./-"},
     {"blabla-", "blabla-"},
     {"\r\n\t", "\\\r\\\n\\\t"},

@@ -1,7 +1,7 @@
 /*
    Search & replace engine of MCEditor.
 
-   Copyright (C) 2021-2023
+   Copyright (C) 2021-2024
    Free Software Foundation, Inc.
 
    Written by:
@@ -29,7 +29,7 @@
 
 #include "lib/global.h"
 #include "lib/search.h"
-#include "lib/mcconfig.h"       /* mc_config_history_get */
+#include "lib/mcconfig.h"       /* mc_config_history_get_recent_item() */
 #ifdef HAVE_CHARSET
 #include "lib/charsets.h"       /* cp_source */
 #endif
@@ -780,16 +780,12 @@ edit_search_cmd (WEdit * edit, gboolean again)
     else
     {
         /* find last search string in history */
-        GList *history;
+        char *s;
 
-        history = mc_config_history_get (MC_HISTORY_SHARED_SEARCH);
-        if (history != NULL)
+        s = mc_config_history_get_recent_item (MC_HISTORY_SHARED_SEARCH);
+        if (s != NULL)
         {
-            /* FIXME: is it possible that history->data == NULL? */
-            edit->last_search_string = (char *) history->data;
-            history->data = NULL;
-            history = g_list_first (history);
-            g_list_free_full (history, g_free);
+            edit->last_search_string = s;
 
             if (edit_search_init (edit, edit->last_search_string))
             {
@@ -877,7 +873,8 @@ edit_replace_cmd (WEdit * edit, gboolean again)
         edit->search = NULL;
     }
 
-    input2_str = g_string_new (input2);
+    input2_str = g_string_new_take (input2);
+    input2 = NULL;
 
     if (edit->search == NULL)
     {

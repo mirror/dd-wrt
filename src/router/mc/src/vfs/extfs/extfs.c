@@ -1,7 +1,7 @@
 /*
    Virtual File System: External file system.
 
-   Copyright (C) 1995-2023
+   Copyright (C) 1995-2024
    Free Software Foundation, Inc.
 
    Written by:
@@ -916,10 +916,9 @@ extfs_cmd (const char *str_extfs_cmd, const struct extfs_super_t *archive,
 {
     char *file;
     char *quoted_file;
-    char *quoted_localname;
     char *archive_name, *quoted_archive_name;
     const extfs_plugin_info_t *info;
-    char *cmd;
+    char *cmd = NULL;
     int retval = 0;
     GError *error = NULL;
     mc_pipe_t *pip;
@@ -928,19 +927,48 @@ extfs_cmd (const char *str_extfs_cmd, const struct extfs_super_t *archive,
     quoted_file = name_quote (file, FALSE);
     g_free (file);
 
+    if (quoted_file == NULL)
+    {
+        message (D_ERROR, MSG_ERROR, _("EXTFS virtual file system:\nwrong file name"));
+        return (-1);
+    }
+
     /* Skip leading "./" (if present) added in name_quote() */
     file = extfs_skip_leading_dotslash (quoted_file);
 
     archive_name = extfs_get_archive_name (archive);
     quoted_archive_name = name_quote (archive_name, FALSE);
     g_free (archive_name);
-    quoted_localname = name_quote (localname, FALSE);
+
+    if (quoted_archive_name == NULL)
+    {
+        message (D_ERROR, MSG_ERROR, _("EXTFS virtual file system:\nwrong archive name"));
+        return (-1);
+    }
+
     info = &g_array_index (extfs_plugins, extfs_plugin_info_t, archive->fstype);
-    cmd = g_strconcat (info->path, info->prefix, str_extfs_cmd,
-                       quoted_archive_name, " ", file, " ", quoted_localname, (char *) NULL);
+
+    if (localname == NULL || *localname == '\0')
+        cmd = g_strconcat (info->path, info->prefix, str_extfs_cmd, quoted_archive_name, " ",
+                           file, (char *) NULL);
+    else
+    {
+        char *quoted_localname;
+
+        quoted_localname = name_quote (localname, FALSE);
+        cmd = g_strconcat (info->path, info->prefix, str_extfs_cmd, quoted_archive_name, " ",
+                           file, " ", quoted_localname, (char *) NULL);
+        g_free (quoted_localname);
+    }
+
     g_free (quoted_file);
-    g_free (quoted_localname);
     g_free (quoted_archive_name);
+
+    if (cmd == NULL)
+    {
+        message (D_ERROR, MSG_ERROR, _("EXTFS virtual file system:\ncannot build command"));
+        return (-1);
+    }
 
     /* don't read stdout */
     pip = mc_popen (cmd, FALSE, TRUE, &error);

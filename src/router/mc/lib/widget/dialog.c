@@ -1,7 +1,7 @@
 /*
    Dialog box features module for the Midnight Commander
 
-   Copyright (C) 1994-2023
+   Copyright (C) 1994-2024
    Free Software Foundation, Inc.
 
    This file is part of the Midnight Commander.
@@ -83,7 +83,7 @@ dlg_default_get_colors (const Widget * w)
 
 /* --------------------------------------------------------------------------------------------- */
 /**
-  * Read histories from the ${XDG_CACHE_HOME}/mc/history file
+  * Read histories from the ${XDG_DATA_HOME}/mc/history file
   */
 static void
 dlg_read_history (WDialog * h)
@@ -122,6 +122,16 @@ refresh_cmd (void)
 
 /* --------------------------------------------------------------------------------------------- */
 
+static void
+dlg_help (const WDialog * h)
+{
+    ev_help_t event_data = { NULL, h->help_ctx };
+
+    mc_event_raise (MCEVENT_GROUP_CORE, "help", &event_data);
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
 static cb_ret_t
 dlg_execute_cmd (WDialog * h, long command)
 {
@@ -152,10 +162,7 @@ dlg_execute_cmd (WDialog * h, long command)
         break;
 
     case CK_Help:
-        {
-            ev_help_t event_data = { NULL, h->help_ctx };
-            mc_event_raise (MCEVENT_GROUP_CORE, "help", &event_data);
-        }
+        dlg_help (h);
         break;
 
     case CK_Suspend:
@@ -571,7 +578,7 @@ dlg_run (WDialog * h)
 /* --------------------------------------------------------------------------------------------- */
 
 /**
-  * Write history to the ${XDG_CACHE_HOME}/mc/history file
+  * Write history to the ${XDG_DATA_HOME}/mc/history file
   */
 void
 dlg_save_history (WDialog * h)

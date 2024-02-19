@@ -145,7 +145,7 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/gettext.m4 \
 	$(top_srcdir)/m4.include/vfs/mc-vfs-sfs.m4 \
 	$(top_srcdir)/m4.include/vfs/mc-vfs-ftp.m4 \
 	$(top_srcdir)/m4.include/vfs/mc-vfs-sftp.m4 \
-	$(top_srcdir)/m4.include/vfs/mc-vfs-fish.m4 \
+	$(top_srcdir)/m4.include/vfs/mc-vfs-shell.m4 \
 	$(top_srcdir)/m4.include/vfs/mc-vfs-undelfs.m4 \
 	$(top_srcdir)/m4.include/vfs/mc-vfs-tarfs.m4 \
 	$(top_srcdir)/m4.include/vfs/mc-vfs-cpiofs.m4 \

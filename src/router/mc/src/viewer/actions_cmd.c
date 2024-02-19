@@ -2,7 +2,7 @@
    Internal file viewer for the Midnight Commander
    Callback function for some actions (hotkeys, menu)
 
-   Copyright (C) 1994-2023
+   Copyright (C) 1994-2024
    Free Software Foundation, Inc.
 
    Written by:
@@ -57,13 +57,13 @@
 #include "lib/charsets.h"
 #endif
 #include "lib/event.h"          /* mc_event_raise() */
-#include "lib/mcconfig.h"       /* mc_config_history_get() */
+#include "lib/mcconfig.h"       /* mc_config_history_get_recent_item() */
 
 #include "src/filemanager/layout.h"
 #include "src/filemanager/filemanager.h"        /* current_panel */
 #include "src/filemanager/ext.h"        /* regex_command_for() */
 
-#include "src/history.h"
+#include "src/history.h"        /* MC_HISTORY_SHARED_SEARCH */
 #include "src/file_history.h"   /* show_file_history() */
 #include "src/execute.h"
 #include "src/keymap.h"
@@ -139,16 +139,12 @@ mcview_continue_search_cmd (WView * view)
     else
     {
         /* find last search string in history */
-        GList *history;
+        char *s;
 
-        history = mc_config_history_get (MC_HISTORY_SHARED_SEARCH);
-        if (history != NULL)
+        s = mc_config_history_get_recent_item (MC_HISTORY_SHARED_SEARCH);
+        if (s != NULL)
         {
-            /* FIXME: is it possible that history->data == NULL? */
-            view->last_search_string = (gchar *) history->data;
-            history->data = NULL;
-            history = g_list_first (history);
-            g_list_free_full (history, g_free);
+            view->last_search_string = s;
 
             if (mcview_search_init (view))
             {
@@ -405,12 +401,6 @@ mcview_execute_cmd (WView * view, long command)
 
     switch (command)
     {
-    case CK_Help:
-        {
-            ev_help_t event_data = { NULL, "[Internal File Viewer]" };
-            mc_event_raise (MCEVENT_GROUP_CORE, "help", &event_data);
-        }
-        break;
     case CK_HexMode:
         /* Toggle between hex view and text view */
         mcview_toggle_hex_mode (view);

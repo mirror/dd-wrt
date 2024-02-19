@@ -13,7 +13,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: https://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2023-08-13 21:07+0200\n"
+"POT-Creation-Date: 2024-01-27 09:33+0100\n"
 "PO-Revision-Date: 2010-12-29 10:19+0000\n"
 "Last-Translator: Alexander Shopov <ash@kambanaria.org>, 2022\n"
 "Language-Team: Bulgarian (http://app.transifex.com/mc/mc/language/bg/)\n"
@@ -739,31 +739,13 @@ msgid ""
 "                 errdhotfocus\n"
 "   Menus:        menunormal, menuhot, menusel, menuhotsel, menuinactive\n"
 "   Popup menus:  pmenunormal, pmenusel, pmenutitle\n"
-"   Editor:       editnormal, editbold, editmarked, editwhitespace,\n"
+"   Editor:       editnormal, editbold, editmarked, editwhitespace, "
+"editnonprintable,\n"
 "                 editlinestate, editbg, editframe, editframeactive\n"
 "                 editframedrag\n"
 "   Viewer:       viewnormal,viewbold, viewunderline, viewselected\n"
 "   Help:         helpnormal, helpitalic, helpbold, helplink, helpslink\n"
 msgstr ""
-"--colors КЛЮЧОВА_ДУМА={ЦВЯТ},{ФОН},{АТРИБУТ}:КЛЮЧОВА_ДУМА_2=…\n"
-"\n"
-"Когато пропуснете {ЦВЯТ}, {ФОН} или {АТРИБУТ}, се ползват стандартните\n"
-"стойности\n"
-"\n"
-"Ключови думи:\n"
-" Глобални:           errors, disabled, reverse, gauge, header,\n"
-"                     input, inputmark, inputunchanged, commandlinemark,\n"
-"                     bbarhotkey, bbarbutton, statusbar\n"
-" Файлове:            normal, selected, marked, markselect\n"
-" Диалогови прозорци: dnormal, dfocus, dhotnormal, dhotfocus, errdhotnormal,\n"
-"                     errdhotfocus\n"
-" Менюта:             menunormal, menuhot, menusel, menuhotsel, menuinactive\n"
-" Изскачащи менюта:   pmenunormal, pmenusel, pmenutitle\n"
-" Редактор:           editnormal, editbold, editmarked, editwhitespace,\n"
-"                     editlinestate, editbg, editframe, editframeactive,\n"
-"                     editframedrag\n"
-" Преглед:            viewnormal, viewbold, viewunderline, viewselected\n"
-" Помощ:              helpnormal, helpitalic, helpbold, helplink, helpslink\n"
 
 #. TRANSLATORS: don't translate color names and attributes
 msgid ""
@@ -1633,7 +1615,7 @@ msgstr ""
 "Удобен текстови редактор\n"
 "за Midnight Commander."
 
-msgid "Copyright (C) 1996-2023 the Free Software Foundation"
+msgid "Copyright (C) 1996-2024 the Free Software Foundation"
 msgstr ""
 
 msgid "About"
@@ -4157,66 +4139,24 @@ msgstr ""
 "Виртуална ФС по EXTFS:\n"
 "%s"
 
+msgid ""
+"EXTFS virtual file system:\n"
+"wrong file name"
+msgstr ""
+
+msgid ""
+"EXTFS virtual file system:\n"
+"wrong archive name"
+msgstr ""
+
+msgid ""
+"EXTFS virtual file system:\n"
+"cannot build command"
+msgstr ""
+
 #, c-format
 msgid "Warning: cannot open %s directory\n"
 msgstr "Предупреждение: директорията %s не може да се отвори \n"
-
-#, c-format
-msgid "fish: Disconnecting from %s"
-msgstr "fish: Изключване от %s"
-
-msgid "fish: Waiting for initial line..."
-msgstr "fish: Изчаква се начален ред…"
-
-msgid "Sorry, we cannot do password authenticated connections for now."
-msgstr "Засега връзки с парола не може да се осъществят."
-
-#, c-format
-msgid "fish: Password is required for %s"
-msgstr "fish: Нужна е парола за %s"
-
-msgid "fish: Sending password..."
-msgstr "fish: Изпращане на парола…"
-
-msgid "fish: Sending initial line..."
-msgstr "fish: Изпращане на начален ред…"
-
-msgid "fish: Handshaking version..."
-msgstr "fish: Потвърждаване на версията…"
-
-msgid "fish: Getting host info..."
-msgstr "fish: Получаване на данни за хоста…"
-
-#, c-format
-msgid "fish: Reading directory %s..."
-msgstr "fish: Прочитане на директорията %s…"
-
-#, c-format
-msgid "%s: done."
-msgstr "%s: готово."
-
-#, c-format
-msgid "%s: failure"
-msgstr "%s: неуспех"
-
-#, c-format
-msgid "fish: store %s: sending command..."
-msgstr "fish: запис на %s: изпращане на командата…"
-
-msgid "fish: Local read failed, sending zeros"
-msgstr "fish: Неуспешно локалнот четене, изпращат се нули"
-
-msgid "fish: storing file"
-msgstr "fish: запис на файл"
-
-msgid "Aborting transfer..."
-msgstr "Отмяна на пренасянето…"
-
-msgid "Error reported after abort."
-msgstr "Грешка след отмяната."
-
-msgid "Aborted transfer would be successful."
-msgstr "Преносът е отменен успешно."
 
 #, c-format
 msgid "ftpfs: Disconnecting from %s"
@@ -4327,6 +4267,14 @@ msgstr "(първо cd)"
 
 msgid "ftpfs: failed; nowhere to fallback to"
 msgstr "ftpfs: неуспех; няма място за връщане"
+
+#, c-format
+msgid "%s: failure"
+msgstr "%s: неуспех"
+
+#, c-format
+msgid "%s: done."
+msgstr "%s: готово."
 
 msgid "ftpfs: storing file"
 msgstr "ftpfs: съхраняване на файл"
@@ -4484,6 +4432,52 @@ msgstr "sftp: (прекъсване с Ctrl-G) Извеждане… %s"
 
 msgid "sftp: Listing done."
 msgstr "sftp: Извеждането приключи."
+
+#, c-format
+msgid "shell: Disconnecting from %s"
+msgstr ""
+
+msgid "shell: Waiting for initial line..."
+msgstr ""
+
+msgid "Sorry, we cannot do password authenticated connections for now."
+msgstr "Засега връзки с парола не може да се осъществят."
+
+#, c-format
+msgid "shell: Password is required for %s"
+msgstr ""
+
+msgid "shell: Sending password..."
+msgstr ""
+
+msgid "shell: Sending initial line..."
+msgstr ""
+
+msgid "shell: Getting host info..."
+msgstr ""
+
+#, c-format
+msgid "shell: Reading directory %s..."
+msgstr ""
+
+#, c-format
+msgid "shell: store %s: sending command..."
+msgstr ""
+
+msgid "shell: Local read failed, sending zeros"
+msgstr ""
+
+msgid "shell: storing file"
+msgstr ""
+
+msgid "Aborting transfer..."
+msgstr "Отмяна на пренасянето…"
+
+msgid "Error reported after abort."
+msgstr "Грешка след отмяната."
+
+msgid "Aborted transfer would be successful."
+msgstr "Преносът е отменен успешно."
 
 msgid "Inconsistent tar archive"
 msgstr "сгрешен архив tar"

@@ -1,7 +1,7 @@
 /*
    Virtual File System: GNU Tar file system.
 
-   Copyright (C) 1995-2023
+   Copyright (C) 1995-2024
    Free Software Foundation, Inc.
 
    Written by:
@@ -87,6 +87,8 @@ struct tar_stat_info current_stat_info;
 #define XGLTYPE 'g'             /* Global extended header */
 
 /* Values used in typeflag field.  */
+#define REGTYPE  '0'            /* regular file */
+#define AREGTYPE '\0'           /* regular file */
 #define LNKTYPE  '1'            /* link */
 #define SYMTYPE  '2'            /* symbolic link */
 #define CHRTYPE  '3'            /* character special */
@@ -123,7 +125,6 @@ struct tar_stat_info current_stat_info;
 #define MODE_FROM_HEADER(where,hbits) mode_from_header (where, sizeof (where), hbits)
 #define TIME_FROM_HEADER(where) time_from_header (where, sizeof (where))
 #define UID_FROM_HEADER(where) uid_from_header (where, sizeof (where))
-#define UINTMAX_FROM_HEADER(where) uintmax_from_header (where, sizeof (where))
 
 /*** file scope type declarations ****************************************************************/
 
@@ -247,14 +248,6 @@ uid_from_header (const char *p, size_t s)
 
 /* --------------------------------------------------------------------------------------------- */
 
-static inline uintmax_t
-uintmax_from_header (const char *p, size_t s)
-{
-    return tar_from_header (p, s, "uintmax_t", 0, UINTMAX_MAX, FALSE);
-}
-
-/* --------------------------------------------------------------------------------------------- */
-
 static void
 tar_calc_sparse_offsets (struct vfs_s_inode *inode)
 {
@@ -304,7 +297,7 @@ tar_skip_member (tar_super_t * archive, struct vfs_s_inode *inode)
     }
     else if (save_typeflag != DIRTYPE)
     {
-        if (inode != NULL)
+        if (inode != NULL && (save_typeflag == REGTYPE || save_typeflag == AREGTYPE))
             inode->data_offset = BLOCKSIZE * tar_current_block_ordinal (archive);
 
         return tar_skip_file (archive, current_stat_info.stat.st_size);
@@ -390,8 +383,10 @@ tar_decode_header (union block *header, tar_super_t * arch)
     {
         if (strcmp (header->header.magic, TMAGIC) == 0)
         {
-            if (header->star_header.prefix[130] == 0 && isodigit (header->star_header.atime[0])
-                && header->star_header.atime[11] == ' ' && isodigit (header->star_header.ctime[0])
+            if (header->star_header.prefix[130] == 0
+                && is_octal_digit (header->star_header.atime[0])
+                && header->star_header.atime[11] == ' '
+                && is_octal_digit (header->star_header.ctime[0])
                 && header->star_header.ctime[11] == ' ')
                 arch->type = TAR_STAR;
             else if (current_stat_info.xhdr.buffer != NULL)
@@ -588,7 +583,6 @@ tar_insert_entry (struct vfs_class *me, struct vfs_s_super *archive, union block
         (*inode)->st.st_mtime = current_stat_info.mtime.tv_sec;
         (*inode)->st.st_atime = current_stat_info.atime.tv_sec;
         (*inode)->st.st_ctime = current_stat_info.ctime.tv_sec;
-        (*inode)->data_offset = BLOCKSIZE * tar_current_block_ordinal (TAR_SUPER (archive));
 
         if (link_name != NULL && *link_name != '\0')
             (*inode)->linkname = g_strdup (link_name);

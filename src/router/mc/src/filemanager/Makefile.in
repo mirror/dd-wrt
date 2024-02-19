@@ -91,7 +91,6 @@ host_triplet = @host@
 @ENABLE_EXT2FS_ATTR_TRUE@am__append_1 = \
 @ENABLE_EXT2FS_ATTR_TRUE@	chattr.c
 
-@ENABLE_EXT2FS_ATTR_TRUE@am__append_2 = @EXT2FS_CFLAGS@ @E2P_CFLAGS@
 subdir = src/filemanager
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/gettext.m4 \
@@ -138,7 +137,7 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/gettext.m4 \
 	$(top_srcdir)/m4.include/vfs/mc-vfs-sfs.m4 \
 	$(top_srcdir)/m4.include/vfs/mc-vfs-ftp.m4 \
 	$(top_srcdir)/m4.include/vfs/mc-vfs-sftp.m4 \
-	$(top_srcdir)/m4.include/vfs/mc-vfs-fish.m4 \
+	$(top_srcdir)/m4.include/vfs/mc-vfs-shell.m4 \
 	$(top_srcdir)/m4.include/vfs/mc-vfs-undelfs.m4 \
 	$(top_srcdir)/m4.include/vfs/mc-vfs-tarfs.m4 \
 	$(top_srcdir)/m4.include/vfs/mc-vfs-cpiofs.m4 \
@@ -467,7 +466,7 @@ libmcfilemanager_la_SOURCES = achown.c boxes.c boxes.h cd.c cd.h \
 
 # Unmaintained, unsupported, etc
 #	listmode.c listmode.h
-AM_CPPFLAGS = -I$(top_srcdir) $(GLIB_CFLAGS) $(am__append_2)
+AM_CPPFLAGS = -I$(top_srcdir) $(GLIB_CFLAGS)
 all: all-am
 
 .SUFFIXES:

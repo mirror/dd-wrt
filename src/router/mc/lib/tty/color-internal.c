@@ -1,7 +1,7 @@
 /*
    Internal stuff of color setup
 
-   Copyright (C) 1994-2023
+   Copyright (C) 1994-2024
    Free Software Foundation, Inc.
 
    Written by:
@@ -184,9 +184,9 @@ tty_color_get_name_by_index (int idx)
         char name[9];
 
         if (idx < 256)
-            sprintf (name, "color%d", idx);
+            g_snprintf (name, sizeof (name), "color%d", idx);
         else
-            sprintf (name, "#%06X", (unsigned int) idx & 0xFFFFFF);
+            g_snprintf (name, sizeof (name), "#%06X", (unsigned int) idx & 0xFFFFFF);
         return g_intern_string (name);
     }
     return "default";

@@ -75,7 +75,6 @@ src/textconf.c
 src/usermenu.c
 src/vfs/cpio/cpio.c
 src/vfs/extfs/extfs.c
-src/vfs/fish/fish.c
 src/vfs/ftpfs/ftpfs.c
 src/vfs/sfs/sfs.c
 src/vfs/sftpfs/config_parser.c
@@ -83,6 +82,7 @@ src/vfs/sftpfs/connection.c
 src/vfs/sftpfs/file.c
 src/vfs/sftpfs/internal.c
 src/vfs/sftpfs/sftpfs.c
+src/vfs/shell/shell.c
 src/vfs/tar/tar.c
 src/vfs/tar/tar-internal.c
 src/vfs/undelfs/undelfs.c

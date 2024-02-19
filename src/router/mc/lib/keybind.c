@@ -1,7 +1,7 @@
 /*
    Definitions of key bindings.
 
-   Copyright (C) 2005-2023
+   Copyright (C) 2005-2024
    Free Software Foundation, Inc.
 
    Written by:
@@ -174,8 +174,8 @@ static name_keymap_t command_names[] = {
     ADD_KEYMAP_NAME (LinkSymbolicEdit),
     ADD_KEYMAP_NAME (ExternalPanelize),
     ADD_KEYMAP_NAME (Filter),
-#ifdef ENABLE_VFS_FISH
-    ADD_KEYMAP_NAME (ConnectFish),
+#ifdef ENABLE_VFS_SHELL
+    ADD_KEYMAP_NAME (ConnectShell),
 #endif
 #ifdef ENABLE_VFS_FTP
     ADD_KEYMAP_NAME (ConnectFtp),

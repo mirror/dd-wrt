@@ -25,9 +25,6 @@
 /* Support for extfs */
 #undef ENABLE_VFS_EXTFS
 
-/* Support for FISH vfs */
-#undef ENABLE_VFS_FISH
-
 /* Support for FTP (classic) */
 #undef ENABLE_VFS_FTP
 
@@ -39,6 +36,9 @@
 
 /* Support for SFTP filesystem */
 #undef ENABLE_VFS_SFTP
+
+/* Support for SHELL vfs */
+#undef ENABLE_VFS_SHELL
 
 /* Support for tar filesystem */
 #undef ENABLE_VFS_TAR

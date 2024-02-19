@@ -1,7 +1,7 @@
 /*
    Editor low level data handling and cursor fundamentals.
 
-   Copyright (C) 1996-2023
+   Copyright (C) 1996-2024
    Free Software Foundation, Inc.
 
    Written by:
@@ -142,6 +142,7 @@ static const struct edit_filters
     { "lz4 -cd %s 2>&1", "lz4 > %s", ".lz4" },
     { "lzip -cd %s 2>&1", "lzip > %s", ".lz"},
     { "lzma -cd %s 2>&1", "lzma > %s", ".lzma" },
+    { "lzop -cd %s 2>&1", "lzop > %s", ".lzo"},
     { "bzip2 -cd %s 2>&1", "bzip2 > %s", ".bz2" },
     { "gzip -cd %s 2>&1", "gzip > %s", ".gz" },
     { "gzip -cd %s 2>&1", "gzip > %s", ".Z" }
@@ -262,15 +263,20 @@ static char *
 edit_get_filter (const vfs_path_t * filename_vpath)
 {
     int i;
-    char *p, *quoted_name;
+    char *quoted_name;
+    char *p = NULL;
 
     i = edit_find_filter (filename_vpath);
     if (i < 0)
         return NULL;
 
     quoted_name = name_quote (vfs_path_as_str (filename_vpath), FALSE);
-    p = g_strdup_printf (all_filters[i].read, quoted_name);
-    g_free (quoted_name);
+    if (quoted_name != NULL)
+    {
+        p = g_strdup_printf (all_filters[i].read, quoted_name);
+        g_free (quoted_name);
+    }
+
     return p;
 }
 
@@ -479,6 +485,7 @@ edit_load_position (WEdit * edit, gboolean load_position)
 {
     long line, column;
     off_t offset;
+    off_t b;
 
     if (edit->filename_vpath == NULL
         || *(vfs_path_get_by_index (edit->filename_vpath, 0)->path) == '\0')
@@ -503,7 +510,8 @@ edit_load_position (WEdit * edit, gboolean load_position)
         edit->search_start = edit->buffer.curs1;
     }
 
-    edit_move_to_prev_col (edit, edit_buffer_get_current_bol (&edit->buffer));
+    b = edit_buffer_get_current_bol (&edit->buffer);
+    edit_move_to_prev_col (edit, b);
     edit_move_display (edit, line - (WIDGET (edit)->rect.lines / 2));
 }
 
@@ -637,7 +645,7 @@ edit_modification (WEdit * edit)
     edit->caches_valid = FALSE;
 
     /* raise lock when file modified */
-    if (!edit->modified && !edit->delete_file)
+    if (edit->modified == 0 && edit->delete_file == 0)
         edit->locked = lock_file (edit->filename_vpath);
     edit->modified = 1;
 }
@@ -679,12 +687,12 @@ is_blank (const edit_buffer_t * buf, off_t offset)
     off_t s, f;
 
     s = edit_buffer_get_bol (buf, offset);
-    f = edit_buffer_get_eol (buf, offset) - 1;
-    while (s <= f)
+    f = edit_buffer_get_eol (buf, offset);
+    for (; s < f; s++)
     {
         int c;
 
-        c = edit_buffer_get_byte (buf, s++);
+        c = edit_buffer_get_byte (buf, s);
         if (!isspace (c))
             return FALSE;
     }
@@ -697,7 +705,8 @@ is_blank (const edit_buffer_t * buf, off_t offset)
 static off_t
 edit_find_line (WEdit * edit, long line)
 {
-    long i, j = 0;
+    long i;
+    long j = 0;
     long m = 2000000000;        /* what is the magic number? */
 
     if (!edit->caches_valid)
@@ -874,7 +883,10 @@ edit_move_to_bottom (WEdit * edit)
 static void
 edit_cursor_to_bol (WEdit * edit)
 {
-    edit_cursor_move (edit, edit_buffer_get_current_bol (&edit->buffer) - edit->buffer.curs1);
+    off_t b;
+
+    b = edit_buffer_get_current_bol (&edit->buffer);
+    edit_cursor_move (edit, b - edit->buffer.curs1);
     edit->search_start = edit->buffer.curs1;
     edit->prev_col = edit_get_col (edit);
     edit->over_col = 0;
@@ -886,7 +898,10 @@ edit_cursor_to_bol (WEdit * edit)
 static void
 edit_cursor_to_eol (WEdit * edit)
 {
-    edit_cursor_move (edit, edit_buffer_get_current_eol (&edit->buffer) - edit->buffer.curs1);
+    off_t b;
+
+    b = edit_buffer_get_current_eol (&edit->buffer);
+    edit_cursor_move (edit, b - edit->buffer.curs1);
     edit->search_start = edit->buffer.curs1;
     edit->prev_col = edit_get_col (edit);
     edit->over_col = 0;
@@ -897,8 +912,8 @@ edit_cursor_to_eol (WEdit * edit)
 static unsigned long
 my_type_of (int c)
 {
-    unsigned long x, r = 0;
-    const char *p, *q;
+    unsigned long r = 0;
+    const char *q;
     const char chars_move_whole_word[] =
         "!=&|<>^~ !:;, !'!`!.?!\"!( !) !{ !} !Aa0 !+-*/= |<> ![ !] !\\#! ";
 
@@ -918,16 +933,21 @@ my_type_of (int c)
     else if (isspace (c))
         c = ' ';
     q = strchr (chars_move_whole_word, c);
-    if (!q)
+    if (q == NULL)
         return 0xFFFFFFFFUL;
+
     do
     {
+        unsigned long x;
+        const char *p;
+
         for (x = 1, p = chars_move_whole_word; p < q; p++)
             if (*p == '!')
                 x <<= 1;
         r |= x;
     }
-    while ((q = strchr (q + 1, c)));
+    while ((q = strchr (q + 1, c)) != NULL);
+
     return r;
 }
 
@@ -949,8 +969,10 @@ edit_left_word_move (WEdit * edit, int s)
         if (edit->buffer.curs1 == 0)
             break;
         c1 = edit_buffer_get_previous_byte (&edit->buffer);
+        if (c1 == '\n')
+            break;
         c2 = edit_buffer_get_current_byte (&edit->buffer);
-        if (c1 == '\n' || c2 == '\n')
+        if (c2 == '\n')
             break;
         if ((my_type_of (c1) & my_type_of (c2)) == 0)
             break;
@@ -988,8 +1010,10 @@ edit_right_word_move (WEdit * edit, int s)
         if (edit->buffer.curs1 >= edit->buffer.size)
             break;
         c1 = edit_buffer_get_previous_byte (&edit->buffer);
+        if (c1 == '\n')
+            break;
         c2 = edit_buffer_get_current_byte (&edit->buffer);
-        if (c1 == '\n' || c2 == '\n')
+        if (c2 == '\n')
             break;
         if ((my_type_of (c1) & my_type_of (c2)) == 0)
             break;
@@ -1118,8 +1142,10 @@ edit_right_delete_word (WEdit * edit)
         int c1, c2;
 
         c1 = edit_delete (edit, TRUE);
+        if (c1 == '\n')
+            break;
         c2 = edit_buffer_get_current_byte (&edit->buffer);
-        if (c1 == '\n' || c2 == '\n')
+        if (c2 == '\n')
             break;
         if ((isspace (c1) == 0) != (isspace (c2) == 0))
             break;
@@ -1138,8 +1164,10 @@ edit_left_delete_word (WEdit * edit)
         int c1, c2;
 
         c1 = edit_backspace (edit, TRUE);
+        if (c1 == '\n')
+            break;
         c2 = edit_buffer_get_previous_byte (&edit->buffer);
-        if (c1 == '\n' || c2 == '\n')
+        if (c2 == '\n')
             break;
         if ((isspace (c1) == 0) != (isspace (c2) == 0))
             break;
@@ -1162,8 +1190,11 @@ edit_do_undo (WEdit * edit)
 
     edit->undo_stack_disable = 1;       /* don't record undo's onto undo stack! */
     edit->over_col = 0;
+
     while ((ac = edit_pop_undo_action (edit)) < KEY_PRESS)
     {
+        off_t b;
+
         switch ((int) ac)
         {
         case STACK_BOTTOM:
@@ -1199,16 +1230,14 @@ edit_do_undo (WEdit * edit)
         if (ac >= MARK_1 - 2 && ac < MARK_2 - 2)
         {
             edit->mark1 = ac - MARK_1;
-            edit->column1 =
-                (long) edit_move_forward3 (edit, edit_buffer_get_bol (&edit->buffer, edit->mark1),
-                                           0, edit->mark1);
+            b = edit_buffer_get_bol (&edit->buffer, edit->mark1);
+            edit->column1 = (long) edit_move_forward3 (edit, b, 0, edit->mark1);
         }
         if (ac >= MARK_2 - 2 && ac < MARK_CURS - 2)
         {
             edit->mark2 = ac - MARK_2;
-            edit->column2 =
-                (long) edit_move_forward3 (edit, edit_buffer_get_bol (&edit->buffer, edit->mark2),
-                                           0, edit->mark2);
+            b = edit_buffer_get_bol (&edit->buffer, edit->mark2);
+            edit->column2 = (long) edit_move_forward3 (edit, b, 0, edit->mark2);
         }
         else if (ac >= MARK_CURS - 2 && ac < KEY_PRESS)
         {
@@ -1249,8 +1278,11 @@ edit_do_redo (WEdit * edit)
         return;
 
     edit->over_col = 0;
+
     while ((ac = edit_pop_redo_action (edit)) < KEY_PRESS)
     {
+        off_t b;
+
         switch ((int) ac)
         {
         case STACK_BOTTOM:
@@ -1284,19 +1316,17 @@ edit_do_redo (WEdit * edit)
         if (ac >= MARK_1 - 2 && ac < MARK_2 - 2)
         {
             edit->mark1 = ac - MARK_1;
-            edit->column1 =
-                (long) edit_move_forward3 (edit, edit_buffer_get_bol (&edit->buffer, edit->mark1),
-                                           0, edit->mark1);
+            b = edit_buffer_get_bol (&edit->buffer, edit->mark1);
+            edit->column1 = (long) edit_move_forward3 (edit, b, 0, edit->mark1);
         }
         else if (ac >= MARK_2 - 2 && ac < KEY_PRESS)
         {
             edit->mark2 = ac - MARK_2;
-            edit->column2 =
-                (long) edit_move_forward3 (edit, edit_buffer_get_bol (&edit->buffer, edit->mark2),
-                                           0, edit->mark2);
+            b = edit_buffer_get_bol (&edit->buffer, edit->mark2);
+            edit->column2 = (long) edit_move_forward3 (edit, b, 0, edit->mark2);
         }
         /* more than one pop usually means something big */
-        if (count++)
+        if (count++ != 0)
             edit->force |= REDRAW_PAGE;
     }
 
@@ -1326,6 +1356,7 @@ edit_group_undo (WEdit * edit)
 {
     long ac = KEY_PRESS;
     long cur_ac = KEY_PRESS;
+
     while (ac != STACK_BOTTOM && ac == cur_ac)
     {
         cur_ac = get_prev_undo_action (edit);
@@ -1374,7 +1405,8 @@ is_aligned_on_a_tab (WEdit * edit)
 static gboolean
 right_of_four_spaces (WEdit * edit)
 {
-    int i, ch = 0;
+    int i;
+    int ch = 0;
 
     for (i = 1; i <= HALF_TAB_SIZE; i++)
         ch |= edit_buffer_get_byte (&edit->buffer, edit->buffer.curs1 - i);
@@ -1442,14 +1474,8 @@ insert_spaces_tab (WEdit * edit, gboolean half)
     if (half)
         i /= 2;
     if (i != 0)
-    {
-        i = ((edit->curs_col / i) + 1) * i - edit->curs_col;
-        while (i > 0)
-        {
+        for (i = ((edit->curs_col / i) + 1) * i - edit->curs_col; i > 0; i -= space_width)
             edit_insert (edit, ' ');
-            i -= space_width;
-        }
-    }
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -1609,6 +1635,8 @@ edit_move_block_to_right (WEdit * edit)
 
     do
     {
+        off_t b;
+
         edit_cursor_move (edit, cur_bol - edit->buffer.curs1);
         if (!edit_line_is_blank (edit, edit->buffer.curs_line))
         {
@@ -1616,8 +1644,9 @@ edit_move_block_to_right (WEdit * edit)
                 insert_spaces_tab (edit, edit_options.fake_half_tabs);
             else
                 edit_insert (edit, '\t');
-            edit_cursor_move (edit,
-                              edit_buffer_get_bol (&edit->buffer, cur_bol) - edit->buffer.curs1);
+
+            b = edit_buffer_get_bol (&edit->buffer, cur_bol);
+            edit_cursor_move (edit, b - edit->buffer.curs1);
         }
 
         if (cur_bol == 0)
@@ -1687,10 +1716,10 @@ edit_move_block_to_left (WEdit * edit)
 static size_t
 edit_print_string (WEdit * e, const char *s)
 {
-    size_t i = 0;
+    size_t i;
 
-    while (s[i] != '\0')
-        edit_execute_cmd (e, CK_InsertChar, (unsigned char) s[i++]);
+    for (i = 0; s[i] != '\0'; i++)
+        edit_execute_cmd (e, CK_InsertChar, (unsigned char) s[i]);
     e->force |= REDRAW_COMPLETELY;
     edit_update_screen (e);
     return i;
@@ -1772,10 +1801,10 @@ edit_insert_column_from_file (WEdit * edit, int file, off_t * start_pos, off_t *
 /** User edit menu, like user menu (F2) but only in editor. */
 
 void
-user_menu (WEdit * edit, const char *menu_file, int selected_entry)
+edit_user_menu (WEdit * edit, const char *menu_file, int selected_entry)
 {
     char *block_file;
-    gboolean nomark;
+    gboolean mark;
     off_t curs;
     off_t start_mark, end_mark;
     struct stat status;
@@ -1784,27 +1813,27 @@ user_menu (WEdit * edit, const char *menu_file, int selected_entry)
     block_file = mc_config_get_full_path (EDIT_HOME_BLOCK_FILE);
     block_file_vpath = vfs_path_from_str (block_file);
     curs = edit->buffer.curs1;
-    nomark = !eval_marks (edit, &start_mark, &end_mark);
-    if (!nomark)
+    mark = eval_marks (edit, &start_mark, &end_mark);
+    if (mark)
         edit_save_block (edit, block_file, start_mark, end_mark);
 
     /* run shell scripts from menu */
     if (user_menu_cmd (CONST_WIDGET (edit), menu_file, selected_entry)
         && (mc_stat (block_file_vpath, &status) == 0) && (status.st_size != 0))
     {
-        int rc = 0;
+        gboolean rc = FALSE;
         FILE *fd;
 
         /* i.e. we have marked block */
-        if (!nomark)
+        if (mark)
             rc = edit_block_delete_cmd (edit);
 
-        if (rc == 0)
+        if (!rc)
         {
             off_t ins_len;
 
             ins_len = edit_insert_file (edit, block_file_vpath);
-            if (!nomark && ins_len > 0)
+            if (mark && ins_len > 0)
                 edit_set_markers (edit, start_mark, start_mark + ins_len, 0, 0);
         }
         /* truncate block file */
@@ -1827,7 +1856,8 @@ edit_get_write_filter (const vfs_path_t * write_name_vpath, const vfs_path_t * f
 {
     int i;
     const char *write_name;
-    char *p, *write_name_quoted;
+    char *write_name_quoted;
+    char *p = NULL;
 
     i = edit_find_filter (filename_vpath);
     if (i < 0)
@@ -1835,8 +1865,11 @@ edit_get_write_filter (const vfs_path_t * write_name_vpath, const vfs_path_t * f
 
     write_name = vfs_path_get_last_path_str (write_name_vpath);
     write_name_quoted = name_quote (write_name, FALSE);
-    p = g_strdup_printf (all_filters[i].write, write_name_quoted);
-    g_free (write_name_quoted);
+    if (write_name_quoted != NULL)
+    {
+        p = g_strdup_printf (all_filters[i].write, write_name_quoted);
+        g_free (write_name_quoted);
+    }
     return p;
 }
 
@@ -1950,7 +1983,7 @@ edit_write_stream (WEdit * edit, FILE * f)
 gboolean
 is_break_char (char c)
 {
-    return (isspace (c) || strchr ("{}[]()<>=|/\\!?~-+`'\",.;:#$%^&*", c));
+    return (isspace (c) || strchr ("{}[]()<>=|/\\!?~-+`'\",.;:#$%^&*", c) != NULL);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -2006,7 +2039,7 @@ edit_insert_file (WEdit * edit, const vfs_path_t * filename_vpath)
     {
         int file;
         off_t blocklen;
-        int vertical_insertion = 0;
+        gboolean vertical_insertion = FALSE;
         char *buf;
 
         file = mc_open (filename_vpath, O_RDONLY | O_BINARY);
@@ -2019,7 +2052,7 @@ edit_insert_file (WEdit * edit, const vfs_path_t * filename_vpath)
         {
             /* if contain signature VERTICAL_MAGIC then it vertical block */
             if (memcmp (buf, VERTICAL_MAGIC, sizeof (VERTICAL_MAGIC)) == 0)
-                vertical_insertion = 1;
+                vertical_insertion = TRUE;
             else
                 mc_lseek (file, 0, SEEK_SET);
         }
@@ -2377,6 +2410,7 @@ edit_push_undo_action (WEdit * edit, long c)
         && ((sp - 2) & edit->undo_stack_size_mask) != edit->undo_stack_bottom)
     {
         long d;
+
         if (edit->undo_stack[spm1] < 0)
         {
             d = edit->undo_stack[(sp - 2) & edit->undo_stack_size_mask];
@@ -2457,6 +2491,7 @@ edit_push_redo_action (WEdit * edit, long c)
         && ((sp - 2) & edit->redo_stack_size_mask) != edit->redo_stack_bottom)
     {
         long d;
+
         if (edit->redo_stack[spm1] < 0)
         {
             d = edit->redo_stack[(sp - 2) & edit->redo_stack_size_mask];
@@ -2848,8 +2883,10 @@ edit_get_cursor_offset (const WEdit * edit)
 long
 edit_get_col (const WEdit * edit)
 {
-    return (long) edit_move_forward3 (edit, edit_buffer_get_current_bol (&edit->buffer), 0,
-                                      edit->buffer.curs1);
+    off_t b;
+
+    b = edit_buffer_get_current_bol (&edit->buffer);
+    return (long) edit_move_forward3 (edit, b, 0, edit->buffer.curs1);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -2867,8 +2904,10 @@ edit_update_curs_row (WEdit * edit)
 void
 edit_update_curs_col (WEdit * edit)
 {
-    edit->curs_col = (long) edit_move_forward3 (edit, edit_buffer_get_current_bol (&edit->buffer),
-                                                0, edit->buffer.curs1);
+    off_t b;
+
+    b = edit_buffer_get_current_bol (&edit->buffer);
+    edit->curs_col = (long) edit_move_forward3 (edit, b, 0, edit->buffer.curs1);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -2899,7 +2938,6 @@ edit_scroll_upward (WEdit * edit, long i)
     }
     edit_update_curs_row (edit);
 }
-
 
 /* --------------------------------------------------------------------------------------------- */
 
@@ -2956,16 +2994,19 @@ edit_move_to_prev_col (WEdit * edit, off_t p)
 {
     long prev = edit->prev_col;
     long over = edit->over_col;
+    off_t b;
 
     edit_cursor_move (edit,
                       edit_move_forward3 (edit, p, prev + edit->over_col, 0) - edit->buffer.curs1);
 
     if (edit_options.cursor_beyond_eol)
     {
+        off_t e;
         long line_len;
 
-        line_len = (long) edit_move_forward3 (edit, edit_buffer_get_current_bol (&edit->buffer), 0,
-                                              edit_buffer_get_current_eol (&edit->buffer));
+        b = edit_buffer_get_current_bol (&edit->buffer);
+        e = edit_buffer_get_current_eol (&edit->buffer);
+        line_len = (long) edit_move_forward3 (edit, b, 0, e);
         if (line_len < prev + edit->over_col)
         {
             edit->over_col = prev + over - line_len;
@@ -2974,9 +3015,9 @@ edit_move_to_prev_col (WEdit * edit, off_t p)
         }
         else
         {
-            edit->curs_col = prev + over;
-            edit->prev_col = edit->curs_col;
             edit->over_col = 0;
+            edit->prev_col = edit->curs_col;
+            edit->curs_col = prev + over;
         }
     }
     else
@@ -2996,12 +3037,13 @@ edit_move_to_prev_col (WEdit * edit, off_t p)
                 q = edit->curs_col;
                 edit->curs_col -= (edit->curs_col % fake_half_tabs);
                 p = edit_buffer_get_current_bol (&edit->buffer);
-                edit_cursor_move (edit,
-                                  edit_move_forward3 (edit, p, edit->curs_col,
-                                                      0) - edit->buffer.curs1);
+                b = edit_move_forward3 (edit, p, edit->curs_col, 0);
+                edit_cursor_move (edit, b - edit->buffer.curs1);
                 if (!left_of_four_spaces (edit))
-                    edit_cursor_move (edit,
-                                      edit_move_forward3 (edit, p, q, 0) - edit->buffer.curs1);
+                {
+                    b = edit_move_forward3 (edit, p, q, 0);
+                    edit_cursor_move (edit, b - edit->buffer.curs1);
+                }
             }
         }
     }
@@ -3069,6 +3111,71 @@ edit_set_markers (WEdit * edit, off_t m1, off_t m2, long c1, long c2)
     edit->column2 = c2;
 }
 
+/* --------------------------------------------------------------------------------------------- */
+/**
+   if mark2 is -1 then marking is from mark1 to the cursor.
+   Otherwise its between the markers. This handles this.
+   Returns FALSE if no text is marked.
+ */
+
+gboolean
+eval_marks (WEdit * edit, off_t * start_mark, off_t * end_mark)
+{
+    long end_mark_curs;
+
+    if (edit->mark1 == edit->mark2)
+    {
+        *start_mark = *end_mark = 0;
+        edit->column2 = edit->column1 = 0;
+        return FALSE;
+    }
+
+    if (edit->end_mark_curs < 0)
+        end_mark_curs = edit->buffer.curs1;
+    else
+        end_mark_curs = edit->end_mark_curs;
+
+    if (edit->mark2 >= 0)
+    {
+        *start_mark = MIN (edit->mark1, edit->mark2);
+        *end_mark = MAX (edit->mark1, edit->mark2);
+    }
+    else
+    {
+        *start_mark = MIN (edit->mark1, end_mark_curs);
+        *end_mark = MAX (edit->mark1, end_mark_curs);
+        edit->column2 = edit->curs_col + edit->over_col;
+    }
+
+    if (edit->column_highlight
+        && ((edit->mark1 > end_mark_curs && edit->column1 < edit->column2)
+            || (edit->mark1 < end_mark_curs && edit->column1 > edit->column2)))
+    {
+        off_t start_bol, start_eol;
+        off_t end_bol, end_eol;
+        long col1, col2;
+        off_t diff1, diff2;
+
+        start_bol = edit_buffer_get_bol (&edit->buffer, *start_mark);
+        start_eol = edit_buffer_get_eol (&edit->buffer, start_bol - 1) + 1;
+        end_bol = edit_buffer_get_bol (&edit->buffer, *end_mark);
+        end_eol = edit_buffer_get_eol (&edit->buffer, *end_mark);
+        col1 = MIN (edit->column1, edit->column2);
+        col2 = MAX (edit->column1, edit->column2);
+
+        diff1 = edit_move_forward3 (edit, start_bol, col2, 0) -
+            edit_move_forward3 (edit, start_bol, col1, 0);
+        diff2 = edit_move_forward3 (edit, end_bol, col2, 0) -
+            edit_move_forward3 (edit, end_bol, col1, 0);
+
+        *start_mark -= diff1;
+        *end_mark += diff2;
+        *start_mark = MAX (*start_mark, start_eol);
+        *end_mark = MIN (*end_mark, end_eol);
+    }
+
+    return TRUE;
+}
 
 /* --------------------------------------------------------------------------------------------- */
 /** highlight marker toggle */
@@ -3364,7 +3471,6 @@ edit_execute_cmd (WEdit * edit, long command, int char_for_insertion)
             if (!mc_global.utf8_display || edit->charpoint == 0)
 #endif
                 if (edit_buffer_get_current_byte (&edit->buffer) != '\n')
-
                     edit_delete (edit, FALSE);
         }
         if (edit_options.cursor_beyond_eol && edit->over_col > 0)
@@ -3378,7 +3484,7 @@ edit_execute_cmd (WEdit * edit, long command, int char_for_insertion)
             && !mc_global.utf8_display)
         {
             unsigned char str[UTF8_CHAR_LEN + 1];
-            size_t i = 0;
+            size_t i;
             int res;
 
             res = g_unichar_to_utf8 (char_for_insertion, (char *) str);
@@ -3388,14 +3494,12 @@ edit_execute_cmd (WEdit * edit, long command, int char_for_insertion)
                 str[1] = '\0';
             }
             else
-            {
                 str[res] = '\0';
-            }
-            while (i <= UTF8_CHAR_LEN && str[i] != '\0')
+
+            for (i = 0; i <= UTF8_CHAR_LEN && str[i] != '\0'; i++)
             {
                 char_for_insertion = str[i];
                 edit_insert (edit, char_for_insertion);
-                i++;
             }
         }
         else
@@ -3920,7 +4024,7 @@ edit_execute_cmd (WEdit * edit, long command, int char_for_insertion)
         edit_goto_matching_bracket (edit);
         break;
     case CK_UserMenu:
-        user_menu (edit, NULL, -1);
+        edit_user_menu (edit, NULL, -1);
         break;
     case CK_Sort:
         edit_sort_cmd (edit);
