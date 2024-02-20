@@ -50,8 +50,9 @@ extern struct task_struct init_task;
 #define	SGID_TO_KGID(x)		(KGIDT_INIT(x))
 #define	KGIDP_TO_SGIDP(x)	(&(x)->val)
 
-#else /* HAVE_KUIDGID_T */
+extern zidmap_t *zfs_get_init_idmap(void);
 
+#else /* HAVE_KUIDGID_T */
 
 #define	KUID_TO_SUID(x)		(x)
 #define	KGID_TO_SGID(x)		(x)
@@ -60,8 +61,6 @@ extern struct task_struct init_task;
 #define	KGIDP_TO_SGIDP(x)	(x)
 
 #endif /* HAVE_KUIDGID_T */
-
-extern zidmap_t *zfs_get_init_idmap(void);
 
 /* Check if the user ns is the initial one */
 static inline boolean_t
