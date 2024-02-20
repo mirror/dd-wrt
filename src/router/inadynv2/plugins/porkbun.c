@@ -65,6 +65,7 @@ static const char *PORKBUN_UPDATE_JSON_FORMAT = "{\"apikey\":\"%s\",\"secretapik
 static const char *IPV4_RECORD_TYPE = "A";
 static const char *IPV6_RECORD_TYPE = "AAAA";
 static const char *KEY_STATUS = "status";
+static const char *KEY_SUCCESS = "success";
 
 static int setup    (ddns_t       *ctx,   ddns_info_t *info, ddns_alias_t *hostname);
 static int request  (ddns_t       *ctx,   ddns_info_t *info, ddns_alias_t *hostname);
