@@ -1,1 +1,0 @@
-cmd_/home/seg/DEV/x86_64/src/router/ndpi-netfilter/ndpi-netfilter/src/xt_ndpi.mod := printf '%s\n'   main.o ../../src/lib/ndpi_geoip.o | awk '!x[$$0]++ { print("/home/seg/DEV/x86_64/src/router/ndpi-netfilter/ndpi-netfilter/src/"$$0) }' > /home/seg/DEV/x86_64/src/router/ndpi-netfilter/ndpi-netfilter/src/xt_ndpi.mod
