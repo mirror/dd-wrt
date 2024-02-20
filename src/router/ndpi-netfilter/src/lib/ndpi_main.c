@@ -10243,7 +10243,7 @@ void ndpi_lru_get_stats(struct ndpi_lru_cache *c, struct ndpi_lru_cache_stats *s
   }
 }
 
-int ndpi_get_lru_cache_stats(struct ndpi_global_context *g_ctx,
+NDPI_STATIC int ndpi_get_lru_cache_stats(struct ndpi_global_context *g_ctx,
 			     struct ndpi_detection_module_struct *ndpi_struct,
 			     lru_cache_type cache_type,
 			     struct ndpi_lru_cache_stats *stats)

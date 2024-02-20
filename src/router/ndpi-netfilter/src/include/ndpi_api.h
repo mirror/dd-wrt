@@ -212,7 +212,7 @@ extern "C" {
    * @return  the initialized global context
    *
    */
-  struct ndpi_global_context *ndpi_global_init(void);
+  NDPI_STATIC struct ndpi_global_context *ndpi_global_init(void);
 
   /**
    * Deinit a properly initialized global context.
@@ -220,7 +220,7 @@ extern "C" {
    * @par g_ctx = global context to free/deinit
    *
    */
-  void ndpi_global_deinit(struct ndpi_global_context *g_ctx);
+  NDPI_STATIC void ndpi_global_deinit(struct ndpi_global_context *g_ctx);
 
   /**
    * Returns a new initialized detection module
@@ -1048,15 +1048,15 @@ extern "C" {
 				      ndpi_protocol *ret);
   NDPI_STATIC int ndpi_match_custom_category(struct ndpi_detection_module_struct *ndpi_struct,
 				 char *name, u_int name_len, ndpi_protocol_category_t *id);
-  NDPI_STATIC void ndpi_fill_protocol_category(struct ndpi_detection_module_struct *ndpi_struct,
-                                   struct ndpi_flow_struct *flow,
-                                   ndpi_protocol *ret);
   NDPI_STATIC int ndpi_get_custom_category_match(struct ndpi_detection_module_struct *ndpi_struct,
 				     NDPI_STATIC char *name_or_ip, u_int name_len,
 				     ndpi_protocol_category_t *id);
   NDPI_STATIC void ndpi_self_check_host_match(FILE *error_out);
 #endif
 
+  NDPI_STATIC void ndpi_fill_protocol_category(struct ndpi_detection_module_struct *ndpi_struct,
+                                   struct ndpi_flow_struct *flow,
+                                   ndpi_protocol *ret);
   NDPI_STATIC u_int16_t ndpi_map_user_proto_id_to_ndpi_id(struct ndpi_detection_module_struct *ndpi_str,
 					      u_int16_t user_proto_id);
   NDPI_STATIC u_int16_t ndpi_map_ndpi_id_to_user_proto_id(struct ndpi_detection_module_struct *ndpi_str,
@@ -2198,7 +2198,7 @@ extern "C" {
    * @return 0 = no error, -1 otherwise
    *
    */
-  int ndpi_load_domain_suffixes(struct ndpi_detection_module_struct *ndpi_str,
+  NDPI_STATIC int ndpi_load_domain_suffixes(struct ndpi_detection_module_struct *ndpi_str,
 				char *public_suffix_list_path);
 
   /**
@@ -2213,7 +2213,7 @@ extern "C" {
    * @return The host domain name suffic or the host itself if not found.
    *
    */
-  const char* ndpi_get_host_domain_suffix(struct ndpi_detection_module_struct *ndpi_str,
+  NDPI_STATIC const char* ndpi_get_host_domain_suffix(struct ndpi_detection_module_struct *ndpi_str,
 					  const char *hostname);
 
   /**
@@ -2228,21 +2228,21 @@ extern "C" {
    * @return The host domain name or the hosti tself if not found.
    *
    */
-  const char* ndpi_get_host_domain(struct ndpi_detection_module_struct *ndpi_str,
+  NDPI_STATIC const char* ndpi_get_host_domain(struct ndpi_detection_module_struct *ndpi_str,
 				   const char *hostname);
 
   /* ******************************* */
 
-  ndpi_cfg_error ndpi_set_config(struct ndpi_detection_module_struct *ndpi_str,
+  NDPI_STATIC ndpi_cfg_error ndpi_set_config(struct ndpi_detection_module_struct *ndpi_str,
                                  const char *proto, const char *param, const char *value);
-  ndpi_cfg_error ndpi_set_config_u64(struct ndpi_detection_module_struct *ndpi_str,
+  NDPI_STATIC ndpi_cfg_error ndpi_set_config_u64(struct ndpi_detection_module_struct *ndpi_str,
                                      const char *proto, const char *param, uint64_t value);
-  char *ndpi_get_config(struct ndpi_detection_module_struct *ndpi_str,
+  NDPI_STATIC char *ndpi_get_config(struct ndpi_detection_module_struct *ndpi_str,
 			const char *proto, const char *param, char *buf, int buf_len);
-  char *ndpi_dump_config_str(struct ndpi_detection_module_struct *ndpi_str,
+  NDPI_STATIC char *ndpi_dump_config_str(struct ndpi_detection_module_struct *ndpi_str,
                        char *output, int *size);
 #ifndef __KERNEL__
-  char *ndpi_dump_config(struct ndpi_detection_module_struct *ndpi_str,
+  NDPI_STATIC char *ndpi_dump_config(struct ndpi_detection_module_struct *ndpi_str,
 			 FILE *fd);
 #endif
   /* ******************************* */
@@ -2269,7 +2269,7 @@ extern "C" {
 
   /* ******************************* */
 
-  const char *ndpi_lru_cache_idx_to_name(lru_cache_type idx);
+  NDPI_STATIC const char *ndpi_lru_cache_idx_to_name(lru_cache_type idx);
 
 
 #ifdef __cplusplus

@@ -30,8 +30,8 @@ typedef struct {
 
 /*********************** FUNCTION DECLARATIONS **********************/
 
-void ndpi_sha256_init(ndpi_SHA256_CTX *ctx);
-void ndpi_sha256_update(ndpi_SHA256_CTX *ctx, const u_int8_t data[], size_t len);
-void ndpi_sha256_final(ndpi_SHA256_CTX *ctx, u_int8_t hash[]);
+NDPI_STATIC void ndpi_sha256_init(ndpi_SHA256_CTX *ctx);
+NDPI_STATIC void ndpi_sha256_update(ndpi_SHA256_CTX *ctx, const u_int8_t data[], size_t len);
+NDPI_STATIC void ndpi_sha256_final(ndpi_SHA256_CTX *ctx, u_int8_t hash[]);
 
 #endif   // SHA256_H
