@@ -50,7 +50,6 @@ u_int32_t ndpi_quick_hash(const unsigned char *str, u_int str_len) {
 
 NDPI_STATIC u_int64_t ndpi_quick_hash64(const char *str, u_int str_len) {
   u_int64_t h = 177;
-  u_int64_t h = 0;
   u_int i;
   
   for(i=0; i<str_len; i++)

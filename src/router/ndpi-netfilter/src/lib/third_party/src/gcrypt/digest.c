@@ -128,7 +128,7 @@ sha256_init(sha256_t *p)
 }
 
 static void
-sha256_transform(uint32_t *state, const uint32_t *data)
+dg_sha256_transform(uint32_t *state, const uint32_t *data)
 {
   uint32_t W[16] = {0};
   unsigned j;
@@ -193,7 +193,7 @@ sha256_write_byte_block(sha256_t *p)
       ((uint32_t)(p->buffer[i * 4 + 1]) << 16) +
       ((uint32_t)(p->buffer[i * 4 + 2]) <<  8) +
       ((uint32_t)(p->buffer[i * 4 + 3]));
-  sha256_transform(p->state, data32);
+  dg_sha256_transform(p->state, data32);
 }
 
 static void

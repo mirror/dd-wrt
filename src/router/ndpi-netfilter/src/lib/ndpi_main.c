@@ -139,6 +139,8 @@
 #include "ndpi_utils.c"
 #include "ndpi_hash.c"
 #include "ndpi_serializer.c"
+#include "ndpi_memory.c"
+#include "ndpi_analyze.c"
 
 /* #define MATCH_DEBUG 1 */
 

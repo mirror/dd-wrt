@@ -315,10 +315,8 @@ extern "C" {
    * @return the detected protocol even if the flow is not completed;
    *
    */
-  NDPI_STATIC ndpi_protocol ndpi_detection_giveup(struct ndpi_detection_module_struct *ndpi_struct,
-				      struct ndpi_flow_struct *flow,
-				      u_int8_t enable_guess,
-				      u_int8_t *protocol_was_guessed);
+  NDPI_STATIC ndpi_protocol ndpi_detection_giveup(struct ndpi_detection_module_struct *ndpi_str, struct ndpi_flow_struct *flow,
+				    u_int8_t *protocol_was_guessed);
 
   /**
    * Processes an extra packet in order to get more information for a given protocol
@@ -1147,8 +1145,8 @@ extern "C" {
 
   NDPI_STATIC int ndpi_load_ipv4_ptree(struct ndpi_detection_module_struct *ndpi_str,
 			   const char *path, u_int16_t protocol_id);
-#ifndef __KERNEL__    
   NDPI_STATIC const char* ndpi_cipher2str(u_int32_t cipher, char unknown_cipher[8]);
+#ifndef __KERNEL__    
   NDPI_STATIC const char* ndpi_tunnel2str(ndpi_packet_tunnel tt);
   NDPI_STATIC int ndpi_has_human_readeable_string(struct ndpi_detection_module_struct *ndpi_struct,
 				      NDPI_STATIC char *buffer, u_int buffer_size,
