@@ -61,7 +61,7 @@ static char _cache_file_ipv6[128];
 static int init_ddns(FILE *fp)
 {
 	int flag = nvram_geti("ddns_enable");
-	if (flag > 63 || flag < 1)
+	if (flag > 64 || flag < 1)
 		return -1;
 	char *providers[] = {
 		NULL,
@@ -322,7 +322,7 @@ void start_ddns(void)
 	FILE *fp;
 
 	int flag = nvram_geti("ddns_enable");
-	if (flag > 63 || flag < 1)
+	if (flag > 64 || flag < 1)
 		return -1;
 
 	mkdir("/tmp/ddns", 0744);
