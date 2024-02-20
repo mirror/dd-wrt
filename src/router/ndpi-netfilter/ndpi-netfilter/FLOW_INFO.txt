@@ -74,6 +74,7 @@ Each line of connection information has 14 required fields and 5 additional fiel
 19*. NDPI SSL info. Optional. Only for SSL/TLS. See "ndpi_flow_opt" option.
     "S=<JA3 server hash>"
     "C=<JA3 client hash>"
+    "c=<JA4 client hash>"
     "F=<TLS finger print>"
     "V=<TLS version>"
 
@@ -113,6 +114,7 @@ Option ndpi_flow_opt (string)
 Allows you to specify which of the JA3 parameters are added to "flow".
 S - server JA3 hash
 C - client JA3 hash
+c - client JA4 hash
 F - TLS fingerprint
 V - version of TLS
 L - confidence level

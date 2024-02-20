@@ -274,7 +274,7 @@ typedef struct ndpi_flow_info {
       client_hassh[33], server_hassh[33], *server_names,
       *advertised_alpns, *negotiated_alpn, *tls_supported_versions,
       *tls_issuerDN, *tls_subjectDN,
-      ja3_client[33], ja3_server[33],
+      ja3_client[33], ja3_server[33], ja4_client[37],
       sha1_cert_fingerprint[20];
     u_int8_t sha1_cert_fingerprint_set;
     struct tls_heuristics browser_heuristics;
@@ -375,12 +375,16 @@ typedef struct ndpi_workflow {
   struct ndpi_workflow_prefs prefs;
   struct ndpi_stats stats;
 
+  ndpi_workflow_callback_ptr flow_callback;
+  void * flow_callback_userdata;
+
   /* outside referencies */
   pcap_t *pcap_handle;
 
   /* allocated by prefs */
   void **ndpi_flows_root;
   struct ndpi_detection_module_struct *ndpi_struct;
+  struct ndpi_global_context *g_ctx;
   u_int32_t num_allocated_flows;
 
   /* CSV,TLV,JSON serialization interface */
@@ -389,7 +393,7 @@ typedef struct ndpi_workflow {
 
 
 /* TODO: remove wrappers parameters and use ndpi global, when their initialization will be fixed... */
-struct ndpi_workflow * ndpi_workflow_init(const struct ndpi_workflow_prefs * prefs, pcap_t * pcap_handle, int do_init_flows_root, ndpi_serialization_format serialization_format);
+struct ndpi_workflow * ndpi_workflow_init(const struct ndpi_workflow_prefs * prefs, pcap_t * pcap_handle, int do_init_flows_root, ndpi_serialization_format serialization_format, struct ndpi_global_context *g_ctx);
 
 
 /* workflow main free function */
@@ -409,6 +413,13 @@ struct ndpi_proto ndpi_workflow_process_packet(struct ndpi_workflow * workflow,
 					       const u_char *packet,
 					       ndpi_risk *flow_risk);
 
+
+/* Flow callback for completed flows, before the flow memory will be freed. */
+static inline void ndpi_workflow_set_flow_callback(struct ndpi_workflow * workflow, ndpi_workflow_callback_ptr callback, void * userdata) {
+  workflow->flow_callback = callback;
+  workflow->flow_callback_userdata = userdata;
+}
+
 int ndpi_is_datalink_supported(int datalink_type);
 
 /* compare two nodes in workflow */
@@ -419,12 +430,12 @@ void ndpi_flow_info_freer(void *node);
 const char* print_cipher_id(u_int32_t cipher);
 int parse_proto_name_list(char *str, NDPI_PROTOCOL_BITMASK *bitmask, int inverted_logic);
 
-extern int nDPI_LogLevel;
+extern int reader_log_level;
 
 #if defined(NDPI_ENABLE_DEBUG_MESSAGES) && !defined(FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION)
 #define LOG(log_level, args...)			\
   {						\
-    if(log_level <= nDPI_LogLevel)		\
+    if(log_level <= reader_log_level)		\
       printf(args);				\
   }
 #else

@@ -47,4 +47,10 @@ NDPI_STATIC ssize_t nrisk_proc_write(struct file *file, const char __user *buffe
 		                     size_t length, loff_t *loff);
 
 NDPI_STATIC int nrisk_proc_close(struct inode *inode, struct file *file);
+NDPI_STATIC int ncfg_proc_open(struct inode *inode, struct file *file);
+NDPI_STATIC ssize_t ncfg_proc_read(struct file *file, char __user *buf,
+                     size_t count, loff_t *ppos);
+NDPI_STATIC ssize_t ncfg_proc_write(struct file *file, const char __user *buffer,
+                     size_t length, loff_t *loff);
+NDPI_STATIC int ncfg_proc_close(struct inode *inode, struct file *file);
 #endif

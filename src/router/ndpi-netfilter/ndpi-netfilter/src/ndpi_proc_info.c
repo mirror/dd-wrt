@@ -196,6 +196,10 @@ ssize_t nann_proc_read(struct file *file, char __user *buf,
 }
 #endif
 
+/*
+ *
+ */
+
 ssize_t nproto_proc_read(struct file *file, char __user *buf,
                               size_t count, loff_t *ppos)
 {
@@ -276,6 +280,9 @@ nproto_proc_write(struct file *file, const char __user *buffer,
 			parse_ndpi_proto, 256, W_BUF_PROTO);
 }
 
+/*
+ *
+ */
 
 ssize_t ndebug_proc_read(struct file *file, char __user *buf,
                               size_t count, loff_t *ppos)
@@ -323,6 +330,9 @@ ndebug_proc_write(struct file *file, const char __user *buffer,
 			parse_ndpi_debug, 256, W_BUF_DEBUG);
 }
 
+/*
+ *
+ */
 
 int risk_names(struct ndpi_net *n, char *lbuf,size_t count) {
 	ndpi_risk_enum r;
@@ -398,6 +408,77 @@ int nrisk_proc_close(struct inode *inode, struct file *file)
 	char *tmp = NULL;
 	generic_proc_close(n,parse_ndpi_risk,W_BUF_RISK);
 	XCHGP(n->risk_names,tmp);
+	if(tmp) kfree(tmp);
+        return 0;
+}
+
+/*
+ *
+ */
+
+int ncfg_proc_open(struct inode *inode, struct file *file) {
+        struct ndpi_net *n = pde_data(file_inode(file));
+	int tmp_len;
+	char *tmp;
+
+	// FIXME race condition
+	if(READ_ONCE(n->cfg_dump)) return -EBUSY;
+	
+	ndpi_dump_config_str(n->ndpi_struct,NULL,(int *)&n->cfg_dump_len);
+	tmp = kmalloc(n->cfg_dump_len+4,GFP_KERNEL);
+	if(tmp) {
+		tmp_len = (int)n->cfg_dump_len;
+		ndpi_dump_config_str(n->ndpi_struct,tmp,&tmp_len);
+		WRITE_ONCE(n->cfg_dump, tmp);
+	} else
+		return -ENOMEM;
+	return 0;
+}
+
+/*
+ *
+ */
+
+ssize_t ncfg_proc_read(struct file *file, char __user *buf,
+                              size_t count, loff_t *ppos)
+{
+        struct ndpi_net *n = pde_data(file_inode(file));
+
+	int l,ro;
+
+	if(!n->cfg_dump_len || !n->cfg_dump) return 0;
+	l = n->cfg_dump_len;
+
+	if( l <= *ppos ) return 0; // EOF
+
+	ro = 0;
+	if(*ppos > 0) {
+		ro = *ppos;
+		l -= ro;
+	}
+	if(count < l) l = count;
+	if(!count) return 0;
+
+	if (!(ACCESS_OK(VERIFY_WRITE, buf, l) &&
+			!__copy_to_user(buf, n->cfg_dump+ro, l))) return -EFAULT;
+	(*ppos) += l;
+	return l;
+}
+
+ssize_t
+ncfg_proc_write(struct file *file, const char __user *buffer,
+                     size_t length, loff_t *loff)
+{
+	return generic_proc_write(pde_data(file_inode(file)), buffer, length, loff,
+			parse_ndpi_cfg, 256, W_BUF_CFG);
+}
+
+int ncfg_proc_close(struct inode *inode, struct file *file)
+{
+        struct ndpi_net *n = pde_data(file_inode(file));
+	char *tmp = NULL;
+	generic_proc_close(n,parse_ndpi_cfg,W_BUF_CFG);
+	XCHGP(n->cfg_dump,tmp);
 	if(tmp) kfree(tmp);
         return 0;
 }

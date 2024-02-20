@@ -270,11 +270,11 @@ int is_stun(struct ndpi_detection_module_struct *ndpi_struct,
 
     case 0x0014: /* Realm */
       if(flow->host_server_name[0] == '\0') {
-        ndpi_hostname_sni_set(flow, payload + off + 4, ndpi_min(len, payload_length - off - 4));
+        ndpi_hostname_sni_set(flow, payload + off + 4, ndpi_min(len, payload_length - off - 4), NDPI_HOSTNAME_NORM_ALL);
         NDPI_LOG_DBG(ndpi_struct, "Realm [%s]\n", flow->host_server_name);
 
         if(strstr(flow->host_server_name, "google.com") != NULL) {
-          *app_proto = NDPI_PROTOCOL_HANGOUT_DUO;
+          *app_proto = NDPI_PROTOCOL_GOOGLE_MEET;
           return 1;
         } else if(strstr(flow->host_server_name, "whispersystems.org") != NULL ||
                   strstr(flow->host_server_name, "signal.org") != NULL) {
@@ -307,7 +307,7 @@ int is_stun(struct ndpi_detection_module_struct *ndpi_struct,
       return 1;
 
     case 0xFF03:
-      *app_proto = NDPI_PROTOCOL_HANGOUT_DUO;
+      *app_proto = NDPI_PROTOCOL_GOOGLE_MEET;
       return 1;
 
     case 0x0013:
@@ -404,7 +404,7 @@ static int stun_search_again(struct ndpi_detection_module_struct *ndpi_struct,
   } else if(first_byte <= 63) {
     NDPI_LOG_DBG(ndpi_struct, "DTLS\n");
 
-    if(ndpi_struct->opportunistic_tls_stun_enabled &&
+    if(ndpi_struct->cfg.stun_opportunistic_tls_enabled &&
        is_dtls(packet->payload, packet->payload_packet_len, &unused)) {
 
       /* Process this DTLS packet via TLS/DTLS code but keep using STUN dissection.
@@ -442,6 +442,8 @@ static int stun_search_again(struct ndpi_detection_module_struct *ndpi_struct,
             /* TODO: right way? It is a bit scary... do we need to reset something else too? */
             reset_detected_protocol(ndpi_struct, flow);
             change_category(ndpi_struct, flow, NDPI_PROTOCOL_CATEGORY_UNSPECIFIED);
+	    /* STUN often triggers this risk; clear it. TODO: clear other risks? */
+	    ndpi_unset_risk(ndpi_struct, flow, NDPI_KNOWN_PROTOCOL_ON_NON_STANDARD_PORT);
 
             /* Give room for DTLS handshake, where we might have
                retransmissions and fragments */
@@ -581,14 +583,14 @@ static void ndpi_int_stun_add_connection(struct ndpi_detection_module_struct *nd
        (ntohs(flow->s_port) >= 19302 && ntohs(flow->s_port) <= 19309) ||
        ntohs(flow->s_port) == 3478) {
       if(flow->is_ipv6) {
-	u_int64_t pref1 = 0x2001486048640005; /* 2001:4860:4864:5::/64 */
-	u_int64_t pref2 = 0x2001486048640006; /* 2001:4860:4864:6::/64 */
+	u_int64_t pref1 = ndpi_htonll(0x2001486048640005); /* 2001:4860:4864:5::/64 */
+	u_int64_t pref2 = ndpi_htonll(0x2001486048640006); /* 2001:4860:4864:6::/64 */
 
-        if(memcmp(&flow->c_address.v6, &pref1, sizeof(pref1)) == 0 ||
-           memcmp(&flow->c_address.v6, &pref2, sizeof(pref2)) == 0 ||
-           memcmp(&flow->s_address.v6, &pref1, sizeof(pref1)) == 0 ||
-           memcmp(&flow->s_address.v6, &pref2, sizeof(pref2)) == 0) {
-          app_proto = NDPI_PROTOCOL_HANGOUT_DUO;
+        if(memcmp(flow->c_address.v6, &pref1, sizeof(pref1)) == 0 ||
+           memcmp(flow->c_address.v6, &pref2, sizeof(pref2)) == 0 ||
+           memcmp(flow->s_address.v6, &pref1, sizeof(pref1)) == 0 ||
+           memcmp(flow->s_address.v6, &pref2, sizeof(pref2)) == 0) {
+          app_proto = NDPI_PROTOCOL_GOOGLE_MEET;
 	}
       } else {
         u_int32_t c_address, s_address;
@@ -599,7 +601,7 @@ static void ndpi_int_stun_add_connection(struct ndpi_detection_module_struct *nd
            (c_address & 0xFFFFFF00) == 0x8efa5200 || /* 142.250.82.0/24 */
            (s_address & 0xFFFFFF00) == 0x4a7dfa00 ||
            (s_address & 0xFFFFFF00) == 0x8efa5200) {
-          app_proto = NDPI_PROTOCOL_HANGOUT_DUO;
+          app_proto = NDPI_PROTOCOL_GOOGLE_MEET;
 	}
       }
     }

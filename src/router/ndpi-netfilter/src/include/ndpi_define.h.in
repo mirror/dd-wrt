@@ -169,7 +169,6 @@
 
 /* misc definitions */
 #define NDPI_DEFAULT_MAX_TCP_RETRANSMISSION_WINDOW_SIZE 0x10000
-#define NDPI_DEFAULT_MAX_NUM_PKTS_PER_FLOW_TO_DISSECT   32
 
 /* TODO: rebuild all memory areas to have a more aligned memory block here */
 
@@ -180,12 +179,12 @@
 #define MAX_DEFAULT_PORTS                                        5
 
 #ifdef NDPI_ENABLE_DEBUG_MESSAGES
- #define NDPI_LOG(proto, m, log_level, args...)		                                 \
+ #define NDPI_LOG(proto, m, loglevel, args...)		                                 \
   {								                         \
     struct ndpi_detection_module_struct *mod = (struct ndpi_detection_module_struct*) m; \
-    if(mod && mod->ndpi_log_level >= log_level) {	                                 \
+    if(mod && mod->cfg.log_level >= loglevel) {	                                 \
       if(mod != NULL && mod->ndpi_debug_printf != NULL)		                         \
-        (*(mod->ndpi_debug_printf))(proto, mod, log_level, __FILE__, __FUNCTION__, __LINE__, args); \
+        (*(mod->ndpi_debug_printf))(proto, mod, loglevel, __FILE__, __FUNCTION__, __LINE__, args); \
     } \
   }
 
@@ -202,25 +201,25 @@
  #endif
 
  #define NDPI_LOG_ERR(mod, args...)		                                 \
-  if(mod && mod->ndpi_log_level >= NDPI_LOG_ERROR) {	                         \
+  if(mod && mod->cfg.log_level >= NDPI_LOG_ERROR) {	                         \
     if(mod != NULL && mod->ndpi_debug_printf != NULL)		                         \
       (*(mod->ndpi_debug_printf))(NDPI_CURRENT_PROTO, mod, NDPI_LOG_ERROR , __FILE__, __FUNCTION__, __LINE__, args); \
   }
 
  #define NDPI_LOG_INFO(mod, args...)		                                 \
-  if(mod && mod->ndpi_log_level >= NDPI_LOG_TRACE) {	                         \
+  if(mod && mod->cfg.log_level >= NDPI_LOG_TRACE) {	                         \
     if(mod != NULL && mod->ndpi_debug_printf != NULL)		                         \
       (*(mod->ndpi_debug_printf))(NDPI_CURRENT_PROTO, mod, NDPI_LOG_TRACE , __FILE__, __FUNCTION__, __LINE__, args); \
   }
 
  #define NDPI_LOG_DBG(mod, args...)		                                 \
-  if(mod && mod->ndpi_log_level >= NDPI_LOG_DEBUG) {	                         \
+  if(mod && mod->cfg.log_level >= NDPI_LOG_DEBUG) {	                         \
     if(mod != NULL && mod->ndpi_debug_printf != NULL)		                         \
       (*(mod->ndpi_debug_printf))(NDPI_CURRENT_PROTO, mod, NDPI_LOG_DEBUG , __FILE__, __FUNCTION__, __LINE__, args); \
   }
 
  #define NDPI_LOG_DBG2(mod, args...)		                                 \
-  if(mod && mod->ndpi_log_level >= NDPI_LOG_DEBUG_EXTRA) {	                         \
+  if(mod && mod->cfg.log_level >= NDPI_LOG_DEBUG_EXTRA) {	                         \
     if(mod != NULL && mod->ndpi_debug_printf != NULL)		                         \
       (*(mod->ndpi_debug_printf))(NDPI_CURRENT_PROTO, mod, NDPI_LOG_DEBUG_EXTRA , __FILE__, __FUNCTION__, __LINE__, args); \
   }
@@ -306,14 +305,15 @@
 			  ndpi_parse_packet_line_info(ndpi_struct,flow);	\
                         }                                                       \
 
-#define NDPI_IPSEC_PROTOCOL_ESP	   50
-#define NDPI_IPSEC_PROTOCOL_AH	   51
-#define NDPI_GRE_PROTOCOL_TYPE	   0x2F
-#define NDPI_ICMP_PROTOCOL_TYPE	   0x01
-#define NDPI_IGMP_PROTOCOL_TYPE	   0x02
-#define NDPI_EGP_PROTOCOL_TYPE	   0x08
-#define NDPI_OSPF_PROTOCOL_TYPE	   0x59
-#define NDPI_SCTP_PROTOCOL_TYPE	   132
+#define NDPI_IPSEC_PROTOCOL_ESP    50
+#define NDPI_IPSEC_PROTOCOL_AH     51
+#define NDPI_GRE_PROTOCOL_TYPE     0x2F
+#define NDPI_ICMP_PROTOCOL_TYPE    0x01
+#define NDPI_IGMP_PROTOCOL_TYPE    0x02
+#define NDPI_EGP_PROTOCOL_TYPE     0x08
+#define NDPI_OSPF_PROTOCOL_TYPE    0x59
+#define NDPI_VRRP_PROTOCOL_TYPE    112
+#define NDPI_SCTP_PROTOCOL_TYPE    132
 #define NDPI_IPIP_PROTOCOL_TYPE    0x04
 #define NDPI_ICMPV6_PROTOCOL_TYPE  0x3a
 #define NDPI_PGM_PROTOCOL_TYPE     0x71

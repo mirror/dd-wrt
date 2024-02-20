@@ -76,18 +76,14 @@
 #include "reader_util.h"
 #include "ndpi_classify.h"
 
-extern u_int8_t enable_protocol_guess, enable_flow_stats, enable_payload_analyzer;
+extern u_int8_t enable_flow_stats, enable_payload_analyzer;
 extern u_int8_t verbose, human_readeable_string_len;
 extern u_int8_t max_num_udp_dissected_pkts /* 24 */, max_num_tcp_dissected_pkts /* 80 */;
 static u_int32_t flow_id = 0;
 
 u_int8_t enable_doh_dot_detection = 0;
-extern ndpi_init_prefs init_prefs;
 
 extern int malloc_size_stats;
-extern struct ndpi_bin malloc_bins;
-extern int max_malloc_bins;
-extern int enable_malloc_bins;
 
 /* ****************************************************** */
 
@@ -132,7 +128,7 @@ int ndpi_analyze_payload(struct ndpi_flow_info *flow,
 #ifdef DEBUG_PAYLOAD
   u_int16_t i;
   for(i=0; i<payload_len; i++)
-    printf("%c", isprint(payload[i]) ? payload[i] : '.');
+    printf("%c", ndpi_isprint(payload[i]) ? payload[i] : '.');
   printf("\n");
 #endif
 
@@ -250,7 +246,7 @@ static void print_payload_stat(struct payload_stats *p, FILE *out) {
   fprintf(out, "\t[");
 
   for(i=0; i<p->pattern_len; i++) {
-    fprintf(out, "%c", isprint(p->pattern[i]) ? p->pattern[i] : '.');
+    fprintf(out, "%c", ndpi_isprint(p->pattern[i]) ? p->pattern[i] : '.');
   }
 
   fprintf(out, "]");
@@ -258,7 +254,7 @@ static void print_payload_stat(struct payload_stats *p, FILE *out) {
   fprintf(out, "[");
 
   for(i=0; i<p->pattern_len; i++) {
-    fprintf(out, "%s%02X", (i > 0) ? " " : "", isprint(p->pattern[i]) ? p->pattern[i] : '.');
+    fprintf(out, "%s%02X", (i > 0) ? " " : "", ndpi_isprint(p->pattern[i]) ? p->pattern[i] : '.');
   }
 
   fprintf(out, "]");
@@ -339,45 +335,6 @@ void ndpi_free_flow_info_half(struct ndpi_flow_info *flow) {
 
 /* ***************************************************** */
 
-extern u_int32_t current_ndpi_memory, max_ndpi_memory;
-
-static u_int32_t __slot_malloc_bins(u_int64_t v)
-{
-  int i;
-
-  /* 0-2,3-4,5-8,9-16,17-32,33-64,65-128,129-256,257-512,513-1024,1025-2048,2049-4096,4097-8192,8193- */
-  for(i=0; i < max_malloc_bins - 1; i++)
-    if((1ULL << (i + 1)) >= v)
-      return i;
-  return i;
-}
-
-/**
- * @brief ndpi_malloc wrapper function
- */
-static void *ndpi_malloc_wrapper(size_t size) {
-  current_ndpi_memory += size;
-
-  if(current_ndpi_memory > max_ndpi_memory)
-    max_ndpi_memory = current_ndpi_memory;
-
-  if(enable_malloc_bins && malloc_size_stats)
-    ndpi_inc_bin(&malloc_bins, __slot_malloc_bins(size), 1);
-
-  return(malloc(size)); /* Don't change to ndpi_malloc !!!!! */
-}
-
-/* ***************************************************** */
-
-/**
- * @brief free wrapper function
- */
-static void free_wrapper(void *freeable) {
-  free(freeable); /* Don't change to ndpi_free !!!!! */
-}
-
-/* ***************************************************** */
-
 static uint16_t ndpi_get_proto_id(struct ndpi_detection_module_struct *ndpi_mod, const char *name) {
   uint16_t proto_id;
   char *e;
@@ -416,7 +373,7 @@ int parse_proto_name_list(char *str, NDPI_PROTOCOL_BITMASK *bitmask, int inverte
   else
    op = 0; /* Default action: remove from the bitmask */
   /* Use a temporary module with all protocols enabled */
-  module = ndpi_init_detection_module(0);
+  module = ndpi_init_detection_module(NULL);
   if(!module)
     return 1;
   NDPI_BITMASK_SET_ALL(all);
@@ -458,23 +415,14 @@ int parse_proto_name_list(char *str, NDPI_PROTOCOL_BITMASK *bitmask, int inverte
 
 /* ***************************************************** */
 
-extern char *_debug_protocols;
-
 struct ndpi_workflow* ndpi_workflow_init(const struct ndpi_workflow_prefs * prefs,
 					 pcap_t * pcap_handle, int do_init_flows_root,
-					 ndpi_serialization_format serialization_format) {
+					 ndpi_serialization_format serialization_format,
+					 struct ndpi_global_context *g_ctx) {
   struct ndpi_detection_module_struct * module;
   struct ndpi_workflow * workflow;
-  static int _debug_protocols_ok = 0;
 
-  /* On some fuzzers we don't want to use these memory allocators, but some custom ones */
-#ifndef DISABLE_CUSTOM_ALLOCATOR_ON_READERUTILS
-  set_ndpi_malloc(ndpi_malloc_wrapper), set_ndpi_free(free_wrapper);
-  set_ndpi_flow_malloc(NULL), set_ndpi_flow_free(NULL);
-#endif
-
-  /* TODO: just needed here to init ndpi ndpi_malloc wrapper */
-  module = ndpi_init_detection_module(init_prefs);
+  module = ndpi_init_detection_module(g_ctx);
 
   if(module == NULL) {
     LOG(NDPI_LOG_ERROR, "global structure initialization failed\n");
@@ -493,20 +441,6 @@ struct ndpi_workflow* ndpi_workflow_init(const struct ndpi_workflow_prefs * pref
   workflow->ndpi_struct = module;
 
   ndpi_set_user_data(module, workflow);
-
-  ndpi_set_log_level(module, nDPI_LogLevel);
-
-  if(_debug_protocols != NULL && ! _debug_protocols_ok) {
-    NDPI_BITMASK_RESET(debug_bitmask);
-    if(parse_proto_name_list(_debug_protocols, &debug_bitmask, 0)) {
-      ndpi_exit_detection_module(module);
-      ndpi_free(workflow);
-      return NULL;
-    }
-    _debug_protocols_ok = 1;
-  }
-  if(_debug_protocols_ok)
-    ndpi_set_debug_bitmask(module, debug_bitmask);
 
   if(do_init_flows_root) {
     workflow->ndpi_flows_root = ndpi_calloc(workflow->prefs.num_roots, sizeof(void *));
@@ -1348,6 +1282,8 @@ void process_ndpi_collected_info(struct ndpi_workflow * workflow, struct ndpi_fl
     flow->ssh_tls.notAfter = flow->ndpi_flow->protos.tls_quic.notAfter;
     ndpi_snprintf(flow->ssh_tls.ja3_client, sizeof(flow->ssh_tls.ja3_client), "%s",
 	     flow->ndpi_flow->protos.tls_quic.ja3_client);
+    ndpi_snprintf(flow->ssh_tls.ja4_client, sizeof(flow->ssh_tls.ja4_client), "%s",
+	     flow->ndpi_flow->protos.tls_quic.ja4_client);
     ndpi_snprintf(flow->ssh_tls.ja3_server, sizeof(flow->ssh_tls.ja3_server), "%s",
 	     flow->ndpi_flow->protos.tls_quic.ja3_server);
     flow->ssh_tls.server_unsafe_cipher = flow->ndpi_flow->protos.tls_quic.server_unsafe_cipher;
@@ -1444,6 +1380,9 @@ void process_ndpi_collected_info(struct ndpi_workflow * workflow, struct ndpi_fl
   if(flow->detection_completed && (!flow->check_extra_packets)) {   
     flow->flow_payload = flow->ndpi_flow->flow_payload, flow->flow_payload_len = flow->ndpi_flow->flow_payload_len;
     flow->ndpi_flow->flow_payload = NULL; /* We'll free the memory */
+
+    if(workflow->flow_callback != NULL)
+      workflow->flow_callback(workflow, flow, workflow->flow_callback_userdata);
 
     ndpi_free_flow_info_half(flow);
   }
@@ -1723,8 +1662,8 @@ static struct ndpi_proto packet_processing(struct ndpi_workflow * workflow,
     struct ndpi_flow_input_info input_info;
 
     u_int enough_packets =
-      (((proto == IPPROTO_UDP) && ((flow->src2dst_packets + flow->dst2src_packets) > max_num_udp_dissected_pkts))
-       || ((proto == IPPROTO_TCP) && ((flow->src2dst_packets + flow->dst2src_packets) > max_num_tcp_dissected_pkts))) ? 1 : 0;
+      ((proto == IPPROTO_UDP && (max_num_udp_dissected_pkts > 0 && flow->src2dst_packets + flow->dst2src_packets > max_num_udp_dissected_pkts)) ||
+       (proto == IPPROTO_TCP && (max_num_tcp_dissected_pkts > 0 && flow->src2dst_packets + flow->dst2src_packets > max_num_tcp_dissected_pkts))) ? 1 : 0;
 
 #if 0
     printf("%s()\n", __FUNCTION__);
@@ -1743,7 +1682,7 @@ static struct ndpi_proto packet_processing(struct ndpi_workflow * workflow,
     input_info.in_pkt_dir = NDPI_IN_PKT_DIR_UNKNOWN;
     input_info.seen_flow_beginning = NDPI_FLOW_BEGINNING_UNKNOWN;
 #if 1
-    if(nDPI_LogLevel > 1 && iph) {
+    if(reader_log_level > 1 && iph) {
 	static int pkt_seq=0;
   	char ip1[48],ip2[48];
        	inet_ntop(AF_INET, &flow->src_ip, ip1, sizeof(ip1));
@@ -1768,22 +1707,16 @@ static struct ndpi_proto packet_processing(struct ndpi_workflow * workflow,
     if(enough_packets || (flow->detected_protocol.app_protocol != NDPI_PROTOCOL_UNKNOWN)) {
       if((!enough_packets)
 	 && ndpi_extra_dissection_possible(workflow->ndpi_struct, ndpi_flow))
-	; /* Wait for certificate fingerprint */
+	; /* Wait for further metadata */
       else {
 	/* New protocol detected or give up */
 	flow->detection_completed = 1;
-
-#if 0
-	/* Check if we should keep checking extra packets */
-	if(ndpi_flow && ndpi_flow->check_extra_packets)
-	  flow->check_extra_packets = 1;
-#endif
 
 	if(flow->detected_protocol.app_protocol == NDPI_PROTOCOL_UNKNOWN) {
 	  u_int8_t proto_guessed;
 
 	  flow->detected_protocol = ndpi_detection_giveup(workflow->ndpi_struct, flow->ndpi_flow,
-							  enable_protocol_guess, &proto_guessed);
+							  &proto_guessed);
 	  if(proto_guessed) workflow->stats.guessed_flow_protocols++;
 	}
 

@@ -48,16 +48,16 @@ u_int32_t ndpi_quick_hash(const unsigned char *str, u_int str_len) {
 
 /* ******************************************************************** */
 
-/* Based on Daniel Lemire code */
 NDPI_STATIC u_int64_t ndpi_quick_hash64(const char *str, u_int str_len) {
+  u_int64_t h = 177;
   u_int64_t h = 0;
   u_int i;
   
   for(i=0; i<str_len; i++)
-    h = (h * 177) + str[i];
+    h = (h * 31) + str[i];
 
-  h ^= strlen(str);
-  
+  h ^= str_len;
+
   return h;
 }
 
@@ -92,7 +92,7 @@ NDPI_STATIC u_int32_t ndpi_rev_hash_string(const char *str) {
 
   if(len == 0) return(0);
   len--;
-  
+
   for(hash = i = 0; len >= 0; len--) {
     hash += str[len];
     hash += (hash << 10);
@@ -134,7 +134,7 @@ NDPI_STATIC u_int32_t ndpi_hash_string_len(const char *str, u_int len) {
   two independent 64-bit linear congruential generators are applied
   results are mixed, scrambled and cast to 32-bit
 */
-u_int32_t ndpi_quick_16_byte_hash(u_int8_t *in_16_bytes_long) {
+u_int32_t ndpi_quick_16_byte_hash(const u_int8_t *in_16_bytes_long) {
   u_int64_t a = *(u_int64_t*)(in_16_bytes_long + 0);
   u_int64_t c = *(u_int64_t*)(in_16_bytes_long + 8);
 

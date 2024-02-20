@@ -425,4 +425,8 @@ Bittorrents-specific files:
   "echo XXX >/proc/net/xt_ndpi/info && cat /proc/net/xt_ndpi/info" - show ip/port in selected hash list"
   "echo -1 >/proc/net/xt_ndpi/info" - restore view common info
 
+/proc/net/xt_ndpi/cfg - show and change nDPI library parameters.
 
+  "cat /proc/net/xt_ndpi/cfg" - show current settings.
+  "echo 'proto_name_or_id param_name value' >/proc/net/xt_ndpi/cfg" - change parameter for specified protocol
+  "echo 'param_name value' >/proc/net/xt_ndpi/cfg" - change global parameter

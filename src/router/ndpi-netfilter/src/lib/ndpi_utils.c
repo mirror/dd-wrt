@@ -705,7 +705,7 @@ static inline int ndpi_is_other_char(char c) {
 /* ******************************************************************** */
 
 static int _ndpi_is_valid_char(char c) {
-  if(ispunct(c) && (!ndpi_is_other_char(c)))
+  if(ndpi_ispunct(c) && (!ndpi_is_other_char(c)))
     return(0);
   else
     return(ndpi_isdigit(c)
@@ -731,7 +731,7 @@ static int ndpi_find_non_eng_bigrams(struct ndpi_detection_module_struct *ndpi_s
 				     char *str) {
   char s[3];
 
-  if((isdigit((int)str[0]) && isdigit((int)str[1]))
+  if((ndpi_isdigit(str[0]) && ndpi_isdigit(str[1]))
      || ndpi_is_other_char(str[0])
      || ndpi_is_other_char(str[1])
      )
@@ -750,7 +750,7 @@ int ndpi_has_human_readeable_string(struct ndpi_detection_module_struct *ndpi_st
 				    char *buffer, u_int buffer_size,
 				    u_int8_t min_string_match_len,
 				    char *outbuf, u_int outbuf_len) {
-  u_int ret = 0, i = 0, do_cr = 0, len = 0, o_idx = 0, being_o_idx = 0;
+  u_int ret = 0, i, do_cr = 0, len = 0, o_idx = 0, being_o_idx = 0;
 
   if(buffer_size <= 0)
     return(0);
@@ -777,7 +777,7 @@ int ndpi_has_human_readeable_string(struct ndpi_detection_module_struct *ndpi_st
 	len += 1;
       }
 
-      // printf("->> %c%c\n", isprint(buffer[i]) ? buffer[i] : '.', isprint(buffer[i+1]) ? buffer[i+1] : '.');
+      // printf("->> %c%c\n", ndpi_isprint(buffer[i]) ? buffer[i] : '.', ndpi_isprint(buffer[i+1]) ? buffer[i+1] : '.');
       if(do_cr) {
 	if(len > min_string_match_len)
 	  ret = 1;
@@ -1208,6 +1208,7 @@ static void ndpi_tls2json(ndpi_serializer *serializer, struct ndpi_flow_struct *
 
       ndpi_serialize_string_string(serializer, "ja3", flow->protos.tls_quic.ja3_client);
       ndpi_serialize_string_string(serializer, "ja3s", flow->protos.tls_quic.ja3_server);
+      ndpi_serialize_string_string(serializer, "ja4", flow->protos.tls_quic.ja4_client);
       ndpi_serialize_string_uint32(serializer, "unsafe_cipher", flow->protos.tls_quic.server_unsafe_cipher);
       ndpi_serialize_string_string(serializer, "cipher",
                                    ndpi_cipher2str(flow->protos.tls_quic.server_cipher, unknown_cipher));
@@ -1582,7 +1583,7 @@ char *ndpi_get_ip_proto_name(u_int16_t ip_proto, char *name, unsigned int name_l
     snprintf(name, name_len, "PIM");
     break;
 
-  case 112:
+  case NDPI_VRRP_PROTOCOL_TYPE:
     snprintf(name, name_len, "VRRP");
     break;
 
@@ -1721,9 +1722,9 @@ static int ndpi_is_xss_injection(char* query) {
 static void ndpi_compile_rce_regex() {
   PCRE2_UCHAR pcreErrorStr[128];
   PCRE2_SIZE pcreErrorOffset;
-  int pcreErrorCode;
+  int i, pcreErrorCode = 0;
 
-  for(int i = 0; i < N_RCE_REGEX; i++) {
+  for(i = 0; i < N_RCE_REGEX; i++) {
     comp_rx[i] = (struct pcre2_struct*)ndpi_malloc(sizeof(struct pcre2_struct));
 
     comp_rx[i]->compiled = pcre2_compile((PCRE2_SPTR)rce_regex[i], PCRE2_ZERO_TERMINATED, 0, &pcreErrorCode,
@@ -1759,9 +1760,10 @@ static int ndpi_is_rce_injection(char* query) {
   }
 
   pcre2_match_data *pcreMatchData;
-  int pcreExecRet;
+  int i, pcreExecRet;
+  unsigned long j;
 
-  for(int i = 0; i < N_RCE_REGEX; i++) {
+  for(i = 0; i < N_RCE_REGEX; i++) {
     unsigned int length = strlen(query);
 
     pcreMatchData = pcre2_match_data_create_from_pattern(comp_rx[i]->compiled, NULL);
@@ -1802,16 +1804,16 @@ static int ndpi_is_rce_injection(char* query) {
 
   size_t ushlen = sizeof(ush_commands) / sizeof(ush_commands[0]);
 
-  for(unsigned long i = 0; i < ushlen; i++) {
-    if(strstr(query, ush_commands[i]) != NULL) {
+  for(j = 0; j < ushlen; j++) {
+    if(strstr(query, ush_commands[j]) != NULL) {
       return 1;
     }
   }
 
   size_t pwshlen = sizeof(pwsh_commands) / sizeof(pwsh_commands[0]);
 
-  for(unsigned long i = 0; i < pwshlen; i++) {
-    if(strstr(query, pwsh_commands[i]) != NULL) {
+  for(j = 0; j < pwshlen; j++) {
+    if(strstr(query, pwsh_commands[j]) != NULL) {
       return 1;
     }
   }
@@ -2174,8 +2176,16 @@ const char* ndpi_http_method2str(ndpi_http_method m) {
   case NDPI_HTTP_METHOD_DELETE:       return("DELETE");
   case NDPI_HTTP_METHOD_TRACE:        return("TRACE");
   case NDPI_HTTP_METHOD_CONNECT:      return("CONNECT");
+  case NDPI_HTTP_METHOD_RPC_CONNECT:  return("RPC_CONNECT");
   case NDPI_HTTP_METHOD_RPC_IN_DATA:  return("RPC_IN_DATA");
   case NDPI_HTTP_METHOD_RPC_OUT_DATA: return("RPC_OUT_DATA");
+  case NDPI_HTTP_METHOD_MKCOL:        return("MKCOL");
+  case NDPI_HTTP_METHOD_MOVE:         return("MOVE");
+  case NDPI_HTTP_METHOD_COPY:         return("COPY");
+  case NDPI_HTTP_METHOD_LOCK:         return("LOCK");
+  case NDPI_HTTP_METHOD_UNLOCK:       return("UNLOCK");
+  case NDPI_HTTP_METHOD_PROPFIND:     return("PROPFIND");
+  case NDPI_HTTP_METHOD_PROPPATCH:    return("PROPPATCH");
   }
 
   return("Unknown HTTP method");
@@ -2191,26 +2201,51 @@ ndpi_http_method ndpi_http_str2method(const char* method, u_int16_t method_len) 
   case 'O': return(NDPI_HTTP_METHOD_OPTIONS);
   case 'G': return(NDPI_HTTP_METHOD_GET);
   case 'H': return(NDPI_HTTP_METHOD_HEAD);
+  case 'L': return(NDPI_HTTP_METHOD_LOCK);
+
+  case 'M':
+    if (method[1] == 'O')
+      return(NDPI_HTTP_METHOD_MOVE);
+    else
+      return(NDPI_HTTP_METHOD_MKCOL);
+    break;
 
   case 'P':
     switch(method[1]) {
     case 'A':return(NDPI_HTTP_METHOD_PATCH);
     case 'O':return(NDPI_HTTP_METHOD_POST);
     case 'U':return(NDPI_HTTP_METHOD_PUT);
+    case 'R':
+      if (method_len >= 5) {
+        if (strncmp(method, "PROPF", 5) == 0)
+          return(NDPI_HTTP_METHOD_PROPFIND);
+        else if (strncmp(method, "PROPP", 5) == 0)
+          return NDPI_HTTP_METHOD_PROPPATCH;
+      }
     }
     break;
 
   case 'D':  return(NDPI_HTTP_METHOD_DELETE);
   case 'T':  return(NDPI_HTTP_METHOD_TRACE);
-  case 'C':  return(NDPI_HTTP_METHOD_CONNECT);
+  case 'C':
+    if (method_len == 4)
+      return(NDPI_HTTP_METHOD_COPY);
+    else
+      return(NDPI_HTTP_METHOD_CONNECT);
+
   case 'R':
     if(method_len >= 11) {
-      if(strncmp(method, "RPC_IN_DATA", 11) == 0)
-	return(NDPI_HTTP_METHOD_RPC_IN_DATA);
-      else if(strncmp(method, "RPC_OUT_DATA", 11) == 0)
-	return(NDPI_HTTP_METHOD_RPC_OUT_DATA);
+      if(strncmp(method, "RPC_CONNECT", 11) == 0) {
+        return(NDPI_HTTP_METHOD_RPC_CONNECT);
+      } else if(strncmp(method, "RPC_IN_DATA", 11) == 0) {
+        return(NDPI_HTTP_METHOD_RPC_IN_DATA);
+      } else if(strncmp(method, "RPC_OUT_DATA", 11) == 0) {
+        return(NDPI_HTTP_METHOD_RPC_OUT_DATA);
+      }
     }
     break;
+
+  case 'U': return(NDPI_HTTP_METHOD_UNLOCK);
   }
 
   return(NDPI_HTTP_METHOD_UNKNOWN);
@@ -2786,14 +2821,6 @@ u_int8_t ndpi_is_encrypted_proto(struct ndpi_detection_module_struct *ndpi_str,
 
 /* ******************************************* */
 
-void ndpi_set_tls_cert_expire_days(struct ndpi_detection_module_struct *ndpi_str,
-				   u_int8_t num_days) {
-  if(ndpi_str)
-    ndpi_str->tls_certificate_expire_in_x_days = num_days;
-}
-
-/* ******************************************* */
-
 u_int32_t ndpi_get_flow_error_code(struct ndpi_flow_struct *flow) {
   switch(flow->detected_protocol_stack[0] /* app_protocol */) {
   case NDPI_PROTOCOL_DNS:
@@ -2835,7 +2862,7 @@ int ndpi_vsnprintf(char * str, size_t size, char const * format, va_list va_args
 struct tm *ndpi_gmtime_r(const time_t *timep,
                          struct tm *result)
 {
-#ifdef WIN32
+#if defined(WIN32)
   gmtime_s(result, timep);
   return result;
 #else
@@ -2949,13 +2976,8 @@ u_int8_t ndpi_check_flow_risk_exceptions(struct ndpi_detection_module_struct *nd
 	return(1);
       break;
 
-    case NDPI_MAX_RISK_PARAM_ID:
-      /* Nothing to do, just avoid warnings */
-      break;
-
     default:
-      printf("nDPI [%s:%u] Ignored risk parameter id %u\n",
-	     __FILE__, __LINE__, params[i].id);
+      NDPI_LOG_ERR(ndpi_str, "Ignored risk parameter id %u\n", params[i].id);
       break;
     }
   }
@@ -3054,97 +3076,63 @@ int tpkt_verify_hdr(const struct ndpi_packet_struct * const packet)
           (get_u_int16_t(packet->payload,2) == htons(packet->payload_packet_len)));
 }
 
-static const u_int16_t crc16_ccitt_table[256] = {
-	0x0000, 0x1189, 0x2312, 0x329B, 0x4624, 0x57AD, 0x6536, 0x74BF,
-	0x8C48, 0x9DC1, 0xAF5A, 0xBED3, 0xCA6C, 0xDBE5, 0xE97E, 0xF8F7,
-	0x1081, 0x0108, 0x3393, 0x221A, 0x56A5, 0x472C, 0x75B7, 0x643E,
-	0x9CC9, 0x8D40, 0xBFDB, 0xAE52, 0xDAED, 0xCB64, 0xF9FF, 0xE876,
-	0x2102, 0x308B, 0x0210, 0x1399, 0x6726, 0x76AF, 0x4434, 0x55BD,
-	0xAD4A, 0xBCC3, 0x8E58, 0x9FD1, 0xEB6E, 0xFAE7, 0xC87C, 0xD9F5,
-	0x3183, 0x200A, 0x1291, 0x0318, 0x77A7, 0x662E, 0x54B5, 0x453C,
-	0xBDCB, 0xAC42, 0x9ED9, 0x8F50, 0xFBEF, 0xEA66, 0xD8FD, 0xC974,
-	0x4204, 0x538D, 0x6116, 0x709F, 0x0420, 0x15A9, 0x2732, 0x36BB,
-	0xCE4C, 0xDFC5, 0xED5E, 0xFCD7, 0x8868, 0x99E1, 0xAB7A, 0xBAF3,
-	0x5285, 0x430C, 0x7197, 0x601E, 0x14A1, 0x0528, 0x37B3, 0x263A,
-	0xDECD, 0xCF44, 0xFDDF, 0xEC56, 0x98E9, 0x8960, 0xBBFB, 0xAA72,
-	0x6306, 0x728F, 0x4014, 0x519D, 0x2522, 0x34AB, 0x0630, 0x17B9,
-	0xEF4E, 0xFEC7, 0xCC5C, 0xDDD5, 0xA96A, 0xB8E3, 0x8A78, 0x9BF1,
-	0x7387, 0x620E, 0x5095, 0x411C, 0x35A3, 0x242A, 0x16B1, 0x0738,
-	0xFFCF, 0xEE46, 0xDCDD, 0xCD54, 0xB9EB, 0xA862, 0x9AF9, 0x8B70,
-	0x8408, 0x9581, 0xA71A, 0xB693, 0xC22C, 0xD3A5, 0xE13E, 0xF0B7,
-	0x0840, 0x19C9, 0x2B52, 0x3ADB, 0x4E64, 0x5FED, 0x6D76, 0x7CFF,
-	0x9489, 0x8500, 0xB79B, 0xA612, 0xD2AD, 0xC324, 0xF1BF, 0xE036,
-	0x18C1, 0x0948, 0x3BD3, 0x2A5A, 0x5EE5, 0x4F6C, 0x7DF7, 0x6C7E,
-	0xA50A, 0xB483, 0x8618, 0x9791, 0xE32E, 0xF2A7, 0xC03C, 0xD1B5,
-	0x2942, 0x38CB, 0x0A50, 0x1BD9, 0x6F66, 0x7EEF, 0x4C74, 0x5DFD,
-	0xB58B, 0xA402, 0x9699, 0x8710, 0xF3AF, 0xE226, 0xD0BD, 0xC134,
-	0x39C3, 0x284A, 0x1AD1, 0x0B58, 0x7FE7, 0x6E6E, 0x5CF5, 0x4D7C,
-	0xC60C, 0xD785, 0xE51E, 0xF497, 0x8028, 0x91A1, 0xA33A, 0xB2B3,
-	0x4A44, 0x5BCD, 0x6956, 0x78DF, 0x0C60, 0x1DE9, 0x2F72, 0x3EFB,
-	0xD68D, 0xC704, 0xF59F, 0xE416, 0x90A9, 0x8120, 0xB3BB, 0xA232,
-	0x5AC5, 0x4B4C, 0x79D7, 0x685E, 0x1CE1, 0x0D68, 0x3FF3, 0x2E7A,
-	0xE70E, 0xF687, 0xC41C, 0xD595, 0xA12A, 0xB0A3, 0x8238, 0x93B1,
-	0x6B46, 0x7ACF, 0x4854, 0x59DD, 0x2D62, 0x3CEB, 0x0E70, 0x1FF9,
-	0xF78F, 0xE606, 0xD49D, 0xC514, 0xB1AB, 0xA022, 0x92B9, 0x8330,
-	0x7BC7, 0x6A4E, 0x58D5, 0x495C, 0x3DE3, 0x2C6A, 0x1EF1, 0x0F78
-};
+/* ******************************************* */
 
-static const u_int16_t crc16_ccitt_false_table[256] = {
-  0x0000, 0x1021, 0x2042, 0x3063, 0x4084, 0x50A5, 0x60C6, 0x70E7,
-  0x8108, 0x9129, 0xA14A, 0xB16B, 0xC18C, 0xD1AD, 0xE1CE, 0xF1EF,
-  0x1231, 0x0210, 0x3273, 0x2252, 0x52B5, 0x4294, 0x72F7, 0x62D6,
-  0x9339, 0x8318, 0xB37B, 0xA35A, 0xD3BD, 0xC39C, 0xF3FF, 0xE3DE,
-  0x2462, 0x3443, 0x0420, 0x1401, 0x64E6, 0x74C7, 0x44A4, 0x5485,
-  0xA56A, 0xB54B, 0x8528, 0x9509, 0xE5EE, 0xF5CF, 0xC5AC, 0xD58D,
-  0x3653, 0x2672, 0x1611, 0x0630, 0x76D7, 0x66F6, 0x5695, 0x46B4,
-  0xB75B, 0xA77A, 0x9719, 0x8738, 0xF7DF, 0xE7FE, 0xD79D, 0xC7BC,
-  0x48C4, 0x58E5, 0x6886, 0x78A7, 0x0840, 0x1861, 0x2802, 0x3823,
-  0xC9CC, 0xD9ED, 0xE98E, 0xF9AF, 0x8948, 0x9969, 0xA90A, 0xB92B,
-  0x5AF5, 0x4AD4, 0x7AB7, 0x6A96, 0x1A71, 0x0A50, 0x3A33, 0x2A12,
-  0xDBFD, 0xCBDC, 0xFBBF, 0xEB9E, 0x9B79, 0x8B58, 0xBB3B, 0xAB1A,
-  0x6CA6, 0x7C87, 0x4CE4, 0x5CC5, 0x2C22, 0x3C03, 0x0C60, 0x1C41,
-  0xEDAE, 0xFD8F, 0xCDEC, 0xDDCD, 0xAD2A, 0xBD0B, 0x8D68, 0x9D49,
-  0x7E97, 0x6EB6, 0x5ED5, 0x4EF4, 0x3E13, 0x2E32, 0x1E51, 0x0E70,
-  0xFF9F, 0xEFBE, 0xDFDD, 0xCFFC, 0xBF1B, 0xAF3A, 0x9F59, 0x8F78,
-  0x9188, 0x81A9, 0xB1CA, 0xA1EB, 0xD10C, 0xC12D, 0xF14E, 0xE16F,
-  0x1080, 0x00A1, 0x30C2, 0x20E3, 0x5004, 0x4025, 0x7046, 0x6067,
-  0x83B9, 0x9398, 0xA3FB, 0xB3DA, 0xC33D, 0xD31C, 0xE37F, 0xF35E,
-  0x02B1, 0x1290, 0x22F3, 0x32D2, 0x4235, 0x5214, 0x6277, 0x7256,
-  0xB5EA, 0xA5CB, 0x95A8, 0x8589, 0xF56E, 0xE54F, 0xD52C, 0xC50D,
-  0x34E2, 0x24C3, 0x14A0, 0x0481, 0x7466, 0x6447, 0x5424, 0x4405,
-  0xA7DB, 0xB7FA, 0x8799, 0x97B8, 0xE75F, 0xF77E, 0xC71D, 0xD73C,
-  0x26D3, 0x36F2, 0x0691, 0x16B0, 0x6657, 0x7676, 0x4615, 0x5634,
-  0xD94C, 0xC96D, 0xF90E, 0xE92F, 0x99C8, 0x89E9, 0xB98A, 0xA9AB,
-  0x5844, 0x4865, 0x7806, 0x6827, 0x18C0, 0x08E1, 0x3882, 0x28A3,
-  0xCB7D, 0xDB5C, 0xEB3F, 0xFB1E, 0x8BF9, 0x9BD8, 0xABBB, 0xBB9A,
-  0x4A75, 0x5A54, 0x6A37, 0x7A16, 0x0AF1, 0x1AD0, 0x2AB3, 0x3A92,
-  0xFD2E, 0xED0F, 0xDD6C, 0xCD4D, 0xBDAA, 0xAD8B, 0x9DE8, 0x8DC9,
-  0x7C26, 0x6C07, 0x5C64, 0x4C45, 0x3CA2, 0x2C83, 0x1CE0, 0x0CC1,
-  0xEF1F, 0xFF3E, 0xCF5D, 0xDF7C, 0xAF9B, 0xBFBA, 0x8FD9, 0x9FF8,
-  0x6E17, 0x7E36, 0x4E55, 0x5E74, 0x2E93, 0x3EB2, 0x0ED1, 0x1EF0
-};
+int64_t ndpi_strtonum(const char *numstr, int64_t minval, int64_t maxval, const char **errstrp, int base)
+{
+  int64_t val = 0;
+  char* endptr;
+#ifdef __KERNEL__
+  int errno;
+#endif
 
-static inline u_int16_t __crc16(u_int16_t crc, const void *data, size_t n_bytes) {
-  u_int8_t* b = (u_int8_t*)data;
-  while (n_bytes--) {
-    crc = (crc << 8) ^ crc16_ccitt_false_table[(crc >> 8) ^ *b++];
+  if (minval > maxval) {
+    *errstrp = "minval > maxval";
+    return 0;
   }
-  return crc;
-}
 
-u_int16_t ndpi_crc16_ccit(const void* data, size_t n_bytes) {
-  u_int16_t crc = 0;
-  u_int8_t* b = (u_int8_t*)data;
-  while (n_bytes--) {
-    crc = (crc >> 8) ^ crc16_ccitt_table[(crc ^ *b++) & 0xFF];
+  errno = 0;    /* To distinguish success/failure after call */
+#ifndef __KERNEL__
+  val = (int64_t)strtoll(numstr, &endptr, base);
+#else
+  endptr = NULL;
+  errno = kstrtoll(numstr,base,&val);
+  if(errno == -EINVAL) {
+    *errstrp = "No digits were found";
+    return 0;
   }
-  return crc;
+#endif
+
+  if((val == LLONG_MIN && errno == ERANGE) || (val < minval)) {
+    *errstrp = "value too small";
+    return 0;
+  }
+  if((val == LLONG_MAX && errno == ERANGE) || (val > maxval )) {
+    *errstrp = "value too large";
+    return 0;
+  }
+  if(errno != 0 && val == 0) {
+    *errstrp = "generic error";
+    return 0;
+  }
+  if(endptr == numstr) {
+    *errstrp = "No digits were found";
+    return 0;
+  }
+  /* Like the original strtonum, we allow further characters after the number */
+
+  *errstrp = NULL;
+  return val;
 }
 
-u_int16_t ndpi_crc16_ccit_false(const void *data, size_t n_bytes) {
-  return __crc16(0xFFFF, data, n_bytes);
-}
+/* ******************************************* */
 
-u_int16_t ndpi_crc16_xmodem(const void *data, size_t n_bytes) {
-  return __crc16(0, data, n_bytes);
+const char *ndpi_lru_cache_idx_to_name(lru_cache_type idx)
+{
+  const char *names[NDPI_LRUCACHE_MAX] = { "ookla", "bittorrent", "zoom", "stun",
+                                           "tls_cert", "mining", "msteams", "stun_zoom" };
+
+  if(idx < 0 || idx >= NDPI_LRUCACHE_MAX)
+    return "unknown";
+  return names[idx];
 }

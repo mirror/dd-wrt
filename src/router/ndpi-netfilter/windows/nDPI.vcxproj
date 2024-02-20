@@ -82,6 +82,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
       <AdditionalDependencies>Ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Ws2_32.lib;$(ProjectDir)..\windows\packages\pthreads.2.9.1.4\build\native\lib\v110\x64\Debug\static\cdecl\libpthread-static.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <FullProgramDatabaseFile>true</FullProgramDatabaseFile>
       <AssemblyDebug>true</AssemblyDebug>
     </Link>
@@ -132,6 +133,7 @@
     <ClCompile Include="..\src\lib\ndpi_memory.c" />
     <ClCompile Include="..\src\lib\ndpi_serializer.c" />
     <ClCompile Include="..\src\lib\ndpi_utils.c" />
+    <ClCompile Include="..\src\lib\ndpi_domains.c" />
     <ClCompile Include="..\src\lib\ndpi_binary_bitmap.c" />
     <ClCompile Include="..\src\lib\ndpi_hash.c" />
     <ClCompile Include="..\src\lib\ndpi_domain_classify.c" />
@@ -156,7 +158,6 @@
     <ClCompile Include="..\src\lib\protocols\collectd.c" />
     <ClCompile Include="..\src\lib\protocols\cpha.c" />
     <ClCompile Include="..\src\lib\protocols\crynet.c" />
-    <ClCompile Include="..\src\lib\protocols\csgo.c" />
     <ClCompile Include="..\src\lib\protocols\diameter.c" />
     <ClCompile Include="..\src\lib\protocols\discord.c" />
     <ClCompile Include="..\src\lib\protocols\dnp3.c" />
@@ -221,6 +222,7 @@
     <ClCompile Include="..\src\lib\protocols\bittorrent.c" />
     <ClCompile Include="..\src\lib\protocols\ciscovpn.c" />
     <ClCompile Include="..\src\lib\protocols\citrix.c" />
+    <ClCompile Include="..\src\lib\protocols\cip.c" />
     <ClCompile Include="..\src\lib\protocols\coap.c" />
     <ClCompile Include="..\src\lib\protocols\corba.c" />
     <ClCompile Include="..\src\lib\protocols\crossfire.c" />
@@ -250,6 +252,7 @@
     <ClCompile Include="..\src\lib\protocols\irc.c" />
     <ClCompile Include="..\src\lib\protocols\jabber.c" />
     <ClCompile Include="..\src\lib\protocols\kakaotalk_voice.c" />
+    <ClCompile Include="..\src\lib\protocols\kcp.c" />
     <ClCompile Include="..\src\lib\protocols\kerberos.c" />
     <ClCompile Include="..\src\lib\protocols\kontiki.c" />
     <ClCompile Include="..\src\lib\protocols\ldap.c" />
@@ -282,9 +285,11 @@
     <ClCompile Include="..\src\lib\protocols\qq.c" />
     <ClCompile Include="..\src\lib\protocols\quic.c" />
     <ClCompile Include="..\src\lib\protocols\radius.c" />
+    <ClCompile Include="..\src\lib\protocols\raft.c" />
     <ClCompile Include="..\src\lib\protocols\rdp.c" />
-    <ClCompile Include="..\src\lib\protocols\redis_net.c" />
+    <ClCompile Include="..\src\lib\protocols\resp.c" />
     <ClCompile Include="..\src\lib\protocols\rmcp.c" />
+    <ClCompile Include="..\src\lib\protocols\roughtime.c" />
     <ClCompile Include="..\src\lib\protocols\rsync.c" />
     <ClCompile Include="..\src\lib\protocols\rtcp.c" />
     <ClCompile Include="..\src\lib\protocols\rtmp.c" />
@@ -344,6 +349,23 @@
     <ClCompile Include="..\src\lib\protocols\ethersbus.c" />
     <ClCompile Include="..\src\lib\protocols\profinet_io.c" />
     <ClCompile Include="..\src\lib\protocols\hislip.c" />
+    <ClCompile Include="..\src\lib\protocols\uftp.c" />
+    <ClCompile Include="..\src\lib\protocols\openflow.c" />
+    <ClCompile Include="..\src\lib\protocols\json-rpc.c" />
+    <ClCompile Include="..\src\lib\protocols\kafka.c" />
+    <ClCompile Include="..\src\lib\protocols\nomachine.c" />
+    <ClCompile Include="..\src\lib\protocols\iec62056.c" />
+    <ClCompile Include="..\src\lib\protocols\hl7.c" />
+    <ClCompile Include="..\src\lib\protocols\ceph.c" />
+    <ClCompile Include="..\src\lib\protocols\steam_datagram_relay.c" />
+    <ClCompile Include="..\src\lib\protocols\mumble.c" />
+    <ClCompile Include="..\src\lib\protocols\yojimbo.c" />
+    <ClCompile Include="..\src\lib\protocols\zoom.c" />
+    <ClCompile Include="..\src\lib\protocols\stomp.c" />
+    <ClCompile Include="..\src\lib\protocols\radmin.c" />
+    <ClCompile Include="..\src\lib\protocols\gearman.c" />
+    <ClCompile Include="..\src\lib\protocols\tencent_games.c" />
+    <ClCompile Include="..\src\lib\protocols\gaijin_entertainment.c" />
     <ClCompile Include="..\src\lib\third_party\src\gcrypt_light.c" />
     <ClCompile Include="..\src\lib\third_party\src\libcache.c" />
     <ClCompile Include="..\src\lib\third_party\src\libinjection_html5.c" />
@@ -352,6 +374,7 @@
     <ClCompile Include="..\src\lib\third_party\src\ndpi_md5.c" />
     <ClCompile Include="..\src\lib\third_party\src\ndpi_patricia.c" />
     <ClCompile Include="..\src\lib\third_party\src\ndpi_sha1.c" />
+    <ClCompile Include="..\src\lib\third_party\src\ndpi_sha256.c" />
     <ClCompile Include="..\src\lib\third_party\src\sha1-fast.c" />
     <ClCompile Include="..\src\lib\third_party\src\strptime.c" />
     <ClCompile Include="..\src\lib\third_party\src\hll\MurmurHash3.c" />

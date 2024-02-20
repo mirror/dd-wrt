@@ -20,10 +20,14 @@
  * along with nDPI.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
-
+#ifndef __KERNEL__
 #include <stdlib.h>
 #include <errno.h>
 #include <sys/types.h>
+#else
+  #include <asm/byteorder.h>
+  #include <linux/kernel.h>
+#endif
 
 #define NDPI_CURRENT_PROTO NDPI_PROTOCOL_UNKNOWN
 
@@ -50,14 +54,22 @@ void set_ndpi_free(void (*__ndpi_free)(void *ptr)) {
 /* ****************************************** */
 
 u_int32_t ndpi_get_tot_allocated_memory() {
-  return(atomic_fetch_add(0, &ndpi_tot_allocated_memory));
+#ifndef __KERNEL__
+   return(__sync_fetch_and_add(&ndpi_tot_allocated_memory, 0));
+#else
+  return 0;
+#endif
 }
 
 /* ****************************************** */
 
 void *ndpi_malloc(size_t size) {
-  atomic_fetch_add(size, &ndpi_tot_allocated_memory);
-  return(_ndpi_malloc ? _ndpi_malloc(size) : malloc(size));
+#ifndef __KERNEL__
+   __sync_fetch_and_add(&ndpi_tot_allocated_memory, size);
+   return(_ndpi_malloc ? _ndpi_malloc(size) : malloc(size));
+#else
+  return _ndpi_malloc(size);
+#endif
 }
 
 /* ****************************************** */
@@ -77,6 +89,7 @@ void *ndpi_calloc(unsigned long count, size_t size) {
 /* ****************************************** */
 
 void ndpi_free(void *ptr) {
+#ifndef __KERNEL__
   if(_ndpi_free) {
     if(ptr)
       _ndpi_free(ptr);
@@ -84,6 +97,10 @@ void ndpi_free(void *ptr) {
     if(ptr)
       free(ptr);
   }
+#else
+    if(ptr)
+      _ndpi_free(ptr);
+#endif
 }
 
 /* ****************************************** */

@@ -958,3 +958,38 @@ int parse_ndpi_risk(struct ndpi_net *n,char *cmd) {
 	return 1;
 }
 
+/*
+ * [proto] param value
+ *
+ */
+int parse_ndpi_cfg(struct ndpi_net *n,char *cmd) {
+	ndpi_cfg_error rc = NDPI_CFG_NOT_FOUND;
+	int i;
+	char *v, *word[4] = { NULL, NULL, NULL, NULL };
+	v = cmd;
+	if(!*v) return 0;
+	i = 0;
+	for(i = 0; *v && i < 3; i++) {
+	    while(*v && (*v == ' ' || *v == '\t')) v++;
+	    word[i] = v;
+            while (*v && *v != ' ' && *v != '\t') v++;
+	    if(*v)
+		*v++ = '\0';
+	}
+	/* if(i == 1) { // TODO:reset settings
+	    } */
+	if(i == 2) {
+		rc = ndpi_set_config(n->ndpi_struct, NULL, word[0], word[1]);
+		if(rc != NDPI_CFG_OK)
+			pr_err("NDPI: bad config rc:%d options %s = %s\n",(int)rc, word[0], word[1]);
+		return rc != NDPI_CFG_OK;
+	}
+	if(i == 3) {
+		rc = ndpi_set_config(n->ndpi_struct, word[0], word[1], word[2]);
+		if(rc != NDPI_CFG_OK)
+			pr_err("NDPI: bad config rc:%d options [%s] %s = %s\n",(int)rc, word[0], word[1], word[2]);
+		return rc != NDPI_CFG_OK;
+	}
+	pr_err("NDPI: bad config options %s\n",cmd);
+	return 1;
+}

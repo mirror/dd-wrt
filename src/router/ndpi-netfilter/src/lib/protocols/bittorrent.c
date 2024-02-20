@@ -2,7 +2,7 @@
  * bittorrent.c
  *
  * Copyright (C) 2009-11 - ipoque GmbH
- * Copyright (C) 2011-22 - ntop.org
+ * Copyright (C) 2011-24 - ntop.org
  *
  * This file is part of nDPI, an open source deep packet inspection
  * library based on the OpenDPI and PACE technology by ipoque GmbH
@@ -91,12 +91,20 @@ d[i >= n ? n-1:i]++;
 
 // #define BITTORRENT_CACHE_DEBUG 1
 
+PACK_ON
 struct ndpi_utp_hdr {
-  u_int8_t h_version:4, h_type:4, next_extension;
+#if defined(__BIG_ENDIAN__)
+  u_int8_t h_type:4, h_version:4;
+#elif defined(__LITTLE_ENDIAN__)
+  u_int8_t h_version:4, h_type:4;
+#else
+#error "Missing endian macro definitions."
+#endif
+  u_int8_t next_extension;
   u_int16_t connection_id;
   u_int32_t ts_usec, tdiff_usec, window_size;
   u_int16_t sequence_nr, ack_nr;
-};
+} PACK_OFF;
 
 
 /* Forward declaration */
@@ -118,18 +126,52 @@ static int search_bittorrent_again(struct ndpi_detection_module_struct *ndpi_str
 
 /* *********************************************** */
 
+static int get_utpv1_length(const u_int8_t *payload, u_int payload_len)
+{
+  struct ndpi_utp_hdr *h = (struct ndpi_utp_hdr*)payload;
+  unsigned int off, num_ext = 0;
+  u_int8_t ext_type = h->next_extension;
+
+  off = sizeof(struct ndpi_utp_hdr);
+  while(ext_type != 0 && off + 1 < payload_len) {
+    ext_type = payload[off];
+    if(ext_type > 2)
+      return -1;
+    /* BEP-29 doesn't have any limits on the number of extensions
+       but putting an hard limit makes sense (there are only 3 ext types) */
+    if(++num_ext > 4)
+      return -1;
+    off += 2 + payload[off + 1];
+  }
+  if(ext_type == 0)
+    return off;
+  return -1;
+}
+
+/* *********************************************** */
+
 static u_int8_t is_utpv1_pkt(const u_int8_t *payload, u_int payload_len) {
   struct ndpi_utp_hdr *h = (struct ndpi_utp_hdr*)payload;
+  int h_length;
 
   if(payload_len < sizeof(struct ndpi_utp_hdr)) return(0);
+  h_length = get_utpv1_length(payload, payload_len);
+  if(h_length == -1)                return(0);
   if(h->h_version != 1)             return(0);
   if(h->h_type > 4)                 return(0);
   if(h->next_extension > 2)         return(0);
-  if(ntohl(h->window_size) > 65565) return(0);
+  if(h->h_type == 4 /* SYN */ && (h->tdiff_usec != 0 ||
+     payload_len != (u_int)h_length)) return(0);
+  if(h->h_type == 0 /* DATA */ &&
+     payload_len == (u_int)h_length) return(0);
+  if(h->connection_id == 0) return(0);
+  if(h->ts_usec == 0) return(0);
 
-  if((h->window_size == 0) && (payload_len != sizeof(struct ndpi_utp_hdr)))
+  if((h->window_size == 0) && (payload_len != (u_int)h_length))
     return(0);
 
+  if(h->h_type == 0)
+    return (2); /* DATA */
   return(1);
 }
 
@@ -1554,11 +1596,17 @@ static void ndpi_search_bittorrent(struct ndpi_detection_module_struct *ndpi_str
 	  /* Check if this is protocol v0 */
 	  u_int8_t v0_extension = packet->payload[17];
 	  u_int8_t v0_flags     = packet->payload[18];
+	  int rc;
 
 	  detect_type = "String";
-	  if(is_utpv1_pkt(packet->payload, packet->payload_packet_len)) {
+	  if((rc = is_utpv1_pkt(packet->payload, packet->payload_packet_len)) > 0) {
 	    bt_proto = ndpi_strnstr((const char *)&packet->payload[20], BITTORRENT_PROTO_STRING, packet->payload_packet_len-20);
-	    goto bittorrent_found;
+	    /* DATA check is quite weak so in that case wait for multiple packets/confirmations */
+	    if(rc == 1 || bt_proto != NULL || (rc == 2 && flow->packet_counter > 2)) {
+	      goto bittorrent_found;
+	    } else {
+	      return;
+	    }
 	  } else if((packet->payload[0]== 0x60)
 		    && (packet->payload[1]== 0x0)
 		    && (packet->payload[2]== 0x0)

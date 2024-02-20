@@ -30,6 +30,17 @@ E * ndpi_typedefs.h
 #ifdef __KERNEL__
 #undef HAVE_HYPERSCAN
 #endif
+
+#ifndef NDPI_CFFI_PREPROCESSING
+#ifdef USE_GLOBAL_CONTEXT
+#include "ndpi_config.h"
+#define HAVE_STRUCT_TIMESPEC
+#ifndef __KERNEL__
+#include <pthread.h>
+#endif
+#endif
+#endif
+
 #include "ndpi_define.h"
 #ifndef NDPI_CFFI_PREPROCESSING
 #include "ndpi_includes.h"
@@ -37,6 +48,9 @@ E * ndpi_typedefs.h
 #include "ndpi_protocol_ids.h"
 
 /* Used by both nDPI core and patricia code under third-party */
+#ifdef __KERNEL__
+#include <linux/in6.h>
+#endif
 #include "ndpi_patricia_typedefs.h"
 
 #ifndef __KERNEL__
@@ -242,6 +256,15 @@ typedef enum {
    ndpi_leaf
 } ndpi_VISIT;
 
+typedef enum {
+  NDPI_CFG_INVALID_CONTEXT = -1,
+  NDPI_CFG_NOT_FOUND = -2,
+  NDPI_CFG_INVALID_PARAM = -3,
+  NDPI_CFG_CONTEXT_ALREADY_INITIALIZED = -4,
+  NDPI_CFG_CALLBACK_ERROR = -5,
+
+  NDPI_CFG_OK = 0,
+} ndpi_cfg_error;
 
 /* NDPI_MASK_SIZE */
 typedef u_int32_t ndpi_ndpi_mask;
@@ -750,8 +773,16 @@ typedef enum {
 	      NDPI_HTTP_METHOD_DELETE,
 	      NDPI_HTTP_METHOD_TRACE,
 	      NDPI_HTTP_METHOD_CONNECT,
+	      NDPI_HTTP_METHOD_RPC_CONNECT,
 	      NDPI_HTTP_METHOD_RPC_IN_DATA,
 	      NDPI_HTTP_METHOD_RPC_OUT_DATA,
+	      NDPI_HTTP_METHOD_MKCOL,
+	      NDPI_HTTP_METHOD_MOVE,
+	      NDPI_HTTP_METHOD_COPY,
+	      NDPI_HTTP_METHOD_LOCK,
+	      NDPI_HTTP_METHOD_UNLOCK,
+	      NDPI_HTTP_METHOD_PROPFIND,
+	      NDPI_HTTP_METHOD_PROPPATCH,
 } ndpi_http_method;
 
 typedef enum {
@@ -799,6 +830,11 @@ typedef enum {
   NDPI_LRUCACHE_MAX	/* Last one! */
 } lru_cache_type;
 
+typedef enum {
+  NDPI_LRUCACHE_SCOPE_LOCAL = 0,
+  NDPI_LRUCACHE_SCOPE_GLOBAL,
+} lru_cache_scope;
+
 struct ndpi_lru_cache_entry {
   u_int32_t key; /* Store the whole key to avoid ambiguities */
   u_int32_t is_full:1, value:16, pad:15;
@@ -813,11 +849,20 @@ struct ndpi_lru_cache_stats {
 
 struct ndpi_lru_cache {
   u_int32_t num_entries;
-  u_int32_t ttl;
+  u_int32_t ttl : 31, shared : 1;
+#ifndef NDPI_CFFI_PREPROCESSING
+#ifndef __KERNEL__
+#ifdef USE_GLOBAL_CONTEXT
+  pthread_mutex_t mutex;
+#endif
+#endif
+#endif
   struct ndpi_lru_cache_stats stats;
   struct ndpi_lru_cache_entry *entries;
 };
 
+#define NDPI_GIVEUP_GUESS_BY_PORT	0x01
+#define NDPI_GIVEUP_GUESS_BY_IP		0x02
 
 /* Aggressiveness values */
 
@@ -914,9 +959,6 @@ struct ndpi_flow_tcp_struct {
   /* NDPI_PROTOCOL_LOTUS_NOTES */
   u_int8_t lotus_notes_packet_id;
 
-  /* NDPI_PROTOCOL_TEAMVIEWER */
-  u_int8_t teamviewer_stage;
-
   /* NDPI_PROTOCOL_ZMQ */
   u_int8_t prev_zmq_pkt_len;
   u_char prev_zmq_pkt[10];
@@ -926,6 +968,9 @@ struct ndpi_flow_tcp_struct {
 
   /* NDPI_PROTOCOL_NEST_LOG_SINK */
   u_int8_t nest_log_sink_matches;
+
+  /* NDPI_PROTOCOL_RADMIN */
+  u_int32_t radmin_stage:1;
 };
 
 /* ************************************************** */
@@ -957,9 +1002,6 @@ struct ndpi_flow_udp_struct {
   /* NDPI_PROTOCOL_SKYPE */
   u_int8_t skype_crc[4];
 
-  /* NDPI_PROTOCOL_TEAMVIEWER */
-  u_int8_t teamviewer_stage;
-
   /* NDPI_PROTOCOL_EAQ */
   u_int8_t eaq_pkt_id;
   u_int32_t eaq_sequence;
@@ -979,10 +1021,9 @@ struct ndpi_flow_udp_struct {
   u_int8_t *quic_reasm_buf;
   u_int8_t *quic_reasm_buf_bitmap;
   u_int32_t quic_reasm_buf_last_pos;
-
-  /* NDPI_PROTOCOL_CSGO */
-  u_int8_t csgo_strid[18],csgo_state,csgo_s2;
-  u_int32_t csgo_id2;
+  /* DCID of the first Initial sent by the client */
+  u_int8_t quic_orig_dest_conn_id[20]; /* Max length is 20 on all QUIC versions */
+  u_int8_t quic_orig_dest_conn_id_len;
 
   /* NDPI_PROTOCOL_RDP */
   u_int8_t rdp_to_srv[3], rdp_from_srv[3], rdp_to_srv_pkts, rdp_from_srv_pkts;   
@@ -997,10 +1038,16 @@ struct ndpi_flow_udp_struct {
   /* NDPI_PROTOCOL_TFTP */
   u_int16_t tftp_data_num;
   u_int16_t tftp_ack_num;
+
+  /* NDPI_PROTOCOL_MUMBLE */
+  u_int8_t mumble_stage:1;
+  u_int64_t mumble_ident;
 };
 
 /* ************************************************** */
 
+
+struct ndpi_global_context;
 struct ndpi_detection_module_struct;
 struct ndpi_flow_struct;
 
@@ -1012,13 +1059,13 @@ typedef enum {
   NDPI_CONFIDENCE_UNKNOWN           = 0,    /* Unknown classification */
   NDPI_CONFIDENCE_MATCH_BY_PORT,            /* Classification obtained looking only at the L4 ports */
   NDPI_CONFIDENCE_MATCH_BY_IP,              /* Classification obtained looking only at the IP */
-  NDPI_CONFIDENCE_USERDEF,                  /* Classification obtained looking IP+port */
   NDPI_CONFIDENCE_NBPF,                     /* PF_RING nBPF (custom protocol) */
   NDPI_CONFIDENCE_DPI_PARTIAL,              /* Classification results based on partial/incomplete DPI information */
   NDPI_CONFIDENCE_DPI_PARTIAL_CACHE,        /* Classification results based on some LRU cache with partial/incomplete DPI information */
   NDPI_CONFIDENCE_DPI_CACHE,                /* Classification results based on some LRU cache (i.e. correlation among sessions) */
   NDPI_CONFIDENCE_DPI,                      /* Deep packet inspection */
   NDPI_CONFIDENCE_DPI_AGGRESSIVE,           /* Aggressive DPI: it might be a false positive */
+  NDPI_CONFIDENCE_CUSTOM_RULE,              /* Matching a custom rules */
 
   /*
     IMPORTANT
@@ -1134,12 +1181,6 @@ typedef enum {
 				*/
   NDPI_PROTOCOL_ANY_CATEGORY /* Used to handle wildcards */
 } ndpi_protocol_category_t;
-
-typedef enum {
-   ndpi_pref_direction_detect_disable = 0,
-   ndpi_pref_max_packets_to_process,
-   ndpi_pref_enable_tls_block_dissection, /* nDPI considers only those blocks past the certificate exchange */
-} ndpi_detection_preference;
 
 /* ntop extensions */
 typedef struct ndpi_proto_defaults {
@@ -1366,7 +1407,7 @@ struct ndpi_flow_struct {
     struct {
       char *server_names, *advertised_alpns, *negotiated_alpn, *tls_supported_versions, *issuerDN, *subjectDN;
       u_int32_t notBefore, notAfter;
-      char ja3_client[33], ja3_server[33];
+      char ja3_client[33], ja3_server[33], ja4_client[37];
       u_int16_t server_cipher;
       u_int8_t sha1_certificate_fingerprint[20];
       u_int8_t hello_processed:1, ch_direction:1, subprotocol_detected:1, fingerprint_set:1, _pad:4;
@@ -1484,9 +1525,6 @@ struct ndpi_flow_struct {
   uint16_t ipdef_proto; /* protocol by ip/port + ip_port_finished */
   ndpi_confidence_t ipdef_proto_level;
 
-  /* NDPI_PROTOCOL_REDIS */
-  u_int8_t redis_s2d_first_char, redis_d2s_first_char;
-
   /* Only packets with L5 data (ie no TCP SYN, pure ACKs, ...) */
   u_int16_t packet_counter;		      // can be 0 - 65000
   u_int16_t packet_direction_counter[2];
@@ -1521,9 +1559,6 @@ struct ndpi_flow_struct {
   /* NDPI_PROTOCOL_RTMP */
   u_int8_t rtmp_stage:2;
 
-  /* NDPI_PROTOCOL_STEAM */
-  u_int16_t steam_stage:3, steam_stage1:3, steam_stage2:2, steam_stage3:2;
-
   /* NDPI_PROTOCOL_STARCRAFT */
   u_int8_t starcraft_udp_stage : 3;	// 0-7
 
@@ -1533,6 +1568,8 @@ struct ndpi_flow_struct {
   /* NDPI_PROTOCOL_OOKLA */
   u_int8_t ookla_stage : 1;
 
+  /* NDPI_PROTOCOL_TEAMVIEWER */
+  u_int8_t teamviewer_stage : 3;
 
   /* NDPI_PROTOCOL_OPENVPN */
   u_int8_t ovpn_session_id[2][8];
@@ -1554,11 +1591,11 @@ struct ndpi_flow_struct {
 
 #if !defined(NDPI_CFFI_PREPROCESSING) && defined(__linux__)
 #if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
-_Static_assert(sizeof(((struct ndpi_flow_struct *)0)->protos) <= 216,
-               "Size of the struct member protocols increased to more than 216 bytes, "
+_Static_assert(sizeof(((struct ndpi_flow_struct *)0)->protos) <= 256,
+               "Size of the struct member protocols increased to more than 256 bytes, "
                "please check if this change is necessary.");
-_Static_assert(sizeof(struct ndpi_flow_struct) <= 988,
-               "Size of the flow struct increased to more than 988 bytes, "
+_Static_assert(sizeof(struct ndpi_flow_struct) <= 1008,
+               "Size of the flow struct increased to more than 1008 bytes, "
                "please check if this change is necessary.");
 #endif
 #endif
@@ -1584,48 +1621,6 @@ typedef struct {
   u_int8_t cidr;
   u_int16_t value;
 } ndpi_network6;
-
-typedef u_int32_t ndpi_init_prefs;
-
-typedef enum {
-    ndpi_no_prefs                  = 0,
-    ndpi_dont_load_tor_list        = (1 << 0),
-    ndpi_dont_init_libgcrypt       = (1 << 1),
-    ndpi_dont_load_azure_list      = (1 << 3),
-    ndpi_dont_load_whatsapp_list   = (1 << 4),
-    ndpi_dont_load_amazon_aws_list = (1 << 5),
-    ndpi_dont_load_ethereum_list   = (1 << 6),
-    ndpi_dont_load_zoom_list       = (1 << 7),
-    ndpi_dont_load_cloudflare_list = (1 << 8),
-    ndpi_dont_load_microsoft_list  = (1 << 9),
-    ndpi_dont_load_google_list     = (1 << 10),
-    ndpi_dont_load_google_cloud_list = (1 << 11),
-    ndpi_dont_load_asn_lists       = (1 << 12),
-    ndpi_dont_load_icloud_private_relay_list  = (1 << 13),
-    ndpi_dont_init_risk_ptree      = (1 << 14),
-    ndpi_dont_load_cachefly_list   = (1 << 15),
-    ndpi_track_flow_payload        = (1 << 16),
-    /* In some networks, there are some anomalous TCP flows where
-       the smallest ACK packets have some kind of zero padding.
-       It looks like the IP and TCP headers in those frames wrongly consider the
-       0x00 Ethernet padding bytes as part of the TCP payload.
-       While this kind of packets is perfectly valid per-se, in some conditions
-       they might be treated by the TCP reassembler logic as (partial) overlaps,
-       deceiving the classification engine.
-       Add an heuristic to detect these packets and to ignore them, allowing
-       correct detection/classification.
-       See #1946 for other details */
-    ndpi_enable_tcp_ack_payload_heuristic = (1 << 17),
-    ndpi_dont_load_crawlers_list = (1 << 18),
-    ndpi_dont_load_protonvpn_list = (1 << 19),
-    /* Heuristic to detect fully encrypted sessions, i.e. flows where every bytes of
-       the payload is encrypted in an attempt to “look like nothing”.
-       This heuristic only analyzes the first packet of the flow.
-       See: https://www.usenix.org/system/files/sec23fall-prepub-234-wu-mingshi.pdf */
-    ndpi_disable_fully_encrypted_heuristic = (1 << 20),
-    ndpi_dont_load_protonvpn_exit_nodes_list = (1 << 21),
-    ndpi_dont_load_mullvad_list = (1 << 22),
-  } ndpi_prefs;
 
 typedef struct {
   u_int32_t protocol_id;

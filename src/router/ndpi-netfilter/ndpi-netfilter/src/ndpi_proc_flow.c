@@ -84,7 +84,7 @@ static int ndpi_confidence_level(ndpi_confidence_t confidence)
     return 1;
   case NDPI_CONFIDENCE_MATCH_BY_IP:
     return 2;
-  case NDPI_CONFIDENCE_USERDEF:
+  case NDPI_CONFIDENCE_CUSTOM_RULE:
     return 3;
   case NDPI_CONFIDENCE_DPI_PARTIAL:
     return 4;
@@ -175,6 +175,12 @@ size_t ndpi_dump_opt(char *buf, size_t bufsize,
 			if(!(flag & 2) && ct->ja3c) {
 			    l += add_opt_str(buf,l,bufsize,'C',&ct->flow_opt[ct->ja3c-1]);
 			    flag |= 2;
+			}
+			break;
+		case 'c':
+			if(!(flag & 0x40) && ct->ja4c) {
+			    l += add_opt_str(buf,l,bufsize,'c',&ct->flow_opt[ct->ja4c-1]);
+			    flag |= 0x40;
 			}
 			break;
 		case 'F':

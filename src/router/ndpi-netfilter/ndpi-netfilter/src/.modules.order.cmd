@@ -1,0 +1,1 @@
+cmd_/home/seg/DEV/x86_64/src/router/ndpi-netfilter/ndpi-netfilter/src/modules.order := {   echo /home/seg/DEV/x86_64/src/router/ndpi-netfilter/ndpi-netfilter/src/xt_ndpi.ko; :; } > /home/seg/DEV/x86_64/src/router/ndpi-netfilter/ndpi-netfilter/src/modules.order

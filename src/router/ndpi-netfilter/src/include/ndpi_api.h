@@ -207,6 +207,22 @@ extern "C" {
                                 ndpi_protocol_match const * const match);
 
   /**
+   * Returns a new initialized global context.
+   *
+   * @return  the initialized global context
+   *
+   */
+  struct ndpi_global_context *ndpi_global_init(void);
+
+  /**
+   * Deinit a properly initialized global context.
+   *
+   * @par g_ctx = global context to free/deinit
+   *
+   */
+  void ndpi_global_deinit(struct ndpi_global_context *g_ctx);
+
+  /**
    * Returns a new initialized detection module
    * Note that before you can use it you can still load
    * hosts and do other things. As soon as you are ready to use
@@ -220,7 +236,7 @@ extern "C" {
    * @return  the initialized detection module
    *
    */
-  NDPI_STATIC struct ndpi_detection_module_struct *ndpi_init_detection_module(ndpi_init_prefs prefs);
+  NDPI_STATIC struct ndpi_detection_module_struct *ndpi_init_detection_module(struct ndpi_global_context *g_ctx);
 
   /**
    * Completes the initialization (2nd step)
@@ -228,7 +244,7 @@ extern "C" {
    * @par ndpi_str = the struct created for the protocol detection
    *
    */
-  NDPI_STATIC void ndpi_finalize_initialization(struct ndpi_detection_module_struct *ndpi_str);
+  NDPI_STATIC int ndpi_finalize_initialization(struct ndpi_detection_module_struct *ndpi_str);
 
   /**
    * Frees the dynamic memory allocated members in the specified flow
@@ -365,7 +381,8 @@ extern "C" {
    * @return the ID of the app protocol detected
    *
    */
-  NDPI_STATIC u_int16_t ndpi_get_flow_appprotocol(struct ndpi_detection_module_struct *ndpi_str, struct ndpi_flow_struct *flow);
+  NDPI_STATIC u_int16_t ndpi_get_flow_appprotocol(struct ndpi_detection_module_struct *ndpi_str,
+				      struct ndpi_flow_struct *flow);
 
   /**
    * Get the category of the passed flows for the detected module
@@ -376,7 +393,8 @@ extern "C" {
    * @return the ID of the category
    *
    */
-  NDPI_STATIC ndpi_protocol_category_t ndpi_get_flow_category(struct ndpi_detection_module_struct *ndpi_str, struct ndpi_flow_struct *flow);
+  NDPI_STATIC ndpi_protocol_category_t ndpi_get_flow_category(struct ndpi_detection_module_struct *ndpi_str,
+						  struct ndpi_flow_struct *flow);
 
   /**
    * Get the ndpi protocol data of the passed flows for the detected module
@@ -387,24 +405,9 @@ extern "C" {
    * @par    ndpi_proto   = the output struct where to store the requested information
    *
    */
-  NDPI_STATIC void ndpi_get_flow_ndpi_proto(struct ndpi_detection_module_struct *ndpi_str, struct ndpi_flow_struct *flow,
-                    struct ndpi_proto * ndpi_proto);
-
-  /**
-   * API call that is called internally by ndpi_detection_process_packet or by apps
-   * that want to avoid calling ndpi_detection_process_packet as they have already
-   * parsed the packet and thus want to avoid this.
-   *
-   *
-   * @par    ndpi_struct              = the detection module
-   * @par    flow                     = the flow given for the detection module
-   * @par    ndpi_selection_bitmask   = the protocol selected bitmask
-   * @return number of protocol dissector that have been tried (0 = no more dissectors)
-   *
-   */
-  NDPI_STATIC u_int32_t ndpi_check_flow_func(struct ndpi_detection_module_struct *ndpi_struct,
-				 struct ndpi_flow_struct *flow,
-				 NDPI_SELECTION_BITMASK_PROTOCOL_SIZE *ndpi_selection_packet);
+  NDPI_STATIC void ndpi_get_flow_ndpi_proto(struct ndpi_detection_module_struct *ndpi_str,
+				struct ndpi_flow_struct *flow,
+				struct ndpi_proto * ndpi_proto);
 
 
   /**
@@ -420,7 +423,8 @@ extern "C" {
    else != 0
    *
    */
-  NDPI_STATIC u_int8_t ndpi_detection_get_l4(const u_int8_t *l3, u_int16_t l3_len, const u_int8_t **l4_return, u_int16_t *l4_len_return,
+  NDPI_STATIC u_int8_t ndpi_detection_get_l4(const u_int8_t *l3, u_int16_t l3_len,
+				 const u_int8_t **l4_return, u_int16_t *l4_len_return,
 				 u_int8_t *l4_protocol_return, u_int32_t flags);
 
   /**
@@ -468,10 +472,8 @@ extern "C" {
   NDPI_STATIC ndpi_protocol ndpi_guess_undetected_protocol_v4(struct ndpi_detection_module_struct *ndpi_struct,
 						  struct ndpi_flow_struct *flow,
 						  u_int8_t proto,
-						  u_int32_t shost,
-						  u_int16_t sport,
-						  u_int32_t dhost,
-						  u_int16_t dport);
+						  u_int32_t shost, u_int16_t sport,
+						  u_int32_t dhost, u_int16_t dport);
   /**
    * Check if the string passed match with a protocol
    *
@@ -1048,17 +1050,14 @@ extern "C" {
 				      ndpi_protocol *ret);
   NDPI_STATIC int ndpi_match_custom_category(struct ndpi_detection_module_struct *ndpi_struct,
 				 char *name, u_int name_len, ndpi_protocol_category_t *id);
+  NDPI_STATIC void ndpi_fill_protocol_category(struct ndpi_detection_module_struct *ndpi_struct,
+                                   struct ndpi_flow_struct *flow,
+                                   ndpi_protocol *ret);
   NDPI_STATIC int ndpi_get_custom_category_match(struct ndpi_detection_module_struct *ndpi_struct,
 				     NDPI_STATIC char *name_or_ip, u_int name_len,
 				     ndpi_protocol_category_t *id);
   NDPI_STATIC void ndpi_self_check_host_match(FILE *error_out);
 #endif
-  NDPI_STATIC void ndpi_fill_protocol_category(struct ndpi_detection_module_struct *ndpi_struct,
-				   struct ndpi_flow_struct *flow,
-				   ndpi_protocol *ret);
-  NDPI_STATIC int ndpi_set_detection_preferences(struct ndpi_detection_module_struct *ndpi_mod,
-				     ndpi_detection_preference pref,
-				     int value);
 
   NDPI_STATIC u_int16_t ndpi_map_user_proto_id_to_ndpi_id(struct ndpi_detection_module_struct *ndpi_str,
 					      u_int16_t user_proto_id);
@@ -1076,47 +1075,17 @@ extern "C" {
   NDPI_STATIC u_int ndpi_get_ndpi_num_supported_protocols(struct ndpi_detection_module_struct *ndpi_mod);
   NDPI_STATIC u_int ndpi_get_ndpi_num_custom_protocols(struct ndpi_detection_module_struct *ndpi_mod);
   NDPI_STATIC u_int ndpi_get_ndpi_detection_module_size(void);
-  NDPI_STATIC void ndpi_set_log_level(struct ndpi_detection_module_struct *ndpi_mod, u_int l);
-  NDPI_STATIC void ndpi_set_debug_bitmask(struct ndpi_detection_module_struct *ndpi_mod, NDPI_PROTOCOL_BITMASK debug_bitmask);
 
   /* Simple helper to get current time, in sec */
   NDPI_STATIC u_int32_t ndpi_get_current_time(struct ndpi_flow_struct *flow);
 
   /* LRU cache */
-  NDPI_STATIC struct ndpi_lru_cache* ndpi_lru_cache_init(u_int32_t num_entries, u_int32_t ttl);
+  NDPI_STATIC struct ndpi_lru_cache* ndpi_lru_cache_init(u_int32_t num_entries, u_int32_t ttl, int shared);
   NDPI_STATIC void ndpi_lru_free_cache(struct ndpi_lru_cache *c);
   NDPI_STATIC u_int8_t ndpi_lru_find_cache(struct ndpi_lru_cache *c, u_int32_t key,
 			       u_int16_t *value, u_int8_t clean_key_when_found, u_int32_t now_sec);
   NDPI_STATIC void ndpi_lru_add_to_cache(struct ndpi_lru_cache *c, u_int32_t key, u_int16_t value, u_int32_t now_sec);
   NDPI_STATIC void ndpi_lru_get_stats(struct ndpi_lru_cache *c, struct ndpi_lru_cache_stats *stats);
-
-  NDPI_STATIC int ndpi_get_lru_cache_stats(struct ndpi_detection_module_struct *ndpi_struct,
-			       lru_cache_type cache_type,
-			       struct ndpi_lru_cache_stats *stats);
-
-  NDPI_STATIC int ndpi_get_lru_cache_size(struct ndpi_detection_module_struct *ndpi_struct,
-			      lru_cache_type cache_type,
-			      u_int32_t *num_entries);
-  NDPI_STATIC int ndpi_set_lru_cache_size(struct ndpi_detection_module_struct *ndpi_struct,
-			      lru_cache_type cache_type,
-			      u_int32_t num_entries);
-
-  NDPI_STATIC int ndpi_set_lru_cache_ttl(struct ndpi_detection_module_struct *ndpi_struct,
-			     lru_cache_type cache_type,
-			     u_int32_t ttl);
-  NDPI_STATIC int ndpi_get_lru_cache_ttl(struct ndpi_detection_module_struct *ndpi_struct,
-			     lru_cache_type cache_type,
-			     u_int32_t *ttl);
-
-  NDPI_STATIC int ndpi_set_opportunistic_tls(struct ndpi_detection_module_struct *ndpi_struct,
-				 u_int16_t proto, int value);
-  NDPI_STATIC int ndpi_get_opportunistic_tls(struct ndpi_detection_module_struct *ndpi_struct,
-				 u_int16_t proto);
-
-  NDPI_STATIC int ndpi_set_protocol_aggressiveness(struct ndpi_detection_module_struct *ndpi_struct,
-                                       u_int16_t proto, u_int32_t value);
-  NDPI_STATIC u_int32_t ndpi_get_protocol_aggressiveness(struct ndpi_detection_module_struct *ndpi_struct,
-                                             u_int16_t proto);
 
   /**
    * Find a protocol id associated with a string automata
@@ -1132,19 +1101,6 @@ extern "C" {
 				    u_int16_t *protocol_id,
 				    ndpi_protocol_category_t *category,
 				    ndpi_protocol_breed_t *breed);
-
-  NDPI_STATIC int ndpi_handle_rule(struct ndpi_detection_module_struct *ndpi_str, char *rule);
-
-  /**
-   * Specifies the threshold used to trigger the NDPI_TLS_CERTIFICATE_ABOUT_TO_EXPIRE
-   * flow risk that by default is set to 30 days
-   *
-   * @par    ndpi_struct  = the struct created for the protocol detection
-   * @par    days         = the number of days threshold for emitting the alert
-   *
-   */
-  NDPI_STATIC void ndpi_set_tls_cert_expire_days(struct ndpi_detection_module_struct *ndpi_str,
-				     u_int8_t days);
 
   NDPI_STATIC void ndpi_handle_risk_exceptions(struct ndpi_detection_module_struct *ndpi_str,
 				   struct ndpi_flow_struct *flow);
@@ -1862,9 +1818,11 @@ extern "C" {
                             ndpi_confidence_t confidence,
                             ndpi_protocol l7_protocol);
 #endif /* KERNEL */
+  NDPI_STATIC void ndpi_sha256(const u_char *data, size_t data_len, u_int8_t sha_hash[32]);
   NDPI_STATIC u_int16_t ndpi_crc16_ccit(const void* data, size_t n_bytes);
   NDPI_STATIC u_int16_t ndpi_crc16_ccit_false(const void *data, size_t n_bytes);
   NDPI_STATIC u_int16_t ndpi_crc16_xmodem(const void *data, size_t n_bytes);
+  NDPI_STATIC u_int16_t ndpi_crc16_x25(const void* data, size_t n_bytes);
   NDPI_STATIC u_int32_t ndpi_quick_hash(const unsigned char *str, u_int str_len);
   NDPI_STATIC const char* ndpi_risk2str(ndpi_risk_enum risk);
   NDPI_STATIC const char* ndpi_severity2str(ndpi_risk_severity s);
@@ -1959,7 +1917,50 @@ extern "C" {
 
   /* ******************************* */
 
-  NDPI_STATIC u_int32_t ndpi_quick_16_byte_hash(u_int8_t *in_16_bytes_long);
+  /*
+   * Checks if the two series are correlated using the
+   * Pearson correlation coefficient that is a value in the -1..0..+1 range
+   * where:
+   * -1 < x < 0   Negative correlation (when one changes the other series changes in opposite direction)
+   * x = 0        No correlation       (no relationship between the series)
+   * 0 < x < 1    Positive correlation (when one changes the other series changes in the same direction)
+   * (i.e. when a series increases, the other also increase and vice-versa)
+   *
+   * @par    values_a   = First series with num_values values
+   * @par    values_b   = Second series with num_values values
+   * @par    num_values = Number of series entries
+   *
+   * @return pearson correlation coefficient
+   *
+   */
+  double ndpi_pearson_correlation(u_int32_t *values_a, u_int32_t *values_b, u_int16_t num_values);
+  
+  /* ******************************* */
+  
+  /*
+   * Checks if a specified value is an outlier with respect to past values
+   * using the Z-score.
+   *
+   * @par past_valuea     = List of observed past values (past knowledge)
+   * @par num_past_values = Number of observed past values
+   * @par value_to_check  = The value to be checked with respect to past values
+   * @par threshold       = Threshold on z-score:. Typical values:
+   *                        t = 1 - The value to check should not exceed the past values
+   *                        t > 1 - The value to check has to be within (t * stddev) boundaries
+   * @par lower           - [out] Lower threshold
+   * @par upper           - [out] Upper threshold   
+   *
+   * @return true if the specified value is an outlier, false otherwise
+   *
+   */
+  
+  NDPI_STATIC bool ndpi_is_outlier(u_int32_t *past_values, u_int32_t num_past_values,
+		       u_int32_t value_to_check, float threshold,
+		       float *lower, float *upper);
+
+  /* ******************************* */
+
+  NDPI_STATIC u_int32_t ndpi_quick_16_byte_hash(const u_int8_t *in_16_bytes_long);
 
 //  extern int ndpi_stun_cache_enable;
 
@@ -2134,6 +2135,10 @@ extern "C" {
 							 u_int8_t class_id,
 							 char *file_path);
   NDPI_STATIC bool                  ndpi_domain_classify_finalize(ndpi_domain_classify *s);
+  NDPI_STATIC const char*           ndpi_domain_classify_longest_prefix(ndpi_domain_classify *s,
+							    u_int8_t *class_id /* out */,
+							    const char *hostnname,
+							    bool return_subprefix);
   NDPI_STATIC bool                  ndpi_domain_classify_contains(ndpi_domain_classify *s,
 						      u_int8_t *class_id /* out */,
 						      const char *domain);
@@ -2176,11 +2181,72 @@ extern "C" {
   /**
    * Get user data which was previously set with `ndpi_set_user_data()`.
    *
+   * @par ndpi_str = the struct created for the protocol detection
+   *
    * @return the user data pointer
    *
    */
   NDPI_STATIC void *ndpi_get_user_data(struct ndpi_detection_module_struct *ndpi_str);
 
+  /* ******************************* */
+
+  /**
+   * Loads the domain suffixes from the specified path. You need to
+   * perform this action once
+   *
+   * @par ndpi_str = the struct created for the protocol detection
+   * @par public_suffix_list_path = path of the public_suffix_list path
+   *
+   * @return 0 = no error, -1 otherwise
+   *
+   */
+  int ndpi_load_domain_suffixes(struct ndpi_detection_module_struct *ndpi_str,
+				char *public_suffix_list_path);
+
+  /**
+   * Returns the domain suffix out of the specified hostname.
+   * The returned pointer is an offset of the original hostname.
+   * Note that you need to call ndpi_load_domain_suffixes() before
+   * calling this function.
+   *
+   * @par ndpi_str = the struct created for the protocol detection
+   * @par hostname = the hostname from which the domain name has to be extracted
+   *
+   * @return The host domain name suffic or the host itself if not found.
+   *
+   */
+  const char* ndpi_get_host_domain_suffix(struct ndpi_detection_module_struct *ndpi_str,
+					  const char *hostname);
+
+  /**
+   * Returns the domain (including the TLS) suffix out of the specified hostname.
+   * The returned pointer is an offset of the original hostname.
+   * Note that you need to call ndpi_load_domain_suffixes() before
+   * calling this function.
+   *
+   * @par ndpi_str = the struct created for the protocol detection
+   * @par hostname = the hostname from which the domain name has to be extracted
+   *
+   * @return The host domain name or the hosti tself if not found.
+   *
+   */
+  const char* ndpi_get_host_domain(struct ndpi_detection_module_struct *ndpi_str,
+				   const char *hostname);
+
+  /* ******************************* */
+
+  ndpi_cfg_error ndpi_set_config(struct ndpi_detection_module_struct *ndpi_str,
+                                 const char *proto, const char *param, const char *value);
+  ndpi_cfg_error ndpi_set_config_u64(struct ndpi_detection_module_struct *ndpi_str,
+                                     const char *proto, const char *param, uint64_t value);
+  char *ndpi_get_config(struct ndpi_detection_module_struct *ndpi_str,
+			const char *proto, const char *param, char *buf, int buf_len);
+  char *ndpi_dump_config_str(struct ndpi_detection_module_struct *ndpi_str,
+                       char *output, int *size);
+#ifndef __KERNEL__
+  char *ndpi_dump_config(struct ndpi_detection_module_struct *ndpi_str,
+			 FILE *fd);
+#endif
   /* ******************************* */
 
   /* Can't call libc functions from kernel space, define some stub instead */
@@ -2197,12 +2263,16 @@ extern "C" {
 
   /* ******************************* */
 
+  NDPI_STATIC int64_t ndpi_strtonum(const char *numstr, int64_t minval, int64_t maxval, const char **errstrp, int base);
   NDPI_STATIC int ndpi_vsnprintf(char * str, size_t size, char const * format, va_list va_args);
   NDPI_STATIC int ndpi_snprintf(char * str, size_t size, char const * format, ...);
   NDPI_STATIC struct tm *ndpi_gmtime_r(const time_t *timep,
                            struct tm *result);
 
   /* ******************************* */
+
+  const char *ndpi_lru_cache_idx_to_name(lru_cache_type idx);
+
 
 #ifdef __cplusplus
 }

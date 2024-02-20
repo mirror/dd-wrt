@@ -18,15 +18,18 @@ libndpi_a_include_HEADERS = ../include/ndpi_api.h \
 			     third_party/include/ndpi_sha1.h \
 			     third_party/include/gcrypt_light.h \
 			     third_party/include/hll.h \
-			     third_party/include/libcache.h
+			     third_party/include/libcache.h \
+			     third_party/include/ndpi_sha256.h
 
 libndpi_a_SOURCES = ndpi_content_match.c.inc \
 		     ndpi_main.c \
+		     ndpi_memory.c \
 		     ndpi_utils.c \
 		     ndpi_bitmap.c \
 		     ndpi_analyze.c \
 		     ndpi_classify.c \
 		     ndpi_serializer.c \
+		     ndpi_domains.c \
 		     ndpi_community_id.c \
 		     ndpi_domain_classify.c \
 		     ndpi_filter.c \
@@ -56,7 +59,9 @@ libndpi_a_SOURCES = ndpi_content_match.c.inc \
 		     protocols/can.c \
 		     protocols/capwap.c \
 		     protocols/cassandra.c \
+		     protocols/ceph.c \
 		     protocols/checkmk.c \
+		     protocols/cip.c \
 		     protocols/ciscovpn.c \
 		     protocols/citrix.c \
 		     protocols/cpha.c \
@@ -65,7 +70,6 @@ libndpi_a_SOURCES = ndpi_content_match.c.inc \
 		     protocols/corba.c \
 		     protocols/crossfire.c \
 		     protocols/crynet.c \
-		     protocols/csgo.c \
 		     protocols/dcerpc.c \
 		     protocols/dhcp.c \
 		     protocols/dhcpv6.c \
@@ -89,6 +93,8 @@ libndpi_a_SOURCES = ndpi_content_match.c.inc \
 		     protocols/fix.c \
 		     protocols/ftp_control.c \
 		     protocols/ftp_data.c \
+		     protocols/gaijin_entertainment.c \
+		     protocols/gearman.c \
 		     protocols/genshin_impact.c \
 		     protocols/git.c \
 		     protocols/gnutella.c \
@@ -99,6 +105,7 @@ libndpi_a_SOURCES = ndpi_content_match.c.inc \
 		     protocols/haproxy.c \
 		     protocols/hart-ip.c \
 		     protocols/hislip.c \
+		     protocols/hl7.c \
 		     protocols/hots.c \
 		     protocols/hpvirtgrp.c \
 		     protocols/hsrp.c \
@@ -110,13 +117,17 @@ libndpi_a_SOURCES = ndpi_content_match.c.inc \
 		     protocols/imo.c \
 		     protocols/ieee-c37118.c \
 		     protocols/iec60870-5-104.c \
+		     protocols/iec62056.c \
 		     protocols/ipsec.c \
 		     protocols/ipp.c \
 		     protocols/irc.c \
 		     protocols/iso9506-1-mms.c \
 		     protocols/ethersbus.c \
 		     protocols/jabber.c \
+		     protocols/json-rpc.c \
+		     protocols/kafka.c \
 		     protocols/kakaotalk_voice.c \
+		     protocols/kcp.c \
 		     protocols/kerberos.c \
 		     protocols/kismet.c \
 		     protocols/kontiki.c \
@@ -140,6 +151,7 @@ libndpi_a_SOURCES = ndpi_content_match.c.inc \
 		     protocols/mpegdash.c \
 		     protocols/mqtt.c \
 		     protocols/mssql_tds.c \
+		     protocols/mumble.c \
 		     protocols/munin.c \
 		     protocols/mysql.c \
 		     protocols/natpmp.c \
@@ -150,10 +162,12 @@ libndpi_a_SOURCES = ndpi_content_match.c.inc \
 		     protocols/nintendo.c \
 		     protocols/nfs.c \
 		     protocols/noe.c \
+		     protocols/nomachine.c \
 		     protocols/non_tcp_udp.c \
 		     protocols/ntp.c \
 		     protocols/oicq.c \
 		     protocols/opc-ua.c \
+		     protocols/openflow.c \
 		     protocols/openvpn.c \
 		     protocols/ookla.c \
 		     protocols/oracle.c \
@@ -166,10 +180,13 @@ libndpi_a_SOURCES = ndpi_content_match.c.inc \
 		     protocols/qq.c \
 		     protocols/quic.c \
 		     protocols/radius.c \
+		     protocols/radmin.c \
+		     protocols/raft.c \
 		     protocols/raknet.c \
 		     protocols/rdp.c \
-		     protocols/redis_net.c \
+		     protocols/resp.c \
 		     protocols/rmcp.c \
+		     protocols/roughtime.c \
 		     protocols/rsh.c \
 		     protocols/rsync.c \
 		     protocols/rtcp.c \
@@ -196,6 +213,8 @@ libndpi_a_SOURCES = ndpi_content_match.c.inc \
 		     protocols/ssh.c \
 		     protocols/starcraft.c \
 		     protocols/steam.c \
+		     protocols/steam_datagram_relay.c \
+		     protocols/stomp.c \
 		     protocols/stun.c \
 		     protocols/syncthing.c \
 		     protocols/syslog.c \
@@ -205,6 +224,7 @@ libndpi_a_SOURCES = ndpi_content_match.c.inc \
 		     protocols/teamviewer.c \
 		     protocols/telegram.c \
 		     protocols/telnet.c \
+		     protocols/tencent_games.c \
 		     protocols/tftp.c \
 		     protocols/thrift.c \
 		     protocols/tls.c \
@@ -217,6 +237,7 @@ libndpi_a_SOURCES = ndpi_content_match.c.inc \
 		     protocols/tvuplayer.c \
 		     protocols/tocaboca.c \
 		     protocols/ubntac2.c \
+		     protocols/uftp.c \
 		     protocols/ultrasurf.c \
 		     protocols/usenet.c \
 		     protocols/viber.c \
@@ -233,8 +254,10 @@ libndpi_a_SOURCES = ndpi_content_match.c.inc \
 		     protocols/xbox.c \
 		     protocols/xdmcp.c \
 		     protocols/xiaomi.c \
+		     protocols/yojimbo.c \
 		     protocols/zattoo.c \
 		     protocols/zeromq.c \
+		     protocols/zoom.c \
 		     protocols/smpp.c \
 		     protocols/tinc.c \
 		     protocols/someip.c \
@@ -256,7 +279,8 @@ libndpi_a_SOURCES = ndpi_content_match.c.inc \
 		     third_party/src/ndpi_patricia.c \
 		     third_party/src/hll/MurmurHash3.c \
 		     third_party/src/hll/hll.c \
-		     third_party/src/gcrypt_light.c
+		     third_party/src/gcrypt_light.c \
+		     third_party/src/ndpi_sha256.c
 
 lib_LIBRARIES = libndpi.a
 

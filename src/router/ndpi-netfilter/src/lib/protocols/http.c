@@ -57,8 +57,13 @@ static void ndpi_set_binary_application_transfer(struct ndpi_detection_module_st
 						 char *msg) {
   /*
     Check known exceptions
+    https://learn.microsoft.com/en-us/windows/privacy/windows-endpoints-1909-non-enterprise-editions
   */
-  if(ends_with(ndpi_struct, (char*)flow->host_server_name, ".windowsupdate.com"))
+  if(ends_with(ndpi_struct, (char*)flow->host_server_name, ".windowsupdate.com")
+     || ends_with(ndpi_struct, (char*)flow->host_server_name, ".microsoft.com")
+     || ends_with(ndpi_struct, (char*)flow->host_server_name, ".office365.com")
+     || ends_with(ndpi_struct, (char*)flow->host_server_name, ".windows.com")
+     )
     ;
   else
     ndpi_set_risk(ndpi_struct, flow, NDPI_BINARY_APPLICATION_TRANSFER, msg);
@@ -120,7 +125,7 @@ static int ndpi_search_http_tcp_again(struct ndpi_detection_module_struct *ndpi_
 /* *********************************************** */
 
 static int ndpi_http_is_print(char c) {
-  if(isprint(c) || (c == '\t') || (c == '\r') || (c == '\n'))
+  if(ndpi_isprint(c) || (c == '\t') || (c == '\r') || (c == '\n'))
     return(1);
   else
     return(0);
@@ -433,9 +438,24 @@ static void ndpi_http_parse_subprotocol(struct ndpi_detection_module_struct *ndp
     ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_OCSP, master_protocol, NDPI_CONFIDENCE_DPI);
   }
 
-  if(flow->http.method == NDPI_HTTP_METHOD_RPC_IN_DATA ||
-     flow->http.method == NDPI_HTTP_METHOD_RPC_OUT_DATA) {
-    ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_RPC, master_protocol, NDPI_CONFIDENCE_DPI);
+  if((flow->http.method == NDPI_HTTP_METHOD_RPC_CONNECT) ||
+     (flow->http.method == NDPI_HTTP_METHOD_RPC_IN_DATA) ||
+     (flow->http.method == NDPI_HTTP_METHOD_RPC_OUT_DATA)) {
+    ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_MS_RPCH, master_protocol, NDPI_CONFIDENCE_DPI);
+  }
+
+  switch (flow->http.method) {
+    case NDPI_HTTP_METHOD_MKCOL:
+    case NDPI_HTTP_METHOD_MOVE:
+    case NDPI_HTTP_METHOD_COPY:
+    case NDPI_HTTP_METHOD_LOCK:
+    case NDPI_HTTP_METHOD_UNLOCK:
+    case NDPI_HTTP_METHOD_PROPFIND:
+    case NDPI_HTTP_METHOD_PROPPATCH:
+      ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_WEBDAV, master_protocol, NDPI_CONFIDENCE_DPI);
+      break;
+    default:
+      break;
   }
 
   if(flow->detected_protocol_stack[1] == NDPI_PROTOCOL_UNKNOWN &&
@@ -524,6 +544,16 @@ static void ndpi_http_parse_subprotocol(struct ndpi_detection_module_struct *ndp
     ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_OOKLA, master_protocol, NDPI_CONFIDENCE_DPI);
     ookla_add_to_cache(ndpi_struct, flow);
   }
+
+  if ((flow->detected_protocol_stack[1] == NDPI_PROTOCOL_UNKNOWN) && 
+      flow->http.user_agent && strstr(flow->http.user_agent, "MSRPC")) {
+    ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_MS_RPCH, master_protocol, NDPI_CONFIDENCE_DPI);
+  }
+
+  if ((flow->detected_protocol_stack[1] == NDPI_PROTOCOL_UNKNOWN) && 
+      flow->http.user_agent && strstr(flow->http.user_agent, "Valve/Steam HTTP Client")) {
+    ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_STEAM, master_protocol, NDPI_CONFIDENCE_DPI);
+  }
 }
 
 /* ************************************************************* */
@@ -546,11 +576,11 @@ static void ndpi_check_user_agent(struct ndpi_detection_module_struct *ndpi_stru
        * We assume at least one non alpha char.
        * e.g. ' ', '-' or ';' ...
        */
-      if (isalpha(ua[i]) == 0)
+      if (ndpi_isalpha(ua[i]) == 0)
       {
         break;
       }
-      if (isupper(ua[i]) != 0)
+      if (isupper((unsigned char)ua[i]) != 0)
       {
         upper_case_count++;
       }
@@ -754,7 +784,7 @@ static void ndpi_check_http_server(struct ndpi_detection_module_struct *ndpi_str
 	char buf[16] = { '\0' };
 
 	for(i=off, j=0; (i<server_len) && (j<sizeof(buf)-1)
-	      && (isdigit(server[i]) || (server[i] == '.')); i++)
+	      && (ndpi_isdigit(server[i]) || (server[i] == '.')); i++)
 	  buf[j++] = server[i];
 
 	if(sscanf(buf, "%d.%d.%d", &a, &b, &c) == 3) {
@@ -773,7 +803,7 @@ static void ndpi_check_http_server(struct ndpi_detection_module_struct *ndpi_str
 
       /* Check server content */
       for(i=0; i<server_len; i++) {
-	if(!isprint(server[i])) {
+	if(!ndpi_isprint(server[i])) {
 	  ndpi_set_risk(ndpi_struct, flow, NDPI_HTTP_SUSPICIOUS_HEADER, "Suspicious Agent");
 	  break;
 	}
@@ -799,7 +829,7 @@ static void check_content_type_and_change_protocol(struct ndpi_detection_module_
      && (packet->host_line.len > 0)) {
     int len = packet->http_url_name.len + packet->host_line.len + 1;
 
-    if(isdigit(packet->host_line.ptr[0])
+    if(ndpi_isdigit(packet->host_line.ptr[0])
        && (packet->host_line.len < 21))
       ndpi_check_numeric_ip(ndpi_struct, flow, (char*)packet->host_line.ptr, packet->host_line.len);
 
@@ -923,7 +953,7 @@ static void check_content_type_and_change_protocol(struct ndpi_detection_module_
 		  packet->host_line.len, packet->host_line.ptr);
 
     /* Copy result for nDPI apps */
-    ndpi_hostname_sni_set(flow, packet->host_line.ptr, packet->host_line.len);
+    ndpi_hostname_sni_set(flow, packet->host_line.ptr, packet->host_line.len, NDPI_HOSTNAME_NORM_ALL);
 
     if(strlen(flow->host_server_name) > 0) {
       char *double_col;
@@ -931,8 +961,8 @@ static void check_content_type_and_change_protocol(struct ndpi_detection_module_
 
       hostname_just_set = 1;
 
-      if(ndpi_is_valid_hostname(flow->host_server_name,
-				strlen(flow->host_server_name)) == 0) {
+      if(ndpi_is_valid_hostname((char *)packet->host_line.ptr,
+				packet->host_line.len) == 0) {
 	char str[128];
 
 	snprintf(str, sizeof(str), "Invalid host %s", flow->host_server_name);
@@ -1005,7 +1035,9 @@ static struct l_string {
 		    STATIC_STRING_L("CONNECT "),
 		    STATIC_STRING_L("PROPFIND "),
 		    STATIC_STRING_L("REPORT "),
-		    STATIC_STRING_L("RPC_IN_DATA "), STATIC_STRING_L("RPC_OUT_DATA ")
+		    STATIC_STRING_L("RPC_CONNECT "),
+		    STATIC_STRING_L("RPC_IN_DATA "),
+		    STATIC_STRING_L("RPC_OUT_DATA ")
 };
 static const char *http_fs = "CDGHOPR";
 
@@ -1474,16 +1506,20 @@ static void ndpi_search_http_tcp(struct ndpi_detection_module_struct *ndpi_struc
   NDPI_LOG_DBG(ndpi_struct, "search HTTP\n");
   ndpi_check_http_tcp(ndpi_struct, flow);
 
-  if((flow->host_server_name[0] != '\0'&&
+  if((ndpi_struct->cfg.http_parse_response_enabled &&
+      flow->host_server_name[0] != '\0'&&
       flow->http.response_status_code != 0) ||
-    /* We have found 3 consecutive requests (without the reply) or 3
-       consecutive replies (without the request). If the traffic is really
-       asymmetric, stop here, because we will never find the metadata from
-       both the request and the reply. We wait for 3 events (instead of 2)
-       to avoid false positives triggered by missing/dropped packets */
-    (flow->l4.tcp.http_asymmetric_stage == 2 &&
-     (flow->packet_direction_complete_counter[0] == 0 ||
-      flow->packet_direction_complete_counter[1] == 0))) {
+     (!ndpi_struct->cfg.http_parse_response_enabled &&
+      (flow->host_server_name[0] != '\0' ||
+       flow->http.response_status_code != 0)) ||
+     /* We have found 3 consecutive requests (without the reply) or 3
+        consecutive replies (without the request). If the traffic is really
+        asymmetric, stop here, because we will never find the metadata from
+        both the request and the reply. We wait for 3 events (instead of 2)
+        to avoid false positives triggered by missing/dropped packets */
+     (flow->l4.tcp.http_asymmetric_stage == 2 &&
+      (flow->packet_direction_complete_counter[0] == 0 ||
+       flow->packet_direction_complete_counter[1] == 0))) {
     flow->extra_packets_func = NULL; /* We're good now */
 
     if(flow->initial_binary_bytes_len) ndpi_analyze_content_signature(ndpi_struct, flow);

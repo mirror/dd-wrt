@@ -1,0 +1,3 @@
+cmd_/home/seg/DEV/x86_64/src/router/ndpi-netfilter/ndpi-netfilter/src/xt_ndpi.o := sh ./scripts/gcc-ld -flinker-output=nolto-rel -flto=jobserver -fwhole-program -fipa-cp-clone   -m elf_x86_64 -z noexecstack --no-warn-rwx-segments    -r -o /home/seg/DEV/x86_64/src/router/ndpi-netfilter/ndpi-netfilter/src/xt_ndpi.o @/home/seg/DEV/x86_64/src/router/ndpi-netfilter/ndpi-netfilter/src/xt_ndpi.mod  ; ./tools/objtool/objtool --hacks=jump_label --hacks=noinstr --static-call --uaccess  --link  --module /home/seg/DEV/x86_64/src/router/ndpi-netfilter/ndpi-netfilter/src/xt_ndpi.o
+
+/home/seg/DEV/x86_64/src/router/ndpi-netfilter/ndpi-netfilter/src/xt_ndpi.o: $(wildcard ./tools/objtool/objtool)

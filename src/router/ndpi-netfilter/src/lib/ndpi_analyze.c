@@ -21,6 +21,8 @@
  *
  */
 
+#ifndef __KERNEL__
+
 #include <stdlib.h>
 #include <errno.h>
 #include <sys/types.h>
@@ -28,13 +30,20 @@
 #include <inttypes.h>
 #include <math.h>
 #include <float.h> /* FLT_EPSILON */
+
+#include "ndpi_replace_printf.h"
+
+#else
+  #include <asm/byteorder.h>
+  #include <linux/kernel.h>
+#endif // __KERNEL__
+
 #include "ndpi_api.h"
 #include "ndpi_config.h"
 #include "third_party/include/hll.h"
 
-#include "ndpi_replace_printf.h"
-
 /* ********************************************************************************* */
+#ifndef __KERNEL__
 
 void ndpi_init_data_analysis(struct ndpi_analyze_struct *ret, u_int16_t _max_series_len) {
   u_int32_t len;
@@ -60,6 +69,20 @@ struct ndpi_analyze_struct* ndpi_alloc_data_analysis(u_int16_t _max_series_len) 
 
   if(ret != NULL)
     ndpi_init_data_analysis(ret, _max_series_len);
+
+  return(ret);
+}
+
+/* ********************************************************************************* */
+
+struct ndpi_analyze_struct* ndpi_alloc_data_analysis_from_series(const u_int32_t *values, u_int16_t num_values) {
+  u_int16_t i;
+  struct ndpi_analyze_struct *ret = ndpi_alloc_data_analysis(num_values);
+
+  if(ret == NULL) return(NULL);
+
+  for(i=0; i<num_values; i++)
+    ndpi_data_add_value(ret, (const u_int64_t)values[i]);
 
   return(ret);
 }
@@ -134,7 +157,7 @@ float ndpi_data_average(struct ndpi_analyze_struct *s) {
   if((!s) || (s->num_data_entries == 0))
     return(0);
 
-  return((s->num_data_entries == 0) ? 0 : ((float)s->sum_total / (float)s->num_data_entries));
+  return((float)s->sum_total / (float)s->num_data_entries);
 }
 
 /* ********************************************************************************* */
@@ -1634,6 +1657,31 @@ u_int ndpi_find_outliers(u_int32_t *values, bool *outliers, u_int32_t num_values
   return(ret);
 }
 
+/* *********************************************************** */
+
+/* Check if the specified value is an outlier with respect to the past values */
+bool ndpi_is_outlier(u_int32_t *past_values, u_int32_t num_past_values,
+		     u_int32_t value_to_check, float threshold,
+		     float *lower, float *upper) {
+  struct ndpi_analyze_struct *data = ndpi_alloc_data_analysis_from_series(past_values, num_past_values);
+  float mean, stddev, v;
+
+  if(!data) return(false);
+
+  mean   = ndpi_data_mean(data);
+  stddev = ndpi_data_stddev(data);
+
+  /* The mimimum threshold is 1 (i.e. the value of the stddev) */
+  if(threshold < 1.) threshold = 1.;
+
+  v = threshold * stddev;
+  *lower = mean - v, *upper = mean + v;
+
+  ndpi_free_data_analysis(data, 1 /* free memory */);
+
+  return(((value_to_check < *lower) || (value_to_check > *upper)) ? true : false);
+}
+
 /* ********************************************************************************* */
 
 /*
@@ -1669,7 +1717,37 @@ int ndpi_predict_linear(u_int32_t *values, u_int32_t num_values,
 }
 
 /* ********************************************************************************* */
-#if 0
+
+double ndpi_pearson_correlation(u_int32_t *values_a, u_int32_t *values_b, u_int16_t num_values) {
+  double sum_a = 0, sum_b = 0, sum_squared_diff_a = 0, sum_squared_diff_b = 0, sum_product_diff = 0;
+  u_int16_t i;
+  double mean_a, mean_b, variance_a, variance_b, covariance;
+
+  if(num_values == 0) return(0.0);
+
+  for(i = 0; i < num_values; i++)
+    sum_a += values_a[i], sum_b += values_b[i];
+
+  mean_a = sum_a / num_values, mean_b = sum_b / num_values;
+
+  for(i = 0; i < num_values; i++)
+    sum_squared_diff_a += pow(values_a[i] - mean_a, 2),
+      sum_squared_diff_b += pow(values_b[i] - mean_b, 2),
+      sum_product_diff += (values_a[i] - mean_a) * (values_b[i] - mean_b);
+
+  variance_a = sum_squared_diff_a / (double)num_values, variance_b = sum_squared_diff_b / (double)num_values;
+  covariance = sum_product_diff / (double)num_values;
+
+  if(variance_a == 0.0 || variance_b == 0.0)
+    return(0.0);
+
+  return(covariance / sqrt(variance_a * variance_b));
+}
+#endif // __KERNEL__
+
+/* ********************************************************************************* */
+/* ********************************************************************************* */
+
 static const u_int16_t crc16_ccitt_table[256] = {
 	0x0000, 0x1189, 0x2312, 0x329B, 0x4624, 0x57AD, 0x6536, 0x74BF,
 	0x8C48, 0x9DC1, 0xAF5A, 0xBED3, 0xCA6C, 0xDBE5, 0xE97E, 0xF8F7,
@@ -1764,7 +1842,18 @@ u_int16_t ndpi_crc16_ccit_false(const void *data, size_t n_bytes) {
 u_int16_t ndpi_crc16_xmodem(const void *data, size_t n_bytes) {
   return __crc16(0, data, n_bytes);
 }
-#endif
+
+u_int16_t ndpi_crc16_x25(const void* data, size_t n_bytes) {
+  u_int16_t crc = 0xFFFF;
+  u_int8_t* b = (u_int8_t*)data;
+  while (n_bytes--) {
+    crc = (crc >> 8) ^ crc16_ccitt_table[(crc ^ *b++) & 0xFF];
+  }
+  return (crc ^ 0xFFFF);
+}
+
+#ifndef __KERNEL__
+
 /* ********************************************************** */
 /*       http://home.thep.lu.se/~bjorn/crc/crc32_fast.c       */
 /* ********************************************************** */
@@ -1872,7 +1961,7 @@ struct ndpi_cm_sketch *ndpi_cm_sketch_init(u_int16_t num_hashes) {
   num_hashes = ndpi_nearest_power_of_two(num_hashes);
 
   sketch->num_hashes = num_hashes;
-  sketch->num_hash_buckets = num_hashes * NDPI_COUNT_MIN_SKETCH_NUM_BUCKETS;  
+  sketch->num_hash_buckets = num_hashes * NDPI_COUNT_MIN_SKETCH_NUM_BUCKETS;
   sketch->num_hash_buckets = ndpi_nearest_power_of_two(sketch->num_hash_buckets)-1,
 
   len = num_hashes * NDPI_COUNT_MIN_SKETCH_NUM_BUCKETS * sizeof(u_int32_t);
@@ -1927,7 +2016,7 @@ u_int32_t ndpi_cm_sketch_count(struct ndpi_cm_sketch *sketch, u_int32_t element)
     printf("ndpi_add_sketch_add() [hash: %d][num_hash_buckets: %u][hashval: %d][value: %d]\n",
 	   idx, sketch->num_hash_buckets, hashval, sketch->tables[hashval]);
 #endif
-    
+
     min_value = ndpi_min(min_value, sketch->tables[hashval]);
   }
 
@@ -1979,3 +2068,4 @@ void ndpi_popcount_count(struct ndpi_popcount *h, const u_int8_t *buf, u_int32_t
 
   h->tot_bytes_count += buf_len;
 }
+#endif

@@ -1,0 +1,1 @@
+cmd_/home/seg/DEV/x86_64/src/router/ndpi-netfilter/ndpi-netfilter/src/Module.symvers :=  sed 's/ko$$/o/'  /home/seg/DEV/x86_64/src/router/ndpi-netfilter/ndpi-netfilter/src/modules.order | scripts/mod/modpost      -o /home/seg/DEV/x86_64/src/router/ndpi-netfilter/ndpi-netfilter/src/Module.symvers -e -i Module.symvers -T - 
