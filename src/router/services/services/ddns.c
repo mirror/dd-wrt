@@ -61,7 +61,7 @@ static char _cache_file_ipv6[128];
 static int init_ddns(FILE *fp)
 {
 	int flag = nvram_geti("ddns_enable");
-	if (flag > 62 || flag < 1)
+	if (flag > 63 || flag < 1)
 		return -1;
 	char *providers[] = {
 		NULL,
@@ -128,6 +128,7 @@ static int init_ddns(FILE *fp)
 		"default@simply.com",
 		"default@twodns.de",
 		"default@ipv64.net",
+		"default@porkbun.com",
 	};
 
 #ifdef HAVE_IPV6
@@ -196,6 +197,7 @@ static int init_ddns(FILE *fp)
 		"ipv6@simply.com",
 		NULL,
 		"ipv6@ipv64.net",
+		"ipv6@porkbun.com",
 	};
 #endif
 	int ipv6_only = 0;
@@ -320,7 +322,7 @@ void start_ddns(void)
 	FILE *fp;
 
 	int flag = nvram_geti("ddns_enable");
-	if (flag > 62 || flag < 1)
+	if (flag > 63 || flag < 1)
 		return -1;
 
 	mkdir("/tmp/ddns", 0744);
