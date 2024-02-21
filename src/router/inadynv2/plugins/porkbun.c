@@ -23,6 +23,7 @@
 #include "json.h"
 
 #define CHECK(fn)       { rc = (fn); if (rc) goto cleanup; }
+#define KEY_SUCCESS		"success"
 
 #define API_HOST "api.porkbun.com"
 #define API_URL "/client/v4"
@@ -65,7 +66,6 @@ static const char *PORKBUN_UPDATE_JSON_FORMAT = "{\"apikey\":\"%s\",\"secretapik
 static const char *IPV4_RECORD_TYPE = "A";
 static const char *IPV6_RECORD_TYPE = "AAAA";
 static const char *KEY_STATUS = "status";
-static const char *KEY_SUCCESS = "success";
 
 static int setup    (ddns_t       *ctx,   ddns_info_t *info, ddns_alias_t *hostname);
 static int request  (ddns_t       *ctx,   ddns_info_t *info, ddns_alias_t *hostname);
@@ -167,7 +167,7 @@ static int get_result_value(const char *json, const char *key, jsmntok_t *out_re
 		goto cleanup;
 	}
 
-	if (check_success(json, tokens, num_tokens) == -1) {
+	if (json_bool(json, tokens + i + 1, &num_tokens) == -1) {
 		logit(LOG_ERR, "Request was unsuccessful.");
 		goto cleanup;
 	}
@@ -190,7 +190,7 @@ static int get_result_value(const char *json, const char *key, jsmntok_t *out_re
 	return -1;
 }
 
-static int json_copy_value(char *dest, size_t dest_size, const char *json, const jsmntok_t *token)
+	static int json_copy_value(char *dest, size_t dest_size, const char *json, const jsmntok_t *token)
 {
 	size_t length;
 
