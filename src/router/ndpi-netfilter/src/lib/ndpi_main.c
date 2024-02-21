@@ -1020,7 +1020,7 @@ static void init_string_based_protocols(struct ndpi_detection_module_struct *ndp
 /* ******************************************************************** */
 
 static int ndpi_validate_protocol_initialization(struct ndpi_detection_module_struct *ndpi_str) {
-  u_int i;
+  u_int i, j;
 
   for(i = 0; i < ndpi_str->ndpi_num_supported_protocols; i++) {
     if(ndpi_str->proto_defaults[i].protoName == NULL) {
@@ -1039,7 +1039,7 @@ static int ndpi_validate_protocol_initialization(struct ndpi_detection_module_st
 #endif
     }
     if(!strcmp(ndpi_str->proto_defaults[i].protoName,"Free")) continue;
-    for(u_int j = 0; j < i; j++)
+    for(j = 0; j < i; j++)
       if(!strcmp(ndpi_str->proto_defaults[i].protoName,ndpi_str->proto_defaults[j].protoName)) {
   	    NDPI_LOG_ERR(ndpi_str, "[NDPI] INTERNAL ERROR: Name of the protocols are the same for #%u and #%u '%s' \n",i,j,
   			    ndpi_str->proto_defaults[i].protoName);
