@@ -24,6 +24,7 @@ inadyn-configure: wolfssl openssl
 		--localstatedir=/tmp \
 		--disable-shared \
 		--enable-static \
+		--enable-reduced \
 		--host=$(ARCH)-linux \
 		CFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 		confuse_CFLAGS="-I$(TOP)/inadynv2/libconfuse/src" \
@@ -37,6 +38,7 @@ inadyn-configure: wolfssl openssl
 		--enable-openssl \
 		--disable-shared \
 		--enable-static \
+		--enable-reduced \
 		--localstatedir=/tmp \
 		--host=$(ARCH)-linux \
 		CFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
@@ -54,6 +56,7 @@ inadyn-configure: wolfssl openssl
 		--enable-openssl \
 		--disable-shared \
 		--enable-static \
+		--enable-reduced \
 		--localstatedir=/tmp \
 		--host=$(ARCH)-linux \
 		CFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
