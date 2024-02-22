@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: confuse 3.3-1\n"
 "Report-Msgid-Bugs-To: https://github.com/libconfuse/libconfuse/issues\n"
-"POT-Creation-Date: 2020-06-22 11:38+0200\n"
+"POT-Creation-Date: 2024-02-21 12:19+0700\n"
 "PO-Revision-Date: 2020-12-26 08:50+0100\n"
 "Last-Translator: Chris Leick <c.leick@vollbio.de>\n"
 "Language-Team: German <debian-l10n-german@lists.debian.org>\n"
@@ -17,7 +17,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: src/confuse.c:326 src/confuse.c:347 src/confuse.c:2295
+#: src/confuse.c:326 src/confuse.c:347 src/confuse.c:2329
 #, c-format
 msgid "no such option '%s'"
 msgstr "keine solche Option »%s«"
@@ -42,95 +42,95 @@ msgstr "doppelte Option »%s« nicht erlaubt"
 msgid "found duplicate title '%s'"
 msgstr "doppelter Titel »%s« gefunden"
 
-#: src/confuse.c:951
+#: src/confuse.c:972
 #, c-format
 msgid "invalid integer value for option '%s'"
 msgstr "ungültiger Ganzzahlwert für Option »%s«"
 
-#: src/confuse.c:955
+#: src/confuse.c:977
 #, c-format
 msgid "integer value for option '%s' is out of range"
 msgstr "Ganzzahlwert für Option »%s« ist außerhalb des Abschnitts"
 
-#: src/confuse.c:973
+#: src/confuse.c:995
 #, c-format
 msgid "invalid floating point value for option '%s'"
 msgstr "ungültiger Fließkommawert für Option »%s«"
 
-#: src/confuse.c:977
+#: src/confuse.c:999
 #, c-format
 msgid "floating point value for option '%s' is out of range"
 msgstr "Fließkommawert für Option »%s« ist außerhalb des Abschnitts"
 
-#: src/confuse.c:1063
+#: src/confuse.c:1085
 #, c-format
 msgid "invalid boolean value for option '%s'"
 msgstr "ungültiger Boolean-Wert für Option »%s«"
 
-#: src/confuse.c:1262
+#: src/confuse.c:1285
 #, c-format
 msgid "dropping deprecated configuration option '%s'"
 msgstr "missbilligte Konfigurationsoption »%s« wird verworfen"
 
 # FIXME s/.//
-#: src/confuse.c:1265
+#: src/confuse.c:1288
 #, c-format
 msgid "found deprecated option '%s', please update configuration file."
 msgstr ""
 "missbilligte Option »%s« gefunden, bitte aktualisieren Sie die "
 "Konfigurationsdatei"
 
-#: src/confuse.c:1296
+#: src/confuse.c:1320
 msgid "premature end of file"
 msgstr "vorzeitiges Ende der Datei"
 
 # http://www.dict.cc/deutsch-englisch/Klammer.html
-#: src/confuse.c:1317
+#: src/confuse.c:1341
 msgid "unexpected closing brace"
 msgstr "unerwartete schließende eckige Klammer"
 
-#: src/confuse.c:1338 src/confuse.c:1418 src/confuse.c:1445 src/confuse.c:1468
-#: src/confuse.c:1583 src/confuse.c:1627
+#: src/confuse.c:1362 src/confuse.c:1442 src/confuse.c:1469 src/confuse.c:1492
+#: src/confuse.c:1607 src/confuse.c:1651
 #, c-format
 msgid "unexpected token '%s'"
 msgstr "unerwartetes Element »%s«"
 
-#: src/confuse.c:1380
+#: src/confuse.c:1404
 #, c-format
 msgid "attempt to append to non-list option '%s'"
 msgstr "Versuch, an die Nicht-Listen-Option »%s« anzuhängen"
 
-#: src/confuse.c:1393
+#: src/confuse.c:1417
 #, c-format
 msgid "missing equal sign after option '%s'"
 msgstr "fehlendes Gleichheitszeichen nach Option »%s«"
 
-#: src/confuse.c:1475
+#: src/confuse.c:1499
 #, c-format
 msgid "missing opening brace for section '%s'"
 msgstr "öffnende geschweifte Klammer für Abschnitt »%s« fehlt"
 
-#: src/confuse.c:1502
+#: src/confuse.c:1526
 #, c-format
 msgid "missing title for section '%s'"
 msgstr "fehlender Titel für Abschnitt »%s«"
 
-#: src/confuse.c:1514
+#: src/confuse.c:1538
 #, c-format
 msgid "missing parenthesis for function '%s'"
 msgstr "runde Klammer für Funktion »%s« fehlt"
 
-#: src/confuse.c:1536 src/confuse.c:1549
+#: src/confuse.c:1560 src/confuse.c:1573
 #, c-format
 msgid "syntax error in call of function '%s'"
 msgstr "Syntaxfehler im Aufruf der Funktion »%s«"
 
-#: src/confuse.c:1643
+#: src/confuse.c:1667
 #, c-format
 msgid "Internal error in cfg_parse_internal(), unknown state %d"
 msgstr "interner Fehler in cfg_parse_internal(), unbekannter Status %d"
 
-#: src/confuse.c:2007
+#: src/confuse.c:2041
 msgid "wrong number of arguments to cfg_include()"
 msgstr "falsche Anzahl von Argumenten für cfg_include()"
 
