@@ -339,7 +339,11 @@ void start_raid(void)
 			// disable NCQ
 			foreach(drive, raid, next)
 			{
-				sysprintf("echo 1 > /sys/block/%s/device/queue_depth", drive);
+				int idx = strrchr(drive);
+				char *tmp = drive;
+				if (idx>0)
+				    tmp = &drive[idx+];
+				sysprintf("echo 1 > /sys/block/%s/device/queue_depth", tmp);
 			}
 			sysprintf("mdadm --assemble /dev/md%d %s", i, raid);
 			sysprintf("echo 32768 > /sys/block/md%d/md/stripe_cache_size", i);
