@@ -66,6 +66,10 @@ mpn_cnd_sub_n (mp_limb_t cnd, mp_limb_t *rp,
 
 void
 mpn_cnd_swap (mp_limb_t cnd, volatile mp_limb_t *ap, volatile mp_limb_t *bp, mp_size_t n);
+
+void
+mpn_sec_tabselect (volatile mp_limb_t *rp, volatile const mp_limb_t *table,
+		   mp_size_t rn, unsigned tn, unsigned k);
 #endif
 
 /* Side-channel silent variant of mpn_zero_p. */

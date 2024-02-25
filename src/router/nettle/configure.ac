@@ -2,19 +2,19 @@ dnl -*- mode: shell-script; sh-indentation: 2; -*-
 
 dnl Process this file with autoconf to produce a configure script.
 
-AC_INIT([nettle], [3.8.1], [nettle-bugs@lists.lysator.liu.se])
+AC_INIT([nettle], [3.9.1], [nettle-bugs@lists.lysator.liu.se])
 AC_PREREQ(2.61)
-AC_CONFIG_SRCDIR([arcfour.c])
+AC_CONFIG_SRCDIR([nettle-types.h])
 # Needed to stop autoconf from looking for files in parent directories.
 AC_CONFIG_AUX_DIR([.])
 
 AC_CONFIG_HEADER([config.h])
 
 LIBNETTLE_MAJOR=8
-LIBNETTLE_MINOR=6
+LIBNETTLE_MINOR=8
 
 LIBHOGWEED_MAJOR=6
-LIBHOGWEED_MINOR=6
+LIBHOGWEED_MINOR=8
 
 dnl Note double square brackets, for extra m4 quoting.
 MAJOR_VERSION=`echo $PACKAGE_VERSION | sed 's/^\([[^.]]*\)\..*/\1/'`
@@ -105,6 +105,10 @@ AC_ARG_ENABLE(power-altivec,
   AC_HELP_STRING([--enable-power-altivec], [Enable POWER altivec and vsx extensions. (default=no)]),,
   [enable_altivec=no])
 
+AC_ARG_ENABLE(power9,
+  AC_HELP_STRING([--enable-power9], [Enable POWER ISA v3.0. (default=no)]),,
+  [enable_power9=no])
+
 AC_ARG_ENABLE(s390x-vf,
   AC_HELP_STRING([--enable-s390x-vf], [Enable vector facility on z/Architecture. (default=no)]),,
   [enable_s390x_vf=no])
@@ -116,6 +120,8 @@ AC_ARG_ENABLE(s390x-msa,
 AC_ARG_ENABLE(mini-gmp,
   AC_HELP_STRING([--enable-mini-gmp], [Enable mini-gmp, used instead of libgmp.]),,
   [enable_mini_gmp=no])
+
+AC_ARG_VAR(ASM_FLAGS, [Extra flags for processing assembly source files])
 
 if test "x$enable_mini_gmp" = xyes ; then
   NETTLE_USE_MINI_GMP=1
@@ -341,9 +347,9 @@ case "$host_cpu" in
       ABI=64
     ])
     ;;
-  *mips*)
+  *mips64*)
     AC_TRY_COMPILE([
-#if defined(__sgi) && defined(__LP64__)
+#if defined(__mips64) || defined(__mips64__) || (defined(__sgi) && defined(__LP64__))
 #error 64-bit mips
 #endif
     ], [], [
@@ -539,9 +545,12 @@ if test "x$enable_assembler" = xyes ; then
 	if test "x$enable_fat" = xyes ; then
 	  asm_path="powerpc64/fat $asm_path"
 	  OPT_NETTLE_SOURCES="fat-ppc.c $OPT_NETTLE_SOURCES"
-	  FAT_TEST_LIST="none crypto_ext altivec"
+	  FAT_TEST_LIST="none crypto_ext altivec power9"
 	else
-	  if test "$enable_power_crypto_ext" = yes ; then
+	  if test "$enable_power9" = yes ; then
+	    asm_path="powerpc64/p9 $asm_path"
+	  fi
+    if test "$enable_power_crypto_ext" = yes ; then
             asm_path="powerpc64/p8 $asm_path"
 	  fi
 	  if test "$enable_power_altivec" = yes ; then
@@ -584,14 +593,14 @@ asm_replace_list="aes-encrypt-internal.asm aes-decrypt-internal.asm \
 		aes256-encrypt.asm aes256-decrypt.asm \
 		cbc-aes128-encrypt.asm cbc-aes192-encrypt.asm \
 		cbc-aes256-encrypt.asm \
-		arcfour-crypt.asm camellia-crypt-internal.asm \
+		camellia-crypt-internal.asm \
 		md5-compress.asm memxor.asm memxor3.asm \
 		ghash-set-key.asm ghash-update.asm \
 		poly1305-internal.asm \
 		chacha-core-internal.asm \
 		salsa20-crypt.asm salsa20-core-internal.asm \
 		serpent-encrypt.asm serpent-decrypt.asm \
-		sha1-compress.asm sha256-compress.asm sha512-compress.asm \
+		sha1-compress.asm sha256-compress-n.asm sha512-compress.asm \
 		sha3-permute.asm umac-nh.asm umac-nh-n.asm machine.m4"
 
 # Assembler files which generate additional object files if they are used.
@@ -605,9 +614,10 @@ asm_nettle_optional_list="cpuid.asm cpu-facility.asm \
   aes256-encrypt-2.asm aes256-decrypt-2.asm \
   cbc-aes128-encrypt-2.asm cbc-aes192-encrypt-2.asm cbc-aes256-encrypt-2.asm \
   chacha-2core.asm chacha-3core.asm chacha-4core.asm chacha-core-internal-2.asm \
+  poly1305-blocks.asm poly1305-internal-2.asm \
   ghash-set-key-2.asm ghash-update-2.asm \
   salsa20-2core.asm salsa20-core-internal-2.asm \
-  sha1-compress-2.asm sha256-compress-2.asm \
+  sha1-compress-2.asm sha256-compress-n-2.asm \
   sha3-permute-2.asm sha512-compress-2.asm \
   umac-nh-n-2.asm umac-nh-2.asm"
 
@@ -751,13 +761,18 @@ AH_VERBATIM([HAVE_NATIVE],
 #undef HAVE_NATIVE_ecc_secp384r1_redc
 #undef HAVE_NATIVE_ecc_secp521r1_modp
 #undef HAVE_NATIVE_ecc_secp521r1_redc
+#undef HAVE_NATIVE_poly1305_set_key
+#undef HAVE_NATIVE_poly1305_block
+#undef HAVE_NATIVE_poly1305_digest
+#undef HAVE_NATIVE_poly1305_blocks
+#undef HAVE_NATIVE_fat_poly1305_blocks
 #undef HAVE_NATIVE_ghash_set_key
 #undef HAVE_NATIVE_ghash_update
 #undef HAVE_NATIVE_salsa20_core
 #undef HAVE_NATIVE_salsa20_2core
 #undef HAVE_NATIVE_fat_salsa20_2core
 #undef HAVE_NATIVE_sha1_compress
-#undef HAVE_NATIVE_sha256_compress
+#undef HAVE_NATIVE_sha256_compress_n
 #undef HAVE_NATIVE_sha512_compress
 #undef HAVE_NATIVE_sha3_permute
 #undef HAVE_NATIVE_umac_nh
@@ -816,6 +831,22 @@ case "$host_os" in
     LIBHOGWEED_LINK='$(CC) $(CFLAGS) $(LDFLAGS) -shared -Wl,--out-implib=$(LIBHOGWEED_FILE) -Wl,--export-all-symbols -Wl,--enable-auto-import -Wl,--whole-archive'
     LIBHOGWEED_LIBS='-Wl,--no-whole-archive $(LIBS) libnettle.dll.a'
     IF_DLL=''
+    ;;
+  midipix*)
+    if test "x$ABI" = x64 ; then
+        W64_ABI=yes
+    fi
+    LIBNETTLE_FORLINK=libnettle.so
+    LIBNETTLE_SONAME='$(LIBNETTLE_FORLINK).$(LIBNETTLE_MAJOR)'
+    LIBNETTLE_FILE='$(LIBNETTLE_SONAME).$(LIBNETTLE_MINOR)'
+    LIBNETTLE_LINK='$(CC) $(CFLAGS) $(LDFLAGS) -shared -Wl,--out-dsolib=libnettle.lib.a -Wl,-soname=$(LIBNETTLE_SONAME)'
+    LIBNETTLE_LIBS=''
+
+    LIBHOGWEED_FORLINK=libhogweed.so
+    LIBHOGWEED_SONAME='$(LIBHOGWEED_FORLINK).$(LIBHOGWEED_MAJOR)'
+    LIBHOGWEED_FILE='$(LIBHOGWEED_SONAME).$(LIBHOGWEED_MINOR)'
+    LIBHOGWEED_LINK='$(CC) $(CFLAGS) $(LDFLAGS) -shared -Wl,--out-dsolib=libhogweed.lib.a -Wl,-soname=$(LIBHOGWEED_SONAME)'
+    LIBHOGWEED_LIBS='$(LIBS) .lib/libnettle.so.8'
     ;;
   darwin*)
     LIBNETTLE_FORLINK=libnettle.dylib

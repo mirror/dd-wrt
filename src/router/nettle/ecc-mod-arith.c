@@ -85,7 +85,20 @@ ecc_mod_sub (const struct ecc_modulo *m, mp_limb_t *rp,
 {
   mp_limb_t cy;
   cy = mpn_sub_n (rp, ap, bp, m->size);
-  cy = mpn_cnd_sub_n (cy, rp, rp, m->B, m->size);
+  /* The adjustments for this function work differently depending on
+     the value of the most significant bit of m.
+
+     If m has a most significant bit of zero, then the first
+     adjustment step conditionally adds 2m. If in addition, inputs are
+     in the 0 <= a,b < 2m range, then the first adjustment guarantees
+     that result is in that same range. The second adjustment step is
+     needed only if b > 2m, it then ensures output is correct modulo
+     m, but nothing more.
+
+     If m has a most significant bit of one, Bm2m and B are the same,
+     and this function works analogously to ecc_mod_add.
+   */
+  cy = mpn_cnd_sub_n (cy, rp, rp, m->Bm2m, m->size);
   cy = mpn_cnd_sub_n (cy, rp, rp, m->B, m->size);
   assert (cy == 0);  
 }

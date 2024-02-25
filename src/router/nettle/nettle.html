@@ -1,9 +1,9 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
-<!-- This manual is for the Nettle library (version 3.4), a
+<!-- This manual is for the Nettle library (version 3.9), a
 low-level cryptographic library.
 
-Originally written 2001 by Niels Möller, updated 2017.
+Originally written 2001 by Niels Möller, updated 2023.
 
 This manual is placed in the public domain. You may freely copy it, in
 whole or in part, with or without modification. Attribution is
@@ -112,8 +112,9 @@ ul.no-bullet {list-style: none}
       <li><a id="toc-DES3-1" href="#DES3">7.2.9 DES3</a></li>
       <li><a id="toc-Salsa20-1" href="#Salsa20">7.2.10 Salsa20</a></li>
       <li><a id="toc-Serpent-1" href="#Serpent">7.2.11 Serpent</a></li>
-      <li><a id="toc-Twofish-1" href="#Twofish">7.2.12 Twofish</a></li>
-      <li><a id="toc-The-struct-nettle_005fcipher-abstraction" href="#nettle_005fcipher-abstraction">7.2.13 The <code>struct nettle_cipher</code> abstraction</a></li>
+      <li><a id="toc-SM4-1" href="#SM4">7.2.12 SM4</a></li>
+      <li><a id="toc-Twofish-1" href="#Twofish">7.2.13 Twofish</a></li>
+      <li><a id="toc-The-struct-nettle_005fcipher-abstraction" href="#nettle_005fcipher-abstraction">7.2.14 The <code>struct nettle_cipher</code> abstraction</a></li>
     </ul></li>
     <li><a id="toc-Cipher-modes-1" href="#Cipher-modes">7.3 Cipher modes</a>
     <ul class="no-bullet">
@@ -144,6 +145,7 @@ ul.no-bullet {list-style: none}
         <li><a id="toc-GCM-helper-macros" href="#GCM-helper-macros">7.4.2.2 <acronym>GCM</acronym> helper macros</a></li>
         <li><a id="toc-GCM_002dAES-interface" href="#GCM_002dAES-interface">7.4.2.3 <acronym>GCM</acronym>-<acronym>AES</acronym> interface</a></li>
         <li><a id="toc-GCM_002dCamellia-interface" href="#GCM_002dCamellia-interface">7.4.2.4 <acronym>GCM</acronym>-Camellia interface</a></li>
+        <li><a id="toc-GCM_002dSM4-interface" href="#GCM_002dSM4-interface">7.4.2.5 <acronym>GCM</acronym>-SM4 interface</a></li>
       </ul></li>
       <li><a id="toc-Counter-with-CBC_002dMAC-mode" href="#CCM">7.4.3 Counter with CBC-MAC mode</a>
       <ul class="no-bullet">
@@ -152,12 +154,22 @@ ul.no-bullet {list-style: none}
         <li><a id="toc-CCM_002dAES-interface" href="#CCM_002dAES-interface">7.4.3.3 <acronym>CCM</acronym>-<acronym>AES</acronym> interface</a></li>
       </ul></li>
       <li><a id="toc-ChaCha_002dPoly1305-1" href="#ChaCha_002dPoly1305">7.4.4 ChaCha-Poly1305</a></li>
-      <li><a id="toc-Synthetic-Initialization-Vector-AEAD" href="#SIV_002dCMAC">7.4.5 Synthetic Initialization Vector AEAD</a>
+      <li><a id="toc-OCB-_0028Offset-Code-Book_0029-Mode" href="#OCB">7.4.5 <acronym>OCB</acronym> (Offset Code Book) Mode</a>
       <ul class="no-bullet">
         <li><a id="toc-General-interface" href="#General-interface">7.4.5.1 General interface</a></li>
-        <li><a id="toc-SIV_002dCMAC_002dAES-interface" href="#SIV_002dCMAC_002dAES-interface">7.4.5.2 <acronym>SIV-CMAC</acronym>-<acronym>AES</acronym> interface</a></li>
+        <li><a id="toc-OCB_002dAES-interface" href="#OCB_002dAES-interface">7.4.5.2 <acronym>OCB-AES</acronym> interface</a></li>
       </ul></li>
-      <li><a id="toc-The-struct-nettle_005faead-abstraction" href="#nettle_005faead-abstraction">7.4.6 The <code>struct nettle_aead</code> abstraction</a></li>
+      <li><a id="toc-Synthetic-Initialization-Vector-AEAD" href="#SIV_002dCMAC">7.4.6 Synthetic Initialization Vector AEAD</a>
+      <ul class="no-bullet">
+        <li><a id="toc-General-interface-1" href="#General-interface-1">7.4.6.1 General interface</a></li>
+        <li><a id="toc-SIV_002dCMAC_002dAES-interface" href="#SIV_002dCMAC_002dAES-interface">7.4.6.2 <acronym>SIV-CMAC</acronym>-<acronym>AES</acronym> interface</a></li>
+      </ul></li>
+      <li><a id="toc-SIV_002dGCM-1" href="#SIV_002dGCM">7.4.7 SIV-GCM</a>
+      <ul class="no-bullet">
+        <li><a id="toc-General-interface-2" href="#General-interface-2">7.4.7.1 General interface</a></li>
+        <li><a id="toc-SIV_002dGCM_002dAES-interface" href="#SIV_002dGCM_002dAES-interface">7.4.7.2 <acronym>SIV-GCM</acronym>-<acronym>AES</acronym> interface</a></li>
+      </ul></li>
+      <li><a id="toc-The-struct-nettle_005faead-abstraction" href="#nettle_005faead-abstraction">7.4.8 The <code>struct nettle_aead</code> abstraction</a></li>
     </ul></li>
     <li><a id="toc-Keyed-Hash-Functions" href="#Keyed-hash-functions">7.5 Keyed Hash Functions</a>
     <ul class="no-bullet">
@@ -184,6 +196,14 @@ ul.no-bullet {list-style: none}
         <li><a id="toc-PBKDF2_002dHMAC_002dSHA256" href="#PBKDF2_002dHMAC_002dSHA256">7.6.3.2 <acronym>PBKDF2-HMAC-SHA256</acronym></a></li>
         <li><a id="toc-PBKDF2_002dHMAC_002dSHA384" href="#PBKDF2_002dHMAC_002dSHA384">7.6.3.3 <acronym>PBKDF2-HMAC-SHA384</acronym></a></li>
         <li><a id="toc-PBKDF2_002dHMAC_002dSHA512" href="#PBKDF2_002dHMAC_002dSHA512">7.6.3.4 <acronym>PBKDF2-HMAC-SHA512</acronym></a></li>
+      </ul></li>
+      <li><a id="toc-BALLOON" href="#BALLOON">7.6.4 <acronym>BALLOON</acronym></a></li>
+      <li><a id="toc-Concrete-BALLOON-functions" href="#Concrete-BALLOON-functions">7.6.5 Concrete <acronym>BALLOON</acronym> functions</a>
+      <ul class="no-bullet">
+        <li><a id="toc-BALLOON_002dSHA1" href="#BALLOON_002dSHA1">7.6.5.1 <acronym>BALLOON-SHA1</acronym></a></li>
+        <li><a id="toc-BALLOON_002dSHA256" href="#BALLOON_002dSHA256">7.6.5.2 <acronym>BALLOON-SHA256</acronym></a></li>
+        <li><a id="toc-BALLOON_002dSHA384" href="#BALLOON_002dSHA384">7.6.5.3 <acronym>BALLOON-SHA384</acronym></a></li>
+        <li><a id="toc-BALLOON_002dSHA512" href="#BALLOON_002dSHA512">7.6.5.4 <acronym>BALLOON-SHA512</acronym></a></li>
       </ul></li>
     </ul></li>
     <li><a id="toc-Public_002dkey-algorithms-1" href="#Public_002dkey-algorithms">7.7 Public-key algorithms</a>
@@ -231,10 +251,10 @@ Next: <a href="#Introduction" accesskey="n" rel="next">Introduction</a> &nbsp; [
 can use the library directly from your C programs, or write or use an
 object-oriented wrapper for your favorite language or application.
 </p>
-<p>This manual is for the Nettle library (version 3.4), a
+<p>This manual is for the Nettle library (version 3.9), a
 low-level cryptographic library.
 </p>
-<p>Originally written 2001 by Niels Möller, updated 2017.
+<p>Originally written 2001 by Niels Möller, updated 2023.
 </p>
 <blockquote>
 <p>This manual is placed in the public domain. You may freely copy it, in
@@ -329,6 +349,8 @@ Cipher functions
 </td></tr>
 <tr><td align="left" valign="top">&bull; <a href="#Serpent">Serpent</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
 </td></tr>
+<tr><td align="left" valign="top">&bull; <a href="#SM4">SM4</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
 <tr><td align="left" valign="top">&bull; <a href="#Twofish">Twofish</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
 </td></tr>
 <tr><td align="left" valign="top">&bull; <a href="#nettle_005fcipher-abstraction">nettle_cipher abstraction</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
@@ -357,7 +379,11 @@ Authenticated encryption with associated data
 </td></tr>
 <tr><td align="left" valign="top">&bull; <a href="#ChaCha_002dPoly1305">ChaCha-Poly1305</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
 </td></tr>
+<tr><td align="left" valign="top">&bull; <a href="#OCB">OCB</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
 <tr><td align="left" valign="top">&bull; <a href="#SIV_002dCMAC">SIV-CMAC</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="#SIV_002dGCM">SIV-GCM</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
 </td></tr>
 <tr><td align="left" valign="top">&bull; <a href="#nettle_005faead-abstraction">nettle_aead abstraction</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
 </td></tr>
@@ -790,6 +816,15 @@ octets of the digest are written.
 <code>sha256_init</code>.
 </p></dd></dl>
 
+<dl>
+<dt id="index-sha256_005fcompress">Function: <em>void</em> <strong>sha256_compress</strong> <em>(const uint32_t *<var>state</var>, uint8_t *<var>input</var>)</em></dt>
+<dd><p>Perform a raw SHA256 compress on SHA256_BLOCK_SIZE bytes from<var>input</var>
+using <var>state</var> as IV (an array of 8 uint32_t). The output is stored in <var>state</var>.
+This function provides access to the underlying compression function,
+for the rare applications that need that (e.g., using different IV from
+standard SHA256).
+</p></dd></dl>
+
 <p>Earlier versions of nettle defined SHA256 in the header file
 <samp>&lt;nettle/sha.h&gt;</samp>, which is now deprecated, but kept for
 compatibility.
@@ -880,6 +915,15 @@ octets of the digest are written.
 </p>
 <p>This function also resets the context in the same way as
 <code>sha512_init</code>.
+</p></dd></dl>
+
+<dl>
+<dt id="index-sha512_005fcompress">Function: <em>void</em> <strong>sha512_compress</strong> <em>(const uint64_t *<var>state</var>, uint8_t *<var>input</var>)</em></dt>
+<dd><p>Perform a raw SHA512 compress on SHA512_BLOCK_SIZE bytes from
+<var>input</var> using <var>state</var> as IV (an array of 8 uint64_t). The output is stored in <var>state</var>.
+This function provides access to the underlying compression function,
+for the rare applications that need that (e.g., using different IV from
+standard SHA512).
 </p></dd></dl>
 
 <span id="SHA384-and-other-variants-of-SHA512"></span><h4 class="subsubsection">7.1.1.4 <acronym>SHA384 and other variants of SHA512</acronym></h4>
@@ -1353,6 +1397,15 @@ octets of the digest are written.
 <code>md5_init</code>.
 </p></dd></dl>
 
+<dl>
+<dt id="index-md5_005fcompress">Function: <em>void</em> <strong>md5_compress</strong> <em>(const uint32_t *<var>state</var>, uint8_t *<var>input</var>)</em></dt>
+<dd><p>Perform a raw MD5 compress on MD5_BLOCK_SIZE bytes from <var>input</var>
+using <var>state</var> as IV (an array of 4 uint32_t). The output is stored in <var>state</var>.
+This function provides access to the underlying compression function,
+for the rare applications that need that (e.g., using different IV from
+standard MD5).
+</p></dd></dl>
+
 <p>The normal way to use MD5 is to call the functions in order: First
 <code>md5_init</code>, then <code>md5_update</code> zero or more times, and finally
 <code>md5_digest</code>. After <code>md5_digest</code>, the context is reset to
@@ -1531,6 +1584,14 @@ octets of the digest are written.
 <code>sha1_init</code>.
 </p></dd></dl>
 
+<dl>
+<dt id="index-sha1_005fcompress">Function: <em>void</em> <strong>sha1_compress</strong> <em>(const uint32_t *<var>state</var>, uint8_t *<var>input</var>)</em></dt>
+<dd><p>Perform a raw SHA1 compress on SHA1_BLOCK_SIZE bytes from <var>input</var>
+using <var>state</var> as IV (an array of 5 uint32_t). The output is stored in <var>state</var>.
+This function provides access to the underlying compression function,
+for the rare applications that need that (e.g., using different IV from
+standard SHA1).
+</p></dd></dl>
 
 <span id="GOSTHASH94-and-GOSTHASH94CP"></span><h4 class="subsubsection">7.1.3.6 <acronym>GOSTHASH94 and GOSTHASH94CP</acronym></h4>
 <span id="index-GOST-hash"></span>
@@ -1772,6 +1833,8 @@ decryption.
 </td></tr>
 <tr><td align="left" valign="top">&bull; <a href="#Serpent">Serpent</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
 </td></tr>
+<tr><td align="left" valign="top">&bull; <a href="#SM4">SM4</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
 <tr><td align="left" valign="top">&bull; <a href="#Twofish">Twofish</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
 </td></tr>
 <tr><td align="left" valign="top">&bull; <a href="#nettle_005fcipher-abstraction">nettle_cipher abstraction</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
@@ -1883,15 +1946,23 @@ Next: <a href="#Arctwo" accesskey="n" rel="next">Arctwo</a>, Previous: <a href="
 <span id="index-Arcfour"></span>
 <span id="index-RC4"></span>
 
-<p>ARCFOUR is a stream cipher, also known under the trade marked name RC4,
-and it is one of the fastest ciphers around. A problem is that the key
-setup of ARCFOUR is quite weak, you should never use keys with
-structure, keys that are ordinary passwords, or sequences of keys like
-&ldquo;secret:1&rdquo;, &ldquo;secret:2&rdquo;, <small class="enddots">...</small>. If you have keys that don&rsquo;t look
-like random bit strings, and you want to use ARCFOUR, always hash the
-key before feeding it to ARCFOUR. Furthermore, the initial bytes of the
-generated key stream leak information about the key; for this reason, it
-is recommended to discard the first 512 bytes of the key stream.
+<p>ARCFOUR is a historic stream cipher, also known under the trade marked
+name RC4, and was a widely used fast stream cipher.
+</p>
+<p>We do not recommend the use of ARCFOUR; the Nettle implementation is
+provided primarily for interoperability with existing applications and
+standards.
+</p>
+<p>One problem is that the key setup of ARCFOUR is quite weak, you should
+never use keys with structure, keys that are ordinary passwords, or
+sequences of keys like &ldquo;secret:1&rdquo;, &ldquo;secret:2&rdquo;, <small class="enddots">...</small>. If you
+have keys that don&rsquo;t look like random bit strings, and you want to use
+ARCFOUR, always hash the key before feeding it to ARCFOUR.
+</p>
+<p>Another problem is that the output is distinguishable from random data,
+and that the initial bytes of the generated key stream leak information
+about the key; for this reason, it was sometimes recommended to discard
+the first 512, 768 or 1024 bytes of the key stream.
 </p>
 <div class="example">
 <pre class="example">/* A more robust key setup function for ARCFOUR */
@@ -2681,7 +2752,7 @@ rounds.
 <hr>
 <span id="Serpent"></span><div class="header">
 <p>
-Next: <a href="#Twofish" accesskey="n" rel="next">Twofish</a>, Previous: <a href="#Salsa20" accesskey="p" rel="prev">Salsa20</a>, Up: <a href="#Cipher-functions" accesskey="u" rel="up">Cipher functions</a> &nbsp; [<a href="#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="#Index" title="Index" rel="index">Index</a>]</p>
+Next: <a href="#SM4" accesskey="n" rel="next">SM4</a>, Previous: <a href="#Salsa20" accesskey="p" rel="prev">Salsa20</a>, Up: <a href="#Cipher-functions" accesskey="u" rel="up">Cipher functions</a> &nbsp; [<a href="#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="#Index" title="Index" rel="index">Index</a>]</p>
 </div>
 <span id="Serpent-1"></span><h4 class="subsection">7.2.11 Serpent</h4>
 <span id="index-Serpent"></span>
@@ -2736,11 +2807,57 @@ in any other way.
 </p></dd></dl>
 
 <hr>
+<span id="SM4"></span><div class="header">
+<p>
+Next: <a href="#Twofish" accesskey="n" rel="next">Twofish</a>, Previous: <a href="#Serpent" accesskey="p" rel="prev">Serpent</a>, Up: <a href="#Cipher-functions" accesskey="u" rel="up">Cipher functions</a> &nbsp; [<a href="#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="#Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<span id="SM4-1"></span><h4 class="subsection">7.2.12 SM4</h4>
+<span id="index-SM4"></span>
+
+<p>SM4 is a block cipher standard adopted by the government of the People&rsquo;s
+Republic of China, and it was issued by the State Cryptography Administration
+on March 21, 2012. The standard is GM/T 0002-2012 &quot;SM4 block cipher algorithm&quot;.
+Nettle defines it in <samp>&lt;nettle/sm4.h&gt;</samp>.
+</p>
+<dl>
+<dt id="index-struct-sm4_005fctx">Context struct: <strong>struct sm4_ctx</strong></dt>
+</dl>
+
+<dl>
+<dt id="index-SM4_005fBLOCK_005fSIZE">Constant: <strong>SM4_BLOCK_SIZE</strong></dt>
+<dd><p>The SM4 block-size, 16.
+</p></dd></dl>
+
+<dl>
+<dt id="index-SM4_005fKEY_005fSIZE">Constant: <strong>SM4_KEY_SIZE</strong></dt>
+<dd><p>Default SM4 key size, 16.
+</p></dd></dl>
+
+<dl>
+<dt id="index-sm4_005fset_005fencrypt_005fkey">Function: <em>void</em> <strong>sm4_set_encrypt_key</strong> <em>(struct sm4_ctx *<var>ctx</var>, const uint8_t *<var>key</var>)</em></dt>
+<dd><p>Initialize the cipher. The function is used for encryption.
+</p></dd></dl>
+
+<dl>
+<dt id="index-sm4_005fset_005fdecrypt_005fkey">Function: <em>void</em> <strong>sm4_set_decrypt_key</strong> <em>(struct sm4_ctx *<var>ctx</var>, const uint8_t *<var>key</var>)</em></dt>
+<dd><p>Initialize the cipher. The function is used for decryption.
+</p></dd></dl>
+
+<dl>
+<dt id="index-sm4_005fcrypt">Function: <em>void</em> <strong>sm4_crypt</strong> <em>(const struct sm4_ctx *<var>ctx</var>, size_t <var>length</var>, uint8_t *<var>dst</var>, const uint8_t *<var>src</var>)</em></dt>
+<dd><p>Cryption function. <var>length</var> must be an integral multiple of the
+block size. If it is more than one block, the data is processed in ECB
+mode. <code>src</code> and <code>dst</code> may be equal, but they must not overlap
+in any other way. The same function is used for both encryption and
+decryption.
+</p></dd></dl>
+
+<hr>
 <span id="Twofish"></span><div class="header">
 <p>
-Next: <a href="#nettle_005fcipher-abstraction" accesskey="n" rel="next">nettle_cipher abstraction</a>, Previous: <a href="#Serpent" accesskey="p" rel="prev">Serpent</a>, Up: <a href="#Cipher-functions" accesskey="u" rel="up">Cipher functions</a> &nbsp; [<a href="#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="#Index" title="Index" rel="index">Index</a>]</p>
+Next: <a href="#nettle_005fcipher-abstraction" accesskey="n" rel="next">nettle_cipher abstraction</a>, Previous: <a href="#SM4" accesskey="p" rel="prev">SM4</a>, Up: <a href="#Cipher-functions" accesskey="u" rel="up">Cipher functions</a> &nbsp; [<a href="#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="#Index" title="Index" rel="index">Index</a>]</p>
 </div>
-<span id="Twofish-1"></span><h4 class="subsection">7.2.12 Twofish</h4>
+<span id="Twofish-1"></span><h4 class="subsection">7.2.13 Twofish</h4>
 <span id="index-Twofish"></span>
 
 <p>Another AES finalist, this one designed by Bruce Schneier and others.
@@ -2794,7 +2911,7 @@ in any other way.
 <p>
 Previous: <a href="#Twofish" accesskey="p" rel="prev">Twofish</a>, Up: <a href="#Cipher-functions" accesskey="u" rel="up">Cipher functions</a> &nbsp; [<a href="#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="#Index" title="Index" rel="index">Index</a>]</p>
 </div>
-<span id="The-struct-nettle_005fcipher-abstraction"></span><h4 class="subsection">7.2.13 The <code>struct nettle_cipher</code> abstraction</h4>
+<span id="The-struct-nettle_005fcipher-abstraction"></span><h4 class="subsection">7.2.14 The <code>struct nettle_cipher</code> abstraction</h4>
 <span id="index-nettle_005fcipher"></span>
 
 <p>Nettle includes a struct including information about some of the more
@@ -3495,9 +3612,13 @@ more adventurous alternative, in particular if performance is important.
 </td></tr>
 <tr><td align="left" valign="top">&bull; <a href="#ChaCha_002dPoly1305" accesskey="4">ChaCha-Poly1305</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
 </td></tr>
-<tr><td align="left" valign="top">&bull; <a href="#SIV_002dCMAC" accesskey="5">SIV-CMAC</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+<tr><td align="left" valign="top">&bull; <a href="#OCB" accesskey="5">OCB</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
 </td></tr>
-<tr><td align="left" valign="top">&bull; <a href="#nettle_005faead-abstraction" accesskey="6">nettle_aead abstraction</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+<tr><td align="left" valign="top">&bull; <a href="#SIV_002dCMAC" accesskey="6">SIV-CMAC</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="#SIV_002dGCM" accesskey="7">SIV-GCM</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="#nettle_005faead-abstraction" accesskey="8">nettle_aead abstraction</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
 </td></tr>
 </table>
 
@@ -3971,6 +4092,50 @@ that <var>length</var> is <code>GCM_DIGEST_SIZE</code>, but if you provide a sma
 value, only the first <var>length</var> octets of the digest are written.
 </p></dd></dl>
 
+<span id="GCM_002dSM4-interface"></span><h4 class="subsubsection">7.4.2.5 <acronym>GCM</acronym>-SM4 interface</h4>
+
+<p>The following functions implement the case of <acronym>GCM</acronym> using
+SM4 as the underlying cipher.
+</p>
+<dl>
+<dt id="index-struct-gcm_005fsm4_005fctx">Context struct: <strong>struct gcm_sm4_ctx</strong></dt>
+<dd><p>Context structs, defined using <code>GCM_CTX</code>.
+</p></dd></dl>
+
+<dl>
+<dt id="index-gcm_005fsm4_005fset_005fkey">Function: <em>void</em> <strong>gcm_sm4_set_key</strong> <em>(struct gcm_sm4_ctx *<var>ctx</var>, const uint8_t *<var>key</var>)</em></dt>
+<dd><p>Initializes <var>ctx</var> using the given key.
+</p></dd></dl>
+
+<dl>
+<dt id="index-gcm_005fsm4_005fset_005fiv">Function: <em>void</em> <strong>gcm_sm4_set_iv</strong> <em>(struct gcm_sm4_ctx *<var>ctx</var>, size_t <var>length</var>, const uint8_t *<var>iv</var>)</em></dt>
+<dd><p>Initializes the per-message state, using the given <acronym>IV</acronym>.
+</p></dd></dl>
+
+<dl>
+<dt id="index-gcm_005fsm4_005fupdate">Function: <em>void</em> <strong>gcm_sm4_update</strong> <em>(struct gcm_sm4_ctx *<var>ctx</var>, size_t <var>length</var>, const uint8_t *<var>data</var>)</em></dt>
+<dd><p>Provides associated data to be authenticated. If used, must be called
+before <code>gcm_sm4_encrypt</code> or <code>gcm_sm4_decrypt</code>. All but the
+last call for each message <em>must</em> use a length that is a multiple
+of the block size.
+</p></dd></dl>
+
+<dl>
+<dt id="index-gcm_005fsm4_005fencrypt">Function: <em>void</em> <strong>gcm_sm4_encrypt</strong> <em>(struct gcm_sm4_ctx *<var>ctx</var>, size_t <var>length</var>, uint8_t *<var>dst</var>, const uint8_t *<var>src</var>)</em></dt>
+<dt id="index-gcm_005fsm4_005fdecrypt">Function: <em>void</em> <strong>gcm_sm4_decrypt</strong> <em>(struct gcm_sm4_ctx *<var>ctx</var>, size_t <var>length</var>, uint8_t *<var>dst</var>, const uint8_t *<var>src</var>)</em></dt>
+<dd><p>Encrypts or decrypts the data of a message. All but the last call for
+each message <em>must</em> use a length that is a multiple of the block
+size.
+</p></dd></dl>
+
+<dl>
+<dt id="index-gcm_005fsm4_005fdigest">Function: <em>void</em> <strong>gcm_sm4_digest</strong> <em>(struct gcm_sm4_ctx *<var>ctx</var>, size_t <var>length</var>, uint8_t *<var>digest</var>)</em></dt>
+<dd><p>Extracts the message digest (also known &ldquo;authentication tag&rdquo;). This is
+the final operation when processing a message. It&rsquo;s strongly recommended
+that <var>length</var> is <code>GCM_DIGEST_SIZE</code>, but if you provide a smaller
+value, only the first <var>length</var> octets of the digest are written.
+</p></dd></dl>
+
 <hr>
 <span id="CCM"></span><div class="header">
 <p>
@@ -4225,7 +4390,7 @@ except that <var>cipher</var> and <var>f</var> are replaced with a context struc
 <hr>
 <span id="ChaCha_002dPoly1305"></span><div class="header">
 <p>
-Next: <a href="#SIV_002dCMAC" accesskey="n" rel="next">SIV-CMAC</a>, Previous: <a href="#CCM" accesskey="p" rel="prev">CCM</a>, Up: <a href="#Authenticated-encryption" accesskey="u" rel="up">Authenticated encryption</a> &nbsp; [<a href="#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="#Index" title="Index" rel="index">Index</a>]</p>
+Next: <a href="#OCB" accesskey="n" rel="next">OCB</a>, Previous: <a href="#CCM" accesskey="p" rel="prev">CCM</a>, Up: <a href="#Authenticated-encryption" accesskey="u" rel="up">Authenticated encryption</a> &nbsp; [<a href="#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="#Index" title="Index" rel="index">Index</a>]</p>
 </div>
 <span id="ChaCha_002dPoly1305-1"></span><h4 class="subsection">7.4.4 ChaCha-Poly1305</h4>
 
@@ -4314,11 +4479,213 @@ smaller than <code>CHACHA_POLY1305_DIGEST_SIZE</code>, only the first
 </p></dd></dl>
 
 <hr>
+<span id="OCB"></span><div class="header">
+<p>
+Next: <a href="#SIV_002dCMAC" accesskey="n" rel="next">SIV-CMAC</a>, Previous: <a href="#ChaCha_002dPoly1305" accesskey="p" rel="prev">ChaCha-Poly1305</a>, Up: <a href="#Authenticated-encryption" accesskey="u" rel="up">Authenticated encryption</a> &nbsp; [<a href="#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="#Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<span id="OCB-_0028Offset-Code-Book_0029-Mode"></span><h4 class="subsection">7.4.5 <acronym>OCB</acronym> (Offset Code Book) Mode</h4>
+
+<span id="index-OCB"></span>
+<span id="index-OCB-mode"></span>
+<span id="index-Offset-Code-Book"></span>
+
+<p>The <acronym>OCB</acronym> mode is an <acronym>AEAD</acronym> construction, featuring
+particularly fast and simple authentication; it needs one block cipher
+operation per data block, and almost free authentication. It is
+constructed on top of a block cipher which must have a block size of 128
+bits.
+</p>
+<p>There have been several versions of the OCB scheme, the implementation
+in Nettle follows <cite>RFC 7253</cite>, which is almost the same as the
+scheme OCB3.
+</p>
+<span id="General-interface"></span><h4 class="subsubsection">7.4.5.1 General interface</h4>
+
+<dl>
+<dt id="index-struct-ocb_005fkey">Context struct: <strong>struct ocb_key</strong></dt>
+<dd><p><acronym>OCB</acronym> state which depends only on the key, but not on the nonce
+or the message.
+</p></dd></dl>
+
+<dl>
+<dt id="index-struct-ocb_005fctx">Context struct: <strong>struct ocb_ctx</strong></dt>
+<dd><p>Holds state corresponding to a particular message.
+</p></dd></dl>
+
+<dl>
+<dt id="index-OCB_005fBLOCK_005fSIZE">Constant: <strong>OCB_BLOCK_SIZE</strong></dt>
+<dd><p>The block size for <acronym>OCB</acronym>&rsquo;s block size, 16.
+</p></dd></dl>
+
+<dl>
+<dt id="index-OCB_005fMAX_005fNONCE_005fSIZE">Constant: <strong>OCB_MAX_NONCE_SIZE</strong></dt>
+<dd><p>The maximum nonce size for <acronym>OCB</acronym>, 15.
+</p></dd></dl>
+
+<dl>
+<dt id="index-OCB_005fDIGEST_005fSIZE">Constant: <strong>OCB_DIGEST_SIZE</strong></dt>
+<dd><p>Size of the <acronym>OCB</acronym> authentication tag.
+</p></dd></dl>
+
+<dl>
+<dt id="index-ocb_005fset_005fkey">Function: <em>void</em> <strong>ocb_set_key</strong> <em>(struct ocb_key *<var>key</var>, const void *<var>cipher</var>, nettle_cipher_func *<var>f</var>)</em></dt>
+<dd><p>Initializes the <var>key</var> struct. The <var>cipher</var> context must be
+initialized for encryption, and <var>f</var> should be the corresponding
+encryption function.
+</p></dd></dl>
+
+<dl>
+<dt id="index-ocb_005fset_005fnonce">Function: <em>void</em> <strong>ocb_set_nonce</strong> <em>(struct ocb_ctx *<var>ctx</var>, const void *<var>cipher</var>, nettle_cipher_func *<var>f</var>, size_t <var>tag_length</var>, size_t <var>nonce_length</var>, const uint8_t *<var>nonce</var>)</em></dt>
+<dd><p>Initializes <var>ctx</var> for processing a new message, using the given
+nonce. The <var>cipher</var> must be initialized for encryption, and <var>f</var>
+should be the corresponding encryption function. The <var>tag_length</var>
+(non-zero, and at most 16) is included when initializing the state, and
+should be the same value later passed to <code>ocb_digest</code>. Nonce is
+optional, and length at most 15 bytes.
+</p></dd></dl>
+
+<dl>
+<dt id="index-ocb_005fupdate">Function: <em>void</em> <strong>ocb_update</strong> <em>(struct ocb_ctx *<var>ctx</var>, const struct ocb_key *<var>key</var>, const void *<var>cipher</var>, nettle_cipher_func *<var>f</var>, size_t <var>length</var>, const uint8_t *<var>data</var>)</em></dt>
+<dd><p>Process associated data for authentication. All but the last call for
+each message <em>must</em> use a length that is a multiple of the block
+size.
+</p></dd></dl>
+
+<dl>
+<dt id="index-ocb_005fencrypt">Function: <em>void</em> <strong>ocb_encrypt</strong> <em>(struct ocb_ctx *<var>ctx</var>, const struct ocb_key *<var>key</var>, const void *<var>cipher</var>, nettle_cipher_func *<var>f</var>, size_t <var>length</var>, uint8_t *<var>dst</var>, const uint8_t *<var>src</var>)</em></dt>
+<dd><p>Encrypts the data of a message. <var>cipher</var> is the context struct for
+the underlying cipher and <var>f</var> is the encryption function. All but
+the last call for each message <em>must</em> use a length that is a
+multiple of the block size.
+</p></dd></dl>
+
+<dl>
+<dt id="index-ocb_005fdecrypt">Function: <em>void</em> <strong>ocb_decrypt</strong> <em>(struct ocb_ctx *<var>ctx</var>, const struct ocb_key *<var>key</var>, const void *<var>encrypt_ctx</var>, nettle_cipher_func *<var>encrypt</var>, const void *<var>decrypt_ctx</var>, nettle_cipher_func *<var>decrypt</var>, size_t <var>length</var>, uint8_t *<var>dst</var>, const uint8_t *<var>src</var>)</em></dt>
+<dd><p>Decrypts the data of a message. <var>encrypt_ctx</var> and <var>encrypt</var>
+define the encryption operation of the underlying cipher, while
+<var>decrypt_ctx</var> and <var>decrypt</var> represent the decryption operation
+(for some ciphers, one of context pointer and function pointer may be
+the same). All but the last call for each message <em>must</em> use a
+length that is a multiple of the block size.
+</p></dd></dl>
+
+<dl>
+<dt id="index-ocb_005fdigest">Function: <em>void</em> <strong>ocb_digest</strong> <em>(const struct ocb_ctx *<var>ctx</var>, const struct ocb_key *<var>key</var>, const void *<var>cipher</var>, nettle_cipher_func *<var>f</var>, size_t <var>length</var>, uint8_t *<var>digest</var>)</em></dt>
+<dd><p>Extracts the message digest (also known &ldquo;authentication tag&rdquo;). This is
+the final operation when processing a message. The <var>length</var> value
+<em>should</em> be the same as the tag length passed to the preceding
+<code>ocb_set_nonce</code> call (using a different length is possible, but
+incompatible with <cite>RFC 7253</cite>).
+</p></dd></dl>
+
+<dl>
+<dt id="index-ocb_005fencrypt_005fmessage">Function: <em>void</em> <strong>ocb_encrypt_message</strong> <em>(const struct ocb_key *<var>ocb_key</var>, const void *<var>cipher</var>, nettle_cipher_func *<var>f</var>, size_t <var>nlength</var>, const uint8_t *<var>nonce</var>, size_t <var>alength</var>, const uint8_t *<var>adata</var>, size_t <var>tlength</var>, size_t <var>clength</var>, uint8_t *<var>dst</var>, const uint8_t *<var>src</var>)</em></dt>
+<dd><p>Computes the message digest from the <var>adata</var> and <var>src</var>
+parameters, encrypts the plaintext from <var>src</var>, appends the tag to
+the ciphertext and writes it to <var>dst</var>. The <var>clength</var> variable
+must be equal to the length of <var>src</var> plus <var>tlength</var>.
+</p></dd></dl>
+
+<dl>
+<dt id="index-ocb_005fdecrypt_005fmessage">Function: <em>int</em> <strong>ocb_decrypt_message</strong> <em>(const struct ocb_key *<var>ocb_key</var>, const void *<var>encrypt_ctx</var>, nettle_cipher_func *<var>encrypt</var>, const void *<var>decrypt_ctx</var>, nettle_cipher_func *<var>decrypt</var>, size_t <var>nlength</var>, const uint8_t *<var>nonce</var>, size_t <var>alength</var>, const uint8_t *<var>adata</var>, size_t <var>tlength</var>, size_t <var>mlength</var>, uint8_t *<var>dst</var>, const uint8_t *<var>src</var>)</em></dt>
+<dd><p>Decrypts the ciphertext from <var>src</var>, outputs the plaintext to
+<var>dst</var>. Like <code>ocb_decrypt</code>, it needs both the encrypt and the
+decrypt function of the underlying cipher. It also recalculates the
+authentication tag from <var>adata</var> and the plaintext, and compares it
+to the final <var>tlength</var> bytes of <var>src</var>. If the values of the
+received and calculated tags are equal, this will return 1 indicating a
+valid and authenticated message. Otherwise, this function will return
+zero.
+</p></dd></dl>
+
+<span id="OCB_002dAES-interface"></span><h4 class="subsubsection">7.4.5.2 <acronym>OCB-AES</acronym> interface</h4>
+
+
+<dl>
+<dt id="index-struct-ocb_005faes128_005fencrypt_005fkey">Context struct: <strong>struct ocb_aes128_encrypt_key</strong></dt>
+<dd><p>Key-dependent state for encryption using <acronym>OCB-AES128</acronym>. For
+decryption, a separate <code>struct aes128_ctx</code>, initialized for
+decryption, is needed as well.
+</p></dd></dl>
+
+<dl>
+<dt id="index-ocb_005faes128_005fset_005fencrypt_005fkey">Function: <em>void</em> <strong>ocb_aes128_set_encrypt_key</strong> <em>(struct ocb_aes128_encrypt_key *<var>ocb</var>, const uint8_t *<var>key</var>)</em></dt>
+<dd><p>Initializes <var>ocb</var> and the underlying AES cipher with the given key.
+</p></dd></dl>
+
+<dl>
+<dt id="index-ocb_005faes128_005fset_005fdecrypt_005fkey">Function: <em>void</em> <strong>ocb_aes128_set_decrypt_key</strong> <em>(struct ocb_aes128_encrypt_key *<var>ocb</var>, struct aes128_ctx *<var>decrypt</var>, const uint8_t *<var>key</var>)</em></dt>
+<dd><p>Initializes <var>ocb</var> and the underlying AES cipher with the given key.
+In addition, initialize <var>decrypt</var> for decryption using the same key;
+this is needed for <code>ocb_aes128_decrypt</code> and
+<code>ocb_aes128_decrypt_message</code>.
+</p></dd></dl>
+
+<dl>
+<dt id="index-ocb_005faes128_005fset_005fnonce">Function: <em>void</em> <strong>ocb_aes128_set_nonce</strong> <em>(struct ocb_ctx *<var>ctx</var>, const struct ocb_aes128_encrypt_key *<var>key</var>, size_t <var>tag_length</var>, size_t <var>nonce_length</var>, const uint8_t *<var>nonce</var>)</em></dt>
+<dd><p>Initializes <var>ctx</var> for processing a new message, using the given
+nonce and key. The <var>tag_length</var> (non-zero, and at most 16) is
+included when initializing the state, and should be the same value later
+passed to <code>ocb_digest</code>. Nonce is optional, and length at most 15
+bytes.
+</p></dd></dl>
+
+<dl>
+<dt id="index-ocb_005faes128_005fupdate">Function: <em>void</em> <strong>ocb_aes128_update</strong> <em>(struct ocb_ctx *<var>ctx</var>, const struct ocb_aes128_encrypt_key *<var>key</var>, size_t <var>length</var>, const uint8_t *<var>data</var>)</em></dt>
+<dd><p>Process associated data for authentication. All but the last call for
+each message <em>must</em> use a length that is a multiple of the block
+size.
+</p></dd></dl>
+
+<dl>
+<dt id="index-ocb_005faes128_005fencrypt">Function: <em>void</em> <strong>ocb_aes128_encrypt</strong> <em>(struct ocb_ctx *<var>ctx</var>, const struct ocb_aes128_encrypt_key *<var>key</var>, size_t <var>length</var>, uint8_t *<var>dst</var>, const uint8_t *<var>src</var>)</em></dt>
+<dd><p>Encrypts the data of a message. All but the last call for each message
+<em>must</em> use a length that is a multiple of the block size.
+</p></dd></dl>
+
+<dl>
+<dt id="index-ocb_005faes128_005fdecrypt">Function: <em>void</em> <strong>ocb_aes128_decrypt</strong> <em>(struct ocb_ctx *<var>ctx</var>, const struct ocb_aes128_encrypt_key *<var>key</var>, const struct aes128_ctx *<var>decrypt</var>, size_t <var>length</var>, uint8_t *<var>dst</var>, const uint8_t *<var>src</var>)</em></dt>
+<dd><p>Decrypts the data of a message. <var>decrypt</var> is an AES context
+initialized for decryption using the same key. All but the last call for
+each message <em>must</em> use a length that is a multiple of the block
+size.
+</p></dd></dl>
+
+<dl>
+<dt id="index-ocb_005faes128_005fdigest">Function: <em>void</em> <strong>ocb_aes128_digest</strong> <em>(struct ocb_ctx *<var>ctx</var>, const struct ocb_aes128_encrypt_key *<var>key</var>, size_t <var>length</var>, uint8_t *<var>digest</var>)</em></dt>
+<dd><p>Extracts the message digest (also known &ldquo;authentication tag&rdquo;). This is
+the final operation when processing a message. The <var>length</var> value
+<em>should</em> be the same as the tag length passed to the preceding
+<code>ocb_aes128_set_nonce</code> call (using a different length is possible, but
+incompatible with <cite>RFC 7253</cite>).
+</p></dd></dl>
+
+<dl>
+<dt id="index-ocb_005faes128_005fencrypt_005fmessage">Function: <em>void</em> <strong>ocb_aes128_encrypt_message</strong> <em>(const struct ocb_aes128_encrypt_key *<var>key</var>, size_t <var>nlength</var>, const uint8_t *<var>nonce</var>, size_t <var>alength</var>, const uint8_t *<var>adata</var>, size_t <var>tlength</var>, size_t <var>clength</var>, uint8_t *<var>dst</var>, const uint8_t *<var>src</var>)</em></dt>
+<dd><p>Computes the message digest from the <var>adata</var> and <var>src</var>
+parameters, encrypts the plaintext from <var>src</var>, appends the tag to
+the ciphertext and writes it to <var>dst</var>. The <var>clength</var> variable
+must be equal to the length of <var>src</var> plus <var>tlength</var>.
+</p></dd></dl>
+
+<dl>
+<dt id="index-ocb_005faes128_005fdecrypt_005fmessage">Function: <em>int</em> <strong>ocb_aes128_decrypt_message</strong> <em>(const struct ocb_aes128_encrypt_key *<var>key</var>, const struct aes128_ctx *<var>decrypt</var>, size_t <var>nlength</var>, const uint8_t *<var>nonce</var>, size_t <var>alength</var>, const uint8_t *<var>adata</var>, size_t <var>tlength</var>, size_t <var>mlength</var>, uint8_t *<var>dst</var>, const uint8_t *<var>src</var>)</em></dt>
+<dd><p>Decrypts the ciphertext from <var>src</var>, outputs the plaintext to
+<var>dst</var>. Like <code>ocb_aes128_decrypt</code>, it needs an AES context
+initialized for decryption using the same key. It also recalculates the
+authentication tag from <var>adata</var> and the plaintext, and compares it
+to the final <var>tlength</var> bytes of <var>src</var>. If the values of the
+received and calculated tags are equal, this will return 1 indicating a
+valid and authenticated message. Otherwise, this function will return
+zero.
+</p></dd></dl>
+
+<hr>
 <span id="SIV_002dCMAC"></span><div class="header">
 <p>
-Next: <a href="#nettle_005faead-abstraction" accesskey="n" rel="next">nettle_aead abstraction</a>, Previous: <a href="#ChaCha_002dPoly1305" accesskey="p" rel="prev">ChaCha-Poly1305</a>, Up: <a href="#Authenticated-encryption" accesskey="u" rel="up">Authenticated encryption</a> &nbsp; [<a href="#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="#Index" title="Index" rel="index">Index</a>]</p>
+Next: <a href="#SIV_002dGCM" accesskey="n" rel="next">SIV-GCM</a>, Previous: <a href="#OCB" accesskey="p" rel="prev">OCB</a>, Up: <a href="#Authenticated-encryption" accesskey="u" rel="up">Authenticated encryption</a> &nbsp; [<a href="#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="#Index" title="Index" rel="index">Index</a>]</p>
 </div>
-<span id="Synthetic-Initialization-Vector-AEAD"></span><h4 class="subsection">7.4.5 Synthetic Initialization Vector AEAD</h4>
+<span id="Synthetic-Initialization-Vector-AEAD"></span><h4 class="subsection">7.4.6 Synthetic Initialization Vector AEAD</h4>
 
 <span id="index-SIV-mode"></span>
 <span id="index-SIV_002dCMAC-mode"></span>
@@ -4352,7 +4719,7 @@ of three elements, where S1 is the authenticated data, S2 is the nonce,
 and S3 is the plaintext.
 </p>
 
-<span id="General-interface"></span><h4 class="subsubsection">7.4.5.1 General interface</h4>
+<span id="General-interface-1"></span><h4 class="subsubsection">7.4.6.1 General interface</h4>
 
 <dl>
 <dt id="index-SIV_005fBLOCK_005fSIZE">Constant: <strong>SIV_BLOCK_SIZE</strong></dt>
@@ -4369,7 +4736,7 @@ and S3 is the plaintext.
 <dd><p>The the minimum size for an <acronym>SIV-CMAC</acronym> nonce, 1.
 </p></dd></dl>
 
-<span id="SIV_002dCMAC_002dAES-interface"></span><h4 class="subsubsection">7.4.5.2 <acronym>SIV-CMAC</acronym>-<acronym>AES</acronym> interface</h4>
+<span id="SIV_002dCMAC_002dAES-interface"></span><h4 class="subsubsection">7.4.6.2 <acronym>SIV-CMAC</acronym>-<acronym>AES</acronym> interface</h4>
 
 <p>The <acronym>AES</acronym> <acronym>SIV-CMAC</acronym> functions provide an API for using
 <acronym>SIV-CMAC</acronym> mode with the <acronym>AES</acronym> block ciphers. The parameters
@@ -4406,8 +4773,7 @@ parameters, encrypts the plaintext from <var>src</var>, prepends the
 initialization vector to the ciphertext and outputs it to <var>dst</var>.
 The <var>clength</var> variable must be equal to the length of <var>src</var>
 plus <code>SIV_DIGEST_SIZE</code>.
-</p>
-</dd></dl>
+</p></dd></dl>
 
 <dl>
 <dt id="index-siv_005fcmac_005faes128_005fdecrypt_005fmessage">Function: <em>int</em> <strong>siv_cmac_aes128_decrypt_message</strong> <em>(struct siv_cmac_aes128_ctx *<var>ctx</var>, size_t <var>nlength</var>, const uint8_t *<var>nonce</var>, size_t <var>alength</var>, const uint8_t *<var>adata</var>, size_t <var>mlength</var>, uint8_t *<var>dst</var>, const uint8_t *<var>src</var>)</em></dt>
@@ -4420,11 +4786,111 @@ message. Otherwise, this function will return zero.
 </p></dd></dl>
 
 <hr>
+<span id="SIV_002dGCM"></span><div class="header">
+<p>
+Next: <a href="#nettle_005faead-abstraction" accesskey="n" rel="next">nettle_aead abstraction</a>, Previous: <a href="#SIV_002dCMAC" accesskey="p" rel="prev">SIV-CMAC</a>, Up: <a href="#Authenticated-encryption" accesskey="u" rel="up">Authenticated encryption</a> &nbsp; [<a href="#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="#Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<span id="SIV_002dGCM-1"></span><h4 class="subsection">7.4.7 SIV-GCM</h4>
+
+<p><acronym>SIV-GCM</acronym>, described in <cite>RFC 8452</cite>, is an <acronym>AEAD</acronym>
+construction similar to <acronym>AES-GCM</acronym>, but provides protection against
+accidental nonce misuse like <acronym>SIV-CMAC</acronym> mode.
+</p>
+<p>It is constructed on top of a block cipher which must have a block size of 128
+bits and a nonce size of 12 bytes. Nettle&rsquo;s support for <acronym>SIV-GCM</acronym>
+consists of a message encryption and authentication interface, for
+<acronym>SIV-GCM</acronym> using AES as the underlying block cipher.  These
+interfaces are defined in <samp>&lt;nettle/siv-gcm.h&gt;</samp>.
+</p>
+<p>Unlike other <acronym>AEAD</acronym> mode in <acronym>SIV-GCM</acronym> the tag is calculated
+over the encoded additional authentication data and plaintext instead of the
+ciphertext.
+</p>
+<span id="General-interface-2"></span><h4 class="subsubsection">7.4.7.1 General interface</h4>
+
+<dl>
+<dt id="index-SIV_005fGCM_005fBLOCK_005fSIZE">Constant: <strong>SIV_GCM_BLOCK_SIZE</strong></dt>
+<dd><p><acronym>SIV-GCM</acronym>&rsquo;s block size, 16.
+</p></dd></dl>
+
+<dl>
+<dt id="index-SIV_005fGCM_005fDIGEST_005fSIZE">Constant: <strong>SIV_GCM_DIGEST_SIZE</strong></dt>
+<dd><p>Size of the <acronym>SIV-GCM</acronym> digest for tags, 16.
+</p></dd></dl>
+
+<dl>
+<dt id="index-SIV_005fGCM_005fNONCE_005fSIZE">Constant: <strong>SIV_GCM_NONCE_SIZE</strong></dt>
+<dd><p>Size of the <acronym>SIV-GCM</acronym> nonce, 12.
+</p></dd></dl>
+
+<dl>
+<dt id="index-siv_005fgcm_005fencrypt_005fmessage">Function: <em>void</em> <strong>siv_gcm_encrypt_message</strong> <em>(const struct nettle_cipher *<var>nc</var>, const void *<var>ctx</var>, void *<var>ctr_ctx</var>, size_t <var>nlength</var>, const uint8_t *<var>nonce</var>, size_t <var>alength</var>, const uint8_t *<var>adata</var>, size_t <var>clength</var>, uint8_t *<var>dst</var>, const uint8_t *<var>src</var>)</em></dt>
+<dd><p>Computes the message digest from the <var>adata</var> and <var>src</var>
+parameters, encrypts the plaintext from <var>src</var>, appends the
+authentication tag to the ciphertext and outputs it to <var>dst</var>.  The
+<var>clength</var> variable must be equal to the length of <var>src</var> plus
+<code>SIV_GCM_DIGEST_SIZE</code>.
+</p></dd></dl>
+
+<dl>
+<dt id="index-siv_005fgcm_005fdecrypt_005fmessage">Function: <em>int</em> <strong>siv_gcm_decrypt_message</strong> <em>(const struct nettle_cipher *<var>nc</var>, const void *<var>ctx</var>, void *<var>ctr_ctx</var>, size_t <var>nlength</var>, const uint8_t *<var>nonce</var>, size_t <var>alength</var>, const uint8_t *<var>adata</var>, size_t <var>mlength</var>, uint8_t *<var>dst</var>, const uint8_t *<var>src</var>)</em></dt>
+<dd><p>Decrypts the ciphertext from <var>src</var>, outputs the plaintext to
+<var>dst</var>, recalculates the initialization vector from <var>adata</var> and the
+plaintext. If the values of the received and calculated initialization vector
+are equal, this will return 1 indicating a valid and authenticated
+message. Otherwise, this function will return zero.
+</p></dd></dl>
+
+<p>In the above interface, <var>nc</var> must point to a cipher that works
+with 16-byte block size and the key sizes that are multiple of
+8-bytes.  The <var>ctx</var> context structure must be initialized for
+encryption mode using a set-key function, before using any of the
+functions in this interface.  While the <var>ctr_ctx</var> context
+structure must have the same size as <var>ctx</var>, it does not need to be
+initialized before calling those functions as it is used as working
+storage.  These structures can point to the same area; in that case
+the contents of *<var>ctx</var> is destroyed by the call.
+</p>
+<p>For convenience, Nettle provides wrapper functions that works with
+<acronym>AES</acronym> described in the following section.
+</p>
+<span id="SIV_002dGCM_002dAES-interface"></span><h4 class="subsubsection">7.4.7.2 <acronym>SIV-GCM</acronym>-<acronym>AES</acronym> interface</h4>
+
+<p>The <acronym>SIV-GCM</acronym> functions provide an API for using <acronym>SIV-GCM</acronym>
+mode with the <acronym>AES</acronym> block ciphers. The parameters all have the same
+meaning as the general and message interfaces, except that the <var>cipher</var>,
+<var>f</var>, and <var>ctx</var> parameters are replaced with an <acronym>AES</acronym> context
+structure. The <acronym>AES</acronym> context structure must be initialized for
+encryption mode using a set-key function, before using any of the functions in
+this interface.
+</p>
+<dl>
+<dt id="index-siv_005fgcm_005faes128_005fencrypt_005fmessage">Function: <em>void</em> <strong>siv_gcm_aes128_encrypt_message</strong> <em>(const struct aes128_ctx *<var>ctx</var>, size_t <var>nlength</var>, const uint8_t *<var>nonce</var>, size_t <var>alength</var>, const uint8_t *<var>adata</var>, size_t <var>clength</var>, uint8_t *<var>dst</var>, const uint8_t *<var>src</var>)</em></dt>
+<dt id="index-siv_005fgcm_005faes256_005fencrypt_005fmessage">Function: <em>void</em> <strong>siv_gcm_aes256_encrypt_message</strong> <em>(const struct aes256_ctx *<var>ctx</var>, size_t <var>nlength</var>, const uint8_t *<var>nonce</var>, size_t <var>alength</var>, const uint8_t *<var>adata</var>, size_t <var>clength</var>, uint8_t *<var>dst</var>, const uint8_t *<var>src</var>)</em></dt>
+<dd><p>Computes the message digest from the <var>adata</var> and <var>src</var>
+parameters, encrypts the plaintext from <var>src</var>, appends the
+authentication tag to the ciphertext and outputs it to <var>dst</var>.
+The <var>clength</var> variable must be equal to the length of <var>src</var>
+plus <code>SIV_GCM_DIGEST_SIZE</code>.
+</p>
+</dd></dl>
+
+<dl>
+<dt id="index-siv_005fgcm_005faes128_005fdecrypt_005fmessage">Function: <em>int</em> <strong>siv_gcm_aes128_decrypt_message</strong> <em>(const struct aes128_ctx *<var>ctx</var>, size_t <var>nlength</var>, const uint8_t *<var>nonce</var>, size_t <var>alength</var>, const uint8_t *<var>adata</var>, size_t <var>mlength</var>, uint8_t *<var>dst</var>, const uint8_t *<var>src</var>)</em></dt>
+<dt id="index-siv_005fgcm_005faes256_005fdecrypt_005fmessage">Function: <em>int</em> <strong>siv_gcm_aes256_decrypt_message</strong> <em>(const struct aes256_ctx *<var>ctx</var>, size_t <var>nlength</var>, const uint8_t *<var>nonce</var>, size_t <var>alength</var>, const uint8_t *<var>adata</var>, size_t <var>mlength</var>, uint8_t *<var>dst</var>, const uint8_t *<var>src</var>)</em></dt>
+<dd><p>Decrypts the ciphertext from <var>src</var>, outputs the plaintext to
+<var>dst</var>, recalculates the initialization vector from <var>adata</var> and the
+plaintext. If the values of the received and calculated initialization vector
+are equal, this will return 1 indicating a valid and authenticated
+message. Otherwise, this function will return zero.
+</p></dd></dl>
+
+<hr>
 <span id="nettle_005faead-abstraction"></span><div class="header">
 <p>
-Previous: <a href="#SIV_002dCMAC" accesskey="p" rel="prev">SIV-CMAC</a>, Up: <a href="#Authenticated-encryption" accesskey="u" rel="up">Authenticated encryption</a> &nbsp; [<a href="#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="#Index" title="Index" rel="index">Index</a>]</p>
+Previous: <a href="#SIV_002dGCM" accesskey="p" rel="prev">SIV-GCM</a>, Up: <a href="#Authenticated-encryption" accesskey="u" rel="up">Authenticated encryption</a> &nbsp; [<a href="#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="#Index" title="Index" rel="index">Index</a>]</p>
 </div>
-<span id="The-struct-nettle_005faead-abstraction"></span><h4 class="subsection">7.4.6 The <code>struct nettle_aead</code> abstraction</h4>
+<span id="The-struct-nettle_005faead-abstraction"></span><h4 class="subsection">7.4.8 The <code>struct nettle_aead</code> abstraction</h4>
 <span id="index-nettle_005faead"></span>
 
 <p>Nettle includes a struct including information about the supported hash
@@ -5246,6 +5712,87 @@ salt <var>salt</var> of length <var>salt_length</var>, with iteration counter
 <var>iterations</var> (&gt; 0).  The output buffer is <var>dst</var> which must have
 room for at least <var>length</var> octets.
 </p></dd></dl>
+
+
+<span id="BALLOON"></span><h4 class="subsection">7.6.4 <acronym>BALLOON</acronym></h4>
+<span id="index-Balloon-password_002dhashing-algorithm"></span>
+<p>Balloon is a memory-hard password-hashing algorithm.  An in-depth description
+of the algorithm and its properties can be found in an online research paper:
+Boneh, D., Corrigan-Gibbs, H., Schechter, S. (2017, May 12). Balloon Hashing:
+A Memory-Hard Function Providing Provable Protection Against Sequential Attacks.
+Retrieved Sep 1, 2022, from <a href="https://eprint.iacr.org/2016/027.pdf">https://eprint.iacr.org/2016/027.pdf</a>
+</p>
+<p>Nettle&rsquo;s definition of the <acronym>BALLOON</acronym> algorithm can be found in
+<samp>&lt;nettle/balloon.h&gt;</samp>.  There is a general <acronym>BALLOON</acronym> function where
+the user can specify desired hash algorithm that will be used by the function.
+There are also concrete, more user-friendly functions that use common hash algorithms
+like SHA1, SHA256, SHA384 and SHA512.  There is also a utility function which helps to
+determine the size of the working buffer that must be provided as one of the inputs.
+</p>
+<p>Each <acronym>BALLOON</acronym> function takes as an input a password and a salt of arbitrary
+lengths, a time and a space parameters, and a scratch buffer.  The space parameter
+<var>s_cost</var> determines how many blocks of working space the algorithm will require
+during its computation.  It is common to set <var>s_cost</var> to a high value in order
+to increase the cost of hardware accelerators built by the adversary.  The time
+parameter <var>t_cost</var> determines the number of rounds of computation that the algorithm
+will perform. This can be used to further increase the cost of computation without raising
+the memory requirement.  Scratch buffer <var>scratch</var> is a user allocated working space
+required by the algorithm.  To determine the required size of the scratch buffer use the
+utility function <code>balloon_itch</code>.  Output of <acronym>BALLOON</acronym> algorithm will be
+written into the output buffer <var>dst</var> that has to be at least <var>digest_size</var> bytes
+long.  Note that it is safe to use the same buffer for both <var>scratch</var> and <var>dst</var>.
+Next follows the description of the general <acronym>BALLOON</acronym> function.
+</p>
+<dl>
+<dt id="index-balloon">Function: <em>void</em> <strong>balloon</strong> <em>(void *<var>hash_ctx</var>, nettle_hash_update_func *<var>update</var>, nettle_hash_digest_func *<var>digest</var>, size_t <var>digest_size</var>, size_t <var>s_cost</var>, size_t <var>t_cost</var>, size_t <var>passwd_length</var>, const uint8_t *<var>passwd</var>, size_t <var>salt_length</var>, const uint8_t *<var>salt</var>, uint8_t *<var>scratch</var>, uint8_t *<var>dst</var>)</em></dt>
+<dd><p>Compute hash of given password <var>passwd</var> of length <var>passwd_length</var> salted
+with <var>salt</var> of length <var>salt_length</var> and write <var>digest_size</var> bytes into
+the output buffer <var>dst</var>.  Parameter <var>hash_ctx</var> is a context for the
+underlying hash function, which much be initialized by the caller.  <var>update</var>
+and <var>digest</var> are the update and digest functions of the chosen hash algorithm.
+<var>digest_size</var> is the digest size of the chosen hash algorithm and determines
+the size of the output.
+</p></dd></dl>
+
+<dl>
+<dt id="index-balloon_005fitch">Function: <em>size_t</em> <strong>balloon_itch</strong> <em>(size_t <var>digest_size</var>, size_t <var>s_cost</var>)</em></dt>
+<dd><p>Compute the size of the scratch buffer <var>scratch</var>.  <var>digest_size</var> is the
+digest size of the chosen hash algorithm.  <var>s_cost</var> is the space parameter
+used by the <code>balloon</code> function.
+</p></dd></dl>
+
+<span id="Concrete-BALLOON-functions"></span><h4 class="subsection">7.6.5 Concrete <acronym>BALLOON</acronym> functions</h4>
+<p>Here follows a list of the specialized <acronym>BALLOON</acronym> functions, which are
+more user-friendly variants of the general function.
+</p>
+<span id="BALLOON_002dSHA1"></span><h4 class="subsubsection">7.6.5.1 <acronym>BALLOON-SHA1</acronym></h4>
+
+<dl>
+<dt id="index-balloon_005fsha1">Function: <em>void</em> <strong>balloon_sha1</strong> <em>(size_t <var>s_cost</var>, size_t <var>t_cost</var>, size_t <var>passwd_length</var>, const uint8_t *<var>passwd</var>, size_t <var>salt_length</var>, const uint8_t *<var>salt</var>, uint8_t *<var>scratch</var>, uint8_t *<var>dst</var>)</em></dt>
+<dd><p><acronym>BALLOON</acronym> algorithm using SHA1 as the underlying hash function.
+</p></dd></dl>
+
+<span id="BALLOON_002dSHA256"></span><h4 class="subsubsection">7.6.5.2 <acronym>BALLOON-SHA256</acronym></h4>
+
+<dl>
+<dt id="index-balloon_005fsha256">Function: <em>void</em> <strong>balloon_sha256</strong> <em>(size_t <var>s_cost</var>, size_t <var>t_cost</var>, size_t <var>passwd_length</var>, const uint8_t *<var>passwd</var>, size_t <var>salt_length</var>, const uint8_t *<var>salt</var>, uint8_t *<var>scratch</var>, uint8_t *<var>dst</var>)</em></dt>
+<dd><p><acronym>BALLOON</acronym> algorithm using SHA256 as the underlying hash function.
+</p></dd></dl>
+
+<span id="BALLOON_002dSHA384"></span><h4 class="subsubsection">7.6.5.3 <acronym>BALLOON-SHA384</acronym></h4>
+
+<dl>
+<dt id="index-balloon_005fsha384">Function: <em>void</em> <strong>balloon_sha384</strong> <em>(size_t <var>s_cost</var>, size_t <var>t_cost</var>, size_t <var>passwd_length</var>, const uint8_t *<var>passwd</var>, size_t <var>salt_length</var>, const uint8_t *<var>salt</var>, uint8_t *<var>scratch</var>, uint8_t *<var>dst</var>)</em></dt>
+<dd><p><acronym>BALLOON</acronym> algorithm using SHA384 as the underlying hash function.
+</p></dd></dl>
+
+<span id="BALLOON_002dSHA512"></span><h4 class="subsubsection">7.6.5.4 <acronym>BALLOON-SHA512</acronym></h4>
+
+<dl>
+<dt id="index-balloon_005fsha512">Function: <em>void</em> <strong>balloon_sha512</strong> <em>(size_t <var>s_cost</var>, size_t <var>t_cost</var>, size_t <var>passwd_length</var>, const uint8_t *<var>passwd</var>, size_t <var>salt_length</var>, const uint8_t *<var>salt</var>, uint8_t *<var>scratch</var>, uint8_t *<var>dst</var>)</em></dt>
+<dd><p><acronym>BALLOON</acronym> algorithm using SHA512 as the underlying hash function.
+</p></dd></dl>
+
 
 <hr>
 <span id="Public_002dkey-algorithms"></span><div class="header">
@@ -6710,11 +7257,13 @@ what output is generated after <code>t_2</code>.
 <p>Nettle includes one randomness generator that is believed to have all
 the above properties, and two simpler ones.
 </p>
-<p><acronym>ARCFOUR</acronym>, like any stream cipher, can be used as a randomness
-generator. Its output should be of reasonable quality, if the seed is
-hashed properly before it is used with <code>arcfour_set_key</code>. There&rsquo;s
-no single natural way to reseed it, but if you need reseeding, you
-should be using Yarrow instead.
+<p><acronym>ChaCha</acronym> (see <a href="#ChaCha">ChaCha</a>), like any stream cipher, can be used
+as a randomness generator. Its output should be of reasonable
+quality. There&rsquo;s no single natural way to reseed it, but if you need
+reseeding, you should be using Yarrow instead.  Historically ARCFOUR
+(see <a href="#Arcfour">Arcfour</a>) has been used as a randomness generator, however it is
+known to be distinguishable from random data and the output leaks
+information about the key.
 </p>
 <p>The &ldquo;lagged Fibonacci&rdquo; generator in <samp>&lt;nettle/knuth-lfib.h&gt;</samp> is a
 fast generator with good statistical properties, but is <strong>not</strong> for
@@ -6729,7 +7278,7 @@ from a small seed.
 <p>Yarrow is a family of pseudo-randomness generators, designed for
 cryptographic use, by John Kelsey, Bruce Schneier and Niels Ferguson.
 Yarrow-160 is described in a paper at
-<a href="https://www.counterpane.com/yarrow.html">https://www.counterpane.com/yarrow.html</a>, and it uses <acronym>SHA1</acronym>
+<a href="https://www.schneier.com/academic/yarrow/">https://www.schneier.com/academic/yarrow/</a>, and it uses <acronym>SHA1</acronym>
 and triple-DES, and has a 160-bit internal state. Nettle implements
 Yarrow-256, which is similar, but uses <acronym>SHA256</acronym> and
 <acronym>AES</acronym> to get an internal state of 256 bits.
@@ -7271,6 +7820,13 @@ Previous: <a href="#Installation" accesskey="p" rel="prev">Installation</a>, Up:
 <tr><td></td><td valign="top"><a href="#index-Authenticated-encryption">Authenticated encryption</a>:</td><td>&nbsp;</td><td valign="top"><a href="#Authenticated-encryption">Authenticated encryption</a></td></tr>
 <tr><td colspan="4"> <hr></td></tr>
 <tr><th id="Index_cp_letter-B">B</th><td></td><td></td></tr>
+<tr><td></td><td valign="top"><a href="#index-balloon"><code>balloon</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#Key-derivation-functions">Key derivation functions</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-Balloon-password_002dhashing-algorithm">Balloon password-hashing algorithm</a>:</td><td>&nbsp;</td><td valign="top"><a href="#Key-derivation-functions">Key derivation functions</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-balloon_005fitch"><code>balloon_itch</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#Key-derivation-functions">Key derivation functions</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-balloon_005fsha1"><code>balloon_sha1</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#Key-derivation-functions">Key derivation functions</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-balloon_005fsha256"><code>balloon_sha256</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#Key-derivation-functions">Key derivation functions</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-balloon_005fsha384"><code>balloon_sha384</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#Key-derivation-functions">Key derivation functions</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-balloon_005fsha512"><code>balloon_sha512</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#Key-derivation-functions">Key derivation functions</a></td></tr>
 <tr><td></td><td valign="top"><a href="#index-base16_005fdecode_005ffinal"><code>base16_decode_final</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#ASCII-encoding">ASCII encoding</a></td></tr>
 <tr><td></td><td valign="top"><a href="#index-base16_005fdecode_005finit"><code>base16_decode_init</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#ASCII-encoding">ASCII encoding</a></td></tr>
 <tr><td></td><td valign="top"><a href="#index-BASE16_005fDECODE_005fLENGTH"><code>BASE16_DECODE_LENGTH</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#ASCII-encoding">ASCII encoding</a></td></tr>
@@ -7555,6 +8111,12 @@ Previous: <a href="#Installation" accesskey="p" rel="prev">Installation</a>, Up:
 <tr><td></td><td valign="top"><a href="#index-GCM_005fSET_005fIV"><code>GCM_SET_IV</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#GCM">GCM</a></td></tr>
 <tr><td></td><td valign="top"><a href="#index-gcm_005fset_005fkey"><code>gcm_set_key</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#GCM">GCM</a></td></tr>
 <tr><td></td><td valign="top"><a href="#index-GCM_005fSET_005fKEY"><code>GCM_SET_KEY</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#GCM">GCM</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-gcm_005fsm4_005fdecrypt"><code>gcm_sm4_decrypt</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#GCM">GCM</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-gcm_005fsm4_005fdigest"><code>gcm_sm4_digest</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#GCM">GCM</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-gcm_005fsm4_005fencrypt"><code>gcm_sm4_encrypt</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#GCM">GCM</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-gcm_005fsm4_005fset_005fiv"><code>gcm_sm4_set_iv</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#GCM">GCM</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-gcm_005fsm4_005fset_005fkey"><code>gcm_sm4_set_key</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#GCM">GCM</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-gcm_005fsm4_005fupdate"><code>gcm_sm4_update</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#GCM">GCM</a></td></tr>
 <tr><td></td><td valign="top"><a href="#index-gcm_005fupdate"><code>gcm_update</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#GCM">GCM</a></td></tr>
 <tr><td></td><td valign="top"><a href="#index-GCM_005fUPDATE"><code>GCM_UPDATE</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#GCM">GCM</a></td></tr>
 <tr><td></td><td valign="top"><a href="#index-GOST-DSA">GOST DSA</a>:</td><td>&nbsp;</td><td valign="top"><a href="#GOSTDSA">GOSTDSA</a></td></tr>
@@ -7613,6 +8175,7 @@ Previous: <a href="#Installation" accesskey="p" rel="prev">Installation</a>, Up:
 <tr><td></td><td valign="top"><a href="#index-md4_005fdigest"><code>md4_digest</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#Legacy-hash-functions">Legacy hash functions</a></td></tr>
 <tr><td></td><td valign="top"><a href="#index-md4_005finit"><code>md4_init</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#Legacy-hash-functions">Legacy hash functions</a></td></tr>
 <tr><td></td><td valign="top"><a href="#index-md4_005fupdate"><code>md4_update</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#Legacy-hash-functions">Legacy hash functions</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-md5_005fcompress"><code>md5_compress</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#Legacy-hash-functions">Legacy hash functions</a></td></tr>
 <tr><td></td><td valign="top"><a href="#index-md5_005fdigest"><code>md5_digest</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#Legacy-hash-functions">Legacy hash functions</a></td></tr>
 <tr><td></td><td valign="top"><a href="#index-md5_005finit"><code>md5_init</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#Legacy-hash-functions">Legacy hash functions</a></td></tr>
 <tr><td></td><td valign="top"><a href="#index-md5_005fupdate"><code>md5_update</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#Legacy-hash-functions">Legacy hash functions</a></td></tr>
@@ -7635,6 +8198,26 @@ Previous: <a href="#Installation" accesskey="p" rel="prev">Installation</a>, Up:
 <tr><td></td><td valign="top"><a href="#index-nettle_005fhashes"><code>nettle_hashes</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#nettle_005fhash-abstraction">nettle_hash abstraction</a></td></tr>
 <tr><td colspan="4"> <hr></td></tr>
 <tr><th id="Index_cp_letter-O">O</th><td></td><td></td></tr>
+<tr><td></td><td valign="top"><a href="#index-OCB">OCB</a>:</td><td>&nbsp;</td><td valign="top"><a href="#OCB">OCB</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-OCB-mode">OCB mode</a>:</td><td>&nbsp;</td><td valign="top"><a href="#OCB">OCB</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-ocb_005faes128_005fdecrypt"><code>ocb_aes128_decrypt</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#OCB">OCB</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-ocb_005faes128_005fdecrypt_005fmessage"><code>ocb_aes128_decrypt_message</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#OCB">OCB</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-ocb_005faes128_005fdigest"><code>ocb_aes128_digest</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#OCB">OCB</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-ocb_005faes128_005fencrypt"><code>ocb_aes128_encrypt</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#OCB">OCB</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-ocb_005faes128_005fencrypt_005fmessage"><code>ocb_aes128_encrypt_message</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#OCB">OCB</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-ocb_005faes128_005fset_005fdecrypt_005fkey"><code>ocb_aes128_set_decrypt_key</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#OCB">OCB</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-ocb_005faes128_005fset_005fencrypt_005fkey"><code>ocb_aes128_set_encrypt_key</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#OCB">OCB</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-ocb_005faes128_005fset_005fnonce"><code>ocb_aes128_set_nonce</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#OCB">OCB</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-ocb_005faes128_005fupdate"><code>ocb_aes128_update</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#OCB">OCB</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-ocb_005fdecrypt"><code>ocb_decrypt</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#OCB">OCB</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-ocb_005fdecrypt_005fmessage"><code>ocb_decrypt_message</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#OCB">OCB</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-ocb_005fdigest"><code>ocb_digest</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#OCB">OCB</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-ocb_005fencrypt"><code>ocb_encrypt</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#OCB">OCB</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-ocb_005fencrypt_005fmessage"><code>ocb_encrypt_message</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#OCB">OCB</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-ocb_005fset_005fkey"><code>ocb_set_key</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#OCB">OCB</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-ocb_005fset_005fnonce"><code>ocb_set_nonce</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#OCB">OCB</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-ocb_005fupdate"><code>ocb_update</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#OCB">OCB</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-Offset-Code-Book">Offset Code Book</a>:</td><td>&nbsp;</td><td valign="top"><a href="#OCB">OCB</a></td></tr>
 <tr><td></td><td valign="top"><a href="#index-One_002dway">One-way</a>:</td><td>&nbsp;</td><td valign="top"><a href="#Hash-functions">Hash functions</a></td></tr>
 <tr><td></td><td valign="top"><a href="#index-One_002dway-function">One-way function</a>:</td><td>&nbsp;</td><td valign="top"><a href="#Public_002dkey-algorithms">Public-key algorithms</a></td></tr>
 <tr><td colspan="4"> <hr></td></tr>
@@ -7721,12 +8304,14 @@ Previous: <a href="#Installation" accesskey="p" rel="prev">Installation</a>, Up:
 <tr><td></td><td valign="top"><a href="#index-serpent_005fdecrypt"><code>serpent_decrypt</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#Serpent">Serpent</a></td></tr>
 <tr><td></td><td valign="top"><a href="#index-serpent_005fencrypt"><code>serpent_encrypt</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#Serpent">Serpent</a></td></tr>
 <tr><td></td><td valign="top"><a href="#index-serpent_005fset_005fkey"><code>serpent_set_key</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#Serpent">Serpent</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-sha1_005fcompress"><code>sha1_compress</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#Legacy-hash-functions">Legacy hash functions</a></td></tr>
 <tr><td></td><td valign="top"><a href="#index-sha1_005fdigest"><code>sha1_digest</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#Legacy-hash-functions">Legacy hash functions</a></td></tr>
 <tr><td></td><td valign="top"><a href="#index-sha1_005finit"><code>sha1_init</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#Legacy-hash-functions">Legacy hash functions</a></td></tr>
 <tr><td></td><td valign="top"><a href="#index-sha1_005fupdate"><code>sha1_update</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#Legacy-hash-functions">Legacy hash functions</a></td></tr>
 <tr><td></td><td valign="top"><a href="#index-sha224_005fdigest"><code>sha224_digest</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#Recommended-hash-functions">Recommended hash functions</a></td></tr>
 <tr><td></td><td valign="top"><a href="#index-sha224_005finit"><code>sha224_init</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#Recommended-hash-functions">Recommended hash functions</a></td></tr>
 <tr><td></td><td valign="top"><a href="#index-sha224_005fupdate"><code>sha224_update</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#Recommended-hash-functions">Recommended hash functions</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-sha256_005fcompress"><code>sha256_compress</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#Recommended-hash-functions">Recommended hash functions</a></td></tr>
 <tr><td></td><td valign="top"><a href="#index-sha256_005fdigest"><code>sha256_digest</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#Recommended-hash-functions">Recommended hash functions</a></td></tr>
 <tr><td></td><td valign="top"><a href="#index-sha256_005finit"><code>sha256_init</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#Recommended-hash-functions">Recommended hash functions</a></td></tr>
 <tr><td></td><td valign="top"><a href="#index-sha256_005fupdate"><code>sha256_update</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#Recommended-hash-functions">Recommended hash functions</a></td></tr>
@@ -7753,6 +8338,7 @@ Previous: <a href="#Installation" accesskey="p" rel="prev">Installation</a>, Up:
 <tr><td></td><td valign="top"><a href="#index-sha512_005f256_005fdigest"><code>sha512_256_digest</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#Recommended-hash-functions">Recommended hash functions</a></td></tr>
 <tr><td></td><td valign="top"><a href="#index-sha512_005f256_005finit"><code>sha512_256_init</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#Recommended-hash-functions">Recommended hash functions</a></td></tr>
 <tr><td></td><td valign="top"><a href="#index-sha512_005f256_005fupdate"><code>sha512_256_update</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#Recommended-hash-functions">Recommended hash functions</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-sha512_005fcompress"><code>sha512_compress</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#Recommended-hash-functions">Recommended hash functions</a></td></tr>
 <tr><td></td><td valign="top"><a href="#index-sha512_005fdigest"><code>sha512_digest</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#Recommended-hash-functions">Recommended hash functions</a></td></tr>
 <tr><td></td><td valign="top"><a href="#index-sha512_005finit"><code>sha512_init</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#Recommended-hash-functions">Recommended hash functions</a></td></tr>
 <tr><td></td><td valign="top"><a href="#index-sha512_005fupdate"><code>sha512_update</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#Recommended-hash-functions">Recommended hash functions</a></td></tr>
@@ -7766,9 +8352,19 @@ Previous: <a href="#Installation" accesskey="p" rel="prev">Installation</a>, Up:
 <tr><td></td><td valign="top"><a href="#index-siv_005fcmac_005faes256_005fdecrypt_005fmessage"><code>siv_cmac_aes256_decrypt_message</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#SIV_002dCMAC">SIV-CMAC</a></td></tr>
 <tr><td></td><td valign="top"><a href="#index-siv_005fcmac_005faes256_005fencrypt_005fmessage"><code>siv_cmac_aes256_encrypt_message</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#SIV_002dCMAC">SIV-CMAC</a></td></tr>
 <tr><td></td><td valign="top"><a href="#index-siv_005fcmac_005faes256_005fset_005fkey"><code>siv_cmac_aes256_set_key</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#SIV_002dCMAC">SIV-CMAC</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-siv_005fgcm_005faes128_005fdecrypt_005fmessage"><code>siv_gcm_aes128_decrypt_message</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#SIV_002dGCM">SIV-GCM</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-siv_005fgcm_005faes128_005fencrypt_005fmessage"><code>siv_gcm_aes128_encrypt_message</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#SIV_002dGCM">SIV-GCM</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-siv_005fgcm_005faes256_005fdecrypt_005fmessage"><code>siv_gcm_aes256_decrypt_message</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#SIV_002dGCM">SIV-GCM</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-siv_005fgcm_005faes256_005fencrypt_005fmessage"><code>siv_gcm_aes256_encrypt_message</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#SIV_002dGCM">SIV-GCM</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-siv_005fgcm_005fdecrypt_005fmessage"><code>siv_gcm_decrypt_message</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#SIV_002dGCM">SIV-GCM</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-siv_005fgcm_005fencrypt_005fmessage"><code>siv_gcm_encrypt_message</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#SIV_002dGCM">SIV-GCM</a></td></tr>
 <tr><td></td><td valign="top"><a href="#index-sm3_005fdigest"><code>sm3_digest</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#Miscellaneous-hash-functions">Miscellaneous hash functions</a></td></tr>
 <tr><td></td><td valign="top"><a href="#index-sm3_005finit"><code>sm3_init</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#Miscellaneous-hash-functions">Miscellaneous hash functions</a></td></tr>
 <tr><td></td><td valign="top"><a href="#index-sm3_005fupdate"><code>sm3_update</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#Miscellaneous-hash-functions">Miscellaneous hash functions</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-SM4">SM4</a>:</td><td>&nbsp;</td><td valign="top"><a href="#SM4">SM4</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-sm4_005fcrypt"><code>sm4_crypt</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#SM4">SM4</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-sm4_005fset_005fdecrypt_005fkey"><code>sm4_set_decrypt_key</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#SM4">SM4</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-sm4_005fset_005fencrypt_005fkey"><code>sm4_set_encrypt_key</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#SM4">SM4</a></td></tr>
 <tr><td></td><td valign="top"><a href="#index-Stream-Cipher">Stream Cipher</a>:</td><td>&nbsp;</td><td valign="top"><a href="#Cipher-functions">Cipher functions</a></td></tr>
 <tr><td></td><td valign="top"><a href="#index-streebog256_005fdigest"><code>streebog256_digest</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#Miscellaneous-hash-functions">Miscellaneous hash functions</a></td></tr>
 <tr><td></td><td valign="top"><a href="#index-streebog256_005finit"><code>streebog256_init</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#Miscellaneous-hash-functions">Miscellaneous hash functions</a></td></tr>
@@ -7815,6 +8411,7 @@ Previous: <a href="#Installation" accesskey="p" rel="prev">Installation</a>, Up:
 <tr><td></td><td valign="top"><a href="#index-struct-gcm_005fcamellia256_005fctx"><code>struct gcm_camellia256_ctx</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#GCM">GCM</a></td></tr>
 <tr><td></td><td valign="top"><a href="#index-struct-gcm_005fctx"><code>struct gcm_ctx</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#GCM">GCM</a></td></tr>
 <tr><td></td><td valign="top"><a href="#index-struct-gcm_005fkey"><code>struct gcm_key</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#GCM">GCM</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-struct-gcm_005fsm4_005fctx"><code>struct gcm_sm4_ctx</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#GCM">GCM</a></td></tr>
 <tr><td></td><td valign="top"><a href="#index-struct-gosthash94cp_005fctx"><code>struct gosthash94cp_ctx</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#Legacy-hash-functions">Legacy hash functions</a></td></tr>
 <tr><td></td><td valign="top"><a href="#index-struct-gosthash94_005fctx"><code>struct gosthash94_ctx</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#Legacy-hash-functions">Legacy hash functions</a></td></tr>
 <tr><td></td><td valign="top"><a href="#index-struct-hmac_005fmd5_005fctx"><code>struct hmac_md5_ctx</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#HMAC">HMAC</a></td></tr>
@@ -7829,6 +8426,9 @@ Previous: <a href="#Installation" accesskey="p" rel="prev">Installation</a>, Up:
 <tr><td></td><td valign="top"><a href="#index-struct-nettle_005faead"><code><code>struct nettle_aead</code></code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#nettle_005faead-abstraction">nettle_aead abstraction</a></td></tr>
 <tr><td></td><td valign="top"><a href="#index-struct-nettle_005fcipher"><code><code>struct nettle_cipher</code></code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#nettle_005fcipher-abstraction">nettle_cipher abstraction</a></td></tr>
 <tr><td></td><td valign="top"><a href="#index-struct-nettle_005fhash"><code><code>struct nettle_hash</code></code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#nettle_005fhash-abstraction">nettle_hash abstraction</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-struct-ocb_005faes128_005fencrypt_005fkey"><code>struct ocb_aes128_encrypt_key</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#OCB">OCB</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-struct-ocb_005fctx"><code>struct ocb_ctx</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#OCB">OCB</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-struct-ocb_005fkey"><code>struct ocb_key</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#OCB">OCB</a></td></tr>
 <tr><td></td><td valign="top"><a href="#index-struct-poly1305_005faes_005fctx"><code>struct poly1305_aes_ctx</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#Poly1305">Poly1305</a></td></tr>
 <tr><td></td><td valign="top"><a href="#index-struct-ripemd160_005fctx"><code>struct ripemd160_ctx</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#Legacy-hash-functions">Legacy hash functions</a></td></tr>
 <tr><td></td><td valign="top"><a href="#index-struct-salsa20_005fctx"><code>struct salsa20_ctx</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#Salsa20">Salsa20</a></td></tr>
@@ -7847,6 +8447,7 @@ Previous: <a href="#Installation" accesskey="p" rel="prev">Installation</a>, Up:
 <tr><td></td><td valign="top"><a href="#index-struct-siv_005fcmac_005faes128_005fctx"><code>struct siv_cmac_aes128_ctx</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#SIV_002dCMAC">SIV-CMAC</a></td></tr>
 <tr><td></td><td valign="top"><a href="#index-struct-siv_005fcmac_005faes256_005fctx"><code>struct siv_cmac_aes256_ctx</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#SIV_002dCMAC">SIV-CMAC</a></td></tr>
 <tr><td></td><td valign="top"><a href="#index-struct-sm3_005fctx"><code>struct sm3_ctx</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#Miscellaneous-hash-functions">Miscellaneous hash functions</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-struct-sm4_005fctx"><code>struct sm4_ctx</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#SM4">SM4</a></td></tr>
 <tr><td></td><td valign="top"><a href="#index-struct-streebog256_005fctx"><code>struct streebog256_ctx</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#Miscellaneous-hash-functions">Miscellaneous hash functions</a></td></tr>
 <tr><td></td><td valign="top"><a href="#index-struct-streebog512_005fctx"><code>struct streebog512_ctx</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#Miscellaneous-hash-functions">Miscellaneous hash functions</a></td></tr>
 <tr><td></td><td valign="top"><a href="#index-struct-twofish_005fctx"><code>struct twofish_ctx</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#Twofish">Twofish</a></td></tr>

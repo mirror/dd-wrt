@@ -51,3 +51,15 @@ forloop(i,0,63,`deflit(`vs'i,i)')
 forloop(i,0,31,`deflit(`f'i,i)')
 forloop(i,0,7, `deflit(`cr'i,i)')
 ')
+
+C Increase index of general-purpose register by specific value
+C INC_GPR(GPR, INC)
+define(`INC_GPR',`ifelse(substr($1,0,1),`r',
+``r'eval($2+substr($1,1,len($1)))',
+`eval($2+$1)')')
+
+C Increase index of vector register by specific value
+C INC_VR(VR, INC)
+define(`INC_VR',`ifelse(substr($1,0,1),`v',
+``v'eval($2+substr($1,1,len($1)))',
+`eval($2+$1)')')

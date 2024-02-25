@@ -248,3 +248,63 @@ nettle_cbc_aes256 = {
   NULL,
   NULL,
 };
+
+static void
+ocb_aes128_set_encrypt_key_wrapper (struct ocb_aes128_ctx *ctx, const uint8_t *key)
+{
+  ocb_aes128_set_encrypt_key(&ctx->key, key);
+}
+
+static void
+ocb_aes128_set_decrypt_key_wrapper (struct ocb_aes128_ctx *ctx, const uint8_t *key)
+{
+  ocb_aes128_set_decrypt_key(&ctx->key, &ctx->decrypt, key);
+}
+
+static void
+ocb_aes128_set_nonce_wrapper (struct ocb_aes128_ctx *ctx, const uint8_t *nonce)
+{
+  ocb_aes128_set_nonce (&ctx->ocb, &ctx->key,
+			OCB_DIGEST_SIZE, OCB_NONCE_SIZE, nonce);
+}
+
+static void
+ocb_aes128_update_wrapper (struct ocb_aes128_ctx *ctx,
+			   size_t length, const uint8_t *data)
+{
+  ocb_aes128_update (&ctx->ocb, &ctx->key, length, data);
+}
+
+static void
+ocb_aes128_encrypt_wrapper (struct ocb_aes128_ctx *ctx,
+			    size_t length, uint8_t *dst, const uint8_t *src)
+{
+  ocb_aes128_encrypt (&ctx->ocb, &ctx->key, length, dst, src);
+}
+
+static void
+ocb_aes128_decrypt_wrapper (struct ocb_aes128_ctx *ctx,
+			    size_t length, uint8_t *dst, const uint8_t *src)
+{
+  ocb_aes128_decrypt (&ctx->ocb, &ctx->key, &ctx->decrypt, length, dst, src);
+}
+
+static void
+ocb_aes128_digest_wrapper (struct ocb_aes128_ctx *ctx, size_t length, uint8_t *digest)
+{
+  ocb_aes128_digest (&ctx->ocb, &ctx->key, length, digest);
+}
+
+const struct nettle_aead
+nettle_ocb_aes128 =
+  { "ocb_aes128", sizeof(struct ocb_aes128_ctx),
+    OCB_BLOCK_SIZE, AES128_KEY_SIZE,
+    OCB_NONCE_SIZE, OCB_DIGEST_SIZE,
+    (nettle_set_key_func *) ocb_aes128_set_encrypt_key_wrapper,
+    (nettle_set_key_func *) ocb_aes128_set_decrypt_key_wrapper,
+    (nettle_set_key_func *) ocb_aes128_set_nonce_wrapper,
+    (nettle_hash_update_func *) ocb_aes128_update_wrapper,
+    (nettle_crypt_func *) ocb_aes128_encrypt_wrapper,
+    (nettle_crypt_func *) ocb_aes128_decrypt_wrapper,
+    (nettle_hash_digest_func *) ocb_aes128_digest_wrapper
+  };

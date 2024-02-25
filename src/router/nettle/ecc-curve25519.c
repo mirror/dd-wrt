@@ -266,6 +266,7 @@ const struct ecc_curve _nettle_curve25519 =
     ecc_p,
     ecc_Bmodp,
     ecc_Bmodp_shifted,
+    ecc_Bm2p,
     NULL,
     ecc_pp1h,
 
@@ -287,6 +288,7 @@ const struct ecc_curve _nettle_curve25519 =
     ecc_q,
     ecc_Bmodq,  
     ecc_mBmodq_shifted, /* Use q - 2^{252} instead. */
+    ecc_Bm2q,
     NULL,
     ecc_qp1h,
 

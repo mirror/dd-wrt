@@ -77,6 +77,18 @@ test_main (void)
 	      "3a41e1423b1853e8aa89747b1f987364"
 	      "44705d6d6d8371ea1f578f2e"); /* s */
 
+  /* Produce a signature where verify operation results in a point duplication. */
+  test_ecdsa (&_nettle_secp_256r1,
+	      "1", /* Private key */
+	      "01010101010101010101010101010101"
+	      "01010101010101010101010101010101", /* nonce */
+	      SHEX("6ff03b949241ce1dadd43519e6960e0a"
+		   "85b41a69a05c328103aa2bce1594ca16"), /* hash */
+	      "6ff03b949241ce1dadd43519e6960e0a"
+	      "85b41a69a05c328103aa2bce1594ca16", /* r */
+	      "53f097727a0e0dc284a0daa0da0ab77d"
+	      "5792ae67ed075d1f8d5bda0f853fa093"); /* s */
+
   /* Test cases for the smaller groups, verified with a
      proof-of-concept implementation done for Yubico AB. */
   test_ecdsa (&_nettle_secp_192r1,

@@ -96,7 +96,7 @@ Amos Jeffries		Implementation of base64url encoding.
 Daiki Ueno		Implementation of RSA-PSS signatures,
 			curve448, shake256, ed448-shake256 signatures,
 			chacha functions for 32-bit nonce, struct
-			nettle_mac interface.
+			nettle_mac interface, siv-gcm.
 
 Dmitry Baryshkov	CFB and CFB8 modes, CMAC64. gosthash94cp and
 			Streebog hash functions, GOST DSA signatures
@@ -121,10 +121,12 @@ Mamone Tarsha Kurdi	Powerpc64 assembly and fat build setup,
 
 Nicolas Mora		RFC 3394 keywrap.
 
-Tianjia Zhang		SM3 hash function.
+Tianjia Zhang		SM3 hash function, SM4 block cipher.
 
 Amitay Isaacs		Powerpc64 assembly for secp192r1, secp224r1
 			and secp256r1.
 
 Martin Schwenke		Powerpc64 assembly for secp384r1, secp521r1,
 			curve25519 and curve448.
+
+Zoltan Fridrich		Ballon password hashing.

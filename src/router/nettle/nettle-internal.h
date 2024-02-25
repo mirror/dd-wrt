@@ -36,8 +36,12 @@
 #define NETTLE_INTERNAL_H_INCLUDED
 
 #include <assert.h>
+/* Needed for alloca on bsd systems. */
+#include <stdlib.h>
 
 #include "nettle-meta.h"
+#include "ocb.h"
+#include "aes.h"
 
 /* For definition of NETTLE_MAX_HASH_CONTEXT_SIZE. */
 #include "sha3.h"
@@ -72,12 +76,13 @@
   do { assert((size_t)(size) <= (sizeof(name))); } while (0)
 #endif 
 
-/* Arbitrary limits which apply to systems that don't have alloca */
-#define NETTLE_MAX_HASH_BLOCK_SIZE 128
+/* Limits that apply to systems that don't have alloca */
+#define NETTLE_MAX_HASH_BLOCK_SIZE 144  /* For sha3_224*/
 #define NETTLE_MAX_HASH_DIGEST_SIZE 64
 #define NETTLE_MAX_HASH_CONTEXT_SIZE (sizeof(struct sha3_224_ctx))
 #define NETTLE_MAX_SEXP_ASSOC 17
 #define NETTLE_MAX_CIPHER_BLOCK_SIZE 32
+#define NETTLE_MAX_CIPHER_KEY_SIZE 32
 
 /* Doesn't quite fit with the other algorithms, because of the weak
  * keys. Weak keys are not reported, the functions will simply crash
@@ -123,5 +128,18 @@ extern const struct nettle_hash nettle_openssl_md5;
 extern const struct nettle_hash nettle_openssl_sha1;
 
 extern const struct nettle_hash * const _nettle_hashes[];
+
+/* OCB-declarations to be moved to a public header file, once it's
+   settled which nonce and tag sizes to use. */
+#define OCB_NONCE_SIZE 12
+
+struct ocb_aes128_ctx
+{
+  struct ocb_ctx ocb;
+  struct ocb_aes128_encrypt_key key;
+  struct aes128_ctx decrypt;
+};
+
+extern const struct nettle_aead nettle_ocb_aes128;
 
 #endif /* NETTLE_INTERNAL_H_INCLUDED */

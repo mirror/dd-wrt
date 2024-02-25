@@ -65,6 +65,7 @@
 #include "aes-internal.h"
 #include "chacha-internal.h"
 #include "ghash-internal.h"
+#include "poly1305.h"
 #include "fat-setup.h"
 
 /* Defines from arch/powerpc/include/uapi/asm/cputable.h in Linux kernel */
@@ -77,11 +78,15 @@
 #ifndef PPC_FEATURE2_VEC_CRYPTO
 #define PPC_FEATURE2_VEC_CRYPTO 0x02000000
 #endif
+#ifndef PPC_FEATURE2_ARCH_3_00
+#define PPC_FEATURE2_ARCH_3_00 0x00800000
+#endif
 
 struct ppc_features
 {
   int have_crypto_ext;
   int have_altivec;
+  int have_power9;
 };
 
 #define MATCH(s, slen, literal, llen) \
@@ -93,6 +98,7 @@ get_ppc_features (struct ppc_features *features)
   const char *s;
   features->have_crypto_ext = 0;
   features->have_altivec = 0;
+  features->have_power9 = 0;
 
   s = secure_getenv (ENV_OVERRIDE);
   if (s)
@@ -105,6 +111,8 @@ get_ppc_features (struct ppc_features *features)
 	  features->have_crypto_ext = 1;
 	else if (MATCH(s, length, "altivec", 7))
 	  features->have_altivec = 1;
+  else if (MATCH(s, length, "power9", 6))
+	  features->have_power9 = 1;
 	if (!sep)
 	  break;
 	s = sep + 1;
@@ -135,6 +143,9 @@ get_ppc_features (struct ppc_features *features)
 # endif
       features->have_crypto_ext
 	= ((hwcap2 & PPC_FEATURE2_VEC_CRYPTO) == PPC_FEATURE2_VEC_CRYPTO);
+
+      features->have_power9
+	= ((hwcap2 & PPC_FEATURE2_ARCH_3_00) == PPC_FEATURE2_ARCH_3_00);
 
       /* We also need VSX instructions, mainly for load and store. */
       features->have_altivec
@@ -171,6 +182,23 @@ DECLARE_FAT_FUNC_VAR(chacha_crypt, chacha_crypt_func, 3core)
 DECLARE_FAT_FUNC(nettle_chacha_crypt32, chacha_crypt_func)
 DECLARE_FAT_FUNC_VAR(chacha_crypt32, chacha_crypt_func, 1core)
 DECLARE_FAT_FUNC_VAR(chacha_crypt32, chacha_crypt_func, 3core)
+
+DECLARE_FAT_FUNC(_nettle_poly1305_set_key, poly1305_set_key_func)
+DECLARE_FAT_FUNC_VAR(poly1305_set_key, poly1305_set_key_func, c)
+DECLARE_FAT_FUNC_VAR(poly1305_set_key, poly1305_set_key_func, ppc64)
+
+DECLARE_FAT_FUNC(_nettle_poly1305_block, poly1305_block_func)
+DECLARE_FAT_FUNC_VAR(poly1305_block, poly1305_block_func, c)
+DECLARE_FAT_FUNC_VAR(poly1305_block, poly1305_block_func, ppc64)
+
+DECLARE_FAT_FUNC(_nettle_poly1305_digest, poly1305_digest_func)
+DECLARE_FAT_FUNC_VAR(poly1305_digest, poly1305_digest_func, c)
+DECLARE_FAT_FUNC_VAR(poly1305_digest, poly1305_digest_func, ppc64)
+
+DECLARE_FAT_FUNC(_nettle_poly1305_blocks, poly1305_blocks_func)
+DECLARE_FAT_FUNC_VAR(poly1305_blocks, poly1305_blocks_func, c)
+DECLARE_FAT_FUNC_VAR(poly1305_blocks, poly1305_blocks_func, ppc64)
+
 
 static void CONSTRUCTOR
 fat_init (void)
@@ -220,6 +248,23 @@ fat_init (void)
       nettle_chacha_crypt_vec = _nettle_chacha_crypt_1core;
       nettle_chacha_crypt32_vec = _nettle_chacha_crypt32_1core;
     }
+
+  if (features.have_power9)
+    {
+      if (verbose)
+	fprintf (stderr, "libnettle: enabling arch 3.00 code.\n");
+      _nettle_poly1305_set_key_vec = _nettle_poly1305_set_key_ppc64;
+    _nettle_poly1305_block_vec = _nettle_poly1305_block_ppc64;
+    _nettle_poly1305_digest_vec = _nettle_poly1305_digest_ppc64;
+    _nettle_poly1305_blocks_vec = _nettle_poly1305_blocks_ppc64;
+    }
+  else
+    {
+      _nettle_poly1305_set_key_vec = _nettle_poly1305_set_key_c;
+    _nettle_poly1305_block_vec = _nettle_poly1305_block_c;
+    _nettle_poly1305_digest_vec = _nettle_poly1305_digest_c;
+    _nettle_poly1305_blocks_vec = _nettle_poly1305_blocks_c;
+    }
 }
 
 DEFINE_FAT_FUNC(_nettle_aes_encrypt, void,
@@ -261,3 +306,25 @@ DEFINE_FAT_FUNC(nettle_chacha_crypt32, void,
 		 uint8_t *dst,
 		 const uint8_t *src),
 		(ctx, length, dst, src))
+
+DEFINE_FAT_FUNC(_nettle_poly1305_set_key, void,
+		(struct poly1305_ctx *ctx,
+     const uint8_t *key),
+		(ctx, key))
+
+DEFINE_FAT_FUNC(_nettle_poly1305_block, void,
+		(struct poly1305_ctx *ctx,
+     const uint8_t *m,
+     unsigned high),
+		(ctx, m, high))
+
+DEFINE_FAT_FUNC(_nettle_poly1305_digest, void,
+		(struct poly1305_ctx *ctx,
+     union nettle_block16 *s),
+		(ctx, s))
+
+DEFINE_FAT_FUNC(_nettle_poly1305_blocks, const uint8_t *,
+		(struct poly1305_ctx *ctx,
+     size_t blocks,
+		 const uint8_t *m),
+		(ctx, blocks, m))

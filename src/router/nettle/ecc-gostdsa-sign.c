@@ -45,8 +45,7 @@
 mp_size_t
 ecc_gostdsa_sign_itch (const struct ecc_curve *ecc)
 {
-  /* Needs 3*ecc->p.size + scratch for ecc->mul_g. Currently same for
-     ecc_mul_g. */
+  /* Needs 3*ecc->p.size + scratch for ecc_mul_g. */
   return ECC_GOSTDSA_SIGN_ITCH (ecc->p.size);
 }
 
@@ -75,9 +74,9 @@ ecc_gostdsa_sign (const struct ecc_curve *ecc,
      4. s <-- (r*z + k*h) mod q.
   */
 
-  ecc->mul_g (ecc, P, kp, P + 3*ecc->p.size);
+  ecc_mul_g (ecc, P, kp, P + 3*ecc->p.size);
   /* x coordinate only, modulo q */
-  ecc->h_to_a (ecc, 2, rp, P, P + 3*ecc->p.size);
+  ecc_j_to_a (ecc, 2, rp, P, P + 3*ecc->p.size);
 
   /* Process hash digest */
   gost_hash (&ecc->q, hp, length, digest);

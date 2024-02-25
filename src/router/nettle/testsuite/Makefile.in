@@ -11,7 +11,7 @@ PRE_CPPFLAGS = -I.. -I$(top_srcdir)
 PRE_LDFLAGS = -L..
 
 TS_NETTLE_SOURCES = aes-test.c aes-keywrap-test.c arcfour-test.c arctwo-test.c \
-		    blowfish-test.c bcrypt-test.c cast128-test.c \
+		    balloon-test.c blowfish-test.c bcrypt-test.c cast128-test.c \
 	            base16-test.c base64-test.c \
 		    camellia-test.c chacha-test.c \
 		    cnd-memcpy-test.c \
@@ -24,11 +24,11 @@ TS_NETTLE_SOURCES = aes-test.c aes-keywrap-test.c arcfour-test.c arctwo-test.c \
 		    sha384-test.c sha512-test.c sha512-224-test.c sha512-256-test.c \
 		    sha3-permute-test.c sha3-224-test.c sha3-256-test.c \
 		    sha3-384-test.c sha3-512-test.c \
-		    shake256-test.c streebog-test.c sm3-test.c \
+		    shake256-test.c streebog-test.c sm3-test.c sm4-test.c \
 		    serpent-test.c twofish-test.c version-test.c \
 		    knuth-lfib-test.c \
 		    cbc-test.c cfb-test.c ctr-test.c gcm-test.c eax-test.c ccm-test.c \
-		    cmac-test.c siv-test.c \
+		    cmac-test.c ocb-test.c siv-cmac-test.c siv-gcm-test.c \
 		    poly1305-test.c chacha-poly1305-test.c \
 		    hmac-test.c umac-test.c \
 		    meta-hash-test.c meta-cipher-test.c\
@@ -47,8 +47,8 @@ TS_HOGWEED_SOURCES = sexp-test.c sexp-format-test.c \
 		     rsa-compute-root-test.c \
 		     dsa-test.c dsa-keygen-test.c \
 		     curve25519-dh-test.c curve448-dh-test.c \
-		     ecc-mod-test.c ecc-modinv-test.c ecc-redc-test.c \
-		     ecc-sqrt-test.c \
+		     ecc-mod-arith-test.c ecc-mod-test.c ecc-modinv-test.c \
+		     ecc-redc-test.c ecc-sqrt-test.c \
 		     ecc-dup-test.c ecc-add-test.c \
 		     ecc-mul-g-test.c ecc-mul-a-test.c \
 		     ecdsa-sign-test.c ecdsa-verify-test.c \

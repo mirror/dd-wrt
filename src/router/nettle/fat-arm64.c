@@ -178,9 +178,9 @@ DECLARE_FAT_FUNC(nettle_sha1_compress, sha1_compress_func)
 DECLARE_FAT_FUNC_VAR(sha1_compress, sha1_compress_func, c)
 DECLARE_FAT_FUNC_VAR(sha1_compress, sha1_compress_func, arm64)
 
-DECLARE_FAT_FUNC(_nettle_sha256_compress, sha256_compress_func)
-DECLARE_FAT_FUNC_VAR(sha256_compress, sha256_compress_func, c)
-DECLARE_FAT_FUNC_VAR(sha256_compress, sha256_compress_func, arm64)
+DECLARE_FAT_FUNC(_nettle_sha256_compress_n, sha256_compress_n_func)
+DECLARE_FAT_FUNC_VAR(sha256_compress_n, sha256_compress_n_func, c)
+DECLARE_FAT_FUNC_VAR(sha256_compress_n, sha256_compress_n_func, arm64)
 
 static void CONSTRUCTOR
 fat_init (void)
@@ -250,11 +250,11 @@ fat_init (void)
     {
       if (verbose)
 	fprintf (stderr, "libnettle: enabling hardware-accelerated sha256 compress code.\n");
-      _nettle_sha256_compress_vec = _nettle_sha256_compress_arm64;
+      _nettle_sha256_compress_n_vec = _nettle_sha256_compress_n_arm64;
     }
   else
     {
-      _nettle_sha256_compress_vec = _nettle_sha256_compress_c;
+      _nettle_sha256_compress_n_vec = _nettle_sha256_compress_n_c;
     }
 }
 
@@ -297,6 +297,7 @@ DEFINE_FAT_FUNC(nettle_sha1_compress, void,
 		(uint32_t *state, const uint8_t *input),
 		(state, input))
 
-DEFINE_FAT_FUNC(_nettle_sha256_compress, void,
-		(uint32_t *state, const uint8_t *input, const uint32_t *k),
-		(state, input, k))
+DEFINE_FAT_FUNC(_nettle_sha256_compress_n, const uint8_t *,
+		(uint32_t *state, const uint32_t *k,
+		 size_t blocks, const uint8_t *input),
+		(state, k, blocks, input))

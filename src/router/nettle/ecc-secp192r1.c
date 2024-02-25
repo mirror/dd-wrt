@@ -247,7 +247,8 @@ const struct ecc_curve _nettle_secp_192r1 =
 
     ecc_p,
     ecc_Bmodp,
-    ecc_Bmodp_shifted,    
+    ecc_Bmodp_shifted,
+    ecc_Bm2p,
     ecc_redc_ppm1,
     ecc_pp1h,
 
@@ -269,6 +270,7 @@ const struct ecc_curve _nettle_secp_192r1 =
     ecc_q,
     ecc_Bmodq,
     ecc_Bmodq_shifted,
+    ecc_Bm2q,
     NULL,
     ecc_qp1h,
 

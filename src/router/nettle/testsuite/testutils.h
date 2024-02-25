@@ -37,9 +37,6 @@
 
 #include "nettle-meta.h"
 
-/* Forward declare */
-struct nettle_aead;
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -82,7 +79,31 @@ test_main(void);
 
 extern int verbose;
 
-/* Test functions deallocate their inputs when finished.*/
+typedef void
+nettle_encrypt_message_func(void *ctx,
+			    size_t nlength, const uint8_t *nonce,
+			    size_t alength, const uint8_t *adata,
+			    size_t clength, uint8_t *dst, const uint8_t *src);
+
+typedef int
+nettle_decrypt_message_func(void *ctx,
+			    size_t nlength, const uint8_t *nonce,
+			    size_t alength, const uint8_t *adata,
+			    size_t mlength, uint8_t *dst, const uint8_t *src);
+
+struct nettle_aead_message
+{
+  const char *name;
+  unsigned context_size;
+  unsigned key_size;
+  unsigned digest_size;
+  int supports_inplace;
+  nettle_set_key_func *set_encrypt_key;
+  nettle_set_key_func *set_decrypt_key;
+  nettle_encrypt_message_func *encrypt;
+  nettle_decrypt_message_func *decrypt;
+};
+
 void
 test_cipher(const struct nettle_cipher *cipher,
 	    const struct tstring *key,
@@ -134,6 +155,14 @@ test_aead(const struct nettle_aead *aead,
 	  const struct tstring *digest);
 
 void
+test_aead_message(const struct nettle_aead_message *aead,
+		  const struct tstring *key,
+		  const struct tstring *adata,
+		  const struct tstring *nonce,
+		  const struct tstring *clear,
+		  const struct tstring *cipher);
+
+void
 test_hash(const struct nettle_hash *hash,
 	  const struct tstring *msg,
 	  const struct tstring *digest);
@@ -164,8 +193,10 @@ typedef struct knuth_lfib_ctx gmp_randstate_t[1];
 void gmp_randinit_default (struct knuth_lfib_ctx *ctx);
 #define gmp_randclear(state)
 void mpz_urandomb (mpz_t r, struct knuth_lfib_ctx *ctx, mp_bitcnt_t bits);
+void mpz_urandomm (mpz_t r, struct knuth_lfib_ctx *ctx, const mpz_t n);
 /* This is cheating */
 #define mpz_rrandomb mpz_urandomb
+#define mpz_rrandomm mpz_urandomm
 static inline int
 test_randomize (gmp_randstate_t rands UNUSED) { return 0; }
 #else /* !NETTLE_USE_MINI_GMP */

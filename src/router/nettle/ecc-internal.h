@@ -66,6 +66,7 @@
 #define ecc_dup_jj _nettle_ecc_dup_jj
 #define ecc_add_jja _nettle_ecc_add_jja
 #define ecc_add_jjj _nettle_ecc_add_jjj
+#define ecc_nonsec_add_jjj _nettle_ecc_nonsec_add_jjj
 #define ecc_dup_eh _nettle_ecc_dup_eh
 #define ecc_add_eh _nettle_ecc_add_eh
 #define ecc_add_ehh _nettle_ecc_add_ehh
@@ -80,7 +81,6 @@
 #define cnd_copy _nettle_cnd_copy
 #define sec_add_1 _nettle_sec_add_1
 #define sec_sub_1 _nettle_sec_sub_1
-#define sec_tabselect _nettle_sec_tabselect
 #define sec_modinv _nettle_sec_modinv
 #define curve25519_eh_to_x _nettle_curve25519_eh_to_x
 #define curve448_eh_to_x _nettle_curve448_eh_to_x
@@ -174,8 +174,14 @@ struct ecc_modulo
   /* B^size mod m. Expected to have at least 32 leading zeros
      (equality for secp_256r1). */
   const mp_limb_t *B;
-  /* 2^{bit_size} - m, same value as above, but shifted. */
+  /* 2^{bit_size} - m. When different from B above, for numbers of
+     interest, usually B has trailing zeros and this is B shifted
+     right. */
   const mp_limb_t *B_shifted;
+  /* For ecc_mod_sub: B^size - 2m, if that doesn't underflow.
+     Otherwise, same as B */
+  const mp_limb_t *Bm2m;
+
   /* m +/- 1, for redc, excluding redc_size low limbs. */
   const mp_limb_t *redc_mpm1;
   /* (m+1)/2 */
@@ -258,6 +264,8 @@ ecc_mod_equal_p (const struct ecc_modulo *m, const mp_limb_t *a,
 void
 ecc_mod_add (const struct ecc_modulo *m, mp_limb_t *rp,
 	     const mp_limb_t *ap, const mp_limb_t *bp);
+
+/* If inputs are in the range 0 <= a, b < 2m, then so is the output. */
 void
 ecc_mod_sub (const struct ecc_modulo *m, mp_limb_t *rp,
 	     const mp_limb_t *ap, const mp_limb_t *bp);
@@ -382,6 +390,14 @@ ecc_add_jjj (const struct ecc_curve *ecc,
 	     mp_limb_t *r, const mp_limb_t *p, const mp_limb_t *q,
 	     mp_limb_t *scratch);
 
+/* Variant that handles the checks for the special cases P = ±Q.
+   Returns 1 on success, 0 if result is infinite. Not side-channel
+   silent, so must not be used with secret inputs. */
+int
+ecc_nonsec_add_jjj (const struct ecc_curve *ecc,
+		    mp_limb_t *r, const mp_limb_t *p, const mp_limb_t *q,
+		    mp_limb_t *scratch);
+
 /* Point doubling on a twisted Edwards curve, with homogeneous
    cooordinates. */
 void
@@ -456,11 +472,6 @@ sec_add_1 (mp_limb_t *rp, mp_limb_t *ap, mp_size_t n, mp_limb_t b);
 
 mp_limb_t
 sec_sub_1 (mp_limb_t *rp, mp_limb_t *ap, mp_size_t n, mp_limb_t b);
-
-void
-sec_tabselect (mp_limb_t *rp, mp_size_t rn,
-	       const mp_limb_t *table, unsigned tn,
-	       unsigned k);
 
 void
 curve25519_eh_to_x (mp_limb_t *xp, const mp_limb_t *p,

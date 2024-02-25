@@ -6,6 +6,13 @@
 #include "gcm.h"
 #include "ghash-internal.h"
 
+#if HAVE_VALGRIND_MEMCHECK_H
+# include <valgrind/memcheck.h>
+#else
+# define VALGRIND_MAKE_MEM_UNDEFINED(p, n)
+# define VALGRIND_MAKE_MEM_DEFINED(p, n)
+#endif
+
 static void
 test_gcm_hash (const struct tstring *msg, const struct tstring *ref)
 {
@@ -42,11 +49,19 @@ test_ghash_internal (const struct tstring *key,
   struct gcm_key gcm_key;
   union nettle_block16 state;
 
+  /* Use VALGRIND_MAKE_MEM_DEFINED to mark inputs as "undefined", to
+     get valgrind to warn about any branches or memory accesses
+     depending on secret data. */
   memcpy (state.b, key->data, GCM_BLOCK_SIZE);
+  VALGRIND_MAKE_MEM_UNDEFINED (&state, sizeof(state));
   _ghash_set_key (&gcm_key, &state);
 
   memcpy (state.b, iv->data, GCM_BLOCK_SIZE);
+  VALGRIND_MAKE_MEM_UNDEFINED (&state, sizeof(state));
+  VALGRIND_MAKE_MEM_UNDEFINED (message->data, message->length);
   _ghash_update (&gcm_key, &state, message->length / GCM_BLOCK_SIZE, message->data);
+  VALGRIND_MAKE_MEM_DEFINED (&state, sizeof(state));
+  VALGRIND_MAKE_MEM_DEFINED (message->data, message->length);
   if (!MEMEQ(GCM_BLOCK_SIZE, state.b, digest->data))
     {
       fprintf (stderr, "gcm_hash (internal) failed\n");
@@ -576,6 +591,24 @@ test_main(void)
 		 "c3c0c95156809539 fcf0e2429a6b5254"
 		 "16aedbf5a0de6a57 a637b39b"),	/* iv */
 	    SHEX("5791883f822013f8bd136fc36fb9946b"));	/* tag */
+
+  /*
+   * GCM-SM4 Test Vectors from
+   * https://datatracker.ietf.org/doc/html/rfc8998
+   */
+  test_aead(&nettle_gcm_sm4, NULL,
+	    SHEX("0123456789ABCDEFFEDCBA9876543210"),
+	    SHEX("FEEDFACEDEADBEEFFEEDFACEDEADBEEFABADDAD2"),
+	    SHEX("AAAAAAAAAAAAAAAABBBBBBBBBBBBBBBB"
+	         "CCCCCCCCCCCCCCCCDDDDDDDDDDDDDDDD"
+	         "EEEEEEEEEEEEEEEEFFFFFFFFFFFFFFFF"
+	         "EEEEEEEEEEEEEEEEAAAAAAAAAAAAAAAA"),
+	    SHEX("17F399F08C67D5EE19D0DC9969C4BB7D"
+	         "5FD46FD3756489069157B282BB200735"
+	         "D82710CA5C22F0CCFA7CBF93D496AC15"
+	         "A56834CBCF98C397B4024A2691233B8D"),
+	    SHEX("00001234567800000000ABCD"),
+	    SHEX("83DE3541E4C2B58177E065A9BF7B62EC"));
 
   /* Test gcm_hash, with varying message size, keys and iv all zero.
      Not compared to any other implementation. */

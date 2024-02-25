@@ -144,7 +144,7 @@ ecc_mul_a (const struct ecc_curve *ecc,
 
   assert (bits < TABLE_SIZE);
 
-  sec_tabselect (r, 3*ecc->p.size, table, TABLE_SIZE, bits);
+  mpn_sec_tabselect (r, table, 3*ecc->p.size, TABLE_SIZE, bits);
   is_zero = (bits == 0);
 
   for (;;)
@@ -171,7 +171,7 @@ ecc_mul_a (const struct ecc_curve *ecc,
 	ecc_dup_jj (ecc, r, r, scratch_out);
 
       bits &= TABLE_MASK;
-      sec_tabselect (tp, 3*ecc->p.size, table, TABLE_SIZE, bits);
+      mpn_sec_tabselect (tp, table, 3*ecc->p.size, TABLE_SIZE, bits);
       cnd_copy (is_zero, r, tp, 3*ecc->p.size);
       ecc_add_jjj (ecc, tp, tp, r, scratch_out);
 

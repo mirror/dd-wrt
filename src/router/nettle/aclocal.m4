@@ -10,6 +10,7 @@ AC_CACHE_VAL(lsh_cv_sys_ccpic,[
 	bsdi4.*)	CCPIC="-fPIC" ;;
 	bsdi*)		CCPIC="" ;;
 	darwin*)	CCPIC="-fPIC" ;;
+	freebsd*|netbsd*|openbsd*)	CCPIC="-fPIC" ;;
 	# Could also use -fpic, depending on the number of symbol references
 	solaris*)	CCPIC="-fPIC" ;;
 	cygwin*)	CCPIC="" ;;
@@ -21,7 +22,7 @@ AC_CACHE_VAL(lsh_cv_sys_ccpic,[
 	darwin*)	CCPIC="-fPIC" ;;
         irix*)		CCPIC="-share" ;;
 	hpux*)		CCPIC="+z"; ;;
-	*freebsd*)	CCPIC="-fpic" ;;
+	freebsd*|netbsd*|openbsd*)	CCPIC="-fPIC" ;;
 	sco*|sysv4.*)	CCPIC="-KPIC -dy -Bdynamic" ;;
 	solaris*)	CCPIC="-KPIC -Bdynamic" ;;
 	winnt*)		CCPIC="-shared" ;;
@@ -301,7 +302,7 @@ AC_DEFUN([GMP_TRY_ASSEMBLE],
 [cat >conftest.s <<EOF
 [$1]
 EOF
-gmp_assemble="$CC $CFLAGS $CPPFLAGS -c conftest.s >conftest.out 2>&1"
+gmp_assemble="$CC $CFLAGS $CPPFLAGS $ASM_FLAGS -c conftest.s >conftest.out 2>&1"
 if AC_TRY_EVAL(gmp_assemble); then
   cat conftest.out >&AC_FD_CC
   ifelse([$2],,:,[$2])
@@ -562,7 +563,7 @@ dnl  Determine whether the assembler takes powerpc registers with an "r" as
 dnl  in "r6", or as plain "6".  The latter is standard, but NeXT, Rhapsody,
 dnl  and MacOS-X require the "r" forms.
 dnl
-dnl  See also mpn/powerpc32/powerpc-defs.m4 which uses the result of this
+dnl  See also powerpc64/machine.m4 which uses the result of this
 dnl  test.
 
 AC_DEFUN([GMP_ASM_POWERPC_R_REGISTERS],

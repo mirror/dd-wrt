@@ -798,88 +798,263 @@ test_aead(const struct nettle_aead *aead,
 	  const struct tstring *digest)
 {
   void *ctx = xalloc(aead->context_size);
-  uint8_t *data;
-  uint8_t *buffer = xalloc(aead->digest_size);
-  size_t offset;
+  uint8_t *in, *out;
+  uint8_t *buffer;
+  unsigned in_align;
 
   ASSERT (cleartext->length == ciphertext->length);
-
   ASSERT (key->length == aead->key_size);
-
-  data = xalloc(cleartext->length);
-
   ASSERT(aead->block_size > 0);
 
-  for (offset = 0; offset <= cleartext->length; offset += aead->block_size)
+  buffer = xalloc(aead->digest_size);
+  in = xalloc(cleartext->length + aead->block_size - 1);
+  out = xalloc(cleartext->length + aead->block_size - 1);
+
+  for (in_align = 0; in_align < aead->block_size; in_align++)
     {
-      /* encryption */
-      aead->set_encrypt_key(ctx, key->data);
-
-      if (nonce->length != aead->nonce_size)
+      /* Different alignment, but don't try all combinations. */
+      unsigned out_align = 3*in_align % aead->block_size;
+      size_t offset;
+      memcpy (in + in_align, cleartext->data, cleartext->length);
+      for (offset = 0; offset <= cleartext->length; offset += aead->block_size)
 	{
-	  ASSERT (set_nonce);
-	  set_nonce (ctx, nonce->length, nonce->data);
-	}
-      else
-	aead->set_nonce(ctx, nonce->data);
+	  /* encryption */
+	  aead->set_encrypt_key(ctx, key->data);
 
-      if (aead->update && authtext->length)
-	aead->update(ctx, authtext->length, authtext->data);
-
-      if (offset > 0)
-	aead->encrypt(ctx, offset, data, cleartext->data);
-
-      if (offset < cleartext->length)
-	aead->encrypt(ctx, cleartext->length - offset,
-		      data + offset, cleartext->data + offset);
-
-      if (digest)
-	{
-	  ASSERT (digest->length <= aead->digest_size);
-	  memset(buffer, 0, aead->digest_size);
-	  aead->digest(ctx, digest->length, buffer);
-	  ASSERT(MEMEQ(digest->length, buffer, digest->data));
-	}
-      else
-	ASSERT(!aead->digest);
-
-      ASSERT(MEMEQ(cleartext->length, data, ciphertext->data));
-
-      /* decryption */
-      if (aead->set_decrypt_key)
-	{
-	  aead->set_decrypt_key(ctx, key->data);
-
-	  if (nonce->length != aead->nonce_size)
-	    {
-	      ASSERT (set_nonce);
+	  if (set_nonce)
 	      set_nonce (ctx, nonce->length, nonce->data);
-	    }
 	  else
-	    aead->set_nonce(ctx, nonce->data);
-
+	    {
+	      assert (nonce->length == aead->nonce_size);
+	      aead->set_nonce(ctx, nonce->data);
+	    }
 	  if (aead->update && authtext->length)
 	    aead->update(ctx, authtext->length, authtext->data);
 
 	  if (offset > 0)
-	    aead->decrypt (ctx, offset, data, data);
+	    aead->encrypt(ctx, offset, out + out_align, in + in_align);
 
 	  if (offset < cleartext->length)
-	    aead->decrypt(ctx, cleartext->length - offset,
-			  data + offset, data + offset);
+	    aead->encrypt(ctx, cleartext->length - offset,
+			  out + out_align + offset, in + in_align + offset);
 
+	  if (!MEMEQ(cleartext->length, out + out_align, ciphertext->data))
+	    {
+	      fprintf(stderr, "aead->encrypt failed (offset = %u):\nclear: ",
+		      (unsigned) offset);
+	      tstring_print_hex(cleartext);
+	      fprintf(stderr, "  got: ");
+	      print_hex(cleartext->length, out + out_align);
+	      fprintf(stderr, "  exp: ");
+	      tstring_print_hex(ciphertext);
+	      FAIL();
+	    }
 	  if (digest)
 	    {
+	      ASSERT (digest->length <= aead->digest_size);
 	      memset(buffer, 0, aead->digest_size);
 	      aead->digest(ctx, digest->length, buffer);
-	      ASSERT(MEMEQ(digest->length, buffer, digest->data));
+	      if (!MEMEQ(digest->length, buffer, digest->data))
+		{
+		  fprintf(stderr, "aead->digest failed (offset = %u):\n  got: ",
+			  (unsigned) offset);
+		  print_hex(digest->length, buffer);
+		  fprintf(stderr, "  exp: ");
+		  tstring_print_hex(digest);
+		  FAIL();
+		}
 	    }
-	  ASSERT(MEMEQ(cleartext->length, data, cleartext->data));
+	  else
+	    ASSERT(!aead->digest);
+
+	  /* decryption */
+	  if (aead->set_decrypt_key)
+	    {
+	      aead->set_decrypt_key(ctx, key->data);
+
+	      if (set_nonce)
+		set_nonce (ctx, nonce->length, nonce->data);
+	      else
+		{
+		  assert (nonce->length == aead->nonce_size);
+		  aead->set_nonce(ctx, nonce->data);
+		}
+
+	      if (aead->update && authtext->length)
+		aead->update(ctx, authtext->length, authtext->data);
+
+	      if (offset > 0)
+		aead->decrypt (ctx, offset, out + out_align, out + out_align);
+
+	      if (offset < cleartext->length)
+		aead->decrypt(ctx, cleartext->length - offset,
+			      out + out_align + offset, out + out_align + offset);
+
+	      ASSERT(MEMEQ(cleartext->length, out + out_align, cleartext->data));
+
+	      if (digest)
+		{
+		  memset(buffer, 0, aead->digest_size);
+		  aead->digest(ctx, digest->length, buffer);
+		  ASSERT(MEMEQ(digest->length, buffer, digest->data));
+		}
+	    }
 	}
     }
   free(ctx);
-  free(data);
+  free(in);
+  free(out);
   free(buffer);
+}
+
+void
+test_aead_message (const struct nettle_aead_message *aead,
+		   const struct tstring *key,
+		   const struct tstring *nonce,
+		   const struct tstring *adata,
+		   const struct tstring *clear,
+		   const struct tstring *cipher)
+{
+  void *ctx = xalloc (aead->context_size);
+  uint8_t *buf = xalloc (cipher->length + 1);
+  uint8_t *copy = xalloc (cipher->length);
+
+  static const uint8_t nul = 0;
+  int res;
+
+  ASSERT (key->length == aead->key_size);
+  ASSERT (cipher->length > clear->length);
+  ASSERT (cipher->length - clear->length == aead->digest_size);
+
+  aead->set_encrypt_key (ctx, key->data);
+  buf[cipher->length] = 0xae;
+  aead->encrypt (ctx,
+		 nonce->length, nonce->data,
+		 adata->length, adata->data,
+		 cipher->length, buf, clear->data);
+  if (!MEMEQ (cipher->length, cipher->data, buf))
+    {
+      fprintf(stderr, "aead->encrypt (message) failed:\n  got: ");
+      print_hex (cipher->length, buf);
+      fprintf (stderr, "  exp: ");
+      tstring_print_hex (cipher);
+      FAIL();
+    }
+  if (buf[cipher->length] != 0xae)
+    {
+      fprintf (stderr, "aead->encrypt (message) wrote too much.\n ");
+      FAIL();
+    }
+  aead->set_decrypt_key (ctx, key->data);
+
+  memset (buf, 0xae, clear->length + 1);
+
+  res = aead->decrypt (ctx,
+		       nonce->length, nonce->data,
+		       adata->length, adata->data,
+		       clear->length, buf, cipher->data);
+  if (!res)
+    {
+      fprintf (stderr, "decrypting valid ciphertext failed:\n  ");
+      tstring_print_hex (cipher);
+    }
+  if (!MEMEQ (clear->length, clear->data, buf))
+    {
+      fprintf(stderr, "aead->decrypt (message) failed:\n  got: ");
+      print_hex (clear->length, buf);
+      fprintf (stderr, "  exp: ");
+      tstring_print_hex (clear);
+      FAIL();
+    }
+
+  /* Invalid messages */
+  if (clear->length > 0
+      && aead->decrypt (ctx,
+			nonce->length, nonce->data,
+			adata->length, adata->data,
+			clear->length - 1, buf, cipher->data))
+    {
+      fprintf (stderr, "Invalid message (truncated) not rejected\n");
+      FAIL();
+    }
+  memcpy (copy, cipher->data, cipher->length);
+  copy[0] ^= 4;
+  if (aead->decrypt (ctx,
+		     nonce->length, nonce->data,
+		     adata->length, adata->data,
+		     clear->length, buf, copy))
+    {
+      fprintf (stderr, "Invalid message (first byte modified) not rejected\n");
+      FAIL();
+    }
+
+  memcpy (copy, cipher->data, cipher->length);
+  copy[cipher->length - 1] ^= 4;
+  if (aead->decrypt (ctx,
+		     nonce->length, nonce->data,
+		     adata->length, adata->data,
+		     clear->length, buf, copy))
+    {
+      fprintf (stderr, "Invalid message (last byte modified) not rejected\n");
+      FAIL();
+    }
+
+  if (aead->decrypt (ctx,
+		     nonce->length, nonce->data,
+		     adata->length > 0 ? adata->length - 1 : 1,
+		     adata->length > 0 ? adata->data : &nul,
+		     clear->length, buf, cipher->data))
+    {
+      fprintf (stderr, "Invalid adata not rejected\n");
+      FAIL();
+    }
+
+  /* Test in-place operation. NOTE: Not supported for SIV-CMAC. */
+  if (aead->supports_inplace)
+    {
+      aead->set_encrypt_key (ctx, key->data);
+      buf[cipher->length] = 0xae;
+
+      memcpy (buf, clear->data, clear->length);
+      aead->encrypt (ctx,
+		     nonce->length, nonce->data,
+		     adata->length, adata->data,
+		     cipher->length, buf, buf);
+      if (!MEMEQ (cipher->length, cipher->data, buf))
+	{
+	  fprintf(stderr, "aead->encrypt (in-place message) failed:\n  got: ");
+	  print_hex (cipher->length, buf);
+	  fprintf (stderr, "  exp: ");
+	  tstring_print_hex (cipher);
+	  FAIL();
+	}
+      if (buf[cipher->length] != 0xae)
+	{
+	  fprintf (stderr, "aead->encrypt (in-place message) wrote too much.\n ");
+	  FAIL();
+	}
+
+      res = aead->decrypt (ctx,
+			   nonce->length, nonce->data,
+			   adata->length, adata->data,
+			   clear->length, buf, buf);
+      if (!res)
+	{
+	  fprintf (stderr, "in-place decrypting valid ciphertext failed:\n  ");
+	  tstring_print_hex (cipher);
+	}
+      if (!MEMEQ (clear->length, clear->data, buf))
+	{
+	  fprintf(stderr, "aead->decrypt (in-place message) failed:\n  got: ");
+	  print_hex (clear->length, buf);
+	  fprintf (stderr, "  exp: ");
+	  tstring_print_hex (clear);
+	  FAIL();
+	}
+    }
+  free (ctx);
+  free (buf);
+  free (copy);
 }
 
 void
@@ -1108,6 +1283,13 @@ mpz_urandomb (mpz_t r, struct knuth_lfib_ctx *ctx, mp_bitcnt_t bits)
   buf[0] &= 0xff >> (8*bytes - bits);
   nettle_mpz_set_str_256_u (r, bytes, buf);
   free (buf);
+}
+void
+mpz_urandomm (mpz_t r, struct knuth_lfib_ctx *ctx, const mpz_t n)
+{
+  /* Add some extra bits, to make result almost unbiased. */
+  mpz_urandomb(r, ctx, mpz_sizeinbase(n, 2) + 30);
+  mpz_mod(r, r, n);
 }
 #else /* !NETTLE_USE_MINI_GMP */
 static void
