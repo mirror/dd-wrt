@@ -214,7 +214,7 @@ struct callback_head {
 
 #undef net_hdr_word
 #undef MIPS_ENABLED
-#ifdef CONFIG_MACH_AR7100
+#if defined(CONFIG_MACH_AR7100) || defined(CONFIG_MACH_AR7240)
 struct net_hdr_word {
        u32 words[1];
 } __attribute__((packed, aligned(2)));
