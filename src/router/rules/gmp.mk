@@ -10,6 +10,7 @@ gmp-configure:
 		--disable-shared \
 		--enable-static \
 		--enable-assembly \
+		--disable-assert \
 		CFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) -I$(TOP)/iptables/include/libipq/ -ffunction-sections -fdata-sections" LDFLAGS="-L$(TOP)/iptables/libipq $(LDLTO)" \
 		AR_FLAGS="cru $(LTOPLUGIN)" \
 		RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
@@ -23,6 +24,7 @@ gmp-configure:
 		--disable-shared \
 		--enable-static \
 		--enable-assembly \
+		--disable-assert \
 		CFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) -I$(TOP)/iptables-new/include/libipq/ -ffunction-sections -fdata-sections" LDFLAGS="-L$(TOP)/iptables-new/libipq/.libs $(LDLTO)" \
 		AR_FLAGS="cru $(LTOPLUGIN)" \
 		RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
