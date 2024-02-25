@@ -339,10 +339,11 @@ void start_raid(void)
 			// disable NCQ
 			foreach(drive, raid, next)
 			{
-				int idx = strrchr(drive, '/');
-				char *tmp = drive;
-				if (idx>0)
-				    tmp = &drive[idx+1];
+				char *tmp = strrchr(drive, '/');
+				if (!tmp)
+				    tmp = drive;
+				else
+				    tmp++;
 				sysprintf("echo 1 > /sys/block/%s/device/queue_depth", tmp);
 			}
 			sysprintf("mdadm --assemble /dev/md%d %s", i, raid);
