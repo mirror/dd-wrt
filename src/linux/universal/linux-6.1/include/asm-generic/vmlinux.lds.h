@@ -361,7 +361,6 @@
 	*(.ref.data)							\
 	*(.data..shared_aligned) /* percpu related */			\
 	MEM_KEEP(init.data*)						\
-	MEM_KEEP(exit.data*)						\
 	*(.data.unlikely)						\
 	__start_once = .;						\
 	*(.data.once)							\
@@ -556,7 +555,6 @@
 	__init_rodata : AT(ADDR(__init_rodata) - LOAD_OFFSET) {		\
 		*(.ref.rodata)						\
 		MEM_KEEP(init.rodata)					\
-		MEM_KEEP(exit.rodata)					\
 	}								\
 									\
 	/* Built-in module parameters. */				\
@@ -611,7 +609,6 @@
 		*(.ref.text)						\
 		*(.text.asan.* .text.tsan.*)				\
 	MEM_KEEP(init.text*)						\
-	MEM_KEEP(exit.text*)						\
 
 
 /* sched.text is aling to function alignment to secure we have same
@@ -761,13 +758,10 @@
 	*(.exit.data .exit.data.*)					\
 	*(.fini_array .fini_array.*)					\
 	*(.dtors .dtors.*)						\
-	MEM_DISCARD(exit.data*)						\
-	MEM_DISCARD(exit.rodata*)
 
 #define EXIT_TEXT							\
 	*(.exit.text)							\
 	*(.text.exit)							\
-	MEM_DISCARD(exit.text)
 
 #define EXIT_CALL							\
 	*(.exitcall.exit)
