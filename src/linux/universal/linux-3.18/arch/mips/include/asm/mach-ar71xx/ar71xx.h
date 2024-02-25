@@ -1350,6 +1350,8 @@ void ar71xx_ddr_flush(u32 reg);
 
 #define QCA956X_REV_ID_REVISION_MASK	0xf
 
+#define QCN550X_REV_ID_REVISION_MASK	0xf
+
 extern void __iomem *ar71xx_reset_base;
 
 static inline void ar71xx_reset_wr(unsigned reg, u32 val)

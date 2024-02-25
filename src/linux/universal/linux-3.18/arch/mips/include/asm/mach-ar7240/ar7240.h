@@ -866,6 +866,9 @@ static inline void ar7240_setup_for_stereo_slave(int ws)
 #define QCA9563_REV_1_3			0x1153
 
 #define QCN550X_REV_1_0			0x2170
+#define QCN550X_REV_1_1			0x2171
+#define QCN550X_REV_1_2			0x2172
+#define QCN550X_REV_1_3			0x2173
 
 
 
