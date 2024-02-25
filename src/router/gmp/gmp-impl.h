@@ -2427,9 +2427,15 @@ struct fft_table_nk
 #define ASSERT_FILE  ""
 #endif
 
+
+#ifdef WANT_ASSERT 
 __GMP_DECLSPEC void __gmp_assert_header (const char *, int);
 __GMP_DECLSPEC void __gmp_assert_fail (const char *, int, const char *) ATTRIBUTE_NORETURN;
+#endif
 
+
+#if WANT_ASSERT
+#define ASSERT(expr)   ASSERT_ALWAYS (expr)
 #define ASSERT_FAIL(expr)  __gmp_assert_fail (ASSERT_FILE, ASSERT_LINE, #expr)
 
 #define ASSERT_ALWAYS(expr)						\
@@ -2438,10 +2444,10 @@ __GMP_DECLSPEC void __gmp_assert_fail (const char *, int, const char *) ATTRIBUT
       ASSERT_FAIL (expr);						\
   } while (0)
 
-#if WANT_ASSERT
-#define ASSERT(expr)   ASSERT_ALWAYS (expr)
 #else
 #define ASSERT(expr)   do {} while (0)
+#define ASSERT_FAIL(expr)  do {} while (0)
+#define ASSERT_ALWAYS(expr) do {} while (0)
 #endif
 
 

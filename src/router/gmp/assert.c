@@ -37,6 +37,7 @@ see https://www.gnu.org/licenses/.  */
 #include "gmp-impl.h"
 
 
+#ifdef WANT_ASSERT
 void
 __gmp_assert_header (const char *filename, int linenum)
 {
@@ -56,3 +57,4 @@ __gmp_assert_fail (const char *filename, int linenum,
   fprintf (stderr, "GNU MP assertion failed: %s\n", expr);
   abort();
 }
+#endif
