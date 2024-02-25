@@ -263,7 +263,7 @@ void __init ar71xx_add_device_mdio(unsigned int id, u32 phy_mask)
 	struct ag71xx_mdio_platform_data *mdio_data;
 	unsigned int max_id;
 
-	if (ar71xx_soc == AR71XX_SOC_AR9341 || ar71xx_soc == AR71XX_SOC_AR9342 || ar71xx_soc == AR71XX_SOC_AR9344 || ar71xx_soc == AR71XX_SOC_QCA9556 || ar71xx_soc == AR71XX_SOC_QCA9558  || ar71xx_soc == AR71XX_SOC_QCA9563 || ar71xx_soc == AR71XX_SOC_QCA9533)
+	if (ar71xx_soc == AR71XX_SOC_AR9341 || ar71xx_soc == AR71XX_SOC_AR9342 || ar71xx_soc == AR71XX_SOC_AR9344 || ar71xx_soc == AR71XX_SOC_QCA9556 || ar71xx_soc == AR71XX_SOC_QCA9558  || ar71xx_soc == AR71XX_SOC_QCA9563 || ar71xx_soc == AR71XX_SOC_QCA9533 || ar71xx_soc == AR71XX_SOC_QCN550X)
 		max_id = 1;
 	else
 		max_id = 0;
