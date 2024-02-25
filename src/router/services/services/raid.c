@@ -341,9 +341,9 @@ void start_raid(void)
 			{
 				char *tmp = strrchr(drive, '/');
 				if (!tmp)
-				    tmp = drive;
+					tmp = drive;
 				else
-				    tmp++;
+					tmp++;
 				sysprintf("echo 1 > /sys/block/%s/device/queue_depth", tmp);
 			}
 			sysprintf("mdadm --assemble /dev/md%d %s", i, raid);
