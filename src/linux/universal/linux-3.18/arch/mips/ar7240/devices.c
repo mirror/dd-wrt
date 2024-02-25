@@ -289,6 +289,7 @@ void __init ar71xx_add_device_mdio(unsigned int id, u32 phy_mask)
 	case AR71XX_SOC_QCA9556:
 	case AR71XX_SOC_QCA9558:
 	case AR71XX_SOC_QCA9563:
+	case AR71XX_SOC_QCN550X:
 		if (id == 0) {
 			mdio_dev = &ar71xx_mdio0_device;
 			mdio_data = &ar71xx_mdio0_data;
@@ -346,6 +347,7 @@ void __init ar71xx_add_device_mdio(unsigned int id, u32 phy_mask)
 		break;
 
 	case AR71XX_SOC_QCA9563:
+	case AR71XX_SOC_QCN550X:
 		if (id == 1)
 			mdio_data->builtin_switch = 1;
 		mdio_data->is_ar934x = 1;
@@ -719,6 +721,7 @@ static void __init ar71xx_init_eth_pll_data(unsigned int id)
 		pll_1000 = AR934X_PLL_VAL_1000;
 		break;
 	case AR71XX_SOC_QCA9563:
+	case AR71XX_SOC_QCN550X:
 		pll_10 = QCA956X_PLL_VAL_10;
 		pll_100 = QCA956X_PLL_VAL_100;
 		pll_1000 = QCA956X_PLL_VAL_1000;
@@ -797,6 +800,7 @@ static int __init ar71xx_setup_phy_if_mode(unsigned int id, struct ag71xx_platfo
 		case AR71XX_SOC_QCA9556:
 		case AR71XX_SOC_QCA9558:
 		case AR71XX_SOC_QCA9563:
+		case AR71XX_SOC_QCN550X:
 			switch (pdata->phy_if_mode) {
 			case PHY_INTERFACE_MODE_MII:
 			case PHY_INTERFACE_MODE_RGMII:
@@ -847,6 +851,7 @@ static int __init ar71xx_setup_phy_if_mode(unsigned int id, struct ag71xx_platfo
 		case AR71XX_SOC_AR9344:
 		case AR71XX_SOC_QCA9533:
 		case AR71XX_SOC_QCA9563:
+		case AR71XX_SOC_QCN550X:
 			switch (pdata->phy_if_mode) {
 			case PHY_INTERFACE_MODE_MII:
 			case PHY_INTERFACE_MODE_GMII:
@@ -1149,6 +1154,7 @@ void __init ar71xx_add_device_eth(unsigned int id)
 			pdata->fifo_cfg3 = 0x01f00140;
 		break;
 	case AR71XX_SOC_QCA9563:
+	case AR71XX_SOC_QCN550X:
 		if (id == 0) {
 			pdata->reset_bit = QCA955X_RESET_GE0_MAC |
 					   QCA955X_RESET_GE0_MDIO;
@@ -1238,6 +1244,7 @@ void __init ar71xx_add_device_eth(unsigned int id)
 			/* don't assign any MDIO device by default */
 			break;
 		case AR71XX_SOC_QCA9563:
+		case AR71XX_SOC_QCN550X:
 			if (pdata->phy_if_mode != PHY_INTERFACE_MODE_SGMII)
 				pdata->mii_bus_dev = &ar71xx_mdio1_device.dev;
 			break;

@@ -213,6 +213,7 @@ void ar71xx_gpio_function_enable(u32 mask)
 		 soc_is_qca953x() ||
 		 soc_is_qca955x() ||
 		 soc_is_qca956x() ||
+		 soc_is_qcn550x() ||
 		 soc_is_tp9343()) {
 
 	__raw_writel(__raw_readl(base + AR934X_GPIO_REG_FUNC) | mask, base + AR934X_GPIO_REG_FUNC);
@@ -240,6 +241,7 @@ void ar71xx_gpio_function_disable(u32 mask)
 		 soc_is_qca953x() ||
 		 soc_is_qca955x() ||
 		 soc_is_qca956x() ||
+		 soc_is_qcn550x() ||
 		 soc_is_tp9343()) {
 
 	__raw_writel(__raw_readl(base + AR934X_GPIO_REG_FUNC) & ~mask, base + AR934X_GPIO_REG_FUNC);
@@ -265,6 +267,7 @@ void ar71xx_gpio_function_setup(u32 set, u32 clear)
 		 soc_is_qca953x() ||
 		 soc_is_qca955x() ||
 		 soc_is_qca956x() ||
+		 soc_is_qcn550x() ||
 		 soc_is_tp9343()) {
 	__raw_writel((__raw_readl(base + AR934X_GPIO_REG_FUNC) & ~clear) | set, base + AR934X_GPIO_REG_FUNC);
 	/* flush write */

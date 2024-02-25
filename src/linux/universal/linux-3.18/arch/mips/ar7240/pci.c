@@ -251,6 +251,7 @@ int __init ar71xx_pci_init(void)
 		break;
 	case AR71XX_SOC_QCA9563:
 	case AR71XX_SOC_TP9343:
+	case AR71XX_SOC_QCN550X:
 		pdev = ar71xx_register_pci_ar724x(0,
 						 QCA956X_PCI_CFG_BASE1,
 						 QCA956X_PCI_CTRL_BASE1,

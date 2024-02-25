@@ -130,6 +130,7 @@ const char
 	u32 tp = 0;
 	u32 rev = 0;
 	u32 ver = 1;
+	u32 qcn = 0;
 	static char str[64];
 	id = ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK;
 
@@ -309,6 +310,30 @@ const char
 		rev = 3;
 		qca = 1;
 		break;
+	case QCN550X_REV_1_0:
+		chip = "550X";
+		rev = 0;
+		qca = 1;
+		qcn = 0;
+		break;
+	case QCN550X_REV_1_1:
+		chip = "550X";
+		rev = 1;
+		qca = 1;
+		qcn = 0;
+		break;
+	case QCN550X_REV_1_2:
+		chip = "550X";
+		rev = 2;
+		qca = 1;
+		qcn = 0;
+		break;
+	case QCN550X_REV_1_3:
+		chip = "550X";
+		rev = 3;
+		qca = 1;
+		qcn = 0;
+		break;
 	case TP9343_REV_1_0:
 		chip = "9343";
 		tp = 1;
@@ -331,7 +356,7 @@ const char
 	default:
 		chip = "724x";
 	}
-	sprintf(str, "%s %s%s ver %u rev 1.%u (0x%04x)",qca ? "Qualcomm Atheros" : "Atheros", tp ? "TP" : qca ? "QCA" : "AR",chip, ver, rev, id);
+	sprintf(str, "%s %s%s ver %u rev 1.%u (0x%04x)",qca ? "Qualcomm Atheros" : "Atheros", tp ? "TP" : qcn ? "QCN" : qca ? "QCA" : "AR",chip, ver, rev, id);
 	return str;
 }
 
@@ -768,6 +793,10 @@ void __init plat_mem_setup(void)
 		serial_print("QCA9558\n");
 		ar71xx_soc = AR71XX_SOC_QCA9558;
 		ar71xx_soc_rev = id & QCA955X_REV_ID_REVISION_MASK;
+	} else if (is_qcn550x()) {
+		serial_print("QCN550X\n");
+		ar71xx_soc = AR71XX_SOC_QCN550X;
+		ar71xx_soc_rev = id & QCN550X_REV_ID_REVISION_MASK;
 	} else if (is_qca9563()) {
 		serial_print("QCA9563\n");
 		ar71xx_soc = AR71XX_SOC_QCA9563;
