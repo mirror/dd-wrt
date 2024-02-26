@@ -845,12 +845,12 @@ static int hostapd_is_usable_chans(struct hostapd_iface *iface)
 static enum hostapd_chan_status
 hostapd_check_chans(struct hostapd_iface *iface)
 {
-	if (iface->conf->channel) {
+//	if (iface->conf->channel) {
 		if (hostapd_is_usable_chans(iface))
 			return HOSTAPD_CHAN_VALID;
 		else
 			return HOSTAPD_CHAN_INVALID;
-	}
+//	}
 
 	/*
 	 * The user set channel=0 or channel=acs_survey

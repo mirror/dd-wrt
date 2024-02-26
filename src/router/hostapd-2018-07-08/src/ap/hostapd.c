@@ -302,6 +302,8 @@ int hostapd_reload_config(struct hostapd_iface *iface)
 
 	if (iface->conf->channel)
 		iface->freq = hostapd_hw_get_freq(hapd, iface->conf->channel);
+	if (hapd->iconf->frequency)
+		iface->freq = hapd->iconf->frequency;
 
 	for (j = 0; j < iface->num_bss; j++) {
 		hapd = iface->bss[j];
@@ -1946,7 +1948,8 @@ static int hostapd_setup_interface_complete_sync(struct hostapd_iface *iface,
 
 	hostapd_ubus_add_iface(iface);
 	wpa_printf(MSG_DEBUG, "Completing interface initialization");
-	if (iface->conf->channel) {
+	if (iface->conf->channel || iface->conf->frequency)
+	{
 #ifdef NEED_AP_MLME
 		int res;
 #endif /* NEED_AP_MLME */
@@ -3354,7 +3357,6 @@ static int hostapd_change_config_freq(struct hostapd_data *hapd,
 	channel = params->channel;
 	if (!channel)
 		return -1;
-
 	/* if a pointer to old_params is provided we save previous state */
 	if (old_params &&
 	    hostapd_set_freq_params(old_params, conf->hw_mode,

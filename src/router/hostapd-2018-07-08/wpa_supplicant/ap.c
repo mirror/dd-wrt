@@ -55,7 +55,7 @@ static void wpas_conf_ap_vht(struct wpa_supplicant *wpa_s,
 	u8 channel = conf->channel;
 #endif /* CONFIG_P2P */
 
-	if (!conf->secondary_channel)
+	if (!conf->secondary_channel && !conf->secondary_channel_freq)
 		goto no_vht;
 
 	/* Use the maximum oper channel width if it's given. */
@@ -130,6 +130,8 @@ no_vht:
 		   conf->channel);
 	conf->vht_oper_centr_freq_seg0_idx =
 		conf->channel + conf->secondary_channel * 2;
+	conf->vht_oper_centr_freq_seg0_idx_freq =
+		conf->frequency + conf->secondary_channel * 10;
 	conf->vht_oper_chwidth = VHT_CHANWIDTH_USE_HT;
 }
 #endif /* CONFIG_IEEE80211N */

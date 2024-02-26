@@ -542,6 +542,7 @@ int hostapd_set_freq(struct hostapd_data *hapd, enum hostapd_hw_mode mode,
 {
 	struct hostapd_freq_params data;
 
+
 	if (hostapd_set_freq_params(&data, mode, freq, channel, ht_enabled,
 				    vht_enabled, sec_channel_offset,
 				    vht_oper_chwidth,
