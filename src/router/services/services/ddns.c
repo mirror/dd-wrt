@@ -239,7 +239,7 @@ static int init_ddns(FILE *fp)
 				fprintf(fp, "provider %s {\n", provider);
 			if (flag != 28 && flag != 11)
 				fprintf(fp, "username = \"%s\"\n", nvram_safe_get(_username));
-			if (flag == 27)
+			if (flag == 27 || flag == 32)
 				fprintf(fp, "password = \"nopasswd\"\n");
 			else
 				fprintf(fp, "password = \"%s\"\n", nvram_safe_get(_passwd));
@@ -277,7 +277,7 @@ static int init_ddns(FILE *fp)
 
 			if (flag != 28 && flag != 11)
 				fprintf(fp, "username = \"%s\"\n", nvram_safe_get(_username));
-			if (flag == 27)
+			if (flag == 27 || flag == 32)
 				fprintf(fp, "password = \"nopasswd\"\n");
 			else
 				fprintf(fp, "password = \"%s\"\n", nvram_safe_get(_passwd));
