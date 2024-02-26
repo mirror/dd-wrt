@@ -2011,8 +2011,8 @@ static int configured_fixed_chan_to_freq(struct hostapd_iface *iface)
 {
 	int freq, i, j;
 
-	if (!iface->conf->channel)
-		return 0;
+//	if (!iface->conf->channel)
+//		return 0;
 	if (iface->conf->op_class) {
 		freq = ieee80211_chan_to_freq(NULL, iface->conf->op_class,
 					      iface->conf->channel);
@@ -2086,7 +2086,7 @@ static int setup_interface2(struct hostapd_iface *iface)
 			iface->freq = 0;
 			iface->conf->channel = 0;
 		}
-
+		
 		ret = configured_fixed_chan_to_freq(iface);
 		if (ret < 0)
 			goto fail;
@@ -2098,7 +2098,6 @@ static int setup_interface2(struct hostapd_iface *iface)
 			hostapd_set_oper_chwidth(iface->conf, ch_width);
 			hostapd_set_6ghz_sec_chan(iface);
 		}
-
 		ret = hostapd_select_hw_mode(iface);
 		if (ret < 0) {
 			wpa_printf(MSG_ERROR, "Could not select hw_mode and "
@@ -2414,6 +2413,7 @@ static int hostapd_setup_interface_complete_sync(struct hostapd_iface *iface,
 
 	hostapd_ubus_add_iface(iface);
 	wpa_printf(MSG_DEBUG, "Completing interface initialization");
+
 	if (iface->freq) {
 #ifdef NEED_AP_MLME
 		int res;

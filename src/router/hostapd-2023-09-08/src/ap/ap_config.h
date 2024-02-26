@@ -1095,6 +1095,7 @@ struct hostapd_config {
 	int no_ht_coex;
 	int ieee80211n;
 	int secondary_channel;
+	int secondary_channel_freq;
 	int no_pri_sec_switch;
 	int require_ht;
 	int dynamic_ht40;

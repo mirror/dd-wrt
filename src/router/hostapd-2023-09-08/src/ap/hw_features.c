@@ -1037,23 +1037,24 @@ static int hostapd_is_usable_chans(struct hostapd_iface *iface)
 	int secondary_freq;
 	struct hostapd_channel_data *pri_chan;
 	int err;
-
 	if (!iface->current_mode)
 		return 0;
 	pri_chan = hw_get_channel_freq(iface->current_mode->mode,
 				       iface->freq, NULL,
 				       iface->hw_features,
 				       iface->num_hw_features);
-	if (!pri_chan) {
-		wpa_printf(MSG_ERROR, "Primary frequency not present");
-		return 0;
-	}
+//	if (!pri_chan) {
+//		wpa_printf(MSG_ERROR, "Primary frequency not present");
+//		return 0;
+//	}
 
 	err = hostapd_is_usable_chan(iface, pri_chan->freq, 1);
+//	if (!pri_chan) {
 	if (err <= 0) {
 		wpa_printf(MSG_ERROR, "Primary frequency not allowed");
 		return err;
 	}
+//	if (!pri_chan) {
 	err = hostapd_is_usable_edmg(iface);
 	if (err <= 0)
 		return err;
@@ -1216,6 +1217,7 @@ int hostapd_acs_completed(struct hostapd_iface *iface, int err)
 	if (err)
 		goto out;
 
+
 	switch (hostapd_check_chans(iface)) {
 	case HOSTAPD_CHAN_VALID:
 		iface->is_no_ir = false;
@@ -1332,7 +1334,6 @@ int hostapd_select_hw_mode(struct hostapd_iface *iface)
 			return -2;
 		}
 	}
-
 	switch (hostapd_check_chans(iface)) {
 	case HOSTAPD_CHAN_VALID:
 		iface->is_no_ir = false;
