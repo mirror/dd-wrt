@@ -442,6 +442,7 @@ static int get_cputemp(webs_t wp, int argc, char_t **argv)
 #ifdef HAVE_BRCMFMAC
 	cpufound |= showsensor(wp, "/sys/class/hwmon/hwmon0/temp1_input", NULL, "WLAN0", 1000, CELSIUS);
 	cpufound |= showsensor(wp, "/sys/class/hwmon/hwmon1/temp1_input", NULL, "WLAN1", 1000, CELSIUS);
+	cpufound |= showsensor(wp, "/sys/class/hwmon/hwmon2/temp1_input", NULL, "WLAN2", 1000, CELSIUS);
 #else
 	if (!present[0] && !present[1] && !present[2] && !cpufound)
 		return 1;
