@@ -336,14 +336,14 @@ int getsocket_inet(int fd, struct sockaddr *addr, socklen_t *addr_len)
 	switch (addr_store.ss_family) {
 	case AF_INET: {
 		struct sockaddr_in *addr_in = NULL;
-		addr_in = (struct sockaddr_in *)addr;
+		addr_in = (struct sockaddr_in *)&addr_store;
 		addr_in->sin_family = AF_INET;
 		*addr_len = sizeof(struct sockaddr_in);
 		memcpy(addr, addr_in, sizeof(struct sockaddr_in));
 	} break;
 	case AF_INET6: {
 		struct sockaddr_in6 *addr_in6 = NULL;
-		addr_in6 = (struct sockaddr_in6 *)addr;
+		addr_in6 = (struct sockaddr_in6 *)&addr_store;
 		if (IN6_IS_ADDR_V4MAPPED(&addr_in6->sin6_addr)) {
 			struct sockaddr_in addr_in4;
 			memset(&addr_in4, 0, sizeof(addr_in4));
@@ -552,9 +552,10 @@ int parse_uri(const char *value, char *scheme, char *host, int *port, char *path
 	return parse_uri_ext(value, scheme, NULL, NULL, host, port, path);
 }
 
-void urldecode(char *dst, const char *src)
+int urldecode(char *dst, int dst_maxlen, const char *src)
 {
 	char a, b;
+	int len = 0;
 	while (*src) {
 		if ((*src == '%') && ((a = src[1]) && (b = src[2])) && (isxdigit(a) && isxdigit(b))) {
 			if (a >= 'a') {
@@ -584,8 +585,15 @@ void urldecode(char *dst, const char *src)
 		} else {
 			*dst++ = *src++;
 		}
+
+		len++;
+		if (len >= dst_maxlen - 1) {
+			return -1;
+		}
 	}
 	*dst++ = '\0';
+
+	return len;
 }
 
 int parse_uri_ext(const char *value, char *scheme, char *user, char *password, char *host, int *port, char *path)
@@ -635,11 +643,15 @@ int parse_uri_ext(const char *value, char *scheme, char *user, char *password, c
 			*sep = '\0';
 			sep = sep + 1;
 			if (password) {
-				urldecode(password, sep);
+				if (urldecode(password, 128, sep) < 0) {
+					return -1;
+				}
 			}
 		}
 		if (user) {
-			urldecode(user, user_password);
+			if (urldecode(user, 128, user_password) < 0) {
+				return -1;
+			}
 		}
 	} else {
 		host_part = user_pass_host_part;
@@ -977,20 +989,59 @@ unsigned char *SSL_SHA256(const unsigned char *d, size_t n, unsigned char *md)
 }
 
 #ifdef HAVE_OPENSSL
-int SSL_base64_decode(const char *in, unsigned char *out, int max_outlen)
+int SSL_base64_decode_ext(const char *in, unsigned char *out, int max_outlen, int url_safe, int auto_padding)
 {
 	size_t inlen = strlen(in);
+	char *in_padding_data = NULL;
+	int padding_len = 0;
+	const char *in_data = in;
 	int outlen = 0;
-
-	if (max_outlen < (int)inlen / 4 * 3) {
-		goto errout;
-	}
 
 	if (inlen == 0) {
 		return 0;
 	}
 
-	outlen = EVP_DecodeBlock(out, (unsigned char *)in, inlen);
+	if (inlen % 4 == 0) {
+		auto_padding = 0;
+	}
+
+	if (auto_padding == 1 || url_safe == 1) {
+		padding_len = 4 - inlen % 4;
+		in_padding_data = (char *)malloc(inlen + padding_len + 1);
+		if (in_padding_data == NULL) {
+			goto errout;
+		}
+
+		if (url_safe) {
+			for (size_t i = 0; i < inlen; i++) {
+				if (in[i] == '-') {
+					in_padding_data[i] = '+';
+				} else if (in[i] == '_') {
+					in_padding_data[i] = '/';
+				} else {
+					in_padding_data[i] = in[i];
+				}
+			}
+		} else {
+			memcpy(in_padding_data, in, inlen);
+		}
+
+		if (auto_padding) {
+			memset(in_padding_data + inlen, '=', padding_len);
+		} else {
+			padding_len = 0;
+		}
+
+		in_padding_data[inlen + padding_len] = '\0';
+		in_data = in_padding_data;
+		inlen += padding_len;
+	}
+
+	if (max_outlen < (int)inlen / 4 * 3) {
+		goto errout;
+	}
+
+	outlen = EVP_DecodeBlock(out, (unsigned char *)in_data, inlen);
 	if (outlen < 0) {
 		goto errout;
 	}
@@ -1000,10 +1051,28 @@ int SSL_base64_decode(const char *in, unsigned char *out, int max_outlen)
 		--outlen;
 	}
 
+	if (in_padding_data) {
+		free(in_padding_data);
+	}
+
+	outlen -= padding_len;
+
 	return outlen;
 errout:
+
+	if (in_padding_data) {
+		free(in_padding_data);
+	}
+
 	return -1;
 }
+
+int SSL_base64_decode(const char *in, unsigned char *out, int max_outlen)
+{
+	return SSL_base64_decode_ext(in, out, max_outlen, 0, 0);
+}
+
+
 int SSL_base64_encode(const void *in, int in_len, char *out)
 {
 	int outlen = 0;

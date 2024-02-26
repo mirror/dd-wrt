@@ -89,7 +89,7 @@ int parse_uri(const char *value, char *scheme, char *host, int *port, char *path
 
 int parse_uri_ext(const char *value, char *scheme, char *user, char *password, char *host, int *port, char *path);
 
-void urldecode(char *dst, const char *src);
+int urldecode(char *dst, int dst_maxlen, const char *src);
 
 int set_fd_nonblock(int fd, int nonblock);
 
@@ -114,6 +114,8 @@ void SSL_CRYPTO_thread_cleanup(void);
 unsigned char *SSL_SHA256(const unsigned char *d, size_t n, unsigned char *md);
 
 int SSL_base64_decode(const char *in, unsigned char *out, int max_outlen);
+
+int SSL_base64_decode_ext(const char *in, unsigned char *out, int max_outlen, int url_safe, int auto_padding);
 
 int SSL_base64_encode(const void *in, int in_len, char *out);
 

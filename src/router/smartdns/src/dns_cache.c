@@ -96,6 +96,7 @@ static void _dns_cache_delete(struct dns_cache *dns_cache)
 	pthread_mutex_lock(&dns_cache_head.lock);
 	hash_del(&dns_cache->node);
 	list_del_init(&dns_cache->list);
+	dns_timer_del(&dns_cache->timer);
 	pthread_mutex_unlock(&dns_cache_head.lock);
 	atomic_dec(&dns_cache_head.num);
 	atomic_sub(sizeof(*dns_cache), &dns_cache_head.mem_size);
@@ -304,6 +305,7 @@ static int _dns_cache_insert(struct dns_cache_info *info, struct dns_cache_data 
 {
 	uint32_t key = 0;
 	struct dns_cache *dns_cache = NULL;
+	int loop_count = 0;
 
 	if (cache_data == NULL || info == NULL) {
 		goto errout;
@@ -323,7 +325,6 @@ static int _dns_cache_insert(struct dns_cache_info *info, struct dns_cache_data 
 	}
 
 	memset(dns_cache, 0, sizeof(*dns_cache));
-	atomic_add(sizeof(*dns_cache), &dns_cache_head.mem_size);
 	key = hash_string(info->domain);
 	key = jhash(&info->qtype, sizeof(info->qtype), key);
 	key = hash_string_initval(info->dns_group_name, key);
@@ -341,16 +342,32 @@ static int _dns_cache_insert(struct dns_cache_info *info, struct dns_cache_data 
 	pthread_mutex_lock(&dns_cache_head.lock);
 	hash_table_add(dns_cache_head.cache_hash, &dns_cache->node, key);
 	list_add_tail(&dns_cache->list, head);
+	atomic_add(sizeof(*dns_cache), &dns_cache_head.mem_size);
+	atomic_inc(&dns_cache_head.num);
 
 	/* Release extra cache, remove oldest cache record */
-	if (atomic_inc_return(&dns_cache_head.num) > dns_cache_head.size ||
-		(dns_cache_head.max_mem_size > 0 && atomic_read(&dns_cache_head.mem_size) > dns_cache_head.max_mem_size)) {
-		struct dns_cache *del_cache = NULL;
-		del_cache = _dns_cache_first();
-		if (del_cache) {
-			_dns_cache_remove(del_cache);
+	do {
+		int need_remove = 0;
+
+		if (dns_cache_head.max_mem_size > 0 && atomic_read(&dns_cache_head.mem_size) > dns_cache_head.max_mem_size) {
+			need_remove = 1;
 		}
-	}
+
+		if (atomic_read(&dns_cache_head.num) > dns_cache_head.size) {
+			need_remove = 1;
+		}
+
+		if (need_remove == 0) {
+			break;
+		}
+
+		struct dns_cache *del_cache = _dns_cache_first();
+		if (del_cache == NULL) {
+			break;
+		}
+
+		_dns_cache_remove(del_cache);
+	} while (loop_count++ < 32);
 
 	dns_cache_get(dns_cache);
 	dns_timer_add(&dns_cache->timer);
