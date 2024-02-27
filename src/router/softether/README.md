@@ -12,9 +12,9 @@
 - [BOARD MEMBERS OF THIS REPOSITORY](#board-members-of-this-repository)
 - [SOFTETHER VPN ADVANTAGES](#softether-vpn-advantages)
 - [Installation](#installation)
-  * [For Ubuntu](#for-ubuntu)
   * [For FreeBSD](#for-freebsd)
-  * [From binary installers:](#from-binary-installers)
+  * [For Windows](#for-windows)
+  * [From binary installers (stable channel)](#from-binary-installers-stable-channel)
   * [Build from Source code](#build-from-source-code)
 - [About HTML5-based Modern Admin Console and JSON-RPC API Suite](#about-html5-based-modern-admin-console-and-json-rpc-api-suite)
   * [Built-in SoftEther VPN Server HTML5 Ajax-based Web Administration Console](#built-in-softether-vpn-server-html5-ajax-based-web-administration-console)
@@ -33,6 +33,8 @@ This repository has experimental codes. Pull requests are welcome.
 Stable Edition is available on
 https://github.com/SoftEtherVPN/SoftEtherVPN_Stable
 which the non-developer user can stable use.
+
+Please note that [some features](#comparison-with-stable-edition) are not available in Stable Edition.
 
 Source code packages (.zip and .tar.gz) and binary files of Stable Edition are also available:  
 https://www.softether-download.com/
@@ -72,7 +74,7 @@ world's most powerful and easy-to-use multi-protocol VPN software.
 SoftEther VPN runs on Windows, Linux, Mac, FreeBSD and Solaris.
 
 SoftEther VPN supports most of widely-used VPN protocols
-including SSL-VPN, OpenVPN, IPsec, L2TP, MS-SSTP, L2TPv3 and EtherIP
+including SSL-VPN, WireGuard, OpenVPN, IPsec, L2TP, MS-SSTP, L2TPv3 and EtherIP
 by the single SoftEther VPN Server program.
 
 More details on https://www.softether.org/.
@@ -105,6 +107,7 @@ https://github.com/chipitsine
 
 - Supporting all popular VPN protocols by the single VPN server:
   SSL-VPN (HTTPS)
+  WireGuard
   OpenVPN
   IPsec
   L2TP
@@ -139,16 +142,36 @@ https://github.com/chipitsine
   releasing the build.
 - More details at https://www.softether.org/.
 
+# Comparison with Stable Edition
+
+| Protocol | Stable Edition (SE) | Developer Edition (DE) | Comment |
+| --- | --- | --- | --- |
+| SSL-VPN | ✅ | ✅ | |
+| OpenVPN | ✅ | ✅ | AEAD mode is supported in DE only. |
+| IPsec | ✅ | ✅ | |
+| L2TP | ✅ | ✅ | |
+| MS-SSTP | ✅ | ✅ | |
+| L2TPv3 | ✅ | ✅ | |
+| EtherIP | ✅ | ✅ | |
+| WireGuard | ❌ | ✅ | |
+| IKEv2 | ❌ | ❌ | |
+
+| Feature | Stable Edition (SE) | Developer Edition (DE) | Comment |
+| --- | --- | --- | --- |
+| Password Authentication | ✅ | ✅ | |
+| RADIUS / NT Authentication | ✅ | ✅ | |
+| Certificate Authentication | ⚠️ | ✅ | SE supports the feature in SSL-VPN only. |
+| IPv6-capable VPN Tunnel | ⚠️ | ✅ | SE supports IPv6 in L2 VPN tunnels only. |
+| IPv4 Route Management | ✅ | ✅ | Windows clients only |
+| IPv6 Route Management | ❌ | ✅ | Windows clients only |
+| TLS Server Verification | ⚠️ | ✅ | In SE you need to specify the exact certificate or CA to verify. DE can perform standard TLS verification and use the system CA store. |
+| Dual-stack Name Resolution | ⚠️ | ✅ | SE attempts in IPv6 only after IPv4 has failed. |
+| ECDSA Certificates Import | ❌ | ✅ | |
+| Runs on Windows XP and Earlier | ✅ | ❌ | |
+| Compatible with SoftEther VPN 1.0 | ✅ | ❌ | |
+| AES-NI Hardware Acceleration | ⚠️ |  ✅ | SE requires [intel_aes_lib](https://software.intel.com/sites/default/files/article/181731/intel-aesni-sample-library-v1.2.zip) to enable AES-NI, so x86 only. In DE, enabled by default as long as processor supports it (at least x86 and ARM). |
 
 # Installation
-
-## For Ubuntu
-
-Launchpad PPA maintained by [Dmitry Verkhoturov](https://github.com/paskal):
-
-[Daily builds](https://code.launchpad.net/~paskal-07/+archive/ubuntu/softethervpn) (latest released tag)
-
-[Nightly builds](https://code.launchpad.net/~paskal-07/+archive/ubuntu/softethervpn-nightly)
 
 ## For FreeBSD
 
@@ -178,7 +201,12 @@ sysrc softether_server_enable=yes
 Also SoftEther VPN [Stable Edition](https://www.freshports.org/security/softether-devel/) and
 [RTM version](https://www.freshports.org/security/softether/) are available on FreeBSD.
 
-## From binary installers:
+## For Windows
+
+[Nightly builds](https://dev.azure.com/SoftEther-VPN/SoftEther%20VPN/_build?definitionId=6)
+(choose appropriate platform, then find binaries or installers as artifacts)
+
+## From binary installers (stable channel)
 
 Those can be found under https://www.softether-download.com/
 There you can also find SoftEtherVPN source code in zip and tar formats.
@@ -236,19 +264,19 @@ SoftEther VPN Project distributes the up-to-date source code
 on all the following open-source repositories:
 
   - GitHub
-    https://github.com/SoftEtherVPN/SoftEtherVPN/
+    https://github.com/SoftEtherVPN/SoftEtherVPN
 
         $ git clone https://github.com/SoftEtherVPN/SoftEtherVPN.git
 
   - GitLab (mirrored from GitHub)
-    https://gitlab.com/SoftEther/SoftEtherVPN/
+    https://gitlab.com/SoftEther/VPN
 
-        $ git clone https://gitlab.com/SoftEther/SoftEtherVPN.git
+        $ git clone https://gitlab.com/SoftEther/VPN.git
 
-  - Codeberg (mirrored from GitHub)
-    https://codeberg.org/softether/vpn
+  - OneDev (mirrored from GitHub)
+    https://code.onedev.io/SoftEther/VPN
 
-        $ git clone https://codeberg.org/softether/vpn.git
+        $ git clone https://code.onedev.io/SoftEther/VPN.git
 
 We hope that you can reach one of the above URLs at least!
 
@@ -261,7 +289,7 @@ Please send patches to us through GitHub.
 
 # DEAR SECURITY EXPERTS
 
-If you find a bug or a security vulnerability please kindly inform us
+If you find a bug or a security vulnerability please [kindly inform](https://github.com/SoftEtherVPN/SoftEtherVPN/security/advisories/new) us
 about the problem immediately so that we can fix the security problem
 to protect a lot of users around the world as soon as possible.
 

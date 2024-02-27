@@ -16,11 +16,25 @@ SOCK *Internal_ProxyTcpConnect(PROXY_PARAM_IN *param, volatile bool *cancel_flag
 	}
 #endif
 
-	return ConnectEx4(param->Hostname, param->Port, param->Timeout, (bool *)cancel_flag, NULL, NULL, false, true, resolved_ip);
+	//return ConnectEx4(param->Hostname, param->Port, param->Timeout, (bool*)cancel_flag, NULL, NULL, false, true, resolved_ip);
+	return BindConnectEx4(param->BindLocalIP, param->BindLocalPort, param->Hostname, param->Port, param->Timeout, (bool *)cancel_flag, NULL, NULL, false, true, resolved_ip);
 }
 
 // Connect to an HTTP proxy
 UINT ProxyHttpConnect(PROXY_PARAM_OUT *out, PROXY_PARAM_IN *in, volatile bool *cancel_flag)
+{
+	// Validate arguments
+	if (out == NULL || in == NULL || in->Port == 0 || in->TargetPort == 0 || IsEmptyStr(in->Hostname) || IsEmptyStr(in->TargetHostname))
+	{
+		return PROXY_ERROR_PARAMETER;
+	}
+	in->BindLocalIP = BIND_LOCALIP_NULL;
+	in->BindLocalPort = BIND_LOCALPORT_NULL;
+	return BindProxyHttpConnect(out, in, cancel_flag);
+}
+
+// Connect to an HTTP proxy
+UINT BindProxyHttpConnect(PROXY_PARAM_OUT *out, PROXY_PARAM_IN *in, volatile bool *cancel_flag)
 {
 	bool dummy_cancel_flag = false, use_auth = false;
 	char target_hostname[MAX_HOST_NAME_LEN + 1];
@@ -129,17 +143,12 @@ UINT ProxyHttpConnect(PROXY_PARAM_OUT *out, PROXY_PARAM_IN *in, volatile bool *c
 
 	if (use_auth && GetHttpValue(h, "Proxy-Authorization") == NULL)
 	{
-		char auth_str[MAX_SIZE * 2], auth_b64_str[MAX_SIZE * 2];
-
-		// Generate the authentication string
+		char auth_str[MAX_SIZE * 2];
 		Format(auth_str, sizeof(auth_str), "%s:%s", in->Username, in->Password);
 
-		// Base64 encode
-		Zero(auth_b64_str, sizeof(auth_b64_str));
-		Encode64(auth_b64_str, auth_str);
-
-		// Generate final string
-		Format(auth_str, sizeof(auth_str), "Basic %s", auth_b64_str);
+		char *base64 = Base64FromBin(NULL, auth_str, StrLen(auth_str));
+		Format(auth_str, sizeof(auth_str), "Basic %s", base64);
+		Free(base64);
 
 		AddHttpValue(h, NewHttpValue("Proxy-Authorization", auth_str));
 	}
@@ -213,6 +222,19 @@ FAILURE:
 
 // Connect to a SOCKS5 proxy (RFC1928, RFC1929 defines username/password authentication)
 UINT ProxySocks5Connect(PROXY_PARAM_OUT *out, PROXY_PARAM_IN *in, volatile bool *cancel_flag)
+{
+	// Validate arguments
+	if (out == NULL || in == NULL || in->Port == 0 || in->TargetPort == 0 || IsEmptyStr(in->Hostname) || IsEmptyStr(in->TargetHostname))
+	{
+		return PROXY_ERROR_PARAMETER;
+	}
+	in->BindLocalIP = BIND_LOCALIP_NULL;
+	in->BindLocalPort = BIND_LOCALPORT_NULL;
+	return BindProxySocks5Connect(out, in, cancel_flag);
+}
+
+// Connect to a SOCKS5 proxy (RFC1928, RFC1929 defines username/password authentication)
+UINT BindProxySocks5Connect(PROXY_PARAM_OUT *out, PROXY_PARAM_IN *in, volatile bool *cancel_flag)
 {
 	bool dummy_cancel_flag = false;
 	UCHAR tmp, recv_buf[2], *recv_buf_final;
@@ -526,6 +548,19 @@ FAILURE:
 
 // Connect to a SOCKS4 proxy
 UINT ProxySocks4Connect(PROXY_PARAM_OUT *out, PROXY_PARAM_IN *in, volatile bool *cancel_flag)
+{
+	// Validate arguments
+	if (out == NULL || in == NULL || in->Port == 0 || in->TargetPort == 0 || IsEmptyStr(in->Hostname) || IsEmptyStr(in->TargetHostname))
+	{
+		return PROXY_ERROR_PARAMETER;
+	}
+	in->BindLocalIP = BIND_LOCALIP_NULL;
+	in->BindLocalPort = BIND_LOCALPORT_NULL;
+	return BindProxySocks4Connect(out, in, cancel_flag);
+}
+
+// Connect to a SOCKS4 proxy
+UINT BindProxySocks4Connect(PROXY_PARAM_OUT *out, PROXY_PARAM_IN *in, volatile bool *cancel_flag)
 {
 	bool dummy_cancel_flag = false;
 	UCHAR tmp, recv_buf[8];

@@ -28,6 +28,7 @@
 #include "Mayaqua/Object.h"
 #include "Mayaqua/Pack.h"
 #include "Mayaqua/Str.h"
+#include "Mayaqua/Table.h"
 #include "Mayaqua/Tick64.h"
 
 #include <stdlib.h>
@@ -909,19 +910,23 @@ void SendKeepAlive(CONNECTION *c, TCPSOCK *ts)
 
 	if (s->UseUdpAcceleration && udp_accel != NULL)
 	{
+		UINT required_size = 0;
+
 		if (udp_accel->MyPortNatT != 0)
 		{
-			size = MAX(size, (StrLen(UDP_NAT_T_PORT_SIGNATURE_IN_KEEP_ALIVE) + sizeof(USHORT)));
+			required_size += StrLen(UDP_NAT_T_PORT_SIGNATURE_IN_KEEP_ALIVE) + sizeof(USHORT);
 
 			insert_natt_port = true;
 		}
 
 		if (IsZeroIP(&udp_accel->MyIpNatT) == false)
 		{
-			size = MAX(size, (StrLen(UDP_NAT_T_IP_SIGNATURE_IN_KEEP_ALIVE) + sizeof(udp_accel->MyIpNatT.address)));
+			required_size += StrLen(UDP_NAT_T_IP_SIGNATURE_IN_KEEP_ALIVE) + sizeof(udp_accel->MyIpNatT.address);
 
 			insert_natt_ip = true;
 		}
+
+		size = MAX(size, required_size);
 
 	}
 
@@ -2986,6 +2991,7 @@ void ConnectionAccept(CONNECTION *c)
 	SOCK *s;
 	X *x;
 	K *k;
+	LIST *chain;
 	char tmp[128];
 	UINT initial_timeout = CONNECTING_TIMEOUT;
 	UCHAR ctoken_hash[SHA1_SIZE];
@@ -3036,26 +3042,34 @@ void ConnectionAccept(CONNECTION *c)
 
 		x = CloneX(c->Cedar->ServerX);
 		k = CloneK(c->Cedar->ServerK);
+		chain = CloneXList(c->Cedar->ServerChain);
 	}
 	Unlock(c->Cedar->lock);
 
 	// Start the SSL communication
 	Copy(&s->SslAcceptSettings, &c->Cedar->SslAcceptSettings, sizeof(SSL_ACCEPT_SETTINGS));
-	if (StartSSL(s, x, k) == false)
+	UINT ssl_err = 0;
+	if (StartSSLEx3(s, x, k, chain, 0, NULL, NULL, &ssl_err) == false)
 	{
 		// Failed
 		AddNoSsl(c->Cedar, &s->RemoteIP);
 		Debug("ConnectionAccept(): StartSSL() failed\n");
+		if (ssl_err != 0)
+		{
+			SLog(c->Cedar, "LS_SSL_START_ERROR", c->Name, GetUniErrorStr(ssl_err), ssl_err);
+		}
 		FreeX(x);
 		FreeK(k);
+		FreeXList(chain);
 
 		goto FINAL;
 	}
 
 	FreeX(x);
 	FreeK(k);
+	FreeXList(chain);
 
-	SLog(c->Cedar, "LS_SSL_START", c->Name, s->CipherName);
+	SLog(c->Cedar, "LS_SSL_START", c->Name, s->SslVersion, s->CipherName);
 
 	Copy(c->CToken_Hash, ctoken_hash, SHA1_SIZE);
 
@@ -3389,6 +3403,11 @@ void CleanupConnection(CONNECTION *c)
 	if (c->CipherName != NULL)
 	{
 		Free(c->CipherName);
+	}
+
+	if (c->SslVersion != NULL)
+	{
+		Free(c->SslVersion);
 	}
 
 	Free(c);

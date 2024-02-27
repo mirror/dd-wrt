@@ -260,26 +260,6 @@ CAPSLIST *ScGetCapsEx(RPC *rpc)
 		AddCapsBool(t, "b_support_config_log", info.ServerType != SERVER_TYPE_FARM_MEMBER);
 		AddCapsBool(t, "b_support_autodelete", false);
 	}
-	else
-	{
-		// Success getting Caps
-		if (info.ServerBuildInt <= 4350)
-		{
-			if (is_bridge == false)
-			{
-				// b_support_cluster should be true for build 4300 or earlier
-				CAPS *caps = GetCaps(t, "b_support_cluster");
-				if (caps == NULL)
-				{
-					AddCapsBool(t, "b_support_cluster", true);
-				}
-				else
-				{
-					caps->Value = 1;
-				}
-			}
-		}
-	}
 
 	if (true)
 	{
@@ -746,9 +726,8 @@ void AdminWebProcPost(CONNECTION *c, SOCK *s, HTTP_HEADER *h, UINT post_data_siz
 	if (RecvAll(s, data, post_data_size, s->SecureMode))
 	{
 		c->JsonRpcAuthed = true;
-#ifndef	GC_SOFTETHER_OSS
+
 		RemoveDosEntry(c->Listener, s);
-#endif	// GC_SOFTETHER_OSS
 
 		// Divide url_target into URL and query string
 		StrCpy(url, sizeof(url), url_target);
@@ -787,9 +766,8 @@ void AdminWebProcGet(CONNECTION *c, SOCK *s, HTTP_HEADER *h, char *url_target)
 	}
 
 	c->JsonRpcAuthed = true;
-#ifndef	GC_SOFTETHER_OSS
+
 	RemoveDosEntry(c->Listener, s);
-#endif	// GC_SOFTETHER_OSS
 
 	// Divide url_target into URL and query string
 	StrCpy(url, sizeof(url), url_target);
@@ -959,30 +937,26 @@ bool HttpParseBasicAuthHeader(HTTP_HEADER *h, char *username, UINT username_size
 		{
 			if (StrCmpi(key, "Basic") == 0 && IsEmptyStr(value) == false)
 			{
-				UINT b64_dest_size = StrSize(value) * 2 + 256;
-				char *b64_dest = ZeroMalloc(b64_dest_size);
-
-				Decode64(b64_dest, value);
-
-				if (IsEmptyStr(b64_dest) == false)
+				char *str = Base64ToBin(NULL, value, StrLen(value));
+				if (str != NULL)
 				{
-					if (b64_dest[0] == ':')
+					if (str[0] == ':')
 					{
 						// Empty username
 						StrCpy(username, username_size, "");
-						StrCpy(password, password_size, b64_dest + 1);
+						StrCpy(password, password_size, str + 1);
 						ret = true;
 					}
 					else
 					{
-						if (GetKeyAndValue(b64_dest, username, username_size, password, password_size, ":"))
+						if (GetKeyAndValue(str, username, username_size, password, password_size, ":"))
 						{
 							ret = true;
 						}
 					}
-				}
 
-				Free(b64_dest);
+					Free(str);
+				}
 			}
 		}
 	}
@@ -1223,9 +1197,7 @@ void JsonRpcProcOptions(CONNECTION *c, SOCK *s, HTTP_HEADER *h, char *url_target
 
 	c->JsonRpcAuthed = true;
 
-#ifndef	GC_SOFTETHER_OSS
 	RemoveDosEntry(c->Listener, s);
-#endif	// GC_SOFTETHER_OSS
 
 	AdminWebSendBody(s, 200, "OK", NULL, 0, NULL, NULL, NULL, h);
 }
@@ -1252,9 +1224,7 @@ void JsonRpcProcGet(CONNECTION *c, SOCK *s, HTTP_HEADER *h, char *url_target)
 
 	c->JsonRpcAuthed = true;
 
-#ifndef	GC_SOFTETHER_OSS
 	RemoveDosEntry(c->Listener, s);
-#endif	// GC_SOFTETHER_OSS
 
 	// Divide url_target into URL and query string
 	StrCpy(url, sizeof(url), url_target);
@@ -1381,9 +1351,7 @@ void JsonRpcProcPost(CONNECTION *c, SOCK *s, HTTP_HEADER *h, UINT post_data_size
 
 		c->JsonRpcAuthed = true;
 
-#ifndef	GC_SOFTETHER_OSS
 		RemoveDosEntry(c->Listener, s);
-#endif	// GC_SOFTETHER_OSS
 
 		if (json_req == NULL || json_req_object == NULL)
 		{
@@ -6553,8 +6521,6 @@ UINT StSetAccessList(ADMIN *a, RPC_ENUM_ACCESS_LIST *t)
 	UINT i;
 	bool no_jitter = false;
 	bool no_include = false;
-	UINT ret = ERR_NO_ERROR;
-
 
 	NO_SUPPORT_FOR_BRIDGE;
 	if (s->ServerType == SERVER_TYPE_FARM_MEMBER)
@@ -6598,59 +6564,19 @@ UINT StSetAccessList(ADMIN *a, RPC_ENUM_ACCESS_LIST *t)
 
 	LockList(h->AccessList);
 	{
-		UINT i;
-
-		if (a->ClientBuild != 0)
+		// Delete whole access list
+		for (i = 0; i < LIST_NUM(h->AccessList); ++i)
 		{
-			// Confirm whether the access list of form which cannot handle by the old client already exists
-			if (a->ClientBuild < 6560)
-			{
-				for (i = 0;i < LIST_NUM(h->AccessList);i++)
-				{
-					ACCESS *access = LIST_DATA(h->AccessList, i);
-					if (access->IsIPv6 ||
-						access->Jitter != 0 || access->Loss != 0 || access->Delay != 0)
-					{
-						ret = ERR_VERSION_INVALID;
-						break;
-					}
-				}
-			}
-
-			if (a->ClientBuild < 8234)
-			{
-				for (i = 0;i < LIST_NUM(h->AccessList);i++)
-				{
-					ACCESS *access = LIST_DATA(h->AccessList, i);
-
-					if (IsEmptyStr(access->RedirectUrl) == false)
-					{
-						ret = ERR_VERSION_INVALID;
-						break;
-					}
-				}
-			}
+			ACCESS *access = LIST_DATA(h->AccessList, i);
+			Free(access);
 		}
 
-		if (ret == ERR_NO_ERROR)
-		{
-			// Delete whole access list
-			for (i = 0;i < LIST_NUM(h->AccessList);i++)
-			{
-				ACCESS *access = LIST_DATA(h->AccessList, i);
-				Free(access);
-			}
+		DeleteAll(h->AccessList);
 
-			DeleteAll(h->AccessList);
-		}
-	}
-
-	if (ret == ERR_NO_ERROR)
-	{
 		ALog(a, h, "LA_SET_ACCESS_LIST", t->NumAccess);
 
 		// Add whole access list
-		for (i = 0;i < t->NumAccess;i++)
+		for (i = 0; i < t->NumAccess; ++i)
 		{
 			ACCESS *a = &t->Accesses[i];
 
@@ -6689,14 +6615,10 @@ UINT StSetAccessList(ADMIN *a, RPC_ENUM_ACCESS_LIST *t)
 		h->CurrentVersion++;
 		SiHubUpdateProc(h);
 	}
-	else
-	{
-		UnlockList(h->AccessList);
-	}
 
 	ReleaseHub(h);
 
-	return ret;
+	return ERR_NO_ERROR;
 }
 
 // Add access list entry
@@ -7423,6 +7345,7 @@ UINT StGetLink(ADMIN *a, RPC_CREATE_LINK *t)
 		Copy(&t->Policy, k->Policy, sizeof(POLICY));
 
 		t->CheckServerCert = k->CheckServerCert;
+		t->AddDefaultCA = k->AddDefaultCA;
 		t->ServerCert = CloneX(k->ServerCert);
 	}
 	Unlock(k->lock);
@@ -7527,7 +7450,7 @@ UINT StSetLink(ADMIN *a, RPC_CREATE_LINK *t)
 
 		if (t->Policy.Ver3 == false)
 		{
-			Copy(k->Policy, &t->Policy, sizeof(UINT) * NUM_POLICY_ITEM_FOR_VER2);
+			Copy(k->Policy, &t->Policy, policy_item[NUM_POLICY_ITEM_FOR_VER2].Offset);
 		}
 		else
 		{
@@ -7538,6 +7461,7 @@ UINT StSetLink(ADMIN *a, RPC_CREATE_LINK *t)
 		k->Option->RequireMonitorMode = false;	// Disable monitor mode
 
 		k->CheckServerCert = t->CheckServerCert;
+		k->AddDefaultCA = t->AddDefaultCA;
 		k->ServerCert = CloneX(t->ServerCert);
 	}
 	Unlock(k->lock);
@@ -7634,6 +7558,7 @@ UINT StCreateLink(ADMIN *a, RPC_CREATE_LINK *t)
 		// setting of verifying server certification
 		// 
 		k->CheckServerCert = t->CheckServerCert;
+		k->AddDefaultCA = t->AddDefaultCA;
 		k->ServerCert = CloneX(t->ServerCert);
 
 		// stay this off-line
@@ -7848,11 +7773,6 @@ UINT StAddCa(ADMIN *a, RPC_HUB_ADD_CA *t)
 	if (t->Cert == NULL)
 	{
 		return ERR_INVALID_PARAMETER;
-	}
-
-	if (t->Cert->is_compatible_bit == false)
-	{
-		return ERR_NOT_RSA_1024;
 	}
 
 	CHECK_RIGHT;
@@ -9519,11 +9439,6 @@ UINT StSetServerCert(ADMIN *a, RPC_KEY_PAIR *t)
 		return ERR_PROTOCOL_ERROR;
 	}
 
-	if (t->Cert->is_compatible_bit == false)
-	{
-		return ERR_NOT_RSA_1024;
-	}
-
 	if (CheckXandK(t->Cert, t->Key) == false)
 	{
 		return ERR_PROTOCOL_ERROR;
@@ -9538,7 +9453,7 @@ UINT StSetServerCert(ADMIN *a, RPC_KEY_PAIR *t)
 		}
 	}
 
-	SetCedarCert(c, t->Cert, t->Key);
+	SetCedarCertAndChain(c, t->Cert, t->Key, t->Chain);
 
 	ALog(a, NULL, "LA_SET_SERVER_CERT");
 
@@ -10146,8 +10061,7 @@ UINT StSetPortsUDP(ADMIN *a, RPC_PORTS *t)
 
 	LockList(server_ports);
 	{
-		char tmp[MAX_SIZE];
-		wchar_t str[MAX_SIZE];
+		char str[MAX_SIZE];
 
 		for (i = 0; i < LIST_NUM(server_ports); ++i)
 		{
@@ -10163,8 +10077,7 @@ UINT StSetPortsUDP(ADMIN *a, RPC_PORTS *t)
 
 		ProtoSetUdpPorts(a->Server->Proto, server_ports);
 
-		IntListToStr(tmp, sizeof(tmp), server_ports, ", ");
-		StrToUni(str, sizeof(str), tmp);
+		IntListToStr(str, sizeof(str), server_ports, ", ");
 		ALog(a, NULL, "LA_SET_PORTS_UDP", str);
 	}
 	UnlockList(server_ports);
@@ -13720,6 +13633,7 @@ void InRpcCreateLink(RPC_CREATE_LINK *t, PACK *p)
 	InRpcPolicy(&t->Policy, p);
 
 	t->CheckServerCert = PackGetBool(p, "CheckServerCert");
+	t->AddDefaultCA = PackGetBool(p, "AddDefaultCA");
 	b = PackGetBuf(p, "ServerCert");
 	if (b != NULL)
 	{
@@ -13742,6 +13656,7 @@ void OutRpcCreateLink(PACK *p, RPC_CREATE_LINK *t)
 	OutRpcPolicy(p, &t->Policy);
 
 	PackAddBool(p, "CheckServerCert", t->CheckServerCert);
+	PackAddBool(p, "AddDefaultCA", t->AddDefaultCA);
 	if (t->ServerCert != NULL)
 	{
 		BUF *b;
@@ -13787,12 +13702,14 @@ void InRpcEnumLink(RPC_ENUM_LINK *t, PACK *p)
 
 		PackGetUniStrEx(p, "AccountName", e->AccountName, sizeof(e->AccountName), i);
 		PackGetStrEx(p, "Hostname", e->Hostname, sizeof(e->Hostname), i);
-		PackGetStrEx(p, "ConnectedHubName", e->HubName, sizeof(e->HubName), i);
+		if (PackGetStrEx(p, "ConnectedHubName", e->HubName, sizeof(e->HubName), i) == false)
+		{
+			PackGetStrEx(p, "TargetHubName", e->HubName, sizeof(e->HubName), i);
+		}
 		e->Online = PackGetBoolEx(p, "Online", i);
 		e->ConnectedTime = PackGetInt64Ex(p, "ConnectedTime", i);
 		e->Connected = PackGetBoolEx(p, "Connected", i);
 		e->LastError = PackGetIntEx(p, "LastError", i);
-		PackGetStrEx(p, "LinkHubName", e->HubName, sizeof(e->HubName), i);
 	}
 }
 void OutRpcEnumLink(PACK *p, RPC_ENUM_LINK *t)
@@ -14640,6 +14557,7 @@ void InRpcKeyPair(RPC_KEY_PAIR *t, PACK *p)
 	}
 
 	t->Cert = PackGetX(p, "Cert");
+	t->Chain = PackGetXList(p, "Chain");
 	t->Key = PackGetK(p, "Key");
 	t->Flag1 = PackGetInt(p, "Flag1");
 }
@@ -14652,12 +14570,14 @@ void OutRpcKeyPair(PACK *p, RPC_KEY_PAIR *t)
 	}
 
 	PackAddX(p, "Cert", t->Cert);
+	PackAddXList(p, "Chain", t->Chain);
 	PackAddK(p, "Key", t->Key);
 	PackAddInt(p, "Flag1", t->Flag1);
 }
 void FreeRpcKeyPair(RPC_KEY_PAIR *t)
 {
 	FreeX(t->Cert);
+	FreeXList(t->Chain);
 	FreeK(t->Key);
 }
 
@@ -14740,19 +14660,19 @@ void InRpcNodeInfo(NODE_INFO *t, PACK *p)
 	PackGetStr(p, "HubName", t->HubName, sizeof(t->HubName));
 	PackGetData2(p, "UniqueId", t->UniqueId, sizeof(t->UniqueId));
 
-	t->ClientProductVer = PackGetInt(p, "ClientProductVer");
-	t->ClientProductBuild = PackGetInt(p, "ClientProductBuild");
-	t->ServerProductVer = PackGetInt(p, "ServerProductVer");
-	t->ServerProductBuild = PackGetInt(p, "ServerProductBuild");
+	t->ClientProductVer = LittleEndian32(PackGetInt(p, "ClientProductVer"));
+	t->ClientProductBuild = LittleEndian32(PackGetInt(p, "ClientProductBuild"));
+	t->ServerProductVer = LittleEndian32(PackGetInt(p, "ServerProductVer"));
+	t->ServerProductBuild = LittleEndian32(PackGetInt(p, "ServerProductBuild"));
 	t->ClientIpAddress = PackGetIp32(p, "ClientIpAddress");
 	PackGetData2(p, "ClientIpAddress6", t->ClientIpAddress6, sizeof(t->ClientIpAddress6));
-	t->ClientPort = PackGetInt(p, "ClientPort");
+	t->ClientPort = LittleEndian32(PackGetInt(p, "ClientPort"));
 	t->ServerIpAddress = PackGetIp32(p, "ServerIpAddress");
 	PackGetData2(p, "ServerIpAddress6", t->ServerIpAddress6, sizeof(t->ServerIpAddress6));
-	t->ServerPort = PackGetInt(p, "ServerPort2");
+	t->ServerPort = LittleEndian32(PackGetInt(p, "ServerPort2"));
 	t->ProxyIpAddress = PackGetIp32(p, "ProxyIpAddress");
 	PackGetData2(p, "ProxyIpAddress6", t->ProxyIpAddress6, sizeof(t->ProxyIpAddress6));
-	t->ProxyPort = PackGetInt(p, "ProxyPort");
+	t->ProxyPort = LittleEndian32(PackGetInt(p, "ProxyPort"));
 }
 void OutRpcNodeInfo(PACK *p, NODE_INFO *t)
 {
@@ -14773,19 +14693,19 @@ void OutRpcNodeInfo(PACK *p, NODE_INFO *t)
 	PackAddStr(p, "HubName", t->HubName);
 	PackAddData(p, "UniqueId", t->UniqueId, sizeof(t->UniqueId));
 
-	PackAddInt(p, "ClientProductVer", t->ClientProductVer);
-	PackAddInt(p, "ClientProductBuild", t->ClientProductBuild);
-	PackAddInt(p, "ServerProductVer", t->ServerProductVer);
-	PackAddInt(p, "ServerProductBuild", t->ServerProductBuild);
+	PackAddInt(p, "ClientProductVer", LittleEndian32(t->ClientProductVer));
+	PackAddInt(p, "ClientProductBuild", LittleEndian32(t->ClientProductBuild));
+	PackAddInt(p, "ServerProductVer", LittleEndian32(t->ServerProductVer));
+	PackAddInt(p, "ServerProductBuild", LittleEndian32(t->ServerProductBuild));
 	PackAddIp32(p, "ClientIpAddress", t->ClientIpAddress);
 	PackAddData(p, "ClientIpAddress6", t->ClientIpAddress6, sizeof(t->ClientIpAddress6));
-	PackAddInt(p, "ClientPort", t->ClientPort);
+	PackAddInt(p, "ClientPort", LittleEndian32(t->ClientPort));
 	PackAddIp32(p, "ServerIpAddress", t->ServerIpAddress);
 	PackAddData(p, "ServerIpAddress6", t->ServerIpAddress6, sizeof(t->ServerIpAddress6));
-	PackAddInt(p, "ServerPort2", t->ServerPort);
+	PackAddInt(p, "ServerPort2", LittleEndian32(t->ServerPort));
 	PackAddIp32(p, "ProxyIpAddress", t->ProxyIpAddress);
 	PackAddData(p, "ProxyIpAddress6", t->ProxyIpAddress6, sizeof(t->ProxyIpAddress6));
-	PackAddInt(p, "ProxyPort", t->ProxyPort);
+	PackAddInt(p, "ProxyPort", LittleEndian32(t->ProxyPort));
 }
 
 // RPC_SESSION_STATUS

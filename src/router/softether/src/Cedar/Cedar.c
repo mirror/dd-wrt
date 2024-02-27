@@ -322,6 +322,34 @@ void DecrementNoSsl(CEDAR *c, IP *ip, UINT num_dec)
 	UnlockList(c->NonSslList);
 }
 
+// Check whether the specified IP address is in Non-SSL connection list
+bool IsInNoSsl(CEDAR *c, IP *ip)
+{
+	bool ret = false;
+	// Validate arguments
+	if (c == NULL || ip == NULL)
+	{
+		return false;
+	}
+
+	LockList(c->NonSslList);
+	{
+		NON_SSL *n = SearchNoSslList(c, ip);
+
+		if (n != NULL)
+		{
+			if (n->EntryExpires > Tick64() && n->Count > NON_SSL_MIN_COUNT)
+			{
+				n->EntryExpires = Tick64() + (UINT64)NON_SSL_ENTRY_EXPIRES;
+				ret = true;
+			}
+		}
+	}
+	UnlockList(c->NonSslList);
+
+	return ret;
+}
+
 // Add new entry to Non-SSL connection list
 bool AddNoSsl(CEDAR *c, IP *ip)
 {
@@ -702,6 +730,47 @@ void DelConnection(CEDAR *cedar, CONNECTION *c)
 		}
 	}
 	UnlockList(cedar->ConnectionList);
+}
+
+// Get the number of unestablished connections
+UINT GetUnestablishedConnections(CEDAR *cedar)
+{
+	UINT i, ret;
+	// Validate arguments
+	if (cedar == NULL)
+	{
+		return 0;
+	}
+
+	ret = 0;
+
+	LockList(cedar->ConnectionList);
+	{
+		for (i = 0;i < LIST_NUM(cedar->ConnectionList);i++)
+		{
+			CONNECTION *c = LIST_DATA(cedar->ConnectionList, i);
+
+			switch (c->Type)
+			{
+			case CONNECTION_TYPE_CLIENT:
+			case CONNECTION_TYPE_INIT:
+			case CONNECTION_TYPE_LOGIN:
+			case CONNECTION_TYPE_ADDITIONAL:
+				switch (c->Status)
+				{
+				case CONNECTION_STATUS_ACCEPTED:
+				case CONNECTION_STATUS_NEGOTIATION:
+				case CONNECTION_STATUS_USERAUTH:
+					ret++;
+					break;
+				}
+				break;
+			}
+		}
+	}
+	UnlockList(cedar->ConnectionList);
+
+	return ret + Count(cedar->AcceptingSockets);
 }
 
 // Add connection to Cedar
@@ -1157,6 +1226,10 @@ void CleanupCedar(CEDAR *c)
 	{
 		FreeK(c->ServerK);
 	}
+	if (c->ServerChain)
+	{
+		FreeXList(c->ServerChain);
+	}
 
 	if (c->CipherList)
 	{
@@ -1387,6 +1460,10 @@ void FreeNetSvcList(CEDAR *cedar)
 // Change certificate of Cedar
 void SetCedarCert(CEDAR *c, X *server_x, K *server_k)
 {
+	SetCedarCertAndChain(c, server_x, server_k, NULL);
+}
+void SetCedarCertAndChain(CEDAR *c, X *server_x, K *server_k, LIST *server_chain)
+{
 	// Validate arguments
 	if (server_x == NULL || server_k == NULL)
 	{
@@ -1405,8 +1482,14 @@ void SetCedarCert(CEDAR *c, X *server_x, K *server_k)
 			FreeK(c->ServerK);
 		}
 
+		if (c->ServerChain != NULL)
+		{
+			FreeXList(c->ServerChain);
+		}
+
 		c->ServerX = CloneX(server_x);
 		c->ServerK = CloneK(server_k);
+		c->ServerChain = CloneXList(server_chain);
 	}
 	Unlock(c->lock);
 }
@@ -1550,11 +1633,14 @@ CEDAR *NewCedar(X *server_x, K *server_k)
 #endif	// ALPHA_VERSION
 
 	ToStr(tmp2, c->Beta);
+	Format(tmp2, sizeof(tmp2), " %s %s ", beta_str, tmp2);
 
-	Format(tmp, sizeof(tmp), "Version %u.%02u Build %u %s %s (%s)",
+	Format(tmp, sizeof(tmp),
+		"Version %u.%02u Build %u"
+		"%s"    // Alpha, Beta, Release Candidate or nothing
+		"(%s)", // Language
 		CEDAR_VERSION_MAJOR, CEDAR_VERSION_MINOR, CEDAR_VERSION_BUILD,
-		c->Beta == 0 ? "" : beta_str,
-		c->Beta == 0 ? "" : tmp2,
+		c->Beta == 0 ? " " : tmp2,
 		_SS("LANGSTR"));
 	Trim(tmp);
 

@@ -91,6 +91,7 @@ struct SESSION
 	char ClientIP[64];				// Client IP
 	CLIENT_OPTION *ClientOption;	// Client connection options
 	CLIENT_AUTH *ClientAuth;		// Client authentication data
+	SSL_VERIFY_OPTION *SslOption;	// SSL verification option
 	volatile bool Halt;				// Halting flag
 	volatile bool CancelConnect;	// Cancel the connection
 	EVENT *HaltEvent;				// Halting event
@@ -129,6 +130,7 @@ struct SESSION
 	UCHAR Padding[2];
 
 	IP ServerIP_CacheForNextConnect;	// Server IP, cached for next connect
+	IP LocalIP_CacheForNextConnect;		// Local  IP, cached for next connect (2nd and subsequent), assigned by first outgoing connection
 
 	UINT64 CreatedTime;				// Creation date and time
 	UINT64 LastCommTime;			// Last communication date and time

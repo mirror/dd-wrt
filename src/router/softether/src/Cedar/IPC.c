@@ -244,7 +244,8 @@ IPC *NewIPCByParam(CEDAR *cedar, IPC_PARAM *param, UINT *error_code)
 	             param->UserName, param->Password, param->WgKey, error_code,
 	             &param->ClientIp, param->ClientPort, &param->ServerIp, param->ServerPort,
 	             param->ClientHostname, param->CryptName,
-	             param->BridgeMode, param->Mss, NULL, param->ClientCertificate, param->Layer);
+	             param->BridgeMode, param->Mss, NULL, param->ClientCertificate, param->RadiusOK,
+				 param->Layer);
 
 	return ipc;
 }
@@ -253,7 +254,7 @@ IPC *NewIPCByParam(CEDAR *cedar, IPC_PARAM *param, UINT *error_code)
 IPC *NewIPC(CEDAR *cedar, char *client_name, char *postfix, char *hubname, char *username, char *password, char *wg_key,
             UINT *error_code, IP *client_ip, UINT client_port, IP *server_ip, UINT server_port,
             char *client_hostname, char *crypt_name,
-            bool bridge_mode, UINT mss, EAP_CLIENT *eap_client, X *client_certificate,
+            bool bridge_mode, UINT mss, EAP_CLIENT *eap_client, X *client_certificate, bool external_auth,
             UINT layer)
 {
 	IPC *ipc;
@@ -359,6 +360,10 @@ IPC *NewIPC(CEDAR *cedar, char *client_name, char *postfix, char *hubname, char 
 	else if (client_certificate != NULL)
 	{
 		p = PackLoginWithOpenVPNCertificate(hubname, username, client_certificate);
+	}
+	else if (external_auth)
+	{
+		p = PackLoginWithExternal(hubname, username);
 	}
 	else
 	{
@@ -496,6 +501,8 @@ IPC *NewIPC(CEDAR *cedar, char *client_name, char *postfix, char *hubname, char 
 		ZeroIP4(&ipc->SubnetMask);
 		ZeroIP4(&ipc->BroadcastAddress);
 	}
+
+	ReleaseHub(hub);
 
 	ZeroIP4(&ipc->ClientIPAddress);
 
@@ -1501,6 +1508,7 @@ void IPCProcessL3EventsEx(IPC *ipc, UINT64 now)
 							if (p->IPv6HeaderPacketInfo.Protocol == IP_PROTO_ICMPV6)
 							{
 								IP icmpHeaderAddr;
+								UINT header_size = 0;
 								// We need to parse the Router Advertisement and Neighbor Advertisement messages
 								// to build the Neighbor Discovery Table (aka ARP table for IPv6)
 								switch (p->ICMPv6HeaderPacketInfo.Type)
@@ -1510,6 +1518,8 @@ void IPCProcessL3EventsEx(IPC *ipc, UINT64 now)
 									IPCIPv6AddRouterPrefixes(ipc, &p->ICMPv6HeaderPacketInfo.OptionList, src_mac, &ip_src);
 									IPCIPv6AssociateOnNDTEx(ipc, &ip_src, src_mac, true);
 									IPCIPv6AssociateOnNDTEx(ipc, &ip_src, p->ICMPv6HeaderPacketInfo.OptionList.SourceLinkLayer->Address, true);
+									ndtProcessed = true;
+									header_size = sizeof(ICMPV6_ROUTER_ADVERTISEMENT_HEADER);
 									break;
 								case ICMPV6_TYPE_NEIGHBOR_ADVERTISEMENT:
 									// We save the neighbor advertisements into NDT
@@ -1517,7 +1527,76 @@ void IPCProcessL3EventsEx(IPC *ipc, UINT64 now)
 									IPCIPv6AssociateOnNDTEx(ipc, &icmpHeaderAddr, src_mac, true);
 									IPCIPv6AssociateOnNDTEx(ipc, &ip_src, src_mac, true);
 									ndtProcessed = true;
+									header_size = sizeof(ICMPV6_NEIGHBOR_ADVERTISEMENT_HEADER);
 									break;
+								case ICMPV6_TYPE_NEIGHBOR_SOLICIATION:
+									header_size = sizeof(ICMPV6_NEIGHBOR_SOLICIATION_HEADER);
+									break;
+								}
+
+								// Remove link-layer address options for Windows clients (required on Windows 11)
+								if (header_size > 0)
+								{
+									UCHAR *src = p->ICMPv6HeaderPacketInfo.Headers.HeaderPointer + header_size;
+									UINT opt_size = p->ICMPv6HeaderPacketInfo.DataSize - header_size;
+									UCHAR *dst = src;
+									UINT removed = 0;
+
+									while (opt_size > sizeof(ICMPV6_OPTION))
+									{
+										ICMPV6_OPTION *option_header;
+										UINT header_total_size;
+
+										option_header = (ICMPV6_OPTION *)src;
+										// Calculate the entire header size
+										header_total_size = option_header->Length * 8;
+										if (header_total_size == 0)
+										{
+											// The size is zero
+											break;
+										}
+										if (opt_size < header_total_size)
+										{
+											// Size shortage
+											break;
+										}
+
+										switch (option_header->Type)
+										{
+										case ICMPV6_OPTION_TYPE_SOURCE_LINK_LAYER:
+										case ICMPV6_OPTION_TYPE_TARGET_LINK_LAYER:
+											// Skip source or target link-layer option
+											removed += header_total_size;
+											break;
+										default:
+											// Copy options other than source link-layer
+											if (src != dst)
+											{
+												UCHAR *tmp = Clone(src, header_total_size);
+												Copy(dst, tmp, header_total_size);
+												Free(tmp);
+											}
+											dst += header_total_size;
+										}
+
+										src += header_total_size;
+										opt_size -= header_total_size;
+
+									}
+
+									// Recalculate length and checksum if modified
+									if (removed > 0)
+									{
+										size -= removed;
+										p->L3.IPv6Header->PayloadLength = Endian16(size - sizeof(IPV6_HEADER));
+										p->L4.ICMPHeader->Checksum = 0;
+										p->L4.ICMPHeader->Checksum =
+											CalcChecksumForIPv6(&p->L3.IPv6Header->SrcAddress,
+												&p->L3.IPv6Header->DestAddress, IP_PROTO_ICMPV6,
+												p->L4.ICMPHeader, size - sizeof(IPV6_HEADER), 0);
+										Copy(data, b->Buf + 14, size);
+									}
+
 								}
 							}
 
@@ -2054,7 +2133,7 @@ void IPCIPv6Init(IPC *ipc)
 	ipc->IPv6RouterAdvs = NewList(NULL);
 
 	ipc->IPv6ClientEUI = 0;
-	ipc->IPv6ServerEUI = 0;
+	GenerateEui64Address6((UCHAR *)&ipc->IPv6ServerEUI, ipc->MacAddress);
 
 	ipc->IPv6State = IPC_PROTO_STATUS_CLOSED;
 }
@@ -2290,6 +2369,15 @@ bool IPCIPv6CheckUnicastFromRouterPrefix(IPC *ipc, IP *ip, IPC_IPV6_ROUTER_ADVER
 	UINT i;
 	IPC_IPV6_ROUTER_ADVERTISEMENT *matchingRA = NULL;
 	bool isInPrefix = false;
+
+	if (LIST_NUM(ipc->IPv6RouterAdvs) == 0)
+	{
+		// We have a unicast packet but we haven't got any RAs.
+		// The client is probably misconfigured in IPv6. We send non-blocking RS at best effort.
+		IPCSendIPv6RouterSoliciation(ipc, false);
+		return false;
+	}
+
 	for (i = 0; i < LIST_NUM(ipc->IPv6RouterAdvs); i++)
 	{
 		IPC_IPV6_ROUTER_ADVERTISEMENT *ra = LIST_DATA(ipc->IPv6RouterAdvs, i);
@@ -2309,91 +2397,71 @@ bool IPCIPv6CheckUnicastFromRouterPrefix(IPC *ipc, IP *ip, IPC_IPV6_ROUTER_ADVER
 	return isInPrefix;
 }
 
-// Send router solicitation and then eventually populate the info from Router Advertisements
-UINT64 IPCIPv6GetServerEui(IPC *ipc)
+// Send router solicitation to find a router
+bool IPCSendIPv6RouterSoliciation(IPC *ipc, bool blocking)
 {
-	// It is already configured, nothing to do here
-	if (ipc->IPv6ServerEUI != 0)
-	{
-		return ipc->IPv6ServerEUI;
-	}
+	IP destIP;
+	IPV6_ADDR destV6;
+	UCHAR destMacAddress[6];
+	IPV6_ADDR linkLocal;
+	BUF *packet;
+	UINT64 giveup_time = Tick64() + (UINT64)(IPC_IPV6_RA_MAX_RETRIES * IPC_IPV6_RA_INTERVAL);
+	UINT64 timeout_retry = 0;
 
 	// If we don't have a valid client EUI, we can't generate a correct link local
 	if (ipc->IPv6ClientEUI == 0)
 	{
-		return ipc->IPv6ServerEUI;
+		return false;
 	}
 
-	if (LIST_NUM(ipc->IPv6RouterAdvs) == 0)
-	{
-		IP destIP;
-		IPV6_ADDR destV6;
-		UCHAR destMacAddress[6];
-		IPV6_ADDR linkLocal;
-		BUF *packet;
-		UINT64 giveup_time = Tick64() + (UINT64)(IPC_IPV6_RA_MAX_RETRIES * IPC_IPV6_RA_INTERVAL);
-		UINT64 timeout_retry = 0;
+	Zero(&linkLocal, sizeof(IPV6_ADDR));
 
-		Zero(&linkLocal, sizeof(IPV6_ADDR));
+	// Generate link local from client's EUI
+	linkLocal.Value[0] = 0xFE;
+	linkLocal.Value[1] = 0x80;
+	Copy(&linkLocal.Value[8], &ipc->IPv6ClientEUI, sizeof(UINT64));
 
-		// Generate link local from client's EUI
-		linkLocal.Value[0] = 0xFE;
-		linkLocal.Value[1] = 0x80;
-		Copy(&linkLocal.Value[8], &ipc->IPv6ClientEUI, sizeof(UINT64));
+	GetAllRouterMulticastAddress6(&destIP);
 
-		GetAllRouterMulticastAddress6(&destIP);
+	// Generate the MAC address from the multicast address
+	destMacAddress[0] = 0x33;
+	destMacAddress[1] = 0x33;
+	Copy(&destMacAddress[2], &destIP.address[12], sizeof(UINT));
 
-		// Generate the MAC address from the multicast address
-		destMacAddress[0] = 0x33;
-		destMacAddress[1] = 0x33;
-		Copy(&destMacAddress[2], &destIP.address[12], sizeof(UINT));
+	IPToIPv6Addr(&destV6, &destIP);
 
-		IPToIPv6Addr(&destV6, &destIP);
+	packet = BuildICMPv6RouterSoliciation(&linkLocal, &destV6, ipc->MacAddress, 0);
 
-		packet = BuildICMPv6RouterSoliciation(&linkLocal, &destV6, ipc->MacAddress, 0);
-
-		while (LIST_NUM(ipc->IPv6RouterAdvs) == 0)
-		{
-			UINT64 now = Tick64();
-			if (now >= timeout_retry)
-			{
-				timeout_retry = now + (UINT64)IPC_IPV6_RA_INTERVAL;
-				IPCIPv6SendWithDestMacAddr(ipc, packet->Buf, packet->Size, destMacAddress);
-			}
-
-			AddInterrupt(ipc->Interrupt, timeout_retry);
-
-			if (Tick64() >= giveup_time)
-			{
-				// We failed to receive any router advertisements
-				break;
-			}
-
-			// The processing should populate the received RAs by itself
-			IPCProcessL3Events(ipc);
-		}
-
+	if (blocking == false) {
+		IPCIPv6SendWithDestMacAddr(ipc, packet->Buf, packet->Size, destMacAddress);
 		FreeBuf(packet);
+		return false;
 	}
 
-	// Populating the IPv6 Server EUI for IPV6CP
-	if (LIST_NUM(ipc->IPv6RouterAdvs) > 0)
+	while (LIST_NUM(ipc->IPv6RouterAdvs) == 0)
 	{
-		IPC_IPV6_ROUTER_ADVERTISEMENT *ra = LIST_DATA(ipc->IPv6RouterAdvs, 0);
-		Copy(&ipc->IPv6ServerEUI, &ra->RouterAddress.address[8], sizeof(ipc->IPv6ServerEUI));
-	}
-
-	// If it is still not defined, let's just generate something random
-	while (ipc->IPv6ServerEUI == 0)
-	{
-		ipc->IPv6ServerEUI = Rand64();
-		if (ipc->IPv6ClientEUI == ipc->IPv6ServerEUI)
+		UINT64 now = Tick64();
+		if (now >= timeout_retry)
 		{
-			ipc->IPv6ServerEUI = 0;
+			timeout_retry = now + (UINT64)IPC_IPV6_RA_INTERVAL;
+			IPCIPv6SendWithDestMacAddr(ipc, packet->Buf, packet->Size, destMacAddress);
 		}
+
+		AddInterrupt(ipc->Interrupt, timeout_retry);
+
+		if (Tick64() >= giveup_time)
+		{
+			// We failed to receive any router advertisements
+			FreeBuf(packet);
+			return false;
+		}
+
+		// The processing should populate the received RAs by itself
+		IPCProcessL3Events(ipc);
 	}
 
-	return ipc->IPv6ServerEUI;
+	FreeBuf(packet);
+	return true;
 }
 
 // Data flow
@@ -2481,10 +2549,20 @@ void IPCIPv6SendWithDestMacAddr(IPC *ipc, void *data, UINT size, UCHAR *dest_mac
 			BUF *buf;
 			BUF *optBuf;
 			BUF *packet;
+			UINT header_size = 0;
 			// We need to rebuild the packet to
 			switch (p->ICMPv6HeaderPacketInfo.Type)
 			{
+			case ICMPV6_TYPE_ROUTER_SOLICIATION:
+				header_size = sizeof(ICMPV6_ROUTER_SOLICIATION_HEADER);
+				if (p->ICMPv6HeaderPacketInfo.OptionList.SourceLinkLayer == NULL)
+				{
+					p->ICMPv6HeaderPacketInfo.OptionList.SourceLinkLayer = &linkLayer;
+				}
+				Copy(p->ICMPv6HeaderPacketInfo.OptionList.SourceLinkLayer->Address, ipc->MacAddress, 6);
+				break;
 			case ICMPV6_TYPE_NEIGHBOR_SOLICIATION:
+				header_size = sizeof(ICMPV6_NEIGHBOR_SOLICIATION_HEADER);
 				if (p->ICMPv6HeaderPacketInfo.OptionList.SourceLinkLayer == NULL)
 				{
 					p->ICMPv6HeaderPacketInfo.OptionList.SourceLinkLayer = &linkLayer;
@@ -2492,6 +2570,7 @@ void IPCIPv6SendWithDestMacAddr(IPC *ipc, void *data, UINT size, UCHAR *dest_mac
 				Copy(p->ICMPv6HeaderPacketInfo.OptionList.SourceLinkLayer->Address, ipc->MacAddress, 6);
 				break;
 			case ICMPV6_TYPE_NEIGHBOR_ADVERTISEMENT:
+				header_size = sizeof(ICMPV6_NEIGHBOR_ADVERTISEMENT_HEADER);
 				if (p->ICMPv6HeaderPacketInfo.OptionList.TargetLinkLayer == NULL)
 				{
 					p->ICMPv6HeaderPacketInfo.OptionList.TargetLinkLayer = &linkLayer;
@@ -2501,12 +2580,12 @@ void IPCIPv6SendWithDestMacAddr(IPC *ipc, void *data, UINT size, UCHAR *dest_mac
 			}
 			switch (p->ICMPv6HeaderPacketInfo.Type)
 			{
+			case ICMPV6_TYPE_ROUTER_SOLICIATION:
 			case ICMPV6_TYPE_NEIGHBOR_SOLICIATION:
 			case ICMPV6_TYPE_NEIGHBOR_ADVERTISEMENT:
 				optBuf = BuildICMPv6Options(&p->ICMPv6HeaderPacketInfo.OptionList);
 				buf = NewBuf();
-				WriteBuf(buf, p->ICMPv6HeaderPacketInfo.Headers.HeaderPointer,
-				         p->ICMPv6HeaderPacketInfo.Type == ICMPV6_TYPE_NEIGHBOR_SOLICIATION ? sizeof(ICMPV6_NEIGHBOR_SOLICIATION_HEADER) : sizeof(ICMPV6_NEIGHBOR_ADVERTISEMENT_HEADER));
+				WriteBuf(buf, p->ICMPv6HeaderPacketInfo.Headers.HeaderPointer, header_size);
 				WriteBufBuf(buf, optBuf);
 				packet = BuildICMPv6(&p->IPv6HeaderPacketInfo.IPv6Header->SrcAddress,
 				                     &p->IPv6HeaderPacketInfo.IPv6Header->DestAddress,
