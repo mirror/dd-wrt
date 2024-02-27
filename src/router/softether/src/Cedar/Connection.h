@@ -58,11 +58,8 @@ struct RC4_KEY_PAIR
 	UCHAR ServerToClientKey[16];
 	UCHAR ClientToServerKey[16];
 };
-#define	TYPE_BINDLOCALIP	1	//  Enable HMI user to edit Source IP address & Source port number for outgoing connection
 
 // Client Options
-// Do not change item size or order and only add new items at the end!
-// See comments in struct SETTING (SMInner.h)
 struct CLIENT_OPTION
 {
 	wchar_t AccountName[MAX_ACCOUNT_NAME_LEN + 1];			// Connection setting name
@@ -74,41 +71,26 @@ struct CLIENT_OPTION
 	UINT ProxyPort;											// Port number of the proxy server
 	char ProxyUsername[PROXY_MAX_USERNAME_LEN + 1];			// Maximum user name length
 	char ProxyPassword[PROXY_MAX_PASSWORD_LEN + 1];			// Maximum password length
+	char CustomHttpHeader[HTTP_CUSTOM_HEADER_MAX_SIZE + 1];	// Custom HTTP proxy header
 	UINT NumRetry;											// Automatic retries
 	UINT RetryInterval;										// Retry interval
 	char HubName[MAX_HUBNAME_LEN + 1];						// HUB name
 	UINT MaxConnection;										// Maximum number of concurrent TCP connections
 	bool UseEncrypt;										// Use encrypted communication
-	char pad1[3];
 	bool UseCompress;										// Use data compression
-	char pad2[3];
 	bool HalfConnection;									// Use half connection in TCP
-	char pad3[3];
 	bool NoRoutingTracking;									// Disable the routing tracking
-	char pad4[3];
 	char DeviceName[MAX_DEVICE_NAME_LEN + 1];				// VLAN device name
 	UINT AdditionalConnectionInterval;						// Connection attempt interval when additional connection establish
 	UINT ConnectionDisconnectSpan;							// Disconnection interval
 	bool HideStatusWindow;									// Hide the status window
-	char pad5[3];
 	bool HideNicInfoWindow;									// Hide the NIC status window
-	char pad6[3];
 	bool RequireMonitorMode;								// Monitor port mode
-	char pad7[3];
 	bool RequireBridgeRoutingMode;							// Bridge or routing mode
-	char pad8[3];
 	bool DisableQoS;										// Disable the VoIP / QoS function
-	char pad9[3];
 	bool FromAdminPack;										// For Administration Pack
-	char pad10[3];
-	char pad11[4];											// Removed bool
 	bool NoUdpAcceleration;									// Do not use UDP acceleration mode
-	char pad12[3];
 	UCHAR HostUniqueKey[SHA1_SIZE];							// Host unique key
-	char CustomHttpHeader[HTTP_CUSTOM_HEADER_MAX_SIZE];		// Custom HTTP proxy header
-	char HintStr[MAX_HOST_NAME_LEN + 1];					// Hint string for NAT-T
-	IP   BindLocalIP;										// Source IP address for outgoing connection
-	UINT BindLocalPort;										// Source port number for outgoing connection
 };
 
 // Client authentication data
@@ -226,7 +208,6 @@ struct CONNECTION
 	X *ServerX;						// Server certificate
 	X *ClientX;						// Client certificate
 	char *CipherName;				// Encryption algorithm name
-	char *SslVersion;				// SSL protocol version
 	UINT64 ConnectedTick;			// Time it is connected
 	IP ClientIp;					// Client IP address
 	char ClientHostname[MAX_HOST_NAME_LEN + 1];	// Client host name

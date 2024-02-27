@@ -9,14 +9,12 @@
 
 #include "Account.h"
 #include "Cedar.h"
-#include "Connection.h"
 #include "Hub.h"
 #include "IPC.h"
 #include "Proto_PPP.h"
 #include "Radius.h"
 #include "Server.h"
 
-#include "Mayaqua/Encoding.h"
 #include "Mayaqua/Internat.h"
 #include "Mayaqua/Memory.h"
 #include "Mayaqua/Microsoft.h"
@@ -32,6 +30,11 @@
 #include <signal.h>
 #include <unistd.h>
 #endif
+
+int base64_enc_len(unsigned int plainLen) {
+	unsigned int n = plainLen;
+	return (n + 2 - ((n + 2) % 3)) / 3 * 4;
+}
 
 PID OpenChildProcess(const char* path, char* const parameter[], int fd[] )
 {
@@ -131,6 +134,7 @@ bool SmbAuthenticate(char* name, char* password, char* domainname, char* groupna
 	int   fds[2];
 	FILE* out, *in;
 	PID   pid;
+	char  buffer[255];
 	char  ntlm_timeout[32];
 	char* proc_parameter[6];
 
@@ -148,6 +152,8 @@ bool SmbAuthenticate(char* name, char* password, char* domainname, char* groupna
 		Debug("Sam.c - SmbAuthenticate - wrong MsCHAPv2 parameter\n");
 		return false;
 	}
+
+	Zero(buffer, sizeof(buffer));
 
 	// Truncate string if unsafe char
 	EnSafeStr(domainname, '\0');
@@ -212,48 +218,64 @@ bool SmbAuthenticate(char* name, char* password, char* domainname, char* groupna
 		return false;
 	}
 
+	if (base64_enc_len((unsigned int)strlen(name)) < sizeof(buffer)-1 &&
+		base64_enc_len((unsigned int)strlen(password)) < sizeof(buffer)-1 &&
+		base64_enc_len((unsigned int)strlen(domainname)) < sizeof(buffer)-1)
 	{
-		char *base64 = Base64FromBin(NULL, name, StrLen(name));
+		char  answer[300];
+
+		unsigned int end = B64_Encode(buffer, name, (int)strlen(name));
+		buffer[end] = '\0';
 		fputs("Username:: ", out);
-		fputs(base64, out);
+		fputs(buffer, out);
 		fputs("\n", out);
-		Free(base64);
+		Debug("Username: %s\n", buffer);
+		buffer[0] = 0;
 
-		base64 = Base64FromBin(NULL, domainname, StrLen(domainname));
+		end = B64_Encode(buffer, domainname, (int)strlen(domainname));
+		buffer[end] = '\0';
 		fputs("NT-Domain:: ", out);
-		fputs(base64, out);
+		fputs(buffer, out);
 		fputs("\n", out);
-		Free(base64);
+		Debug("NT-Domain: %s\n", buffer);
+		buffer[0] = 0;
 
-		if (IsEmptyStr(password) == false)
+		if (password[0] != '\0')
 		{
-			Debug("SmbAuthenticate(): Using password authentication...\n");
-
-			base64 = Base64FromBin(NULL, password, StrLen(password));
+			Debug("Password authentication\n");
+			end = B64_Encode(buffer, password, (int)strlen(password));
+			buffer[end] = '\0';
 			fputs("Password:: ", out);
-			fputs(base64, out);
+			fputs(buffer, out);
 			fputs("\n", out);
-			Free(base64);
+			Debug("Password: %s\n", buffer);
+			buffer[0] = 0;
 		}
 		else
 		{
-			Debug("SmbAuthenticate(): Using MsChapV2 authentication...\n");
+			char* mschapv2_client_response;
+			char* base64_challenge8;
 
-			char *mschapv2_client_response = CopyBinToStr(MsChapV2_ClientResponse, 24);
-			base64 = Base64FromBin(NULL, mschapv2_client_response, 48);
-			Free(mschapv2_client_response);
+			Debug("MsChapV2 authentication\n");
+			mschapv2_client_response = CopyBinToStr(MsChapV2_ClientResponse, 24);
+			end = B64_Encode(buffer, mschapv2_client_response, 48);
+			buffer[end] = '\0';
 			fputs("NT-Response:: ", out);
-			fputs(base64, out);
+			fputs(buffer, out);
 			fputs("\n", out);
-			Free(base64);
+			Debug("NT-Response:: %s\n", buffer);
+			buffer[0] = 0;
+			Free(mschapv2_client_response);
 
-			char *base64_challenge8 = CopyBinToStr(challenge8, 8);
-			base64 = Base64FromBin(NULL, base64_challenge8, 16);
-			Free(base64_challenge8);
+			base64_challenge8 = CopyBinToStr(challenge8, 8);
+			end = B64_Encode(buffer, base64_challenge8 , 16);
+			buffer[end] = '\0';
 			fputs("LANMAN-Challenge:: ", out);
-			fputs(base64, out);
+			fputs(buffer, out);
 			fputs("\n", out);
-			Free(base64);
+			Debug("LANMAN-Challenge:: %s\n", buffer);
+			buffer[0] = 0;
+			Free(base64_challenge8);
 
 			fputs("Request-User-Session-Key: Yes\n", out);
  		}
@@ -263,7 +285,6 @@ bool SmbAuthenticate(char* name, char* password, char* domainname, char* groupna
 		fflush (out);
 		// Request send!
 
-		char answer[300];
 		Zero(answer, sizeof(answer));
 
 		while (fgets(answer, sizeof(answer)-1, in))
@@ -302,7 +323,7 @@ bool SmbAuthenticate(char* name, char* password, char* domainname, char* groupna
 				response_parameter[0] ='\0';
 				response_parameter++;
 
-				const UINT end = Base64Decode(response_parameter, response_parameter, StrLen(response_parameter));
+				end = Decode64(response_parameter, response_parameter);
 				response_parameter[end] = '\0';
 			}
 
@@ -421,7 +442,7 @@ bool SamAuthUserByPlainPassword(CONNECTION *c, HUB *hub, char *username, char *p
 	bool auth_by_nt = false;
 	HUB *h;
 	// Validate arguments
-	if (hub == NULL || c == NULL || username == NULL || password == NULL || opt == NULL)
+	if (hub == NULL || c == NULL || username == NULL)
 	{
 		return false;
 	}
@@ -439,14 +460,7 @@ bool SamAuthUserByPlainPassword(CONNECTION *c, HUB *hub, char *username, char *p
 	AcLock(hub);
 	{
 		USER *u;
-
-		// Find exact user first
-		u = AcGetUser(hub, username);
-		if (u == NULL && ast)
-		{
-			u = AcGetUser(hub, "*");
-		}
-
+		u = AcGetUser(hub, ast == false ? username : "*");
 		if (u)
 		{
 			Lock(u->lock);
@@ -455,7 +469,7 @@ bool SamAuthUserByPlainPassword(CONNECTION *c, HUB *hub, char *username, char *p
 				{
 					// Radius authentication
 					AUTHRADIUS *auth = (AUTHRADIUS *)u->AuthData;
-					if (auth->RadiusUsername == NULL || UniStrLen(auth->RadiusUsername) == 0)
+					if (ast || auth->RadiusUsername == NULL || UniStrLen(auth->RadiusUsername) == 0)
 					{
 						if( IsEmptyStr(h->RadiusRealm) == false )
 						{	
@@ -480,7 +494,7 @@ bool SamAuthUserByPlainPassword(CONNECTION *c, HUB *hub, char *username, char *p
 				{
 					// NT authentication
 					AUTHNT *auth = (AUTHNT *)u->AuthData;
-					if (auth->NtUsername == NULL || UniStrLen(auth->NtUsername) == 0)
+					if (ast || auth->NtUsername == NULL || UniStrLen(auth->NtUsername) == 0)
 					{
 						name = CopyStrToUni(username);
 					}
@@ -516,74 +530,9 @@ bool SamAuthUserByPlainPassword(CONNECTION *c, HUB *hub, char *username, char *p
 			char suffix_filter[MAX_SIZE];
 			wchar_t suffix_filter_w[MAX_SIZE];
 			UINT interval;
-			EAP_CLIENT *eap = NULL;
-			char password1[MAX_SIZE];
-			UCHAR client_challenge[16];
-			UCHAR server_challenge[16];
-			UCHAR challenge8[8];
-			UCHAR client_response[24];
-			UCHAR ntlm_hash[MD5_SIZE];
 
 			Zero(suffix_filter, sizeof(suffix_filter));
 			Zero(suffix_filter_w, sizeof(suffix_filter_w));
-
-			// MSCHAPv2 / EAP wrapper for SEVPN
-			if (c->IsInProc == false && StartWith(password, IPC_PASSWORD_MSCHAPV2_TAG) == false)
-			{
-				char client_ip_str[MAX_SIZE];
-				char utf8[MAX_SIZE];
-
-				// Convert the user name to a Unicode string
-				UniToStr(utf8, sizeof(utf8), name);
-				utf8[MAX_SIZE-1] = 0;
-
-				Zero(client_ip_str, sizeof(client_ip_str));
-				if (c != NULL && c->FirstSock != NULL)
-				{
-					IPToStr(client_ip_str, sizeof(client_ip_str), &c->FirstSock->RemoteIP);
-				}
-
-				if (hub->RadiusConvertAllMsChapv2AuthRequestToEap)
-				{
-					// Do EAP or PEAP
-					eap = HubNewEapClient(hub->Cedar, hub->Name, client_ip_str, utf8, opt->In_VpnProtocolState, false, NULL, 0);
-
-					// Prepare MSCHAP response and replace plain password
-					if (eap != NULL)
-					{
-						char server_challenge_hex[MAX_SIZE];
-						char client_challenge_hex[MAX_SIZE];
-						char client_response_hex[MAX_SIZE];
-						char eap_client_hex[64];
-
-						MsChapV2Client_GenerateChallenge(client_challenge);
-						GenerateNtPasswordHash(ntlm_hash, password);
-						Copy(server_challenge, eap->MsChapV2Challenge.Chap_ChallengeValue, 16);
-						MsChapV2_GenerateChallenge8(challenge8, client_challenge, server_challenge, utf8);
-						MsChapV2Client_GenerateResponse(client_response, challenge8, ntlm_hash);
-
-						BinToStr(server_challenge_hex, sizeof(server_challenge_hex),
-								server_challenge, sizeof(server_challenge));
-						BinToStr(client_challenge_hex, sizeof(client_challenge_hex),
-								client_challenge, sizeof(client_challenge));
-						BinToStr(client_response_hex, sizeof(client_response_hex),
-								client_response, sizeof(client_response));
-						BinToStr(eap_client_hex, sizeof(eap_client_hex), &eap, 8);
-						Format(password1, sizeof(password1), "%s%s:%s:%s:%s:%s",
-										IPC_PASSWORD_MSCHAPV2_TAG,
-										utf8,
-										server_challenge_hex,
-										client_challenge_hex,
-										client_response_hex,
-										eap_client_hex);
-						password = password1;
-					}
-				}
-				else
-				{
-					// Todo: Do MSCHAPv2
-				}
-			}
 
 			// Get the Radius server information
 			if (GetRadiusServerEx2(hub, radius_server_addr, sizeof(radius_server_addr), &radius_server_port, radius_secret, sizeof(radius_secret), &interval, suffix_filter, sizeof(suffix_filter)))
@@ -601,7 +550,10 @@ bool SamAuthUserByPlainPassword(CONNECTION *c, HUB *hub, char *username, char *p
 
 					if (b)
 					{
-						opt->Out_IsRadiusLogin = true;
+						if (opt != NULL)
+						{
+							opt->Out_IsRadiusLogin = true;
+						}
 					}
 				}
 
@@ -610,11 +562,6 @@ bool SamAuthUserByPlainPassword(CONNECTION *c, HUB *hub, char *username, char *p
 			else
 			{
 				HLog(hub, "LH_NO_RADIUS_SETTING", name);
-			}
-
-			if (eap != NULL)
-			{
-				ReleaseEapClient(eap);
 			}
 		}
 		else

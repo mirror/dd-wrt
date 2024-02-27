@@ -140,7 +140,6 @@ typedef struct CM_ACCOUNT
 	bool Startup;						// Startup account
 	bool CheckServerCert;				// Check the server certificate
 	bool RetryOnServerCert;				// Retry on invalid server certificate
-	bool AddDefaultCA;					// Use default trust store
 	X *ServerCert;						// Server certificate
 	char old_server_name[MAX_HOST_NAME_LEN + 1];	// Old server name
 	bool Inited;						// Initialization flag
@@ -410,7 +409,6 @@ void CmEditAccountDlgInit(HWND hWnd, CM_ACCOUNT *a);
 void CmEditAccountDlgOnOk(HWND hWnd, CM_ACCOUNT *a);
 void CmEditAccountDlgStartEnumHub(HWND hWnd, CM_ACCOUNT *a);
 bool CmLoadXAndK(HWND hWnd, X **x, K **k);
-bool CmLoadXListAndK(HWND hWnd, X **x, K **k, LIST **cc);
 bool CmLoadKEx(HWND hWnd, K **k, char *filename, UINT size);
 bool CmLoadKExW(HWND hWnd, K **k, wchar_t *filename, UINT size);
 bool CmLoadXFromFileOrSecureCard(HWND hWnd, X **x);

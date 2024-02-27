@@ -29,4 +29,4 @@ if(WIN32)
   )
 endif()
 
-target_link_libraries(vpntest cedar)
+target_link_libraries(vpntest cedar mayaqua)

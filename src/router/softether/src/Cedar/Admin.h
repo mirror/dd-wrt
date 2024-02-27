@@ -230,7 +230,6 @@ struct RPC_FARM_CONNECTION_STATUS
 struct RPC_KEY_PAIR
 {
 	X *Cert;							// Certificate
-	LIST *Chain;						// Trust chain
 	K *Key;								// Secret key
 	UINT Flag1;							// Flag1
 };
@@ -436,7 +435,6 @@ struct RPC_CREATE_LINK
 	CLIENT_AUTH *ClientAuth;			// Client authentication data
 	POLICY Policy;						// Policy
 	bool CheckServerCert;				// Validate the server certificate
-	bool AddDefaultCA;					// Use default trust store
 	X *ServerCert;						// Server certificate
 };
 

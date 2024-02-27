@@ -38,8 +38,6 @@
 #include "Mayaqua/Tick64.h"
 #include "Mayaqua/Unix.h"
 
-#include "Mayaqua/Crypto/Key.h"
-
 #include <stdlib.h>
 
 #ifdef OS_UNIX
@@ -845,8 +843,6 @@ void PtMain(PT *pt)
 		CMD cmd[] =
 		{
 			{"About", PsAbout},
-			{"GenX25519", PtGenX25519},
-			{"GetPublicX25519", PtGetPublicX25519},
 			{"MakeCert", PtMakeCert},
 			{"MakeCert2048", PtMakeCert2048},
 			{"TrafficClient", PtTrafficClient},
@@ -2665,131 +2661,6 @@ UINT PtTrafficClient(CONSOLE *c, char *cmd_name, wchar_t *str, void *param)
 	return ret;
 }
 
-UINT PtGenX25519(CONSOLE *c, char *cmd_name, wchar_t *str, void *param)
-{
-	UINT ret = ERR_INTERNAL_ERROR;
-
-	LIST *o = ParseCommandList(c, cmd_name, str, NULL, 0);
-	if (o == NULL)
-	{
-		return ret;
-	}
-
-	EVP_PKEY *opaque = CryptoKeyOpaqueNew(KEY_X25519);
-
-	CRYPTO_KEY_RAW *private = NULL, *public = NULL;
-	const bool ok = CryptoKeyOpaqueToRaw(opaque, &private, &public);
-	CryptoKeyOpaqueFree(opaque);
-
-	if (ok == false)
-	{
-		goto FINAL;
-	}
-
-	char *base64 = Base64FromBin(NULL, private->Data, private->Size);
-	if (base64 == NULL)
-	{
-		goto FINAL;
-	}
-
-	wchar_t buf[MAX_SIZE];
-	UniFormat(buf, sizeof(buf), L"\n%s%S", _UU("CMD_GenX25519_PRIVATE_KEY"), base64);
-	Free(base64);
-
-	c->Write(c, buf);
-
-	base64 = Base64FromBin(NULL, public->Data, public->Size);
-	if (base64 == NULL)
-	{
-		goto FINAL;
-	}
-
-	UniFormat(buf, sizeof(buf), L"%s%S\n\n", _UU("CMD_GenX25519_PUBLIC_KEY"), base64);
-	Free(base64);
-
-	c->Write(c, buf);
-
-	ret = ERR_NO_ERROR;
-FINAL:
-	CryptoKeyRawFree(private);
-	CryptoKeyRawFree(public);
-	FreeParamValueList(o);
-
-	if (ret != ERR_NO_ERROR)
-	{
-		CmdPrintError(c, ret);
-	}
-
-	return ret;
-}
-
-UINT PtGetPublicX25519(CONSOLE *c, char *cmd_name, wchar_t *str, void *param)
-{
-	const PARAM args[] =
-	{
-		{"[private]", CmdPrompt, _UU("CMD_GetPublicX25519_PRIVATE_KEY"), CmdEvalNotEmpty, NULL}
-	};
-
-	LIST *o = ParseCommandList(c, cmd_name, str, args, sizeof(args) / sizeof(args[0]));
-	if (o == NULL)
-	{
-		return ERR_INVALID_PARAMETER;
-	}
-
-	UINT ret = ERR_INVALID_PARAMETER;
-
-	UINT size;
-	char *base64 = GetParamStr(o, "[private]");
-	void *bin = Base64ToBin(&size, base64, StrLen(base64));
-	if (bin == NULL)
-	{
-		goto FINAL;
-	}
-
-	CRYPTO_KEY_RAW *private = CryptoKeyRawNew(bin, size, KEY_X25519);
-	Free(bin);
-
-	if (private == NULL)
-	{
-		goto FINAL;
-	}
-
-	ret = ERR_INTERNAL_ERROR;
-
-	CRYPTO_KEY_RAW *public = CryptoKeyRawPublic(private);
-	CryptoKeyRawFree(private);
-
-	if (public == NULL)
-	{
-		goto FINAL;
-	}
-
-	base64 = Base64FromBin(NULL, public->Data, public->Size);
-	CryptoKeyRawFree(public);
-
-	if (base64 == NULL)
-	{
-		goto FINAL;
-	}
-
-	wchar_t buf[MAX_SIZE];
-	UniFormat(buf, sizeof(buf), L"\n%s%S\n\n", _UU("CMD_GetPublicX25519_PUBLIC_KEY"), base64);
-	Free(base64);
-
-	c->Write(c, buf);
-
-	ret = ERR_NO_ERROR;
-FINAL:
-	FreeParamValueList(o);
-
-	if (ret != ERR_NO_ERROR)
-	{
-		CmdPrintError(c, ret);
-	}
-
-	return ret;
-}
-
 // Certificate easy creation tool (1024 bit)
 UINT PtMakeCert(CONSOLE *c, char *cmd_name, wchar_t *str, void *param)
 {
@@ -3109,8 +2980,6 @@ void PcMain(PC *pc)
 			{"AccountServerCertDisable", PcAccountServerCertDisable},
 			{"AccountRetryOnServerCertEnable", PcAccountRetryOnServerCertEnable},
 			{"AccountRetryOnServerCertDisable", PcAccountRetryOnServerCertDisable},
-			{"AccountDefaultCAEnable", PcAccountDefaultCAEnable},
-			{"AccountDefaultCADisable", PcAccountDefaultCADisable},
 			{"AccountServerCertSet", PcAccountServerCertSet},
 			{"AccountServerCertDelete", PcAccountServerCertDelete},
 			{"AccountServerCertGet", PcAccountServerCertGet},
@@ -4295,26 +4164,6 @@ UINT PcAccountCreate(CONSOLE *c, char *cmd_name, wchar_t *str, void *param)
 	return ret;
 }
 
-// Setup a RPC_CLIENT_CREATE_ACCOUNT from a RPC_CLIENT_GET_ACCOUNT
-void SetRpcClientCreateAccountFromGetAccount(RPC_CLIENT_CREATE_ACCOUNT *c, RPC_CLIENT_GET_ACCOUNT *t)
-{
-	if (c == NULL || t == NULL)
-	{
-		return;
-	}
-
-	Zero(c, sizeof(RPC_CLIENT_CREATE_ACCOUNT));
-
-	// Copy reference
-	c->ClientAuth = t->ClientAuth;
-	c->ClientOption = t->ClientOption;
-	c->CheckServerCert = t->CheckServerCert;
-	c->RetryOnServerCert = t->RetryOnServerCert;
-	c->AddDefaultCA = t->AddDefaultCA;
-	c->ServerCert = t->ServerCert;
-	c->StartupAccount = t->StartupAccount;
-}
-
 // Set the destination of the connection settings
 UINT PcAccountSet(CONSOLE *c, char *cmd_name, wchar_t *str, void *param)
 {
@@ -4355,10 +4204,16 @@ UINT PcAccountSet(CONSOLE *c, char *cmd_name, wchar_t *str, void *param)
 		// Success
 		t.ClientOption->Port = port;
 		StrCpy(t.ClientOption->Hostname, sizeof(t.ClientOption->Hostname), host);
-		t.ClientOption->HintStr[0] = 0;
 		StrCpy(t.ClientOption->HubName, sizeof(t.ClientOption->HubName), GetParamStr(o, "HUB"));
 
-		SetRpcClientCreateAccountFromGetAccount(&c, &t);
+		Zero(&c, sizeof(c));
+
+		c.ClientAuth = t.ClientAuth;
+		c.ClientOption = t.ClientOption;
+		c.CheckServerCert = t.CheckServerCert;
+		c.RetryOnServerCert = t.RetryOnServerCert;
+		c.ServerCert = t.ServerCert;
+		c.StartupAccount = t.StartupAccount;
 
 		ret = CcSetAccount(pc->RemoteClient, &c);
 	}
@@ -4416,18 +4271,7 @@ UINT PcAccountGet(CONSOLE *c, char *cmd_name, wchar_t *str, void *param)
 		CtInsert(ct, _UU("CMD_ACCOUNT_COLUMN_NAME"), t.ClientOption->AccountName);
 
 		// Host name of the destination VPN Server
-		if (IsEmptyStr(t.ClientOption->HintStr))
-		{
-			StrToUni(tmp, sizeof(tmp), t.ClientOption->Hostname);
-		}
-		else
-		{
-			char hostname[MAX_SIZE];
-			StrCpy(hostname, sizeof(hostname), t.ClientOption->Hostname);
-			StrCat(hostname, sizeof(hostname), "/");
-			StrCat(hostname, sizeof(hostname), t.ClientOption->HintStr);
-			StrToUni(tmp, sizeof(tmp), hostname);
-		}
+		StrToUni(tmp, sizeof(tmp), t.ClientOption->Hostname);
 		CtInsert(ct, _UU("CMD_ACCOUNT_COLUMN_HOSTNAME"), tmp);
 
 		// The port number to connect to VPN Server
@@ -4471,8 +4315,6 @@ UINT PcAccountGet(CONSOLE *c, char *cmd_name, wchar_t *str, void *param)
 		{
 			CtInsert(ct, _UU("CMD_ACCOUNT_COLUMN_RETRY_ON_SERVER_CERT"),
 				t.RetryOnServerCert ? _UU("CMD_MSG_ENABLE") : _UU("CMD_MSG_DISABLE"));
-			CtInsert(ct, _UU("CMD_ACCOUNT_COLUMN_ADD_DEFAULT_CA"),
-				t.AddDefaultCA ? _UU("CMD_MSG_ENABLE") : _UU("CMD_MSG_DISABLE"));
 		}
 
 		// Device name to be used for the connection
@@ -4647,7 +4489,13 @@ UINT PcAccountUsernameSet(CONSOLE *c, char *cmd_name, wchar_t *str, void *param)
 			c->Write(c, _UU("CMD_AccountUsername_Notice"));
 		}
 
-		SetRpcClientCreateAccountFromGetAccount(&z, &t);
+		Zero(&z, sizeof(z));
+		z.CheckServerCert = t.CheckServerCert;
+		z.RetryOnServerCert = t.RetryOnServerCert;
+		z.ClientAuth = t.ClientAuth;
+		z.ClientOption = t.ClientOption;
+		z.ServerCert = t.ServerCert;
+		z.StartupAccount = t.StartupAccount;
 
 		ret = CcSetAccount(pc->RemoteClient, &z);
 	}
@@ -4699,7 +4547,13 @@ UINT PcAccountAnonymousSet(CONSOLE *c, char *cmd_name, wchar_t *str, void *param
 		// Change the settings
 		t.ClientAuth->AuthType = CLIENT_AUTHTYPE_ANONYMOUS;
 
-		SetRpcClientCreateAccountFromGetAccount(&z, &t);
+		Zero(&z, sizeof(z));
+		z.CheckServerCert = t.CheckServerCert;
+		z.RetryOnServerCert = t.RetryOnServerCert;
+		z.ClientAuth = t.ClientAuth;
+		z.ClientOption = t.ClientOption;
+		z.ServerCert = t.ServerCert;
+		z.StartupAccount = t.StartupAccount;
 
 		ret = CcSetAccount(pc->RemoteClient, &z);
 	}
@@ -4775,7 +4629,13 @@ UINT PcAccountPasswordSet(CONSOLE *c, char *cmd_name, wchar_t *str, void *param)
 
 		if (ret == ERR_NO_ERROR)
 		{
-			SetRpcClientCreateAccountFromGetAccount(&z, &t);
+			Zero(&z, sizeof(z));
+			z.CheckServerCert = t.CheckServerCert;
+			z.RetryOnServerCert = t.RetryOnServerCert;
+			z.ClientAuth = t.ClientAuth;
+			z.ClientOption = t.ClientOption;
+			z.ServerCert = t.ServerCert;
+			z.StartupAccount = t.StartupAccount;
 
 			ret = CcSetAccount(pc->RemoteClient, &z);
 		}
@@ -4848,7 +4708,13 @@ UINT PcAccountCertSet(CONSOLE *c, char *cmd_name, wchar_t *str, void *param)
 		t.ClientAuth->ClientX = CloneX(x);
 		t.ClientAuth->ClientK = CloneK(k);
 
-		SetRpcClientCreateAccountFromGetAccount(&z, &t);
+		Zero(&z, sizeof(z));
+		z.CheckServerCert = t.CheckServerCert;
+		z.RetryOnServerCert = t.RetryOnServerCert;
+		z.ClientAuth = t.ClientAuth;
+		z.ClientOption = t.ClientOption;
+		z.ServerCert = t.ServerCert;
+		z.StartupAccount = t.StartupAccount;
 
 		ret = CcSetAccount(pc->RemoteClient, &z);
 	}
@@ -4963,7 +4829,13 @@ UINT PcAccountEncryptDisable(CONSOLE *c, char *cmd_name, wchar_t *str, void *par
 		// Change the settings
 		t.ClientOption->UseEncrypt = false;
 
-		SetRpcClientCreateAccountFromGetAccount(&z, &t);
+		Zero(&z, sizeof(z));
+		z.CheckServerCert = t.CheckServerCert;
+		z.RetryOnServerCert = t.RetryOnServerCert;
+		z.ClientAuth = t.ClientAuth;
+		z.ClientOption = t.ClientOption;
+		z.ServerCert = t.ServerCert;
+		z.StartupAccount = t.StartupAccount;
 
 		ret = CcSetAccount(pc->RemoteClient, &z);
 	}
@@ -5015,7 +4887,13 @@ UINT PcAccountEncryptEnable(CONSOLE *c, char *cmd_name, wchar_t *str, void *para
 		// Change the settings
 		t.ClientOption->UseEncrypt = true;
 
-		SetRpcClientCreateAccountFromGetAccount(&z, &t);
+		Zero(&z, sizeof(z));
+		z.CheckServerCert = t.CheckServerCert;
+		z.RetryOnServerCert = t.RetryOnServerCert;
+		z.ClientAuth = t.ClientAuth;
+		z.ClientOption = t.ClientOption;
+		z.ServerCert = t.ServerCert;
+		z.StartupAccount = t.StartupAccount;
 
 		ret = CcSetAccount(pc->RemoteClient, &z);
 	}
@@ -5067,7 +4945,13 @@ UINT PcAccountCompressEnable(CONSOLE *c, char *cmd_name, wchar_t *str, void *par
 		// Change the settings
 		t.ClientOption->UseCompress = true;
 
-		SetRpcClientCreateAccountFromGetAccount(&z, &t);
+		Zero(&z, sizeof(z));
+		z.CheckServerCert = t.CheckServerCert;
+		z.RetryOnServerCert = t.RetryOnServerCert;
+		z.ClientAuth = t.ClientAuth;
+		z.ClientOption = t.ClientOption;
+		z.ServerCert = t.ServerCert;
+		z.StartupAccount = t.StartupAccount;
 
 		ret = CcSetAccount(pc->RemoteClient, &z);
 	}
@@ -5119,7 +5003,13 @@ UINT PcAccountCompressDisable(CONSOLE *c, char *cmd_name, wchar_t *str, void *pa
 		// Change the settings
 		t.ClientOption->UseCompress = false;
 
-		SetRpcClientCreateAccountFromGetAccount(&z, &t);
+		Zero(&z, sizeof(z));
+		z.CheckServerCert = t.CheckServerCert;
+		z.RetryOnServerCert = t.RetryOnServerCert;
+		z.ClientAuth = t.ClientAuth;
+		z.ClientOption = t.ClientOption;
+		z.ServerCert = t.ServerCert;
+		z.StartupAccount = t.StartupAccount;
 
 		ret = CcSetAccount(pc->RemoteClient, &z);
 	}
@@ -5194,7 +5084,13 @@ UINT PcAccountHttpHeaderAdd(CONSOLE *c, char *cmd_name, wchar_t *str, void *para
 			if ((StrLen(s) + StrLen(t.ClientOption->CustomHttpHeader)) < sizeof(t.ClientOption->CustomHttpHeader)) {
 				StrCat(t.ClientOption->CustomHttpHeader, sizeof(s), s);
 
-				SetRpcClientCreateAccountFromGetAccount(&z, &t);
+				Zero(&z, sizeof(z));
+				z.CheckServerCert = t.CheckServerCert;
+				z.RetryOnServerCert = t.RetryOnServerCert;
+				z.ClientAuth = t.ClientAuth;
+				z.ClientOption = t.ClientOption;
+				z.ServerCert = t.ServerCert;
+				z.StartupAccount = t.StartupAccount;
 
 				ret = CcSetAccount(pc->RemoteClient, &z);
 			}
@@ -5259,7 +5155,13 @@ UINT PcAccountHttpHeaderDelete(CONSOLE *c, char *cmd_name, wchar_t *str, void *p
 		RPC_CLIENT_CREATE_ACCOUNT z;
 		char *value = GetParamStr(o, "NAME");
 
-		SetRpcClientCreateAccountFromGetAccount(&z, &t);
+		Zero(&z, sizeof(z));
+		z.CheckServerCert = t.CheckServerCert;
+		z.RetryOnServerCert = t.RetryOnServerCert;
+		z.ClientAuth = t.ClientAuth;
+		z.ClientOption = t.ClientOption;
+		z.ServerCert = t.ServerCert;
+		z.StartupAccount = t.StartupAccount;
 
 		Zero(z.ClientOption->CustomHttpHeader, sizeof(z.ClientOption->CustomHttpHeader));
 
@@ -5379,7 +5281,13 @@ UINT PcAccountProxyNone(CONSOLE *c, char *cmd_name, wchar_t *str, void *param)
 		// Change the settings
 		t.ClientOption->ProxyType = PROXY_DIRECT;
 
-		SetRpcClientCreateAccountFromGetAccount(&z, &t);
+		Zero(&z, sizeof(z));
+		z.CheckServerCert = t.CheckServerCert;
+		z.RetryOnServerCert = t.RetryOnServerCert;
+		z.ClientAuth = t.ClientAuth;
+		z.ClientOption = t.ClientOption;
+		z.ServerCert = t.ServerCert;
+		z.StartupAccount = t.StartupAccount;
 
 		ret = CcSetAccount(pc->RemoteClient, &z);
 	}
@@ -5445,7 +5353,13 @@ UINT PcAccountProxyHttp(CONSOLE *c, char *cmd_name, wchar_t *str, void *param)
 			Free(host);
 		}
 
-		SetRpcClientCreateAccountFromGetAccount(&z, &t);
+		Zero(&z, sizeof(z));
+		z.CheckServerCert = t.CheckServerCert;
+		z.RetryOnServerCert = t.RetryOnServerCert;
+		z.ClientAuth = t.ClientAuth;
+		z.ClientOption = t.ClientOption;
+		z.ServerCert = t.ServerCert;
+		z.StartupAccount = t.StartupAccount;
 
 		ret = CcSetAccount(pc->RemoteClient, &z);
 	}
@@ -5511,7 +5425,13 @@ UINT PcAccountProxySocks(CONSOLE *c, char *cmd_name, wchar_t *str, void *param)
 			Free(host);
 		}
 
-		SetRpcClientCreateAccountFromGetAccount(&z, &t);
+		Zero(&z, sizeof(z));
+		z.CheckServerCert = t.CheckServerCert;
+		z.RetryOnServerCert = t.RetryOnServerCert;
+		z.ClientAuth = t.ClientAuth;
+		z.ClientOption = t.ClientOption;
+		z.ServerCert = t.ServerCert;
+		z.StartupAccount = t.StartupAccount;
 
 		ret = CcSetAccount(pc->RemoteClient, &z);
 	}
@@ -5577,7 +5497,13 @@ UINT PcAccountProxySocks5(CONSOLE *c, char *cmd_name, wchar_t *str, void *param)
 			Free(host);
 		}
 
-		SetRpcClientCreateAccountFromGetAccount(&z, &t);
+		Zero(&z, sizeof(z));
+		z.CheckServerCert = t.CheckServerCert;
+		z.RetryOnServerCert = t.RetryOnServerCert;
+		z.ClientAuth = t.ClientAuth;
+		z.ClientOption = t.ClientOption;
+		z.ServerCert = t.ServerCert;
+		z.StartupAccount = t.StartupAccount;
 
 		ret = CcSetAccount(pc->RemoteClient, &z);
 	}
@@ -5629,7 +5555,13 @@ UINT PcAccountServerCertEnable(CONSOLE *c, char *cmd_name, wchar_t *str, void *p
 		// Change the settings
 		t.CheckServerCert = true;
 
-		SetRpcClientCreateAccountFromGetAccount(&z, &t);
+		Zero(&z, sizeof(z));
+		z.CheckServerCert = t.CheckServerCert;
+		z.RetryOnServerCert = t.RetryOnServerCert;
+		z.ClientAuth = t.ClientAuth;
+		z.ClientOption = t.ClientOption;
+		z.ServerCert = t.ServerCert;
+		z.StartupAccount = t.StartupAccount;
 
 		ret = CcSetAccount(pc->RemoteClient, &z);
 	}
@@ -5681,7 +5613,13 @@ UINT PcAccountServerCertDisable(CONSOLE *c, char *cmd_name, wchar_t *str, void *
 		// Change the settings
 		t.CheckServerCert = false;
 
-		SetRpcClientCreateAccountFromGetAccount(&z, &t);
+		Zero(&z, sizeof(z));
+		z.CheckServerCert = t.CheckServerCert;
+		z.RetryOnServerCert = t.RetryOnServerCert;
+		z.ClientAuth = t.ClientAuth;
+		z.ClientOption = t.ClientOption;
+		z.ServerCert = t.ServerCert;
+		z.StartupAccount = t.StartupAccount;
 
 		ret = CcSetAccount(pc->RemoteClient, &z);
 	}
@@ -5733,7 +5671,13 @@ UINT PcAccountRetryOnServerCertEnable(CONSOLE *c, char *cmd_name, wchar_t *str, 
 		// Change the settings
 		t.RetryOnServerCert = true;
 
-		SetRpcClientCreateAccountFromGetAccount(&z, &t);
+		Zero(&z, sizeof(z));
+		z.CheckServerCert = t.CheckServerCert;
+		z.RetryOnServerCert = t.RetryOnServerCert;
+		z.ClientAuth = t.ClientAuth;
+		z.ClientOption = t.ClientOption;
+		z.ServerCert = t.ServerCert;
+		z.StartupAccount = t.StartupAccount;
 
 		ret = CcSetAccount(pc->RemoteClient, &z);
 	}
@@ -5785,111 +5729,13 @@ UINT PcAccountRetryOnServerCertDisable(CONSOLE *c, char *cmd_name, wchar_t *str,
 		// Change the settings
 		t.RetryOnServerCert = false;
 
-		SetRpcClientCreateAccountFromGetAccount(&z, &t);
-
-		ret = CcSetAccount(pc->RemoteClient, &z);
-	}
-
-	if (ret != ERR_NO_ERROR)
-	{
-		// Error has occurred
-		CmdPrintError(c, ret);
-	}
-
-	CiFreeClientGetAccount(&t);
-
-	// Release of the parameter list
-	FreeParamValueList(o);
-
-	return ret;
-}
-
-// Enable trusting default CA list
-UINT PcAccountDefaultCAEnable(CONSOLE *c, char *cmd_name, wchar_t *str, void *param)
-{
-	LIST *o;
-	PC *pc = (PC *)param;
-	UINT ret = ERR_NO_ERROR;
-	RPC_CLIENT_GET_ACCOUNT t;
-	// Parameter list that can be specified
-	PARAM args[] =
-	{
-		{"[name]", CmdPrompt, _UU("CMD_AccountCreate_Prompt_Name"), CmdEvalNotEmpty, NULL},
-	};
-
-	// Get the parameter list
-	o = ParseCommandList(c, cmd_name, str, args, sizeof(args) / sizeof(args[0]));
-	if (o == NULL)
-	{
-		return ERR_INVALID_PARAMETER;
-	}
-
-	// RPC call
-	Zero(&t, sizeof(t));
-
-	UniStrCpy(t.AccountName, sizeof(t.AccountName), GetParamUniStr(o, "[name]"));
-
-	ret = CcGetAccount(pc->RemoteClient, &t);
-
-	if (ret == ERR_NO_ERROR)
-	{
-		RPC_CLIENT_CREATE_ACCOUNT z;
-		// Change the settings
-		t.AddDefaultCA = true;
-
-		SetRpcClientCreateAccountFromGetAccount(&z, &t);
-
-		ret = CcSetAccount(pc->RemoteClient, &z);
-	}
-
-	if (ret != ERR_NO_ERROR)
-	{
-		// Error has occurred
-		CmdPrintError(c, ret);
-	}
-
-	CiFreeClientGetAccount(&t);
-
-	// Release of the parameter list
-	FreeParamValueList(o);
-
-	return ret;
-}
-
-// Disable trusting default CA list
-UINT PcAccountDefaultCADisable(CONSOLE *c, char *cmd_name, wchar_t *str, void *param)
-{
-	LIST *o;
-	PC *pc = (PC *)param;
-	UINT ret = ERR_NO_ERROR;
-	RPC_CLIENT_GET_ACCOUNT t;
-	// Parameter list that can be specified
-	PARAM args[] =
-	{
-		{"[name]", CmdPrompt, _UU("CMD_AccountCreate_Prompt_Name"), CmdEvalNotEmpty, NULL},
-	};
-
-	// Get the parameter list
-	o = ParseCommandList(c, cmd_name, str, args, sizeof(args) / sizeof(args[0]));
-	if (o == NULL)
-	{
-		return ERR_INVALID_PARAMETER;
-	}
-
-	// RPC call
-	Zero(&t, sizeof(t));
-
-	UniStrCpy(t.AccountName, sizeof(t.AccountName), GetParamUniStr(o, "[name]"));
-
-	ret = CcGetAccount(pc->RemoteClient, &t);
-
-	if (ret == ERR_NO_ERROR)
-	{
-		RPC_CLIENT_CREATE_ACCOUNT z;
-		// Change the settings
-		t.AddDefaultCA = false;
-
-		SetRpcClientCreateAccountFromGetAccount(&z, &t);
+		Zero(&z, sizeof(z));
+		z.CheckServerCert = t.CheckServerCert;
+		z.RetryOnServerCert = t.RetryOnServerCert;
+		z.ClientAuth = t.ClientAuth;
+		z.ClientOption = t.ClientOption;
+		z.ServerCert = t.ServerCert;
+		z.StartupAccount = t.StartupAccount;
 
 		ret = CcSetAccount(pc->RemoteClient, &z);
 	}
@@ -5955,7 +5801,13 @@ UINT PcAccountServerCertSet(CONSOLE *c, char *cmd_name, wchar_t *str, void *para
 		}
 		t.ServerCert = CloneX(x);
 
-		SetRpcClientCreateAccountFromGetAccount(&z, &t);
+		Zero(&z, sizeof(z));
+		z.CheckServerCert = t.CheckServerCert;
+		z.RetryOnServerCert = t.RetryOnServerCert;
+		z.ClientAuth = t.ClientAuth;
+		z.ClientOption = t.ClientOption;
+		z.ServerCert = t.ServerCert;
+		z.StartupAccount = t.StartupAccount;
 
 		ret = CcSetAccount(pc->RemoteClient, &z);
 	}
@@ -6013,7 +5865,13 @@ UINT PcAccountServerCertDelete(CONSOLE *c, char *cmd_name, wchar_t *str, void *p
 		}
 		t.ServerCert = NULL;
 
-		SetRpcClientCreateAccountFromGetAccount(&z, &t);
+		Zero(&z, sizeof(z));
+		z.CheckServerCert = t.CheckServerCert;
+		z.RetryOnServerCert = t.RetryOnServerCert;
+		z.ClientAuth = t.ClientAuth;
+		z.ClientOption = t.ClientOption;
+		z.ServerCert = t.ServerCert;
+		z.StartupAccount = t.StartupAccount;
 
 		ret = CcSetAccount(pc->RemoteClient, &z);
 	}
@@ -6062,20 +5920,23 @@ UINT PcAccountServerCertGet(CONSOLE *c, char *cmd_name, wchar_t *str, void *para
 
 	if (ret == ERR_NO_ERROR)
 	{
-		// Save the certificate
-		if (t.ServerCert == NULL)
+		RPC_CLIENT_CREATE_ACCOUNT z;
+		// Change the settings
+		if (t.ServerCert != NULL)
 		{
-			c->Write(c, _UU("CMD_CERT_NOT_EXISTS"));
-			ret = ERR_INTERNAL_ERROR;
+			FreeX(t.ServerCert);
 		}
-		else
-		{
-			if (XToFileW(t.ServerCert, GetParamUniStr(o, "SAVECERT"), true) == false)
-			{
-				c->Write(c, _UU("CMD_SAVECERT_FAILED"));
-				ret = ERR_INTERNAL_ERROR;
-			}
-		}
+		t.ServerCert = NULL;
+
+		Zero(&z, sizeof(z));
+		z.CheckServerCert = t.CheckServerCert;
+		z.RetryOnServerCert = t.RetryOnServerCert;
+		z.ClientAuth = t.ClientAuth;
+		z.ClientOption = t.ClientOption;
+		z.ServerCert = t.ServerCert;
+		z.StartupAccount = t.StartupAccount;
+
+		ret = CcSetAccount(pc->RemoteClient, &z);
 	}
 
 	if (ret != ERR_NO_ERROR)
@@ -6150,7 +6011,12 @@ UINT PcAccountDetailSet(CONSOLE *c, char *cmd_name, wchar_t *str, void *param)
 		t.ClientOption->DisableQoS = GetParamYes(o, "NOQOS");
 		t.ClientOption->NoUdpAcceleration = GetParamYes(o, "DISABLEUDP");
 
-		SetRpcClientCreateAccountFromGetAccount(&z, &t);
+		Zero(&z, sizeof(z));
+		z.CheckServerCert = t.CheckServerCert;
+		z.ClientAuth = t.ClientAuth;
+		z.ClientOption = t.ClientOption;
+		z.ServerCert = t.ServerCert;
+		z.StartupAccount = t.StartupAccount;
 
 		ret = CcSetAccount(pc->RemoteClient, &z);
 	}
@@ -6393,7 +6259,14 @@ UINT PcAccountNicSet(CONSOLE *c, char *cmd_name, wchar_t *str, void *param)
 		StrCpy(t.ClientOption->DeviceName, sizeof(t.ClientOption->DeviceName),
 			GetParamStr(o, "NICNAME"));
 
-		SetRpcClientCreateAccountFromGetAccount(&c, &t);
+		Zero(&c, sizeof(c));
+
+		c.ClientAuth = t.ClientAuth;
+		c.ClientOption = t.ClientOption;
+		c.CheckServerCert = t.CheckServerCert;
+		c.RetryOnServerCert = t.RetryOnServerCert;
+		c.ServerCert = t.ServerCert;
+		c.StartupAccount = t.StartupAccount;
 
 		ret = CcSetAccount(pc->RemoteClient, &c);
 	}
@@ -6445,7 +6318,13 @@ UINT PcAccountStatusShow(CONSOLE *c, char *cmd_name, wchar_t *str, void *param)
 		// Change the settings
 		t.ClientOption->HideStatusWindow = false;
 
-		SetRpcClientCreateAccountFromGetAccount(&z, &t);
+		Zero(&z, sizeof(z));
+		z.CheckServerCert = t.CheckServerCert;
+		z.RetryOnServerCert = t.RetryOnServerCert;
+		z.ClientAuth = t.ClientAuth;
+		z.ClientOption = t.ClientOption;
+		z.ServerCert = t.ServerCert;
+		z.StartupAccount = t.StartupAccount;
 
 		ret = CcSetAccount(pc->RemoteClient, &z);
 	}
@@ -6497,7 +6376,13 @@ UINT PcAccountStatusHide(CONSOLE *c, char *cmd_name, wchar_t *str, void *param)
 		// Change the settings
 		t.ClientOption->HideStatusWindow = true;
 
-		SetRpcClientCreateAccountFromGetAccount(&z, &t);
+		Zero(&z, sizeof(z));
+		z.CheckServerCert = t.CheckServerCert;
+		z.RetryOnServerCert = t.RetryOnServerCert;
+		z.ClientAuth = t.ClientAuth;
+		z.ClientOption = t.ClientOption;
+		z.ServerCert = t.ServerCert;
+		z.StartupAccount = t.StartupAccount;
 
 		ret = CcSetAccount(pc->RemoteClient, &z);
 	}
@@ -6555,7 +6440,13 @@ UINT PcAccountSecureCertSet(CONSOLE *c, char *cmd_name, wchar_t *str, void *para
 		StrCpy(t.ClientAuth->SecurePrivateKeyName, sizeof(t.ClientAuth->SecurePrivateKeyName),
 			GetParamStr(o, "KEYNAME"));
 
-		SetRpcClientCreateAccountFromGetAccount(&z, &t);
+		Zero(&z, sizeof(z));
+		z.CheckServerCert = t.CheckServerCert;
+		z.RetryOnServerCert = t.RetryOnServerCert;
+		z.ClientAuth = t.ClientAuth;
+		z.ClientOption = t.ClientOption;
+		z.ServerCert = t.ServerCert;
+		z.StartupAccount = t.StartupAccount;
 
 		ret = CcSetAccount(pc->RemoteClient, &z);
 	}
@@ -6607,19 +6498,24 @@ UINT PcAccountOpensslEngineCertSet(CONSOLE *c, char *cmd_name, wchar_t *str, voi
 	{
 		RPC_CLIENT_CREATE_ACCOUNT z;
 		t.ClientAuth->AuthType = CLIENT_AUTHTYPE_OPENSSLENGINE;
-		X *x;
-		x = FileToXW(GetParamUniStr(o, "LOADCERT"));
-		if (x == NULL)
-		{
+    X *x;
+	  x = FileToXW(GetParamUniStr(o, "LOADCERT"));
+    if (x == NULL)
+    {
 			c->Write(c, _UU("CMD_LOADCERT_FAILED"));
-		}
+    }
 		StrCpy(t.ClientAuth->OpensslEnginePrivateKeyName, sizeof(t.ClientAuth->OpensslEnginePrivateKeyName),
 					 GetParamStr(o, "KEYNAME"));
 		StrCpy(t.ClientAuth->OpensslEngineName, sizeof(t.ClientAuth->OpensslEngineName),
 					 GetParamStr(o, "ENGINENAME"));
 		t.ClientAuth->ClientX = CloneX(x);
-
-		SetRpcClientCreateAccountFromGetAccount(&z, &t);
+		Zero(&z, sizeof(z));
+		z.CheckServerCert = t.CheckServerCert;
+		z.RetryOnServerCert = t.RetryOnServerCert;
+		z.ClientAuth = t.ClientAuth;
+		z.ClientOption = t.ClientOption;
+		z.ServerCert = t.ServerCert;
+		z.StartupAccount = t.StartupAccount;
 
 		ret = CcSetAccount(pc->RemoteClient, &z);
 	}
@@ -6684,7 +6580,13 @@ UINT PcAccountRetrySet(CONSOLE *c, char *cmd_name, wchar_t *str, void *param)
 		t.ClientOption->NumRetry = (num == 999) ? INFINITE : num;
 		t.ClientOption->RetryInterval = interval;
 
-		SetRpcClientCreateAccountFromGetAccount(&z, &t);
+		Zero(&z, sizeof(z));
+		z.CheckServerCert = t.CheckServerCert;
+		z.RetryOnServerCert = t.RetryOnServerCert;
+		z.ClientAuth = t.ClientAuth;
+		z.ClientOption = t.ClientOption;
+		z.ServerCert = t.ServerCert;
+		z.StartupAccount = t.StartupAccount;
 
 		ret = CcSetAccount(pc->RemoteClient, &z);
 	}
@@ -6737,7 +6639,13 @@ UINT PcAccountStartupSet(CONSOLE *c, char *cmd_name, wchar_t *str, void *param)
 		// Change the settings
 		t.StartupAccount = true;
 
-		SetRpcClientCreateAccountFromGetAccount(&z, &t);
+		Zero(&z, sizeof(z));
+		z.CheckServerCert = t.CheckServerCert;
+		z.RetryOnServerCert = t.RetryOnServerCert;
+		z.ClientAuth = t.ClientAuth;
+		z.ClientOption = t.ClientOption;
+		z.ServerCert = t.ServerCert;
+		z.StartupAccount = t.StartupAccount;
 
 		ret = CcSetAccount(pc->RemoteClient, &z);
 	}
@@ -6789,7 +6697,13 @@ UINT PcAccountStartupRemove(CONSOLE *c, char *cmd_name, wchar_t *str, void *para
 		// Change the settings
 		t.StartupAccount = false;
 
-		SetRpcClientCreateAccountFromGetAccount(&z, &t);
+		Zero(&z, sizeof(z));
+		z.CheckServerCert = t.CheckServerCert;
+		z.RetryOnServerCert = t.RetryOnServerCert;
+		z.ClientAuth = t.ClientAuth;
+		z.ClientOption = t.ClientOption;
+		z.ServerCert = t.ServerCert;
+		z.StartupAccount = t.StartupAccount;
 
 		ret = CcSetAccount(pc->RemoteClient, &z);
 	}
@@ -6846,7 +6760,12 @@ UINT PcAccountExport(CONSOLE *c, char *cmd_name, wchar_t *str, void *param)
 		UINT buf_size;
 		UCHAR bom[] = {0xef, 0xbb, 0xbf, };
 
-		SetRpcClientCreateAccountFromGetAccount(&z, &t);
+		Zero(&z, sizeof(z));
+		z.CheckServerCert = t.CheckServerCert;
+		z.ClientAuth = t.ClientAuth;
+		z.ClientOption = t.ClientOption;
+		z.ServerCert = t.ServerCert;
+		z.StartupAccount = t.StartupAccount;
 
 		b = CiAccountToCfg(&z);
 
@@ -7650,8 +7569,6 @@ void PsMain(PS *ps)
 			{"CascadeProxySocks5", PsCascadeProxySocks5},
 			{"CascadeServerCertEnable", PsCascadeServerCertEnable},
 			{"CascadeServerCertDisable", PsCascadeServerCertDisable},
-			{"CascadeDefaultCAEnable", PsCascadeDefaultCAEnable},
-			{"CascadeDefaultCADisable", PsCascadeDefaultCADisable},
 			{"CascadeServerCertSet", PsCascadeServerCertSet},
 			{"CascadeServerCertDelete", PsCascadeServerCertDelete},
 			{"CascadeServerCertGet", PsCascadeServerCertGet},
@@ -8592,51 +8509,18 @@ UINT PsServerKeyGet(CONSOLE *c, char *cmd_name, wchar_t *str, void *param)
 // Read the certificate and the private key
 bool CmdLoadCertAndKey(CONSOLE *c, X **xx, K **kk, wchar_t *cert_filename, wchar_t *key_filename)
 {
-	return CmdLoadCertChainAndKey(c, xx, kk, NULL, cert_filename, key_filename);
-}
-bool CmdLoadCertChainAndKey(CONSOLE *c, X **xx, K **kk, LIST **cc, wchar_t *cert_filename, wchar_t *key_filename)
-{
-	X *x = NULL;
+	X *x;
 	K *k;
-	LIST *chain = NULL;
 	// Validate arguments
 	if (c == NULL || cert_filename == NULL || key_filename == NULL || xx == NULL || kk == NULL)
 	{
 		return false;
 	}
 
-	BUF *b = ReadDumpW(cert_filename);
-	if (b == NULL)
-	{
-		c->Write(c, _UU("CMD_LOADCERT_FAILED"));
-		return false;
-	}
-
-	// DER-encoded X509 files can't hold multiple certificates
-	if (cc == NULL || IsBase64(b) == false)
-	{
-		x = BufToX(b, IsBase64(b));
-	}
-	else
-	{
-		chain = BufToXList(b, true);
-		if (LIST_NUM(chain) > 0)
-		{
-			x = LIST_DATA(chain, 0);
-			Delete(chain, x);
-
-			if (LIST_NUM(chain) == 0)
-			{
-				ReleaseList(chain);
-				chain = NULL;
-			}
-		}
-	}
-	FreeBuf(b);
+	x = FileToXW(cert_filename);
 	if (x == NULL)
 	{
 		c->Write(c, _UU("CMD_LOADCERT_FAILED"));
-		FreeXList(chain);
 		return false;
 	}
 
@@ -8645,7 +8529,6 @@ bool CmdLoadCertChainAndKey(CONSOLE *c, X **xx, K **kk, LIST **cc, wchar_t *cert
 	{
 		c->Write(c, _UU("CMD_LOADKEY_FAILED"));
 		FreeX(x);
-		FreeXList(chain);
 		return false;
 	}
 
@@ -8654,17 +8537,12 @@ bool CmdLoadCertChainAndKey(CONSOLE *c, X **xx, K **kk, LIST **cc, wchar_t *cert
 		c->Write(c, _UU("CMD_KEYPAIR_FAILED"));
 		FreeX(x);
 		FreeK(k);
-		FreeXList(chain);
 
 		return false;
 	}
 
 	*xx = x;
 	*kk = k;
-	if (cc != NULL)
-	{
-		*cc = chain;
-	}
 
 	return true;
 }
@@ -8747,7 +8625,7 @@ UINT PsServerCertSet(CONSOLE *c, char *cmd_name, wchar_t *str, void *param)
 
 	Zero(&t, sizeof(t));
 
-	if (CmdLoadCertChainAndKey(c, &t.Cert, &t.Key, &t.Chain,
+	if (CmdLoadCertAndKey(c, &t.Cert, &t.Key,
 		GetParamUniStr(o, "LOADCERT"),
 		GetParamUniStr(o, "LOADKEY")))
 	{
@@ -13071,7 +12949,6 @@ UINT PsCascadeSet(CONSOLE *c, char *cmd_name, wchar_t *str, void *param)
 
 	t.ClientOption->Port = port;
 	StrCpy(t.ClientOption->Hostname, sizeof(t.ClientOption->Hostname), host);
-	t.ClientOption->HintStr[0] = 0;
 	StrCpy(t.ClientOption->HubName, sizeof(t.ClientOption->HubName), GetParamStr(o, "HUB"));
 
 	Free(host);
@@ -13178,18 +13055,7 @@ UINT PsCascadeGet(CONSOLE *c, char *cmd_name, wchar_t *str, void *param)
 		CtInsert(ct, _UU("CMD_ACCOUNT_COLUMN_NAME"), t.ClientOption->AccountName);
 
 		// Host name of the destination VPN Server
-		if (IsEmptyStr(t.ClientOption->HintStr))
-		{
-			StrToUni(tmp, sizeof(tmp), t.ClientOption->Hostname);
-		}
-		else
-		{
-			char hostname[MAX_SIZE];
-			StrCpy(hostname, sizeof(hostname), t.ClientOption->Hostname);
-			StrCat(hostname, sizeof(hostname), "/");
-			StrCat(hostname, sizeof(hostname), t.ClientOption->HintStr);
-			StrToUni(tmp, sizeof(tmp), hostname);
-		}
+		StrToUni(tmp, sizeof(tmp), t.ClientOption->Hostname);
 		CtInsert(ct, _UU("CMD_ACCOUNT_COLUMN_HOSTNAME"), tmp);
 
 		// The port number to connect to VPN Server
@@ -13227,12 +13093,6 @@ UINT PsCascadeGet(CONSOLE *c, char *cmd_name, wchar_t *str, void *param)
 		{
 			GetAllNameFromX(tmp, sizeof(tmp), t.ServerCert);
 			CtInsert(ct, _UU("CMD_ACCOUNT_COLUMN_SERVER_CERT_NAME"), tmp);
-		}
-
-		if (t.CheckServerCert)
-		{
-			CtInsert(ct, _UU("CMD_ACCOUNT_COLUMN_ADD_DEFAULT_CA"),
-				t.AddDefaultCA ? _UU("CMD_MSG_ENABLE") : _UU("CMD_MSG_DISABLE"));
 		}
 
 		// Device name to be used for the connection
@@ -14653,134 +14513,6 @@ UINT PsCascadeServerCertDisable(CONSOLE *c, char *cmd_name, wchar_t *str, void *
 	return 0;
 }
 
-// Enable trusting default CA list for cascade connection
-UINT PsCascadeDefaultCAEnable(CONSOLE *c, char *cmd_name, wchar_t *str, void *param)
-{
-	LIST *o;
-	PS *ps = (PS *)param;
-	UINT ret = 0;
-	RPC_CREATE_LINK t;
-	// Parameter list that can be specified
-	PARAM args[] =
-	{
-		// "name", prompt_proc, prompt_param, eval_proc, eval_param
-		{"[name]", CmdPrompt, _UU("CMD_CascadeCreate_Prompt_Name"), CmdEvalNotEmpty, NULL},
-	};
-	
-	// If virtual HUB is not selected, it's an error
-	if (ps->HubName == NULL)
-	{
-		c->Write(c, _UU("CMD_Hub_Not_Selected"));
-		return ERR_INVALID_PARAMETER;
-	}
-
-	o = ParseCommandList(c, cmd_name, str, args, sizeof(args) / sizeof(args[0]));
-	if (o == NULL)
-	{
-		return ERR_INVALID_PARAMETER;
-	}
-
-	Zero(&t, sizeof(t));
-	StrCpy(t.HubName, sizeof(t.HubName), ps->HubName);
-	t.ClientOption = ZeroMalloc(sizeof(CLIENT_OPTION));
-	UniStrCpy(t.ClientOption->AccountName, sizeof(t.ClientOption->AccountName), GetParamUniStr(o, "[name]"));
-
-	// RPC call
-	ret = ScGetLink(ps->Rpc, &t);
-
-	if (ret != ERR_NO_ERROR)
-	{
-		// An error has occured
-		CmdPrintError(c, ret);
-		FreeParamValueList(o);
-		return ret;
-	}
-	else
-	{
-		// Data change
-		t.AddDefaultCA = true;
-
-		ret = ScSetLink(ps->Rpc, &t);
-		if (ret != ERR_NO_ERROR)
-		{
-			// An error has occured
-			CmdPrintError(c, ret);
-			FreeParamValueList(o);
-			return ret;
-		}
-
-		FreeRpcCreateLink(&t);
-	}
-
-	FreeParamValueList(o);
-
-	return 0;
-}
-
-// Disable trusting default CA list for cascade connection
-UINT PsCascadeDefaultCADisable(CONSOLE *c, char *cmd_name, wchar_t *str, void *param)
-{
-	LIST *o;
-	PS *ps = (PS *)param;
-	UINT ret = 0;
-	RPC_CREATE_LINK t;
-	// Parameter list that can be specified
-	PARAM args[] =
-	{
-		// "name", prompt_proc, prompt_param, eval_proc, eval_param
-		{"[name]", CmdPrompt, _UU("CMD_CascadeCreate_Prompt_Name"), CmdEvalNotEmpty, NULL},
-	};
-	
-	// If virtual HUB is not selected, it's an error
-	if (ps->HubName == NULL)
-	{
-		c->Write(c, _UU("CMD_Hub_Not_Selected"));
-		return ERR_INVALID_PARAMETER;
-	}
-
-	o = ParseCommandList(c, cmd_name, str, args, sizeof(args) / sizeof(args[0]));
-	if (o == NULL)
-	{
-		return ERR_INVALID_PARAMETER;
-	}
-
-	Zero(&t, sizeof(t));
-	StrCpy(t.HubName, sizeof(t.HubName), ps->HubName);
-	t.ClientOption = ZeroMalloc(sizeof(CLIENT_OPTION));
-	UniStrCpy(t.ClientOption->AccountName, sizeof(t.ClientOption->AccountName), GetParamUniStr(o, "[name]"));
-
-	// RPC call
-	ret = ScGetLink(ps->Rpc, &t);
-
-	if (ret != ERR_NO_ERROR)
-	{
-		// An error has occured
-		CmdPrintError(c, ret);
-		FreeParamValueList(o);
-		return ret;
-	}
-	else
-	{
-		// Data change
-		t.AddDefaultCA = false;
-
-		ret = ScSetLink(ps->Rpc, &t);
-		if (ret != ERR_NO_ERROR)
-		{
-			// An error has occured
-			CmdPrintError(c, ret);
-			FreeParamValueList(o);
-			return ret;
-		}
-
-		FreeRpcCreateLink(&t);
-	}
-
-	FreeParamValueList(o);
-
-	return 0;
-}
-
 // Server-specific certificate settings of cascade connection
 UINT PsCascadeServerCertSet(CONSOLE *c, char *cmd_name, wchar_t *str, void *param)
 {
@@ -15534,11 +15266,7 @@ void CmdPrintStatusToListViewEx(CT *ct, RPC_CLIENT_GET_CONNECTION_STATUS *s, boo
 		}
 		else
 		{
-			if (StrLen(s->CipherName) != 0 && StrLen(s->ProtocolName) != 0)
-			{
-				UniFormat(tmp, sizeof(tmp), _UU("CM_ST_USE_ENCRYPT_TRUE3"), s->ProtocolName, s->CipherName);
-			}
-			else if (StrLen(s->CipherName) != 0)
+			if (StrLen(s->CipherName) != 0)
 			{
 				UniFormat(tmp, sizeof(tmp), _UU("CM_ST_USE_ENCRYPT_TRUE"), s->CipherName);
 			}
@@ -19073,7 +18801,7 @@ UINT PsSessionGet(CONSOLE *c, char *cmd_name, wchar_t *str, void *param)
 		char str[MAX_SIZE];
 		CT *ct = CtNewStandard();
 
-		if (t.ClientIp != 0 || IsZero(t.ClientIp6, sizeof(t.ClientIp6)) == false)
+		if (t.ClientIp != 0)
 		{
 			IPToStr4or6(str, sizeof(str), t.ClientIp, t.ClientIp6);
 			StrToUni(tmp, sizeof(tmp), str);
@@ -24377,12 +24105,6 @@ UINT PsConnect(CONSOLE *c, char *host, UINT port, char *hub, char *adminhub, wch
 	Zero(&o, sizeof(o));
 	UniStrCpy(o.AccountName, sizeof(o.AccountName), L"VPNCMD");
 	StrCpy(o.Hostname, sizeof(o.Hostname), host);
-	UINT i = SearchStrEx(o.Hostname, "/", 0, false);
-	if (i != INFINITE)
-	{
-		StrCpy(o.HintStr, sizeof(o.HintStr), o.Hostname + i + 1);
-		o.Hostname[i] = 0;
-	}
 	o.Port = port;
 	o.ProxyType = PROXY_DIRECT;
 
@@ -24441,7 +24163,7 @@ UINT PsConnect(CONSOLE *c, char *host, UINT port, char *hub, char *adminhub, wch
 			PS *ps;
 
 			// Success
-			ps = NewPs(c, rpc, o.Hostname, port, hub, adminhub, cmdline);
+			ps = NewPs(c, rpc, host, port, hub, adminhub, cmdline);
 			PsMain(ps);
 			retcode = ps->LastError;
 			FreePs(ps);
@@ -24495,34 +24217,6 @@ void CmdPrintAbout(CONSOLE *c)
 		cedar->VerString, cedar->BuildInfo);
 
 	c->Write(c, tmp);
-
-	// Showing an explanation of the purpose of the Developer Edition and the difference from the Stable Editon by Daiyuu Nobori
-	/*
-	* Welcome to the Developer Edition of SoftEther VPN.
-
-	Please note: SoftEther VPN Developer Edition (Version 5.x) has accepted
-	great code contributions on GitHub from many excellent open source
-	developers. This edition contains some very bright experimental code.
-	  The experimental code in this Developer Edition has *NOT* been fully
-	reviewed by Daiyuu Nobori (the first original author of SoftEther VPN)
-	and has not been endorsed by him for stability and quality. It is his
-	policy to encourage many developers to contribute code with their
-	creative minds and ambitions. The succession of low-level system
-	software and network developers is of critical importance worldwide,
-	and SoftEther VPN Developer Edition is very important to increase
-	the number of such great developers.
-	- If you are a programmer of VPN software, or if you want a variety of
-	  experimental code, this edition is very suitable for you.
-	- On the other hand, if you are building VPNs for mission-critical
-	  business systems that require stability and security,
-	  Stable Edition (Version 4.x) is highly recommended.
-	- All code in Stable Edition is reviewed by Daiyuu Nobori. He is also
-	  responsible for porting features from the Developer Edition
-	  to the Stable Edition.
-	- SoftEther VPN Stable Edition can be downloaded at:
-	  https://github.com/SoftEtherVPN/SoftEtherVPN_Stable/
-*/
-	c->Write(c, L"\nWelcome to the Developer Edition of SoftEther VPN.\n\nPlease note: SoftEther VPN Developer Edition (Version 5.x) has accepted\ngreat code contributions on GitHub from many excellent open source\ndevelopers. This edition contains some very bright experimental code.\n  The experimental code in this Developer Edition has *NOT* been fully\nreviewed by Daiyuu Nobori (the first original author of SoftEther VPN)\nand has not been endorsed by him for stability and quality. It is his\npolicy to encourage many developers to contribute code with their\ncreative minds and ambitions. The succession of low-level system\nsoftware and network developers is of critical importance worldwide,\nand SoftEther VPN Developer Edition is very important to increase\nthe number of such great developers.\n- If you are a programmer of VPN software, or if you want a variety of\n  experimental code, this edition is very suitable for you.\n- On the other hand, if you are building VPNs for mission-critical\n  business systems that require stability and security,\n  Stable Edition (Version 4.x) is highly recommended.\n- All code in Stable Edition is reviewed by Daiyuu Nobori. He is also\n  responsible for porting features from the Developer Edition\n  to the Stable Edition.\n- SoftEther VPN Stable Edition can be downloaded at:\n  https://github.com/SoftEtherVPN/SoftEtherVPN_Stable/\n\n");
 
 	ReleaseCedar(cedar);
 }

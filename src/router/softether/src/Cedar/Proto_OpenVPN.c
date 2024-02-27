@@ -147,7 +147,7 @@ bool OvsProcessData(void *param, TCP_RAW_DATA *in, FIFO *out)
 		payload_size = READ_USHORT(FifoPtr(fifo));
 		packet_size = payload_size + sizeof(USHORT);
 
-		if (payload_size == 0 || payload_size > (sizeof(buf) - sizeof(USHORT)))
+		if (payload_size == 0 || packet_size > sizeof(buf))
 		{
 			ret = false;
 			Debug("OvsProcessData(): Invalid payload size: %u bytes\n", payload_size);
@@ -824,10 +824,6 @@ void OvsProcessRecvControlPacket(OPENVPN_SERVER *s, OPENVPN_SESSION *se, OPENVPN
 				}
 
 				c->SslPipe = NewSslPipeEx(true, s->Cedar->ServerX, s->Cedar->ServerK, s->Dh, true, &c->ClientCert);
-				if (c->SslPipe == NULL)
-				{
-					return;
-				}
 			}
 			Unlock(s->Cedar->lock);
 
@@ -1906,10 +1902,6 @@ BUF *OvsBuildPacket(OPENVPN_PACKET *p)
 
 	// NumAck
 	num_ack = MIN(p->NumAck, OPENVPN_MAX_NUMACK);
-	if (p->OpCode != OPENVPN_P_ACK_V1)
-	{
-		num_ack = MIN(num_ack, OPENVPN_MAX_NUMACK_NONACK);
-	}
 	WriteBufChar(b, (UCHAR)num_ack);
 
 	if (p->NumAck >= 1)
@@ -1990,7 +1982,7 @@ OPENVPN_PACKET *OvsParsePacket(UCHAR *data, UINT size)
 
 	ret->NumAck = uc;
 
-	if (ret->NumAck > OPENVPN_MAX_NUMACK)
+	if (ret->NumAck > 4)
 	{
 		goto LABEL_ERROR;
 	}
@@ -2494,8 +2486,8 @@ void OvsRecvPacket(OPENVPN_SERVER *s, LIST *recv_packet_list, UINT protocol)
 											if (r->Exists)
 											{
 												Format(l3_options, sizeof(l3_options),
-												       ",route %r %r %r",
-												       &r->Network, &r->SubnetMask, &r->Gateway);
+												       ",route %r %r vpn_gateway",
+												       &r->Network, &r->SubnetMask);
 
 												StrCat(option_str, sizeof(option_str), l3_options);
 											}

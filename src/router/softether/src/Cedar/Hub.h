@@ -172,7 +172,6 @@ struct HUB_OPTION
 	bool DoNotSaveHeavySecurityLogs;	// Do not take heavy security log
 	bool DropBroadcastsInPrivacyFilterMode;	// Drop broadcasting packets if the both source and destination session is PrivacyFilter mode
 	bool DropArpInPrivacyFilterMode;	// Drop ARP packets if the both source and destination session is PrivacyFilter mode
-	bool AllowSameUserInPrivacyFilterMode;	// Allow packets if both the source and destination session user are the same
 	bool SuppressClientUpdateNotification;	// Suppress the update notification function on the VPN Client
 	UINT FloodingSendQueueBufferQuota;	// The global quota of send queues of flooding packets
 	bool AssignVLanIdByRadiusAttribute;	// Assign the VLAN ID for the VPN session, by the attribute value of RADIUS
@@ -182,7 +181,6 @@ struct HUB_OPTION
 	bool NoPhysicalIPOnPacketLog;		// Disable saving physical IP address on the packet log
 	bool UseHubNameAsDhcpUserClassOption;	// Add HubName to DHCP request as User-Class option
 	bool UseHubNameAsRadiusNasId;		// Add HubName to Radius request as NAS-Identifier attrioption
-	bool AllowEapMatchUserByCert;		// Allow matching EAP Identity with user certificate CNs
 };
 
 // MAC table entry
@@ -537,8 +535,7 @@ bool IsUserMatchInUserList(LIST *o, char *filename, UINT64 user_hash);
 bool IsUserMatchInUserListWithCacheExpires(LIST *o, char *filename, UINT64 user_hash, UINT64 lifetime);
 bool IsUserMatchInUserListWithCacheExpiresAcl(LIST *o, char *name_in_acl, UINT64 user_hash, UINT64 lifetime);
 bool CheckMaxLoggedPacketsPerMinute(SESSION *s, UINT max_packets, UINT64 now);
-EAP_CLIENT *HubNewEapClient(CEDAR *cedar, char *hubname, char *client_ip_str, char *username, char *vpn_protocol_state_str, bool proxy_only, 
-							PPP_LCP **response, UCHAR last_recv_eapid);
+EAP_CLIENT *HubNewEapClient(CEDAR *cedar, char *hubname, char *client_ip_str, char *username, char *vpn_protocol_state_str);
 
 #endif	// HUB_H
 

@@ -4214,7 +4214,7 @@ bool NatTransactUdp(VH *v, NAT_ENTRY *n)
 	// Try to send data to the UDP socket
 	while (block = GetNext(n->UdpSendQueue))
 	{
-		UINT send_size = 0;
+		UINT send_size;
 		bool is_nbtdgm = false;
 		LIST *local_ip_list = NULL;
 

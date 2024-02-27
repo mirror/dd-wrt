@@ -29,13 +29,11 @@
 #include <sys/ioctl.h>
 #include <sys/stat.h>
 
-#if !defined(UNIX_OPENBSD) && !defined(UNIX_SOLARIS)
+#ifndef UNIX_OPENBSD
 #include <net/ethernet.h>
 #endif
 
 #ifdef UNIX_SOLARIS
-#include <stropts.h>
-#include <sys/dlpi.h>
 #include <sys/sockio.h>
 #endif
 
@@ -51,7 +49,7 @@
 #endif
 
 #ifdef UNIX_LINUX
-#include <netpacket/packet.h>
+#include <linux/if_packet.h>
 
 struct my_tpacket_auxdata
 {
@@ -321,7 +319,7 @@ TOKEN_LIST *GetEthListLinux(bool enum_normal, bool enum_rawip)
 					{
 						if (IsInListStr(o, name) == false)
 						{
-							if (StartWith(name, UNIX_VLAN_BRIDGE_IFACE_PREFIX"_") == false)
+							if (StartWith(name, "tap_") == false)
 							{
 								Add(o, CopyStr(name));
 							}
@@ -506,7 +504,7 @@ ETH *OpenEthLinux(char *name, bool local, bool tapmode, char *tapaddr)
 	{
 #ifndef	NO_VLAN
 		// In tap mode
-		VLAN *v = NewBridgeTap(name, tapaddr, true);
+		VLAN *v = NewTap(name, tapaddr, true);
 		if (v == NULL)
 		{
 			return NULL;
@@ -1399,7 +1397,7 @@ ETH *OpenEthBSD(char *name, bool local, bool tapmode, char *tapaddr)
 	{
 #ifndef	NO_VLAN
 		// In tap mode
-		VLAN *v = NewBridgeTap(name, tapaddr, true);
+		VLAN *v = NewTap(name, tapaddr, true);
 		if (v == NULL)
 		{
 			return NULL;
@@ -1416,7 +1414,7 @@ ETH *OpenEthBSD(char *name, bool local, bool tapmode, char *tapaddr)
 
 		return e;
 #else	// NO_VLAN
-	return NULL;
+return NULL:
 #endif	// NO_VLAN
 	}
 
@@ -1475,7 +1473,7 @@ void CloseEth(ETH *e)
 	if (e->Tap != NULL)
 	{
 #ifndef	NO_VLAN
-		FreeBridgeTap(e->Tap);
+		FreeTap(e->Tap);
 #endif	// NO_VLAN
 	}
 

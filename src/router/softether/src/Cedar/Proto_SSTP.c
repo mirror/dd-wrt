@@ -275,6 +275,8 @@ void SstpProcessControlPacket(SSTP_SERVER *s, SSTP_PACKET *p)
 // Process the SSTP received data packet
 void SstpProcessDataPacket(SSTP_SERVER *s, SSTP_PACKET *p)
 {
+	PPP_SESSION *underlyingSession;
+
 	// Validate arguments
 	if (s == NULL || p == NULL || p->IsControl)
 	{
@@ -286,9 +288,11 @@ void SstpProcessDataPacket(SSTP_SERVER *s, SSTP_PACKET *p)
 	if (s->PPPThread == NULL)
 	{
 		// Create a thread to initialize the new PPP module
-		s->PPPThread = NewPPPSession(s->Cedar, &s->ClientIp, s->ClientPort, &s->ServerIp, s->ServerPort,
+		underlyingSession = NewPPPSession(s->Cedar, &s->ClientIp, s->ClientPort, &s->ServerIp, s->ServerPort,
 			s->TubeSend, s->TubeRecv, SSTP_IPC_POSTFIX, SSTP_IPC_CLIENT_NAME,
 			s->ClientHostName, s->ClientCipherName, 0);
+		s->PPPSession = underlyingSession;
+		s->PPPThread = underlyingSession->SessionThread;
 	}
 
 	// Pass the received data to the PPP module
@@ -440,9 +444,9 @@ void SstpProcessInterrupt(SSTP_SERVER *s)
 		}
 	}
 
-	if (s->TubeRecv != NULL && s->TubeRecv->DataTimeout > sstpTimeout)
+	if (s->PPPSession != NULL && s->PPPSession->DataTimeout > sstpTimeout)
 	{
-		sstpTimeout = s->TubeRecv->DataTimeout;
+		sstpTimeout = s->PPPSession->DataTimeout;
 	}
 
 	if ((s->LastRecvTick + sstpTimeout) <= s->Now)

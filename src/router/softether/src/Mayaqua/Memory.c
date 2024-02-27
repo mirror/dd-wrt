@@ -7,7 +7,6 @@
 
 #include "Memory.h"
 
-#include "Encoding.h"
 #include "Encrypt.h"
 #include "FileIO.h"
 #include "Internat.h"
@@ -16,16 +15,10 @@
 #include "Object.h"
 #include "OS.h"
 #include "Str.h"
-#include "Tick64.h"
 #include "Tracking.h"
 
 #include <stdlib.h>
 #include <string.h>
-#include <time.h>
-
-#ifdef OS_UNIX
-#include <sys/time.h>
-#endif
 
 #include <zlib.h>
 
@@ -39,105 +32,6 @@
 #define	INIT_NUM_RESERVED		32
 
 static UINT fifo_current_realloc_mem_size = FIFO_REALLOC_MEM_SIZE;
-
-static bool canary_inited = false;
-typedef struct CANARY_RAND_DATA
-{
-	UCHAR Data[CANARY_RAND_SIZE + 4];
-} CANARY_RAND_DATA;
-
-static CANARY_RAND_DATA canary_rand_data[NUM_CANARY_RAND] = { 0 };
-
-static UINT64 canary_memtag_magic1 = 0;
-static UINT64 canary_memtag_magic2 = 0;
-
-UCHAR *GetCanaryRand(UINT id)
-{
-	if (id >= NUM_CANARY_RAND)
-	{
-		id = NUM_CANARY_RAND - 1;
-	}
-
-	return &((canary_rand_data[id].Data)[0]);
-}
-
-void InitCanaryRand()
-{
-	SYSTEMTIME st = { 0 };
-	char random_seed[1024] = { 0 };
-	UINT64 t1 = 0, t2 = 0;
-	if (canary_inited)
-	{
-		return;
-	}
-
-#ifdef OS_WIN32
-	Win32GetSystemTime(&st);
-	memcpy(&t1, ((UCHAR *)&st) + 0, 8);
-	memcpy(&t2, ((UCHAR *)&st) + 8, 8);
-#else	// OS_WIN32
-	struct timeval tv = { 0 };
-	struct timezone tz = { 0 };
-	gettimeofday(&tv, &tz);
-	t1 = (UINT64)tv.tv_sec;
-	t2 = (UINT64)tv.tv_usec;
-#endif // OS_WIN32
-
-	{
-		UINT64 dos_rand = (UINT64)rand();
-		UINT64 tick1 = TickHighresNano64(true);
-		UINT64 tick2 = TickHighresNano64(true);
-
-		UINT i;
-
-		void *p1 = malloc(1);
-		void *p2 = malloc(1);
-
-		for (i = 0;i < NUM_CANARY_RAND;i++)
-		{
-			// using sprintf() here is safe.
-			sprintf(random_seed,
-				"%u "
-				"%llu "
-				"%llu "
-				"%llu "
-				"%llu "
-				"%llu "
-				"%llu "
-				"%llu "
-				"%llu "
-				"%llu "
-				"%llu "
-				"%llu "
-				"%u "
-				,
-				i,
-				(UINT64)InitCanaryRand,
-				(UINT64)&canary_inited,
-				(UINT64) & ((canary_rand_data[0].Data)[0]),
-				(UINT64)&random_seed[0],
-				tick1,
-				tick2,
-				dos_rand,
-				(UINT64)p1,
-				(UINT64)p2,
-				t1,
-				t2,
-				~i
-			);
-
-			Sha0(canary_rand_data[i].Data, random_seed, (UINT)strlen(random_seed));
-		}
-
-		free(p1);
-		free(p2);
-
-		canary_memtag_magic1 = *((UINT64 *)(GetCanaryRand(CANARY_RAND_ID_MEMTAG_MAGIC) + 0));
-		canary_memtag_magic2 = *((UINT64 *)(GetCanaryRand(CANARY_RAND_ID_MEMTAG_MAGIC) + 8));
-
-		canary_inited = true;
-	}
-}
 
 // New PRand
 PRAND *NewPRand(void *key, UINT key_size)
@@ -3219,10 +3113,6 @@ void AdjustBufSize(BUF *b, UINT new_size)
 
 	while (b->SizeReserved < new_size)
 	{
-		if (b->SizeReserved > 0x7FFFFFFF)
-		{
-			AbortExitEx("AdjustBufSize(): too large buffer size");
-		}
 		b->SizeReserved = b->SizeReserved * 2;
 	}
 	b->Buf = ReAlloc(b->Buf, b->SizeReserved);
@@ -3482,48 +3372,6 @@ UINT64 Endian64(UINT64 src)
 	}
 }
 
-// Endian conversion 16bit
-USHORT LittleEndian16(USHORT src)
-{
-	int x = 0x01000000;
-	if (*((char *)&x))
-	{
-		return Swap16(src);
-	}
-	else
-	{
-		return src;
-	}
-}
-
-// Endian conversion 32bit
-UINT LittleEndian32(UINT src)
-{
-	int x = 0x01000000;
-	if (*((char *)&x))
-	{
-		return Swap32(src);
-	}
-	else
-	{
-		return src;
-	}
-}
-
-// Endian conversion 64bit
-UINT64 LittleEndian64(UINT64 src)
-{
-	int x = 0x01000000;
-	if (*((char *)&x))
-	{
-		return Swap64(src);
-	}
-	else
-	{
-		return src;
-	}
-}
-
 // 16bit swap
 USHORT Swap16(USHORT value)
 {
@@ -3559,62 +3407,232 @@ UINT64 Swap64(UINT64 value)
 	return r;
 }
 
-void *Base64ToBin(UINT *out_size, const void *src, const UINT size)
+// Base64 encode
+UINT Encode64(char *dst, char *src)
 {
-	if (src == NULL || size == 0)
+	// Validate arguments
+	if (dst == NULL || src == NULL)
 	{
-		return NULL;
+		return 0;
 	}
 
-	UINT bin_size = Base64Decode(NULL, src, size);
-	if (bin_size == 0)
-	{
-		return NULL;
-	}
-
-	void *bin = ZeroMalloc(bin_size + 1);
-	bin_size = Base64Decode(bin, src, size);
-	if (bin_size == 0)
-	{
-		Free(bin);
-		return NULL;
-	}
-
-	if (out_size != NULL)
-	{
-		*out_size = bin_size;
-	}
-
-	return bin;
+	return B64_Encode(dst, src, StrLen(src));
 }
 
-void *Base64FromBin(UINT *out_size, const void *src, const UINT size)
+// Base64 decoding
+UINT Decode64(char *dst, char *src)
 {
-	if (src == NULL || size == 0)
+	// Validate arguments
+	if (dst == NULL || src == NULL)
 	{
-		return NULL;
+		return 0;
 	}
 
-	UINT base64_size = Base64Encode(NULL, src, size);
-	if (base64_size == 0)
-	{
-		return NULL;
-	}
+	return B64_Decode(dst, src, StrLen(src));
+}
 
-	void *base64 = Malloc(base64_size);
-	base64_size = Base64Encode(base64, src, size);
-	if (base64_size == 0)
+// Base64 encode
+int B64_Encode(char *set, char *source, int len)
+{
+	BYTE *src;
+	int i,j;
+	src = (BYTE *)source;
+	j = 0;
+	i = 0;
+	if (!len)
 	{
-		Free(base64);
-		return NULL;
+		return 0;
 	}
-
-	if (out_size != NULL)
+	while (true)
 	{
-		*out_size = base64_size;
+		if (i >= len)
+		{
+			return j;
+		}
+		if (set)
+		{
+			set[j] = B64_CodeToChar((src[i]) >> 2);
+		}
+		if (i + 1 >= len)
+		{
+			if (set)
+			{
+				set[j + 1] = B64_CodeToChar((src[i] & 0x03) << 4);
+				set[j + 2] = '=';
+				set[j + 3] = '=';
+			}
+			return j + 4;
+		}
+		if (set)
+		{
+			set[j + 1] = B64_CodeToChar(((src[i] & 0x03) << 4) + ((src[i + 1] >> 4)));
+		}
+		if (i + 2 >= len)
+		{
+			if (set)
+			{
+				set[j + 2] = B64_CodeToChar((src[i + 1] & 0x0f) << 2);
+				set[j + 3] = '=';
+			}
+			return j + 4;
+		}
+		if (set)
+		{
+			set[j + 2] = B64_CodeToChar(((src[i + 1] & 0x0f) << 2) + ((src[i + 2] >> 6)));
+			set[j + 3] = B64_CodeToChar(src[i + 2] & 0x3f);
+		}
+		i += 3;
+		j += 4;
 	}
+}
 
-	return base64;
+// Base64 decode
+int B64_Decode(char *set, char *source, int len)
+{
+	int i,j;
+	char a1,a2,a3,a4;
+	char *src;
+	int f1,f2,f3,f4;
+	src = source;
+	i = 0;
+	j = 0;
+	while (true)
+	{
+		f1 = f2 = f3 = f4 = 0;
+		if (i >= len)
+		{
+			break;
+		}
+		f1 = 1;
+		a1 = B64_CharToCode(src[i]);
+		if (a1 == -1)
+		{
+			f1 = 0;
+		}
+		if (i >= len + 1)
+		{
+			a2 = 0;
+		}
+		else
+		{
+			a2 = B64_CharToCode(src[i + 1]);
+			f2 = 1;
+			if (a2 == -1)
+			{
+				f2 = 0;
+			}
+		}
+		if (i >= len + 2)
+		{
+			a3 = 0;
+		}
+		else
+		{
+			a3 = B64_CharToCode(src[i + 2]);
+			f3 = 1;
+			if (a3 == -1)
+			{
+				f3 = 0;
+			}
+		}
+		if (i >= len + 3)
+		{
+			a4 = 0;
+		}
+		else
+		{
+			a4 = B64_CharToCode(src[i + 3]);
+			f4 = 1;
+			if (a4 == -1)
+			{
+				f4 = 0;
+			}
+		}
+		if (f1 && f2)
+		{
+			if (set)
+			{
+				set[j] = (a1 << 2) + (a2 >> 4);
+			}
+			j++;
+		}
+		if (f2 && f3)
+		{
+			if (set)
+			{
+				set[j] = (a2 << 4) + (a3 >> 2);
+			}
+			j++;
+		}
+		if (f3 && f4)
+		{
+			if (set)
+			{
+				set[j] = (a3 << 6) + a4;
+			}
+			j++;
+		}
+		i += 4;
+	}
+	return j;
+}
+
+// Base64 : Convert a code to a character
+char B64_CodeToChar(BYTE c)
+{
+	BYTE r;
+	r = '=';
+	if (c <= 0x19)
+	{
+		r = c + 'A';
+	}
+	if (c >= 0x1a && c <= 0x33)
+	{
+		r = c - 0x1a + 'a';
+	}
+	if (c >= 0x34 && c <= 0x3d)
+	{
+		r = c - 0x34 + '0';
+	}
+	if (c == 0x3e)
+	{
+		r = '+';
+	}
+	if (c == 0x3f)
+	{
+		r = '/';
+	}
+	return r;
+}
+
+// Base64 : Convert a character to a code
+char B64_CharToCode(char c)
+{
+	if (c >= 'A' && c <= 'Z')
+	{
+		return c - 'A';
+	}
+	if (c >= 'a' && c <= 'z')
+	{
+		return c - 'a' + 0x1a;
+	}
+	if (c >= '0' && c <= '9')
+	{
+		return c - '0' + 0x34;
+	}
+	if (c == '+')
+	{
+		return 0x3e;
+	}
+	if (c == '/')
+	{
+		return 0x3f;
+	}
+	if (c == '=')
+	{
+		return -1;
+	}
+	return 0;
 }
 
 // Malloc
@@ -3624,52 +3642,33 @@ void *Malloc(UINT size)
 }
 void *MallocEx(UINT size, bool zero_clear_when_free)
 {
-	MEMTAG1 *tag1;
-	MEMTAG2 *tag2;
+	MEMTAG *tag;
 	UINT real_size;
-
-	if (canary_inited == false)
-	{
-		InitCanaryRand();
-	}
-
-	if (size > MAX_MALLOC_MEM_SIZE)
-	{
-		AbortExitEx("MallocEx() error: too large size");
-	}
 
 	real_size = CALC_MALLOCSIZE(size);
 
-	tag1 = InternalMalloc(real_size);
+	tag = InternalMalloc(real_size);
 
-	tag1->Magic = canary_memtag_magic1 ^ ((UINT64)tag1 * GOLDEN_RATION_PRIME_U64);
-	tag1->Size = size;
-	tag1->ZeroFree = zero_clear_when_free;
+	Zero(tag, sizeof(MEMTAG));
+	tag->Magic = MEMTAG_MAGIC;
+	tag->Size = size;
+	tag->ZeroFree = zero_clear_when_free;
 
-	tag2 = (MEMTAG2 *)(((UCHAR *)tag1) + CALC_MALLOCSIZE(tag1->Size) - sizeof(MEMTAG2));
-	tag2->Magic = canary_memtag_magic2 ^ ((UINT64)tag2 * GOLDEN_RATION_PRIME_U64);
-
-	return MEMTAG1_TO_POINTER(tag1);
+	return MEMTAG_TO_POINTER(tag);
 }
 
 // Get memory size
 UINT GetMemSize(void *addr)
 {
-	MEMTAG1 *tag;
-
-	if (canary_inited == false)
-	{
-		InitCanaryRand();
-	}
-
+	MEMTAG *tag;
 	// Validate arguments
 	if (IS_NULL_POINTER(addr))
 	{
 		return 0;
 	}
 
-	tag = POINTER_TO_MEMTAG1(addr);
-	CheckMemTag1(tag);
+	tag = POINTER_TO_MEMTAG(addr);
+	CheckMemTag(tag);
 
 	return tag->Size;
 }
@@ -3677,35 +3676,20 @@ UINT GetMemSize(void *addr)
 // ReAlloc
 void *ReAlloc(void *addr, UINT size)
 {
-	MEMTAG1 *tag1;
-	MEMTAG2 *tag2;
+	MEMTAG *tag;
 	bool zerofree;
-
-	if (canary_inited == false)
-	{
-		InitCanaryRand();
-	}
-
-	if (size > MAX_MALLOC_MEM_SIZE)
-	{
-		AbortExitEx("ReAlloc() error: too large size");
-	}
-
 	// Validate arguments
 	if (IS_NULL_POINTER(addr))
 	{
 		return NULL;
 	}
 
-	tag1 = POINTER_TO_MEMTAG1(addr);
-	CheckMemTag1(tag1);
+	tag = POINTER_TO_MEMTAG(addr);
+	CheckMemTag(tag);
 
-	tag2 = (MEMTAG2 *)(((UCHAR *)tag1) + CALC_MALLOCSIZE(tag1->Size) - sizeof(MEMTAG2));
-	CheckMemTag2(tag2);
+	zerofree = tag->ZeroFree;
 
-	zerofree = tag1->ZeroFree;
-
-	if (tag1->Size == size)
+	if (tag->Size == size)
 	{
 		// No size change
 		return addr;
@@ -3717,10 +3701,10 @@ void *ReAlloc(void *addr, UINT size)
 			// Size changed (zero clearing required)
 			void *new_p = MallocEx(size, true);
 
-			if (tag1->Size <= size)
+			if (tag->Size <= size)
 			{
 				// Size expansion
-				Copy(new_p, addr, tag1->Size);
+				Copy(new_p, addr, tag->Size);
 			}
 			else
 			{
@@ -3736,22 +3720,13 @@ void *ReAlloc(void *addr, UINT size)
 		else
 		{
 			// Size changed
-			MEMTAG1 *tag1_new;
-			MEMTAG2 *tag2_new;
+			MEMTAG *tag2 = InternalReAlloc(tag, CALC_MALLOCSIZE(size));
 
-			tag1->Magic = 0;
-			tag2->Magic = 0;
+			Zero(tag2, sizeof(MEMTAG));
+			tag2->Magic = MEMTAG_MAGIC;
+			tag2->Size = size;
 
-			tag1_new = InternalReAlloc(tag1, CALC_MALLOCSIZE(size));
-
-			tag1_new->Magic = canary_memtag_magic1 ^ ((UINT64)tag1_new * GOLDEN_RATION_PRIME_U64);
-			tag1_new->Size = size;
-			tag1_new->ZeroFree = 0;
-
-			tag2_new = (MEMTAG2 *)(((UCHAR *)tag1_new) + CALC_MALLOCSIZE(size) - sizeof(MEMTAG2));
-			tag2_new->Magic = canary_memtag_magic2 ^ ((UINT64)tag2_new * GOLDEN_RATION_PRIME_U64);
-
-			return MEMTAG1_TO_POINTER(tag1_new);
+			return MEMTAG_TO_POINTER(tag2);
 		}
 	}
 }
@@ -3759,35 +3734,25 @@ void *ReAlloc(void *addr, UINT size)
 // Free
 void Free(void *addr)
 {
-	MEMTAG1 *tag1;
-	MEMTAG2 *tag2;
+	MEMTAG *tag;
 	// Validate arguments
 	if (IS_NULL_POINTER(addr))
 	{
 		return;
 	}
 
-	if (canary_inited == false)
-	{
-		InitCanaryRand();
-	}
+	tag = POINTER_TO_MEMTAG(addr);
+	CheckMemTag(tag);
 
-	tag1 = POINTER_TO_MEMTAG1(addr);
-	CheckMemTag1(tag1);
-
-	tag2 = (MEMTAG2 *)(((UCHAR *)tag1) + CALC_MALLOCSIZE(tag1->Size) - sizeof(MEMTAG2));
-	CheckMemTag2(tag2);
-
-	if (tag1->ZeroFree)
+	if (tag->ZeroFree)
 	{
 		// Zero clear
-		Zero(addr, tag1->Size);
+		Zero(addr, tag->Size);
 	}
 
 	// Memory release
-	tag1->Magic = 0;
-	tag2->Magic = 0;
-	InternalFree(tag1);
+	tag->Magic = 0;
+	InternalFree(tag);
 }
 
 // Free and set pointer's value to NULL
@@ -3797,36 +3762,24 @@ void FreeSafe(void **addr)
 	*addr = NULL;
 }
 
-// Check the memtag1
-void CheckMemTag1(MEMTAG1 *tag)
+// Check the memtag
+void CheckMemTag(MEMTAG *tag)
 {
+	if (IsTrackingEnabled() == false)
+	{
+		return;
+	}
+
 	// Validate arguments
 	if (tag == NULL)
 	{
-		AbortExitEx("CheckMemTag1: tag1 == NULL");
+		AbortExitEx("CheckMemTag: tag == NULL");
 		return;
 	}
 
-	if (tag->Magic != (canary_memtag_magic1 ^ ((UINT64)tag * GOLDEN_RATION_PRIME_U64)))
+	if (tag->Magic != MEMTAG_MAGIC)
 	{
-		AbortExitEx("CheckMemTag1: tag1->Magic != canary_memtag_magic1");
-		return;
-	}
-}
-
-// Check the memtag2
-void CheckMemTag2(MEMTAG2 *tag)
-{
-	// Validate arguments
-	if (tag == NULL)
-	{
-		AbortExitEx("CheckMemTag2: tag2 == NULL");
-		return;
-	}
-
-	if (tag->Magic != (canary_memtag_magic2 ^ ((UINT64)tag * GOLDEN_RATION_PRIME_U64)))
-	{
-		AbortExitEx("CheckMemTag2: tag2->Magic != canary_memtag_magic2");
+		AbortExitEx("CheckMemTag: tag->Magic != MEMTAG_MAGIC");
 		return;
 	}
 }

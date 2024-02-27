@@ -410,7 +410,7 @@ void CmEasyDlgOnKey(HWND hWnd, CM_EASY_DLG *d, bool ctrl, bool alt, UINT key)
 			break;
 		case 'O':
 			// Option settings
-			Command(hWnd, CMD_OPTION);
+			Command(hWnd, CMD_TRAFFIC);
 			break;
 		case 'R':
 			// Certificate management
@@ -4251,6 +4251,9 @@ UINT CmMainWindowProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam, void *p
 	case WM_TIMER:
 		switch (wParam)
 		{
+		case 1:
+			CmSetForegroundProcessToCnService();
+			break;
 		case 2:
 			CmPollingTray(hWnd);
 			break;
@@ -5016,7 +5019,7 @@ void CmOnKey(HWND hWnd, bool ctrl, bool alt, UINT key)
 			break;
 		case 'O':
 			// Option settings
-			Command(hWnd, CMD_OPTION);
+			Command(hWnd, CMD_TRAFFIC);
 			break;
 		case 'R':
 			// Certificate management
@@ -5447,6 +5450,8 @@ void CmMainWindowOnCommandEx(HWND hWnd, WPARAM wParam, LPARAM lParam, bool easy)
 			CmStopUacHelper(helper);
 
 			Free(name);
+
+			CmRefresh(hWnd);
 		}
 		break;
 	case CMD_DELETE_VLAN:
@@ -5475,6 +5480,8 @@ void CmMainWindowOnCommandEx(HWND hWnd, WPARAM wParam, LPARAM lParam, bool easy)
 				}
 				Free(s);
 			}
+
+			CmRefresh(hWnd);
 		}
 		break;
 	case CMD_ENABLE_VLAN:
@@ -5494,6 +5501,8 @@ void CmMainWindowOnCommandEx(HWND hWnd, WPARAM wParam, LPARAM lParam, bool easy)
 					CALL(hWnd, CcEnableVLan(cm->Client, &c));
 				}
 				Free(s);
+
+				CmRefresh(hWnd);
 			}
 		}
 		break;
@@ -5514,6 +5523,8 @@ void CmMainWindowOnCommandEx(HWND hWnd, WPARAM wParam, LPARAM lParam, bool easy)
 					CALL(hWnd, CcDisableVLan(cm->Client, &c));
 				}
 				Free(s);
+
+				CmRefresh(hWnd);
 			}
 		}
 		break;
@@ -5549,6 +5560,8 @@ void CmMainWindowOnCommandEx(HWND hWnd, WPARAM wParam, LPARAM lParam, bool easy)
 					CmStopUacHelper(helper);
 				}
 				Free(s);
+
+				CmRefresh(hWnd);
 			}
 		}
 		break;
@@ -6019,7 +6032,6 @@ void CmExportAccount(HWND hWnd, wchar_t *account_name)
 		t.StartupAccount = a->Startup;
 		t.CheckServerCert = a->CheckServerCert;
 		t.RetryOnServerCert = a->RetryOnServerCert;
-		t.AddDefaultCA = a->AddDefaultCA;
 		t.ServerCert = a->ServerCert;
 		t.ClientOption->FromAdminPack = false;
 
@@ -6150,8 +6162,6 @@ void CmImportAccountMainEx(HWND hWnd, wchar_t *filename, bool overwrite)
 					t->ClientOption->RequireMonitorMode = old_option->RequireMonitorMode;
 					t->ClientOption->RequireBridgeRoutingMode = old_option->RequireBridgeRoutingMode;
 					t->ClientOption->DisableQoS = old_option->DisableQoS;
-					t->ClientOption->BindLocalIP = old_option->BindLocalIP;// Source IP address for outgoing connection
-					t->ClientOption->BindLocalPort = old_option->BindLocalPort;// Source port number for outgoing connection
 
 					// Inherit the authentication data
 					CiFreeClientAuth(t->ClientAuth);
@@ -6161,7 +6171,6 @@ void CmImportAccountMainEx(HWND hWnd, wchar_t *filename, bool overwrite)
 					t->StartupAccount = get.StartupAccount;
 					t->CheckServerCert = get.CheckServerCert;
 					t->RetryOnServerCert = get.RetryOnServerCert;
-					t->AddDefaultCA = get.AddDefaultCA;
 					if (t->ServerCert != NULL)
 					{
 						FreeX(t->ServerCert);
@@ -6271,7 +6280,6 @@ void CmCopyAccount(HWND hWnd, wchar_t *account_name)
 	}
 	c.CheckServerCert = a->CheckServerCert;
 	c.RetryOnServerCert = a->RetryOnServerCert;
-	c.AddDefaultCA = a->AddDefaultCA;
 	c.StartupAccount = false;		// Don't copy the startup attribute
 
 	CALL(hWnd, CcCreateAccount(cm->Client, &c));
@@ -6458,54 +6466,8 @@ void CmDetailDlgUpdate(HWND hWnd, CM_ACCOUNT *a)
 		Disable(hWnd, R_BRIDGE);
 		Disable(hWnd, R_MONITOR);
 		Disable(hWnd, R_NO_ROUTING);
-#if TYPE_BINDLOCALIP
-		Disable(hWnd, E_BIND_LOCALIP);// Source IP address for outgoing connection
-		Disable(hWnd, E_BIND_LOCALPORT);// Source port number for outgoing connection
-#endif
-
 	}
 }
-
-#if TYPE_BINDLOCALIP
-// Set the value of the IP type
-void SetIp(HWND hWnd, UINT id, IP* ip)
-{
-	char tmp[MAX_SIZE];
-	// Validate arguments
-	if (hWnd == NULL || ip == NULL)
-	{
-		return;
-	}
-
-	IPToStr(tmp, sizeof(tmp), ip);
-	SetTextA(hWnd, id, tmp);
-}
-
-// Get an IP address
-bool GetIp(HWND hWnd, UINT id, IP* ip)
-{
-	char tmp[MAX_SIZE];
-	// Validate arguments
-	if (hWnd == NULL || ip == NULL)
-	{
-		return false;
-	}
-
-	Zero(ip, sizeof(IP));
-
-	if (GetTxtA(hWnd, id, tmp, sizeof(tmp)) == false)
-	{
-		return false;
-	}
-
-	if (StrToIP(ip, tmp) == false)
-	{
-		return false;
-	}
-
-	return true;
-}
-#endif
 
 // Advanced Settings dialog procedure
 UINT CmDetailDlgProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam, void *param)
@@ -6543,11 +6505,6 @@ UINT CmDetailDlgProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam, void *pa
 		Check(hWnd, R_NO_ROUTING, a->ClientOption->NoRoutingTracking);
 		Check(hWnd, R_DISABLE_QOS, a->ClientOption->DisableQoS);
 		Check(hWnd, R_DISABLE_UDP, a->ClientOption->NoUdpAcceleration);
-#if TYPE_BINDLOCALIP
-		SetIp(hWnd, E_BIND_LOCALIP, &a->ClientOption->BindLocalIP);// Source IP address for outgoing connection
-		SetIntEx(hWnd, E_BIND_LOCALPORT, a->ClientOption->BindLocalPort);// Source port number for outgoing connection
-		//Disable(hWnd, E_BIND_LOCALPORT);	// You can not edit
-#endif
 
 		// Select the Connection Mode
 		if (a->LinkMode == false)
@@ -6595,20 +6552,6 @@ UINT CmDetailDlgProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam, void *pa
 				Focus(hWnd, E_INTERVAL);
 				break;
 			}
-#if TYPE_BINDLOCALIP
-			// Source IP address for outgoing connection
-			IP tmpIP;
-			if (GetIp(hWnd, E_BIND_LOCALIP, &tmpIP) == false)
-			{
-				FocusEx(hWnd, E_BIND_LOCALIP);
-				break;
-			}
-			// Source port number for outgoing connection
-			if ((GetInt(hWnd, E_BIND_LOCALPORT) < 0) || (GetInt(hWnd, E_BIND_LOCALPORT) > 65535)){
-				FocusEx(hWnd, E_BIND_LOCALPORT);
-				break;
-			}
-#endif
 
 			a->ClientOption->MaxConnection = num;
 			a->ClientOption->AdditionalConnectionInterval = GetInt(hWnd, E_INTERVAL);
@@ -6626,10 +6569,6 @@ UINT CmDetailDlgProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam, void *pa
 			a->ClientOption->NoRoutingTracking = IsChecked(hWnd, R_NO_ROUTING);
 			a->ClientOption->DisableQoS = IsChecked(hWnd, R_DISABLE_QOS);
 			a->ClientOption->NoUdpAcceleration = IsChecked(hWnd, R_DISABLE_UDP);
-#if TYPE_BINDLOCALIP
-			a->ClientOption->BindLocalIP = tmpIP;// Source IP address for outgoing connection
-			a->ClientOption->BindLocalPort = GetInt(hWnd, E_BIND_LOCALPORT);// Source port number for outgoing connection
-#endif
 
 			if (a->LinkMode)
 			{
@@ -6720,7 +6659,6 @@ void CmEditAccountDlgUpdate(HWND hWnd, CM_ACCOUNT *a)
 	// Host name
 	GetTxtA(hWnd, E_HOSTNAME, a->ClientOption->Hostname, sizeof(a->ClientOption->Hostname));
 	Trim(a->ClientOption->Hostname);
-	a->ClientOption->HintStr[0] = 0;
 
 	if (InStr(a->ClientOption->Hostname, "/tcp"))
 	{
@@ -6757,13 +6695,9 @@ void CmEditAccountDlgUpdate(HWND hWnd, CM_ACCOUNT *a)
 	// To validate the server certificate
 	a->CheckServerCert = IsChecked(hWnd, R_CHECK_CERT);
 
-	// Trust default CA list
-	a->AddDefaultCA = IsChecked(hWnd, R_TRUST_DEFAULT);
-
 	if (a->NatMode)
 	{
 		Disable(hWnd, R_CHECK_CERT);
-		Disable(hWnd, R_TRUST_DEFAULT);
 		Disable(hWnd, B_TRUST);
 	}
 
@@ -7106,7 +7040,6 @@ void CmEditAccountDlgUpdate(HWND hWnd, CM_ACCOUNT *a)
 		SetEnable(hWnd, S_STATIC7, false);
 		SetEnable(hWnd, S_STATIC11, false);
 		SetEnable(hWnd, R_CHECK_CERT, false);
-		SetEnable(hWnd, R_TRUST_DEFAULT, false);
 		SetEnable(hWnd, B_TRUST, false);
 		SetEnable(hWnd, B_SERVER_CERT, false);
 		SetEnable(hWnd, B_VIEW_SERVER_CERT, false);
@@ -7168,17 +7101,10 @@ void CmEditAccountDlgInit(HWND hWnd, CM_ACCOUNT *a)
 	SetText(hWnd, E_ACCOUNT_NAME, a->ClientOption->AccountName);
 
 	// Host name
-	char hostname[MAX_SIZE];
-	StrCpy(hostname, sizeof(hostname), a->ClientOption->Hostname);
-	if (IsEmptyStr(a->ClientOption->HintStr) == false)
-	{
-		StrCat(hostname, sizeof(hostname), "/");
-		StrCat(hostname, sizeof(hostname), a->ClientOption->HintStr);
-	}
-	SetTextA(hWnd, E_HOSTNAME, hostname);
-	StrCpy(a->old_server_name, sizeof(a->old_server_name), hostname);
+	SetTextA(hWnd, E_HOSTNAME, a->ClientOption->Hostname);
+	StrCpy(a->old_server_name, sizeof(a->old_server_name), a->ClientOption->Hostname);
 
-	if (InStr(hostname, "/tcp"))
+	if (InStr(a->ClientOption->Hostname, "/tcp"))
 	{
 		Check(hWnd, R_DISABLE_NATT, true);
 	}
@@ -7207,9 +7133,6 @@ void CmEditAccountDlgInit(HWND hWnd, CM_ACCOUNT *a)
 
 	// Verify the server certificate
 	Check(hWnd, R_CHECK_CERT, a->CheckServerCert);
-
-	// Trust default CA list
-	Check(hWnd, R_TRUST_DEFAULT, a->AddDefaultCA);
 
 	// LAN card list
 	if (a->NatMode == false && a->LinkMode == false)
@@ -7443,7 +7366,6 @@ UINT CmEditAccountDlgProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam, voi
 		case R_HTTPS:
 		case R_SOCKS:
 		case R_CHECK_CERT:
-		case R_TRUST_DEFAULT:
 		case C_TYPE:
 		case E_USERNAME:
 		case E_PASSWORD:
@@ -8542,11 +8464,6 @@ bool CmLoadKExW(HWND hWnd, K **k, wchar_t *filename, UINT size)
 // Read a set of certificate and private key
 bool CmLoadXAndK(HWND hWnd, X **x, K **k)
 {
-	return CmLoadXListAndK(hWnd, x, k, NULL);
-}
-// Read a set of certificate and private key and trust chain
-bool CmLoadXListAndK(HWND hWnd, X **x, K **k, LIST **cc)
-{
 	wchar_t *s;
 	bool is_p12;
 	wchar_t tmp[MAX_SIZE];
@@ -8593,7 +8510,7 @@ START_FIRST:
 		}
 		if (IsEncryptedP12(p12) == false)
 		{
-			if (ParseP12Ex(p12, x, k, cc, NULL) == false)
+			if (ParseP12(p12, x, k, NULL) == false)
 			{
 				MsgBoxEx(hWnd, MB_ICONSTOP, _UU("DLG_BAD_P12_W"), tmp);
 				FreeP12(p12);
@@ -8612,7 +8529,7 @@ START_FIRST:
 			}
 			else
 			{
-				if (ParseP12Ex(p12, x, k, cc, password) == false)
+				if (ParseP12(p12, x, k, password) == false)
 				{
 					MsgBoxEx(hWnd, MB_ICONSTOP, _UU("DLG_BAD_P12_W"), tmp);
 					FreeP12(p12);
@@ -8625,10 +8542,6 @@ START_FIRST:
 		{
 			FreeX(*x);
 			FreeK(*k);
-			if (cc != NULL)
-			{
-				FreeXList(*cc);
-			}
 			FreeP12(p12);
 			FreeBuf(b);
 			if (MsgBox(hWnd, MB_ICONEXCLAMATION | MB_RETRYCANCEL, _UU("DLG_BAD_SIGNATURE")) == IDRETRY)
@@ -8636,11 +8549,6 @@ START_FIRST:
 				goto START_FIRST;
 			}
 			return false;
-		}
-		if (cc != NULL && LIST_NUM(*cc) == 0)
-		{
-			ReleaseList(*cc);
-			*cc = NULL;
 		}
 		FreeP12(p12);
 		FreeBuf(b);
@@ -8650,40 +8558,19 @@ START_FIRST:
 	{
 		// Processing of X509
 		BUF *b = ReadDumpW(tmp);
-		X *x509 = NULL;
+		X *x509;
 		K *key;
-		LIST *chain = NULL;
 		if (b == NULL)
 		{
 			MsgBoxEx(hWnd, MB_ICONSTOP, _UU("DLG_OPEN_FILE_ERROR_W"), tmp);
 			return false;
 		}
 
-		// DER-encoded X509 files can't hold multiple certificates
-		if (cc == NULL || IsBase64(b) == false)
-		{
-			x509 = BufToX(b, IsBase64(b));
-		}
-		else
-		{
-			chain = BufToXList(b, true);
-			if (LIST_NUM(chain) > 0)
-			{
-				x509 = LIST_DATA(chain, 0);
-				Delete(chain, x509);
-
-				if (LIST_NUM(chain) == 0)
-				{
-					ReleaseList(chain);
-					chain = NULL;
-				}
-			}
-		}
+		x509 = BufToX(b, IsBase64(b));
 		FreeBuf(b);
 		if (x509 == NULL)
 		{
 			MsgBoxEx(hWnd, MB_ICONSTOP, _UU("DLG_BAD_X509_W"), tmp);
-			FreeXList(chain);
 			return false;
 		}
 
@@ -8692,7 +8579,6 @@ START_FIRST:
 		if (s == NULL)
 		{
 			FreeX(x509);
-			FreeXList(chain);
 			return false;
 		}
 		UniStrCpy(tmp, sizeof(tmp), s);
@@ -8703,7 +8589,6 @@ START_FIRST:
 		{
 			MsgBoxEx(hWnd, MB_ICONSTOP, _UU("DLG_OPEN_FILE_ERROR_W"), tmp);
 			FreeX(x509);
-			FreeXList(chain);
 			return false;
 		}
 
@@ -8718,7 +8603,6 @@ START_FIRST:
 			{
 				FreeBuf(b);
 				FreeX(x509);
-				FreeXList(chain);
 				return false;
 			}
 			key = BufToK(b, true, IsBase64(b), pass);
@@ -8728,7 +8612,6 @@ START_FIRST:
 		{
 			FreeBuf(b);
 			FreeX(x509);
-			FreeXList(chain);
 			MsgBoxEx(hWnd, MB_ICONSTOP, _UU("DLG_BAD_KEY_W"), tmp);
 			return false;
 		}
@@ -8738,7 +8621,6 @@ START_FIRST:
 			FreeBuf(b);
 			FreeX(x509);
 			FreeK(key);
-			FreeXList(chain);
 			if (MsgBox(hWnd, MB_ICONEXCLAMATION | MB_RETRYCANCEL, _UU("DLG_BAD_SIGNATURE")) == IDRETRY)
 			{
 				goto START_FIRST;
@@ -8749,10 +8631,6 @@ START_FIRST:
 		FreeBuf(b);
 		*x = x509;
 		*k = key;
-		if (cc != NULL)
-		{
-			*cc = chain;
-		}
 		return true;
 	}
 }
@@ -8850,7 +8728,6 @@ void CmEditAccountDlgOnOk(HWND hWnd, CM_ACCOUNT *a)
 		Copy(c.ClientOption, a->ClientOption, sizeof(CLIENT_OPTION));
 		c.ClientAuth = CopyClientAuth(a->ClientAuth);
 		c.CheckServerCert = a->CheckServerCert;
-		c.AddDefaultCA = a->AddDefaultCA;
 		if (a->ServerCert != NULL)
 		{
 			c.ServerCert = CloneX(a->ServerCert);
@@ -8904,7 +8781,6 @@ void CmEditAccountDlgOnOk(HWND hWnd, CM_ACCOUNT *a)
 			Copy(t.ClientOption, a->ClientOption, sizeof(CLIENT_OPTION));
 			t.ClientAuth = CopyClientAuth(a->ClientAuth);
 			t.CheckServerCert = a->CheckServerCert;
-			t.AddDefaultCA = a->AddDefaultCA;
 			t.ServerCert = CloneX(a->ServerCert);
 
 			// Save the settings for cascade connection
@@ -9097,7 +8973,6 @@ CM_ACCOUNT *CmGetExistAccountObject(HWND hWnd, wchar_t *account_name)
 	a->EditMode = true;
 	a->CheckServerCert = c.CheckServerCert;
 	a->RetryOnServerCert = c.RetryOnServerCert;
-	a->AddDefaultCA = c.AddDefaultCA;
 	a->Startup = c.StartupAccount;
 	if (c.ServerCert != NULL)
 	{
@@ -9128,7 +9003,6 @@ CM_ACCOUNT *CmCreateNewAccountObject(HWND hWnd)
 	a->EditMode = false;
 	a->CheckServerCert = false;
 	a->RetryOnServerCert = false;
-	a->AddDefaultCA = false;
 	a->Startup = false;
 	a->ClientOption = ZeroMalloc(sizeof(CLIENT_OPTION));
 
@@ -9644,11 +9518,7 @@ void CmPrintStatusToListViewEx(LVB *b, RPC_CLIENT_GET_CONNECTION_STATUS *s, bool
 		}
 		else
 		{
-			if (StrLen(s->CipherName) != 0 && StrLen(s->ProtocolName) != 0)
-			{
-				UniFormat(tmp, sizeof(tmp), _UU("CM_ST_USE_ENCRYPT_TRUE3"), s->ProtocolName, s->CipherName);
-			}
-			else if (StrLen(s->CipherName) != 0)
+			if (StrLen(s->CipherName) != 0)
 			{
 				UniFormat(tmp, sizeof(tmp), _UU("CM_ST_USE_ENCRYPT_TRUE"), s->CipherName);
 			}
@@ -10540,7 +10410,7 @@ void CmRefreshAccountListEx2(HWND hWnd, bool easy, bool style_changed)
 	UINT num = 0;
 	RPC_CLIENT_ENUM_ACCOUNT a;
 	UINT num_connecting = 0, num_connected = 0;
-	wchar_t tooltip[MAX_SIZE];
+	wchar_t tmp[MAX_SIZE];
 	wchar_t new_inserted_item[MAX_ACCOUNT_NAME_LEN + 1];
 	bool select_new_inserted_item = true;
 	// Validate arguments
@@ -10593,8 +10463,6 @@ void CmRefreshAccountListEx2(HWND hWnd, bool easy, bool style_changed)
 	{
 		select_new_inserted_item = false;
 	}
-
-	UniStrCpy(tooltip, sizeof(tooltip), _UU("CM_TRAY_INITING"));
 
 	// Enumerate the account list
 	if (CALL(hWnd, CcEnumAccount(cm->Client, &a)))
@@ -10719,16 +10587,10 @@ void CmRefreshAccountListEx2(HWND hWnd, bool easy, bool style_changed)
 				if (t->Connected)
 				{
 					num_connected++;
-					UniStrCat(tooltip, sizeof(tooltip), L"\r\n"L"\r\n");
-					UniStrCat(tooltip, sizeof(tooltip), t->AccountName);
-					UniStrCat(tooltip, sizeof(tooltip), _UU("CM_TRAY_CONNECTED"));
 				}
 				else
 				{
 					num_connecting++;
-					UniStrCat(tooltip, sizeof(tooltip), L"\r\n"L"\r\n");
-					UniStrCat(tooltip, sizeof(tooltip), t->AccountName);
-					UniStrCat(tooltip, sizeof(tooltip), _UU("CM_TRAY_CONNECTING"));
 				}
 			}
 		}
@@ -10781,8 +10643,22 @@ void CmRefreshAccountListEx2(HWND hWnd, bool easy, bool style_changed)
 		if (num_connecting == 0 && num_connected == 0)
 		{
 			// There is no connecting or connected account
-			UniStrCat(tooltip, sizeof(tooltip), L"\r\n");
-			UniStrCat(tooltip, sizeof(tooltip), _UU("CM_TRAY_NOT_CONNECTED"));
+			UniStrCpy(tmp, sizeof(tmp), _UU("CM_TRAY_NOT_CONNECTED"));
+		}
+		else if (num_connected == 0)
+		{
+			// There is only connecting account
+			UniFormat(tmp, sizeof(tmp), _UU("CM_TRAY_CONNECTED_1"), num_connecting);
+		}
+		else if (num_connecting == 0)
+		{
+			// There is only connected account
+			UniFormat(tmp, sizeof(tmp), _UU("CM_TRAY_CONNECTED_2"), num_connected);
+		}
+		else
+		{
+			// There are both
+			UniFormat(tmp, sizeof(tmp), _UU("CM_TRAY_CONNECTED_0"), num_connected, num_connecting);
 		}
 
 		if (num_connecting == 0 && num_connected == 0)
@@ -10804,7 +10680,7 @@ void CmRefreshAccountListEx2(HWND hWnd, bool easy, bool style_changed)
 			}
 		}
 
-		CmChangeTrayString(hWnd, tooltip);
+		CmChangeTrayString(hWnd, tmp);
 	}
 
 	Refresh(hWnd);
@@ -11331,6 +11207,7 @@ void CmMainWindowOnInit(HWND hWnd)
 	CmInitNotifyClientThread();
 
 	// Timer setting
+	SetTimer(hWnd, 1, 128, NULL);
 	SetTimer(hWnd, 6, 5000, NULL);
 
 	// Initialize the task tray
@@ -11967,6 +11844,7 @@ bool LoginCM()
 	// Try to login with an empty password first
 	bool bad_pass, no_remote;
 	wchar_t server_name[MAX_SIZE];
+	RPC_CLIENT_VERSION a;
 
 RETRY:
 	if (cm->server_name != NULL)
@@ -12018,8 +11896,13 @@ RETRY:
 		}
 	}
 
-	cm->CmSettingSupported = true;
-	cm->CmEasyModeSupported = true;
+	Zero(&a, sizeof(a));
+	CcGetClientVersion(cm->Client, &a);
+	if (a.ClientBuildInt >= 5192)
+	{
+		cm->CmSettingSupported = true;
+		cm->CmEasyModeSupported = true;
+	}
 
 	return true;
 }

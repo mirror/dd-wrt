@@ -609,24 +609,6 @@ void SessionMain(SESSION *s)
 							WHERE;
 						}
 					}
-
-					// If all the specified number of tcp connections are not alive continuously, then terminate the session.
-					UINT num_tcp_conn = LIST_NUM(s->Connection->Tcp->TcpSockList);
-					UINT max_conn = s->ClientOption->MaxConnection;
-
-					if ((s->CurrentConnectionEstablishTime +
-						(UINT64)(s->ClientOption->AdditionalConnectionInterval * 1000 * 2 + CONNECTING_TIMEOUT * 2))
-						<= Tick64())
-					{
-						if (s->ClientOption->BindLocalPort != 0 || num_tcp_conn == 0)
-						{
-							timeouted = true;
-							WHERE;
-						}
-					}
-					//Debug("SessionMain(): The number of TCP connections short... Num_Tcp_Conn=%d Max_Conn=%d Curr_Conn_Time=%llu Tick64=%llu\n"
-					//	, num_tcp_conn, max_conn, s->CurrentConnectionEstablishTime, Tick64());
-
 				}
 			}
 
@@ -1288,13 +1270,6 @@ void CleanupSession(SESSION *s)
 		Free(s->ClientAuth);
 	}
 
-	if (s->SslOption != NULL)
-	{
-		FreeXList(s->SslOption->CaList);
-		FreeX(s->SslOption->SavedCert);
-		Free(s->SslOption);
-	}
-
 	FreeTraffic(s->Traffic);
 	Free(s->Name);
 
@@ -1448,9 +1423,6 @@ void ClientThread(THREAD *t, void *param)
 	while (true)
 	{
 		Zero(&s->ServerIP_CacheForNextConnect, sizeof(IP));
-		Zero(&s->LocalIP_CacheForNextConnect, sizeof(IP));	// Assigned by first outgoing connection
-		Zero(s->UnderlayProtocol, sizeof(s->UnderlayProtocol));
-		Zero(s->ProtocolDetails, sizeof(s->ProtocolDetails));
 
 		if (s->Link != NULL && ((*s->Link->StopAllLinkFlag) || s->Link->Halting))
 		{
@@ -1977,55 +1949,23 @@ SESSION *NewClientSessionEx(CEDAR *cedar, CLIENT_OPTION *option, CLIENT_AUTH *au
 	{
 		s->ClientAuth->ClientX = CloneX(s->ClientAuth->ClientX);
 	}
-	if (s->ClientAuth->ClientK != NULL)
-	{
-		if (s->ClientAuth->AuthType != CLIENT_AUTHTYPE_OPENSSLENGINE)
-		{
-			s->ClientAuth->ClientK = CloneK(s->ClientAuth->ClientK);
-		}
-		else
-		{
-			s->ClientAuth->ClientK = OpensslEngineToK(s->ClientAuth->OpensslEnginePrivateKeyName, s->ClientAuth->OpensslEngineName);
-		}
-	}
+  if (s->ClientAuth->ClientK != NULL)
+  {
+    if (s->ClientAuth->AuthType != CLIENT_AUTHTYPE_OPENSSLENGINE)
+    {
+      s->ClientAuth->ClientK = CloneK(s->ClientAuth->ClientK);
+    }
+    else
+    {
+      s->ClientAuth->ClientK = OpensslEngineToK(s->ClientAuth->OpensslEnginePrivateKeyName, s->ClientAuth->OpensslEngineName);
+    }
+  }
 
 	if (StrCmpi(s->ClientOption->DeviceName, LINK_DEVICE_NAME) == 0)
 	{
 		// Link client mode
 		s->LinkModeClient = true;
 		s->Link = (LINK *)s->PacketAdapter->Param;
-		if (s->Link != NULL && s->Link->CheckServerCert && s->Link->Hub->HubDb != NULL)
-		{
-			// Enable SSL peer verification
-			s->SslOption = ZeroMalloc(sizeof(SSL_VERIFY_OPTION));
-			s->SslOption->VerifyPeer = true;
-			s->SslOption->AddDefaultCA = s->Link->AddDefaultCA;
-			s->SslOption->VerifyHostname = true;
-			s->SslOption->SavedCert = CloneX(s->Link->ServerCert);
-
-			// Copy trusted CA
-			LIST *o = s->Link->Hub->HubDb->RootCertList;
-			s->SslOption->CaList = CloneXList(o);
-		}
-	}
-	else
-	{
-		if (account != NULL && account->CheckServerCert)
-		{
-			// Enable SSL peer verification
-			s->SslOption = ZeroMalloc(sizeof(SSL_VERIFY_OPTION));
-			s->SslOption->VerifyPeer = true;
-#ifdef	OS_WIN32
-			s->SslOption->PromptOnVerifyFail = true;
-#endif
-			s->SslOption->AddDefaultCA = account->AddDefaultCA;
-			s->SslOption->VerifyHostname = true;
-			s->SslOption->SavedCert = CloneX(account->ServerCert);
-
-			// Copy trusted CA
-			LIST *o = cedar->CaList;
-			s->SslOption->CaList = CloneXList(o);
-		}
 	}
 
 	if (StrCmpi(s->ClientOption->DeviceName, SNAT_DEVICE_NAME) == 0)

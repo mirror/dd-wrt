@@ -404,28 +404,6 @@ bool WriteSecKey(SECURE *sec, bool private_obj, char *name, K *k)
 	UCHAR modules[MAX_SIZE], pub[MAX_SIZE], pri[MAX_SIZE], prime1[MAX_SIZE], prime2[MAX_SIZE];
 	UCHAR exp1[MAX_SIZE], exp2[MAX_SIZE], coeff[MAX_SIZE];
 	const BIGNUM *n, *e, *d, *p, *q, *dmp1, *dmq1, *iqmp;
-
-	// Validate arguments
-	if (sec == NULL)
-	{
-		return false;
-	}
-	if (name == NULL || k == NULL || k->private_key == false)
-	{
-		sec->Error = SEC_ERROR_BAD_PARAMETER;
-		return false;
-	}
-	if (sec->SessionCreated == false)
-	{
-		sec->Error = SEC_ERROR_NO_SESSION;
-		return false;
-	}
-	if (sec->LoginFlag == false && private_obj)
-	{
-		sec->Error = SEC_ERROR_NOT_LOGIN;
-		return false;
-	}
-
 	CK_ATTRIBUTE a[] =
 	{
 		{CKA_MODULUS,			modules,		0},		// 0
@@ -451,6 +429,27 @@ bool WriteSecKey(SECURE *sec, bool private_obj, char *name, K *k)
 		{CKA_EXTRACTABLE,		&b_false,		sizeof(b_false)},
 		{CKA_MODIFIABLE,		&b_false,		sizeof(b_false)},
 	};
+
+	// Validate arguments
+	if (sec == NULL)
+	{
+		return false;
+	}
+	if (name == NULL || k == NULL || k->private_key == false)
+	{
+		sec->Error = SEC_ERROR_BAD_PARAMETER;
+		return false;
+	}
+	if (sec->SessionCreated == false)
+	{
+		sec->Error = SEC_ERROR_NO_SESSION;
+		return false;
+	}
+	if (sec->LoginFlag == false && private_obj)
+	{
+		sec->Error = SEC_ERROR_NOT_LOGIN;
+		return false;
+	}
 
 	// Numeric data generation
 	rsa = EVP_PKEY_get0_RSA(k->pkey);
@@ -641,6 +640,22 @@ bool WriteSecCert(SECURE *sec, bool private_obj, char *name, X *x)
 	UINT ret;
 	BUF *b;
 	UINT object;
+	CK_ATTRIBUTE a[] =
+	{
+		{CKA_SUBJECT,			subject,		0},			// 0
+		{CKA_ISSUER,			issuer,			0},			// 1
+		{CKA_SERIAL_NUMBER,		serial_number,	0},			// 2
+		{CKA_VALUE,				value,			0},			// 3
+		{CKA_CLASS,				&obj_class,		sizeof(obj_class)},
+		{CKA_TOKEN,				&b_true,		sizeof(b_true)},
+		{CKA_PRIVATE,			&b_private_obj,	sizeof(b_private_obj)},
+		{CKA_LABEL,				name,			StrLen(name)},
+		{CKA_CERTIFICATE_TYPE,	&cert_type,		sizeof(cert_type)},
+#if	0		// Don't use these because some tokens fail
+		{CKA_START_DATE,		&start_date,	sizeof(start_date)},
+		{CKA_END_DATE,			&end_date,		sizeof(end_date)},
+#endif
+	};
 	// Validate arguments
 	if (sec == NULL)
 	{
@@ -661,23 +676,6 @@ bool WriteSecCert(SECURE *sec, bool private_obj, char *name, X *x)
 		sec->Error = SEC_ERROR_NOT_LOGIN;
 		return false;
 	}
-
-	CK_ATTRIBUTE a[] =
-	{
-		{CKA_SUBJECT,			subject,		0},			// 0
-		{CKA_ISSUER,			issuer,			0},			// 1
-		{CKA_SERIAL_NUMBER,		serial_number,	0},			// 2
-		{CKA_VALUE,				value,			0},			// 3
-		{CKA_CLASS,				&obj_class,		sizeof(obj_class)},
-		{CKA_TOKEN,				&b_true,		sizeof(b_true)},
-		{CKA_PRIVATE,			&b_private_obj,	sizeof(b_private_obj)},
-		{CKA_LABEL,				name,			StrLen(name)},
-		{CKA_CERTIFICATE_TYPE,	&cert_type,		sizeof(cert_type)},
-#if	0		// Don't use these because some tokens fail
-		{CKA_START_DATE,		&start_date,	sizeof(start_date)},
-		{CKA_END_DATE,			&end_date,		sizeof(end_date)},
-#endif
-	};
 
 	// Copy the certificate to the buffer
 	b = XToBuf(x, false);
@@ -1315,6 +1313,14 @@ bool WriteSecData(SECURE *sec, bool private_obj, char *name, void *data, UINT si
 	UINT object_class = CKO_DATA;
 	CK_BBOOL b_true = true, b_false = false, b_private_obj = private_obj;
 	UINT object;
+	CK_ATTRIBUTE a[] =
+	{
+		{CKA_TOKEN,		&b_true,		sizeof(b_true)},
+		{CKA_CLASS,		&object_class,	sizeof(object_class)},
+		{CKA_PRIVATE,	&b_private_obj,	sizeof(b_private_obj)},
+		{CKA_LABEL,		name,			StrLen(name)},
+		{CKA_VALUE,		data,			size},
+	};
 	// Validate arguments
 	if (sec == NULL)
 	{
@@ -1340,15 +1346,6 @@ bool WriteSecData(SECURE *sec, bool private_obj, char *name, void *data, UINT si
 		sec->Error = SEC_ERROR_DATA_TOO_BIG;
 		return false;
 	}
-
-	CK_ATTRIBUTE a[] =
-	{
-		{CKA_TOKEN,		&b_true,		sizeof(b_true)},
-		{CKA_CLASS,		&object_class,	sizeof(object_class)},
-		{CKA_PRIVATE,	&b_private_obj,	sizeof(b_private_obj)},
-		{CKA_LABEL,		name,			StrLen(name)},
-		{CKA_VALUE,		data,			size},
-	};
 
 	// Delete any objects with the same name
 	if (CheckSecObject(sec, name, SEC_DATA))

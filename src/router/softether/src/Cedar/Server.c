@@ -1092,15 +1092,10 @@ UINT GetServerCapsInt(SERVER *s, char *name)
 		return 0;
 	}
 
+	Zero(&t, sizeof(t));
+	GetServerCaps(s, &t);
 
-	Lock(s->CapsCacheLock);
-	{
-		Zero(&t, sizeof(t));
-		GetServerCaps(s, &t);
-
-		ret = GetCapsInt(&t, name);
-	}
-	Unlock(s->CapsCacheLock);
+	ret = GetCapsInt(&t, name);
 
 	return ret;
 }
@@ -1169,14 +1164,10 @@ void FlushServerCaps(SERVER *s)
 		return;
 	}
 
-	Lock(s->CapsCacheLock);
-	{
-		DestroyServerCapsCache(s);
+	DestroyServerCapsCache(s);
 
-		Zero(&t, sizeof(t));
-		GetServerCaps(s, &t);
-	}
-	Unlock(s->CapsCacheLock);
+	Zero(&t, sizeof(t));
+	GetServerCaps(s, &t);
 }
 
 // Get the Caps list for this server
@@ -2329,7 +2320,7 @@ void SiSetDefaultHubOption(HUB_OPTION *o)
 	o->DefaultSubnet = SetIP32(255, 255, 255, 0);
 	o->MaxSession = 0;
 	o->VlanTypeId = MAC_PROTO_TAGVLAN;
-	o->NoIPv6DefaultRouterInRAWhenIPv6 = false;
+	o->NoIPv6DefaultRouterInRAWhenIPv6 = true;
 	o->ManageOnlyPrivateIP = true;
 	o->ManageOnlyLocalUnicastIPv6 = true;
 	o->NoMacAddressLog = true;
@@ -3409,7 +3400,6 @@ void SiWriteHubLinkCfg(FOLDER *f, LINK *k)
 		}
 
 		CfgAddBool(f, "CheckServerCert", k->CheckServerCert);
-		CfgAddBool(f, "AddDefaultCA", k->AddDefaultCA);
 
 		if (k->ServerCert != NULL)
 		{
@@ -3460,7 +3450,6 @@ void SiLoadHubLinkCfg(FOLDER *f, HUB *h)
 	{
 		BUF *b;
 		k->CheckServerCert = CfgGetBool(f, "CheckServerCert");
-		k->AddDefaultCA = CfgGetBool(f, "AddDefaultCA");
 		b = CfgGetBuf(f, "ServerCert");
 		if (b != NULL)
 		{
@@ -3468,8 +3457,16 @@ void SiLoadHubLinkCfg(FOLDER *f, HUB *h)
 			FreeBuf(b);
 		}
 
-		k->Offline = !online;
-
+		if (online)
+		{
+			k->Offline = true;
+			SetLinkOnline(k);
+		}
+		else
+		{
+			k->Offline = false;
+			SetLinkOffline(k);
+		}
 		ReleaseLink(k);
 	}
 
@@ -3883,16 +3880,6 @@ void SiLoadHubOptionCfg(FOLDER *f, HUB_OPTION *o)
 		o->DropArpInPrivacyFilterMode = true;
 	}
 
-	if (CfgIsItem(f, "AllowSameUserInPrivacyFilterMode"))
-        {
-                o->AllowSameUserInPrivacyFilterMode = CfgGetBool(f, "AllowSameUserInPrivacyFilterMode");
-        }
-        else
-        {
-                o->AllowSameUserInPrivacyFilterMode = false;
-        }
-
-
 	o->NoLookBPDUBridgeId = CfgGetBool(f, "NoLookBPDUBridgeId");
 	o->AdjustTcpMssValue = CfgGetInt(f, "AdjustTcpMssValue");
 	o->DisableAdjustTcpMss = CfgGetBool(f, "DisableAdjustTcpMss");
@@ -3941,7 +3928,6 @@ void SiLoadHubOptionCfg(FOLDER *f, HUB_OPTION *o)
 	o->NoPhysicalIPOnPacketLog = CfgGetBool(f, "NoPhysicalIPOnPacketLog");
 	o->UseHubNameAsDhcpUserClassOption = CfgGetBool(f, "UseHubNameAsDhcpUserClassOption");
 	o->UseHubNameAsRadiusNasId = CfgGetBool(f, "UseHubNameAsRadiusNasId");
-	o->AllowEapMatchUserByCert = CfgGetBool(f, "AllowEapMatchUserByCert");
 
 	// Enabled by default
 	if (CfgIsItem(f, "ManageOnlyPrivateIP"))
@@ -4018,7 +4004,6 @@ void SiWriteHubOptionCfg(FOLDER *f, HUB_OPTION *o)
 	CfgAddBool(f, "DoNotSaveHeavySecurityLogs", o->DoNotSaveHeavySecurityLogs);
 	CfgAddBool(f, "DropBroadcastsInPrivacyFilterMode", o->DropBroadcastsInPrivacyFilterMode);
 	CfgAddBool(f, "DropArpInPrivacyFilterMode", o->DropArpInPrivacyFilterMode);
-	CfgAddBool(f, "AllowSameUserInPrivacyFilterMode", o->AllowSameUserInPrivacyFilterMode);
 	CfgAddBool(f, "SuppressClientUpdateNotification", o->SuppressClientUpdateNotification);
 	CfgAddBool(f, "AssignVLanIdByRadiusAttribute", o->AssignVLanIdByRadiusAttribute);
 	CfgAddBool(f, "DenyAllRadiusLoginWithNoVlanAssign", o->DenyAllRadiusLoginWithNoVlanAssign);
@@ -4047,7 +4032,6 @@ void SiWriteHubOptionCfg(FOLDER *f, HUB_OPTION *o)
 	CfgAddBool(f, "DisableCorrectIpOffloadChecksum", o->DisableCorrectIpOffloadChecksum);
 	CfgAddBool(f, "UseHubNameAsDhcpUserClassOption", o->UseHubNameAsDhcpUserClassOption);
 	CfgAddBool(f, "UseHubNameAsRadiusNasId", o->UseHubNameAsRadiusNasId);
-	CfgAddBool(f, "AllowEapMatchUserByCert", o->AllowEapMatchUserByCert);
 }
 
 // Write the user
@@ -5624,7 +5608,6 @@ void SiLoadServerCfg(SERVER *s, FOLDER *f)
 	char tmp[MAX_SIZE];
 	X *x = NULL;
 	K *k = NULL;
-	LIST *chain = NewList(NULL);
 	FOLDER *params_folder;
 	UINT i;
 	// Validate arguments
@@ -5864,14 +5847,10 @@ void SiLoadServerCfg(SERVER *s, FOLDER *f)
 			FreeBuf(b);
 		}
 
-		// Server trust chain
-		SiLoadCertList(chain, CfgGetFolder(f, "ServerChain"));
-
 		if (x == NULL || k == NULL || CheckXandK(x, k) == false)
 		{
 			FreeX(x);
 			FreeK(k);
-			FreeXList(chain);
 			SiGenerateDefaultCert(&x, &k);
 
 			SetCedarCert(c, x, k);
@@ -5881,18 +5860,10 @@ void SiLoadServerCfg(SERVER *s, FOLDER *f)
 		}
 		else
 		{
-			if (LIST_NUM(chain) == 0)
-			{
-				SetCedarCert(c, x, k);
-			}
-			else
-			{
-				SetCedarCertAndChain(c, x, k, chain);
-			}
+			SetCedarCert(c, x, k);
 
 			FreeX(x);
 			FreeK(k);
-			FreeXList(chain);
 		}
 
 		// Character which separates the username from the hub name
@@ -6274,9 +6245,6 @@ void SiWriteServerCfg(FOLDER *f, SERVER *s)
 		b = KToBuf(c->ServerK, false, NULL);
 		CfgAddBuf(f, "ServerKey", b);
 		FreeBuf(b);
-
-		// Server trust chain
-		SiWriteCertList(CfgCreateFolder(f, "ServerChain"), c->ServerChain);
 
 		{
 			// Character which separates the username from the hub name
@@ -7485,7 +7453,6 @@ void SiCalledUpdateHub(SERVER *s, PACK *p)
 	o.DoNotSaveHeavySecurityLogs = PackGetBool(p, "DoNotSaveHeavySecurityLogs");
 	o.DropBroadcastsInPrivacyFilterMode = PackGetBool(p, "DropBroadcastsInPrivacyFilterMode");
 	o.DropArpInPrivacyFilterMode = PackGetBool(p, "DropArpInPrivacyFilterMode");
-	o.AllowSameUserInPrivacyFilterMode= PackGetBool(p, "AllowSameUserInPrivacyFilterMode");
 	o.SuppressClientUpdateNotification = PackGetBool(p, "SuppressClientUpdateNotification");
 	o.AssignVLanIdByRadiusAttribute = PackGetBool(p, "AssignVLanIdByRadiusAttribute");
 	o.DenyAllRadiusLoginWithNoVlanAssign = PackGetBool(p, "DenyAllRadiusLoginWithNoVlanAssign");
@@ -7536,7 +7503,6 @@ void SiCalledUpdateHub(SERVER *s, PACK *p)
 	o.DisableCorrectIpOffloadChecksum = PackGetBool(p, "DisableCorrectIpOffloadChecksum");
 	o.UseHubNameAsDhcpUserClassOption = PackGetBool(p, "UseHubNameAsDhcpUserClassOption");
 	o.UseHubNameAsRadiusNasId = PackGetBool(p, "UseHubNameAsRadiusNasId");
-	o.AllowEapMatchUserByCert = PackGetBool(p, "AllowEapMatchUserByCert");
 
 	save_packet_log = PackGetInt(p, "SavePacketLog");
 	packet_log_switch_type = PackGetInt(p, "PacketLogSwitchType");
@@ -9313,7 +9279,6 @@ void SiPackAddCreateHub(PACK *p, HUB *h)
 	PackAddBool(p, "DoNotSaveHeavySecurityLogs", h->Option->DoNotSaveHeavySecurityLogs);
 	PackAddBool(p, "DropBroadcastsInPrivacyFilterMode", h->Option->DropBroadcastsInPrivacyFilterMode);
 	PackAddBool(p, "DropArpInPrivacyFilterMode", h->Option->DropArpInPrivacyFilterMode);
-	PackAddBool(p, "AllowSameUserInPrivacyFilterMode", h->Option->AllowSameUserInPrivacyFilterMode);
 	PackAddBool(p, "SuppressClientUpdateNotification", h->Option->SuppressClientUpdateNotification);
 	PackAddBool(p, "AssignVLanIdByRadiusAttribute", h->Option->AssignVLanIdByRadiusAttribute);
 	PackAddBool(p, "DenyAllRadiusLoginWithNoVlanAssign", h->Option->DenyAllRadiusLoginWithNoVlanAssign);
@@ -9371,7 +9336,6 @@ void SiPackAddCreateHub(PACK *p, HUB *h)
 	PackAddData(p, "SecurePassword", h->SecurePassword, SHA1_SIZE);
 	PackAddBool(p, "UseHubNameAsDhcpUserClassOption", h->Option->UseHubNameAsDhcpUserClassOption);
 	PackAddBool(p, "UseHubNameAsRadiusNasId", h->Option->UseHubNameAsRadiusNasId);
-	PackAddBool(p, "AllowEapMatchUserByCert", h->Option->AllowEapMatchUserByCert);
 
 	SiAccessListToPack(p, h->AccessList);
 

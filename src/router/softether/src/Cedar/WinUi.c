@@ -35,9 +35,6 @@
 #include <shellapi.h>
 #include <shlobj.h>
 
-#include <openssl/evp.h>
-#include <openssl/ec.h>
-
 // Process name list of incompatible anti-virus software
 static BAD_PROCESS bad_processes[] =
 {
@@ -903,10 +900,7 @@ void ShowWizard(HWND hWndParent, WIZARD *w, UINT start_id)
 	h.phpage = (HPROPSHEETPAGE *)pages_array;
 	h.pszbmHeader = MAKEINTRESOURCEW(w->Bitmap);
 	h.pszCaption = w->Caption;
-    #pragma clang diagnostic push
-    #pragma clang diagnostic ignored "-Wincompatible-function-pointer-types"
 	h.pfnCallback = WizardDlgProc;
-    #pragma clang diagnostic pop
 
 	start_page = GetWizardPage(w, start_id);
 	if (start_page != NULL)
@@ -1332,7 +1326,7 @@ void WinConnectDlgThread(THREAD *thread, void *param)
 		nat_t_svc_name = d->nat_t_svc_name;
 	}
 
-	s = ConnectEx5(d->hostname, d->port, d->timeout, &d->cancel, nat_t_svc_name, &nat_t_error_code, d->try_start_ssl, false, d->ssl_option, d->ssl_err, d->hint_str, NULL);
+	s = ConnectEx3(d->hostname, d->port, d->timeout, &d->cancel, nat_t_svc_name, &nat_t_error_code, d->try_start_ssl, false);
 
 	d->ret_sock = s;
 	d->nat_t_error_code = nat_t_error_code;
@@ -1402,10 +1396,6 @@ UINT WinConnectDlgProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam, void *
 // TCP connection with showing the UI
 SOCK *WinConnectEx3(HWND hWnd, char *server, UINT port, UINT timeout, UINT icon_id, wchar_t *caption, wchar_t *info, UINT *nat_t_error_code, char *nat_t_svc_name, bool try_start_ssl)
 {
-	return WinConnectEx4(hWnd, server, port, timeout, icon_id, caption, info, nat_t_error_code, nat_t_svc_name, try_start_ssl, NULL, NULL, NULL);
-}
-SOCK *WinConnectEx4(HWND hWnd, char *server, UINT port, UINT timeout, UINT icon_id, wchar_t *caption, wchar_t *info, UINT *nat_t_error_code, char *nat_t_svc_name, bool try_start_ssl, SSL_VERIFY_OPTION *ssl_option, UINT *ssl_err, char *hint_str)
-{
 	wchar_t tmp[MAX_SIZE];
 	wchar_t tmp2[MAX_SIZE];
 	WINCONNECT_DLG_DATA d;
@@ -1447,9 +1437,6 @@ SOCK *WinConnectEx4(HWND hWnd, char *server, UINT port, UINT timeout, UINT icon_
 	d.timeout = timeout;
 	d.hostname = server;
 	d.port = port;
-	d.ssl_option = ssl_option;
-	d.ssl_err = ssl_err;
-	d.hint_str = hint_str;
 	StrCpy(d.nat_t_svc_name, sizeof(d.nat_t_svc_name), nat_t_svc_name);
 
 	Dialog(hWnd, D_CONNECT, WinConnectDlgProc, &d);
@@ -3490,10 +3477,7 @@ HWND SearchWindow(wchar_t *caption)
 	p.caption = caption;
 	p.hWndFound = NULL;
 
-    #pragma clang diagnostic push
-    #pragma clang diagnostic ignored "-Wincompatible-function-pointer-types"
 	EnumWindows(SearchWindowEnumProc, (LPARAM)&p);
-    #pragma clang diagnostic pop
 
 	return p.hWndFound;
 }
@@ -5582,58 +5566,17 @@ void PrintCertInfo(HWND hWnd, CERT_DLG *p)
 	GetDateTimeStrEx64(tmp, sizeof(tmp), SystemToLocal64(x->notAfter), NULL);
 	LvInsert(hWnd, L_CERTINFO, ICO_CERT, NULL, 2, _UU("CERT_NOT_AFTER"), tmp);
 
+	// Number of bits
+	if (x->is_compatible_bit)
+	{
+		UniFormat(tmp, sizeof(tmp), _UU("CERT_BITS_FORMAT"), x->bits);
+		LvInsert(hWnd, L_CERTINFO, ICO_CERT, NULL, 2, _UU("CERT_BITS"), tmp);
+	}
+
 	// Public key
 	k = GetKFromX(x);
 	if (k != NULL)
 	{
-		UINT type = EVP_PKEY_base_id(k->pkey);
-		switch (type)
-		{
-		case EVP_PKEY_RSA:
-			LvInsert(hWnd, L_CERTINFO, ICO_CERT, NULL, 2, _UU("CERT_KEY_ALGORITHM"), L"RSA");
-			UniFormat(tmp, sizeof(tmp), _UU("CERT_BITS_FORMAT"), x->bits);
-			LvInsert(hWnd, L_CERTINFO, ICO_CERT, NULL, 2, _UU("CERT_BITS"), tmp);
-			break;
-		case EVP_PKEY_EC:
-			LvInsert(hWnd, L_CERTINFO, ICO_CERT, NULL, 2, _UU("CERT_KEY_ALGORITHM"), L"ECDSA");
-			UniFormat(tmp, sizeof(tmp), _UU("CERT_BITS_FORMAT"), x->bits);
-			LvInsert(hWnd, L_CERTINFO, ICO_CERT, NULL, 2, _UU("CERT_BITS"), tmp);
-
-# ifndef OPENSSL_NO_EC
-			EC_KEY *key = EVP_PKEY_get0_EC_KEY(k->pkey);
-			if (key == NULL)
-			{
-				break;
-			}
-
-			EC_GROUP *group = EC_KEY_get0_group(key);
-			if (group == NULL)
-			{
-				break;
-			}
-
-			int nid = EC_GROUP_get_curve_name(group);
-			if (nid == 0)
-			{
-				break;
-			}
-
-			if (StrToUni(tmp, sizeof(tmp), OBJ_nid2sn(nid)) > 0)
-			{
-				wchar_t *nname = CopyStrToUni(EC_curve_nid2nist(nid));
-				if (nname)
-				{
-					UniFormat(tmp, sizeof(tmp), L"%s (%s)", tmp, nname);
-				}
-				LvInsert(hWnd, L_CERTINFO, ICO_CERT, NULL, 2, _UU("CERT_KEY_PARAMETER"), tmp);
-				Free(nname);
-			}
-# endif
-			break;
-		default:
-			break;
-		}
-
 		BUF *b = KToBuf(k, false, NULL);
 		s_tmp = CopyBinToStrEx(b->Buf, b->Size);
 		StrToUni(tmp, sizeof(tmp), s_tmp);

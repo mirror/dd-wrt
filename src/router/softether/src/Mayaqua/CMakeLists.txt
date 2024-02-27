@@ -1,5 +1,5 @@
-file(GLOB SOURCES_MAYAQUA "*.c" "Crypto/*.c")
-file(GLOB HEADERS_MAYAQUA "*.h" "Crypto/*.h")
+file(GLOB SOURCES_MAYAQUA "*.c")
+file(GLOB HEADERS_MAYAQUA "*.h")
 
 if(WIN32)
   add_library(mayaqua STATIC ${SOURCES_MAYAQUA} ${HEADERS_MAYAQUA})
@@ -17,29 +17,6 @@ set_target_properties(mayaqua
 )
 
 find_package(OpenSSL REQUIRED)
-
-include(CheckSymbolExists)
-
-set(CMAKE_REQUIRED_INCLUDES ${OPENSSL_INCLUDE_DIR})
-set(CMAKE_REQUIRED_LIBRARIES OpenSSL::Crypto)
-set(CMAKE_REQUIRED_LIBRARIES OpenSSL::SSL)
-
-check_symbol_exists(EVP_PKEY_get_raw_public_key "openssl/evp.h" HAVE_EVP_PKEY_GET_RAW_PUBLIC_KEY)
-check_symbol_exists(SSL_CTX_set_num_tickets "openssl/ssl.h" HAVE_SSL_CTX_SET_NUM_TICKETS)
-
-unset(CMAKE_REQUIRED_INCLUDES)
-unset(CMAKE_REQUIRED_LIBRARIES)
-
-if(NOT HAVE_EVP_PKEY_GET_RAW_PUBLIC_KEY)
-  message(FATAL_ERROR "Required EVP_PKEY_get_raw_public_key() not found in OpenSSL library!")
-endif()
-
-if (HAVE_SSL_CTX_SET_NUM_TICKETS)
-  add_compile_definitions(HAVE_SSL_CTX_SET_NUM_TICKETS)
-endif()
-
-
-
 find_package(ZLIB REQUIRED)
 
 # Required because we include <openssl/opensslv.h> in Encrypt.h.
@@ -62,7 +39,6 @@ if(WIN32)
 
   target_link_libraries(mayaqua
     PRIVATE
-      "crypt32.lib"
       "DbgHelp.Lib"
       "dwmapi.lib"
       "iphlpapi.lib"
@@ -71,7 +47,6 @@ if(WIN32)
       "Secur32.Lib"
       "setupapi.lib"
       "winmm.lib"
-      "ws2_32.lib"
       "WtsApi32.Lib"
     )
 endif()
@@ -82,16 +57,9 @@ if(UNIX)
   # In some cases libiconv is not included in libc
   find_library(LIB_ICONV iconv)
 
-  find_library(LIB_M m)
   find_library(LIB_RT rt)
 
-  target_link_libraries(mayaqua
-    PRIVATE
-      Threads::Threads
-      $<$<BOOL:${LIB_ICONV}>:${LIB_ICONV}>
-      $<$<BOOL:${LIB_M}>:${LIB_M}>
-      $<$<BOOL:${LIB_RT}>:${LIB_RT}>
-  )
+  target_link_libraries(mayaqua PRIVATE Threads::Threads)
 
   if (CMAKE_SYSTEM_PROCESSOR MATCHES "^(armv7l|aarch64|s390x)$" OR NOT HAVE_SYS_AUXV OR SKIP_CPU_FEATURES)
     add_definitions(-DSKIP_CPU_FEATURES)
@@ -99,6 +67,14 @@ if(UNIX)
     add_subdirectory(3rdparty/cpu_features)
     set_property(TARGET cpu_features PROPERTY POSITION_INDEPENDENT_CODE ON)
     target_link_libraries(mayaqua PRIVATE cpu_features)
+  endif()
+
+  if(LIB_RT)
+    target_link_libraries(mayaqua PRIVATE rt)
+  endif()
+
+  if(LIB_ICONV)
+    target_link_libraries(mayaqua PRIVATE ${LIB_ICONV})
   endif()
 
   if(${CMAKE_SYSTEM_NAME} STREQUAL "SunOS")

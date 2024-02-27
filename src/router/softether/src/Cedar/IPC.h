@@ -91,7 +91,6 @@ struct IPC_PARAM
 	UINT Mss;
 	bool IsL3Mode;
 	X *ClientCertificate;
-	bool RadiusOK;
 	UINT Layer;
 };
 
@@ -156,7 +155,7 @@ struct IPC
 	LIST *IPv6NeighborTable;			// Neighbor Discovery Table
 	LIST *IPv6RouterAdvs;				// Router offered prefixes
 	UINT64 IPv6ClientEUI;				// The EUI of the client (for the SLAAC autoconf)
-	UINT64 IPv6ServerEUI;				// The EUI of the server (from the IPC Mac address)
+	UINT64 IPv6ServerEUI;				// The EUI of the server (from the RA discovery)
 };
 
 // MS-CHAPv2 authentication information
@@ -181,7 +180,7 @@ struct IPC_IPV6_ROUTER_ADVERTISEMENT
 IPC *NewIPC(CEDAR *cedar, char *client_name, char *postfix, char *hubname, char *username, char *password, char *wg_key,
             UINT *error_code, IP *client_ip, UINT client_port, IP *server_ip, UINT server_port,
             char *client_hostname, char *crypt_name,
-            bool bridge_mode, UINT mss, EAP_CLIENT *eap_client, X *client_certificate, bool external_auth,
+            bool bridge_mode, UINT mss, EAP_CLIENT *eap_client, X *client_certificate,
             UINT layer);
 IPC *NewIPCByParam(CEDAR *cedar, IPC_PARAM *param, UINT *error_code);
 IPC *NewIPCBySock(CEDAR *cedar, SOCK *s, void *mac_address);
@@ -234,7 +233,7 @@ bool IPCIPv6CheckExistingLinkLocal(IPC *ipc, UINT64 eui);
 // RA
 void IPCIPv6AddRouterPrefixes(IPC *ipc, ICMPV6_OPTION_LIST *recvPrefix, UCHAR *macAddress, IP *ip);
 bool IPCIPv6CheckUnicastFromRouterPrefix(IPC *ipc, IP *ip, IPC_IPV6_ROUTER_ADVERTISEMENT *matchedRA);
-bool IPCSendIPv6RouterSoliciation(IPC *ipc, bool blocking);
+UINT64 IPCIPv6GetServerEui(IPC *ipc);
 // Data flow
 BLOCK *IPCIPv6Recv(IPC *ipc);
 void IPCIPv6Send(IPC *ipc, void *data, UINT size);

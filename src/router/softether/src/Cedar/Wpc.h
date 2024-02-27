@@ -32,7 +32,7 @@ struct WPC_CONNECT
 	UINT ProxyPort;											// Proxy server port number
 	char ProxyUsername[MAX_USERNAME_LEN + 1];				// Proxy server user name
 	char ProxyPassword[MAX_USERNAME_LEN + 1];				// Proxy server password
-	char CustomHttpHeader[HTTP_CUSTOM_HEADER_MAX_SIZE];		// Custom HTTP header
+	char CustomHttpHeader[HTTP_CUSTOM_HEADER_MAX_SIZE + 1];	// Custom HTTP header
 	bool UseCompress;										// Use of compression
 	bool DontCheckCert;										// Do not check the certificate
 };
@@ -45,7 +45,7 @@ struct INTERNET_SETTING
 	UINT ProxyPort;											// Proxy server port number
 	char ProxyUsername[MAX_USERNAME_LEN + 1];				// Proxy server user name
 	char ProxyPassword[MAX_USERNAME_LEN + 1];				// Proxy server password
-	char CustomHttpHeader[HTTP_CUSTOM_HEADER_MAX_SIZE];		// Custom HTTP header
+	char CustomHttpHeader[HTTP_CUSTOM_HEADER_MAX_SIZE + 1];	// Custom HTTP header
 };
 
 // URL
@@ -84,10 +84,10 @@ struct WPC_PACKET
 typedef bool (WPC_RECV_CALLBACK)(void *param, UINT total_size, UINT current_size, BUF *recv_buf);
 
 // Function prototype
-void Base64ToSafe64(char *str, const UINT size);
-void Safe64ToBase64(char *str, const UINT size);
-UINT DecodeSafe64(void *dst, const char *src, UINT size);
-void EncodeSafe64(char *dst, const void *src, const UINT size);
+void EncodeSafe64(char *dst, void *src, UINT src_size);
+UINT DecodeSafe64(void *dst, char *src, UINT src_strlen);
+void Base64ToSafe64(char *str);
+void Safe64ToBase64(char *str);
 bool ParseUrl(URL_DATA *data, char *str, bool is_post, char *referrer);
 void CreateUrl(char *url, UINT url_size, URL_DATA *data);
 void GetSystemInternetSetting(INTERNET_SETTING *setting);

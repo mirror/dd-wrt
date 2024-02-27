@@ -170,7 +170,7 @@ ERR_103					Not enough Client Connection Licenses on the destination VPN Server.
 ERR_104					Not enough Bridge Connection Licenses on the destination VPN Server. Contact the server administrator.
 ERR_105					Due to current technical difficulties, the destination VPN Server is not receiving the connection. Either wait a while, or contact the VPN Server administrator requesting that the server log file be checked.
 ERR_106					The destination VPN Server's certificate has expired. Contact the VPN Server's administrator.
-ERR_107					A connection has been requested in Monitoring Mode. But the security policy for the connecting user does not permit Monitoring Mode.
+ERR_107					A connection has beens requested in Monitoring Mode. But the security policy for the connecting user does not permit Monitoring Mode.
 ERR_108					A connection has been requested in Bridge / Router Mode. But the security policy for the connecting user forbids both bridge mode and router mode.
 ERR_109					A connection from a client IP address has been denied by the Source IP Restriction List of the Virtual Hub.
 ERR_110					There are too many items.
@@ -212,11 +212,6 @@ ERR_145					Unacceptable operation. Use the VPN Gate Utility to modify the conne
 ERR_146					The VPN Gate Service is running inside the VPN Client program. You cannot stop the VPN Gate Service on this screen. Use the VPN Client Manager to enable or disable the VPN Gate Service.
 ERR_147					This feature is not supported. It hasn't been implemented yet on the open-source version of SoftEther VPN.
 ERR_148					The VPN connection was disconnected because the system is being suspended.
-ERR_149					The destination VPN Server's certificate does not match the specified hostname.
-ERR_150					Failed to find the TLS version that is supported by both sides. This usually means that one side may be using an obsolete TLS version which is diabled by the other side.
-ERR_151					Failed to find an available cipher that is supported by both sides, or the cipher specified is not compatible with the server certificate.
-ERR_152					TLS handshake has failed.
-
 
 # Concerning licenses
 LICENSE_INFO_URL		https://selinks.org/?new_license
@@ -403,7 +398,7 @@ PW_TYPE_1				Standard Password Authentication
 PW_TYPE_2				RADIUS or NT Domain Authentication
 PW_TYPE_3				Client Certificate Authentication
 PW_TYPE_4				Smart Card Authentication
-PW_TYPE_5				OpenSSL Engine Authentication
+PW_TYPE_5				Openssl Engine Authentication
 
 PW_MSG_PROXY			User authentication failed on the proxy server %S. Re-enter the correct user name and password.
 PW_TYPE_PROXY			Proxy Server Authentication
@@ -437,8 +432,6 @@ CERT_DIGEST_MD5			Digest (MD5)
 CERT_DIGEST_SHA1		Digest (SHA-1)
 CERT_NO_SERIAL			There is no serial number
 CERT_BITS_FORMAT		%u bits
-CERT_KEY_ALGORITHM		Public Key Algorithm
-CERT_KEY_PARAMETER		Parameters
 
 
 # Concerning certificate confirmation dialogs
@@ -459,6 +452,8 @@ WINVER_ERROR_PC_REMOTE	the remote server
 # Warning for Open-source Version
 OSS_MSG					Welcome to the SoftEther VPN Server Academic Version!\r\n\r\n\r\nThis VPN Server is open-source free software developed as academic research at University of Tsukuba, Japan, and distributed from the SoftEther VPN Project (http://www.softether.org/), for free of charge for the public interests.\r\n\r\nSoftEther VPN software is distributed to public as a part of the joint-research contract between University of Tsukuba and SoftEther VPN Project. SoftEther VPN software is developed and published for JUST AN ACADEMIC RESEARCH PURPOSE. Therefore no support service are provided about SoftEther VPN software even if it contains bugs or vulnerabilities. A user will be liable for the result of use SoftEther VPN. The developers and publishers of SoftEther VPN will never be liable for either any consequences or damages.\r\n\r\nEnjoy using VPN with SoftEther VPN Server.\r\n\r\nFor more details of SoftEther VPN, visit http://www.softether.org/.\r\n\r\n
 NATT_MSG				** Connected with NAT traversal - might be unstable **\r\n\r\nThis VPN Client is connected to the VPN Server '%S' by using the NAT Traversal (UDP Hole Punching) technology.\r\n\r\nNAT Traversal allows the VPN Server behind the NAT-box to accept VPN connections from VPN Client without any port-forwarding setting on the NAT-box.\r\n\r\nHowever, NAT Traversal-based VPN sessions sometimes become unstable, because NAT Traversal uses UDP-based protocol. For example, the VPN tunnel disconnects every 5 minutes if there is a poor NAT-box between the VPN Server and the VPN Client. Some large-scale NAT gateways in cheap ISPs sometimes cause the same problem on NAT Traversal. This is a problem of routers or ISPs. This is not a problem of SoftEther VPN software.\r\n\r\nTo solve the unstable tunnel problem, you should connect to the VPN Server's TCP listener port directly, instead of using NAT Traversal. To connect to the VPN Server directly by using TCP, a listener port of the VPN Server must be exposed to the Internet by a port-forward setting on the NAT-box. Ask the administrator of the NAT-box, or refer to the manual of the NAT-box to add a port-forwarding setting on the NAT-box.\r\n\r\nIf this message still remains despite the VPN Server is exposing a TCP port to the Internet, check the "Disable NAT-T" checkbox on the VPN Client connection setting screen.\r\n\r\n
+NATT_MSG2				** Connected with NAT traversal - might be unstable **\r\n\r\nThis VPN Client is connected to the VPN Server '%S' by using the NAT Traversal (UDP Hole Punching) technology.\r\n\r\nNAT Traversal allows the VPN Server behind the NAT-box to accept VPN connections from VPN Client without any port-forwarding setting on the NAT-box.\r\n\r\nHowever, NAT Traversal-based VPN sessions sometimes become unstable, because NAT Traversal uses UDP-based protocol. For example, the VPN tunnel disconnects every 5 minutes if there is a poor NAT-box between the VPN Server and the VPN Client. Some large-scale NAT gateways in cheap ISPs sometimes cause the same problem on NAT Traversal. This is a problem of routers or ISPs. This is not a problem of SoftEther VPN software.\r\n\r\nTo solve the unstable tunnel problem, you should connect to the VPN Server's TCP listener port directly, instead of using NAT Traversal. To connect to the VPN Server directly by using TCP, a listener port of the VPN Server must be exposed to the Internet by a port-forward setting on the NAT-box. Ask the administrator of the NAT-box, or refer to the manual of the NAT-box to add a port-forwarding setting on the NAT-box.\r\n\r\nIf this message still remains despite the VPN Server is exposing a TCP port to the Internet, check the "Disable NAT-T" checkbox on the VPN Client connection setting screen after upgrading the VPN Client to Build 9428 or later.\r\n\r\n
+
 
 
 # Virtual HUB Admin Options
@@ -557,8 +552,6 @@ HUB_AO_MaxLoggedPacketsPerMinute			Maximum number of logging target packets per 
 HUB_AO_DoNotSaveHeavySecurityLogs			Do not take heavy security log.
 HUB_AO_DropBroadcastsInPrivacyFilterMode	Drop broadcasting packets if the both source and destination session is PrivacyFilter mode.
 HUB_AO_DropArpInPrivacyFilterMode			Drop ARP packets if the both source and destination session is PrivacyFilter mode.
-HUB_AO_AllowSameUserInPrivacyFilterMode			Allow packets if both the source and destination session users are the same, even in PrivacyFilter mode.
-
 HUB_AO_SuppressClientUpdateNotification		Suppress the update notification screen on the VPN Client.
 HUB_AO_FloodingSendQueueBufferQuota			Specify the quota limitation value (in bytes) of the sending queue buffer size which the flooding operation on the Virtual Hub can consume. The quota value is applied on the total length of sending queues of all active VPN sessions. Specify '0' to disable the quota. This option is effective to solve the out-of-memory problem on the network where there are many flooding packets.
 HUB_AO_AssignVLanIdByRadiusAttribute		Enable the VLAN ID dynamic assignment function. Each VPN session will be assigned its own VLAN ID by the RADIUS attribute value when the user is authenticated by the external RADIUS server unless the user object has a VLAN ID security policy. The RADIUS attribute with the name "Tunnel-Pvt-Group-ID" (ID = 81) will be used as the VLAN ID. The data type must be STRING.
@@ -568,7 +561,6 @@ HUB_AO_DetectDormantSessionInterval			If you set this option to non-zero value, 
 HUB_AO_NoPhysicalIPOnPacketLog				If you set this option to non-zero value, then the physical IP addresses of VPN clients of either the source VPN session or the destination VPN session will not be recorded on the packet log file.
 HUB_AO_UseHubNameAsDhcpUserClassOption		If you set this option to non-zero value, then the Virtual Hub Name will be added to a DHCP request to an external DHCP server as the "User-Class" option. This allows to use separate pools of IP addresses for each Virtual Hub. (For only L2TP/IPsec and OpenVPN sessions.)
 HUB_AO_UseHubNameAsRadiusNasId				If you set this option to non-zero value, then the NAS-Identifier RADIUS attribute will be set to a name of the Virtual Hub. This allows to determine on RADIUS server whether access to the Virtual Hub should be granted or denied.
-HUB_AO_AllowEapMatchUserByCert				If you enable (set to 1) this option, the Virtual Hub will attempt to match the EAP Identity not only with usernames, but also with user certificates during the PPP EAP authentication flow.
 
 
 # Concerning failed connection dialogs
@@ -843,14 +835,12 @@ CM_ST_NO_VLAN			-
 CM_ST_USE_ENCRYPT		Encryption
 CM_ST_USE_ENCRYPT_TRUE	Enabled (Algorithm: %S)
 CM_ST_USE_ENCRYPT_TRUE2	Enabled
-CM_ST_USE_ENCRYPT_TRUE3	Enabled (%S Algorithm: %S)
 CM_ST_USE_ENCRYPT_FALSE	Disabled (No Encryption)
 CM_ST_USE_COMPRESS		Use of Compression
 CM_ST_UDP_ACCEL_ENABLED	UDP Acceleration is Supported
 CM_ST_UDP_ACCEL_USING	UDP Acceleration is Active
 CM_ST_RUDP				TCP over UDP (NAT Traversal)
 CM_ST_UNDERLAY_PROTOCOL	Physical Underlay Protocol
-CM_ST_PROTOCOL_DETAILS	Protocol Details
 CM_ST_COMPRESS_TRUE		Yes (%u %%)
 CM_ST_COMPRESS_FALSE	No (No Compression)
 CM_ST_SESSION_NAME		Session Name
@@ -970,10 +960,11 @@ CM_VPN_FILE_IMPORT_NG	Unable to import the VPN Connection Setting File. Because 
 CM_VLAN_INSTALLING		Please Wait a While
 CM_SECURE_MUST_LOCAL	It is currently not possible to configure smart card settings because you are connected to and managing a VPN Client on a remote computer.
 CM_DETAIL_MODE_LINK_STR	With a Cascade Connection, Connect by Bridge / Router mode is always enabled.
-CM_TRAY_INITING			SoftEther VPN
-CM_TRAY_NOT_CONNECTED	\r\nNot connected
-CM_TRAY_CONNECTING		\r\nConnecting
-CM_TRAY_CONNECTED		\r\nConnected
+CM_TRAY_INITING			SoftEther VPN Client Manager (Developer Edition) ...
+CM_TRAY_NOT_CONNECTED	SoftEther VPN Client Manager (Developer Edition)\r\nNot connected.
+CM_TRAY_CONNECTED_0		SoftEther VPN Client Manager (Developer Edition)\r\nActive connections to %u servers and is attempting to connect to %u servers
+CM_TRAY_CONNECTED_1		SoftEther VPN Client Manager (Developer Edition)\r\nAttempting to connect to %u servers
+CM_TRAY_CONNECTED_2		SoftEther VPN Client Manager (Developer Edition)\r\nActive connections to %u servers
 CM_TRAY_MENU_1_SHOW		&Show VPN Client Manager
 CM_TRAY_MENU_1_HIDE		Cl&ose VPN Client Manager
 CM_TRAY_MENU_2_QUIT		E&xit VPN Client Manager Program
@@ -1773,9 +1764,8 @@ LS_HUB_STOP				Virtual Hub "%S" has been stopped.
 LS_HUB_MAC				The MAC address of Virtual Hub "%S" is "%S".
 LS_NODE_INFO_TAG		Client product name: "%S", Client version: %u, Client build number: %u, Server product name: "%S", Server version: %u, Server build number: %u, Client OS name: "%S", Client OS version: "%S", Client product ID: "%S", Client host name: "%S", Client IP address: "%S", Client port number: %u, Server host name: "%S", Server IP address: "%S", Server port number: %u, Proxy host name: "%S", Proxy IP address: "%S", Proxy port number: %u, Virtual Hub name: "%S", Client unique ID: "%S"
 LS_CONNECTION_START_1	For the client (IP address: %S, host name: "%S", port number: %u), connection "%S" has been created.
-LS_SSL_START_ERROR		Failed to start SSL communication for connection "%S". Error: %s (code %u)
 LS_CONNECTION_END_1		Connection "%S" has been terminated.
-LS_SSL_START			SSL communication for connection "%S" has been started. The protocol version is %S. The encryption algorithm name is "%S".
+LS_SSL_START			SSL communication for connection "%S" has been started. The encryption algorithm name is "%S".
 LS_CONNECTION_ERROR		Connection "%S" terminated by the cause "%s" (code %u).
 LS_FARMMEMBER_NOT_ADMIN	Connection "%S": Although the server is a cluster member, the client attempted that to directly connect to the Virtual Hub "%S" while not being administrator user "%S". The user name provided by the client is "%S". Access is refused.
 LS_HUB_NOT_FOUND		Connection "%S": Virtual Hub "%S" that the client is trying to connect to does not exist on the server.
@@ -1803,8 +1793,6 @@ LS_LICENSE_VIOLATION_DETECTED	A license violation has been detected. A different
 LS_API_AUTH_OK			HTTPS API client "%r:%u" (%S): Administration mode: "%S": The embedded HTTPS web server accepted the successful login. Username: "%S", Method: "%S", Path: "%S"
 LS_API_AUTH_ERROR		HTTPS API client "%r:%u" (%S): The embedded HTTPS web server refused a login attempt. Username: "%S", Method: "%S", Path: "%S"
 LS_API_RPC_CALL			HTTPS API client "%r:%u" (%S): The client called a JSON-API. Method: "%S", Returned error code: %u (0 = success), Returned error message: "%s"
-LS_AZURE_START			Received VPN Azure connection request from the client (IP address: %S, port number: %u).
-LS_AZURE_SSL_ERROR		Failed to start SSL communication with VPN Azure relay server. Error: %s (code %u)
 
 
 # (Proto log)
@@ -1925,7 +1913,6 @@ LH_AUTH_PASSWORD		Password authentication
 LH_AUTH_PLAIN_PASSWORD	External server authentication
 LH_AUTH_CERT			Certificate authentication
 LH_AUTH_TICKET			Ticket authentication
-LH_AUTH_EXTERNAL		External server authentication
 LH_AUTH_WIREGUARD_KEY	WireGuard public key authentication
 LH_AUTH_OPENVPN_CERT	OpenVPN certificate authentication
 LH_AUTH_RADIUS_NOT_SUPPORT	Connection "%S": The authentication method of the user "%S" has been specified as RADIUS Authentication or Active Directory Authentication (NT Domain Authentication). However, the edition of the VPN Server is "%S". This edition does not support RADIUS Authentication nor Active Directory Authentication (NT Domain Authentication). The connection will be denied.
@@ -1936,7 +1923,7 @@ LH_AUTH_OK_CERT			The Virtual Hub's Security Account Manager has received the fo
 LH_AUTH_NG_CERT			Although the Virtual Hub's Security Account Manager has received the following certificate, has refused its contents as the certificate for when user "%S" logs in because this certificate's contents matches the contents that are registered in the Virtual Hub's certificates revocation list: %s
 LH_AUTH_NG				Connection "%S": User authentication failed. The user name that has been provided was "%S", from %S.
 LH_LOCAL_ONLY			Connection "%S": The remote login has been refused because of the password for user "%S" is blank.
-LH_POLICY_ACCESS_NG		Connection "%S": Access has been refused to user "%S" based on the security policy.
+LH_POLICY_ACCESS_NG		Connection "%S": Access has beens refused to user "%S" based on the security policy.
 LH_USER_EXPIRES			Connection "%S": Access has been refused to user "%S" because of the expiration date has been expired.
 LH_CLIENT_VERSION_OLD	Connection "%S": The build number of the VPN Client is %u. Only the build %u or latest version of VPN Client is granted to access the VPN Server.
 LH_CLIENT_ID_REQUIRED	Connection "%S": The Client ID which has been specified by the VPN Client is %u. However, this Virtual Hub has the RequiredClientId value set to %u.
@@ -2017,8 +2004,8 @@ LA_CREATE_LISTENER		A new TCP listener (port number %u) has been created.
 LA_DELETE_LISTENER		TCP listener (port number %u) has been deleted.
 LA_ENABLE_LISTENER		TCP listener (port number %u) has been enabled.
 LA_DISABLE_LISTENER		TCP listener (port number %u) has been disabled.
-LA_SET_PORTS_UDP		UDP ports have been set: %S.
-LA_SET_PROTO_OPTIONS	%S options have been set.
+LA_SET_PORTS_UDP		UDP ports have been set: %s.
+LA_SET_PROTO_OPTIONS	%s options have been set.
 LA_SET_SERVER_PASSWORD	The server administrator password has been set.
 LA_SET_FARM_SETTING		The clustering setting has been changed.
 LA_SET_SERVER_CERT		The server certificates have been set.
@@ -2099,7 +2086,6 @@ LC_DELETE_ACCOUNT		The VPN Connection Setting "%s" has been deleted.
 LC_RENAME_ACCOUNT		The name of VPN Connection Setting "%s" has been changed to "%s".
 LC_CONNECT				Connection processing for VPN Connection Setting "%s" has started.
 LC_CONNECT_1			VPN Connection Setting "%s": Connection operation starting (this is now %u times).
-LC_SSL_CONNECTED		VPN Connection Setting "%s": SSL communication has been started. The protocol version is %S. The encryption algorithm name is "%S".
 LC_CONNECT_2			VPN Connection Setting "%s": Now connected. Session name: "%S"
 LC_CONNECT_ERROR		VPN Connection Setting "%s": The connection has been either disconnected or it failed. Cause: %s (code %u)
 LC_DISCONNECT			Disconnecting the VPN Connection Setting "%s".
@@ -2336,7 +2322,6 @@ R_SOCKS5				Connect via &SOCKS5 Proxy Server
 B_PROXY_CONFIG			P&roxy Server Setting
 STATIC11				Server Certificate Veri&fication Option:
 R_CHECK_CERT			Always Verify Server &Certificate
-R_TRUST_DEFAULT			Trust System Certificate Store
 B_TRUST					Manage Trusted CA &Certificate List
 B_SERVER_CERT			&Specify Individual Cert
 B_VIEW_SERVER_CERT		Show Indi&vidual Cert
@@ -2421,8 +2406,6 @@ STATIC17				Other Confi&gurations:
 R_NO_ROUTING			No Adjustments of &Routing Table
 STATIC18				Keep the settings default in this dialog unless you are told to do so by a system administrator, or you have expertise for networking and security.
 STATIC19				The VoIP / QoS functions handle high priority packets such as IP telephone packets (VoIP) to be transmitted faster.
-STATIC20				Source IP Address:
-STATIC21				Source Port Number:
 R_DISABLE_QOS			Disable VoIP / &QoS Functions
 IDOK					&OK
 IDCANCEL				Cancel
@@ -2466,7 +2449,7 @@ STATIC1					You can modify the settings for VPN Client.
 STATIC2					R&emote Management:
 STATIC3					You can remotely manage the VPN Client Service Program from another computer by using VPN Client Manager Remote Mode.
 R_ALLOW_REMOTE_CONFIG	Allow &Remote Management of VPN Client Service
-S_WARNING				You must set a password if you allow remote management. From the menu bar, choose Tools -> Set Password to set the password. The VPN Client service must be restarted to apply the change of remote management availability.
+S_WARNING				It is recommended to set a password if you allow remote management. From the menu bar, choose Tools -> Set Password to set the password.
 STATIC4					For environments where Internet connections will automatically be disconnected when idle, you can keep alive the Internet connection by sending dummy packets to any host on the Internet.
 R_USE_KEEP_CONNECT		Use &Keep Alive Internet Connection Function
 S_HOSTNAME				&Host Name:
@@ -2489,7 +2472,7 @@ PREFIX					D_ABOUT
 S_INFO1					SoftEther VPN %u.0 Developer Edition (Ver %u.%02u, Build %u)
 S_INFO2				Licensed under the Apache License, Version 2.0.\r\nCopyright (c) 2012-%u all contributors on SoftEther VPN project in GitHub. All Rights Reserved.\r\nWeb Site: http://www.softether.org/\r\n%S
 S_INFO3					This product includes the following software components:\r\nBitVisor: Copyright (c) 2007, 2008 University of Tsukuba. Copyright (C) 2007, 2008 National Institute of Information and Communications Technology. All rights reserved. / Microsoft(R) C Runtime Library: (c) 2007 Microsoft Corporation. All Rights Reserved. / PKCS #11 Cryptographic Token Interface (Cryptoki): Copyright (c) RSA Security Inc. / WinPcap: Copyright (c) 2001 - 2003 NetGroup, Politecnico di Torino (Italy). All rights reserved. / libedit: Copyright (c) 1992, 1993 The Regents of the University of California. All rights reserved. / libiconv: Copyright (C) 2007 Free Software Foundation, Inc. / ncurses: Copyright (c) 1998-2005, 2006 Free Software Foundation, Inc. / OpenSSL: Copyright (c) 1998-2011 The OpenSSL Project. All rights reserved. This product includes software developed by the OpenSSL Project for use in the OpenSSL Toolkit (http://www.openssl.org/). This product includes cryptographic software written by Eric Young (eay@cryptsoft.com). / zlib: (C) 1995-2004 Jean-loup Gailly and Mark Adler. / Special Thanks to: Software Laboratory, Academic Computing Communication Center, Industrial Liaison and Cooperative Research Center and Professor Yasushi Shinjo in University of Tsukuba, Japan.
-S_INFO4				THIS SOFTWARE IS FREEWARE DEVELOPED UNDER THE SOFTETHER VPN PROJECT AT UNIVERSITY OF TSUKUBA, WITHOUT WARRANTY OF ANY KIND. IN NO EVENT SHALL THE DEVELOPERS, COPYRIGHT OWNERS OR DISTRIBUTORS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY IN ANY WAY OUT OF THE USE OF THIS SOFTWARE.\r\n\r\nSoftEther VPN is a work of the research and development project of Japanese Government, subsidized by Ministry of Economy, Trade and Industry of Japan, administrated by Information Promotion Agency.
+S_INFO4				THIS SOFTWARE IS FREEWARE DEVELOPED UNDER THE SOFTETHER VPN PROJECT AT UNIVERSITY OF TSUKUBA, WITHOUT WARRANTY OF AND KIND. IN NO EVENT SHALL THE DEVELOPERS, COPYRIGHT OWNERS OR DISTRIBUTORS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY IN ANY WAY OUT OF THE USE OF THIS SOFTWARE.\r\n\r\nSoftEther VPN is a work of the research and development project of Japanese Government, subsidized by Ministry of Economy, Trade and Industry of Japan, administrated by Information Promotion Agency.
 IDCANCEL				&OK
 B_WEB					Visit SoftEther VPN &Website...
 B_EULA					&End User License
@@ -4413,7 +4396,6 @@ CMD_ACCOUNT_COLUMN_PROXY_USERNAME	Proxy Server User Name
 CMD_ACCOUNT_COLUMN_SERVER_CERT_USE	Verify Server Certificate
 CMD_ACCOUNT_COLUMN_SERVER_CERT_NAME	Registered Server Individual Certificate
 CMD_ACCOUNT_COLUMN_RETRY_ON_SERVER_CERT	Retry on Untrusted Server Certificate
-CMD_ACCOUNT_COLUMN_ADD_DEFAULT_CA   Trust System Certificate Store
 CMD_ACCOUNT_COLUMN_DEVICE_NAME		Device Name Used for Connection
 CMD_ACCOUNT_COLUMN_AUTH_TYPE		Authentication Type
 CMD_ACCOUNT_COLUMN_AUTH_USERNAME	User Name
@@ -5514,20 +5496,6 @@ CMD_CascadeServerCertDisable_Args	CascadeServerCertDisable [name]
 CMD_CascadeServerCertDisable_[name]	Specify the name of the Cascade Connection whose setting you want to change.
 
 
-# CascadeDefaultCAEnable command
-CMD_CascadeDefaultCAEnable	        Enable Trust System Certificate Store Option
-CMD_CascadeDefaultCAEnable_Help	    When server certificate verification is enabled, use this to enable trusting certificates from the system trust store. \nIf server certificate verification is disabled, this option does nothing.
-CMD_CascadeDefaultCAEnable_Args	    CascadeDefaultCAEnable [name]
-CMD_CascadeDefaultCAEnable_[name]	Specify the name of the Cascade Connection whose setting you want to change.
-
-
-# CascadeDefaultCADisable command
-CMD_CascadeDefaultCADisable         Disable Trust System Certificate Store Option
-CMD_CascadeDefaultCADisable_Help    When server certificate verification is enabled, use this to disable trusting certificates from the system trust store. \nIf server certificate verification is disabled, this option does nothing.
-CMD_CascadeDefaultCADisable_Args	CascadeDefaultCADisable [name]
-CMD_CascadeDefaultCADisable_[name]	Specify the name of the Cascade Connection whose setting you want to change.
-
-
 # CascadeServerCertSet command
 CMD_CascadeServerCertSet	Set the Server Individual Certificate for Cascade Connection
 CMD_CascadeServerCertSet_Help	When a Cascade Connection registered on the currently managed Virtual Hub is specified and that Cascade Connection connects to a VPN Server, use this to register beforehand the same certificate as the SSL certificate provided by the destination VPN Server. \nIf the option to verify server certificates for Cascade Connections is enabled, you must either use this command to save the connection destination server SSL certificate beforehand in the Cascade Connection Settings beforehand, or use the CAAdd command etc. to register a root certificate containing the signed server SSL certificate in the list of Virtual Hub trusted CA certificates. \nIf the certificate of the connected VPN Server cannot be trusted under the condition where the option to verify server certificates was enabled for the Cascade Connection, the connection will be promptly cancelled and continual reattempts at connection will be made. \nYou cannot execute this command for Virtual Hubs of VPN Servers operating as a cluster.
@@ -6465,7 +6433,7 @@ CMD_VpnAzureGetStatus_PRINT_CONNECTED	Connection to VPN Azure Cloud Server is Es
 CMD_VpnAzureGetStatus_PRINT_HOSTNAME	Hostname of this VPN Server on VPN Azure Service
 
 
-# VpnAzureSetEnable command
+# VpnAzureSetStatus command
 CMD_VpnAzureSetEnable			Enable / Disable VPN Azure Function
 CMD_VpnAzureSetEnable_Help		Enable or disable the VPN Azure function.\n\nVPN Azure makes it easier to establish a VPN Session from your home PC to your office PC. While a VPN connection is established, you can access to any other servers on the private network of your company.\nYou don't need a global IP address on the office PC (VPN Server). It can work behind firewalls or NATs. No network administrator's configuration required. You can use the built-in SSTP-VPN Client of Windows in your home PC.\nVPN Azure is a cloud VPN service operated by SoftEther VPN Project. VPN Azure is free of charge and available to anyone. Visit http://www.vpnazure.net/ to see details and how-to-use instructions.\n\nThe VPN Azure hostname is same to the hostname of the Dynamic DNS setting, but altering the domain suffix to "vpnazure.net". To change the hostname use the DynamicDnsSetHostname command.\n\nTo execute this command, you must have VPN Server administrator privileges. \nThis command cannot be run on VPN Bridge.\nYou cannot execute this command for Virtual Hubs of VPN Servers operating as a cluster.
 CMD_VpnAzureSetEnable_Args		VpnAzureSetEnable [yes|no]
@@ -6835,20 +6803,6 @@ CMD_AccountRetryOnServerCertDisable_Args	AccountRetryOnServerCertDisable [name]
 CMD_AccountRetryOnServerCertDisable_[name]	Specify the name of the VPN Connection Setting whose setting you want to change.
 
 
-# AccountDefaultCAEnable command
-CMD_AccountDefaultCAEnable	        Enable Trust System Certificate Store Option
-CMD_AccountDefaultCAEnable_Help	    When server certificate verification is enabled, use this to enable trusting certificates from the system trust store. \nIf server certificate verification is disabled, this option does nothing.
-CMD_AccountDefaultCAEnable_Args	    AccountDefaultCAEnable [name]
-CMD_AccountDefaultCAEnable_[name]	Specify the name of the VPN Connection Setting whose setting you want to change.
-
-
-# AccountDefaultCADisable command
-CMD_AccountDefaultCADisable         Disable Trust System Certificate Store Option
-CMD_AccountDefaultCADisable_Help    When server certificate verification is enabled, use this to disable trusting certificates from the system trust store. \nIf server certificate verification is disabled, this option does nothing.
-CMD_AccountDefaultCADisable_Args	AccountDefaultCADisable [name]
-CMD_AccountDefaultCADisable_[name]	Specify the name of the VPN Connection Setting whose setting you want to change.
-
-
 # AccountServerCertSet command
 CMD_AccountServerCertSet	Set Server Individual Certificate for VPN Connection Setting
 CMD_AccountServerCertSet_Help	When a VPN Connection Setting registered on the VPN Client is specified and that VPN Connection Setting connects to a VPN Server, use this to register the same certificate as the SSL certificate provided by the destination VPN Server. \nIf the option to verify server certificates for VPN Connection Settings is enabled, you must either use this command to save the connection destination server SSL certificate beforehand in the VPN Connection Setting settings beforehand, or use the CAAdd command etc. to register a root certificate containing the signed server SSL certificate in the list of Virtual Hub trusted CA certificates. \nIf the certificate of the connected VPN Server cannot be trusted under the condition where the option to verify server certificates has been enabled for the VPN Connection Setting, the connection will be promptly cancelled and continual reattempts at connection will be made.
@@ -7016,13 +6970,13 @@ CMD_AccountImport_OK	The VPN Connection Setting "%s" has been imported.
 
 # RemoteEnable command
 CMD_RemoteEnable		Allow Remote Management of VPN Client Service
-CMD_RemoteEnable_Help	Use this to allow management of a VPN Client service from a remote computer that is not localhost, via a remote connection by Command Line Management Utility or VPN Client Manager. The VPN Client service must be restarted to apply the change of remote management availability. You must set a password if you allow remote management.
+CMD_RemoteEnable_Help	Use this to allow management of a VPN Client service from a remote computer that is not localhost, via a remote connection by Command Line Management Utility or VPN Client Manager.
 CMD_RemoteEnable_Args	RemoteEnable
 
 
 # RemoteDisable command
 CMD_RemoteDisable		Deny Remote Management of VPN Client Service
-CMD_RemoteDisable_Help	Use this to deny management of a VPN Client service from a remote computer that is not localhost, via a remote connection by Command Line Management Utility or VPN Client Manager. The VPN Client service must be restarted to apply the change of remote management availability.
+CMD_RemoteDisable_Help	Use this to deny management of a VPN Client service from a remote computer that is not localhost, via a remote connection by Command Line Management Utility or VPN Client Manager.
 CMD_RemoteDisable_Args	RemoteDisable
 
 
@@ -7035,23 +6989,6 @@ CMD_RemoteDisable_Args	RemoteDisable
 # Commands for VPN Tools are listed below         #
 #                                                 #
 ###################################################
-
-
-# GenX25519 command
-CMD_GenX25519				Create new X25519 keypair
-CMD_GenX25519_Help			Use this to create a new X25519 keypair, which can be used for WireGuard. \nBoth the private and public key will be shown. \nThe public key can be shared and is used to identify a peer. \nAlso, it can always be retrieved from the private key using the GetPublicX25519 command. \nThe private key should be kept in a secure place and never be shared. \nIt cannot be recovered once lost.
-CMD_GenX25519_ARGS			GenX25519
-CMD_GenX25519_PRIVATE_KEY	Private key: 
-CMD_GenX25519_PUBLIC_KEY	Public key: 
-
-
-# GetPublicX25519 command
-CMD_GetPublicX25519				Retrieve public X25519 key from a private one
-CMD_GetPublicX25519_Help		Use this if you have a private X25519 key and want to get its corresponding public key.
-CMD_GetPublicX25519_ARGS    	GetPublicX25519 [private]
-CMD_GetPublicX25519_[private]	The private X25519 key you want to get the corresponding public key of.
-CMD_GetPublicX25519_PRIVATE_KEY	Private key: 
-CMD_GetPublicX25519_PUBLIC_KEY	Public key: 
 
 
 # MakeCert command
@@ -7142,7 +7079,7 @@ TTS_ACCEPTED			Connection %u: Connected from Client %S Port %u.
 TTS_DISCONNECTED		Connection %u (%S) has been disconnected.
 TTS_DISCONNECT			Connection %u (%S) has been disconnected.
 TTC_INIT				Starting the client program...
-TTC_FREE				The client program has been terminated.
+TTC_FREE				The client program has beens terminated.
 TTC_CONNECT_START		The connection to server %S (port %u) will start. %u TCP connections will be connected.
 TTC_CONNECT_FAILED		The connection of TCP connection number %u failed.
 TTC_CONNECT_NOT_SERVER	Because a program other than TrafficServer is operating on the destination TCP port, traffic cannot be measured.

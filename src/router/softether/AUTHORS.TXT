@@ -52,8 +52,6 @@ DEVELOPMENT BOARD MEMBERS:
   - Ilya Shipitsin
     https://github.com/chipitsine
 
-  - Yihong Wu
-    https://github.com/domosekai
 
 SPECIAL CONTRIBUTORS:
 

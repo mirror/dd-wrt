@@ -29,7 +29,7 @@ if(WIN32)
   )
 endif()
 
-target_link_libraries(vpncmd cedar)
+target_link_libraries(vpncmd cedar mayaqua)
 
 if(UNIX)
   # Copy binary and "hamcore.se2" to /usr/lib(exec)/softether/, install launch script
