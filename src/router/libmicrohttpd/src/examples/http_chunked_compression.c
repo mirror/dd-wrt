@@ -1,6 +1,7 @@
 /*
      This file is part of libmicrohttpd
      Copyright (C) 2019 Christian Grothoff (and other contributing authors)
+     Copyright (C) 2019-2022 Evgeny Grin (Karlson2k)
 
      This library is free software; you can redistribute it and/or
      modify it under the terms of the GNU Lesser General Public
@@ -20,15 +21,21 @@
  * @file http_chunked_compression.c
  * @brief example for how to compress a chunked HTTP response
  * @author Silvio Clecio (silvioprog)
+ * @author Karlson2k (Evgeny Grin)
  */
 
 #include "platform.h"
+#ifndef ZLIB_CONST
+/* Correct API with const pointer for input data is required */
+#define ZLIB_CONST 1
+#endif /* ! ZLIB_CONST */
 #include <zlib.h>
 #include <microhttpd.h>
 #ifdef HAVE_LIMITS_H
 #include <limits.h>
 #endif /* HAVE_LIMITS_H */
 #include <stddef.h>
+#include <stdint.h>
 
 #ifndef SSIZE_MAX
 #ifdef __SSIZE_MAX__
@@ -76,12 +83,12 @@ compress_buf (z_stream *strm, const void *src, size_t src_size, size_t *offset,
       flush = Z_SYNC_FLUSH;
     }
     *offset += strm->avail_in;
-    strm->next_in = (Bytef *) src;
+    strm->next_in = (const Bytef *) src;
     do
     {
       strm->avail_out = CHUNK;
       strm->next_out = tmp;
-      ret = deflate (strm, flush);
+      ret = (Z_OK == deflate (strm, flush)) ? MHD_YES : MHD_NO;
       have = CHUNK - strm->avail_out;
       *dest_size += have;
       tmp_dest = realloc (*dest, *dest_size);
@@ -92,12 +99,12 @@ compress_buf (z_stream *strm, const void *src, size_t src_size, size_t *offset,
         return MHD_NO;
       }
       *dest = tmp_dest;
-      memcpy (((char *) (*dest)) + ((*dest_size) - have), tmp, have);
+      memcpy (((uint8_t *) (*dest)) + ((*dest_size) - have), tmp, have);
     }
     while (0 == strm->avail_out);
   }
   while (flush != Z_SYNC_FLUSH);
-  return (Z_OK == ret) ? MHD_YES : MHD_NO;
+  return ret;
 }
 
 
@@ -109,6 +116,7 @@ read_cb (void *cls, uint64_t pos, char *mem, size_t size)
   void *buf;
   ssize_t ret;
   size_t offset;
+  size_t r_size;
 
   if (pos > SSIZE_MAX)
     return MHD_CONTENT_READER_END_WITH_ERROR;
@@ -116,24 +124,20 @@ read_cb (void *cls, uint64_t pos, char *mem, size_t size)
   src = malloc (size);
   if (NULL == src)
     return MHD_CONTENT_READER_END_WITH_ERROR;
-  ret = fread (src, 1, size, holder->file);
-  if (ret < 0)
+  r_size = fread (src, 1, size, holder->file);
+  if (0 == r_size)
   {
-    ret = MHD_CONTENT_READER_END_WITH_ERROR;
+    ret = (0 != ferror (holder->file)) ?
+          MHD_CONTENT_READER_END_WITH_ERROR : MHD_CONTENT_READER_END_OF_STREAM;
     goto done;
   }
-  if (0 == ret)
-  {
-    ret = MHD_CONTENT_READER_END_OF_STREAM;
-    goto done;
-  }
-  if (MHD_YES != compress_buf (&holder->stream, src, ret, &offset, &buf, &size,
-                               holder->buf))
+  if (MHD_YES != compress_buf (&holder->stream, src, r_size, &offset, &buf,
+                               &size, holder->buf))
     ret = MHD_CONTENT_READER_END_WITH_ERROR;
   else
   {
     memcpy (mem, buf, size);
-    ret = size;
+    ret = (ssize_t) size;
   }
   free (buf); /* Buf may be set even on error return. */
 done:
@@ -156,7 +160,7 @@ free_cb (void *cls)
 static enum MHD_Result
 ahc_echo (void *cls, struct MHD_Connection *con, const char *url, const
           char *method, const char *version,
-          const char *upload_data, size_t *upload_size, void **ptr)
+          const char *upload_data, size_t *upload_size, void **req_cls)
 {
   struct Holder *holder;
   struct MHD_Response *res;
@@ -167,20 +171,19 @@ ahc_echo (void *cls, struct MHD_Connection *con, const char *url, const
   (void) version;
   (void) upload_data;
   (void) upload_size;
-  if (NULL == *ptr)
+  if (NULL == *req_cls)
   {
-    *ptr = (void *) 1;
+    *req_cls = (void *) 1;
     return MHD_YES;
   }
-  *ptr = NULL;
+  *req_cls = NULL;
   holder = calloc (1, sizeof (struct Holder));
   if (! holder)
     return MHD_NO;
   holder->file = fopen (__FILE__, "rb");
   if (NULL == holder->file)
     goto file_error;
-  ret = deflateInit (&holder->stream, Z_BEST_COMPRESSION);
-  if (ret != Z_OK)
+  if (Z_OK != deflateInit (&holder->stream, Z_BEST_COMPRESSION))
     goto stream_error;
   holder->buf = malloc (CHUNK);
   if (NULL == holder->buf)

@@ -1,7 +1,7 @@
 /*
      This file is part of libmicrohttpd
      Copyright (C) 2016 Christian Grothoff
-     Copyright (C) 2016-2021 Evgeny Grin (Karlson2k)
+     Copyright (C) 2016-2022 Evgeny Grin (Karlson2k)
 
      libmicrohttpd is free software; you can redistribute it and/or modify
      it under the terms of the GNU General Public License as published
@@ -43,7 +43,7 @@
 static volatile unsigned int request_counter;
 
 
-static void
+_MHD_NORETURN static void
 http_PanicCallback (void *cls,
                     const char *file,
                     unsigned int line,
@@ -94,7 +94,7 @@ suspend_connection (struct MHD_Connection *connection)
 
 struct ContentReaderUserdata
 {
-  int bytes_written;
+  size_t bytes_written;
   struct MHD_Connection *connection;
 };
 
@@ -113,7 +113,7 @@ http_ContentReaderCallback (void *cls,
   if (userdata->bytes_written >= 1024)
   {
     fprintf (stderr,
-             "finish: %d\n",
+             "finish: %u\n",
              request_counter);
     return MHD_CONTENT_READER_END_OF_STREAM;
   }
@@ -142,7 +142,7 @@ http_AccessHandlerCallback (void *cls,
                             const char *version,
                             const char *upload_data,
                             size_t *upload_data_size,
-                            void **con_cls)
+                            void **req_cls)
 {
   enum MHD_Result ret;
   struct MHD_Response *response;
@@ -151,11 +151,11 @@ http_AccessHandlerCallback (void *cls,
   (void) upload_data_size;                       /* Unused. Silent compiler warning. */
 
   /* Never respond on first call */
-  if (NULL == *con_cls)
+  if (NULL == *req_cls)
   {
     struct ContentReaderUserdata *userdata;
     fprintf (stderr,
-             "start: %d\n",
+             "start: %u\n",
              ++request_counter);
 
     userdata = malloc (sizeof(struct ContentReaderUserdata));
@@ -164,7 +164,7 @@ http_AccessHandlerCallback (void *cls,
       return MHD_NO;
     userdata->bytes_written = 0;
     userdata->connection = connection;
-    *con_cls = userdata;
+    *req_cls = userdata;
     return MHD_YES;
   }
 
@@ -173,7 +173,7 @@ http_AccessHandlerCallback (void *cls,
     = MHD_create_response_from_callback (MHD_SIZE_UNKNOWN,
                                          32 * 1024,
                                          &http_ContentReaderCallback,
-                                         *con_cls,
+                                         *req_cls,
                                          &free_crc_data);
   ret = MHD_queue_response (connection,
                             MHD_HTTP_OK,
@@ -188,7 +188,7 @@ http_AccessHandlerCallback (void *cls,
 int
 main (void)
 {
-  int port;
+  uint16_t port;
   char command_line[1024];
   /* Flags */
   unsigned int daemon_flags
@@ -226,12 +226,12 @@ main (void)
     {
       MHD_stop_daemon (daemon); return 32;
     }
-    port = (int) dinfo->port;
+    port = dinfo->port;
   }
   snprintf (command_line,
             sizeof (command_line),
-            "curl -s http://127.0.0.1:%d",
-            port);
+            "curl -s http://127.0.0.1:%u",
+            (unsigned int) port);
 
   if (0 != system (command_line))
   {

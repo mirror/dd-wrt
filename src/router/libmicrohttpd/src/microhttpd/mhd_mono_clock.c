@@ -1,6 +1,6 @@
 /*
   This file is part of libmicrohttpd
-  Copyright (C) 2015 Karlson2k (Evgeny Grin)
+  Copyright (C) 2015-2022 Karlson2k (Evgeny Grin)
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -448,7 +448,7 @@ MHD_monotonic_msec_counter (void)
        (0 == clock_gettime (mono_clock_id,
                             &ts)) )
     return (uint64_t) (((uint64_t) (ts.tv_sec - mono_clock_start)) * 1000
-                       + (ts.tv_nsec / 1000000));
+                       + (uint64_t) (ts.tv_nsec / 1000000));
 #endif /* HAVE_CLOCK_GETTIME */
 #ifdef HAVE_CLOCK_GET_TIME
   if (_MHD_INVALID_CLOCK_SERV != mono_clock_service)
@@ -458,7 +458,7 @@ MHD_monotonic_msec_counter (void)
     if (KERN_SUCCESS == clock_get_time (mono_clock_service,
                                         &cur_time))
       return (uint64_t) (((uint64_t) (cur_time.tv_sec - mono_clock_start))
-                         * 1000 + (cur_time.tv_nsec / 1000000));
+                         * 1000 + (uint64_t) (cur_time.tv_nsec / 1000000));
   }
 #endif /* HAVE_CLOCK_GET_TIME */
 #if defined(_WIN32)
@@ -487,14 +487,14 @@ MHD_monotonic_msec_counter (void)
 #ifdef HAVE_TIMESPEC_GET
   if (TIME_UTC == timespec_get (&ts, TIME_UTC))
     return (uint64_t) (((uint64_t) (ts.tv_sec - gettime_start)) * 1000
-                       + (ts.tv_nsec / 1000000));
+                       + (uint64_t) (ts.tv_nsec / 1000000));
 #elif defined(HAVE_GETTIMEOFDAY)
   if (1)
   {
     struct timeval tv;
     if (0 == gettimeofday (&tv, NULL))
       return (uint64_t) (((uint64_t) (tv.tv_sec - gettime_start)) * 1000
-                         + (tv.tv_usec / 1000));
+                         + (uint64_t) (tv.tv_usec / 1000));
   }
 #endif /* HAVE_GETTIMEOFDAY */
 

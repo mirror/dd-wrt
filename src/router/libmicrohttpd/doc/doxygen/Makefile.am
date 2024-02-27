@@ -1,7 +1,7 @@
 # This Makefile.am is in the public domain
 all:
 	@echo -e \
-"Generate documentation:\n" \
+"Generate doxygen additional documentation:\n" \
 "\tmake full - full documentation with dependency graphs (slow)\n" \
 "\tmake fast - fast mode without dependency graphs"
 

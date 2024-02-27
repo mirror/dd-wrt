@@ -29,13 +29,13 @@ static enum MHD_Result
 answer_to_connection (void *cls, struct MHD_Connection *connection,
                       const char *url, const char *method,
                       const char *version, const char *upload_data,
-                      size_t *upload_data_size, void **con_cls)
+                      size_t *upload_data_size, void **req_cls)
 {
   (void) cls;               /* Unused. Silent compiler warning. */
   (void) version;           /* Unused. Silent compiler warning. */
   (void) upload_data;       /* Unused. Silent compiler warning. */
   (void) upload_data_size;  /* Unused. Silent compiler warning. */
-  (void) con_cls;           /* Unused. Silent compiler warning. */
+  (void) req_cls;           /* Unused. Silent compiler warning. */
   printf ("New %s request for %s using version %s\n", method, url, version);
 
   MHD_get_connection_values (connection, MHD_HEADER_KIND, print_out_key,
@@ -46,7 +46,7 @@ answer_to_connection (void *cls, struct MHD_Connection *connection,
 
 
 int
-main ()
+main (void)
 {
   struct MHD_Daemon *daemon;
 

@@ -27,7 +27,7 @@ Installation
 
 See INSTALL for generic installation instructions.
 
-If you are using Git, run "autoreconf -fi" to create configure.
+If you are using Git, run "./bootstrap" to create configure.
 
 In order to run the testcases, you need a recent version of libcurl.
 libcurl is not required if you just want to install the library.
@@ -84,9 +84,8 @@ library stable, we should have testcases for the following features:
 - MHD basic and digest authentication
 
 In particular, the following functions are not covered by 'make check':
-- mhd_panic_std (daemon.c); special case (abort)
+- mhd_panic_std (mhd_panic.c); special case (abort)
 - parse_options (daemon.c)
-- MHD_set_panic_func (daemon.c)
 - MHD_get_version (daemon.c)
 
 

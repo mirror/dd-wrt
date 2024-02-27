@@ -21,11 +21,9 @@ static enum MHD_Result
 answer_to_connection (void *cls, struct MHD_Connection *connection,
                       const char *url, const char *method,
                       const char *version, const char *upload_data,
-                      size_t *upload_data_size, void **con_cls)
+                      size_t *upload_data_size, void **req_cls)
 {
-  char *user;
-  char *pass;
-  int fail;
+  struct MHD_BasicAuthInfo *auth_info;
   enum MHD_Result ret;
   struct MHD_Response *response;
   (void) cls;               /* Unused. Silent compiler warning. */
@@ -36,39 +34,48 @@ answer_to_connection (void *cls, struct MHD_Connection *connection,
 
   if (0 != strcmp (method, "GET"))
     return MHD_NO;
-  if (NULL == *con_cls)
+  if (NULL == *req_cls)
   {
-    *con_cls = connection;
+    *req_cls = connection;
     return MHD_YES;
   }
-  pass = NULL;
-  user = MHD_basic_auth_get_username_password (connection,
-                                               &pass);
-  fail = ( (NULL == user) ||
-           (0 != strcmp (user, "root")) ||
-           (0 != strcmp (pass, "pa$$w0rd") ) );
-  if (NULL != user)
-    MHD_free (user);
-  if (NULL != pass)
-    MHD_free (pass);
-  if (fail)
+  auth_info = MHD_basic_auth_get_username_password3 (connection);
+  if (NULL == auth_info)
   {
-    const char *page = "<html><body>Go away.</body></html>";
-    response =
-      MHD_create_response_from_buffer (strlen (page), (void *) page,
-                                       MHD_RESPMEM_PERSISTENT);
-    ret = MHD_queue_basic_auth_fail_response (connection,
-                                              "my realm",
-                                              response);
+    static const char *page =
+      "<html><body>Authorization required</body></html>";
+    response = MHD_create_response_from_buffer_static (strlen (page), page);
+    ret = MHD_queue_basic_auth_required_response3 (connection,
+                                                   "admins",
+                                                   MHD_YES,
+                                                   response);
+  }
+  else if ((strlen ("root") != auth_info->username_len) ||
+           (0 != memcmp (auth_info->username, "root",
+                         auth_info->username_len)) ||
+           /* The next check against NULL is optional,
+            * if 'password' is NULL then 'password_len' is always zero. */
+           (NULL == auth_info->password) ||
+           (strlen ("pa$$w0rd") != auth_info->password_len) ||
+           (0 != memcmp (auth_info->password, "pa$$w0rd",
+                         auth_info->password_len)))
+  {
+    static const char *page =
+      "<html><body>Wrong username or password</body></html>";
+    response = MHD_create_response_from_buffer_static (strlen (page), page);
+    ret = MHD_queue_basic_auth_required_response3 (connection,
+                                                   "admins",
+                                                   MHD_YES,
+                                                   response);
   }
   else
   {
-    const char *page = "<html><body>A secret.</body></html>";
-    response =
-      MHD_create_response_from_buffer (strlen (page), (void *) page,
-                                       MHD_RESPMEM_PERSISTENT);
+    static const char *page = "<html><body>A secret.</body></html>";
+    response = MHD_create_response_from_buffer_static (strlen (page), page);
     ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
   }
+  if (NULL != auth_info)
+    MHD_free (auth_info);
   MHD_destroy_response (response);
   return ret;
 }

@@ -1,5 +1,48 @@
+Fri 23 Feb 2024 21:00:00 UZT
+Released GNU libmicrohttpd 1.0.1.
+
+    This is a correction release.
+    This release mainly fixes and improves builds with non-default configure
+    parameters.
+
+    -- Evgeny Grin (Karlson2k)
+
+Thu 01 Feb 2024 15:00:00 CET
+Released GNU libmicrohttpd 1.0.0.
+
+    This is the first non-bugfix release since version 0.9.75 and the first
+    ever stable release of GNU libmicrohttpd. It is a huge one with new
+    features and fixes.
+
+    The major changes:
+    * Rewritten parsing of clients' requests, fully aligned with current
+      RFCs (9110 and 9112) requirements. Added detailed control of strict
+      or lenient specification enforcement. Application may choose between
+      more compatible mode or more strict and secure mode.
+    * Reworked Digest Auth, greater enhanced support for current RFC 7617
+      features. MHD currently is the only known server-side implementation
+      with support for SHA-512/256, userhash and username in extended
+      notation. At the same time the very old RFC2069 is supported, as
+      well as MD5 and SHA-256.
+    * Improved functionality in multi-threading environment, especially with
+      external sockets polling modes.
+    * Reworked Basic Auth, adding new convenient API functions.
+    * Re-implemented GnuTLS initialisation. Now supported
+      libmicrohttpd-specific system-wide configuration, as well as generic
+      GnuTLS system-wide configuration. Application may adjust settings based
+      on system configuration instead of specifying its own full
+      configuration.
+    * Tons of other new functionality and various fixes. For detailed changes
+      see the ChangeLog or Git commit logs.
+
+
+    Since last non-bugfix release there are 1062 commits added with
+    67007 lines insertions and 26616 deletions.
+
+    -- Evgeny Grin (Karlson2k)
+
 Sun 28 May 2023 18:00:00 MSK
-Released GNU libmicrohttpd 0.9.77. -CG
+Released GNU libmicrohttpd 0.9.77.
 
     This is mostly a bugfix release.
     This version created by taking patches from the current development

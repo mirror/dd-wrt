@@ -1,6 +1,6 @@
 /*
      This file is part of libmicrohttpd
-     Copyright (C) 2014-2021 Evgeny Grin (Karlson2k)
+     Copyright (C) 2014-2022 Evgeny Grin (Karlson2k)
      Copyright (C) 2007, 2009, 2011 Christian Grothoff
 
      libmicrohttpd is free software; you can redistribute it and/or modify
@@ -39,7 +39,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include "test_helpers.h"
+#include <errno.h>
+#include "mhd_has_in_name.h"
+#include "mhd_has_param.h"
 #include "mhd_sockets.h" /* only macros used */
 
 #ifdef HAVE_STRINGS_H
@@ -218,7 +220,7 @@ _mhdErrorExit_func (const char *errDesc, const char *funcName, int lineNum)
 /* Global parameters */
 static int verbose;                 /**< Be verbose */
 static int oneone;                  /**< If false use HTTP/1.0 for requests*/
-static int global_port;             /**< MHD daemons listen port number */
+static uint16_t global_port;        /**< MHD daemons listen port number */
 static int large_req_method;        /**< Large request method */
 static int large_req_url;           /**< Large request URL */
 static int large_req_header_name; /**< Large request single header name */
@@ -255,12 +257,12 @@ test_global_cleanup (void)
 struct headers_check_result
 {
   unsigned int num_n1_headers;
-  unsigned int large_header_name_size;
-  unsigned int large_header_value_size;
+  size_t large_header_name_size;
+  size_t large_header_value_size;
   int large_header_valid;
 };
 
-size_t
+static size_t
 lcurl_hdr_callback (char *buffer, size_t size, size_t nitems,
                     void *userdata)
 {
@@ -285,7 +287,7 @@ lcurl_hdr_callback (char *buffer, size_t size, size_t nitems,
     else
     {
       const char *const name = buffer;
-      const size_t name_len = col_ptr - buffer;
+      const size_t name_len = (size_t) (col_ptr - buffer);
       const size_t val_pos = name_len + 2;
       const size_t val_len = data_size - val_pos - 2; /* 2 = strlen("\r\n") */
       const char *const value = buffer + val_pos;
@@ -371,12 +373,12 @@ check_uri_cb (void *cls,
 struct mhd_header_checker_param
 {
   unsigned int num_n1_headers;
-  unsigned int large_header_name_size;
-  unsigned int large_header_value_size;
+  size_t large_header_name_size;
+  size_t large_header_value_size;
   int large_header_valid;
 };
 
-enum MHD_Result
+static enum MHD_Result
 headerCheckerInterator (void *cls,
                         enum MHD_ValueKind kind,
                         const char *key,
@@ -452,7 +454,7 @@ ahcCheck (void *cls,
           const char *method,
           const char *version,
           const char *upload_data, size_t *upload_data_size,
-          void **con_cls)
+          void **req_cls)
 {
   static int ptr;
   struct MHD_Response *response;
@@ -481,21 +483,21 @@ ahcCheck (void *cls,
   if (0 != strcmp (param->rq_method, method))
     mhdErrorExitDesc ("Unexpected request method");
 
-  if (&ptr != *con_cls)
+  if (&ptr != *req_cls)
   {
-    *con_cls = &ptr;
+    *req_cls = &ptr;
     return MHD_YES;
   }
-  *con_cls = NULL;
+  *req_cls = NULL;
 
   if (1 > MHD_get_connection_values_n (connection, MHD_HEADER_KIND,
                                        &headerCheckerInterator,
                                        &param->header_check_param))
     mhdErrorExitDesc ("Wrong number of headers in the request");
 
-  response = MHD_create_response_from_buffer (param->rp_data_size,
-                                              (void *) param->rp_data,
-                                              MHD_RESPMEM_MUST_COPY);
+  response =
+    MHD_create_response_from_buffer_copy (param->rp_data_size,
+                                          (const void *) param->rp_data);
   if (NULL == response)
     mhdErrorExitDesc ("Failed to create response");
 
@@ -524,10 +526,10 @@ ahcCheck (void *cls,
       externalErrorExit ();
     large_hrd_name[0] = '0'; /* Name starts with zero for unique identification */
     for (i = 1; i < large_hdr_name_size; i++)
-      large_hrd_name[i] = 'a' + i % ('z' - 'a' + 1);
+      large_hrd_name[i] = 'a' + (char) (unsigned char) (i % ('z' - 'a' + 1));
     large_hrd_name[large_hdr_name_size] = 0;
     for (i = 0; i < large_hdr_value_size; i++)
-      large_hrd_value[i] = 'Z' - i % ('Z' - 'A' + 1);
+      large_hrd_value[i] = 'Z' - (char) (unsigned char) (i % ('Z' - 'A' + 1));
     if (NULL != large_hrd_value)
       large_hrd_value[large_hdr_value_size] = 0;
     if (MHD_YES != MHD_add_response_header (response,
@@ -553,7 +555,7 @@ ahcCheck (void *cls,
 
 static CURL *
 curlEasyInitForTest (const char *queryPath, const char *method,
-                     int port,
+                     uint16_t port,
                      struct lcurl_data_cb_param *dcbp,
                      struct headers_check_result *hdr_chk_result,
                      struct curl_slist *headers)
@@ -581,10 +583,9 @@ curlEasyInitForTest (const char *queryPath, const char *method,
       (CURLE_OK != curl_easy_setopt (c, CURLOPT_HEADERDATA,
                                      hdr_chk_result)) ||
       (CURLE_OK != curl_easy_setopt (c, CURLOPT_FAILONERROR, 1L)) ||
-      (oneone) ?
       (CURLE_OK != curl_easy_setopt (c, CURLOPT_HTTP_VERSION,
-                                     CURL_HTTP_VERSION_1_1)) :
-      (CURLE_OK != curl_easy_setopt (c, CURLOPT_HTTP_VERSION,
+                                     (oneone) ?
+                                     CURL_HTTP_VERSION_1_1 :
                                      CURL_HTTP_VERSION_1_0)))
     libcurlErrorExitDesc ("curl_easy_setopt() failed");
 
@@ -666,8 +667,7 @@ performQueryExternal (struct MHD_Daemon *d, CURL *c)
     }
     if (NULL == multi)
     { /* libcurl has finished, check whether MHD still needs to perform cleanup */
-      unsigned long long to;
-      if ((MHD_YES != MHD_get_timeout (d, &to)) || (0 != to))
+      if (0 != MHD_get_timeout64s (d))
         break; /* MHD finished as well */
     }
     if (MHD_YES != MHD_get_fdset (d, &rs, &ws, &es, &maxMhdSk))
@@ -707,13 +707,13 @@ struct curlQueryParams
   const char *method;
 
   /* Destination port for CURL query */
-  int queryPort;
+  uint16_t queryPort;
 
   /* List of additional request headers */
   struct curl_slist *headers;
 
   /* CURL query result error flag */
-  volatile int queryError;
+  volatile unsigned int queryError;
 
   /* Response HTTP code, zero if no response */
   volatile int responseCode;
@@ -721,7 +721,7 @@ struct curlQueryParams
 
 
 /* Returns zero for successful response and non-zero for failed response */
-static int
+static unsigned int
 doCurlQueryInThread (struct MHD_Daemon *d,
                      struct curlQueryParams *p,
                      struct headers_check_result *hdr_res,
@@ -788,9 +788,16 @@ doCurlQueryInThread (struct MHD_Daemon *d,
       mhdErrorExitDesc ("Request failed due to unexpected error");
     }
     p->queryError = 1;
-    if ((0 != resp_code) &&
-        ((499 < resp_code) || (400 > resp_code))) /* TODO: add all expected error codes */
+    switch (resp_code)
     {
+    case 0: /* No parsed response */
+    case 413: /* "Content Too Large" */
+    case 414: /* "URI Too Long" */
+    case 431: /* "Request Header Fields Too Large" */
+    case 501: /* "Not Implemented" */
+      /* Expected error codes */
+      break;
+    default:
       fprintf (stderr,
                "Got reply with unexpected status code: %ld\n",
                resp_code);
@@ -816,13 +823,13 @@ doCurlQueryInThread (struct MHD_Daemon *d,
 
 
 /* Perform test queries, shut down MHD daemon, and free parameters */
-static int
-performTestQueries (struct MHD_Daemon *d, int d_port,
+static unsigned int
+performTestQueries (struct MHD_Daemon *d, uint16_t d_port,
                     struct ahc_cls_type *ahc_param,
                     struct check_uri_cls *uri_cb_param)
 {
   struct curlQueryParams qParam;
-  int ret = 0;          /* Return value */
+  unsigned int ret = 0;          /* Return value */
   struct headers_check_result rp_headers_check;
   char *buf;
   size_t i;
@@ -851,7 +858,7 @@ performTestQueries (struct MHD_Daemon *d, int d_port,
   if (large_req_method)
   {
     for (i = 0; i < TEST_START_SIZE; i++)
-      buf[i] = 'A' + i % ('Z' - 'A' + 1);
+      buf[i] = 'A' + (char) (unsigned char) (i % ('Z' - 'A' + 1));
     for (; i <= TEST_FAIL_SIZE; i++)
     {
       buf[i] = 0;
@@ -865,7 +872,14 @@ performTestQueries (struct MHD_Daemon *d, int d_port,
                                     ahc_param->rp_data,
                                     ahc_param->rp_data_size))
       {
-        (void) qParam.responseCode; /* TODO: check for the right response code */
+        if ((0 != qParam.responseCode) && (501 != qParam.responseCode))
+        {
+          fprintf (stderr,
+                   "Got reply with status code %d, "
+                   "while code 501 (\"Not Implemented\") is expected.\n",
+                   qParam.responseCode);
+          mhdErrorExit ();
+        }
         if (TEST_OK_SIZE >= i)
         {
           fprintf (stderr,
@@ -896,7 +910,7 @@ performTestQueries (struct MHD_Daemon *d, int d_port,
       if (0 != rp_headers_check.large_header_name_size)
         mhdErrorExitDesc ("Detected unexpected large reply header");
 
-      buf[i] = 'A' + i % ('Z' - 'A' + 1);
+      buf[i] = 'A' + (char) (unsigned char) (i % ('Z' - 'A' + 1));
     }
   }
   else if (large_req_url)
@@ -907,7 +921,7 @@ performTestQueries (struct MHD_Daemon *d, int d_port,
     memcpy (buf, URL_SCHEME_HOST, base_size);
     url[0] = '/';
     for (i = 1; i < TEST_START_SIZE; i++)
-      url[i] = 'a' + i % ('z' - 'a' + 1);
+      url[i] = 'a' + (char) (unsigned char) (i % ('z' - 'a' + 1));
     for (; i <= TEST_FAIL_SIZE; i++)
     {
       url[i] = 0;
@@ -922,7 +936,14 @@ performTestQueries (struct MHD_Daemon *d, int d_port,
                                     ahc_param->rp_data,
                                     ahc_param->rp_data_size))
       {
-        (void) qParam.responseCode; /* TODO: check for the right response code */
+        if ((0 != qParam.responseCode) && (414 != qParam.responseCode))
+        {
+          fprintf (stderr,
+                   "Got reply with status code %d, "
+                   "while code 414 (\"URI Too Long\") is expected.\n",
+                   qParam.responseCode);
+          mhdErrorExit ();
+        }
         if (TEST_OK_SIZE >= i)
         {
           fprintf (stderr,
@@ -953,14 +974,14 @@ performTestQueries (struct MHD_Daemon *d, int d_port,
       if (0 != rp_headers_check.large_header_name_size)
         mhdErrorExitDesc ("Detected unexpected large reply header");
 
-      url[i] = 'a' + i % ('z' - 'a' + 1);
+      url[i] = 'a' + (char) (unsigned char) (i % ('z' - 'a' + 1));
     }
   }
   else if (large_req_header_name)
   {
     buf[0] = '0'; /* Name starts with zero for unique identification */
     for (i = 1; i < TEST_START_SIZE; i++)
-      buf[i] = 'a' + i % ('z' - 'a' + 1);
+      buf[i] = 'a' + (char) (unsigned char) (i % ('z' - 'a' + 1));
     for (; i <= TEST_FAIL_SIZE; i++)
     {
       struct curl_slist *curl_headers;
@@ -981,7 +1002,14 @@ performTestQueries (struct MHD_Daemon *d, int d_port,
                                     ahc_param->rp_data,
                                     ahc_param->rp_data_size))
       {
-        (void) qParam.responseCode; /* TODO: check for the right response code */
+        if ((0 != qParam.responseCode) && (431 != qParam.responseCode))
+        {
+          fprintf (stderr,
+                   "Got reply with status code %d, while code 431 "
+                   "(\"Request Header Fields Too Large\") is expected.\n",
+                   qParam.responseCode);
+          mhdErrorExit ();
+        }
         if (0 != ahc_param->header_check_param.large_header_name_size)
         { /* If large header was processed, it must be valid */
           if (i != ahc_param->header_check_param.large_header_name_size)
@@ -1026,7 +1054,7 @@ performTestQueries (struct MHD_Daemon *d, int d_port,
         mhdErrorExitDesc ("Detected unexpected large reply header");
 
       curl_slist_free_all (curl_headers);
-      buf[i] = 'a' + i % ('z' - 'a' + 1);
+      buf[i] = 'a' + (char) (unsigned char) (i % ('z' - 'a' + 1));
     }
   }
   else if (large_req_header_value)
@@ -1035,7 +1063,7 @@ performTestQueries (struct MHD_Daemon *d, int d_port,
     /* Name starts with zero for unique identification */
     memcpy (buf, "0: ", 3); /* Note: strlen(": Z") is less than strlen(URL_SCHEME_HOST) */
     for (i = 0; i < TEST_START_SIZE; i++)
-      hdr_value[i] = 'Z' - i % ('Z' - 'A' + 1);
+      hdr_value[i] = 'Z' - (char) (unsigned char) (i % ('Z' - 'A' + 1));
     for (; i <= TEST_FAIL_SIZE; i++)
     {
       struct curl_slist *curl_headers;
@@ -1055,7 +1083,14 @@ performTestQueries (struct MHD_Daemon *d, int d_port,
                                     ahc_param->rp_data,
                                     ahc_param->rp_data_size))
       {
-        (void) qParam.responseCode; /* TODO: check for the right response code */
+        if ((0 != qParam.responseCode) && (431 != qParam.responseCode))
+        {
+          fprintf (stderr,
+                   "Got reply with status code %d, while code 431 "
+                   "(\"Request Header Fields Too Large\") is expected.\n",
+                   qParam.responseCode);
+          mhdErrorExit ();
+        }
         if (0 != ahc_param->header_check_param.large_header_name_size)
         { /* If large header was processed, it must be valid */
           if (1 != ahc_param->header_check_param.large_header_name_size)
@@ -1100,7 +1135,7 @@ performTestQueries (struct MHD_Daemon *d, int d_port,
         mhdErrorExitDesc ("Detected unexpected large reply header");
 
       curl_slist_free_all (curl_headers);
-      hdr_value[i] = 'Z' - i % ('Z' - 'A' + 1);
+      hdr_value[i] = 'Z' - (char) (unsigned char) (i % ('Z' - 'A' + 1));
     }
   }
   else if (large_req_headers)
@@ -1129,7 +1164,14 @@ performTestQueries (struct MHD_Daemon *d, int d_port,
                                     ahc_param->rp_data,
                                     ahc_param->rp_data_size))
       {
-        (void) qParam.responseCode; /* TODO: check for the right response code */
+        if ((0 != qParam.responseCode) && (431 != qParam.responseCode))
+        {
+          fprintf (stderr,
+                   "Got reply with status code %d, while code 431 "
+                   "(\"Request Header Fields Too Large\") is expected.\n",
+                   qParam.responseCode);
+          mhdErrorExit ();
+        }
         if (0 != ahc_param->header_check_param.num_n1_headers)
         { /* If headers were processed, they must be valid */
           if (num_hdrs != ahc_param->header_check_param.num_n1_headers)
@@ -1276,7 +1318,7 @@ performTestQueries (struct MHD_Daemon *d, int d_port,
   }
   else if (large_rsp_headers)
   {
-    unsigned int num_hrds;
+    size_t num_hrds;
     const size_t hdr_size = strlen (N1_HEADER_CRLF);
 
     for (num_hrds = TEST_START_SIZE / hdr_size;
@@ -1359,7 +1401,7 @@ enum testMhdPollType
 static unsigned int
 testNumThreadsForPool (enum testMhdPollType pollType)
 {
-  int numThreads = MHD_CPU_COUNT;
+  unsigned int numThreads = MHD_CPU_COUNT;
   (void) pollType; /* Don't care about pollType for this test */
   return numThreads; /* No practical limit for non-cleanup test */
 }
@@ -1367,7 +1409,7 @@ testNumThreadsForPool (enum testMhdPollType pollType)
 
 static struct MHD_Daemon *
 startTestMhdDaemon (enum testMhdThreadsType thrType,
-                    enum testMhdPollType pollType, int *pport,
+                    enum testMhdPollType pollType, uint16_t *pport,
                     struct ahc_cls_type **ahc_param,
                     struct check_uri_cls **uri_cb_param)
 {
@@ -1409,8 +1451,20 @@ startTestMhdDaemon (enum testMhdThreadsType thrType,
       *pport += 16;
   }
 
-  if (testMhdThreadInternalPool != thrType)
-    d = MHD_start_daemon (((int) thrType) | ((int) pollType)
+  if (testMhdThreadExternal == thrType)
+    d = MHD_start_daemon (((unsigned int) thrType) | ((unsigned int) pollType)
+                          | (verbose ? MHD_USE_ERROR_LOG : 0)
+                          | MHD_USE_NO_THREAD_SAFETY,
+                          *pport, NULL, NULL,
+                          &ahcCheck, *ahc_param,
+                          MHD_OPTION_URI_LOG_CALLBACK, &check_uri_cb,
+                          *uri_cb_param,
+                          MHD_OPTION_CONNECTION_MEMORY_LIMIT,
+                          (size_t) BUFFER_SIZE,
+                          MHD_OPTION_APP_FD_SETSIZE, (int) FD_SETSIZE,
+                          MHD_OPTION_END);
+  else if (testMhdThreadInternalPool != thrType)
+    d = MHD_start_daemon (((unsigned int) thrType) | ((unsigned int) pollType)
                           | (verbose ? MHD_USE_ERROR_LOG : 0),
                           *pport, NULL, NULL,
                           &ahcCheck, *ahc_param,
@@ -1420,7 +1474,8 @@ startTestMhdDaemon (enum testMhdThreadsType thrType,
                           (size_t) BUFFER_SIZE,
                           MHD_OPTION_END);
   else
-    d = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD | ((int) pollType)
+    d = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD
+                          | ((unsigned int) pollType)
                           | (verbose ? MHD_USE_ERROR_LOG : 0),
                           *pport, NULL, NULL,
                           &ahcCheck, *ahc_param,
@@ -1446,7 +1501,7 @@ startTestMhdDaemon (enum testMhdThreadsType thrType,
       fprintf (stderr, "MHD_get_daemon_info() failed.\n");
       abort ();
     }
-    *pport = (int) dinfo->port;
+    *pport = dinfo->port;
     if (0 == global_port)
       global_port = *pport; /* Reuse the same port for all tests */
   }
@@ -1458,11 +1513,11 @@ startTestMhdDaemon (enum testMhdThreadsType thrType,
 /* Test runners */
 
 
-static int
+static unsigned int
 testExternalGet (void)
 {
   struct MHD_Daemon *d;
-  int d_port = global_port; /* Daemon's port */
+  uint16_t d_port = global_port; /* Daemon's port */
   struct ahc_cls_type *ahc_param;
   struct check_uri_cls *uri_cb_param;
 
@@ -1473,11 +1528,11 @@ testExternalGet (void)
 }
 
 
-static int
+static unsigned int
 testInternalGet (enum testMhdPollType pollType)
 {
   struct MHD_Daemon *d;
-  int d_port = global_port; /* Daemon's port */
+  uint16_t d_port = global_port; /* Daemon's port */
   struct ahc_cls_type *ahc_param;
   struct check_uri_cls *uri_cb_param;
 
@@ -1488,11 +1543,11 @@ testInternalGet (enum testMhdPollType pollType)
 }
 
 
-static int
+static unsigned int
 testMultithreadedGet (enum testMhdPollType pollType)
 {
   struct MHD_Daemon *d;
-  int d_port = global_port; /* Daemon's port */
+  uint16_t d_port = global_port; /* Daemon's port */
   struct ahc_cls_type *ahc_param;
   struct check_uri_cls *uri_cb_param;
 
@@ -1502,11 +1557,11 @@ testMultithreadedGet (enum testMhdPollType pollType)
 }
 
 
-static int
+static unsigned int
 testMultithreadedPoolGet (enum testMhdPollType pollType)
 {
   struct MHD_Daemon *d;
-  int d_port = global_port; /* Daemon's port */
+  uint16_t d_port = global_port; /* Daemon's port */
   struct ahc_cls_type *ahc_param;
   struct check_uri_cls *uri_cb_param;
 
@@ -1542,7 +1597,10 @@ main (int argc, char *const *argv)
       + large_req_header_value + large_req_headers + large_rsp_header_name
       + large_rsp_header_value + large_rsp_headers != 1)
     return 99;
-  verbose = ! has_param (argc, argv, "-q") || has_param (argc, argv, "--quiet");
+  verbose = ! (has_param (argc, argv, "-q") ||
+               has_param (argc, argv, "--quiet") ||
+               has_param (argc, argv, "-s") ||
+               has_param (argc, argv, "--silent"));
 
   test_global_init ();
 

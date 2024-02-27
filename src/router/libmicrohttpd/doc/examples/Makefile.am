@@ -2,13 +2,22 @@
 SUBDIRS  = .
 
 AM_CPPFLAGS = \
-  -I$(top_srcdir)/src/include
+  -I$(top_srcdir)/src/include \
+  $(CPPFLAGS_ac)
 
-AM_CFLAGS = @LIBGCRYPT_CFLAGS@
+AM_CFLAGS = $(CFLAGS_ac) @LIBGCRYPT_CFLAGS@
+
+AM_LDFLAGS = $(LDFLAGS_ac)
+
+AM_TESTS_ENVIRONMENT = $(TESTS_ENVIRONMENT_ac)
 
 if USE_COVERAGE
   AM_CFLAGS += --coverage
 endif
+
+$(top_builddir)/src/microhttpd/libmicrohttpd.la: $(top_builddir)/src/microhttpd/Makefile
+	@echo ' cd $(top_builddir)/src/microhttpd && $(MAKE) $(AM_MAKEFLAGS) libmicrohttpd.la'; \
+	$(am__cd) $(top_builddir)/src/microhttpd && $(MAKE) $(AM_MAKEFLAGS) libmicrohttpd.la
 
 # example programs
 noinst_PROGRAMS = \
@@ -19,18 +28,22 @@ noinst_PROGRAMS = \
 if ENABLE_BAUTH
 noinst_PROGRAMS += \
   basicauthentication
-endif
-
 if ENABLE_HTTPS
 noinst_PROGRAMS += \
   tlsauthentication
 endif
+endif
+
 if HAVE_POSTPROCESSOR
 noinst_PROGRAMS += simplepost largepost sessions 
 endif
 
 if HAVE_W32
 AM_CPPFLAGS += -DWINDOWS
+endif
+
+if HAVE_EXPERIMENTAL
+noinst_PROGRAMS += websocket
 endif
 
 basicauthentication_SOURCES = \
@@ -73,3 +86,8 @@ largepost_SOURCES = \
 largepost_LDADD = \
  $(top_builddir)/src/microhttpd/libmicrohttpd.la 
 
+websocket_SOURCES = \
+ websocket.c
+websocket_LDADD = \
+ $(top_builddir)/src/microhttpd/libmicrohttpd.la \
+ $(top_builddir)/src/microhttpd_ws/libmicrohttpd_ws.la

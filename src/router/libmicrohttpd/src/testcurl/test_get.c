@@ -1,7 +1,7 @@
 /*
      This file is part of libmicrohttpd
      Copyright (C) 2007, 2009, 2011 Christian Grothoff
-     Copyright (C) 2014-2021 Evgeny Grin (Karlson2k)
+     Copyright (C) 2014-2022 Evgeny Grin (Karlson2k)
 
      libmicrohttpd is free software; you can redistribute it and/or modify
      it under the terms of the GNU General Public License as published
@@ -31,7 +31,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include "test_helpers.h"
+#include <errno.h>
+#include "mhd_has_in_name.h"
+#include "mhd_has_param.h"
 #include "mhd_sockets.h" /* only macros used */
 
 
@@ -57,7 +59,7 @@
 #endif
 
 static int oneone;
-static int global_port;
+static uint16_t global_port;
 
 struct CBC
 {
@@ -106,25 +108,25 @@ ahc_echo (void *cls,
           const char *method,
           const char *version,
           const char *upload_data, size_t *upload_data_size,
-          void **unused)
+          void **req_cls)
 {
   static int ptr;
-  const char *me = cls;
   struct MHD_Response *response;
   enum MHD_Result ret;
   const char *v;
+  (void) cls;
   (void) version;
   (void) upload_data;
   (void) upload_data_size;       /* Unused. Silence compiler warning. */
 
-  if (0 != strcmp (me, method))
+  if (0 != strcmp (MHD_HTTP_METHOD_GET, method))
     return MHD_NO;              /* unexpected method */
-  if (&ptr != *unused)
+  if (&ptr != *req_cls)
   {
-    *unused = &ptr;
+    *req_cls = &ptr;
     return MHD_YES;
   }
-  *unused = NULL;
+  *req_cls = NULL;
   v = MHD_lookup_connection_value (connection,
                                    MHD_GET_ARGUMENT_KIND,
                                    "a");
@@ -155,9 +157,8 @@ ahc_echo (void *cls,
              NULL == v ? "NULL" : v);
     _exit (19);
   }
-  response = MHD_create_response_from_buffer (strlen (url),
-                                              (void *) url,
-                                              MHD_RESPMEM_MUST_COPY);
+  response = MHD_create_response_from_buffer_copy (strlen (url),
+                                                   (const void *) url);
   ret = MHD_queue_response (connection,
                             MHD_HTTP_OK,
                             response);
@@ -171,8 +172,8 @@ ahc_echo (void *cls,
 }
 
 
-static int
-testInternalGet (int poll_flag)
+static unsigned int
+testInternalGet (uint32_t poll_flag)
 {
   struct MHD_Daemon *d;
   CURL *c;
@@ -192,9 +193,9 @@ testInternalGet (int poll_flag)
   cbc.size = 2048;
   cbc.pos = 0;
   d = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG
-                        | poll_flag,
+                        | (enum MHD_FLAG) poll_flag,
                         global_port, NULL, NULL,
-                        &ahc_echo, "GET",
+                        &ahc_echo, NULL,
                         MHD_OPTION_URI_LOG_CALLBACK, &log_cb, NULL,
                         MHD_OPTION_END);
   if (d == NULL)
@@ -207,7 +208,7 @@ testInternalGet (int poll_flag)
     {
       MHD_stop_daemon (d); return 32;
     }
-    global_port = (int) dinfo->port;
+    global_port = dinfo->port;
   }
   c = curl_easy_init ();
   curl_easy_setopt (c, CURLOPT_URL, "http://127.0.0.1" EXPECTED_URI_PATH);
@@ -244,8 +245,8 @@ testInternalGet (int poll_flag)
 }
 
 
-static int
-testMultithreadedGet (int poll_flag)
+static unsigned int
+testMultithreadedGet (uint32_t poll_flag)
 {
   struct MHD_Daemon *d;
   CURL *c;
@@ -266,9 +267,9 @@ testMultithreadedGet (int poll_flag)
   cbc.pos = 0;
   d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION
                         | MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG
-                        | poll_flag,
+                        | (enum MHD_FLAG) poll_flag,
                         global_port, NULL, NULL,
-                        &ahc_echo, "GET",
+                        &ahc_echo, NULL,
                         MHD_OPTION_URI_LOG_CALLBACK, &log_cb, NULL,
                         MHD_OPTION_END);
   if (d == NULL)
@@ -281,7 +282,7 @@ testMultithreadedGet (int poll_flag)
     {
       MHD_stop_daemon (d); return 32;
     }
-    global_port = (int) dinfo->port;
+    global_port = dinfo->port;
   }
   c = curl_easy_init ();
   curl_easy_setopt (c, CURLOPT_URL, "http://127.0.0.1" EXPECTED_URI_PATH);
@@ -318,8 +319,8 @@ testMultithreadedGet (int poll_flag)
 }
 
 
-static int
-testMultithreadedPoolGet (int poll_flag)
+static unsigned int
+testMultithreadedPoolGet (uint32_t poll_flag)
 {
   struct MHD_Daemon *d;
   CURL *c;
@@ -339,9 +340,9 @@ testMultithreadedPoolGet (int poll_flag)
   cbc.size = 2048;
   cbc.pos = 0;
   d = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG
-                        | poll_flag,
+                        | (enum MHD_FLAG) poll_flag,
                         global_port, NULL, NULL,
-                        &ahc_echo, "GET",
+                        &ahc_echo, NULL,
                         MHD_OPTION_THREAD_POOL_SIZE, MHD_CPU_COUNT,
                         MHD_OPTION_URI_LOG_CALLBACK, &log_cb, NULL,
                         MHD_OPTION_END);
@@ -355,7 +356,7 @@ testMultithreadedPoolGet (int poll_flag)
     {
       MHD_stop_daemon (d); return 32;
     }
-    global_port = (int) dinfo->port;
+    global_port = dinfo->port;
   }
   c = curl_easy_init ();
   curl_easy_setopt (c, CURLOPT_URL, "http://127.0.0.1" EXPECTED_URI_PATH);
@@ -392,8 +393,8 @@ testMultithreadedPoolGet (int poll_flag)
 }
 
 
-static int
-testExternalGet ()
+static unsigned int
+testExternalGet (int thread_unsafe)
 {
   struct MHD_Daemon *d;
   CURL *c;
@@ -423,10 +424,12 @@ testExternalGet ()
   cbc.buf = buf;
   cbc.size = 2048;
   cbc.pos = 0;
-  d = MHD_start_daemon (MHD_USE_ERROR_LOG,
+  d = MHD_start_daemon (MHD_USE_ERROR_LOG
+                        | (thread_unsafe ? MHD_USE_NO_THREAD_SAFETY : 0),
                         global_port, NULL, NULL,
-                        &ahc_echo, "GET",
+                        &ahc_echo, NULL,
                         MHD_OPTION_URI_LOG_CALLBACK, &log_cb, NULL,
+                        MHD_OPTION_APP_FD_SETSIZE, (int) FD_SETSIZE,
                         MHD_OPTION_END);
   if (d == NULL)
     return 256;
@@ -438,7 +441,7 @@ testExternalGet ()
     {
       MHD_stop_daemon (d); return 32;
     }
-    global_port = (int) dinfo->port;
+    global_port = dinfo->port;
   }
   c = curl_easy_init ();
   curl_easy_setopt (c, CURLOPT_URL, "http://127.0.0.1" EXPECTED_URI_PATH);
@@ -577,8 +580,8 @@ testExternalGet ()
 }
 
 
-static int
-testUnknownPortGet (int poll_flag)
+static unsigned int
+testUnknownPortGet (uint32_t poll_flag)
 {
   struct MHD_Daemon *d;
   const union MHD_DaemonInfo *di;
@@ -586,7 +589,7 @@ testUnknownPortGet (int poll_flag)
   char buf[2048];
   struct CBC cbc;
   CURLcode errornum;
-  int port;
+  uint16_t port;
 
   struct sockaddr_in addr;
   socklen_t addr_len = sizeof(addr);
@@ -599,8 +602,8 @@ testUnknownPortGet (int poll_flag)
   cbc.size = 2048;
   cbc.pos = 0;
   d = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG
-                        | poll_flag,
-                        0, NULL, NULL, &ahc_echo, "GET",
+                        | (enum MHD_FLAG) poll_flag,
+                        0, NULL, NULL, &ahc_echo, NULL,
                         MHD_OPTION_SOCK_ADDR, &addr,
                         MHD_OPTION_URI_LOG_CALLBACK, &log_cb, NULL,
                         MHD_OPTION_END);
@@ -615,7 +618,7 @@ testUnknownPortGet (int poll_flag)
 
     if (addr.sin_family != AF_INET)
       return 26214;
-    port = (int) ntohs (addr.sin_port);
+    port = ntohs (addr.sin_port);
   }
   else
   {
@@ -625,13 +628,13 @@ testUnknownPortGet (int poll_flag)
     {
       MHD_stop_daemon (d); return 32;
     }
-    port = (int) dinfo->port;
+    port = dinfo->port;
   }
 
   snprintf (buf,
             sizeof(buf),
-            "http://127.0.0.1:%d%s",
-            port,
+            "http://127.0.0.1:%u%s",
+            (unsigned int) port,
             EXPECTED_URI_PATH);
 
   c = curl_easy_init ();
@@ -668,8 +671,8 @@ testUnknownPortGet (int poll_flag)
 }
 
 
-static int
-testStopRace (int poll_flag)
+static unsigned int
+testStopRace (uint32_t poll_flag)
 {
   struct sockaddr_in sin;
   MHD_socket fd;
@@ -685,9 +688,9 @@ testStopRace (int poll_flag)
 
   d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION
                         | MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG
-                        | poll_flag,
+                        | (enum MHD_FLAG) poll_flag,
                         global_port, NULL, NULL,
-                        &ahc_echo, "GET",
+                        &ahc_echo, NULL,
                         MHD_OPTION_URI_LOG_CALLBACK, &log_cb, NULL,
                         MHD_OPTION_END);
   if (d == NULL)
@@ -700,7 +703,7 @@ testStopRace (int poll_flag)
     {
       MHD_stop_daemon (d); return 32;
     }
-    global_port = (int) dinfo->port;
+    global_port = dinfo->port;
   }
 
   fd = socket (PF_INET, SOCK_STREAM, 0);
@@ -744,7 +747,7 @@ ahc_empty (void *cls,
            const char *version,
            const char *upload_data,
            size_t *upload_data_size,
-           void **unused)
+           void **req_cls)
 {
   static int ptr;
   struct MHD_Response *response;
@@ -758,15 +761,13 @@ ahc_empty (void *cls,
 
   if (0 != strcmp ("GET", method))
     return MHD_NO;              /* unexpected method */
-  if (&ptr != *unused)
+  if (&ptr != *req_cls)
   {
-    *unused = &ptr;
+    *req_cls = &ptr;
     return MHD_YES;
   }
-  *unused = NULL;
-  response = MHD_create_response_from_buffer (0,
-                                              NULL,
-                                              MHD_RESPMEM_PERSISTENT);
+  *req_cls = NULL;
+  response = MHD_create_response_empty (MHD_RF_NONE);
   ret = MHD_queue_response (connection,
                             MHD_HTTP_OK,
                             response);
@@ -799,8 +800,8 @@ curlExcessFound (CURL *c,
 }
 
 
-static int
-testEmptyGet (int poll_flag)
+static unsigned int
+testEmptyGet (uint32_t poll_flag)
 {
   struct MHD_Daemon *d;
   CURL *c;
@@ -821,7 +822,7 @@ testEmptyGet (int poll_flag)
   cbc.size = 2048;
   cbc.pos = 0;
   d = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG
-                        | poll_flag,
+                        | (enum MHD_FLAG) poll_flag,
                         global_port, NULL, NULL,
                         &ahc_empty, NULL,
                         MHD_OPTION_URI_LOG_CALLBACK, &log_cb, NULL,
@@ -836,7 +837,7 @@ testEmptyGet (int poll_flag)
     {
       MHD_stop_daemon (d); return 32;
     }
-    global_port = (int) dinfo->port;
+    global_port = dinfo->port;
   }
   c = curl_easy_init ();
   curl_easy_setopt (c, CURLOPT_URL, "http://127.0.0.1" EXPECTED_URI_PATH);
@@ -890,14 +891,20 @@ main (int argc, char *const *argv)
   if (0 != curl_global_init (CURL_GLOBAL_WIN32))
     return 2;
   global_port = 0;
-  test_result = testExternalGet ();
+  test_result = testExternalGet (! 0);
   if (test_result)
-    fprintf (stderr, "FAILED: testExternalGet () - %u.\n", test_result);
+    fprintf (stderr, "FAILED: testExternalGet (!0) - %u.\n", test_result);
   else if (verbose)
     printf ("PASSED: testExternalGet ().\n");
   errorCount += test_result;
   if (MHD_YES == MHD_is_feature_supported (MHD_FEATURE_THREADS))
   {
+    test_result += testExternalGet (0);
+    if (test_result)
+      fprintf (stderr, "FAILED: testExternalGet (0) - %u.\n", test_result);
+    else if (verbose)
+      printf ("PASSED: testExternalGet ().\n");
+    errorCount += test_result;
     test_result += testInternalGet (0);
     if (test_result)
       fprintf (stderr, "FAILED: testInternalGet (0) - %u.\n", test_result);

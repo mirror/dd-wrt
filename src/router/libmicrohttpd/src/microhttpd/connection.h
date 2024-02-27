@@ -1,6 +1,7 @@
 /*
      This file is part of libmicrohttpd
      Copyright (C) 2007 Daniel Pittman and Christian Grothoff
+     Copyright (C) 2015-2023 Evgeny Grin (Karlson2k)
 
      This library is free software; you can redistribute it and/or
      modify it under the terms of the GNU Lesser General Public
@@ -87,6 +88,14 @@ MHD_set_http_callbacks_ (struct MHD_Connection *connection);
 
 
 /**
+ * Set initial internal states for the connection to start reading and
+ * processing incoming data.
+ * @param c the connection to process
+ */
+void
+MHD_connection_set_initial_state_ (struct MHD_Connection *c);
+
+/**
  * This function handles a particular connection when it has been
  * determined that there is data to be read off a socket. All
  * implementations (multithreaded, external polling, internal polling)
@@ -114,8 +123,8 @@ MHD_connection_handle_write (struct MHD_Connection *connection);
 
 /**
  * This function was created to handle per-connection processing that
- * has to happen even if the socket cannot be read or written to.  All
- * implementations (multithreaded, external select, internal select)
+ * has to happen even if the socket cannot be read or written to.
+ * All implementations (multithreaded, external select, internal select)
  * call this function.
  * @remark To be called only from thread that process connection's
  * recv(), send() and response.
@@ -189,5 +198,19 @@ MHD_connection_epoll_update_ (struct MHD_Connection *connection);
  */
 void
 MHD_update_last_activity_ (struct MHD_Connection *connection);
+
+
+/**
+ * Allocate memory from connection's memory pool.
+ * If memory pool doesn't have enough free memory but read or write buffer
+ * have some unused memory, the size of the buffer will be reduced as needed.
+ * @param connection the connection to use
+ * @param size the size of allocated memory area
+ * @return pointer to allocated memory region in the pool or
+ *         NULL if no memory is available
+ */
+void *
+MHD_connection_alloc_memory_ (struct MHD_Connection *connection,
+                              size_t size);
 
 #endif

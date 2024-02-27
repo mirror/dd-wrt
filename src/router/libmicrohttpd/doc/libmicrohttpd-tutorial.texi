@@ -15,7 +15,7 @@
 
 @dircategory Software libraries
 @direntry
-* libmicrohttpdtutorial: (libmicrohttpd).       A tutorial for GNU libmicrohttpd.
+* libmicrohttpdtutorial: (libmicrohttpd-tutorial).       A tutorial for GNU libmicrohttpd.
 @end direntry
 
 @copying

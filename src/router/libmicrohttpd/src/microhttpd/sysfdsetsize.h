@@ -1,6 +1,6 @@
 /*
   This file is part of libmicrohttpd
-  Copyright (C) 2015 Karlson2k (Evgeny Grin)
+  Copyright (C) 2015-2023 Karlson2k (Evgeny Grin)
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -26,11 +26,28 @@
 #ifndef SYSFDSETSIZE_H
 #define SYSFDSETSIZE_H 1
 
+#include "mhd_options.h"
+
+#ifndef MHD_SYS_FD_SETSIZE_
 /**
  * Get system default value of FD_SETSIZE
  * @return system default value of FD_SETSIZE
  */
 unsigned int
 get_system_fdsetsize_value (void);
+
+#else  /* MHD_SYS_FD_SETSIZE_ */
+/**
+ * Get system default value of FD_SETSIZE
+ * @return system default value of FD_SETSIZE
+ */
+_MHD_static_inline unsigned int
+get_system_fdsetsize_value (void)
+{
+  return (unsigned int) MHD_SYS_FD_SETSIZE_;
+}
+
+
+#endif /* MHD_SYS_FD_SETSIZE_ */
 
 #endif /* !SYSFDSETSIZE_H */

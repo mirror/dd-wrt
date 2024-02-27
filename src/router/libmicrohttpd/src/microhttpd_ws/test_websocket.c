@@ -9838,7 +9838,7 @@ test_check_upgrade_header ()
              (unsigned int) __LINE__);
     ++failed;
   }
-  /* Edge test (success): All allowed token characters plus /, then websocket keyowrd */
+  /* Edge test (success): All allowed token characters plus /, then websocket keyword */
   ret = MHD_websocket_check_upgrade_header (
     "!#$%&'*+-.^_`|~0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz/,websocket");
   if (MHD_WEBSOCKET_STATUS_OK != ret)

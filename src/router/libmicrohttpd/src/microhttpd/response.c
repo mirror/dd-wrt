@@ -1,7 +1,7 @@
 /*
      This file is part of libmicrohttpd
      Copyright (C) 2007-2021 Daniel Pittman and Christian Grothoff
-     Copyright (C) 2015-2021 Evgeny Grin (Karlson2k)
+     Copyright (C) 2015-2023 Evgeny Grin (Karlson2k)
 
      This library is free software; you can redistribute it and/or
      modify it under the terms of the GNU Lesser General Public
@@ -145,6 +145,146 @@
 } while (0)
 
 /**
+ * Add preallocated strings a header or footer line to the response without
+ * checking.
+ *
+ * Header/footer strings are not checked and assumed to be correct.
+ *
+ * The string must not be statically allocated!
+ * The strings must be malloc()'ed and zero terminated. The strings will
+ * be free()'ed when the response is destroyed.
+ *
+ * @param response response to add a header to
+ * @param kind header or footer
+ * @param header the header string to add, must be malloc()'ed and
+ *               zero-terminated
+ * @param header_len the length of the @a header
+ * @param content the value string to add, must be malloc()'ed and
+ *                zero-terminated
+ * @param content_len the length of the @a content
+ */
+bool
+MHD_add_response_entry_no_alloc_ (struct MHD_Response *response,
+                                  enum MHD_ValueKind kind,
+                                  char *header,
+                                  size_t header_len,
+                                  char *content,
+                                  size_t content_len)
+{
+  struct MHD_HTTP_Res_Header *hdr;
+
+  mhd_assert (0 != header_len);
+  mhd_assert (0 != content_len);
+  if (NULL == (hdr = MHD_calloc_ (1, sizeof (struct MHD_HTTP_Res_Header))))
+    return false;
+
+  hdr->header = header;
+  hdr->header_size = header_len;
+  hdr->value = content;
+  hdr->value_size = content_len;
+  hdr->kind = kind;
+  _MHD_insert_header_last (response, hdr);
+
+  return true; /* Success exit point */
+}
+
+
+/**
+ * Add a header or footer line to the response without checking.
+ *
+ * It is assumed that parameters are correct.
+ *
+ * @param response response to add a header to
+ * @param kind header or footer
+ * @param header the header to add, does not need to be zero-terminated
+ * @param header_len the length of the @a header
+ * @param content value to add, does not need to be zero-terminated
+ * @param content_len the length of the @a content
+ * @return false on error (like out-of-memory),
+ *         true if succeed
+ */
+bool
+MHD_add_response_entry_no_check_ (struct MHD_Response *response,
+                                  enum MHD_ValueKind kind,
+                                  const char *header,
+                                  size_t header_len,
+                                  const char *content,
+                                  size_t content_len)
+{
+  char *header_malloced;
+  char *value_malloced;
+
+  mhd_assert (0 != header_len);
+  mhd_assert (0 != content_len);
+  header_malloced = malloc (header_len + 1);
+  if (NULL == header_malloced)
+    return false;
+
+  memcpy (header_malloced, header, header_len);
+  header_malloced[header_len] = 0;
+
+  value_malloced = malloc (content_len + 1);
+  if (NULL != value_malloced)
+  {
+    memcpy (value_malloced, content, content_len);
+    value_malloced[content_len] = 0;
+
+    if (MHD_add_response_entry_no_alloc_ (response, kind,
+                                          header_malloced, header_len,
+                                          value_malloced, content_len))
+      return true; /* Success exit point */
+
+    free (value_malloced);
+  }
+  free (header_malloced);
+
+  return false; /* Failure exit point */
+}
+
+
+/**
+ * Add a header or footer line to the response.
+ *
+ * @param header the header to add, does not need to be zero-terminated
+ * @param header_len the length of the @a header
+ * @param content value to add, does not need to be zero-terminated
+ * @param content_len the length of the @a content
+ * @return false on error (out-of-memory, invalid header or content),
+ *         true if succeed
+ */
+static bool
+add_response_entry_n (struct MHD_Response *response,
+                      enum MHD_ValueKind kind,
+                      const char *header,
+                      size_t header_len,
+                      const char *content,
+                      size_t content_len)
+{
+  if (NULL == response)
+    return false;
+  if (0 == header_len)
+    return false;
+  if (0 == content_len)
+    return false;
+  if (NULL != memchr (header, '\t', header_len))
+    return false;
+  if (NULL != memchr (header, ' ', header_len))
+    return false;
+  if (NULL != memchr (header, '\r', header_len))
+    return false;
+  if (NULL != memchr (header, '\n', header_len))
+    return false;
+  if (NULL != memchr (content, '\r', content_len))
+    return false;
+  if (NULL != memchr (content, '\n', content_len))
+    return false;
+
+  return MHD_add_response_entry_no_check_ (response, kind, header, header_len,
+                                           content, content_len);
+}
+
+
+/**
  * Add a header or footer line to the response.
  *
  * @param response response to add a header to
@@ -159,38 +299,17 @@ add_response_entry (struct MHD_Response *response,
                     const char *header,
                     const char *content)
 {
-  struct MHD_HTTP_Header *hdr;
+  size_t header_len;
+  size_t content_len;
 
-  if ( (NULL == response) ||
-       (NULL == header) ||
-       (NULL == content) ||
-       (0 == header[0]) ||
-       (0 == content[0]) ||
-       (NULL != strchr (header, '\t')) ||
-       (NULL != strchr (header, ' ')) ||
-       (NULL != strchr (header, '\r')) ||
-       (NULL != strchr (header, '\n')) ||
-       (NULL != strchr (content, '\r')) ||
-       (NULL != strchr (content, '\n')) )
+  if (NULL == content)
     return MHD_NO;
-  if (NULL == (hdr = MHD_calloc_ (1, sizeof (struct MHD_HTTP_Header))))
-    return MHD_NO;
-  if (NULL == (hdr->header = strdup (header)))
-  {
-    free (hdr);
-    return MHD_NO;
-  }
-  hdr->header_size = strlen (header);
-  if (NULL == (hdr->value = strdup (content)))
-  {
-    free (hdr->header);
-    free (hdr);
-    return MHD_NO;
-  }
-  hdr->value_size = strlen (content);
-  hdr->kind = kind;
-  _MHD_insert_header_last (response, hdr);
-  return MHD_YES;
+
+  header_len = strlen (header);
+  content_len = strlen (content);
+  return add_response_entry_n (response, kind, header,
+                               header_len, content,
+                               content_len) ? MHD_YES : MHD_NO;
 }
 
 
@@ -213,12 +332,12 @@ add_response_header_connection (struct MHD_Response *response,
   /** the length of the "Connection" key */
   static const size_t key_len =
     MHD_STATICSTR_LEN_ (MHD_HTTP_HEADER_CONNECTION);
-  size_t value_len;  /**< the length of the @a value */
+  size_t value_len; /**< the length of the @a value */
   size_t old_value_len; /**< the length of the existing "Connection" value */
-  size_t buf_size;   /**< the size of the buffer */
-  ssize_t norm_len;  /**< the length of the normalised value */
-  char *buf;         /**< the temporal buffer */
-  struct MHD_HTTP_Header *hdr; /**< existing "Connection" header */
+  size_t buf_size;  /**< the size of the buffer */
+  size_t norm_len;  /**< the length of the normalised value */
+  char *buf;        /**< the temporal buffer */
+  struct MHD_HTTP_Res_Header *hdr; /**< existing "Connection" header */
   bool value_has_close; /**< the @a value has "close" token */
   bool already_has_close; /**< existing "Connection" header has "close" token */
   size_t pos = 0;   /**< position of addition in the @a buf */
@@ -253,19 +372,34 @@ add_response_header_connection (struct MHD_Response *response,
   value_len = strlen (value);
   if (value_len >= SSIZE_MAX)
     return MHD_NO;
-  /* Additional space for normalisation and zero-termination*/
-  norm_len = (ssize_t) (value_len + value_len / 2 + 1);
+  /* Additional space for normalisation and zero-termination */
+  norm_len = value_len + value_len / 2 + 1;
+  if (norm_len >= SSIZE_MAX)
+    return MHD_NO;
   buf_size = old_value_len + (size_t) norm_len;
 
   buf = malloc (buf_size);
   if (NULL == buf)
     return MHD_NO;
-  /* Remove "close" token (if any), it will be moved to the front */
-  value_has_close = MHD_str_remove_token_caseless_ (value, value_len, "close",
-                                                    MHD_STATICSTR_LEN_ ( \
-                                                      "close"),
-                                                    buf + old_value_len,
-                                                    &norm_len);
+  if (1)
+  { /* local scope */
+    ssize_t norm_len_s = (ssize_t) norm_len;
+    /* Remove "close" token (if any), it will be moved to the front */
+    value_has_close = MHD_str_remove_token_caseless_ (value, value_len, "close",
+                                                      MHD_STATICSTR_LEN_ ( \
+                                                        "close"),
+                                                      buf + old_value_len,
+                                                      &norm_len_s);
+    mhd_assert (0 <= norm_len_s);
+    if (0 > norm_len_s)
+    {
+      /* Must never happen with realistic sizes */
+      free (buf);
+      return MHD_NO;
+    }
+    else
+      norm_len = (size_t) norm_len_s;
+  }
 #ifdef UPGRADE_SUPPORT
   if ( (NULL != response->upgrade_handler) && value_has_close)
   { /* The "close" token cannot be used with connection "upgrade" */
@@ -273,17 +407,10 @@ add_response_header_connection (struct MHD_Response *response,
     return MHD_NO;
   }
 #endif /* UPGRADE_SUPPORT */
-  mhd_assert (0 <= norm_len);
-  if (0 > norm_len)
-    norm_len = 0; /* Must never happen */
   if (0 != norm_len)
-  {
-    size_t len = norm_len;
-    MHD_str_remove_tokens_caseless_ (buf + old_value_len, &len,
+    MHD_str_remove_tokens_caseless_ (buf + old_value_len, &norm_len,
                                      "keep-alive",
                                      MHD_STATICSTR_LEN_ ("keep-alive"));
-    norm_len = (ssize_t) len;
-  }
   if (0 == norm_len)
   { /* New value is empty after normalisation */
     if (! value_has_close)
@@ -301,7 +428,7 @@ add_response_header_connection (struct MHD_Response *response,
   if (value_has_close && ! already_has_close)
   {
     /* Need to insert "close" token at the first position */
-    mhd_assert (buf_size >= old_value_len + (size_t) norm_len   \
+    mhd_assert (buf_size >= old_value_len + norm_len   \
                 + MHD_STATICSTR_LEN_ ("close, ") + 1);
     if (0 != norm_len)
       memmove (buf + MHD_STATICSTR_LEN_ ("close, ") + old_value_len,
@@ -333,16 +460,16 @@ add_response_header_connection (struct MHD_Response *response,
     mhd_assert ((value_has_close && ! already_has_close) ? \
                 (MHD_STATICSTR_LEN_ ("close, ") + old_value_len == pos) : \
                 (old_value_len == pos));
-    pos += (size_t) norm_len;
+    pos += norm_len;
   }
   mhd_assert (buf_size > pos);
   buf[pos] = 0; /* Null terminate the result */
 
   if (NULL == hdr)
   {
-    struct MHD_HTTP_Header *new_hdr; /**< new "Connection" header */
+    struct MHD_HTTP_Res_Header *new_hdr; /**< new "Connection" header */
     /* Create new response header entry */
-    new_hdr = MHD_calloc_ (1, sizeof (struct MHD_HTTP_Header));
+    new_hdr = MHD_calloc_ (1, sizeof (struct MHD_HTTP_Res_Header));
     if (NULL != new_hdr)
     {
       new_hdr->header = malloc (key_len + 1);
@@ -390,7 +517,7 @@ static enum MHD_Result
 del_response_header_connection (struct MHD_Response *response,
                                 const char *value)
 {
-  struct MHD_HTTP_Header *hdr; /**< existing "Connection" header */
+  struct MHD_HTTP_Res_Header *hdr; /**< existing "Connection" header */
 
   hdr = MHD_get_response_element_n_ (response, MHD_HEADER_KIND,
                                      MHD_HTTP_HEADER_CONNECTION,
@@ -489,7 +616,7 @@ del_response_header_connection (struct MHD_Response *response,
  *         or out of memory
  * @ingroup response
  */
-enum MHD_Result
+_MHD_EXTERN enum MHD_Result
 MHD_add_response_header (struct MHD_Response *response,
                          const char *header,
                          const char *content)
@@ -501,9 +628,12 @@ MHD_add_response_header (struct MHD_Response *response,
                                MHD_HTTP_HEADER_TRANSFER_ENCODING))
   {
     if (! MHD_str_equal_caseless_ (content, "chunked"))
-      return MHD_NO;
+      return MHD_NO;   /* Only "chunked" encoding is allowed */
     if (0 != (response->flags_auto & MHD_RAF_HAS_TRANS_ENC_CHUNKED))
-      return MHD_YES;
+      return MHD_YES;  /* Already has "chunked" encoding header */
+    if ( (0 != (response->flags_auto & MHD_RAF_HAS_CONTENT_LENGTH)) &&
+         (0 == (MHD_RF_INSANITY_HEADER_CONTENT_LENGTH & response->flags)) )
+      return MHD_NO; /* Has "Content-Length" header and no "Insanity" flag */
     if (MHD_NO != add_response_entry (response,
                                       MHD_HEADER_KIND,
                                       header,
@@ -519,7 +649,7 @@ MHD_add_response_header (struct MHD_Response *response,
   {
     if (0 != (response->flags_auto & MHD_RAF_HAS_DATE_HDR))
     {
-      struct MHD_HTTP_Header *hdr;
+      struct MHD_HTTP_Res_Header *hdr;
       hdr = MHD_get_response_element_n_ (response, MHD_HEADER_KIND,
                                          MHD_HTTP_HEADER_DATE,
                                          MHD_STATICSTR_LEN_ ( \
@@ -541,13 +671,27 @@ MHD_add_response_header (struct MHD_Response *response,
     }
     return MHD_NO;
   }
-  if ( (0 == (MHD_RF_INSANITY_HEADER_CONTENT_LENGTH
-              & response->flags)) &&
-       (MHD_str_equal_caseless_ (header,
-                                 MHD_HTTP_HEADER_CONTENT_LENGTH)) )
+
+  if (MHD_str_equal_caseless_ (header,
+                               MHD_HTTP_HEADER_CONTENT_LENGTH))
   {
-    /* MHD will set Content-length if allowed and possible,
-       reject attempt by application */
+    /* Generally MHD sets automatically correct "Content-Length" always when
+     * needed.
+     * Custom "Content-Length" header is allowed only in special cases. */
+    if ( (0 != (MHD_RF_INSANITY_HEADER_CONTENT_LENGTH & response->flags)) ||
+         ((0 != (MHD_RF_HEAD_ONLY_RESPONSE & response->flags)) &&
+          (0 == (response->flags_auto & (MHD_RAF_HAS_TRANS_ENC_CHUNKED
+                                         | MHD_RAF_HAS_CONTENT_LENGTH)))) )
+    {
+      if (MHD_NO != add_response_entry (response,
+                                        MHD_HEADER_KIND,
+                                        header,
+                                        content))
+      {
+        response->flags_auto |= MHD_RAF_HAS_CONTENT_LENGTH;
+        return MHD_YES;
+      }
+    }
     return MHD_NO;
   }
 
@@ -567,7 +711,7 @@ MHD_add_response_header (struct MHD_Response *response,
  * @return #MHD_NO on error (i.e. invalid footer or content format).
  * @ingroup response
  */
-enum MHD_Result
+_MHD_EXTERN enum MHD_Result
 MHD_add_response_footer (struct MHD_Response *response,
                          const char *footer,
                          const char *content)
@@ -593,12 +737,12 @@ MHD_add_response_footer (struct MHD_Response *response,
  * @return #MHD_NO on error (no such header known)
  * @ingroup response
  */
-enum MHD_Result
+_MHD_EXTERN enum MHD_Result
 MHD_del_response_header (struct MHD_Response *response,
                          const char *header,
                          const char *content)
 {
-  struct MHD_HTTP_Header *pos;
+  struct MHD_HTTP_Res_Header *pos;
   size_t header_len;
   size_t content_len;
 
@@ -644,6 +788,19 @@ MHD_del_response_header (struct MHD_Response *response,
                                                header_len) )
         response->flags_auto &=
           ~((enum MHD_ResponseAutoFlags) MHD_RAF_HAS_DATE_HDR);
+      else if ( (MHD_STATICSTR_LEN_ (MHD_HTTP_HEADER_CONTENT_LENGTH) ==
+                 header_len) &&
+                MHD_str_equal_caseless_bin_n_ (header,
+                                               MHD_HTTP_HEADER_CONTENT_LENGTH,
+                                               header_len) )
+      {
+        if (NULL == MHD_get_response_element_n_ (response,
+                                                 MHD_HEADER_KIND,
+                                                 MHD_HTTP_HEADER_CONTENT_LENGTH,
+                                                 header_len))
+          response->flags_auto &=
+            ~((enum MHD_ResponseAutoFlags) MHD_RAF_HAS_CONTENT_LENGTH);
+      }
       return MHD_YES;
     }
     pos = pos->next;
@@ -662,13 +819,13 @@ MHD_del_response_header (struct MHD_Response *response,
  * @return number of entries iterated over
  * @ingroup response
  */
-int
+_MHD_EXTERN int
 MHD_get_response_headers (struct MHD_Response *response,
                           MHD_KeyValueIterator iterator,
                           void *iterator_cls)
 {
   int numHeaders = 0;
-  struct MHD_HTTP_Header *pos;
+  struct MHD_HTTP_Res_Header *pos;
 
   for (pos = response->first_header;
        NULL != pos;
@@ -694,11 +851,11 @@ MHD_get_response_headers (struct MHD_Response *response,
  * @return NULL if header does not exist
  * @ingroup response
  */
-const char *
+_MHD_EXTERN const char *
 MHD_get_response_header (struct MHD_Response *response,
                          const char *key)
 {
-  struct MHD_HTTP_Header *pos;
+  struct MHD_HTTP_Res_Header *pos;
   size_t key_size;
 
   if (NULL == key)
@@ -728,13 +885,13 @@ MHD_get_response_header (struct MHD_Response *response,
  * @return NULL if header element does not exist
  * @ingroup response
  */
-struct MHD_HTTP_Header *
+struct MHD_HTTP_Res_Header *
 MHD_get_response_element_n_ (struct MHD_Response *response,
                              enum MHD_ValueKind kind,
                              const char *key,
                              size_t key_len)
 {
-  struct MHD_HTTP_Header *pos;
+  struct MHD_HTTP_Res_Header *pos;
 
   mhd_assert (NULL != key);
   mhd_assert (0 != key[0]);
@@ -776,7 +933,7 @@ MHD_check_response_header_token_ci (const struct MHD_Response *response,
                                     const char *token,
                                     size_t token_len)
 {
-  struct MHD_HTTP_Header *pos;
+  struct MHD_HTTP_Res_Header *pos;
 
   if ( (NULL == key) ||
        ('\0' == key[0]) ||
@@ -806,8 +963,13 @@ MHD_check_response_header_token_ci (const struct MHD_Response *response,
 
 
 /**
- * Create a response object.  The response object can be extended with
- * header information and then be used any number of times.
+ * Create a response object.
+ * The response object can be extended with header information and then be used
+ * any number of times.
+ *
+ * If response object is used to answer HEAD request then the body of the
+ * response is not used, while all headers (including automatic headers) are
+ * used.
  *
  * @param size size of the data portion of the response, #MHD_SIZE_UNKNOWN for unknown
  * @param block_size preferred block size for querying crc (advisory only,
@@ -821,7 +983,7 @@ MHD_check_response_header_token_ci (const struct MHD_Response *response,
  * @return NULL on error (i.e. invalid arguments, out of memory)
  * @ingroup response
  */
-struct MHD_Response *
+_MHD_EXTERN struct MHD_Response *
 MHD_create_response_from_callback (uint64_t size,
                                    size_t block_size,
                                    MHD_ContentReaderCallback crc,
@@ -862,7 +1024,7 @@ MHD_create_response_from_callback (uint64_t size,
  * @param ... #MHD_RO_END terminated list of options
  * @return #MHD_YES on success, #MHD_NO on error
  */
-enum MHD_Result
+_MHD_EXTERN enum MHD_Result
 MHD_set_response_options (struct MHD_Response *response,
                           enum MHD_ResponseFlags flags,
                           ...)
@@ -871,13 +1033,35 @@ MHD_set_response_options (struct MHD_Response *response,
   enum MHD_Result ret;
   enum MHD_ResponseOptions ro;
 
+  if (0 != (response->flags_auto & MHD_RAF_HAS_CONTENT_LENGTH))
+  { /* Response has custom "Content-Lengh" header */
+    if ( (0 != (response->flags & MHD_RF_INSANITY_HEADER_CONTENT_LENGTH)) &&
+         (0 == (flags & MHD_RF_INSANITY_HEADER_CONTENT_LENGTH)))
+    { /* Request to remove MHD_RF_INSANITY_HEADER_CONTENT_LENGTH flag */
+      return MHD_NO;
+    }
+    if ( (0 != (response->flags & MHD_RF_HEAD_ONLY_RESPONSE)) &&
+         (0 == (flags & MHD_RF_HEAD_ONLY_RESPONSE)))
+    { /* Request to remove MHD_RF_HEAD_ONLY_RESPONSE flag */
+      if (0 == (flags & MHD_RF_INSANITY_HEADER_CONTENT_LENGTH))
+        return MHD_NO;
+    }
+  }
+
+  if ( (0 != (flags & MHD_RF_HEAD_ONLY_RESPONSE)) &&
+       (0 != response->total_size) )
+    return MHD_NO;
+
   ret = MHD_YES;
   response->flags = flags;
+
   va_start (ap, flags);
   while (MHD_RO_END != (ro = va_arg (ap, enum MHD_ResponseOptions)))
   {
     switch (ro)
     {
+    case MHD_RO_END: /* Not possible */
+      break;
     default:
       ret = MHD_NO;
       break;
@@ -908,7 +1092,7 @@ file_reader (void *cls,
 #if ! defined(_WIN32) || defined(__CYGWIN__)
   ssize_t n;
 #else  /* _WIN32 && !__CYGWIN__ */
-  const HANDLE fh = (HANDLE) _get_osfhandle (response->fd);
+  const HANDLE fh = (HANDLE) (uintptr_t) _get_osfhandle (response->fd);
 #endif /* _WIN32 && !__CYGWIN__ */
   const int64_t offset64 = (int64_t) (pos + response->fd_off);
 
@@ -996,17 +1180,21 @@ pipe_reader (void *cls,
   ssize_t n;
 
   (void) pos;
+
 #ifndef _WIN32
   if (SSIZE_MAX < max)
     max = SSIZE_MAX;
-#else  /* _WIN32 */
-  if (UINT_MAX < max)
-    max = UINT_MAX;
-#endif /* _WIN32 */
-
   n = read (response->fd,
             buf,
             (MHD_SCKT_SEND_SIZE_) max);
+#else  /* _WIN32 */
+  if (UINT_MAX < max)
+    max = INT_MAX;
+  n = read (response->fd,
+            buf,
+            (unsigned int) max);
+#endif /* _WIN32 */
+
   if (0 == n)
     return MHD_CONTENT_READER_END_OF_STREAM;
   if (n < 0)
@@ -1056,14 +1244,16 @@ free_callback (void *cls)
  * @return NULL on error (i.e. invalid arguments, out of memory)
  * @ingroup response
  */
-struct MHD_Response *
+_MHD_EXTERN struct MHD_Response *
 MHD_create_response_from_fd_at_offset (size_t size,
                                        int fd,
                                        off_t offset)
 {
+  if (0 > offset)
+    return NULL;
   return MHD_create_response_from_fd_at_offset64 (size,
                                                   fd,
-                                                  offset);
+                                                  (uint64_t) offset);
 }
 
 
@@ -1176,7 +1366,7 @@ MHD_create_response_from_pipe (int fd)
  * @return NULL on error (i.e. invalid arguments, out of memory)
  * @ingroup response
  */
-struct MHD_Response *
+_MHD_EXTERN struct MHD_Response *
 MHD_create_response_from_fd (size_t size,
                              int fd)
 {
@@ -1217,77 +1407,40 @@ MHD_create_response_from_fd64 (uint64_t size,
 
 
 /**
- * Create a response object with the content of provided buffer used as
- * the response body.
+ * Create a response object.
+ * The response object can be extended with header information and then be used
+ * any number of times.
  *
- * The response object can be extended with header information and then
- * be used any number of times.
- *
- * If response object is used to answer HEAD request then the body
- * of the response is not used, while all headers (including automatic
- * headers) are used.
+ * If response object is used to answer HEAD request then the body of the
+ * response is not used, while all headers (including automatic headers) are
+ * used.
  *
  * @param size size of the @a data portion of the response
  * @param data the data itself
  * @param must_free libmicrohttpd should free data when done
  * @param must_copy libmicrohttpd must make a copy of @a data
- *        right away, the data maybe released anytime after
+ *        right away, the data may be released anytime after
  *        this call returns
  * @return NULL on error (i.e. invalid arguments, out of memory)
  * @deprecated use #MHD_create_response_from_buffer instead
  * @ingroup response
  */
-struct MHD_Response *
+_MHD_EXTERN struct MHD_Response *
 MHD_create_response_from_data (size_t size,
                                void *data,
                                int must_free,
                                int must_copy)
 {
-  struct MHD_Response *response;
-  void *tmp;
+  enum MHD_ResponseMemoryMode mode;
 
-  if ((NULL == data) && (size > 0))
-    return NULL;
-#if SIZEOF_SIZE_T >= SIZEOF_UINT64_T
-  if (MHD_SIZE_UNKNOWN == size)
-    return NULL;
-#endif /* SIZEOF_SIZE_T >= SIZEOF_UINT64_T */
-  if (NULL == (response = MHD_calloc_ (1, sizeof (struct MHD_Response))))
-    return NULL;
-  response->fd = -1;
-#if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
-  if (! MHD_mutex_init_ (&response->mutex))
-  {
-    free (response);
-    return NULL;
-  }
-#endif
-  if ((must_copy) && (size > 0))
-  {
-    if (NULL == (tmp = malloc (size)))
-    {
-#if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
-      MHD_mutex_destroy_chk_ (&response->mutex);
-#endif
-      free (response);
-      return NULL;
-    }
-    memcpy (tmp, data, size);
-    must_free = MHD_YES;
-    data = tmp;
-  }
-  if (must_free)
-  {
-    response->crfc = &free;
-    response->crc_cls = data;
-  }
-  response->reference_count = 1;
-  response->total_size = size;
-  response->data = data;
-  response->data_size = size;
-  if (must_copy)
-    response->data_buffer_size = size;
-  return response;
+  if (0 != must_copy)
+    mode = MHD_RESPMEM_MUST_COPY;
+  else if (0 != must_free)
+    mode = MHD_RESPMEM_MUST_FREE;
+  else
+    mode = MHD_RESPMEM_PERSISTENT;
+
+  return MHD_create_response_from_buffer (size, data, mode);
 }
 
 
@@ -1308,15 +1461,114 @@ MHD_create_response_from_data (size_t size,
  * @return NULL on error (i.e. invalid arguments, out of memory)
  * @ingroup response
  */
-struct MHD_Response *
+_MHD_EXTERN struct MHD_Response *
 MHD_create_response_from_buffer (size_t size,
                                  void *buffer,
                                  enum MHD_ResponseMemoryMode mode)
 {
-  return MHD_create_response_from_data (size,
-                                        buffer,
-                                        mode == MHD_RESPMEM_MUST_FREE,
-                                        mode == MHD_RESPMEM_MUST_COPY);
+  if (MHD_RESPMEM_MUST_FREE == mode)
+    return MHD_create_response_from_buffer_with_free_callback_cls (size,
+                                                                   buffer,
+                                                                   &free,
+                                                                   buffer);
+  if (MHD_RESPMEM_MUST_COPY == mode)
+    return MHD_create_response_from_buffer_copy (size,
+                                                 buffer);
+
+  return MHD_create_response_from_buffer_with_free_callback_cls (size,
+                                                                 buffer,
+                                                                 NULL,
+                                                                 NULL);
+}
+
+
+/**
+ * Create a response object with the content of provided statically allocated
+ * buffer used as the response body.
+ *
+ * The buffer must be valid for the lifetime of the response. The easiest way
+ * to achieve this is to use a statically allocated buffer.
+ *
+ * The response object can be extended with header information and then
+ * be used any number of times.
+ *
+ * If response object is used to answer HEAD request then the body
+ * of the response is not used, while all headers (including automatic
+ * headers) are used.
+ *
+ * @param size the size of the data in @a buffer, can be zero
+ * @param buffer the buffer with the data for the response body, can be NULL
+ *               if @a size is zero
+ * @return NULL on error (i.e. invalid arguments, out of memory)
+ * @note Available since #MHD_VERSION 0x00097701
+ * @ingroup response
+ */
+_MHD_EXTERN struct MHD_Response *
+MHD_create_response_from_buffer_static (size_t size,
+                                        const void *buffer)
+{
+  return MHD_create_response_from_buffer_with_free_callback_cls (size,
+                                                                 buffer,
+                                                                 NULL,
+                                                                 NULL);
+}
+
+
+/**
+ * Create a response object with the content of provided temporal buffer
+ * used as the response body.
+ *
+ * An internal copy of the buffer will be made automatically, so buffer have
+ * to be valid only during the call of this function (as a typical example:
+ * buffer is a local (non-static) array).
+ *
+ * The response object can be extended with header information and then
+ * be used any number of times.
+ *
+ * If response object is used to answer HEAD request then the body
+ * of the response is not used, while all headers (including automatic
+ * headers) are used.
+ *
+ * @param size the size of the data in @a buffer, can be zero
+ * @param buffer the buffer with the data for the response body, can be NULL
+ *               if @a size is zero
+ * @return NULL on error (i.e. invalid arguments, out of memory)
+ * @note Available since #MHD_VERSION 0x00097701
+ * @ingroup response
+ */
+_MHD_EXTERN struct MHD_Response *
+MHD_create_response_from_buffer_copy (size_t size,
+                                      const void *buffer)
+{
+  struct MHD_Response *r;
+  void *mhd_copy;
+
+  if (0 == size)
+    return MHD_create_response_from_buffer_with_free_callback_cls (0,
+                                                                   NULL,
+                                                                   NULL,
+                                                                   NULL);
+  if (NULL == buffer)
+    return NULL;
+
+  mhd_copy = malloc (size);
+  if (NULL == mhd_copy)
+    return NULL;
+  memcpy (mhd_copy, buffer, size);
+
+  r = MHD_create_response_from_buffer_with_free_callback_cls (size,
+                                                              mhd_copy,
+                                                              &free,
+                                                              mhd_copy);
+  if (NULL == r)
+    free (mhd_copy);
+  else
+  {
+    /* TODO: remove the next assignment, the buffer should not be modifiable */
+    r->data_buffer_size = size;
+  }
+
+  return r;
 }
 
 
@@ -1343,16 +1595,10 @@ MHD_create_response_from_buffer_with_free_callback (size_t size,
                                                     MHD_ContentReaderFreeCallback
                                                     crfc)
 {
-  struct MHD_Response *r;
-
-  r = MHD_create_response_from_data (size,
-                                     buffer,
-                                     MHD_YES,
-                                     MHD_NO);
-  if (NULL == r)
-    return r;
-  r->crfc = crfc;
-  return r;
+  return MHD_create_response_from_buffer_with_free_callback_cls (size,
+                                                                 buffer,
+                                                                 crfc,
+                                                                 buffer);
 }
 
 
@@ -1374,22 +1620,41 @@ MHD_create_response_from_buffer_with_free_callback (size_t size,
  * @param crfc_cls an argument for @a crfc
  * @return NULL on error (i.e. invalid arguments, out of memory)
  * @note Available since #MHD_VERSION 0x00097302
+ * @note 'const' qualifier is used for @a buffer since #MHD_VERSION 0x00097701
  * @ingroup response
  */
 _MHD_EXTERN struct MHD_Response *
 MHD_create_response_from_buffer_with_free_callback_cls (size_t size,
-                                                        void *buffer,
+                                                        const void *buffer,
                                                         MHD_ContentReaderFreeCallback
                                                         crfc,
                                                         void *crfc_cls)
 {
   struct MHD_Response *r;
 
-  r = MHD_create_response_from_buffer_with_free_callback (size,
-                                                          buffer,
-                                                          crfc);
-  if (NULL != r)
-    r->crc_cls = crfc_cls;
+  if ((NULL == buffer) && (size > 0))
+    return NULL;
+#if SIZEOF_SIZE_T >= SIZEOF_UINT64_T
+  if (MHD_SIZE_UNKNOWN == size)
+    return NULL;
+#endif /* SIZEOF_SIZE_T >= SIZEOF_UINT64_T */
+  r = MHD_calloc_ (1, sizeof (struct MHD_Response));
+  if (NULL == r)
+    return NULL;
+#if defined(MHD_USE_THREADS)
+  if (! MHD_mutex_init_ (&r->mutex))
+  {
+    free (r);
+    return NULL;
+  }
+#endif
+  r->fd = -1;
+  r->reference_count = 1;
+  r->total_size = size;
+  r->data = buffer;
+  r->data_size = size;
+  r->crfc = crfc;
+  r->crc_cls = crfc_cls;
   return r;
 }
 
@@ -1461,7 +1726,7 @@ MHD_create_response_from_iovec (const struct MHD_IoVec *iov,
     {
       int64_t i_add;
 
-      i_add = iov[i].iov_len / ULONG_MAX;
+      i_add = (int64_t) (iov[i].iov_len / ULONG_MAX);
       if (0 != iov[i].iov_len % ULONG_MAX)
         i_add++;
       if (INT_MAX < (i_add + i_cp))
@@ -1493,16 +1758,17 @@ MHD_create_response_from_iovec (const struct MHD_IoVec *iov,
   if (1 == i_cp)
   {
     mhd_assert (NULL != last_valid_buffer);
-    response->data = (void *) last_valid_buffer;
+    response->data = last_valid_buffer;
     response->data_size = (size_t) total_size;
     return response;
   }
   mhd_assert (1 < i_cp);
-  {
+  if (1)
+  { /* for local variables local scope only */
     MHD_iovec_ *iov_copy;
     int num_copy_elements = i_cp;
 
-    iov_copy = MHD_calloc_ (num_copy_elements,
+    iov_copy = MHD_calloc_ ((size_t) num_copy_elements, \
                             sizeof(MHD_iovec_));
     if (NULL == iov_copy)
     {
@@ -1521,22 +1787,61 @@ MHD_create_response_from_iovec (const struct MHD_IoVec *iov,
 #if defined(MHD_WINSOCK_SOCKETS) && defined(_WIN64)
       while (MHD_IOV_ELMN_MAX_SIZE < element_size)
       {
-        iov_copy[i_cp].iov_base = (char *) buf;
+        iov_copy[i_cp].iov_base = (char *) _MHD_DROP_CONST (buf);
         iov_copy[i_cp].iov_len = ULONG_MAX;
         buf += ULONG_MAX;
         element_size -= ULONG_MAX;
         i_cp++;
       }
 #endif /* MHD_WINSOCK_SOCKETS && _WIN64 */
-      iov_copy[i_cp].iov_base = (void *) buf;
+      iov_copy[i_cp].iov_base = _MHD_DROP_CONST (buf);
       iov_copy[i_cp].iov_len = (MHD_iov_size_) element_size;
       i_cp++;
     }
     mhd_assert (num_copy_elements == i_cp);
+    mhd_assert (0 <= i_cp);
     response->data_iov = iov_copy;
-    response->data_iovcnt = i_cp;
-    return response;
+    response->data_iovcnt = (unsigned int) i_cp;
   }
+  return response;
+}
+
+
+/**
+ * Create a response object with empty (zero size) body.
+ *
+ * The response object can be extended with header information and then be used
+ * any number of times.
+ *
+ * This function is a faster equivalent of #MHD_create_response_from_buffer call
+ * with zero size combined with call of #MHD_set_response_options.
+ *
+ * @param flags the flags for the new response object
+ * @return NULL on error (i.e. invalid arguments, out of memory),
+ *         the pointer to the created response object otherwise
+ * @note Available since #MHD_VERSION 0x00097701
+ * @ingroup response
+ */
+_MHD_EXTERN struct MHD_Response *
+MHD_create_response_empty (enum MHD_ResponseFlags flags)
+{
+  struct MHD_Response *r;
+  r = (struct MHD_Response *) MHD_calloc_ (1, sizeof (struct MHD_Response));
+  if (NULL != r)
+  {
+    if (MHD_mutex_init_ (&r->mutex))
+    {
+      r->fd = -1;
+      r->reference_count = 1;
+      /* If any flags combination will be not allowed, replace the next
+       * assignment with MHD_set_response_options() call. */
+      r->flags = flags;
+
+      return r; /* Successful result */
+    }
+    free (r);
+  }
+  return NULL; /* Something failed */
 }
 
 
@@ -1628,32 +1933,35 @@ enum MHD_Result
 MHD_response_execute_upgrade_ (struct MHD_Response *response,
                                struct MHD_Connection *connection)
 {
-  struct MHD_Daemon *daemon = connection->daemon;
+#if defined(HTTPS_SUPPORT) || defined(_DEBUG) || defined(HAVE_MESSAGES)
+  struct MHD_Daemon *const daemon = connection->daemon;
+#endif /* HTTPS_SUPPORT || _DEBUG || HAVE_MESSAGES */
   struct MHD_UpgradeResponseHandle *urh;
   size_t rbo;
 
 #ifdef MHD_USE_THREADS
-  mhd_assert ( (0 == (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)) || \
-               MHD_thread_ID_match_current_ (connection->pid) );
+  mhd_assert ( (! MHD_D_IS_USING_THREADS_ (daemon)) || \
+               MHD_thread_handle_ID_is_current_thread_ (connection->tid) );
 #endif /* MHD_USE_THREADS */
 
-  if (0 == (daemon->options & MHD_ALLOW_UPGRADE))
-    return MHD_NO;
+  /* "Upgrade" responses accepted only if MHD_ALLOW_UPGRADE is enabled */
+  mhd_assert (0 != (daemon->options & MHD_ALLOW_UPGRADE));
+  /* The header was checked when response queued */
+  mhd_assert (NULL != \
+              MHD_get_response_element_n_ (response, MHD_HEADER_KIND,
+                                           MHD_HTTP_HEADER_UPGRADE,
+                                           MHD_STATICSTR_LEN_ ( \
+                                             MHD_HTTP_HEADER_UPGRADE)));
 
-  if (NULL ==
-      MHD_get_response_element_n_ (response, MHD_HEADER_KIND,
-                                   MHD_HTTP_HEADER_UPGRADE,
-                                   MHD_STATICSTR_LEN_ ( \
-                                     MHD_HTTP_HEADER_UPGRADE)))
+  if (! connection->sk_nonblck)
   {
 #ifdef HAVE_MESSAGES
     MHD_DLOG (daemon,
-              _ ("Invalid response for upgrade: " \
-                 "application failed to set the 'Upgrade' header!\n"));
+              _ ("Cannot execute \"upgrade\" as the socket is in " \
+                 "the blocking mode.\n"));
 #endif
     return MHD_NO;
   }
-
   urh = MHD_calloc_ (1, sizeof (struct MHD_UpgradeResponseHandle));
   if (NULL == urh)
     return MHD_NO;
@@ -1665,9 +1973,6 @@ MHD_response_execute_upgrade_ (struct MHD_Response *response,
 #ifdef HTTPS_SUPPORT
   if (0 != (daemon->options & MHD_USE_TLS) )
   {
-    struct MemoryPool *pool;
-    size_t avail;
-    char *buf;
     MHD_socket sv[2];
 #if defined(MHD_socket_nosignal_) || ! defined(MHD_socket_pair_nblk_)
     int res1;
@@ -1725,67 +2030,30 @@ MHD_response_execute_upgrade_ (struct MHD_Response *response,
 #endif /* ! MSG_NOSIGNAL */
     }
 #endif /* MHD_socket_nosignal_ */
-    if ( (! MHD_SCKT_FD_FITS_FDSET_ (sv[1],
-                                     NULL)) &&
-         (0 == (daemon->options & (MHD_USE_POLL | MHD_USE_EPOLL))) )
+    if (MHD_D_IS_USING_SELECT_ (daemon) &&
+        (! MHD_D_DOES_SCKT_FIT_FDSET_ (sv[1], daemon)) )
     {
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,
-                _ ("Socketpair descriptor larger than FD_SETSIZE: %d > %d\n"),
+                _ ("Socketpair descriptor is not less than FD_SETSIZE: " \
+                   "%d >= %d\n"),
                 (int) sv[1],
-                (int) FD_SETSIZE);
+                (int) MHD_D_GET_FD_SETSIZE_ (daemon));
 #endif
       MHD_socket_close_chk_ (sv[0]);
       MHD_socket_close_chk_ (sv[1]);
       free (urh);
       return MHD_NO;
     }
-    pool = connection->pool;
-    if (0 != connection->write_buffer_size)
-    {
-      mhd_assert (NULL != connection->write_buffer);
-      /* All data should be sent already */
-      mhd_assert (connection->write_buffer_send_offset == \
-                  connection->write_buffer_append_offset);
-      (void) MHD_pool_reallocate (pool, connection->write_buffer,
-                                  connection->write_buffer_size, 0);
-      connection->write_buffer_append_offset = 0;
-      connection->write_buffer_send_offset = 0;
-      connection->write_buffer_size = 0;
-    }
-    connection->write_buffer = NULL;
     urh->app.socket = sv[0];
     urh->app.urh = urh;
     urh->app.celi = MHD_EPOLL_STATE_UNREADY;
     urh->mhd.socket = sv[1];
     urh->mhd.urh = urh;
     urh->mhd.celi = MHD_EPOLL_STATE_UNREADY;
-    avail = MHD_pool_get_free (pool);
-    if (avail < RESERVE_EBUF_SIZE)
-    {
-      /* connection's pool is totally at the limit,
-         use our 'emergency' buffer of #RESERVE_EBUF_SIZE bytes. */
-      avail = RESERVE_EBUF_SIZE;
-      buf = urh->e_buf;
-    }
-    else
-    {
-      /* Normal case: grab all remaining memory from the
-         connection's pool for the IO buffers; the connection
-         certainly won't need it anymore as we've upgraded
-         to another protocol. */
-      buf = MHD_pool_allocate (pool,
-                               avail,
-                               false);
-    }
-    /* use half the buffer for inbound, half for outbound */
-    urh->in_buffer_size = avail / 2;
-    urh->out_buffer_size = avail - urh->in_buffer_size;
-    urh->in_buffer = buf;
-    urh->out_buffer = &buf[urh->in_buffer_size];
 #ifdef EPOLL_SUPPORT
     /* Launch IO processing by the event loop */
-    if (0 != (daemon->options & MHD_USE_EPOLL))
+    if (MHD_D_IS_USING_EPOLL_ (daemon))
     {
       /* We're running with epoll(), need to add the sockets
          to the event set of the daemon's `epoll_upgrade_fd` */
@@ -1842,7 +2110,7 @@ MHD_response_execute_upgrade_ (struct MHD_Response *response,
       urh->in_eready_list = true;
     }
 #endif /* EPOLL_SUPPORT */
-    if (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION) )
+    if (! MHD_D_IS_USING_THREAD_PER_CONN_ (daemon))
     {
       /* This takes care of further processing for most event loops:
          simply add to DLL for bi-direcitonal processing */
@@ -1873,7 +2141,7 @@ MHD_response_execute_upgrade_ (struct MHD_Response *response,
   /* hand over socket to application */
   response->upgrade_handler (response->upgrade_handler_cls,
                              connection,
-                             connection->client_context,
+                             connection->rq.client_context,
                              connection->read_buffer,
                              rbo,
 #ifdef HTTPS_SUPPORT
@@ -1883,6 +2151,61 @@ MHD_response_execute_upgrade_ (struct MHD_Response *response,
                              connection->socket_fd,
 #endif /* ! HTTPS_SUPPORT */
                              urh);
+
+#ifdef HTTPS_SUPPORT
+  if (0 != (daemon->options & MHD_USE_TLS))
+  {
+    struct MemoryPool *const pool = connection->pool;
+    size_t avail;
+    char *buf;
+
+    /* All data should be sent already */
+    mhd_assert (connection->write_buffer_send_offset == \
+                connection->write_buffer_append_offset);
+    MHD_pool_deallocate (pool, connection->write_buffer,
+                         connection->write_buffer_size);
+    connection->write_buffer_append_offset = 0;
+    connection->write_buffer_send_offset = 0;
+    connection->write_buffer_size = 0;
+    connection->write_buffer = NULL;
+
+    /* Extra read data should be processed already by the application */
+    MHD_pool_deallocate (pool, connection->read_buffer,
+                         connection->read_buffer_size);
+    connection->read_buffer_offset = 0;
+    connection->read_buffer_size = 0;
+    connection->read_buffer = NULL;
+
+    avail = MHD_pool_get_free (pool);
+    if (avail < RESERVE_EBUF_SIZE)
+    {
+      /* connection's pool is totally at the limit,
+         use our 'emergency' buffer of #RESERVE_EBUF_SIZE bytes. */
+      avail = RESERVE_EBUF_SIZE;
+      buf = urh->e_buf;
+#ifdef HAVE_MESSAGES
+      MHD_DLOG (daemon,
+                _ ("Memory shortage in connection's memory pool. " \
+                   "The \"upgraded\" communication will be inefficient.\n"));
+#endif
+    }
+    else
+    {
+      /* Normal case: grab all remaining memory from the
+         connection's pool for the IO buffers; the connection
+         certainly won't need it anymore as we've upgraded
+         to another protocol. */
+      buf = MHD_pool_allocate (pool,
+                               avail,
+                               false);
+    }
+    /* use half the buffer for inbound, half for outbound */
+    urh->in_buffer_size = avail / 2;
+    urh->out_buffer_size = avail - urh->in_buffer_size;
+    urh->in_buffer = buf;
+    urh->out_buffer = buf + urh->in_buffer_size;
+  }
+#endif /* HTTPS_SUPPORT */
   return MHD_YES;
 }
 
@@ -1936,7 +2259,7 @@ MHD_create_response_for_upgrade (MHD_UpgradeHandler upgrade_handler,
 #endif
   response->upgrade_handler = upgrade_handler;
   response->upgrade_handler_cls = upgrade_handler_cls;
-  response->total_size = MHD_SIZE_UNKNOWN;
+  response->total_size = 0;
   response->reference_count = 1;
   if (MHD_NO ==
       MHD_add_response_header (response,
@@ -1962,10 +2285,10 @@ MHD_create_response_for_upgrade (MHD_UpgradeHandler upgrade_handler,
  * @param response response to destroy
  * @ingroup response
  */
-void
+_MHD_EXTERN void
 MHD_destroy_response (struct MHD_Response *response)
 {
-  struct MHD_HTTP_Header *pos;
+  struct MHD_HTTP_Res_Header *pos;
 
   if (NULL == response)
     return;

@@ -51,7 +51,7 @@ ahc_echo (void *cls,
           const char *ver,
           const char *upd,
           size_t *upsz,
-          void **ptr)
+          void **req_cls)
 {
   return MHD_NO;
 }

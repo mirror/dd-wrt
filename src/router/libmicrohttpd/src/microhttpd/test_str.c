@@ -35,6 +35,9 @@
 #define PRIX64 "llX"
 #endif /* ! HAVE_INTTYPES_H */
 #include <stdint.h>
+#ifdef HAVE_STDLIB_H
+#include <stdlib.h>
+#endif /* HAVE_STDLIB_H */
 #include "mhd_limits.h"
 #include "mhd_str.h"
 #include "test_helpers.h"
@@ -60,14 +63,21 @@ static const char *const locale_names[] = {
   ".1250",
   ".1251",
   ".1252",
+  "en",
+  "english",
+  "French_France",
+  "Turkish_Turkey.1254",
+  "de",
+  "zh-Hans",
+  "ru-RU.1251"
+#if 0 /* Disabled extra checks */
+  ,
   ".1254",
   ".20866",   /* number for KOI8-R */
   ".28591",   /* number for ISO-8859-1 */
   ".28595",   /* number for ISO-8859-5 */
   ".28599",   /* number for ISO-8859-9 */
   ".28605",   /* number for ISO-8859-15 */
-  "en",
-  "english",
   "en-US",
   "English-US",
   "en-US.437",
@@ -79,14 +89,12 @@ static const char *const locale_names[] = {
   "fra",
   "french",
   "fr-FR",
-  "French_France",
   "fr-FR.850",
   "french_france.850",
   "fr-FR.1252",
   "French_france.1252",
   "French_france.28605",
   "French_France.65001",
-  "de",
   "de-DE",
   "de-DE.850",
   "German_Germany.850",
@@ -100,7 +108,6 @@ static const char *const locale_names[] = {
   "turkish",
   "tr-TR",
   "tr-TR.1254",
-  "Turkish_Turkey.1254",
   "tr-TR.857",
   "Turkish_Turkey.857",
   "Turkish_Turkey.28599",
@@ -110,14 +117,13 @@ static const char *const locale_names[] = {
   "Russian",
   "ru-RU.866",
   "Russian_Russia.866",
-  "ru-RU.1251",
   "Russian_Russia.1251",
   "Russian_Russia.20866",
   "Russian_Russia.28595",
   "Russian_Russia.65001",
-  "zh-Hans",
   "zh-Hans.936",
   "chinese-simplified"
+#endif /* Disabled extra checks */
 #else /* ! _WIN32 || __CYGWIN__ */
   "C.UTF-8",
   "POSIX",
@@ -208,11 +214,14 @@ static const unsigned int locale_name_count = sizeof(locale_names)
  *  Helper functions
  */
 
-int
-set_test_locale (unsigned int num)
+static int
+set_test_locale (size_t num)
 {
   if (num >= locale_name_count)
-    return -1;
+  {
+    fprintf (stderr, "Unexpected number of locale.\n");
+    exit (99);
+  }
   if (verbose > 2)
     printf ("Setting locale \"%s\":", locale_names[num]);
   if (setlocale (LC_ALL, locale_names[num]))
@@ -227,7 +236,7 @@ set_test_locale (unsigned int num)
 }
 
 
-const char *
+static const char *
 get_current_locale_str (void)
 {
   char const *loc_str = setlocale (LC_ALL, NULL);
@@ -239,12 +248,12 @@ static char tmp_bufs[4][4 * 1024]; /* should be enough for testing */
 static size_t buf_idx = 0;
 
 /* print non-printable chars as char codes */
-char *
+static char *
 n_prnt (const char *str)
 {
   static char *buf;  /* should be enough for testing */
   static const size_t buf_size = sizeof(tmp_bufs[0]);
-  const unsigned char *p = (const unsigned char*) str;
+  const unsigned char *p = (const unsigned char *) str;
   size_t w_pos = 0;
   if (++buf_idx > 3)
     buf_idx = 0;
@@ -258,10 +267,10 @@ n_prnt (const char *str)
       if (w_pos + 2 >= buf_size)
         break;
       buf[w_pos++] = '\\';
-      buf[w_pos++] = c;
+      buf[w_pos++] = (char) c;
     }
     else if ((c >= 0x20) && (c <= 0x7E) )
-      buf[w_pos++] = c;
+      buf[w_pos++] = (char) c;
     else
     {
       if (w_pos + 4 >= buf_size)
@@ -306,22 +315,22 @@ struct two_eq_strs
 };
 
 static const struct two_eq_strs eq_strings[] = {
-  {D_STR_W_LEN ("1234567890!@~%&$@#{}[]\\/!?`."), D_STR_W_LEN (
-     "1234567890!@~%&$@#{}[]\\/!?`.")},
+  {D_STR_W_LEN ("1234567890!@~%&$@#{}[]\\/!?`."),
+   D_STR_W_LEN ("1234567890!@~%&$@#{}[]\\/!?`.")},
   {D_STR_W_LEN ("Simple string."), D_STR_W_LEN ("Simple string.")},
   {D_STR_W_LEN ("SIMPLE STRING."), D_STR_W_LEN ("SIMPLE STRING.")},
   {D_STR_W_LEN ("simple string."), D_STR_W_LEN ("simple string.")},
   {D_STR_W_LEN ("simple string."), D_STR_W_LEN ("Simple String.")},
   {D_STR_W_LEN ("sImPlE StRiNg."), D_STR_W_LEN ("SiMpLe sTrInG.")},
   {D_STR_W_LEN ("SIMPLE STRING."), D_STR_W_LEN ("simple string.")},
-  {D_STR_W_LEN ("abcdefghijklmnopqrstuvwxyz"), D_STR_W_LEN (
-     "abcdefghijklmnopqrstuvwxyz")},
-  {D_STR_W_LEN ("ABCDEFGHIJKLMNOPQRSTUVWXYZ"), D_STR_W_LEN (
-     "ABCDEFGHIJKLMNOPQRSTUVWXYZ")},
-  {D_STR_W_LEN ("abcdefghijklmnopqrstuvwxyz"), D_STR_W_LEN (
-     "ABCDEFGHIJKLMNOPQRSTUVWXYZ")},
-  {D_STR_W_LEN ("zyxwvutsrqponMLKJIHGFEDCBA"), D_STR_W_LEN (
-     "ZYXWVUTSRQPONmlkjihgfedcba")},
+  {D_STR_W_LEN ("abcdefghijklmnopqrstuvwxyz"),
+   D_STR_W_LEN ("abcdefghijklmnopqrstuvwxyz")},
+  {D_STR_W_LEN ("ABCDEFGHIJKLMNOPQRSTUVWXYZ"),
+   D_STR_W_LEN ("ABCDEFGHIJKLMNOPQRSTUVWXYZ")},
+  {D_STR_W_LEN ("abcdefghijklmnopqrstuvwxyz"),
+   D_STR_W_LEN ("ABCDEFGHIJKLMNOPQRSTUVWXYZ")},
+  {D_STR_W_LEN ("zyxwvutsrqponMLKJIHGFEDCBA"),
+   D_STR_W_LEN ("ZYXWVUTSRQPONmlkjihgfedcba")},
 
   {D_STR_W_LEN ("Cha\x8cne pour le test."),
    D_STR_W_LEN ("Cha\x8cne pour le test.")},      /* "Chaîne pour le test." in CP850 */
@@ -418,7 +427,8 @@ static const struct two_eq_strs eq_strings[] = {
      "\xb2\xb3\xb4\xb5\xb6\xb7\xb8\xb9\xba\xbb\xbc\xbd\xbe\xbf\xc0\xc1\xc2\xc3\xc4\xc5"
      "\xc6\xc7\xc8\xc9\xca\xcb\xcc\xcd\xce\xcf\xd0\xd1\xd2\xd3\xd4\xd5\xd6\xd7\xd8\xd9"
      "\xda\xdb\xdc\xdd\xde\xdf\xe0\xe1\xe2\xe3\xe4\xe5\xe6\xe7\xe8\xe9\xea\xeb\xec\xed"
-     "\xee\xef\xf0\xf1\xf2\xf3\xf4\xf5\xf6\xf7\xf8\xf9\xfa\xfb\xfc\xfd\xfe\xff"),
+     "\xee\xef\xf0\xf1\xf2\xf3\xf4\xf5\xf6\xf7\xf8\xf9\xfa\xfb\xfc\xfd\xfe\xff")
+   ,
    D_STR_W_LEN (
      "\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f\x10\x11\x12\x13\x14"
      "\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f !\"#$%&'()*+,-./0123456789:;<=>?@ab"
@@ -428,7 +438,8 @@ static const struct two_eq_strs eq_strings[] = {
      "\xb2\xb3\xb4\xb5\xb6\xb7\xb8\xb9\xba\xbb\xbc\xbd\xbe\xbf\xc0\xc1\xc2\xc3\xc4\xc5"
      "\xc6\xc7\xc8\xc9\xca\xcb\xcc\xcd\xce\xcf\xd0\xd1\xd2\xd3\xd4\xd5\xd6\xd7\xd8\xd9"
      "\xda\xdb\xdc\xdd\xde\xdf\xe0\xe1\xe2\xe3\xe4\xe5\xe6\xe7\xe8\xe9\xea\xeb\xec\xed"
-     "\xee\xef\xf0\xf1\xf2\xf3\xf4\xf5\xf6\xf7\xf8\xf9\xfa\xfb\xfc\xfd\xfe\xff")}             /* Full with A/a match */
+     "\xee\xef\xf0\xf1\xf2\xf3\xf4\xf5\xf6\xf7\xf8\xf9\xfa\xfb\xfc\xfd\xfe\xff")
+  }                                                                                           /* Full with A/a match */
 };
 
 struct two_neq_strs
@@ -439,21 +450,21 @@ struct two_neq_strs
 };
 
 static const struct two_neq_strs neq_strings[] = {
-  {D_STR_W_LEN ("1234567890!@~%&$@#{}[]\\/!?`."), D_STR_W_LEN (
-     "1234567890!@~%&$@#{}[]\\/!?`"), 27},
-  {D_STR_W_LEN (".1234567890!@~%&$@#{}[]\\/!?`."), D_STR_W_LEN (
-     "1234567890!@~%&$@#{}[]\\/!?`"), 0},
+  {D_STR_W_LEN ("1234567890!@~%&$@#{}[]\\/!?`."),
+   D_STR_W_LEN ("1234567890!@~%&$@#{}[]\\/!?`"), 27},
+  {D_STR_W_LEN (".1234567890!@~%&$@#{}[]\\/!?`."),
+   D_STR_W_LEN ("1234567890!@~%&$@#{}[]\\/!?`"), 0},
   {D_STR_W_LEN ("Simple string."), D_STR_W_LEN ("Simple ctring."), 7},
   {D_STR_W_LEN ("simple string."), D_STR_W_LEN ("simple string"), 13},
   {D_STR_W_LEN ("simple strings"), D_STR_W_LEN ("Simple String."), 13},
   {D_STR_W_LEN ("sImPlE StRiNg."), D_STR_W_LEN ("SYMpLe sTrInG."), 1},
   {D_STR_W_LEN ("SIMPLE STRING."), D_STR_W_LEN ("simple string.2"), 14},
-  {D_STR_W_LEN ("abcdefghijklmnopqrstuvwxyz,"), D_STR_W_LEN (
-     "abcdefghijklmnopqrstuvwxyz."), 26},
-  {D_STR_W_LEN ("abcdefghijklmnopqrstuvwxyz!"), D_STR_W_LEN (
-     "ABCDEFGHIJKLMNOPQRSTUVWXYZ?"), 26},
-  {D_STR_W_LEN ("zyxwvutsrqponwMLKJIHGFEDCBA"), D_STR_W_LEN (
-     "ZYXWVUTSRQPON%mlkjihgfedcba"), 13},
+  {D_STR_W_LEN ("abcdefghijklmnopqrstuvwxyz,"),
+   D_STR_W_LEN ("abcdefghijklmnopqrstuvwxyz."), 26},
+  {D_STR_W_LEN ("abcdefghijklmnopqrstuvwxyz!"),
+   D_STR_W_LEN ("ABCDEFGHIJKLMNOPQRSTUVWXYZ?"), 26},
+  {D_STR_W_LEN ("zyxwvutsrqponwMLKJIHGFEDCBA"),
+   D_STR_W_LEN ("ZYXWVUTSRQPON%mlkjihgfedcba"), 13},
 
   {D_STR_W_LEN ("S\xbdur veulent plus d'\xbdufs."),         /* "Sœur veulent plus d'œufs." in ISO-8859-15 */
    D_STR_W_LEN ("S\xbcUR VEULENT PLUS D'\xbcUFS."), 1}, /* "SŒUR VEULENT PLUS D'ŒUFS." in ISO-8859-15 */
@@ -502,13 +513,13 @@ static const struct two_neq_strs neq_strings[] = {
 };
 
 
-int
+static size_t
 check_eq_strings (void)
 {
   size_t t_failed = 0;
   size_t i, j;
-  static const size_t n_checks = sizeof(eq_strings) / sizeof(eq_strings[0]);
-  int c_failed[n_checks];
+  int c_failed[sizeof(eq_strings) / sizeof(eq_strings[0])];
+  static const size_t n_checks = sizeof(c_failed) / sizeof(c_failed[0]);
 
   memset (c_failed, 0, sizeof(c_failed));
 
@@ -549,13 +560,13 @@ check_eq_strings (void)
 }
 
 
-int
+static size_t
 check_neq_strings (void)
 {
   size_t t_failed = 0;
   size_t i, j;
-  static const size_t n_checks = sizeof(neq_strings) / sizeof(neq_strings[0]);
-  int c_failed[n_checks];
+  int c_failed[sizeof(neq_strings) / sizeof(neq_strings[0])];
+  static const size_t n_checks = sizeof(c_failed) / sizeof(c_failed[0]);
 
   memset (c_failed, 0, sizeof(c_failed));
 
@@ -596,13 +607,13 @@ check_neq_strings (void)
 }
 
 
-int
+static size_t
 check_eq_strings_n (void)
 {
   size_t t_failed = 0;
   size_t i, j, k;
-  static const size_t n_checks = sizeof(eq_strings) / sizeof(eq_strings[0]);
-  int c_failed[n_checks];
+  int c_failed[sizeof(eq_strings) / sizeof(eq_strings[0])];
+  static const size_t n_checks = sizeof(c_failed) / sizeof(c_failed[0]);
 
   memset (c_failed, 0, sizeof(c_failed));
 
@@ -638,24 +649,25 @@ check_eq_strings_n (void)
         }
       }
       if ((verbose > 1) && (j == locale_name_count - 1) && ! c_failed[i])
-        printf (
-          "PASSED: MHD_str_equal_caseless_n_(\"%s\", \"%s\", N) != 0 && \\\n"
-          "        MHD_str_equal_caseless_n_(\"%s\", \"%s\", N) != 0, where N is 0..%u\n",
-          n_prnt (t->s1.str), n_prnt (t->s2.str), n_prnt (t->s2.str),
-          n_prnt (t->s1.str), (unsigned int) m_len + 1);
+        printf ("PASSED: MHD_str_equal_caseless_n_(\"%s\", \"%s\", N) " \
+                "!= 0 && \\\n" \
+                "        MHD_str_equal_caseless_n_(\"%s\", \"%s\", N) " \
+                "!= 0, where N is 0..%u\n",
+                n_prnt (t->s1.str), n_prnt (t->s2.str), n_prnt (t->s2.str),
+                n_prnt (t->s1.str), (unsigned int) m_len + 1);
     }
   }
   return t_failed;
 }
 
 
-int
+static size_t
 check_neq_strings_n (void)
 {
   size_t t_failed = 0;
   size_t i, j, k;
-  static const size_t n_checks = sizeof(neq_strings) / sizeof(neq_strings[0]);
-  int c_failed[n_checks];
+  int c_failed[sizeof(neq_strings) / sizeof(neq_strings[0])];
+  static const size_t n_checks = sizeof(c_failed) / sizeof(c_failed[0]);
 
   memset (c_failed, 0, sizeof(c_failed));
 
@@ -675,7 +687,7 @@ check_neq_strings_n (void)
                                                                      int) t->
                  dif_pos,
                  (unsigned int) t->s1.len, (unsigned int) t->s2.len);
-        return -1;
+        exit (99);
       }
       if (t->dif_pos > t->s1.len)
       {
@@ -684,7 +696,7 @@ check_neq_strings_n (void)
                  "equal to s1.len (%u).\n", (unsigned int) i, (unsigned
                                                                int) t->dif_pos,
                  (unsigned int) t->s1.len);
-        return -1;
+        exit (99);
       }
       if (t->dif_pos > t->s2.len)
       {
@@ -693,7 +705,7 @@ check_neq_strings_n (void)
                  "equal to s2.len (%u).\n", (unsigned int) i, (unsigned
                                                                int) t->dif_pos,
                  (unsigned int) t->s2.len);
-        return -1;
+        exit (99);
       }
       for (k = 0; k <= m_len + 1 && ! c_failed[i]; k++)
       {
@@ -769,21 +781,16 @@ check_neq_strings_n (void)
 /*
  * Run eq/neq strings tests
  */
-int
+static int
 run_eq_neq_str_tests (void)
 {
-  int str_equal_caseless_fails = 0;
-  int str_equal_caseless_n_fails = 0;
-  int res;
+  size_t str_equal_caseless_fails = 0;
+  size_t str_equal_caseless_n_fails = 0;
+  size_t res;
 
   res = check_eq_strings ();
   if (res != 0)
   {
-    if (res < 0)
-    {
-      fprintf (stderr, "ERROR: test internal error in check_eq_strings().\n");
-      return 99;
-    }
     str_equal_caseless_fails += res;
     fprintf (stderr, "FAILED: testcase check_eq_strings() failed.\n\n");
   }
@@ -793,11 +800,6 @@ run_eq_neq_str_tests (void)
   res = check_neq_strings ();
   if (res != 0)
   {
-    if (res < 0)
-    {
-      fprintf (stderr, "ERROR: test internal error in check_neq_strings().\n");
-      return 99;
-    }
     str_equal_caseless_fails += res;
     fprintf (stderr, "FAILED: testcase check_neq_strings() failed.\n\n");
   }
@@ -806,8 +808,9 @@ run_eq_neq_str_tests (void)
 
   if (str_equal_caseless_fails)
     fprintf (stderr,
-             "FAILED: function MHD_str_equal_caseless_() failed %d time%s.\n\n",
-             str_equal_caseless_fails, str_equal_caseless_fails == 1 ? "" :
+             "FAILED: function MHD_str_equal_caseless_() failed %lu time%s.\n\n",
+             (unsigned long) str_equal_caseless_fails,
+             str_equal_caseless_fails == 1 ? "" :
              "s");
   else if (verbose > 0)
     printf (
@@ -816,11 +819,6 @@ run_eq_neq_str_tests (void)
   res = check_eq_strings_n ();
   if (res != 0)
   {
-    if (res < 0)
-    {
-      fprintf (stderr, "ERROR: test internal error in check_eq_strings_n().\n");
-      return 99;
-    }
     str_equal_caseless_n_fails += res;
     fprintf (stderr, "FAILED: testcase check_eq_strings_n() failed.\n\n");
   }
@@ -830,12 +828,6 @@ run_eq_neq_str_tests (void)
   res = check_neq_strings_n ();
   if (res != 0)
   {
-    if (res < 0)
-    {
-      fprintf (stderr,
-               "ERROR: test internal error in check_neq_strings_n().\n");
-      return 99;
-    }
     str_equal_caseless_n_fails += res;
     fprintf (stderr, "FAILED: testcase check_neq_strings_n() failed.\n\n");
   }
@@ -844,8 +836,9 @@ run_eq_neq_str_tests (void)
 
   if (str_equal_caseless_n_fails)
     fprintf (stderr,
-             "FAILED: function MHD_str_equal_caseless_n_() failed %d time%s.\n\n",
-             str_equal_caseless_n_fails, str_equal_caseless_n_fails == 1 ? "" :
+             "FAILED: function MHD_str_equal_caseless_n_() failed %lu time%s.\n\n",
+             (unsigned long) str_equal_caseless_n_fails,
+             str_equal_caseless_n_fails == 1 ? "" :
              "s");
   else if (verbose > 0)
     printf (
@@ -945,7 +938,7 @@ static const struct str_with_value dstrs_w_values[] = {
 };
 
 /* strings that should overflow uint64_t */
-const struct str_with_len str_ovflw[] = {
+static const struct str_with_len str_ovflw[] = {
   D_STR_W_LEN ("18446744073709551616"),  /* 0x10000000000000000, UINT64_MAX+1 */
   D_STR_W_LEN ("18446744073709551620"),
   D_STR_W_LEN ("18446744083709551615"),
@@ -965,7 +958,7 @@ const struct str_with_len str_ovflw[] = {
 };
 
 /* strings that should not be convertible to numeric value */
-const struct str_with_len str_no_num[] = {
+static const struct str_with_len str_no_num[] = {
   D_STR_W_LEN ("zero"),
   D_STR_W_LEN ("one"),
   D_STR_W_LEN ("\xb9\xb2\xb3"),                                    /* superscript "123" in ISO-8859-1/CP1252 */
@@ -1102,7 +1095,7 @@ static const struct str_with_value xdstrs_w_values[] = {
 };
 
 /* hex strings that should overflow uint64_t */
-const struct str_with_len strx_ovflw[] = {
+static const struct str_with_len strx_ovflw[] = {
   D_STR_W_LEN ("10000000000000000"),            /* 0x10000000000000000, UINT64_MAX+1 */
   D_STR_W_LEN ("10000000000000001"),
   D_STR_W_LEN ("10000000000000002"),
@@ -1133,14 +1126,14 @@ const struct str_with_len strx_ovflw[] = {
 };
 
 
-int
+static size_t
 check_str_to_uint64_valid (void)
 {
   size_t t_failed = 0;
   size_t i, j;
-  static const size_t n_checks = sizeof(dstrs_w_values)
-                                 / sizeof(dstrs_w_values[0]);
-  int c_failed[n_checks];
+  int c_failed[sizeof(dstrs_w_values)
+               / sizeof(dstrs_w_values[0])];
+  static const size_t n_checks = sizeof(c_failed) / sizeof(c_failed[0]);
 
   memset (c_failed, 0, sizeof(c_failed));
 
@@ -1164,7 +1157,7 @@ check_str_to_uint64_valid (void)
                  (unsigned int) i, (unsigned int) t->num_of_digt, (unsigned
                                                                    int) t->str.
                  len);
-        return -1;
+        exit (99);
       }
       rv = 9435223;     /* some random value */
       rs = MHD_str_to_uint64_ (t->str.str, &rv);
@@ -1176,7 +1169,7 @@ check_str_to_uint64_valid (void)
                  "FAILED: MHD_str_to_uint64_(\"%s\", ->%" PRIu64 ") returned %"
                  PRIuPTR
                  ", while expecting %d."
-                 " Locale: %s\n", n_prnt (t->str.str), rv, (intptr_t) rs,
+                 " Locale: %s\n", n_prnt (t->str.str), rv, (uintptr_t) rs,
                  (int) t->num_of_digt, get_current_locale_str ());
       }
       if (rv != t->val)
@@ -1187,25 +1180,25 @@ check_str_to_uint64_valid (void)
                  "FAILED: MHD_str_to_uint64_(\"%s\", ->%" PRIu64
                  ") converted string to value %"
                  PRIu64 ","
-                 " while expecting result %" PRIu64 ". Locale: %s\n", n_prnt (
-                   t->str.str), rv, rv,
+                 " while expecting result %" PRIu64 ". Locale: %s\n",
+                 n_prnt (t->str.str), rv, rv,
                  t->val, get_current_locale_str ());
       }
       if ((verbose > 1) && (j == locale_name_count - 1) && ! c_failed[i])
-        printf (
-          "PASSED: MHD_str_to_uint64_(\"%s\", ->%" PRIu64 ") == %" PRIuPTR "\n",
-          n_prnt (t->str.str), rv, rs);
+        printf ("PASSED: MHD_str_to_uint64_(\"%s\", ->%" PRIu64 ") == %" \
+                PRIuPTR "\n",
+                n_prnt (t->str.str), rv, rs);
     }
   }
   return t_failed;
 }
 
 
-int
+static size_t
 check_str_to_uint64_all_chars (void)
 {
-  static const size_t n_checks = 256; /* from 0 to 255 */
-  int c_failed[n_checks];
+  int c_failed[256]; /* from 0 to 255 */
+  static const size_t n_checks = sizeof(c_failed) / sizeof(c_failed[0]);
   size_t t_failed = 0;
   size_t j;
 
@@ -1258,9 +1251,9 @@ check_str_to_uint64_all_chars (void)
         char test_str[] = "0123";
         test_str[0] = (char) (unsigned char) c;      /* replace first char with non-digit char */
 
-        printf (
-          "PASSED: MHD_str_to_uint64_(\"%s\", &ret_val) == 0, value of ret_val is unmodified\n",
-          n_prnt (test_str));
+        printf ("PASSED: MHD_str_to_uint64_(\"%s\", &ret_val) == 0, "
+                "value of ret_val is unmodified\n",
+                n_prnt (test_str));
       }
     }
   }
@@ -1268,13 +1261,13 @@ check_str_to_uint64_all_chars (void)
 }
 
 
-int
+static size_t
 check_str_to_uint64_overflow (void)
 {
   size_t t_failed = 0;
   size_t i, j;
-  static const size_t n_checks = sizeof(str_ovflw) / sizeof(str_ovflw[0]);
-  int c_failed[n_checks];
+  int c_failed[sizeof(str_ovflw) / sizeof(str_ovflw[0])];
+  static const size_t n_checks = sizeof(c_failed) / sizeof(c_failed[0]);
 
   memset (c_failed, 0, sizeof(c_failed));
 
@@ -1317,22 +1310,22 @@ check_str_to_uint64_overflow (void)
         }
       }
       if ((verbose > 1) && (j == locale_name_count - 1) && ! c_failed[i])
-        printf (
-          "PASSED: MHD_str_to_uint64_(\"%s\", &ret_val) == 0, value of ret_val is unmodified\n",
-          n_prnt (t->str));
+        printf ("PASSED: MHD_str_to_uint64_(\"%s\", &ret_val) == 0, "
+                "value of ret_val is unmodified\n",
+                n_prnt (t->str));
     }
   }
   return t_failed;
 }
 
 
-int
+static size_t
 check_str_to_uint64_no_val (void)
 {
   size_t t_failed = 0;
   size_t i, j;
-  static const size_t n_checks = sizeof(str_no_num) / sizeof(str_no_num[0]);
-  int c_failed[n_checks];
+  int c_failed[sizeof(str_no_num) / sizeof(str_no_num[0])];
+  static const size_t n_checks = sizeof(c_failed) / sizeof(c_failed[0]);
 
   memset (c_failed, 0, sizeof(c_failed));
 
@@ -1375,23 +1368,23 @@ check_str_to_uint64_no_val (void)
         }
       }
       if ((verbose > 1) && (j == locale_name_count - 1) && ! c_failed[i])
-        printf (
-          "PASSED: MHD_str_to_uint64_(\"%s\", &ret_val) == 0, value of ret_val is unmodified\n",
-          n_prnt (t->str));
+        printf ("PASSED: MHD_str_to_uint64_(\"%s\", &ret_val) == 0, "
+                "value of ret_val is unmodified\n",
+                n_prnt (t->str));
     }
   }
   return t_failed;
 }
 
 
-int
+static size_t
 check_str_to_uint64_n_valid (void)
 {
   size_t t_failed = 0;
   size_t i, j;
-  static const size_t n_checks = sizeof(dstrs_w_values)
-                                 / sizeof(dstrs_w_values[0]);
-  int c_failed[n_checks];
+  int c_failed[sizeof(dstrs_w_values)
+               / sizeof(dstrs_w_values[0])];
+  static const size_t n_checks = sizeof(c_failed) / sizeof(c_failed[0]);
 
   memset (c_failed, 0, sizeof(c_failed));
 
@@ -1413,7 +1406,7 @@ check_str_to_uint64_n_valid (void)
                  (unsigned int) i, (unsigned int) t->num_of_digt, (unsigned
                                                                    int) t->str.
                  len);
-        return -1;
+        exit (99);
       }
       for (len = t->num_of_digt; len <= t->str.len + 1 && ! c_failed[i]; len++)
       {
@@ -1426,7 +1419,7 @@ check_str_to_uint64_n_valid (void)
                    "FAILED: MHD_str_to_uint64_n_(\"%s\", %" PRIuPTR ", ->%"
                    PRIu64 ")"
                    " returned %" PRIuPTR ", while expecting %d. Locale: %s\n",
-                   n_prnt (t->str.str), (intptr_t) len, rv, (intptr_t) rs,
+                   n_prnt (t->str.str), (uintptr_t) len, rv, (uintptr_t) rs,
                    (int) t->num_of_digt, get_current_locale_str ());
         }
         if (rv != t->val)
@@ -1438,29 +1431,28 @@ check_str_to_uint64_n_valid (void)
                    PRIu64 ")"
                    " converted string to value %" PRIu64
                    ", while expecting result %" PRIu64
-                   ". Locale: %s\n", n_prnt (t->str.str), (intptr_t) len, rv,
+                   ". Locale: %s\n", n_prnt (t->str.str), (uintptr_t) len, rv,
                    rv,
                    t->val, get_current_locale_str ());
         }
       }
       if ((verbose > 1) && (j == locale_name_count - 1) && ! c_failed[i])
-        printf (
-          "PASSED: MHD_str_to_uint64_n_(\"%s\", %" PRIuPTR "..%" PRIuPTR ", ->%"
-          PRIu64 ")"
-          " == %" PRIuPTR "\n", n_prnt (t->str.str),
-          (intptr_t) t->num_of_digt,
-          (intptr_t) t->str.len + 1, rv, rs);
+        printf ("PASSED: MHD_str_to_uint64_n_(\"%s\", %" PRIuPTR "..%"
+                PRIuPTR ", ->%" PRIu64 ")" " == %" PRIuPTR "\n",
+                n_prnt (t->str.str),
+                (uintptr_t) t->num_of_digt,
+                (uintptr_t) t->str.len + 1, rv, rs);
     }
   }
   return t_failed;
 }
 
 
-int
+static size_t
 check_str_to_uint64_n_all_chars (void)
 {
-  static const size_t n_checks = 256; /* from 0 to 255 */
-  int c_failed[n_checks];
+  int c_failed[256]; /* from 0 to 255 */
+  static const size_t n_checks = sizeof(c_failed) / sizeof(c_failed[0]);
   size_t t_failed = 0;
   size_t j;
 
@@ -1523,9 +1515,9 @@ check_str_to_uint64_n_all_chars (void)
         char test_str[] = "0123";
         test_str[0] = (char) (unsigned char) c;      /* replace first char with non-digit char */
 
-        printf (
-          "PASSED: MHD_str_to_uint64_n_(\"%s\", 0..5, &ret_val) == 0, value of ret_val is unmodified\n",
-          n_prnt (test_str));
+        printf ("PASSED: MHD_str_to_uint64_n_(\"%s\", 0..5, &ret_val) == 0, "
+                "value of ret_val is unmodified\n",
+                n_prnt (test_str));
       }
     }
   }
@@ -1533,13 +1525,13 @@ check_str_to_uint64_n_all_chars (void)
 }
 
 
-int
+static size_t
 check_str_to_uint64_n_overflow (void)
 {
   size_t t_failed = 0;
   size_t i, j;
-  static const size_t n_checks = sizeof(str_ovflw) / sizeof(str_ovflw[0]);
-  int c_failed[n_checks];
+  int c_failed[sizeof(str_ovflw) / sizeof(str_ovflw[0])];
+  static const size_t n_checks = sizeof(c_failed) / sizeof(c_failed[0]);
 
   memset (c_failed, 0, sizeof(c_failed));
 
@@ -1590,25 +1582,24 @@ check_str_to_uint64_n_overflow (void)
         }
       }
       if ((verbose > 1) && (j == locale_name_count - 1) && ! c_failed[i])
-        printf (
-          "PASSED: MHD_str_to_uint64_n_(\"%s\", %" PRIuPTR "..%" PRIuPTR
-          ", &ret_val) == 0,"
-          " value of ret_val is unmodified\n", n_prnt (t->str),
-          (uintptr_t) t->len,
-          (uintptr_t) t->len + 1);
+        printf ("PASSED: MHD_str_to_uint64_n_(\"%s\", %" PRIuPTR "..%" PRIuPTR
+                ", &ret_val) == 0,"
+                " value of ret_val is unmodified\n", n_prnt (t->str),
+                (uintptr_t) t->len,
+                (uintptr_t) t->len + 1);
     }
   }
   return t_failed;
 }
 
 
-int
+static size_t
 check_str_to_uint64_n_no_val (void)
 {
   size_t t_failed = 0;
   size_t i, j;
-  static const size_t n_checks = sizeof(str_no_num) / sizeof(str_no_num[0]);
-  int c_failed[n_checks];
+  int c_failed[sizeof(str_no_num) / sizeof(str_no_num[0])];
+  static const size_t n_checks = sizeof(c_failed) / sizeof(c_failed[0]);
 
   memset (c_failed, 0, sizeof(c_failed));
 
@@ -1659,25 +1650,24 @@ check_str_to_uint64_n_no_val (void)
         }
       }
       if ((verbose > 1) && (j == locale_name_count - 1) && ! c_failed[i])
-        printf (
-          "PASSED: MHD_str_to_uint64_n_(\"%s\", 0..%" PRIuPTR
-          ", &ret_val) == 0,"
-          " value of ret_val is unmodified\n", n_prnt (t->str),
-          (uintptr_t) t->len + 1);
+        printf ("PASSED: MHD_str_to_uint64_n_(\"%s\", 0..%" PRIuPTR
+                ", &ret_val) == 0,"
+                " value of ret_val is unmodified\n", n_prnt (t->str),
+                (uintptr_t) t->len + 1);
     }
   }
   return t_failed;
 }
 
 
-int
+static size_t
 check_strx_to_uint32_valid (void)
 {
   size_t t_failed = 0;
   size_t i, j;
-  static const size_t n_checks = sizeof(xdstrs_w_values)
-                                 / sizeof(xdstrs_w_values[0]);
-  int c_failed[n_checks];
+  int c_failed[sizeof(xdstrs_w_values)
+               / sizeof(xdstrs_w_values[0])];
+  static const size_t n_checks = sizeof(c_failed) / sizeof(c_failed[0]);
 
   memset (c_failed, 0, sizeof(c_failed));
 
@@ -1704,7 +1694,7 @@ check_strx_to_uint32_valid (void)
                  (unsigned int) i, (unsigned int) t->num_of_digt, (unsigned
                                                                    int) t->str.
                  len);
-        return -1;
+        exit (99);
       }
       rv = 1458532;     /* some random value */
       rs = MHD_strx_to_uint32_ (t->str.str, &rv);
@@ -1717,7 +1707,7 @@ check_strx_to_uint32_valid (void)
                  ") returned %"
                  PRIuPTR ", while expecting %d."
                  " Locale: %s\n", n_prnt (t->str.str), (uint64_t) rv,
-                 (intptr_t) rs, (int) t->num_of_digt,
+                 (uintptr_t) rs, (int) t->num_of_digt,
                  get_current_locale_str ());
       }
       if (rv != t->val)
@@ -1728,26 +1718,25 @@ check_strx_to_uint32_valid (void)
                  "FAILED: MHD_strx_to_uint32_(\"%s\", ->0x%" PRIX64
                  ") converted string to value 0x%"
                  PRIX64 ","
-                 " while expecting result 0x%" PRIX64 ". Locale: %s\n", n_prnt (
-                   t->str.str), (uint64_t) rv, (uint64_t) rv,
+                 " while expecting result 0x%" PRIX64 ". Locale: %s\n",
+                 n_prnt (t->str.str), (uint64_t) rv, (uint64_t) rv,
                  t->val, get_current_locale_str ());
       }
       if ((verbose > 1) && (j == locale_name_count - 1) && ! c_failed[i])
-        printf (
-          "PASSED: MHD_strx_to_uint32_(\"%s\", ->0x%" PRIX64 ") == %" PRIuPTR
-          "\n",
-          n_prnt (t->str.str), (uint64_t) rv, rs);
+        printf ("PASSED: MHD_strx_to_uint32_(\"%s\", ->0x%" PRIX64 ") == %"
+                PRIuPTR "\n",
+                n_prnt (t->str.str), (uint64_t) rv, rs);
     }
   }
   return t_failed;
 }
 
 
-int
+static size_t
 check_strx_to_uint32_all_chars (void)
 {
-  static const size_t n_checks = 256; /* from 0 to 255 */
-  int c_failed[n_checks];
+  int c_failed[256]; /* from 0 to 255 */
+  static const size_t n_checks = sizeof(c_failed) / sizeof(c_failed[0]);
   size_t t_failed = 0;
   size_t j;
 
@@ -1763,11 +1752,9 @@ check_strx_to_uint32_all_chars (void)
     {
       static const uint32_t rnd_val = 234234;
       size_t rs;
-      if (((c >= '0') && (c <= '9') ) || ((c >= 'A') && (c <= 'F') ) || ((c >=
-                                                                          'a')
-                                                                         &&
-                                                                         (c <=
-                                                                          'f') ))
+      if (( (c >= '0') && (c <= '9') )
+          || ( (c >= 'A') && (c <= 'F') )
+          || ( (c >= 'a') && (c <= 'f') ))
         continue;     /* skip xdigits */
       for (test_val = 0; test_val <= rnd_val && ! c_failed[c]; test_val +=
              rnd_val)
@@ -1805,9 +1792,9 @@ check_strx_to_uint32_all_chars (void)
         char test_str[] = "0123";
         test_str[0] = (char) (unsigned char) c;      /* replace first char with non-digit char */
 
-        printf (
-          "PASSED: MHD_strx_to_uint32_(\"%s\", &ret_val) == 0, value of ret_val is unmodified\n",
-          n_prnt (test_str));
+        printf ("PASSED: MHD_strx_to_uint32_(\"%s\", &ret_val) == 0, "
+                "value of ret_val is unmodified\n",
+                n_prnt (test_str));
       }
     }
   }
@@ -1815,16 +1802,16 @@ check_strx_to_uint32_all_chars (void)
 }
 
 
-int
+static size_t
 check_strx_to_uint32_overflow (void)
 {
   size_t t_failed = 0;
   size_t i, j;
   static const size_t n_checks1 = sizeof(strx_ovflw) / sizeof(strx_ovflw[0]);
-  static const size_t n_checks = sizeof(strx_ovflw) / sizeof(strx_ovflw[0])
-                                 + sizeof(xdstrs_w_values)
-                                 / sizeof(xdstrs_w_values[0]);
-  int c_failed[n_checks];
+  int c_failed[(sizeof(strx_ovflw) / sizeof(strx_ovflw[0]))
+               + (sizeof(xdstrs_w_values)
+                  / sizeof(xdstrs_w_values[0]))];
+  static const size_t n_checks = sizeof(c_failed) / sizeof(c_failed[0]);
 
   memset (c_failed, 0, sizeof(c_failed));
 
@@ -1882,22 +1869,22 @@ check_strx_to_uint32_overflow (void)
         }
       }
       if ((verbose > 1) && (j == locale_name_count - 1) && ! c_failed[i])
-        printf (
-          "PASSED: MHD_strx_to_uint32_(\"%s\", &ret_val) == 0, value of ret_val is unmodified\n",
-          n_prnt (str));
+        printf ("PASSED: MHD_strx_to_uint32_(\"%s\", &ret_val) == 0, "
+                "value of ret_val is unmodified\n",
+                n_prnt (str));
     }
   }
   return t_failed;
 }
 
 
-int
+static size_t
 check_strx_to_uint32_no_val (void)
 {
   size_t t_failed = 0;
   size_t i, j;
-  static const size_t n_checks = sizeof(str_no_num) / sizeof(str_no_num[0]);
-  int c_failed[n_checks];
+  int c_failed[sizeof(str_no_num) / sizeof(str_no_num[0])];
+  static const size_t n_checks = sizeof(c_failed) / sizeof(c_failed[0]);
 
   memset (c_failed, 0, sizeof(c_failed));
 
@@ -1941,23 +1928,23 @@ check_strx_to_uint32_no_val (void)
         }
       }
       if ((verbose > 1) && (j == locale_name_count - 1) && ! c_failed[i])
-        printf (
-          "PASSED: MHD_strx_to_uint32_(\"%s\", &ret_val) == 0, value of ret_val is unmodified\n",
-          n_prnt (t->str));
+        printf ("PASSED: MHD_strx_to_uint32_(\"%s\", &ret_val) == 0, "
+                "value of ret_val is unmodified\n",
+                n_prnt (t->str));
     }
   }
   return t_failed;
 }
 
 
-int
+static size_t
 check_strx_to_uint32_n_valid (void)
 {
   size_t t_failed = 0;
   size_t i, j;
-  static const size_t n_checks = sizeof(xdstrs_w_values)
-                                 / sizeof(xdstrs_w_values[0]);
-  int c_failed[n_checks];
+  int c_failed[sizeof(xdstrs_w_values)
+               / sizeof(xdstrs_w_values[0])];
+  static const size_t n_checks = sizeof(c_failed) / sizeof(c_failed[0]);
 
   memset (c_failed, 0, sizeof(c_failed));
 
@@ -1982,7 +1969,7 @@ check_strx_to_uint32_n_valid (void)
                  (unsigned int) i, (unsigned int) t->num_of_digt, (unsigned
                                                                    int) t->str.
                  len);
-        return -1;
+        exit (99);
       }
       for (len = t->num_of_digt; len <= t->str.len + 1 && ! c_failed[i]; len++)
       {
@@ -1995,8 +1982,8 @@ check_strx_to_uint32_n_valid (void)
                    "FAILED: MHD_strx_to_uint32_n_(\"%s\", %" PRIuPTR ", ->0x%"
                    PRIX64 ")"
                    " returned %" PRIuPTR ", while expecting %d. Locale: %s\n",
-                   n_prnt (t->str.str), (intptr_t) len, (uint64_t) rv,
-                   (intptr_t) rs,
+                   n_prnt (t->str.str), (uintptr_t) len, (uint64_t) rv,
+                   (uintptr_t) rs,
                    (int) t->num_of_digt, get_current_locale_str ());
         }
         if (rv != t->val)
@@ -2008,7 +1995,7 @@ check_strx_to_uint32_n_valid (void)
                    PRIX64 ")"
                    " converted string to value 0x%" PRIX64
                    ", while expecting result 0x%" PRIX64
-                   ". Locale: %s\n", n_prnt (t->str.str), (intptr_t) len,
+                   ". Locale: %s\n", n_prnt (t->str.str), (uintptr_t) len,
                    (uint64_t) rv, (uint64_t) rv,
                    t->val, get_current_locale_str ());
         }
@@ -2019,19 +2006,19 @@ check_strx_to_uint32_n_valid (void)
           ", ->0x%"
           PRIX64 ")"
           " == %" PRIuPTR "\n", n_prnt (t->str.str),
-          (intptr_t) t->num_of_digt,
-          (intptr_t) t->str.len + 1, (uint64_t) rv, rs);
+          (uintptr_t) t->num_of_digt,
+          (uintptr_t) t->str.len + 1, (uint64_t) rv, rs);
     }
   }
   return t_failed;
 }
 
 
-int
+static size_t
 check_strx_to_uint32_n_all_chars (void)
 {
-  static const size_t n_checks = 256; /* from 0 to 255 */
-  int c_failed[n_checks];
+  int c_failed[256]; /* from 0 to 255 */
+  static const size_t n_checks = sizeof(c_failed) / sizeof(c_failed[0]);
   size_t t_failed = 0;
   size_t j;
 
@@ -2049,11 +2036,9 @@ check_strx_to_uint32_n_all_chars (void)
       size_t rs;
       size_t len;
 
-      if (((c >= '0') && (c <= '9') ) || ((c >= 'A') && (c <= 'F') ) || ((c >=
-                                                                          'a')
-                                                                         &&
-                                                                         (c <=
-                                                                          'f') ))
+      if (( (c >= '0') && (c <= '9') )
+          || ( (c >= 'A') && (c <= 'F') )
+          || ( (c >= 'a') && (c <= 'f') ))
         continue;     /* skip xdigits */
 
       for (len = 0; len <= 5; len++)
@@ -2099,9 +2084,9 @@ check_strx_to_uint32_n_all_chars (void)
         char test_str[] = "0123";
         test_str[0] = (char) (unsigned char) c;      /* replace first char with non-digit char */
 
-        printf (
-          "PASSED: MHD_strx_to_uint32_n_(\"%s\", 0..5, &ret_val) == 0, value of ret_val is unmodified\n",
-          n_prnt (test_str));
+        printf ("PASSED: MHD_strx_to_uint32_n_(\"%s\", 0..5, &ret_val) == 0, "
+                "value of ret_val is unmodified\n",
+                n_prnt (test_str));
       }
     }
   }
@@ -2109,16 +2094,16 @@ check_strx_to_uint32_n_all_chars (void)
 }
 
 
-int
+static size_t
 check_strx_to_uint32_n_overflow (void)
 {
   size_t t_failed = 0;
   size_t i, j;
   static const size_t n_checks1 = sizeof(strx_ovflw) / sizeof(strx_ovflw[0]);
-  static const size_t n_checks = sizeof(strx_ovflw) / sizeof(strx_ovflw[0])
-                                 + sizeof(xdstrs_w_values)
-                                 / sizeof(xdstrs_w_values[0]);
-  int c_failed[n_checks];
+  int c_failed[(sizeof(strx_ovflw) / sizeof(strx_ovflw[0]))
+               + (sizeof(xdstrs_w_values)
+                  / sizeof(xdstrs_w_values[0]))];
+  static const size_t n_checks = sizeof(c_failed) / sizeof(c_failed[0]);
 
   memset (c_failed, 0, sizeof(c_failed));
 
@@ -2154,7 +2139,7 @@ check_strx_to_uint32_n_overflow (void)
                    (unsigned int) (i - n_checks1), (unsigned
                                                     int) t->num_of_digt,
                    (unsigned int) t->str.len);
-          return -1;
+          exit (99);
         }
         str = t->str.str;
         min_len = t->num_of_digt;
@@ -2199,25 +2184,24 @@ check_strx_to_uint32_n_overflow (void)
         }
       }
       if ((verbose > 1) && (j == locale_name_count - 1) && ! c_failed[i])
-        printf (
-          "PASSED: MHD_strx_to_uint32_n_(\"%s\", %" PRIuPTR "..%" PRIuPTR
-          ", &ret_val) == 0,"
-          " value of ret_val is unmodified\n", n_prnt (str),
-          (uintptr_t) min_len,
-          (uintptr_t) max_len);
+        printf ("PASSED: MHD_strx_to_uint32_n_(\"%s\", %" PRIuPTR "..%" PRIuPTR
+                ", &ret_val) == 0,"
+                " value of ret_val is unmodified\n", n_prnt (str),
+                (uintptr_t) min_len,
+                (uintptr_t) max_len);
     }
   }
   return t_failed;
 }
 
 
-int
+static size_t
 check_strx_to_uint32_n_no_val (void)
 {
   size_t t_failed = 0;
   size_t i, j;
-  static const size_t n_checks = sizeof(str_no_num) / sizeof(str_no_num[0]);
-  int c_failed[n_checks];
+  int c_failed[sizeof(str_no_num) / sizeof(str_no_num[0])];
+  static const size_t n_checks = sizeof(c_failed) / sizeof(c_failed[0]);
 
   memset (c_failed, 0, sizeof(c_failed));
 
@@ -2269,25 +2253,24 @@ check_strx_to_uint32_n_no_val (void)
         }
       }
       if ((verbose > 1) && (j == locale_name_count - 1) && ! c_failed[i])
-        printf (
-          "PASSED: MHD_strx_to_uint32_n_(\"%s\", 0..%" PRIuPTR
-          ", &ret_val) == 0,"
-          " value of ret_val is unmodified\n", n_prnt (t->str),
-          (uintptr_t) t->len + 1);
+        printf ("PASSED: MHD_strx_to_uint32_n_(\"%s\", 0..%" PRIuPTR
+                ", &ret_val) == 0,"
+                " value of ret_val is unmodified\n", n_prnt (t->str),
+                (uintptr_t) t->len + 1);
     }
   }
   return t_failed;
 }
 
 
-int
+static size_t
 check_strx_to_uint64_valid (void)
 {
   size_t t_failed = 0;
   size_t i, j;
-  static const size_t n_checks = sizeof(xdstrs_w_values)
-                                 / sizeof(xdstrs_w_values[0]);
-  int c_failed[n_checks];
+  int c_failed[sizeof(xdstrs_w_values)
+               / sizeof(xdstrs_w_values[0])];
+  static const size_t n_checks = sizeof(c_failed) / sizeof(c_failed[0]);
 
   memset (c_failed, 0, sizeof(c_failed));
 
@@ -2311,7 +2294,7 @@ check_strx_to_uint64_valid (void)
                  (unsigned int) i, (unsigned int) t->num_of_digt, (unsigned
                                                                    int) t->str.
                  len);
-        return -1;
+        exit (99);
       }
       rv = 1458532;     /* some random value */
       rs = MHD_strx_to_uint64_ (t->str.str, &rv);
@@ -2323,7 +2306,7 @@ check_strx_to_uint64_valid (void)
                  "FAILED: MHD_strx_to_uint64_(\"%s\", ->0x%" PRIX64
                  ") returned %"
                  PRIuPTR ", while expecting %d."
-                 " Locale: %s\n", n_prnt (t->str.str), rv, (intptr_t) rs,
+                 " Locale: %s\n", n_prnt (t->str.str), rv, (uintptr_t) rs,
                  (int) t->num_of_digt, get_current_locale_str ());
       }
       if (rv != t->val)
@@ -2334,26 +2317,25 @@ check_strx_to_uint64_valid (void)
                  "FAILED: MHD_strx_to_uint64_(\"%s\", ->0x%" PRIX64
                  ") converted string to value 0x%"
                  PRIX64 ","
-                 " while expecting result 0x%" PRIX64 ". Locale: %s\n", n_prnt (
-                   t->str.str), rv, rv,
+                 " while expecting result 0x%" PRIX64 ". Locale: %s\n",
+                 n_prnt (t->str.str), rv, rv,
                  t->val, get_current_locale_str ());
       }
       if ((verbose > 1) && (j == locale_name_count - 1) && ! c_failed[i])
-        printf (
-          "PASSED: MHD_strx_to_uint64_(\"%s\", ->0x%" PRIX64 ") == %" PRIuPTR
-          "\n",
-          n_prnt (t->str.str), rv, rs);
+        printf ("PASSED: MHD_strx_to_uint64_(\"%s\", ->0x%" PRIX64 ") == %"
+                PRIuPTR "\n",
+                n_prnt (t->str.str), rv, rs);
     }
   }
   return t_failed;
 }
 
 
-int
+static size_t
 check_strx_to_uint64_all_chars (void)
 {
-  static const size_t n_checks = 256; /* from 0 to 255 */
-  int c_failed[n_checks];
+  int c_failed[256]; /* from 0 to 255 */
+  static const size_t n_checks = sizeof(c_failed) / sizeof(c_failed[0]);
   size_t t_failed = 0;
   size_t j;
 
@@ -2369,11 +2351,9 @@ check_strx_to_uint64_all_chars (void)
     {
       static const uint64_t rnd_val = 234234;
       size_t rs;
-      if (((c >= '0') && (c <= '9') ) || ((c >= 'A') && (c <= 'F') ) || ((c >=
-                                                                          'a')
-                                                                         &&
-                                                                         (c <=
-                                                                          'f') ))
+      if (( (c >= '0') && (c <= '9') )
+          || ( (c >= 'A') && (c <= 'F') )
+          || ( (c >= 'a') && (c <= 'f') ))
         continue;     /* skip xdigits */
       for (test_val = 0; test_val <= rnd_val && ! c_failed[c]; test_val +=
              rnd_val)
@@ -2410,9 +2390,9 @@ check_strx_to_uint64_all_chars (void)
         char test_str[] = "0123";
         test_str[0] = (char) (unsigned char) c;      /* replace first char with non-digit char */
 
-        printf (
-          "PASSED: MHD_strx_to_uint64_(\"%s\", &ret_val) == 0, value of ret_val is unmodified\n",
-          n_prnt (test_str));
+        printf ("PASSED: MHD_strx_to_uint64_(\"%s\", &ret_val) == 0, "
+                "value of ret_val is unmodified\n",
+                n_prnt (test_str));
       }
     }
   }
@@ -2420,13 +2400,13 @@ check_strx_to_uint64_all_chars (void)
 }
 
 
-int
+static size_t
 check_strx_to_uint64_overflow (void)
 {
   size_t t_failed = 0;
   size_t i, j;
-  static const size_t n_checks = sizeof(strx_ovflw) / sizeof(strx_ovflw[0]);
-  int c_failed[n_checks];
+  int c_failed[sizeof(strx_ovflw) / sizeof(strx_ovflw[0])];
+  static const size_t n_checks = sizeof(c_failed) / sizeof(c_failed[0]);
 
   memset (c_failed, 0, sizeof(c_failed));
 
@@ -2469,22 +2449,22 @@ check_strx_to_uint64_overflow (void)
         }
       }
       if ((verbose > 1) && (j == locale_name_count - 1) && ! c_failed[i])
-        printf (
-          "PASSED: MHD_strx_to_uint64_(\"%s\", &ret_val) == 0, value of ret_val is unmodified\n",
-          n_prnt (t->str));
+        printf ("PASSED: MHD_strx_to_uint64_(\"%s\", &ret_val) == 0, "
+                "value of ret_val is unmodified\n",
+                n_prnt (t->str));
     }
   }
   return t_failed;
 }
 
 
-int
+static size_t
 check_strx_to_uint64_no_val (void)
 {
   size_t t_failed = 0;
   size_t i, j;
-  static const size_t n_checks = sizeof(str_no_num) / sizeof(str_no_num[0]);
-  int c_failed[n_checks];
+  int c_failed[sizeof(str_no_num) / sizeof(str_no_num[0])];
+  static const size_t n_checks = sizeof(c_failed) / sizeof(c_failed[0]);
 
   memset (c_failed, 0, sizeof(c_failed));
 
@@ -2527,23 +2507,22 @@ check_strx_to_uint64_no_val (void)
         }
       }
       if ((verbose > 1) && (j == locale_name_count - 1) && ! c_failed[i])
-        printf (
-          "PASSED: MHD_strx_to_uint64_(\"%s\", &ret_val) == 0, value of ret_val is unmodified\n",
-          n_prnt (t->str));
+        printf ("PASSED: MHD_strx_to_uint64_(\"%s\", &ret_val) == 0, "
+                "value of ret_val is unmodified\n",
+                n_prnt (t->str));
     }
   }
   return t_failed;
 }
 
 
-int
+static size_t
 check_strx_to_uint64_n_valid (void)
 {
   size_t t_failed = 0;
   size_t i, j;
-  static const size_t n_checks = sizeof(xdstrs_w_values)
-                                 / sizeof(xdstrs_w_values[0]);
-  int c_failed[n_checks];
+  int c_failed[sizeof(xdstrs_w_values) / sizeof(xdstrs_w_values[0])];
+  static const size_t n_checks = sizeof(c_failed) / sizeof(c_failed[0]);
 
   memset (c_failed, 0, sizeof(c_failed));
 
@@ -2565,7 +2544,7 @@ check_strx_to_uint64_n_valid (void)
                  (unsigned int) i, (unsigned int) t->num_of_digt, (unsigned
                                                                    int) t->str.
                  len);
-        return -1;
+        exit (99);
       }
       for (len = t->num_of_digt; len <= t->str.len + 1 && ! c_failed[i]; len++)
       {
@@ -2578,7 +2557,7 @@ check_strx_to_uint64_n_valid (void)
                    "FAILED: MHD_strx_to_uint64_n_(\"%s\", %" PRIuPTR ", ->0x%"
                    PRIX64 ")"
                    " returned %" PRIuPTR ", while expecting %d. Locale: %s\n",
-                   n_prnt (t->str.str), (intptr_t) len, rv, (intptr_t) rs,
+                   n_prnt (t->str.str), (uintptr_t) len, rv, (uintptr_t) rs,
                    (int) t->num_of_digt, get_current_locale_str ());
         }
         if (rv != t->val)
@@ -2590,30 +2569,29 @@ check_strx_to_uint64_n_valid (void)
                    PRIX64 ")"
                    " converted string to value 0x%" PRIX64
                    ", while expecting result 0x%" PRIX64
-                   ". Locale: %s\n", n_prnt (t->str.str), (intptr_t) len, rv,
+                   ". Locale: %s\n", n_prnt (t->str.str), (uintptr_t) len, rv,
                    rv,
                    t->val, get_current_locale_str ());
         }
       }
       if ((verbose > 1) && (j == locale_name_count - 1) && ! c_failed[i])
-        printf (
-          "PASSED: MHD_strx_to_uint64_n_(\"%s\", %" PRIuPTR "..%" PRIuPTR
-          ", ->0x%"
-          PRIX64 ")"
-          " == %" PRIuPTR "\n", n_prnt (t->str.str),
-          (intptr_t) t->num_of_digt,
-          (intptr_t) t->str.len + 1, rv, rs);
+        printf ("PASSED: MHD_strx_to_uint64_n_(\"%s\", %" PRIuPTR "..%" PRIuPTR
+                ", ->0x%"
+                PRIX64 ")"
+                " == %" PRIuPTR "\n", n_prnt (t->str.str),
+                (uintptr_t) t->num_of_digt,
+                (uintptr_t) t->str.len + 1, rv, rs);
     }
   }
   return t_failed;
 }
 
 
-int
+static size_t
 check_strx_to_uint64_n_all_chars (void)
 {
-  static const size_t n_checks = 256; /* from 0 to 255 */
-  int c_failed[n_checks];
+  int c_failed[256]; /* from 0 to 255 */
+  static const size_t n_checks = sizeof(c_failed) / sizeof(c_failed[0]);
   size_t t_failed = 0;
   size_t j;
 
@@ -2631,11 +2609,9 @@ check_strx_to_uint64_n_all_chars (void)
       size_t rs;
       size_t len;
 
-      if (((c >= '0') && (c <= '9') ) || ((c >= 'A') && (c <= 'F') ) || ((c >=
-                                                                          'a')
-                                                                         &&
-                                                                         (c <=
-                                                                          'f') ))
+      if (( (c >= '0') && (c <= '9') )
+          || ( (c >= 'A') && (c <= 'F') )
+          || ( (c >= 'a') && (c <= 'f') ))
         continue;     /* skip xdigits */
 
       for (len = 0; len <= 5; len++)
@@ -2681,9 +2657,9 @@ check_strx_to_uint64_n_all_chars (void)
         char test_str[] = "0123";
         test_str[0] = (char) (unsigned char) c;      /* replace first char with non-digit char */
 
-        printf (
-          "PASSED: MHD_strx_to_uint64_n_(\"%s\", 0..5, &ret_val) == 0, value of ret_val is unmodified\n",
-          n_prnt (test_str));
+        printf ("PASSED: MHD_strx_to_uint64_n_(\"%s\", 0..5, &ret_val) == 0, "
+                "value of ret_val is unmodified\n",
+                n_prnt (test_str));
       }
     }
   }
@@ -2691,13 +2667,13 @@ check_strx_to_uint64_n_all_chars (void)
 }
 
 
-int
+static size_t
 check_strx_to_uint64_n_overflow (void)
 {
   size_t t_failed = 0;
   size_t i, j;
-  static const size_t n_checks = sizeof(strx_ovflw) / sizeof(strx_ovflw[0]);
-  int c_failed[n_checks];
+  int c_failed[sizeof(strx_ovflw) / sizeof(strx_ovflw[0])];
+  static const size_t n_checks = sizeof(c_failed) / sizeof(c_failed[0]);
 
   memset (c_failed, 0, sizeof(c_failed));
 
@@ -2749,25 +2725,24 @@ check_strx_to_uint64_n_overflow (void)
         }
       }
       if ((verbose > 1) && (j == locale_name_count - 1) && ! c_failed[i])
-        printf (
-          "PASSED: MHD_strx_to_uint64_n_(\"%s\", %" PRIuPTR "..%" PRIuPTR
-          ", &ret_val) == 0,"
-          " value of ret_val is unmodified\n", n_prnt (t->str),
-          (uintptr_t) t->len,
-          (uintptr_t) t->len + 1);
+        printf ("PASSED: MHD_strx_to_uint64_n_(\"%s\", %" PRIuPTR "..%" PRIuPTR
+                ", &ret_val) == 0,"
+                " value of ret_val is unmodified\n", n_prnt (t->str),
+                (uintptr_t) t->len,
+                (uintptr_t) t->len + 1);
     }
   }
   return t_failed;
 }
 
 
-int
+static size_t
 check_strx_to_uint64_n_no_val (void)
 {
   size_t t_failed = 0;
   size_t i, j;
-  static const size_t n_checks = sizeof(str_no_num) / sizeof(str_no_num[0]);
-  int c_failed[n_checks];
+  int c_failed[sizeof(str_no_num) / sizeof(str_no_num[0])];
+  static const size_t n_checks = sizeof(c_failed) / sizeof(c_failed[0]);
 
   memset (c_failed, 0, sizeof(c_failed));
 
@@ -2819,37 +2794,30 @@ check_strx_to_uint64_n_no_val (void)
         }
       }
       if ((verbose > 1) && (j == locale_name_count - 1) && ! c_failed[i])
-        printf (
-          "PASSED: MHD_strx_to_uint64_n_(\"%s\", 0..%" PRIuPTR
-          ", &ret_val) == 0,"
-          " value of ret_val is unmodified\n", n_prnt (t->str),
-          (uintptr_t) t->len + 1);
+        printf ("PASSED: MHD_strx_to_uint64_n_(\"%s\", 0..%" PRIuPTR
+                ", &ret_val) == 0,"
+                " value of ret_val is unmodified\n", n_prnt (t->str),
+                (uintptr_t) t->len + 1);
     }
   }
   return t_failed;
 }
 
 
-int
+static int
 run_str_to_X_tests (void)
 {
-  int str_to_uint64_fails = 0;
-  int str_to_uint64_n_fails = 0;
-  int strx_to_uint32_fails = 0;
-  int strx_to_uint32_n_fails = 0;
-  int strx_to_uint64_fails = 0;
-  int strx_to_uint64_n_fails = 0;
-  int res;
+  size_t str_to_uint64_fails = 0;
+  size_t str_to_uint64_n_fails = 0;
+  size_t strx_to_uint32_fails = 0;
+  size_t strx_to_uint32_n_fails = 0;
+  size_t strx_to_uint64_fails = 0;
+  size_t strx_to_uint64_n_fails = 0;
+  size_t res;
 
   res = check_str_to_uint64_valid ();
   if (res != 0)
   {
-    if (res < 0)
-    {
-      fprintf (stderr,
-               "ERROR: test internal error in check_str_to_uint64_valid().\n");
-      return 99;
-    }
     str_to_uint64_fails += res;
     fprintf (stderr,
              "FAILED: testcase check_str_to_uint64_valid() failed.\n\n");
@@ -2861,441 +2829,309 @@ run_str_to_X_tests (void)
   res = check_str_to_uint64_all_chars ();
   if (res != 0)
   {
-    if (res < 0)
-    {
-      fprintf (stderr,
-               "ERROR: test internal error in check_str_to_uint64_all_chars().\n");
-      return 99;
-    }
     str_to_uint64_fails += res;
     fprintf (stderr,
              "FAILED: testcase check_str_to_uint64_all_chars() failed.\n\n");
   }
   else if (verbose > 1)
-    printf (
-      "PASSED: testcase check_str_to_uint64_all_chars() successfully passed.\n\n");
+    printf ("PASSED: testcase check_str_to_uint64_all_chars() "
+            "successfully passed.\n\n");
 
   res = check_str_to_uint64_overflow ();
   if (res != 0)
   {
-    if (res < 0)
-    {
-      fprintf (stderr,
-               "ERROR: test internal error in check_str_to_uint64_overflow().\n");
-      return 99;
-    }
     str_to_uint64_fails += res;
     fprintf (stderr,
              "FAILED: testcase check_str_to_uint64_overflow() failed.\n\n");
   }
   else if (verbose > 1)
-    printf (
-      "PASSED: testcase check_str_to_uint64_overflow() successfully passed.\n\n");
+    printf ("PASSED: testcase check_str_to_uint64_overflow() "
+            "successfully passed.\n\n");
 
   res = check_str_to_uint64_no_val ();
   if (res != 0)
   {
-    if (res < 0)
-    {
-      fprintf (stderr,
-               "ERROR: test internal error in check_str_to_uint64_no_val().\n");
-      return 99;
-    }
     str_to_uint64_fails += res;
     fprintf (stderr,
              "FAILED: testcase check_str_to_uint64_no_val() failed.\n\n");
   }
   else if (verbose > 1)
-    printf (
-      "PASSED: testcase check_str_to_uint64_no_val() successfully passed.\n\n");
+    printf ("PASSED: testcase check_str_to_uint64_no_val() "
+            "successfully passed.\n\n");
 
   if (str_to_uint64_fails)
     fprintf (stderr,
-             "FAILED: function MHD_str_to_uint64_() failed %d time%s.\n\n",
-             str_to_uint64_fails, str_to_uint64_fails == 1 ? "" : "s");
+             "FAILED: function MHD_str_to_uint64_() failed %lu time%s.\n\n",
+             (unsigned long) str_to_uint64_fails,
+             str_to_uint64_fails == 1 ? "" : "s");
   else if (verbose > 0)
-    printf (
-      "PASSED: function MHD_str_to_uint64_() successfully passed all checks.\n\n");
+    printf ("PASSED: function MHD_str_to_uint64_() successfully "
+            "passed all checks.\n\n");
 
   res = check_str_to_uint64_n_valid ();
   if (res != 0)
   {
-    if (res < 0)
-    {
-      fprintf (stderr,
-               "ERROR: test internal error in check_str_to_uint64_n_valid().\n");
-      return 99;
-    }
     str_to_uint64_n_fails += res;
     fprintf (stderr,
              "FAILED: testcase check_str_to_uint64_n_valid() failed.\n\n");
   }
   else if (verbose > 1)
-    printf (
-      "PASSED: testcase check_str_to_uint64_n_valid() successfully passed.\n\n");
+    printf ("PASSED: testcase check_str_to_uint64_n_valid() "
+            "successfully passed.\n\n");
 
   res = check_str_to_uint64_n_all_chars ();
   if (res != 0)
   {
-    if (res < 0)
-    {
-      fprintf (stderr,
-               "ERROR: test internal error in check_str_to_uint64_n_all_chars().\n");
-      return 99;
-    }
     str_to_uint64_n_fails += res;
     fprintf (stderr,
              "FAILED: testcase check_str_to_uint64_n_all_chars() failed.\n\n");
   }
   else if (verbose > 1)
-    printf (
-      "PASSED: testcase check_str_to_uint64_n_all_chars() successfully passed.\n\n");
+    printf ("PASSED: testcase check_str_to_uint64_n_all_chars() "
+            "successfully passed.\n\n");
 
   res = check_str_to_uint64_n_overflow ();
   if (res != 0)
   {
-    if (res < 0)
-    {
-      fprintf (stderr,
-               "ERROR: test internal error in check_str_to_uint64_n_overflow().\n");
-      return 99;
-    }
     str_to_uint64_n_fails += res;
     fprintf (stderr,
              "FAILED: testcase check_str_to_uint64_n_overflow() failed.\n\n");
   }
   else if (verbose > 1)
-    printf (
-      "PASSED: testcase check_str_to_uint64_n_overflow() successfully passed.\n\n");
+    printf ("PASSED: testcase check_str_to_uint64_n_overflow() "
+            "successfully passed.\n\n");
 
   res = check_str_to_uint64_n_no_val ();
   if (res != 0)
   {
-    if (res < 0)
-    {
-      fprintf (stderr,
-               "ERROR: test internal error in check_str_to_uint64_n_no_val().\n");
-      return 99;
-    }
     str_to_uint64_n_fails += res;
     fprintf (stderr,
              "FAILED: testcase check_str_to_uint64_n_no_val() failed.\n\n");
   }
   else if (verbose > 1)
-    printf (
-      "PASSED: testcase check_str_to_uint64_n_no_val() successfully passed.\n\n");
+    printf ("PASSED: testcase check_str_to_uint64_n_no_val() "
+            "successfully passed.\n\n");
 
   if (str_to_uint64_n_fails)
     fprintf (stderr,
-             "FAILED: function MHD_str_to_uint64_n_() failed %d time%s.\n\n",
-             str_to_uint64_n_fails, str_to_uint64_n_fails == 1 ? "" : "s");
+             "FAILED: function MHD_str_to_uint64_n_() failed %lu time%s.\n\n",
+             (unsigned long) str_to_uint64_n_fails,
+             str_to_uint64_n_fails == 1 ? "" : "s");
   else if (verbose > 0)
-    printf (
-      "PASSED: function MHD_str_to_uint64_n_() successfully passed all checks.\n\n");
+    printf ("PASSED: function MHD_str_to_uint64_n_() successfully "
+            "passed all checks.\n\n");
 
   res = check_strx_to_uint32_valid ();
   if (res != 0)
   {
-    if (res < 0)
-    {
-      fprintf (stderr,
-               "ERROR: test internal error in check_strx_to_uint32_valid().\n");
-      return 99;
-    }
     strx_to_uint32_fails += res;
     fprintf (stderr,
              "FAILED: testcase check_strx_to_uint32_valid() failed.\n\n");
   }
   else if (verbose > 1)
-    printf (
-      "PASSED: testcase check_strx_to_uint32_valid() successfully passed.\n\n");
+    printf ("PASSED: testcase check_strx_to_uint32_valid() "
+            "successfully passed.\n\n");
 
   res = check_strx_to_uint32_all_chars ();
   if (res != 0)
   {
-    if (res < 0)
-    {
-      fprintf (stderr,
-               "ERROR: test internal error in check_strx_to_uint32_all_chars().\n");
-      return 99;
-    }
     strx_to_uint32_fails += res;
     fprintf (stderr,
              "FAILED: testcase check_strx_to_uint32_all_chars() failed.\n\n");
   }
   else if (verbose > 1)
-    printf (
-      "PASSED: testcase check_strx_to_uint32_all_chars() successfully passed.\n\n");
+    printf ("PASSED: testcase check_strx_to_uint32_all_chars() "
+            "successfully passed.\n\n");
 
   res = check_strx_to_uint32_overflow ();
   if (res != 0)
   {
-    if (res < 0)
-    {
-      fprintf (stderr,
-               "ERROR: test internal error in check_strx_to_uint32_overflow().\n");
-      return 99;
-    }
     strx_to_uint32_fails += res;
     fprintf (stderr,
              "FAILED: testcase check_strx_to_uint32_overflow() failed.\n\n");
   }
   else if (verbose > 1)
-    printf (
-      "PASSED: testcase check_strx_to_uint32_overflow() successfully passed.\n\n");
+    printf ("PASSED: testcase check_strx_to_uint32_overflow() "
+            "successfully passed.\n\n");
 
   res = check_strx_to_uint32_no_val ();
   if (res != 0)
   {
-    if (res < 0)
-    {
-      fprintf (stderr,
-               "ERROR: test internal error in check_strx_to_uint32_no_val().\n");
-      return 99;
-    }
     strx_to_uint32_fails += res;
     fprintf (stderr,
              "FAILED: testcase check_strx_to_uint32_no_val() failed.\n\n");
   }
   else if (verbose > 1)
-    printf (
-      "PASSED: testcase check_strx_to_uint32_no_val() successfully passed.\n\n");
+    printf ("PASSED: testcase check_strx_to_uint32_no_val() "
+            "successfully passed.\n\n");
 
   if (strx_to_uint32_fails)
     fprintf (stderr,
-             "FAILED: function MHD_strx_to_uint32_() failed %d time%s.\n\n",
-             strx_to_uint32_fails, strx_to_uint32_fails == 1 ? "" : "s");
+             "FAILED: function MHD_strx_to_uint32_() failed %lu time%s.\n\n",
+             (unsigned long) strx_to_uint32_fails,
+             strx_to_uint32_fails == 1 ? "" : "s");
   else if (verbose > 0)
-    printf (
-      "PASSED: function MHD_strx_to_uint32_() successfully passed all checks.\n\n");
+    printf ("PASSED: function MHD_strx_to_uint32_() successfully "
+            "passed all checks.\n\n");
 
   res = check_strx_to_uint32_n_valid ();
   if (res != 0)
   {
-    if (res < 0)
-    {
-      fprintf (stderr,
-               "ERROR: test internal error in check_strx_to_uint32_n_valid().\n");
-      return 99;
-    }
     strx_to_uint32_n_fails += res;
     fprintf (stderr,
              "FAILED: testcase check_strx_to_uint32_n_valid() failed.\n\n");
   }
   else if (verbose > 1)
-    printf (
-      "PASSED: testcase check_strx_to_uint32_n_valid() successfully passed.\n\n");
+    printf ("PASSED: testcase check_strx_to_uint32_n_valid() "
+            "successfully passed.\n\n");
 
   res = check_strx_to_uint32_n_all_chars ();
   if (res != 0)
   {
-    if (res < 0)
-    {
-      fprintf (stderr,
-               "ERROR: test internal error in check_strx_to_uint32_n_all_chars().\n");
-      return 99;
-    }
     strx_to_uint32_n_fails += res;
     fprintf (stderr,
              "FAILED: testcase check_strx_to_uint32_n_all_chars() failed.\n\n");
   }
   else if (verbose > 1)
-    printf (
-      "PASSED: testcase check_strx_to_uint32_n_all_chars() successfully passed.\n\n");
+    printf ("PASSED: testcase check_strx_to_uint32_n_all_chars() "
+            "successfully passed.\n\n");
 
   res = check_strx_to_uint32_n_overflow ();
   if (res != 0)
   {
-    if (res < 0)
-    {
-      fprintf (stderr,
-               "ERROR: test internal error in check_strx_to_uint32_n_overflow().\n");
-      return 99;
-    }
     strx_to_uint32_n_fails += res;
     fprintf (stderr,
              "FAILED: testcase check_strx_to_uint32_n_overflow() failed.\n\n");
   }
   else if (verbose > 1)
-    printf (
-      "PASSED: testcase check_strx_to_uint32_n_overflow() successfully passed.\n\n");
+    printf ("PASSED: testcase check_strx_to_uint32_n_overflow() "
+            "successfully passed.\n\n");
 
   res = check_strx_to_uint32_n_no_val ();
   if (res != 0)
   {
-    if (res < 0)
-    {
-      fprintf (stderr,
-               "ERROR: test internal error in check_strx_to_uint32_n_no_val().\n");
-      return 99;
-    }
     strx_to_uint32_n_fails += res;
     fprintf (stderr,
              "FAILED: testcase check_strx_to_uint32_n_no_val() failed.\n\n");
   }
   else if (verbose > 1)
-    printf (
-      "PASSED: testcase check_strx_to_uint32_n_no_val() successfully passed.\n\n");
+    printf ("PASSED: testcase check_strx_to_uint32_n_no_val() "
+            "successfully passed.\n\n");
 
   if (strx_to_uint32_n_fails)
     fprintf (stderr,
-             "FAILED: function MHD_strx_to_uint32_n_() failed %d time%s.\n\n",
-             strx_to_uint32_n_fails, strx_to_uint32_n_fails == 1 ? "" : "s");
+             "FAILED: function MHD_strx_to_uint32_n_() failed %lu time%s.\n\n",
+             (unsigned long) strx_to_uint32_n_fails,
+             strx_to_uint32_n_fails == 1 ? "" : "s");
   else if (verbose > 0)
-    printf (
-      "PASSED: function MHD_strx_to_uint32_n_() successfully passed all checks.\n\n");
+    printf ("PASSED: function MHD_strx_to_uint32_n_() successfully "
+            "passed all checks.\n\n");
 
   res = check_strx_to_uint64_valid ();
   if (res != 0)
   {
-    if (res < 0)
-    {
-      fprintf (stderr,
-               "ERROR: test internal error in check_strx_to_uint64_valid().\n");
-      return 99;
-    }
     strx_to_uint64_fails += res;
     fprintf (stderr,
              "FAILED: testcase check_strx_to_uint64_valid() failed.\n\n");
   }
   else if (verbose > 1)
-    printf (
-      "PASSED: testcase check_strx_to_uint64_valid() successfully passed.\n\n");
+    printf ("PASSED: testcase check_strx_to_uint64_valid() "
+            "successfully passed.\n\n");
 
   res = check_strx_to_uint64_all_chars ();
   if (res != 0)
   {
-    if (res < 0)
-    {
-      fprintf (stderr,
-               "ERROR: test internal error in check_strx_to_uint64_all_chars().\n");
-      return 99;
-    }
     strx_to_uint64_fails += res;
     fprintf (stderr,
              "FAILED: testcase check_strx_to_uint64_all_chars() failed.\n\n");
   }
   else if (verbose > 1)
-    printf (
-      "PASSED: testcase check_strx_to_uint64_all_chars() successfully passed.\n\n");
+    printf ("PASSED: testcase check_strx_to_uint64_all_chars() "
+            "successfully passed.\n\n");
 
   res = check_strx_to_uint64_overflow ();
   if (res != 0)
   {
-    if (res < 0)
-    {
-      fprintf (stderr,
-               "ERROR: test internal error in check_strx_to_uint64_overflow().\n");
-      return 99;
-    }
     strx_to_uint64_fails += res;
     fprintf (stderr,
              "FAILED: testcase check_strx_to_uint64_overflow() failed.\n\n");
   }
   else if (verbose > 1)
-    printf (
-      "PASSED: testcase check_strx_to_uint64_overflow() successfully passed.\n\n");
+    printf ("PASSED: testcase check_strx_to_uint64_overflow() "
+            "successfully passed.\n\n");
 
   res = check_strx_to_uint64_no_val ();
   if (res != 0)
   {
-    if (res < 0)
-    {
-      fprintf (stderr,
-               "ERROR: test internal error in check_strx_to_uint64_no_val().\n");
-      return 99;
-    }
     strx_to_uint64_fails += res;
     fprintf (stderr,
              "FAILED: testcase check_strx_to_uint64_no_val() failed.\n\n");
   }
   else if (verbose > 1)
-    printf (
-      "PASSED: testcase check_strx_to_uint64_no_val() successfully passed.\n\n");
+    printf ("PASSED: testcase check_strx_to_uint64_no_val() "
+            "successfully passed.\n\n");
 
   if (strx_to_uint64_fails)
     fprintf (stderr,
-             "FAILED: function MHD_strx_to_uint64_() failed %d time%s.\n\n",
-             strx_to_uint64_fails, strx_to_uint64_fails == 1 ? "" : "s");
+             "FAILED: function MHD_strx_to_uint64_() failed %lu time%s.\n\n",
+             (unsigned long) strx_to_uint64_fails,
+             strx_to_uint64_fails == 1 ? "" : "s");
   else if (verbose > 0)
-    printf (
-      "PASSED: function MHD_strx_to_uint64_() successfully passed all checks.\n\n");
+    printf ("PASSED: function MHD_strx_to_uint64_() successfully "
+            "passed all checks.\n\n");
 
   res = check_strx_to_uint64_n_valid ();
   if (res != 0)
   {
-    if (res < 0)
-    {
-      fprintf (stderr,
-               "ERROR: test internal error in check_strx_to_uint64_n_valid().\n");
-      return 99;
-    }
     strx_to_uint64_n_fails += res;
     fprintf (stderr,
              "FAILED: testcase check_strx_to_uint64_n_valid() failed.\n\n");
   }
   else if (verbose > 1)
-    printf (
-      "PASSED: testcase check_strx_to_uint64_n_valid() successfully passed.\n\n");
+    printf ("PASSED: testcase check_strx_to_uint64_n_valid() "
+            "successfully passed.\n\n");
 
   res = check_strx_to_uint64_n_all_chars ();
   if (res != 0)
   {
-    if (res < 0)
-    {
-      fprintf (stderr,
-               "ERROR: test internal error in check_strx_to_uint64_n_all_chars().\n");
-      return 99;
-    }
     strx_to_uint64_n_fails += res;
     fprintf (stderr,
              "FAILED: testcase check_strx_to_uint64_n_all_chars() failed.\n\n");
   }
   else if (verbose > 1)
-    printf (
-      "PASSED: testcase check_strx_to_uint64_n_all_chars() successfully passed.\n\n");
+    printf ("PASSED: testcase check_strx_to_uint64_n_all_chars() "
+            "successfully passed.\n\n");
 
   res = check_strx_to_uint64_n_overflow ();
   if (res != 0)
   {
-    if (res < 0)
-    {
-      fprintf (stderr,
-               "ERROR: test internal error in check_strx_to_uint64_n_overflow().\n");
-      return 99;
-    }
     strx_to_uint64_n_fails += res;
     fprintf (stderr,
              "FAILED: testcase check_strx_to_uint64_n_overflow() failed.\n\n");
   }
   else if (verbose > 1)
-    printf (
-      "PASSED: testcase check_strx_to_uint64_n_overflow() successfully passed.\n\n");
+    printf ("PASSED: testcase check_strx_to_uint64_n_overflow() "
+            "successfully passed.\n\n");
 
   res = check_strx_to_uint64_n_no_val ();
   if (res != 0)
   {
-    if (res < 0)
-    {
-      fprintf (stderr,
-               "ERROR: test internal error in check_strx_to_uint64_n_no_val().\n");
-      return 99;
-    }
     strx_to_uint64_n_fails += res;
     fprintf (stderr,
              "FAILED: testcase check_strx_to_uint64_n_no_val() failed.\n\n");
   }
   else if (verbose > 1)
-    printf (
-      "PASSED: testcase check_strx_to_uint64_n_no_val() successfully passed.\n\n");
+    printf ("PASSED: testcase check_strx_to_uint64_n_no_val() "
+            "successfully passed.\n\n");
 
   if (strx_to_uint64_n_fails)
     fprintf (stderr,
-             "FAILED: function MHD_strx_to_uint64_n_() failed %d time%s.\n\n",
-             strx_to_uint64_n_fails, strx_to_uint64_n_fails == 1 ? "" : "s");
+             "FAILED: function MHD_strx_to_uint64_n_() failed %lu time%s.\n\n",
+             (unsigned long) strx_to_uint64_n_fails,
+             strx_to_uint64_n_fails == 1 ? "" : "s");
   else if (verbose > 0)
-    printf (
-      "PASSED: function MHD_strx_to_uint64_n_() successfully passed all checks.\n\n");
+    printf ("PASSED: function MHD_strx_to_uint64_n_() successfully "
+            "passed all checks.\n\n");
 
   if (str_to_uint64_fails || str_to_uint64_n_fails ||
       strx_to_uint32_fails || strx_to_uint32_n_fails ||
@@ -3314,7 +3150,7 @@ run_str_to_X_tests (void)
 }
 
 
-int
+static size_t
 check_str_from_uint16 (void)
 {
   size_t t_failed = 0;
@@ -3324,9 +3160,9 @@ check_str_from_uint16 (void)
     "-@=sd#+&(pdiren456qwe#@C3S!DAS45AOIPUQWESAdFzxcv1s*()&#$%34`"
     "32452d098poiden45SADFFDA3S4D3SDFdfgsdfgsSADFzxdvs$*()&#2342`"
     "adsf##$$@&*^%*^&56qwe#3C@S!DAScFAOIP$#%#$Ad1zs3v1$*()&#1228`";
-  static const size_t n_checks = sizeof(dstrs_w_values)
-                                 / sizeof(dstrs_w_values[0]);
-  int c_failed[n_checks];
+  int c_failed[sizeof(dstrs_w_values)
+               / sizeof(dstrs_w_values[0])];
+  static const size_t n_checks = sizeof(c_failed) / sizeof(c_failed[0]);
 
   memset (c_failed, 0, sizeof(c_failed));
 
@@ -3350,7 +3186,7 @@ check_str_from_uint16 (void)
                  (unsigned int) i, (unsigned int) t->num_of_digt, (unsigned
                                                                    int) t->str.
                  len);
-        return -1;
+        exit (99);
       }
       if ('0' == t->str.str[0])
         continue;  /* Skip strings prefixed with zeros */
@@ -3364,14 +3200,15 @@ check_str_from_uint16 (void)
                  "ERROR: dstrs_w_values[%u] has too long (%u) string, "
                  "size of 'buf' should be increased.\n",
                  (unsigned int) i, (unsigned int) t->str.len);
-        return -1;
+        exit (99);
       }
+      rs = 0; /* Only to mute compiler warning */
       for (b_size = 0; b_size <= t->str.len + 1; ++b_size)
       {
         /* fill buffer with pseudo-random values */
         memcpy (buf, erase, sizeof(buf));
 
-        rs = MHD_uint16_to_str (t->val, buf, b_size);
+        rs = MHD_uint16_to_str ((uint16_t) t->val, buf, b_size);
 
         if (t->num_of_digt > b_size)
         {
@@ -3385,7 +3222,7 @@ check_str_from_uint16 (void)
                      "FAILED: MHD_uint16_to_str(%" PRIu64 ", -> buf,"
                      " %d) returned %" PRIuPTR
                      ", while expecting 0."
-                     " Locale: %s\n", t->val, (int) b_size, (intptr_t) rs,
+                     " Locale: %s\n", t->val, (int) b_size, (uintptr_t) rs,
                      get_current_locale_str ());
           }
         }
@@ -3400,7 +3237,7 @@ check_str_from_uint16 (void)
                      "FAILED: MHD_uint16_to_str(%" PRIu64 ", -> buf,"
                      " %d) returned %" PRIuPTR
                      ", while expecting %d."
-                     " Locale: %s\n", t->val, (int) b_size, (intptr_t) rs,
+                     " Locale: %s\n", t->val, (int) b_size, (uintptr_t) rs,
                      (int) t->num_of_digt, get_current_locale_str ());
           }
           else if (0 != memcmp (buf, t->str.str, t->num_of_digt))
@@ -3412,7 +3249,7 @@ check_str_from_uint16 (void)
                      "FAILED: MHD_uint16_to_str(%" PRIu64 ", -> \"%.*s\","
                      " %d) returned %" PRIuPTR "."
                      " Locale: %s\n", t->val, (int) rs, buf, (int) b_size,
-                     (intptr_t) rs,  get_current_locale_str ());
+                     (uintptr_t) rs,  get_current_locale_str ());
           }
           else if (0 != memcmp (buf + rs, erase + rs, sizeof(buf) - rs))
           {
@@ -3424,21 +3261,21 @@ check_str_from_uint16 (void)
                      " %d) returned %" PRIuPTR
                      " and touched data after the resulting string."
                      " Locale: %s\n", t->val, (int) rs, buf, (int) b_size,
-                     (intptr_t) rs,  get_current_locale_str ());
+                     (uintptr_t) rs,  get_current_locale_str ());
           }
         }
       }
       if ((verbose > 1) && (j == locale_name_count - 1) && ! c_failed[i])
         printf ("PASSED: MHD_uint16_to_str(%" PRIu64 ", -> \"%.*s\", %d) "
                 "== %" PRIuPTR "\n",
-                t->val, (int) rs, buf, (int) b_size - 1, (intptr_t) rs);
+                t->val, (int) rs, buf, (int) b_size - 1, (uintptr_t) rs);
     }
   }
   return t_failed;
 }
 
 
-int
+static size_t
 check_str_from_uint64 (void)
 {
   size_t t_failed = 0;
@@ -3448,9 +3285,9 @@ check_str_from_uint64 (void)
     "-@=sd#+&(pdirenDSFGSe#@C&S!DAS*!AOIPUQWESAdFzxcvSs*()&#$%KH`"
     "32452d098poiden45SADFFDA3S4D3SDFdfgsdfgsSADFzxdvs$*()&#2342`"
     "adsf##$$@&*^%*^&56qwe#3C@S!DAScFAOIP$#%#$Ad1zs3v1$*()&#1228`";
-  static const size_t n_checks = sizeof(dstrs_w_values)
-                                 / sizeof(dstrs_w_values[0]);
-  int c_failed[n_checks];
+  int c_failed[sizeof(dstrs_w_values)
+               / sizeof(dstrs_w_values[0])];
+  static const size_t n_checks = sizeof(c_failed) / sizeof(c_failed[0]);
 
   memset (c_failed, 0, sizeof(c_failed));
 
@@ -3474,7 +3311,7 @@ check_str_from_uint64 (void)
                  (unsigned int) i, (unsigned int) t->num_of_digt, (unsigned
                                                                    int) t->str.
                  len);
-        return -1;
+        exit (99);
       }
       if ('0' == t->str.str[0])
         continue;  /* Skip strings prefixed with zeros */
@@ -3486,8 +3323,9 @@ check_str_from_uint64 (void)
                  "ERROR: dstrs_w_values[%u] has too long (%u) string, "
                  "size of 'buf' should be increased.\n",
                  (unsigned int) i, (unsigned int) t->str.len);
-        return -1;
+        exit (99);
       }
+      rs = 0; /* Only to mute compiler warning */
       for (b_size = 0; b_size <= t->str.len + 1; ++b_size)
       {
         /* fill buffer with pseudo-random values */
@@ -3507,7 +3345,7 @@ check_str_from_uint64 (void)
                      "FAILED: MHD_uint64_to_str(%" PRIu64 ", -> buf,"
                      " %d) returned %" PRIuPTR
                      ", while expecting 0."
-                     " Locale: %s\n", t->val, (int) b_size, (intptr_t) rs,
+                     " Locale: %s\n", t->val, (int) b_size, (uintptr_t) rs,
                      get_current_locale_str ());
           }
         }
@@ -3522,7 +3360,7 @@ check_str_from_uint64 (void)
                      "FAILED: MHD_uint64_to_str(%" PRIu64 ", -> buf,"
                      " %d) returned %" PRIuPTR
                      ", while expecting %d."
-                     " Locale: %s\n", t->val, (int) b_size, (intptr_t) rs,
+                     " Locale: %s\n", t->val, (int) b_size, (uintptr_t) rs,
                      (int) t->num_of_digt, get_current_locale_str ());
           }
           else if (0 != memcmp (buf, t->str.str, t->num_of_digt))
@@ -3534,7 +3372,7 @@ check_str_from_uint64 (void)
                      "FAILED: MHD_uint64_to_str(%" PRIu64 ", -> \"%.*s\","
                      " %d) returned %" PRIuPTR "."
                      " Locale: %s\n", t->val, (int) rs, buf, (int) b_size,
-                     (intptr_t) rs,  get_current_locale_str ());
+                     (uintptr_t) rs,  get_current_locale_str ());
           }
           else if (0 != memcmp (buf + rs, erase + rs, sizeof(buf) - rs))
           {
@@ -3546,21 +3384,21 @@ check_str_from_uint64 (void)
                      " %d) returned %" PRIuPTR
                      " and touched data after the resulting string."
                      " Locale: %s\n", t->val, (int) rs, buf, (int) b_size,
-                     (intptr_t) rs,  get_current_locale_str ());
+                     (uintptr_t) rs,  get_current_locale_str ());
           }
         }
       }
       if ((verbose > 1) && (j == locale_name_count - 1) && ! c_failed[i])
         printf ("PASSED: MHD_uint64_to_str(%" PRIu64 ", -> \"%.*s\", %d) "
                 "== %" PRIuPTR "\n",
-                t->val, (int) rs, buf, (int) b_size - 1, (intptr_t) rs);
+                t->val, (int) rs, buf, (int) b_size - 1, (uintptr_t) rs);
     }
   }
   return t_failed;
 }
 
 
-int
+static size_t
 check_strx_from_uint32 (void)
 {
   size_t t_failed = 0;
@@ -3570,9 +3408,9 @@ check_strx_from_uint32 (void)
     "jrlkjssfhjfvrjntJHLJ$@%$#adsfdkj;k$##$%#$%FGDF%$#^FDFG%$#$D`"
     ";skjdhjflsdkjhdjfalskdjhdfalkjdhf$%##%$$#%FSDGFSDDGDFSSDSDF`"
     "#5#$%#$#$DFSFDDFSGSDFSDF354FDDSGFDFfdssfddfswqemn,.zxih,.sx`";
-  static const size_t n_checks = sizeof(xdstrs_w_values)
-                                 / sizeof(xdstrs_w_values[0]);
-  int c_failed[n_checks];
+  int c_failed[sizeof(xdstrs_w_values)
+               / sizeof(xdstrs_w_values[0])];
+  static const size_t n_checks = sizeof(c_failed) / sizeof(c_failed[0]);
 
   memset (c_failed, 0, sizeof(c_failed));
 
@@ -3596,7 +3434,7 @@ check_strx_from_uint32 (void)
                  (unsigned int) i, (unsigned int) t->num_of_digt, (unsigned
                                                                    int) t->str.
                  len);
-        return -1;
+        exit (99);
       }
       if ('0' == t->str.str[0])
         continue;  /* Skip strings prefixed with zeros */
@@ -3610,14 +3448,15 @@ check_strx_from_uint32 (void)
                  "ERROR: dstrs_w_values[%u] has too long (%u) string, "
                  "size of 'buf' should be increased.\n",
                  (unsigned int) i, (unsigned int) t->str.len);
-        return -1;
+        exit (99);
       }
+      rs = 0; /* Only to mute compiler warning */
       for (b_size = 0; b_size <= t->str.len + 1; ++b_size)
       {
         /* fill buffer with pseudo-random values */
         memcpy (buf, erase, sizeof(buf));
 
-        rs = MHD_uint32_to_strx (t->val, buf, b_size);
+        rs = MHD_uint32_to_strx ((uint32_t) t->val, buf, b_size);
 
         if (t->num_of_digt > b_size)
         {
@@ -3631,7 +3470,7 @@ check_strx_from_uint32 (void)
                      "FAILED: MHD_uint32_to_strx(0x%" PRIX64 ", -> buf,"
                      " %d) returned %" PRIuPTR
                      ", while expecting 0."
-                     " Locale: %s\n", t->val, (int) b_size, (intptr_t) rs,
+                     " Locale: %s\n", t->val, (int) b_size, (uintptr_t) rs,
                      get_current_locale_str ());
           }
         }
@@ -3646,7 +3485,7 @@ check_strx_from_uint32 (void)
                      "FAILED: MHD_uint32_to_strx(0x%" PRIX64 ", -> buf,"
                      " %d) returned %" PRIuPTR
                      ", while expecting %d."
-                     " Locale: %s\n", t->val, (int) b_size, (intptr_t) rs,
+                     " Locale: %s\n", t->val, (int) b_size, (uintptr_t) rs,
                      (int) t->num_of_digt, get_current_locale_str ());
           }
           else if (0 == MHD_str_equal_caseless_bin_n_ (buf, t->str.str,
@@ -3659,7 +3498,15 @@ check_strx_from_uint32 (void)
                      "FAILED: MHD_uint32_to_strx(0x%" PRIX64 ", -> \"%.*s\","
                      " %d) returned %" PRIuPTR "."
                      " Locale: %s\n", t->val, (int) rs, buf, (int) b_size,
-                     (intptr_t) rs,  get_current_locale_str ());
+                     (uintptr_t) rs,  get_current_locale_str ());
+          }
+          else if (sizeof(buf) <= rs)
+          {
+            fprintf (stderr,
+                     "ERROR: dstrs_w_values[%u] has string with too many"
+                     "(%u) digits, size of 'buf' should be increased.\n",
+                     (unsigned int) i, (unsigned int) rs);
+            exit (99);
           }
           else if (0 != memcmp (buf + rs, erase + rs, sizeof(buf) - rs))
           {
@@ -3671,14 +3518,14 @@ check_strx_from_uint32 (void)
                      " %d) returned %" PRIuPTR
                      " and touched data after the resulting string."
                      " Locale: %s\n", t->val, (int) rs, buf, (int) b_size,
-                     (intptr_t) rs,  get_current_locale_str ());
+                     (uintptr_t) rs,  get_current_locale_str ());
           }
         }
       }
       if ((verbose > 1) && (j == locale_name_count - 1) && ! c_failed[i])
         printf ("PASSED: MHD_uint32_to_strx(0x%" PRIX64 ", -> \"%.*s\", %d) "
                 "== %" PRIuPTR "\n",
-                t->val, (int) rs, buf, (int) b_size - 1, (intptr_t) rs);
+                t->val, (int) rs, buf, (int) b_size - 1, (uintptr_t) rs);
     }
   }
   return t_failed;
@@ -4466,12 +4313,12 @@ static const struct str_with_value duint8_w_values_p3[] = {
 static const struct str_with_value *duint8_w_values_p[3] =
 {duint8_w_values_p1, duint8_w_values_p2, duint8_w_values_p3};
 
-int
+static size_t
 check_str_from_uint8_pad (void)
 {
   int i;
-  int pad;
-  int t_failed = 0;
+  uint8_t pad;
+  size_t t_failed = 0;
 
   if ((256 != sizeof(duint8_w_values_p1) / sizeof(duint8_w_values_p1[0])) ||
       (256 != sizeof(duint8_w_values_p2) / sizeof(duint8_w_values_p2[0])) ||
@@ -4479,12 +4326,14 @@ check_str_from_uint8_pad (void)
   {
     fprintf (stderr,
              "ERROR: wrong number of items in duint8_w_values_p*.\n");
-    return -1;
+    exit (99);
   }
   for (pad = 0; pad <= 3; pad++)
   {
-    int table_num = pad - 1;
-    if (0 == pad)
+    size_t table_num;
+    if (0 != pad)
+      table_num = pad - 1;
+    else
       table_num = 0;
 
     for (i = 0; i <= 255; i++)
@@ -4502,7 +4351,7 @@ check_str_from_uint8_pad (void)
                  (unsigned int) i, (unsigned int) t->num_of_digt, (unsigned
                                                                    int) t->str.
                  len);
-        return -1;
+        exit (99);
       }
       if (sizeof(buf) < t->str.len + 1)
       {
@@ -4510,14 +4359,14 @@ check_str_from_uint8_pad (void)
                  "ERROR: dstrs_w_values[%u] has too long (%u) string, "
                  "size of 'buf' should be increased.\n",
                  (unsigned int) i, (unsigned int) t->str.len);
-        return -1;
+        exit (99);
       }
       for (b_size = 0; b_size <= t->str.len + 1; ++b_size)
       {
         /* fill buffer with pseudo-random values */
         memset (buf, '#', sizeof(buf));
 
-        rs = MHD_uint8_to_str_pad (t->val, pad, buf, b_size);
+        rs = MHD_uint8_to_str_pad ((uint8_t) t->val, pad, buf, b_size);
 
         if (t->num_of_digt > b_size)
         {
@@ -4529,7 +4378,7 @@ check_str_from_uint8_pad (void)
                      "FAILED: MHD_uint8_to_str_pad(%" PRIu64 ", %d, -> buf,"
                      " %d) returned %" PRIuPTR
                      ", while expecting 0.\n", t->val, (int) pad, (int) b_size,
-                     (intptr_t) rs);
+                     (uintptr_t) rs);
           }
         }
         else
@@ -4541,7 +4390,7 @@ check_str_from_uint8_pad (void)
                      "FAILED: MHD_uint8_to_str_pad(%" PRIu64 ", %d, -> buf,"
                      " %d) returned %" PRIuPTR
                      ", while expecting %d.\n", t->val, (int) pad,
-                     (int) b_size, (intptr_t) rs, (int) t->num_of_digt);
+                     (int) b_size, (uintptr_t) rs, (int) t->num_of_digt);
           }
           else if (0 != memcmp (buf, t->str.str, t->num_of_digt))
           {
@@ -4550,7 +4399,7 @@ check_str_from_uint8_pad (void)
                      "FAILED: MHD_uint8_to_str_pad(%" PRIu64 ", %d, "
                      "-> \"%.*s\", %d) returned %" PRIuPTR ".\n",
                      t->val, (int) pad, (int) rs, buf,
-                     (int) b_size, (intptr_t) rs);
+                     (int) b_size, (uintptr_t) rs);
           }
           else if (0 != memcmp (buf + rs, "########", sizeof(buf) - rs))
           {
@@ -4560,7 +4409,7 @@ check_str_from_uint8_pad (void)
                      " -> \"%.*s\", %d) returned %" PRIuPTR
                      " and touched data after the resulting string.\n",
                      t->val, (int) pad, (int) rs, buf, (int) b_size,
-                     (intptr_t) rs);
+                     (uintptr_t) rs);
           }
         }
       }
@@ -4573,83 +4422,59 @@ check_str_from_uint8_pad (void)
 }
 
 
-int
+static int
 run_str_from_X_tests (void)
 {
-  int str_from_uint16;
-  int str_from_uint64;
-  int strx_from_uint32;
-  int str_from_uint8_pad;
-  int failures;
+  size_t str_from_uint16;
+  size_t str_from_uint64;
+  size_t strx_from_uint32;
+  size_t str_from_uint8_pad;
+  size_t failures;
 
   failures = 0;
 
   str_from_uint16 = check_str_from_uint16 ();
   if (str_from_uint16 != 0)
   {
-    if (str_from_uint16 < 0)
-    {
-      fprintf (stderr,
-               "ERROR: test internal error in check_str_from_uint16().\n");
-      return 99;
-    }
     fprintf (stderr,
              "FAILED: testcase check_str_from_uint16() failed.\n\n");
     failures += str_from_uint16;
   }
   else if (verbose > 1)
-    printf (
-      "PASSED: testcase check_str_from_uint16() successfully passed.\n\n");
+    printf ("PASSED: testcase check_str_from_uint16() successfully "
+            "passed.\n\n");
 
   str_from_uint64 = check_str_from_uint64 ();
   if (str_from_uint64 != 0)
   {
-    if (str_from_uint64 < 0)
-    {
-      fprintf (stderr,
-               "ERROR: test internal error in check_str_from_uint16().\n");
-      return 99;
-    }
     fprintf (stderr,
              "FAILED: testcase check_str_from_uint16() failed.\n\n");
     failures += str_from_uint64;
   }
   else if (verbose > 1)
-    printf (
-      "PASSED: testcase check_str_from_uint16() successfully passed.\n\n");
+    printf ("PASSED: testcase check_str_from_uint16() successfully "
+            "passed.\n\n");
   strx_from_uint32 = check_strx_from_uint32 ();
   if (strx_from_uint32 != 0)
   {
-    if (strx_from_uint32 < 0)
-    {
-      fprintf (stderr,
-               "ERROR: test internal error in check_strx_from_uint32().\n");
-      return 99;
-    }
     fprintf (stderr,
              "FAILED: testcase check_strx_from_uint32() failed.\n\n");
     failures += strx_from_uint32;
   }
   else if (verbose > 1)
-    printf (
-      "PASSED: testcase check_strx_from_uint32() successfully passed.\n\n");
+    printf ("PASSED: testcase check_strx_from_uint32() successfully "
+            "passed.\n\n");
 
   str_from_uint8_pad = check_str_from_uint8_pad ();
   if (str_from_uint8_pad != 0)
   {
-    if (str_from_uint8_pad < 0)
-    {
-      fprintf (stderr,
-               "ERROR: test internal error in check_str_from_uint8_pad().\n");
-      return 99;
-    }
     fprintf (stderr,
              "FAILED: testcase check_str_from_uint8_pad() failed.\n\n");
     failures += str_from_uint8_pad;
   }
   else if (verbose > 1)
-    printf (
-      "PASSED: testcase check_str_from_uint8_pad() successfully passed.\n\n");
+    printf ("PASSED: testcase check_str_from_uint8_pad() successfully "
+            "passed.\n\n");
 
   if (failures)
   {

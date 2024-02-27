@@ -61,7 +61,7 @@ expect_not_found_n (const char *str, const char *token, size_t token_len)
 #define expect_not_found(s,t) expect_not_found_n ((s),(t),MHD_STATICSTR_LEN_ ( \
                                                     t))
 
-int
+static int
 check_match (void)
 {
   int errcount = 0;
@@ -89,7 +89,7 @@ check_match (void)
 }
 
 
-int
+static int
 check_not_match (void)
 {
   int errcount = 0;

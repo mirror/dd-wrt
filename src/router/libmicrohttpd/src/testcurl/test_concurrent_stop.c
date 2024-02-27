@@ -1,7 +1,7 @@
 /*
      This file is part of libmicrohttpd
      Copyright (C) 2007, 2009, 2011, 2015, 2016 Christian Grothoff
-     Copyright (C) 2014-2021 Evgeny Grin (Karlson2k)
+     Copyright (C) 2014-2022 Evgeny Grin (Karlson2k)
 
      libmicrohttpd is free software; you can redistribute it and/or modify
      it under the terms of the GNU General Public License as published
@@ -33,7 +33,6 @@
 #include <string.h>
 #include <time.h>
 #include <pthread.h>
-#include "gauger.h"
 
 #if defined(MHD_CPU_COUNT) && (MHD_CPU_COUNT + 0) < 2
 #undef MHD_CPU_COUNT
@@ -45,7 +44,15 @@
 /**
  * How many requests do we do in parallel?
  */
-#define PAR (MHD_CPU_COUNT * 4)
+#if SIZEOF_SIZE_T >= 8 || MHD_CPU_COUNT < 8
+#  define PAR (MHD_CPU_COUNT * 4)
+#elif MHD_CPU_COUNT < 16
+/* Limit load */
+#  define PAR (MHD_CPU_COUNT * 2)
+#else
+/* Limit load */
+#  define PAR (MHD_CPU_COUNT * 1)
+#endif
 
 /**
  * Do we use HTTP 1.1?
@@ -97,7 +104,7 @@ thread_watchdog (void *param)
 }
 
 
-pthread_t watchdog_tid;
+static pthread_t watchdog_tid;
 
 static void
 start_watchdog (int timeout, const char *obj_name)
@@ -143,22 +150,22 @@ ahc_echo (void *cls,
           const char *version,
           const char *upload_data,
           size_t *upload_data_size,
-          void **usr_data)
+          void **req_cls)
 {
   static int marker;
-  const char *me = cls;
   enum MHD_Result ret;
+  (void) cls;
   (void) url; (void) version;                      /* Unused. Silent compiler warning. */
   (void) upload_data; (void) upload_data_size;     /* Unused. Silent compiler warning. */
 
-  if (0 != strcmp (me, method))
+  if (0 != strcmp (MHD_HTTP_METHOD_GET, method))
     return MHD_NO;              /* unexpected method */
-  if (&marker != *usr_data)
+  if (&marker != *req_cls)
   {
-    *usr_data = &marker;
+    *req_cls = &marker;
     return MHD_YES;
   }
-  *usr_data = NULL;
+  *req_cls = NULL;
   ret = MHD_queue_response (connection,
                             MHD_HTTP_OK,
                             response);
@@ -217,12 +224,12 @@ do_gets (void *param)
   int j;
   pthread_t par[PAR];
   char url[64];
-  int port = (int) (intptr_t) param;
+  uint16_t port = (uint16_t) (intptr_t) param;
 
   snprintf (url,
             sizeof (url),
-            "http://127.0.0.1:%d/hello_world",
-            port);
+            "http://127.0.0.1:%u/hello_world",
+            (unsigned int) port);
 
   for (j = 0; j < PAR; j++)
   {
@@ -246,8 +253,8 @@ do_gets (void *param)
 }
 
 
-pthread_t
-start_gets (int port)
+static pthread_t
+start_gets (uint16_t port)
 {
   pthread_t tid;
   continue_requesting = 1;
@@ -260,21 +267,21 @@ start_gets (int port)
 }
 
 
-static int
-testMultithreadedGet (int port,
-                      int poll_flag)
+static unsigned int
+testMultithreadedGet (uint16_t port,
+                      uint32_t poll_flag)
 {
   struct MHD_Daemon *d;
   pthread_t p;
-  int result;
+  unsigned int result;
 
   result = 0;
   d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION
                         | MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG
-                        | poll_flag,
+                        | (enum MHD_FLAG) poll_flag,
                         port,
                         NULL, NULL,
-                        &ahc_echo, "GET",
+                        &ahc_echo, NULL,
                         MHD_OPTION_END);
   if (d == NULL)
     return 16;
@@ -286,7 +293,7 @@ testMultithreadedGet (int port,
     {
       MHD_stop_daemon (d); return 32;
     }
-    port = (int) dinfo->port;
+    port = dinfo->port;
   }
   client_error = CURLE_OK; /* clear client error state */
   p = start_gets (port);
@@ -306,20 +313,20 @@ testMultithreadedGet (int port,
 }
 
 
-static int
-testMultithreadedPoolGet (int port,
-                          int poll_flag)
+static unsigned int
+testMultithreadedPoolGet (uint16_t port,
+                          uint32_t poll_flag)
 {
   struct MHD_Daemon *d;
   pthread_t p;
-  int result;
+  unsigned int result;
 
   result = 0;
   d = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG
-                        | poll_flag,
+                        | (enum MHD_FLAG) poll_flag,
                         port,
                         NULL, NULL,
-                        &ahc_echo, "GET",
+                        &ahc_echo, NULL,
                         MHD_OPTION_THREAD_POOL_SIZE, MHD_CPU_COUNT,
                         MHD_OPTION_END);
   if (d == NULL)
@@ -332,7 +339,7 @@ testMultithreadedPoolGet (int port,
     {
       MHD_stop_daemon (d); return 32;
     }
-    port = (int) dinfo->port;
+    port = dinfo->port;
   }
   client_error = CURLE_OK; /* clear client error state */
   p = start_gets (port);
@@ -356,7 +363,7 @@ int
 main (int argc, char *const *argv)
 {
   unsigned int errorCount = 0;
-  int port;
+  uint16_t port;
   (void) argc;   /* Unused. Silent compiler warning. */
   (void) argv;   /* Unused. Silent compiler warning. */
 
@@ -372,9 +379,8 @@ main (int argc, char *const *argv)
     port += 5;
   if (0 != curl_global_init (CURL_GLOBAL_WIN32))
     return 2;
-  response = MHD_create_response_from_buffer (strlen ("/hello_world"),
-                                              "/hello_world",
-                                              MHD_RESPMEM_MUST_COPY);
+  response = MHD_create_response_from_buffer_copy (strlen ("/hello_world"),
+                                                   "/hello_world");
   errorCount += testMultithreadedGet (port, 0);
   if (0 != port)
     port++;

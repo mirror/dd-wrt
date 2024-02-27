@@ -42,7 +42,7 @@ value_checker (void *cls,
                const char *transfer_encoding,
                const char *data, uint64_t off, size_t size)
 {
-  unsigned int *pos = cls;
+  size_t *pos = (size_t *) cls;
   (void) kind; (void) key; (void) filename; (void) content_type; /* Unused. Silent compiler warning. */
   (void) transfer_encoding; (void) data; (void) off;             /* Unused. Silent compiler warning. */
 #if 0
@@ -59,25 +59,25 @@ value_checker (void *cls,
 }
 
 
-static int
-test_simple_large ()
+static unsigned int
+test_simple_large (void)
 {
   struct MHD_Connection connection;
-  struct MHD_HTTP_Header header;
+  struct MHD_HTTP_Req_Header header;
   struct MHD_PostProcessor *pp;
   size_t i;
   size_t delta;
   size_t size;
   char data[102400];
-  unsigned int pos;
+  size_t pos;
 
   pos = 0;
   memset (data, 'A', sizeof (data));
   memcpy (data, "key=", 4);
   data[sizeof (data) - 1] = '\0';
   memset (&connection, 0, sizeof (struct MHD_Connection));
-  memset (&header, 0, sizeof (struct MHD_HTTP_Header));
-  connection.headers_received = &header;
+  memset (&header, 0, sizeof (struct MHD_HTTP_Res_Header));
+  connection.rq.headers_received = &header;
   header.header = MHD_HTTP_HEADER_CONTENT_TYPE;
   header.value = MHD_HTTP_POST_ENCODING_FORM_URLENCODED;
   header.header_size = strlen (header.header);
@@ -88,8 +88,17 @@ test_simple_large ()
   size = strlen (data);
   while (i < size)
   {
-    delta = 1 + MHD_random_ () % (size - i);
-    MHD_post_process (pp, &data[i], delta);
+    delta = 1 + ((size_t) MHD_random_ ()) % (size - i);
+    if (MHD_YES !=
+        MHD_post_process (pp,
+                          &data[i],
+                          delta))
+    {
+      fprintf (stderr,
+               "MHD_post_process() failed!\n");
+      MHD_destroy_post_processor (pp);
+      return 1;
+    }
     i += delta;
   }
   MHD_destroy_post_processor (pp);

@@ -1,6 +1,7 @@
 /*
      This file is part of libmicrohttpd
      Copyright (C) 2015 Christian Grothoff (and other contributing authors)
+     Copyright (C) 2016-2022 Evgeny Grin (Karlson2k)
 
      This library is free software; you can redistribute it and/or
      modify it under the terms of the GNU Lesser General Public
@@ -61,7 +62,7 @@ callback (void *cls,
   if (buf_size < (param->response_size - pos))
     size_to_copy = buf_size;
   else
-    size_to_copy = param->response_size - pos;
+    size_to_copy = (size_t) (param->response_size - pos);
 
   memcpy (buf, param->response_data + pos, size_to_copy);
 
@@ -73,7 +74,10 @@ callback (void *cls,
     }
    * End of pseudo code. */
   /* Return amount of data copied to buffer. */
-  return size_to_copy;
+  /* The 'buf_size' is always smaller than SSIZE_MAX therefore it's safe
+   * to cast 'size_to_copy' to 'ssize_t'. */
+  /* assert (size_to_copy <= buf_size); */
+  return (ssize_t) size_to_copy;
 }
 
 
@@ -97,7 +101,7 @@ ahc_echo (void *cls,
           const char *version,
           const char *upload_data,
           size_t *upload_data_size,
-          void **ptr)
+          void **req_cls)
 {
   static int aptr;
   struct ResponseContentCallbackParam *callback_param;
@@ -111,10 +115,10 @@ ahc_echo (void *cls,
 
   if (0 != strcmp (method, "GET"))
     return MHD_NO;              /* unexpected method */
-  if (&aptr != *ptr)
+  if (&aptr != *req_cls)
   {
     /* do never respond on first call */
-    *ptr = &aptr;
+    *req_cls = &aptr;
     return MHD_YES;
   }
 
@@ -126,7 +130,7 @@ ahc_echo (void *cls,
   callback_param->response_size = (sizeof(simple_response_text)
                                    / sizeof(char)) - 1;
 
-  *ptr = NULL;                  /* reset when done */
+  *req_cls = NULL;                  /* reset when done */
   response = MHD_create_response_from_callback (MHD_SIZE_UNKNOWN,
                                                 1024,
                                                 &callback,

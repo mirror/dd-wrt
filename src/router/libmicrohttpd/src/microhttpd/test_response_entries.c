@@ -24,21 +24,21 @@ expect_str (const char *actual, const char *expected)
   if (NULL == actual)
   {
     fprintf (stderr, "FAILED: result: NULL\n" \
-             "        expected: \"%s\"",
+             "        expected: \"%s\"\n",
              expected);
     return 0;
   }
   if (NULL == expected)
   {
     fprintf (stderr, "FAILED: result: \"%s\"\n" \
-             "        expected: NULL",
+             "        expected: NULL\n",
              actual);
     return 0;
   }
   if (0 != strcmp (actual, expected))
   {
     fprintf (stderr, "FAILED: result: \"%s\"\n" \
-             "        expected: \"%s\"",
+             "        expected: \"%s\"\n",
              actual, expected);
     return 0;
   }
@@ -50,11 +50,11 @@ int
 main (int argc,
       char *const *argv)
 {
+  struct MHD_Response *r;
   (void) argc;
   (void) argv; /* Unused. Silence compiler warning. */
-  struct MHD_Response *r;
 
-  r = MHD_create_response_from_buffer (0, "", MHD_RESPMEM_PERSISTENT);
+  r = MHD_create_response_empty (MHD_RF_NONE);
   if (NULL == r)
   {
     fprintf (stderr, "Cannot create a response.\n");

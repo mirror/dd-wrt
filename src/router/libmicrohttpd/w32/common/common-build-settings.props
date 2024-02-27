@@ -3,9 +3,9 @@
   <PropertyGroup Label="UserMacros">
     <!-- Target minimum OS version: WinXP = 0; Vista = 1; Win7 = 2; Win8 = 3...
          Only 0, 1 and 3 are used currently -->
-    <TargetOSLevel Condition="$(Platform.StartsWith('ARM'))">3</TargetOSLevel>
-    <TargetOSLevel Condition="! $(Platform.StartsWith('ARM')) And $(PlatformToolset.EndsWith('_xp'))">0</TargetOSLevel>
-    <TargetOSLevel Condition="! $(Platform.StartsWith('ARM')) And ! $(PlatformToolset.EndsWith('_xp'))">1</TargetOSLevel>
+    <TargetOSLevel Condition="$(Platform.ToLowerInvariant().StartsWith('arm'))">3</TargetOSLevel>
+    <TargetOSLevel Condition="! $(Platform.ToLowerInvariant().StartsWith('arm')) And $(PlatformToolset.EndsWith('_xp'))">0</TargetOSLevel>
+    <TargetOSLevel Condition="! $(Platform.ToLowerInvariant().StartsWith('arm')) And ! $(PlatformToolset.EndsWith('_xp'))">1</TargetOSLevel>
     <MhdNumBits Condition="$(Platform.EndsWith('64'))">64</MhdNumBits>
     <MhdNumBits Condition="! $(Platform.EndsWith('64'))">32</MhdNumBits>
   </PropertyGroup>
@@ -25,10 +25,13 @@
   <ItemDefinitionGroup>
     <ClCompile>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <WarningLevel>Level3</WarningLevel>
+      <WarningLevel Condition="'%(ClCompile.ExternalWarningLevel)' != ''">EnableAllWarnings</WarningLevel>
+      <WarningLevel Condition="'%(ClCompile.ExternalWarningLevel)' == ''">Level4</WarningLevel>
+      <ExternalWarningLevel>Level3</ExternalWarningLevel>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <DisableSpecificWarnings>4996;4820;4127;5045</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4996;4820;4127;5045;4711;4710</DisableSpecificWarnings>
       <TreatSpecificWarningsAsErrors>4013</TreatSpecificWarningsAsErrors>
+      <SmallerTypeCheck>false</SmallerTypeCheck>
       <ProgramDataBaseFileName>$(IntDir)$(TargetName).pdb</ProgramDataBaseFileName>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <LanguageStandard_C Condition="'%(ClCompile.LanguageStandard_C)' != ''">stdc17</LanguageStandard_C>
@@ -89,7 +92,6 @@
   <ItemDefinitionGroup Condition="'$(UseDebugLibraries)'=='true'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <SmallerTypeCheck>true</SmallerTypeCheck>
       <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <ResourceCompile>
@@ -98,7 +100,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(UseDebugLibraries)'!='true'">
     <ClCompile>
-      <Optimization>Full</Optimization>
+      <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>

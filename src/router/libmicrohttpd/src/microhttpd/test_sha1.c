@@ -249,9 +249,9 @@ check_result (const char *test_name,
   {
     char calc_str[SHA1_DIGEST_STRING_SIZE];
     bin2hex (calculated, SHA1_DIGEST_SIZE, calc_str);
-    printf (
-      "PASSED: %s check %u: calculated digest %s matches expected digest.\n",
-      test_name, check_num, calc_str);
+    printf ("PASSED: %s check %u: calculated digest %s matches " \
+            "expected digest.\n",
+            test_name, check_num, calc_str);
     fflush (stdout);
   }
   return failed ? 1 : 0;

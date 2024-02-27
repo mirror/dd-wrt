@@ -1,6 +1,7 @@
 /*
      This file is part of libmicrohttpd
      Copyright (C) 2011 Christian Grothoff (and other contributing authors)
+     Copyright (C) 2014-2022 Evgeny Grin (Karlson2k)
 
      This library is free software; you can redistribute it and/or
      modify it under the terms of the GNU Lesser General Public
@@ -20,6 +21,7 @@
  * @file post_example.c
  * @brief example for processing POST requests using libmicrohttpd
  * @author Christian Grothoff
+ * @author Karlson2k (Evgeny Grin)
  */
 
 #include <stdlib.h>
@@ -203,12 +205,13 @@ get_session (struct MHD_Connection *connection)
  * @param mime mime type to use
  * @param session session information
  * @param connection connection to process
- * @param MHD_YES on success, MHD_NO on failure
+ * @param #MHD_YES on success, #MHD_NO on failure
  */
-typedef enum MHD_Result (*PageHandler)(const void *cls,
-                                       const char *mime,
-                                       struct Session *session,
-                                       struct MHD_Connection *connection);
+typedef enum MHD_Result
+(*PageHandler)(const void *cls,
+               const char *mime,
+               struct Session *session,
+               struct MHD_Connection *connection);
 
 
 /**
@@ -285,15 +288,19 @@ serve_simple_form (const void *cls,
   struct MHD_Response *response;
 
   /* return static form */
-  response = MHD_create_response_from_buffer (strlen (form),
-                                              (void *) form,
-                                              MHD_RESPMEM_PERSISTENT);
+  response = MHD_create_response_from_buffer_static (strlen (form),
+                                                     (const void *) form);
   if (NULL == response)
     return MHD_NO;
   add_session_cookie (session, response);
-  MHD_add_response_header (response,
-                           MHD_HTTP_HEADER_CONTENT_ENCODING,
-                           mime);
+  if (MHD_YES !=
+      MHD_add_response_header (response,
+                               MHD_HTTP_HEADER_CONTENT_ENCODING,
+                               mime))
+  {
+    fprintf (stderr,
+             "Failed to set content encoding header!\n");
+  }
   ret = MHD_queue_response (connection,
                             MHD_HTTP_OK,
                             response);
@@ -331,18 +338,24 @@ fill_v1_form (const void *cls,
             MAIN_PAGE,
             session->value_1);
   /* return static form */
-  response = MHD_create_response_from_buffer (slen,
-                                              (void *) reply,
-                                              MHD_RESPMEM_MUST_FREE);
+  response =
+    MHD_create_response_from_buffer_with_free_callback (slen,
+                                                        (void *) reply,
+                                                        &free);
   if (NULL == response)
   {
     free (reply);
     return MHD_NO;
   }
   add_session_cookie (session, response);
-  MHD_add_response_header (response,
-                           MHD_HTTP_HEADER_CONTENT_ENCODING,
-                           mime);
+  if (MHD_YES !=
+      MHD_add_response_header (response,
+                               MHD_HTTP_HEADER_CONTENT_ENCODING,
+                               mime))
+  {
+    fprintf (stderr,
+             "Failed to set content encoding header!\n");
+  }
   ret = MHD_queue_response (connection,
                             MHD_HTTP_OK,
                             response);
@@ -371,8 +384,8 @@ fill_v1_v2_form (const void *cls,
   size_t slen;
   (void) cls; /* Unused. Silent compiler warning. */
 
-  slen = strlen (SECOND_PAGE) + strlen (session->value_1) + strlen (
-    session->value_2);
+  slen = strlen (SECOND_PAGE) + strlen (session->value_1)
+         + strlen (session->value_2);
   reply = malloc (slen + 1);
   if (NULL == reply)
     return MHD_NO;
@@ -382,18 +395,24 @@ fill_v1_v2_form (const void *cls,
             session->value_1,
             session->value_2);
   /* return static form */
-  response = MHD_create_response_from_buffer (slen,
-                                              (void *) reply,
-                                              MHD_RESPMEM_MUST_FREE);
+  response =
+    MHD_create_response_from_buffer_with_free_callback (slen,
+                                                        (void *) reply,
+                                                        &free);
   if (NULL == response)
   {
     free (reply);
     return MHD_NO;
   }
   add_session_cookie (session, response);
-  MHD_add_response_header (response,
-                           MHD_HTTP_HEADER_CONTENT_ENCODING,
-                           mime);
+  if (MHD_YES !=
+      MHD_add_response_header (response,
+                               MHD_HTTP_HEADER_CONTENT_ENCODING,
+                               mime))
+  {
+    fprintf (stderr,
+             "Failed to set content encoding header!\n");
+  }
   ret = MHD_queue_response (connection,
                             MHD_HTTP_OK,
                             response);
@@ -422,17 +441,22 @@ not_found_page (const void *cls,
   (void) session; /* Unused. Silent compiler warning. */
 
   /* unsupported HTTP method */
-  response = MHD_create_response_from_buffer (strlen (NOT_FOUND_ERROR),
-                                              (void *) NOT_FOUND_ERROR,
-                                              MHD_RESPMEM_PERSISTENT);
+  response =
+    MHD_create_response_from_buffer_static (strlen (NOT_FOUND_ERROR),
+                                            (const void *) NOT_FOUND_ERROR);
   if (NULL == response)
     return MHD_NO;
   ret = MHD_queue_response (connection,
                             MHD_HTTP_NOT_FOUND,
                             response);
-  MHD_add_response_header (response,
-                           MHD_HTTP_HEADER_CONTENT_ENCODING,
-                           mime);
+  if (MHD_YES !=
+      MHD_add_response_header (response,
+                               MHD_HTTP_HEADER_CONTENT_ENCODING,
+                               mime))
+  {
+    fprintf (stderr,
+             "Failed to set content encoding header!\n");
+  }
   MHD_destroy_response (response);
   return ret;
 }
@@ -496,8 +520,10 @@ post_iterator (void *cls,
   }
   if (0 == strcmp ("v1", key))
   {
+    if (off >= sizeof(session->value_1) - 1)
+      return MHD_YES; /* Discard extra data */
     if (size + off >= sizeof(session->value_1))
-      size = sizeof (session->value_1) - off - 1;
+      size = (size_t) (sizeof (session->value_1) - off - 1); /* crop extra data */
     memcpy (&session->value_1[off],
             data,
             size);
@@ -506,8 +532,10 @@ post_iterator (void *cls,
   }
   if (0 == strcmp ("v2", key))
   {
+    if (off >= sizeof(session->value_2) - 1)
+      return MHD_YES; /* Discard extra data */
     if (size + off >= sizeof(session->value_2))
-      size = sizeof (session->value_2) - off - 1;
+      size = (size_t) (sizeof (session->value_2) - off - 1); /* crop extra data */
     memcpy (&session->value_2[off],
             data,
             size);
@@ -540,7 +568,7 @@ post_iterator (void *cls,
  * @param upload_data_size set initially to the size of the
  *        upload_data provided; the method must update this
  *        value to the number of bytes NOT processed;
- * @param ptr pointer that the callback can set to some
+ * @param req_cls pointer that the callback can set to some
  *        address and that will be preserved by MHD for future
  *        calls for this request; since the access handler may
  *        be called many times (i.e., for a PUT/POST operation
@@ -549,7 +577,7 @@ post_iterator (void *cls,
  *        If necessary, this state can be cleaned up in the
  *        global "MHD_RequestCompleted" callback (which
  *        can be set with the MHD_OPTION_NOTIFY_COMPLETED).
- *        Initially, <tt>*con_cls</tt> will be NULL.
+ *        Initially, <tt>*req_cls</tt> will be NULL.
  * @return MHS_YES if the connection was handled successfully,
  *         MHS_NO if the socket must be closed due to a serious
  *         error while handling the request
@@ -562,7 +590,7 @@ create_response (void *cls,
                  const char *version,
                  const char *upload_data,
                  size_t *upload_data_size,
-                 void **ptr)
+                 void **req_cls)
 {
   struct MHD_Response *response;
   struct Request *request;
@@ -572,7 +600,7 @@ create_response (void *cls,
   (void) cls;               /* Unused. Silent compiler warning. */
   (void) version;           /* Unused. Silent compiler warning. */
 
-  request = *ptr;
+  request = *req_cls;
   if (NULL == request)
   {
     request = calloc (1, sizeof (struct Request));
@@ -581,7 +609,7 @@ create_response (void *cls,
       fprintf (stderr, "calloc error: %s\n", strerror (errno));
       return MHD_NO;
     }
-    *ptr = request;
+    *req_cls = request;
     if (0 == strcmp (method, MHD_HTTP_METHOD_POST))
     {
       request->pp = MHD_create_post_processor (connection, 1024,
@@ -610,9 +638,11 @@ create_response (void *cls,
   if (0 == strcmp (method, MHD_HTTP_METHOD_POST))
   {
     /* evaluate POST data */
-    MHD_post_process (request->pp,
-                      upload_data,
-                      *upload_data_size);
+    if (MHD_YES !=
+        MHD_post_process (request->pp,
+                          upload_data,
+                          *upload_data_size))
+      return MHD_NO;
     if (0 != *upload_data_size)
     {
       *upload_data_size = 0;
@@ -643,9 +673,9 @@ create_response (void *cls,
     return ret;
   }
   /* unsupported HTTP method */
-  response = MHD_create_response_from_buffer (strlen (METHOD_ERROR),
-                                              (void *) METHOD_ERROR,
-                                              MHD_RESPMEM_PERSISTENT);
+  response =
+    MHD_create_response_from_buffer_static (strlen (METHOD_ERROR),
+                                            (const void *) METHOD_ERROR);
   ret = MHD_queue_response (connection,
                             MHD_HTTP_NOT_ACCEPTABLE,
                             response);
@@ -660,16 +690,16 @@ create_response (void *cls,
  *
  * @param cls not used
  * @param connection connection that completed
- * @param con_cls session handle
+ * @param req_cls session handle
  * @param toe status code
  */
 static void
 request_completed_callback (void *cls,
                             struct MHD_Connection *connection,
-                            void **con_cls,
+                            void **req_cls,
                             enum MHD_RequestTerminationCode toe)
 {
-  struct Request *request = *con_cls;
+  struct Request *request = *req_cls;
   (void) cls;         /* Unused. Silent compiler warning. */
   (void) connection;  /* Unused. Silent compiler warning. */
   (void) toe;         /* Unused. Silent compiler warning. */
@@ -689,7 +719,7 @@ request_completed_callback (void *cls,
  * too long.
  */
 static void
-expire_sessions ()
+expire_sessions (void)
 {
   struct Session *pos;
   struct Session *prev;
@@ -732,22 +762,31 @@ main (int argc, char *const *argv)
   fd_set ws;
   fd_set es;
   MHD_socket max;
-  MHD_UNSIGNED_LONG_LONG mhd_timeout;
+  uint64_t mhd_timeout;
+  int port;
 
   if (argc != 2)
   {
     printf ("%s PORT\n", argv[0]);
     return 1;
   }
+  port = atoi (argv[1]);
+  if ( (1 > port) || (port > 65535) )
+  {
+    fprintf (stderr,
+             "Port must be a number between 1 and 65535.\n");
+    return 1;
+  }
   /* initialize PRNG */
   srand ((unsigned int) time (NULL));
   d = MHD_start_daemon (MHD_USE_ERROR_LOG,
-                        atoi (argv[1]),
+                        (uint16_t) port,
                         NULL, NULL,
                         &create_response, NULL,
                         MHD_OPTION_CONNECTION_TIMEOUT, (unsigned int) 15,
                         MHD_OPTION_NOTIFY_COMPLETED,
                         &request_completed_callback, NULL,
+                        MHD_OPTION_APP_FD_SETSIZE, (int) FD_SETSIZE,
                         MHD_OPTION_END);
   if (NULL == d)
     return 1;
@@ -760,15 +799,19 @@ main (int argc, char *const *argv)
     FD_ZERO (&es);
     if (MHD_YES != MHD_get_fdset (d, &rs, &ws, &es, &max))
       break; /* fatal internal error */
-    if (MHD_get_timeout (d, &mhd_timeout) == MHD_YES)
+    if (MHD_get_timeout64 (d, &mhd_timeout) == MHD_YES)
     {
-      tv.tv_sec = mhd_timeout / 1000;
-      tv.tv_usec = (mhd_timeout - (tv.tv_sec * 1000)) * 1000;
+#if ! defined(_WIN32) || defined(__CYGWIN__)
+      tv.tv_sec = (time_t) (mhd_timeout / 1000LL);
+#else  /* Native W32 */
+      tv.tv_sec = (long) (mhd_timeout / 1000LL);
+#endif /* Native W32 */
+      tv.tv_usec = ((long) (mhd_timeout % 1000)) * 1000;
       tvp = &tv;
     }
     else
       tvp = NULL;
-    if (-1 == select (max + 1, &rs, &ws, &es, tvp))
+    if (-1 == select ((int) max + 1, &rs, &ws, &es, tvp))
     {
       if (EINTR != errno)
         abort ();

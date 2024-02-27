@@ -1,6 +1,7 @@
 /*
      This file is part of libmicrohttpd
      Copyright (C) 2008 Christian Grothoff (and other contributing authors)
+     Copyright (C) 2014-2022 Evgeny Grin (Karlson2k)
 
      This library is free software; you can redistribute it and/or
      modify it under the terms of the GNU Lesser General Public
@@ -21,6 +22,7 @@
  * @file authorization_example.c
  * @brief example for how to use libmicrohttpd with HTTP authentication
  * @author Christian Grothoff
+ * @author Karlson2k (Evgeny Grin)
  */
 
 #include "platform.h"
@@ -45,15 +47,14 @@ ahc_echo (void *cls,
           const char *url,
           const char *method,
           const char *version,
-          const char *upload_data, size_t *upload_data_size, void **ptr)
+          const char *upload_data, size_t *upload_data_size, void **req_cls)
 {
   static int aptr;
-  const char *me = cls;
   struct MHD_Response *response;
   enum MHD_Result ret;
-  char *user;
-  char *pass;
+  struct MHD_BasicAuthInfo *auth_info;
   int fail;
+  (void) cls;               /* Unused. Silent compiler warning. */
   (void) url;               /* Unused. Silent compiler warning. */
   (void) version;           /* Unused. Silent compiler warning. */
   (void) upload_data;       /* Unused. Silent compiler warning. */
@@ -61,39 +62,45 @@ ahc_echo (void *cls,
 
   if (0 != strcmp (method, "GET"))
     return MHD_NO;              /* unexpected method */
-  if (&aptr != *ptr)
+  if (&aptr != *req_cls)
   {
     /* do never respond on first call */
-    *ptr = &aptr;
+    *req_cls = &aptr;
     return MHD_YES;
   }
-  *ptr = NULL;                  /* reset when done */
+  *req_cls = NULL;                  /* reset when done */
 
   /* require: "Aladdin" with password "open sesame" */
-  pass = NULL;
-  user = MHD_basic_auth_get_username_password (connection,
-                                               &pass);
-  fail = ( (NULL == user) ||
-           (0 != strcmp (user, "Aladdin")) ||
-           (0 != strcmp (pass, "open sesame") ) );
+  auth_info = MHD_basic_auth_get_username_password3 (connection);
+  fail = ( (NULL == auth_info) ||
+           (strlen ("Aladdin") != auth_info->username_len) ||
+           (0 != memcmp (auth_info->username, "Aladdin",
+                         auth_info->username_len)) ||
+           /* The next check against NULL is optional,
+            * if 'password' is NULL then 'password_len' is always zero. */
+           (NULL == auth_info->password) ||
+           (strlen ("open sesame") != auth_info->password_len) ||
+           (0 != memcmp (auth_info->password, "open sesame",
+                         auth_info->password_len)) );
   if (fail)
   {
-    response = MHD_create_response_from_buffer (strlen (DENIED),
-                                                (void *) DENIED,
-                                                MHD_RESPMEM_PERSISTENT);
-    ret = MHD_queue_basic_auth_fail_response (connection,"TestRealm",response);
+    response =
+      MHD_create_response_from_buffer_static (strlen (DENIED),
+                                              (const void *) DENIED);
+    ret = MHD_queue_basic_auth_required_response3 (connection,
+                                                   "TestRealm",
+                                                   MHD_NO,
+                                                   response);
   }
   else
   {
-    response = MHD_create_response_from_buffer (strlen (me),
-                                                (void *) me,
-                                                MHD_RESPMEM_PERSISTENT);
+    response =
+      MHD_create_response_from_buffer_static (strlen (PAGE),
+                                              (const void *) PAGE);
     ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
   }
-  if (NULL != user)
-    MHD_free (user);
-  if (NULL != pass)
-    MHD_free (pass);
+  if (NULL != auth_info)
+    MHD_free (auth_info);
   MHD_destroy_response (response);
   return ret;
 }
@@ -107,7 +114,7 @@ main (int argc, char *const *argv)
 
   if ( (argc != 2) ||
        (1 != sscanf (argv[1], "%u", &port)) ||
-       (UINT16_MAX < port) )
+       (65535 < port) )
   {
     fprintf (stderr,
              "%s PORT\n", argv[0]);
@@ -116,8 +123,8 @@ main (int argc, char *const *argv)
 
   d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION
                         | MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG,
-                        atoi (argv[1]),
-                        NULL, NULL, &ahc_echo, PAGE, MHD_OPTION_END);
+                        (uint16_t) port,
+                        NULL, NULL, &ahc_echo, NULL, MHD_OPTION_END);
   if (d == NULL)
     return 1;
   fprintf (stderr, "HTTP server running. Press ENTER to stop the server.\n");

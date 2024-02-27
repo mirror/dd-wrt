@@ -4,7 +4,6 @@
   <Import Project="$(MhdW32Common)project-configs.props" />
   <Import Project="$(MhdW32Common)hellobrowser-files.vcxproj" />
   <PropertyGroup Label="Globals">
-    <VCProjectVersion>16.0</VCProjectVersion>
     <ProjectGuid>{310F39BD-A2D6-44FF-8344-37ADD0524CBD}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>hellobrowser</RootNamespace>

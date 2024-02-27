@@ -23,7 +23,7 @@ static enum MHD_Result
 answer_to_connection (void *cls, struct MHD_Connection *connection,
                       const char *url, const char *method,
                       const char *version, const char *upload_data,
-                      size_t *upload_data_size, void **con_cls)
+                      size_t *upload_data_size, void **req_cls)
 {
   struct MHD_Response *response;
   int fd;
@@ -34,7 +34,7 @@ answer_to_connection (void *cls, struct MHD_Connection *connection,
   (void) version;           /* Unused. Silent compiler warning. */
   (void) upload_data;       /* Unused. Silent compiler warning. */
   (void) upload_data_size;  /* Unused. Silent compiler warning. */
-  (void) con_cls;           /* Unused. Silent compiler warning. */
+  (void) req_cls;           /* Unused. Silent compiler warning. */
 
   if (0 != strcmp (method, "GET"))
     return MHD_NO;
@@ -49,9 +49,7 @@ answer_to_connection (void *cls, struct MHD_Connection *connection,
     if (fd != -1)
       (void) close (fd);
     response =
-      MHD_create_response_from_buffer (strlen (errorstr),
-                                       (void *) errorstr,
-                                       MHD_RESPMEM_PERSISTENT);
+      MHD_create_response_from_buffer_static (strlen (errorstr), errorstr);
     if (NULL != response)
     {
       ret =
@@ -65,9 +63,21 @@ answer_to_connection (void *cls, struct MHD_Connection *connection,
       return MHD_NO;
   }
   response =
-    MHD_create_response_from_fd_at_offset64 (sbuf.st_size, fd, 0);
-  MHD_add_response_header (response, "Content-Type", MIMETYPE);
-  ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
+    MHD_create_response_from_fd_at_offset64 ((size_t) sbuf.st_size,
+                                             fd,
+                                             0);
+  if (MHD_YES !=
+      MHD_add_response_header (response,
+                               MHD_HTTP_HEADER_CONTENT_TYPE,
+                               MIMETYPE))
+  {
+    fprintf (stderr,
+             "Failed to set content type header!\n");
+    /* return response without content encoding anyway ... */
+  }
+  ret = MHD_queue_response (connection,
+                            MHD_HTTP_OK,
+                            response);
   MHD_destroy_response (response);
 
   return ret;
@@ -75,7 +85,7 @@ answer_to_connection (void *cls, struct MHD_Connection *connection,
 
 
 int
-main ()
+main (void)
 {
   struct MHD_Daemon *daemon;
 

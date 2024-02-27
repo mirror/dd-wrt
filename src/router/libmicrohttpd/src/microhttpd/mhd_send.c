@@ -1,6 +1,6 @@
 /*
   This file is part of libmicrohttpd
-  Copyright (C) 2017,2020 Karlson2k (Evgeny Grin), Full re-write of buffering and
+  Copyright (C) 2017-2023 Karlson2k (Evgeny Grin), Full re-write of buffering and
                      pushing, many bugs fixes, optimisations, sendfile() porting
   Copyright (C) 2019 ng0 <ng0@n0.is>, Initial version of send() wrappers
 
@@ -125,11 +125,15 @@ iov_max_init_ (void)
 {
   long res = sysconf (_SC_IOV_MAX);
   if (res >= 0)
-    mhd_iov_max_ = res;
-#if defined(IOV_MAX)
+    mhd_iov_max_ = (unsigned long) res;
   else
+  {
+#if defined(IOV_MAX)
     mhd_iov_max_ = IOV_MAX;
-#endif /* IOV_MAX */
+#else  /* ! IOV_MAX */
+    mhd_iov_max_ = 8; /* Should be the safe limit */
+#endif /* ! IOV_MAX */
+  }
 }
 
 
@@ -850,7 +854,7 @@ MHD_send_data_ (struct MHD_Connection *connection,
 
       if (MHD_SCKT_ERR_IS_EAGAIN_ (err))
       {
-#if EPOLL_SUPPORT
+#ifdef EPOLL_SUPPORT
         /* EAGAIN, no longer write-ready */
         connection->epoll_state &=
           ~((enum MHD_EpollState) MHD_EPOLL_STATE_WRITE_READY);
@@ -876,7 +880,7 @@ MHD_send_data_ (struct MHD_Connection *connection,
       /* Treat any other error as a hard error. */
       return MHD_ERR_NOTCONN_;
     }
-#if EPOLL_SUPPORT
+#ifdef EPOLL_SUPPORT
     else if (buffer_size > (size_t) ret)
       connection->epoll_state &=
         ~((enum MHD_EpollState) MHD_EPOLL_STATE_WRITE_READY);
@@ -1055,9 +1059,9 @@ MHD_send_hdr_and_body_ (struct MHD_Connection *connection,
 #endif /* ! HAVE_SENDMSG */
                    push_hdr || push_body);
 #if defined(HAVE_SENDMSG) || defined(HAVE_WRITEV)
-  vector[0].iov_base = (void *) header;
+  vector[0].iov_base = _MHD_DROP_CONST (header);
   vector[0].iov_len = header_size;
-  vector[1].iov_base = (void *) body;
+  vector[1].iov_base = _MHD_DROP_CONST (body);
   vector[1].iov_len = body_size;
 
 #if defined(HAVE_SENDMSG)
@@ -1078,9 +1082,9 @@ MHD_send_hdr_and_body_ (struct MHD_Connection *connection,
     complete_response = false;
     push_body = complete_response;
   }
-  vector[0].buf = (char *) header;
+  vector[0].buf = (char *) _MHD_DROP_CONST (header);
   vector[0].len = (unsigned long) header_size;
-  vector[1].buf = (char *) body;
+  vector[1].buf = (char *) _MHD_DROP_CONST (body);
   vector[1].len = (unsigned long) body_size;
 
   ret = WSASend (s, vector, 2, &vec_sent, 0, NULL, NULL);
@@ -1096,7 +1100,7 @@ MHD_send_hdr_and_body_ (struct MHD_Connection *connection,
 
     if (MHD_SCKT_ERR_IS_EAGAIN_ (err))
     {
-#if EPOLL_SUPPORT
+#ifdef EPOLL_SUPPORT
       /* EAGAIN, no longer write-ready */
       connection->epoll_state &=
         ~((enum MHD_EpollState) MHD_EPOLL_STATE_WRITE_READY);
@@ -1122,7 +1126,7 @@ MHD_send_hdr_and_body_ (struct MHD_Connection *connection,
     /* Treat any other error as a hard error. */
     return MHD_ERR_NOTCONN_;
   }
-#if EPOLL_SUPPORT
+#ifdef EPOLL_SUPPORT
   else if ((header_size + body_size) > (size_t) ret)
     connection->epoll_state &=
       ~((enum MHD_EpollState) MHD_EPOLL_STATE_WRITE_READY);
@@ -1155,7 +1159,7 @@ MHD_send_hdr_and_body_ (struct MHD_Connection *connection,
     /* Luckily the type of send function will be used next is known. */
     post_send_setopt (connection,
 #if defined(_MHD_HAVE_SENDFILE)
-                      MHD_resp_sender_std == connection->resp_sender,
+                      MHD_resp_sender_std == connection->rp.resp_sender,
 #else  /* ! _MHD_HAVE_SENDFILE */
                       true,
 #endif /* ! _MHD_HAVE_SENDFILE */
@@ -1175,7 +1179,7 @@ ssize_t
 MHD_send_sendfile_ (struct MHD_Connection *connection)
 {
   ssize_t ret;
-  const int file_fd = connection->response->fd;
+  const int file_fd = connection->rp.response->fd;
   uint64_t left;
   uint64_t offsetu64;
 #ifndef HAVE_SENDFILE64
@@ -1197,24 +1201,25 @@ MHD_send_sendfile_ (struct MHD_Connection *connection)
 #ifdef HAVE_DARWIN_SENDFILE
   off_t len;
 #endif /* HAVE_DARWIN_SENDFILE */
-  const bool used_thr_p_c = (0 != (connection->daemon->options
-                                   & MHD_USE_THREAD_PER_CONNECTION));
+  const bool used_thr_p_c =
+    MHD_D_IS_USING_THREAD_PER_CONN_ (connection->daemon);
   const size_t chunk_size = used_thr_p_c ? MHD_SENFILE_CHUNK_THR_P_C_ :
                             MHD_SENFILE_CHUNK_;
   size_t send_size = 0;
   bool push_data;
-  mhd_assert (MHD_resp_sender_sendfile == connection->resp_sender);
+  mhd_assert (MHD_resp_sender_sendfile == connection->rp.resp_sender);
   mhd_assert (0 == (connection->daemon->options & MHD_USE_TLS));
 
-  offsetu64 = connection->response_write_position
-              + connection->response->fd_off;
+  offsetu64 = connection->rp.rsp_write_position
+              + connection->rp.response->fd_off;
   if (max_off_t < offsetu64)
   {   /* Retry to send with standard 'send()'. */
-    connection->resp_sender = MHD_resp_sender_std;
+    connection->rp.resp_sender = MHD_resp_sender_std;
     return MHD_ERR_AGAIN_;
   }
 
-  left = connection->response->total_size - connection->response_write_position;
+  left = connection->rp.response->total_size
+         - connection->rp.rsp_write_position;
 
   if ( (uint64_t) SSIZE_MAX < left)
     left = SSIZE_MAX;
@@ -1270,14 +1275,14 @@ MHD_send_sendfile_ (struct MHD_Connection *connection)
        to fall back to 'SEND'; see also this thread for info on
        odd libc/Linux behavior with sendfile:
        http://lists.gnu.org/archive/html/libmicrohttpd/2011-02/msg00015.html */
-    connection->resp_sender = MHD_resp_sender_std;
+    connection->rp.resp_sender = MHD_resp_sender_std;
     return MHD_ERR_AGAIN_;
 #else  /* HAVE_SOLARIS_SENDFILE */
     if ( (EAFNOSUPPORT == err) ||
          (EINVAL == err) ||
          (EOPNOTSUPP == err) )
     {     /* Retry with standard file reader. */
-      connection->resp_sender = MHD_resp_sender_std;
+      connection->rp.resp_sender = MHD_resp_sender_std;
       return MHD_ERR_AGAIN_;
     }
     if ( (ENOTCONN == err) ||
@@ -1319,7 +1324,7 @@ MHD_send_sendfile_ (struct MHD_Connection *connection)
     }
     /* Some unrecoverable error. Possibly file FD is not suitable
      * for sendfile(). Retry with standard send(). */
-    connection->resp_sender = MHD_resp_sender_std;
+    connection->rp.resp_sender = MHD_resp_sender_std;
     return MHD_ERR_AGAIN_;
   }
   mhd_assert (0 < sent_bytes);
@@ -1353,7 +1358,7 @@ MHD_send_sendfile_ (struct MHD_Connection *connection)
         (EOPNOTSUPP == err) )
     {     /* This file FD is not suitable for sendfile().
            * Retry with standard send(). */
-      connection->resp_sender = MHD_resp_sender_std;
+      connection->rp.resp_sender = MHD_resp_sender_std;
       return MHD_ERR_AGAIN_;
     }
     return MHD_ERR_BADF_;   /* Return hard error. */
@@ -1400,7 +1405,6 @@ send_iov_nontls (struct MHD_Connection *connection,
                  bool push_data)
 {
   ssize_t res;
-  ssize_t total_sent;
   size_t items_to_send;
 #ifdef HAVE_SENDMSG
   struct msghdr msg;
@@ -1502,35 +1506,38 @@ send_iov_nontls (struct MHD_Connection *connection,
   }
 
   /* Some data has been sent */
-  total_sent = res;
-  /* Adjust the internal tracking information for the iovec to
-   * take this last send into account. */
-  while ((0 != res) && (r_iov->iov[r_iov->sent].iov_len <= (size_t) res))
+  if (1)
   {
-    res -= r_iov->iov[r_iov->sent].iov_len;
-    r_iov->sent++; /* The iov element has been completely sent */
-    mhd_assert ((r_iov->cnt > r_iov->sent) || (0 == res));
-  }
-
-  if (r_iov->cnt == r_iov->sent)
-    post_send_setopt (connection, true, push_data);
-  else
-  {
-#ifdef EPOLL_SUPPORT
-    connection->epoll_state &=
-      ~((enum MHD_EpollState) MHD_EPOLL_STATE_WRITE_READY);
-#endif /* EPOLL_SUPPORT */
-    if (0 != res)
+    size_t track_sent = (size_t) res;
+    /* Adjust the internal tracking information for the iovec to
+     * take this last send into account. */
+    while ((0 != track_sent) && (r_iov->iov[r_iov->sent].iov_len <= track_sent))
     {
-      mhd_assert (r_iov->cnt > r_iov->sent);
-      /* The last iov element has been partially sent */
-      r_iov->iov[r_iov->sent].iov_base =
-        (void *) ((uint8_t *) r_iov->iov[r_iov->sent].iov_base + (size_t) res);
-      r_iov->iov[r_iov->sent].iov_len -= (MHD_iov_size_) res;
+      track_sent -= r_iov->iov[r_iov->sent].iov_len;
+      r_iov->sent++; /* The iov element has been completely sent */
+      mhd_assert ((r_iov->cnt > r_iov->sent) || (0 == track_sent));
+    }
+
+    if (r_iov->cnt == r_iov->sent)
+      post_send_setopt (connection, true, push_data);
+    else
+    {
+#ifdef EPOLL_SUPPORT
+      connection->epoll_state &=
+        ~((enum MHD_EpollState) MHD_EPOLL_STATE_WRITE_READY);
+#endif /* EPOLL_SUPPORT */
+      if (0 != track_sent)
+      {
+        mhd_assert (r_iov->cnt > r_iov->sent);
+        /* The last iov element has been partially sent */
+        r_iov->iov[r_iov->sent].iov_base =
+          (void *) ((uint8_t *) r_iov->iov[r_iov->sent].iov_base + track_sent);
+        r_iov->iov[r_iov->sent].iov_len -= (MHD_iov_size_) track_sent;
+      }
     }
   }
 
-  return total_sent;
+  return res;
 }
 
 
@@ -1568,7 +1575,7 @@ send_iov_emu (struct MHD_Connection *connection,
   do
   {
     if ((size_t) SSIZE_MAX - total_sent < r_iov->iov[r_iov->sent].iov_len)
-      return total_sent; /* return value would overflow */
+      return (ssize_t) total_sent; /* return value would overflow */
 
     res = MHD_send_data_ (connection,
                           r_iov->iov[r_iov->sent].iov_base,
@@ -1581,7 +1588,7 @@ send_iov_emu (struct MHD_Connection *connection,
         return res; /* Nothing was sent, return result as is */
 
       if (MHD_ERR_AGAIN_ == res)
-        return total_sent; /* Some data has been sent, return the amount */
+        return (ssize_t) total_sent; /* Return the amount of the sent data */
 
       return res; /* Any kind of a hard error */
     }
@@ -1590,13 +1597,14 @@ send_iov_emu (struct MHD_Connection *connection,
 
     if (r_iov->iov[r_iov->sent].iov_len != (size_t) res)
     {
+      const size_t sent = (size_t) res;
       /* Incomplete buffer has been sent.
        * Adjust buffer of the last element. */
       r_iov->iov[r_iov->sent].iov_base =
-        (void *) ((uint8_t *) r_iov->iov[r_iov->sent].iov_base + (size_t) res);
-      r_iov->iov[r_iov->sent].iov_len -= res;
+        (void *) ((uint8_t *) r_iov->iov[r_iov->sent].iov_base + sent);
+      r_iov->iov[r_iov->sent].iov_len -= (MHD_iov_size_) sent;
 
-      return total_sent;
+      return (ssize_t) total_sent;
     }
     /* The iov element has been completely sent */
     r_iov->sent++;
@@ -1622,9 +1630,9 @@ MHD_send_iovec_ (struct MHD_Connection *connection,
 #endif /* HTTPS_SUPPORT || _MHD_VECT_SEND_NEEDS_SPIPE_SUPPRESSED */
 #endif /* MHD_VECT_SEND */
 
-  mhd_assert (NULL != connection->resp_iov.iov);
-  mhd_assert (NULL != connection->response->data_iov);
-  mhd_assert (connection->resp_iov.cnt > connection->resp_iov.sent);
+  mhd_assert (NULL != connection->rp.resp_iov.iov);
+  mhd_assert (NULL != connection->rp.response->data_iov);
+  mhd_assert (connection->rp.resp_iov.cnt > connection->rp.resp_iov.sent);
 #ifdef MHD_VECT_SEND
 #if defined(HTTPS_SUPPORT) || \
   defined(_MHD_VECT_SEND_NEEDS_SPIPE_SUPPRESSED)

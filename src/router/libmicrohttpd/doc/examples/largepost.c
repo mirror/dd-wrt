@@ -60,47 +60,49 @@ struct connection_info_struct
 };
 
 
-const char *askpage =
-  "<html><body>\n\
-                       Upload a file, please!<br>\n\
-                       There are %u clients uploading at the moment.<br>\n\
-                       <form action=\"/filepost\" method=\"post\" enctype=\"multipart/form-data\">\n\
-                       <input name=\"file\" type=\"file\">\n\
-                       <input type=\"submit\" value=\" Send \"></form>\n\
-                       </body></html>";
-const char *busypage =
+#define ASKPAGE \
+  "<html><body>\n" \
+  "Upload a file, please!<br>\n" \
+  "There are %u clients uploading at the moment.<br>\n" \
+  "<form action=\"/filepost\" method=\"post\" enctype=\"multipart/form-data\">\n" \
+  "<input name=\"file\" type=\"file\">\n" \
+  "<input type=\"submit\" value=\" Send \"></form>\n" \
+  "</body></html>"
+static const char *busypage =
   "<html><body>This server is busy, please try again later.</body></html>";
-const char *completepage =
+static const char *completepage =
   "<html><body>The upload has been completed.</body></html>";
-const char *errorpage =
+static const char *errorpage =
   "<html><body>This doesn't seem to be right.</body></html>";
-const char *servererrorpage =
+static const char *servererrorpage =
   "<html><body>Invalid request.</body></html>";
-const char *fileexistspage =
+static const char *fileexistspage =
   "<html><body>This file already exists.</body></html>";
-const char *fileioerror =
+static const char *fileioerror =
   "<html><body>IO error writing to disk.</body></html>";
-const char *const postprocerror =
+static const char *const postprocerror =
   "<html><head><title>Error</title></head><body>Error processing POST data</body></html>";
 
 
 static enum MHD_Result
 send_page (struct MHD_Connection *connection,
            const char *page,
-           int status_code)
+           unsigned int status_code)
 {
   enum MHD_Result ret;
   struct MHD_Response *response;
 
-  response =
-    MHD_create_response_from_buffer (strlen (page),
-                                     (void *) page,
-                                     MHD_RESPMEM_MUST_COPY);
+  response = MHD_create_response_from_buffer_static (strlen (page), page);
   if (! response)
     return MHD_NO;
-  MHD_add_response_header (response,
-                           MHD_HTTP_HEADER_CONTENT_TYPE,
-                           "text/html");
+  if (MHD_YES !=
+      MHD_add_response_header (response,
+                               MHD_HTTP_HEADER_CONTENT_TYPE,
+                               "text/html"))
+  {
+    fprintf (stderr,
+             "Failed to set content type header!\n");
+  }
   ret = MHD_queue_response (connection,
                             status_code,
                             response);
@@ -175,10 +177,10 @@ iterate_post (void *coninfo_cls,
 static void
 request_completed (void *cls,
                    struct MHD_Connection *connection,
-                   void **con_cls,
+                   void **req_cls,
                    enum MHD_RequestTerminationCode toe)
 {
-  struct connection_info_struct *con_info = *con_cls;
+  struct connection_info_struct *con_info = *req_cls;
   (void) cls;         /* Unused. Silent compiler warning. */
   (void) connection;  /* Unused. Silent compiler warning. */
   (void) toe;         /* Unused. Silent compiler warning. */
@@ -199,7 +201,7 @@ request_completed (void *cls,
   }
 
   free (con_info);
-  *con_cls = NULL;
+  *req_cls = NULL;
 }
 
 
@@ -211,13 +213,13 @@ answer_to_connection (void *cls,
                       const char *version,
                       const char *upload_data,
                       size_t *upload_data_size,
-                      void **con_cls)
+                      void **req_cls)
 {
   (void) cls;               /* Unused. Silent compiler warning. */
   (void) url;               /* Unused. Silent compiler warning. */
   (void) version;           /* Unused. Silent compiler warning. */
 
-  if (NULL == *con_cls)
+  if (NULL == *req_cls)
   {
     /* First call, setup data structures */
     struct connection_info_struct *con_info;
@@ -256,7 +258,7 @@ answer_to_connection (void *cls,
       con_info->connectiontype = GET;
     }
 
-    *con_cls = (void *) con_info;
+    *req_cls = (void *) con_info;
 
     return MHD_YES;
   }
@@ -268,7 +270,7 @@ answer_to_connection (void *cls,
 
     snprintf (buffer,
               sizeof (buffer),
-              askpage,
+              ASKPAGE,
               nr_of_uploading_clients);
     return send_page (connection,
                       buffer,
@@ -277,7 +279,7 @@ answer_to_connection (void *cls,
 
   if (0 == strcmp (method, MHD_HTTP_METHOD_POST))
   {
-    struct connection_info_struct *con_info = *con_cls;
+    struct connection_info_struct *con_info = *req_cls;
 
     if (0 != *upload_data_size)
     {
@@ -325,7 +327,7 @@ answer_to_connection (void *cls,
 
 
 int
-main ()
+main (void)
 {
   struct MHD_Daemon *daemon;
 

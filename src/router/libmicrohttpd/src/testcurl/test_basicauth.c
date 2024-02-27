@@ -21,7 +21,7 @@
 
 /**
  * @file test_basicauth.c
- * @brief  Testcase for libmicrohttpd concurrent Basic Authorisation
+ * @brief  Testcase for libmicrohttpd Basic Authorisation
  * @author Amr Ali
  * @author Karlson2k (Evgeny Grin)
  */
@@ -33,6 +33,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <errno.h>
 
 #ifndef WINDOWS
 #include <sys/socket.h>
@@ -40,6 +41,9 @@
 #else
 #include <wincrypt.h>
 #endif
+
+#include "mhd_has_param.h"
+#include "mhd_has_in_name.h"
 
 #ifndef MHD_STATICSTR_LEN_
 /**
@@ -247,6 +251,8 @@ struct CBC
 };
 
 static int verbose;
+static int preauth;
+static int oldapi;
 
 static size_t
 copyBuffer (void *ptr,
@@ -275,8 +281,6 @@ ahc_echo (void *cls,
           void **req_cls)
 {
   struct MHD_Response *response;
-  char *username;
-  char *password;
   enum MHD_Result ret;
   static int already_called_marker;
   (void) cls; (void) url;         /* Unused. Silent compiler warning. */
@@ -294,55 +298,136 @@ ahc_echo (void *cls,
     mhdErrorExitDesc ("Unexpected HTTP method");
 
   /* require: USERNAME with password PASSWORD */
-  password = NULL;
-  username = MHD_basic_auth_get_username_password (connection,
-                                                   &password);
-  if (NULL != username)
+  if (! oldapi)
   {
-    if (0 != strcmp (username, USERNAME))
+    struct MHD_BasicAuthInfo *creds;
+
+    creds = MHD_basic_auth_get_username_password3 (connection);
+    if (NULL != creds)
     {
-      fprintf (stderr, "'username' does not match.\n"
-               "Expected: '%s'\tRecieved: '%s'. ", USERNAME, username);
-      mhdErrorExitDesc ("Wrong 'username'");
+      if (NULL == creds->username)
+        mhdErrorExitDesc ("'username' is NULL");
+      else if (MHD_STATICSTR_LEN_ (USERNAME) != creds->username_len)
+      {
+        fprintf (stderr, "'username_len' does not match.\n"
+                 "Expected: %u\tRecieved: %u. ",
+                 (unsigned) MHD_STATICSTR_LEN_ (USERNAME),
+                 (unsigned) creds->username_len);
+        mhdErrorExitDesc ("Wrong 'username_len'");
+      }
+      else if (0 != memcmp (creds->username, USERNAME, creds->username_len))
+      {
+        fprintf (stderr, "'username' does not match.\n"
+                 "Expected: '%s'\tRecieved: '%.*s'. ",
+                 USERNAME,
+                 (int) creds->username_len,
+                 creds->username);
+        mhdErrorExitDesc ("Wrong 'username'");
+      }
+      else if (0 != creds->username[creds->username_len])
+        mhdErrorExitDesc ("'username' is not zero-terminated");
+      else if (NULL == creds->password)
+        mhdErrorExitDesc ("'password' is NULL");
+      else if (MHD_STATICSTR_LEN_ (PASSWORD) != creds->password_len)
+      {
+        fprintf (stderr, "'password_len' does not match.\n"
+                 "Expected: %u\tRecieved: %u. ",
+                 (unsigned) MHD_STATICSTR_LEN_ (PASSWORD),
+                 (unsigned) creds->password_len);
+        mhdErrorExitDesc ("Wrong 'password_len'");
+      }
+      else if (0 != memcmp (creds->password, PASSWORD, creds->password_len))
+      {
+        fprintf (stderr, "'password' does not match.\n"
+                 "Expected: '%s'\tRecieved: '%.*s'. ",
+                 PASSWORD,
+                 (int) creds->password_len,
+                 creds->password);
+        mhdErrorExitDesc ("Wrong 'username'");
+      }
+      else if (0 != creds->password[creds->password_len])
+        mhdErrorExitDesc ("'password' is not zero-terminated");
+
+      MHD_free (creds);
+
+      response =
+        MHD_create_response_from_buffer_static (MHD_STATICSTR_LEN_ (PAGE),
+                                                (const void *) PAGE);
+      if (NULL == response)
+        mhdErrorExitDesc ("Response creation failed");
+      ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
+      if (MHD_YES != ret)
+        mhdErrorExitDesc ("'MHD_queue_response()' failed");
     }
-    if (NULL == password)
-      mhdErrorExitDesc ("The password pointer is NULL");
-    if (0 != strcmp (password, PASSWORD))
-      fprintf (stderr, "'password' does not match.\n"
-               "Expected: '%s'\tRecieved: '%s'. ", PASSWORD, password);
-    response =
-      MHD_create_response_from_buffer (MHD_STATICSTR_LEN_ (PAGE),
-                                       (void *) PAGE,
-                                       MHD_RESPMEM_PERSISTENT);
-    if (NULL == response)
-      mhdErrorExitDesc ("Response creation failed");
-    ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
-    if (MHD_YES != ret)
-      mhdErrorExitDesc ("'MHD_queue_response()' failed");
+    else
+    {
+      response =
+        MHD_create_response_from_buffer_static (MHD_STATICSTR_LEN_ (DENIED),
+                                                (const void *) DENIED);
+      if (NULL == response)
+        mhdErrorExitDesc ("Response creation failed");
+      ret = MHD_queue_basic_auth_required_response3 (connection, REALM, MHD_YES,
+                                                     response);
+      if (MHD_YES != ret)
+        mhdErrorExitDesc ("'MHD_queue_basic_auth_required_response3()' failed");
+    }
   }
   else
   {
+    char *username;
+    char *password;
+
+    password = NULL;
+    username = MHD_basic_auth_get_username_password (connection,
+                                                     &password);
+    if (NULL != username)
+    {
+      if (0 != strcmp (username, USERNAME))
+      {
+        fprintf (stderr, "'username' does not match.\n"
+                 "Expected: '%s'\tRecieved: '%s'. ", USERNAME, username);
+        mhdErrorExitDesc ("Wrong 'username'");
+      }
+      if (NULL == password)
+        mhdErrorExitDesc ("The password pointer is NULL");
+      if (0 != strcmp (password, PASSWORD))
+        fprintf (stderr, "'password' does not match.\n"
+                 "Expected: '%s'\tRecieved: '%s'. ", PASSWORD, password);
+      response =
+        MHD_create_response_from_buffer_static (MHD_STATICSTR_LEN_ (PAGE),
+                                                (const void *) PAGE);
+      if (NULL == response)
+        mhdErrorExitDesc ("Response creation failed");
+      ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
+      if (MHD_YES != ret)
+        mhdErrorExitDesc ("'MHD_queue_response()' failed");
+    }
+    else
+    {
+      if (NULL != password)
+        mhdErrorExitDesc ("The password pointer is NOT NULL");
+      response =
+        MHD_create_response_from_buffer_static (MHD_STATICSTR_LEN_ (DENIED),
+                                                (const void *) DENIED);
+      if (NULL == response)
+        mhdErrorExitDesc ("Response creation failed");
+      ret = MHD_queue_basic_auth_fail_response (connection, REALM, response);
+      if (MHD_YES != ret)
+        mhdErrorExitDesc ("'MHD_queue_basic_auth_fail_response()' failed");
+    }
+    if (NULL != username)
+      MHD_free (username);
     if (NULL != password)
-      mhdErrorExitDesc ("The password pointer is NOT NULL");
-    response =
-      MHD_create_response_from_buffer (MHD_STATICSTR_LEN_ (DENIED),
-                                       (void *) DENIED,
-                                       MHD_RESPMEM_PERSISTENT);
-    ret = MHD_queue_basic_auth_fail_response (connection, REALM,
-                                              response);
+      MHD_free (password);
   }
 
-  if (NULL != username)
-    MHD_free (username);
-  if (NULL != password)
-    MHD_free (password);
   MHD_destroy_response (response);
   return ret;
 }
 
 
 static CURL *
-setupCURL (void *cbc, int port, char *errbuf)
+setupCURL (void *cbc, uint16_t port, char *errbuf)
 {
   CURL *c;
   char url[512];
@@ -353,7 +438,8 @@ setupCURL (void *cbc, int port, char *errbuf)
     /* A workaround for some old libcurl versions, which ignore the specified
      * port by CURLOPT_PORT when authorisation is used. */
     res = snprintf (url, (sizeof(url) / sizeof(url[0])),
-                    "http://127.0.0.1:%d%s", port, MHD_URI_BASE_PATH);
+                    "http://127.0.0.1:%u%s", (unsigned int) port,
+                    MHD_URI_BASE_PATH);
     if ((0 >= res) || ((sizeof(url) / sizeof(url[0])) <= (size_t) res))
       externalErrorExitDesc ("Cannot form request URL");
   }
@@ -374,6 +460,7 @@ setupCURL (void *cbc, int port, char *errbuf)
                                      ((long) TIMEOUTS_VAL))) ||
       (CURLE_OK != curl_easy_setopt (c, CURLOPT_HTTP_VERSION,
                                      CURL_HTTP_VERSION_1_1)) ||
+      /* (CURLE_OK != curl_easy_setopt (c, CURLOPT_VERBOSE, 1L)) || */
       (CURLE_OK != curl_easy_setopt (c, CURLOPT_FAILONERROR, 1L)) ||
 #if CURL_AT_LEAST_VERSION (7, 85, 0)
       (CURLE_OK != curl_easy_setopt (c, CURLOPT_PROTOCOLS_STR, "http")) ||
@@ -386,36 +473,38 @@ setupCURL (void *cbc, int port, char *errbuf)
       (CURLE_OK != curl_easy_setopt (c, CURLOPT_PORT, ((long) port))) ||
       (CURLE_OK != curl_easy_setopt (c, CURLOPT_URL, url)))
     libcurlErrorExitDesc ("curl_easy_setopt() failed");
+#if CURL_AT_LEAST_VERSION (7,21,3)
+  if ((CURLE_OK != curl_easy_setopt (c, CURLOPT_HTTPAUTH,
+                                     CURLAUTH_BASIC
+                                     | (preauth ? 0 : CURLAUTH_ONLY))) ||
+      (CURLE_OK != curl_easy_setopt (c, CURLOPT_USERPWD,
+                                     USERNAME ":" PASSWORD)))
+    libcurlErrorExitDesc ("curl_easy_setopt() authorization options failed");
+#else  /* libcurl version before 7.21.3 */
   if ((CURLE_OK != curl_easy_setopt (c, CURLOPT_HTTPAUTH, CURLAUTH_BASIC)) ||
       (CURLE_OK != curl_easy_setopt (c, CURLOPT_USERPWD,
                                      USERNAME ":" PASSWORD)))
     libcurlErrorExitDesc ("curl_easy_setopt() authorization options failed");
+#endif /* libcurl version before 7.21.3 */
   return c;
 }
 
 
 static CURLcode
-performQueryExternal (struct MHD_Daemon *d, CURL *c, CURLM **multi_reuse)
+performQueryExternal (struct MHD_Daemon *d, CURL *c)
 {
   CURLM *multi;
   time_t start;
   struct timeval tv;
   CURLcode ret;
-  int libcurl_finished;
 
   ret = CURLE_FAILED_INIT; /* will be replaced with real result */
-  if (NULL != *multi_reuse)
-    multi = *multi_reuse;
-  else
-  {
-    multi = curl_multi_init ();
-    if (multi == NULL)
-      libcurlErrorExitDesc ("curl_multi_init() failed");
-    *multi_reuse = multi;
-  }
+  multi = NULL;
+  multi = curl_multi_init ();
+  if (multi == NULL)
+    libcurlErrorExitDesc ("curl_multi_init() failed");
   if (CURLM_OK != curl_multi_add_handle (multi, c))
     libcurlErrorExitDesc ("curl_multi_add_handle() failed");
-  libcurl_finished = 0;
 
   start = time (NULL);
   while (time (NULL) - start <= TIMEOUTS_VAL)
@@ -425,16 +514,15 @@ performQueryExternal (struct MHD_Daemon *d, CURL *c, CURLM **multi_reuse)
     fd_set es;
     MHD_socket maxMhdSk;
     int maxCurlSk;
-    MHD_UNSIGNED_LONG_LONG time_o;
+    int running;
 
     maxMhdSk = MHD_INVALID_SOCKET;
     maxCurlSk = -1;
     FD_ZERO (&rs);
     FD_ZERO (&ws);
     FD_ZERO (&es);
-    if (! libcurl_finished)
+    if (NULL != multi)
     {
-      int running;
       curl_multi_perform (multi, &running);
       if (0 == running)
       {
@@ -459,7 +547,8 @@ performQueryExternal (struct MHD_Daemon *d, CURL *c, CURLM **multi_reuse)
           externalErrorExit ();
         }
         curl_multi_remove_handle (multi, c);
-        libcurl_finished = ! 0;
+        curl_multi_cleanup (multi);
+        multi = NULL;
       }
       else
       {
@@ -467,24 +556,15 @@ performQueryExternal (struct MHD_Daemon *d, CURL *c, CURLM **multi_reuse)
           libcurlErrorExitDesc ("curl_multi_fdset() failed");
       }
     }
-    if (libcurl_finished)
+    if (NULL == multi)
     { /* libcurl has finished, check whether MHD still needs to perform cleanup */
-      if (MHD_YES != MHD_get_timeout (d, &time_o))
+      if (0 != MHD_get_timeout64s (d))
         break; /* MHD finished as well */
     }
-    if (MHD_NO == MHD_get_fdset (d, &rs, &ws, &es, &maxMhdSk))
+    if (MHD_YES != MHD_get_fdset (d, &rs, &ws, &es, &maxMhdSk))
       mhdErrorExitDesc ("MHD_get_fdset() failed");
     tv.tv_sec = 0;
     tv.tv_usec = 200000;
-    if ((MHD_NO != MHD_get_timeout (d, &time_o)) && (0 == time_o))
-      tv.tv_usec = 0;
-    else
-    {
-      long curl_to = -1;
-      curl_multi_timeout (multi, &curl_to);
-      if (0 == curl_to)
-        tv.tv_usec = 0;
-    }
 #ifdef MHD_POSIX_SOCKETS
     if (maxMhdSk > maxCurlSk)
       maxCurlSk = maxMhdSk;
@@ -498,7 +578,7 @@ performQueryExternal (struct MHD_Daemon *d, CURL *c, CURLM **multi_reuse)
       if ((WSAEINVAL != WSAGetLastError ()) ||
           (0 != rs.fd_count) || (0 != ws.fd_count) || (0 != es.fd_count) )
         externalErrorExitDesc ("Unexpected select() error");
-      Sleep ((unsigned long) tv.tv_usec / 1000);
+      Sleep (200);
 #endif
     }
     if (MHD_YES != MHD_run_from_select (d, &rs, &ws, &es))
@@ -560,7 +640,6 @@ testBasicAuth (void)
   struct CBC cbc;
   char buf[2048];
   CURL *c;
-  CURLM *multi_reuse;
   int failed = 0;
 
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
@@ -568,9 +647,10 @@ testBasicAuth (void)
   else
     port = 4210;
 
-  d = MHD_start_daemon (MHD_USE_ERROR_LOG,
+  d = MHD_start_daemon (MHD_USE_ERROR_LOG | MHD_USE_NO_THREAD_SAFETY,
                         port, NULL, NULL,
                         &ahc_echo, NULL,
+                        MHD_OPTION_APP_FD_SETSIZE, (int) FD_SETSIZE,
                         MHD_OPTION_END);
   if (d == NULL)
     return 1;
@@ -592,8 +672,7 @@ testBasicAuth (void)
   cbc.pos = 0;
   memset (cbc.buf, 0, cbc.size);
   c = setupCURL (&cbc, port, libcurl_errbuf);
-  multi_reuse = NULL;
-  if (check_result (performQueryExternal (d, c, &multi_reuse), &cbc))
+  if (check_result (performQueryExternal (d, c), &cbc))
   {
     if (verbose)
       printf ("First request successful.\n");
@@ -611,7 +690,7 @@ testBasicAuth (void)
   cbc.pos = 0;
   memset (cbc.buf, 0, cbc.size);
   c = setupCURL (&cbc, port, libcurl_errbuf);
-  if (check_result (performQueryExternal (d, c, &multi_reuse), &cbc))
+  if (check_result (performQueryExternal (d, c), &cbc))
   {
     if (verbose)
       printf ("Second request successful.\n");
@@ -622,8 +701,6 @@ testBasicAuth (void)
     failed = 1;
   }
   curl_easy_cleanup (c);
-  if (NULL != multi_reuse)
-    curl_multi_cleanup (multi_reuse);
   MHD_stop_daemon (d);
   return failed ? 1 : 0;
 }
@@ -635,8 +712,29 @@ main (int argc, char *const *argv)
   unsigned int errorCount = 0;
   (void) argc; (void) argv; /* Unused. Silent compiler warning. */
 
-  verbose = ! 0;
+  verbose = ! (has_param (argc, argv, "-q") ||
+               has_param (argc, argv, "--quiet") ||
+               has_param (argc, argv, "-s") ||
+               has_param (argc, argv, "--silent"));
+  preauth = has_in_name (argv[0], "_preauth");
+#if ! CURL_AT_LEAST_VERSION (7,21,3)
+  if (preauth)
+  {
+    fprintf (stderr, "libcurl version 7.21.3 or later is "
+             "required to run this test.\n");
+    return 77;
+  }
+#endif /* libcurl version before 7.21.3 */
 
+#ifdef MHD_HTTPS_REQUIRE_GCRYPT
+#ifdef HAVE_GCRYPT_H
+  gcry_control (GCRYCTL_ENABLE_QUICK_RANDOM, 0);
+#ifdef GCRYCTL_INITIALIZATION_FINISHED
+  gcry_control (GCRYCTL_INITIALIZATION_FINISHED, 0);
+#endif
+#endif
+#endif /* MHD_HTTPS_REQUIRE_GCRYPT */
+  oldapi = has_in_name (argv[0], "_oldapi");
   if (0 != curl_global_init (CURL_GLOBAL_WIN32))
     return 2;
   errorCount += testBasicAuth ();

@@ -20,7 +20,7 @@
  */
 
 /**
- * @file mhds_session_info_test.c
+ * @file test_https_session_info.c
  * @brief  Testcase for libmicrohttpd HTTPS connection querying operations
  * @author Sagie Amir
  * @author Karlson2k (Evgeny Grin)
@@ -33,57 +33,58 @@
 #include <gcrypt.h>
 #endif /* MHD_HTTPS_REQUIRE_GCRYPT */
 #include "tls_test_common.h"
+#include "tls_test_keys.h"
 
-struct MHD_Daemon *d;
+
+static int test_append_prio;
 
 /*
  * HTTP access handler call back
  * used to query negotiated security parameters
  */
 static enum MHD_Result
-query_session_ahc (void *cls, struct MHD_Connection *connection,
-                   const char *url, const char *method,
-                   const char *version, const char *upload_data,
-                   size_t *upload_data_size, void **ptr)
+query_info_ahc (void *cls, struct MHD_Connection *connection,
+                const char *url, const char *method,
+                const char *version, const char *upload_data,
+                size_t *upload_data_size, void **req_cls)
 {
   struct MHD_Response *response;
   enum MHD_Result ret;
-  int gret;
-  (void) cls; (void) url; (void) method; (void) version;   /* Unused. Silent compiler warning. */
-  (void) upload_data; (void) upload_data_size;             /* Unused. Silent compiler warning. */
+  const union MHD_ConnectionInfo *conn_info;
+  enum know_gnutls_tls_id *used_tls_ver;
+  (void) url; (void) method; (void) version;   /* Unused. Silent compiler warning. */
+  (void) upload_data; (void) upload_data_size; /* Unused. Silent compiler warning. */
+  used_tls_ver = (enum know_gnutls_tls_id *) cls;
 
-  if (NULL == *ptr)
+  if (NULL == *req_cls)
   {
-    *ptr = (void *) &query_session_ahc;
+    *req_cls = (void *) &query_info_ahc;
     return MHD_YES;
   }
 
-  if (GNUTLS_TLS1_1 !=
-      (gret = MHD_get_connection_info
-                (connection,
-                MHD_CONNECTION_INFO_PROTOCOL)->protocol))
+  conn_info = MHD_get_connection_info (connection,
+                                       MHD_CONNECTION_INFO_PROTOCOL);
+  if (NULL == conn_info)
   {
-    if (GNUTLS_TLS1_2 == gret)
-    {
-      /* as usual, TLS implementations sometimes don't
-         quite do what was asked, just mildly complain... */
-      fprintf (stderr,
-               "Warning: requested TLS 1.1, got TLS 1.2\n");
-    }
-    else
-    {
-      /* really different version... */
-      fprintf (stderr,
-               "Error: requested protocol mismatch (wanted %d, got %d)\n",
-               GNUTLS_TLS1_1,
-               gret);
-      return MHD_NO;
-    }
+    fflush (stderr);
+    fflush (stdout);
+    fprintf (stderr, "MHD_get_connection_info() failed.\n");
+    fflush (stderr);
+    return MHD_NO;
   }
+  if (0 == (unsigned int) conn_info->protocol)
+  {
+    fflush (stderr);
+    fflush (stdout);
+    fprintf (stderr, "MHD_get_connection_info()->protocol has "
+             "wrong zero value.\n");
+    fflush (stderr);
+    return MHD_NO;
+  }
+  *used_tls_ver = (enum know_gnutls_tls_id) conn_info->protocol;
 
-  response = MHD_create_response_from_buffer (strlen (EMPTY_PAGE),
-                                              (void *) EMPTY_PAGE,
-                                              MHD_RESPMEM_PERSISTENT);
+  response = MHD_create_response_from_buffer_static (strlen (EMPTY_PAGE),
+                                                     EMPTY_PAGE);
   ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
   MHD_destroy_response (response);
   return ret;
@@ -93,43 +94,47 @@ query_session_ahc (void *cls, struct MHD_Connection *connection,
 /**
  * negotiate a secure connection with server & query negotiated security parameters
  */
-#if LIBCURL_VERSION_NUM >= 0x072200
-static int
-test_query_session ()
+static unsigned int
+test_query_session (enum know_gnutls_tls_id tls_ver, uint16_t *pport)
 {
   CURL *c;
   struct CBC cbc;
   CURLcode errornum;
   char url[256];
-  int port;
-  const char *aes256_sha = "AES256-SHA";
-
-  if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
-    port = 0;
-  else
-    port = 3060;
+  enum know_gnutls_tls_id found_tls_ver;
+  struct MHD_Daemon *d;
 
   if (NULL == (cbc.buf = malloc (sizeof (char) * 255)))
-    return 16;
+    return 99;
   cbc.size = 255;
   cbc.pos = 0;
 
   /* setup test */
+  found_tls_ver = KNOWN_BAD;
   d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION
                         | MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_TLS
-                        | MHD_USE_ERROR_LOG, port,
-                        NULL, NULL, &query_session_ahc, NULL,
-                        MHD_OPTION_HTTPS_PRIORITIES, "NORMAL:+ARCFOUR-128",
-                        MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
+                        | MHD_USE_ERROR_LOG, *pport,
+                        NULL, NULL,
+                        &query_info_ahc, &found_tls_ver,
+                        test_append_prio ?
+                        MHD_OPTION_HTTPS_PRIORITIES_APPEND :
+                        MHD_OPTION_HTTPS_PRIORITIES,
+                        test_append_prio ?
+                        priorities_append_map[tls_ver] :
+                        priorities_map[tls_ver],
+                        MHD_OPTION_HTTPS_MEM_KEY, srv_self_signed_key_pem,
                         MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,
                         MHD_OPTION_END);
 
   if (d == NULL)
   {
     free (cbc.buf);
-    return 2;
+    fprintf (stderr, "MHD_start_daemon() with %s failed.\n",
+             tls_names[tls_ver]);
+    fflush (stderr);
+    return 77;
   }
-  if (0 == port)
+  if (0 == *pport)
   {
     const union MHD_DaemonInfo *dinfo;
     dinfo = MHD_get_daemon_info (d, MHD_DAEMON_INFO_BIND_PORT);
@@ -137,65 +142,206 @@ test_query_session ()
     {
       MHD_stop_daemon (d);
       free (cbc.buf);
-      return 32;
+      fprintf (stderr, "MHD_get_daemon_info() failed.\n");
+      fflush (stderr);
+      return 10;
     }
-    port = (int) dinfo->port;
+    *pport = dinfo->port; /* Use the same port for rest of the checks */
   }
 
-  if (curl_tls_is_nss ())
-  {
-    aes256_sha = "rsa_aes_256_sha";
-  }
-
-  gen_test_file_url (url,
-                     sizeof (url),
-                     port);
+  gen_test_uri (url,
+                sizeof (url),
+                *pport);
   c = curl_easy_init ();
-#if DEBUG_HTTPS_TEST
+  fflush (stderr);
+  if (NULL == c)
+  {
+    fprintf (stderr, "curl_easy_init() failed.\n");
+    fflush (stderr);
+    MHD_stop_daemon (d);
+    free (cbc.buf);
+    return 99;
+  }
+#ifdef _DEBUG
   curl_easy_setopt (c, CURLOPT_VERBOSE, 1L);
 #endif
-  curl_easy_setopt (c, CURLOPT_URL, url);
-  curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
-  curl_easy_setopt (c, CURLOPT_TIMEOUT, 10L);
-  curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT, 10L);
-  curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
-  curl_easy_setopt (c, CURLOPT_FILE, &cbc);
-  /* TLS options */
-  curl_easy_setopt (c, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1_1);
-  curl_easy_setopt (c, CURLOPT_SSL_CIPHER_LIST, aes256_sha);
-  /* currently skip any peer authentication */
-  curl_easy_setopt (c, CURLOPT_SSL_VERIFYPEER, 0L);
-  curl_easy_setopt (c, CURLOPT_SSL_VERIFYHOST, 0L);
-  curl_easy_setopt (c, CURLOPT_FAILONERROR, 1L);
 
-  /* NOTE: use of CONNECTTIMEOUT without also
-   * setting NOSIGNAL results in really weird
-   * crashes on my system! */
-  curl_easy_setopt (c, CURLOPT_NOSIGNAL, 1L);
-  if (CURLE_OK != (errornum = curl_easy_perform (c)))
+  if ((CURLE_OK != (errornum = curl_easy_setopt (c, CURLOPT_URL, url))) ||
+      (CURLE_OK != (errornum = curl_easy_setopt (c, CURLOPT_HTTP_VERSION,
+                                                 CURL_HTTP_VERSION_1_1))) ||
+      (CURLE_OK != (errornum = curl_easy_setopt (c, CURLOPT_TIMEOUT, 10L))) ||
+      (CURLE_OK !=
+       (errornum = curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT, 10L))) ||
+      (CURLE_OK !=
+       (errornum = curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer))) ||
+      (CURLE_OK != (errornum = curl_easy_setopt (c, CURLOPT_WRITEDATA,
+                                                 &cbc))) ||
+      /* TLS options */
+      /* currently skip any peer authentication */
+      (CURLE_OK !=
+       (errornum = curl_easy_setopt (c, CURLOPT_SSL_VERIFYPEER, 0L))) ||
+      (CURLE_OK !=
+       (errornum = curl_easy_setopt (c, CURLOPT_SSL_VERIFYHOST, 0L))) ||
+      (CURLE_OK !=
+       (errornum = curl_easy_setopt (c, CURLOPT_FAILONERROR, 1L))) ||
+      (CURLE_OK != (errornum = curl_easy_setopt (c, CURLOPT_NOSIGNAL, 1L))))
   {
-    fprintf (stderr, "curl_easy_perform failed: `%s'\n",
-             curl_easy_strerror (errornum));
-
-    MHD_stop_daemon (d);
     curl_easy_cleanup (c);
     free (cbc.buf);
-    return -1;
+    MHD_stop_daemon (d);
+    fflush (stderr);
+    fflush (stdout);
+    fprintf (stderr, "Error setting libcurl option: %s.\n",
+             curl_easy_strerror (errornum));
+    fflush (stderr);
+    return 99;
+  }
+
+  if (CURLE_OK != (errornum = curl_easy_perform (c)))
+  {
+    unsigned int ret;
+    curl_easy_cleanup (c);
+    free (cbc.buf);
+    MHD_stop_daemon (d);
+
+    fflush (stderr);
+    fflush (stdout);
+    if ((CURLE_SSL_CONNECT_ERROR == errornum) ||
+        (CURLE_SSL_CIPHER == errornum))
+    {
+      ret = 77;
+      fprintf (stderr, "libcurl request failed due to TLS error: '%s'\n",
+               curl_easy_strerror (errornum));
+
+    }
+    else
+    {
+      ret = 1;
+      fprintf (stderr, "curl_easy_perform failed: '%s'\n",
+               curl_easy_strerror (errornum));
+    }
+    fflush (stderr);
+
+    return ret;
   }
 
   curl_easy_cleanup (c);
-  MHD_stop_daemon (d);
   free (cbc.buf);
+  MHD_stop_daemon (d);
+
+  if (tls_ver != found_tls_ver)
+  {
+    fflush (stderr);
+    fflush (stdout);
+    fprintf (stderr, "MHD_get_connection_info (conn, "
+             "MHD_CONNECTION_INFO_PROTOCOL) returned unexpected "
+             "protocol version.\n"
+             "\tReturned: %s (%u)\tExpected: %s (%u)\n",
+             ((unsigned int) found_tls_ver) > KNOWN_TLS_MAX ?
+             "[wrong value]" : tls_names[found_tls_ver],
+             (unsigned int) found_tls_ver,
+             tls_names[tls_ver], (unsigned int) tls_ver);
+    fflush (stderr);
+    return 2;
+  }
   return 0;
 }
 
 
-#endif
+static unsigned int
+test_all_supported_versions (void)
+{
+  enum know_gnutls_tls_id ver_for_test; /**< TLS version used for test */
+  const gnutls_protocol_t *vers_list;    /**< The list of GnuTLS supported TLS versions */
+  uint16_t port;
+  unsigned int num_success; /**< Number of tests succeeded */
+  unsigned int num_failed;  /**< Number of tests failed */
+
+  if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
+    port = 0;     /* Use system automatic assignment */
+  else
+    port = 3060;  /* Use predefined port, may break parallel testing of another MHD build */
+
+  vers_list = gnutls_protocol_list ();
+  if (NULL == vers_list)
+  {
+    fprintf (stderr, "Error getting GnuTLS supported TLS versions");
+    return 99;
+  }
+  num_success = 0;
+  num_failed = 0;
+
+  for (ver_for_test = KNOWN_TLS_MIN; KNOWN_TLS_MAX >= ver_for_test;
+       ++ver_for_test)
+  {
+    const gnutls_protocol_t *ver_ptr;      /**< The pointer to the position on the @a vers_list */
+    unsigned int res;
+    for (ver_ptr = vers_list; 0 != *ver_ptr; ++ver_ptr)
+    {
+      if (ver_for_test == (enum know_gnutls_tls_id) *ver_ptr)
+        break;
+    }
+    if (0 == *ver_ptr)
+    {
+      printf ("%s is not supported by GnuTLS, skipping.\n\n",
+              tls_names[ver_for_test]);
+      fflush (stdout);
+      continue;
+    }
+    printf ("Starting check for %s...\n",
+            tls_names[ver_for_test]);
+    fflush (stdout);
+    res = test_query_session (ver_for_test, &port);
+    fflush (stderr);
+    fflush (stdout);
+    if (99 == res)
+    {
+      fprintf (stderr, "Hard error. Test stopped.\n");
+      fflush (stderr);
+      return 99;
+    }
+    else if (77 == res)
+    {
+      printf ("%s does not work with libcurl client and GnuTLS "
+              "server combination, skipping.\n",
+              tls_names[ver_for_test]);
+      fflush (stdout);
+    }
+    else if (0 != res)
+    {
+      fprintf (stderr, "Check failed for %s.\n",
+               tls_names[ver_for_test]);
+      fflush (stderr);
+      num_failed++;
+    }
+    else
+    {
+      printf ("Check succeeded for %s.\n",
+              tls_names[ver_for_test]);
+      fflush (stdout);
+      num_success++;
+    }
+    printf ("\n");
+    fflush (stdout);
+  }
+
+  if (0 == num_failed)
+  {
+    if (0 == num_success)
+    {
+      fprintf (stderr, "No supported TLS version was found.\n");
+      fflush (stderr);
+      return 77;
+    }
+    return 0;
+  }
+  return num_failed;
+}
+
 
 int
 main (int argc, char *const *argv)
 {
-#if LIBCURL_VERSION_NUM >= 0x072200
   unsigned int errorCount = 0;
   const char *ssl_version;
   (void) argc;   /* Unused. Silent compiler warning. */
@@ -206,6 +352,7 @@ main (int argc, char *const *argv)
   gcry_control (GCRYCTL_INITIALIZATION_FINISHED, 0);
 #endif
 #endif /* MHD_HTTPS_REQUIRE_GCRYPT */
+  test_append_prio = has_in_name (argv[0], "_append");
   if (! testsuite_curl_global_init ())
     return 99;
 
@@ -216,19 +363,14 @@ main (int argc, char *const *argv)
     curl_global_cleanup ();
     return 77;
   }
-  if (! curl_tls_is_gnutls ())
-  {
-    fprintf (stderr, "This test can be run only with libcurl-gnutls.\n");
-    curl_global_cleanup ();
-    return 77;
-  }
-  errorCount += test_query_session ();
-  print_test_result (errorCount, argv[0]);
+  errorCount = test_all_supported_versions ();
+  fflush (stderr);
+  fflush (stdout);
   curl_global_cleanup ();
+  if (77 == errorCount)
+    return 77;
+  else if (99 == errorCount)
+    return 99;
+  print_test_result (errorCount, argv[0]);
   return errorCount != 0 ? 1 : 0;
-#else  /* LIBCURL_VERSION_NUM < 0x072200 */
-  (void) argc; (void) argv;   /* Unused. Silent compiler warning. */
-  (void) query_session_ahc; /* Mute compiler warning */
-  return 77;
-#endif /* LIBCURL_VERSION_NUM < 0x072200 */
 }

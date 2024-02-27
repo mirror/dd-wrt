@@ -1,6 +1,7 @@
 /*
      This file is part of libmicrohttpd
      Copyright (C) 2007, 2008 Christian Grothoff (and other contributing authors)
+     Copyright (C) 2016-2022 Evgeny Grin (Karlson2k)
 
      This library is free software; you can redistribute it and/or
      modify it under the terms of the GNU Lesser General Public
@@ -30,6 +31,7 @@
  * 'certtool' may be used to generate these if required.
  *
  * @author Sagie Amir
+ * @author Karlson2k (Evgeny Grin)
  */
 
 #include "platform.h"
@@ -43,7 +45,7 @@
   "<html><head><title>File not found</title></head><body>File not found</body></html>"
 
 /* test server key */
-const char key_pem[] =
+static const char key_pem[] =
   "-----BEGIN PRIVATE KEY-----\n\
 MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQCff7amw9zNSE+h\n\
 rOMhBrzbbsJluUP3gmd8nOKY5MUimoPkxmAXfp2L0il+MPZT/ZEmo11q0k6J2jfG\n\
@@ -74,7 +76,7 @@ qdJNJ1DkyUc9dN2cliX4R+rG\n\
 -----END PRIVATE KEY-----";
 
 /* test server CA signed certificates */
-const char cert_pem[] =
+static const char cert_pem[] =
   "-----BEGIN CERTIFICATE-----\n\
 MIIFSzCCAzOgAwIBAgIBBDANBgkqhkiG9w0BAQsFADCBgTELMAkGA1UEBhMCUlUx\n\
 DzANBgNVBAgMBk1vc2NvdzEPMA0GA1UEBwwGTW9zY293MRswGQYDVQQKDBJ0ZXN0\n\
@@ -110,10 +112,19 @@ OT1qAbIblaRuWqCsid8BzP7ZQiAnAWgMRSUg1gzDwSwRhrYQRRWAyn/Qipzec+27\n\
 static ssize_t
 file_reader (void *cls, uint64_t pos, char *buf, size_t max)
 {
-  FILE *file = cls;
+  FILE *file = (FILE *) cls;
+  size_t bytes_read;
 
-  (void) fseek (file, pos, SEEK_SET);
-  return fread (buf, 1, max, file);
+  /* 'fseek' may not support files larger 2GiB, depending on platform.
+   * For production code, make sure that 'pos' has valid values, supported by
+   * 'fseek', or use 'fseeko' or similar function. */
+  if (0 != fseek (file, (long) pos, SEEK_SET))
+    return MHD_CONTENT_READER_END_WITH_ERROR;
+  bytes_read = fread (buf, 1, max, file);
+  if (0 == bytes_read)
+    return (0 != ferror (file)) ? MHD_CONTENT_READER_END_WITH_ERROR :
+           MHD_CONTENT_READER_END_OF_STREAM;
+  return (ssize_t) bytes_read;
 }
 
 
@@ -133,7 +144,7 @@ http_ahc (void *cls,
           const char *method,
           const char *version,
           const char *upload_data,
-          size_t *upload_data_size, void **ptr)
+          size_t *upload_data_size, void **req_cls)
 {
   static int aptr;
   struct MHD_Response *response;
@@ -148,13 +159,13 @@ http_ahc (void *cls,
 
   if (0 != strcmp (method, MHD_HTTP_METHOD_GET))
     return MHD_NO;              /* unexpected method */
-  if (&aptr != *ptr)
+  if (&aptr != *req_cls)
   {
     /* do never respond on first call */
-    *ptr = &aptr;
+    *req_cls = &aptr;
     return MHD_YES;
   }
-  *ptr = NULL;                  /* reset when done */
+  *req_cls = NULL;                  /* reset when done */
 
   file = fopen (&url[1], "rb");
   if (NULL != file)
@@ -176,15 +187,16 @@ http_ahc (void *cls,
 
   if (NULL == file)
   {
-    response = MHD_create_response_from_buffer (strlen (EMPTY_PAGE),
-                                                (void *) EMPTY_PAGE,
-                                                MHD_RESPMEM_PERSISTENT);
+    response =
+      MHD_create_response_from_buffer_static (strlen (EMPTY_PAGE),
+                                              (const void *) EMPTY_PAGE);
     ret = MHD_queue_response (connection, MHD_HTTP_NOT_FOUND, response);
     MHD_destroy_response (response);
   }
   else
   {
-    response = MHD_create_response_from_callback (buf.st_size, 32 * 1024,       /* 32k PAGE_NOT_FOUND size */
+    response = MHD_create_response_from_callback ((size_t) buf.st_size,
+                                                  32 * 1024,   /* 32k page size */
                                                   &file_reader, file,
                                                   &file_free_callback);
     if (NULL == response)

@@ -1,6 +1,7 @@
 /*
  This file is part of libmicrohttpd
  Copyright (C) 2007 Christian Grothoff
+ Copyright (C) 2014-2022 Evgeny Grin (Karlson2k)
 
  libmicrohttpd is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published
@@ -20,8 +21,9 @@
 
 /**
  * @file test_https_get_select.c
- * @brief  Testcase for libmicrohttpd HTTPS GET operations
+ * @brief  Testcase for libmicrohttpd HTTPS GET operations using external select
  * @author Sagie Amir
+ * @author Karlson2k (Evgeny Grin)
  */
 
 #include "platform.h"
@@ -33,6 +35,7 @@
 #include <gcrypt.h>
 #endif /* MHD_HTTPS_REQUIRE_GCRYPT */
 #include "tls_test_common.h"
+#include "tls_test_keys.h"
 
 static int oneone;
 
@@ -43,25 +46,24 @@ ahc_echo (void *cls,
           const char *method,
           const char *version,
           const char *upload_data, size_t *upload_data_size,
-          void **unused)
+          void **req_cls)
 {
   static int ptr;
-  const char *me = cls;
   struct MHD_Response *response;
   enum MHD_Result ret;
+  (void) cls;
   (void) version; (void) upload_data; (void) upload_data_size;       /* Unused. Silent compiler warning. */
 
-  if (0 != strcmp (me, method))
+  if (0 != strcmp (MHD_HTTP_METHOD_GET, method))
     return MHD_NO;              /* unexpected method */
-  if (&ptr != *unused)
+  if (&ptr != *req_cls)
   {
-    *unused = &ptr;
+    *req_cls = &ptr;
     return MHD_YES;
   }
-  *unused = NULL;
-  response = MHD_create_response_from_buffer (strlen (url),
-                                              (void *) url,
-                                              MHD_RESPMEM_MUST_COPY);
+  *req_cls = NULL;
+  response = MHD_create_response_from_buffer_copy (strlen (url),
+                                                   (const void *) url);
   ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
   MHD_destroy_response (response);
   if (ret == MHD_NO)
@@ -70,8 +72,8 @@ ahc_echo (void *cls,
 }
 
 
-static int
-testExternalGet (int flags)
+static unsigned int
+testExternalGet (unsigned int flags)
 {
   struct MHD_Daemon *d;
   CURL *c;
@@ -92,7 +94,7 @@ testExternalGet (int flags)
   struct CURLMsg *msg;
   time_t start;
   struct timeval tv;
-  int port;
+  uint16_t port;
 
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
     port = 0;
@@ -104,9 +106,9 @@ testExternalGet (int flags)
   cbc.size = 2048;
   cbc.pos = 0;
   d = MHD_start_daemon (MHD_USE_ERROR_LOG | MHD_USE_TLS | flags,
-                        port, NULL, NULL, &ahc_echo, "GET",
-                        MHD_OPTION_HTTPS_MEM_KEY, srv_signed_key_pem,
-                        MHD_OPTION_HTTPS_MEM_CERT, srv_signed_cert_pem,
+                        port, NULL, NULL, &ahc_echo, NULL,
+                        MHD_OPTION_HTTPS_MEM_KEY, srv_self_signed_key_pem,
+                        MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,
                         MHD_OPTION_END);
   if (d == NULL)
     return 256;
@@ -118,15 +120,19 @@ testExternalGet (int flags)
     {
       MHD_stop_daemon (d); return 32;
     }
-    port = (int) dinfo->port;
+    port = dinfo->port;
   }
 
   c = curl_easy_init ();
+#ifdef _DEBUG
+  curl_easy_setopt (c, CURLOPT_VERBOSE, 1L);
+#endif
   curl_easy_setopt (c, CURLOPT_URL, "https://127.0.0.1/hello_world");
   curl_easy_setopt (c, CURLOPT_PORT, (long) port);
   curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
   curl_easy_setopt (c, CURLOPT_WRITEDATA, &cbc);
   /* TLS options */
+  curl_easy_setopt (c, CURLOPT_SSLVERSION, CURL_SSLVERSION_DEFAULT);
   curl_easy_setopt (c, CURLOPT_SSL_VERIFYPEER, 0L);
   curl_easy_setopt (c, CURLOPT_SSL_VERIFYHOST, 0L);
   curl_easy_setopt (c, CURLOPT_FAILONERROR, 1L);
@@ -259,7 +265,7 @@ main (int argc, char *const *argv)
   unsigned int errorCount = 0;
   (void) argc;   /* Unused. Silent compiler warning. */
 
-  oneone = 0;
+  oneone = 1;
   if (! testsuite_curl_global_init ())
     return 99;
   if (NULL == curl_version_info (CURLVERSION_NOW)->ssl_version)
@@ -272,7 +278,9 @@ main (int argc, char *const *argv)
 #ifdef EPOLL_SUPPORT
   errorCount += testExternalGet (MHD_USE_EPOLL);
 #endif
-  errorCount += testExternalGet (0);
+  if (MHD_YES == MHD_is_feature_supported (MHD_FEATURE_THREADS))
+    errorCount += testExternalGet (MHD_NO_FLAG);
+  errorCount += testExternalGet (MHD_USE_NO_THREAD_SAFETY);
   curl_global_cleanup ();
   if (errorCount != 0)
     fprintf (stderr, "Failed test: %s, error: %u.\n", argv[0], errorCount);

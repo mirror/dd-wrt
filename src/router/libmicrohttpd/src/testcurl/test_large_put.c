@@ -1,7 +1,7 @@
 /*
      This file is part of libmicrohttpd
      Copyright (C) 2007, 2008 Christian Grothoff
-     Copyright (C) 2014-2021 Evgeny Grin (Karlson2k)
+     Copyright (C) 2014-2022 Evgeny Grin (Karlson2k)
 
      libmicrohttpd is free software; you can redistribute it and/or modify
      it under the terms of the GNU General Public License as published
@@ -33,12 +33,14 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <errno.h>
 
 #ifndef WINDOWS
 #include <unistd.h>
 #endif
 
-#include "test_helpers.h"
+#include "mhd_has_in_name.h"
+#include "mhd_has_param.h"
 
 #if defined(MHD_CPU_COUNT) && (MHD_CPU_COUNT + 0) < 2
 #undef MHD_CPU_COUNT
@@ -167,7 +169,7 @@ struct CBC
   size_t size;
 };
 
-char *
+static char *
 alloc_init (size_t buf_size)
 {
   static const char template[] =
@@ -232,7 +234,7 @@ ahc_echo (void *cls,
           const char *method,
           const char *version,
           const char *upload_data, size_t *upload_data_size,
-          void **pparam)
+          void **req_cls)
 {
   int *done = cls;
   struct MHD_Response *response;
@@ -258,13 +260,13 @@ ahc_echo (void *cls,
   if ((*done) == 0)
   {
     size_t *pproc;
-    if (NULL == *pparam)
+    if (NULL == *req_cls)
     {
       processed = 0;
       /* Safe as long as only one parallel request served. */
-      *pparam = &processed;
+      *req_cls = &processed;
     }
-    pproc = (size_t *) *pparam;
+    pproc = (size_t *) *req_cls;
 
     if (0 == *upload_data_size)
       return MHD_YES;   /* No data to process. */
@@ -285,9 +287,9 @@ ahc_echo (void *cls,
       *done = 1;   /* Whole request is processed. */
     return MHD_YES;
   }
-  response = MHD_create_response_from_buffer (strlen (url),
-                                              (void *) url,
-                                              MHD_RESPMEM_MUST_COPY);
+  response =
+    MHD_create_response_from_buffer_copy (strlen (url),
+                                          (const void *) url);
   if (NULL == response)
     mhdErrorExitDesc ("Failed to create response");
   ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
@@ -296,7 +298,7 @@ ahc_echo (void *cls,
 }
 
 
-static int
+static unsigned int
 testPutInternalThread (unsigned int add_flag)
 {
   struct MHD_Daemon *d;
@@ -306,7 +308,7 @@ testPutInternalThread (unsigned int add_flag)
   int done_flag = 0;
   CURLcode errornum;
   char buf[2048];
-  int port;
+  uint16_t port;
 
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
     port = 0;
@@ -337,7 +339,7 @@ testPutInternalThread (unsigned int add_flag)
     dinfo = MHD_get_daemon_info (d, MHD_DAEMON_INFO_BIND_PORT);
     if ((NULL == dinfo) || (0 == dinfo->port) )
       mhdErrorExit ();
-    port = (int) dinfo->port;
+    port = dinfo->port;
   }
 
   c = curl_easy_init ();
@@ -364,11 +366,11 @@ testPutInternalThread (unsigned int add_flag)
                                      (long) 150)) ||
       (CURLE_OK != curl_easy_setopt (c, CURLOPT_TIMEOUT,
                                      (long) 150)) ||
-      ((oneone) ?
-       (CURLE_OK != curl_easy_setopt (c, CURLOPT_HTTP_VERSION,
-                                      CURL_HTTP_VERSION_1_1)) :
-       (CURLE_OK != curl_easy_setopt (c, CURLOPT_HTTP_VERSION,
-                                      CURL_HTTP_VERSION_1_0))))
+      (CURLE_OK != curl_easy_setopt (c, CURLOPT_HTTP_VERSION,
+                                     (oneone) ?
+                                     CURL_HTTP_VERSION_1_1 :
+                                     CURL_HTTP_VERSION_1_0)))
+
   {
     fprintf (stderr, "curl_easy_setopt() failed.\n");
     externalErrorExit ();
@@ -401,7 +403,7 @@ testPutInternalThread (unsigned int add_flag)
 }
 
 
-static int
+static unsigned int
 testPutThreadPerConn (unsigned int add_flag)
 {
   struct MHD_Daemon *d;
@@ -411,7 +413,7 @@ testPutThreadPerConn (unsigned int add_flag)
   int done_flag = 0;
   CURLcode errornum;
   char buf[2048];
-  int port;
+  uint16_t port;
 
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
     port = 0;
@@ -443,7 +445,7 @@ testPutThreadPerConn (unsigned int add_flag)
     dinfo = MHD_get_daemon_info (d, MHD_DAEMON_INFO_BIND_PORT);
     if ((NULL == dinfo) || (0 == dinfo->port) )
       mhdErrorExit ();
-    port = (int) dinfo->port;
+    port = dinfo->port;
   }
 
   c = curl_easy_init ();
@@ -470,11 +472,10 @@ testPutThreadPerConn (unsigned int add_flag)
                                      (long) 150)) ||
       (CURLE_OK != curl_easy_setopt (c, CURLOPT_TIMEOUT,
                                      (long) 150)) ||
-      ((oneone) ?
-       (CURLE_OK != curl_easy_setopt (c, CURLOPT_HTTP_VERSION,
-                                      CURL_HTTP_VERSION_1_1)) :
-       (CURLE_OK != curl_easy_setopt (c, CURLOPT_HTTP_VERSION,
-                                      CURL_HTTP_VERSION_1_0))))
+      (CURLE_OK != curl_easy_setopt (c, CURLOPT_HTTP_VERSION,
+                                     (oneone) ?
+                                     CURL_HTTP_VERSION_1_1 :
+                                     CURL_HTTP_VERSION_1_0)))
   {
     fprintf (stderr, "curl_easy_setopt() failed.\n");
     externalErrorExit ();
@@ -507,7 +508,7 @@ testPutThreadPerConn (unsigned int add_flag)
 }
 
 
-static int
+static unsigned int
 testPutThreadPool (unsigned int add_flag)
 {
   struct MHD_Daemon *d;
@@ -517,7 +518,7 @@ testPutThreadPool (unsigned int add_flag)
   int done_flag = 0;
   CURLcode errornum;
   char buf[2048];
-  int port;
+  uint16_t port;
 
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
     port = 0;
@@ -549,7 +550,7 @@ testPutThreadPool (unsigned int add_flag)
     dinfo = MHD_get_daemon_info (d, MHD_DAEMON_INFO_BIND_PORT);
     if ((NULL == dinfo) || (0 == dinfo->port) )
       mhdErrorExit ();
-    port = (int) dinfo->port;
+    port = dinfo->port;
   }
 
   c = curl_easy_init ();
@@ -576,11 +577,10 @@ testPutThreadPool (unsigned int add_flag)
                                      (long) 150)) ||
       (CURLE_OK != curl_easy_setopt (c, CURLOPT_TIMEOUT,
                                      (long) 150)) ||
-      ((oneone) ?
-       (CURLE_OK != curl_easy_setopt (c, CURLOPT_HTTP_VERSION,
-                                      CURL_HTTP_VERSION_1_1)) :
-       (CURLE_OK != curl_easy_setopt (c, CURLOPT_HTTP_VERSION,
-                                      CURL_HTTP_VERSION_1_0))))
+      (CURLE_OK != curl_easy_setopt (c, CURLOPT_HTTP_VERSION,
+                                     (oneone) ?
+                                     CURL_HTTP_VERSION_1_1 :
+                                     CURL_HTTP_VERSION_1_0)))
   {
     fprintf (stderr, "curl_easy_setopt() failed.\n");
     externalErrorExit ();
@@ -612,7 +612,7 @@ testPutThreadPool (unsigned int add_flag)
 }
 
 
-static int
+static unsigned int
 testPutExternal (void)
 {
   struct MHD_Daemon *d;
@@ -630,7 +630,7 @@ testPutExternal (void)
   size_t pos = 0;
   int done_flag = 0;
   char buf[2048];
-  int port;
+  uint16_t port;
 
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
     port = 0;
@@ -647,11 +647,12 @@ testPutExternal (void)
   cbc.size = 2048;
   cbc.pos = 0;
   multi = NULL;
-  d = MHD_start_daemon (MHD_USE_ERROR_LOG,
+  d = MHD_start_daemon (MHD_USE_ERROR_LOG | MHD_USE_NO_THREAD_SAFETY,
                         port,
                         NULL, NULL, &ahc_echo, &done_flag,
                         MHD_OPTION_CONNECTION_MEMORY_LIMIT,
                         (size_t) (incr_read ? 1024 : (PUT_SIZE * 4)),
+                        MHD_OPTION_APP_FD_SETSIZE, (int) FD_SETSIZE,
                         MHD_OPTION_END);
   if (d == NULL)
     mhdErrorExit ();
@@ -661,7 +662,7 @@ testPutExternal (void)
     dinfo = MHD_get_daemon_info (d, MHD_DAEMON_INFO_BIND_PORT);
     if ((NULL == dinfo) || (0 == dinfo->port) )
       mhdErrorExit ();
-    port = (int) dinfo->port;
+    port = dinfo->port;
   }
 
   c = curl_easy_init ();
@@ -688,11 +689,10 @@ testPutExternal (void)
                                      (long) 150)) ||
       (CURLE_OK != curl_easy_setopt (c, CURLOPT_TIMEOUT,
                                      (long) 150)) ||
-      ((oneone) ?
-       (CURLE_OK != curl_easy_setopt (c, CURLOPT_HTTP_VERSION,
-                                      CURL_HTTP_VERSION_1_1)) :
-       (CURLE_OK != curl_easy_setopt (c, CURLOPT_HTTP_VERSION,
-                                      CURL_HTTP_VERSION_1_0))))
+      (CURLE_OK != curl_easy_setopt (c, CURLOPT_HTTP_VERSION,
+                                     (oneone) ?
+                                     CURL_HTTP_VERSION_1_1 :
+                                     CURL_HTTP_VERSION_1_0)))
   {
     fprintf (stderr, "curl_easy_setopt() failed.\n");
     externalErrorExit ();
@@ -742,7 +742,7 @@ testPutExternal (void)
       if ((WSAEINVAL != WSAGetLastError ()) ||
           (0 != rs.fd_count) || (0 != ws.fd_count) || (0 != es.fd_count) )
         externalErrorExitDesc ("Unexpected select() error");
-      Sleep (tv.tv_sec * 1000 + tv.tv_usec / 1000);
+      Sleep ((DWORD) (tv.tv_sec * 1000 + tv.tv_usec / 1000));
 #endif
     }
 

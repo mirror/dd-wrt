@@ -1,6 +1,7 @@
 /*
      This file is part of libmicrohttpd
      Copyright (C) 2013 Christian Grothoff (and other contributing authors)
+     Copyright (C) 2016-2022 Evgeny Grin (Karlson2k)
 
      This library is free software; you can redistribute it and/or
      modify it under the terms of the GNU Lesser General Public
@@ -30,6 +31,7 @@
  *        This demonstration uses key/cert stored in static string. Optionally,
  *        use gnutls_load_file() to load them from file.
  * @author Christian Grothoff
+ * @author Karlson2k (Evgeny Grin)
  */
 #include "platform.h"
 #include <microhttpd.h>
@@ -43,6 +45,7 @@
 #endif /* MHD_HAVE_LIBMAGIC */
 #include <limits.h>
 #include <ctype.h>
+#include <errno.h>
 
 #if defined(MHD_CPU_COUNT) && (MHD_CPU_COUNT + 0) < 2
 #undef MHD_CPU_COUNT
@@ -280,6 +283,7 @@ list_directory (struct ResponseDataContext *rdc,
     return MHD_NO;
   while (NULL != (de = readdir (dir)))
   {
+    int res;
     if ('.' == de->d_name[0])
       continue;
     if (sizeof (fullname) <= (size_t)
@@ -302,11 +306,16 @@ list_directory (struct ResponseDataContext *rdc,
         break; /* out of memory */
       rdc->buf = r;
     }
-    rdc->off += snprintf (&rdc->buf[rdc->off],
-                          rdc->buf_len - rdc->off,
-                          "<li><a href=\"/%s\">%s</a></li>\n",
-                          fullname,
-                          de->d_name);
+    res = snprintf (&rdc->buf[rdc->off],
+                    rdc->buf_len - rdc->off,
+                    "<li><a href=\"/%s\">%s</a></li>\n",
+                    fullname,
+                    de->d_name);
+    if (0 >= res)
+      continue;  /* snprintf() error */
+    if (rdc->buf_len - rdc->off <= (size_t) res)
+      continue;  /* buffer too small?? */
+    rdc->off += (size_t) res;
   }
   (void) closedir (dir);
   return MHD_YES;
@@ -317,7 +326,7 @@ list_directory (struct ResponseDataContext *rdc,
  * Re-scan our local directory and re-build the index.
  */
 static void
-update_directory ()
+update_directory (void)
 {
   static size_t initial_allocation = 32 * 1024; /* initial size for response buffer */
   struct MHD_Response *response;
@@ -328,6 +337,8 @@ update_directory ()
   const char *category;
   char dir_name[128];
   struct stat sbuf;
+  int res;
+  size_t len;
 
   rdc.buf_len = initial_allocation;
   if (NULL == (rdc.buf = malloc (rdc.buf_len)))
@@ -335,9 +346,15 @@ update_directory ()
     update_cached_response (NULL);
     return;
   }
-  rdc.off = snprintf (rdc.buf, rdc.buf_len,
-                      "%s",
-                      INDEX_PAGE_HEADER);
+  len = strlen (INDEX_PAGE_HEADER);
+  if (rdc.buf_len <= len)
+  { /* buffer too small */
+    free (rdc.buf);
+    update_cached_response (NULL);
+    return;
+  }
+  memcpy (rdc.buf, INDEX_PAGE_HEADER, len);
+  rdc.off = len;
   for (language_idx = 0; NULL != languages[language_idx].dirname;
        language_idx++)
   {
@@ -346,27 +363,39 @@ update_directory ()
     if (0 != stat (language->dirname, &sbuf))
       continue; /* empty */
     /* we ensured always +1k room, filenames are ~256 bytes,
- so there is always still enough space for the header
- without need for an additional reallocation check. */
-    rdc.off += snprintf (&rdc.buf[rdc.off], rdc.buf_len - rdc.off,
-                         "<h2>%s</h2>\n",
-                         language->longname);
+       so there is always still enough space for the header
+       without need for an additional reallocation check. */
+    res = snprintf (&rdc.buf[rdc.off], rdc.buf_len - rdc.off,
+                    "<h2>%s</h2>\n",
+                    language->longname);
+    if (0 >= res)
+      continue;  /* snprintf() error */
+    if (rdc.buf_len - rdc.off <= (size_t) res)
+      continue;  /* buffer too small?? */
+    rdc.off += (size_t) res;
     for (category_idx = 0; NULL != categories[category_idx]; category_idx++)
     {
       category = categories[category_idx];
-      snprintf (dir_name, sizeof (dir_name),
-                "%s/%s",
-                language->dirname,
-                category);
+      res = snprintf (dir_name, sizeof (dir_name),
+                      "%s/%s",
+                      language->dirname,
+                      category);
+      if ((0 >= res) || (sizeof (dir_name) <= (size_t) res))
+        continue;  /* cannot print dir name */
       if (0 != stat (dir_name, &sbuf))
-        continue; /* empty */
+        continue;  /* empty */
 
       /* we ensured always +1k room, filenames are ~256 bytes,
          so there is always still enough space for the header
          without need for an additional reallocation check. */
-      rdc.off += snprintf (&rdc.buf[rdc.off], rdc.buf_len - rdc.off,
-                           "<h3>%s</h3>\n",
-                           category);
+      res = snprintf (&rdc.buf[rdc.off], rdc.buf_len - rdc.off,
+                      "<h3>%s</h3>\n",
+                      category);
+      if (0 >= res)
+        continue;  /* snprintf() error */
+      if (rdc.buf_len - rdc.off <= (size_t) res)
+        continue;  /* buffer too small?? */
+      rdc.off += (size_t) res;
 
       if (MHD_NO == list_directory (&rdc, dir_name))
       {
@@ -379,15 +408,22 @@ update_directory ()
   /* we ensured always +1k room, filenames are ~256 bytes,
      so there is always still enough space for the footer
      without need for a final reallocation check. */
-  rdc.off += snprintf (&rdc.buf[rdc.off], rdc.buf_len - rdc.off,
-                       "%s",
-                       INDEX_PAGE_FOOTER);
+  len = strlen (INDEX_PAGE_FOOTER);
+  if (rdc.buf_len - rdc.off <= len)
+  { /* buffer too small */
+    free (rdc.buf);
+    update_cached_response (NULL);
+    return;
+  }
+  memcpy (rdc.buf, INDEX_PAGE_FOOTER, len);
+  rdc.off += len;
   initial_allocation = rdc.buf_len; /* remember for next time */
-  response = MHD_create_response_from_buffer (rdc.off,
-                                              rdc.buf,
-                                              MHD_RESPMEM_MUST_FREE);
+  response =
+    MHD_create_response_from_buffer_with_free_callback (rdc.off,
+                                                        rdc.buf,
+                                                        &free);
   mark_as_html (response);
-#if FORCE_CLOSE
+#ifdef FORCE_CLOSE
   (void) MHD_add_response_header (response,
                                   MHD_HTTP_HEADER_CONNECTION,
                                   "close");
@@ -508,7 +544,8 @@ process_upload_data (void *cls,
                      size_t size)
 {
   struct UploadContext *uc = cls;
-  int i;
+  size_t i;
+  int res;
   (void) kind;              /* Unused. Silent compiler warning. */
   (void) content_type;      /* Unused. Silent compiler warning. */
   (void) transfer_encoding; /* Unused. Silent compiler warning. */
@@ -566,17 +603,22 @@ process_upload_data (void *cls,
     (void) mkdir (fn, S_IRWXU);
 #endif
     /* open file */
-    snprintf (fn, sizeof (fn),
-              "%s/%s/%s",
-              uc->language,
-              uc->category,
-              filename);
-    for (i = strlen (fn) - 1; i >= 0; i--)
+    res = snprintf (fn, sizeof (fn),
+                    "%s/%s/%s",
+                    uc->language,
+                    uc->category,
+                    filename);
+    if ((0 >= res) || (sizeof (fn) <= (size_t) res))
+    {
+      uc->response = request_refused_response;
+      return MHD_NO;
+    }
+    for (i = 0; i < (size_t) res; i++)
       if (! isprint ((unsigned char) fn[i]))
         fn[i] = '_';
     uc->fd = open (fn,
                    O_CREAT | O_EXCL
-#if O_LARGEFILE
+#ifdef O_LARGEFILE
                    | O_LARGEFILE
 #endif
                    | O_WRONLY,
@@ -593,7 +635,12 @@ process_upload_data (void *cls,
     uc->filename = strdup (fn);
   }
   if ( (0 != size) &&
-       (size != (size_t) write (uc->fd, data, size)) )
+#if ! defined(_WIN32) || defined(__CYGWIN__)
+       (size != (size_t) write (uc->fd, data, size))
+#else  /* Native W32 */
+       (size != (size_t) write (uc->fd, data, (unsigned int) size))
+#endif /* Native W32 */
+       )
   {
     /* write failed; likely: disk full */
     fprintf (stderr,
@@ -601,7 +648,7 @@ process_upload_data (void *cls,
              uc->filename,
              strerror (errno));
     uc->response = internal_error_response;
-    close (uc->fd);
+    (void) close (uc->fd);
     uc->fd = -1;
     if (NULL != uc->filename)
     {
@@ -621,7 +668,7 @@ process_upload_data (void *cls,
  *
  * @param cls client-defined closure, NULL
  * @param connection connection handle
- * @param con_cls value as set by the last call to
+ * @param req_cls value as set by the last call to
  *        the MHD_AccessHandlerCallback, points to NULL if this was
  *            not an upload
  * @param toe reason for request termination
@@ -629,10 +676,10 @@ process_upload_data (void *cls,
 static void
 response_completed_callback (void *cls,
                              struct MHD_Connection *connection,
-                             void **con_cls,
+                             void **req_cls,
                              enum MHD_RequestTerminationCode toe)
 {
-  struct UploadContext *uc = *con_cls;
+  struct UploadContext *uc = *req_cls;
   (void) cls;         /* Unused. Silent compiler warning. */
   (void) connection;  /* Unused. Silent compiler warning. */
   (void) toe;         /* Unused. Silent compiler warning. */
@@ -696,7 +743,7 @@ return_directory_response (struct MHD_Connection *connection)
  * @param version HTTP version
  * @param upload_data data from upload (PUT/POST)
  * @param upload_data_size number of bytes in "upload_data"
- * @param ptr our context
+ * @param req_cls our context
  * @return #MHD_YES on success, #MHD_NO to drop connection
  */
 static enum MHD_Result
@@ -706,7 +753,7 @@ generate_page (void *cls,
                const char *method,
                const char *version,
                const char *upload_data,
-               size_t *upload_data_size, void **ptr)
+               size_t *upload_data_size, void **req_cls)
 {
   struct MHD_Response *response;
   enum MHD_Result ret;
@@ -747,13 +794,13 @@ generate_page (void *cls,
     /* read beginning of the file to determine mime type  */
     got = read (fd, file_data, sizeof (file_data));
     (void) lseek (fd, 0, SEEK_SET);
-    if (-1 != got)
-      mime = magic_buffer (magic, file_data, got);
+    if (0 < got)
+      mime = magic_buffer (magic, file_data, (size_t) got);
     else
 #endif /* MHD_HAVE_LIBMAGIC */
     mime = NULL;
 
-    if (NULL == (response = MHD_create_response_from_fd (buf.st_size,
+    if (NULL == (response = MHD_create_response_from_fd ((size_t) buf.st_size,
                                                          fd)))
     {
       /* internal error (i.e. out of memory) */
@@ -776,7 +823,7 @@ generate_page (void *cls,
   if (0 == strcmp (method, MHD_HTTP_METHOD_POST))
   {
     /* upload! */
-    struct UploadContext *uc = *ptr;
+    struct UploadContext *uc = *req_cls;
 
     if (NULL == uc)
     {
@@ -794,7 +841,7 @@ generate_page (void *cls,
         free (uc);
         return MHD_NO;
       }
-      *ptr = uc;
+      *req_cls = uc;
       return MHD_YES;
     }
     if (0 != *upload_data_size)
@@ -877,7 +924,7 @@ ignore_sigpipe (void)
 #endif
 
 /* test server key */
-const char srv_signed_key_pem[] =
+static const char srv_signed_key_pem[] =
   "-----BEGIN PRIVATE KEY-----\n\
 MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQCff7amw9zNSE+h\n\
 rOMhBrzbbsJluUP3gmd8nOKY5MUimoPkxmAXfp2L0il+MPZT/ZEmo11q0k6J2jfG\n\
@@ -908,7 +955,7 @@ qdJNJ1DkyUc9dN2cliX4R+rG\n\
 -----END PRIVATE KEY-----";
 
 /* test server CA signed certificates */
-const char srv_signed_cert_pem[] =
+static const char srv_signed_cert_pem[] =
   "-----BEGIN CERTIFICATE-----\n\
 MIIFSzCCAzOgAwIBAgIBBDANBgkqhkiG9w0BAQsFADCBgTELMAkGA1UEBhMCUlUx\n\
 DzANBgNVBAgMBk1vc2NvdzEPMA0GA1UEBwwGTW9zY293MRswGQYDVQQKDBJ0ZXN0\n\
@@ -974,37 +1021,33 @@ main (int argc, char *const *argv)
 #endif /* MHD_HAVE_LIBMAGIC */
 
   (void) pthread_mutex_init (&mutex, NULL);
-  file_not_found_response = MHD_create_response_from_buffer (strlen (
-                                                               FILE_NOT_FOUND_PAGE),
-                                                             (void *)
-                                                             FILE_NOT_FOUND_PAGE,
-                                                             MHD_RESPMEM_PERSISTENT);
+  file_not_found_response =
+    MHD_create_response_from_buffer_static (strlen (FILE_NOT_FOUND_PAGE),
+                                            (const void *) FILE_NOT_FOUND_PAGE);
   mark_as_html (file_not_found_response);
-  request_refused_response = MHD_create_response_from_buffer (strlen (
-                                                                REQUEST_REFUSED_PAGE),
-                                                              (void *)
-                                                              REQUEST_REFUSED_PAGE,
-                                                              MHD_RESPMEM_PERSISTENT);
+  request_refused_response =
+    MHD_create_response_from_buffer_static (strlen (REQUEST_REFUSED_PAGE),
+                                            (const void *)
+                                            REQUEST_REFUSED_PAGE);
   mark_as_html (request_refused_response);
-  internal_error_response = MHD_create_response_from_buffer (strlen (
-                                                               INTERNAL_ERROR_PAGE),
-                                                             (void *)
-                                                             INTERNAL_ERROR_PAGE,
-                                                             MHD_RESPMEM_PERSISTENT);
+  internal_error_response =
+    MHD_create_response_from_buffer_static (strlen (INTERNAL_ERROR_PAGE),
+                                            (const void *) INTERNAL_ERROR_PAGE);
   mark_as_html (internal_error_response);
   update_directory ();
   d = MHD_start_daemon (MHD_USE_AUTO | MHD_USE_INTERNAL_POLLING_THREAD
                         | MHD_USE_ERROR_LOG | MHD_USE_TLS,
-                        port,
+                        (uint16_t) port,
                         NULL, NULL,
                         &generate_page, NULL,
                         MHD_OPTION_CONNECTION_MEMORY_LIMIT, (size_t) (256
                                                                       * 1024),
-#if PRODUCTION
+#ifdef PRODUCTION
                         MHD_OPTION_PER_IP_CONNECTION_LIMIT, (unsigned int) (64),
 #endif
                         MHD_OPTION_CONNECTION_TIMEOUT, (unsigned
-                                                        int) (120 /* seconds */),
+                                                        int) (120 /* seconds */)
+                        ,
                         MHD_OPTION_THREAD_POOL_SIZE, (unsigned
                                                       int) NUMBER_OF_THREADS,
                         MHD_OPTION_NOTIFY_COMPLETED,

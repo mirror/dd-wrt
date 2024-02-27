@@ -56,13 +56,14 @@ expect_result_n (const char *str, size_t str_len,
     ssize_t result_len;
     memset (buf_out, '$', sizeof(buf_out));
 
-    result_len = buf_len;
+    result_len = (ssize_t) buf_len;
+    mhd_assert (0 <= result_len);
 
     res = MHD_str_remove_token_caseless_ (buf_in, str_len, buf_token, token_len,
                                           buf_out, &result_len);
     if (buf_len < expected_len)
     { /* The result should not fit into the buffer */
-      if (res || (0 < result_len))
+      if (res || (0 <= result_len))
       {
         fprintf (stderr,
                  "MHD_str_remove_token_caseless_() FAILED:\n"
@@ -77,9 +78,10 @@ expect_result_n (const char *str, size_t str_len,
     else
     { /* The result should fit into the buffer */
       if ( (expected_removed != res) ||
+           (result_len < 0) ||
            (expected_len != (size_t) result_len) ||
            ((0 != result_len) && (0 != memcmp (expected, buf_out,
-                                               result_len))) ||
+                                               (size_t) result_len))) ||
            ('$' != buf_out[result_len]))
       {
         fprintf (stderr,
@@ -104,7 +106,7 @@ expect_result_n (const char *str, size_t str_len,
                    (t),MHD_STATICSTR_LEN_ (t), \
                    (e),MHD_STATICSTR_LEN_ (e), found)
 
-int
+static int
 check_result (void)
 {
   int errcount = 0;

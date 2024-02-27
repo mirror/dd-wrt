@@ -33,6 +33,7 @@
 #define _CRT_SECURE_NO_WARNINGS
 #endif
 #include "platform.h"
+#include <errno.h>
 #include <microhttpd.h>
 #include <microhttpd_ws.h>
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
@@ -186,8 +187,9 @@
   "  function window_onload(event)\n" \
   "  {\n" \
   " /* Determine the base url (for http:/" "/ this is ws:/" "/ for https:/" \
-                                  "/ this must be wss:/" "/) */\n" \
-  "    baseUrl = 'ws' + (window.location.protocol === 'https:' ? 's' : '') + ':/" "/' + window.location.host + '/ChatServerWebSocket';\n" \
+  "/ this must be wss:/" "/) */\n" \
+  "    baseUrl = 'ws' + (window.location.protocol === 'https:' ? 's' : '') + ':/" \
+  "/' + window.location.host + '/ChatServerWebSocket';\n" \
   "    chat_generate();\n" \
   "    chat_connect();\n" \
   "  }\n" \
@@ -585,7 +587,7 @@
   "      let message  = [ ];\n" \
   " /* message type */ \n"     \
   "      let j = 0;\n" \
-  "      let i = byteData.indexOf(0x7C, j); /* | = 0x7C;*/ \n"\
+  "      let i = byteData.indexOf(0x7C, j); /* | = 0x7C;*/ \n" \
   "      if(i < 0)\n" \
   "        return;\n" \
   "      message.push(decoder.decode(byteData.slice(0, i)));\n" \
@@ -736,28 +738,28 @@ send_all (struct ConnectedUser *cu,
   ssize_t ret;
   size_t off;
 
-  if (0 == pthread_mutex_lock (&cu->send_mutex))
+  if (0 != pthread_mutex_lock (&cu->send_mutex))
+    abort ();
+  for (off = 0; off < len; off += ret)
   {
-    for (off = 0; off < len; off += ret)
+    ret = send (cu->fd,
+                &buf[off],
+                (int) (len - off),
+                0);
+    if (0 > ret)
     {
-      ret = send (cu->fd,
-                  &buf[off],
-                  (int) (len - off),
-                  0);
-      if (0 > ret)
+      if (EAGAIN == errno)
       {
-        if (EAGAIN == errno)
-        {
-          ret = 0;
-          continue;
-        }
-        break;
+        ret = 0;
+        continue;
       }
-      if (0 == ret)
-        break;
+      break;
     }
-    pthread_mutex_unlock (&cu->send_mutex);
+    if (0 == ret)
+      break;
   }
+  if (0 != pthread_mutex_unlock (&cu->send_mutex))
+    abort ();
 }
 
 
@@ -805,7 +807,7 @@ chat_addmessage (size_t from_user_id,
   if (0 != needs_lock)
   {
     if (0 != pthread_mutex_lock (&chat_mutex))
-      return 1;
+      abort ();
   }
 
   /* add the new message to the global message list */
@@ -818,7 +820,8 @@ chat_addmessage (size_t from_user_id,
   {
     free (message);
     if (0 != needs_lock)
-      pthread_mutex_unlock (&chat_mutex);
+      if (0 != pthread_mutex_unlock (&chat_mutex))
+        abort ();
     return 1;
   }
   messages_[message_count] = message;
@@ -833,7 +836,8 @@ chat_addmessage (size_t from_user_id,
   if (0 != needs_lock)
   {
     if (0 != needs_lock)
-      pthread_mutex_unlock (&chat_mutex);
+      if (0 != pthread_mutex_unlock (&chat_mutex))
+        abort ();
   }
   return 0;
 }
@@ -853,7 +857,7 @@ chat_clearmessages (int needs_lock)
   if (0 != needs_lock)
   {
     if (0 != pthread_mutex_lock (&chat_mutex))
-      return 1;
+      abort ();
   }
 
   /* update the clean counter and check whether we need cleaning */
@@ -863,7 +867,8 @@ chat_clearmessages (int needs_lock)
     /* no cleanup required */
     if (0 != needs_lock)
     {
-      pthread_mutex_unlock (&chat_mutex);
+      if (0 != pthread_mutex_unlock (&chat_mutex))
+        abort ();
     }
     return 0;
   }
@@ -915,7 +920,8 @@ chat_clearmessages (int needs_lock)
   /* unlock the global mutex if needed */
   if (0 != needs_lock)
   {
-    pthread_mutex_unlock (&chat_mutex);
+    if (0 != pthread_mutex_unlock (&chat_mutex))
+      abort ();
   }
   return 0;
 }
@@ -946,10 +952,7 @@ chat_adduser (struct ConnectedUser *cu)
 
   /* lock the mutex */
   if (0 != pthread_mutex_lock (&chat_mutex))
-  {
-    free (data);
-    return 1;
-  }
+    abort ();
   /* inform the other chat users about the new user */
   if (0 != chat_addmessage (0,
                             0,
@@ -959,23 +962,22 @@ chat_adduser (struct ConnectedUser *cu)
                             0))
   {
     free (data);
-    pthread_mutex_unlock (&chat_mutex);
+    if (0 != pthread_mutex_unlock (&chat_mutex))
+      abort ();
     return 1;
   }
   free (data);
 
   /* add the new user to the list */
   size_t user_count_ = user_count + 1;
-  struct ConnectedUser **users_ = (struct ConnectedUser **) realloc (users,
-                                                                     user_count_
-                                                                     * sizeof (
-                                                                       struct
-                                                                       ConnectedUser
-                                                                       *));
+  struct ConnectedUser **users_ =
+    (struct ConnectedUser **) realloc (users, user_count_
+                                       * sizeof (struct ConnectedUser *));
   if (NULL == users_)
   {
     /* realloc failed */
-    pthread_mutex_unlock (&chat_mutex);
+    if (0 != pthread_mutex_unlock (&chat_mutex))
+      abort ();
     return 1;
   }
   users_[user_count] = cu;
@@ -987,7 +989,8 @@ chat_adduser (struct ConnectedUser *cu)
   cu->next_message_index = message_count;
 
   /* unlock the mutex */
-  pthread_mutex_unlock (&chat_mutex);
+  if (0 != pthread_mutex_unlock (&chat_mutex))
+    abort ();
   return 0;
 }
 
@@ -1016,10 +1019,7 @@ chat_removeuser (struct ConnectedUser *cu)
 
   /* lock the mutex */
   if (0 != pthread_mutex_lock (&chat_mutex))
-  {
-    free (data);
-    return 1;
-  }
+    abort ();
   /* inform the other chat users that the user is gone */
   int got_error = 0;
   if (0 != chat_addmessage (0, 0, data, data_len, 0, 0))
@@ -1047,7 +1047,8 @@ chat_removeuser (struct ConnectedUser *cu)
     got_error = 1;
 
   /* unlock the mutex */
-  pthread_mutex_unlock (&chat_mutex);
+  if (0 != pthread_mutex_unlock (&chat_mutex))
+    abort ();
 
   return got_error;
 }
@@ -1068,9 +1069,7 @@ chat_renameuser (struct ConnectedUser *cu,
 {
   /* lock the mutex */
   if (0 != pthread_mutex_lock (&chat_mutex))
-  {
-    return 1;
-  }
+    abort ();
 
   /* check whether the name is already in use */
   for (size_t i = 0; i < user_count; ++i)
@@ -1080,7 +1079,8 @@ chat_renameuser (struct ConnectedUser *cu,
       if ((users[i]->user_name_len == new_name_len) &&
           (0 == strcasecmp (users[i]->user_name, new_name)))
       {
-        pthread_mutex_unlock (&chat_mutex);
+        if (0 != pthread_mutex_unlock (&chat_mutex))
+          abort ();
         return 2;
       }
     }
@@ -1103,7 +1103,8 @@ chat_renameuser (struct ConnectedUser *cu,
   if (0 != chat_addmessage (0, 0, data, data_len, 0, 0))
   {
     free (data);
-    pthread_mutex_unlock (&chat_mutex);
+    if (0 != pthread_mutex_unlock (&chat_mutex))
+      abort ();
     return 1;
   }
   free (data);
@@ -1114,7 +1115,8 @@ chat_renameuser (struct ConnectedUser *cu,
   cu->user_name_len = new_name_len;
 
   /* unlock the mutex */
-  pthread_mutex_unlock (&chat_mutex);
+  if (0 != pthread_mutex_unlock (&chat_mutex))
+    abort ();
 
   return 0;
 }
@@ -1413,48 +1415,39 @@ connecteduser_parse_received_websocket_stream (struct ConnectedUser *cu,
               case 3:
                 /* ping */
                 {
-                  if (0 == pthread_mutex_lock (&chat_mutex))
+                  if (0 != pthread_mutex_lock (&chat_mutex))
+                    abort ();
+                  /* check whether the to_user exists */
+                  struct ConnectedUser *ping_user = NULL;
+                  for (size_t k = 0; k < user_count; ++k)
                   {
-                    /* check whether the to_user exists */
-                    struct ConnectedUser *ping_user = NULL;
-                    for (size_t k = 0; k < user_count; ++k)
+                    if (users[k]->user_id == to_user_id)
                     {
-                      if (users[k]->user_id == to_user_id)
-                      {
-                        ping_user = users[k];
-                        break;
-                      }
+                      ping_user = users[k];
+                      break;
                     }
-                    if (NULL == ping_user)
-                    {
-                      chat_addmessage (0,
-                                       from_user_id,
-                                       "error||Couldn't find the specified user for pinging.",
-                                       52,
-                                       0,
-                                       0);
-                    }
-                    else
-                    {
-                      /* if pinging is requested, */
-                      /* we mark the user and inform the sender about this */
-                      if (0 == ping_user->ping_status)
-                      {
-                        ping_user->ping_status = 1;
-                        pthread_cond_signal (&ping_user->wake_up_sender);
-                      }
-                    }
-                    pthread_mutex_unlock (&chat_mutex);
                   }
-                  else
+                  if (NULL == ping_user)
                   {
                     chat_addmessage (0,
                                      from_user_id,
-                                     "error||Error while pinging.",
-                                     27,
+                                     "error||Couldn't find the specified user for pinging.",
+                                     52,
                                      0,
-                                     1);
+                                     0);
                   }
+                  else
+                  {
+                    /* if pinging is requested, */
+                    /* we mark the user and inform the sender about this */
+                    if (0 == ping_user->ping_status)
+                    {
+                      ping_user->ping_status = 1;
+                      pthread_cond_signal (&ping_user->wake_up_sender);
+                    }
+                  }
+                  if (0 != pthread_mutex_unlock (&chat_mutex))
+                    abort ();
                 }
                 break;
 
@@ -1546,8 +1539,8 @@ connecteduser_parse_received_websocket_stream (struct ConnectedUser *cu,
               snprintf (result_text + 5, 235, "%d", (int) cu->user_id);
               strcat (result_text,
                       "|");
-              snprintf (result_text + strlen (result_text), 240 - strlen (
-                          result_text), "%d", (int) ping);
+              snprintf (result_text + strlen (result_text), 240
+                        - strlen (result_text), "%d", (int) ping);
               chat_addmessage (0,
                                0,
                                result_text,
@@ -1593,135 +1586,134 @@ connecteduser_send_messages (void *cls)
   struct ConnectedUser *cu = cls;
 
   /* the main loop of sending messages requires to lock the mutex */
-  if (0 == pthread_mutex_lock (&chat_mutex))
+  if (0 != pthread_mutex_lock (&chat_mutex))
+    abort ();
+  for (;;)
   {
-    for (;;)
+    /* loop while not all messages processed */
+    int all_messages_read = 0;
+    while (0 == all_messages_read)
     {
-      /* loop while not all messages processed */
-      int all_messages_read = 0;
-      while (0 == all_messages_read)
+      if (1 == disconnect_all)
       {
-        if (1 == disconnect_all)
+        /* the application closes and want that we disconnect all users */
+        struct MHD_UpgradeResponseHandle *urh = cu->urh;
+        if (NULL != urh)
         {
-          /* the application closes and want that we disconnect all users */
-          struct MHD_UpgradeResponseHandle *urh = cu->urh;
-          if (NULL != urh)
-          {
-            /* Close the TCP/IP socket. */
-            /* This will also wake-up the waiting receive-thread for this connected user. */
-            cu->urh = NULL;
-            MHD_upgrade_action (urh,
-                                MHD_UPGRADE_ACTION_CLOSE);
-          }
-          pthread_mutex_unlock (&chat_mutex);
-          return NULL;
+          /* Close the TCP/IP socket. */
+          /* This will also wake-up the waiting receive-thread for this connected user. */
+          cu->urh = NULL;
+          MHD_upgrade_action (urh,
+                              MHD_UPGRADE_ACTION_CLOSE);
         }
-        else if (1 == cu->disconnect)
+        if (0 != pthread_mutex_unlock (&chat_mutex))
+          abort ();
+        return NULL;
+      }
+      else if (1 == cu->disconnect)
+      {
+        /* The sender thread shall close. */
+        /* This is only requested by the receive thread, so we can just leave. */
+        if (0 != pthread_mutex_unlock (&chat_mutex))
+          abort ();
+        return NULL;
+      }
+      else if (1 == cu->ping_status)
+      {
+        /* A pending ping is requested */
+        ++cu->ping_counter;
+        strcpy (cu->ping_message,
+                "libmicrohttpdchatserverpingdata");
+        snprintf (cu->ping_message + 31, 97, "%d", (int) cu->ping_counter);
+        cu->ping_message_len = strlen (cu->ping_message);
+        char *frame_data = NULL;
+        size_t frame_len = 0;
+        int er = MHD_websocket_encode_ping (cu->ws,
+                                            cu->ping_message,
+                                            cu->ping_message_len,
+                                            &frame_data,
+                                            &frame_len);
+        if (MHD_WEBSOCKET_STATUS_OK == er)
         {
-          /* The sender thread shall close. */
-          /* This is only requested by the receive thread, so we can just leave. */
-          pthread_mutex_unlock (&chat_mutex);
-          return NULL;
-        }
-        else if (1 == cu->ping_status)
-        {
-          /* A pending ping is requested */
-          ++cu->ping_counter;
-          strcpy (cu->ping_message,
-                  "libmicrohttpdchatserverpingdata");
-          snprintf (cu->ping_message + 31, 97, "%d", (int) cu->ping_counter);
-          cu->ping_message_len = strlen (cu->ping_message);
-          char *frame_data = NULL;
-          size_t frame_len = 0;
-          int er = MHD_websocket_encode_ping (cu->ws,
-                                              cu->ping_message,
-                                              cu->ping_message_len,
-                                              &frame_data,
-                                              &frame_len);
-          if (MHD_WEBSOCKET_STATUS_OK == er)
-          {
-            cu->ping_status = 2;
-            timespec_get (&cu->ping_start, TIME_UTC);
+          cu->ping_status = 2;
+          timespec_get (&cu->ping_start, TIME_UTC);
 
-            /* send the data via the TCP/IP socket and */
-            /* unlock the mutex while sending */
-            pthread_mutex_unlock (&chat_mutex);
-            send_all (cu,
-                      frame_data,
-                      frame_len);
-            if (0 != pthread_mutex_lock (&chat_mutex))
-            {
-              return NULL;
-            }
-          }
-          MHD_websocket_free (cu->ws, frame_data);
+          /* send the data via the TCP/IP socket and */
+          /* unlock the mutex while sending */
+          if (0 != pthread_mutex_unlock (&chat_mutex))
+            abort ();
+          send_all (cu,
+                    frame_data,
+                    frame_len);
+          if (0 != pthread_mutex_lock (&chat_mutex))
+            abort ();
         }
-        else if (cu->next_message_index < message_count)
+        MHD_websocket_free (cu->ws, frame_data);
+      }
+      else if (cu->next_message_index < message_count)
+      {
+        /* a chat message or command is pending */
+        char *frame_data = NULL;
+        size_t frame_len = 0;
+        int er = 0;
         {
-          /* a chat message or command is pending */
-          char *frame_data = NULL;
-          size_t frame_len = 0;
-          int er = 0;
+          struct Message *msg = messages[cu->next_message_index];
+          if ((0 == msg->to_user_id) ||
+              (cu->user_id == msg->to_user_id) ||
+              (cu->user_id == msg->from_user_id) )
           {
-            struct Message *msg = messages[cu->next_message_index];
-            if ((0 == msg->to_user_id) ||
-                (cu->user_id == msg->to_user_id) ||
-                (cu->user_id == msg->from_user_id) )
+            if (0 == msg->is_binary)
             {
-              if (0 == msg->is_binary)
-              {
-                er = MHD_websocket_encode_text (cu->ws,
+              er = MHD_websocket_encode_text (cu->ws,
+                                              msg->data,
+                                              msg->data_len,
+                                              MHD_WEBSOCKET_FRAGMENTATION_NONE,
+                                              &frame_data,
+                                              &frame_len,
+                                              NULL);
+            }
+            else
+            {
+              er = MHD_websocket_encode_binary (cu->ws,
                                                 msg->data,
                                                 msg->data_len,
                                                 MHD_WEBSOCKET_FRAGMENTATION_NONE,
                                                 &frame_data,
-                                                &frame_len,
-                                                NULL);
-              }
-              else
-              {
-                er = MHD_websocket_encode_binary (cu->ws,
-                                                  msg->data,
-                                                  msg->data_len,
-                                                  MHD_WEBSOCKET_FRAGMENTATION_NONE,
-                                                  &frame_data,
-                                                  &frame_len);
-              }
+                                                &frame_len);
             }
           }
-          ++cu->next_message_index;
-
-          /* send the data via the TCP/IP socket and */
-          /* unlock the mutex while sending */
-          pthread_mutex_unlock (&chat_mutex);
-          if (MHD_WEBSOCKET_STATUS_OK == er)
-          {
-            send_all (cu,
-                      frame_data,
-                      frame_len);
-          }
-          MHD_websocket_free (cu->ws,
-                              frame_data);
-          if (0 != pthread_mutex_lock (&chat_mutex))
-          {
-            return NULL;
-          }
-          /* check whether there are still pending messages */
-          all_messages_read = (cu->next_message_index < message_count) ? 0 : 1;
         }
-        else
+        ++cu->next_message_index;
+
+        /* send the data via the TCP/IP socket and */
+        /* unlock the mutex while sending */
+        if (0 != pthread_mutex_unlock (&chat_mutex))
+          abort ();
+        if (MHD_WEBSOCKET_STATUS_OK == er)
         {
-          all_messages_read = 1;
+          send_all (cu,
+                    frame_data,
+                    frame_len);
         }
+        MHD_websocket_free (cu->ws,
+                            frame_data);
+        if (0 != pthread_mutex_lock (&chat_mutex))
+          abort ();
+        /* check whether there are still pending messages */
+        all_messages_read = (cu->next_message_index < message_count) ? 0 : 1;
       }
-      /* clear old messages */
-      chat_clearmessages (0);
-
-      /* Wait for wake up. */
-      /* This will automatically unlock the mutex while waiting and */
-      /* lock the mutex after waiting */
-      pthread_cond_wait (&cu->wake_up_sender, &chat_mutex);
+      else
+      {
+        all_messages_read = 1;
+      }
     }
+    /* clear old messages */
+    chat_clearmessages (0);
+
+    /* Wait for wake up. */
+    /* This will automatically unlock the mutex while waiting and */
+    /* lock the mutex after waiting */
+    pthread_cond_wait (&cu->wake_up_sender, &chat_mutex);
   }
 
   return NULL;
@@ -1819,37 +1811,37 @@ connecteduser_receive_messages (void *cls)
     size_t init_users_len = 0;
 
     /* first collect all users without sending (so the mutex isn't locked too long) */
-    if (0 == pthread_mutex_lock (&chat_mutex))
+    if (0 != pthread_mutex_lock (&chat_mutex))
+      abort ();
+    if (0 < user_count)
     {
-      if (0 < user_count)
+      init_users = (struct UserInit *) malloc (user_count * sizeof (struct
+                                                                    UserInit));
+      if (NULL != init_users)
       {
-        init_users = (struct UserInit *) malloc (user_count * sizeof (struct
-                                                                      UserInit));
-        if (NULL != init_users)
+        init_users_len = user_count;
+        for (size_t i = 0; i < user_count; ++i)
         {
-          init_users_len = user_count;
-          for (size_t i = 0; i < user_count; ++i)
+          char user_index[32];
+          snprintf (user_index, 32, "%d", (int) users[i]->user_id);
+          size_t user_index_len = strlen (user_index);
+          struct UserInit iu;
+          iu.user_init_len = user_index_len + users[i]->user_name_len + 10;
+          iu.user_init = (char *) malloc (iu.user_init_len + 1);
+          if (NULL != iu.user_init)
           {
-            char user_index[32];
-            snprintf (user_index, 32, "%d", (int) users[i]->user_id);
-            size_t user_index_len = strlen (user_index);
-            struct UserInit iu;
-            iu.user_init_len = user_index_len + users[i]->user_name_len + 10;
-            iu.user_init = (char *) malloc (iu.user_init_len + 1);
-            if (NULL != iu.user_init)
-            {
-              strcpy (iu.user_init, "userinit|");
-              strcat (iu.user_init, user_index);
-              strcat (iu.user_init, "|");
-              if (0 < users[i]->user_name_len)
-                strcat (iu.user_init, users[i]->user_name);
-            }
-            init_users[i] = iu;
+            strcpy (iu.user_init, "userinit|");
+            strcat (iu.user_init, user_index);
+            strcat (iu.user_init, "|");
+            if (0 < users[i]->user_name_len)
+              strcat (iu.user_init, users[i]->user_name);
           }
+          init_users[i] = iu;
         }
       }
-      pthread_mutex_unlock (&chat_mutex);
     }
+    if (0 != pthread_mutex_unlock (&chat_mutex))
+      abort ();
 
     /* then send all users to the connected client */
     for (size_t i = 0; i < init_users_len; ++i)
@@ -1924,13 +1916,14 @@ connecteduser_receive_messages (void *cls)
                                                             cu->extra_in_size))
     {
       chat_removeuser (cu);
-      if (0 == pthread_mutex_lock (&chat_mutex))
-      {
-        cu->disconnect = 1;
-        pthread_cond_signal (&cu->wake_up_sender);
-        pthread_mutex_unlock (&chat_mutex);
-        pthread_join (pt, NULL);
-      }
+      if (0 != pthread_mutex_lock (&chat_mutex))
+        abort ();
+      cu->disconnect = 1;
+      pthread_cond_signal (&cu->wake_up_sender);
+      if (0 != pthread_mutex_unlock (&chat_mutex))
+        abort ();
+      pthread_join (pt, NULL);
+
       struct MHD_UpgradeResponseHandle *urh = cu->urh;
       if (NULL != urh)
       {
@@ -1969,13 +1962,13 @@ connecteduser_receive_messages (void *cls)
       {
         /* A websocket protocol error occurred */
         chat_removeuser (cu);
-        if (0 == pthread_mutex_lock (&chat_mutex))
-        {
-          cu->disconnect = 1;
-          pthread_cond_signal (&cu->wake_up_sender);
-          pthread_mutex_unlock (&chat_mutex);
-          pthread_join (pt, NULL);
-        }
+        if (0 != pthread_mutex_lock (&chat_mutex))
+          abort ();
+        cu->disconnect = 1;
+        pthread_cond_signal (&cu->wake_up_sender);
+        if (0 != pthread_mutex_unlock (&chat_mutex))
+          abort ();
+        pthread_join (pt, NULL);
         struct MHD_UpgradeResponseHandle *urh = cu->urh;
         if (NULL != urh)
         {
@@ -1995,13 +1988,13 @@ connecteduser_receive_messages (void *cls)
 
   /* cleanup */
   chat_removeuser (cu);
-  if (0 == pthread_mutex_lock (&chat_mutex))
-  {
-    cu->disconnect = 1;
-    pthread_cond_signal (&cu->wake_up_sender);
-    pthread_mutex_unlock (&chat_mutex);
-    pthread_join (pt, NULL);
-  }
+  if (0 != pthread_mutex_lock (&chat_mutex))
+    abort ();
+  cu->disconnect = 1;
+  pthread_cond_signal (&cu->wake_up_sender);
+  if (0 != pthread_mutex_unlock (&chat_mutex))
+    abort ();
+  pthread_join (pt, NULL);
   struct MHD_UpgradeResponseHandle *urh = cu->urh;
   if (NULL != urh)
   {
@@ -2044,7 +2037,7 @@ connecteduser_receive_messages (void *cls)
  * @param connection original HTTP connection handle,
  *                   giving the function a last chance
  *                   to inspect the original HTTP request
- * @param con_cls last value left in `con_cls` of the `MHD_AccessHandlerCallback`
+ * @param req_cls last value left in `req_cls` of the `MHD_AccessHandlerCallback`
  * @param extra_in if we happened to have read bytes after the
  *                 HTTP header already (because the client sent
  *                 more than the HTTP header of the request before
@@ -2069,7 +2062,7 @@ connecteduser_receive_messages (void *cls)
 static void
 upgrade_handler (void *cls,
                  struct MHD_Connection *connection,
-                 void *con_cls,
+                 void *req_cls,
                  const char *extra_in,
                  size_t extra_in_size,
                  MHD_socket fd,
@@ -2079,7 +2072,7 @@ upgrade_handler (void *cls,
   pthread_t pt;
   (void) cls;         /* Unused. Silent compiler warning. */
   (void) connection;  /* Unused. Silent compiler warning. */
-  (void) con_cls;     /* Unused. Silent compiler warning. */
+  (void) req_cls;     /* Unused. Silent compiler warning. */
 
   /* This callback must return as soon as possible. */
 
@@ -2130,7 +2123,7 @@ upgrade_handler (void *cls,
  * @param version The HTTP version
  * @param upload_data Given upload data for POST requests
  * @param upload_data_size The size of the upload data
- * @param ptr A pointer for request specific data
+ * @param req_cls A pointer for request specific data
  * @return MHD_YES on success or MHD_NO on error.
  */
 static enum MHD_Result
@@ -2141,7 +2134,7 @@ access_handler (void *cls,
                 const char *version,
                 const char *upload_data,
                 size_t *upload_data_size,
-                void **ptr)
+                void **req_cls)
 {
   static int aptr;
   struct MHD_Response *response;
@@ -2153,20 +2146,19 @@ access_handler (void *cls,
 
   if (0 != strcmp (method, "GET"))
     return MHD_NO;              /* unexpected method */
-  if (&aptr != *ptr)
+  if (&aptr != *req_cls)
   {
     /* do never respond on first call */
-    *ptr = &aptr;
+    *req_cls = &aptr;
     return MHD_YES;
   }
-  *ptr = NULL;                  /* reset when done */
+  *req_cls = NULL;                  /* reset when done */
   if (0 == strcmp (url, "/"))
   {
     /* Default page for visiting the server */
-    struct MHD_Response *response = MHD_create_response_from_buffer (strlen (
-                                                                       PAGE),
-                                                                     PAGE,
-                                                                     MHD_RESPMEM_PERSISTENT);
+    struct MHD_Response *response;
+    response = MHD_create_response_from_buffer_static (strlen (PAGE),
+                                                       PAGE);
     ret = MHD_queue_response (connection,
                               MHD_HTTP_OK,
                               response);
@@ -2256,10 +2248,11 @@ access_handler (void *cls,
     else
     {
       /* return error page */
-      struct MHD_Response *response = MHD_create_response_from_buffer (strlen (
-                                                                         PAGE_INVALID_WEBSOCKET_REQUEST),
-                                                                       PAGE_INVALID_WEBSOCKET_REQUEST,
-                                                                       MHD_RESPMEM_PERSISTENT);
+      struct MHD_Response *response;
+      response =
+        MHD_create_response_from_buffer_static ( \
+          strlen (PAGE_INVALID_WEBSOCKET_REQUEST),
+          PAGE_INVALID_WEBSOCKET_REQUEST);
       ret = MHD_queue_response (connection,
                                 MHD_HTTP_BAD_REQUEST,
                                 response);
@@ -2268,10 +2261,9 @@ access_handler (void *cls,
   }
   else
   {
-    struct MHD_Response *response = MHD_create_response_from_buffer (strlen (
-                                                                       PAGE_NOT_FOUND),
-                                                                     PAGE_NOT_FOUND,
-                                                                     MHD_RESPMEM_PERSISTENT);
+    struct MHD_Response *response;
+    response = MHD_create_response_from_buffer_static (strlen (PAGE_NOT_FOUND),
+                                                       PAGE_NOT_FOUND);
     ret = MHD_queue_response (connection,
                               MHD_HTTP_NOT_FOUND,
                               response);
@@ -2325,28 +2317,28 @@ main (int argc,
     return 1;
   (void) getc (stdin);
 
-  if (0 == pthread_mutex_lock (&chat_mutex))
-  {
-    disconnect_all = 1;
-    for (size_t i = 0; i < user_count; ++i)
-      pthread_cond_signal (&users[i]->wake_up_sender);
-    pthread_mutex_unlock (&chat_mutex);
-  }
+  if (0 != pthread_mutex_lock (&chat_mutex))
+    abort ();
+  disconnect_all = 1;
+  for (size_t i = 0; i < user_count; ++i)
+    pthread_cond_signal (&users[i]->wake_up_sender);
+  if (0 != pthread_mutex_unlock (&chat_mutex))
+    abort ();
   sleep (2);
-  if (0 == pthread_mutex_lock (&chat_mutex))
+  if (0 != pthread_mutex_lock (&chat_mutex))
+    abort ();
+  for (size_t i = 0; i < user_count; ++i)
   {
-    for (size_t i = 0; i < user_count; ++i)
+    struct MHD_UpgradeResponseHandle *urh = users[i]->urh;
+    if (NULL != urh)
     {
-      struct MHD_UpgradeResponseHandle *urh = users[i]->urh;
-      if (NULL != urh)
-      {
-        users[i]->urh = NULL;
-        MHD_upgrade_action (users[i]->urh,
-                            MHD_UPGRADE_ACTION_CLOSE);
-      }
+      users[i]->urh = NULL;
+      MHD_upgrade_action (users[i]->urh,
+                          MHD_UPGRADE_ACTION_CLOSE);
     }
-    pthread_mutex_unlock (&chat_mutex);
   }
+  if (0 != pthread_mutex_unlock (&chat_mutex))
+    abort ();
   sleep (2);
 
   /* usually we should wait here in a safe way for all threads to disconnect, */

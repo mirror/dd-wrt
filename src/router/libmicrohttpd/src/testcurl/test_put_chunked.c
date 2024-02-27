@@ -1,7 +1,7 @@
 /*
      This file is part of libmicrohttpd
      Copyright (C) 2007 Christian Grothoff
-     Copyright (C) 2014-2021 Evgeny Grin (Karlson2k)
+     Copyright (C) 2014-2022 Evgeny Grin (Karlson2k)
 
      libmicrohttpd is free software; you can redistribute it and/or modify
      it under the terms of the GNU General Public License as published
@@ -34,6 +34,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <errno.h>
 
 #ifndef WINDOWS
 #include <unistd.h>
@@ -56,8 +57,8 @@ struct CBC
 static size_t
 putBuffer (void *stream, size_t size, size_t nmemb, void *ptr)
 {
-  unsigned int *pos = ptr;
-  unsigned int wrt;
+  size_t *pos = ptr;
+  size_t wrt;
 
   wrt = size * nmemb;
   if (wrt > 8 - (*pos))
@@ -90,13 +91,13 @@ ahc_echo (void *cls,
           const char *method,
           const char *version,
           const char *upload_data, size_t *upload_data_size,
-          void **unused)
+          void **req_cls)
 {
-  int *done = cls;
+  size_t *done = cls;
   struct MHD_Response *response;
   enum MHD_Result ret;
-  int have;
-  (void) version; (void) unused;   /* Unused. Silent compiler warning. */
+  size_t have;
+  (void) version; (void) req_cls;   /* Unused. Silent compiler warning. */
 
   if (0 != strcmp ("PUT", method))
     return MHD_NO;              /* unexpected method */
@@ -125,26 +126,25 @@ ahc_echo (void *cls,
 #endif
     return MHD_YES;
   }
-  response = MHD_create_response_from_buffer (strlen (url),
-                                              (void *) url,
-                                              MHD_RESPMEM_MUST_COPY);
+  response = MHD_create_response_from_buffer_copy (strlen (url),
+                                                   (const void *) url);
   ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
   MHD_destroy_response (response);
   return ret;
 }
 
 
-static int
-testInternalPut ()
+static unsigned int
+testInternalPut (void)
 {
   struct MHD_Daemon *d;
   CURL *c;
   char buf[2048];
   struct CBC cbc;
-  unsigned int pos = 0;
-  int done_flag = 0;
+  size_t pos = 0;
+  size_t done_flag = 0;
   CURLcode errornum;
-  int port;
+  uint16_t port;
 
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
     port = 0;
@@ -167,7 +167,7 @@ testInternalPut ()
     {
       MHD_stop_daemon (d); return 32;
     }
-    port = (int) dinfo->port;
+    port = dinfo->port;
   }
   c = curl_easy_init ();
   curl_easy_setopt (c, CURLOPT_URL, "http://127.0.0.1/hello_world");
@@ -208,17 +208,17 @@ testInternalPut ()
 }
 
 
-static int
-testMultithreadedPut ()
+static unsigned int
+testMultithreadedPut (void)
 {
   struct MHD_Daemon *d;
   CURL *c;
   char buf[2048];
   struct CBC cbc;
-  unsigned int pos = 0;
-  int done_flag = 0;
+  size_t pos = 0;
+  size_t done_flag = 0;
   CURLcode errornum;
-  int port;
+  uint16_t port;
 
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
     port = 0;
@@ -242,7 +242,7 @@ testMultithreadedPut ()
     {
       MHD_stop_daemon (d); return 32;
     }
-    port = (int) dinfo->port;
+    port = dinfo->port;
   }
   c = curl_easy_init ();
   curl_easy_setopt (c, CURLOPT_URL, "http://127.0.0.1/hello_world");
@@ -284,17 +284,17 @@ testMultithreadedPut ()
 }
 
 
-static int
-testMultithreadedPoolPut ()
+static unsigned int
+testMultithreadedPoolPut (void)
 {
   struct MHD_Daemon *d;
   CURL *c;
   char buf[2048];
   struct CBC cbc;
-  unsigned int pos = 0;
-  int done_flag = 0;
+  size_t pos = 0;
+  size_t done_flag = 0;
   CURLcode errornum;
-  int port;
+  uint16_t port;
 
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
     port = 0;
@@ -319,7 +319,7 @@ testMultithreadedPoolPut ()
     {
       MHD_stop_daemon (d); return 32;
     }
-    port = (int) dinfo->port;
+    port = dinfo->port;
   }
   c = curl_easy_init ();
   curl_easy_setopt (c, CURLOPT_URL, "http://127.0.0.1/hello_world");
@@ -361,8 +361,8 @@ testMultithreadedPoolPut ()
 }
 
 
-static int
-testExternalPut ()
+static unsigned int
+testExternalPut (void)
 {
   struct MHD_Daemon *d;
   CURL *c;
@@ -383,9 +383,9 @@ testExternalPut ()
   struct CURLMsg *msg;
   time_t start;
   struct timeval tv;
-  unsigned int pos = 0;
-  int done_flag = 0;
-  int port;
+  size_t pos = 0;
+  size_t done_flag = 0;
+  uint16_t port;
 
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
     port = 0;
@@ -398,7 +398,9 @@ testExternalPut ()
   cbc.pos = 0;
   d = MHD_start_daemon (MHD_USE_ERROR_LOG,
                         port,
-                        NULL, NULL, &ahc_echo, &done_flag, MHD_OPTION_END);
+                        NULL, NULL, &ahc_echo, &done_flag,
+                        MHD_OPTION_APP_FD_SETSIZE, (int) FD_SETSIZE,
+                        MHD_OPTION_END);
   if (d == NULL)
     return 256;
   if (0 == port)
@@ -409,7 +411,7 @@ testExternalPut ()
     {
       MHD_stop_daemon (d); return 32;
     }
-    port = (int) dinfo->port;
+    port = dinfo->port;
   }
   c = curl_easy_init ();
   curl_easy_setopt (c, CURLOPT_URL, "http://127.0.0.1/hello_world");

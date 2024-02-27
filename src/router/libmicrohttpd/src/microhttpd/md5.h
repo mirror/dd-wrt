@@ -1,71 +1,131 @@
 /*
- * This code implements the MD5 message-digest algorithm.
- * The algorithm is due to Ron Rivest.	This code was
- * written by Colin Plumb in 1993, no copyright is claimed.
- * This code is in the public domain; do with it what you wish.
- *
- * Equivalent code is available from RSA Data Security, Inc.
- * This code has been tested against that, and is equivalent,
- * except that you don't need to include two pages of legalese
- * with every copy.
- *
- * To compute the message digest of a chunk of bytes, declare an
- * MD5Context structure, pass it to MHD_MD5Init, call MHD_MD5Update as
- * needed on buffers full of bytes, and then call MHD_MD5Final, which
- * will fill a supplied 16-byte array with the digest.
+     This file is part of GNU libmicrohttpd
+     Copyright (C) 2022 Evgeny Grin (Karlson2k)
+
+     GNU libmicrohttpd is free software; you can redistribute it and/or
+     modify it under the terms of the GNU Lesser General Public
+     License as published by the Free Software Foundation; either
+     version 2.1 of the License, or (at your option) any later version.
+
+     This library is distributed in the hope that it will be useful,
+     but WITHOUT ANY WARRANTY; without even the implied warranty of
+     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+     Lesser General Public License for more details.
+
+     You should have received a copy of the GNU Lesser General Public
+     License along with this library.
+     If not, see <http://www.gnu.org/licenses/>.
+*/
+
+/**
+ * @file microhttpd/md5.h
+ * @brief  Calculation of MD5 digest
+ * @author Karlson2k (Evgeny Grin)
  */
 
 #ifndef MHD_MD5_H
-#define MHD_MD5_H
+#define MHD_MD5_H 1
 
 #include "mhd_options.h"
 #include <stdint.h>
 #ifdef HAVE_STDDEF_H
-#include <stddef.h>
+#include <stddef.h>  /* for size_t */
 #endif /* HAVE_STDDEF_H */
 
-#define MD5_BLOCK_SIZE              64
-#define MD5_DIGEST_SIZE             16
-#define MD5_DIGEST_STRING_LENGTH    (MD5_DIGEST_SIZE * 2 + 1)
+/**
+ * Number of bits in single MD5 word.
+ */
+#define MD5_WORD_SIZE_BITS 32
 
-struct MD5Context
+/**
+ * Number of bytes in single MD5 word.
+ */
+#define MD5_BYTES_IN_WORD (MD5_WORD_SIZE_BITS / 8)
+
+/**
+ * Hash is kept internally as four 32-bit words.
+ * This is intermediate hash size, used during computing the final digest.
+ */
+#define MD5_HASH_SIZE_WORDS 4
+
+/**
+ * Size of MD5 resulting digest in bytes.
+ * This is the final digest size, not intermediate hash.
+ */
+#define MD5_DIGEST_SIZE_WORDS MD5_HASH_SIZE_WORDS
+
+/**
+ * Size of MD5 resulting digest in bytes
+ * This is the final digest size, not intermediate hash.
+ */
+#define MD5_DIGEST_SIZE (MD5_DIGEST_SIZE_WORDS * MD5_BYTES_IN_WORD)
+
+/**
+ * Size of MD5 digest string in chars including termination NUL.
+ */
+#define MD5_DIGEST_STRING_SIZE ((MD5_DIGEST_SIZE) * 2 + 1)
+
+/**
+ * Size of MD5 single processing block in bits.
+ */
+#define MD5_BLOCK_SIZE_BITS 512
+
+/**
+ * Size of MD5 single processing block in bytes.
+ */
+#define MD5_BLOCK_SIZE (MD5_BLOCK_SIZE_BITS / 8)
+
+/**
+ * Size of MD5 single processing block in words.
+ */
+#define MD5_BLOCK_SIZE_WORDS (MD5_BLOCK_SIZE_BITS / MD5_WORD_SIZE_BITS)
+
+
+/**
+ * MD5 calculation context
+ */
+struct Md5Ctx
 {
-  uint32_t state[4];  /* state */
-  uint64_t count;     /* number of bytes, mod 2^64 */
-  uint8_t buffer[MD5_BLOCK_SIZE]; /* input buffer */
+  uint32_t H[MD5_HASH_SIZE_WORDS];         /**< Intermediate hash value / digest at end of calculation */
+  uint32_t buffer[MD5_BLOCK_SIZE_WORDS];   /**< MD5 input data buffer */
+  uint64_t count;                          /**< number of bytes, mod 2^64 */
 };
 
-
 /**
- * Start MD5 accumulation.  Set bit count to 0 and buffer to mysterious
- * initialization constants.
+ * Initialise structure for MD5 calculation.
  *
- * @param ctx_ must be a `struct MD5Context *`
+ * @param ctx the calculation context
  */
 void
-MHD_MD5Init (void *ctx_);
+MHD_MD5_init (struct Md5Ctx *ctx);
 
 
 /**
- * Update context to reflect the concatenation of another buffer full
- * of bytes.
+ * MD5 process portion of bytes.
  *
- * @param ctx_ must be a `struct MD5Context *`
+ * @param ctx the calculation context
+ * @param data bytes to add to hash
+ * @param length number of bytes in @a data
  */
 void
-MHD_MD5Update (void *ctx_,
-               const uint8_t *input,
-               size_t len);
+MHD_MD5_update (struct Md5Ctx *ctx,
+                const uint8_t *data,
+                size_t length);
 
 
 /**
- * Final wrapup--call MD5Pad, fill in digest and zero out ctx.
+ * Finalise MD5 calculation, return digest.
  *
- * @param ctx_ must be a `struct MD5Context *`
+ * @param ctx the calculation context
+ * @param[out] digest set to the hash, must be #MD5_DIGEST_SIZE bytes
  */
 void
-MHD_MD5Final (void *ctx_,
-              uint8_t digest[MD5_DIGEST_SIZE]);
+MHD_MD5_finish (struct Md5Ctx *ctx,
+                uint8_t digest[MD5_DIGEST_SIZE]);
 
+/**
+ * Indicates that function MHD_MD5_finish() (without context reset) is available
+ */
+#define MHD_MD5_HAS_FINISH 1
 
-#endif /* !MHD_MD5_H */
+#endif /* MHD_MD5_H */

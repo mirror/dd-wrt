@@ -1,6 +1,6 @@
 /*
   This file is part of libmicrohttpd
-  Copyright (C) 2019 Karlson2k (Evgeny Grin)
+  Copyright (C) 2019-2023 Evgeny Grin (Karlson2k)
 
   This test tool is free software; you can redistribute it and/or
   modify it under the terms of the GNU General Public License as
@@ -24,10 +24,15 @@
  */
 
 #include "mhd_options.h"
-#include "md5.h"
+#include "mhd_md5_wrap.h"
 #include "test_helpers.h"
 #include <stdio.h>
 #include <stdlib.h>
+
+#if defined(MHD_MD5_TLSLIB) && defined(MHD_HTTPS_REQUIRE_GCRYPT)
+#define NEED_GCRYP_INIT 1
+#include <gcrypt.h>
+#endif /* MHD_MD5_TLSLIB && MHD_HTTPS_REQUIRE_GCRYPT */
 
 static int verbose = 0; /* verbose level (0-1)*/
 
@@ -59,10 +64,39 @@ static const struct data_unit1 data_units1[] = {
   {D_STR_W_LEN ("zyxwvutsrqponMLKJIHGFEDCBA"),
    {0x05, 0x61, 0x3a, 0x6b, 0xde, 0x75, 0x3a, 0x45, 0x91, 0xa8, 0x81, 0xb0,
     0xa7, 0xe2, 0xe2, 0x0e}},
-  {D_STR_W_LEN ("abcdefghijklmnopqrstuvwxyzzyxwvutsrqponMLKJIHGFEDCBA"
+  {D_STR_W_LEN ("abcdefghijklmnopqrstuvwxyzzyxwvutsrqponMLKJIHGFEDCBA" \
                 "abcdefghijklmnopqrstuvwxyzzyxwvutsrqponMLKJIHGFEDCBA"),
    {0xaf, 0xab, 0xc7, 0xe9, 0xe7, 0x17, 0xbe, 0xd6, 0xc0, 0x0f, 0x78, 0x8c,
     0xde, 0xdd, 0x11, 0xd1}},
+  {D_STR_W_LEN ("/long/long/long/long/long/long/long/long/long/long/long" \
+                "/long/long/long/long/long/long/long/long/long/long/long" \
+                "/long/long/long/long/long/long/long/long/long/long/long" \
+                "/long/long/long/long/long/long/long/long/long/long/long" \
+                "/long/long/long/long/long/long/long/long/long/long/long" \
+                "/long/long/long/long/long/long/long/long/long/long/long" \
+                "/long/long/long/long/path?with%20some=parameters"),
+   {0x7e, 0xe6, 0xdb, 0xe2, 0x76, 0x49, 0x1a, 0xd8, 0xaf, 0xf3, 0x52, 0x2d,
+    0xd8, 0xfc, 0x89, 0x1e}},
+  {D_STR_W_LEN (""),
+   {0xd4, 0x1d, 0x8c, 0xd9, 0x8f, 0x00, 0xb2, 0x04, 0xe9, 0x80, 0x09, 0x98,
+    0xec, 0xf8, 0x42, 0x7e}},
+  {D_STR_W_LEN ("a"),
+   {0x0c, 0xc1, 0x75, 0xb9, 0xc0, 0xf1, 0xb6, 0xa8, 0x31, 0xc3, 0x99, 0xe2,
+    0x69, 0x77, 0x26, 0x61}},
+  {D_STR_W_LEN ("abc"),
+   {0x90, 0x01, 0x50, 0x98, 0x3c, 0xd2, 0x4f, 0xb0, 0xd6, 0x96, 0x3f, 0x7d,
+    0x28, 0xe1, 0x7f, 0x72}},
+  {D_STR_W_LEN ("message digest"),
+   {0xf9, 0x6b, 0x69, 0x7d, 0x7c, 0xb7, 0x93, 0x8d, 0x52, 0x5a, 0x2f, 0x31,
+    0xaa, 0xf1, 0x61, 0xd0}},
+  {D_STR_W_LEN ("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz" \
+                "0123456789"),
+   {0xd1, 0x74, 0xab, 0x98, 0xd2, 0x77, 0xd9, 0xf5, 0xa5, 0x61, 0x1c, 0x2c,
+    0x9f, 0x41, 0x9d, 0x9f}},
+  {D_STR_W_LEN ("12345678901234567890123456789012345678901234567890" \
+                "123456789012345678901234567890"),
+   {0x57, 0xed, 0xf4, 0xa2, 0x2b, 0xe3, 0xc9, 0x55, 0xac, 0x49, 0xda, 0x2e,
+    0x21, 0x07, 0xb6, 0x7a}}
 };
 
 static const size_t units1_num = sizeof(data_units1) / sizeof(data_units1[0]);
@@ -251,8 +285,8 @@ check_result (const char *test_name,
   check_num++; /* Print 1-based numbers */
   if (failed)
   {
-    char calc_str[MD5_DIGEST_STRING_LENGTH];
-    char expc_str[MD5_DIGEST_STRING_LENGTH];
+    char calc_str[MD5_DIGEST_STRING_SIZE];
+    char expc_str[MD5_DIGEST_STRING_SIZE];
     bin2hex (calculated, MD5_DIGEST_SIZE, calc_str);
     bin2hex (expected, MD5_DIGEST_SIZE, expc_str);
     fprintf (stderr,
@@ -262,11 +296,11 @@ check_result (const char *test_name,
   }
   else if (verbose)
   {
-    char calc_str[MD5_DIGEST_STRING_LENGTH];
+    char calc_str[MD5_DIGEST_STRING_SIZE];
     bin2hex (calculated, MD5_DIGEST_SIZE, calc_str);
-    printf (
-      "PASSED: %s check %u: calculated digest %s match expected digest.\n",
-      test_name, check_num, calc_str);
+    printf ("PASSED: %s check %u: calculated digest %s "
+            "matches expected digest.\n",
+            test_name, check_num, calc_str);
     fflush (stdout);
   }
   return failed ? 1 : 0;
@@ -283,19 +317,28 @@ test1_str (void)
 {
   unsigned int i;
   int num_failed = 0;
+  struct Md5CtxWr ctx;
+
+  MHD_MD5_init_one_time (&ctx);
 
   for (i = 0; i < units1_num; i++)
   {
-    struct MD5Context ctx;
     uint8_t digest[MD5_DIGEST_SIZE];
 
-    MHD_MD5Init (&ctx);
-    MHD_MD5Update (&ctx, (const uint8_t *) data_units1[i].str_l.str,
-                   data_units1[i].str_l.len);
-    MHD_MD5Final (&ctx, digest);
+    MHD_MD5_update (&ctx, (const uint8_t *) data_units1[i].str_l.str,
+                    data_units1[i].str_l.len);
+    MHD_MD5_finish_reset (&ctx, digest);
+#ifdef MHD_MD5_HAS_EXT_ERROR
+    if (0 != ctx.ext_error)
+    {
+      fprintf (stderr, "External hashing error: %d.\n", ctx.ext_error);
+      exit (99);
+    }
+#endif
     num_failed += check_result (MHD_FUNC_, i, digest,
                                 data_units1[i].digest);
   }
+  MHD_MD5_deinit (&ctx);
   return num_failed;
 }
 
@@ -305,18 +348,27 @@ test1_bin (void)
 {
   unsigned int i;
   int num_failed = 0;
+  struct Md5CtxWr ctx;
+
+  MHD_MD5_init_one_time (&ctx);
 
   for (i = 0; i < units2_num; i++)
   {
-    struct MD5Context ctx;
     uint8_t digest[MD5_DIGEST_SIZE];
 
-    MHD_MD5Init (&ctx);
-    MHD_MD5Update (&ctx, data_units2[i].bin_l.bin, data_units2[i].bin_l.len);
-    MHD_MD5Final (&ctx, digest);
+    MHD_MD5_update (&ctx, data_units2[i].bin_l.bin, data_units2[i].bin_l.len);
+    MHD_MD5_finish_reset (&ctx, digest);
+#ifdef MHD_MD5_HAS_EXT_ERROR
+    if (0 != ctx.ext_error)
+    {
+      fprintf (stderr, "External hashing error: %d.\n", ctx.ext_error);
+      exit (99);
+    }
+#endif
     num_failed += check_result (MHD_FUNC_, i, digest,
                                 data_units2[i].digest);
   }
+  MHD_MD5_deinit (&ctx);
   return num_failed;
 }
 
@@ -327,21 +379,33 @@ test2_str (void)
 {
   unsigned int i;
   int num_failed = 0;
+  struct Md5CtxWr ctx;
+
+  MHD_MD5_init_one_time (&ctx);
 
   for (i = 0; i < units1_num; i++)
   {
-    struct MD5Context ctx;
     uint8_t digest[MD5_DIGEST_SIZE];
     size_t part_s = data_units1[i].str_l.len / 4;
 
-    MHD_MD5Init (&ctx);
-    MHD_MD5Update (&ctx, (const uint8_t *) data_units1[i].str_l.str, part_s);
-    MHD_MD5Update (&ctx, (const uint8_t *) data_units1[i].str_l.str + part_s,
-                   data_units1[i].str_l.len - part_s);
-    MHD_MD5Final (&ctx, digest);
+    MHD_MD5_update (&ctx, (const uint8_t *) "", 0);
+    MHD_MD5_update (&ctx, (const uint8_t *) data_units1[i].str_l.str, part_s);
+    MHD_MD5_update (&ctx, (const uint8_t *) "", 0);
+    MHD_MD5_update (&ctx, (const uint8_t *) data_units1[i].str_l.str + part_s,
+                    data_units1[i].str_l.len - part_s);
+    MHD_MD5_update (&ctx, (const uint8_t *) "", 0);
+    MHD_MD5_finish_reset (&ctx, digest);
+#ifdef MHD_MD5_HAS_EXT_ERROR
+    if (0 != ctx.ext_error)
+    {
+      fprintf (stderr, "External hashing error: %d.\n", ctx.ext_error);
+      exit (99);
+    }
+#endif
     num_failed += check_result (MHD_FUNC_, i, digest,
                                 data_units1[i].digest);
   }
+  MHD_MD5_deinit (&ctx);
   return num_failed;
 }
 
@@ -351,21 +415,31 @@ test2_bin (void)
 {
   unsigned int i;
   int num_failed = 0;
+  struct Md5CtxWr ctx;
+
+  MHD_MD5_init_one_time (&ctx);
 
   for (i = 0; i < units2_num; i++)
   {
-    struct MD5Context ctx;
     uint8_t digest[MD5_DIGEST_SIZE];
     size_t part_s = data_units2[i].bin_l.len * 2 / 3;
 
-    MHD_MD5Init (&ctx);
-    MHD_MD5Update (&ctx, data_units2[i].bin_l.bin, part_s);
-    MHD_MD5Update (&ctx, data_units2[i].bin_l.bin + part_s,
-                   data_units2[i].bin_l.len - part_s);
-    MHD_MD5Final (&ctx, digest);
+    MHD_MD5_update (&ctx, data_units2[i].bin_l.bin, part_s);
+    MHD_MD5_update (&ctx, (const uint8_t *) "", 0);
+    MHD_MD5_update (&ctx, data_units2[i].bin_l.bin + part_s,
+                    data_units2[i].bin_l.len - part_s);
+    MHD_MD5_finish_reset (&ctx, digest);
+#ifdef MHD_MD5_HAS_EXT_ERROR
+    if (0 != ctx.ext_error)
+    {
+      fprintf (stderr, "External hashing error: %d.\n", ctx.ext_error);
+      exit (99);
+    }
+#endif
     num_failed += check_result (MHD_FUNC_, i, digest,
                                 data_units2[i].digest);
   }
+  MHD_MD5_deinit (&ctx);
   return num_failed;
 }
 
@@ -381,6 +455,7 @@ test_unaligned (void)
   unsigned int offset;
   uint8_t *buf;
   uint8_t *digest_buf;
+  struct Md5CtxWr ctx;
 
   const struct data_unit2 *const tdata = data_units2 + DATA_POS;
 
@@ -389,9 +464,10 @@ test_unaligned (void)
   if ((NULL == buf) || (NULL == digest_buf))
     exit (99);
 
+  MHD_MD5_init_one_time (&ctx);
+
   for (offset = MAX_OFFSET; offset >= 1; --offset)
   {
-    struct MD5Context ctx;
     uint8_t *unaligned_digest;
     uint8_t *unaligned_buf;
 
@@ -400,12 +476,19 @@ test_unaligned (void)
     unaligned_digest = digest_buf + MAX_OFFSET - offset;
     memset (unaligned_digest, 0, MD5_DIGEST_SIZE);
 
-    MHD_MD5Init (&ctx);
-    MHD_MD5Update (&ctx, unaligned_buf, tdata->bin_l.len);
-    MHD_MD5Final (&ctx, unaligned_digest);
+    MHD_MD5_update (&ctx, unaligned_buf, tdata->bin_l.len);
+    MHD_MD5_finish_reset (&ctx, unaligned_digest);
+#ifdef MHD_MD5_HAS_EXT_ERROR
+    if (0 != ctx.ext_error)
+    {
+      fprintf (stderr, "External hashing error: %d.\n", ctx.ext_error);
+      exit (99);
+    }
+#endif
     num_failed += check_result (MHD_FUNC_, MAX_OFFSET - offset,
                                 unaligned_digest, tdata->digest);
   }
+  MHD_MD5_deinit (&ctx);
   free (digest_buf);
   free (buf);
   return num_failed;
@@ -419,6 +502,13 @@ main (int argc, char *argv[])
   (void) has_in_name; /* Mute compiler warning. */
   if (has_param (argc, argv, "-v") || has_param (argc, argv, "--verbose"))
     verbose = 1;
+
+#ifdef NEED_GCRYP_INIT
+  gcry_control (GCRYCTL_ENABLE_QUICK_RANDOM, 0);
+#ifdef GCRYCTL_INITIALIZATION_FINISHED
+  gcry_control (GCRYCTL_INITIALIZATION_FINISHED, 0);
+#endif /* GCRYCTL_INITIALIZATION_FINISHED */
+#endif /* NEED_GCRYP_INIT */
 
   num_failed += test1_str ();
   num_failed += test1_bin ();

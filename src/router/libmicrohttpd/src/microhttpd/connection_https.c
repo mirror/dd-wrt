@@ -1,7 +1,7 @@
 /*
      This file is part of libmicrohttpd
      Copyright (C) 2007, 2008, 2010 Daniel Pittman and Christian Grothoff
-     Copyright (C) 2015-2021 Karlson2k (Evgeny Grin)
+     Copyright (C) 2015-2022 Karlson2k (Evgeny Grin)
 
      This library is free software; you can redistribute it and/or
      modify it under the terms of the GNU Lesser General Public
@@ -111,9 +111,9 @@ recv_tls_adapter (struct MHD_Connection *connection,
 #endif /* EPOLL_SUPPORT */
 
   /* Check whether TLS buffers still have some unread data. */
-  connection->tls_read_ready = ( ((size_t) res == i) &&
-                                 (0 != gnutls_record_check_pending (
-                                    connection->tls_session)) );
+  connection->tls_read_ready =
+    ( ((size_t) res == i) &&
+      (0 != gnutls_record_check_pending (connection->tls_session)) );
   return res;
 }
 

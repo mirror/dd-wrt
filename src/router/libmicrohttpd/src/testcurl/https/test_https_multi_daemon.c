@@ -1,6 +1,7 @@
 /*
  This file is part of libmicrohttpd
  Copyright (C) 2007 Christian Grothoff
+ Copyright (C) 2016-2022 Evgeny Grin (Karlson2k)
 
  libmicrohttpd is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published
@@ -19,9 +20,10 @@
  */
 
 /**
- * @file mhds_multi_daemon_test.c
+ * @file test_https_multi_daemon.c
  * @brief  Testcase for libmicrohttpd multiple HTTPS daemon scenario
  * @author Sagie Amir
+ * @author Karlson2k (Evgeny Grin)
  */
 
 #include "platform.h"
@@ -33,20 +35,23 @@
 #include <gcrypt.h>
 #endif /* MHD_HTTPS_REQUIRE_GCRYPT */
 #include "tls_test_common.h"
+#include "tls_test_keys.h"
 
 /*
  * assert initiating two separate daemons and having one shut down
  * doesn't affect the other
  */
-static int
-test_concurent_daemon_pair (void *cls)
+static unsigned int
+test_concurent_daemon_pair (void *cls,
+                            const char *cipher_suite,
+                            int proto_version)
 {
-  int ret;
+  unsigned int ret;
+  enum test_get_result res;
   struct MHD_Daemon *d1;
   struct MHD_Daemon *d2;
-  int port1, port2;
+  uint16_t port1, port2;
   (void) cls;    /* Unused. Silent compiler warning. */
-
 
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
     port1 = port2 = 0;
@@ -60,14 +65,14 @@ test_concurent_daemon_pair (void *cls)
                          | MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_TLS
                          | MHD_USE_ERROR_LOG, port1,
                          NULL, NULL, &http_ahc, NULL,
-                         MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
+                         MHD_OPTION_HTTPS_MEM_KEY, srv_self_signed_key_pem,
                          MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,
                          MHD_OPTION_END);
 
   if (d1 == NULL)
   {
     fprintf (stderr, MHD_E_SERVER_INIT);
-    return -1;
+    return 1;
   }
   if (0 == port1)
   {
@@ -75,16 +80,18 @@ test_concurent_daemon_pair (void *cls)
     dinfo = MHD_get_daemon_info (d1, MHD_DAEMON_INFO_BIND_PORT);
     if ((NULL == dinfo) || (0 == dinfo->port) )
     {
-      MHD_stop_daemon (d1); return -1;
+      fprintf (stderr, "Cannot detect daemon bind port.\n");
+      MHD_stop_daemon (d1);
+      return 1;
     }
-    port1 = (int) dinfo->port;
+    port1 = dinfo->port;
   }
 
   d2 = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION
                          | MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_TLS
                          | MHD_USE_ERROR_LOG, port2,
                          NULL, NULL, &http_ahc, NULL,
-                         MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
+                         MHD_OPTION_HTTPS_MEM_KEY, srv_self_signed_key_pem,
                          MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,
                          MHD_OPTION_END);
 
@@ -92,7 +99,7 @@ test_concurent_daemon_pair (void *cls)
   {
     MHD_stop_daemon (d1);
     fprintf (stderr, MHD_E_SERVER_INIT);
-    return -1;
+    return 1;
   }
   if (0 == port2)
   {
@@ -100,21 +107,50 @@ test_concurent_daemon_pair (void *cls)
     dinfo = MHD_get_daemon_info (d2, MHD_DAEMON_INFO_BIND_PORT);
     if ((NULL == dinfo) || (0 == dinfo->port) )
     {
+      fprintf (stderr, "Cannot detect daemon bind port.\n");
       MHD_stop_daemon (d1);
       MHD_stop_daemon (d2);
-      return -1;
+      return 1;
     }
-    port2 = (int) dinfo->port;
+    port2 = dinfo->port;
   }
 
-  ret =
-    test_daemon_get (NULL, port1, 0);
-  ret +=
-    test_daemon_get (NULL, port2, 0);
+  res =
+    test_daemon_get (NULL, cipher_suite, proto_version, port1, 0);
+  ret = (unsigned int) res;
+  if ((TEST_GET_HARD_ERROR == res) ||
+      (TEST_GET_CURL_GEN_ERROR == res))
+  {
+    fprintf (stderr, "libcurl error.\nTest aborted.\n");
+    MHD_stop_daemon (d2);
+    MHD_stop_daemon (d1);
+    return 99;
+  }
+
+  res =
+    test_daemon_get (NULL, cipher_suite, proto_version,
+                     port2, 0);
+  ret += (unsigned int) res;
+  if ((TEST_GET_HARD_ERROR == res) ||
+      (TEST_GET_CURL_GEN_ERROR == res))
+  {
+    fprintf (stderr, "libcurl error.\nTest aborted.\n");
+    MHD_stop_daemon (d2);
+    MHD_stop_daemon (d1);
+    return 99;
+  }
 
   MHD_stop_daemon (d2);
-  ret +=
-    test_daemon_get (NULL, port1, 0);
+  res =
+    test_daemon_get (NULL, cipher_suite, proto_version, port1, 0);
+  ret += (unsigned int) res;
+  if ((TEST_GET_HARD_ERROR == res) ||
+      (TEST_GET_CURL_GEN_ERROR == res))
+  {
+    fprintf (stderr, "libcurl error.\nTest aborted.\n");
+    MHD_stop_daemon (d1);
+    return 99;
+  }
   MHD_stop_daemon (d1);
   return ret;
 }
@@ -123,8 +159,7 @@ test_concurent_daemon_pair (void *cls)
 int
 main (int argc, char *const *argv)
 {
-  unsigned int errorCount = 0;
-  FILE *cert;
+  unsigned int errorCount;
   (void) argc; (void) argv;       /* Unused. Silent compiler warning. */
 
 #ifdef MHD_HTTPS_REQUIRE_GCRYPT
@@ -141,23 +176,15 @@ main (int argc, char *const *argv)
     curl_global_cleanup ();
     return 77;
   }
-  if ((cert = setup_ca_cert ()) == NULL)
-  {
-    fprintf (stderr, MHD_E_TEST_FILE_CREAT);
-    curl_global_cleanup ();
-    return 99;
-  }
 
-  errorCount +=
-    test_concurent_daemon_pair (NULL);
+  errorCount =
+    test_concurent_daemon_pair (NULL, NULL, CURL_SSLVERSION_DEFAULT);
 
   print_test_result (errorCount, "concurent_daemon_pair");
 
   curl_global_cleanup ();
-  fclose (cert);
-  if (0 != remove (ca_cert_file_name))
-    fprintf (stderr,
-             "Failed to remove `%s'\n",
-             ca_cert_file_name);
+  if (99 == errorCount)
+    return 99;
+
   return errorCount != 0 ? 1 : 0;
 }

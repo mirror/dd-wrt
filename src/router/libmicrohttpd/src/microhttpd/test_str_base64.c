@@ -37,35 +37,6 @@
 #endif /* ! MHD_STATICSTR_LEN_ */
 
 
-/**
- * Convert @a size bytes from input binary data to lower case
- * hexadecimal digits.
- * Result is NOT zero-terminated
- * @param bin the pointer to the binary data to convert
- * @param size the size in bytes of the binary data to convert
- * @param[out] hex the output buffer, should be at least 2 * @a size
- * @return The number of characters written to the output buffer.
- */
-static size_t
-MHD_bin_to_hex (const void *bin,
-                size_t size,
-                char *hex)
-{
-  size_t i;
-
-  for (i = 0; i < size; ++i)
-  {
-    uint8_t j;
-    const uint8_t b = ((const uint8_t *) bin)[i];
-    j = b >> 4;
-    hex[i * 2] = (char) ((j < 10) ? (j + '0') : (j - 10 + 'a'));
-    j = b & 0x0f;
-    hex[i * 2 + 1] = (char) ((j < 10) ? (j + '0') : (j - 10 + 'a'));
-  }
-  return i * 2;
-}
-
-
 #define TEST_BIN_MAX_SIZE 1024
 
 /* return zero if succeed, one otherwise */
@@ -115,7 +86,7 @@ expect_decoded_n (const char *const encoded, const size_t encoded_len,
     }
     else
     {
-      prnt_size = MHD_bin_to_hex (buf, res_size, prnt);
+      prnt_size = MHD_bin_to_hex_z (buf, res_size, prnt);
       mhd_assert (2 * res_size == prnt_size);
 
       fprintf (stderr,
@@ -125,7 +96,7 @@ expect_decoded_n (const char *const encoded, const size_t encoded_len,
                (int) prnt_size, prnt, (unsigned) decoded_size,
                (unsigned) res_size);
     }
-    prnt_size = MHD_bin_to_hex (decoded, decoded_size, prnt);
+    prnt_size = MHD_bin_to_hex_z (decoded, decoded_size, prnt);
     mhd_assert (2 * decoded_size == prnt_size);
     fprintf (stderr,
              "\tEXPECTED: MHD_base64_to_bin_n ('%.*s', %u, ->%.*sh, %u)"
@@ -608,6 +579,53 @@ check_decode_bin (void)
                              "gUEAwIBAP/+/Q==", bin);
   }
 
+  if (1)
+  {
+    static const uint8_t bin[48] =
+    {0x00, 0x10, 0x83, 0x10, 0x51, 0x87, 0x20, 0x92, 0x8b, 0x30, 0xd3, 0x8f,
+     0x41, 0x14, 0x93, 0x51, 0x55, 0x97, 0x61, 0x96, 0x9b, 0x71, 0xd7, 0x9f,
+     0x82, 0x18, 0xa3, 0x92, 0x59, 0xa7, 0xa2, 0x9a, 0xab, 0xb2, 0xdb, 0xaf,
+     0xc3, 0x1c, 0xb3, 0xd3, 0x5d, 0xb7, 0xe3, 0x9e, 0xbb, 0xf3, 0xdf, 0xbf };
+    r += expect_decoded_arr ("ABCDEFGHIJKLMNOPQRSTUVWXYZ" \
+                             "abcdefghijklmnopqrstuvwxyz0123456789+/", bin);
+  }
+
+  if (1)
+  {
+    static const uint8_t bin[49] =
+    {0x00, 0x10, 0x83, 0x10, 0x51, 0x87, 0x20, 0x92, 0x8b, 0x30, 0xd3, 0x8f,
+     0x41, 0x14, 0x93, 0x51, 0x55, 0x97, 0x61, 0x96, 0x9b, 0x71, 0xd7, 0x9f,
+     0x82, 0x18, 0xa3, 0x92, 0x59, 0xa7, 0xa2, 0x9a, 0xab, 0xb2, 0xdb, 0xaf,
+     0xc3, 0x1c, 0xb3, 0xd3, 0x5d, 0xb7, 0xe3, 0x9e, 0xbb, 0xf3, 0xdf, 0xbf,
+     0x00 };
+    r += expect_decoded_arr ("ABCDEFGHIJKLMNOPQRSTUVWXYZ" \
+                             "abcdefghijklmnopqrstuvwxyz0123456789+/" \
+                             "AA==", bin);
+  }
+
+  if (1)
+  {
+    static const uint8_t bin[48] =
+    {0xff, 0xef, 0x7c, 0xef, 0xae, 0x78, 0xdf, 0x6d, 0x74, 0xcf, 0x2c, 0x70,
+     0xbe, 0xeb, 0x6c, 0xae, 0xaa, 0x68, 0x9e, 0x69, 0x64, 0x8e, 0x28, 0x60,
+     0x7d, 0xe7, 0x5c, 0x6d, 0xa6, 0x58, 0x5d, 0x65, 0x54, 0x4d, 0x24, 0x50,
+     0x3c, 0xe3, 0x4c, 0x2c, 0xa2, 0x48, 0x1c, 0x61, 0x44, 0x0c, 0x20, 0x40 };
+    r += expect_decoded_arr ("/+9876543210zyxwvutsrqponmlkjihgfedcba" \
+                             "ZYXWVUTSRQPONMLKJIHGFEDCBA", bin);
+  }
+
+  if (1)
+  {
+    static const uint8_t bin[49] =
+    {0xff, 0xef, 0x7c, 0xef, 0xae, 0x78, 0xdf, 0x6d, 0x74, 0xcf, 0x2c, 0x70,
+     0xbe, 0xeb, 0x6c, 0xae, 0xaa, 0x68, 0x9e, 0x69, 0x64, 0x8e, 0x28, 0x60,
+     0x7d, 0xe7, 0x5c, 0x6d, 0xa6, 0x58, 0x5d, 0x65, 0x54, 0x4d, 0x24, 0x50,
+     0x3c, 0xe3, 0x4c, 0x2c, 0xa2, 0x48, 0x1c, 0x61, 0x44, 0x0c, 0x20, 0x40,
+     0x00 };
+    r += expect_decoded_arr ("/+9876543210zyxwvutsrqponmlkjihgfedcba" \
+                             "ZYXWVUTSRQPONMLKJIHGFEDCBAAA==", bin);
+  }
+
   return r;
 }
 
@@ -649,7 +667,7 @@ expect_fail_n (const char *const encoded, const size_t encoded_len,
     }
     else
     {
-      prnt_size = MHD_bin_to_hex (buf, res_size, prnt);
+      prnt_size = MHD_bin_to_hex_z (buf, res_size, prnt);
       mhd_assert (2 * res_size == prnt_size);
 
       fprintf (stderr,

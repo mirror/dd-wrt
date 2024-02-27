@@ -89,7 +89,7 @@ expect_result_n (const char *str, size_t str_len,
                    (t),MHD_STATICSTR_LEN_ (t), \
                    (e),MHD_STATICSTR_LEN_ (e), found)
 
-int
+static int
 check_result (void)
 {
   int errcount = 0;

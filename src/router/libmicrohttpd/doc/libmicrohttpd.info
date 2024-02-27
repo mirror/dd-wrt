@@ -1,10 +1,10 @@
-This is libmicrohttpd.info, produced by makeinfo version 6.8 from
+This is libmicrohttpd.info, produced by makeinfo version 7.1 from
 libmicrohttpd.texi.
 
-This manual is for GNU libmicrohttpd (version 0.9.77, 13 May 2023), a
+This manual is for GNU libmicrohttpd (version 1.0.1, 29 January 2024), a
 library for embedding an HTTP(S) server into C applications.
 
-   Copyright © 2007–2019 Christian Grothoff
+   Copyright © 2007-2019 Christian Grothoff
 
      Permission is granted to copy, distribute and/or modify this
      document under the terms of the GNU Free Documentation License,
@@ -23,10 +23,10 @@ File: libmicrohttpd.info,  Node: Top,  Next: microhttpd-intro,  Up: (dir)
 The GNU libmicrohttpd Library
 *****************************
 
-This manual is for GNU libmicrohttpd (version 0.9.77, 13 May 2023), a
+This manual is for GNU libmicrohttpd (version 1.0.1, 29 January 2024), a
 library for embedding an HTTP(S) server into C applications.
 
-   Copyright © 2007–2019 Christian Grothoff
+   Copyright © 2007-2019 Christian Grothoff
 
      Permission is granted to copy, distribute and/or modify this
      document under the terms of the GNU Free Documentation License,
@@ -54,12 +54,12 @@ library for embedding an HTTP(S) server into C applications.
 
 Appendices
 
-* GNU-LGPL::                     The GNU Lesser General Public License says how you
-                                 can copy and share almost all of ‘libmicrohttpd’.
-* eCos License::                 The eCos License says how you can copy and share some parts of ‘libmicrohttpd’.
-* GNU-GPL::                      The GNU General Public License (with eCos extension) says how you can copy and share some parts of ‘libmicrohttpd’.
+* GNU-LGPL::                    The GNU Lesser General Public License says how you
+                                 can copy and share almost all of 'libmicrohttpd'.
+* eCos License::                The eCos License says how you can copy and share some parts of 'libmicrohttpd'.
+* GNU-GPL::                     The GNU General Public License (with eCos extension) says how you can copy and share some parts of 'libmicrohttpd'.
 * GNU-FDL::                     The GNU Free Documentation License says how you
-                                can copy and share the documentation of ‘libmicrohttpd’.
+                                can copy and share the documentation of 'libmicrohttpd'.
 
 Indices
 
@@ -125,7 +125,7 @@ connection to avoid resource exhaustion.
 =========
 
 MHD is currently used in a wide range of implementations.  Examples
-based on reports we’ve received from developers include:
+based on reports we've received from developers include:
    • Embedded HTTP server on a cortex M3 (128 KB code space)
    • Large-scale multimedia server (reportedly serving at the simulator
      limit of 7.5 GB/s)
@@ -149,7 +149,7 @@ available on all platforms, epoll and poll may not be available on some
 platforms.  Note that it is possible to combine MHD using epoll with an
 external select-based event loop.
 
-   The default (if no other option is passed) is “external select”.  The
+   The default (if no other option is passed) is "external select".  The
 highest performance can typically be obtained with a thread pool using
 ‘epoll’.  Apache Benchmark (ab) was used to compare the performance of
 ‘select’ and ‘epoll’ when using a thread pool and a large number of
@@ -161,7 +161,6 @@ was able to handle more than 45,000 connections per second on loopback
 (with Apache Benchmark running three processes on the same machine).
 
  [image src="libmicrohttpd_performance_data.png" alt="Data" ]
-
 
 
 Figure 1.1: Performance measurements for select vs.  epoll (with
@@ -186,7 +185,6 @@ internal                yes      yes    yes
 thread pool             yes      yes    yes
 thread-per-connection   yes      yes    no
 
-
 Table 1.1: Supported combinations of event styles and thread modes.
 
 1.3 Compiling GNU libmicrohttpd
@@ -207,8 +205,8 @@ Standard distributions including MHD are expected to always ship with
 all features enabled, otherwise unexpected incompatibilities can arise!
 
    Here is a list of MHD-specific options that can be given to configure
-(canonical configure options such as “–prefix” are also supported, for a
-full list of options run “./configure –help”):
+(canonical configure options such as "-prefix" are also supported, for a
+full list of options run "./configure -help"):
 
 ‘``--disable-curl''’
      disable running testcases using libcurl
@@ -234,7 +232,7 @@ full list of options run “./configure –help”):
      incompatibility)
 
 ‘``--disable-httpupgrade''’
-     do not build code for HTTP “Upgrade” (smaller binary size, binary
+     do not build code for HTTP "Upgrade" (smaller binary size, binary
      incompatible library)
 
 ‘``--disable-epoll''’
@@ -246,11 +244,11 @@ full list of options run “./configure –help”):
      slow, large binaries)
 
 ‘``--with-threads=posix,w32,none,auto''’
-     sets threading library to use.  With use “none” to not support
-     threads.  In this case, MHD will only support the “external”
+     sets threading library to use.  With use "none" to not support
+     threads.  In this case, MHD will only support the "external"
      threading modes and not perform any locking of data structures!
      Use ‘MHD_is_feature_supported(MHD_FEATURE_THREADS)’ to test if
-     threads are available.  Default is “auto”.
+     threads are available.  Default is "auto".
 
 ‘``--with-gcrypt=PATH''’
      specifies path to libgcrypt installation
@@ -294,12 +292,13 @@ the response itself is valid.
 =====================================
 
 Ideally, before including "microhttpd.h" you should add the necessary
-includes to define the ‘uint64_t’, ‘size_t’, ‘fd_set’, ‘socklen_t’ and
-‘struct sockaddr’ data types.  Which specific headers are needed may
-depend on your platform and your build system might include some tests
-to provide you with the necessary conditional operations.  For possible
-suggestions consult ‘platform.h’ and ‘configure.ac’ in the MHD
-distribution.
+includes to define the ‘va_list’, ‘size_t’, ‘ssize_t’, ‘intptr_t’,
+‘off_t’, ‘uint8_t’, ‘uint16_t’, ‘int32_t’, ‘uint32_t’, ‘int64_t’,
+‘uint64_t’, ‘fd_set’, ‘socklen_t’ and ‘struct sockaddr’ data types.
+Which specific headers are needed may depend on your platform and your
+build system might include some tests to provide you with the necessary
+conditional operations.  For possible suggestions consult ‘platform.h’
+and ‘configure.ac’ in the MHD distribution.
 
    Once you have ensured that you manually (!)  included the right
 headers for your platform before "microhttpd.h", you should also add a
@@ -362,7 +361,7 @@ should change "platform.h" to define ‘MHD_LONG_LONG’ and
 ‘MHD_UNSIGNED_LONG_LONG’ to an appropriate alternative type and also
 define ‘MHD_LONG_LONG_PRINTF’ and ‘MHD_UNSIGNED_LONG_LONG_PRINTF’ to the
 corresponding format string for printing such a data type.  Note that
-the “signed” versions are deprecated.  Also, for historical reasons,
+the "signed" versions are deprecated.  Also, for historical reasons,
 ‘MHD_LONG_LONG_PRINTF’ is without the percent sign, whereas
 ‘MHD_UNSIGNED_LONG_LONG_PRINTF’ is with the percent sign.  Newly written
 code should only use the unsigned versions.  However, you need to define
@@ -416,7 +415,7 @@ File: libmicrohttpd.info,  Node: microhttpd-const,  Next: microhttpd-struct,  Pr
 
      ‘MHD_USE_ERROR_LOG’
           If this flag is used, the library should print error messages
-          and warnings to stderr (or to custom error printer if it’s
+          and warnings to stderr (or to custom error printer if it's
           specified by options).  Note that for this run-time option to
           have any effect, MHD needs to be compiled with messages
           enabled.  This is done by default except you ran configure
@@ -449,7 +448,7 @@ File: libmicrohttpd.info,  Node: microhttpd-const,  Next: microhttpd-struct,  Pr
      ‘MHD_USE_DUAL_STACK’
           Use a single socket for IPv4 and IPv6.  Note that this will
           mean that IPv4 addresses are returned by MHD in the
-          IPv6-mapped format (the ’struct sockaddr_in6’ format will be
+          IPv6-mapped format (the 'struct sockaddr_in6' format will be
           used for IPv4 and IPv6).
 
      ‘MHD_USE_PEDANTIC_CHECKS’
@@ -457,8 +456,8 @@ File: libmicrohttpd.info,  Node: microhttpd-const,  Next: microhttpd-struct,  Pr
           about the protocol.  Specifically, at the moment, this flag
           causes MHD to reject HTTP 1.1 connections without a ‘Host’
           header.  This is required by the standard, but of course in
-          violation of the “be as liberal as possible in what you
-          accept” norm.  It is recommended to turn this *ON* if you are
+          violation of the "be as liberal as possible in what you
+          accept" norm.  It is recommended to turn this *ON* if you are
           testing clients against MHD, and *OFF* in production.
 
      ‘MHD_USE_POLL’
@@ -497,7 +496,7 @@ File: libmicrohttpd.info,  Node: microhttpd-const,  Next: microhttpd-struct,  Pr
           see if this makes any difference for you.
 
      ‘MHD_USE_SUPPRESS_DATE_NO_CLOCK’
-          Suppress (automatically) adding the ’Date:’ header to HTTP
+          Suppress (automatically) adding the 'Date:' header to HTTP
           responses.  This option should ONLY be used on systems that do
           not have a clock and that DO provide other mechanisms for
           cache control.  See also RFC 2616, section 14.18 (exception
@@ -541,7 +540,7 @@ File: libmicrohttpd.info,  Node: microhttpd-const,  Next: microhttpd-struct,  Pr
 
      ‘MHD_ALLOW_UPGRADE’
           This option must be set if you want to upgrade connections
-          (via “101 Switching Protocols” responses).  This requires MHD
+          (via "101 Switching Protocols" responses).  This requires MHD
           to allocate additional resources, and hence we require this
           special flag so we only use the resources that are really
           needed.
@@ -549,8 +548,8 @@ File: libmicrohttpd.info,  Node: microhttpd-const,  Next: microhttpd-struct,  Pr
      ‘MHD_USE_AUTO’
           Automatically select best event loop style (polling function)
           depending on requested mode by other MHD flags and functions
-          available on platform.  If application doesn’t have
-          requirements for any specific polling function, it’s
+          available on platform.  If application doesn't have
+          requirements for any specific polling function, it's
           recommended to use this flag.  This flag is very convenient
           for multiplatform applications.
 
@@ -607,7 +606,7 @@ File: libmicrohttpd.info,  Node: microhttpd-const,  Next: microhttpd-struct,  Pr
           four for ‘stdin’, ‘stdout’, ‘stderr’ and the server socket).
           In other words, the default is as large as possible.
 
-          If the connection limit is reached, MHD’s behavior depends a
+          If the connection limit is reached, MHD's behavior depends a
           bit on other options.  If ‘MHD_USE_ITC’ was given, MHD will
           stop accepting connections on the listen socket.  This will
           cause the operating system to queue connections (up to the
@@ -619,18 +618,18 @@ File: libmicrohttpd.info,  Node: microhttpd-const,  Next: microhttpd-struct,  Pr
 
           Note that if you set a low connection limit, you can easily
           get into trouble with browsers doing request pipelining.  For
-          example, if your connection limit is “1”, a browser may open a
-          first connection to access your “index.html” file, keep it
+          example, if your connection limit is "1", a browser may open a
+          first connection to access your "index.html" file, keep it
           open but use a second connection to retrieve CSS files, images
           and the like.  In fact, modern browsers are typically by
           default configured for up to 15 parallel connections to a
           single server.  If this happens, MHD will refuse to even
           accept the second connection until the first connection is
-          closed — which does not happen until timeout.  As a result,
+          closed -- which does not happen until timeout.  As a result,
           the browser will fail to render the page and seem to hang.  If
           you expect your server to operate close to the connection
           limit, you should first consider using a lower timeout value
-          and also possibly add a “Connection: close” header to your
+          and also possibly add a "Connection: close" header to your
           response to ensure that request pipelining is not used and
           connections are closed immediately after the request has
           completed:
@@ -657,19 +656,17 @@ File: libmicrohttpd.info,  Node: microhttpd-const,  Next: microhttpd-struct,  Pr
 
      ‘MHD_OPTION_NOTIFY_CONNECTION’
           Register a function that should be called when the TCP
-          connection to a client is opened or closed.  Note that
-          ‘MHD_OPTION_NOTIFY_COMPLETED’ and the ‘con_cls’ argument to
-          the ‘MHD_AccessHandlerCallback’ are per HTTP request (and
-          there can be multiple HTTP requests per TCP connection).  The
-          registered callback is called twice per TCP connection, with
+          connection to a client is opened or closed.  The registered
+          callback is called twice per TCP connection, with
           ‘MHD_CONNECTION_NOTIFY_STARTED’ and
           ‘MHD_CONNECTION_NOTIFY_CLOSED’ respectively.  An additional
           argument can be used to store TCP connection specific
           information, which can be retrieved using
           ‘MHD_CONNECTION_INFO_SOCKET_CONTEXT’ during the lifetime of
-          the TCP connection.  The respective location is not the same
-          as the HTTP-request-specific ‘con_cls’ from the
-          ‘MHD_AccessHandlerCallback’.
+          the TCP connection.  Note ‘MHD_OPTION_NOTIFY_COMPLETED’ and
+          the ‘req_cls’ argument to the ‘MHD_AccessHandlerCallback’ are
+          per HTTP request (and there can be multiple HTTP requests per
+          TCP connection).
 
           This option should be followed by *TWO* pointers.  First a
           pointer to a function of type ‘MHD_NotifyConnectionCallback()’
@@ -730,7 +727,7 @@ File: libmicrohttpd.info,  Node: microhttpd-const,  Next: microhttpd-struct,  Pr
           point to a ‘struct sockaddr_in6’, otherwise to a ‘struct
           sockaddr_in’.  If this option is not specified, the daemon
           will listen to incoming connections from anywhere.  If you use
-          this option, the ’port’ argument from ‘MHD_start_daemon’ is
+          this option, the 'port' argument from ‘MHD_start_daemon’ is
           ignored and the port from the given ‘struct sockaddr *’ will
           be used instead.
 
@@ -743,17 +740,17 @@ File: libmicrohttpd.info,  Node: microhttpd-const,  Next: microhttpd-struct,  Pr
           should be followed by two arguments, the first one must be of
           the form
                 void * my_logger(void * cls, const char * uri, struct MHD_Connection *con)
-          where the return value will be passed as ‘*con_cls’ in calls
+          where the return value will be passed as ‘*req_cls’ in calls
           to the ‘MHD_AccessHandlerCallback’ when this request is
           processed later; returning a value of ‘NULL’ has no special
           significance; (however, note that if you return non-‘NULL’,
           you can no longer rely on the first call to the access handler
-          having ‘NULL == *con_cls’ on entry) ‘cls’ will be set to the
+          having ‘NULL == *req_cls’ on entry) ‘cls’ will be set to the
           second argument following MHD_OPTION_URI_LOG_CALLBACK.
           Finally, ‘uri’ will be the 0-terminated URI of the request.
 
           Note that during the time of this call, most of the
-          connection’s state is not initialized (as we have not yet
+          connection's state is not initialized (as we have not yet
           parsed he headers).  However, information about the connecting
           client (IP, socket) is available.
 
@@ -761,13 +758,13 @@ File: libmicrohttpd.info,  Node: microhttpd-const,  Next: microhttpd-struct,  Pr
           Memory pointer to the private key to be used by the HTTPS
           daemon.  This option should be followed by an "const char*"
           argument.  This should be used in conjunction with
-          ’MHD_OPTION_HTTPS_MEM_CERT’.
+          'MHD_OPTION_HTTPS_MEM_CERT'.
 
      ‘MHD_OPTION_HTTPS_KEY_PASSWORD’
           Memory pointer to the password that decrypts the private key
           to be used by the HTTPS daemon.  This option should be
           followed by an "const char*" argument.  This should be used in
-          conjunction with ’MHD_OPTION_HTTPS_MEM_KEY’.
+          conjunction with 'MHD_OPTION_HTTPS_MEM_KEY'.
 
           The password (or passphrase) is only used immediately during
           ‘MHD_start_daemon()’.  Thus, the application may want to erase
@@ -777,7 +774,7 @@ File: libmicrohttpd.info,  Node: microhttpd-const,  Next: microhttpd-struct,  Pr
           Memory pointer to the certificate to be used by the HTTPS
           daemon.  This option should be followed by an "const char*"
           argument.  This should be used in conjunction with
-          ’MHD_OPTION_HTTPS_MEM_KEY’.
+          'MHD_OPTION_HTTPS_MEM_KEY'.
 
      ‘MHD_OPTION_HTTPS_MEM_TRUST’
           Memory pointer to the CA certificate to be used by the HTTPS
@@ -802,7 +799,7 @@ File: libmicrohttpd.info,  Node: microhttpd-const,  Next: microhttpd-struct,  Pr
           protocol versions and ciphers that are acceptable for the
           application.  The string is passed unchanged to
           gnutls_priority_init.  If this option is not specified,
-          “NORMAL” is used.
+          "NORMAL" is used.
 
      ‘MHD_OPTION_HTTPS_CERT_CALLBACK’
           Use a callback to determine which X.509 certificate should be
@@ -812,7 +809,7 @@ File: libmicrohttpd.info,  Node: microhttpd-const,  Next: microhttpd-struct,  Pr
           provides an alternative to MHD_OPTION_HTTPS_MEM_KEY and
           MHD_OPTION_HTTPS_MEM_CERT. You must use this version if
           multiple domains are to be hosted at the same IP address using
-          TLS’s Server Name Indication (SNI) extension.  In this case,
+          TLS's Server Name Indication (SNI) extension.  In this case,
           the callback is expected to select the correct certificate
           based on the SNI information provided.  The callback is
           expected to access the SNI data using
@@ -823,7 +820,7 @@ File: libmicrohttpd.info,  Node: microhttpd-const,  Next: microhttpd-struct,  Pr
           Use a callback to determine which X.509 certificate should be
           used for a given HTTPS connection.  This option should be
           followed by a argument of type
-          ‘gnutls_certificate_retrieve_function3 *‘.  This option
+          'gnutls_certificate_retrieve_function3 *'.  This option
           provides an alternative/extension to
           #MHD_OPTION_HTTPS_CERT_CALLBACK. You must use this version if
           you want to use OCSP stapling.  Using this option requires
@@ -836,7 +833,7 @@ File: libmicrohttpd.info,  Node: microhttpd-const,  Next: microhttpd-struct,  Pr
           key for a given username.
 
      ‘MHD_OPTION_DIGEST_AUTH_RANDOM’
-          Digest Authentication nonce’s seed.
+          Digest Authentication nonce's seed.
 
           This option should be followed by two arguments.  First an
           integer of type "size_t" which specifies the size of the
@@ -879,13 +876,13 @@ File: libmicrohttpd.info,  Node: microhttpd-const,  Next: microhttpd-struct,  Pr
      ‘MHD_OPTION_EXTERNAL_LOGGER’
           Use the given function for logging error messages.  This
           option must be followed by two arguments; the first must be a
-          pointer to a function of type ’void fun(void * arg, const char
-          * fmt, va_list ap)’ and the second a pointer of type ’void*’
+          pointer to a function of type 'void fun(void * arg, const char
+          * fmt, va_list ap)' and the second a pointer of type 'void*'
           which will be passed as the "arg" argument to "fun".
 
           Note that MHD will not generate any log messages without the
           MHD_USE_ERROR_LOG flag set and if MHD was compiled with the
-          "–disable-messages" flag.
+          "-disable-messages" flag.
 
      ‘MHD_OPTION_THREAD_POOL_SIZE’
           Number (unsigned int) of threads in thread pool.  Enable
@@ -898,9 +895,9 @@ File: libmicrohttpd.info,  Node: microhttpd-const,  Next: microhttpd-struct,  Pr
      ‘MHD_OPTION_ARRAY’
           This option can be used for initializing MHD using options
           from an array.  A common use for this is writing an FFI for
-          MHD. The actual options given are in an array of ’struct
-          MHD_OptionItem’, so this option requires a single argument of
-          type ’struct MHD_OptionItem’.  The array must be terminated
+          MHD. The actual options given are in an array of 'struct
+          MHD_OptionItem', so this option requires a single argument of
+          type 'struct MHD_OptionItem'.  The array must be terminated
           with an entry ‘MHD_OPTION_END’.
 
           An example for code using MHD_OPTION_ARRAY is:
@@ -1032,7 +1029,7 @@ File: libmicrohttpd.info,  Node: microhttpd-const,  Next: microhttpd-struct,  Pr
      ‘MHD_create_response_from_buffer’.
 
      ‘MHD_RESPMEM_PERSISTENT’
-          Buffer is a persistent (static/global) buffer that won’t
+          Buffer is a persistent (static/global) buffer that won't
           change for at least the lifetime of the response, MHD should
           just use it, not free it, not copy it, just keep an alias to
           it.
@@ -1067,12 +1064,12 @@ File: libmicrohttpd.info,  Node: microhttpd-const,  Next: microhttpd-struct,  Pr
 
      ‘MHD_RF_HTTP_VERSION_1_0_RESPONSE’
           Only respond in HTTP 1.0-mode.  Contrary to the
-          ‘MHD_RF_HTTP_VERSION_1_0_ONLY’ flag, the response’s HTTP
-          version will always be set to 1.0 and “Connection” headers are
+          ‘MHD_RF_HTTP_VERSION_1_0_ONLY’ flag, the response's HTTP
+          version will always be set to 1.0 and "Connection" headers are
           still supported.
 
           You can even combine this option with
-          MHD_RF_HTTP_VERSION_1_0_ONLY to change the response’s HTTP
+          MHD_RF_HTTP_VERSION_1_0_ONLY to change the response's HTTP
           version while maintaining strict compliance with HTTP 1.0
           regarding connection management.
 
@@ -1086,7 +1083,7 @@ File: libmicrohttpd.info,  Node: microhttpd-const,  Next: microhttpd-struct,  Pr
 
           GET / HTTP/1.1
 
-          as the “Host” header is missing and is mandatory in HTTP 1.1,
+          as the "Host" header is missing and is mandatory in HTTP 1.1,
           but it should succeed when interpreted with HTTP 1.0.
 
      ‘MHD_RF_INSANITY_HEADER_CONTENT_LENGTH’
@@ -1135,7 +1132,7 @@ File: libmicrohttpd.info,  Node: microhttpd-const,  Next: microhttpd-struct,  Pr
           ‘MHD_WEBSOCKET_FLAG_SERVER’.
 
      ‘MHD_WEBSOCKET_FLAG_NO_FRAGMENTS’
-          You don’t want to get fragmented data while decoding
+          You don't want to get fragmented data while decoding
           (default).  Fragmented frames will be internally put together
           until they are complete.  Whether or not data is fragmented is
           decided by the sender of the data during encoding.
@@ -1177,7 +1174,7 @@ File: libmicrohttpd.info,  Node: microhttpd-const,  Next: microhttpd-struct,  Pr
      websockets.
 
      ‘MHD_WEBSOCKET_FRAGMENTATION_NONE’
-          You don’t want to use fragmentation.  The encoded frame
+          You don't want to use fragmentation.  The encoded frame
           consists of only one frame.
 
      ‘MHD_WEBSOCKET_FRAGMENTATION_FIRST’
@@ -1384,7 +1381,7 @@ File: libmicrohttpd.info,  Node: microhttpd-const,  Next: microhttpd-struct,  Pr
 
      ‘MHD_WEBSOCKET_STATUS_NO_WEBSOCKET_HANDSHAKE_HEADER’
           A check routine for the HTTP headers came to the conclusion
-          that the header value isn’t valid for a websocket handshake
+          that the header value isn't valid for a websocket handshake
           request.  This value can only be returned from the following
           functions: ‘MHD_websocket_check_http_version’,
           ‘MHD_websocket_check_connection_header’,
@@ -1413,7 +1410,7 @@ File: libmicrohttpd.info,  Node: microhttpd-const,  Next: microhttpd-struct,  Pr
 
      ‘MHD_WEBSOCKET_CLOSEREASON_NO_REASON’
           This value is used as placeholder for
-          ‘MHD_websocket_encode_close’ to tell that you don’t want to
+          ‘MHD_websocket_encode_close’ to tell that you don't want to
           specify any reason.  If you use this value then no reason text
           may be used.  This value cannot be a result of decoding,
           because this value is not a valid close reason for the
@@ -1433,13 +1430,13 @@ File: libmicrohttpd.info,  Node: microhttpd-const,  Next: microhttpd-struct,  Pr
 
      ‘MHD_WEBSOCKET_CLOSEREASON_UNSUPPORTED_DATATYPE’
           You close the websocket because you received data which you
-          don’t accept.  For example if you received a binary frame, but
+          don't accept.  For example if you received a binary frame, but
           your application only expects text frames.
 
      ‘MHD_WEBSOCKET_CLOSEREASON_MALFORMED_UTF8’
           You close the websocket because it contains malformed UTF-8.
           The UTF-8 validity is automatically checked by
-          ‘MHD_websocket_decode’, so you don’t need to check it on your
+          ‘MHD_websocket_decode’, so you don't need to check it on your
           own.  UTF-8 is specified in RFC 3629.
 
      ‘MHD_WEBSOCKET_CLOSEREASON_POLICY_VIOLATED’
@@ -1450,7 +1447,7 @@ File: libmicrohttpd.info,  Node: microhttpd-const,  Next: microhttpd-struct,  Pr
 
      ‘MHD_WEBSOCKET_CLOSEREASON_MISSING_EXTENSION’
           This status code can be sent by the client if it expected a
-          specific extension, but this extension hasn’t been negotiated.
+          specific extension, but this extension hasn't been negotiated.
 
      ‘MHD_WEBSOCKET_CLOSEREASON_UNEXPECTED_CONDITION’
           The server closes the websocket because it encountered an
@@ -1594,7 +1591,7 @@ File: libmicrohttpd.info,  Node: microhttpd-cb,  Next: microhttpd-init,  Prev: m
  -- Function Pointer: enum MHD_Result *MHD_AccessHandlerCallback (void
           *cls, struct MHD_Connection * connection, const char *url,
           const char *method, const char *version, const char
-          *upload_data, size_t *upload_data_size, void **con_cls)
+          *upload_data, size_t *upload_data_size, void **req_cls)
      Invoked in the context of a connection to answer a request from the
      client.  This callback must call MHD functions (example: the
      ‘MHD_Response’ ones) to provide content to give back to the client
@@ -1624,7 +1621,7 @@ File: libmicrohttpd.info,  Node: microhttpd-cb,  Next: microhttpd-init,  Prev: m
 
           ‘POST’ data *will* be made available incrementally in
           UPLOAD_DATA; even if ‘POST’ data is available, the first time
-          the callback is invoked there won’t be upload data, as this is
+          the callback is invoked there won't be upload data, as this is
           done just after MHD parses the headers.  If supported by the
           client and the HTTP version, the application can at this point
           queue an error response to possibly avoid the upload entirely.
@@ -1654,7 +1651,7 @@ File: libmicrohttpd.info,  Node: microhttpd-cb,  Next: microhttpd-init,  Prev: m
           process upload data incrementally and reduce the value of
           ‘upload_data_size’.
 
-     CON_CLS
+     REQ_CLS
           reference to a pointer, initially set to ‘NULL’, that this
           callback can set to some address and that will be preserved by
           MHD for future calls for this request;
@@ -1669,7 +1666,7 @@ File: libmicrohttpd.info,  Node: microhttpd-cb,  Next: microhttpd-init,  Prev: m
           ‘MHD_OPTION_NOTIFY_COMPLETED’).
 
  -- Function Pointer: void *MHD_RequestCompletedCallback (void *cls,
-          struct MHD_Connectionconnection, void **con_cls, enum
+          struct MHD_Connectionconnection, void **req_cls, enum
           MHD_RequestTerminationCode toe)
      Signature of the callback used by MHD to notify the application
      about completed requests.
@@ -1680,7 +1677,7 @@ File: libmicrohttpd.info,  Node: microhttpd-cb,  Next: microhttpd-init,  Prev: m
      CONNECTION
           connection handle;
 
-     CON_CLS
+     REQ_CLS
           value as set by the last call to the
           ‘MHD_AccessHandlerCallback’;
 
@@ -1866,8 +1863,8 @@ File: libmicrohttpd.info,  Node: microhttpd-cb,  Next: microhttpd-init,  Prev: m
           *cls, void* buf, size_t buf_len)
      This callback function is used for generating random numbers for
      masking payload data in client mode.  If you use websockets in
-     server mode with _libmicrohttpd_ then you don’t need a random
-     number generator, because the server doesn’t mask its outgoing
+     server mode with _libmicrohttpd_ then you don't need a random
+     number generator, because the server doesn't mask its outgoing
      messages.  However if you wish to use a websocket stream in client
      mode, you must pass this callback function to
      ‘MHD_websocket_stream_init2’.
@@ -2025,7 +2022,7 @@ File: libmicrohttpd.info,  Node: microhttpd-init,  Next: microhttpd-inspect,  Pr
 
      This function will return ‘MHD_YES’ on success, ‘MHD_NO’ if this
      daemon could not handle the connection (i.e.  malloc failed, etc).
-     The socket will be closed in any case; ’errno’ is set to indicate
+     The socket will be closed in any case; 'errno' is set to indicate
      further details about the error.
 
 
@@ -2037,11 +2034,11 @@ File: libmicrohttpd.info,  Node: microhttpd-inspect,  Next: microhttpd-requests,
  -- Function: enum MHD_Result MHD_get_fdset (struct MHD_Daemon *daemon,
           fd_set * read_fd_set, fd_set * write_fd_set, fd_set *
           except_fd_set, int *max_fd)
-     Obtain the ‘select()’ sets for this daemon.  The daemon’s socket is
+     Obtain the ‘select()’ sets for this daemon.  The daemon's socket is
      added to READ_FD_SET.  The list of currently existent connections
      is scanned and their file descriptors added to the correct set.
 
-     When calling this function, FD_SETSIZE is assumed to be platform’s
+     When calling this function, FD_SETSIZE is assumed to be platform's
      default.  If you changed FD_SETSIZE for your application, you
      should use ‘MHD_get_fdset2()’ instead.
 
@@ -2114,19 +2111,19 @@ File: libmicrohttpd.info,  Node: microhttpd-requests,  Next: microhttpd-response
 
      In the case of ‘MHD_GET_ARGUMENT_KIND’, the VALUE argument will be
      ‘NULL’ if the URL contained a key without an equals operator.  For
-     example, for a HTTP request to the URL “http://foo/bar?key”, the
+     example, for a HTTP request to the URL "http://foo/bar?key", the
      VALUE argument is ‘NULL’; in contrast, a HTTP request to the URL
-     “http://foo/bar?key=”, the VALUE argument is the empty string.  The
-     normal case is that the URL contains “http://foo/bar?key=value” in
-     which case VALUE would be the string “value” and KEY would contain
-     the string “key”.
+     "http://foo/bar?key=", the VALUE argument is the empty string.  The
+     normal case is that the URL contains "http://foo/bar?key=value" in
+     which case VALUE would be the string "value" and KEY would contain
+     the string "key".
 
  -- Function: enum MHD_Result MHD_set_connection_value (struct
           MHD_Connection *connection, enum MHD_ValueKind kind, const
           char *key, const char *value)
      This function can be used to append an entry to the list of HTTP
      headers of a connection (so that the ‘MHD_get_connection_values
-     function’ will return them – and the MHD PostProcessor will also
+     function’ will return them - and the MHD PostProcessor will also
      see them).  This maybe required in certain situations (see Mantis
      #1399) where (broken) HTTP implementations fail to supply values
      needed by the post processor (or other parts of the application).
@@ -2148,7 +2145,7 @@ File: libmicrohttpd.info,  Node: microhttpd-requests,  Next: microhttpd-response
           MHD_Connection *connection, enum MHD_ValueKind kind, const
           char *key)
      Get a particular header value.  If multiple values match the KIND,
-     return one of them (the “first”, whatever that means).  KEY must
+     return one of them (the "first", whatever that means).  KEY must
      reference a zero-terminated ASCII-coded string representing the
      header to look for: it is compared against the headers using
      (basically) ‘strcasecmp()’, so case is ignored.
@@ -2158,7 +2155,7 @@ File: libmicrohttpd.info,  Node: microhttpd-requests,  Next: microhttpd-response
           char *key, size_t key_size, const char **value_ptr, size_t
           *value_size_ptr)
      Get a particular header value.  If multiple values match the KIND,
-     return one of them (the “first”, whatever that means).  KEY must
+     return one of them (the "first", whatever that means).  KEY must
      reference an ASCII-coded string representing the header to look
      for: it is compared against the headers using (basically)
      ‘strncasecmp()’, so case is ignored.  The VALUE_PTR is set to the
@@ -2247,9 +2244,9 @@ File: libmicrohttpd.info,  Node: microhttpd-response enqueue,  Next: microhttpd-
           MHD_destroy_response(response);
           /* here: reference counter = 1 */
 
-  4. the daemon handles the connection sending the response’s data to
+  4. the daemon handles the connection sending the response's data to
      the client then decrements the reference counter by calling
-     ‘MHD_destroy_response()’: the counter’s value drops to zero and the
+     ‘MHD_destroy_response()’: the counter's value drops to zero and the
      ‘MHD_Response’ object is released.
 
    ---------- Footnotes ----------
@@ -2302,15 +2299,15 @@ File: libmicrohttpd.info,  Node: microhttpd-response create,  Next: microhttpd-r
 
      FD
           file descriptor referring to a file on disk with the data;
-          will be closed when response is destroyed; note that ’fd’ must
+          will be closed when response is destroyed; note that 'fd' must
           be an actual file descriptor (not a pipe or socket) since MHD
-          might use ’sendfile’ or ’seek’ on it.  The descriptor should
+          might use 'sendfile' or 'seek' on it.  The descriptor should
           be in blocking-IO mode.
 
      Return ‘NULL’ on error (i.e.  invalid arguments, out of memory).
 
- -- Function: struct MHD_Response * MHD_create_response_from_pipe
-          (uint64_t size, int fd)
+ -- Function: struct MHD_Response * MHD_create_response_from_pipe (int
+          fd)
      Create a response object.  The response object can be extended with
      header information and then it can be used ONLY ONCE.
 
@@ -2353,9 +2350,9 @@ File: libmicrohttpd.info,  Node: microhttpd-response create,  Next: microhttpd-r
 
      FD
           file descriptor referring to a file on disk with the data;
-          will be closed when response is destroyed; note that ’fd’ must
+          will be closed when response is destroyed; note that 'fd' must
           be an actual file descriptor (not a pipe or socket) since MHD
-          might use ’sendfile’ or ’seek’ on it.  The descriptor should
+          might use 'sendfile' or 'seek' on it.  The descriptor should
           be in blocking-IO mode.
 
      OFFSET
@@ -2387,7 +2384,7 @@ File: libmicrohttpd.info,  Node: microhttpd-response create,  Next: microhttpd-r
  -- Function: struct MHD_Response *
           MHD_create_response_from_buffer_with_free_callback (size_t
           size, void *data, MHD_ContentReaderFreeCallback crfc)
-     Create a response object.  The buffer at the end must be free’d by
+     Create a response object.  The buffer at the end must be free'd by
      calling the CRFC function.
 
      SIZE
@@ -2479,15 +2476,15 @@ File: libmicrohttpd.info,  Node: microhttpd-response headers,  Next: microhttpd-
      tab chars.
 
      MHD_add_response_header() prevents applications from setting a
-     “Transfer-Encoding” header to values other than “identity” or
-     “chunked” as other transfer encodings are not supported by MHD.
+     "Transfer-Encoding" header to values other than "identity" or
+     "chunked" as other transfer encodings are not supported by MHD.
      Note that usually MHD will pick the transfer encoding correctly
      automatically, but applications can use the header to force a
      particular behavior.
 
      MHD_add_response_header() also prevents applications from setting a
-     “Content-Length” header.  MHD will automatically set a correct
-     “Content-Length” header if it is possible and allowed.
+     "Content-Length" header.  MHD will automatically set a correct
+     "Content-Length" header if it is possible and allowed.
 
      Return ‘MHD_NO’ on error (i.e.  invalid header or content format or
      memory allocation error).
@@ -2502,7 +2499,7 @@ File: libmicrohttpd.info,  Node: microhttpd-response headers,  Next: microhttpd-
      Notice that the strings must not hold newlines, carriage returns or
      tab chars.  You can add response footers at any time before
      signalling the end of the response to MHD (not just before calling
-     ’MHD_queue_response’).  Footers are useful for adding cryptographic
+     'MHD_queue_response').  Footers are useful for adding cryptographic
      checksums to the reply or to signal errors encountered during data
      generation.  This call was introduced in MHD 0.9.3.
 
@@ -2574,15 +2571,15 @@ File: libmicrohttpd.info,  Node: microhttpd-response upgrade,  Prev: microhttpd-
 =============================================
 
 With RFC 2817 a mechanism to switch protocols within HTTP was
-introduced.  Here, a client sends a request with a “Connection: Upgrade”
-header.  The server responds with a “101 Switching Protocols” response
+introduced.  Here, a client sends a request with a "Connection: Upgrade"
+header.  The server responds with a "101 Switching Protocols" response
 header, after which the two parties begin to speak a different
 (non-HTTP) protocol over the TCP connection.
 
    This mechanism is used for upgrading HTTP 1.1 connections to HTTP2 or
 HTTPS, as well as for implementing WebSockets.  Which protocol upgrade
 is performed is negotiated between server and client in additional
-headers, in particular the “Upgrade” header.
+headers, in particular the "Upgrade" header.
 
    MHD supports switching protocols using this mechanism only if the
 ‘MHD_ALLOW_SUSPEND_RESUME’ flag has been set when starting the daemon.
@@ -2596,9 +2593,9 @@ code) which must have been created with the following function:
      Create a response suitable for switching protocols.  Returns
      ‘MHD_YES’ on success.  ‘upgrade_handler’ must not be ‘NULL’.
 
-     When creating this type of response, the “Connection: Upgrade”
+     When creating this type of response, the "Connection: Upgrade"
      header will be set automatically for you.  MHD requires that you
-     additionally set an “Upgrade:” header.  The “Upgrade” header must
+     additionally set an "Upgrade:" header.  The "Upgrade" header must
      simply exist, the specific value is completely up to the
      application.
 
@@ -2627,12 +2624,12 @@ code) which must have been created with the following function:
      CONNECTION
           identifies the connection that is being upgraded;
 
-     CON_CLS
-          last value left in ‘*con_cls‘ in the
-          ‘MHD_AccessHandlerCallback‘
+     REQ_CLS
+          last value left in '*req_cls' in the
+          'MHD_AccessHandlerCallback'
 
      EXTRA_IN
-          buffer of bytes MHD read “by accident” from the socket
+          buffer of bytes MHD read "by accident" from the socket
           already.  This can happen if the client eagerly transmits more
           than just the HTTP request.  The application should treat
           these as if it had read them from the socket.
@@ -2705,7 +2702,7 @@ perform flow control.
  -- Function: enum MHD_Result MHD_suspend_connection (struct
           MHD_Connection *connection)
      Suspend handling of network data for a given connection.  This can
-     be used to dequeue a connection from MHD’s event loop (external
+     be used to dequeue a connection from MHD's event loop (external
      select, internal select or thread pool; not applicable to
      thread-per-connection!)  for a while.
 
@@ -2745,7 +2742,7 @@ perform flow control.
      function on a connection that was not previously suspended will
      result in undefined behavior.
 
-     If you are using this function in “external” select mode, you must
+     If you are using this function in "external" select mode, you must
      make sure to run ‘MHD_run’ afterwards (before again calling
      ‘MHD_get_fdset’), as otherwise the change may not be reflected in
      the set returned by ‘MHD_get_fdset’ and you may end up with a
@@ -2790,8 +2787,8 @@ presented in the MHD tutorial.
 
 * Menu:
 
-* microhttpd-dauth basic:: Using Basic Authentication.
-* microhttpd-dauth digest:: Using Digest Authentication.
+* microhttpd-dauth basic::      Using Basic Authentication.
+* microhttpd-dauth digest::     Using Digest Authentication.
 
 
 File: libmicrohttpd.info,  Node: microhttpd-dauth basic,  Next: microhttpd-dauth digest,  Up: microhttpd-dauth
@@ -2803,25 +2800,28 @@ File: libmicrohttpd.info,  Node: microhttpd-dauth basic,  Next: microhttpd-dauth
      Free the memory given at ‘ptr’.  Used to free data structures
      allocated by MHD. Calls ‘free(ptr)’.
 
- -- Function: char * MHD_basic_auth_get_username_password (struct
-          MHD_Connection *connection, char** password)
+ -- Function: char * MHD_basic_auth_get_username_password3 (struct
+          MHD_Connection *connection)
      Get the username and password from the basic authorization header
-     sent by the client.  Return ‘NULL’ if no username could be found, a
-     pointer to the username if found.  If returned value is not ‘NULL’,
-     the value must be ‘MHD_free()’’ed.
+     sent by the client.  Return ‘NULL’ if no Basic Authorization header
+     set by the client or if Base64 encoding is invalid; a pointer to
+     the structure with username and password if found values set by the
+     client.  If returned value is not ‘NULL’, the value must be
+     ‘MHD_free()’'ed.
 
-     PASSWORD reference a buffer to store the password.  It can be
-     ‘NULL’.  If returned value is not ‘NULL’, the value must be
-     ‘MHD_free()’’ed.
-
- -- Function: enum MHD_Result MHD_queue_basic_auth_fail_response (struct
-          MHD_Connection *connection, const char *realm, struct
-          MHD_Response *response)
+ -- Function: enum MHD_Result MHD_queue_basic_auth_fail_response3
+          (struct MHD_Connection *connection, const char *realm, int
+          prefer_utf8, struct MHD_Response *response)
      Queues a response to request basic authentication from the client.
      Return ‘MHD_YES’ if successful, otherwise ‘MHD_NO’.
 
      REALM must reference to a zero-terminated string representing the
      realm.
+
+     PREFER_UTF8 if set to ‘MHD_YES’ then parameter ‘charset’ with value
+     ‘UTF-8’ will be added to the response authentication header which
+     indicates that UTF-8 encoding is preferred for username and
+     password.
 
      RESPONSE a response structure to specify what shall be presented to
      the client with a 401 HTTP status.
@@ -2849,12 +2849,68 @@ used to specify which algorithm should be used.
      ‘MHD_DIGEST_ALG_SHA256’
           Force use of SHA-256.
 
+ -- Enumeration: MHD_DigestAuthResult
+     The result of digest authentication of the client.
+
+     ‘MHD_DAUTH_OK’
+          Authentication OK.
+
+     ‘MHD_DAUTH_ERROR’
+          General error, like "out of memory".
+
+     ‘MHD_DAUTH_WRONG_HEADER’
+          No "Authorization" header or wrong format of the header.
+
+     ‘MHD_DAUTH_WRONG_USERNAME’
+          Wrong "username".
+
+     ‘MHD_DAUTH_WRONG_REALM’
+          Wrong "realm".
+
+     ‘MHD_DAUTH_WRONG_URI’
+          Wrong "URI" (or URI parameters).
+
+     ‘MHD_DAUTH_NONCE_STALE’
+          The "nonce" is too old.  Suggest the client to retry with the
+          same username and password to get the fresh "nonce".  The
+          validity of the "nonce" may not be checked.
+
+     ‘MHD_DAUTH_NONCE_WRONG’
+          The "nonce" is wrong.  May indicate an attack attempt.
+
+     ‘MHD_DAUTH_RESPONSE_WRONG’
+          The "response" is wrong.  May indicate an attack attempt.
+
  -- Function: char * MHD_digest_auth_get_username (struct MHD_Connection
           *connection)
      Find and return a pointer to the username value from the request
      header.  Return ‘NULL’ if the value is not found or header does not
      exist.  If returned value is not ‘NULL’, the value must be
-     ‘MHD_free()’’ed.
+     ‘MHD_free()’'ed.
+
+ -- Function: enum MHD_DigestAuthResult MHD_digest_auth_check3 (struct
+          MHD_Connection *connection, const char *realm, const char
+          *username, const char *password, unsigned int nonce_timeout,
+          enum MHD_DigestAuthAlgorithm algo)
+     Checks if the provided values in the WWW-Authenticate header are
+     valid and sound according to RFC7616.  If valid return
+     ‘MHD_DAUTH_OK’, otherwise return the error code.
+
+     REALM must reference to a zero-terminated string representing the
+     realm.
+
+     USERNAME must reference to a zero-terminated string representing
+     the username, it is usually the returned value from
+     MHD_digest_auth_get_username.
+
+     PASSWORD must reference to a zero-terminated string representing
+     the password, most probably it will be the result of a lookup of
+     the username against a local database.
+
+     NONCE_TIMEOUT the nonce validity duration in seconds.  Most of the
+     time it is sound to specify 300 seconds as its values.
+
+     ALGO which digest algorithm should we use.
 
  -- Function: int MHD_digest_auth_check2 (struct MHD_Connection
           *connection, const char *realm, const char *username, const
@@ -2904,6 +2960,32 @@ used to specify which algorithm should be used.
      invalid.  Most of the time it is sound to specify 300 seconds as
      its values.
 
+ -- Function: enum MHD_DigestAuthResult MHD_digest_auth_check_digest3
+          (struct MHD_Connection *connection, const char *realm, const
+          char *username, const uint8_t *digest, unsigned int
+          nonce_timeout, enum MHD_DigestAuthAlgorithm algo)
+     Checks if the provided values in the WWW-Authenticate header are
+     valid and sound according to RFC7616.  If valid return
+     ‘MHD_DAUTH_OK’, otherwise return the error code.
+
+     REALM must reference to a zero-terminated string representing the
+     realm.
+
+     USERNAME must reference to a zero-terminated string representing
+     the username, it is usually the returned value from
+     MHD_digest_auth_get_username.
+
+     DIGEST the pointer to the binary digest for the precalculated hash
+     value "username:realm:password" with specified ALGO.
+
+     DIGEST_SIZE the number of bytes in DIGEST (the size must match
+     ALGO!)
+
+     NONCE_TIMEOUT the nonce validity duration in seconds.  Most of the
+     time it is sound to specify 300 seconds as its values.
+
+     ALGO digest authentication algorithm to use.
+
  -- Function: int MHD_digest_auth_check_digest2 (struct MHD_Connection
           *connection, const char *realm, const char *username, const
           uint8_t *digest, unsigned int nonce_timeout, enum
@@ -2920,7 +3002,7 @@ used to specify which algorithm should be used.
      MHD_digest_auth_get_username.
 
      DIGEST pointer to the binary MD5 sum for the precalculated hash
-     value “userame:realm:password”.  The size must match the selected
+     value "userame:realm:password".  The size must match the selected
      ALGO!
 
      NONCE_TIMEOUT is the amount of time in seconds for a nonce to be
@@ -2946,7 +3028,7 @@ used to specify which algorithm should be used.
      MHD_digest_auth_get_username.
 
      DIGEST pointer to the binary MD5 sum for the precalculated hash
-     value “userame:realm:password” of ‘MHD_MD5_DIGEST_SIZE’ bytes.
+     value "userame:realm:password" of ‘MHD_MD5_DIGEST_SIZE’ bytes.
 
      NONCE_TIMEOUT is the amount of time in seconds for a nonce to be
      invalid.  Most of the time it is sound to specify 300 seconds as
@@ -3021,6 +3103,14 @@ used to specify which algorithm should be used.
        const char *password = "testpass";
        const char *realm = "test@example.com";
        int ret;
+       static int already_called_marker;
+
+       if (&already_called_marker != *req_cls)
+         { /* Called for the first time, request not fully read yet */
+           *req_cls = &already_called_marker;
+           /* Wait for complete request */
+           return MHD_YES;
+         }
 
        username = MHD_digest_auth_get_username (connection);
        if (username == NULL)
@@ -3043,7 +3133,7 @@ used to specify which algorithm should be used.
      			        password,
      			        300,
                                      MHD_DIGEST_ALG_SHA256);
-       free(username);
+       MHD_free(username);
        if ( (ret == MHD_INVALID_NONCE) ||
             (ret == MHD_NO) )
          {
@@ -3083,20 +3173,20 @@ File: libmicrohttpd.info,  Node: microhttpd-post,  Next: microhttpd-info,  Prev:
                                 ‘POST’ processor.
 
 MHD provides the post processor API to make it easier for applications
-to parse the data of a client’s ‘POST’ request: the
+to parse the data of a client's ‘POST’ request: the
 ‘MHD_AccessHandlerCallback’ will be invoked multiple times to process
 data as it arrives; at each invocation a new chunk of data must be
 processed.  The arguments UPLOAD_DATA and UPLOAD_DATA_SIZE are used to
 reference the chunk of data.
 
-   When ‘MHD_AccessHandlerCallback’ is invoked for a new connection: its
-‘*CON_CLS’ argument is set to ‘NULL’.  When ‘POST’ data comes in the
-upload buffer it is *mandatory* to use the CON_CLS to store a reference
-to per-connection data.  The fact that the pointer was initially ‘NULL’
-can be used to detect that this is a new request.
+   When ‘MHD_AccessHandlerCallback’ is invoked for a new request: its
+‘*REQ_CLS’ argument is set to ‘NULL’.  When ‘POST’ data comes in the
+upload buffer it is *mandatory* to use the REQ_CLS to store a reference
+to per-request data.  The fact that the pointer was initially ‘NULL’ can
+be used to detect that this is a new request.
 
-   One method to detect that a new connection was established is to set
-‘*con_cls’ to an unused integer:
+   One method to detect that a new request was started is to set
+‘*req_cls’ to an unused integer:
 
      int
      access_handler (void *cls,
@@ -3104,22 +3194,22 @@ can be used to detect that this is a new request.
                      const char *url,
                      const char *method, const char *version,
                      const char *upload_data, size_t *upload_data_size,
-                     void **con_cls)
+                     void **req_cls)
      {
        static int old_connection_marker;
-       int new_connection = (NULL == *con_cls);
+       int new_connection = (NULL == *req_cls);
 
        if (new_connection)
          {
            /* new connection with POST */
-           *con_cls = &old_connection_marker;
+           *req_cls = &old_connection_marker;
          }
 
        ...
      }
 
 In contrast to the previous example, for ‘POST’ requests in particular,
-it is more common to use the value of ‘*con_cls’ to keep track of actual
+it is more common to use the value of ‘*req_cls’ to keep track of actual
 state used during processing, such as the post processor (or a struct
 containing a post processor):
 
@@ -3129,14 +3219,14 @@ containing a post processor):
                      const char *url,
                      const char *method, const char *version,
                      const char *upload_data, size_t *upload_data_size,
-                     void **con_cls)
+                     void **req_cls)
      {
-       struct MHD_PostProcessor * pp = *con_cls;
+       struct MHD_PostProcessor * pp = *req_cls;
 
        if (pp == NULL)
          {
            pp = MHD_create_post_processor(connection, ...);
-           *con_cls = pp;
+           *req_cls = pp;
            return MHD_YES;
          }
        if (*upload_data_size)
@@ -3229,9 +3319,9 @@ File: libmicrohttpd.info,  Node: microhttpd-info,  Next: microhttpd-util,  Prev:
 
 * Menu:
 
-* microhttpd-info daemon::        State information about an MHD daemon
-* microhttpd-info conn::          State information about a connection
-* microhttpd-option conn::        Modify per-connection options
+* microhttpd-info daemon::      State information about an MHD daemon
+* microhttpd-info conn::        State information about a connection
+* microhttpd-option conn::      Modify per-connection options
 
 
 File: libmicrohttpd.info,  Node: microhttpd-info daemon,  Next: microhttpd-info conn,  Up: microhttpd-info
@@ -3264,14 +3354,14 @@ File: libmicrohttpd.info,  Node: microhttpd-info daemon,  Next: microhttpd-info 
      ‘MHD_DAEMON_INFO_KEY_SIZE’
           Request information about the key size for a particular cipher
           algorithm.  The cipher algorithm should be passed as an extra
-          argument (of type ’enum MHD_GNUTLS_CipherAlgorithm’).  No
+          argument (of type 'enum MHD_GNUTLS_CipherAlgorithm').  No
           longer supported, using this value will cause
           ‘MHD_get_daemon_info’ to return NULL.
 
      ‘MHD_DAEMON_INFO_MAC_KEY_SIZE’
           Request information about the key size for a particular cipher
           algorithm.  The cipher algorithm should be passed as an extra
-          argument (of type ’enum MHD_GNUTLS_HashAlgorithm’).  No longer
+          argument (of type 'enum MHD_GNUTLS_HashAlgorithm').  No longer
           supported, using this value will cause ‘MHD_get_daemon_info’
           to return NULL.
 
@@ -3287,7 +3377,7 @@ File: libmicrohttpd.info,  Node: microhttpd-info daemon,  Next: microhttpd-info 
           returned; if we are using a thread pool or this daemon was not
           started with ‘MHD_USE_EPOLL’, (a pointer to) -1 is returned.
           If we are using ‘MHD_USE_INTERNAL_POLLING_THREAD’ or are in
-          ’external’ select mode, the internal epoll FD is returned.
+          'external' select mode, the internal epoll FD is returned.
           This function must be used in external select mode with epoll
           to obtain the FD to call epoll on.  No extra arguments should
           be passed.
@@ -3378,11 +3468,11 @@ File: libmicrohttpd.info,  Node: microhttpd-info conn,  Next: microhttpd-option 
 
      ‘MHD_CONNECTION_INFO_CONNECTION_FD’
           Returns the file descriptor (usually a TCP socket) associated
-          with this connection (in the “connect-fd” member of the
+          with this connection (in the "connect-fd" member of the
           returned struct).  Note that manipulating the descriptor
           directly can have problematic consequences (as in, break
-          HTTP). Applications might use this access to manipulate TCP
-          options, for example to set the “TCP-NODELAY” option for
+          HTTP).  Applications might use this access to manipulate TCP
+          options, for example to set the "TCP-NODELAY" option for
           COMET-like applications.  Note that MHD will set TCP-CORK
           after sending the HTTP header and clear it after finishing the
           footers automatically (if the platform supports it).  As the
@@ -3403,8 +3493,8 @@ File: libmicrohttpd.info,  Node: microhttpd-info conn,  Next: microhttpd-option 
           Returns the client-specific pointer to a ‘void *’ that was
           (possibly) set during a ‘MHD_NotifyConnectionCallback’ when
           the socket was first accepted.  Note that this is NOT the same
-          as the ‘con_cls’ argument of the ‘MHD_AccessHandlerCallback’.
-          The ‘con_cls’ is fresh for each HTTP request, while the
+          as the ‘req_cls’ argument of the ‘MHD_AccessHandlerCallback’.
+          The ‘req_cls’ is fresh for each HTTP request, while the
           ‘socket_context’ is fresh for each socket.
 
           Takes no extra arguments.
@@ -3471,8 +3561,8 @@ File: libmicrohttpd.info,  Node: microhttpd-util,  Next: microhttpd-websocket,  
 
 * Menu:
 
-* microhttpd-util feature::       Test supported MHD features
-* microhttpd-util unescape::      Unescape strings
+* microhttpd-util feature::     Test supported MHD features
+* microhttpd-util unescape::    Unescape strings
 
 
 File: libmicrohttpd.info,  Node: microhttpd-util feature,  Next: microhttpd-util unescape,  Up: microhttpd-util
@@ -3569,7 +3659,7 @@ File: libmicrohttpd.info,  Node: microhttpd-util unescape,  Prev: microhttpd-uti
 =====================
 
  -- Function: size_t MHD_http_unescape (char *val)
-     Process escape sequences (’%HH’) Updates val in place; the result
+     Process escape sequences ('%HH') Updates val in place; the result
      should be UTF-8 encoded and cannot be larger than the input.  The
      result must also still be 0-terminated.
 
@@ -3616,7 +3706,7 @@ File: libmicrohttpd.info,  Node: microhttpd-websocket handshake,  Next: microhtt
           matching HTTP version.
 
      Returns 0 when the HTTP version is valid for a websocket request
-     and a value less than zero when the HTTP version isn’t valid for a
+     and a value less than zero when the HTTP version isn't valid for a
      websocket request.  Can be compared with ‘enum
      MHD_WEBSOCKET_STATUS’.
 
@@ -3635,7 +3725,7 @@ File: libmicrohttpd.info,  Node: microhttpd-websocket handshake,  Next: microhtt
 
      Returns 0 when the ‘Connection’ header is valid for a websocket
      request and a value less than zero when the ‘Connection’ header
-     isn’t valid for a websocket request.  Can be compared with ‘enum
+     isn't valid for a websocket request.  Can be compared with ‘enum
      MHD_WEBSOCKET_STATUS’.
 
  -- Function: enum MHD_WEBSOCKET_STATUS
@@ -3652,7 +3742,7 @@ File: libmicrohttpd.info,  Node: microhttpd-websocket handshake,  Next: microhtt
           is handled like a not matching ‘Upgrade’ header value.
 
      Returns 0 when the ‘Upgrade’ header is valid for a websocket
-     request and a value less than zero when the ‘Upgrade’ header isn’t
+     request and a value less than zero when the ‘Upgrade’ header isn't
      valid for a websocket request.  Can be compared with ‘enum
      MHD_WEBSOCKET_STATUS’.
 
@@ -3673,7 +3763,7 @@ File: libmicrohttpd.info,  Node: microhttpd-websocket handshake,  Next: microhtt
 
      Returns 0 when the ‘Sec-WebSocket-Version’ header is valid for a
      websocket request and a value less than zero when the
-     ‘Sec-WebSocket-Version’ header isn’t valid for a websocket request.
+     ‘Sec-WebSocket-Version’ header isn't valid for a websocket request.
      Can be compared with ‘enum MHD_WEBSOCKET_STATUS’.
 
  -- Function: enum MHD_WEBSOCKET_STATUS
@@ -3703,7 +3793,7 @@ File: libmicrohttpd.info,  Node: microhttpd-websocket handshake,  Next: microhtt
      Returns 0 when the ‘Sec-WebSocket-Key’ header was not empty and a
      result value for the ‘Sec-WebSocket-Accept’ was calculated.  A
      value less than zero is returned when the ‘Sec-WebSocket-Key’
-     header isn’t valid for a websocket request or when any error
+     header isn't valid for a websocket request or when any error
      occurred.  Can be compared with ‘enum MHD_WEBSOCKET_STATUS’.
 
 
@@ -3948,7 +4038,7 @@ File: libmicrohttpd.info,  Node: microhttpd-websocket encode,  Next: microhttpd-
           websocket stream;
 
      PAYLOAD_UTF8
-          text to send.  This must be UTF-8 encoded.  If you don’t want
+          text to send.  This must be UTF-8 encoded.  If you don't want
           UTF-8 then send a binary frame with
           ‘MHD_websocket_encode_binary()’ instead.  May be be ‘NULL’ if
           ‘payload_utf8_len’ is 0, must not be ‘NULL’ otherwise.
@@ -3959,7 +4049,7 @@ File: libmicrohttpd.info,  Node: microhttpd-websocket encode,  Next: microhttpd-
      FRAGMENTATION
           A value of ‘enum MHD_WEBSOCKET_FRAGMENTATION’ to specify the
           fragmentation behavior.  Specify
-          ‘MHD_WEBSOCKET_FRAGMENTATION_NONE’ or just 0 if you don’t want
+          ‘MHD_WEBSOCKET_FRAGMENTATION_NONE’ or just 0 if you don't want
           to use fragmentation (default).
 
      FRAME
@@ -3985,8 +4075,7 @@ File: libmicrohttpd.info,  Node: microhttpd-websocket encode,  Next: microhttpd-
           This parameter is a pointer to a variable which contains the
           last check status of the UTF-8 sequence.  It is required to
           continue a previous UTF-8 sequence check when fragmentation is
-          used, because a UTF-8 sequence could be splitted upon
-          fragments.
+          used, because a UTF-8 sequence could be split upon fragments.
 
           ‘enum MHD_WEBSOCKET_UTF8STEP’ is used for this value.  If you
           start a new fragment using ‘MHD_WEBSOCKET_FRAGMENTATION_NONE’
@@ -4018,7 +4107,7 @@ File: libmicrohttpd.info,  Node: microhttpd-websocket encode,  Next: microhttpd-
      FRAGMENTATION
           A value of ‘enum MHD_WEBSOCKET_FRAGMENTATION’ to specify the
           fragmentation behavior.  Specify
-          ‘MHD_WEBSOCKET_FRAGMENTATION_NONE’ or just 0 if you don’t want
+          ‘MHD_WEBSOCKET_FRAGMENTATION_NONE’ or just 0 if you don't want
           to use fragmentation (default).
 
      FRAME
@@ -4121,7 +4210,7 @@ File: libmicrohttpd.info,  Node: microhttpd-websocket encode,  Next: microhttpd-
           reason for close.  You can use ‘enum
           MHD_WEBSOCKET_CLOSEREASON’ for typical reasons, but you are
           not limited to these values.  The allowed values are specified
-          in RFC 6455 7.4.  If you don’t want to enter a reason, you can
+          in RFC 6455 7.4.  If you don't want to enter a reason, you can
           specify ‘MHD_WEBSOCKET_CLOSEREASON_NO_REASON’ (or just 0) then
           no reason is encoded.
 
@@ -4228,11 +4317,11 @@ Preamble
 
 The licenses for most software are designed to take away your freedom to
 share and change it.  By contrast, the GNU General Public Licenses are
-intended to guarantee your freedom to share and change free software—to
+intended to guarantee your freedom to share and change free software--to
 make sure the software is free for all its users.
 
    This license, the Lesser General Public License, applies to some
-specially designated software—typically libraries—of the Free Software
+specially designated software--typically libraries--of the Free Software
 Foundation and other authors who decide to use it.  You can use it too,
 but we suggest you first think carefully about whether this license or
 the ordinary General Public License is the better strategy to use in any
@@ -4266,7 +4355,7 @@ permission to copy, distribute and/or modify the library.
    To protect each distributor, we want to make it very clear that there
 is no warranty for the free library.  Also, if the library is modified
 by someone else and passed on, the recipients should know that what they
-have is not the original version, so that the original author’s
+have is not the original version, so that the original author's
 reputation will not be affected by problems that might be introduced by
 others.
 
@@ -4293,7 +4382,7 @@ License permits more lax criteria for linking other code with the
 library.
 
    We call this license the “Lesser” General Public License because it
-does _Less_ to protect the user’s freedom than the ordinary General
+does _Less_ to protect the user's freedom than the ordinary General
 Public License.  It also provides other free software developers Less of
 an advantage over competing non-free programs.  These disadvantages are
 the reason we use the ordinary General Public License for many
@@ -4315,13 +4404,13 @@ programs enables many more people to use the whole GNU operating system,
 as well as its variant, the GNU/Linux operating system.
 
    Although the Lesser General Public License is Less protective of the
-users’ freedom, it does ensure that the user of a program that is linked
+users' freedom, it does ensure that the user of a program that is linked
 with the Library has the freedom and the wherewithal to run that program
 using a modified version of the Library.
 
    The precise terms and conditions for copying, distribution and
 modification follow.  Pay close attention to the difference between a
-“work based on the library” and a “work that uses the library”.  The
+"work based on the library" and a "work that uses the library".  The
 former contains code derived from the library, whereas the latter must
 be combined with the library in order to run.
 
@@ -4331,23 +4420,23 @@ TERMS AND CONDITIONS FOR COPYING, DISTRIBUTION AND MODIFICATION
   0. This License Agreement applies to any software library or other
      program which contains a notice placed by the copyright holder or
      other authorized party saying it may be distributed under the terms
-     of this Lesser General Public License (also called “this License”).
-     Each licensee is addressed as “you”.
+     of this Lesser General Public License (also called "this License").
+     Each licensee is addressed as "you".
 
-     A “library” means a collection of software functions and/or data
+     A "library" means a collection of software functions and/or data
      prepared so as to be conveniently linked with application programs
      (which use some of those functions and data) to form executables.
 
-     The “Library”, below, refers to any such software library or work
-     which has been distributed under these terms.  A “work based on the
-     Library” means either the Library or any derivative work under
+     The "Library", below, refers to any such software library or work
+     which has been distributed under these terms.  A "work based on the
+     Library" means either the Library or any derivative work under
      copyright law: that is to say, a work containing the Library or a
      portion of it, either verbatim or with modifications and/or
      translated straightforwardly into another language.  (Hereinafter,
      translation is included without limitation in the term
-     “modification”.)
+     "modification".)
 
-     “Source code” for a work means the preferred form of the work for
+     "Source code" for a work means the preferred form of the work for
      making modifications to it.  For a library, complete source code
      means all the source code for all modules it contains, plus any
      associated interface definition files, plus the scripts used to
@@ -4362,7 +4451,7 @@ TERMS AND CONDITIONS FOR COPYING, DISTRIBUTION AND MODIFICATION
      depends on what the Library does and what the program that uses the
      Library does.
 
-  1. You may copy and distribute verbatim copies of the Library’s
+  1. You may copy and distribute verbatim copies of the Library's
      complete source code as you receive it, in any medium, provided
      that you conspicuously and appropriately publish on each copy an
      appropriate copyright notice and disclaimer of warranty; keep
@@ -4454,17 +4543,17 @@ TERMS AND CONDITIONS FOR COPYING, DISTRIBUTION AND MODIFICATION
 
   5. A program that contains no derivative of any portion of the
      Library, but is designed to work with the Library by being compiled
-     or linked with it, is called a “work that uses the Library”.  Such
+     or linked with it, is called a "work that uses the Library".  Such
      a work, in isolation, is not a derivative work of the Library, and
      therefore falls outside the scope of this License.
 
-     However, linking a “work that uses the Library” with the Library
+     However, linking a "work that uses the Library" with the Library
      creates an executable that is a derivative of the Library (because
-     it contains portions of the Library), rather than a “work that uses
-     the library”.  The executable is therefore covered by this License.
+     it contains portions of the Library), rather than a "work that uses
+     the library".  The executable is therefore covered by this License.
      Section 6 states terms for distribution of such executables.
 
-     When a “work that uses the Library” uses material from a header
+     When a "work that uses the Library" uses material from a header
      file that is part of the Library, the object code for the work may
      be a derivative work of the Library even though the source code is
      not.  Whether this is true is especially significant if the work
@@ -4485,10 +4574,10 @@ TERMS AND CONDITIONS FOR COPYING, DISTRIBUTION AND MODIFICATION
      whether or not they are linked directly with the Library itself.
 
   6. As an exception to the Sections above, you may also combine or link
-     a “work that uses the Library” with the Library to produce a work
+     a "work that uses the Library" with the Library to produce a work
      containing portions of the Library, and distribute that work under
      terms of your choice, provided that the terms permit modification
-     of the work for the customer’s own use and reverse engineering for
+     of the work for the customer's own use and reverse engineering for
      debugging such modifications.
 
      You must give prominent notice with each copy of the work that the
@@ -4504,7 +4593,7 @@ TERMS AND CONDITIONS FOR COPYING, DISTRIBUTION AND MODIFICATION
           whatever changes were used in the work (which must be
           distributed under Sections 1 and 2 above); and, if the work is
           an executable linked with the Library, with the complete
-          machine-readable “work that uses the Library”, as object code
+          machine-readable "work that uses the Library", as object code
           and/or source code, so that the user can modify the Library
           and then relink to produce a modified executable containing
           the modified Library.  (It is understood that the user who
@@ -4514,7 +4603,7 @@ TERMS AND CONDITIONS FOR COPYING, DISTRIBUTION AND MODIFICATION
 
        b. Use a suitable shared library mechanism for linking with the
           Library.  A suitable mechanism is one that (1) uses at run
-          time a copy of the library already present on the user’s
+          time a copy of the library already present on the user's
           computer system, rather than copying library functions into
           the executable, and (2) will operate properly with a modified
           version of the library, if the user installs one, as long as
@@ -4533,8 +4622,8 @@ TERMS AND CONDITIONS FOR COPYING, DISTRIBUTION AND MODIFICATION
        e. Verify that the user has already received a copy of these
           materials or that you have already sent this user a copy.
 
-     For an executable, the required form of the “work that uses the
-     Library” must include any data and utility programs needed for
+     For an executable, the required form of the "work that uses the
+     Library" must include any data and utility programs needed for
      reproducing the executable from it.  However, as a special
      exception, the materials to be distributed need not include
      anything that is normally distributed (in either source or binary
@@ -4587,7 +4676,7 @@ TERMS AND CONDITIONS FOR COPYING, DISTRIBUTION AND MODIFICATION
      Library), the recipient automatically receives a license from the
      original licensor to copy, distribute, link with or modify the
      Library subject to these terms and conditions.  You may not impose
-     any further restrictions on the recipients’ exercise of the rights
+     any further restrictions on the recipients' exercise of the rights
      granted herein.  You are not responsible for enforcing compliance
      by third parties with this License.
 
@@ -4640,7 +4729,7 @@ TERMS AND CONDITIONS FOR COPYING, DISTRIBUTION AND MODIFICATION
 
      Each version is given a distinguishing version number.  If the
      Library specifies a version number of this License which applies to
-     it and “any later version”, you have the option of following the
+     it and "any later version", you have the option of following the
      terms and conditions either of that version or of any later version
      published by the Free Software Foundation.  If the Library does not
      specify a license version number, you may choose any version ever
@@ -4659,8 +4748,8 @@ TERMS AND CONDITIONS FOR COPYING, DISTRIBUTION AND MODIFICATION
 
   15. BECAUSE THE LIBRARY IS LICENSED FREE OF CHARGE, THERE IS NO
      WARRANTY FOR THE LIBRARY, TO THE EXTENT PERMITTED BY APPLICABLE
-     LAW. EXCEPT WHEN OTHERWISE STATED IN WRITING THE COPYRIGHT HOLDERS
-     AND/OR OTHER PARTIES PROVIDE THE LIBRARY “AS IS” WITHOUT WARRANTY
+     LAW.  EXCEPT WHEN OTHERWISE STATED IN WRITING THE COPYRIGHT HOLDERS
+     AND/OR OTHER PARTIES PROVIDE THE LIBRARY "AS IS" WITHOUT WARRANTY
      OF ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING, BUT NOT
      LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
      FOR A PARTICULAR PURPOSE. THE ENTIRE RISK AS TO THE QUALITY AND
@@ -4694,7 +4783,7 @@ the ordinary General Public License).
    To apply these terms, attach the following notices to the library.
 It is safest to attach them to the start of each source file to most
 effectively convey the exclusion of warranty; and each file should have
-at least the “copyright” line and a pointer to where the full notice is
+at least the "copyright" line and a pointer to where the full notice is
 found.
 
      ONE LINE TO GIVE THE LIBRARY'S NAME AND AN IDEA OF WHAT IT DOES.
@@ -4719,7 +4808,7 @@ found.
 mail.
 
    You should also get your employer (if you work as a programmer) or
-your school, if any, to sign a “copyright disclaimer” for the library,
+your school, if any, to sign a "copyright disclaimer" for the library,
 if necessary.  Here is a sample; alter the names:
 
      Yoyodyne, Inc., hereby disclaims all copyright interest in the library
@@ -4728,7 +4817,7 @@ if necessary.  Here is a sample; alter the names:
      SIGNATURE OF TY COON, 1 April 1990
      Ty Coon, President of Vice
 
-   That’s all there is to it!
+   That's all there is to it!
 
 
 File: libmicrohttpd.info,  Node: eCos License,  Next: GNU-GPL,  Prev: GNU-LGPL,  Up: Top
@@ -4781,9 +4870,9 @@ Preamble
 
 The licenses for most software are designed to take away your freedom to
 share and change it.  By contrast, the GNU General Public License is
-intended to guarantee your freedom to share and change free software—to
+intended to guarantee your freedom to share and change free software--to
 make sure the software is free for all its users.  This General Public
-License applies to most of the Free Software Foundation’s software and
+License applies to most of the Free Software Foundation's software and
 to any other program whose authors commit to using it.  (Some other Free
 Software Foundation software is covered by the GNU Lesser General Public
 License instead.)  You can apply it to your programs, too.
@@ -4810,18 +4899,18 @@ rights.
 and (2) offer you this license which gives you legal permission to copy,
 distribute and/or modify the software.
 
-   Also, for each author’s protection and ours, we want to make certain
+   Also, for each author's protection and ours, we want to make certain
 that everyone understands that there is no warranty for this free
 software.  If the software is modified by someone else and passed on, we
 want its recipients to know that what they have is not the original, so
 that any problems introduced by others will not reflect on the original
-authors’ reputations.
+authors' reputations.
 
    Finally, any free program is threatened constantly by software
 patents.  We wish to avoid the danger that redistributors of a free
 program will individually obtain patent licenses, in effect making the
 program proprietary.  To prevent this, we have made it clear that any
-patent must be licensed for everyone’s free use or not licensed at all.
+patent must be licensed for everyone's free use or not licensed at all.
 
    The precise terms and conditions for copying, distribution and
 modification follow.
@@ -4831,14 +4920,14 @@ TERMS AND CONDITIONS FOR COPYING, DISTRIBUTION AND MODIFICATION
 
   0. This License applies to any program or other work which contains a
      notice placed by the copyright holder saying it may be distributed
-     under the terms of this General Public License.  The “Program”,
-     below, refers to any such program or work, and a “work based on the
-     Program” means either the Program or any derivative work under
+     under the terms of this General Public License.  The "Program",
+     below, refers to any such program or work, and a "work based on the
+     Program" means either the Program or any derivative work under
      copyright law: that is to say, a work containing the Program or a
      portion of it, either verbatim or with modifications and/or
      translated into another language.  (Hereinafter, translation is
-     included without limitation in the term “modification”.)  Each
-     licensee is addressed as “you”.
+     included without limitation in the term "modification".)  Each
+     licensee is addressed as "you".
 
      Activities other than copying, distribution and modification are
      not covered by this License; they are outside its scope.  The act
@@ -4847,7 +4936,7 @@ TERMS AND CONDITIONS FOR COPYING, DISTRIBUTION AND MODIFICATION
      the Program (independent of having been made by running the
      Program).  Whether that is true depends on what the Program does.
 
-  1. You may copy and distribute verbatim copies of the Program’s source
+  1. You may copy and distribute verbatim copies of the Program's source
      code as you receive it, in any medium, provided that you
      conspicuously and appropriately publish on each copy an appropriate
      copyright notice and disclaimer of warranty; keep intact all the
@@ -4966,7 +5055,7 @@ TERMS AND CONDITIONS FOR COPYING, DISTRIBUTION AND MODIFICATION
      Program), the recipient automatically receives a license from the
      original licensor to copy, distribute or modify the Program subject
      to these terms and conditions.  You may not impose any further
-     restrictions on the recipients’ exercise of the rights granted
+     restrictions on the recipients' exercise of the rights granted
      herein.  You are not responsible for enforcing compliance by third
      parties to this License.
 
@@ -5019,7 +5108,7 @@ TERMS AND CONDITIONS FOR COPYING, DISTRIBUTION AND MODIFICATION
 
      Each version is given a distinguishing version number.  If the
      Program specifies a version number of this License which applies to
-     it and “any later version”, you have the option of following the
+     it and "any later version", you have the option of following the
      terms and conditions either of that version or of any later version
      published by the Free Software Foundation.  If the Program does not
      specify a version number of this License, you may choose any
@@ -5038,8 +5127,8 @@ TERMS AND CONDITIONS FOR COPYING, DISTRIBUTION AND MODIFICATION
 
   11. BECAUSE THE PROGRAM IS LICENSED FREE OF CHARGE, THERE IS NO
      WARRANTY FOR THE PROGRAM, TO THE EXTENT PERMITTED BY APPLICABLE
-     LAW. EXCEPT WHEN OTHERWISE STATED IN WRITING THE COPYRIGHT HOLDERS
-     AND/OR OTHER PARTIES PROVIDE THE PROGRAM “AS IS” WITHOUT WARRANTY
+     LAW.  EXCEPT WHEN OTHERWISE STATED IN WRITING THE COPYRIGHT HOLDERS
+     AND/OR OTHER PARTIES PROVIDE THE PROGRAM "AS IS" WITHOUT WARRANTY
      OF ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING, BUT NOT
      LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
      FOR A PARTICULAR PURPOSE. THE ENTIRE RISK AS TO THE QUALITY AND
@@ -5071,7 +5160,7 @@ terms.
    To do so, attach the following notices to the program.  It is safest
 to attach them to the start of each source file to most effectively
 convey the exclusion of warranty; and each file should have at least the
-“copyright” line and a pointer to where the full notice is found.
+"copyright" line and a pointer to where the full notice is found.
 
      ONE LINE TO GIVE THE PROGRAM'S NAME AND A BRIEF IDEA OF WHAT IT DOES.
      Copyright (C) YYYY  NAME OF AUTHOR
@@ -5104,11 +5193,11 @@ this when it starts in an interactive mode:
    The hypothetical commands ‘show w’ and ‘show c’ should show the
 appropriate parts of the General Public License.  Of course, the
 commands you use may be called something other than ‘show w’ and ‘show
-c’; they could even be mouse-clicks or menu items—whatever suits your
+c’; they could even be mouse-clicks or menu items--whatever suits your
 program.
 
    You should also get your employer (if you work as a programmer) or
-your school, if any, to sign a “copyright disclaimer” for the program,
+your school, if any, to sign a "copyright disclaimer" for the program,
 if necessary.  Here is a sample; alter the names:
 
      Yoyodyne, Inc., hereby disclaims all copyright interest in the program
@@ -5147,7 +5236,7 @@ GNU-FDL
      author and publisher a way to get credit for their work, while not
      being considered responsible for modifications made by others.
 
-     This License is a kind of “copyleft”, which means that derivative
+     This License is a kind of "copyleft", which means that derivative
      works of the document must themselves be free in the same sense.
      It complements the GNU General Public License, which is a copyleft
      license designed for free software.
@@ -5168,18 +5257,18 @@ GNU-FDL
      be distributed under the terms of this License.  Such a notice
      grants a world-wide, royalty-free license, unlimited in duration,
      to use that work under the conditions stated herein.  The
-     “Document”, below, refers to any such manual or work.  Any member
-     of the public is a licensee, and is addressed as “you”.  You accept
+     "Document", below, refers to any such manual or work.  Any member
+     of the public is a licensee, and is addressed as "you".  You accept
      the license if you copy, modify or distribute the work in a way
      requiring permission under copyright law.
 
-     A “Modified Version” of the Document means any work containing the
+     A "Modified Version" of the Document means any work containing the
      Document or a portion of it, either copied verbatim, or with
      modifications and/or translated into another language.
 
-     A “Secondary Section” is a named appendix or a front-matter section
+     A "Secondary Section" is a named appendix or a front-matter section
      of the Document that deals exclusively with the relationship of the
-     publishers or authors of the Document to the Document’s overall
+     publishers or authors of the Document to the Document's overall
      subject (or to related matters) and contains nothing that could
      fall directly within that overall subject.  (Thus, if the Document
      is in part a textbook of mathematics, a Secondary Section may not
@@ -5188,7 +5277,7 @@ GNU-FDL
      of legal, commercial, philosophical, ethical or political position
      regarding them.
 
-     The “Invariant Sections” are certain Secondary Sections whose
+     The "Invariant Sections" are certain Secondary Sections whose
      titles are designated, as being those of Invariant Sections, in the
      notice that says that the Document is released under this License.
      If a section does not fit the above definition of Secondary then it
@@ -5196,13 +5285,13 @@ GNU-FDL
      contain zero Invariant Sections.  If the Document does not identify
      any Invariant Sections then there are none.
 
-     The “Cover Texts” are certain short passages of text that are
+     The "Cover Texts" are certain short passages of text that are
      listed, as Front-Cover Texts or Back-Cover Texts, in the notice
      that says that the Document is released under this License.  A
      Front-Cover Text may be at most 5 words, and a Back-Cover Text may
      be at most 25 words.
 
-     A “Transparent” copy of the Document means a machine-readable copy,
+     A "Transparent" copy of the Document means a machine-readable copy,
      represented in a format whose specification is available to the
      general public, that is suitable for revising the document
      straightforwardly with generic text editors or (for images composed
@@ -5214,7 +5303,7 @@ GNU-FDL
      been arranged to thwart or discourage subsequent modification by
      readers is not Transparent.  An image format is not Transparent if
      used for any substantial amount of text.  A copy that is not
-     “Transparent” is called “Opaque”.
+     "Transparent" is called "Opaque".
 
      Examples of suitable formats for Transparent copies include plain
      ASCII without markup, Texinfo input format, LaTeX input format,
@@ -5227,23 +5316,23 @@ GNU-FDL
      the machine-generated HTML, PostScript or PDF produced by some word
      processors for output purposes only.
 
-     The “Title Page” means, for a printed book, the title page itself,
+     The "Title Page" means, for a printed book, the title page itself,
      plus such following pages as are needed to hold, legibly, the
      material this License requires to appear in the title page.  For
-     works in formats which do not have any title page as such, “Title
-     Page” means the text near the most prominent appearance of the
-     work’s title, preceding the beginning of the body of the text.
+     works in formats which do not have any title page as such, "Title
+     Page" means the text near the most prominent appearance of the
+     work's title, preceding the beginning of the body of the text.
 
-     The “publisher” means any person or entity that distributes copies
+     The "publisher" means any person or entity that distributes copies
      of the Document to the public.
 
-     A section “Entitled XYZ” means a named subunit of the Document
+     A section "Entitled XYZ" means a named subunit of the Document
      whose title either is precisely XYZ or contains XYZ in parentheses
      following text that translates XYZ in another language.  (Here XYZ
      stands for a specific section name mentioned below, such as
-     “Acknowledgements”, “Dedications”, “Endorsements”, or “History”.)
-     To “Preserve the Title” of such a section when you modify the
-     Document means that it remains a section “Entitled XYZ” according
+     "Acknowledgements", "Dedications", "Endorsements", or "History".)
+     To "Preserve the Title" of such a section when you modify the
+     Document means that it remains a section "Entitled XYZ" according
      to this definition.
 
      The Document may include Warranty Disclaimers next to the notice
@@ -5273,7 +5362,7 @@ GNU-FDL
 
      If you publish printed copies (or copies in media that commonly
      have printed covers) of the Document, numbering more than 100, and
-     the Document’s license notice requires Cover Texts, you must
+     the Document's license notice requires Cover Texts, you must
      enclose the copies in covers that carry, clearly and legibly, all
      these Cover Texts: Front-Cover Texts on the front cover, and
      Back-Cover Texts on the back cover.  Both covers must also clearly
@@ -5345,15 +5434,15 @@ GNU-FDL
           the Addendum below.
 
        G. Preserve in that license notice the full lists of Invariant
-          Sections and required Cover Texts given in the Document’s
+          Sections and required Cover Texts given in the Document's
           license notice.
 
        H. Include an unaltered copy of this License.
 
-       I. Preserve the section Entitled “History”, Preserve its Title,
+       I. Preserve the section Entitled "History", Preserve its Title,
           and add to it an item stating at least the title, year, new
           authors, and publisher of the Modified Version as given on the
-          Title Page.  If there is no section Entitled “History” in the
+          Title Page.  If there is no section Entitled "History" in the
           Document, create one stating the title, year, authors, and
           publisher of the Document as given on its Title Page, then add
           an item describing the Modified Version as stated in the
@@ -5363,12 +5452,12 @@ GNU-FDL
           for public access to a Transparent copy of the Document, and
           likewise the network locations given in the Document for
           previous versions it was based on.  These may be placed in the
-          “History” section.  You may omit a network location for a work
+          "History" section.  You may omit a network location for a work
           that was published at least four years before the Document
           itself, or if the original publisher of the version it refers
           to gives permission.
 
-       K. For any section Entitled “Acknowledgements” or “Dedications”,
+       K. For any section Entitled "Acknowledgements" or "Dedications",
           Preserve the Title of the section, and preserve in the section
           all the substance and tone of each of the contributor
           acknowledgements and/or dedications given therein.
@@ -5377,11 +5466,11 @@ GNU-FDL
           in their text and in their titles.  Section numbers or the
           equivalent are not considered part of the section titles.
 
-       M. Delete any section Entitled “Endorsements”.  Such a section
+       M. Delete any section Entitled "Endorsements".  Such a section
           may not be included in the Modified Version.
 
        N. Do not retitle any existing section to be Entitled
-          “Endorsements” or to conflict in title with any Invariant
+          "Endorsements" or to conflict in title with any Invariant
           Section.
 
        O. Preserve any Warranty Disclaimers.
@@ -5390,15 +5479,15 @@ GNU-FDL
      appendices that qualify as Secondary Sections and contain no
      material copied from the Document, you may at your option designate
      some or all of these sections as invariant.  To do this, add their
-     titles to the list of Invariant Sections in the Modified Version’s
+     titles to the list of Invariant Sections in the Modified Version's
      license notice.  These titles must be distinct from any other
      section titles.
 
-     You may add a section Entitled “Endorsements”, provided it contains
+     You may add a section Entitled "Endorsements", provided it contains
      nothing but endorsements of your Modified Version by various
-     parties—for example, statements of peer review or that the text has
-     been approved by an organization as the authoritative definition of
-     a standard.
+     parties--for example, statements of peer review or that the text
+     has been approved by an organization as the authoritative
+     definition of a standard.
 
      You may add a passage of up to five words as a Front-Cover Text,
      and a passage of up to 25 words as a Back-Cover Text, to the end of
@@ -5436,10 +5525,10 @@ GNU-FDL
      combined work.
 
      In the combination, you must combine any sections Entitled
-     “History” in the various original documents, forming one section
-     Entitled “History”; likewise combine any sections Entitled
-     “Acknowledgements”, and any sections Entitled “Dedications”.  You
-     must delete all sections Entitled “Endorsements.”
+     "History" in the various original documents, forming one section
+     Entitled "History"; likewise combine any sections Entitled
+     "Acknowledgements", and any sections Entitled "Dedications".  You
+     must delete all sections Entitled "Endorsements."
 
   6. COLLECTIONS OF DOCUMENTS
 
@@ -5460,16 +5549,16 @@ GNU-FDL
 
      A compilation of the Document or its derivatives with other
      separate and independent documents or works, in or on a volume of a
-     storage or distribution medium, is called an “aggregate” if the
+     storage or distribution medium, is called an "aggregate" if the
      copyright resulting from the compilation is not used to limit the
-     legal rights of the compilation’s users beyond what the individual
+     legal rights of the compilation's users beyond what the individual
      works permit.  When the Document is included in an aggregate, this
      License does not apply to the other works in the aggregate which
      are not themselves derivative works of the Document.
 
      If the Cover Text requirement of section 3 is applicable to these
      copies of the Document, then if the Document is less than one half
-     of the entire aggregate, the Document’s Cover Texts may be placed
+     of the entire aggregate, the Document's Cover Texts may be placed
      on covers that bracket the Document within the aggregate, or the
      electronic equivalent of covers if the Document is in electronic
      form.  Otherwise they must appear on printed covers that bracket
@@ -5491,8 +5580,8 @@ GNU-FDL
      this License or a notice or disclaimer, the original version will
      prevail.
 
-     If a section in the Document is Entitled “Acknowledgements”,
-     “Dedications”, or “History”, the requirement (section 4) to
+     If a section in the Document is Entitled "Acknowledgements",
+     "Dedications", or "History", the requirement (section 4) to
      Preserve its Title (section 1) will typically require changing the
      actual title.
 
@@ -5533,7 +5622,7 @@ GNU-FDL
 
      Each version of the License is given a distinguishing version
      number.  If the Document specifies that a particular numbered
-     version of this License “or any later version” applies to it, you
+     version of this License "or any later version" applies to it, you
      have the option of following the terms and conditions either of
      that specified version or of any later version that has been
      published (not as a draft) by the Free Software Foundation.  If the
@@ -5541,29 +5630,29 @@ GNU-FDL
      choose any version ever published (not as a draft) by the Free
      Software Foundation.  If the Document specifies that a proxy can
      decide which future versions of this License can be used, that
-     proxy’s public statement of acceptance of a version permanently
+     proxy's public statement of acceptance of a version permanently
      authorizes you to choose that version for the Document.
 
   11. RELICENSING
 
-     “Massive Multiauthor Collaboration Site” (or “MMC Site”) means any
+     "Massive Multiauthor Collaboration Site" (or "MMC Site") means any
      World Wide Web server that publishes copyrightable works and also
      provides prominent facilities for anybody to edit those works.  A
      public wiki that anybody can edit is an example of such a server.
-     A “Massive Multiauthor Collaboration” (or “MMC”) contained in the
+     A "Massive Multiauthor Collaboration" (or "MMC") contained in the
      site means any set of copyrightable works thus published on the MMC
      site.
 
-     “CC-BY-SA” means the Creative Commons Attribution-Share Alike 3.0
+     "CC-BY-SA" means the Creative Commons Attribution-Share Alike 3.0
      license published by Creative Commons Corporation, a not-for-profit
      corporation with a principal place of business in San Francisco,
      California, as well as future copyleft versions of that license
      published by that same organization.
 
-     “Incorporate” means to publish or republish a Document, in whole or
+     "Incorporate" means to publish or republish a Document, in whole or
      in part, as part of another Document.
 
-     An MMC is “eligible for relicensing” if it is licensed under this
+     An MMC is "eligible for relicensing" if it is licensed under this
      License, and if all works that were first published under this
      License somewhere other than this MMC, and subsequently
      incorporated in whole or in part into the MMC, (1) had no cover
@@ -5590,7 +5679,7 @@ notices just after the title page:
        Free Documentation License''.
 
    If you have Invariant Sections, Front-Cover Texts and Back-Cover
-Texts, replace the “with...Texts.” line with this:
+Texts, replace the "with...Texts."  line with this:
 
          with the Invariant Sections being LIST THEIR TITLES, with
          the Front-Cover Texts being LIST, and with the Back-Cover Texts
@@ -5615,43 +5704,43 @@ Concept Index
 * Menu:
 
 * ARM:                                   microhttpd-intro.   (line  285)
-* bind, restricting bind:                microhttpd-const.   (line  332)
-* bind, restricting bind <1>:            microhttpd-const.   (line  567)
-* cipher:                                microhttpd-const.   (line  405)
+* bind, restricting bind:                microhttpd-const.   (line  330)
+* bind, restricting bind <1>:            microhttpd-const.   (line  565)
+* cipher:                                microhttpd-const.   (line  403)
 * clock:                                 microhttpd-const.   (line  105)
-* compilation:                           microhttpd-intro.   (line  124)
+* compilation:                           microhttpd-intro.   (line  123)
 * connection, limiting number of connections: microhttpd-const.
                                                              (line  209)
 * connection, limiting number of connections <1>: microhttpd-info daemon.
                                                              (line   60)
-* cookie:                                microhttpd-const.   (line  599)
+* cookie:                                microhttpd-const.   (line  597)
 * cortex m3:                             microhttpd-intro.   (line  285)
 * date:                                  microhttpd-const.   (line  105)
 * debugging:                             microhttpd-const.   (line   31)
-* debugging <1>:                         microhttpd-const.   (line  343)
+* debugging <1>:                         microhttpd-const.   (line  341)
 * deprecated:                            microhttpd-const.   (line   61)
-* DH:                                    microhttpd-const.   (line  559)
-* digest auth:                           microhttpd-const.   (line  444)
-* digest auth <1>:                       microhttpd-const.   (line  455)
+* DH:                                    microhttpd-const.   (line  557)
+* digest auth:                           microhttpd-const.   (line  442)
+* digest auth <1>:                       microhttpd-const.   (line  453)
 * eCos, GNU General Public License with eCos Extension: eCos License.
                                                              (line    6)
-* embedded systems:                      microhttpd-intro.   (line  124)
+* embedded systems:                      microhttpd-intro.   (line  123)
 * embedded systems <1>:                  microhttpd-intro.   (line  285)
 * embedded systems <2>:                  microhttpd-const.   (line  105)
 * embedded systems <3>:                  microhttpd-const.   (line  112)
-* embedded systems <4>:                  microhttpd-const.   (line  543)
+* embedded systems <4>:                  microhttpd-const.   (line  541)
 * epoll:                                 microhttpd-intro.   (line   67)
 * epoll <1>:                             microhttpd-const.   (line   77)
 * epoll <2>:                             microhttpd-info daemon.
                                                              (line   49)
-* escaping:                              microhttpd-const.   (line  526)
+* escaping:                              microhttpd-const.   (line  524)
 * FD_SETSIZE:                            microhttpd-const.   (line   70)
 * FD_SETSIZE <1>:                        microhttpd-const.   (line   77)
-* foreign-function interface:            microhttpd-const.   (line  504)
+* foreign-function interface:            microhttpd-const.   (line  502)
 * HTTP2:                                 microhttpd-response upgrade.
                                                              (line    6)
 * IAR:                                   microhttpd-intro.   (line  285)
-* internationalization:                  microhttpd-const.   (line  526)
+* internationalization:                  microhttpd-const.   (line  524)
 * IPv6:                                  microhttpd-const.   (line   45)
 * IPv6 <1>:                              microhttpd-const.   (line   55)
 * license:                               GNU-LGPL.           (line    6)
@@ -5660,44 +5749,44 @@ Concept Index
 * license <3>:                           GNU-FDL.            (line    6)
 * listen:                                microhttpd-const.   (line  112)
 * listen <1>:                            microhttpd-const.   (line  143)
-* listen <2>:                            microhttpd-const.   (line  549)
+* listen <2>:                            microhttpd-const.   (line  547)
 * listen <3>:                            microhttpd-info daemon.
                                                              (line   43)
-* logging:                               microhttpd-const.   (line  343)
-* logging <1>:                           microhttpd-const.   (line  485)
+* logging:                               microhttpd-const.   (line  341)
+* logging <1>:                           microhttpd-const.   (line  483)
 * long long:                             microhttpd-intro.   (line  285)
 * memory:                                microhttpd-const.   (line  201)
 * memory, limiting memory utilization:   microhttpd-const.   (line  193)
 * MHD_LONG_LONG:                         microhttpd-intro.   (line  285)
-* microhttpd.h:                          microhttpd-intro.   (line  225)
-* OCSP:                                  microhttpd-const.   (line  428)
-* options:                               microhttpd-const.   (line  504)
+* microhttpd.h:                          microhttpd-intro.   (line  224)
+* OCSP:                                  microhttpd-const.   (line  426)
+* options:                               microhttpd-const.   (line  502)
 * performance:                           microhttpd-intro.   (line   91)
 * performance <1>:                       microhttpd-const.   (line   90)
-* performance <2>:                       microhttpd-const.   (line  496)
+* performance <2>:                       microhttpd-const.   (line  494)
 * performance <3>:                       microhttpd-info conn.
                                                              (line  114)
 * poll:                                  microhttpd-intro.   (line   67)
 * poll <1>:                              microhttpd-const.   (line   70)
 * poll <2>:                              microhttpd-init.    (line   74)
-* portability:                           microhttpd-intro.   (line  124)
-* portability <1>:                       microhttpd-intro.   (line  225)
-* POST method:                           microhttpd-const.   (line  603)
+* portability:                           microhttpd-intro.   (line  123)
+* portability <1>:                       microhttpd-intro.   (line  224)
+* POST method:                           microhttpd-const.   (line  601)
 * POST method <1>:                       microhttpd-struct.  (line   22)
 * POST method <2>:                       microhttpd-cb.      (line   48)
 * POST method <3>:                       microhttpd-post.    (line    6)
 * POST method <4>:                       microhttpd-post api.
                                                              (line    6)
 * proxy:                                 microhttpd-const.   (line  112)
-* PSK:                                   microhttpd-const.   (line  438)
-* pthread:                               microhttpd-const.   (line  543)
+* PSK:                                   microhttpd-const.   (line  436)
+* pthread:                               microhttpd-const.   (line  541)
 * PUT method:                            microhttpd-cb.      (line   48)
-* query string:                          microhttpd-const.   (line  343)
+* query string:                          microhttpd-const.   (line  341)
 * quiesce:                               microhttpd-const.   (line  119)
 * quiesce <1>:                           microhttpd-init.    (line   51)
-* random:                                microhttpd-const.   (line  444)
-* replay attack:                         microhttpd-const.   (line  455)
-* reusing listening address:             microhttpd-const.   (line  567)
+* random:                                microhttpd-const.   (line  442)
+* replay attack:                         microhttpd-const.   (line  453)
+* reusing listening address:             microhttpd-const.   (line  565)
 * RFC2817:                               microhttpd-response upgrade.
                                                              (line    6)
 * select:                                microhttpd-intro.   (line   67)
@@ -5706,47 +5795,47 @@ Concept Index
 * select <3>:                            microhttpd-init.    (line   74)
 * select <4>:                            microhttpd-init.    (line   89)
 * signals:                               microhttpd-intro.   (line  246)
-* SNI:                                   microhttpd-const.   (line  413)
-* SNI <1>:                               microhttpd-const.   (line  428)
+* SNI:                                   microhttpd-const.   (line  411)
+* SNI <1>:                               microhttpd-const.   (line  426)
 * SSL:                                   microhttpd-const.   (line   34)
-* SSL <1>:                               microhttpd-const.   (line  366)
-* SSL <2>:                               microhttpd-const.   (line  372)
-* SSL <3>:                               microhttpd-const.   (line  382)
-* SSL <4>:                               microhttpd-const.   (line  388)
-* SSL <5>:                               microhttpd-const.   (line  400)
-* SSL <6>:                               microhttpd-const.   (line  405)
-* SSL <7>:                               microhttpd-const.   (line  413)
-* SSL <8>:                               microhttpd-const.   (line  428)
-* SSL <9>:                               microhttpd-const.   (line  438)
-* SSL <10>:                              microhttpd-const.   (line  559)
-* stack:                                 microhttpd-const.   (line  543)
-* systemd:                               microhttpd-const.   (line  478)
-* testing:                               microhttpd-const.   (line  321)
-* thread:                                microhttpd-const.   (line  543)
+* SSL <1>:                               microhttpd-const.   (line  364)
+* SSL <2>:                               microhttpd-const.   (line  370)
+* SSL <3>:                               microhttpd-const.   (line  380)
+* SSL <4>:                               microhttpd-const.   (line  386)
+* SSL <5>:                               microhttpd-const.   (line  398)
+* SSL <6>:                               microhttpd-const.   (line  403)
+* SSL <7>:                               microhttpd-const.   (line  411)
+* SSL <8>:                               microhttpd-const.   (line  426)
+* SSL <9>:                               microhttpd-const.   (line  436)
+* SSL <10>:                              microhttpd-const.   (line  557)
+* stack:                                 microhttpd-const.   (line  541)
+* systemd:                               microhttpd-const.   (line  476)
+* testing:                               microhttpd-const.   (line  319)
+* thread:                                microhttpd-const.   (line  541)
 * timeout:                               microhttpd-const.   (line  247)
 * timeout <1>:                           microhttpd-inspect. (line   39)
 * timeout <2>:                           microhttpd-option conn.
                                                              (line    6)
 * TLS:                                   microhttpd-const.   (line   34)
-* TLS <1>:                               microhttpd-const.   (line  366)
-* TLS <2>:                               microhttpd-const.   (line  372)
-* TLS <3>:                               microhttpd-const.   (line  382)
-* TLS <4>:                               microhttpd-const.   (line  388)
-* TLS <5>:                               microhttpd-const.   (line  400)
-* TLS <6>:                               microhttpd-const.   (line  405)
-* TLS <7>:                               microhttpd-const.   (line  413)
-* TLS <8>:                               microhttpd-const.   (line  428)
-* TLS <9>:                               microhttpd-const.   (line  438)
-* TLS <10>:                              microhttpd-const.   (line  559)
+* TLS <1>:                               microhttpd-const.   (line  364)
+* TLS <2>:                               microhttpd-const.   (line  370)
+* TLS <3>:                               microhttpd-const.   (line  380)
+* TLS <4>:                               microhttpd-const.   (line  386)
+* TLS <5>:                               microhttpd-const.   (line  398)
+* TLS <6>:                               microhttpd-const.   (line  403)
+* TLS <7>:                               microhttpd-const.   (line  411)
+* TLS <8>:                               microhttpd-const.   (line  426)
+* TLS <9>:                               microhttpd-const.   (line  436)
+* TLS <10>:                              microhttpd-const.   (line  557)
 * upgrade:                               microhttpd-const.   (line  148)
 * Upgrade:                               microhttpd-response upgrade.
                                                              (line    6)
-* websocket:                             microhttpd-const.   (line  710)
-* websocket <1>:                         microhttpd-const.   (line  775)
-* websocket <2>:                         microhttpd-const.   (line  807)
-* websocket <3>:                         microhttpd-const.   (line 1001)
-* websocket <4>:                         microhttpd-const.   (line 1066)
-* websocket <5>:                         microhttpd-const.   (line 1124)
+* websocket:                             microhttpd-const.   (line  708)
+* websocket <1>:                         microhttpd-const.   (line  773)
+* websocket <2>:                         microhttpd-const.   (line  805)
+* websocket <3>:                         microhttpd-const.   (line  999)
+* websocket <4>:                         microhttpd-const.   (line 1064)
+* websocket <5>:                         microhttpd-const.   (line 1122)
 * websocket <6>:                         microhttpd-struct.  (line   31)
 * websocket <7>:                         microhttpd-cb.      (line  243)
 * websocket <8>:                         microhttpd-cb.      (line  259)
@@ -5779,13 +5868,13 @@ Concept Index
 * websocket <23>:                        microhttpd-websocket encode.
                                                              (line   10)
 * websocket <24>:                        microhttpd-websocket encode.
-                                                             (line   71)
+                                                             (line   70)
 * websocket <25>:                        microhttpd-websocket encode.
-                                                             (line  110)
+                                                             (line  109)
 * websocket <26>:                        microhttpd-websocket encode.
-                                                             (line  144)
+                                                             (line  143)
 * websocket <27>:                        microhttpd-websocket encode.
-                                                             (line  179)
+                                                             (line  178)
 * websocket <28>:                        microhttpd-websocket memory.
                                                              (line    8)
 * websocket <29>:                        microhttpd-websocket memory.
@@ -5814,7 +5903,7 @@ Function and Data Index
 * *MHD_WebSocketRandomNumberGenerator:   microhttpd-cb.       (line 290)
 * *MHD_WebSocketReallocCallback:         microhttpd-cb.       (line 257)
 * MHD_add_connection:                    microhttpd-init.     (line 115)
-* MHD_basic_auth_get_username_password:  microhttpd-dauth basic.
+* MHD_basic_auth_get_username_password3: microhttpd-dauth basic.
                                                               (line  10)
 * MHD_create_post_processor:             microhttpd-post api. (line   6)
 * MHD_create_response_from_buffer:       microhttpd-response create.
@@ -5836,15 +5925,19 @@ Function and Data Index
 * MHD_destroy_response:                  microhttpd-response enqueue.
                                                               (line  29)
 * MHD_digest_auth_check:                 microhttpd-dauth digest.
-                                                              (line  55)
-* MHD_digest_auth_check2:                microhttpd-dauth digest.
-                                                              (line  30)
+                                                              (line 111)
 * MHD_digest_auth_check_digest:          microhttpd-dauth digest.
-                                                              (line 103)
+                                                              (line 185)
 * MHD_digest_auth_check_digest2:         microhttpd-dauth digest.
-                                                              (line  78)
+                                                              (line 160)
+* MHD_digest_auth_check2:                microhttpd-dauth digest.
+                                                              (line  86)
 * MHD_digest_auth_get_username:          microhttpd-dauth digest.
-                                                              (line  23)
+                                                              (line  55)
+* MHD_DigestAuthResult:                  microhttpd-dauth digest.
+                                                              (line  62)
+* MHD_DigestAuthResult <1>:              microhttpd-dauth digest.
+                                                              (line 134)
 * MHD_free:                              microhttpd-dauth basic.
                                                               (line   6)
 * MHD_get_connection_info:               microhttpd-info conn.
@@ -5862,8 +5955,8 @@ Function and Data Index
                                                               (line  77)
 * MHD_lookup_connection_value:           microhttpd-requests. (line  58)
 * MHD_lookup_connection_value_n:         microhttpd-requests. (line  67)
-* MHD_queue_basic_auth_fail_response:    microhttpd-dauth basic.
-                                                              (line  21)
+* MHD_queue_basic_auth_fail_response3:   microhttpd-dauth basic.
+                                                              (line  19)
 * MHD_quiesce_daemon:                    microhttpd-init.     (line  50)
 * MHD_Result:                            microhttpd-cb.       (line   6)
 * MHD_Result <1>:                        microhttpd-cb.       (line  19)
@@ -5892,9 +5985,9 @@ Function and Data Index
 * MHD_Result <17>:                       microhttpd-flow.     (line  20)
 * MHD_Result <18>:                       microhttpd-flow.     (line  56)
 * MHD_Result <19>:                       microhttpd-dauth digest.
-                                                              (line 126)
+                                                              (line 208)
 * MHD_Result <20>:                       microhttpd-dauth digest.
-                                                              (line 153)
+                                                              (line 235)
 * MHD_Result <21>:                       microhttpd-post api. (line  33)
 * MHD_Result <22>:                       microhttpd-post api. (line  52)
 * MHD_set_connection_option:             microhttpd-option conn.
@@ -5915,13 +6008,13 @@ Function and Data Index
 * MHD_websocket_decode:                  microhttpd-websocket decode.
                                                               (line   6)
 * MHD_websocket_encode_binary:           microhttpd-websocket encode.
-                                                              (line  67)
+                                                              (line  66)
 * MHD_websocket_encode_close:            microhttpd-websocket encode.
-                                                              (line 175)
+                                                              (line 174)
 * MHD_websocket_encode_ping:             microhttpd-websocket encode.
-                                                              (line 107)
+                                                              (line 106)
 * MHD_websocket_encode_pong:             microhttpd-websocket encode.
-                                                              (line 141)
+                                                              (line 140)
 * MHD_websocket_encode_text:             microhttpd-websocket encode.
                                                               (line   6)
 * MHD_websocket_free:                    microhttpd-websocket memory.
@@ -5953,87 +6046,89 @@ Type Index
 * Menu:
 
 * MHD_Connection:                        microhttpd-struct.  (line    9)
+* MHD_CONNECTION_OPTION:                 microhttpd-option conn.
+                                                             (line   22)
 * MHD_ConnectionInfo:                    microhttpd-struct.  (line   24)
 * MHD_ConnectionInfoType:                microhttpd-info conn.
                                                              (line   25)
-* MHD_CONNECTION_OPTION:                 microhttpd-option conn.
-                                                             (line   22)
 * MHD_Daemon:                            microhttpd-struct.  (line    6)
 * MHD_DaemonInfo:                        microhttpd-struct.  (line   27)
 * MHD_DaemonInfoType:                    microhttpd-info daemon.
                                                              (line   25)
 * MHD_DigestAuthAlgorithm:               microhttpd-dauth digest.
                                                              (line   10)
+* MHD_DigestAuthResult:                  microhttpd-dauth digest.
+                                                             (line   23)
 * MHD_FEATURE:                           microhttpd-util feature.
                                                              (line    6)
 * MHD_FLAG:                              microhttpd-const.   (line    6)
 * MHD_IoVec:                             microhttpd-struct.  (line   18)
 * MHD_OPTION:                            microhttpd-const.   (line  184)
-* MHD_OptionItem:                        microhttpd-const.   (line  578)
+* MHD_OptionItem:                        microhttpd-const.   (line  576)
 * MHD_PostProcessor:                     microhttpd-struct.  (line   21)
-* MHD_RequestTerminationCode:            microhttpd-const.   (line  616)
+* MHD_RequestTerminationCode:            microhttpd-const.   (line  614)
 * MHD_Response:                          microhttpd-struct.  (line   15)
-* MHD_ResponseFlags:                     microhttpd-const.   (line  656)
-* MHD_ResponseMemoryMode:                microhttpd-const.   (line  634)
-* MHD_ResponseOptions:                   microhttpd-const.   (line  701)
+* MHD_ResponseFlags:                     microhttpd-const.   (line  654)
+* MHD_ResponseMemoryMode:                microhttpd-const.   (line  632)
+* MHD_ResponseOptions:                   microhttpd-const.   (line  699)
 * MHD_UpgradeAction:                     microhttpd-response upgrade.
                                                              (line  103)
-* MHD_ValueKind:                         microhttpd-const.   (line  591)
+* MHD_ValueKind:                         microhttpd-const.   (line  589)
+* MHD_WEBSOCKET_CLOSEREASON:             microhttpd-const.   (line  998)
+* MHD_WEBSOCKET_FLAG:                    microhttpd-const.   (line  707)
+* MHD_WEBSOCKET_FRAGMENTATION:           microhttpd-const.   (line  772)
+* MHD_WEBSOCKET_STATUS:                  microhttpd-const.   (line  804)
+* MHD_WEBSOCKET_UTF8STEP:                microhttpd-const.   (line 1063)
+* MHD_WEBSOCKET_VALIDITY:                microhttpd-const.   (line 1121)
 * MHD_WebSocketStream:                   microhttpd-struct.  (line   30)
-* MHD_WEBSOCKET_CLOSEREASON:             microhttpd-const.   (line 1000)
-* MHD_WEBSOCKET_FLAG:                    microhttpd-const.   (line  709)
-* MHD_WEBSOCKET_FRAGMENTATION:           microhttpd-const.   (line  774)
-* MHD_WEBSOCKET_STATUS:                  microhttpd-const.   (line  806)
-* MHD_WEBSOCKET_UTF8STEP:                microhttpd-const.   (line 1065)
-* MHD_WEBSOCKET_VALIDITY:                microhttpd-const.   (line 1123)
 
 
 
 Tag Table:
-Node: Top813
-Node: microhttpd-intro3164
-Ref: fig:performance8081
-Ref: tbl:supported9054
-Node: microhttpd-const17377
-Node: microhttpd-struct75422
-Node: microhttpd-cb76360
-Node: microhttpd-init89665
-Node: microhttpd-inspect95547
-Node: microhttpd-requests98328
-Node: microhttpd-responses102408
-Node: microhttpd-response enqueue103607
-Ref: microhttpd-response enqueue-Footnote-1105936
-Node: microhttpd-response create106171
-Node: microhttpd-response headers114222
-Node: microhttpd-response options116720
-Node: microhttpd-response inspect117603
-Node: microhttpd-response upgrade118824
-Node: microhttpd-flow124202
-Node: microhttpd-dauth127760
-Node: microhttpd-dauth basic129311
-Node: microhttpd-dauth digest130717
-Node: microhttpd-post140937
-Node: microhttpd-post api143936
-Node: microhttpd-info146604
-Node: microhttpd-info daemon147026
-Node: microhttpd-info conn150486
-Node: microhttpd-option conn155752
-Node: microhttpd-util156832
-Node: microhttpd-util feature157115
-Node: microhttpd-util unescape160701
-Node: microhttpd-websocket161349
-Node: microhttpd-websocket handshake162068
-Node: microhttpd-websocket stream167243
-Node: microhttpd-websocket decode172283
-Node: microhttpd-websocket encode176781
-Node: microhttpd-websocket memory186227
-Node: GNU-LGPL188052
-Node: eCos License216248
-Node: GNU-GPL217639
-Node: GNU-FDL236946
-Node: Concept Index262215
-Node: Function and Data Index275401
-Node: Type Index285448
+Node: Top814
+Node: microhttpd-intro3147
+Ref: fig:performance8058
+Ref: tbl:supported9030
+Node: microhttpd-const17455
+Node: microhttpd-struct75236
+Node: microhttpd-cb76174
+Node: microhttpd-init89473
+Node: microhttpd-inspect95351
+Node: microhttpd-requests98128
+Node: microhttpd-responses102178
+Node: microhttpd-response enqueue103377
+Ref: microhttpd-response enqueue-Footnote-1105702
+Node: microhttpd-response create105937
+Node: microhttpd-response headers113947
+Node: microhttpd-response options116421
+Node: microhttpd-response inspect117304
+Node: microhttpd-response upgrade118525
+Node: microhttpd-flow123867
+Node: microhttpd-dauth127419
+Node: microhttpd-dauth basic128979
+Node: microhttpd-dauth digest130570
+Node: microhttpd-post144181
+Node: microhttpd-post api147165
+Node: microhttpd-info149833
+Node: microhttpd-info daemon150249
+Node: microhttpd-info conn153697
+Node: microhttpd-option conn158956
+Node: microhttpd-util160036
+Node: microhttpd-util feature160315
+Node: microhttpd-util unescape163901
+Node: microhttpd-websocket164545
+Node: microhttpd-websocket handshake165264
+Node: microhttpd-websocket stream170429
+Node: microhttpd-websocket decode175469
+Node: microhttpd-websocket encode179967
+Node: microhttpd-websocket memory189392
+Node: GNU-LGPL191217
+Node: eCos License219315
+Node: GNU-GPL220706
+Node: GNU-FDL239968
+Node: Concept Index265037
+Node: Function and Data Index278223
+Node: Type Index288548
 
 End Tag Table
 

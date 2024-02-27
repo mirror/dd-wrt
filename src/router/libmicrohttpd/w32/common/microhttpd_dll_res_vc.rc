@@ -4,8 +4,8 @@
 
 LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 VS_VERSION_INFO VERSIONINFO
-  FILEVERSION 0,9,77,0
-  PRODUCTVERSION 0,9,77,0
+  FILEVERSION 1,0,1,0
+  PRODUCTVERSION 1,0,1,0
   FILEFLAGSMASK  VS_FFI_FILEFLAGSMASK
 #if defined(_DEBUG)
   FILEFLAGS      VS_FF_DEBUG
@@ -21,8 +21,8 @@ BEGIN
         BLOCK "04090000"  /* Lang = US English, Charset = ASCII */
         BEGIN
             VALUE "ProductName", "GNU libmicrohttpd\0"
-            VALUE "ProductVersion", "0.9.77\0"
-            VALUE "FileVersion", "0.9.77\0"
+            VALUE "ProductVersion", "1.0.1\0"
+            VALUE "FileVersion", "1.0.1\0"
             VALUE "FileDescription", "GNU libmicrohttpd DLL for Windows (VC build)\0"
             VALUE "InternalName", "libmicrohttpd\0"
 #if defined(_DEBUG)

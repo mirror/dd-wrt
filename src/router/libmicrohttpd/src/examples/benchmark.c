@@ -1,6 +1,7 @@
 /*
      This file is part of libmicrohttpd
      Copyright (C) 2007, 2013 Christian Grothoff (and other contributing authors)
+     Copyright (C) 2014-2022 Evgeny Grin (Karlson2k)
 
      This library is free software; you can redistribute it and/or
      modify it under the terms of the GNU Lesser General Public
@@ -20,6 +21,7 @@
  * @file benchmark.c
  * @brief minimal code to benchmark MHD GET performance
  * @author Christian Grothoff
+ * @author Karlson2k (Evgeny Grin)
  */
 
 #include "platform.h"
@@ -62,7 +64,7 @@ static struct MHD_Response *response;
  *
  * @param cls client-defined closure
  * @param connection connection handle
- * @param con_cls value as set by the last call to
+ * @param req_cls value as set by the last call to
  *        the MHD_AccessHandlerCallback
  * @param toe reason for request termination
  * @see MHD_OPTION_NOTIFY_COMPLETED
@@ -70,10 +72,10 @@ static struct MHD_Response *response;
 static void
 completed_callback (void *cls,
                     struct MHD_Connection *connection,
-                    void **con_cls,
+                    void **req_cls,
                     enum MHD_RequestTerminationCode toe)
 {
-  struct timeval *tv = *con_cls;
+  struct timeval *tv = *req_cls;
   struct timeval tve;
   uint64_t delta;
   (void) cls;         /* Unused. Silent compiler warning. */
@@ -84,13 +86,8 @@ completed_callback (void *cls,
     return;
   gettimeofday (&tve, NULL);
 
-  delta = 0;
-  if (tve.tv_usec >= tv->tv_usec)
-    delta += (tve.tv_sec - tv->tv_sec) * 1000000LL
-             + (tve.tv_usec - tv->tv_usec);
-  else
-    delta += (tve.tv_sec - tv->tv_sec) * 1000000LL
-             - tv->tv_usec + tve.tv_usec;
+  delta = ((uint64_t) (tve.tv_sec - tv->tv_sec)) * 1000000LL
+          + (uint64_t) tve.tv_usec - (uint64_t) tv->tv_usec;
   if (delta < SMALL)
     small_deltas[delta]++;
   else
@@ -119,14 +116,14 @@ ahc_echo (void *cls,
           const char *url,
           const char *method,
           const char *version,
-          const char *upload_data, size_t *upload_data_size, void **ptr)
+          const char *upload_data, size_t *upload_data_size, void **req_cls)
 {
   (void) cls;               /* Unused. Silent compiler warning. */
   (void) url;               /* Unused. Silent compiler warning. */
   (void) version;           /* Unused. Silent compiler warning. */
   (void) upload_data;       /* Unused. Silent compiler warning. */
   (void) upload_data_size;  /* Unused. Silent compiler warning. */
-  (void) ptr;               /* Unused. Silent compiler warning. */
+  (void) req_cls;           /* Unused. Silent compiler warning. */
 
   if (0 != strcmp (method, "GET"))
     return MHD_NO;              /* unexpected method */
@@ -139,15 +136,22 @@ main (int argc, char *const *argv)
 {
   struct MHD_Daemon *d;
   unsigned int i;
+  int port;
 
   if (argc != 2)
   {
     printf ("%s PORT\n", argv[0]);
     return 1;
   }
-  response = MHD_create_response_from_buffer (strlen (PAGE),
-                                              (void *) PAGE,
-                                              MHD_RESPMEM_PERSISTENT);
+  port = atoi (argv[1]);
+  if ( (1 > port) || (port > 65535) )
+  {
+    fprintf (stderr,
+             "Port must be a number between 1 and 65535.\n");
+    return 1;
+  }
+  response = MHD_create_response_from_buffer_static (strlen (PAGE),
+                                                     (const void *) PAGE);
 #if 0
   (void) MHD_add_response_header (response,
                                   MHD_HTTP_HEADER_CONNECTION,
@@ -159,7 +163,7 @@ main (int argc, char *const *argv)
                         | MHD_USE_EPOLL | MHD_USE_TURBO
 #endif
                         ,
-                        atoi (argv[1]),
+                        (uint16_t) port,
                         NULL, NULL, &ahc_echo, NULL,
                         MHD_OPTION_CONNECTION_TIMEOUT, (unsigned int) 120,
                         MHD_OPTION_THREAD_POOL_SIZE, (unsigned

@@ -1,7 +1,7 @@
 /*
      This file is part of libmicrohttpd
      Copyright (C) 2007 Christian Grothoff
-     Copyright (C) 2014-2021 Evgeny Grin (Karlson2k)
+     Copyright (C) 2014-2022 Evgeny Grin (Karlson2k)
 
      libmicrohttpd is free software; you can redistribute it and/or modify
      it under the terms of the GNU General Public License as published
@@ -33,7 +33,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include "gauger.h"
+#include <errno.h>
 #include "mhd_has_in_name.h"
 
 #ifndef WINDOWS
@@ -86,7 +86,7 @@ ahc_echo (void *cls,
           const char *method,
           const char *version,
           const char *upload_data, size_t *upload_data_size,
-          void **mptr)
+          void **req_cls)
 {
   static int marker;
   struct MHD_Response *response;
@@ -99,27 +99,27 @@ ahc_echo (void *cls,
     printf ("METHOD: %s\n", method);
     return MHD_NO;              /* unexpected method */
   }
-  if ((*mptr != NULL) && (0 == *upload_data_size))
+  if ((*req_cls != NULL) && (0 == *upload_data_size))
   {
-    if (*mptr != &marker)
+    if (*req_cls != &marker)
       abort ();
-    response = MHD_create_response_from_buffer (2, "OK",
-                                                MHD_RESPMEM_PERSISTENT);
+    response = MHD_create_response_from_buffer_static (2,
+                                                       "OK");
     ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
     MHD_destroy_response (response);
-    *mptr = NULL;
+    *req_cls = NULL;
     return ret;
   }
   if (strlen (POST_DATA) != *upload_data_size)
     return MHD_YES;
   *upload_data_size = 0;
-  *mptr = &marker;
+  *req_cls = &marker;
   return MHD_YES;
 }
 
 
-static int
-testInternalPost ()
+static unsigned int
+testInternalPost (void)
 {
   struct MHD_Daemon *d;
   CURL *c;
@@ -128,7 +128,7 @@ testInternalPost ()
   CURLcode errornum;
   int i;
   char url[1024];
-  int port;
+  uint16_t port;
 
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
     port = 0;
@@ -153,7 +153,7 @@ testInternalPost ()
     {
       MHD_stop_daemon (d); return 32;
     }
-    port = (int) dinfo->port;
+    port = dinfo->port;
   }
   for (i = 0; i < LOOPCOUNT; i++)
   {
@@ -164,8 +164,8 @@ testInternalPost ()
     buf[0] = '\0';
     snprintf (url,
               sizeof (url),
-              "http://127.0.0.1:%d/hw%d",
-              port,
+              "http://127.0.0.1:%u/hw%d",
+              (unsigned int) port,
               i);
     curl_easy_setopt (c, CURLOPT_URL, url);
     curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
@@ -207,8 +207,8 @@ testInternalPost ()
 }
 
 
-static int
-testMultithreadedPost ()
+static unsigned int
+testMultithreadedPost (void)
 {
   struct MHD_Daemon *d;
   CURL *c;
@@ -217,7 +217,7 @@ testMultithreadedPost ()
   CURLcode errornum;
   int i;
   char url[1024];
-  int port;
+  uint16_t port;
 
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
     port = 0;
@@ -245,7 +245,7 @@ testMultithreadedPost ()
     {
       MHD_stop_daemon (d); return 32;
     }
-    port = (int) dinfo->port;
+    port = dinfo->port;
   }
   for (i = 0; i < LOOPCOUNT; i++)
   {
@@ -256,8 +256,8 @@ testMultithreadedPost ()
     buf[0] = '\0';
     snprintf (url,
               sizeof (url),
-              "http://127.0.0.1:%d/hw%d",
-              port,
+              "http://127.0.0.1:%u/hw%d",
+              (unsigned int) port,
               i);
     curl_easy_setopt (c, CURLOPT_URL, url);
     curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
@@ -299,8 +299,8 @@ testMultithreadedPost ()
 }
 
 
-static int
-testMultithreadedPoolPost ()
+static unsigned int
+testMultithreadedPoolPost (void)
 {
   struct MHD_Daemon *d;
   CURL *c;
@@ -309,7 +309,7 @@ testMultithreadedPoolPost ()
   CURLcode errornum;
   int i;
   char url[1024];
-  int port;
+  uint16_t port;
 
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
     port = 0;
@@ -336,7 +336,7 @@ testMultithreadedPoolPost ()
     {
       MHD_stop_daemon (d); return 32;
     }
-    port = (int) dinfo->port;
+    port = dinfo->port;
   }
   for (i = 0; i < LOOPCOUNT; i++)
   {
@@ -347,8 +347,8 @@ testMultithreadedPoolPost ()
     buf[0] = '\0';
     snprintf (url,
               sizeof (url),
-              "http://127.0.0.1:%d/hw%d",
-              port,
+              "http://127.0.0.1:%u/hw%d",
+              (unsigned int) port,
               i);
     curl_easy_setopt (c, CURLOPT_URL, url);
     curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
@@ -390,8 +390,8 @@ testMultithreadedPoolPost ()
 }
 
 
-static int
-testExternalPost ()
+static unsigned int
+testExternalPost (void)
 {
   struct MHD_Daemon *d;
   CURL *c;
@@ -413,10 +413,10 @@ testExternalPost ()
   time_t start;
   struct timeval tv;
   int i;
-  unsigned long long timeout;
+  uint64_t timeout64;
   long ctimeout;
   char url[1024];
-  int port;
+  uint16_t port;
 
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
     port = 0;
@@ -431,8 +431,10 @@ testExternalPost ()
   cbc.buf = buf;
   cbc.size = 2048;
   cbc.pos = 0;
-  d = MHD_start_daemon (MHD_USE_ERROR_LOG,
-                        port, NULL, NULL, &ahc_echo, NULL, MHD_OPTION_END);
+  d = MHD_start_daemon (MHD_USE_ERROR_LOG | MHD_USE_NO_THREAD_SAFETY,
+                        port, NULL, NULL, &ahc_echo, NULL,
+                        MHD_OPTION_APP_FD_SETSIZE, (int) FD_SETSIZE,
+                        MHD_OPTION_END);
   if (d == NULL)
     return 256;
   if (0 == port)
@@ -443,7 +445,7 @@ testExternalPost ()
     {
       MHD_stop_daemon (d); return 32;
     }
-    port = (int) dinfo->port;
+    port = dinfo->port;
   }
   multi = curl_multi_init ();
   if (multi == NULL)
@@ -460,8 +462,8 @@ testExternalPost ()
     buf[0] = '\0';
     snprintf (url,
               sizeof (url),
-              "http://127.0.0.1:%d/hw%d",
-              port,
+              "http://127.0.0.1:%u/hw%d",
+              (unsigned int) port,
               i);
     curl_easy_setopt (c, CURLOPT_URL, url);
     curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
@@ -516,15 +518,19 @@ testExternalPost ()
         MHD_stop_daemon (d);
         return 4096;
       }
-      if (MHD_NO == MHD_get_timeout (d, &timeout))
-        timeout = 100;          /* 100ms == INFTY -- CURL bug... */
+      if (MHD_NO == MHD_get_timeout64 (d, &timeout64))
+        timeout64 = 100;          /* 100ms == INFTY -- CURL bug... */
       if ((CURLM_OK == curl_multi_timeout (multi, &ctimeout)) &&
-          (ctimeout < (long long) timeout) && (ctimeout >= 0))
-        timeout = ctimeout;
-      if ( (c == NULL) || (0 == running) )
-        timeout = 0; /* terminate quickly... */
-      tv.tv_sec = timeout / 1000;
-      tv.tv_usec = (timeout % 1000) * 1000;
+          (ctimeout >= 0) && ((uint64_t) ctimeout < timeout64))
+        timeout64 = (uint64_t) ctimeout;
+      if (0 == running)
+        timeout64 = 0; /* terminate quickly... */
+#if ! defined(_WIN32) || defined(__CYGWIN__)
+      tv.tv_sec = (time_t) (timeout64 / 1000);
+#else  /* Native W32 */
+      tv.tv_sec = (long) (timeout64 / 1000);
+#endif /* Native W32 */
+      tv.tv_usec = (long) (1000 * (timeout64 % 1000));
       if (-1 == select (maxposixs + 1, &rs, &ws, &es, &tv))
       {
 #ifdef MHD_POSIX_SOCKETS
@@ -576,14 +582,11 @@ testExternalPost ()
           fprintf (stderr, "libcurl haven't returned OK code\n");
           abort ();
         }
-        curl_multi_remove_handle (multi, c);
-        curl_easy_cleanup (c);
-        c = NULL;
         break;
       }
       MHD_run (d);
     }
-    if (c != NULL)
+    if (NULL != c)
     {
       curl_multi_remove_handle (multi, c);
       curl_easy_cleanup (c);
@@ -615,7 +618,7 @@ static unsigned long long start_time;
  * @return current time in ms
  */
 static unsigned long long
-now ()
+now (void)
 {
   struct timeval tv;
 
@@ -644,36 +647,24 @@ main (int argc, char *const *argv)
              oneone ? "%s: Sequential POSTs (http/1.1) %f/s\n" :
              "%s: Sequential POSTs (http/1.0) %f/s\n",
              "internal select",
-             (double) 1000 * LOOPCOUNT / (now () - start_time + 1.0));
-    GAUGER ("internal select",
-            oneone ? "Sequential POSTs (http/1.1)" :
-            "Sequential POSTs (http/1.0)",
-            (double) 1000 * LOOPCOUNT / (now () - start_time + 1.0),
-            "requests/s");
+             (double) 1000 * LOOPCOUNT
+             / ((double) (now () - start_time) + 1.0));
     start_time = now ();
     errorCount += testMultithreadedPost ();
     fprintf (stderr,
              oneone ? "%s: Sequential POSTs (http/1.1) %f/s\n" :
              "%s: Sequential POSTs (http/1.0) %f/s\n",
              "multithreaded post",
-             (double) 1000 * LOOPCOUNT / (now () - start_time + 1.0));
-    GAUGER ("Multithreaded select",
-            oneone ? "Sequential POSTs (http/1.1)" :
-            "Sequential POSTs (http/1.0)",
-            (double) 1000 * LOOPCOUNT / (now () - start_time + 1.0),
-            "requests/s");
+             (double) 1000 * LOOPCOUNT
+             / ((double) (now () - start_time) + 1.0));
     start_time = now ();
     errorCount += testMultithreadedPoolPost ();
     fprintf (stderr,
              oneone ? "%s: Sequential POSTs (http/1.1) %f/s\n" :
              "%s: Sequential POSTs (http/1.0) %f/s\n",
              "thread with pool",
-             (double) 1000 * LOOPCOUNT / (now () - start_time + 1.0));
-    GAUGER ("thread with pool",
-            oneone ? "Sequential POSTs (http/1.1)" :
-            "Sequential POSTs (http/1.0)",
-            (double) 1000 * LOOPCOUNT / (now () - start_time + 1.0),
-            "requests/s");
+             (double) 1000 * LOOPCOUNT
+             / ((double) (now () - start_time) + 1.0));
   }
   start_time = now ();
   errorCount += testExternalPost ();
@@ -681,12 +672,8 @@ main (int argc, char *const *argv)
            oneone ? "%s: Sequential POSTs (http/1.1) %f/s\n" :
            "%s: Sequential POSTs (http/1.0) %f/s\n",
            "external select",
-           (double) 1000 * LOOPCOUNT / (now () - start_time + 1.0));
-  GAUGER ("external select",
-          oneone ? "Sequential POSTs (http/1.1)" :
-          "Sequential POSTs (http/1.0)",
-          (double) 1000 * LOOPCOUNT / (now () - start_time + 1.0),
-          "requests/s");
+           (double) 1000 * LOOPCOUNT
+           / ((double) (now () - start_time) + 1.0));
   if (errorCount != 0)
     fprintf (stderr, "Error (code: %u)\n", errorCount);
   curl_global_cleanup ();

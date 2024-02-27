@@ -1,6 +1,6 @@
 /*
   This file is part of libmicrohttpd
-  Copyright (C) 2015, 2016 Karlson2k (Evgeny Grin)
+  Copyright (C) 2015-2023 Karlson2k (Evgeny Grin)
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -38,6 +38,8 @@
 #include <stdbool.h>
 #endif /* HAVE_STDBOOL_H */
 
+#include "mhd_str_types.h"
+
 #if defined(_MSC_FULL_VER) && ! defined(_SSIZE_T_DEFINED)
 #define _SSIZE_T_DEFINED
 typedef intptr_t ssize_t;
@@ -47,25 +49,6 @@ typedef intptr_t ssize_t;
 #include "mhd_limits.h"
 #endif /* MHD_FAVOR_SMALL_CODE */
 
-#ifndef MHD_STATICSTR_LEN_
-/**
- * Determine length of static string / macro strings at compile time.
- */
-#define MHD_STATICSTR_LEN_(macro) (sizeof(macro) / sizeof(char) - 1)
-#endif /* ! MHD_STATICSTR_LEN_ */
-
-struct _MHD_str_w_len
-{
-  const char *str;
-  const size_t len;
-};
-
-/**
- * Static string initialiser for struct _MHD_str_w_len
- */
-#define _MHD_S_STR_W_LEN(str) { str, MHD_STATICSTR_LEN_(str) }
-
-
 /*
  * Block of functions/macros that use US-ASCII charset as required by HTTP
  * standards. Not affected by current locale settings.
@@ -74,6 +57,7 @@ struct _MHD_str_w_len
 #ifndef MHD_FAVOR_SMALL_CODE
 /**
  * Check two strings for equality, ignoring case of US-ASCII letters.
+ *
  * @param str1 first string to compare
  * @param str2 second string to compare
  * @return non-zero if two strings are equal, zero otherwise.
@@ -107,12 +91,13 @@ MHD_str_equal_caseless_n_ (const char *const str1,
 
 /**
  * Check two string for equality, ignoring case of US-ASCII letters and
- * checking exactly @a len characters.
- * Compares exactly @a len characters, including binary zero characters.
+ * checking not more than @a len bytes.
+ * Compares not more first than @a len bytes, including binary zero characters.
+ * Comparison stops at first unmatched byte.
  * @param str1 first string to compare
  * @param str2 second string to compare
  * @param len number of characters to compare
- * @return non-zero if two strings are equal, zero otherwise.
+ * @return non-zero if @a len bytes are equal, zero otherwise.
  */
 bool
 MHD_str_equal_caseless_bin_n_ (const char *const str1,
@@ -121,9 +106,27 @@ MHD_str_equal_caseless_bin_n_ (const char *const str1,
 
 
 /**
+ * Check whether string is equal statically allocated another string,
+ * ignoring case of US-ASCII letters and checking not more than @a len bytes.
+ *
+ * If strings have different sizes (lengths) then macro returns boolean false
+ * without checking the content.
+ *
+ * Compares not more first than @a len bytes, including binary zero characters.
+ * Comparison stops at first unmatched byte.
+ * @param a the statically allocated string to compare
+ * @param s the string to compare
+ * @param len number of characters to compare
+ * @return non-zero if @a len bytes are equal, zero otherwise.
+ */
+#define MHD_str_equal_caseless_s_bin_n_(a,s,l) \
+  ((MHD_STATICSTR_LEN_(a) == (l)) \
+   && MHD_str_equal_caseless_bin_n_(a,s,l))
+
+/**
  * Check whether @a str has case-insensitive @a token.
  * Token could be surrounded by spaces and tabs and delimited by comma.
- * Match succeed if substring between start, end of string or comma
+ * Match succeed if substring between start, end (of string) or comma
  * contains only case-insensitive token and optional spaces and tabs.
  * @warning token must not contain null-characters except optional
  *          terminating null-character.
@@ -225,8 +228,9 @@ MHD_str_remove_tokens_caseless_ (char *str,
 /**
  * Convert decimal US-ASCII digits in string to number in uint64_t.
  * Conversion stopped at first non-digit character.
+ *
  * @param str string to convert
- * @param out_val pointer to uint64_t to store result of conversion
+ * @param[out] out_val pointer to uint64_t to store result of conversion
  * @return non-zero number of characters processed on succeed,
  *         zero if no digit is found, resulting value is larger
  *         then possible to store in uint64_t or @a out_val is NULL
@@ -240,9 +244,10 @@ MHD_str_to_uint64_ (const char *str,
  * number in uint64_t.
  * Conversion stopped at first non-digit character or after @a maxlen
  * digits.
+ *
  * @param str string to convert
  * @param maxlen maximum number of characters to process
- * @param out_val pointer to uint64_t to store result of conversion
+ * @param[out] out_val pointer to uint64_t to store result of conversion
  * @return non-zero number of characters processed on succeed,
  *         zero if no digit is found, resulting value is larger
  *         then possible to store in uint64_t or @a out_val is NULL
@@ -256,8 +261,9 @@ MHD_str_to_uint64_n_ (const char *str,
 /**
  * Convert hexadecimal US-ASCII digits in string to number in uint32_t.
  * Conversion stopped at first non-digit character.
+ *
  * @param str string to convert
- * @param out_val pointer to uint32_t to store result of conversion
+ * @param[out] out_val pointer to uint32_t to store result of conversion
  * @return non-zero number of characters processed on succeed,
  *         zero if no digit is found, resulting value is larger
  *         then possible to store in uint32_t or @a out_val is NULL
@@ -272,9 +278,10 @@ MHD_strx_to_uint32_ (const char *str,
  * to number in uint32_t.
  * Conversion stopped at first non-digit character or after @a maxlen
  * digits.
+ *
  * @param str string to convert
  * @param maxlen maximum number of characters to process
- * @param out_val pointer to uint32_t to store result of conversion
+ * @param[out] out_val pointer to uint32_t to store result of conversion
  * @return non-zero number of characters processed on succeed,
  *         zero if no digit is found, resulting value is larger
  *         then possible to store in uint32_t or @a out_val is NULL
@@ -288,8 +295,9 @@ MHD_strx_to_uint32_n_ (const char *str,
 /**
  * Convert hexadecimal US-ASCII digits in string to number in uint64_t.
  * Conversion stopped at first non-digit character.
+ *
  * @param str string to convert
- * @param out_val pointer to uint64_t to store result of conversion
+ * @param[out] out_val pointer to uint64_t to store result of conversion
  * @return non-zero number of characters processed on succeed,
  *         zero if no digit is found, resulting value is larger
  *         then possible to store in uint64_t or @a out_val is NULL
@@ -304,9 +312,10 @@ MHD_strx_to_uint64_ (const char *str,
  * to number in uint64_t.
  * Conversion stopped at first non-digit character or after @a maxlen
  * digits.
+ *
  * @param str string to convert
  * @param maxlen maximum number of characters to process
- * @param out_val pointer to uint64_t to store result of conversion
+ * @param[out] out_val pointer to uint64_t to store result of conversion
  * @return non-zero number of characters processed on succeed,
  *         zero if no digit is found, resulting value is larger
  *         then possible to store in uint64_t or @a out_val is NULL
@@ -325,15 +334,16 @@ MHD_strx_to_uint64_n_ (const char *str,
  * Conversion stopped at first non-digit character or after @a maxlen
  * digits.
  * To be used only within macro.
+ *
  * @param str the string to convert
  * @param maxlen the maximum number of characters to process
- * @param out_val the pointer to uint64_t to store result of conversion
- * @param val_size the size of variable pointed by @a out_val
+ * @param out_val the pointer to variable to store result of conversion
+ * @param val_size the size of variable pointed by @a out_val, in bytes, 4 or 8
  * @param max_val the maximum decoded number
  * @param base the numeric base, 10 or 16
  * @return non-zero number of characters processed on succeed,
  *         zero if no digit is found, resulting value is larger
- *         then @ max_val or @a out_val is NULL
+ *         then @a max_val, @a val_size is not 4/8 or @a out_val is NULL
  */
 size_t
 MHD_str_to_uvalue_n_ (const char *str,
@@ -450,6 +460,283 @@ MHD_uint8_to_str_pad (uint8_t val,
                       size_t buf_size);
 
 
+/**
+ * Convert @a size bytes from input binary data to lower case
+ * hexadecimal digits.
+ * Result is NOT zero-terminated
+ * @param bin the pointer to the binary data to convert
+ * @param size the size in bytes of the binary data to convert
+ * @param[out] hex the output buffer, should be at least 2 * @a size
+ * @return The number of characters written to the output buffer.
+ */
+size_t
+MHD_bin_to_hex (const void *bin,
+                size_t size,
+                char *hex);
+
+/**
+ * Convert @a size bytes from input binary data to lower case
+ * hexadecimal digits, zero-terminate the result.
+ * @param bin the pointer to the binary data to convert
+ * @param size the size in bytes of the binary data to convert
+ * @param[out] hex the output buffer, should be at least 2 * @a size + 1
+ * @return The number of characters written to the output buffer,
+ *         not including terminating zero.
+ */
+size_t
+MHD_bin_to_hex_z (const void *bin,
+                  size_t size,
+                  char *hex);
+
+/**
+ * Convert hexadecimal digits to binary data.
+ *
+ * The input decoded byte-by-byte (each byte is two hexadecimal digits).
+ * If length is an odd number, extra leading zero is assumed.
+ *
+ * @param hex the input string with hexadecimal digits
+ * @param len the length of the input string
+ * @param[out] bin the output buffer, must be at least len/2 bytes long (or
+ *                 len/2 + 1 if @a len is not even number)
+ * @return the number of bytes written to the output buffer,
+ *         zero if found any character which is not hexadecimal digits
+ */
+size_t
+MHD_hex_to_bin (const char *hex,
+                size_t len,
+                void *bin);
+
+/**
+ * Decode string with percent-encoded characters as defined by
+ * RFC 3986 #section-2.1.
+ *
+ * This function decode string by converting percent-encoded characters to
+ * their decoded versions and copying all other characters without extra
+ * processing.
+ *
+ * @param pct_encoded the input string to be decoded
+ * @param pct_encoded_len the length of the @a pct_encoded
+ * @param[out] decoded the output buffer, NOT zero-terminated, can point
+ *                     to the same buffer as @a pct_encoded
+ * @param buf_size the size of the output buffer
+ * @return the number of characters written to the output buffer or
+ *         zero if any percent-encoded characters is broken ('%' followed
+ *         by less than two hexadecimal digits) or output buffer is too
+ *         small to hold the result
+ */
+size_t
+MHD_str_pct_decode_strict_n_ (const char *pct_encoded,
+                              size_t pct_encoded_len,
+                              char *decoded,
+                              size_t buf_size);
+
+/**
+ * Decode string with percent-encoded characters as defined by
+ * RFC 3986 #section-2.1.
+ *
+ * This function decode string by converting percent-encoded characters to
+ * their decoded versions and copying all other characters without extra
+ * processing.
+ *
+ * Any invalid percent-encoding sequences ('%' symbol not followed by two
+ * valid hexadecimal digits) are copied to the output string without decoding.
+ *
+ * @param pct_encoded the input string to be decoded
+ * @param pct_encoded_len the length of the @a pct_encoded
+ * @param[out] decoded the output buffer, NOT zero-terminated, can point
+ *                     to the same buffer as @a pct_encoded
+ * @param buf_size the size of the output buffer
+ * @param[out] broken_encoding will be set to true if any '%' symbol is not
+ *                             followed by two valid hexadecimal digits,
+ *                             optional, can be NULL
+ * @return the number of characters written to the output buffer or
+ *         zero if output buffer is too small to hold the result
+ */
+size_t
+MHD_str_pct_decode_lenient_n_ (const char *pct_encoded,
+                               size_t pct_encoded_len,
+                               char *decoded,
+                               size_t buf_size,
+                               bool *broken_encoding);
+
+
+/**
+ * Decode string in-place with percent-encoded characters as defined by
+ * RFC 3986 #section-2.1.
+ *
+ * This function decode string by converting percent-encoded characters to
+ * their decoded versions and copying back all other characters without extra
+ * processing.
+ *
+ * @param[in,out] str the string to be updated in-place, must be zero-terminated
+ *                    on input, the output is zero-terminated; the string is
+ *                    truncated to zero length if broken encoding is found
+ * @return the number of character in decoded string
+ */
+size_t
+MHD_str_pct_decode_in_place_strict_ (char *str);
+
+
+/**
+ * Decode string in-place with percent-encoded characters as defined by
+ * RFC 3986 #section-2.1.
+ *
+ * This function decode string by converting percent-encoded characters to
+ * their decoded versions and copying back all other characters without extra
+ * processing.
+ *
+ * Any invalid percent-encoding sequences ('%' symbol not followed by two
+ * valid hexadecimal digits) are copied to the output string without decoding.
+ *
+ * @param[in,out] str the string to be updated in-place, must be zero-terminated
+ *                    on input, the output is zero-terminated
+ * @param[out] broken_encoding will be set to true if any '%' symbol is not
+ *                             followed by two valid hexadecimal digits,
+ *                             optional, can be NULL
+ * @return the number of character in decoded string
+ */
+size_t
+MHD_str_pct_decode_in_place_lenient_ (char *str,
+                                      bool *broken_encoding);
+
+#ifdef DAUTH_SUPPORT
+/**
+ * Check two strings for equality, "unquoting" the first string from quoted
+ * form as specified by RFC7230#section-3.2.6 and RFC7694#quoted.strings.
+ *
+ * Null-termination for input strings is not required, binary zeros compared
+ * like other characters.
+ *
+ * @param quoted the quoted string to compare, must NOT include leading and
+ *               closing DQUOTE chars, does not need to be zero-terminated
+ * @param quoted_len the length in chars of the @a quoted string
+ * @param unquoted the unquoted string to compare, does not need to be
+ *                 zero-terminated
+ * @param unquoted_len the length in chars of the @a unquoted string
+ * @return zero if quoted form is broken (no character after the last escaping
+ *         backslash), zero if strings are not equal after unquoting of the
+ *         first string,
+ *         non-zero if two strings are equal after unquoting of the
+ *         first string.
+ */
+bool
+MHD_str_equal_quoted_bin_n (const char *quoted,
+                            size_t quoted_len,
+                            const char *unquoted,
+                            size_t unquoted_len);
+
+/**
+ * Check whether the string after "unquoting" equals static string.
+ *
+ * Null-termination for input string is not required, binary zeros compared
+ * like other characters.
+ *
+ * @param q the quoted string to compare, must NOT include leading and
+ *          closing DQUOTE chars, does not need to be zero-terminated
+ * @param l the length in chars of the @a q string
+ * @param u the unquoted static string to compare
+ * @return zero if quoted form is broken (no character after the last escaping
+ *         backslash), zero if strings are not equal after unquoting of the
+ *         first string,
+ *         non-zero if two strings are equal after unquoting of the
+ *         first string.
+ */
+#define MHD_str_equal_quoted_s_bin_n(q,l,u) \
+    MHD_str_equal_quoted_bin_n(q,l,u,MHD_STATICSTR_LEN_(u))
+
+/**
+ * Check two strings for equality, "unquoting" the first string from quoted
+ * form as specified by RFC7230#section-3.2.6 and RFC7694#quoted.strings and
+ * ignoring case of US-ASCII letters.
+ *
+ * Null-termination for input strings is not required, binary zeros compared
+ * like other characters.
+ *
+ * @param quoted the quoted string to compare, must NOT include leading and
+ *               closing DQUOTE chars, does not need to be zero-terminated
+ * @param quoted_len the length in chars of the @a quoted string
+ * @param unquoted the unquoted string to compare, does not need to be
+ *                 zero-terminated
+ * @param unquoted_len the length in chars of the @a unquoted string
+ * @return zero if quoted form is broken (no character after the last escaping
+ *         backslash), zero if strings are not equal after unquoting of the
+ *         first string,
+ *         non-zero if two strings are caseless equal after unquoting of the
+ *         first string.
+ */
+bool
+MHD_str_equal_caseless_quoted_bin_n (const char *quoted,
+                                     size_t quoted_len,
+                                     const char *unquoted,
+                                     size_t unquoted_len);
+
+/**
+ * Check whether the string after "unquoting" equals static string, ignoring
+ * case of US-ASCII letters.
+ *
+ * Null-termination for input string is not required, binary zeros compared
+ * like other characters.
+ *
+ * @param q the quoted string to compare, must NOT include leading and
+ *          closing DQUOTE chars, does not need to be zero-terminated
+ * @param l the length in chars of the @a q string
+ * @param u the unquoted static string to compare
+ * @return zero if quoted form is broken (no character after the last escaping
+ *         backslash), zero if strings are not equal after unquoting of the
+ *         first string,
+ *         non-zero if two strings are caseless equal after unquoting of the
+ *         first string.
+ */
+#define MHD_str_equal_caseless_quoted_s_bin_n(q,l,u) \
+    MHD_str_equal_caseless_quoted_bin_n(q,l,u,MHD_STATICSTR_LEN_(u))
+
+/**
+ * Convert string from quoted to unquoted form as specified by
+ * RFC7230#section-3.2.6 and RFC7694#quoted.strings.
+ *
+ * @param quoted the quoted string, must NOT include leading and closing
+ *               DQUOTE chars, does not need to be zero-terminated
+ * @param quoted_len the length in chars of the @a quoted string
+ * @param[out] result the pointer to the buffer to put the result, must
+ *                    be at least @a size character long. May be modified even
+ *                    if @a quoted is invalid sequence. The result is NOT
+ *                    zero-terminated.
+ * @return The number of characters written to the output buffer,
+ *         zero if last backslash is not followed by any character (or
+ *         @a quoted_len is zero).
+ */
+size_t
+MHD_str_unquote (const char *quoted,
+                 size_t quoted_len,
+                 char *result);
+
+#endif /* DAUTH_SUPPORT */
+
+#if defined(DAUTH_SUPPORT) || defined(BAUTH_SUPPORT)
+
+/**
+ * Convert string from unquoted to quoted form as specified by
+ * RFC7230#section-3.2.6 and RFC7694#quoted.strings.
+ *
+ * @param unquoted the unquoted string, does not need to be zero-terminated
+ * @param unquoted_len the length in chars of the @a unquoted string
+ * @param[out] result the pointer to the buffer to put the result. May be
+ *                    modified even if function failed due to insufficient
+ *                    space. The result is NOT zero-terminated and does not
+ *                    have opening and closing DQUOTE chars.
+ * @param buf_size the size of the allocated memory for @a result
+ * @return The number of copied characters, can be up to two times more than
+ *         @a unquoted_len, zero if @a unquoted_len is zero or if quoted
+ *         string is larger than @a buf_size.
+ */
+size_t
+MHD_str_quote (const char *unquoted,
+               size_t unquoted_len,
+               char *result,
+               size_t buf_size);
+
+#endif /* DAUTH_SUPPORT || BAUTH_SUPPORT */
+
 #ifdef BAUTH_SUPPORT
 
 /**
@@ -473,7 +760,7 @@ MHD_uint8_to_str_pad (uint8_t val,
  * @param bin_size the size of the @a bin buffer in bytes, if the size is
  *                 at least @a base64_len / 4 * 3 then result will always
  *                 fit, regardless of the amount of the padding characters
- * @return 0 if @base64_len is zero, or input string has wrong data (not
+ * @return 0 if @a base64_len is zero, or input string has wrong data (not
  *         valid Base64 sequence), or @a bin_size is too small;
  *         non-zero number of bytes written to the @a bin, the number must be
  *         (base64_len / 4 * 3 - 2), (base64_len / 4 * 3 - 1) or

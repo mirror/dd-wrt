@@ -18,29 +18,14 @@
 #   and this notice are preserved. This file is offered as-is, without any
 #   warranty.
 
-#serial 4
+#serial 6
 
 AC_DEFUN([MHD_CHECK_SOCKET_SHUTDOWN_TRIGGER],[dnl
   AC_PREREQ([2.64])dnl
   AC_REQUIRE([AC_CANONICAL_HOST])dnl
   AC_REQUIRE([AC_PROG_CC])dnl
   AC_REQUIRE([AX_PTHREAD])dnl
-  AC_CHECK_HEADERS([sys/time.h time.h])dnl
-  MHD_CHECK_FUNC([[gettimeofday]],
-    [[
-#ifdef HAVE_SYS_TIME_H
-#include <sys/time.h>
-#endif /* HAVE_SYS_TIME_H */
-#ifdef HAVE_TIME_H
-#include <time.h>
-#endif /* HAVE_TIME_H */
-    ]],
-    [[
-  struct timeval tv;
-  if (0 != gettimeofday (&tv, (void*) 0))
-    return 1;
-    ]]
-  )
+  AC_REQUIRE([MHD_CHECK_FUNC_GETTIMEOFDAY])dnl
   MHD_CHECK_FUNC([[usleep]], [[#include <unistd.h>]], [[usleep(100000);]])
   MHD_CHECK_FUNC([[nanosleep]], [[#include <time.h>]], [[struct timespec ts2, ts1 = {0, 0}; nanosleep(&ts1, &ts2);]])
   AC_CHECK_HEADERS([string.h sys/types.h sys/socket.h netinet/in.h time.h sys/select.h netinet/tcp.h],[],[], [AC_INCLUDES_DEFAULT])

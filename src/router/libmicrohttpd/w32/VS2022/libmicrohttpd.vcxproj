@@ -4,6 +4,7 @@
   <Import Project="$(MhdW32Common)project-configs.props" />
   <Import Project="$(MhdW32Common)libmicrohttpd-files.vcxproj" />
   <PropertyGroup Label="Globals">
+    <VCProjectVersion>17.0</VCProjectVersion>
     <ProjectGuid>{9CFB0342-A9E7-483E-BEE5-A1DE22584C5A}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>libmicrohttpd</RootNamespace>

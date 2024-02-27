@@ -1,6 +1,7 @@
 /*
      This file is part of libmicrohttpd
-     Copyright (C) 2007-2021 Daniel Pittman, Christian Grothoff, and Evgeny Grin
+     Copyright (C) 2007-2021 Daniel Pittman and Christian Grothoff
+     Copyright (C) 2014-2022 Karlson2k (Evgeny Grin)
 
      This library is free software; you can redistribute it and/or
      modify it under the terms of the GNU Lesser General Public
@@ -24,6 +25,7 @@
  * @author Karlson2k (Evgeny Grin)
  */
 
+#include "postprocessor.h"
 #include "internal.h"
 #include "mhd_str.h"
 #include "mhd_compat.h"
@@ -36,223 +38,8 @@
  */
 #define XBUF_SIZE 512
 
-/**
- * States in the PP parser's state machine.
- */
-enum PP_State
-{
-  /* general states */
-  PP_Error,
-  PP_Done,
-  PP_Init,
-  PP_NextBoundary,
 
-  /* url encoding-states */
-  PP_ProcessKey,
-  PP_ProcessValue,
-  PP_Callback,
-
-  /* post encoding-states  */
-  PP_ProcessEntryHeaders,
-  PP_PerformCheckMultipart,
-  PP_ProcessValueToBoundary,
-  PP_PerformCleanup,
-
-  /* nested post-encoding states */
-  PP_Nested_Init,
-  PP_Nested_PerformMarking,
-  PP_Nested_ProcessEntryHeaders,
-  PP_Nested_ProcessValueToBoundary,
-  PP_Nested_PerformCleanup
-
-};
-
-
-enum RN_State
-{
-  /**
-   * No RN-preprocessing in this state.
-   */
-  RN_Inactive = 0,
-
-  /**
-   * If the next character is CR, skip it.  Otherwise,
-   * just go inactive.
-   */
-  RN_OptN = 1,
-
-  /**
-   * Expect LFCR (and only LFCR).  As always, we also
-   * expect only LF or only CR.
-   */
-  RN_Full = 2,
-
-  /**
-   * Expect either LFCR or '--'LFCR.  If '--'LFCR, transition into dash-state
-   * for the main state machine
-   */
-  RN_Dash = 3,
-
-  /**
-   * Got a single dash, expect second dash.
-   */
-  RN_Dash2 = 4
-};
-
-
-/**
- * Bits for the globally known fields that
- * should not be deleted when we exit the
- * nested state.
- */
-enum NE_State
-{
-  NE_none = 0,
-  NE_content_name = 1,
-  NE_content_type = 2,
-  NE_content_filename = 4,
-  NE_content_transfer_encoding = 8
-};
-
-
-/**
- * Internal state of the post-processor.  Note that the fields
- * are sorted by type to enable optimal packing by the compiler.
- */
-struct MHD_PostProcessor
-{
-
-  /**
-   * The connection for which we are doing
-   * POST processing.
-   */
-  struct MHD_Connection *connection;
-
-  /**
-   * Function to call with POST data.
-   */
-  MHD_PostDataIterator ikvi;
-
-  /**
-   * Extra argument to ikvi.
-   */
-  void *cls;
-
-  /**
-   * Encoding as given by the headers of the connection.
-   */
-  const char *encoding;
-
-  /**
-   * Primary boundary (points into encoding string)
-   */
-  const char *boundary;
-
-  /**
-   * Nested boundary (if we have multipart/mixed encoding).
-   */
-  char *nested_boundary;
-
-  /**
-   * Pointer to the name given in disposition.
-   */
-  char *content_name;
-
-  /**
-   * Pointer to the (current) content type.
-   */
-  char *content_type;
-
-  /**
-   * Pointer to the (current) filename.
-   */
-  char *content_filename;
-
-  /**
-   * Pointer to the (current) encoding.
-   */
-  char *content_transfer_encoding;
-
-  /**
-   * Value data left over from previous iteration.
-   */
-  char xbuf[2];
-
-  /**
-   * Size of our buffer for the key.
-   */
-  size_t buffer_size;
-
-  /**
-   * Current position in the key buffer.
-   */
-  size_t buffer_pos;
-
-  /**
-   * Current position in @e xbuf.
-   */
-  size_t xbuf_pos;
-
-  /**
-   * Current offset in the value being processed.
-   */
-  uint64_t value_offset;
-
-  /**
-   * strlen(boundary) -- if boundary != NULL.
-   */
-  size_t blen;
-
-  /**
-   * strlen(nested_boundary) -- if nested_boundary != NULL.
-   */
-  size_t nlen;
-
-  /**
-   * Do we have to call the 'ikvi' callback when processing the
-   * multipart post body even if the size of the payload is zero?
-   * Set to #MHD_YES whenever we parse a new multiparty entry header,
-   * and to #MHD_NO the first time we call the 'ikvi' callback.
-   * Used to ensure that we do always call 'ikvi' even if the
-   * payload is empty (but not more than once).
-   */
-  bool must_ikvi;
-
-  /**
-   * Set if we still need to run the unescape logic
-   * on the key allocated at the end of this struct.
-   */
-  bool must_unescape_key;
-
-  /**
-   * State of the parser.
-   */
-  enum PP_State state;
-
-  /**
-   * Side-state-machine: skip LRCR (or just LF).
-   * Set to 0 if we are not in skip mode.  Set to 2
-   * if a LFCR is expected, set to 1 if a CR should
-   * be skipped if it is the next character.
-   */
-  enum RN_State skip_rn;
-
-  /**
-   * If we are in skip_rn with "dash" mode and
-   * do find 2 dashes, what state do we go into?
-   */
-  enum PP_State dash_state;
-
-  /**
-   * Which headers are global? (used to tell which
-   * headers were only valid for the nested multipart).
-   */
-  enum NE_State have;
-
-};
-
-
-struct MHD_PostProcessor *
+_MHD_EXTERN struct MHD_PostProcessor *
 MHD_create_post_processor (struct MHD_Connection *connection,
                            size_t buffer_size,
                            MHD_PostDataIterator iter,
@@ -266,18 +53,18 @@ MHD_create_post_processor (struct MHD_Connection *connection,
   if ( (buffer_size < 256) ||
        (NULL == connection) ||
        (NULL == iter))
-    mhd_panic (mhd_panic_cls,
-               __FILE__,
-               __LINE__,
-               NULL);
-  if (MHD_NO == MHD_lookup_connection_value_n (connection,
-                                               MHD_HEADER_KIND,
-                                               MHD_HTTP_HEADER_CONTENT_TYPE,
-                                               MHD_STATICSTR_LEN_ (
-                                                 MHD_HTTP_HEADER_CONTENT_TYPE),
-                                               &encoding,
-                                               NULL))
+    MHD_PANIC (_ ("libmicrohttpd API violation.\n"));
+  encoding = NULL;
+  if (MHD_NO ==
+      MHD_lookup_connection_value_n (connection,
+                                     MHD_HEADER_KIND,
+                                     MHD_HTTP_HEADER_CONTENT_TYPE,
+                                     MHD_STATICSTR_LEN_ (
+                                       MHD_HTTP_HEADER_CONTENT_TYPE),
+                                     &encoding,
+                                     NULL))
     return NULL;
+  mhd_assert (NULL != encoding);
   boundary = NULL;
   if (! MHD_str_equal_caseless_n_ (MHD_HTTP_POST_ENCODING_FORM_URLENCODED,
                                    encoding,
@@ -370,19 +157,22 @@ process_value (struct MHD_PostProcessor *pp,
   if ( (NULL != last_escape) &&
        (((size_t) (value_end - last_escape)) < sizeof (pp->xbuf)) )
   {
-    pp->xbuf_pos = value_end - last_escape;
+    mhd_assert (value_end >= last_escape);
+    pp->xbuf_pos = (size_t) (value_end - last_escape);
     memcpy (pp->xbuf,
             last_escape,
-            value_end - last_escape);
+            (size_t) (value_end - last_escape));
     value_end = last_escape;
   }
   while ( (value_start != value_end) ||
           (pp->must_ikvi) ||
           (xoff > 0) )
   {
-    size_t delta = value_end - value_start;
+    size_t delta = (size_t) (value_end - value_start);
     bool cut = false;
     size_t clen = 0;
+
+    mhd_assert (value_end >= value_start);
 
     if (delta > XBUF_SIZE - xoff)
       delta = XBUF_SIZE - xoff;
@@ -663,7 +453,8 @@ post_process_urlencoded (struct MHD_PostProcessor *pp,
       mhd_assert ((NULL != end_key) || (NULL == start_key));
       if (1)
       {
-        const size_t key_len = end_key - start_key;
+        const size_t key_len = (size_t) (end_key - start_key);
+        mhd_assert (end_key >= start_key);
         if (0 != key_len)
         {
           if ( (pp->buffer_pos + key_len >= pp->buffer_size) ||
@@ -706,11 +497,18 @@ post_process_urlencoded (struct MHD_PostProcessor *pp,
       pp->buffer_pos = 0;
       pp->state = PP_Init;
       break;
+    case PP_NextBoundary:
+    case PP_ProcessEntryHeaders:
+    case PP_PerformCheckMultipart:
+    case PP_ProcessValueToBoundary:
+    case PP_PerformCleanup:
+    case PP_Nested_Init:
+    case PP_Nested_PerformMarking:
+    case PP_Nested_ProcessEntryHeaders:
+    case PP_Nested_ProcessValueToBoundary:
+    case PP_Nested_PerformCleanup:
     default:
-      mhd_panic (mhd_panic_cls,
-                 __FILE__,
-                 __LINE__,
-                 NULL);              /* should never happen! */
+      MHD_PANIC (_ ("internal error.\n")); /* should never happen! */
     }
     mhd_assert ((end_key == NULL) || (start_key != NULL));
     mhd_assert ((end_value == NULL) || (start_value != NULL));
@@ -731,7 +529,8 @@ post_process_urlencoded (struct MHD_PostProcessor *pp,
     mhd_assert ((PP_ProcessKey == pp->state) || (NULL != end_key));
     if (NULL == end_key)
       end_key = &post_data[poff];
-    key_len = end_key - start_key;
+    mhd_assert (end_key >= start_key);
+    key_len = (size_t) (end_key - start_key);
     mhd_assert (0 != key_len); /* it must be always non-zero here */
     if (pp->buffer_pos + key_len >= pp->buffer_size)
     {
@@ -860,13 +659,13 @@ find_boundary (struct MHD_PostProcessor *pp,
                      '-',
                      pp->buffer_pos);
       if (NULL == dash)
-        (*ioffptr) += pp->buffer_pos;  /* skip entire buffer */
+        (*ioffptr) += pp->buffer_pos;         /* skip entire buffer */
       else if (dash == buf)
-        (*ioffptr)++;                  /* at least skip one byte */
+        (*ioffptr)++;                         /* at least skip one byte */
       else
-        (*ioffptr) += dash - buf;      /* skip to first possible boundary */
+        (*ioffptr) += (size_t) (dash - buf);  /* skip to first possible boundary */
     }
-    return MHD_NO;                     /* expected boundary */
+    return MHD_NO;                            /* expected boundary */
   }
   /* remove boundary from buffer */
   (*ioffptr) += 2 + blen;
@@ -914,7 +713,7 @@ try_get_value (const char *buf,
     if (NULL == (endv = strchr (&spos[klen + 2],
                                 '\"')))
       return;                   /* no end-quote */
-    vlen = endv - spos - klen - 1;
+    vlen = (size_t) (endv - spos) - klen - 1;
     *destination = malloc (vlen);
     if (NULL == *destination)
       return;                   /* out of memory */
@@ -1043,7 +842,7 @@ process_value_to_boundary (struct MHD_PostProcessor *pp,
         newline = pp->buffer_pos - 4;
         break;
       }
-      newline = r - buf;
+      newline = (size_t) (r - buf);
       if (0 == memcmp ("\r\n--",
                        &buf[newline],
                        4))
@@ -1430,11 +1229,11 @@ post_process_multipart (struct MHD_PostProcessor *pp,
       pp->state = PP_Nested_ProcessEntryHeaders;
       state_changed = 1;
       break;
+    case PP_ProcessKey:
+    case PP_ProcessValue:
+    case PP_Callback:
     default:
-      mhd_panic (mhd_panic_cls,
-                 __FILE__,
-                 __LINE__,
-                 NULL);              /* should never happen! */
+      MHD_PANIC (_ ("internal error.\n")); /* should never happen! */
     }
 AGAIN:
     if (ioff > 0)
@@ -1464,7 +1263,7 @@ END:
 }
 
 
-enum MHD_Result
+_MHD_EXTERN enum MHD_Result
 MHD_post_process (struct MHD_PostProcessor *pp,
                   const char *post_data,
                   size_t post_data_len)
@@ -1492,7 +1291,7 @@ MHD_post_process (struct MHD_PostProcessor *pp,
 }
 
 
-enum MHD_Result
+_MHD_EXTERN enum MHD_Result
 MHD_destroy_post_processor (struct MHD_PostProcessor *pp)
 {
   enum MHD_Result ret;

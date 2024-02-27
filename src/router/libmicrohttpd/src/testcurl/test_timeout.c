@@ -1,7 +1,7 @@
 /*
      This file is part of libmicrohttpd
      Copyright (C) 2007 Christian Grothoff
-     Copyright (C) 2016-2019 Evgeny Grin (Karlson2k)
+     Copyright (C) 2016-2022 Evgeny Grin (Karlson2k)
 
      libmicrohttpd is free software; you can redistribute it and/or modify
      it under the terms of the GNU General Public License as published
@@ -45,7 +45,7 @@
  * Pause execution for specified number of milliseconds.
  * @param ms the number of milliseconds to sleep
  */
-void
+static void
 _MHD_sleep (uint32_t ms)
 {
 #if defined(_WIN32)
@@ -96,11 +96,11 @@ struct CBC
 static void
 termination_cb (void *cls,
                 struct MHD_Connection *connection,
-                void **con_cls,
+                void **req_cls,
                 enum MHD_RequestTerminationCode toe)
 {
   int *test = cls;
-  (void) connection; (void) con_cls;       /* Unused. Silent compiler warning. */
+  (void) connection; (void) req_cls;       /* Unused. Silent compiler warning. */
 
   switch (toe)
   {
@@ -149,8 +149,8 @@ termination_cb (void *cls,
 static size_t
 putBuffer (void *stream, size_t size, size_t nmemb, void *ptr)
 {
-  unsigned int *pos = ptr;
-  unsigned int wrt;
+  size_t *pos = ptr;
+  size_t wrt;
 
   wrt = size * nmemb;
   if (wrt > 8 - (*pos))
@@ -190,14 +190,14 @@ ahc_echo (void *cls,
           const char *method,
           const char *version,
           const char *upload_data, size_t *upload_data_size,
-          void **unused)
+          void **req_cls)
 {
   int *done = cls;
   struct MHD_Response *response;
   enum MHD_Result ret;
-  (void) version; (void) unused;   /* Unused. Silent compiler warning. */
+  (void) version; (void) req_cls;   /* Unused. Silent compiler warning. */
 
-  if (0 != strcmp ("PUT", method))
+  if (0 != strcmp (MHD_HTTP_METHOD_PUT, method))
     return MHD_NO;              /* unexpected method */
   if ((*done) == 0)
   {
@@ -215,26 +215,25 @@ ahc_echo (void *cls,
     *done = 1;
     return MHD_YES;
   }
-  response = MHD_create_response_from_buffer (strlen (url),
-                                              (void *) url,
-                                              MHD_RESPMEM_MUST_COPY);
+  response = MHD_create_response_from_buffer_copy (strlen (url),
+                                                   (const void *) url);
   ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
   MHD_destroy_response (response);
   return ret;
 }
 
 
-static int
-testWithoutTimeout ()
+static unsigned int
+testWithoutTimeout (void)
 {
   struct MHD_Daemon *d;
   CURL *c;
   char buf[2048];
   struct CBC cbc;
-  unsigned int pos = 0;
+  size_t pos = 0;
   int done_flag = 0;
   CURLcode errornum;
-  int port;
+  uint16_t port;
 
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
     port = 0;
@@ -265,7 +264,7 @@ testWithoutTimeout ()
     {
       MHD_stop_daemon (d); return 32;
     }
-    port = (int) dinfo->port;
+    port = dinfo->port;
   }
   c = curl_easy_init ();
   curl_easy_setopt (c, CURLOPT_URL, "http://127.0.0.1/hello_world");
@@ -311,8 +310,8 @@ testWithoutTimeout ()
 }
 
 
-static int
-testWithTimeout ()
+static unsigned int
+testWithTimeout (void)
 {
   struct MHD_Daemon *d;
   CURL *c;
@@ -320,7 +319,7 @@ testWithTimeout ()
   struct CBC cbc;
   int done_flag = 0;
   CURLcode errornum;
-  int port;
+  uint16_t port;
 
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
     port = 0;
@@ -351,7 +350,7 @@ testWithTimeout ()
     {
       MHD_stop_daemon (d); return 32;
     }
-    port = (int) dinfo->port;
+    port = dinfo->port;
   }
   c = curl_easy_init ();
   curl_easy_setopt (c, CURLOPT_URL, "http://127.0.0.1/hello_world");

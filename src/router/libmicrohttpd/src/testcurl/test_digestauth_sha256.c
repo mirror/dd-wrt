@@ -1,7 +1,7 @@
 /*
      This file is part of libmicrohttpd
      Copyright (C) 2010, 2018 Christian Grothoff
-     Copyright (C) 2019-2021 Evgeny Grin (Karlson2k)
+     Copyright (C) 2019-2022 Evgeny Grin (Karlson2k)
 
      libmicrohttpd is free software; you can redistribute it and/or modify
      it under the terms of the GNU General Public License as published
@@ -27,18 +27,20 @@
  * @author Karlson2k (Evgeny Grin)
  */
 
-#include "MHD_config.h"
+#include "mhd_options.h"
 #include "platform.h"
 #include <curl/curl.h>
 #include <microhttpd.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#ifdef MHD_HTTPS_REQUIRE_GCRYPT
-#ifdef HAVE_GCRYPT_H
+#include <errno.h>
+
+#if defined(MHD_HTTPS_REQUIRE_GCRYPT) && \
+  (defined(MHD_SHA256_TLSLIB) || defined(MHD_MD5_TLSLIB))
+#define NEED_GCRYP_INIT 1
 #include <gcrypt.h>
-#endif
-#endif /* MHD_HTTPS_REQUIRE_GCRYPT */
+#endif /* MHD_HTTPS_REQUIRE_GCRYPT && (MHD_SHA256_TLSLIB || MHD_MD5_TLSLIB) */
 
 #ifndef WINDOWS
 #include <sys/socket.h>
@@ -87,7 +89,7 @@ ahc_echo (void *cls,
           const char *version,
           const char *upload_data,
           size_t *upload_data_size,
-          void **unused)
+          void **req_cls)
 {
   struct MHD_Response *response;
   char *username;
@@ -95,17 +97,24 @@ ahc_echo (void *cls,
   const char *realm = "test@example.com";
   enum MHD_Result ret;
   int ret_i;
+  static int already_called_marker;
   (void) cls; (void) url;                         /* Unused. Silent compiler warning. */
   (void) method; (void) version; (void) upload_data; /* Unused. Silent compiler warning. */
-  (void) upload_data_size; (void) unused;         /* Unused. Silent compiler warning. */
+  (void) upload_data_size; (void) req_cls;        /* Unused. Silent compiler warning. */
+
+  if (&already_called_marker != *req_cls)
+  { /* Called for the first time, request not fully read yet */
+    *req_cls = &already_called_marker;
+    /* Wait for complete request */
+    return MHD_YES;
+  }
 
   username = MHD_digest_auth_get_username (connection);
   if ( (username == NULL) ||
        (0 != strcmp (username, "testuser")) )
   {
-    response = MHD_create_response_from_buffer (strlen (DENIED),
-                                                DENIED,
-                                                MHD_RESPMEM_PERSISTENT);
+    response = MHD_create_response_from_buffer_static (strlen (DENIED),
+                                                       DENIED);
     ret = MHD_queue_auth_fail_response2 (connection,
                                          realm,
                                          MY_OPAQUE,
@@ -121,13 +130,11 @@ ahc_echo (void *cls,
                                   password,
                                   300,
                                   MHD_DIGEST_ALG_SHA256);
-  free (username);
-  if ( (ret_i == MHD_INVALID_NONCE) ||
-       (ret_i == MHD_NO) )
+  MHD_free (username);
+  if (ret_i != MHD_YES)
   {
-    response = MHD_create_response_from_buffer (strlen (DENIED),
-                                                DENIED,
-                                                MHD_RESPMEM_PERSISTENT);
+    response = MHD_create_response_from_buffer_static (strlen (DENIED),
+                                                       DENIED);
     if (NULL == response)
       return MHD_NO;
     ret = MHD_queue_auth_fail_response2 (connection,
@@ -140,9 +147,8 @@ ahc_echo (void *cls,
     MHD_destroy_response (response);
     return ret;
   }
-  response = MHD_create_response_from_buffer (strlen (PAGE),
-                                              PAGE,
-                                              MHD_RESPMEM_PERSISTENT);
+  response = MHD_create_response_from_buffer_static (strlen (PAGE),
+                                                     PAGE);
   ret = MHD_queue_response (connection,
                             MHD_HTTP_OK,
                             response);
@@ -151,8 +157,8 @@ ahc_echo (void *cls,
 }
 
 
-static int
-testDigestAuth ()
+static unsigned int
+testDigestAuth (void)
 {
   CURL *c;
   CURLcode errornum;
@@ -160,7 +166,7 @@ testDigestAuth ()
   struct CBC cbc;
   char buf[2048];
   char rnd[8];
-  int port;
+  uint16_t port;
   char url[128];
 #ifndef WINDOWS
   int fd;
@@ -189,9 +195,9 @@ testDigestAuth ()
   }
   while (off < 8)
   {
-    len = read (fd,
-                rnd,
-                8);
+    len = (size_t) read (fd,
+                         rnd + off,
+                         8 - off);
     if (len == (size_t) -1)
     {
       fprintf (stderr,
@@ -235,9 +241,10 @@ testDigestAuth ()
 #endif
   d = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG,
                         port, NULL, NULL,
-                        &ahc_echo, PAGE,
+                        &ahc_echo, NULL,
                         MHD_OPTION_DIGEST_AUTH_RANDOM, sizeof (rnd), rnd,
                         MHD_OPTION_NONCE_NC_SIZE, 300,
+                        MHD_OPTION_DIGEST_AUTH_DEFAULT_MAX_NC, (uint32_t) 999,
                         MHD_OPTION_END);
   if (d == NULL)
     return 1;
@@ -253,12 +260,12 @@ testDigestAuth ()
       MHD_stop_daemon (d);
       return 32;
     }
-    port = (int) dinfo->port;
+    port = dinfo->port;
   }
   snprintf (url,
             sizeof (url),
-            "http://127.0.0.1:%d/bar%%20foo%%3Fkey%%3Dvalue",
-            port);
+            "http://127.0.0.1:%u/bar%%20foo?key=value",
+            (unsigned int) port);
   c = curl_easy_init ();
   curl_easy_setopt (c, CURLOPT_URL, url);
   curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
@@ -298,6 +305,15 @@ main (int argc, char *const *argv)
   unsigned int errorCount = 0;
   curl_version_info_data *d = curl_version_info (CURLVERSION_NOW);
   (void) argc; (void) argv; /* Unused. Silent compiler warning. */
+#if (LIBCURL_VERSION_MAJOR == 7) && (LIBCURL_VERSION_MINOR == 62)
+  if (1)
+  {
+    fprintf (stderr, "libcurl version 7.62.x has bug in processing"
+             "URI with GET arguments for Digest Auth.\n");
+    fprintf (stderr, "This test cannot be performed.\n");
+    exit (77);
+  }
+#endif /* libcurl version 7.62.x */
 
 #ifdef CURL_VERSION_SSPI
   if (0 != (d->features & CURL_VERSION_SSPI))
@@ -307,14 +323,12 @@ main (int argc, char *const *argv)
   /* curl added SHA256 support in 7.57 = 7.0x39 */
   if (d->version_num < 0x073900)
     return 77; /* skip test, curl is too old */
-#ifdef MHD_HTTPS_REQUIRE_GCRYPT
-#ifdef HAVE_GCRYPT_H
+#ifdef NEED_GCRYP_INIT
   gcry_control (GCRYCTL_ENABLE_QUICK_RANDOM, 0);
 #ifdef GCRYCTL_INITIALIZATION_FINISHED
   gcry_control (GCRYCTL_INITIALIZATION_FINISHED, 0);
-#endif
-#endif
-#endif /* MHD_HTTPS_REQUIRE_GCRYPT */
+#endif /* GCRYCTL_INITIALIZATION_FINISHED */
+#endif /* NEED_GCRYP_INIT */
   if (0 != curl_global_init (CURL_GLOBAL_WIN32))
     return 2;
   errorCount += testDigestAuth ();

@@ -95,9 +95,9 @@ answer_to_connection (void *cls, struct MHD_Connection *connection,
 		      const char *url, 
                       const char *method, const char *version, 
 		      const char *upload_data, 
-                      size_t *upload_data_size, void **con_cls)
+                      size_t *upload_data_size, void **req_cls)
 {
-  if (NULL == *con_cls) 
+  if (NULL == *req_cls) 
     {
       struct connection_info_struct *con_info;
 
@@ -120,7 +120,7 @@ the addition of a filepointer for each connection.
         } 
       else con_info->connectiontype = GET;
 
-      *con_cls = (void*) con_info;
+      *req_cls = (void*) con_info;
  
       return MHD_YES;
     }
@@ -179,7 +179,7 @@ constituted no expected request method.
 @verbatim
   if (0 == strcmp (method, "POST")) 
     {
-      struct connection_info_struct *con_info = *con_cls;
+      struct connection_info_struct *con_info = *req_cls;
        
       if (0 != *upload_data_size) 
         { 
@@ -284,10 +284,10 @@ The new client was registered when the postprocessor was created. Likewise, we u
 on destroying the postprocessor when the request is completed.
 @verbatim
 void request_completed (void *cls, struct MHD_Connection *connection, 
-     		        void **con_cls,
+     		        void **req_cls,
                         enum MHD_RequestTerminationCode toe)
 {
-  struct connection_info_struct *con_info = *con_cls;
+  struct connection_info_struct *con_info = *req_cls;
 
   if (NULL == con_info) return;
 
@@ -303,7 +303,7 @@ void request_completed (void *cls, struct MHD_Connection *connection,
     }
 
   free (con_info);
-  *con_cls = NULL;      
+  *req_cls = NULL;      
 }
 @end verbatim
 @noindent

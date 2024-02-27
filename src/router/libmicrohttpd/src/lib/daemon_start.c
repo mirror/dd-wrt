@@ -199,7 +199,7 @@ open_listen_socket (struct MHD_Daemon *daemon)
     } /* switch on ss_family */
     break;   /* MHD_AF_NONE */
   case MHD_AF_AUTO:
-#if HAVE_INET6
+#ifdef HAVE_INET6
     pf = PF_INET6;
     use_v6 = true;
 #else
@@ -213,7 +213,7 @@ open_listen_socket (struct MHD_Daemon *daemon)
     break;
   case MHD_AF_INET6:
   case MHD_AF_DUAL:
-#if HAVE_INET6
+#ifdef HAVE_INET6
     pf = PF_INET6;
     use_v6 = true;
     break;
@@ -296,7 +296,7 @@ try_open_listen_socket:
   else
   {
     /* Compute bind address based on port and AF */
-#if HAVE_INET6
+#ifdef HAVE_INET6
     if (use_v6)
     {
 #ifdef IN6ADDR_ANY_INIT
@@ -633,7 +633,7 @@ MHD_polling_thread (void *cls)
                           MHD_YES);
       break;
     case MHD_ELS_POLL:
-#if HAVE_POLL
+#ifdef HAVE_POLL
       MHD_daemon_poll_ (daemon,
                         MHD_YES);
 #else
@@ -834,7 +834,7 @@ MHD_daemon_start (struct MHD_Daemon *daemon)
       daemon->event_loop_syscall = MHD_ELS_POLL;
     else
       daemon->event_loop_syscall = MHD_ELS_EPOLL;
-#elif HAVE_POLL
+#elif defined(HAVE_POLL)
     daemon->event_loop_syscall = MHD_ELS_POLL;
 #else
     daemon->event_loop_syscall = MHD_ELS_SELECT;

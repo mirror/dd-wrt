@@ -34,6 +34,7 @@
 #include "mhd_sockets.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include <errno.h>
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -178,7 +179,7 @@ start_socket_listen (int domain)
 #endif
   addrlen = sizeof (struct sockaddr_in);
 
-  if (bind (fd, (const struct sockaddr*) &sock_addr, addrlen) < 0)
+  if (bind (fd, (const struct sockaddr *) &sock_addr, addrlen) < 0)
   {
     fprintf (stderr, "Failed to bind socket: %u\n",
              (unsigned) sock_errno);
@@ -219,11 +220,11 @@ start_socket_listen (int domain)
 }
 
 
-MHD_THRD_RTRN_TYPE_ MHD_THRD_CALL_SPEC_
-select_thread (void*data)
+static MHD_THRD_RTRN_TYPE_ MHD_THRD_CALL_SPEC_
+select_thread (void *data)
 {
   /* use select() like in daemon.c */
-  MHD_socket listen_sock = *((MHD_socket*) data);
+  MHD_socket listen_sock = *((MHD_socket *) data);
   fd_set rs, ws;
   struct timeval timeout;
 
@@ -240,12 +241,12 @@ select_thread (void*data)
 
 
 #ifdef HAVE_POLL
-MHD_THRD_RTRN_TYPE_ MHD_THRD_CALL_SPEC_
-poll_thread (void*data)
+static MHD_THRD_RTRN_TYPE_ MHD_THRD_CALL_SPEC_
+poll_thread (void *data)
 {
   /* use poll() like in daemon.c */
   struct pollfd p[1];
-  MHD_socket listen_sock = *((MHD_socket*) data);
+  MHD_socket listen_sock = *((MHD_socket *) data);
 
   p[0].fd = listen_sock;
   p[0].events = POLLIN;
@@ -281,7 +282,7 @@ main (int argc, char *const *argv)
   int i;
   time_t start_t, end_t;
   int result = 0;
-  MHD_THRD_RTRN_TYPE_ (MHD_THRD_CALL_SPEC_ * test_func)(void*data);
+  MHD_THRD_RTRN_TYPE_ (MHD_THRD_CALL_SPEC_ * test_func)(void *data);
 #ifdef MHD_WINSOCK_SOCKETS
   WORD ver_req;
   WSADATA wsa_data;
@@ -321,7 +322,7 @@ main (int argc, char *const *argv)
    */
   for (i = 0; i < 5 && result == 0; i++)
   {
-    MHD_thread_handle_ sel_thrd;
+    MHD_thread_handle_native_ sel_thrd;
     /* fprintf(stdout, "Creating, binding and listening socket...\n"); */
     MHD_socket listen_socket = start_socket_listen (AF_INET);
     if (MHD_INVALID_SOCKET == listen_socket)
@@ -337,8 +338,8 @@ main (int argc, char *const *argv)
       return 99;
     }
 #elif defined(MHD_USE_W32_THREADS)
-    sel_thrd = (HANDLE) _beginthreadex (NULL, 0, test_func, &listen_socket, 0,
-                                        NULL);
+    sel_thrd = (HANDLE) (uintptr_t)
+               _beginthreadex (NULL, 0, test_func, &listen_socket, 0, NULL);
     if (0 == (sel_thrd))
     {
       MHD_socket_close_chk_ (listen_socket);

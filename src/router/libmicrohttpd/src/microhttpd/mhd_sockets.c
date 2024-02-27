@@ -1,6 +1,6 @@
 /*
   This file is part of libmicrohttpd
-  Copyright (C) 2014-2016 Karlson2k (Evgeny Grin)
+  Copyright (C) 2014-2024 Karlson2k (Evgeny Grin)
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -381,11 +381,17 @@ int
 MHD_add_to_fd_set_ (MHD_socket fd,
                     fd_set *set,
                     MHD_socket *max_fd,
-                    unsigned int fd_setsize)
+                    int fd_setsize)
 {
   if ( (NULL == set) ||
        (MHD_INVALID_SOCKET == fd) )
     return 0;
+
+#ifndef HAS_FD_SETSIZE_OVERRIDABLE
+  (void) fd_setsize;  /* Mute compiler warning */
+  fd_setsize = (int) FD_SETSIZE; /* Help compiler to optimise */
+#endif /* ! HAS_FD_SETSIZE_OVERRIDABLE */
+
   if (! MHD_SCKT_FD_FITS_FDSET_SETSIZE_ (fd,
                                          set,
                                          fd_setsize))
@@ -516,16 +522,14 @@ MHD_socket_create_listen_ (int pf)
 
 #if defined(MHD_POSIX_SOCKETS) && (defined(SOCK_CLOEXEC) || \
   defined(SOCK_NOSIGPIPE) )
+
   fd = socket (pf,
                SOCK_STREAM | SOCK_CLOEXEC | SOCK_NOSIGPIPE_OR_ZERO,
                0);
-  if (MHD_INVALID_SOCKET != fd)
-  {
-    cloexec_set = (SOCK_CLOEXEC_OR_ZERO != 0);
+  cloexec_set = (SOCK_CLOEXEC_OR_ZERO != 0);
 #if defined(SOCK_NOSIGPIPE) || defined(MHD_socket_nosignal_)
-    nosigpipe_set = (SOCK_NOSIGPIPE_OR_ZERO != 0);
+  nosigpipe_set = (SOCK_NOSIGPIPE_OR_ZERO != 0);
 #endif /* SOCK_NOSIGPIPE ||  MHD_socket_nosignal_ */
-  }
 #elif defined(MHD_WINSOCK_SOCKETS) && defined(WSA_FLAG_NO_HANDLE_INHERIT)
   fd = WSASocketW (pf,
                    SOCK_STREAM,
@@ -534,9 +538,13 @@ MHD_socket_create_listen_ (int pf)
                    0,
                    WSA_FLAG_OVERLAPPED | WSA_FLAG_NO_HANDLE_INHERIT);
   cloexec_set = ! 0;
-#else  /* !SOCK_CLOEXEC */
+#else  /* No special socket init function / flags */
   fd = MHD_INVALID_SOCKET;
-#endif /* !SOCK_CLOEXEC */
+  cloexec_set = 0;
+#if defined(SOCK_NOSIGPIPE) || defined(MHD_socket_nosignal_)
+  nosigpipe_set = 0;
+#endif /* SOCK_NOSIGPIPE ||  MHD_socket_nosignal_ */
+#endif /* No special socket init function / flags */
   if (MHD_INVALID_SOCKET == fd)
   {
     fd = socket (pf,

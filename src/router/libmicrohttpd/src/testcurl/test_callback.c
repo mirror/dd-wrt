@@ -1,7 +1,7 @@
 /*
      This file is part of libmicrohttpd
      Copyright (C) 2007, 2009, 2011 Christian Grothoff
-     Copyright (C) 2014-2021 Evgeny Grin (Karlson2k)
+     Copyright (C) 2014-2022 Evgeny Grin (Karlson2k)
 
      libmicrohttpd is free software; you can redistribute it and/or modify
      it under the terms of the GNU General Public License as published
@@ -29,6 +29,7 @@
 #include "platform.h"
 #include <curl/curl.h>
 #include <microhttpd.h>
+#include <errno.h>
 
 struct callback_closure
 {
@@ -47,7 +48,7 @@ called_twice (void *cls, uint64_t pos, char *buf, size_t max)
   {
     memcpy (buf, "test", 5);
     cls2->called = 1;
-    return strlen (buf);
+    return (ssize_t) strlen (buf);
   }
   if (cls2->called == 1)
   {
@@ -69,7 +70,7 @@ callback (void *cls,
           const char *version,
           const char *upload_data,
           size_t *upload_data_size,
-          void **con_cls)
+          void **req_cls)
 {
   struct callback_closure *cbc = calloc (1, sizeof(struct callback_closure));
   struct MHD_Response *r;
@@ -81,7 +82,7 @@ callback (void *cls,
   (void) version;
   (void) upload_data; /* Unused. Silent compiler warning. */
   (void) upload_data_size;
-  (void) con_cls;         /* Unused. Silent compiler warning. */
+  (void) req_cls;         /* Unused. Silent compiler warning. */
 
   if (NULL == cbc)
     return MHD_NO;
@@ -132,7 +133,7 @@ main (int argc, char **argv)
   int running;
   struct timeval tv;
   int extra;
-  int port;
+  uint16_t port;
   (void) argc; (void) argv; /* Unused. Silent compiler warning. */
 
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
@@ -140,12 +141,13 @@ main (int argc, char **argv)
   else
     port = 1140;
 
-  d = MHD_start_daemon (0,
+  d = MHD_start_daemon (MHD_USE_NO_THREAD_SAFETY,
                         port,
                         NULL,
                         NULL,
                         &callback,
                         NULL,
+                        MHD_OPTION_APP_FD_SETSIZE, (int) FD_SETSIZE,
                         MHD_OPTION_END);
   if (d == NULL)
     return 32;
@@ -157,7 +159,7 @@ main (int argc, char **argv)
     {
       MHD_stop_daemon (d); return 48;
     }
-    port = (int) dinfo->port;
+    port = dinfo->port;
   }
   c = curl_easy_init ();
   curl_easy_setopt (c, CURLOPT_URL, "http://127.0.0.1/");

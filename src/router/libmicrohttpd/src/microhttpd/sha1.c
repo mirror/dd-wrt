@@ -1,6 +1,6 @@
 /*
      This file is part of libmicrohttpd
-     Copyright (C) 2019-2021 Karlson2k (Evgeny Grin)
+     Copyright (C) 2019-2022 Karlson2k (Evgeny Grin)
 
      libmicrohttpd is free software; you can redistribute it and/or
      modify it under the terms of the GNU Lesser General Public
@@ -105,8 +105,11 @@ sha1_transform (uint32_t H[_SHA1_DIGEST_LENGTH],
      See FIPS PUB 180-4 paragraph 6.1.3.
      Input data must be read in big-endian bytes order,
      see FIPS PUB 180-4 paragraph 3.1.2. */
+  /* Use cast to (void*) to mute compiler alignment warning,
+   * data was already aligned in previous step */
 #define GET_W_FROM_DATA(buf,t) \
-  _MHD_GET_32BIT_BE (((const uint8_t*) (buf)) + (t) * SHA1_BYTES_IN_WORD)
+  _MHD_GET_32BIT_BE ((const void *)(((const uint8_t*) (buf)) + \
+                                    (t) * SHA1_BYTES_IN_WORD))
 
 #ifndef _MHD_GET_32BIT_BE_UNALIGNED
   if (0 != (((uintptr_t) data) % _MHD_UINT32_ALIGN))
@@ -116,7 +119,7 @@ sha1_transform (uint32_t H[_SHA1_DIGEST_LENGTH],
     /* The W[] buffer itself will be used as the source of the data,
      * but data will be reloaded in correct bytes order during
      * the next steps */
-    data = (uint8_t*) W;
+    data = (uint8_t *) W;
   }
 #endif /* _MHD_GET_32BIT_BE_UNALIGNED */
 
@@ -366,11 +369,13 @@ MHD_SHA1_finish (void *ctx_,
   if (1)
 #endif /* _MHD_PUT_32BIT_BE_UNALIGNED */
   {
-    _MHD_PUT_32BIT_BE (digest + 0 * SHA1_BYTES_IN_WORD, ctx->H[0]);
-    _MHD_PUT_32BIT_BE (digest + 1 * SHA1_BYTES_IN_WORD, ctx->H[1]);
-    _MHD_PUT_32BIT_BE (digest + 2 * SHA1_BYTES_IN_WORD, ctx->H[2]);
-    _MHD_PUT_32BIT_BE (digest + 3 * SHA1_BYTES_IN_WORD, ctx->H[3]);
-    _MHD_PUT_32BIT_BE (digest + 4 * SHA1_BYTES_IN_WORD, ctx->H[4]);
+    /* Use cast to (void*) here to mute compiler alignment warnings.
+     * Compilers are not smart enough to see that alignment has been checked. */
+    _MHD_PUT_32BIT_BE ((void *) (digest + 0 * SHA1_BYTES_IN_WORD), ctx->H[0]);
+    _MHD_PUT_32BIT_BE ((void *) (digest + 1 * SHA1_BYTES_IN_WORD), ctx->H[1]);
+    _MHD_PUT_32BIT_BE ((void *) (digest + 2 * SHA1_BYTES_IN_WORD), ctx->H[2]);
+    _MHD_PUT_32BIT_BE ((void *) (digest + 3 * SHA1_BYTES_IN_WORD), ctx->H[3]);
+    _MHD_PUT_32BIT_BE ((void *) (digest + 4 * SHA1_BYTES_IN_WORD), ctx->H[4]);
   }
 
   /* Erase potentially sensitive data. */

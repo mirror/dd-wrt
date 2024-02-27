@@ -1,5 +1,147 @@
-Sun 28 May 2023 18:00:00 MSK
-    Releasing GNU libmicrohttpd 0.9.77 -EG
+Fri 23 Feb 2024 21:00:00 UZT
+    Releasing GNU libmicrohttpd 1.0.1 -EG
+
+February 2024
+    Fixed builds without messages. -JP & CG
+    Fixed builds with external MD5 calculation.
+    Fixed SHA-512/256 code for hypothetical extra large sizes.
+    Fixed response handling during daemon shutdown.
+    Fixed code logic for builds without messages.
+    Reduced the binary size for builds without messages by removing
+    the strings with filenames used for panic reports.
+    Fixed tests and examples for builds without messages and for builds
+    without basic auth.
+    Fixed some compiler warnings. -EG
+
+Thu 01 Feb 2024 15:00:00 CET
+    Releasing GNU libmicrohttpd 1.0.0 -EG
+
+January 2024
+    add missing lock, do not call 'close(-1)' on very rare error path.
+    use correct HTTP header (content type, not content encoding) for mime type
+    in examples.
+    fix memory leak on error path. -CG
+    MHD_OPTION_CONNECTION_MEMORY_{LIMIT,INCREMENT}: added ignore of zero value.
+    test_upgrade{,_large}{,_tls}: unified code, removed workarounds, added new
+    test.
+    digest_auth_example_adv: added new advanced example for the new Digest
+    Auth API use.
+    Fixed compiler warnings in configure, lib, examples, tests.
+    test_digestauth2: supported old libcurl versions.
+    Fixed tests with GnuTLS in non-default path.
+    configure: sorted messages in final config summary.
+    Fixed non-debug build without HTTPS.
+    configure: removed old workaround for Solaris.
+    test_upgrade: adapted for macOS. -EG
+
+December 2023
+    "Upgraded" TLS connections: fixed data pumping in various edge conditions.
+    'bootstrap': fixes and simplifications.
+    Digest Auth: added default timeout and max nc values, added daemon options
+    for default nonce timeout and max nc values, added testing, implemented
+    setting DAuth defaults by configure parameters. -EG
+
+November 2023
+    Updated HTTP methods, headers and reason phrases.
+    Renamed one new basic auth function, improved doxy.
+    digest auth: updated header, slightly modified multi-value processing. -EG
+    websocket_threaded_example: fix websocket url string. -Evgeniy Gavrilenko
+    configure: warn if building without threads. -EG
+    configure: added detection of FD_SETSIZE value and ability to override it.
+    internal.h: added macros for polling mode detection.
+    Added use of configure-detected system default FD_SETSIZE value.
+    internal.h: added macros for internal threads modes detection.
+    Added MHD_OPTION_APP_FD_SETSIZE and MHD_FEATURE_FLEXIBLE_FD_SETSIZE.
+    daemon.c: moved processing and checking of app-provided listen socket.
+    MHD_start_daemon(): mark listen as UNIX based on available information.
+    MHD_start_daemon(): added stricter checks for bind() and listen() return
+    values.
+    MHD_start_daemon(): added check for epoll FD to fit fd_set for external
+    polling mode.
+    Implemented and documented MHD_OPTION_LISTEN_SOCKET followed by
+    MHD_INVALID_SOCKET.
+    Fixed ignored daemon port when MHD_OPTION_LISTEN_SOCKET or
+    MHD_OPTION_SOCK_ADDR are used as documented.
+    MHD_start_daemon(): further improved UNIX / IP socket detection.
+    Implemented new option MHD_OPTION_SOCK_ADDR_LEN.
+    MHD_start_daemon(): added check for app-provided socket to fit fd_set.
+    MHD_start_daemon(): fixed leaked listen socket when daemon start failed.
+    MHD_add_connection(): added more checks for correct members of sockaddr.
+    Timeout handling added detection of more conditions to process the data
+    without waiting.
+    MHD_quiesce_daemon(): fixed return value if already quiesced.
+    MHD_start_daemon(): reject INTERNAL_POLLING_THREAD if threads are disabled.
+    test_daemon: fixed to not skip the test if failed.
+    test_digestauth2: fixed order of the initial checks.
+    Improved daemon shutdown handling in external polling mode.
+    Unified and simplified fd_set filling.
+    Added new daemon flag MHD_USE_NO_THREAD_SAFETY and testing.
+    Officially support zero for MHD_OPTION_THREAD_POOL_SIZE.
+    test_upgrade: used sized send and receive, removed VLA, other improvements.
+    test_upgrade: implemented proper timeout detection and handling. -EG
+
+September 2023
+    fix #7928: correct tutorial direntry.
+    proper fix for #7757. -CG
+    W32 VS projects: added perf_replies.
+    W32 VS projects: added .editorconfig.
+    perf_replies improvements for W32.
+    mhd_threads: muted compiler warning on W32.
+    mhd_threads: fixed check for error when starting a new thread on W32.
+    Renamed 'pid' -> 'tid' when used for threads.
+    mhd_str: fixed possible compiler and run-time sanitizers warnings.
+    Muted and fixed some compiler warnings.
+    W32 VS project: corrected compiler settings.
+    W32 VS: really muted run-time false warnings about data truncation.
+    examples/sessions.c: fixes.
+    Fixed missing <errno.h> includes.
+    Refactored threads support to handle platforms without "invalid" ID value.
+    Fixed MHD_CONNECTION_INFO_DAEMON: return master daemon. -EG
+    check rvalues from pthread_mutex_, MHD_add_response_header,
+    MHD_post_process in examples.
+    Theoretical use-after-free in test on error path. -CG
+    Do no use internal magic number if it is used by the remote client.
+    Refactoring: store "request target" original length.
+    Detect error earlier if request HTTP version is bad.
+    Added calculation of request headers total size.
+    Rewritten handling of exhaustion of memory pool when receiving.
+    tests: fixed compiler warnings, copy-paste error, added error reporting.
+    test_long_header: re-use the same port for all checks.
+    Control acceptance of LF as CRLF in chunked encoding in the same way as
+    in headers parsing.
+    Improved compatibility with old compilers.
+    Fixed more compiler warnings. -EG
+
+Sun Sep  3 12:23:18 AM CEST 2023
+    Prevent queueing of responses if connection is not currently in the
+    access handler callback (which was always not allowed per API spec,
+    but is now met with an appropriate error response). Fixes #7757. -CG
+
+August 2023
+    Improved CPU cores detection in perf_replies. -EG
+
+July 2023
+    Added new tool perf_replies with automatic detection of number of available
+    CPU on system and for the program. -EG
+
+June 2023
+    Bump version numbers as v0.9.77 was released on parallel branch.
+    Added test for MHD_get_version{,_bin} function and related macros.
+    base64 decoding: added more compact code version.
+    Refactoring: check whether memory pool block is resizeable.
+    Re-implemented parsing of the request line from scratch with strict
+    conformance with RFC 9110 and 9112 requirements.
+    Re-implemented parsing of the request headers and footers from scratch with
+    strict conformance with RFC 9110 and 9112 requirements.
+    Fuzzing tests: almost completely re-implemented. The new version is unified
+    and much easier to maintain.
+    Added new tests for folded headers.
+    Corrected HTTP error responses for clients.
+    connection: fixed pipelined requests processing.
+    Added checks for correct values specified for connection memory limits.
+    process new connection: fixed missing mutex unlock in error handling path.
+    W32 VS Projects: fixed code parsing by GUI.
+    Focused all read-buffer grows in a single point, related improvements. -EG
 
 May 2023
     Improved portability of boostrap (and autogen.sh)
@@ -12,124 +154,357 @@ May 2023
     Tests: fixed build with C89 compilers.
     Tests: fixed tests on Darwin 22.x (Ventura).
     Tests: redesigned one tests group to avoid stress-testing of the OS.
-    Digest auth: fixed thread sync to avoid "stale hash" results.
     configure: improved portability for exotic platforms.
     examples: removed non-portable functions, added some checking,
     fixed compiler warnings, fixed erroneously commented out code.
     configure: fixed detection of __FUNCTION__ magic macro.
     Unified function name magic macros usage in code.
-    HTTPS tests: removed enforcement of the cipher and TLS version. Relay
-    on automatic selection by TLS library.
-    HTTPS tests: changed certificate hash algorithm from SHA-1 to SHA-256
-    as SHA-1 is already blocked by some libs/OSes.
     W32 VS projects: supported ARM and ARM64.
     Fixed compiler warning on x32.
-    Basic Auth switched to internal Base64 implementation for better
-    checking of input data validity.
-    Removed public domain Base64 implementation.
     Some minor fixes for W32 VS compilation. -EG
 
+
 April 2023
-    Fixed processing of folded headers.
-    Updated internal libtool and autoconf patches to be compatible with
-    the latest compiler versions.
-    Created internal helper script for better preparation of 'make dist'.
-    Updated po/POTFILES.in
-    autoinit_funcs.h: general minor improvements, updated the technic
-    for VC compilers, added support for ARM and ARM64 with VC compilers. -EG
+    Implemented and used new function MHD_pool_deallocate().
+    Updated libtool fixes.
+    Removed some autotools files from git.
+    Added autoconf patches and fixes.
+    {md5,sha256}_ext.c: fixed processing of initialisation error with NULL
+    handler. -EG
 
 March 2023
-    configure: added check for enablement of eventFD on the system.
-    Built-in tsearch replacement: updated to the latest fixed version.
-    configure: added custom check for system tsearch with detection of
-    known bugs. Added known bad tsearch implementation for cross-compiling.
-    Fixed Makefiles to work with 'make' without nested variables support.
-    configure: fixed compiler warnings in checks.
-    configure: added more cache variables, cosmetics.
-    configure: fixed checking for required system libraries, added required
-    system libraries to .pc file.
-    configure: improved compatibility with POSIX, added check for more
-    system libraries names as required by POSIX.
-    libmicrohttpd.h: fixed typo in doxy.
-    Fixed every inefficient data pumping for upgraded TLS connections.
-    Fixed initialisation of old GnuTLS versions.
-    Fixed HTTPS tests for LTO.
-    Disabled some broken HTTPS tests. -EG
+    Upgraded TLS: fixed inefficient communication.
+    Upgraded TLS: use more available memory for pumping the data. -EG
+
+Web 29 Mar 2023 20:56:00 CEST
+    Bumped version as the hotfix was released based on the separate branch. -EG
+
+March 2023
+    configure: reordered checks for compiler flags.
+    configure: fixed checks for tsearch() and related changes.
+    Makefile: fixed build with 'make' without nested vars support.
+    configure: fixed compiler warnings.
+    libcurl.m4: patched to fix compiler warning.
+    configure: internal fixes, compiler warning fixes, cosmetics, better
+    POSIX compatibility, fixed compatibility with old autoconf.
+    Upgraded TLS: warn if emergency buffer is used. -EG
+
+Sun Feb 26 05:49:30 PM CET 2023
+    Fix potential DoS vector in MHD_PostProcessor discovered
+    by Gynvael Coldwind and Dejan Alvadzijevic (CVE-2023-27371). -CG
 
 February 2023
-    Added assert for connection suspend API violation and clarified
-    related documentation. -CG
+    epoll: immediately notice when other side closes the socket, instead of
+    waiting for timeout. -CG
 
 December 2022
-    configure: improved detection of some functions when cross-compiling. -EG
+    Refactored cookies parsing.
+    Always close connection after reply if both Content-Length and chucked are
+    used. This is specified by RFC.
+    Added new daemon option MHD_OPTION_CLIENT_DISCIPLINE_LV with more detailed
+    control of accepted/rejected non-standard requests.
+    Added new M4 helper macro.
+    configure: used better detection of some functions when cross-compiling.
+    configure: try to detect whether eventfd is enabled.
+    Compiler warning fixes.
+    Improved reported strings in tests. -EG
 
 November 2022
-    Added new tests for folded headers.
-    Fixed checking of libcurl-provided values of response headers as
-    null-terminated strings.
-    Tests: added "Host:" requested header in upgrade tests as required by
-    HTTP/1.1.
-    Added new function MHD_get_version_bin().
-    Fixed missing includes in iovec test. -EG
+    connection: refuse requests with unsupported Transfer-Encoding.
+    connection: reject or log requests with both chunked encoding and
+    Content-Length.
+    tests: fixed checking response headers as null-terminated string.
+    Some tests fixes.
+    configure: check fixes.
+    Refactored user-poison: minimized scope of non-sanitized code.
+    digestauth: avoided malloc() repeating by using the new function.
+    MHD_get_version_bin(): added new function.
+    test_parse_cookies: rewritten. -EG
 
 October 2022
+    Reworked HTTPS tests. Removed hardcoded TLS version and ciphers, updated
+    self-signed certificate.
     Fixed delayed call of connection notification callback in
     thread-per-connection mode.
+    Fixed delayed new connection notification in thread-per-connection mode.
+    Minor internal code improvements.
     Added handling of "DEBUG" preprocessor macro as an alias of "_DEBUG".
-    Fuzzing tests: fixed CPPFLAGS. -EG
+    TLS initialisation: re-implemented. New implementation trying to use
+    "libmicrohttpd" system-wide GnuTLS configuration by default with fallbacks
+    to generic system-wide GnuTLS configuration and default GnuTLS
+    configuration.
+    New daemon option to use addition to default configuration instead of
+    specifying full configuration string.
+    Added relevant tests for GnuTLS initialization.
+    Added reporting of failed part of GnuTLS configuration string.
+    Added MHD_FEATURE_DEBUG_BUILD value.
+    Implemented internal protection from some wild data hypothetically reported
+    by accept4().
+    Internal refactoring.
+    Prevented sending "100 continue" if request has no body or if any part of
+    request data has been received.
+    Reworked handling of situation when app just partially processed the data:
+    if any data was processed then zero timeout if used for polling sockets,
+    if no data was processed then callback in not called until the new data
+    arrived.
+    Fixed handling of various errors conditions detected in requests.
+    Added test with Content-Length broken value in request.
+    test_head: added check for excess data in reply
+    Improved epoll connection handling.
+    Fuzzing tests: fixed CPPFLAGS.
+    configure: do not pass AM_TESTS_ENVIRONMENT directly.
+    configure: added summary message about heavy and fuzzing tests
+    test-suite: marked some tests as "very heavy" tests
+    configure: improved check for asserts. -EG
 
 September 2022
+    Added testing of userdigest and userhash calculations.
+    Implemented SHA-512/256 from scratch.
+    Digest Auth: implemented SHA-512/256 support, added
+    MHD_FEATURE_DIGEST_AUTH_SHA512_256 and relevant tests.
+    Made all algorithms (MD5, SHA-256, SHA-512/256) optional with ability
+    to remove by configure parameter.
+    Digest Auth: internal refactoring and improvements.
     configure: minor improvements.
+    Fixed initialisation of very old GnuTLS versions.
+    Replace public domain MD5 implementation with the new implementation
+    written from scratch.
+    MD5, SHA-256, SHA-512/256: various code improvements, special versions for
+    compact code.
+    Digest Auth: changed internal algorithm for re-use of nonce-nc slot.
+    Digest Auth: used weak pseudo-random generators to avoid slot clashes.
+    Implemented optional ability to use GnuTLS functions for MD5 and SHA-256
+    calculations.
     Fixed harmless unwanted extra data processing resulting in triggering of
     the assert.
-    Fixed compiler warnings for compact code version. -EG
+    Added testing of HEAD requests.
+    Minor internal changes.
+    Fixed compiler warnings for compact code version.
+    Muted compiler warnings with clang.
+    Configure: more workarounds for clang on W32 with incorrect headers.
+    Removed long-unused "gauger" from tests.
+    Fixed compiler warnings in test.
+    test_add_conn: added reasonable limits. -EG
+
+August 2022
+    Added testing of userhash parameter parsing.
+    Added testing of the auth type headers in one request.
+    Warn in log if random data has not been initialised.
+    Digest Auth: improved response header in RFC2069 mode.
+    Added more string processing internal functions.
+    Digest Auth: added new option MHD_OPTION_DIGEST_AUTH_NONCE_BIND_TYPE to
+    control nonces generation.
+    Increased testing for Digest Auth.
+    Digest Auth: do not use reproducible nonces generation by default.
+    Minor correction for auth headers processing.
+    Digest Auth: internal refactoring.
+    Digest Auth: added algorithm value to username info (required for userhash
+    values).
+    Digest Auth: added new public functions for userhash and userdigest
+    calculations. -EG
+
+July 2022
+    Digest Auth: internal optimisations and refactoring, digest_auth_check
+    almost completely rewritten.
+    Digest Auth: removed use of VLA.
+    Digest Auth: added support for username in extended notation and test
+    for extended notation.
+    Digest Auth: implemented userhash support and tests for extended notation.
+    MHD_add_response_entry(): refactoring
+    Digest Auth: implemented DAuth response function
+    MHD_queue_auth_required_response3() from scratch. Removed old
+    implementations, old functions converted to wrappers for the new function.
+    Digest Auth: added new group of tests.
+    Digest Auth: added related MHD_FEATURES_* values.
+    Digest Auth: added detection of the algorithm used by the client and
+    use specified algorithm if allowed by application.
+    Configure: cosmetics and reports improvements, control static and shared
+    enablement by --enable-build-type=.
+    Added new daemon option MHD_OPTION_DIGEST_AUTH_RANDOM_COPY and tests.
+    Digest Auth: implemented support for old RFC 2069 (if allowed by app) and
+    tests for RFC 2069.
+    Internal refactoring: moved all request-related connection struct members
+    to dedicated struct. The same for reply-related struct members.
+    Implemented support for both Basic and Digest headers in the same
+    request. -EG
 
 June 2022
     Fixed compiler warnings in main code and examples.
+    Added error checking in examples.
+    Added test for parsing auth headers.
+    Improved parsing of auth headers.
+    Added more internal functions for quoted string processing.
+    Added test for quoting string processing.
+    Digest Auth: internal optimisations.
+    Basic Auth: fixed handling of realms with slashes and/or double quotes.
+    Digest Auth: fixed use of possible maximum client nonce length as maximum
+    server nonce length. Reduced size of internal arrays.
+    Basic Auth: new function MHD_queue_basic_auth_fail_response3() with support
+    for RFC 7617.
+    Basic Auth: added new function MHD_basic_auth_get_username_password3() with
+    more details about username and password. Technically allow binary zero in
+    username and in password.
     Fixed data races when closing upgraded connection.
+    Replaced public domain Base64 decoder with the new implementation written
+    from scratch. The new implementation has very precise checks for the input
+    data.
+    Added new test for Base64 decoding.
+    Updated examples to use new Basic Auth functions.
+    Fixed and improved postprocessor tests.
+    Ported test to non-VLA compilers.
+    Added configure parameter --enable-compact-code.
     Removed duplication of "Connection: upgrade" header. Patch by Alexander
     Irion.
-    Implemented Base64 decoding with thorough checks for the input data
-    validity.
-    Added new test for Base64 decoding. -EG
+    Configure: removed some unneeded compiler flags.
+    Digest Auth: improved RFC match (qop value caseless match), check
+    parameters length validity before checking the values validity, correctly
+    compare URLs with binary zeros, check URL arguments only in the same order
+    as specified in DAuth header.
+    Added internal functions for percent-decoding and tests for
+    percent-decoding.
+    Added internal function for hex to bin decoding, tests for hex<->bin
+    decoding.
+    Digest Auth: added new function MHD_digest_auth_get_request_info3() and
+    MHD_digest_auth_get_username3() with detailed information about DAuth
+    request. -EG
+    Fixed memory leaks in tests.
+    Fixed wrong array size for Digest Auth. -CG
 
 May 2022
+    Improved public doxy.
+    Digest Auth: fixed missing mark on 'nc' value as 'used'.
+    Digest Auth: added internal checks for unrealistically high values.
+    Digest Auth: added check for correct values from application.
+    Digest Auth: nonce timestamps changed to milliseconds to lower conflict
+    probability.
+    Digest Auth: implemented management nonce-nc map array slots so old
+    entries are removed safely while trying to avoid to remove the new entries.
+    configure: added 'debugger' build type.
+    Added more tests for cookies parsing.
+    Digest Auth: use nonce-nc map arrays with locks in master daemon only
+    so works can re-use the nonces and nc information.
+    MHD_set_connection_option(): reduced scope for the lock.
+    Fixed leak of mutexes when daemon creation failed and when closing daemon
+    with thread pool.
+    Digest Auth: fixed stale nonce result value ambiguity.
+    Digest Auth: added special check for fabricated nonces.
+    Added new functions MHD_digest_auth_check3() and
+    MHD_digest_auth_check_digest3() with detailed result of the checks.
+    Added return NULL MHD_CONNECTION_INFO_CLIENT_ADDRESS when information is
+    not available.
+    Improved internal handling of non-IP connections (UNIX sockets or pipes)
+    when processing the client address.
     Fixed compiler warnings.
+    Increased testing of cookies parsing.
+    Completely re-written cookies parsing. The new code follow RFC 6265.
+    Made cookies parsing functionality optional, can be disabled by configure.
+    Configure: added more warning flags.
+    Configure: internal improvements.
+    Globally changed '#if HAVE_SOMETHING' to '#ifdef HAVE_SOMETHING'.
+    Enabled more compiler warnings in W32 projects.
     Fixed MHD functionality with blocking sockets. Patch by Kolja Nowak.
+    Moved some macros and declaration to new specialised headers: basicauth.h
+    and digestauth.h.
+    Added new function to process quoted strings.
+    Digest Auth: reworking support for multiple digest algorithms.
+    Response processing: better handle unrealistic but broken situation.
+    Basic and Digest Auth: completely reworked headers parsing, unified code.
+    Added new autoconf macros.
+    Configure: added more workarounds for clang.
     Fixed possible use of uninitialised variable.
-    Added new test for Basic Auth. -EG
+    Added new test for Basic Auth.
+    Some code readability improvements. -EG
 
 April 2022
+    Added autoconf macro for checking compiler parameter/flag.
+    Improved -fvisibility compiler flag support detection in configure.
     Fixed compiler warnings.
+    Moved fixed libtool-specific flags to Makefile from configure.
+    Configure: added reporting of final compiler/linker flags.
+    Fixed ignored user linker flags when building library binary.
+    Improved makefiles dependency specification.
+    Implemented --enable-build-type=TYPE configure parameters for ready-to-use
+    configuration sets (defaults).
+    Separated internal types for request headers and response headers.
+    Fixed many unneeded drops of 'const' qualifier, converted some pointers
+    to 'const'.
+    Added use of _MHD_EXTERN with all external function definitions.
+    Refactored response creation functions.
+    Added new function MHD_create_response_from_buffer_static() to avoid
+    unwanted dropping of 'const' when application is using static strings.
+    Added new API function MHD_create_response_from_buffer_copy().
+    Public doxy improvements.
+    Improved handling of TLS backends for libcurl when testing HTTPS.
     Updated TLS certificates for tests and examples. New certificates
     were generated with SAN fields to match actual requirements.
+    Fixed old style function definitions in examples.
+    Tuned compiler warning flags.
+    Fixed many preprocessor macros (removed space before bracket).
     Fixed printf() format specifications in examples.
-    Changed: any negative number returned by response data generation 
+    Removed non-literal strings for printf in examples.
+    Improved portability of examples.
+    Fixed unaligned access via sockaddr_in pointers.
+    Fixed unaligned access in MHD_get_connection_info() and
+    MHD_get_daemon_info().
+    Compiler warning fixes.
+    Changed: any negative number returned by response data generation
     callback function is treated as an error.
     Fixed setting custom connection timeout value for thread-per-connection
-    mode. -EG
+    mode.
+    Fixed short (lees then one second) busy-waiting when connection is about
+    to expire by switching to milliseconds accuracy instead of seconds.
+    Added new functions MHD_get_timeout64(), MHD_get_timeout64s(),
+    MHD_get_timeout_i().
+    Added some checks for possible value trim due to width conversion.
+    Digest Auth: continuation of refactoring, optimisations.
+    Digest Auth: do not use nonces provided by the client if they were not
+    generated previously by MHD. -EG
 
 March 2022
+    Added internal check for suitability of used response.
+    Improved doxy.
+    Improved handling of application-provide "Content-Length" header.
+    Internally separated "Icy" flag from the response code.
     Fixed Address Sanitizer unpoison of memory when memory pool is destroyed.
+    Improved log messages.
+    Added more checks for "Upgrade" handling.
+    Better internally separated response type handling:
+      headers only without
+      body-specific headers, body-specific headers without body
+    (Content-Length/Transfer-Encoding),
+      all headers with body.
     Blocked MHD_SIZE_UNKNOWN value for buffer-based responses.
+    Significantly improved doxy for MHD_queue_response().
+    Added new function MHD_create_response_empty()
+    Fixed compiler flags for UBsan in configure.
+    Added new option for "--enable-sanitizers=" parameter.
     Improved autoconf macros. -EG
 
 January 2022
     Tuned automake options.
     Fixed compiler warning in examples.
     Fixed use of initialised variable in tests.
+    Removed unused autotools files.
+    .gitignore: cleanup and update.
+    Autotools: always let user override build flags.
+    Moved 'po' files to separate directory.
+    Fixed missing include file in docs.
+    Fixed 'make distcheck'.
+    Fixed use on GNU/kFreeBSD.
+    Fixed HTTP/1.1 or 1.0 selection in tests.
+    Other tests improvements and fixes.
     Digest Auth: changed "md5" / "sha-256" to "MD5" / "SHA-256" to better
     match RFC (while clients should use caseless matching).
+    Initial digest auth refactoring, reject invalid input.
+    Global rename of callback parameter 'con_cls' -> 'req_cls'.
+    Digest auth tests improvements and fixes.
+    Added test for parallel digest auth requests.
     Minor autoconf macros fixes. -EG
 
 December 2021
     configure: fixed unwanted output on Fedora.
-    configure: clarified licence message. -EG
-
-Sun Feb 26 05:49:30 PM CET 2023
-    Fix potential DoS vector in MHD_PostProcessor discovered
-    by Gynvael Coldwind and Dejan Alvadzijevic (CVE-2023-27371). -CG
-    Releasing GNU libmicrohttpd 0.9.76 hotfix. -CG
+    configure: clarified licence message.
+    Doxy corrections and improvments. -EG
 
 Sun 26 Dec 2021 20:30:00 MSK
     Releasing GNU libmicrohttpd 0.9.75 -EG

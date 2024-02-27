@@ -80,3 +80,34 @@ PO_DEPENDS_ON_POT = yes
 # "no".  Set this to no if the POT file and PO files are maintained
 # externally.
 DIST_DEPENDS_ON_UPDATE_PO = yes
+
+# Hacks for MHD
+am__cd = CDPATH="$${ZSH_VERSION+.}$(PATH_SEPARATOR)" && cd
+
+$(top_builddir)/po-config.status: $(srcdir)/po-configure.ac.in $(top_srcdir)/configure.ac
+	@echo "cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) po-config.status" && \
+	$(am__cd) '$(top_builddir)' && $(MAKE) $(AM_MAKEFLAGS) po-config.status
+
+$(srcdir)/POTFILES.in: $(top_srcdir)/src/microhttpd/Makefile.am
+	@echo "cd $(top_srcdir)/src/microhttpd && $(MAKE) $(AM_MAKEFLAGS) update-po-POTFILES.in" && \
+	$(am__cd) '$(top_srcdir)/src/microhttpd' && $(MAKE) $(AM_MAKEFLAGS) update-po-POTFILES.in
+
+$(srcdir)/stamp-m.in:
+	@: > '$@'
+
+stamp-m: $(srcdir)/Makefile.in.in $(srcdir)/Makevars $(top_builddir)/po-config.status $(srcdir)/POTFILES.in $(srcdir)/stamp-m.in
+	@$(am__cd) $(top_builddir) \
+	    && $(MHD_CONFIG_SHELL) ./po-config.status po/stamp-m po/Makefile.in po-directories
+
+.DELETE_ON_ERROR: stamp-m
+
+$(srcdir)/$(MHD_AUX_DIR)/install-sh: $(topsrcdir)/$(MHD_AUX_DIR)/install-sh
+	@$(MKDIR_P) '$(topsrcdir)/$(MHD_AUX_DIR)'
+	cp -f '$(topsrcdir)/$(MHD_AUX_DIR)/install-sh' '$@'
+
+mostlyclean: mostlycleancustom
+mostlycleancustom:
+	-rm -f stamp-m Makefile.in po-configure.ac
+	-rm -f $(top_builddir)/po-config.status
+
+.PHONY: mostlycleancustom

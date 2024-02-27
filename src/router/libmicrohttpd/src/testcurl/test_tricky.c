@@ -1,6 +1,6 @@
 /*
      This file is part of libmicrohttpd
-     Copyright (C) 2014-2021 Evgeny Grin (Karlson2k)
+     Copyright (C) 2014-2022 Evgeny Grin (Karlson2k)
      Copyright (C) 2007, 2009, 2011 Christian Grothoff
 
      libmicrohttpd is free software; you can redistribute it and/or modify
@@ -31,7 +31,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include "test_helpers.h"
+#include <errno.h>
+#include "mhd_has_in_name.h"
+#include "mhd_has_param.h"
 #include "mhd_sockets.h" /* only macros used */
 
 #ifdef HAVE_STRINGS_H
@@ -210,7 +212,7 @@ _mhdErrorExit_func (const char *errDesc, const char *funcName, int lineNum)
 /* Global parameters */
 static int verbose;                 /**< Be verbose */
 static int oneone;                  /**< If false use HTTP/1.0 for requests*/
-static int global_port;             /**< MHD daemons listen port number */
+static uint16_t global_port;        /**< MHD daemons listen port number */
 static int response_timeout_val = TIMEOUTS_VAL;
 
 static int tricky_url;              /**< Tricky request URL */
@@ -245,7 +247,7 @@ struct headers_check_result
 };
 
 
-size_t
+static size_t
 lcurl_hdr_callback (char *buffer, size_t size, size_t nitems,
                     void *userdata)
 {
@@ -313,7 +315,7 @@ struct mhd_header_checker_param
   int found_header4;
 };
 
-enum MHD_Result
+static enum MHD_Result
 headerCheckerInterator (void *cls,
                         enum MHD_ValueKind kind,
                         const char *key,
@@ -384,7 +386,7 @@ ahcCheck (void *cls,
           const char *method,
           const char *version,
           const char *upload_data, size_t *upload_data_size,
-          void **con_cls)
+          void **req_cls)
 {
   static int ptr;
   struct MHD_Response *response;
@@ -412,21 +414,21 @@ ahcCheck (void *cls,
   if (0 != strcmp (param->rq_method, method))
     mhdErrorExitDesc ("Unexpected request method");
 
-  if (&ptr != *con_cls)
+  if (&ptr != *req_cls)
   {
-    *con_cls = &ptr;
+    *req_cls = &ptr;
     return MHD_YES;
   }
-  *con_cls = NULL;
+  *req_cls = NULL;
 
   if (1 > MHD_get_connection_values_n (connection, MHD_HEADER_KIND,
                                        &headerCheckerInterator,
                                        &param->header_check_param))
     mhdErrorExitDesc ("Wrong number of headers in the request");
 
-  response = MHD_create_response_from_buffer (param->rp_data_size,
-                                              (void *) param->rp_data,
-                                              MHD_RESPMEM_MUST_COPY);
+  response =
+    MHD_create_response_from_buffer_copy (param->rp_data_size,
+                                          (const void *) param->rp_data);
   if (NULL == response)
     mhdErrorExitDesc ("Failed to create response");
 
@@ -454,13 +456,13 @@ struct curlQueryParams
   const char *method;
 
   /* Destination port for CURL query */
-  int queryPort;
+  uint16_t queryPort;
 
   /* List of additional request headers */
   struct curl_slist *headers;
 
   /* CURL query result error flag */
-  volatile int queryError;
+  volatile unsigned int queryError;
 
   /* Response HTTP code, zero if no response */
   volatile int responseCode;
@@ -499,10 +501,9 @@ curlEasyInitForTest (struct curlQueryParams *p,
                                      (long) 1)) ||
 #endif /* CURL_AT_LEAST_VERSION(7, 42, 0) */
       (CURLE_OK != curl_easy_setopt (c, CURLOPT_FAILONERROR, 1L)) ||
-      (oneone) ?
       (CURLE_OK != curl_easy_setopt (c, CURLOPT_HTTP_VERSION,
-                                     CURL_HTTP_VERSION_1_1)) :
-      (CURLE_OK != curl_easy_setopt (c, CURLOPT_HTTP_VERSION,
+                                     (oneone) ?
+                                     CURL_HTTP_VERSION_1_1 :
                                      CURL_HTTP_VERSION_1_0)))
     libcurlErrorExitDesc ("curl_easy_setopt() failed");
 
@@ -591,8 +592,7 @@ performQueryExternal (struct MHD_Daemon *d, CURL *c)
     }
     if (NULL == multi)
     { /* libcurl has finished, check whether MHD still needs to perform cleanup */
-      unsigned long long to;
-      if ((MHD_YES != MHD_get_timeout (d, &to)) || (0 != to))
+      if (0 != MHD_get_timeout64s (d))
         break; /* MHD finished as well */
     }
     if (MHD_YES != MHD_get_fdset (d, &rs, &ws, &es, &maxMhdSk))
@@ -624,7 +624,7 @@ performQueryExternal (struct MHD_Daemon *d, CURL *c)
 
 
 /* Returns zero for successful response and non-zero for failed response */
-static int
+static unsigned int
 doCurlQueryInThread (struct MHD_Daemon *d,
                      struct curlQueryParams *p,
                      struct headers_check_result *hdr_res,
@@ -690,7 +690,7 @@ doCurlQueryInThread (struct MHD_Daemon *d,
     {
       if (CURLE_OPERATION_TIMEDOUT == errornum)
         mhdErrorExitDesc ("Request was aborted due to timeout");
-      fprintf (stderr, "libcurl returned expected error: %s\n",
+      fprintf (stderr, "libcurl returned unexpected error: %s\n",
                curl_easy_strerror (errornum));
       mhdErrorExitDesc ("Request failed due to unexpected error");
     }
@@ -723,13 +723,13 @@ doCurlQueryInThread (struct MHD_Daemon *d,
 
 
 /* Perform test queries, shut down MHD daemon, and free parameters */
-static int
-performTestQueries (struct MHD_Daemon *d, int d_port,
+static unsigned int
+performTestQueries (struct MHD_Daemon *d, uint16_t d_port,
                     struct ahc_cls_type *ahc_param,
                     struct check_uri_cls *uri_cb_param)
 {
   struct curlQueryParams qParam;
-  int ret = 0;          /* Return value */
+  unsigned int ret = 0;          /* Return value */
   struct headers_check_result rp_headers_check;
   struct curl_slist *curl_headers;
   curl_headers = NULL;
@@ -924,7 +924,7 @@ enum testMhdPollType
 static unsigned int
 testNumThreadsForPool (enum testMhdPollType pollType)
 {
-  int numThreads = MHD_CPU_COUNT;
+  unsigned int numThreads = MHD_CPU_COUNT;
   (void) pollType; /* Don't care about pollType for this test */
   return numThreads; /* No practical limit for non-cleanup test */
 }
@@ -932,7 +932,7 @@ testNumThreadsForPool (enum testMhdPollType pollType)
 
 static struct MHD_Daemon *
 startTestMhdDaemon (enum testMhdThreadsType thrType,
-                    enum testMhdPollType pollType, int *pport,
+                    enum testMhdPollType pollType, uint16_t *pport,
                     struct ahc_cls_type **ahc_param,
                     struct check_uri_cls **uri_cb_param)
 {
@@ -962,8 +962,18 @@ startTestMhdDaemon (enum testMhdThreadsType thrType,
       *pport += 16;
   }
 
-  if (testMhdThreadInternalPool != thrType)
-    d = MHD_start_daemon (((int) thrType) | ((int) pollType)
+  if (testMhdThreadExternal == thrType)
+    d = MHD_start_daemon (((unsigned int) thrType) | ((unsigned int) pollType)
+                          | (verbose ? MHD_USE_ERROR_LOG : 0)
+                          | MHD_USE_NO_THREAD_SAFETY,
+                          *pport, NULL, NULL,
+                          &ahcCheck, *ahc_param,
+                          MHD_OPTION_URI_LOG_CALLBACK, &check_uri_cb,
+                          *uri_cb_param,
+                          MHD_OPTION_APP_FD_SETSIZE, (int) FD_SETSIZE,
+                          MHD_OPTION_END);
+  else if (testMhdThreadInternalPool != thrType)
+    d = MHD_start_daemon (((unsigned int) thrType) | ((unsigned int) pollType)
                           | (verbose ? MHD_USE_ERROR_LOG : 0),
                           *pport, NULL, NULL,
                           &ahcCheck, *ahc_param,
@@ -971,7 +981,8 @@ startTestMhdDaemon (enum testMhdThreadsType thrType,
                           *uri_cb_param,
                           MHD_OPTION_END);
   else
-    d = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD | ((int) pollType)
+    d = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD
+                          | ((unsigned int) pollType)
                           | (verbose ? MHD_USE_ERROR_LOG : 0),
                           *pport, NULL, NULL,
                           &ahcCheck, *ahc_param,
@@ -995,7 +1006,7 @@ startTestMhdDaemon (enum testMhdThreadsType thrType,
       fprintf (stderr, "MHD_get_daemon_info() failed.\n");
       abort ();
     }
-    *pport = (int) dinfo->port;
+    *pport = dinfo->port;
     if (0 == global_port)
       global_port = *pport; /* Reuse the same port for all tests */
   }
@@ -1007,11 +1018,11 @@ startTestMhdDaemon (enum testMhdThreadsType thrType,
 /* Test runners */
 
 
-static int
+static unsigned int
 testExternalGet (void)
 {
   struct MHD_Daemon *d;
-  int d_port = global_port; /* Daemon's port */
+  uint16_t d_port = global_port; /* Daemon's port */
   struct ahc_cls_type *ahc_param;
   struct check_uri_cls *uri_cb_param;
 
@@ -1022,11 +1033,11 @@ testExternalGet (void)
 }
 
 
-static int
+static unsigned int
 testInternalGet (enum testMhdPollType pollType)
 {
   struct MHD_Daemon *d;
-  int d_port = global_port; /* Daemon's port */
+  uint16_t d_port = global_port; /* Daemon's port */
   struct ahc_cls_type *ahc_param;
   struct check_uri_cls *uri_cb_param;
 
@@ -1037,11 +1048,11 @@ testInternalGet (enum testMhdPollType pollType)
 }
 
 
-static int
+static unsigned int
 testMultithreadedGet (enum testMhdPollType pollType)
 {
   struct MHD_Daemon *d;
-  int d_port = global_port; /* Daemon's port */
+  uint16_t d_port = global_port; /* Daemon's port */
   struct ahc_cls_type *ahc_param;
   struct check_uri_cls *uri_cb_param;
 
@@ -1051,11 +1062,11 @@ testMultithreadedGet (enum testMhdPollType pollType)
 }
 
 
-static int
+static unsigned int
 testMultithreadedPoolGet (enum testMhdPollType pollType)
 {
   struct MHD_Daemon *d;
-  int d_port = global_port; /* Daemon's port */
+  uint16_t d_port = global_port; /* Daemon's port */
   struct ahc_cls_type *ahc_param;
   struct check_uri_cls *uri_cb_param;
 
@@ -1079,7 +1090,10 @@ main (int argc, char *const *argv)
   tricky_header2 = has_in_name (argv[0], "_header2") ? 1 : 0;
   if (1 != tricky_url + tricky_header2)
     return 99;
-  verbose = ! has_param (argc, argv, "-q") || has_param (argc, argv, "--quiet");
+  verbose = ! (has_param (argc, argv, "-q") ||
+               has_param (argc, argv, "--quiet") ||
+               has_param (argc, argv, "-s") ||
+               has_param (argc, argv, "--silent"));
 
 #if ! CURL_AT_LEAST_VERSION (7, 62, 0)
   if (tricky_url)

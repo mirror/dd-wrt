@@ -1,7 +1,7 @@
 /*
      This file is part of libmicrohttpd
      Copyright (C) 2007 Christian Grothoff
-     Copyright (C) 2014-2021 Evgeny Grin (Karlson2k)
+     Copyright (C) 2014-2022 Evgeny Grin (Karlson2k)
 
      libmicrohttpd is free software; you can redistribute it and/or modify
      it under the terms of the GNU General Public License as published
@@ -33,6 +33,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <errno.h>
 
 #ifndef WINDOWS
 #include <unistd.h>
@@ -59,32 +60,32 @@
 /**
  * Use "Connection: close" header?
  */
-int conn_close;
+static int conn_close;
 
 /**
  * Use static string response instead of callback-generated?
  */
-int resp_string;
+static int resp_string;
 
 /**
  * Use response with known size?
  */
-int resp_sized;
+static int resp_sized;
 
 /**
  * Use empty (zero-sized) response?
  */
-int resp_empty;
+static int resp_empty;
 
 /**
  * Force chunked response by response header?
  */
-int chunked_forced;
+static int chunked_forced;
 
 /**
  * MHD port used for testing
  */
-int port_global;
+static uint16_t port_global;
 
 
 struct headers_check_result
@@ -93,7 +94,7 @@ struct headers_check_result
   int found_footer;
 };
 
-size_t
+static size_t
 lcurl_hdr_callback (char *buffer, size_t size, size_t nitems,
                     void *userdata)
 {
@@ -159,7 +160,9 @@ crc (void *cls,
 
   if (max < RESP_BLOCK_SIZE)
     abort ();                   /* should not happen in this testcase... */
-  memset (buf, 'A' + (pos / RESP_BLOCK_SIZE), RESP_BLOCK_SIZE);
+  memset (buf,
+          'A' + (char) (unsigned char) (pos / RESP_BLOCK_SIZE),
+          RESP_BLOCK_SIZE);
   return RESP_BLOCK_SIZE;
 }
 
@@ -180,24 +183,24 @@ ahc_echo (void *cls,
           const char *url,
           const char *method,
           const char *version,
-          const char *upload_data, size_t *upload_data_size, void **ptr)
+          const char *upload_data, size_t *upload_data_size, void **req_cls)
 {
   static int aptr;
-  const char *me = cls;
   struct MHD_Response *response;
   enum MHD_Result ret;
 
+  (void) cls;
   (void) url;
   (void) version;              /* Unused. Silent compiler warning. */
   (void) upload_data;
   (void) upload_data_size;     /* Unused. Silent compiler warning. */
 
-  if (0 != strcmp (me, method))
+  if (0 != strcmp (MHD_HTTP_METHOD_GET, method))
     return MHD_NO;              /* unexpected method */
-  if (&aptr != *ptr)
+  if (&aptr != *req_cls)
   {
     /* do never respond on first call */
-    *ptr = &aptr;
+    *req_cls = &aptr;
     return MHD_YES;
   }
   if (! resp_string)
@@ -225,15 +228,15 @@ ahc_echo (void *cls,
       if (NULL == buf)
         _exit (99);
       for (pos = 0; pos < resp_size; pos += RESP_BLOCK_SIZE)
-        memset (buf + pos, 'A' + (pos / RESP_BLOCK_SIZE), RESP_BLOCK_SIZE);
+        memset (buf + pos,
+                'A' + (char) (unsigned char) (pos / RESP_BLOCK_SIZE),
+                RESP_BLOCK_SIZE);
 
-      response = MHD_create_response_from_buffer (resp_size, buf,
-                                                  MHD_RESPMEM_MUST_COPY);
+      response = MHD_create_response_from_buffer_copy (resp_size, buf);
       free (buf);
     }
     else
-      response = MHD_create_response_from_buffer (0, NULL,
-                                                  MHD_RESPMEM_PERSISTENT);
+      response = MHD_create_response_empty (MHD_RF_NONE);
   }
   if (NULL == response)
     abort ();
@@ -266,8 +269,8 @@ ahc_echo (void *cls,
 }
 
 
-static int
-validate (struct CBC cbc, int ebase)
+static unsigned int
+validate (struct CBC cbc, unsigned int ebase)
 {
   int i;
   char buf[RESP_BLOCK_SIZE];
@@ -308,15 +311,15 @@ validate (struct CBC cbc, int ebase)
 }
 
 
-static int
-testInternalGet ()
+static unsigned int
+testInternalGet (void)
 {
   struct MHD_Daemon *d;
   CURL *c;
   char buf[2048];
   struct CBC cbc;
   CURLcode errornum;
-  int port;
+  uint16_t port;
   struct curl_slist *h_list = NULL;
   struct headers_check_result hdr_check;
 
@@ -325,7 +328,7 @@ testInternalGet ()
   cbc.size = 2048;
   cbc.pos = 0;
   d = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG,
-                        port, NULL, NULL, &ahc_echo, "GET", MHD_OPTION_END);
+                        port, NULL, NULL, &ahc_echo, NULL, MHD_OPTION_END);
   if (d == NULL)
     return 1;
   if (0 == port)
@@ -336,7 +339,7 @@ testInternalGet ()
     {
       MHD_stop_daemon (d); return 32;
     }
-    port = (int) dinfo->port;
+    port = dinfo->port;
     if (0 == port_global)
       port_global = port; /* Re-use the same port for all checks */
   }
@@ -390,15 +393,15 @@ testInternalGet ()
 }
 
 
-static int
-testMultithreadedGet ()
+static unsigned int
+testMultithreadedGet (void)
 {
   struct MHD_Daemon *d;
   CURL *c;
   char buf[2048];
   struct CBC cbc;
   CURLcode errornum;
-  int port;
+  uint16_t port;
   struct curl_slist *h_list = NULL;
   struct headers_check_result hdr_check;
 
@@ -408,7 +411,7 @@ testMultithreadedGet ()
   cbc.pos = 0;
   d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION
                         | MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG,
-                        port, NULL, NULL, &ahc_echo, "GET", MHD_OPTION_END);
+                        port, NULL, NULL, &ahc_echo, NULL, MHD_OPTION_END);
   if (d == NULL)
     return 16;
   if (0 == port)
@@ -419,7 +422,7 @@ testMultithreadedGet ()
     {
       MHD_stop_daemon (d); return 32;
     }
-    port = (int) dinfo->port;
+    port = dinfo->port;
     if (0 == port_global)
       port_global = port; /* Re-use the same port for all checks */
   }
@@ -473,15 +476,15 @@ testMultithreadedGet ()
 }
 
 
-static int
-testMultithreadedPoolGet ()
+static unsigned int
+testMultithreadedPoolGet (void)
 {
   struct MHD_Daemon *d;
   CURL *c;
   char buf[2048];
   struct CBC cbc;
   CURLcode errornum;
-  int port;
+  uint16_t port;
   struct curl_slist *h_list = NULL;
   struct headers_check_result hdr_check;
 
@@ -490,7 +493,7 @@ testMultithreadedPoolGet ()
   cbc.size = 2048;
   cbc.pos = 0;
   d = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG,
-                        port, NULL, NULL, &ahc_echo, "GET",
+                        port, NULL, NULL, &ahc_echo, NULL,
                         MHD_OPTION_THREAD_POOL_SIZE, MHD_CPU_COUNT,
                         MHD_OPTION_END);
   if (d == NULL)
@@ -503,7 +506,7 @@ testMultithreadedPoolGet ()
     {
       MHD_stop_daemon (d); return 32;
     }
-    port = (int) dinfo->port;
+    port = dinfo->port;
     if (0 == port_global)
       port_global = port; /* Re-use the same port for all checks */
   }
@@ -557,8 +560,8 @@ testMultithreadedPoolGet ()
 }
 
 
-static int
-testExternalGet ()
+static unsigned int
+testExternalGet (void)
 {
   struct MHD_Daemon *d;
   CURL *c;
@@ -579,7 +582,7 @@ testExternalGet ()
   struct CURLMsg *msg;
   time_t start;
   struct timeval tv;
-  int port;
+  uint16_t port;
   struct curl_slist *h_list = NULL;
   struct headers_check_result hdr_check;
 
@@ -588,8 +591,10 @@ testExternalGet ()
   cbc.buf = buf;
   cbc.size = 2048;
   cbc.pos = 0;
-  d = MHD_start_daemon (MHD_USE_ERROR_LOG,
-                        port, NULL, NULL, &ahc_echo, "GET", MHD_OPTION_END);
+  d = MHD_start_daemon (MHD_USE_ERROR_LOG | MHD_USE_NO_THREAD_SAFETY,
+                        port, NULL, NULL, &ahc_echo, NULL,
+                        MHD_OPTION_APP_FD_SETSIZE, (int) FD_SETSIZE,
+                        MHD_OPTION_END);
   if (d == NULL)
     return 256;
   if (0 == port)
@@ -600,7 +605,7 @@ testExternalGet ()
     {
       MHD_stop_daemon (d); return 32;
     }
-    port = (int) dinfo->port;
+    port = dinfo->port;
     if (0 == port_global)
       port_global = port; /* Re-use the same port for all checks */
   }

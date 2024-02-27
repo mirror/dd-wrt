@@ -41,6 +41,9 @@
  */
 #define _(String) (String)
 
+#if defined(_MHD_EXTERN) && ! defined(BUILDING_MHD_LIB)
+#undef _MHD_EXTERN
+#endif /* _MHD_EXTERN && ! BUILDING_MHD_LIB */
 
 #ifndef _MHD_EXTERN
 #if defined(BUILDING_MHD_LIB) && defined(_WIN32) && \
@@ -80,7 +83,7 @@
 #  endif
 #endif /* MHD_USE_POSIX_THREADS || MHD_USE_W32_THREADS */
 
-#if OS390
+#if defined(OS390)
 #define _OPEN_THREADS
 #define _OPEN_SYS_SOCK_IPV6
 #define _OPEN_MSGQ_EXT
@@ -109,7 +112,7 @@
 #define RESTRICT __restrict__
 #endif /* __VXWORKS__ || __vxworks || OS_VXWORKS */
 
-#if LINUX + 0 && (defined(HAVE_SENDFILE64) || defined(HAVE_LSEEK64)) && \
+#if defined(LINUX) && (defined(HAVE_SENDFILE64) || defined(HAVE_LSEEK64)) && \
   ! defined(_LARGEFILE64_SOURCE)
 /* On Linux, special macro is required to enable definitions of some xxx64 functions */
 #define _LARGEFILE64_SOURCE 1
@@ -153,32 +156,133 @@
 #endif /* MHD_ASAN_ACTIVE */
 
 #if defined(MHD_ASAN_ACTIVE) && defined(HAVE_SANITIZER_ASAN_INTERFACE_H) && \
-  (defined(FUNC_ATTR_PTRCOMPARE_WOKRS) || defined(FUNC_ATTR_NOSANITIZE_WORKS))
+  (defined(FUNC_PTRCOMPARE_CAST_WORKAROUND_WORKS) || \
+  (defined(FUNC_ATTR_PTRCOMPARE_WORKS) && \
+  defined(FUNC_ATTR_PTRSUBTRACT_WORKS)) || \
+  defined(FUNC_ATTR_NOSANITIZE_WORKS))
 #ifndef MHD_ASAN_POISON_ACTIVE
-/* Manual ASAN poisoning could be used */
+/* User ASAN poisoning could be used */
 #warning User memory poisoning is not active
 #endif /* ! MHD_ASAN_POISON_ACTIVE */
 #else  /* ! (MHD_ASAN_ACTIVE && HAVE_SANITIZER_ASAN_INTERFACE_H &&
-           (FUNC_ATTR_PTRCOMPARE_WOKRS || FUNC_ATTR_NOSANITIZE_WORKS))   */
+           (FUNC_ATTR_PTRCOMPARE_WORKS || FUNC_ATTR_NOSANITIZE_WORKS))   */
 #ifdef MHD_ASAN_POISON_ACTIVE
 #error User memory poisoning is active, but conditions are not suitable
 #endif /* MHD_ASAN_POISON_ACTIVE */
 #endif /* ! (MHD_ASAN_ACTIVE && HAVE_SANITIZER_ASAN_INTERFACE_H &&
-           (FUNC_ATTR_PTRCOMPARE_WOKRS || FUNC_ATTR_NOSANITIZE_WORKS))   */
+           (FUNC_ATTR_PTRCOMPARE_WORKS || FUNC_ATTR_NOSANITIZE_WORKS))   */
 
+#ifndef _MSC_FULL_VER
+#  define MHD_DATA_TRUNCATION_RUNTIME_CHECK_DISABLE_ /* empty */
+#  define MHD_DATA_TRUNCATION_RUNTIME_CHECK_RESTORE_ /* empty */
+#else  /* _MSC_FULL_VER */
+#  define MHD_DATA_TRUNCATION_RUNTIME_CHECK_DISABLE_ \
+   __pragma(runtime_checks("c", off))
+#  define MHD_DATA_TRUNCATION_RUNTIME_CHECK_RESTORE_ \
+   __pragma(runtime_checks("c", restore))
+#endif /* _MSC_FULL_VER */
 
 /**
  * Automatic string with the name of the current function
  */
 #if defined(HAVE___FUNC__)
 #define MHD_FUNC_       __func__
+#define MHD_HAVE_MHD_FUNC_ 1
 #elif defined(HAVE___FUNCTION__)
 #define MHD_FUNC_       __FUNCTION__
+#define MHD_HAVE_MHD_FUNC_ 1
 #elif defined(HAVE___PRETTY_FUNCTION__)
 #define MHD_FUNC_       __PRETTY_FUNCTION__
+#define MHD_HAVE_MHD_FUNC_ 1
 #else
 #define MHD_FUNC_       "**name unavailable**"
+#ifdef MHD_HAVE_MHD_FUNC_
+#undef MHD_HAVE_MHD_FUNC_
+#endif /* MHD_HAVE_MHD_FUNC_ */
 #endif
 
+/* Un-define some HAVE_DECL_* macro if they equal zero.
+   This should allow safely use #ifdef in the code.
+   Define HAS_DECL_* macros only if matching HAVE_DECL_* macro
+   has non-zero value. Unlike HAVE_DECL_*, macros HAS_DECL_*
+   cannot have zero value. */
+#ifdef HAVE_DECL__SC_NPROCESSORS_ONLN
+#  if 0 == HAVE_DECL__SC_NPROCESSORS_ONLN
+#    undef HAVE_DECL__SC_NPROCESSORS_ONLN
+#  else  /* 0 != HAVE_DECL__SC_NPROCESSORS_ONLN */
+#    define HAS_DECL__SC_NPROCESSORS_ONLN 1
+#  endif /* 0 != HAVE_DECL__SC_NPROCESSORS_ONLN */
+#endif /* HAVE_DECL__SC_NPROCESSORS_ONLN */
+
+#ifdef HAVE_DECL__SC_NPROCESSORS_CONF
+#  if 0 == HAVE_DECL__SC_NPROCESSORS_CONF
+#    undef HAVE_DECL__SC_NPROCESSORS_CONF
+#  else  /* 0 != HAVE_DECL__SC_NPROCESSORS_CONF */
+#    define HAS_DECL__SC_NPROCESSORS_CONF 1
+#  endif /* 0 != HAVE_DECL__SC_NPROCESSORS_CONF */
+#endif /* HAVE_DECL__SC_NPROCESSORS_CONF */
+
+#ifdef HAVE_DECL__SC_NPROC_ONLN
+#  if 0 == HAVE_DECL__SC_NPROC_ONLN
+#    undef HAVE_DECL__SC_NPROC_ONLN
+#  else  /* 0 != HAVE_DECL__SC_NPROC_ONLN */
+#    define HAS_DECL__SC_NPROC_ONLN 1
+#  endif /* 0 != HAVE_DECL__SC_NPROC_ONLN */
+#endif /* HAVE_DECL__SC_NPROC_ONLN */
+
+#ifdef HAVE_DECL__SC_CRAY_NCPU
+#  if 0 == HAVE_DECL__SC_CRAY_NCPU
+#    undef HAVE_DECL__SC_CRAY_NCPU
+#  else  /* 0 != HAVE_DECL__SC_CRAY_NCPU */
+#    define HAS_DECL__SC_CRAY_NCPU 1
+#  endif /* 0 != HAVE_DECL__SC_CRAY_NCPU */
+#endif /* HAVE_DECL__SC_CRAY_NCPU */
+
+#ifdef HAVE_DECL_CTL_HW
+#  if 0 == HAVE_DECL_CTL_HW
+#    undef HAVE_DECL_CTL_HW
+#  else  /* 0 != HAVE_DECL_CTL_HW */
+#    define HAS_DECL_CTL_HW 1
+#  endif /* 0 != HAVE_DECL_CTL_HW */
+#endif /* HAVE_DECL_CTL_HW */
+
+#ifdef HAVE_DECL_HW_NCPUONLINE
+#  if 0 == HAVE_DECL_HW_NCPUONLINE
+#    undef HAVE_DECL_HW_NCPUONLINE
+#  else  /* 0 != HAVE_DECL_HW_NCPUONLINE */
+#    define HAS_DECL_HW_NCPUONLINE 1
+#  endif /* 0 != HAVE_DECL_HW_NCPUONLINE */
+#endif /* HAVE_DECL_HW_NCPUONLINE */
+
+#ifdef HAVE_DECL_HW_AVAILCPU
+#  if 0 == HAVE_DECL_HW_AVAILCPU
+#    undef HAVE_DECL_HW_AVAILCPU
+#  else  /* 0 != HAVE_DECL_HW_AVAILCPU */
+#    define HAS_DECL_HW_AVAILCPU 1
+#  endif /* 0 != HAVE_DECL_HW_AVAILCPU */
+#endif /* HAVE_DECL_HW_AVAILCPU */
+
+#ifdef HAVE_DECL_HW_NCPU
+#  if 0 == HAVE_DECL_HW_NCPU
+#    undef HAVE_DECL_HW_NCPU
+#  else  /* 0 != HAVE_DECL_HW_NCPU */
+#    define HAS_DECL_HW_NCPU 1
+#  endif /* 0 != HAVE_DECL_HW_NCPU */
+#endif /* HAVE_DECL_HW_NCPU */
+
+#ifdef HAVE_DECL_CPU_SETSIZE
+#  if 0 == HAVE_DECL_CPU_SETSIZE
+#    undef HAVE_DECL_CPU_SETSIZE
+#  else  /* 0 != HAVE_DECL_CPU_SETSIZE */
+#    define HAS_DECL_CPU_SETSIZE 1
+#  endif /* 0 != HAVE_DECL_CPU_SETSIZE */
+#endif /* HAVE_DECL_CPU_SETSIZE */
+
+#ifndef MHD_DAUTH_DEF_TIMEOUT_
+#  define MHD_DAUTH_DEF_TIMEOUT_ 90
+#endif /* ! MHD_DAUTH_DEF_TIMEOUT_ */
+#ifndef MHD_DAUTH_DEF_MAX_NC_
+#  define MHD_DAUTH_DEF_MAX_NC_ 1000
+#endif /* ! MHD_DAUTH_DEF_MAX_NC_ */
 
 #endif /* MHD_OPTIONS_H */

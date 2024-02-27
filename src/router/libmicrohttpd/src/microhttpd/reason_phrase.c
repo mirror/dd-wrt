@@ -1,6 +1,7 @@
 /*
      This file is part of libmicrohttpd
-     Copyright (C) 2007, 2011, 2017, 2019 Christian Grothoff, Karlson2k (Evgeny Grin)
+     Copyright (C) 2007, 2011, 2017, 2019 Christian Grothoff
+     Copyright (C) 2017-2023 Karlson2k (Evgeny Grin)
 
      This library is free software; you can redistribute it and/or
      modify it under the terms of the GNU Lesser General Public
@@ -32,25 +33,25 @@
 #define NULL ((void*) 0)
 #endif
 
-static const struct _MHD_str_w_len invalid_hundred[] = {
+static const struct _MHD_cstr_w_len invalid_hundred[] = {
   { NULL, 0 }
 };
 
-static const struct _MHD_str_w_len one_hundred[] = {
-  /* 100 */ _MHD_S_STR_W_LEN ("Continue"),       /* RFC-ietf-httpbis-semantics, Section 15.2.1 */
-  /* 101 */ _MHD_S_STR_W_LEN ("Switching Protocols"), /* RFC-ietf-httpbis-semantics, Section 15.2.2 */
+static const struct _MHD_cstr_w_len one_hundred[] = {
+  /* 100 */ _MHD_S_STR_W_LEN ("Continue"),       /* RFC9110, Section 15.2.1 */
+  /* 101 */ _MHD_S_STR_W_LEN ("Switching Protocols"), /* RFC9110, Section 15.2.2 */
   /* 102 */ _MHD_S_STR_W_LEN ("Processing"),     /* RFC2518 */
   /* 103 */ _MHD_S_STR_W_LEN ("Early Hints")     /* RFC8297 */
 };
 
-static const struct _MHD_str_w_len two_hundred[] = {
-  /* 200 */ _MHD_S_STR_W_LEN ("OK"),             /* RFC-ietf-httpbis-semantics, Section 15.3.1 */
-  /* 201 */ _MHD_S_STR_W_LEN ("Created"),        /* RFC-ietf-httpbis-semantics, Section 15.3.2 */
-  /* 202 */ _MHD_S_STR_W_LEN ("Accepted"),       /* RFC-ietf-httpbis-semantics, Section 15.3.3 */
-  /* 203 */ _MHD_S_STR_W_LEN ("Non-Authoritative Information"), /* RFC-ietf-httpbis-semantics, Section 15.3.4 */
-  /* 204 */ _MHD_S_STR_W_LEN ("No Content"),     /* RFC-ietf-httpbis-semantics, Section 15.3.5 */
-  /* 205 */ _MHD_S_STR_W_LEN ("Reset Content"),  /* RFC-ietf-httpbis-semantics, Section 15.3.6 */
-  /* 206 */ _MHD_S_STR_W_LEN ("Partial Content"), /* RFC-ietf-httpbis-semantics, Section 15.3.7 */
+static const struct _MHD_cstr_w_len two_hundred[] = {
+  /* 200 */ _MHD_S_STR_W_LEN ("OK"),             /* RFC9110, Section 15.3.1 */
+  /* 201 */ _MHD_S_STR_W_LEN ("Created"),        /* RFC9110, Section 15.3.2 */
+  /* 202 */ _MHD_S_STR_W_LEN ("Accepted"),       /* RFC9110, Section 15.3.3 */
+  /* 203 */ _MHD_S_STR_W_LEN ("Non-Authoritative Information"), /* RFC9110, Section 15.3.4 */
+  /* 204 */ _MHD_S_STR_W_LEN ("No Content"),     /* RFC9110, Section 15.3.5 */
+  /* 205 */ _MHD_S_STR_W_LEN ("Reset Content"),  /* RFC9110, Section 15.3.6 */
+  /* 206 */ _MHD_S_STR_W_LEN ("Partial Content"), /* RFC9110, Section 15.3.7 */
   /* 207 */ _MHD_S_STR_W_LEN ("Multi-Status"),   /* RFC4918 */
   /* 208 */ _MHD_S_STR_W_LEN ("Already Reported"), /* RFC5842 */
   /* 209 */ {"Unknown", 0},                      /* Not used */
@@ -73,46 +74,46 @@ static const struct _MHD_str_w_len two_hundred[] = {
   /* 226 */ _MHD_S_STR_W_LEN ("IM Used")         /* RFC3229 */
 };
 
-static const struct _MHD_str_w_len three_hundred[] = {
-  /* 300 */ _MHD_S_STR_W_LEN ("Multiple Choices"), /* RFC-ietf-httpbis-semantics, Section 15.4.1 */
-  /* 301 */ _MHD_S_STR_W_LEN ("Moved Permanently"), /* RFC-ietf-httpbis-semantics, Section 15.4.2 */
-  /* 302 */ _MHD_S_STR_W_LEN ("Found"),          /* RFC-ietf-httpbis-semantics, Section 15.4.3 */
-  /* 303 */ _MHD_S_STR_W_LEN ("See Other"),      /* RFC-ietf-httpbis-semantics, Section 15.4.4 */
-  /* 304 */ _MHD_S_STR_W_LEN ("Not Modified"),   /* RFC-ietf-httpbis-semantics, Section 15.4.5 */
-  /* 305 */ _MHD_S_STR_W_LEN ("Use Proxy"),      /* RFC-ietf-httpbis-semantics, Section 15.4.6 */
-  /* 306 */ _MHD_S_STR_W_LEN ("Switch Proxy"),   /* Not used! RFC-ietf-httpbis-semantics, Section 15.4.7 */
-  /* 307 */ _MHD_S_STR_W_LEN ("Temporary Redirect"), /* RFC-ietf-httpbis-semantics, Section 15.4.8 */
-  /* 308 */ _MHD_S_STR_W_LEN ("Permanent Redirect") /* RFC-ietf-httpbis-semantics, Section 15.4.9 */
+static const struct _MHD_cstr_w_len three_hundred[] = {
+  /* 300 */ _MHD_S_STR_W_LEN ("Multiple Choices"), /* RFC9110, Section 15.4.1 */
+  /* 301 */ _MHD_S_STR_W_LEN ("Moved Permanently"), /* RFC9110, Section 15.4.2 */
+  /* 302 */ _MHD_S_STR_W_LEN ("Found"),          /* RFC9110, Section 15.4.3 */
+  /* 303 */ _MHD_S_STR_W_LEN ("See Other"),      /* RFC9110, Section 15.4.4 */
+  /* 304 */ _MHD_S_STR_W_LEN ("Not Modified"),   /* RFC9110, Section 15.4.5 */
+  /* 305 */ _MHD_S_STR_W_LEN ("Use Proxy"),      /* RFC9110, Section 15.4.6 */
+  /* 306 */ _MHD_S_STR_W_LEN ("Switch Proxy"),   /* Not used! RFC9110, Section 15.4.7 */
+  /* 307 */ _MHD_S_STR_W_LEN ("Temporary Redirect"), /* RFC9110, Section 15.4.8 */
+  /* 308 */ _MHD_S_STR_W_LEN ("Permanent Redirect") /* RFC9110, Section 15.4.9 */
 };
 
-static const struct _MHD_str_w_len four_hundred[] = {
-  /* 400 */ _MHD_S_STR_W_LEN ("Bad Request"),    /* RFC-ietf-httpbis-semantics, Section 15.5.1 */
-  /* 401 */ _MHD_S_STR_W_LEN ("Unauthorized"),   /* RFC-ietf-httpbis-semantics, Section 15.5.2 */
-  /* 402 */ _MHD_S_STR_W_LEN ("Payment Required"), /* RFC-ietf-httpbis-semantics, Section 15.5.3 */
-  /* 403 */ _MHD_S_STR_W_LEN ("Forbidden"),      /* RFC-ietf-httpbis-semantics, Section 15.5.4 */
-  /* 404 */ _MHD_S_STR_W_LEN ("Not Found"),      /* RFC-ietf-httpbis-semantics, Section 15.5.5 */
-  /* 405 */ _MHD_S_STR_W_LEN ("Method Not Allowed"), /* RFC-ietf-httpbis-semantics, Section 15.5.6 */
-  /* 406 */ _MHD_S_STR_W_LEN ("Not Acceptable"), /* RFC-ietf-httpbis-semantics, Section 15.5.7 */
-  /* 407 */ _MHD_S_STR_W_LEN ("Proxy Authentication Required"), /* RFC-ietf-httpbis-semantics, Section 15.5.8 */
-  /* 408 */ _MHD_S_STR_W_LEN ("Request Timeout"), /* RFC-ietf-httpbis-semantics, Section 15.5.9 */
-  /* 409 */ _MHD_S_STR_W_LEN ("Conflict"),       /* RFC-ietf-httpbis-semantics, Section 15.5.10 */
-  /* 410 */ _MHD_S_STR_W_LEN ("Gone"),           /* RFC-ietf-httpbis-semantics, Section 15.5.11 */
-  /* 411 */ _MHD_S_STR_W_LEN ("Length Required"), /* RFC-ietf-httpbis-semantics, Section 15.5.12 */
-  /* 412 */ _MHD_S_STR_W_LEN ("Precondition Failed"), /* RFC-ietf-httpbis-semantics, Section 15.5.13 */
-  /* 413 */ _MHD_S_STR_W_LEN ("Content Too Large"), /* RFC-ietf-httpbis-semantics, Section 15.5.14 */
-  /* 414 */ _MHD_S_STR_W_LEN ("URI Too Long"),   /* RFC-ietf-httpbis-semantics, Section 15.5.15 */
-  /* 415 */ _MHD_S_STR_W_LEN ("Unsupported Media Type"), /* RFC-ietf-httpbis-semantics, Section 15.5.16 */
-  /* 416 */ _MHD_S_STR_W_LEN ("Range Not Satisfiable"), /* RFC-ietf-httpbis-semantics, Section 15.5.17 */
-  /* 417 */ _MHD_S_STR_W_LEN ("Expectation Failed"), /* RFC-ietf-httpbis-semantics, Section 15.5.18 */
+static const struct _MHD_cstr_w_len four_hundred[] = {
+  /* 400 */ _MHD_S_STR_W_LEN ("Bad Request"),    /* RFC9110, Section 15.5.1 */
+  /* 401 */ _MHD_S_STR_W_LEN ("Unauthorized"),   /* RFC9110, Section 15.5.2 */
+  /* 402 */ _MHD_S_STR_W_LEN ("Payment Required"), /* RFC9110, Section 15.5.3 */
+  /* 403 */ _MHD_S_STR_W_LEN ("Forbidden"),      /* RFC9110, Section 15.5.4 */
+  /* 404 */ _MHD_S_STR_W_LEN ("Not Found"),      /* RFC9110, Section 15.5.5 */
+  /* 405 */ _MHD_S_STR_W_LEN ("Method Not Allowed"), /* RFC9110, Section 15.5.6 */
+  /* 406 */ _MHD_S_STR_W_LEN ("Not Acceptable"), /* RFC9110, Section 15.5.7 */
+  /* 407 */ _MHD_S_STR_W_LEN ("Proxy Authentication Required"), /* RFC9110, Section 15.5.8 */
+  /* 408 */ _MHD_S_STR_W_LEN ("Request Timeout"), /* RFC9110, Section 15.5.9 */
+  /* 409 */ _MHD_S_STR_W_LEN ("Conflict"),       /* RFC9110, Section 15.5.10 */
+  /* 410 */ _MHD_S_STR_W_LEN ("Gone"),           /* RFC9110, Section 15.5.11 */
+  /* 411 */ _MHD_S_STR_W_LEN ("Length Required"), /* RFC9110, Section 15.5.12 */
+  /* 412 */ _MHD_S_STR_W_LEN ("Precondition Failed"), /* RFC9110, Section 15.5.13 */
+  /* 413 */ _MHD_S_STR_W_LEN ("Content Too Large"), /* RFC9110, Section 15.5.14 */
+  /* 414 */ _MHD_S_STR_W_LEN ("URI Too Long"),   /* RFC9110, Section 15.5.15 */
+  /* 415 */ _MHD_S_STR_W_LEN ("Unsupported Media Type"), /* RFC9110, Section 15.5.16 */
+  /* 416 */ _MHD_S_STR_W_LEN ("Range Not Satisfiable"), /* RFC9110, Section 15.5.17 */
+  /* 417 */ _MHD_S_STR_W_LEN ("Expectation Failed"), /* RFC9110, Section 15.5.18 */
   /* 418 */ {"Unknown", 0},                      /* Not used */
   /* 419 */ {"Unknown", 0},                      /* Not used */
   /* 420 */ {"Unknown", 0},                      /* Not used */
-  /* 421 */ _MHD_S_STR_W_LEN ("Misdirected Request"), /* RFC-ietf-httpbis-semantics, Section 15.5.20 */
-  /* 422 */ _MHD_S_STR_W_LEN ("Unprocessable Content"), /* RFC-ietf-httpbis-semantics, Section 15.5.21 */
+  /* 421 */ _MHD_S_STR_W_LEN ("Misdirected Request"), /* RFC9110, Section 15.5.20 */
+  /* 422 */ _MHD_S_STR_W_LEN ("Unprocessable Content"), /* RFC9110, Section 15.5.21 */
   /* 423 */ _MHD_S_STR_W_LEN ("Locked"),         /* RFC4918 */
   /* 424 */ _MHD_S_STR_W_LEN ("Failed Dependency"), /* RFC4918 */
   /* 425 */ _MHD_S_STR_W_LEN ("Too Early"),      /* RFC8470 */
-  /* 426 */ _MHD_S_STR_W_LEN ("Upgrade Required"), /* RFC-ietf-httpbis-semantics, Section 15.5.22 */
+  /* 426 */ _MHD_S_STR_W_LEN ("Upgrade Required"), /* RFC9110, Section 15.5.22 */
   /* 427 */ {"Unknown", 0},                      /* Not used */
   /* 428 */ _MHD_S_STR_W_LEN ("Precondition Required"), /* RFC6585 */
   /* 429 */ _MHD_S_STR_W_LEN ("Too Many Requests"), /* RFC6585 */
@@ -140,18 +141,18 @@ static const struct _MHD_str_w_len four_hundred[] = {
   /* 451 */ _MHD_S_STR_W_LEN ("Unavailable For Legal Reasons") /* RFC7725 */
 };
 
-static const struct _MHD_str_w_len five_hundred[] = {
-  /* 500 */ _MHD_S_STR_W_LEN ("Internal Server Error"), /* RFC-ietf-httpbis-semantics, Section 15.6.1 */
-  /* 501 */ _MHD_S_STR_W_LEN ("Not Implemented"), /* RFC-ietf-httpbis-semantics, Section 15.6.2 */
-  /* 502 */ _MHD_S_STR_W_LEN ("Bad Gateway"),    /* RFC-ietf-httpbis-semantics, Section 15.6.3 */
-  /* 503 */ _MHD_S_STR_W_LEN ("Service Unavailable"), /* RFC-ietf-httpbis-semantics, Section 15.6.4 */
-  /* 504 */ _MHD_S_STR_W_LEN ("Gateway Timeout"), /* RFC-ietf-httpbis-semantics, Section 15.6.5 */
-  /* 505 */ _MHD_S_STR_W_LEN ("HTTP Version Not Supported"), /* RFC-ietf-httpbis-semantics, Section 15.6.6 */
+static const struct _MHD_cstr_w_len five_hundred[] = {
+  /* 500 */ _MHD_S_STR_W_LEN ("Internal Server Error"), /* RFC9110, Section 15.6.1 */
+  /* 501 */ _MHD_S_STR_W_LEN ("Not Implemented"), /* RFC9110, Section 15.6.2 */
+  /* 502 */ _MHD_S_STR_W_LEN ("Bad Gateway"),    /* RFC9110, Section 15.6.3 */
+  /* 503 */ _MHD_S_STR_W_LEN ("Service Unavailable"), /* RFC9110, Section 15.6.4 */
+  /* 504 */ _MHD_S_STR_W_LEN ("Gateway Timeout"), /* RFC9110, Section 15.6.5 */
+  /* 505 */ _MHD_S_STR_W_LEN ("HTTP Version Not Supported"), /* RFC9110, Section 15.6.6 */
   /* 506 */ _MHD_S_STR_W_LEN ("Variant Also Negotiates"), /* RFC2295 */
   /* 507 */ _MHD_S_STR_W_LEN ("Insufficient Storage"), /* RFC4918 */
   /* 508 */ _MHD_S_STR_W_LEN ("Loop Detected"),  /* RFC5842 */
   /* 509 */ _MHD_S_STR_W_LEN ("Bandwidth Limit Exceeded"), /* Apache extension */
-  /* 510 */ _MHD_S_STR_W_LEN ("Not Extended"),   /* RFC2774 */
+  /* 510 */ _MHD_S_STR_W_LEN ("Not Extended"),   /* (OBSOLETED) RFC2774; status-change-http-experiments-to-historic */
   /* 511 */ _MHD_S_STR_W_LEN ("Network Authentication Required") /* RFC6585 */
 };
 
@@ -159,7 +160,7 @@ static const struct _MHD_str_w_len five_hundred[] = {
 struct MHD_Reason_Block
 {
   size_t max;
-  const struct _MHD_str_w_len *const data;
+  const struct _MHD_cstr_w_len *const data;
 };
 
 #define BLOCK(m) { (sizeof(m) / sizeof(m[0])), m }
@@ -174,7 +175,7 @@ static const struct MHD_Reason_Block reasons[] = {
 };
 
 
-const char *
+_MHD_EXTERN const char *
 MHD_get_reason_phrase_for (unsigned int code)
 {
   if ( (code >= 100) &&
@@ -185,7 +186,7 @@ MHD_get_reason_phrase_for (unsigned int code)
 }
 
 
-size_t
+_MHD_EXTERN size_t
 MHD_get_reason_phrase_len_for (unsigned int code)
 {
   if ( (code >= 100) &&

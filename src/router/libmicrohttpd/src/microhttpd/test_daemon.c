@@ -1,6 +1,7 @@
 /*
      This file is part of libmicrohttpd
      Copyright (C) 2007, 2017 Christian Grothoff
+     Copyright (C) 2014--2023  Evgeny Grin (Karlson2k)
 
      libmicrohttpd is free software; you can redistribute it and/or modify
      it under the terms of the GNU General Public License as published
@@ -22,6 +23,7 @@
  * @file test_daemon.c
  * @brief  Testcase for libmicrohttpd starts and stops
  * @author Christian Grothoff
+ * @author Karlson2k (Evgeny Grin)
  */
 
 #include "platform.h"
@@ -35,8 +37,8 @@
 #endif
 
 
-static int
-testStartError ()
+static unsigned int
+testStartError (void)
 {
   struct MHD_Daemon *d;
 
@@ -81,18 +83,18 @@ ahc_nothing (void *cls,
              const char *method,
              const char *version,
              const char *upload_data, size_t *upload_data_size,
-             void **unused)
+             void **req_cls)
 {
   (void) cls; (void) connection; (void) url;         /* Unused. Silent compiler warning. */
   (void) method; (void) version; (void) upload_data; /* Unused. Silent compiler warning. */
-  (void) upload_data_size; (void) unused;            /* Unused. Silent compiler warning. */
+  (void) upload_data_size; (void) req_cls;           /* Unused. Silent compiler warning. */
 
   return MHD_NO;
 }
 
 
-static int
-testStartStop ()
+static unsigned int
+testStartStop (void)
 {
   struct MHD_Daemon *d;
 
@@ -105,37 +107,38 @@ testStartStop ()
   {
     fprintf (stderr,
              "Failed to start daemon on port %u\n",
-             0);
-    exit (77);
+             (unsigned int) 0);
+    exit (3);
   }
   MHD_stop_daemon (d);
   return 0;
 }
 
 
-static int
-testExternalRun ()
+static unsigned int
+testExternalRun (int use_no_thread_safe)
 {
   struct MHD_Daemon *d;
   fd_set rs;
   MHD_socket maxfd;
   int i;
 
-  d = MHD_start_daemon (MHD_USE_ERROR_LOG,
+  d = MHD_start_daemon (MHD_USE_ERROR_LOG
+                        | (use_no_thread_safe ? MHD_USE_NO_THREAD_SAFETY : 0),
                         0,
                         &apc_all, NULL,
                         &ahc_nothing, NULL,
+                        MHD_OPTION_APP_FD_SETSIZE, (int) FD_SETSIZE,
                         MHD_OPTION_END);
 
   if (NULL == d)
   {
     fprintf (stderr,
              "Failed to start daemon on port %u\n",
-             0);
-    exit (77);
+             (unsigned int) 0);
+    exit (3);
   }
-  i = 0;
-  while (i < 15)
+  for (i = 0; i < 15; ++i)
   {
     maxfd = 0;
     FD_ZERO (&rs);
@@ -146,22 +149,21 @@ testExternalRun ()
                "Failed in MHD_get_fdset().\n");
       return 256;
     }
-    if (MHD_run (d) == MHD_NO)
+    if (MHD_NO == MHD_run (d))
     {
       MHD_stop_daemon (d);
       fprintf (stderr,
                "Failed in MHD_run().\n");
       return 8;
     }
-    i++;
   }
   MHD_stop_daemon (d);
   return 0;
 }
 
 
-static int
-testThread ()
+static unsigned int
+testThread (void)
 {
   struct MHD_Daemon *d;
 
@@ -175,8 +177,8 @@ testThread ()
   {
     fprintf (stderr,
              "Failed to start daemon on port %u.\n",
-             1082);
-    exit (77);
+             (unsigned int) 0);
+    exit (3);
   }
   if (MHD_run (d) != MHD_NO)
   {
@@ -189,8 +191,8 @@ testThread ()
 }
 
 
-static int
-testMultithread ()
+static unsigned int
+testMultithread (void)
 {
   struct MHD_Daemon *d;
 
@@ -205,8 +207,8 @@ testMultithread ()
   {
     fprintf (stderr,
              "Failed to start daemon on port %u\n",
-             0);
-    exit (77);
+             (unsigned int) 0);
+    exit (3);
   }
   if (MHD_run (d) != MHD_NO)
   {
@@ -223,14 +225,23 @@ int
 main (int argc,
       char *const *argv)
 {
-  int errorCount = 0;
+  unsigned int errorCount = 0;
+  int has_threads_support;
   (void) argc; (void) argv; /* Unused. Silent compiler warning. */
 
+  has_threads_support =
+    (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_THREADS));
   errorCount += testStartError ();
-  errorCount += testStartStop ();
-  errorCount += testExternalRun ();
-  errorCount += testThread ();
-  errorCount += testMultithread ();
+  if (has_threads_support)
+    errorCount += testStartStop ();
+  if (has_threads_support)
+    errorCount += testExternalRun (0);
+  errorCount += testExternalRun (! 0);
+  if (has_threads_support)
+  {
+    errorCount += testThread ();
+    errorCount += testMultithread ();
+  }
   if (0 != errorCount)
     fprintf (stderr,
              "Error (code: %u)\n",

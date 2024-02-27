@@ -1,6 +1,6 @@
 # This file is part of libmicrohttpd.
 # (C) 2006-2021 Christian Grothoff (and other contributing authors)
-# (C) 2014-2022 Evgeny Grin (Karlson2k)
+# (C) 2014-2024 Evgeny Grin (Karlson2k)
 #
 # libmicrohttpd is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published
@@ -23,36 +23,106 @@
 #
 AC_PREREQ([2.64])
 LT_PREREQ([2.4.0])
-AC_INIT([GNU Libmicrohttpd],[0.9.77],[libmicrohttpd@gnu.org])
+AC_INIT([GNU libmicrohttpd],[1.0.1],[libmicrohttpd@gnu.org])
 AC_CONFIG_AUX_DIR([build-aux])
-AM_INIT_AUTOMAKE([gnu] [check-news] [filename-length-max=99] [tar-v7] [silent-rules] [subdir-objects])
+MHD_AUX_DIR='build-aux' # Must be set to the same value as in the previous line
 AC_CONFIG_HEADERS([MHD_config.h])
 AC_CONFIG_MACRO_DIR([m4])
+m4_pattern_forbid([^_?MHD_[A-Z_]+_CC_])dnl
 
-LIB_VERSION_CURRENT=73
-LIB_VERSION_REVISION=0
-LIB_VERSION_AGE=61
+LIB_VERSION_CURRENT=74
+LIB_VERSION_REVISION=1
+LIB_VERSION_AGE=62
 AC_SUBST([LIB_VERSION_CURRENT])
 AC_SUBST([LIB_VERSION_REVISION])
 AC_SUBST([LIB_VERSION_AGE])
 
-AC_MSG_CHECKING([[whether z/OS special settings are required]])
-AS_IF([test `uname -s` = "OS/390"],
-[
-# configure binaries for z/OS
-  AS_IF([test -z "$CC"],
-        [CC=`pwd`"/contrib/xcc"
-         chmod +x $CC || true])
-  AS_IF([test -z "$CPP"],
-        CPP="c89 -E")
-  AS_IF([test -z "$CXXCPP"],
-        CXXCPP="c++ -E -+")
-  AC_MSG_RESULT([[yes]])
-#  _CCC_CCMODE=1
-#  _C89_CCMODE=1
-],
-  AC_MSG_RESULT([[no]])
+
+PACKAGE_VERSION_MAJOR='m4_car(m4_unquote(m4_split(AC_PACKAGE_VERSION, [\.])))'
+PACKAGE_VERSION_MINOR='m4_argn(2, m4_unquote(m4_split(AC_PACKAGE_VERSION, [\.])))'
+PACKAGE_VERSION_SUBMINOR='m4_argn(3, m4_unquote(m4_split(AC_PACKAGE_VERSION, [\.])))'
+AS_VAR_ARITH([MHD_W32_DLL_SUFF],[[$LIB_VERSION_CURRENT - $LIB_VERSION_AGE]])
+AC_SUBST([PACKAGE_VERSION_MAJOR])
+AC_SUBST([PACKAGE_VERSION_MINOR])
+AC_SUBST([PACKAGE_VERSION_SUBMINOR])
+AC_SUBST([MHD_W32_DLL_SUFF])
+AC_CONFIG_FILES([src/microhttpd/microhttpd_dll_res.rc])
+
+MHD_LIB_CPPFLAGS=""
+MHD_LIB_CFLAGS=""
+MHD_LIB_LDFLAGS=""
+MHD_LIBDEPS=""
+# for pkg-config
+MHD_REQ_PRIVATE=''
+MHD_LIBDEPS_PKGCFG=''
+
+AS_IF([test -z "$CC" && test -z "$CPP"], [
+  AC_MSG_CHECKING([[whether z/OS special settings are required]])
+  AS_IF([test `uname -s` = "OS/390"],
+    [
+      # configure binaries for z/OS
+      AS_IF([test -z "$CC"],
+            [CC=`pwd`"/contrib/xcc"
+             chmod +x $CC || true])
+      AS_IF([test -z "$CPP"],
+            CPP="c89 -E")
+      AC_MSG_RESULT([[yes]])
+    ],
+    [AC_MSG_RESULT([[no]])]
+  )
+])
+
+
+AC_MSG_CHECKING([for build type])
+AC_ARG_ENABLE([build-type],
+  [AS_HELP_STRING([[--enable-build-type=TYPE]],
+  [enable build TYPE, a set of configuration parameters; individual settings ]
+  [(asserts, sanitizers, compiler and linker flags) can be overridden by ]
+  [additional configure parameters (debug, debugger, neutral, release, release-compact, ]
+  [release-hardened) [neutral]])],
+  [], [enable_build_type=neutral])
+AS_IF([test "x${enable_build_type}" = "x"], [enable_build_type="neutral"])
+AS_VAR_IF([enable_build_type], ["no"], [enable_build_type="neutral"])
+AS_VAR_IF([enable_build_type], ["yes"], [AC_MSG_ERROR([[Missing TYPE for --enable-build-type=]])])
+AS_CASE([${enable_build_type}],
+  [debug], [AC_MSG_RESULT([debug. Defaults: enable asserts, sanitizers (if any supported), debug information, compiler optimisation for debugging])],
+  [debugger], [AC_MSG_RESULT([debugger. Defaults: enable asserts, disable sanitizers, debug information, no compiler optimisation, static lib])],
+  [neutral], [AC_MSG_RESULT([neutral. Defaults: use only user-specified compiler and linker flags])],
+  [release], [AC_MSG_RESULT([release. Defaults: disable asserts, enable compiler optimisations])],
+  [release-compact], [AC_MSG_RESULT([release-compact. Defaults: disable asserts, enable compiler optimisations for size, enable compact code])],
+  [release-hardened], [AC_MSG_RESULT([release-hardened. Defaults: disable asserts, enable compiler optimisations, enable linker and compiler hardening])],
+  [AC_MSG_ERROR([[Unknown build type: ${enable_build_type}]])]
 )
+AS_VAR_IF([enable_build_type], ["neutral"], [:],
+  [
+    # For all non-neutral build types do not use automatic "-g -O2" for CFLAGS
+    AS_IF([test -z "${CFLAGS}"], [CFLAGS=""])
+  ]
+)
+AS_VAR_IF([enable_build_type], ["debugger"],
+  [ # Build only static version unless something else is specified by the user
+    AS_IF([test -z "${enable_static}" || test "x${enable_static}" = "xyes"],
+      [
+        AS_IF([test -z "${enable_shared}"],
+          [
+            enable_shared="no"
+            enable_static="yes"
+          ]
+        )
+      ],
+      [
+        AS_CASE([${enable_static}],[*libmicrohttpd*],
+          [AS_IF([test -z "${enable_shared}"], [enable_shared="no"])],
+        )
+      ]
+    )
+  ]
+)
+AS_CASE([${enable_build_type}],[debug|debugger],
+  [ AS_IF([test -z "${enable_silent_rules}"], [ enable_silent_rules="yes" ])]
+)
+
+AM_INIT_AUTOMAKE([gnu] [check-news] [filename-length-max=99] [tar-v7] [silent-rules] [subdir-objects])
 
 # Checks for programs.
 AC_PROG_AWK
@@ -76,9 +146,338 @@ AC_PROG_CC
 AC_PROG_CC_STDC
   ]
 )
-MHD_SYS_EXT
+
+# Workaround for libgcrypt
+AS_IF([[test "x$lt_sysroot" != "x" && test "x$SYSROOT" = "x"]], [[SYSROOT="$lt_sysroot"]])
+user_CFLAGS="$CFLAGS"
+user_LDFLAGS="$LDFLAGS"
+user_CPPFLAGS="$CPPFLAGS"
+
+CFLAGS_ac=""
+LDFLAGS_ac=""
+CPPFLAGS_ac=""
+
+MHD_SYS_EXT([CPPFLAGS_ac])
+CPPFLAGS="${CPPFLAGS_ac} ${user_CPPFLAGS}"
 LT_INIT([win32-dll])
 LT_LANG([Windows Resource])
+
+AC_ARG_ENABLE([compact-code],
+  [AS_HELP_STRING([[--enable-compact-code]],
+  [enable use of a reduced size version of the code, resulting in smaller ]
+  [binaries with a slight performance hit [auto]])],
+  [], [enable_compact_code=auto])
+AS_IF([test "x${enable_compact_code}" = "x"], [enable_compact_code="auto"])
+AH_TEMPLATE([[MHD_FAVOR_SMALL_CODE]], [Define to '1' to use compact code version])
+AH_TEMPLATE([[MHD_FAVOR_FAST_CODE]], [Define to '1' to use fast (and larger) code version])
+AS_UNSET([compact_code_MSG])
+AS_CASE([${enable_compact_code}], [auto],
+  [
+    # Parameter not set.
+    # Check preprocessor macros
+    AC_CHECK_DECL([MHD_FAVOR_SMALL_CODE],
+      [
+        enable_compact_code="yes"
+        compact_code_MSG="enabled by preprocessor macro"
+      ],
+      [],[/* no includes */]
+    )
+    AC_CHECK_DECL([MHD_FAVOR_FAST_CODE],
+      [
+        AS_VAR_IF([enable_compact_code],["yes"],
+          [AC_MSG_ERROR([Both MHD_FAVOR_SMALL_CODE and MHD_FAVOR_FAST_CODE macros are defined])]
+        )
+        enable_compact_code="no"
+        compact_code_MSG="set by preprocessor macro"
+      ],[],[/* no includes */]
+    )
+
+    AS_VAR_IF([enable_compact_code], ["auto"],
+      [
+        # No preference by preprocessor macros
+        AC_CACHE_CHECK([whether compiler is configured to optimize for size],
+          [mhd_cv_cc_optim_size],
+          [
+            AC_COMPILE_IFELSE(
+              [
+                AC_LANG_PROGRAM([[
+#ifndef __OPTIMIZE_SIZE__
+#error Looks like compiler does not optimize for size
+choke me now
+#endif
+              ]],[])
+              ],
+              [mhd_cv_cc_optim_size="yes"],[mhd_cv_cc_optim_size="no"]
+            )
+          ]
+        )
+        AS_VAR_IF([mhd_cv_cc_optim_size], ["yes"],
+          [
+            enable_compact_code="yes"
+            compact_code_MSG="enabled automatically as compiler optimizes for size"
+            AC_DEFINE([MHD_FAVOR_SMALL_CODE],[1])
+          ]
+        )
+      ]
+    )
+
+    AS_VAR_IF([enable_compact_code], ["auto"],
+      [
+        # No preference by preprocessor macros and compiler flags
+        AS_CASE([${enable_build_type}],[*-compact],
+          [
+            enable_compact_code="yes"
+            compact_code_MSG="enabled by --enable-build-type=${enable_build_type}"
+            AC_DEFINE([MHD_FAVOR_SMALL_CODE],[1])
+          ]
+        )
+      ]
+    )
+
+    AS_VAR_IF([enable_compact_code], ["auto"],
+      [
+        # No preference
+        enable_compact_code="no"
+        compact_code_MSG="by default"
+        AC_DEFINE([MHD_FAVOR_FAST_CODE],[1])
+      ]
+    )
+  ],
+  [yes],
+  [
+    compact_code_MSG="enabled by configure parameter"
+    AC_CHECK_DECL([MHD_FAVOR_SMALL_CODE],
+      [],
+      [AC_DEFINE([MHD_FAVOR_SMALL_CODE],[1])],[/* no includes */]
+    )
+    AC_CHECK_DECL([MHD_FAVOR_FAST_CODE],
+      [AC_MSG_ERROR([MHD_FAVOR_FAST_CODE macro is defined, --enable-compact-code could not be used])
+      ],
+      [],[/* no includes */]
+    )
+  ],
+  [no],
+  [
+    compact_code_MSG="disabled by configure parameter"
+    AC_CHECK_DECL([MHD_FAVOR_FAST_CODE],
+      [],
+      [AC_DEFINE([MHD_FAVOR_FAST_CODE],[1])],[/* no includes */]
+    )
+    AC_CHECK_DECL([MHD_FAVOR_SMALL_CODE],
+      [AC_MSG_ERROR([MHD_FAVOR_SMALL_CODE macro is defined, --disable-compact-code could not be used])
+      ],
+      [],[/* no includes */]
+    )
+  ],
+  [AC_MSG_ERROR([[Unknown parameter value: --enable-compact-code=${enable_compact_code}]])]
+)
+
+AC_MSG_CHECKING([whether to use a reduced size version of the code])
+AC_MSG_RESULT([${enable_compact_code} (${compact_code_MSG})])
+
+
+CFLAGS="${user_CFLAGS}"
+# Compiler options to always enable (if supported)
+MHD_FIND_ADD_CC_CFLAG([CFLAGS_ac], [-fno-strict-aliasing], [-qnoansialias])
+# '-qlonglong' is XLC option for C89, not used with C99 or later
+MHD_CHECK_ADD_CC_CFLAG([-qlonglong], [CFLAGS_ac])
+
+# Set basic optimisation flags
+AS_VAR_IF([enable_build_type],["neutral"],[],
+  [ # Any non-neutral build types
+    AC_CACHE_CHECK([whether workarounds for clang or clang-based compiler are required],
+      [mhd_cv_cc_clang_based],
+      [
+        AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
+#if ! defined(__clang__) && ! defined(__llvm__)
+#error Compiler is not clang-based
+choke me now
+#endif
+              ]]
+            )
+          ],
+          [mhd_cv_cc_clang_based="yes"],[mhd_cv_cc_clang_based="no"]
+        )
+      ]
+    )
+  ]
+)
+AS_CASE([${enable_build_type}],[debug|debugger],
+  [ # Debug build or build for walking with debugger
+    CFLAGS="${user_CFLAGS}"
+    AS_VAR_IF([enable_build_type],["debug"],
+      [
+        # Clang has ASAN (pointer compare) broken when '-Og' optimisations are used
+        AS_IF([test "x${enable_sanitizers}" != "xno" && test "x${mhd_cv_cc_clang_based}" = "xyes"],
+          [MHD_CHECK_ADD_CC_CFLAG([-O0], [CFLAGS_ac])],
+          [MHD_FIND_ADD_CC_CFLAG([CFLAGS_ac], [-Og], [-O0])]
+        )
+      ],
+      [MHD_CHECK_ADD_CC_CFLAG([-O0], [CFLAGS_ac])]
+    )
+    CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
+  ]
+)
+AS_CASE([${enable_build_type}],[release|release-*],
+  [ # All release types
+    AS_VAR_IF([enable_build_type],["release-compact"],
+      [
+        CPPFLAGS="${CPPFLAGS_ac} ${user_CPPFLAGS}"
+        AC_CHECK_DECL([MHD_FAVOR_SMALL_CODE],[],
+          [AC_CHECK_DECL([MHD_FAVOR_FAST_CODE],[],
+            [MHD_APPEND_FLAG_TO_VAR([CPPFLAGS_ac],[-DMHD_FAVOR_SMALL_CODE=1])],
+            [/* no includes */])],[/* no includes */])
+        CPPFLAGS="${CPPFLAGS_ac} ${user_CPPFLAGS}"
+        CFLAGS="${user_CFLAGS}"
+        MHD_FIND_ADD_CC_CFLAG([CFLAGS_ac], [-Oz], [-Os], [-O])
+	    CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
+      ],
+      [ # All non-compact release types
+        CPPFLAGS="${CPPFLAGS_ac} ${user_CPPFLAGS}"
+        AC_CHECK_DECL([MHD_FAVOR_SMALL_CODE],[],
+          [AC_CHECK_DECL([MHD_FAVOR_FAST_CODE],[],
+            [MHD_APPEND_FLAG_TO_VAR([CPPFLAGS_ac],[-DMHD_FAVOR_FAST_CODE=1])],
+            [/* no includes */])],[/* no includes */])
+        CPPFLAGS="${CPPFLAGS_ac} ${user_CPPFLAGS}"
+        CFLAGS="${user_CFLAGS}"
+        MHD_FIND_ADD_CC_CFLAG([CFLAGS_ac], [-O2], [-O])
+	    CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
+      ]
+    )
+  ]
+)
+
+AS_VAR_IF([enable_build_type],["neutral"],[],
+  [ # Any non-neutral build types
+    MHD_CHECK_ADD_CC_CFLAGS([-Wall -Wnull-dereference], [CFLAGS_ac])
+    MHD_CHECK_ADD_CC_CFLAGS([-Wdeclaration-after-statement -Wimplicit -Wnested-externs], [CFLAGS_ac])
+    MHD_CHECK_ADD_CC_CFLAGS([-Wredundant-decls -Wtrampolines -Wunsafe-loop-optimizations], [CFLAGS_ac])
+    MHD_CHECK_ADD_CC_CFLAGS([-Wpoison-system-directories], [CFLAGS_ac])
+    CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
+    LDFLAGS="${user_LDFLAGS}"
+    MHD_CHECK_ADD_CC_LDFLAG([-Wl,--warn-common], [LDFLAGS_ac])
+    LDFLAGS="${LDFLAGS_ac} ${user_LDFLAGS}"
+  ]
+)
+AS_CASE([${enable_build_type}],[debug|debugger],
+  [ # Debug build or build for walking with debugger
+    CFLAGS="${user_CFLAGS}"
+    MHD_FIND_ADD_CC_CFLAG([CFLAGS_ac], [-ggdb3], [-g3], [-ggdb], [-g])
+    MHD_CHECK_ADD_CC_CFLAGS([-Wextra -Wdouble-promotion], [CFLAGS_ac])
+    MHD_FIND_ADD_CC_CFLAG_IFELSE(
+      [
+        # clang produce warning when string pointer is used as a format specifier for v*printf() function
+        AS_VAR_IF([mhd_cv_cc_clang_based],["yes"],[MHD_CHECK_ADD_CC_CFLAG([-Wno-format-nonliteral], [CFLAGS_ac])])
+      ],[],
+      [CFLAGS_ac], [-Wformat=2], [-Wformat]
+    )
+    MHD_CHECK_ADD_CC_CFLAGS([-Wformat-overflow -Wformat-truncation -Wformat-security -Wformat-signedness], [CFLAGS_ac])
+    MHD_CHECK_ADD_CC_CFLAGS([-Wmissing-include-dirs -Wshift-overflow=2 -Wstringop-overflow=4 -Walloc-zero], [CFLAGS_ac])
+    MHD_CHECK_ADD_CC_CFLAGS([-Wduplicated-branches -Wduplicated-cond -Wfloat-equal -Wshadow -Wpointer-arith], [CFLAGS_ac])
+    MHD_FIND_ADD_CC_CFLAG([CFLAGS_ac], [-Wshadow-all], [-Wshadow])
+    MHD_CHECK_ADD_CC_CFLAGS([-Wbad-function-cast -Wcast-qual -Wwrite-strings -Wconversion], [CFLAGS_ac])
+    MHD_FIND_ADD_CC_CFLAG([CFLAGS_ac], [-Wcast-align=strict], [-Wcast-align])
+    MHD_CHECK_ADD_CC_CFLAGS([-Wjump-misses-init -Wlogical-op -Waggregate-return -Wstrict-prototypes], [CFLAGS_ac])
+    MHD_CHECK_ADD_CC_CFLAGS([-Wold-style-definition -Wmissing-declarations -Wmissing-prototypes], [CFLAGS_ac])
+    MHD_CHECK_ADD_CC_CFLAGS([-Wuninitialized -Winit-self -Wshift-negative-value -Wswitch-enum], [CFLAGS_ac])
+    MHD_FIND_ADD_CC_CFLAG([CFLAGS_ac], [-Wstrict-overflow=4], [-Wstrict-overflow])
+    MHD_FIND_ADD_CC_CFLAG([CFLAGS_ac], [-Wnormalized=nfkc], [-Wnormalized])
+    MHD_CHECK_ADD_CC_CFLAGS([-Walloca -Wbidi-chars=any -Warray-bounds -Wpacked -Wvariadic-macros], [CFLAGS_ac])
+    MHD_CHECK_ADD_CC_CFLAGS([-Wundef], [CFLAGS_ac])
+
+    MHD_CHECK_ADD_CC_CFLAGS([-Wanon-enum-enum-conversion -Warray-bounds-pointer-arithmetic -Wassign-enum], [CFLAGS_ac])
+    MHD_CHECK_ADD_CC_CFLAGS([-Wbit-int-extension -Wbitfield-enum-conversion -Wparentheses -Wbool-operation], [CFLAGS_ac])
+    MHD_CHECK_ADD_CC_CFLAGS([-Wcast-function-type -Wcomma -Wcomment -Wcompound-token-split], [CFLAGS_ac])
+    MHD_CHECK_ADD_CC_CFLAGS([-Wconditional-uninitialized -Wdeprecated], [CFLAGS_ac])
+    MHD_CHECK_ADD_CC_CFLAGS([-Wdocumentation-pedantic -Wempty-init-stmt -Wenum-conversion -Wexpansion-to-defined], [CFLAGS_ac])
+    MHD_CHECK_ADD_CC_CFLAGS([-Wflexible-array-extensions -Wloop-analysis -Wformat-pedantic], [CFLAGS_ac])
+    MHD_CHECK_ADD_CC_CFLAGS([-Wformat-type-confusion -Wfour-char-constants], [CFLAGS_ac])
+    MHD_CHECK_ADD_CC_CFLAGS([-Wgcc-compat -Wgnu-anonymous-struct -Wgnu-compound-literal-initializer], [CFLAGS_ac])
+    MHD_CHECK_ADD_CC_CFLAGS([-Wgnu-conditional-omitted-operand -Wgnu-designator -Wgnu-empty-initializer], [CFLAGS_ac])
+    MHD_CHECK_ADD_CC_CFLAGS([-Wgnu-empty-struct -Wgnu-flexible-array-initializer -Wgnu-folding-constant], [CFLAGS_ac])
+    MHD_CHECK_ADD_CC_CFLAGS([-Wgnu-null-pointer-arithmetic -Wgnu-pointer-arith -Wgnu-redeclared-enum], [CFLAGS_ac])
+    MHD_CHECK_ADD_CC_CFLAGS([-Wgnu-union-cast -Wgnu-variable-sized-type-not-at-end -Widiomatic-parentheses], [CFLAGS_ac])
+    MHD_CHECK_ADD_CC_CFLAGS([-Wmissing-noreturn -Wmissing-variable-declarations -Wnested-anon-types], [CFLAGS_ac])
+    MHD_CHECK_ADD_CC_CFLAGS([-Wnewline-eof -Wover-aligned -Wredundant-parens], [CFLAGS_ac])
+    MHD_CHECK_ADD_CC_CFLAGS([-Wshift-sign-overflow -Wtautological-compare -Wunaligned-access], [CFLAGS_ac])
+    MHD_CHECK_ADD_CC_CFLAGS([-Wunused -Wzero-as-null-pointer-constant -Wzero-length-array], [CFLAGS_ac])
+    MHD_CHECK_CC_CFLAG([-Wused-but-marked-unused],[CFLAGS_ac],
+      [
+        AC_CACHE_CHECK([whether $[]CC -Wused-but-marked-unused works with system headers],
+          [mhd_cv_wused_but_marked_unused_sys_header],
+          [
+            SAVE_ac_c_werror_flag="$ac_c_werror_flag"
+            ac_c_werror_flag="yes"
+            CFLAGS="${CFLAGS_ac} -Wused-but-marked-unused ${user_CFLAGS}"
+            AC_COMPILE_IFELSE(
+              [
+                AC_LANG_SOURCE([[
+#include <stdio.h>
+
+int main(void)
+{
+  char buf[16];
+  return (int) snprintf(buf, 16, "test");
+}
+                  ]]
+                )
+              ],
+              [mhd_cv_wused_but_marked_unused_sys_header="yes"],
+              [mhd_cv_wused_but_marked_unused_sys_header="no"]
+            )
+            ac_c_werror_flag="$SAVE_ac_c_werror_flag"
+          ]
+        )
+        AS_VAR_IF([mhd_cv_wused_but_marked_unused_sys_header],["yes"],
+          [MHD_APPEND_FLAG_TO_VAR([CFLAGS_ac],[-Wused-but-marked-unused])]
+        )
+      ]
+    )
+    #
+    # Removed flags:
+    #
+    # -Wdisabled-macro-expansion - warns about macros from system headers
+
+    CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
+    LDFLAGS="${user_LDFLAGS}"
+    MHD_CHECK_ADD_CC_LDFLAG([-Wl,--enable-long-section-names], [LDFLAGS_ac])
+    LDFLAGS="${LDFLAGS_ac} ${user_LDFLAGS}"
+  ]
+)
+AS_CASE([${enable_build_type}],[release|release-*],
+  [ # All release types
+    CFLAGS="${user_CFLAGS}"
+    AS_VAR_IF([enable_build_type],["release-compact"],
+      [],
+      [ # All non-compact release types
+        MHD_CHECK_ADD_CC_CFLAGS([-fsched-pressure -fira-loop-pressure -fmerge-all-constants], [CFLAGS_ac]) # These flags may improve size, recheck with LTO and linker garbage collection
+        MHD_CHECK_ADD_CC_CFLAGS([-ftree-partial-pre -fgcse-after-reload -fipa-pta], [CFLAGS_ac])
+        MHD_CHECK_ADD_CC_CFLAGS([-fisolate-erroneous-paths-attribute -ffinite-loops -floop-nest-optimize], [CFLAGS_ac])
+        MHD_CHECK_ADD_CC_CFLAGS([-fpredictive-commoning -frename-registers], [CFLAGS_ac])
+        MHD_CHECK_ADD_CC_CFLAGS([-ftree-loop-distribute-patterns -fpeel-loops -fsplit-loops -ftree-vectorize], [CFLAGS_ac])
+      ]
+    )
+
+    AS_VAR_IF([enable_build_type],["release-hardened"],
+      [
+        MHD_CHECK_ADD_CC_CFLAGS([-Wformat-security -Wstack-protector], [CFLAGS_ac])
+        MHD_CHECK_ADD_CC_CFLAGS([-Wuninitialized -Winit-self -Walloc-zero -Wbidi-chars=any], [CFLAGS_ac])
+      ]
+    )
+    AS_VAR_IF([enable_build_type],["release"],
+      [ # Flags are not suitable for 'compact' and for 'hardened'
+        MHD_CHECK_ADD_CC_CFLAGS([-ffast-math -fno-trapping-math], [CFLAGS_ac])
+      ]
+    )
+    CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
+    # W32-specific
+    LDFLAGS="${user_LDFLAGS}"
+    MHD_CHECK_ADD_CC_LDFLAG([-Wl,--disable-long-section-names], [LDFLAGS_ac])
+    LDFLAGS="${LDFLAGS_ac} ${user_LDFLAGS}"
+  ]
+)
+CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
+# Additional flags are checked and added at the end of 'configure'
 
 # Check for headers that are ALWAYS required
 AC_CHECK_HEADERS_ONCE([stdio.h string.h stdint.h errno.h limits.h fcntl.h], [],
@@ -277,63 +676,79 @@ AC_CHECK_HEADERS([sys/sysctl.h netinet/ip_icmp.h netinet/icmp_var.h], [], [],
   ]]
 )
 
-# Checks for gettext.
-m4_ifdef([AM_GNU_GETTEXT], [
-  AS_VAR_SET_IF([enable_nls], [], [[enable_nls=no]])
-  AM_GNU_GETTEXT([external],[need-ngettext])
-  AC_CONFIG_FILES([po/Makefile.in])
-  have_po=yes
-], [
-  have_po=no
-])
-m4_ifdef([AM_GNU_GETTEXT_VERSION], [
-#do not indent here
-AM_GNU_GETTEXT_VERSION([0.20.2])
-])
-AM_CONDITIONAL([HAVE_PO], [ test "$have_po" = yes ])
-
-
-
-
-# Adam shostack suggests the following for Windows:
-# -D_FORTIFY_SOURCE=2 -fstack-protector-all
-AC_ARG_ENABLE([gcc-hardening],
-   [AS_HELP_STRING([--enable-gcc-hardening], [enable compiler security checks])],
-[AS_IF([test x$enableval = xyes],[
-    CFLAGS="$CFLAGS -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=2 -fstack-protector-all"
-    CFLAGS="$CFLAGS -fwrapv -fPIE -Wstack-protector"
-    CFLAGS="$CFLAGS --param ssp-buffer-size=1"
-    LDFLAGS="$LDFLAGS -pie"
- ])])
+AC_ARG_ENABLE([compiler-hardening],
+  [AS_HELP_STRING([--enable-compiler-hardening], [enable compiler security checks])],
+  [],
+  [AS_CASE([${enable_build_type}],[*-hardened],
+    [enable_compiler_hardening='yes'],[enable_compiler_hardening='no'])]
+)
+AS_VAR_IF([enable_compiler_hardening],["yes"],
+  [
+    CPPFLAGS="${CPPFLAGS_ac} ${user_CPPFLAGS}"
+    AC_CHECK_DECL([_FORTIFY_SOURCE],
+      [MHD_APPEND_FLAG_TO_VAR([CPPFLAGS_ac],[-U_FORTIFY_SOURCE])],
+      [],[/* no includes */])
+    MHD_APPEND_FLAG_TO_VAR([CPPFLAGS_ac],[-D_FORTIFY_SOURCE=2])
+    CPPFLAGS="${CPPFLAGS_ac} ${user_CPPFLAGS}"
+    CFLAGS="${user_CFLAGS}"
+    MHD_FIND_ADD_CC_CFLAG([CFLAGS_ac],[-fstack-protector-strong],[-fstack-protector-all],[-fstack-protector])
+    MHD_CHECK_ADD_CC_CFLAGS([-fstack-clash-protection],[CFLAGS_ac])
+    MHD_FIND_ADD_CC_CFLAG([CFLAGS_ac],[-ftrivial-auto-var-init=pattern],[-ftrivial-auto-var-init=zero])
+    CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
+    AS_IF([test "x${enable_static}" = "xyes" && test "x${pic_mode}" != "xyes"],
+      [
+        # PIE static lib can be used within non-PIE application, but
+        # PIE static lib cannot be used in non-PIE shared lib. Let's assume
+        # that static lib will not be used in shared lib
+        # All "pie" flags will be used automatically by libtool only
+        # for static library objects.
+        CFLAGS="${user_CFLAGS}"
+        # Perform tests here with "-pie" enabled
+        LDFLAGS="${LDFLAGS_ac} -pie ${user_LDFLAGS}"
+        MHD_CHECK_ADD_CC_CFLAG([-fPIE],[CFLAGS_ac],
+          [
+            MHD_APPEND_FLAG_TO_VAR([LDFLAGS_ac],[-pie])
+          ],
+          [
+            MHD_CHECK_ADD_CC_CFLAG([-fpie],[CFLAGS_ac],
+              [
+                MHD_APPEND_FLAG_TO_VAR([LDFLAGS_ac],[-pie])
+              ]
+            )
+          ]
+        )
+        CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
+        LDFLAGS="${LDFLAGS_ac} ${user_LDFLAGS}"
+      ]
+    )
+    CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
+    LDFLAGS="${LDFLAGS_ac} ${user_LDFLAGS}"
+  ]
+)
 
 # Linker hardening options
-# Currently these options are ELF specific - you can't use this with MacOSX
+# Currently these options are ELF specific, they don't work on Darwin and W32
 AC_ARG_ENABLE([linker-hardening],
   [AS_HELP_STRING([--enable-linker-hardening], [enable linker security fixups])],
-[AS_IF([test x$enableval = xyes],
-   [LDFLAGS="$LDFLAGS -z relro -z now"])])
+  [],
+  [AS_CASE([${enable_build_type}],[*-hardened],
+    [enable_linker_hardening='yes'],[enable_linker_hardening='no'])]
+)
+AS_VAR_IF([enable_linker_hardening],["yes"],
+  [
+    CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
+    LDFLAGS="${user_LDFLAGS}"
+    MHD_CHECK_ADD_CC_LDFLAG([-Wl,-z,relro],[LDFLAGS_ac],
+      [MHD_CHECK_ADD_CC_LDFLAG([-Wl,-z,now],[LDFLAGS_ac])])
+    # Actually should be "noexec" by default, but let's try to enforce it.
+    MHD_CHECK_ADD_CC_LDFLAG([-Wl,-z,noexecstack],[LDFLAGS_ac])
+    # W32-specific. Some are enabled by default, but they will be enfored to be sure.
+    MHD_CHECK_ADD_CC_LDFLAGS([-Wl,--large-address-aware -Wl,--enable-auto-image-base],[LDFLAGS_ac])
+    MHD_CHECK_ADD_CC_LDFLAGS([-Wl,--dynamicbase -Wl,--nxcompat -Wl,--high-entropy-va],[LDFLAGS_ac])
+    LDFLAGS="${LDFLAGS_ac} ${user_LDFLAGS}"
+  ]
+)
 
-
-# Workaround for libgcrypt
-AS_IF([[test "x$lt_sysroot" != "x" && test "x$SYSROOT" = "x"]], [[SYSROOT="$lt_sysroot"]])
-
-PACKAGE_VERSION_MAJOR='m4_car(m4_unquote(m4_split(AC_PACKAGE_VERSION, [\.])))'
-PACKAGE_VERSION_MINOR='m4_argn(2, m4_unquote(m4_split(AC_PACKAGE_VERSION, [\.])))'
-PACKAGE_VERSION_SUBMINOR='m4_argn(3, m4_unquote(m4_split(AC_PACKAGE_VERSION, [\.])))'
-AS_VAR_ARITH([MHD_W32_DLL_SUFF],[[$LIB_VERSION_CURRENT - $LIB_VERSION_AGE]])
-AC_SUBST([PACKAGE_VERSION_MAJOR])
-AC_SUBST([PACKAGE_VERSION_MINOR])
-AC_SUBST([PACKAGE_VERSION_SUBMINOR])
-AC_SUBST([MHD_W32_DLL_SUFF])
-AC_CONFIG_FILES([src/microhttpd/microhttpd_dll_res.rc])
-
-MHD_LIB_CPPFLAGS=""
-MHD_LIB_CFLAGS=""
-MHD_LIB_LDFLAGS=""
-MHD_LIBDEPS=""
-# for pkg-config
-MHD_REQ_PRIVATE=''
-MHD_LIBDEPS_PKGCFG=''
 
 AH_TEMPLATE([[HAVE_STDBOOL_H]], [Define to 1 if you have the <stdbool.h> header file and <stdbool.h> defines 'bool' type.])
 AH_TEMPLATE([[HAVE_BUILTIN_TYPE_BOOL]], [Define to 1 if you have the real boolean type.])
@@ -433,9 +848,8 @@ AS_VAR_IF([[mhd_cv_macro_true_false_valid]], [["yes"]], [[:]],
 
 AX_CHECK_COMPILE_FLAG([[-Werror=attributes]],
   [
-   save_CFLAGS="$CFLAGS"
-   CFLAGS="$CFLAGS -Werror=attributes"
    AC_MSG_CHECKING([[whether -Werror=attributes actually works]])
+   CFLAGS="${CFLAGS_ac} ${user_CFLAGS} -Werror=attributes"
    AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
        [[__attribute__((non_existing_attrb_dummy)) static int SimpleFunc(void) {return 3;}]],
        [[int r = SimpleFunc(); if (r) return r;]])],
@@ -446,12 +860,12 @@ AX_CHECK_COMPILE_FLAG([[-Werror=attributes]],
        AC_MSG_RESULT([[yes]])
        errattr_CFLAGS="-Werror=attributes"
      ])
-   CFLAGS="$save_CFLAGS"
+   CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
   ],
                       [[errattr_CFLAGS=""]], [], [])
+
 AC_MSG_CHECKING([[for function inline keywords supported by $CC]])
-save_CFLAGS="$CFLAGS"
-CFLAGS="$CFLAGS $errattr_CFLAGS"
+CFLAGS="${CFLAGS_ac} ${user_CFLAGS} $errattr_CFLAGS"
 inln_prfx="none"
 # Prefer always inline functions
 for inln_prfx_chk in InlineWithAttr __forceinline inline __inline__ __inline _inline _Inline
@@ -500,7 +914,7 @@ AS_IF([[test "x$inln_prfx" != "xnone"]],
        AC_DEFINE([_MHD_static_inline],[static],[Define to prefix which will be used with MHD static inline functions.])
       ])
 AC_MSG_RESULT([[$inln_prfx]])
-CFLAGS="$save_CFLAGS"
+CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
 
 AC_CHECK_HEADERS([stdalign.h], [], [], [AC_INCLUDES_DEFAULT])
 AC_CACHE_CHECK([[for C11 'alignof()' support]], [[mhd_cv_c_alignof]],
@@ -546,49 +960,48 @@ AS_VAR_IF([mhd_cv_c_alignof], ["yes"],
 
 
 # Check system type
-shutdown_trig_select='no'
 AC_MSG_CHECKING([[for target host OS]])
+os_is_windows="no"
+os_is_native_w32="no"
 AS_CASE(["$host_os"],
  [*darwin* | *rhapsody* | *macosx*],
- [AC_DEFINE_UNQUOTED(OSX,1,[This is an OS X system])
-     CFLAGS="-no-cpp-precomp -fno-common $CFLAGS"
+ [AC_DEFINE([OSX],[1],[This is an OS X system])
      mhd_host_os='Darwin'
      AC_MSG_RESULT([[$mhd_host_os]])],
+ [kfreebsd*-gnu],
+ [AC_DEFINE([SOMEBSD],[1],[This is a BSD system])
+     AC_DEFINE([FREEBSD],[1],[This is a FreeBSD system])
+     mhd_host_os='FreeBSD kernel with GNU userland'
+     AC_MSG_RESULT([[$mhd_host_os]])],
  [freebsd*],
- [AC_DEFINE_UNQUOTED(SOMEBSD,1,[This is a BSD system])
-     AC_DEFINE_UNQUOTED(FREEBSD,1,[This is a FreeBSD system])
+ [AC_DEFINE([SOMEBSD],[1],[This is a BSD system])
+     AC_DEFINE([FREEBSD],[1],[This is a FreeBSD system])
      mhd_host_os='FreeBSD'
      AC_MSG_RESULT([[$mhd_host_os]])],
  [openbsd*],
- [AC_DEFINE_UNQUOTED(SOMEBSD,1,[This is a BSD system])
-     AC_DEFINE_UNQUOTED(OPENBSD,1,[This is an OpenBSD system])
+ [AC_DEFINE([SOMEBSD],[1],[This is a BSD system])
+     AC_DEFINE([OPENBSD],[1],[This is an OpenBSD system])
      mhd_host_os='OpenBSD'
      AC_MSG_RESULT([[$mhd_host_os]])],
  [netbsd*],
- [AC_DEFINE_UNQUOTED(SOMEBSD,1,[This is a BSD system])
-     AC_DEFINE_UNQUOTED(NETBSD,1,[This is a NetBSD system])
+ [AC_DEFINE([SOMEBSD],[1],[This is a BSD system])
+     AC_DEFINE([NETBSD],[1],[This is a NetBSD system])
      mhd_host_os='NetBSD'
      AC_MSG_RESULT([[$mhd_host_os]])],
  [*solaris*],
- [AC_DEFINE_UNQUOTED(SOLARIS,1,[This is a Solaris system])
-     AC_DEFINE_UNQUOTED(_REENTRANT,1,[Need with solaris or errno does not work])
+ [AC_DEFINE([SOLARIS],[1],[This is a Solaris system])
+     AC_DEFINE([_REENTRANT],[1],[Need with solaris or errno does not work])
      mhd_host_os='Solaris'
-     AC_MSG_RESULT([[$mhd_host_os]])
-     AC_SEARCH_LIBS([gethostbyname], [nsl])],
-  [*arm-linux*],
-  [AC_DEFINE_UNQUOTED(LINUX,1,[This is a Linux kernel])
-     mhd_host_os='ARM Linux'
-     AC_MSG_RESULT([[$mhd_host_os]])
-     CFLAGS="-fPIC -pipe $CFLAGS"],
+     AC_MSG_RESULT([[$mhd_host_os]])],
   [*linux*],
-  [AC_DEFINE_UNQUOTED(LINUX,1,[This is a Linux kernel])
+  [AC_DEFINE([LINUX],[1],[This is a Linux kernel])
      mhd_host_os='Linux'
      AC_MSG_RESULT([[$mhd_host_os]])],
   [*cygwin*],
-  [AC_DEFINE_UNQUOTED(CYGWIN,1,[This is a Cygwin system])
+  [AC_DEFINE([CYGWIN],[1],[This is a Cygwin system])
      mhd_host_os='Windows/Cygwin'
      AC_MSG_RESULT([[$mhd_host_os]])
-     os_is_windows=yes],
+     os_is_windows="yes"],
   [*mingw*],
   [
     AC_DEFINE([MINGW],[1],[This is a MinGW system])
@@ -605,11 +1018,11 @@ AS_CASE(["$host_os"],
      AS_IF([test "x$ac_cv_use_ms_lib_tool" = "xyes"],
        [AC_SUBST([MS_LIB_TOOL], [[lib]])])
      AC_SUBST([lt_cv_objdir])
-     os_is_windows=yes
-     os_is_native_w32=yes
+     os_is_windows="yes"
+     os_is_native_w32="yes"
    ],
    [*openedition*],
-   [AC_DEFINE_UNQUOTED(OS390,1,[This is a OS/390 system])
+   [AC_DEFINE([OS390],[1],[This is a OS/390 system])
      mhd_host_os='OS/390'
      AC_MSG_RESULT([[$mhd_host_os]])],
    [gnu*],
@@ -621,7 +1034,7 @@ AS_CASE(["$host_os"],
      AC_MSG_RESULT([unrecognised OS])
      mhd_host_os="${host_os}"
      AC_MSG_WARN([Unrecognised OS $host_os])
-     AC_DEFINE_UNQUOTED(OTHEROS,1,[Some strange OS])
+     AC_DEFINE([OTHEROS],1,[Some strange OS])
  ])
 
 AM_CONDITIONAL([CYGWIN_TARGET], [[test "x$os_is_windows" = "xyes" && \
@@ -770,7 +1183,8 @@ choke me now;
      ], [
        mhd_w32_ver="Vista"
        mhd_w32_ver_msg="Vista (default, override by CPPFLAGS=-D_WIN32_WINNT=0xNNNN)"
-       CPPFLAGS="$CPPFLAGS -D_WIN32_WINNT=0x0600"
+       CPPFLAGS_ac="${CPPFLAGS_ac} -D_WIN32_WINNT=0x0600"
+       CPPFLAGS="${CPPFLAGS_ac} ${user_CPPFLAGS}"
        AC_MSG_CHECKING([[whether headers accept _WIN32_WINNT=0x0600]])
        AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #ifdef HAVE_SDKDDKVER_H
@@ -827,13 +1241,24 @@ int main(void)
     mhd_host_os="${mhd_host_os}-${mhd_cv_wctr_type}"
     AS_VAR_IF([mhd_cv_wctr_type], ["msvcrt"],
       [
-        AX_APPEND_COMPILE_FLAGS([-U__USE_MINGW_ANSI_STDIO -D__USE_MINGW_ANSI_STDIO=0], [CPPFLAGS])
+        # Use CFLAGS here to override user-supplied wrong CPPFLAGS. Durty trick, but choice is limited.
+        AX_APPEND_COMPILE_FLAGS([-U__USE_MINGW_ANSI_STDIO -D__USE_MINGW_ANSI_STDIO=0], [CFLAGS_ac])
         AC_SUBST([W32CRT], [MSVCRT])
       ], [AC_SUBST([W32CRT], [UCRT])]
     )
+
+    CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
+    LDFLAGS="${user_LDFLAGS}"
+    AS_CASE([$mhd_w32_ver],
+      [WinXP],
+      [MHD_CHECK_ADD_CC_LDFLAG([-Wl,--major-subsystem-version,5,--minor-subsystem-version,1],[LDFLAGS_ac])],
+      [Vista],
+      [MHD_CHECK_ADD_CC_LDFLAG([-Wl,--major-subsystem-version,6,--minor-subsystem-version,0],[LDFLAGS_ac])]
+    )
+    LDFLAGS="${LDFLAGS_ac} ${user_LDFLAGS}"
   ]
 )
-
+CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
 
 
 AC_ARG_WITH([threads],
@@ -859,9 +1284,8 @@ AX_PTHREAD(
 	AC_CACHE_CHECK([[whether pthread_sigmask(3) is available]],
 	  [[mhd_cv_func_pthread_sigmask]], [dnl
 	  save_LIBS="$LIBS"
-	  save_CFLAGS="$CFLAGS"
 	  LIBS="$PTHREAD_LIBS $LIBS"
-  	  CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
+  	  CFLAGS="${CFLAGS_ac} ${PTHREAD_CFLAGS} ${user_CFLAGS}"
 	  AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <signal.h>]],
 	    [[
 	      sigset_t nset, oset;
@@ -871,7 +1295,7 @@ AX_PTHREAD(
 	    ]])],
 	    [[mhd_cv_func_pthread_sigmask="yes"]],[[mhd_cv_func_pthread_sigmask="no"]])
 	  LIBS="${save_LIBS}"
-	  CFLAGS="${save_CFLAGS}"
+      CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
 	])
 	AS_VAR_IF([mhd_cv_func_pthread_sigmask],["yes"],
 	  [AC_DEFINE([[HAVE_PTHREAD_SIGMASK]],[[1]],[Define to 1 if you have the pthread_sigmask(3) function.])])
@@ -943,9 +1367,8 @@ AS_IF([test "x$enable_thread_names" != "xno" && test "x$USE_THREADS" = "xposix"]
   # Check for thread name function
   HAVE_THREAD_NAME_FUNC="no"
   SAVE_LIBS="$LIBS"
-  SAVE_CFLAGS="$CFLAGS"
   LIBS="$PTHREAD_LIBS $LIBS"
-  CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
+  CFLAGS="${CFLAGS_ac} $PTHREAD_CFLAGS ${user_CFLAGS}"
   AC_CHECK_HEADERS([pthread_np.h],[],[],
     [
 AC_INCLUDES_DEFAULT
@@ -1094,7 +1517,7 @@ AC_INCLUDES_DEFAULT
     ])
 
   LIBS="$SAVE_LIBS"
-  CFLAGS="$SAVE_CFLAGS"
+  CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
 ])
 
 AS_IF([[test "x$enable_thread_names" != "xno"]],
@@ -1170,6 +1593,8 @@ AM_CONDITIONAL([W32_SHARED_LIB_EXP], [test "x$w32_shared_lib_exp" = "xyes"])
 AM_CONDITIONAL([USE_MS_LIB_TOOL], [test "x$ac_cv_use_ms_lib_tool" = "xyes"])
 AM_CONDITIONAL([USE_EXPORT_FILE], [test "x$use_expfile" = "xyes"])
 
+dnl gethostbyname() is not really needed
+dnl AC_SEARCH_LIBS([gethostbyname], [nsl])
 MHD_FIND_LIB([socket],
   [[
 #ifdef HAVE_SYS_TYPES_H
@@ -1199,6 +1624,551 @@ MHD_FIND_LIB([socket],
 
 MHD_CHECK_SOCKET_SHUTDOWN_TRIGGER([AC_DEFINE([HAVE_LISTEN_SHUTDOWN],[1],[can use shutdown on listen sockets])])
 AM_CONDITIONAL([HAVE_LISTEN_SHUTDOWN], [test "x$mhd_cv_host_shtdwn_trgr_select" = "xyes"])
+
+AC_CACHE_CHECK([fo][r system default FD_SETSIZE value],[mhd_cv_sys_fd_setsize_value],
+  [
+    CFLAGS="${CFLAGS_ac} ${user_CFLAGS} -UFD_SETSIZE"
+    CPPFLAGS="${CPPFLAGS_ac} ${user_CPPFLAGS} -UFD_SETSIZE"
+    AC_COMPUTE_INT([mhd_cv_sys_fd_setsize_value],[FD_SETSIZE],dnl
+      [[
+#ifdef HAVE_SYS_TIME_H
+#include <sys/time.h>
+#endif
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+#ifdef HAVE_SYS_SOCKET_H
+#include <sys/socket.h>
+#endif
+#ifdef HAVE_SOCKLIB_H
+#include <sockLib.h>
+#endif
+#if defined(_WIN32) && ! defined(__CYGWIN__)
+#include <winsock2.h>
+#endif
+#ifdef HAVE_SYS_SELECT_H
+#include <sys/select.h>
+#endif
+      ]], [mhd_cv_sys_fd_setsize_value="unknown"]
+    )
+    CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
+    CPPFLAGS="${CPPFLAGS_ac} ${user_CPPFLAGS}"
+    AS_IF([test "x${mhd_cv_sys_fd_setsize_value}" != "xunknown" && \
+      test "${mhd_cv_sys_fd_setsize_value}" -eq "0" \
+      ], [mhd_cv_sys_fd_setsize_value="unknown"]
+    )
+  ]
+)
+AS_VAR_IF([mhd_cv_sys_fd_setsize_value],["unknown"],[:],
+  [
+    AC_DEFINE_UNQUOTED([MHD_SYS_FD_SETSIZE_],[${mhd_cv_sys_fd_setsize_value}],
+      [Define to system default value of FD_SETSIZE macro]
+    )
+  ]
+)
+AM_CONDITIONAL([NEED_SYS_FD_SET_SIZE_VALUE],[test "x${mhd_cv_sys_fd_setsize_value}" = "xunknown"])
+
+AC_CACHE_CHECK([fo][r current FD_SETSIZE value],[mhd_cv_fd_setsize_value],
+  [
+    CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
+    CPPFLAGS="${CPPFLAGS_ac} ${user_CPPFLAGS}"
+    AS_IF([test "x${cross_compiling}" != "xno" && test "x${mhd_cv_sys_fd_setsize_value}" != "xunknown"],
+      [
+        AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+              [[
+#ifdef HAVE_SYS_TIME_H
+#include <sys/time.h>
+#endif
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+#ifdef HAVE_SYS_SOCKET_H
+#include <sys/socket.h>
+#endif
+#ifdef HAVE_SOCKLIB_H
+#include <sockLib.h>
+#endif
+#if defined(_WIN32) && ! defined(__CYGWIN__)
+#include <winsock2.h>
+#endif
+#ifdef HAVE_SYS_SELECT_H
+#include <sys/select.h>
+#endif
+
+#define DETECTED_FD_SETZIE_VALUE ${mhd_cv_sys_fd_setsize_value}
+
+#if (FD_SETSIZE) != (DETECTED_FD_SETZIE_VALUE)
+#error The current default FD_SETSIZE value is different from ${mhd_cv_sys_fd_setsize_value}
+choke me here now
+#endif /* (FD_SETSIZE) != (DETECTED_FD_SETZIE_VALUE) */
+
+#if (FD_SETSIZE) != (${mhd_cv_sys_fd_setsize_value})
+#error The current default FD_SETSIZE value is different from ${mhd_cv_sys_fd_setsize_value}
+choke me here now
+#endif /* (FD_SETSIZE) != (${mhd_cv_sys_fd_setsize_value}) */
+              ]],[]
+            )
+          ],
+          [mhd_cv_fd_setsize_value="${mhd_cv_sys_fd_setsize_value}"]
+        )
+      ]
+    )
+    AS_VAR_SET_IF([mhd_cv_fd_setsize_value],[:],
+      [
+        AC_COMPUTE_INT([mhd_cv_fd_setsize_value],[FD_SETSIZE],dnl
+          [[
+#ifdef HAVE_SYS_TIME_H
+#include <sys/time.h>
+#endif
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+#ifdef HAVE_SYS_SOCKET_H
+#include <sys/socket.h>
+#endif
+#ifdef HAVE_SOCKLIB_H
+#include <sockLib.h>
+#endif
+#if defined(_WIN32) && ! defined(__CYGWIN__)
+#include <winsock2.h>
+#endif
+#ifdef HAVE_SYS_SELECT_H
+#include <sys/select.h>
+#endif
+          ]], [mhd_cv_fd_setsize_value="unknown"]
+        )
+      ]
+    )
+    AS_IF([test "x${mhd_cv_fd_setsize_value}" != "xunknown" && \
+      test "${mhd_cv_fd_setsize_value}" -eq "0"],
+      [mhd_cv_fd_setsize_value="unknown"]
+    )
+  ]
+)
+
+
+AC_CACHE_CHECK([whether FD_SETSIZE is overridable],[mhd_cv_fd_setsize_overridable],
+  [
+    AS_VAR_IF([mhd_cv_fd_setsize_value],["unknown"],
+      [
+        AS_VAR_IF([mhd_cv_sys_fd_setsize_value],["unknown"],
+          [
+            # Assume the most popular FD_SETSIZE value
+            base_fd_setsize=1024
+          ],
+          [base_fd_setsize="${mhd_cv_sys_fd_setsize_value}"]
+        )
+        base_min_fd_setsize="${base_fd_setsize}"
+      ],
+      [
+        AS_VAR_IF([mhd_cv_sys_fd_setsize_value],["unknown"],
+          [
+            base_fd_setsize="${mhd_cv_fd_setsize_value}"
+            base_min_fd_setsize="${base_fd_setsize}"
+          ],
+          [
+            AS_IF([test "${mhd_cv_fd_setsize_value}" -ge "${mhd_cv_sys_fd_setsize_value}"],
+              [
+                base_fd_setsize="${mhd_cv_fd_setsize_value}"
+                base_min_fd_setsize="${mhd_cv_sys_fd_setsize_value}"
+              ],
+              [
+                base_fd_setsize="${mhd_cv_sys_fd_setsize_value}"
+                base_min_fd_setsize="${mhd_cv_fd_setsize_value}"
+              ]
+            )
+          ]
+        )
+      ]
+    )
+    # Use two times larger FD_SETSIZE value for test
+    AS_VAR_ARITH([test_fd_setsize],[${base_fd_setsize} '+' ${base_fd_setsize}])
+    AS_IF([test "${test_fd_setsize}" -lt "128"],[test_fd_setsize=128])
+    test_type_fd_setsize="larger"
+
+    CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
+    CPPFLAGS="${CPPFLAGS_ac} ${user_CPPFLAGS}"
+
+    _AS_ECHO_LOG([testing whether FD_SETSIZE test value (${test_fd_setsize}) is suitable for 'int' type])
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([],
+          [[
+            static int test_arr1[(((long long)${test_fd_setsize}) != ((int)${test_fd_setsize})) ? -1 : 1];
+            static int test_arr2[(0 > ((int)${test_fd_setsize})) ? -1 : 1];
+            test_arr1[0] = 0;
+            test_arr2[0] = 0;
+            i][f (test_arr1[0] != test_arr2[0]) return 1;
+          ]]
+        )
+      ],[],
+      [
+        _AS_ECHO_LOG([The selected test FD_SETSIZE value (${test_fd_setsize}) is too large for 'int' type])
+        AS_VAR_ARITH([test_fd_setsize],[${base_min_fd_setsize} '/' '2'])
+        test_type_fd_setsize="smaller"
+      ]
+    )
+
+    _AS_ECHO_LOG([will try ${test_fd_setsize} as FD_SETSIZE value])
+
+    AS_IF([test "x${cross_compiling}" = "xno" && test "x${test_type_fd_setsize}" = "xlarger"],
+      [
+        _AS_ECHO_LOG([will try ${test_fd_setsize} as FD_SETSIZE value with run test])
+        AC_RUN_IFELSE(
+          [
+            AC_LANG_SOURCE(
+              [[
+#ifdef FD_SETSIZE
+#undef FD_SETSIZE
+#endif /* FD_SETSIZE */
+
+#define FD_SETSIZE          ${test_fd_setsize}
+#define MY_TEST_FD_SETSIZE  ${test_fd_setsize}
+
+#ifdef HAVE_SYS_TIME_H
+#include <sys/time.h>
+#endif
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+#ifdef HAVE_SYS_SOCKET_H
+#include <sys/socket.h>
+#endif
+#ifdef HAVE_SOCKLIB_H
+#include <sockLib.h>
+#endif
+#if defined(_WIN32) && ! defined(__CYGWIN__)
+#include <winsock2.h>
+#define MHD_TEST_SOCKET_TYPE SOCKET
+#else
+#define MHD_TEST_SOCKET_TYPE int
+#endif
+#ifdef HAVE_SYS_SELECT_H
+#include <sys/select.h>
+#endif
+
+#include <string.h>
+#include <stdio.h>
+
+/* Test fo][r mismatch by macro check */
+#if (FD_SETSIZE) != (MY_TEST_FD_SETSIZE)
+#error System headers ignore custom FD_SETSIZE value, FD_SETSIZE is NOT ${test_fd_setsize}
+choke me here now;
+#endif /* (FD_SETSIZE) != (MY_TEST_FD_SETSIZE) */
+
+/* Additional test fo][r mismatch by macro check */
+#if (FD_SETSIZE) != (${test_fd_setsize})
+#error System headers ignore custom FD_SETSIZE value, FD_SETSIZE is NOT ${test_fd_setsize}
+choke me here now;
+#endif /* (FD_SETSIZE) != (${test_fd_setsize}) */
+
+static unsigned long var_fd_setsize_value = FD_SETSIZE;
+static unsigned long var_my_test_fd_setsize_value = MY_TEST_FD_SETSIZE;
+
+int main(void)
+{
+  fd_set fds_num_one_copy;
+  fd_set fds_num_three_copy;
+  fd_set test_fdsets[6];
+  int i;
+  int ret = 0;
+#if defined(_WIN32) && ! defined(__CYGWIN__)
+  WSADATA wsa_data;
+
+  if (0 != WSAStartup(MAKEWORD(2, 2), &wsa_data))
+    return 21;
+  if (MAKEWORD(2, 2) != wsa_data.wVersion)
+  {
+    WSACleanup();
+    return 22;
+  }
+#endif /* _WIN32 && ! __CYGWIN__ */
+
+  /* Init with zeros to make sure that slack areas are equal */
+  memset(test_fdsets, 0, sizeof(test_fdsets));
+
+  /* Correctly init fd_sets */
+  for (i = 0; i < 6; ++i)
+    FD_ZERO(test_fdsets + i);
+
+  /* Make copies of zero-inited fd_sets */
+  memcpy(&fds_num_one_copy, test_fdsets + 1, sizeof(fd_set));
+  memcpy(&fds_num_three_copy, test_fdsets + 3, sizeof(fd_set));
+
+  if (var_fd_setsize_value != var_my_test_fd_setsize_value)
+  {
+    fprintf (stderr, "System headers redefined FD_SETSIZE to another value (%lu).\n",
+             (unsigned long) FD_SETSIZE);
+    ret = 2;
+  }
+  else
+  {
+    /* Set (almost) all FDs in test_fdset[2] */
+    for (i = 1; i < FD_SETSIZE; ++i)
+      FD_SET((MHD_TEST_SOCKET_TYPE)i, test_fdsets + 2);
+
+    if (! FD_ISSET((MHD_TEST_SOCKET_TYPE)1, test_fdsets + 2))
+    {
+      fprintf (stderr, "FD number one in original fd_set is unset, while should be set.\n");
+      ret |= 3;
+    }
+    if (! FD_ISSET((MHD_TEST_SOCKET_TYPE)(FD_SETSIZE - 1), test_fdsets + 2))
+    {
+      fprintf (stderr, "FD number %lu in original fd_set is unset, while should be set.\n",
+               (unsigned long) FD_SETSIZE);
+      ret |= 3;
+    }
+
+    if (FD_ISSET((MHD_TEST_SOCKET_TYPE)1, test_fdsets + 1))
+    {
+      fprintf (stderr, "FD number one in the first fd_set is unset, while should be set.\n");
+      ret |= 4;
+    }
+    if (FD_ISSET((MHD_TEST_SOCKET_TYPE)(FD_SETSIZE - 1), test_fdsets + 1))
+    {
+      fprintf (stderr, "FD number %lu in the first fd_set is unset, while should be set.\n",
+               (unsigned long) FD_SETSIZE);
+      ret |= 4;
+    }
+    if (0 != memcmp (&fds_num_one_copy, test_fdsets + 1, sizeof(fd_set)))
+    {
+      fprintf (stderr, "The first fd_set has been altered.\n");
+      ret |= 4;
+    }
+
+    if (FD_ISSET((MHD_TEST_SOCKET_TYPE)1, test_fdsets + 3))
+    {
+      fprintf (stderr, "FD number one in the third fd_set is unset, while should be set.\n");
+      ret |= 8;
+    }
+    if (FD_ISSET((MHD_TEST_SOCKET_TYPE)(FD_SETSIZE - 1), test_fdsets + 3))
+    {
+      fprintf (stderr, "FD number %lu in the third fd_set is unset, while should be set.\n",
+               (unsigned long) FD_SETSIZE);
+      ret |= 8;
+    }
+    if (0 != memcmp (&fds_num_three_copy, test_fdsets + 3, sizeof(fd_set)))
+    {
+      fprintf (stderr, "The third fd_set has been altered.\n");
+      ret |= 8;
+    }
+  }
+#if defined(_WIN32) && ! defined(__CYGWIN__)
+  WSACleanup();
+#endif /* _WIN32 && ! __CYGWIN__ */
+  return ret;
+}
+              ]]
+            )
+          ],
+          [mhd_cv_fd_setsize_overridable="yes"],
+          [mhd_cv_fd_setsize_overridable="no"],
+          [[# Not used when cross-compiling ]]
+        )
+      ],
+      [
+        _AS_ECHO_LOG([will try ${test_fd_setsize} as FD_SETSIZE with simple compile test])
+        AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+              [[
+#ifdef FD_SETSIZE
+#undef FD_SETSIZE
+#endif /* FD_SETSIZE */
+
+#define FD_SETSIZE          ${test_fd_setsize}
+#define MY_TEST_FD_SETSIZE  ${test_fd_setsize}
+
+#ifdef HAVE_SYS_TIME_H
+#include <sys/time.h>
+#endif
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+#ifdef HAVE_SYS_SOCKET_H
+#include <sys/socket.h>
+#endif
+#ifdef HAVE_SOCKLIB_H
+#include <sockLib.h>
+#endif
+#if defined(_WIN32) && ! defined(__CYGWIN__)
+#include <winsock2.h>
+#endif
+#ifdef HAVE_SYS_SELECT_H
+#include <sys/select.h>
+#endif
+
+/* Test fo][r mismatch by macro check */
+#if (FD_SETSIZE) != (MY_TEST_FD_SETSIZE)
+#error System headers ignore custom FD_SETSIZE value, FD_SETSIZE is NOT ${test_fd_setsize}
+choke me here now
+#endif /* (FD_SETSIZE) != (MY_TEST_FD_SETSIZE) */
+
+/* Additional test fo][r mismatch by macro check */
+#if (FD_SETSIZE) != (${test_fd_setsize})
+#error System headers ignore custom FD_SETSIZE value, FD_SETSIZE is NOT ${test_fd_setsize}
+choke me here now
+#endif /* (FD_SETSIZE) != (${test_fd_setsize}) */
+              ]],[]
+            )
+          ],
+          [
+            _AS_ECHO_LOG([comple test succeed, will check whether another FD_SETSIZE value changes the size of 'fd_set'])
+
+            # Check current size of fd_set
+            _AS_ECHO_LOG([find the sizeof(fd_setsize) with current default (${mhd_cv_fd_setsize_value}) FD_SETSIZE value])
+            AC_COMPUTE_INT([sizeof_cur_fd_set],[sizeof(fd_set)],dnl
+              [[
+#ifdef HAVE_SYS_TIME_H
+#include <sys/time.h>
+#endif
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+#ifdef HAVE_SYS_SOCKET_H
+#include <sys/socket.h>
+#endif
+#ifdef HAVE_SOCKLIB_H
+#include <sockLib.h>
+#endif
+#if defined(_WIN32) && ! defined(__CYGWIN__)
+#include <winsock2.h>
+#endif
+#ifdef HAVE_SYS_SELECT_H
+#include <sys/select.h>
+#endif
+              ]], [sizeof_cur_fd_set="unknown"]
+            )
+            _AS_ECHO_LOG([the sizeof(fd_setsize) with current default (${mhd_cv_fd_setsize_value}) FD_SETSIZE value is ${sizeof_cur_fd_set}])
+
+            # Check the size of fd_set with redefined FD_SETSIZE
+            _AS_ECHO_LOG([find the sizeof(fd_setsize) with redefined (${test_fd_setsize}) FD_SETSIZE value])
+            AC_COMPUTE_INT([sizeof_mod_fd_set],[sizeof(fd_set)],dnl
+              [[
+#ifdef FD_SETSIZE
+#undef FD_SETSIZE
+#endif /* FD_SETSIZE */
+
+#define FD_SETSIZE          ${test_fd_setsize}
+
+#ifdef HAVE_SYS_TIME_H
+#include <sys/time.h>
+#endif
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+#ifdef HAVE_SYS_SOCKET_H
+#include <sys/socket.h>
+#endif
+#ifdef HAVE_SOCKLIB_H
+#include <sockLib.h>
+#endif
+#if defined(_WIN32) && ! defined(__CYGWIN__)
+#include <winsock2.h>
+#endif
+#ifdef HAVE_SYS_SELECT_H
+#include <sys/select.h>
+#endif
+              ]], [sizeof_mod_fd_set="unknown"]
+            )
+            _AS_ECHO_LOG([the sizeof(fd_setsize) with redefined (${test_fd_setsize}) FD_SETSIZE value is ${sizeof_mod_fd_set}])
+            _AS_ECHO_LOG([detected sizes of 'fd_set': '${sizeof_cur_fd_set}' (by default), '${sizeof_mod_fd_set}' with modified FD_SETSIZE])
+            AS_IF([test "x${sizeof_cur_fd_set}" != "x${sizeof_mod_fd_set}"],
+              [mhd_cv_fd_setsize_overridable="yes"],
+              [mhd_cv_fd_setsize_overridable="no"]
+            )
+            AS_UNSET([sizeof_mod_fd_set])
+            AS_UNSET([sizeof_cur_fd_set])
+          ],
+          [mhd_cv_fd_setsize_overridable="no"]
+        )
+      ]
+    )
+    AS_UNSET([test_type_fd_setsize])
+    AS_UNSET([test_fd_setsize])
+    AS_UNSET([base_min_fd_setsize])
+    AS_UNSET([base_fd_setsize])
+  ]
+)
+
+AS_VAR_IF([mhd_cv_fd_setsize_overridable],["no"],
+  [
+    AS_VAR_IF([os_is_native_w32],["yes"],
+      [AC_MSG_ERROR([Non-overridable FD_SETSIZE detected for native W32 build. FD_SETSIZE is overridable on W32.])]
+    )
+    AS_IF([test "x${mhd_cv_fd_setsize_value}" != "xunknown" && test "x${mhd_cv_sys_fd_setsize_value}" != "xunknown" && test "${mhd_cv_fd_setsize_value}" -ne "${mhd_cv_sys_fd_setsize_value}"],
+      [AC_MSG_WARN([Detected non-overridable FD_SETSIZE, but the toolchain uses FD_SETSIZE (${mhd_cv_fd_setsize_value}) different from system default (${mhd_cv_sys_fd_setsize_value})])]
+    )
+  ],
+  [AC_DEFINE([HAS_FD_SETSIZE_OVERRIDABLE],[1],[Define to 1 i][f your system allow overriding the value of FD_SETSIZE macro])]
+)
+
+AC_CACHE_CHECK([whether socket value is a signed type],[mhd_cv_socket_signed],
+  [
+    AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
+#ifdef HAVE_SYS_TIME_H
+#include <sys/time.h>
+#endif
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+#ifdef HAVE_SYS_SOCKET_H
+#include <sys/socket.h>
+#endif
+#ifdef HAVE_SOCKLIB_H
+#include <sockLib.h>
+#endif
+#if defined(_WIN32) && ! defined(__CYGWIN__)
+#include <winsock2.h>
+#endif
+#ifdef HAVE_SYS_SELECT_H
+#include <sys/select.h>
+#endif
+
+/* Keep in sync with microhttpd.h */
+#if ! defined(_WIN32) || defined(_SYS_TYPES_FD_SET)
+typedef int MHD_socket;
+#else /* defined(_WIN32) && ! defined(_SYS_TYPES_FD_SET) */
+typedef SOCKET MHD_socket;
+#endif /* defined(_WIN32) && ! defined(_SYS_TYPES_FD_SET) */
+
+int main(void)
+{
+  int test_arr[2 - 5*(!!(0 < ((MHD_socket)-1)))];
+  test_arr[1] = 0;
+  return test_arr[1];
+}
+          ]]
+        )
+      ],
+      [mhd_cv_socket_signed="yes"],
+      [mhd_cv_socket_signed="no"]
+    )
+  ]
+)
+AS_VAR_IF([mhd_cv_socket_signed],["yes"],
+  [AC_DEFINE([HAS_SIGNED_SOCKET],[1],[Define to 1 i][f your socket type is signed])]
+)
 
 MHD_CHECK_FUNC([writev],
   [[#include <sys/uio.h>]],
@@ -1256,12 +2226,6 @@ MHD_FIND_LIB([sendmsg],
   ],[],
   [MHD_LIBDEPS]
 )
-
-# set GCC options
-# use '-fno-strict-aliasing', but only if the compiler
-# and linker can take it
-AX_CHECK_LINK_FLAG([-fno-strict-aliasing],
-  [AX_APPEND_COMPILE_FLAGS([-fno-strict-aliasing])])
 
 AC_C_BIGENDIAN
 AC_C_VARARRAYS
@@ -1328,22 +2292,57 @@ AC_ARG_ENABLE([[examples]],
 test "x$enable_examples" = "xno" || enable_examples=yes
 AM_CONDITIONAL([BUILD_EXAMPLES], [test "x$enable_examples" = "xyes"])
 
+AC_ARG_ENABLE([[tools]],
+  [AS_HELP_STRING([[--disable-tools]], [do not build testing and demo tools])], ,
+    [enable_tools=yes])
+test "x$enable_tools" = "xyes" || enable_tools=no
+AM_CONDITIONAL([BUILD_TOOLS], [test "x$enable_tools" = "xyes"])
+
 AC_ARG_ENABLE([[heavy-tests]],
-  [AS_HELP_STRING([[--enable-heavy-tests]], [use heavy tests in test-suite. WARNING:]
+  [AS_HELP_STRING([[--enable-heavy-tests[=SCOPE]]], [use SCOPE of heavy tests in test-suite. WARNING:]
   [a dedicated host with minimal number of background processes and no network]
-  [activity is recommended to enable.])], [],
+  [activity is recommended to enable. (basic, full)])], [],
     [enable_heavy_tests=no])
-AS_VAR_IF([enable_heavy_tests], ["yes"],
+use_heavy_tests="no"
+use_vheavy_tests="no"
+use_heavy_tests_MSG="no"
+AS_CASE([${enable_heavy_tests}],
+  [yes|basic],
+  [
+  	enable_heavy_tests="basic"
+    use_heavy_tests="yes"
+    use_vheavy_tests="no"
+    use_heavy_tests_MSG="yes, basic heavy tests (a dedicated host is recommended)"
+  ],
+  [all|full],
+  [
+  	enable_heavy_tests="full"
+    use_heavy_tests="yes"
+    use_vheavy_tests="yes"
+    use_heavy_tests_MSG="yes, full set of heavy tests (a dedicated host is recommended)"
+  ],
+  [no],
+  [
+    use_heavy_tests="no"
+    use_vheavy_tests="no"
+    use_heavy_tests_MSG="no"
+  ],
+  [AC_MSG_ERROR([[Unknown parameter value: --enable-heavy-tests=${enable_heavy_tests}]])]
+)
+AS_VAR_IF([use_heavy_tests], ["yes"],
   [
     HEAVY_TESTS_NOTPARALLEL='.NOTPARALLEL:'
     AC_DEFINE([_MHD_HEAVY_TESTS], [1], [Define to 1 to enable "heavy" test paths.])
+    AS_VAR_IF([use_vheavy_tests], ["yes"],
+      [AC_DEFINE([_MHD_VHEAVY_TESTS], [1], [Define to 1 to enable "very heavy" test paths.])]
+    )
   ],
   [
-    enable_heavy_tests=no
     HEAVY_TESTS_NOTPARALLEL=" "
   ]
 )
-AM_CONDITIONAL([HEAVY_TESTS],[test "x$enable_heavy_tests" = "xyes"])
+AM_CONDITIONAL([HEAVY_TESTS],[test "x$use_heavy_tests" = "xyes"])
+AM_CONDITIONAL([VHEAVY_TESTS],[test "x$use_vheavy_tests" = "xyes"])
 AM_CONDITIONAL([TESTS_STRESS_OS],[false])
 
 AC_ARG_ENABLE([[poll]],
@@ -1438,11 +2437,10 @@ AS_IF([test "x$enable_epoll" = "xyes"],
   ]
 )
 
-AC_CACHE_CHECK([for suported 'noreturn' keyword], [mhd_cv_decl_noreturn],
+AC_CACHE_CHECK([for supported 'noreturn' keyword], [mhd_cv_decl_noreturn],
   [
     mhd_cv_decl_noreturn="none"
-    save_CFLAGS="${CFLAGS}"
-    CFLAGS="${CFLAGS} ${errattr_CFLAGS}"
+    CFLAGS="${CFLAGS_ac} ${user_CFLAGS} ${errattr_CFLAGS}"
     for decl_noret in '_Noreturn' '__attribute__((__noreturn__))' '__declspec(noreturn)'
     do
       AC_LINK_IFELSE([AC_LANG_SOURCE(
@@ -1472,7 +2470,7 @@ int main (int argc, char *const *argv)
       )
       AS_IF([test "x${mhd_cv_decl_noreturn}" != "xnone"], [break])
     done
-    CFLAGS="${save_CFLAGS}"
+   CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
   ]
 )
 AS_VAR_IF([mhd_cv_decl_noreturn], ["none"],
@@ -1497,7 +2495,7 @@ AC_CACHE_CHECK([size of tv_sec member of struct timeval], [mhd_cv_size_timeval_t
 #if HAVE_SYS_TYPES_H
 #include <sys/types.h>
 #endif /* HAVE_SYS_TYPES_H */
-struct timeval test_var;
+static struct timeval test_var;
       ]],
       [
         # The size is used only to exclude additional checks/comparison in code
@@ -1512,8 +2510,11 @@ struct timeval test_var;
 )
 AC_DEFINE_UNQUOTED([SIZEOF_STRUCT_TIMEVAL_TV_SEC], [$mhd_cv_size_timeval_tv_sec],
   [The size of `tv_sec' member of `struct timeval', as computed by sizeof])
+AC_CHECK_SIZEOF([int64_t], [], [[#include <stdint.h>]])
 AC_CHECK_SIZEOF([uint64_t], [], [[#include <stdint.h>]])
+AC_CHECK_SIZEOF([int], [], [[#include <stdint.h>]])
 AC_CHECK_SIZEOF([unsigned int], [], [[#include <stdint.h>]])
+AC_CHECK_SIZEOF([unsigned long long], [], [[#include <stdint.h>]])
 AC_CHECK_SIZEOF([size_t], [],
   [[
 #ifdef HAVE_STDLIB_H
@@ -1525,7 +2526,6 @@ AC_CHECK_SIZEOF([size_t], [],
 #include <stdio.h>
   ]]
 )
-AC_CHECK_SIZEOF([unsigned long long], [], [[#include <stdint.h>]])
 
 AC_CHECK_HEADERS([dlfcn.h],[have_tlsplugin=yes],[have_tlsplugin=no], [AC_INCLUDES_DEFAULT])
 AM_CONDITIONAL([MHD_HAVE_TLS_PLUGIN], [[test "x$have_tlsplugin" = xyes]])
@@ -1552,8 +2552,8 @@ AC_INCLUDES_DEFAULT
   ]
 )
 
-AC_CHECK_MEMBERS([struct sockaddr_in.sin_len, struct sockaddr_in6.sin6_len,
-                  struct sockaddr_storage.ss_len],
+AC_CHECK_MEMBERS([struct sockaddr.sa_len, struct sockaddr_storage.ss_len,
+                  struct sockaddr_in.sin_len, struct sockaddr_in6.sin6_len],
    [], [],
    [
 #ifdef HAVE_SYS_TYPES_H
@@ -1564,6 +2564,12 @@ AC_CHECK_MEMBERS([struct sockaddr_in.sin_len, struct sockaddr_in6.sin6_len,
 #endif
 #ifdef HAVE_NETINET_IN_H
 #include <netinet/in.h>
+#endif
+#ifdef HAVE_WINSOCK2_H
+#include <winsock2.h>
+#endif
+#ifdef HAVE_WS2TCPIP_H
+#include <ws2tcpip.h>
 #endif
    ])
 
@@ -2031,8 +3037,8 @@ extern "C"
 #endif
              struct tm* gmtime_s(const time_t* time, struct tm* result);
            ]], [[
-             struct tm res;
-             time_t t;
+             static struct tm res;
+             static time_t t = 0;
              gmtime_s (&t, &res);
           ]])
         ],
@@ -2052,8 +3058,8 @@ extern "C"
 #endif
 errno_t gmtime_s(struct tm* _tm, const time_t* time);
               ]], [[
-                 struct tm res;
-                 time_t t;
+                 static struct tm res;
+                 static time_t t = 0;
                  gmtime_s (&res, &t);
               ]])
             ],
@@ -2152,21 +3158,7 @@ choke me now
   ]
 )
 
-MHD_CHECK_FUNC([[gettimeofday]],
-  [[
-#ifdef HAVE_SYS_TIME_H
-#include <sys/time.h>
-#endif /* HAVE_SYS_TIME_H */
-#ifdef HAVE_TIME_H
-#include <time.h>
-#endif /* HAVE_TIME_H */
-  ]],
-  [[
-  struct timeval tv;
-  i][f (0 != gettimeofday (&tv, (void*) 0))
-    return 1;
-  ]]
-)
+MHD_CHECK_FUNC_GETTIMEOFDAY
 
 # IPv6
 AC_CACHE_CHECK([for IPv6],[mhd_cv_have_inet6],
@@ -2274,21 +3266,41 @@ MHD_CHECK_FUNC([[usleep]], [[#include <unistd.h>]], [[usleep(100000);]])
 MHD_CHECK_FUNC([[nanosleep]], [[#include <time.h>]], [[struct timespec ts2, ts1 = {0, 0}; nanosleep(&ts1, &ts2);]])
 
 HIDDEN_VISIBILITY_CFLAGS=""
-AS_CASE(["$host"],
-  [*-*-mingw*],[
-    dnl on mingw32 we do -fvisibility=hidden and __declspec(dllexport)
-    AC_DEFINE([_MHD_EXTERN], [__attribute__((visibility("default"))) __declspec(dllexport) extern],
-              [defines how to decorate public symbols while building])
-    HIDDEN_VISIBILITY_CFLAGS="-fvisibility=hidden"
-  ],[
-    dnl on other compilers, check if we can do -fvisibility=hidden
-    AX_CHECK_LINK_FLAG([-fvisibility=hidden],
-      [AX_CHECK_COMPILE_FLAG([-fvisibility=hidden],
-                           [AC_DEFINE([_MHD_EXTERN], [__attribute__((visibility("default"))) extern],
-                                       [defines how to decorate public symbols while building])
-                            HIDDEN_VISIBILITY_CFLAGS="-fvisibility=hidden"])])
-   ])
-AC_SUBST(HIDDEN_VISIBILITY_CFLAGS)
+AH_TEMPLATE([_MHD_EXTERN],[defines how to decorate public symbols w][hile building the library])
+CFLAGS="${user_CFLAGS}"
+MHD_CHECK_CC_CFLAG([-fvisibility=hidden],[CFLAGS_ac],
+  [
+    # NOTE: require setting of errattr_CFLAGS above
+    CFLAGS="${CFLAGS_ac} -fvisibility=hidden ${user_CFLAGS} ${errattr_CFLAGS}"
+    AC_CACHE_CHECK([whether $CC supports __attribute__((visibility("default")))],[mhd_cv_cc_attr_visibility],
+      [
+        AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
+extern __attribute__((visibility("default"))) int test_extrn_func(void);
+
+int test_extrn_func(void) {return 0;}
+              ]])
+          ],
+          [mhd_cv_cc_attr_visibility="yes"],[mhd_cv_cc_attr_visibility="no"]
+        )
+      ]
+    )
+    AS_VAR_IF([mhd_cv_cc_attr_visibility],["yes"],
+      [
+        HIDDEN_VISIBILITY_CFLAGS="-fvisibility=hidden"
+        AS_IF([test "x$os_is_native_w32" = "xyes" && test "x$enable_shared" = "xyes"],
+          [AC_DEFINE([_MHD_EXTERN], [__attribute__((visibility("default"))) __declspec(dllexport) extern])],
+          [AC_DEFINE([_MHD_EXTERN], [__attribute__((visibility("default"))) extern])]
+        )
+      ],
+      [
+        AC_MSG_WARN([$CC supports -fvisibility, but does not support __attribute__((visibility("default"))). Check compiler and compiler flags.])
+        AC_DEFINE([_MHD_EXTERN], [extern])
+      ]
+    )
+  ],[AC_DEFINE([_MHD_EXTERN], [extern])]
+)
+CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
+AC_SUBST([HIDDEN_VISIBILITY_CFLAGS])
 
 # libcurl (required for testing)
 AC_ARG_ENABLE([curl],
@@ -2303,17 +3315,12 @@ AS_IF([test "$enable_curl" != "no"],
       enable_curl=no
     ])
 ])
-AS_IF([test "$enable_curl" != "no"],
- [
-# Lib cURL & cURL - OpenSSL versions
-  AC_DEFINE([MHD_REQ_CURL_VERSION], ["7.16.4"], [required cURL version to run tests])
-  AC_DEFINE([MHD_REQ_CURL_OPENSSL_VERSION], ["0.9.8"], [required cURL SSL version to run tests])
-  AC_DEFINE([MHD_REQ_CURL_GNUTLS_VERSION], ["2.8.6"], [gnuTLS lib version - used in conjunction with cURL])
-  AC_DEFINE([MHD_REQ_CURL_NSS_VERSION], ["3.12.0"], [NSS lib version - used in conjunction with cURL])
- ])
-AM_CONDITIONAL([HAVE_CURL], [test "x$enable_curl" = "xyes"])
+AM_CONDITIONAL([RUN_LIBCURL_TESTS], [test "x$enable_curl" = "xyes"])
+AS_IF([test "x$enable_curl" = "xyes"],
+  [MSG_CURL="yes"],
+  [MSG_CURL="no, many unit tests will not run"]
+)
 
-mhd_have_libmagic="no"
 MHD_CHECK_FUNC([magic_open],
   [[
 #include <magic.h>
@@ -2522,7 +3529,7 @@ AS_VAR_IF([[found_sendfile]], [["no"]],
   [
    AC_MSG_CHECKING([[for Solaris-style sendfile(3)]])
    SAVE_LIBS="$LIBS"
-   LIBS="$LIBS -lsendfile"
+   LIBS="-lsendfile $LIBS"
    AC_LINK_IFELSE(
      [AC_LANG_PROGRAM(
        [[
@@ -2579,17 +3586,19 @@ AS_IF([[test "x$found_sendfile" = "xno" && test "x$enable_sendfile" = "xyes"]],
   [AC_MSG_ERROR([[sendfile() usage was requested by configure parameter, but no usable sendfile() function is detected]])]
 )
 
-# optional: have error messages ?
-AC_MSG_CHECKING([[whether to generate error messages]])
+# optional: enable error and informational messages
+AC_MSG_CHECKING([[whether to generate text messages]])
 AC_ARG_ENABLE([messages],
    [AS_HELP_STRING([--disable-messages],
-               [disable MHD error messages])],
+               [disable error, warning messages and text bodies for ]
+               [automatic HTTP responses (to reduce the binary size)])],
    [enable_messages=${enableval}],
    [enable_messages=yes])
 AS_IF([[test "x$enable_messages" = "xyes"]],
-  [ AC_DEFINE([HAVE_MESSAGES],[1],[Define to 1 to enable support for error messages.]) ],
+  [ AC_DEFINE([HAVE_MESSAGES],[1],[Define to 1 to enable support for text messages.]) ],
   [[ enable_messages=no ]])
 AC_MSG_RESULT([[$enable_messages]])
+AM_CONDITIONAL([HAVE_MESSAGES], [test "x$enable_messages" != "xno"])
 
 
 # optional: have postprocessor?
@@ -2604,13 +3613,6 @@ AS_IF([[test "x$enable_postprocessor" != "xno"]],
     AC_DEFINE([HAVE_POSTPROCESSOR],[1],[Define to 1 if libmicrohttpd is compiled with postprocessor support.]) ])
 AM_CONDITIONAL([HAVE_POSTPROCESSOR], [test "x$enable_postprocessor" != "xno"])
 AC_MSG_RESULT([[$enable_postprocessor]])
-
-
-# optional: have zzuf, socat?
-AC_CHECK_PROG([have_zzuf],[zzuf], [yes], [no])
-AC_CHECK_PROG([have_socat],[socat], [yes], [no])
-AM_CONDITIONAL([HAVE_ZZUF], [test "x$have_zzuf" = "xyes"])
-AM_CONDITIONAL([HAVE_SOCAT], [test "x$have_socat" = "xyes"])
 
 have_gnutls=no
 have_gnutls_sni=no
@@ -2647,12 +3649,9 @@ AC_ARG_WITH([[gnutls]],
       ],
       [
         AC_MSG_RESULT([[-I$with_gnutls/include -L$with_gnutls/lib -lgnutls]])
-        SAVE_LDFLAGS="$LDFLAGS"
-        SAVE_CPPFLAGS="$CPPFLAGS"
-        SAVE_CFLAGS="$CFLAGS"
         SAVE_LIBS="$LIBS"
-        LDFLAGS="-L$with_gnutls/lib $LDFLAGS"
-        CPPFLAGS="-I$with_gnutls/include $CPPFLAGS"
+        LDFLAGS="${LDFLAGS_ac} -L$with_gnutls/lib ${user_LDFLAGS}"
+        CPPFLAGS="${CPPFLAGS_ac} -I$with_gnutls/include ${user_CPPFLAGS}"
         have_gnutls_pkgcfg=no
         MHD_CHECK_FUNC([gnutls_check_version],[[#include <gnutls/gnutls.h>]],
           [
@@ -2668,9 +3667,9 @@ AC_ARG_WITH([[gnutls]],
           [AC_MSG_ERROR([can't find usable libgnutls at specified prefix $with_gnutls])],
           [-lgnutls]
         )
-        CPPFLAGS="${SAVE_CPPFLAGS}"
-        CFLAGS="${SAVE_CFLAGS}"
-        LDFLAGS="${SAVE_LDFLAGS}"
+        CPPFLAGS="${CPPFLAGS_ac} ${user_CPPFLAGS}"
+        CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
+        LDFLAGS="${LDFLAGS_ac} ${user_LDFLAGS}"
         LIBS="$SAVE_LIBS"
       ])
    ],
@@ -2679,56 +3678,12 @@ AC_ARG_WITH([[gnutls]],
 
 AS_IF([test "x$with_gnutls" != "xno" && test "x$have_gnutls" != "xyes"],
   [
-    AC_CACHE_CHECK([[whether to add pkg-config special search directories]], [mhd_cv_pkgconf_add_dirs],
-     [
-      AS_IF([[test "x$host_os" = "xsolaris2.11" && test "x$cross_compiling" = "xno"]],
-       [
-        AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
-char size_chk[7-sizeof(char*)];
-#if defined(_LP64) || defined(__LP64__) || defined(__x86_64) || defined(__x86_64__)
-#error This is 64-bit target.
-choke me now
-#endif
-#if defined(__amd64) || defined(__amd64__) || defined(__sparcv9) || defined(__sparc_v9__)
-#error This is 64-bit target.
-choke me now
-#endif
-           ]], [[]]
-          )
-         ],
-         [
-          mhd_cv_pkgconf_add_dirs='/usr/lib/pkgconfig/gnutls-3'
-         ],
-         [
-          AS_IF([[test "x$host_cpu" = "xx86_64" || test "x$host_cpu" = "xi386"]],
-                  [[mhd_cv_pkgconf_add_dirs='/usr/lib/amd64/pkgconfig/gnutls-3:/usr/lib/amd64/pkgconfig']],
-                [[test "x$host_cpu" = "xsparc"]],
-                  [[mhd_cv_pkgconf_add_dirs='/usr/lib/sparkv9/pkgconfig/gnutls-3:/usr/lib/sparkv9/pkgconfig']],
-                  [[mhd_cv_pkgconf_add_dirs='/usr/lib/64/pkgconfig/gnutls-3:/usr/lib/64/pkgconfig']]
-          )
-         ]
-        )
-       ],
-       [[ mhd_cv_pkgconf_add_dirs='no' ]]
-      )
-     ]
-    )
-    AS_IF([[test "x$mhd_cv_pkgconf_add_dirs" != "xno"]],
-     [
-      test "x$PKG_CONFIG_PATH" = "x" || PKG_CONFIG_PATH="${PKG_CONFIG_PATH}${PATH_SEPARATOR}"
-      PKG_CONFIG_PATH="${PKG_CONFIG_PATH}${mhd_cv_pkgconf_add_dirs}"
-      export PKG_CONFIG_PATH
-     ]
-    )
     PKG_CHECK_MODULES(GNUTLS, [[gnutls]],
       [
        have_gnutls_pkgcfg='yes'
-       SAVE_CPPFLAGS="$CPPFLAGS"
-       SAVE_CFLAGS="$CFLAGS"
-       SAVE_LDFLAGS="$LDFLAGS"
        SAVE_LIBS="$LIBS"
-       CFLAGS="$GNUTLS_CFLAGS $CFLAGS"
-       LIBS="$LIBS $GNUTLS_LIBS"
+       CFLAGS="${CFLAGS_ac} $GNUTLS_CFLAGS ${user_CFLAGS}"
+       LIBS="$GNUTLS_LIBS $LIBS"
        AC_MSG_CHECKING([[whether GnuTLS is usable]])
        AC_LINK_IFELSE([
          AC_LANG_PROGRAM([[
@@ -2746,7 +3701,7 @@ choke me now
            have_gnutls=yes
            # GNUTLS_CFLAGS is actually CPPFLAGS
            GNUTLS_CPPFLAGS="$GNUTLS_CFLAGS"
-           # GNUTLS_CFLAGS is combination of LDFLAGS and LIBS
+           # GNUTLS_LDFLAGS is a combination of LDFLAGS and LIBS
            GNUTLS_LDFLAGS="$GNUTLS_LIBS"
           ],
           [
@@ -2763,9 +3718,9 @@ choke me now
           AS_UNSET([GNUTLS_LIBS])
          ]
        )
-       CPPFLAGS="$SAVE_CPPFLAGS"
-       CFLAGS="$SAVE_CFLAGS"
-       LDFLAGS="$SAVE_LDFLAGS"
+       CPPFLAGS="${CPPFLAGS_ac} ${user_CPPFLAGS}"
+       CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
+       LDFLAGS="${LDFLAGS_ac} ${user_LDFLAGS}"
        LIBS="$SAVE_LIBS"
       ],
       [
@@ -2786,16 +3741,13 @@ AS_IF([test "x$with_gnutls" != "xno" && test "x$have_gnutls" != "xyes"],
    AM_PATH_LIBGCRYPT([1.2.2], [have_gcrypt=yes], [have_gcrypt=no])
    AS_IF([[test "x$have_gcrypt" = "xyes"]],
      [
-       SAVE_CPPFLAGS="$CPPFLAGS"
-       SAVE_CFLAGS="$CFLAGS"
        SAVE_LIBS="$LIBS"
-       SAVE_LDFLAGS="$LDFLAGS"
-       CFLAGS="$CFLAGS $LIBGCRYPT_CFLAGS"
+       CFLAGS="${CFLAGS_ac} $LIBGCRYPT_CFLAGS ${user_CFLAGS}"
        # LIBGCRYPT_CFLAGS can be actually a CPPFLAGS, so check them both
-       CPPFLAGS="$CPPFLAGS $LIBGCRYPT_CFLAGS"
+       CPPFLAGS="${CPPFLAGS_ac} $LIBGCRYPT_CFLAGS ${user_CPPFLAGS}"
        AC_CHECK_HEADERS([gcrypt.h], [], [have_gcrypt=no], [AC_INCLUDES_DEFAULT])
        # Check for GnuTLS with gcrypt flags
-       LDFLAGS="$LDFLAGS $LIBGCRYPT_LIBS"
+       LDFLAGS="${LDFLAGS_ac} ${LIBGCRYPT_LIBS} ${user_LDFLAGS}"
        # A bit of hack: unset cache variable to force recheck
        AS_UNSET([ac_cv_header_gnutls_gnutls_h])
        AC_CHECK_HEADERS([gnutls/gnutls.h],
@@ -2808,9 +3760,9 @@ AS_IF([test "x$with_gnutls" != "xno" && test "x$have_gnutls" != "xyes"],
             GNUTLS_LIBS="-lgnutls"
             have_gnutls=yes
           ])], [], [AC_INCLUDES_DEFAULT])
-       CPPFLAGS="$SAVE_CPPFLAGS"
-       CFLAGS="$SAVE_CFLAGS"
-       LDFLAGS="$SAVE_LDFLAGS"
+       CPPFLAGS="${CPPFLAGS_ac} ${user_CPPFLAGS}"
+       CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
+       LDFLAGS="${LDFLAGS_ac} ${user_LDFLAGS}"
        LIBS="$SAVE_LIBS"
      ]
    )
@@ -2821,14 +3773,11 @@ AS_IF([test "x$have_gnutls" != "xyes" && test "x$with_gnutls" = "xyes"],
 
   AS_IF([test "x$have_gnutls" = "xyes"],
     [
-     SAVE_CPPFLAGS="$CPPFLAGS"
-     SAVE_CFLAGS="$CFLAGS"
-     SAVE_LDFLAGS="$LDFLAGS"
      SAVE_LIBS="$LIBS"
-     CPPFLAGS="$GNUTLS_CPPFLAGS $CPPFLAGS"
-     CFLAGS="$GNUTLS_CFLAGS $CFLAGS"
-     LDFLAGS="$GNUTLS_LDFLAGS $LDFLAGS"
-     LIBS="$LIBS $GNUTLS_LIBS"
+     CPPFLAGS="${CPPFLAGS_ac} ${GNUTLS_CPPFLAGS} ${user_CPPFLAGS}"
+     CFLAGS="${CFLAGS_ac} ${GNUTLS_CFLAGS} ${user_CFLAGS}"
+     LDFLAGS="${LDFLAGS_ac} ${GNUTLS_LDFLAGS} ${user_LDFLAGS}"
+     LIBS="$GNUTLS_LIBS $LIBS"
      AC_MSG_CHECKING([[for gnutls_privkey_import_x509_raw()]])
      AC_LINK_IFELSE([
        AC_LANG_PROGRAM([[
@@ -2868,9 +3817,9 @@ choke me now
         )
        ]
      )
-     CPPFLAGS="$SAVE_CPPFLAGS"
-     CFLAGS="$SAVE_CFLAGS"
-     LDFLAGS="$SAVE_LDFLAGS"
+     CPPFLAGS="${CPPFLAGS_ac} ${user_CPPFLAGS}"
+     CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
+     LDFLAGS="${LDFLAGS_ac} ${user_LDFLAGS}"
      LIBS="$SAVE_LIBS"
     ],
     [
@@ -2884,14 +3833,12 @@ choke me now
      AM_PATH_LIBGCRYPT([1.2.2], [have_gcrypt=yes], [have_gcrypt=no])
      AS_IF([[test "x$have_gcrypt" = "xyes"]],
        [
-         SAVE_CPPFLAGS="$CPPFLAGS"
-         SAVE_CFLAGS="$CFLAGS"
-         CFLAGS="$CFLAGS $LIBGCRYPT_CFLAGS"
+         CFLAGS="${CFLAGS_ac} ${LIBGCRYPT_CFLAGS} ${user_CFLAGS}"
          # LIBGCRYPT_CFLAGS can be actually a CPPFLAGS, so check them both
-         CPPFLAGS="$CPPFLAGS $LIBGCRYPT_CFLAGS"
+         CPPFLAGS="${CPPFLAGS_ac} ${LIBGCRYPT_CFLAGS} ${user_CPPFLAGS}"
          AC_CHECK_HEADERS([gcrypt.h], [], [have_gcrypt=no], [AC_INCLUDES_DEFAULT])
-         CPPFLAGS="$SAVE_CPPFLAGS"
-         CFLAGS="$SAVE_CFLAGS"
+         CPPFLAGS="${CPPFLAGS_ac} ${user_CPPFLAGS}"
+         CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
        ]
      )
     ]
@@ -3040,13 +3987,113 @@ AC_MSG_RESULT([[$enable_bauth]])
 AC_MSG_CHECKING([[whether to support HTTP Digest authentication]])
 AC_ARG_ENABLE([dauth],
 		[AS_HELP_STRING([--disable-dauth], [disable HTTP Digest Authentication support])],
-		[enable_dauth=${enableval}],
-		[enable_dauth=yes])
+		[enable_dauth="${enableval}"],
+		[enable_dauth="yes"])
 AS_IF([[test "x$enable_dauth" != "xno"]],
   [ enable_dauth=yes
     AC_DEFINE([DAUTH_SUPPORT],[1],[Define to 1 if libmicrohttpd is compiled with Digest Auth support.]) ])
 AM_CONDITIONAL([ENABLE_DAUTH], [test "x$enable_dauth" != "xno"])
 AC_MSG_RESULT([[$enable_dauth]])
+
+AS_VAR_IF([enable_dauth], ["yes"],
+  [
+    AC_MSG_CHECKING([[for Digest Authentication default nonce timeout value]])
+    AC_ARG_ENABLE([dauth-def-timeout],
+      [AS_HELP_STRING([--enable-dauth-def-timeout=NNN],
+                      [set default Digest Auth nonce validity time to NNN seconds])],
+      [enable_dauth_def_timeout="${enableval}"],
+      [enable_dauth_def_timeout=""]
+    )
+    AS_VAR_IF([enable_dauth_def_timeout], ["no"],
+      [
+        AC_MSG_WARN([Default Diget Auth nonce validity time cannot be disabled, --disable-dauth-def-timeout parameter is ignored])
+        enable_dauth_def_timeout=""
+      ]
+    )
+    AS_IF([test -z "${enable_dauth_def_timeout}"],
+      [
+        enable_dauth_def_timeout="90"
+        enable_dauth_def_timeout_MSG="${enable_dauth_def_timeout} seconds (default)"
+      ],
+      [
+        AS_IF([[test "x${enable_dauth_def_timeout}" = "x`echo ${enable_dauth_def_timeout}|${SED-sed} 's/[^0-9]//g'`" && \
+                test "${enable_dauth_def_timeout}" -ge "0" 2>/dev/null ]],[:],
+          [AC_MSG_ERROR([Invalid parameter --enable-dauth-def-timeout=${enable_dauth_def_timeout}. Timeout value must be a positive integer.])
+          ]
+        )
+        AC_COMPILE_IFELSE(
+          [
+            AC_LANG_PROGRAM([],
+              [[
+  static int arr[((int) 2) - 4 * (int)(${enable_dauth_def_timeout} != ((unsigned int)${enable_dauth_def_timeout}))];
+  (void) arr;
+              ]]
+            )
+          ],
+          [],
+          [AC_MSG_ERROR([The value specified by --enable-dauth-def-timeout=${enable_dauth_def_timeout} is too large.])]
+        )
+        enable_dauth_def_timeout_MSG="${enable_dauth_def_timeout} seconds (set by parameter)"
+      ]
+    )
+    AC_DEFINE_UNQUOTED([MHD_DAUTH_DEF_TIMEOUT_],[${enable_dauth_def_timeout}],
+        [The default HTTP Digest Auth default nonce timeout value (in seconds)])
+    AC_MSG_RESULT([[${enable_dauth_def_timeout_MSG}]])
+
+    AC_MSG_CHECKING([[for Digest Authentication default maximum nc value]])
+    AC_ARG_ENABLE([dauth-def-max-nc],
+      [AS_HELP_STRING([--enable-dauth-def-max-nc=NNN],
+                      [set default Digest Auth maximum nc (nonce count) value to NNN])],
+      [enable_dauth_def_max_nc="${enableval}"],
+      [enable_dauth_def_max_nc=""]
+    )
+    AS_VAR_IF([enable_dauth_def_max_nc], ["no"],
+      [
+        AC_MSG_WARN([Default Diget Auth maximum nc cannot be disabled, --disable-dauth-def-max-nc parameter is ignored])
+        enable_dauth_def_max_nc=""
+      ]
+    )
+    AS_IF([test -z "${enable_dauth_def_max_nc}"],
+      [
+        enable_dauth_def_max_nc="1000"
+        enable_dauth_def_max_nc_MSG="${enable_dauth_def_max_nc} (default)"
+      ],
+      [
+        AS_IF([[test "x${enable_dauth_def_max_nc}" = "x`echo ${enable_dauth_def_max_nc}|${SED-sed} 's/[^0-9]//g'`" && \
+                test "${enable_dauth_def_max_nc}" -ge "0" 2>/dev/null ]],[:],
+          [AC_MSG_ERROR([Invalid parameter --enable-dauth-def-max-nc=${enable_dauth_def_max_nc}. The value must be a positive integer.])
+          ]
+        )
+        AC_COMPILE_IFELSE(
+          [
+            AC_LANG_PROGRAM(
+              [[
+#include <stdint.h>
+              ]],
+              [[
+  static int arr[((int) 2) - 4 * (int)(${enable_dauth_def_max_nc} != ((uint32_t)${enable_dauth_def_max_nc}))];
+  (void) arr;
+              ]]
+            )
+          ],
+          [],
+          [AC_MSG_ERROR([The value specified by --enable-dauth-def-max-nc=${enable_dauth_def_max_nc} is too large.])]
+        )
+        enable_dauth_def_max_nc_MSG="${enable_dauth_def_max_nc} (set by parameter)"
+      ]
+    )
+    AC_DEFINE_UNQUOTED([MHD_DAUTH_DEF_MAX_NC_],[${enable_dauth_def_max_nc}],
+        [The default HTTP Digest Auth default maximum nc (nonce count) value])
+    AC_MSG_RESULT([[${enable_dauth_def_max_nc_MSG}]])
+
+    dauth_defs_MSG="timeout: ${enable_dauth_def_timeout_MSG}, max nc: ${enable_dauth_def_max_nc_MSG}"
+  ],
+  [
+    dauth_defs_MSG="N/A"
+  ]
+)
+
+AM_CONDITIONAL([HAVE_ANYAUTH],[test "x$enable_bauth" != "xno" || test "x$enable_dauth" != "xno"])
 
 # optional: HTTP "Upgrade" support. Enabled by default
 AC_MSG_CHECKING([[whether to support HTTP "Upgrade"]])
@@ -3059,6 +4106,306 @@ AS_VAR_IF([[enable_httpupgrade]],[["yes"]],
    AC_DEFINE([[UPGRADE_SUPPORT]],[[1]],[Define to 1 if libmicrohttpd is compiled with HTTP Upgrade support.]) ])
 AM_CONDITIONAL([ENABLE_UPGRADE], [[test "x$enable_httpupgrade" = "xyes"]])
 AC_MSG_RESULT([[$enable_httpupgrade]])
+
+# optional: HTTP cookie parsing support. Enabled by default
+AC_MSG_CHECKING([[whether to support HTTP cookie parsing]])
+AC_ARG_ENABLE([[cookie]],
+    [AS_HELP_STRING([[--disable-cookie]], [disable HTTP cookie parsing support])],
+    [AS_VAR_IF([[enable_cookie]],[["no"]],[],[[enable_cookie='yes']])],
+    [[enable_cookie='yes']])
+AS_VAR_IF([[enable_cookie]],[["yes"]],
+  [
+   AC_DEFINE([[COOKIE_SUPPORT]],[[1]],[Define to 1 if libmicrohttpd is compiled with HTTP cookie parsing support.]) ])
+AM_CONDITIONAL([ENABLE_COOKIE], [[test "x$enable_cookie" = "xyes"]])
+AC_MSG_RESULT([[$enable_cookie]])
+
+# optional: MD5 support for Digest Auth. Enabled by default.
+AC_ARG_ENABLE([[md5]],
+  [AS_HELP_STRING([[--enable-md5=TYPE]],
+    [enable TYPE of MD5 hashing code (yes, no, builtin, tlslib) [yes if dauth enabled]])],
+  [
+    AS_VAR_IF([enable_md5],["internal"],[enable_md5='builtin'])
+    AS_VAR_IF([enable_md5],["built-in"],[enable_md5='builtin'])
+    AS_VAR_IF([enable_dauth],["yes"],[],
+      [
+        AS_VAR_IF([enable_md5],["no"],[],
+          [
+            AC_MSG_WARN([The parameter --enable-md5=${enable_md5} is ignored as Digest Authentication is disabled])
+            enable_md5='no'
+          ]
+        )
+      ]
+    )
+  ], [[enable_md5="${enable_dauth}"]]
+)
+AS_CASE([${enable_md5}],[yes|tlslib],
+  [
+    AS_IF([test "x${enable_compact_code}" != "xno" || test "x$enable_md5" = "xtlslib"],
+      [
+        AS_IF([test "x$enable_https" = "xyes"],
+          [
+            AC_CACHE_CHECK([whether GnuTLS supports MD5 hashing],[mhd_cv_gnutls_md5],
+              [
+                CFLAGS="${CFLAGS_ac} ${GNUTLS_CFLAGS} ${user_CFLAGS}"
+                CPPFLAGS="${CPPFLAGS_ac} ${MHD_TLS_LIB_CPPFLAGS} ${user_CPPFLAGS}"
+                CFLAGS="${CFLAGS_ac} ${MHD_TLS_LIB_CFLAGS} ${user_CFLAGS}"
+                LDFLAGS="${LDFLAGS_ac} ${MHD_TLS_LIB_LDFLAGS} ${user_LDFLAGS}"
+                save_LIBS="$LIBS"
+                LIBS="${MHD_TLS_LIBDEPS} ${LIBS}"
+                AC_LINK_IFELSE(
+                  [
+                    AC_LANG_PROGRAM(
+                      [[
+#include <gnutls/crypto.h>
+                      ]],
+                      [[
+    gnutls_hash_hd_t hash_handle;
+    unsigned char digest[16];
+    int exit_code;
+
+    if (0 == gnutls_hash_init(&hash_handle, GNUTLS_DIG_MD5))
+    {
+      if (0 == gnutls_hash(hash_handle, "", 1))
+      {
+        gnutls_hash_output(hash_handle, digest);
+        if (0x93 == digest[0])
+          exit_code = 0;
+        else
+          exit_code = 7;
+      }
+      else
+        exit_code = 5;
+      gnutls_hash_deinit(hash_handle, (void *)0);
+    }
+    else
+      exit_code = 2;
+    if (exit_code)
+      return exit_code;
+                      ]]
+                    )
+                  ],
+                  [mhd_cv_gnutls_md5='yes'],[mhd_cv_gnutls_md5='no']
+                )
+                LIBS="${save_LIBS}"
+                CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
+                CPPFLAGS="${CPPFLAGS_ac} ${user_CPPFLAGS}"
+                CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
+                LDFLAGS="${LDFLAGS_ac} ${user_LDFLAGS}"
+              ]
+            )
+            AS_VAR_IF([mhd_cv_gnutls_md5],["no"],
+              [
+                AS_VAR_IF([enable_md5],["tlslib"],
+                  [AC_MSG_FAILURE([TLS library MD5 implementation is not available])]
+                )
+                enable_md5="builtin"
+              ],
+              [enable_md5="tlslib"]
+            )
+          ],
+          [
+            AS_VAR_IF([enable_md5],["tlslib"],
+              [AC_MSG_ERROR([HTTPS is not enabled, TLS library MD5 implementation cannot be used])]
+            )
+            enable_md5="builtin"
+          ]
+        )
+      ],
+      [
+        enable_md5="builtin"
+      ]
+    )
+  ]
+)
+AC_MSG_CHECKING([[whether to support MD5]])
+AS_UNSET([enable_md5_MSG])
+AS_CASE([${enable_md5}],
+  [builtin],[enable_md5_MSG='yes, built-in'],
+  [tlslib],[enable_md5_MSG='yes, external (TLS library)'],
+  [no],[enable_md5_MSG='no'],
+  [yes],[AC_MSG_ERROR([configure internal error: unexpected variable value])],
+  [AC_MSG_ERROR([Unrecognized parameter --enable-md5=${enable_md5}])]
+)
+AS_IF([test "x${enable_md5}" = "xbuiltin" || test "x${enable_md5}" = "xtlslib" ],
+  [
+    AC_DEFINE([[MHD_MD5_SUPPORT]],[[1]],
+      [Define to 1 if libmicrohttpd is compiled with MD5 hashing support.])
+  ]
+)
+AS_IF([test "x${enable_md5}" = "xtlslib" ],
+  [
+    AC_DEFINE([[MHD_MD5_TLSLIB]],[[1]],
+      [Define to 1 if libmicrohttpd is compiled with MD5 hashing by TLS library.])
+  ]
+)
+AM_CONDITIONAL([ENABLE_MD5], [[test "x${enable_md5}" = "xbuiltin" || test "x${enable_md5}" = "xtlslib" ]])
+AM_CONDITIONAL([ENABLE_MD5_EXT], [[test "x${enable_md5}" = "xtlslib" ]])
+AC_MSG_RESULT([[${enable_md5_MSG}]])
+
+# optional: SHA-256 support for Digest Auth. Enabled by default.
+AC_ARG_ENABLE([[sha256]],
+  [AS_HELP_STRING([[--enable-sha256=TYPE]],
+    [enable TYPE of SHA-256 hashing code (yes, no, builtin, tlslib) [yes if dauth enabled]])],
+  [
+    AS_VAR_IF([enable_sha256],["internal"],[enable_sha256='builtin'])
+    AS_VAR_IF([enable_sha256],["built-in"],[enable_sha256='builtin'])
+    AS_VAR_IF([enable_dauth],["yes"],[],
+      [
+        AS_VAR_IF([enable_sha256],["no"],[],
+          [
+            AC_MSG_WARN([The parameter --enable-sha256=${enable_sha256} is ignored as Digest Authentication is disabled])
+            enable_sha256='no'
+          ]
+        )
+      ]
+    )
+  ], [[enable_sha256="${enable_dauth}"]]
+)
+AS_CASE([${enable_sha256}],[yes|tlslib],
+  [
+    AS_IF([test "x${enable_compact_code}" != "xno" || test "x$enable_sha256" = "xtlslib"],
+      [
+        AS_IF([test "x$enable_https" = "xyes"],
+          [
+            AC_CACHE_CHECK([whether GnuTLS supports sha256 hashing],[mhd_cv_gnutls_sha256],
+              [
+                CFLAGS="${CFLAGS_ac} ${GNUTLS_CFLAGS} ${user_CFLAGS}"
+                CPPFLAGS="${CPPFLAGS_ac} ${MHD_TLS_LIB_CPPFLAGS} ${user_CPPFLAGS}"
+                CFLAGS="${CFLAGS_ac} ${MHD_TLS_LIB_CFLAGS} ${user_CFLAGS}"
+                LDFLAGS="${LDFLAGS_ac} ${MHD_TLS_LIB_LDFLAGS} ${user_LDFLAGS}"
+                save_LIBS="$LIBS"
+                LIBS="${MHD_TLS_LIBDEPS} ${LIBS}"
+                AC_LINK_IFELSE(
+                  [
+                    AC_LANG_PROGRAM(
+                      [[
+#include <gnutls/crypto.h>
+                      ]],
+                      [[
+    gnutls_hash_hd_t hash_handle;
+    unsigned char digest[32];
+    int exit_code;
+
+    if (0 == gnutls_hash_init(&hash_handle, GNUTLS_DIG_SHA256))
+    {
+      if (0 == gnutls_hash(hash_handle, "", 1))
+      {
+        gnutls_hash_output(hash_handle, digest);
+        if (0x6e == digest[0])
+          exit_code = 0;
+        else
+          exit_code = 7;
+      }
+      else
+        exit_code = 5;
+      gnutls_hash_deinit(hash_handle, (void *)0);
+    }
+    else
+      exit_code = 2;
+    if (exit_code)
+      return exit_code;
+                      ]]
+                    )
+                  ],
+                  [mhd_cv_gnutls_sha256='yes'],[mhd_cv_gnutls_sha256='no']
+                )
+                LIBS="${save_LIBS}"
+                CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
+                CPPFLAGS="${CPPFLAGS_ac} ${user_CPPFLAGS}"
+                CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
+                LDFLAGS="${LDFLAGS_ac} ${user_LDFLAGS}"
+              ]
+            )
+            AS_VAR_IF([mhd_cv_gnutls_sha256],["no"],
+              [
+                AS_VAR_IF([enable_sha256],["tlslib"],
+                  [AC_MSG_FAILURE([TLS library SHA-256 implementation is not available])]
+                )
+                enable_sha256="builtin"
+              ],
+              [enable_sha256="tlslib"]
+            )
+          ],
+          [
+            AS_VAR_IF([enable_sha256],["tlslib"],
+              [AC_MSG_ERROR([HTTPS is not enabled, TLS library SHA-256 implementation cannot be used])]
+            )
+            enable_sha256="builtin"
+          ]
+        )
+      ],
+      [
+        enable_sha256="builtin"
+      ]
+    )
+  ]
+)
+AC_MSG_CHECKING([[whether to support SHA-256]])
+AS_UNSET([enable_sha256_MSG])
+AS_CASE([${enable_sha256}],
+  [builtin],[enable_sha256_MSG='yes, built-in'],
+  [tlslib],[enable_sha256_MSG='yes, external (TLS library)'],
+  [no],[enable_sha256_MSG='no'],
+  [yes],[AC_MSG_ERROR([configure internal error: unexpected variable value])],
+  [AC_MSG_ERROR([Unrecognized parameter --enable-sha256=${enable_sha256}])]
+)
+AS_IF([test "x${enable_sha256}" = "xbuiltin" || test "x${enable_sha256}" = "xtlslib" ],
+  [
+    AC_DEFINE([[MHD_SHA256_SUPPORT]],[[1]],
+      [Define to 1 if libmicrohttpd is compiled with SHA-256 hashing support.])
+  ]
+)
+AS_IF([test "x${enable_sha256}" = "xtlslib" ],
+  [
+    AC_DEFINE([[MHD_SHA256_TLSLIB]],[[1]],
+      [Define to 1 if libmicrohttpd is compiled with SHA-256 hashing by TLS library.])
+  ]
+)
+AM_CONDITIONAL([ENABLE_SHA256], [[test "x${enable_sha256}" = "xbuiltin" || test "x${enable_sha256}" = "xtlslib" ]])
+AM_CONDITIONAL([ENABLE_SHA256_EXT], [[test "x${enable_sha256}" = "xtlslib" ]])
+AC_MSG_RESULT([[${enable_sha256_MSG}]])
+
+# optional: SHA-512/256 support for Digest Auth. Enabled by default.
+AC_ARG_ENABLE([[sha512-256]],
+  [AS_HELP_STRING([[--disable-sha512-256]],
+    [disable SHA-512/256 hashing support for Digest Authentication])],
+  [
+    AS_VAR_IF([[enable_sha512_256]],[["yes"]],
+      [
+        AS_VAR_IF([enable_dauth],["yes"],[],
+          [
+            AC_MSG_WARN([The parameter --enable-sha512-256 is ignored as Digest Authentication is disabled])
+            enable_sha512_256='no'
+          ]
+        )
+      ],[[enable_sha512_256='no']]
+    )
+  ], [[enable_sha512_256="${enable_dauth}"]]
+)
+AC_MSG_CHECKING([[whether to support SHA-512/256]])
+AS_UNSET([enable_sha512_256_MSG])
+AS_CASE([${enable_sha512_256}],
+  [yes],[enable_sha512_256_MSG='yes, built-in'],
+  [no],[enable_sha512_256_MSG='no'],
+  [AC_MSG_ERROR([Unrecognized parameter --enable-sha512-256=${enable_sha512_256}])]
+)
+AS_VAR_IF([[enable_sha512_256]],[["yes"]],
+  [
+   AC_DEFINE([[MHD_SHA512_256_SUPPORT]],[[1]],
+     [Define to 1 if libmicrohttpd is compiled with SHA-512/256 hashing support.])
+  ]
+)
+AM_CONDITIONAL([ENABLE_SHA512_256], [[test "x${enable_sha512_256}" = "xyes"]])
+AC_MSG_RESULT([[${enable_sha512_256_MSG}]])
+
+AS_IF([test "x$enable_dauth" != "xno"],
+  [
+    AS_IF([test "x${enable_md5}" = "xno" &&  test "x${enable_sha256}" = "xno" && test "x${enable_sha512_256}" != "xyes"],
+      [AC_MSG_ERROR([At least one hashing algorithm must be enabled if Digest Auth is enabled])]
+    )
+  ]
+)
+
 
 AC_CACHE_CHECK([[for calloc()]], [[mhd_cv_have_func_calloc]],
   [
@@ -3166,6 +4513,347 @@ AS_VAR_IF([mhd_cv_ipv6_for_testing],["yes"],
 	[AC_DEFINE([[USE_IPV6_TESTING]], [[1]], [Define to 1 if your kernel supports IPv6 and IPv6 is enabled and useful for testing.])]
 )
 
+AS_VAR_IF([enable_tools],["yes"],
+  [
+    AC_CHECK_HEADERS([features.h sys/pstat.h vxCpuLib.h],[],[],[AC_INCLUDES_DEFAULT])
+    AC_CHECK_DECLS(
+      [_SC_NPROCESSORS_ONLN,_SC_NPROC_ONLN,_SC_CRAY_NCPU,_SC_NPROCESSORS_CONF,CTL_HW,HW_NCPUONLINE,HW_NCPU,HW_AVAILCPU],
+      [],[],
+      [[
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif /* HAVE_SYS_TYPES_H */
+#ifdef HAVE_SYS_PARAM_H
+#include <sys/param.h>
+#endif /* HAVE_SYS_PARAM_H */
+#ifdef HAVE_SYS_SYSCTL_H
+#include <sys/sysctl.h>
+#endif /* HAVE_SYS_SYSCTL_H */
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif /* HAVE_UNISTD_H */
+      ]]
+    )
+    MHD_CHECK_FUNC([pstat_getdynamic],[[
+#include <sys/param.h>
+#include <sys/pstat.h>
+      ]],
+      [[
+        struct pst_dynamic psd_data;
+        i][f (1 != pstat_getdynamic(&psd_data, sizeof(psd_data), (size_t)1, 0))
+          return 2;
+        i][f (0 >= psd_data.psd_proc_cnt)
+          return 3; 
+      ]]
+    )
+    MHD_CHECK_FUNC([vxCpuEnabledGet],[[#include <vxCpuLib.h>]],
+      [[
+        cpuset_t enb_set;
+        enb_set = vxCpuEnabledGet();
+        (void) enb_set;
+      ]]
+    )
+    AC_CHECK_HEADERS([sched.h sys/_cpuset.h sys/cpuset.h],[],[],[AC_INCLUDES_DEFAULT])
+    # glibc / Linux kernel
+    MHD_CHECK_FUNC([getpid],[[
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif /* HAVE_SYS_TYPES_H */
+#include <unistd.h>
+      ]],
+      [[
+        pid_t cur_pid;
+        cur_pid = getpid();
+        (void) &cur_pid; /* Mute possible warning */
+      ]],
+      [
+        MHD_CHECK_FUNC([sched_getaffinity],[[
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif /* HAVE_SYS_TYPES_H */
+#include <unistd.h>
+#include <sched.h>
+          ]],
+          [[
+            cpu_set_t cur_set;
+            i][f (0 != sched_getaffinity(getpid(), sizeof(cur_set), &cur_set))
+              return 2;
+            i][f (0 == CPU_SET (0, &cur_set))
+              return 3; /* Actually this could be a valid result */
+          ]],
+          [
+            MHD_CHECK_FUNC([CPU_COUNT],[[
+#include <stddef.h>
+#include <sched.h>
+              ]],
+              [[
+                cpu_set_t cur_set;
+                CPU_ZERO(&cur_set);
+                i][f (0 != CPU_COUNT(&cur_set))
+                  return 2;
+              ]],
+              [
+                MHD_CHECK_FUNC([CPU_COUNT_S],[[
+#include <stddef.h>
+#include <sched.h>
+                  ]],
+                  [[
+                    static const unsigned int set_size_cpus = 2048u;
+                    const size_t set_size_bytes = (size_t) CPU_ALLOC_SIZE(set_size_cpus);
+                    cpu_set_t *p_set;
+                    p_set = CPU_ALLOC(set_size_cpus);
+                    i][f (!p_set)
+                     return 2;
+                    CPU_ZERO_S(set_size_bytes, p_set);
+                    i][f (0 != CPU_COUNT_S(set_size_bytes, p_set))
+                    {
+                      CPU_FREE(p_set);
+                      return 3;
+                    }
+                    CPU_FREE(p_set);
+                  ]],
+                  [AC_CHECK_DECLS([CPU_SETSIZE],[],[],[#include <sched.h>])]
+                )
+              ]
+            )
+          ]
+        )
+        # NetBSD
+        # Should work only with -lrt, but actually works without it.
+        MHD_CHECK_FUNC([sched_getaffinity_np],[[
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif /* HAVE_SYS_TYPES_H */
+#include <unistd.h>
+#include <sched.h>
+          ]],
+          [[
+            cpuset_t *cpuset_ptr;
+            cpuid_t cpu_num = 0;
+            cpuset_ptr = cpuset_create();
+            i][f (!cpuset_ptr)
+              return 2;
+            i][f (0 != sched_getaffinity_np(getpid(), cpuset_size(cpuset_ptr), cpuset_ptr))
+            {
+              cpuset_destroy(cpuset_ptr);
+              return 3;
+            }
+            i][f (0 >= cpuset_isset(cpu_num, cpuset_ptr))
+            {
+              cpuset_destroy(cpuset_ptr);
+              return 4; /* Actually this could be a valid result */
+            }
+            cpuset_destroy(cpuset_ptr);
+          ]]
+        )
+      ]
+    )
+    # FreeBSD
+    MHD_CHECK_FUNC([cpuset_getaffinity],[[
+#ifdef HAVE_SYS_PARAM_H
+#include <sys/param.h>
+#endif /* HAVE_SYS_PARAM_H */
+#include <sys/cpuset.h>
+      ]],
+      [[
+        cpuset_t cur_mask;
+        i][f (0 != cpuset_getaffinity(CPU_LEVEL_WHICH, CPU_WHICH_PID, (id_t) -1, sizeof(cur_mask), &cur_mask))
+          return 2;
+      ]],
+      [
+        MHD_CHECK_FUNC([CPU_COUNT],[[
+#ifdef HAVE_SYS_PARAM_H
+#include <sys/param.h>
+#endif /* HAVE_SYS_PARAM_H */
+#ifdef HAVE_SYS__CPUSET_H
+#include <sys/_cpuset.h>
+#endif /* HAVE_SYS_PARAM_H */
+#include <sys/cpuset.h>
+          ]],
+          [[
+            cpuset_t test_mask;
+            CPU_ZERO(&test_mask);
+            i][f (0 !=  CPU_COUNT(&test_mask))
+              return 2;
+          ]],
+          [
+            MHD_CHECK_FUNC([CPU_COUNT_S],[[
+#ifdef HAVE_SYS_PARAM_H
+#include <sys/param.h>
+#endif /* HAVE_SYS_PARAM_H */
+#ifdef HAVE_SYS__CPUSET_H
+#include <sys/_cpuset.h>
+#endif /* HAVE_SYS_PARAM_H */
+#include <sys/cpuset.h>
+              ]],
+              [[
+                static const unsigned int max_cpu_num = 2048u;
+                cpuset_t *mask_ptr;
+                mask_ptr = CPU_ALLOC(max_cpu_num);
+                i][f (! mask_ptr)
+                  return 2;
+                i][f (0 != cpuset_getaffinity(CPU_LEVEL_WHICH, CPU_WHICH_PID, (id_t) -1,
+                                              CPU_ALLOC_SIZE(max_cpu_num), mask_ptr))
+                {
+                  CPU_FREE(mask_ptr);
+                  return 3;
+                }
+                i][f (0 == CPU_COUNT_S(CPU_ALLOC_SIZE(max_cpu_num), &test_mask))
+                {
+                  CPU_FREE(mask_ptr);
+                  return 4;
+                }
+                CPU_FREE(mask_ptr);
+              ]]
+            )
+          ]
+        )
+      ]
+    )
+    AS_VAR_IF([mhd_cv_func_CPU_COUNT_S],["yes"],
+      [
+        AC_CACHE_CHECK([whether CPU_COUNT_S() expects max CPU number as 'size' parameter],[mhd_cv_func_cpu_count_s_cpus],
+          [
+            AS_VAR_IF([cross-compiling],["yes"],[mhd_cv_func_cpu_count_s_cpus="assuming no"],
+              [
+                AC_LINK_IFELSE(
+                  [
+                    AC_LANG_PROGRAM([[
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif /* HAVE_SYS_TYPES_H */
+#ifdef HAVE_SYS_PARAM_H
+#include <sys/param.h>
+#endif /* HAVE_SYS_PARAM_H */
+#ifdef HAVE_SYS__CPUSET_H
+#include <sys/_cpuset.h>
+#endif /* HAVE_SYS_PARAM_H */
+#ifdef HAVE_SYS_CPUSET_H
+#include <sys/cpuset.h>
+#endif /* HAVE_SYS_CPUSET_H */
+#ifdef HAVE_STDDEF_H
+#include <stddef.h>
+#endif /* HAVE_STDDEF_H */
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif /* HAVE_UNISTD_H */
+#ifdef HAVE_SCHED_H
+#include <sched.h>
+#endif /* HAVE_SCHED_H */
+#include <stdio.h>
+
+#ifdef HAVE_SCHED_GETAFFINITY
+#define TEST_CPUSET_TYPE cpu_set_t
+#else  /* ! HAVE_SCHED_GETAFFINITY */
+#define TEST_CPUSET_TYPE cpuset_t
+#endif /* ! HAVE_SCHED_GETAFFINITY */
+                      ]],
+                      [[
+  TEST_CPUSET_TYPE *p_testset;
+  /* The size of the cpuset that is larger then the test cpuset (in CPUs) */
+  static const unsigned int testset_size_oversized_cpus = (8 * sizeof(long)) * 1024;
+  const size_t testset_size_oversized_bytes = CPU_ALLOC_SIZE(testset_size_oversized_cpus);
+  /* The size of the test cpuset in number of CPUs */
+  const unsigned int testset_size_cpus = (unsigned int) testset_size_oversized_bytes;
+  /* The size of the test cpuset in bytes */
+  const size_t testset_size_bytes = CPU_ALLOC_SIZE(testset_size_cpus);
+  /* The last one CPU in the test set */
+  const unsigned int test_cpu_num1 = testset_size_cpus - 1;
+  /* The penultimate CPU in the test set */
+  const unsigned int test_cpu_num2 = testset_size_cpus - 2;
+  /* The CPU numbers that should be cleared */
+  const unsigned int test_cpu_clear1 = testset_size_cpus - 3;
+  const unsigned int test_cpu_clear2 = testset_size_cpus - 4;
+  unsigned int count_res;
+  int ret = 0;
+
+  /* Allocate oversize area to ensure that memory outside the buffer is not used */
+  p_testset = CPU_ALLOC(testset_size_oversized_cpus);
+  if (! p_testset)
+  {
+    fprintf (stderr, "Error allocating memory.\n");
+    return 99;
+  }
+  /* Set the some CPU numbers and then clear them */
+  CPU_SET_S(test_cpu_clear1, testset_size_bytes, p_testset);
+  CPU_SET_S(test_cpu_clear2, testset_size_bytes, p_testset);
+  CPU_ZERO_S(testset_size_bytes, p_testset);
+  /* Set two CPUs on */
+  CPU_SET_S(test_cpu_num1, testset_size_bytes, p_testset);
+  CPU_SET_S(test_cpu_num2, testset_size_bytes, p_testset);
+  count_res = (unsigned int) CPU_COUNT_S(testset_size_bytes, p_testset);
+  if (0 == count_res)
+  {
+    fprintf (stderr, "Full cpuset cannot be read by CPU_COUNT_S() when using the number of bytes as the size parameter.\n");
+    /* Set the some CPU numbers and then clear them */
+    CPU_SET_S(test_cpu_clear1, testset_size_cpus, p_testset);
+    CPU_SET_S(test_cpu_clear2, testset_size_cpus, p_testset);
+    CPU_ZERO_S(testset_size_cpus, p_testset);
+    /* Set two CPUs on */
+    CPU_SET_S(test_cpu_num1, testset_size_cpus, p_testset);
+    CPU_SET_S(test_cpu_num2, testset_size_cpus, p_testset);
+    count_res = (unsigned int) CPU_COUNT_S(testset_size_cpus, p_testset);
+    if (2 == count_res)
+    {
+      fprintf (stderr, "Full cpuset is read by CPU_COUNT_S() only when using the maximum CPU number as the size parameter.\n");
+      ret = 3;
+    }
+    else
+    {
+      fprintf (stderr, "Wrong result returned by CPU_COUNT_S() when using the maximum CPU number as the size parameter.\n");
+      fprintf (stderr, "Number of 'enabled' CPUs: 2\n");
+      fprintf (stderr, "Number of counted CPUs:   %u\n", count_res);
+      fprintf (stderr, "CPU_COUNT_S() could be unreliable.\n");
+      ret = 70;
+    }
+  }
+  else if (2 == count_res)
+  {
+    fprintf (stderr, "Full cpuset is read by CPU_COUNT_S() when using the number of bytes as the size parameter.\n");
+  }
+  else
+  {
+    fprintf (stderr, "Wrong result returned by CPU_COUNT_S() when using the number of bytes as the size parameter.\n");
+    fprintf (stderr, "Number of 'enabled' CPUs: 2\n");
+    fprintf (stderr, "Number of counted CPUs:   %u\n", count_res);
+    fprintf (stderr, "CPU_COUNT_S() could be unreliable.\n");
+    ret = 71;
+  }
+  CPU_FREE(p_testset);
+  if (0 != ret)
+    return ret;
+                      ]]
+                    )
+                  ],
+                  [
+                    AM_RUN_LOG([./conftest$EXEEXT])
+                    count_test_res=$?
+                    AS_IF([test $count_test_res -eq 0],[mhd_cv_func_cpu_count_s_cpus="no"],
+                      [test $count_test_res -eq 3],[mhd_cv_func_cpu_count_s_cpus="yes"],
+                      [
+                        AC_MSG_WARN([Unexpected value returned by CPU_COUNT_S() test program. Please report to ${PACKAGE_BUGREPORT}])
+                        mhd_cv_func_cpu_count_s_cpus="assuming no"
+                      ]
+                    )
+                  ],
+                  [
+                    AC_MSG_WARN([Cannot build CPU_COUNT_S() test program. Please report to ${PACKAGE_BUGREPORT}])
+                    mhd_cv_func_cpu_count_s_cpus="assuming no"
+                  ]
+                )
+              ]
+            )
+          ]
+        )
+        AS_VAR_IF([mhd_cv_func_cpu_count_s_cpus],["yes"],
+          [AC_DEFINE([MHD_FUNC_CPU_COUNT_S_GETS_CPUS],[1],
+             [Define to '1' if CPU_COUNT_S() function expects max CPU number as 'size' parameter])
+          ]
+        )
+      ]
+    )
+  ]
+)
 
 # Check for fork() and waitpid(). They are used for tests.
 AC_MSG_CHECKING([[for fork()]])
@@ -3231,8 +4919,10 @@ AC_MSG_RESULT($use_gcov)
 AM_CONDITIONAL([USE_COVERAGE], [test "x$use_gcov" = "xyes"])
 
 AX_COUNT_CPUS
+AC_SUBST([MHD_REAL_CPU_COUNT],[${CPU_COUNT}])
+AM_SUBST_NOTMAKE([MHD_REAL_CPU_COUNT])
 AC_MSG_CHECKING([for number of CPU cores to use in tests])
-AS_VAR_IF([enable_heavy_tests], ["yes"],
+AS_VAR_IF([use_heavy_tests], ["yes"],
   [
     # Enable usage of many core if heavy tests are enabled
     AS_IF([[test "$CPU_COUNT" -gt "32"]], [[CPU_COUNT="32"]])dnl Limit resource usage
@@ -3246,42 +4936,196 @@ AS_VAR_IF([enable_heavy_tests], ["yes"],
 AC_MSG_RESULT([$CPU_COUNT])
 
 
-AC_MSG_CHECKING([[whether to enable debug asserts]])
 AC_ARG_ENABLE([[asserts]],
-              AS_HELP_STRING([[--enable-asserts]],
-                             [enable test build with debug asserts]),
-              [], [[enable_asserts='no']])
+  [AS_HELP_STRING([[--enable-asserts]],
+    [enable test build with debug asserts])],
+  [],
+  [enable_asserts='auto']
+)
+AS_UNSET([use_asserts_MSG])
+AC_CACHE_CHECK([[whether NDEBUG macro is defined]], [mhd_cv_macro_ndebug_def],
+  [
+    AC_LINK_IFELSE(
+      [
+        AC_LANG_SOURCE([[
+#ifndef NDEBUG
+#error NDEBUG is NOT defined
+chome me now
+#endif
+
+int main(void)
+{
+  return 0;
+}
+          ]]
+        )
+      ],
+      [[mhd_cv_macro_ndebug_def='yes']],
+      [[mhd_cv_macro_ndebug_def='no']]
+    )
+  ]
+)
+AS_VAR_IF([enable_asserts],["yes"],
+  [
+    AS_VAR_IF([mhd_cv_macro_ndebug_def],["yes"],
+      [
+        AC_MSG_FAILURE([Parameter --enable-asserts is specified, but NDEBUG macro is defined as well])
+      ]
+    )
+    use_asserts_MSG="yes, enabled by configure parameter"
+  ]
+)
+AC_CACHE_CHECK([[whether _DEBUG macro is defined]], [mhd_cv_macro__debug_def],
+  [
+    AC_LINK_IFELSE(
+      [
+        AC_LANG_SOURCE([[
+#ifndef _DEBUG
+#error _DEBUG is NOT defined
+chome me now
+#endif
+
+int main(void)
+{
+  return 0;
+}
+          ]]
+        )
+      ],
+      [[mhd_cv_macro__debug_def='yes']],
+      [[mhd_cv_macro__debug_def='no']]
+    )
+  ]
+)
+AS_VAR_IF([enable_asserts],["no"],
+  [
+    AS_VAR_IF([mhd_cv_macro__debug_def],["yes"],
+      [
+        AC_MSG_FAILURE([Parameter --disable-asserts is specified, but _DEBUG macro is defined as well])
+      ]
+    )
+    use_asserts_MSG="no, set by configure parameter"
+  ]
+)
+AS_IF([test "x${mhd_cv_macro_ndebug_def}" = "xyes" && test "x${mhd_cv_macro__debug_def}" = "xyes"],
+  [AC_MSG_FAILURE([Both NDEBUG and _DEBUG macros are defined])]
+)
+AS_VAR_IF([enable_asserts],["auto"],
+  [
+    AS_VAR_IF([mhd_cv_macro_ndebug_def],["yes"],
+      [
+        enable_asserts="no"
+        use_asserts_MSG="no, set by NDEBUG preprocessor macro"
+      ]
+    )
+  ]
+)
+AS_VAR_IF([enable_asserts],["auto"],
+  [
+    AS_VAR_IF([mhd_cv_macro__debug_def],["yes"],
+      [
+        enable_asserts="yes"
+        use_asserts_MSG="yes, enabled by _DEBUG preprocessor macro"
+      ]
+    )
+  ]
+)
+AS_VAR_IF([enable_asserts],["auto"],
+  [
+    AC_CACHE_CHECK([[whether DEBUG macro is defined]], [mhd_cv_macro_debug_def],
+      [
+        AC_LINK_IFELSE(
+          [
+            AC_LANG_SOURCE([[
+#ifndef DEBUG
+#error DEBUG is NOT defined
+chome me now
+#endif
+
+int main(void)
+{
+  return 0;
+}
+              ]]
+            )
+          ],
+          [[mhd_cv_macro_debug_def='yes']],
+          [[mhd_cv_macro_debug_def='no']]
+        )
+      ]
+    )
+    AS_VAR_IF([mhd_cv_macro_debug_def],["yes"],
+      [
+        enable_asserts="yes"
+        use_asserts_MSG="yes, enabled by DEBUG preprocessor macro"
+      ]
+    )
+  ]
+)
+AC_MSG_CHECKING([[whether to enable debug asserts]])
+AS_VAR_IF([enable_asserts],["auto"],
+  [
+    AS_CASE([${enable_build_type}],
+      [debug|debugger],
+      [
+        enable_asserts="yes"
+        use_asserts_MSG="yes, enabled by --enable-bulid-type=${enable_build_type}"
+      ],
+      [
+        enable_asserts="no"
+        use_asserts_MSG="no"
+      ]
+    )
+  ]
+)
 AS_CASE([[$enable_asserts]], [[yes]], [[:]], [[no]], [[:]], [[enable_asserts='no']])
-AC_MSG_RESULT([[$enable_asserts]])
+AC_MSG_RESULT([[${use_asserts_MSG=no}]])
 
 AS_VAR_IF([[enable_asserts]], [["yes"]],
   [
-   AC_DEFINE([[_DEBUG]], [[1]], [Define to use debug asserts.])
-   [mhd_assert_test_prg="#include <assert.h>
-   int pos_val(void) {return 5;}
-   int neg_val(void) {return -5;}
-   int main(void)
-   { int pos_var = pos_val(), neg_var = neg_val();
-     assert(neg_var > pos_var); /* Must trigger assert. */
-     (void)pos_var; (void)neg_var;
-     return 0; }
-   "]
-   AC_CACHE_CHECK([[whether system assert() is available]], [mhd_cv_sys_assert_avail],
-     [
-      AC_LINK_IFELSE([AC_LANG_SOURCE([[$mhd_assert_test_prg]])],
-                     [[mhd_cv_sys_assert_avail='yes']],
-                     [[mhd_cv_sys_assert_avail='no']])
-     ]
-   )
-   AS_VAR_IF([[mhd_cv_sys_assert_avail]], [["no"]], [],
-     [AC_DEFINE([[HAVE_ASSERT]], [[1]], [Define if you have usable assert() and assert.h])])
-   AS_UNSET([mhd_assert_test_prg])
+    AS_VAR_IF([[mhd_cv_macro__debug_def]], [["yes"]], [:],
+      [
+        MHD_PREPEND_FLAG_TO_VAR([CPPFLAGS_ac],[-D_DEBUG=1])
+        CPPFLAGS="${CPPFLAGS_ac} ${user_CPPFLAGS}"
+      ]
+    )
+    AC_CACHE_CHECK([[whether system assert() is available]], [mhd_cv_sys_assert_avail],
+      [
+        AC_LINK_IFELSE(
+          [
+            AC_LANG_SOURCE([[
+#include <assert.h>
+
+static int pos_val(void) {return 5;}
+static int neg_val(void) {return -5;}
+int main(void)
+{
+  int pos_var = pos_val(), neg_var = neg_val();
+  assert(neg_var > pos_var); /* Must trigger assert. */
+  return pos_var + neg_var;
+}
+            ]])
+          ],
+          [[mhd_cv_sys_assert_avail='yes']],
+          [[mhd_cv_sys_assert_avail='no']]
+        )
+      ]
+    )
+    AS_VAR_IF([[mhd_cv_sys_assert_avail]], [["no"]], [],
+      [AC_DEFINE([[HAVE_ASSERT]], [[1]], [Define if you have usable assert() and assert.h])])
   ],
-  [AC_DEFINE([[NDEBUG]], [[1]], [Define to disable usage of debug asserts.])]
+  [
+    AS_VAR_IF([[mhd_cv_macro_ndebug_def]], [["yes"]], [:],
+      [
+        MHD_PREPEND_FLAG_TO_VAR([CPPFLAGS_ac],[-DNDEBUG=1])
+        CPPFLAGS="${CPPFLAGS_ac} ${user_CPPFLAGS}"
+      ]
+    )
+  ]
 )
 
 AS_UNSET([enabled_sanitizers])
-AM_TESTS_ENVIRONMENT=""
+TESTS_ENVIRONMENT_ac=""
 AM_ASAN_OPTIONS=""
 AM_UBSAN_OPTIONS=""
 AM_LSAN_OPTIONS=""
@@ -3292,11 +5136,17 @@ AS_UNSET([LSAN_OPTIONS])
 AC_MSG_CHECKING([whether to enable run-time sanitizers])
 AC_ARG_ENABLE([sanitizers],
   [AS_HELP_STRING([[--enable-sanitizers[=address,undefined,leak,user-poison]]],
-  [enable run-time sanitizers, specify the list of types of sanitizers to enable or ]
-  [leave the list empty to enable all suppoted and availabe sanitizers])],
-  [], [enable_sanitizers=no])
+  [enable run-time sanitizers, specify the list of types of sanitizers to enable, ]
+  [leave the list empty (or set to "auto") to enable all supported and available ]
+  [sanitizers, or specify "auto-fallback" to use sanitizers even without ]
+  [installed sanitizer run-time library])],
+  [], [AS_CASE([${enable_build_type}],[debug],
+    [enable_sanitizers='auto-optional'],[enable_sanitizers='no'])]
+)
 AS_IF([test "x${enable_sanitizers}" = "x"], [enable_sanitizers="auto"])
 AS_VAR_IF([enable_sanitizers], ["yes"], [enable_sanitizers="auto"])
+AS_VAR_IF([enable_sanitizers], ["autofallback"], [enable_sanitizers="auto-fallback"])
+AS_VAR_IF([enable_sanitizers], ["autooptional"], [enable_sanitizers="auto-optional"])
 AS_IF([test "x${enable_sanitizers}" = "xno"],
   [
     enable_sanitizers="no"
@@ -3305,10 +5155,32 @@ AS_IF([test "x${enable_sanitizers}" = "xno"],
     enable_san_leak="no"
     enable_san_upoison="no"
   ],
-  [test "x${enable_sanitizers}" = "xauto"],
+  [test "x${enable_sanitizers}" = "xauto" || test "x${enable_sanitizers}" = "xauto-optional"],
+  [
+    AS_VAR_IF([enable_compiler_hardening],["yes"],
+      [
+        AS_VAR_IF([enable_sanitizers],["auto"],
+          [AC_MSG_ERROR([sanitizers cannot be enabled with compiler hardnening])],
+          [AC_MSG_WARN([sanitizers cannot be enabled with compiler hardnening])]
+        )
+        enable_sanitizers="no"
+        enable_san_address="no"
+        enable_san_undef="no"
+        enable_san_leak="no"
+        enable_san_upoison="no"
+      ],
+      [
+        enable_san_address="auto"
+        enable_san_undef="auto"
+        enable_san_leak="auto"
+        enable_san_upoison="auto"
+      ]
+    )
+  ],
+  [test "x${enable_sanitizers}" = "xauto-fallback"],
   [
     enable_san_address="auto"
-    enable_san_undef="auto"
+    enable_san_undef="auto-fallback"
     enable_san_leak="auto"
     enable_san_upoison="auto"
   ],
@@ -3325,7 +5197,7 @@ AS_IF([test "x${enable_sanitizers}" = "xno"],
         [undefined], [enable_san_undef="yes"],
         [leak], [enable_san_leak="yes"],
         [user-poison|user_poison], [enable_san_upoison="yes"],
-        [no|yes|auto], [AC_MSG_ERROR(["$san" cannot be used with other options for --enable-sanitizers=])],
+        [no|yes|auto|auto-fallback|autofallback], [AC_MSG_ERROR(["$san" cannot be used with other options for --enable-sanitizers=])],
         [AC_MSG_ERROR([Unknown parameter "$san" for --enable-sanitizers=])]
       )
     done
@@ -3338,17 +5210,18 @@ AS_IF([test "x${enable_sanitizers}" = "xno"],
 AS_CASE([${enable_sanitizers}],
   [selected], [AC_MSG_RESULT([selected])],
   [auto], [AC_MSG_RESULT([yes, detect and use supported sanitizers])],
+  [auto-fallback], [AC_MSG_RESULT([yes, detect and use supported sanitizers even without run-time lib])],
+  [auto-optional], [AC_MSG_RESULT([yes, detect and use supported sanitizers if any])],
   [AC_MSG_RESULT([no])]
 )
 AS_VAR_IF([enable_sanitizers], ["no"], [:],
  [
    AS_UNSET([san_FLAGS]) # the sanitizer flags to be added to both CFLAGS and LDFLAGS
    AS_UNSET([san_CFLAGS]) # the sanitizer flags to be added to CFLAGS
-   saved_CFLAGS="$CFLAGS"
    AC_CACHE_CHECK([whether '-fsanitize=' works for $CC],
      [mhd_cv_cc_sanitizer_works],
      [
-       CFLAGS="${saved_CFLAGS} -fsanitize=wrongFeatureName"
+       CFLAGS="${CFLAGS_ac} -fsanitize=wrongFeatureName ${user_CFLAGS}"
        AC_COMPILE_IFELSE([AC_LANG_PROGRAM([],[])],
          [mhd_cv_cc_sanitizer_works=no], [mhd_cv_cc_sanitizer_works=yes])
      ]
@@ -3359,7 +5232,7 @@ AS_VAR_IF([enable_sanitizers], ["no"], [:],
          [
            AC_CACHE_CHECK([for address sanitizer], [mhd_cv_cc_sanitizer_address],
              [
-               CFLAGS="${saved_CFLAGS} ${san_CFLAGS} ${san_FLAGS} -fsanitize=address"
+               CFLAGS="${CFLAGS_ac} ${san_CFLAGS} ${san_FLAGS} -fsanitize=address ${user_CFLAGS}"
                AC_LINK_IFELSE([AC_LANG_PROGRAM([],[])],
                 [mhd_cv_cc_sanitizer_address=yes], [mhd_cv_cc_sanitizer_address=no])
              ]
@@ -3373,7 +5246,7 @@ AS_VAR_IF([enable_sanitizers], ["no"], [:],
                  [
                    AC_CACHE_CHECK([whether leak detect is not rejected by address sanitizer], [mhd_cv_cc_sanitizer_address_leak],
                      [
-                       CFLAGS="${saved_CFLAGS} ${san_CFLAGS} ${san_FLAGS}"
+                       CFLAGS="${CFLAGS_ac} ${san_CFLAGS} ${san_FLAGS} ${user_CFLAGS}"
                        ASAN_OPTIONS="exitcode=88:detect_leaks=1:halt_on_error=1"
                        export ASAN_OPTIONS
                        AC_RUN_IFELSE([AC_LANG_PROGRAM([],[])],
@@ -3390,7 +5263,7 @@ AS_VAR_IF([enable_sanitizers], ["no"], [:],
                )
                AC_CACHE_CHECK([for pointer compare sanitizer], [mhd_cv_cc_sanitizer_pointer_compare],
                  [
-                   CFLAGS="${saved_CFLAGS} ${san_CFLAGS} ${san_FLAGS} -fsanitize=pointer-compare"
+                   CFLAGS="${CFLAGS_ac} ${san_CFLAGS} ${san_FLAGS} -fsanitize=pointer-compare ${user_CFLAGS}"
                    AC_LINK_IFELSE([AC_LANG_PROGRAM([],[])],
                     [mhd_cv_cc_sanitizer_pointer_compare=yes], [mhd_cv_cc_sanitizer_pointer_compare=no])
                  ]
@@ -3403,7 +5276,7 @@ AS_VAR_IF([enable_sanitizers], ["no"], [:],
                )
                AC_CACHE_CHECK([for pointer subtract sanitizer], [mhd_cv_cc_sanitizer_pointer_subtract],
                  [
-                   CFLAGS="${saved_CFLAGS} ${san_CFLAGS} ${san_FLAGS} -fsanitize=pointer-subtract"
+                   CFLAGS="${CFLAGS_ac} ${san_CFLAGS} ${san_FLAGS} -fsanitize=pointer-subtract ${user_CFLAGS}"
                    AC_LINK_IFELSE([AC_LANG_PROGRAM([],[])],
                     [mhd_cv_cc_sanitizer_pointer_subtract=yes], [mhd_cv_cc_sanitizer_pointer_subtract=no])
                  ]
@@ -3417,39 +5290,174 @@ AS_VAR_IF([enable_sanitizers], ["no"], [:],
                AS_VAR_IF([enable_san_upoison], ["no"], [:],
                  [
                    AC_CHECK_HEADERS([sanitizer/asan_interface.h], [], [], [AC_INCLUDES_DEFAULT])
-                   AS_IF([test "x${mhd_cv_cc_sanitizer_pointer_compare}" = "xyes" && test "x${ac_cv_header_sanitizer_asan_interface_h}" = "xyes"],
+                   AS_VAR_IF([ac_cv_header_sanitizer_asan_interface_h],["yes"],
                      [
-                       AC_CACHE_CHECK([whether '__attribute__((no_sanitize("pointer-compare","pointer-subtract")))' works], [mhd_cv_func_attribute_nosanitize_ptr],
+                       CFLAGS="${CFLAGS_ac} ${san_CFLAGS} ${san_FLAGS} ${errattr_CFLAGS} ${user_CFLAGS}"
+                       MHD_CHECK_FUNC([__asan_address_is_poisoned],[[#include <sanitizer/asan_interface.h>]],
+                         [[int a_var=1; i][f(__asan_address_is_poisoned((void*) &a_var)) return 3;]]
+                       )
+                       MHD_CHECK_FUNC([__asan_region_is_poisoned],[[#include <sanitizer/asan_interface.h>]],
+                         [[int a_var=1; i][f(((void*) 0) != __asan_region_is_poisoned((void*) &a_var, sizeof(a_var))) return 3;]]
+                       )
+                       AC_CACHE_CHECK([whether special function attribute is needed for user-poison], [mhd_cv_func_u_p_attribute_needed],
                          [
                            ASAN_OPTIONS="exitcode=88:detect_invalid_pointer_pairs=3:halt_on_error=1"
                            export ASAN_OPTIONS
-                           CFLAGS="${saved_CFLAGS} ${san_CFLAGS} ${san_FLAGS} ${errattr_CFLAGS}"
+                           CFLAGS="${CFLAGS_ac} ${san_CFLAGS} ${san_FLAGS} ${errattr_CFLAGS} ${user_CFLAGS}"
                            AC_RUN_IFELSE(
                              [
-                               AC_LANG_PROGRAM(
+                               AC_LANG_SOURCE(
                                  [[
+#include <stdint.h>
 #include <stdlib.h>
+#include <sanitizer/asan_interface.h>
 
-__attribute__((no_sanitize("pointer-compare","pointer-subtract")))
-int ptr_process(void *ptr1, void *ptr2)
+static const size_t first_pos = 0;
+static const size_t mid_pos = 64;
+static const size_t last_pos = 128;
+static const size_t zone_size = 16;
+static const size_t buf_size = 128 + 16;
+
+static int ptr_compare(void *ptr1, uint8_t *ptr2)
 {
-  if ((char*)ptr1 <= (char*)ptr2)
-    return (int) ((char*)ptr2 - (char*)ptr1);
-  return (int) ((char*)ptr1 - (char*)ptr2);
+  if ((((uintptr_t) (uint8_t *)ptr1) >= ((uintptr_t)ptr2)))
+    return ((char *) ptr1)[0] < ((char *) ptr2)[0];
+  return ((char *) ptr1)[0] > ((char *) ptr2)[0];
 }
-                                 ]],
-                                 [[
-  int *a = (int*) malloc (sizeof(int)*4);
-  int *b = (int*) malloc (sizeof(long)*6);
-  int c = ptr_process(a, b);
-  if (c)
+
+static int ptr_subtract(void *ptr1, uint8_t *ptr2)
+{
+  return ((size_t)(((uintptr_t)(uint8_t*)ptr1) - ((uintptr_t)ptr2))) <= last_pos;
+}
+
+int main(int argc, char *argv[])
+{
+  char *buf = (char*) malloc (buf_size);
+  char *a;
+  char *b;
+  int ret;
+
+  (void) argv;
+  if (NULL == buf)
+    return 10;
+  ASAN_POISON_MEMORY_REGION (buf + first_pos + zone_size, mid_pos - first_pos - zone_size);
+  ASAN_POISON_MEMORY_REGION (buf + mid_pos + zone_size, last_pos - mid_pos - zone_size);
+
+  if (0 < argc)
+    a = buf + last_pos;
+  else
+    a = buf + first_pos;
+  b = buf + mid_pos;
+
+  *a = '0';
+  *b = '9';
+
+  if (ptr_compare((void *)a, (uint8_t*) b))
   {
-    free (b);
-    free (a);
-    return 0;
+    if (ptr_subtract((void *)a, (uint8_t*) b))
+      ret = 0;
+    else
+      ret = 10;
   }
-  free (a);
-  free (b);
+  else
+    ret = 5;
+  ASAN_UNPOISON_MEMORY_REGION (buf, buf_size);
+  free (buf);
+
+  return ret;
+}
+                                 ]]
+                               )
+                             ],
+                             [mhd_cv_func_u_p_attribute_needed="no"], [mhd_cv_func_u_p_attribute_needed="yes"],
+                             [
+                               # Cross-compiling with sanitizers??
+                               mhd_cv_func_up_attribute_needed='assuming no'
+                             ]
+                           )
+                           AS_UNSET([ASAN_OPTIONS])
+                         ]
+                       )
+                     ]
+                   )
+                   AS_VAR_IF([mhd_cv_func_u_p_attribute_needed],["yes"],[:],
+                     [
+                       AC_DEFINE([FUNC_PTRCOMPARE_CAST_WORKAROUND_WORKS],[1],[Define to '1' if cast to 'uintptr_t' works for safely processing user-poisoned pointer])
+                     ]
+                   )
+                   AS_IF([test "x${mhd_cv_func_u_p_attribute_needed}" = "xyes" && test "x${ac_cv_header_sanitizer_asan_interface_h}" = "xyes"],
+                     [
+                       AC_CACHE_CHECK([whether '__attribute__((no_sanitize("pointer-compare")))' and '__attribute__((no_sanitize("pointer-subtract")))' work],
+                         [mhd_cv_func_attribute_nosanitize_ptr],
+                         [
+                           ASAN_OPTIONS="exitcode=88:detect_invalid_pointer_pairs=3:halt_on_error=1"
+                           export ASAN_OPTIONS
+                           CFLAGS="${CFLAGS_ac} ${san_CFLAGS} ${san_FLAGS} ${errattr_CFLAGS} ${user_CFLAGS}"
+                           AC_RUN_IFELSE(
+                             [
+                               AC_LANG_SOURCE(
+                                 [[
+#include <stdint.h>
+#include <stdlib.h>
+#include <sanitizer/asan_interface.h>
+
+static const size_t first_pos = 0;
+static const size_t mid_pos = 64;
+static const size_t last_pos = 128;
+static const size_t zone_size = 16;
+static const size_t buf_size = 128 + 16;
+
+__attribute__((no_sanitize("pointer-compare")))
+static int ptr_compare(void *ptr1, uint8_t *ptr2)
+{
+  if ((((const uint8_t*)ptr1) >= ((const uint8_t*)ptr2)))
+    return ((char *) ptr1)[0] < ((char *) ptr2)[0];
+  return ((char *) ptr1)[0] > ((char *) ptr2)[0];
+}
+
+__attribute__((no_sanitize("pointer-subtract")))
+static int ptr_subtract(void *ptr1, uint8_t *ptr2)
+{
+  return ((size_t)(((const uint8_t*)ptr1) - \
+          ((const uint8_t*)ptr2))) <= last_pos;
+}
+
+int main(int argc, char *argv[])
+{
+  char *buf = (char*) malloc (buf_size);
+  char *a;
+  char *b;
+  int ret;
+
+  (void) argv;
+  if (NULL == buf)
+    return 10;
+  ASAN_POISON_MEMORY_REGION (buf + first_pos + zone_size, mid_pos - first_pos - zone_size);
+  ASAN_POISON_MEMORY_REGION (buf + mid_pos + zone_size, last_pos - mid_pos - zone_size);
+
+  if (0 < argc)
+    a = buf + last_pos;
+  else
+    a = buf + first_pos;
+  b = buf + mid_pos;
+
+  *a = '0';
+  *b = '9';
+
+  if (ptr_compare((void *)a, (uint8_t*) b))
+  {
+    if (ptr_subtract((void *)a, (uint8_t*) b))
+      ret = 0;
+    else
+      ret = 10;
+  }
+  else
+    ret = 5;
+  ASAN_UNPOISON_MEMORY_REGION (buf, buf_size);
+  free (buf);
+
+  return ret;
+}
                                  ]]
                                )
                              ],
@@ -3463,39 +5471,81 @@ int ptr_process(void *ptr1, void *ptr2)
                          ]
                        )
                        AS_VAR_IF([mhd_cv_func_attribute_nosanitize_ptr], ["yes"],
-                         [AC_DEFINE([FUNC_ATTR_PTRCOMPARE_WOKRS],[1],[Define to '1' if '__attribute__((no_sanitize("pointer-compare","pointer-subtract")))' works])],
+                         [
+                           AC_DEFINE([FUNC_ATTR_PTRCOMPARE_WORKS],[1],[Define to '1' if '__attribute__((no_sanitize("pointer-compare")))' works])
+                           AC_DEFINE([FUNC_ATTR_PTRSUBTRACT_WORKS],[1],[Define to '1' if '__attribute__((no_sanitize("pointer-subtract")))' works])
+                         ],
                          [
                            AC_CACHE_CHECK([whether '__attribute__((no_sanitize("address")))' works for pointers compare], [mhd_cv_func_attribute_nosanitize_addr],
                              [
                                ASAN_OPTIONS="exitcode=88:detect_invalid_pointer_pairs=3:halt_on_error=1"
                                export ASAN_OPTIONS
-                               CFLAGS="${saved_CFLAGS} ${san_CFLAGS} ${san_FLAGS} ${errattr_CFLAGS}"
+                               CFLAGS="${CFLAGS_ac} ${san_CFLAGS} ${san_FLAGS} ${errattr_CFLAGS} ${user_CFLAGS}"
                                AC_RUN_IFELSE(
                                  [
-                                   AC_LANG_PROGRAM(
+                                   AC_LANG_SOURCE(
                                      [[
+#include <stdint.h>
 #include <stdlib.h>
+#include <sanitizer/asan_interface.h>
+
+static const size_t first_pos = 0;
+static const size_t mid_pos = 64;
+static const size_t last_pos = 128;
+static const size_t zone_size = 16;
+static const size_t buf_size = 128 + 16;
 
 __attribute__((no_sanitize("address")))
-int ptr_process(void *ptr1, void *ptr2)
+static int ptr_compare(void *ptr1, uint8_t *ptr2)
 {
-  if ((char*)ptr1 <= (char*)ptr2)
-    return (int) ((char*)ptr2 - (char*)ptr1);
-  return (int) ((char*)ptr1 - (char*)ptr2);
+  if ((((const uint8_t*)ptr1) >= ((const uint8_t*)ptr2)))
+    return ((char *) ptr1)[0] < ((char *) ptr2)[0];
+  return ((char *) ptr1)[0] > ((char *) ptr2)[0];
 }
-                                     ]],
-                                     [[
-  int *a = (int*) malloc (sizeof(int)*4);
-  int *b = (int*) malloc (sizeof(long)*6);
-  int c = ptr_process(a, b);
-  if (c)
+
+__attribute__((no_sanitize("address")))
+static int ptr_subtract(void *ptr1, uint8_t *ptr2)
+{
+  return ((size_t)(((const uint8_t*)ptr1) - \
+          ((const uint8_t*)ptr2))) <= last_pos;
+}
+
+int main(int argc, char *argv[])
+{
+  char *buf = (char*) malloc (buf_size);
+  char *a;
+  char *b;
+  int ret;
+
+  (void) argv;
+  if (NULL == buf)
+    return 10;
+  ASAN_POISON_MEMORY_REGION (buf + first_pos + zone_size, mid_pos - first_pos - zone_size);
+  ASAN_POISON_MEMORY_REGION (buf + mid_pos + zone_size, last_pos - mid_pos - zone_size);
+
+  if (0 < argc)
+    a = buf + last_pos;
+  else
+    a = buf + first_pos;
+  b = buf + mid_pos;
+
+  *a = '0';
+  *b = '9';
+
+  if (ptr_compare((void *)a, (uint8_t*) b))
   {
-    free (b);
-    free (a);
-    return 0;
+    if (ptr_subtract((void *)a, (uint8_t*) b))
+      ret = 0;
+    else
+      ret = 10;
   }
-  free (a);
-  free (b);
+  else
+    ret = 5;
+  ASAN_UNPOISON_MEMORY_REGION (buf, buf_size);
+  free (buf);
+
+  return ret;
+}
                                      ]]
                                    )
                                  ],
@@ -3563,7 +5613,7 @@ int main(void)
            ]
            AC_CACHE_CHECK([for undefined behavior sanitizer], [mhd_cv_cc_sanitizer_undefined],
              [
-               CFLAGS="${saved_CFLAGS} ${san_FLAGS} ${san_CFLAGS} -fsanitize=undefined"
+               CFLAGS="${CFLAGS_ac} ${san_FLAGS} ${san_CFLAGS} -fsanitize=undefined ${user_CFLAGS}"
                AC_LINK_IFELSE([AC_LANG_SOURCE([${test_undf_prog}])],
                 [mhd_cv_cc_sanitizer_undefined=yes], [mhd_cv_cc_sanitizer_undefined=no])
              ]
@@ -3574,38 +5624,55 @@ int main(void)
                enabled_sanitizers="${enabled_sanitizers}${enabled_sanitizers:+, }undefined"
              ],
              [
-               AC_CACHE_CHECK([for undefined behavior sanitizer with '-fsanitize-undefined-trap-on-error'], [mhd_cv_cc_sanitizer_undefined_trap],
+               AS_CASE([${enable_san_undef}], [yes|auto-fallback],
                  [
-                   CFLAGS="${saved_CFLAGS} ${san_FLAGS} ${san_CFLAGS} -fsanitize=undefined -fsanitize-undefined-trap-on-error"
-                   AC_LINK_IFELSE([AC_LANG_SOURCE([${test_undf_prog}])],
-                    [mhd_cv_cc_sanitizer_undefined_trap=yes], [mhd_cv_cc_sanitizer_undefined_trap=no])
-                 ]
-               )
-               AS_VAR_IF([mhd_cv_cc_sanitizer_undefined_trap], ["yes"],
-                 [
-                   AX_APPEND_FLAG([-fsanitize=undefined], [san_FLAGS])
-                   AX_APPEND_FLAG([-fsanitize-undefined-trap-on-error], [san_FLAGS])
-                   enabled_sanitizers="${enabled_sanitizers}${enabled_sanitizers:+, }undefined"
-                   AC_MSG_WARN([Enabled sanitizer without run-time library, error reporting will be limited])
-                 ],
-                 [
-                   AS_IF([test -z "${enabled_sanitizers}"],
+                   AC_CACHE_CHECK([for undefined behavior sanitizer with '-fsanitize-undefined-trap-on-error'], [mhd_cv_cc_sanitizer_undefined_trap],
                      [
-                       # Last resort
-                       AC_CACHE_CHECK([for undefined behavior sanitizer with '-fsanitize-trap=all'], [mhd_cv_cc_sanitizer_undefined_trap_all],
+                       CFLAGS="${CFLAGS_ac} ${san_FLAGS} ${san_CFLAGS} -fsanitize=undefined -fsanitize-undefined-trap-on-error ${user_CFLAGS}"
+                       AC_LINK_IFELSE([AC_LANG_SOURCE([${test_undf_prog}])],
+                        [mhd_cv_cc_sanitizer_undefined_trap=yes], [mhd_cv_cc_sanitizer_undefined_trap=no])
+                     ]
+                   )
+                   AS_VAR_IF([mhd_cv_cc_sanitizer_undefined_trap], ["yes"],
+                     [
+                       AX_APPEND_FLAG([-fsanitize=undefined], [san_FLAGS])
+                       AX_APPEND_FLAG([-fsanitize-undefined-trap-on-error], [san_FLAGS])
+                       enabled_sanitizers="${enabled_sanitizers}${enabled_sanitizers:+, }undefined"
+                       AC_MSG_WARN([Enabled sanitizer without run-time library, error reporting will be limited])
+                     ],
+                     [
+                       AS_IF([test -z "${enabled_sanitizers}"],
                          [
-                           CFLAGS="${saved_CFLAGS} ${san_FLAGS} ${san_CFLAGS} -fsanitize=undefined -fsanitize-trap=all"
-                           AC_LINK_IFELSE([AC_LANG_SOURCE([${test_undf_prog}])],
-                            [mhd_cv_cc_sanitizer_undefined_trap_all=yes], [mhd_cv_cc_sanitizer_undefined_trap_all=no])
+                           # Last resort
+                           AC_CACHE_CHECK([for undefined behavior sanitizer with '-fsanitize-trap=all'], [mhd_cv_cc_sanitizer_undefined_trap_all],
+                             [
+                               CFLAGS="${CFLAGS_ac} ${san_FLAGS} ${san_CFLAGS} -fsanitize=undefined -fsanitize-trap=all ${user_CFLAGS}"
+                               AC_LINK_IFELSE([AC_LANG_SOURCE([${test_undf_prog}])],
+                                [mhd_cv_cc_sanitizer_undefined_trap_all=yes], [mhd_cv_cc_sanitizer_undefined_trap_all=no])
+                             ]
+                           )
+                           AS_VAR_IF([mhd_cv_cc_sanitizer_undefined_trap_all],["yes"],
+                             [
+                               AX_APPEND_FLAG([-fsanitize=undefined], [san_FLAGS])
+                               AX_APPEND_FLAG([-fsanitize-trap=all], [san_FLAGS])
+                               CFLAGS="${CFLAGS_ac} ${san_FLAGS} ${san_CFLAGS} -fsanitize=undefined -fsanitize-trap=all ${user_CFLAGS}"
+                               enabled_sanitizers="${enabled_sanitizers}${enabled_sanitizers:+, }undefined"
+                               AC_MSG_WARN([Enabled sanitizer without run-time library, error reporting will be limited])
+                             ]
+                           )
                          ]
                        )
-                       AS_VAR_IF([mhd_cv_cc_sanitizer_undefined_trap_all],["yes"],
+                     ]
+                   )
+                   AS_CASE(["$enabled_sanitizers"], [*undefined],
+                     [
+                       AS_VAR_IF([mhd_cv_cc_sanitizer_undefined], ["yes"],[],
                          [
-                           AX_APPEND_FLAG([-fsanitize=undefined], [san_FLAGS])
-                           AX_APPEND_FLAG([-fsanitize-trap=all], [san_FLAGS])
-                           CFLAGS="${saved_CFLAGS} ${san_FLAGS} ${san_CFLAGS} -fsanitize=undefined -fsanitize-trap=all"
-                           enabled_sanitizers="${enabled_sanitizers}${enabled_sanitizers:+, }undefined"
-                           AC_MSG_WARN([Enabled sanitizer without run-time library, error reporting will be limited])
+                           # A workaround for broken clang which is trying to use UBSan lib
+                           # even when instructed to not use it
+                           CFLAGS="${CFLAGS_ac} ${san_FLAGS} ${san_CFLAGS} ${user_CFLAGS}"
+                           AX_APPEND_LINK_FLAGS([-fsanitize-trap=implicit-conversion],
+                             [san_FLAGS], [], [AC_LANG_SOURCE([${test_undf_prog}])])
                          ]
                        )
                      ]
@@ -3616,16 +5683,7 @@ int main(void)
            )
            AS_CASE(["$enabled_sanitizers"], [*undefined],
              [
-               AS_VAR_IF([mhd_cv_cc_sanitizer_undefined], ["yes"],[],
-                 [
-                   # A workaround for broken clang which is trying to use UBSan lib
-                   # even when instructed to not use it
-                   CFLAGS="${saved_CFLAGS} ${san_FLAGS} ${san_CFLAGS}"
-                   AX_APPEND_LINK_FLAGS([-fsanitize-trap=implicit-conversion],
-                     [san_FLAGS], [], [AC_LANG_SOURCE([${test_undf_prog}])])
-                 ]
-               )
-               CFLAGS="${saved_CFLAGS} ${san_FLAGS} ${san_CFLAGS}"
+               CFLAGS="${CFLAGS_ac} ${san_FLAGS} ${san_CFLAGS} ${user_CFLAGS}"
                AX_APPEND_LINK_FLAGS([-fsanitize=bounds-strict -fsanitize=local-bounds -fsanitize=implicit-conversion -fsanitize=nullability-arg],
                  [san_CFLAGS], [], [AC_LANG_SOURCE([${test_undf_prog}])])
              ]
@@ -3644,7 +5702,7 @@ int main(void)
          [
            AC_CACHE_CHECK([for leak sanitizer], [mhd_cv_cc_sanitizer_leak],
              [
-               CFLAGS="${saved_CFLAGS} ${san_FLAGS} ${san_CFLAGS} -fsanitize=leak"
+               CFLAGS="${CFLAGS_ac} ${san_FLAGS} ${san_CFLAGS} -fsanitize=leak ${user_CFLAGS}"
                AC_LINK_IFELSE([AC_LANG_PROGRAM([],[])],
                 [mhd_cv_cc_sanitizer_leak=yes], [mhd_cv_cc_sanitizer_leak=no])
              ]
@@ -3662,88 +5720,170 @@ int main(void)
          ]
        )
        AS_IF([test -z "${enabled_sanitizers}"],
-         [AC_MSG_ERROR([cannot find any sanitizer supported by $CC])])
-       AS_VAR_IF([enable_san_upoison], ["no"], [:],
          [
-           AC_MSG_CHECKING([whether to enable user memory poisoning])
-           AS_IF([test "x${mhd_cv_cc_sanitizer_address}" = "xyes" && test "x${mhd_cv_cc_sanitizer_pointer_compare}" = "xyes" && \
-             test "x${ac_cv_header_sanitizer_asan_interface_h}" = "xyes" && \
-             (test "x${mhd_cv_func_attribute_nosanitize_ptr}" = "xyes" || test "x${mhd_cv_func_attribute_nosanitize_addr}" = "xyes")],
+           AS_VAR_IF([enable_sanitizers], ["auto-optional"],
              [
-               AC_DEFINE([MHD_ASAN_POISON_ACTIVE], [1], [Define to '1' if user memory poison is used])
-               enabled_sanitizers="${enabled_sanitizers}${enabled_sanitizers:+, }user-poison"
-               enable_san_upoison="yes"
-               AC_MSG_RESULT([yes])
+               san_FLAGS=""
+               san_CFLAGS=""
              ],
              [
-               AC_MSG_RESULT([no])
-               AS_VAR_IF([enable_san_upoison], ["yes"],
-                 [AC_MSG_ERROR([User memory poisoning cannot be enabled])])
-               enable_san_upoison="no"
+               AC_MSG_ERROR([cannot find any sanitizer supported by $CC])
              ]
            )
-         ]
-       )
-       AS_VAR_IF([enable_san_address], ["yes"],
+         ],
          [
-           AS_VAR_IF([mhd_cv_cc_sanitizer_address],["yes"],
+           AS_VAR_IF([enable_san_upoison], ["no"], [:],
              [
+               AC_MSG_CHECKING([whether to enable user memory poisoning])
+               AS_IF([test "x${mhd_cv_cc_sanitizer_address}" = "xyes" && test "x${ac_cv_header_sanitizer_asan_interface_h}" = "xyes" && \
+                 (test "x${mhd_cv_func_u_p_attribute_needed}" != "xyes" || test "x${mhd_cv_func_attribute_nosanitize_ptr}" = "xyes" || \
+                  test "x${mhd_cv_func_attribute_nosanitize_addr}" = "xyes")],
+                 [
+                   AC_DEFINE([MHD_ASAN_POISON_ACTIVE], [1], [Define to '1' if user memory poison is used])
+                   enabled_sanitizers="${enabled_sanitizers}${enabled_sanitizers:+, }user-poison"
+                   enable_san_upoison="yes"
+                   AC_MSG_RESULT([yes])
+                 ],
+                 [
+                   AC_MSG_RESULT([no])
+                   AS_VAR_IF([enable_san_upoison], ["yes"],
+                     [AC_MSG_ERROR([User memory poisoning cannot be enabled])])
+                   enable_san_upoison="no"
+                 ]
+               )
+             ]
+           )
+           AS_VAR_IF([enable_san_address], ["yes"],
+             [
+               CFLAGS="${CFLAGS_ac} ${san_FLAGS} ${san_CFLAGS} ${user_CFLAGS}"
+               AC_CHECK_DECL([_FORTIFY_SOURCE],
+                 [MHD_APPEND_FLAG_TO_VAR([CPPFLAGS_ac],[-U_FORTIFY_SOURCE])],
+                 [],[/* no includes */])
                AX_APPEND_FLAG([-D_FORTIFY_SOURCE=0], [san_CFLAGS])
-               CFLAGS="${saved_CFLAGS} ${san_FLAGS} ${san_CFLAGS}"
-               AX_APPEND_COMPILE_FLAGS([-Wp,-U_FORTIFY_SOURCE], [san_CFLAGS])
              ],
-             [AC_MSG_WARN([$CC does not support address sanitizer])]
+             [
+               AS_CASE([$enable_sanitizers], [auto|auto-fallback],
+                 [AC_MSG_WARN([$CC does not support address sanitizer])])
+             ]
            )
-         ]
-       )
-       CFLAGS="${saved_CFLAGS} ${san_FLAGS} ${san_CFLAGS}"
-       # Always stop on sanitizer error
-       AX_APPEND_COMPILE_FLAGS([-fno-sanitize-recover=all], [san_CFLAGS])
-       # Get a better output for sanitizers error reporting
-       AX_APPEND_COMPILE_FLAGS([-fno-omit-frame-pointer -fno-optimize-sibling-calls],
-         [san_CFLAGS])
-       AS_VAR_IF([enable_san_address], ["yes"],
-         [
-           AM_ASAN_OPTIONS="exitcode=88:strict_string_checks=1:detect_stack_use_after_return=1"
-           AM_ASAN_OPTIONS="${AM_ASAN_OPTIONS}:check_initialization_order=1:strict_init_order=1:redzone=64"
-           AM_ASAN_OPTIONS="${AM_ASAN_OPTIONS}:max_free_fill_size=1024:detect_invalid_pointer_pairs=3"
-           AM_ASAN_OPTIONS="${AM_ASAN_OPTIONS}:handle_ioctl=1:halt_on_error=1"
-           AS_VAR_IF([enable_san_upoison], ["yes"], [AM_ASAN_OPTIONS="${AM_ASAN_OPTIONS}:allow_user_poisoning=1"])
+           CFLAGS="${CFLAGS_ac} ${san_FLAGS} ${san_CFLAGS} ${user_CFLAGS}"
+           # Always stop on sanitizer error
+           AX_APPEND_COMPILE_FLAGS([-fno-sanitize-recover=all], [san_CFLAGS])
+           # Get a better output for sanitizers error reporting
+           AX_APPEND_COMPILE_FLAGS([-fno-omit-frame-pointer -fno-optimize-sibling-calls],
+             [san_CFLAGS])
+           AS_VAR_IF([enable_san_address], ["yes"],
+             [
+               AM_ASAN_OPTIONS="exitcode=88:strict_string_checks=1:detect_stack_use_after_return=1"
+               AM_ASAN_OPTIONS="${AM_ASAN_OPTIONS}:check_initialization_order=1:strict_init_order=1:redzone=64"
+               AM_ASAN_OPTIONS="${AM_ASAN_OPTIONS}:max_free_fill_size=1024:detect_invalid_pointer_pairs=3"
+               AM_ASAN_OPTIONS="${AM_ASAN_OPTIONS}:handle_ioctl=1:halt_on_error=1"
+               AS_VAR_IF([enable_san_upoison], ["yes"], [AM_ASAN_OPTIONS="${AM_ASAN_OPTIONS}:allow_user_poisoning=1"])
+               AS_VAR_IF([enable_san_leak], ["yes"],
+                 [AS_VAR_IF([mhd_cv_cc_sanitizer_address_leak], ["yes"],
+                   [AM_ASAN_OPTIONS="${AM_ASAN_OPTIONS}:detect_leaks=1"])
+                 ], [AM_ASAN_OPTIONS="${AM_ASAN_OPTIONS}:detect_leaks=0"]
+               )
+             ]
+           )
+           AS_VAR_IF([enable_san_undef], [yes],
+             [AM_UBSAN_OPTIONS="exitcode=87:print_stacktrace=1:halt_on_error=1"])
            AS_VAR_IF([enable_san_leak], ["yes"],
-             [AS_VAR_IF([mhd_cv_cc_sanitizer_address_leak], ["yes"],
-               [AM_ASAN_OPTIONS="${AM_ASAN_OPTIONS}:detect_leaks=1"])
-             ], [AM_ASAN_OPTIONS="${AM_ASAN_OPTIONS}:detect_leaks=0"]
+             [AM_LSAN_OPTIONS="use_unaligned=1"]
            )
+           TESTS_ENVIRONMENT_ac='\
+    ASAN_OPTIONS="$(AM_ASAN_OPTIONS)" ; export ASAN_OPTIONS ; \
+    UBSAN_OPTIONS="$(AM_UBSAN_OPTIONS)" ; export UBSAN_OPTIONS ; \
+    LSAN_OPTIONS="$(AM_LSAN_OPTIONS)" ; export LSAN_OPTIONS ;'
          ]
        )
-       AS_VAR_IF([enable_san_undef], [yes],
-         [AM_UBSAN_OPTIONS="exitcode=87:print_stacktrace=1:halt_on_error=1"])
-       AS_VAR_IF([enable_san_leak], ["yes"],
-         [AM_LSAN_OPTIONS="use_unaligned=1"]
-       )
-       AM_TESTS_ENVIRONMENT='\
-ASAN_OPTIONS="$(AM_ASAN_OPTIONS)" ; export ASAN_OPTIONS ; \
-UBSAN_OPTIONS="$(AM_UBSAN_OPTIONS)" ; export UBSAN_OPTIONS ; \
-LSAN_OPTIONS="$(AM_LSAN_OPTIONS)" ; export LSAN_OPTIONS ;'
      ]
    )
-   CFLAGS="${saved_CFLAGS} ${san_FLAGS} ${san_CFLAGS}"
-   AS_UNSET([saved_CFLAGS])
+   CFLAGS_ac="${CFLAGS_ac} ${san_FLAGS} ${san_CFLAGS}"
+   CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
  ]
 )
+
+# fuzzing tests
+run_zzuf_tests="no"
+zzuf_socat_mandatory="no"
+AS_VAR_IF([use_heavy_tests],["yes"],
+  [
+    AS_VAR_IF([enable_curl],["yes"],
+      [
+        AC_PATH_PROG([ZZUF],[zzuf],[no])
+        AS_VAR_IF([ZZUF],["no"],
+          [
+            run_zzuf_tests="no"
+            run_zzuf_tests_MSG="no, zzuf tool not found"
+          ],
+          [
+	        AC_PATH_PROG([SOCAT],[socat],[no])
+            AS_IF([test "x${ac_cv_func_accept4}" = "xyes" && test "x${enable_asserts}" = "xno"],
+              [
+                zzuf_socat_mandatory="yes"
+		        AS_VAR_IF([SOCAT],["no"],
+                  [run_zzuf_tests_MSG="no, socat not found, but required for fuzzing tests on this platform without asserts enabled"],
+                  [
+		            run_zzuf_tests="yes"
+		            run_zzuf_tests_MSG="yes, with zzuf and socat tools"
+                  ]
+                )
+              ],
+              [test -n "${enabled_sanitizers}"],
+              [
+                zzuf_socat_mandatory="yes"
+		        AS_VAR_IF([SOCAT],["no"],
+                  [run_zzuf_tests_MSG="no, socat not found, but required for fuzzing tests when sanitizers enabled"],
+                  [
+		            run_zzuf_tests="yes"
+		            run_zzuf_tests_MSG="yes, with zzuf and socat tools"
+                  ]
+                )
+              ],
+              [
+                run_zzuf_tests="yes"
+                run_zzuf_tests_MSG="yes, with zzuf tool"
+              ]
+            )
+          ]
+        )
+      ],
+      [
+        run_zzuf_tests="no"
+        run_zzuf_tests_MSG="no, tests with libcurl are not enabled"
+      ]
+    )
+  ],
+  [
+    run_zzuf_tests="no"
+    run_zzuf_tests_MSG="no, heavy tests are not enabled"
+  ]
+)
+AM_CONDITIONAL([RUN_ZZUF_TESTS],[test "x$run_zzuf_tests" = "xyes"])
+AM_CONDITIONAL([FORCE_USE_ZZUF_SOCAT],[test "x$zzuf_socat_mandatory" = "xyes"])
+
+# Final flags that may interfere with autoconf detections
+AS_CASE([${enable_build_type}],[debug|debugger],
+  [ # Debug build or build for walking with debugger
+    CFLAGS="${user_CFLAGS}"
+    MHD_CHECK_ADD_CC_CFLAGS([-Wextra-semi -Wextra-semi-stmt], [CFLAGS_ac])
+    CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
+  ]
+)
+
 AM_CONDITIONAL([USE_SANITIZERS],
   [test -n "$enabled_sanitizers" && test "x$mhd_cv_cc_sanitizer_works" = "xyes"])
 AC_SUBST([AM_ASAN_OPTIONS])
 AC_SUBST([AM_UBSAN_OPTIONS])
 AC_SUBST([AM_LSAN_OPTIONS])
-AC_SUBST([AM_TESTS_ENVIRONMENT])
+AC_SUBST([TESTS_ENVIRONMENT_ac])
 
-AM_CONDITIONAL([USE_BROKEN_TLS_TESTS],[false])
-
-MHD_LIB_LDFLAGS="$MHD_LIB_LDFLAGS -export-dynamic -no-undefined"
+MHD_LIB_LDFLAGS="$MHD_LIB_LDFLAGS"
 
 AC_SUBST([CPU_COUNT])
 AC_SUBST([HEAVY_TESTS_NOTPARALLEL])
+AM_SUBST_NOTMAKE([HEAVY_TESTS_NOTPARALLEL])
 AC_SUBST(MHD_LIB_CPPFLAGS)
 AC_SUBST(MHD_LIB_CFLAGS)
 AC_SUBST(MHD_LIB_LDFLAGS)
@@ -3757,13 +5897,37 @@ AC_SUBST(MHD_TLS_LIBDEPS)
 AC_SUBST([MHD_REQ_PRIVATE])
 AC_SUBST([MHD_LIBDEPS_PKGCFG])
 
-AC_SUBST(CPPFLAGS)
-AC_SUBST(LIBS)
-AC_SUBST(LDFLAGS)
+# Restore flags as set by the user
+CFLAGS="${user_CFLAGS}"
+LDFLAGS="${user_LDFLAGS}"
+CPPFLAGS="${user_CPPFLAGS}"
+AC_SUBST([CFLAGS])
+AC_SUBST([LDFLAGS])
+AC_SUBST([CPPFLAGS])
+AC_SUBST([LIBS])
+
+# Configure-defined flags
+AC_SUBST([CFLAGS_ac])
+AC_SUBST([LDFLAGS_ac])
+AC_SUBST([CPPFLAGS_ac])
 
 # Used for 'po' directory staff
 AC_SUBST([ac_configure_args])
-AC_SUBST([EMPTY_VAR], [[]])
+AC_SUBST([EMPTY_VAR],[])
+AC_SUBST([MHD_AUX_DIR])
+AC_CONFIG_FILES([po/po-configure.ac])
+AC_CONFIG_COMMANDS([po/Makefile.in],
+  [
+    echo "Skipping update of po/Makefile.in"
+    echo "Real update of po/Makefile.in for 'make dist' is performed by po-config.status"
+  ]
+)
+AC_CONFIG_COMMANDS([po-directories],
+  [
+    echo "Skipping po-directories command."
+    echo "Real po-directories command for 'make dist' is implemented in po-config.status"
+  ]
+)
 
 # We define the paths here, because MinGW/GCC expands paths
 # passed through the command line ("-DDIR=..."). This would
@@ -3771,6 +5935,8 @@ AC_SUBST([EMPTY_VAR], [[]])
 # not contain the actual installation.
 AC_DEFINE_DIR([MHD_PLUGIN_INSTALL_PREFIX], [libdir/libmicrohttpd], [tls plugins])
 
+AC_SUBST([ZZUF])
+AC_SUBST([SOCAT])
 
 # should experimental code be compiled (code that may not yet compile)?
 AC_MSG_CHECKING(whether to compile experimental code)
@@ -3797,15 +5963,50 @@ src/lib/Makefile
 src/microhttpd/Makefile
 src/microhttpd_ws/Makefile
 src/examples/Makefile
+src/tools/Makefile
 src/testcurl/Makefile
 src/testcurl/https/Makefile
 src/testzzuf/Makefile])
 AC_OUTPUT
 
 # Finally: summary
-AS_IF([test "x$enable_curl" != "xyes"],
- [MSG_CURL="no, many unit tests will not run"],
- [MSG_CURL="yes"])
+# Format flags without extra spaces for visual beauty
+fin_CPPFLAGS="$user_CPPFLAGS"
+fin_CFLAGS="$user_CFLAGS"
+fin_LDFLAGS="$user_LDFLAGS"
+MHD_PREPEND_FLAG_TO_VAR([fin_CPPFLAGS],[$CPPFLAGS_ac])
+MHD_PREPEND_FLAG_TO_VAR([fin_CFLAGS],[$CFLAGS_ac])
+MHD_PREPEND_FLAG_TO_VAR([fin_LDFLAGS],[$LDFLAGS_ac])
+fin_lib_CPPFLAGS="$user_CPPFLAGS"
+fin_lib_CFLAGS="$user_CFLAGS"
+fin_lib_LDFLAGS="$user_LDFLAGS"
+MHD_PREPEND_FLAG_TO_VAR([fin_lib_CPPFLAGS],[$MHD_LIB_CPPFLAGS])
+MHD_PREPEND_FLAG_TO_VAR([fin_lib_CFLAGS],[$MHD_LIB_CFLAGS])
+MHD_PREPEND_FLAG_TO_VAR([fin_lib_LDFLAGS],[$MHD_LIB_LDFLAGS])
+MHD_PREPEND_FLAG_TO_VAR([fin_lib_CPPFLAGS],[$CPPFLAGS_ac])
+MHD_PREPEND_FLAG_TO_VAR([fin_lib_CFLAGS],[$CFLAGS_ac])
+MHD_PREPEND_FLAG_TO_VAR([fin_lib_LDFLAGS],[$LDFLAGS_ac])
+AC_MSG_NOTICE([Toolchain settings:
+  CC=$CC
+  User/system/default flags:
+    CPPFLAGS="$user_CPPFLAGS"
+    CFLAGS=  "$user_CFLAGS"
+    LDFLAGS= "$user_LDFLAGS"
+  Final set of the flags for tests and examples:
+    CPPFLAGS="$fin_CPPFLAGS"
+    CFLAGS=  "$fin_CFLAGS"
+    LDFLAGS= "$fin_LDFLAGS"
+  Final set of the flags for ${PACKAGE_NAME} library:
+    CPPFLAGS="$fin_lib_CPPFLAGS"
+    CFLAGS=  "$fin_lib_CFLAGS"
+    LDFLAGS= "$fin_lib_LDFLAGS"
+])
+AS_UNSET([fin_CPPFLAGS])
+AS_UNSET([fin_CFLAGS])
+AS_UNSET([fin_LDFLAGS])
+AS_UNSET([fin_lib_CPPFLAGS])
+AS_UNSET([fin_lib_CFLAGS])
+AS_UNSET([fin_lib_LDFLAGS])
 
 AS_VAR_IF([os_is_windows], ["yes"],
   [os_ver_msg="
@@ -3816,24 +6017,35 @@ AC_MSG_NOTICE([GNU libmicrohttpd ${PACKAGE_VERSION} Configuration Summary:
   Target directory:  ${prefix}
   Cross-compiling:   ${cross_compiling}
   Operating System:  ${mhd_host_os}${os_ver_msg}
-  Shutdown of listening socket triggers select: ${mhd_cv_host_shtdwn_trgr_select}
+  Threading lib:     ${USE_THREADS}
   Inter-thread comm: ${use_itc}
+  Shutdown of listening socket triggers select: ${mhd_cv_host_shtdwn_trgr_select}
   poll support:      ${enable_poll=no}
   epoll support:     ${enable_epoll=no}
   sendfile used:     ${found_sendfile}
   HTTPS support:     ${MSG_HTTPS}
-  Threading lib:     ${USE_THREADS}
-  Use thread names:  ${enable_thread_names}
-  Use debug asserts: ${enable_asserts}
-  Use sanitizers:    ${enabled_sanitizers:=no}
   Messages:          ${enable_messages}
+  Cookie parsing:    ${enable_cookie}
+  Postproc:          ${enable_postprocessor}
   Basic auth.:       ${enable_bauth}
   Digest auth.:      ${enable_dauth}
+  Digest auth. defaults: ${dauth_defs_MSG}
+  MD5:               ${enable_md5_MSG}
+  SHA-256:           ${enable_sha256_MSG}
+  SHA-512/256:       ${enable_sha512_256_MSG}
   HTTP "Upgrade":    ${enable_httpupgrade}
-  Postproc:          ${enable_postprocessor}
+  Compact code:      ${enable_compact_code} (${compact_code_MSG})
+  Use thread names:  ${enable_thread_names}
+  Use debug asserts: ${use_asserts_MSG=no}
+  Use sanitizers:    ${enabled_sanitizers:=no}
+  Build static lib:  ${enable_static}
+  Build shared lib:  ${enable_shared}
   Build docs:        ${enable_doc}
   Build examples:    ${enable_examples}
+  Build tools:       ${enable_examples}
   Test with libcurl: ${MSG_CURL}
+  Heavy tests:       ${use_heavy_tests_MSG}
+  Fuzzing tests:     ${run_zzuf_tests_MSG=no}
 ])
 
 AS_IF([test "x$enable_https" = "xyes"],
@@ -3846,6 +6058,13 @@ AS_IF([test "x$enable_https" = "xyes"],
 
 AS_IF([test "x$enable_bauth" != "xyes" || \
    test "x$enable_dauth" != "xyes" || \
+   test "x${enable_md5}" = "xno" || \
+   test "x${enable_sha256}" = "xno" || \
+   test "x${enable_sha512_256}" != "xyes" || \
+   test "x${USE_THREADS}" = "xnone" || \
+   test "x$enable_httpupgrade" != "xyes" || \
+   test "x$enable_cookie" != "xyes" || \
    test "x$enable_httpupgrade" != "xyes" || \
    test "x$enable_postprocessor" != "xyes"],
-   [AC_MSG_NOTICE([WARNING: This will be a custom build with missing symbols. Do NOT use this build in a distribution. Building with these kinds of configure options is only for custom builds for embedded systems.])])
+   [AC_MSG_WARN([This will be a custom build with missing symbols. Do NOT use this build in a distribution. Building with these kinds of configure options is only for custom builds for embedded systems.])]
+)

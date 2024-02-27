@@ -4,6 +4,7 @@
   <Import Project="$(MhdW32Common)project-configs.props" />
   <Import Project="$(MhdW32Common)largepost-files.vcxproj" />
   <PropertyGroup Label="Globals">
+    <VCProjectVersion>17.0</VCProjectVersion>
     <ProjectGuid>{77A27E6D-9A39-40B8-961B-40E63DB7FA65}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>largepost</RootNamespace>

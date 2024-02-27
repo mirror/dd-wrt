@@ -66,6 +66,96 @@
  * - simplify API for common-case of one-shot responses by
  *   eliminating need for destroy response in most cases;
  *
+ * NEW-EG:
+ * - avoid fixed types, like uint32_t. They may not exist on some
+ *   platforms. Instead use uint_fast32_t.
+ *   It is also better for future-proof.
+ * - check portability for embedded platforms. Some of them support
+ *   64 bits, but 'int' could be just 16 bits resulting of silently
+ *   dropping enum values higher than 65535.
+ *   => in general, more functions, fewer enums for setup
+ *
+ * - Avoid returning pointers to internal members. It is not thread-safe and
+ * even in single thread the value could change over the time. Prefer pointers to
+ * app-allocated memory with the size, like MHD_daemon_get_static_info(enum
+ * MHD_enum_name info_type, void *buf, size_t buf_size).
+ *   => Except in cases where zero-copy matters.
+ *
+ * - Use separate app calls/functions for data the will not change for the
+ * lifetime of the object and dynamic data. The only difference should be the
+ * name. Like MHD_daemon_get_static_info(enum MHD_enum_name info_type, void *buf,
+ * size_t buf_size) MHD_daemon_get_dynamic_info(enum MHD_enum_name info_type,
+ * void *buf, size_t buf_size) Examples of static data: listen socket, number of
+ * workers, daemon flags.  Examples of dynamic data: number of connections,
+ * quiesce status.  It should give a clear idea whether the data could be changed
+ * over the time (could be not obvious for some data) and thus may change the
+ * approach how to use the data in app.  The same for: library, daemon,
+ * connection, request. Not sure that dynamic data makes sense for the library.
+ *
+ * - Use clear separation between connection and request. Do not mix the kind
+ * data in the callbacks.  Currently we are mixing things in
+ * MHD_AccessHandlerCallback and MHD_RequestCompletedCallback. Instead of
+ * pointers to struct MHD_Connection we should use pointers to (new) struct
+ * MHD_Request.  Probably some other functions are mixing the things as well, to
+ * be re-checked.
+ *
+ * - Define default response code in response object. There are a very little
+ * chance that response body designed for 404 or 403 codes will be used with
+ * 200 code. However, the responses body for 307 and 308 could be the same. So:
+ * * add default response code in response object. Use zero for default 200.
+ * * When app sending the response use zero for response's default code or
+ *   use specific code to override response's default value.
+ *
+ * - Make responses unmodifiable after first use. It is not thread-safe.
+ *   MHD-generated headers (Date, Connection/Keep-Alive) are again
+ *   part of the *request* and do not count as part of the "response" here.
+ *
+ * - Remove "footers" from responses. With unmodifiable responses everything should be "headers".
+ *   Add footers to *requests* instead.
+ *
+ * - Add API for adding request-specific response headers and footers. To
+ * simplify the things it should just copy the strings (to avoid dealing with
+ * complicated deinit of possible dynamic strings).  After this change it should
+ * be possible to simplify DAuth handling as response could be reused (currently
+ * 403 responses are modified for each reply).
+ *
+ * - Control response behaviour mainly by response flags, not by additional
+ * headers (like MHD_RF_FORCE_CLOSE instead of "Connection: close").
+ * It is easier for both: app and MHD.
+ *
+ * - Move response codes from MHD_HTTP_xxx namespace to MHD_HTTP_CODE_xxx
+ *   namespace. It already may clash with other HTTP values.
+ *
+ * - plus other things that was discussed already, like avoiding extra calls
+ *   for body-less requests. I assume it should be resolved with fundamental
+ *   re-design of request/response cycle handling.
+ *
+ * - Internals: carefully check where locking is really required. Probably
+ *   separate locks. Check out-of-thread value reading. Currently code assumes
+ *   atomic reading of values used in other threads, which mostly true on x86,
+ *   but not OK on other arches. Probably use read/write locking to minimize
+ *   the threads interference.
+ *
+ * - figure out how to do portable variant of cork/uncork
+ *
+ * NEW-CG:
+ * - Postprocessor is unusable night-mare when doing "stream processing"
+ *   for tiny values where the application basically has to copy together
+ *   the stream back into a single compact heap value, just making the
+ *   parsing highly more complicated (see examples in Challenger)
+ *
+ * - non-stream processing variant for request bodies, give apps a
+ *   way to request the full body in one buffer; give apps a way
+ *   to request a 'large new allocation' for such buffers; give apps
+ *   a way to specify a global quota for large allocations to ensure
+ *   memory usage has a hard bound
+ *
+ * - remove request data from memory pool when response is queued
+ *   (IF no callbacks and thus data cannot be used anymore, or IF
+ *    application permits explictly per daemon) to get more space
+ *   for building response;
+ *
+ *
  * TODO:
  * - varargs in upgrade is still there and ugly (and not even used!)
  * - migrate event loop apis (get fdset, timeout, MHD_run(), etc.)
@@ -2429,7 +2519,7 @@ enum MHD_ConnectionNotificationCode
  * @param socket_context socket-specific pointer where the
  *                       client can associate some state specific
  *                       to the TCP connection; note that this is
- *                       different from the "con_cls" which is per
+ *                       different from the "req_cls" which is per
  *                       HTTP request.  The client can initialize
  *                       during #MHD_CONNECTION_NOTIFY_STARTED and
  *                       cleanup during #MHD_CONNECTION_NOTIFY_CLOSED
@@ -3303,7 +3393,7 @@ MHD_NONNULL (1);
  * @param connection original HTTP connection handle,
  *                   giving the function a last chance
  *                   to inspect the original HTTP request
- * @param con_cls last value left in `con_cls` of the `MHD_AccessHandlerCallback`
+ * @param req_cls last value left in `req_cls` of the `MHD_AccessHandlerCallback`
  * @param extra_in if we happened to have read bytes after the
  *                 HTTP header already (because the client sent
  *                 more than the HTTP header of the request before
@@ -3328,7 +3418,7 @@ MHD_NONNULL (1);
 typedef void
 (*MHD_UpgradeHandler)(void *cls,
                       struct MHD_Connection *connection,
-                      void *con_cls,
+                      void *req_cls,
                       const char *extra_in,
                       size_t extra_in_size,
                       MHD_socket sock,
@@ -3644,8 +3734,8 @@ enum MHD_ConnectionInformationType
   /**
    * Returns the client-specific pointer to a `void *` that was (possibly)
    * set during a #MHD_NotifyConnectionCallback when the socket was
-   * first accepted.  Note that this is NOT the same as the "con_cls"
-   * argument of the #MHD_AccessHandlerCallback.  The "con_cls" is
+   * first accepted.  Note that this is NOT the same as the "req_cls"
+   * argument of the #MHD_AccessHandlerCallback.  The "req_cls" is
    * fresh for each HTTP request, while the "socket_context" is fresh
    * for each socket.
    */

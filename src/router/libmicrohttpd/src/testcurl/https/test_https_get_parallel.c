@@ -1,6 +1,7 @@
 /*
   This file is part of libmicrohttpd
   Copyright (C) 2007 Christian Grothoff
+  Copyright (C) 2014-2022 Evgeny Grin (Karlson2k)
 
   libmicrohttpd is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published
@@ -20,9 +21,11 @@
 
 /**
  * @file test_https_get_parallel.c
- * @brief  Testcase for libmicrohttpd HTTPS GET operations
+ * @brief  Testcase for libmicrohttpd HTTPS GET operations with single-threaded
+ *         MHD daemon and several clients working in parallel
  * @author Sagie Amir
  * @author Christian Grothoff
+ * @author Karlson2k (Evgeny Grin)
  */
 
 #include "platform.h"
@@ -35,6 +38,7 @@
 #include <gcrypt.h>
 #endif /* MHD_HTTPS_REQUIRE_GCRYPT */
 #include "tls_test_common.h"
+#include "tls_test_keys.h"
 
 #if defined(MHD_CPU_COUNT) && (MHD_CPU_COUNT + 0) < 4
 #undef MHD_CPU_COUNT
@@ -42,8 +46,6 @@
 #if ! defined(MHD_CPU_COUNT)
 #define MHD_CPU_COUNT 4
 #endif
-
-int curl_check_version (const char *req_version);
 
 
 /**
@@ -55,11 +57,10 @@ https_transfer_thread_adapter (void *args)
 {
   static int nonnull;
   struct https_test_data *cargs = args;
-  int ret;
+  unsigned int ret;
 
-  /* time spread incoming requests */
-  usleep ((useconds_t) 10.0 * ((double) rand ()) / ((double) RAND_MAX));
-  ret = test_https_transfer (NULL, cargs->port);
+  ret = test_https_transfer (NULL, cargs->port,
+                             cargs->cipher_suite, cargs->proto_version);
   if (ret == 0)
     return NULL;
   return &nonnull;
@@ -69,21 +70,22 @@ https_transfer_thread_adapter (void *args)
 /**
  * Test non-parallel requests.
  *
- * @return: 0 upon all client requests returning '0', -1 otherwise.
+ * @return: 0 upon all client requests returning '0', 1 otherwise.
  *
  * TODO : make client_count a parameter - number of curl client threads to spawn
  */
-static int
-test_single_client (void *cls, int port)
+static unsigned int
+test_single_client (void *cls, uint16_t port, const char *cipher_suite,
+                    int curl_proto_version)
 {
   void *client_thread_ret;
   struct https_test_data client_args =
-  { NULL, port };
+  { NULL, port, cipher_suite, curl_proto_version };
   (void) cls;    /* Unused. Silent compiler warning. */
 
   client_thread_ret = https_transfer_thread_adapter (&client_args);
   if (client_thread_ret != NULL)
-    return -1;
+    return 1;
   return 0;
 }
 
@@ -91,19 +93,20 @@ test_single_client (void *cls, int port)
 /**
  * Test parallel request handling.
  *
- * @return: 0 upon all client requests returning '0', -1 otherwise.
+ * @return: 0 upon all client requests returning '0', 1 otherwise.
  *
  * TODO : make client_count a parameter - number of curl client threads to spawn
  */
-static int
-test_parallel_clients (void *cls, int port)
+static unsigned int
+test_parallel_clients (void *cls, uint16_t port, const char *cipher_suite,
+                       int curl_proto_version)
 {
   int i;
   int client_count = (MHD_CPU_COUNT - 1);
   void *client_thread_ret;
   pthread_t client_arr[client_count];
   struct https_test_data client_args =
-  { NULL, port };
+  { NULL, port, cipher_suite, curl_proto_version };
   (void) cls;    /* Unused. Silent compiler warning. */
 
   for (i = 0; i < client_count; ++i)
@@ -112,7 +115,7 @@ test_parallel_clients (void *cls, int port)
                         &https_transfer_thread_adapter, &client_args) != 0)
     {
       fprintf (stderr, "Error: failed to spawn test client threads.\n");
-      return -1;
+      return 1;
     }
   }
 
@@ -121,7 +124,7 @@ test_parallel_clients (void *cls, int port)
   {
     if ((pthread_join (client_arr[i], &client_thread_ret) != 0) ||
         (client_thread_ret != NULL))
-      return -1;
+      return 1;
   }
 
   return 0;
@@ -132,7 +135,7 @@ int
 main (int argc, char *const *argv)
 {
   unsigned int errorCount = 0;
-  int port;
+  uint16_t port;
   unsigned int iseed;
   (void) argc;   /* Unused. Silent compiler warning. */
 
@@ -159,8 +162,8 @@ main (int argc, char *const *argv)
                NULL, port,
                MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_TLS
                | MHD_USE_ERROR_LOG | MHD_USE_EPOLL,
-               MHD_OPTION_HTTPS_MEM_KEY,
-               srv_key_pem, MHD_OPTION_HTTPS_MEM_CERT,
+               NULL, CURL_SSLVERSION_DEFAULT, MHD_OPTION_HTTPS_MEM_KEY,
+               srv_self_signed_key_pem, MHD_OPTION_HTTPS_MEM_CERT,
                srv_self_signed_cert_pem, MHD_OPTION_END);
 #endif
   errorCount +=
@@ -168,8 +171,8 @@ main (int argc, char *const *argv)
                NULL, port,
                MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_TLS
                | MHD_USE_ERROR_LOG,
-               MHD_OPTION_HTTPS_MEM_KEY,
-               srv_key_pem, MHD_OPTION_HTTPS_MEM_CERT,
+               NULL, CURL_SSLVERSION_DEFAULT, MHD_OPTION_HTTPS_MEM_KEY,
+               srv_self_signed_key_pem, MHD_OPTION_HTTPS_MEM_CERT,
                srv_self_signed_cert_pem, MHD_OPTION_END);
 #ifdef EPOLL_SUPPORT
   errorCount +=
@@ -177,8 +180,8 @@ main (int argc, char *const *argv)
                &test_parallel_clients, NULL, port,
                MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_TLS
                | MHD_USE_ERROR_LOG | MHD_USE_EPOLL,
-               MHD_OPTION_HTTPS_MEM_KEY,
-               srv_key_pem, MHD_OPTION_HTTPS_MEM_CERT,
+               NULL, CURL_SSLVERSION_DEFAULT, MHD_OPTION_HTTPS_MEM_KEY,
+               srv_self_signed_key_pem, MHD_OPTION_HTTPS_MEM_CERT,
                srv_self_signed_cert_pem, MHD_OPTION_END);
 #endif
   errorCount +=
@@ -186,8 +189,8 @@ main (int argc, char *const *argv)
                &test_parallel_clients, NULL, port,
                MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_TLS
                | MHD_USE_ERROR_LOG,
-               MHD_OPTION_HTTPS_MEM_KEY,
-               srv_key_pem, MHD_OPTION_HTTPS_MEM_CERT,
+               NULL, CURL_SSLVERSION_DEFAULT, MHD_OPTION_HTTPS_MEM_KEY,
+               srv_self_signed_key_pem, MHD_OPTION_HTTPS_MEM_CERT,
                srv_self_signed_cert_pem, MHD_OPTION_END);
 
   curl_global_cleanup ();

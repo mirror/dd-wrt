@@ -1,6 +1,7 @@
 /*
      This file is part of libmicrohttpd
      Copyright (C) 2019 Christian Grothoff (and other contributing authors)
+     Copyright (C) 2019-2022 Evgeny Grin (Karlson2k)
 
      This library is free software; you can redistribute it and/or
      modify it under the terms of the GNU Lesser General Public
@@ -20,6 +21,7 @@
  * @file http_compression.c
  * @brief minimal example for how to compress HTTP response
  * @author Silvio Clecio (silvioprog)
+ * @author Karlson2k (Evgeny Grin)
  */
 
 #include "platform.h"
@@ -68,14 +70,14 @@ body_compress (void **buf,
   uLongf cbuf_size;
   int ret;
 
-  cbuf_size = compressBound (*buf_size);
+  cbuf_size = compressBound ((uLong) * buf_size);
   cbuf = malloc (cbuf_size);
   if (NULL == cbuf)
     return MHD_NO;
   ret = compress (cbuf,
                   &cbuf_size,
                   (const Bytef *) *buf,
-                  *buf_size);
+                  (uLong) * buf_size);
   if ((Z_OK != ret) ||
       (cbuf_size >= *buf_size))
   {
@@ -96,7 +98,7 @@ ahc_echo (void *cls,
           const char *url,
           const char *method,
           const char *version,
-          const char *upload_data, size_t *upload_data_size, void **ptr)
+          const char *upload_data, size_t *upload_data_size, void **req_cls)
 {
   struct MHD_Response *response;
   enum MHD_Result ret;
@@ -111,12 +113,12 @@ ahc_echo (void *cls,
 
   if (0 != strcmp (method, "GET"))
     return MHD_NO; /* unexpected method */
-  if (! *ptr)
+  if (! *req_cls)
   {
-    *ptr = (void *) 1;
+    *req_cls = (void *) 1;
     return MHD_YES;
   }
-  *ptr = NULL;
+  *req_cls = NULL;
 
   body_str = strdup (PAGE);
   if (NULL == body_str)
@@ -130,9 +132,11 @@ ahc_echo (void *cls,
       can_compress (connection))
     comp = body_compress ((void **) &body_str,
                           &body_len);
-  response = MHD_create_response_from_buffer (body_len,
-                                              body_str,
-                                              MHD_RESPMEM_MUST_FREE);
+  response =
+    MHD_create_response_from_buffer_with_free_callback (body_len,
+                                                        body_str,
+                                                        &free);
+
   if (NULL == response)
   {
     free (body_str);
@@ -163,15 +167,18 @@ int
 main (int argc, char *const *argv)
 {
   struct MHD_Daemon *d;
+  unsigned int port;
 
-  if (argc != 2)
+  if ( (argc != 2) ||
+       (1 != sscanf (argv[1], "%u", &port)) ||
+       (65535 < port) )
   {
     printf ("%s PORT\n", argv[0]);
     return 1;
   }
   d = MHD_start_daemon (MHD_USE_AUTO | MHD_USE_INTERNAL_POLLING_THREAD
                         | MHD_USE_ERROR_LOG,
-                        atoi (argv[1]), NULL, NULL,
+                        (uint16_t) port, NULL, NULL,
                         &ahc_echo, NULL,
                         MHD_OPTION_END);
   if (NULL == d)

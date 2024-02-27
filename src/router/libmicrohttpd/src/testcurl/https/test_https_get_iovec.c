@@ -1,7 +1,7 @@
 /*
   This file is part of libmicrohttpd
   Copyright (C) 2007-2021 Christian Grothoff
-  Copyright (C) 2016-2021 Evgeny Grin
+  Copyright (C) 2016-2022 Evgeny Grin
 
   libmicrohttpd is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published
@@ -41,9 +41,10 @@
 #include <gcrypt.h>
 #endif /* MHD_HTTPS_REQUIRE_GCRYPT */
 #include "tls_test_common.h"
+#include "tls_test_keys.h"
 
 
-static int global_port;
+static uint16_t global_port;
 
 /* Use large enough pieces (>16KB) to test partially consumed
  * data as TLS doesn't take more than 16KB by a single call. */
@@ -88,7 +89,7 @@ iovec_ahc (void *cls,
            const char *version,
            const char *upload_data,
            size_t *upload_data_size,
-           void **ptr)
+           void **req_cls)
 {
   static int aptr;
   struct MHD_Response *response;
@@ -102,13 +103,13 @@ iovec_ahc (void *cls,
 
   if (0 != strcmp (method, MHD_HTTP_METHOD_GET))
     return MHD_NO;              /* unexpected method */
-  if (&aptr != *ptr)
+  if (&aptr != *req_cls)
   {
     /* do never respond on first call */
-    *ptr = &aptr;
+    *req_cls = &aptr;
     return MHD_YES;
   }
-  *ptr = NULL;                  /* reset when done */
+  *req_cls = NULL;                  /* reset when done */
 
   /* Create some test data. */
   if (NULL == (data = malloc (TESTSTR_SIZE)))
@@ -116,16 +117,17 @@ iovec_ahc (void *cls,
 
   for (j = 0; j < TESTSTR_IOVCNT; ++j)
   {
+    int *chunk;
     /* Assign chunks of memory area in the reverse order
      * to make non-continous set of data therefore
      * possible buffer overruns could be detected */
-    iov[j].iov_base = data + (((TESTSTR_IOVCNT - 1) - j)
-                              * (TESTSTR_SIZE / TESTSTR_IOVCNT
-                                 / sizeof(int)));
+    chunk = data + (((TESTSTR_IOVCNT - 1) - (unsigned int) j)
+                    * (TESTSTR_SIZE / TESTSTR_IOVCNT / sizeof(int)));
+    iov[j].iov_base = chunk;
     iov[j].iov_len = TESTSTR_SIZE / TESTSTR_IOVCNT;
 
     for (i = 0; i < (int) (TESTSTR_IOVLEN / sizeof(int)); ++i)
-      ((int *) iov[j].iov_base)[i] = i + (j * TESTSTR_IOVLEN / sizeof(int));
+      chunk[i] = i + (j * (int) (TESTSTR_IOVLEN / sizeof(int)));
   }
 
   response = MHD_create_response_from_iovec (iov,
@@ -138,12 +140,14 @@ iovec_ahc (void *cls,
 }
 
 
-static int
+static unsigned int
 test_iovec_transfer (void *cls,
-                     int port)
+                     uint16_t port,
+                     const char *cipher_suite,
+                     int proto_version)
 {
-  int len;
-  int ret = 0;
+  size_t len;
+  unsigned int ret = 0;
   struct CBC cbc;
   char url[255];
   (void) cls;    /* Unused. Silent compiler warning. */
@@ -152,32 +156,31 @@ test_iovec_transfer (void *cls,
   if (NULL == (cbc.buf = malloc (sizeof (char) * len)))
   {
     fprintf (stderr, MHD_E_MEM);
-    return -1;
+    return 1;
   }
   cbc.size = len;
   cbc.pos = 0;
 
-  if (gen_test_file_url (url,
-                         sizeof (url),
-                         port))
+  if (gen_test_uri (url,
+                    sizeof (url),
+                    port))
   {
-    ret = -1;
+    ret = 1;
     goto cleanup;
   }
 
   if (CURLE_OK !=
-      send_curl_req (url, &cbc))
+      send_curl_req (url, &cbc, cipher_suite, proto_version))
   {
-    ret = -1;
+    ret = 1;
     goto cleanup;
   }
 
-  /* compare test file & daemon response */
   if ((cbc.pos != TESTSTR_SIZE) ||
       (0 != check_read_data (cbc.buf, cbc.pos)))
   {
     fprintf (stderr, "Error: local file & received file differ.\n");
-    ret = -1;
+    ret = 1;
   }
 cleanup:
   free (cbc.buf);
@@ -186,17 +189,19 @@ cleanup:
 
 
 /* perform a HTTP GET request via SSL/TLS */
-static int
-test_secure_get (FILE *test_fd)
+static unsigned int
+test_secure_get (FILE *test_fd,
+                 const char *cipher_suite,
+                 int proto_version)
 {
-  int ret;
+  unsigned int ret;
   struct MHD_Daemon *d;
-  int port;
+  uint16_t port;
 
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
     port = 0;
   else
-    port = 3041;
+    port = 3045;
 
   d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION
                         | MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_TLS
@@ -210,7 +215,7 @@ test_secure_get (FILE *test_fd)
   if (d == NULL)
   {
     fprintf (stderr, MHD_E_SERVER_INIT);
-    return -1;
+    return 1;
   }
   if (0 == port)
   {
@@ -218,13 +223,16 @@ test_secure_get (FILE *test_fd)
     dinfo = MHD_get_daemon_info (d, MHD_DAEMON_INFO_BIND_PORT);
     if ((NULL == dinfo) || (0 == dinfo->port) )
     {
-      MHD_stop_daemon (d); return -1;
+      MHD_stop_daemon (d);
+      return 1;
     }
-    port = (int) dinfo->port;
+    port = dinfo->port;
   }
 
   ret = test_iovec_transfer (test_fd,
-                             port);
+                             port,
+                             cipher_suite,
+                             proto_version);
 
   MHD_stop_daemon (d);
   return ret;
@@ -239,7 +247,7 @@ ahc_empty (void *cls,
            const char *version,
            const char *upload_data,
            size_t *upload_data_size,
-           void **unused)
+           void **req_cls)
 {
   static int ptr;
   struct MHD_Response *response;
@@ -252,15 +260,15 @@ ahc_empty (void *cls,
   (void) upload_data;
   (void) upload_data_size; /* Unused. Silent compiler warning. */
 
-  if (0 != strcmp ("GET",
+  if (0 != strcmp (MHD_HTTP_METHOD_GET,
                    method))
     return MHD_NO;              /* unexpected method */
-  if (&ptr != *unused)
+  if (&ptr != *req_cls)
   {
-    *unused = &ptr;
+    *req_cls = &ptr;
     return MHD_YES;
   }
-  *unused = NULL;
+  *req_cls = NULL;
 
   iov.iov_base = NULL;
   iov.iov_len = 0;
@@ -293,6 +301,12 @@ curlExcessFound (CURL *c,
   const size_t str_size = strlen (excess_found);
   (void) c;      /* Unused. Silence compiler warning. */
 
+#ifdef _DEBUG
+  if ((CURLINFO_TEXT == type) ||
+      (CURLINFO_HEADER_IN == type) ||
+      (CURLINFO_HEADER_OUT == type))
+    fprintf (stderr, "%.*s", (int) size, data);
+#endif /* _DEBUG */
   if ((CURLINFO_TEXT == type)
       && (size >= str_size)
       && (0 == strncmp (excess_found, data, str_size)))
@@ -301,8 +315,8 @@ curlExcessFound (CURL *c,
 }
 
 
-static int
-testEmptyGet (int poll_flag)
+static unsigned int
+testEmptyGet (unsigned int poll_flag)
 {
   struct MHD_Daemon *d;
   CURL *c;
@@ -339,11 +353,15 @@ testEmptyGet (int poll_flag)
     {
       MHD_stop_daemon (d); return 32;
     }
-    global_port = (int) dinfo->port;
+    global_port = dinfo->port;
   }
   c = curl_easy_init ();
+#ifdef _DEBUG
+  curl_easy_setopt (c, CURLOPT_VERBOSE, 1L);
+#endif
   curl_easy_setopt (c, CURLOPT_URL, "https://127.0.0.1/");
   curl_easy_setopt (c, CURLOPT_PORT, (long) global_port);
+  curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
   curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
   curl_easy_setopt (c, CURLOPT_WRITEDATA, &cbc);
   curl_easy_setopt (c, CURLOPT_DEBUGFUNCTION, &curlExcessFound);
@@ -399,7 +417,7 @@ main (int argc, char *const *argv)
   }
 
   errorCount +=
-    test_secure_get (NULL);
+    test_secure_get (NULL, NULL, CURL_SSLVERSION_DEFAULT);
   errorCount += testEmptyGet (0);
   curl_global_cleanup ();
 

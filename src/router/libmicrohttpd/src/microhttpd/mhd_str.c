@@ -1,6 +1,6 @@
 /*
   This file is part of libmicrohttpd
-  Copyright (C) 2015, 2016 Karlson2k (Evgeny Grin)
+  Copyright (C) 2015-2024 Karlson2k (Evgeny Grin)
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -211,6 +211,308 @@ todigitvalue (char c)
 _MHD_static_inline int
 toxdigitvalue (char c)
 {
+#if ! defined(MHD_FAVOR_SMALL_CODE)
+  switch ((unsigned char) c)
+  {
+#if 0 /* Disabled to give the compiler a hint about low probability */
+  case 0x00U:    /* NUL */
+  case 0x01U:    /* SOH */
+  case 0x02U:    /* STX */
+  case 0x03U:    /* ETX */
+  case 0x04U:    /* EOT */
+  case 0x05U:    /* ENQ */
+  case 0x06U:    /* ACK */
+  case 0x07U:    /* BEL */
+  case 0x08U:    /* BS */
+  case 0x09U:    /* HT */
+  case 0x0AU:    /* LF */
+  case 0x0BU:    /* VT */
+  case 0x0CU:    /* FF */
+  case 0x0DU:    /* CR */
+  case 0x0EU:    /* SO */
+  case 0x0FU:    /* SI */
+  case 0x10U:    /* DLE */
+  case 0x11U:    /* DC1 */
+  case 0x12U:    /* DC2 */
+  case 0x13U:    /* DC3 */
+  case 0x14U:    /* DC4 */
+  case 0x15U:    /* NAK */
+  case 0x16U:    /* SYN */
+  case 0x17U:    /* ETB */
+  case 0x18U:    /* CAN */
+  case 0x19U:    /* EM */
+  case 0x1AU:    /* SUB */
+  case 0x1BU:    /* ESC */
+  case 0x1CU:    /* FS */
+  case 0x1DU:    /* GS */
+  case 0x1EU:    /* RS */
+  case 0x1FU:    /* US */
+  case 0x20U:    /* ' ' */
+  case 0x21U:    /* '!' */
+  case 0x22U:    /* '"' */
+  case 0x23U:    /* '#' */
+  case 0x24U:    /* '$' */
+  case 0x25U:    /* '%' */
+  case 0x26U:    /* '&' */
+  case 0x27U:    /* '\'' */
+  case 0x28U:    /* '(' */
+  case 0x29U:    /* ')' */
+  case 0x2AU:    /* '*' */
+  case 0x2BU:    /* '+' */
+  case 0x2CU:    /* ',' */
+  case 0x2DU:    /* '-' */
+  case 0x2EU:    /* '.' */
+  case 0x2FU:    /* '/' */
+    return -1;
+#endif
+  case 0x30U: /* '0' */
+    return 0;
+  case 0x31U: /* '1' */
+    return 1;
+  case 0x32U: /* '2' */
+    return 2;
+  case 0x33U: /* '3' */
+    return 3;
+  case 0x34U: /* '4' */
+    return 4;
+  case 0x35U: /* '5' */
+    return 5;
+  case 0x36U: /* '6' */
+    return 6;
+  case 0x37U: /* '7' */
+    return 7;
+  case 0x38U: /* '8' */
+    return 8;
+  case 0x39U: /* '9' */
+    return 9;
+#if 0         /* Disabled to give the compiler a hint about low probability */
+  case 0x3AU: /* ':' */
+  case 0x3BU: /* ';' */
+  case 0x3CU: /* '<' */
+  case 0x3DU: /* '=' */
+  case 0x3EU: /* '>' */
+  case 0x3FU: /* '?' */
+  case 0x40U: /* '@' */
+    return -1;
+#endif
+  case 0x41U: /* 'A' */
+    return 0xAU;
+  case 0x42U: /* 'B' */
+    return 0xBU;
+  case 0x43U: /* 'C' */
+    return 0xCU;
+  case 0x44U: /* 'D' */
+    return 0xDU;
+  case 0x45U: /* 'E' */
+    return 0xEU;
+  case 0x46U: /* 'F' */
+    return 0xFU;
+#if 0         /* Disabled to give the compiler a hint about low probability */
+  case 0x47U: /* 'G' */
+  case 0x48U: /* 'H' */
+  case 0x49U: /* 'I' */
+  case 0x4AU: /* 'J' */
+  case 0x4BU: /* 'K' */
+  case 0x4CU: /* 'L' */
+  case 0x4DU: /* 'M' */
+  case 0x4EU: /* 'N' */
+  case 0x4FU: /* 'O' */
+  case 0x50U: /* 'P' */
+  case 0x51U: /* 'Q' */
+  case 0x52U: /* 'R' */
+  case 0x53U: /* 'S' */
+  case 0x54U: /* 'T' */
+  case 0x55U: /* 'U' */
+  case 0x56U: /* 'V' */
+  case 0x57U: /* 'W' */
+  case 0x58U: /* 'X' */
+  case 0x59U: /* 'Y' */
+  case 0x5AU: /* 'Z' */
+  case 0x5BU: /* '[' */
+  case 0x5CU: /* '\' */
+  case 0x5DU: /* ']' */
+  case 0x5EU: /* '^' */
+  case 0x5FU: /* '_' */
+  case 0x60U: /* '`' */
+    return -1;
+#endif
+  case 0x61U: /* 'a' */
+    return 0xAU;
+  case 0x62U: /* 'b' */
+    return 0xBU;
+  case 0x63U: /* 'c' */
+    return 0xCU;
+  case 0x64U: /* 'd' */
+    return 0xDU;
+  case 0x65U: /* 'e' */
+    return 0xEU;
+  case 0x66U: /* 'f' */
+    return 0xFU;
+#if 0         /* Disabled to give the compiler a hint about low probability */
+  case 0x67U: /* 'g' */
+  case 0x68U: /* 'h' */
+  case 0x69U: /* 'i' */
+  case 0x6AU: /* 'j' */
+  case 0x6BU: /* 'k' */
+  case 0x6CU: /* 'l' */
+  case 0x6DU: /* 'm' */
+  case 0x6EU: /* 'n' */
+  case 0x6FU: /* 'o' */
+  case 0x70U: /* 'p' */
+  case 0x71U: /* 'q' */
+  case 0x72U: /* 'r' */
+  case 0x73U: /* 's' */
+  case 0x74U: /* 't' */
+  case 0x75U: /* 'u' */
+  case 0x76U: /* 'v' */
+  case 0x77U: /* 'w' */
+  case 0x78U: /* 'x' */
+  case 0x79U: /* 'y' */
+  case 0x7AU: /* 'z' */
+  case 0x7BU: /* '{' */
+  case 0x7CU: /* '|' */
+  case 0x7DU: /* '}' */
+  case 0x7EU: /* '~' */
+  case 0x7FU: /* DEL */
+  case 0x80U: /* EXT */
+  case 0x81U: /* EXT */
+  case 0x82U: /* EXT */
+  case 0x83U: /* EXT */
+  case 0x84U: /* EXT */
+  case 0x85U: /* EXT */
+  case 0x86U: /* EXT */
+  case 0x87U: /* EXT */
+  case 0x88U: /* EXT */
+  case 0x89U: /* EXT */
+  case 0x8AU: /* EXT */
+  case 0x8BU: /* EXT */
+  case 0x8CU: /* EXT */
+  case 0x8DU: /* EXT */
+  case 0x8EU: /* EXT */
+  case 0x8FU: /* EXT */
+  case 0x90U: /* EXT */
+  case 0x91U: /* EXT */
+  case 0x92U: /* EXT */
+  case 0x93U: /* EXT */
+  case 0x94U: /* EXT */
+  case 0x95U: /* EXT */
+  case 0x96U: /* EXT */
+  case 0x97U: /* EXT */
+  case 0x98U: /* EXT */
+  case 0x99U: /* EXT */
+  case 0x9AU: /* EXT */
+  case 0x9BU: /* EXT */
+  case 0x9CU: /* EXT */
+  case 0x9DU: /* EXT */
+  case 0x9EU: /* EXT */
+  case 0x9FU: /* EXT */
+  case 0xA0U: /* EXT */
+  case 0xA1U: /* EXT */
+  case 0xA2U: /* EXT */
+  case 0xA3U: /* EXT */
+  case 0xA4U: /* EXT */
+  case 0xA5U: /* EXT */
+  case 0xA6U: /* EXT */
+  case 0xA7U: /* EXT */
+  case 0xA8U: /* EXT */
+  case 0xA9U: /* EXT */
+  case 0xAAU: /* EXT */
+  case 0xABU: /* EXT */
+  case 0xACU: /* EXT */
+  case 0xADU: /* EXT */
+  case 0xAEU: /* EXT */
+  case 0xAFU: /* EXT */
+  case 0xB0U: /* EXT */
+  case 0xB1U: /* EXT */
+  case 0xB2U: /* EXT */
+  case 0xB3U: /* EXT */
+  case 0xB4U: /* EXT */
+  case 0xB5U: /* EXT */
+  case 0xB6U: /* EXT */
+  case 0xB7U: /* EXT */
+  case 0xB8U: /* EXT */
+  case 0xB9U: /* EXT */
+  case 0xBAU: /* EXT */
+  case 0xBBU: /* EXT */
+  case 0xBCU: /* EXT */
+  case 0xBDU: /* EXT */
+  case 0xBEU: /* EXT */
+  case 0xBFU: /* EXT */
+  case 0xC0U: /* EXT */
+  case 0xC1U: /* EXT */
+  case 0xC2U: /* EXT */
+  case 0xC3U: /* EXT */
+  case 0xC4U: /* EXT */
+  case 0xC5U: /* EXT */
+  case 0xC6U: /* EXT */
+  case 0xC7U: /* EXT */
+  case 0xC8U: /* EXT */
+  case 0xC9U: /* EXT */
+  case 0xCAU: /* EXT */
+  case 0xCBU: /* EXT */
+  case 0xCCU: /* EXT */
+  case 0xCDU: /* EXT */
+  case 0xCEU: /* EXT */
+  case 0xCFU: /* EXT */
+  case 0xD0U: /* EXT */
+  case 0xD1U: /* EXT */
+  case 0xD2U: /* EXT */
+  case 0xD3U: /* EXT */
+  case 0xD4U: /* EXT */
+  case 0xD5U: /* EXT */
+  case 0xD6U: /* EXT */
+  case 0xD7U: /* EXT */
+  case 0xD8U: /* EXT */
+  case 0xD9U: /* EXT */
+  case 0xDAU: /* EXT */
+  case 0xDBU: /* EXT */
+  case 0xDCU: /* EXT */
+  case 0xDDU: /* EXT */
+  case 0xDEU: /* EXT */
+  case 0xDFU: /* EXT */
+  case 0xE0U: /* EXT */
+  case 0xE1U: /* EXT */
+  case 0xE2U: /* EXT */
+  case 0xE3U: /* EXT */
+  case 0xE4U: /* EXT */
+  case 0xE5U: /* EXT */
+  case 0xE6U: /* EXT */
+  case 0xE7U: /* EXT */
+  case 0xE8U: /* EXT */
+  case 0xE9U: /* EXT */
+  case 0xEAU: /* EXT */
+  case 0xEBU: /* EXT */
+  case 0xECU: /* EXT */
+  case 0xEDU: /* EXT */
+  case 0xEEU: /* EXT */
+  case 0xEFU: /* EXT */
+  case 0xF0U: /* EXT */
+  case 0xF1U: /* EXT */
+  case 0xF2U: /* EXT */
+  case 0xF3U: /* EXT */
+  case 0xF4U: /* EXT */
+  case 0xF5U: /* EXT */
+  case 0xF6U: /* EXT */
+  case 0xF7U: /* EXT */
+  case 0xF8U: /* EXT */
+  case 0xF9U: /* EXT */
+  case 0xFAU: /* EXT */
+  case 0xFBU: /* EXT */
+  case 0xFCU: /* EXT */
+  case 0xFDU: /* EXT */
+  case 0xFEU: /* EXT */
+  case 0xFFU: /* EXT */
+    return -1;
+  default:
+    mhd_assert (0);
+    break;  /* Should be unreachable */
+#else
+  default:
+    break;
+#endif
+  }
+  return -1;
+#else  /* MHD_FAVOR_SMALL_CODE */
   if (isasciidigit (c))
     return (unsigned char) (c - '0');
   if ( (c >= 'A') && (c <= 'F') )
@@ -219,6 +521,7 @@ toxdigitvalue (char c)
     return (unsigned char) (c - 'a' + 10);
 
   return -1;
+#endif /* MHD_FAVOR_SMALL_CODE */
 }
 
 
@@ -226,7 +529,7 @@ toxdigitvalue (char c)
  * Caseless compare two characters.
  *
  * @param c1 the first char to compare
- * @param c1 the second char to compare
+ * @param c2 the second char to compare
  * @return boolean 'true' if chars are caseless equal, false otherwise
  */
 _MHD_static_inline bool
@@ -356,7 +659,7 @@ charsequalcaseless (const char c1, const char c2)
  * Caseless compare two characters.
  *
  * @param c1 the first char to compare
- * @param c1 the second char to compare
+ * @param c2 the second char to compare
  * @return boolean 'true' if chars are caseless equal, false otherwise
  */
 #define charsequalcaseless(c1, c2) \
@@ -434,12 +737,13 @@ MHD_str_equal_caseless_n_ (const char *const str1,
 
 /**
  * Check two string for equality, ignoring case of US-ASCII letters and
- * checking exactly @a len characters.
- * Compares exactly @a len characters, including binary zero characters.
+ * checking not more than @a len bytes.
+ * Compares not more first than @a len bytes, including binary zero characters.
+ * Comparison stops at first unmatched byte.
  * @param str1 first string to compare
  * @param str2 second string to compare
  * @param len number of characters to compare
- * @return non-zero if two strings are equal, zero otherwise.
+ * @return non-zero if @a len bytes are equal, zero otherwise.
  */
 bool
 MHD_str_equal_caseless_bin_n_ (const char *const str1,
@@ -568,6 +872,12 @@ MHD_str_remove_token_caseless_ (const char *str,
   mhd_assert (NULL == memchr (token, ',', token_len));
   mhd_assert (0 <= *buf_size);
 
+  if (SSIZE_MAX <= ((str_len / 2) * 3 + 3))
+  {
+    /* The return value may overflow, refuse */
+    *buf_size = (ssize_t) -1;
+    return false;
+  }
   s1 = str;
   s2 = buf;
   token_removed = false;
@@ -627,7 +937,7 @@ MHD_str_remove_token_caseless_ (const char *str,
     copy_size = (size_t) (s1 - cur_token);
     if (buf == s2)
     { /* The first token to copy to the output */
-      if (buf + *buf_size < s2 + copy_size)
+      if ((size_t) *buf_size < copy_size)
       { /* Not enough space in the output buffer */
         *buf_size = (ssize_t) -1;
         return false;
@@ -635,7 +945,8 @@ MHD_str_remove_token_caseless_ (const char *str,
     }
     else
     { /* Some token was already copied to the output buffer */
-      if (buf + *buf_size < s2 + copy_size + 2)
+      mhd_assert (s2 > buf);
+      if ((size_t) *buf_size < ((size_t) (s2 - buf)) + copy_size + 2)
       { /* Not enough space in the output buffer */
         *buf_size = (ssize_t) -1;
         return false;
@@ -659,7 +970,8 @@ MHD_str_remove_token_caseless_ (const char *str,
       while ( ((size_t) (s1 - str) < str_len) &&
               (',' != *s1) && (' ' != *s1) && ('\t' != *s1) )
       {
-        if (buf + *buf_size <= s2) /* '<= s2' equals '< s2 + 1' */
+        mhd_assert (s2 >= buf);
+        if ((size_t) *buf_size <= (size_t) (s2 - buf)) /* '<= s2' equals '< s2 + 1' */
         { /* Not enough space in the output buffer */
           *buf_size = (ssize_t) -1;
           return false;
@@ -678,7 +990,8 @@ MHD_str_remove_token_caseless_ (const char *str,
        * the input string */
       if (((size_t) (s1 - str) < str_len) && (',' != *s1))
       { /* Not the end of the current token */
-        if (buf + *buf_size <= s2) /* '<= s2' equals '< s2 + 1' */
+        mhd_assert (s2 >= buf);
+        if ((size_t) *buf_size <= (size_t) (s2 - buf)) /* '<= s2' equals '< s2 + 1' */
         { /* Not enough space in the output buffer */
           *buf_size = (ssize_t) -1;
           return false;
@@ -760,7 +1073,7 @@ MHD_str_remove_tokens_caseless_ (char *str,
       while (pt < tokens_len && (' ' == t[pt] || '\t' == t[pt]))
         pt++;
       /* Found end of the token string or non-whitespace char */
-    } while(pt < tokens_len && ',' != t[pt]);
+    } while (pt < tokens_len && ',' != t[pt]);
 
     /* 'tkn' is the input token with 'tkn_len' chars */
     mhd_assert (0 != tkn_len);
@@ -899,12 +1212,12 @@ MHD_str_to_uint64_ (const char *str,
       return 0;
 
     res *= 10;
-    res += digit;
+    res += (unsigned int) digit;
     str++;
   } while (isasciidigit (*str));
 
   *out_val = res;
-  return str - start;
+  return (size_t) (str - start);
 }
 
 
@@ -944,7 +1257,7 @@ MHD_str_to_uint64_n_ (const char *str,
       return 0;
 
     res *= 10;
-    res += digit;
+    res += (unsigned int) digit;
     i++;
   } while ( (i < maxlen) &&
             isasciidigit (str[i]) );
@@ -980,11 +1293,11 @@ MHD_strx_to_uint32_ (const char *str,
   while (digit >= 0)
   {
     if ( (res < (UINT32_MAX / 16)) ||
-         ((res == (UINT32_MAX / 16)) && ( (uint32_t) digit <= (UINT32_MAX
-                                                               % 16)) ) )
+         ((res == (UINT32_MAX / 16)) &&
+          ( (uint32_t) digit <= (UINT32_MAX % 16)) ) )
     {
       res *= 16;
-      res += digit;
+      res += (unsigned int) digit;
     }
     else
       return 0;
@@ -994,7 +1307,7 @@ MHD_strx_to_uint32_ (const char *str,
 
   if (str - start > 0)
     *out_val = res;
-  return str - start;
+  return (size_t) (str - start);
 }
 
 
@@ -1027,12 +1340,12 @@ MHD_strx_to_uint32_n_ (const char *str,
   while (i < maxlen && (digit = toxdigitvalue (str[i])) >= 0)
   {
     if ( (res > (UINT32_MAX / 16)) ||
-         ((res == (UINT32_MAX / 16)) && ( (uint32_t) digit > (UINT32_MAX
-                                                              % 16)) ) )
+         ((res == (UINT32_MAX / 16)) &&
+          ( (uint32_t) digit > (UINT32_MAX % 16)) ) )
       return 0;
 
     res *= 16;
-    res += digit;
+    res += (unsigned int) digit;
     i++;
   }
 
@@ -1067,11 +1380,11 @@ MHD_strx_to_uint64_ (const char *str,
   while (digit >= 0)
   {
     if ( (res < (UINT64_MAX / 16)) ||
-         ((res == (UINT64_MAX / 16)) && ( (uint64_t) digit <= (UINT64_MAX
-                                                               % 16)) ) )
+         ((res == (UINT64_MAX / 16)) &&
+          ( (uint64_t) digit <= (UINT64_MAX % 16)) ) )
     {
       res *= 16;
-      res += digit;
+      res += (unsigned int) digit;
     }
     else
       return 0;
@@ -1081,7 +1394,7 @@ MHD_strx_to_uint64_ (const char *str,
 
   if (str - start > 0)
     *out_val = res;
-  return str - start;
+  return (size_t) (str - start);
 }
 
 
@@ -1114,12 +1427,12 @@ MHD_strx_to_uint64_n_ (const char *str,
   while (i < maxlen && (digit = toxdigitvalue (str[i])) >= 0)
   {
     if ( (res > (UINT64_MAX / 16)) ||
-         ((res == (UINT64_MAX / 16)) && ( (uint64_t) digit > (UINT64_MAX
-                                                              % 16)) ) )
+         ((res == (UINT64_MAX / 16)) &&
+          ( (uint64_t) digit > (UINT64_MAX % 16)) ) )
       return 0;
 
     res *= 16;
-    res += digit;
+    res += (unsigned int) digit;
     i++;
   }
 
@@ -1146,7 +1459,7 @@ MHD_strx_to_uint64_n_ (const char *str,
  * @param base the numeric base, 10 or 16
  * @return non-zero number of characters processed on succeed,
  *         zero if no digit is found, resulting value is larger
- *         then @max_val, @val_size is not 16/32 or @a out_val is NULL
+ *         then @a max_val, @a val_size is not 4/8 or @a out_val is NULL
  */
 size_t
 MHD_str_to_uvalue_n_ (const char *str,
@@ -1158,12 +1471,8 @@ MHD_str_to_uvalue_n_ (const char *str,
 {
   size_t i;
   uint64_t res;
-  int digit;
   const uint64_t max_v_div_b = max_val / base;
   const uint64_t max_v_mod_b = max_val % base;
-  /* 'digit->value' must be function, not macro */
-  int (*const dfunc)(char) = (base == 16) ?
-                             toxdigitvalue : todigitvalue;
 
   if (! str || ! out_val ||
       ((base != 16) && (base != 10)) )
@@ -1171,14 +1480,19 @@ MHD_str_to_uvalue_n_ (const char *str,
 
   res = 0;
   i = 0;
-  while (maxlen > i && 0 <= (digit = dfunc (str[i])))
+  while (maxlen > i)
   {
+    const int digit = (base == 16) ?
+                      toxdigitvalue (str[i]) : todigitvalue (str[i]);
+
+    if (0 > digit)
+      break;
     if ( ((max_v_div_b) < res) ||
          (( (max_v_div_b) == res) && ( (max_v_mod_b) < (uint64_t) digit) ) )
       return 0;
 
     res *= base;
-    res += digit;
+    res += (unsigned int) digit;
     i++;
   }
 
@@ -1217,8 +1531,10 @@ MHD_uint32_to_strx (uint32_t val,
 
   while (o_pos < buf_size)
   {
-    buf[o_pos++] = (digit <= 9) ? ('0' + (char) digit) :
-                   ('A' + (char) digit - 10);
+    buf[o_pos++] =
+      (char) ((digit <= 9) ?
+              ('0' + (char) digit) :
+              ('A' + (char) digit - 10));
     if (0 == digit_pos)
       return o_pos;
     digit_pos--;
@@ -1254,12 +1570,12 @@ MHD_uint16_to_str (uint16_t val,
 
   while (0 != buf_size)
   {
-    *chr = (char) digit + '0';
+    *chr = (char) ((char) digit + '0');
     chr++;
     buf_size--;
     if (1 == divisor)
       return (size_t) (chr - buf);
-    val %= divisor;
+    val = (uint16_t) (val % divisor);
     divisor /= 10;
     digit = (int) (val / divisor);
     mhd_assert (digit < 10);
@@ -1295,7 +1611,7 @@ MHD_uint64_to_str (uint64_t val,
 
   while (0 != buf_size)
   {
-    *chr = (char) digit + '0';
+    *chr = (char) ((char) digit + '0');
     chr++;
     buf_size--;
     if (1 == divisor)
@@ -1330,7 +1646,7 @@ MHD_uint8_to_str_pad (uint8_t val,
   }
   else
   {
-    buf[pos++] = '0' + digit;
+    buf[pos++] = (char) ('0' + (char) digit);
     val %= 100;
     min_digits = 2;
   }
@@ -1345,18 +1661,609 @@ MHD_uint8_to_str_pad (uint8_t val,
   }
   else
   {
-    buf[pos++] = '0' + digit;
+    buf[pos++] = (char) ('0' + (char) digit);
     val %= 10;
   }
 
   if (buf_size <= pos)
     return 0;
-  buf[pos++] = '0' + val;
+  buf[pos++] = (char) ('0' + (char) val);
   return pos;
 }
 
 
+size_t
+MHD_bin_to_hex (const void *bin,
+                size_t size,
+                char *hex)
+{
+  size_t i;
+
+  for (i = 0; i < size; ++i)
+  {
+    uint8_t j;
+    const uint8_t b = ((const uint8_t *) bin)[i];
+    j = b >> 4;
+    hex[i * 2] = (char) ((j < 10) ? (j + '0') : (j - 10 + 'a'));
+    j = b & 0x0f;
+    hex[i * 2 + 1] = (char) ((j < 10) ? (j + '0') : (j - 10 + 'a'));
+  }
+  return i * 2;
+}
+
+
+size_t
+MHD_bin_to_hex_z (const void *bin,
+                  size_t size,
+                  char *hex)
+{
+  size_t res;
+
+  res = MHD_bin_to_hex (bin, size, hex);
+  hex[res] = 0;
+
+  return res;
+}
+
+
+size_t
+MHD_hex_to_bin (const char *hex,
+                size_t len,
+                void *bin)
+{
+  uint8_t *const out = (uint8_t *) bin;
+  size_t r;
+  size_t w;
+
+  if (0 == len)
+    return 0;
+  r = 0;
+  w = 0;
+  if (0 != len % 2)
+  {
+    /* Assume the first byte is encoded with single digit */
+    const int l = toxdigitvalue (hex[r++]);
+    if (0 > l)
+      return 0;
+    out[w++] = (uint8_t) ((unsigned int) l);
+  }
+  while (r < len)
+  {
+    const int h = toxdigitvalue (hex[r++]);
+    const int l = toxdigitvalue (hex[r++]);
+    if ((0 > h) || (0 > l))
+      return 0;
+    out[w++] = (uint8_t) ( ((uint8_t) (((uint8_t) ((unsigned int) h)) << 4))
+                           | ((uint8_t) ((unsigned int) l)) );
+  }
+  mhd_assert (len == r);
+  mhd_assert ((len + 1) / 2 == w);
+  return w;
+}
+
+
+size_t
+MHD_str_pct_decode_strict_n_ (const char *pct_encoded,
+                              size_t pct_encoded_len,
+                              char *decoded,
+                              size_t buf_size)
+{
+#ifdef MHD_FAVOR_SMALL_CODE
+  bool broken;
+  size_t res;
+
+  res = MHD_str_pct_decode_lenient_n_ (pct_encoded, pct_encoded_len, decoded,
+                                       buf_size, &broken);
+  if (broken)
+    return 0;
+  return res;
+#else  /* ! MHD_FAVOR_SMALL_CODE */
+  size_t r;
+  size_t w;
+  r = 0;
+  w = 0;
+
+  if (buf_size >= pct_encoded_len)
+  {
+    while (r < pct_encoded_len)
+    {
+      const char chr = pct_encoded[r];
+      if ('%' == chr)
+      {
+        if (2 > pct_encoded_len - r)
+          return 0;
+        else
+        {
+          const int h = toxdigitvalue (pct_encoded[++r]);
+          const int l = toxdigitvalue (pct_encoded[++r]);
+          unsigned char out;
+          if ((0 > h) || (0 > l))
+            return 0;
+          out =
+            (unsigned char) (((uint8_t) (((uint8_t) ((unsigned int) h)) << 4))
+                             | ((uint8_t) ((unsigned int) l)));
+          decoded[w] = (char) out;
+        }
+      }
+      else
+        decoded[w] = chr;
+      ++r;
+      ++w;
+    }
+    return w;
+  }
+
+  while (r < pct_encoded_len)
+  {
+    const char chr = pct_encoded[r];
+    if (w >= buf_size)
+      return 0;
+    if ('%' == chr)
+    {
+      if (2 > pct_encoded_len - r)
+        return 0;
+      else
+      {
+        const int h = toxdigitvalue (pct_encoded[++r]);
+        const int l = toxdigitvalue (pct_encoded[++r]);
+        unsigned char out;
+        if ((0 > h) || (0 > l))
+          return 0;
+        out =
+          (unsigned char) (((uint8_t) (((uint8_t) ((unsigned int) h)) << 4))
+                           | ((uint8_t) ((unsigned int) l)));
+        decoded[w] = (char) out;
+      }
+    }
+    else
+      decoded[w] = chr;
+    ++r;
+    ++w;
+  }
+  return w;
+#endif /* ! MHD_FAVOR_SMALL_CODE */
+}
+
+
+size_t
+MHD_str_pct_decode_lenient_n_ (const char *pct_encoded,
+                               size_t pct_encoded_len,
+                               char *decoded,
+                               size_t buf_size,
+                               bool *broken_encoding)
+{
+  size_t r;
+  size_t w;
+  r = 0;
+  w = 0;
+  if (NULL != broken_encoding)
+    *broken_encoding = false;
+#ifndef MHD_FAVOR_SMALL_CODE
+  if (buf_size >= pct_encoded_len)
+  {
+    while (r < pct_encoded_len)
+    {
+      const char chr = pct_encoded[r];
+      if ('%' == chr)
+      {
+        if (2 > pct_encoded_len - r)
+        {
+          if (NULL != broken_encoding)
+            *broken_encoding = true;
+          decoded[w] = chr; /* Copy "as is" */
+        }
+        else
+        {
+          const int h = toxdigitvalue (pct_encoded[++r]);
+          const int l = toxdigitvalue (pct_encoded[++r]);
+          unsigned char out;
+          if ((0 > h) || (0 > l))
+          {
+            r -= 2;
+            if (NULL != broken_encoding)
+              *broken_encoding = true;
+            decoded[w] = chr; /* Copy "as is" */
+          }
+          else
+          {
+            out =
+              (unsigned char) (((uint8_t) (((uint8_t) ((unsigned int) h)) << 4))
+                               | ((uint8_t) ((unsigned int) l)));
+            decoded[w] = (char) out;
+          }
+        }
+      }
+      else
+        decoded[w] = chr;
+      ++r;
+      ++w;
+    }
+    return w;
+  }
+#endif /* ! MHD_FAVOR_SMALL_CODE */
+  while (r < pct_encoded_len)
+  {
+    const char chr = pct_encoded[r];
+    if (w >= buf_size)
+      return 0;
+    if ('%' == chr)
+    {
+      if (2 > pct_encoded_len - r)
+      {
+        if (NULL != broken_encoding)
+          *broken_encoding = true;
+        decoded[w] = chr; /* Copy "as is" */
+      }
+      else
+      {
+        const int h = toxdigitvalue (pct_encoded[++r]);
+        const int l = toxdigitvalue (pct_encoded[++r]);
+        if ((0 > h) || (0 > l))
+        {
+          r -= 2;
+          if (NULL != broken_encoding)
+            *broken_encoding = true;
+          decoded[w] = chr; /* Copy "as is" */
+        }
+        else
+        {
+          unsigned char out;
+          out =
+            (unsigned char) (((uint8_t) (((uint8_t) ((unsigned int) h)) << 4))
+                             | ((uint8_t) ((unsigned int) l)));
+          decoded[w] = (char) out;
+        }
+      }
+    }
+    else
+      decoded[w] = chr;
+    ++r;
+    ++w;
+  }
+  return w;
+}
+
+
+size_t
+MHD_str_pct_decode_in_place_strict_ (char *str)
+{
+#ifdef MHD_FAVOR_SMALL_CODE
+  size_t res;
+  bool broken;
+
+  res = MHD_str_pct_decode_in_place_lenient_ (str, &broken);
+  if (broken)
+  {
+    res = 0;
+    str[0] = 0;
+  }
+  return res;
+#else  /* ! MHD_FAVOR_SMALL_CODE */
+  size_t r;
+  size_t w;
+  r = 0;
+  w = 0;
+
+  while (0 != str[r])
+  {
+    const char chr = str[r++];
+    if ('%' == chr)
+    {
+      const char d1 = str[r++];
+      if (0 == d1)
+        return 0;
+      else
+      {
+        const char d2 = str[r++];
+        if (0 == d2)
+          return 0;
+        else
+        {
+          const int h = toxdigitvalue (d1);
+          const int l = toxdigitvalue (d2);
+          unsigned char out;
+          if ((0 > h) || (0 > l))
+            return 0;
+          out =
+            (unsigned char) (((uint8_t) (((uint8_t) ((unsigned int) h)) << 4))
+                             | ((uint8_t) ((unsigned int) l)));
+          str[w++] = (char) out;
+        }
+      }
+    }
+    else
+      str[w++] = chr;
+  }
+  str[w] = 0;
+  return w;
+#endif /* ! MHD_FAVOR_SMALL_CODE */
+}
+
+
+size_t
+MHD_str_pct_decode_in_place_lenient_ (char *str,
+                                      bool *broken_encoding)
+{
+#ifdef MHD_FAVOR_SMALL_CODE
+  size_t len;
+  size_t res;
+
+  len = strlen (str);
+  res = MHD_str_pct_decode_lenient_n_ (str, len, str, len, broken_encoding);
+  str[res] = 0;
+
+  return res;
+#else  /* ! MHD_FAVOR_SMALL_CODE */
+  size_t r;
+  size_t w;
+  if (NULL != broken_encoding)
+    *broken_encoding = false;
+  r = 0;
+  w = 0;
+  while (0 != str[r])
+  {
+    const char chr = str[r++];
+    if ('%' == chr)
+    {
+      const char d1 = str[r++];
+      if (0 == d1)
+      {
+        if (NULL != broken_encoding)
+          *broken_encoding = true;
+        str[w++] = chr; /* Copy "as is" */
+        str[w] = 0;
+        return w;
+      }
+      else
+      {
+        const char d2 = str[r++];
+        if (0 == d2)
+        {
+          if (NULL != broken_encoding)
+            *broken_encoding = true;
+          str[w++] = chr; /* Copy "as is" */
+          str[w++] = d1; /* Copy "as is" */
+          str[w] = 0;
+          return w;
+        }
+        else
+        {
+          const int h = toxdigitvalue (d1);
+          const int l = toxdigitvalue (d2);
+          unsigned char out;
+          if ((0 > h) || (0 > l))
+          {
+            if (NULL != broken_encoding)
+              *broken_encoding = true;
+            str[w++] = chr; /* Copy "as is" */
+            str[w++] = d1;
+            str[w++] = d2;
+            continue;
+          }
+          out =
+            (unsigned char) (((uint8_t) (((uint8_t) ((unsigned int) h)) << 4))
+                             | ((uint8_t) ((unsigned int) l)));
+          str[w++] = (char) out;
+          continue;
+        }
+      }
+    }
+    str[w++] = chr;
+  }
+  str[w] = 0;
+  return w;
+#endif /* ! MHD_FAVOR_SMALL_CODE */
+}
+
+
+#ifdef DAUTH_SUPPORT
+bool
+MHD_str_equal_quoted_bin_n (const char *quoted,
+                            size_t quoted_len,
+                            const char *unquoted,
+                            size_t unquoted_len)
+{
+  size_t i;
+  size_t j;
+  if (unquoted_len < quoted_len / 2)
+    return false;
+
+  j = 0;
+  for (i = 0; quoted_len > i && unquoted_len > j; ++i, ++j)
+  {
+    if ('\\' == quoted[i])
+    {
+      i++; /* Advance to the next character */
+      if (quoted_len == i)
+        return false; /* No character after escaping backslash */
+    }
+    if (quoted[i] != unquoted[j])
+      return false; /* Different characters */
+  }
+  if ((quoted_len != i) || (unquoted_len != j))
+    return false; /* The strings have different length */
+
+  return true;
+}
+
+
+bool
+MHD_str_equal_caseless_quoted_bin_n (const char *quoted,
+                                     size_t quoted_len,
+                                     const char *unquoted,
+                                     size_t unquoted_len)
+{
+  size_t i;
+  size_t j;
+  if (unquoted_len < quoted_len / 2)
+    return false;
+
+  j = 0;
+  for (i = 0; quoted_len > i && unquoted_len > j; ++i, ++j)
+  {
+    if ('\\' == quoted[i])
+    {
+      i++; /* Advance to the next character */
+      if (quoted_len == i)
+        return false; /* No character after escaping backslash */
+    }
+    if (! charsequalcaseless (quoted[i], unquoted[j]))
+      return false; /* Different characters */
+  }
+  if ((quoted_len != i) || (unquoted_len != j))
+    return false; /* The strings have different length */
+
+  return true;
+}
+
+
+size_t
+MHD_str_unquote (const char *quoted,
+                 size_t quoted_len,
+                 char *result)
+{
+  size_t r;
+  size_t w;
+
+  r = 0;
+  w = 0;
+
+  while (quoted_len > r)
+  {
+    if ('\\' == quoted[r])
+    {
+      ++r;
+      if (quoted_len == r)
+        return 0; /* Last backslash is not followed by char to unescape */
+    }
+    result[w++] = quoted[r++];
+  }
+  return w;
+}
+
+
+#endif /* DAUTH_SUPPORT */
+
+#if defined(DAUTH_SUPPORT) || defined(BAUTH_SUPPORT)
+
+size_t
+MHD_str_quote (const char *unquoted,
+               size_t unquoted_len,
+               char *result,
+               size_t buf_size)
+{
+  size_t r;
+  size_t w;
+
+  r = 0;
+  w = 0;
+
+#ifndef MHD_FAVOR_SMALL_CODE
+  if (unquoted_len * 2 <= buf_size)
+  {
+    /* Fast loop: the output will fit the buffer with any input string content */
+    while (unquoted_len > r)
+    {
+      const char chr = unquoted[r++];
+      if (('\\' == chr) || ('\"' == chr))
+        result[w++] = '\\'; /* Escape current char */
+      result[w++] = chr;
+    }
+  }
+  else
+  {
+    if (unquoted_len > buf_size)
+      return 0; /* Quick fail: the output buffer is too small */
+#else  /* MHD_FAVOR_SMALL_CODE */
+  if (1)
+  {
+#endif /* MHD_FAVOR_SMALL_CODE */
+
+    while (unquoted_len > r)
+    {
+      if (buf_size <= w)
+        return 0; /* The output buffer is too small */
+      else
+      {
+        const char chr = unquoted[r++];
+        if (('\\' == chr) || ('\"' == chr))
+        {
+          result[w++] = '\\'; /* Escape current char */
+          if (buf_size <= w)
+            return 0; /* The output buffer is too small */
+        }
+        result[w++] = chr;
+      }
+    }
+  }
+
+  mhd_assert (w >= r);
+  mhd_assert (w <= r * 2);
+  return w;
+}
+
+
+#endif /* DAUTH_SUPPORT || BAUTH_SUPPORT */
+
 #ifdef BAUTH_SUPPORT
+
+/*
+ * MHD_BASE64_FUNC_VERSION
+ * 1 = smallest,
+ * 2 = medium,
+ * 3 = fastest
+ */
+#ifndef MHD_BASE64_FUNC_VERSION
+#ifdef MHD_FAVOR_SMALL_CODE
+#define MHD_BASE64_FUNC_VERSION 1
+#else  /* ! MHD_FAVOR_SMALL_CODE */
+#define MHD_BASE64_FUNC_VERSION 3
+#endif /* ! MHD_FAVOR_SMALL_CODE */
+#endif /* ! MHD_BASE64_FUNC_VERSION */
+
+#if MHD_BASE64_FUNC_VERSION < 1 || MHD_BASE64_FUNC_VERSION > 3
+#error Wrong MHD_BASE64_FUNC_VERSION value
+#endif /* MHD_BASE64_FUNC_VERSION < 1 || MHD_BASE64_FUNC_VERSION > 3 */
+
+#if MHD_BASE64_FUNC_VERSION == 3
+#define MHD_base64_map_type_ int
+#else  /* MHD_BASE64_FUNC_VERSION < 3 */
+#define MHD_base64_map_type_ int8_t
+#endif /* MHD_BASE64_FUNC_VERSION < 3 */
+
+#if MHD_BASE64_FUNC_VERSION == 1
+static MHD_base64_map_type_
+base64_char_to_value_ (uint8_t c)
+{
+  if ('Z' >= c)
+  {
+    if ('A' <= c)
+      return (MHD_base64_map_type_) ((c - 'A') + 0);
+    if ('0' <= c)
+    {
+      if ('9' >= c)
+        return (MHD_base64_map_type_) ((c - '0') + 52);
+      if ('=' == c)
+        return -2;
+      return -1;
+    }
+    if ('+' == c)
+      return 62;
+    if ('/' == c)
+      return 63;
+    return -1;
+  }
+  if (('z' >= c) && ('a' <= c))
+    return (MHD_base64_map_type_) ((c - 'a') + 26);
+  return -1;
+}
+
+
+#endif /* MHD_BASE64_FUNC_VERSION == 1 */
+
+
+MHD_DATA_TRUNCATION_RUNTIME_CHECK_DISABLE_
+
 
 size_t
 MHD_base64_to_bin_n (const char *base64,
@@ -1364,23 +2271,74 @@ MHD_base64_to_bin_n (const char *base64,
                      void *bin,
                      size_t bin_size)
 {
-#ifndef MHD_FAVOR_SMALL_CODE
-#define map_type int
-#else  /* MHD_FAVOR_SMALL_CODE */
-#define map_type int8_t
-#endif /* MHD_FAVOR_SMALL_CODE */
-  static const map_type map[] = {
+#if MHD_BASE64_FUNC_VERSION >= 2
+  static const MHD_base64_map_type_ map[] = {
     /* -1 = invalid char, -2 = padding
-     0,  1,  2,  3,  4,  5,  6,  7,  8,  9,  A,  B,  C,  D,  E,  F */
-    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,  /* 00..0F */
-    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,  /* 10..1F */
-    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 62, -1, -1, -1, 63,  /* 20..2F */
-    52, 53, 54, 55, 56, 57, 58, 59, 60, 61, -1, -1, -1, -2, -1, -1,  /* 30..3F */
-    -1,  0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14,  /* 40..4F */
-    15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, -1, -1, -1, -1, -1,  /* 50..5F */
-    -1, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40,  /* 60..6F */
-    41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, -1, -1, -1, -1, -1   /* 70..7F */
-#ifndef MHD_FAVOR_SMALL_CODE
+    0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+    NUL,  SOH,  STX,  ETX,  EOT,  ENQ,  ACK,  BEL,  */
+    -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,
+    /*
+    0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F,
+    BS,   HT,   LF,   VT,   FF,   CR,   SO,   SI,   */
+    -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,
+    /*
+    0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
+    DLE,  DC1,  DC2,  DC3,  DC4,  NAK,  SYN,  ETB,  */
+    -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,
+    /*
+    0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F,
+    CAN,  EM,   SUB,  ESC,  FS,   GS,   RS,   US,   */
+    -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,
+    /*
+    0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27,
+    ' ',  '!',  '"',  '#',  '$',  '%',  '&',  '\'', */
+    -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,
+    /*
+    0x28, 0x29, 0x2A, 0x2B, 0x2C, 0x2D, 0x2E, 0x2F,
+    '(',  ')',  '*',  '+',  ',',  '-',  '.',  '/',  */
+    -1,   -1,   -1,   62,   -1,   -1,   -1,   63,
+    /*
+    0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37,
+    '0',  '1',  '2',  '3',  '4',  '5',  '6',  '7',  */
+    52,   53,   54,   55,   56,   57,   58,   59,
+    /*
+    0x38, 0x39, 0x3A, 0x3B, 0x3C, 0x3D, 0x3E, 0x3F,
+    '8',  '9',  ':',  ';',  '<',  '=',  '>',  '?',  */
+    60,   61,   -1,   -1,   -1,   -2,   -1,   -1,
+    /*
+    0x40, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47,
+    '@',  'A',  'B',  'C',  'D',  'E',  'F',  'G',  */
+    -1,    0,    1,    2,    3,    4,    5,    6,
+    /*
+    0x48, 0x49, 0x4A, 0x4B, 0x4C, 0x4D, 0x4E, 0x4F,
+    'H',  'I',  'J',  'K',  'L',  'M',  'N',  'O',  */
+    7,     8,    9,   10,   11,   12,   13,   14,
+    /*
+    0x50, 0x51, 0x52, 0x53, 0x54, 0x55, 0x56, 0x57,
+    'P',  'Q',  'R',  'S',  'T',  'U',  'V',  'W',  */
+    15,   16,   17,   18,   19,   20,   21,   22,
+    /*
+     0x58, 0x59, 0x5A, 0x5B, 0x5C, 0x5D, 0x5E, 0x5F,
+    'X',  'Y',  'Z',  '[',  '\',  ']',  '^',  '_',  */
+    23,   24,   25,   -1,   -1,   -1,   -1,   -1,
+    /*
+    0x60, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66, 0x67,
+    '`',  'a',  'b',  'c',  'd',  'e',  'f',  'g',  */
+    -1,   26,   27,   28,   29,   30,   31,   32,
+    /*
+    0x68, 0x69, 0x6A, 0x6B, 0x6C, 0x6D, 0x6E, 0x6F,
+    'h',  'i',  'j',  'k',  'l',  'm',  'n',  'o',  */
+    33,   34,   35,   36,   37,   38,   39,   40,
+    /*
+    0x70, 0x71, 0x72, 0x73, 0x74, 0x75, 0x76, 0x77,
+    'p',  'q',  'r',  's',  't',  'u',  'v',  'w',  */
+    41,   42,   43,   44,   45,   46,   47,   48,
+    /*
+    0x78, 0x79, 0x7A, 0x7B, 0x7C, 0x7D, 0x7E, 0x7F,
+    'x',  'y',  'z',  '{',  '|',  '}',  '~',  DEL,  */
+    49,   50,   51,   -1,   -1,   -1,   -1,   -1
+
+#if MHD_BASE64_FUNC_VERSION == 3
     ,
     -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,  /* 80..8F */
     -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,  /* 90..9F */
@@ -1390,8 +2348,10 @@ MHD_base64_to_bin_n (const char *base64,
     -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,  /* D0..DF */
     -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,  /* E0..EF */
     -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,  /* F0..FF */
-#endif /* ! MHD_FAVOR_SMALL_CODE */
+#endif /* ! MHD_BASE64_FUNC_VERSION == 3 */
   };
+#define base64_char_to_value_(c) map[(c)]
+#endif /* MHD_BASE64_FUNC_VERSION >= 2 */
   const uint8_t *const in = (const uint8_t *) base64;
   uint8_t *const out = (uint8_t *) bin;
   size_t i;
@@ -1406,38 +2366,42 @@ MHD_base64_to_bin_n (const char *base64,
   j = 0;
   for (i = 0; i < (base64_len - 4); i += 4)
   {
-#ifdef MHD_FAVOR_SMALL_CODE
+#if MHD_BASE64_FUNC_VERSION == 2
     if (0 != (0x80 & (in[i] | in[i + 1] | in[i + 2] | in[i + 3])))
       return 0;
-#endif /* MHD_FAVOR_SMALL_CODE */
+#endif /* MHD_BASE64_FUNC_VERSION == 2 */
     if (1)
     {
-      const map_type v1 = map[in[i + 0]];
-      const map_type v2 = map[in[i + 1]];
-      const map_type v3 = map[in[i + 2]];
-      const map_type v4 = map[in[i + 3]];
+      const MHD_base64_map_type_ v1 = base64_char_to_value_ (in[i + 0]);
+      const MHD_base64_map_type_ v2 = base64_char_to_value_ (in[i + 1]);
+      const MHD_base64_map_type_ v3 = base64_char_to_value_ (in[i + 2]);
+      const MHD_base64_map_type_ v4 = base64_char_to_value_ (in[i + 3]);
       if ((0 > v1) || (0 > v2) || (0 > v3) || (0 > v4))
         return 0;
-      out[j + 0] = (uint8_t) ((((uint8_t) v1) << 2) | (((uint8_t) v2) >> 4));
-      out[j + 1] = (uint8_t) ((((uint8_t) v2) << 4) | (((uint8_t) v3) >> 2));
-      out[j + 2] = (uint8_t) ((((uint8_t) v3) << 6) | (((uint8_t) v4)));
+      out[j + 0] = (uint8_t) (((uint8_t) (((uint8_t) v1) << 2))
+                              | ((uint8_t) (((uint8_t) v2) >> 4)));
+      out[j + 1] = (uint8_t) (((uint8_t) (((uint8_t) v2) << 4))
+                              | ((uint8_t) (((uint8_t) v3) >> 2)));
+      out[j + 2] = (uint8_t) (((uint8_t) (((uint8_t) v3) << 6))
+                              | ((uint8_t) v4));
     }
     j += 3;
   }
-#ifdef MHD_FAVOR_SMALL_CODE
+#if MHD_BASE64_FUNC_VERSION == 2
   if (0 != (0x80 & (in[i] | in[i + 1] | in[i + 2] | in[i + 3])))
     return 0;
-#endif /* MHD_FAVOR_SMALL_CODE */
+#endif /* MHD_BASE64_FUNC_VERSION == 2 */
   if (1)
   { /* The last four chars block */
-    const map_type v1 = map[in[i + 0]];
-    const map_type v2 = map[in[i + 1]];
-    const map_type v3 = map[in[i + 2]];
-    const map_type v4 = map[in[i + 3]];
+    const MHD_base64_map_type_ v1 = base64_char_to_value_ (in[i + 0]);
+    const MHD_base64_map_type_ v2 = base64_char_to_value_ (in[i + 1]);
+    const MHD_base64_map_type_ v3 = base64_char_to_value_ (in[i + 2]);
+    const MHD_base64_map_type_ v4 = base64_char_to_value_ (in[i + 3]);
     if ((0 > v1) || (0 > v2))
       return 0; /* Invalid char or padding at first two positions */
     mhd_assert (j < bin_size);
-    out[j++] = (uint8_t) ((((uint8_t) v1) << 2) | (((uint8_t) v2) >> 4));
+    out[j++] = (uint8_t) (((uint8_t) (((uint8_t) v1) << 2))
+                          | ((uint8_t) (((uint8_t) v2) >> 4)));
     if (0 > v3)
     { /* Third char is either padding or invalid */
       if ((-2 != v3) || (-2 != v4))
@@ -1448,7 +2412,8 @@ MHD_base64_to_bin_n (const char *base64,
     }
     if (j >= bin_size)
       return 0; /* Not enough space */
-    out[j++] = (uint8_t) ((((uint8_t) v2) << 4) | (((uint8_t) v3) >> 2));
+    out[j++] = (uint8_t) (((uint8_t) (((uint8_t) v2) << 4))
+                          | ((uint8_t) (((uint8_t) v3) >> 2)));
     if (0 > v4)
     { /* Fourth char is either padding or invalid */
       if (-2 != v4)
@@ -1459,11 +2424,19 @@ MHD_base64_to_bin_n (const char *base64,
     }
     if (j >= bin_size)
       return 0; /* Not enough space */
-    out[j++] = (uint8_t) ((((uint8_t) v3) << 6) | (((uint8_t) v4)));
+    out[j++] = (uint8_t) (((uint8_t) (((uint8_t) v3) << 6))
+                          | ((uint8_t) v4));
   }
   return j;
-#undef map_type
+#if MHD_BASE64_FUNC_VERSION >= 2
+#undef base64_char_to_value_
+#endif /* MHD_BASE64_FUNC_VERSION >= 2 */
 }
 
+
+MHD_DATA_TRUNCATION_RUNTIME_CHECK_RESTORE_
+
+
+#undef MHD_base64_map_type_
 
 #endif /* BAUTH_SUPPORT */

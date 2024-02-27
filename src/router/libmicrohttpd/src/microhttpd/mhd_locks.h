@@ -1,6 +1,6 @@
 /*
   This file is part of libmicrohttpd
-  Copyright (C) 2016 Karlson2k (Evgeny Grin)
+  Copyright (C) 2016-2022 Karlson2k (Evgeny Grin)
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -62,10 +62,11 @@
 #    include <stdlib.h>
 #  endif /* HAVE_STDLIB_H */
 /* Simple implementation of MHD_PANIC, to be used outside lib */
-#  define MHD_PANIC(msg) do { fprintf (stderr,           \
-                                       "Abnormal termination at %d line in file %s: %s\n", \
-                                       (int) __LINE__, __FILE__, msg); abort (); \
-} while (0)
+#  define MHD_PANIC(msg) \
+  do { fprintf (stderr,           \
+       "Abnormal termination at %d line in file %s: %s\n", \
+       (int) __LINE__, __FILE__, msg); abort (); \
+  } while (0)
 #endif /* ! MHD_PANIC */
 
 #if defined(MHD_PTHREAD_MUTEX_)
@@ -87,8 +88,8 @@ typedef CRITICAL_SECTION MHD_mutex_;
  * @param pmutex pointer to mutex
  * @return nonzero on success, zero otherwise
  */
-#define MHD_mutex_init_(pmutex) (InitializeCriticalSectionAndSpinCount ( \
-                                   (pmutex),16))
+#define MHD_mutex_init_(pmutex) \
+  (InitializeCriticalSectionAndSpinCount ((pmutex),16))
 #endif
 
 #if defined(MHD_PTHREAD_MUTEX_)
@@ -96,8 +97,8 @@ typedef CRITICAL_SECTION MHD_mutex_;
 /**
  *  Define static mutex and statically initialise it.
  */
-#    define MHD_MUTEX_STATIC_DEFN_INIT_(m) static MHD_mutex_ m = \
-  PTHREAD_MUTEX_INITIALIZER
+#    define MHD_MUTEX_STATIC_DEFN_INIT_(m) \
+  static MHD_mutex_ m = PTHREAD_MUTEX_INITIALIZER
 #  endif /* PTHREAD_MUTEX_INITIALIZER */
 #endif
 
@@ -125,7 +126,7 @@ typedef CRITICAL_SECTION MHD_mutex_;
 #define MHD_mutex_destroy_chk_(pmutex) do {       \
     if (! MHD_mutex_destroy_ (pmutex))              \
       MHD_PANIC (_ ("Failed to destroy mutex.\n")); \
-} while (0)
+  } while (0)
 
 
 #if defined(MHD_PTHREAD_MUTEX_)

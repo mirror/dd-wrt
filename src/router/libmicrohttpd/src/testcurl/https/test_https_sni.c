@@ -1,6 +1,7 @@
 /*
   This file is part of libmicrohttpd
   Copyright (C) 2013, 2016 Christian Grothoff
+  Copyright (C) 2016-2022 Evgeny Grin (Karlson2k)
 
   libmicrohttpd is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published
@@ -22,6 +23,7 @@
  * @file test_https_sni.c
  * @brief  Testcase for libmicrohttpd HTTPS with SNI operations
  * @author Christian Grothoff
+ * @author Karlson2k (Evgeny Grin)
  */
 #include "platform.h"
 #include "microhttpd.h"
@@ -180,7 +182,7 @@ sni_callback (gnutls_session_t session,
 
 /* perform a HTTP GET request via SSL/TLS */
 static int
-do_get (const char *url, int port)
+do_get (const char *url, uint16_t port)
 {
   CURL *c;
   struct CBC cbc;
@@ -199,25 +201,25 @@ do_get (const char *url, int port)
   cbc.pos = 0;
 
   c = curl_easy_init ();
-#if DEBUG_HTTPS_TEST
+#ifdef _DEBUG
   curl_easy_setopt (c, CURLOPT_VERBOSE, 1L);
 #endif
   curl_easy_setopt (c, CURLOPT_URL, url);
   curl_easy_setopt (c, CURLOPT_PORT, (long) port);
-  curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0);
+  curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
   curl_easy_setopt (c, CURLOPT_TIMEOUT, 10L);
   curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT, 10L);
   curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
-  curl_easy_setopt (c, CURLOPT_FILE, &cbc);
-  curl_easy_setopt (c, CURLOPT_CAINFO, ABS_SRCDIR "/test-ca.crt");
+  curl_easy_setopt (c, CURLOPT_WRITEDATA, &cbc);
+  curl_easy_setopt (c, CURLOPT_CAINFO, SRCDIR "/test-ca.crt");
 
   /* perform peer authentication */
   /* TODO merge into send_curl_req */
   curl_easy_setopt (c, CURLOPT_SSL_VERIFYPEER, 0L);
   curl_easy_setopt (c, CURLOPT_SSL_VERIFYHOST, 2L);
-  sprintf (buf, "mhdhost1:%d:127.0.0.1", port);
+  sprintf (buf, "mhdhost1:%u:127.0.0.1", (unsigned int) port);
   dns_info = curl_slist_append (NULL, buf);
-  sprintf (buf, "mhdhost2:%d:127.0.0.1", port);
+  sprintf (buf, "mhdhost2:%u:127.0.0.1", (unsigned int) port);
   dns_info = curl_slist_append (dns_info, buf);
   curl_easy_setopt (c, CURLOPT_RESOLVE, dns_info);
   curl_easy_setopt (c, CURLOPT_FAILONERROR, 1L);
@@ -233,7 +235,7 @@ do_get (const char *url, int port)
     curl_easy_cleanup (c);
     free (cbc.buf);
     curl_slist_free_all (dns_info);
-    return errornum;
+    return -1;
   }
 
   curl_easy_cleanup (c);
@@ -255,13 +257,14 @@ main (int argc, char *const *argv)
 {
   unsigned int error_count = 0;
   struct MHD_Daemon *d;
-  int port;
+  uint16_t port;
+  const char *tls_backend;
   (void) argc;   /* Unused. Silent compiler warning. */
 
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
     port = 0;
   else
-    port = 3060;
+    port = 3065;
 
 #ifdef MHD_HTTPS_REQUIRE_GCRYPT
   gcry_control (GCRYCTL_ENABLE_QUICK_RANDOM, 0);
@@ -271,17 +274,26 @@ main (int argc, char *const *argv)
 #endif /* MHD_HTTPS_REQUIRE_GCRYPT */
   if (! testsuite_curl_global_init ())
     return 99;
-  if (NULL == curl_version_info (CURLVERSION_NOW)->ssl_version)
+  tls_backend = curl_version_info (CURLVERSION_NOW)->ssl_version;
+  if (NULL == tls_backend)
   {
     fprintf (stderr, "Curl does not support SSL.  Cannot run the test.\n");
     curl_global_cleanup ();
     return 77;
   }
+  if (! curl_tls_is_gnutls () && ! curl_tls_is_openssl ())
+  {
+    fprintf (stderr, "This test is reliable only with libcurl with GnuTLS or "
+             "OpenSSL backends.\nSkipping the test as libcurl has '%s' "
+             "backend.\n", tls_backend);
+    curl_global_cleanup ();
+    return 77;
+  }
 
-  load_keys ("mhdhost1", ABS_SRCDIR "/mhdhost1.crt",
-             ABS_SRCDIR "/mhdhost1.key");
-  load_keys ("mhdhost2", ABS_SRCDIR "/mhdhost2.crt",
-             ABS_SRCDIR "/mhdhost2.key");
+  load_keys ("mhdhost1", SRCDIR "/mhdhost1.crt",
+             SRCDIR "/mhdhost1.key");
+  load_keys ("mhdhost2", SRCDIR "/mhdhost2.crt",
+             SRCDIR "/mhdhost2.key");
   d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION
                         | MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_TLS
                         | MHD_USE_ERROR_LOG,
@@ -303,7 +315,7 @@ main (int argc, char *const *argv)
     {
       MHD_stop_daemon (d); return -1;
     }
-    port = (int) dinfo->port;
+    port = dinfo->port;
   }
   if (0 != do_get ("https://mhdhost1/", port))
     error_count++;

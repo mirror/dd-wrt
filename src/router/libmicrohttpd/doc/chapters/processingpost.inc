@@ -111,10 +111,10 @@ requests other than @emph{POST} requests.
 
 @verbatim
 void request_completed (void *cls, struct MHD_Connection *connection, 
-     		        void **con_cls,
+     		        void **req_cls,
                         enum MHD_RequestTerminationCode toe)
 {
-  struct connection_info_struct *con_info = *con_cls;
+  struct connection_info_struct *con_info = *req_cls;
 
   if (NULL == con_info) return;
   if (con_info->connectiontype == POST)
@@ -124,7 +124,7 @@ void request_completed (void *cls, struct MHD_Connection *connection,
     }
   
   free (con_info);
-  *con_cls = NULL;   
+  *req_cls = NULL;   
 }
 @end verbatim
 @noindent
@@ -155,9 +155,9 @@ answer_to_connection (void *cls, struct MHD_Connection *connection,
 		      const char *url, 
                       const char *method, const char *version, 
 		      const char *upload_data, 
-                      size_t *upload_data_size, void **con_cls)
+                      size_t *upload_data_size, void **req_cls)
 {
-  if(NULL == *con_cls) 
+  if(NULL == *req_cls) 
     {
       struct connection_info_struct *con_info;
 
@@ -190,7 +190,7 @@ of the request is stored for convenience.
 The address of our structure will both serve as the indicator for successive iterations and to remember
 the particular details about the connection.
 @verbatim
-      *con_cls = (void*) con_info; 
+      *req_cls = (void*) con_info; 
       return MHD_YES;
     }
 @end verbatim
@@ -212,7 +212,7 @@ considered---all of it.
 @verbatim
   if (0 == strcmp (method, "POST")) 
     {
-      struct connection_info_struct *con_info = *con_cls;
+      struct connection_info_struct *con_info = *req_cls;
 
       if (*upload_data_size != 0) 
         {

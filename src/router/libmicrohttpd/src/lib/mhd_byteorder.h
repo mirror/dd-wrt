@@ -28,39 +28,39 @@
 
 #include "platform.h"
 
-#if HAVE_ENDIAN_H
+#ifdef HAVE_ENDIAN_H
 #include <endian.h>
 #endif
 
-#if HAVE_SYS_PARAM_H
+#ifdef HAVE_SYS_PARAM_H
 #include <sys/param.h>
 #endif
 
-#if HAVE_MACHINE_ENDIAN_H
+#ifdef HAVE_MACHINE_ENDIAN_H
 #include <machine/endian.h>
 #endif
 
-#if HAVE_SYS_ENDIAN_H
+#ifdef HAVE_SYS_ENDIAN_H
 #include <sys/endian.h>
 #endif
 
-#if HAVE_SYS_TYPES_H
+#ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
 #endif
 
-#if HAVE_SYS_BYTEORDER_H
+#ifdef HAVE_SYS_BYTEORDER_H
 #include <sys/byteorder.h>
 #endif
 
-#if HAVE_SYS_MACHINE_H
+#ifdef HAVE_SYS_MACHINE_H
 #include <sys/machine.h>
 #endif
 
-#if HAVE_MACHINE_PARAM_H
+#ifdef HAVE_MACHINE_PARAM_H
 #include <machine/param.h>
 #endif
 
-#if HAVE_SYS_ISA_DEFS_H
+#ifdef HAVE_SYS_ISA_DEFS_H
 #include <sys/isa_defs.h>
 #endif
 

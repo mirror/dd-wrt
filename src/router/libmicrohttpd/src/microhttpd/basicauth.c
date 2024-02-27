@@ -1,6 +1,7 @@
 /*
      This file is part of libmicrohttpd
      Copyright (C) 2010, 2011, 2012 Daniel Pittman and Christian Grothoff
+     Copyright (C) 2014-2023 Evgeny Grin (Karlson2k)
 
      This library is free software; you can redistribute it and/or
      modify it under the terms of the GNU Lesser General Public
@@ -21,165 +22,263 @@
  * @brief Implements HTTP basic authentication methods
  * @author Amr Ali
  * @author Matthieu Speder
+ * @author Karlson2k (Evgeny Grin)
  */
+#include "basicauth.h"
+#include "gen_auth.h"
 #include "platform.h"
 #include "mhd_limits.h"
 #include "internal.h"
-#include "mhd_str.h"
 #include "mhd_compat.h"
+#include "mhd_str.h"
+
 
 /**
- * Beginning string for any valid Basic authentication header.
+ * Get the username and password from the Basic Authorisation header
+ * sent by the client
+ *
+ * @param connection the MHD connection structure
+ * @return NULL if no valid Basic Authentication header is present in
+ *         current request, or
+ *         pointer to structure with username and password, which must be
+ *         freed by #MHD_free().
+ * @note Available since #MHD_VERSION 0x00097701
+ * @ingroup authentication
  */
-#define _BASIC_BASE   "Basic "
+_MHD_EXTERN struct MHD_BasicAuthInfo *
+MHD_basic_auth_get_username_password3 (struct MHD_Connection *connection)
+{
+  const struct MHD_RqBAuth *params;
+  size_t decoded_max_len;
+  struct MHD_BasicAuthInfo *ret;
+
+  params = MHD_get_rq_bauth_params_ (connection);
+
+  if (NULL == params)
+    return NULL;
+
+  if ((NULL == params->token68.str) || (0 == params->token68.len))
+    return NULL;
+
+  decoded_max_len = MHD_base64_max_dec_size_ (params->token68.len);
+  ret = (struct MHD_BasicAuthInfo *) malloc (sizeof(struct MHD_BasicAuthInfo)
+                                             + decoded_max_len + 1);
+  if (NULL != ret)
+  {
+    size_t decoded_len;
+    char *decoded;
+
+    decoded = (char *) (ret + 1);
+    decoded_len = MHD_base64_to_bin_n (params->token68.str, params->token68.len,
+                                       decoded, decoded_max_len);
+    mhd_assert (decoded_max_len >= decoded_len);
+    if (0 != decoded_len)
+    {
+      size_t username_len;
+      char *colon;
+
+      colon = memchr (decoded, ':', decoded_len);
+      if (NULL != colon)
+      {
+        size_t password_pos;
+        size_t password_len;
+
+        username_len = (size_t) (colon - decoded);
+        password_pos = username_len + 1;
+        password_len = decoded_len - password_pos;
+        ret->password = decoded + password_pos;
+        ret->password[password_len] = 0;  /* Zero-terminate the string */
+        ret->password_len = password_len;
+      }
+      else
+      {
+        username_len = decoded_len;
+        ret->password = NULL;
+        ret->password_len = 0;
+      }
+      ret->username = decoded;
+      ret->username[username_len] = 0;  /* Zero-terminate the string */
+      ret->username_len = username_len;
+
+      return ret; /* Success exit point */
+    }
+#ifdef HAVE_MESSAGES
+    else
+      MHD_DLOG (connection->daemon,
+                _ ("Error decoding Basic Authorization authentication.\n"));
+#endif /* HAVE_MESSAGES */
+
+    free (ret);
+  }
+#ifdef HAVE_MESSAGES
+  else
+  {
+    MHD_DLOG (connection->daemon,
+              _ ("Failed to allocate memory to process " \
+                 "Basic Authorization authentication.\n"));
+  }
+#endif /* HAVE_MESSAGES */
+
+  return NULL; /* Failure exit point */
+}
 
 
 /**
  * Get the username and password from the basic authorization header sent by the client
  *
  * @param connection The MHD connection structure
- * @param password a pointer for the password
+ * @param[out] password a pointer for the password, free using #MHD_free().
  * @return NULL if no username could be found, a pointer
- *      to the username if found
+ *      to the username if found, free using #MHD_free().
+ * @deprecated use #MHD_basic_auth_get_username_password3()
  * @ingroup authentication
  */
-char *
+_MHD_EXTERN char *
 MHD_basic_auth_get_username_password (struct MHD_Connection *connection,
                                       char **password)
 {
-  const char *header;
-  size_t enc_size;
-  size_t value_size;
-  size_t dec_size;
-  char *decode;
-  char *separator;
+  struct MHD_BasicAuthInfo *info;
 
-  if (NULL != password)
-    *password = NULL;
-
-  if (MHD_NO ==
-      MHD_lookup_connection_value_n (connection,
-                                     MHD_HEADER_KIND,
-                                     MHD_HTTP_HEADER_AUTHORIZATION,
-                                     MHD_STATICSTR_LEN_ ( \
-                                       MHD_HTTP_HEADER_AUTHORIZATION),
-                                     &header,
-                                     &value_size))
+  info = MHD_basic_auth_get_username_password3 (connection);
+  if (NULL == info)
     return NULL;
 
-  if (0 != strncmp (header,
-                    _BASIC_BASE,
-                    MHD_STATICSTR_LEN_ (_BASIC_BASE)))
-    return NULL;
-
-  header += MHD_STATICSTR_LEN_ (_BASIC_BASE);
-  enc_size = value_size - MHD_STATICSTR_LEN_ (_BASIC_BASE);
-  if (0 != (enc_size % 4))
+  /* For backward compatibility this function must return NULL if
+   * no password is provided */
+  if (NULL != info->password)
   {
-#ifdef HAVE_MESSAGES
-    MHD_DLOG (connection->daemon,
-              _ ("Bad length of basic authentication value.\n"));
-#endif
-    return NULL;
-  }
-  dec_size = MHD_base64_max_dec_size_ (enc_size);
-  decode = (char *) malloc (dec_size + 1);
-  if (NULL == decode)
-  {
-#ifdef HAVE_MESSAGES
-    MHD_DLOG (connection->daemon,
-              _ ("Failed to allocate memory.\n"));
-#endif
-    return NULL;
-  }
-  dec_size = MHD_base64_to_bin_n (header, enc_size, decode, dec_size);
-  if (0 != dec_size)
-  {
-    decode[dec_size] = 0; /* Zero-terminate */
-    /* Find user:password pattern */
-    separator = memchr (decode, ':', dec_size);
-    if (NULL != separator)
+    char *username;
+
+    username = malloc (info->username_len + 1);
+    if (NULL != username)
     {
-      *separator = 0; /* Zero-terminate 'username' */
-      if (NULL == password)
-        return decode;  /* Success exit point */
-      else
+      memcpy (username, info->username, info->username_len + 1);
+      mhd_assert (0 == username[info->username_len]);
+      if (NULL != password)
       {
-        *password = strdup (separator + 1);
+        *password = malloc (info->password_len + 1);
         if (NULL != *password)
-          return decode; /* Success exit point */
+        {
+          memcpy (*password, info->password, info->password_len + 1);
+          mhd_assert (0 == (*password)[info->password_len]);
+
+          free (info);
+          return username; /* Success exit point */
+        }
 #ifdef HAVE_MESSAGES
         else
-        {
           MHD_DLOG (connection->daemon,
-                    _ ("Failed to allocate memory for password.\n"));
-        }
+                    _ ("Failed to allocate memory.\n"));
 #endif /* HAVE_MESSAGES */
       }
+      else
+      {
+        free (info);
+        return username; /* Success exit point */
+      }
+
+      free (username);
     }
 #ifdef HAVE_MESSAGES
     else
-    {
       MHD_DLOG (connection->daemon,
-                _ ("Basic authentication doesn't contain ':' separator.\n"));
-    }
+                _ ("Failed to allocate memory.\n"));
 #endif /* HAVE_MESSAGES */
+
   }
-#ifdef HAVE_MESSAGES
-  else
-  {
-    MHD_DLOG (connection->daemon,
-              _ ("Error decoding basic authentication.\n"));
-  }
-#endif /* HAVE_MESSAGES */
-  free (decode);
+  free (info);
+  if (NULL != password)
+    *password = NULL;
   return NULL;  /* Failure exit point */
 }
 
 
 /**
  * Queues a response to request basic authentication from the client.
+ *
  * The given response object is expected to include the payload for
  * the response; the "WWW-Authenticate" header will be added and the
  * response queued with the 'UNAUTHORIZED' status code.
  *
- * @param connection The MHD connection structure
+ * See RFC 7617#section-2 for details.
+ *
+ * The @a response is modified by this function. The modified response object
+ * can be used to respond subsequent requests by #MHD_queue_response()
+ * function with status code #MHD_HTTP_UNAUTHORIZED and must not be used again
+ * with MHD_queue_basic_auth_required_response3() function. The response could
+ * be destroyed right after call of this function.
+ *
+ * @param connection the MHD connection structure
  * @param realm the realm presented to the client
- * @param response response object to modify and queue
+ * @param prefer_utf8 if not set to #MHD_NO, parameter'charset="UTF-8"' will
+ *                    be added, indicating for client that UTF-8 encoding
+ *                    is preferred
+ * @param response the response object to modify and queue; the NULL
+ *                 is tolerated
  * @return #MHD_YES on success, #MHD_NO otherwise
+ * @note Available since #MHD_VERSION 0x00097704
  * @ingroup authentication
  */
-enum MHD_Result
-MHD_queue_basic_auth_fail_response (struct MHD_Connection *connection,
-                                    const char *realm,
-                                    struct MHD_Response *response)
+_MHD_EXTERN enum MHD_Result
+MHD_queue_basic_auth_required_response3 (struct MHD_Connection *connection,
+                                         const char *realm,
+                                         int prefer_utf8,
+                                         struct MHD_Response *response)
 {
+  static const char prefix[] = "Basic realm=\"";
+  static const char suff_charset[] = "\", charset=\"UTF-8\"";
+  static const size_t prefix_len = MHD_STATICSTR_LEN_ (prefix);
+  static const size_t suff_simple_len = MHD_STATICSTR_LEN_ ("\"");
+  static const size_t suff_charset_len =
+    MHD_STATICSTR_LEN_ (suff_charset);
   enum MHD_Result ret;
-  int res;
-  size_t hlen = strlen (realm) + strlen ("Basic realm=\"\"") + 1;
-  char *header;
+  char *h_str;
+  size_t h_maxlen;
+  size_t suffix_len;
+  size_t realm_len;
+  size_t realm_quoted_len;
+  size_t pos;
 
-  header = (char *) malloc (hlen);
-  if (NULL == header)
+  if (NULL == response)
+    return MHD_NO;
+
+  suffix_len = (0 == prefer_utf8) ? suff_simple_len : suff_charset_len;
+  realm_len = strlen (realm);
+  h_maxlen = prefix_len + realm_len * 2 + suffix_len;
+
+  h_str = (char *) malloc (h_maxlen + 1);
+  if (NULL == h_str)
   {
 #ifdef HAVE_MESSAGES
     MHD_DLOG (connection->daemon,
-              "Failed to allocate memory for auth header.\n");
+              "Failed to allocate memory for Basic Authentication header.\n");
 #endif /* HAVE_MESSAGES */
     return MHD_NO;
   }
-  res = MHD_snprintf_ (header,
-                       hlen,
-                       "Basic realm=\"%s\"",
-                       realm);
-  if ((res > 0) && ((size_t) res < hlen))
-    ret = MHD_add_response_header (response,
-                                   MHD_HTTP_HEADER_WWW_AUTHENTICATE,
-                                   header);
+  memcpy (h_str, prefix, prefix_len);
+  pos = prefix_len;
+  realm_quoted_len = MHD_str_quote (realm, realm_len, h_str + pos,
+                                    h_maxlen - prefix_len - suffix_len);
+  pos += realm_quoted_len;
+  mhd_assert (pos + suffix_len <= h_maxlen);
+  if (0 == prefer_utf8)
+  {
+    h_str[pos++] = '\"';
+    h_str[pos++] = 0; /* Zero terminate the result */
+    mhd_assert (pos <= h_maxlen + 1);
+  }
   else
-    ret = MHD_NO;
+  {
+    /* Copy with the final zero-termination */
+    mhd_assert (pos + suff_charset_len <= h_maxlen);
+    memcpy (h_str + pos, suff_charset, suff_charset_len + 1);
+    mhd_assert (0 == h_str[pos + suff_charset_len]);
+  }
 
-  free (header);
+  ret = MHD_add_response_header (response,
+                                 MHD_HTTP_HEADER_WWW_AUTHENTICATE,
+                                 h_str);
+  free (h_str);
   if (MHD_NO != ret)
   {
     ret = MHD_queue_response (connection,
@@ -190,10 +289,33 @@ MHD_queue_basic_auth_fail_response (struct MHD_Connection *connection,
   {
 #ifdef HAVE_MESSAGES
     MHD_DLOG (connection->daemon,
-              _ ("Failed to add Basic auth header.\n"));
+              _ ("Failed to add Basic Authentication header.\n"));
 #endif /* HAVE_MESSAGES */
   }
   return ret;
+}
+
+
+/**
+ * Queues a response to request basic authentication from the client
+ * The given response object is expected to include the payload for
+ * the response; the "WWW-Authenticate" header will be added and the
+ * response queued with the 'UNAUTHORIZED' status code.
+ *
+ * @param connection The MHD connection structure
+ * @param realm the realm presented to the client
+ * @param response response object to modify and queue; the NULL is tolerated
+ * @return #MHD_YES on success, #MHD_NO otherwise
+ * @deprecated use MHD_queue_basic_auth_required_response3()
+ * @ingroup authentication
+ */
+_MHD_EXTERN enum MHD_Result
+MHD_queue_basic_auth_fail_response (struct MHD_Connection *connection,
+                                    const char *realm,
+                                    struct MHD_Response *response)
+{
+  return MHD_queue_basic_auth_required_response3 (connection, realm, MHD_NO,
+                                                  response);
 }
 
 

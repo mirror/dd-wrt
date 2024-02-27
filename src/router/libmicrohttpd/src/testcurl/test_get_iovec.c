@@ -1,7 +1,7 @@
 /*
      This file is part of libmicrohttpd
      Copyright (C) 2007-2021 Christian Grothoff
-     Copyright (C) 2014-2021 Evgeny Grin
+     Copyright (C) 2014-2022 Evgeny Grin
 
      libmicrohttpd is free software; you can redistribute it and/or modify
      it under the terms of the GNU General Public License as published
@@ -44,6 +44,7 @@
 #ifdef HAVE_STDBOOL_H
 #include <stdbool.h>
 #endif
+#include <errno.h>
 #include "mhd_sockets.h"
 #include "mhd_has_in_name.h"
 
@@ -95,15 +96,20 @@ iov_free_callback (void *cls)
 }
 
 
+struct iovncont_data
+{
+  void *ptrs[TESTSTR_IOVCNT];
+};
+
 static void
 iovncont_free_callback (void *cls)
 {
-  struct MHD_IoVec *iov = cls;
+  struct iovncont_data *data = (struct iovncont_data *) cls;
   unsigned int i;
 
   for (i = 0; i < TESTSTR_IOVCNT; ++i)
-    free ((void *) iov[i].iov_base);
-  free (iov);
+    free (data->ptrs[i]);
+  free (data);
 }
 
 
@@ -129,32 +135,32 @@ check_read_data (const void *ptr, size_t len)
 
 
 static enum MHD_Result
-ahc_echo (void *cls,
+ahc_cont (void *cls,
           struct MHD_Connection *connection,
           const char *url,
           const char *method,
           const char *version,
           const char *upload_data, size_t *upload_data_size,
-          void **unused)
+          void **req_cls)
 {
   static int ptr;
-  const char *me = cls;
   struct MHD_Response *response;
   enum MHD_Result ret;
   int *data;
   struct MHD_IoVec iov[TESTSTR_IOVCNT];
   int i;
+  (void) cls;
   (void) url; (void) version;                      /* Unused. Silent compiler warning. */
   (void) upload_data; (void) upload_data_size;     /* Unused. Silent compiler warning. */
 
-  if (0 != strcmp (me, method))
+  if (0 != strcmp (MHD_HTTP_METHOD_GET, method))
     return MHD_NO;              /* unexpected method */
-  if (&ptr != *unused)
+  if (&ptr != *req_cls)
   {
-    *unused = &ptr;
+    *req_cls = &ptr;
     return MHD_YES;
   }
-  *unused = NULL;
+  *req_cls = NULL;
 
   /* Create some test data. */
   if (NULL == (data = malloc (TESTSTR_SIZE)))
@@ -167,8 +173,8 @@ ahc_echo (void *cls,
 
   for (i = 0; i < TESTSTR_IOVCNT; ++i)
   {
-    iov[i].iov_base = data + (i * (TESTSTR_SIZE / TESTSTR_IOVCNT
-                                   / sizeof(int)));
+    iov[i].iov_base = data + (((size_t) i)
+                              * (TESTSTR_SIZE / TESTSTR_IOVCNT / sizeof(int)));
     iov[i].iov_len = TESTSTR_SIZE / TESTSTR_IOVCNT;
   }
 
@@ -185,57 +191,60 @@ ahc_echo (void *cls,
 
 
 static enum MHD_Result
-ncont_echo (void *cls,
-            struct MHD_Connection *connection,
-            const char *url,
-            const char *method,
-            const char *version,
-            const char *upload_data, size_t *upload_data_size,
-            void **unused)
+ahc_ncont (void *cls,
+           struct MHD_Connection *connection,
+           const char *url,
+           const char *method,
+           const char *version,
+           const char *upload_data, size_t *upload_data_size,
+           void **req_cls)
 {
   static int ptr;
-  const char *me = cls;
   struct MHD_Response *response;
   enum MHD_Result ret;
-  int *data;
-  struct MHD_IoVec *iov;
+  struct MHD_IoVec iov[TESTSTR_IOVCNT];
+  struct iovncont_data *clear_cls;
   int i, j;
+  (void) cls;
   (void) url; (void) version;                      /* Unused. Silent compiler warning. */
   (void) upload_data; (void) upload_data_size;     /* Unused. Silent compiler warning. */
 
-  if (0 != strcmp (me, method))
+  if (0 != strcmp (MHD_HTTP_METHOD_GET, method))
     return MHD_NO;              /* unexpected method */
-  if (&ptr != *unused)
+  if (&ptr != *req_cls)
   {
-    *unused = &ptr;
+    *req_cls = &ptr;
     return MHD_YES;
   }
-  *unused = NULL;
+  *req_cls = NULL;
 
-  if (NULL == (iov = malloc (sizeof(struct MHD_IoVec) * TESTSTR_IOVCNT)))
-    return MHD_NO;
-
+  clear_cls = malloc (sizeof(struct iovncont_data));
+  if (NULL == clear_cls)
+    abort ();
   memset (iov, 0, sizeof(struct MHD_IoVec) * TESTSTR_IOVCNT);
 
   /* Create some test data. */
   for (j = TESTSTR_IOVCNT - 1; j >= 0; --j)
   {
-    if (NULL == (data = malloc (TESTSTR_IOVLEN)))
-      goto err_out;
-
-    iov[j].iov_base = data;
-    iov[j].iov_len = TESTSTR_IOVLEN;
+    int *data;
+    data = malloc (TESTSTR_IOVLEN);
+    if (NULL == data)
+      abort ();
+    clear_cls->ptrs[j] = (void *) data;
 
     for (i = 0; i < (int) (TESTSTR_IOVLEN / sizeof(int)); ++i)
     {
-      data[i] = i + (j * TESTSTR_IOVLEN / sizeof(int));
+      data[i] = i + (j * (int) (TESTSTR_IOVLEN / sizeof(int)));
     }
+    iov[j].iov_base = (const void *) data;
+    iov[j].iov_len = TESTSTR_IOVLEN;
+
   }
 
   response = MHD_create_response_from_iovec (iov,
                                              TESTSTR_IOVCNT,
                                              &iovncont_free_callback,
-                                             iov);
+                                             clear_cls);
   ret = MHD_queue_response (connection,
                             MHD_HTTP_OK,
                             response);
@@ -243,26 +252,17 @@ ncont_echo (void *cls,
   if (ret == MHD_NO)
     abort ();
   return ret;
-
-err_out:
-  for (j = 0; j < TESTSTR_IOVCNT; ++j)
-  {
-    if (NULL != iov[j].iov_base)
-      free ((void *) iov[j].iov_base);
-  }
-  free (iov);
-  return MHD_NO;
 }
 
 
-static int
+static unsigned int
 testInternalGet (bool contiguous)
 {
   struct MHD_Daemon *d;
   CURL *c;
   struct CBC cbc;
   CURLcode errornum;
-  int port;
+  uint16_t port;
 
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
     port = 0;
@@ -280,12 +280,12 @@ testInternalGet (bool contiguous)
   if (contiguous)
   {
     d = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG,
-                          port, NULL, NULL, &ahc_echo, "GET", MHD_OPTION_END);
+                          port, NULL, NULL, &ahc_cont, NULL, MHD_OPTION_END);
   }
   else
   {
     d = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG,
-                          port, NULL, NULL, &ncont_echo, "GET", MHD_OPTION_END);
+                          port, NULL, NULL, &ahc_ncont, NULL, MHD_OPTION_END);
   }
 
   if (d == NULL)
@@ -298,7 +298,7 @@ testInternalGet (bool contiguous)
     {
       MHD_stop_daemon (d); return 32;
     }
-    port = (int) dinfo->port;
+    port = dinfo->port;
   }
   c = curl_easy_init ();
   curl_easy_setopt (c, CURLOPT_URL, "http://127.0.0.1/");
@@ -335,14 +335,14 @@ testInternalGet (bool contiguous)
 }
 
 
-static int
-testMultithreadedGet ()
+static unsigned int
+testMultithreadedGet (void)
 {
   struct MHD_Daemon *d;
   CURL *c;
   struct CBC cbc;
   CURLcode errornum;
-  int port;
+  uint16_t port;
 
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
     port = 0;
@@ -359,7 +359,7 @@ testMultithreadedGet ()
   d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION
                         | MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG
                         | MHD_USE_AUTO,
-                        port, NULL, NULL, &ahc_echo, "GET", MHD_OPTION_END);
+                        port, NULL, NULL, &ahc_cont, NULL, MHD_OPTION_END);
   if (d == NULL)
     return 16;
   if (0 == port)
@@ -370,7 +370,7 @@ testMultithreadedGet ()
     {
       MHD_stop_daemon (d); return 32;
     }
-    port = (int) dinfo->port;
+    port = dinfo->port;
   }
   c = curl_easy_init ();
   curl_easy_setopt (c, CURLOPT_URL, "http://127.0.0.1/");
@@ -407,14 +407,14 @@ testMultithreadedGet ()
 }
 
 
-static int
-testMultithreadedPoolGet ()
+static unsigned int
+testMultithreadedPoolGet (void)
 {
   struct MHD_Daemon *d;
   CURL *c;
   struct CBC cbc;
   CURLcode errornum;
-  int port;
+  uint16_t port;
 
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
     port = 0;
@@ -430,7 +430,7 @@ testMultithreadedPoolGet ()
   cbc.pos = 0;
   d = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG
                         | MHD_USE_AUTO,
-                        port, NULL, NULL, &ahc_echo, "GET",
+                        port, NULL, NULL, &ahc_cont, NULL,
                         MHD_OPTION_THREAD_POOL_SIZE, MHD_CPU_COUNT,
                         MHD_OPTION_END);
   if (d == NULL)
@@ -443,7 +443,7 @@ testMultithreadedPoolGet ()
     {
       MHD_stop_daemon (d); return 32;
     }
-    port = (int) dinfo->port;
+    port = dinfo->port;
   }
   c = curl_easy_init ();
   curl_easy_setopt (c, CURLOPT_URL, "http://127.0.0.1/");
@@ -480,8 +480,8 @@ testMultithreadedPoolGet ()
 }
 
 
-static int
-testExternalGet ()
+static unsigned int
+testExternalGet (int thread_unsafe)
 {
   struct MHD_Daemon *d;
   CURL *c;
@@ -501,7 +501,7 @@ testExternalGet ()
   struct CURLMsg *msg;
   time_t start;
   struct timeval tv;
-  int port;
+  uint16_t port;
 
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
     port = 0;
@@ -516,8 +516,11 @@ testExternalGet ()
   cbc.buf = (char *) readbuf;
   cbc.size = sizeof(readbuf);
   cbc.pos = 0;
-  d = MHD_start_daemon (MHD_USE_ERROR_LOG,
-                        port, NULL, NULL, &ahc_echo, "GET", MHD_OPTION_END);
+  d = MHD_start_daemon (MHD_USE_ERROR_LOG
+                        | (thread_unsafe ? MHD_USE_NO_THREAD_SAFETY : 0),
+                        port, NULL, NULL, &ahc_cont, NULL,
+                        MHD_OPTION_APP_FD_SETSIZE, (int) FD_SETSIZE,
+                        MHD_OPTION_END);
   if (d == NULL)
     return 256;
   if (0 == port)
@@ -528,7 +531,7 @@ testExternalGet ()
     {
       MHD_stop_daemon (d); return 32;
     }
-    port = (int) dinfo->port;
+    port = dinfo->port;
   }
   c = curl_easy_init ();
   curl_easy_setopt (c, CURLOPT_URL, "http://127.0.0.1/");
@@ -663,15 +666,15 @@ testExternalGet ()
 }
 
 
-static int
-testUnknownPortGet ()
+static unsigned int
+testUnknownPortGet (void)
 {
   struct MHD_Daemon *d;
   const union MHD_DaemonInfo *di;
   CURL *c;
   struct CBC cbc;
   CURLcode errornum;
-  int port;
+  uint16_t port;
   char buf[2048];
 
   struct sockaddr_in addr;
@@ -685,7 +688,7 @@ testUnknownPortGet ()
   cbc.size = sizeof(readbuf);
   cbc.pos = 0;
   d = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG,
-                        0, NULL, NULL, &ahc_echo, "GET",
+                        0, NULL, NULL, &ahc_cont, NULL,
                         MHD_OPTION_SOCK_ADDR, &addr,
                         MHD_OPTION_END);
   if (d == NULL)
@@ -702,7 +705,7 @@ testUnknownPortGet ()
 
     if (addr.sin_family != AF_INET)
       return 26214;
-    port = (int) ntohs (addr.sin_port);
+    port = ntohs (addr.sin_port);
   }
   else
   {
@@ -712,11 +715,11 @@ testUnknownPortGet ()
     {
       MHD_stop_daemon (d); return 32;
     }
-    port = (int) dinfo->port;
+    port = dinfo->port;
   }
 
-  snprintf (buf, sizeof(buf), "http://127.0.0.1:%d/",
-            port);
+  snprintf (buf, sizeof(buf), "http://127.0.0.1:%u/",
+            (unsigned int) port);
 
   c = curl_easy_init ();
   curl_easy_setopt (c, CURLOPT_URL, buf);
@@ -771,8 +774,9 @@ main (int argc, char *const *argv)
     errorCount += testMultithreadedGet ();
     errorCount += testMultithreadedPoolGet ();
     errorCount += testUnknownPortGet ();
+    errorCount += testExternalGet (0);
   }
-  errorCount += testExternalGet ();
+  errorCount += testExternalGet (! 0);
   if (errorCount != 0)
     fprintf (stderr, "Error (code: %u)\n", errorCount);
   curl_global_cleanup ();

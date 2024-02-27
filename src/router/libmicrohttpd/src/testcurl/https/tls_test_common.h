@@ -1,6 +1,7 @@
 /*
  This file is part of libmicrohttpd
  Copyright (C) 2007 Christian Grothoff
+ Copyright (C) 2017-2022 Evgeny Grin (Karlson2k)
 
  libmicrohttpd is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published
@@ -28,12 +29,16 @@
 #include <limits.h>
 #include <gnutls/gnutls.h>
 
-/* this enables verbos CURL version checking */
-#define DEBUG_HTTPS_TEST 0
-#define CURL_VERBOS_LEVEL 0
+#ifndef CURL_VERSION_BITS
+#define CURL_VERSION_BITS(x,y,z) ((x) << 16 | (y) << 8 | (z))
+#endif /* ! CURL_VERSION_BITS */
+#ifndef CURL_AT_LEAST_VERSION
+#define CURL_AT_LEAST_VERSION(x,y,z) \
+  (LIBCURL_VERSION_NUM >= CURL_VERSION_BITS (x, y, z))
+#endif /* ! CURL_AT_LEAST_VERSION */
 
 #define test_data "Hello World\n"
-#define ca_cert_file_name "tmp_ca_cert.pem"
+#define ca_cert_file_name SRCDIR "/test-ca.crt"
 
 #define EMPTY_PAGE \
   "<html><head><title>Empty page</title></head><body>Empty page</body></html>"
@@ -48,25 +53,67 @@
 #define MHD_E_FAILED_TO_CONNECT \
   "Error: server connection could not be established\n"
 
-extern const char *const ca_cert_pem;
+#ifndef MHD_STATICSTR_LEN_
+/**
+ * Determine length of static string / macro strings at compile time.
+ */
+#define MHD_STATICSTR_LEN_(macro) (sizeof(macro) / sizeof(char) - 1)
+#endif /* ! MHD_STATICSTR_LEN_ */
 
-/* test server key */
-extern const char *const srv_signed_key_pem;
 
-/* test server CA signed certificates */
-extern const char *const srv_signed_cert_pem;
+/* The local copy if GnuTLS IDs to avoid long #ifdefs list with various
+ * GnuTLS versions */
+/**
+ * The list of know (at the moment of writing) GnuTLS IDs of TLS versions.
+ * Can be safely casted to/from @a gnutls_protocol_t.
+ */
+enum know_gnutls_tls_id
+{
+  KNOWN_BAD = 0,       /**< No TLS */
+  KNOWN_TLS_SSLv3 = 1, /**< GNUTLS_SSL3 */
+  KNOWN_TLS_V1_0 =  2, /**< GNUTLS_TLS1_0 */
+  KNOWN_TLS_V1_1 =  3, /**< GNUTLS_TLS1_1 */
+  KNOWN_TLS_V1_2 =  4, /**< GNUTLS_TLS1_2 */
+  KNOWN_TLS_V1_3 =  5, /**< GNUTLS_TLS1_3 */
+  KNOWN_TLS_MIN = KNOWN_TLS_SSLv3, /**< Minimum valid value */
+  KNOWN_TLS_MAX = KNOWN_TLS_V1_3   /**< Maximum valid value */
+};
 
-/* test server self signed certificate */
-extern const char *const srv_self_signed_cert_pem;
+#define KNOW_TLS_IDS_COUNT 6 /* KNOWN_TLS_MAX + 1 */
+/**
+ * Map @a know_gnutls_tls_ids values to printable names.
+ */
+extern const char *tls_names[KNOW_TLS_IDS_COUNT];
 
-/* test server self signed certificate key */
-extern const char *const srv_key_pem;
+/**
+ * Map @a know_gnutls_tls_ids values to GnuTLS priorities strings.
+ */
+extern const char *priorities_map[KNOW_TLS_IDS_COUNT];
 
-/* TODO rm if unused */
+/**
+ * Map @a know_gnutls_tls_ids values to GnuTLS priorities append strings.
+ */
+extern const char *priorities_append_map[KNOW_TLS_IDS_COUNT];
+
+/**
+ * Map @a know_gnutls_tls_ids values to libcurl @a CURLOPT_SSLVERSION value.
+ */
+extern const long libcurl_tls_vers_map[KNOW_TLS_IDS_COUNT];
+
+#if CURL_AT_LEAST_VERSION (7,54,0)
+/**
+ * Map @a know_gnutls_tls_ids values to libcurl @a CURLOPT_SSLVERSION value
+ * for maximum supported TLS version.
+ */
+extern const long libcurl_tls_max_vers_map[KNOW_TLS_IDS_COUNT];
+#endif /* CURL_AT_LEAST_VERSION(7,54,0) */
+
 struct https_test_data
 {
   void *cls;
-  int port;
+  uint16_t port;
+  const char *cipher_suite;
+  int proto_version;
 };
 
 struct CBC
@@ -76,18 +123,11 @@ struct CBC
   size_t size;
 };
 
-struct CipherDef
-{
-  int options[2];
-  char *curlname;
-};
-
-
-int
-curl_check_version (const char *req_version);
-
 int
 curl_tls_is_gnutls (void);
+
+int
+curl_tls_is_openssl (void);
 
 int
 curl_tls_is_nss (void);
@@ -98,18 +138,32 @@ curl_tls_is_schannel (void);
 int
 curl_tls_is_sectransport (void);
 
-FILE *
-setup_ca_cert (void);
 
+enum test_get_result
+{
+  TEST_GET_OK = 0,
+  TEST_GET_ERROR = 1,
+
+  TEST_GET_MHD_ERROR = 16,
+  TEST_GET_TRANSFER_ERROR = 17,
+
+  TEST_GET_CURL_GEN_ERROR = 32,
+  TEST_GET_CURL_CA_ERROR = 33,
+  TEST_GET_CURL_NOT_IMPLT = 34,
+
+  TEST_GET_HARD_ERROR = 999
+};
 /**
  * perform cURL request for file
  */
-int
+enum test_get_result
 test_daemon_get (void *cls,
-                 int port, int ver_peer);
+                 const char *cipher_suite, int proto_version,
+                 uint16_t port, int ver_peer);
 
 void
-print_test_result (int test_outcome, char *test_name);
+print_test_result (unsigned int test_outcome,
+                   const char *test_name);
 
 size_t
 copyBuffer (void *ptr, size_t size, size_t nmemb, void *ctx);
@@ -117,56 +171,72 @@ copyBuffer (void *ptr, size_t size, size_t nmemb, void *ctx);
 enum MHD_Result
 http_ahc (void *cls, struct MHD_Connection *connection,
           const char *url, const char *method, const char *upload_data,
-          const char *version, size_t *upload_data_size, void **ptr);
+          const char *version, size_t *upload_data_size, void **req_cls);
 
 enum MHD_Result
 http_dummy_ahc (void *cls, struct MHD_Connection *connection,
                 const char *url, const char *method, const char *upload_data,
                 const char *version, size_t *upload_data_size,
-                void **ptr);
+                void **req_cls);
 
 
 /**
- * compile test file url pointing to the current running directory path
+ * compile test URI
  *
- * @param[out] url - char buffer into which the url is compiled
- * @param url_len number of bytes available in @a url
+ * @param[out] uri - char buffer into which the url is compiled
+ * @param uri_len number of bytes available in @a url
  * @param port port to use for the test
- * @return -1 on error
+ * @return 1 on error
  */
-int
-gen_test_file_url (char *url,
-                   size_t url_len,
-                   int port);
+unsigned int
+gen_test_uri (char *uri,
+              size_t uri_len,
+              uint16_t port);
 
-int
-send_curl_req (char *url, struct CBC *cbc);
+CURLcode
+send_curl_req (char *url,
+               struct CBC *cbc,
+               const char *cipher_suite,
+               int proto_version);
 
-int
-test_https_transfer (void *cls, int port);
+unsigned int
+test_https_transfer (void *cls,
+                     uint16_t port,
+                     const char *cipher_suite,
+                     int proto_version);
 
-int
-setup_testcase (struct MHD_Daemon **d, int port, int daemon_flags, va_list
-                arg_list);
-
-void
-teardown_testcase (struct MHD_Daemon *d);
-
-
-int
+unsigned int
 setup_session (gnutls_session_t *session,
                gnutls_certificate_credentials_t *xcred);
 
-int
+unsigned int
 teardown_session (gnutls_session_t session,
                   gnutls_certificate_credentials_t xcred);
 
-int
-test_wrap (const char *test_name, int
-           (*test_function)(void *cls, int port), void *cls,
-           int port,
-           int daemon_flags, ...);
+unsigned int
+test_wrap (const char *test_name, unsigned int
+           (*test_function)(void *cls, uint16_t port, const char *cipher_suite,
+                            int proto_version), void *cls,
+           uint16_t port,
+           unsigned int daemon_flags, const char *cipher_suite,
+           int proto_version, ...);
 
 int testsuite_curl_global_init (void);
+
+/**
+ * Check whether program name contains specific @a marker string.
+ * Only last component in pathname is checked for marker presence,
+ * all leading directories names (if any) are ignored. Directories
+ * separators are handled correctly on both non-W32 and W32
+ * platforms.
+ * @param prog_name program name, may include path
+ * @param marker    marker to look for.
+ * @return zero if any parameter is NULL or empty string or
+ *         @a prog_name ends with slash or @a marker is not found in
+ *         program name, non-zero if @a maker is found in program
+ *         name.
+ */
+int
+has_in_name (const char *prog_name, const char *marker);
 
 #endif /* TLS_TEST_COMMON_H_ */

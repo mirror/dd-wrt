@@ -1,6 +1,6 @@
 /*
   This file is part of libmicrohttpd
-  Copyright (C) 2015 Karlson2k (Evgeny Grin)
+  Copyright (C) 2015-2023 Karlson2k (Evgeny Grin)
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -24,7 +24,11 @@
  */
 
 
-#include "MHD_config.h"
+#include "mhd_options.h"
+
+#ifndef MHD_SYS_FD_SETSIZE_
+
+#include "sysfdsetsize.h"
 
 #ifdef FD_SETSIZE
 /* FD_SETSIZE was defined before system headers. */
@@ -39,22 +43,22 @@
 #if defined(__VXWORKS__) || defined(__vxworks) || defined(OS_VXWORKS)
 #include <sockLib.h>
 #endif /* OS_VXWORKS */
-#if HAVE_SYS_SELECT_H
+#ifdef HAVE_SYS_SELECT_H
 #include <sys/select.h>
 #endif /* HAVE_SYS_SELECT_H */
-#if HAVE_SYS_TYPES_H
+#ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
 #endif /* HAVE_SYS_TYPES_H */
-#if HAVE_SYS_TIME_H
+#ifdef HAVE_SYS_TIME_H
 #include <sys/time.h>
 #endif /* HAVE_SYS_TIME_H */
-#if HAVE_TIME_H
+#ifdef HAVE_TIME_H
 #include <time.h>
 #endif /* HAVE_TIME_H */
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif /* HAVE_UNISTD_H */
-#if HAVE_SYS_SOCKET_H
+#ifdef HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
 #endif /* HAVE_SYS_SOCKET_H */
 
@@ -69,7 +73,6 @@
 #error FD_SETSIZE must be defined in system headers
 #endif /* !FD_SETSIZE */
 
-#include "sysfdsetsize.h"
 
 /**
  * Get system default value of FD_SETSIZE
@@ -78,5 +81,8 @@
 unsigned int
 get_system_fdsetsize_value (void)
 {
-  return FD_SETSIZE;
+  return (unsigned int) FD_SETSIZE;
 }
+
+
+#endif /* ! MHD_SYS_FD_SETSIZE_ */

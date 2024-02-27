@@ -23,7 +23,7 @@
  */
 /*
  *                            *** WARNING! ***
- * *   The websockets interface is currenly in "experimental" stage.   *
+ * *   The websockets interface is currently in "experimental" stage.   *
  * * It does not work on architectures with endianness different from  *
  * * big endian and little endian and may have some portability issues.*
  * * API and ABI are not yet stable.                                   *

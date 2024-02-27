@@ -71,10 +71,10 @@ Free Documentation License".
 
 Appendices
 
-* GNU-LGPL::                     The GNU Lesser General Public License says how you
+* GNU-LGPL::                    The GNU Lesser General Public License says how you
                                  can copy and share almost all of `libmicrohttpd'.
-* eCos License::                 The eCos License says how you can copy and share some parts of `libmicrohttpd'.
-* GNU-GPL::                      The GNU General Public License (with eCos extension) says how you can copy and share some parts of `libmicrohttpd'.
+* eCos License::                The eCos License says how you can copy and share some parts of `libmicrohttpd'.
+* GNU-GPL::                     The GNU General Public License (with eCos extension) says how you can copy and share some parts of `libmicrohttpd'.
 * GNU-FDL::                     The GNU Free Documentation License says how you
                                 can copy and share the documentation of `libmicrohttpd'.
 
@@ -332,11 +332,13 @@ valid as long as the response itself is valid.
 @cindex microhttpd.h
 
 Ideally, before including "microhttpd.h" you should add the necessary
-includes to define the @code{uint64_t}, @code{size_t}, @code{fd_set},
-@code{socklen_t} and @code{struct sockaddr} data types.  Which
-specific headers are needed may depend on your platform and your build
-system might include some tests to provide you with the necessary
-conditional operations.  For possible suggestions consult
+includes to define the @code{va_list}, @code{size_t}, @code{ssize_t},
+@code{intptr_t}, @code{off_t}, @code{uint8_t}, @code{uint16_t},
+@code{int32_t}, @code{uint32_t}, @code{int64_t}, @code{uint64_t},
+@code{fd_set}, @code{socklen_t} and @code{struct sockaddr} data types.
+Which specific headers are needed may depend on your platform and your
+build system might include some tests to provide you with the
+necessary conditional operations.  For possible suggestions consult
 @code{platform.h} and @code{configure.ac} in the MHD distribution.
 
 Once you have ensured that you manually (!) included the right headers
@@ -734,18 +736,15 @@ callback.  The second pointer maybe @code{NULL}.
 
 @item MHD_OPTION_NOTIFY_CONNECTION
 Register a function that should be called when the TCP connection to a
-client is opened or closed.  Note that
-@code{MHD_OPTION_NOTIFY_COMPLETED} and the @code{con_cls} argument to
-the @code{MHD_AccessHandlerCallback} are per HTTP request (and there
-can be multiple HTTP requests per TCP connection).  The registered
-callback is called twice per TCP connection, with
-@code{MHD_CONNECTION_NOTIFY_STARTED} and
-@code{MHD_CONNECTION_NOTIFY_CLOSED} respectively.  An additional
+client is opened or closed. The registered callback is called twice per
+TCP connection, with @code{MHD_CONNECTION_NOTIFY_STARTED} and
+@code{MHD_CONNECTION_NOTIFY_CLOSED} respectively. An additional
 argument can be used to store TCP connection specific information,
 which can be retrieved using @code{MHD_CONNECTION_INFO_SOCKET_CONTEXT}
-during the lifetime of the TCP connection.  The respective location is
-not the same as the HTTP-request-specific @code{con_cls} from the
-@code{MHD_AccessHandlerCallback}.
+during the lifetime of the TCP connection. 
+Note @code{MHD_OPTION_NOTIFY_COMPLETED} and the @code{req_cls} argument
+to the @code{MHD_AccessHandlerCallback} are per HTTP request (and there
+can be multiple HTTP requests per TCP connection). 
 
 This option should be followed by @strong{TWO} pointers.  First a
 pointer to a function of type @code{MHD_NotifyConnectionCallback()}
@@ -820,12 +819,12 @@ one must be of the form
  void * my_logger(void * cls, const char * uri, struct MHD_Connection *con)
 @end example
 where the return value will be passed as
-@code{*con_cls} in calls to the @code{MHD_AccessHandlerCallback}
+@code{*req_cls} in calls to the @code{MHD_AccessHandlerCallback}
 when this request is processed later; returning a
 value of @code{NULL} has no special significance; (however,
 note that if you return non-@code{NULL}, you can no longer
 rely on the first call to the access handler having
-@code{NULL == *con_cls} on entry)
+@code{NULL == *req_cls} on entry)
 @code{cls} will be set to the second argument following
 MHD_OPTION_URI_LOG_CALLBACK.  Finally, @code{uri} will
 be the 0-terminated URI of the request.
@@ -1808,7 +1807,7 @@ length of the address information.
 @end deftypefn
 
 
-@deftypefn {Function Pointer} enum MHD_Result {*MHD_AccessHandlerCallback} (void *cls, struct MHD_Connection * connection, const char *url, const char *method, const char *version, const char *upload_data, size_t *upload_data_size, void **con_cls)
+@deftypefn {Function Pointer} enum MHD_Result {*MHD_AccessHandlerCallback} (void *cls, struct MHD_Connection * connection, const char *url, const char *method, const char *version, const char *upload_data, size_t *upload_data_size, void **req_cls)
 Invoked in the context of a connection to answer a request from the
 client.  This callback must call MHD functions (example: the
 @code{MHD_Response} ones) to provide content to give back to the client
@@ -1874,7 +1873,7 @@ and return an internal server error to the client.  In order to
 avoid this, clients must be able to process upload data incrementally
 and reduce the value of @code{upload_data_size}.
 
-@item con_cls
+@item req_cls
 reference to a pointer, initially set to @code{NULL}, that this callback can
 set to some address and that will be preserved by MHD for future
 calls for this request;
@@ -1890,7 +1889,7 @@ if necessary, this state can be cleaned up in the global
 @end deftypefn
 
 
-@deftypefn {Function Pointer} void {*MHD_RequestCompletedCallback} (void *cls, struct MHD_Connectionconnection, void **con_cls, enum MHD_RequestTerminationCode toe)
+@deftypefn {Function Pointer} void {*MHD_RequestCompletedCallback} (void *cls, struct MHD_Connectionconnection, void **req_cls, enum MHD_RequestTerminationCode toe)
 Signature of the callback used by MHD to notify the application about
 completed requests.
 
@@ -1901,7 +1900,7 @@ custom value selected at callback registration time;
 @item connection
 connection handle;
 
-@item con_cls
+@item req_cls
 value as set by the last call to the
 @code{MHD_AccessHandlerCallback};
 
@@ -2615,7 +2614,7 @@ Return @code{NULL} on error (i.e. invalid arguments, out of memory).
 @end deftypefun
 
 
-@deftypefun {struct MHD_Response *} MHD_create_response_from_pipe (uint64_t size, int fd)
+@deftypefun {struct MHD_Response *} MHD_create_response_from_pipe (int fd)
 Create a response object.  The response object can be extended with
 header information and then it can be used ONLY ONCE.
 
@@ -2944,8 +2943,8 @@ matches the @code{upgrade_handler_cls} that was given to @code{MHD_create_respon
 @item connection
 identifies the connection that is being upgraded;
 
-@item con_cls
-last value left in `*con_cls` in the `MHD_AccessHandlerCallback`
+@item req_cls
+last value left in `*req_cls` in the `MHD_AccessHandlerCallback`
 
 @item extra_in
 buffer of bytes MHD read ``by accident'' from the socket already.  This can happen if the client eagerly transmits more than just the HTTP request.   The application should treat these as if it had read them from the socket.
@@ -3108,8 +3107,8 @@ machine and user authentication).  A code example for using
 client certificates is presented in the MHD tutorial.
 
 @menu
-* microhttpd-dauth basic:: Using Basic Authentication.
-* microhttpd-dauth digest:: Using Digest Authentication.
+* microhttpd-dauth basic::      Using Basic Authentication.
+* microhttpd-dauth digest::     Using Digest Authentication.
 @end menu
 
 @c ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -3122,20 +3121,23 @@ client certificates is presented in the MHD tutorial.
 Free the memory given at @code{ptr}.  Used to free data structures allocated by MHD. Calls @code{free(ptr)}.
 @end deftypefun
 
-@deftypefun {char *} MHD_basic_auth_get_username_password (struct MHD_Connection *connection, char** password)
+@deftypefun {char *} MHD_basic_auth_get_username_password3 (struct MHD_Connection *connection)
 Get the username and password from the basic authorization header sent by the client.
-Return @code{NULL} if no username could be found, a pointer to the username if found.
-If returned value is not @code{NULL}, the value must be @code{MHD_free()}'ed.
-
-@var{password} reference a buffer to store the password. It can be @code{NULL}.
+Return @code{NULL} if no Basic Authorization header set by the client or if Base64
+encoding is invalid; a pointer to the structure with username and password
+if found values set by the client.
 If returned value is not @code{NULL}, the value must be @code{MHD_free()}'ed.
 @end deftypefun
 
-@deftypefun {enum MHD_Result} MHD_queue_basic_auth_fail_response (struct MHD_Connection *connection, const char *realm, struct MHD_Response *response)
+@deftypefun {enum MHD_Result} MHD_queue_basic_auth_fail_response3 (struct MHD_Connection *connection, const char *realm, int prefer_utf8, struct MHD_Response *response)
 Queues a response to request basic authentication from the client.
 Return @code{MHD_YES} if successful, otherwise @code{MHD_NO}.
 
 @var{realm} must reference to a zero-terminated string representing the realm.
+
+@var{prefer_utf8} if set to @code{MHD_YES} then parameter @code{charset} with value
+@code{UTF-8} will be added to the response authentication header which indicates
+that UTF-8 encoding is preferred for username and password.
 
 @var{response} a response structure to specify what shall be presented to the
 client with a 401 HTTP status.
@@ -3167,11 +3169,65 @@ Force use of SHA-256.
 @end table
 @end deftp
 
+@deftp {Enumeration} MHD_DigestAuthResult
+The result of digest authentication of the client.
+
+@table @code
+@item MHD_DAUTH_OK
+Authentication OK.
+
+@item MHD_DAUTH_ERROR
+General error, like ``out of memory''.
+
+@item MHD_DAUTH_WRONG_HEADER
+No ``Authorization'' header or wrong format of the header.
+
+@item MHD_DAUTH_WRONG_USERNAME
+Wrong ``username''.
+
+@item MHD_DAUTH_WRONG_REALM
+Wrong ``realm''.
+
+@item MHD_DAUTH_WRONG_URI
+Wrong ``URI'' (or URI parameters).
+
+@item MHD_DAUTH_NONCE_STALE
+The ``nonce'' is too old. Suggest the client to retry with the same username and
+password to get the fresh ``nonce''.
+The validity of the ``nonce'' may not be checked.
+
+@item MHD_DAUTH_NONCE_WRONG
+The ``nonce'' is wrong. May indicate an attack attempt.
+
+@item MHD_DAUTH_RESPONSE_WRONG
+The ``response'' is wrong. May indicate an attack attempt.
+
+@end table
+@end deftp
+
 
 @deftypefun {char *} MHD_digest_auth_get_username (struct MHD_Connection *connection)
 Find and return a pointer to the username value from the request header.
 Return @code{NULL} if the value is not found or header does not exist.
 If returned value is not @code{NULL}, the value must be @code{MHD_free()}'ed.
+@end deftypefun
+
+@deftypefun enum MHD_DigestAuthResult MHD_digest_auth_check3 (struct MHD_Connection *connection, const char *realm, const char *username, const char *password, unsigned int nonce_timeout, enum MHD_DigestAuthAlgorithm algo)
+Checks if the provided values in the WWW-Authenticate header are valid
+and sound according to RFC7616. If valid return @code{MHD_DAUTH_OK}, otherwise return the error code.
+
+@var{realm} must reference to a zero-terminated string representing the realm.
+
+@var{username} must reference to a zero-terminated string representing the username,
+it is usually the returned value from MHD_digest_auth_get_username.
+
+@var{password} must reference to a zero-terminated string representing the password,
+most probably it will be the result of a lookup of the username against a local database.
+
+@var{nonce_timeout} the nonce validity duration in seconds.
+Most of the time it is sound to specify 300 seconds as its values.
+
+@var{algo} which digest algorithm should we use.
 @end deftypefun
 
 @deftypefun int MHD_digest_auth_check2 (struct MHD_Connection *connection, const char *realm, const char *username, const char *password, unsigned int nonce_timeout, enum MHD_DigestAuthAlgorithm algo)
@@ -3212,6 +3268,25 @@ Most of the time it is sound to specify 300 seconds as its values.
 @end deftypefun
 
 
+
+@deftypefun enum MHD_DigestAuthResult MHD_digest_auth_check_digest3 (struct MHD_Connection *connection, const char *realm, const char *username, const uint8_t *digest, unsigned int nonce_timeout, enum MHD_DigestAuthAlgorithm algo)
+Checks if the provided values in the WWW-Authenticate header are valid
+and sound according to RFC7616. If valid return @code{MHD_DAUTH_OK}, otherwise return the error code.
+
+@var{realm} must reference to a zero-terminated string representing the realm.
+
+@var{username} must reference to a zero-terminated string representing the username,
+it is usually the returned value from MHD_digest_auth_get_username.
+
+@var{digest} the pointer to the binary digest for the precalculated hash value ``username:realm:password'' with specified @var{algo}.
+
+@var{digest_size} the number of bytes in @var{digest} (the size must match @var{algo}!)
+
+@var{nonce_timeout} the nonce validity duration in seconds.
+Most of the time it is sound to specify 300 seconds as its values.
+
+@var{algo} digest authentication algorithm to use.
+@end deftypefun
 
 @deftypefun int MHD_digest_auth_check_digest2 (struct MHD_Connection *connection, const char *realm, const char *username, const uint8_t *digest, unsigned int nonce_timeout, enum MHD_DigestAuthAlgorithm algo)
 Checks if the provided values in the WWW-Authenticate header are valid
@@ -3310,6 +3385,14 @@ ahc_echo (void *cls,
   const char *password = "testpass";
   const char *realm = "test@@example.com";
   int ret;
+  static int already_called_marker;
+
+  if (&already_called_marker != *req_cls)
+    @{ /* Called for the first time, request not fully read yet */
+      *req_cls = &already_called_marker;
+      /* Wait for complete request */
+      return MHD_YES;
+    @}
 
   username = MHD_digest_auth_get_username (connection);
   if (username == NULL)
@@ -3332,7 +3415,7 @@ ahc_echo (void *cls,
 			        password,
 			        300,
                                 MHD_DIGEST_ALG_SHA256);
-  free(username);
+  MHD_free(username);
   if ( (ret == MHD_INVALID_NONCE) ||
        (ret == MHD_NO) )
     @{
@@ -3382,15 +3465,15 @@ process data as it arrives; at each invocation a new chunk of data must
 be processed. The arguments @var{upload_data} and @var{upload_data_size}
 are used to reference the chunk of data.
 
-When @code{MHD_AccessHandlerCallback} is invoked for a new connection:
-its @code{*@var{con_cls}} argument is set to @code{NULL}. When @code{POST}
+When @code{MHD_AccessHandlerCallback} is invoked for a new request:
+its @code{*@var{req_cls}} argument is set to @code{NULL}. When @code{POST}
 data comes in the upload buffer it is @strong{mandatory} to use the
-@var{con_cls} to store a reference to per-connection data.  The fact
+@var{req_cls} to store a reference to per-request data.  The fact
 that the pointer was initially @code{NULL} can be used to detect that
 this is a new request.
 
-One method to detect that a new connection was established is
-to set @code{*con_cls} to an unused integer:
+One method to detect that a new request was started is
+to set @code{*req_cls} to an unused integer:
 
 @example
 int
@@ -3399,15 +3482,15 @@ access_handler (void *cls,
                 const char *url,
                 const char *method, const char *version,
                 const char *upload_data, size_t *upload_data_size,
-                void **con_cls)
+                void **req_cls)
 @{
   static int old_connection_marker;
-  int new_connection = (NULL == *con_cls);
+  int new_connection = (NULL == *req_cls);
 
   if (new_connection)
     @{
       /* new connection with POST */
-      *con_cls = &old_connection_marker;
+      *req_cls = &old_connection_marker;
     @}
 
   ...
@@ -3416,7 +3499,7 @@ access_handler (void *cls,
 
 @noindent
 In contrast to the previous example, for @code{POST} requests in particular,
-it is more common to use the value of @code{*con_cls} to keep track of
+it is more common to use the value of @code{*req_cls} to keep track of
 actual state used during processing, such as the post processor (or a
 struct containing a post processor):
 
@@ -3427,14 +3510,14 @@ access_handler (void *cls,
                 const char *url,
                 const char *method, const char *version,
                 const char *upload_data, size_t *upload_data_size,
-                void **con_cls)
+                void **req_cls)
 @{
-  struct MHD_PostProcessor * pp = *con_cls;
+  struct MHD_PostProcessor * pp = *req_cls;
 
   if (pp == NULL)
     @{
       pp = MHD_create_post_processor(connection, ...);
-      *con_cls = pp;
+      *req_cls = pp;
       return MHD_YES;
     @}
   if (*upload_data_size)
@@ -3540,9 +3623,9 @@ of this function.
 
 
 @menu
-* microhttpd-info daemon::        State information about an MHD daemon
-* microhttpd-info conn::          State information about a connection
-* microhttpd-option conn::        Modify per-connection options
+* microhttpd-info daemon::      State information about an MHD daemon
+* microhttpd-info conn::        State information about a connection
+* microhttpd-option conn::      Modify per-connection options
 @end menu
 
 
@@ -3724,8 +3807,8 @@ Takes no extra arguments.
 Returns the client-specific pointer to a @code{void *} that was
 (possibly) set during a @code{MHD_NotifyConnectionCallback} when the
 socket was first accepted.  Note that this is NOT the same as the
-@code{con_cls} argument of the @code{MHD_AccessHandlerCallback}.  The
-@code{con_cls} is fresh for each HTTP request, while the
+@code{req_cls} argument of the @code{MHD_AccessHandlerCallback}.  The
+@code{req_cls} is fresh for each HTTP request, while the
 @code{socket_context} is fresh for each socket.
 
 Takes no extra arguments.
@@ -3808,8 +3891,8 @@ zero for no timeout.
 
 
 @menu
-* microhttpd-util feature::       Test supported MHD features
-* microhttpd-util unescape::      Unescape strings
+* microhttpd-util feature::     Test supported MHD features
+* microhttpd-util unescape::    Unescape strings
 @end menu
 
 
@@ -4381,7 +4464,7 @@ should be @code{NULL}.
 This parameter is a pointer to a variable which contains the last check status
 of the UTF-8 sequence. It is required to continue a previous
 UTF-8 sequence check when fragmentation is used, because a UTF-8 sequence
-could be splitted upon fragments.
+could be split upon fragments.
 
 @code{enum MHD_WEBSOCKET_UTF8STEP} is used for this value.
 If you start a new fragment using

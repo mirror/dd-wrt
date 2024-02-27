@@ -1,6 +1,7 @@
 /*
      This file is part of libmicrohttpd
      Copyright (C) 2018 Christian Grothoff (and other contributing authors)
+     Copyright (C) 2022 Evgeny Grin (Karlson2k)
 
      This library is free software; you can redistribute it and/or
      modify it under the terms of the GNU Lesser General Public
@@ -22,12 +23,14 @@
  *        resume a suspended connection
  * @author Robert D Kocisko
  * @author Christian Grothoff
+ * @author Karlson2k (Evgeny Grin)
  */
 #include "platform.h"
 #include <microhttpd.h>
 #include <sys/epoll.h>
 #include <sys/timerfd.h>
 #include <limits.h>
+#include <errno.h>
 
 #define TIMEOUT_INFINITE -1
 
@@ -49,7 +52,7 @@ ahc_echo (void *cls,
           const char *url,
           const char *method,
           const char *version,
-          const char *upload_data, size_t *upload_data_size, void **ptr)
+          const char *upload_data, size_t *upload_data_size, void **req_cls)
 {
   struct MHD_Response *response;
   enum MHD_Result ret;
@@ -57,12 +60,11 @@ ahc_echo (void *cls,
   struct itimerspec ts;
 
   (void) cls;
-  (void) url;               /* Unused. Silence compiler warning. */
   (void) method;
   (void) version;           /* Unused. Silence compiler warning. */
   (void) upload_data;       /* Unused. Silence compiler warning. */
   (void) upload_data_size;  /* Unused. Silence compiler warning. */
-  req = *ptr;
+  req = *req_cls;
   if (NULL == req)
   {
 
@@ -71,16 +73,15 @@ ahc_echo (void *cls,
       return MHD_NO;
     req->connection = connection;
     req->timerfd = -1;
-    *ptr = req;
+    *req_cls = req;
     return MHD_YES;
   }
 
   if (-1 != req->timerfd)
   {
     /* send response (echo request url) */
-    response = MHD_create_response_from_buffer (strlen (url),
-                                                (void *) url,
-                                                MHD_RESPMEM_MUST_COPY);
+    response = MHD_create_response_from_buffer_copy (strlen (url),
+                                                     (const void *) url);
     if (NULL == response)
       return MHD_NO;
     ret = MHD_queue_response (connection,
@@ -120,10 +121,10 @@ ahc_echo (void *cls,
 static void
 connection_done (void *cls,
                  struct MHD_Connection *connection,
-                 void **con_cls,
+                 void **req_cls,
                  enum MHD_RequestTerminationCode toe)
 {
-  struct Request *req = *con_cls;
+  struct Request *req = *req_cls;
 
   (void) cls;
   (void) connection;
@@ -145,14 +146,22 @@ main (int argc,
   struct epoll_event events_list[1];
   struct Request *req;
   uint64_t timer_expirations;
+  int port;
 
   if (argc != 2)
   {
     printf ("%s PORT\n", argv[0]);
     return 1;
   }
+  port = atoi (argv[1]);
+  if ( (1 > port) || (port > 65535) )
+  {
+    fprintf (stderr,
+             "Port must be a number between 1 and 65535.\n");
+    return 1;
+  }
   d = MHD_start_daemon (MHD_USE_EPOLL | MHD_ALLOW_SUSPEND_RESUME,
-                        atoi (argv[1]),
+                        (uint16_t) port,
                         NULL, NULL, &ahc_echo, NULL,
                         MHD_OPTION_NOTIFY_COMPLETED, &connection_done, NULL,
                         MHD_OPTION_END);
@@ -174,16 +183,8 @@ main (int argc,
 
   while (1)
   {
-    int timeout;
-    MHD_UNSIGNED_LONG_LONG to;
-
-    if (MHD_YES !=
-        MHD_get_timeout (d,
-                         &to))
-      timeout = TIMEOUT_INFINITE;
-    else
-      timeout = (to < INT_MAX - 1) ? (int) to : (INT_MAX - 1);
-    current_event_count = epoll_wait (epfd, events_list, 1, timeout);
+    current_event_count = epoll_wait (epfd, events_list, 1,
+                                      MHD_get_timeout_i (d));
 
     if (1 == current_event_count)
     {

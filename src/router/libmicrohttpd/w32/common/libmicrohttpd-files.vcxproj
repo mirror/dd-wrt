@@ -5,9 +5,11 @@
     <ClCompile Include="$(MhdSrc)microhttpd\connection.c" />
     <ClCompile Include="$(MhdSrc)microhttpd\daemon.c" />
     <ClCompile Include="$(MhdSrc)microhttpd\digestauth.c" />
+    <ClCompile Include="$(MhdSrc)microhttpd\gen_auth.c" />
     <ClCompile Include="$(MhdSrc)microhttpd\internal.c" />
     <ClCompile Include="$(MhdSrc)microhttpd\md5.c" />
     <ClCompile Include="$(MhdSrc)microhttpd\sha256.c" />
+    <ClCompile Include="$(MhdSrc)microhttpd\sha512_256.c" />
     <ClCompile Include="$(MhdSrc)microhttpd\memorypool.c" />
     <ClCompile Include="$(MhdSrc)microhttpd\mhd_mono_clock.c" />
     <ClCompile Include="$(MhdSrc)microhttpd\postprocessor.c" />
@@ -19,20 +21,29 @@
     <ClCompile Include="$(MhdSrc)microhttpd\mhd_threads.c" />
     <ClCompile Include="$(MhdSrc)microhttpd\mhd_send.c" />
     <ClCompile Include="$(MhdSrc)microhttpd\mhd_sockets.c" />
-    <ClCompile Include="$(MhdSrc)microhttpd\mhd_itc.c" />
+    <ClCompile Include="$(MhdSrc)microhttpd\mhd_itc.c">
+      <ExcludedFromBuild>true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="$(MhdSrc)microhttpd\mhd_compat.c">
       <ExcludedFromBuild Condition="'$(PlatformToolsetVersion)'&gt;='140'">true</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="$(MhdSrc)microhttpd\mhd_panic.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(MhdSrc)include\autoinit_funcs.h" />
     <ClInclude Include="$(MhdSrc)include\microhttpd.h" />
     <ClInclude Include="$(MhdSrc)include\mhd_options.h" />
     <ClInclude Include="$(MhdSrc)include\platform.h" />
+    <ClInclude Include="$(MhdSrc)microhttpd\basicauth.h" />
     <ClInclude Include="$(MhdSrc)microhttpd\connection.h" />
+    <ClInclude Include="$(MhdSrc)microhttpd\digestauth.h" />
+    <ClInclude Include="$(MhdSrc)microhttpd\gen_auth.h" />
     <ClInclude Include="$(MhdSrc)microhttpd\internal.h" />
+    <ClInclude Include="$(MhdSrc)microhttpd\mhd_md5_wrap.h" />
     <ClInclude Include="$(MhdSrc)microhttpd\md5.h" />
+    <ClInclude Include="$(MhdSrc)microhttpd\mhd_sha256_wrap.h" />
     <ClInclude Include="$(MhdSrc)microhttpd\sha256.h" />
+    <ClInclude Include="$(MhdSrc)microhttpd\sha512_256.h" />
     <ClInclude Include="$(MhdSrc)microhttpd\memorypool.h" />
     <ClInclude Include="$(MhdSrc)microhttpd\mhd_assert.h" />
     <ClInclude Include="$(MhdSrc)microhttpd\mhd_align.h" />
@@ -41,9 +52,11 @@
     <ClInclude Include="$(MhdSrc)microhttpd\mhd_limits.h" />
     <ClInclude Include="$(MhdSrc)microhttpd\mhd_mono_clock.h" />
     <ClInclude Include="$(MhdSrc)microhttpd\response.h" />
+    <ClInclude Include="$(MhdSrc)microhttpd\postprocessor.h" />
     <ClInclude Include="$(MhdSrc)microhttpd\tsearch.h" />
     <ClInclude Include="$(MhdSrc)microhttpd\sysfdsetsize.h" />
     <ClInclude Include="$(MhdSrc)microhttpd\mhd_str.h" />
+    <ClInclude Include="$(MhdSrc)microhttpd\mhd_str_types.h" />
     <ClInclude Include="$(MhdSrc)microhttpd\mhd_threads.h" />
     <ClInclude Include="$(MhdSrc)microhttpd\mhd_locks.h" />
     <ClInclude Include="$(MhdSrc)microhttpd\mhd_send.h" />
@@ -51,6 +64,7 @@
     <ClInclude Include="$(MhdSrc)microhttpd\mhd_itc.h" />
     <ClInclude Include="$(MhdSrc)microhttpd\mhd_itc_types.h" />
     <ClInclude Include="$(MhdSrc)microhttpd\mhd_compat.h" />
+    <ClInclude Include="$(MhdSrc)microhttpd\mhd_panic.h" />
     <ClInclude Include="$(MhdW32Common)MHD_config.h" />
   </ItemGroup>
   <ItemGroup>
@@ -68,5 +82,8 @@
       <Outputs>$(MhdW32Common)microhttpd_dll_res_vc.rc</Outputs>
       <AdditionalInputs>$(MhdW32Common)gen_dll_res.ps1;$(MhdRoot)configure.ac</AdditionalInputs>
     </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="$(MhdW32Common)cpp.hint" />
   </ItemGroup>
 </Project>

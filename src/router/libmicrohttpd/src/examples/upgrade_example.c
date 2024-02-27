@@ -1,6 +1,7 @@
 /*
      This file is part of libmicrohttpd
      Copyright (C) 2016 Christian Grothoff (and other contributing authors)
+     Copyright (C) 2016-2022 Evgeny Grin (Karlson2k)
 
      This library is free software; you can redistribute it and/or
      modify it under the terms of the GNU Lesser General Public
@@ -20,6 +21,7 @@
  * @file upgrade_example.c
  * @brief example for how to use libmicrohttpd upgrade
  * @author Christian Grothoff
+ * @author Karlson2k (Evgeny Grin)
  *
  * Telnet to the HTTP server, use this in the request:
  * GET / http/1.1
@@ -31,6 +33,7 @@
 #include "platform.h"
 #include <microhttpd.h>
 #include <pthread.h>
+#include <errno.h>
 
 #define PAGE \
   "<html><head><title>libmicrohttpd demo</title></head><body>libmicrohttpd demo</body></html>"
@@ -71,11 +74,15 @@ send_all (MHD_socket sock,
   size_t off;
 
   make_blocking (sock);
-  for (off = 0; off < len; off += ret)
+  for (off = 0; off < len; off += (size_t) ret)
   {
     ret = send (sock,
                 &buf[off],
+#if ! defined(_WIN32) || defined(__CYGWIN__)
                 len - off,
+#else  /* Native W32 */
+                (int) (len - off),
+#endif /* Native W32 */
                 0);
     if (0 > ret)
     {
@@ -135,7 +142,7 @@ run_usock (void *cls)
       break;
     send_all (md->sock,
               buf,
-              got);
+              (size_t) got);
   }
   free (md);
   MHD_upgrade_action (urh,
@@ -169,7 +176,7 @@ run_usock (void *cls)
  * @param connection original HTTP connection handle,
  *                   giving the function a last chance
  *                   to inspect the original HTTP request
- * @param con_cls last value left in `con_cls` of the `MHD_AccessHandlerCallback`
+ * @param req_cls last value left in `req_cls` of the `MHD_AccessHandlerCallback`
  * @param extra_in if we happened to have read bytes after the
  *                 HTTP header already (because the client sent
  *                 more than the HTTP header of the request before
@@ -194,7 +201,7 @@ run_usock (void *cls)
 static void
 uh_cb (void *cls,
        struct MHD_Connection *connection,
-       void *con_cls,
+       void *req_cls,
        const char *extra_in,
        size_t extra_in_size,
        MHD_socket sock,
@@ -204,7 +211,7 @@ uh_cb (void *cls,
   pthread_t pt;
   (void) cls;         /* Unused. Silent compiler warning. */
   (void) connection;  /* Unused. Silent compiler warning. */
-  (void) con_cls;     /* Unused. Silent compiler warning. */
+  (void) req_cls;     /* Unused. Silent compiler warning. */
 
   md = malloc (sizeof (struct MyData));
   if (NULL == md)
@@ -247,7 +254,7 @@ ahc_echo (void *cls,
           const char *version,
           const char *upload_data,
           size_t *upload_data_size,
-          void **ptr)
+          void **req_cls)
 {
   static int aptr;
   struct MHD_Response *response;
@@ -260,13 +267,13 @@ ahc_echo (void *cls,
 
   if (0 != strcmp (method, "GET"))
     return MHD_NO;              /* unexpected method */
-  if (&aptr != *ptr)
+  if (&aptr != *req_cls)
   {
     /* do never respond on first call */
-    *ptr = &aptr;
+    *req_cls = &aptr;
     return MHD_YES;
   }
-  *ptr = NULL;                  /* reset when done */
+  *req_cls = NULL;                  /* reset when done */
   response = MHD_create_response_for_upgrade (&uh_cb,
                                               NULL);
 
@@ -286,15 +293,18 @@ main (int argc,
       char *const *argv)
 {
   struct MHD_Daemon *d;
+  unsigned int port;
 
-  if (argc != 2)
+  if ( (argc != 2) ||
+       (1 != sscanf (argv[1], "%u", &port)) ||
+       (65535 < port) )
   {
     printf ("%s PORT\n", argv[0]);
     return 1;
   }
   d = MHD_start_daemon (MHD_ALLOW_UPGRADE | MHD_USE_AUTO
                         | MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG,
-                        atoi (argv[1]),
+                        (uint16_t) port,
                         NULL, NULL,
                         &ahc_echo, NULL,
                         MHD_OPTION_CONNECTION_TIMEOUT, (unsigned int) 120,

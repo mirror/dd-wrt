@@ -1,6 +1,6 @@
 /*
   This file is part of libmicrohttpd
-  Copyright (C) 2014-2016 Karlson2k (Evgeny Grin)
+  Copyright (C) 2014-2023 Karlson2k (Evgeny Grin)
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -126,7 +126,7 @@ typedef intptr_t ssize_t;
 #endif
 
 
-#ifdef __FreeBSD__
+#if defined(__FreeBSD__) || defined(__FreeBSD_kernel__)
 #include <sys/param.h> /* For __FreeBSD_version */
 #endif /* __FreeBSD__ */
 
@@ -135,8 +135,12 @@ typedef intptr_t ssize_t;
 #ifdef _MHD_FD_SETSIZE_IS_DEFAULT
 #  define _MHD_SYS_DEFAULT_FD_SETSIZE FD_SETSIZE
 #else  /* ! _MHD_FD_SETSIZE_IS_DEFAULT */
-#  include "sysfdsetsize.h"
-#  define _MHD_SYS_DEFAULT_FD_SETSIZE get_system_fdsetsize_value ()
+#  ifndef MHD_SYS_FD_SETSIZE_
+#    include "sysfdsetsize.h"
+#    define _MHD_SYS_DEFAULT_FD_SETSIZE get_system_fdsetsize_value ()
+#  else  /* MHD_SYS_FD_SETSIZE_ */
+#    define _MHD_SYS_DEFAULT_FD_SETSIZE MHD_SYS_FD_SETSIZE_
+#  endif /* MHD_SYS_FD_SETSIZE_ */
 #endif /* ! _MHD_FD_SETSIZE_IS_DEFAULT */
 
 #ifndef MHD_PANIC
@@ -199,12 +203,13 @@ typedef SOCKET MHD_socket;
 #  define SHUT_RDWR SD_BOTH
 #endif
 
-#if HAVE_ACCEPT4 + 0 != 0 && (defined(HAVE_SOCK_NONBLOCK) || \
+#if defined(HAVE_ACCEPT4) && (defined(HAVE_SOCK_NONBLOCK) || \
   defined(SOCK_CLOEXEC) || defined(SOCK_NOSIGPIPE))
 #  define USE_ACCEPT4 1
 #endif
 
-#if defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__NetBSD__) || \
+#if defined(__FreeBSD__) || defined(__FreeBSD_kernel__) || \
+  defined(__OpenBSD__) || defined(__NetBSD__) || \
   defined(MHD_WINSOCK_SOCKETS) || defined(__MACH__) || defined(__sun) || \
   defined(SOMEBSD)
 /* Most of OSes inherit nonblocking setting from the listen socket */
@@ -248,8 +253,10 @@ typedef SOCKET MHD_socket;
  */
 #define _MHD_CORK_RESET_PUSH_DATA_ALWAYS 1
 #endif /* __linux__ */
-#if defined(__FreeBSD__) && \
-  ((__FreeBSD__ + 0) >= 5 || (__FreeBSD_version + 0) >= 450000)
+#if (defined(__FreeBSD__) && \
+  ((__FreeBSD__ + 0) >= 5 || (__FreeBSD_version + 0) >= 450000)) || \
+  (defined(__FreeBSD_kernel_version) && \
+  (__FreeBSD_kernel_version + 0) >= 450000)
 /* FreeBSD pushes data to the network with reset of TCP_NOPUSH
  * starting from version 4.5. */
 /**
@@ -391,7 +398,7 @@ typedef int MHD_SCKT_SEND_SIZE_;
  */
 #if defined(MHD_POSIX_SOCKETS)
 #  define MHD_SCKT_FD_FITS_FDSET_SETSIZE_(fd,pset,setsize) \
-    ((fd) < ((MHD_socket) setsize))
+    ((fd) < ((MHD_socket) (setsize)))
 #elif defined(MHD_WINSOCK_SOCKETS)
 #  define MHD_SCKT_FD_FITS_FDSET_SETSIZE_(fd,pset,setsize) \
    ( ((void*) (pset)==  (void*) 0) || \
@@ -440,8 +447,8 @@ typedef int MHD_SCKT_SEND_SIZE_;
       (((void*) (w) == (void*) 0) || ((fd_set*) (w))->fd_count == 0) &&  \
       (((void*) (e) == (void*) 0) || ((fd_set*) (e))->fd_count == 0) ) ? \
     ( ((void*) (t) == (void*) 0) ? 0 :                                   \
-      (Sleep (((struct timeval*) (t))->tv_sec * 1000                     \
-              + ((struct timeval*) (t))->tv_usec / 1000), 0) ) :         \
+      (Sleep ((DWORD)((struct timeval*) (t))->tv_sec * 1000              \
+              + (DWORD)((struct timeval*) (t))->tv_usec / 1000), 0) ) :  \
     (select ((int) 0,(r),(w),(e),(t))) )
 #endif
 
@@ -641,7 +648,7 @@ typedef int MHD_SCKT_SEND_SIZE_;
 #  define MHD_SCKT_EACCESS_       WSAEACCES
 #  define MHD_SCKT_ENETDOWN_      WSAENETDOWN
 #  define MHD_SCKT_EALREADY_      WSAEALREADY
-#  define MHD_SCKT_EINPROGRESS_   WSAEACCES
+#  define MHD_SCKT_EINPROGRESS_   WSAEINPROGRESS
 #  define MHD_SCKT_EISCONN_       WSAEISCONN
 #endif
 
@@ -874,7 +881,7 @@ int
 MHD_add_to_fd_set_ (MHD_socket fd,
                     fd_set *set,
                     MHD_socket *max_fd,
-                    unsigned int fd_setsize);
+                    int fd_setsize);
 
 
 /**

@@ -3,15 +3,24 @@ SUBDIRS  = .
 
 AM_CPPFLAGS = \
   -I$(top_srcdir)/src/include \
+  $(CPPFLAGS_ac) \
   -DDATA_DIR=\"$(top_srcdir)/src/datadir/\"
 
-AM_CFLAGS = @LIBGCRYPT_CFLAGS@
+AM_CFLAGS = $(CFLAGS_ac) @LIBGCRYPT_CFLAGS@
+
+AM_LDFLAGS = $(LDFLAGS_ac)
 
 MHD_CPU_COUNT_DEF = -DMHD_CPU_COUNT=$(CPU_COUNT)
+
+AM_TESTS_ENVIRONMENT = $(TESTS_ENVIRONMENT_ac)
 
 if USE_COVERAGE
   AM_CFLAGS += --coverage
 endif
+
+$(top_builddir)/src/microhttpd/libmicrohttpd.la: $(top_builddir)/src/microhttpd/Makefile
+	@echo ' cd $(top_builddir)/src/microhttpd && $(MAKE) $(AM_MAKEFLAGS) libmicrohttpd.la'; \
+	$(am__cd) $(top_builddir)/src/microhttpd && $(MAKE) $(AM_MAKEFLAGS) libmicrohttpd.la
 
 
 # example programs
@@ -61,7 +70,8 @@ endif
 
 if ENABLE_DAUTH
 noinst_PROGRAMS += \
- digest_auth_example
+ digest_auth_example \
+ digest_auth_example_adv
 endif
 
 if ENABLE_BAUTH
@@ -204,6 +214,11 @@ authorization_example_LDADD = \
 digest_auth_example_SOURCES = \
  digest_auth_example.c
 digest_auth_example_LDADD = \
+ $(top_builddir)/src/microhttpd/libmicrohttpd.la
+
+digest_auth_example_adv_SOURCES = \
+ digest_auth_example_adv.c
+digest_auth_example_adv_LDADD = \
  $(top_builddir)/src/microhttpd/libmicrohttpd.la
 
 refuse_post_example_SOURCES = \

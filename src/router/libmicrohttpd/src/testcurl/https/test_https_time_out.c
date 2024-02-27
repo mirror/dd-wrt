@@ -1,7 +1,7 @@
 /*
  This file is part of libmicrohttpd
  Copyright (C) 2007 Christian Grothoff
- Copyright (C) 2014-2021 Karlson2k (Evgeny Grin)
+ Copyright (C) 2014-2022 Evgeny Grin (Karlson2k)
 
  libmicrohttpd is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published
@@ -21,7 +21,7 @@
 
 /**
  * @file test_https_time_out.c
- * @brief: daemon TLS alert response test-case
+ * @brief: daemon TLS timeout test
  *
  * @author Sagie Amir
  * @author Karlson2k (Evgeny Grin)
@@ -52,18 +52,19 @@
 #endif /* !WIN32_LEAN_AND_MEAN */
 #include <windows.h>
 #endif
+#include "tls_test_keys.h"
 
-static const int TIME_OUT = 2;
+static const unsigned int timeout_val = 2;
 
-static unsigned int num_connects = 0;
-static unsigned int num_disconnects = 0;
+static volatile unsigned int num_connects = 0;
+static volatile unsigned int num_disconnects = 0;
 
 
 /**
  * Pause execution for specified number of milliseconds.
  * @param ms the number of milliseconds to sleep
  */
-void
+static void
 _MHD_sleep (uint32_t ms)
 {
 #if defined(_WIN32)
@@ -97,31 +98,40 @@ _MHD_sleep (uint32_t ms)
 }
 
 
-void
+static void
 socket_cb (void *cls,
            struct MHD_Connection *c,
            void **socket_context,
            enum MHD_ConnectionNotificationCode toe)
 {
-  struct sckt_notif_cb_param *param = (struct sckt_notif_cb_param *) cls;
   if (NULL == socket_context)
     abort ();
   if (NULL == c)
     abort ();
-  if (NULL == param)
+  if (NULL != cls)
     abort ();
 
   if (MHD_CONNECTION_NOTIFY_STARTED == toe)
+  {
     num_connects++;
+#ifdef _DEBUG
+    fprintf (stderr, "MHD: Connection has started.\n");
+#endif /* _DEBUG */
+  }
   else if (MHD_CONNECTION_NOTIFY_CLOSED == toe)
+  {
     num_disconnects++;
+#ifdef _DEBUG
+    fprintf (stderr, "MHD: Connection has closed.\n");
+#endif /* _DEBUG */
+  }
   else
     abort ();
 }
 
 
-static int
-test_tls_session_time_out (gnutls_session_t session, int port)
+static unsigned int
+test_tls_session_time_out (gnutls_session_t session, uint16_t port)
 {
   int ret;
   MHD_socket sd;
@@ -162,17 +172,21 @@ test_tls_session_time_out (gnutls_session_t session, int port)
     return 2;
   }
 
-  _MHD_sleep (TIME_OUT * 1000 + 1200);
+  _MHD_sleep (timeout_val * 1000 + 1700);
 
-  /* check that server has closed the connection */
-  if (1 == num_disconnects)
+  if (0 == num_connects)
   {
-    fprintf (stderr, "Connection failed to time-out\n");
+    fprintf (stderr, "MHD has not detected any connection attempt.\n");
+    MHD_socket_close_chk_ (sd);
+    return 4;
+  }
+  /* check that server has closed the connection */
+  if (0 == num_disconnects)
+  {
+    fprintf (stderr, "MHD has not detected any disconnections.\n");
     MHD_socket_close_chk_ (sd);
     return 1;
   }
-  else if (0 != num_disconnects)
-    abort ();
 
   MHD_socket_close_chk_ (sd);
   return 0;
@@ -182,11 +196,11 @@ test_tls_session_time_out (gnutls_session_t session, int port)
 int
 main (int argc, char *const *argv)
 {
-  int errorCount = 0;
+  unsigned int errorCount = 0;
   struct MHD_Daemon *d;
   gnutls_session_t session;
   gnutls_certificate_credentials_t xcred;
-  int port;
+  uint16_t port;
   (void) argc;   /* Unused. Silent compiler warning. */
 
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
@@ -224,8 +238,10 @@ main (int argc, char *const *argv)
                         | MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_TLS
                         | MHD_USE_ERROR_LOG, port,
                         NULL, NULL, &http_dummy_ahc, NULL,
-                        MHD_OPTION_CONNECTION_TIMEOUT, TIME_OUT,
-                        MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
+                        MHD_OPTION_CONNECTION_TIMEOUT,
+                        (unsigned int) timeout_val,
+                        MHD_OPTION_NOTIFY_CONNECTION, &socket_cb, NULL,
+                        MHD_OPTION_HTTPS_MEM_KEY, srv_self_signed_key_pem,
                         MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,
                         MHD_OPTION_END);
 
@@ -240,9 +256,10 @@ main (int argc, char *const *argv)
     dinfo = MHD_get_daemon_info (d, MHD_DAEMON_INFO_BIND_PORT);
     if ((NULL == dinfo) || (0 == dinfo->port) )
     {
-      MHD_stop_daemon (d); return -1;
+      MHD_stop_daemon (d);
+      return 99;
     }
-    port = (int) dinfo->port;
+    port = dinfo->port;
   }
 
   if (0 != setup_session (&session, &xcred))

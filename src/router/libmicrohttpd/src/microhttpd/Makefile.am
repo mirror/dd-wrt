@@ -2,9 +2,13 @@
 
 AM_CPPFLAGS = \
   -I$(top_srcdir)/src/include \
-  -I$(top_srcdir)/src/microhttpd
+  $(CPPFLAGS_ac)
 
-AM_CFLAGS = $(HIDDEN_VISIBILITY_CFLAGS)
+AM_CFLAGS = $(CFLAGS_ac) $(HIDDEN_VISIBILITY_CFLAGS)
+
+AM_LDFLAGS = $(LDFLAGS_ac)
+
+AM_TESTS_ENVIRONMENT = $(TESTS_ENVIRONMENT_ac)
 
 lib_LTLIBRARIES = \
   libmicrohttpd.la
@@ -79,13 +83,14 @@ libmicrohttpd_la_SOURCES = \
   memorypool.c memorypool.h \
   mhd_mono_clock.c mhd_mono_clock.h \
   mhd_limits.h \
-  sysfdsetsize.c sysfdsetsize.h \
-  mhd_str.c mhd_str.h \
+  sysfdsetsize.h \
+  mhd_str.c mhd_str.h mhd_str_types.h\
   mhd_send.h mhd_send.c \
   mhd_assert.h \
   mhd_sockets.c mhd_sockets.h \
   mhd_itc.c mhd_itc.h mhd_itc_types.h \
   mhd_compat.c mhd_compat.h \
+  mhd_panic.c mhd_panic.h \
   response.c response.h
 
 if USE_POSIX_THREADS
@@ -99,6 +104,10 @@ libmicrohttpd_la_SOURCES += \
   mhd_locks.h
 endif
 
+if NEED_SYS_FD_SET_SIZE_VALUE
+libmicrohttpd_la_SOURCES += \
+  sysfdsetsize.c
+endif
 
 libmicrohttpd_la_CPPFLAGS = \
   $(AM_CPPFLAGS) $(MHD_LIB_CPPFLAGS) $(MHD_TLS_LIB_CPPFLAGS) \
@@ -106,8 +115,9 @@ libmicrohttpd_la_CPPFLAGS = \
 libmicrohttpd_la_CFLAGS = \
   $(AM_CFLAGS) $(MHD_LIB_CFLAGS) $(MHD_TLS_LIB_CFLAGS)
 libmicrohttpd_la_LDFLAGS = \
-  $(MHD_LIB_LDFLAGS) $(MHD_TLS_LIB_LDFLAGS) \
+  $(AM_LDFLAGS) $(MHD_LIB_LDFLAGS) $(MHD_TLS_LIB_LDFLAGS) \
   $(W32_MHD_LIB_LDFLAGS) \
+  -export-dynamic -no-undefined \
   -version-info @LIB_VERSION_CURRENT@:@LIB_VERSION_REVISION@:@LIB_VERSION_AGE@
 libmicrohttpd_la_LIBADD = \
   $(MHD_LIBDEPS) $(MHD_TLS_LIBDEPS)
@@ -154,20 +164,48 @@ endif
 
 if HAVE_POSTPROCESSOR
 libmicrohttpd_la_SOURCES += \
-  postprocessor.c
+  postprocessor.c postprocessor.h
 endif
 
+if HAVE_ANYAUTH
+libmicrohttpd_la_SOURCES += \
+  gen_auth.c gen_auth.h
+endif
 if ENABLE_DAUTH
 libmicrohttpd_la_SOURCES += \
-  digestauth.c \
-  mhd_bithelpers.h mhd_byteorder.h mhd_align.h \
-  md5.c md5.h \
+  digestauth.c digestauth.h \
+  mhd_bithelpers.h mhd_byteorder.h mhd_align.h
+if ENABLE_MD5
+libmicrohttpd_la_SOURCES += \
+  mhd_md5_wrap.h
+if ! ENABLE_MD5_EXT
+libmicrohttpd_la_SOURCES += \
+  md5.c md5.h
+else
+libmicrohttpd_la_SOURCES += \
+  md5_ext.c md5_ext.h
+endif
+endif
+if ENABLE_SHA256
+libmicrohttpd_la_SOURCES += \
+  mhd_sha256_wrap.h
+if ! ENABLE_SHA256_EXT
+libmicrohttpd_la_SOURCES += \
   sha256.c sha256.h
+else
+libmicrohttpd_la_SOURCES += \
+  sha256_ext.c sha256_ext.h
+endif
+endif
+if ENABLE_SHA512_256
+libmicrohttpd_la_SOURCES += \
+  sha512_256.c sha512_256.h
+endif
 endif
 
 if ENABLE_BAUTH
 libmicrohttpd_la_SOURCES += \
-  basicauth.c
+  basicauth.c basicauth.h
 endif
 
 if ENABLE_HTTPS
@@ -182,10 +220,10 @@ check_PROGRAMS = \
   test_str_token \
   test_str_token_remove \
   test_str_tokens_remove \
+  test_str_pct \
+  test_str_bin_hex \
   test_http_reasons \
-  test_md5 \
   test_sha1 \
-  test_sha256 \
   test_start_stop \
   test_daemon \
   test_response_entries \
@@ -202,20 +240,30 @@ check_PROGRAMS = \
   test_client_put_chunked_steps_shutdown \
   test_client_put_chunked_steps_close \
   test_client_put_chunked_steps_hard_close \
-  test_options
+  test_options \
+  test_mhd_version \
+  test_set_panic
+
+if ENABLE_MD5
+check_PROGRAMS += \
+  test_md5
+endif
+if ENABLE_SHA256
+check_PROGRAMS += \
+  test_sha256
+endif
+if ENABLE_SHA512_256
+check_PROGRAMS += \
+  test_sha512_256
+endif
 
 if HAVE_POSIX_THREADS
 if ENABLE_UPGRADE
-if USE_POSIX_THREADS
-  check_PROGRAMS += test_upgrade test_upgrade_large
-endif
-if USE_W32_THREADS
-  check_PROGRAMS += test_upgrade test_upgrade_large
-endif
-if ENABLE_HTTPS
 if USE_THREADS
+check_PROGRAMS += test_upgrade test_upgrade_large test_upgrade_vlarge
+if ENABLE_HTTPS
 if USE_UPGRADE_TLS_TESTS
-check_PROGRAMS += test_upgrade_tls test_upgrade_large_tls
+check_PROGRAMS += test_upgrade_tls test_upgrade_large_tls test_upgrade_vlarge_tls
 endif
 endif
 endif
@@ -246,6 +294,24 @@ endif
 endif
 endif
 
+if HAVE_ANYAUTH
+if HAVE_MESSAGES
+check_PROGRAMS += \
+  test_auth_parse
+endif
+endif
+if ENABLE_DAUTH
+check_PROGRAMS += \
+  test_str_quote \
+  test_dauth_userdigest \
+  test_dauth_userhash
+endif
+if ENABLE_BAUTH
+check_PROGRAMS += \
+  test_str_base64
+endif
+
+
 if HEAVY_TESTS
 if TESTS_STRESS_OS
 check_PROGRAMS += \
@@ -254,12 +320,18 @@ check_PROGRAMS += \
   test_client_put_chunked_steps_hard_close_stress_os
 endif
 endif
-if ENABLE_BAUTH
-check_PROGRAMS += \
-  test_str_base64
-endif
+
 
 TESTS = $(check_PROGRAMS)
+
+update-po-POTFILES.in: $(top_srcdir)/po/POTFILES.in
+
+$(top_srcdir)/po/POTFILES.in: $(srcdir)/Makefile.am
+	@echo "Creating $@"
+	@echo  src/include/microhttpd.h > "$@" && \
+	for src in $(am__libmicrohttpd_la_SOURCES_DIST) ; do \
+	  echo "$(subdir)/$$src" >> "$@" ; \
+	done
 
 test_start_stop_SOURCES = \
   test_start_stop.c
@@ -269,7 +341,7 @@ test_start_stop_LDADD = \
 test_daemon_SOURCES = \
   test_daemon.c
 test_daemon_LDADD = \
-  $(top_builddir)/src/microhttpd/libmicrohttpd.la
+  $(builddir)/libmicrohttpd.la
 
 test_response_entries_SOURCES = \
   test_response_entries.c
@@ -285,48 +357,64 @@ test_upgrade_CFLAGS = \
 test_upgrade_LDFLAGS = \
   $(MHD_TLS_LIB_LDFLAGS)
 test_upgrade_LDADD = \
-  $(top_builddir)/src/microhttpd/libmicrohttpd.la \
-  $(MHD_TLS_LIB_LDFLAGS) $(MHD_TLS_LIBDEPS) \
+  $(builddir)/libmicrohttpd.la \
+  $(MHD_TLS_LIBDEPS) \
   $(PTHREAD_LIBS)
 
 test_upgrade_large_SOURCES = \
-  test_upgrade_large.c test_helpers.h mhd_sockets.h mhd_sockets.c mhd_itc.h mhd_itc_types.h mhd_itc.c
+  $(test_upgrade_SOURCES)
 test_upgrade_large_CPPFLAGS = \
-  $(AM_CPPFLAGS) $(MHD_TLS_LIB_CPPFLAGS)
+  $(test_upgrade_CPPFLAGS)
 test_upgrade_large_CFLAGS = \
-  $(AM_CFLAGS) $(PTHREAD_CFLAGS) $(MHD_TLS_LIB_CFLAGS)
+  $(test_upgrade_CFLAGS)
 test_upgrade_large_LDFLAGS = \
-  $(MHD_TLS_LIB_LDFLAGS)
+  $(test_upgrade_LDFLAGS)
 test_upgrade_large_LDADD = \
-  $(top_builddir)/src/microhttpd/libmicrohttpd.la \
-  $(MHD_TLS_LIB_LDFLAGS) $(MHD_TLS_LIBDEPS) \
-  $(PTHREAD_LIBS)
+  $(test_upgrade_LDADD)
+
+test_upgrade_vlarge_SOURCES = \
+  $(test_upgrade_SOURCES)
+test_upgrade_vlarge_CPPFLAGS = \
+  $(test_upgrade_CPPFLAGS)
+test_upgrade_vlarge_CFLAGS = \
+  $(test_upgrade_CFLAGS)
+test_upgrade_vlarge_LDFLAGS = \
+  $(test_upgrade_LDFLAGS)
+test_upgrade_vlarge_LDADD = \
+  $(test_upgrade_LDADD)
 
 test_upgrade_tls_SOURCES = \
-  test_upgrade.c test_helpers.h mhd_sockets.h
+  $(test_upgrade_SOURCES)
 test_upgrade_tls_CPPFLAGS = \
-  $(AM_CPPFLAGS) $(MHD_TLS_LIB_CPPFLAGS)
+  $(test_upgrade_CPPFLAGS)
 test_upgrade_tls_CFLAGS = \
-  $(AM_CFLAGS) $(PTHREAD_CFLAGS) $(MHD_TLS_LIB_CFLAGS)
+  $(test_upgrade_CFLAGS)
 test_upgrade_tls_LDFLAGS = \
-  $(MHD_TLS_LIB_LDFLAGS)
+  $(test_upgrade_LDFLAGS)
 test_upgrade_tls_LDADD = \
-  $(top_builddir)/src/microhttpd/libmicrohttpd.la \
-  $(MHD_TLS_LIB_LDFLAGS) $(MHD_TLS_LIBDEPS) \
-  $(PTHREAD_LIBS)
+  $(test_upgrade_LDADD)
 
 test_upgrade_large_tls_SOURCES = \
-  test_upgrade_large.c test_helpers.h mhd_sockets.h mhd_sockets.c mhd_itc.h mhd_itc_types.h mhd_itc.c
+  $(test_upgrade_SOURCES)
 test_upgrade_large_tls_CPPFLAGS = \
-  $(AM_CPPFLAGS) $(MHD_TLS_LIB_CPPFLAGS)
+  $(test_upgrade_CPPFLAGS)
 test_upgrade_large_tls_CFLAGS = \
-  $(AM_CFLAGS) $(PTHREAD_CFLAGS) $(MHD_TLS_LIB_CFLAGS)
+  $(test_upgrade_CFLAGS)
 test_upgrade_large_tls_LDFLAGS = \
-  $(MHD_TLS_LIB_LDFLAGS)
+  $(test_upgrade_LDFLAGS)
 test_upgrade_large_tls_LDADD = \
-  $(top_builddir)/src/microhttpd/libmicrohttpd.la \
-  $(MHD_TLS_LIB_LDFLAGS) $(MHD_TLS_LIBDEPS) \
-  $(PTHREAD_LIBS)
+  $(test_upgrade_LDADD)
+
+test_upgrade_vlarge_tls_SOURCES = \
+  $(test_upgrade_SOURCES)
+test_upgrade_vlarge_tls_CPPFLAGS = \
+  $(test_upgrade_CPPFLAGS)
+test_upgrade_vlarge_tls_CFLAGS = \
+  $(test_upgrade_CFLAGS)
+test_upgrade_vlarge_tls_LDFLAGS = \
+  $(test_upgrade_LDFLAGS)
+test_upgrade_vlarge_tls_LDADD = \
+  $(test_upgrade_LDADD)
 
 test_postprocessor_SOURCES = \
   test_postprocessor.c
@@ -335,7 +423,7 @@ test_postprocessor_CPPFLAGS = \
 test_postprocessor_CFLAGS = \
   $(AM_CFLAGS) $(MHD_TLS_LIB_CFLAGS)
 test_postprocessor_LDADD = \
-  $(top_builddir)/src/microhttpd/libmicrohttpd.la
+  $(builddir)/libmicrohttpd.la
 
 test_postprocessor_amp_SOURCES = \
   test_postprocessor_amp.c
@@ -344,7 +432,7 @@ test_postprocessor_amp_CPPFLAGS = \
 test_postprocessor_amp_CFLAGS = \
   $(AM_CFLAGS) $(MHD_TLS_LIB_CFLAGS)
 test_postprocessor_amp_LDADD = \
-  $(top_builddir)/src/microhttpd/libmicrohttpd.la
+  $(builddir)/libmicrohttpd.la
 
 test_postprocessor_large_SOURCES = \
   test_postprocessor_large.c
@@ -353,48 +441,56 @@ test_postprocessor_large_CPPFLAGS = \
 test_postprocessor_large_CFLAGS = \
   $(AM_CFLAGS) $(MHD_TLS_LIB_CFLAGS)
 test_postprocessor_large_LDADD = \
-  $(top_builddir)/src/microhttpd/libmicrohttpd.la
+  $(builddir)/libmicrohttpd.la
 
 test_postprocessor_md_SOURCES = \
-  test_postprocessor_md.c
+  test_postprocessor_md.c postprocessor.h postprocessor.c \
+  internal.h internal.c mhd_str.h mhd_str.c \
+  mhd_panic.h mhd_panic.c
 test_postprocessor_md_CPPFLAGS = \
   $(AM_CPPFLAGS) $(MHD_TLS_LIB_CPPFLAGS)
-test_postprocessor_md_CFLAGS = \
-  $(AM_CFLAGS) $(MHD_TLS_LIB_CFLAGS)
 
 test_shutdown_select_SOURCES = \
   test_shutdown_select.c
+test_shutdown_select_CFLAGS = $(AM_CFLAGS)
+test_shutdown_select_LDADD = $(LDADD)
 if USE_POSIX_THREADS
-test_shutdown_select_CFLAGS = \
-  $(AM_CFLAGS) $(PTHREAD_CFLAGS)
-test_shutdown_select_LDADD = \
+test_shutdown_select_CFLAGS += \
+  $(PTHREAD_CFLAGS)
+test_shutdown_select_LDADD += \
   $(PTHREAD_LIBS)
 endif
 
 test_shutdown_poll_SOURCES = \
   test_shutdown_select.c mhd_threads.h
+test_shutdown_poll_CFLAGS = $(AM_CFLAGS)
+test_shutdown_poll_LDADD = $(LDADD)
 if USE_POSIX_THREADS
-test_shutdown_poll_CFLAGS = \
+test_shutdown_poll_CFLAGS += \
   $(AM_CFLAGS) $(PTHREAD_CFLAGS)
-test_shutdown_poll_LDADD = \
+test_shutdown_poll_LDADD += \
   $(PTHREAD_LIBS)
 endif
 
 test_shutdown_select_ignore_SOURCES = \
   test_shutdown_select.c
+test_shutdown_select_ignore_CFLAGS = $(AM_CFLAGS)
+test_shutdown_select_ignore_LDADD = $(LDADD)
 if USE_POSIX_THREADS
-test_shutdown_select_ignore_CFLAGS = \
-  $(AM_CFLAGS) $(PTHREAD_CFLAGS)
-test_shutdown_select_ignore_LDADD = \
+test_shutdown_select_ignore_CFLAGS += \
+  $(PTHREAD_CFLAGS)
+test_shutdown_select_ignore_LDADD += \
   $(PTHREAD_LIBS)
 endif
 
 test_shutdown_poll_ignore_SOURCES = \
   test_shutdown_select.c mhd_threads.h
+test_shutdown_poll_ignore_CFLAGS = $(AM_CFLAGS)
+test_shutdown_poll_ignore_LDADD = $(LDADD)
 if USE_POSIX_THREADS
-test_shutdown_poll_ignore_CFLAGS = \
+test_shutdown_poll_ignore_CFLAGS += \
   $(AM_CFLAGS) $(PTHREAD_CFLAGS)
-test_shutdown_poll_ignore_LDADD = \
+test_shutdown_poll_ignore_LDADD += \
   $(PTHREAD_LIBS)
 endif
 
@@ -421,24 +517,70 @@ test_http_reasons_SOURCES = \
   reason_phrase.c mhd_str.c mhd_str.h
 
 test_md5_SOURCES = \
-  test_md5.c test_helpers.h \
+  test_md5.c test_helpers.h mhd_md5_wrap.h ../include/mhd_options.h
+if ! ENABLE_MD5_EXT
+test_md5_SOURCES += \
   md5.c md5.h mhd_bithelpers.h mhd_byteorder.h mhd_align.h
+test_md5_CPPFLAGS = $(AM_CPPFLAGS)
+test_md5_CFLAGS = $(AM_CFLAGS)
+test_md5_LDFLAGS = $(AM_LDFLAGS)
+test_md5_LDADD = $(LDADD)
+else
+test_md5_SOURCES += \
+  md5_ext.c md5_ext.h
+test_md5_CPPFLAGS = $(AM_CPPFLAGS) $(MHD_TLS_LIB_CPPFLAGS)
+test_md5_CFLAGS = $(AM_CFLAGS) $(MHD_TLS_LIB_CFLAGS)
+test_md5_LDFLAGS = $(AM_LDFLAGS) $(MHD_TLS_LIB_LDFLAGS)
+test_md5_LDADD = $(MHD_TLS_LIBDEPS) $(LDADD)
+endif
 
 test_sha256_SOURCES = \
-  test_sha256.c test_helpers.h \
+  test_sha256.c test_helpers.h mhd_sha256_wrap.h ../include/mhd_options.h
+if ! ENABLE_SHA256_EXT
+test_sha256_SOURCES += \
   sha256.c sha256.h mhd_bithelpers.h mhd_byteorder.h mhd_align.h
+test_sha256_CPPFLAGS = $(AM_CPPFLAGS)
+test_sha256_CFLAGS = $(AM_CFLAGS)
+test_sha256_LDFLAGS = $(AM_LDFLAGS)
+test_sha256_LDADD = $(LDADD)
+else
+test_sha256_SOURCES += \
+  sha256_ext.c sha256_ext.h
+test_sha256_CPPFLAGS = $(AM_CPPFLAGS) $(MHD_TLS_LIB_CPPFLAGS)
+test_sha256_CFLAGS = $(AM_CFLAGS) $(MHD_TLS_LIB_CFLAGS)
+test_sha256_LDFLAGS = $(AM_LDFLAGS) $(MHD_TLS_LIB_LDFLAGS)
+test_sha256_LDADD = $(MHD_TLS_LIBDEPS) $(LDADD)
+endif
+
+test_sha512_256_SOURCES = \
+  test_sha512_256.c test_helpers.h \
+  sha512_256.c sha512_256.h mhd_bithelpers.h mhd_byteorder.h mhd_align.h
 
 test_sha1_SOURCES = \
   test_sha1.c test_helpers.h \
   sha1.c sha1.h mhd_bithelpers.h mhd_byteorder.h mhd_align.h
 
+test_auth_parse_SOURCES = \
+  test_auth_parse.c gen_auth.c gen_auth.h  mhd_str.h mhd_str.c mhd_assert.h
+test_auth_parse_CPPFLAGS = \
+  $(AM_CPPFLAGS) $(MHD_TLS_LIB_CPPFLAGS)
+
+test_str_quote_SOURCES = \
+  test_str_quote.c mhd_str.h mhd_str.c mhd_assert.h
+
 test_str_base64_SOURCES = \
   test_str_base64.c mhd_str.h mhd_str.c mhd_assert.h
+
+test_str_pct_SOURCES = \
+  test_str_pct.c mhd_str.h mhd_str.c mhd_assert.h
+
+test_str_bin_hex_SOURCES = \
+  test_str_bin_hex.c mhd_str.h mhd_str.c mhd_assert.h
 
 test_options_SOURCES = \
   test_options.c
 test_options_LDADD = \
-  $(top_builddir)/src/microhttpd/libmicrohttpd.la
+  $(builddir)/libmicrohttpd.la
 
 test_client_put_shutdown_SOURCES = \
   test_client_put_stop.c
@@ -514,4 +656,25 @@ test_client_put_chunked_steps_hard_close_stress_os_SOURCES = \
   $(test_client_put_chunked_steps_hard_close_SOURCES)
 test_client_put_chunked_steps_hard_close_stress_os_LDADD = \
   $(test_client_put_chunked_steps_hard_close_LDADD)
-  
+
+test_set_panic_SOURCES = \
+  test_set_panic.c
+test_set_panic_LDADD = \
+  libmicrohttpd.la
+
+test_dauth_userdigest_SOURCES = \
+  test_dauth_userdigest.c
+test_dauth_userdigest_LDADD = \
+  libmicrohttpd.la
+
+test_dauth_userhash_SOURCES = \
+  test_dauth_userhash.c
+test_dauth_userhash_LDADD = \
+  libmicrohttpd.la
+
+test_mhd_version_SOURCES = \
+  test_mhd_version.c
+test_mhd_version_LDADD = \
+  libmicrohttpd.la
+
+.PHONY: update-po-POTFILES.in

@@ -1,7 +1,7 @@
 /*
   This file is part of libmicrohttpd
   Copyright (C) 2007-2018 Daniel Pittman and Christian Grothoff
-  Copyright (C) 2014-2021 Evgeny Grin (Karlson2k)
+  Copyright (C) 2014-2023 Evgeny Grin (Karlson2k)
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -53,28 +53,8 @@
 #define PRIu64  "llu"
 #endif /* ! PRIu64 */
 
-#ifdef MHD_PANIC
-/* Override any defined MHD_PANIC macro with proper one */
-#undef MHD_PANIC
-#endif /* MHD_PANIC */
-
-#ifdef HAVE_MESSAGES
-/**
- * Trigger 'panic' action based on fatal errors.
- *
- * @param msg error message (const char *)
- */
-#define MHD_PANIC(msg) do { mhd_panic (mhd_panic_cls, __FILE__, __LINE__, msg); \
-                            BUILTIN_NOT_REACHED; } while (0)
-#else
-/**
- * Trigger 'panic' action based on fatal errors.
- *
- * @param msg error message (const char *)
- */
-#define MHD_PANIC(msg) do { mhd_panic (mhd_panic_cls, __FILE__, __LINE__, NULL); \
-                            BUILTIN_NOT_REACHED; } while (0)
-#endif
+/* Must be included before other internal headers! */
+#include "mhd_panic.h"
 
 #if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
 #include "mhd_threads.h"
@@ -82,7 +62,19 @@
 #include "mhd_locks.h"
 #include "mhd_sockets.h"
 #include "mhd_itc_types.h"
+#include "mhd_str_types.h"
+#if defined(BAUTH_SUPPORT) || defined(DAUTH_SUPPORT)
+#include "gen_auth.h"
+#endif /* BAUTH_SUPPORT || DAUTH_SUPPORT*/
 
+
+/**
+ * Macro to drop 'const' qualifier from pointer without compiler warning.
+ * To be used *only* to deal with broken external APIs, which require non-const
+ * pointer to unmodifiable data.
+ * Must not be used to transform pointers for MHD needs.
+ */
+#define _MHD_DROP_CONST(ptr)    ((void *) ((uintptr_t) ((const void *) (ptr))))
 
 /**
  * @def _MHD_MACRO_NO
@@ -144,29 +136,10 @@
  * IO-buffer, but if absolutely needed we additively grow by the
  * number of bytes given here (up to -- theoretically -- the full pool
  * space).
+ *
+ * Currently set to reasonable maximum MSS size.
  */
-#define MHD_BUF_INC_SIZE 1024
-
-
-/**
- * Handler for fatal errors.
- */
-extern MHD_PanicCallback mhd_panic;
-
-/**
- * Closure argument for "mhd_panic".
- */
-extern void *mhd_panic_cls;
-
-/* If we have Clang or gcc >= 4.5, use __builtin_unreachable() */
-#if defined(__clang__) || (__GNUC__ > 4) || \
-  (__GNUC__ == 4 && __GNUC_MINOR__ >= 5)
-#define BUILTIN_NOT_REACHED __builtin_unreachable ()
-#elif defined(_MSC_FULL_VER)
-#define BUILTIN_NOT_REACHED __assume (0)
-#else
-#define BUILTIN_NOT_REACHED
-#endif
+#define MHD_BUF_INC_SIZE 1500
 
 #ifndef MHD_STATICSTR_LEN_
 /**
@@ -243,22 +216,29 @@ enum MHD_ConnectionEventLoopInfo
   /**
    * We are waiting to be able to read.
    */
-  MHD_EVENT_LOOP_INFO_READ = 0,
+  MHD_EVENT_LOOP_INFO_READ = 1 << 0,
 
   /**
    * We are waiting to be able to write.
    */
-  MHD_EVENT_LOOP_INFO_WRITE = 1,
+  MHD_EVENT_LOOP_INFO_WRITE = 1 << 1,
 
   /**
    * We are waiting for the application to provide data.
    */
-  MHD_EVENT_LOOP_INFO_BLOCK = 2,
+  MHD_EVENT_LOOP_INFO_PROCESS = 1 << 2,
+
+  /**
+   * Some data is ready to be processed, but more data could
+   * be read.
+   */
+  MHD_EVENT_LOOP_INFO_PROCESS_READ =
+    MHD_EVENT_LOOP_INFO_READ | MHD_EVENT_LOOP_INFO_PROCESS,
 
   /**
    * We are finished and are awaiting cleanup.
    */
-  MHD_EVENT_LOOP_INFO_CLEANUP = 3
+  MHD_EVENT_LOOP_INFO_CLEANUP = 1 << 3
 } _MHD_FIXED_ENUM;
 
 
@@ -270,12 +250,24 @@ enum MHD_ConnectionEventLoopInfo
 
 /**
  * Maximum length of a nonce in digest authentication.  64(SHA-256 Hex) +
- * 8(Timestamp Hex) + 1(NULL); hence 73 should suffice, but Opera
+ * 12(Timestamp Hex) + 1(NULL); hence 77 should suffice, but Opera
  * (already) takes more (see Mantis #1633), so we've increased the
  * value to support something longer...
  */
-#define MAX_NONCE_LENGTH 129
+#define MAX_CLIENT_NONCE_LENGTH 129
 
+/**
+ * The maximum size of MHD-generated nonce when printed with hexadecimal chars.
+ *
+ * This is equal to "(32 bytes for SHA-256 (or SHA-512/256) nonce plus 6 bytes
+ * for timestamp) multiplied by two hex chars per byte".
+ * Please keep it in sync with digestauth.c
+ */
+#if defined(MHD_SHA256_SUPPORT) || defined(MHD_SHA512_256_SUPPORT)
+#define MAX_DIGEST_NONCE_LENGTH ((32 + 6) * 2)
+#else  /* !MHD_SHA256_SUPPORT && !MHD_SHA512_256_SUPPORT */
+#define MAX_DIGEST_NONCE_LENGTH ((16 + 6) * 2)
+#endif /* !MHD_SHA256_SUPPORT && !MHD_SHA512_256_SUPPORT */
 
 /**
  * A structure representing the internal holder of the
@@ -286,20 +278,24 @@ struct MHD_NonceNc
 
   /**
    * Nonce counter, a value that increases for each subsequent
-   * request for the same nonce.
+   * request for the same nonce. Matches the largest last received
+   * 'nc' value.
+   * This 'nc' value was already used by the client.
    */
-  uint64_t nc;
+  uint32_t nc;
 
   /**
-   * Bitmask over the nc-64 previous nonce values.  Used to
-   * allow out-of-order nonces.
+   * Bitmask over the previous 64 nonce counter values (down to to nc-64).
+   * Used to allow out-of-order 'nc'.
+   * If bit in the bitmask is set to one, then this 'nc' value was already used
+   * by the client.
    */
   uint64_t nmask;
 
   /**
-   * Nonce value:
+   * Nonce value
    */
-  char nonce[MAX_NONCE_LENGTH];
+  char nonce[MAX_DIGEST_NONCE_LENGTH + 1];
 
 };
 
@@ -317,19 +313,19 @@ MHD_DLOG (const struct MHD_Daemon *daemon,
 
 
 /**
- * Header or cookie in HTTP request or response.
+ * Header or footer for HTTP response.
  */
-struct MHD_HTTP_Header
+struct MHD_HTTP_Res_Header
 {
   /**
    * Headers are kept in a double-linked list.
    */
-  struct MHD_HTTP_Header *next;
+  struct MHD_HTTP_Res_Header *next;
 
   /**
    * Headers are kept in a double-linked list.
    */
-  struct MHD_HTTP_Header *prev;
+  struct MHD_HTTP_Res_Header *prev;
 
   /**
    * The name of the header (key), without the colon.
@@ -352,8 +348,50 @@ struct MHD_HTTP_Header
   size_t value_size;
 
   /**
-   * Type of the header (where in the HTTP protocol is this header
-   * from).
+   * Type of the value.
+   */
+  enum MHD_ValueKind kind;
+
+};
+
+
+/**
+ * Header, footer, or cookie for HTTP request.
+ */
+struct MHD_HTTP_Req_Header
+{
+  /**
+   * Headers are kept in a double-linked list.
+   */
+  struct MHD_HTTP_Req_Header *next;
+
+  /**
+   * Headers are kept in a double-linked list.
+   */
+  struct MHD_HTTP_Req_Header *prev;
+
+  /**
+   * The name of the header (key), without the colon.
+   */
+  const char *header;
+
+  /**
+   * The length of the @a header, not including the final zero termination.
+   */
+  size_t header_size;
+
+  /**
+   * The value of the header.
+   */
+  const char *value;
+
+  /**
+   * The length of the @a value, not including the final zero termination.
+   */
+  size_t value_size;
+
+  /**
+   * Type of the value.
    */
   enum MHD_ValueKind kind;
 
@@ -368,8 +406,9 @@ enum MHD_ResponseAutoFlags
   MHD_RAF_NO_FLAGS = 0,                   /**< No auto flags */
   MHD_RAF_HAS_CONNECTION_HDR = 1 << 0,    /**< Has "Connection" header */
   MHD_RAF_HAS_CONNECTION_CLOSE = 1 << 1,  /**< Has "Connection: close" */
-  MHD_RAF_HAS_TRANS_ENC_CHUNKED = 1 << 2, /**< Has "Transfer-Encoding: chunked */
-  MHD_RAF_HAS_DATE_HDR = 1 << 3           /**< Has "Date" header */
+  MHD_RAF_HAS_TRANS_ENC_CHUNKED = 1 << 2, /**< Has "Transfer-Encoding: chunked" */
+  MHD_RAF_HAS_CONTENT_LENGTH = 1 << 3,    /**< Has "Content-Length" header */
+  MHD_RAF_HAS_DATE_HDR = 1 << 4           /**< Has "Date" header */
 } _MHD_FIXED_FLAGS_ENUM;
 
 
@@ -414,7 +453,7 @@ struct MHD_iovec_track_
   MHD_iovec_ *iov;
 
   /**
-   * The number of elements in @iov.
+   * The number of elements in @a iov.
    * This value is not changed during lifetime.
    */
   size_t cnt;
@@ -436,18 +475,18 @@ struct MHD_Response
   /**
    * Head of double-linked list of headers to send for the response.
    */
-  struct MHD_HTTP_Header *first_header;
+  struct MHD_HTTP_Res_Header *first_header;
 
   /**
    * Tail of double-linked list of headers to send for the response.
    */
-  struct MHD_HTTP_Header *last_header;
+  struct MHD_HTTP_Res_Header *last_header;
 
   /**
    * Buffer pointing to data that we are supposed
    * to send as a response.
    */
-  char *data;
+  const char *data;
 
   /**
    * Closure to give to the content reader @e crc
@@ -586,21 +625,23 @@ enum MHD_CONNECTION_STATE
 
   /**
    * We got the URL (and request type and version).  Wait for a header line.
+   *
+   * A milestone state. No received data is processed in this state.
    */
-  MHD_CONNECTION_URL_RECEIVED = MHD_CONNECTION_REQ_LINE_RECEIVING + 1,
+  MHD_CONNECTION_REQ_LINE_RECEIVED = MHD_CONNECTION_REQ_LINE_RECEIVING + 1,
 
   /**
-   * We got part of a multi-line request header.  Wait for the rest.
+   * Receiving request headers.  Wait for the rest of the headers.
    */
-  MHD_CONNECTION_HEADER_PART_RECEIVED = MHD_CONNECTION_URL_RECEIVED + 1,
+  MHD_CONNECTION_REQ_HEADERS_RECEIVING = MHD_CONNECTION_REQ_LINE_RECEIVED + 1,
 
   /**
    * We got the request headers.  Process them.
    */
-  MHD_CONNECTION_HEADERS_RECEIVED = MHD_CONNECTION_HEADER_PART_RECEIVED + 1,
+  MHD_CONNECTION_HEADERS_RECEIVED = MHD_CONNECTION_REQ_HEADERS_RECEIVING + 1,
 
   /**
-   * We have processed the request headers.  Send 100 continue.
+   * We have processed the request headers.  Call application callback.
    */
   MHD_CONNECTION_HEADERS_PROCESSED = MHD_CONNECTION_HEADERS_RECEIVED + 1,
 
@@ -612,23 +653,26 @@ enum MHD_CONNECTION_STATE
   /**
    * We have sent 100 CONTINUE (or do not need to).  Read the message body.
    */
-  MHD_CONNECTION_CONTINUE_SENT = MHD_CONNECTION_CONTINUE_SENDING + 1,
+  MHD_CONNECTION_BODY_RECEIVING = MHD_CONNECTION_CONTINUE_SENDING + 1,
 
   /**
-   * We got the request body.  Wait for a line of the footer.
+   * We got the request body.
+   *
+   * A milestone state. No received data is processed in this state.
    */
-  MHD_CONNECTION_BODY_RECEIVED = MHD_CONNECTION_CONTINUE_SENT + 1,
+  MHD_CONNECTION_BODY_RECEIVED = MHD_CONNECTION_BODY_RECEIVING + 1,
 
   /**
-   * We got part of a line of the footer.  Wait for the
-   * rest.
+   * We are reading the request footers.
    */
-  MHD_CONNECTION_FOOTER_PART_RECEIVED = MHD_CONNECTION_BODY_RECEIVED + 1,
+  MHD_CONNECTION_FOOTERS_RECEIVING = MHD_CONNECTION_BODY_RECEIVED + 1,
 
   /**
    * We received the entire footer.
+   *
+   * A milestone state. No received data is processed in this state.
    */
-  MHD_CONNECTION_FOOTERS_RECEIVED = MHD_CONNECTION_FOOTER_PART_RECEIVED + 1,
+  MHD_CONNECTION_FOOTERS_RECEIVED = MHD_CONNECTION_FOOTERS_RECEIVING + 1,
 
   /**
    * We received the entire request.
@@ -676,31 +720,33 @@ enum MHD_CONNECTION_STATE
   MHD_CONNECTION_CHUNKED_BODY_READY = MHD_CONNECTION_CHUNKED_BODY_UNREADY + 1,
 
   /**
-   * We have sent the response body. Prepare the footers.
+   * We have sent the chunked response body. Prepare the footers.
    */
-  MHD_CONNECTION_BODY_SENT = MHD_CONNECTION_CHUNKED_BODY_READY + 1,
+  MHD_CONNECTION_CHUNKED_BODY_SENT = MHD_CONNECTION_CHUNKED_BODY_READY + 1,
 
   /**
    * We have prepared the response footer.  Send it.
    */
-  MHD_CONNECTION_FOOTERS_SENDING = MHD_CONNECTION_BODY_SENT + 1,
+  MHD_CONNECTION_FOOTERS_SENDING = MHD_CONNECTION_CHUNKED_BODY_SENT + 1,
 
   /**
-   * We have sent the response footer.  Shutdown or restart.
+   * We have sent the entire reply.
+   * Shutdown connection or restart processing to get a new request.
    */
-  MHD_CONNECTION_FOOTERS_SENT = MHD_CONNECTION_FOOTERS_SENDING + 1,
+  MHD_CONNECTION_FULL_REPLY_SENT = MHD_CONNECTION_FOOTERS_SENDING + 1,
 
   /**
    * This connection is to be closed.
    */
-  MHD_CONNECTION_CLOSED = MHD_CONNECTION_FOOTERS_SENT + 1,
+  MHD_CONNECTION_CLOSED = MHD_CONNECTION_FULL_REPLY_SENT + 1
 
 #ifdef UPGRADE_SUPPORT
+  ,
   /**
    * Connection was "upgraded" and socket is now under the
    * control of the application.
    */
-  MHD_CONNECTION_UPGRADE
+  MHD_CONNECTION_UPGRADE = MHD_CONNECTION_CLOSED + 1
 #endif /* UPGRADE_SUPPORT */
 
 } _MHD_FIXED_ENUM;
@@ -833,7 +879,7 @@ enum MHD_HTTP_Version
  * Returns boolean 'true' if HTTP version is supported by MHD
  */
 #define MHD_IS_HTTP_VER_SUPPORTED(ver) (MHD_HTTP_VER_1_0 <= (ver) && \
-    MHD_HTTP_VER_1_2__1_9 >= (ver))
+                                        MHD_HTTP_VER_1_2__1_9 >= (ver))
 
 /**
  * Protocol should be used as HTTP/1.1 protocol.
@@ -842,12 +888,12 @@ enum MHD_HTTP_Version
  * https://datatracker.ietf.org/doc/html/rfc7230#section-2.6
  */
 #define MHD_IS_HTTP_VER_1_1_COMPAT(ver) (MHD_HTTP_VER_1_1 == (ver) || \
-    MHD_HTTP_VER_1_2__1_9 == (ver))
+                                         MHD_HTTP_VER_1_2__1_9 == (ver))
 
 /**
  * The HTTP method.
  *
- * Only primary methods (specified in RFC7231) are defined here.
+ * Only primary methods (specified in RFC9110) are defined here.
  */
 enum MHD_HTTP_Method
 {
@@ -895,14 +941,375 @@ enum MHD_HTTP_Method
 
 
 /**
+ * The request line processing data
+ */
+struct MHD_RequestLineProcessing
+{
+  /**
+   * The position of the next character to be processed
+   */
+  size_t proc_pos;
+  /**
+   * The number of empty lines skipped
+   */
+  unsigned int skipped_empty_lines;
+  /**
+   * The position of the start of the current/last found whitespace block,
+   * zero if not found yet.
+   */
+  size_t last_ws_start;
+  /**
+   * The position of the next character after the last known whitespace
+   * character in the current/last found whitespace block,
+   * zero if not found yet.
+   */
+  size_t last_ws_end;
+  /**
+   * The pointer to the request target.
+   * The request URI will be formed based on it.
+   */
+  char *rq_tgt;
+  /**
+   * The pointer to the first question mark in the @a rq_tgt.
+   */
+  char *rq_tgt_qmark;
+  /**
+   * The number of whitespace characters in the request URI
+   */
+  size_t num_ws_in_uri;
+};
+
+/**
+ * The request header processing data
+ */
+struct MHD_HeaderProcessing
+{
+  /**
+   * The position of the last processed character
+   */
+  size_t proc_pos;
+
+  /**
+   * The position of the first whitespace character in current contiguous
+   * whitespace block.
+   * Zero when no whitespace found or found non-whitespace character after
+   * whitespace.
+   * Must be zero, if the current character is not whitespace.
+   */
+  size_t ws_start;
+
+  /**
+   * Indicates that end of the header (field) name found.
+   * Must be false until the first colon in line is found.
+   */
+  bool name_end_found;
+
+  /**
+   * The length of the header name.
+   * Must be zero until the first colon in line is found.
+   * Name always starts at zero position.
+   */
+  size_t name_len;
+
+  /**
+   * The position of the first character of the header value.
+   * Zero when the first character has not been found yet.
+   */
+  size_t value_start;
+
+  /**
+   * Line starts with whitespace.
+   * It's meaningful only for the first line, as other lines should be handled
+   * as "folded".
+   */
+  bool starts_with_ws;
+};
+
+/**
+ * The union of request line and header processing data
+ */
+union MHD_HeadersProcessing
+{
+  /**
+   * The request line processing data
+   */
+  struct MHD_RequestLineProcessing rq_line;
+
+  /**
+   * The request header processing data
+   */
+  struct MHD_HeaderProcessing hdr;
+};
+
+
+/**
+ * The union of text staring point and the size of the text
+ */
+union MHD_StartOrSize
+{
+  /**
+   * The starting point of the text.
+   * Valid when the text is being processed and the end of the text
+   * is not yet determined.
+   */
+  const char *start;
+  /**
+   * The size of the text.
+   * Valid when the text has been processed and the end of the text
+   * is known.
+   */
+  size_t size;
+};
+
+/**
+ * Request-specific values.
+ *
+ * Meaningful for the current request only.
+ */
+struct MHD_Request
+{
+  /**
+   * HTTP version string (i.e. http/1.1).  Allocated
+   * in pool.
+   */
+  const char *version;
+
+  /**
+   * HTTP protocol version as enum.
+   */
+  enum MHD_HTTP_Version http_ver;
+
+  /**
+   * Request method.  Should be GET/POST/etc.  Allocated in pool.
+   */
+  const char *method;
+
+  /**
+   * The request method as enum.
+   */
+  enum MHD_HTTP_Method http_mthd;
+
+  /**
+   * Requested URL (everything after "GET" only).  Allocated
+   * in pool.
+   */
+  const char *url;
+
+  /**
+   * The length of the @a url in characters, not including the terminating zero.
+   */
+  size_t url_len;
+
+  /**
+   * The original length of the request target.
+   */
+  size_t req_target_len;
+
+  /**
+   * Linked list of parsed headers.
+   */
+  struct MHD_HTTP_Req_Header *headers_received;
+
+  /**
+   * Tail of linked list of parsed headers.
+   */
+  struct MHD_HTTP_Req_Header *headers_received_tail;
+
+  /**
+   * Number of bytes we had in the HTTP header, set once we
+   * pass #MHD_CONNECTION_HEADERS_RECEIVED.
+   * This includes the request line, all request headers, the header section
+   * terminating empty line, with all CRLF (or LF) characters.
+   */
+  size_t header_size;
+
+  /**
+   * The union of the size of all request field lines (headers) and
+   * the starting point of the first request field line (the first header).
+   * Until #MHD_CONNECTION_HEADERS_RECEIVED the @a start member is valid,
+   * staring with #MHD_CONNECTION_HEADERS_RECEIVED the @a size member is valid.
+   * The size includes CRLF (or LR) characters, but does not include
+   * the terminating empty line.
+   */
+  union MHD_StartOrSize field_lines;
+
+  /**
+   * How many more bytes of the body do we expect
+   * to read? #MHD_SIZE_UNKNOWN for unknown.
+   */
+  uint64_t remaining_upload_size;
+
+  /**
+   * Are we receiving with chunked encoding?
+   * This will be set to #MHD_YES after we parse the headers and
+   * are processing the body with chunks.
+   * After we are done with the body and we are processing the footers;
+   * once the footers are also done, this will be set to #MHD_NO again
+   * (before the final call to the handler).
+   * It is used only for requests, chunked encoding for response is
+   * indicated by @a rp_props.
+   */
+  bool have_chunked_upload;
+
+  /**
+   * If we are receiving with chunked encoding, where are we right
+   * now?
+   * Set to 0 if we are waiting to receive the chunk size;
+   * otherwise, this is the size of the current chunk.
+   * A value of zero is also used when we're at the end of the chunks.
+   */
+  uint64_t current_chunk_size;
+
+  /**
+   * If we are receiving with chunked encoding, where are we currently
+   * with respect to the current chunk (at what offset / position)?
+   */
+  uint64_t current_chunk_offset;
+
+  /**
+   * Indicate that some of the upload payload data (from the currently
+   * processed chunk for chunked uploads) have been processed by the
+   * last call of the connection handler.
+   * If any data have been processed, but some data left in the buffer
+   * for further processing, then MHD will use zero timeout before the
+   * next data processing round. This allow the application handler
+   * process the data by the fixed portions or other way suitable for
+   * application developer.
+   * If no data have been processed, than MHD will wait for more data
+   * to come (as it makes no sense to call the same connection handler
+   * under the same conditions). However this is dangerous as if buffer
+   * is completely used then connection is aborted. Connection
+   * suspension should be used in such case.
+   */
+  bool some_payload_processed;
+
+  /**
+   * We allow the main application to associate some pointer with the
+   * HTTP request, which is passed to each #MHD_AccessHandlerCallback
+   * and some other API calls.  Here is where we store it.  (MHD does
+   * not know or care what it is).
+   */
+  void *client_context;
+
+  /**
+   * Did we ever call the "default_handler" on this request?
+   * This flag determines if we have called the #MHD_OPTION_NOTIFY_COMPLETED
+   * handler when the request finishes.
+   */
+  bool client_aware;
+
+#ifdef BAUTH_SUPPORT
+  /**
+   * Basic Authorization parameters.
+   * The result of Basic Authorization header parsing.
+   * Allocated in the connection's pool.
+   */
+  const struct MHD_RqBAuth *bauth;
+
+  /**
+   * Set to true if current request headers are checked for Basic Authorization
+   */
+  bool bauth_tried;
+#endif /* BAUTH_SUPPORT */
+#ifdef DAUTH_SUPPORT
+  /**
+   * Digest Authorization parameters.
+   * The result of Digest Authorization header parsing.
+   * Allocated in the connection's pool.
+   */
+  const struct MHD_RqDAuth *dauth;
+
+  /**
+   * Set to true if current request headers are checked for Digest Authorization
+   */
+  bool dauth_tried;
+#endif /* DAUTH_SUPPORT */
+  /**
+   * Number of bare CR characters that were replaced with space characters
+   * in the request line or in the headers (field lines).
+   */
+  size_t num_cr_sp_replaced;
+
+  /**
+   * The number of header lines skipped because they have no colon
+   */
+  size_t skipped_broken_lines;
+
+  /**
+   * The data of the request line / request headers processing
+   */
+  union MHD_HeadersProcessing hdrs;
+};
+
+
+/**
  * Reply-specific properties.
  */
 struct MHD_Reply_Properties
 {
+#ifdef _DEBUG
   bool set; /**< Indicates that other members are set and valid */
+#endif /* _DEBUG */
   bool use_reply_body_headers; /**< Use reply body-specific headers */
   bool send_reply_body; /**< Send reply body (can be zero-sized) */
   bool chunked; /**< Use chunked encoding for reply */
+};
+
+#if defined(_MHD_HAVE_SENDFILE)
+enum MHD_resp_sender_
+{
+  MHD_resp_sender_std = 0,
+  MHD_resp_sender_sendfile
+};
+#endif /* _MHD_HAVE_SENDFILE */
+
+/**
+ * Reply-specific values.
+ *
+ * Meaningful for the current reply only.
+ */
+struct MHD_Reply
+{
+  /**
+   * Response to transmit (initially NULL).
+   */
+  struct MHD_Response *response;
+
+  /**
+   * HTTP response code.  Only valid if response object
+   * is already set.
+   */
+  unsigned int responseCode;
+
+  /**
+   * The "ICY" response.
+   * Reply begins with the SHOUTcast "ICY" line instead of "HTTP".
+   */
+  bool responseIcy;
+
+  /**
+   * Current write position in the actual response
+   * (excluding headers, content only; should be 0
+   * while sending headers).
+   */
+  uint64_t rsp_write_position;
+
+  /**
+   * The copy of iov response.
+   * Valid if iovec response is used.
+   * Updated during send.
+   * Members are allocated in the pool.
+   */
+  struct MHD_iovec_track_ resp_iov;
+
+#if defined(_MHD_HAVE_SENDFILE)
+  enum MHD_resp_sender_ resp_sender;
+#endif /* _MHD_HAVE_SENDFILE */
+
+  /**
+   * Reply-specific properties
+   */
+  struct MHD_Reply_Properties props;
 };
 
 /**
@@ -953,19 +1360,14 @@ struct MHD_Connection
   struct MHD_Daemon *daemon;
 
   /**
-   * Linked list of parsed headers.
+   * Request-specific data
    */
-  struct MHD_HTTP_Header *headers_received;
+  struct MHD_Request rq;
 
   /**
-   * Tail of linked list of parsed headers.
+   * Reply-specific data
    */
-  struct MHD_HTTP_Header *headers_received_tail;
-
-  /**
-   * Response to transmit (initially NULL).
-   */
-  struct MHD_Response *response;
+  struct MHD_Reply rp;
 
   /**
    * The memory pool is created whenever we first read from the TCP
@@ -979,47 +1381,12 @@ struct MHD_Connection
 
   /**
    * We allow the main application to associate some pointer with the
-   * HTTP request, which is passed to each #MHD_AccessHandlerCallback
-   * and some other API calls.  Here is where we store it.  (MHD does
-   * not know or care what it is).
-   */
-  void *client_context;
-
-  /**
-   * We allow the main application to associate some pointer with the
    * TCP connection (which may span multiple HTTP requests).  Here is
    * where we store it.  (MHD does not know or care what it is).
    * The location is given to the #MHD_NotifyConnectionCallback and
    * also accessible via #MHD_CONNECTION_INFO_SOCKET_CONTEXT.
    */
   void *socket_context;
-
-  /**
-   * Request method.  Should be GET/POST/etc.  Allocated in pool.
-   */
-  char *method;
-
-  /**
-   * The request method as enum.
-   */
-  enum MHD_HTTP_Method http_mthd;
-
-  /**
-   * Requested URL (everything after "GET" only).  Allocated
-   * in pool.
-   */
-  const char *url;
-
-  /**
-   * HTTP version string (i.e. http/1.1).  Allocated
-   * in pool.
-   */
-  char *version;
-
-  /**
-   * HTTP protocol version as enum.
-   */
-  enum MHD_HTTP_Version http_ver;
 
   /**
    * Close connection after sending response?
@@ -1042,34 +1409,17 @@ struct MHD_Connection
   char *write_buffer;
 
   /**
-   * Last incomplete header line during parsing of headers.
-   * Allocated in pool.  Only valid if state is
-   * either #MHD_CONNECTION_HEADER_PART_RECEIVED or
-   * #MHD_CONNECTION_FOOTER_PART_RECEIVED.
-   */
-  char *last;
-
-  /**
-   * Position after the colon on the last incomplete header
-   * line during parsing of headers.
-   * Allocated in pool.  Only valid if state is
-   * either #MHD_CONNECTION_HEADER_PART_RECEIVED or
-   * #MHD_CONNECTION_FOOTER_PART_RECEIVED.
-   */
-  char *colon;
-
-  /**
    * Foreign address (of length @e addr_len).  MALLOCED (not
    * in pool!).
    */
-  struct sockaddr *addr;
+  struct sockaddr_storage *addr;
 
 #if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
   /**
    * Thread handle for this connection (if we are using
    * one thread per connection).
    */
-  MHD_thread_handle_ID_ pid;
+  MHD_thread_handle_ID_ tid;
 #endif
 
   /**
@@ -1102,42 +1452,6 @@ struct MHD_Connection
   size_t write_buffer_append_offset;
 
   /**
-   * Number of bytes we had in the HTTP header, set once we
-   * pass #MHD_CONNECTION_HEADERS_RECEIVED.
-   */
-  size_t header_size;
-
-  /**
-   * How many more bytes of the body do we expect
-   * to read? #MHD_SIZE_UNKNOWN for unknown.
-   */
-  uint64_t remaining_upload_size;
-
-  /**
-   * Current write position in the actual response
-   * (excluding headers, content only; should be 0
-   * while sending headers).
-   */
-  uint64_t response_write_position;
-
-  /**
-   * The copy of iov response.
-   * Valid if iovec response is used.
-   * Updated during send.
-   * Members are allocated in the pool.
-   */
-  struct MHD_iovec_track_ resp_iov;
-
-
-#if defined(_MHD_HAVE_SENDFILE)
-  enum MHD_resp_sender_
-  {
-    MHD_resp_sender_std = 0,
-    MHD_resp_sender_sendfile
-  } resp_sender;
-#endif /* _MHD_HAVE_SENDFILE */
-
-  /**
    * Position in the 100 CONTINUE message that
    * we need to send when receiving http 1.1 requests.
    */
@@ -1160,18 +1474,6 @@ struct MHD_Connection
    * Zero for no timeout.
    */
   uint64_t connection_timeout_ms;
-
-  /**
-   * Special member to be returned by #MHD_get_connection_info()
-   */
-  unsigned int connection_timeout_dummy;
-
-  /**
-   * Did we ever call the "default_handler" on this connection?  (this
-   * flag will determine if we call the #MHD_OPTION_NOTIFY_COMPLETED
-   * handler when the connection closes down).
-   */
-  bool client_aware;
 
   /**
    * Socket for this connection.  Set to #MHD_INVALID_SOCKET if
@@ -1268,44 +1570,6 @@ struct MHD_Connection
   enum MHD_ConnectionEventLoopInfo event_loop_info;
 
   /**
-   * HTTP response code.  Only valid if response object
-   * is already set.
-   */
-  unsigned int responseCode;
-
-  /**
-   * Reply-specific properties
-   */
-  struct MHD_Reply_Properties rp_props;
-
-  /**
-   * Are we receiving with chunked encoding?
-   * This will be set to #MHD_YES after we parse the headers and
-   * are processing the body with chunks.
-   * After we are done with the body and we are processing the footers;
-   * once the footers are also done, this will be set to #MHD_NO again
-   * (before the final call to the handler).
-   * It is used only for requests, chunked encoding for response is
-   * indicated by @a rp_props.
-   */
-  bool have_chunked_upload;
-
-  /**
-   * If we are receiving with chunked encoding, where are we right
-   * now?
-   * Set to 0 if we are waiting to receive the chunk size;
-   * otherwise, this is the size of the current chunk.
-   * A value of zero is also used when we're at the end of the chunks.
-   */
-  uint64_t current_chunk_size;
-
-  /**
-   * If we are receiving with chunked encoding, where are we currently
-   * with respect to the current chunk (at what offset / position)?
-   */
-  uint64_t current_chunk_offset;
-
-  /**
    * Function used for reading HTTP request stream.
    */
   ReceiveCallback recv_cls;
@@ -1328,16 +1592,6 @@ struct MHD_Connection
   gnutls_session_t tls_session;
 
   /**
-   * Memory location to return for protocol session info.
-   */
-  int protocol;
-
-  /**
-   * Memory location to return for protocol session info.
-   */
-  int cipher;
-
-  /**
    * State of connection's TLS layer
    */
   enum MHD_TLS_CONN_STATE tls_state;
@@ -1355,14 +1609,21 @@ struct MHD_Connection
   bool suspended;
 
   /**
-   * Special member to be returned by #MHD_get_connection_info()
+   * Are we currently in the #MHD_AccessHandlerCallback
+   * for this connection (and thus eligible to receive
+   * calls to #MHD_queue_response()?).
    */
-  int suspended_dummy;
+  bool in_access_handler;
 
   /**
    * Is the connection wanting to resume?
    */
   volatile bool resuming;
+
+  /**
+   * Special member to be returned by #MHD_get_connection_info()
+   */
+  union MHD_ConnectionInfo connection_info_dummy;
 };
 
 
@@ -1893,7 +2154,7 @@ struct MHD_Daemon
   /**
    * The select thread handle (if we have internal select)
    */
-  MHD_thread_handle_ID_ pid;
+  MHD_thread_handle_ID_ tid;
 
   /**
    * Mutex for per-IP connection counts.
@@ -1998,9 +2259,26 @@ struct MHD_Daemon
   unsigned int per_ip_connection_limit;
 
   /**
-   * Be neutral (zero), strict (1) or permissive (-1) to client.
+   * The strictness level for parsing of incoming data.
+   * @see #MHD_OPTION_CLIENT_DISCIPLINE_LVL
    */
-  int strict_for_client;
+  int client_discipline;
+
+#ifdef HAS_FD_SETSIZE_OVERRIDABLE
+  /**
+   * The value of FD_SETSIZE used by the daemon.
+   * For external sockets polling this is the value provided by the application
+   * via MHD_OPTION_APP_FD_SETSIZE or current FD_SETSIZE value.
+   * For internal threads modes this is always current FD_SETSIZE value.
+   */
+  int fdset_size;
+
+  /**
+   * Indicates whether @a fdset_size value was set by application.
+   * 'false' if default value is used.
+   */
+  bool fdset_size_set_by_app;
+#endif /* HAS_FD_SETSIZE_OVERRIDABLE */
 
   /**
    * True if SIGPIPE is blocked
@@ -2121,6 +2399,16 @@ struct MHD_Daemon
   const char *digest_auth_random;
 
   /**
+   * Size of @a digest_auth_random.
+   */
+  size_t digest_auth_rand_size;
+
+  /**
+   * The malloc'ed copy of the @a digest_auth_random.
+   */
+  void *digest_auth_random_copy;
+
+  /**
    * An array that contains the map nonce-nc.
    */
   struct MHD_NonceNc *nnc;
@@ -2133,15 +2421,24 @@ struct MHD_Daemon
 #endif
 
   /**
-   * Size of `digest_auth_random.
-   */
-  size_t digest_auth_rand_size;
-
-  /**
    * Size of the nonce-nc array.
    */
   unsigned int nonce_nc_size;
 
+  /**
+   * Nonce bind type.
+   */
+  unsigned int dauth_bind_type;
+
+  /**
+   * Default nonce validity length.
+   */
+  unsigned int dauth_def_nonce_timeout;
+
+  /**
+   * Default maximum nc (nonce count) value.
+   */
+  uint32_t dauth_def_max_nc;
 #endif
 
 #ifdef TCP_FASTOPEN
@@ -2156,16 +2453,199 @@ struct MHD_Daemon
    */
   unsigned int listen_backlog_size;
 
+  /* TODO: replace with a single member */
   /**
-   * The number of user options used.
-   *
-   * Contains number of only meaningful options, i.e. #MHD_OPTION_END
-   * and #MHD_OPTION_ARRAY are not counted, while options inside
-   * #MHD_OPTION_ARRAY are counted.
+   * The value to be returned by #MHD_get_daemon_info()
    */
-  size_t num_opts;
+  union MHD_DaemonInfo daemon_info_dummy_listen_fd;
+
+#ifdef EPOLL_SUPPORT
+  /**
+   * The value to be returned by #MHD_get_daemon_info()
+   */
+  union MHD_DaemonInfo daemon_info_dummy_epoll_fd;
+#endif /* EPOLL_SUPPORT */
+
+  /**
+   * The value to be returned by #MHD_get_daemon_info()
+   */
+  union MHD_DaemonInfo daemon_info_dummy_num_connections;
+
+  /**
+   * The value to be returned by #MHD_get_daemon_info()
+   */
+  union MHD_DaemonInfo daemon_info_dummy_flags;
+
+  /**
+   * The value to be returned by #MHD_get_daemon_info()
+   */
+  union MHD_DaemonInfo daemon_info_dummy_port;
+
+#if defined(_DEBUG) && defined(HAVE_ACCEPT4)
+  /**
+   * If set to 'true', accept() function will be used instead of accept4() even
+   * if accept4() is available.
+   * This is a workaround for zzuf, which does not support sockets created
+   * by accept4() function.
+   * There is no API to change the value of this member, it can be flipped
+   * only by direct access to the struct member.
+   */
+  bool avoid_accept4;
+#endif /* _DEBUG */
 };
 
+
+#if defined(HAVE_POLL) && defined(EPOLL_SUPPORT)
+/**
+ * Checks whether the @a d daemon is using select()
+ */
+#define MHD_D_IS_USING_SELECT_(d) \
+  (0 == (d->options & (MHD_USE_POLL | MHD_USE_EPOLL)))
+/**
+ * Checks whether the @a d daemon is using poll()
+ */
+#define MHD_D_IS_USING_POLL_(d) (0 != ((d)->options & MHD_USE_POLL))
+/**
+ * Checks whether the @a d daemon is using epoll
+ */
+#define MHD_D_IS_USING_EPOLL_(d) (0 != ((d)->options & MHD_USE_EPOLL))
+#elif defined(HAVE_POLL)
+/**
+ * Checks whether the @a d daemon is using select()
+ */
+#define MHD_D_IS_USING_SELECT_(d) (0 == ((d)->options & MHD_USE_POLL))
+/**
+ * Checks whether the @a d daemon is using poll()
+ */
+#define MHD_D_IS_USING_POLL_(d) (0 != ((d)->options & MHD_USE_POLL))
+/**
+ * Checks whether the @a d daemon is using epoll
+ */
+#define MHD_D_IS_USING_EPOLL_(d) ((void) (d), 0)
+#elif defined(EPOLL_SUPPORT)
+/**
+ * Checks whether the @a d daemon is using select()
+ */
+#define MHD_D_IS_USING_SELECT_(d) (0 == ((d)->options & MHD_USE_EPOLL))
+/**
+ * Checks whether the @a d daemon is using poll()
+ */
+#define MHD_D_IS_USING_POLL_(d) ((void) (d), 0)
+/**
+ * Checks whether the @a d daemon is using epoll
+ */
+#define MHD_D_IS_USING_EPOLL_(d) (0 != ((d)->options & MHD_USE_EPOLL))
+#else  /* select() only */
+/**
+ * Checks whether the @a d daemon is using select()
+ */
+#define MHD_D_IS_USING_SELECT_(d) ((void) (d), ! 0)
+/**
+ * Checks whether the @a d daemon is using poll()
+ */
+#define MHD_D_IS_USING_POLL_(d) ((void) (d), 0)
+/**
+ * Checks whether the @a d daemon is using epoll
+ */
+#define MHD_D_IS_USING_EPOLL_(d) ((void) (d), 0)
+#endif /* select() only */
+
+#if defined(MHD_USE_THREADS)
+/**
+ * Checks whether the @a d daemon is using internal polling thread
+ */
+#define MHD_D_IS_USING_THREADS_(d) \
+  (0 != (d->options & (MHD_USE_INTERNAL_POLLING_THREAD)))
+/**
+ * Checks whether the @a d daemon is using thread-per-connection mode
+ */
+#define MHD_D_IS_USING_THREAD_PER_CONN_(d) \
+  (0 != ((d)->options & MHD_USE_THREAD_PER_CONNECTION))
+
+/**
+ * Check whether the @a d daemon has thread-safety enabled.
+ */
+#define MHD_D_IS_THREAD_SAFE_(d) \
+  (0 == ((d)->options & MHD_USE_NO_THREAD_SAFETY))
+#else  /* ! MHD_USE_THREADS */
+/**
+ * Checks whether the @a d daemon is using internal polling thread
+ */
+#define MHD_D_IS_USING_THREADS_(d) ((void) d, 0)
+/**
+ * Checks whether the @a d daemon is using thread-per-connection mode
+ */
+#define MHD_D_IS_USING_THREAD_PER_CONN_(d) ((void) d, 0)
+
+/**
+ * Check whether the @a d daemon has thread-safety enabled.
+ */
+#define MHD_D_IS_THREAD_SAFE_(d) ((void) d, 0)
+#endif /* ! MHD_USE_THREADS */
+
+#ifdef HAS_FD_SETSIZE_OVERRIDABLE
+/**
+ * Get FD_SETSIZE used by the daemon @a d
+ */
+#define MHD_D_GET_FD_SETSIZE_(d) ((d)->fdset_size)
+#else  /* ! HAS_FD_SETSIZE_OVERRIDABLE */
+/**
+ * Get FD_SETSIZE used by the daemon @a d
+ */
+#define MHD_D_GET_FD_SETSIZE_(d) (FD_SETSIZE)
+#endif /* ! HAS_FD_SETSIZE_OVERRIDABLE */
+
+/**
+ * Check whether socket @a sckt fits fd_sets used by the daemon @a d
+ */
+#define MHD_D_DOES_SCKT_FIT_FDSET_(sckt,d) \
+  MHD_SCKT_FD_FITS_FDSET_SETSIZE_(sckt,NULL,MHD_D_GET_FD_SETSIZE_(d))
+
+
+#ifdef DAUTH_SUPPORT
+
+/**
+ * Parameter of request's Digest Authorization header
+ */
+struct MHD_RqDAuthParam
+{
+  /**
+   * The string with length, NOT zero-terminated
+   */
+  struct _MHD_str_w_len value;
+  /**
+   * True if string must be "unquoted" before processing.
+   * This member is false if the string is used in DQUOTE marks, but no
+   * backslash-escape is used in the string.
+   */
+  bool quoted;
+};
+
+/**
+ * Request client's Digest Authorization header parameters
+ */
+struct MHD_RqDAuth
+{
+  struct MHD_RqDAuthParam nonce;
+  struct MHD_RqDAuthParam opaque;
+  struct MHD_RqDAuthParam response;
+  struct MHD_RqDAuthParam username;
+  struct MHD_RqDAuthParam username_ext;
+  struct MHD_RqDAuthParam realm;
+  struct MHD_RqDAuthParam uri;
+  /* The raw QOP value, used in the 'response' calculation */
+  struct MHD_RqDAuthParam qop_raw;
+  struct MHD_RqDAuthParam cnonce;
+  struct MHD_RqDAuthParam nc;
+
+  /* Decoded values are below */
+  bool userhash; /* True if 'userhash' parameter has value 'true'. */
+  enum MHD_DigestAuthAlgo3 algo3;
+  enum MHD_DigestAuthQOP qop;
+};
+
+
+#endif /* DAUTH_SUPPORT */
 
 /**
  * Insert an element at the head of a DLL. Assumes that head, tail and
@@ -2317,7 +2797,7 @@ MHD_unescape_plus (char *arg);
  * Callback invoked when iterating over @a key / @a value
  * argument pairs during parsing.
  *
- * @param connection context of the iteration
+ * @param cls context of the iteration
  * @param key 0-terminated key string, never NULL
  * @param key_size number of bytes in key
  * @param value 0-terminated binary data, may include binary zeros, may be NULL
@@ -2327,7 +2807,7 @@ MHD_unescape_plus (char *arg);
  *         #MHD_NO to signal failure (and abort iteration)
  */
 typedef enum MHD_Result
-(*MHD_ArgumentIterator_)(struct MHD_Connection *connection,
+(*MHD_ArgumentIterator_)(void *cls,
                          const char *key,
                          size_t key_size,
                          const char *value,
@@ -2344,7 +2824,7 @@ typedef enum MHD_Result
  * @param[in,out] args argument URI string (after "?" in URI),
  *        clobbered in the process!
  * @param cb function to call on each key-value pair found
- * @param[out] num_headers set to the number of headers found
+ * @param cls the iterator context
  * @return #MHD_NO on failure (@a cb returned #MHD_NO),
  *         #MHD_YES for success (parsing succeeded, @a cb always
  *                               returned #MHD_YES)
@@ -2354,7 +2834,7 @@ MHD_parse_arguments_ (struct MHD_Connection *connection,
                       enum MHD_ValueKind kind,
                       char *args,
                       MHD_ArgumentIterator_ cb,
-                      unsigned int *num_headers);
+                      void *cls);
 
 
 /**
@@ -2395,15 +2875,6 @@ MHD_check_response_header_token_ci (const struct MHD_Response *response,
   MHD_check_response_header_token_ci ((r),(k),MHD_STATICSTR_LEN_ (k), \
                                       (tkn),MHD_STATICSTR_LEN_ (tkn))
 
-/**
- * Trace up to and return master daemon. If the supplied daemon
- * is a master, then return the daemon itself.
- *
- * @param daemon handle to a daemon
- * @return master daemon handle
- */
-struct MHD_Daemon *
-MHD_get_master (struct MHD_Daemon *daemon);
 
 /**
  * Internal version of #MHD_suspend_connection().
@@ -2416,6 +2887,28 @@ MHD_get_master (struct MHD_Daemon *daemon);
  */
 void
 internal_suspend_connection_ (struct MHD_Connection *connection);
+
+
+/**
+ * Trace up to and return master daemon. If the supplied daemon
+ * is a master, then return the daemon itself.
+ *
+ * @param daemon handle to a daemon
+ * @return master daemon handle
+ */
+_MHD_static_inline struct MHD_Daemon *
+MHD_get_master (struct MHD_Daemon *const daemon)
+{
+  struct MHD_Daemon *ret;
+
+  if (NULL != daemon->master)
+    ret = daemon->master;
+  else
+    ret = daemon;
+  mhd_assert (NULL == ret->master);
+
+  return ret;
+}
 
 
 #ifdef UPGRADE_SUPPORT

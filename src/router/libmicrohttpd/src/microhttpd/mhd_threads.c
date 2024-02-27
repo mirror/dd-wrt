@@ -1,6 +1,6 @@
 /*
   This file is part of libmicrohttpd
-  Copyright (C) 2016 Karlson2k (Evgeny Grin)
+  Copyright (C) 2016-2023 Karlson2k (Evgeny Grin)
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -38,6 +38,7 @@
 #endif /* HAVE_PTHREAD_NP_H */
 #endif /* MHD_USE_THREAD_NAME_ */
 #include <errno.h>
+#include "mhd_assert.h"
 
 
 #ifndef MHD_USE_THREAD_NAME_
@@ -66,7 +67,7 @@
  * @return non-zero on success, zero otherwise
  */
 static int
-MHD_set_thread_name_ (const MHD_thread_ID_ thread_id,
+MHD_set_thread_name_ (const MHD_thread_ID_native_ thread_id,
                       const char *thread_name)
 {
   if (NULL == thread_name)
@@ -122,7 +123,7 @@ MHD_set_thread_name_ (const MHD_thread_ID_ thread_id,
  * @return non-zero on success, zero otherwise
  */
 static int
-MHD_set_thread_name_ (const MHD_thread_ID_ thread_id,
+MHD_set_thread_name_ (const MHD_thread_ID_native_ thread_id,
                       const char *thread_name)
 {
   static const DWORD VC_SETNAME_EXC = 0x406D1388;
@@ -164,7 +165,7 @@ MHD_set_thread_name_ (const MHD_thread_ID_ thread_id,
  * @return non-zero on success, zero otherwise
  */
 #define MHD_set_cur_thread_name_(n) \
-  MHD_set_thread_name_ ((MHD_thread_ID_) -1,(n))
+  MHD_set_thread_name_ ((MHD_thread_ID_native_) -1,(n))
 #endif /* _MSC_FULL_VER */
 #endif /* MHD_USE_W32_THREADS */
 
@@ -174,20 +175,31 @@ MHD_set_thread_name_ (const MHD_thread_ID_ thread_id,
 /**
  * Create a thread and set the attributes according to our options.
  *
- * @param thread        handle to initialize
+ * If thread is created, thread handle must be freed by MHD_join_thread_().
+ *
+ * @param handle_id     handle to initialise
  * @param stack_size    size of stack for new thread, 0 for default
  * @param start_routine main function of thread
  * @param arg argument  for start_routine
  * @return non-zero on success; zero otherwise (with errno set)
  */
 int
-MHD_create_thread_ (MHD_thread_handle_ID_ *thread,
+MHD_create_thread_ (MHD_thread_handle_ID_ *handle_id,
                     size_t stack_size,
                     MHD_THREAD_START_ROUTINE_ start_routine,
                     void *arg)
 {
 #if defined(MHD_USE_POSIX_THREADS)
   int res;
+#if defined(MHD_thread_handle_ID_get_native_handle_ptr_)
+  pthread_t *const new_tid_ptr =
+    MHD_thread_handle_ID_get_native_handle_ptr_ (handle_id);
+#else  /* ! MHD_thread_handle_ID_get_native_handle_ptr_ */
+  pthread_t new_tid;
+  pthread_t *const new_tid_ptr = &new_tid;
+#endif /* ! MHD_thread_handle_ID_get_native_handle_ptr_ */
+
+  mhd_assert (! MHD_thread_handle_ID_is_valid_handle_ (*handle_id));
 
   if (0 != stack_size)
   {
@@ -198,7 +210,7 @@ MHD_create_thread_ (MHD_thread_handle_ID_ *thread,
       res = pthread_attr_setstacksize (&attr,
                                        stack_size);
       if (0 == res)
-        res = pthread_create (&(thread->handle),
+        res = pthread_create (new_tid_ptr,
                               &attr,
                               start_routine,
                               arg);
@@ -206,34 +218,46 @@ MHD_create_thread_ (MHD_thread_handle_ID_ *thread,
     }
   }
   else
-    res = pthread_create (&(thread->handle),
+    res = pthread_create (new_tid_ptr,
                           NULL,
                           start_routine,
                           arg);
 
   if (0 != res)
+  {
     errno = res;
+    MHD_thread_handle_ID_set_invalid_ (handle_id);
+  }
+#if ! defined(MHD_thread_handle_ID_get_native_handle_ptr_)
+  else
+    MHD_thread_handle_ID_set_native_handle_ (handle_id, new_tid);
+#endif /* ! MHD_thread_handle_ID_set_current_thread_ID_ */
 
   return ! res;
 #elif defined(MHD_USE_W32_THREADS)
+  uintptr_t thr_handle;
 #if SIZEOF_SIZE_T != SIZEOF_UNSIGNED_INT
+
+  mhd_assert (! MHD_thread_handle_ID_is_valid_handle_ (*handle_id));
+
   if (stack_size > UINT_MAX)
   {
     errno = EINVAL;
     return 0;
   }
 #endif /* SIZEOF_SIZE_T != SIZEOF_UNSIGNED_INT */
-
-  thread->handle = (MHD_thread_handle_)
-                   _beginthreadex (NULL,
-                                   (unsigned int) stack_size,
-                                   start_routine,
-                                   arg,
-                                   0,
-                                   NULL);
-
-  if ((MHD_thread_handle_) - 1 == thread->handle)
+  thr_handle = (uintptr_t) _beginthreadex (NULL,
+                                           (unsigned int) stack_size,
+                                           start_routine,
+                                           arg,
+                                           0,
+                                           NULL);
+  if ((MHD_thread_handle_native_) 0 == (MHD_thread_handle_native_) thr_handle)
     return 0;
+
+  MHD_thread_handle_ID_set_native_handle_ (handle_id, \
+                                           (MHD_thread_handle_native_) \
+                                           thr_handle);
 
   return ! 0;
 #endif
@@ -289,7 +313,7 @@ named_thread_starter (void *data)
 /**
  * Create a named thread and set the attributes according to our options.
  *
- * @param thread        handle to initialize
+ * @param handle_id     handle to initialise
  * @param thread_name   name for new thread
  * @param stack_size    size of stack for new thread, 0 for default
  * @param start_routine main function of thread
@@ -297,7 +321,7 @@ named_thread_starter (void *data)
  * @return non-zero on success; zero otherwise (with errno set)
  */
 int
-MHD_create_named_thread_ (MHD_thread_handle_ID_ *thread,
+MHD_create_named_thread_ (MHD_thread_handle_ID_ *handle_id,
                           const char *thread_name,
                           size_t stack_size,
                           MHD_THREAD_START_ROUTINE_ start_routine,
@@ -306,15 +330,22 @@ MHD_create_named_thread_ (MHD_thread_handle_ID_ *thread,
 #if defined(MHD_USE_THREAD_ATTR_SETNAME)
   int res;
   pthread_attr_t attr;
+#if defined(MHD_thread_handle_ID_get_native_handle_ptr_)
+  pthread_t *const new_tid_ptr =
+    MHD_thread_handle_ID_get_native_handle_ptr_ (handle_id);
+#else  /* ! MHD_thread_handle_ID_get_native_handle_ptr_ */
+  pthread_t new_tid;
+  pthread_t *const new_tid_ptr = &new_tid;
+#endif /* ! MHD_thread_handle_ID_get_native_handle_ptr_ */
 
   res = pthread_attr_init (&attr);
   if (0 == res)
   {
 #if defined(HAVE_PTHREAD_ATTR_SETNAME_NP_NETBSD)
-    /* NetBSD use 3 arguments: second argument is string in printf-like format,
-     *                         third argument is single argument for printf;
-     * OSF1 use 3 arguments too, but last one always must be zero (NULL).
-     * MHD doesn't use '%' in thread names, so both form are used in same way.
+    /* NetBSD uses 3 arguments: second argument is string in printf-like format,
+     *                          third argument is single argument for printf;
+     * OSF1 uses 3 arguments too, but last one always must be zero (NULL).
+     * MHD doesn't use '%' in thread names, so both forms are used in same way.
      */
     res = pthread_attr_setname_np (&attr,
                                    thread_name,
@@ -329,14 +360,21 @@ MHD_create_named_thread_ (MHD_thread_handle_ID_ *thread,
       res = pthread_attr_setstacksize (&attr,
                                        stack_size);
     if (0 == res)
-      res = pthread_create (&(thread->handle),
+      res = pthread_create (new_tid_ptr,
                             &attr,
                             start_routine,
                             arg);
     pthread_attr_destroy (&attr);
   }
   if (0 != res)
+  {
     errno = res;
+    MHD_thread_handle_ID_set_invalid_ (handle_id);
+  }
+#if ! defined(MHD_thread_handle_ID_get_native_handle_ptr_)
+  else
+    MHD_thread_handle_ID_set_native_handle_ (handle_id, new_tid);
+#endif /* ! MHD_thread_handle_ID_set_current_thread_ID_ */
 
   return ! res;
 #else  /* ! MHD_USE_THREAD_ATTR_SETNAME */
@@ -359,12 +397,16 @@ MHD_create_named_thread_ (MHD_thread_handle_ID_ *thread,
   /* Set thread name in thread itself to avoid problems with
    * threads which terminated before name is set in other thread.
    */
-  if (! MHD_create_thread_ (thread,
+  if (! MHD_create_thread_ (handle_id,
                             stack_size,
                             &named_thread_starter,
                             (void *) param))
   {
+    int err_num;
+
+    err_num = errno;
     free (param);
+    errno = err_num;
     return 0;
   }
 

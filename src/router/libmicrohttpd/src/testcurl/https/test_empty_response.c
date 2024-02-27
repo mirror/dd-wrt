@@ -1,6 +1,7 @@
 /*
  This file is part of libmicrohttpd
  Copyright (C) 2013 Christian Grothoff
+ Copyright (C) 2014-2022 Evgeny Grin (Karlson2k)
 
  libmicrohttpd is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published
@@ -22,6 +23,7 @@
  * @file test_empty_response.c
  * @brief  Testcase for libmicrohttpd HTTPS GET operations with empty reply
  * @author Christian Grothoff
+ * @author Karlson2k (Evgeny Grin)
  */
 #include "platform.h"
 #include "microhttpd.h"
@@ -32,6 +34,7 @@
 #include <gcrypt.h>
 #endif /* MHD_HTTPS_REQUIRE_GCRYPT */
 #include "tls_test_common.h"
+#include "tls_test_keys.h"
 
 static int oneone;
 
@@ -42,23 +45,22 @@ ahc_echo (void *cls,
           const char *method,
           const char *version,
           const char *upload_data, size_t *upload_data_size,
-          void **unused)
+          void **req_cls)
 {
   struct MHD_Response *response;
   enum MHD_Result ret;
   (void) cls; (void) url; (void) method; (void) version;             /* Unused. Silent compiler warning. */
-  (void) upload_data; (void) upload_data_size; (void) unused;        /* Unused. Silent compiler warning. */
+  (void) upload_data; (void) upload_data_size; (void) req_cls;       /* Unused. Silent compiler warning. */
 
-  response = MHD_create_response_from_buffer (0, NULL,
-                                              MHD_RESPMEM_PERSISTENT);
+  response = MHD_create_response_empty (MHD_RF_NONE);
   ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
   MHD_destroy_response (response);
   return ret;
 }
 
 
-static int
-testInternalSelectGet ()
+static unsigned int
+testInternalSelectGet (void)
 {
   struct MHD_Daemon *d;
   CURL *c;
@@ -74,7 +76,7 @@ testInternalSelectGet ()
   struct CURLMsg *msg;
   time_t start;
   struct timeval tv;
-  int port;
+  uint16_t port;
 
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
     port = 0;
@@ -87,8 +89,8 @@ testInternalSelectGet ()
   cbc.pos = 0;
   d = MHD_start_daemon (MHD_USE_ERROR_LOG | MHD_USE_TLS
                         | MHD_USE_INTERNAL_POLLING_THREAD,
-                        port, NULL, NULL, &ahc_echo, "GET",
-                        MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
+                        port, NULL, NULL, &ahc_echo, NULL,
+                        MHD_OPTION_HTTPS_MEM_KEY, srv_self_signed_key_pem,
                         MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,
                         MHD_OPTION_END);
   if (d == NULL)
@@ -102,15 +104,19 @@ testInternalSelectGet ()
     {
       MHD_stop_daemon (d); return 32;
     }
-    port = (int) dinfo->port;
+    port = dinfo->port;
   }
 
   c = curl_easy_init ();
+#ifdef _DEBUG
+  curl_easy_setopt (c, CURLOPT_VERBOSE, 1L);
+#endif
   curl_easy_setopt (c, CURLOPT_URL, "https://127.0.0.1/hello_world");
   curl_easy_setopt (c, CURLOPT_PORT, (long) port);
   curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
   curl_easy_setopt (c, CURLOPT_WRITEDATA, &cbc);
   /* TLS options */
+  curl_easy_setopt (c, CURLOPT_SSLVERSION, CURL_SSLVERSION_DEFAULT);
   curl_easy_setopt (c, CURLOPT_SSL_VERIFYPEER, 0L);
   curl_easy_setopt (c, CURLOPT_SSL_VERIFYHOST, 0L);
   curl_easy_setopt (c, CURLOPT_FAILONERROR, 1L);
@@ -231,6 +237,7 @@ main (int argc, char *const *argv)
   unsigned int errorCount = 0;
   (void) argc;   /* Unused. Silent compiler warning. */
 
+  oneone = 1;
   if (! testsuite_curl_global_init ())
     return 99;
   if (NULL == curl_version_info (CURLVERSION_NOW)->ssl_version)

@@ -1,7 +1,7 @@
 /*
      This file is part of libmicrohttpd
      Copyright (C) 2007, 2009, 2011 Christian Grothoff
-     Copyright (C) 2014-2021 Evgeny Grin (Karlson2k)
+     Copyright (C) 2014-2022 Evgeny Grin (Karlson2k)
 
      libmicrohttpd is free software; you can redistribute it and/or modify
      it under the terms of the GNU General Public License as published
@@ -86,22 +86,22 @@ ahc_echo (void *cls,
           const char *method,
           const char *version,
           const char *upload_data, size_t *upload_data_size,
-          void **unused)
+          void **req_cls)
 {
   static int ptr;
-  const char *me = cls;
   enum MHD_Result ret;
+  (void) cls;
   (void) url; (void) version;                      /* Unused. Silent compiler warning. */
   (void) upload_data; (void) upload_data_size;     /* Unused. Silent compiler warning. */
 
-  if (0 != strcmp (me, method))
+  if (0 != strcmp (MHD_HTTP_METHOD_GET, method))
     return MHD_NO;              /* unexpected method */
-  if (&ptr != *unused)
+  if (&ptr != *req_cls)
   {
-    *unused = &ptr;
+    *req_cls = &ptr;
     return MHD_YES;
   }
-  *unused = NULL;
+  *req_cls = NULL;
   ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
   if (ret == MHD_NO)
     abort ();
@@ -116,12 +116,12 @@ thread_gets (void *param)
   CURLcode errornum;
   unsigned int i;
   char url[64];
-  int port = (int) (intptr_t) param;
+  uint16_t port = (uint16_t) (intptr_t) param;
 
   snprintf (url,
             sizeof (url),
-            "http://127.0.0.1:%d/hello_world",
-            port);
+            "http://127.0.0.1:%u/hello_world",
+            (unsigned int) port);
 
   c = curl_easy_init ();
   if (NULL == c)
@@ -156,8 +156,8 @@ thread_gets (void *param)
 }
 
 
-static int
-testRunWaitGet (int port, int poll_flag)
+static unsigned int
+testRunWaitGet (uint16_t port, uint32_t poll_flag)
 {
   pthread_t get_tid;
   struct MHD_Daemon *d;
@@ -175,8 +175,8 @@ testRunWaitGet (int port, int poll_flag)
   printf ("Starting MHD_run_wait() test with MHD in %s polling mode.\n",
           test_desc);
   signal_done = 0;
-  d = MHD_start_daemon (MHD_USE_ERROR_LOG | poll_flag,
-                        port, NULL, NULL, &ahc_echo, "GET", MHD_OPTION_END);
+  d = MHD_start_daemon (MHD_USE_ERROR_LOG | (enum MHD_FLAG) poll_flag,
+                        port, NULL, NULL, &ahc_echo, NULL, MHD_OPTION_END);
   if (d == NULL)
     abort ();
   if (0 == port)
@@ -185,7 +185,7 @@ testRunWaitGet (int port, int poll_flag)
     dinfo = MHD_get_daemon_info (d, MHD_DAEMON_INFO_BIND_PORT);
     if ((NULL == dinfo) || (0 == dinfo->port) )
       abort ();
-    port = (int) dinfo->port;
+    port = dinfo->port;
   }
 
   if (0 != pthread_create (&get_tid, NULL,
@@ -214,7 +214,7 @@ testRunWaitGet (int port, int poll_flag)
 int
 main (int argc, char *const *argv)
 {
-  int port = 1675;
+  uint16_t port = 1675;
   (void) argc;   /* Unused. Silent compiler warning. */
 
   if ((NULL == argv) || (0 == argv[0]))
@@ -224,9 +224,8 @@ main (int argc, char *const *argv)
     port += 5;
   if (0 != curl_global_init (CURL_GLOBAL_WIN32))
     return 2;
-  response = MHD_create_response_from_buffer (strlen ("/hello_world"),
-                                              "/hello_world",
-                                              MHD_RESPMEM_MUST_COPY);
+  response = MHD_create_response_from_buffer_static (strlen ("/hello_world"),
+                                                     "/hello_world");
   testRunWaitGet (port++, 0);
   if (MHD_YES == MHD_is_feature_supported (MHD_FEATURE_EPOLL))
     testRunWaitGet (port++, MHD_USE_EPOLL);

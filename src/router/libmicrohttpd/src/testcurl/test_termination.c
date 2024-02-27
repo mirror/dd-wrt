@@ -1,7 +1,7 @@
 /*
      This file is part of libmicrohttpd
      Copyright (C) 2009 Christian Grothoff
-     Copyright (C) 2014-2021 Evgeny Grin (Karlson2k)
+     Copyright (C) 2014-2022 Evgeny Grin (Karlson2k)
 
      libmicrohttpd is free software; you can redistribute it and/or modify
      it under the terms of the GNU General Public License as published
@@ -56,7 +56,7 @@ connection_handler (void *cls,
                     const char *method,
                     const char *version,
                     const char *upload_data, size_t *upload_data_size,
-                    void **ptr)
+                    void **req_cls)
 {
   static int i;
   struct MHD_Response *response;
@@ -65,9 +65,9 @@ connection_handler (void *cls,
   (void) method; (void) version; (void) upload_data; /* Unused. Silent compiler warning. */
   (void) upload_data_size;                       /* Unused. Silent compiler warning. */
 
-  if (*ptr == NULL)
+  if (*req_cls == NULL)
   {
-    *ptr = &i;
+    *req_cls = &i;
     return MHD_YES;
   }
 
@@ -78,8 +78,7 @@ connection_handler (void *cls,
   }
 
   response =
-    MHD_create_response_from_buffer (strlen ("Response"), "Response",
-                                     MHD_RESPMEM_PERSISTENT);
+    MHD_create_response_from_buffer_static (strlen ("Response"), "Response");
   ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
   MHD_destroy_response (response);
 
@@ -99,7 +98,7 @@ int
 main (void)
 {
   struct MHD_Daemon *daemon;
-  int port;
+  uint16_t port;
   char url[255];
   CURL *curl;
   CURLcode success;
@@ -130,15 +129,15 @@ main (void)
     {
       MHD_stop_daemon (daemon); return 32;
     }
-    port = (int) dinfo->port;
+    port = dinfo->port;
   }
 
   curl = curl_easy_init ();
   /* curl_easy_setopt(curl, CURLOPT_POST, 1L); */
   snprintf (url,
             sizeof (url),
-            "http://127.0.0.1:%d",
-            port);
+            "http://127.0.0.1:%u",
+            (unsigned int) port);
   curl_easy_setopt (curl, CURLOPT_URL, url);
   curl_easy_setopt (curl, CURLOPT_WRITEFUNCTION, write_data);
 

@@ -78,7 +78,7 @@ struct sha1_ctx
 /**
  * Initialise structure for SHA-1 calculation.
  *
- * @param ctx must be a `struct sha1_ctx *`
+ * @param ctx_ must be a `struct sha1_ctx *`
  */
 void
 MHD_SHA1_init (void *ctx_);

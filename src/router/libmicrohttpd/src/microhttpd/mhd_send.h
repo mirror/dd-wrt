@@ -1,6 +1,6 @@
 /*
   This file is part of libmicrohttpd
-  Copyright (C) 2017, 2020 Karlson2k (Evgeny Grin)
+  Copyright (C) 2017-2021 Karlson2k (Evgeny Grin)
   Copyright (C) 2019 ng0
 
   This library is free software; you can redistribute it and/or

@@ -1,7 +1,7 @@
 /*
      This file is part of libmicrohttpd
      Copyright (C) 2007, 2009, 2011 Christian Grothoff
-     Copyright (C) 2014-2020 Evgeny Grin (Karlson2k) - large rework,
+     Copyright (C) 2014-2022 Evgeny Grin (Karlson2k) - large rework,
                              multithreading.
 
      libmicrohttpd is free software; you can redistribute it and/or modify
@@ -32,7 +32,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include "test_helpers.h"
+#include <errno.h>
+#include "mhd_has_in_name.h"
+#include "mhd_has_param.h"
 #include "mhd_sockets.h" /* only macros used */
 
 
@@ -78,20 +80,19 @@
 
 /* Cleanup test: max number of concurrent daemons depending on maximum number
  * of open FDs. */
-#define CLEANUP_MAX_DAEMONS(max_fds) ( ((max_fds) < 10) ? 0 : \
-                                         ( (((max_fds) - 10) / \
-                                           (CLEANUP_NUM_REQS_PER_DAEMON * 5 \
-                                            + 3)) ) )
+#define CLEANUP_MAX_DAEMONS(max_fds) (unsigned int) \
+  ( ((max_fds) < 10) ? \
+    0 : ( (((max_fds) - 10) / (CLEANUP_NUM_REQS_PER_DAEMON * 5 + 3)) ) )
 
 #define EXPECTED_URI_BASE_PATH  "/hello_world"
 #define EXPECTED_URI_QUERY      "a=%26&b=c"
 #define EXPECTED_URI_FULL_PATH  EXPECTED_URI_BASE_PATH "?" EXPECTED_URI_QUERY
 
 /* Global parameters */
-static int oneone;         /**< Use HTTP/1.1 instead of HTTP/1.0 */
-static int no_listen;      /**< Start MHD daemons without listen socket */
-static int global_port;    /**< MHD daemons listen port number */
-static int cleanup_test;   /**< Test for final cleanup */
+static int oneone;           /**< Use HTTP/1.1 instead of HTTP/1.0 */
+static int no_listen;        /**< Start MHD daemons without listen socket */
+static uint16_t global_port; /**< MHD daemons listen port number */
+static int cleanup_test;     /**< Test for final cleanup */
 static int slow_reply = 0; /**< Slowdown MHD replies */
 static int ignore_response_errors = 0; /**< Do not fail test if CURL
                                             returns error */
@@ -147,25 +148,25 @@ ahc_echo (void *cls,
           const char *method,
           const char *version,
           const char *upload_data, size_t *upload_data_size,
-          void **unused)
+          void **req_cls)
 {
   static int ptr;
-  const char *me = cls;
   struct MHD_Response *response;
   enum MHD_Result ret;
   const char *v;
+  (void) cls;
   (void) version;
   (void) upload_data;
   (void) upload_data_size;       /* Unused. Silence compiler warning. */
 
-  if (0 != strcmp (me, method))
+  if (0 != strcmp (MHD_HTTP_METHOD_GET, method))
     return MHD_NO;              /* unexpected method */
-  if (&ptr != *unused)
+  if (&ptr != *req_cls)
   {
-    *unused = &ptr;
+    *req_cls = &ptr;
     return MHD_YES;
   }
-  *unused = NULL;
+  *req_cls = NULL;
   v = MHD_lookup_connection_value (connection,
                                    MHD_GET_ARGUMENT_KIND,
                                    "a");
@@ -199,9 +200,8 @@ ahc_echo (void *cls,
   if (slow_reply)
     usleep (200000);
 
-  response = MHD_create_response_from_buffer (strlen (url),
-                                              (void *) url,
-                                              MHD_RESPMEM_MUST_COPY);
+  response = MHD_create_response_from_buffer_copy (strlen (url),
+                                                   (const void *) url);
   ret = MHD_queue_response (connection,
                             MHD_HTTP_OK,
                             response);
@@ -215,7 +215,7 @@ ahc_echo (void *cls,
 }
 
 
-static void
+_MHD_NORETURN static void
 _externalErrorExit_func (const char *errDesc, const char *funcName, int lineNum)
 {
   if ((NULL != errDesc) && (0 != errDesc[0]))
@@ -239,33 +239,33 @@ _externalErrorExit_func (const char *errDesc, const char *funcName, int lineNum)
 
 #if defined(HAVE___FUNC__)
 #define externalErrorExit(ignore) \
-    _externalErrorExit_func(NULL, __func__, __LINE__)
+  _externalErrorExit_func (NULL, __func__, __LINE__)
 #define externalErrorExitDesc(errDesc) \
-    _externalErrorExit_func(errDesc, __func__, __LINE__)
+  _externalErrorExit_func (errDesc, __func__, __LINE__)
 #elif defined(HAVE___FUNCTION__)
 #define externalErrorExit(ignore) \
-    _externalErrorExit_func(NULL, __FUNCTION__, __LINE__)
+  _externalErrorExit_func (NULL, __FUNCTION__, __LINE__)
 #define externalErrorExitDesc(errDesc) \
-    _externalErrorExit_func(errDesc, __FUNCTION__, __LINE__)
+  _externalErrorExit_func (errDesc, __FUNCTION__, __LINE__)
 #else
-#define externalErrorExit(ignore) _externalErrorExit_func(NULL, NULL, __LINE__)
+#define externalErrorExit(ignore) _externalErrorExit_func (NULL, NULL, __LINE__)
 #define externalErrorExitDesc(errDesc) \
-  _externalErrorExit_func(errDesc, NULL, __LINE__)
+  _externalErrorExit_func (errDesc, NULL, __LINE__)
 #endif
 
 
 /* Static const value, indicates that result value was not set yet */
-static const int eMarker = 0xCE;
+static const unsigned int eMarker = 0xCE;
 
 
 static MHD_socket
-createListeningSocket (int *pport)
+createListeningSocket (uint16_t *pport)
 {
   MHD_socket skt;
   struct sockaddr_in sin;
   socklen_t sin_len;
 #ifdef MHD_POSIX_SOCKETS
-  static const int on = 1;
+  static int on = 1;
 #endif /* MHD_POSIX_SOCKETS */
 
   skt = socket (PF_INET, SOCK_STREAM, IPPROTO_TCP);
@@ -300,7 +300,7 @@ createListeningSocket (int *pport)
     if (AF_INET != sin.sin_family)
       externalErrorExitDesc ("getsockname() returned wrong socket family");
 
-    *pport = (int) ntohs (sin.sin_port);
+    *pport = ntohs (sin.sin_port);
   }
 
   return skt;
@@ -338,14 +338,14 @@ struct addConnParam
 
   MHD_socket clent_sk;
   /* Non-zero indicate error */
-  volatile int result;
+  volatile unsigned int result;
 
 #ifdef HAVE_PTHREAD_H
   pthread_t addConnThread;
 #endif /* HAVE_PTHREAD_H */
 };
 
-static int
+static unsigned int
 doAcceptAndAddConnInThread (struct addConnParam *p)
 {
   struct sockaddr addr;
@@ -386,7 +386,7 @@ startThreadAddConn (struct addConnParam *param)
 }
 
 
-static int
+static unsigned int
 finishThreadAddConn (struct addConnParam *param)
 {
   struct addConnParam *result;
@@ -413,10 +413,10 @@ struct curlQueryParams
   const char *queryPath;
 
   /* Destination port for CURL query */
-  int queryPort;
+  uint16_t queryPort;
 
   /* CURL query result error flag */
-  volatile int queryError;
+  volatile unsigned int queryError;
 
 #ifdef HAVE_PTHREAD_H
   pthread_t queryThread;
@@ -424,7 +424,7 @@ struct curlQueryParams
 };
 
 static CURL *
-curlEasyInitForTest (const char *queryPath, int port, struct CBC *pcbc)
+curlEasyInitForTest (const char *queryPath, uint16_t port, struct CBC *pcbc)
 {
   CURL *c;
 
@@ -445,10 +445,9 @@ curlEasyInitForTest (const char *queryPath, int port, struct CBC *pcbc)
       (CURLE_OK != curl_easy_setopt (c, CURLOPT_TIMEOUT,
                                      (long) response_timeout_val)) ||
       (CURLE_OK != curl_easy_setopt (c, CURLOPT_FAILONERROR, 1L)) ||
-      (oneone) ?
       (CURLE_OK != curl_easy_setopt (c, CURLOPT_HTTP_VERSION,
-                                     CURL_HTTP_VERSION_1_1)) :
-      (CURLE_OK != curl_easy_setopt (c, CURLOPT_HTTP_VERSION,
+                                     (oneone) ?
+                                     CURL_HTTP_VERSION_1_1 :
                                      CURL_HTTP_VERSION_1_0)))
   {
     fprintf (stderr, "curl_easy_setopt() failed.\n");
@@ -459,7 +458,7 @@ curlEasyInitForTest (const char *queryPath, int port, struct CBC *pcbc)
 }
 
 
-static int
+static unsigned int
 doCurlQueryInThread (struct curlQueryParams *p)
 {
   CURL *c;
@@ -540,7 +539,7 @@ startThreadCurlQuery (struct curlQueryParams *param)
 }
 
 
-static int
+static unsigned int
 finishThreadCurlQuery (struct curlQueryParams *param)
 {
   struct curlQueryParams *result;
@@ -559,13 +558,13 @@ finishThreadCurlQuery (struct curlQueryParams *param)
 
 
 /* Perform test queries and shut down MHD daemon */
-static int
-performTestQueries (struct MHD_Daemon *d, int d_port)
+static unsigned int
+performTestQueries (struct MHD_Daemon *d, uint16_t d_port)
 {
   struct curlQueryParams qParam;
   struct addConnParam aParam;
-  int a_port;           /* Additional listening socket port */
-  int ret = 0;          /* Return value */
+  uint16_t a_port;      /* Additional listening socket port */
+  unsigned int ret = 0; /* Return value */
 
   qParam.queryPath = "http://127.0.0.1" EXPECTED_URI_FULL_PATH;
   a_port = 0; /* auto-assign */
@@ -604,16 +603,16 @@ performTestQueries (struct MHD_Daemon *d, int d_port)
 
 
 /* Perform test for cleanup and shutdown MHD daemon */
-static int
-performTestCleanup (struct MHD_Daemon *d, int num_queries)
+static unsigned int
+performTestCleanup (struct MHD_Daemon *d, unsigned int num_queries)
 {
   struct curlQueryParams *qParamList;
   struct addConnParam aParam;
   MHD_socket lstn_sk;   /* Additional listening socket */
   MHD_socket *clntSkList;
-  int a_port;           /* Additional listening socket port */
-  int i;
-  int ret = 0;          /* Return value */
+  uint16_t a_port;      /* Additional listening socket port */
+  unsigned int i;
+  unsigned int ret = 0; /* Return value */
 
   a_port = 0; /* auto-assign */
 
@@ -704,7 +703,7 @@ enum testMhdPollType
 static unsigned int
 testNumThreadsForPool (enum testMhdPollType pollType)
 {
-  int numThreads = MHD_CPU_COUNT;
+  unsigned int numThreads = MHD_CPU_COUNT;
   if (! cleanup_test)
     return numThreads; /* No practical limit for non-cleanup test */
   if (CLEANUP_MAX_DAEMONS (sys_max_fds) < numThreads)
@@ -721,7 +720,7 @@ testNumThreadsForPool (enum testMhdPollType pollType)
 
 static struct MHD_Daemon *
 startTestMhdDaemon (enum testMhdThreadsType thrType,
-                    enum testMhdPollType pollType, int *pport)
+                    enum testMhdPollType pollType, uint16_t *pport)
 {
   struct MHD_Daemon *d;
   const union MHD_DaemonInfo *dinfo;
@@ -738,27 +737,47 @@ startTestMhdDaemon (enum testMhdThreadsType thrType,
       *pport += 4;
   }
 
-  if (testMhdThreadInternalPool != thrType)
-    d = MHD_start_daemon (((int) thrType) | ((int) pollType)
-                          | (thrType == testMhdThreadExternal ?
-                             0 : MHD_USE_ITC)
+  switch (thrType)
+  {
+  case testMhdThreadExternal:
+    d = MHD_start_daemon (((unsigned int) thrType) | ((unsigned int) pollType)
+                          | MHD_USE_NO_THREAD_SAFETY
                           | (no_listen ? MHD_USE_NO_LISTEN_SOCKET : 0)
                           | MHD_USE_ERROR_LOG,
                           *pport, NULL, NULL,
-                          &ahc_echo, "GET",
+                          &ahc_echo, NULL,
                           MHD_OPTION_URI_LOG_CALLBACK, &log_cb, NULL,
+                          MHD_OPTION_APP_FD_SETSIZE, (int) FD_SETSIZE,
                           MHD_OPTION_END);
-  else
-    d = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD | ((int) pollType)
+    break;
+  case testMhdThreadInternalPool:
+    d = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD
+                          | ((unsigned int) pollType)
                           | MHD_USE_ITC
                           | (no_listen ? MHD_USE_NO_LISTEN_SOCKET : 0)
                           | MHD_USE_ERROR_LOG,
                           *pport, NULL, NULL,
-                          &ahc_echo, "GET",
+                          &ahc_echo, NULL,
                           MHD_OPTION_THREAD_POOL_SIZE,
                           testNumThreadsForPool (pollType),
                           MHD_OPTION_URI_LOG_CALLBACK, &log_cb, NULL,
                           MHD_OPTION_END);
+    break;
+  case testMhdThreadInternal:
+  case testMhdThreadInternalPerConnection:
+    d = MHD_start_daemon (((unsigned int) thrType) | ((unsigned int) pollType)
+                          | MHD_USE_ITC
+                          | (no_listen ? MHD_USE_NO_LISTEN_SOCKET : 0)
+                          | MHD_USE_ERROR_LOG,
+                          *pport, NULL, NULL,
+                          &ahc_echo, NULL,
+                          MHD_OPTION_URI_LOG_CALLBACK, &log_cb, NULL,
+                          MHD_OPTION_END);
+    break;
+  default:
+    abort ();
+    break;
+  }
 
   if (NULL == d)
   {
@@ -774,7 +793,7 @@ startTestMhdDaemon (enum testMhdThreadsType thrType,
       fprintf (stderr, "MHD_get_daemon_info() failed.\n");
       abort ();
     }
-    *pport = (int) dinfo->port;
+    *pport = dinfo->port;
   }
 
   return d;
@@ -784,7 +803,7 @@ startTestMhdDaemon (enum testMhdThreadsType thrType,
 /* Test runners */
 
 
-static int
+static unsigned int
 testExternalGet (void)
 {
   struct MHD_Daemon *d;
@@ -797,10 +816,10 @@ testExternalGet (void)
   CURLM *multi;
   time_t start;
   struct timeval tv;
-  int d_port = global_port; /* Daemon's port */
-  int a_port = 0;           /* Additional listening socket port */
+  uint16_t d_port = global_port; /* Daemon's port */
+  uint16_t a_port = 0;      /* Additional listening socket port */
   struct addConnParam aParam;
-  int ret = 0;              /* Return value of the test */
+  unsigned int ret = 0;     /* Return value of the test */
   const int c_no_listen = no_listen; /* Local const value to mute analyzer */
 
   d = startTestMhdDaemon (testMhdThreadExternal, testMhdPollBySelect, &d_port);
@@ -994,11 +1013,11 @@ testExternalGet (void)
 
 
 #ifdef HAVE_PTHREAD_H
-static int
+static unsigned int
 testInternalGet (enum testMhdPollType pollType)
 {
   struct MHD_Daemon *d;
-  int d_port = global_port; /* Daemon's port */
+  uint16_t d_port = global_port; /* Daemon's port */
 
   d = startTestMhdDaemon (testMhdThreadInternal, pollType,
                           &d_port);
@@ -1009,11 +1028,11 @@ testInternalGet (enum testMhdPollType pollType)
 }
 
 
-static int
+static unsigned int
 testMultithreadedGet (enum testMhdPollType pollType)
 {
   struct MHD_Daemon *d;
-  int d_port = global_port; /* Daemon's port */
+  uint16_t d_port = global_port; /* Daemon's port */
 
   d = startTestMhdDaemon (testMhdThreadInternalPerConnection, pollType,
                           &d_port);
@@ -1026,11 +1045,11 @@ testMultithreadedGet (enum testMhdPollType pollType)
 }
 
 
-static int
+static unsigned int
 testMultithreadedPoolGet (enum testMhdPollType pollType)
 {
   struct MHD_Daemon *d;
-  int d_port = global_port; /* Daemon's port */
+  uint16_t d_port = global_port; /* Daemon's port */
 
   d = startTestMhdDaemon (testMhdThreadInternalPool, pollType,
                           &d_port);
@@ -1042,17 +1061,17 @@ testMultithreadedPoolGet (enum testMhdPollType pollType)
 }
 
 
-static int
+static unsigned int
 testStopRace (enum testMhdPollType pollType)
 {
   struct MHD_Daemon *d;
-  int d_port = global_port; /* Daemon's port */
-  int a_port = 0;           /* Additional listening socket port */
+  uint16_t d_port = global_port; /* Daemon's port */
+  uint16_t a_port = 0;           /* Additional listening socket port */
   struct sockaddr_in sin;
   MHD_socket fd1;
   MHD_socket fd2;
   struct addConnParam aParam;
-  int ret = 0;              /* Return value of the test */
+  unsigned int ret = 0;              /* Return value of the test */
 
   d = startTestMhdDaemon (testMhdThreadInternal, pollType,
                           &d_port);
@@ -1131,20 +1150,24 @@ main (int argc, char *const *argv)
   if (cleanup_test)
     return 77; /* Cannot run without threads */
 #endif /* HAVE_PTHREAD_H */
-  verbose = ! has_param (argc, argv, "-q") || has_param (argc, argv, "--quiet");
+  verbose = ! (has_param (argc, argv, "-q") ||
+               has_param (argc, argv, "--quiet") ||
+               has_param (argc, argv, "-s") ||
+               has_param (argc, argv, "--silent"));
   if (cleanup_test)
   {
 #ifndef _WIN32
     /* Find system limit for number of open FDs. */
 #if defined(HAVE_SYSCONF) && defined(_SC_OPEN_MAX)
-    sys_max_fds = sysconf (_SC_OPEN_MAX);
+    sys_max_fds = sysconf (_SC_OPEN_MAX) > 500000 ?
+                  500000 : (int) sysconf (_SC_OPEN_MAX);
 #else  /* ! HAVE_SYSCONF || ! _SC_OPEN_MAX */
     sys_max_fds = -1;
 #endif /* ! HAVE_SYSCONF || ! _SC_OPEN_MAX */
     if (0 > sys_max_fds)
     {
 #if defined(OPEN_MAX) && (0 < ((OPEN_MAX) +1))
-      sys_max_fds = OPEN_MAX;
+      sys_max_fds = OPEN_MAX > 500000 ? 500000 : (int) OPEN_MAX;
 #else  /* ! OPEN_MAX */
       sys_max_fds = 256; /* Use reasonable value */
 #endif /* ! OPEN_MAX */

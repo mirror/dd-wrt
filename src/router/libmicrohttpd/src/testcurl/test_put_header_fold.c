@@ -32,6 +32,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <errno.h>
 
 #ifndef _WIN32
 #include <sys/socket.h>
@@ -39,7 +40,8 @@
 #endif
 
 #include "internal.h"
-#include "test_helpers.h"
+#include "mhd_has_param.h"
+#include "mhd_has_in_name.h"
 
 /* The next macros are borrowed from memorypool.c
    Keep them in sync! */
@@ -258,7 +260,7 @@ _mhdErrorExit_func (const char *errDesc, const char *funcName, int lineNum)
  */
 #define HEADERS_POINTERS_SIZE \
   RQ_NUM_HEADERS * \
-  ROUND_TO_ALIGN_PLUS_RED_ZONE(sizeof(struct MHD_HTTP_Header))
+  ROUND_TO_ALIGN_PLUS_RED_ZONE(sizeof(struct MHD_HTTP_Req_Header))
 
 #define PAGE \
   "<html><head><title>libmicrohttpd demo page</title></head>" \
@@ -513,12 +515,12 @@ libcurlUploadDataCB (void *stream, size_t item_size, size_t nitems, void *ctx)
 
   /* Avoid libcurl magic numbers */
 #ifdef CURL_READFUNC_PAUSE
-  if (CURL_READFUNC_ABORT == to_fill)
-    to_fill -= 2;
+  if (CURL_READFUNC_PAUSE == to_fill)
+    to_fill = (CURL_READFUNC_PAUSE - 2);
 #endif /* CURL_READFUNC_PAUSE */
 #ifdef CURL_READFUNC_ABORT
   if (CURL_READFUNC_ABORT == to_fill)
-    --to_fill;
+    to_fill = (CURL_READFUNC_ABORT - 1);
 #endif /* CURL_READFUNC_ABORT */
 
   memcpy (stream, put_data + cbc->up_pos, to_fill);
@@ -609,14 +611,14 @@ setupCURL (void *cbc, uint16_t port,
 #endif /* _DEBUG */
       (CURLE_OK != curl_easy_setopt (c, CURLOPT_DEBUGFUNCTION,
                                      &libcurl_debug_cb)) ||
+#if CURL_AT_LEAST_VERSION (7, 45, 0)
+      (CURLE_OK != curl_easy_setopt (c, CURLOPT_DEFAULT_PROTOCOL, "http")) ||
+#endif /* CURL_AT_LEAST_VERSION (7, 45, 0) */
 #if CURL_AT_LEAST_VERSION (7, 85, 0)
       (CURLE_OK != curl_easy_setopt (c, CURLOPT_PROTOCOLS_STR, "http")) ||
 #elif CURL_AT_LEAST_VERSION (7, 19, 4)
       (CURLE_OK != curl_easy_setopt (c, CURLOPT_PROTOCOLS, CURLPROTO_HTTP)) ||
 #endif /* CURL_AT_LEAST_VERSION (7, 19, 4) */
-#if CURL_AT_LEAST_VERSION (7, 45, 0)
-      (CURLE_OK != curl_easy_setopt (c, CURLOPT_DEFAULT_PROTOCOL, "http")) ||
-#endif /* CURL_AT_LEAST_VERSION (7, 45, 0) */
       (CURLE_OK != curl_easy_setopt (c, CURLOPT_URL,
                                      URL_SCHEME_HOST_PATH)) ||
       (CURLE_OK != curl_easy_setopt (c, CURLOPT_PORT, ((long) port))))
@@ -843,8 +845,8 @@ ahcCheck (void *cls,
   }
 
   response =
-    MHD_create_response_from_buffer (MHD_STATICSTR_LEN_ (PAGE), PAGE,
-                                     MHD_RESPMEM_PERSISTENT);
+    MHD_create_response_from_buffer_static (MHD_STATICSTR_LEN_ (PAGE),
+                                            PAGE);
   if (NULL == response)
     mhdErrorExitDesc ("Failed to create response");
 
@@ -899,7 +901,6 @@ performQueryExternal (struct MHD_Daemon *d, CURL *c, CURLM **multi_reuse)
     fd_set es;
     MHD_socket maxMhdSk;
     int maxCurlSk;
-    MHD_UNSIGNED_LONG_LONG time_o;
 
     maxMhdSk = MHD_INVALID_SOCKET;
     maxCurlSk = -1;
@@ -943,14 +944,14 @@ performQueryExternal (struct MHD_Daemon *d, CURL *c, CURLM **multi_reuse)
     }
     if (libcurl_finished)
     { /* libcurl has finished, check whether MHD still needs to perform cleanup */
-      if (MHD_YES != MHD_get_timeout (d, &time_o))
+      if (0 != MHD_get_timeout64s (d))
         break; /* MHD finished as well */
     }
-    if (MHD_NO == MHD_get_fdset (d, &rs, &ws, &es, &maxMhdSk))
+    if (MHD_YES != MHD_get_fdset (d, &rs, &ws, &es, &maxMhdSk))
       mhdErrorExitDesc ("MHD_get_fdset() failed");
     tv.tv_sec = 0;
     tv.tv_usec = 200000;
-    if ((MHD_NO != MHD_get_timeout (d, &time_o)) && (0 == time_o))
+    if (0 == MHD_get_timeout64s (d))
       tv.tv_usec = 0;
     else
     {
@@ -1146,10 +1147,11 @@ performCheck (void)
       mem_limit = (size_t) ((TEST_UPLOAD_DATA_SIZE * 4) / 3 + 2
                             + HEADERS_POINTERS_SIZE);
 
-    d = MHD_start_daemon (MHD_USE_ERROR_LOG,
+    d = MHD_start_daemon (MHD_USE_ERROR_LOG | MHD_USE_NO_THREAD_SAFETY,
                           port, NULL, NULL,
                           &ahcCheck, &ahc_param,
                           MHD_OPTION_CONNECTION_MEMORY_LIMIT, mem_limit,
+                          MHD_OPTION_APP_FD_SETSIZE, (int) FD_SETSIZE,
                           MHD_OPTION_END);
   }
   if (d == NULL)

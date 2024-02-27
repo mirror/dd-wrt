@@ -4,6 +4,7 @@
   <Import Project="$(MhdW32Common)project-configs.props" />
   <Import Project="$(MhdW32Common)simplepost-files.vcxproj" />
   <PropertyGroup Label="Globals">
+    <VCProjectVersion>17.0</VCProjectVersion>
     <ProjectGuid>{294D5317-E983-4682-8DB5-678EA4645E11}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>simplepost</RootNamespace>

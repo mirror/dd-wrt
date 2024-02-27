@@ -5,6 +5,10 @@ AM_CPPFLAGS = \
 
 AM_CFLAGS = $(HIDDEN_VISIBILITY_CFLAGS)
 
+$(top_builddir)/src/microhttpd/libmicrohttpd.la: $(top_builddir)/src/microhttpd/Makefile
+	@echo ' cd $(top_builddir)/src/microhttpd && $(MAKE) $(AM_MAKEFLAGS) libmicrohttpd.la'; \
+	$(am__cd) $(top_builddir)/src/microhttpd && $(MAKE) $(AM_MAKEFLAGS) libmicrohttpd.la
+
 noinst_DATA =
 MOSTLYCLEANFILES =
 

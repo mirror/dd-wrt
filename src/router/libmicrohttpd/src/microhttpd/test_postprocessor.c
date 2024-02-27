@@ -54,7 +54,7 @@ struct expResult
  * Each series of checks should be terminated by
  * five NULL-entries.
  */
-struct expResult exp_results[] = {
+static struct expResult exp_results[] = {
 #define URL_NOVALUE1_DATA "abc&x=5"
 #define URL_NOVALUE1_START 0
   {"abc", NULL, NULL, NULL, /* NULL */ ""}, /* change after API update */
@@ -87,14 +87,24 @@ struct expResult exp_results[] = {
 #define URL_ENC_END (URL_ENC_START + 4)
   {NULL, NULL, NULL, NULL, NULL},
 #define FORM_DATA \
-  "--AaB03x\r\ncontent-disposition: form-data; name=\"field1\"\r\n\r\nJoe Blow\r\n--AaB03x\r\ncontent-disposition: form-data; name=\"pics\"; filename=\"file1.txt\"\r\nContent-Type: text/plain\r\nContent-Transfer-Encoding: binary\r\n\r\nfiledata\r\n--AaB03x--\r\n"
+  "--AaB03x\r\ncontent-disposition: form-data; name=\"field1\"\r\n\r\n" \
+  "Joe Blow\r\n--AaB03x\r\ncontent-disposition: form-data; name=\"pics\";" \
+  " filename=\"file1.txt\"\r\nContent-Type: text/plain\r\n" \
+  "Content-Transfer-Encoding: binary\r\n\r\nfiledata\r\n--AaB03x--\r\n"
 #define FORM_START (URL_ENC_END + 1)
   {"field1", NULL, NULL, NULL, "Joe Blow"},
   {"pics", "file1.txt", "text/plain", "binary", "filedata"},
 #define FORM_END (FORM_START + 2)
   {NULL, NULL, NULL, NULL, NULL},
 #define FORM_NESTED_DATA \
-  "--AaB03x\r\ncontent-disposition: form-data; name=\"field1\"\r\n\r\nJane Blow\r\n--AaB03x\r\ncontent-disposition: form-data; name=\"pics\"\r\nContent-type: multipart/mixed, boundary=BbC04y\r\n\r\n--BbC04y\r\nContent-disposition: attachment; filename=\"file1.txt\"\r\nContent-Type: text/plain\r\n\r\nfiledata1\r\n--BbC04y\r\nContent-disposition: attachment; filename=\"file2.gif\"\r\nContent-type: image/gif\r\nContent-Transfer-Encoding: binary\r\n\r\nfiledata2\r\n--BbC04y--\r\n--AaB03x--"
+  "--AaB03x\r\ncontent-disposition: form-data; name=\"field1\"\r\n\r\n" \
+  "Jane Blow\r\n--AaB03x\r\ncontent-disposition: form-data; name=\"pics\"\r\n" \
+  "Content-type: multipart/mixed, boundary=BbC04y\r\n\r\n--BbC04y\r\n" \
+  "Content-disposition: attachment; filename=\"file1.txt\"\r\n" \
+  "Content-Type: text/plain\r\n\r\nfiledata1\r\n--BbC04y\r\n" \
+  "Content-disposition: attachment; filename=\"file2.gif\"\r\n" \
+  "Content-type: image/gif\r\nContent-Transfer-Encoding: binary\r\n\r\n" \
+  "filedata2\r\n--BbC04y--\r\n--AaB03x--"
 #define FORM_NESTED_START (FORM_END + 1)
   {"field1", NULL, NULL, NULL, "Jane Blow"},
   {"pics", "file1.txt", "text/plain", NULL, "filedata1"},
@@ -173,7 +183,8 @@ value_checker (void *cls,
       (mismatch (filename, expect->fname)) ||
       (mismatch (content_type, expect->cnt_type)) ||
       (mismatch (transfer_encoding, expect->tr_enc)) ||
-      (mismatch2 (data, expect->data, off, size)))
+      (strlen (expect->data) < off) ||
+      (mismatch2 (data, expect->data, (size_t) off, size)))
   {
     *idxp = (unsigned int) -1;
     fprintf (stderr,
@@ -198,7 +209,8 @@ value_checker (void *cls,
              (mismatch (filename, expect->fname)),
              (mismatch (content_type, expect->cnt_type)),
              (mismatch (transfer_encoding, expect->tr_enc)),
-             (mismatch2 (data, expect->data, off, size)));
+             (strlen (expect->data) < off)
+             || (mismatch2 (data, expect->data, (size_t) off, size)));
     return MHD_NO;
   }
   if ( ( (NULL == expect->data) &&
@@ -210,26 +222,26 @@ value_checker (void *cls,
 }
 
 
-static int
+static unsigned int
 test_urlencoding_case (unsigned int want_start,
                        unsigned int want_end,
                        const char *url_data)
 {
   size_t step;
-  int errors = 0;
+  unsigned int errors = 0;
   const size_t size = strlen (url_data);
 
   for (step = 1; size >= step; ++step)
   {
     struct MHD_Connection connection;
-    struct MHD_HTTP_Header header;
+    struct MHD_HTTP_Req_Header header;
     struct MHD_PostProcessor *pp;
     unsigned int want_off = want_start;
     size_t i;
 
     memset (&connection, 0, sizeof (struct MHD_Connection));
-    memset (&header, 0, sizeof (struct MHD_HTTP_Header));
-    connection.headers_received = &header;
+    memset (&header, 0, sizeof (struct MHD_HTTP_Res_Header));
+    connection.rq.headers_received = &header;
     header.header = MHD_HTTP_HEADER_CONTENT_TYPE;
     header.value = MHD_HTTP_POST_ENCODING_FORM_URLENCODED;
     header.header_size = MHD_STATICSTR_LEN_ (MHD_HTTP_HEADER_CONTENT_TYPE);
@@ -278,7 +290,7 @@ test_urlencoding_case (unsigned int want_start,
 }
 
 
-static int
+static unsigned int
 test_urlencoding (void)
 {
   unsigned int errorCount = 0;
@@ -357,11 +369,11 @@ test_urlencoding (void)
 }
 
 
-static int
+static unsigned int
 test_multipart_garbage (void)
 {
   struct MHD_Connection connection;
-  struct MHD_HTTP_Header header;
+  struct MHD_HTTP_Req_Header header;
   struct MHD_PostProcessor *pp;
   unsigned int want_off;
   size_t size = MHD_STATICSTR_LEN_ (FORM_DATA);
@@ -378,14 +390,15 @@ test_multipart_garbage (void)
   {
     want_off = FORM_START;
     memset (&connection, 0, sizeof (struct MHD_Connection));
-    memset (&header, 0, sizeof (struct MHD_HTTP_Header));
-    connection.headers_received = &header;
+    memset (&header, 0, sizeof (struct MHD_HTTP_Res_Header));
+    connection.rq.headers_received = &header;
     header.header = MHD_HTTP_HEADER_CONTENT_TYPE;
     header.value =
       MHD_HTTP_POST_ENCODING_MULTIPART_FORMDATA ", boundary=AaB03x";
     header.header_size = MHD_STATICSTR_LEN_ (MHD_HTTP_HEADER_CONTENT_TYPE);
-    header.value_size = MHD_STATICSTR_LEN_ (
-      MHD_HTTP_POST_ENCODING_MULTIPART_FORMDATA ", boundary=AaB03x");
+    header.value_size =
+      MHD_STATICSTR_LEN_ (MHD_HTTP_POST_ENCODING_MULTIPART_FORMDATA \
+                          ", boundary=AaB03x");
     header.kind = MHD_HEADER_KIND;
     pp = MHD_create_post_processor (&connection,
                                     1024, &value_checker, &want_off);
@@ -406,30 +419,30 @@ test_multipart_garbage (void)
     if (MHD_YES != MHD_post_process (pp, &xdata[splitpoint], size - splitpoint))
     {
       fprintf (stderr,
-               "Test failed in line %u at point %d\n",
+               "Test failed in line %u at point %u\n",
                (unsigned int) __LINE__,
-               (int) splitpoint);
+               (unsigned int) splitpoint);
       exit (49);
     }
     MHD_destroy_post_processor (pp);
     if (want_off != FORM_END)
     {
       fprintf (stderr,
-               "Test failed in line %u at point %d\n",
+               "Test failed in line %u at point %u\n",
                (unsigned int) __LINE__,
-               (int) splitpoint);
-      return (int) splitpoint;
+               (unsigned int) splitpoint);
+      return (unsigned int) splitpoint;
     }
   }
   return 0;
 }
 
 
-static int
+static unsigned int
 test_multipart_splits (void)
 {
   struct MHD_Connection connection;
-  struct MHD_HTTP_Header header;
+  struct MHD_HTTP_Req_Header header;
   struct MHD_PostProcessor *pp;
   unsigned int want_off;
   size_t size;
@@ -440,8 +453,8 @@ test_multipart_splits (void)
   {
     want_off = FORM_START;
     memset (&connection, 0, sizeof (struct MHD_Connection));
-    memset (&header, 0, sizeof (struct MHD_HTTP_Header));
-    connection.headers_received = &header;
+    memset (&header, 0, sizeof (struct MHD_HTTP_Res_Header));
+    connection.rq.headers_received = &header;
     header.header = MHD_HTTP_HEADER_CONTENT_TYPE;
     header.value =
       MHD_HTTP_POST_ENCODING_MULTIPART_FORMDATA ", boundary=AaB03x";
@@ -468,30 +481,30 @@ test_multipart_splits (void)
                                      size - splitpoint))
     {
       fprintf (stderr,
-               "Test failed in line %u at point %d\n",
+               "Test failed in line %u at point %u\n",
                (unsigned int) __LINE__,
-               (int) splitpoint);
+               (unsigned int) splitpoint);
       exit (49);
     }
     MHD_destroy_post_processor (pp);
     if (want_off != FORM_END)
     {
       fprintf (stderr,
-               "Test failed in line %u at point %d\n",
+               "Test failed in line %u at point %u\n",
                (unsigned int) __LINE__,
-               (int) splitpoint);
-      return (int) splitpoint;
+               (unsigned int) splitpoint);
+      return (unsigned int) splitpoint;
     }
   }
   return 0;
 }
 
 
-static int
+static unsigned int
 test_multipart (void)
 {
   struct MHD_Connection connection;
-  struct MHD_HTTP_Header header;
+  struct MHD_HTTP_Req_Header header;
   struct MHD_PostProcessor *pp;
   unsigned int want_off = FORM_START;
   size_t i;
@@ -499,8 +512,8 @@ test_multipart (void)
   size_t size;
 
   memset (&connection, 0, sizeof (struct MHD_Connection));
-  memset (&header, 0, sizeof (struct MHD_HTTP_Header));
-  connection.headers_received = &header;
+  memset (&header, 0, sizeof (struct MHD_HTTP_Res_Header));
+  connection.rq.headers_received = &header;
   header.header = MHD_HTTP_HEADER_CONTENT_TYPE;
   header.value =
     MHD_HTTP_POST_ENCODING_MULTIPART_FORMDATA ", boundary=AaB03x";
@@ -519,7 +532,7 @@ test_multipart (void)
   size = strlen (FORM_DATA);
   while (i < size)
   {
-    delta = 1 + MHD_random_ () % (size - i);
+    delta = 1 + ((size_t) MHD_random_ ()) % (size - i);
     if (MHD_YES != MHD_post_process (pp,
                                      &FORM_DATA[i],
                                      delta))
@@ -544,11 +557,11 @@ test_multipart (void)
 }
 
 
-static int
+static unsigned int
 test_nested_multipart (void)
 {
   struct MHD_Connection connection;
-  struct MHD_HTTP_Header header;
+  struct MHD_HTTP_Req_Header header;
   struct MHD_PostProcessor *pp;
   unsigned int want_off = FORM_NESTED_START;
   size_t i;
@@ -556,8 +569,8 @@ test_nested_multipart (void)
   size_t size;
 
   memset (&connection, 0, sizeof (struct MHD_Connection));
-  memset (&header, 0, sizeof (struct MHD_HTTP_Header));
-  connection.headers_received = &header;
+  memset (&header, 0, sizeof (struct MHD_HTTP_Res_Header));
+  connection.rq.headers_received = &header;
   header.header = MHD_HTTP_HEADER_CONTENT_TYPE;
   header.value =
     MHD_HTTP_POST_ENCODING_MULTIPART_FORMDATA ", boundary=AaB03x";
@@ -576,7 +589,7 @@ test_nested_multipart (void)
   size = strlen (FORM_NESTED_DATA);
   while (i < size)
   {
-    delta = 1 + MHD_random_ () % (size - i);
+    delta = 1 + ((size_t) MHD_random_ ()) % (size - i);
     if (MHD_YES != MHD_post_process (pp,
                                      &FORM_NESTED_DATA[i],
                                      delta))
@@ -619,11 +632,11 @@ value_checker2 (void *cls,
 }
 
 
-static int
-test_overflow ()
+static unsigned int
+test_overflow (void)
 {
   struct MHD_Connection connection;
-  struct MHD_HTTP_Header header;
+  struct MHD_HTTP_Req_Header header;
   struct MHD_PostProcessor *pp;
   size_t i;
   size_t j;
@@ -631,8 +644,8 @@ test_overflow ()
   char *buf;
 
   memset (&connection, 0, sizeof (struct MHD_Connection));
-  memset (&header, 0, sizeof (struct MHD_HTTP_Header));
-  connection.headers_received = &header;
+  memset (&header, 0, sizeof (struct MHD_HTTP_Res_Header));
+  connection.rq.headers_received = &header;
   header.header = MHD_HTTP_HEADER_CONTENT_TYPE;
   header.value = MHD_HTTP_POST_ENCODING_FORM_URLENCODED;
   header.header_size = strlen (header.header);
@@ -655,7 +668,7 @@ test_overflow ()
       return 1;
     memset (buf, 'A', i);
     buf[i / 2] = '=';
-    delta = 1 + (MHD_random_ () % (i - 1));
+    delta = 1 + (((size_t) MHD_random_ ()) % (i - 1));
     j = 0;
     while (j < i)
     {
@@ -675,7 +688,7 @@ test_overflow ()
 }
 
 
-static int
+static unsigned int
 test_empty_key (void)
 {
   const char form_data[] = "=abcdef";
@@ -686,13 +699,13 @@ test_empty_key (void)
   {
     size_t i;
     struct MHD_Connection connection;
-    struct MHD_HTTP_Header header;
+    struct MHD_HTTP_Req_Header header;
     struct MHD_PostProcessor *pp;
     memset (&connection, 0, sizeof (struct MHD_Connection));
-    memset (&header, 0, sizeof (struct MHD_HTTP_Header));
+    memset (&header, 0, sizeof (struct MHD_HTTP_Res_Header));
 
-    connection.headers_received = &header;
-    connection.headers_received_tail = &header;
+    connection.rq.headers_received = &header;
+    connection.rq.headers_received_tail = &header;
     header.header = MHD_HTTP_HEADER_CONTENT_TYPE;
     header.header_size = MHD_STATICSTR_LEN_ (MHD_HTTP_HEADER_CONTENT_TYPE);
     header.value = MHD_HTTP_POST_ENCODING_FORM_URLENCODED;
@@ -726,7 +739,7 @@ test_empty_key (void)
 }
 
 
-static int
+static unsigned int
 test_double_value (void)
 {
   const char form_data[] = URL_DATA "=abcdef";
@@ -738,15 +751,15 @@ test_double_value (void)
   {
     size_t i;
     struct MHD_Connection connection;
-    struct MHD_HTTP_Header header;
+    struct MHD_HTTP_Req_Header header;
     struct MHD_PostProcessor *pp;
     unsigned int results_off = URL_START;
     unsigned int results_final = results_off + 1; /* First value is correct */
     memset (&connection, 0, sizeof (struct MHD_Connection));
-    memset (&header, 0, sizeof (struct MHD_HTTP_Header));
+    memset (&header, 0, sizeof (struct MHD_HTTP_Res_Header));
 
-    connection.headers_received = &header;
-    connection.headers_received_tail = &header;
+    connection.rq.headers_received = &header;
+    connection.rq.headers_received_tail = &header;
     header.header = MHD_HTTP_HEADER_CONTENT_TYPE;
     header.header_size = MHD_STATICSTR_LEN_ (MHD_HTTP_HEADER_CONTENT_TYPE);
     header.value = MHD_HTTP_POST_ENCODING_FORM_URLENCODED;
@@ -822,5 +835,5 @@ main (int argc, char *const *argv)
   errorCount += test_overflow ();
   if (errorCount != 0)
     fprintf (stderr, "Error (code: %u)\n", errorCount);
-  return errorCount != 0;       /* 0 == pass */
+  return (errorCount == 0) ? 0 : 1;       /* 0 == pass */
 }

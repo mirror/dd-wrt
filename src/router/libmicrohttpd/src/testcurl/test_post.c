@@ -1,7 +1,7 @@
 /*
      This file is part of libmicrohttpd
      Copyright (C) 2007 Christian Grothoff
-     Copyright (C) 2014-2021 Evgeny Grin (Karlson2k)
+     Copyright (C) 2014-2022 Evgeny Grin (Karlson2k)
 
      libmicrohttpd is free software; you can redistribute it and/or modify
      it under the terms of the GNU General Public License as published
@@ -33,6 +33,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <errno.h>
 
 #ifndef WINDOWS
 #include <unistd.h>
@@ -69,15 +70,15 @@ struct CBC
 static void
 completed_cb (void *cls,
               struct MHD_Connection *connection,
-              void **con_cls,
+              void **req_cls,
               enum MHD_RequestTerminationCode toe)
 {
-  struct MHD_PostProcessor *pp = *con_cls;
+  struct MHD_PostProcessor *pp = *req_cls;
   (void) cls; (void) connection; (void) toe; /* Unused. Silent compiler warning. */
 
   if (NULL != pp)
     MHD_destroy_post_processor (pp);
-  *con_cls = NULL;
+  *req_cls = NULL;
 }
 
 
@@ -129,7 +130,7 @@ ahc_echo (void *cls,
           const char *method,
           const char *version,
           const char *upload_data, size_t *upload_data_size,
-          void **unused)
+          void **req_cls)
 {
   static int eok;
   struct MHD_Response *response;
@@ -137,28 +138,27 @@ ahc_echo (void *cls,
   enum MHD_Result ret;
   (void) cls; (void) version;      /* Unused. Silent compiler warning. */
 
-  if (0 != strcmp ("POST", method))
+  if (0 != strcmp (MHD_HTTP_METHOD_POST, method))
   {
-    printf ("METHOD: %s\n", method);
+    fprintf (stderr, "METHOD: %s\n", method);
     return MHD_NO;              /* unexpected method */
   }
-  pp = *unused;
+  pp = *req_cls;
   if (pp == NULL)
   {
     eok = 0;
     pp = MHD_create_post_processor (connection, 1024, &post_iterator, &eok);
-    *unused = pp;
+    *req_cls = pp;
   }
   MHD_post_process (pp, upload_data, *upload_data_size);
   if ((eok == 3) && (0 == *upload_data_size))
   {
-    response = MHD_create_response_from_buffer (strlen (url),
-                                                (void *) url,
-                                                MHD_RESPMEM_MUST_COPY);
+    response = MHD_create_response_from_buffer_copy (strlen (url),
+                                                     (const void *) url);
     ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
     MHD_destroy_response (response);
     MHD_destroy_post_processor (pp);
-    *unused = NULL;
+    *req_cls = NULL;
     return ret;
   }
   *upload_data_size = 0;
@@ -166,15 +166,15 @@ ahc_echo (void *cls,
 }
 
 
-static int
-testInternalPost ()
+static unsigned int
+testInternalPost (void)
 {
   struct MHD_Daemon *d;
   CURL *c;
   char buf[2048];
   struct CBC cbc;
   CURLcode errornum;
-  int port;
+  uint16_t port;
 
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
     port = 0;
@@ -202,7 +202,7 @@ testInternalPost ()
     {
       MHD_stop_daemon (d); return 32;
     }
-    port = (int) dinfo->port;
+    port = dinfo->port;
   }
   c = curl_easy_init ();
   curl_easy_setopt (c, CURLOPT_URL, "http://127.0.0.1/hello_world");
@@ -242,15 +242,15 @@ testInternalPost ()
 }
 
 
-static int
-testMultithreadedPost ()
+static unsigned int
+testMultithreadedPost (void)
 {
   struct MHD_Daemon *d;
   CURL *c;
   char buf[2048];
   struct CBC cbc;
   CURLcode errornum;
-  int port;
+  uint16_t port;
 
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
     port = 0;
@@ -279,7 +279,7 @@ testMultithreadedPost ()
     {
       MHD_stop_daemon (d); return 32;
     }
-    port = (int) dinfo->port;
+    port = dinfo->port;
   }
   c = curl_easy_init ();
   curl_easy_setopt (c, CURLOPT_URL, "http://127.0.0.1/hello_world");
@@ -319,15 +319,15 @@ testMultithreadedPost ()
 }
 
 
-static int
-testMultithreadedPoolPost ()
+static unsigned int
+testMultithreadedPoolPost (void)
 {
   struct MHD_Daemon *d;
   CURL *c;
   char buf[2048];
   struct CBC cbc;
   CURLcode errornum;
-  int port;
+  uint16_t port;
 
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
     port = 0;
@@ -356,7 +356,7 @@ testMultithreadedPoolPost ()
     {
       MHD_stop_daemon (d); return 32;
     }
-    port = (int) dinfo->port;
+    port = dinfo->port;
   }
   c = curl_easy_init ();
   curl_easy_setopt (c, CURLOPT_URL, "http://127.0.0.1/hello_world");
@@ -396,8 +396,8 @@ testMultithreadedPoolPost ()
 }
 
 
-static int
-testExternalPost ()
+static unsigned int
+testExternalPost (void)
 {
   struct MHD_Daemon *d;
   CURL *c;
@@ -418,7 +418,7 @@ testExternalPost ()
   struct CURLMsg *msg;
   time_t start;
   struct timeval tv;
-  int port;
+  uint16_t port;
 
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
     port = 0;
@@ -433,9 +433,10 @@ testExternalPost ()
   cbc.buf = buf;
   cbc.size = 2048;
   cbc.pos = 0;
-  d = MHD_start_daemon (MHD_USE_ERROR_LOG,
+  d = MHD_start_daemon (MHD_USE_ERROR_LOG | MHD_USE_NO_THREAD_SAFETY,
                         port, NULL, NULL, &ahc_echo, NULL,
                         MHD_OPTION_NOTIFY_COMPLETED, &completed_cb, NULL,
+                        MHD_OPTION_APP_FD_SETSIZE, (int) FD_SETSIZE,
                         MHD_OPTION_END);
   if (d == NULL)
     return 256;
@@ -447,7 +448,7 @@ testExternalPost ()
     {
       MHD_stop_daemon (d); return 32;
     }
-    port = (int) dinfo->port;
+    port = dinfo->port;
   }
   c = curl_easy_init ();
   curl_easy_setopt (c, CURLOPT_URL, "http://127.0.0.1/hello_world");
@@ -592,7 +593,7 @@ ahc_cancel (void *cls,
             const char *method,
             const char *version,
             const char *upload_data, size_t *upload_data_size,
-            void **unused)
+            void **req_cls)
 {
   struct MHD_Response *response;
   enum MHD_Result ret;
@@ -606,12 +607,12 @@ ahc_cancel (void *cls,
     return MHD_NO;
   }
 
-  if (*unused == NULL)
+  if (*req_cls == NULL)
   {
-    *unused = "wibble";
+    static int marker = 1;
+    *req_cls = &marker;
     /* We don't want the body. Send a 500. */
-    response = MHD_create_response_from_buffer (0, NULL,
-                                                MHD_RESPMEM_PERSISTENT);
+    response = MHD_create_response_empty (MHD_RF_NONE);
     ret = MHD_queue_response (connection, 500, response);
     if (ret != MHD_YES)
       fprintf (stderr, "Failed to queue response\n");
@@ -667,7 +668,7 @@ slowReadBuffer (void *p, size_t size, size_t nmemb, void *opaque)
 #define FLAG_COUNT 16
 
 
-static int
+static unsigned int
 testMultithreadedPostCancelPart (int flags)
 {
   struct MHD_Daemon *d;
@@ -678,9 +679,9 @@ testMultithreadedPostCancelPart (int flags)
   struct curl_slist *headers = NULL;
   long response_code;
   CURLcode cc;
-  int result = 0;
+  unsigned int result = 0;
   struct CRBC crbc;
-  int port;
+  uint16_t port;
 
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
     port = 0;
@@ -713,7 +714,7 @@ testMultithreadedPostCancelPart (int flags)
     {
       MHD_stop_daemon (d); return 32;
     }
-    port = (int) dinfo->port;
+    port = dinfo->port;
   }
 
   crbc.buffer = "Test content";
@@ -769,8 +770,8 @@ testMultithreadedPostCancelPart (int flags)
 #endif /* ! _WIN32 */
     {
       fprintf (stderr,
-               "flibbet curl_easy_perform didn't fail as expected: `%s' %d\n",
-               curl_easy_strerror (errornum), errornum);
+               "flibbet curl_easy_perform didn't fail as expected: `%s' %u\n",
+               curl_easy_strerror (errornum), (unsigned int) errornum);
       result = 65536;
     }
     curl_easy_cleanup (c);
@@ -803,10 +804,10 @@ testMultithreadedPostCancelPart (int flags)
 }
 
 
-static int
-testMultithreadedPostCancel ()
+static unsigned int
+testMultithreadedPostCancel (void)
 {
-  int result = 0;
+  unsigned int result = 0;
   int flags;
   for (flags = 0; flags < FLAG_COUNT; ++flags)
     result |= testMultithreadedPostCancelPart (flags);
