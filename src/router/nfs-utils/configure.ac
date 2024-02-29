@@ -338,9 +338,6 @@ AC_CHECK_HEADER(rpc/rpc.h, ,
                 AC_MSG_ERROR([Header file rpc/rpc.h not found - maybe try building with --enable-tirpc]))
 CPPFLAGS="${nfsutils_save_CPPFLAGS}"
 
-AC_CHECK_HEADER(uuid/uuid.h, ,
-	AC_MSG_ERROR([Cannot find needed header file uuid/uuid.h. Install libuuid-devel]))
-
 dnl check for libevent libraries and headers
 AC_LIBEVENT
 
