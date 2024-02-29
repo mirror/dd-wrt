@@ -2742,9 +2742,9 @@ void wpa_gtk_rekey(struct wpa_authenticator *wpa_auth)
 }
 
 
-static const char * wpa_bool_txt(int bool)
+static const char * wpa_bool_txt(int b)
 {
-	return bool ? "TRUE" : "FALSE";
+	return b ? "TRUE" : "FALSE";
 }
 
 #ifdef CONFIG_CTRL_IFACE_MIB

@@ -2146,9 +2146,9 @@ void ieee802_1x_notify_pre_auth(struct eapol_state_machine *sm, int pre_auth)
 }
 
 
-static const char * bool_txt(Boolean bool)
+static const char * bool_txt(Boolean b)
 {
-	return bool ? "TRUE" : "FALSE";
+	return b ? "TRUE" : "FALSE";
 }
 
 #ifdef CONFIG_CTRL_IFACE_MIB

@@ -19,6 +19,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>
+#include <stdbool.h>
 #include <string.h>
 #ifndef _WIN32_WCE
 #ifndef CONFIG_TI_COMPILER

@@ -153,6 +153,12 @@ static int eap_tls_params_from_conf(struct eap_sm *sm,
 		return -1;
 	}
 
+	if (!phase2)
+		data->client_cert_conf = params->client_cert ||
+			params->client_cert_blob ||
+			params->private_key ||
+			params->private_key_blob;
+
 	return 0;
 }
 
@@ -251,12 +257,6 @@ int eap_peer_tls_ssl_init(struct eap_sm *sm, struct eap_ssl_data *data,
 			   "unfragmented packets");
 		data->include_tls_length = 1;
 	}
-
-	if (!phase2)
-		data->client_cert_conf = params->client_cert ||
-			params->client_cert_blob ||
-			params->private_key ||
-			params->private_key_blob;
 
 	return 0;
 }
