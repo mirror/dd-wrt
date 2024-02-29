@@ -32,18 +32,18 @@ Microcode patches in microcode_amd_fam16h.bin:
 
 Microcode patches in microcode_amd_fam17h.bin:
   Family=0x17 Model=0x08 Stepping=0x02: Patch=0x0800820d Length=3200 bytes
-  Family=0x17 Model=0x31 Stepping=0x00: Patch=0x0830107a Length=3200 bytes
+  Family=0x17 Model=0x31 Stepping=0x00: Patch=0x0830107b Length=3200 bytes
   Family=0x17 Model=0xa0 Stepping=0x00: Patch=0x08a00008 Length=3200 bytes
   Family=0x17 Model=0x01 Stepping=0x02: Patch=0x0800126e Length=3200 bytes
 
 Microcode patches in microcode_amd_fam19h.bin:
-  Family=0x19 Model=0x11 Stepping=0x01: Patch=0x0a10113e Length=5568 bytes
-  Family=0x19 Model=0x11 Stepping=0x02: Patch=0x0a10123e Length=5568 bytes
-  Family=0x19 Model=0xa0 Stepping=0x02: Patch=0x0aa00212 Length=5568 bytes
-  Family=0x19 Model=0x01 Stepping=0x01: Patch=0x0a0011d1 Length=5568 bytes
+  Family=0x19 Model=0x11 Stepping=0x02: Patch=0x0a101244 Length=5568 bytes
+  Family=0x19 Model=0x01 Stepping=0x02: Patch=0x0a001236 Length=5568 bytes
   Family=0x19 Model=0x01 Stepping=0x00: Patch=0x0a001079 Length=5568 bytes
-  Family=0x19 Model=0x01 Stepping=0x02: Patch=0x0a001234 Length=5568 bytes
+  Family=0x19 Model=0x01 Stepping=0x01: Patch=0x0a0011d3 Length=5568 bytes
+  Family=0x19 Model=0xa0 Stepping=0x02: Patch=0x0aa00213 Length=5568 bytes
   Family=0x19 Model=0xa0 Stepping=0x01: Patch=0x0aa00116 Length=5568 bytes
+  Family=0x19 Model=0x11 Stepping=0x01: Patch=0x0a101144 Length=5568 bytes
 
 NOTE: For Genoa (Family=0x19 Model=0x11) and Bergamo (Family=0x19 Model=0xa0),
 either AGESA version >= 1.0.0.8 OR a kernel with the following commit is
