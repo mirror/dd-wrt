@@ -438,7 +438,7 @@ int checkwanip_main(int argc, char *argv[])
 
 #ifdef HAVE_IPV6
 	char *provider = getenv("INADYN_PROVIDER");
-	if (provider && strstr(provider, "v6")) {
+	if (provider && strstr(provider, "ipv6")) {
 		char wan_if_buffer[33];
 		char buf[INET6_ADDRSTRLEN];
 		const char *ipv6addr = NULL;
