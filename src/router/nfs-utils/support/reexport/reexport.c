@@ -5,9 +5,13 @@
 #ifdef HAVE_DLFCN_H
 #include <dlfcn.h>
 #endif
+#include <stdio.h>
+#include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/vfs.h>
+#include <unistd.h>
 #include <errno.h>
+#include <sys/socket.h>
 
 #include "nfsd_path.h"
 #include "conffile.h"

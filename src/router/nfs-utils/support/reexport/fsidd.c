@@ -7,7 +7,8 @@
 #include <dlfcn.h>
 #endif
 #include <event2/event.h>
-
+#include <stdio.h>
+#include <unistd.h>
 #include "conffile.h"
 #include "reexport_backend.h"
 #include "reexport.h"
