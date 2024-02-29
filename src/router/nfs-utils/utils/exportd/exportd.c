@@ -16,7 +16,6 @@
 #include <string.h>
 #include <getopt.h>
 #include <errno.h>
-#include <wait.h>
 
 #include "nfslib.h"
 #include "conffile.h"
@@ -54,90 +53,19 @@ static char shortopts[] = "d:fghs:t:liT:";
  */
 inline static void set_signals(void);
 
-/* Wait for all worker child processes to exit and reap them */
-static void
-wait_for_workers (void)
-{
-	int status;
-	pid_t pid;
-
-	for (;;) {
-
-		pid = waitpid(0, &status, 0);
-
-		if (pid < 0) {
-			if (errno == ECHILD)
-				return; /* no more children */
-			xlog(L_FATAL, "mountd: can't wait: %s\n",
-					strerror(errno));
-		}
-
-		/* Note: because we SIG_IGN'd SIGCHLD earlier, this
-		 * does not happen on 2.6 kernels, and waitpid() blocks
-		 * until all the children are dead then returns with
-		 * -ECHILD.  But, we don't need to do anything on the
-		 * death of individual workers, so we don't care. */
-		xlog(L_NOTICE, "mountd: reaped child %d, status %d\n",
-				(int)pid, status);
-	}
-}
-
 inline void
 cleanup_lockfiles (void)
 {
 	unlink(etab.lockfn);
 }
 
-/* Fork num_threads worker children and wait for them */
 static void
-fork_workers(void)
-{
-	int i;
-	pid_t pid;
-
-	xlog(L_NOTICE, "mountd: starting %d threads\n", num_threads);
-
-	for (i = 0 ; i < num_threads ; i++) {
-		pid = fork();
-		if (pid < 0) {
-			xlog(L_FATAL, "mountd: cannot fork: %s\n",
-					strerror(errno));
-		}
-		if (pid == 0) {
-			/* worker child */
-
-			/* Re-enable the default action on SIGTERM et al
-			 * so that workers die naturally when sent them.
-			 * Only the parent unregisters with pmap and
-			 * hence needs to do special SIGTERM handling. */
-			struct sigaction sa;
-			sa.sa_handler = SIG_DFL;
-			sa.sa_flags = 0;
-			sigemptyset(&sa.sa_mask);
-			sigaction(SIGHUP, &sa, NULL);
-			sigaction(SIGINT, &sa, NULL);
-			sigaction(SIGTERM, &sa, NULL);
-
-			/* fall into my_svc_run in caller */
-			return;
-		}
-	}
-
-	/* in parent */
-	wait_for_workers();
-	cleanup_lockfiles();
-	free_state_path_names(&etab);
-	xlog(L_NOTICE, "exportd: no more workers, exiting\n");
-	exit(0);
-}
-
-static void 
 killer (int sig)
 {
 	if (num_threads > 1) {
 		/* play Kronos and eat our children */
 		kill(0, SIGTERM);
-		wait_for_workers();
+		cache_wait_for_workers("exportd");
 	}
 	cleanup_lockfiles();
 	free_state_path_names(&etab);
@@ -145,6 +73,7 @@ killer (int sig)
 
 	exit(0);
 }
+
 static void
 sig_hup (int UNUSED(sig))
 {
@@ -152,8 +81,9 @@ sig_hup (int UNUSED(sig))
 	xlog (L_NOTICE, "Received SIGHUP... Ignoring.\n");
 	return;
 }
-inline static void 
-set_signals(void) 
+
+inline static void
+set_signals(void)
 {
 	struct sigaction sa;
 
@@ -289,18 +219,27 @@ main(int argc, char **argv)
 	else if (num_threads > MAX_THREADS)
 		num_threads = MAX_THREADS;
 
-	if (num_threads > 1)
-		fork_workers();
-
-
-	/* Open files now to avoid sharing descriptors among forked processes */
+	/* Open cache channel files BEFORE forking so each upcall is
+	 * only handled by one thread.  Kernel provides locking for both
+	 * read and write.
+	 */
 	cache_open();
+
+	if (cache_fork_workers(progname, num_threads) == 0) {
+		/* We forked, waited, and now need to clean up */
+		cleanup_lockfiles();
+		free_state_path_names(&etab);
+		xlog(L_NOTICE, "%s: no more workers, exiting\n", progname);
+		exit(0);
+	}
+
 	v4clients_init();
 
 	/* Process incoming upcalls */
-	cache_process_loop();
+	while (cache_process(NULL) >= 0)
+		;
 
-	xlog(L_ERROR, "%s: process loop terminated unexpectedly. Exiting...\n",
+	xlog(L_ERROR, "%s: process loop terminated unexpectedly(%m). Exiting...\n",
 		progname);
 
 	free_state_path_names(&etab);

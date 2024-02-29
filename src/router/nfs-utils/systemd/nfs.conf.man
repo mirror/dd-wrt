@@ -137,8 +137,9 @@ but on the server, this will resolve to the path
 .TP
 .B exportd
 Recognized values:
+.BR manage-gids ,
 .BR threads ,
-.BR cache-use-upaddr ,
+.BR cache-use-ipaddr ,
 .BR ttl ,
 .BR state-directory-path
 
@@ -204,7 +205,7 @@ Recognized values:
 .BR port ,
 .BR threads ,
 .BR reverse-lookup ,
-.BR cache-use-upaddr ,
+.BR cache-use-ipaddr ,
 .BR ttl ,
 .BR state-directory-path ,
 .BR ha-callout .

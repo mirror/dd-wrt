@@ -414,13 +414,29 @@ create_auth_rpc_client(struct clnt_info *clp,
 		tid, tgtname);
 	auth = authgss_create_default(rpc_clnt, tgtname, &sec);
 	if (!auth) {
+		if (sec.minor_status == KRB5KRB_AP_ERR_BAD_INTEGRITY) {
+			printerr(2, "WARNING: server=%s failed context "
+				 "creation with KRB5_AP_ERR_BAD_INTEGRITY\n",
+				 clp->servername);
+			if (cred == GSS_C_NO_CREDENTIAL)
+				retval = gssd_refresh_krb5_machine_credential(clp->servername,
+					"*", NULL, 1);
+			else
+				retval = gssd_k5_remove_bad_service_cred(clp->servername);
+			if (!retval) {
+				auth = authgss_create_default(rpc_clnt, tgtname,
+						&sec);
+				if (auth)
+					goto success;
+			}
+		}
 		/* Our caller should print appropriate message */
 		printerr(2, "WARNING: Failed to create krb5 context for "
 			    "user with uid %d for server %s\n",
 			 uid, tgtname);
 		goto out_fail;
 	}
-
+success:
 	/* Success !!! */
 	rpc_clnt->cl_auth = auth;
 	*clnt_return = rpc_clnt;
@@ -573,7 +589,7 @@ krb5_use_machine_creds(struct clnt_info *clp, uid_t uid,
 
 	do {
 		gssd_refresh_krb5_machine_credential(clp->servername,
-						     service, srchost);
+						     service, srchost, 0);
 	/*
 	 * Get a list of credential cache names and try each
 	 * of them until one works or we've tried them all

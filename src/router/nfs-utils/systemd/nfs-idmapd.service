@@ -2,7 +2,8 @@
 Description=NFSv4 ID-name mapping service
 DefaultDependencies=no
 Requires=rpc_pipefs.target
-After=rpc_pipefs.target local-fs.target
+After=rpc_pipefs.target local-fs.target network-online.target
+Wants=network-online.target
 
 BindsTo=nfs-server.service
 

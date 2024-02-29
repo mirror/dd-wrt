@@ -11,8 +11,8 @@ exec 9> /run/rpc.statd.lock
 flock -e 9
 
 if [ -s /run/rpc.statd.pid ] &&
-       [ 1`cat /run/rpc.statd.pid` -gt 1 ] &&
-       kill -0 `cat /run/rpc.statd.pid` > /dev/null 2>&1
+       [ "1$(cat /run/rpc.statd.pid)" -gt 1 ] &&
+       kill -0 "$(cat /run/rpc.statd.pid)" > /dev/null 2>&1
 then
     # statd already running - must have been slow to respond.
     exit 0

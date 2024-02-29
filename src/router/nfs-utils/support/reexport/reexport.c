@@ -2,17 +2,12 @@
 #include <config.h>
 #endif
 
+#ifdef HAVE_DLFCN_H
 #include <dlfcn.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <sys/random.h>
-#include <sys/stat.h>
+#endif
 #include <sys/types.h>
 #include <sys/vfs.h>
-#include <unistd.h>
 #include <errno.h>
-#include <sys/socket.h>
-#include <sys/un.h>
 
 #include "nfsd_path.h"
 #include "conffile.h"
@@ -38,6 +33,9 @@ static bool connect_fsid_service(void)
 	memset(&addr, 0, sizeof(struct sockaddr_un));
 	addr.sun_family = AF_UNIX;
 	strncpy(addr.sun_path, sock_file, sizeof(addr.sun_path) - 1);
+	if (addr.sun_path[0] == '@')
+		/* "abstract" socket namespace */
+		addr.sun_path[0] = 0;
 
 	s = socket(AF_UNIX, SOCK_SEQPACKET, 0);
 	if (s == -1) {

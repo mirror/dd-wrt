@@ -219,10 +219,15 @@ static int domain_from_dns(char **domain)
 
 	if (gethostname(hname, sizeof(hname)) == -1)
 		return -1;
-	if ((he = gethostbyname(hname)) == NULL)
-		return -1;
-	if ((c = strchr(he->h_name, '.')) == NULL || *++c == '\0')
-		return -1;
+	if ((he = gethostbyname(hname)) == NULL) {
+		IDMAP_LOG(1, ("libnfsidmap: DNS lookup of hostname failed. Attempting to use domain from hostname as is."));
+		if ((c = strchr(hname, '.')) == NULL || *++c == '\0')
+			return -1;
+	}
+	else {
+		if ((c = strchr(he->h_name, '.')) == NULL || *++c == '\0')
+			return -1;
+	}
 	/* 
 	 * Query DNS to see if the _nfsv4idmapdomain TXT record exists
 	 * If so use it... 
@@ -387,7 +392,7 @@ int nfs4_init_name_mapping(char *conffile)
 		dflt = 1;
 		ret = domain_from_dns(&default_domain);
 		if (ret) {
-			IDMAP_LOG(1, ("libnfsidmap: Unable to determine "
+			IDMAP_LOG(0, ("libnfsidmap: Unable to determine "
 				  "the NFSv4 domain; Using '%s' as the NFSv4 domain "
 				  "which means UIDs will be mapped to the 'Nobody-User' "
 				  "user defined in %s", 

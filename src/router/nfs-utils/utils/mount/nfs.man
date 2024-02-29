@@ -94,31 +94,38 @@ This option is an alternative to the
 option.
 It is included for compatibility with other operating systems
 .TP 1.5i
-.BR soft " / " hard
+.BR soft " / " softerr " / " hard
 Determines the recovery behavior of the NFS client
 after an NFS request times out.
-If neither option is specified (or if the
+If no option is specified (or if the
 .B hard
 option is specified), NFS requests are retried indefinitely.
-If the
-.B soft
+If either the
+.BR soft " or " softerr
 option is specified, then the NFS client fails an NFS request
 after
 .B retrans
 retransmissions have been sent,
-causing the NFS client to return an error
-to the calling application.
+causing the NFS client to return either the error
+.B EIO
+(for the
+.B soft
+option) or
+.B ETIMEDOUT
+(for the
+.B softerr
+option) to the calling application.
 .IP
 .I NB:
 A so-called "soft" timeout can cause
 silent data corruption in certain cases. As such, use the
-.B soft
+.BR soft " or " softerr
 option only when client responsiveness
 is more important than data integrity.
 Using NFS over TCP or increasing the value of the
 .B retrans
 option may mitigate some of the risks of using the
-.B soft
+.BR soft " or " softerr
 option.
 .TP 1.5i
 .BR softreval " / " nosoftreval
@@ -416,19 +423,6 @@ Note that the
 option may also be used by some pNFS drivers to decide how many
 connections to set up to the data servers.
 .TP 1.5i
-.BR max_connect= n
-While
-.BR nconnect
-option sets a limit on the number of connections that can be established
-to a given server IP,
-.BR max_connect
-option allows the user to specify maximum number of connections to different
-server IPs that belong to the same NFSv4.1+ server (session trunkable
-connections) up to a limit of 16. When client discovers that it established
-a client ID to an already existing server, instead of dropping the newly
-created network transport, the client will add this new connection to the
-list of available transports for that RPC client.
-.TP 1.5i
 .BR rdirplus " / " nordirplus
 Selects whether to use NFS v3 or v4 READDIRPLUS requests.
 If this option is not specified, the NFS client uses READDIRPLUS requests
@@ -590,21 +584,28 @@ If
 is specified,
 transport layer security is forced off, even if the NFS server supports
 transport layer security.
+.IP
 If
 .B tls
 is specified, the client uses RPC-with-TLS to provide in-transit
 confidentiality.
+.IP
 If
 .B mtls
 is specified, the client uses RPC-with-TLS to authenticate itself and
 to provide in-transit confidentiality.
-If the server does not support RPC-with-TLS or peer authentication
-fails, the mount attempt fails.
+.IP
+If either
+.B tls
+or
+.B mtls
+is specified and the server does not support RPC-with-TLS or peer
+authentication fails, the mount attempt fails.
 .IP
 If the
 .B xprtsec=
 option is not specified,
-the default behavior depends on the kernel,
+the default behavior depends on the kernel version,
 but is usually equivalent to
 .BR "xprtsec=none" .
 .SS "Options for NFS versions 2 and 3 only"
@@ -971,6 +972,32 @@ when it identifies itself via a traditional identification string.
 .IP
 This mount option has no effect with NFSv4 minor versions newer than zero,
 which always use TSM-compatible client identification strings.
+.TP 1.5i
+.BR max_connect= n
+While
+.BR nconnect
+option sets a limit on the number of connections that can be established
+to a given server IP,
+.BR max_connect
+option allows the user to specify maximum number of connections to different
+server IPs that belong to the same NFSv4.1+ server (session trunkable
+connections) up to a limit of 16. When client discovers that it established
+a client ID to an already existing server, instead of dropping the newly
+created network transport, the client will add this new connection to the
+list of available transports for that RPC client.
+.TP 1.5i
+.BR trunkdiscovery " / " notrunkdiscovery
+When the client discovers a new filesystem on a NFSv4.1+ server, the
+.BR trunkdiscovery
+mount option will cause it to send a GETATTR for the fs_locations attribute.
+If is receives a non-zero length reply, it will iterate through the response,
+and for each server location it will establish a connection, send an
+EXCHANGE_ID, and test for session trunking.  If the trunking test succeeds,
+the connection will be added to the existing set of transports for the server,
+subject to the limit specified by the
+.BR max_connect
+option.  The default is
+.BR notrunkdiscovery .
 .SH nfs4 FILE SYSTEM TYPE
 The
 .BR nfs4
@@ -986,7 +1013,6 @@ file. See
 .BR nfsmount.conf(5)
 for details.
 .SH EXAMPLES
-mount option.
 To mount using NFS version 3,
 use the
 .B nfs

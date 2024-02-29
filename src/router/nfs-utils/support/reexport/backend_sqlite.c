@@ -7,8 +7,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/random.h>
 #include <unistd.h>
+
+#ifdef HAVE_GETRANDOM
+# include <sys/random.h>
+# if !defined(SYS_getrandom) && defined(__NR_getrandom)
+   /* usable kernel-headers, but old glibc-headers */
+#  define SYS_getrandom __NR_getrandom
+# endif
+#endif
 
 #include "conffile.h"
 #include "reexport_backend.h"
@@ -19,6 +26,15 @@
 
 static sqlite3 *db;
 static int init_done;
+
+#if !defined(HAVE_GETRANDOM) && defined(SYS_getrandom)
+/* libc without function, but we have syscall */
+static int getrandom(void *buf, size_t buflen, unsigned int flags)
+{
+	return (syscall(SYS_getrandom, buf, buflen, flags));
+}
+# define HAVE_GETRANDOM
+#endif
 
 static int prng_init(void)
 {

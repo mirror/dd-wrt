@@ -10,6 +10,7 @@ EXTRA_DIST = \
 	autogen.sh \
 	\
 	aclocal/bsdsignals.m4 \
+	aclocal/getrandom.m4 \
 	aclocal/nfs-utils.m4 \
 	aclocal/kerberos5.m4 \
 	aclocal/tcp-wrappers.m4 \

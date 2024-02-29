@@ -86,6 +86,12 @@ struct clnt_info {
 	int			gssd_fd;
 	struct event		*gssd_ev;
 	struct			sockaddr_storage addr;
+	char			*upcall_address;
+	char			*upcall_port;
+	int			upcall_program;
+	int			upcall_vers;
+	char			*upcall_protoname;
+	char			*upcall_service;
 };
 
 struct clnt_upcall_info {

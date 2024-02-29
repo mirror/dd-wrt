@@ -365,6 +365,12 @@ gssd_read_service_info(int dirfd, struct clnt_info *clp)
 
 fail:
 	printerr(0, "ERROR: failed to parse %s/info\n", clp->relpath);
+	clp->upcall_address = strdup(address);
+	clp->upcall_port = strdup(port);
+	clp->upcall_program = program;
+	clp->upcall_vers = version;
+	clp->upcall_protoname = strdup(protoname);
+	clp->upcall_service = strdup(service);
 	free(servername);
 	free(protoname);
 	clp->servicename = NULL;
@@ -408,6 +414,16 @@ gssd_free_client(struct clnt_info *clp)
 	free(clp->servicename);
 	free(clp->servername);
 	free(clp->protocol);
+	if (!clp->servername) {
+		if (clp->upcall_address)
+			free(clp->upcall_address);
+		if (clp->upcall_port)
+			free(clp->upcall_port);
+		if (clp->upcall_protoname)
+			free(clp->upcall_protoname);
+		if (clp->upcall_service)
+			free(clp->upcall_service);
+	}
 	free(clp);
 }
 
@@ -446,6 +462,31 @@ gssd_clnt_gssd_cb(int UNUSED(fd), short UNUSED(which), void *data)
 {
 	struct clnt_info *clp = data;
 
+	/* if there was a failure to translate IP to name for this server,
+	 * try again
+	 */
+	if (!clp->servername) {
+	        if (!gssd_addrstr_to_sockaddr((struct sockaddr *)&clp->addr,
+                                 clp->upcall_address, clp->upcall_port ?
+				 clp->upcall_port : "")) {
+			goto do_upcall;
+		}
+		clp->servername = gssd_get_servername(clp->upcall_address,
+				(struct sockaddr *)&clp->addr, clp->upcall_address);
+		if (!clp->servername)
+			goto do_upcall;
+
+		if (asprintf(&clp->servicename, "%s@%s", clp->upcall_service,
+					clp->servername) < 0) {
+			free(clp->servername);
+			clp->servername = NULL;
+			goto do_upcall;
+		}
+		clp->prog = clp->upcall_program;
+		clp->vers = clp->upcall_vers;
+		clp->protocol = strdup(clp->upcall_protoname);
+	}
+do_upcall:
 	handle_gssd_upcall(clp);
 }
 

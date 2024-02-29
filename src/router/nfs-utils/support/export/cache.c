@@ -1,10 +1,9 @@
-
 /*
  * Handle communication with knfsd internal cache
  *
  * We open /proc/net/rpc/{auth.unix.ip,nfsd.export,nfsd.fh}/channel
  * and listen for requests (using my_svc_run)
- * 
+ *
  */
 
 #ifdef HAVE_CONFIG_H
@@ -16,6 +15,7 @@
 #include <sys/select.h>
 #include <sys/stat.h>
 #include <sys/vfs.h>
+#include <sys/wait.h>
 #include <time.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -77,6 +77,7 @@ static bool path_lookup_error(int err)
 	case ENAMETOOLONG:
 	case ENOENT:
 	case ENOTDIR:
+	case EACCES:
 		return 1;
 	}
 	return 0;
@@ -758,7 +759,15 @@ static struct addrinfo *lookup_client_addr(char *dom)
 	return ret;
 }
 
-static void nfsd_fh(int f)
+#define RETRY_SEC 120
+struct delayed {
+	char *message;
+	time_t last_attempt;
+	int f;
+	struct delayed *next;
+} *delayed;
+
+static int nfsd_handle_fh(int f, char *bp, int blen)
 {
 	/* request are:
 	 *  domain fsidtype fsid
@@ -776,21 +785,13 @@ static void nfsd_fh(int f)
 	nfs_export *exp;
 	int i;
 	int dev_missing = 0;
-	char buf[RPC_CHAN_BUF_SIZE], *bp;
-	int blen;
+	char buf[RPC_CHAN_BUF_SIZE];
 	int did_uncover = 0;
-
-	blen = cache_read(f, buf, sizeof(buf));
-	if (blen <= 0 || buf[blen-1] != '\n') return;
-	buf[blen-1] = 0;
-
-	xlog(D_CALL, "nfsd_fh: inbuf '%s'", buf);
-
-	bp = buf;
+	int ret = 0;
 
 	dom = malloc(blen);
 	if (dom == NULL)
-		return;
+		return ret;
 	if (qword_get(&bp, dom, blen) <= 0)
 		goto out;
 	if (qword_get_int(&bp, &fsidtype) != 0)
@@ -858,7 +859,8 @@ static void nfsd_fh(int f)
 			case 0:
 				continue;
 			case -1:
-				goto out;
+				dev_missing ++;
+				continue;
 			}
 			if (is_ipaddr_client(dom)
 					&& !ipaddr_client_matches(exp, ai))
@@ -891,8 +893,10 @@ static void nfsd_fh(int f)
 		/* The missing dev could be what we want, so just be
 		 * quiet rather than returning stale yet
 		 */
-		if (dev_missing)
+		if (dev_missing) {
+			ret = 1;
 			goto out;
+		}
 	} else if (found->e_mountpoint &&
 	    !is_mountpoint(found->e_mountpoint[0]?
 			   found->e_mountpoint:
@@ -902,7 +906,7 @@ static void nfsd_fh(int f)
 		   xlog(L_WARNING, "%s not exported as %d not a mountpoint",
 		   found->e_path, found->e_mountpoint);
 		 */
-		/* FIXME we need to make sure we re-visit this later */
+		ret = 1;
 		goto out;
 	}
 
@@ -931,7 +935,68 @@ out:
 		free(found_path);
 	nfs_freeaddrinfo(ai);
 	free(dom);
-	xlog(D_CALL, "nfsd_fh: found %p path %s", found, found ? found->e_path : NULL);
+	if (!ret)
+		xlog(D_CALL, "nfsd_fh: found %p path %s",
+		     found, found ? found->e_path : NULL);
+	return ret;
+}
+
+static void nfsd_fh(int f)
+{
+	struct delayed *d, **dp;
+	char inbuf[RPC_CHAN_BUF_SIZE];
+	int blen;
+
+	blen = cache_read(f, inbuf, sizeof(inbuf));
+	if (blen <= 0 || inbuf[blen-1] != '\n') return;
+	inbuf[blen-1] = 0;
+
+	xlog(D_CALL, "nfsd_fh: inbuf '%s'", inbuf);
+
+	if (nfsd_handle_fh(f, inbuf, blen) == 0)
+		return;
+	/* We don't have a definitive answer to give the kernel.
+	 * This is because an export marked "mountpoint" isn't a
+	 * mountpoint, or because a stat of a mountpoint fails with
+	 * a strange error like ETIMEDOUT as is possible with an
+	 * NFS mount marked "softerr" which is being re-exported.
+	 *
+	 * We cannot tell the kernel to retry, so we have to
+	 * retry ourselves.
+	 */
+	d = malloc(sizeof(*d));
+
+	if (!d)
+		return;
+	d->message = strndup(inbuf, blen);
+	if (!d->message) {
+		free(d);
+		return;
+	}
+	d->f = f;
+	d->last_attempt = time(NULL);
+	d->next = NULL;
+	dp = &delayed;
+	while (*dp)
+		dp = &(*dp)->next;
+	*dp = d;
+}
+
+static void nfsd_retry_fh(struct delayed *d)
+{
+	struct delayed **dp;
+
+	if (nfsd_handle_fh(d->f, d->message, strlen(d->message)+1) == 0) {
+		free(d->message);
+		free(d);
+		return;
+	}
+	d->last_attempt = time(NULL);
+	d->next = NULL;
+	dp = &delayed;
+	while (*dp)
+		dp = &(*dp)->next;
+	*dp = d;
 }
 
 #ifdef HAVE_JUNCTION_SUPPORT
@@ -1510,7 +1575,7 @@ static void nfsd_export(int f)
 			 * This will cause it not to appear in the V4 Pseudo-root
 			 * and so a "mount" of this path will fail, just like with
 			 * V3.
-			 * And filehandle for this mountpoint from an earlier
+			 * Any filehandle for this mountpoint from an earlier
 			 * mount will block in nfsd.fh lookup.
 			 */
 			xlog(L_WARNING,
@@ -1600,39 +1665,62 @@ int cache_process_req(fd_set *readfds)
 }
 
 /**
- * cache_process_loop - process incoming upcalls
+ * cache_process - process incoming upcalls
+ * Returns -ve on error, or number of fds in svc_fds
+ * that might need processing.
  */
-void cache_process_loop(void)
+int cache_process(fd_set *readfds)
 {
-	fd_set	readfds;
+	fd_set fdset;
 	int	selret;
+	struct timeval tv = { 24*3600, 0 };
 
-	FD_ZERO(&readfds);
+	if (!readfds) {
+		FD_ZERO(&fdset);
+		readfds = &fdset;
+	}
+	cache_set_fds(readfds);
+	v4clients_set_fds(readfds);
 
-	for (;;) {
+	if (delayed) {
+		time_t now = time(NULL);
+		time_t delay;
+		if (delayed->last_attempt > now)
+			/* Clock updated - retry immediately */
+			delayed->last_attempt = now - RETRY_SEC;
+		delay = delayed->last_attempt + RETRY_SEC - now;
+		if (delay < 0)
+			delay = 0;
+		tv.tv_sec = delay;
+	}
+	selret = select(FD_SETSIZE, readfds, NULL, NULL, &tv);
 
-		cache_set_fds(&readfds);
-		v4clients_set_fds(&readfds);
+	if (delayed) {
+		time_t now = time(NULL);
+		struct delayed *d = delayed;
 
-		selret = select(FD_SETSIZE, &readfds,
-				(void *) 0, (void *) 0, (struct timeval *) 0);
-
-
-		switch (selret) {
-		case -1:
-			if (errno == EINTR || errno == ECONNREFUSED
-			 || errno == ENETUNREACH || errno == EHOSTUNREACH)
-				continue;
-			xlog(L_ERROR, "my_svc_run() - select: %m");
-			return;
-
-		default:
-			cache_process_req(&readfds);
-			v4clients_process(&readfds);
+		if (d->last_attempt + RETRY_SEC <= now) {
+			delayed = d->next;
+			d->next = NULL;
+			nfsd_retry_fh(d);
 		}
 	}
-}
 
+	switch (selret) {
+	case -1:
+		if (errno == EINTR || errno == ECONNREFUSED
+		    || errno == ENETUNREACH || errno == EHOSTUNREACH)
+			return 0;
+		return -1;
+
+	default:
+		selret -= cache_process_req(readfds);
+		selret -= v4clients_process(readfds);
+		if (selret < 0)
+			selret = 0;
+	}
+	return selret;
+}
 
 /*
  * Give IP->domain and domain+path->options to kernel
@@ -1772,4 +1860,75 @@ cache_get_filehandle(nfs_export *exp, int len, char *p)
 	memset(fh.fh_handle, 0, sizeof(fh.fh_handle));
 	fh.fh_size = qword_get(&bp, (char *)fh.fh_handle, NFS3_FHSIZE);
 	return &fh;
+}
+
+/* Wait for all worker child processes to exit and reap them */
+void
+cache_wait_for_workers(char *prog)
+{
+	int status;
+	pid_t pid;
+
+	for (;;) {
+
+		pid = waitpid(0, &status, 0);
+
+		if (pid < 0) {
+			if (errno == ECHILD)
+				return; /* no more children */
+			xlog(L_FATAL, "%s: can't wait: %s\n", prog,
+					strerror(errno));
+		}
+
+		/* Note: because we SIG_IGN'd SIGCHLD earlier, this
+		 * does not happen on 2.6 kernels, and waitpid() blocks
+		 * until all the children are dead then returns with
+		 * -ECHILD.  But, we don't need to do anything on the
+		 * death of individual workers, so we don't care. */
+		xlog(L_NOTICE, "%s: reaped child %d, status %d\n",
+		     prog, (int)pid, status);
+	}
+}
+
+/* Fork num_threads worker children and wait for them */
+int
+cache_fork_workers(char *prog, int num_threads)
+{
+	int i;
+	pid_t pid;
+
+	if (num_threads <= 1)
+		return 1;
+
+	xlog(L_NOTICE, "%s: starting %d threads\n", prog, num_threads);
+
+	for (i = 0 ; i < num_threads ; i++) {
+		pid = fork();
+		if (pid < 0) {
+			xlog(L_FATAL, "%s: cannot fork: %s\n", prog,
+					strerror(errno));
+		}
+		if (pid == 0) {
+			/* worker child */
+
+			/* Re-enable the default action on SIGTERM et al
+			 * so that workers die naturally when sent them.
+			 * Only the parent unregisters with pmap and
+			 * hence needs to do special SIGTERM handling. */
+			struct sigaction sa;
+			sa.sa_handler = SIG_DFL;
+			sa.sa_flags = 0;
+			sigemptyset(&sa.sa_mask);
+			sigaction(SIGHUP, &sa, NULL);
+			sigaction(SIGINT, &sa, NULL);
+			sigaction(SIGTERM, &sa, NULL);
+
+			/* fall into my_svc_run in caller */
+			return 1;
+		}
+	}
+
+	/* in parent */
+	cache_wait_for_workers(prog);
+	return 0;
 }

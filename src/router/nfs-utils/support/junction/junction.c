@@ -63,7 +63,7 @@ junction_open_path(const char *pathname, int *fd)
 	if (pathname == NULL || fd == NULL)
 		return FEDFS_ERR_INVAL;
 
-	tmp = open(pathname, O_PATH|O_DIRECTORY);
+	tmp = open(pathname, O_DIRECTORY);
 	if (tmp == -1) {
 		switch (errno) {
 		case EPERM:

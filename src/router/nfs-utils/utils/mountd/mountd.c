@@ -21,7 +21,6 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <sys/resource.h>
-#include <sys/wait.h>
 
 #include "conffile.h"
 #include "xmalloc.h"
@@ -119,90 +118,17 @@ cleanup_lockfiles (void)
 	unlink(rmtab.lockfn);
 }
 
-/* Wait for all worker child processes to exit and reap them */
-static void
-wait_for_workers (void)
-{
-	int status;
-	pid_t pid;
-
-	for (;;) {
-
-		pid = waitpid(0, &status, 0);
-
-		if (pid < 0) {
-			if (errno == ECHILD)
-				return; /* no more children */
-			xlog(L_FATAL, "mountd: can't wait: %s\n",
-					strerror(errno));
-		}
-
-		/* Note: because we SIG_IGN'd SIGCHLD earlier, this
-		 * does not happen on 2.6 kernels, and waitpid() blocks
-		 * until all the children are dead then returns with
-		 * -ECHILD.  But, we don't need to do anything on the
-		 * death of individual workers, so we don't care. */
-		xlog(L_NOTICE, "mountd: reaped child %d, status %d\n",
-				(int)pid, status);
-	}
-}
-
-/* Fork num_threads worker children and wait for them */
-static void
-fork_workers(void)
-{
-	int i;
-	pid_t pid;
-
-	xlog(L_NOTICE, "mountd: starting %d threads\n", num_threads);
-
-	for (i = 0 ; i < num_threads ; i++) {
-		pid = fork();
-		if (pid < 0) {
-			xlog(L_FATAL, "mountd: cannot fork: %s\n",
-					strerror(errno));
-		}
-		if (pid == 0) {
-			/* worker child */
-
-			/* Re-enable the default action on SIGTERM et al
-			 * so that workers die naturally when sent them.
-			 * Only the parent unregisters with pmap and
-			 * hence needs to do special SIGTERM handling. */
-			struct sigaction sa;
-			sa.sa_handler = SIG_DFL;
-			sa.sa_flags = 0;
-			sigemptyset(&sa.sa_mask);
-			sigaction(SIGHUP, &sa, NULL);
-			sigaction(SIGINT, &sa, NULL);
-			sigaction(SIGTERM, &sa, NULL);
-
-			/* fall into my_svc_run in caller */
-			return;
-		}
-	}
-
-	/* in parent */
-	wait_for_workers();
-	unregister_services();
-	cleanup_lockfiles();
-	free_state_path_names(&etab);
-	free_state_path_names(&rmtab);
-	xlog(L_NOTICE, "mountd: no more workers, exiting\n");
-	exit(0);
-}
-
 /*
  * Signal handler.
  */
-static void 
+static void
 killer (int sig)
 {
 	unregister_services();
 	if (num_threads > 1) {
 		/* play Kronos and eat our children */
 		kill(0, SIGTERM);
-		wait_for_workers();
+		cache_wait_for_workers("mountd");
 	}
 	cleanup_lockfiles();
 	free_state_path_names(&etab);
@@ -220,7 +146,7 @@ sig_hup (int UNUSED(sig))
 }
 
 bool_t
-mount_null_1_svc(struct svc_req *rqstp, void *UNUSED(argp), 
+mount_null_1_svc(struct svc_req *rqstp, void *UNUSED(argp),
 	void *UNUSED(resp))
 {
 	struct sockaddr *sap = nfs_getrpccaller(rqstp->rq_xprt);
@@ -916,12 +842,23 @@ main(int argc, char **argv)
 	else if (num_threads > MAX_THREADS)
 		num_threads = MAX_THREADS;
 
-	if (num_threads > 1)
-		fork_workers();
+	/* Open cache channel files BEFORE forking so each upcall is
+	 * only handled by one thread.  Kernel provides locking for both
+	 * read and write.
+	 */
+	cache_open();
+
+	if (cache_fork_workers("mountd", num_threads) == 0) {
+		/* We forked, waited, and now need to clean up */
+		unregister_services();
+		cleanup_lockfiles();
+		free_state_path_names(&etab);
+		free_state_path_names(&rmtab);
+		xlog(L_NOTICE, "mountd: no more workers, exiting\n");
+		exit(0);
+	}
 
 	nfsd_path_init();
-	/* Open files now to avoid sharing descriptors among forked processes */
-	cache_open();
 	v4clients_init();
 
 	xlog(L_NOTICE, "Version " VERSION " starting");
