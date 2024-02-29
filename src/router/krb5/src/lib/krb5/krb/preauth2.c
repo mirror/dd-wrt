@@ -263,6 +263,10 @@ k5_preauth_request_context_init(krb5_context context,
      * preauth context's array of handles. */
     for (count = 0; pctx->handles[count] != NULL; count++);
     reqctx->modreqs = calloc(count, sizeof(*reqctx->modreqs));
+    if (reqctx->modreqs == NULL) {
+        free(reqctx);
+        return;
+    }
     for (i = 0; i < count; i++) {
         h = pctx->handles[i];
         if (h->vt.request_init != NULL)
@@ -879,49 +883,6 @@ error:
     return ENOMEM;
 }
 
-static krb5_error_code
-add_s4u_x509_user_padata(krb5_context context, krb5_s4u_userid *userid,
-                         krb5_principal client, krb5_pa_data ***out_pa_list,
-                         int *out_pa_list_size)
-{
-    krb5_pa_data *s4u_padata;
-    krb5_error_code code;
-    krb5_principal client_copy;
-
-    if (userid == NULL)
-        return EINVAL;
-    code = krb5_copy_principal(context, client, &client_copy);
-    if (code != 0)
-        return code;
-    krb5_free_principal(context, userid->user);
-    userid->user = client_copy;
-
-    if (userid->subject_cert.length != 0) {
-        s4u_padata = malloc(sizeof(*s4u_padata));
-        if (s4u_padata == NULL)
-            return ENOMEM;
-
-        s4u_padata->magic = KV5M_PA_DATA;
-        s4u_padata->pa_type = KRB5_PADATA_S4U_X509_USER;
-        s4u_padata->contents = k5memdup(userid->subject_cert.data,
-                                        userid->subject_cert.length, &code);
-        if (s4u_padata->contents == NULL) {
-            free(s4u_padata);
-            return code;
-        }
-        s4u_padata->length = userid->subject_cert.length;
-
-        code = grow_pa_list(out_pa_list, out_pa_list_size, &s4u_padata, 1);
-        if (code) {
-            free(s4u_padata->contents);
-            free(s4u_padata);
-            return code;
-        }
-    }
-
-    return 0;
-}
-
 /*
  * If the module for pa_type can adjust its AS_REQ data using the contents of
  * err and err_padata, return 0 with *padata_out set to a padata list for the
@@ -1017,7 +978,8 @@ k5_preauth(krb5_context context, krb5_init_creds_context ctx,
     *padata_out = NULL;
     *pa_type_out = KRB5_PADATA_NONE;
 
-    if (in_padata == NULL)
+    /* We should never invoke preauth modules when identifying the realm. */
+    if (in_padata == NULL || ctx->identify_realm)
         return 0;
 
     TRACE_PREAUTH_INPUT(context, in_padata);
@@ -1031,16 +993,6 @@ k5_preauth(krb5_context context, krb5_init_creds_context ctx,
     ret = copy_cookie(context, in_padata, &out_pa_list, &out_pa_list_size);
     if (ret)
         goto error;
-
-    if (krb5int_find_pa_data(context, in_padata,
-                             KRB5_PADATA_S4U_X509_USER) != NULL) {
-        /* Fulfill a private contract with krb5_get_credentials_for_user. */
-        ret = add_s4u_x509_user_padata(context, ctx->gak_data,
-                                       ctx->request->client,
-                                       &out_pa_list, &out_pa_list_size);
-        if (ret)
-            goto error;
-    }
 
     /* If we can't initialize the preauth context, stop with what we have. */
     k5_init_preauth_context(context);

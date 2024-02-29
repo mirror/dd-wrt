@@ -29,7 +29,6 @@ extern char KRB_HelpFile[_MAX_PATH];
 // Function Prototypes.
 int DoNiftyErrorReport(long errnum, LPSTR what);
 LONG Leash_timesync(int);
-BOOL Leash_ms2mit(BOOL);
 
 // Crap...
 #include <krb5.h>
@@ -182,7 +181,7 @@ typedef int cc_int32;
 
 enum {
     CC_CRED_VUNKNOWN = 0,       // For validation
-    CC_CRED_V4 = 1,
+    /* CC_CRED_V4 = 1, */
     CC_CRED_V5 = 2,
     CC_CRED_VMAX = 3            // For validation
 };
@@ -241,13 +240,12 @@ cc_free_NC_info,
 
 /* The following definitions are summarized from KRB5, Leash32, and
  * Leashw32 modules.  They are current as of KfW 2.6.2.  There is no
- * guarrantee that changes to other modules will be updated in this list.
+ * guarantee that changes to other modules will be updated in this list.
  */
 
 /* Must match the values used in Leash32.exe */
 #define LEASH_SETTINGS_REGISTRY_KEY_NAME "Software\\MIT\\Leash32\\Settings"
 #define LEASH_SETTINGS_REGISTRY_VALUE_UPPERCASEREALM   "UpperCaseRealm"
-#define LEASH_SETTINGS_REGISTRY_VALUE_MSLSA_IMPORT     "MsLsaImport"
 
 /* These values are defined and used within Leashw32.dll */
 #define LEASH_REGISTRY_KEY_NAME "Software\\MIT\\Leash"

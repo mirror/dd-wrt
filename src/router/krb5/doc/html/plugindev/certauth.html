@@ -12,7 +12,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '1.17',
+        VERSION:     '1.21.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -72,10 +72,18 @@ description of the certauth interface, see the header file
 whether a client’s certificate is authorized to authenticate a client
 principal.  <strong>authorize</strong> receives the DER-encoded certificate, the
 requested client principal, and a pointer to the client’s
-krb5_db_entry (for modules that link against libkdb5).  It returns the
+krb5_db_entry (for modules that link against libkdb5).  The method
+must decode the certificate and inspect its attributes to determine if
+it should authorize PKINIT authentication.  It returns the
 authorization status and optionally outputs a list of authentication
-indicator strings to be added to the ticket.  A module must use its
-own internal or library-provided ASN.1 certificate decoder.</p>
+indicator strings to be added to the ticket.</p>
+<p>Beginning in release 1.19, the authorize method can request that the
+hardware authentication bit be set in the ticket by returning
+<strong>KRB5_CERTAUTH_HWAUTH</strong>.  Beginning in release 1.20, the authorize
+method can return <strong>KRB5_CERTAUTH_HWAUTH_PASS</strong> to request that the
+hardware authentication bit be set in the ticket but otherwise defer
+authorization to another certauth module.  A module must use its own
+internal or library-provided ASN.1 certificate decoder.</p>
 <p>A module can optionally create and destroy module data with the
 <strong>init</strong> and <strong>fini</strong> methods.  Module data objects last for the
 lifetime of the KDC process.</p>
@@ -144,8 +152,8 @@ to free the list.</p>
 
     <div class="footer-wrapper">
         <div class="footer" >
-            <div class="right" ><i>Release: 1.17</i><br />
-                &copy; <a href="../copyright.html">Copyright</a> 1985-2019, MIT.
+            <div class="right" ><i>Release: 1.21.2</i><br />
+                &copy; <a href="../copyright.html">Copyright</a> 1985-2023, MIT.
             </div>
             <div class="left">
                 

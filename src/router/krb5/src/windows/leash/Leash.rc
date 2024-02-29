@@ -86,14 +86,12 @@ IDI_LEASH_TICKET_SESSION ICON                    "res\\key.ico"
 IDI_LEASH_TICKET_ENCRYPTION ICON                    "res\\encryption.ico"
 IDI_TOOLBAR_INIT        ICON                    "res\\new.ico"
 IDI_TOOLBAR_RENEW       ICON                    "res\\renew.ico"
-IDI_TOOLBAR_IMPORT      ICON                    "res\\import.ico"
 IDI_TOOLBAR_DESTROY     ICON                    "res\\destroy.ico"
 IDI_TOOLBAR_PASSWORD    ICON                    "res\\password.ico"
 IDI_TOOLBAR_REFRESH     ICON                    "res\\refresh.ico"
 IDI_TOOLBAR_SYNC        ICON                    "res\\sync.ico"
 IDI_TOOLBAR_INIT_DISABLED ICON                    "res\\new_disabled.ico"
 IDI_TOOLBAR_RENEW_DISABLED ICON                    "res\\renew_disabled.ico"
-IDI_TOOLBAR_IMPORT_DISABLED ICON                    "res\\import_disabled.ico"
 IDI_TOOLBAR_DESTROY_DISABLED ICON                    "res\\destroy_disabled.ico"
 IDI_TOOLBAR_PASSWORD_DISABLED ICON                    "res\\password_disabled.ico"
 IDI_TOOLBAR_REFRESH_DISABLED ICON                    "res\\refresh_disabled.ico"
@@ -110,7 +108,6 @@ BEGIN
     BEGIN
         MENUITEM "&Get Ticket(s)\tCtrl+T",      ID_INIT_TICKET
         MENUITEM "&Renew Ticket(s)\tCtrl+R",    ID_RENEW_TICKET
-        MENUITEM "&Import Ticket(s)\tCtrl+I",   ID_IMPORT_TICKET
         MENUITEM "&Destroy Ticket(s)\tCtrl+D",  ID_DESTROY_TICKET
         MENUITEM SEPARATOR
         MENUITEM "&Change Password...",         ID_CHANGE_PASSWORD
@@ -155,7 +152,6 @@ IDR_MAINFRAME ACCELERATORS
 BEGIN
     "C",            ID_EDIT_COPY,           VIRTKEY, CONTROL, NOINVERT
     "D",            ID_DESTROY_TICKET,      VIRTKEY, CONTROL, NOINVERT
-    "I",            ID_IMPORT_TICKET,       VIRTKEY, CONTROL, NOINVERT
     "M",            ID_MAKE_DEFAULT,        VIRTKEY, CONTROL, NOINVERT
     "N",            ID_FILE_NEW,            VIRTKEY, CONTROL, NOINVERT
     "O",            ID_FILE_OPEN,           VIRTKEY, CONTROL, NOINVERT
@@ -629,7 +625,6 @@ IDR_MAINFRAME TOOLBAR  18, 18
 BEGIN
     BUTTON      ID_INIT_TICKET
     BUTTON      ID_RENEW_TICKET
-    BUTTON      ID_IMPORT_TICKET
     BUTTON      ID_DESTROY_TICKET
     SEPARATOR
     BUTTON      ID_CHANGE_PASSWORD
@@ -690,7 +685,6 @@ END
 STRINGTABLE
 BEGIN
     ID_PROPERTIES           "Enables you to change settings"
-    ID_IMPORT_TICKET        "import tickets from your Windows Logon Session.\n Import Tickets"
     ID_INIT_TICKET          "Obtain a new ticket\n Get Ticket"
     ID_AUTO_RENEW           "Automatically attempt to renew tickets.\n Automatic Ticket Renewal"
     ID_TIME_ISSUED          "Display column showing when your tickets will expire.\n Issued"
@@ -715,8 +709,8 @@ BEGIN
     ID_LARGE_ICONS          "Show large or small tree icons"
     ID_UPPERCASE_REALM      "Allow realm names that include lower case letters.\n Allow Mixed Case Realm Name"
     ID_OPTIONS_RESETWINDOWSIZE
-                            "Puts Leash's main window back to it's default size "
-    ID_RESET_WINDOW_SIZE    "Refresh Leash window to it's default size/position"
+                            "Puts Leash's main window back to its default size "
+    ID_RESET_WINDOW_SIZE    "Refresh Leash window to its default size/position"
     ID_SYSTEM_CONTROL_PANEL "Open your System Properties window"
     ID_OPTIONS_LOWTICKETALARMSOUND
                             "Turn alarm off or on,  when ticket time is low"
@@ -734,9 +728,7 @@ END
 STRINGTABLE
 BEGIN
     ID_MAKE_DEFAULT         "Make the selected principal the default principal.\n Make Default"
-    ID_IMPORT_TICKETS       "Automatically import tickets from your Windows Logon Session.\n Import Tickets"
     ID_EXPORT_TICKET        "Export tickets to your Windows Logon Sesion.\n Export Tickets"
-    ID_AUTO_IMPORT_TICKET   "Automatically import tickets from your Windows Logon Session.\n Automatic Import Tickets"
 END
 
 #endif    // English (United States) resources

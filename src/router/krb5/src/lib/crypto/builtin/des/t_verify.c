@@ -325,7 +325,7 @@ main(argc,argv)
         printf("%02x ",cipher_text[j]);
     printf("\n\n");
     if ( memcmp((char *)cipher_text, (char *)checksum, 8) ) {
-        printf("verify: error in CBC cheksum\n");
+        printf("verify: error in CBC checksum\n");
         exit(-1);
     }
     else

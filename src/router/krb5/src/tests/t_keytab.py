@@ -41,6 +41,19 @@ realm.kinit(realm.user_princ, flags=['-i'],
             expected_msg='keytab specified, forcing -k')
 realm.klist(realm.user_princ)
 
+# Test default principal for -k.  This operation requires
+# canonicalization against the keytab in krb5_get_init_creds_keytab()
+# as the krb5_sname_to_principal() result won't have a realm.  Try
+# with and without without fallback processing since the code paths
+# are different.
+mark('default principal for -k')
+realm.run([kinit, '-k'])
+realm.klist(realm.host_princ)
+no_canon_conf = {'libdefaults': {'dns_canonicalize_hostname': 'false'}}
+no_canon = realm.special_env('no_canon', False, krb5_conf=no_canon_conf)
+realm.run([kinit, '-k'], env=no_canon)
+realm.klist(realm.host_princ)
+
 # Test extracting keys with multiple key versions present.
 mark('multi-kvno extract')
 os.remove(realm.keytab)
@@ -155,9 +168,6 @@ realm.run([kadminl, 'ank', '-pw', 'pw', 'default'])
 realm.run([kadminl, 'ank', '-e', 'aes256-cts:special', '-pw', 'pw', 'exp'])
 realm.run([kadminl, 'ank', '-e', 'aes256-cts:special', '-pw', 'pw', '+preauth',
            'pexp'])
-realm.run([kadminl, 'ank', '-e', 'des-cbc-crc:afs3', '-pw', 'pw', 'afs'])
-realm.run([kadminl, 'ank', '-e', 'des-cbc-crc:afs3', '-pw', 'pw', '+preauth',
-           'pafs'])
 
 # Extract one of the explicit salt values from the database.
 out = realm.run([kdb5_util, 'tabdump', 'keyinfo'])
@@ -187,8 +197,13 @@ test_addent(realm, 'default', '-f')
 test_addent(realm, 'default', '-f -e aes128-cts')
 test_addent(realm, 'exp', '-f')
 test_addent(realm, 'pexp', '-f')
-test_addent(realm, 'afs', '-f')
-test_addent(realm, 'pafs', '-f')
 
-success('Keytab-related tests')
+# Regression test for #8914: INT32_MIN length can cause backwards seek
+mark('invalid record length')
+f = open(realm.keytab, 'wb')
+f.write(b'\x05\x02\x80\x00\x00\x00')
+f.close()
+msg = 'Bad format in keytab while scanning keytab'
+realm.run([klist, '-k'], expected_code=1, expected_msg=msg)
+
 success('Keytab-related tests')

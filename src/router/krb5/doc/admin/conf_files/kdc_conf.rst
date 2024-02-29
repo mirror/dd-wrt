@@ -208,6 +208,12 @@ The following tags may be specified in a [realms] subsection:
     if there is no policy assigned to the principal, no dictionary
     checks of passwords will be performed.
 
+**disable_pac**
+    (Boolean value.)  If true, the KDC will not issue PACs for this
+    realm, and S4U2Self and S4U2Proxy operations will be disabled.
+    The default is false, which will permit the KDC to issue PACs.
+    New in release 1.20.
+
 **encrypted_challenge_indicator**
     (String.)  Specifies the authentication indicator value that the KDC
     asserts into tickets obtained using FAST encrypted challenge
@@ -222,14 +228,19 @@ The following tags may be specified in a [realms] subsection:
     (Boolean value.)  Specifies whether incremental database
     propagation is enabled.  The default value is false.
 
-**iprop_master_ulogsize**
+**iprop_ulogsize**
     (Integer.)  Specifies the maximum number of log entries to be
     retained for incremental propagation.  The default value is 1000.
-    Prior to release 1.11, the maximum value was 2500.
+    Prior to release 1.11, the maximum value was 2500.  New in release
+    1.19.
+
+**iprop_master_ulogsize**
+    The name for **iprop_ulogsize** prior to release 1.19.  Its value is
+    used as a fallback if **iprop_ulogsize** is not specified.
 
 **iprop_replica_poll**
     (Delta time string.)  Specifies how often the replica KDC polls
-    for new updates from the master.  The default value is ``2m``
+    for new updates from the primary.  The default value is ``2m``
     (that is, two minutes).  New in release 1.17.
 
 **iprop_slave_poll**
@@ -253,7 +264,7 @@ The following tags may be specified in a [realms] subsection:
     (Port number.)  Specifies the port number to be used for
     incremental propagation.  When **iprop_enable** is true, this
     relation is required in the replica KDC configuration file, and
-    this relation or **iprop_listen** is required in the master
+    this relation or **iprop_listen** is required in the primary
     configuration file, as there is no default port number.  Port
     numbers specified in **iprop_listen** entries will override this
     port number for the :ref:`kadmind(8)` daemon.
@@ -381,13 +392,6 @@ The following tags may be specified in a [realms] subsection:
     listed in **host_based_services**.  ``no_host_referral = *`` will
     disable referral processing altogether.
 
-**des_crc_session_supported**
-    (Boolean value).  If set to true, the KDC will assume that service
-    principals support des-cbc-crc for session key enctype negotiation
-    purposes.  If **allow_weak_crypto** in :ref:`libdefaults` is
-    false, or if des-cbc-crc is not a permitted enctype, then this
-    variable has no effect.  Defaults to true.  New in release 1.11.
-
 **reject_bad_transit**
     (Boolean value.)  If set to true, the KDC will check the list of
     transited realms for cross-realm tickets against the transit path
@@ -453,7 +457,6 @@ definitions of these relations.
 * **ldap_kadmind_sasl_mech**
 * **ldap_kadmind_sasl_realm**
 * **ldap_service_password_file**
-* **ldap_servers**
 * **ldap_conns_per_server**
 
 
@@ -649,16 +652,19 @@ Logging specifications may have the following forms:
     facility is specified, the default is **AUTH**.
 
 In the following example, the logging messages from the KDC will go to
-the console and to the system log under the facility LOG_DAEMON with
-default severity of LOG_INFO; and the logging messages from the
-administrative server will be appended to the file
-``/var/adm/kadmin.log`` and sent to the device ``/dev/tty04``. ::
+the console and to the system log under the facility LOG_DAEMON, and
+the logging messages from the administrative server will be appended
+to the file ``/var/adm/kadmin.log`` and sent to the device
+``/dev/tty04``. ::
 
     [logging]
         kdc = CONSOLE
         kdc = SYSLOG:INFO:DAEMON
         admin_server = FILE:/var/adm/kadmin.log
         admin_server = DEVICE=/dev/tty04
+
+If no logging specification is given, the default is to use syslog.
+To disable logging entirely, specify ``default = DEVICE=/dev/null``.
 
 
 .. _otp:
@@ -844,26 +850,20 @@ Encryption types
 
 Any tag in the configuration files which requires a list of encryption
 types can be set to some combination of the following strings.
-Encryption types marked as "weak" are available for compatibility but
-not recommended for use.
+Encryption types marked as "weak" and "deprecated" are available for
+compatibility but not recommended for use.
 
 ==================================================== =========================================================
-des-cbc-crc                                          DES cbc mode with CRC-32 (weak)
-des-cbc-md4                                          DES cbc mode with RSA-MD4 (weak)
-des-cbc-md5                                          DES cbc mode with RSA-MD5 (weak)
-des-cbc-raw                                          DES cbc mode raw (weak)
 des3-cbc-raw                                         Triple DES cbc mode raw (weak)
-des3-cbc-sha1 des3-hmac-sha1 des3-cbc-sha1-kd        Triple DES cbc mode with HMAC/sha1
-des-hmac-sha1                                        DES with HMAC/sha1 (weak)
+des3-cbc-sha1 des3-hmac-sha1 des3-cbc-sha1-kd        Triple DES cbc mode with HMAC/sha1 (deprecated)
 aes256-cts-hmac-sha1-96 aes256-cts aes256-sha1       AES-256 CTS mode with 96-bit SHA-1 HMAC
 aes128-cts-hmac-sha1-96 aes128-cts aes128-sha1       AES-128 CTS mode with 96-bit SHA-1 HMAC
 aes256-cts-hmac-sha384-192 aes256-sha2               AES-256 CTS mode with 192-bit SHA-384 HMAC
 aes128-cts-hmac-sha256-128 aes128-sha2               AES-128 CTS mode with 128-bit SHA-256 HMAC
-arcfour-hmac rc4-hmac arcfour-hmac-md5               RC4 with HMAC/MD5
+arcfour-hmac rc4-hmac arcfour-hmac-md5               RC4 with HMAC/MD5 (deprecated)
 arcfour-hmac-exp rc4-hmac-exp arcfour-hmac-md5-exp   Exportable RC4 with HMAC/MD5 (weak)
 camellia256-cts-cmac camellia256-cts                 Camellia-256 CTS mode with CMAC
 camellia128-cts-cmac camellia128-cts                 Camellia-128 CTS mode with CMAC
-des                                                  The DES family: des-cbc-crc, des-cbc-md5, and des-cbc-md4 (weak)
 des3                                                 The triple DES family: des3-cbc-sha1
 aes                                                  The AES family: aes256-cts-hmac-sha1-96, aes128-cts-hmac-sha1-96, aes256-cts-hmac-sha384-192, and aes128-cts-hmac-sha256-128
 rc4                                                  The RC4 family: arcfour-hmac
@@ -875,8 +875,8 @@ types for the variable in question.  Types or families can be removed
 from the current list by prefixing them with a minus sign ("-").
 Types or families can be prefixed with a plus sign ("+") for symmetry;
 it has the same meaning as just listing the type or family.  For
-example, "``DEFAULT -des``" would be the default set of encryption
-types with DES types removed, and "``des3 DEFAULT``" would be the
+example, "``DEFAULT -rc4``" would be the default set of encryption
+types with RC4 types removed, and "``des3 DEFAULT``" would be the
 default set of encryption types with triple DES types moved to the
 front.
 
@@ -917,10 +917,8 @@ follows:
 
 ================= ============================================
 normal            default for Kerberos Version 5
-v4                the only type used by Kerberos Version 4 (no salt)
 norealm           same as the default, without using realm information
 onlyrealm         uses only realm information as the salt
-afs3              AFS version 3, only used for compatibility with Kerberos 4 in AFS
 special           generate a random salt
 ================= ============================================
 

@@ -12,7 +12,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '1.17',
+        VERSION:     '1.21.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -73,16 +73,16 @@
 <p>The kproplog command displays the contents of the KDC database update
 log to standard output.  It can be used to keep track of incremental
 updates to the principal database.  The update log file contains the
-update log maintained by the <a class="reference internal" href="kadmind.html#kadmind-8"><span class="std std-ref">kadmind</span></a> process on the master
+update log maintained by the <a class="reference internal" href="kadmind.html#kadmind-8"><span class="std std-ref">kadmind</span></a> process on the primary
 KDC server and the <a class="reference internal" href="kpropd.html#kpropd-8"><span class="std std-ref">kpropd</span></a> process on the replica KDC
 servers.  When updates occur, they are logged to this file.
 Subsequently any KDC replica configured for incremental updates will
-request the current data from the master KDC and update their log file
-with any updates returned.</p>
+request the current data from the primary KDC and update their log
+file with any updates returned.</p>
 <p>The kproplog command requires read access to the update log file.  It
 will display update entries only for the KDC it runs on.</p>
 <p>If no options are specified, kproplog displays a summary of the update
-log.  If invoked on the master, kproplog also displays all of the
+log.  If invoked on the primary, kproplog also displays all of the
 update entries.  If invoked on a replica KDC server, kproplog displays
 only a summary of the updates, which includes the serial number of the
 last update received and the associated time stamp of the last update.</p>
@@ -93,7 +93,8 @@ last update received and the associated time stamp of the last update.</p>
 <dt><strong>-R</strong></dt>
 <dd>Reset the update log.  This forces full resynchronization.  If
 used on a replica then that replica will request a full resync.
-If used on the master then all replicas will request full resyncs.</dd>
+If used on the primary then all replicas will request full
+resyncs.</dd>
 <dt><strong>-h</strong></dt>
 <dd>Display a summary of the update log.  This information includes
 the database version number, state of the database, the number of
@@ -224,8 +225,8 @@ variables.</p>
 
     <div class="footer-wrapper">
         <div class="footer" >
-            <div class="right" ><i>Release: 1.17</i><br />
-                &copy; <a href="../../copyright.html">Copyright</a> 1985-2019, MIT.
+            <div class="right" ><i>Release: 1.21.2</i><br />
+                &copy; <a href="../../copyright.html">Copyright</a> 1985-2023, MIT.
             </div>
             <div class="left">
                 

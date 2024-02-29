@@ -8,6 +8,7 @@ k5_buf_add
 k5_buf_add_len
 k5_buf_add_fmt
 k5_buf_add_vfmt
+k5_buf_cstring
 k5_buf_get_space
 k5_buf_truncate
 k5_buf_status
@@ -60,6 +61,7 @@ k5_once
 k5_path_isabs
 k5_path_join
 k5_path_split
+k5_siphash24
 k5_strerror_r
 k5_utf8_to_utf16le
 k5_utf16le_to_utf8
@@ -94,5 +96,4 @@ krb5int_ucs4_to_utf8
 krb5int_utf8_to_ucs4
 krb5int_utf8_lentab
 krb5int_utf8_mintab
-krb5int_utf8_next
 krb5int_zap

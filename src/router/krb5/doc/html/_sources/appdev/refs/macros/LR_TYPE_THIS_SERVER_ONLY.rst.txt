@@ -1,4 +1,4 @@
-.. highlightlang:: c
+.. highlight:: c
 
 .. _LR-TYPE-THIS-SERVER-ONLY-data:
 

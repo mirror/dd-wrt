@@ -12,7 +12,8 @@ SYNOPSIS
 [ **-c** *source_cache_name* ]
 [ **-k** ]
 [ **-r** time ]
-[ **-pf** ]
+[ **-p** | **-P**]
+[ **-f** | **-F**]
 [ **-l** *lifetime* ]
 [ **-z | Z** ]
 [ **-q** ]
@@ -154,7 +155,7 @@ wrong password is typed in, ksu fails.
 .. note::
 
           During authentication, only the tickets that could be
-          obtained without providing a password are cached in in the
+          obtained without providing a password are cached in the
           source cache.
 
 
@@ -247,7 +248,7 @@ OPTIONS
 
 Ticket granting ticket options:
 
-**-l** *lifetime* **-r** *time* **-pf**
+**-l** *lifetime* **-r** *time* **-p** **-P** **-f** **-F**
     The ticket granting ticket options only apply to the case where
     there are no appropriate tickets in the cache to authenticate the
     source user.  In this case if ksu is configured to prompt users
@@ -269,9 +270,19 @@ Ticket granting ticket options:
     specifies that the **proxiable** option should be requested for
     the ticket.
 
+**-P**
+    specifies that the **proxiable** option should not be requested
+    for the ticket, even if the default configuration is to ask for
+    proxiable tickets.
+
 **-f**
     option specifies that the **forwardable** option should be
     requested for the ticket.
+
+**-F**
+    option specifies that the **forwardable** option should not be
+    requested for the ticket, even if the default configuration is to
+    ask for forwardable tickets.
 
 **-e** *command* [*args* ...]
     ksu proceeds exactly the same as if it was invoked without the

@@ -1,6 +1,6 @@
 .\" Man page generated from reStructuredText.
 .
-.TH "KADMIN" "1" " " "1.17" "MIT Kerberos"
+.TH "KADMIN" "1" " " "1.21.2" "MIT Kerberos"
 .SH NAME
 kadmin \- Kerberos V5 database administration program
 .
@@ -63,9 +63,9 @@ Kerberos principals, password policies, and service key tables
 (keytabs).
 .sp
 The remote kadmin client uses Kerberos to authenticate to kadmind
-using the service principal \fBkadmin/ADMINHOST\fP (where \fIADMINHOST\fP is
-the fully\-qualified hostname of the admin server) or \fBkadmin/admin\fP\&.
-If the credentials cache contains a ticket for one of these
+using the service principal \fBkadmin/admin\fP or \fBkadmin/ADMINHOST\fP
+(where \fIADMINHOST\fP is the fully\-qualified hostname of the admin
+server).  If the credentials cache contains a ticket for one of these
 principals, and the \fB\-c\fP credentials_cache option is specified, that
 ticket is used to authenticate to kadmind.  Otherwise, the \fB\-p\fP and
 \fB\-k\fP options are used to specify the client Kerberos principal name
@@ -74,7 +74,7 @@ it requests a service ticket from the KDC, and uses that service
 ticket to authenticate to kadmind.
 .sp
 Since kadmin.local directly accesses the KDC database, it usually must
-be run directly on the master KDC with sufficient permissions to read
+be run directly on the primary KDC with sufficient permissions to read
 the KDC database.  If the KDC database uses the LDAP database module,
 kadmin.local can be run on any host which can access the LDAP server.
 .SH OPTIONS
@@ -115,10 +115,10 @@ principal.  As of release 1.8, the MIT Kerberos KDC only supports
 fully anonymous operation.
 .TP
 \fB\-c\fP \fIcredentials_cache\fP
-Use \fIcredentials_cache\fP as the credentials cache.  The
-cache should contain a service ticket for the \fBkadmin/ADMINHOST\fP
-(where \fIADMINHOST\fP is the fully\-qualified hostname of the admin
-server) or \fBkadmin/admin\fP service; it can be acquired with the
+Use \fIcredentials_cache\fP as the credentials cache.  The cache
+should contain a service ticket for the \fBkadmin/admin\fP or
+\fBkadmin/ADMINHOST\fP (where \fIADMINHOST\fP is the fully\-qualified
+hostname of the admin server) service; it can be acquired with the
 kinit(1) program.  If this option is not specified, kadmin
 requests a new service ticket from the KDC, and stores it in its
 own temporary ccache.
@@ -458,7 +458,7 @@ Example:
 .nf
 .ft C
 kadmin: addprinc jennifer
-WARNING: no policy specified for "jennifer@ATHENA.MIT.EDU";
+No policy specified for "jennifer@ATHENA.MIT.EDU";
 defaulting to no policy.
 Enter password for principal jennifer@ATHENA.MIT.EDU:
 Re\-enter password for principal jennifer@ATHENA.MIT.EDU:
@@ -610,16 +610,16 @@ kadmin: getprinc tlyu/admin
 Principal: tlyu/admin@BLEEP.COM
 Expiration date: [never]
 Last password change: Mon Aug 12 14:16:47 EDT 1996
-Password expiration date: [none]
+Password expiration date: [never]
 Maximum ticket life: 0 days 10:00:00
 Maximum renewable life: 7 days 00:00:00
 Last modified: Mon Aug 12 14:16:47 EDT 1996 (bjaspan/admin@BLEEP.COM)
 Last successful authentication: [never]
 Last failed authentication: [never]
 Failed password attempts: 0
-Number of keys: 2
-Key: vno 1, des\-cbc\-crc
-Key: vno 1, des\-cbc\-crc:v4
+Number of keys: 1
+Key: vno 1, aes256\-cts\-hmac\-sha384\-192
+MKey: vno 1
 Attributes:
 Policy: [none]
 
@@ -649,7 +649,7 @@ expression.
 .sp
 This command requires the \fBlist\fP privilege.
 .sp
-Alias: \fBlistprincs\fP, \fBget_principals\fP, \fBget_princs\fP
+Alias: \fBlistprincs\fP, \fBget_principals\fP, \fBgetprincs\fP
 .sp
 Example:
 .INDENT 0.0
@@ -678,7 +678,7 @@ Displays string attributes on \fIprincipal\fP\&.
 .sp
 This command requires the \fBinquire\fP privilege.
 .sp
-Alias: \fBgetstr\fP
+Alias: \fBgetstrs\fP
 .SS set_string
 .INDENT 0.0
 .INDENT 3.5
@@ -715,6 +715,15 @@ attributes required for the client certificate used by the
 principal during PKINIT authentication.  The matching expression
 is in the same format as those used by the \fBpkinit_cert_match\fP
 option in krb5.conf(5)\&.  (New in release 1.16.)
+.TP
+\fBpac_privsvr_enctype\fP
+Forces the encryption type of the PAC KDC checksum buffers to the
+specified encryption type for tickets issued to this server, by
+deriving a key from the local krbtgt key if it is of a different
+encryption type.  It may be necessary to set this value to
+"aes256\-sha1" on the cross\-realm krbtgt entry for an Active
+Directory realm when using aes\-sha2 keys on the local krbtgt
+entry.
 .UNINDENT
 .sp
 This command requires the \fBmodify\fP privilege.
@@ -885,7 +894,7 @@ tabs.
 .sp
 This command requires the \fBinquire\fP privilege.
 .sp
-Alias: getpol
+Alias: \fBgetpol\fP
 .sp
 Examples:
 .INDENT 0.0
@@ -994,6 +1003,8 @@ An entry for each of the principal\(aqs unique encryption types is added,
 ignoring multiple keys with the same encryption type but different
 salt types.
 .sp
+Alias: \fBxst\fP
+.sp
 Example:
 .INDENT 0.0
 .INDENT 3.5
@@ -1035,6 +1046,8 @@ used.
 \fB\-q\fP
 Display less verbose information.
 .UNINDENT
+.sp
+Alias: \fBktrem\fP
 .sp
 Example:
 .INDENT 0.0
@@ -1081,6 +1094,6 @@ kpasswd(1), kadmind(8), kerberos(7)
 .SH AUTHOR
 MIT
 .SH COPYRIGHT
-1985-2019, MIT
+1985-2023, MIT
 .\" Generated by docutils manpage writer.
 .

@@ -41,6 +41,10 @@ This function creates a principal from a length-counted string and a variable-le
 
 
 
+Beginning with release 1.20, the name type of the principal will be inferred as **KRB5_NT_SRV_INST** or **KRB5_NT_WELLKNOWN** based on the principal name. The type will be **KRB5_NT_PRINCIPAL** if a type cannot be inferred.
+
+
+
 
 
 

@@ -87,7 +87,7 @@
  *
  * + Use gethostbyname2, inet_aton and other IPv6 or thread-safe
  *   functions if available.  But, see
- *   http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=135182 for one
+ *   https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=135182 for one
  *   gethostbyname2 problem on Linux.  And besides, if a platform is
  *   supporting IPv6 at all, they really should be doing getaddrinfo
  *   by now.
@@ -1167,7 +1167,7 @@ getaddrinfo (const char *name, const char *serv, const struct addrinfo *hint,
        that, we'll have to start replacing and freeing all of the
        ai_canonname fields.
 
-       Ref: http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=133668 .
+       Ref: https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=133668 .
 
        Since it's dependent on the target hostname, it's hard to check
        for at configure time.  The bug was fixed in glibc 2.3.4.

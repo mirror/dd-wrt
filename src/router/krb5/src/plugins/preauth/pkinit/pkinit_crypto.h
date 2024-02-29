@@ -46,7 +46,6 @@
  */
 enum cms_msg_types {
     CMS_SIGN_CLIENT,
-    CMS_SIGN_DRAFT9,
     CMS_SIGN_SERVER,
     CMS_ENVEL_SERVER
 };
@@ -133,9 +132,6 @@ krb5_error_code cms_signeddata_create
 	int cms_msg_type,				/* IN
 		    specifies CMS_SIGN_CLIENT for client-side CMS message
 		    and CMS_SIGN_SERVER for kdc-side */
-	int include_certchain,				/* IN
-		    specifies where certificates field in SignedData
-		    should contain certificate path */
 	unsigned char *auth_pack,			/* IN
 		    contains DER encoded AuthPack (CMS_SIGN_CLIENT)
 		    or DER encoded DHRepInfo (CMS_SIGN_SERVER) */
@@ -193,9 +189,6 @@ krb5_error_code cms_envelopeddata_create
 	pkinit_req_crypto_context req_cryptoctx,	/* IN */
 	pkinit_identity_crypto_context id_cryptoctx,	/* IN */
 	krb5_preauthtype pa_type,			/* IN */
-	int include_certchain,				/* IN
-		    specifies whether the certificates field in
-		    SignedData should contain certificate path */
 	unsigned char *key_pack,			/* IN
 		    contains DER encoded ReplyKeyPack */
 	unsigned int key_pack_len,			/* IN
@@ -316,14 +309,8 @@ krb5_error_code client_create_dh
 	pkinit_identity_crypto_context id_cryptoctx,	/* IN */
 	int dh_size,					/* IN
 		    specifies the DH modulous, eg 1024, 2048, or 4096 */
-	unsigned char **dh_params_out,			/* OUT
-		    contains DER encoded DH params */
-	unsigned int *dh_params_len_out,		/* OUT
-		    contains length of encoded DH params */
-	unsigned char **dh_pubkey_out,			/* OUT
-		    receives DER encoded DH pub key */
-	unsigned int *dh_pubkey_len_out);			/* OUT
-		    receives length of DH pub key */
+	krb5_data *spki_out);				/* OUT
+		    receives SubjectPublicKeyInfo encoding */
 
 /*
  * this function completes client's the DH protocol. client
@@ -354,10 +341,10 @@ krb5_error_code server_check_dh
 	pkinit_plg_crypto_context plg_cryptoctx,	/* IN */
 	pkinit_req_crypto_context req_cryptoctx,	/* IN */
 	pkinit_identity_crypto_context id_cryptoctx,	/* IN */
-	krb5_data *dh_params,				/* IN
-		    ???? */
+	const krb5_data *client_spki,			/* IN
+		    SubjectPublicKeyInfo encoding from client */
 	int minbits);					/* IN
-		    the mininum number of key bits acceptable */
+		    the minimum number of key bits acceptable */
 
 /*
  * this function completes the KDC's DH protocol. The KDC generates
@@ -368,10 +355,6 @@ krb5_error_code server_process_dh
 	pkinit_plg_crypto_context plg_cryptoctx,	/* IN */
 	pkinit_req_crypto_context req_cryptoctx,	/* IN */
 	pkinit_identity_crypto_context id_cryptoctx,	/* IN */
-	unsigned char *received_pubkey,			/* IN
-		    contains client's DER encoded DH pub key */
-	unsigned int received_pub_len,			/* IN
-		    contains length of received_pubkey */
 	unsigned char **dh_pubkey_out,			/* OUT
 		    receives KDC's DER encoded DH pub key */
 	unsigned int *dh_pubkey_len_out,		/* OUT
@@ -617,18 +600,23 @@ pkinit_alg_agility_kdf(krb5_context context,
                        krb5_data *pk_as_rep,
                        krb5_keyblock *key_block);
 
-extern const krb5_octet krb5_pkinit_sha1_oid[];
-extern const size_t krb5_pkinit_sha1_oid_len;
-extern const krb5_octet krb5_pkinit_sha256_oid[];
-extern const size_t krb5_pkinit_sha256_oid_len;
-extern const krb5_octet krb5_pkinit_sha512_oid[];
-extern const size_t  krb5_pkinit_sha512_oid_len;
+extern const krb5_data sha1_id;
+extern const krb5_data sha256_id;
+extern const krb5_data sha512_id;
+extern const krb5_data oakley_1024;
+extern const krb5_data oakley_2048;
+extern const krb5_data oakley_4096;
+
 /**
  * An ordered set of OIDs, stored as krb5_data, of KDF algorithms
  * supported by this implementation. The order of this array controls
  * the order in which the server will pick.
  */
 extern krb5_data const * const supported_kdf_alg_ids[];
+
+/* CMS signature algorithms supported by this implementation, in order of
+ * decreasing preference. */
+extern krb5_data const * const supported_cms_algs[];
 
 krb5_error_code
 crypto_encode_der_cert(krb5_context context, pkinit_req_crypto_context reqctx,

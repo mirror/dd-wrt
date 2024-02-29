@@ -31,7 +31,7 @@
  * NOTE: This is highly site specific, and is only really necessary
  * for sites who need to convert from V4 to V5.  It is used by both
  * the KDC and the kdb5_convert program.  Since its use is highly
- * specialized, the necesary information is just going to be
+ * specialized, the necessary information is just going to be
  * hard-coded in this file.
  */
 

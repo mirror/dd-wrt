@@ -45,6 +45,7 @@
  * + path manipulation
  * + _, N_, dgettext, bindtextdomain (for localization)
  * + getopt_long
+ * + secure_getenv
  * + fetching filenames from a directory
  */
 
@@ -1023,6 +1024,10 @@ static inline void zap(void *ptr, size_t len)
     if (len > 0)
         memset_s(ptr, len, 0, len);
 }
+#elif defined(HAVE_EXPLICIT_BZERO)
+# define zap(ptr, len) explicit_bzero(ptr, len)
+#elif defined(HAVE_EXPLICIT_MEMSET)
+# define zap(ptr, len) explicit_memset(ptr, 0, len)
 #elif defined(__GNUC__) || defined(__clang__)
 /*
  * Use an asm statement which declares a memory clobber to force the memset to
@@ -1032,7 +1037,7 @@ static inline void zap(void *ptr, size_t len)
 {
     if (len > 0)
         memset(ptr, 0, len);
-    __asm__ __volatile__("" : : "r" (ptr) : "memory");
+    __asm__ __volatile__("" : : "g" (ptr) : "memory");
 }
 #else
 /*
@@ -1129,6 +1134,14 @@ extern int k5_getopt_long(int nargc, char **nargv, char *options,
                           struct option *long_options, int *index);
 #define getopt_long k5_getopt_long
 #endif /* HAVE_GETOPT_LONG */
+
+#if defined(_WIN32)
+/* On Windows there is never a need to ignore the process environment. */
+#define secure_getenv getenv
+#elif !defined(HAVE_SECURE_GETENV)
+#define secure_getenv k5_secure_getenv
+extern char *k5_secure_getenv(const char *name);
+#endif
 
 /* Set *fnames_out to a null-terminated list of filenames within dirname,
  * sorted according to strcmp().  Return 0 on success, or ENOENT/ENOMEM. */

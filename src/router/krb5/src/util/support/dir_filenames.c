@@ -87,7 +87,7 @@ k5_dir_filenames(const char *dirname, char ***fnames_out)
         return ENOENT;
 
     do {
-        if (add_filename(&fnames, &n_fnames, &ffd.cFileName) != 0) {
+        if (add_filename(&fnames, &n_fnames, ffd.cFileName) != 0) {
             k5_free_filenames(fnames);
             FindClose(handle);
             return ENOMEM;

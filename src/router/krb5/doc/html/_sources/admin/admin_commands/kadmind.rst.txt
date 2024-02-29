@@ -23,9 +23,9 @@ DESCRIPTION
 -----------
 
 kadmind starts the Kerberos administration server.  kadmind typically
-runs on the master Kerberos server, which stores the KDC database.  If
-the KDC database uses the LDAP module, the administration server and
-the KDC server need not run on the same machine.  kadmind accepts
+runs on the primary Kerberos server, which stores the KDC database.
+If the KDC database uses the LDAP module, the administration server
+and the KDC server need not run on the same machine.  kadmind accepts
 remote requests from programs such as :ref:`kadmin(1)` and
 :ref:`kpasswd(1)` to administer the information in these database.
 
@@ -53,8 +53,8 @@ Incremental propagation allows replica KDC servers to receive
 principal and policy updates incrementally instead of receiving full
 dumps of the database.  This facility can be enabled in the
 :ref:`kdc.conf(5)` file with the **iprop_enable** option.  Incremental
-propagation requires the principal ``kiprop/MASTER\@REALM`` (where
-MASTER is the master KDC's canonical host name, and REALM the realm
+propagation requires the principal ``kiprop/PRIMARY\@REALM`` (where
+PRIMARY is the primary KDC's canonical host name, and REALM the realm
 name).  In release 1.13, this principal is automatically created and
 registered into the datebase.
 
@@ -74,8 +74,7 @@ OPTIONS
 
 **-nofork**
     causes the server to remain in the foreground and remain
-    associated to the terminal.  In normal operation, you should allow
-    the server to place itself in the background.
+    associated to the terminal.
 
 **-proponly**
     causes the server to only listen and respond to Kerberos replica

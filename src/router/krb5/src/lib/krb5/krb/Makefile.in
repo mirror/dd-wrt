@@ -77,6 +77,7 @@ STLIBOBJS= \
 	mk_safe.o	\
 	pac.o		\
 	pac_sign.o	\
+	padata.o	\
 	parse.o		\
 	parse_host_string.o	\
 	plugin.o	\
@@ -99,7 +100,6 @@ STLIBOBJS= \
 	rd_safe.o	\
 	recvauth.o	\
 	response_items.o	\
-	s4u_authdata.o	\
 	s4u_creds.o	\
 	sendauth.o	\
 	send_tgs.o	\
@@ -190,6 +190,7 @@ OBJS=	$(OUTPRE)addr_comp.$(OBJEXT)	\
 	$(OUTPRE)mk_safe.$(OBJEXT)	\
 	$(OUTPRE)pac.$(OBJEXT)		\
 	$(OUTPRE)pac_sign.$(OBJEXT)	\
+	$(OUTPRE)padata.$(OBJEXT)	\
 	$(OUTPRE)parse.$(OBJEXT)	\
 	$(OUTPRE)parse_host_string.$(OBJEXT)	\
 	$(OUTPRE)plugin.$(OBJEXT)	\
@@ -212,7 +213,6 @@ OBJS=	$(OUTPRE)addr_comp.$(OBJEXT)	\
 	$(OUTPRE)rd_safe.$(OBJEXT)	\
 	$(OUTPRE)recvauth.$(OBJEXT)	\
 	$(OUTPRE)response_items.$(OBJEXT)	\
-	$(OUTPRE)s4u_authdata.$(OBJEXT)	\
 	$(OUTPRE)s4u_creds.$(OBJEXT)	\
 	$(OUTPRE)sendauth.$(OBJEXT)	\
 	$(OUTPRE)send_tgs.$(OBJEXT)	\
@@ -303,6 +303,7 @@ SRCS=	$(srcdir)/addr_comp.c	\
 	$(srcdir)/mk_safe.c	\
 	$(srcdir)/pac.c		\
 	$(srcdir)/pac_sign.c	\
+	$(srcdir)/padata.c	\
 	$(srcdir)/parse.c	\
 	$(srcdir)/parse_host_string.c	\
 	$(srcdir)/plugin.c	\
@@ -325,7 +326,6 @@ SRCS=	$(srcdir)/addr_comp.c	\
 	$(srcdir)/rd_safe.c	\
 	$(srcdir)/recvauth.c	\
 	$(srcdir)/response_items.c	\
-	$(srcdir)/s4u_authdata.c\
 	$(srcdir)/s4u_creds.c	\
 	$(srcdir)/sendauth.c	\
 	$(srcdir)/send_tgs.c	\
@@ -387,20 +387,19 @@ clean-unix:: clean-libobjs
 
 COMERRLIB=$(TOPLIBD)/libcom_err.a
 
-T_WALK_RTREE_OBJS= t_walk_rtree.o walk_rtree.o tgtname.o unparse.o \
-	bld_pr_ext.o copy_data.o
+T_WALK_RTREE_OBJS= t_walk_rtree.o
 
 T_KERB_OBJS= t_kerb.o conv_princ.o unparse.o set_realm.o str_conv.o
 
 T_SER_OBJS= t_ser.o ser_actx.o ser_adata.o ser_addr.o ser_auth.o ser_cksum.o \
 	ser_ctx.o ser_key.o ser_princ.o serialize.o authdata.o pac.o \
-	pac_sign.o ai_authdata.o authdata_exp.o s4u_authdata.o copy_data.o etype_list.o
+	pac_sign.o ai_authdata.o authdata_exp.o copy_data.o etype_list.o
 
 T_DELTAT_OBJS= t_deltat.o deltat.o
 
 T_PAC_OBJS= t_pac.o pac.o pac_sign.o copy_data.o
 
-T_PRINC_OBJS= t_princ.o parse.o unparse.o
+T_PRINC_OBJS= t_princ.o
 
 T_ETYPES_OBJS= t_etypes.o init_ctx.o etype_list.o plugin.o
 
@@ -472,7 +471,7 @@ TEST_PROGS= t_walk_rtree t_kerb t_ser t_deltat t_expand t_authdata t_pac \
 	t_in_ccache t_cc_config t_copy_context t_princ t_etypes t_vfy_increds \
 	t_response_items t_sname_match t_valid_times t_get_etype_info
 
-check-unix: $(TEST_PROGS)
+check-unix: $(TEST_PROGS) runenv.sh
 	$(RUN_TEST_LOCAL_CONF) ./t_kerb \
 		parse_name tytso \
 		parse_name tytso@SHAZAAM \
@@ -483,6 +482,10 @@ check-unix: $(TEST_PROGS)
 		parse_name tytso\\\\0/\\0@B\\n\\t\\\\GAG \
 		parse_name tytso/\\n/\\b\\t@B\\0hacky-test \
 		parse_name \\/slash/\\@atsign/octa\\/thorpe@\\/slash\\@at\\/sign \
+		name_type host/www.krb5.test@KRB5.TEST \
+		name_type krbtg/KRB5.TEST@KRB5.TEST \
+		name_type krbtgt/KRB5.TEST@KRB5.TEST \
+		name_type WELLKNOWN/ANONYMOUS@KRB5.TEST \
 		425_conv_principal rcmd e40-po ATHENA.MIT.EDU \
 		425_conv_principal rcmd mit ATHENA.MIT.EDU \
 		425_conv_principal rcmd lithium ATHENA.MIT.EDU \

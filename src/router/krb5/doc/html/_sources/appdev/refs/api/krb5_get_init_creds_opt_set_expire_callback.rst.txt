@@ -35,7 +35,7 @@ Set a callback to receive password and account expiration times.
 
 
 
-This option only applies to :c:func:`krb5_get_init_creds_password()` . *cb* will be invoked if and only if credentials are successfully acquired. The callback will receive the *context* from the :c:func:`krb5_get_init_creds_password()` call and the *data* argument supplied with this API. The remaining arguments should be interpreted as follows:
+ *cb* will be invoked if and only if credentials are successfully acquired. The callback will receive the *context* from the calling function and the *data* argument supplied with this API. The remaining arguments should be interpreted as follows:
 
 
 

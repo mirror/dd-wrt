@@ -1,4 +1,4 @@
-.. highlightlang:: c
+.. highlight:: c
 
 .. _AP-OPTS-USE-SUBKEY-data:
 

@@ -1,4 +1,4 @@
-.. highlightlang:: c
+.. highlight:: c
 
 .. _KDC-OPT-ENC-TKT-IN-SKEY-data:
 

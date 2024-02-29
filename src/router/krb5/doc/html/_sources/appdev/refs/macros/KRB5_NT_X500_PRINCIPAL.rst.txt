@@ -1,4 +1,4 @@
-.. highlightlang:: c
+.. highlight:: c
 
 .. _KRB5-NT-X500-PRINCIPAL-data:
 

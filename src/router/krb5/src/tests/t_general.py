@@ -37,6 +37,16 @@ realm.stop()
 
 realm = K5Realm(create_host=False)
 
+# Regression test for #6428 (KDC should prefer account expiration
+# error to password expiration error).
+mark('#6428 regression test')
+realm.run([kadminl, 'addprinc', '-randkey', '-pwexpire', 'yesterday', 'xpr'])
+realm.run(['./icred', 'xpr'], expected_code=1,
+          expected_msg='Password has expired')
+realm.run([kadminl, 'modprinc', '-expire', 'yesterday', 'xpr'])
+realm.run(['./icred', 'xpr'], expected_code=1,
+          expected_msg="Client's entry in database has expired")
+
 # Regression test for #8454 (responder callback isn't used when
 # preauth is not required).
 mark('#8454 regression test')

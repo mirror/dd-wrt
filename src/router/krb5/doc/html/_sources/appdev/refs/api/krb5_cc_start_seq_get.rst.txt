@@ -52,7 +52,7 @@ krb5_cc_start_seq_get -  Prepare to sequentially read every credential in a cred
 
 .. note::
 
-	 If *cache* is modified between the time of the call to this function and the time of the final :c:func:`krb5_cc_end_seq_get()` , the results are undefined.
+	 If the cache represented by *cache* is modified between the time of the call to this function and the time of the final :c:func:`krb5_cc_end_seq_get()` , these changes may not be reflected in the results of :c:func:`krb5_cc_next_cred()` calls.
  
 
 

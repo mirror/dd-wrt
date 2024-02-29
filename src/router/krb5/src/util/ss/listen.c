@@ -54,7 +54,7 @@ static void add_history(const char *line)
 }
 #endif
 
-static RETSIGTYPE listen_int_handler(signo)
+static void listen_int_handler(signo)
     int signo;
 {
     putc('\n', stdout);
@@ -74,8 +74,8 @@ int ss_listen (sci_idx)
     struct sigaction isig, csig, nsig, osig;
     sigset_t nmask, omask;
 #else
-    RETSIGTYPE (*sig_cont)();
-    RETSIGTYPE (*sig_int)(), (*old_sig_cont)();
+    void (*sig_cont)();
+    void (*sig_int)(), (*old_sig_cont)();
     int mask;
 #endif
 
@@ -83,12 +83,12 @@ int ss_listen (sci_idx)
     info->abort = 0;
 
 #ifdef POSIX_SIGNALS
-    csig.sa_handler = (RETSIGTYPE (*)())0;
+    csig.sa_handler = (void (*)())0;
     sigemptyset(&nmask);
     sigaddset(&nmask, SIGINT);
     sigprocmask(SIG_BLOCK, &nmask, &omask);
 #else
-    sig_cont = (RETSIGTYPE (*)())0;
+    sig_cont = (void (*)())0;
     mask = sigblock(sigmask(SIGINT));
 #endif
 
@@ -115,7 +115,7 @@ int ss_listen (sci_idx)
         nsig.sa_handler = listen_int_handler;   /* fgets is not signal-safe */
         osig = csig;
         sigaction(SIGCONT, &nsig, &csig);
-        if ((RETSIGTYPE (*)())csig.sa_handler==(RETSIGTYPE (*)())listen_int_handler)
+        if ((void (*)())csig.sa_handler==(void (*)())listen_int_handler)
             csig = osig;
 #else
         old_sig_cont = sig_cont;

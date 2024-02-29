@@ -46,7 +46,7 @@ interoperability issues in rare circumstances.
 The result of these commands will be two files, cakey.pem and
 cacert.pem.  cakey.pem will contain a 2048-bit RSA private key, which
 must be carefully protected.  cacert.pem will contain the CA
-certificate, which must be placed in the filesytems of the KDC and
+certificate, which must be placed in the filesystems of the KDC and
 each client host.  cakey.pem will be required to create KDC and client
 certificates.
 
@@ -72,7 +72,7 @@ First, you will need a file containing the following::
     principal_name=EXP:1,SEQUENCE:kdc_principal_seq
 
     [kdc_principal_seq]
-    name_type=EXP:0,INTEGER:1
+    name_type=EXP:0,INTEGER:2
     name_string=EXP:1,SEQUENCE:kdc_principals
 
     [kdc_principals]

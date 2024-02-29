@@ -1240,7 +1240,6 @@ kdb5_purge_mkeys(int argc, char *argv[])
                             if (actkvno_entry == actkvno_list) {
                                 /* remove from head */
                                 actkvno_list = actkvno_entry->next;
-                                prev_actkvno_entry = actkvno_list;
                             } else if (actkvno_entry->next == NULL) {
                                 /* remove from tail */
                                 prev_actkvno_entry->next = NULL;
@@ -1263,7 +1262,6 @@ kdb5_purge_mkeys(int argc, char *argv[])
                         if (mkey_aux_entry->mkey_kvno == args.kvnos[j].kvno) {
                             if (mkey_aux_entry == mkey_aux_list) {
                                 mkey_aux_list = mkey_aux_entry->next;
-                                prev_mkey_aux_entry = mkey_aux_list;
                             } else if (mkey_aux_entry->next == NULL) {
                                 prev_mkey_aux_entry->next = NULL;
                             } else {

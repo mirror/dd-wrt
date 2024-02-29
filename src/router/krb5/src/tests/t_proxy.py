@@ -4,27 +4,19 @@ from k5test import *
 if runenv.tls_impl == 'no':
     skip_rest('HTTP proxy tests', 'TLS build support not enabled')
 try:
-    from paste import httpserver
-except:
-    skip_rest('HTTP proxy tests', 'Python paste module not found')
-try:
     import kdcproxy
 except:
     skip_rest('HTTP proxy tests', 'Python kdcproxy module not found')
 
 # Construct a krb5.conf fragment configuring the client to use a local proxy
 # server.
-proxysubjectpem = os.path.join(srctop, 'tests', 'dejagnu', 'proxy-certs',
-                               'proxy-subject.pem')
-proxysanpem = os.path.join(srctop, 'tests', 'dejagnu', 'proxy-certs',
-                           'proxy-san.pem')
-proxyidealpem = os.path.join(srctop, 'tests', 'dejagnu', 'proxy-certs',
-                             'proxy-ideal.pem')
-proxywrongpem = os.path.join(srctop, 'tests', 'dejagnu', 'proxy-certs',
-                             'proxy-no-match.pem')
-proxybadpem = os.path.join(srctop, 'tests', 'dejagnu', 'proxy-certs',
-                           'proxy-badsig.pem')
-proxyca = os.path.join(srctop, 'tests', 'dejagnu', 'proxy-certs', 'ca.pem')
+proxycerts = os.path.join(srctop, 'tests', 'proxy-certs')
+proxysubjectpem = os.path.join(proxycerts, 'proxy-subject.pem')
+proxysanpem = os.path.join(proxycerts, 'proxy-san.pem')
+proxyidealpem = os.path.join(proxycerts, 'proxy-ideal.pem')
+proxywrongpem = os.path.join(proxycerts, 'proxy-no-match.pem')
+proxybadpem = os.path.join(proxycerts, 'proxy-badsig.pem')
+proxyca = os.path.join(proxycerts, 'ca.pem')
 proxyurl = 'https://localhost:$port5/KdcProxy'
 proxyurlupcase = 'https://LocalHost:$port5/KdcProxy'
 proxyurl4 = 'https://127.0.0.1:$port5/KdcProxy'
@@ -54,7 +46,7 @@ kpasswd_input = (password('user') + '\n' + password('user') + '\n' +
 
 def start_proxy(realm, keycertpem):
     proxy_conf_path = os.path.join(realm.testdir, 'kdcproxy.conf')
-    proxy_exec_path = os.path.join(srctop, 'util', 'paste-kdcproxy.py')
+    proxy_exec_path = os.path.join(srctop, 'util', 'wsgiref-kdcproxy.py')
     conf = open(proxy_conf_path, 'w')
     conf.write('[%s]\n' % realm.realm)
     conf.write('kerberos = kerberos://localhost:%d\n' % realm.portbase)

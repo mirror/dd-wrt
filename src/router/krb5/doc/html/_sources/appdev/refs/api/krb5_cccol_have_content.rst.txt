@@ -1,5 +1,5 @@
-krb5_cccol_have_content -  Check if the credential cache collection contains any credentials. 
-==============================================================================================
+krb5_cccol_have_content -  Check if the credential cache collection contains any initialized caches. 
+=====================================================================================================
 
 ..
 
@@ -17,8 +17,8 @@ krb5_cccol_have_content -  Check if the credential cache collection contains any
 
 
 :retval:
-         -   0   Credentials are available in the collection
-         -   KRB5_CC_NOTFOUND   The collection contains no credentials
+         -   0   At least one initialized cache is present in the collection
+         -   KRB5_CC_NOTFOUND   The collection contains no caches
 
 
 ..

@@ -1,3 +1,5 @@
+.. _dbtypes:
+
 Database types
 ==============
 

@@ -93,7 +93,7 @@ hash_bytes(krb5_context context, const void *ptr, size_t len)
     krb5_data d = make_data((void *) ptr, len);
     char *s = NULL;
 
-    if (krb5_k_make_checksum(context, CKSUMTYPE_NIST_SHA, NULL, 0, &d,
+    if (krb5_k_make_checksum(context, CKSUMTYPE_SHA1, NULL, 0, &d,
                              &cksum) != 0)
         return NULL;
     if (cksum.length >= 2)
@@ -164,6 +164,8 @@ padata_type_string(krb5_preauthtype type)
     case KRB5_ENCPADATA_REQ_ENC_PA_REP: return "PA-REQ-ENC-PA-REP";
     case KRB5_PADATA_AS_FRESHNESS: return "PA_AS_FRESHNESS";
     case KRB5_PADATA_SPAKE: return "PA-SPAKE";
+    case KRB5_PADATA_REDHAT_IDP_OAUTH2: return "PA-REDHAT-IDP-OAUTH2";
+    case KRB5_PADATA_REDHAT_PASSKEY: return "PA-REDHAT-PASSKEY";
     default: return NULL;
     }
 }
@@ -365,7 +367,7 @@ trace_format(krb5_context context, const char *fmt, va_list ap)
                    creds->client, creds->server);
         }
     }
-    return buf.data;
+    return k5_buf_cstring(&buf);
 }
 
 /* Allows trace_format formatters to be represented in terms of other
@@ -389,7 +391,7 @@ k5_init_trace(krb5_context context)
 {
     const char *filename;
 
-    filename = getenv("KRB5_TRACE");
+    filename = secure_getenv("KRB5_TRACE");
     if (filename)
         (void) krb5_set_trace_filename(context, filename);
 }
@@ -411,8 +413,8 @@ krb5int_trace(krb5_context context, const char *fmt, ...)
         goto cleanup;
     if (krb5_crypto_us_timeofday(&sec, &usec) != 0)
         goto cleanup;
-    if (asprintf(&msg, "[%d] %u.%d: %s\n", (int) getpid(), (unsigned int) sec,
-                 (int) usec, str) < 0)
+    if (asprintf(&msg, "[%d] %u.%06d: %s\n", (int)getpid(),
+                 (unsigned int)sec, (int)usec, str) < 0)
         goto cleanup;
     info.message = msg;
     context->trace_callback(context, &info, context->trace_callback_data);

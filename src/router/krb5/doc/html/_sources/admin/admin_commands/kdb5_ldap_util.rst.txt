@@ -29,6 +29,9 @@ COMMAND-LINE OPTIONS
 
 .. _kdb5_ldap_util_options:
 
+**-r** *realm*
+    Specifies the realm to be operated on.
+
 **-D** *user_dn*
     Specifies the Distinguished Name (DN) of the user who has
     sufficient rights to perform the operation on the LDAP server.
@@ -38,8 +41,12 @@ COMMAND-LINE OPTIONS
     recommended.
 
 **-H** *ldapuri*
-    Specifies the URI of the LDAP server.  It is recommended to use
-    ``ldapi://`` or ``ldaps://`` to connect to the LDAP server.
+    Specifies the URI of the LDAP server.
+
+By default, kdb5_ldap_util operates on the default realm (as specified
+in :ref:`krb5.conf(5)`) and connects and authenticates to the LDAP
+server in the same manner as :ref:kadmind(8)` would given the
+parameters in :ref:`dbdefaults` in :ref:`kdc.conf(5)`.
 
 .. _kdb5_ldap_util_options_end:
 
@@ -58,9 +65,9 @@ create
     [**-containerref** *container_reference_dn*]
     [**-k** *mkeytype*]
     [**-kv** *mkeyVNO*]
+    [**-M** *mkeyname*]
     [**-m|-P** *password*\|\ **-sf** *stashfilename*]
     [**-s**]
-    [**-r** *realm*]
     [**-maxtktlife** *max_ticket_life*]
     [**-maxrenewlife** *max_renewable_ticket_life*]
     [*ticket_flags*]
@@ -92,6 +99,11 @@ Creates realm in directory. Options:
     Specifies the version number of the master key in the database;
     the default is 1.  Note that 0 is not allowed.
 
+**-M** *mkeyname*
+    Specifies the principal name for the master key in the database.
+    If not specified, the name is determined by the
+    **master_key_name** variable in :ref:`kdc.conf(5)`.
+
 **-m**
     Specifies that the master database password should be read from
     the TTY rather than fetched from a file on the disk.
@@ -99,9 +111,6 @@ Creates realm in directory. Options:
 **-P** *password*
     Specifies the master database password. This option is not
     recommended.
-
-**-r** *realm*
-    Specifies the Kerberos realm of the database.
 
 **-sf** *stashfilename*
     Specifies the stash file of the master database password.
@@ -125,7 +134,7 @@ Creates realm in directory. Options:
 Example::
 
     kdb5_ldap_util -D cn=admin,o=org -H ldaps://ldap-server1.mit.edu
-        create -subtrees o=org -sscope SUB -r ATHENA.MIT.EDU
+        -r ATHENA.MIT.EDU create -subtrees o=org -sscope SUB
     Password for "cn=admin,o=org":
     Initializing database for realm 'ATHENA.MIT.EDU'
     You will be prompted for the database Master Password.
@@ -144,7 +153,6 @@ modify
     [**-subtrees** *subtree_dn_list*]
     [**-sscope** *search_scope*]
     [**-containerref** *container_reference_dn*]
-    [**-r** *realm*]
     [**-maxtktlife** *max_ticket_life*]
     [**-maxrenewlife** *max_renewable_ticket_life*]
     [*ticket_flags*]
@@ -165,9 +173,6 @@ Modifies the attributes of a realm.  Options:
     container object in which the principals of a realm will be
     created.
 
-**-r** *realm*
-    Specifies the Kerberos realm of the database.
-
 **-maxtktlife** *max_ticket_life*
     (:ref:`getdate` string) Specifies maximum ticket life for
     principals in this realm.
@@ -183,9 +188,8 @@ Modifies the attributes of a realm.  Options:
 
 Example::
 
-    shell% kdb5_ldap_util -D cn=admin,o=org -H
-        ldaps://ldap-server1.mit.edu modify +requires_preauth -r
-        ATHENA.MIT.EDU
+    shell% kdb5_ldap_util -r ATHENA.MIT.EDU -D cn=admin,o=org -H
+        ldaps://ldap-server1.mit.edu modify +requires_preauth
     Password for "cn=admin,o=org":
     shell%
 
@@ -196,17 +200,14 @@ view
 
 .. _kdb5_ldap_util_view:
 
-    **view** [**-r** *realm*]
+    **view**
 
-Displays the attributes of a realm.  Options:
-
-**-r** *realm*
-    Specifies the Kerberos realm of the database.
+Displays the attributes of a realm.
 
 Example::
 
     kdb5_ldap_util -D cn=admin,o=org -H ldaps://ldap-server1.mit.edu
-        view -r ATHENA.MIT.EDU
+        -r ATHENA.MIT.EDU view
     Password for "cn=admin,o=org":
     Realm Name: ATHENA.MIT.EDU
     Subtree: ou=users,o=org
@@ -223,20 +224,17 @@ destroy
 
 .. _kdb5_ldap_util_destroy:
 
-    **destroy** [**-f**] [**-r** *realm*]
+    **destroy** [**-f**]
 
 Destroys an existing realm. Options:
 
 **-f**
     If specified, will not prompt the user for confirmation.
 
-**-r** *realm*
-    Specifies the Kerberos realm of the database.
-
 Example::
 
-    shell% kdb5_ldap_util -D cn=admin,o=org -H
-        ldaps://ldap-server1.mit.edu destroy -r ATHENA.MIT.EDU
+    shell% kdb5_ldap_util -r ATHENA.MIT.EDU -D cn=admin,o=org -H
+        ldaps://ldap-server1.mit.edu destroy
     Password for "cn=admin,o=org":
     Deleting KDC database of 'ATHENA.MIT.EDU', are you sure?
     (type 'yes' to confirm)? yes
@@ -252,7 +250,7 @@ list
 
     **list**
 
-Lists the name of realms.
+Lists the names of realms under the container.
 
 Example::
 
@@ -308,16 +306,12 @@ create_policy
 .. _kdb5_ldap_util_create_policy:
 
     **create_policy**
-    [**-r** *realm*]
     [**-maxtktlife** *max_ticket_life*]
     [**-maxrenewlife** *max_renewable_ticket_life*]
     [*ticket_flags*]
     *policy_name*
 
 Creates a ticket policy in the directory.  Options:
-
-**-r** *realm*
-    Specifies the Kerberos realm of the database.
 
 **-maxtktlife** *max_ticket_life*
     (:ref:`getdate` string) Specifies maximum ticket life for
@@ -339,7 +333,7 @@ Creates a ticket policy in the directory.  Options:
 Example::
 
     kdb5_ldap_util -D cn=admin,o=org -H ldaps://ldap-server1.mit.edu
-        create_policy -r ATHENA.MIT.EDU -maxtktlife "1 day"
+        -r ATHENA.MIT.EDU create_policy -maxtktlife "1 day"
         -maxrenewlife "1 week" -allow_postdated +needchange
         -allow_forwardable tktpolicy
     Password for "cn=admin,o=org":
@@ -352,7 +346,6 @@ modify_policy
 .. _kdb5_ldap_util_modify_policy:
 
     **modify_policy**
-    [**-r** *realm*]
     [**-maxtktlife** *max_ticket_life*]
     [**-maxrenewlife** *max_renewable_ticket_life*]
     [*ticket_flags*]
@@ -364,7 +357,7 @@ Modifies the attributes of a ticket policy.  Options are same as for
 Example::
 
     kdb5_ldap_util -D cn=admin,o=org -H
-        ldaps://ldap-server1.mit.edu modify_policy -r ATHENA.MIT.EDU
+        ldaps://ldap-server1.mit.edu -r ATHENA.MIT.EDU modify_policy
         -maxtktlife "60 minutes" -maxrenewlife "10 hours"
         +allow_postdated -requires_preauth tktpolicy
     Password for "cn=admin,o=org":
@@ -377,18 +370,14 @@ view_policy
 .. _kdb5_ldap_util_view_policy:
 
     **view_policy**
-    [**-r** *realm*]
     *policy_name*
 
-Displays the attributes of a ticket policy.  Options:
-
-*policy_name*
-    Specifies the name of the ticket policy.
+Displays the attributes of the named ticket policy.
 
 Example::
 
     kdb5_ldap_util -D cn=admin,o=org -H ldaps://ldap-server1.mit.edu
-        view_policy -r ATHENA.MIT.EDU tktpolicy
+        -r ATHENA.MIT.EDU view_policy tktpolicy
     Password for "cn=admin,o=org":
     Ticket policy: tktpolicy
     Maximum ticket life: 0 days 01:00:00
@@ -403,14 +392,10 @@ destroy_policy
 .. _kdb5_ldap_util_destroy_policy:
 
     **destroy_policy**
-    [**-r** *realm*]
     [**-force**]
     *policy_name*
 
 Destroys an existing ticket policy.  Options:
-
-**-r** *realm*
-    Specifies the Kerberos realm of the database.
 
 **-force**
     Forces the deletion of the policy object.  If not specified, the
@@ -422,7 +407,7 @@ Destroys an existing ticket policy.  Options:
 Example::
 
     kdb5_ldap_util -D cn=admin,o=org -H ldaps://ldap-server1.mit.edu
-        destroy_policy -r ATHENA.MIT.EDU tktpolicy
+        -r ATHENA.MIT.EDU destroy_policy tktpolicy
     Password for "cn=admin,o=org":
     This will delete the policy object 'tktpolicy', are you sure?
     (type 'yes' to confirm)? yes
@@ -436,18 +421,13 @@ list_policy
 .. _kdb5_ldap_util_list_policy:
 
     **list_policy**
-    [**-r** *realm*]
 
-Lists the ticket policies in realm if specified or in the default
-realm.  Options:
-
-**-r** *realm*
-    Specifies the Kerberos realm of the database.
+Lists ticket policies.
 
 Example::
 
     kdb5_ldap_util -D cn=admin,o=org -H ldaps://ldap-server1.mit.edu
-        list_policy -r ATHENA.MIT.EDU
+        -r ATHENA.MIT.EDU list_policy
     Password for "cn=admin,o=org":
     tktpolicy
     tmppolicy

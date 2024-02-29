@@ -26,7 +26,7 @@
   -->
 <Include xmlns="http://schemas.microsoft.com/wix/2003/01/wi">
 
-    <!-- include site sepecific customizations -->
+    <!-- include site-specific customizations -->
     <?include site-local.wxi?>
     
     <!-- Sanity checks -->
@@ -49,6 +49,10 @@
         <?define VCVer="140"?>
     <?elseif $(env.VISUALSTUDIOVERSION) = "15.0"?>
         <?define VCVer="141"?>
+    <?elseif $(env.VISUALSTUDIOVERSION) = "16.0"?>
+        <?define VCVer="142"?>
+    <?elseif $(env.VISUALSTUDIOVERSION) = "17.0"?>
+        <?define VCVer="143"?>
     <?else?>
         <?error Unknown MFC version?>
     <?endif?>
@@ -101,9 +105,6 @@
     <?endif?>
     <?ifndef LeashLockFileLocations?>
         <?define LeashLockFileLocations="0"?>
-    <?endif?>
-    <?ifndef LeashMsLsaImport?>
-        <?define LeashMsLsaImport="2"?>
     <?endif?>
     <?ifndef LeashLifetime?>
         <?define LeashLifetime="0"?>

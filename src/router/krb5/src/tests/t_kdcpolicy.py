@@ -12,6 +12,10 @@ kdc_conf = {'realms': {'$realm': {'default_principal_flags': '+preauth',
                                   'max_renewable_life': '1d'}}}
 realm = K5Realm(krb5_conf=krb5_conf, kdc_conf=kdc_conf)
 
+# We will be scraping timestamps from klist to compute lifetimes, so
+# use a time zone with no daylight savings time.
+realm.env['TZ'] = 'UTC'
+
 realm.run([kadminl, 'addprinc', '-pw', password('fail'), 'fail'])
 
 def verify_time(out, target_time):

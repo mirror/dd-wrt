@@ -418,7 +418,7 @@ xdrrec_skiprecord(XDR *xdrs)
 }
 
 /*
- * Look ahead fuction.
+ * Look ahead function.
  * Returns TRUE iff there is no more input in the buffer
  * after consuming the rest of the current record.
  */
@@ -442,8 +442,8 @@ xdrrec_eof(XDR *xdrs)
 /*
  * The client must tell the package when an end-of-record has occurred.
  * The second paraemters tells whether the record should be flushed to the
- * (output) tcp stream.  (This let's the package support batched or
- * pipelined procedure calls.)  TRUE => immmediate flush to tcp connection.
+ * (output) tcp stream.  (This lets the package support batched or
+ * pipelined procedure calls.)  TRUE => immediate flush to tcp connection.
  */
 bool_t
 xdrrec_endofrecord(XDR *xdrs, bool_t sendnow)

@@ -1,4 +1,4 @@
-.. highlightlang:: c
+.. highlight:: c
 
 .. _MAX-KEYTAB-NAME-LEN-data:
 

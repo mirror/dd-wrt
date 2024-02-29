@@ -52,14 +52,12 @@
 #define IDB_BITMAP1                     239
 #define IDI_TOOLBAR_INIT                240
 #define IDI_TOOLBAR_RENEW               241
-#define IDI_TOOLBAR_IMPORT              242
 #define IDI_TOOLBAR_DESTROY             243
 #define IDI_TOOLBAR_PASSWORD            244
 #define IDI_TOOLBAR_REFRESH             245
 #define IDI_TOOLBAR_SYNC                246
 #define IDI_TOOLBAR_INIT_DISABLED       247
 #define IDI_TOOLBAR_RENEW_DISABLED      248
-#define IDI_TOOLBAR_IMPORT_DISABLED     249
 #define IDI_TOOLBAR_DESTROY_DISABLED    250
 #define IDI_TOOLBAR_PASSWORD_DISABLED   251
 #define IDI_TOOLBAR_REFRESH_DISABLED    252
@@ -262,9 +260,6 @@
 #define IDC_EDIT_RENEW_MAX_M            1200
 #define IDC_EDIT_LIFETIME_M             1201
 #define IDC_EDIT_RENEWTILL_M            1202
-#define IDC_RADIO_MSLSA_IMPORT_OFF      1203
-#define IDC_RADIO_MSLSA_IMPORT_ON       1204
-#define IDC_RADIO_MSLSA_IMPORT_MATCH    1205
 #define IDC_STATIC_LEASH_MSLSA          1206
 #define IDC_LEASH_MAINVIEW              1207
 #define IDC_LIST3                       1208
@@ -297,7 +292,6 @@
 #define ID_HELP_FIND                    32803
 #define ID_HELP_LEASH32                 32804
 #define ID_HELP_WHYUSELEASH32           32805
-#define ID_IMPORT_TICKET                32806
 #define ID_INIT_TICKET                  32807
 #define ID_AUTO_RENEW                   32808
 #define ID_OBTAIN_TGT_WITH_LPARAM       32809
@@ -312,10 +306,7 @@
 #define ID_VALID_UNTIL                  32828
 #define ID_MAKE_DEFAULT                 32835
 #define ID_CHECK2                       32836
-#define ID_IMPORT_TICKETS               32836
 #define ID_EXPORT_TICKET                32837
-#define ID_AUTO_IMPORT_TICKET           32838
-#define ID_AUTO_IMPORT_TICKETS          32840
 #define ID_CCACHE_NAME                  32841
 
 // Next default values for new objects

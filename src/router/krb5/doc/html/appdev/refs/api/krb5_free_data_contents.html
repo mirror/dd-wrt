@@ -12,7 +12,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../',
-        VERSION:     '1.17',
+        VERSION:     '1.21.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -26,7 +26,7 @@
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
     <link rel="copyright" title="Copyright" href="../../../copyright.html" />
-    <link rel="next" title="krb5_free_default_realm - Free a defaultrealm string returned by krb5_get_default_realm() ." href="krb5_free_default_realm.html" />
+    <link rel="next" title="krb5_free_default_realm - Free a default realm string returned by krb5_get_default_realm() ." href="krb5_free_default_realm.html" />
     <link rel="prev" title="krb5_free_data - Free a krb5_data structure." href="krb5_free_data.html" /> 
   </head>
   <body>
@@ -42,7 +42,7 @@
             accesskey="C">Contents</a> |
         <a href="krb5_free_data.html" title="krb5_free_data - Free a krb5_data structure."
             accesskey="P">previous</a> |
-        <a href="krb5_free_default_realm.html" title="krb5_free_default_realm - Free a defaultrealm string returned by krb5_get_default_realm() ."
+        <a href="krb5_free_default_realm.html" title="krb5_free_default_realm - Free a default realm string returned by krb5_get_default_realm() ."
             accesskey="N">next</a> |
         <a href="../../../genindex.html" title="General Index"
             accesskey="I">index</a> |
@@ -78,7 +78,7 @@ void <code class="descname">krb5_free_data_contents</code><span class="sig-paren
 </tr>
 </tbody>
 </table>
-<p>This function frees the contents of <em>val</em> , but not the structure itself.</p>
+<p>This function frees the contents of <em>val</em> , but not the structure itself. It sets the structure’s data pointer to null and (beginning in release 1.19) sets its length to zero.</p>
 </div>
 
 
@@ -137,8 +137,8 @@ void <code class="descname">krb5_free_data_contents</code><span class="sig-paren
 
     <div class="footer-wrapper">
         <div class="footer" >
-            <div class="right" ><i>Release: 1.17</i><br />
-                &copy; <a href="../../../copyright.html">Copyright</a> 1985-2019, MIT.
+            <div class="right" ><i>Release: 1.21.2</i><br />
+                &copy; <a href="../../../copyright.html">Copyright</a> 1985-2023, MIT.
             </div>
             <div class="left">
                 
@@ -146,7 +146,7 @@ void <code class="descname">krb5_free_data_contents</code><span class="sig-paren
             >Contents</a> |
         <a href="krb5_free_data.html" title="krb5_free_data - Free a krb5_data structure."
             >previous</a> |
-        <a href="krb5_free_default_realm.html" title="krb5_free_default_realm - Free a defaultrealm string returned by krb5_get_default_realm() ."
+        <a href="krb5_free_default_realm.html" title="krb5_free_default_realm - Free a default realm string returned by krb5_get_default_realm() ."
             >next</a> |
         <a href="../../../genindex.html" title="General Index"
             >index</a> |

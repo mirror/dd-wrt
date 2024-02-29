@@ -5,7 +5,7 @@
  */
 
 /*
- * This module will parse the update logs on the master or replica servers.
+ * This module will parse the update logs on the primary or replica servers.
  */
 
 #include "k5-int.h"
@@ -19,6 +19,7 @@
 #include <syslog.h>
 #include <kdb_log.h>
 #include <kadm5/admin.h>
+#include <adm_proto.h>
 
 static char *progname;
 
@@ -36,38 +37,17 @@ usage()
 static void
 print_flags(unsigned int flags)
 {
-    unsigned int i;
-    static char *prflags[] = {
-        "DISALLOW_POSTDATED",     /* 0x00000001 */
-        "DISALLOW_FORWARDABLE",   /* 0x00000002 */
-        "DISALLOW_TGT_BASED",     /* 0x00000004 */
-        "DISALLOW_RENEWABLE",     /* 0x00000008 */
-        "DISALLOW_PROXIABLE",     /* 0x00000010 */
-        "DISALLOW_DUP_SKEY",      /* 0x00000020 */
-        "DISALLOW_ALL_TIX",       /* 0x00000040 */
-        "REQUIRES_PRE_AUTH",      /* 0x00000080 */
-        "REQUIRES_HW_AUTH",       /* 0x00000100 */
-        "REQUIRES_PWCHANGE",      /* 0x00000200 */
-        "UNKNOWN_0x00000400",     /* 0x00000400 */
-        "UNKNOWN_0x00000800",     /* 0x00000800 */
-        "DISALLOW_SVR",           /* 0x00001000 */
-        "PWCHANGE_SERVICE",       /* 0x00002000 */
-        "SUPPORT_DESMD5",         /* 0x00004000 */
-        "NEW_PRINC",              /* 0x00008000 */
-        "UNKNOWN_0x00010000",     /* 0x00010000 */
-        "UNKNOWN_0x00020000",     /* 0x00020000 */
-        "UNKNOWN_0x00040000",     /* 0x00040000 */
-        "UNKNOWN_0x00080000",     /* 0x00080000 */
-        "OK_AS_DELEGATE",         /* 0x00100000 */
-        "OK_TO_AUTH_AS_DELEGATE", /* 0x00200000 */
-        "NO_AUTH_DATA_REQUIRED",  /* 0x00400000 */
+    char **attrstrs, **sp;
 
-    };
-
-    for (i = 0; i < sizeof(prflags) / sizeof(*prflags); i++) {
-        if (flags & (krb5_flags)(1 << i))
-            printf("\t\t\t%s\n", prflags[i]);
+    if (krb5_flags_to_strings(flags, &attrstrs) != 0) {
+        printf("\t\t\t(error)\n");
+        return;
     }
+    for (sp = attrstrs; sp != NULL && *sp != NULL; sp++) {
+        printf("\t\t\t%s\n", *sp);
+        free(*sp);
+    }
+    free(attrstrs);
 }
 
 /* ctime() for uint32_t* */
@@ -418,28 +398,36 @@ print_update(kdb_hlog_t *ulog, uint32_t entry, uint32_t ulogentries,
     }
 }
 
-/* Return a read-only mmap of the ulog, or NULL on failure.  Assumes fd is
- * released on process exit. */
+/* Return a read-only mmap of the ulog, or NULL on failure. */
 static kdb_hlog_t *
-map_ulog(const char *filename)
+map_ulog(const char *filename, int *fd_out)
 {
     int fd;
     struct stat st;
-    kdb_hlog_t *ulog;
+    kdb_hlog_t *ulog = MAP_FAILED;
+
+    *fd_out = -1;
 
     fd = open(filename, O_RDONLY);
     if (fd == -1)
         return NULL;
-    if (fstat(fd, &st) < 0)
+    if (fstat(fd, &st) < 0) {
+        close(fd);
         return NULL;
+    }
     ulog = mmap(0, st.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
-    return (ulog == MAP_FAILED) ? NULL : ulog;
+    if (ulog == MAP_FAILED) {
+        close(fd);
+        return NULL;
+    }
+    *fd_out = fd;
+    return ulog;
 }
 
 int
 main(int argc, char **argv)
 {
-    int c;
+    int c, ulog_fd = -1;
     unsigned int verbose = 0;
     bool_t headeronly = FALSE, reset = FALSE;
     uint32_t entry = 0;
@@ -470,7 +458,7 @@ main(int argc, char **argv)
         }
     }
 
-    if (krb5_init_context(&context)) {
+    if (kadm5_init_krb5_context(&context)) {
         fprintf(stderr, _("Unable to initialize Kerberos\n\n"));
         exit(1);
     }
@@ -500,7 +488,7 @@ main(int argc, char **argv)
         goto done;
     }
 
-    ulog = map_ulog(params.iprop_logfile);
+    ulog = map_ulog(params.iprop_logfile, &ulog_fd);
     if (ulog == NULL) {
         fprintf(stderr, _("Unable to map log file %s\n\n"),
                 params.iprop_logfile);
@@ -566,6 +554,7 @@ main(int argc, char **argv)
     printf("\n");
 
 done:
+    close(ulog_fd);
     kadm5_free_config_params(context, &params);
     krb5_free_context(context);
     return 0;

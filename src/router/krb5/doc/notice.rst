@@ -1,4 +1,4 @@
-Copyright |copy| 1985-2019 by the Massachusetts Institute of Technology.
+Copyright |copy| 1985-2023 by the Massachusetts Institute of Technology.
 
 All rights reserved.
 
@@ -134,27 +134,22 @@ Portions of ``src/lib/crypto`` have the following copyright:
 The implementation of the AES encryption algorithm in
 ``src/lib/crypto/builtin/aes`` has the following copyright:
 
-    | Copyright |copy| 2001, Dr Brian Gladman ``brg@gladman.uk.net``,
-        Worcester, UK.
-    | All rights reserved.
+    | Copyright |copy| 1998-2013, Brian Gladman, Worcester, UK. All
+    | rights reserved.
 
-    LICENSE TERMS
+    The redistribution and use of this software (with or without
+    changes) is allowed without the payment of fees or royalties
+    provided that:
 
-    The free distribution and use of this software in both source and binary
-    form is allowed (with or without changes) provided that:
+      source code distributions include the above copyright notice,
+      this list of conditions and the following disclaimer;
 
-    1.  distributions of this source code include the above copyright
-        notice, this list of conditions and the following disclaimer;
-    2.  distributions in binary form include the above copyright
-        notice, this list of conditions and the following disclaimer
-        in the documentation and/or other associated materials;
-    3.  the copyright holder's name is not used to endorse products
-        built using this software without specific written permission.
+      binary distributions include the above copyright notice, this
+      list of conditions and the following disclaimer in their
+      documentation.
 
-    DISCLAIMER
-
-    This software is provided 'as is' with no explcit or implied warranties
-    in respect of any properties, including, but not limited to, correctness
+    This software is provided 'as is' with no explicit or implied warranties
+    in respect of its operation, including, but not limited to, correctness
     and fitness for purpose.
 
 -------------------
@@ -695,6 +690,36 @@ have the following copyright and permission notice:
 
 -------------------
 
+    Copyright |copy| 2022 United States Government as represented by the
+    Secretary of the Navy.  All rights reserved.
+
+    Redistribution and use in source and binary forms, with or without
+    modification, are permitted provided that the following conditions
+    are met:
+
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+
+    * Redistributions in binary form must reproduce the above copyright
+      notice, this list of conditions and the following disclaimer in
+      the documentation and/or other materials provided with the
+      distribution.
+
+    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+    "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+    LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+    FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+    COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+    INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+    (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+    SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+    HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+    STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+    ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
+    OF THE POSSIBILITY OF SUCH DAMAGE.
+
+-------------------
+
     Copyright |copy| 1991, 1992, 1994 by Cygnus Support.
 
     Permission to use, copy, modify, and
@@ -731,36 +756,6 @@ have the following copyright and permission notice:
     SOFTWARE.
 
 -------------------
-
-Portions of the implementation of the Fortuna-like PRNG are subject to
-the following notice:
-
-    | Copyright |copy| 2005 Marko Kreen
-    | All rights reserved.
-
-    Redistribution and use in source and binary forms, with or without
-    modification, are permitted provided that the following conditions
-    are met:
-
-    1.  Redistributions of source code must retain the above copyright
-        notice, this list of conditions and the following disclaimer.
-    2.  Redistributions in binary form must reproduce the above copyright
-        notice, this list of conditions and the following disclaimer in the
-        documentation and/or other materials provided with the distribution.
-
-    THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS "AS IS" AND
-    ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-    IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-    ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
-    FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-    DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
-    OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-    HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-    LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
-    OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
-    SUCH DAMAGE.
-
-..
 
     Copyright |copy| 1994 by the University of Southern California
 
@@ -952,16 +947,6 @@ The following notice applies to ``src/util/profile/argv_parse.c`` and
     IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.  (Isn't
     it sick that the U.S. culture of lawsuit-happy lawyers requires
     this kind of disclaimer?)
-
--------------------
-
-The following notice applies to SWIG-generated code in
-``src/util/profile/profile_tcl.c``:
-
-    Copyright |copy| 1999-2000, The University of Chicago
-
-    This file may be freely redistributed without license or fee provided
-    this copyright message remains intact.
 
 -------------------
 

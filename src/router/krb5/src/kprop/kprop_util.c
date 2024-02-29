@@ -73,26 +73,64 @@ sn2princ_realm(krb5_context context, const char *hostname, const char *sname,
                const char *realm, krb5_principal *princ_out)
 {
     krb5_error_code ret;
-    char *canonhost, localname[MAXHOSTNAMELEN];
+    krb5_principal princ;
 
     *princ_out = NULL;
     assert(sname != NULL && realm != NULL);
 
-    /* If hostname is NULL, use the local hostname. */
-    if (hostname == NULL) {
-        if (gethostname(localname, MAXHOSTNAMELEN) != 0)
-            return SOCKET_ERRNO;
-        hostname = localname;
-    }
-
-    ret = krb5_expand_hostname(context, hostname, &canonhost);
+    ret = krb5_sname_to_principal(context, hostname, sname, KRB5_NT_SRV_HST,
+                                  &princ);
     if (ret)
         return ret;
 
-    ret = krb5_build_principal(context, princ_out, strlen(realm), realm, sname,
-                               canonhost, (char *)NULL);
-    krb5_free_string(context, canonhost);
-    if (!ret)
-        (*princ_out)->type = KRB5_NT_SRV_HST;
-    return ret;
+    ret = krb5_set_principal_realm(context, princ, realm);
+    if (ret) {
+        krb5_free_principal(context, princ);
+        return ret;
+    }
+
+    *princ_out = princ;
+    return 0;
+}
+
+void
+encode_database_size(uint64_t size, krb5_data *buf)
+{
+    assert(buf->length >= 12);
+    if (size > 0 && size <= UINT32_MAX) {
+        /* Encode in 32 bits for backward compatibility. */
+        store_32_be(size, buf->data);
+        buf->length = 4;
+    } else {
+        /* Set the first 32 bits to 0 and encode in the following 64 bits. */
+        store_32_be(0, buf->data);
+        store_64_be(size, buf->data + 4);
+        buf->length = 12;
+    }
+}
+
+krb5_error_code
+decode_database_size(const krb5_data *buf, uint64_t *size_out)
+{
+    uint64_t size;
+
+    if (buf->length == 12) {
+        /* A 12-byte buffer must have the first four bytes zeroed. */
+        if (load_32_be(buf->data) != 0)
+            return KRB5KRB_ERR_GENERIC;
+
+        /* The size is stored in the next 64 bits.  Values from 1..2^32-1 must
+         * be encoded in four bytes. */
+        size = load_64_be(buf->data + 4);
+        if (size > 0 && size <= UINT32_MAX)
+            return KRB5KRB_ERR_GENERIC;
+    } else if (buf->length == 4) {
+        size = load_32_be(buf->data);
+    } else {
+        /* Invalid buffer size. */
+        return KRB5KRB_ERR_GENERIC;
+    }
+
+    *size_out = size;
+    return 0;
 }

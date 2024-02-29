@@ -111,3 +111,6 @@ getopt.so getopt.po $(OUTPRE)getopt.$(OBJEXT): $(BUILDTOP)/include/autoconf.h \
 getopt_long.so getopt_long.po $(OUTPRE)getopt_long.$(OBJEXT): \
   $(BUILDTOP)/include/autoconf.h $(top_srcdir)/include/k5-platform.h \
   $(top_srcdir)/include/k5-thread.h getopt_long.c
+secure_getenv.so secure_getenv.po $(OUTPRE)secure_getenv.$(OBJEXT): \
+  $(BUILDTOP)/include/autoconf.h $(top_srcdir)/include/k5-platform.h \
+  $(top_srcdir)/include/k5-thread.h secure_getenv.c

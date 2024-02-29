@@ -28,8 +28,6 @@ SYNOPSIS
 [**-x** *db_args*]
 [command args...]
 
-.. _kadmin_synopsis_end:
-
 
 DESCRIPTION
 -----------
@@ -44,9 +42,9 @@ Kerberos principals, password policies, and service key tables
 (keytabs).
 
 The remote kadmin client uses Kerberos to authenticate to kadmind
-using the service principal ``kadmin/ADMINHOST`` (where *ADMINHOST* is
-the fully-qualified hostname of the admin server) or ``kadmin/admin``.
-If the credentials cache contains a ticket for one of these
+using the service principal ``kadmin/admin`` or ``kadmin/ADMINHOST``
+(where *ADMINHOST* is the fully-qualified hostname of the admin
+server).  If the credentials cache contains a ticket for one of these
 principals, and the **-c** credentials_cache option is specified, that
 ticket is used to authenticate to kadmind.  Otherwise, the **-p** and
 **-k** options are used to specify the client Kerberos principal name
@@ -55,7 +53,7 @@ it requests a service ticket from the KDC, and uses that service
 ticket to authenticate to kadmind.
 
 Since kadmin.local directly accesses the KDC database, it usually must
-be run directly on the master KDC with sufficient permissions to read
+be run directly on the primary KDC with sufficient permissions to read
 the KDC database.  If the KDC database uses the LDAP database module,
 kadmin.local can be run on any host which can access the LDAP server.
 
@@ -100,10 +98,10 @@ OPTIONS
     fully anonymous operation.
 
 **-c** *credentials_cache*
-    Use *credentials_cache* as the credentials cache.  The
-    cache should contain a service ticket for the ``kadmin/ADMINHOST``
-    (where *ADMINHOST* is the fully-qualified hostname of the admin
-    server) or ``kadmin/admin`` service; it can be acquired with the
+    Use *credentials_cache* as the credentials cache.  The cache
+    should contain a service ticket for the ``kadmin/admin`` or
+    ``kadmin/ADMINHOST`` (where *ADMINHOST* is the fully-qualified
+    hostname of the admin server) service; it can be acquired with the
     :ref:`kinit(1)` program.  If this option is not specified, kadmin
     requests a new service ticket from the KDC, and stores it in its
     own temporary ccache.
@@ -141,8 +139,6 @@ OPTIONS
 **-x** *db_args*
     Specifies the database specific arguments.  See the next section
     for supported options.
-
-.. _kadmin_options_end:
 
 Starting with release 1.14, if any command-line arguments remain after
 the options, they will be treated as a single query to be executed.
@@ -419,14 +415,12 @@ Options:
 Example::
 
     kadmin: addprinc jennifer
-    WARNING: no policy specified for "jennifer@ATHENA.MIT.EDU";
+    No policy specified for "jennifer@ATHENA.MIT.EDU";
     defaulting to no policy.
     Enter password for principal jennifer@ATHENA.MIT.EDU:
     Re-enter password for principal jennifer@ATHENA.MIT.EDU:
     Principal "jennifer@ATHENA.MIT.EDU" created.
     kadmin:
-
-.. _add_principal_end:
 
 .. _modify_principal:
 
@@ -451,8 +445,6 @@ Options (in addition to the **addprinc** options):
     authentication attempts without enough time between them according
     to its password policy) so that it can successfully authenticate.
 
-.. _modify_principal_end:
-
 .. _rename_principal:
 
 rename_principal
@@ -468,8 +460,6 @@ This command requires the **add** and **delete** privileges.
 
 Alias: **renprinc**
 
-.. _rename_principal_end:
-
 .. _delete_principal:
 
 delete_principal
@@ -483,8 +473,6 @@ prompts for deletion, unless the **-force** option is given.
 This command requires the **delete** privilege.
 
 Alias: **delprinc**
-
-.. _delete_principal_end:
 
 .. _change_password:
 
@@ -529,8 +517,6 @@ Example::
     Password for systest@BLEEP.COM changed.
     kadmin:
 
-.. _change_password_end:
-
 .. _purgekeys:
 
 purgekeys
@@ -545,8 +531,6 @@ only purges keys with kvnos lower than *oldest_kvno_to_keep*.  If
 is new in release 1.12.
 
 This command requires the **modify** privilege.
-
-.. _purgekeys_end:
 
 .. _get_principal:
 
@@ -569,16 +553,16 @@ Examples::
     Principal: tlyu/admin@BLEEP.COM
     Expiration date: [never]
     Last password change: Mon Aug 12 14:16:47 EDT 1996
-    Password expiration date: [none]
+    Password expiration date: [never]
     Maximum ticket life: 0 days 10:00:00
     Maximum renewable life: 7 days 00:00:00
     Last modified: Mon Aug 12 14:16:47 EDT 1996 (bjaspan/admin@BLEEP.COM)
     Last successful authentication: [never]
     Last failed authentication: [never]
     Failed password attempts: 0
-    Number of keys: 2
-    Key: vno 1, des-cbc-crc
-    Key: vno 1, des-cbc-crc:v4
+    Number of keys: 1
+    Key: vno 1, aes256-cts-hmac-sha384-192
+    MKey: vno 1
     Attributes:
     Policy: [none]
 
@@ -587,8 +571,6 @@ Examples::
     785926535 753241234 785900000
     tlyu/admin@BLEEP.COM     786100034 0    0
     kadmin:
-
-.. _get_principal_end:
 
 .. _list_principals:
 
@@ -607,7 +589,7 @@ expression.
 
 This command requires the **list** privilege.
 
-Alias: **listprincs**, **get_principals**, **get_princs**
+Alias: **listprincs**, **get_principals**, **getprincs**
 
 Example::
 
@@ -617,8 +599,6 @@ Example::
     test1@SECURE-TEST.OV.COM
     testuser@SECURE-TEST.OV.COM
     kadmin:
-
-.. _list_principals_end:
 
 .. _get_strings:
 
@@ -631,9 +611,7 @@ Displays string attributes on *principal*.
 
 This command requires the **inquire** privilege.
 
-Alias: **getstr**
-
-.. _get_strings_end:
+Alias: **getstrs**
 
 .. _set_string:
 
@@ -671,6 +649,15 @@ KDC:
     is in the same format as those used by the **pkinit_cert_match**
     option in :ref:`krb5.conf(5)`.  (New in release 1.16.)
 
+**pac_privsvr_enctype**
+    Forces the encryption type of the PAC KDC checksum buffers to the
+    specified encryption type for tickets issued to this server, by
+    deriving a key from the local krbtgt key if it is of a different
+    encryption type.  It may be necessary to set this value to
+    "aes256-sha1" on the cross-realm krbtgt entry for an Active
+    Directory realm when using aes-sha2 keys on the local krbtgt
+    entry.
+
 This command requires the **modify** privilege.
 
 Alias: **setstr**
@@ -679,8 +666,6 @@ Example::
 
     set_string host/foo.mit.edu session_enctypes aes128-cts
     set_string user@FOO.COM otp "[{""type"":""hotp"",""username"":""al""}]"
-
-.. _set_string_end:
 
 .. _del_string:
 
@@ -694,8 +679,6 @@ Deletes a string attribute from *principal*.
 This command requires the **delete** privilege.
 
 Alias: **delstr**
-
-.. _del_string_end:
 
 .. _add_policy:
 
@@ -773,8 +756,6 @@ Example::
     kadmin: add_policy -maxlife "2 days" -minlength 5 guests
     kadmin:
 
-.. _add_policy_end:
-
 .. _modify_policy:
 
 modify_policy
@@ -788,8 +769,6 @@ for **add_policy**.
 This command requires the **modify** privilege.
 
 Alias: **modpol**
-
-.. _modify_policy_end:
 
 .. _delete_policy:
 
@@ -813,8 +792,6 @@ Example::
     (yes/no): yes
     kadmin:
 
-.. _delete_policy_end:
-
 .. _get_policy:
 
 get_policy
@@ -828,7 +805,7 @@ tabs.
 
 This command requires the **inquire** privilege.
 
-Alias: getpol
+Alias: **getpol**
 
 Examples::
 
@@ -848,8 +825,6 @@ Examples::
 The "Reference count" is the number of principals using that policy.
 With the LDAP KDC database module, the reference count field is not
 meaningful.
-
-.. _get_policy_end:
 
 .. _list_policies:
 
@@ -880,8 +855,6 @@ Examples::
     test-pol
     test-pol-nopw
     kadmin:
-
-.. _list_policies_end:
 
 .. _ktadd:
 
@@ -922,6 +895,8 @@ An entry for each of the principal's unique encryption types is added,
 ignoring multiple keys with the same encryption type but different
 salt types.
 
+Alias: **xst**
+
 Example::
 
     kadmin: ktadd -k /tmp/foo-new-keytab host/foo.mit.edu
@@ -929,8 +904,6 @@ Example::
          encryption type aes256-cts-hmac-sha1-96 added to keytab
          FILE:/tmp/foo-new-keytab
     kadmin:
-
-.. _ktadd_end:
 
 .. _ktremove:
 
@@ -957,14 +930,14 @@ The options are:
 **-q**
     Display less verbose information.
 
+Alias: **ktrem**
+
 Example::
 
     kadmin: ktremove kadmin/admin all
     Entry for principal kadmin/admin with kvno 3 removed from keytab
          FILE:/etc/krb5.keytab
     kadmin:
-
-.. _ktremove_end:
 
 lock
 ~~~~

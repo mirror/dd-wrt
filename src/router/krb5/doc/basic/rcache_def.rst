@@ -9,7 +9,7 @@ request is detected in the replay cache, an error message is sent to
 the application program.
 
 The replay cache interface, like the credential cache and
-:ref:`keytab_definition` interfaces, uses `type:value` strings to
+:ref:`keytab_definition` interfaces, uses `type:residual` strings to
 indicate the type of replay cache and any associated cache naming
 data to use.
 
@@ -57,41 +57,55 @@ additional messages), or if the simple act of presenting the
 authenticator triggers some interesting action in the service being
 attacked.
 
-Default rcache type
--------------------
-
-There is currently only one implemented kind of replay cache, called
-**dfl**.  It stores replay data in one file, occasionally rewriting it
-to purge old, expired entries.
-
-The default type can be overridden by the **KRB5RCACHETYPE**
-environment variable.
-
-The placement of the replay cache file is determined by the following:
-
-#. The **KRB5RCACHEDIR** environment variable;
-
-#. If KRB5RCACHEDIR is unspecified, on UNIX, the library
-   will fall back to the environment variable **TMPDIR**, and then to
-   a temporary directory determined at configuration time such as
-   */tmp* or */var/tmp*; on Windows, it will check the environment
-   variables *TEMP* and *TMP*, and fall back to the directory C:\\.
-
-Performance issues
+Replay cache types
 ------------------
 
-Several known minor performance issues that may occur when replay
-cache is enabled on the Kerberos system include: delays due to writing
-the authenticator data to disk slowing down response time for very
-heavily loaded servers, and delays during the rewrite that may be
-unacceptable to high-performance services.
+Unlike the credential cache and keytab interfaces, replay cache types
+are in lowercase.  The following types are defined:
 
-For use cases where replays are adequately defended against for all
-protocols using a given service principal name, or where performance
-or other considerations outweigh the risk of replays, the special
-replay cache type "none" can be specified::
+#. **none** disables the replay cache.  The residual value is ignored.
 
-    KRB5RCACHETYPE=none
+#. **file2** (new in release 1.18) uses a hash-based format to store
+   replay records.  The file may grow to accommodate hash collisions.
+   The residual value is the filename.
 
-It doesn't record any information about authenticators, and reports
-that any authenticator seen is not a replay.
+#. **dfl** is the default type if no environment variable or
+   configuration specifies a different type.  It stores replay data in
+   a file2 replay cache with a filename based on the effective uid.
+   The residual value is ignored.
+
+For the dfl type, the location of the replay cache file is determined
+as follows:
+
+#. The directory is taken from the **KRB5RCACHEDIR** environment
+   variable, or the **TMPDIR** environment variable, or a temporary
+   directory determined at configuration time such as ``/var/tmp``, in
+   descending order of preference.
+
+#. The filename is ``krb5_EUID.rcache2`` where EUID is the effective
+   uid of the process.
+
+#. The file is opened without following symbolic links, and ownership
+   of the file is verified to match the effective uid.
+
+On Windows, the directory for the dfl type is the local appdata
+directory, unless overridden by the **KRB5RCACHEDIR** environment
+variable.  The filename on Windows is ``krb5.rcache2``, and the file
+is opened normally.
+
+Default replay cache name
+-------------------------
+
+The default replay cache name is determined by the following, in
+descending order of priority:
+
+#. The **KRB5RCACHENAME** environment variable (new in release 1.18).
+
+#. The **KRB5RCACHETYPE** environment variable.  If this variable is
+   set, the residual value is empty.
+
+#. The **default_rcache_name** profile variable in :ref:`libdefaults`
+   (new in release 1.18).
+
+#. If none of the above are set, the default replay cache name is
+   ``dfl:``.

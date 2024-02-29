@@ -1065,7 +1065,7 @@ GetMSTGT(krb5_context context, HANDLE LogonHandle, ULONG PackageId, KERB_EXTERNA
     }
 
     //
-    // Intialize the request of the request.
+    // Initialize the request of the request.
     //
 
     pTicketRequest->MessageType = KerbRetrieveEncodedTicketMessage;
@@ -1103,12 +1103,13 @@ GetMSTGT(krb5_context context, HANDLE LogonHandle, ULONG PackageId, KERB_EXTERNA
     }
 
     if (krb5_get_tgs_ktypes(context, NULL, &etype_list)) {
-        ptr = etype_list = NULL;
-        etype = ENCTYPE_DES_CBC_CRC;
-    } else {
-        ptr = etype_list + 1;
-        etype = *etype_list;
+        /* No enctypes - nothing we can do. */
+        bIsLsaError = TRUE;
+        goto cleanup;
     }
+
+    ptr = etype_list + 1;
+    etype = *etype_list;
 
     while ( etype ) {
         // Try once more but this time specify the Encryption Type
@@ -1511,7 +1512,7 @@ typedef struct _krb5_lcc_cursor {
  * id
  *
  * Effects:
- * Acccess the MS Kerberos LSA cache in the current logon session
+ * Access the MS Kerberos LSA cache in the current logon session
  * Ignore the residual.
  *
  * Returns:
@@ -1736,7 +1737,7 @@ krb5_lcc_start_seq_get(krb5_context context, krb5_ccache id, krb5_cc_cursor *cur
  * cursor is a krb5_cc_cursor originally obtained from
  * krb5_lcc_start_seq_get.
  *
- * Modifes:
+ * Modifies:
  * cursor
  *
  * Effects:
@@ -2203,7 +2204,6 @@ const krb5_cc_ops krb5_lcc_ops = {
     krb5_lcc_ptcursor_next,
     krb5_lcc_ptcursor_free,
     NULL, /* move */
-    NULL, /* lastchange */
     NULL, /* wasdefault */
     NULL, /* lock */
     NULL, /* unlock */

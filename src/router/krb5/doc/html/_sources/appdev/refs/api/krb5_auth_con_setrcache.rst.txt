@@ -32,7 +32,7 @@ krb5_auth_con_setrcache -  Set the replay cache in an auth context.
 
 
 
-This function sets the replay cache in *auth_context* to *rcache* . *rcache* will be closed when *auth_context* is freed, so the caller should relinguish that responsibility.
+This function sets the replay cache in *auth_context* to *rcache* . *rcache* will be closed when *auth_context* is freed, so the caller should relinquish that responsibility.
 
 
 

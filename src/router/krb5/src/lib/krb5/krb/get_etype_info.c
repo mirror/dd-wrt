@@ -96,7 +96,7 @@ krb5_get_etype_info(krb5_context context, krb5_principal principal,
     krb5_data reply = empty_data(), req = empty_data(), realm = empty_data();
     krb5_data salt = empty_data(), s2kparams = empty_data();
     unsigned int flags;
-    int master, tcp_only;
+    int primary, tcp_only;
     krb5_error_code ret;
 
     *enctype_out = ENCTYPE_NULL;
@@ -118,8 +118,8 @@ krb5_get_etype_info(krb5_context context, krb5_principal principal,
     /* Send the packet (possibly once with UDP and again with TCP). */
     tcp_only = 0;
     for (;;) {
-        master = 0;
-        ret = krb5_sendto_kdc(context, &req, &realm, &reply, &master,
+        primary = 0;
+        ret = krb5_sendto_kdc(context, &req, &realm, &reply, &primary,
                               tcp_only);
         if (ret)
             goto cleanup;

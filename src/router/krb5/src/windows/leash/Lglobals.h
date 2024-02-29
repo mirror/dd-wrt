@@ -68,9 +68,6 @@ extern DECL_FUNC_PTR(Leash_kinit_dlg_ex);
 extern DECL_FUNC_PTR(Leash_timesync);
 extern DECL_FUNC_PTR(Leash_get_default_uppercaserealm);
 extern DECL_FUNC_PTR(Leash_set_default_uppercaserealm);
-extern DECL_FUNC_PTR(Leash_get_default_mslsa_import);
-extern DECL_FUNC_PTR(Leash_import);
-extern DECL_FUNC_PTR(Leash_importable);
 extern DECL_FUNC_PTR(Leash_renew);
 
 // psapi functions

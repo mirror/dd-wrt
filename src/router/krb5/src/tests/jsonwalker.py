@@ -25,7 +25,7 @@ class Parser(object):
 
     def flatten(self, defaults):
         """
-        Flattens pathes to attributes.
+        Flattens paths to attributes.
 
         Parameters
         ----------

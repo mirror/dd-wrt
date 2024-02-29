@@ -13,6 +13,7 @@ SUBDIRS=util include lib \
 	@audit_plugin@ \
 	plugins/kadm5_hook/test \
 	plugins/kadm5_auth/test \
+	plugins/gssapi/negoextest \
 	plugins/hostrealm/test \
 	plugins/localauth/test \
 	plugins/pwqual/test \
@@ -70,8 +71,8 @@ INSTALLMKDIRS = $(KRB5ROOT) $(KRB5MANROOT) $(KRB5OTHERMKDIRS) \
 		$(KRB5_DB_MODULE_DIR) $(KRB5_PA_MODULE_DIR) \
 		$(KRB5_AD_MODULE_DIR) \
 		$(KRB5_LIBKRB5_MODULE_DIR) $(KRB5_TLS_MODULE_DIR) \
-		@localstatedir@ @localstatedir@/krb5kdc \
-		@runstatedir@ @runstatedir@/krb5kdc \
+		$(localstatedir) $(localstatedir)/krb5kdc \
+		$(runstatedir) $(runstatedir)/krb5kdc \
 		$(KRB5_INCSUBDIRS) $(datadir) $(EXAMPLEDIR) \
 		$(PKGCONFIG_DIR)
 
@@ -494,8 +495,9 @@ check-prerecurse: runenv.py
 check-unix: check-lmdb-$(HAVE_LMDB)
 	cat $(SKIPTESTS)
 
+MINPYTHON = @PYTHON_MINVERSION@
 check-pytests-no: check-postrecurse
-	@echo 'Skipped python test scripts: python 2.5 or later required' >> \
+	@echo 'Skipped python test scripts: python $(MINPYTHON) required' >> \
 		$(SKIPTESTS)
 
 check-cmocka-no: check-postrecurse
@@ -567,7 +569,6 @@ coverity prevent cov: Makefiles
 FIND = find
 XARGS = xargs
 EMACS = emacs
-PYTHON = python
 
 INDENTDIRS = \
 	appl \
@@ -635,7 +636,6 @@ OTHEREXCLUDES = \
 	util/et/com_err.h \
 	util/profile/prof_int.h \
 	util/profile/profile.hin \
-	util/profile/profile_tcl.c \
 	util/support/fnmatch.c \
 	util/verto \
 	util/k5ev
@@ -671,7 +671,7 @@ mark-cstyle-bsd:
 check-copyright:
 	(cd $(top_srcdir) && \
 	$(FIND) . \( -name '*.[ch]' -o -name '*.hin' \) -print0 | \
-	$(XARGS) -0 python util/krb5-check-copyright.py)
+	$(XARGS) -0 $(PYTHON) util/krb5-check-copyright.py)
 
 tags: FORCE
 	(cd $(top_srcdir) && \
@@ -681,6 +681,13 @@ tags: FORCE
 	$(FIND) . -name '*.y' -print | etags --lang=yacc --append -)
 FORCE:
 .PHONY: FORCE tags
+
+# Update versioned automatically-generated files.
+regen:
+	$(MAKE) depend
+	(cd man && $(MAKE) man)
+	(cd po && $(MAKE) update-po)
+	(cd lib/krb5/krb && $(RM) deltat.c && $(MAKE) deltat.c)
 
 distclean-unix:
 	$(RM) $(top_srcdir)/TAGS

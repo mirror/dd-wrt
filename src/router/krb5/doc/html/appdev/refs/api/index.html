@@ -12,7 +12,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../',
-        VERSION:     '1.17',
+        VERSION:     '1.21.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -177,7 +177,7 @@
 <li class="toctree-l1"><a class="reference internal" href="krb5_address_compare.html">krb5_address_compare -  Compare two Kerberos addresses.</a></li>
 <li class="toctree-l1"><a class="reference internal" href="krb5_address_order.html">krb5_address_order -  Return an ordering of the specified addresses.</a></li>
 <li class="toctree-l1"><a class="reference internal" href="krb5_address_search.html">krb5_address_search -  Search a list of addresses for a specified address.</a></li>
-<li class="toctree-l1"><a class="reference internal" href="krb5_allow_weak_crypto.html">krb5_allow_weak_crypto -  Allow the appplication to override the profile’s allow_weak_crypto setting.</a></li>
+<li class="toctree-l1"><a class="reference internal" href="krb5_allow_weak_crypto.html">krb5_allow_weak_crypto -  Allow the application to override the profile’s allow_weak_crypto setting.</a></li>
 <li class="toctree-l1"><a class="reference internal" href="krb5_aname_to_localname.html">krb5_aname_to_localname -  Convert a principal name to a local name.</a></li>
 <li class="toctree-l1"><a class="reference internal" href="krb5_anonymous_principal.html">krb5_anonymous_principal -  Build an anonymous principal.</a></li>
 <li class="toctree-l1"><a class="reference internal" href="krb5_anonymous_realm.html">krb5_anonymous_realm -  Return an anonymous realm data.</a></li>
@@ -216,8 +216,6 @@
 <li class="toctree-l1"><a class="reference internal" href="krb5_cc_get_config.html">krb5_cc_get_config -  Get a configuration value from a credential cache.</a></li>
 <li class="toctree-l1"><a class="reference internal" href="krb5_cc_get_flags.html">krb5_cc_get_flags -  Retrieve flags from a credential cache structure.</a></li>
 <li class="toctree-l1"><a class="reference internal" href="krb5_cc_get_full_name.html">krb5_cc_get_full_name -  Retrieve the full name of a credential cache.</a></li>
-<li class="toctree-l1"><a class="reference internal" href="krb5_cc_last_change_time.html">krb5_cc_last_change_time -  Return a timestamp of the last modification to a credential cache.</a></li>
-<li class="toctree-l1"><a class="reference internal" href="krb5_cc_lock.html">krb5_cc_lock -  Lock a credential cache.</a></li>
 <li class="toctree-l1"><a class="reference internal" href="krb5_cc_move.html">krb5_cc_move -  Move a credential cache.</a></li>
 <li class="toctree-l1"><a class="reference internal" href="krb5_cc_next_cred.html">krb5_cc_next_cred -  Retrieve the next entry from the credential cache.</a></li>
 <li class="toctree-l1"><a class="reference internal" href="krb5_cc_remove_cred.html">krb5_cc_remove_cred -  Remove credentials from a credential cache.</a></li>
@@ -230,14 +228,10 @@
 <li class="toctree-l1"><a class="reference internal" href="krb5_cc_store_cred.html">krb5_cc_store_cred -  Store credentials in a credential cache.</a></li>
 <li class="toctree-l1"><a class="reference internal" href="krb5_cc_support_switch.html">krb5_cc_support_switch -  Determine whether a credential cache type supports switching.</a></li>
 <li class="toctree-l1"><a class="reference internal" href="krb5_cc_switch.html">krb5_cc_switch -  Make a credential cache the primary cache for its collection.</a></li>
-<li class="toctree-l1"><a class="reference internal" href="krb5_cc_unlock.html">krb5_cc_unlock -  Unlock a credential cache.</a></li>
 <li class="toctree-l1"><a class="reference internal" href="krb5_cccol_cursor_free.html">krb5_cccol_cursor_free -  Free a credential cache collection cursor.</a></li>
 <li class="toctree-l1"><a class="reference internal" href="krb5_cccol_cursor_new.html">krb5_cccol_cursor_new -  Prepare to iterate over the collection of known credential caches.</a></li>
 <li class="toctree-l1"><a class="reference internal" href="krb5_cccol_cursor_next.html">krb5_cccol_cursor_next -  Get the next credential cache in the collection.</a></li>
-<li class="toctree-l1"><a class="reference internal" href="krb5_cccol_have_content.html">krb5_cccol_have_content -  Check if the credential cache collection contains any credentials.</a></li>
-<li class="toctree-l1"><a class="reference internal" href="krb5_cccol_last_change_time.html">krb5_cccol_last_change_time -  Return a timestamp of the last modification of any known credential cache.</a></li>
-<li class="toctree-l1"><a class="reference internal" href="krb5_cccol_lock.html">krb5_cccol_lock -  Acquire a global lock for credential caches.</a></li>
-<li class="toctree-l1"><a class="reference internal" href="krb5_cccol_unlock.html">krb5_cccol_unlock -  Release a global lock for credential caches.</a></li>
+<li class="toctree-l1"><a class="reference internal" href="krb5_cccol_have_content.html">krb5_cccol_have_content -  Check if the credential cache collection contains any initialized caches.</a></li>
 <li class="toctree-l1"><a class="reference internal" href="krb5_clear_error_message.html">krb5_clear_error_message -  Clear the extended error message in a context.</a></li>
 <li class="toctree-l1"><a class="reference internal" href="krb5_check_clockskew.html">krb5_check_clockskew -  Check if a timestamp is within the allowed clock skew of the current time.</a></li>
 <li class="toctree-l1"><a class="reference internal" href="krb5_copy_addresses.html">krb5_copy_addresses -  Copy an array of addresses.</a></li>
@@ -261,7 +255,7 @@
 <li class="toctree-l1"><a class="reference internal" href="krb5_free_creds.html">krb5_free_creds -  Free a krb5_creds structure.</a></li>
 <li class="toctree-l1"><a class="reference internal" href="krb5_free_data.html">krb5_free_data -  Free a krb5_data structure.</a></li>
 <li class="toctree-l1"><a class="reference internal" href="krb5_free_data_contents.html">krb5_free_data_contents -  Free the contents of a krb5_data structure and zero the data field.</a></li>
-<li class="toctree-l1"><a class="reference internal" href="krb5_free_default_realm.html">krb5_free_default_realm -  Free a defaultrealm string returned by krb5_get_default_realm() .</a></li>
+<li class="toctree-l1"><a class="reference internal" href="krb5_free_default_realm.html">krb5_free_default_realm -  Free a default realm string returned by krb5_get_default_realm() .</a></li>
 <li class="toctree-l1"><a class="reference internal" href="krb5_free_enctypes.html">krb5_free_enctypes -  Free an array of encryption types.</a></li>
 <li class="toctree-l1"><a class="reference internal" href="krb5_free_error.html">krb5_free_error -  Free an error allocated by krb5_read_error() or krb5_sendauth() .</a></li>
 <li class="toctree-l1"><a class="reference internal" href="krb5_free_host_realm.html">krb5_free_host_realm -  Free the memory allocated by krb5_get_host_realm() .</a></li>
@@ -288,6 +282,8 @@
 <li class="toctree-l1"><a class="reference internal" href="krb5_init_creds_step.html">krb5_init_creds_step -  Get the next KDC request for acquiring initial credentials.</a></li>
 <li class="toctree-l1"><a class="reference internal" href="krb5_init_keyblock.html">krb5_init_keyblock -  Initialize an empty krb5_keyblock .</a></li>
 <li class="toctree-l1"><a class="reference internal" href="krb5_is_referral_realm.html">krb5_is_referral_realm -  Check for a match with KRB5_REFERRAL_REALM.</a></li>
+<li class="toctree-l1"><a class="reference internal" href="krb5_kdc_sign_ticket.html">krb5_kdc_sign_ticket -  Sign a PAC, possibly including a ticket signature.</a></li>
+<li class="toctree-l1"><a class="reference internal" href="krb5_kdc_verify_ticket.html">krb5_kdc_verify_ticket -  Verify a PAC, possibly including ticket signature.</a></li>
 <li class="toctree-l1"><a class="reference internal" href="krb5_kt_add_entry.html">krb5_kt_add_entry -  Add a new entry to a key table.</a></li>
 <li class="toctree-l1"><a class="reference internal" href="krb5_kt_end_seq_get.html">krb5_kt_end_seq_get -  Release a keytab cursor.</a></li>
 <li class="toctree-l1"><a class="reference internal" href="krb5_kt_get_entry.html">krb5_kt_get_entry -  Get an entry from a key table.</a></li>
@@ -297,6 +293,7 @@
 <li class="toctree-l1"><a class="reference internal" href="krb5_kt_remove_entry.html">krb5_kt_remove_entry -  Remove an entry from a key table.</a></li>
 <li class="toctree-l1"><a class="reference internal" href="krb5_kt_start_seq_get.html">krb5_kt_start_seq_get -  Start a sequential retrieval of key table entries.</a></li>
 <li class="toctree-l1"><a class="reference internal" href="krb5_make_authdata_kdc_issued.html">krb5_make_authdata_kdc_issued -  Encode and sign AD-KDCIssued authorization data.</a></li>
+<li class="toctree-l1"><a class="reference internal" href="krb5_marshal_credentials.html">krb5_marshal_credentials -  Serialize a krb5_creds object.</a></li>
 <li class="toctree-l1"><a class="reference internal" href="krb5_merge_authdata.html">krb5_merge_authdata -  Merge two authorization data lists into a new list.</a></li>
 <li class="toctree-l1"><a class="reference internal" href="krb5_mk_1cred.html">krb5_mk_1cred -  Format a KRB-CRED message for a single set of credentials.</a></li>
 <li class="toctree-l1"><a class="reference internal" href="krb5_mk_error.html">krb5_mk_error -  Format and encode a KRB_ERROR message.</a></li>
@@ -314,10 +311,11 @@
 <li class="toctree-l1"><a class="reference internal" href="krb5_pac_get_types.html">krb5_pac_get_types -  Return an array of buffer types in a PAC handle.</a></li>
 <li class="toctree-l1"><a class="reference internal" href="krb5_pac_init.html">krb5_pac_init -  Create an empty Privilege Attribute Certificate (PAC) handle.</a></li>
 <li class="toctree-l1"><a class="reference internal" href="krb5_pac_parse.html">krb5_pac_parse -  Unparse an encoded PAC into a new handle.</a></li>
-<li class="toctree-l1"><a class="reference internal" href="krb5_pac_sign.html">krb5_pac_sign -  Sign a PAC.</a></li>
-<li class="toctree-l1"><a class="reference internal" href="krb5_pac_sign_ext.html">krb5_pac_sign_ext -  Sign a PAC, possibly with a specified realm.</a></li>
+<li class="toctree-l1"><a class="reference internal" href="krb5_pac_sign.html">krb5_pac_sign</a></li>
+<li class="toctree-l1"><a class="reference internal" href="krb5_pac_sign_ext.html">krb5_pac_sign_ext</a></li>
 <li class="toctree-l1"><a class="reference internal" href="krb5_pac_verify.html">krb5_pac_verify -  Verify a PAC.</a></li>
 <li class="toctree-l1"><a class="reference internal" href="krb5_pac_verify_ext.html">krb5_pac_verify_ext -  Verify a PAC, possibly from a specified realm.</a></li>
+<li class="toctree-l1"><a class="reference internal" href="krb5_pac_get_client_info.html">krb5_pac_get_client_info -  Read client information from a PAC.</a></li>
 <li class="toctree-l1"><a class="reference internal" href="krb5_prepend_error_message.html">krb5_prepend_error_message -  Add a prefix to the message for an error code.</a></li>
 <li class="toctree-l1"><a class="reference internal" href="krb5_principal2salt.html">krb5_principal2salt -  Convert a principal name into the default salt for that principal.</a></li>
 <li class="toctree-l1"><a class="reference internal" href="krb5_rd_cred.html">krb5_rd_cred -  Read and validate a KRB-CRED message.</a></li>
@@ -349,6 +347,7 @@
 <li class="toctree-l1"><a class="reference internal" href="krb5_tkt_creds_get_times.html">krb5_tkt_creds_get_times -  Retrieve ticket times from a TGS request context.</a></li>
 <li class="toctree-l1"><a class="reference internal" href="krb5_tkt_creds_init.html">krb5_tkt_creds_init -  Create a context to get credentials from a KDC’s Ticket Granting Service.</a></li>
 <li class="toctree-l1"><a class="reference internal" href="krb5_tkt_creds_step.html">krb5_tkt_creds_step -  Get the next KDC request in a TGS exchange.</a></li>
+<li class="toctree-l1"><a class="reference internal" href="krb5_unmarshal_credentials.html">krb5_unmarshal_credentials -  Deserialize a krb5_creds object.</a></li>
 <li class="toctree-l1"><a class="reference internal" href="krb5_verify_init_creds.html">krb5_verify_init_creds -  Verify initial credentials against a keytab.</a></li>
 <li class="toctree-l1"><a class="reference internal" href="krb5_verify_init_creds_opt_init.html">krb5_verify_init_creds_opt_init -  Initialize a credential verification options structure.</a></li>
 <li class="toctree-l1"><a class="reference internal" href="krb5_verify_init_creds_opt_set_ap_req_nofail.html">krb5_verify_init_creds_opt_set_ap_req_nofail -  Set whether credential verification is required.</a></li>
@@ -388,9 +387,9 @@
 <li class="toctree-l1"><a class="reference internal" href="krb5_c_prf.html">krb5_c_prf -  Generate enctype-specific pseudo-random bytes.</a></li>
 <li class="toctree-l1"><a class="reference internal" href="krb5_c_prfplus.html">krb5_c_prfplus -  Generate pseudo-random bytes using RFC 6113 PRF+.</a></li>
 <li class="toctree-l1"><a class="reference internal" href="krb5_c_prf_length.html">krb5_c_prf_length -  Get the output length of pseudo-random functions for an encryption type.</a></li>
-<li class="toctree-l1"><a class="reference internal" href="krb5_c_random_add_entropy.html">krb5_c_random_add_entropy -  Add entropy to the pseudo-random number generator.</a></li>
+<li class="toctree-l1"><a class="reference internal" href="krb5_c_random_add_entropy.html">krb5_c_random_add_entropy</a></li>
 <li class="toctree-l1"><a class="reference internal" href="krb5_c_random_make_octets.html">krb5_c_random_make_octets -  Generate pseudo-random bytes.</a></li>
-<li class="toctree-l1"><a class="reference internal" href="krb5_c_random_os_entropy.html">krb5_c_random_os_entropy -  Collect entropy from the OS if possible.</a></li>
+<li class="toctree-l1"><a class="reference internal" href="krb5_c_random_os_entropy.html">krb5_c_random_os_entropy</a></li>
 <li class="toctree-l1"><a class="reference internal" href="krb5_c_random_to_key.html">krb5_c_random_to_key -  Generate an enctype-specific key from random data.</a></li>
 <li class="toctree-l1"><a class="reference internal" href="krb5_c_string_to_key.html">krb5_c_string_to_key -  Convert a string (such a password) to a key.</a></li>
 <li class="toctree-l1"><a class="reference internal" href="krb5_c_string_to_key_with_params.html">krb5_c_string_to_key_with_params -  Convert a string (such as a password) to a key with additional parameters.</a></li>
@@ -536,8 +535,8 @@
 
     <div class="footer-wrapper">
         <div class="footer" >
-            <div class="right" ><i>Release: 1.17</i><br />
-                &copy; <a href="../../../copyright.html">Copyright</a> 1985-2019, MIT.
+            <div class="right" ><i>Release: 1.21.2</i><br />
+                &copy; <a href="../../../copyright.html">Copyright</a> 1985-2023, MIT.
             </div>
             <div class="left">
                 

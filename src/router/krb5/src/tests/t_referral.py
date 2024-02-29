@@ -20,7 +20,7 @@ def testref(realm, nametype):
     out = realm.run([klist]).split('\n')
     if len(out) != 8:
         fail('unexpected number of lines in klist output')
-    if out[5].split()[4] != 'a/x.d@' or out[6].split()[4] != 'a/x.d@REFREALM':
+    if out[5].split()[4] != 'a/x.d@' or out[6].split()[2] != 'a/x.d@REFREALM':
         fail('unexpected service principals in klist output')
 
 # Get credentials and check that we get an error, not a referral.
@@ -100,12 +100,8 @@ refrealm.stop()
 mark('#7483 regression test')
 drealm = {'domain_realm': {'d': 'KRBTEST.COM'}}
 realm = K5Realm(kdc_conf=drealm, create_host=False)
-tracefile = os.path.join(realm.testdir, 'trace')
-realm.run(['env', 'KRB5_TRACE=' + tracefile, './gcred', 'srv-hst', 'a/x.d@'],
-          expected_code=1)
-f = open(tracefile, 'r')
-trace = f.read()
-f.close()
+out, trace = realm.run(['./gcred', 'srv-hst', 'a/x.d@'], expected_code=1,
+                       return_trace=True)
 if 'back to same realm' in trace:
     fail('KDC returned referral to service realm')
 realm.stop()
@@ -121,14 +117,14 @@ kdcconf = {'realms': {'$realm': {'database_module': 'test'}},
 r1, r2 = cross_realms(2, xtgts=(),
                       args=({'kdc_conf': kdcconf, 'create_kdb': False}, None),
                       create_host=False)
-r2.addprinc('abc\@XYZ', 'pw')
+r2.addprinc('abc\\@XYZ', 'pw')
 r1.start_kdc()
 r1.kinit('user', expected_code=1,
          expected_msg='not found in Kerberos database')
 r1.kinit('user', password('user'), ['-C'])
 r1.klist('user@KRBTEST2.COM', 'krbtgt/KRBTEST2.COM')
 r1.kinit('abc@XYZ', 'pw', ['-E'])
-r1.klist('abc\@XYZ@KRBTEST2.COM', 'krbtgt/KRBTEST2.COM')
+r1.klist('abc\\@XYZ@KRBTEST2.COM', 'krbtgt/KRBTEST2.COM')
 
 # Test that disable_encrypted_timestamp persists across client
 # referrals.  (This test relies on SPAKE not being enabled by default

@@ -12,7 +12,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '1.17',
+        VERSION:     '1.21.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -98,7 +98,7 @@ interoperability issues in rare circumstances.</p>
 <p>The result of these commands will be two files, cakey.pem and
 cacert.pem.  cakey.pem will contain a 2048-bit RSA private key, which
 must be carefully protected.  cacert.pem will contain the CA
-certificate, which must be placed in the filesytems of the KDC and
+certificate, which must be placed in the filesystems of the KDC and
 each client host.  cakey.pem will be required to create KDC and client
 certificates.</p>
 </div>
@@ -121,7 +121,7 @@ realm=EXP:0,GeneralString:${ENV::REALM}
 principal_name=EXP:1,SEQUENCE:kdc_principal_seq
 
 [kdc_principal_seq]
-name_type=EXP:0,INTEGER:1
+name_type=EXP:0,INTEGER:2
 name_string=EXP:1,SEQUENCE:kdc_principals
 
 [kdc_principals]
@@ -464,8 +464,8 @@ and verify that authentication is unsuccessful.</p>
 
     <div class="footer-wrapper">
         <div class="footer" >
-            <div class="right" ><i>Release: 1.17</i><br />
-                &copy; <a href="../copyright.html">Copyright</a> 1985-2019, MIT.
+            <div class="right" ><i>Release: 1.21.2</i><br />
+                &copy; <a href="../copyright.html">Copyright</a> 1985-2023, MIT.
             </div>
             <div class="left">
                 

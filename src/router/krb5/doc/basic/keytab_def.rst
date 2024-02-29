@@ -12,10 +12,8 @@ credentials for client applications.
 
 Keytabs are named using the format *type*\ ``:``\ *value*.  Usually
 *type* is ``FILE`` and *value* is the absolute pathname of the file.
-Other possible values for *type* are ``SRVTAB``, which indicates a
-file in the deprecated Kerberos 4 srvtab format, and ``MEMORY``, which
-indicates a temporary keytab stored in the memory of the current
-process.
+The other possible value for *type* is ``MEMORY``, which indicates a
+temporary keytab stored in the memory of the current process.
 
 A keytab contains one or more entries, where each entry consists of a
 timestamp (indicating when the entry was written to the keytab), a

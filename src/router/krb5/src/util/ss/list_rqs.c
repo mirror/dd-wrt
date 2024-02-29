@@ -44,7 +44,7 @@ ss_list_requests(argc, argv, sci_idx, info_ptr)
     sigset_t nmask, omask;
 #else
     int mask;
-    RETSIGTYPE (*func)();
+    void (*func)();
 #endif
 #ifndef WAIT_USES_INT
     union wait waitb;

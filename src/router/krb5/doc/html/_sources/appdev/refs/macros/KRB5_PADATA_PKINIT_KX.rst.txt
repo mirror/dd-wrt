@@ -1,4 +1,4 @@
-.. highlightlang:: c
+.. highlight:: c
 
 .. _KRB5-PADATA-PKINIT-KX-data:
 

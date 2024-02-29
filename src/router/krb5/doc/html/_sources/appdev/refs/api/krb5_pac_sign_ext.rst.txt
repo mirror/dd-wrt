@@ -1,5 +1,5 @@
-krb5_pac_sign_ext -  Sign a PAC, possibly with a specified realm. 
-==================================================================
+krb5_pac_sign_ext
+=================
 
 ..
 
@@ -10,36 +10,34 @@ krb5_pac_sign_ext -  Sign a PAC, possibly with a specified realm.
 
 :param:
 
-	          **[in]** **context** - Library context
+	          **context**
 
-	          **[in]** **pac** - PAC handle
+	          **pac**
 
-	          **[in]** **authtime** - Expected timestamp
+	          **authtime**
 
-	          **[in]** **principal** - Principal name (or NULL)
+	          **principal**
 
-	          **[in]** **server_key** - Key for server checksum
+	          **server_key**
 
-	          **[in]** **privsvr_key** - Key for KDC checksum
+	          **privsvr_key**
 
-	          **[in]** **with_realm** - If true, include the realm of *principal*
+	          **with_realm**
 
-	          **[out]** **data** - Signed PAC encoding
-
-
-..
-
+	          **data**
 
 
 ..
 
 
 
+..
+
+
+DEPRECATED Use krb5_kdc_sign_ticket() instead. 
 
 
 
-
-This function is similar to :c:func:`krb5_pac_sign()` , but adds a parameter *with_realm* . If *with_realm* is true, the PAC_CLIENT_INFO field of the signed PAC will include the realm of *principal* as well as the name. This flag is necessary to generate PACs for cross-realm S4U2Self referrals.
 
 
 
@@ -55,8 +53,4 @@ This function is similar to :c:func:`krb5_pac_sign()` , but adds a parameter *wi
 
 
 
-.. note::
-
-	 New in 1.17
- 
 

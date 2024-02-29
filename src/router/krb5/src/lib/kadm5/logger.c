@@ -182,7 +182,7 @@ static void
 klog_com_err_proc(const char *whoami, long int code, const char *format, va_list ap)
 {
     struct k5buf buf;
-    const char *emsg;
+    const char *emsg, *msg;
 
     if (format == NULL)
         return;
@@ -200,8 +200,9 @@ klog_com_err_proc(const char *whoami, long int code, const char *format, va_list
     /* Add the formatted message. */
     k5_buf_add_vfmt(&buf, format, ap);
 
-    if (k5_buf_status(&buf) == 0)
-        krb5_klog_syslog(code ? LOG_ERR : LOG_INFO, "%s", (char *)buf.data);
+    msg = k5_buf_cstring(&buf);
+    if (msg != NULL)
+        krb5_klog_syslog(code ? LOG_ERR : LOG_INFO, "%s", msg);
 
     k5_buf_free(&buf);
 }

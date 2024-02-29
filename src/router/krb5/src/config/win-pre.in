@@ -118,7 +118,11 @@ CC=cl
 
 PDB_OPTS=-Fd$(OUTPRE)\ -FD
 CPPFLAGS=-I$(top_srcdir)\include -I$(top_srcdir)\include\krb5 $(DNSFLAGS) -DWIN32_LEAN_AND_MEAN -DKRB5_DEPRECATED=1 -DKRB5_PRIVATE -D_CRT_SECURE_NO_DEPRECATE $(KFWFLAGS) $(TIME_T_FLAGS)
-CCOPTS=-nologo /EHsc /W3 $(PDB_OPTS) $(DLL_FILE_DEF)
+# Treat the following warnings as errors:
+#  4020: too many actual parameters
+#  4024: different types for formal and actual parameter
+#  4047: different levels of indirection
+CCOPTS=-nologo /EHsc /W3 /we4020 /we4024 /we4047 $(PDB_OPTS) $(DLL_FILE_DEF)
 LOPTS=-nologo -incremental:no -manifest
 
 !if  ("$(BITS)" == "64" )
@@ -127,7 +131,7 @@ ENTRYPOINT=_DllMainCRTStartup
 ENTRYPOINT=_DllMainCRTStartup@12
 !endif
 CCLINKOPTION=
-DEBUGOPT=/Zi
+DEBUGOPT=/guard:cf /Zi
 
 #if the compiler is vstudio 8, generate manifest
 !if exists("$(VCINSTALLDIR)\..\..\MICROSOFT VISUAL STUDIO 8")
@@ -204,9 +208,6 @@ MFLAGS=$(MAKEFLAGS)
 !ifdef MIGNORE
 MAKE=-$(MAKE)
 !endif
-
-CRYPTO_IMPL	= builtin
-PRNG_ALG	= fortuna
 
 CFLAGS = $(CCOPTS)
 ALL_CFLAGS = $(DEFS) $(DEFINES) $(LOCALINCLUDES) $(CPPFLAGS) $(CFLAGS)

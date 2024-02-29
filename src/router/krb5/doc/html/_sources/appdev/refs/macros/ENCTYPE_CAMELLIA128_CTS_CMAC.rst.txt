@@ -1,4 +1,4 @@
-.. highlightlang:: c
+.. highlight:: c
 
 .. _ENCTYPE-CAMELLIA128-CTS-CMAC-data:
 

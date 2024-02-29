@@ -99,24 +99,14 @@ start building Kerberos; see :ref:`do_build`)::
 
     make check
 
-However, there are several prerequisites that must be satisfied first:
-
-* Configure and build Kerberos with Tcl support. Tcl is used to drive
-  the test suite.  This often means passing **-**\ **-with-tcl** to
-  configure to tell it the location of the Tcl configuration
-  script. (See :ref:`options2configure`.)
-* In addition to Tcl, DejaGnu must be available on the system for some
-  of the tests to run.  The test suite will still run the other tests
-  if DejaGnu is not present, but the test coverage will be reduced
-  accordingly.
-* On some operating systems, you have to run ``make install`` before
-  running ``make check``, or the test suite will pick up installed
-  versions of Kerberos libraries rather than the newly built ones.
-  You can install into a prefix that isn't in the system library
-  search path, though. Alternatively, you can configure with
-  **-**\ **-disable-rpath**, which renders the build tree less suitable for
-  installation, but allows testing without interference from
-  previously installed libraries.
+On some operating systems, you have to run ``make install`` before
+running ``make check``, or the test suite will pick up installed
+versions of Kerberos libraries rather than the newly built ones.  You
+can install into a prefix that isn't in the system library search
+path, though.  Alternatively, you can configure with
+**-**\ **-disable-rpath**, which renders the build tree less suitable
+for installation, but allows testing without interference from
+previously installed libraries.
 
 There are additional regression tests available, which are not run
 by ``make check``.  These tests require manual setup and teardown of

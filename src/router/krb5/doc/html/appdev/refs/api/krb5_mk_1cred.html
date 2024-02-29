@@ -12,7 +12,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../',
-        VERSION:     '1.17',
+        VERSION:     '1.21.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -65,7 +65,7 @@
 <h1>krb5_mk_1cred -  Format a KRB-CRED message for a single set of credentials.<a class="headerlink" href="#krb5-mk-1cred-format-a-krb-cred-message-for-a-single-set-of-credentials" title="Permalink to this headline">¶</a></h1>
 <dl class="function">
 <dt id="c.krb5_mk_1cred">
-<a class="reference internal" href="../types/krb5_error_code.html#c.krb5_error_code" title="krb5_error_code">krb5_error_code</a> <code class="descname">krb5_mk_1cred</code><span class="sig-paren">(</span><a class="reference internal" href="../types/krb5_context.html#c.krb5_context" title="krb5_context">krb5_context</a><em>&nbsp;context</em>, <a class="reference internal" href="../types/krb5_auth_context.html#c.krb5_auth_context" title="krb5_auth_context">krb5_auth_context</a><em>&nbsp;auth_context</em>, <a class="reference internal" href="../types/krb5_creds.html#c.krb5_creds" title="krb5_creds">krb5_creds</a> *<em>&nbsp;pcreds</em>, <a class="reference internal" href="../types/krb5_data.html#c.krb5_data" title="krb5_data">krb5_data</a> **<em>&nbsp;ppdata</em>, <a class="reference internal" href="../types/krb5_replay_data.html#c.krb5_replay_data" title="krb5_replay_data">krb5_replay_data</a> *<em>&nbsp;outdata</em><span class="sig-paren">)</span><a class="headerlink" href="#c.krb5_mk_1cred" title="Permalink to this definition">¶</a></dt>
+<a class="reference internal" href="../types/krb5_error_code.html#c.krb5_error_code" title="krb5_error_code">krb5_error_code</a> <code class="descname">krb5_mk_1cred</code><span class="sig-paren">(</span><a class="reference internal" href="../types/krb5_context.html#c.krb5_context" title="krb5_context">krb5_context</a><em>&nbsp;context</em>, <a class="reference internal" href="../types/krb5_auth_context.html#c.krb5_auth_context" title="krb5_auth_context">krb5_auth_context</a><em>&nbsp;auth_context</em>, <a class="reference internal" href="../types/krb5_creds.html#c.krb5_creds" title="krb5_creds">krb5_creds</a> *<em>&nbsp;creds</em>, <a class="reference internal" href="../types/krb5_data.html#c.krb5_data" title="krb5_data">krb5_data</a> **<em>&nbsp;der_out</em>, <a class="reference internal" href="../types/krb5_replay_data.html#c.krb5_replay_data" title="krb5_replay_data">krb5_replay_data</a> *<em>&nbsp;rdata_out</em><span class="sig-paren">)</span><a class="headerlink" href="#c.krb5_mk_1cred" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <table class="docutils field-list" frame="void" rules="none">
@@ -74,9 +74,9 @@
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">param:</th><td class="field-body"><p class="first"><strong>[in]</strong> <strong>context</strong> - Library context</p>
 <p><strong>[in]</strong> <strong>auth_context</strong> - Authentication context</p>
-<p><strong>[in]</strong> <strong>pcreds</strong> - Pointer to credentials</p>
-<p><strong>[out]</strong> <strong>ppdata</strong> - Encoded credentials</p>
-<p class="last"><strong>[out]</strong> <strong>outdata</strong> - Replay cache data (NULL if not needed)</p>
+<p><strong>[in]</strong> <strong>creds</strong> - Pointer to credentials</p>
+<p><strong>[out]</strong> <strong>der_out</strong> - Encoded credentials</p>
+<p class="last"><strong>[out]</strong> <strong>rdata_out</strong> - Replay cache data (NULL if not needed)</p>
 </td>
 </tr>
 </tbody>
@@ -158,8 +158,8 @@
 
     <div class="footer-wrapper">
         <div class="footer" >
-            <div class="right" ><i>Release: 1.17</i><br />
-                &copy; <a href="../../../copyright.html">Copyright</a> 1985-2019, MIT.
+            <div class="right" ><i>Release: 1.21.2</i><br />
+                &copy; <a href="../../../copyright.html">Copyright</a> 1985-2023, MIT.
             </div>
             <div class="left">
                 

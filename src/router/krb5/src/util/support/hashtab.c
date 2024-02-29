@@ -111,6 +111,15 @@ siphash24(const uint8_t *data, size_t len, uint64_t k0, uint64_t k1)
     return v0 ^ v1 ^ v2 ^ v3;
 }
 
+uint64_t
+k5_siphash24(const uint8_t *data, size_t len,
+             const uint8_t seed[K5_HASH_SEED_LEN])
+{
+    uint64_t k0 = load_64_le(seed), k1 = load_64_le(seed + 8);
+
+    return siphash24(data, len, k0, k1);
+}
+
 int
 k5_hashtab_create(const uint8_t seed[K5_HASH_SEED_LEN], size_t initial_buckets,
                   struct k5_hashtab **ht_out)

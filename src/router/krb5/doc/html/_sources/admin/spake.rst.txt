@@ -27,7 +27,7 @@ KDC.  Simply setting it to ``edwards25519`` is recommended::
 Set the **+requires_preauth** and **-allow_svr** flags on client
 principal entries, as you would for any preauthentication mechanism::
 
-    kadmin: modprinc +requires_preauth -allow_srv PRINCNAME
+    kadmin: modprinc +requires_preauth -allow_svr PRINCNAME
 
 Clients which do not implement SPAKE preauthentication will fall back
 to encrypted timestamp.

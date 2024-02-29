@@ -61,6 +61,12 @@ name types are supported by the krb5 mechanism:
   is defined in the ``<gssapi/gssapi_krb5.h>`` header.  (New in
   release 1.17.)
 
+* **GSS_KRB5_NT_X509_CERT**: The value should be an X.509 certificate
+  encoded according to :rfc:`5280`.  This name form can be used for
+  the desired_name parameter of gss_acquire_cred_impersonate_name(),
+  to identify the S4U2Self user by certificate.  (New in release
+  1.19.)
+
 
 Initiator credentials
 ---------------------
@@ -200,6 +206,93 @@ so multiple invocations may be necessary to retrieve all of the
 indicators from the ticket.  (New in release 1.15.)
 
 
+Credential store extensions
+---------------------------
+
+Beginning with release 1.11, the following GSSAPI extensions declared
+in ``<gssapi/gssapi_ext.h>`` can be used to specify how credentials
+are acquired or stored::
+
+    struct gss_key_value_element_struct {
+        const char *key;
+        const char *value;
+    };
+    typedef struct gss_key_value_element_struct gss_key_value_element_desc;
+
+    struct gss_key_value_set_struct {
+        OM_uint32 count;
+        gss_key_value_element_desc *elements;
+    };
+    typedef const struct gss_key_value_set_struct gss_key_value_set_desc;
+    typedef const gss_key_value_set_desc *gss_const_key_value_set_t;
+
+    OM_uint32 gss_acquire_cred_from(OM_uint32 *minor_status,
+                                    const gss_name_t desired_name,
+                                    OM_uint32 time_req,
+                                    const gss_OID_set desired_mechs,
+                                    gss_cred_usage_t cred_usage,
+                                    gss_const_key_value_set_t cred_store,
+                                    gss_cred_id_t *output_cred_handle,
+                                    gss_OID_set *actual_mechs,
+                                    OM_uint32 *time_rec);
+
+    OM_uint32 gss_store_cred_into(OM_uint32 *minor_status,
+                                  gss_cred_id_t input_cred_handle,
+                                  gss_cred_usage_t cred_usage,
+                                  const gss_OID desired_mech,
+                                  OM_uint32 overwrite_cred,
+                                  OM_uint32 default_cred,
+                                  gss_const_key_value_set_t cred_store,
+                                  gss_OID_set *elements_stored,
+                                  gss_cred_usage_t *cred_usage_stored);
+
+The additional *cred_store* parameter allows the caller to specify
+information about how the credentials should be obtained and stored.
+The following options are supported by the krb5 mechanism:
+
+* **ccache**: For acquiring initiator credentials, the name of the
+  :ref:`credential cache <ccache_definition>` to which the handle will
+  refer.  For storing credentials, the name of the cache or collection
+  where the credentials will be stored (see below).
+
+* **client_keytab**: For acquiring initiator credentials, the name of
+  the :ref:`keytab <keytab_definition>` which will be used, if
+  necessary, to refresh the credentials in the cache.
+
+* **keytab**: For acquiring acceptor credentials, the name of the
+  :ref:`keytab <keytab_definition>` to which the handle will refer.
+  In release 1.19 and later, this option also determines the keytab to
+  be used for verification when initiator credentials are acquired
+  using a password and verified.
+
+* **password**: For acquiring initiator credentials, this option
+  instructs the mechanism to acquire fresh credentials into a unique
+  memory credential cache.  This option may not be used with the
+  **ccache** or **client_keytab** options, and a *desired_name* must
+  be specified.  (New in release 1.19.)
+
+* **rcache**: For acquiring acceptor credentials, the name of the
+  :ref:`replay cache <rcache_definition>` to be used when processing
+  the initiator tokens.  (New in release 1.13.)
+
+* **verify**: For acquiring initiator credentials, this option
+  instructs the mechanism to verify the credentials by obtaining a
+  ticket to a service with a known key.  The service key is obtained
+  from the keytab specified with the **keytab** option or the default
+  keytab.  The value may be the name of a principal in the keytab, or
+  the empty string.  If the empty string is given, any ``host``
+  service principal in the keytab may be used.  (New in release 1.19.)
+
+In release 1.20 or later, if a collection name is specified for
+**cache** in a call to gss_store_cred_into(), an existing cache for
+the client principal within the collection will be selected, or a new
+cache will be created within the collection.  If *overwrite_cred* is
+false and the selected credential cache already exists, a
+**GSS_S_DUPLICATE_ELEMENT** error will be returned.  If *default_cred*
+is true, the primary cache of the collection will be switched to the
+selected cache.
+
+
 Importing and exporting credentials
 -----------------------------------
 
@@ -258,13 +351,13 @@ ticket-granting ticket, if the KDC is configured to allow it.
 
 To perform a constrained delegation operation, the intermediate
 service must submit to the KDC an "evidence ticket" from the client to
-the intermediate service with the forwardable bit set.  An evidence
-ticket can be acquired when the client authenticates to the
-intermediate service with Kerberos, or with an S4U2Self request if the
-KDC allows it.  The MIT krb5 GSSAPI library represents an evidence
-ticket using a "proxy credential", which is a special kind of
-gss_cred_id_t object whose underlying credential cache contains the
-evidence ticket and a krbtgt ticket for the intermediate service.
+the intermediate service.  An evidence ticket can be acquired when the
+client authenticates to the intermediate service with Kerberos, or
+with an S4U2Self request if the KDC allows it.  The MIT krb5 GSSAPI
+library represents an evidence ticket using a "proxy credential",
+which is a special kind of gss_cred_id_t object whose underlying
+credential cache contains the evidence ticket and a krbtgt ticket for
+the intermediate service.
 
 To acquire a proxy credential during client authentication, the
 service should first create an acceptor credential using the
@@ -273,9 +366,9 @@ credential as the *acceptor_cred_handle* to gss_accept_sec_context_,
 and also pass a *delegated_cred_handle* output parameter to receive a
 proxy credential containing the evidence ticket.  The output value of
 *delegated_cred_handle* may be a delegated ticket-granting ticket if
-the client sent one, or a proxy credential if the client authenticated
-with a forwardable service ticket, or **GSS_C_NO_CREDENTIAL** if
-neither is the case.
+the client sent one, or a proxy credential if not.  If the library can
+determine that the client's ticket is not a valid evidence ticket, it
+will place **GSS_C_NO_CREDENTIAL** in *delegated_cred_handle*.
 
 To acquire a proxy credential using an S4U2Self request, the service
 can use the following GSSAPI extension::
@@ -296,17 +389,10 @@ request to the KDC for a ticket from *desired_name* to the
 intermediate service.  Both *icred* and *desired_name* are required
 for this function; passing **GSS_C_NO_CREDENTIAL** or
 **GSS_C_NO_NAME** will cause the call to fail.  *icred* must contain a
-krbtgt ticket for the intermediate service.  If the KDC returns a
-forwardable ticket, the result of this operation is a proxy
-credential; if it is not forwardable, the result is a regular
-credential for *desired_name*.
-
-A recent KDC will usually allow any service to acquire a ticket from a
-client to itself with an S4U2Self request, but the ticket will only be
-forwardable if the service has a specific privilege.  In the MIT krb5
-KDC, this privilege is determined by the **ok_to_auth_as_delegate**
-bit on the intermediate service's principal entry, which can be
-configured with :ref:`kadmin(1)`.
+krbtgt ticket for the intermediate service.  The result of this
+operation is a proxy credential.  (Prior to release 1.18, the result
+of this operation may be a regular credential for *desired_name*, if
+the KDC issues a non-forwardable ticket.)
 
 Once the intermediate service has a proxy credential, it can simply
 pass it to gss_init_sec_context_ as the *initiator_cred_handle*
@@ -619,16 +705,14 @@ gss_get_mic_iov_length and gss_get_mic_iov::
     iov[1].buffer.value = "message";
     iov[1].buffer.length = 7;
 
-    major = gss_wrap_iov_length(&minor, ctx, 1, GSS_C_QOP_DEFAULT,
-                                NULL, iov, 2);
+    major = gss_get_mic_iov_length(&minor, ctx, GSS_C_QOP_DEFAULT, iov, 2);
     if (GSS_ERROR(major))
         handle_error(major, minor);
     if (iov[0].buffer.length > sizeof(data))
         handle_out_of_space_error();
     iov[0].buffer.value = data;
 
-    major = gss_wrap_iov(&minor, ctx, 1, GSS_C_QOP_DEFAULT, NULL,
-                         iov, 2);
+    major = gss_get_mic_iov(&minor, ctx, GSS_C_QOP_DEFAULT, iov, 2);
     if (GSS_ERROR(major))
         handle_error(major, minor);
 

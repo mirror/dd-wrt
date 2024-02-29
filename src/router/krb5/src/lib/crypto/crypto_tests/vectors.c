@@ -30,7 +30,8 @@
  *
  * N.B.: Doesn't compile -- this file uses some routines internal to our
  * crypto library which are declared "static" and thus aren't accessible
- * without modifying the other sources.
+ * without modifying the other sources.  Additionally, some ciphers have been
+ * removed.
  */
 
 #include <assert.h>

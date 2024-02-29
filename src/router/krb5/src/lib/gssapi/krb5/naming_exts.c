@@ -624,7 +624,7 @@ krb5_gss_export_name_composite(OM_uint32 *minor_status,
     exp_composite_name->length += 4; /* length of encoded attributes */
     if (attrs != NULL)
         exp_composite_name->length += attrs->length;
-    exp_composite_name->value = malloc(exp_composite_name->length);
+    exp_composite_name->value = gssalloc_malloc(exp_composite_name->length);
     if (exp_composite_name->value == NULL) {
         code = ENOMEM;
         goto cleanup;

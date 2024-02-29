@@ -149,9 +149,9 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL,     // DLL module handle
             // On Win9x/Me, the RPC exception will not be caught.
             // However, Win9x ignores exceptions during process shutdown,
             // so the exception will never be seen unless a debugger is
-            // attached to the proccess.
+            // attached to the process.
             //
-            // A good potential woraround would be to have a global
+            // A good potential workaround would be to have a global
             // variable that denotes whether the DLL is attached to the
             // process.  If it is not, all entrypoints into the DLL should
             // return failure.

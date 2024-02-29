@@ -31,7 +31,9 @@ OPTIONS
 -------
 
 The **-r** *realm* option specifies the realm for which the server
-should provide service.
+should provide service.  This option may be specified multiple times
+to serve multiple realms.  If no **-r** option is given, the default
+realm (as specified in :ref:`krb5.conf(5)`) will be served.
 
 The **-d** *dbname* option specifies the name under which the
 principal database can be found.  This option does not apply to the
@@ -39,7 +41,7 @@ LDAP database.
 
 The **-k** *keytype* option specifies the key type of the master key
 to be entered manually as a password when **-m** is given; the default
-is ``des-cbc-crc``.
+is |defmkey|.
 
 The **-M** *mkeyname* option specifies the principal name for the
 master key in the database (usually ``K/M`` in the KDC's realm).
@@ -48,9 +50,7 @@ The **-m** option specifies that the master database password should
 be fetched from the keyboard rather than from a stash file.
 
 The **-n** option specifies that the KDC does not put itself in the
-background and does not disassociate itself from the terminal.  In
-normal operation, you should always allow the KDC to place itself in
-the background.
+background and does not disassociate itself from the terminal.
 
 The **-P** *pid_file* option tells the KDC to write its PID into
 *pid_file* after it starts up.  This can be used to identify whether

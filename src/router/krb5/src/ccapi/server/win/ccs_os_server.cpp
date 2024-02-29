@@ -162,7 +162,7 @@ cc_int32 ccs_os_server_initialize (int argc, const char *argv[]) {
 
     if (err) {
         Init::Cleanup();
-        fprintf(    stderr, "An error occured while %s the server (%u)\n",
+        fprintf(    stderr, "An error occurred while %s the server (%u)\n",
                     opts.bShutdown ? "shutting down" : "starting/running",
                     err);
         exit(cci_check_error (err));
@@ -625,7 +625,7 @@ RPC_STATUS send_connection_reply(ccs_pipe_t in_pipe) {
             CCMSG_CONNECT_REPLY,    /* Message type */
             (unsigned char*)&h,      /* client's tspdata* */
             (unsigned char*)uuid,
-            getMySST(),             /* Server's session number = it's start time */
+            getMySST(),             /* Server's session number = its start time */
             &status );              /* Return code */
         }
     RpcExcept(1) {

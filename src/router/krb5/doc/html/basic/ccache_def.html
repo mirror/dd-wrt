@@ -12,7 +12,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '1.17',
+        VERSION:     '1.21.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -103,7 +103,14 @@ with multiple Kerberos realms and KDCs.  For release 1.10 the
 directory must already exist.  In post-1.10 releases the
 requirement is for parent directory to exist and the current
 process must have permissions to create the directory if it does
-not exist. See <a class="reference internal" href="#col-ccache"><span class="std std-ref">Collections of caches</span></a> for details.  New in release 1.10.</p>
+not exist. See <a class="reference internal" href="#col-ccache"><span class="std std-ref">Collections of caches</span></a> for details.  New in release 1.10.
+The following residual forms are supported:</p>
+<ul class="simple">
+<li>DIR:dirname</li>
+<li>DIR::dirpath/filename - a single cache within the directory</li>
+</ul>
+<p>Switching to a ccache of the latter type causes it to become the
+primary for the directory.</p>
 </li>
 <li><p class="first"><strong>FILE</strong> caches are the simplest and most portable. A simple flat
 file format is used to store one credential after another.  This is
@@ -258,8 +265,8 @@ descending order of priority:</p>
 
     <div class="footer-wrapper">
         <div class="footer" >
-            <div class="right" ><i>Release: 1.17</i><br />
-                &copy; <a href="../copyright.html">Copyright</a> 1985-2019, MIT.
+            <div class="right" ><i>Release: 1.21.2</i><br />
+                &copy; <a href="../copyright.html">Copyright</a> 1985-2023, MIT.
             </div>
             <div class="left">
                 

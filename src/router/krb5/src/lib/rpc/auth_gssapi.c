@@ -383,7 +383,7 @@ next_token:
 	  } else {
 	       PRINTF(("gssapi_create: processing signed isn\n"));
 
-	       /* don't check conf (integ only) or qop (accpet default) */
+	       /* don't check conf (integ only) or qop (accept default) */
 	       *gssstat = gss_unseal(minor_stat,
 				     AUTH_PRIVATE(auth)->context,
 				     &call_res.signed_isn,

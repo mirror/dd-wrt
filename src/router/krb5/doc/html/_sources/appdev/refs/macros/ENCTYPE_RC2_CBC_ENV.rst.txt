@@ -1,4 +1,4 @@
-.. highlightlang:: c
+.. highlight:: c
 
 .. _ENCTYPE-RC2-CBC-ENV-data:
 

@@ -1,6 +1,6 @@
 .\" Man page generated from reStructuredText.
 .
-.TH "KDC.CONF" "5" " " "1.17" "MIT Kerberos"
+.TH "KDC.CONF" "5" " " "1.21.2" "MIT Kerberos"
 .SH NAME
 kdc.conf \- Kerberos V5 KDC configuration file
 .
@@ -269,6 +269,12 @@ per line, with no additional whitespace.  If none is specified or
 if there is no policy assigned to the principal, no dictionary
 checks of passwords will be performed.
 .TP
+\fBdisable_pac\fP
+(Boolean value.)  If true, the KDC will not issue PACs for this
+realm, and S4U2Self and S4U2Proxy operations will be disabled.
+The default is false, which will permit the KDC to issue PACs.
+New in release 1.20.
+.TP
 \fBencrypted_challenge_indicator\fP
 (String.)  Specifies the authentication indicator value that the KDC
 asserts into tickets obtained using FAST encrypted challenge
@@ -283,14 +289,19 @@ not marked as host\-based by the client.
 (Boolean value.)  Specifies whether incremental database
 propagation is enabled.  The default value is false.
 .TP
-\fBiprop_master_ulogsize\fP
+\fBiprop_ulogsize\fP
 (Integer.)  Specifies the maximum number of log entries to be
 retained for incremental propagation.  The default value is 1000.
-Prior to release 1.11, the maximum value was 2500.
+Prior to release 1.11, the maximum value was 2500.  New in release
+1.19.
+.TP
+\fBiprop_master_ulogsize\fP
+The name for \fBiprop_ulogsize\fP prior to release 1.19.  Its value is
+used as a fallback if \fBiprop_ulogsize\fP is not specified.
 .TP
 \fBiprop_replica_poll\fP
 (Delta time string.)  Specifies how often the replica KDC polls
-for new updates from the master.  The default value is \fB2m\fP
+for new updates from the primary.  The default value is \fB2m\fP
 (that is, two minutes).  New in release 1.17.
 .TP
 \fBiprop_slave_poll\fP
@@ -314,7 +325,7 @@ address at the port specified in \fBiprop_port\fP\&.  New in release
 (Port number.)  Specifies the port number to be used for
 incremental propagation.  When \fBiprop_enable\fP is true, this
 relation is required in the replica KDC configuration file, and
-this relation or \fBiprop_listen\fP is required in the master
+this relation or \fBiprop_listen\fP is required in the primary
 configuration file, as there is no default port number.  Port
 numbers specified in \fBiprop_listen\fP entries will override this
 port number for the kadmind(8) daemon.
@@ -441,13 +452,6 @@ marks the server principal as host\-based or the service is also
 listed in \fBhost_based_services\fP\&.  \fBno_host_referral = *\fP will
 disable referral processing altogether.
 .TP
-\fBdes_crc_session_supported\fP
-(Boolean value).  If set to true, the KDC will assume that service
-principals support des\-cbc\-crc for session key enctype negotiation
-purposes.  If \fBallow_weak_crypto\fP in libdefaults is
-false, or if des\-cbc\-crc is not a permitted enctype, then this
-variable has no effect.  Defaults to true.  New in release 1.11.
-.TP
 \fBreject_bad_transit\fP
 (Boolean value.)  If set to true, the KDC will check the list of
 transited realms for cross\-realm tickets against the transit path
@@ -487,7 +491,7 @@ specified multiple times.  New in release 1.17.
 (List of \fIkey\fP:\fIsalt\fP strings.)  Specifies the default key/salt
 combinations of principals for this realm.  Any principals created
 through kadmin(1) will have keys of these types.  The
-default value for this tag is \fBaes256\-cts\-hmac\-sha1\-96:normal aes128\-cts\-hmac\-sha1\-96:normal des3\-cbc\-sha1:normal arcfour\-hmac\-md5:normal\fP\&.  For lists of
+default value for this tag is \fBaes256\-cts\-hmac\-sha1\-96:normal aes128\-cts\-hmac\-sha1\-96:normal\fP\&.  For lists of
 possible values, see \fI\%Keysalt lists\fP\&.
 .UNINDENT
 .SS [dbdefaults]
@@ -521,8 +525,6 @@ definitions of these relations.
 \fBldap_kadmind_sasl_realm\fP
 .IP \(bu 2
 \fBldap_service_password_file\fP
-.IP \(bu 2
-\fBldap_servers\fP
 .IP \(bu 2
 \fBldap_conns_per_server\fP
 .UNINDENT
@@ -727,10 +729,10 @@ facility is specified, the default is \fBAUTH\fP\&.
 .UNINDENT
 .sp
 In the following example, the logging messages from the KDC will go to
-the console and to the system log under the facility LOG_DAEMON with
-default severity of LOG_INFO; and the logging messages from the
-administrative server will be appended to the file
-\fB/var/adm/kadmin.log\fP and sent to the device \fB/dev/tty04\fP\&.
+the console and to the system log under the facility LOG_DAEMON, and
+the logging messages from the administrative server will be appended
+to the file \fB/var/adm/kadmin.log\fP and sent to the device
+\fB/dev/tty04\fP\&.
 .INDENT 0.0
 .INDENT 3.5
 .sp
@@ -745,6 +747,9 @@ administrative server will be appended to the file
 .fi
 .UNINDENT
 .UNINDENT
+.sp
+If no logging specification is given, the default is to use syslog.
+To disable logging entirely, specify \fBdefault = DEVICE=/dev/null\fP\&.
 .SS [otp]
 .sp
 Each subsection of [otp] is the name of an OTP token type.  The tags
@@ -962,35 +967,11 @@ in PKINIT requests.  The default value is false.  (New in release
 .sp
 Any tag in the configuration files which requires a list of encryption
 types can be set to some combination of the following strings.
-Encryption types marked as "weak" are available for compatibility but
-not recommended for use.
+Encryption types marked as "weak" and "deprecated" are available for
+compatibility but not recommended for use.
 .TS
 center;
 |l|l|.
-_
-T{
-des\-cbc\-crc
-T}	T{
-DES cbc mode with CRC\-32 (weak)
-T}
-_
-T{
-des\-cbc\-md4
-T}	T{
-DES cbc mode with RSA\-MD4 (weak)
-T}
-_
-T{
-des\-cbc\-md5
-T}	T{
-DES cbc mode with RSA\-MD5 (weak)
-T}
-_
-T{
-des\-cbc\-raw
-T}	T{
-DES cbc mode raw (weak)
-T}
 _
 T{
 des3\-cbc\-raw
@@ -1001,13 +982,7 @@ _
 T{
 des3\-cbc\-sha1 des3\-hmac\-sha1 des3\-cbc\-sha1\-kd
 T}	T{
-Triple DES cbc mode with HMAC/sha1
-T}
-_
-T{
-des\-hmac\-sha1
-T}	T{
-DES with HMAC/sha1 (weak)
+Triple DES cbc mode with HMAC/sha1 (deprecated)
 T}
 _
 T{
@@ -1037,7 +1012,7 @@ _
 T{
 arcfour\-hmac rc4\-hmac arcfour\-hmac\-md5
 T}	T{
-RC4 with HMAC/MD5
+RC4 with HMAC/MD5 (deprecated)
 T}
 _
 T{
@@ -1056,12 +1031,6 @@ T{
 camellia128\-cts\-cmac camellia128\-cts
 T}	T{
 Camellia\-128 CTS mode with CMAC
-T}
-_
-T{
-des
-T}	T{
-The DES family: des\-cbc\-crc, des\-cbc\-md5, and des\-cbc\-md4 (weak)
 T}
 _
 T{
@@ -1095,8 +1064,8 @@ types for the variable in question.  Types or families can be removed
 from the current list by prefixing them with a minus sign ("\-").
 Types or families can be prefixed with a plus sign ("+") for symmetry;
 it has the same meaning as just listing the type or family.  For
-example, "\fBDEFAULT \-des\fP" would be the default set of encryption
-types with DES types removed, and "\fBdes3 DEFAULT\fP" would be the
+example, "\fBDEFAULT \-rc4\fP" would be the default set of encryption
+types with RC4 types removed, and "\fBdes3 DEFAULT\fP" would be the
 default set of encryption types with triple DES types moved to the
 front.
 .sp
@@ -1148,12 +1117,6 @@ default for Kerberos Version 5
 T}
 _
 T{
-v4
-T}	T{
-the only type used by Kerberos Version 4 (no salt)
-T}
-_
-T{
 norealm
 T}	T{
 same as the default, without using realm information
@@ -1163,12 +1126,6 @@ T{
 onlyrealm
 T}	T{
 uses only realm information as the salt
-T}
-_
-T{
-afs3
-T}	T{
-AFS version 3, only used for compatibility with Kerberos 4 in AFS
 T}
 _
 T{
@@ -1233,6 +1190,6 @@ krb5.conf(5), krb5kdc(8), kadm5.acl(5)
 .SH AUTHOR
 MIT
 .SH COPYRIGHT
-1985-2019, MIT
+1985-2023, MIT
 .\" Generated by docutils manpage writer.
 .

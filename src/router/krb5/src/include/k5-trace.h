@@ -105,6 +105,9 @@ void krb5int_trace(krb5_context context, const char *fmt, ...);
 
 #endif /* DISABLE_TRACING */
 
+#define TRACE_CC_CACHE_MATCH(c, princ, ret)                             \
+    TRACE(c, "Matching {princ} in collection with result: {kerr}",      \
+          princ, ret)
 #define TRACE_CC_DESTROY(c, cache)                      \
     TRACE(c, "Destroying ccache {ccache}", cache)
 #define TRACE_CC_GEN_NEW(c, cache)                                      \
@@ -116,7 +119,7 @@ void krb5int_trace(krb5_context context, const char *fmt, ...);
     TRACE(c, "Initializing {ccache} with default princ {princ}",    \
           cache, princ)
 #define TRACE_CC_MOVE(c, src, dst)                                      \
-    TRACE(c, "Moving contents of ccache {src} to {dst}", src, dst)
+    TRACE(c, "Moving ccache {ccache} to {ccache}", src, dst)
 #define TRACE_CC_NEW_UNIQUE(c, type)                            \
     TRACE(c, "Resolving unique ccache of type {str}", type)
 #define TRACE_CC_REMOVE(c, cache, creds)                        \
@@ -173,7 +176,7 @@ void krb5int_trace(krb5_context context, const char *fmt, ...);
 #define TRACE_FAST_ARMOR_CCACHE(c, ccache_name)         \
     TRACE(c, "FAST armor ccache: {str}", ccache_name)
 #define TRACE_FAST_ARMOR_CCACHE_KEY(c, keyblock)                \
-    TRACE(c, "Armor ccache sesion key: {keyblock}", keyblock)
+    TRACE(c, "Armor ccache session key: {keyblock}", keyblock)
 #define TRACE_FAST_ARMOR_KEY(c, keyblock)               \
     TRACE(c, "FAST armor key: {keyblock}", keyblock)
 #define TRACE_FAST_CCACHE_CONFIG(c)                                     \
@@ -191,14 +194,17 @@ void krb5int_trace(krb5_context context, const char *fmt, ...);
 #define TRACE_FAST_REQUIRED(c)                                  \
     TRACE(c, "Using FAST due to KRB5_FAST_REQUIRED flag")
 
+#define TRACE_GET_CREDS_FALLBACK(c, hostname)                           \
+    TRACE(c, "Falling back to canonicalized server hostname {str}", hostname)
+
 #define TRACE_GIC_PWD_CHANGED(c)                                \
     TRACE(c, "Getting initial TGT with changed password")
 #define TRACE_GIC_PWD_CHANGEPW(c, tries)                                \
     TRACE(c, "Attempting password change; {int} tries remaining", tries)
 #define TRACE_GIC_PWD_EXPIRED(c)                                \
     TRACE(c, "Principal expired; getting changepw ticket")
-#define TRACE_GIC_PWD_MASTER(c)                         \
-    TRACE(c, "Retrying AS request with master KDC")
+#define TRACE_GIC_PWD_PRIMARY(c)                        \
+    TRACE(c, "Retrying AS request with primary KDC")
 
 #define TRACE_GSS_CLIENT_KEYTAB_FAIL(c, ret)                            \
     TRACE(c, "Unable to resolve default client keytab: {kerr}", ret)
@@ -224,8 +230,10 @@ void krb5int_trace(krb5_context context, const char *fmt, ...);
 #define TRACE_INIT_CREDS_GAK(c, salt, s2kparams)                    \
     TRACE(c, "Getting AS key, salt \"{data}\", params \"{data}\"",  \
           salt, s2kparams)
-#define TRACE_INIT_CREDS_KEYTAB_LOOKUP(c, etypes)               \
-    TRACE(c, "Looked up etypes in keytab: {etypes}", etypes)
+#define TRACE_INIT_CREDS_IDENTIFIED_REALM(c, realm)                     \
+    TRACE(c, "Identified realm of client principal as {data}", realm)
+#define TRACE_INIT_CREDS_KEYTAB_LOOKUP(c, princ, etypes)                \
+    TRACE(c, "Found entries for {princ} in keytab: {etypes}", princ, etypes)
 #define TRACE_INIT_CREDS_KEYTAB_LOOKUP_FAILED(c, code)          \
     TRACE(c, "Couldn't lookup etypes in keytab: {kerr}", code)
 #define TRACE_INIT_CREDS_PREAUTH(c)                     \
@@ -288,6 +296,16 @@ void krb5int_trace(krb5_context context, const char *fmt, ...);
     TRACE(c, "PAC checksum verification failed: {kerr}", err)
 #define TRACE_MSPAC_DISCARD_UNVERF(c)           \
     TRACE(c, "Filtering out unverified MS PAC")
+
+#define TRACE_NEGOEX_INCOMING(c, seqnum, typestr, info)                 \
+    TRACE(c, "NegoEx received [{int}]{str}: {str}", (int)seqnum, typestr, info)
+#define TRACE_NEGOEX_OUTGOING(c, seqnum, typestr, info)                 \
+    TRACE(c, "NegoEx sending [{int}]{str}: {str}", (int)seqnum, typestr, info)
+
+#define TRACE_PLUGIN_LOAD_FAIL(c, modname, err)                         \
+    TRACE(c, "Error loading plugin module {str}: {kerr}", modname, err)
+#define TRACE_PLUGIN_LOOKUP_FAIL(c, modname, err)                       \
+    TRACE(c, "Error initializing module {str}: {kerr}", modname, err)
 
 #define TRACE_PREAUTH_CONFLICT(c, name1, name2, patype)                 \
     TRACE(c, "Preauth module {str} conflicts with module {str} for pa " \
@@ -364,13 +382,13 @@ void krb5int_trace(krb5_context context, const char *fmt, ...);
 #define TRACE_SENDTO_KDC_ERROR_SET_MESSAGE(c, raddr, err)               \
     TRACE(c, "Error preparing message to send to {raddr}: {errno}",     \
           raddr, err)
-#define TRACE_SENDTO_KDC(c, len, rlm, master, tcp)                     \
+#define TRACE_SENDTO_KDC(c, len, rlm, primary, tcp)                     \
     TRACE(c, "Sending request ({int} bytes) to {data}{str}{str}", len,  \
-          rlm, (master) ? " (master)" : "", (tcp) ? " (tcp only)" : "")
+          rlm, (primary) ? " (primary)" : "", (tcp) ? " (tcp only)" : "")
 #define TRACE_SENDTO_KDC_K5TLS_LOAD_ERROR(c, ret)       \
     TRACE(c, "Error loading k5tls module: {kerr}", ret)
-#define TRACE_SENDTO_KDC_MASTER(c, master)                              \
-    TRACE(c, "Response was{str} from master KDC", (master) ? "" : " not")
+#define TRACE_SENDTO_KDC_PRIMARY(c, primary)                            \
+    TRACE(c, "Response was{str} from primary KDC", (primary) ? "" : " not")
 #define TRACE_SENDTO_KDC_RESOLVING(c, hostname)         \
     TRACE(c, "Resolving hostname {str}", hostname)
 #define TRACE_SENDTO_KDC_RESPONSE(c, len, raddr)                        \

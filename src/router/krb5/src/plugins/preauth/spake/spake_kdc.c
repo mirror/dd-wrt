@@ -120,10 +120,7 @@ parse_cookie(const krb5_data *cookie, int *stage_out, int32_t *group_out,
 static void
 marshal_data(struct k5buf *buf, const krb5_data *data)
 {
-    uint8_t lenbuf[4];
-
-    store_32_be(data->length, lenbuf);
-    k5_buf_add_len(buf, lenbuf, 4);
+    k5_buf_add_uint32_be(buf, data->length);
     k5_buf_add_len(buf, data->data, data->length);
 }
 
@@ -133,18 +130,14 @@ make_cookie(int stage, int32_t group, const krb5_data *spake,
             const krb5_data *thash, krb5_data *cookie_out)
 {
     struct k5buf buf;
-    uint8_t intbuf[4];
 
     *cookie_out = empty_data();
     k5_buf_init_dynamic_zap(&buf);
 
     /* Marshal the version, stage, and group. */
-    store_16_be(1, intbuf);
-    k5_buf_add_len(&buf, intbuf, 2);
-    store_16_be(stage, intbuf);
-    k5_buf_add_len(&buf, intbuf, 2);
-    store_32_be(group, intbuf);
-    k5_buf_add_len(&buf, intbuf, 4);
+    k5_buf_add_uint16_be(&buf, 1);
+    k5_buf_add_uint16_be(&buf, stage);
+    k5_buf_add_uint32_be(&buf, group);
 
     /* Marshal the data fields. */
     marshal_data(&buf, spake);
@@ -465,6 +458,10 @@ verify_response(krb5_context context, groupstate *gstate,
 
     ret = derive_key(context, gstate, group, ikey, &wbytes, &spakeresult,
                      &thash, der_req, 0, &reply_key);
+    if (ret)
+        goto cleanup;
+
+    ret = cb->replace_reply_key(context, rock, reply_key, TRUE);
 
 cleanup:
     zapfree(wbytes.data, wbytes.length);
@@ -472,8 +469,9 @@ cleanup:
     zapfree(spakeresult.data, spakeresult.length);
     krb5_free_data_contents(context, &thash);
     krb5_free_keyblock(context, k1);
+    krb5_free_keyblock(context, reply_key);
     k5_free_spake_factor(context, factor);
-    (*respond)(arg, ret, (krb5_kdcpreauth_modreq)reply_key, NULL, NULL);
+    (*respond)(arg, ret, NULL, NULL, NULL);
 }
 
 /*
@@ -540,31 +538,6 @@ spake_verify(krb5_context context, krb5_data *req_pkt, krb5_kdc_req *request,
     k5_free_pa_spake(context, pa_spake);
 }
 
-/* If a key was set in the per-request module data, replace the reply key.  Do
- * not generate any pa-data to include with the KDC reply. */
-static krb5_error_code
-spake_return(krb5_context context, krb5_pa_data *padata, krb5_data *req_pkt,
-             krb5_kdc_req *request, krb5_kdc_rep *reply,
-             krb5_keyblock *encrypting_key, krb5_pa_data **send_pa_out,
-             krb5_kdcpreauth_callbacks cb, krb5_kdcpreauth_rock rock,
-             krb5_kdcpreauth_moddata moddata, krb5_kdcpreauth_modreq modreq)
-{
-    krb5_keyblock *reply_key = (krb5_keyblock *)modreq;
-
-    if (reply_key == NULL)
-        return 0;
-    krb5_free_keyblock_contents(context, encrypting_key);
-    return krb5_copy_keyblock_contents(context, reply_key, encrypting_key);
-}
-
-/* Release a per-request module data object. */
-static void
-spake_free_modreq(krb5_context context, krb5_kdcpreauth_moddata moddata,
-                  krb5_kdcpreauth_modreq modreq)
-{
-    krb5_free_keyblock(context, (krb5_keyblock *)modreq);
-}
-
 krb5_error_code
 kdcpreauth_spake_initvt(krb5_context context, int maj_ver, int min_ver,
                         krb5_plugin_vtable vtable);
@@ -585,7 +558,5 @@ kdcpreauth_spake_initvt(krb5_context context, int maj_ver, int min_ver,
     vt->fini = spake_fini;
     vt->edata = spake_edata;
     vt->verify = spake_verify;
-    vt->return_padata = spake_return;
-    vt->free_modreq = spake_free_modreq;
     return 0;
 }

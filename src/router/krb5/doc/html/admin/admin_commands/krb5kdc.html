@@ -12,7 +12,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '1.17',
+        VERSION:     '1.21.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -86,21 +86,21 @@ Distribution Center (AS/KDC).</p>
 <div class="section" id="options">
 <h2>OPTIONS<a class="headerlink" href="#options" title="Permalink to this headline">¶</a></h2>
 <p>The <strong>-r</strong> <em>realm</em> option specifies the realm for which the server
-should provide service.</p>
+should provide service.  This option may be specified multiple times
+to serve multiple realms.  If no <strong>-r</strong> option is given, the default
+realm (as specified in <a class="reference internal" href="../conf_files/krb5_conf.html#krb5-conf-5"><span class="std std-ref">krb5.conf</span></a>) will be served.</p>
 <p>The <strong>-d</strong> <em>dbname</em> option specifies the name under which the
 principal database can be found.  This option does not apply to the
 LDAP database.</p>
 <p>The <strong>-k</strong> <em>keytype</em> option specifies the key type of the master key
 to be entered manually as a password when <strong>-m</strong> is given; the default
-is <code class="docutils literal"><span class="pre">des-cbc-crc</span></code>.</p>
+is <code class="docutils literal"><span class="pre">aes256-cts-hmac-sha1-96</span></code>.</p>
 <p>The <strong>-M</strong> <em>mkeyname</em> option specifies the principal name for the
 master key in the database (usually <code class="docutils literal"><span class="pre">K/M</span></code> in the KDC’s realm).</p>
 <p>The <strong>-m</strong> option specifies that the master database password should
 be fetched from the keyboard rather than from a stash file.</p>
 <p>The <strong>-n</strong> option specifies that the KDC does not put itself in the
-background and does not disassociate itself from the terminal.  In
-normal operation, you should always allow the KDC to place itself in
-the background.</p>
+background and does not disassociate itself from the terminal.</p>
 <p>The <strong>-P</strong> <em>pid_file</em> option tells the KDC to write its PID into
 <em>pid_file</em> after it starts up.  This can be used to identify whether
 the KDC is still running and to allow init scripts to stop the correct
@@ -244,8 +244,8 @@ variables.</p>
 
     <div class="footer-wrapper">
         <div class="footer" >
-            <div class="right" ><i>Release: 1.17</i><br />
-                &copy; <a href="../../copyright.html">Copyright</a> 1985-2019, MIT.
+            <div class="right" ><i>Release: 1.21.2</i><br />
+                &copy; <a href="../../copyright.html">Copyright</a> 1985-2023, MIT.
             </div>
             <div class="left">
                 

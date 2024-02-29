@@ -618,6 +618,7 @@ otp_state_free(otp_state *self)
         return;
 
     krad_attrset_free(self->attrs);
+    krad_client_free(self->radius);
     token_types_free(self->types);
     free(self);
 }

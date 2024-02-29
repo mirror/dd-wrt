@@ -43,7 +43,7 @@ Valid *ap_req_options* are:
 	 - :data:`AP_OPTS_USE_SESSION_KEY` - Use the session key when creating the request used for user to user authentication.
  
  
-	 - :data:`AP_OPTS_MUTUAL_REQUIRED` - Request a mutual authentication packet from the reciever.
+	 - :data:`AP_OPTS_MUTUAL_REQUIRED` - Request a mutual authentication packet from the receiver.
  
  
 	 - :data:`AP_OPTS_USE_SUBKEY` - Generate a subsession key from the current session key obtained from the credentials.

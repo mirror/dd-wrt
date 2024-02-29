@@ -255,9 +255,16 @@ change_set_password(krb5_context context,
     callback_info.pfn_cleanup = kpasswd_sendto_msg_cleanup;
     krb5_free_data_contents(callback_ctx.context, &chpw_rep);
 
+    /* UDP retransmits may be seen as replays.  Only try UDP after other
+     * transports fail completely. */
     code = k5_sendto(callback_ctx.context, NULL, &creds->server->realm,
-                     &sl, UDP_LAST, &callback_info, &chpw_rep,
+                     &sl, NO_UDP, &callback_info, &chpw_rep,
                      ss2sa(&remote_addr), &addrlen, NULL, NULL, NULL);
+    if (code == KRB5_KDC_UNREACH) {
+        code = k5_sendto(callback_ctx.context, NULL, &creds->server->realm,
+                         &sl, ONLY_UDP, &callback_info, &chpw_rep,
+                         ss2sa(&remote_addr), &addrlen, NULL, NULL, NULL);
+    }
     if (code)
         goto cleanup;
 

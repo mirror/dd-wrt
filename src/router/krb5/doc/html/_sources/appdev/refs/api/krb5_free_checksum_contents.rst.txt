@@ -27,7 +27,7 @@ krb5_free_checksum_contents -  Free the contents of a krb5_checksum structure.
 
 
 
-This function frees the contents of *val* , but not the structure itself.
+This function frees the contents of *val* , but not the structure itself. It sets the checksum's data pointer to null and (beginning in release 1.19) sets its length to zero.
 
 
 

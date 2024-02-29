@@ -12,7 +12,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '1.17',
+        VERSION:     '1.21.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -248,6 +248,11 @@ are not allowed as passwords.  The file should contain one string
 per line, with no additional whitespace.  If none is specified or
 if there is no policy assigned to the principal, no dictionary
 checks of passwords will be performed.</dd>
+<dt><strong>disable_pac</strong></dt>
+<dd>(Boolean value.)  If true, the KDC will not issue PACs for this
+realm, and S4U2Self and S4U2Proxy operations will be disabled.
+The default is false, which will permit the KDC to issue PACs.
+New in release 1.20.</dd>
 <dt><strong>encrypted_challenge_indicator</strong></dt>
 <dd>(String.)  Specifies the authentication indicator value that the KDC
 asserts into tickets obtained using FAST encrypted challenge
@@ -259,13 +264,17 @@ not marked as host-based by the client.</dd>
 <dt><strong>iprop_enable</strong></dt>
 <dd>(Boolean value.)  Specifies whether incremental database
 propagation is enabled.  The default value is false.</dd>
-<dt><strong>iprop_master_ulogsize</strong></dt>
+<dt><strong>iprop_ulogsize</strong></dt>
 <dd>(Integer.)  Specifies the maximum number of log entries to be
 retained for incremental propagation.  The default value is 1000.
-Prior to release 1.11, the maximum value was 2500.</dd>
+Prior to release 1.11, the maximum value was 2500.  New in release
+1.19.</dd>
+<dt><strong>iprop_master_ulogsize</strong></dt>
+<dd>The name for <strong>iprop_ulogsize</strong> prior to release 1.19.  Its value is
+used as a fallback if <strong>iprop_ulogsize</strong> is not specified.</dd>
 <dt><strong>iprop_replica_poll</strong></dt>
 <dd>(Delta time string.)  Specifies how often the replica KDC polls
-for new updates from the master.  The default value is <code class="docutils literal"><span class="pre">2m</span></code>
+for new updates from the primary.  The default value is <code class="docutils literal"><span class="pre">2m</span></code>
 (that is, two minutes).  New in release 1.17.</dd>
 <dt><strong>iprop_slave_poll</strong></dt>
 <dd>(Delta time string.)  The name for <strong>iprop_replica_poll</strong> prior to
@@ -286,7 +295,7 @@ address at the port specified in <strong>iprop_port</strong>.  New in release
 <dd>(Port number.)  Specifies the port number to be used for
 incremental propagation.  When <strong>iprop_enable</strong> is true, this
 relation is required in the replica KDC configuration file, and
-this relation or <strong>iprop_listen</strong> is required in the master
+this relation or <strong>iprop_listen</strong> is required in the primary
 configuration file, as there is no default port number.  Port
 numbers specified in <strong>iprop_listen</strong> entries will override this
 port number for the <a class="reference internal" href="../admin_commands/kadmind.html#kadmind-8"><span class="std std-ref">kadmind</span></a> daemon.</dd>
@@ -396,12 +405,6 @@ from getting host-based referral processing, even if the client
 marks the server principal as host-based or the service is also
 listed in <strong>host_based_services</strong>.  <code class="docutils literal"><span class="pre">no_host_referral</span> <span class="pre">=</span> <span class="pre">*</span></code> will
 disable referral processing altogether.</dd>
-<dt><strong>des_crc_session_supported</strong></dt>
-<dd>(Boolean value).  If set to true, the KDC will assume that service
-principals support des-cbc-crc for session key enctype negotiation
-purposes.  If <strong>allow_weak_crypto</strong> in <a class="reference internal" href="krb5_conf.html#libdefaults"><span class="std std-ref">[libdefaults]</span></a> is
-false, or if des-cbc-crc is not a permitted enctype, then this
-variable has no effect.  Defaults to true.  New in release 1.11.</dd>
 <dt><strong>reject_bad_transit</strong></dt>
 <dd><p class="first">(Boolean value.)  If set to true, the KDC will check the list of
 transited realms for cross-realm tickets against the transit path
@@ -436,7 +439,7 @@ specified multiple times.  New in release 1.17.</dd>
 <dd>(List of <em>key</em>:<em>salt</em> strings.)  Specifies the default key/salt
 combinations of principals for this realm.  Any principals created
 through <a class="reference internal" href="../admin_commands/kadmin_local.html#kadmin-1"><span class="std std-ref">kadmin</span></a> will have keys of these types.  The
-default value for this tag is <code class="docutils literal"><span class="pre">aes256-cts-hmac-sha1-96:normal</span> <span class="pre">aes128-cts-hmac-sha1-96:normal</span> <span class="pre">des3-cbc-sha1:normal</span> <span class="pre">arcfour-hmac-md5:normal</span></code>.  For lists of
+default value for this tag is <code class="docutils literal"><span class="pre">aes256-cts-hmac-sha1-96:normal</span> <span class="pre">aes128-cts-hmac-sha1-96:normal</span></code>.  For lists of
 possible values, see <a class="reference internal" href="#keysalt-lists"><span class="std std-ref">Keysalt lists</span></a>.</dd>
 </dl>
 </div>
@@ -459,7 +462,6 @@ definitions of these relations.</p>
 <li><strong>ldap_kadmind_sasl_mech</strong></li>
 <li><strong>ldap_kadmind_sasl_realm</strong></li>
 <li><strong>ldap_service_password_file</strong></li>
-<li><strong>ldap_servers</strong></li>
 <li><strong>ldap_conns_per_server</strong></li>
 </ul>
 </div>
@@ -626,10 +628,10 @@ facility is specified, the default is <strong>AUTH</strong>.</p>
 </dd>
 </dl>
 <p>In the following example, the logging messages from the KDC will go to
-the console and to the system log under the facility LOG_DAEMON with
-default severity of LOG_INFO; and the logging messages from the
-administrative server will be appended to the file
-<code class="docutils literal"><span class="pre">/var/adm/kadmin.log</span></code> and sent to the device <code class="docutils literal"><span class="pre">/dev/tty04</span></code>.</p>
+the console and to the system log under the facility LOG_DAEMON, and
+the logging messages from the administrative server will be appended
+to the file <code class="docutils literal"><span class="pre">/var/adm/kadmin.log</span></code> and sent to the device
+<code class="docutils literal"><span class="pre">/dev/tty04</span></code>.</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">logging</span><span class="p">]</span>
     <span class="n">kdc</span> <span class="o">=</span> <span class="n">CONSOLE</span>
     <span class="n">kdc</span> <span class="o">=</span> <span class="n">SYSLOG</span><span class="p">:</span><span class="n">INFO</span><span class="p">:</span><span class="n">DAEMON</span>
@@ -637,6 +639,8 @@ administrative server will be appended to the file
     <span class="n">admin_server</span> <span class="o">=</span> <span class="n">DEVICE</span><span class="o">=/</span><span class="n">dev</span><span class="o">/</span><span class="n">tty04</span>
 </pre></div>
 </div>
+<p>If no logging specification is given, the default is to use syslog.
+To disable logging entirely, specify <code class="docutils literal"><span class="pre">default</span> <span class="pre">=</span> <span class="pre">DEVICE=/dev/null</span></code>.</p>
 </div>
 <div class="section" id="otp">
 <span id="id5"></span><h3>[otp]<a class="headerlink" href="#otp" title="Permalink to this headline">¶</a></h3>
@@ -805,61 +809,43 @@ in PKINIT requests.  The default value is false.  (New in release
 <span id="id6"></span><h2>Encryption types<a class="headerlink" href="#encryption-types" title="Permalink to this headline">¶</a></h2>
 <p>Any tag in the configuration files which requires a list of encryption
 types can be set to some combination of the following strings.
-Encryption types marked as “weak” are available for compatibility but
-not recommended for use.</p>
+Encryption types marked as “weak” and “deprecated” are available for
+compatibility but not recommended for use.</p>
 <table border="1" class="docutils">
 <colgroup>
 <col width="30%" />
 <col width="70%" />
 </colgroup>
 <tbody valign="top">
-<tr class="row-odd"><td>des-cbc-crc</td>
-<td>DES cbc mode with CRC-32 (weak)</td>
-</tr>
-<tr class="row-even"><td>des-cbc-md4</td>
-<td>DES cbc mode with RSA-MD4 (weak)</td>
-</tr>
-<tr class="row-odd"><td>des-cbc-md5</td>
-<td>DES cbc mode with RSA-MD5 (weak)</td>
-</tr>
-<tr class="row-even"><td>des-cbc-raw</td>
-<td>DES cbc mode raw (weak)</td>
-</tr>
 <tr class="row-odd"><td>des3-cbc-raw</td>
 <td>Triple DES cbc mode raw (weak)</td>
 </tr>
 <tr class="row-even"><td>des3-cbc-sha1 des3-hmac-sha1 des3-cbc-sha1-kd</td>
-<td>Triple DES cbc mode with HMAC/sha1</td>
+<td>Triple DES cbc mode with HMAC/sha1 (deprecated)</td>
 </tr>
-<tr class="row-odd"><td>des-hmac-sha1</td>
-<td>DES with HMAC/sha1 (weak)</td>
-</tr>
-<tr class="row-even"><td>aes256-cts-hmac-sha1-96 aes256-cts aes256-sha1</td>
+<tr class="row-odd"><td>aes256-cts-hmac-sha1-96 aes256-cts aes256-sha1</td>
 <td>AES-256 CTS mode with 96-bit SHA-1 HMAC</td>
 </tr>
-<tr class="row-odd"><td>aes128-cts-hmac-sha1-96 aes128-cts aes128-sha1</td>
+<tr class="row-even"><td>aes128-cts-hmac-sha1-96 aes128-cts aes128-sha1</td>
 <td>AES-128 CTS mode with 96-bit SHA-1 HMAC</td>
 </tr>
-<tr class="row-even"><td>aes256-cts-hmac-sha384-192 aes256-sha2</td>
+<tr class="row-odd"><td>aes256-cts-hmac-sha384-192 aes256-sha2</td>
 <td>AES-256 CTS mode with 192-bit SHA-384 HMAC</td>
 </tr>
-<tr class="row-odd"><td>aes128-cts-hmac-sha256-128 aes128-sha2</td>
+<tr class="row-even"><td>aes128-cts-hmac-sha256-128 aes128-sha2</td>
 <td>AES-128 CTS mode with 128-bit SHA-256 HMAC</td>
 </tr>
-<tr class="row-even"><td>arcfour-hmac rc4-hmac arcfour-hmac-md5</td>
-<td>RC4 with HMAC/MD5</td>
+<tr class="row-odd"><td>arcfour-hmac rc4-hmac arcfour-hmac-md5</td>
+<td>RC4 with HMAC/MD5 (deprecated)</td>
 </tr>
-<tr class="row-odd"><td>arcfour-hmac-exp rc4-hmac-exp arcfour-hmac-md5-exp</td>
+<tr class="row-even"><td>arcfour-hmac-exp rc4-hmac-exp arcfour-hmac-md5-exp</td>
 <td>Exportable RC4 with HMAC/MD5 (weak)</td>
 </tr>
-<tr class="row-even"><td>camellia256-cts-cmac camellia256-cts</td>
+<tr class="row-odd"><td>camellia256-cts-cmac camellia256-cts</td>
 <td>Camellia-256 CTS mode with CMAC</td>
 </tr>
-<tr class="row-odd"><td>camellia128-cts-cmac camellia128-cts</td>
+<tr class="row-even"><td>camellia128-cts-cmac camellia128-cts</td>
 <td>Camellia-128 CTS mode with CMAC</td>
-</tr>
-<tr class="row-even"><td>des</td>
-<td>The DES family: des-cbc-crc, des-cbc-md5, and des-cbc-md4 (weak)</td>
 </tr>
 <tr class="row-odd"><td>des3</td>
 <td>The triple DES family: des3-cbc-sha1</td>
@@ -880,8 +866,8 @@ types for the variable in question.  Types or families can be removed
 from the current list by prefixing them with a minus sign (“-“).
 Types or families can be prefixed with a plus sign (“+”) for symmetry;
 it has the same meaning as just listing the type or family.  For
-example, “<code class="docutils literal"><span class="pre">DEFAULT</span> <span class="pre">-des</span></code>” would be the default set of encryption
-types with DES types removed, and “<code class="docutils literal"><span class="pre">des3</span> <span class="pre">DEFAULT</span></code>” would be the
+example, “<code class="docutils literal"><span class="pre">DEFAULT</span> <span class="pre">-rc4</span></code>” would be the default set of encryption
+types with RC4 types removed, and “<code class="docutils literal"><span class="pre">des3</span> <span class="pre">DEFAULT</span></code>” would be the
 default set of encryption types with triple DES types moved to the
 front.</p>
 <p>While <strong>aes128-cts</strong> and <strong>aes256-cts</strong> are supported for all Kerberos
@@ -914,24 +900,18 @@ using something called a salt.  The supported salt types are as
 follows:</p>
 <table border="1" class="docutils">
 <colgroup>
-<col width="21%" />
-<col width="79%" />
+<col width="25%" />
+<col width="75%" />
 </colgroup>
 <tbody valign="top">
 <tr class="row-odd"><td>normal</td>
 <td>default for Kerberos Version 5</td>
 </tr>
-<tr class="row-even"><td>v4</td>
-<td>the only type used by Kerberos Version 4 (no salt)</td>
-</tr>
-<tr class="row-odd"><td>norealm</td>
+<tr class="row-even"><td>norealm</td>
 <td>same as the default, without using realm information</td>
 </tr>
-<tr class="row-even"><td>onlyrealm</td>
+<tr class="row-odd"><td>onlyrealm</td>
 <td>uses only realm information as the salt</td>
-</tr>
-<tr class="row-odd"><td>afs3</td>
-<td>AFS version 3, only used for compatibility with Kerberos 4 in AFS</td>
 </tr>
 <tr class="row-even"><td>special</td>
 <td>generate a random salt</td>
@@ -1081,8 +1061,8 @@ follows:</p>
 
     <div class="footer-wrapper">
         <div class="footer" >
-            <div class="right" ><i>Release: 1.17</i><br />
-                &copy; <a href="../../copyright.html">Copyright</a> 1985-2019, MIT.
+            <div class="right" ><i>Release: 1.21.2</i><br />
+                &copy; <a href="../../copyright.html">Copyright</a> 1985-2023, MIT.
             </div>
             <div class="left">
                 

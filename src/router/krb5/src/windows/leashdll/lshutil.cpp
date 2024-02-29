@@ -1,6 +1,5 @@
 /* -*- mode: c; c-basic-offset: 4; indent-tabs-mode: nil -*- */
-/* prototype/prototype.c - <<< One-line description of file >>> */
-/* leashdll/lshutil.cpp - text maniuplation for principal entry */
+/* leashdll/lshutil.cpp - text manipulation for principal entry */
 /*
  * Copyright (C) 2012 by the Massachusetts Institute of Technology.
  * All rights reserved.

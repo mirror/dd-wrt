@@ -1,5 +1,5 @@
-krb5_pac_sign -  Sign a PAC. 
-=============================
+krb5_pac_sign
+=============
 
 ..
 
@@ -10,34 +10,32 @@ krb5_pac_sign -  Sign a PAC.
 
 :param:
 
-	          **[in]** **context** - Library context
+	          **context**
 
-	          **[in]** **pac** - PAC handle
+	          **pac**
 
-	          **[in]** **authtime** - Expected timestamp
+	          **authtime**
 
-	          **[in]** **principal** - Expected principal name (or NULL)
+	          **principal**
 
-	          **[in]** **server_key** - Key for server checksum
+	          **server_key**
 
-	          **[in]** **privsvr_key** - Key for KDC checksum
+	          **privsvr_key**
 
-	          **[out]** **data** - Signed PAC encoding
-
-
-..
-
+	          **data**
 
 
 ..
 
 
 
+..
+
+
+DEPRECATED Use krb5_kdc_sign_ticket() instead. 
 
 
 
-
-This function signs *pac* using the keys *server_key* and *privsvr_key* and returns the signed encoding in *data* . *pac* is modified to include the server and KDC checksum buffers. Use :c:func:`krb5_free_data_contents()` to free *data* when it is no longer needed.
 
 
 
@@ -53,8 +51,4 @@ This function signs *pac* using the keys *server_key* and *privsvr_key* and retu
 
 
 
-.. note::
-
-	 New in 1.10
- 
 

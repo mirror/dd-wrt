@@ -107,7 +107,7 @@ kprop: No route to host while connecting to server
 ..................................................
 
 Make sure that the hostname of the replica KDC (as given to kprop) is
-correct, and that any firewalls between the master and the replica
+correct, and that any firewalls between the primary and the replica
 allow a connection on port 754.
 
 .. _kprop_con_refused:
@@ -128,8 +128,8 @@ kprop: Server rejected authentication (during sendauth exchange) while authentic
 
 Make sure that:
 
-#. The time is synchronized between the master and replica KDCs.
-#. The master stash file was copied from the master to the expected
+#. The time is synchronized between the primary and replica KDCs.
+#. The master stash file was copied from the primary to the expected
    location on the replica.
 #. The replica has a keytab file in the default location containing a
    ``host`` principal for the replica's hostname.

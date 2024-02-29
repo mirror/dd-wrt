@@ -544,7 +544,7 @@ xdr_u_int32(XDR *xdrs, uint32_t *up)
 }
 
 /*
- * XDR a descriminated union
+ * XDR a discriminated union
  * Support routine for discriminated unions.
  * You create an array of xdrdiscrim structures, terminated with
  * an entry with a null procedure pointer.  The routine gets

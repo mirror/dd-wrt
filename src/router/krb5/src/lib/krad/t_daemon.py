@@ -50,7 +50,7 @@ class TestServer(server.Server):
 
         for key in pkt.keys():
             if key == "User-Password":
-                passwd = map(pkt.PwDecrypt, pkt[key])
+                passwd = [pkt.PwDecrypt(x) for x in pkt[key]]
 
         reply = self.CreateReplyPacket(pkt)
         if passwd == ['accept']:
@@ -61,8 +61,8 @@ class TestServer(server.Server):
 
 srv = TestServer(addresses=["localhost"],
                  hosts={"127.0.0.1":
-                        server.RemoteHost("127.0.0.1", "foo", "localhost")},
-                 dict=dictionary.Dictionary(StringIO.StringIO(DICTIONARY)))
+                        server.RemoteHost("127.0.0.1", b"foo", "localhost")},
+                 dict=dictionary.Dictionary(StringIO(DICTIONARY)))
 
 # Write a sentinel character to let the parent process know we're listening.
 sys.stdout.write("~")

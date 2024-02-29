@@ -135,10 +135,6 @@ kdb5_ldap_stash_service_password(int argc, char **argv)
             print_usage = TRUE;
             goto cleanup;
         }
-        if (file_name == NULL) {
-            com_err(me, ENOMEM, _("while setting service object password"));
-            goto cleanup;
-        }
     } else { /* argc == 2 */
         service_object = strdup (argv[1]);
         if (service_object == NULL) {
@@ -288,7 +284,7 @@ kdb5_ldap_stash_service_password(int argc, char **argv)
             goto cleanup;
         }
 
-        /* TODO: file lock for the service passowrd file */
+        /* TODO: file lock for the service password file */
 
         fclose(pfile);
         fclose(newfile);

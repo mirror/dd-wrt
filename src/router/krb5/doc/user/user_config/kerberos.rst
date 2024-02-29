@@ -108,13 +108,22 @@ programs.  These include:
     Distribution Center daemon and associated programs.  The default
     is |kdcdir|\ ``/kdc.conf``.
 
+**KRB5RCACHENAME**
+    (New in release 1.18) Specifies the location of the default replay
+    cache, in the form *type*:*residual*.  The ``file2`` type with a
+    pathname residual specifies a replay cache file in the version-2
+    format in the specified location.  The ``none`` type (residual is
+    ignored) disables the replay cache.  The ``dfl`` type (residual is
+    ignored) indicates the default, which uses a file2 replay cache in
+    a temporary directory.  The default is ``dfl:``.
+
 **KRB5RCACHETYPE**
-    Specifies the default type of replay cache to use for servers.
-    Valid types include ``dfl`` for the normal file type and ``none``
-    for no replay cache.  The default is ``dfl``.
+    Specifies the type of the default replay cache, if
+    **KRB5RCACHENAME** is unspecified.  No residual can be specified,
+    so ``none`` and ``dfl`` are the only useful types.
 
 **KRB5RCACHEDIR**
-    Specifies the default directory for replay caches used by servers.
+    Specifies the directory used by the ``dfl`` replay cache type.
     The default is the value of the **TMPDIR** environment variable,
     or ``/var/tmp`` if **TMPDIR** is not set.
 
@@ -132,6 +141,12 @@ programs.  These include:
 
 **KPROP_PORT**
     :ref:`kprop(8)` port to use.  Defaults to 754.
+
+**GSS_MECH_CONFIG**
+    Specifies a filename containing GSSAPI mechanism module
+    configuration.  The default is to read |sysconfdir|\ ``/gss/mech``
+    and files with a ``.conf`` suffix within the directory
+    |sysconfdir|\ ``/gss/mech.d``.
 
 Most environment variables are disabled for certain programs, such as
 login system programs and setuid programs, which are designed to be

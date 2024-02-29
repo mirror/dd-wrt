@@ -12,7 +12,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../',
-        VERSION:     '1.17',
+        VERSION:     '1.21.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -94,7 +94,7 @@
 <div><a class="reference internal" href="krb5_cc_end_seq_get.html#c.krb5_cc_end_seq_get" title="krb5_cc_end_seq_get"><code class="xref c c-func docutils literal"><span class="pre">krb5_cc_end_seq_get()</span></code></a> must be called to complete the retrieve operation.</div></blockquote>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
-<p class="last">If <em>cache</em> is modified between the time of the call to this function and the time of the final <a class="reference internal" href="krb5_cc_end_seq_get.html#c.krb5_cc_end_seq_get" title="krb5_cc_end_seq_get"><code class="xref c c-func docutils literal"><span class="pre">krb5_cc_end_seq_get()</span></code></a> , the results are undefined.</p>
+<p class="last">If the cache represented by <em>cache</em> is modified between the time of the call to this function and the time of the final <a class="reference internal" href="krb5_cc_end_seq_get.html#c.krb5_cc_end_seq_get" title="krb5_cc_end_seq_get"><code class="xref c c-func docutils literal"><span class="pre">krb5_cc_end_seq_get()</span></code></a> , these changes may not be reflected in the results of <a class="reference internal" href="krb5_cc_next_cred.html#c.krb5_cc_next_cred" title="krb5_cc_next_cred"><code class="xref c c-func docutils literal"><span class="pre">krb5_cc_next_cred()</span></code></a> calls.</p>
 </div>
 </div>
 
@@ -154,8 +154,8 @@
 
     <div class="footer-wrapper">
         <div class="footer" >
-            <div class="right" ><i>Release: 1.17</i><br />
-                &copy; <a href="../../../copyright.html">Copyright</a> 1985-2019, MIT.
+            <div class="right" ><i>Release: 1.21.2</i><br />
+                &copy; <a href="../../../copyright.html">Copyright</a> 1985-2023, MIT.
             </div>
             <div class="left">
                 

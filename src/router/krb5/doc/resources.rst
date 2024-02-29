@@ -25,13 +25,13 @@ Mailing lists
 IRC channels
 ------------
 
-The IRC channel `#kerberos` on irc.freenode.net is a community
-resource for general Kerberos discussion and support.
+The IRC channel `#kerberos` on libera.chat is a community resource for
+general Kerberos discussion and support.
 
 The main IRC channel for MIT Kerberos development is `#krbdev` on
-freenode.
+Libera Chat.
 
-For more information about freenode, see https://freenode.net/.
+For more information about Libera Chat, see https://libera.chat/.
 
 
 Archives

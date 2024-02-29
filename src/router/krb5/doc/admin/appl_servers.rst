@@ -4,9 +4,9 @@ Application servers
 If you need to install the Kerberos V5 programs on an application
 server, please refer to the Kerberos V5 Installation Guide.  Once you
 have installed the software, you need to add that host to the Kerberos
-database (see :ref:`add_mod_del_princs`), and generate a keytab for
-that host, that contains the host's key.  You also need to make sure
-the host's clock is within your maximum clock skew of the KDCs.
+database (see :ref:`principals`), and generate a keytab for that host,
+that contains the host's key.  You also need to make sure the host's
+clock is within your maximum clock skew of the KDCs.
 
 
 Keytabs
@@ -30,34 +30,60 @@ Adding principals to keytabs
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 To generate a keytab, or to add a principal to an existing keytab, use
-the **ktadd** command from kadmin.
-
-.. include:: admin_commands/kadmin_local.rst
-   :start-after:  _ktadd:
-   :end-before: _ktadd_end:
-
-
-Examples
-########
-
-Here is a sample session, using configuration files that enable only
-AES encryption::
+the **ktadd** command from kadmin.  Here is a sample session, using
+configuration files that enable only AES encryption::
 
     kadmin: ktadd host/daffodil.mit.edu@ATHENA.MIT.EDU
     Entry for principal host/daffodil.mit.edu with kvno 2, encryption type aes256-cts-hmac-sha1-96 added to keytab FILE:/etc/krb5.keytab
     Entry for principal host/daffodil.mit.edu with kvno 2, encryption type aes128-cts-hmac-sha1-96 added to keytab FILE:/etc/krb5.keytab
-    kadmin:
 
 
 Removing principals from keytabs
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 To remove a principal from an existing keytab, use the kadmin
-**ktremove** command.
+**ktremove** command::
 
-.. include:: admin_commands/kadmin_local.rst
-   :start-after:  _ktremove:
-   :end-before: _ktremove_end:
+    kadmin:  ktremove host/daffodil.mit.edu@ATHENA.MIT.EDU
+    Entry for principal host/daffodil.mit.edu with kvno 2 removed from keytab FILE:/etc/krb5.keytab.
+    Entry for principal host/daffodil.mit.edu with kvno 2 removed from keytab FILE:/etc/krb5.keytab.
+
+
+Using a keytab to acquire client credentials
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+While keytabs are ordinarily used to accept credentials from clients,
+they can also be used to acquire initial credentials, allowing one
+service to authenticate to another.
+
+To manually obtain credentials using a keytab, use the :ref:`kinit(1)`
+**-k** option, together with the **-t** option if the keytab is not in
+the default location.
+
+Beginning with release 1.11, GSSAPI applications can be configured to
+automatically obtain initial credentials from a keytab as needed.  The
+recommended configuration is as follows:
+
+#. Create a keytab containing a single entry for the desired client
+   identity.
+
+#. Place the keytab in a location readable by the service, and set the
+   **KRB5_CLIENT_KTNAME** environment variable to its filename.
+   Alternatively, use the **default_client_keytab_name** profile
+   variable in :ref:`libdefaults`, or use the default location of
+   |ckeytab|.
+
+#. Set **KRB5CCNAME** to a filename writable by the service, which
+   will not be used for any other purpose.  Do not manually obtain
+   credentials at this location.  (Another credential cache type
+   besides **FILE** can be used if desired, as long the cache will not
+   conflict with another use.  A **MEMORY** cache can be used if the
+   service runs as a long-lived process.  See :ref:`ccache_definition`
+   for details.)
+
+#. Start the service.  When it authenticates using GSSAPI, it will
+   automatically obtain credentials from the client keytab into the
+   specified credential cache, and refresh them before they expire.
 
 
 Clock Skew
@@ -78,14 +104,12 @@ Getting DNS information correct
 -------------------------------
 
 Several aspects of Kerberos rely on name service.  When a hostname is
-used to name a service, the Kerberos library canonicalizes the
-hostname using forward and reverse name resolution.  (The reverse name
-resolution step can be turned off using the **rdns** variable in
-:ref:`libdefaults`.)  The result of this canonicalization must match
-the principal entry in the host's keytab, or authentication will fail.
-
-Each host's canonical name must be the fully-qualified host name
-(including the domain), and each host's IP address must
+used to name a service, clients may canonicalize the hostname using
+forward and possibly reverse name resolution.  The result of this
+canonicalization must match the principal entry in the host's keytab,
+or authentication will fail.  To work with all client canonicalization
+configurations, each host's canonical name must be the fully-qualified
+host name (including the domain), and each host's IP address must
 reverse-resolve to the canonical name.
 
 Configuration of hostnames varies by operating system.  On the

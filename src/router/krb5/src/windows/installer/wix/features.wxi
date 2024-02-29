@@ -103,7 +103,6 @@
             <!-- Leash config options -->
             <ComponentRef Id="rcm_leash_2" />
             <ComponentRef Id="rcm_leash_3" />
-            <ComponentRef Id="rcm_leash_6" />
             
             <ComponentRef Id="cmf_leash32_chm" />
             

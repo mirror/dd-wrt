@@ -12,7 +12,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../',
-        VERSION:     '1.17',
+        VERSION:     '1.21.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -97,6 +97,7 @@
 </tbody>
 </table>
 <p>Call <a class="reference internal" href="krb5_free_principal.html#c.krb5_free_principal" title="krb5_free_principal"><code class="xref c c-func docutils literal"><span class="pre">krb5_free_principal()</span></code></a> to free <em>princ</em> when it is no longer needed.</p>
+<p>Beginning with release 1.20, the name type of the principal will be inferred as <strong>KRB5_NT_SRV_INST</strong> or <strong>KRB5_NT_WELLKNOWN</strong> based on the principal name. The type will be <strong>KRB5_NT_PRINCIPAL</strong> if a type cannot be inferred.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
 <p class="last"><a class="reference internal" href="#c.krb5_build_principal" title="krb5_build_principal"><code class="xref c c-func docutils literal"><span class="pre">krb5_build_principal()</span></code></a> and <a class="reference internal" href="krb5_build_principal_alloc_va.html#c.krb5_build_principal_alloc_va" title="krb5_build_principal_alloc_va"><code class="xref c c-func docutils literal"><span class="pre">krb5_build_principal_alloc_va()</span></code></a> perform the same task. <a class="reference internal" href="#c.krb5_build_principal" title="krb5_build_principal"><code class="xref c c-func docutils literal"><span class="pre">krb5_build_principal()</span></code></a> takes variadic arguments. <a class="reference internal" href="krb5_build_principal_alloc_va.html#c.krb5_build_principal_alloc_va" title="krb5_build_principal_alloc_va"><code class="xref c c-func docutils literal"><span class="pre">krb5_build_principal_alloc_va()</span></code></a> takes a pre-computed <em>varargs</em> pointer.</p>
@@ -159,8 +160,8 @@
 
     <div class="footer-wrapper">
         <div class="footer" >
-            <div class="right" ><i>Release: 1.17</i><br />
-                &copy; <a href="../../../copyright.html">Copyright</a> 1985-2019, MIT.
+            <div class="right" ><i>Release: 1.21.2</i><br />
+                &copy; <a href="../../../copyright.html">Copyright</a> 1985-2023, MIT.
             </div>
             <div class="left">
                 

@@ -12,7 +12,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../',
-        VERSION:     '1.17',
+        VERSION:     '1.21.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -70,27 +70,31 @@
 
 <p>OTP responder question.</p>
 <p>The OTP responder question is asked when the KDC indicates that an OTP value is required in order to complete the authentication. The JSON format of the challenge is:</p>
-<p><em>{</em></p>
-<p><em>“service”: &lt;string (optional)&gt;,</em></p>
-<p><em>“tokenInfo”: [</em></p>
-<p><em>{</em></p>
-<p><em>“flags”: &lt;number&gt;,</em></p>
-<p><em>“vendor”: &lt;string (optional)&gt;,</em></p>
-<p><em>“challenge”: &lt;string (optional)&gt;,</em></p>
-<p><em>“length”: &lt;number (optional)&gt;,</em></p>
-<p><em>“format”: &lt;number (optional)&gt;,</em></p>
-<p><em>“tokenID”: &lt;string (optional)&gt;,</em></p>
-<p><em>“algID”: &lt;string (optional)&gt;,</em></p>
-<p><em>},</em></p>
-<p><em>…</em></p>
-<p><em>]</em></p>
-<p><em>}</em></p>
+<div class="highlight-c"><div class="highlight"><pre><span></span><span class="p">{</span>
+  <span class="s">&quot;service&quot;</span><span class="o">:</span> <span class="o">&lt;</span><span class="n">string</span> <span class="p">(</span><span class="n">optional</span><span class="p">)</span><span class="o">&gt;</span><span class="p">,</span>
+  <span class="s">&quot;tokenInfo&quot;</span><span class="o">:</span> <span class="p">[</span>
+    <span class="p">{</span>
+      <span class="s">&quot;flags&quot;</span><span class="o">:</span>     <span class="o">&lt;</span><span class="n">number</span><span class="o">&gt;</span><span class="p">,</span>
+      <span class="s">&quot;vendor&quot;</span><span class="o">:</span>    <span class="o">&lt;</span><span class="n">string</span> <span class="p">(</span><span class="n">optional</span><span class="p">)</span><span class="o">&gt;</span><span class="p">,</span>
+      <span class="s">&quot;challenge&quot;</span><span class="o">:</span> <span class="o">&lt;</span><span class="n">string</span> <span class="p">(</span><span class="n">optional</span><span class="p">)</span><span class="o">&gt;</span><span class="p">,</span>
+      <span class="s">&quot;length&quot;</span><span class="o">:</span>    <span class="o">&lt;</span><span class="n">number</span> <span class="p">(</span><span class="n">optional</span><span class="p">)</span><span class="o">&gt;</span><span class="p">,</span>
+      <span class="s">&quot;format&quot;</span><span class="o">:</span>    <span class="o">&lt;</span><span class="n">number</span> <span class="p">(</span><span class="n">optional</span><span class="p">)</span><span class="o">&gt;</span><span class="p">,</span>
+      <span class="s">&quot;tokenID&quot;</span><span class="o">:</span>   <span class="o">&lt;</span><span class="n">string</span> <span class="p">(</span><span class="n">optional</span><span class="p">)</span><span class="o">&gt;</span><span class="p">,</span>
+      <span class="s">&quot;algID&quot;</span><span class="o">:</span>     <span class="o">&lt;</span><span class="n">string</span> <span class="p">(</span><span class="n">optional</span><span class="p">)</span><span class="o">&gt;</span><span class="p">,</span>
+    <span class="p">},</span>
+    <span class="p">...</span>
+  <span class="p">]</span>
+<span class="p">}</span>
+</pre></div>
+</div>
 <p>The answer to the question MUST be JSON formatted:</p>
-<p><em>{</em></p>
-<p><em>“tokeninfo”: &lt;number&gt;,</em></p>
-<p><em>“value”: &lt;string (optional)&gt;,</em></p>
-<p><em>“pin”: &lt;string (optional)&gt;,</em></p>
-<p><em>}</em></p>
+<div class="highlight-c"><div class="highlight"><pre><span></span><span class="p">{</span>
+  <span class="s">&quot;tokeninfo&quot;</span><span class="o">:</span> <span class="o">&lt;</span><span class="n">number</span><span class="o">&gt;</span><span class="p">,</span>
+  <span class="s">&quot;value&quot;</span><span class="o">:</span>     <span class="o">&lt;</span><span class="n">string</span> <span class="p">(</span><span class="n">optional</span><span class="p">)</span><span class="o">&gt;</span><span class="p">,</span>
+  <span class="s">&quot;pin&quot;</span><span class="o">:</span>       <span class="o">&lt;</span><span class="n">string</span> <span class="p">(</span><span class="n">optional</span><span class="p">)</span><span class="o">&gt;</span><span class="p">,</span>
+<span class="p">}</span>
+</pre></div>
+</div>
 <p>For more detail, please see RFC 6560.</p>
 <table border="1" class="docutils">
 <colgroup>
@@ -161,8 +165,8 @@
 
     <div class="footer-wrapper">
         <div class="footer" >
-            <div class="right" ><i>Release: 1.17</i><br />
-                &copy; <a href="../../../copyright.html">Copyright</a> 1985-2019, MIT.
+            <div class="right" ><i>Release: 1.21.2</i><br />
+                &copy; <a href="../../../copyright.html">Copyright</a> 1985-2023, MIT.
             </div>
             <div class="left">
                 

@@ -16,7 +16,6 @@ OBJS=   \
 	$(OUTPRE)LeashUICommandHandler.obj \
 	$(OUTPRE)LeashView.obj \
 	$(OUTPRE)MainFrm.obj \
-	$(OUTPRE)out2con.obj \
 	$(OUTPRE)StdAfx.obj \
 	$(OUTPRE)KrbListTickets.obj
 

@@ -132,7 +132,7 @@ conf = {'plugins': {'localauth': { 'module': [
 mod = realm.special_env('mod', False, conf)
 
 # test1's untyped an2ln method should come before the names method, mapping
-# test/a/b@X to its realm name (superceding auth_to_local_names).
+# test/a/b@X to its realm name (superseding auth_to_local_names).
 test_an2ln(mod, 'test/a/b@X', 'X', 'mod untyped an2ln')
 
 # Match the auth_to_local values in order.  test2's TYPEA should map

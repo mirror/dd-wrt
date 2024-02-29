@@ -113,7 +113,7 @@ errcode_t profile_create_node(const char *name, const char *value,
 }
 
 /*
- * This function verifies that all of the representation invarients of
+ * This function verifies that all of the representation invariants of
  * the profile are true.  If not, we have a programming bug somewhere,
  * probably in this file.
  */
@@ -236,7 +236,7 @@ const char *profile_get_node_value(struct profile_node *node)
 
 /*
  * Iterate through the section, returning the nodes which match
- * the given name.  If name is NULL, then interate through all the
+ * the given name.  If name is NULL, then iterate through all the
  * nodes in the section.  If section_flag is non-zero, only return the
  * section which matches the name; don't return relations.  If value
  * is non-NULL, then only return relations which match the requested
@@ -313,7 +313,7 @@ errcode_t profile_find_node(struct profile_node *section, const char *name,
 
 /*
  * Iterate through the section, returning the relations which match
- * the given name.  If name is NULL, then interate through all the
+ * the given name.  If name is NULL, then iterate through all the
  * relations in the section.  The first time this routine is called,
  * the state pointer must be null.  When this profile_find_node_relation()
  * returns, if the state pointer is non-NULL, then this routine should
@@ -346,7 +346,7 @@ errcode_t profile_find_node_relation(struct profile_node *section,
 
 /*
  * Iterate through the section, returning the subsections which match
- * the given name.  If name is NULL, then interate through all the
+ * the given name.  If name is NULL, then iterate through all the
  * subsections in the section.  The first time this routine is called,
  * the state pointer must be null.  When this profile_find_node_subsection()
  * returns, if the state pointer is non-NULL, then this routine should

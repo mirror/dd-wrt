@@ -4,12 +4,11 @@ BUILDTOP=$(REL)..
 SPHINX_BUILD=sphinx-build
 GROFF=@GROFF@
 GROFF_MAN=$(GROFF) -mtty-char -Tascii -mandoc -c
-localstatedir=@localstatedir@
-runstatedir=@runstatedir@
 sysconfdir=@sysconfdir@
 DEFCCNAME=@DEFCCNAME@
 DEFKTNAME=@DEFKTNAME@
 DEFCKTNAME=@DEFCKTNAME@
+PKCS11_MODNAME=@PKCS11_MODNAME@
 
 MANSUBS=k5identity.sub k5login.sub k5srvutil.sub kadm5.acl.sub kadmin.sub \
 	kadmind.sub kdb5_ldap_util.sub kdb5_util.sub kdc.conf.sub \
@@ -49,7 +48,8 @@ $(docsrc)/version.py: $(top_srcdir)/patchlevel.h
 	    -e 's|@SYSCONFDIR@|$(sysconfdir)|g' \
 	    -e 's|@CCNAME@|$(DEFCCNAME)|g' \
 	    -e 's|@KTNAME@|$(DEFKTNAME)|g' \
-	    -e 's|@CKTNAME@|$(DEFCKTNAME)|g' $? > $@
+	    -e 's|@CKTNAME@|$(DEFCKTNAME)|g' \
+	    -e 's|@PKCS11MOD@|$(PKCS11_MODNAME)|g' $? > $@
 
 all: $(MANSUBS)
 

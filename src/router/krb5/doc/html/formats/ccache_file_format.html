@@ -12,7 +12,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '1.17',
+        VERSION:     '1.21.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -212,6 +212,11 @@ the GSS mechanism using a client keytab.  The value is the ASCII
 decimal representation of a timestamp at which the GSS mechanism
 should attempt to refresh the credential cache from the client
 keytab.</dd>
+<dt>start_realm</dt>
+<dd>This key indicates the realm of the ticket-granting ticket to be
+used for TGS requests, when making a referrals request or
+beginning a cross-realm request.  If it is not present, the client
+realm is used.</dd>
 </dl>
 </div>
 </div>
@@ -245,6 +250,7 @@ keytab.</dd>
 <li class="toctree-l1 current"><a class="reference internal" href="index.html">Protocols and file formats</a><ul class="current">
 <li class="toctree-l2 current"><a class="current reference internal" href="#">Credential cache file format</a></li>
 <li class="toctree-l2"><a class="reference internal" href="keytab_file_format.html">Keytab file format</a></li>
+<li class="toctree-l2"><a class="reference internal" href="rcache_file_format.html">Replay cache file format</a></li>
 <li class="toctree-l2"><a class="reference internal" href="cookie.html">KDC cookie format</a></li>
 <li class="toctree-l2"><a class="reference internal" href="freshness_token.html">PKINIT freshness tokens</a></li>
 </ul>
@@ -271,8 +277,8 @@ keytab.</dd>
 
     <div class="footer-wrapper">
         <div class="footer" >
-            <div class="right" ><i>Release: 1.17</i><br />
-                &copy; <a href="../copyright.html">Copyright</a> 1985-2019, MIT.
+            <div class="right" ><i>Release: 1.21.2</i><br />
+                &copy; <a href="../copyright.html">Copyright</a> 1985-2023, MIT.
             </div>
             <div class="left">
                 

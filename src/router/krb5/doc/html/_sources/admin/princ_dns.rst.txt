@@ -31,27 +31,35 @@ based on rotating ``CNAME`` records in DNS.
 Service principal canonicalization
 ----------------------------------
 
-MIT Kerberos clients currently always do forward resolution (looking
-up the IPv4 and possibly IPv6 addresses using ``getaddrinfo()``) of
-the hostname part of a host-based service principal to canonicalize
-the hostname.  They obtain the "canonical" name of the host when doing
-so.  By default, MIT Kerberos clients will also then do reverse DNS
-resolution (looking up the hostname associated with the IPv4 or IPv6
-address using ``getnameinfo()``) of the hostname.  Using the
-:ref:`krb5.conf(5)` setting::
+In the MIT krb5 client library, canonicalization of host-based service
+principals is controlled by the **dns_canonicalize_hostname**,
+**rnds**, and **qualify_shortname** variables in :ref:`libdefaults`.
 
-    [libdefaults]
-        rdns = false
+If **dns_canonicalize_hostname** is set to ``true`` (the default
+value), the client performs forward resolution by looking up the IPv4
+and/or IPv6 addresses of the hostname using ``getaddrinfo()``.  This
+process will typically add a domain suffix to the hostname if needed,
+and follow CNAME records in the DNS.  If **rdns** is also set to
+``true`` (the default), the client will then perform a reverse lookup
+of the first returned Internet address using ``getnameinfo()``,
+finding the name associated with the PTR record.
 
-will disable reverse DNS lookup on clients.  The default setting is
-"true".
+If **dns_canonicalize_hostname** is set to ``false``, the hostname is
+not canonicalized using DNS.  If the hostname has only one component
+(i.e. it contains no "." characters), the host's primary DNS search
+domain will be appended, if there is one.  The **qualify_shortname**
+variable can be used to override or disable this suffix.
 
-Operating system bugs may prevent a setting of ``rdns = false`` from
-disabling reverse DNS lookup.  Some versions of GNU libc have a bug in
-``getaddrinfo()`` that cause them to look up ``PTR`` records even when
-not required.  MIT Kerberos releases krb5-1.10.2 and newer have a
-workaround for this problem, as does the krb5-1.9.x series as of
-release krb5-1.9.4.
+If **dns_canonicalize_hostname** is set to ``fallback`` (added in
+release 1.18), the hostname is initially treated according to the
+rules for ``dns_canonicalize_hostname=false``.  If a ticket request
+fails because the service principal is unknown, the hostname will be
+canonicalized according to the rules for
+``dns_canonicalize_hostname=true`` and the request will be retried.
+
+In all cases, the hostname is converted to lowercase, and any trailing
+dot is removed.
+
 
 
 Reverse DNS mismatches
@@ -107,3 +115,12 @@ any key in its keytab when accepting a connection, rather than looking
 for the keytab entry that matches the host's own idea of its name
 (typically the name that ``gethostname()`` returns).  This requires
 krb5-1.10 or later.
+
+OpenLDAP (ldapsearch, etc.)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+OpenLDAP's SASL implementation performs reverse DNS lookup in order to
+canonicalize service principal names, even if **rdns** is set to
+``false`` in the Kerberos configuration.  To disable this behavior,
+add ``SASL_NOCANON on`` to ``ldap.conf``, or set the
+``LDAPSASL_NOCANON`` environment variable.

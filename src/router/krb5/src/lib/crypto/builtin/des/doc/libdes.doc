@@ -149,7 +149,7 @@ int
 	by "*key", then after getting a new key, call the des_set_key() 
 	routine when needed.
 
-	No meaningfull value is returned.  Void is not used for compatibility
+	No meaningful value is returned.  Void is not used for compatibility
 	with other compilers.
 
 

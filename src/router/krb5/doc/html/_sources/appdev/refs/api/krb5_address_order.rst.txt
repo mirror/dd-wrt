@@ -21,8 +21,9 @@ krb5_address_order -  Return an ordering of the specified addresses.
 
 
 :retval:
-         -   0   The two addresses are the same
-         -     
+         -   0   if The two addresses are the same
+         -   <   0 First address is less than second
+         -   >   0 First address is greater than second
 
 
 ..

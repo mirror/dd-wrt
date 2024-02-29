@@ -224,8 +224,6 @@ protected: // create from serialization only
 
 // Attributes
 public:
-    static BOOL  m_importedTickets;
-
     CLeashView();
 	//LeashDoc* GetDocument();
 
@@ -267,7 +265,6 @@ protected:
     afx_msg VOID OnClose(void);
 	afx_msg VOID OnInitTicket();
 	afx_msg VOID OnRenewTicket();
-	afx_msg VOID OnImportTicket();
 	afx_msg VOID OnDestroyTicket();
 	afx_msg VOID OnMakeDefault();
 	afx_msg VOID OnChangePassword();
@@ -285,7 +282,6 @@ protected:
 	afx_msg VOID OnKillTixOnExit();
 	afx_msg VOID OnDestroy();
 	afx_msg VOID OnUpdateDestroyTicket(CCmdUI* pCmdUI);
-	afx_msg VOID OnUpdateImportTicket(CCmdUI* pCmdUI);
 	afx_msg VOID OnUpdateInitTicket(CCmdUI* pCmdUI);
 	afx_msg VOID OnUpdateRenewTicket(CCmdUI* pCmdUI);
 	afx_msg VOID OnUpdateTimeIssued(CCmdUI* pCmdUI);

@@ -634,16 +634,6 @@ main(int argc, char **argv)
         ktest_empty_ad_kdcissued(&kdci);
     }
     /****************************************************************/
-    /* encode_krb5_ad_signedpath */
-    {
-        krb5_ad_signedpath sp, *tmp;
-        ktest_make_sample_ad_signedpath(&sp);
-        leak_test(sp, encode_krb5_ad_signedpath,
-                  decode_krb5_ad_signedpath,
-                  krb5_free_ad_signedpath);
-        ktest_empty_ad_signedpath(&sp);
-    }
-    /****************************************************************/
     /* encode_krb5_iakerb_header */
     {
         krb5_iakerb_header ih, *tmp;

@@ -373,7 +373,7 @@ enum auth_stat gssrpc__svcauth_gssapi(
 	  /*
 	   * If the client's server_creds is already set, use it.
 	   * Otherwise, try each credential in server_creds_list until
-	   * one of them succeedes, then set the client server_creds
+	   * one of them succeeds, then set the client server_creds
 	   * to that.  If all fail, the client's server_creds isn't
 	   * set (which is fine, because the client will be gc'ed
 	   * anyway).

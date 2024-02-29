@@ -1,4 +1,4 @@
-.. highlightlang:: c
+.. highlight:: c
 
 .. _CKSUMTYPE-MD5-HMAC-ARCFOUR-data:
 

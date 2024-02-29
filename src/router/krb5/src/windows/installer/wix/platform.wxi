@@ -66,7 +66,6 @@
         <?define rcm_leash_3_guid="66D97178-E735-499b-961F-C7B8B8074E1A"?>
         <?define rcm_leash_4_guid="D20180CC-B68D-4a6d-95E4-5EB07B9EADCD"?>
         <?define rcm_leash_5_guid="AF3B73AE-86ED-42f5-987A-9831B8799D2F"?>
-        <?define rcm_leash_6_guid="0C72D4F8-096B-4295-8F0A-6B5723A8593D"?>
         <?define csc_LeashStartup_guid="228192C5-D847-4c46-A726-0E8211742349"?>
         <?define cmf_leash32_hlp_guid="EF1B0ED6-9C01-4adb-9F11-C3FF07F669D5"?>
         <?define cmf_leash32_chm_guid="769B54EB-9B96-4abe-9B72-9EF346C8C03D"?>
@@ -142,7 +141,6 @@
         <?define rcm_leash_3_guid="9610A7E3-251F-4286-B776-1C3AF5DE7815"?>
         <?define rcm_leash_4_guid="815AED84-2437-4EBC-B561-F847833DB3A5"?>
         <?define rcm_leash_5_guid="A0D3D75F-762E-4D5C-909B-53E7396CEDB6"?>
-        <?define rcm_leash_6_guid="F675C145-6F9D-4BC4-9DA0-CAFB47A96A71"?>
         <?define csc_LeashStartup_guid="0DF73BCD-F34E-4B01-AA71-0EE08EB62F70"?>
         <?define cmf_leash32_hlp_guid="919616D6-1605-4A79-8E33-C18A0D0F25E3"?>
         <?define cmf_leash32_chm_guid="C50E5E0A-B822-4419-855B-1713637BCA6A"?>

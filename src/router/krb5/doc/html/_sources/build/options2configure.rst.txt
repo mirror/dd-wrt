@@ -39,12 +39,6 @@ Most commonly used options
     library or fails to pass the tests in ``src/tests/resolv``, you
     will need to use this option.
 
-**-**\ **-with-tcl=**\ *TCLPATH*
-    Some of the unit-tests in the build tree rely upon using a program
-    in Tcl.  The directory specified by *TCLPATH* specifies where the
-    Tcl header file (TCLPATH/include/tcl.h) as well as where the Tcl
-    library (TCLPATH/lib) should be found.
-
 **-**\ **-enable-dns-for-realm**
     Enable the use of DNS to look up a host's Kerberos realm,
     if the information is not provided in
@@ -142,6 +136,9 @@ Environment variables
 **LIBS=**\ *LDNAME*
     This option allows one to specify libraries to be passed to the
     linker (e.g., ``-l<library>``)
+
+**PKCS11_MODNAME=**\ *library*
+    Override the built-in default PKCS11 library name.
 
 **SS_LIB=**\ *libs*...
     If ``-lss`` is not the correct way to link in your installed ss
@@ -332,11 +329,6 @@ Optional packages
 **-**\ **-with-lmdb**
     Compile LMDB database backend module.
 
-**-**\ **-with-tcl=**\ *path*
-    Specifies that *path* is the location of a Tcl installation.
-    Tcl is needed for some of the tests run by 'make check'; such tests
-    will be skipped if this option is not set.
-
 **-**\ **-with-vague-errors**
     Do not send helpful errors to client.  For example, if the KDC
     should return only vague error codes to clients.
@@ -348,11 +340,6 @@ Optional packages
     implemented crypto backend is ``openssl``.  (See
     :ref:`mitK5features`)
 
-**-**\ **-with-prng-alg=**\ *ALG*
-    Use specified PRNG algorithm.  For example, to use the OS native
-    prng specify ``--with-prng-alg=os``.  The default is ``fortuna``.
-    (See :ref:`mitK5features`)
-
 **-**\ **-without-libedit**
     Do not compile and link against libedit.  Some utilities will no
     longer offer command history or completion in interactive mode if
@@ -360,8 +347,6 @@ Optional packages
 
 **-**\ **-with-readline**
     Compile and link against GNU readline, as an alternative to libedit.
-    Building with readline breaks the dejagnu test suite, which is a
-    subset of the tests run by 'make check'.
 
 **-**\ **-with-system-verto**
     Use an installed version of libverto.  If the libverto header and
@@ -386,6 +371,10 @@ Optional packages
     default is to use ``krb5-config`` from the program path.  Specify
     ``--without-krb5-config`` to disable the use of krb5-config and
     use the usual built-in defaults.
+
+**-**\ **-without-keyutils**
+    Build without libkeyutils support.  This disables the KEYRING
+    credential cache type.
 
 
 Examples

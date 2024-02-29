@@ -12,7 +12,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../',
-        VERSION:     '1.17',
+        VERSION:     '1.21.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -78,7 +78,7 @@ void <code class="descname">krb5_free_checksum_contents</code><span class="sig-p
 </tr>
 </tbody>
 </table>
-<p>This function frees the contents of <em>val</em> , but not the structure itself.</p>
+<p>This function frees the contents of <em>val</em> , but not the structure itself. It sets the checksum’s data pointer to null and (beginning in release 1.19) sets its length to zero.</p>
 </div>
 
 
@@ -137,8 +137,8 @@ void <code class="descname">krb5_free_checksum_contents</code><span class="sig-p
 
     <div class="footer-wrapper">
         <div class="footer" >
-            <div class="right" ><i>Release: 1.17</i><br />
-                &copy; <a href="../../../copyright.html">Copyright</a> 1985-2019, MIT.
+            <div class="right" ><i>Release: 1.21.2</i><br />
+                &copy; <a href="../../../copyright.html">Copyright</a> 1985-2023, MIT.
             </div>
             <div class="left">
                 

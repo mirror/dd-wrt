@@ -527,11 +527,6 @@ behavior is to skip that field and assign the value to a subsequent
 field.  It should be very rare for ASN.1 modules to use choice or open
 types this way.
 
-For historical interoperability reasons, our decoder accepts the
-indefinite length form for constructed tags, which is allowed by BER
-but not DER.  We still require the primitive forms of basic scalar
-types, however, so we do not accept all BER encodings of ASN.1 values.
-
 
 Debugging
 ---------

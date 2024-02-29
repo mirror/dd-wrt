@@ -3,7 +3,7 @@ krb5_mk_safe -  Format a KRB-SAFE message.
 
 ..
 
-.. c:function:: krb5_error_code krb5_mk_safe(krb5_context context, krb5_auth_context auth_context, const krb5_data * userdata, krb5_data * outbuf, krb5_replay_data * outdata)
+.. c:function:: krb5_error_code krb5_mk_safe(krb5_context context, krb5_auth_context auth_context, const krb5_data * userdata, krb5_data * der_out, krb5_replay_data * rdata_out)
 
 ..
 
@@ -16,9 +16,9 @@ krb5_mk_safe -  Format a KRB-SAFE message.
 
 	          **[in]** **userdata** - User data in the message
 
-	          **[out]** **outbuf** - Formatted **KRB-SAFE** buffer
+	          **[out]** **der_out** - Formatted **KRB-SAFE** buffer
 
-	          **[out]** **outdata** - Replay data. Specify NULL if not needed
+	          **[out]** **rdata_out** - Replay data. Specify NULL if not needed
 
 
 ..
@@ -48,15 +48,15 @@ The local address in *auth_context* must be set, and is used to form the sender 
 
 
 
-If :data:`KRB5_AUTH_CONTEXT_DO_TIME` flag is set in the *auth_context* , an entry describing the message is entered in the replay cache *auth_context->rcache* which enables the caller to detect if this message is reflected by an attacker. If :data:`KRB5_AUTH_CONTEXT_DO_TIME` is not set, the replay cache is not used.
+If the :data:`KRB5_AUTH_CONTEXT_DO_TIME` flag is set in *auth_context* , a timestamp is included in the KRB-SAFE message, and an entry for the message is entered in an in-memory replay cache to detect if the message is reflected by an attacker. If :data:`KRB5_AUTH_CONTEXT_DO_TIME` is not set, no replay cache is used. If :data:`KRB5_AUTH_CONTEXT_RET_TIME` is set in *auth_context* , a timestamp is included in the KRB-SAFE message and is stored in *rdata_out* .
 
 
 
-If either :data:`KRB5_AUTH_CONTEXT_DO_SEQUENCE` or :data:`KRB5_AUTH_CONTEXT_RET_SEQUENCE` is set, the *auth_context* local sequence number will be placed in *outdata* as its sequence number.
+If either :data:`KRB5_AUTH_CONTEXT_DO_SEQUENCE` or :data:`KRB5_AUTH_CONTEXT_RET_SEQUENCE` is set, the *auth_context* local sequence number is included in the KRB-SAFE message and then incremented. If :data:`KRB5_AUTH_CONTEXT_RET_SEQUENCE` is set, the sequence number used is stored in *rdata_out* .
 
 
 
-Use :c:func:`krb5_free_data_contents()` to free *outbuf* when it is no longer needed.
+Use :c:func:`krb5_free_data_contents()` to free *der_out* when it is no longer needed.
 
 
 
@@ -76,7 +76,7 @@ Use :c:func:`krb5_free_data_contents()` to free *outbuf* when it is no longer ne
 
 .. note::
 
-	 The *outdata* argument is required if :data:`KRB5_AUTH_CONTEXT_RET_TIME` or :data:`KRB5_AUTH_CONTEXT_RET_SEQUENCE` flag is set in the *auth_context* .
+	 The *rdata_out* argument is required if the :data:`KRB5_AUTH_CONTEXT_RET_TIME` or :data:`KRB5_AUTH_CONTEXT_RET_SEQUENCE` flag is set in *auth_context* .
  
 
 

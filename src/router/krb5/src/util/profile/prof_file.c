@@ -182,7 +182,7 @@ errcode_t profile_open_file(const_profile_filespec_t filespec,
     prf->magic = PROF_MAGIC_FILE;
 
     if (filespec[0] == '~' && filespec[1] == '/') {
-        home_env = getenv("HOME");
+        home_env = secure_getenv("HOME");
 #ifdef HAVE_PWD_H
         if (home_env == NULL) {
             uid_t uid;

@@ -121,8 +121,8 @@ LeashKRB5_renew(void)
     code = pkrb5_get_renewed_creds(ctx, &my_creds, me, cc, NULL);
     pkrb5_cc_set_flags(ctx, cc, KRB5_TC_NOTICKET);
     if (code) {
-        if ( code != KRB5KDC_ERR_ETYPE_NOSUPP ||
-             code != KRB5_KDC_UNREACH)
+        if (code != KRB5KDC_ERR_ETYPE_NOSUPP && code != KRB5_KDC_UNREACH &&
+            code != KRB5_CC_NOTFOUND)
             Leash_krb5_error(code, "krb5_get_renewed_creds()", 0, &ctx, &cc);
         goto cleanup;
     }
@@ -484,71 +484,6 @@ Leash_krb5_error(krb5_error_code rc, LPCSTR FailedFunctionName,
     }
 
     return rc;
-}
-
-
-BOOL
-Leash_ms2mit(BOOL save_creds)
-{
-    krb5_context kcontext = 0;
-    krb5_error_code code;
-    krb5_ccache ccache=0;
-    krb5_ccache mslsa_ccache=0;
-    krb5_creds creds;
-    krb5_cc_cursor cursor=0;
-    krb5_principal princ = 0;
-    BOOL rc = FALSE;
-
-    if ( !pkrb5_init_context )
-        goto cleanup;
-
-    if (code = pkrb5_init_context(&kcontext))
-        goto cleanup;
-
-    if (code = pkrb5_cc_resolve(kcontext, "MSLSA:", &mslsa_ccache))
-        goto cleanup;
-
-    if ( save_creds ) {
-        if (code = pkrb5_cc_get_principal(kcontext, mslsa_ccache, &princ))
-            goto cleanup;
-
-        if (code = pkrb5_cc_default(kcontext, &ccache))
-            goto cleanup;
-
-        if (code = pkrb5_cc_initialize(kcontext, ccache, princ))
-            goto cleanup;
-
-        if (code = pkrb5_cc_copy_creds(kcontext, mslsa_ccache, ccache))
-            goto cleanup;
-
-        rc = TRUE;
-    } else {
-        /* Enumerate tickets from cache looking for an initial ticket */
-        if ((code = pkrb5_cc_start_seq_get(kcontext, mslsa_ccache, &cursor)))
-            goto cleanup;
-
-        while (!(code = pkrb5_cc_next_cred(kcontext, mslsa_ccache, &cursor, &creds)))
-        {
-            if ( creds.ticket_flags & TKT_FLG_INITIAL ) {
-                rc = TRUE;
-                pkrb5_free_cred_contents(kcontext, &creds);
-                break;
-            }
-            pkrb5_free_cred_contents(kcontext, &creds);
-        }
-        pkrb5_cc_end_seq_get(kcontext, mslsa_ccache, &cursor);
-    }
-
-  cleanup:
-    if (princ)
-        pkrb5_free_principal(kcontext, princ);
-    if (ccache)
-        pkrb5_cc_close(kcontext, ccache);
-    if (mslsa_ccache)
-        pkrb5_cc_close(kcontext, mslsa_ccache);
-    if (kcontext)
-        pkrb5_free_context(kcontext);
-    return(rc);
 }
 
 

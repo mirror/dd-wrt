@@ -1728,7 +1728,7 @@ TYPEDEF_FUNC(
     krb5_locate_kdc,
     (krb5_context context, const krb5_data *realm,
       struct addrlist *addrlist,
-      int get_masters, int socktype, int family)
+      int get_primaries, int socktype, int family)
     );
 
 TYPEDEF_FUNC(

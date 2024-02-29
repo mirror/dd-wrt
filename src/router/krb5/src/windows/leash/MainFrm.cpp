@@ -175,7 +175,7 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 #endif
 
 
-	// TODO: Remove this if you don't want tool tips or a resizeable toolbar
+	// TODO: Remove this if you don't want tool tips or a resizable toolbar
 	//m_wndToolBar.SetPaneStyle(m_wndToolBar.GetPaneStyle() |
 	//	                     CBRS_TOOLTIPS | CBRS_FLYBY | CBRS_SIZE_DYNAMIC);
 

@@ -12,7 +12,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../',
-        VERSION:     '1.17',
+        VERSION:     '1.21.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -70,15 +70,19 @@
 
 <p>PKINIT responder question.</p>
 <p>The PKINIT responder question is asked when the client needs a password that’s being used to protect key information, and is formatted as a JSON object. A specific identity’s flags value, if not zero, is the bitwise-OR of one or more of the KRB5_RESPONDER_PKINIT_FLAGS_TOKEN_* flags defined below, and possibly other flags to be added later. Any resemblance to similarly-named CKF_* values in the PKCS#11 API should not be depended on.</p>
-<p><em>{</em></p>
-<p><em>identity &lt;string&gt; : flags &lt;number&gt;,</em></p>
-<p><em>…</em></p>
-<p><em>}</em></p>
+<div class="highlight-c"><div class="highlight"><pre><span></span><span class="p">{</span>
+    <span class="n">identity</span> <span class="o">&lt;</span><span class="n">string</span><span class="o">&gt;</span> <span class="o">:</span> <span class="n">flags</span> <span class="o">&lt;</span><span class="n">number</span><span class="o">&gt;</span><span class="p">,</span>
+    <span class="p">...</span>
+<span class="p">}</span>
+</pre></div>
+</div>
 <p>The answer to the question MUST be JSON formatted:</p>
-<p><em>{</em></p>
-<p><em>identity &lt;string&gt; : password &lt;string&gt;,</em></p>
-<p><em>…</em></p>
-<p><em>}</em></p>
+<div class="highlight-c"><div class="highlight"><pre><span></span><span class="p">{</span>
+    <span class="n">identity</span> <span class="o">&lt;</span><span class="n">string</span><span class="o">&gt;</span> <span class="o">:</span> <span class="n">password</span> <span class="o">&lt;</span><span class="n">string</span><span class="o">&gt;</span><span class="p">,</span>
+    <span class="p">...</span>
+<span class="p">}</span>
+</pre></div>
+</div>
 <table border="1" class="docutils">
 <colgroup>
 <col width="63%" />
@@ -148,8 +152,8 @@
 
     <div class="footer-wrapper">
         <div class="footer" >
-            <div class="right" ><i>Release: 1.17</i><br />
-                &copy; <a href="../../../copyright.html">Copyright</a> 1985-2019, MIT.
+            <div class="right" ><i>Release: 1.21.2</i><br />
+                &copy; <a href="../../../copyright.html">Copyright</a> 1985-2023, MIT.
             </div>
             <div class="left">
                 

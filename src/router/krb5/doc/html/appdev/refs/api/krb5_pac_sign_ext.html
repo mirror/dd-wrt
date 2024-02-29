@@ -5,14 +5,14 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>krb5_pac_sign_ext - Sign a PAC, possibly with a specified realm. &#8212; MIT Kerberos Documentation</title>
+    <title>krb5_pac_sign_ext &#8212; MIT Kerberos Documentation</title>
     <link rel="stylesheet" href="../../../_static/agogo.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/kerb.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../',
-        VERSION:     '1.17',
+        VERSION:     '1.21.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -27,7 +27,7 @@
     <link rel="search" title="Search" href="../../../search.html" />
     <link rel="copyright" title="Copyright" href="../../../copyright.html" />
     <link rel="next" title="krb5_pac_verify - Verify a PAC." href="krb5_pac_verify.html" />
-    <link rel="prev" title="krb5_pac_sign - Sign a PAC." href="krb5_pac_sign.html" /> 
+    <link rel="prev" title="krb5_pac_sign" href="krb5_pac_sign.html" /> 
   </head>
   <body>
     <div class="header-wrapper">
@@ -40,7 +40,7 @@
                 
         <a href="../../../index.html" title="Full Table of Contents"
             accesskey="C">Contents</a> |
-        <a href="krb5_pac_sign.html" title="krb5_pac_sign - Sign a PAC."
+        <a href="krb5_pac_sign.html" title="krb5_pac_sign"
             accesskey="P">previous</a> |
         <a href="krb5_pac_verify.html" title="krb5_pac_verify - Verify a PAC."
             accesskey="N">next</a> |
@@ -48,7 +48,7 @@
             accesskey="I">index</a> |
         <a href="../../../search.html" title="Enter search criteria"
             accesskey="S">Search</a> |
-    <a href="mailto:krb5-bugs@mit.edu?subject=Documentation__krb5_pac_sign_ext -  Sign a PAC, possibly with a specified realm.">feedback</a>
+    <a href="mailto:krb5-bugs@mit.edu?subject=Documentation__krb5_pac_sign_ext">feedback</a>
             </div>
         </div>
     </div>
@@ -61,8 +61,8 @@
         <div class="bodywrapper">
           <div class="body" role="main">
             
-  <div class="section" id="krb5-pac-sign-ext-sign-a-pac-possibly-with-a-specified-realm">
-<h1>krb5_pac_sign_ext -  Sign a PAC, possibly with a specified realm.<a class="headerlink" href="#krb5-pac-sign-ext-sign-a-pac-possibly-with-a-specified-realm" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="krb5-pac-sign-ext">
+<h1>krb5_pac_sign_ext<a class="headerlink" href="#krb5-pac-sign-ext" title="Permalink to this headline">¶</a></h1>
 <dl class="function">
 <dt id="c.krb5_pac_sign_ext">
 <a class="reference internal" href="../types/krb5_error_code.html#c.krb5_error_code" title="krb5_error_code">krb5_error_code</a> <code class="descname">krb5_pac_sign_ext</code><span class="sig-paren">(</span><a class="reference internal" href="../types/krb5_context.html#c.krb5_context" title="krb5_context">krb5_context</a><em>&nbsp;context</em>, <a class="reference internal" href="../types/krb5_pac.html#c.krb5_pac" title="krb5_pac">krb5_pac</a><em>&nbsp;pac</em>, <a class="reference internal" href="../types/krb5_timestamp.html#c.krb5_timestamp" title="krb5_timestamp">krb5_timestamp</a><em>&nbsp;authtime</em>, <a class="reference internal" href="../types/krb5_const_principal.html#c.krb5_const_principal" title="krb5_const_principal">krb5_const_principal</a><em>&nbsp;principal</em>, const <a class="reference internal" href="../types/krb5_keyblock.html#c.krb5_keyblock" title="krb5_keyblock">krb5_keyblock</a> *<em>&nbsp;server_key</em>, const <a class="reference internal" href="../types/krb5_keyblock.html#c.krb5_keyblock" title="krb5_keyblock">krb5_keyblock</a> *<em>&nbsp;privsvr_key</em>, <a class="reference internal" href="../types/krb5_boolean.html#c.krb5_boolean" title="krb5_boolean">krb5_boolean</a><em>&nbsp;with_realm</em>, <a class="reference internal" href="../types/krb5_data.html#c.krb5_data" title="krb5_data">krb5_data</a> *<em>&nbsp;data</em><span class="sig-paren">)</span><a class="headerlink" href="#c.krb5_pac_sign_ext" title="Permalink to this definition">¶</a></dt>
@@ -72,23 +72,19 @@
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">param:</th><td class="field-body"><p class="first"><strong>[in]</strong> <strong>context</strong> - Library context</p>
-<p><strong>[in]</strong> <strong>pac</strong> - PAC handle</p>
-<p><strong>[in]</strong> <strong>authtime</strong> - Expected timestamp</p>
-<p><strong>[in]</strong> <strong>principal</strong> - Principal name (or NULL)</p>
-<p><strong>[in]</strong> <strong>server_key</strong> - Key for server checksum</p>
-<p><strong>[in]</strong> <strong>privsvr_key</strong> - Key for KDC checksum</p>
-<p><strong>[in]</strong> <strong>with_realm</strong> - If true, include the realm of <em>principal</em></p>
-<p class="last"><strong>[out]</strong> <strong>data</strong> - Signed PAC encoding</p>
+<tr class="field-odd field"><th class="field-name">param:</th><td class="field-body"><p class="first"><strong>context</strong></p>
+<p><strong>pac</strong></p>
+<p><strong>authtime</strong></p>
+<p><strong>principal</strong></p>
+<p><strong>server_key</strong></p>
+<p><strong>privsvr_key</strong></p>
+<p><strong>with_realm</strong></p>
+<p class="last"><strong>data</strong></p>
 </td>
 </tr>
 </tbody>
 </table>
-<p>This function is similar to <a class="reference internal" href="krb5_pac_sign.html#c.krb5_pac_sign" title="krb5_pac_sign"><code class="xref c c-func docutils literal"><span class="pre">krb5_pac_sign()</span></code></a> , but adds a parameter <em>with_realm</em> . If <em>with_realm</em> is true, the PAC_CLIENT_INFO field of the signed PAC will include the realm of <em>principal</em> as well as the name. This flag is necessary to generate PACs for cross-realm S4U2Self referrals.</p>
-<div class="admonition note">
-<p class="first admonition-title">Note</p>
-<p class="last">New in 1.17</p>
-</div>
+<p>DEPRECATED Use krb5_kdc_sign_ticket() instead.</p>
 </div>
 
 
@@ -99,7 +95,7 @@
         <div class="sidebar">
     <h2>On this page</h2>
     <ul>
-<li><a class="reference internal" href="#">krb5_pac_sign_ext -  Sign a PAC, possibly with a specified realm.</a></li>
+<li><a class="reference internal" href="#">krb5_pac_sign_ext</a></li>
 </ul>
 
     <br/>
@@ -147,14 +143,14 @@
 
     <div class="footer-wrapper">
         <div class="footer" >
-            <div class="right" ><i>Release: 1.17</i><br />
-                &copy; <a href="../../../copyright.html">Copyright</a> 1985-2019, MIT.
+            <div class="right" ><i>Release: 1.21.2</i><br />
+                &copy; <a href="../../../copyright.html">Copyright</a> 1985-2023, MIT.
             </div>
             <div class="left">
                 
         <a href="../../../index.html" title="Full Table of Contents"
             >Contents</a> |
-        <a href="krb5_pac_sign.html" title="krb5_pac_sign - Sign a PAC."
+        <a href="krb5_pac_sign.html" title="krb5_pac_sign"
             >previous</a> |
         <a href="krb5_pac_verify.html" title="krb5_pac_verify - Verify a PAC."
             >next</a> |
@@ -162,7 +158,7 @@
             >index</a> |
         <a href="../../../search.html" title="Enter search criteria"
             >Search</a> |
-    <a href="mailto:krb5-bugs@mit.edu?subject=Documentation__krb5_pac_sign_ext -  Sign a PAC, possibly with a specified realm.">feedback</a>
+    <a href="mailto:krb5-bugs@mit.edu?subject=Documentation__krb5_pac_sign_ext">feedback</a>
             </div>
         </div>
     </div>

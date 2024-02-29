@@ -62,7 +62,6 @@ Public
    krb5_preauthtype.rst
    krb5_principal.rst
    krb5_principal_data.rst
-   krb5_const_principal.rst
    krb5_prompt.rst
    krb5_prompt_type.rst
    krb5_prompter_fct.rst

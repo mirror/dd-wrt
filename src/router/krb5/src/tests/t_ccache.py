@@ -21,8 +21,18 @@
 # or implied warranty.
 
 from k5test import *
+import tempfile
 
-realm = K5Realm(create_host=False)
+socketdir = tempfile.TemporaryDirectory()
+kcm_socket_path = os.path.join(socketdir.name, 'kcm')
+conf = {'libdefaults': {'kcm_socket': kcm_socket_path,
+                        'kcm_mach_service': '-'}}
+realm = K5Realm(krb5_conf=conf)
+
+realm.addprinc('contest')
+realm.extract_keytab('contest', realm.keytab)
+realm.run(['./conccache', realm.ccache + '.contest', 'contest',
+           realm.host_princ])
 
 keyctl = which('keyctl')
 out = realm.run([klist, '-c', 'KEYRING:process:abcd'], expected_code=1)
@@ -46,7 +56,7 @@ mark('klist -s single ccache')
 realm.run([klist, '-s'], expected_code=1)
 realm.kinit(realm.user_princ, password('user'))
 realm.run([klist, '-s'])
-realm.kinit(realm.user_princ, password('user'), ['-l', '-1s'])
+realm.kinit(realm.user_princ, password('user'), ['-l', '-10s'])
 realm.run([klist, '-s'], expected_code=1)
 realm.kinit(realm.user_princ, password('user'), ['-S', 'kadmin/admin'])
 realm.run([klist, '-s'])
@@ -68,6 +78,11 @@ def collection_test(realm, ccname):
     realm.kinit('alice', password('alice'))
     realm.run([klist], expected_msg='Default principal: alice@')
     realm.run([klist, '-A', '-s'])
+    realm.run([kvno, realm.host_princ], expected_msg = 'kvno = 1')
+    realm.run([kvno, realm.host_princ], expected_msg = 'kvno = 1')
+    out = realm.run([klist])
+    if out.count(realm.host_princ) != 1:
+        fail('Wrong number of service tickets in cache')
     realm.run([kdestroy])
     output = realm.run([klist], expected_code=1)
     if 'No credentials cache' not in output and 'not found' not in output:
@@ -122,6 +137,18 @@ def collection_test(realm, ccname):
 
 
 collection_test(realm, 'DIR:' + os.path.join(realm.testdir, 'cc'))
+
+# Test KCM with and without RETRIEVE and GET_CRED_LIST support.
+kcmserver_path = os.path.join(srctop, 'tests', 'kcmserver.py')
+kcmd = realm.start_server([sys.executable, kcmserver_path, kcm_socket_path],
+                          'starting...')
+collection_test(realm, 'KCM:')
+stop_daemon(kcmd)
+os.remove(kcm_socket_path)
+realm.start_server([sys.executable, kcmserver_path, '-f', kcm_socket_path],
+                   'starting...')
+collection_test(realm, 'KCM:')
+
 if test_keyring:
     def cleanup_keyring(anchor, name):
         out = realm.run(['keyctl', 'list', anchor])

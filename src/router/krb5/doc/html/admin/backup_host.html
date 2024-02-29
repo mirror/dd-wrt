@@ -12,7 +12,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '1.17',
+        VERSION:     '1.21.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -80,17 +80,17 @@ password.</p>
 become corrupted.  If this happens on one of the replica KDCs, you
 might never notice, since the next automatic propagation of the
 database would install a fresh copy.  However, if it happens to the
-master KDC, the corrupted database would be propagated to all of the
+primary KDC, the corrupted database would be propagated to all of the
 replicas during the next propagation.  For this reason, MIT recommends
-that you back up your Kerberos database regularly.  Because the master
+that you back up your Kerberos database regularly.  Because the primary
 KDC is continuously dumping the database to a file in order to
 propagate it to the replica KDCs, it is a simple matter to have a cron
 job periodically copy the dump file to a secure machine elsewhere on
 your network.  (Of course, it is important to make the host where
 these backups are stored as secure as your KDCs, and to encrypt its
 transmission across your network.)  Then if your database becomes
-corrupted, you can load the most recent dump onto the master KDC.
-(See <a class="reference internal" href="database.html#restore-from-dump"><span class="std std-ref">Restoring a Kerberos database from a dump file</span></a>.)</p>
+corrupted, you can load the most recent dump onto the primary KDC.
+(See <a class="reference internal" href="database.html#restore-from-dump"><span class="std std-ref">Dumping and loading a Kerberos database</span></a>.)</p>
 </div>
 </div>
 
@@ -166,8 +166,8 @@ corrupted, you can load the most recent dump onto the master KDC.
 
     <div class="footer-wrapper">
         <div class="footer" >
-            <div class="right" ><i>Release: 1.17</i><br />
-                &copy; <a href="../copyright.html">Copyright</a> 1985-2019, MIT.
+            <div class="right" ><i>Release: 1.21.2</i><br />
+                &copy; <a href="../copyright.html">Copyright</a> 1985-2023, MIT.
             </div>
             <div class="left">
                 

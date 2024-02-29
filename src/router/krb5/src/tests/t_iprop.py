@@ -3,6 +3,16 @@ import re
 
 from k5test import *
 
+# On macOS with System Integrity Protection enabled, this script hangs
+# in the wait_for_prop() call after starting the first kpropd process,
+# most likely due to signal restrictions preventing the listening
+# child from informing the parent that a full resync was processed.
+if which('csrutil'):
+    out = subprocess.check_output(['csrutil', 'status'],
+                                  universal_newlines=True)
+    if 'status: enabled' in out:
+        skip_rest('iprop tests', 'System Integrity Protection is enabled')
+
 # Read lines from kpropd output until we are synchronized.  Error if
 # full_expected is true and we didn't see a full propagation or vice
 # versa.
@@ -47,7 +57,8 @@ def wait_for_prop(kpropd, full_expected, expected_old, expected_new):
             fail('iprop_get_updates failed')
         if 'permission denied' in line:
             fail('kadmind denied update')
-        if 'error from master' in line or 'error returned from master' in line:
+        if ('error from primary' in line or
+            'error returned from primary' in line):
             fail('kadmind reported error')
         if 'invalid return' in line:
             fail('kadmind returned invalid result')
@@ -107,11 +118,11 @@ def check_ulog(num, first, last, entries, env=None):
             if eprinc != None:
                 fail('Expected princ %s in update entry %d' % (eprinc, ser))
 
-# replica1 will receive updates from master, and replica2 will receive
-# updates from replica1.  Because of the awkward way iprop and kprop
-# port configuration currently works, we need separate config files
-# for the replica and master sides of replica1, but they use the same
-# DB and ulog file.
+# replica1 will receive updates from primary, and replica2 will
+# receive updates from replica1.  Because of the awkward way iprop and
+# kprop port configuration currently works, we need separate config
+# files for the replica and primary sides of replica1, but they use
+# the same DB and ulog file.
 conf = {'realms': {'$realm': {'iprop_enable': 'true',
                               'iprop_logfile': '$testdir/db.ulog'}}}
 conf_rep1 = {'realms': {'$realm': {'iprop_replica_poll': '600',
@@ -178,6 +189,7 @@ for realm in multidb_realms(kdc_conf=conf, create_user=False,
 
     # Create the principal used to authenticate kpropd to kadmind.
     kiprop_princ = 'kiprop/' + hostname
+    realm.addprinc(kiprop_princ)
     realm.extract_keytab(kiprop_princ, realm.keytab)
 
     # Create the initial replica databases.
@@ -188,12 +200,12 @@ for realm in multidb_realms(kdc_conf=conf, create_user=False,
     realm.run([kdb5_util, '-r', realm.realm, 'load', dumpfile], replica3)
     realm.run([kdb5_util, 'load', dumpfile], replica4)
 
-    # Reinitialize the master ulog so we know exactly what to expect in
-    # it.
+    # Reinitialize the primary ulog so we know exactly what to expect
+    # in it.
     realm.run([kproplog, '-R'])
     check_ulog(1, 1, 1, [None])
 
-    # Make some changes to the master DB.
+    # Make some changes to the primary DB.
     realm.addprinc(pr1)
     realm.addprinc(pr3)
     realm.addprinc(pr2)
@@ -201,13 +213,13 @@ for realm in multidb_realms(kdc_conf=conf, create_user=False,
     realm.run([kadminl, 'modprinc', '+allow_tix', pr2])
     check_ulog(6, 1, 6, [None, pr1, pr3, pr2, pr2, pr2])
 
-    # Start kpropd for replica1 and get a full dump from master.
+    # Start kpropd for replica1 and get a full dump from primary.
     mark('propagate M->1 full')
     kpropd1 = realm.start_kpropd(replica1, ['-d'])
     wait_for_prop(kpropd1, True, 1, 6)
     out = realm.run([kadminl, 'listprincs'], env=replica1)
     if pr1 not in out or pr2 not in out or pr3 not in out:
-        fail('replica1 does not have all principals from master')
+        fail('replica1 does not have all principals from primary')
     check_ulog(1, 6, 6, [None], replica1)
 
     # Make a change and check that it propagates incrementally.
@@ -227,7 +239,7 @@ for realm in multidb_realms(kdc_conf=conf, create_user=False,
     replica2_kprop_port = str(realm.portbase + 9)
     kadmind_proponly = realm.start_server([kadmind, '-r', realm.realm,
                                            '-nofork', '-proponly',
-                                           '-W', '-p', kdb5_util,
+                                           '-p', kdb5_util,
                                            '-K', kprop, '-k',
                                            replica2_kprop_port,
                                            '-F', replica1_out_dump_path],
@@ -278,7 +290,7 @@ for realm in multidb_realms(kdc_conf=conf, create_user=False,
     stop_daemon(kpropd4)
 
     # Start kpropd for replica2.  The -A option isn't needed since
-    # we're talking to the same host as master (we specify it anyway
+    # we're talking to the same host as primary (we specify it anyway
     # to exercise the code), but replica2 defines iprop_port to $port8
     # so it will talk to replica1.  Get a full dump from replica1.
     mark('propagate 1->2 full')
@@ -309,7 +321,7 @@ for realm in multidb_realms(kdc_conf=conf, create_user=False,
     realm.run([kadminl, 'getprinc', pr1], env=replica2,
               expected_msg='Maximum renewable life: 0 days 22:00:00\n')
 
-    # Reset the ulog on replica1 to force a full resync from master.
+    # Reset the ulog on replica1 to force a full resync from primary.
     # The resync will use the old dump file and then propagate
     # changes.  replica2 should still be in sync with replica1 after
     # the resync, so make sure it doesn't take a full resync.
@@ -384,7 +396,7 @@ for realm in multidb_realms(kdc_conf=conf, create_user=False,
     realm.run([kadminl, 'getpol', 'testpol'], env=replica2, expected_code=1,
               expected_msg='Policy does not exist')
 
-    # Modify a principal on the master and test that it propagates
+    # Modify a principal on the primary and test that it propagates
     # incrementally.
     mark('propagate M->1->2 incremental (after policy changes)')
     realm.run([kadminl, 'modprinc', '-maxlife', '10 minutes', pr1])
@@ -435,7 +447,7 @@ for realm in multidb_realms(kdc_conf=conf, create_user=False,
 
     pr1 = renpr
 
-    # Reset the ulog on the master to force a full resync.
+    # Reset the ulog on the primary to force a full resync.
     mark('propagate M->1->2 full (ulog reset)')
     realm.run([kproplog, '-R'])
     check_ulog(1, 1, 1, [None])
@@ -458,7 +470,7 @@ for realm in multidb_realms(kdc_conf=conf, create_user=False,
         fail('Expected synchronized from kpropd -t')
     check_ulog(1, 1, 1, [None], replica1)
 
-    # Make a change on the master and fetch it incrementally.
+    # Make a change on the primary and fetch it incrementally.
     realm.run([kadminl, 'modprinc', '-maxlife', '5 minutes', pr1])
     check_ulog(2, 1, 2, [None, pr1])
     out = realm.run_kpropd_once(replica1, ['-d'])

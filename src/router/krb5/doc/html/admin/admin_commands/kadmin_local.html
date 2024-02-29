@@ -12,7 +12,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '1.17',
+        VERSION:     '1.21.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -85,7 +85,7 @@
 [command args…]</p>
 </div>
 <div class="section" id="description">
-<span id="kadmin-synopsis-end"></span><h2>DESCRIPTION<a class="headerlink" href="#description" title="Permalink to this headline">¶</a></h2>
+<h2>DESCRIPTION<a class="headerlink" href="#description" title="Permalink to this headline">¶</a></h2>
 <p>kadmin and kadmin.local are command-line interfaces to the Kerberos V5
 administration system.  They provide nearly identical functionalities;
 the difference is that kadmin.local directly accesses the KDC
@@ -95,9 +95,9 @@ to refer to both versions.  kadmin provides for the maintenance of
 Kerberos principals, password policies, and service key tables
 (keytabs).</p>
 <p>The remote kadmin client uses Kerberos to authenticate to kadmind
-using the service principal <code class="docutils literal"><span class="pre">kadmin/ADMINHOST</span></code> (where <em>ADMINHOST</em> is
-the fully-qualified hostname of the admin server) or <code class="docutils literal"><span class="pre">kadmin/admin</span></code>.
-If the credentials cache contains a ticket for one of these
+using the service principal <code class="docutils literal"><span class="pre">kadmin/admin</span></code> or <code class="docutils literal"><span class="pre">kadmin/ADMINHOST</span></code>
+(where <em>ADMINHOST</em> is the fully-qualified hostname of the admin
+server).  If the credentials cache contains a ticket for one of these
 principals, and the <strong>-c</strong> credentials_cache option is specified, that
 ticket is used to authenticate to kadmind.  Otherwise, the <strong>-p</strong> and
 <strong>-k</strong> options are used to specify the client Kerberos principal name
@@ -105,7 +105,7 @@ used to authenticate.  Once kadmin has determined the principal name,
 it requests a service ticket from the KDC, and uses that service
 ticket to authenticate to kadmind.</p>
 <p>Since kadmin.local directly accesses the KDC database, it usually must
-be run directly on the master KDC with sufficient permissions to read
+be run directly on the primary KDC with sufficient permissions to read
 the KDC database.  If the KDC database uses the LDAP database module,
 kadmin.local can be run on any host which can access the LDAP server.</p>
 </div>
@@ -142,10 +142,10 @@ principal (but not realm) will be replaced by the anonymous
 principal.  As of release 1.8, the MIT Kerberos KDC only supports
 fully anonymous operation.</dd>
 <dt><strong>-c</strong> <em>credentials_cache</em></dt>
-<dd>Use <em>credentials_cache</em> as the credentials cache.  The
-cache should contain a service ticket for the <code class="docutils literal"><span class="pre">kadmin/ADMINHOST</span></code>
-(where <em>ADMINHOST</em> is the fully-qualified hostname of the admin
-server) or <code class="docutils literal"><span class="pre">kadmin/admin</span></code> service; it can be acquired with the
+<dd>Use <em>credentials_cache</em> as the credentials cache.  The cache
+should contain a service ticket for the <code class="docutils literal"><span class="pre">kadmin/admin</span></code> or
+<code class="docutils literal"><span class="pre">kadmin/ADMINHOST</span></code> (where <em>ADMINHOST</em> is the fully-qualified
+hostname of the admin server) service; it can be acquired with the
 <a class="reference internal" href="../../user/user_commands/kinit.html#kinit-1"><span class="std std-ref">kinit</span></a> program.  If this option is not specified, kadmin
 requests a new service ticket from the KDC, and stores it in its
 own temporary ccache.</dd>
@@ -175,7 +175,7 @@ values.</dd>
 <dd>Specifies the database specific arguments.  See the next section
 for supported options.</dd>
 </dl>
-<p id="kadmin-options-end">Starting with release 1.14, if any command-line arguments remain after
+<p>Starting with release 1.14, if any command-line arguments remain after
 the options, they will be treated as a single query to be executed.
 This mode of operation is intended for scripts and behaves differently
 from the interactive mode in several respects:</p>
@@ -407,7 +407,7 @@ principal container configured in the realm.</li>
 </dl>
 <p>Example:</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">kadmin</span><span class="p">:</span> <span class="n">addprinc</span> <span class="n">jennifer</span>
-<span class="n">WARNING</span><span class="p">:</span> <span class="n">no</span> <span class="n">policy</span> <span class="n">specified</span> <span class="k">for</span> <span class="s2">&quot;jennifer@ATHENA.MIT.EDU&quot;</span><span class="p">;</span>
+<span class="n">No</span> <span class="n">policy</span> <span class="n">specified</span> <span class="k">for</span> <span class="s2">&quot;jennifer@ATHENA.MIT.EDU&quot;</span><span class="p">;</span>
 <span class="n">defaulting</span> <span class="n">to</span> <span class="n">no</span> <span class="n">policy</span><span class="o">.</span>
 <span class="n">Enter</span> <span class="n">password</span> <span class="k">for</span> <span class="n">principal</span> <span class="n">jennifer</span><span class="nd">@ATHENA</span><span class="o">.</span><span class="n">MIT</span><span class="o">.</span><span class="n">EDU</span><span class="p">:</span>
 <span class="n">Re</span><span class="o">-</span><span class="n">enter</span> <span class="n">password</span> <span class="k">for</span> <span class="n">principal</span> <span class="n">jennifer</span><span class="nd">@ATHENA</span><span class="o">.</span><span class="n">MIT</span><span class="o">.</span><span class="n">EDU</span><span class="p">:</span>
@@ -417,7 +417,7 @@ principal container configured in the realm.</li>
 </div>
 </div>
 <div class="section" id="modify-principal">
-<span id="add-principal-end"></span><span id="id2"></span><h3>modify_principal<a class="headerlink" href="#modify-principal" title="Permalink to this headline">¶</a></h3>
+<span id="id2"></span><h3>modify_principal<a class="headerlink" href="#modify-principal" title="Permalink to this headline">¶</a></h3>
 <blockquote>
 <div><strong>modify_principal</strong> [<em>options</em>] <em>principal</em></div></blockquote>
 <p>Modifies the specified principal, changing the fields as specified.
@@ -435,7 +435,7 @@ to its password policy) so that it can successfully authenticate.</dd>
 </dl>
 </div>
 <div class="section" id="rename-principal">
-<span id="modify-principal-end"></span><span id="id3"></span><h3>rename_principal<a class="headerlink" href="#rename-principal" title="Permalink to this headline">¶</a></h3>
+<span id="id3"></span><h3>rename_principal<a class="headerlink" href="#rename-principal" title="Permalink to this headline">¶</a></h3>
 <blockquote>
 <div><strong>rename_principal</strong> [<strong>-force</strong>] <em>old_principal</em> <em>new_principal</em></div></blockquote>
 <p>Renames the specified <em>old_principal</em> to <em>new_principal</em>.  This
@@ -445,7 +445,7 @@ given.</p>
 <p>Alias: <strong>renprinc</strong></p>
 </div>
 <div class="section" id="delete-principal">
-<span id="rename-principal-end"></span><span id="id4"></span><h3>delete_principal<a class="headerlink" href="#delete-principal" title="Permalink to this headline">¶</a></h3>
+<span id="id4"></span><h3>delete_principal<a class="headerlink" href="#delete-principal" title="Permalink to this headline">¶</a></h3>
 <blockquote>
 <div><strong>delete_principal</strong> [<strong>-force</strong>] <em>principal</em></div></blockquote>
 <p>Deletes the specified <em>principal</em> from the database.  This command
@@ -454,7 +454,7 @@ prompts for deletion, unless the <strong>-force</strong> option is given.</p>
 <p>Alias: <strong>delprinc</strong></p>
 </div>
 <div class="section" id="change-password">
-<span id="delete-principal-end"></span><span id="id5"></span><h3>change_password<a class="headerlink" href="#change-password" title="Permalink to this headline">¶</a></h3>
+<span id="id5"></span><h3>change_password<a class="headerlink" href="#change-password" title="Permalink to this headline">¶</a></h3>
 <blockquote>
 <div><strong>change_password</strong> [<em>options</em>] <em>principal</em></div></blockquote>
 <p>Changes the password of <em>principal</em>.  Prompts for a new password if
@@ -489,7 +489,7 @@ necessary except perhaps for <code class="docutils literal"><span class="pre">kr
 </div>
 </div>
 <div class="section" id="purgekeys">
-<span id="change-password-end"></span><span id="id6"></span><h3>purgekeys<a class="headerlink" href="#purgekeys" title="Permalink to this headline">¶</a></h3>
+<span id="id6"></span><h3>purgekeys<a class="headerlink" href="#purgekeys" title="Permalink to this headline">¶</a></h3>
 <blockquote>
 <div><strong>purgekeys</strong> [<strong>-all</strong>|<strong>-keepkvno</strong> <em>oldest_kvno_to_keep</em>] <em>principal</em></div></blockquote>
 <p>Purges previously retained old keys (e.g., from <strong>change_password
@@ -500,7 +500,7 @@ is new in release 1.12.</p>
 <p>This command requires the <strong>modify</strong> privilege.</p>
 </div>
 <div class="section" id="get-principal">
-<span id="purgekeys-end"></span><span id="id7"></span><h3>get_principal<a class="headerlink" href="#get-principal" title="Permalink to this headline">¶</a></h3>
+<span id="id7"></span><h3>get_principal<a class="headerlink" href="#get-principal" title="Permalink to this headline">¶</a></h3>
 <blockquote>
 <div><strong>get_principal</strong> [<strong>-terse</strong>] <em>principal</em></div></blockquote>
 <p>Gets the attributes of principal.  With the <strong>-terse</strong> option, outputs
@@ -513,16 +513,16 @@ running the the program to be the same as the one being listed.</p>
 <span class="n">Principal</span><span class="p">:</span> <span class="n">tlyu</span><span class="o">/</span><span class="n">admin</span><span class="nd">@BLEEP</span><span class="o">.</span><span class="n">COM</span>
 <span class="n">Expiration</span> <span class="n">date</span><span class="p">:</span> <span class="p">[</span><span class="n">never</span><span class="p">]</span>
 <span class="n">Last</span> <span class="n">password</span> <span class="n">change</span><span class="p">:</span> <span class="n">Mon</span> <span class="n">Aug</span> <span class="mi">12</span> <span class="mi">14</span><span class="p">:</span><span class="mi">16</span><span class="p">:</span><span class="mi">47</span> <span class="n">EDT</span> <span class="mi">1996</span>
-<span class="n">Password</span> <span class="n">expiration</span> <span class="n">date</span><span class="p">:</span> <span class="p">[</span><span class="n">none</span><span class="p">]</span>
+<span class="n">Password</span> <span class="n">expiration</span> <span class="n">date</span><span class="p">:</span> <span class="p">[</span><span class="n">never</span><span class="p">]</span>
 <span class="n">Maximum</span> <span class="n">ticket</span> <span class="n">life</span><span class="p">:</span> <span class="mi">0</span> <span class="n">days</span> <span class="mi">10</span><span class="p">:</span><span class="mi">00</span><span class="p">:</span><span class="mi">00</span>
 <span class="n">Maximum</span> <span class="n">renewable</span> <span class="n">life</span><span class="p">:</span> <span class="mi">7</span> <span class="n">days</span> <span class="mi">00</span><span class="p">:</span><span class="mi">00</span><span class="p">:</span><span class="mi">00</span>
 <span class="n">Last</span> <span class="n">modified</span><span class="p">:</span> <span class="n">Mon</span> <span class="n">Aug</span> <span class="mi">12</span> <span class="mi">14</span><span class="p">:</span><span class="mi">16</span><span class="p">:</span><span class="mi">47</span> <span class="n">EDT</span> <span class="mi">1996</span> <span class="p">(</span><span class="n">bjaspan</span><span class="o">/</span><span class="n">admin</span><span class="nd">@BLEEP</span><span class="o">.</span><span class="n">COM</span><span class="p">)</span>
 <span class="n">Last</span> <span class="n">successful</span> <span class="n">authentication</span><span class="p">:</span> <span class="p">[</span><span class="n">never</span><span class="p">]</span>
 <span class="n">Last</span> <span class="n">failed</span> <span class="n">authentication</span><span class="p">:</span> <span class="p">[</span><span class="n">never</span><span class="p">]</span>
 <span class="n">Failed</span> <span class="n">password</span> <span class="n">attempts</span><span class="p">:</span> <span class="mi">0</span>
-<span class="n">Number</span> <span class="n">of</span> <span class="n">keys</span><span class="p">:</span> <span class="mi">2</span>
-<span class="n">Key</span><span class="p">:</span> <span class="n">vno</span> <span class="mi">1</span><span class="p">,</span> <span class="n">des</span><span class="o">-</span><span class="n">cbc</span><span class="o">-</span><span class="n">crc</span>
-<span class="n">Key</span><span class="p">:</span> <span class="n">vno</span> <span class="mi">1</span><span class="p">,</span> <span class="n">des</span><span class="o">-</span><span class="n">cbc</span><span class="o">-</span><span class="n">crc</span><span class="p">:</span><span class="n">v4</span>
+<span class="n">Number</span> <span class="n">of</span> <span class="n">keys</span><span class="p">:</span> <span class="mi">1</span>
+<span class="n">Key</span><span class="p">:</span> <span class="n">vno</span> <span class="mi">1</span><span class="p">,</span> <span class="n">aes256</span><span class="o">-</span><span class="n">cts</span><span class="o">-</span><span class="n">hmac</span><span class="o">-</span><span class="n">sha384</span><span class="o">-</span><span class="mi">192</span>
+<span class="n">MKey</span><span class="p">:</span> <span class="n">vno</span> <span class="mi">1</span>
 <span class="n">Attributes</span><span class="p">:</span>
 <span class="n">Policy</span><span class="p">:</span> <span class="p">[</span><span class="n">none</span><span class="p">]</span>
 
@@ -535,7 +535,7 @@ running the the program to be the same as the one being listed.</p>
 </div>
 </div>
 <div class="section" id="list-principals">
-<span id="get-principal-end"></span><span id="id8"></span><h3>list_principals<a class="headerlink" href="#list-principals" title="Permalink to this headline">¶</a></h3>
+<span id="id8"></span><h3>list_principals<a class="headerlink" href="#list-principals" title="Permalink to this headline">¶</a></h3>
 <blockquote>
 <div><strong>list_principals</strong> [<em>expression</em>]</div></blockquote>
 <p>Retrieves all or some principal names.  <em>expression</em> is a shell-style
@@ -546,7 +546,7 @@ printed.  If the expression does not contain an <code class="docutils literal"><
 <code class="docutils literal"><span class="pre">&#64;</span></code> character followed by the local realm is appended to the
 expression.</p>
 <p>This command requires the <strong>list</strong> privilege.</p>
-<p>Alias: <strong>listprincs</strong>, <strong>get_principals</strong>, <strong>get_princs</strong></p>
+<p>Alias: <strong>listprincs</strong>, <strong>get_principals</strong>, <strong>getprincs</strong></p>
 <p>Example:</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">kadmin</span><span class="p">:</span>  <span class="n">listprincs</span> <span class="n">test</span><span class="o">*</span>
 <span class="n">test3</span><span class="nd">@SECURE</span><span class="o">-</span><span class="n">TEST</span><span class="o">.</span><span class="n">OV</span><span class="o">.</span><span class="n">COM</span>
@@ -558,15 +558,15 @@ expression.</p>
 </div>
 </div>
 <div class="section" id="get-strings">
-<span id="list-principals-end"></span><span id="id9"></span><h3>get_strings<a class="headerlink" href="#get-strings" title="Permalink to this headline">¶</a></h3>
+<span id="id9"></span><h3>get_strings<a class="headerlink" href="#get-strings" title="Permalink to this headline">¶</a></h3>
 <blockquote>
 <div><strong>get_strings</strong> <em>principal</em></div></blockquote>
 <p>Displays string attributes on <em>principal</em>.</p>
 <p>This command requires the <strong>inquire</strong> privilege.</p>
-<p>Alias: <strong>getstr</strong></p>
+<p>Alias: <strong>getstrs</strong></p>
 </div>
 <div class="section" id="set-string">
-<span id="get-strings-end"></span><span id="id10"></span><h3>set_string<a class="headerlink" href="#set-string" title="Permalink to this headline">¶</a></h3>
+<span id="id10"></span><h3>set_string<a class="headerlink" href="#set-string" title="Permalink to this headline">¶</a></h3>
 <blockquote>
 <div><strong>set_string</strong> <em>principal</em> <em>name</em> <em>value</em></div></blockquote>
 <p>Sets a string attribute on <em>principal</em>.  String attributes are used to
@@ -594,6 +594,14 @@ attributes required for the client certificate used by the
 principal during PKINIT authentication.  The matching expression
 is in the same format as those used by the <strong>pkinit_cert_match</strong>
 option in <a class="reference internal" href="../conf_files/krb5_conf.html#krb5-conf-5"><span class="std std-ref">krb5.conf</span></a>.  (New in release 1.16.)</dd>
+<dt><strong>pac_privsvr_enctype</strong></dt>
+<dd>Forces the encryption type of the PAC KDC checksum buffers to the
+specified encryption type for tickets issued to this server, by
+deriving a key from the local krbtgt key if it is of a different
+encryption type.  It may be necessary to set this value to
+“aes256-sha1” on the cross-realm krbtgt entry for an Active
+Directory realm when using aes-sha2 keys on the local krbtgt
+entry.</dd>
 </dl>
 <p>This command requires the <strong>modify</strong> privilege.</p>
 <p>Alias: <strong>setstr</strong></p>
@@ -604,7 +612,7 @@ option in <a class="reference internal" href="../conf_files/krb5_conf.html#krb5-
 </div>
 </div>
 <div class="section" id="del-string">
-<span id="set-string-end"></span><span id="id11"></span><h3>del_string<a class="headerlink" href="#del-string" title="Permalink to this headline">¶</a></h3>
+<span id="id11"></span><h3>del_string<a class="headerlink" href="#del-string" title="Permalink to this headline">¶</a></h3>
 <blockquote>
 <div><strong>del_string</strong> <em>principal</em> <em>key</em></div></blockquote>
 <p>Deletes a string attribute from <em>principal</em>.</p>
@@ -612,7 +620,7 @@ option in <a class="reference internal" href="../conf_files/krb5_conf.html#krb5-
 <p>Alias: <strong>delstr</strong></p>
 </div>
 <div class="section" id="add-policy">
-<span id="del-string-end"></span><span id="id12"></span><h3>add_policy<a class="headerlink" href="#add-policy" title="Permalink to this headline">¶</a></h3>
+<span id="id12"></span><h3>add_policy<a class="headerlink" href="#add-policy" title="Permalink to this headline">¶</a></h3>
 <blockquote>
 <div><strong>add_policy</strong> [<em>options</em>] <em>policy</em></div></blockquote>
 <p>Adds a password policy named <em>policy</em> to the database.</p>
@@ -675,7 +683,7 @@ a value of ‘-‘.</dd>
 </div>
 </div>
 <div class="section" id="modify-policy">
-<span id="add-policy-end"></span><span id="id13"></span><h3>modify_policy<a class="headerlink" href="#modify-policy" title="Permalink to this headline">¶</a></h3>
+<span id="id13"></span><h3>modify_policy<a class="headerlink" href="#modify-policy" title="Permalink to this headline">¶</a></h3>
 <blockquote>
 <div><strong>modify_policy</strong> [<em>options</em>] <em>policy</em></div></blockquote>
 <p>Modifies the password policy named <em>policy</em>.  Options are as described
@@ -684,7 +692,7 @@ for <strong>add_policy</strong>.</p>
 <p>Alias: <strong>modpol</strong></p>
 </div>
 <div class="section" id="delete-policy">
-<span id="modify-policy-end"></span><span id="id14"></span><h3>delete_policy<a class="headerlink" href="#delete-policy" title="Permalink to this headline">¶</a></h3>
+<span id="id14"></span><h3>delete_policy<a class="headerlink" href="#delete-policy" title="Permalink to this headline">¶</a></h3>
 <blockquote>
 <div><strong>delete_policy</strong> [<strong>-force</strong>] <em>policy</em></div></blockquote>
 <p>Deletes the password policy named <em>policy</em>.  Prompts for confirmation
@@ -701,14 +709,14 @@ kadmin:
 </div>
 </div>
 <div class="section" id="get-policy">
-<span id="delete-policy-end"></span><span id="id15"></span><h3>get_policy<a class="headerlink" href="#get-policy" title="Permalink to this headline">¶</a></h3>
+<span id="id15"></span><h3>get_policy<a class="headerlink" href="#get-policy" title="Permalink to this headline">¶</a></h3>
 <blockquote>
 <div><strong>get_policy</strong> [ <strong>-terse</strong> ] <em>policy</em></div></blockquote>
 <p>Displays the values of the password policy named <em>policy</em>.  With the
 <strong>-terse</strong> flag, outputs the fields as quoted strings separated by
 tabs.</p>
 <p>This command requires the <strong>inquire</strong> privilege.</p>
-<p>Alias: getpol</p>
+<p>Alias: <strong>getpol</strong></p>
 <p>Examples:</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">kadmin</span><span class="p">:</span> <span class="n">get_policy</span> <span class="n">admin</span>
 <span class="n">Policy</span><span class="p">:</span> <span class="n">admin</span>
@@ -729,7 +737,7 @@ With the LDAP KDC database module, the reference count field is not
 meaningful.</p>
 </div>
 <div class="section" id="list-policies">
-<span id="get-policy-end"></span><span id="id16"></span><h3>list_policies<a class="headerlink" href="#list-policies" title="Permalink to this headline">¶</a></h3>
+<span id="id16"></span><h3>list_policies<a class="headerlink" href="#list-policies" title="Permalink to this headline">¶</a></h3>
 <blockquote>
 <div><strong>list_policies</strong> [<em>expression</em>]</div></blockquote>
 <p>Retrieves all or some policy names.  <em>expression</em> is a shell-style
@@ -754,7 +762,7 @@ printed.</p>
 </div>
 </div>
 <div class="section" id="ktadd">
-<span id="list-policies-end"></span><span id="id17"></span><h3>ktadd<a class="headerlink" href="#ktadd" title="Permalink to this headline">¶</a></h3>
+<span id="id17"></span><h3>ktadd<a class="headerlink" href="#ktadd" title="Permalink to this headline">¶</a></h3>
 <blockquote>
 <div><div class="line-block">
 <div class="line"><strong>ktadd</strong> [options] <em>principal</em></div>
@@ -786,6 +794,7 @@ unchanged.  This option cannot be specified in combination with the
 <p>An entry for each of the principal’s unique encryption types is added,
 ignoring multiple keys with the same encryption type but different
 salt types.</p>
+<p>Alias: <strong>xst</strong></p>
 <p>Example:</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">kadmin</span><span class="p">:</span> <span class="n">ktadd</span> <span class="o">-</span><span class="n">k</span> <span class="o">/</span><span class="n">tmp</span><span class="o">/</span><span class="n">foo</span><span class="o">-</span><span class="n">new</span><span class="o">-</span><span class="n">keytab</span> <span class="n">host</span><span class="o">/</span><span class="n">foo</span><span class="o">.</span><span class="n">mit</span><span class="o">.</span><span class="n">edu</span>
 <span class="n">Entry</span> <span class="k">for</span> <span class="n">principal</span> <span class="n">host</span><span class="o">/</span><span class="n">foo</span><span class="o">.</span><span class="n">mit</span><span class="o">.</span><span class="n">edu</span><span class="nd">@ATHENA</span><span class="o">.</span><span class="n">MIT</span><span class="o">.</span><span class="n">EDU</span> <span class="k">with</span> <span class="n">kvno</span> <span class="mi">3</span><span class="p">,</span>
@@ -796,7 +805,7 @@ salt types.</p>
 </div>
 </div>
 <div class="section" id="ktremove">
-<span id="ktadd-end"></span><span id="id18"></span><h3>ktremove<a class="headerlink" href="#ktremove" title="Permalink to this headline">¶</a></h3>
+<span id="id18"></span><h3>ktremove<a class="headerlink" href="#ktremove" title="Permalink to this headline">¶</a></h3>
 <blockquote>
 <div><strong>ktremove</strong> [options] <em>principal</em> [<em>kvno</em> | <em>all</em> | <em>old</em>]</div></blockquote>
 <p>Removes entries for the specified <em>principal</em> from a keytab.  Requires
@@ -814,6 +823,7 @@ used.</dd>
 <dt><strong>-q</strong></dt>
 <dd>Display less verbose information.</dd>
 </dl>
+<p>Alias: <strong>ktrem</strong></p>
 <p>Example:</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">kadmin</span><span class="p">:</span> <span class="n">ktremove</span> <span class="n">kadmin</span><span class="o">/</span><span class="n">admin</span> <span class="nb">all</span>
 <span class="n">Entry</span> <span class="k">for</span> <span class="n">principal</span> <span class="n">kadmin</span><span class="o">/</span><span class="n">admin</span> <span class="k">with</span> <span class="n">kvno</span> <span class="mi">3</span> <span class="n">removed</span> <span class="kn">from</span> <span class="nn">keytab</span>
@@ -823,7 +833,7 @@ used.</dd>
 </div>
 </div>
 <div class="section" id="lock">
-<span id="ktremove-end"></span><h3>lock<a class="headerlink" href="#lock" title="Permalink to this headline">¶</a></h3>
+<h3>lock<a class="headerlink" href="#lock" title="Permalink to this headline">¶</a></h3>
 <p>Lock database exclusively.  Use with extreme caution!  This command
 only works with the DB2 KDC database module.</p>
 </div>
@@ -974,8 +984,8 @@ variables.</p>
 
     <div class="footer-wrapper">
         <div class="footer" >
-            <div class="right" ><i>Release: 1.17</i><br />
-                &copy; <a href="../../copyright.html">Copyright</a> 1985-2019, MIT.
+            <div class="right" ><i>Release: 1.21.2</i><br />
+                &copy; <a href="../../copyright.html">Copyright</a> 1985-2023, MIT.
             </div>
             <div class="left">
                 

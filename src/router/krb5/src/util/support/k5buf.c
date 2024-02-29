@@ -73,13 +73,13 @@ ensure_space(struct k5buf *buf, size_t len)
 
     if (buf->buftype == K5BUF_ERROR)
         return 0;
-    if (buf->space - 1 - buf->len >= len) /* Enough room already. */
+    if (buf->space - buf->len >= len) /* Enough room already. */
         return 1;
     if (buf->buftype == K5BUF_FIXED) /* Can't resize a fixed buffer. */
         goto error_exit;
     assert(buf->buftype == K5BUF_DYNAMIC || buf->buftype == K5BUF_DYNAMIC_ZAP);
     new_space = buf->space * 2;
-    while (new_space - buf->len - 1 < len) {
+    while (new_space - buf->len < len) {
         if (new_space > SIZE_MAX / 2)
             goto error_exit;
         new_space *= 2;
@@ -90,7 +90,6 @@ ensure_space(struct k5buf *buf, size_t len)
         if (new_data == NULL)
             goto error_exit;
         memcpy(new_data, buf->data, buf->len);
-        new_data[buf->len] = '\0';
         zap(buf->data, buf->len);
         free(buf->data);
     } else {
@@ -112,14 +111,13 @@ error_exit:
 }
 
 void
-k5_buf_init_fixed(struct k5buf *buf, char *data, size_t space)
+k5_buf_init_fixed(struct k5buf *buf, void *data, size_t space)
 {
     assert(space > 0);
     buf->buftype = K5BUF_FIXED;
     buf->data = data;
     buf->space = space;
     buf->len = 0;
-    *endptr(buf) = '\0';
 }
 
 void
@@ -133,7 +131,6 @@ k5_buf_init_dynamic(struct k5buf *buf)
         return;
     }
     buf->len = 0;
-    *endptr(buf) = '\0';
 }
 
 void
@@ -158,7 +155,6 @@ k5_buf_add_len(struct k5buf *buf, const void *data, size_t len)
     if (len > 0)
         memcpy(endptr(buf), data, len);
     buf->len += len;
-    *endptr(buf) = '\0';
 }
 
 void
@@ -195,7 +191,7 @@ k5_buf_add_vfmt(struct k5buf *buf, const char *fmt, va_list ap)
 
     if (r >= 0) {
         /* snprintf correctly told us how much space is required. */
-        if (!ensure_space(buf, r))
+        if (!ensure_space(buf, r + 1))
             return;
         remaining = buf->space - buf->len;
         r = vsnprintf(endptr(buf), remaining, fmt, ap);
@@ -214,8 +210,8 @@ k5_buf_add_vfmt(struct k5buf *buf, const char *fmt, va_list ap)
         return;
     }
     if (ensure_space(buf, r)) {
-        /* Copy the temporary string into buf, including terminator. */
-        memcpy(endptr(buf), tmp, r + 1);
+        /* Copy the temporary string into buf. */
+        memcpy(endptr(buf), tmp, r);
         buf->len += r;
     }
     if (buf->buftype == K5BUF_DYNAMIC_ZAP)
@@ -233,13 +229,21 @@ k5_buf_add_fmt(struct k5buf *buf, const char *fmt, ...)
     va_end(ap);
 }
 
+char *
+k5_buf_cstring(struct k5buf *buf)
+{
+    if (!ensure_space(buf, 1))
+        return NULL;
+    *endptr(buf) = '\0';
+    return buf->data;
+}
+
 void *
 k5_buf_get_space(struct k5buf *buf, size_t len)
 {
     if (!ensure_space(buf, len))
         return NULL;
     buf->len += len;
-    *endptr(buf) = '\0';
     return endptr(buf) - len;
 }
 
@@ -250,7 +254,6 @@ k5_buf_truncate(struct k5buf *buf, size_t len)
         return;
     assert(len <= buf->len);
     buf->len = len;
-    *endptr(buf) = '\0';
 }
 
 int

@@ -12,7 +12,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../',
-        VERSION:     '1.17',
+        VERSION:     '1.21.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -81,7 +81,8 @@
 </tbody>
 </table>
 <p>Set a callback to receive password and account expiration times.</p>
-<p>This option only applies to <a class="reference internal" href="krb5_get_init_creds_password.html#c.krb5_get_init_creds_password" title="krb5_get_init_creds_password"><code class="xref c c-func docutils literal"><span class="pre">krb5_get_init_creds_password()</span></code></a> . <em>cb</em> will be invoked if and only if credentials are successfully acquired. The callback will receive the <em>context</em> from the <a class="reference internal" href="krb5_get_init_creds_password.html#c.krb5_get_init_creds_password" title="krb5_get_init_creds_password"><code class="xref c c-func docutils literal"><span class="pre">krb5_get_init_creds_password()</span></code></a> call and the <em>data</em> argument supplied with this API. The remaining arguments should be interpreted as follows:</p>
+<blockquote>
+<div><em>cb</em> will be invoked if and only if credentials are successfully acquired. The callback will receive the <em>context</em> from the calling function and the <em>data</em> argument supplied with this API. The remaining arguments should be interpreted as follows:</div></blockquote>
 <p>If <em>is_last_req</em> is true, then the KDC reply contained last-req entries which unambiguously indicated the password expiration, account expiration, or both. (If either value was not present, the corresponding argument will be 0.) Furthermore, a non-zero <em>password_expiration</em> should be taken as a suggestion from the KDC that a warning be displayed.</p>
 <p>If <em>is_last_req</em> is false, then <em>account_expiration</em> will be 0 and <em>password_expiration</em> will contain the expiration time of either the password or account, or 0 if no expiration time was indicated in the KDC reply. The callback should independently decide whether to display a password expiration warning.</p>
 <p>Note that <em>cb</em> may be invoked even if credentials are being acquired for the kadmin/changepw service in order to change the password. It is the caller’s responsibility to avoid displaying a password expiry warning in this case.</p>
@@ -151,8 +152,8 @@
 
     <div class="footer-wrapper">
         <div class="footer" >
-            <div class="right" ><i>Release: 1.17</i><br />
-                &copy; <a href="../../../copyright.html">Copyright</a> 1985-2019, MIT.
+            <div class="right" ><i>Release: 1.21.2</i><br />
+                &copy; <a href="../../../copyright.html">Copyright</a> 1985-2023, MIT.
             </div>
             <div class="left">
                 

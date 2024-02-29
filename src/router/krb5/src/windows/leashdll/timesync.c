@@ -189,7 +189,7 @@ LONG Leash_timesync(int MessageP)
     {
         if (rc && !*tmpstr)
         {
-            strcpy(tmpstr, "Unable to syncronize time!\n\n");
+            strcpy(tmpstr, "Unable to synchronize time!\n\n");
             if (*hostname)
             {
                 char                tmpstr1[2048];
@@ -283,7 +283,7 @@ int ProcessTimeSync(char *hostname, int Port, char *tmpstr)
         return(LSH_SETTIMEOFDAY);
     }
 
-    sprintf(tmpstr, "The time has been syncronized with the server:   %s\n\n", hostname);
+    sprintf(tmpstr, "The time has been synchronized with the server:   %s\n\n", hostname);
     strcat(tmpstr, "To be able to use the Kerberos server, it was necessary to \nset the system time to:  ") ;
     strcat(tmpstr, ctime((time_t *)&hosttime));
     strcat(tmpstr, "\n");

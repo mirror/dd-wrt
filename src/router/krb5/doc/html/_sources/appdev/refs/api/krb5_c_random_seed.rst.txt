@@ -22,7 +22,7 @@ krb5_c_random_seed
 ..
 
 
-DEPRECATED Replaced by krb5_c_* API family. 
+DEPRECATED This call is no longer necessary. 
 
 
 

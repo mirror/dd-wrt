@@ -35,10 +35,10 @@
     
     <Property Id="ARPCOMMENTS">$(var.ARPComments)</Property>
     <Property Id="ARPCONTACT">kerberos@mit.edu</Property>
-    <Property Id="ARPURLINFOABOUT">http://web.mit.edu/kerberos</Property>
-    <Property Id="ARPHELPLINK">http://web.mit.edu/kerberos</Property>
+    <Property Id="ARPURLINFOABOUT">https://web.mit.edu/kerberos</Property>
+    <Property Id="ARPHELPLINK">https://web.mit.edu/kerberos</Property>
     <Property Id="INSTALLLEVEL">50</Property>
-    <Property Id="ComponentDownload">http://web.mit.edu/kerberos</Property>
+    <Property Id="ComponentDownload">https://web.mit.edu/kerberos</Property>
 
     <Property Id="UPGRADENSIS">
         <RegistrySearch Win64="no" Id="regsrch_NSIS" Root="HKLM" Key="Software\Microsoft\Windows\CurrentVersion\Uninstall\Kerberos for Windows" Name="UninstallString" Type="raw"/>
@@ -60,7 +60,6 @@
 <?ifdef UseDefaultProperties?>
     <Property Id="LEASHCREATEMISSINGCONFIG" Admin="yes" Secure="yes">$(var.LeashCreateMissingConfig)</Property>
     <Property Id="LEASHAUTORENEWTICKETS" Admin="yes" Secure="yes">$(var.LeashAutoRenewTickets)</Property>
-    <Property Id="LEASHMSLSAIMPORT" Admin="yes" Secure="yes">$(var.LeashMsLsaImport)</Property>
     <Property Id="LEASHLIFETIME" Admin="yes" Secure="yes">$(var.LeashLifetime)</Property>
     <Property Id="LEASHRENEWTILL" Admin="yes" Secure="yes">$(var.LeashRenewTill)</Property>
     <Property Id="LEASHRENEWABLE" Admin="yes" Secure="yes">$(var.LeashRenewable)</Property>

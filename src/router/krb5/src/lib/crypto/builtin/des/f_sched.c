@@ -29,8 +29,10 @@
 /*
  * des_make_sched.c - permute a DES key, returning the resulting key schedule
  */
-#include "k5-int.h"
+#include "crypto_int.h"
 #include "des_int.h"
+
+#ifdef K5_BUILTIN_DES
 
 /*
  * Permuted choice 1 tables.  These are used to extract bits
@@ -357,3 +359,5 @@ mit_des_make_key_sched(mit_des_cblock key, mit_des_key_schedule schedule)
     }
     return (0);
 }
+
+#endif /* K5_BUILTIN_DES */

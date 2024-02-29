@@ -568,7 +568,7 @@ VOID KFW_Logon_Event( PWLX_NOTIFICATION_INFO pInfo )
 
 
 /* Documentation on the use of RunDll32 entrypoints can be found
- * at http://support.microsoft.com/kb/164787
+ * at https://support.microsoft.com/kb/164787
  */
 void CALLBACK
 LogonEventHandlerA(HWND hwnd, HINSTANCE hinst, LPSTR lpszCmdLine, int nCmdShow)

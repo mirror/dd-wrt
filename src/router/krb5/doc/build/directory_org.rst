@@ -11,7 +11,7 @@ clients          Kerberos V5 user programs (See :ref:`user_commands`)
 config           Configure scripts
 config-files     Sample Kerberos configuration files
 include          include files needed to build the Kerberos system
-kadmin           Administrative interface to the Kerberos master database: :ref:`kadmin(1)`, :ref:`kdb5_util(8)`, :ref:`ktutil(1)`.
+kadmin           Administrative interface to the Kerberos database: :ref:`kadmin(1)`, :ref:`kdb5_util(8)`, :ref:`ktutil(1)`.
 kdc              Kerberos V5 Authentication Service and Key Distribution Center
 lib_             Libraries for use with/by Kerberos V5
 plugins          Kerberos plugins directory

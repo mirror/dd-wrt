@@ -439,7 +439,6 @@ int get_tgt (context, p_client_str, p_client, ccache)
     krb5_principal *p_client;
     krb5_ccache ccache;
 {
-    char *cache_name = NULL;		/* -f option */
     long lifetime = KRB5_DEFAULT_LIFE;	/* -l option */
     krb5_error_code code;
     krb5_creds my_creds;
@@ -464,8 +463,7 @@ int get_tgt (context, p_client_str, p_client, ccache)
 
     code = krb5_cc_initialize (context, ccache, *p_client);
     if (code != 0) {
-	com_err (prog, code, "when initializing cache %s",
-		 cache_name?cache_name:"");
+	com_err (prog, code, "when initializing cache");
 	return(-1);
     }
 

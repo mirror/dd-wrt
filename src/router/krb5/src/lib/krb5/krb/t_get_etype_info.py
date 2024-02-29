@@ -9,9 +9,6 @@ realm.run([kadminl, 'ank', '-nokey', '+preauth', 'pnokey'])
 realm.run([kadminl, 'ank', '-e', 'aes256-cts:special', '-pw', 'pw', 'exp'])
 realm.run([kadminl, 'ank', '-e', 'aes256-cts:special', '-pw', 'pw', '+preauth',
            'pexp'])
-realm.run([kadminl, 'ank', '-e', 'des-cbc-crc:afs3', '-pw', 'pw', 'afs'])
-realm.run([kadminl, 'ank', '-e', 'des-cbc-crc:afs3', '-pw', 'pw', '+preauth',
-           'pafs'])
 
 # Extract the explicit salt values from the database.
 out = realm.run([kdb5_util, 'tabdump', 'keyinfo'])
@@ -55,9 +52,5 @@ realm.run(['./t_get_etype_info', 'exp'],
           expected_msg='etype: aes256-cts\nsalt: ' + exp_salt + '\n')
 realm.run(['./t_get_etype_info', 'pexp'],
           expected_msg='etype: aes256-cts\nsalt: ' + pexp_salt + '\n')
-
-msg = 'etype: des-cbc-crc\nsalt: KRBTEST.COM\ns2kparams: 01\n'
-realm.run(['./t_get_etype_info', 'afs'], expected_msg=msg)
-realm.run(['./t_get_etype_info', 'pafs'], expected_msg=msg)
 
 success('krb5_get_etype_info() tests')

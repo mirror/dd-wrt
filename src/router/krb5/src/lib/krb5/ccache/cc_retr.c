@@ -58,15 +58,14 @@ static krb5_boolean
 princs_match(krb5_context context, krb5_flags whichfields,
              const krb5_creds *mcreds, const krb5_creds *creds)
 {
-    krb5_principal_data princ;
-
-    if (!krb5_principal_compare(context, mcreds->client, creds->client))
+    if (mcreds->client != NULL &&
+        !krb5_principal_compare(context, mcreds->client, creds->client))
         return FALSE;
+    if (mcreds->server == NULL)
+        return TRUE;
     if (whichfields & KRB5_TC_MATCH_SRV_NAMEONLY) {
-        /* Ignore the server realm. */
-        princ = *mcreds->server;
-        princ.realm = creds->server->realm;
-        return krb5_principal_compare(context, &princ, creds->server);
+        return krb5_principal_compare_any_realm(context, mcreds->server,
+                                                creds->server);
     } else {
         return krb5_principal_compare(context, mcreds->server, creds->server);
     }

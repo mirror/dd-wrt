@@ -98,15 +98,8 @@ void ktutil_read_v4(argc, argv)
     int argc;
     char *argv[];
 {
-    krb5_error_code retval;
-
-    if (argc != 2) {
-        fprintf(stderr, _("%s: must specify the srvtab to read\n"), argv[0]);
-        return;
-    }
-    retval = ktutil_read_srvtab(kcontext, argv[1], &ktlist);
-    if (retval)
-        com_err(argv[0], retval, _("while reading srvtab \"%s\""), argv[1]);
+    fprintf(stderr, _("%s: reading srvtabs is no longer supported\n"),
+            argv[0]);
 }
 
 void ktutil_write_v5(argc, argv)

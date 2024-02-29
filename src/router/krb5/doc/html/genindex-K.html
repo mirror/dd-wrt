@@ -13,7 +13,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '1.17',
+        VERSION:     '1.21.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -269,6 +269,8 @@
 </li>
       <li><a href="appdev/refs/macros/KRB5_AUTHDATA_AND_OR.html#KRB5_AUTHDATA_AND_OR">KRB5_AUTHDATA_AND_OR (built-in variable)</a>
 </li>
+      <li><a href="appdev/refs/macros/KRB5_AUTHDATA_AP_OPTIONS.html#KRB5_AUTHDATA_AP_OPTIONS">KRB5_AUTHDATA_AP_OPTIONS (built-in variable)</a>
+</li>
       <li><a href="appdev/refs/macros/KRB5_AUTHDATA_AUTH_INDICATOR.html#KRB5_AUTHDATA_AUTH_INDICATOR">KRB5_AUTHDATA_AUTH_INDICATOR (built-in variable)</a>
 </li>
       <li><a href="appdev/refs/macros/KRB5_AUTHDATA_CAMMAC.html#KRB5_AUTHDATA_CAMMAC">KRB5_AUTHDATA_CAMMAC (built-in variable)</a>
@@ -431,10 +433,6 @@
 </li>
       <li><a href="appdev/refs/api/krb5_cc_initialize.html#c.krb5_cc_initialize">krb5_cc_initialize (C function)</a>
 </li>
-      <li><a href="appdev/refs/api/krb5_cc_last_change_time.html#c.krb5_cc_last_change_time">krb5_cc_last_change_time (C function)</a>
-</li>
-      <li><a href="appdev/refs/api/krb5_cc_lock.html#c.krb5_cc_lock">krb5_cc_lock (C function)</a>
-</li>
       <li><a href="appdev/refs/api/krb5_cc_move.html#c.krb5_cc_move">krb5_cc_move (C function)</a>
 </li>
       <li><a href="appdev/refs/api/krb5_cc_new_unique.html#c.krb5_cc_new_unique">krb5_cc_new_unique (C function)</a>
@@ -463,8 +461,6 @@
 </li>
       <li><a href="appdev/refs/api/krb5_cc_switch.html#c.krb5_cc_switch">krb5_cc_switch (C function)</a>
 </li>
-      <li><a href="appdev/refs/api/krb5_cc_unlock.html#c.krb5_cc_unlock">krb5_cc_unlock (C function)</a>
-</li>
       <li><a href="appdev/refs/types/krb5_ccache.html#c.krb5_ccache">krb5_ccache (C type)</a>
 </li>
       <li><a href="appdev/refs/types/krb5_cccol_cursor.html#c.krb5_cccol_cursor">krb5_cccol_cursor (C type)</a>
@@ -476,12 +472,6 @@
       <li><a href="appdev/refs/api/krb5_cccol_cursor_next.html#c.krb5_cccol_cursor_next">krb5_cccol_cursor_next (C function)</a>
 </li>
       <li><a href="appdev/refs/api/krb5_cccol_have_content.html#c.krb5_cccol_have_content">krb5_cccol_have_content (C function)</a>
-</li>
-      <li><a href="appdev/refs/api/krb5_cccol_last_change_time.html#c.krb5_cccol_last_change_time">krb5_cccol_last_change_time (C function)</a>
-</li>
-      <li><a href="appdev/refs/api/krb5_cccol_lock.html#c.krb5_cccol_lock">krb5_cccol_lock (C function)</a>
-</li>
-      <li><a href="appdev/refs/api/krb5_cccol_unlock.html#c.krb5_cccol_unlock">krb5_cccol_unlock (C function)</a>
 </li>
       <li><a href="appdev/refs/api/krb5_change_password.html#c.krb5_change_password">krb5_change_password (C function)</a>
 </li>
@@ -1029,8 +1019,6 @@
 </li>
       <li><a href="appdev/refs/macros/KRB5_INT16_MIN.html#KRB5_INT16_MIN">KRB5_INT16_MIN (built-in variable)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="appdev/refs/types/krb5_int32.html#c.krb5_int32">krb5_int32 (C type)</a>
 </li>
       <li><a href="appdev/refs/macros/KRB5_INT32_MAX.html#KRB5_INT32_MAX">KRB5_INT32_MAX (built-in variable)</a>
@@ -1053,6 +1041,8 @@
 </li>
       <li><a href="appdev/refs/api/krb5_k_encrypt_iov.html#c.krb5_k_encrypt_iov">krb5_k_encrypt_iov (C function)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="appdev/refs/api/krb5_k_free_key.html#c.krb5_k_free_key">krb5_k_free_key (C function)</a>
 </li>
       <li><a href="appdev/refs/api/krb5_k_key_enctype.html#c.krb5_k_key_enctype">krb5_k_key_enctype (C function)</a>
@@ -1120,6 +1110,10 @@
       <li><a href="appdev/refs/types/krb5_kdc_req.html#c.krb5_kdc_req.till">krb5_kdc_req.till (C member)</a>
 </li>
       <li><a href="appdev/refs/types/krb5_kdc_req.html#c.krb5_kdc_req.unenc_authdata">krb5_kdc_req.unenc_authdata (C member)</a>
+</li>
+      <li><a href="appdev/refs/api/krb5_kdc_sign_ticket.html#c.krb5_kdc_sign_ticket">krb5_kdc_sign_ticket (C function)</a>
+</li>
+      <li><a href="appdev/refs/api/krb5_kdc_verify_ticket.html#c.krb5_kdc_verify_ticket">krb5_kdc_verify_ticket (C function)</a>
 </li>
       <li><a href="appdev/refs/types/krb5_key.html#c.krb5_key">krb5_key (C type)</a>
 </li>
@@ -1335,6 +1329,8 @@
 </li>
       <li><a href="appdev/refs/api/krb5_make_authdata_kdc_issued.html#c.krb5_make_authdata_kdc_issued">krb5_make_authdata_kdc_issued (C function)</a>
 </li>
+      <li><a href="appdev/refs/api/krb5_marshal_credentials.html#c.krb5_marshal_credentials">krb5_marshal_credentials (C function)</a>
+</li>
       <li><a href="appdev/refs/api/krb5_merge_authdata.html#c.krb5_merge_authdata">krb5_merge_authdata (C function)</a>
 </li>
       <li><a href="appdev/refs/api/krb5_mk_1cred.html#c.krb5_mk_1cred">krb5_mk_1cred (C function)</a>
@@ -1423,15 +1419,27 @@
 </li>
       <li><a href="appdev/refs/api/krb5_pac_add_buffer.html#c.krb5_pac_add_buffer">krb5_pac_add_buffer (C function)</a>
 </li>
+      <li><a href="appdev/refs/macros/KRB5_PAC_ATTRIBUTES_INFO.html#KRB5_PAC_ATTRIBUTES_INFO">KRB5_PAC_ATTRIBUTES_INFO (built-in variable)</a>
+</li>
+      <li><a href="appdev/refs/macros/KRB5_PAC_CLIENT_CLAIMS.html#KRB5_PAC_CLIENT_CLAIMS">KRB5_PAC_CLIENT_CLAIMS (built-in variable)</a>
+</li>
       <li><a href="appdev/refs/macros/KRB5_PAC_CLIENT_INFO.html#KRB5_PAC_CLIENT_INFO">KRB5_PAC_CLIENT_INFO (built-in variable)</a>
 </li>
       <li><a href="appdev/refs/macros/KRB5_PAC_CREDENTIALS_INFO.html#KRB5_PAC_CREDENTIALS_INFO">KRB5_PAC_CREDENTIALS_INFO (built-in variable)</a>
 </li>
       <li><a href="appdev/refs/macros/KRB5_PAC_DELEGATION_INFO.html#KRB5_PAC_DELEGATION_INFO">KRB5_PAC_DELEGATION_INFO (built-in variable)</a>
 </li>
+      <li><a href="appdev/refs/macros/KRB5_PAC_DEVICE_CLAIMS.html#KRB5_PAC_DEVICE_CLAIMS">KRB5_PAC_DEVICE_CLAIMS (built-in variable)</a>
+</li>
+      <li><a href="appdev/refs/macros/KRB5_PAC_DEVICE_INFO.html#KRB5_PAC_DEVICE_INFO">KRB5_PAC_DEVICE_INFO (built-in variable)</a>
+</li>
       <li><a href="appdev/refs/api/krb5_pac_free.html#c.krb5_pac_free">krb5_pac_free (C function)</a>
 </li>
+      <li><a href="appdev/refs/macros/KRB5_PAC_FULL_CHECKSUM.html#KRB5_PAC_FULL_CHECKSUM">KRB5_PAC_FULL_CHECKSUM (built-in variable)</a>
+</li>
       <li><a href="appdev/refs/api/krb5_pac_get_buffer.html#c.krb5_pac_get_buffer">krb5_pac_get_buffer (C function)</a>
+</li>
+      <li><a href="appdev/refs/api/krb5_pac_get_client_info.html#c.krb5_pac_get_client_info">krb5_pac_get_client_info (C function)</a>
 </li>
       <li><a href="appdev/refs/api/krb5_pac_get_types.html#c.krb5_pac_get_types">krb5_pac_get_types (C function)</a>
 </li>
@@ -1443,11 +1451,15 @@
 </li>
       <li><a href="appdev/refs/macros/KRB5_PAC_PRIVSVR_CHECKSUM.html#KRB5_PAC_PRIVSVR_CHECKSUM">KRB5_PAC_PRIVSVR_CHECKSUM (built-in variable)</a>
 </li>
+      <li><a href="appdev/refs/macros/KRB5_PAC_REQUESTOR.html#KRB5_PAC_REQUESTOR">KRB5_PAC_REQUESTOR (built-in variable)</a>
+</li>
       <li><a href="appdev/refs/macros/KRB5_PAC_SERVER_CHECKSUM.html#KRB5_PAC_SERVER_CHECKSUM">KRB5_PAC_SERVER_CHECKSUM (built-in variable)</a>
 </li>
       <li><a href="appdev/refs/api/krb5_pac_sign.html#c.krb5_pac_sign">krb5_pac_sign (C function)</a>
 </li>
       <li><a href="appdev/refs/api/krb5_pac_sign_ext.html#c.krb5_pac_sign_ext">krb5_pac_sign_ext (C function)</a>
+</li>
+      <li><a href="appdev/refs/macros/KRB5_PAC_TICKET_CHECKSUM.html#KRB5_PAC_TICKET_CHECKSUM">KRB5_PAC_TICKET_CHECKSUM (built-in variable)</a>
 </li>
       <li><a href="appdev/refs/macros/KRB5_PAC_UPN_DNS_INFO.html#KRB5_PAC_UPN_DNS_INFO">KRB5_PAC_UPN_DNS_INFO (built-in variable)</a>
 </li>
@@ -1495,6 +1507,8 @@
 </li>
       <li><a href="appdev/refs/macros/KRB5_PADATA_OTP_REQUEST.html#KRB5_PADATA_OTP_REQUEST">KRB5_PADATA_OTP_REQUEST (built-in variable)</a>
 </li>
+      <li><a href="appdev/refs/macros/KRB5_PADATA_PAC_OPTIONS.html#KRB5_PADATA_PAC_OPTIONS">KRB5_PADATA_PAC_OPTIONS (built-in variable)</a>
+</li>
       <li><a href="appdev/refs/macros/KRB5_PADATA_PAC_REQUEST.html#KRB5_PADATA_PAC_REQUEST">KRB5_PADATA_PAC_REQUEST (built-in variable)</a>
 </li>
       <li><a href="appdev/refs/macros/KRB5_PADATA_PK_AS_REP.html#KRB5_PADATA_PK_AS_REP">KRB5_PADATA_PK_AS_REP (built-in variable)</a>
@@ -1508,6 +1522,10 @@
       <li><a href="appdev/refs/macros/KRB5_PADATA_PKINIT_KX.html#KRB5_PADATA_PKINIT_KX">KRB5_PADATA_PKINIT_KX (built-in variable)</a>
 </li>
       <li><a href="appdev/refs/macros/KRB5_PADATA_PW_SALT.html#KRB5_PADATA_PW_SALT">KRB5_PADATA_PW_SALT (built-in variable)</a>
+</li>
+      <li><a href="appdev/refs/macros/KRB5_PADATA_REDHAT_IDP_OAUTH2.html#KRB5_PADATA_REDHAT_IDP_OAUTH2">KRB5_PADATA_REDHAT_IDP_OAUTH2 (built-in variable)</a>
+</li>
+      <li><a href="appdev/refs/macros/KRB5_PADATA_REDHAT_PASSKEY.html#KRB5_PADATA_REDHAT_PASSKEY">KRB5_PADATA_REDHAT_PASSKEY (built-in variable)</a>
 </li>
       <li><a href="appdev/refs/macros/KRB5_PADATA_REFERRAL.html#KRB5_PADATA_REFERRAL">KRB5_PADATA_REFERRAL (built-in variable)</a>
 </li>
@@ -1606,6 +1624,8 @@
       <li><a href="appdev/refs/macros/KRB5_PRINCIPAL_PARSE_ENTERPRISE.html#KRB5_PRINCIPAL_PARSE_ENTERPRISE">KRB5_PRINCIPAL_PARSE_ENTERPRISE (built-in variable)</a>
 </li>
       <li><a href="appdev/refs/macros/KRB5_PRINCIPAL_PARSE_IGNORE_REALM.html#KRB5_PRINCIPAL_PARSE_IGNORE_REALM">KRB5_PRINCIPAL_PARSE_IGNORE_REALM (built-in variable)</a>
+</li>
+      <li><a href="appdev/refs/macros/KRB5_PRINCIPAL_PARSE_NO_DEF_REALM.html#KRB5_PRINCIPAL_PARSE_NO_DEF_REALM">KRB5_PRINCIPAL_PARSE_NO_DEF_REALM (built-in variable)</a>
 </li>
       <li><a href="appdev/refs/macros/KRB5_PRINCIPAL_PARSE_NO_REALM.html#KRB5_PRINCIPAL_PARSE_NO_REALM">KRB5_PRINCIPAL_PARSE_NO_REALM (built-in variable)</a>
 </li>
@@ -1955,6 +1975,8 @@
 </li>
       <li><a href="appdev/refs/types/krb5_ui_4.html#c.krb5_ui_4">krb5_ui_4 (C type)</a>
 </li>
+      <li><a href="appdev/refs/api/krb5_unmarshal_credentials.html#c.krb5_unmarshal_credentials">krb5_unmarshal_credentials (C function)</a>
+</li>
       <li><a href="appdev/refs/api/krb5_unparse_name.html#c.krb5_unparse_name">krb5_unparse_name (C function)</a>
 </li>
       <li><a href="appdev/refs/api/krb5_unparse_name_ext.html#c.krb5_unparse_name_ext">krb5_unparse_name_ext (C function)</a>
@@ -2042,8 +2064,8 @@
 
     <div class="footer-wrapper">
         <div class="footer" >
-            <div class="right" ><i>Release: 1.17</i><br />
-                &copy; <a href="copyright.html">Copyright</a> 1985-2019, MIT.
+            <div class="right" ><i>Release: 1.21.2</i><br />
+                &copy; <a href="copyright.html">Copyright</a> 1985-2023, MIT.
             </div>
             <div class="left">
                 

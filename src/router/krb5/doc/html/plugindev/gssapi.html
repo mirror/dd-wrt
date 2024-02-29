@@ -12,7 +12,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '1.17',
+        VERSION:     '1.21.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -67,8 +67,7 @@
 the set of built-in mechanisms.</p>
 <p>A mechanism module is a Unix shared object or Windows DLL, built
 separately from the krb5 tree.  Modules are loaded according to the
-<code class="docutils literal"><span class="pre">/etc/gss/mech</span></code> or <code class="docutils literal"><span class="pre">/etc/gss/mech.d/*.conf</span></code> config files, as
-described in <a class="reference internal" href="../admin/host_config.html#gssapi-plugin-config"><span class="std std-ref">GSSAPI mechanism modules</span></a>.</p>
+GSS mechanism config files described in <a class="reference internal" href="../admin/host_config.html#gssapi-plugin-config"><span class="std std-ref">GSSAPI mechanism modules</span></a>.</p>
 <p>For the most part, a GSSAPI mechanism module exports the same
 functions as would a GSSAPI implementation itself, with the same
 function signatures.  The mechanism selection layer within the GSSAPI
@@ -85,6 +84,28 @@ implement the “acquire” variants of those functions.</p>
 of other mechanisms.  If the mechglue detects conflicts, it will map
 the mechanism’s status codes onto unique values, and then map them
 back again when <strong>gss_display_status</strong> is called.</p>
+<div class="section" id="negoex-modules">
+<h2>NegoEx modules<a class="headerlink" href="#negoex-modules" title="Permalink to this headline">¶</a></h2>
+<p>Some Windows GSSAPI mechanisms can only be negotiated via a Microsoft
+extension to SPNEGO called NegoEx.  Beginning with release 1.18,
+mechanism modules can support NegoEx as follows:</p>
+<ul class="simple">
+<li>Implement the gssspi_query_meta_data(), gssspi_exchange_meta_data(),
+and gssspi_query_mechanism_info() SPIs declared in
+<code class="docutils literal"><span class="pre">&lt;gssapi/gssapi_ext.h&gt;</span></code>.</li>
+<li>Implement gss_inquire_sec_context_by_oid() and answer the
+<strong>GSS_C_INQ_NEGOEX_KEY</strong> and <strong>GSS_C_INQ_NEGOEX_VERIFY_KEY</strong> OIDs
+to provide the checksum keys for outgoing and incoming checksums,
+respectively.  The answer must be in two buffers: the first buffer
+contains the key contents, and the second buffer contains the key
+encryption type as a four-byte little-endian integer.</li>
+</ul>
+<p>By default, NegoEx mechanisms will not be directly negotiated via
+SPNEGO.  If direct SPNEGO negotiation is required for
+interoperability, implement gss_inquire_attrs_for_mech() and assert
+the GSS_C_MA_NEGOEX_AND_SPNEGO attribute (along with any applicable
+RFC 5587 attributes).</p>
+</div>
 <div class="section" id="interposer-modules">
 <h2>Interposer modules<a class="headerlink" href="#interposer-modules" title="Permalink to this headline">¶</a></h2>
 <p>The mechglue also supports a kind of loadable module, called an
@@ -96,16 +117,20 @@ with the following signature:</p>
 </pre></div>
 </div>
 <p>This function is invoked with the OID of the interposer mechanism as
-specified in <code class="docutils literal"><span class="pre">/etc/gss/mech</span></code> or in a <code class="docutils literal"><span class="pre">/etc/gss/mech.d/*.conf</span></code>
-file, and returns a set of mechanism OIDs to be interposed.  The
-returned OID set must have been created using the mechglue’s
-gss_create_empty_oid_set and gss_add_oid_set_member functions.</p>
+specified in the mechanism config file, and returns a set of mechanism
+OIDs to be interposed.  The returned OID set must have been created
+using the mechglue’s gss_create_empty_oid_set and
+gss_add_oid_set_member functions.</p>
 <p>An interposer module must use the prefix <code class="docutils literal"><span class="pre">gssi_</span></code> for the GSSAPI
-functions it exports, instead of the prefix <code class="docutils literal"><span class="pre">gss_</span></code>.</p>
+functions it exports, instead of the prefix <code class="docutils literal"><span class="pre">gss_</span></code>.  In most cases,
+unexported <code class="docutils literal"><span class="pre">gssi_</span></code> functions will result in failure from their
+corresponding <code class="docutils literal"><span class="pre">gss_</span></code> calls.</p>
 <p>An interposer module can link against the GSSAPI library in order to
 make calls to the original mechanism.  To do so, it must specify a
 special mechanism OID which is the concatention of the interposer’s
 own OID byte string and the original mechanism’s OID byte string.</p>
+<p>Functions that do not accept a mechanism argument directly require no
+special handling, with the following exceptions:</p>
 <p>Since <strong>gss_accept_sec_context</strong> does not accept a mechanism argument,
 an interposer mechanism must, in order to invoke the original
 mechanism’s function, acquire a credential for the concatenated OID
@@ -130,20 +155,24 @@ the token.  These functions have the following signatures:</p>
 </div>
 <p>To re-enter the original mechanism when importing tokens for the above
 functions, the interposer module must wrap the mechanism token in the
-mechglue’s format, using the concatenated OID.  The mechglue token
-formats are:</p>
+mechglue’s format, using the concatenated OID (except in
+<strong>gss_import_name</strong>).  The mechglue token formats are:</p>
 <ul class="simple">
 <li>For <strong>gss_import_sec_context</strong>, a four-byte OID length in big-endian
-order, followed by the mechanism OID, followed by the mechanism
+order, followed by the concatenated OID, followed by the mechanism
 token.</li>
 <li>For <strong>gss_import_name</strong>, the bytes 04 01, followed by a two-byte OID
 length in big-endian order, followed by the mechanism OID, followed
-by the bytes 06, followed by the OID length as a single byte,
-followed by the mechanism OID, followed by the mechanism token.</li>
+by a four-byte token length in big-endian order, followed by the
+mechanism token.  Unlike most uses of OIDs in the API, the mechanism
+OID encoding must include the DER tag and length for an object
+identifier (06 followed by the DER length of the OID byte string),
+and this prefix must be included in the two-byte OID length.
+input_name_type must also be set to GSS_C_NT_EXPORT_NAME.</li>
 <li>For <strong>gss_import_cred</strong>, a four-byte OID length in big-endian order,
-followed by the mechanism OID, followed by a four-byte token length
-in big-endian order, followed by the mechanism token.  This sequence
-may be repeated multiple times.</li>
+followed by the concatenated OID, followed by a four-byte token
+length in big-endian order, followed by the mechanism token.  This
+sequence may be repeated multiple times.</li>
 </ul>
 </div>
 </div>
@@ -157,6 +186,7 @@ may be repeated multiple times.</li>
     <h2>On this page</h2>
     <ul>
 <li><a class="reference internal" href="#">GSSAPI mechanism interface</a><ul>
+<li><a class="reference internal" href="#negoex-modules">NegoEx modules</a></li>
 <li><a class="reference internal" href="#interposer-modules">Interposer modules</a></li>
 </ul>
 </li>
@@ -211,8 +241,8 @@ may be repeated multiple times.</li>
 
     <div class="footer-wrapper">
         <div class="footer" >
-            <div class="right" ><i>Release: 1.17</i><br />
-                &copy; <a href="../copyright.html">Copyright</a> 1985-2019, MIT.
+            <div class="right" ><i>Release: 1.21.2</i><br />
+                &copy; <a href="../copyright.html">Copyright</a> 1985-2023, MIT.
             </div>
             <div class="left">
                 

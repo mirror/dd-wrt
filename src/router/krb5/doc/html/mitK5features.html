@@ -12,7 +12,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '1.17',
+        VERSION:     '1.21.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -72,9 +72,9 @@
 <dl class="docutils">
 <dt>Releases:</dt>
 <dd><ul class="first last simple">
-<li>Latest stable: <a class="reference external" href="https://web.mit.edu/kerberos/krb5-1.17/">https://web.mit.edu/kerberos/krb5-1.17/</a></li>
-<li>Supported: <a class="reference external" href="https://web.mit.edu/kerberos/krb5-1.16/">https://web.mit.edu/kerberos/krb5-1.16/</a></li>
-<li>Release cycle: 9 – 12 months</li>
+<li>Latest stable: <a class="reference external" href="https://web.mit.edu/kerberos/krb5-1.20/">https://web.mit.edu/kerberos/krb5-1.20/</a></li>
+<li>Supported: <a class="reference external" href="https://web.mit.edu/kerberos/krb5-1.19/">https://web.mit.edu/kerberos/krb5-1.19/</a></li>
+<li>Release cycle: approximately 12 months</li>
 </ul>
 </dd>
 <dt>Supported platforms / OS distributions:</dt>
@@ -94,7 +94,7 @@
 </dl>
 <p>Database backends: LDAP, DB2, LMDB</p>
 <p>krb4 support: Kerberos 5 release &lt; 1.8</p>
-<p>DES support: configurable (See <a class="reference internal" href="admin/advanced/retiring-des.html#retiring-des"><span class="std std-ref">Retiring DES</span></a>)</p>
+<p>DES support: Kerberos 5 release &lt; 1.18 (See <a class="reference internal" href="admin/advanced/retiring-des.html#retiring-des"><span class="std std-ref">Retiring DES</span></a>)</p>
 </div>
 <div class="section" id="interoperability">
 <h2>Interoperability<a class="headerlink" href="#interoperability" title="Permalink to this headline">¶</a></h2>
@@ -163,7 +163,7 @@ permitted by KDC policy.</li>
 <li>Plugin to test password quality           <a class="reference internal" href="plugindev/pwqual.html#pwqual-plugin"><span class="std std-ref">Password quality interface (pwqual)</span></a></li>
 <li>Plugin to synchronize password changes    <a class="reference internal" href="plugindev/kadm5_hook.html#kadm5-hook-plugin"><span class="std std-ref">KADM5 hook interface (kadm5_hook)</span></a></li>
 <li>Parallel KDC</li>
-<li>GSS-API extentions for SASL GS2 bridge    <span class="target" id="index-8"></span><a class="rfc reference external" href="https://tools.ietf.org/html/rfc5801.html"><strong>RFC 5801</strong></a> <span class="target" id="index-9"></span><a class="rfc reference external" href="https://tools.ietf.org/html/rfc5587.html"><strong>RFC 5587</strong></a></li>
+<li>GSS-API extensions for SASL GS2 bridge    <span class="target" id="index-8"></span><a class="rfc reference external" href="https://tools.ietf.org/html/rfc5801.html"><strong>RFC 5801</strong></a> <span class="target" id="index-9"></span><a class="rfc reference external" href="https://tools.ietf.org/html/rfc5587.html"><strong>RFC 5587</strong></a></li>
 <li>Purging old keys</li>
 <li>Naming extensions for delegation chain</li>
 <li>Password expiration API</li>
@@ -204,7 +204,7 @@ permitted by KDC policy.</li>
 the <a class="reference external" href="https://msdn.microsoft.com/en-us/library/hh553774.aspx">MS-KKDCP</a>
 protocol.</li>
 <li>Add support for <a class="reference external" href="https://k5wiki.kerberos.org/wiki/Projects/Hierarchical_iprop">hierarchical incremental propagation</a>,
-where replicas can act as intermediates between an upstream master
+where replicas can act as intermediates between an upstream primary
 and other downstream replicas.</li>
 <li>Add support for configuring GSS mechanisms using
 <code class="docutils literal"><span class="pre">/etc/gss/mech.d/*.conf</span></code> files in addition to
@@ -312,9 +312,9 @@ platforms with support for open file description locks.</li>
 </ul>
 </li>
 <li>Performance:<ul>
-<li>On replica KDCs, poll the master KDC immediately after processing
-a full resync, and do not require two full resyncs after the
-master KDC’s log file is reset.</li>
+<li>On replica KDCs, poll the primary KDC immediately after
+processing a full resync, and do not require two full resyncs
+after the primary KDC’s log file is reset.</li>
 </ul>
 </li>
 </ul>
@@ -335,7 +335,7 @@ more easily recover from database corruption resulting from power
 failure events.</li>
 <li>Add DNS auto-discovery of KDC and kpasswd servers from URI
 records, in addition to SRV records.  URI records can convey TCP
-and UDP servers and master KDC status in a single DNS lookup, and
+and UDP servers and primary KDC status in a single DNS lookup, and
 can also point to HTTPS proxy servers.</li>
 <li>Add support for password history to the LDAP back end.</li>
 <li>Add support for principal renaming to the LDAP back end.</li>
@@ -497,6 +497,192 @@ or later is now required.</li>
 </ul>
 </li>
 </ul>
+<p>Release 1.18</p>
+<ul class="simple">
+<li>Administrator experience:<ul>
+<li>Remove support for single-DES encryption types.</li>
+<li>Change the replay cache format to be more efficient and robust.
+Replay cache filenames using the new format end with <code class="docutils literal"><span class="pre">.rcache2</span></code>
+by default.</li>
+<li>setuid programs will automatically ignore environment variables
+that normally affect krb5 API functions, even if the caller does
+not use krb5_init_secure_context().</li>
+<li>Add an <code class="docutils literal"><span class="pre">enforce_ok_as_delegate</span></code> krb5.conf relation to disable
+credential forwarding during GSSAPI authentication unless the KDC
+sets the ok-as-delegate bit in the service ticket.</li>
+</ul>
+</li>
+<li>Developer experience:<ul>
+<li>Implement krb5_cc_remove_cred() for all credential cache types.</li>
+<li>Add the krb5_pac_get_client_info() API to get the client account
+name from a PAC.</li>
+</ul>
+</li>
+<li>Protocol evolution:<ul>
+<li>Add KDC support for S4U2Self requests where the user is identified
+by X.509 certificate.  (Requires support for certificate lookup
+from a third-party KDB module.)</li>
+<li>Remove support for an old (“draft 9”) variant of PKINIT.</li>
+<li>Add support for Microsoft NegoEx.  (Requires one or more
+third-party GSS modules implementing NegoEx mechanisms.)</li>
+</ul>
+</li>
+<li>User experience:<ul>
+<li>Add support for <code class="docutils literal"><span class="pre">dns_canonicalize_hostname=fallback</span></code>, causing
+host-based principal names to be tried first without DNS
+canonicalization, and again with DNS canonicalization if the
+un-canonicalized server is not found.</li>
+<li>Expand single-component hostnames in hhost-based principal names
+when DNS canonicalization is not used, adding the system’s first
+DNS search path as a suffix.  Add a <code class="docutils literal"><span class="pre">qualify_shortname</span></code>
+krb5.conf relation to override this suffix or disable expansion.</li>
+</ul>
+</li>
+<li>Code quality:<ul>
+<li>The libkrb5 serialization code (used to export and import krb5 GSS
+security contexts) has been simplified and made type-safe.</li>
+<li>The libkrb5 code for creating KRB-PRIV, KRB-SAFE, and KRB-CRED
+messages has been revised to conform to current coding practices.</li>
+<li>The test suite has been modified to work with macOS System
+Integrity Protection enabled.</li>
+<li>The test suite incorporates soft-pkcs11 so that PKINIT PKCS11
+support can always be tested.</li>
+</ul>
+</li>
+</ul>
+<p>Release 1.19</p>
+<ul class="simple">
+<li>Administrator experience:<ul>
+<li>When a client keytab is present, the GSSAPI krb5 mech will refresh
+credentials even if the current credentials were acquired
+manually.</li>
+<li>It is now harder to accidentally delete the K/M entry from a KDB.</li>
+</ul>
+</li>
+<li>Developer experience:<ul>
+<li>gss_acquire_cred_from() now supports the “password” and “verify”
+options, allowing credentials to be acquired via password and
+verified using a keytab key.</li>
+<li>When an application accepts a GSS security context, the new
+GSS_C_CHANNEL_BOUND_FLAG will be set if the initiator and acceptor
+both provided matching channel bindings.</li>
+<li>Added the GSS_KRB5_NT_X509_CERT name type, allowing S4U2Self
+requests to identify the desired client principal by certificate.</li>
+<li>PKINIT certauth modules can now cause the hw-authent flag to be
+set in issued tickets.</li>
+<li>The krb5_init_creds_step() API will now issue the same password
+expiration warnings as krb5_get_init_creds_password().</li>
+</ul>
+</li>
+<li>Protocol evolution:<ul>
+<li>Added client and KDC support for Microsoft’s Resource-Based
+Constrained Delegation, which allows cross-realm S4U2Proxy
+requests.  A third-party database module is required for KDC
+support.</li>
+<li>kadmin/admin is now the preferred server principal name for kadmin
+connections, and the host-based form is no longer created by
+default.  The client will still try the host-based form as a
+fallback.</li>
+<li>Added client and server support for Microsoft’s
+KERB_AP_OPTIONS_CBT extension, which causes channel bindings to be
+required for the initiator if the acceptor provided them.  The
+client will send this option if the client_aware_gss_bindings
+profile option is set.</li>
+</ul>
+</li>
+</ul>
+<p>User experience:</p>
+<blockquote>
+<div><ul class="simple">
+<li>The default setting of dns_canonicalize_realm is now “fallback”.
+Hostnames provided from applications will be tried in principal
+names as given (possibly with shortname qualification), falling
+back to the canonicalized name.</li>
+<li>kinit will now issue a warning if the des3-cbc-sha1 encryption
+type is used in the reply.  This encryption type will be
+deprecated and removed in future releases.</li>
+<li>Added kvno flags –out-cache, –no-store, and –cached-only
+(inspired by Heimdal’s kgetcred).</li>
+</ul>
+</div></blockquote>
+<p>Release 1.20</p>
+<ul class="simple">
+<li>Administrator experience:<ul>
+<li>Added a “disable_pac” realm relation to suppress adding PAC
+authdata to tickets, for realms which do not need to support S4U
+requests.</li>
+<li>Most credential cache types will use atomic replacement when a
+cache is reinitialized using kinit or refreshed from the client
+keytab.</li>
+<li>kprop can now propagate databases with a dump size larger than
+4GB, if both the client and server are upgraded.</li>
+<li>kprop can now work over NATs that change the destination IP
+address, if the client is upgraded.</li>
+</ul>
+</li>
+<li>Developer experience:<ul>
+<li>Updated the KDB interface.  The sign_authdata() method is replaced
+with the issue_pac() method, allowing KDB modules to add logon
+info and other buffers to the PAC issued by the KDC.</li>
+<li>Host-based initiator names are better supported in the GSS krb5
+mechanism.</li>
+</ul>
+</li>
+<li>Protocol evolution:<ul>
+<li>Replaced AD-SIGNEDPATH authdata with minimal PACs.</li>
+<li>To avoid spurious replay errors, password change requests will not
+be attempted over UDP until the attempt over TCP fails.</li>
+<li>PKINIT will sign its CMS messages with SHA-256 instead of SHA-1.</li>
+</ul>
+</li>
+<li>Code quality:<ul>
+<li>Updated all code using OpenSSL to be compatible with OpenSSL 3.</li>
+<li>Reorganized the libk5crypto build system to allow the OpenSSL
+back-end to pull in material from the builtin back-end depending
+on the OpenSSL version.</li>
+<li>Simplified the PRNG logic to always use the platform PRNG.</li>
+<li>Converted the remaining Tcl tests to Python.</li>
+</ul>
+</li>
+</ul>
+<p>Release 1.21</p>
+<ul class="simple">
+<li>User experience:<ul>
+<li>Added a credential cache type providing compatibility with the
+macOS 11 native credential cache.</li>
+</ul>
+</li>
+<li>Developer experience:<ul>
+<li>libkadm5 will use the provided krb5_context object to read
+configuration values, instead of creating its own.</li>
+<li>Added an interface to retrieve the ticket session key from a GSS
+context.</li>
+</ul>
+</li>
+<li>Protocol evolution:<ul>
+<li>The KDC will no longer issue tickets with RC4 or triple-DES
+session keys unless explicitly configured with the new allow_rc4
+or allow_des3 variables respectively.</li>
+<li>The KDC will assume that all services can handle aes256-sha1
+session keys unless the service principal has a session_enctypes
+string attribute.</li>
+<li>Support for PAC full KDC checksums has been added to mitigate an
+S4U2Proxy privilege escalation attack.</li>
+<li>The PKINIT client will advertise a more modern set of supported
+CMS algorithms.</li>
+</ul>
+</li>
+<li>Code quality:<ul>
+<li>Removed unused code in libkrb5, libkrb5support, and the PKINIT
+module.</li>
+<li>Modernized the KDC code for processing TGS requests, the code for
+encrypting and decrypting key data, the PAC handling code, and the
+GSS library packet parsing and composition code.</li>
+<li>Improved the test framework’s detection of memory errors in daemon
+processes when used with asan.</li>
+</ul>
+</li>
+</ul>
 <p><cite>Pre-authentication mechanisms</cite></p>
 <ul class="simple">
 <li>PW-SALT                                         <span class="target" id="index-11"></span><a class="rfc reference external" href="https://tools.ietf.org/html/rfc4120.html#section-5.2.7.3"><strong>RFC 4120#section-5.2.7.3</strong></a></li>
@@ -509,13 +695,6 @@ or later is now required.</li>
 <li>S4U-X509-USER                (release 1.8)      <a class="reference external" href="https://msdn.microsoft.com/en-us/library/cc246091">https://msdn.microsoft.com/en-us/library/cc246091</a></li>
 <li>OTP                          (release 1.12)     <a class="reference internal" href="admin/otp.html#otp-preauth"><span class="std std-ref">OTP Preauthentication</span></a></li>
 <li>SPAKE                        (release 1.17)     <a class="reference internal" href="admin/spake.html#spake"><span class="std std-ref">SPAKE Preauthentication</span></a></li>
-</ul>
-<p><cite>PRNG</cite></p>
-<ul class="simple">
-<li>modularity       (release 1.9)</li>
-<li>Yarrow PRNG      (release &lt; 1.10)</li>
-<li>Fortuna PRNG     (release 1.9)       <a class="reference external" href="https://www.schneier.com/book-practical.html">https://www.schneier.com/book-practical.html</a></li>
-<li>OS PRNG          (release 1.10)      OS’s native PRNG</li>
 </ul>
 </div>
 </div>
@@ -568,8 +747,8 @@ or later is now required.</li>
 
     <div class="footer-wrapper">
         <div class="footer" >
-            <div class="right" ><i>Release: 1.17</i><br />
-                &copy; <a href="copyright.html">Copyright</a> 1985-2019, MIT.
+            <div class="right" ><i>Release: 1.21.2</i><br />
+                &copy; <a href="copyright.html">Copyright</a> 1985-2023, MIT.
             </div>
             <div class="left">
                 

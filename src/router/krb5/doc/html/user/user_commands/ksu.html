@@ -12,7 +12,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '1.17',
+        VERSION:     '1.21.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -71,7 +71,8 @@
 [ <strong>-c</strong> <em>source_cache_name</em> ]
 [ <strong>-k</strong> ]
 [ <strong>-r</strong> time ]
-[ <strong>-pf</strong> ]
+[ <strong>-p</strong> | <strong>-P</strong>]
+[ <strong>-f</strong> | <strong>-F</strong>]
 [ <strong>-l</strong> <em>lifetime</em> ]
 [ <strong>-z | Z</strong> ]
 [ <strong>-q</strong> ]
@@ -195,7 +196,7 @@ wrong password is typed in, ksu fails.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
 <p class="last">During authentication, only the tickets that could be
-obtained without providing a password are cached in in the
+obtained without providing a password are cached in the
 source cache.</p>
 </div>
 </div>
@@ -286,7 +287,7 @@ option.</dd>
 </dl>
 <p>Ticket granting ticket options:</p>
 <dl class="docutils">
-<dt><strong>-l</strong> <em>lifetime</em> <strong>-r</strong> <em>time</em> <strong>-pf</strong></dt>
+<dt><strong>-l</strong> <em>lifetime</em> <strong>-r</strong> <em>time</em> <strong>-p</strong> <strong>-P</strong> <strong>-f</strong> <strong>-F</strong></dt>
 <dd>The ticket granting ticket options only apply to the case where
 there are no appropriate tickets in the cache to authenticate the
 source user.  In this case if ksu is configured to prompt users
@@ -304,9 +305,17 @@ total lifetime of the ticket.</dd>
 <dt><strong>-p</strong></dt>
 <dd>specifies that the <strong>proxiable</strong> option should be requested for
 the ticket.</dd>
+<dt><strong>-P</strong></dt>
+<dd>specifies that the <strong>proxiable</strong> option should not be requested
+for the ticket, even if the default configuration is to ask for
+proxiable tickets.</dd>
 <dt><strong>-f</strong></dt>
 <dd>option specifies that the <strong>forwardable</strong> option should be
 requested for the ticket.</dd>
+<dt><strong>-F</strong></dt>
+<dd>option specifies that the <strong>forwardable</strong> option should not be
+requested for the ticket, even if the default configuration is to
+ask for forwardable tickets.</dd>
 <dt><strong>-e</strong> <em>command</em> [<em>args</em> …]</dt>
 <dd><p class="first">ksu proceeds exactly the same as if it was invoked without the
 <strong>-e</strong> option, except instead of executing the target shell, ksu
@@ -492,8 +501,8 @@ variables.</p>
 
     <div class="footer-wrapper">
         <div class="footer" >
-            <div class="right" ><i>Release: 1.17</i><br />
-                &copy; <a href="../../copyright.html">Copyright</a> 1985-2019, MIT.
+            <div class="right" ><i>Release: 1.21.2</i><br />
+                &copy; <a href="../../copyright.html">Copyright</a> 1985-2023, MIT.
             </div>
             <div class="left">
                 

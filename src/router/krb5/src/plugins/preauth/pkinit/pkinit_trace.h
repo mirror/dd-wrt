@@ -49,8 +49,6 @@
 #define TRACE_PKINIT_CLIENT_KDF_OS2K(c, keyblock)                       \
     TRACE(c, "PKINIT client used octetstring2key to compute reply key " \
           "{keyblock}", keyblock)
-#define TRACE_PKINIT_CLIENT_NO_DRAFT9(c)                                \
-    TRACE(c, "PKINIT client ignoring draft 9 offer from RFC 4556 KDC")
 #define TRACE_PKINIT_CLIENT_NO_IDENTITY(c)                              \
     TRACE(c, "PKINIT client has no configured identity; giving up")
 #define TRACE_PKINIT_CLIENT_REP_CHECKSUM_FAIL(c, expected, received)    \
@@ -95,6 +93,25 @@
 #define TRACE_PKINIT_OPENSSL_ERROR(c, msg)              \
     TRACE(c, "PKINIT OpenSSL error: {str}", msg)
 
+#define TRACE_PKINIT_PKCS11_GETFLIST_FAILED(c, errstr)                  \
+    TRACE(c, "PKINIT PKCS11 C_GetFunctionList failed: {str}", errstr)
+#define TRACE_PKINIT_PKCS11_GETSYM_FAILED(c, errstr)                    \
+    TRACE(c, "PKINIT unable to find PKCS11 plugin symbol "              \
+          "C_GetFunctionList: {str}", errstr)
+#define TRACE_PKINIT_PKCS11_LOGIN_FAILED(c, errstr)             \
+    TRACE(c, "PKINIT PKCS11 C_Login failed: {str}", errstr)
+#define TRACE_PKINIT_PKCS11_NO_MATCH_TOKEN(c)                   \
+    TRACE(c, "PKINIT PKCS#11 module has no matching tokens")
+#define TRACE_PKINIT_PKCS11_NO_TOKEN(c)                                 \
+    TRACE(c, "PKINIT PKCS#11 module shows no slots with tokens")
+#define TRACE_PKINIT_PKCS11_OPEN(c, name)                       \
+    TRACE(c, "PKINIT opening PKCS#11 module \"{str}\"", name)
+#define TRACE_PKINIT_PKCS11_OPEN_FAILED(c, errstr)                      \
+    TRACE(c, "PKINIT PKCS#11 module open failed: {str}", errstr)
+#define TRACE_PKINIT_PKCS11_SLOT(c, slot, len, label)            \
+    TRACE(c, "PKINIT PKCS#11 slotid {int} token {lenstr}",       \
+          slot, len, label)
+
 #define TRACE_PKINIT_SERVER_CERT_AUTH(c, modname)                       \
     TRACE(c, "PKINIT server authorizing cert with module {str}",        \
           modname)
@@ -115,8 +132,6 @@
     TRACE(c, "PKINIT server found no SAN in client cert")
 #define TRACE_PKINIT_SERVER_PADATA_VERIFY(c)                    \
     TRACE(c, "PKINIT server verifying KRB5_PADATA_PK_AS_REQ")
-#define TRACE_PKINIT_SERVER_PADATA_VERIFY_OLD(c)                        \
-    TRACE(c, "PKINIT server verifying KRB5_PADATA_PK_AS_REQ_OLD")
 #define TRACE_PKINIT_SERVER_PADATA_VERIFY_FAIL(c)       \
     TRACE(c, "PKINIT server failed to verify PA data")
 #define TRACE_PKINIT_SERVER_RETURN_PADATA(c)    \
@@ -127,16 +142,28 @@
     TRACE(c, "PKINIT server could not parse UPN \"{str}\": {kerr}",     \
           upn, ret)
 
+#define TRACE_PKINIT_CERT_CHAIN_NAME(c, index, name)    \
+    TRACE(c, "PKINIT chain cert #{int}: {str}", index, name)
+#define TRACE_PKINIT_CERT_NUM_MATCHING(c, total, nummatch)              \
+    TRACE(c, "PKINIT client checked {int} certs, found {int} matches",  \
+          total, nummatch)
+#define TRACE_PKINIT_CERT_RULE(c, rule)                                 \
+    TRACE(c, "PKINIT client matching rule '{str}' against certificates", rule)
+#define TRACE_PKINIT_CERT_RULE_INVALID(c, rule)                         \
+    TRACE(c, "PKINIT client ignoring invalid rule '{str}'", rule)
+
 #define TRACE_PKINIT_EKU(c)                                             \
     TRACE(c, "PKINIT found acceptable EKU and digitalSignature KU")
 #define TRACE_PKINIT_EKU_NO_KU(c)                                       \
     TRACE(c, "PKINIT found acceptable EKU but no digitalSignature KU")
+#define TRACE_PKINIT_IDENTITY_OPTION(c, name)           \
+    TRACE(c, "PKINIT loading identity {str}", name)
 #define TRACE_PKINIT_LOADED_CERT(c, name)                       \
     TRACE(c, "PKINIT loaded cert and key for {str}", name)
-#define TRACE_PKINIT_LOAD_FROM_FILE(c)                          \
-    TRACE(c, "PKINIT loading CA certs and CRLs from FILE")
-#define TRACE_PKINIT_LOAD_FROM_DIR(c)                           \
-    TRACE(c, "PKINIT loading CA certs and CRLs from DIR")
+#define TRACE_PKINIT_LOAD_FROM_FILE(c, name)                            \
+    TRACE(c, "PKINIT loading CA certs and CRLs from FILE {str}", name)
+#define TRACE_PKINIT_LOAD_FROM_DIR(c, name)                             \
+    TRACE(c, "PKINIT loading CA certs and CRLs from DIR {str}", name)
 #define TRACE_PKINIT_NO_CA_ANCHOR(c, file)              \
     TRACE(c, "PKINIT no anchor CA in file {str}", file)
 #define TRACE_PKINIT_NO_CA_INTERMEDIATE(c, file)                \
@@ -166,6 +193,18 @@
     TRACE(c, "PKINIT second PKCS12_parse with password failed")
 #define TRACE_PKINIT_PKCS_PROMPT_FAIL(c)                        \
     TRACE(c, "PKINIT failed to prompt for PKCS12 password")
+#define TRACE_PKINIT_REGEXP_MATCH(c, keyword, comp, value, idx)         \
+    TRACE(c, "PKINIT matched {str} rule '{str}' with "                  \
+          "value '{str}' in cert #{int}", keyword, comp, value, (idx) + 1)
+#define TRACE_PKINIT_REGEXP_NOMATCH(c, keyword, comp, value, idx)       \
+    TRACE(c, "PKINIT didn't match {str} rule '{str}' with "             \
+          "value '{str}' in cert #{int}", keyword, comp, value, (idx) + 1)
+#define TRACE_PKINIT_SAN_CERT_COUNT(c, count, princ, upns, dns, cert)   \
+    TRACE(c, "PKINIT client found {int} SANs ({int} princs, {int} "     \
+          "UPNs, {int} DNS names) in certificate {str}", count, princ,   \
+          upns, dns, cert)
+#define TRACE_PKINIT_SAN_CERT_NONE(c, cert)                             \
+    TRACE(c, "PKINIT client found no SANs in certificate {str}", cert)
 
 #define TRACE_CERTAUTH_VTINIT_FAIL(c, ret)                              \
     TRACE(c, "certauth module failed to init vtable: {kerr}", ret)

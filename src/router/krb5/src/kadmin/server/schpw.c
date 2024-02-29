@@ -436,7 +436,7 @@ dispatch(void *handle, const krb5_fulladdr *local_addr,
 {
     krb5_error_code ret;
     krb5_keytab kt = NULL;
-    kadm5_server_handle_t server_handle = (kadm5_server_handle_t)handle;
+    kadm5_server_handle_t server_handle = *(void **)handle;
     krb5_data *response = NULL;
     const char *emsg;
 
@@ -454,7 +454,7 @@ dispatch(void *handle, const krb5_fulladdr *local_addr,
         goto egress;
 
     ret = process_chpw_request(server_handle->context,
-                               handle,
+                               server_handle,
                                server_handle->params.realm,
                                kt,
                                local_addr,

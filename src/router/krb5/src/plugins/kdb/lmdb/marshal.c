@@ -36,29 +36,11 @@
 #include "klmdb-int.h"
 
 static void
-put16(struct k5buf *buf, uint16_t num)
-{
-    uint8_t n[2];
-
-    store_16_le(num, n);
-    k5_buf_add_len(buf, n, 2);
-}
-
-static void
-put32(struct k5buf *buf, uint32_t num)
-{
-    uint8_t n[4];
-
-    store_32_le(num, n);
-    k5_buf_add_len(buf, n, 4);
-}
-
-static void
 put_tl_data(struct k5buf *buf, const krb5_tl_data *tl)
 {
     for (; tl != NULL; tl = tl->tl_data_next) {
-        put16(buf, tl->tl_data_type);
-        put16(buf, tl->tl_data_length);
+        k5_buf_add_uint16_le(buf, tl->tl_data_type);
+        k5_buf_add_uint16_le(buf, tl->tl_data_length);
         k5_buf_add_len(buf, tl->tl_data_contents, tl->tl_data_length);
     }
 }
@@ -76,21 +58,21 @@ klmdb_encode_princ(krb5_context context, const krb5_db_entry *entry,
 
     k5_buf_init_dynamic(&buf);
 
-    put32(&buf, entry->attributes);
-    put32(&buf, entry->max_life);
-    put32(&buf, entry->max_renewable_life);
-    put32(&buf, entry->expiration);
-    put32(&buf, entry->pw_expiration);
-    put16(&buf, entry->n_tl_data);
-    put16(&buf, entry->n_key_data);
+    k5_buf_add_uint32_le(&buf, entry->attributes);
+    k5_buf_add_uint32_le(&buf, entry->max_life);
+    k5_buf_add_uint32_le(&buf, entry->max_renewable_life);
+    k5_buf_add_uint32_le(&buf, entry->expiration);
+    k5_buf_add_uint32_le(&buf, entry->pw_expiration);
+    k5_buf_add_uint16_le(&buf, entry->n_tl_data);
+    k5_buf_add_uint16_le(&buf, entry->n_key_data);
     put_tl_data(&buf, entry->tl_data);
     for (i = 0; i < entry->n_key_data; i++) {
         kd = &entry->key_data[i];
-        put16(&buf, kd->key_data_ver);
-        put16(&buf, kd->key_data_kvno);
+        k5_buf_add_uint16_le(&buf, kd->key_data_ver);
+        k5_buf_add_uint16_le(&buf, kd->key_data_kvno);
         for (j = 0; j < kd->key_data_ver; j++) {
-            put16(&buf, kd->key_data_type[j]);
-            put16(&buf, kd->key_data_length[j]);
+            k5_buf_add_uint16_le(&buf, kd->key_data_type[j]);
+            k5_buf_add_uint16_le(&buf, kd->key_data_length[j]);
             if (kd->key_data_length[j] > 0) {
                 k5_buf_add_len(&buf, kd->key_data_contents[j],
                                kd->key_data_length[j]);
@@ -125,26 +107,26 @@ klmdb_encode_policy(krb5_context context, const osa_policy_ent_rec *pol,
     *len_out = 0;
 
     k5_buf_init_dynamic(&buf);
-    put32(&buf, pol->pw_min_life);
-    put32(&buf, pol->pw_max_life);
-    put32(&buf, pol->pw_min_length);
-    put32(&buf, pol->pw_min_classes);
-    put32(&buf, pol->pw_history_num);
-    put32(&buf, pol->pw_max_fail);
-    put32(&buf, pol->pw_failcnt_interval);
-    put32(&buf, pol->pw_lockout_duration);
-    put32(&buf, pol->attributes);
-    put32(&buf, pol->max_life);
-    put32(&buf, pol->max_renewable_life);
+    k5_buf_add_uint32_le(&buf, pol->pw_min_life);
+    k5_buf_add_uint32_le(&buf, pol->pw_max_life);
+    k5_buf_add_uint32_le(&buf, pol->pw_min_length);
+    k5_buf_add_uint32_le(&buf, pol->pw_min_classes);
+    k5_buf_add_uint32_le(&buf, pol->pw_history_num);
+    k5_buf_add_uint32_le(&buf, pol->pw_max_fail);
+    k5_buf_add_uint32_le(&buf, pol->pw_failcnt_interval);
+    k5_buf_add_uint32_le(&buf, pol->pw_lockout_duration);
+    k5_buf_add_uint32_le(&buf, pol->attributes);
+    k5_buf_add_uint32_le(&buf, pol->max_life);
+    k5_buf_add_uint32_le(&buf, pol->max_renewable_life);
 
     if (pol->allowed_keysalts == NULL) {
-        put32(&buf, 0);
+        k5_buf_add_uint32_le(&buf, 0);
     } else {
-        put32(&buf, strlen(pol->allowed_keysalts));
+        k5_buf_add_uint32_le(&buf, strlen(pol->allowed_keysalts));
         k5_buf_add(&buf, pol->allowed_keysalts);
     }
 
-    put16(&buf, pol->n_tl_data);
+    k5_buf_add_uint16_le(&buf, pol->n_tl_data);
     put_tl_data(&buf, pol->tl_data);
 
     if (k5_buf_status(&buf) != 0)

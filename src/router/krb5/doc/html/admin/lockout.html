@@ -12,7 +12,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '1.17',
+        VERSION:     '1.21.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -85,11 +85,11 @@ principals (such as the “default” policy), or you may need to create a
 new one and associate it with each user principal.</p>
 <p>The policy parameters related to account lockout are:</p>
 <ul class="simple">
-<li><a class="reference internal" href="database.html#policy-maxfailure"><span class="std std-ref">maxfailure</span></a>: the number of failed attempts
+<li><a class="reference internal" href="admin_commands/kadmin_local.html#policy-maxfailure"><span class="std std-ref">maxfailure</span></a>: the number of failed attempts
 before the principal is locked out</li>
-<li><a class="reference internal" href="database.html#policy-failurecountinterval"><span class="std std-ref">failurecountinterval</span></a>: the
+<li><a class="reference internal" href="admin_commands/kadmin_local.html#policy-failurecountinterval"><span class="std std-ref">failurecountinterval</span></a>: the
 allowable interval between failed attempts</li>
-<li><a class="reference internal" href="database.html#policy-lockoutduration"><span class="std std-ref">lockoutduration</span></a>: the amount of time
+<li><a class="reference internal" href="admin_commands/kadmin_local.html#policy-lockoutduration"><span class="std std-ref">lockoutduration</span></a>: the amount of time
 a principal is locked out for</li>
 </ul>
 <p>Here is an example of setting these parameters on a new policy and
@@ -153,10 +153,10 @@ traditional <a class="reference internal" href="admin_commands/kprop.html#kprop-
 this, the number of attempts an attacker can make within a time period
 is multiplied by the number of KDCs.  For instance, if the
 <strong>maxfailure</strong> parameter on a policy is 10 and there are four KDCs in
-the environment (a master and three replicas), an attacker could make
+the environment (a primary and three replicas), an attacker could make
 as many as 40 attempts before the principal is locked out on all four
 KDCs.</p>
-<p>An administrative unlock is propagated from the master to the replica
+<p>An administrative unlock is propagated from the primary to the replica
 KDCs during the next propagation.  Propagation of an administrative
 unlock will cause the counter of failed attempts on each replica to
 reset to 1 on the next failure.</p>
@@ -275,8 +275,8 @@ read access, account lockout will not function.</p>
 
     <div class="footer-wrapper">
         <div class="footer" >
-            <div class="right" ><i>Release: 1.17</i><br />
-                &copy; <a href="../copyright.html">Copyright</a> 1985-2019, MIT.
+            <div class="right" ><i>Release: 1.21.2</i><br />
+                &copy; <a href="../copyright.html">Copyright</a> 1985-2023, MIT.
             </div>
             <div class="left">
                 

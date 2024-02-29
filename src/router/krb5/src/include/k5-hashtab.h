@@ -76,4 +76,7 @@ int k5_hashtab_remove(struct k5_hashtab *ht, const void *key, size_t klen);
 /* Retrieve a value from a hash table by key. */
 void *k5_hashtab_get(struct k5_hashtab *ht, const void *key, size_t klen);
 
+uint64_t k5_siphash24(const uint8_t *data, size_t len,
+                      const uint8_t seed[K5_HASH_SEED_LEN]);
+
 #endif /* K5_HASH_H */

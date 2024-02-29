@@ -27,6 +27,8 @@
 #include <ctype.h>
 #include "crypto_int.h"
 
+#ifdef K5_BUILTIN_PBKDF2
+
 /*
  * RFC 2898 specifies PBKDF2 in terms of an underlying pseudo-random
  * function with two arguments (password and salt||blockindex).  Right
@@ -73,10 +75,12 @@ static void printd (const char *descr, krb5_data *d) {
  * Implements the hmac-sha1 PRF.  pass has been pre-hashed (if
  * necessary) and converted to a key already; salt has had the block
  * index appended to the original salt.
+ *
+ * NetBSD 8 declares an hmac() function in stdlib.h, so avoid that name.
  */
 static krb5_error_code
-hmac(const struct krb5_hash_provider *hash, krb5_keyblock *pass,
-     krb5_data *salt, krb5_data *out)
+k5_hmac(const struct krb5_hash_provider *hash, krb5_keyblock *pass,
+        krb5_data *salt, krb5_data *out)
 {
     krb5_error_code err;
     krb5_crypto_iov iov;
@@ -111,7 +115,7 @@ F(char *output, char *u_tmp1, char *u_tmp2,
 
     out = make_data(u_tmp1, hlen);
 
-    err = hmac(hash, pass, &sdata, &out);
+    err = k5_hmac(hash, pass, &sdata, &out);
     if (err)
         return err;
 
@@ -121,7 +125,7 @@ F(char *output, char *u_tmp1, char *u_tmp2,
     sdata.length = hlen;
     for (j = 2; j <= count; j++) {
         memcpy(u_tmp2, u_tmp1, hlen);
-        err = hmac(hash, pass, &sdata, &out);
+        err = k5_hmac(hash, pass, &sdata, &out);
         if (err)
             return err;
 
@@ -213,3 +217,5 @@ krb5int_pbkdf2_hmac(const struct krb5_hash_provider *hash,
     err = pbkdf2(hash, &keyblock, salt, count, out);
     return err;
 }
+
+#endif /* K5_BUILTIN_PBKDF2 */

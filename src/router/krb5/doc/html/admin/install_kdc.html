@@ -12,7 +12,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '1.17',
+        VERSION:     '1.21.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -64,23 +64,24 @@
   <div class="section" id="installing-kdcs">
 <h1>Installing KDCs<a class="headerlink" href="#installing-kdcs" title="Permalink to this headline">¶</a></h1>
 <p>When setting up Kerberos in a production environment, it is best to
-have multiple replica KDCs alongside with a master KDC to ensure the
+have multiple replica KDCs alongside with a primary KDC to ensure the
 continued availability of the Kerberized services.  Each KDC contains
-a copy of the Kerberos database.  The master KDC contains the writable
-copy of the realm database, which it replicates to the replica KDCs at
-regular intervals.  All database changes (such as password changes)
-are made on the master KDC.  Replica KDCs provide Kerberos
-ticket-granting services, but not database administration, when the
-master KDC is unavailable.  MIT recommends that you install all of
-your KDCs to be able to function as either the master or one of the
-replicas.  This will enable you to easily switch your master KDC with
-one of the replicas if necessary (see <a class="reference internal" href="#switch-master-replica"><span class="std std-ref">Switching master and replica KDCs</span></a>).
-This installation procedure is based on that recommendation.</p>
+a copy of the Kerberos database.  The primary KDC contains the
+writable copy of the realm database, which it replicates to the
+replica KDCs at regular intervals.  All database changes (such as
+password changes) are made on the primary KDC.  Replica KDCs provide
+Kerberos ticket-granting services, but not database administration,
+when the primary KDC is unavailable.  MIT recommends that you install
+all of your KDCs to be able to function as either the primary or one
+of the replicas.  This will enable you to easily switch your primary
+KDC with one of the replicas if necessary (see
+<a class="reference internal" href="#switch-primary-replica"><span class="std std-ref">Switching primary and replica KDCs</span></a>).  This installation procedure is based
+on that recommendation.</p>
 <div class="admonition warning">
 <p class="first admonition-title">Warning</p>
 <ul class="last simple">
 <li>The Kerberos system relies on the availability of correct time
-information.  Ensure that the master and all replica KDCs have
+information.  Ensure that the primary and all replica KDCs have
 properly synchronized clocks.</li>
 <li>It is best to install and run KDCs on secured and dedicated
 hardware with limited access.  If your KDC is also a file
@@ -90,15 +91,15 @@ of those areas could potentially gain access to the Kerberos
 database.</li>
 </ul>
 </div>
-<div class="section" id="install-and-configure-the-master-kdc">
-<h2>Install and configure the master KDC<a class="headerlink" href="#install-and-configure-the-master-kdc" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="install-and-configure-the-primary-kdc">
+<h2>Install and configure the primary KDC<a class="headerlink" href="#install-and-configure-the-primary-kdc" title="Permalink to this headline">¶</a></h2>
 <p>Install Kerberos either from the OS-provided packages or from the
 source (See <a class="reference internal" href="../build/doing_build.html#do-build"><span class="std std-ref">Building within a single tree</span></a>).</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
 <p>For the purpose of this document we will use the following
 names:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">kerberos</span><span class="o">.</span><span class="n">mit</span><span class="o">.</span><span class="n">edu</span>    <span class="o">-</span> <span class="n">master</span> <span class="n">KDC</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">kerberos</span><span class="o">.</span><span class="n">mit</span><span class="o">.</span><span class="n">edu</span>    <span class="o">-</span> <span class="n">primary</span> <span class="n">KDC</span>
 <span class="n">kerberos</span><span class="o">-</span><span class="mf">1.</span><span class="n">mit</span><span class="o">.</span><span class="n">edu</span>  <span class="o">-</span> <span class="n">replica</span> <span class="n">KDC</span>
 <span class="n">ATHENA</span><span class="o">.</span><span class="n">MIT</span><span class="o">.</span><span class="n">EDU</span>      <span class="o">-</span> <span class="n">realm</span> <span class="n">name</span>
 <span class="o">.</span><span class="n">k5</span><span class="o">.</span><span class="n">ATHENA</span><span class="o">.</span><span class="n">MIT</span><span class="o">.</span><span class="n">EDU</span>  <span class="o">-</span> <span class="n">stash</span> <span class="n">file</span>
@@ -196,7 +197,7 @@ your Kerberos realm and server respectively.</p>
 </div>
 <div class="section" id="create-the-kdc-database">
 <span id="create-db"></span><h2>Create the KDC database<a class="headerlink" href="#create-the-kdc-database" title="Permalink to this headline">¶</a></h2>
-<p>You will use the <a class="reference internal" href="admin_commands/kdb5_util.html#kdb5-util-8"><span class="std std-ref">kdb5_util</span></a> command on the master KDC to
+<p>You will use the <a class="reference internal" href="admin_commands/kdb5_util.html#kdb5-util-8"><span class="std std-ref">kdb5_util</span></a> command on the primary KDC to
 create the Kerberos database and the optional <a class="reference internal" href="../basic/stash_file_def.html#stash-definition"><span class="std std-ref">stash file</span></a>.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
@@ -218,7 +219,7 @@ your source for Kerberos 5!”  (It’s the first letter of each word,
 substituting the numeral “4” for the word “for”, and includes the
 punctuation mark at the end.)</p>
 <p>The following is an example of how to create a Kerberos database and
-stash file on the master KDC, using the <a class="reference internal" href="admin_commands/kdb5_util.html#kdb5-util-8"><span class="std std-ref">kdb5_util</span></a> command.
+stash file on the primary KDC, using the <a class="reference internal" href="admin_commands/kdb5_util.html#kdb5-util-8"><span class="std std-ref">kdb5_util</span></a> command.
 Replace <code class="docutils literal"><span class="pre">ATHENA.MIT.EDU</span></code> with the name of your Kerberos realm:</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">shell</span><span class="o">%</span> <span class="n">kdb5_util</span> <span class="n">create</span> <span class="o">-</span><span class="n">r</span> <span class="n">ATHENA</span><span class="o">.</span><span class="n">MIT</span><span class="o">.</span><span class="n">EDU</span> <span class="o">-</span><span class="n">s</span>
 
@@ -261,10 +262,10 @@ are allowed to administer Kerberos database) to the Kerberos database.
 You <em>must</em> add at least one principal now to allow communication
 between the Kerberos administration daemon kadmind and the kadmin
 program over the network for further administration.  To do this, use
-the kadmin.local utility on the master KDC.  kadmin.local is designed
-to be run on the master KDC host without using Kerberos authentication
-to an admin server; instead, it must have read and write access to the
-Kerberos database on the local filesystem.</p>
+the kadmin.local utility on the primary KDC.  kadmin.local is designed
+to be run on the primary KDC host without using Kerberos
+authentication to an admin server; instead, it must have read and
+write access to the Kerberos database on the local filesystem.</p>
 <p>The administrative principals you create should be the ones you added
 to the ACL file (see <a class="reference internal" href="#admin-acl"><span class="std std-ref">Add administrators to the ACL file</span></a>).</p>
 <p>In the following example, the administrative principal <code class="docutils literal"><span class="pre">admin/admin</span></code>
@@ -273,7 +274,7 @@ is created:</p>
 
 <span class="n">kadmin</span><span class="o">.</span><span class="n">local</span><span class="p">:</span> <span class="n">addprinc</span> <span class="n">admin</span><span class="o">/</span><span class="n">admin</span><span class="nd">@ATHENA</span><span class="o">.</span><span class="n">MIT</span><span class="o">.</span><span class="n">EDU</span>
 
-<span class="n">WARNING</span><span class="p">:</span> <span class="n">no</span> <span class="n">policy</span> <span class="n">specified</span> <span class="k">for</span> <span class="s2">&quot;admin/admin@ATHENA.MIT.EDU&quot;</span><span class="p">;</span>
+<span class="n">No</span> <span class="n">policy</span> <span class="n">specified</span> <span class="k">for</span> <span class="s2">&quot;admin/admin@ATHENA.MIT.EDU&quot;</span><span class="p">;</span>
 <span class="n">assigning</span> <span class="s2">&quot;default&quot;</span><span class="o">.</span>
 <span class="n">Enter</span> <span class="n">password</span> <span class="k">for</span> <span class="n">principal</span> <span class="n">admin</span><span class="o">/</span><span class="n">admin</span><span class="nd">@ATHENA</span><span class="o">.</span><span class="n">MIT</span><span class="o">.</span><span class="n">EDU</span><span class="p">:</span>  <span class="o">&lt;=</span> <span class="n">Enter</span> <span class="n">a</span> <span class="n">password</span><span class="o">.</span>
 <span class="n">Re</span><span class="o">-</span><span class="n">enter</span> <span class="n">password</span> <span class="k">for</span> <span class="n">principal</span> <span class="n">admin</span><span class="o">/</span><span class="n">admin</span><span class="nd">@ATHENA</span><span class="o">.</span><span class="n">MIT</span><span class="o">.</span><span class="n">EDU</span><span class="p">:</span>  <span class="o">&lt;=</span> <span class="n">Type</span> <span class="n">it</span> <span class="n">again</span><span class="o">.</span>
@@ -282,10 +283,10 @@ is created:</p>
 </pre></div>
 </div>
 </div>
-<div class="section" id="start-the-kerberos-daemons-on-the-master-kdc">
-<span id="start-kdc-daemons"></span><h2>Start the Kerberos daemons on the master KDC<a class="headerlink" href="#start-the-kerberos-daemons-on-the-master-kdc" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="start-the-kerberos-daemons-on-the-primary-kdc">
+<span id="start-kdc-daemons"></span><h2>Start the Kerberos daemons on the primary KDC<a class="headerlink" href="#start-the-kerberos-daemons-on-the-primary-kdc" title="Permalink to this headline">¶</a></h2>
 <p>At this point, you are ready to start the Kerberos KDC
-(<a class="reference internal" href="admin_commands/krb5kdc.html#krb5kdc-8"><span class="std std-ref">krb5kdc</span></a>) and administrative daemons on the Master KDC.  To
+(<a class="reference internal" href="admin_commands/krb5kdc.html#krb5kdc-8"><span class="std std-ref">krb5kdc</span></a>) and administrative daemons on the primary KDC.  To
 do so, type:</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">shell</span><span class="o">%</span> <span class="n">krb5kdc</span>
 <span class="n">shell</span><span class="o">%</span> <span class="n">kadmind</span>
@@ -323,33 +324,34 @@ against the principals that you have created on the previous step
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
 <p class="last">Assuming you are setting the KDCs up so that you can easily
-switch the master KDC with one of the replicas, you should
-perform each of these steps on the master KDC as well as the
-replica KDCs, unless these instructions specify otherwise.</p>
+switch the primary KDC with one of the replicas, you should
+perform each of these steps on the primary KDC as well as
+the replica KDCs, unless these instructions specify
+otherwise.</p>
 </div>
 <div class="section" id="create-host-keytabs-for-replica-kdcs">
 <span id="replica-host-key"></span><h3>Create host keytabs for replica KDCs<a class="headerlink" href="#create-host-keytabs-for-replica-kdcs" title="Permalink to this headline">¶</a></h3>
 <p>Each KDC needs a <code class="docutils literal"><span class="pre">host</span></code> key in the Kerberos database.  These keys
 are used for mutual authentication when propagating the database dump
-file from the master KDC to the secondary KDC servers.</p>
-<p>On the master KDC, connect to administrative interface and create the
+file from the primary KDC to the secondary KDC servers.</p>
+<p>On the primary KDC, connect to administrative interface and create the
 host principal for each of the KDCs’ <code class="docutils literal"><span class="pre">host</span></code> services.  For example,
-if the master KDC were called <code class="docutils literal"><span class="pre">kerberos.mit.edu</span></code>, and you had a
+if the primary KDC were called <code class="docutils literal"><span class="pre">kerberos.mit.edu</span></code>, and you had a
 replica KDC named <code class="docutils literal"><span class="pre">kerberos-1.mit.edu</span></code>, you would type the
 following:</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">shell</span><span class="o">%</span> <span class="n">kadmin</span>
 <span class="n">kadmin</span><span class="p">:</span> <span class="n">addprinc</span> <span class="o">-</span><span class="n">randkey</span> <span class="n">host</span><span class="o">/</span><span class="n">kerberos</span><span class="o">.</span><span class="n">mit</span><span class="o">.</span><span class="n">edu</span>
-<span class="n">NOTICE</span><span class="p">:</span> <span class="n">no</span> <span class="n">policy</span> <span class="n">specified</span> <span class="k">for</span> <span class="s2">&quot;host/kerberos.mit.edu@ATHENA.MIT.EDU&quot;</span><span class="p">;</span> <span class="n">assigning</span> <span class="s2">&quot;default&quot;</span>
+<span class="n">No</span> <span class="n">policy</span> <span class="n">specified</span> <span class="k">for</span> <span class="s2">&quot;host/kerberos.mit.edu@ATHENA.MIT.EDU&quot;</span><span class="p">;</span> <span class="n">assigning</span> <span class="s2">&quot;default&quot;</span>
 <span class="n">Principal</span> <span class="s2">&quot;host/kerberos.mit.edu@ATHENA.MIT.EDU&quot;</span> <span class="n">created</span><span class="o">.</span>
 
 <span class="n">kadmin</span><span class="p">:</span> <span class="n">addprinc</span> <span class="o">-</span><span class="n">randkey</span> <span class="n">host</span><span class="o">/</span><span class="n">kerberos</span><span class="o">-</span><span class="mf">1.</span><span class="n">mit</span><span class="o">.</span><span class="n">edu</span>
-<span class="n">NOTICE</span><span class="p">:</span> <span class="n">no</span> <span class="n">policy</span> <span class="n">specified</span> <span class="k">for</span> <span class="s2">&quot;host/kerberos-1.mit.edu@ATHENA.MIT.EDU&quot;</span><span class="p">;</span> <span class="n">assigning</span> <span class="s2">&quot;default&quot;</span>
+<span class="n">No</span> <span class="n">policy</span> <span class="n">specified</span> <span class="k">for</span> <span class="s2">&quot;host/kerberos-1.mit.edu@ATHENA.MIT.EDU&quot;</span><span class="p">;</span> <span class="n">assigning</span> <span class="s2">&quot;default&quot;</span>
 <span class="n">Principal</span> <span class="s2">&quot;host/kerberos-1.mit.edu@ATHENA.MIT.EDU&quot;</span> <span class="n">created</span><span class="o">.</span>
 </pre></div>
 </div>
-<p>It is not strictly necessary to have the master KDC server in the
+<p>It is not strictly necessary to have the primary KDC server in the
 Kerberos database, but it can be handy if you want to be able to swap
-the master KDC with one of the replicas.</p>
+the primary KDC with one of the replicas.</p>
 <p>Next, extract <code class="docutils literal"><span class="pre">host</span></code> random keys for all participating KDCs and
 store them in each host’s default keytab file.  Ideally, you should
 extract each keytab locally on its own KDC.  If this is not feasible,
@@ -362,13 +364,13 @@ To extract a keytab directly on a replica KDC called
 <span class="n">Entry</span> <span class="k">for</span> <span class="n">principal</span> <span class="n">host</span><span class="o">/</span><span class="n">kerberos</span><span class="o">-</span><span class="mf">1.</span><span class="n">mit</span><span class="o">.</span><span class="n">edu</span> <span class="k">with</span> <span class="n">kvno</span> <span class="mi">2</span><span class="p">,</span> <span class="n">encryption</span>
     <span class="nb">type</span> <span class="n">aes128</span><span class="o">-</span><span class="n">cts</span><span class="o">-</span><span class="n">hmac</span><span class="o">-</span><span class="n">sha1</span><span class="o">-</span><span class="mi">96</span> <span class="n">added</span> <span class="n">to</span> <span class="n">keytab</span> <span class="n">FILE</span><span class="p">:</span><span class="o">/</span><span class="n">etc</span><span class="o">/</span><span class="n">krb5</span><span class="o">.</span><span class="n">keytab</span><span class="o">.</span>
 <span class="n">Entry</span> <span class="k">for</span> <span class="n">principal</span> <span class="n">host</span><span class="o">/</span><span class="n">kerberos</span><span class="o">-</span><span class="mf">1.</span><span class="n">mit</span><span class="o">.</span><span class="n">edu</span> <span class="k">with</span> <span class="n">kvno</span> <span class="mi">2</span><span class="p">,</span> <span class="n">encryption</span>
-    <span class="nb">type</span> <span class="n">des3</span><span class="o">-</span><span class="n">cbc</span><span class="o">-</span><span class="n">sha1</span> <span class="n">added</span> <span class="n">to</span> <span class="n">keytab</span> <span class="n">FILE</span><span class="p">:</span><span class="o">/</span><span class="n">etc</span><span class="o">/</span><span class="n">krb5</span><span class="o">.</span><span class="n">keytab</span><span class="o">.</span>
+    <span class="nb">type</span> <span class="n">aes256</span><span class="o">-</span><span class="n">cts</span><span class="o">-</span><span class="n">hmac</span><span class="o">-</span><span class="n">sha384</span><span class="o">-</span><span class="mi">192</span> <span class="n">added</span> <span class="n">to</span> <span class="n">keytab</span> <span class="n">FILE</span><span class="p">:</span><span class="o">/</span><span class="n">etc</span><span class="o">/</span><span class="n">krb5</span><span class="o">.</span><span class="n">keytab</span><span class="o">.</span>
 <span class="n">Entry</span> <span class="k">for</span> <span class="n">principal</span> <span class="n">host</span><span class="o">/</span><span class="n">kerberos</span><span class="o">-</span><span class="mf">1.</span><span class="n">mit</span><span class="o">.</span><span class="n">edu</span> <span class="k">with</span> <span class="n">kvno</span> <span class="mi">2</span><span class="p">,</span> <span class="n">encryption</span>
     <span class="nb">type</span> <span class="n">arcfour</span><span class="o">-</span><span class="n">hmac</span> <span class="n">added</span> <span class="n">to</span> <span class="n">keytab</span> <span class="n">FILE</span><span class="p">:</span><span class="o">/</span><span class="n">etc</span><span class="o">/</span><span class="n">krb5</span><span class="o">.</span><span class="n">keytab</span><span class="o">.</span>
 </pre></div>
 </div>
 <p>If you are instead extracting a keytab for the replica KDC called
-<code class="docutils literal"><span class="pre">kerberos-1.mit.edu</span></code> on the master KDC, you should use a dedicated
+<code class="docutils literal"><span class="pre">kerberos-1.mit.edu</span></code> on the primary KDC, you should use a dedicated
 temporary keytab file for that machine’s keytab:</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">kadmin</span><span class="p">:</span> <span class="n">ktadd</span> <span class="o">-</span><span class="n">k</span> <span class="o">/</span><span class="n">tmp</span><span class="o">/</span><span class="n">kerberos</span><span class="o">-</span><span class="mf">1.</span><span class="n">keytab</span> <span class="n">host</span><span class="o">/</span><span class="n">kerberos</span><span class="o">-</span><span class="mf">1.</span><span class="n">mit</span><span class="o">.</span><span class="n">edu</span>
 <span class="n">Entry</span> <span class="k">for</span> <span class="n">principal</span> <span class="n">host</span><span class="o">/</span><span class="n">kerberos</span><span class="o">-</span><span class="mf">1.</span><span class="n">mit</span><span class="o">.</span><span class="n">edu</span> <span class="k">with</span> <span class="n">kvno</span> <span class="mi">2</span><span class="p">,</span> <span class="n">encryption</span>
@@ -382,10 +384,10 @@ temporary keytab file for that machine’s keytab:</p>
 </div>
 <div class="section" id="configure-replica-kdcs">
 <h3>Configure replica KDCs<a class="headerlink" href="#configure-replica-kdcs" title="Permalink to this headline">¶</a></h3>
-<p>Database propagation copies the contents of the master’s database, but
-does not propagate configuration files, stash files, or the kadm5 ACL
-file.  The following files must be copied by hand to each replica (see
-<a class="reference internal" href="../mitK5defaults.html#mitk5defaults"><span class="std std-ref">MIT Kerberos defaults</span></a> for the default locations for these files):</p>
+<p>Database propagation copies the contents of the primary’s database,
+but does not propagate configuration files, stash files, or the kadm5
+ACL file.  The following files must be copied by hand to each replica
+(see <a class="reference internal" href="../mitK5defaults.html#mitk5defaults"><span class="std std-ref">MIT Kerberos defaults</span></a> for the default locations for these files):</p>
 <ul class="simple">
 <li>krb5.conf</li>
 <li>kdc.conf</li>
@@ -393,10 +395,10 @@ file.  The following files must be copied by hand to each replica (see
 <li>master key stash file</li>
 </ul>
 <p>Move the copied files into their appropriate directories, exactly as
-on the master KDC.  kadm5.acl is only needed to allow a replica to
-swap with the master KDC.</p>
-<p>The database is propagated from the master KDC to the replica KDCs via
-the <a class="reference internal" href="admin_commands/kpropd.html#kpropd-8"><span class="std std-ref">kpropd</span></a> daemon.  You must explicitly specify the
+on the primary KDC.  kadm5.acl is only needed to allow a replica to
+swap with the primary KDC.</p>
+<p>The database is propagated from the primary KDC to the replica KDCs
+via the <a class="reference internal" href="admin_commands/kpropd.html#kpropd-8"><span class="std std-ref">kpropd</span></a> daemon.  You must explicitly specify the
 principals which are allowed to provide Kerberos dump updates on the
 replica machine with a new database.  Create a file named kpropd.acl
 in the KDC state directory containing the <code class="docutils literal"><span class="pre">host</span></code> principals for each
@@ -407,11 +409,11 @@ of the KDCs:</p>
 </div>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
-<p class="last">If you expect that the master and replica KDCs will be
+<p class="last">If you expect that the primary and replica KDCs will be
 switched at some point of time, list the host principals
 from all participating KDC servers in kpropd.acl files on
 all of the KDCs.  Otherwise, you only need to list the
-master KDC’s host principal in the kpropd.acl files of the
+primary KDC’s host principal in the kpropd.acl files of the
 replica KDCs.</p>
 </div>
 <p>Then, add the following line to <code class="docutils literal"><span class="pre">/etc/inetd.conf</span></code> on each KDC
@@ -429,13 +431,13 @@ used):</p>
 <p>Alternatively, start <a class="reference internal" href="admin_commands/kpropd.html#kpropd-8"><span class="std std-ref">kpropd</span></a> as a stand-alone daemon.  This is
 required when incremental propagation is enabled.</p>
 <p>Now that the replica KDC is able to accept database propagation,
-you’ll need to propagate the database from the master server.</p>
+you’ll need to propagate the database from the primary server.</p>
 <p>NOTE: Do not start the replica KDC yet; you still do not have a copy
-of the master’s database.</p>
+of the primary’s database.</p>
 </div>
 <div class="section" id="propagate-the-database-to-each-replica-kdc">
 <span id="kprop-to-replicas"></span><h3>Propagate the database to each replica KDC<a class="headerlink" href="#propagate-the-database-to-each-replica-kdc" title="Permalink to this headline">¶</a></h3>
-<p>First, create a dump file of the database on the master KDC, as
+<p>First, create a dump file of the database on the primary KDC, as
 follows:</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">shell</span><span class="o">%</span> <span class="n">kdb5_util</span> <span class="n">dump</span> <span class="o">/</span><span class="n">usr</span><span class="o">/</span><span class="n">local</span><span class="o">/</span><span class="n">var</span><span class="o">/</span><span class="n">krb5kdc</span><span class="o">/</span><span class="n">replica_datatrans</span>
 </pre></div>
@@ -473,7 +475,7 @@ start the krb5kdc daemon:</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">shell</span><span class="o">%</span> <span class="n">krb5kdc</span>
 </pre></div>
 </div>
-<p>As with the master KDC, you will probably want to add this command to
+<p>As with the primary KDC, you will probably want to add this command to
 the KDCs’ <code class="docutils literal"><span class="pre">/etc/rc</span></code> or <code class="docutils literal"><span class="pre">/etc/inittab</span></code> files, so they will start
 the krb5kdc daemon automatically at boot time.</p>
 <div class="section" id="propagation-failed">
@@ -494,22 +496,22 @@ to be redirected to <a class="reference internal" href="troubleshoot.html#troubl
 <p>Once your KDCs are set up and running, you are ready to use
 <a class="reference internal" href="admin_commands/kadmin_local.html#kadmin-1"><span class="std std-ref">kadmin</span></a> to load principals for your users, hosts, and other
 services into the Kerberos database.  This procedure is described
-fully in <a class="reference internal" href="database.html#add-mod-del-princs"><span class="std std-ref">Adding, modifying and deleting principals</span></a>.</p>
+fully in <a class="reference internal" href="database.html#principals"><span class="std std-ref">Principals</span></a>.</p>
 <p>You may occasionally want to use one of your replica KDCs as the
-master.  This might happen if you are upgrading the master KDC, or if
-your master KDC has a disk crash.  See the following section for the
-instructions.</p>
+primary.  This might happen if you are upgrading the primary KDC, or
+if your primary KDC has a disk crash.  See the following section for
+the instructions.</p>
 </div>
-<div class="section" id="switching-master-and-replica-kdcs">
-<span id="switch-master-replica"></span><h2>Switching master and replica KDCs<a class="headerlink" href="#switching-master-and-replica-kdcs" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="switching-primary-and-replica-kdcs">
+<span id="switch-primary-replica"></span><h2>Switching primary and replica KDCs<a class="headerlink" href="#switching-primary-and-replica-kdcs" title="Permalink to this headline">¶</a></h2>
 <p>You may occasionally want to use one of your replica KDCs as the
-master.  This might happen if you are upgrading the master KDC, or if
-your master KDC has a disk crash.</p>
+primary.  This might happen if you are upgrading the primary KDC, or
+if your primary KDC has a disk crash.</p>
 <p>Assuming you have configured all of your KDCs to be able to function
-as either the master KDC or a replica KDC (as this document
+as either the primary KDC or a replica KDC (as this document
 recommends), all you need to do to make the changeover is:</p>
-<p>If the master KDC is still running, do the following on the <em>old</em>
-master KDC:</p>
+<p>If the primary KDC is still running, do the following on the <em>old</em>
+primary KDC:</p>
 <ol class="arabic simple">
 <li>Kill the kadmind process.</li>
 <li>Disable the cron job that propagates the database.</li>
@@ -517,12 +519,12 @@ master KDC:</p>
 replicas all have the latest copy of the database (see
 <a class="reference internal" href="#kprop-to-replicas"><span class="std std-ref">Propagate the database to each replica KDC</span></a>).</li>
 </ol>
-<p>On the <em>new</em> master KDC:</p>
+<p>On the <em>new</em> primary KDC:</p>
 <ol class="arabic simple">
-<li>Start the <a class="reference internal" href="admin_commands/kadmind.html#kadmind-8"><span class="std std-ref">kadmind</span></a> daemon (see <a class="reference internal" href="#start-kdc-daemons"><span class="std std-ref">Start the Kerberos daemons on the master KDC</span></a>).</li>
+<li>Start the <a class="reference internal" href="admin_commands/kadmind.html#kadmind-8"><span class="std std-ref">kadmind</span></a> daemon (see <a class="reference internal" href="#start-kdc-daemons"><span class="std std-ref">Start the Kerberos daemons on the primary KDC</span></a>).</li>
 <li>Set up the cron job to propagate the database (see
 <a class="reference internal" href="#kprop-to-replicas"><span class="std std-ref">Propagate the database to each replica KDC</span></a>).</li>
-<li>Switch the CNAMEs of the old and new master KDCs.  If you can’t do
+<li>Switch the CNAMEs of the old and new primary KDCs.  If you can’t do
 this, you’ll need to change the <a class="reference internal" href="conf_files/krb5_conf.html#krb5-conf-5"><span class="std std-ref">krb5.conf</span></a> file on every
 client machine in your Kerberos realm.</li>
 </ol>
@@ -544,7 +546,7 @@ set up incremental propagation to replica KDCs.  See
     <h2>On this page</h2>
     <ul>
 <li><a class="reference internal" href="#">Installing KDCs</a><ul>
-<li><a class="reference internal" href="#install-and-configure-the-master-kdc">Install and configure the master KDC</a></li>
+<li><a class="reference internal" href="#install-and-configure-the-primary-kdc">Install and configure the primary KDC</a></li>
 <li><a class="reference internal" href="#edit-kdc-configuration-files">Edit KDC configuration files</a><ul>
 <li><a class="reference internal" href="#krb5-conf">krb5.conf</a></li>
 <li><a class="reference internal" href="#kdc-conf">kdc.conf</a></li>
@@ -553,7 +555,7 @@ set up incremental propagation to replica KDCs.  See
 <li><a class="reference internal" href="#create-the-kdc-database">Create the KDC database</a></li>
 <li><a class="reference internal" href="#add-administrators-to-the-acl-file">Add administrators to the ACL file</a></li>
 <li><a class="reference internal" href="#add-administrators-to-the-kerberos-database">Add administrators to the Kerberos database</a></li>
-<li><a class="reference internal" href="#start-the-kerberos-daemons-on-the-master-kdc">Start the Kerberos daemons on the master KDC</a></li>
+<li><a class="reference internal" href="#start-the-kerberos-daemons-on-the-primary-kdc">Start the Kerberos daemons on the primary KDC</a></li>
 <li><a class="reference internal" href="#install-the-replica-kdcs">Install the replica KDCs</a><ul>
 <li><a class="reference internal" href="#create-host-keytabs-for-replica-kdcs">Create host keytabs for replica KDCs</a></li>
 <li><a class="reference internal" href="#configure-replica-kdcs">Configure replica KDCs</a></li>
@@ -564,7 +566,7 @@ set up incremental propagation to replica KDCs.  See
 </ul>
 </li>
 <li><a class="reference internal" href="#add-kerberos-principals-to-the-database">Add Kerberos principals to the database</a></li>
-<li><a class="reference internal" href="#switching-master-and-replica-kdcs">Switching master and replica KDCs</a></li>
+<li><a class="reference internal" href="#switching-primary-and-replica-kdcs">Switching primary and replica KDCs</a></li>
 <li><a class="reference internal" href="#incremental-database-propagation">Incremental database propagation</a></li>
 </ul>
 </li>
@@ -633,8 +635,8 @@ set up incremental propagation to replica KDCs.  See
 
     <div class="footer-wrapper">
         <div class="footer" >
-            <div class="right" ><i>Release: 1.17</i><br />
-                &copy; <a href="../copyright.html">Copyright</a> 1985-2019, MIT.
+            <div class="right" ><i>Release: 1.21.2</i><br />
+                &copy; <a href="../copyright.html">Copyright</a> 1985-2023, MIT.
             </div>
             <div class="left">
                 

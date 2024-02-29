@@ -176,7 +176,7 @@ k5_unparse_name(krb5_context context, krb5_const_principal principal,
      * Allocate space for the ascii string; if space has been
      * provided, use it, realloc'ing it if necessary.
      *
-     * We need only n-1 seperators for n components, but we need
+     * We need only n-1 separators for n components, but we need
      * an extra byte for the NUL at the end.
      */
     if (size) {

@@ -2,23 +2,24 @@ Installing KDCs
 ===============
 
 When setting up Kerberos in a production environment, it is best to
-have multiple replica KDCs alongside with a master KDC to ensure the
+have multiple replica KDCs alongside with a primary KDC to ensure the
 continued availability of the Kerberized services.  Each KDC contains
-a copy of the Kerberos database.  The master KDC contains the writable
-copy of the realm database, which it replicates to the replica KDCs at
-regular intervals.  All database changes (such as password changes)
-are made on the master KDC.  Replica KDCs provide Kerberos
-ticket-granting services, but not database administration, when the
-master KDC is unavailable.  MIT recommends that you install all of
-your KDCs to be able to function as either the master or one of the
-replicas.  This will enable you to easily switch your master KDC with
-one of the replicas if necessary (see :ref:`switch_master_replica`).
-This installation procedure is based on that recommendation.
+a copy of the Kerberos database.  The primary KDC contains the
+writable copy of the realm database, which it replicates to the
+replica KDCs at regular intervals.  All database changes (such as
+password changes) are made on the primary KDC.  Replica KDCs provide
+Kerberos ticket-granting services, but not database administration,
+when the primary KDC is unavailable.  MIT recommends that you install
+all of your KDCs to be able to function as either the primary or one
+of the replicas.  This will enable you to easily switch your primary
+KDC with one of the replicas if necessary (see
+:ref:`switch_primary_replica`).  This installation procedure is based
+on that recommendation.
 
 .. warning::
 
     - The Kerberos system relies on the availability of correct time
-      information.  Ensure that the master and all replica KDCs have
+      information.  Ensure that the primary and all replica KDCs have
       properly synchronized clocks.
 
     - It is best to install and run KDCs on secured and dedicated
@@ -29,8 +30,8 @@ This installation procedure is based on that recommendation.
       database.
 
 
-Install and configure the master KDC
-------------------------------------
+Install and configure the primary KDC
+-------------------------------------
 
 Install Kerberos either from the OS-provided packages or from the
 source (See :ref:`do_build`).
@@ -40,7 +41,7 @@ source (See :ref:`do_build`).
           For the purpose of this document we will use the following
           names::
 
-             kerberos.mit.edu    - master KDC
+             kerberos.mit.edu    - primary KDC
              kerberos-1.mit.edu  - replica KDC
              ATHENA.MIT.EDU      - realm name
              .k5.ATHENA.MIT.EDU  - stash file
@@ -148,7 +149,7 @@ your Kerberos realm and server respectively.
 Create the KDC database
 -----------------------
 
-You will use the :ref:`kdb5_util(8)` command on the master KDC to
+You will use the :ref:`kdb5_util(8)` command on the primary KDC to
 create the Kerberos database and the optional :ref:`stash_definition`.
 
 .. note::
@@ -172,7 +173,7 @@ substituting the numeral "4" for the word "for", and includes the
 punctuation mark at the end.)
 
 The following is an example of how to create a Kerberos database and
-stash file on the master KDC, using the :ref:`kdb5_util(8)` command.
+stash file on the primary KDC, using the :ref:`kdb5_util(8)` command.
 Replace ``ATHENA.MIT.EDU`` with the name of your Kerberos realm::
 
     shell% kdb5_util create -r ATHENA.MIT.EDU -s
@@ -224,10 +225,10 @@ are allowed to administer Kerberos database) to the Kerberos database.
 You *must* add at least one principal now to allow communication
 between the Kerberos administration daemon kadmind and the kadmin
 program over the network for further administration.  To do this, use
-the kadmin.local utility on the master KDC.  kadmin.local is designed
-to be run on the master KDC host without using Kerberos authentication
-to an admin server; instead, it must have read and write access to the
-Kerberos database on the local filesystem.
+the kadmin.local utility on the primary KDC.  kadmin.local is designed
+to be run on the primary KDC host without using Kerberos
+authentication to an admin server; instead, it must have read and
+write access to the Kerberos database on the local filesystem.
 
 The administrative principals you create should be the ones you added
 to the ACL file (see :ref:`admin_acl`).
@@ -239,7 +240,7 @@ is created::
 
     kadmin.local: addprinc admin/admin@ATHENA.MIT.EDU
 
-    WARNING: no policy specified for "admin/admin@ATHENA.MIT.EDU";
+    No policy specified for "admin/admin@ATHENA.MIT.EDU";
     assigning "default".
     Enter password for principal admin/admin@ATHENA.MIT.EDU:  <= Enter a password.
     Re-enter password for principal admin/admin@ATHENA.MIT.EDU:  <= Type it again.
@@ -248,11 +249,11 @@ is created::
 
 .. _start_kdc_daemons:
 
-Start the Kerberos daemons on the master KDC
---------------------------------------------
+Start the Kerberos daemons on the primary KDC
+---------------------------------------------
 
 At this point, you are ready to start the Kerberos KDC
-(:ref:`krb5kdc(8)`) and administrative daemons on the Master KDC.  To
+(:ref:`krb5kdc(8)`) and administrative daemons on the primary KDC.  To
 do so, type::
 
     shell% krb5kdc
@@ -294,9 +295,10 @@ You are now ready to start configuring the replica KDCs.
 .. note::
 
           Assuming you are setting the KDCs up so that you can easily
-          switch the master KDC with one of the replicas, you should
-          perform each of these steps on the master KDC as well as the
-          replica KDCs, unless these instructions specify otherwise.
+          switch the primary KDC with one of the replicas, you should
+          perform each of these steps on the primary KDC as well as
+          the replica KDCs, unless these instructions specify
+          otherwise.
 
 
 .. _replica_host_key:
@@ -306,26 +308,26 @@ Create host keytabs for replica KDCs
 
 Each KDC needs a ``host`` key in the Kerberos database.  These keys
 are used for mutual authentication when propagating the database dump
-file from the master KDC to the secondary KDC servers.
+file from the primary KDC to the secondary KDC servers.
 
-On the master KDC, connect to administrative interface and create the
+On the primary KDC, connect to administrative interface and create the
 host principal for each of the KDCs' ``host`` services.  For example,
-if the master KDC were called ``kerberos.mit.edu``, and you had a
+if the primary KDC were called ``kerberos.mit.edu``, and you had a
 replica KDC named ``kerberos-1.mit.edu``, you would type the
 following::
 
     shell% kadmin
     kadmin: addprinc -randkey host/kerberos.mit.edu
-    NOTICE: no policy specified for "host/kerberos.mit.edu@ATHENA.MIT.EDU"; assigning "default"
+    No policy specified for "host/kerberos.mit.edu@ATHENA.MIT.EDU"; assigning "default"
     Principal "host/kerberos.mit.edu@ATHENA.MIT.EDU" created.
 
     kadmin: addprinc -randkey host/kerberos-1.mit.edu
-    NOTICE: no policy specified for "host/kerberos-1.mit.edu@ATHENA.MIT.EDU"; assigning "default"
+    No policy specified for "host/kerberos-1.mit.edu@ATHENA.MIT.EDU"; assigning "default"
     Principal "host/kerberos-1.mit.edu@ATHENA.MIT.EDU" created.
 
-It is not strictly necessary to have the master KDC server in the
+It is not strictly necessary to have the primary KDC server in the
 Kerberos database, but it can be handy if you want to be able to swap
-the master KDC with one of the replicas.
+the primary KDC with one of the replicas.
 
 Next, extract ``host`` random keys for all participating KDCs and
 store them in each host's default keytab file.  Ideally, you should
@@ -340,12 +342,12 @@ To extract a keytab directly on a replica KDC called
     Entry for principal host/kerberos-1.mit.edu with kvno 2, encryption
         type aes128-cts-hmac-sha1-96 added to keytab FILE:/etc/krb5.keytab.
     Entry for principal host/kerberos-1.mit.edu with kvno 2, encryption
-        type des3-cbc-sha1 added to keytab FILE:/etc/krb5.keytab.
+        type aes256-cts-hmac-sha384-192 added to keytab FILE:/etc/krb5.keytab.
     Entry for principal host/kerberos-1.mit.edu with kvno 2, encryption
         type arcfour-hmac added to keytab FILE:/etc/krb5.keytab.
 
 If you are instead extracting a keytab for the replica KDC called
-``kerberos-1.mit.edu`` on the master KDC, you should use a dedicated
+``kerberos-1.mit.edu`` on the primary KDC, you should use a dedicated
 temporary keytab file for that machine's keytab::
 
     kadmin: ktadd -k /tmp/kerberos-1.keytab host/kerberos-1.mit.edu
@@ -361,10 +363,10 @@ The file ``/tmp/kerberos-1.keytab`` can then be installed as
 Configure replica KDCs
 ~~~~~~~~~~~~~~~~~~~~~~
 
-Database propagation copies the contents of the master's database, but
-does not propagate configuration files, stash files, or the kadm5 ACL
-file.  The following files must be copied by hand to each replica (see
-:ref:`mitK5defaults` for the default locations for these files):
+Database propagation copies the contents of the primary's database,
+but does not propagate configuration files, stash files, or the kadm5
+ACL file.  The following files must be copied by hand to each replica
+(see :ref:`mitK5defaults` for the default locations for these files):
 
 * krb5.conf
 * kdc.conf
@@ -372,11 +374,11 @@ file.  The following files must be copied by hand to each replica (see
 * master key stash file
 
 Move the copied files into their appropriate directories, exactly as
-on the master KDC.  kadm5.acl is only needed to allow a replica to
-swap with the master KDC.
+on the primary KDC.  kadm5.acl is only needed to allow a replica to
+swap with the primary KDC.
 
-The database is propagated from the master KDC to the replica KDCs via
-the :ref:`kpropd(8)` daemon.  You must explicitly specify the
+The database is propagated from the primary KDC to the replica KDCs
+via the :ref:`kpropd(8)` daemon.  You must explicitly specify the
 principals which are allowed to provide Kerberos dump updates on the
 replica machine with a new database.  Create a file named kpropd.acl
 in the KDC state directory containing the ``host`` principals for each
@@ -387,11 +389,11 @@ of the KDCs::
 
 .. note::
 
-          If you expect that the master and replica KDCs will be
+          If you expect that the primary and replica KDCs will be
           switched at some point of time, list the host principals
           from all participating KDC servers in kpropd.acl files on
           all of the KDCs.  Otherwise, you only need to list the
-          master KDC's host principal in the kpropd.acl files of the
+          primary KDC's host principal in the kpropd.acl files of the
           replica KDCs.
 
 Then, add the following line to ``/etc/inetd.conf`` on each KDC
@@ -411,10 +413,10 @@ Alternatively, start :ref:`kpropd(8)` as a stand-alone daemon.  This is
 required when incremental propagation is enabled.
 
 Now that the replica KDC is able to accept database propagation,
-you’ll need to propagate the database from the master server.
+you’ll need to propagate the database from the primary server.
 
 NOTE: Do not start the replica KDC yet; you still do not have a copy
-of the master's database.
+of the primary's database.
 
 
 .. _kprop_to_replicas:
@@ -422,7 +424,7 @@ of the master's database.
 Propagate the database to each replica KDC
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-First, create a dump file of the database on the master KDC, as
+First, create a dump file of the database on the primary KDC, as
 follows::
 
     shell% kdb5_util dump /usr/local/var/krb5kdc/replica_datatrans
@@ -463,7 +465,7 @@ start the krb5kdc daemon::
 
     shell% krb5kdc
 
-As with the master KDC, you will probably want to add this command to
+As with the primary KDC, you will probably want to add this command to
 the KDCs' ``/etc/rc`` or ``/etc/inittab`` files, so they will start
 the krb5kdc daemon automatically at boot time.
 
@@ -486,29 +488,29 @@ Add Kerberos principals to the database
 Once your KDCs are set up and running, you are ready to use
 :ref:`kadmin(1)` to load principals for your users, hosts, and other
 services into the Kerberos database.  This procedure is described
-fully in :ref:`add_mod_del_princs`.
+fully in :ref:`principals`.
 
 You may occasionally want to use one of your replica KDCs as the
-master.  This might happen if you are upgrading the master KDC, or if
-your master KDC has a disk crash.  See the following section for the
-instructions.
+primary.  This might happen if you are upgrading the primary KDC, or
+if your primary KDC has a disk crash.  See the following section for
+the instructions.
 
 
-.. _switch_master_replica:
+.. _switch_primary_replica:
 
-Switching master and replica KDCs
----------------------------------
+Switching primary and replica KDCs
+----------------------------------
 
 You may occasionally want to use one of your replica KDCs as the
-master.  This might happen if you are upgrading the master KDC, or if
-your master KDC has a disk crash.
+primary.  This might happen if you are upgrading the primary KDC, or
+if your primary KDC has a disk crash.
 
 Assuming you have configured all of your KDCs to be able to function
-as either the master KDC or a replica KDC (as this document
+as either the primary KDC or a replica KDC (as this document
 recommends), all you need to do to make the changeover is:
 
-If the master KDC is still running, do the following on the *old*
-master KDC:
+If the primary KDC is still running, do the following on the *old*
+primary KDC:
 
 #. Kill the kadmind process.
 #. Disable the cron job that propagates the database.
@@ -516,12 +518,12 @@ master KDC:
    replicas all have the latest copy of the database (see
    :ref:`kprop_to_replicas`).
 
-On the *new* master KDC:
+On the *new* primary KDC:
 
 #. Start the :ref:`kadmind(8)` daemon (see :ref:`start_kdc_daemons`).
 #. Set up the cron job to propagate the database (see
    :ref:`kprop_to_replicas`).
-#. Switch the CNAMEs of the old and new master KDCs.  If you can't do
+#. Switch the CNAMEs of the old and new primary KDCs.  If you can't do
    this, you'll need to change the :ref:`krb5.conf(5)` file on every
    client machine in your Kerberos realm.
 

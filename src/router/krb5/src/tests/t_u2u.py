@@ -32,4 +32,29 @@ realm.run([kvno, '--u2u', realm.ccache, realm.user_princ])
 
 realm.run([klist])
 
+realm.stop()
+
+# Load the test KDB module to test aliases
+testprincs = {'krbtgt/KRBTEST.COM': {'keys': 'aes128-cts'},
+              'user': {'keys': 'aes128-cts', 'flags': '+preauth'},
+              'WIN10': {'keys': 'aes128-cts'}}
+kdcconf = {'realms': {'$realm': {'database_module': 'test'}},
+           'dbmodules': {'test': {'db_library': 'test',
+                                  'princs': testprincs,
+                                  'alias': {'HOST/win10': 'WIN10'}}}}
+
+realm = K5Realm(kdc_conf=kdcconf, create_kdb=False)
+realm.start_kdc()
+
+# Create a second user principal and get tickets for it.
+u2u_ccache = 'FILE:' + os.path.join(realm.testdir, 'ccu2u')
+realm.extract_keytab('WIN10', realm.keytab)
+realm.kinit('WIN10', None, ['-k', '-c', u2u_ccache])
+
+realm.extract_keytab(realm.user_princ, realm.keytab)
+realm.kinit(realm.user_princ, None, ['-k'])
+
+realm.run([kvno, '--u2u', u2u_ccache, 'HOST/win10'], expected_msg='kvno = 0')
+realm.run([kvno, '--u2u', u2u_ccache, 'WIN10'], expected_msg='kvno = 0')
+
 success('user-to-user tests')

@@ -12,7 +12,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '1.17',
+        VERSION:     '1.21.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -110,6 +110,11 @@ enterprise name string (see <span class="target" id="index-3"></span><a class="r
 <code class="docutils literal"><span class="pre">user&#64;suffix</span></code>.  This name type is used to convey alias names, and
 is defined in the <code class="docutils literal"><span class="pre">&lt;gssapi/gssapi_krb5.h&gt;</span></code> header.  (New in
 release 1.17.)</li>
+<li><strong>GSS_KRB5_NT_X509_CERT</strong>: The value should be an X.509 certificate
+encoded according to <span class="target" id="index-4"></span><a class="rfc reference external" href="https://tools.ietf.org/html/rfc5280.html"><strong>RFC 5280</strong></a>.  This name form can be used for
+the desired_name parameter of gss_acquire_cred_impersonate_name(),
+to identify the S4U2Self user by certificate.  (New in release
+1.19.)</li>
 </ul>
 </div>
 <div class="section" id="initiator-credentials">
@@ -218,7 +223,7 @@ allowed to authenticate to that principal in the default keytab.</p>
 <div class="section" id="name-attributes">
 <h2>Name Attributes<a class="headerlink" href="#name-attributes" title="Permalink to this headline">¶</a></h2>
 <p>In release 1.8 or later, the <a class="reference external" href="https://tools.ietf.org/html/rfc6680.txt#section-7.4">gss_inquire_name</a> and
-<a class="reference external" href="https://tools.ietf.org/html/6680.html#section-7.5">gss_get_name_attribute</a> functions, specified in <span class="target" id="index-4"></span><a class="rfc reference external" href="https://tools.ietf.org/html/rfc6680.html"><strong>RFC 6680</strong></a>, can be
+<a class="reference external" href="https://tools.ietf.org/html/6680.html#section-7.5">gss_get_name_attribute</a> functions, specified in <span class="target" id="index-5"></span><a class="rfc reference external" href="https://tools.ietf.org/html/rfc6680.html"><strong>RFC 6680</strong></a>, can be
 used to retrieve name attributes from the <em>src_name</em> returned by
 <a class="reference external" href="https://tools.ietf.org/html/rfc2744.html#section-5.1">gss_accept_sec_context</a>.  The following attributes are defined when
 the krb5 mechanism is used:</p>
@@ -230,6 +235,86 @@ ticket contains <a class="reference internal" href="../admin/auth_indicator.html
 One indicator is returned per invocation of <a class="reference external" href="https://tools.ietf.org/html/6680.html#section-7.5">gss_get_name_attribute</a>,
 so multiple invocations may be necessary to retrieve all of the
 indicators from the ticket.  (New in release 1.15.)</p>
+</div>
+<div class="section" id="credential-store-extensions">
+<h2>Credential store extensions<a class="headerlink" href="#credential-store-extensions" title="Permalink to this headline">¶</a></h2>
+<p>Beginning with release 1.11, the following GSSAPI extensions declared
+in <code class="docutils literal"><span class="pre">&lt;gssapi/gssapi_ext.h&gt;</span></code> can be used to specify how credentials
+are acquired or stored:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">struct</span> <span class="n">gss_key_value_element_struct</span> <span class="p">{</span>
+    <span class="n">const</span> <span class="n">char</span> <span class="o">*</span><span class="n">key</span><span class="p">;</span>
+    <span class="n">const</span> <span class="n">char</span> <span class="o">*</span><span class="n">value</span><span class="p">;</span>
+<span class="p">};</span>
+<span class="n">typedef</span> <span class="n">struct</span> <span class="n">gss_key_value_element_struct</span> <span class="n">gss_key_value_element_desc</span><span class="p">;</span>
+
+<span class="n">struct</span> <span class="n">gss_key_value_set_struct</span> <span class="p">{</span>
+    <span class="n">OM_uint32</span> <span class="n">count</span><span class="p">;</span>
+    <span class="n">gss_key_value_element_desc</span> <span class="o">*</span><span class="n">elements</span><span class="p">;</span>
+<span class="p">};</span>
+<span class="n">typedef</span> <span class="n">const</span> <span class="n">struct</span> <span class="n">gss_key_value_set_struct</span> <span class="n">gss_key_value_set_desc</span><span class="p">;</span>
+<span class="n">typedef</span> <span class="n">const</span> <span class="n">gss_key_value_set_desc</span> <span class="o">*</span><span class="n">gss_const_key_value_set_t</span><span class="p">;</span>
+
+<span class="n">OM_uint32</span> <span class="n">gss_acquire_cred_from</span><span class="p">(</span><span class="n">OM_uint32</span> <span class="o">*</span><span class="n">minor_status</span><span class="p">,</span>
+                                <span class="n">const</span> <span class="n">gss_name_t</span> <span class="n">desired_name</span><span class="p">,</span>
+                                <span class="n">OM_uint32</span> <span class="n">time_req</span><span class="p">,</span>
+                                <span class="n">const</span> <span class="n">gss_OID_set</span> <span class="n">desired_mechs</span><span class="p">,</span>
+                                <span class="n">gss_cred_usage_t</span> <span class="n">cred_usage</span><span class="p">,</span>
+                                <span class="n">gss_const_key_value_set_t</span> <span class="n">cred_store</span><span class="p">,</span>
+                                <span class="n">gss_cred_id_t</span> <span class="o">*</span><span class="n">output_cred_handle</span><span class="p">,</span>
+                                <span class="n">gss_OID_set</span> <span class="o">*</span><span class="n">actual_mechs</span><span class="p">,</span>
+                                <span class="n">OM_uint32</span> <span class="o">*</span><span class="n">time_rec</span><span class="p">);</span>
+
+<span class="n">OM_uint32</span> <span class="n">gss_store_cred_into</span><span class="p">(</span><span class="n">OM_uint32</span> <span class="o">*</span><span class="n">minor_status</span><span class="p">,</span>
+                              <span class="n">gss_cred_id_t</span> <span class="n">input_cred_handle</span><span class="p">,</span>
+                              <span class="n">gss_cred_usage_t</span> <span class="n">cred_usage</span><span class="p">,</span>
+                              <span class="n">const</span> <span class="n">gss_OID</span> <span class="n">desired_mech</span><span class="p">,</span>
+                              <span class="n">OM_uint32</span> <span class="n">overwrite_cred</span><span class="p">,</span>
+                              <span class="n">OM_uint32</span> <span class="n">default_cred</span><span class="p">,</span>
+                              <span class="n">gss_const_key_value_set_t</span> <span class="n">cred_store</span><span class="p">,</span>
+                              <span class="n">gss_OID_set</span> <span class="o">*</span><span class="n">elements_stored</span><span class="p">,</span>
+                              <span class="n">gss_cred_usage_t</span> <span class="o">*</span><span class="n">cred_usage_stored</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>The additional <em>cred_store</em> parameter allows the caller to specify
+information about how the credentials should be obtained and stored.
+The following options are supported by the krb5 mechanism:</p>
+<ul class="simple">
+<li><strong>ccache</strong>: For acquiring initiator credentials, the name of the
+<a class="reference internal" href="../basic/ccache_def.html#ccache-definition"><span class="std std-ref">credential cache</span></a> to which the handle will
+refer.  For storing credentials, the name of the cache or collection
+where the credentials will be stored (see below).</li>
+<li><strong>client_keytab</strong>: For acquiring initiator credentials, the name of
+the <a class="reference internal" href="../basic/keytab_def.html#keytab-definition"><span class="std std-ref">keytab</span></a> which will be used, if
+necessary, to refresh the credentials in the cache.</li>
+<li><strong>keytab</strong>: For acquiring acceptor credentials, the name of the
+<a class="reference internal" href="../basic/keytab_def.html#keytab-definition"><span class="std std-ref">keytab</span></a> to which the handle will refer.
+In release 1.19 and later, this option also determines the keytab to
+be used for verification when initiator credentials are acquired
+using a password and verified.</li>
+<li><strong>password</strong>: For acquiring initiator credentials, this option
+instructs the mechanism to acquire fresh credentials into a unique
+memory credential cache.  This option may not be used with the
+<strong>ccache</strong> or <strong>client_keytab</strong> options, and a <em>desired_name</em> must
+be specified.  (New in release 1.19.)</li>
+<li><strong>rcache</strong>: For acquiring acceptor credentials, the name of the
+<a class="reference internal" href="../basic/rcache_def.html#rcache-definition"><span class="std std-ref">replay cache</span></a> to be used when processing
+the initiator tokens.  (New in release 1.13.)</li>
+<li><strong>verify</strong>: For acquiring initiator credentials, this option
+instructs the mechanism to verify the credentials by obtaining a
+ticket to a service with a known key.  The service key is obtained
+from the keytab specified with the <strong>keytab</strong> option or the default
+keytab.  The value may be the name of a principal in the keytab, or
+the empty string.  If the empty string is given, any <code class="docutils literal"><span class="pre">host</span></code>
+service principal in the keytab may be used.  (New in release 1.19.)</li>
+</ul>
+<p>In release 1.20 or later, if a collection name is specified for
+<strong>cache</strong> in a call to gss_store_cred_into(), an existing cache for
+the client principal within the collection will be selected, or a new
+cache will be created within the collection.  If <em>overwrite_cred</em> is
+false and the selected credential cache already exists, a
+<strong>GSS_S_DUPLICATE_ELEMENT</strong> error will be returned.  If <em>default_cred</em>
+is true, the primary cache of the collection will be switched to the
+selected cache.</p>
 </div>
 <div class="section" id="importing-and-exporting-credentials">
 <h2>Importing and exporting credentials<a class="headerlink" href="#importing-and-exporting-credentials" title="Permalink to this headline">¶</a></h2>
@@ -282,13 +367,13 @@ a target service without requiring the client to delegate a
 ticket-granting ticket, if the KDC is configured to allow it.</p>
 <p>To perform a constrained delegation operation, the intermediate
 service must submit to the KDC an “evidence ticket” from the client to
-the intermediate service with the forwardable bit set.  An evidence
-ticket can be acquired when the client authenticates to the
-intermediate service with Kerberos, or with an S4U2Self request if the
-KDC allows it.  The MIT krb5 GSSAPI library represents an evidence
-ticket using a “proxy credential”, which is a special kind of
-gss_cred_id_t object whose underlying credential cache contains the
-evidence ticket and a krbtgt ticket for the intermediate service.</p>
+the intermediate service.  An evidence ticket can be acquired when the
+client authenticates to the intermediate service with Kerberos, or
+with an S4U2Self request if the KDC allows it.  The MIT krb5 GSSAPI
+library represents an evidence ticket using a “proxy credential”,
+which is a special kind of gss_cred_id_t object whose underlying
+credential cache contains the evidence ticket and a krbtgt ticket for
+the intermediate service.</p>
 <p>To acquire a proxy credential during client authentication, the
 service should first create an acceptor credential using the
 <strong>GSS_C_BOTH</strong> usage.  The application should then pass this
@@ -296,9 +381,9 @@ credential as the <em>acceptor_cred_handle</em> to <a class="reference external"
 and also pass a <em>delegated_cred_handle</em> output parameter to receive a
 proxy credential containing the evidence ticket.  The output value of
 <em>delegated_cred_handle</em> may be a delegated ticket-granting ticket if
-the client sent one, or a proxy credential if the client authenticated
-with a forwardable service ticket, or <strong>GSS_C_NO_CREDENTIAL</strong> if
-neither is the case.</p>
+the client sent one, or a proxy credential if not.  If the library can
+determine that the client’s ticket is not a valid evidence ticket, it
+will place <strong>GSS_C_NO_CREDENTIAL</strong> in <em>delegated_cred_handle</em>.</p>
 <p>To acquire a proxy credential using an S4U2Self request, the service
 can use the following GSSAPI extension:</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">OM_uint32</span> <span class="n">gss_acquire_cred_impersonate_name</span><span class="p">(</span><span class="n">OM_uint32</span> <span class="o">*</span><span class="n">minor_status</span><span class="p">,</span>
@@ -318,16 +403,10 @@ request to the KDC for a ticket from <em>desired_name</em> to the
 intermediate service.  Both <em>icred</em> and <em>desired_name</em> are required
 for this function; passing <strong>GSS_C_NO_CREDENTIAL</strong> or
 <strong>GSS_C_NO_NAME</strong> will cause the call to fail.  <em>icred</em> must contain a
-krbtgt ticket for the intermediate service.  If the KDC returns a
-forwardable ticket, the result of this operation is a proxy
-credential; if it is not forwardable, the result is a regular
-credential for <em>desired_name</em>.</p>
-<p>A recent KDC will usually allow any service to acquire a ticket from a
-client to itself with an S4U2Self request, but the ticket will only be
-forwardable if the service has a specific privilege.  In the MIT krb5
-KDC, this privilege is determined by the <strong>ok_to_auth_as_delegate</strong>
-bit on the intermediate service’s principal entry, which can be
-configured with <a class="reference internal" href="../admin/admin_commands/kadmin_local.html#kadmin-1"><span class="std std-ref">kadmin</span></a>.</p>
+krbtgt ticket for the intermediate service.  The result of this
+operation is a proxy credential.  (Prior to release 1.18, the result
+of this operation may be a regular credential for <em>desired_name</em>, if
+the KDC issues a non-forwardable ticket.)</p>
 <p>Once the intermediate service has a proxy credential, it can simply
 pass it to <a class="reference external" href="https://tools.ietf.org/html/rfc2744.html#section-5.19">gss_init_sec_context</a> as the <em>initiator_cred_handle</em>
 parameter, and the desired service as the <em>target_name</em> parameter.
@@ -512,7 +591,7 @@ Here is an example of using gss_wrap_iov_length and gss_wrap_iov:</p>
 </pre></div>
 </div>
 <p>If the context was established using the <strong>GSS_C_DCE_STYLE</strong> flag
-(described in <span class="target" id="index-5"></span><a class="rfc reference external" href="https://tools.ietf.org/html/rfc4757.html"><strong>RFC 4757</strong></a>), wrap tokens compatible with Microsoft DCE
+(described in <span class="target" id="index-6"></span><a class="rfc reference external" href="https://tools.ietf.org/html/rfc4757.html"><strong>RFC 4757</strong></a>), wrap tokens compatible with Microsoft DCE
 RPC can be constructed.  In this case, the IOV list must include a
 SIGN_ONLY buffer, a DATA buffer, a second SIGN_ONLY buffer, and a
 HEADER buffer in that order (the order of the buffer contents remains
@@ -622,16 +701,14 @@ gss_get_mic_iov_length and gss_get_mic_iov:</p>
 <span class="n">iov</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">buffer</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="s2">&quot;message&quot;</span><span class="p">;</span>
 <span class="n">iov</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">buffer</span><span class="o">.</span><span class="n">length</span> <span class="o">=</span> <span class="mi">7</span><span class="p">;</span>
 
-<span class="n">major</span> <span class="o">=</span> <span class="n">gss_wrap_iov_length</span><span class="p">(</span><span class="o">&amp;</span><span class="n">minor</span><span class="p">,</span> <span class="n">ctx</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">GSS_C_QOP_DEFAULT</span><span class="p">,</span>
-                            <span class="n">NULL</span><span class="p">,</span> <span class="n">iov</span><span class="p">,</span> <span class="mi">2</span><span class="p">);</span>
+<span class="n">major</span> <span class="o">=</span> <span class="n">gss_get_mic_iov_length</span><span class="p">(</span><span class="o">&amp;</span><span class="n">minor</span><span class="p">,</span> <span class="n">ctx</span><span class="p">,</span> <span class="n">GSS_C_QOP_DEFAULT</span><span class="p">,</span> <span class="n">iov</span><span class="p">,</span> <span class="mi">2</span><span class="p">);</span>
 <span class="k">if</span> <span class="p">(</span><span class="n">GSS_ERROR</span><span class="p">(</span><span class="n">major</span><span class="p">))</span>
     <span class="n">handle_error</span><span class="p">(</span><span class="n">major</span><span class="p">,</span> <span class="n">minor</span><span class="p">);</span>
 <span class="k">if</span> <span class="p">(</span><span class="n">iov</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">buffer</span><span class="o">.</span><span class="n">length</span> <span class="o">&gt;</span> <span class="n">sizeof</span><span class="p">(</span><span class="n">data</span><span class="p">))</span>
     <span class="n">handle_out_of_space_error</span><span class="p">();</span>
 <span class="n">iov</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">buffer</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">data</span><span class="p">;</span>
 
-<span class="n">major</span> <span class="o">=</span> <span class="n">gss_wrap_iov</span><span class="p">(</span><span class="o">&amp;</span><span class="n">minor</span><span class="p">,</span> <span class="n">ctx</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">GSS_C_QOP_DEFAULT</span><span class="p">,</span> <span class="n">NULL</span><span class="p">,</span>
-                     <span class="n">iov</span><span class="p">,</span> <span class="mi">2</span><span class="p">);</span>
+<span class="n">major</span> <span class="o">=</span> <span class="n">gss_get_mic_iov</span><span class="p">(</span><span class="o">&amp;</span><span class="n">minor</span><span class="p">,</span> <span class="n">ctx</span><span class="p">,</span> <span class="n">GSS_C_QOP_DEFAULT</span><span class="p">,</span> <span class="n">iov</span><span class="p">,</span> <span class="mi">2</span><span class="p">);</span>
 <span class="k">if</span> <span class="p">(</span><span class="n">GSS_ERROR</span><span class="p">(</span><span class="n">major</span><span class="p">))</span>
     <span class="n">handle_error</span><span class="p">(</span><span class="n">major</span><span class="p">,</span> <span class="n">minor</span><span class="p">);</span>
 </pre></div>
@@ -652,6 +729,7 @@ gss_get_mic_iov_length and gss_get_mic_iov:</p>
 <li><a class="reference internal" href="#initiator-credentials">Initiator credentials</a></li>
 <li><a class="reference internal" href="#acceptor-names">Acceptor names</a></li>
 <li><a class="reference internal" href="#name-attributes">Name Attributes</a></li>
+<li><a class="reference internal" href="#credential-store-extensions">Credential store extensions</a></li>
 <li><a class="reference internal" href="#importing-and-exporting-credentials">Importing and exporting credentials</a></li>
 <li><a class="reference internal" href="#constrained-delegation-s4u">Constrained delegation (S4U)</a></li>
 <li><a class="reference internal" href="#aead-message-wrapping">AEAD message wrapping</a></li>
@@ -701,8 +779,8 @@ gss_get_mic_iov_length and gss_get_mic_iov:</p>
 
     <div class="footer-wrapper">
         <div class="footer" >
-            <div class="right" ><i>Release: 1.17</i><br />
-                &copy; <a href="../copyright.html">Copyright</a> 1985-2019, MIT.
+            <div class="right" ><i>Release: 1.21.2</i><br />
+                &copy; <a href="../copyright.html">Copyright</a> 1985-2023, MIT.
             </div>
             <div class="left">
                 

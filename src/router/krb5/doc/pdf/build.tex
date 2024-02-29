@@ -55,7 +55,7 @@
 
 \title{Building MIT Kerberos}
 \date{ }
-\release{1.17}
+\release{1.21.2}
 \author{MIT}
 \newcommand{\sphinxlogo}{\vbox{}}
 \renewcommand{\releasename}{Release}
@@ -167,7 +167,7 @@ include files needed to build the Kerberos system
 \hline
 kadmin
 &
-Administrative interface to the Kerberos master database: \DUrole{xref,std,std-ref}{kadmin(1)}, \DUrole{xref,std,std-ref}{kdb5\_util(8)}, \DUrole{xref,std,std-ref}{ktutil(1)}.
+Administrative interface to the Kerberos database: \DUrole{xref,std,std-ref}{kadmin(1)}, \DUrole{xref,std,std-ref}{kdb5\_util(8)}, \DUrole{xref,std,std-ref}{ktutil(1)}.
 \\
 \hline
 kdc
@@ -422,31 +422,14 @@ start building Kerberos; see {\hyperref[\detokenize{build/doing_build:do-build}]
 \PYG{n}{make} \PYG{n}{check}
 \end{sphinxVerbatim}
 
-However, there are several prerequisites that must be satisfied first:
-\begin{itemize}
-\item {} 
-Configure and build Kerberos with Tcl support. Tcl is used to drive
-the test suite.  This often means passing \sphinxstylestrong{-}\sphinxstylestrong{-with-tcl} to
-configure to tell it the location of the Tcl configuration
-script. (See {\hyperref[\detokenize{build/options2configure:options2configure}]{\sphinxcrossref{\DUrole{std,std-ref}{Options to configure}}}}.)
-
-\item {} 
-In addition to Tcl, DejaGnu must be available on the system for some
-of the tests to run.  The test suite will still run the other tests
-if DejaGnu is not present, but the test coverage will be reduced
-accordingly.
-
-\item {} 
 On some operating systems, you have to run \sphinxcode{make install} before
 running \sphinxcode{make check}, or the test suite will pick up installed
-versions of Kerberos libraries rather than the newly built ones.
-You can install into a prefix that isn’t in the system library
-search path, though. Alternatively, you can configure with
-\sphinxstylestrong{-}\sphinxstylestrong{-disable-rpath}, which renders the build tree less suitable for
-installation, but allows testing without interference from
+versions of Kerberos libraries rather than the newly built ones.  You
+can install into a prefix that isn’t in the system library search
+path, though.  Alternatively, you can configure with
+\sphinxstylestrong{-}\sphinxstylestrong{-disable-rpath}, which renders the build tree less suitable
+for installation, but allows testing without interference from
 previously installed libraries.
-
-\end{itemize}
 
 There are additional regression tests available, which are not run
 by \sphinxcode{make check}.  These tests require manual setup and teardown of
@@ -532,12 +515,6 @@ default, Kerberos V5 configuration will look for \sphinxcode{-lnsl} and
 \sphinxcode{-lsocket}.  If your operating system has a broken resolver
 library or fails to pass the tests in \sphinxcode{src/tests/resolv}, you
 will need to use this option.
-
-\item[{\sphinxstylestrong{-}\sphinxstylestrong{-with-tcl=}\sphinxstyleemphasis{TCLPATH}}] \leavevmode
-Some of the unit-tests in the build tree rely upon using a program
-in Tcl.  The directory specified by \sphinxstyleemphasis{TCLPATH} specifies where the
-Tcl header file (TCLPATH/include/tcl.h) as well as where the Tcl
-library (TCLPATH/lib) should be found.
 
 \item[{\sphinxstylestrong{-}\sphinxstylestrong{-enable-dns-for-realm}}] \leavevmode
 Enable the use of DNS to look up a host’s Kerberos realm,
@@ -636,6 +613,9 @@ This option informs the linker where to get additional libraries
 \item[{\sphinxstylestrong{LIBS=}\sphinxstyleemphasis{LDNAME}}] \leavevmode
 This option allows one to specify libraries to be passed to the
 linker (e.g., \sphinxcode{-l\textless{}library\textgreater{}})
+
+\item[{\sphinxstylestrong{PKCS11\_MODNAME=}\sphinxstyleemphasis{library}}] \leavevmode
+Override the built-in default PKCS11 library name.
 
 \item[{\sphinxstylestrong{SS\_LIB=}\sphinxstyleemphasis{libs}…}] \leavevmode
 If \sphinxcode{-lss} is not the correct way to link in your installed ss
@@ -831,11 +811,6 @@ Compile OpenLDAP database backend module.
 \item[{\sphinxstylestrong{-}\sphinxstylestrong{-with-lmdb}}] \leavevmode
 Compile LMDB database backend module.
 
-\item[{\sphinxstylestrong{-}\sphinxstylestrong{-with-tcl=}\sphinxstyleemphasis{path}}] \leavevmode
-Specifies that \sphinxstyleemphasis{path} is the location of a Tcl installation.
-Tcl is needed for some of the tests run by ‘make check’; such tests
-will be skipped if this option is not set.
-
 \item[{\sphinxstylestrong{-}\sphinxstylestrong{-with-vague-errors}}] \leavevmode
 Do not send helpful errors to client.  For example, if the KDC
 should return only vague error codes to clients.
@@ -846,11 +821,6 @@ Kerberos implementation \sphinxcode{builtin}.  The other currently
 implemented crypto backend is \sphinxcode{openssl}.  (See
 \DUrole{xref,std,std-ref}{mitK5features})
 
-\item[{\sphinxstylestrong{-}\sphinxstylestrong{-with-prng-alg=}\sphinxstyleemphasis{ALG}}] \leavevmode
-Use specified PRNG algorithm.  For example, to use the OS native
-prng specify \sphinxcode{-{-}with-prng-alg=os}.  The default is \sphinxcode{fortuna}.
-(See \DUrole{xref,std,std-ref}{mitK5features})
-
 \item[{\sphinxstylestrong{-}\sphinxstylestrong{-without-libedit}}] \leavevmode
 Do not compile and link against libedit.  Some utilities will no
 longer offer command history or completion in interactive mode if
@@ -858,8 +828,6 @@ libedit is disabled.
 
 \item[{\sphinxstylestrong{-}\sphinxstylestrong{-with-readline}}] \leavevmode
 Compile and link against GNU readline, as an alternative to libedit.
-Building with readline breaks the dejagnu test suite, which is a
-subset of the tests run by ‘make check’.
 
 \item[{\sphinxstylestrong{-}\sphinxstylestrong{-with-system-verto}}] \leavevmode
 Use an installed version of libverto.  If the libverto header and
@@ -884,6 +852,10 @@ default credential cache, keytab, and client keytab names.  The
 default is to use \sphinxcode{krb5-config} from the program path.  Specify
 \sphinxcode{-{-}without-krb5-config} to disable the use of krb5-config and
 use the usual built-in defaults.
+
+\item[{\sphinxstylestrong{-}\sphinxstylestrong{-without-keyutils}}] \leavevmode
+Build without libkeyutils support.  This disables the KEYRING
+credential cache type.
 
 \end{description}
 

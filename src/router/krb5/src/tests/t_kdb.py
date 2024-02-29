@@ -319,18 +319,42 @@ realm.klist(realm.user_princ, realm.host_princ)
 
 mark('LDAP auth indicator')
 
-# Test auth indicator support
+# Test require_auth normalization.
 realm.addprinc('authind', password('authind'))
 realm.run([kadminl, 'setstr', 'authind', 'require_auth', 'otp radius'])
 
+# Check that krbPrincipalAuthInd attributes are set when the string
+# attribute it set.
 out = ldap_search('(krbPrincipalName=authind*)')
 if 'krbPrincipalAuthInd: otp' not in out:
     fail('Expected krbPrincipalAuthInd value not in output')
 if 'krbPrincipalAuthInd: radius' not in out:
     fail('Expected krbPrincipalAuthInd value not in output')
 
+# Check that the string attribute still appears when the principal is
+# loaded.
 realm.run([kadminl, 'getstrs', 'authind'],
           expected_msg='require_auth: otp radius')
+
+# Modify the LDAP attributes and check that the change is reflected in
+# the string attribute.
+ldap_modify('dn: krbPrincipalName=authind@KRBTEST.COM,cn=t1,cn=krb5\n'
+            'changetype: modify\n'
+            'replace: krbPrincipalAuthInd\n'
+            'krbPrincipalAuthInd: radius\n'
+            'krbPrincipalAuthInd: pkinit\n')
+realm.run([kadminl, 'getstrs', 'authind'],
+           expected_msg='require_auth: radius pkinit')
+
+# Regression test for #8877: remove the string attribute and check
+# that it is reflected in the LDAP attributes and by getstrs.
+realm.run([kadminl, 'delstr', 'authind', 'require_auth'])
+out = ldap_search('(krbPrincipalName=authind*)')
+if 'krbPrincipalAuthInd' in out:
+    fail('krbPrincipalAuthInd attribute still present after delstr')
+out = realm.run([kadminl, 'getstrs', 'authind'])
+if 'require_auth' in out:
+    fail('require_auth string attribute still visible after delstr')
 
 mark('LDAP service principal aliases')
 
@@ -340,10 +364,13 @@ ldap_modify('dn: krbPrincipalName=canon@KRBTEST.COM,cn=t1,cn=krb5\n'
             'changetype: modify\n'
             'add: krbPrincipalName\n'
             'krbPrincipalName: alias@KRBTEST.COM\n'
+            'krbPrincipalName: ent@abc@KRBTEST.COM\n'
             '-\n'
             'add: krbCanonicalName\n'
             'krbCanonicalName: canon@KRBTEST.COM\n')
 realm.run([kadminl, 'getprinc', 'alias'],
+          expected_msg='Principal: canon@KRBTEST.COM\n')
+realm.run([kadminl, 'getprinc', 'ent\\@abc'],
           expected_msg='Principal: canon@KRBTEST.COM\n')
 realm.run([kadminl, 'getprinc', 'canon'],
           expected_msg='Principal: canon@KRBTEST.COM\n')
@@ -380,14 +407,27 @@ realm.klist(realm.user_princ, 'alias@KRBTEST.COM')
 
 # Test client principal aliases, with and without preauth.
 realm.kinit('canon', password('canon'))
-realm.kinit('alias', password('canon'), expected_code=1,
-            expected_msg='not found in Kerberos database')
+realm.kinit('alias', password('canon'))
+realm.run([kvno, 'alias'])
+realm.klist('alias@KRBTEST.COM', 'alias@KRBTEST.COM')
 realm.kinit('alias', password('canon'), ['-C'])
 realm.run([kvno, 'alias'])
 realm.klist('canon@KRBTEST.COM', 'alias@KRBTEST.COM')
 realm.run([kadminl, 'modprinc', '+requires_preauth', 'canon'])
 realm.kinit('canon', password('canon'))
 realm.kinit('alias', password('canon'), ['-C'])
+
+# Test enterprise alias with and without canonicalization.
+realm.kinit('ent@abc', password('canon'), ['-E', '-C'])
+realm.run([kvno, 'alias'])
+realm.klist('canon@KRBTEST.COM', 'alias@KRBTEST.COM')
+
+realm.kinit('ent@abc', password('canon'), ['-E'])
+realm.run([kvno, 'alias'])
+realm.klist('ent\\@abc@KRBTEST.COM', 'alias@KRBTEST.COM')
+
+# Test client name canonicalization in non-krbtgt AS reply
+realm.kinit('alias', password('canon'), ['-C', '-S', 'kadmin/changepw'])
 
 mark('LDAP password history')
 
@@ -479,15 +519,38 @@ else:
     realm.run([kadminl, 'modprinc', '-pwexpire', '2040-02-03', 'user'])
     realm.run([kadminl, 'getprinc', 'user'], expected_msg=' 2040\n')
 
+# Regression test for #8861 (pw_expiration policy enforcement).
+mark('pw_expiration propogation')
+# Create a policy with a max life and verify its application.
+realm.run([kadminl, 'addpol', '-maxlife', '1s', 'pw_e'])
+realm.run([kadminl, 'addprinc', '-policy', 'pw_e', '-pw', 'password',
+           'pwuser'])
+out = realm.run([kadminl, 'getprinc', 'pwuser'],
+                expected_msg='Password expiration date: ')
+if 'Password expiration date: [never]' in out:
+    fail('pw_expiration not applied at principal creation')
+# Unset the policy max life and verify its application during password
+# change.
+realm.run([kadminl, 'modpol', '-maxlife', '0', 'pw_e'])
+realm.run([kadminl, 'cpw', '-pw', 'password_', 'pwuser'])
+realm.run([kadminl, 'getprinc', 'pwuser'],
+          expected_msg='Password expiration date: [never]')
+
 realm.stop()
 
-# Briefly test dump and load.
+# Test dump and load.  Include a regression test for #8882
+# (pw_expiration not set during load operation).
 mark('LDAP dump and load')
+realm.run([kadminl, 'modprinc', '-pwexpire', 'now', 'pwuser'])
 dumpfile = os.path.join(realm.testdir, 'dump')
 realm.run([kdb5_util, 'dump', dumpfile])
 realm.run([kdb5_util, 'load', dumpfile], expected_code=1,
           expected_msg='KDB module requires -update argument')
+realm.run([kadminl, 'delprinc', 'pwuser'])
 realm.run([kdb5_util, 'load', '-update', dumpfile])
+out = realm.run([kadminl, 'getprinc', 'pwuser'])
+if 'Password expiration date: [never]' in out:
+    fail('pw_expiration not preserved across dump and load')
 
 # Destroy the realm.
 kldaputil(['destroy', '-f'])

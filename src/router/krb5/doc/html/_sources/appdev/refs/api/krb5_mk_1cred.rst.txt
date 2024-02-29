@@ -3,7 +3,7 @@ krb5_mk_1cred -  Format a KRB-CRED message for a single set of credentials.
 
 ..
 
-.. c:function:: krb5_error_code krb5_mk_1cred(krb5_context context, krb5_auth_context auth_context, krb5_creds * pcreds, krb5_data ** ppdata, krb5_replay_data * outdata)
+.. c:function:: krb5_error_code krb5_mk_1cred(krb5_context context, krb5_auth_context auth_context, krb5_creds * creds, krb5_data ** der_out, krb5_replay_data * rdata_out)
 
 ..
 
@@ -14,11 +14,11 @@ krb5_mk_1cred -  Format a KRB-CRED message for a single set of credentials.
 
 	          **[in]** **auth_context** - Authentication context
 
-	          **[in]** **pcreds** - Pointer to credentials
+	          **[in]** **creds** - Pointer to credentials
 
-	          **[out]** **ppdata** - Encoded credentials
+	          **[out]** **der_out** - Encoded credentials
 
-	          **[out]** **outdata** - Replay cache data (NULL if not needed)
+	          **[out]** **rdata_out** - Replay cache data (NULL if not needed)
 
 
 ..

@@ -263,8 +263,6 @@ ipropx_resync(uint32_t vers, struct svc_req *rqstp)
     int pret, fret;
     FILE *p;
     kadm5_server_handle_t handle = global_server_handle;
-    OM_uint32 min_stat;
-    gss_name_t name = NULL;
     char *client_name = NULL, *service_name = NULL;
     char *whoami = "iprop_full_resync_1";
 
@@ -440,8 +438,6 @@ out:
 	debprret(whoami, ret.ret, 0);
     free(client_name);
     free(service_name);
-    if (name)
-	gss_release_name(&min_stat, &name);
     free(ubuf);
     return (&ret);
 }

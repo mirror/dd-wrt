@@ -431,7 +431,7 @@ int Leash_changepwd_dlg_ex(HWND hParent, LPLSH_DLGINFO_EX lpdlginfo)
 
 
 /*  These little utils are taken from lshutil.c
-    they are added here for the Call back funtion.
+    they are added here for the Call back function.
 ****** beginning of added utils from lshutil.c  ******/
 
 BOOL IsDlgItem(HWND hWnd, WORD id)

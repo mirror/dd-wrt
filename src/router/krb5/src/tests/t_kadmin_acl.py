@@ -328,4 +328,25 @@ realm.run([kadmin, '-c', realm.ccache, 'cpw', '-randkey', 'none'],
 realm.run([kadmin, '-c', realm.ccache, 'cpw', '-randkey', '-e', 'aes256-cts',
            'none'], expected_code=1, expected_msg=msg)
 
+# Test authentication to kadmin/hostname.
+mark('authentication to kadmin/hostname')
+kadmin_hostname = 'kadmin/' + hostname
+realm.addprinc(kadmin_hostname)
+realm.run([kadminl, 'delprinc', 'kadmin/admin'])
+msgs = ('Getting initial credentials for user/admin@KRBTEST.COM',
+        'Setting initial creds service to kadmin/admin',
+        '/Server not found in Kerberos database',
+        'Getting initial credentials for user/admin@KRBTEST.COM',
+        'Setting initial creds service to ' + kadmin_hostname,
+        'Decrypted AS reply')
+realm.run([kadmin, '-p', 'user/admin', 'listprincs'], expected_code=1,
+          expected_msg="Operation requires ``list'' privilege",
+          input=password('user/admin'), expected_trace=msgs)
+
+# Test operations disallowed at the libkadm5 layer.
+realm.run([kadminl, 'delprinc', 'K/M'],
+          expected_code=1, expected_msg='Cannot change protected principal')
+realm.run([kadminl, 'cpw', '-pw', 'pw', 'kadmin/history'],
+          expected_code=1, expected_msg='Cannot change protected principal')
+
 success('kadmin ACL enforcement')

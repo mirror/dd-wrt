@@ -40,7 +40,7 @@ def testd_error(realm, expected_error, msg, env=None):
 ###
 
 # The test2 module returns a fatal error on hosts beginning with 'z',
-# and an answer on hosts begining with 'a'.
+# and an answer on hosts beginning with 'a'.
 mark('test2 module')
 testh_error(realm, 'zoo', 'service not available', 'host_realm test2 z')
 testh(realm, 'abacus', ['a'], 'host_realm test2 a')

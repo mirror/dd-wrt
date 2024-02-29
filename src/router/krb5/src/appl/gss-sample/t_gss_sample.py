@@ -36,6 +36,17 @@ def run_client_server(realm, options, server_options, **kwargs):
     server = realm.start_server(server_args, 'starting...')
     realm.run([gss_client, '-port', portstr] + options +
               [hostname, 'host', 'testmsg'], **kwargs)
+
+    seen1 = seen2 = False
+    while 'expected_code' not in kwargs and not (seen1 and seen2):
+        line = server.stdout.readline()
+        if line == '':
+            fail('gss-server process exited unexpectedly')
+        if line == 'Accepted connection: "user@KRBTEST.COM"\n':
+            seen1 = True
+        if line == 'Received message: "testmsg"\n':
+            seen2 = True
+
     stop_daemon(server)
 
 # Run a gss-server and gss-client process, and verify that gss-client

@@ -38,10 +38,9 @@ typedef struct {
     asn1_construction construction;
     asn1_tagnum tagnum;
 
-    /* When decoding, stores the leading and trailing lengths of a tag.  Used
-     * by store_der(). */
+    /* When decoding, stores the leading length of a tag.  Used by
+     * store_der(). */
     size_t tag_len;
-    size_t tag_end_len;
 } taginfo;
 
 /* These functions are referenced by encoder structures.  They handle the

@@ -257,9 +257,12 @@ krb5int_process_tgs_reply(krb5_context context,
         /* Final hop, check whether KDC supports S4U2Self */
         if (krb5_principal_compare(context, dec_rep->client, in_cred->server))
             retval = KRB5KDC_ERR_PADATA_TYPE_NOSUPP;
-    } else if ((kdcoptions & KDC_OPT_CNAME_IN_ADDL_TKT) == 0) {
-        /* XXX for constrained delegation this check must be performed by caller
-         * as we don't have access to the key to decrypt the evidence ticket.
+    } else if ((kdcoptions & KDC_OPT_CNAME_IN_ADDL_TKT) == 0 ||
+               IS_TGS_PRINC(dec_rep->ticket->server)) {
+        /*
+         * For constrained delegation this check must be performed by caller,
+         * as we can't decrypt the evidence ticket.  However, if it is a
+         * referral the client should match the TGT client like normal.
          */
         if (!krb5_principal_compare(context, dec_rep->client, tkt->client))
             retval = KRB5_KDCREP_MODIFIED;
@@ -342,7 +345,7 @@ krb5_get_cred_via_tkt_ext(krb5_context context, krb5_creds *tkt,
     krb5_timestamp timestamp;
     krb5_int32 nonce;
     krb5_keyblock *subkey = NULL;
-    int tcp_only = 0, use_master = 0;
+    int tcp_only = 0, use_primary = 0;
     struct krb5int_fast_request_state *fast_state = NULL;
 
     request_data.data = NULL;
@@ -364,9 +367,9 @@ krb5_get_cred_via_tkt_ext(krb5_context context, krb5_creds *tkt,
         goto cleanup;
 
 send_again:
-    use_master = 0;
+    use_primary = 0;
     retval = krb5_sendto_kdc(context, &request_data, &in_cred->server->realm,
-                             &response_data, &use_master, tcp_only);
+                             &response_data, &use_primary, tcp_only);
     if (retval == 0) {
         if (krb5_is_krb_error(&response_data)) {
             if (!tcp_only) {

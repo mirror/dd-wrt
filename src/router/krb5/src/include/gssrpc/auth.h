@@ -190,7 +190,6 @@ extern AUTH *authunix_create(char *machname, int uid, int gid, int len,
 			     int *aup_gids);
 extern AUTH *authunix_create_default(void);	/* takes no parameters */
 extern AUTH *authnone_create(void);		/* takes no parameters */
-extern AUTH *authdes_create();
 extern bool_t xdr_opaque_auth(XDR *, struct opaque_auth *);
 
 #define AUTH_NONE	0		/* no authentication */

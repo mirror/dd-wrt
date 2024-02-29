@@ -145,6 +145,7 @@ krb5_free_checksum_contents(krb5_context context, krb5_checksum *val)
         return;
     free(val->contents);
     val->contents = NULL;
+    val->length = 0;
 }
 
 void KRB5_CALLCONV
@@ -242,10 +243,9 @@ krb5_free_data_contents(krb5_context context, krb5_data *val)
 {
     if (val == NULL)
         return;
-    if (val->data) {
-        free(val->data);
-        val->data = 0;
-    }
+    free(val->data);
+    val->data = NULL;
+    val->length = 0;
 }
 
 void KRB5_CALLCONV
@@ -740,24 +740,6 @@ krb5_free_ad_kdcissued(krb5_context context, krb5_ad_kdcissued *val)
     krb5_free_checksum_contents(context, &val->ad_checksum);
     krb5_free_principal(context, val->i_principal);
     krb5_free_authdata(context, val->elements);
-    free(val);
-}
-
-void KRB5_CALLCONV
-krb5_free_ad_signedpath(krb5_context context, krb5_ad_signedpath *val)
-{
-    int i;
-
-    if (val == NULL)
-        return;
-
-    krb5_free_checksum_contents(context, &val->checksum);
-    if (val->delegated != NULL) {
-        for (i = 0; val->delegated[i] != NULL; i++)
-            krb5_free_principal(context, val->delegated[i]);
-        free(val->delegated);
-    }
-    krb5_free_pa_data(context, val->method_data);
     free(val);
 }
 

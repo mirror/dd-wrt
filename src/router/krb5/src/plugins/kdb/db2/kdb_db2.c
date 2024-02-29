@@ -95,7 +95,7 @@
  * time of this file is the "version number" of the database.
  * At the start of a read operation, the reader checks the version
  * number; at the end of the read operation, it checks again.  If the
- * version number changed, or if the semaphore was nonexistant at
+ * version number changed, or if the semaphore was nonexistent at
  * either time, the reader sleeps for a second to let things
  * stabilize, and then tries again; if it does not succeed after
  * KRB5_DBM_MAX_RETRY attempts, it gives up.
@@ -107,7 +107,7 @@
  *
  * If the system crashes in the middle of an update, the semaphore
  * file is not automatically created on reboot; this is a feature, not
- * a bug, since the database may be inconsistant.  Note that the
+ * a bug, since the database may be inconsistent.  Note that the
  * absence of a semaphore file does not prevent another _update_ from
  * taking place later.  Database replacements take place automatically
  * only on replica servers; a crash in the middle of an update will be
@@ -1258,7 +1258,7 @@ krb5_db2_destroy(krb5_context context, char *conf_section, char **db_args)
         goto cleanup;
     status = osa_adb_destroy_db(polname, plockname, OSA_ADB_POLICY_DB_MAGIC);
     if (status)
-        return status;
+        goto cleanup;
 
     status = krb5_db2_fini(context);
 

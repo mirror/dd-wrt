@@ -12,7 +12,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../',
-        VERSION:     '1.17',
+        VERSION:     '1.21.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -97,6 +97,7 @@
 </tbody>
 </table>
 <p>This function creates a principal from a length-counted string and a variable-length list of length-counted components. The list of components ends with the first 0 length argument (so it is not possible to specify an empty component with this function). Call <a class="reference internal" href="krb5_free_principal.html#c.krb5_free_principal" title="krb5_free_principal"><code class="xref c c-func docutils literal"><span class="pre">krb5_free_principal()</span></code></a> to free allocated memory for principal when it is no longer needed.</p>
+<p>Beginning with release 1.20, the name type of the principal will be inferred as <strong>KRB5_NT_SRV_INST</strong> or <strong>KRB5_NT_WELLKNOWN</strong> based on the principal name. The type will be <strong>KRB5_NT_PRINCIPAL</strong> if a type cannot be inferred.</p>
 </div>
 
 
@@ -155,8 +156,8 @@
 
     <div class="footer-wrapper">
         <div class="footer" >
-            <div class="right" ><i>Release: 1.17</i><br />
-                &copy; <a href="../../../copyright.html">Copyright</a> 1985-2019, MIT.
+            <div class="right" ><i>Release: 1.21.2</i><br />
+                &copy; <a href="../../../copyright.html">Copyright</a> 1985-2023, MIT.
             </div>
             <div class="left">
                 

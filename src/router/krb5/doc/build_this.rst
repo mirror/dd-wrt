@@ -3,7 +3,7 @@ How to build this documentation from the source
 
 Pre-requisites for a simple build, or to update man pages:
 
-* Sphinx 1.0.4 or higher (See http://www.sphinx-doc.org) with the
+* Sphinx 1.0.4 or higher (See https://www.sphinx-doc.org) with the
   autodoc extension installed.
 
 Additional prerequisites to include the API reference based on Doxygen

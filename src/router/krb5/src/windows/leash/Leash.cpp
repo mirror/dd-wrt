@@ -25,7 +25,6 @@
 #include "reminder.h"
 #include <leasherr.h>
 #include "lglobals.h"
-#include "out2con.h"
 #include <krb5.h>
 #include <com_err.h>
 
@@ -239,26 +238,6 @@ BOOL CLeashApp::InitInstance()
                 }
                 return TRUE;
             }
-            else if (0 == stricmp(optionParam+1, "ms2mit") ||
-                     0 == stricmp(optionParam+1, "import") ||
-                     0 == stricmp(optionParam+1, "m"))
-            {
-                if (!pLeash_importable()) {
-                    MessageBox(hMsg,
-                               "The Microsoft Logon Session does not support importing Ticket Getting Tickets!",
-                               "Error", MB_OK);
-                    return FALSE;
-                }
-
-                if (!pLeash_import())
-                {
-                    MessageBox(hMsg,
-                               "There was an error importing tickets from the Microsoft Logon Session!",
-                               "Error", MB_OK);
-                    return FALSE;
-                }
-                return TRUE;
-            }
             else if (0 == stricmp(optionParam+1, "destroy") ||
                      0 == stricmp(optionParam+1, "d"))
             {
@@ -291,7 +270,10 @@ BOOL CLeashApp::InitInstance()
             else if (0 == stricmp(optionParam+1, "console") ||
                      0 == stricmp(optionParam+1, "c"))
             {
-                CreateConsoleEcho();
+                FILE *dummy;
+                AllocConsole();
+                freopen_s(&dummy, "CONOUT$", "w", stderr);
+                freopen_s(&dummy, "CONOUT$", "w", stdout);
             }
             else if (0 == stricmp(optionParam+1, "noribbon"))
             {
@@ -304,8 +286,7 @@ BOOL CLeashApp::InitInstance()
                             "'-renew' or '-r' to perform ticket renewal (and exit)\n"
                             "'-destroy' or '-d' to perform ticket destruction (and exit)\n"
                             "'-autoinit' or '-a' to perform automatic ticket initialization\n"
-                            "'-console' or '-c' to attach a console for debugging\n"
-                            "'-ms2mit' or '-import' or '-m' to perform ticket importation (and exit)",
+                            "'-console' or '-c' to attach a console for debugging\n",
                            "MIT Kerberos Error", MB_OK);
                 return FALSE;
             }
@@ -316,8 +297,7 @@ BOOL CLeashApp::InitInstance()
                         "'-kinit' or '-i' to perform ticket initialization (and exit)\n"
                         "'-renew' or '-r' to perform ticket renewal (and exit)\n"
                         "'-destroy' or '-d' to perform ticket destruction (and exit)\n"
-                        "'-autoinit' or '-a' to perform automatic ticket initialization\n"
-                        "'-ms2mit' or '-import' or '-m' to perform ticket importation (and exit)",
+                        "'-autoinit' or '-a' to perform automatic ticket initialization\n",
                        "MIT Kerberos Error", MB_OK);
             return FALSE;
         }
@@ -392,8 +372,8 @@ BOOL CLeashApp::InitInstance()
     if (!ProcessShellCommand(cmdInfo))
         return FALSE;
 
-    // Check to see if there are any tickets in the cache
-    // If not and the Windows Logon Session is Kerberos authenticated attempt an import
+    // Check to see if there are any tickets in the cache.  If not and
+    // autoinitialization is enabled, display the initial tickets dialog.
     {
         if (WaitForSingleObject( ticketinfo.lockObj, INFINITE ) != WAIT_OBJECT_0)
             throw("Unable to lock ticketinfo");
@@ -401,57 +381,6 @@ BOOL CLeashApp::InitInstance()
         BOOL b_autoinit = !ticketinfo.Krb5.btickets;
         LeashKRB5FreeTicketInfo(&ticketinfo.Krb5);
         ReleaseMutex(ticketinfo.lockObj);
-
-        DWORD dwMsLsaImport = pLeash_get_default_mslsa_import();
-
-        if ( b_autoinit && dwMsLsaImport && pLeash_importable() ) {
-            // We have the option of importing tickets from the MSLSA
-            // but should we?  Do the tickets in the MSLSA cache belong
-            // to the default realm used by Leash?  If so, import.
-            int import = 0;
-
-            if ( dwMsLsaImport == 1 ) {             /* always import */
-                import = 1;
-            } else if ( dwMsLsaImport == 2 ) {      /* import when realms match */
-                krb5_error_code code;
-                krb5_ccache mslsa_ccache=0;
-                krb5_principal princ = 0;
-                char ms_realm[128] = "", *def_realm = 0, *r;
-                int i;
-
-                if (code = pkrb5_cc_resolve(CLeashApp::m_krbv5_context, "MSLSA:", &mslsa_ccache))
-                    goto cleanup;
-
-                if (code = pkrb5_cc_get_principal(CLeashApp::m_krbv5_context, mslsa_ccache, &princ))
-                    goto cleanup;
-
-                for ( r=ms_realm, i=0; i<krb5_princ_realm(CLeashApp::m_krb5v5_context, princ)->length; r++, i++ ) {
-                    *r = krb5_princ_realm(CLeashApp::m_krb5v5_context, princ)->data[i];
-                }
-                *r = '\0';
-
-                if (code = pkrb5_get_default_realm(CLeashApp::m_krbv5_context, &def_realm))
-                    goto cleanup;
-
-                import = !strcmp(def_realm, ms_realm);
-
-              cleanup:
-                if (def_realm)
-                    pkrb5_free_default_realm(CLeashApp::m_krbv5_context, def_realm);
-
-                if (princ)
-                    pkrb5_free_principal(CLeashApp::m_krbv5_context, princ);
-
-                if (mslsa_ccache)
-                    pkrb5_cc_close(CLeashApp::m_krbv5_context, mslsa_ccache);
-            }
-
-            if (import && pLeash_import()) {
-                CLeashView::m_importedTickets = 1;
-                ::PostMessage(m_pMainWnd->m_hWnd, WM_COMMAND, ID_UPDATE_DISPLAY, 0);
-                b_autoinit = FALSE;
-            }
-        }
 
         if (autoInit) {
             if ( b_autoinit )
@@ -485,9 +414,6 @@ DECL_FUNC_PTR(Leash_kinit_dlg_ex);
 DECL_FUNC_PTR(Leash_timesync);
 DECL_FUNC_PTR(Leash_get_default_uppercaserealm);
 DECL_FUNC_PTR(Leash_set_default_uppercaserealm);
-DECL_FUNC_PTR(Leash_get_default_mslsa_import);
-DECL_FUNC_PTR(Leash_import);
-DECL_FUNC_PTR(Leash_importable);
 DECL_FUNC_PTR(Leash_renew);
 
 FUNC_INFO leash_fi[] = {
@@ -499,14 +425,11 @@ FUNC_INFO leash_fi[] = {
     MAKE_FUNC_INFO(Leash_timesync),
     MAKE_FUNC_INFO(Leash_get_default_uppercaserealm),
     MAKE_FUNC_INFO(Leash_set_default_uppercaserealm),
-    MAKE_FUNC_INFO(Leash_get_default_mslsa_import),
-    MAKE_FUNC_INFO(Leash_import),
-    MAKE_FUNC_INFO(Leash_importable),
     MAKE_FUNC_INFO(Leash_renew),
     END_FUNC_INFO
 };
 
-// com_err funcitons
+// com_err functions
 DECL_FUNC_PTR(error_message);
 FUNC_INFO ce_fi[] =  {
     MAKE_FUNC_INFO(error_message),
@@ -1151,40 +1074,17 @@ CLeashApp::ObtainTicketsViaUserIfNeeded(HWND hWnd)
     LeashKRB5FreeTicketInfo(&ticketinfo.Krb5);
     ReleaseMutex(ticketinfo.lockObj);
 
-    if ( !btickets ) {
-        if ( pLeash_importable() ) {
-            if (pLeash_import())
-                CLeashView::m_importedTickets = 1;
-        }
-        else if ( ProbeKDC() ) {
-            LSH_DLGINFO_EX ldi;
-            ldi.size = LSH_DLGINFO_EX_V1_SZ;
-            ldi.dlgtype = DLGTYPE_PASSWD;
-            ldi.title = "MIT Kerberos: Get Ticket";
-            ldi.username = NULL;
-            ldi.realm = NULL;
-            ldi.dlgtype = DLGTYPE_PASSWD;
-            ldi.use_defaults = 1;
+    if (ProbeKDC() && (!btickets || !pLeash_renew())) {
+        LSH_DLGINFO_EX ldi;
+        ldi.size = LSH_DLGINFO_EX_V1_SZ;
+        ldi.dlgtype = DLGTYPE_PASSWD;
+        ldi.title = "MIT Kerberos: Get Ticket";
+        ldi.username = NULL;
+        ldi.realm = NULL;
+        ldi.dlgtype = DLGTYPE_PASSWD;
+        ldi.use_defaults = 1;
 
-            pLeash_kinit_dlg_ex(hWnd, &ldi);
-        }
-    } else {
-        if ( CLeashView::m_importedTickets && pLeash_importable() ) {
-            if (pLeash_import())
-                CLeashView::m_importedTickets = 1;
-        }
-        else if ( ProbeKDC() && !pLeash_renew() ) {
-            LSH_DLGINFO_EX ldi;
-            ldi.size = LSH_DLGINFO_EX_V1_SZ;
-            ldi.dlgtype = DLGTYPE_PASSWD;
-            ldi.title = "MIT Kerberos: Get Ticket";
-            ldi.username = NULL;
-            ldi.realm = NULL;
-            ldi.dlgtype = DLGTYPE_PASSWD;
-            ldi.use_defaults = 1;
-
-            pLeash_kinit_dlg_ex(hWnd, &ldi);
-        }
+        pLeash_kinit_dlg_ex(hWnd, &ldi);
     }
     return;
 }
@@ -1237,7 +1137,7 @@ CLeashApp::IpAddrChangeMonitor(void * hWnd)
 
         NumOfAddrs = GetNumOfIpAddrs();
         if ( NumOfAddrs != prevNumOfAddrs ) {
-            // wait for the network state to stablize
+            // wait for the network state to stabilize
             Sleep(2000);
             // this call should probably be mutex protected
             ObtainTicketsViaUserIfNeeded((HWND)hWnd);

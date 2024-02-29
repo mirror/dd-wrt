@@ -19,13 +19,14 @@ SYNOPSIS
 [**-E**]
 [**-v**]
 [**-R**]
-[**-k** [-**t** *keytab_file*]]
+[**-k** [**-i** | -**t** *keytab_file*]]
 [**-c** *cache_name*]
 [**-n**]
 [**-S** *service_name*]
 [**-I** *input_ccache*]
 [**-T** *armor_ccache*]
 [**-X** *attribute*\ [=\ *value*]]
+[**--request-pac** | **--no-request-pac**]
 [*principal*]
 
 
@@ -92,8 +93,7 @@ OPTIONS
     requested.
 
 **-E**
-    treats the principal name as an enterprise name (implies the
-    **-C** option).
+    treats the principal name as an enterprise name.
 
 **-v**
     requests that the ticket-granting ticket in the cache (with the
@@ -199,6 +199,13 @@ OPTIONS
 
     **disable_freshness**\ [**=yes**]
         disable sending freshness tokens (for testing purposes only)
+
+**--request-pac** | **--no-request-pac**
+    mutually exclusive.  If **--request-pac** is set, ask the KDC to
+    include a PAC in authdata; if **--no-request-pac** is set, ask the
+    KDC not to include a PAC; if neither are set,  the KDC will follow
+    its default, which is typically is to include a PAC if doing so is
+    supported.
 
 ENVIRONMENT
 -----------

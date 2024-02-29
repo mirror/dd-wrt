@@ -25,6 +25,7 @@
  */
 
 #include "k5-int.h"
+#include <inttypes.h>
 #include <locale.h>
 #include <sys/file.h>
 #include <signal.h>
@@ -49,7 +50,7 @@ static char *kprop_version = KPROP_PROT_VERSION;
 
 static char *progname = NULL;
 static int debug = 0;
-static char *srvtab = NULL;
+static char *keytab_path = NULL;
 static char *replica_host;
 static char *realm = NULL;
 static char *def_realm = NULL;
@@ -60,7 +61,6 @@ static krb5_principal my_principal;
 
 static krb5_creds creds;
 static krb5_address *sender_addr;
-static krb5_address *receiver_addr;
 static const char *port = KPROP_SERVICE;
 static char *dbpathname;
 
@@ -71,11 +71,11 @@ static void open_connection(krb5_context context, char *host, int *fd_out);
 static void kerberos_authenticate(krb5_context context,
                                   krb5_auth_context *auth_context, int fd,
                                   krb5_principal me, krb5_creds **new_creds);
-static int open_database(krb5_context context, char *data_fn, int *size);
+static int open_database(krb5_context context, char *data_fn, off_t *size);
 static void close_database(krb5_context context, int fd);
 static void xmit_database(krb5_context context,
                           krb5_auth_context auth_context, krb5_creds *my_creds,
-                          int fd, int database_fd, int in_database_size);
+                          int fd, int database_fd, off_t in_database_size);
 static void send_error(krb5_context context, krb5_creds *my_creds, int fd,
                        char *err_text, krb5_error_code err_code);
 static void update_last_prop_file(char *hostname, char *file_name);
@@ -83,14 +83,15 @@ static void update_last_prop_file(char *hostname, char *file_name);
 static void usage()
 {
     fprintf(stderr, _("\nUsage: %s [-r realm] [-f file] [-d] [-P port] "
-                      "[-s srvtab] replica_host\n\n"), progname);
+                      "[-s keytab] replica_host\n\n"), progname);
     exit(1);
 }
 
 int
 main(int argc, char **argv)
 {
-    int fd, database_fd, database_size;
+    int fd, database_fd;
+    off_t database_size;
     krb5_error_code retval;
     krb5_context context;
     krb5_creds *my_creds;
@@ -140,7 +141,7 @@ parse_args(krb5_context context, int argc, char **argv)
             port = optarg;
             break;
         case 's':
-            srvtab = optarg;
+            keytab_path = optarg;
             break;
         default:
             usage();
@@ -191,8 +192,8 @@ get_tickets(krb5_context context)
         exit(1);
     }
 
-    if (srvtab != NULL) {
-        retval = krb5_kt_resolve(context, srvtab, &keytab);
+    if (keytab_path != NULL) {
+        retval = krb5_kt_resolve(context, keytab_path, &keytab);
         if (retval) {
             com_err(progname, retval, _("while resolving keytab"));
             exit(1);
@@ -251,12 +252,6 @@ open_connection(krb5_context context, char *host, int *fd_out)
 
         /* We successfully connect()ed */
         *fd_out = s;
-        retval = sockaddr2krbaddr(context, res->ai_family, res->ai_addr,
-                                  &receiver_addr);
-        if (retval != 0) {
-            com_err(progname, retval, _("while converting server address"));
-            exit(1);
-        }
 
         break;
     }
@@ -296,8 +291,7 @@ kerberos_authenticate(krb5_context context, krb5_auth_context *auth_context,
     krb5_auth_con_setflags(context, *auth_context,
                            KRB5_AUTH_CONTEXT_DO_SEQUENCE);
 
-    retval = krb5_auth_con_setaddrs(context, *auth_context, sender_addr,
-                                    receiver_addr);
+    retval = krb5_auth_con_setaddrs(context, *auth_context, sender_addr, NULL);
     if (retval) {
         com_err(progname, retval, _("in krb5_auth_con_setaddrs"));
         exit(1);
@@ -339,7 +333,7 @@ kerberos_authenticate(krb5_context context, krb5_auth_context *auth_context,
  * in the size of the database file.
  */
 static int
-open_database(krb5_context context, char *data_fn, int *size)
+open_database(krb5_context context, char *data_fn, off_t *size)
 {
     struct stat stbuf, stbuf_ok;
     char *data_ok_fn;
@@ -413,19 +407,18 @@ close_database(krb5_context context, int fd)
 static void
 xmit_database(krb5_context context, krb5_auth_context auth_context,
               krb5_creds *my_creds, int fd, int database_fd,
-              int in_database_size)
+              off_t in_database_size)
 {
     krb5_int32 n;
     krb5_data inbuf, outbuf;
-    char buf[KPROP_BUFSIZ];
+    char buf[KPROP_BUFSIZ], dbsize_buf[KPROP_DBSIZE_MAX_BUFSIZ];
     krb5_error_code retval;
     krb5_error *error;
-    krb5_ui_4 database_size = in_database_size, send_size, sent_size;
+    uint64_t database_size = in_database_size, send_size, sent_size;
 
     /* Send over the size. */
-    send_size = htonl(database_size);
-    inbuf.data = (char *)&send_size;
-    inbuf.length = sizeof(send_size); /* must be 4, really */
+    inbuf = make_data(dbsize_buf, sizeof(dbsize_buf));
+    encode_database_size(database_size, &inbuf);
     /* KPROP_CKSUMTYPE */
     retval = krb5_mk_safe(context, auth_context, &inbuf, &outbuf, NULL);
     if (retval) {
@@ -460,7 +453,7 @@ xmit_database(krb5_context context, krb5_auth_context auth_context,
         retval = krb5_mk_priv(context, auth_context, &inbuf, &outbuf, NULL);
         if (retval) {
             snprintf(buf, sizeof(buf),
-                     "while encoding database block starting at %d",
+                     "while encoding database block starting at %"PRIu64,
                      sent_size);
             com_err(progname, retval, "%s", buf);
             send_error(context, my_creds, fd, buf, retval);
@@ -471,14 +464,14 @@ xmit_database(krb5_context context, krb5_auth_context auth_context,
         if (retval) {
             krb5_free_data_contents(context, &outbuf);
             com_err(progname, retval,
-                    _("while sending database block starting at %d"),
+                    _("while sending database block starting at %"PRIu64),
                     sent_size);
             exit(1);
         }
         krb5_free_data_contents(context, &outbuf);
         sent_size += n;
         if (debug)
-            printf("%d bytes sent.\n", sent_size);
+            printf("%"PRIu64" bytes sent.\n", sent_size);
     }
     if (sent_size != database_size) {
         com_err(progname, 0, _("Premature EOF found for database file!"));
@@ -533,10 +526,14 @@ xmit_database(krb5_context context, krb5_auth_context auth_context,
         exit(1);
     }
 
-    memcpy(&send_size, outbuf.data, sizeof(send_size));
-    send_size = ntohl(send_size);
+    retval = decode_database_size(&outbuf, &send_size);
+    if (retval) {
+        com_err(progname, retval, _("malformed sent database size message"));
+        exit(1);
+    }
     if (send_size != database_size) {
-        com_err(progname, 0, _("Kpropd sent database size %d, expecting %d"),
+        com_err(progname, 0, _("Kpropd sent database size %"PRIu64
+                               ", expecting %"PRIu64),
                 send_size, database_size);
         exit(1);
     }

@@ -12,7 +12,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '1.17',
+        VERSION:     '1.21.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -65,54 +65,40 @@
 <span id="conf-ldap"></span><h1>Configuring Kerberos with OpenLDAP back-end<a class="headerlink" href="#configuring-kerberos-with-openldap-back-end" title="Permalink to this headline">¶</a></h1>
 <blockquote>
 <div><ol class="arabic">
-<li><p class="first">Set up SSL on the OpenLDAP server and client to ensure secure
-communication when the KDC service and LDAP server are on different
-machines.  <code class="docutils literal"><span class="pre">ldapi://</span></code> can be used if the LDAP server and KDC
-service are running on the same machine.</p>
-<ol class="upperalpha simple">
-<li>Setting up SSL on the OpenLDAP server:</li>
-</ol>
-<blockquote>
-<div><ol class="lowerroman">
-<li><p class="first">Get a CA certificate using OpenSSL tools</p>
+<li><p class="first">Make sure the LDAP server is using local authentication
+(<code class="docutils literal"><span class="pre">ldapi://</span></code>) or TLS (<code class="docutils literal"><span class="pre">ldaps</span></code>).  See
+<a class="reference external" href="https://www.openldap.org/doc/admin/tls.html">https://www.openldap.org/doc/admin/tls.html</a> for instructions on
+configuring TLS support in OpenLDAP.</p>
 </li>
-<li><p class="first">Configure OpenLDAP server for using SSL/TLS</p>
-<p>For the latter, you need to specify the location of CA
-certificate location in <em>slapd.conf</em> file.</p>
-<p>Refer to the following link for more information:
-<a class="reference external" href="https://www.openldap.org/doc/admin23/tls.html">https://www.openldap.org/doc/admin23/tls.html</a></p>
-</li>
-</ol>
-</div></blockquote>
-<ol class="upperalpha" start="2">
-<li><p class="first">Setting up SSL on OpenLDAP client:</p>
-<ol class="lowerroman">
-<li><p class="first">For the KDC and Admin Server, you need to do the client-side
-configuration in ldap.conf.  For example:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">TLS_CACERT</span> <span class="o">/</span><span class="n">etc</span><span class="o">/</span><span class="n">openldap</span><span class="o">/</span><span class="n">certs</span><span class="o">/</span><span class="n">cacert</span><span class="o">.</span><span class="n">pem</span>
-</pre></div>
-</div>
-</li>
-</ol>
-</li>
-</ol>
-</li>
-<li><p class="first">Include the Kerberos schema file (kerberos.schema) in the
-configuration file (slapd.conf) on the LDAP Server, by providing
-the location where it is stored:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">include</span> <span class="o">/</span><span class="n">etc</span><span class="o">/</span><span class="n">openldap</span><span class="o">/</span><span class="n">schema</span><span class="o">/</span><span class="n">kerberos</span><span class="o">.</span><span class="n">schema</span>
+<li><p class="first">Add the Kerberos schema file to the LDAP Server using the OpenLDAP
+LDIF file from the krb5 source directory
+(<code class="docutils literal"><span class="pre">src/plugins/kdb/ldap/libkdb_ldap/kerberos.openldap.ldif</span></code>).
+The following example uses local authentication:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">ldapadd</span> <span class="o">-</span><span class="n">Y</span> <span class="n">EXTERNAL</span> <span class="o">-</span><span class="n">H</span> <span class="n">ldapi</span><span class="p">:</span><span class="o">///</span> <span class="o">-</span><span class="n">f</span> <span class="o">/</span><span class="n">path</span><span class="o">/</span><span class="n">to</span><span class="o">/</span><span class="n">kerberos</span><span class="o">.</span><span class="n">openldap</span><span class="o">.</span><span class="n">ldif</span>
 </pre></div>
 </div>
 </li>
 <li><p class="first">Choose DNs for the <a class="reference internal" href="admin_commands/krb5kdc.html#krb5kdc-8"><span class="std std-ref">krb5kdc</span></a> and <a class="reference internal" href="admin_commands/kadmind.html#kadmind-8"><span class="std std-ref">kadmind</span></a> servers
-to bind to the LDAP server, and create them if necessary. These DNs
-will be specified with the <strong>ldap_kdc_dn</strong> and <strong>ldap_kadmind_dn</strong>
-directives in <a class="reference internal" href="conf_files/kdc_conf.html#kdc-conf-5"><span class="std std-ref">kdc.conf</span></a>; their passwords can be stashed
-with “<code class="docutils literal"><span class="pre">kdb5_ldap_util</span> <span class="pre">stashsrvpw</span></code>” and the resulting file
-specified with the <strong>ldap_service_password_file</strong> directive.</p>
+to bind to the LDAP server, and create them if necessary.  Specify
+these DNs with the <strong>ldap_kdc_dn</strong> and <strong>ldap_kadmind_dn</strong>
+directives in <a class="reference internal" href="conf_files/kdc_conf.html#kdc-conf-5"><span class="std std-ref">kdc.conf</span></a>.  The kadmind DN will also be
+used for administrative commands such as <a class="reference internal" href="admin_commands/kdb5_util.html#kdb5-util-8"><span class="std std-ref">kdb5_util</span></a>.</p>
+<p>Alternatively, you may configure krb5kdc and kadmind to use SASL
+authentication to access the LDAP server; see the <a class="reference internal" href="conf_files/kdc_conf.html#dbmodules"><span class="std std-ref">[dbmodules]</span></a>
+relations <strong>ldap_kdc_sasl_mech</strong> and similar.</p>
+</li>
+<li><p class="first">Specify a location for the LDAP service password file by setting
+<strong>ldap_service_password_file</strong>.  Use <code class="docutils literal"><span class="pre">kdb5_ldap_util</span> <span class="pre">stashsrvpw</span></code>
+to stash passwords for the KDC and kadmind DNs chosen above.  For
+example:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">kdb5_ldap_util</span> <span class="n">stashsrvpw</span> <span class="o">-</span><span class="n">f</span> <span class="o">/</span><span class="n">path</span><span class="o">/</span><span class="n">to</span><span class="o">/</span><span class="n">service</span><span class="o">.</span><span class="n">keyfile</span> <span class="n">cn</span><span class="o">=</span><span class="n">krbadmin</span><span class="p">,</span><span class="n">dc</span><span class="o">=</span><span class="n">example</span><span class="p">,</span><span class="n">dc</span><span class="o">=</span><span class="n">com</span>
+</pre></div>
+</div>
+<p>Skip this step if you are using SASL authentication and the
+mechanism does not require a password.</p>
 </li>
 <li><p class="first">Choose a DN for the global Kerberos container entry (but do not
-create the entry at this time).  This DN will be specified with the
+create the entry at this time).  Specify this DN with the
 <strong>ldap_kerberos_container_dn</strong> directive in <a class="reference internal" href="conf_files/kdc_conf.html#kdc-conf-5"><span class="std std-ref">kdc.conf</span></a>.
 Realm container entries will be created underneath this DN.
 Principal entries may exist either underneath the realm container
@@ -131,21 +117,13 @@ KDC DN only requires read access to the Kerberos data.</p>
 <span class="n">access</span> <span class="n">to</span> <span class="n">dn</span><span class="o">.</span><span class="n">base</span><span class="o">=</span><span class="s2">&quot;cn=Subschema&quot;</span>
     <span class="n">by</span> <span class="o">*</span> <span class="n">read</span>
 
-<span class="n">access</span> <span class="n">to</span> <span class="n">attrs</span><span class="o">=</span><span class="n">userPassword</span><span class="p">,</span><span class="n">userPKCS12</span>
-    <span class="n">by</span> <span class="bp">self</span> <span class="n">write</span>
-    <span class="n">by</span> <span class="o">*</span> <span class="n">auth</span>
-
-<span class="n">access</span> <span class="n">to</span> <span class="n">attrs</span><span class="o">=</span><span class="n">shadowLastChange</span>
-    <span class="n">by</span> <span class="bp">self</span> <span class="n">write</span>
-    <span class="n">by</span> <span class="o">*</span> <span class="n">read</span>
-
-<span class="c1"># Providing access to realm container</span>
+<span class="c1"># Provide access to the realm container.</span>
 <span class="n">access</span> <span class="n">to</span> <span class="n">dn</span><span class="o">.</span><span class="n">subtree</span><span class="o">=</span> <span class="s2">&quot;cn=EXAMPLE.COM,cn=krbcontainer,dc=example,dc=com&quot;</span>
     <span class="n">by</span> <span class="n">dn</span><span class="o">.</span><span class="n">exact</span><span class="o">=</span><span class="s2">&quot;cn=kdc-service,dc=example,dc=com&quot;</span> <span class="n">write</span>
     <span class="n">by</span> <span class="n">dn</span><span class="o">.</span><span class="n">exact</span><span class="o">=</span><span class="s2">&quot;cn=adm-service,dc=example,dc=com&quot;</span> <span class="n">write</span>
     <span class="n">by</span> <span class="o">*</span> <span class="n">none</span>
 
-<span class="c1"># Providing access to principals, if not underneath realm container</span>
+<span class="c1"># Provide access to principals, if not underneath the realm container.</span>
 <span class="n">access</span> <span class="n">to</span> <span class="n">dn</span><span class="o">.</span><span class="n">subtree</span><span class="o">=</span> <span class="s2">&quot;ou=users,dc=example,dc=com&quot;</span>
     <span class="n">by</span> <span class="n">dn</span><span class="o">.</span><span class="n">exact</span><span class="o">=</span><span class="s2">&quot;cn=kdc-service,dc=example,dc=com&quot;</span> <span class="n">write</span>
     <span class="n">by</span> <span class="n">dn</span><span class="o">.</span><span class="n">exact</span><span class="o">=</span><span class="s2">&quot;cn=adm-service,dc=example,dc=com&quot;</span> <span class="n">write</span>
@@ -155,36 +133,25 @@ KDC DN only requires read access to the Kerberos data.</p>
     <span class="n">by</span> <span class="o">*</span> <span class="n">read</span>
 </pre></div>
 </div>
-<p>If the locations of the container and principals or the DNs of
-the service objects for a realm are changed then this
-information should be updated.</p>
+<p>If the locations of the container and principals or the DNs of the
+service objects for a realm are changed then this information
+should be updated.</p>
 </li>
-<li><p class="first">Start the LDAP server as follows:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">slapd</span> <span class="o">-</span><span class="n">h</span> <span class="s2">&quot;ldapi:/// ldaps:///&quot;</span>
+<li><p class="first">In <a class="reference internal" href="conf_files/kdc_conf.html#kdc-conf-5"><span class="std std-ref">kdc.conf</span></a>, make sure the following relations are set
+in the <a class="reference internal" href="conf_files/kdc_conf.html#dbmodules"><span class="std std-ref">[dbmodules]</span></a> subsection for the realm:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span>db_library (set to ``kldap``)
+ldap_kerberos_container_dn
+ldap_kdc_dn
+ldap_kadmind_dn
+ldap_service_password_file
+ldap_servers
 </pre></div>
 </div>
 </li>
-<li><p class="first">Modify the <a class="reference internal" href="conf_files/kdc_conf.html#kdc-conf-5"><span class="std std-ref">kdc.conf</span></a> file to include LDAP specific items
-listed below:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">realms</span>
-    <span class="n">database_module</span>
-
-<span class="n">dbmodules</span>
-    <span class="n">db_library</span>
-    <span class="n">db_module_dir</span>
-    <span class="n">ldap_kdc_dn</span>
-    <span class="n">ldap_kadmind_dn</span>
-    <span class="n">ldap_service_password_file</span>
-    <span class="n">ldap_servers</span>
-    <span class="n">ldap_conns_per_server</span>
-</pre></div>
-</div>
-</li>
-<li><p class="first">Create the realm using <a class="reference internal" href="admin_commands/kdb5_ldap_util.html#kdb5-ldap-util-8"><span class="std std-ref">kdb5_ldap_util</span></a> (see
-<a class="reference internal" href="database.html#ldap-create-realm"><span class="std std-ref">Creating a Kerberos realm</span></a>):</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">kdb5_ldap_util</span> <span class="o">-</span><span class="n">D</span> <span class="n">cn</span><span class="o">=</span><span class="n">admin</span><span class="p">,</span><span class="n">dc</span><span class="o">=</span><span class="n">example</span><span class="p">,</span><span class="n">dc</span><span class="o">=</span><span class="n">com</span> <span class="n">create</span> <span class="o">-</span><span class="n">subtrees</span> <span class="n">ou</span><span class="o">=</span><span class="n">users</span><span class="p">,</span><span class="n">dc</span><span class="o">=</span><span class="n">example</span><span class="p">,</span><span class="n">dc</span><span class="o">=</span><span class="n">com</span> <span class="o">-</span><span class="n">r</span> <span class="n">EXAMPLE</span><span class="o">.</span><span class="n">COM</span> <span class="o">-</span><span class="n">s</span>
-</pre></div>
-</div>
+<li><p class="first">Create the realm using <a class="reference internal" href="admin_commands/kdb5_ldap_util.html#kdb5-ldap-util-8"><span class="std std-ref">kdb5_ldap_util</span></a>:</p>
+<blockquote>
+<div><p>kdb5_ldap_util create -subtrees ou=users,dc=example,dc=com -s</p>
+</div></blockquote>
 <p>Use the <strong>-subtrees</strong> option if the principals are to exist in a
 separate subtree from the realm container.  Before executing the
 command, make sure that the subtree mentioned above
@@ -193,30 +160,22 @@ exist underneath the realm container, omit the <strong>-subtrees</strong> option
 and do not worry about creating the principal subtree.</p>
 <p>For more information, refer to the section <a class="reference internal" href="database.html#ops-on-ldap"><span class="std std-ref">Operations on the LDAP database</span></a>.</p>
 <p>The realm object is created under the
-<strong>ldap_kerberos_container_dn</strong> specified in the configuration file.
-This operation will also create the Kerberos container, if not
-present already.  This will be used to store information related to
-all realms.</p>
+<strong>ldap_kerberos_container_dn</strong> specified in the configuration
+file.  This operation will also create the Kerberos container, if
+not present already.  This container can be used to store
+information related to multiple realms.</p>
 </li>
-<li><p class="first">Stash the password of the service object used by the KDC and
-Administration service to bind to the LDAP server using the
-<a class="reference internal" href="admin_commands/kdb5_ldap_util.html#kdb5-ldap-util-8"><span class="std std-ref">kdb5_ldap_util</span></a> <strong>stashsrvpw</strong> command (see
-<a class="reference internal" href="database.html#stash-ldap"><span class="std std-ref">Stashing service object’s password</span></a>).  The object DN should be the same as
-<strong>ldap_kdc_dn</strong> and <strong>ldap_kadmind_dn</strong> values specified in the
-<a class="reference internal" href="conf_files/kdc_conf.html#kdc-conf-5"><span class="std std-ref">kdc.conf</span></a> file:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">kdb5_ldap_util</span> <span class="o">-</span><span class="n">D</span> <span class="n">cn</span><span class="o">=</span><span class="n">admin</span><span class="p">,</span><span class="n">dc</span><span class="o">=</span><span class="n">example</span><span class="p">,</span><span class="n">dc</span><span class="o">=</span><span class="n">com</span> <span class="n">stashsrvpw</span> <span class="o">-</span><span class="n">f</span> <span class="o">/</span><span class="n">etc</span><span class="o">/</span><span class="n">kerberos</span><span class="o">/</span><span class="n">service</span><span class="o">.</span><span class="n">keyfile</span> <span class="n">cn</span><span class="o">=</span><span class="n">krbadmin</span><span class="p">,</span><span class="n">dc</span><span class="o">=</span><span class="n">example</span><span class="p">,</span><span class="n">dc</span><span class="o">=</span><span class="n">com</span>
-</pre></div>
-</div>
-</li>
-<li><p class="first">Add <code class="docutils literal"><span class="pre">krbPrincipalName</span></code> to the indexes in slapd.conf to speed up
-the access.</p>
+<li><p class="first">Add an <code class="docutils literal"><span class="pre">eq</span></code> index for <code class="docutils literal"><span class="pre">krbPrincipalName</span></code> to speed up principal
+lookup operations.  See
+<a class="reference external" href="https://www.openldap.org/doc/admin/tuning.html#Indexes">https://www.openldap.org/doc/admin/tuning.html#Indexes</a> for
+details.</p>
 </li>
 </ol>
 </div></blockquote>
 <p>With the LDAP back end it is possible to provide aliases for principal
-entries.  Currently we provide no mechanism provided for creating
-aliases, so it must be done by direct manipulation of the LDAP
-entries.</p>
+entries.  Currently we provide no administrative utilities for
+creating aliases, so it must be done by direct manipulation of the
+LDAP entries.</p>
 <p>An entry with aliases contains multiple values of the
 <em>krbPrincipalName</em> attribute.  Since LDAP attribute values are not
 ordered, it is necessary to specify which principal name is canonical,
@@ -230,10 +189,6 @@ requests canonicalization.  Canonicalization is normally requested for
 service principals; for client principals, an explicit flag is often
 required (e.g., <code class="docutils literal"><span class="pre">kinit</span> <span class="pre">-C</span></code>) and canonicalization is only performed
 for initial ticket requests.</p>
-<div class="admonition seealso">
-<p class="first admonition-title">See also</p>
-<p class="last"><a class="reference internal" href="advanced/ldapbackend.html#ldap-be-ubuntu"><span class="std std-ref">LDAP backend on Ubuntu 10.4 (lucid)</span></a></p>
-</div>
 </div>
 
 
@@ -305,8 +260,8 @@ for initial ticket requests.</p>
 
     <div class="footer-wrapper">
         <div class="footer" >
-            <div class="right" ><i>Release: 1.17</i><br />
-                &copy; <a href="../copyright.html">Copyright</a> 1985-2019, MIT.
+            <div class="right" ><i>Release: 1.21.2</i><br />
+                &copy; <a href="../copyright.html">Copyright</a> 1985-2023, MIT.
             </div>
             <div class="left">
                 

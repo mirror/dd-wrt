@@ -30,7 +30,7 @@ A simple way to get the necessary Unix utilities is to install Git
 BASH from https://gitforwindows.org and configure it to add the Unix
 utilities to the command-line path.  In some versions of Windows (not
 the most current versions), the Unix utilities can alternatively be
-obtained via the Utilities and SDK for UNIX-based Aplications, which
+obtained via the Utilities and SDK for UNIX-based Applications, which
 may be enabled as a Windows feature and then the components installed.
 Note that the Windows nmake will not find the SUA awk utility in the
 path unless it is named awk.exe; the permissions on the utility may

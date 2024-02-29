@@ -1,6 +1,6 @@
 .\" Man page generated from reStructuredText.
 .
-.TH "KRB5.CONF" "5" " " "1.17" "MIT Kerberos"
+.TH "KRB5.CONF" "5" " " "1.21.2" "MIT Kerberos"
 .SH NAME
 krb5.conf \- Kerberos configuration file
 .
@@ -76,25 +76,11 @@ fubar = {
 .UNINDENT
 .UNINDENT
 .sp
-Placing a \(aq*\(aq at the end of a line indicates that this is the \fIfinal\fP
-value for the tag.  This means that neither the remainder of this
-configuration file nor any other configuration file will be checked
-for any other values for this tag.
-.sp
-For example, if you have the following lines:
-.INDENT 0.0
-.INDENT 3.5
-.sp
-.nf
-.ft C
-foo = bar*
-foo = baz
-.ft P
-.fi
-.UNINDENT
-.UNINDENT
-.sp
-then the second value of \fBfoo\fP (\fBbaz\fP) would never be read.
+Placing a \(aq*\(aq after the closing bracket of a section name indicates
+that the section is \fIfinal\fP, meaning that if the same section appears
+within a later file specified in \fBKRB5_CONFIG\fP, it will be ignored.
+A subsection can be marked as final by placing a \(aq*\(aq after either the
+tag name or the closing brace.
 .sp
 The krb5.conf file can include other files using either of the
 following directives at the beginning of a line:
@@ -192,23 +178,24 @@ kdc.conf(5), but it is not a recommended practice.
 The libdefaults section may contain any of the following relations:
 .INDENT 0.0
 .TP
+\fBallow_des3\fP
+Permit the KDC to issue tickets with des3\-cbc\-sha1 session keys.
+In future releases, this flag will allow des3\-cbc\-sha1 to be used
+at all.  The default value for this tag is false.  (Added in
+release 1.21.)
+.TP
+\fBallow_rc4\fP
+Permit the KDC to issue tickets with arcfour\-hmac session keys.
+In future releases, this flag will allow arcfour\-hmac to be used
+at all.  The default value for this tag is false.  (Added in
+release 1.21.)
+.TP
 \fBallow_weak_crypto\fP
 If this flag is set to false, then weak encryption types (as noted
 in Encryption_types in kdc.conf(5)) will be filtered
 out of the lists \fBdefault_tgs_enctypes\fP,
 \fBdefault_tkt_enctypes\fP, and \fBpermitted_enctypes\fP\&.  The default
-value for this tag is false, which may cause authentication
-failures in existing Kerberos infrastructures that do not support
-strong crypto.  Users in affected environments should set this tag
-to true until their infrastructure adopts stronger ciphers.
-.TP
-\fBap_req_checksum_type\fP
-An integer which specifies the type of AP\-REQ checksum to use in
-authenticators.  This variable should be unset so the appropriate
-checksum for the encryption key in use will be used.  This can be
-set if backward compatibility requires a specific checksum type.
-See the \fBkdc_req_checksum_type\fP configuration option for the
-possible values and their meanings.
+value for this tag is false.
 .TP
 \fBcanonicalize\fP
 If this flag is set to true, initial ticket requests to the KDC
@@ -250,6 +237,11 @@ This relation specifies the default keytab name to be used by
 application servers such as sshd.  The default is \fB@KTNAME@\fP\&.  This
 relation is subject to parameter expansion (see below).
 .TP
+\fBdefault_rcache_name\fP
+This relation specifies the name of the default replay cache.
+The default is \fBdfl:\fP\&.  This relation is subject to parameter
+expansion (see below).  New in release 1.18.
+.TP
 \fBdefault_realm\fP
 Identifies the default Kerberos realm for the client.  Set its
 value to your Kerberos realm.  If this value is not set, then a
@@ -262,9 +254,10 @@ the client should request when making a TGS\-REQ, in order of
 preference from highest to lowest.  The list may be delimited with
 commas or whitespace.  See Encryption_types in
 kdc.conf(5) for a list of the accepted values for this tag.
-The default value is \fBaes256\-cts\-hmac\-sha1\-96 aes128\-cts\-hmac\-sha1\-96 aes256\-cts\-hmac\-sha384\-192 aes128\-cts\-hmac\-sha256\-128 des3\-cbc\-sha1 arcfour\-hmac\-md5 camellia256\-cts\-cmac camellia128\-cts\-cmac des\-cbc\-crc des\-cbc\-md5 des\-cbc\-md4\fP, but single\-DES encryption types
-will be implicitly removed from this list if the value of
-\fBallow_weak_crypto\fP is false.
+Starting in release 1.18, the default value is the value of
+\fBpermitted_enctypes\fP\&.  For previous releases or if
+\fBpermitted_enctypes\fP is not set, the default value is
+\fBaes256\-cts\-hmac\-sha1\-96 aes128\-cts\-hmac\-sha1\-96 aes256\-cts\-hmac\-sha384\-192 aes128\-cts\-hmac\-sha256\-128 des3\-cbc\-sha1 arcfour\-hmac\-md5 camellia256\-cts\-cmac camellia128\-cts\-cmac\fP\&.
 .sp
 Do not set this unless required for specific backward
 compatibility purposes; stale values of this setting can prevent
@@ -275,10 +268,10 @@ libraries are upgraded.
 Identifies the supported list of session key encryption types that
 the client should request when making an AS\-REQ, in order of
 preference from highest to lowest.  The format is the same as for
-default_tgs_enctypes.  The default value for this tag is
-\fBaes256\-cts\-hmac\-sha1\-96 aes128\-cts\-hmac\-sha1\-96 aes256\-cts\-hmac\-sha384\-192 aes128\-cts\-hmac\-sha256\-128 des3\-cbc\-sha1 arcfour\-hmac\-md5 camellia256\-cts\-cmac camellia128\-cts\-cmac des\-cbc\-crc des\-cbc\-md5 des\-cbc\-md4\fP, but single\-DES encryption types will be implicitly
-removed from this list if the value of \fBallow_weak_crypto\fP is
-false.
+default_tgs_enctypes.  Starting in release 1.18, the default
+value is the value of \fBpermitted_enctypes\fP\&.  For previous
+releases or if \fBpermitted_enctypes\fP is not set, the default
+value is \fBaes256\-cts\-hmac\-sha1\-96 aes128\-cts\-hmac\-sha1\-96 aes256\-cts\-hmac\-sha384\-192 aes128\-cts\-hmac\-sha256\-128 des3\-cbc\-sha1 arcfour\-hmac\-md5 camellia256\-cts\-cmac camellia128\-cts\-cmac\fP\&.
 .sp
 Do not set this unless required for specific backward
 compatibility purposes; stale values of this setting can prevent
@@ -290,7 +283,10 @@ Indicate whether name lookups will be used to canonicalize
 hostnames for use in service principal names.  Setting this flag
 to false can improve security by reducing reliance on DNS, but
 means that short hostnames will not be canonicalized to
-fully\-qualified hostnames.  The default value is true.
+fully\-qualified hostnames.  If this option is set to \fBfallback\fP (new
+in release 1.18), DNS canonicalization will only be performed the
+server hostname is not found with the original name when
+requesting credentials.  The default value is true.
 .TP
 \fBdns_lookup_kdc\fP
 Indicate whether DNS SRV records should be used to locate the KDCs
@@ -314,6 +310,13 @@ and other servers for a realm, if they are not listed in the
 krb5.conf information for the realm.  SRV records are used as a
 fallback if no URI records were found.  The default value is true.
 New in release 1.15.
+.TP
+\fBenforce_ok_as_delegate\fP
+If this flag to true, GSSAPI credential delegation will be
+disabled when the \fBok\-as\-delegate\fP flag is not set in the
+service ticket.  If this flag is false, the \fBok\-as\-delegate\fP
+ticket flag is only enforced when an application specifically
+requests enforcement.  The default value is false.
 .TP
 \fBerr_fmt\fP
 This relation allows for custom error message formatting.  If a
@@ -384,84 +387,18 @@ requesting service tickets or authenticating to services.  This
 corrective factor is only used by the Kerberos library; it is not
 used to change the system clock.  The default value is 1.
 .TP
-\fBkdc_req_checksum_type\fP
-An integer which specifies the type of checksum to use for the KDC
-requests, for compatibility with very old KDC implementations.
-This value is only used for DES keys; other keys use the preferred
-checksum type for those keys.
-.sp
-The possible values and their meanings are as follows.
-.TS
-center;
-|l|l|.
-_
-T{
-1
-T}	T{
-CRC32
-T}
-_
-T{
-2
-T}	T{
-RSA MD4
-T}
-_
-T{
-3
-T}	T{
-RSA MD4 DES
-T}
-_
-T{
-4
-T}	T{
-DES CBC
-T}
-_
-T{
-7
-T}	T{
-RSA MD5
-T}
-_
-T{
-8
-T}	T{
-RSA MD5 DES
-T}
-_
-T{
-9
-T}	T{
-NIST SHA
-T}
-_
-T{
-12
-T}	T{
-HMAC SHA1 DES3
-T}
-_
-T{
-\-138
-T}	T{
-Microsoft MD5 HMAC checksum type
-T}
-_
-.TE
-.TP
 \fBnoaddresses\fP
 If this flag is true, requests for initial tickets will not be
 made with address restrictions set, allowing the tickets to be
 used across NATs.  The default value is true.
 .TP
 \fBpermitted_enctypes\fP
-Identifies all encryption types that are permitted for use in
-session key encryption.  The default value for this tag is
-\fBaes256\-cts\-hmac\-sha1\-96 aes128\-cts\-hmac\-sha1\-96 aes256\-cts\-hmac\-sha384\-192 aes128\-cts\-hmac\-sha256\-128 des3\-cbc\-sha1 arcfour\-hmac\-md5 camellia256\-cts\-cmac camellia128\-cts\-cmac des\-cbc\-crc des\-cbc\-md5 des\-cbc\-md4\fP, but single\-DES encryption types will be implicitly
-removed from this list if the value of \fBallow_weak_crypto\fP is
-false.
+Identifies the encryption types that servers will permit for
+session keys and for ticket and authenticator encryption, ordered
+by preference from highest to lowest.  Starting in release 1.18,
+this tag also acts as the default value for
+\fBdefault_tgs_enctypes\fP and \fBdefault_tkt_enctypes\fP\&.  The
+default value for this tag is \fBaes256\-cts\-hmac\-sha1\-96 aes128\-cts\-hmac\-sha1\-96 aes256\-cts\-hmac\-sha384\-192 aes128\-cts\-hmac\-sha256\-128 des3\-cbc\-sha1 arcfour\-hmac\-md5 camellia256\-cts\-cmac camellia128\-cts\-cmac\fP\&.
 .TP
 \fBplugin_base_dir\fP
 If set, determines the base directory where krb5 plugins are
@@ -478,6 +415,15 @@ which forces libkrb5 to attempt to use PKINIT if it is supported.
 \fBproxiable\fP
 If this flag is true, initial tickets will be proxiable by
 default, if allowed by the KDC.  The default value is false.
+.TP
+\fBqualify_shortname\fP
+If this string is set, it determines the domain suffix for
+single\-component hostnames when DNS canonicalization is not used
+(either because \fBdns_canonicalize_hostname\fP is false or because
+forward canonicalization failed).  The default value is the first
+search domain of the system\(aqs DNS configuration.  To disable
+qualification of shortnames, set this relation to the empty string
+with \fBqualify_shortname = ""\fP\&.  (New in release 1.18.)
 .TP
 \fBrdns\fP
 If this flag is true, reverse name lookup will be used in addition
@@ -498,15 +444,6 @@ set.  The default is not to search domain components.
 \fBrenew_lifetime\fP
 (duration string.)  Sets the default renewable lifetime
 for initial ticket requests.  The default value is 0.
-.TP
-\fBsafe_checksum_type\fP
-An integer which specifies the type of checksum to use for the
-KRB\-SAFE requests.  By default it is set to 8 (RSA MD5 DES).  For
-compatibility with applications linked against DCE version 1.1 or
-earlier Kerberos libraries, use a value of 3 to use the RSA MD4
-DES instead.  This field is ignored when its value is incompatible
-with the session key type.  See the \fBkdc_req_checksum_type\fP
-configuration option for the possible values and their meanings.
 .TP
 \fBspake_preauth_groups\fP
 A whitespace or comma\-separated list of words which specifies the
@@ -561,6 +498,12 @@ attempt fails.
 If this flag is true, then an attempt to verify initial
 credentials will fail if the client machine does not have a
 keytab.  The default value is false.
+.TP
+\fBclient_aware_channel_bindings\fP
+If this flag is true, then all application protocol authentication
+requests will be flagged to indicate that the application supports
+channel bindings when operating over a secure channel.  The
+default value is false.
 .UNINDENT
 .SS [realms]
 .sp
@@ -572,7 +515,7 @@ following tags may be specified in the realm\(aqs subsection:
 .TP
 \fBadmin_server\fP
 Identifies the host where the administration server is running.
-Typically, this is the master Kerberos server.  This tag must be
+Typically, this is the primary Kerberos server.  This tag must be
 given a value in order to communicate with the kadmind(8)
 server for the realm.
 .TP
@@ -696,12 +639,16 @@ by \fBdns_lookup_kdc\fP).  Finally, port 464 on the \fBadmin_server\fP
 host will be tried.
 .TP
 \fBmaster_kdc\fP
-Identifies the master KDC(s).  Currently, this tag is used in only
+The name for \fBprimary_kdc\fP prior to release 1.19.  Its value is
+used as a fallback if \fBprimary_kdc\fP is not specified.
+.TP
+\fBprimary_kdc\fP
+Identifies the primary KDC(s).  Currently, this tag is used in only
 one case: If an attempt to get credentials fails because of an
 invalid password, the client software will attempt to contact the
-master KDC, in case the user\(aqs password has just been changed, and
+primary KDC, in case the user\(aqs password has just been changed, and
 the updated database has not been propagated to the replica
-servers yet.
+servers yet.  New in release 1.19.
 .TP
 \fBv4_instance_convert\fP
 This subsection allows the administrator to configure exceptions
@@ -719,15 +666,12 @@ is the Kerberos V4 realm name.
 .UNINDENT
 .SS [domain_realm]
 .sp
-The [domain_realm] section provides a translation from a domain name
-or hostname to a Kerberos realm name.  The tag name can be a host name
-or domain name, where domain names are indicated by a prefix of a
-period (\fB\&.\fP).  The value of the relation is the Kerberos realm name
-for that particular host or domain.  A host name relation implicitly
-provides the corresponding domain name relation, unless an explicit domain
-name relation is provided.  The Kerberos realm may be
+The [domain_realm] section provides a translation from hostnames to
+Kerberos realms.  Each tag is a domain name, providing the mapping for
+that domain and all subdomains.  If the tag begins with a period
+(\fB\&.\fP) then it applies only to subdomains.  The Kerberos realm may be
 identified either in the \fI\%realms\fP section or using DNS SRV records.
-Host names and domain names should be in lower case.  For example:
+Tag names should be in lower case.  For example:
 .INDENT 0.0
 .INDENT 3.5
 .sp
@@ -1216,7 +1160,7 @@ user\(aqs certificate and private key.
 All keyword/values are optional.  \fImodname\fP specifies the location
 of a library implementing PKCS #11.  If a value is encountered
 with no keyword, it is assumed to be the \fImodname\fP\&.  If no
-module\-name is specified, the default is \fBopensc\-pkcs11.so\fP\&.
+module\-name is specified, the default is \fB@PKCS11MOD@\fP\&.
 \fBslotid=\fP and/or \fBtoken=\fP may be specified to force the use of
 a particular smard card reader or token if there is more than one
 available.  \fBcertid=\fP and/or \fBcertlabel=\fP may be specified to
@@ -1356,13 +1300,12 @@ The default is 2048.
 \fBpkinit_identities\fP
 Specifies the location(s) to be used to find the user\(aqs X.509
 identity information.  If this option is specified multiple times,
-the first valid value is used; this can be used to specify an
-environment variable (with \fBENV:\fP\fIenvvar\fP) followed by a
-default value.  Note that these values are not used if the user
-specifies \fBX509_user_identity\fP on the command line.
+each value is attempted in order until certificates are found.
+Note that these values are not used if the user specifies
+\fBX509_user_identity\fP on the command line.
 .TP
 \fBpkinit_kdc_hostname\fP
-The presense of this option indicates that the client is willing
+The presence of this option indicates that the client is willing
 to accept a KDC certificate with a dNSName SAN (Subject
 Alternative Name) rather than requiring the id\-pkinit\-san as
 defined in \fI\%RFC 4556\fP\&.  This option may be specified multiple
@@ -1526,7 +1469,7 @@ Here is an example of a generic krb5.conf file:
         kdc = kerberos\-1.mit.edu
         kdc = kerberos\-2.mit.edu
         admin_server = kerberos.mit.edu
-        master_kdc = kerberos.mit.edu
+        primary_kdc = kerberos.mit.edu
     }
     EXAMPLE.COM = {
         kdc = kerberos.example.com
@@ -1557,6 +1500,6 @@ syslog(3)
 .SH AUTHOR
 MIT
 .SH COPYRIGHT
-1985-2019, MIT
+1985-2023, MIT
 .\" Generated by docutils manpage writer.
 .

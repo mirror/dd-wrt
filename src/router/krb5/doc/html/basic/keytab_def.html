@@ -12,7 +12,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '1.17',
+        VERSION:     '1.21.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -71,10 +71,8 @@ authentications from clients, but can also be used to obtain initial
 credentials for client applications.</p>
 <p>Keytabs are named using the format <em>type</em><code class="docutils literal"><span class="pre">:</span></code><em>value</em>.  Usually
 <em>type</em> is <code class="docutils literal"><span class="pre">FILE</span></code> and <em>value</em> is the absolute pathname of the file.
-Other possible values for <em>type</em> are <code class="docutils literal"><span class="pre">SRVTAB</span></code>, which indicates a
-file in the deprecated Kerberos 4 srvtab format, and <code class="docutils literal"><span class="pre">MEMORY</span></code>, which
-indicates a temporary keytab stored in the memory of the current
-process.</p>
+The other possible value for <em>type</em> is <code class="docutils literal"><span class="pre">MEMORY</span></code>, which indicates a
+temporary keytab stored in the memory of the current process.</p>
 <p>A keytab contains one or more entries, where each entry consists of a
 timestamp (indicating when the entry was written to the keytab), a
 principal name, a key version number, an encryption type, and the
@@ -166,8 +164,8 @@ decreasing order of preference:</p>
 
     <div class="footer-wrapper">
         <div class="footer" >
-            <div class="right" ><i>Release: 1.17</i><br />
-                &copy; <a href="../copyright.html">Copyright</a> 1985-2019, MIT.
+            <div class="right" ><i>Release: 1.21.2</i><br />
+                &copy; <a href="../copyright.html">Copyright</a> 1985-2023, MIT.
             </div>
             <div class="left">
                 

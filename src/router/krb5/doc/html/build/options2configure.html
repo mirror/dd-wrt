@@ -12,7 +12,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '1.17',
+        VERSION:     '1.21.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -93,11 +93,6 @@ default, Kerberos V5 configuration will look for <code class="docutils literal">
 <code class="docutils literal"><span class="pre">-lsocket</span></code>.  If your operating system has a broken resolver
 library or fails to pass the tests in <code class="docutils literal"><span class="pre">src/tests/resolv</span></code>, you
 will need to use this option.</dd>
-<dt><strong>-</strong><strong>-with-tcl=</strong><em>TCLPATH</em></dt>
-<dd>Some of the unit-tests in the build tree rely upon using a program
-in Tcl.  The directory specified by <em>TCLPATH</em> specifies where the
-Tcl header file (TCLPATH/include/tcl.h) as well as where the Tcl
-library (TCLPATH/lib) should be found.</dd>
 <dt><strong>-</strong><strong>-enable-dns-for-realm</strong></dt>
 <dd>Enable the use of DNS to look up a host’s Kerberos realm,
 if the information is not provided in
@@ -180,6 +175,8 @@ C compiler as specified above.</dd>
 <dt><strong>LIBS=</strong><em>LDNAME</em></dt>
 <dd>This option allows one to specify libraries to be passed to the
 linker (e.g., <code class="docutils literal"><span class="pre">-l&lt;library&gt;</span></code>)</dd>
+<dt><strong>PKCS11_MODNAME=</strong><em>library</em></dt>
+<dd>Override the built-in default PKCS11 library name.</dd>
 <dt><strong>SS_LIB=</strong><em>libs</em>…</dt>
 <dd><p class="first">If <code class="docutils literal"><span class="pre">-lss</span></code> is not the correct way to link in your installed ss
 library, for example if additional support libraries are needed,
@@ -335,10 +332,6 @@ directory.  By default Hesiod is unsupported.</dd>
 <dd>Compile OpenLDAP database backend module.</dd>
 <dt><strong>-</strong><strong>-with-lmdb</strong></dt>
 <dd>Compile LMDB database backend module.</dd>
-<dt><strong>-</strong><strong>-with-tcl=</strong><em>path</em></dt>
-<dd>Specifies that <em>path</em> is the location of a Tcl installation.
-Tcl is needed for some of the tests run by ‘make check’; such tests
-will be skipped if this option is not set.</dd>
 <dt><strong>-</strong><strong>-with-vague-errors</strong></dt>
 <dd>Do not send helpful errors to client.  For example, if the KDC
 should return only vague error codes to clients.</dd>
@@ -347,18 +340,12 @@ should return only vague error codes to clients.</dd>
 Kerberos implementation <code class="docutils literal"><span class="pre">builtin</span></code>.  The other currently
 implemented crypto backend is <code class="docutils literal"><span class="pre">openssl</span></code>.  (See
 <a class="reference internal" href="../mitK5features.html#mitk5features"><span class="std std-ref">MIT Kerberos features</span></a>)</dd>
-<dt><strong>-</strong><strong>-with-prng-alg=</strong><em>ALG</em></dt>
-<dd>Use specified PRNG algorithm.  For example, to use the OS native
-prng specify <code class="docutils literal"><span class="pre">--with-prng-alg=os</span></code>.  The default is <code class="docutils literal"><span class="pre">fortuna</span></code>.
-(See <a class="reference internal" href="../mitK5features.html#mitk5features"><span class="std std-ref">MIT Kerberos features</span></a>)</dd>
 <dt><strong>-</strong><strong>-without-libedit</strong></dt>
 <dd>Do not compile and link against libedit.  Some utilities will no
 longer offer command history or completion in interactive mode if
 libedit is disabled.</dd>
 <dt><strong>-</strong><strong>-with-readline</strong></dt>
-<dd>Compile and link against GNU readline, as an alternative to libedit.
-Building with readline breaks the dejagnu test suite, which is a
-subset of the tests run by ‘make check’.</dd>
+<dd>Compile and link against GNU readline, as an alternative to libedit.</dd>
 <dt><strong>-</strong><strong>-with-system-verto</strong></dt>
 <dd><p class="first">Use an installed version of libverto.  If the libverto header and
 library are not in default locations, you may wish to specify
@@ -380,6 +367,9 @@ default credential cache, keytab, and client keytab names.  The
 default is to use <code class="docutils literal"><span class="pre">krb5-config</span></code> from the program path.  Specify
 <code class="docutils literal"><span class="pre">--without-krb5-config</span></code> to disable the use of krb5-config and
 use the usual built-in defaults.</dd>
+<dt><strong>-</strong><strong>-without-keyutils</strong></dt>
+<dd>Build without libkeyutils support.  This disables the KEYRING
+credential cache type.</dd>
 </dl>
 </div>
 <div class="section" id="examples">
@@ -462,8 +452,8 @@ Kerberos might be done thus:</p>
 
     <div class="footer-wrapper">
         <div class="footer" >
-            <div class="right" ><i>Release: 1.17</i><br />
-                &copy; <a href="../copyright.html">Copyright</a> 1985-2019, MIT.
+            <div class="right" ><i>Release: 1.21.2</i><br />
+                &copy; <a href="../copyright.html">Copyright</a> 1985-2023, MIT.
             </div>
             <div class="left">
                 

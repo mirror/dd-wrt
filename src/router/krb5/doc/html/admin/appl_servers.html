@@ -12,7 +12,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '1.17',
+        VERSION:     '1.21.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -66,9 +66,9 @@
 <p>If you need to install the Kerberos V5 programs on an application
 server, please refer to the Kerberos V5 Installation Guide.  Once you
 have installed the software, you need to add that host to the Kerberos
-database (see <a class="reference internal" href="database.html#add-mod-del-princs"><span class="std std-ref">Adding, modifying and deleting principals</span></a>), and generate a keytab for
-that host, that contains the host’s key.  You also need to make sure
-the host’s clock is within your maximum clock skew of the KDCs.</p>
+database (see <a class="reference internal" href="database.html#principals"><span class="std std-ref">Principals</span></a>), and generate a keytab for that host,
+that contains the host’s key.  You also need to make sure the host’s
+clock is within your maximum clock skew of the KDCs.</p>
 <div class="section" id="keytabs">
 <h2>Keytabs<a class="headerlink" href="#keytabs" title="Permalink to this headline">¶</a></h2>
 <p>A keytab is a host’s copy of its own keylist, which is analogous to a
@@ -84,92 +84,54 @@ reside.</p>
 <div class="section" id="adding-principals-to-keytabs">
 <span id="add-princ-kt"></span><h3>Adding principals to keytabs<a class="headerlink" href="#adding-principals-to-keytabs" title="Permalink to this headline">¶</a></h3>
 <p>To generate a keytab, or to add a principal to an existing keytab, use
-the <strong>ktadd</strong> command from kadmin.</p>
-</div>
-<div class="section" id="ktadd">
-<h3>ktadd<a class="headerlink" href="#ktadd" title="Permalink to this headline">¶</a></h3>
-<blockquote>
-<div><div class="line-block">
-<div class="line"><strong>ktadd</strong> [options] <em>principal</em></div>
-<div class="line"><strong>ktadd</strong> [options] <strong>-glob</strong> <em>princ-exp</em></div>
-</div>
-</div></blockquote>
-<p>Adds a <em>principal</em>, or all principals matching <em>princ-exp</em>, to a
-keytab file.  Each principal’s keys are randomized in the process.
-The rules for <em>princ-exp</em> are described in the <strong>list_principals</strong>
-command.</p>
-<p>This command requires the <strong>inquire</strong> and <strong>changepw</strong> privileges.
-With the <strong>-glob</strong> form, it also requires the <strong>list</strong> privilege.</p>
-<p>The options are:</p>
-<dl class="docutils">
-<dt><strong>-k[eytab]</strong> <em>keytab</em></dt>
-<dd>Use <em>keytab</em> as the keytab file.  Otherwise, the default keytab is
-used.</dd>
-<dt><strong>-e</strong> <em>enc</em>:<em>salt</em>,…</dt>
-<dd>Uses the specified keysalt list for setting the new keys of the
-principal.  See <a class="reference internal" href="conf_files/kdc_conf.html#keysalt-lists"><span class="std std-ref">Keysalt lists</span></a> in <a class="reference internal" href="conf_files/kdc_conf.html#kdc-conf-5"><span class="std std-ref">kdc.conf</span></a> for a
-list of possible values.</dd>
-<dt><strong>-q</strong></dt>
-<dd>Display less verbose information.</dd>
-<dt><strong>-norandkey</strong></dt>
-<dd>Do not randomize the keys. The keys and their version numbers stay
-unchanged.  This option cannot be specified in combination with the
-<strong>-e</strong> option.</dd>
-</dl>
-<p>An entry for each of the principal’s unique encryption types is added,
-ignoring multiple keys with the same encryption type but different
-salt types.</p>
-<p>Example:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">kadmin</span><span class="p">:</span> <span class="n">ktadd</span> <span class="o">-</span><span class="n">k</span> <span class="o">/</span><span class="n">tmp</span><span class="o">/</span><span class="n">foo</span><span class="o">-</span><span class="n">new</span><span class="o">-</span><span class="n">keytab</span> <span class="n">host</span><span class="o">/</span><span class="n">foo</span><span class="o">.</span><span class="n">mit</span><span class="o">.</span><span class="n">edu</span>
-<span class="n">Entry</span> <span class="k">for</span> <span class="n">principal</span> <span class="n">host</span><span class="o">/</span><span class="n">foo</span><span class="o">.</span><span class="n">mit</span><span class="o">.</span><span class="n">edu</span><span class="nd">@ATHENA</span><span class="o">.</span><span class="n">MIT</span><span class="o">.</span><span class="n">EDU</span> <span class="k">with</span> <span class="n">kvno</span> <span class="mi">3</span><span class="p">,</span>
-     <span class="n">encryption</span> <span class="nb">type</span> <span class="n">aes256</span><span class="o">-</span><span class="n">cts</span><span class="o">-</span><span class="n">hmac</span><span class="o">-</span><span class="n">sha1</span><span class="o">-</span><span class="mi">96</span> <span class="n">added</span> <span class="n">to</span> <span class="n">keytab</span>
-     <span class="n">FILE</span><span class="p">:</span><span class="o">/</span><span class="n">tmp</span><span class="o">/</span><span class="n">foo</span><span class="o">-</span><span class="n">new</span><span class="o">-</span><span class="n">keytab</span>
-<span class="n">kadmin</span><span class="p">:</span>
-</pre></div>
-</div>
-<div class="section" id="examples">
-<h4>Examples<a class="headerlink" href="#examples" title="Permalink to this headline">¶</a></h4>
-<p>Here is a sample session, using configuration files that enable only
-AES encryption:</p>
+the <strong>ktadd</strong> command from kadmin.  Here is a sample session, using
+configuration files that enable only AES encryption:</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">kadmin</span><span class="p">:</span> <span class="n">ktadd</span> <span class="n">host</span><span class="o">/</span><span class="n">daffodil</span><span class="o">.</span><span class="n">mit</span><span class="o">.</span><span class="n">edu</span><span class="nd">@ATHENA</span><span class="o">.</span><span class="n">MIT</span><span class="o">.</span><span class="n">EDU</span>
 <span class="n">Entry</span> <span class="k">for</span> <span class="n">principal</span> <span class="n">host</span><span class="o">/</span><span class="n">daffodil</span><span class="o">.</span><span class="n">mit</span><span class="o">.</span><span class="n">edu</span> <span class="k">with</span> <span class="n">kvno</span> <span class="mi">2</span><span class="p">,</span> <span class="n">encryption</span> <span class="nb">type</span> <span class="n">aes256</span><span class="o">-</span><span class="n">cts</span><span class="o">-</span><span class="n">hmac</span><span class="o">-</span><span class="n">sha1</span><span class="o">-</span><span class="mi">96</span> <span class="n">added</span> <span class="n">to</span> <span class="n">keytab</span> <span class="n">FILE</span><span class="p">:</span><span class="o">/</span><span class="n">etc</span><span class="o">/</span><span class="n">krb5</span><span class="o">.</span><span class="n">keytab</span>
 <span class="n">Entry</span> <span class="k">for</span> <span class="n">principal</span> <span class="n">host</span><span class="o">/</span><span class="n">daffodil</span><span class="o">.</span><span class="n">mit</span><span class="o">.</span><span class="n">edu</span> <span class="k">with</span> <span class="n">kvno</span> <span class="mi">2</span><span class="p">,</span> <span class="n">encryption</span> <span class="nb">type</span> <span class="n">aes128</span><span class="o">-</span><span class="n">cts</span><span class="o">-</span><span class="n">hmac</span><span class="o">-</span><span class="n">sha1</span><span class="o">-</span><span class="mi">96</span> <span class="n">added</span> <span class="n">to</span> <span class="n">keytab</span> <span class="n">FILE</span><span class="p">:</span><span class="o">/</span><span class="n">etc</span><span class="o">/</span><span class="n">krb5</span><span class="o">.</span><span class="n">keytab</span>
-<span class="n">kadmin</span><span class="p">:</span>
 </pre></div>
-</div>
 </div>
 </div>
 <div class="section" id="removing-principals-from-keytabs">
 <h3>Removing principals from keytabs<a class="headerlink" href="#removing-principals-from-keytabs" title="Permalink to this headline">¶</a></h3>
 <p>To remove a principal from an existing keytab, use the kadmin
-<strong>ktremove</strong> command.</p>
-</div>
-<div class="section" id="ktremove">
-<h3>ktremove<a class="headerlink" href="#ktremove" title="Permalink to this headline">¶</a></h3>
-<blockquote>
-<div><strong>ktremove</strong> [options] <em>principal</em> [<em>kvno</em> | <em>all</em> | <em>old</em>]</div></blockquote>
-<p>Removes entries for the specified <em>principal</em> from a keytab.  Requires
-no permissions, since this does not require database access.</p>
-<p>If the string “all” is specified, all entries for that principal are
-removed; if the string “old” is specified, all entries for that
-principal except those with the highest kvno are removed.  Otherwise,
-the value specified is parsed as an integer, and all entries whose
-kvno match that integer are removed.</p>
-<p>The options are:</p>
-<dl class="docutils">
-<dt><strong>-k[eytab]</strong> <em>keytab</em></dt>
-<dd>Use <em>keytab</em> as the keytab file.  Otherwise, the default keytab is
-used.</dd>
-<dt><strong>-q</strong></dt>
-<dd>Display less verbose information.</dd>
-</dl>
-<p>Example:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">kadmin</span><span class="p">:</span> <span class="n">ktremove</span> <span class="n">kadmin</span><span class="o">/</span><span class="n">admin</span> <span class="nb">all</span>
-<span class="n">Entry</span> <span class="k">for</span> <span class="n">principal</span> <span class="n">kadmin</span><span class="o">/</span><span class="n">admin</span> <span class="k">with</span> <span class="n">kvno</span> <span class="mi">3</span> <span class="n">removed</span> <span class="kn">from</span> <span class="nn">keytab</span>
-     <span class="n">FILE</span><span class="p">:</span><span class="o">/</span><span class="n">etc</span><span class="o">/</span><span class="n">krb5</span><span class="o">.</span><span class="n">keytab</span>
-<span class="n">kadmin</span><span class="p">:</span>
+<strong>ktremove</strong> command:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">kadmin</span><span class="p">:</span>  <span class="n">ktremove</span> <span class="n">host</span><span class="o">/</span><span class="n">daffodil</span><span class="o">.</span><span class="n">mit</span><span class="o">.</span><span class="n">edu</span><span class="nd">@ATHENA</span><span class="o">.</span><span class="n">MIT</span><span class="o">.</span><span class="n">EDU</span>
+<span class="n">Entry</span> <span class="k">for</span> <span class="n">principal</span> <span class="n">host</span><span class="o">/</span><span class="n">daffodil</span><span class="o">.</span><span class="n">mit</span><span class="o">.</span><span class="n">edu</span> <span class="k">with</span> <span class="n">kvno</span> <span class="mi">2</span> <span class="n">removed</span> <span class="kn">from</span> <span class="nn">keytab</span> <span class="n">FILE</span><span class="p">:</span><span class="o">/</span><span class="n">etc</span><span class="o">/</span><span class="n">krb5</span><span class="o">.</span><span class="n">keytab</span><span class="o">.</span>
+<span class="n">Entry</span> <span class="k">for</span> <span class="n">principal</span> <span class="n">host</span><span class="o">/</span><span class="n">daffodil</span><span class="o">.</span><span class="n">mit</span><span class="o">.</span><span class="n">edu</span> <span class="k">with</span> <span class="n">kvno</span> <span class="mi">2</span> <span class="n">removed</span> <span class="kn">from</span> <span class="nn">keytab</span> <span class="n">FILE</span><span class="p">:</span><span class="o">/</span><span class="n">etc</span><span class="o">/</span><span class="n">krb5</span><span class="o">.</span><span class="n">keytab</span><span class="o">.</span>
 </pre></div>
 </div>
+</div>
+<div class="section" id="using-a-keytab-to-acquire-client-credentials">
+<h3>Using a keytab to acquire client credentials<a class="headerlink" href="#using-a-keytab-to-acquire-client-credentials" title="Permalink to this headline">¶</a></h3>
+<p>While keytabs are ordinarily used to accept credentials from clients,
+they can also be used to acquire initial credentials, allowing one
+service to authenticate to another.</p>
+<p>To manually obtain credentials using a keytab, use the <a class="reference internal" href="../user/user_commands/kinit.html#kinit-1"><span class="std std-ref">kinit</span></a>
+<strong>-k</strong> option, together with the <strong>-t</strong> option if the keytab is not in
+the default location.</p>
+<p>Beginning with release 1.11, GSSAPI applications can be configured to
+automatically obtain initial credentials from a keytab as needed.  The
+recommended configuration is as follows:</p>
+<ol class="arabic simple">
+<li>Create a keytab containing a single entry for the desired client
+identity.</li>
+<li>Place the keytab in a location readable by the service, and set the
+<strong>KRB5_CLIENT_KTNAME</strong> environment variable to its filename.
+Alternatively, use the <strong>default_client_keytab_name</strong> profile
+variable in <a class="reference internal" href="conf_files/krb5_conf.html#libdefaults"><span class="std std-ref">[libdefaults]</span></a>, or use the default location of
+<a class="reference internal" href="../mitK5defaults.html#paths"><span class="std std-ref">DEFCKTNAME</span></a>.</li>
+<li>Set <strong>KRB5CCNAME</strong> to a filename writable by the service, which
+will not be used for any other purpose.  Do not manually obtain
+credentials at this location.  (Another credential cache type
+besides <strong>FILE</strong> can be used if desired, as long the cache will not
+conflict with another use.  A <strong>MEMORY</strong> cache can be used if the
+service runs as a long-lived process.  See <a class="reference internal" href="../basic/ccache_def.html#ccache-definition"><span class="std std-ref">Credential cache</span></a>
+for details.)</li>
+<li>Start the service.  When it authenticates using GSSAPI, it will
+automatically obtain credentials from the client keytab into the
+specified credential cache, and refresh them before they expire.</li>
+</ol>
 </div>
 </div>
 <div class="section" id="clock-skew">
@@ -186,13 +148,12 @@ variable in <a class="reference internal" href="conf_files/krb5_conf.html#libdef
 <div class="section" id="getting-dns-information-correct">
 <h2>Getting DNS information correct<a class="headerlink" href="#getting-dns-information-correct" title="Permalink to this headline">¶</a></h2>
 <p>Several aspects of Kerberos rely on name service.  When a hostname is
-used to name a service, the Kerberos library canonicalizes the
-hostname using forward and reverse name resolution.  (The reverse name
-resolution step can be turned off using the <strong>rdns</strong> variable in
-<a class="reference internal" href="conf_files/krb5_conf.html#libdefaults"><span class="std std-ref">[libdefaults]</span></a>.)  The result of this canonicalization must match
-the principal entry in the host’s keytab, or authentication will fail.</p>
-<p>Each host’s canonical name must be the fully-qualified host name
-(including the domain), and each host’s IP address must
+used to name a service, clients may canonicalize the hostname using
+forward and possibly reverse name resolution.  The result of this
+canonicalization must match the principal entry in the host’s keytab,
+or authentication will fail.  To work with all client canonicalization
+configurations, each host’s canonical name must be the fully-qualified
+host name (including the domain), and each host’s IP address must
 reverse-resolve to the canonical name.</p>
 <p>Configuration of hostnames varies by operating system.  On the
 application server itself, canonicalization will typically use the
@@ -258,12 +219,8 @@ point for learning to configure firewalls.</p>
 <li><a class="reference internal" href="#">Application servers</a><ul>
 <li><a class="reference internal" href="#keytabs">Keytabs</a><ul>
 <li><a class="reference internal" href="#adding-principals-to-keytabs">Adding principals to keytabs</a></li>
-<li><a class="reference internal" href="#ktadd">ktadd</a><ul>
-<li><a class="reference internal" href="#examples">Examples</a></li>
-</ul>
-</li>
 <li><a class="reference internal" href="#removing-principals-from-keytabs">Removing principals from keytabs</a></li>
-<li><a class="reference internal" href="#ktremove">ktremove</a></li>
+<li><a class="reference internal" href="#using-a-keytab-to-acquire-client-credentials">Using a keytab to acquire client credentials</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#clock-skew">Clock Skew</a></li>
@@ -331,8 +288,8 @@ point for learning to configure firewalls.</p>
 
     <div class="footer-wrapper">
         <div class="footer" >
-            <div class="right" ><i>Release: 1.17</i><br />
-                &copy; <a href="../copyright.html">Copyright</a> 1985-2019, MIT.
+            <div class="right" ><i>Release: 1.21.2</i><br />
+                &copy; <a href="../copyright.html">Copyright</a> 1985-2023, MIT.
             </div>
             <div class="left">
                 

@@ -602,10 +602,6 @@ cleanup_args(struct rec_args *args)
         fclose(args->f);
 }
 
-/*
- * Usaage is:
- *     tabdump [-H] [-c] [-e] [-n] [-o outfile] dumptype
- */
 void
 tabdump(int argc, char **argv)
 {

@@ -19,7 +19,7 @@ DESCRIPTION
 -----------
 
 kprop is used to securely propagate a Kerberos V5 database dump file
-from the master Kerberos server to a replica Kerberos server, which is
+from the primary Kerberos server to a replica Kerberos server, which is
 specified by *replica_host*.  The dump file must be created by
 :ref:`kdb5_util(8)`.
 
@@ -28,7 +28,7 @@ OPTIONS
 -------
 
 **-r** *realm*
-    Specifies the realm of the master server.
+    Specifies the realm of the primary server.
 
 **-f** *file*
     Specifies the filename where the dumped principal database file is

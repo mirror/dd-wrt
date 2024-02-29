@@ -12,7 +12,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '1.17',
+        VERSION:     '1.21.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -81,9 +81,9 @@
 <div class="section" id="description">
 <h2>DESCRIPTION<a class="headerlink" href="#description" title="Permalink to this headline">¶</a></h2>
 <p>kadmind starts the Kerberos administration server.  kadmind typically
-runs on the master Kerberos server, which stores the KDC database.  If
-the KDC database uses the LDAP module, the administration server and
-the KDC server need not run on the same machine.  kadmind accepts
+runs on the primary Kerberos server, which stores the KDC database.
+If the KDC database uses the LDAP module, the administration server
+and the KDC server need not run on the same machine.  kadmind accepts
 remote requests from programs such as <a class="reference internal" href="kadmin_local.html#kadmin-1"><span class="std std-ref">kadmin</span></a> and
 <a class="reference internal" href="../../user/user_commands/kpasswd.html#kpasswd-1"><span class="std std-ref">kpasswd</span></a> to administer the information in these database.</p>
 <p>kadmind requires a number of configuration files to be set up in order
@@ -108,8 +108,8 @@ Incremental propagation allows replica KDC servers to receive
 principal and policy updates incrementally instead of receiving full
 dumps of the database.  This facility can be enabled in the
 <a class="reference internal" href="../conf_files/kdc_conf.html#kdc-conf-5"><span class="std std-ref">kdc.conf</span></a> file with the <strong>iprop_enable</strong> option.  Incremental
-propagation requires the principal <code class="docutils literal"><span class="pre">kiprop/MASTER\&#64;REALM</span></code> (where
-MASTER is the master KDC’s canonical host name, and REALM the realm
+propagation requires the principal <code class="docutils literal"><span class="pre">kiprop/PRIMARY\&#64;REALM</span></code> (where
+PRIMARY is the primary KDC’s canonical host name, and REALM the realm
 name).  In release 1.13, this principal is automatically created and
 registered into the datebase.</p>
 </div>
@@ -126,8 +126,7 @@ invoked with the <strong>-nofork</strong> option) rather than from a file on
 disk.</dd>
 <dt><strong>-nofork</strong></dt>
 <dd>causes the server to remain in the foreground and remain
-associated to the terminal.  In normal operation, you should allow
-the server to place itself in the background.</dd>
+associated to the terminal.</dd>
 <dt><strong>-proponly</strong></dt>
 <dd>causes the server to only listen and respond to Kerberos replica
 incremental propagation polling requests.  This option can be used
@@ -260,8 +259,8 @@ variables.</p>
 
     <div class="footer-wrapper">
         <div class="footer" >
-            <div class="right" ><i>Release: 1.17</i><br />
-                &copy; <a href="../../copyright.html">Copyright</a> 1985-2019, MIT.
+            <div class="right" ><i>Release: 1.21.2</i><br />
+                &copy; <a href="../../copyright.html">Copyright</a> 1985-2023, MIT.
             </div>
             <div class="left">
                 

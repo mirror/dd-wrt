@@ -23,7 +23,7 @@
  *     direct, indirect, or consequential damages with respect to any
  *     claim by the user or distributor of the ksu software.
  *
- * KSU was writen by:  Ari Medvinsky, ari@isi.edu
+ * KSU was written by:  Ari Medvinsky, ari@isi.edu
  */
 
 #include "ksu.h"
@@ -48,6 +48,7 @@ int quiet = 0;
 static int set_env_var (char *, char *);
 static void sweep_up (krb5_context, krb5_ccache);
 static char * ontty (void);
+static krb5_error_code init_ksu_context(krb5_context *);
 static krb5_error_code set_ccname_env(krb5_context, krb5_ccache);
 static void print_status( const char *fmt, ...)
 #if __GNUC__ > 2 || (__GNUC__ == 2 && __GNUC_MINOR__ >= 7)
@@ -66,7 +67,7 @@ static krb5_error_code resolve_target_cache(krb5_context ksu_context,
 void usage (){
     fprintf(stderr,
             _("Usage: %s [target user] [-n principal] [-c source cachename] "
-              "[-k] [-r time] [-pf] [-l lifetime] [-zZ] [-q] "
+              "[-k] [-r time] [-p|-P] [-f|-F] [-l lifetime] [-zZ] [-q] "
               "[-e command [args... ] ] [-a [args... ] ]\n"), prog_name);
 }
 
@@ -129,7 +130,7 @@ main (argc, argv)
 
     unsetenv ("KRB5_CONFIG");
 
-    retval = krb5_init_secure_context(&ksu_context);
+    retval = init_ksu_context(&ksu_context);
     if (retval) {
         com_err(argv[0], retval, _("while initializing krb5"));
         exit(1);
@@ -189,7 +190,8 @@ main (argc, argv)
         com_err (prog_name, errno, _("while setting euid to source user"));
         exit (1);
     }
-    while(!done && ((option = getopt(pargc, pargv,"n:c:r:a:zZDfpkql:e:")) != -1)){
+    while (!done &&
+           (option = getopt(pargc, pargv,"n:c:r:a:zZDfFpPkql:e:")) != -1) {
         switch (option) {
         case 'r':
             if (strlen (optarg) >= 14)
@@ -217,8 +219,14 @@ main (argc, argv)
         case 'p':
             krb5_get_init_creds_opt_set_proxiable(options, 1);
             break;
+        case 'P':
+            krb5_get_init_creds_opt_set_proxiable(options, 0);
+            break;
         case 'f':
             krb5_get_init_creds_opt_set_forwardable(options, 1);
+            break;
+        case 'F':
+            krb5_get_init_creds_opt_set_forwardable(options, 0);
             break;
         case 'k':
             keep_target_cache =1;
@@ -499,7 +507,7 @@ main (argc, argv)
 #endif /* GET_TGT_VIA_PASSWD */
     }
 
-    /* if the user is root or same uid then authentication is not neccesary,
+    /* if the user is root or same uid then authentication is not necessary,
        root gets in automatically */
 
     if (source_uid && (source_uid != target_uid)) {
@@ -618,7 +626,7 @@ main (argc, argv)
 
 #ifdef HAVE_GETUSERSHELL
 
-    /* insist that the target login uses a standard shell (root is omited) */
+    /* insist that the target login uses a standard shell (root is omitted) */
 
     if (!standard_shell(target_pwd->pw_shell) && source_uid) {
         fprintf(stderr, _("ksu: permission denied (shell).\n"));
@@ -785,6 +793,34 @@ main (argc, argv)
             exit (1);
         }
     }
+}
+
+static krb5_error_code
+init_ksu_context(krb5_context *context_out)
+{
+    krb5_error_code retval;
+    const char *env_ccname;
+    krb5_context context;
+
+    *context_out = NULL;
+
+    retval = krb5_init_secure_context(&context);
+    if (retval)
+        return retval;
+
+    /* We want to obey KRB5CCNAME in this context even though this is a setuid
+     * program.  (It will only be used when operating as the real uid.) */
+    env_ccname = getenv(KRB5_ENV_CCNAME);
+    if (env_ccname != NULL) {
+        retval = krb5_cc_set_default_name(context, env_ccname);
+        if (retval) {
+            krb5_free_context(context);
+            return retval;
+        }
+    }
+
+    *context_out = context;
+    return 0;
 }
 
 /* Set KRB5CCNAME in the environment to point to ccache.  Print an error
@@ -994,7 +1030,7 @@ static void sweep_up(context, cc)
 /*****************************************************************
 get_params is to be called for the -a option or -e option to
            collect all params passed in for the shell or for
-           cmd.  An aray is returned containing all params.
+           cmd.  An array is returned containing all params.
            optindex is incremented accordingly and the first
            element in the returned array is reserved for the
            name of the command to be executed or the name of the

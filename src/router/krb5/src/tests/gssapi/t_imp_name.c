@@ -41,6 +41,8 @@ oid_str(char type)
         return "{ 1 2 840 113554 1 2 2 1 }";
     case 'e': /* GSS_KRB5_NT_ENTERPRISE_NAME */
         return "{ 1 2 840 113554 1 2 2 6 }";
+    case 'c': /* GSS_KRB5_NT_X509_CERT */
+        return "{ 1 2 840 113554 1 2 2 7 }";
     case 'h': /* GSS_C_NT_HOSTBASED_SERVICE */
         return "{ 1 2 840 113554 1 2 1 4 }";
     }

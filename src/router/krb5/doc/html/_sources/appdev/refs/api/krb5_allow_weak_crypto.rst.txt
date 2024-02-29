@@ -1,5 +1,5 @@
-krb5_allow_weak_crypto -  Allow the appplication to override the profile's allow_weak_crypto setting. 
-======================================================================================================
+krb5_allow_weak_crypto -  Allow the application to override the profile's allow_weak_crypto setting. 
+=====================================================================================================
 
 ..
 

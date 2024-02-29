@@ -55,7 +55,7 @@
 
 \title{Kerberos Plugin Module Developer Guide}
 \date{ }
-\release{1.17}
+\release{1.21.2}
 \author{MIT}
 \newcommand{\sphinxlogo}{\vbox{}}
 \renewcommand{\releasename}{Release}
@@ -671,8 +671,7 @@ the set of built-in mechanisms.
 
 A mechanism module is a Unix shared object or Windows DLL, built
 separately from the krb5 tree.  Modules are loaded according to the
-\sphinxcode{/etc/gss/mech} or \sphinxcode{/etc/gss/mech.d/*.conf} config files, as
-described in \DUrole{xref,std,std-ref}{gssapi\_plugin\_config}.
+GSS mechanism config files described in \DUrole{xref,std,std-ref}{gssapi\_plugin\_config}.
 
 For the most part, a GSSAPI mechanism module exports the same
 functions as would a GSSAPI implementation itself, with the same
@@ -694,6 +693,34 @@ the mechanism’s status codes onto unique values, and then map them
 back again when \sphinxstylestrong{gss\_display\_status} is called.
 
 
+\subsection{NegoEx modules}
+\label{\detokenize{plugindev/gssapi:negoex-modules}}
+Some Windows GSSAPI mechanisms can only be negotiated via a Microsoft
+extension to SPNEGO called NegoEx.  Beginning with release 1.18,
+mechanism modules can support NegoEx as follows:
+\begin{itemize}
+\item {} 
+Implement the gssspi\_query\_meta\_data(), gssspi\_exchange\_meta\_data(),
+and gssspi\_query\_mechanism\_info() SPIs declared in
+\sphinxcode{\textless{}gssapi/gssapi\_ext.h\textgreater{}}.
+
+\item {} 
+Implement gss\_inquire\_sec\_context\_by\_oid() and answer the
+\sphinxstylestrong{GSS\_C\_INQ\_NEGOEX\_KEY} and \sphinxstylestrong{GSS\_C\_INQ\_NEGOEX\_VERIFY\_KEY} OIDs
+to provide the checksum keys for outgoing and incoming checksums,
+respectively.  The answer must be in two buffers: the first buffer
+contains the key contents, and the second buffer contains the key
+encryption type as a four-byte little-endian integer.
+
+\end{itemize}
+
+By default, NegoEx mechanisms will not be directly negotiated via
+SPNEGO.  If direct SPNEGO negotiation is required for
+interoperability, implement gss\_inquire\_attrs\_for\_mech() and assert
+the GSS\_C\_MA\_NEGOEX\_AND\_SPNEGO attribute (along with any applicable
+RFC 5587 attributes).
+
+
 \subsection{Interposer modules}
 \label{\detokenize{plugindev/gssapi:interposer-modules}}
 The mechglue also supports a kind of loadable module, called an
@@ -709,18 +736,23 @@ with the following signature:
 \end{sphinxVerbatim}
 
 This function is invoked with the OID of the interposer mechanism as
-specified in \sphinxcode{/etc/gss/mech} or in a \sphinxcode{/etc/gss/mech.d/*.conf}
-file, and returns a set of mechanism OIDs to be interposed.  The
-returned OID set must have been created using the mechglue’s
-gss\_create\_empty\_oid\_set and gss\_add\_oid\_set\_member functions.
+specified in the mechanism config file, and returns a set of mechanism
+OIDs to be interposed.  The returned OID set must have been created
+using the mechglue’s gss\_create\_empty\_oid\_set and
+gss\_add\_oid\_set\_member functions.
 
 An interposer module must use the prefix \sphinxcode{gssi\_} for the GSSAPI
-functions it exports, instead of the prefix \sphinxcode{gss\_}.
+functions it exports, instead of the prefix \sphinxcode{gss\_}.  In most cases,
+unexported \sphinxcode{gssi\_} functions will result in failure from their
+corresponding \sphinxcode{gss\_} calls.
 
 An interposer module can link against the GSSAPI library in order to
 make calls to the original mechanism.  To do so, it must specify a
 special mechanism OID which is the concatention of the interposer’s
 own OID byte string and the original mechanism’s OID byte string.
+
+Functions that do not accept a mechanism argument directly require no
+special handling, with the following exceptions:
 
 Since \sphinxstylestrong{gss\_accept\_sec\_context} does not accept a mechanism argument,
 an interposer mechanism must, in order to invoke the original
@@ -750,25 +782,29 @@ the token.  These functions have the following signatures:
 
 To re-enter the original mechanism when importing tokens for the above
 functions, the interposer module must wrap the mechanism token in the
-mechglue’s format, using the concatenated OID.  The mechglue token
-formats are:
+mechglue’s format, using the concatenated OID (except in
+\sphinxstylestrong{gss\_import\_name}).  The mechglue token formats are:
 \begin{itemize}
 \item {} 
 For \sphinxstylestrong{gss\_import\_sec\_context}, a four-byte OID length in big-endian
-order, followed by the mechanism OID, followed by the mechanism
+order, followed by the concatenated OID, followed by the mechanism
 token.
 
 \item {} 
 For \sphinxstylestrong{gss\_import\_name}, the bytes 04 01, followed by a two-byte OID
 length in big-endian order, followed by the mechanism OID, followed
-by the bytes 06, followed by the OID length as a single byte,
-followed by the mechanism OID, followed by the mechanism token.
+by a four-byte token length in big-endian order, followed by the
+mechanism token.  Unlike most uses of OIDs in the API, the mechanism
+OID encoding must include the DER tag and length for an object
+identifier (06 followed by the DER length of the OID byte string),
+and this prefix must be included in the two-byte OID length.
+input\_name\_type must also be set to GSS\_C\_NT\_EXPORT\_NAME.
 
 \item {} 
 For \sphinxstylestrong{gss\_import\_cred}, a four-byte OID length in big-endian order,
-followed by the mechanism OID, followed by a four-byte token length
-in big-endian order, followed by the mechanism token.  This sequence
-may be repeated multiple times.
+followed by the concatenated OID, followed by a four-byte token
+length in big-endian order, followed by the mechanism token.  This
+sequence may be repeated multiple times.
 
 \end{itemize}
 
@@ -816,10 +852,19 @@ A certauth module implements the \sphinxstylestrong{authorize} method to determi
 whether a client’s certificate is authorized to authenticate a client
 principal.  \sphinxstylestrong{authorize} receives the DER-encoded certificate, the
 requested client principal, and a pointer to the client’s
-krb5\_db\_entry (for modules that link against libkdb5).  It returns the
+krb5\_db\_entry (for modules that link against libkdb5).  The method
+must decode the certificate and inspect its attributes to determine if
+it should authorize PKINIT authentication.  It returns the
 authorization status and optionally outputs a list of authentication
-indicator strings to be added to the ticket.  A module must use its
-own internal or library-provided ASN.1 certificate decoder.
+indicator strings to be added to the ticket.
+
+Beginning in release 1.19, the authorize method can request that the
+hardware authentication bit be set in the ticket by returning
+\sphinxstylestrong{KRB5\_CERTAUTH\_HWAUTH}.  Beginning in release 1.20, the authorize
+method can return \sphinxstylestrong{KRB5\_CERTAUTH\_HWAUTH\_PASS} to request that the
+hardware authentication bit be set in the ticket but otherwise defer
+authorization to another certauth module.  A module must use its own
+internal or library-provided ASN.1 certificate decoder.
 
 A module can optionally create and destroy module data with the
 \sphinxstylestrong{init} and \sphinxstylestrong{fini} methods.  Module data objects last for the

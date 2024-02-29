@@ -12,7 +12,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '1.17',
+        VERSION:     '1.21.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -137,7 +137,7 @@ properly on the client if the principal entry has no long-term keys.</p>
 <div class="section" id="kprop-no-route-to-host-while-connecting-to-server">
 <span id="kprop-no-route"></span><h4>kprop: No route to host while connecting to server<a class="headerlink" href="#kprop-no-route-to-host-while-connecting-to-server" title="Permalink to this headline">¶</a></h4>
 <p>Make sure that the hostname of the replica KDC (as given to kprop) is
-correct, and that any firewalls between the master and the replica
+correct, and that any firewalls between the primary and the replica
 allow a connection on port 754.</p>
 </div>
 <div class="section" id="kprop-connection-refused-while-connecting-to-server">
@@ -152,8 +152,8 @@ mode, make sure that it is running.</p>
 <span id="kprop-sendauth-exchange"></span><h4>kprop: Server rejected authentication (during sendauth exchange) while authenticating to server<a class="headerlink" href="#kprop-server-rejected-authentication-during-sendauth-exchange-while-authenticating-to-server" title="Permalink to this headline">¶</a></h4>
 <p>Make sure that:</p>
 <ol class="arabic simple">
-<li>The time is synchronized between the master and replica KDCs.</li>
-<li>The master stash file was copied from the master to the expected
+<li>The time is synchronized between the primary and replica KDCs.</li>
+<li>The master stash file was copied from the primary to the expected
 location on the replica.</li>
 <li>The replica has a keytab file in the default location containing a
 <code class="docutils literal"><span class="pre">host</span></code> principal for the replica’s hostname.</li>
@@ -248,8 +248,8 @@ location on the replica.</li>
 
     <div class="footer-wrapper">
         <div class="footer" >
-            <div class="right" ><i>Release: 1.17</i><br />
-                &copy; <a href="../copyright.html">Copyright</a> 1985-2019, MIT.
+            <div class="right" ><i>Release: 1.21.2</i><br />
+                &copy; <a href="../copyright.html">Copyright</a> 1985-2023, MIT.
             </div>
             <div class="left">
                 

@@ -191,11 +191,11 @@ k5_asn1_decode_int(const uint8_t *asn1, size_t len, intmax_t *val)
     if (len == 0)
         return ASN1_BAD_LENGTH;
     n = (asn1[0] & 0x80) ? -1 : 0;
-    /* Check length; allow extra octet if first octet is 0. */
-    if (len > sizeof(intmax_t) + (asn1[0] == 0))
+    /* Check length. */
+    if (len > sizeof(intmax_t))
         return ASN1_OVERFLOW;
     for (i = 0; i < len; i++)
-        n = (n << 8) | asn1[i];
+        n = n * 256 + asn1[i];
     *val = n;
     return 0;
 }
@@ -244,6 +244,7 @@ k5_asn1_decode_generaltime(const uint8_t *asn1, size_t len, time_t *time_out)
     const char *s = (char *)asn1;
     struct tm ts;
     time_t t;
+    size_t i;
 
     *time_out = 0;
     if (len != 15)
@@ -256,6 +257,10 @@ k5_asn1_decode_generaltime(const uint8_t *asn1, size_t len, time_t *time_out)
         return 0;
     }
 #define c2i(c) ((c) - '0')
+    for (i = 0; i < 14; ++i) {
+        if ((uint8_t)c2i(s[i]) > 9)
+            return ASN1_BAD_TIMEFORMAT;
+    }
     ts.tm_year = 1000 * c2i(s[0]) + 100 * c2i(s[1]) + 10 * c2i(s[2]) +
         c2i(s[3]) - 1900;
     ts.tm_mon = 10 * c2i(s[4]) + c2i(s[5]) - 1;
@@ -344,25 +349,19 @@ make_tag(asn1buf *buf, const taginfo *t, size_t len)
 }
 
 /*
- * Read a BER tag and length from asn1/len.  Place the tag parameters in
+ * Read a DER tag and length from asn1/len.  Place the tag parameters in
  * tag_out.  Set contents_out/clen_out to the octet range of the tag's
  * contents, and remainder_out/rlen_out to the octet range after the end of the
- * BER encoding.
- *
- * (krb5 ASN.1 encodings should be in DER, but for compatibility with some
- * really ancient implementations we handle the indefinite length form in tags.
- * However, we still insist on the primitive form of string types.)
+ * DER encoding.
  */
 static krb5_error_code
 get_tag(const uint8_t *asn1, size_t len, taginfo *tag_out,
         const uint8_t **contents_out, size_t *clen_out,
         const uint8_t **remainder_out, size_t *rlen_out)
 {
-    krb5_error_code ret;
     uint8_t o;
-    const uint8_t *c, *p, *tag_start = asn1;
+    const uint8_t *tag_start = asn1;
     size_t clen, llen, i;
-    taginfo t;
 
     *contents_out = *remainder_out = NULL;
     *clen_out = *rlen_out = 0;
@@ -379,10 +378,15 @@ get_tag(const uint8_t *asn1, size_t len, taginfo *tag_out,
         do {
             if (len == 0)
                 return ASN1_OVERRUN;
+            if (tag_out->tagnum > (ASN1_TAGNUM_MAX >> 7))
+                return ASN1_OVERFLOW;
             o = *asn1++;
             len--;
             tag_out->tagnum = (tag_out->tagnum << 7) | (o & 0x7F);
         } while (o & 0x80);
+        /* Check for overly large tag values */
+        if (tag_out->tagnum > ASN1_TAGNUM_MAX)
+            return ASN1_OVERFLOW;
     }
 
     if (len == 0)
@@ -390,26 +394,10 @@ get_tag(const uint8_t *asn1, size_t len, taginfo *tag_out,
     o = *asn1++;
     len--;
 
-    if (o == 0x80) {
-        /* Indefinite form (should not be present in DER, but we accept it). */
-        if (tag_out->construction != CONSTRUCTED)
-            return ASN1_MISMATCH_INDEF;
-        p = asn1;
-        while (!(len >= 2 && p[0] == 0 && p[1] == 0)) {
-            ret = get_tag(p, len, &t, &c, &clen, &p, &len);
-            if (ret)
-                return ret;
-        }
-        tag_out->tag_end_len = 2;
-        *contents_out = asn1;
-        *clen_out = p - asn1;
-        *remainder_out = p + 2;
-        *rlen_out = len - 2;
-    } else if ((o & 0x80) == 0) {
+    if ((o & 0x80) == 0) {
         /* Short form (first octet gives content length). */
         if (o > len)
             return ASN1_OVERRUN;
-        tag_out->tag_end_len = 0;
         *contents_out = asn1;
         *clen_out = o;
         *remainder_out = asn1 + *clen_out;
@@ -421,11 +409,12 @@ get_tag(const uint8_t *asn1, size_t len, taginfo *tag_out,
             return ASN1_OVERRUN;
         if (llen > sizeof(*clen_out))
             return ASN1_OVERFLOW;
+        if (llen == 0)
+            return ASN1_INDEF;
         for (i = 0, clen = 0; i < llen; i++)
             clen = (clen << 8) | asn1[i];
         if (clen > len - llen)
             return ASN1_OVERRUN;
-        tag_out->tag_end_len = 0;
         *contents_out = asn1 + llen;
         *clen_out = clen;
         *remainder_out = *contents_out + clen;
@@ -635,7 +624,7 @@ store_der(const taginfo *t, const uint8_t *asn1, size_t len, void *val,
     size_t der_len;
 
     *count_out = 0;
-    der_len = t->tag_len + len + t->tag_end_len;
+    der_len = t->tag_len + len;
     der = malloc(der_len);
     if (der == NULL)
         return ENOMEM;
@@ -1202,7 +1191,8 @@ decode_atype(const taginfo *t, const uint8_t *asn1, size_t len,
             ret = get_tag(asn1, len, &inner_tag, &asn1, &len, &rem, &rlen);
             if (ret)
                 return ret;
-            /* Note: we don't check rlen (it should be 0). */
+            if (rlen)
+                return ASN1_BAD_LENGTH;
             tp = &inner_tag;
             if (!check_atype_tag(tag->basetype, tp))
                 return ASN1_BAD_ID;

@@ -168,9 +168,9 @@ clnttcp_create(
 	if (*sockp < 0) {
 		*sockp = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 		(void)bindresvport_sa(*sockp, NULL);
-		if ((*sockp < 0)
-		    || (connect(*sockp, (struct sockaddr *)raddr,
-		    sizeof(*raddr)) < 0)) {
+		if (*sockp < 0 || raddr == NULL ||
+		    connect(*sockp, (struct sockaddr *)raddr,
+			    sizeof(*raddr)) < 0) {
 			rpc_createerr.cf_stat = RPC_SYSTEMERROR;
 			rpc_createerr.cf_error.re_errno = errno;
                         (void)closesocket(*sockp);

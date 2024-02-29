@@ -12,7 +12,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '1.17',
+        VERSION:     '1.21.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -70,16 +70,18 @@
 <div class="section" id="description">
 <h2>DESCRIPTION<a class="headerlink" href="#description" title="Permalink to this headline">¶</a></h2>
 <p>The ktutil command invokes a command interface from which an
-administrator can read, write, or edit entries in a keytab or Kerberos
-V4 srvtab file.</p>
+administrator can read, write, or edit entries in a keytab.  (Kerberos
+V4 srvtab files are no longer supported.)</p>
 </div>
 <div class="section" id="commands">
 <h2>COMMANDS<a class="headerlink" href="#commands" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="list">
 <h3>list<a class="headerlink" href="#list" title="Permalink to this headline">¶</a></h3>
 <blockquote>
-<div><strong>list</strong></div></blockquote>
-<p>Displays the current keylist.</p>
+<div><strong>list</strong> [<strong>-t</strong>] [<strong>-k</strong>] [<strong>-e</strong>]</div></blockquote>
+<p>Displays the current keylist.  If <strong>-t</strong>, <strong>-k</strong>, and/or <strong>-e</strong> are
+specified, also display the timestamp, key contents, or enctype
+(respectively).</p>
 <p>Alias: <strong>l</strong></p>
 </div>
 <div class="section" id="read-kt">
@@ -89,26 +91,12 @@ V4 srvtab file.</p>
 <p>Read the Kerberos V5 keytab file <em>keytab</em> into the current keylist.</p>
 <p>Alias: <strong>rkt</strong></p>
 </div>
-<div class="section" id="read-st">
-<h3>read_st<a class="headerlink" href="#read-st" title="Permalink to this headline">¶</a></h3>
-<blockquote>
-<div><strong>read_st</strong> <em>srvtab</em></div></blockquote>
-<p>Read the Kerberos V4 srvtab file <em>srvtab</em> into the current keylist.</p>
-<p>Alias: <strong>rst</strong></p>
-</div>
 <div class="section" id="write-kt">
 <h3>write_kt<a class="headerlink" href="#write-kt" title="Permalink to this headline">¶</a></h3>
 <blockquote>
 <div><strong>write_kt</strong> <em>keytab</em></div></blockquote>
 <p>Write the current keylist into the Kerberos V5 keytab file <em>keytab</em>.</p>
 <p>Alias: <strong>wkt</strong></p>
-</div>
-<div class="section" id="write-st">
-<h3>write_st<a class="headerlink" href="#write-st" title="Permalink to this headline">¶</a></h3>
-<blockquote>
-<div><strong>write_st</strong> <em>srvtab</em></div></blockquote>
-<p>Write the current keylist into the Kerberos V4 srvtab file <em>srvtab</em>.</p>
-<p>Alias: <strong>wst</strong></p>
 </div>
 <div class="section" id="clear-list">
 <h3>clear_list<a class="headerlink" href="#clear-list" title="Permalink to this headline">¶</a></h3>
@@ -161,7 +149,7 @@ overridden with the <strong>-s</strong> option.</p>
 <span class="n">ktutil</span><span class="p">:</span>  <span class="n">add_entry</span> <span class="o">-</span><span class="n">password</span> <span class="o">-</span><span class="n">p</span> <span class="n">alice</span><span class="nd">@BLEEP</span><span class="o">.</span><span class="n">COM</span> <span class="o">-</span><span class="n">k</span> <span class="mi">1</span> <span class="o">-</span><span class="n">e</span>
     <span class="n">aes256</span><span class="o">-</span><span class="n">cts</span><span class="o">-</span><span class="n">hmac</span><span class="o">-</span><span class="n">sha1</span><span class="o">-</span><span class="mi">96</span>
 <span class="n">Password</span> <span class="k">for</span> <span class="n">alice</span><span class="nd">@BLEEP</span><span class="o">.</span><span class="n">COM</span><span class="p">:</span>
-<span class="n">ktutil</span><span class="p">:</span>  <span class="n">write_kt</span> <span class="n">keytab</span>
+<span class="n">ktutil</span><span class="p">:</span>  <span class="n">write_kt</span> <span class="n">alice</span><span class="o">.</span><span class="n">keytab</span>
 <span class="n">ktutil</span><span class="p">:</span>
 </pre></div>
 </div>
@@ -192,9 +180,7 @@ variables.</p>
 <li><a class="reference internal" href="#commands">COMMANDS</a><ul>
 <li><a class="reference internal" href="#list">list</a></li>
 <li><a class="reference internal" href="#read-kt">read_kt</a></li>
-<li><a class="reference internal" href="#read-st">read_st</a></li>
 <li><a class="reference internal" href="#write-kt">write_kt</a></li>
-<li><a class="reference internal" href="#write-st">write_st</a></li>
 <li><a class="reference internal" href="#clear-list">clear_list</a></li>
 <li><a class="reference internal" href="#delete-entry">delete_entry</a></li>
 <li><a class="reference internal" href="#add-entry">add_entry</a></li>
@@ -280,8 +266,8 @@ variables.</p>
 
     <div class="footer-wrapper">
         <div class="footer" >
-            <div class="right" ><i>Release: 1.17</i><br />
-                &copy; <a href="../../copyright.html">Copyright</a> 1985-2019, MIT.
+            <div class="right" ><i>Release: 1.21.2</i><br />
+                &copy; <a href="../../copyright.html">Copyright</a> 1985-2023, MIT.
             </div>
             <div class="left">
                 

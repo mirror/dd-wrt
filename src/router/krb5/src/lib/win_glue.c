@@ -349,12 +349,10 @@ control(int mode)
     switch (mode) {
     case DLL_STARTUP:
 	profile_library_initializer__auxinit();
-	cryptoint_initialize_library__auxinit();
 	krb5int_lib_init__auxinit();
 	break;
     case DLL_SHUTDOWN:
 	krb5int_lib_fini();
-	cryptoint_cleanup_library();
 	profile_library_finalizer();
 	break;
     }

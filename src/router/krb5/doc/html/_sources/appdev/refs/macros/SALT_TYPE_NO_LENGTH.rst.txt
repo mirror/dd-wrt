@@ -1,4 +1,4 @@
-.. highlightlang:: c
+.. highlight:: c
 
 .. _SALT-TYPE-NO-LENGTH-data:
 

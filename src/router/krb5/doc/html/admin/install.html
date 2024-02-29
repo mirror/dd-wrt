@@ -12,7 +12,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '1.17',
+        VERSION:     '1.21.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -68,15 +68,15 @@
 <div class="toctree-wrapper compound">
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="install_kdc.html">Installing KDCs</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="install_kdc.html#install-and-configure-the-master-kdc">Install and configure the master KDC</a></li>
+<li class="toctree-l2"><a class="reference internal" href="install_kdc.html#install-and-configure-the-primary-kdc">Install and configure the primary KDC</a></li>
 <li class="toctree-l2"><a class="reference internal" href="install_kdc.html#edit-kdc-configuration-files">Edit KDC configuration files</a></li>
 <li class="toctree-l2"><a class="reference internal" href="install_kdc.html#create-the-kdc-database">Create the KDC database</a></li>
 <li class="toctree-l2"><a class="reference internal" href="install_kdc.html#add-administrators-to-the-acl-file">Add administrators to the ACL file</a></li>
 <li class="toctree-l2"><a class="reference internal" href="install_kdc.html#add-administrators-to-the-kerberos-database">Add administrators to the Kerberos database</a></li>
-<li class="toctree-l2"><a class="reference internal" href="install_kdc.html#start-the-kerberos-daemons-on-the-master-kdc">Start the Kerberos daemons on the master KDC</a></li>
+<li class="toctree-l2"><a class="reference internal" href="install_kdc.html#start-the-kerberos-daemons-on-the-primary-kdc">Start the Kerberos daemons on the primary KDC</a></li>
 <li class="toctree-l2"><a class="reference internal" href="install_kdc.html#install-the-replica-kdcs">Install the replica KDCs</a></li>
 <li class="toctree-l2"><a class="reference internal" href="install_kdc.html#add-kerberos-principals-to-the-database">Add Kerberos principals to the database</a></li>
-<li class="toctree-l2"><a class="reference internal" href="install_kdc.html#switching-master-and-replica-kdcs">Switching master and replica KDCs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="install_kdc.html#switching-primary-and-replica-kdcs">Switching primary and replica KDCs</a></li>
 <li class="toctree-l2"><a class="reference internal" href="install_kdc.html#incremental-database-propagation">Incremental database propagation</a></li>
 </ul>
 </li>
@@ -96,7 +96,7 @@
 <h2>Additional references<a class="headerlink" href="#additional-references" title="Permalink to this headline">¶</a></h2>
 <ol class="arabic simple">
 <li>Debian: <a class="reference external" href="http://techpubs.spinlocksolutions.com/dklar/kerberos.html">Setting up MIT Kerberos 5</a></li>
-<li>Solaris: <a class="reference external" href="http://download.oracle.com/docs/cd/E19253-01/816-4557/6maosrjv2/index.html">Configuring the Kerberos Service</a></li>
+<li>Solaris: <a class="reference external" href="https://docs.oracle.com/cd/E19253-01/816-4557/6maosrjv2/index.html">Configuring the Kerberos Service</a></li>
 </ol>
 </div>
 </div>
@@ -179,8 +179,8 @@
 
     <div class="footer-wrapper">
         <div class="footer" >
-            <div class="right" ><i>Release: 1.17</i><br />
-                &copy; <a href="../copyright.html">Copyright</a> 1985-2019, MIT.
+            <div class="right" ><i>Release: 1.21.2</i><br />
+                &copy; <a href="../copyright.html">Copyright</a> 1985-2023, MIT.
             </div>
             <div class="left">
                 

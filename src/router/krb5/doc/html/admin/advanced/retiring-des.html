@@ -12,7 +12,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '1.17',
+        VERSION:     '1.21.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -27,7 +27,7 @@
     <link rel="search" title="Search" href="../../search.html" />
     <link rel="copyright" title="Copyright" href="../../copyright.html" />
     <link rel="next" title="Various links" href="../various_envs.html" />
-    <link rel="prev" title="LDAP backend on Ubuntu 10.4 (lucid)" href="ldapbackend.html" /> 
+    <link rel="prev" title="Advanced topics" href="index.html" /> 
   </head>
   <body>
     <div class="header-wrapper">
@@ -40,7 +40,7 @@
                 
         <a href="../../index.html" title="Full Table of Contents"
             accesskey="C">Contents</a> |
-        <a href="ldapbackend.html" title="LDAP backend on Ubuntu 10.4 (lucid)"
+        <a href="index.html" title="Advanced topics"
             accesskey="P">previous</a> |
         <a href="../various_envs.html" title="Various links"
             accesskey="N">next</a> |
@@ -79,6 +79,10 @@ partial support in version 1.3.0 of krb5 and full support in version 1.3.2.
 However, deployments of krb5 using Kerberos databases created with older
 versions of krb5 will not necessarily start using strong crypto for
 ordinary operation without administrator intervention.</p>
+<p>MIT krb5 began flagging deprecated encryption types with release 1.17,
+and removed DES (single-DES) support in release 1.18.  As a
+consequence, a release prior to 1.18 is required to perform these
+migrations.</p>
 </div>
 <div class="section" id="types-of-keys">
 <h2>Types of keys<a class="headerlink" href="#types-of-keys" title="Permalink to this headline">¶</a></h2>
@@ -183,7 +187,7 @@ existing tickets will still function until their scheduled expiry
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
 <p class="last">The new <code class="docutils literal"><span class="pre">krbtgt&#64;REALM</span></code> key should be propagated to replica KDCs
-immediately so that TGTs issued by the master KDC can be used to
+immediately so that TGTs issued by the primary KDC can be used to
 issue service tickets on replica KDCs.  Replica KDCs will refuse
 requests using the new TGT kvno until the new krbtgt entry has
 been propagated to them.</p>
@@ -352,7 +356,7 @@ this flag on a service principal is not always advisable; see the entry in
 <p class="first admonition-title">Note</p>
 <p class="last">As before, the KDC process must be restarted for this change to take
 effect.  It is best practice to update kdc.conf on all KDCs, not just the
-master, to avoid unpleasant surprises should the master fail and a
+primary, to avoid unpleasant surprises should the primary fail and a
 replica need to be promoted.</p>
 </div>
 <p>It is now appropriate to remove the legacy single-DES key from the
@@ -493,7 +497,6 @@ converted to the new master key.</p>
 <li class="toctree-l2"><a class="reference internal" href="../env_variables.html">Environment variables</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../troubleshoot.html">Troubleshooting</a></li>
 <li class="toctree-l2 current"><a class="reference internal" href="index.html">Advanced topics</a><ul class="current">
-<li class="toctree-l3"><a class="reference internal" href="ldapbackend.html">LDAP backend on Ubuntu 10.4 (lucid)</a></li>
 <li class="toctree-l3 current"><a class="current reference internal" href="#">Retiring DES</a></li>
 </ul>
 </li>
@@ -527,14 +530,14 @@ converted to the new master key.</p>
 
     <div class="footer-wrapper">
         <div class="footer" >
-            <div class="right" ><i>Release: 1.17</i><br />
-                &copy; <a href="../../copyright.html">Copyright</a> 1985-2019, MIT.
+            <div class="right" ><i>Release: 1.21.2</i><br />
+                &copy; <a href="../../copyright.html">Copyright</a> 1985-2023, MIT.
             </div>
             <div class="left">
                 
         <a href="../../index.html" title="Full Table of Contents"
             >Contents</a> |
-        <a href="ldapbackend.html" title="LDAP backend on Ubuntu 10.4 (lucid)"
+        <a href="index.html" title="Advanced topics"
             >previous</a> |
         <a href="../various_envs.html" title="Various links"
             >next</a> |

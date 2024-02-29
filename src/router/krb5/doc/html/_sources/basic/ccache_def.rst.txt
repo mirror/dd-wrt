@@ -51,6 +51,13 @@ library.
    requirement is for parent directory to exist and the current
    process must have permissions to create the directory if it does
    not exist. See :ref:`col_ccache` for details.  New in release 1.10.
+   The following residual forms are supported:
+
+   * DIR:dirname
+   * DIR::dirpath/filename - a single cache within the directory
+
+   Switching to a ccache of the latter type causes it to become the
+   primary for the directory.
 
 #. **FILE** caches are the simplest and most portable. A simple flat
    file format is used to store one credential after another.  This is

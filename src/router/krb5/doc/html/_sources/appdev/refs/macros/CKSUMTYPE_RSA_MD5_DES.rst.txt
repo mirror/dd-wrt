@@ -1,4 +1,4 @@
-.. highlightlang:: c
+.. highlight:: c
 
 .. _CKSUMTYPE-RSA-MD5-DES-data:
 

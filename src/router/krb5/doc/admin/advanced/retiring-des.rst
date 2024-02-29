@@ -22,6 +22,11 @@ However, deployments of krb5 using Kerberos databases created with older
 versions of krb5 will not necessarily start using strong crypto for
 ordinary operation without administrator intervention.
 
+MIT krb5 began flagging deprecated encryption types with release 1.17,
+and removed DES (single-DES) support in release 1.18.  As a
+consequence, a release prior to 1.18 is required to perform these
+migrations.
+
 Types of keys
 -------------
 
@@ -135,7 +140,7 @@ existing tickets will still function until their scheduled expiry
 .. note::
 
     The new ``krbtgt@REALM`` key should be propagated to replica KDCs
-    immediately so that TGTs issued by the master KDC can be used to
+    immediately so that TGTs issued by the primary KDC can be used to
     issue service tickets on replica KDCs.  Replica KDCs will refuse
     requests using the new TGT kvno until the new krbtgt entry has
     been propagated to them.
@@ -321,7 +326,7 @@ The following KDC configuration will not generate DES keys by default:
 
     As before, the KDC process must be restarted for this change to take
     effect.  It is best practice to update kdc.conf on all KDCs, not just the
-    master, to avoid unpleasant surprises should the master fail and a
+    primary, to avoid unpleasant surprises should the primary fail and a
     replica need to be promoted.
 
 It is now appropriate to remove the legacy single-DES key from the

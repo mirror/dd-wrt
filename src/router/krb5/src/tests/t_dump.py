@@ -73,7 +73,6 @@ for realm in multidb_realms(start_kdc=False):
     srcdump_r18 = os.path.join(srcdumpdir, 'dump.r18')
     srcdump_r13 = os.path.join(srcdumpdir, 'dump.r13')
     srcdump_b7 = os.path.join(srcdumpdir, 'dump.b7')
-    srcdump_ov = os.path.join(srcdumpdir, 'dump.ov')
 
     # Load a dump file from the source directory.
     realm.run([kdb5_util, 'destroy', '-f'])
@@ -86,17 +85,10 @@ for realm in multidb_realms(start_kdc=False):
     dump_compare(realm, ['-r18'], srcdump_r18)
     dump_compare(realm, ['-r13'], srcdump_r13)
     dump_compare(realm, ['-b7'], srcdump_b7)
-    dump_compare(realm, ['-ov'], srcdump_ov)
 
     # Load each format of dump, check it, re-dump it, and compare.
     load_dump_check_compare(realm, ['-r18'], srcdump_r18)
     load_dump_check_compare(realm, ['-r13'], srcdump_r13)
     load_dump_check_compare(realm, ['-b7'], srcdump_b7)
-
-    # Loading the last (-b7 format) dump won't have loaded the
-    # per-principal kadm data.  Load that incrementally with -ov.
-    realm.run([kadminl, 'getprinc', 'user'], expected_msg='Policy: [none]')
-    realm.run([kdb5_util, 'load', '-update', '-ov', srcdump_ov])
-    realm.run([kadminl, 'getprinc', 'user'], expected_msg='Policy: testpol')
 
 success('Dump/load tests')

@@ -61,11 +61,9 @@ struct salttype_lookup_entry {
 #include "kdb.h"
 static const struct salttype_lookup_entry salttype_table[] = {
     { KRB5_KDB_SALTTYPE_NORMAL,     "normal"     },
-    { KRB5_KDB_SALTTYPE_V4,         "v4",        },
     { KRB5_KDB_SALTTYPE_NOREALM,    "norealm",   },
     { KRB5_KDB_SALTTYPE_ONLYREALM,  "onlyrealm", },
     { KRB5_KDB_SALTTYPE_SPECIAL,    "special",   },
-    { KRB5_KDB_SALTTYPE_AFS3,       "afs3",      },
 };
 static const int salttype_table_nents = sizeof(salttype_table)/
     sizeof(salttype_table[0]);

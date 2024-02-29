@@ -77,7 +77,7 @@ static char PIN_message[64];            /* Max length should be 50 chars */
  *   returns: 0 on success
  *            KRB5 error codes otherwise
  *
- *   builds pricipal name with final instance of "SECURID" and
+ *   builds principal name with final instance of "SECURID" and
  *   finds the database entry, decrypts the key out of the database
  *   and passes the key back to the calling process
  */
@@ -436,7 +436,7 @@ verify_securid_data_2(krb5_context context, krb5_db_entry *client,
                 (memcmp(passcode, trackp->passcode, pin1_len) != 0)) {
                 retval = KRB5KDC_ERR_PREAUTH_FAILED;
                 krb5_klog_syslog(LOG_INFO, "New SecurID PIN Failed for user "
-                                 "%s: PIN mis-match", user);
+                                 "%s: PIN mismatch", user);
                 break;
             }
             retval = SD_Pin(trackp->handle, passcode);

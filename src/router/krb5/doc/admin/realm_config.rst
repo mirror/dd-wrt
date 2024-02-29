@@ -10,8 +10,8 @@ following issues:
 * Which ports your KDC and and kadmind services will use, if they will
   not be using the default ports.
 * How many replica KDCs you need and where they should be located.
-* The hostnames of your master and replica KDCs.
-* How frequently you will propagate the database from the master KDC
+* The hostnames of your primary and replica KDCs.
+* How frequently you will propagate the database from the primary KDC
   to the replica KDCs.
 
 
@@ -98,7 +98,7 @@ Replica KDCs
 ------------
 
 Replica KDCs provide an additional source of Kerberos ticket-granting
-services in the event of inaccessibility of the master KDC.  The
+services in the event of inaccessibility of the primary KDC.  The
 number of replica KDCs you need and the decision of where to place them,
 both physically and logically, depends on the specifics of your
 network.
@@ -109,15 +109,15 @@ be unavailable and have a replica KDC to take up the slack.
 
 Some considerations include:
 
-* Have at least one replica KDC as a backup, for when the master KDC
+* Have at least one replica KDC as a backup, for when the primary KDC
   is down, is being upgraded, or is otherwise unavailable.
 * If your network is split such that a network outage is likely to
   cause a network partition (some segment or segments of the network
   to become cut off or isolated from other segments), have a replica
   KDC accessible to each segment.
 * If possible, have at least one replica KDC in a different building
-  from the master, in case of power outages, fires, or other localized
-  disasters.
+  from the primary, in case of power outages, fires, or other
+  localized disasters.
 
 
 .. _kdc_hostnames:
@@ -126,7 +126,7 @@ Hostnames for KDCs
 ------------------
 
 MIT recommends that your KDCs have a predefined set of CNAME records
-(DNS hostname aliases), such as ``kerberos`` for the master KDC and
+(DNS hostname aliases), such as ``kerberos`` for the primary KDC and
 ``kerberos-1``, ``kerberos-2``, ... for the replica KDCs.  This way,
 if you need to swap a machine, you only need to change a DNS entry,
 rather than having to change hostnames.
@@ -144,31 +144,33 @@ _kerberos._udp
     the most often.  Normally you should list port 88 on each of your
     KDCs.
 _kerberos._tcp
-    This is for contacting any KDC by TCP.  The MIT KDC by default
-    will not listen on any TCP ports, so unless you've changed the
-    configuration or you're running another KDC implementation, you
-    should leave this unspecified.  If you do enable TCP support,
-    normally you should use port 88.
+    This is for contacting any KDC by TCP.  Normally you should use
+    port 88.  This entry should be omitted if the KDC does not listen
+    on TCP ports, as was the default prior to release 1.13.
 _kerberos-master._udp
     This entry should refer to those KDCs, if any, that will
     immediately see password changes to the Kerberos database.  If a
     user is logging in and the password appears to be incorrect, the
-    client will retry with the master KDC before failing with an
+    client will retry with the primary KDC before failing with an
     "incorrect password" error given.
 
     If you have only one KDC, or for whatever reason there is no
     accessible KDC that would get database changes faster than the
-    others, you do not need to define this entry.
-_kerberos-adm._tcp
-    This should list port 749 on your master KDC.  Support for it is
+    others, you do not need to define this entry.  _kerberos-adm._tcp
+    This should list port 749 on your primary KDC.  Support for it is
     not complete at this time, but it will eventually be used by the
     :ref:`kadmin(1)` program and related utilities.  For now, you will
     also need the **admin_server** variable in :ref:`krb5.conf(5)`.
+_kerberos-master._tcp
+    The corresponding TCP port for _kerberos-master._udp, assuming the
+    primary KDC listens on a TCP port.
 _kpasswd._udp
-    This should list port 464 on your master KDC.  It is used when a
-    user changes her password.  If this entry is not defined but a
-    _kerberos-adm._tcp entry is defined, the client will use the
-    _kerberos-adm._tcp entry with the port number changed to 749.
+    This entry should list port 464 on your primary KDC.  It is used
+    when a user changes her password.  If this entry is not defined
+    but a _kerberos-adm._tcp entry is defined, the client will use the
+    _kerberos-adm._tcp entry with the port number changed to 464.
+_kpasswd._tcp
+    The corresponding TCP port for _kpasswd._udp.
 
 The DNS SRV specification requires that the hostnames listed be the
 canonical names, not aliases.  So, for example, you might include the
@@ -202,8 +204,8 @@ KDC Discovery
 As of MIT krb5 1.15, clients can also locate KDCs in DNS through URI
 records (:rfc:`7553`).  Limitations with the SRV record format may
 result in extra DNS queries in situations where a client must failover
-to other transport types, or find a master server.  The URI record can
-convey more information about a realm's KDCs with a single query.
+to other transport types, or find a primary server.  The URI record
+can convey more information about a realm's KDCs with a single query.
 
 The client performs a query for the following URI records:
 
@@ -218,8 +220,8 @@ consists of case-insensitive colon separated fields, in the form
 * *scheme* defines the registered URI type.  It should always be
   ``krb5srv``.
 * *flags* contains zero or more flag characters.  Currently the only
-  valid flag is ``m``, which indicates that the record is for a master
-  server.
+  valid flag is ``m``, which indicates that the record is for a
+  primary server.
 * *transport* defines the transport type of the residual URL or
   address.  Accepted values are ``tcp``, ``udp``, or ``kkdcp`` for the
   MS-KKDCP type.
@@ -247,7 +249,7 @@ records are found.
 Database propagation
 --------------------
 
-The Kerberos database resides on the master KDC, and must be
+The Kerberos database resides on the primary KDC, and must be
 propagated regularly (usually by a cron job) to the replica KDCs.  In
 deciding how frequently the propagation should happen, you will need
 to balance the amount of time the propagation takes against the
@@ -258,7 +260,7 @@ If the propagation time is longer than this maximum reasonable time
 (e.g., you have a particularly large database, you have a lot of
 replicas, or you experience frequent network delays), you may wish to
 cut down on your propagation delay by performing the propagation in
-parallel.  To do this, have the master KDC propagate the database to
+parallel.  To do this, have the primary KDC propagate the database to
 one set of replicas, and then have each of these replicas propagate
 the database to additional replicas.
 

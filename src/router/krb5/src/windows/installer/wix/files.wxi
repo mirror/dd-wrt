@@ -185,10 +185,6 @@
 	                    <RegistryValue Id="reg_leash_3" Root="HKLM" Key="Software\MIT\Leash32\Settings" Name="AutoRenewTickets" Type="integer" Value="[LEASHAUTORENEWTICKETS]" KeyPath="yes"/>
 	                    <Condition>LEASHAUTORENEWTICKETS</Condition>
                     </Component>
-                    <Component Id="rcm_leash_6" Guid="$(var.rcm_leash_6_guid)" DiskId="1">
-	                    <RegistryValue Id="reg_leash_6" Root="HKLM" Key="Software\MIT\Leash" Name="MsLsaImport" Type="integer" Value="[LEASHMSLSAIMPORT]" KeyPath="yes"/>
-	                    <Condition>LEASHMSLSAIMPORT</Condition>
-                    </Component>
                     <Component Id="csc_LeashStartup" Guid="$(var.csc_LeashStartup_guid)" DiskId="1">
                         <RegistryValue Id="reg_sc_leash_marker" Root="HKCU" Key="$(var.KfwRegRoot)\Client\$(var.VersionString)" Name="LeashAutoStart" Type="integer" Value="1" KeyPath="yes" />
                         <Shortcut Id="sc_leash_exe_startup" Advertise="no" Directory="StartupFolder" Name="MIT Kerberos.lnk" Arguments="[LEASHAUTOINIT]" Target="[dirbin]MIT Kerberos.exe" Show="minimized" />
@@ -365,6 +361,7 @@
                         <Directory Id="dirinc_krb5_gssapi" Name="gssapi" FileSource="$(var.IncDir)gssapi\">
                             <Component Id="cmp_dirinc_krb5_gssapi" Guid="BD3C190B-1EBB-4d14-81DD-B2000DC4EAC7" DiskId="1">
                                 <File Id="fil_gssapi_h" Name="gssapi.h" KeyPath="yes" />
+                                <File Id="fil_gssapi_alloc_h" Name="gssapi_alloc.h" />
                                 <File Id="fil_gssapi_ext_h" Name="gssapi_ext.h" />
                                 <File Id="fil_gssapi_generic_h" Name="gssapi_generic.h" />
                                 <File Id="fil_gssapi_krb5_h" Name="gssapi_krb5.h" />

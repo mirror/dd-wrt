@@ -12,7 +12,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '1.17',
+        VERSION:     '1.21.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -92,16 +92,11 @@ the form:</p>
 <span class="p">}</span>
 </pre></div>
 </div>
-<p>Placing a ‘*’ at the end of a line indicates that this is the <em>final</em>
-value for the tag.  This means that neither the remainder of this
-configuration file nor any other configuration file will be checked
-for any other values for this tag.</p>
-<p>For example, if you have the following lines:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">foo</span> <span class="o">=</span> <span class="n">bar</span><span class="o">*</span>
-<span class="n">foo</span> <span class="o">=</span> <span class="n">baz</span>
-</pre></div>
-</div>
-<p>then the second value of <code class="docutils literal"><span class="pre">foo</span></code> (<code class="docutils literal"><span class="pre">baz</span></code>) would never be read.</p>
+<p>Placing a ‘*’ after the closing bracket of a section name indicates
+that the section is <em>final</em>, meaning that if the same section appears
+within a later file specified in <strong>KRB5_CONFIG</strong>, it will be ignored.
+A subsection can be marked as final by placing a ‘*’ after either the
+tag name or the closing brace.</p>
 <p>The krb5.conf file can include other files using either of the
 following directives at the beginning of a line:</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">include</span> <span class="n">FILENAME</span>
@@ -165,22 +160,22 @@ directive, <a class="reference internal" href="kdc_conf.html#kdc-conf-5"><span c
 <span id="id1"></span><h3>[libdefaults]<a class="headerlink" href="#libdefaults" title="Permalink to this headline">¶</a></h3>
 <p>The libdefaults section may contain any of the following relations:</p>
 <dl class="docutils">
+<dt><strong>allow_des3</strong></dt>
+<dd>Permit the KDC to issue tickets with des3-cbc-sha1 session keys.
+In future releases, this flag will allow des3-cbc-sha1 to be used
+at all.  The default value for this tag is false.  (Added in
+release 1.21.)</dd>
+<dt><strong>allow_rc4</strong></dt>
+<dd>Permit the KDC to issue tickets with arcfour-hmac session keys.
+In future releases, this flag will allow arcfour-hmac to be used
+at all.  The default value for this tag is false.  (Added in
+release 1.21.)</dd>
 <dt><strong>allow_weak_crypto</strong></dt>
 <dd>If this flag is set to false, then weak encryption types (as noted
 in <a class="reference internal" href="kdc_conf.html#encryption-types"><span class="std std-ref">Encryption types</span></a> in <a class="reference internal" href="kdc_conf.html#kdc-conf-5"><span class="std std-ref">kdc.conf</span></a>) will be filtered
 out of the lists <strong>default_tgs_enctypes</strong>,
 <strong>default_tkt_enctypes</strong>, and <strong>permitted_enctypes</strong>.  The default
-value for this tag is false, which may cause authentication
-failures in existing Kerberos infrastructures that do not support
-strong crypto.  Users in affected environments should set this tag
-to true until their infrastructure adopts stronger ciphers.</dd>
-<dt><strong>ap_req_checksum_type</strong></dt>
-<dd>An integer which specifies the type of AP-REQ checksum to use in
-authenticators.  This variable should be unset so the appropriate
-checksum for the encryption key in use will be used.  This can be
-set if backward compatibility requires a specific checksum type.
-See the <strong>kdc_req_checksum_type</strong> configuration option for the
-possible values and their meanings.</dd>
+value for this tag is false.</dd>
 <dt><strong>canonicalize</strong></dt>
 <dd>If this flag is set to true, initial ticket requests to the KDC
 will request canonicalization of the client principal name, and
@@ -215,6 +210,10 @@ New in release 1.11.</dd>
 <dd>This relation specifies the default keytab name to be used by
 application servers such as sshd.  The default is <a class="reference internal" href="../../mitK5defaults.html#paths"><span class="std std-ref">DEFKTNAME</span></a>.  This
 relation is subject to parameter expansion (see below).</dd>
+<dt><strong>default_rcache_name</strong></dt>
+<dd>This relation specifies the name of the default replay cache.
+The default is <code class="docutils literal"><span class="pre">dfl:</span></code>.  This relation is subject to parameter
+expansion (see below).  New in release 1.18.</dd>
 <dt><strong>default_realm</strong></dt>
 <dd>Identifies the default Kerberos realm for the client.  Set its
 value to your Kerberos realm.  If this value is not set, then a
@@ -226,9 +225,10 @@ the client should request when making a TGS-REQ, in order of
 preference from highest to lowest.  The list may be delimited with
 commas or whitespace.  See <a class="reference internal" href="kdc_conf.html#encryption-types"><span class="std std-ref">Encryption types</span></a> in
 <a class="reference internal" href="kdc_conf.html#kdc-conf-5"><span class="std std-ref">kdc.conf</span></a> for a list of the accepted values for this tag.
-The default value is <code class="docutils literal"><span class="pre">aes256-cts-hmac-sha1-96</span> <span class="pre">aes128-cts-hmac-sha1-96</span> <span class="pre">aes256-cts-hmac-sha384-192</span> <span class="pre">aes128-cts-hmac-sha256-128</span> <span class="pre">des3-cbc-sha1</span> <span class="pre">arcfour-hmac-md5</span> <span class="pre">camellia256-cts-cmac</span> <span class="pre">camellia128-cts-cmac</span> <span class="pre">des-cbc-crc</span> <span class="pre">des-cbc-md5</span> <span class="pre">des-cbc-md4</span></code>, but single-DES encryption types
-will be implicitly removed from this list if the value of
-<strong>allow_weak_crypto</strong> is false.</p>
+Starting in release 1.18, the default value is the value of
+<strong>permitted_enctypes</strong>.  For previous releases or if
+<strong>permitted_enctypes</strong> is not set, the default value is
+<code class="docutils literal"><span class="pre">aes256-cts-hmac-sha1-96</span> <span class="pre">aes128-cts-hmac-sha1-96</span> <span class="pre">aes256-cts-hmac-sha384-192</span> <span class="pre">aes128-cts-hmac-sha256-128</span> <span class="pre">des3-cbc-sha1</span> <span class="pre">arcfour-hmac-md5</span> <span class="pre">camellia256-cts-cmac</span> <span class="pre">camellia128-cts-cmac</span></code>.</p>
 <p class="last">Do not set this unless required for specific backward
 compatibility purposes; stale values of this setting can prevent
 clients from taking advantage of new stronger enctypes when the
@@ -238,10 +238,10 @@ libraries are upgraded.</p>
 <dd><p class="first">Identifies the supported list of session key encryption types that
 the client should request when making an AS-REQ, in order of
 preference from highest to lowest.  The format is the same as for
-default_tgs_enctypes.  The default value for this tag is
-<code class="docutils literal"><span class="pre">aes256-cts-hmac-sha1-96</span> <span class="pre">aes128-cts-hmac-sha1-96</span> <span class="pre">aes256-cts-hmac-sha384-192</span> <span class="pre">aes128-cts-hmac-sha256-128</span> <span class="pre">des3-cbc-sha1</span> <span class="pre">arcfour-hmac-md5</span> <span class="pre">camellia256-cts-cmac</span> <span class="pre">camellia128-cts-cmac</span> <span class="pre">des-cbc-crc</span> <span class="pre">des-cbc-md5</span> <span class="pre">des-cbc-md4</span></code>, but single-DES encryption types will be implicitly
-removed from this list if the value of <strong>allow_weak_crypto</strong> is
-false.</p>
+default_tgs_enctypes.  Starting in release 1.18, the default
+value is the value of <strong>permitted_enctypes</strong>.  For previous
+releases or if <strong>permitted_enctypes</strong> is not set, the default
+value is <code class="docutils literal"><span class="pre">aes256-cts-hmac-sha1-96</span> <span class="pre">aes128-cts-hmac-sha1-96</span> <span class="pre">aes256-cts-hmac-sha384-192</span> <span class="pre">aes128-cts-hmac-sha256-128</span> <span class="pre">des3-cbc-sha1</span> <span class="pre">arcfour-hmac-md5</span> <span class="pre">camellia256-cts-cmac</span> <span class="pre">camellia128-cts-cmac</span></code>.</p>
 <p class="last">Do not set this unless required for specific backward
 compatibility purposes; stale values of this setting can prevent
 clients from taking advantage of new stronger enctypes when the
@@ -252,7 +252,10 @@ libraries are upgraded.</p>
 hostnames for use in service principal names.  Setting this flag
 to false can improve security by reducing reliance on DNS, but
 means that short hostnames will not be canonicalized to
-fully-qualified hostnames.  The default value is true.</dd>
+fully-qualified hostnames.  If this option is set to <code class="docutils literal"><span class="pre">fallback</span></code> (new
+in release 1.18), DNS canonicalization will only be performed the
+server hostname is not found with the original name when
+requesting credentials.  The default value is true.</dd>
 <dt><strong>dns_lookup_kdc</strong></dt>
 <dd><p class="first">Indicate whether DNS SRV records should be used to locate the KDCs
 and other servers for a realm, if they are not listed in the
@@ -274,6 +277,12 @@ and other servers for a realm, if they are not listed in the
 krb5.conf information for the realm.  SRV records are used as a
 fallback if no URI records were found.  The default value is true.
 New in release 1.15.</dd>
+<dt><strong>enforce_ok_as_delegate</strong></dt>
+<dd>If this flag to true, GSSAPI credential delegation will be
+disabled when the <code class="docutils literal"><span class="pre">ok-as-delegate</span></code> flag is not set in the
+service ticket.  If this flag is false, the <code class="docutils literal"><span class="pre">ok-as-delegate</span></code>
+ticket flag is only enforced when an application specifically
+requests enforcement.  The default value is false.</dd>
 <dt><strong>err_fmt</strong></dt>
 <dd>This relation allows for custom error message formatting.  If a
 value is set, error messages will be formatted by substituting a
@@ -333,58 +342,17 @@ use this value to correct for an inaccurate system clock when
 requesting service tickets or authenticating to services.  This
 corrective factor is only used by the Kerberos library; it is not
 used to change the system clock.  The default value is 1.</dd>
-<dt><strong>kdc_req_checksum_type</strong></dt>
-<dd><p class="first">An integer which specifies the type of checksum to use for the KDC
-requests, for compatibility with very old KDC implementations.
-This value is only used for DES keys; other keys use the preferred
-checksum type for those keys.</p>
-<p>The possible values and their meanings are as follows.</p>
-<table border="1" class="last docutils">
-<colgroup>
-<col width="20%" />
-<col width="80%" />
-</colgroup>
-<tbody valign="top">
-<tr class="row-odd"><td>1</td>
-<td>CRC32</td>
-</tr>
-<tr class="row-even"><td>2</td>
-<td>RSA MD4</td>
-</tr>
-<tr class="row-odd"><td>3</td>
-<td>RSA MD4 DES</td>
-</tr>
-<tr class="row-even"><td>4</td>
-<td>DES CBC</td>
-</tr>
-<tr class="row-odd"><td>7</td>
-<td>RSA MD5</td>
-</tr>
-<tr class="row-even"><td>8</td>
-<td>RSA MD5 DES</td>
-</tr>
-<tr class="row-odd"><td>9</td>
-<td>NIST SHA</td>
-</tr>
-<tr class="row-even"><td>12</td>
-<td>HMAC SHA1 DES3</td>
-</tr>
-<tr class="row-odd"><td>-138</td>
-<td>Microsoft MD5 HMAC checksum type</td>
-</tr>
-</tbody>
-</table>
-</dd>
 <dt><strong>noaddresses</strong></dt>
 <dd>If this flag is true, requests for initial tickets will not be
 made with address restrictions set, allowing the tickets to be
 used across NATs.  The default value is true.</dd>
 <dt><strong>permitted_enctypes</strong></dt>
-<dd>Identifies all encryption types that are permitted for use in
-session key encryption.  The default value for this tag is
-<code class="docutils literal"><span class="pre">aes256-cts-hmac-sha1-96</span> <span class="pre">aes128-cts-hmac-sha1-96</span> <span class="pre">aes256-cts-hmac-sha384-192</span> <span class="pre">aes128-cts-hmac-sha256-128</span> <span class="pre">des3-cbc-sha1</span> <span class="pre">arcfour-hmac-md5</span> <span class="pre">camellia256-cts-cmac</span> <span class="pre">camellia128-cts-cmac</span> <span class="pre">des-cbc-crc</span> <span class="pre">des-cbc-md5</span> <span class="pre">des-cbc-md4</span></code>, but single-DES encryption types will be implicitly
-removed from this list if the value of <strong>allow_weak_crypto</strong> is
-false.</dd>
+<dd>Identifies the encryption types that servers will permit for
+session keys and for ticket and authenticator encryption, ordered
+by preference from highest to lowest.  Starting in release 1.18,
+this tag also acts as the default value for
+<strong>default_tgs_enctypes</strong> and <strong>default_tkt_enctypes</strong>.  The
+default value for this tag is <code class="docutils literal"><span class="pre">aes256-cts-hmac-sha1-96</span> <span class="pre">aes128-cts-hmac-sha1-96</span> <span class="pre">aes256-cts-hmac-sha384-192</span> <span class="pre">aes128-cts-hmac-sha256-128</span> <span class="pre">des3-cbc-sha1</span> <span class="pre">arcfour-hmac-md5</span> <span class="pre">camellia256-cts-cmac</span> <span class="pre">camellia128-cts-cmac</span></code>.</dd>
 <dt><strong>plugin_base_dir</strong></dt>
 <dd>If set, determines the base directory where krb5 plugins are
 located.  The default value is the <code class="docutils literal"><span class="pre">krb5/plugins</span></code> subdirectory
@@ -398,6 +366,14 @@ which forces libkrb5 to attempt to use PKINIT if it is supported.</dd>
 <dt><strong>proxiable</strong></dt>
 <dd>If this flag is true, initial tickets will be proxiable by
 default, if allowed by the KDC.  The default value is false.</dd>
+<dt><strong>qualify_shortname</strong></dt>
+<dd>If this string is set, it determines the domain suffix for
+single-component hostnames when DNS canonicalization is not used
+(either because <strong>dns_canonicalize_hostname</strong> is false or because
+forward canonicalization failed).  The default value is the first
+search domain of the system’s DNS configuration.  To disable
+qualification of shortnames, set this relation to the empty string
+with <code class="docutils literal"><span class="pre">qualify_shortname</span> <span class="pre">=</span> <span class="pre">&quot;&quot;</span></code>.  (New in release 1.18.)</dd>
 <dt><strong>rdns</strong></dt>
 <dd>If this flag is true, reverse name lookup will be used in addition
 to forward name lookup to canonicalizing hostnames for use in
@@ -415,14 +391,6 @@ set.  The default is not to search domain components.</dd>
 <dt><strong>renew_lifetime</strong></dt>
 <dd>(<a class="reference internal" href="../../basic/date_format.html#duration"><span class="std std-ref">Time duration</span></a> string.)  Sets the default renewable lifetime
 for initial ticket requests.  The default value is 0.</dd>
-<dt><strong>safe_checksum_type</strong></dt>
-<dd>An integer which specifies the type of checksum to use for the
-KRB-SAFE requests.  By default it is set to 8 (RSA MD5 DES).  For
-compatibility with applications linked against DCE version 1.1 or
-earlier Kerberos libraries, use a value of 3 to use the RSA MD4
-DES instead.  This field is ignored when its value is incompatible
-with the session key type.  See the <strong>kdc_req_checksum_type</strong>
-configuration option for the possible values and their meanings.</dd>
 <dt><strong>spake_preauth_groups</strong></dt>
 <dd><p class="first">A whitespace or comma-separated list of words which specifies the
 groups allowed for SPAKE preauthentication.  The possible values
@@ -464,6 +432,11 @@ attempt fails.</dd>
 <dd>If this flag is true, then an attempt to verify initial
 credentials will fail if the client machine does not have a
 keytab.  The default value is false.</dd>
+<dt><strong>client_aware_channel_bindings</strong></dt>
+<dd>If this flag is true, then all application protocol authentication
+requests will be flagged to indicate that the application supports
+channel bindings when operating over a secure channel.  The
+default value is false.</dd>
 </dl>
 </div>
 <div class="section" id="realms">
@@ -475,7 +448,7 @@ following tags may be specified in the realm’s subsection:</p>
 <dl class="docutils">
 <dt><strong>admin_server</strong></dt>
 <dd>Identifies the host where the administration server is running.
-Typically, this is the master Kerberos server.  This tag must be
+Typically, this is the primary Kerberos server.  This tag must be
 given a value in order to communicate with the <a class="reference internal" href="../admin_commands/kadmind.html#kadmind-8"><span class="std std-ref">kadmind</span></a>
 server for the realm.</dd>
 <dt><strong>auth_to_local</strong></dt>
@@ -575,12 +548,15 @@ If there is no such entry, DNS will be queried (unless forbidden
 by <strong>dns_lookup_kdc</strong>).  Finally, port 464 on the <strong>admin_server</strong>
 host will be tried.</dd>
 <dt><strong>master_kdc</strong></dt>
-<dd>Identifies the master KDC(s).  Currently, this tag is used in only
+<dd>The name for <strong>primary_kdc</strong> prior to release 1.19.  Its value is
+used as a fallback if <strong>primary_kdc</strong> is not specified.</dd>
+<dt><strong>primary_kdc</strong></dt>
+<dd>Identifies the primary KDC(s).  Currently, this tag is used in only
 one case: If an attempt to get credentials fails because of an
 invalid password, the client software will attempt to contact the
-master KDC, in case the user’s password has just been changed, and
+primary KDC, in case the user’s password has just been changed, and
 the updated database has not been propagated to the replica
-servers yet.</dd>
+servers yet.  New in release 1.19.</dd>
 <dt><strong>v4_instance_convert</strong></dt>
 <dd>This subsection allows the administrator to configure exceptions
 to the <strong>default_domain</strong> mapping rule.  It contains V4 instances
@@ -597,15 +573,12 @@ is the Kerberos V4 realm name.</dd>
 </div>
 <div class="section" id="domain-realm">
 <span id="id3"></span><h3>[domain_realm]<a class="headerlink" href="#domain-realm" title="Permalink to this headline">¶</a></h3>
-<p>The [domain_realm] section provides a translation from a domain name
-or hostname to a Kerberos realm name.  The tag name can be a host name
-or domain name, where domain names are indicated by a prefix of a
-period (<code class="docutils literal"><span class="pre">.</span></code>).  The value of the relation is the Kerberos realm name
-for that particular host or domain.  A host name relation implicitly
-provides the corresponding domain name relation, unless an explicit domain
-name relation is provided.  The Kerberos realm may be
+<p>The [domain_realm] section provides a translation from hostnames to
+Kerberos realms.  Each tag is a domain name, providing the mapping for
+that domain and all subdomains.  If the tag begins with a period
+(<code class="docutils literal"><span class="pre">.</span></code>) then it applies only to subdomains.  The Kerberos realm may be
 identified either in the <a class="reference internal" href="#realms">realms</a> section or using DNS SRV records.
-Host names and domain names should be in lower case.  For example:</p>
+Tag names should be in lower case.  For example:</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">domain_realm</span><span class="p">]</span>
     <span class="n">crash</span><span class="o">.</span><span class="n">mit</span><span class="o">.</span><span class="n">edu</span> <span class="o">=</span> <span class="n">TEST</span><span class="o">.</span><span class="n">ATHENA</span><span class="o">.</span><span class="n">MIT</span><span class="o">.</span><span class="n">EDU</span>
     <span class="o">.</span><span class="n">dev</span><span class="o">.</span><span class="n">mit</span><span class="o">.</span><span class="n">edu</span> <span class="o">=</span> <span class="n">TEST</span><span class="o">.</span><span class="n">ATHENA</span><span class="o">.</span><span class="n">MIT</span><span class="o">.</span><span class="n">EDU</span>
@@ -1002,7 +975,7 @@ user’s certificate and private key.</dd>
 <dd>All keyword/values are optional.  <em>modname</em> specifies the location
 of a library implementing PKCS #11.  If a value is encountered
 with no keyword, it is assumed to be the <em>modname</em>.  If no
-module-name is specified, the default is <code class="docutils literal"><span class="pre">opensc-pkcs11.so</span></code>.
+module-name is specified, the default is <a class="reference internal" href="../../mitK5defaults.html#paths"><span class="std std-ref">PKCS11_MODNAME</span></a>.
 <code class="docutils literal"><span class="pre">slotid=</span></code> and/or <code class="docutils literal"><span class="pre">token=</span></code> may be specified to force the use of
 a particular smard card reader or token if there is more than one
 available.  <code class="docutils literal"><span class="pre">certid=</span></code> and/or <code class="docutils literal"><span class="pre">certlabel=</span></code> may be specified to
@@ -1111,12 +1084,11 @@ The default is 2048.</dd>
 <dt><strong>pkinit_identities</strong></dt>
 <dd>Specifies the location(s) to be used to find the user’s X.509
 identity information.  If this option is specified multiple times,
-the first valid value is used; this can be used to specify an
-environment variable (with <strong>ENV:</strong><em>envvar</em>) followed by a
-default value.  Note that these values are not used if the user
-specifies <strong>X509_user_identity</strong> on the command line.</dd>
+each value is attempted in order until certificates are found.
+Note that these values are not used if the user specifies
+<strong>X509_user_identity</strong> on the command line.</dd>
 <dt><strong>pkinit_kdc_hostname</strong></dt>
-<dd>The presense of this option indicates that the client is willing
+<dd>The presence of this option indicates that the client is willing
 to accept a KDC certificate with a dNSName SAN (Subject
 Alternative Name) rather than requiring the id-pkinit-san as
 defined in <span class="target" id="index-6"></span><a class="rfc reference external" href="https://tools.ietf.org/html/rfc4556.html"><strong>RFC 4556</strong></a>.  This option may be specified multiple
@@ -1227,7 +1199,7 @@ Valid parameters are:</p>
         <span class="n">kdc</span> <span class="o">=</span> <span class="n">kerberos</span><span class="o">-</span><span class="mf">1.</span><span class="n">mit</span><span class="o">.</span><span class="n">edu</span>
         <span class="n">kdc</span> <span class="o">=</span> <span class="n">kerberos</span><span class="o">-</span><span class="mf">2.</span><span class="n">mit</span><span class="o">.</span><span class="n">edu</span>
         <span class="n">admin_server</span> <span class="o">=</span> <span class="n">kerberos</span><span class="o">.</span><span class="n">mit</span><span class="o">.</span><span class="n">edu</span>
-        <span class="n">master_kdc</span> <span class="o">=</span> <span class="n">kerberos</span><span class="o">.</span><span class="n">mit</span><span class="o">.</span><span class="n">edu</span>
+        <span class="n">primary_kdc</span> <span class="o">=</span> <span class="n">kerberos</span><span class="o">.</span><span class="n">mit</span><span class="o">.</span><span class="n">edu</span>
     <span class="p">}</span>
     <span class="n">EXAMPLE</span><span class="o">.</span><span class="n">COM</span> <span class="o">=</span> <span class="p">{</span>
         <span class="n">kdc</span> <span class="o">=</span> <span class="n">kerberos</span><span class="o">.</span><span class="n">example</span><span class="o">.</span><span class="n">com</span>
@@ -1363,8 +1335,8 @@ Valid parameters are:</p>
 
     <div class="footer-wrapper">
         <div class="footer" >
-            <div class="right" ><i>Release: 1.17</i><br />
-                &copy; <a href="../../copyright.html">Copyright</a> 1985-2019, MIT.
+            <div class="right" ><i>Release: 1.21.2</i><br />
+                &copy; <a href="../../copyright.html">Copyright</a> 1985-2023, MIT.
             </div>
             <div class="left">
                 

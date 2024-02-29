@@ -32,6 +32,7 @@
 #define KPROP_PROT_VERSION "kprop5_01"
 
 #define KPROP_BUFSIZ 32768
+#define KPROP_DBSIZE_MAX_BUFSIZ 12  /* max length of an encoded DB size */
 
 /* pathnames are in osconf.h, included via k5-int.h */
 
@@ -41,3 +42,14 @@ int sockaddr2krbaddr(krb5_context context, int family, struct sockaddr *sa,
 krb5_error_code
 sn2princ_realm(krb5_context context, const char *hostname, const char *sname,
                const char *realm, krb5_principal *princ_out);
+
+/*
+ * Encode size in four bytes (for backward compatibility) if it fits; otherwise
+ * use the larger encoding.  buf must be allocated with at least
+ * KPROP_DBSIZE_MAX_BUFSIZ bytes.
+ */
+void encode_database_size(uint64_t size, krb5_data *buf);
+
+/* Decode a database size.  Return KRB5KRB_ERR_GENERIC if buf has an invalid
+ * length or did not encode a 32-bit size compactly. */
+krb5_error_code decode_database_size(const krb5_data *buf, uint64_t *size_out);

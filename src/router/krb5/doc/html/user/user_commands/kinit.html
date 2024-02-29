@@ -12,7 +12,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '1.17',
+        VERSION:     '1.21.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -78,13 +78,14 @@
 [<strong>-E</strong>]
 [<strong>-v</strong>]
 [<strong>-R</strong>]
-[<strong>-k</strong> [-<strong>t</strong> <em>keytab_file</em>]]
+[<strong>-k</strong> [<strong>-i</strong> | -<strong>t</strong> <em>keytab_file</em>]]
 [<strong>-c</strong> <em>cache_name</em>]
 [<strong>-n</strong>]
 [<strong>-S</strong> <em>service_name</em>]
 [<strong>-I</strong> <em>input_ccache</em>]
 [<strong>-T</strong> <em>armor_ccache</em>]
 [<strong>-X</strong> <em>attribute</em>[=<em>value</em>]]
+[<strong>–request-pac</strong> | <strong>–no-request-pac</strong>]
 [<em>principal</em>]</p>
 </div>
 <div class="section" id="description">
@@ -136,8 +137,7 @@ lifetime of <em>renewable_life</em>.</dd>
 KDC to reply with a different client principal from the one
 requested.</dd>
 <dt><strong>-E</strong></dt>
-<dd>treats the principal name as an enterprise name (implies the
-<strong>-C</strong> option).</dd>
+<dd>treats the principal name as an enterprise name.</dd>
 <dt><strong>-v</strong></dt>
 <dd>requests that the ticket-granting ticket in the cache (with the
 <strong>invalid</strong> flag set) be passed to the KDC for validation.  If the
@@ -232,6 +232,12 @@ protocol</dd>
 <dd>disable sending freshness tokens (for testing purposes only)</dd>
 </dl>
 </dd>
+<dt><strong>–request-pac</strong> | <strong>–no-request-pac</strong></dt>
+<dd>mutually exclusive.  If <strong>–request-pac</strong> is set, ask the KDC to
+include a PAC in authdata; if <strong>–no-request-pac</strong> is set, ask the
+KDC not to include a PAC; if neither are set,  the KDC will follow
+its default, which is typically is to include a PAC if doing so is
+supported.</dd>
 </dl>
 </div>
 <div class="section" id="environment">
@@ -322,8 +328,8 @@ variables.</p>
 
     <div class="footer-wrapper">
         <div class="footer" >
-            <div class="right" ><i>Release: 1.17</i><br />
-                &copy; <a href="../../copyright.html">Copyright</a> 1985-2019, MIT.
+            <div class="right" ><i>Release: 1.21.2</i><br />
+                &copy; <a href="../../copyright.html">Copyright</a> 1985-2023, MIT.
             </div>
             <div class="left">
                 

@@ -55,7 +55,7 @@
 
 \title{Kerberos Concepts}
 \date{ }
-\release{1.17}
+\release{1.21.2}
 \author{MIT}
 \newcommand{\sphinxlogo}{\vbox{}}
 \renewcommand{\releasename}{Release}
@@ -120,6 +120,18 @@ directory must already exist.  In post-1.10 releases the
 requirement is for parent directory to exist and the current
 process must have permissions to create the directory if it does
 not exist. See {\hyperref[\detokenize{basic/ccache_def:col-ccache}]{\sphinxcrossref{\DUrole{std,std-ref}{Collections of caches}}}} for details.  New in release 1.10.
+The following residual forms are supported:
+\begin{itemize}
+\item {} 
+DIR:dirname
+
+\item {} 
+DIR::dirpath/filename - a single cache within the directory
+
+\end{itemize}
+
+Switching to a ccache of the latter type causes it to become the
+primary for the directory.
 
 \item {} 
 \sphinxstylestrong{FILE} caches are the simplest and most portable. A simple flat
@@ -267,10 +279,8 @@ credentials for client applications.
 
 Keytabs are named using the format \sphinxstyleemphasis{type}\sphinxcode{:}\sphinxstyleemphasis{value}.  Usually
 \sphinxstyleemphasis{type} is \sphinxcode{FILE} and \sphinxstyleemphasis{value} is the absolute pathname of the file.
-Other possible values for \sphinxstyleemphasis{type} are \sphinxcode{SRVTAB}, which indicates a
-file in the deprecated Kerberos 4 srvtab format, and \sphinxcode{MEMORY}, which
-indicates a temporary keytab stored in the memory of the current
-process.
+The other possible value for \sphinxstyleemphasis{type} is \sphinxcode{MEMORY}, which indicates a
+temporary keytab stored in the memory of the current process.
 
 A keytab contains one or more entries, where each entry consists of a
 timestamp (indicating when the entry was written to the keytab), a
@@ -332,7 +342,7 @@ request is detected in the replay cache, an error message is sent to
 the application program.
 
 The replay cache interface, like the credential cache and
-{\hyperref[\detokenize{basic/keytab_def:keytab-definition}]{\sphinxcrossref{\DUrole{std,std-ref}{keytab}}}} interfaces, uses \sphinxtitleref{type:value} strings to
+{\hyperref[\detokenize{basic/keytab_def:keytab-definition}]{\sphinxcrossref{\DUrole{std,std-ref}{keytab}}}} interfaces, uses \sphinxtitleref{type:residual} strings to
 indicate the type of replay cache and any associated cache naming
 data to use.
 
@@ -381,50 +391,73 @@ authenticator triggers some interesting action in the service being
 attacked.
 
 
-\section{Default rcache type}
-\label{\detokenize{basic/rcache_def:default-rcache-type}}
-There is currently only one implemented kind of replay cache, called
-\sphinxstylestrong{dfl}.  It stores replay data in one file, occasionally rewriting it
-to purge old, expired entries.
-
-The default type can be overridden by the \sphinxstylestrong{KRB5RCACHETYPE}
-environment variable.
-
-The placement of the replay cache file is determined by the following:
+\section{Replay cache types}
+\label{\detokenize{basic/rcache_def:replay-cache-types}}
+Unlike the credential cache and keytab interfaces, replay cache types
+are in lowercase.  The following types are defined:
 \begin{enumerate}
 \item {} 
-The \sphinxstylestrong{KRB5RCACHEDIR} environment variable;
+\sphinxstylestrong{none} disables the replay cache.  The residual value is ignored.
 
 \item {} 
-If KRB5RCACHEDIR is unspecified, on UNIX, the library
-will fall back to the environment variable \sphinxstylestrong{TMPDIR}, and then to
-a temporary directory determined at configuration time such as
-\sphinxstyleemphasis{/tmp} or \sphinxstyleemphasis{/var/tmp}; on Windows, it will check the environment
-variables \sphinxstyleemphasis{TEMP} and \sphinxstyleemphasis{TMP}, and fall back to the directory C:.
+\sphinxstylestrong{file2} (new in release 1.18) uses a hash-based format to store
+replay records.  The file may grow to accommodate hash collisions.
+The residual value is the filename.
+
+\item {} 
+\sphinxstylestrong{dfl} is the default type if no environment variable or
+configuration specifies a different type.  It stores replay data in
+a file2 replay cache with a filename based on the effective uid.
+The residual value is ignored.
 
 \end{enumerate}
 
+For the dfl type, the location of the replay cache file is determined
+as follows:
+\begin{enumerate}
+\item {} 
+The directory is taken from the \sphinxstylestrong{KRB5RCACHEDIR} environment
+variable, or the \sphinxstylestrong{TMPDIR} environment variable, or a temporary
+directory determined at configuration time such as \sphinxcode{/var/tmp}, in
+descending order of preference.
 
-\section{Performance issues}
-\label{\detokenize{basic/rcache_def:performance-issues}}
-Several known minor performance issues that may occur when replay
-cache is enabled on the Kerberos system include: delays due to writing
-the authenticator data to disk slowing down response time for very
-heavily loaded servers, and delays during the rewrite that may be
-unacceptable to high-performance services.
+\item {} 
+The filename is \sphinxcode{krb5\_EUID.rcache2} where EUID is the effective
+uid of the process.
 
-For use cases where replays are adequately defended against for all
-protocols using a given service principal name, or where performance
-or other considerations outweigh the risk of replays, the special
-replay cache type “none” can be specified:
+\item {} 
+The file is opened without following symbolic links, and ownership
+of the file is verified to match the effective uid.
 
-\fvset{hllines={, ,}}%
-\begin{sphinxVerbatim}[commandchars=\\\{\}]
-\PYG{n}{KRB5RCACHETYPE}\PYG{o}{=}\PYG{n}{none}
-\end{sphinxVerbatim}
+\end{enumerate}
 
-It doesn’t record any information about authenticators, and reports
-that any authenticator seen is not a replay.
+On Windows, the directory for the dfl type is the local appdata
+directory, unless overridden by the \sphinxstylestrong{KRB5RCACHEDIR} environment
+variable.  The filename on Windows is \sphinxcode{krb5.rcache2}, and the file
+is opened normally.
+
+
+\section{Default replay cache name}
+\label{\detokenize{basic/rcache_def:default-replay-cache-name}}
+The default replay cache name is determined by the following, in
+descending order of priority:
+\begin{enumerate}
+\item {} 
+The \sphinxstylestrong{KRB5RCACHENAME} environment variable (new in release 1.18).
+
+\item {} 
+The \sphinxstylestrong{KRB5RCACHETYPE} environment variable.  If this variable is
+set, the residual value is empty.
+
+\item {} 
+The \sphinxstylestrong{default\_rcache\_name} profile variable in \DUrole{xref,std,std-ref}{libdefaults}
+(new in release 1.18).
+
+\item {} 
+If none of the above are set, the default replay cache name is
+\sphinxcode{dfl:}.
+
+\end{enumerate}
 
 
 \chapter{stash file}

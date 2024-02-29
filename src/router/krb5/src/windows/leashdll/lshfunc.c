@@ -686,49 +686,17 @@ IsProcessUacLimited (void)
 
 }
 
-// This looks really ugly because it is.  The result of IsKerberosLogon()
-// does not prove whether or not there are Kerberos tickets available to
-// be imported.  Only the call to Leash_ms2mit() which actually attempts
-// to import tickets can do that.  However, calling Leash_ms2mit() can
-// result in a TGS_REQ being sent to the KDC and since Leash_importable()
-// is called quite often we want to avoid this if at all possible.
-// Unfortunately, we have be shown at least one case in which the primary
-// authentication package was not Kerberos and yet there were Kerberos
-// tickets available.  Therefore, if IsKerberosLogon() is not TRUE we
-// must call Leash_ms2mit() but we still do not want to call it in a
-// tight loop so we cache the response and assume it won't change.
-
-// 2007-03-21
-// And the nightmare goes on.  On Vista the Lsa call we use to determine
-// whether or not Kerberos was used for logon fails to return and worse
-// corrupts the stack.  Therefore, we must now test to see if the
-// operating system is Vista and skip the call to IsKerberosLogon()
-// if it is.
 long FAR
 Leash_importable(void)
 {
-    if (IsProcessUacLimited())
-	return FALSE;
-
-    if ( !IsWindowsVista() && IsKerberosLogon() )
-        return TRUE;
-    else {
-        static int response = -1;
-        if (response == -1) {
-            response = Leash_ms2mit(0);
-        }
-        return response;
-    }
+    /* Import functionality has been removed. */
+    return FALSE;
 }
 
 long FAR
 Leash_import(void)
 {
-    if ( Leash_ms2mit(1) ) {
-        int lifetime;
-        lifetime = Leash_get_default_lifetime() / 5;
-        return 1;
-    }
+    /* Import functionality has been removed. */
     return 0;
 }
 
@@ -996,7 +964,7 @@ Leash_get_default_lifetime(
                            use the form 'ticket_lifetime = 600' where
                            the unit is assumed to be minutes.  While
                            these are technically wrong (a unit needs
-                           to be specified), we try to accomodate for
+                           to be specified), we try to accommodate for
                            this using the safe assumption that the
                            unit is seconds and tack an 's' to the end
                            and see if that works. */
@@ -1148,7 +1116,7 @@ Leash_get_default_renew_till(
                            use the form 'ticket_lifetime = 600' where
                            the unit is assumed to be minutes.  While
                            these are technically wrong (a unit needs
-                           to be specified), we try to accomodate for
+                           to be specified), we try to accommodate for
                            this using the safe assumption that the
                            unit is seconds and tack an 's' to the end
                            and see if that works. */
@@ -2181,34 +2149,11 @@ Leash_get_default_uppercaserealm(
     return 1;
 }
 
-static
-BOOL
-get_default_mslsa_import_from_registry(
-    HKEY hBaseKey,
-    DWORD * result
-    )
-{
-    return get_DWORD_from_registry(hBaseKey,
-                                   LEASH_SETTINGS_REGISTRY_KEY_NAME,
-                                   LEASH_SETTINGS_REGISTRY_VALUE_MSLSA_IMPORT,
-                                   result);
-}
-
 DWORD
 Leash_reset_default_mslsa_import(
     )
 {
-    HKEY hKey;
-    LONG rc;
-
-    rc = RegOpenKeyEx(HKEY_CURRENT_USER, LEASH_SETTINGS_REGISTRY_KEY_NAME, 0, KEY_WRITE, &hKey);
-    if (rc)
-        return rc;
-
-    rc = RegDeleteValue(hKey, LEASH_SETTINGS_REGISTRY_VALUE_MSLSA_IMPORT);
-    RegCloseKey(hKey);
-
-    return rc;
+    return ERROR_INVALID_FUNCTION;
 }
 
 DWORD
@@ -2216,46 +2161,14 @@ Leash_set_default_mslsa_import(
     DWORD onoffmatch
     )
 {
-    HKEY hKey;
-    LONG rc;
-
-    rc = RegCreateKeyEx(HKEY_CURRENT_USER, LEASH_SETTINGS_REGISTRY_KEY_NAME, 0,
-                        0, 0, KEY_WRITE, 0, &hKey, 0);
-    if (rc)
-        return rc;
-
-    rc = RegSetValueEx(hKey, LEASH_SETTINGS_REGISTRY_VALUE_MSLSA_IMPORT, 0, REG_DWORD,
-                       (LPBYTE) &onoffmatch, sizeof(DWORD));
-    RegCloseKey(hKey);
-
-    return rc;
+    return ERROR_INVALID_FUNCTION;
 }
 
 DWORD
 Leash_get_default_mslsa_import(
     )
 {
-    HMODULE hmLeash;
-    DWORD result;
-
-    if (get_default_mslsa_import_from_registry(HKEY_CURRENT_USER, &result) ||
-        get_default_mslsa_import_from_registry(HKEY_LOCAL_MACHINE, &result))
-    {
-        return result;
-    }
-
-    hmLeash = GetModuleHandle(LEASH_DLL);
-    if (hmLeash)
-    {
-        char mslsa_import[80];
-        if (LoadString(hmLeash, LSH_DEFAULT_MSLSA_IMPORT,
-                       mslsa_import, sizeof(mslsa_import)))
-        {
-            mslsa_import[sizeof(mslsa_import) - 1] = 0;
-            return atoi(mslsa_import);
-        }
-    }
-    return 2;   /* import only when mslsa realm matches default */
+    return 0;
 }
 
 
@@ -2352,7 +2265,6 @@ Leash_reset_defaults(void)
     Leash_reset_default_renew_min();
     Leash_reset_default_renew_max();
     Leash_reset_default_uppercaserealm();
-    Leash_reset_default_mslsa_import();
     Leash_reset_default_preserve_kinit_settings();
 }
 
@@ -2679,9 +2591,7 @@ cleanup:
 static void
 acquire_tkt_no_princ(krb5_context context, char * ccname, int cclen)
 {
-    TicketList 		*list = NULL;
     krb5_context        ctx;
-    DWORD 		dwMsLsaImport = Leash_get_default_mslsa_import();
     DWORD		gle;
     char ccachename[272]="";
     char loginenv[16];
@@ -2703,71 +2613,6 @@ acquire_tkt_no_princ(krb5_context context, char * ccname, int cclen)
     }
 
     haveTickets = cc_default_have_tickets(ctx);
-    if ((!haveTickets) &&
-        dwMsLsaImport && Leash_importable() ) {
-        // We have the option of importing tickets from the MSLSA
-        // but should we?  Do the tickets in the MSLSA cache belong
-        // to the default realm used by Leash?  Does the default
-	// ccache name specify a principal name?  Only import if we
-	// aren't going to break the default identity as specified
-	// by the user in Network Identity Manager.
-        int import = 0;
-	BOOL isCCPrinc;
-
-	/* Determine if the default ccachename is principal name.  If so, don't
-	* import the MSLSA: credentials into it unless the names match.
-	*/
-	isCCPrinc = (strncmp("API:",ccachename, 4) == 0 && strchr(ccachename, '@'));
-
-        if ( dwMsLsaImport == 1 && !isCCPrinc ) { /* always import */
-            import = 1;
-        } else if ( dwMsLsaImport ) {      	  /* import when realms match */
-            krb5_error_code code;
-            krb5_ccache mslsa_ccache=NULL;
-            krb5_principal princ = NULL;
-	    char *mslsa_principal = NULL;
-            char ms_realm[128] = "", *def_realm = NULL, *r;
-            size_t i;
-
-            if (code = pkrb5_cc_resolve(ctx, "MSLSA:", &mslsa_ccache))
-                goto cleanup;
-
-            if (code = pkrb5_cc_get_principal(ctx, mslsa_ccache, &princ))
-                goto cleanup;
-
-            for ( r=ms_realm, i=0; i<krb5_princ_realm(ctx, princ)->length; r++, i++ ) {
-                *r = krb5_princ_realm(ctx, princ)->data[i];
-            }
-            *r = '\0';
-
-            if (code = pkrb5_get_default_realm(ctx, &def_realm))
-                goto cleanup;
-
-	    if (code = pkrb5_unparse_name(ctx, princ, &mslsa_principal))
-		goto cleanup;
-
-            import = (!isCCPrinc && !strcmp(def_realm, ms_realm)) ||
-		(isCCPrinc && !strcmp(&ccachename[4], mslsa_principal));
-
-          cleanup:
-	    if (mslsa_principal)
-		pkrb5_free_unparsed_name(ctx, mslsa_principal);
-
-            if (def_realm)
-                pkrb5_free_default_realm(ctx, def_realm);
-
-            if (princ)
-                pkrb5_free_principal(ctx, princ);
-
-            if (mslsa_ccache)
-                pkrb5_cc_close(ctx, mslsa_ccache);
-        }
-
-        if ( import ) {
-            Leash_import();
-            haveTickets = cc_default_have_tickets(ctx);
-        }
-    }
 
     if ( prompt && !haveTickets ) {
 	acquire_tkt_send_msg(ctx, NULL, ccachename, NULL, ccname, cclen);

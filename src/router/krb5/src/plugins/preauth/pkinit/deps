@@ -44,14 +44,14 @@ pkinit_kdf_test.so pkinit_kdf_test.po $(OUTPRE)pkinit_kdf_test.$(OBJEXT): \
   $(top_srcdir)/include/krb5/preauth_plugin.h pkcs11.h \
   pkinit.h pkinit_accessor.h pkinit_crypto.h pkinit_kdf_test.c \
   pkinit_trace.h
-pkinit_kdf_constants.so pkinit_kdf_constants.po $(OUTPRE)pkinit_kdf_constants.$(OBJEXT): \
+pkinit_constants.so pkinit_constants.po $(OUTPRE)pkinit_constants.$(OBJEXT): \
   $(BUILDTOP)/include/autoconf.h $(BUILDTOP)/include/krb5/krb5.h \
   $(BUILDTOP)/include/profile.h $(COM_ERR_DEPS) $(top_srcdir)/include/k5-int-pkinit.h \
   $(top_srcdir)/include/k5-platform.h $(top_srcdir)/include/k5-thread.h \
   $(top_srcdir)/include/k5-trace.h $(top_srcdir)/include/krb5/clpreauth_plugin.h \
   $(top_srcdir)/include/krb5/kdcpreauth_plugin.h $(top_srcdir)/include/krb5/plugin.h \
   $(top_srcdir)/include/krb5/preauth_plugin.h pkcs11.h \
-  pkinit.h pkinit_accessor.h pkinit_crypto.h pkinit_kdf_constants.c \
+  pkinit.h pkinit_accessor.h pkinit_constants.c pkinit_crypto.h \
   pkinit_trace.h
 pkinit_clnt.so pkinit_clnt.po $(OUTPRE)pkinit_clnt.$(OBJEXT): \
   $(BUILDTOP)/include/autoconf.h $(BUILDTOP)/include/krb5/krb5.h \

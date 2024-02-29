@@ -15,7 +15,7 @@ LIBBASE=krb5support
 LIBMAJOR=@SUPPORTLIB_MAJOR@
 LIBMINOR=1
 
-LIBINITFUNC=krb5int_thread_support_init
+LIBINITFUNC=krb5int_thread_support_init @SECURE_GETENV_INIT@
 LIBFINIFUNC=krb5int_thread_support_fini
 
 GETTIMEOFDAY_ST_OBJ= @GETTIMEOFDAY_ST_OBJ@
@@ -52,6 +52,11 @@ GETOPT_LONG_ST_OBJ= @GETOPT_LONG_ST_OBJ@
 GETOPT_LONG_OBJ= @GETOPT_LONG_OBJ@
 ##DOS##GETOPT_LONG_ST_OBJ= getopt_long.o
 ##DOS##GETOPT_LONG_OBJ= $(OUTPRE)getopt_long.$(OBJEXT)
+
+SECURE_GETENV_ST_OBJ= @SECURE_GETENV_ST_OBJ@
+SECURE_GETENV_OBJ= @SECURE_GETENV_OBJ@
+##DOS##SECURE_GETENV_ST_OBJ=
+##DOS##SECURE_GETENV_OBJ=
 
 IPC_ST_OBJ=
 IPC_OBJ=
@@ -93,7 +98,8 @@ STLIBOBJS= \
 	$(PRINTF_ST_OBJ) \
 	$(MKSTEMP_ST_OBJ) \
 	$(GETOPT_ST_OBJ) \
-	$(GETOPT_LONG_ST_OBJ)
+	$(GETOPT_LONG_ST_OBJ) \
+	$(SECURE_GETENV_OBJ)
 
 LIBOBJS= \
 	$(OUTPRE)threads.$(OBJEXT) \
@@ -121,7 +127,8 @@ LIBOBJS= \
 	$(PRINTF_OBJ) \
 	$(MKSTEMP_OBJ) \
 	$(GETOPT_OBJ) \
-	$(GETOPT_LONG_OBJ)
+	$(GETOPT_LONG_OBJ) \
+	$(SECURE_GETENV_OBJ)
 
 SRCS=\
 	$(srcdir)/threads.c \
@@ -156,7 +163,8 @@ SRCS=\
 	$(srcdir)/t_utf8.c \
 	$(srcdir)/t_utf16.c \
 	$(srcdir)/getopt.c \
-	$(srcdir)/getopt_long.c
+	$(srcdir)/getopt_long.c \
+	$(srcdir)/secure_getenv.c
 
 SHLIB_EXPDEPS =
 # Add -lm if dumping thread stats, for sqrt.

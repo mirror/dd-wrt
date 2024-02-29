@@ -63,7 +63,7 @@ main()
     major = gss_add_cred(&minor, GSS_C_NO_CREDENTIAL, name, &mech_krb5,
                          GSS_C_INITIATE, GSS_C_INDEFINITE, GSS_C_INDEFINITE,
                          &cred1, NULL, NULL, NULL);
-    assert(major == GSS_S_CRED_UNAVAIL);
+    assert(major == GSS_S_NO_CRED);
     gss_release_name(&minor, &name);
 
     /* Create cred1 with a krb5 initiator cred by passing an output handle but

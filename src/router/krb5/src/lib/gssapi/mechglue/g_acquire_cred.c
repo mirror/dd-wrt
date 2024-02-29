@@ -480,7 +480,13 @@ gss_add_cred_from(minor_status, input_cred_handle,
     else if (!mech->gss_acquire_cred)
 	return (GSS_S_UNAVAILABLE);
 
-    if (input_cred_handle == GSS_C_NO_CREDENTIAL) {
+    union_cred = (gss_union_cred_t)input_cred_handle;
+    if (union_cred != NULL &&
+	gssint_get_mechanism_cred(union_cred,
+				  selected_mech) != GSS_C_NO_CREDENTIAL)
+	return (GSS_S_DUPLICATE_ELEMENT);
+
+    if (union_cred == NULL) {
 	/* Create a new credential handle. */
 	union_cred = malloc(sizeof (gss_union_cred_desc));
 	if (union_cred == NULL)
@@ -488,13 +494,7 @@ gss_add_cred_from(minor_status, input_cred_handle,
 
 	(void) memset(union_cred, 0, sizeof (gss_union_cred_desc));
 	union_cred->loopback = union_cred;
-    } else if (output_cred_handle == NULL) {
-	/* Add to the existing handle. */
-	union_cred = (gss_union_cred_t)input_cred_handle;
-	if (gssint_get_mechanism_cred(union_cred, selected_mech) !=
-	    GSS_C_NO_CREDENTIAL)
-	    return (GSS_S_DUPLICATE_ELEMENT);
-    } else {
+    } else if (output_cred_handle != NULL) {
 	/* Create a new credential handle with the mechanism credentials of the
 	 * input handle plus the acquired mechanism credential. */
 	status = copy_union_cred(minor_status, input_cred_handle, &union_cred);

@@ -48,7 +48,6 @@ BEGIN_MESSAGE_MAP(CLeashView, CListView)
 	ON_WM_SHOWWINDOW()
 	ON_COMMAND(ID_INIT_TICKET, OnInitTicket)
 	ON_COMMAND(ID_RENEW_TICKET, OnRenewTicket)
-    ON_COMMAND(ID_IMPORT_TICKET, OnImportTicket)
 	ON_COMMAND(ID_DESTROY_TICKET, OnDestroyTicket)
 	ON_COMMAND(ID_CHANGE_PASSWORD, OnChangePassword)
 	ON_COMMAND(ID_MAKE_DEFAULT, OnMakeDefault)
@@ -74,7 +73,6 @@ BEGIN_MESSAGE_MAP(CLeashView, CListView)
 	ON_UPDATE_COMMAND_UI(ID_KILL_TIX_ONEXIT, OnUpdateKillTixOnExit)
 	ON_WM_DESTROY()
 	ON_UPDATE_COMMAND_UI(ID_DESTROY_TICKET, OnUpdateDestroyTicket)
-    ON_UPDATE_COMMAND_UI(ID_IMPORT_TICKET, OnUpdateImportTicket)
 	ON_UPDATE_COMMAND_UI(ID_INIT_TICKET, OnUpdateInitTicket)
 	ON_UPDATE_COMMAND_UI(ID_RENEW_TICKET, OnUpdateRenewTicket)
 	ON_COMMAND(ID_APP_ABOUT, OnAppAbout)
@@ -117,7 +115,6 @@ INT  CLeashView::m_alreadyPlayedDisplayCount;
 INT  CLeashView::m_autoRenewTickets = 0;
 BOOL CLeashView::m_lowTicketAlarmSound;
 INT  CLeashView::m_autoRenewalAttempted = 0;
-BOOL CLeashView::m_importedTickets = 0;
 LONG CLeashView::m_timerMsgNotInProgress = 1;
 ViewColumnInfo CLeashView::sm_viewColumns[] =
 {
@@ -329,7 +326,6 @@ CLeashView::CLeashView()
     m_debugWindow = 0;
     m_upperCaseRealm = 0;
     m_lowTicketAlarm = 0;
-    m_importedTickets = 0;
 
     m_pDebugWindow = NULL;
     m_pDebugWindow = new CLeashDebugWindow(this);
@@ -573,8 +569,6 @@ VOID CLeashView::OnInitTicket()
 
 UINT CLeashView::InitTicket(void * hWnd)
 {
-    m_importedTickets = 0;
-
     LSH_DLGINFO_EX ldi;
     char username[64];
     char realm[192];
@@ -637,82 +631,6 @@ UINT CLeashView::InitTicket(void * hWnd)
     return 0;
 }
 
-VOID CLeashView::OnImportTicket()
-{
-    try {
-        ImportTicket(m_hWnd);
-    }
-    catch(...) {
-        AfxMessageBox("Ticket Getting operation already in progress", MB_OK|MB_ICONWARNING, 0);
-    }
-}
-
-UINT CLeashView::ImportTicket(void * hWnd)
-{
-    if ( !CLeashApp::m_hKrb5DLL )
-        return 0;
-
-    krb5_error_code code;
-    krb5_ccache mslsa_ccache=0;
-    krb5_principal princ = 0;
-    char * pname = 0;
-
-    if (code = pkrb5_cc_resolve(CLeashApp::m_krbv5_context, "MSLSA:", &mslsa_ccache))
-        goto cleanup;
-
-    if (code = pkrb5_cc_get_principal(CLeashApp::m_krbv5_context, mslsa_ccache, &princ))
-        goto cleanup;
-
-    if (code = pkrb5_unparse_name(CLeashApp::m_krbv5_context, princ, &pname))
-        goto cleanup;
-
-cleanup:
-    if (pname)
-        pkrb5_free_unparsed_name(CLeashApp::m_krbv5_context, pname);
-
-    if (princ)
-        pkrb5_free_principal(CLeashApp::m_krbv5_context, princ);
-
-    if (mslsa_ccache)
-        pkrb5_cc_close(CLeashApp::m_krbv5_context, mslsa_ccache);
-
-    if ( code == 0 ) {
-        int result = pLeash_import();
-        if (-1 == result)
-        {
-            AfxMessageBox("There is a problem importing tickets!",
-                            MB_OK|MB_ICONSTOP);
-            ::SendMessage((HWND)hWnd,WM_COMMAND, ID_UPDATE_DISPLAY, 0);
-            m_importedTickets = 0;
-        }
-        else
-        {
-            if (WaitForSingleObject( ticketinfo.lockObj, INFINITE ) != WAIT_OBJECT_0) {
-                throw("Unable to lock ticketinfo");
-            }
-            ticketinfo.Krb5.btickets = GOOD_TICKETS;
-            m_warningOfTicketTimeLeftKrb5 = 0;
-            m_ticketStatusKrb5 = 0;
-            ReleaseMutex(ticketinfo.lockObj);
-            ::SendMessage((HWND)hWnd, WM_COMMAND, ID_UPDATE_DISPLAY, 0);
-
-            if (WaitForSingleObject( ticketinfo.lockObj, INFINITE ) != WAIT_OBJECT_0) {
-                throw("Unable to lock ticketinfo");
-            }
-
-            if (ticketinfo.Krb5.btickets != GOOD_TICKETS) {
-                ReleaseMutex(ticketinfo.lockObj);
-                AfxBeginThread(InitTicket,hWnd);
-            } else {
-                ReleaseMutex(ticketinfo.lockObj);
-                m_importedTickets = 1;
-                m_autoRenewalAttempted = 0;
-            }
-        }
-    }
-    return 0;
-}
-
 static UINT krenew(void *param)
 {
     char *ccache_name = (char *)param;
@@ -722,9 +640,6 @@ static UINT krenew(void *param)
     krb5_principal server = 0;
     krb5_creds my_creds;
     krb5_data *realm = 0;
-
-    // @TODO: logic to check for imported tickets and auto-renew/re-import
-    // from MSLSA
 
     memset(&my_creds, 0, sizeof(krb5_creds));
     if (ccache_name == NULL)
@@ -838,39 +753,7 @@ UINT CLeashView::RenewTicket(void * hWnd)
         return 0;
     }
 
-    krb5_error_code code;
-    krb5_ccache mslsa_ccache=0;
-    krb5_principal princ = 0;
-    char * pname = 0;
-
-    if (code = pkrb5_cc_resolve(CLeashApp::m_krbv5_context, "MSLSA:", &mslsa_ccache))
-        goto cleanup;
-
-    if (code = pkrb5_cc_get_principal(CLeashApp::m_krbv5_context, mslsa_ccache, &princ))
-        goto cleanup;
-
-    if (code = pkrb5_unparse_name(CLeashApp::m_krbv5_context, princ, &pname))
-        goto cleanup;
-
-    if ( !strcmp(ticketinfo.Krb5.principal, pname) )
-        m_importedTickets = 1;
-
-  cleanup:
-    if (pname)
-        pkrb5_free_unparsed_name(CLeashApp::m_krbv5_context, pname);
-
-    if (princ)
-        pkrb5_free_principal(CLeashApp::m_krbv5_context, princ);
-
-    if (mslsa_ccache)
-        pkrb5_cc_close(CLeashApp::m_krbv5_context, mslsa_ccache);
-
-    // If imported from Kerberos LSA, re-import
-    // Otherwise, init the tickets
-    if ( m_importedTickets )
-        AfxBeginThread(ImportTicket,hWnd);
-    else
-        AfxBeginThread(InitTicket,hWnd);
+    AfxBeginThread(InitTicket,hWnd);
 
     return 0;
 }
@@ -933,7 +816,6 @@ VOID CLeashView::OnDestroyTicket()
             SendMessage(WM_COMMAND, ID_UPDATE_DISPLAY, 0);
         }
     }
-    m_importedTickets = 0;
     m_autoRenewalAttempted = 0;
 }
 
@@ -1506,7 +1388,7 @@ VOID CLeashView::OnDebugMode()
     }
 
 
-    // Check all possible 'KRB' system varables, then reset (delete) debug file
+    // Check all possible 'KRB' system variables, then delete debug file
     CHAR*  Env[] = {"TEMP", "TMP", "HOME", NULL};
     CHAR** pEnv = Env;
     CHAR debugFilePath[MAX_PATH];
@@ -1833,24 +1715,6 @@ VOID CLeashView::OnUpdateRenewTicket(CCmdUI* pCmdUI)
     pCmdUI->Enable(enable);
 }
 
-VOID CLeashView::OnUpdateImportTicket(CCmdUI* pCmdUI)
-{
-    bool ccIsMSLSA = false;
-
-    if (CLeashApp::m_krbv5_context)
-    {
-        const char *ccName = pkrb5_cc_default_name(CLeashApp::m_krbv5_context);
-
-        if (ccName)
-            ccIsMSLSA = !strcmp(ccName, "MSLSA:");
-    }
-
-    if (!CLeashApp::m_hKrbLSA || !pLeash_importable() || ccIsMSLSA)
-        pCmdUI->Enable(FALSE);
-    else
-        pCmdUI->Enable(TRUE);
-}
-
 LRESULT CLeashView::OnGoodbye(WPARAM wParam, LPARAM lParam)
 {
     m_pDebugWindow->DestroyWindow();
@@ -1904,11 +1768,6 @@ LRESULT CLeashView::OnTrayIcon(WPARAM wParam, LPARAM lParam)
             else
                 nFlags = MF_STRING;
             menu->AppendMenu(nFlags, ID_RENEW_TICKET, "&Renew Tickets");
-            if (!CLeashApp::m_hKrbLSA || !pLeash_importable())
-                nFlags = MF_STRING | MF_GRAYED;
-            else
-                nFlags = MF_STRING;
-            menu->AppendMenu(MF_STRING, ID_IMPORT_TICKET, "&Import Tickets");
             if (!ticketinfo.Krb5.btickets)
                 nFlags = MF_STRING | MF_GRAYED;
             else
@@ -2168,7 +2027,7 @@ BOOL CLeashView::PreTranslateMessage(MSG* pMsg)
 
                 if (CMainFrame::m_isMinimum)
                 {
-                    // minimized dispay
+                    // minimized display
                     ticketStatusKrb5.Format("Kerb-5: %02d:%02d Left",
                                              (m_ticketTimeLeft / 60L / 60L),
                                              (m_ticketTimeLeft / 60L % 60L));

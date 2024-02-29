@@ -16,18 +16,18 @@ DESCRIPTION
 The kproplog command displays the contents of the KDC database update
 log to standard output.  It can be used to keep track of incremental
 updates to the principal database.  The update log file contains the
-update log maintained by the :ref:`kadmind(8)` process on the master
+update log maintained by the :ref:`kadmind(8)` process on the primary
 KDC server and the :ref:`kpropd(8)` process on the replica KDC
 servers.  When updates occur, they are logged to this file.
 Subsequently any KDC replica configured for incremental updates will
-request the current data from the master KDC and update their log file
-with any updates returned.
+request the current data from the primary KDC and update their log
+file with any updates returned.
 
 The kproplog command requires read access to the update log file.  It
 will display update entries only for the KDC it runs on.
 
 If no options are specified, kproplog displays a summary of the update
-log.  If invoked on the master, kproplog also displays all of the
+log.  If invoked on the primary, kproplog also displays all of the
 update entries.  If invoked on a replica KDC server, kproplog displays
 only a summary of the updates, which includes the serial number of the
 last update received and the associated time stamp of the last update.
@@ -39,7 +39,8 @@ OPTIONS
 **-R**
     Reset the update log.  This forces full resynchronization.  If
     used on a replica then that replica will request a full resync.
-    If used on the master then all replicas will request full resyncs.
+    If used on the primary then all replicas will request full
+    resyncs.
 
 **-h**
     Display a summary of the update log.  This information includes

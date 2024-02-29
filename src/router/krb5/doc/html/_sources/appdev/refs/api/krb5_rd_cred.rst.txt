@@ -3,7 +3,7 @@ krb5_rd_cred -  Read and validate a KRB-CRED message.
 
 ..
 
-.. c:function:: krb5_error_code krb5_rd_cred(krb5_context context, krb5_auth_context auth_context, krb5_data * pcreddata, krb5_creds *** pppcreds, krb5_replay_data * outdata)
+.. c:function:: krb5_error_code krb5_rd_cred(krb5_context context, krb5_auth_context auth_context, krb5_data * creddata, krb5_creds *** creds_out, krb5_replay_data * rdata_out)
 
 ..
 
@@ -14,11 +14,11 @@ krb5_rd_cred -  Read and validate a KRB-CRED message.
 
 	          **[in]** **auth_context** - Authentication context
 
-	          **[in]** **pcreddata** - **KRB-CRED** message
+	          **[in]** **creddata** - **KRB-CRED** message
 
-	          **[out]** **pppcreds** - Null-terminated array of forwarded credentials
+	          **[out]** **creds_out** - Null-terminated array of forwarded credentials
 
-	          **[out]** **outdata** - Replay data (NULL if not needed)
+	          **[out]** **rdata_out** - Replay data (NULL if not needed)
 
 
 ..
@@ -36,11 +36,11 @@ krb5_rd_cred -  Read and validate a KRB-CRED message.
 
 
 
- *pcreddata* will be decrypted using the receiving subkey if it is present in *auth_context* , or the session key if the receiving subkey is not present or fails to decrypt the message.
+ *creddata* will be decrypted using the receiving subkey if it is present in *auth_context* , or the session key if the receiving subkey is not present or fails to decrypt the message.
 
 
 
-Use :c:func:`krb5_free_tgt_creds()` to free *pppcreds* when it is no longer needed.
+Use :c:func:`krb5_free_tgt_creds()` to free *creds_out* when it is no longer needed.
 
 
 
@@ -60,7 +60,7 @@ Use :c:func:`krb5_free_tgt_creds()` to free *pppcreds* when it is no longer need
 
 .. note::
 
-	 The *outdata* argument is required if :data:`KRB5_AUTH_CONTEXT_RET_TIME` or :data:`KRB5_AUTH_CONTEXT_RET_SEQUENCE` flag is set in the *auth_context* .`
+	 The *rdata_out* argument is required if the :data:`KRB5_AUTH_CONTEXT_RET_TIME` or :data:`KRB5_AUTH_CONTEXT_RET_SEQUENCE` flag is set in *auth_context* .`
  
 
 

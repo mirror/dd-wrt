@@ -12,7 +12,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../',
-        VERSION:     '1.17',
+        VERSION:     '1.21.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -98,6 +98,7 @@
 <p>Convert a string representation of a principal name to a krb5_principal structure.</p>
 <p>A string representation of a Kerberos name consists of one or more principal name components, separated by slashes, optionally followed by the &#64; character and a realm name. If the realm name is not specified, the local realm is used.</p>
 <p>To use the slash and &#64; symbols as part of a component (quoted) instead of using them as a component separator or as a realm prefix), put a backslash () character in front of the symbol. Similarly, newline, tab, backspace, and NULL characters can be included in a component by using <strong>n</strong> , <strong>t</strong> , <strong>b</strong> or <strong>0</strong> , respectively.</p>
+<p>Beginning with release 1.20, the name type of the principal will be inferred as <strong>KRB5_NT_SRV_INST</strong> or <strong>KRB5_NT_WELLKNOWN</strong> based on the principal name. The type will be <strong>KRB5_NT_PRINCIPAL</strong> if a type cannot be inferred.</p>
 <p>Use <a class="reference internal" href="krb5_free_principal.html#c.krb5_free_principal" title="krb5_free_principal"><code class="xref c c-func docutils literal"><span class="pre">krb5_free_principal()</span></code></a> to free <em>principal_out</em> when it is no longer needed.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
@@ -161,8 +162,8 @@
 
     <div class="footer-wrapper">
         <div class="footer" >
-            <div class="right" ><i>Release: 1.17</i><br />
-                &copy; <a href="../../../copyright.html">Copyright</a> 1985-2019, MIT.
+            <div class="right" ><i>Release: 1.21.2</i><br />
+                &copy; <a href="../../../copyright.html">Copyright</a> 1985-2023, MIT.
             </div>
             <div class="left">
                 

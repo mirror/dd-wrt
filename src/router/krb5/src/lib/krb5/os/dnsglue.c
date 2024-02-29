@@ -71,6 +71,7 @@ static int initparse(struct krb5int_dns_state *);
  * Define macros to use the best available DNS search functions.  INIT_HANDLE()
  * returns true if handle initialization is successful, false if it is not.
  * SEARCH() returns the length of the response or -1 on error.
+ * PRIMARY_DOMAIN() returns the first search domain in allocated memory.
  * DECLARE_HANDLE() must be used last in the declaration list since it may
  * evaluate to nothing.
  */
@@ -81,6 +82,7 @@ static int initparse(struct krb5int_dns_state *);
 #define DECLARE_HANDLE(h) dns_handle_t h
 #define INIT_HANDLE(h) ((h = dns_open(NULL)) != NULL)
 #define SEARCH(h, n, c, t, a, l) dns_search(h, n, c, t, a, l, NULL, NULL)
+#define PRIMARY_DOMAIN(h) dns_search_list_domain(h, 0)
 #define DESTROY_HANDLE(h) dns_free(h)
 
 #elif HAVE_RES_NINIT && HAVE_RES_NSEARCH
@@ -89,6 +91,7 @@ static int initparse(struct krb5int_dns_state *);
 #define DECLARE_HANDLE(h) struct __res_state h
 #define INIT_HANDLE(h) (memset(&h, 0, sizeof(h)), res_ninit(&h) == 0)
 #define SEARCH(h, n, c, t, a, l) res_nsearch(&h, n, c, t, a, l)
+#define PRIMARY_DOMAIN(h) ((h.dnsrch[0] == NULL) ? NULL : strdup(h.dnsrch[0]))
 #if HAVE_RES_NDESTROY
 #define DESTROY_HANDLE(h) res_ndestroy(&h)
 #else
@@ -101,6 +104,8 @@ static int initparse(struct krb5int_dns_state *);
 #define DECLARE_HANDLE(h)
 #define INIT_HANDLE(h) (res_init() == 0)
 #define SEARCH(h, n, c, t, a, l) res_search(n, c, t, a, l)
+#define PRIMARY_DOMAIN(h) \
+    ((_res.defdname == NULL) ? NULL : strdup(_res.defdname))
 #define DESTROY_HANDLE(h)
 
 #endif
@@ -387,7 +392,7 @@ txt_lookup_name(const char *prefix, const char *name)
             k5_buf_add(&buf, ".");
     }
 
-    return buf.data;
+    return k5_buf_cstring(&buf);
 }
 
 /*
@@ -431,6 +436,12 @@ cleanup:
     if (rr != NULL)
         DnsRecordListFree(rr, DnsFreeRecordList);
     return ret;
+}
+
+char *
+k5_primary_domain()
+{
+    return NULL;
 }
 
 #else /* _WIN32 */
@@ -483,6 +494,19 @@ errout:
     krb5int_dns_fini(ds);
     free(txtname);
     return retval;
+}
+
+char *
+k5_primary_domain()
+{
+    char *domain;
+    DECLARE_HANDLE(h);
+
+    if (!INIT_HANDLE(h))
+        return NULL;
+    domain = PRIMARY_DOMAIN(h);
+    DESTROY_HANDLE(h);
+    return domain;
 }
 
 #endif /* not _WIN32 */

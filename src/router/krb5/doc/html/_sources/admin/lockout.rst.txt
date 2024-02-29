@@ -102,11 +102,11 @@ traditional :ref:`kprop(8)` or incremental propagation.  Because of
 this, the number of attempts an attacker can make within a time period
 is multiplied by the number of KDCs.  For instance, if the
 **maxfailure** parameter on a policy is 10 and there are four KDCs in
-the environment (a master and three replicas), an attacker could make
+the environment (a primary and three replicas), an attacker could make
 as many as 40 attempts before the principal is locked out on all four
 KDCs.
 
-An administrative unlock is propagated from the master to the replica
+An administrative unlock is propagated from the primary to the replica
 KDCs during the next propagation.  Propagation of an administrative
 unlock will cause the counter of failed attempts on each replica to
 reset to 1 on the next failure.

@@ -60,13 +60,9 @@
 
 #define xdr_des_block		gssrpc_xdr_des_block
 
-#define authany_wrap		gssrpc_authany_wrap
-#define authany_unwrap		gssrpc_authany_unwrap
-
 #define authunix_create		gssrpc_authunix_create
 #define authunix_create_default	gssrpc_authunix_create_default
 #define authnone_create		gssrpc_authnone_create
-#define authdes_create		gssrpc_authdes_create
 #define xdr_opaque_auth		gssrpc_xdr_opaque_auth
 
 /* auth_gss.c */
@@ -203,11 +199,8 @@
 #define svc_fdset		gssrpc_svc_fdset
 #define svc_fds			gssrpc_svc_fds
 
-#define rpctest_service		gssrpc_rpctest_service
-
 #define svc_getreq		gssrpc_svc_getreq
 #define svc_getreqset		gssrpc_svc_getreqset
-#define svc_getreqset2		gssrpc_svc_getreqset2
 #define svc_run			gssrpc_svc_run
 
 #define svcraw_create		gssrpc_svcraw_create

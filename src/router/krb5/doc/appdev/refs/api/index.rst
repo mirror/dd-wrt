@@ -157,8 +157,6 @@ Rarely used public interfaces
    krb5_cc_get_config.rst
    krb5_cc_get_flags.rst
    krb5_cc_get_full_name.rst
-   krb5_cc_last_change_time.rst
-   krb5_cc_lock.rst
    krb5_cc_move.rst
    krb5_cc_next_cred.rst
    krb5_cc_remove_cred.rst
@@ -171,14 +169,10 @@ Rarely used public interfaces
    krb5_cc_store_cred.rst
    krb5_cc_support_switch.rst
    krb5_cc_switch.rst
-   krb5_cc_unlock.rst
    krb5_cccol_cursor_free.rst
    krb5_cccol_cursor_new.rst
    krb5_cccol_cursor_next.rst
    krb5_cccol_have_content.rst
-   krb5_cccol_last_change_time.rst
-   krb5_cccol_lock.rst
-   krb5_cccol_unlock.rst
    krb5_clear_error_message.rst
    krb5_check_clockskew.rst
    krb5_copy_addresses.rst
@@ -229,6 +223,8 @@ Rarely used public interfaces
    krb5_init_creds_step.rst
    krb5_init_keyblock.rst
    krb5_is_referral_realm.rst
+   krb5_kdc_sign_ticket.rst
+   krb5_kdc_verify_ticket.rst
    krb5_kt_add_entry.rst
    krb5_kt_end_seq_get.rst
    krb5_kt_get_entry.rst
@@ -238,6 +234,7 @@ Rarely used public interfaces
    krb5_kt_remove_entry.rst
    krb5_kt_start_seq_get.rst
    krb5_make_authdata_kdc_issued.rst
+   krb5_marshal_credentials.rst
    krb5_merge_authdata.rst
    krb5_mk_1cred.rst
    krb5_mk_error.rst
@@ -259,6 +256,7 @@ Rarely used public interfaces
    krb5_pac_sign_ext.rst
    krb5_pac_verify.rst
    krb5_pac_verify_ext.rst
+   krb5_pac_get_client_info.rst
    krb5_prepend_error_message.rst
    krb5_principal2salt.rst
    krb5_rd_cred.rst
@@ -290,6 +288,7 @@ Rarely used public interfaces
    krb5_tkt_creds_get_times.rst
    krb5_tkt_creds_init.rst
    krb5_tkt_creds_step.rst
+   krb5_unmarshal_credentials.rst
    krb5_verify_init_creds.rst
    krb5_verify_init_creds_opt_init.rst
    krb5_verify_init_creds_opt_set_ap_req_nofail.rst

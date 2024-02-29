@@ -25,6 +25,68 @@ realm.run([kadminl, 'cpw', '-pw', 'l0ngenough', 'pwuser'], expected_code=1,
 realm.run([kadminl, 'cpw', '-pw', '3rdpassword', 'pwuser'])
 realm.run([kadminl, 'cpw', '-pw', 'l0ngenough', 'pwuser'])
 
+# Regression test for #929 (kadmind crash with more historical
+# passwords in a principal entry than current policy history setting).
+mark('password history (policy value reduced below current array size)')
+realm.run([kadminl, 'addpol', '-history', '5', 'histpol'])
+realm.addprinc('histprinc', 'first')
+realm.run([kadminl, 'modprinc', '-policy', 'histpol', 'histprinc'])
+realm.run([kadminl, 'cpw', '-pw', 'second', 'histprinc'])
+realm.run([kadminl, 'cpw', '-pw', 'third', 'histprinc'])
+realm.run([kadminl, 'cpw', '-pw', 'fourth', 'histprinc'])
+realm.run([kadminl, 'modpol', '-history', '3', 'histpol'])
+realm.run([kadminl, 'cpw', '-pw', 'fifth', 'histprinc'])
+realm.run([kadminl, 'delprinc', 'histprinc'])
+
+# Regression test for #2841 (heap buffer overflow when policy history
+# value is reduced to match the number of historical passwords for a
+# principal).
+mark('password history (policy value reduced to current array size)')
+def histfail(*pwlist):
+    for pw in pwlist:
+        realm.run([kadminl, 'cpw', '-pw', pw, 'histprinc'], expected_code=1,
+                  expected_msg='Cannot reuse password')
+realm.run([kadminl, 'modpol', '-history', '3', 'histpol'])
+realm.addprinc('histprinc', '1111')
+realm.run([kadminl, 'modprinc', '-policy', 'histpol', 'histprinc'])
+realm.run([kadminl, 'cpw', '-pw', '2222', 'histprinc'])
+histfail('2222', '1111')
+realm.run([kadminl, 'modpol', '-history', '2', 'histpol'])
+realm.run([kadminl, 'cpw', '-pw', '3333', 'histprinc'])
+
+# Test that the history array is properly resized if the policy
+# history value is increased after the array is filled.
+mark('password history (policy value increase)')
+realm.run([kadminl, 'delprinc', 'histprinc'])
+realm.addprinc('histprinc', '1111')
+realm.run([kadminl, 'modprinc', '-policy', 'histpol', 'histprinc'])
+realm.run([kadminl, 'cpw', '-pw', '2222', 'histprinc'])
+histfail('2222', '1111')
+realm.run([kadminl, 'cpw', '-pw', '2222', 'histprinc'], expected_code=1,
+          expected_msg='Cannot reuse password')
+realm.run([kadminl, 'cpw', '-pw', '1111', 'histprinc'], expected_code=1,
+          expected_msg='Cannot reuse password')
+realm.run([kadminl, 'modpol', '-history', '3', 'histpol'])
+realm.run([kadminl, 'cpw', '-pw', '3333', 'histprinc'])
+histfail('3333', '2222', '1111')
+realm.run([kadminl, 'modpol', '-history', '4', 'histpol'])
+histfail('3333', '2222', '1111')
+realm.run([kadminl, 'cpw', '-pw', '4444', 'histprinc'])
+histfail('4444', '3333', '2222', '1111')
+
+# Test that when the policy history value is reduced, all currently
+# known old passwords still fail until the next password change, after
+# which the new number of old passwords fails (but no more).
+mark('password history (policy value reduction)')
+realm.run([kadminl, 'modpol', '-history', '3', 'histpol'])
+histfail('4444', '3333', '2222', '1111')
+realm.run([kadminl, 'cpw', '-pw', '5555', 'histprinc'])
+histfail('5555', '3333', '3333')
+realm.run([kadminl, 'cpw', '-pw', '2222', 'histprinc'])
+realm.run([kadminl, 'modpol', '-history', '2', 'histpol'])
+histfail('2222', '5555', '4444')
+realm.run([kadminl, 'cpw', '-pw', '3333', 'histprinc'])
+
 # Test references to nonexistent policies.
 mark('nonexistent policy references')
 realm.run([kadminl, 'addprinc', '-randkey', '-policy', 'newpol', 'newuser'])

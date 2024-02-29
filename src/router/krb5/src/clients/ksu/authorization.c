@@ -23,7 +23,7 @@
  *     direct, indirect, or consequential damages with respect to any
  *     claim by the user or distributor of the ksu software.
  *
- * KSU was writen by:  Ari Medvinsky, ari@isi.edu
+ * KSU was written by:  Ari Medvinsky, ari@isi.edu
  */
 
 #include "ksu.h"
@@ -501,11 +501,11 @@ krb5_boolean find_first_cmd_that_exists(fcmd_arr, cmd_out, err_out)
         for(j= 0; j < i; j ++)
             k5_buf_add_fmt(&buf, " %s ", fcmd_arr[j]);
         k5_buf_add(&buf, "\n");
-        if (k5_buf_status(&buf) != 0) {
+        *err_out = k5_buf_cstring(&buf);
+        if (*err_out == NULL) {
             perror(prog_name);
             exit(1);
         }
-        *err_out = buf.data;
     }
 
 
