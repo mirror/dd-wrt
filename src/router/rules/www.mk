@@ -10,6 +10,9 @@ www:
 ifeq ($(CONFIG_EOP_TUNNEL),y)
 	$(MAKE) -C eop-tunnel www-install INSTALLDIR=$(INSTALLDIR)/www
 endif
+ifeq ($(CONFIG_WIREGUARD),y)
+	$(MAKE) -C eop-tunnel www-install INSTALLDIR=$(INSTALLDIR)/www
+endif
 ifeq ($(CONFIG_WIVIZ),y)
 	$(MAKE) -C wiviz2 wwwinstall INSTALLDIR=$(INSTALLDIR)/wiviz2
 endif

@@ -510,6 +510,9 @@ endif
 ifeq ($(CONFIG_EOP_TUNNEL),y)
 	sed -i 's/\# CONFIG_SEQ is not set/CONFIG_SEQ=y/g' busybox/.config
 endif
+ifeq ($(CONFIG_WIREGUARD),y)
+	sed -i 's/\# CONFIG_SEQ is not set/CONFIG_SEQ=y/g' busybox/.config
+endif
 	sed -i 's/\# CONFIG_IP is not set/CONFIG_IP=y/g' busybox/.config
 	sed -i 's/\# CONFIG_IPADDR is not set/CONFIG_IPADDR=y/g' busybox/.config
 	sed -i 's/\# CONFIG_IPLINK is not set/CONFIG_IPLINK=y/g' busybox/.config
