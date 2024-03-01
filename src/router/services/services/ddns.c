@@ -50,7 +50,7 @@
 static char _username[] = "ddns_username_XX";
 #ifdef HAVE_IPV6
 static char _ipv6[] = "ddns_ipv6_XX";
-static char _ipv6_only[] = "ddns_ipv6_XX";
+static char _ipv6_only[] = "ddns_ipv6_only_XX";
 #endif
 static char _passwd[] = "ddns_passwd_XX";
 static char _hostname[] = "ddns_hostname_XX";
