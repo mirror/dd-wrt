@@ -1448,10 +1448,7 @@ static struct ksmbd_user *session_user(struct ksmbd_conn *conn,
 	char *name;
 	unsigned int name_off, name_len, secbuf_len;
 
-	if (conn->use_spnego && conn->mechToken)
-		secbuf_len = conn->mechTokenLen;
-	else
-		secbuf_len = le16_to_cpu(req->SecurityBufferLength);
+	secbuf_len = le16_to_cpu(req->SecurityBufferLength);
 	if (secbuf_len < sizeof(struct authenticate_message)) {
 		ksmbd_debug(SMB, "blob len %d too small\n", secbuf_len);
 		return NULL;
@@ -1544,10 +1541,7 @@ static int ntlm_authenticate(struct ksmbd_work *work,
 		struct authenticate_message *authblob;
 
 		authblob = user_authblob(conn, req);
-		if (conn->use_spnego && conn->mechToken)
-			sz = conn->mechTokenLen;
-		else
-			sz = le16_to_cpu(req->SecurityBufferLength);
+		sz = le16_to_cpu(req->SecurityBufferLength);
 		rc = ksmbd_decode_ntlmssp_auth_blob(authblob, sz, conn, sess);
 		if (rc) {
 			set_user_flag(sess->user, KSMBD_USER_FLAG_BAD_PASSWORD);
@@ -1742,7 +1736,6 @@ int smb2_sess_setup(struct ksmbd_work *work)
 	rsp->SecurityBufferOffset = cpu_to_le16(72);
 	rsp->SecurityBufferLength = 0;
 
-	ksmbd_conn_lock(conn);
 	if (!req->hdr.SessionId) {
 		sess = ksmbd_smb2_session_create();
 		if (!sess) {
@@ -1821,7 +1814,8 @@ int smb2_sess_setup(struct ksmbd_work *work)
 
 	negblob_off = le16_to_cpu(req->SecurityBufferOffset);
 	negblob_len = le16_to_cpu(req->SecurityBufferLength);
-	if (negblob_off < offsetof(struct smb2_sess_setup_req, Buffer)) {
+	if (negblob_off < offsetof(struct smb2_sess_setup_req, Buffer) ||
+	    negblob_len < offsetof(struct negotiate_message, NegotiateFlags)) {
 		rc = -EINVAL;
 		goto out_err;
 	}
@@ -1830,15 +1824,8 @@ int smb2_sess_setup(struct ksmbd_work *work)
 			negblob_off);
 
 	if (decode_negotiation_token(conn, negblob, negblob_len) == 0) {
-		if (conn->mechToken) {
+		if (conn->mechToken)
 			negblob = (struct negotiate_message *)conn->mechToken;
-			negblob_len = conn->mechTokenLen;
-		}
-	}
-
-	if (negblob_len < offsetof(struct negotiate_message, NegotiateFlags)) {
-		rc = -EINVAL;
-		goto out_err;
 	}
 
 	if (server_conf.auth_mechs & conn->auth_mechs) {
@@ -1961,7 +1948,6 @@ out_err:
 			rsp->hdr.Status = STATUS_INSUFFICIENT_RESOURCES;
 	}
 
-	ksmbd_conn_unlock(conn);
 	return rc;
 }
 
@@ -2035,10 +2021,6 @@ int smb2_tree_connect(struct ksmbd_work *work)
 	status.tree_conn->maximal_access = le32_to_cpu(rsp->MaximalAccess);
 	if (conn->posix_ext_supported)
 		status.tree_conn->posix_extensions = true;
-
-	write_lock(&sess->tree_conns_lock);
-	status.tree_conn->t_state = TREE_CONNECTED;
-	write_unlock(&sess->tree_conns_lock);
 
 	rsp->StructureSize = cpu_to_le16(16);
 out_err1:
@@ -2163,46 +2145,27 @@ int smb2_tree_disconnect(struct ksmbd_work *work)
 
 	ksmbd_debug(SMB, "request\n");
 
-	if (!tcon) {
-
-		ksmbd_debug(SMB, "Invalid tid %d\n", req->hdr.Id.SyncId.TreeId);
-		rsp->hdr.Status = STATUS_NETWORK_NAME_DELETED;
-		err = -ENOENT;
-		goto err_out;
-	}
-
-	ksmbd_close_tree_conn_fds(work);
-	write_lock(&sess->tree_conns_lock);
-	if (tcon->t_state == TREE_DISCONNECTED) {
-		write_unlock(&sess->tree_conns_lock);
-		rsp->hdr.Status = STATUS_NETWORK_NAME_DELETED;
-		err = -ENOENT;
-		goto err_out;
-	}
-
-	WARN_ON_ONCE(atomic_dec_and_test(&tcon->refcount));
-	tcon->t_state = TREE_DISCONNECTED;
-	write_unlock(&sess->tree_conns_lock);
-	err = ksmbd_tree_conn_disconnect(sess, tcon);
-	if (err) {
-		rsp->hdr.Status = STATUS_NETWORK_NAME_DELETED;
-		goto err_out;
-	}
-	work->tcon = NULL;
-
 	rsp->StructureSize = cpu_to_le16(4);
 	err = ksmbd_iov_pin_rsp(work, rsp,
 				sizeof(struct smb2_tree_disconnect_rsp));
 	if (err) {
 		rsp->hdr.Status = STATUS_INSUFFICIENT_RESOURCES;
-		goto err_out;
+		smb2_set_err_rsp(work);
+		return err;
 	}
 
-	return 0;
+	if (!tcon) {
 
-err_out:
-	smb2_set_err_rsp(work);
-	return err;
+		ksmbd_debug(SMB, "Invalid tid %d\n", req->hdr.Id.SyncId.TreeId);
+		rsp->hdr.Status = STATUS_NETWORK_NAME_DELETED;
+		smb2_set_err_rsp(work);
+		return -ENOENT;
+	}
+
+	ksmbd_close_tree_conn_fds(work);
+	ksmbd_tree_conn_disconnect(sess, tcon);
+	work->tcon = NULL;
+	return 0;
 }
 
 /**
@@ -6030,7 +5993,6 @@ static int smb2_rename(struct ksmbd_work *work, struct ksmbd_file *fp,
 		}
 	}
 
-	smb_break_all_levII_oplock(work, fp, 0);
 	rc = ksmbd_vfs_fp_rename(work, fp, new_name);
 out:
 	kfree(pathname);
@@ -8449,71 +8411,6 @@ int smb2_ioctl(struct ksmbd_work *work)
 		nbytes = sizeof(struct reparse_data_buffer);
 		break;
 	}
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 4, 0)
-	case FSCTL_DUPLICATE_EXTENTS_TO_FILE: {
-		struct ksmbd_file *fp_in, *fp_out = NULL;
-		struct duplicate_extents_to_file *dup_ext;
-		loff_t src_off, dst_off, length, cloned;
-
-		if (in_buf_len < sizeof(struct duplicate_extents_to_file)) {
-			ret = -EINVAL;
-			goto out;
-		}
-
-		dup_ext = (struct duplicate_extents_to_file *)&req->Buffer[0];
-
-		fp_in = ksmbd_lookup_fd_slow(work, dup_ext->VolatileFileHandle,
-					     dup_ext->PersistentFileHandle);
-		if (!fp_in) {
-			pr_err("not found file handle in duplicate extent to file\n");
-			ret = -ENOENT;
-			goto out;
-		}
-
-		fp_out = ksmbd_lookup_fd_fast(work, id);
-		if (!fp_out) {
-			pr_err("not found fp\n");
-			ret = -ENOENT;
-			goto dup_ext_out;
-		}
-
-		src_off = le64_to_cpu(dup_ext->SourceFileOffset);
-		dst_off = le64_to_cpu(dup_ext->TargetFileOffset);
-		length = le64_to_cpu(dup_ext->ByteCount);
-		/*
-     * XXX: It is not clear if FSCTL_DUPLICATE_EXTENTS_TO_FILE
-     * should fall back to vfs_copy_file_range().  This could be
-     * beneficial when re-exporting nfs/smb mount, but note that
-     * this can result in partial copy that returns an error status.
-     * If/when FSCTL_DUPLICATE_EXTENTS_TO_FILE_EX is implemented,
-     * fall back to vfs_copy_file_range(), should be avoided when
-     * the flag DUPLICATE_EXTENTS_DATA_EX_SOURCE_ATOMIC is set.
-     */
-		cloned = vfs_clone_file_range(fp_in->filp, src_off,
-					      fp_out->filp, dst_off, length);
-		if (cloned == -EXDEV || cloned == -EOPNOTSUPP) {
-			ret = -EOPNOTSUPP;
-			goto dup_ext_out;
-		} else if (cloned != length) {
-			cloned = vfs_copy_file_range(fp_in->filp, src_off,
-						     fp_out->filp, dst_off,
-						     length, 0);
-			if (cloned != length) {
-				if (cloned < 0)
-					ret = cloned;
-				else
-					ret = -EINVAL;
-			}
-		}
-
-dup_ext_out:
-		ksmbd_fd_put(work, fp_in);
-		ksmbd_fd_put(work, fp_out);
-		if (ret < 0)
-			goto out;
-		break;
-	}
-#endif
 	default:
 		ksmbd_debug(SMB, "not implemented yet ioctl command 0x%x\n",
 			    cnt_code);

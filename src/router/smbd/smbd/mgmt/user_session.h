@@ -63,8 +63,6 @@ struct ksmbd_session {
 	struct list_head		sessions_entry;
 	struct ksmbd_file_table		file_table;
 	atomic_t			refcnt;
-	unsigned long last_active;
-	rwlock_t tree_conns_lock;
 };
 
 static inline int test_session_flag(struct ksmbd_session *sess, int bit)
