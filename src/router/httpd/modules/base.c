@@ -2520,7 +2520,8 @@ void do_ddwrt_inspired_themes(webs_t wp);
 #ifdef HAVE_STATUS_SYSLOG
 static int do_syslog(unsigned char method, struct mime_handler *handler, char *url, webs_t stream)
 {
-	static const char filename[] = "/var/log/messages";
+	const char filename[] = "/var/log/messages";
+	const char filename_jffs[] = "/jffs/log/messages";
 	char *style_dark = nvram_safe_get("router_style_dark");
 	char buf[128];
 	char *charset = live_translate(stream, "lang_charset.set");
@@ -2568,7 +2569,11 @@ static int do_syslog(unsigned char method, struct mime_handler *handler, char *u
 
 	do_ddwrt_inspired_themes(stream);
 	if (nvram_matchi("syslogd_enable", 1)) {
-		FILE *fp = fopen(filename, "r");
+		FILE *fp = NULL;
+		if (nvram_matchi("syslogd_jffs2", 1))
+			fp = fopen(filename_jffs, "r");
+		if (!fp) //fallback
+			fp = fopen(filename, "r");
 		if (fp != NULL) {
 			char line[1024];
 			websWrite(stream, "<div style=\"height: 770px; overflow-y: auto; overflow-x: hidden;\"><table><tbody>");
