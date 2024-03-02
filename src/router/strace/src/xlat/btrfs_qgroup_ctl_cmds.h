@@ -24,6 +24,9 @@ static const struct xlat_data btrfs_qgroup_ctl_cmds_xdata[] = {
  XLAT_TYPE(uint64_t, BTRFS_QUOTA_CTL_RESCAN__NOTUSED),
  #define XLAT_VAL_2 ((uint64_t) (BTRFS_QUOTA_CTL_RESCAN__NOTUSED))
  #define XLAT_STR_2 STRINGIFY(BTRFS_QUOTA_CTL_RESCAN__NOTUSED)
+ XLAT_TYPE(uint64_t, BTRFS_QUOTA_CTL_ENABLE_SIMPLE_QUOTA),
+ #define XLAT_VAL_3 ((uint64_t) (BTRFS_QUOTA_CTL_ENABLE_SIMPLE_QUOTA))
+ #define XLAT_STR_3 STRINGIFY(BTRFS_QUOTA_CTL_ENABLE_SIMPLE_QUOTA)
 };
 #  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
 static
@@ -42,6 +45,9 @@ const struct xlat btrfs_qgroup_ctl_cmds[1] = { {
 #  ifdef XLAT_VAL_2
   | XLAT_VAL_2
 #  endif
+#  ifdef XLAT_VAL_3
+  | XLAT_VAL_3
+#  endif
   ,
  .flags_strsz = 0
 #  ifdef XLAT_STR_0
@@ -53,6 +59,9 @@ const struct xlat btrfs_qgroup_ctl_cmds[1] = { {
 #  ifdef XLAT_STR_2
   + sizeof(XLAT_STR_2)
 #  endif
+#  ifdef XLAT_STR_3
+  + sizeof(XLAT_STR_3)
+#  endif
   ,
 } };
 DIAG_POP_IGNORE_TAUTOLOGICAL_CONSTANT_COMPARE
@@ -63,6 +72,8 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_CONSTANT_COMPARE
 #  undef XLAT_VAL_1
 #  undef XLAT_STR_2
 #  undef XLAT_VAL_2
+#  undef XLAT_STR_3
+#  undef XLAT_VAL_3
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

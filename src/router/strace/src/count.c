@@ -8,7 +8,7 @@
  *                    <barrow_dj@mail.yahoo.com,djbarrow@de.ibm.com>
  * Copyright (c) 2004 Roland McGrath <roland@redhat.com>
  * Copyright (c) 2006 Dmitry V. Levin <ldv@strace.io>
- * Copyright (c) 2006-2021 The strace developers.
+ * Copyright (c) 2006-2023 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: LGPL-2.1-or-later
@@ -316,7 +316,7 @@ call_summary_pers(FILE *outf)
 
 
 	/* sort, calculate statistics */
-	indices = xcalloc(sizeof(indices[0]), nsyscalls);
+	indices = xcalloc(nsyscalls, sizeof(indices[0]));
 	for (size_t i = 0; i < nsyscalls; ++i) {
 		indices[i] = i;
 		if (counts[i].calls == 0)

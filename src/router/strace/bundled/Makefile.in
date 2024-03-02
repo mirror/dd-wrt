@@ -16,7 +16,7 @@
 
 # Automake input for bundled.
 #
-# Copyright (c) 2021-2022 The strace developers.
+# Copyright (c) 2018-2023 The strace developers.
 # All rights reserved.
 #
 # SPDX-License-Identifier: LGPL-2.1-or-later
@@ -108,6 +108,7 @@ am__aclocal_m4_deps = $(top_srcdir)/src/xlat/ieee802154_addr_types.m4 \
 	$(top_srcdir)/m4/ax_prog_cc_for_build.m4 \
 	$(top_srcdir)/m4/ax_valgrind_check.m4 \
 	$(top_srcdir)/m4/bpf_attr.m4 $(top_srcdir)/m4/mpers.m4 \
+	$(top_srcdir)/m4/st_debug_cflags.m4 \
 	$(top_srcdir)/m4/st_demangle.m4 \
 	$(top_srcdir)/m4/st_esyscmd_s.m4 $(top_srcdir)/m4/st_libdw.m4 \
 	$(top_srcdir)/m4/st_libunwind.m4 \
@@ -390,6 +391,7 @@ EXTRA_DIST = \
 	linux/include/uapi/linux/mount.h \
 	linux/include/uapi/linux/mpls.h \
 	linux/include/uapi/linux/mptcp.h \
+	linux/include/uapi/linux/mptcp_pm.h \
 	linux/include/uapi/linux/mqueue.h \
 	linux/include/uapi/linux/mroute.h \
 	linux/include/uapi/linux/mroute6.h \

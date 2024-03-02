@@ -2,7 +2,7 @@
  * Copyright (c) 1991, 1992 Paul Kranenburg <pk@cs.few.eur.nl>
  * Copyright (c) 1993 Branko Lankester <branko@hacktic.nl>
  * Copyright (c) 1993, 1994, 1995, 1996 Rick Sladkey <jrs@world.std.com>
- * Copyright (c) 1999-2023 The strace developers.
+ * Copyright (c) 1999-2024 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: LGPL-2.1-or-later
@@ -407,14 +407,15 @@ extern const struct_sysent stub_sysent;
 extern const struct xlat addrfams[];
 extern const struct xlat arp_hardware_types[];
 extern const struct xlat at_flags[];
+extern const struct xlat audit_arch[];
 extern const struct xlat clocknames[];
 extern const struct xlat dirent_types[];
 extern const struct xlat ethernet_protocols[];
-extern const struct xlat inet_protocols[];
 extern const struct xlat evdev_abs[];
-extern const struct xlat audit_arch[];
 extern const struct xlat evdev_ev[];
+extern const struct xlat futexbitset[];
 extern const struct xlat iffflags[];
+extern const struct xlat inet_protocols[];
 extern const struct xlat ip_type_of_services[];
 extern const struct xlat ipc_private[];
 extern const struct xlat msg_flags[];
@@ -544,11 +545,16 @@ enum xflag_opts {
 extern unsigned xflag;
 extern bool followfork;
 extern bool output_separately;
+enum stack_trace_modes {
+	STACK_TRACE_OFF,
+	STACK_TRACE_ON,
+	STACK_TRACE_WITH_SRCINFO,
+};
 # ifdef ENABLE_STACKTRACE
 /* if this is true do the stack trace for every system call */
-extern bool stack_trace_enabled;
+extern enum stack_trace_modes stack_trace_mode;
 # else
-#  define stack_trace_enabled 0
+#  define stack_trace_mode STACK_TRACE_OFF
 # endif
 extern unsigned max_strlen;
 extern unsigned os_release;
@@ -1560,7 +1566,7 @@ extern void print_ticks_d(int64_t val, long freq, unsigned int precision);
 extern void print_clock_t(uint64_t val);
 
 # ifdef ENABLE_STACKTRACE
-extern void unwind_init(void);
+extern void unwind_init(bool);
 extern void unwind_tcb_init(struct tcb *);
 extern void unwind_tcb_fin(struct tcb *);
 extern void unwind_tcb_print(struct tcb *);

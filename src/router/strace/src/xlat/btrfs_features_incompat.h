@@ -57,6 +57,12 @@ static const struct xlat_data btrfs_features_incompat_xdata[] = {
  XLAT_TYPE(uint64_t, BTRFS_FEATURE_INCOMPAT_EXTENT_TREE_V2),
  #define XLAT_VAL_13 ((uint64_t) (BTRFS_FEATURE_INCOMPAT_EXTENT_TREE_V2))
  #define XLAT_STR_13 STRINGIFY(BTRFS_FEATURE_INCOMPAT_EXTENT_TREE_V2)
+ XLAT_TYPE(uint64_t, BTRFS_FEATURE_INCOMPAT_RAID_STRIPE_TREE),
+ #define XLAT_VAL_14 ((uint64_t) (BTRFS_FEATURE_INCOMPAT_RAID_STRIPE_TREE))
+ #define XLAT_STR_14 STRINGIFY(BTRFS_FEATURE_INCOMPAT_RAID_STRIPE_TREE)
+ XLAT_TYPE(uint64_t, BTRFS_FEATURE_INCOMPAT_SIMPLE_QUOTA),
+ #define XLAT_VAL_15 ((uint64_t) (BTRFS_FEATURE_INCOMPAT_SIMPLE_QUOTA))
+ #define XLAT_STR_15 STRINGIFY(BTRFS_FEATURE_INCOMPAT_SIMPLE_QUOTA)
 };
 #  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
 static
@@ -108,6 +114,12 @@ const struct xlat btrfs_features_incompat[1] = { {
 #  ifdef XLAT_VAL_13
   | XLAT_VAL_13
 #  endif
+#  ifdef XLAT_VAL_14
+  | XLAT_VAL_14
+#  endif
+#  ifdef XLAT_VAL_15
+  | XLAT_VAL_15
+#  endif
   ,
  .flags_strsz = 0
 #  ifdef XLAT_STR_0
@@ -152,6 +164,12 @@ const struct xlat btrfs_features_incompat[1] = { {
 #  ifdef XLAT_STR_13
   + sizeof(XLAT_STR_13)
 #  endif
+#  ifdef XLAT_STR_14
+  + sizeof(XLAT_STR_14)
+#  endif
+#  ifdef XLAT_STR_15
+  + sizeof(XLAT_STR_15)
+#  endif
   ,
 } };
 DIAG_POP_IGNORE_TAUTOLOGICAL_CONSTANT_COMPARE
@@ -184,6 +202,10 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_CONSTANT_COMPARE
 #  undef XLAT_VAL_12
 #  undef XLAT_STR_13
 #  undef XLAT_VAL_13
+#  undef XLAT_STR_14
+#  undef XLAT_VAL_14
+#  undef XLAT_STR_15
+#  undef XLAT_VAL_15
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

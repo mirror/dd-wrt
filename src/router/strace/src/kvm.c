@@ -3,7 +3,7 @@
  *
  * Copyright (c) 2017 Masatake YAMATO <yamato@redhat.com>
  * Copyright (c) 2017 Red Hat, Inc.
- * Copyright (c) 2017-2021 The strace developers.
+ * Copyright (c) 2017-2023 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: LGPL-2.1-or-later
@@ -21,7 +21,7 @@ struct vcpu_info {
 	struct vcpu_info *next;
 	int fd;
 	int cpuid;
-	long mmap_addr;
+	unsigned long mmap_addr;
 	unsigned long mmap_len;
 	bool resolved;
 };

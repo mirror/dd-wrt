@@ -1,6 +1,6 @@
 # Automake input for bundled.
 #
-# Copyright (c) 2021-2022 The strace developers.
+# Copyright (c) 2018-2023 The strace developers.
 # All rights reserved.
 #
 # SPDX-License-Identifier: LGPL-2.1-or-later
@@ -70,6 +70,7 @@ EXTRA_DIST = \
 	linux/include/uapi/linux/mount.h \
 	linux/include/uapi/linux/mpls.h \
 	linux/include/uapi/linux/mptcp.h \
+	linux/include/uapi/linux/mptcp_pm.h \
 	linux/include/uapi/linux/mqueue.h \
 	linux/include/uapi/linux/mroute.h \
 	linux/include/uapi/linux/mroute6.h \

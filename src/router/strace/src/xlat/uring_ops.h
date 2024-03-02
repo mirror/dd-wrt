@@ -156,6 +156,27 @@ static const struct xlat_data uring_ops_xdata[] = {
  [IORING_OP_URING_CMD] = XLAT(IORING_OP_URING_CMD),
  #define XLAT_VAL_46 ((unsigned) (IORING_OP_URING_CMD))
  #define XLAT_STR_46 STRINGIFY(IORING_OP_URING_CMD)
+ [IORING_OP_SEND_ZC] = XLAT(IORING_OP_SEND_ZC),
+ #define XLAT_VAL_47 ((unsigned) (IORING_OP_SEND_ZC))
+ #define XLAT_STR_47 STRINGIFY(IORING_OP_SEND_ZC)
+ [IORING_OP_SENDMSG_ZC] = XLAT(IORING_OP_SENDMSG_ZC),
+ #define XLAT_VAL_48 ((unsigned) (IORING_OP_SENDMSG_ZC))
+ #define XLAT_STR_48 STRINGIFY(IORING_OP_SENDMSG_ZC)
+ [IORING_OP_READ_MULTISHOT] = XLAT(IORING_OP_READ_MULTISHOT),
+ #define XLAT_VAL_49 ((unsigned) (IORING_OP_READ_MULTISHOT))
+ #define XLAT_STR_49 STRINGIFY(IORING_OP_READ_MULTISHOT)
+ [IORING_OP_WAITID] = XLAT(IORING_OP_WAITID),
+ #define XLAT_VAL_50 ((unsigned) (IORING_OP_WAITID))
+ #define XLAT_STR_50 STRINGIFY(IORING_OP_WAITID)
+ [IORING_OP_FUTEX_WAIT] = XLAT(IORING_OP_FUTEX_WAIT),
+ #define XLAT_VAL_51 ((unsigned) (IORING_OP_FUTEX_WAIT))
+ #define XLAT_STR_51 STRINGIFY(IORING_OP_FUTEX_WAIT)
+ [IORING_OP_FUTEX_WAKE] = XLAT(IORING_OP_FUTEX_WAKE),
+ #define XLAT_VAL_52 ((unsigned) (IORING_OP_FUTEX_WAKE))
+ #define XLAT_STR_52 STRINGIFY(IORING_OP_FUTEX_WAKE)
+ [IORING_OP_FUTEX_WAITV] = XLAT(IORING_OP_FUTEX_WAITV),
+ #define XLAT_VAL_53 ((unsigned) (IORING_OP_FUTEX_WAITV))
+ #define XLAT_STR_53 STRINGIFY(IORING_OP_FUTEX_WAITV)
 };
 static
 const struct xlat uring_ops[1] = { {
@@ -304,6 +325,27 @@ const struct xlat uring_ops[1] = { {
 #  ifdef XLAT_VAL_46
   | XLAT_VAL_46
 #  endif
+#  ifdef XLAT_VAL_47
+  | XLAT_VAL_47
+#  endif
+#  ifdef XLAT_VAL_48
+  | XLAT_VAL_48
+#  endif
+#  ifdef XLAT_VAL_49
+  | XLAT_VAL_49
+#  endif
+#  ifdef XLAT_VAL_50
+  | XLAT_VAL_50
+#  endif
+#  ifdef XLAT_VAL_51
+  | XLAT_VAL_51
+#  endif
+#  ifdef XLAT_VAL_52
+  | XLAT_VAL_52
+#  endif
+#  ifdef XLAT_VAL_53
+  | XLAT_VAL_53
+#  endif
   ,
  .flags_strsz = 0
 #  ifdef XLAT_STR_0
@@ -447,6 +489,27 @@ const struct xlat uring_ops[1] = { {
 #  ifdef XLAT_STR_46
   + sizeof(XLAT_STR_46)
 #  endif
+#  ifdef XLAT_STR_47
+  + sizeof(XLAT_STR_47)
+#  endif
+#  ifdef XLAT_STR_48
+  + sizeof(XLAT_STR_48)
+#  endif
+#  ifdef XLAT_STR_49
+  + sizeof(XLAT_STR_49)
+#  endif
+#  ifdef XLAT_STR_50
+  + sizeof(XLAT_STR_50)
+#  endif
+#  ifdef XLAT_STR_51
+  + sizeof(XLAT_STR_51)
+#  endif
+#  ifdef XLAT_STR_52
+  + sizeof(XLAT_STR_52)
+#  endif
+#  ifdef XLAT_STR_53
+  + sizeof(XLAT_STR_53)
+#  endif
   ,
 } };
 DIAG_POP_IGNORE_TAUTOLOGICAL_CONSTANT_COMPARE
@@ -545,6 +608,20 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_CONSTANT_COMPARE
 #  undef XLAT_VAL_45
 #  undef XLAT_STR_46
 #  undef XLAT_VAL_46
+#  undef XLAT_STR_47
+#  undef XLAT_VAL_47
+#  undef XLAT_STR_48
+#  undef XLAT_VAL_48
+#  undef XLAT_STR_49
+#  undef XLAT_VAL_49
+#  undef XLAT_STR_50
+#  undef XLAT_VAL_50
+#  undef XLAT_STR_51
+#  undef XLAT_VAL_51
+#  undef XLAT_STR_52
+#  undef XLAT_VAL_52
+#  undef XLAT_STR_53
+#  undef XLAT_VAL_53
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

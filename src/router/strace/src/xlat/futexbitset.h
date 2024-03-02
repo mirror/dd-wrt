@@ -14,11 +14,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 #ifndef XLAT_MACROS_ONLY
 
-# ifdef IN_MPERS
-
-#  error static const struct xlat futexbitset in mpers mode
-
-# else
+# ifndef IN_MPERS
 
 DIAG_PUSH_IGNORE_TAUTOLOGICAL_CONSTANT_COMPARE
 static const struct xlat_data futexbitset_xdata[] = {
@@ -26,7 +22,6 @@ static const struct xlat_data futexbitset_xdata[] = {
  #define XLAT_VAL_0 ((unsigned) (FUTEX_BITSET_MATCH_ANY))
  #define XLAT_STR_0 STRINGIFY(FUTEX_BITSET_MATCH_ANY)
 };
-static
 const struct xlat futexbitset[1] = { {
  .data = futexbitset_xdata,
  .size = ARRAY_SIZE(futexbitset_xdata),

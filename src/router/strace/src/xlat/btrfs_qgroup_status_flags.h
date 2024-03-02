@@ -21,6 +21,12 @@ static const struct xlat_data btrfs_qgroup_status_flags_xdata[] = {
  XLAT_TYPE(uint64_t, BTRFS_QGROUP_STATUS_FLAG_RESCAN),
  #define XLAT_VAL_1 ((uint64_t) (BTRFS_QGROUP_STATUS_FLAG_RESCAN))
  #define XLAT_STR_1 STRINGIFY(BTRFS_QGROUP_STATUS_FLAG_RESCAN)
+ XLAT_TYPE(uint64_t, BTRFS_QGROUP_STATUS_FLAG_INCONSISTENT),
+ #define XLAT_VAL_2 ((uint64_t) (BTRFS_QGROUP_STATUS_FLAG_INCONSISTENT))
+ #define XLAT_STR_2 STRINGIFY(BTRFS_QGROUP_STATUS_FLAG_INCONSISTENT)
+ XLAT_TYPE(uint64_t, BTRFS_QGROUP_STATUS_FLAG_SIMPLE_MODE),
+ #define XLAT_VAL_3 ((uint64_t) (BTRFS_QGROUP_STATUS_FLAG_SIMPLE_MODE))
+ #define XLAT_STR_3 STRINGIFY(BTRFS_QGROUP_STATUS_FLAG_SIMPLE_MODE)
 };
 #  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
 static
@@ -36,6 +42,12 @@ const struct xlat btrfs_qgroup_status_flags[1] = { {
 #  ifdef XLAT_VAL_1
   | XLAT_VAL_1
 #  endif
+#  ifdef XLAT_VAL_2
+  | XLAT_VAL_2
+#  endif
+#  ifdef XLAT_VAL_3
+  | XLAT_VAL_3
+#  endif
   ,
  .flags_strsz = 0
 #  ifdef XLAT_STR_0
@@ -43,6 +55,12 @@ const struct xlat btrfs_qgroup_status_flags[1] = { {
 #  endif
 #  ifdef XLAT_STR_1
   + sizeof(XLAT_STR_1)
+#  endif
+#  ifdef XLAT_STR_2
+  + sizeof(XLAT_STR_2)
+#  endif
+#  ifdef XLAT_STR_3
+  + sizeof(XLAT_STR_3)
 #  endif
   ,
 } };
@@ -52,6 +70,10 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_CONSTANT_COMPARE
 #  undef XLAT_VAL_0
 #  undef XLAT_STR_1
 #  undef XLAT_VAL_1
+#  undef XLAT_STR_2
+#  undef XLAT_VAL_2
+#  undef XLAT_STR_3
+#  undef XLAT_VAL_3
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

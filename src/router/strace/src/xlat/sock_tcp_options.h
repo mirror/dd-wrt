@@ -262,6 +262,41 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 #else
 # define TCP_TX_DELAY 37
 #endif
+#if defined(TCP_AO_ADD_KEY) || (defined(HAVE_DECL_TCP_AO_ADD_KEY) && HAVE_DECL_TCP_AO_ADD_KEY)
+DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
+static_assert((TCP_AO_ADD_KEY) == (38), "TCP_AO_ADD_KEY != 38");
+DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
+#else
+# define TCP_AO_ADD_KEY 38
+#endif
+#if defined(TCP_AO_DEL_KEY) || (defined(HAVE_DECL_TCP_AO_DEL_KEY) && HAVE_DECL_TCP_AO_DEL_KEY)
+DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
+static_assert((TCP_AO_DEL_KEY) == (39), "TCP_AO_DEL_KEY != 39");
+DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
+#else
+# define TCP_AO_DEL_KEY 39
+#endif
+#if defined(TCP_AO_INFO) || (defined(HAVE_DECL_TCP_AO_INFO) && HAVE_DECL_TCP_AO_INFO)
+DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
+static_assert((TCP_AO_INFO) == (40), "TCP_AO_INFO != 40");
+DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
+#else
+# define TCP_AO_INFO 40
+#endif
+#if defined(TCP_AO_GET_KEYS) || (defined(HAVE_DECL_TCP_AO_GET_KEYS) && HAVE_DECL_TCP_AO_GET_KEYS)
+DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
+static_assert((TCP_AO_GET_KEYS) == (41), "TCP_AO_GET_KEYS != 41");
+DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
+#else
+# define TCP_AO_GET_KEYS 41
+#endif
+#if defined(TCP_AO_REPAIR) || (defined(HAVE_DECL_TCP_AO_REPAIR) && HAVE_DECL_TCP_AO_REPAIR)
+DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
+static_assert((TCP_AO_REPAIR) == (42), "TCP_AO_REPAIR != 42");
+DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
+#else
+# define TCP_AO_REPAIR 42
+#endif
 #undef XLAT_PREV_VAL
 
 #ifndef XLAT_MACROS_ONLY
@@ -385,6 +420,21 @@ static const struct xlat_data sock_tcp_options_xdata[] = {
  [TCP_TX_DELAY] = XLAT(TCP_TX_DELAY),
  #define XLAT_VAL_36 ((unsigned) (TCP_TX_DELAY))
  #define XLAT_STR_36 STRINGIFY(TCP_TX_DELAY)
+ [TCP_AO_ADD_KEY] = XLAT(TCP_AO_ADD_KEY),
+ #define XLAT_VAL_37 ((unsigned) (TCP_AO_ADD_KEY))
+ #define XLAT_STR_37 STRINGIFY(TCP_AO_ADD_KEY)
+ [TCP_AO_DEL_KEY] = XLAT(TCP_AO_DEL_KEY),
+ #define XLAT_VAL_38 ((unsigned) (TCP_AO_DEL_KEY))
+ #define XLAT_STR_38 STRINGIFY(TCP_AO_DEL_KEY)
+ [TCP_AO_INFO] = XLAT(TCP_AO_INFO),
+ #define XLAT_VAL_39 ((unsigned) (TCP_AO_INFO))
+ #define XLAT_STR_39 STRINGIFY(TCP_AO_INFO)
+ [TCP_AO_GET_KEYS] = XLAT(TCP_AO_GET_KEYS),
+ #define XLAT_VAL_40 ((unsigned) (TCP_AO_GET_KEYS))
+ #define XLAT_STR_40 STRINGIFY(TCP_AO_GET_KEYS)
+ [TCP_AO_REPAIR] = XLAT(TCP_AO_REPAIR),
+ #define XLAT_VAL_41 ((unsigned) (TCP_AO_REPAIR))
+ #define XLAT_STR_41 STRINGIFY(TCP_AO_REPAIR)
 };
 static
 const struct xlat sock_tcp_options[1] = { {
@@ -503,6 +553,21 @@ const struct xlat sock_tcp_options[1] = { {
 #  ifdef XLAT_VAL_36
   | XLAT_VAL_36
 #  endif
+#  ifdef XLAT_VAL_37
+  | XLAT_VAL_37
+#  endif
+#  ifdef XLAT_VAL_38
+  | XLAT_VAL_38
+#  endif
+#  ifdef XLAT_VAL_39
+  | XLAT_VAL_39
+#  endif
+#  ifdef XLAT_VAL_40
+  | XLAT_VAL_40
+#  endif
+#  ifdef XLAT_VAL_41
+  | XLAT_VAL_41
+#  endif
   ,
  .flags_strsz = 0
 #  ifdef XLAT_STR_0
@@ -616,6 +681,21 @@ const struct xlat sock_tcp_options[1] = { {
 #  ifdef XLAT_STR_36
   + sizeof(XLAT_STR_36)
 #  endif
+#  ifdef XLAT_STR_37
+  + sizeof(XLAT_STR_37)
+#  endif
+#  ifdef XLAT_STR_38
+  + sizeof(XLAT_STR_38)
+#  endif
+#  ifdef XLAT_STR_39
+  + sizeof(XLAT_STR_39)
+#  endif
+#  ifdef XLAT_STR_40
+  + sizeof(XLAT_STR_40)
+#  endif
+#  ifdef XLAT_STR_41
+  + sizeof(XLAT_STR_41)
+#  endif
   ,
 } };
 DIAG_POP_IGNORE_TAUTOLOGICAL_CONSTANT_COMPARE
@@ -694,6 +774,16 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_CONSTANT_COMPARE
 #  undef XLAT_VAL_35
 #  undef XLAT_STR_36
 #  undef XLAT_VAL_36
+#  undef XLAT_STR_37
+#  undef XLAT_VAL_37
+#  undef XLAT_STR_38
+#  undef XLAT_VAL_38
+#  undef XLAT_STR_39
+#  undef XLAT_VAL_39
+#  undef XLAT_STR_40
+#  undef XLAT_VAL_40
+#  undef XLAT_STR_41
+#  undef XLAT_VAL_41
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

@@ -1,7 +1,7 @@
 # Automake input for strace tests.
 #
 # Copyright (c) 2011-2016 Dmitry V. Levin <ldv@strace.io>
-# Copyright (c) 2011-2023 The strace developers.
+# Copyright (c) 2011-2024 The strace developers.
 # All rights reserved.
 #
 # SPDX-License-Identifier: GPL-2.0-or-later
@@ -54,6 +54,7 @@ libtests_a_SOURCES = \
 	errno2name.c \
 	error_msg.c \
 	fill_memory.c \
+	futex2_flags.h \
 	get_page_size.c \
 	get_sigset_size.c \
 	hexdump_strdup.c \
@@ -140,6 +141,7 @@ check_PROGRAMS = $(PURE_EXECUTABLES) \
 	close_range \
 	count-f \
 	delay \
+	detach-vfork \
 	execve-v \
 	execveat-v \
 	fcntl--pidns-translation \
@@ -473,9 +475,19 @@ uio_CPPFLAGS = $(AM_CPPFLAGS) -D_FILE_OFFSET_BITS=64
 
 stack_fcall_SOURCES = stack-fcall.c \
 	stack-fcall-0.c stack-fcall-1.c stack-fcall-2.c stack-fcall-3.c
+if USE_LIBDW
+if ACCEPT_GDWARF_ARANGES
+stack_fcall_CFLAGS = $(AM_CFLAGS) -gdwarf-aranges
+endif
+endif
 
 stack_fcall_attach_SOURCES = stack-fcall-attach.c \
 	stack-fcall-0.c stack-fcall-1.c stack-fcall-2.c stack-fcall-3.c
+if USE_LIBDW
+if ACCEPT_GDWARF_ARANGES
+stack_fcall_attach_CFLAGS = $(AM_CFLAGS) -gdwarf-aranges
+endif
+endif
 
 stack_fcall_mangled_SOURCES = stack-fcall-mangled.c \
 	stack-fcall-mangled-0.c stack-fcall-mangled-1.c \
@@ -490,6 +502,9 @@ include gen_tests.am
 
 if ENABLE_STACKTRACE
 STACKTRACE_TESTS = strace-k.test strace-k-p.test
+if USE_LIBDW
+STACKTRACE_TESTS += strace-kk.test strace-kk-p.test
+endif
 if USE_DEMANGLE
 STACKTRACE_TESTS += strace-k-demangle.test
 endif
@@ -578,6 +593,7 @@ MISC_TESTS = \
 	detach-running.test \
 	detach-sleeping.test \
 	detach-stopped.test \
+	detach-vfork.test \
 	exec-PATH.test \
 	fflush.test \
 	filter-unavailable.test \
@@ -693,6 +709,8 @@ check_SCRIPTS = \
 	strace-k-demangle.test \
 	strace-k-p.test \
 	strace-k.test \
+	strace-kk-p.test \
+	strace-kk.test \
 	syntax.sh \
 	# end of check_SCRIPTS
 
@@ -749,6 +767,8 @@ check_DATA = \
 	strace-k-demangle.expected \
 	strace-k-p.expected \
 	strace-k.expected \
+	strace-kk-p.expected \
+	strace-kk.expected \
 	strace-r.expected \
 	strace.supp \
 	strauss_body.exp \

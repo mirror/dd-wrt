@@ -20,7 +20,7 @@
 # Copyright (c) 2006-2016 Dmitry V. Levin <ldv@strace.io>
 # Copyright (c) 2008-2015 Mike Frysinger <vapier@gentoo.org>
 # Copyright (c) 2015 Elvira Khabirova <lineprinter0@gmail.com>
-# Copyright (c) 2002-2023 The strace developers.
+# Copyright (c) 2002-2024 The strace developers.
 # All rights reserved.
 #
 # SPDX-License-Identifier: LGPL-2.1-or-later
@@ -156,6 +156,7 @@ am__aclocal_m4_deps = $(top_srcdir)/src/xlat/ieee802154_addr_types.m4 \
 	$(top_srcdir)/m4/ax_prog_cc_for_build.m4 \
 	$(top_srcdir)/m4/ax_valgrind_check.m4 \
 	$(top_srcdir)/m4/bpf_attr.m4 $(top_srcdir)/m4/mpers.m4 \
+	$(top_srcdir)/m4/st_debug_cflags.m4 \
 	$(top_srcdir)/m4/st_demangle.m4 \
 	$(top_srcdir)/m4/st_esyscmd_s.m4 $(top_srcdir)/m4/st_libdw.m4 \
 	$(top_srcdir)/m4/st_libunwind.m4 \
@@ -314,7 +315,7 @@ am__libstrace_a_SOURCES_DIST = access.c affinity.c aio.c alpha.c \
 	file_handle.c filter.h filter_qualify.c filter_seccomp.c \
 	filter_seccomp.h flock.c fs_0x94_ioctl.c fs_f_ioctl.c \
 	fs_x_ioctl.c fsconfig.c fsmount.c fsopen.c fspick.c fstatfs.c \
-	fstatfs64.c futex.c futex_waitv.c gcc_compat.h gen/gen_hdio.c \
+	fstatfs64.c futex.c futex2.c gcc_compat.h gen/gen_hdio.c \
 	gen/generated.h get_personality.c get_personality.h \
 	get_robust_list.c getcpu.c getcwd.c getpagesize.c getpid.c \
 	getrandom.c gpio_ioctl.c hdio.c hostname.c inotify.c \
@@ -430,7 +431,7 @@ am_libstrace_a_OBJECTS = libstrace_a-access.$(OBJEXT) \
 	libstrace_a-fsconfig.$(OBJEXT) libstrace_a-fsmount.$(OBJEXT) \
 	libstrace_a-fsopen.$(OBJEXT) libstrace_a-fspick.$(OBJEXT) \
 	libstrace_a-fstatfs.$(OBJEXT) libstrace_a-fstatfs64.$(OBJEXT) \
-	libstrace_a-futex.$(OBJEXT) libstrace_a-futex_waitv.$(OBJEXT) \
+	libstrace_a-futex.$(OBJEXT) libstrace_a-futex2.$(OBJEXT) \
 	gen/libstrace_a-gen_hdio.$(OBJEXT) \
 	libstrace_a-get_personality.$(OBJEXT) \
 	libstrace_a-get_robust_list.$(OBJEXT) \
@@ -803,7 +804,7 @@ am__depfiles_remade = ./$(DEPDIR)/disable_ptrace_get_syscall_info.Po \
 	./$(DEPDIR)/libstrace_a-fstatfs.Po \
 	./$(DEPDIR)/libstrace_a-fstatfs64.Po \
 	./$(DEPDIR)/libstrace_a-futex.Po \
-	./$(DEPDIR)/libstrace_a-futex_waitv.Po \
+	./$(DEPDIR)/libstrace_a-futex2.Po \
 	./$(DEPDIR)/libstrace_a-get_personality.Po \
 	./$(DEPDIR)/libstrace_a-get_robust_list.Po \
 	./$(DEPDIR)/libstrace_a-getcpu.Po \
@@ -1337,9 +1338,9 @@ XLAT_INPUT_FILES = xlat/access_modes.in xlat/addrfams.in \
 	xlat/flockcmds.in xlat/fs_ioc_flags.in xlat/fs_xflags.in \
 	xlat/fsconfig_cmds.in xlat/fsmagic.in \
 	xlat/fsmount_attr_flags.in xlat/fsmount_flags.in \
-	xlat/fsopen_flags.in xlat/fspick_flags.in \
-	xlat/futex_waiter_flags.in xlat/futexbitset.in \
-	xlat/futexops.in xlat/futexwakecmps.in xlat/futexwakeops.in \
+	xlat/fsopen_flags.in xlat/fspick_flags.in xlat/futex2_flags.in \
+	xlat/futex2_sizes.in xlat/futexbitset.in xlat/futexops.in \
+	xlat/futexwakecmps.in xlat/futexwakeops.in \
 	xlat/get_mempolicy_flags.in xlat/getrandom_flags.in \
 	xlat/getsock_ip_options.in xlat/getsock_ipv6_options.in \
 	xlat/getsock_options.in xlat/gpio_event_flags.in \
@@ -1698,8 +1699,8 @@ XLAT_HEADER_FILES = xlat/access_modes.h xlat/addrfams.h \
 	xlat/fiemap_flags.h xlat/flockcmds.h xlat/fs_ioc_flags.h \
 	xlat/fs_xflags.h xlat/fsconfig_cmds.h xlat/fsmagic.h \
 	xlat/fsmount_attr_flags.h xlat/fsmount_flags.h \
-	xlat/fsopen_flags.h xlat/fspick_flags.h \
-	xlat/futex_waiter_flags.h xlat/futexbitset.h xlat/futexops.h \
+	xlat/fsopen_flags.h xlat/fspick_flags.h xlat/futex2_flags.h \
+	xlat/futex2_sizes.h xlat/futexbitset.h xlat/futexops.h \
 	xlat/futexwakecmps.h xlat/futexwakeops.h \
 	xlat/get_mempolicy_flags.h xlat/getrandom_flags.h \
 	xlat/getsock_ip_options.h xlat/getsock_ipv6_options.h \
@@ -2006,7 +2007,7 @@ libstrace_a_SOURCES = access.c affinity.c aio.c alpha.c arch_defs.h \
 	fetch_struct_xfs_quotastat.c file_handle.c filter.h \
 	filter_qualify.c filter_seccomp.c filter_seccomp.h flock.c \
 	fs_0x94_ioctl.c fs_f_ioctl.c fs_x_ioctl.c fsconfig.c fsmount.c \
-	fsopen.c fspick.c fstatfs.c fstatfs64.c futex.c futex_waitv.c \
+	fsopen.c fspick.c fstatfs.c fstatfs64.c futex.c futex2.c \
 	gcc_compat.h gen/gen_hdio.c gen/generated.h get_personality.c \
 	get_personality.h get_robust_list.c getcpu.c getcwd.c \
 	getpagesize.c getpid.c getrandom.c gpio_ioctl.c hdio.c \
@@ -3072,7 +3073,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libstrace_a-fstatfs.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libstrace_a-fstatfs64.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libstrace_a-futex.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libstrace_a-futex_waitv.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libstrace_a-futex2.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libstrace_a-get_personality.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libstrace_a-get_robust_list.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libstrace_a-getcpu.Po@am__quote@ # am--include-marker
@@ -5491,19 +5492,19 @@ libstrace_a-futex.obj: futex.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libstrace_a_CPPFLAGS) $(CPPFLAGS) $(libstrace_a_CFLAGS) $(CFLAGS) -c -o libstrace_a-futex.obj `if test -f 'futex.c'; then $(CYGPATH_W) 'futex.c'; else $(CYGPATH_W) '$(srcdir)/futex.c'; fi`
 
-libstrace_a-futex_waitv.o: futex_waitv.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libstrace_a_CPPFLAGS) $(CPPFLAGS) $(libstrace_a_CFLAGS) $(CFLAGS) -MT libstrace_a-futex_waitv.o -MD -MP -MF $(DEPDIR)/libstrace_a-futex_waitv.Tpo -c -o libstrace_a-futex_waitv.o `test -f 'futex_waitv.c' || echo '$(srcdir)/'`futex_waitv.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libstrace_a-futex_waitv.Tpo $(DEPDIR)/libstrace_a-futex_waitv.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='futex_waitv.c' object='libstrace_a-futex_waitv.o' libtool=no @AMDEPBACKSLASH@
+libstrace_a-futex2.o: futex2.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libstrace_a_CPPFLAGS) $(CPPFLAGS) $(libstrace_a_CFLAGS) $(CFLAGS) -MT libstrace_a-futex2.o -MD -MP -MF $(DEPDIR)/libstrace_a-futex2.Tpo -c -o libstrace_a-futex2.o `test -f 'futex2.c' || echo '$(srcdir)/'`futex2.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libstrace_a-futex2.Tpo $(DEPDIR)/libstrace_a-futex2.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='futex2.c' object='libstrace_a-futex2.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libstrace_a_CPPFLAGS) $(CPPFLAGS) $(libstrace_a_CFLAGS) $(CFLAGS) -c -o libstrace_a-futex_waitv.o `test -f 'futex_waitv.c' || echo '$(srcdir)/'`futex_waitv.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libstrace_a_CPPFLAGS) $(CPPFLAGS) $(libstrace_a_CFLAGS) $(CFLAGS) -c -o libstrace_a-futex2.o `test -f 'futex2.c' || echo '$(srcdir)/'`futex2.c
 
-libstrace_a-futex_waitv.obj: futex_waitv.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libstrace_a_CPPFLAGS) $(CPPFLAGS) $(libstrace_a_CFLAGS) $(CFLAGS) -MT libstrace_a-futex_waitv.obj -MD -MP -MF $(DEPDIR)/libstrace_a-futex_waitv.Tpo -c -o libstrace_a-futex_waitv.obj `if test -f 'futex_waitv.c'; then $(CYGPATH_W) 'futex_waitv.c'; else $(CYGPATH_W) '$(srcdir)/futex_waitv.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libstrace_a-futex_waitv.Tpo $(DEPDIR)/libstrace_a-futex_waitv.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='futex_waitv.c' object='libstrace_a-futex_waitv.obj' libtool=no @AMDEPBACKSLASH@
+libstrace_a-futex2.obj: futex2.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libstrace_a_CPPFLAGS) $(CPPFLAGS) $(libstrace_a_CFLAGS) $(CFLAGS) -MT libstrace_a-futex2.obj -MD -MP -MF $(DEPDIR)/libstrace_a-futex2.Tpo -c -o libstrace_a-futex2.obj `if test -f 'futex2.c'; then $(CYGPATH_W) 'futex2.c'; else $(CYGPATH_W) '$(srcdir)/futex2.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libstrace_a-futex2.Tpo $(DEPDIR)/libstrace_a-futex2.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='futex2.c' object='libstrace_a-futex2.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libstrace_a_CPPFLAGS) $(CPPFLAGS) $(libstrace_a_CFLAGS) $(CFLAGS) -c -o libstrace_a-futex_waitv.obj `if test -f 'futex_waitv.c'; then $(CYGPATH_W) 'futex_waitv.c'; else $(CYGPATH_W) '$(srcdir)/futex_waitv.c'; fi`
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libstrace_a_CPPFLAGS) $(CPPFLAGS) $(libstrace_a_CFLAGS) $(CFLAGS) -c -o libstrace_a-futex2.obj `if test -f 'futex2.c'; then $(CYGPATH_W) 'futex2.c'; else $(CYGPATH_W) '$(srcdir)/futex2.c'; fi`
 
 gen/libstrace_a-gen_hdio.o: gen/gen_hdio.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libstrace_a_CPPFLAGS) $(CPPFLAGS) $(libstrace_a_CFLAGS) $(CFLAGS) -MT gen/libstrace_a-gen_hdio.o -MD -MP -MF gen/$(DEPDIR)/libstrace_a-gen_hdio.Tpo -c -o gen/libstrace_a-gen_hdio.o `test -f 'gen/gen_hdio.c' || echo '$(srcdir)/'`gen/gen_hdio.c
@@ -8792,7 +8793,7 @@ distclean: distclean-am
 	-rm -f ./$(DEPDIR)/libstrace_a-fstatfs.Po
 	-rm -f ./$(DEPDIR)/libstrace_a-fstatfs64.Po
 	-rm -f ./$(DEPDIR)/libstrace_a-futex.Po
-	-rm -f ./$(DEPDIR)/libstrace_a-futex_waitv.Po
+	-rm -f ./$(DEPDIR)/libstrace_a-futex2.Po
 	-rm -f ./$(DEPDIR)/libstrace_a-get_personality.Po
 	-rm -f ./$(DEPDIR)/libstrace_a-get_robust_list.Po
 	-rm -f ./$(DEPDIR)/libstrace_a-getcpu.Po
@@ -9208,7 +9209,7 @@ maintainer-clean: maintainer-clean-am
 	-rm -f ./$(DEPDIR)/libstrace_a-fstatfs.Po
 	-rm -f ./$(DEPDIR)/libstrace_a-fstatfs64.Po
 	-rm -f ./$(DEPDIR)/libstrace_a-futex.Po
-	-rm -f ./$(DEPDIR)/libstrace_a-futex_waitv.Po
+	-rm -f ./$(DEPDIR)/libstrace_a-futex2.Po
 	-rm -f ./$(DEPDIR)/libstrace_a-get_personality.Po
 	-rm -f ./$(DEPDIR)/libstrace_a-get_robust_list.Po
 	-rm -f ./$(DEPDIR)/libstrace_a-getcpu.Po
@@ -9774,7 +9775,9 @@ $(top_srcdir)/src/xlat/fsopen_flags.h: $(top_srcdir)/src/xlat/fsopen_flags.in $(
 	$(AM_V_GEN)$(top_srcdir)/src/xlat/gen.sh $< $@
 $(top_srcdir)/src/xlat/fspick_flags.h: $(top_srcdir)/src/xlat/fspick_flags.in $(top_srcdir)/src/xlat/gen.sh
 	$(AM_V_GEN)$(top_srcdir)/src/xlat/gen.sh $< $@
-$(top_srcdir)/src/xlat/futex_waiter_flags.h: $(top_srcdir)/src/xlat/futex_waiter_flags.in $(top_srcdir)/src/xlat/gen.sh
+$(top_srcdir)/src/xlat/futex2_flags.h: $(top_srcdir)/src/xlat/futex2_flags.in $(top_srcdir)/src/xlat/gen.sh
+	$(AM_V_GEN)$(top_srcdir)/src/xlat/gen.sh $< $@
+$(top_srcdir)/src/xlat/futex2_sizes.h: $(top_srcdir)/src/xlat/futex2_sizes.in $(top_srcdir)/src/xlat/gen.sh
 	$(AM_V_GEN)$(top_srcdir)/src/xlat/gen.sh $< $@
 $(top_srcdir)/src/xlat/futexbitset.h: $(top_srcdir)/src/xlat/futexbitset.in $(top_srcdir)/src/xlat/gen.sh
 	$(AM_V_GEN)$(top_srcdir)/src/xlat/gen.sh $< $@

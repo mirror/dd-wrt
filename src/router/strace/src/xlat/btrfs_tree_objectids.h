@@ -54,9 +54,12 @@ static const struct xlat_data btrfs_tree_objectids_xdata[] = {
  XLAT_TYPE(uint64_t, BTRFS_LAST_FREE_OBJECTID),
  #define XLAT_VAL_12 ((uint64_t) (BTRFS_LAST_FREE_OBJECTID))
  #define XLAT_STR_12 STRINGIFY(BTRFS_LAST_FREE_OBJECTID)
+ XLAT_TYPE(uint64_t, BTRFS_RAID_STRIPE_TREE_OBJECTID),
+ #define XLAT_VAL_13 ((uint64_t) (BTRFS_RAID_STRIPE_TREE_OBJECTID))
+ #define XLAT_STR_13 STRINGIFY(BTRFS_RAID_STRIPE_TREE_OBJECTID)
  XLAT_TYPE(uint64_t, UINT64_MAX),
- #define XLAT_VAL_13 ((uint64_t) (UINT64_MAX))
- #define XLAT_STR_13 STRINGIFY(UINT64_MAX)
+ #define XLAT_VAL_14 ((uint64_t) (UINT64_MAX))
+ #define XLAT_STR_14 STRINGIFY(UINT64_MAX)
 };
 #  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
 static
@@ -108,6 +111,9 @@ const struct xlat btrfs_tree_objectids[1] = { {
 #  ifdef XLAT_VAL_13
   | XLAT_VAL_13
 #  endif
+#  ifdef XLAT_VAL_14
+  | XLAT_VAL_14
+#  endif
   ,
  .flags_strsz = 0
 #  ifdef XLAT_STR_0
@@ -152,6 +158,9 @@ const struct xlat btrfs_tree_objectids[1] = { {
 #  ifdef XLAT_STR_13
   + sizeof(XLAT_STR_13)
 #  endif
+#  ifdef XLAT_STR_14
+  + sizeof(XLAT_STR_14)
+#  endif
   ,
 } };
 DIAG_POP_IGNORE_TAUTOLOGICAL_CONSTANT_COMPARE
@@ -184,6 +193,8 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_CONSTANT_COMPARE
 #  undef XLAT_VAL_12
 #  undef XLAT_STR_13
 #  undef XLAT_VAL_13
+#  undef XLAT_STR_14
+#  undef XLAT_VAL_14
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

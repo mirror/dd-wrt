@@ -5,10 +5,17 @@
 
 #if defined(PR_MDWE_REFUSE_EXEC_GAIN) || (defined(HAVE_DECL_PR_MDWE_REFUSE_EXEC_GAIN) && HAVE_DECL_PR_MDWE_REFUSE_EXEC_GAIN)
 DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
-static_assert((PR_MDWE_REFUSE_EXEC_GAIN) == (1), "PR_MDWE_REFUSE_EXEC_GAIN != 1");
+static_assert((PR_MDWE_REFUSE_EXEC_GAIN) == ((1U << 0)), "PR_MDWE_REFUSE_EXEC_GAIN != (1U << 0)");
 DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 #else
-# define PR_MDWE_REFUSE_EXEC_GAIN 1
+# define PR_MDWE_REFUSE_EXEC_GAIN (1U << 0)
+#endif
+#if defined(PR_MDWE_NO_INHERIT) || (defined(HAVE_DECL_PR_MDWE_NO_INHERIT) && HAVE_DECL_PR_MDWE_NO_INHERIT)
+DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
+static_assert((PR_MDWE_NO_INHERIT) == ((1U << 1)), "PR_MDWE_NO_INHERIT != (1U << 1)");
+DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
+#else
+# define PR_MDWE_NO_INHERIT (1U << 1)
 #endif
 #undef XLAT_PREV_VAL
 
@@ -25,6 +32,9 @@ static const struct xlat_data pr_mdwe_flags_xdata[] = {
  XLAT(PR_MDWE_REFUSE_EXEC_GAIN),
  #define XLAT_VAL_0 ((unsigned) (PR_MDWE_REFUSE_EXEC_GAIN))
  #define XLAT_STR_0 STRINGIFY(PR_MDWE_REFUSE_EXEC_GAIN)
+ XLAT(PR_MDWE_NO_INHERIT),
+ #define XLAT_VAL_1 ((unsigned) (PR_MDWE_NO_INHERIT))
+ #define XLAT_STR_1 STRINGIFY(PR_MDWE_NO_INHERIT)
 };
 static
 const struct xlat pr_mdwe_flags[1] = { {
@@ -35,10 +45,16 @@ const struct xlat pr_mdwe_flags[1] = { {
 #  ifdef XLAT_VAL_0
   | XLAT_VAL_0
 #  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
   ,
  .flags_strsz = 0
 #  ifdef XLAT_STR_0
   + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
 #  endif
   ,
 } };
@@ -46,6 +62,8 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_CONSTANT_COMPARE
 
 #  undef XLAT_STR_0
 #  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

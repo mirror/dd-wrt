@@ -2,7 +2,7 @@
  * Check decoding of PTP_* commands of ioctl syscall.
  *
  * Copyright (c) 2018 Harsha Sharma <harshasharmaiitr@gmail.com>
- * Copyright (c) 2018-2023 The strace developers.
+ * Copyright (c) 2018-2024 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -100,7 +100,7 @@ test_no_device(void)
 	long rc;
 
 	/* unrecognized */
-	static const uint8_t unk_nums[] = { 0, 19, 20, 255 };
+	static const uint8_t unk_nums[] = { 0, 21, 22, 255 };
 
 	for (const uint8_t *p = unk_nums; p < ARRAY_END(unk_nums); p++) {
 		for (uint16_t sz = 0; sz < 1280; sz += 8) {

@@ -17,7 +17,7 @@
 # Automake input for strace tests.
 #
 # Copyright (c) 2011-2016 Dmitry V. Levin <ldv@strace.io>
-# Copyright (c) 2011-2023 The strace developers.
+# Copyright (c) 2011-2024 The strace developers.
 # All rights reserved.
 #
 # SPDX-License-Identifier: GPL-2.0-or-later
@@ -131,8 +131,8 @@ check_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_2) _newselect-P$(EXEEXT) \
 	clone_ptrace--quiet-attach$(EXEEXT) \
 	clone_ptrace--quiet-exit$(EXEEXT) clone_ptrace-q$(EXEEXT) \
 	clone_ptrace-qq$(EXEEXT) close_range$(EXEEXT) count-f$(EXEEXT) \
-	delay$(EXEEXT) execve-v$(EXEEXT) execveat-v$(EXEEXT) \
-	fcntl--pidns-translation$(EXEEXT) \
+	delay$(EXEEXT) detach-vfork$(EXEEXT) execve-v$(EXEEXT) \
+	execveat-v$(EXEEXT) fcntl--pidns-translation$(EXEEXT) \
 	fcntl64--pidns-translation$(EXEEXT) \
 	filter-unavailable$(EXEEXT) filter_seccomp-flag$(EXEEXT) \
 	filter_seccomp-perf$(EXEEXT) fork--pidns-translation$(EXEEXT) \
@@ -344,7 +344,8 @@ check_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_2) _newselect-P$(EXEEXT) \
 	xet_robust_list--pidns-translation$(EXEEXT) \
 	xetpgid--pidns-translation$(EXEEXT) \
 	xetpriority--pidns-translation$(EXEEXT) zeroargc$(EXEEXT)
-@ENABLE_STACKTRACE_TRUE@@USE_DEMANGLE_TRUE@am__append_2 = strace-k-demangle.test
+@ENABLE_STACKTRACE_TRUE@@USE_LIBDW_TRUE@am__append_2 = strace-kk.test strace-kk-p.test
+@ENABLE_STACKTRACE_TRUE@@USE_DEMANGLE_TRUE@am__append_3 = strace-k-demangle.test
 TESTS = $(GEN_TESTS) $(DECODER_TESTS) $(MISC_TESTS) $(am__EXEEXT_3)
 subdir = tests-m32
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -360,6 +361,7 @@ am__aclocal_m4_deps = $(top_srcdir)/src/xlat/ieee802154_addr_types.m4 \
 	$(top_srcdir)/m4/ax_prog_cc_for_build.m4 \
 	$(top_srcdir)/m4/ax_valgrind_check.m4 \
 	$(top_srcdir)/m4/bpf_attr.m4 $(top_srcdir)/m4/mpers.m4 \
+	$(top_srcdir)/m4/st_debug_cflags.m4 \
 	$(top_srcdir)/m4/st_demangle.m4 \
 	$(top_srcdir)/m4/st_esyscmd_s.m4 $(top_srcdir)/m4/st_libdw.m4 \
 	$(top_srcdir)/m4/st_libunwind.m4 \
@@ -426,7 +428,13 @@ am__EXEEXT_1 = _newselect$(EXEEXT) accept$(EXEEXT) accept4$(EXEEXT) \
 	fstat64-Xabbrev$(EXEEXT) fstat64-Xraw$(EXEEXT) \
 	fstat64-Xverbose$(EXEEXT) fstatat64$(EXEEXT) fstatfs$(EXEEXT) \
 	fstatfs64$(EXEEXT) fsync$(EXEEXT) ftruncate$(EXEEXT) \
-	ftruncate64$(EXEEXT) futex$(EXEEXT) futex_waitv$(EXEEXT) \
+	ftruncate64$(EXEEXT) futex$(EXEEXT) futex_requeue$(EXEEXT) \
+	futex_requeue-Xabbrev$(EXEEXT) futex_requeue-Xraw$(EXEEXT) \
+	futex_requeue-Xverbose$(EXEEXT) futex_wait$(EXEEXT) \
+	futex_wait-Xabbrev$(EXEEXT) futex_wait-Xraw$(EXEEXT) \
+	futex_wait-Xverbose$(EXEEXT) futex_waitv$(EXEEXT) \
+	futex_wake$(EXEEXT) futex_wake-Xabbrev$(EXEEXT) \
+	futex_wake-Xraw$(EXEEXT) futex_wake-Xverbose$(EXEEXT) \
 	futimesat$(EXEEXT) get_mempolicy$(EXEEXT) getcpu$(EXEEXT) \
 	getcwd$(EXEEXT) getdents$(EXEEXT) getdents-v$(EXEEXT) \
 	getdents64$(EXEEXT) getdents64-v$(EXEEXT) getegid$(EXEEXT) \
@@ -1236,6 +1244,10 @@ delete_module_SOURCES = delete_module.c
 delete_module_OBJECTS = delete_module.$(OBJEXT)
 delete_module_LDADD = $(LDADD)
 delete_module_DEPENDENCIES = libtests.a $(am__DEPENDENCIES_1)
+detach_vfork_SOURCES = detach-vfork.c
+detach_vfork_OBJECTS = detach-vfork.$(OBJEXT)
+detach_vfork_LDADD = $(LDADD)
+detach_vfork_DEPENDENCIES = libtests.a $(am__DEPENDENCIES_1)
 dev__decode_fds_all_SOURCES = dev--decode-fds-all.c
 dev__decode_fds_all_OBJECTS = dev--decode-fds-all.$(OBJEXT)
 dev__decode_fds_all_LDADD = $(LDADD)
@@ -1859,10 +1871,58 @@ futex_SOURCES = futex.c
 futex_OBJECTS = futex.$(OBJEXT)
 futex_LDADD = $(LDADD)
 futex_DEPENDENCIES = libtests.a $(am__DEPENDENCIES_1)
+futex_requeue_SOURCES = futex_requeue.c
+futex_requeue_OBJECTS = futex_requeue.$(OBJEXT)
+futex_requeue_LDADD = $(LDADD)
+futex_requeue_DEPENDENCIES = libtests.a $(am__DEPENDENCIES_1)
+futex_requeue_Xabbrev_SOURCES = futex_requeue-Xabbrev.c
+futex_requeue_Xabbrev_OBJECTS = futex_requeue-Xabbrev.$(OBJEXT)
+futex_requeue_Xabbrev_LDADD = $(LDADD)
+futex_requeue_Xabbrev_DEPENDENCIES = libtests.a $(am__DEPENDENCIES_1)
+futex_requeue_Xraw_SOURCES = futex_requeue-Xraw.c
+futex_requeue_Xraw_OBJECTS = futex_requeue-Xraw.$(OBJEXT)
+futex_requeue_Xraw_LDADD = $(LDADD)
+futex_requeue_Xraw_DEPENDENCIES = libtests.a $(am__DEPENDENCIES_1)
+futex_requeue_Xverbose_SOURCES = futex_requeue-Xverbose.c
+futex_requeue_Xverbose_OBJECTS = futex_requeue-Xverbose.$(OBJEXT)
+futex_requeue_Xverbose_LDADD = $(LDADD)
+futex_requeue_Xverbose_DEPENDENCIES = libtests.a $(am__DEPENDENCIES_1)
+futex_wait_SOURCES = futex_wait.c
+futex_wait_OBJECTS = futex_wait.$(OBJEXT)
+futex_wait_LDADD = $(LDADD)
+futex_wait_DEPENDENCIES = libtests.a $(am__DEPENDENCIES_1)
+futex_wait_Xabbrev_SOURCES = futex_wait-Xabbrev.c
+futex_wait_Xabbrev_OBJECTS = futex_wait-Xabbrev.$(OBJEXT)
+futex_wait_Xabbrev_LDADD = $(LDADD)
+futex_wait_Xabbrev_DEPENDENCIES = libtests.a $(am__DEPENDENCIES_1)
+futex_wait_Xraw_SOURCES = futex_wait-Xraw.c
+futex_wait_Xraw_OBJECTS = futex_wait-Xraw.$(OBJEXT)
+futex_wait_Xraw_LDADD = $(LDADD)
+futex_wait_Xraw_DEPENDENCIES = libtests.a $(am__DEPENDENCIES_1)
+futex_wait_Xverbose_SOURCES = futex_wait-Xverbose.c
+futex_wait_Xverbose_OBJECTS = futex_wait-Xverbose.$(OBJEXT)
+futex_wait_Xverbose_LDADD = $(LDADD)
+futex_wait_Xverbose_DEPENDENCIES = libtests.a $(am__DEPENDENCIES_1)
 futex_waitv_SOURCES = futex_waitv.c
 futex_waitv_OBJECTS = futex_waitv.$(OBJEXT)
 futex_waitv_LDADD = $(LDADD)
 futex_waitv_DEPENDENCIES = libtests.a $(am__DEPENDENCIES_1)
+futex_wake_SOURCES = futex_wake.c
+futex_wake_OBJECTS = futex_wake.$(OBJEXT)
+futex_wake_LDADD = $(LDADD)
+futex_wake_DEPENDENCIES = libtests.a $(am__DEPENDENCIES_1)
+futex_wake_Xabbrev_SOURCES = futex_wake-Xabbrev.c
+futex_wake_Xabbrev_OBJECTS = futex_wake-Xabbrev.$(OBJEXT)
+futex_wake_Xabbrev_LDADD = $(LDADD)
+futex_wake_Xabbrev_DEPENDENCIES = libtests.a $(am__DEPENDENCIES_1)
+futex_wake_Xraw_SOURCES = futex_wake-Xraw.c
+futex_wake_Xraw_OBJECTS = futex_wake-Xraw.$(OBJEXT)
+futex_wake_Xraw_LDADD = $(LDADD)
+futex_wake_Xraw_DEPENDENCIES = libtests.a $(am__DEPENDENCIES_1)
+futex_wake_Xverbose_SOURCES = futex_wake-Xverbose.c
+futex_wake_Xverbose_OBJECTS = futex_wake-Xverbose.$(OBJEXT)
+futex_wake_Xverbose_LDADD = $(LDADD)
+futex_wake_Xverbose_DEPENDENCIES = libtests.a $(am__DEPENDENCIES_1)
 futimesat_SOURCES = futimesat.c
 futimesat_OBJECTS = futimesat.$(OBJEXT)
 futimesat_LDADD = $(LDADD)
@@ -5748,18 +5808,27 @@ splice_SOURCES = splice.c
 splice_OBJECTS = splice.$(OBJEXT)
 splice_LDADD = $(LDADD)
 splice_DEPENDENCIES = libtests.a $(am__DEPENDENCIES_1)
-am_stack_fcall_OBJECTS = stack-fcall.$(OBJEXT) stack-fcall-0.$(OBJEXT) \
-	stack-fcall-1.$(OBJEXT) stack-fcall-2.$(OBJEXT) \
-	stack-fcall-3.$(OBJEXT)
+am_stack_fcall_OBJECTS = stack_fcall-stack-fcall.$(OBJEXT) \
+	stack_fcall-stack-fcall-0.$(OBJEXT) \
+	stack_fcall-stack-fcall-1.$(OBJEXT) \
+	stack_fcall-stack-fcall-2.$(OBJEXT) \
+	stack_fcall-stack-fcall-3.$(OBJEXT)
 stack_fcall_OBJECTS = $(am_stack_fcall_OBJECTS)
 stack_fcall_LDADD = $(LDADD)
 stack_fcall_DEPENDENCIES = libtests.a $(am__DEPENDENCIES_1)
-am_stack_fcall_attach_OBJECTS = stack-fcall-attach.$(OBJEXT) \
-	stack-fcall-0.$(OBJEXT) stack-fcall-1.$(OBJEXT) \
-	stack-fcall-2.$(OBJEXT) stack-fcall-3.$(OBJEXT)
+stack_fcall_LINK = $(CCLD) $(stack_fcall_CFLAGS) $(CFLAGS) \
+	$(AM_LDFLAGS) $(LDFLAGS) -o $@
+am_stack_fcall_attach_OBJECTS =  \
+	stack_fcall_attach-stack-fcall-attach.$(OBJEXT) \
+	stack_fcall_attach-stack-fcall-0.$(OBJEXT) \
+	stack_fcall_attach-stack-fcall-1.$(OBJEXT) \
+	stack_fcall_attach-stack-fcall-2.$(OBJEXT) \
+	stack_fcall_attach-stack-fcall-3.$(OBJEXT)
 stack_fcall_attach_OBJECTS = $(am_stack_fcall_attach_OBJECTS)
 stack_fcall_attach_LDADD = $(LDADD)
 stack_fcall_attach_DEPENDENCIES = libtests.a $(am__DEPENDENCIES_1)
+stack_fcall_attach_LINK = $(CCLD) $(stack_fcall_attach_CFLAGS) \
+	$(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 am_stack_fcall_mangled_OBJECTS = stack-fcall-mangled.$(OBJEXT) \
 	stack-fcall-mangled-0.$(OBJEXT) \
 	stack-fcall-mangled-1.$(OBJEXT) \
@@ -6399,7 +6468,7 @@ am__depfiles_remade = ./$(DEPDIR)/_newselect-P.Po \
 	./$(DEPDIR)/clone_ptrace.Po ./$(DEPDIR)/close_range.Po \
 	./$(DEPDIR)/copy_file_range.Po ./$(DEPDIR)/count-f.Po \
 	./$(DEPDIR)/creat.Po ./$(DEPDIR)/delay.Po \
-	./$(DEPDIR)/delete_module.Po \
+	./$(DEPDIR)/delete_module.Po ./$(DEPDIR)/detach-vfork.Po \
 	./$(DEPDIR)/dev--decode-fds-all.Po \
 	./$(DEPDIR)/dev--decode-fds-dev.Po \
 	./$(DEPDIR)/dev--decode-fds-none.Po \
@@ -6499,16 +6568,24 @@ am__depfiles_remade = ./$(DEPDIR)/_newselect-P.Po \
 	./$(DEPDIR)/fstatfs64.Po ./$(DEPDIR)/fsync-y.Po \
 	./$(DEPDIR)/fsync.Po ./$(DEPDIR)/ftruncate.Po \
 	./$(DEPDIR)/ftruncate64-ftruncate64.Po ./$(DEPDIR)/futex.Po \
-	./$(DEPDIR)/futex_waitv.Po ./$(DEPDIR)/futimesat.Po \
-	./$(DEPDIR)/get_mempolicy.Po ./$(DEPDIR)/get_process_reaper.Po \
-	./$(DEPDIR)/getcpu.Po ./$(DEPDIR)/getcwd.Po \
-	./$(DEPDIR)/getdents-v.Po ./$(DEPDIR)/getdents.Po \
-	./$(DEPDIR)/getdents64-v.Po ./$(DEPDIR)/getdents64.Po \
-	./$(DEPDIR)/getegid.Po ./$(DEPDIR)/getegid32.Po \
-	./$(DEPDIR)/geteuid.Po ./$(DEPDIR)/geteuid32.Po \
-	./$(DEPDIR)/getgid.Po ./$(DEPDIR)/getgid32.Po \
-	./$(DEPDIR)/getgroups.Po ./$(DEPDIR)/getgroups32.Po \
-	./$(DEPDIR)/getpeername.Po \
+	./$(DEPDIR)/futex_requeue-Xabbrev.Po \
+	./$(DEPDIR)/futex_requeue-Xraw.Po \
+	./$(DEPDIR)/futex_requeue-Xverbose.Po \
+	./$(DEPDIR)/futex_requeue.Po ./$(DEPDIR)/futex_wait-Xabbrev.Po \
+	./$(DEPDIR)/futex_wait-Xraw.Po \
+	./$(DEPDIR)/futex_wait-Xverbose.Po ./$(DEPDIR)/futex_wait.Po \
+	./$(DEPDIR)/futex_waitv.Po ./$(DEPDIR)/futex_wake-Xabbrev.Po \
+	./$(DEPDIR)/futex_wake-Xraw.Po \
+	./$(DEPDIR)/futex_wake-Xverbose.Po ./$(DEPDIR)/futex_wake.Po \
+	./$(DEPDIR)/futimesat.Po ./$(DEPDIR)/get_mempolicy.Po \
+	./$(DEPDIR)/get_process_reaper.Po ./$(DEPDIR)/getcpu.Po \
+	./$(DEPDIR)/getcwd.Po ./$(DEPDIR)/getdents-v.Po \
+	./$(DEPDIR)/getdents.Po ./$(DEPDIR)/getdents64-v.Po \
+	./$(DEPDIR)/getdents64.Po ./$(DEPDIR)/getegid.Po \
+	./$(DEPDIR)/getegid32.Po ./$(DEPDIR)/geteuid.Po \
+	./$(DEPDIR)/geteuid32.Po ./$(DEPDIR)/getgid.Po \
+	./$(DEPDIR)/getgid32.Po ./$(DEPDIR)/getgroups.Po \
+	./$(DEPDIR)/getgroups32.Po ./$(DEPDIR)/getpeername.Po \
 	./$(DEPDIR)/getpgrp--pidns-translation.Po \
 	./$(DEPDIR)/getpgrp.Po \
 	./$(DEPDIR)/getpid--pidns-translation.Po ./$(DEPDIR)/getpid.Po \
@@ -7170,14 +7247,21 @@ am__depfiles_remade = ./$(DEPDIR)/_newselect-P.Po \
 	./$(DEPDIR)/sockopt-sol_socket-success.Po \
 	./$(DEPDIR)/sockopt-sol_socket.Po \
 	./$(DEPDIR)/sockopt-timestamp.Po ./$(DEPDIR)/splice.Po \
-	./$(DEPDIR)/stack-fcall-0.Po ./$(DEPDIR)/stack-fcall-1.Po \
-	./$(DEPDIR)/stack-fcall-2.Po ./$(DEPDIR)/stack-fcall-3.Po \
-	./$(DEPDIR)/stack-fcall-attach.Po \
 	./$(DEPDIR)/stack-fcall-mangled-0.Po \
 	./$(DEPDIR)/stack-fcall-mangled-1.Po \
 	./$(DEPDIR)/stack-fcall-mangled-2.Po \
 	./$(DEPDIR)/stack-fcall-mangled-3.Po \
-	./$(DEPDIR)/stack-fcall-mangled.Po ./$(DEPDIR)/stack-fcall.Po \
+	./$(DEPDIR)/stack-fcall-mangled.Po \
+	./$(DEPDIR)/stack_fcall-stack-fcall-0.Po \
+	./$(DEPDIR)/stack_fcall-stack-fcall-1.Po \
+	./$(DEPDIR)/stack_fcall-stack-fcall-2.Po \
+	./$(DEPDIR)/stack_fcall-stack-fcall-3.Po \
+	./$(DEPDIR)/stack_fcall-stack-fcall.Po \
+	./$(DEPDIR)/stack_fcall_attach-stack-fcall-0.Po \
+	./$(DEPDIR)/stack_fcall_attach-stack-fcall-1.Po \
+	./$(DEPDIR)/stack_fcall_attach-stack-fcall-2.Po \
+	./$(DEPDIR)/stack_fcall_attach-stack-fcall-3.Po \
+	./$(DEPDIR)/stack_fcall_attach-stack-fcall-attach.Po \
 	./$(DEPDIR)/stat.Po ./$(DEPDIR)/stat64-stat64.Po \
 	./$(DEPDIR)/statfs-statfs.Po ./$(DEPDIR)/statfs64.Po \
 	./$(DEPDIR)/status-all.Po \
@@ -7303,12 +7387,12 @@ SOURCES = $(libtests_a_SOURCES) _newselect.c _newselect-P.c accept.c \
 	clone_ptrace.c clone_ptrace--quiet-attach.c \
 	clone_ptrace--quiet-exit.c clone_ptrace-q.c clone_ptrace-qq.c \
 	close_range.c copy_file_range.c count-f.c creat.c delay.c \
-	delete_module.c dev--decode-fds-all.c dev--decode-fds-dev.c \
-	dev--decode-fds-none.c dev--decode-fds-path.c \
-	dev--decode-fds-socket.c dev-yy.c dup.c dup-P.c \
-	dup-trace-fds-0.c dup-trace-fds-0-9.c dup-trace-fds-0-P.c \
-	dup-trace-fds-not-9.c dup-y.c dup-yy.c dup2.c dup2-P.c \
-	dup2-e-fd-0.c dup2-e-fd-0-9.c dup2-e-fd-0-P.c \
+	delete_module.c detach-vfork.c dev--decode-fds-all.c \
+	dev--decode-fds-dev.c dev--decode-fds-none.c \
+	dev--decode-fds-path.c dev--decode-fds-socket.c dev-yy.c dup.c \
+	dup-P.c dup-trace-fds-0.c dup-trace-fds-0-9.c \
+	dup-trace-fds-0-P.c dup-trace-fds-not-9.c dup-y.c dup-yy.c \
+	dup2.c dup2-P.c dup2-e-fd-0.c dup2-e-fd-0-9.c dup2-e-fd-0-P.c \
 	dup2-e-fd-not-9.c dup2-y.c dup2-yy.c dup3.c dup3-P.c dup3-y.c \
 	dup3-yy.c epoll_create.c epoll_create1.c epoll_ctl.c \
 	epoll_pwait.c epoll_pwait2.c epoll_pwait2-P.c epoll_pwait2-y.c \
@@ -7356,12 +7440,16 @@ SOURCES = $(libtests_a_SOURCES) _newselect.c _newselect-P.c accept.c \
 	fstat-Xabbrev.c fstat-Xraw.c fstat-Xverbose.c fstat64.c \
 	fstat64-Xabbrev.c fstat64-Xraw.c fstat64-Xverbose.c \
 	fstatat64.c fstatfs.c fstatfs64.c fsync.c fsync-y.c \
-	ftruncate.c ftruncate64.c futex.c futex_waitv.c futimesat.c \
-	get_mempolicy.c get_process_reaper.c getcpu.c getcwd.c \
-	getdents.c getdents-v.c getdents64.c getdents64-v.c getegid.c \
-	getegid32.c geteuid.c geteuid32.c getgid.c getgid32.c \
-	getgroups.c getgroups32.c getpeername.c getpgrp.c \
-	getpgrp--pidns-translation.c getpid.c \
+	ftruncate.c ftruncate64.c futex.c futex_requeue.c \
+	futex_requeue-Xabbrev.c futex_requeue-Xraw.c \
+	futex_requeue-Xverbose.c futex_wait.c futex_wait-Xabbrev.c \
+	futex_wait-Xraw.c futex_wait-Xverbose.c futex_waitv.c \
+	futex_wake.c futex_wake-Xabbrev.c futex_wake-Xraw.c \
+	futex_wake-Xverbose.c futimesat.c get_mempolicy.c \
+	get_process_reaper.c getcpu.c getcwd.c getdents.c getdents-v.c \
+	getdents64.c getdents64-v.c getegid.c getegid32.c geteuid.c \
+	geteuid32.c getgid.c getgid32.c getgroups.c getgroups32.c \
+	getpeername.c getpgrp.c getpgrp--pidns-translation.c getpid.c \
 	getpid--pidns-translation.c getppid.c getrandom.c getresgid.c \
 	getresgid32.c getresuid.c getresuid32.c getrlimit.c \
 	getrusage.c getsid.c getsid--pidns-translation.c getsockname.c \
@@ -7759,12 +7847,12 @@ DIST_SOURCES = $(libtests_a_SOURCES) _newselect.c _newselect-P.c \
 	clone_ptrace.c clone_ptrace--quiet-attach.c \
 	clone_ptrace--quiet-exit.c clone_ptrace-q.c clone_ptrace-qq.c \
 	close_range.c copy_file_range.c count-f.c creat.c delay.c \
-	delete_module.c dev--decode-fds-all.c dev--decode-fds-dev.c \
-	dev--decode-fds-none.c dev--decode-fds-path.c \
-	dev--decode-fds-socket.c dev-yy.c dup.c dup-P.c \
-	dup-trace-fds-0.c dup-trace-fds-0-9.c dup-trace-fds-0-P.c \
-	dup-trace-fds-not-9.c dup-y.c dup-yy.c dup2.c dup2-P.c \
-	dup2-e-fd-0.c dup2-e-fd-0-9.c dup2-e-fd-0-P.c \
+	delete_module.c detach-vfork.c dev--decode-fds-all.c \
+	dev--decode-fds-dev.c dev--decode-fds-none.c \
+	dev--decode-fds-path.c dev--decode-fds-socket.c dev-yy.c dup.c \
+	dup-P.c dup-trace-fds-0.c dup-trace-fds-0-9.c \
+	dup-trace-fds-0-P.c dup-trace-fds-not-9.c dup-y.c dup-yy.c \
+	dup2.c dup2-P.c dup2-e-fd-0.c dup2-e-fd-0-9.c dup2-e-fd-0-P.c \
 	dup2-e-fd-not-9.c dup2-y.c dup2-yy.c dup3.c dup3-P.c dup3-y.c \
 	dup3-yy.c epoll_create.c epoll_create1.c epoll_ctl.c \
 	epoll_pwait.c epoll_pwait2.c epoll_pwait2-P.c epoll_pwait2-y.c \
@@ -7812,12 +7900,16 @@ DIST_SOURCES = $(libtests_a_SOURCES) _newselect.c _newselect-P.c \
 	fstat-Xabbrev.c fstat-Xraw.c fstat-Xverbose.c fstat64.c \
 	fstat64-Xabbrev.c fstat64-Xraw.c fstat64-Xverbose.c \
 	fstatat64.c fstatfs.c fstatfs64.c fsync.c fsync-y.c \
-	ftruncate.c ftruncate64.c futex.c futex_waitv.c futimesat.c \
-	get_mempolicy.c get_process_reaper.c getcpu.c getcwd.c \
-	getdents.c getdents-v.c getdents64.c getdents64-v.c getegid.c \
-	getegid32.c geteuid.c geteuid32.c getgid.c getgid32.c \
-	getgroups.c getgroups32.c getpeername.c getpgrp.c \
-	getpgrp--pidns-translation.c getpid.c \
+	ftruncate.c ftruncate64.c futex.c futex_requeue.c \
+	futex_requeue-Xabbrev.c futex_requeue-Xraw.c \
+	futex_requeue-Xverbose.c futex_wait.c futex_wait-Xabbrev.c \
+	futex_wait-Xraw.c futex_wait-Xverbose.c futex_waitv.c \
+	futex_wake.c futex_wake-Xabbrev.c futex_wake-Xraw.c \
+	futex_wake-Xverbose.c futimesat.c get_mempolicy.c \
+	get_process_reaper.c getcpu.c getcwd.c getdents.c getdents-v.c \
+	getdents64.c getdents64-v.c getegid.c getegid32.c geteuid.c \
+	geteuid32.c getgid.c getgid32.c getgroups.c getgroups32.c \
+	getpeername.c getpgrp.c getpgrp--pidns-translation.c getpid.c \
 	getpid--pidns-translation.c getppid.c getrandom.c getresgid.c \
 	getresgid32.c getresuid.c getresuid32.c getrlimit.c \
 	getrusage.c getsid.c getsid--pidns-translation.c getsockname.c \
@@ -8374,7 +8466,7 @@ AM_TESTSUITE_SUMMARY_HEADER = ' for $(PACKAGE_STRING)'
 RECHECK_LOGS = $(TEST_LOGS)
 AM_RECURSIVE_TARGETS = check recheck
 @ENABLE_STACKTRACE_TRUE@am__EXEEXT_3 = strace-k.test strace-k-p.test \
-@ENABLE_STACKTRACE_TRUE@	$(am__append_2)
+@ENABLE_STACKTRACE_TRUE@	$(am__append_2) $(am__append_3)
 TEST_SUITE_LOG = test-suite.log
 TEST_EXTENSIONS = @EXEEXT@ .test
 am__test_logs1 = $(TESTS:=.log)
@@ -8611,6 +8703,7 @@ libtests_a_SOURCES = \
 	errno2name.c \
 	error_msg.c \
 	fill_memory.c \
+	futex2_flags.h \
 	get_page_size.c \
 	get_sigset_size.c \
 	hexdump_strdup.c \
@@ -8788,7 +8881,19 @@ PURE_EXECUTABLES = \
   ftruncate \
   ftruncate64 \
   futex \
+  futex_requeue \
+  futex_requeue-Xabbrev \
+  futex_requeue-Xraw \
+  futex_requeue-Xverbose \
+  futex_wait \
+  futex_wait-Xabbrev \
+  futex_wait-Xraw \
+  futex_wait-Xverbose \
   futex_waitv \
+  futex_wake \
+  futex_wake-Xabbrev \
+  futex_wake-Xraw \
+  futex_wake-Xverbose \
   futimesat \
   get_mempolicy \
   getcpu \
@@ -9673,9 +9778,11 @@ uio_CPPFLAGS = $(AM_CPPFLAGS) -D_FILE_OFFSET_BITS=64
 stack_fcall_SOURCES = stack-fcall.c \
 	stack-fcall-0.c stack-fcall-1.c stack-fcall-2.c stack-fcall-3.c
 
+@ACCEPT_GDWARF_ARANGES_TRUE@@USE_LIBDW_TRUE@stack_fcall_CFLAGS = $(AM_CFLAGS) -gdwarf-aranges
 stack_fcall_attach_SOURCES = stack-fcall-attach.c \
 	stack-fcall-0.c stack-fcall-1.c stack-fcall-2.c stack-fcall-3.c
 
+@ACCEPT_GDWARF_ARANGES_TRUE@@USE_LIBDW_TRUE@stack_fcall_attach_CFLAGS = $(AM_CFLAGS) -gdwarf-aranges
 stack_fcall_mangled_SOURCES = stack-fcall-mangled.c \
 	stack-fcall-mangled-0.c stack-fcall-mangled-1.c \
 	stack-fcall-mangled-2.c stack-fcall-mangled-3.c
@@ -9791,7 +9898,13 @@ GEN_TESTS = _newselect.gen.test _newselect-P.gen.test accept.gen.test \
 	fstat64-Xabbrev.gen.test fstat64-Xraw.gen.test \
 	fstat64-Xverbose.gen.test fstatat64.gen.test fstatfs.gen.test \
 	fstatfs64.gen.test fsync.gen.test fsync-y.gen.test \
-	ftruncate.gen.test ftruncate64.gen.test futex_waitv.gen.test \
+	ftruncate.gen.test ftruncate64.gen.test futex_requeue.gen.test \
+	futex_requeue-Xabbrev.gen.test futex_requeue-Xraw.gen.test \
+	futex_requeue-Xverbose.gen.test futex_wait.gen.test \
+	futex_wait-Xabbrev.gen.test futex_wait-Xraw.gen.test \
+	futex_wait-Xverbose.gen.test futex_waitv.gen.test \
+	futex_wake.gen.test futex_wake-Xabbrev.gen.test \
+	futex_wake-Xraw.gen.test futex_wake-Xverbose.gen.test \
 	futimesat.gen.test get_mempolicy.gen.test getcpu.gen.test \
 	getcwd.gen.test getdents.gen.test getdents-v.gen.test \
 	getdents64.gen.test getdents64-v.gen.test getegid.gen.test \
@@ -10366,7 +10479,8 @@ GEN_TESTS = _newselect.gen.test _newselect-P.gen.test accept.gen.test \
 	xettimeofday.gen.test
 @ENABLE_STACKTRACE_FALSE@STACKTRACE_TESTS = 
 @ENABLE_STACKTRACE_TRUE@STACKTRACE_TESTS = strace-k.test \
-@ENABLE_STACKTRACE_TRUE@	strace-k-p.test $(am__append_2)
+@ENABLE_STACKTRACE_TRUE@	strace-k-p.test $(am__append_2) \
+@ENABLE_STACKTRACE_TRUE@	$(am__append_3)
 @ENABLE_STACKTRACE_FALSE@STACKTRACE_XFAIL_TESTS = 
 @ENABLE_STACKTRACE_TRUE@@USE_LIBUNWIND_FALSE@STACKTRACE_XFAIL_TESTS = 
 @ENABLE_STACKTRACE_TRUE@@USE_LIBUNWIND_TRUE@STACKTRACE_XFAIL_TESTS = $(STACKTRACE_TESTS)
@@ -10445,6 +10559,7 @@ MISC_TESTS = \
 	detach-running.test \
 	detach-sleeping.test \
 	detach-stopped.test \
+	detach-vfork.test \
 	exec-PATH.test \
 	fflush.test \
 	filter-unavailable.test \
@@ -10555,6 +10670,8 @@ check_SCRIPTS = \
 	strace-k-demangle.test \
 	strace-k-p.test \
 	strace-k.test \
+	strace-kk-p.test \
+	strace-kk.test \
 	syntax.sh \
 	# end of check_SCRIPTS
 
@@ -10611,6 +10728,8 @@ check_DATA = \
 	strace-k-demangle.expected \
 	strace-k-p.expected \
 	strace-k.expected \
+	strace-kk-p.expected \
+	strace-kk.expected \
 	strace-r.expected \
 	strace.supp \
 	strauss_body.exp \
@@ -11151,6 +11270,10 @@ delay$(EXEEXT): $(delay_OBJECTS) $(delay_DEPENDENCIES) $(EXTRA_delay_DEPENDENCIE
 delete_module$(EXEEXT): $(delete_module_OBJECTS) $(delete_module_DEPENDENCIES) $(EXTRA_delete_module_DEPENDENCIES) 
 	@rm -f delete_module$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(delete_module_OBJECTS) $(delete_module_LDADD) $(LIBS)
+
+detach-vfork$(EXEEXT): $(detach_vfork_OBJECTS) $(detach_vfork_DEPENDENCIES) $(EXTRA_detach_vfork_DEPENDENCIES) 
+	@rm -f detach-vfork$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(detach_vfork_OBJECTS) $(detach_vfork_LDADD) $(LIBS)
 
 dev--decode-fds-all$(EXEEXT): $(dev__decode_fds_all_OBJECTS) $(dev__decode_fds_all_DEPENDENCIES) $(EXTRA_dev__decode_fds_all_DEPENDENCIES) 
 	@rm -f dev--decode-fds-all$(EXEEXT)
@@ -11728,9 +11851,57 @@ futex$(EXEEXT): $(futex_OBJECTS) $(futex_DEPENDENCIES) $(EXTRA_futex_DEPENDENCIE
 	@rm -f futex$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(futex_OBJECTS) $(futex_LDADD) $(LIBS)
 
+futex_requeue$(EXEEXT): $(futex_requeue_OBJECTS) $(futex_requeue_DEPENDENCIES) $(EXTRA_futex_requeue_DEPENDENCIES) 
+	@rm -f futex_requeue$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(futex_requeue_OBJECTS) $(futex_requeue_LDADD) $(LIBS)
+
+futex_requeue-Xabbrev$(EXEEXT): $(futex_requeue_Xabbrev_OBJECTS) $(futex_requeue_Xabbrev_DEPENDENCIES) $(EXTRA_futex_requeue_Xabbrev_DEPENDENCIES) 
+	@rm -f futex_requeue-Xabbrev$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(futex_requeue_Xabbrev_OBJECTS) $(futex_requeue_Xabbrev_LDADD) $(LIBS)
+
+futex_requeue-Xraw$(EXEEXT): $(futex_requeue_Xraw_OBJECTS) $(futex_requeue_Xraw_DEPENDENCIES) $(EXTRA_futex_requeue_Xraw_DEPENDENCIES) 
+	@rm -f futex_requeue-Xraw$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(futex_requeue_Xraw_OBJECTS) $(futex_requeue_Xraw_LDADD) $(LIBS)
+
+futex_requeue-Xverbose$(EXEEXT): $(futex_requeue_Xverbose_OBJECTS) $(futex_requeue_Xverbose_DEPENDENCIES) $(EXTRA_futex_requeue_Xverbose_DEPENDENCIES) 
+	@rm -f futex_requeue-Xverbose$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(futex_requeue_Xverbose_OBJECTS) $(futex_requeue_Xverbose_LDADD) $(LIBS)
+
+futex_wait$(EXEEXT): $(futex_wait_OBJECTS) $(futex_wait_DEPENDENCIES) $(EXTRA_futex_wait_DEPENDENCIES) 
+	@rm -f futex_wait$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(futex_wait_OBJECTS) $(futex_wait_LDADD) $(LIBS)
+
+futex_wait-Xabbrev$(EXEEXT): $(futex_wait_Xabbrev_OBJECTS) $(futex_wait_Xabbrev_DEPENDENCIES) $(EXTRA_futex_wait_Xabbrev_DEPENDENCIES) 
+	@rm -f futex_wait-Xabbrev$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(futex_wait_Xabbrev_OBJECTS) $(futex_wait_Xabbrev_LDADD) $(LIBS)
+
+futex_wait-Xraw$(EXEEXT): $(futex_wait_Xraw_OBJECTS) $(futex_wait_Xraw_DEPENDENCIES) $(EXTRA_futex_wait_Xraw_DEPENDENCIES) 
+	@rm -f futex_wait-Xraw$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(futex_wait_Xraw_OBJECTS) $(futex_wait_Xraw_LDADD) $(LIBS)
+
+futex_wait-Xverbose$(EXEEXT): $(futex_wait_Xverbose_OBJECTS) $(futex_wait_Xverbose_DEPENDENCIES) $(EXTRA_futex_wait_Xverbose_DEPENDENCIES) 
+	@rm -f futex_wait-Xverbose$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(futex_wait_Xverbose_OBJECTS) $(futex_wait_Xverbose_LDADD) $(LIBS)
+
 futex_waitv$(EXEEXT): $(futex_waitv_OBJECTS) $(futex_waitv_DEPENDENCIES) $(EXTRA_futex_waitv_DEPENDENCIES) 
 	@rm -f futex_waitv$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(futex_waitv_OBJECTS) $(futex_waitv_LDADD) $(LIBS)
+
+futex_wake$(EXEEXT): $(futex_wake_OBJECTS) $(futex_wake_DEPENDENCIES) $(EXTRA_futex_wake_DEPENDENCIES) 
+	@rm -f futex_wake$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(futex_wake_OBJECTS) $(futex_wake_LDADD) $(LIBS)
+
+futex_wake-Xabbrev$(EXEEXT): $(futex_wake_Xabbrev_OBJECTS) $(futex_wake_Xabbrev_DEPENDENCIES) $(EXTRA_futex_wake_Xabbrev_DEPENDENCIES) 
+	@rm -f futex_wake-Xabbrev$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(futex_wake_Xabbrev_OBJECTS) $(futex_wake_Xabbrev_LDADD) $(LIBS)
+
+futex_wake-Xraw$(EXEEXT): $(futex_wake_Xraw_OBJECTS) $(futex_wake_Xraw_DEPENDENCIES) $(EXTRA_futex_wake_Xraw_DEPENDENCIES) 
+	@rm -f futex_wake-Xraw$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(futex_wake_Xraw_OBJECTS) $(futex_wake_Xraw_LDADD) $(LIBS)
+
+futex_wake-Xverbose$(EXEEXT): $(futex_wake_Xverbose_OBJECTS) $(futex_wake_Xverbose_DEPENDENCIES) $(EXTRA_futex_wake_Xverbose_DEPENDENCIES) 
+	@rm -f futex_wake-Xverbose$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(futex_wake_Xverbose_OBJECTS) $(futex_wake_Xverbose_LDADD) $(LIBS)
 
 futimesat$(EXEEXT): $(futimesat_OBJECTS) $(futimesat_DEPENDENCIES) $(EXTRA_futimesat_DEPENDENCIES) 
 	@rm -f futimesat$(EXEEXT)
@@ -15166,11 +15337,11 @@ splice$(EXEEXT): $(splice_OBJECTS) $(splice_DEPENDENCIES) $(EXTRA_splice_DEPENDE
 
 stack-fcall$(EXEEXT): $(stack_fcall_OBJECTS) $(stack_fcall_DEPENDENCIES) $(EXTRA_stack_fcall_DEPENDENCIES) 
 	@rm -f stack-fcall$(EXEEXT)
-	$(AM_V_CCLD)$(LINK) $(stack_fcall_OBJECTS) $(stack_fcall_LDADD) $(LIBS)
+	$(AM_V_CCLD)$(stack_fcall_LINK) $(stack_fcall_OBJECTS) $(stack_fcall_LDADD) $(LIBS)
 
 stack-fcall-attach$(EXEEXT): $(stack_fcall_attach_OBJECTS) $(stack_fcall_attach_DEPENDENCIES) $(EXTRA_stack_fcall_attach_DEPENDENCIES) 
 	@rm -f stack-fcall-attach$(EXEEXT)
-	$(AM_V_CCLD)$(LINK) $(stack_fcall_attach_OBJECTS) $(stack_fcall_attach_LDADD) $(LIBS)
+	$(AM_V_CCLD)$(stack_fcall_attach_LINK) $(stack_fcall_attach_OBJECTS) $(stack_fcall_attach_LDADD) $(LIBS)
 
 stack-fcall-mangled$(EXEEXT): $(stack_fcall_mangled_OBJECTS) $(stack_fcall_mangled_DEPENDENCIES) $(EXTRA_stack_fcall_mangled_DEPENDENCIES) 
 	@rm -f stack-fcall-mangled$(EXEEXT)
@@ -15797,6 +15968,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/creat.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/delay.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/delete_module.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/detach-vfork.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dev--decode-fds-all.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dev--decode-fds-dev.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dev--decode-fds-none.Po@am__quote@ # am--include-marker
@@ -15941,7 +16113,19 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ftruncate.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ftruncate64-ftruncate64.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/futex.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/futex_requeue-Xabbrev.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/futex_requeue-Xraw.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/futex_requeue-Xverbose.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/futex_requeue.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/futex_wait-Xabbrev.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/futex_wait-Xraw.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/futex_wait-Xverbose.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/futex_wait.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/futex_waitv.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/futex_wake-Xabbrev.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/futex_wake-Xraw.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/futex_wake-Xverbose.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/futex_wake.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/futimesat.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/get_mempolicy.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/get_process_reaper.Po@am__quote@ # am--include-marker
@@ -16838,17 +17022,21 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sockopt-sol_socket.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sockopt-timestamp.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/splice.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stack-fcall-0.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stack-fcall-1.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stack-fcall-2.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stack-fcall-3.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stack-fcall-attach.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stack-fcall-mangled-0.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stack-fcall-mangled-1.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stack-fcall-mangled-2.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stack-fcall-mangled-3.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stack-fcall-mangled.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stack-fcall.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stack_fcall-stack-fcall-0.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stack_fcall-stack-fcall-1.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stack_fcall-stack-fcall-2.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stack_fcall-stack-fcall-3.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stack_fcall-stack-fcall.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stack_fcall_attach-stack-fcall-0.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stack_fcall_attach-stack-fcall-1.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stack_fcall_attach-stack-fcall-2.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stack_fcall_attach-stack-fcall-3.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stack_fcall_attach-stack-fcall-attach.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stat.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stat64-stat64.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/statfs-statfs.Po@am__quote@ # am--include-marker
@@ -17710,6 +17898,146 @@ pwritev-pwritev.obj: pwritev.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(pwritev_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o pwritev-pwritev.obj `if test -f 'pwritev.c'; then $(CYGPATH_W) 'pwritev.c'; else $(CYGPATH_W) '$(srcdir)/pwritev.c'; fi`
 
+stack_fcall-stack-fcall.o: stack-fcall.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(stack_fcall_CFLAGS) $(CFLAGS) -MT stack_fcall-stack-fcall.o -MD -MP -MF $(DEPDIR)/stack_fcall-stack-fcall.Tpo -c -o stack_fcall-stack-fcall.o `test -f 'stack-fcall.c' || echo '$(srcdir)/'`stack-fcall.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/stack_fcall-stack-fcall.Tpo $(DEPDIR)/stack_fcall-stack-fcall.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='stack-fcall.c' object='stack_fcall-stack-fcall.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(stack_fcall_CFLAGS) $(CFLAGS) -c -o stack_fcall-stack-fcall.o `test -f 'stack-fcall.c' || echo '$(srcdir)/'`stack-fcall.c
+
+stack_fcall-stack-fcall.obj: stack-fcall.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(stack_fcall_CFLAGS) $(CFLAGS) -MT stack_fcall-stack-fcall.obj -MD -MP -MF $(DEPDIR)/stack_fcall-stack-fcall.Tpo -c -o stack_fcall-stack-fcall.obj `if test -f 'stack-fcall.c'; then $(CYGPATH_W) 'stack-fcall.c'; else $(CYGPATH_W) '$(srcdir)/stack-fcall.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/stack_fcall-stack-fcall.Tpo $(DEPDIR)/stack_fcall-stack-fcall.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='stack-fcall.c' object='stack_fcall-stack-fcall.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(stack_fcall_CFLAGS) $(CFLAGS) -c -o stack_fcall-stack-fcall.obj `if test -f 'stack-fcall.c'; then $(CYGPATH_W) 'stack-fcall.c'; else $(CYGPATH_W) '$(srcdir)/stack-fcall.c'; fi`
+
+stack_fcall-stack-fcall-0.o: stack-fcall-0.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(stack_fcall_CFLAGS) $(CFLAGS) -MT stack_fcall-stack-fcall-0.o -MD -MP -MF $(DEPDIR)/stack_fcall-stack-fcall-0.Tpo -c -o stack_fcall-stack-fcall-0.o `test -f 'stack-fcall-0.c' || echo '$(srcdir)/'`stack-fcall-0.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/stack_fcall-stack-fcall-0.Tpo $(DEPDIR)/stack_fcall-stack-fcall-0.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='stack-fcall-0.c' object='stack_fcall-stack-fcall-0.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(stack_fcall_CFLAGS) $(CFLAGS) -c -o stack_fcall-stack-fcall-0.o `test -f 'stack-fcall-0.c' || echo '$(srcdir)/'`stack-fcall-0.c
+
+stack_fcall-stack-fcall-0.obj: stack-fcall-0.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(stack_fcall_CFLAGS) $(CFLAGS) -MT stack_fcall-stack-fcall-0.obj -MD -MP -MF $(DEPDIR)/stack_fcall-stack-fcall-0.Tpo -c -o stack_fcall-stack-fcall-0.obj `if test -f 'stack-fcall-0.c'; then $(CYGPATH_W) 'stack-fcall-0.c'; else $(CYGPATH_W) '$(srcdir)/stack-fcall-0.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/stack_fcall-stack-fcall-0.Tpo $(DEPDIR)/stack_fcall-stack-fcall-0.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='stack-fcall-0.c' object='stack_fcall-stack-fcall-0.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(stack_fcall_CFLAGS) $(CFLAGS) -c -o stack_fcall-stack-fcall-0.obj `if test -f 'stack-fcall-0.c'; then $(CYGPATH_W) 'stack-fcall-0.c'; else $(CYGPATH_W) '$(srcdir)/stack-fcall-0.c'; fi`
+
+stack_fcall-stack-fcall-1.o: stack-fcall-1.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(stack_fcall_CFLAGS) $(CFLAGS) -MT stack_fcall-stack-fcall-1.o -MD -MP -MF $(DEPDIR)/stack_fcall-stack-fcall-1.Tpo -c -o stack_fcall-stack-fcall-1.o `test -f 'stack-fcall-1.c' || echo '$(srcdir)/'`stack-fcall-1.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/stack_fcall-stack-fcall-1.Tpo $(DEPDIR)/stack_fcall-stack-fcall-1.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='stack-fcall-1.c' object='stack_fcall-stack-fcall-1.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(stack_fcall_CFLAGS) $(CFLAGS) -c -o stack_fcall-stack-fcall-1.o `test -f 'stack-fcall-1.c' || echo '$(srcdir)/'`stack-fcall-1.c
+
+stack_fcall-stack-fcall-1.obj: stack-fcall-1.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(stack_fcall_CFLAGS) $(CFLAGS) -MT stack_fcall-stack-fcall-1.obj -MD -MP -MF $(DEPDIR)/stack_fcall-stack-fcall-1.Tpo -c -o stack_fcall-stack-fcall-1.obj `if test -f 'stack-fcall-1.c'; then $(CYGPATH_W) 'stack-fcall-1.c'; else $(CYGPATH_W) '$(srcdir)/stack-fcall-1.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/stack_fcall-stack-fcall-1.Tpo $(DEPDIR)/stack_fcall-stack-fcall-1.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='stack-fcall-1.c' object='stack_fcall-stack-fcall-1.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(stack_fcall_CFLAGS) $(CFLAGS) -c -o stack_fcall-stack-fcall-1.obj `if test -f 'stack-fcall-1.c'; then $(CYGPATH_W) 'stack-fcall-1.c'; else $(CYGPATH_W) '$(srcdir)/stack-fcall-1.c'; fi`
+
+stack_fcall-stack-fcall-2.o: stack-fcall-2.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(stack_fcall_CFLAGS) $(CFLAGS) -MT stack_fcall-stack-fcall-2.o -MD -MP -MF $(DEPDIR)/stack_fcall-stack-fcall-2.Tpo -c -o stack_fcall-stack-fcall-2.o `test -f 'stack-fcall-2.c' || echo '$(srcdir)/'`stack-fcall-2.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/stack_fcall-stack-fcall-2.Tpo $(DEPDIR)/stack_fcall-stack-fcall-2.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='stack-fcall-2.c' object='stack_fcall-stack-fcall-2.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(stack_fcall_CFLAGS) $(CFLAGS) -c -o stack_fcall-stack-fcall-2.o `test -f 'stack-fcall-2.c' || echo '$(srcdir)/'`stack-fcall-2.c
+
+stack_fcall-stack-fcall-2.obj: stack-fcall-2.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(stack_fcall_CFLAGS) $(CFLAGS) -MT stack_fcall-stack-fcall-2.obj -MD -MP -MF $(DEPDIR)/stack_fcall-stack-fcall-2.Tpo -c -o stack_fcall-stack-fcall-2.obj `if test -f 'stack-fcall-2.c'; then $(CYGPATH_W) 'stack-fcall-2.c'; else $(CYGPATH_W) '$(srcdir)/stack-fcall-2.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/stack_fcall-stack-fcall-2.Tpo $(DEPDIR)/stack_fcall-stack-fcall-2.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='stack-fcall-2.c' object='stack_fcall-stack-fcall-2.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(stack_fcall_CFLAGS) $(CFLAGS) -c -o stack_fcall-stack-fcall-2.obj `if test -f 'stack-fcall-2.c'; then $(CYGPATH_W) 'stack-fcall-2.c'; else $(CYGPATH_W) '$(srcdir)/stack-fcall-2.c'; fi`
+
+stack_fcall-stack-fcall-3.o: stack-fcall-3.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(stack_fcall_CFLAGS) $(CFLAGS) -MT stack_fcall-stack-fcall-3.o -MD -MP -MF $(DEPDIR)/stack_fcall-stack-fcall-3.Tpo -c -o stack_fcall-stack-fcall-3.o `test -f 'stack-fcall-3.c' || echo '$(srcdir)/'`stack-fcall-3.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/stack_fcall-stack-fcall-3.Tpo $(DEPDIR)/stack_fcall-stack-fcall-3.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='stack-fcall-3.c' object='stack_fcall-stack-fcall-3.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(stack_fcall_CFLAGS) $(CFLAGS) -c -o stack_fcall-stack-fcall-3.o `test -f 'stack-fcall-3.c' || echo '$(srcdir)/'`stack-fcall-3.c
+
+stack_fcall-stack-fcall-3.obj: stack-fcall-3.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(stack_fcall_CFLAGS) $(CFLAGS) -MT stack_fcall-stack-fcall-3.obj -MD -MP -MF $(DEPDIR)/stack_fcall-stack-fcall-3.Tpo -c -o stack_fcall-stack-fcall-3.obj `if test -f 'stack-fcall-3.c'; then $(CYGPATH_W) 'stack-fcall-3.c'; else $(CYGPATH_W) '$(srcdir)/stack-fcall-3.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/stack_fcall-stack-fcall-3.Tpo $(DEPDIR)/stack_fcall-stack-fcall-3.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='stack-fcall-3.c' object='stack_fcall-stack-fcall-3.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(stack_fcall_CFLAGS) $(CFLAGS) -c -o stack_fcall-stack-fcall-3.obj `if test -f 'stack-fcall-3.c'; then $(CYGPATH_W) 'stack-fcall-3.c'; else $(CYGPATH_W) '$(srcdir)/stack-fcall-3.c'; fi`
+
+stack_fcall_attach-stack-fcall-attach.o: stack-fcall-attach.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(stack_fcall_attach_CFLAGS) $(CFLAGS) -MT stack_fcall_attach-stack-fcall-attach.o -MD -MP -MF $(DEPDIR)/stack_fcall_attach-stack-fcall-attach.Tpo -c -o stack_fcall_attach-stack-fcall-attach.o `test -f 'stack-fcall-attach.c' || echo '$(srcdir)/'`stack-fcall-attach.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/stack_fcall_attach-stack-fcall-attach.Tpo $(DEPDIR)/stack_fcall_attach-stack-fcall-attach.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='stack-fcall-attach.c' object='stack_fcall_attach-stack-fcall-attach.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(stack_fcall_attach_CFLAGS) $(CFLAGS) -c -o stack_fcall_attach-stack-fcall-attach.o `test -f 'stack-fcall-attach.c' || echo '$(srcdir)/'`stack-fcall-attach.c
+
+stack_fcall_attach-stack-fcall-attach.obj: stack-fcall-attach.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(stack_fcall_attach_CFLAGS) $(CFLAGS) -MT stack_fcall_attach-stack-fcall-attach.obj -MD -MP -MF $(DEPDIR)/stack_fcall_attach-stack-fcall-attach.Tpo -c -o stack_fcall_attach-stack-fcall-attach.obj `if test -f 'stack-fcall-attach.c'; then $(CYGPATH_W) 'stack-fcall-attach.c'; else $(CYGPATH_W) '$(srcdir)/stack-fcall-attach.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/stack_fcall_attach-stack-fcall-attach.Tpo $(DEPDIR)/stack_fcall_attach-stack-fcall-attach.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='stack-fcall-attach.c' object='stack_fcall_attach-stack-fcall-attach.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(stack_fcall_attach_CFLAGS) $(CFLAGS) -c -o stack_fcall_attach-stack-fcall-attach.obj `if test -f 'stack-fcall-attach.c'; then $(CYGPATH_W) 'stack-fcall-attach.c'; else $(CYGPATH_W) '$(srcdir)/stack-fcall-attach.c'; fi`
+
+stack_fcall_attach-stack-fcall-0.o: stack-fcall-0.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(stack_fcall_attach_CFLAGS) $(CFLAGS) -MT stack_fcall_attach-stack-fcall-0.o -MD -MP -MF $(DEPDIR)/stack_fcall_attach-stack-fcall-0.Tpo -c -o stack_fcall_attach-stack-fcall-0.o `test -f 'stack-fcall-0.c' || echo '$(srcdir)/'`stack-fcall-0.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/stack_fcall_attach-stack-fcall-0.Tpo $(DEPDIR)/stack_fcall_attach-stack-fcall-0.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='stack-fcall-0.c' object='stack_fcall_attach-stack-fcall-0.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(stack_fcall_attach_CFLAGS) $(CFLAGS) -c -o stack_fcall_attach-stack-fcall-0.o `test -f 'stack-fcall-0.c' || echo '$(srcdir)/'`stack-fcall-0.c
+
+stack_fcall_attach-stack-fcall-0.obj: stack-fcall-0.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(stack_fcall_attach_CFLAGS) $(CFLAGS) -MT stack_fcall_attach-stack-fcall-0.obj -MD -MP -MF $(DEPDIR)/stack_fcall_attach-stack-fcall-0.Tpo -c -o stack_fcall_attach-stack-fcall-0.obj `if test -f 'stack-fcall-0.c'; then $(CYGPATH_W) 'stack-fcall-0.c'; else $(CYGPATH_W) '$(srcdir)/stack-fcall-0.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/stack_fcall_attach-stack-fcall-0.Tpo $(DEPDIR)/stack_fcall_attach-stack-fcall-0.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='stack-fcall-0.c' object='stack_fcall_attach-stack-fcall-0.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(stack_fcall_attach_CFLAGS) $(CFLAGS) -c -o stack_fcall_attach-stack-fcall-0.obj `if test -f 'stack-fcall-0.c'; then $(CYGPATH_W) 'stack-fcall-0.c'; else $(CYGPATH_W) '$(srcdir)/stack-fcall-0.c'; fi`
+
+stack_fcall_attach-stack-fcall-1.o: stack-fcall-1.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(stack_fcall_attach_CFLAGS) $(CFLAGS) -MT stack_fcall_attach-stack-fcall-1.o -MD -MP -MF $(DEPDIR)/stack_fcall_attach-stack-fcall-1.Tpo -c -o stack_fcall_attach-stack-fcall-1.o `test -f 'stack-fcall-1.c' || echo '$(srcdir)/'`stack-fcall-1.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/stack_fcall_attach-stack-fcall-1.Tpo $(DEPDIR)/stack_fcall_attach-stack-fcall-1.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='stack-fcall-1.c' object='stack_fcall_attach-stack-fcall-1.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(stack_fcall_attach_CFLAGS) $(CFLAGS) -c -o stack_fcall_attach-stack-fcall-1.o `test -f 'stack-fcall-1.c' || echo '$(srcdir)/'`stack-fcall-1.c
+
+stack_fcall_attach-stack-fcall-1.obj: stack-fcall-1.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(stack_fcall_attach_CFLAGS) $(CFLAGS) -MT stack_fcall_attach-stack-fcall-1.obj -MD -MP -MF $(DEPDIR)/stack_fcall_attach-stack-fcall-1.Tpo -c -o stack_fcall_attach-stack-fcall-1.obj `if test -f 'stack-fcall-1.c'; then $(CYGPATH_W) 'stack-fcall-1.c'; else $(CYGPATH_W) '$(srcdir)/stack-fcall-1.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/stack_fcall_attach-stack-fcall-1.Tpo $(DEPDIR)/stack_fcall_attach-stack-fcall-1.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='stack-fcall-1.c' object='stack_fcall_attach-stack-fcall-1.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(stack_fcall_attach_CFLAGS) $(CFLAGS) -c -o stack_fcall_attach-stack-fcall-1.obj `if test -f 'stack-fcall-1.c'; then $(CYGPATH_W) 'stack-fcall-1.c'; else $(CYGPATH_W) '$(srcdir)/stack-fcall-1.c'; fi`
+
+stack_fcall_attach-stack-fcall-2.o: stack-fcall-2.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(stack_fcall_attach_CFLAGS) $(CFLAGS) -MT stack_fcall_attach-stack-fcall-2.o -MD -MP -MF $(DEPDIR)/stack_fcall_attach-stack-fcall-2.Tpo -c -o stack_fcall_attach-stack-fcall-2.o `test -f 'stack-fcall-2.c' || echo '$(srcdir)/'`stack-fcall-2.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/stack_fcall_attach-stack-fcall-2.Tpo $(DEPDIR)/stack_fcall_attach-stack-fcall-2.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='stack-fcall-2.c' object='stack_fcall_attach-stack-fcall-2.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(stack_fcall_attach_CFLAGS) $(CFLAGS) -c -o stack_fcall_attach-stack-fcall-2.o `test -f 'stack-fcall-2.c' || echo '$(srcdir)/'`stack-fcall-2.c
+
+stack_fcall_attach-stack-fcall-2.obj: stack-fcall-2.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(stack_fcall_attach_CFLAGS) $(CFLAGS) -MT stack_fcall_attach-stack-fcall-2.obj -MD -MP -MF $(DEPDIR)/stack_fcall_attach-stack-fcall-2.Tpo -c -o stack_fcall_attach-stack-fcall-2.obj `if test -f 'stack-fcall-2.c'; then $(CYGPATH_W) 'stack-fcall-2.c'; else $(CYGPATH_W) '$(srcdir)/stack-fcall-2.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/stack_fcall_attach-stack-fcall-2.Tpo $(DEPDIR)/stack_fcall_attach-stack-fcall-2.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='stack-fcall-2.c' object='stack_fcall_attach-stack-fcall-2.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(stack_fcall_attach_CFLAGS) $(CFLAGS) -c -o stack_fcall_attach-stack-fcall-2.obj `if test -f 'stack-fcall-2.c'; then $(CYGPATH_W) 'stack-fcall-2.c'; else $(CYGPATH_W) '$(srcdir)/stack-fcall-2.c'; fi`
+
+stack_fcall_attach-stack-fcall-3.o: stack-fcall-3.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(stack_fcall_attach_CFLAGS) $(CFLAGS) -MT stack_fcall_attach-stack-fcall-3.o -MD -MP -MF $(DEPDIR)/stack_fcall_attach-stack-fcall-3.Tpo -c -o stack_fcall_attach-stack-fcall-3.o `test -f 'stack-fcall-3.c' || echo '$(srcdir)/'`stack-fcall-3.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/stack_fcall_attach-stack-fcall-3.Tpo $(DEPDIR)/stack_fcall_attach-stack-fcall-3.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='stack-fcall-3.c' object='stack_fcall_attach-stack-fcall-3.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(stack_fcall_attach_CFLAGS) $(CFLAGS) -c -o stack_fcall_attach-stack-fcall-3.o `test -f 'stack-fcall-3.c' || echo '$(srcdir)/'`stack-fcall-3.c
+
+stack_fcall_attach-stack-fcall-3.obj: stack-fcall-3.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(stack_fcall_attach_CFLAGS) $(CFLAGS) -MT stack_fcall_attach-stack-fcall-3.obj -MD -MP -MF $(DEPDIR)/stack_fcall_attach-stack-fcall-3.Tpo -c -o stack_fcall_attach-stack-fcall-3.obj `if test -f 'stack-fcall-3.c'; then $(CYGPATH_W) 'stack-fcall-3.c'; else $(CYGPATH_W) '$(srcdir)/stack-fcall-3.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/stack_fcall_attach-stack-fcall-3.Tpo $(DEPDIR)/stack_fcall_attach-stack-fcall-3.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='stack-fcall-3.c' object='stack_fcall_attach-stack-fcall-3.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(stack_fcall_attach_CFLAGS) $(CFLAGS) -c -o stack_fcall_attach-stack-fcall-3.obj `if test -f 'stack-fcall-3.c'; then $(CYGPATH_W) 'stack-fcall-3.c'; else $(CYGPATH_W) '$(srcdir)/stack-fcall-3.c'; fi`
+
 stat64-stat64.o: stat64.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(stat64_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT stat64-stat64.o -MD -MP -MF $(DEPDIR)/stat64-stat64.Tpo -c -o stat64-stat64.o `test -f 'stat64.c' || echo '$(srcdir)/'`stat64.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/stat64-stat64.Tpo $(DEPDIR)/stat64-stat64.Po
@@ -18222,6 +18550,7 @@ distclean: distclean-am
 	-rm -f ./$(DEPDIR)/creat.Po
 	-rm -f ./$(DEPDIR)/delay.Po
 	-rm -f ./$(DEPDIR)/delete_module.Po
+	-rm -f ./$(DEPDIR)/detach-vfork.Po
 	-rm -f ./$(DEPDIR)/dev--decode-fds-all.Po
 	-rm -f ./$(DEPDIR)/dev--decode-fds-dev.Po
 	-rm -f ./$(DEPDIR)/dev--decode-fds-none.Po
@@ -18366,7 +18695,19 @@ distclean: distclean-am
 	-rm -f ./$(DEPDIR)/ftruncate.Po
 	-rm -f ./$(DEPDIR)/ftruncate64-ftruncate64.Po
 	-rm -f ./$(DEPDIR)/futex.Po
+	-rm -f ./$(DEPDIR)/futex_requeue-Xabbrev.Po
+	-rm -f ./$(DEPDIR)/futex_requeue-Xraw.Po
+	-rm -f ./$(DEPDIR)/futex_requeue-Xverbose.Po
+	-rm -f ./$(DEPDIR)/futex_requeue.Po
+	-rm -f ./$(DEPDIR)/futex_wait-Xabbrev.Po
+	-rm -f ./$(DEPDIR)/futex_wait-Xraw.Po
+	-rm -f ./$(DEPDIR)/futex_wait-Xverbose.Po
+	-rm -f ./$(DEPDIR)/futex_wait.Po
 	-rm -f ./$(DEPDIR)/futex_waitv.Po
+	-rm -f ./$(DEPDIR)/futex_wake-Xabbrev.Po
+	-rm -f ./$(DEPDIR)/futex_wake-Xraw.Po
+	-rm -f ./$(DEPDIR)/futex_wake-Xverbose.Po
+	-rm -f ./$(DEPDIR)/futex_wake.Po
 	-rm -f ./$(DEPDIR)/futimesat.Po
 	-rm -f ./$(DEPDIR)/get_mempolicy.Po
 	-rm -f ./$(DEPDIR)/get_process_reaper.Po
@@ -19263,17 +19604,21 @@ distclean: distclean-am
 	-rm -f ./$(DEPDIR)/sockopt-sol_socket.Po
 	-rm -f ./$(DEPDIR)/sockopt-timestamp.Po
 	-rm -f ./$(DEPDIR)/splice.Po
-	-rm -f ./$(DEPDIR)/stack-fcall-0.Po
-	-rm -f ./$(DEPDIR)/stack-fcall-1.Po
-	-rm -f ./$(DEPDIR)/stack-fcall-2.Po
-	-rm -f ./$(DEPDIR)/stack-fcall-3.Po
-	-rm -f ./$(DEPDIR)/stack-fcall-attach.Po
 	-rm -f ./$(DEPDIR)/stack-fcall-mangled-0.Po
 	-rm -f ./$(DEPDIR)/stack-fcall-mangled-1.Po
 	-rm -f ./$(DEPDIR)/stack-fcall-mangled-2.Po
 	-rm -f ./$(DEPDIR)/stack-fcall-mangled-3.Po
 	-rm -f ./$(DEPDIR)/stack-fcall-mangled.Po
-	-rm -f ./$(DEPDIR)/stack-fcall.Po
+	-rm -f ./$(DEPDIR)/stack_fcall-stack-fcall-0.Po
+	-rm -f ./$(DEPDIR)/stack_fcall-stack-fcall-1.Po
+	-rm -f ./$(DEPDIR)/stack_fcall-stack-fcall-2.Po
+	-rm -f ./$(DEPDIR)/stack_fcall-stack-fcall-3.Po
+	-rm -f ./$(DEPDIR)/stack_fcall-stack-fcall.Po
+	-rm -f ./$(DEPDIR)/stack_fcall_attach-stack-fcall-0.Po
+	-rm -f ./$(DEPDIR)/stack_fcall_attach-stack-fcall-1.Po
+	-rm -f ./$(DEPDIR)/stack_fcall_attach-stack-fcall-2.Po
+	-rm -f ./$(DEPDIR)/stack_fcall_attach-stack-fcall-3.Po
+	-rm -f ./$(DEPDIR)/stack_fcall_attach-stack-fcall-attach.Po
 	-rm -f ./$(DEPDIR)/stat.Po
 	-rm -f ./$(DEPDIR)/stat64-stat64.Po
 	-rm -f ./$(DEPDIR)/statfs-statfs.Po
@@ -19532,6 +19877,7 @@ maintainer-clean: maintainer-clean-am
 	-rm -f ./$(DEPDIR)/creat.Po
 	-rm -f ./$(DEPDIR)/delay.Po
 	-rm -f ./$(DEPDIR)/delete_module.Po
+	-rm -f ./$(DEPDIR)/detach-vfork.Po
 	-rm -f ./$(DEPDIR)/dev--decode-fds-all.Po
 	-rm -f ./$(DEPDIR)/dev--decode-fds-dev.Po
 	-rm -f ./$(DEPDIR)/dev--decode-fds-none.Po
@@ -19676,7 +20022,19 @@ maintainer-clean: maintainer-clean-am
 	-rm -f ./$(DEPDIR)/ftruncate.Po
 	-rm -f ./$(DEPDIR)/ftruncate64-ftruncate64.Po
 	-rm -f ./$(DEPDIR)/futex.Po
+	-rm -f ./$(DEPDIR)/futex_requeue-Xabbrev.Po
+	-rm -f ./$(DEPDIR)/futex_requeue-Xraw.Po
+	-rm -f ./$(DEPDIR)/futex_requeue-Xverbose.Po
+	-rm -f ./$(DEPDIR)/futex_requeue.Po
+	-rm -f ./$(DEPDIR)/futex_wait-Xabbrev.Po
+	-rm -f ./$(DEPDIR)/futex_wait-Xraw.Po
+	-rm -f ./$(DEPDIR)/futex_wait-Xverbose.Po
+	-rm -f ./$(DEPDIR)/futex_wait.Po
 	-rm -f ./$(DEPDIR)/futex_waitv.Po
+	-rm -f ./$(DEPDIR)/futex_wake-Xabbrev.Po
+	-rm -f ./$(DEPDIR)/futex_wake-Xraw.Po
+	-rm -f ./$(DEPDIR)/futex_wake-Xverbose.Po
+	-rm -f ./$(DEPDIR)/futex_wake.Po
 	-rm -f ./$(DEPDIR)/futimesat.Po
 	-rm -f ./$(DEPDIR)/get_mempolicy.Po
 	-rm -f ./$(DEPDIR)/get_process_reaper.Po
@@ -20573,17 +20931,21 @@ maintainer-clean: maintainer-clean-am
 	-rm -f ./$(DEPDIR)/sockopt-sol_socket.Po
 	-rm -f ./$(DEPDIR)/sockopt-timestamp.Po
 	-rm -f ./$(DEPDIR)/splice.Po
-	-rm -f ./$(DEPDIR)/stack-fcall-0.Po
-	-rm -f ./$(DEPDIR)/stack-fcall-1.Po
-	-rm -f ./$(DEPDIR)/stack-fcall-2.Po
-	-rm -f ./$(DEPDIR)/stack-fcall-3.Po
-	-rm -f ./$(DEPDIR)/stack-fcall-attach.Po
 	-rm -f ./$(DEPDIR)/stack-fcall-mangled-0.Po
 	-rm -f ./$(DEPDIR)/stack-fcall-mangled-1.Po
 	-rm -f ./$(DEPDIR)/stack-fcall-mangled-2.Po
 	-rm -f ./$(DEPDIR)/stack-fcall-mangled-3.Po
 	-rm -f ./$(DEPDIR)/stack-fcall-mangled.Po
-	-rm -f ./$(DEPDIR)/stack-fcall.Po
+	-rm -f ./$(DEPDIR)/stack_fcall-stack-fcall-0.Po
+	-rm -f ./$(DEPDIR)/stack_fcall-stack-fcall-1.Po
+	-rm -f ./$(DEPDIR)/stack_fcall-stack-fcall-2.Po
+	-rm -f ./$(DEPDIR)/stack_fcall-stack-fcall-3.Po
+	-rm -f ./$(DEPDIR)/stack_fcall-stack-fcall.Po
+	-rm -f ./$(DEPDIR)/stack_fcall_attach-stack-fcall-0.Po
+	-rm -f ./$(DEPDIR)/stack_fcall_attach-stack-fcall-1.Po
+	-rm -f ./$(DEPDIR)/stack_fcall_attach-stack-fcall-2.Po
+	-rm -f ./$(DEPDIR)/stack_fcall_attach-stack-fcall-3.Po
+	-rm -f ./$(DEPDIR)/stack_fcall_attach-stack-fcall-attach.Po
 	-rm -f ./$(DEPDIR)/stat.Po
 	-rm -f ./$(DEPDIR)/stat64-stat64.Po
 	-rm -f ./$(DEPDIR)/statfs-statfs.Po
@@ -21372,7 +21734,43 @@ $(srcdir)/ftruncate.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
 $(srcdir)/ftruncate64.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
 	$(AM_V_GEN) $^ $@
 
+$(srcdir)/futex_requeue.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
+	$(AM_V_GEN) $^ $@
+
+$(srcdir)/futex_requeue-Xabbrev.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
+	$(AM_V_GEN) $^ $@
+
+$(srcdir)/futex_requeue-Xraw.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
+	$(AM_V_GEN) $^ $@
+
+$(srcdir)/futex_requeue-Xverbose.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
+	$(AM_V_GEN) $^ $@
+
+$(srcdir)/futex_wait.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
+	$(AM_V_GEN) $^ $@
+
+$(srcdir)/futex_wait-Xabbrev.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
+	$(AM_V_GEN) $^ $@
+
+$(srcdir)/futex_wait-Xraw.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
+	$(AM_V_GEN) $^ $@
+
+$(srcdir)/futex_wait-Xverbose.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
+	$(AM_V_GEN) $^ $@
+
 $(srcdir)/futex_waitv.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
+	$(AM_V_GEN) $^ $@
+
+$(srcdir)/futex_wake.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
+	$(AM_V_GEN) $^ $@
+
+$(srcdir)/futex_wake-Xabbrev.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
+	$(AM_V_GEN) $^ $@
+
+$(srcdir)/futex_wake-Xraw.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
+	$(AM_V_GEN) $^ $@
+
+$(srcdir)/futex_wake-Xverbose.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
 	$(AM_V_GEN) $^ $@
 
 $(srcdir)/futimesat.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in

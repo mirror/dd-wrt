@@ -1,3 +1,603 @@
+2024-01-29  Dmitry V. Levin  <ldv@strace.io>
+
+	Prepare for 6.7 release.
+	* NEWS: Update for 6.7 release.
+
+	Update .mailmap.
+	* .mailmap: Add both email addresses of Josh Triplett to avoid
+	duplication in CREDITS file.
+
+2024-01-29  Dmitry V. Levin  <ldv@strace.io>
+
+	tests: update UFFDIO ioctl test.
+	Starting with Linux kernel commit v6.6-rc1~53^2~422, UFFDIO_POISON
+	feature can be enabled by the kernel.
+
+	* tests/ioctl_uffdio.c (main): Recognize and print 1<<_UFFDIO_POISON
+	when returned by UFFDIO_REGISTER_MODE_MISSING.
+
+2024-01-29  Jan Macku  <jamacku@redhat.com>
+
+	ci: update GitHub Actions to latest versions.
+	actions/upload-artifact - @v2 -> @v3
+	redhat-plumbers-in-action/differential-shellcheck - @v4 -> @v5
+
+	ci: enable dependency manager for GitHub Actions.
+
+2024-01-28  Dmitry V. Levin  <ldv@strace.io>
+
+	Update copyright year number range.
+	* COPYING: Update copyright year number range.
+	* tests/COPYING: Likewise.
+	* debian/copyright: Likewise.
+
+	Update copyright headers.
+	Headers updated automatically using maint/update_copyright_years.sh
+	script.
+
+2024-01-28  Dmitry V. Levin  <ldv@strace.io>
+
+	.github: switch from actions/checkout@v3 to actions/checkout@v4.
+	This fixes the following diagnostic warning:
+
+	  Node.js 16 actions are deprecated.
+	  Please update the following actions to use Node.js 20: actions/checkout@v3
+	  For more information see:
+	  https://github.blog/changelog/2023-09-22-github-actions-transitioning-from-node-16-to-node-20/.
+
+	* .github/workflows/ci.yml: Replace actions/checkout@v3 with
+	actions/checkout@v4.
+	* .github/workflows/differential-shellcheck.yml: Likewise.
+
+2024-01-28  Sahil Siddiq  <icegambit91@gmail.com>
+
+	init: remove redundant clause in condition.
+	output_separately is redundant in the third expression as it's
+	already evaluated in the second expression.
+
+	* src/strace.c (init): Remove redundancy in condition.
+
+	Complements: v5.6~169 "strace: add a long option aliases for -f and -ff"
+
+2024-01-28  Dmitry V. Levin  <ldv@strace.io>
+
+	tests: check decoding of futex_requeue syscall.
+	* tests/futex_requeue.c: New file.
+	* tests/futex_requeue-Xabbrev.c: Likewise.
+	* tests/futex_requeue-Xraw.c: Likewise.
+	* tests/futex_requeue-Xverbose.c: Likewise.
+	* tests/pure_executables.list: Add futex_requeue, futex_requeue-Xabbrev,
+	futex_requeue-Xraw, and futex_requeue-Xverbose.
+	* tests/.gitignore: Likewise.
+	* tests/gen_tests.in (futex_requeue, futex_requeue-Xabbrev,
+	futex_requeue-Xraw, futex_requeue-Xverbose): New tests.
+
+2024-01-27  Dmitry V. Levin  <ldv@strace.io>
+
+	futex_waitv: print futex flags as FUTEX2_* flags.
+	Starting with Linux kernel commit v6.7-rc1~193^2~28, futex_waitv syscall
+	takes FUTEX2_* flags, which is a superset of FUTEX_* flags.
+
+	* src/futex2.c: Stop including "xlat/futex_waiter_flags.h".
+	(print_waiter): Print flags using print_futex2_flags.
+	* src/xlat/futex_waiter_flags.in: Remove.
+	* tests/futex_waitv.c (main): Update expected output.
+
+2024-01-26  Dmitry V. Levin  <ldv@strace.io>
+
+	Implement decoding of futex_requeue syscall.
+	This new syscall was introduced by Linux kernel commit
+	v6.7-rc1~193^2~19.
+
+	* src/futex2.c (SYS_FUNC(futex_requeue)): New function.
+	* src/linux/generic/syscallent-common.h [BASE_NR + 456]: Wire up
+	futex_requeue.
+	* NEWS: Mention this change.
+
+2024-01-25  Dmitry V. Levin  <ldv@strace.io>
+
+	tests: check decoding of futex_wait syscall.
+	* tests/futex_wait.c: New file.
+	* tests/futex_wait-Xabbrev.c: Likewise.
+	* tests/futex_wait-Xraw.c: Likewise.
+	* tests/futex_wait-Xverbose.c: Likewise.
+	* tests/pure_executables.list: Add futex_wait, futex_wait-Xabbrev,
+	futex_wait-Xraw, and futex_wait-Xverbose.
+	* tests/.gitignore: Likewise.
+	* tests/gen_tests.in (futex_wait, futex_wait-Xabbrev, futex_wait-Xraw,
+	futex_wait-Xverbose): New tests.
+
+2024-01-24  Dmitry V. Levin  <ldv@strace.io>
+
+	Implement decoding of futex_wait syscall.
+	This new syscall was introduced by Linux kernel commit
+	v6.7-rc1~193^2~22.
+
+	* src/futex2.c (SYS_FUNC(futex_wait)): New function.
+	* src/linux/generic/syscallent-common.h [BASE_NR + 455]: Wire up
+	futex_wait.
+	* NEWS: Mention this change.
+
+2024-01-23  Dmitry V. Levin  <ldv@strace.io>
+
+	tests: check decoding of futex_wake syscall.
+	* tests/futex_wake.c: New file.
+	* tests/futex_wake-Xabbrev.c: Likewise.
+	* tests/futex_wake-Xraw.c: Likewise.
+	* tests/futex_wake-Xverbose.c: Likewise.
+	* tests/futex2_flags.h: New file.
+	* tests/Makefile.am (libtests_a_SOURCES): Add futex2_flags.h.
+	* tests/pure_executables.list: Add futex_wake, futex_wake-Xabbrev,
+	futex_wake-Xraw, and futex_wake-Xverbose.
+	* tests/.gitignore: Likewise.
+	* tests/gen_tests.in (futex_wake, futex_wake-Xabbrev, futex_wake-Xraw,
+	futex_wake-Xverbose): New tests.
+
+2024-01-22  Dmitry V. Levin  <ldv@strace.io>
+
+	Implement decoding of futex_wake syscall.
+	This new syscall was introduced by Linux kernel commit
+	v6.7-rc1~193^2~24.
+
+	* src/xlat/futex2_flags.in: New file.
+	* src/xlat/futex2_sizes.in: Likewise.
+	* src/futex2.c: Include "xlat/futex2_sizes.h" and "xlat/futex2_flags.h".
+	(print_futex2_flags, SYS_FUNC(futex_wake)): New functions.
+	* src/defs.h (futexbitset): New declaration.
+	* src/linux/generic/syscallent-common.h [BASE_NR + 454]: Wire up
+	futex_wake.
+	* NEWS: Mention this change.
+
+2024-01-21  Dmitry V. Levin  <ldv@strace.io>
+
+	src: rename futex_waitv.c to futex2.c.
+	As futex_waitv syscall became a futex2 family syscall, and
+	print_waiter_array() is going to be needed to implement decoding of
+	futex_requeue syscall from futex2 family, let's rename futex_waitv.c
+	to futex2.c and later add decoders of futex2 family syscalls there.
+
+	* src/futex_waitv.c: Rename to futex2.c.
+	* src/Makefile.am (libstrace_a_SOURCES): Rename futex_waitv.c
+	to futex2.c.
+
+2024-01-21  Dmitry V. Levin  <ldv@strace.io>
+
+	defs.h: keep the list of public xlat tables sorted.
+	* src/defs.h: Sort "extern const struct xlat" declarations.
+
+2024-01-20  Jean-Baptiste Skutnik  <jb.skutnik@gmail.com>
+
+	xlat: add Lustre fs magic.
+	* src/xlat/fsmagic.in (LL_SUPER_MAGIC): New constant introduced
+	by Lustre commit 191061ee668400324f4505cf498f1ee2d57e4962 back in 2004.
+	(LUSTRE_SUPER_MAGIC): New constant introduced by Lustre commit
+	113303973ec9f8484eb2355a1a6ef3c4c7fd6a56 back in 2007.
+
+	Resolves: https://github.com/strace/strace/pull/285
+	Link: git://git.whamcloud.com/fs/lustre-release.git
+
+2024-01-19  Dmitry V. Levin  <ldv@strace.io>
+
+	tests: cleanup map_shadow_stack test.
+	* tests/map_shadow_stack.c [!__NR_map_shadow_stack]: Remove.
+
+	Complements: v6.6-2-ga1bb27b6b908 "Add map_shadow_stack syscall to all architectures"
+
+2024-01-18  Gleb Fotengauer-Malinovskiy  <glebfm@altlinux.org>
+
+	Update ioctl entries from linux v6.7.
+	* src/linux/32/ioctls_inc_align16.h: Update from linux v6.7 using
+	ioctls_gen.sh.
+	* src/linux/32/ioctls_inc_align32.h: Likewise.
+	* src/linux/32/ioctls_inc_align64.h: Likewise.
+	* src/linux/64/ioctls_inc.h: Likewise.
+	* src/linux/x32/ioctls_inc0.h: Likewise.
+	* src/linux/aarch64/ioctls_arch0.h: Likewise.
+	* NEWS: Mention this.
+
+2024-01-18  Dmitry V. Levin  <ldv@strace.io>
+
+	tests: update ioctl_ptp test.
+	* tests/ioctl_ptp.c (test_no_device): Update unknown numbers to avoid
+	collisions with the new ioctls introduced by Linux kernel commit
+	v6.7-rc1~122^2~139^2~2.
+
+2023-12-20  Sergei Trofimovich  <slyich@gmail.com>
+
+	src/count.c: fix build against upcoming `gcc-14` (`-Werror=calloc-transposed-args`)
+	`gcc-14` added a new `-Wcalloc-transposed-args` warning recently. It
+	detected minor infelicity in `calloc()` API usage in `strace`:
+
+	    count.c:319:33: error: 'strace_calloc' sizes specified with 'sizeof' in the earlier argument and not in the later argument [-Werror=calloc-transposed-args]
+	      319 |         indices = xcalloc(sizeof(indices[0]), nsyscalls);
+	          |                                 ^
+
+2023-12-01  Dmitry V. Levin  <ldv@strace.io>
+
+	Enhance "Exit of unknown pid" diagnostics.
+	A wait event from unknown pid is not necessarily an exit,
+	it could be a termination or a stop as well.
+
+	* src/strace.c (status2str): New function.
+	(cleanup, maybe_allocate_tcb): Use it.
+	* tests/detach-vfork.test: Test it.
+	* tests/detach-vfork.c (main): Update expected output.
+
+2023-11-30  Dmitry V. Levin  <ldv@strace.io>
+
+	tests: extend test coverage for detaching from vfork'ed processes.
+	* tests/detach-vfork.test: Check exits of pipe commands and unknown
+	processes.
+	* tests/detach-vfork.c (main): Update expected output.
+
+2023-11-29  Dmitry V. Levin  <ldv@strace.io>
+
+	tests: check detaching from vfork'ed processes.
+	* tests/detach-vfork.c: New file.
+	* tests/detach-vfork.test: New test.
+	* tests/.gitignore: Add detach-vfork.
+	* tests/Makefile.am (check_PROGRAMS): Likewise.
+	(MISC_TESTS): Add detach-vfork.test.
+
+2023-11-28  donghaobo  <donghaobo@kuaishou.com>
+	    Dmitry V. Levin  <ldv@strace.io>
+
+	strace: fix potential deadlock during cleanup.
+	strace -f can potentially deadlock during cleanup if the tracee
+	is using vfork or CLONE_VFORK to spawn threads.
+
+	On linux, calling vfork will cause the calling thread to 'D' state
+	until the child process calls execve or exit.  Therefore, strace
+	should detach the child process first, otherwise it can wait
+	indefinitely for the calling thread in 'D' state.
+
+	Reproducer:
+
+	  /*
+	   * Start tracing with strace -f,
+	   * then press Ctrl-C within 9 seconds to interrupt.
+	   */
+	  #include <stdlib.h>
+	  #include <unistd.h>
+	  #include <sys/wait.h>
+	  int main(void)
+	  {
+	    pid_t pid = vfork();
+	    if (pid < 0)
+	      return 1;
+	    if (pid) {
+	      int status;
+	      waitpid(pid, &status, 0);
+	      return 0;
+	    }
+	    sleep(9);
+	    _exit(0);
+	  }
+
+	* src/strace.c (cleanup): Do not call detach() for each tracee
+	one by one as it can deadlock, instead call interrupt_or_stop()
+	for each tracee and after that enter a wait loop calling
+	detach_interrupted_or_stopped() for each tracee as soon as
+	they become ready.
+	* NEWS: Mention this fix.
+
+2023-11-27  Dmitry V. Levin  <ldv@strace.io>
+
+	Factor out detach_interrupted_or_stopped() from detach()
+	* src/strace.c (detach_interrupted_or_stopped): New function.
+	(detach): Use it.
+
+2023-11-26  Dmitry V. Levin  <ldv@strace.io>
+
+	Factor out interrupt_or_stop() from detach()
+	* src/strace.c (interrupt_or_stop): New function.
+	(detach): Use it.
+
+2023-11-25  Dmitry V. Levin  <ldv@strace.io>
+
+	Factor out droptcb_verbose() from detach()
+	* src/strace.c (droptcb_verbose): New function.
+	(detach): Use it instead of droptcb.
+
+2023-11-24  Dmitry V. Levin  <ldv@strace.io>
+
+	Move print_debug_info() definition before cleanup()
+	* src/strace.c (print_debug_info): Move before cleanup().
+
+2023-11-23  Dmitry V. Levin  <ldv@strace.io>
+
+	Fix the type of tcbtab iterators.
+	* src/strace.c (alloctcb, startup_attach, init, pid2tcb, cleanup):
+	Change the type of tcbtab iterators from unsigned int to size_t so that
+	they match the type of tcbtabsize.
+
+2023-11-22  Masatake YAMATO  <yamato@redhat.com>
+	    Dmitry V. Levin  <ldv@strace.io>
+
+	kvm: fix mmap_addr sign extension bug on x32.
+	* src/kvm.c (struct vcpu_info): Change the type of mmap_addr from "long"
+	to "unsigned long", to avoid unintended sign extension later on in
+	kvm_ioctl_run_attach_auxstr.
+
+2023-11-22  Josh Triplett  <josh@joshtriplett.org>
+
+	Fix strace -r during the first second after booting.
+	strace -r decides whether the previous timespec has been initialized by
+	checking if tv_sec is 0.  However, in the first second after booting,
+	CLOCK_MONOTONIC will legitimately have a tv_sec of 0.  This causes every
+	displayed timestamp to display as 0.000000 during the first second after
+	boot.
+
+	* src/strace.c (printleader): Check tv_nsec as well before assuming
+	the previous timespec is uninitialized.
+	* NEWS: Mention this fix.
+
+2023-11-21  Masatake YAMATO  <yamato@redhat.com>
+
+	tests: check diagnostics about -kk/--stack-traces=source option.
+	* tests/options-syntax.test: Check strace -kk/--stack-traces=source
+	diagnostics.
+
+	tests: check strace -kk -p.
+	* tests/strace-kk-p.test: New test case.
+	* tests/strace-kk-p.expected: New file.
+	* tests/Makefile.am (check_SCRIPTS): Add strace-kk-p.test.
+	(check_DATA): Add strace-kk-p.expected.
+
+	tests/stack-fcall: use -gdwarf-aranges option if CC = clang.
+	* m4/st_debug_cflags.m4: New file defining a new macro
+	st_DEBUG_CFLAGS and a new condition ACCEPT_GDWARF_ARANGES.
+	* configure.ac: Use st_DEBUG_CFLAGS.
+	* tests/Makefile.am [USE_LIBDW && ACCEPT_GDWARF_ARANGES]
+	(stack_fcall_CFLAGS, stack_fcall_attach_CFLAGS): Add -gdwarf-aranges.
+
+2023-11-21  Masatake YAMATO  <yamato@redhat.com>
+
+	unwind-libdw: add -kk/--stack-traces=source option.
+	This change adds source code information to stack traces printed with
+	-k option when strace is built with libdw.
+
+	An example output:
+
+	    exit_group(0)                           = ?
+	    +++ exited with 0 +++
+	     > /usr/lib64/libc.so.6(_exit+0x1d) [0xdb44d] ../sysdeps/unix/sysv/linux/_exit.c:30
+	     > /usr/lib64/libc.so.6(__run_exit_handlers+0x125) [0x40165] /usr/src/debug/glibc-2.37-4.fc38.x86_64/stdlib/exit.c:134
+	     > /usr/lib64/libc.so.6(exit+0x1d) [0x402ed] /usr/src/debug/glibc-2.37-4.fc38.x86_64/stdlib/exit.c:141
+	     > /usr/lib64/libc.so.6(__libc_start_call_main+0x80) [0x27b50] ../sysdeps/nptl/libc_start_call_main.h:74
+	     > /usr/lib64/libc.so.6(__libc_start_main@@GLIBC_2.34+0x8a) [0x27c0a] ../csu/libc-start.c:360
+	     > /usr/bin/ls(_start+0x24) [0x6d54]
+
+	This change also adds --stack-traces=symbol option as an alias for the
+	original -k/--stack-traces options.
+
+	NOTE: If the target program is compiled with clang, -gdwarf-aranges
+	option must be specified in addition to -g to make -kk option work.
+	See https://sourceware.org/bugzilla/show_bug.cgi?id=30948 about this
+	limitation.
+
+	* NEWS: Mention this.
+	* doc/strace.1.in: Document this.
+	* src/defs.h (stack_trace_modes): New enum.
+	(stack_trace_modes::STACK_TRACE_OFF,STACK_TRACE_ON,
+	STACK_TRACE_WITH_SRCINFO): New enumerators.
+	(stack_trace_enabled): Rename this variable declaration to ...
+	(stack_trace_mode): ... this. The type is also changed from bool to
+	enum stack_trace_modes.
+	(unwind_init): Add a bool parameter.
+	* src/filter_seccomp.c (traced_by_seccomp): Use the new variable name
+	stack_trace_mode.
+	* src/strace.c (stack_trace_enabled): Rename this variable to ...
+	(stack_trace_mode): ... this.
+	[ENABLE_STACKTRACE && USE_LIBDW] (K_OPT): Add "kk" option.
+	[ENABLE_STACKTRACE] (usage): Print --stack-traces=symbol options.
+	[ENABLE_STACKTRACE && USE_LIBDW] (usage): Print -kk and
+	--strack-traces=source options.
+	[ENABLE_STACKTRACE] (after_successful_attach): Use the new variable
+	name stack_trace_mode.
+	(GETOPT_STACK): New enumerator.
+	(init::longopts): Let --stack-traces take an option argument.  Use
+	GETOPT_STACK as the val for --stack-traces.
+	[ENABLE_STACKTRACE] (init): Handle -kk and --stack-traces=source
+	options.
+	(init): Pass true to unwind_init() if -kk or --stack-traces=source is
+	specified.
+	(print_stopped): Use the new variable name stack_trace_mode.
+	* src/syscall.c (update_personality, syscall_entering_trace,
+	syscall_exiting_trace): Use the new variable name stack_trace_mode.
+	* src/unwind.h (unwind_call_action_fn): Add parameters
+	source_filename and source_line as parameters.
+	(struct unwind_unwinder_t::init): Add a bool parameter.
+	* src/unwind.c (unwind_init): Add with_srcinfo parameter and
+	pass it to init method of backend.
+	(STACK_ENTRY_SYMBOL_WITH_SRCINFO_FMT): New format string for
+	printing stack trace entries with source code information.
+	(print_call_cb): Add source_filename and source_line as
+	parameters. Build stack trace entries with
+	STACK_ENTRY_SYMBOL_WITH_SRCINFO_FMT if source_filename is given.
+	(queue_put): Add source_filename and source_line as parameters.
+	Pass them to sprint_call_or_error().
+	(queue_put_call): Do the same as queue_put.
+	(queue_put_error): Pass NULL as source_filename, 0 as source_line to
+	queue_put().
+	* src/unwind-libdw.c (struct cache_entry::source_filename,
+	struct cache_entry::source_line): New members.
+	(with_srcinfo): New file local variable.
+	(init): Set with_srcinfo.
+	(frame_callback): Get source information for pc from
+	dwfl_module_getsrc() and dwfl_lineinfo().  Pass the source information
+	to call_action method and fill the source_filename and source_line
+	members of cache entry.
+	* src/unwind-libunwind.c (init, print_stack_frame): Adjust the code to
+	the updated interface declared in unwind.h.
+	* tests/Makefile.am (check_SCRIPTS): Add strace-kk.test.
+	(check_DATA): Add strace-kk.expected.
+	[ENABLE_STACKTRACE && USE_LIBDW] (STACKTRACE_TESTS): Add strace-kk.test.
+	* tests/strace-k.test: Add KOPT_SHORT and KOPT_LONG variables to make
+	the test case reusable for testing -kk option.  Do not hardcode -k
+	and --stack-traces.  Add a new pattern for testing
+	-kk/--stack-traces=source.
+	* tests/strace-kk.expected: New file.
+	* tests/strace-kk.test: New test case.
+	* tests/options-syntax.test: Update expecting output.
+
+2023-11-21  Dmitry V. Levin  <ldv@strace.io>
+
+	tests: avoid using -a in test expressions.
+	* tests/init.sh: Prefer "[ p ] && [ q ]" over "[ p -a q ]".
+	* tests/options-syntax.test: Likewise.
+
+	Link: https://www.shellcheck.net/wiki/SC2166
+
+2023-11-20  Dmitry V. Levin  <ldv@strace.io>
+
+	xlat: update BTRFS_* constants.
+	* src/xlat/btrfs_features_incompat.in
+	(BTRFS_FEATURE_INCOMPAT_RAID_STRIPE_TREE): New constant introduced
+	by Linux kernel commit v6.7-rc1~202^2~85.
+	(BTRFS_FEATURE_INCOMPAT_SIMPLE_QUOTA): New constant introduced
+	by Linux kernel commit v6.7-rc1~202^2~72.
+	* src/xlat/btrfs_key_types.in (BTRFS_EXTENT_OWNER_REF_KEY): New constant
+	introduced by Linux kernel commit v6.7-rc2~30^2.
+	(BTRFS_RAID_STRIPE_KEY): New constant introduced by Linux kernel commit
+	v6.7-rc1~202^2~86.
+	* src/xlat/btrfs_qgroup_ctl_cmds.in (BTRFS_QUOTA_CTL_ENABLE_SIMPLE_QUOTA):
+	New constant introduced by Linux kernel commit v6.7-rc1~202^2~72.
+	* src/xlat/btrfs_qgroup_status_flags.in (BTRFS_QGROUP_STATUS_FLAG_INCONSISTENT):
+	New constant introduced by Linux kernel commit v4.7-rc1~21^2~3^2^2~1.
+	(BTRFS_QGROUP_STATUS_FLAG_SIMPLE_MODE): New constant introduced by Linux
+	kernel commit v6.7-rc1~202^2~72.
+	* src/xlat/btrfs_tree_objectids.in (BTRFS_RAID_STRIPE_TREE_OBJECTID):
+	New constant introduced by Linux kernel commit v6.7-rc1~202^2~86.
+	* tests/btrfs.c (btrfs_test_quota_ctl_ioctl): Update.
+	* NEWS: Mention this.
+
+2023-11-19  Dmitry V. Levin  <ldv@strace.io>
+
+	bundled: update linux UAPI headers to v6.7-rc2.
+	* bundled/linux/include/uapi/linux/btrfs_tree.h: Update to
+	headers_install'ed Linux kernel v6.7-rc2.
+
+	xlat: update TCP_* constants.
+	* src/xlat/sock_tcp_options.in (TCP_AO_ADD_KEY, TCP_AO_DEL_KEY): New
+	constants introduced by Linux kernel commit v6.7-rc1~122^2~24^2~20.
+	(TCP_AO_INFO, TCP_AO_GET_KEYS): New constants introduced by Linux kernel
+	commit v6.7-rc1~122^2~24^2~5.
+	(TCP_AO_REPAIR): New constant introduced by Linux kernel commit
+	v6.7-rc1~122^2~24^2~1.
+	* NEWS: Mention this change.
+
+2023-11-18  Dmitry V. Levin  <ldv@strace.io>
+
+	xlat: update PR_* constants.
+	* src/xlat/pr_mdwe_flags.in (PR_MDWE_NO_INHERIT): New
+	constant introduced by Linux kernel commit v6.7-rc1~90^2~234.
+	* tests/prctl-mdwe.c (main): Update.
+	* tests/gen_tests.in (prctl-mdwe): Likewise.
+	* NEWS: Mention this change.
+
+2023-11-17  Dmitry V. Levin  <ldv@strace.io>
+
+	xlat: update LANDLOCK_* constants.
+	* src/xlat/landlock_rule_types.in (LANDLOCK_RULE_NET_PORT): New
+	constant introduced by Linux kernel commit v6.7-rc1~82^2~5.
+	* tests/landlock_add_rule.c (main): Update expected output.
+	* NEWS: Mention this change.
+
+2023-11-16  Dmitry V. Levin  <ldv@strace.io>
+
+	xlat: update KVM_* constants.
+	* src/xlat/kvm_cap.in (KVM_CAP_ARM_SUPPORTED_REG_MASK_RANGES): New
+	constant introduced by Linux kernel commit v6.7-rc1~92^2^2~1^2~12.
+	* src/xlat/kvm_exit_reason.in (KVM_EXIT_LOONGARCH_IOCSR): New constant
+	introduced by Linux kernel commit v6.7-rc1~92^2~10^2~24.
+	* NEWS: Mention this change.
+
+2023-11-15  Dmitry V. Levin  <ldv@strace.io>
+
+	xlat: update IORING_* constants.
+	* src/xlat/uring_ops.in (IORING_OP_SEND_ZC): New constant introduced
+	by Linux kernel commit v6.0-rc4~15^2~1.
+	(IORING_OP_SENDMSG_ZC): New constant introduced by Linux kernel commit
+	v6.1-rc1~135^2~14.
+	(IORING_OP_READ_MULTISHOT): New constant introduced by Linux kernel
+	commit v6.7-rc1~139^2~12.
+	(IORING_OP_WAITID): New constant introduced by Linux kernel commit
+	v6.7-rc1~139^2~7.
+	(IORING_OP_FUTEX_WAIT, IORING_OP_FUTEX_WAKE): New constants introduced
+	by Linux kernel commit v6.7-rc1~137^2~4.
+	(IORING_OP_FUTEX_WAITV): New constant introduced by Linux kernel commit
+	v6.7-rc1~137^2.
+	* tests/io_uring_register.c (main): Update expected output.
+	* NEWS: Mention this change.
+
+2023-11-14  Dmitry V. Levin  <ldv@strace.io>
+
+	xlat: update BPF_* constants.
+	* src/xlat/bpf_attach_type.in (BPF_CGROUP_UNIX_CONNECT,
+	BPF_CGROUP_UNIX_SENDMSG, BPF_CGROUP_UNIX_RECVMSG,
+	BPF_CGROUP_UNIX_GETPEERNAME, BPF_CGROUP_UNIX_GETSOCKNAME): New constants
+	introduced by Linux kernel commit v6.7-rc1~3^2~13^2~5^2~5.
+	(BPF_NETKIT_PRIMARY, BPF_NETKIT_PEER): New constants introduced
+	by Linux kernel commit v6.7-rc1~122^2~28^2~6^2~6.
+	* tests/bpf.c (BPF_PROG_QUERY_checks): Update expected output.
+	* NEWS: Mention this.
+
+2023-11-13  Dmitry V. Levin  <ldv@strace.io>
+
+	bundled: update linux UAPI headers to v6.7-rc1.
+	* bundled/linux/include/uapi/linux/btrfs.h: Update to
+	headers_install'ed Linux kernel v6.7-rc1.
+	* bundled/linux/include/uapi/linux/btrfs_tree.h: Likewise.
+	* bundled/linux/include/uapi/linux/counter.h: Likewise.
+	* bundled/linux/include/uapi/linux/fs.h: Likewise.
+	* bundled/linux/include/uapi/linux/fscrypt.h: Likewise.
+	* bundled/linux/include/uapi/linux/futex.h: Likewise.
+	* bundled/linux/include/uapi/linux/if_bridge.h: Likewise.
+	* bundled/linux/include/uapi/linux/if_link.h: Likewise.
+	* bundled/linux/include/uapi/linux/io_uring.h: Likewise.
+	* bundled/linux/include/uapi/linux/landlock.h: Likewise.
+	* bundled/linux/include/uapi/linux/mptcp.h: Likewise.
+	* bundled/linux/include/uapi/linux/netlink.h: Likewise.
+	* bundled/linux/include/uapi/linux/pkt_sched.h: Likewise.
+	* bundled/linux/include/uapi/linux/prctl.h: Likewise.
+	* bundled/linux/include/uapi/linux/ptp_clock.h: Likewise.
+	* bundled/linux/include/uapi/linux/rtnetlink.h: Likewise.
+	* bundled/linux/include/uapi/linux/tcp.h: Likewise.
+	* bundled/linux/include/uapi/linux/userfaultfd.h: Likewise.
+	* bundled/linux/include/uapi/linux/v4l2-controls.h: Likewise.
+	* bundled/linux/include/uapi/linux/version.h: Likewise.
+	* bundled/linux/include/uapi/linux/videodev2.h: Likewise.
+	* bundled/linux/include/uapi/linux/vm_sockets.h: Likewise.
+	* bundled/linux/include/uapi/mtd/ubi-user.h: Likewise.
+	* bundled/linux/include/uapi/linux/mptcp_pm.h: New file.
+	* bundled/Makefile.am (EXTRA_DIST): Add
+	linux/include/uapi/linux/mptcp_pm.h.
+
+2023-11-12  Dmitry V. Levin  <ldv@strace.io>
+
+	landlock_ruleset_attr: robustify against future changes of struct landlock_ruleset_attr
+	* src/landlock.c (print_landlock_ruleset_attr): Do not make assumptions
+	about sizeof(struct landlock_ruleset_attr).
+	* tests/landlock_create_ruleset.c: Likewise.
+
+2023-11-02  Dmitry V. Levin  <ldv@strace.io>
+
+	Add map_shadow_stack syscall to all architectures.
+	This mirrors the change introduced by Linux kernel commit
+	v6.6-10070-g1e0c505e1316.
+
+	* src/linux/x86_64/syscallent.h (453): Move map_shadow_stack entry ...
+	* src/linux/generic/syscallent-common.h: ... here.
+	* src/linux/x32/syscallent.h (453): Remove map_shadow_stack entry.
+
+2023-11-01  Dmitry V. Levin  <ldv@strace.io>
+
+	Post-release administrivia.
+	* NEWS: Add a header line for the next release.
+	* debian/changelog.in: Add a changelog entry for 6.6-1.
+	* strace.spec.in: Likewise.
+
 2023-10-31  Dmitry V. Levin  <ldv@strace.io>
 
 	Prepare for 6.6 release.

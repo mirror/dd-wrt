@@ -134,6 +134,7 @@ strace-devel@lists.strace.io mailing list.
 	Jann Horn <jannh@google.com>
 	Janosch Frank <frankja@linux.ibm.com>
 	JayRJoshi <jay.r.joshi100@gmail.com>
+	Jean-Baptiste Skutnik <jb.skutnik@gmail.com>
 	Jeff Law <law@redhat.com>
 	Jeff Mahoney <jeffm@suse.com>
 	Jeremy Kerr <jk@ozlabs.org>
@@ -148,7 +149,7 @@ strace-devel@lists.strace.io mailing list.
 	John Spencer <maillist-strace@barfooze.de>
 	Jonathan Borne <jborne@kalray.eu>
 	Josef T. Burger <bolo@cs.wisc.edu>
-	Josh Triplett <josh@freedesktop.org>
+	Josh Triplett <josh@joshtriplett.org>
 	Joubin Jabbari <joubin@linux.com>
 	Jürgen Fluk <louis@marco.de>
 	Jürgen Weigert <jnweiger@immd4.informatik.uni-erlangen.de>
@@ -307,6 +308,7 @@ strace-devel@lists.strace.io mailing list.
 	Zhibin Li <haoyouab@gmail.com>
 	Zubin Mithra <zubin.mithra@gmail.com>
 	adrien-n <adrien.nader@canonical.com>
+	donghaobo <donghaobo@kuaishou.com>
 	leedagee <leedageea@gmail.com>
 	Ákos Uzonyi <uzonyi.akos@gmail.com>
 	Марк Коренберг <socketpair@gmail.com>

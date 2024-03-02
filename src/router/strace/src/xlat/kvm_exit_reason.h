@@ -269,6 +269,13 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 #else
 # define KVM_EXIT_NOTIFY 37
 #endif
+#if defined(KVM_EXIT_LOONGARCH_IOCSR) || (defined(HAVE_DECL_KVM_EXIT_LOONGARCH_IOCSR) && HAVE_DECL_KVM_EXIT_LOONGARCH_IOCSR)
+DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
+static_assert((KVM_EXIT_LOONGARCH_IOCSR) == (38), "KVM_EXIT_LOONGARCH_IOCSR != 38");
+DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
+#else
+# define KVM_EXIT_LOONGARCH_IOCSR 38
+#endif
 #undef XLAT_PREV_VAL
 
 #ifndef XLAT_MACROS_ONLY
@@ -396,6 +403,9 @@ static const struct xlat_data kvm_exit_reason_xdata[] = {
  [KVM_EXIT_NOTIFY] = XLAT(KVM_EXIT_NOTIFY),
  #define XLAT_VAL_37 ((unsigned) (KVM_EXIT_NOTIFY))
  #define XLAT_STR_37 STRINGIFY(KVM_EXIT_NOTIFY)
+ [KVM_EXIT_LOONGARCH_IOCSR] = XLAT(KVM_EXIT_LOONGARCH_IOCSR),
+ #define XLAT_VAL_38 ((unsigned) (KVM_EXIT_LOONGARCH_IOCSR))
+ #define XLAT_STR_38 STRINGIFY(KVM_EXIT_LOONGARCH_IOCSR)
 };
 static
 const struct xlat kvm_exit_reason[1] = { {
@@ -517,6 +527,9 @@ const struct xlat kvm_exit_reason[1] = { {
 #  ifdef XLAT_VAL_37
   | XLAT_VAL_37
 #  endif
+#  ifdef XLAT_VAL_38
+  | XLAT_VAL_38
+#  endif
   ,
  .flags_strsz = 0
 #  ifdef XLAT_STR_0
@@ -633,6 +646,9 @@ const struct xlat kvm_exit_reason[1] = { {
 #  ifdef XLAT_STR_37
   + sizeof(XLAT_STR_37)
 #  endif
+#  ifdef XLAT_STR_38
+  + sizeof(XLAT_STR_38)
+#  endif
   ,
 } };
 DIAG_POP_IGNORE_TAUTOLOGICAL_CONSTANT_COMPARE
@@ -713,6 +729,8 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_CONSTANT_COMPARE
 #  undef XLAT_VAL_36
 #  undef XLAT_STR_37
 #  undef XLAT_VAL_37
+#  undef XLAT_STR_38
+#  undef XLAT_VAL_38
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */
