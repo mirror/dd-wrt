@@ -1,4 +1,28 @@
 ------------------------------------------------------------------------
+r7649 | brainslayer | 2024-03-02 18:45:48 +0600 (Sat, 02 Mar 2024) | 1 line
+
+format code
+------------------------------------------------------------------------
+r7648 | brainslayer | 2024-03-02 18:44:53 +0600 (Sat, 02 Mar 2024) | 1 line
+
+test fw for new code
+------------------------------------------------------------------------
+r7647 | brainslayer | 2024-03-02 18:35:11 +0600 (Sat, 02 Mar 2024) | 1 line
+
+use uint16 now since channellist is bigger than 255
+------------------------------------------------------------------------
+r7646 | brainslayer | 2024-03-02 18:33:50 +0600 (Sat, 02 Mar 2024) | 1 line
+
+use uint16 now since channellist is bigger than 255
+------------------------------------------------------------------------
+r7645 | brainslayer | 2024-03-02 18:20:36 +0600 (Sat, 02 Mar 2024) | 1 line
+
+limit maximum numbers for decdicated scan request list
+------------------------------------------------------------------------
+r7644 | brainslayer | 2024-03-02 18:20:20 +0600 (Sat, 02 Mar 2024) | 1 line
+
+limit maximum numbers for decdicated scan request list
+------------------------------------------------------------------------
 r7643 | brainslayer | 2024-03-02 13:13:29 +0600 (Sat, 02 Mar 2024) | 1 line
 
 set to 270 and add 4.8 ghz
