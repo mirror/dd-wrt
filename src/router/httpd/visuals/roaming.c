@@ -139,6 +139,7 @@ void show_roaming(webs_t wp, char *var)
 	}
 	if (!nvram_nmatch("ap", "%s_mode", var) && !nvram_nmatch("wdsap", "%s_mode", var))
 		return;
+
 	char s80211v[64];
 	sprintf(s80211v, "%s_80211v", var);
 	websWrite(wp, "<fieldset><legend><script type=\"text/javascript\">Capture(roaming.s80211v)</script></legend>");
@@ -190,11 +191,12 @@ void show_roaming(webs_t wp, char *var)
 		websWrite(wp, "show_layer_ext(document.getElementsByName(\"%s_time_advertisement\"), \"%s_id_time_zone\", %s);\n",
 			  var, var, nvram_matchi(adv, 1) ? "true" : "false");
 		websWrite(wp, "//]]>\n</script>\n");
-
 		showRadioPrefix(wp, "roaming.wnm_sleep_mode", "wnm_sleep_mode", var);
-		showRadioPrefix(wp, "roaming.wnm_sleep_mode_no_keys", "wnm_sleep_mode_no_keys", var);
-		showRadioPrefix(wp, "roaming.bss_transition", "bss_transition", var);
-		showRadioPrefix(wp, "roaming.proxy_arp", "proxy_arp", var);
+		if (!is_brcmfmac(var)) {
+			showRadioPrefix(wp, "roaming.wnm_sleep_mode_no_keys", "wnm_sleep_mode_no_keys", var);
+			showRadioPrefix(wp, "roaming.bss_transition", "bss_transition", var);
+			showRadioPrefix(wp, "roaming.proxy_arp", "proxy_arp", var);
+		}
 	}
 	websWrite(wp, "</div>\n");
 	websWrite(wp, "</fieldset> </br>\n");
@@ -216,13 +218,15 @@ void show_roaming(webs_t wp, char *var)
 	websWrite(wp, "</div>\n");
 	websWrite(wp, "<div id=\"%s_id80211k\">\n", var);
 	{
-		showRadioPrefix(wp, "roaming.rrm_neighbor_report", "rrm_neighbor_report", var);
-		showRadioPrefix(wp, "roaming.rrm_beacon_report", "rrm_beacon_report", var);
+		if (!is_brcmfmac(var)) {
+			showRadioPrefix(wp, "roaming.rrm_neighbor_report", "rrm_neighbor_report", var);
+			showRadioPrefix(wp, "roaming.rrm_beacon_report", "rrm_beacon_report", var);
+		}
 	}
 	websWrite(wp, "</div>\n");
 	websWrite(wp, "</fieldset> <br />\n");
 
-	if (v_show_preshared || v_show_owe || v_show_wparadius) {
+	if ((v_show_preshared || v_show_owe || v_show_wparadius) && !is_brcmfmac(var)) {
 		websWrite(wp, "<fieldset><legend><script type=\"text/javascript\">Capture(roaming.mbo)</script></legend>");
 		websWrite(
 			wp,
