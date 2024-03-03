@@ -1481,8 +1481,8 @@ CFLAGS += -DOPENSSL_EXTRA
 
 else
 ifeq ($(CONFIG_OPENSSL),y)
-CFLAGS += -I$(TOP)/libressl/include  -I$(TOP)/libressl/include/openssl
-SSLLDFLAGS += -L$(TOP)/libressl/crypto/.libs -L$(TOP)/libressl/ssl/.libs -lssl -lcrypto
+CFLAGS += -I$(TOP)/openssl/include  -I$(TOP)/openssl/include/openssl
+SSLLDFLAGS += -L$(TOP)/openssl -L$(TOP)/openssl -L$(TOP)/zlib -lssl -lcrypto -L$(TOP)/libucontext -lucontext
 CFLAGS += -DHAVE_OPENSSL
 CFLAGS += -DHAVE_HTTPS
 endif
