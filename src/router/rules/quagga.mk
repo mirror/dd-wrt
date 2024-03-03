@@ -4,7 +4,7 @@ quagga-configure: ncurses readline
 	cd quagga && touch *
 
 quagga: ncurses
-	$(MAKE) -j 4 -C quagga
+	$(MAKE) -C quagga
 
 quagga-install:
 	make -C quagga DESTDIR=$(INSTALLDIR)/quagga install

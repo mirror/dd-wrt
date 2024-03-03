@@ -2,8 +2,8 @@ olsrd-clean:
 	make -C olsrd OS=linux uberclean
 
 olsrd:
-	make -j 4 -C olsrd OS=linux
-	make -j 4 -C olsrd OS=linux libs
+	make -C olsrd OS=linux
+	make -C olsrd OS=linux libs
 
 olsrd-install:
 	install -D olsrd/olsrd $(INSTALLDIR)/olsrd/usr/sbin/olsrd

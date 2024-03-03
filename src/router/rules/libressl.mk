@@ -3,10 +3,10 @@ libressl-configure:
 	cd libressl && aclocal
 	cd libressl && automake --add-missing
 	cd libressl && autoreconf -fi 
-	cd libressl && ./configure  --prefix=/usr ac_cv_host=$(ARCH)-uclibc-linux --target=$(ARCH)-linux --host=$(ARCH) --disable-static --enable-shared
+	cd libressl && ./configure  --prefix=/usr --libdir=/usr/lib ac_cv_host=$(ARCH)-uclibc-linux --target=$(ARCH)-linux --host=$(ARCH) --disable-static --enable-shared --disable-hardening --disable-tests
 
 libressl:
-	make -C libressl all
+	make -C libressl
 	make -C libressl DESTDIR=$(TOP)/libressl/tmpinstall install
 	mkdir -p $(TOP)/libressl/tmpinstall/usr/sbin
 	rm -f $(TOP)/libressl/tmpinstall/usr/bin/ocspcheck
@@ -16,7 +16,7 @@ libressl:
 	rm -f $(TOP)/libressl/tmpinstall/usr/lib/*.la
 	rm -f $(TOP)/libressl/tmpinstall/usr/lib/*.a
 	rm -rf $(TOP)/libressl/tmpinstall/usr/lib/pkgconfig
-	mv -f $(TOP)/libressl/tmpinstall/usr/bin/openssl $(INSTALLDIR)/libressl/usr/sbin
+	mv -f $(TOP)/libressl/tmpinstall/usr/bin/openssl $(TOP)/libressl/tmpinstall/usr/sbin
 	cp -a $(TOP)/libressl/tmpinstall/usr/lib/* $(TOP)/libressl/
 	
 

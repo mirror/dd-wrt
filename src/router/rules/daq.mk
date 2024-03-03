@@ -1,6 +1,10 @@
 ifeq ($(CONFIG_IPV6),y)
 daq-configure: libpcap libdnet-configure libnetfilter_queue-configure libdnet libnetfilter_queue iptables-new
+	cd daq && libtoolize
+	cd daq && aclocal
 	cd daq && autoconf
+	cd daq && autoheader
+	cd daq && automake --add-missing
 	export ac_cv_header_linux_netfilter_h=yes ; \
 	export ac_cv_lib_pcap_pcap_lib_version=yes ; \
 	export daq_cv_libpcap_version_1x=yes ; \
@@ -24,7 +28,11 @@ daq-configure: libpcap libdnet-configure libnetfilter_queue-configure libdnet li
 	$(MAKE) -C daq all install CFLAGS="$(COPTS) -fPIC -DNEED_PRINTF -Drpl_malloc=malloc"
 else
 daq-configure: libpcap libdnet-configure libnetfilter_queue-configure libdnet libnetfilter_queue iptables
+	cd daq && libtoolize
+	cd daq && aclocal
 	cd daq && autoconf
+	cd daq && autoheader
+	cd daq && automake --add-missing
 	export ac_cv_header_linux_netfilter_h=yes ; \
 	export ac_cv_lib_pcap_pcap_lib_version=yes ; \
 	export daq_cv_libpcap_version_1x=yes ; \
