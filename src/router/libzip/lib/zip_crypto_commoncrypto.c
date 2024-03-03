@@ -1,9 +1,9 @@
 /*
   zip_crypto_commoncrypto.c -- CommonCrypto wrapper.
-  Copyright (C) 2018 Dieter Baron and Thomas Klausner
+  Copyright (C) 2018-2021 Dieter Baron and Thomas Klausner
 
   This file is part of libzip, a library to manipulate ZIP archives.
-  The authors can be contacted at <libzip@nih.at>
+  The authors can be contacted at <info@libzip.org>
 
   Redistribution and use in source and binary forms, with or without
   modification, are permitted provided that the following conditions
@@ -41,8 +41,7 @@
 #include <unistd.h>
 
 void
-_zip_crypto_aes_free(_zip_crypto_aes_t *aes)
-{
+_zip_crypto_aes_free(_zip_crypto_aes_t *aes) {
     if (aes == NULL) {
         return;
     }
@@ -52,8 +51,7 @@ _zip_crypto_aes_free(_zip_crypto_aes_t *aes)
 
 
 bool
-_zip_crypto_aes_encrypt_block(_zip_crypto_aes_t *aes, const zip_uint8_t *in, zip_uint8_t *out)
-{
+_zip_crypto_aes_encrypt_block(_zip_crypto_aes_t *aes, const zip_uint8_t *in, zip_uint8_t *out) {
     size_t len;
     CCCryptorUpdate(aes, in, ZIP_CRYPTO_AES_BLOCK_LENGTH, out, ZIP_CRYPTO_AES_BLOCK_LENGTH, &len);
     return true;
@@ -61,8 +59,7 @@ _zip_crypto_aes_encrypt_block(_zip_crypto_aes_t *aes, const zip_uint8_t *in, zip
 
 
 _zip_crypto_aes_t *
-_zip_crypto_aes_new(const zip_uint8_t *key, zip_uint16_t key_size, zip_error_t *error)
-{
+_zip_crypto_aes_new(const zip_uint8_t *key, zip_uint16_t key_size, zip_error_t *error) {
     _zip_crypto_aes_t *aes;
     CCCryptorStatus ret;
 
@@ -88,8 +85,7 @@ _zip_crypto_aes_new(const zip_uint8_t *key, zip_uint16_t key_size, zip_error_t *
 
 
 void
-_zip_crypto_hmac_free(_zip_crypto_hmac_t *hmac)
-{
+_zip_crypto_hmac_free(_zip_crypto_hmac_t *hmac) {
     if (hmac == NULL) {
         return;
     }
@@ -100,8 +96,7 @@ _zip_crypto_hmac_free(_zip_crypto_hmac_t *hmac)
 
 
 _zip_crypto_hmac_t *
-_zip_crypto_hmac_new(const zip_uint8_t *secret, zip_uint64_t secret_length, zip_error_t *error)
-{
+_zip_crypto_hmac_new(const zip_uint8_t *secret, zip_uint64_t secret_length, zip_error_t *error) {
     _zip_crypto_hmac_t *hmac;
 
     if ((hmac = (_zip_crypto_hmac_t *)malloc(sizeof(*hmac))) == NULL) {
@@ -112,22 +107,4 @@ _zip_crypto_hmac_new(const zip_uint8_t *secret, zip_uint64_t secret_length, zip_
     CCHmacInit(hmac, kCCHmacAlgSHA1, secret, secret_length);
 
     return hmac;
-}
-
-
-ZIP_EXTERN bool
-zip_random(zip_uint8_t *buffer, zip_uint16_t length) {
-    int fd;
-
-    if ((fd = open("/dev/urandom", O_RDONLY)) < 0) {
-        return false;
-    }
-
-    if (read(fd, buffer, length) != length) {
-        close(fd);
-        return false;
-    }
-
-    close(fd);
-    return true;
 }

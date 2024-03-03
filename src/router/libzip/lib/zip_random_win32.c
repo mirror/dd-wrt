@@ -1,9 +1,9 @@
 /*
   zip_random_win32.c -- fill the user's buffer with random stuff (Windows version)
-  Copyright (C) 2016 Dieter Baron and Thomas Klausner
+  Copyright (C) 2016-2021 Dieter Baron and Thomas Klausner
 
   This file is part of libzip, a library to manipulate ZIP archives.
-  The authors can be contacted at <libzip@nih.at>
+  The authors can be contacted at <info@libzip.org>
 
   Redistribution and use in source and binary forms, with or without
   modification, are permitted provided that the following conditions
@@ -32,21 +32,51 @@
 */
 
 #include "zipint.h"
-#include "zipwin32.h"
+
+#ifdef HAVE_CRYPTO
+#include "zip_crypto.h"
+#endif
+
+#include <windows.h>
+
+#ifndef HAVE_SECURE_RANDOM
 
 #include <wincrypt.h>
 
 ZIP_EXTERN bool
-zip_random(zip_uint8_t *buffer, zip_uint16_t length) {
+zip_secure_random(zip_uint8_t *buffer, zip_uint16_t length) {
     HCRYPTPROV hprov;
     if (!CryptAcquireContext(&hprov, NULL, NULL, PROV_RSA_AES, CRYPT_VERIFYCONTEXT | CRYPT_SILENT)) {
-	return false;
+        return false;
     }
     if (!CryptGenRandom(hprov, length, buffer)) {
-	return false;
+        return false;
     }
     if (!CryptReleaseContext(hprov, 0)) {
-	return false;
+        return false;
     }
     return true;
 }
+#endif
+
+#ifndef HAVE_RANDOM_UINT32
+#include <stdlib.h>
+
+zip_uint32_t
+zip_random_uint32(void) {
+    static bool seeded = false;
+
+    zip_uint32_t value;
+
+    if (zip_secure_random((zip_uint8_t *)&value, sizeof(value))) {
+        return value;
+    }
+
+    if (!seeded) {
+        srand((unsigned int)time(NULL));
+        seeded = true;
+    }
+
+    return (zip_uint32_t)rand();
+}
+#endif

@@ -1,8 +1,8 @@
 .\" zip_source_function.mdoc -- create data source from function
-.\" Copyright (C) 2004-2017 Dieter Baron and Thomas Klausner
+.\" Copyright (C) 2004-2022 Dieter Baron and Thomas Klausner
 .\"
 .\" This file is part of libzip, a library to manipulate ZIP archives.
-.\" The authors can be contacted at <libzip@nih.at>
+.\" The authors can be contacted at <info@libzip.org>
 .\"
 .\" Redistribution and use in source and binary forms, with or without
 .\" modification, are permitted provided that the following conditions
@@ -29,7 +29,7 @@
 .\" OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
 .\" IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 .\"
-.Dd December 18, 2017
+.Dd January 5, 2023
 .Dt ZIP_SOURCE_FUNCTION 3
 .Os
 .Sh NAME
@@ -49,7 +49,7 @@ The functions
 .Fn zip_source_function
 and
 .Fn zip_source_function_create
-creates a zip source from the user-provided function
+create a zip source from the user-provided function
 .Ar fn ,
 which must be of the following type:
 .Pp
@@ -90,6 +90,12 @@ Must support
 .Dv ZIP_SOURCE_STAT ,
 and
 .Dv ZIP_SOURCE_ERROR .
+.Pp
+If your source uses any allocated memory (including
+.Ar userdata )
+it should also implement
+.Dv ZIP_SOURCE_FREE
+to avoid memory leaks.
 .It seekable read source
 Same as previous, but from a source allowing reading from arbitrary
 offsets (also for read-only zip archive).
@@ -109,7 +115,18 @@ Must additionally support
 .Dv ZIP_SOURCE_TELL_WRITE ,
 and
 .Dv ZIP_SOURCE_REMOVE .
+.Pp
+On top of the above, supporting the pseudo-command
+.Dv ZIP_SOURCE_SUPPORTS_REOPEN
+allows calling
+.Fn zip_source_open
+again after calling
+.Fn zip_source_close .
 .El
+.Ss Dv ZIP_SOURCE_ACCEPT_EMPTY
+Return 1 if an empty source should be accepted as a valid zip archive.
+This is the default if this command is not supported by a source.
+File system backed sources should return 0.
 .Ss Dv ZIP_SOURCE_BEGIN_WRITE
 Prepare the source for writing.
 Use this to create any temporary file(s).
@@ -149,6 +166,62 @@ Otherwise, return 2 * sizeof(int).
 Clean up and free all resources, including
 .Ar userdata .
 The callback function will not be called again.
+.Ss Dv ZIP_SOURCE_GET_FILE_ATTRIBUTES
+Provide information about various data.
+Then the data should be put in the appropriate entry in the passed
+.Vt zip_file_attributes_t
+argument, and the appropriate
+.Dv ZIP_FILE_ATTRIBUTES_*
+value must be or'ed into the
+.Ar valid
+member to denote that the corresponding data has been provided.
+A
+.Vt zip_file_attributes_t
+structure can be initialized using
+.Xr zip_file_attributes_init 3 .
+.Bl -tag -width 10n
+.It ASCII mode
+If a file is a plaintext file in ASCII.
+Can be used by extraction tools to automatically convert line endings
+(part of the internal file attributes).
+Member
+.Ar ascii ,
+flag
+.Dv ZIP_FILE_ATTRIBUTES_ASCII .
+.It General Purpose Bit Flags (limited to Compression Flags)
+The general purpose bit flag in the zip in the local and central
+directory headers contain information about the compression method.
+Member
+.Ar general_purpose_bit_flags
+and
+.Ar general_purpose_bit_mask
+to denote which members have been set;
+flag
+.Dv ZIP_FILE_ATTRIBUTES_GENERAL_PURPOSE_BIT_FLAGS .
+.It External File Attributes
+The external file attributes (usually operating system-specific).
+Member
+.Ar external_file_attributes ,
+flag
+.Dv ZIP_FILE_ATTRIBUTES_EXTERNAL_FILE_ATTRIBUTES .
+.It Version Needed
+A minimum version needed required to unpack this entry (in the usual
+"major * 10 + minor" format).
+Member
+.Ar version_needed ,
+flag
+.Dv ZIP_FILE_ATTRIBUTES_VERSION_NEEDED .
+.It Operating System
+One of the operating systems as defined by the
+.Dv ZIP_OPSYS_*
+variables (see
+.Pa zip.h ) .
+This value affects the interpretation of the external file attributes.
+Member
+.Ar host_system ,
+flag
+.Dv ZIP_FILE_ATTRIBUTES_HOST_SYSTEM .
+.El
 .Ss Dv ZIP_SOURCE_OPEN
 Prepare for reading.
 .Ss Dv ZIP_SOURCE_READ
@@ -200,7 +273,7 @@ which should be initialized using
 and then filled in.
 .Pp
 For uncompressed, unencrypted data, all information is optional.
-However, fill in as much information as is readily available. 
+However, fill in as much information as is readily available.
 .Pp
 If the data is compressed,
 .Dv ZIP_STAT_COMP_METHOD ,
@@ -240,6 +313,9 @@ Return the current write offset in the source, like
 .Ss Dv ZIP_SOURCE_WRITE
 Write data to the source.
 Return number of bytes written.
+.Ss Dv ZIP_SOURCE_SUPPORTS_REOPEN
+This command is never actually invoked, support for it signals the
+ability to handle multiple open/read/close cycles.
 .Ss Return Values
 Commands should return \-1 on error.
 .Dv ZIP_SOURCE_ERROR
@@ -276,6 +352,9 @@ or
 .Dv ZIP_SOURCE_ROLLBACK_WRITE
 will be called.
 .Pp
+.Dv ZIP_SOURCE_ACCEPT_EMPTY ,
+.Dv ZIP_SOURCE_GET_FILE_ATTRIBUTES ,
+and
 .Dv ZIP_SOURCE_STAT
 can be issued at any time.
 .Pp
@@ -319,8 +398,9 @@ Required memory could not be allocated.
 .El
 .Sh SEE ALSO
 .Xr libzip 3 ,
-.Xr zip_add 3 ,
-.Xr zip_replace 3 ,
+.Xr zip_file_add 3 ,
+.Xr zip_file_attributes_init 3 ,
+.Xr zip_file_replace 3 ,
 .Xr zip_source 3 ,
 .Xr zip_stat_init 3
 .Sh HISTORY

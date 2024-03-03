@@ -3,10 +3,10 @@
 
 /*
   compat.h -- compatibility defines.
-  Copyright (C) 1999-2017 Dieter Baron and Thomas Klausner
+  Copyright (C) 1999-2021 Dieter Baron and Thomas Klausner
 
   This file is part of libzip, a library to manipulate ZIP archives.
-  The authors can be contacted at <libzip@nih.at>
+  The authors can be contacted at <info@libzip.org>
 
   Redistribution and use in source and binary forms, with or without
   modification, are permitted provided that the following conditions
@@ -36,12 +36,13 @@
 
 #include "zipconf.h"
 
-#ifdef HAVE_CONFIG_H
 #include "config.h"
-#endif
 
 /* to have *_MAX definitions for all types when compiling with g++ */
 #define __STDC_LIMIT_MACROS
+
+/* to have ISO C secure library functions */
+#define __STDC_WANT_LIB_EXT1__ 1
 
 #ifdef _WIN32
 #ifndef ZIP_EXTERN
@@ -77,10 +78,12 @@ typedef char bool;
 #define EOVERFLOW EFBIG
 #endif
 
-#ifdef _WIN32
-#if defined(HAVE__CHMOD)
-#define chmod _chmod
+/* not supported on at least Windows */
+#ifndef O_CLOEXEC
+#define O_CLOEXEC 0
 #endif
+
+#ifdef _WIN32
 #if defined(HAVE__CLOSE)
 #define close _close
 #endif
@@ -94,12 +97,11 @@ typedef char bool;
 #if !defined(HAVE_FILENO) && defined(HAVE__FILENO)
 #define fileno _fileno
 #endif
-/* Windows' open() doesn't understand Unix permissions */
-#if defined(HAVE__OPEN)
-#define open(a, b, c) _open((a), (b))
-#endif
-#if defined(HAVE__SNPRINTF)
+#if !defined(HAVE_SNPRINTF) && defined(HAVE__SNPRINTF)
 #define snprintf _snprintf
+#endif
+#if !defined(HAVE__SNWPRINTF_S)
+#define _snwprintf_s(buf, bufsz, len, fmt, ...) (_snwprintf((buf), (len), (fmt), __VA_ARGS__))
 #endif
 #if defined(HAVE__STRDUP)
 #if !defined(HAVE_STRDUP) || defined(_WIN32)
@@ -116,9 +118,6 @@ typedef char bool;
 #if !defined(HAVE_STRTOULL) && defined(HAVE__STRTOUI64)
 #define strtoull _strtoui64
 #endif
-#if defined(HAVE__UMASK)
-#define umask _umask
-#endif
 #if defined(HAVE__UNLINK)
 #define unlink _unlink
 #endif
@@ -132,9 +131,31 @@ typedef char bool;
 #define ftello(s) ((long)ftell((s)))
 #endif
 
-#ifndef HAVE_MKSTEMP
-int _zip_mkstemp(char *);
-#define mkstemp _zip_mkstemp
+#ifdef HAVE_LOCALTIME_S
+#ifdef _WIN32
+/* Windows is incompatible to the C11 standard, hurray! */
+#define zip_localtime(t, tm) (localtime_s((tm), (t)) == 0 ? tm : NULL)
+#else
+#define zip_localtime localtime_s
+#endif
+#else
+#ifdef HAVE_LOCALTIME_R
+#define zip_localtime localtime_r
+#else
+#define zip_localtime(t, tm) (localtime(t))
+#endif
+#endif
+
+#ifndef HAVE_MEMCPY_S
+#define memcpy_s(dest, destsz, src, count) (memcpy((dest), (src), (count)) == NULL)
+#endif
+
+#ifndef HAVE_SNPRINTF_S
+#ifdef HAVE__SNPRINTF_S
+#define snprintf_s(buf, bufsz, fmt, ...) (_snprintf_s((buf), (bufsz), (bufsz), (fmt), __VA_ARGS__))
+#else
+#define snprintf_s snprintf
+#endif
 #endif
 
 #if !defined(HAVE_STRCASECMP)
@@ -142,6 +163,19 @@ int _zip_mkstemp(char *);
 #define strcasecmp _stricmp
 #elif defined(HAVE_STRICMP)
 #define strcasecmp stricmp
+#endif
+#endif
+
+#ifndef HAVE_STRNCPY_S
+#define strncpy_s(dest, destsz, src, count) (strncpy((dest), (src), (count)), 0)
+#endif
+
+#ifndef HAVE_STRERROR_S
+#define strerrorlen_s(errnum) (strlen(strerror(errnum)))
+#define strerror_s(buf, bufsz, errnum) ((void)strncpy_s((buf), (bufsz), strerror(errnum), (bufsz)), (buf)[(bufsz)-1] = '\0', strerrorlen_s(errnum) >= (bufsz))
+#else
+#ifndef HAVE_STRERRORLEN_S
+#define strerrorlen_s(errnum)   8192
 #endif
 #endif
 
@@ -197,6 +231,10 @@ int _zip_mkstemp(char *);
 
 #ifndef S_ISDIR
 #define S_ISDIR(mode) (((mode)&S_IFMT) == S_IFDIR)
+#endif
+
+#ifndef S_ISREG
+#define S_ISREG(mode) (((mode)&S_IFMT) == S_IFREG)
 #endif
 
 #endif /* compat.h */

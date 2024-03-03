@@ -1,8 +1,8 @@
 .\" zip_file_add.mdoc -- add files to zip archive
-.\" Copyright (C) 2004-2017 Dieter Baron and Thomas Klausner
+.\" Copyright (C) 2004-2021 Dieter Baron and Thomas Klausner
 .\"
 .\" This file is part of libzip, a library to manipulate ZIP archives.
-.\" The authors can be contacted at <libzip@nih.at>
+.\" The authors can be contacted at <info@libzip.org>
 .\"
 .\" Redistribution and use in source and binary forms, with or without
 .\" modification, are permitted provided that the following conditions
@@ -29,7 +29,7 @@
 .\" OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
 .\" IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 .\"
-.Dd December 18, 2017
+.Dd September 22, 2020
 .Dt ZIP_FILE_ADD 3
 .Os
 .Sh NAME
@@ -76,6 +76,7 @@ only.
 Guess encoding of
 .Ar name
 (default).
+(Only CP-437 and UTF-8 are recognized.)
 .It Dv ZIP_FL_ENC_UTF_8
 Interpret
 .Ar name
@@ -111,10 +112,10 @@ is set to indicate the error.
 .Sh EXAMPLES
 .Bd -literal -offset indent
 zip_source_t *s;
-const char buf="teststring";
+const char buf[]="teststring";
 
-if ((s=zip_source_buffer(archive, buffer, sizeof(buf), 0)) == NULL ||
-    zip_file_add(archive, name, s, ZIP_FL_ENC_UTF_8) \*[Lt] 0) {
+if ((s=zip_source_buffer(archive, buf, sizeof(buf), 0)) == NULL ||
+    zip_file_add(archive, name, s, ZIP_FL_ENC_UTF_8) < 0) {
     zip_source_free(s);
     printf("error adding file: %s\en", zip_strerror(archive));
 }

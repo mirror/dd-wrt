@@ -1,9 +1,9 @@
 /*
   zip_crypto.h -- crypto definitions
-  Copyright (C) 2017 Dieter Baron and Thomas Klausner
+  Copyright (C) 2017-2021 Dieter Baron and Thomas Klausner
 
   This file is part of libzip, a library to manipulate ZIP archives.
-  The authors can be contacted at <libzip@nih.at>
+  The authors can be contacted at <info@libzip.org>
 
   Redistribution and use in source and binary forms, with or without
   modification, are permitted provided that the following conditions
@@ -37,12 +37,16 @@
 #define ZIP_CRYPTO_SHA1_LENGTH 20
 #define ZIP_CRYPTO_AES_BLOCK_LENGTH 16
 
-#if defined(HAVE_OPENSSL)
-#include "zip_crypto_openssl.h"
-#elif defined(HAVE_GNUTLS)
-#include "zip_crypto_gnutls.h"
+#if defined(HAVE_WINDOWS_CRYPTO)
+#include "zip_crypto_win.h"
 #elif defined(HAVE_COMMONCRYPTO)
 #include "zip_crypto_commoncrypto.h"
+#elif defined(HAVE_GNUTLS)
+#include "zip_crypto_gnutls.h"
+#elif defined(HAVE_OPENSSL)
+#include "zip_crypto_openssl.h"
+#elif defined(HAVE_MBEDTLS)
+#include "zip_crypto_mbedtls.h"
 #else
 #error "no crypto backend found"
 #endif

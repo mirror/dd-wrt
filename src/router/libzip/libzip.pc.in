@@ -1,15 +1,14 @@
-prefix=@prefix@
-exec_prefix=@exec_prefix@
+prefix=@CMAKE_INSTALL_PREFIX@
+exec_prefix=${prefix}
 bindir=@bindir@
 libdir=@libdir@
 includedir=@includedir@
 
-zipcmp=@bindir@/zipcmp
+zipcmp=${bindir}/zipcmp
 
 Name: libzip
 Description: library for handling zip archives
-Version: @VERSION@
+Version: @PROJECT_VERSION@
 Libs: @PKG_CONFIG_RPATH@ -L${libdir} -lzip
 Libs.private: @LIBS@
 Cflags: -I${includedir}
-
