@@ -368,7 +368,7 @@ include rules/btop.mk
 #
 
 %:
-	[ ! -d $* ] || $(MAKE) -C $*
+	[ ! -d $* ] || make -C $*
 
 %-distclean:
 	[ ! -d $* ] || $(MAKE) -C $* clean

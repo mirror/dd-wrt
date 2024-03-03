@@ -87,8 +87,8 @@ snort-configure: libnet daq-configure pcre-configure daq pcre zlib
 endif
 
 snort: libnet pcre
-	$(MAKE) -C snort CFLAGS="$(COPTS) $(MIPS16_OPT) -DNEED_PRINTF -I$(TOP)/librpc"
-	$(MAKE) -C snort/so_rules/src CFLAGS="$(COPTS) $(MIPS16_OPT) -DNEED_PRINTF -I$(TOP)/librpc -I$(TOP)/daq/install/include -I$(TOP)/pcre -I$(TOP)/zlib"
+	make -C snort CFLAGS="$(COPTS) $(MIPS16_OPT) -DNEED_PRINTF -I$(TOP)/librpc"
+	make -C snort/so_rules/src CFLAGS="$(COPTS) $(MIPS16_OPT) -DNEED_PRINTF -I$(TOP)/librpc -I$(TOP)/daq/install/include -I$(TOP)/pcre -I$(TOP)/zlib"
 
 snort-clean:
 	$(MAKE) -C snort clean CFLAGS="$(COPTS) $(MIPS16_OPT) -DNEED_PRINTF -I$(TOP)/librpc"

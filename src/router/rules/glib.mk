@@ -137,7 +137,7 @@ endif
 
 	cd glib20/gettext && ./autogen.sh
 	cd glib20/gettext && ./configure --enable-static --disable-shared --host=$(ARCH)-linux  LDFLAGS="$(COPTS) $(LTO) -std=gnu89 $(MIPS16_OPT) -D_GNU_SOURCE -fPIC -Drpl_malloc=malloc " CFLAGS="$(COPTS)  $(MIPS16_OPT)  -D_GNU_SOURCE -fPIC -Drpl_malloc=malloc" CXXFLAGS="$(COPTS)  $(MIPS16_OPT) -D_GNU_SOURCE -fPIC -Drpl_malloc=malloc"
-	$(MAKE) -C glib20/gettext clean all
+	make -C glib20/gettext clean all
 	rm -rf $(TOP)/glib20/libglib/build
 	export CPPFLAGS="$(COPTS) $(MIPS16_OPT)  -I$(TOP)/libffi/$(ARCH)-$(SUBARCH)-linux-gnu/include -I$(TOP)/zlib -DNEED_PRINTF" && \
 	export CFLAGS="$(COPTS) $(MIPS16_OPT)  -I$(TOP)/libffi/$(ARCH)-$(SUBARCH)-linux-gnu/include -I$(TOP)/zlib -DNEED_PRINTF" && \
@@ -182,7 +182,7 @@ ifneq ($(CONFIG_NFS),y)
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libmount.so*
 endif
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libmount.la
-	$(MAKE) -C glib20/gettext all
+	make -C glib20/gettext all
 
 
 	export CPPFLAGS="$(COPTS) -I$(TOP)/libffi/$(ARCH)-$(SUBARCH)-linux-gnu/include -I$(TOP)/zlib" && \
@@ -229,11 +229,11 @@ endif
 
 
 glib20-clean:
-	$(MAKE) -C glib20/gettext clean
+	make -C glib20/gettext clean
 	cd $(TOP)/glib20/libglib && ninja -C build clean
 
 glib20-install:
-	$(MAKE) -C glib20/gettext clean
+	make -C glib20/gettext clean
 	export DESTDIR=$(INSTALLDIR)/glib20 && \
 	cd $(TOP)/glib20/libglib && ninja -C build install
 	rm -rf $(INSTALLDIR)/glib20/usr/bin

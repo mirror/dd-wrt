@@ -47,7 +47,7 @@ zlib-configure:
 	cp -f $(TOP)/zlib/zconf.h $(TOP)/zlib/include
 
 zlib:
-	$(MAKE) -C zlib
+	make -C zlib
 	rm -f zlib/libz.a
 	rm -rf $(TOP)/zlib/include
 	-mkdir -p $(TOP)/zlib/include
@@ -61,5 +61,5 @@ zlib-install:
 	cd $(INSTALLDIR)/zlib/usr/lib ; ln -s -f libz.so.1.2.12 libz.so  ; true
 
 zlib-clean:
-	if [ -e "$(ZLIB_PKG_BUILD_DIR)/Makefile" ]; then $(MAKE) -C zlib clean ; fi
+	if [ -e "$(ZLIB_PKG_BUILD_DIR)/Makefile" ]; then make -C zlib clean ; fi
 #	$(call CMakeClean,$(ZLIB_PKG_BUILD_DIR))

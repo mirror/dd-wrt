@@ -57,11 +57,11 @@ install: all
 	install -m 755 bcmupnp $(INSTALLDIR)/upnp/usr/sbin/upnp
 
 clean:
-	$(MAKE) -C $(UPNP) clean
+	make -C $(UPNP) clean
 	rm -f bcmupnp
 
 upnp: FORCE
-	$(MAKE) -C $(UPNP) DEBUG=$(DEBUG) SRCBASE=$(SRCBASE) TARGET_PREFIX=$(CROSS_COMPILE) CFG_BCMIGD=$(CFG_BCMIGD) ADDLIBS="$(ADDLIBS)"
+	make -C $(UPNP) DEBUG=$(DEBUG) SRCBASE=$(SRCBASE) TARGET_PREFIX=$(CROSS_COMPILE) CFG_BCMIGD=$(CFG_BCMIGD) ADDLIBS="$(ADDLIBS)"
 	cp $(UPNP)/upnp ./bcmupnp
 
 FORCE:
