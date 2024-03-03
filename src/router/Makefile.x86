@@ -87,7 +87,7 @@ export TOOLCHAIN := $(shell cd $(dir $(shell which $(CROSS_COMPILE)gcc))/.. && p
 #export CFLAGS += -DBCMWPA2 
 #endif
 
-export BASEOPT:=-Oz -fno-unwind-tables -fno-asynchronous-unwind-tables
+export BASEOPT:=-Os -fno-unwind-tables -fno-asynchronous-unwind-tables
 #export ARCH:= mipsel
 
 export LINUXVER = $(shell cat $(LINUXDIR)/include/config/kernel.release 2> /dev/null)
@@ -465,20 +465,6 @@ endif
 # Configuration rules
 #
 include rules/all.mk
-
-%:
-	[ ! -d $* ] || $(MAKE) -C $* 
-
-%-distclean:
-	[ ! -d $* ] || $(MAKE) -C $* clean
-
-%-clean:
-	[ ! -d $* ] || $(MAKE) -C $* clean
-
-%-install:
-	[ ! -d $* ] || $(MAKE) -C $* install INSTALLDIR=$(INSTALLDIR)/$*
-
-$(obj-y) $(obj-n) $(obj-clean) $(obj-install): dummy
 
 .PHONY: all clean distclean mrproper install package
 .PHONY: conf mconf oldconf kconf kmconf config menuconfig oldconfig

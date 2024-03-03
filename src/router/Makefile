@@ -573,23 +573,6 @@ endif
 # Configuration rules
 #
 include rules/all.mk
-#
-# Generic rules
-#
-
-%:
-	[ ! -d $* ] || $(MAKE) -C $* 
-
-%-distclean:
-	[ ! -d $* ] || $(MAKE) -C $* clean
-
-%-clean:
-	[ ! -d $* ] || $(MAKE) -C $* clean
-
-%-install:
-	[ ! -d $* ] || $(MAKE) -C $* install INSTALLDIR=$(INSTALLDIR)/$*
-
-$(obj-y) $(obj-n) $(obj-clean) $(obj-install): dummy
 
 .PHONY: all clean distclean mrproper install package
 .PHONY: conf mconf oldconf kconf kmconf config menuconfig oldconfig
