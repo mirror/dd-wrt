@@ -95,7 +95,8 @@ include rules/libpng.mk
 include rules/libgd.mk
 include rules/libmcrypt.mk
 include rules/php8.mk
-include rules/openssl.mk
+#include rules/openssl.mk
+include rules/libressl.mk
 include rules/rp-l2tp.mk
 include rules/libpcap.mk
 include rules/eou.mk
