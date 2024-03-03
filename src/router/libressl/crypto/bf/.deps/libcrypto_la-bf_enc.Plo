@@ -1,0 +1,8 @@
+bf/libcrypto_la-bf_enc.lo: bf/bf_enc.c /usr/include/stdc-predef.h \
+ ../include/openssl/blowfish.h ../include/openssl/opensslconf.h \
+ ../include/openssl/opensslfeatures.h bf/bf_local.h
+/usr/include/stdc-predef.h:
+../include/openssl/blowfish.h:
+../include/openssl/opensslconf.h:
+../include/openssl/opensslfeatures.h:
+bf/bf_local.h:

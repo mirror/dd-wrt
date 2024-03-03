@@ -1,0 +1,4 @@
+whrlpool/libcrypto_la-wp-elf-x86_64.lo: whrlpool/wp-elf-x86_64.S \
+ /usr/include/stdc-predef.h x86_arch.h
+/usr/include/stdc-predef.h:
+x86_arch.h:

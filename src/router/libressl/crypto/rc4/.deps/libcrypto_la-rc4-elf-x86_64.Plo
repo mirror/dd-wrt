@@ -1,0 +1,4 @@
+rc4/libcrypto_la-rc4-elf-x86_64.lo: rc4/rc4-elf-x86_64.S \
+ /usr/include/stdc-predef.h x86_arch.h
+/usr/include/stdc-predef.h:
+x86_arch.h:

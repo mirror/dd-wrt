@@ -1,0 +1,21 @@
+compat/syslog_r.lo: compat/syslog_r.c /usr/include/stdc-predef.h \
+ ../include/compat/syslog.h /usr/include/syslog.h \
+ /usr/include/sys/syslog.h /usr/include/features.h \
+ /usr/include/sys/cdefs.h /usr/include/bits/wordsize.h \
+ /usr/include/bits/long-double.h /usr/include/gnu/stubs.h \
+ /usr/include/gnu/stubs-64.h \
+ /usr/lib64/gcc/x86_64-suse-linux/13/include/stdarg.h \
+ /usr/include/bits/syslog-path.h /usr/include/bits/syslog.h
+/usr/include/stdc-predef.h:
+../include/compat/syslog.h:
+/usr/include/syslog.h:
+/usr/include/sys/syslog.h:
+/usr/include/features.h:
+/usr/include/sys/cdefs.h:
+/usr/include/bits/wordsize.h:
+/usr/include/bits/long-double.h:
+/usr/include/gnu/stubs.h:
+/usr/include/gnu/stubs-64.h:
+/usr/lib64/gcc/x86_64-suse-linux/13/include/stdarg.h:
+/usr/include/bits/syslog-path.h:
+/usr/include/bits/syslog.h:

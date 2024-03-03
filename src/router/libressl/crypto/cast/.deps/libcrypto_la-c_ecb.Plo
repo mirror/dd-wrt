@@ -1,0 +1,13 @@
+cast/libcrypto_la-c_ecb.lo: cast/c_ecb.c /usr/include/stdc-predef.h \
+ ../crypto/hidden/openssl/cast.h ../include/openssl/cast.h \
+ ../include/openssl/opensslconf.h ../include/openssl/opensslfeatures.h \
+ ../crypto/hidden/crypto_namespace.h cast/cast_local.h \
+ ../include/openssl/opensslv.h
+/usr/include/stdc-predef.h:
+../crypto/hidden/openssl/cast.h:
+../include/openssl/cast.h:
+../include/openssl/opensslconf.h:
+../include/openssl/opensslfeatures.h:
+../crypto/hidden/crypto_namespace.h:
+cast/cast_local.h:
+../include/openssl/opensslv.h:

@@ -1,0 +1,186 @@
+#!/bin/sh
+set -e
+set -x
+
+unset CC
+ENABLE_ASM="${ENABLE_ASM:=ON}"
+
+if type apt-get >/dev/null 2>&1; then
+	sudo apt-get update
+	sudo apt-get install -y cmake ninja-build
+fi
+
+# generate source tree
+./autogen.sh
+
+if [ "$ARCH" = "" ]; then
+	ARCH=`uname -m`
+fi
+
+# test macOS
+if [ `uname` = "Darwin" ]; then
+	# test autotools
+	./configure
+
+	# make distribution
+	make -j 4 distcheck
+
+	# test cmake
+	tar zxvf libressl-*.tar.gz
+	cd libressl-*
+
+	(
+		mkdir build-static
+		cd build-static
+		cmake -DCMAKE_OSX_ARCHITECTURES=$ARCH ..
+		make -j 4
+		if [ "$ARCH" = "x86_64" ]; then
+			make test
+		fi
+	)
+
+	(
+		mkdir build-shared
+		cd build-shared
+		cmake -DBUILD_SHARED_LIBS=ON -DCMAKE_OSX_ARCHITECTURES=$ARCH ..
+		make -j 4
+		if [ "$ARCH" = "x86_64" ]; then
+			make test
+		fi
+	)
+
+# assuming Linux below
+elif [ "$ARCH" = "native" ]; then
+	# test autotools
+	./configure
+
+	# make distribution
+	make -j 4 distcheck
+
+	tar zxvf libressl-*.tar.gz
+	cd libressl-*
+
+
+	# test cmake and ninja
+	(
+		mkdir build-static
+		cd build-static
+		cmake -GNinja -DENABLE_ASM=${ENABLE_ASM} ..
+		ninja
+		ninja test
+	)
+
+	(
+		mkdir build-shared
+		cd build-shared
+		cmake -GNinja -DBUILD_SHARED_LIBS=ON -DENABLE_ASM=${ENABLE_ASM} ..
+		ninja
+		ninja test
+	)
+
+elif [ "$ARCH" = "mingw32" -o "$ARCH" = "mingw64" ]; then
+	CPU=i686
+	if [ "$ARCH" = "mingw64" ]; then
+		CPU=x86_64
+	fi
+
+	if ! type i686-w64-mingw32-gcc > /dev/null; then
+		sudo apt-get install -y mingw-w64
+	fi
+
+	./configure --host=$CPU-w64-mingw32
+	make -j 4
+
+	(
+	 rm -fr build-static
+	 mkdir build-static
+	 cd build-static
+	 cmake -GNinja -DCMAKE_TOOLCHAIN_FILE=../scripts/$CPU-w64-mingw32.cmake -DENABLE_ASM=${ENABLE_ASM} ..
+	 ninja -j 4
+	)
+	(
+	 rm -fr build-shared
+	 mkdir build-shared
+	 cd build-shared
+	 cmake -GNinja -DCMAKE_TOOLCHAIN_FILE=../scripts/$CPU-w64-mingw32.cmake -DBUILD_SHARED_LIBS=ON -DENABLE_ASM=${ENABLE_ASM} ..
+	 ninja -j 4
+	)
+
+elif [ "$ARCH" = "arm32" -o "$ARCH" = "arm64" ]; then
+	sudo apt-get install -y qemu-user-static binfmt-support
+
+	if [ "$ARCH" = "arm32" ]; then
+		sudo apt-get install -y g++-arm-linux-gnueabihf
+		sudo ln -sf /usr/arm-linux-gnueabihf/lib/ld-linux-armhf.so.3 /lib/
+		./configure --host=arm-linux-gnueabihf
+		LD_LIBRARY_PATH=/usr/arm-linux-gnueabihf/lib make -j 4 check
+	else
+		sudo apt-get install -y g++-aarch64-linux-gnu
+		sudo ln -sf /usr/aarch64-linux-gnu/lib/ld-linux-aarch64.so.1 /lib/
+		./configure --host=aarch64-linux-gnu
+		LD_LIBRARY_PATH=/usr/aarch64-linux-gnu/lib make -j 4 check
+	fi
+
+	file apps/openssl/.libs/openssl
+
+elif [ "$ARCH" = "mips32" -o "$ARCH" = "mips64" ]; then
+	sudo apt-get install -y qemu-user-static binfmt-support
+
+	if [ "$ARCH" = "mips32" ]; then
+		sudo apt-get install -y g++-mips-linux-gnu
+		sudo ln -sf /usr/mipsel-linux-gnu/lib/ld.so.1 /lib/
+		./configure --host=mipsel-linux-gnu
+		LD_LIBRARY_PATH=/usr/mipsel-linux-gnu/lib make -j 4 check
+	else
+		sudo apt-get install -y g++-mips64el-linux-gnuabi64
+		sudo ln -sf /usr/mips64el-linux-gnuabi64/lib64/ld.so.1 /lib64
+		./configure --host=mips64el-linux-gnuabi64
+		LD_LIBRARY_PATH=/usr/mips64el-linux-gnuabi64/lib make -j 4 check
+	fi
+
+	file apps/openssl/.libs/openssl
+
+elif [ "$ARCH" = "android" ]; then
+	export TC_FILE=$ANDROID_NDK_HOME/build/cmake/android.toolchain.cmake
+
+	# set target API level and architecture
+	level_arch=""
+	level=$MIN_NAL
+	while [ $level -le $MAX_NAL ]
+	do
+		level_arch="$level_arch $level;x86_64"
+		level_arch="$level_arch $level;x86"
+		level_arch="$level_arch $level;arm64-v8a"
+
+		level=`expr $level + 1`
+	done
+
+	echo "##### level_arch = $level_arch"
+
+	# build each API level and architecture
+	for la in $level_arch
+	do
+		NAL=`echo $la | cut -d ';' -f 1`
+		ABI=`echo $la | cut -d ';' -f 2`
+		echo ""
+		echo "##### Date: `date`, Native API level: $NAL, ABI: $ABI"
+
+		(
+		 build_dir=build-$NAL_$ABI
+		 rm -fr $build_dir include/openssl/opensslconf.h
+		 mkdir $build_dir
+		 cd $build_dir
+		 echo "##### cmake -GNinja -DCMAKE_MAKE_PROGRAM=ninja -DANDROID_NDK=$ANDROID_NDK_HOME -DCMAKE_TOOLCHAIN_FILE=$TC_FILE -DANDROID_ABI=$ABI -DANDROID_NATIVE_API_LEVEL=$NAL .."
+		 cmake -GNinja -DCMAKE_MAKE_PROGRAM=ninja \
+		 -DANDROID_NDK=$ANDROID_NDK_HOME \
+		 -DCMAKE_TOOLCHAIN_FILE=$TC_FILE \
+		 -DANDROID_ABI=$ABI -DANDROID_NATIVE_API_LEVEL=$NAL \
+		 -DENABLE_ASM=${ENABLE_ASM} ..
+
+		 ninja -j 4
+
+		 echo ""
+		 file apps/openssl/openssl
+		)
+	done
+fi

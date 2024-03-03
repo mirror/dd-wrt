@@ -1,0 +1,4 @@
+bn/libcrypto_la-modexp512-elf-x86_64.lo: bn/modexp512-elf-x86_64.S \
+ /usr/include/stdc-predef.h x86_arch.h
+/usr/include/stdc-predef.h:
+x86_arch.h:

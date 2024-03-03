@@ -1,0 +1,4 @@
+md5/libcrypto_la-md5-elf-x86_64.lo: md5/md5-elf-x86_64.S \
+ /usr/include/stdc-predef.h x86_arch.h
+/usr/include/stdc-predef.h:
+x86_arch.h:
