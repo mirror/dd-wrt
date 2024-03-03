@@ -1640,6 +1640,9 @@ ifneq ($(CONFIG_3G_ONLY),y)
 C_LIBS +=libdisc.so
 endif
 endif
+ifeq ($(CONFIG_RAID),y)
+C_LIBS +=libdisc.so
+endif
 all: $(C_LIBS) $(A_LIBS)
 
 install: all
