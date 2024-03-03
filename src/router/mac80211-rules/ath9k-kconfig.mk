@@ -337,10 +337,10 @@ endif
 	cmp $(MAC80211_PATH)/.config_temp $(MAC80211_PATH)/.config_temp_old || rm -f $(MAC80211_PATH)/.configured
 	cmp $(LINUXDIR)/.config $(MAC80211_PATH)/.kernel_config || (rm -f $(MAC80211_PATH)/.configured ; printf "\n\nKERNEL CONFIG CHANGED ; DOING RECONFIGURE\n\n\n")
 	test -f $(MAC80211_PATH)/.configured || printf "\n\nDOING RECONFIGURE\n\n\n"
-	test -f $(MAC80211_PATH)/.configured || ( MAKEFLAGS= KERNELRELEASE= CFLAGS= $(MAKE) -j 32 -C $(MAC80211_PATH) $(MAKE_OPTS) clean ; true)
+	test -f $(MAC80211_PATH)/.configured || ( MAKEFLAGS= KERNELRELEASE= CFLAGS= $(MAKE) -C $(MAC80211_PATH) $(MAKE_OPTS) clean ; true)
 	test -f $(MAC80211_PATH)/.configured || rm -f $(MAC80211_PATH)/.config $(MAC80211_PATH)/.compat_autoconf_*
 	test -f $(MAC80211_PATH)/.configured || cat $(MAC80211_PATH)/.config_temp | sort | uniq > $(MAC80211_PATH)/.config 
-	test -f $(MAC80211_PATH)/.configured || CC=gcc MAKEFLAGS= KERNELRELEASE= CFLAGS= $(MAKE) -j 32 -C $(MAC80211_PATH) $(MAKE_OPTS) allnoconfig
+	test -f $(MAC80211_PATH)/.configured || CC=gcc MAKEFLAGS= KERNELRELEASE= CFLAGS= $(MAKE) -C $(MAC80211_PATH) $(MAKE_OPTS) allnoconfig
 	-cp $(LINUXDIR)/.config $(MAC80211_PATH)/.kernel_config
 	touch $(MAC80211_PATH)/.configured
 
@@ -348,7 +348,7 @@ ath9k-configure:
 	rm -f $(MAC80211_PATH)/.configured
 
 ath9k: ath9k-checkconfig
-	MAKEFLAGS= KERNELRELEASE= CFLAGS= $(MAKE) -j 32 -C $(MAC80211_PATH) $(MAKE_OPTS) modules
+	MAKEFLAGS= KERNELRELEASE= CFLAGS= $(MAKE) -C $(MAC80211_PATH) $(MAKE_OPTS) modules
 
 ath9k-install: ath9k
 	rm -rf $(INSTALLDIR)/ath9k/
@@ -572,6 +572,6 @@ endif
 
 ath9k-clean:
 	rm -f $(MAC80211_PATH)/.config $(MAC80211_PATH)/.compat_autoconf_*
-	MAKEFLAGS= KERNELRELEASE= CFLAGS= $(MAKE) -j 32 -C $(MAC80211_PATH) $(MAKE_OPTS) clean
+	MAKEFLAGS= KERNELRELEASE= CFLAGS= $(MAKE) -C $(MAC80211_PATH) $(MAKE_OPTS) clean
 
 include $(TOP)/mac80211-rules/ath9k-userspace.mk
