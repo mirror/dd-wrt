@@ -6,7 +6,7 @@ tcpdump-configure: libpcap
 	sed -i 's/-Wl,-rpath,\/usr\/lib64/ /g' $(TOP)/tcpdump/Makefile
 	sed -i 's/-L\/usr\/lib64/ /g' $(TOP)/tcpdump/Makefile
 tcpdump:
-	make -C tcpdump
+	make -j 4 -C tcpdump
 
 
 tcpdump-install:

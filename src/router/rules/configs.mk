@@ -7,7 +7,7 @@ obj-$(CONFIG_SHARED) += libutils
 obj-$(CONFIG_SHARED) += shared
 obj-$(CONFIG_LIBNET) += libnet
 obj-$(CONFIG_IRQBALANCE) += libnl irqbalance
-obj-$(CONFIG_OPENSSL) += libressl
+obj-$(CONFIG_OPENSSL) += libucontext openssl openssl-shared openssl-apps
 obj-$(CONFIG_MATRIXSSL) += matrixssl
 obj-$(CONFIG_CTORRENT) += ctorrent
 obj-$(CONFIG_SFTPSERVER) += sftp-server
@@ -303,7 +303,7 @@ obj-$(CONFIG_DAWN) += json-c libubox ubus libnltiny dawn
 obj-$(CONFIG_WPA3) += json-c libubox ubus libnltiny usteer
 obj-$(CONFIG_WPA_SUPPLICANT2) += wpa_supplicant2
 obj-$(CONFIG_MIITOOL) += net-tools
-obj-$(CONFIG_TOR) += xz zstd zlib libressl libevent tor
+obj-$(CONFIG_TOR) += xz zstd zlib libucontext openssl libevent tor
 obj-$(CONFIG_RSTP) += rstp
 obj-$(CONFIG_OPENLLDP) += openlldp
 obj-$(CONFIG_WGETS) += wgets
@@ -373,12 +373,12 @@ obj-$(CONFIG_UBIUTILS) += ubi-utils zlib lzo zstd
 obj-$(CONFIG_STRONGSWAN) += gmp strongswan sqlite
 obj-$(CONFIG_PRIVOXY) += zlib pcre privoxy
 obj-$(CONFIG_VENTANA) += kobs-ng
-obj-$(CONFIG_WEBSERVER) += libffi zlib libzip libressl glib20 libxml2 libmcrypt lighttpd curl libpng sqlite php8 util-linux
+obj-$(CONFIG_WEBSERVER) += libffi zlib libzip libucontext openssl glib20 libxml2 libmcrypt lighttpd curl libpng sqlite php8 util-linux
 obj-$(CONFIG_TRANSMISSION) += curl transmission zlib
 obj-$(CONFIG_CLOUD4WI) += curl zlib
 obj-$(CONFIG_UNIWIP) += uniwip_gpio
 ifeq ($(CONFIG_OPENSSL),y)
-obj-$(CONFIG_MACTELNET) += libressl mactelnet
+obj-$(CONFIG_MACTELNET) += libucontext openssl openssl-shared openssl-apps mactelnet
 endif
 obj-$(CONFIG_FIRMWARES) += firmwares
 obj-$(CONFIG_SERVICEGATE) += servicegate
@@ -422,7 +422,7 @@ obj-$(CONFIG_I2CTOOLS) += i2ctools
 obj-$(CONFIG_RAID) += libudev mdadm raidmanager
 obj-$(CONFIG_I2C_GPIO_CUSTOM) += i2c-gpio-custom
 obj-$(CONFIG_NEWPORT) += cpt8x
-obj-$(CONFIG_RSYNC) += libressl zstd rsync
+obj-$(CONFIG_RSYNC) += libucontext openssl zstd rsync
 ifneq ($(KERNELVERSION),6.1)
 obj-$(CONFIG_CAKE) += cake
 obj-$(CONFIG_CAKE) += fq_codel_fast
@@ -433,7 +433,7 @@ obj-$(CONFIG_APFS) += apfs
 endif
 obj-$(CONFIG_APFS) += apfsprogs
 obj-$(CONFIG_SMARTDNS) += smartdns
-obj-$(CONFIG_NGINX) += pcre libressl zlib nginx
+obj-$(CONFIG_NGINX) += pcre libucontext openssl zlib nginx
 ifneq ($(KERNELVERSION),6.1)
 obj-$(CONFIG_X86) += yukon
 endif
@@ -453,8 +453,8 @@ obj-$(CONFIG_OCTEON) += lmsensors
 obj-$(CONFIG_P7ZIP) += p7zip
 obj-$(CONFIG_MEMTESTER) += memtester
 obj-$(CONFIG_PLEX) += plex
-obj-$(CONFIG_ANTAIRA_AGENT) += curl zlib libressl json-c antaira-agent
-obj-$(CONFIG_BOINC) += zlib libressl curl boinc
+obj-$(CONFIG_ANTAIRA_AGENT) += curl zlib openssl json-c antaira-agent
+obj-$(CONFIG_BOINC) += zlib openssl curl boinc
 obj-$(CONFIG_MUSL) += musl
 obj-$(CONFIG_X86) += cpupower
 obj-$(CONFIG_BTOP) += btop

@@ -693,17 +693,17 @@ endif
 	echo "CONFIG_ASH_SLEEP=y" >> busybox/.config
 	cd busybox && make oldconfig
 	
-#	-$(MAKE) -C busybox STRIPTOOL=$(STRIP) PREFIX=$(INSTALLDIR)/busybox
-	$(MAKE) -C busybox STRIPTOOL=$(STRIP) PREFIX=$(INSTALLDIR)/busybox
+#	-$(MAKE) -j 4 -C busybox STRIPTOOL=$(STRIP) PREFIX=$(INSTALLDIR)/busybox
+	$(MAKE) -j 4 -C busybox STRIPTOOL=$(STRIP) PREFIX=$(INSTALLDIR)/busybox
 
 
 busybox-install:
-	$(MAKE) -C busybox STRIPTOOL=$(STRIP) PREFIX=$(INSTALLDIR)/busybox install
+	$(MAKE) -j 4 -C busybox STRIPTOOL=$(STRIP) PREFIX=$(INSTALLDIR)/busybox install
 	rm -f $(INSTALLDIR)/busybox/usr/sbin/httpd-busybox
 	[ -e $(INSTALLDIR)/busybox/usr/sbin/httpd ] && mv $(INSTALLDIR)/busybox/usr/sbin/httpd $(INSTALLDIR)/busybox/usr/sbin/httpd-busybox || true
 
 busybox-clean: busybox-config
-	$(MAKE)  -C busybox clean PREFIX=$(INSTALLDIR)/busybox 
+	$(MAKE) -j 4  -C busybox clean PREFIX=$(INSTALLDIR)/busybox 
 
 busybox-distclean: busybox-config
 	$(MAKE) -C busybox clean

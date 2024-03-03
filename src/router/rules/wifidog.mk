@@ -18,9 +18,9 @@ ifeq ($(CONFIG_TIEXTRA2),y)
 endif
 ifeq ($(CONFIG_OPENSSL),y)
 	make -C wolfssl/minimal
-	$(MAKE) -C wifidog/ssl
+	$(MAKE) -j 4 -C wifidog/ssl
 else
-	$(MAKE) -C wifidog/nossl
+	$(MAKE) -j 4 -C wifidog/nossl
 endif
 
 wifidog-clean:

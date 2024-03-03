@@ -19,7 +19,7 @@ powertop-configure:
 	RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
 
 powertop: pciutils
-	$(MAKE) -C powertop
+	$(MAKE) -j 4 -C powertop
 
 powertop-clean:
 	if test -e "powertop/Makefile"; then make -C powertop clean; fi

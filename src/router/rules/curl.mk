@@ -26,7 +26,7 @@ curl: openssl zlib
 curl-clean:
 	$(MAKE) -C curl/build clean
 
-curl-configure: libressl zlib
+curl-configure: openssl zlib
 	$(MAKE) -C zlib clean
 	$(MAKE) -C zlib
 	$(MAKE) -C bearssl clean
@@ -46,8 +46,8 @@ curl-configure: libressl zlib
 	--without-libpsl \
 	--without-zstd \
 	--with-ca-bundle=/etc/ssl/ca-bundle.crt --with-openssl --prefix=/usr ac_cv_host=$(ARCH)-uclibc-linux --libdir=/usr/lib --target=$(ARCH)-linux --host=$(ARCH) CC="ccache $(ARCH)-linux-uclibc-gcc" \
-	CFLAGS="-DNEED_PRINTF $(LTO) $(COPTS) $(MIPS16_OPT) -I$(TOP)/zlib  -I$(TOP)/libressl/include -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-	LDFLAGS="$(LDLTO) $(COPTS) $(MIPS16_OPT) -L$(TOP)/zlib -L$(TOP)/libressl -lcrypto -lssl -ldl" \
+	CFLAGS="-DNEED_PRINTF $(LTO) $(COPTS) $(MIPS16_OPT) -I$(TOP)/zlib  -I$(TOP)/openssl/include -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+	LDFLAGS="$(LDLTO) $(COPTS) $(MIPS16_OPT) -L$(TOP)/zlib -L$(TOP)/openssl -lcrypto -lssl -ldl" \
 	AR_FLAGS="cru $(LTOPLUGIN)" \
 	RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)" \
 	NM="$(ARCH)-linux-nm $(LTOPLUGIN)" \

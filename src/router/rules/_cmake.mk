@@ -3,8 +3,8 @@ define CMakeConfigure
 	(cd $(strip $(1)); \
 		CFLAGS="$(CFLAGS) $(EXTRA_CFLAGS) $(MIPS16_OPT) $(4)" \
 		LDFLAGS="$(5)" \
-		CXXFLAGS="$(CFLAGS) $(EXTRA_CFLAGS) $(MIPS16_OPT) $(4)" \
-		CPPFLAGS="$(CFLAGS) $(EXTRA_CFLAGS) $(MIPS16_OPT) $(4)" \
+		CXXFLAGS="$(CFLAGS) $(EXTRA_CFLAGS)  $(MIPS16_OPT) $(4)" \
+		CPPFLAGS="$(CFLAGS) $(EXTRA_CFLAGS)  $(MIPS16_OPT) $(4)" \
 		cmake \
 			--debug-output \
 			-DCMAKE_CXX_COMPILER_LAUNCHER="ccache" \

@@ -20,13 +20,13 @@ ncurses-configure:
 		--with-terminfo-dirs=/etc/terminfo \
 		--with-default-terminfo-dir=/etc/terminfo 
 	chmod a+x "$(TOP)/ncurses/misc/ncurses-config"
-	make -C ncurses
+	make -j 4 -C ncurses
 
 ncurses-clean:
-	make -C ncurses clean
+	make -j 4 -C ncurses clean
 
 ncurses:
-	make -C ncurses
+	make -j 4 -C ncurses
 	rm -rf ncurses/include/ncurses
 	mkdir -p ncurses/include/ncurses
 	cp -a ncurses/include/*.h ncurses/include/ncurses
