@@ -1,4 +1,0 @@
-aes/libcrypto_la-bsaes-elf-x86_64.lo: aes/bsaes-elf-x86_64.S \
- /usr/include/stdc-predef.h x86_arch.h
-/usr/include/stdc-predef.h:
-x86_arch.h:

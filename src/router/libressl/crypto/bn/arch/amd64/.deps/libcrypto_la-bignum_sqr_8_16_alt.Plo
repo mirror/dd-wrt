@@ -1,5 +1,0 @@
-bn/arch/amd64/libcrypto_la-bignum_sqr_8_16_alt.lo: \
- bn/arch/amd64/bignum_sqr_8_16_alt.S /usr/include/stdc-predef.h \
- ../crypto/bn/s2n_bignum_internal.h
-/usr/include/stdc-predef.h:
-../crypto/bn/s2n_bignum_internal.h:

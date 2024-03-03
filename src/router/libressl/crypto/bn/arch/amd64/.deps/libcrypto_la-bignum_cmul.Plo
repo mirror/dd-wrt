@@ -1,4 +1,0 @@
-bn/arch/amd64/libcrypto_la-bignum_cmul.lo: bn/arch/amd64/bignum_cmul.S \
- /usr/include/stdc-predef.h ../crypto/bn/s2n_bignum_internal.h
-/usr/include/stdc-predef.h:
-../crypto/bn/s2n_bignum_internal.h:
