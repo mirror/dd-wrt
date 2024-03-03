@@ -21,7 +21,7 @@ daq-configure: libpcap libdnet-configure libnetfilter_queue-configure libdnet li
 		CFLAGS="$(COPTS) $(MIPS16_OPT) -fPIC -DNEED_PRINTF -D_GNU_SOURCE -Drpl_malloc=malloc -I$(TOP)/iptables-new/include -I$(TOP)/iptables-new/include/libipq -I$(TOP)/libnetfilter_queue/include -I$(TOP)/libnfnetlink/include" \
 		CPPFLAGS="$(COPTS) $(MIPS16_OPT) -fPIC -DNEED_PRINTF -D_GNU_SOURCE  -Drpl_malloc=malloc -I$(TOP)/iptables-new/include -I$(TOP)/iptables-new/include/libipq -I$(TOP)/libnetfilter_queue/include -I$(TOP)/libnfnetlink/include" \
 		LDFLAGS="-L$(TOP)/iptables-new/libipq/.libs -L$(TOP)/libnetfilter_queue/src/.libs -L$(TOP)/libnfnetlink/src/.libs -fPIC"
-	$(MAKE) -C daq all install CFLAGS="$(COPTS) -fPIC -DNEED_PRINTF -Drpl_malloc=malloc"
+	make -C daq all install CFLAGS="$(COPTS) -fPIC -DNEED_PRINTF -Drpl_malloc=malloc"
 else
 daq-configure: libpcap libdnet-configure libnetfilter_queue-configure libdnet libnetfilter_queue iptables
 	cd daq && autoconf
@@ -45,16 +45,16 @@ daq-configure: libpcap libdnet-configure libnetfilter_queue-configure libdnet li
 		CFLAGS="$(COPTS) $(MIPS16_OPT) -fPIC -DNEED_PRINTF -D_GNU_SOURCE -Drpl_malloc=malloc -I$(TOP)/iptables/include -I$(TOP)/iptables/include/libipq -I$(TOP)/libnetfilter_queue/include -I$(TOP)/libnfnetlink/include" \
 		CPPFLAGS="$(COPTS) $(MIPS16_OPT) -fPIC -DNEED_PRINTF -D_GNU_SOURCE  -Drpl_malloc=malloc -I$(TOP)/iptables/include -I$(TOP)/iptables/include/libipq -I$(TOP)/libnetfilter_queue/include -I$(TOP)/libnfnetlink/include" \
 		LDFLAGS="-L$(TOP)/iptables/libipq -L$(TOP)/libnetfilter_queue/src/.libs -L$(TOP)/libnfnetlink/src/.libs -fPIC"
-	$(MAKE) -C daq all install CFLAGS="$(COPTS) -fPIC -DNEED_PRINTF -Drpl_malloc=malloc"
+	make -C daq all install CFLAGS="$(COPTS) -fPIC -DNEED_PRINTF -Drpl_malloc=malloc"
 endif
 daq: libpcap libdnet iptables
 	-mkdir daq/install
 	-rm -rf daq/install/*
-	$(MAKE) -C daq all install CFLAGS="$(COPTS) -fPIC -DNEED_PRINTF -Drpl_malloc=malloc"
+	make -C daq all install CFLAGS="$(COPTS) -fPIC -DNEED_PRINTF -Drpl_malloc=malloc"
 
 daq-clean:
 	-rm -rf daq/install/*
-	$(MAKE) -C daq clean  CFLAGS="$(COPTS) -fPIC -DNEED_PRINTF -Drpl_malloc=malloc"
+	make -C daq clean  CFLAGS="$(COPTS) -fPIC -DNEED_PRINTF -Drpl_malloc=malloc"
 
 daq-install:
 	-install -D daq/install/lib/libsfbpf.so.0 $(INSTALLDIR)/daq/usr/lib/libsfbpf.so.0

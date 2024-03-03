@@ -1,4 +1,5 @@
-zfs-configure: libtirpc-configure libtirpc libudev openssl zlib curl ncurses util-linux
+zfs-configure: libtirpc libudev openssl zlib curl ncurses util-linux
+	$(MAKE) -C libtirpc
 	cd zfs && ./autogen.sh
 	cd zfs && autoreconf
 	cd zfs && ./configure \
@@ -20,7 +21,7 @@ zfs: libtirpc libudev openssl zlib ncurses util-linux
 	cd zfs && find . -name "*.la" -exec touch {} +
 	touch $(TOP)/util-linux/libblkid/src/blkid.h
 	touch $(TOP)/openssl/include/openssl/opensslconf.h
-	$(MAKE) -j 4 -C zfs
+	$(MAKE) -C zfs
 
 zfs-clean:
 	if test -e "zfs/Makefile"; then make -C zfs clean; fi

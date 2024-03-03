@@ -9,14 +9,14 @@ wolfssl-configure:
 	cd wolfssl/minimal && ../configure --prefix=/usr --libdir=/usr/lib --host=$(ARCH)-linux --enable-opensslextra --disable-shared --enable-fastmath --enable-static -disable-errorstrings --disable-oldtls --disable-sha --enable-lowresource --disable-md5 --disable-rc4 --disable-poly1305 --disable-chacha --enable-ecc --disable-sslv3 --disable-tls13 --disable-des3 --enable-md4 --enable-stunnel --enable-session-ticket --enable-cmac CFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 	    AR_FLAGS="cru $(LTOPLUGIN)" \
 	    RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
-	$(MAKE) -j 4 -C wolfssl/minimal
-	$(MAKE) -j 4 -C wolfssl/standard
+	$(MAKE) -C wolfssl/minimal
+	$(MAKE) -C wolfssl/standard
 
 wolfssl:
 ifeq ($(CONFIG_WOLFSSLMIN),y)
-	$(MAKE) -j 4 -C wolfssl/minimal
+	$(MAKE) -C wolfssl/minimal
 else
-	$(MAKE) -j 4 -C wolfssl/standard
+	$(MAKE) -C wolfssl/standard
 endif
 	-rm wolfssl/wolfssl/options.h
 
@@ -27,7 +27,7 @@ wolfssl-clean:
 
 wolfssl-install:
 ifneq ($(CONFIG_WOLFSSLMIN),y)
-	$(MAKE) -j 4 -C wolfssl/standard install DESTDIR=$(INSTALLDIR)/wolfssl
+	$(MAKE) -C wolfssl/standard install DESTDIR=$(INSTALLDIR)/wolfssl
 	rm -rf $(INSTALLDIR)/wolfssl/usr/bin
 	rm -rf $(INSTALLDIR)/wolfssl/usr/include
 	rm -rf $(INSTALLDIR)/wolfssl/usr/lib/pkgconfig

@@ -124,8 +124,8 @@ openvpn-conf-prep:
 openvpn-conf: openssl wolfssl
 	mkdir -p openvpn/openssl
 	mkdir -p openvpn/wolfssl
-	-$(MAKE) -j 4 -C wolfssl/minimal
-	-$(MAKE) -j 4 -C wolfssl/standard
+	-$(MAKE) -C wolfssl/minimal
+	-$(MAKE) -C wolfssl/standard
 	-cd $(OVPN)/openssl && ../configure $(CONFIGURE_ARGS_OVPN)
 	-cd $(OVPN)/wolfssl && ../configure $(CONFIGURE_ARGS_WOLFSSL)
 
@@ -165,26 +165,26 @@ endif
 endif
 endif
 endif
-	-make -j 4 -C $(OVPN)/openssl clean
+	-make -C $(OVPN)/openssl clean
 ifeq ($(CONFIG_OPENVPN_SSLSTATIC),y)
 	rm -f openssl/*.so*
 endif
 ifeq ($(CONFIG_WOLFSSL),y)
-	make -j 4 -C $(OVPN)/wolfssl
+	make -C $(OVPN)/wolfssl
 else
-	make -j 4 -C $(OVPN)/openssl
+	make -C $(OVPN)/openssl
 endif
 ifeq ($(KERNELVERSION),6.1)
-	make -j 4 -C ovpn-dco
+	make -C ovpn-dco
 endif
 ifeq ($(KERNELVERSION),4.9)
-	make -j 4 -C ovpn-dco
+	make -C ovpn-dco
 endif
 ifeq ($(KERNELVERSION),4.14)
-	make -j 4 -C ovpn-dco
+	make -C ovpn-dco
 endif
 ifeq ($(KERNELVERSION),4.4)
-	make -j 4 -C ovpn-dco
+	make -C ovpn-dco
 endif
 
 openvpn-install:
@@ -209,30 +209,30 @@ endif
 	cp -f openvpn/config/*.sh $(INSTALLDIR)/openvpn/etc
 	install -D -m 0755 openvpn/config/userscripts/*.sh -t $(INSTALLDIR)/openvpn/usr/bin
 ifeq ($(KERNELVERSION),6.1)
-	make -j 4 -C ovpn-dco install
+	make -C ovpn-dco install
 endif
 ifeq ($(KERNELVERSION),4.9)
-	make -j 4 -C ovpn-dco install
+	make -C ovpn-dco install
 endif
 ifeq ($(KERNELVERSION),4.14)
-	make -j 4 -C ovpn-dco install
+	make -C ovpn-dco install
 endif
 ifeq ($(KERNELVERSION),4.4)
-	make -j 4 -C ovpn-dco install
+	make -C ovpn-dco install
 endif
 
 openvpn-clean:
 	-make -C $(OVPN)/wolfssl clean
 	-make -C $(OVPN)/openssl clean
 ifeq ($(KERNELVERSION),6.1)
-	make -j 4 -C ovpn-dco clean
+	make -C ovpn-dco clean
 endif
 ifeq ($(KERNELVERSION),4.9)
-	make -j 4 -C ovpn-dco clean
+	make -C ovpn-dco clean
 endif
 ifeq ($(KERNELVERSION),4.14)
-	make -j 4 -C ovpn-dco clean
+	make -C ovpn-dco clean
 endif
 ifeq ($(KERNELVERSION),4.4)
-	make -j 4 -C ovpn-dco clean
+	make -C ovpn-dco clean
 endif

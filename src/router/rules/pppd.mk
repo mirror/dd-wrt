@@ -17,28 +17,28 @@ else
 pppd: pppd-symlinks
 endif
 ifeq ($(CONFIG_IPV6),y)
-	$(MAKE) HAVE_INET6=y -j 4 -C pppd/pppd
+	$(MAKE) HAVE_INET6=y -C pppd/pppd
 else
-	$(MAKE) -j 4 -C pppd/pppd
+	$(MAKE) -C pppd/pppd
 endif
 ifeq ($(CONFIG_3G),y)
-	$(MAKE) -j 4 -C pppd/chat
+	$(MAKE) -C pppd/chat
 endif
 ifeq ($(CONFIG_PPPSTATS),y)
-	$(MAKE) -j 4 -C pppd/pppstats
+	$(MAKE) -C pppd/pppstats
 endif
-	$(MAKE) -j 4 -C pppd/pppd/plugins/rp-pppoe
+	$(MAKE) -C pppd/pppd/plugins/rp-pppoe
 ifeq ($(CONFIG_PPTP_ACCEL),y)
-	$(MAKE) -j 4 -C pppd/pppd/plugins/pptp
+	$(MAKE) -C pppd/pppd/plugins/pptp
 endif
 ifeq ($(CONFIG_RADIUSPLUGIN),y)
-	$(MAKE) -j 4 -C pppd/pppd/plugins/radius
+	$(MAKE) -C pppd/pppd/plugins/radius
 endif
 ifeq ($(CONFIG_PPPOATM),y)
-	$(MAKE) -j 4 -C pppd/pppd/plugins/pppoatm
+	$(MAKE) -C pppd/pppd/plugins/pppoatm
 endif
 ifeq ($(CONFIG_L2TP),y)
-	$(MAKE) -j 4 -C pppd/pppd/plugins/pppol2tp
+	$(MAKE) -C pppd/pppd/plugins/pppol2tp
 endif
 
 

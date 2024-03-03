@@ -8,7 +8,7 @@ nprobe:
 
 
 nprobe-clean:
-	make -j 4 -C nprobe clean
+	make -C nprobe clean
 
 
 nprobe-install:

@@ -5,7 +5,7 @@ mtr-configure: ncurses-configure ncurses
 
 
 mtr: ncurses
-	$(MAKE) -j 4 -C mtr
+	$(MAKE) -C mtr
 
 mtr-clean:
 	if test -e "mtr/Makefile"; then make -C mtr clean; fi

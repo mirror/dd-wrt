@@ -1,11 +1,11 @@
 readline-configure: 
 	cd readline && ./configure --host=$(ARCH)-uclibc-linux --prefix=/usr --libdir=/usr/lib --disable-static CFLAGS="$(COPTS) $(MIPS16_OPT) -fPIC -fno-strict-aliasing"
-	$(MAKE) -C readline clean all
+	make -C readline clean all
 	cd readline/shlib && rm -f libreadline.so
 	cd readline/shlib && rm -f libhistory.so
 
 readline:
-	$(MAKE) -C readline
+	make -C readline
 	cd readline/shlib && rm -f libreadline.so
 	cd readline/shlib && rm -f libhistory.so
 	cd readline/shlib && ln -s libreadline.so.7.0 libreadline.so
@@ -13,7 +13,7 @@ readline:
 
 readline-install:
 	rm -rf $(INSTALLDIR)/readline/usr/lib
-	$(MAKE) -C readline DESTDIR=$(INSTALLDIR)/readline install
+	make -C readline DESTDIR=$(INSTALLDIR)/readline install
 	rm -rf $(INSTALLDIR)/readline/usr/include
 	rm -rf $(INSTALLDIR)/readline/usr/info
 	rm -rf $(INSTALLDIR)/readline/usr/man
@@ -26,4 +26,4 @@ ifneq ($(CONFIG_SOFTETHER),y)
 endif
 
 readline-clean:
-	-if test -e "readline/Makefile"; then $(MAKE) -C readline clean; fi
+	-if test -e "readline/Makefile"; then make -C readline clean; fi

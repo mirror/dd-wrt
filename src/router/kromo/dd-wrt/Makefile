@@ -389,7 +389,7 @@ endif
 # end orange fix
 
 ifeq ($(CONFIG_34TELECOM),y)
-	$(MAKE) -C $(SRCBASE)/router/kromo/34telecom/ install
+	make -C $(SRCBASE)/router/kromo/34telecom/ install
 	mkdir $(INSTALLDIR)/www/style/cyan
 	cp cyan/style.css $(INSTALLDIR)/www/style/cyan
 #	cp common_style/common_style_ie.css $(INSTALLDIR)/www/style/cyan
@@ -1088,34 +1088,34 @@ endif
 	rm -f $(INSTALLDIR)/www/help/HAnchorFree.asp
 	
 ifeq ($(CONFIG_RAMON),y)
-	$(MAKE) -C $(SRCBASE)/router/kromo/newmedia/ install
+	make -C $(SRCBASE)/router/kromo/newmedia/ install
 else
 
 ifeq ($(CONFIG_SKYTRON),y)
-	$(MAKE) -C $(SRCBASE)/router/kromo/skytron/ install
+	make -C $(SRCBASE)/router/kromo/skytron/ install
 else
 ifeq ($(CONFIG_SKYTEL),y)
-	$(MAKE) -C $(SRCBASE)/router/kromo/skytel/ install
+	make -C $(SRCBASE)/router/kromo/skytel/ install
 else
 ifeq ($(CONFIG_ERC),y)
-	$(MAKE) -C $(SRCBASE)/router/kromo/dd-wrt/erc/common/ install
+	make -C $(SRCBASE)/router/kromo/dd-wrt/erc/common/ install
 else
 ifeq ($(CONFIG_CARLSONWIRELESS),y)
-	$(MAKE) -C $(SRCBASE)/router/kromo/dd-wrt/carlsonwireless/common/ install
+	make -C $(SRCBASE)/router/kromo/dd-wrt/carlsonwireless/common/ install
 else
 ifeq ($(CONFIG_ESPOD),y)
-	$(MAKE) -C $(SRCBASE)/router/kromo/dd-wrt/espod/common/ install
+	make -C $(SRCBASE)/router/kromo/dd-wrt/espod/common/ install
 else
 ifeq ($(CONFIG_IPR),y)
-	$(MAKE) -C $(SRCBASE)/router/kromo/dd-wrt/ipr/common/ install
+	make -C $(SRCBASE)/router/kromo/dd-wrt/ipr/common/ install
 else
 ifeq ($(CONFIG_ONNET),y)
-	$(MAKE) -C $(SRCBASE)/router/kromo/dd-wrt/onnet/common/ install
+	make -C $(SRCBASE)/router/kromo/dd-wrt/onnet/common/ install
 else 
 ifeq ($(CONFIG_RAYTRONIK),y)
-	$(MAKE) -C $(SRCBASE)/router/kromo/dd-wrt/raytronik/common/ install
+	make -C $(SRCBASE)/router/kromo/dd-wrt/raytronik/common/ install
 else
-	$(MAKE) -C $(SRCBASE)/router/kromo/common/ install
+	make -C $(SRCBASE)/router/kromo/common/ install
 endif
 endif
 endif
@@ -1128,11 +1128,11 @@ endif
 endif
 
 ifeq ($(CONFIG_OMNI),y)
-	$(MAKE) -C $(SRCBASE)/router/kromo/omni-wifi/ install
+	make -C $(SRCBASE)/router/kromo/omni-wifi/ install
 endif
 
 #ifeq ($(CONFIG_DDLAN),y)
-#	$(MAKE) -C $(SRCBASE)/router/kromo/ddlan/ install
+#	make -C $(SRCBASE)/router/kromo/ddlan/ install
 #endif
 
 
