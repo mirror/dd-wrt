@@ -1,3 +1,6 @@
+export MAKE := make -j $(shell getconf _NPROCESSORS_ONLN)
+
+
 COPTS+=  -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 -fno-unwind-tables -fno-asynchronous-unwind-tables -DNDEBUG
 
 ifeq ($(AGGRESSIVE_SIZE),y)
