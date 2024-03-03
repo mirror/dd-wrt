@@ -1,9 +1,9 @@
 
 #CC?=gcc
 
-CFLAGS += $(LTO) $(COPTS) $(MIPS16_OPT) -I$(TOP)/wolfssl -I$(TOP)/openssl/include   -D_GNU_SOURCE  -ffunction-sections -fdata-sections -Wl,--gc-sections -DNEED_PRINTF
+CFLAGS += $(LTO) $(COPTS) $(MIPS16_OPT) -I$(TOP)/wolfssl -I$(TOP)/libressl/include   -D_GNU_SOURCE  -ffunction-sections -fdata-sections -Wl,--gc-sections -DNEED_PRINTF
 # Run this with make LIBS=-lrt if you want to compile on kfreebsd
-LIBS = -L$(TOP)/nvram -lnvram -L$(TOP)/openssl -lcrypto
+LIBS = -L$(TOP)/nvram -lnvram -L$(TOP)/libressl -lcrypto
 all: multicall
 
 clean: distclean
