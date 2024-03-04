@@ -23,7 +23,7 @@
     #include <config.h>
 #endif
 
-#include <wolfssl/wolfcrypt/settings.h>
+#include <wolfssl/wolfcrypt/types.h>
 
 #if defined(WOLFSSL_MAXQ1065) ||  defined(WOLFSSL_MAXQ108X)
 
@@ -43,10 +43,16 @@
 #include <wolfssl/wolfcrypt/logging.h>
 #include <wolfssl/wolfcrypt/port/maxim/MXQ_API.h>
 
+#ifndef WOLFSSL_HAVE_ECC_KEY_GET_PRIV
+    /* FIPS build has replaced ecc.h. */
+    #define wc_ecc_key_get_priv(key) (&((key)->k))
+    #define WOLFSSL_HAVE_ECC_KEY_GET_PRIV
+#endif
+
 #ifdef MAXQ_DEBUG
 void dbg_dumphex(const char *identifier, const uint8_t* pdata, uint32_t plen);
 #else
-#define dbg_dumphex(identifier, pdata, plen)
+#define dbg_dumphex(identifier, pdata, plen) WC_DO_NOTHING
 #endif /* MAXQ_DEBUG */
 
 #if defined(USE_WINDOWS_API)
@@ -525,8 +531,9 @@ int wc_MAXQ10XX_EccSetKey(ecc_key* key, word32 keysize)
 
     if (err == 0) {
         if ((keytype == ECC_PRIVATEKEY) || (keytype == ECC_PRIVATEKEY_ONLY)) {
-            err = wc_export_int(&key->k, key->maxq_ctx.ecc_key + (2 * keysize),
-                                &bufflen, keysize, WC_TYPE_UNSIGNED_BIN);
+            err = wc_export_int(wc_ecc_key_get_priv(key),
+                key->maxq_ctx.ecc_key + (2 * keysize), &bufflen, keysize,
+                WC_TYPE_UNSIGNED_BIN);
         }
     }
 

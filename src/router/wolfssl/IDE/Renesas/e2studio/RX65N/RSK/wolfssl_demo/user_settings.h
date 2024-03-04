@@ -37,9 +37,10 @@
  *      113: TSIPv1.13
  *      114: TSIPv1.14
  *      115: TSIPv1.15
+ *      117: TSIPv1.17
  *----------------------------------------------------------------------------*/
   #define WOLFSSL_RENESAS_TSIP
-  #define WOLFSSL_RENESAS_TSIP_VER     115
+  #define WOLFSSL_RENESAS_TSIP_VER     117
 
 
 /*-- TLS version definitions  --------------------------------------------------
@@ -61,6 +62,17 @@
 #define FREERTOS
 #define FREERTOS_TCP
 
+
+/*-- Compiler related definitions  ---------------------------------------------
+ *
+ *  CC-RX is C99 compliant, but may not provide the features wolfSSL requires.
+ *  This section defines macros for such cases to avoid build-time or run-time
+ *  failures.
+ *
+ *----------------------------------------------------------------------------*/
+
+/* CC-RX does not support variable length array */
+#define WOLFSSL_SP_NO_DYN_STACK
 
 
 
@@ -109,6 +121,11 @@
    */
   #define USE_ECC_CERT
 
+  /* Enable WOLFSSL_CHECK_SIG_FAULTS definition when self-verify for
+   * Ecc signature is required. It is disabled by default.
+   */
+  /*#define WOLFSSL_CHECK_SIG_FAULTS*/
+
   /* In this example application, Root CA cert buffer named 
    * "ca_ecc_cert_der_256" is used under the following macro definition 
    * for ECDSA.
@@ -132,7 +149,7 @@
   * -- "NO_ASN_TIME" macro is to avoid certificate expiration validation --
   *  
   * Note. In your actual products, do not forget to comment-out 
-  * "NO_ASN_TIME" macro. And prepare time function to get calender time,
+  * "NO_ASN_TIME" macro. And prepare time function to get calendar time,
   * otherwise, certificate expiration validation will not work.  
   */
   /*#define NO_ASN_TIME*/
@@ -207,13 +224,28 @@
 
 #if defined(WOLFSSL_RENESAS_TSIP)
 
+    /*-- TSIP TLS and/or CRYPTONLY Definition --------------------------------*/
+    /* Enable TSIP TLS (default)
+     *   TSIP CRYPTONLY is also enabled.
+     * Disable TSIP TLS
+     *   TSIP CRYPTONLY is only enabled.
+     */
+    #define WOLFSSL_RENESAS_TSIP_TLS
+
     #if !defined(NO_RENESAS_TSIP_CRYPT)
-        #define WOLFSSL_RENESAS_TSIP_CRYPT
-        #define WOLFSSL_RENESAS_TSIP_TLS
-        #define WOLFSSL_RENESAS_TSIP_TLS_AES_CRYPT
+        #define WOLFSSL_RENESAS_TSIP_CRYPTONLY
         #define HAVE_PK_CALLBACKS
         #define WOLF_CRYPTO_CB
-        #define WOLF_PRIVATE_KEY_ID
+        #if defined(WOLFSSL_RENESAS_TSIP_TLS)
+            #define WOLFSSL_RENESAS_TSIP_TLS_AES_CRYPT
+            #define WOLF_PRIVATE_KEY_ID
+        #endif
+    #endif
+
+    #if !defined(WOLFSSL_RENESAS_TSIP_TLS) && \
+         defined(WOLFSSL_RENESAS_TSIP_CRYPTONLY)
+        # undef WOLFSSL_RENESAS_TSIP_TLS
+        # undef WOLFSSL_RENESAS_TSIP_CRYPT
     #endif
 
 #else

@@ -36,7 +36,6 @@
     #define WOLFSSL_HAVE_SP_RSA
     #define WOLFSSL_HAVE_SP_DH
     #define WOLFSSL_HAVE_SP_ECC
-    //#define WOLFSSL_SP_CACHE_RESISTANT
     //#define WOLFSSL_SP_MATH     /* only SP math - eliminates fast math code */
 
     /* SP Assembly Speedups */
@@ -187,7 +186,7 @@
             #else
                 #undef  ALT_ECC_SIZE
                 #define ALT_ECC_SIZE
-                /* wolfSSL will compute the FP_MAX_BITS_ECC, but it can be overriden */
+                /* wolfSSL will compute the FP_MAX_BITS_ECC, but it can be overridden */
                 //#undef  FP_MAX_BITS_ECC
                 //#define FP_MAX_BITS_ECC (256 * 2)
             #endif

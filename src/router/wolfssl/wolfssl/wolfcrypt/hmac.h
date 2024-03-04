@@ -31,14 +31,6 @@
 #ifndef NO_HMAC
 
 #if defined(HAVE_FIPS) && \
-        (!defined(HAVE_FIPS_VERSION) || (HAVE_FIPS_VERSION < 2))
-/* for fips @wc_fips */
-    #include <cyassl/ctaocrypt/hmac.h>
-    #define WC_HMAC_BLOCK_SIZE HMAC_BLOCK_SIZE
-#endif
-
-
-#if defined(HAVE_FIPS) && \
         defined(HAVE_FIPS_VERSION) && (HAVE_FIPS_VERSION >= 2)
     #include <wolfssl/wolfcrypt/fips.h>
 #endif
@@ -107,6 +99,8 @@ enum {
     HMAC_MAX_ID_LEN    = 32,
     HMAC_MAX_LABEL_LEN = 32,
 #endif
+
+    WOLF_ENUM_DUMMY_LAST_ELEMENT(HMAC)
 };
 
 /* Select the largest available hash for the buffer size. */
@@ -141,6 +135,9 @@ typedef union {
 #endif
 #ifdef WOLFSSL_SHA3
     wc_Sha3 sha3;
+#endif
+#ifdef WOLFSSL_SM3
+    wc_Sm3 sm3;
 #endif
 } wc_HmacHash;
 

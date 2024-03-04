@@ -26,18 +26,36 @@
     int InitCAAM(void);
     #include "caam_qnx.h"
 #endif
+
+
+#ifndef CAAM_BASE
 #if (defined(__INTEGRITY) || defined(INTEGRITY))
     #define CAAM_BASE 0xf2100000
     #define CAAM_PAGE 0xf0100000
+#elif defined(__aarch64__)
+    /* if on an AArch64 system make assumption that it is an i.MX8 QXP */
+    /* use block of memory set aside for job ring 2 */
+    #define CAAM_BASE 0x31400000
+    #define CAAM_PAGE 0x31800000
+#elif defined(WOLFSSL_CAAM_IMX6Q)
+    /* IMX6Q */
+    #define CAAM_BASE 0x02100000
+    #define CAAM_PAGE 0x00100000
+#else
+    /* IMX6UL */
+    #define CAAM_BASE 0x02140000
+    #define CAAM_PAGE 0x00100000
 #endif
+#endif /* !CAAM_BASE */
+
 
 #ifdef WOLFSSL_CAAM_PRINT
     #include <stdio.h>
     #define WOLFSSL_MSG(in) printf("%s\n", (in))
     void DEBUG_PRINT_ARRAY(void* a, int aSz, char* str);
 #else
-    #define WOLFSSL_MSG(in)
-    #define DEBUG_PRINT_ARRAY(a,aSz,str)
+    #define WOLFSSL_MSG(in) do {} while (0)
+    #define DEBUG_PRINT_ARRAY(a,aSz,str) do {} while (0)
 #endif
 
 #define CAAM_PAGE_MAX 6
@@ -263,6 +281,13 @@
 #define CAAM_VERSION_LS  0x0FFC
 #define CAAM_CHA_CCBVID  0x0FE4
 
+
+/* high performance AES module includes XTS, GCM */
+#define CAAM_AES_HIGH_PERFORMANCE 0x4
+
+/* low power AES module includes ECB, CBC, CTR, CCM, CMAC, CBC */
+#define CAAM_AES_LOW_POWER 0x3
+
 #define CAAM_SM_CMD  0x0BE4
 #define CAAM_SM_SMPO 0x0FBC
 #define CAAM_SMAPR   0x0A04
@@ -430,5 +455,6 @@ struct DESCSTRUCT {
 #define MAX_ECDSA_SIGN_ADDR 8
 #define BLACK_KEY_MAC_SZ 16
 #define BLACK_BLOB_KEYMOD_SZ 16
-#define RED_BLOB_KEYMOD_SZ 8
+#define RED_BLOB_KEYMOD_SZ 16
+#define SM_BLOB_KEYMOD_SZ 8
 #endif /* CAAM_DRIVER_H */

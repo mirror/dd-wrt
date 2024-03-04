@@ -129,7 +129,7 @@ static int wolfssl_read_bio_len(WOLFSSL_BIO* bio, int sz, char** data)
     char* mem;
 
     /* Allocate buffer to hold data. */
-    mem = (char*)XMALLOC(sz, bio->heap, DYNAMIC_TYPE_OPENSSL);
+    mem = (char*)XMALLOC((size_t)sz, bio->heap, DYNAMIC_TYPE_OPENSSL);
     if (mem == NULL) {
         WOLFSSL_ERROR_MSG("Memory allocation error");
         ret = MEMORY_E;
@@ -203,8 +203,12 @@ static int wolfssl_read_bio(WOLFSSL_BIO* bio, char** data, int* dataSz,
     return ret;
 }
 #endif /* !NO_BIO */
+#endif /* OPENSSL_EXTRA && !WOLFCRYPT_ONLY */
 
-#if !defined(NO_FILESYSTEM)
+#if (defined(OPENSSL_EXTRA) || defined(PERSIST_CERT_CACHE) || \
+     (!defined(NO_CERTS) && (!defined(NO_WOLFSSL_CLIENT) || \
+      !defined(WOLFSSL_NO_CLIENT_AUTH)))) && !defined(WOLFCRYPT_ONLY) && \
+    !defined(NO_FILESYSTEM)
 /* Read all the data from a file.
  *
  * @param [in]  fp          File pointer to read with.
@@ -253,7 +257,10 @@ static int wolfssl_file_len(XFILE fp, long* fileSz)
 
     return ret;
 }
+#endif
 
+#if (defined(OPENSSL_EXTRA) || defined(PERSIST_CERT_CACHE)) && \
+    !defined(WOLFCRYPT_ONLY) && !defined(NO_FILESYSTEM)
 /* Read all the data from a file.
  *
  * @param [in]  fp          File pointer to read with.
@@ -272,13 +279,13 @@ static int wolfssl_read_file(XFILE fp, char** data, int* dataSz)
     ret = wolfssl_file_len(fp, &sz);
     if (ret == 0) {
         /* Allocate memory big enough to hold whole file. */
-        mem = (char*)XMALLOC(sz, NULL, DYNAMIC_TYPE_TMP_BUFFER);
+        mem = (char*)XMALLOC((size_t)sz, NULL, DYNAMIC_TYPE_TMP_BUFFER);
         if (mem == NULL) {
             ret = MEMORY_E;
         }
     }
     /* Read whole file into new buffer. */
-    if ((ret == 0) && ((int)XFREAD(mem, 1, sz, fp) != sz)) {
+    if ((ret == 0) && ((int)XFREAD(mem, 1, (size_t)sz, fp) != sz)) {
         ret = WOLFSSL_BAD_FILE;
     }
     if (ret == 0) {
@@ -290,7 +297,7 @@ static int wolfssl_read_file(XFILE fp, char** data, int* dataSz)
     XFREE(mem, NULL, DYNAMIC_TYPE_TMP_BUFFER);
     return ret;
 }
-#endif /* !NO_FILESYSTEM */
-#endif /* OPENSSL_EXTRA && !WOLFCRYPT_ONLY */
+#endif /* (OPENSSL_EXTRA || PERSIST_CERT_CACHE) && !WOLFCRYPT_ONLY &&
+        * !NO_FILESYSTEM */
 #endif /* !WOLFSSL_SSL_MISC_INCLUDED */
 

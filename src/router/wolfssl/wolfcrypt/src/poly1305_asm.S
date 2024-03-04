@@ -1,5 +1,5 @@
-/* poly1305_asm
- *
+/* poly1305_asm.S */
+/*
  * Copyright (C) 2006-2023 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
@@ -324,7 +324,7 @@ L_poly1305_avx_final_no_more:
         movq	%rcx, %r8
         andq	$3, %rcx
         shrq	$2, %r8
-        #   Multily by 5
+        #   Multiply by 5
         leaq	0(%r8,%r8,4), %r8
         addq	%r8, %rax
         adcq	$0x00, %rdx

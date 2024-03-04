@@ -277,10 +277,7 @@ static int Dtls13GetRnMask(WOLFSSL* ssl, const byte* ciphertext, byte* mask,
         /* assuming CIPHER[0..3] should be interpreted as little endian 32-bits
            integer. The draft rfc isn't really clear on that. See sec 4.2.3 of
            the draft. See also Section 2.3 of the Chacha RFC. */
-        XMEMCPY(&counter, ciphertext, sizeof(counter));
-#ifdef BIG_ENDIAN
-        counter = ByteReverseWord32(counter);
-#endif /* BIG_ENDIAN */
+        ato32le(ciphertext, &counter);
 
         ret = wc_Chacha_SetIV(c->chacha, &ciphertext[4], counter);
         if (ret != 0)
@@ -300,6 +297,12 @@ static int Dtls13EncryptDecryptRecordNumber(WOLFSSL* ssl, byte* seq,
 {
     byte mask[DTLS13_RN_MASK_SIZE];
     int ret;
+
+#ifdef HAVE_NULL_CIPHER
+    /* Do not encrypt record numbers with null cipher. See RFC 9150 Sec 9 */
+    if (ssl->specs.bulk_cipher_algorithm == wolfssl_cipher_null)
+        return 0;
+#endif /*HAVE_NULL_CIPHER */
 
     ret = Dtls13GetRnMask(ssl, ciphertext, mask, dir);
     if (ret != 0)
@@ -349,6 +352,7 @@ int Dtls13ProcessBufferedMessages(WOLFSSL* ssl)
     WOLFSSL_ENTER("Dtls13ProcessBufferedMessages");
 
     while (msg != NULL) {
+        int downgraded = 0;
         idx = 0;
 
         /* message not in order */
@@ -359,8 +363,32 @@ int Dtls13ProcessBufferedMessages(WOLFSSL* ssl)
         if (!msg->ready)
             break;
 
-        ret = DoTls13HandShakeMsgType(ssl, msg->fullMsg, &idx, msg->type,
-                msg->sz, msg->sz);
+#ifndef WOLFSSL_DISABLE_EARLY_SANITY_CHECKS
+        ret = MsgCheckEncryption(ssl, msg->type, msg->encrypted);
+        if (ret != 0) {
+            SendAlert(ssl, alert_fatal, unexpected_message);
+            break;
+        }
+#endif
+
+        /* We may have DTLS <=1.2 msgs stored from before we knew which version
+         * we were going to use. Interpret correctly. */
+        if (IsAtLeastTLSv1_3(ssl->version)) {
+            ret = DoTls13HandShakeMsgType(ssl, msg->fullMsg, &idx, msg->type,
+                    msg->sz, msg->sz);
+            if (!IsAtLeastTLSv1_3(ssl->version))
+                downgraded = 1;
+        }
+        else {
+#if !defined(WOLFSSL_NO_TLS12)
+            ret = DoHandShakeMsgType(ssl, msg->fullMsg, &idx, msg->type,
+                    msg->sz, msg->sz);
+#else
+            WOLFSSL_MSG("DTLS1.2 disabled with WOLFSSL_NO_TLS12");
+            WOLFSSL_ERROR_VERBOSE(NOT_COMPILED_IN);
+            ret = NOT_COMPILED_IN;
+#endif
+        }
 
         /* processing certificate_request triggers a connect. The error came
          * from there, the message can be considered processed successfully.
@@ -368,7 +396,13 @@ int Dtls13ProcessBufferedMessages(WOLFSSL* ssl)
          * waiting to flush the output buffer. */
         if ((ret == 0 || ret == WANT_WRITE) || (msg->type == certificate_request &&
                          ssl->options.handShakeDone && ret == WC_PENDING_E)) {
-            Dtls13MsgWasProcessed(ssl, (enum HandShakeType)msg->type);
+            if (IsAtLeastTLSv1_3(ssl->version))
+                Dtls13MsgWasProcessed(ssl, (enum HandShakeType)msg->type);
+            else if (downgraded)
+                /* DoHandShakeMsgType normally handles the hs number but if
+                 * DoTls13HandShakeMsgType processed 1.2 msgs then this wasn't
+                 * incremented. */
+                ssl->keys.dtls_expected_peer_handshake_number++;
 
             ssl->dtls_rx_msg_list = msg->next;
             DtlsMsgDelete(msg, ssl->heap);
@@ -413,7 +447,7 @@ static int Dtls13SendFragFromBuffer(WOLFSSL* ssl, byte* output, word16 length)
     if (ret != 0)
         return ret;
 
-    buf = ssl->buffers.outputBuffer.buffer + ssl->buffers.outputBuffer.length;
+    buf = GetOutputBuffer(ssl);
 
     XMEMCPY(buf, output, length);
 
@@ -622,7 +656,7 @@ static void Dtls13RtxRecordUnlink(WOLFSSL* ssl, Dtls13RtxRecord** prevNext,
     *prevNext = r->next;
 }
 
-static void Dtls13RtxFlushBuffered(WOLFSSL* ssl, byte keepNewSessionTicket)
+void Dtls13RtxFlushBuffered(WOLFSSL* ssl, byte keepNewSessionTicket)
 {
     Dtls13RtxRecord *r, **prevNext;
 
@@ -803,10 +837,16 @@ static int Dtls13RtxMsgRecvd(WOLFSSL* ssl, enum HandShakeType hs,
             Dtls13MaybeSaveClientHello(ssl);
 
         /* In the handshake, receiving part of the next flight, acknowledge the
-           sent flight. The only exception is, on the server side, receiving the
-           last client flight does not ACK any sent new_session_ticket
-           messages. */
-        Dtls13RtxFlushBuffered(ssl, 1);
+         * sent flight. */
+        /* On the server side, receiving the last client flight does not ACK any
+         * sent new_session_ticket messages. */
+        /* We don't want to clear the buffer until we have done version
+         * negotiation in the SH or have received a unified header in the
+         * DTLS record. */
+        if (ssl->options.serverState >= SERVER_HELLO_COMPLETE ||
+                    ssl->options.seenUnifiedHdr)
+            /* Use 1.2 API to clear 1.2 buffers too */
+            DtlsMsgPoolReset(ssl);
     }
 
     if (ssl->keys.dtls_peer_handshake_number <
@@ -850,6 +890,8 @@ static int Dtls13RtxMsgRecvd(WOLFSSL* ssl, enum HandShakeType hs,
 void Dtls13FreeFsmResources(WOLFSSL* ssl)
 {
     Dtls13RtxFlushAcks(ssl);
+    /* Use 1.2 API to clear 1.2 buffers too */
+    DtlsMsgPoolReset(ssl);
     Dtls13RtxFlushBuffered(ssl, 0);
 }
 
@@ -915,11 +957,12 @@ static int Dtls13SendFragmentedInternal(WOLFSSL* ssl)
         }
 
         ret = CheckAvailableSize(ssl, recordLength + MAX_MSG_EXTRA);
-        if (ret != 0)
+        if (ret != 0) {
+            Dtls13FreeFragmentsBuffer(ssl);
             return ret;
+        }
 
-        output =
-            ssl->buffers.outputBuffer.buffer + ssl->buffers.outputBuffer.length;
+        output = GetOutputBuffer(ssl);
 
         ret = Dtls13HandshakeAddHeaderFrag(ssl, output + rlHeaderLength,
             (enum HandShakeType)ssl->dtls13FragHandshakeType,
@@ -1503,8 +1546,7 @@ static int Dtls13RtxSendBuffered(WOLFSSL* ssl)
         if (ret != 0)
             return ret;
 
-        output =
-            ssl->buffers.outputBuffer.buffer + ssl->buffers.outputBuffer.length;
+        output = GetOutputBuffer(ssl);
 
         XMEMCPY(output + headerLength, r->data, r->length);
 
@@ -1547,6 +1589,19 @@ static int Dtls13RtxSendBuffered(WOLFSSL* ssl)
     return 0;
 }
 
+static int Dtls13AcceptFragmented(WOLFSSL *ssl, enum HandShakeType type)
+{
+    if (IsEncryptionOn(ssl, 0))
+        return 1;
+    if (ssl->options.side == WOLFSSL_CLIENT_END && type == server_hello)
+        return 1;
+#ifdef WOLFSSL_DTLS_CH_FRAG
+    if (ssl->options.side == WOLFSSL_SERVER_END && type == client_hello &&
+            ssl->options.dtls13ChFrag && ssl->options.dtlsStateful)
+        return 1;
+#endif
+    return 0;
+}
 /**
  * Dtls13HandshakeRecv() - process an handshake message. Deal with
  fragmentation if needed
@@ -1574,6 +1629,13 @@ static int _Dtls13HandshakeRecv(WOLFSSL* ssl, byte* input, word32 size,
         &messageLength, &fragOff, &fragLength, size);
     if (ret != 0)
         return PARSE_ERROR;
+
+    /* Need idx + fragLength as we don't advance the inputBuffer idx value */
+    ret = EarlySanityCheckMsgReceived(ssl, handshakeType, idx + fragLength);
+    if (ret != 0) {
+        WOLFSSL_ERROR(ret);
+        return ret;
+    }
 
     if (ssl->options.side == WOLFSSL_SERVER_END &&
             ssl->options.acceptState < TLS13_ACCEPT_FIRST_REPLY_DONE) {
@@ -1620,13 +1682,35 @@ static int _Dtls13HandshakeRecv(WOLFSSL* ssl, byte* input, word32 size,
     isFirst = fragOff == 0;
     isComplete = isFirst && fragLength == messageLength;
 
-    if (!isComplete && !IsEncryptionOn(ssl, 0)) {
+    if (!isComplete && !Dtls13AcceptFragmented(ssl, handshakeType)) {
+#ifdef WOLFSSL_DTLS_CH_FRAG
+        byte tls13 = 0;
+        /* check if the first CH fragment contains a valid cookie */
+        if (ssl->options.dtls13ChFrag && !ssl->options.dtlsStateful &&
+                isFirst && handshakeType == client_hello &&
+                DoClientHelloStateless(ssl, input + idx, fragLength, 1, &tls13)
+                    == 0 && tls13) {
+            /* We can save this message and continue as stateful. */
+            if (ssl->chGoodCb != NULL) {
+                int cbret = ssl->chGoodCb(ssl, ssl->chGoodCtx);
+                if (cbret < 0) {
+                    ssl->error = cbret;
+                    WOLFSSL_MSG("ClientHello Good Cb don't continue error");
+                    return WOLFSSL_FATAL_ERROR;
+                }
+            }
+            WOLFSSL_MSG("ClientHello fragment verified");
+        }
+        else
+#endif
+        {
 #ifdef WOLFSSL_DEBUG_TLS
-        WOLFSSL_MSG("DTLS1.3 not accepting fragmented plaintext message");
+            WOLFSSL_MSG("DTLS1.3 not accepting fragmented plaintext message");
 #endif /* WOLFSSL_DEBUG_TLS */
-        /* ignore the message */
-        *processedSize = idx + fragLength + ssl->keys.padSz;
-        return 0;
+            /* ignore the message */
+            *processedSize = idx + fragLength + ssl->keys.padSz;
+            return 0;
+        }
     }
 
     usingAsyncCrypto = ssl->devId != INVALID_DEVID;
@@ -2266,6 +2350,15 @@ int Dtls13SetRecordNumberKeys(WOLFSSL* ssl, enum encrypt_side side)
     }
 #endif /* HAVE_CHACHA */
 
+#ifdef HAVE_NULL_CIPHER
+    if (ssl->specs.bulk_cipher_algorithm == wolfssl_cipher_null) {
+#ifdef WOLFSSL_DEBUG_TLS
+        WOLFSSL_MSG("Skipping Record Number key provisioning with null cipher");
+#endif /* WOLFSSL_DEBUG_TLS */
+        return 0;
+    }
+#endif /* HAVE_NULL_CIPHER */
+
     return NOT_COMPILED_IN;
 }
 
@@ -2327,15 +2420,18 @@ static int Dtls13WriteAckMessage(WOLFSSL* ssl,
     if (ret != 0)
         return ret;
 
-    output =
-        ssl->buffers.outputBuffer.buffer + ssl->buffers.outputBuffer.length;
+    output = GetOutputBuffer(ssl);
 
     ackMessage = output + headerLength;
 
     c16toa(msgSz, ackMessage);
     ackMessage += OPAQUE16_LEN;
 
+    WOLFSSL_MSG("write ack records");
+
     while (recordNumberList != NULL) {
+        WOLFSSL_MSG_EX("epoch %d seq %d", recordNumberList->epoch,
+                recordNumberList->seq);
         c64toa(&recordNumberList->epoch, ackMessage);
         ackMessage += OPAQUE64_LEN;
         c64toa(&recordNumberList->seq, ackMessage);
@@ -2462,7 +2558,12 @@ int Dtls13RtxTimeout(WOLFSSL* ssl)
 {
     int ret = 0;
 
-    if (ssl->dtls13Rtx.seenRecords != NULL) {
+    /* We don't want to send acks until we have done version
+     * negotiation in the SH or have received a unified header in the
+     * DTLS record. */
+    if (ssl->dtls13Rtx.seenRecords != NULL &&
+            (ssl->options.serverState >= SERVER_HELLO_COMPLETE ||
+                    ssl->options.seenUnifiedHdr)) {
         ssl->dtls13Rtx.sendAcks = 0;
         /* reset fast timeout as we are sending ACKs */
         ssl->dtls13FastTimeout = 0;
@@ -2522,10 +2623,13 @@ int DoDtls13Ack(WOLFSSL* ssl, const byte* input, word32 inputSize,
     if (length % (DTLS13_RN_SIZE) != 0)
         return PARSE_ERROR;
 
+    WOLFSSL_MSG("read ack records");
+
     ackMessage = input + OPAQUE16_LEN;
     for (i = 0; i < length; i += DTLS13_RN_SIZE) {
         ato64(ackMessage + i, &epoch);
         ato64(ackMessage + i + OPAQUE64_LEN, &seq);
+        WOLFSSL_MSG_EX("epoch %d seq %d", epoch, seq);
         Dtls13RtxRemoveRecord(ssl, epoch, seq);
     }
 
@@ -2596,15 +2700,13 @@ int SendDtls13Ack(WOLFSSL* ssl)
     if (ret != 0)
         return ret;
 
+    ret = Dtls13WriteAckMessage(ssl, ssl->dtls13Rtx.seenRecords, &length);
+    if (ret != 0)
+        return ret;
+
+    output = GetOutputBuffer(ssl);
+
     if (w64IsZero(ssl->dtls13EncryptEpoch->epochNumber)) {
-
-        ret = Dtls13WriteAckMessage(ssl, ssl->dtls13Rtx.seenRecords, &length);
-        if (ret != 0)
-            return ret;
-
-        output =
-            ssl->buffers.outputBuffer.buffer + ssl->buffers.outputBuffer.length;
-
         ret = Dtls13RlAddPlaintextHeader(ssl, output, ack, (word16)length);
         if (ret != 0)
             return ret;
@@ -2612,15 +2714,8 @@ int SendDtls13Ack(WOLFSSL* ssl)
         ssl->buffers.outputBuffer.length += length + DTLS_RECORD_HEADER_SZ;
     }
     else {
-
-        ret = Dtls13WriteAckMessage(ssl, ssl->dtls13Rtx.seenRecords, &length);
-        if (ret != 0)
-            return ret;
-
-        output =
-            ssl->buffers.outputBuffer.buffer + ssl->buffers.outputBuffer.length;
-
         outputSize = ssl->buffers.outputBuffer.bufferSize -
+                     ssl->buffers.outputBuffer.idx -
                      ssl->buffers.outputBuffer.length;
 
         headerSize = Dtls13GetRlHeaderLength(ssl, 1);
@@ -2756,6 +2851,28 @@ int Dtls13CheckAEADFailLimit(WOLFSSL* ssl)
         }
     }
     return 0;
+}
+#endif
+
+#ifdef WOLFSSL_DTLS_CH_FRAG
+int wolfSSL_dtls13_allow_ch_frag(WOLFSSL *ssl, int enabled)
+{
+    if (ssl->options.side == WOLFSSL_CLIENT_END) {
+        return WOLFSSL_FAILURE;
+    }
+    ssl->options.dtls13ChFrag = !!enabled;
+    return WOLFSSL_SUCCESS;
+}
+#endif
+
+#ifdef WOLFSSL_DTLS13_NO_HRR_ON_RESUME
+int wolfSSL_dtls13_no_hrr_on_resume(WOLFSSL *ssl, int enabled)
+{
+    if (ssl->options.side == WOLFSSL_CLIENT_END) {
+        return WOLFSSL_FAILURE;
+    }
+    ssl->options.dtls13NoHrrOnResume = !!enabled;
+    return WOLFSSL_SUCCESS;
 }
 #endif
 

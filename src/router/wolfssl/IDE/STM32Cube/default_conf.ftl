@@ -33,9 +33,9 @@
 [#list SWIPdatas as SWIP]
 [#-- Global variables --]
 [#if SWIP.variables??]
-	[#list SWIP.variables as variable]
+    [#list SWIP.variables as variable]
 extern ${variable.value} ${variable.name};
-	[/#list]
+    [/#list]
 [/#if]
 
 [#-- Global variables --]
@@ -45,16 +45,16 @@ extern ${variable.value} ${variable.name};
 [#assign version = SWIP.version]
 
 /**
-	MiddleWare name : ${instName}
-	MiddleWare fileName : ${fileName}
-	MiddleWare version : ${version}
+    MiddleWare name : ${instName}
+    MiddleWare fileName : ${fileName}
+    MiddleWare version : ${version}
 */
 [#if SWIP.defines??]
-	[#list SWIP.defines as definition]
+    [#list SWIP.defines as definition]
 /*---------- [#if definition.comments??]${definition.comments}[/#if] -----------*/
 #define ${definition.name} #t#t ${definition.value}
 [#if definition.description??]${definition.description} [/#if]
-	[/#list]
+    [/#list]
 [/#if]
 
 
@@ -76,6 +76,11 @@ extern ${variable.value} ${variable.name};
     #define WOLFSSL_STM32_PKA
     #undef  NO_STM32_CRYPTO
     #define HAL_CONSOLE_UART huart1
+#elif defined(STM32WL55xx)
+    #define WOLFSSL_STM32WL
+    #define WOLFSSL_STM32_PKA
+    #undef  NO_STM32_CRYPTO
+    #define HAL_CONSOLE_UART huart2
 #elif defined(STM32F407xx)
     #define WOLFSSL_STM32F4
     #define HAL_CONSOLE_UART huart2
@@ -102,7 +107,7 @@ extern ${variable.value} ${variable.name};
     #undef  NO_STM32_HASH
     #undef  NO_STM32_CRYPTO
     #define HAL_CONSOLE_UART huart3
-#elif defined(STM32H723xx)
+#elif defined(STM32H723xx) || defined(STM32H725xx)
     #define WOLFSSL_STM32H7
     #define HAL_CONSOLE_UART huart3
 #elif defined(STM32L4A6xx)
@@ -152,6 +157,12 @@ extern ${variable.value} ${variable.name};
         #undef  NO_STM32_CRYPTO
         #define WOLFSSL_STM32_PKA
     #endif
+#elif defined(STM32H563xx)
+    #define WOLFSSL_STM32H5
+    #define HAL_CONSOLE_UART huart3
+    #define STM32_HAL_V2
+    #undef  NO_STM32_HASH
+
 #else
     #warning Please define a hardware platform!
     /* This means there is not a pre-defined platform for your board/CPU */
@@ -171,7 +182,8 @@ extern ${variable.value} ${variable.name};
     //#define NO_STM32_RNG
     //#undef  NO_STM32_HASH
     //#undef  NO_STM32_CRYPTO
-    //#define WOLFSSL_GENSEED_FORTEST /* if no HW RNG is available use test seed */
+    /* if no HW RNG is available use test seed */
+    //#define WOLFSSL_GENSEED_FORTEST
     //#define STM32_HAL_V2
 #endif
 
@@ -236,14 +248,14 @@ extern ${variable.value} ${variable.name};
         #define WOLFSSL_HAVE_SP_ECC
     #endif
     #if WOLF_CONF_MATH == 6 || WOLF_CONF_MATH == 7
+        #define WOLFSSL_SP_MATH_ALL /* use sp_int.c multi precision math */
+    #else
         #define WOLFSSL_SP_MATH    /* disable non-standard curves / key sizes */
     #endif
     #define SP_WORD_SIZE 32
 
     /* Enable to put all math on stack (no heap) */
     //#define WOLFSSL_SP_NO_MALLOC
-    /* Enable for SP cache resistance (not usually enabled for embedded micros) */
-    //#define WOLFSSL_SP_CACHE_RESISTANT
 
     #if WOLF_CONF_MATH == 4 || WOLF_CONF_MATH == 5
         #define WOLFSSL_SP_ASM /* required if using the ASM versions */
@@ -499,12 +511,12 @@ extern ${variable.value} ${variable.name};
 /* Sha3 */
 #undef WOLFSSL_SHA3
 #if defined(WOLF_CONF_SHA3) && WOLF_CONF_SHA3 == 1
-	#define WOLFSSL_SHA3
+    #define WOLFSSL_SHA3
 #endif
 
 /* MD5 */
 #if defined(WOLF_CONF_MD5) && WOLF_CONF_MD5 == 1
-	/* enabled */
+    /* enabled */
 #else
     #define NO_MD5
 #endif
@@ -529,8 +541,8 @@ extern ${variable.value} ${variable.name};
     #if 0
         #define USE_WOLFSSL_MEMORY
         #define WOLFSSL_TRACK_MEMORY
-  		  #define WOLFSSL_DEBUG_MEMORY
-	  	  #define WOLFSSL_DEBUG_MEMORY_PRINT
+        #define WOLFSSL_DEBUG_MEMORY
+        #define WOLFSSL_DEBUG_MEMORY_PRINT
     #endif
 #else
     //#define NO_WOLFSSL_MEMORY

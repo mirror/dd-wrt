@@ -46,15 +46,9 @@
             __asm__ __volatile__ ("cpuid":\
              "=a" (reg[0]), "=b" (reg[1]), "=c" (reg[2]), "=d" (reg[3]) :\
              "a" (leaf), "c"(sub));
-
-    #define XASM_LINK(f) asm(f)
 #else
-
     #include <intrin.h>
     #define cpuid(a,b,c) __cpuidex((int*)a,b,c)
-
-    #define XASM_LINK(f)
-
 #endif /* _MSC_VER */
 
 #define EAX 0
@@ -124,7 +118,7 @@ WC_INLINE static int set_cpuid_flags(void) {
    if(IS_INTEL_BMI2 && IS_INTEL_ADX){  func;  ret ;  }
 
 #else
-    #define IF_HAVE_INTEL_MULX(func, ret)
+    #define IF_HAVE_INTEL_MULX(func, ret) WC_DO_NOTHING
 #endif
 
 #if defined(TFM_X86) && !defined(TFM_SSE2)

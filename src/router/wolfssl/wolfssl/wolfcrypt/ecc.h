@@ -36,7 +36,7 @@
     #include <wolfssl/wolfcrypt/fips.h>
 #endif /* HAVE_FIPS_VERSION >= 2 */
 
-#include <wolfssl/wolfcrypt/integer.h>
+#include <wolfssl/wolfcrypt/wolfmath.h>
 #include <wolfssl/wolfcrypt/random.h>
 
 #ifdef HAVE_X963_KDF
@@ -107,7 +107,7 @@
     #define MAX_ECC_BITS_NEEDED    384
 #elif defined(HAVE_ECC320)
     #define MAX_ECC_BITS_NEEDED    320
-#elif !defined(NO_ECC256)
+#elif !defined(NO_ECC256) || defined(WOLFSSL_SM2)
     #define MAX_ECC_BITS_NEEDED    256
 #elif defined(HAVE_ECC239)
     #define MAX_ECC_BITS_NEEDED    239
@@ -195,6 +195,8 @@ enum {
     ECC_MAX_ID_LEN    = 32,
     ECC_MAX_LABEL_LEN = 32,
 #endif
+
+    WOLF_ENUM_DUMMY_LAST_ELEMENT(ECC)
 };
 
 #endif /* HAVE_ECC */
@@ -240,6 +242,9 @@ typedef enum ecc_curve_id {
     ECC_BRAINPOOLP320R1,
     ECC_BRAINPOOLP384R1,
     ECC_BRAINPOOLP512R1,
+
+    /* SM2 */
+    ECC_SM2P256V1,
 
     /* Twisted Edwards Curves */
 #ifdef HAVE_CURVE25519
@@ -304,14 +309,14 @@ typedef struct ecc_set_type {
 typedef struct ecc_set_type {
     int size;             /* The size of the curve in octets */
     int id;               /* id of this curve */
-    const char name[MAX_ECC_NAME];     /* name of this curve */
-    const char prime[MAX_ECC_STRING];    /* prime that defines the field, curve is in (hex) */
-    const char Af[MAX_ECC_STRING];       /* fields A param (hex) */
-    const char Bf[MAX_ECC_STRING];       /* fields B param (hex) */
-    const char order[MAX_ECC_STRING];    /* order of the curve (hex) */
-    const char Gx[MAX_ECC_STRING];       /* x coordinate of the base point on curve (hex) */
-    const char Gy[MAX_ECC_STRING];       /* y coordinate of the base point on curve (hex) */
-    const ecc_oid_t oid[10];
+    char name[MAX_ECC_NAME];     /* name of this curve */
+    char prime[MAX_ECC_STRING];    /* prime that defines the field, curve is in (hex) */
+    char Af[MAX_ECC_STRING];       /* fields A param (hex) */
+    char Bf[MAX_ECC_STRING];       /* fields B param (hex) */
+    char order[MAX_ECC_STRING];    /* order of the curve (hex) */
+    char Gx[MAX_ECC_STRING];       /* x coordinate of the base point on curve (hex) */
+    char Gy[MAX_ECC_STRING];       /* y coordinate of the base point on curve (hex) */
+    ecc_oid_t oid[10];
     word32      oidSz;
     word32      oidSum;    /* sum of encoded OID bytes */
     int         cofactor;
@@ -345,13 +350,14 @@ typedef struct ecc_set_type {
  * The ALT_ECC_SIZE option only applies to stack based fast math USE_FAST_MATH.
  */
 
-#if !defined(USE_FAST_MATH) && !defined(WOLFSSL_SP_MATH_ALL) && \
-    !defined(WOLFSSL_SP_MATH)
-    #error USE_FAST_MATH must be defined to use ALT_ECC_SIZE
+#if defined(USE_INTEGER_HEAP_MATH)
+    #error Cannot use integer math with ALT_ECC_SIZE
 #endif
 #ifdef WOLFSSL_NO_MALLOC
     #error ALT_ECC_SIZE cannot be used with no malloc (WOLFSSL_NO_MALLOC)
 #endif
+
+#ifdef USE_FAST_MATH
 
 /* determine max bits required for ECC math */
 #ifndef FP_MAX_BITS_ECC
@@ -383,6 +389,40 @@ typedef struct alt_fp_int {
     int used, sign, size;
     mp_digit dp[FP_SIZE_ECC];
 } alt_fp_int;
+
+#else
+
+#ifdef FP_MAX_BITS_ECC
+    #define SP_INT_BITS_ECC    (FP_MAX_BITS_ECC / 2)
+#elif SP_INT_BITS < MAX_ECC_BITS
+    #define SP_INT_BITS_ECC    SP_INT_BITS
+#else
+    #define SP_INT_BITS_ECC    MAX_ECC_BITS
+#endif
+
+#define SP_INT_DIGITS_ECC \
+    (((SP_INT_BITS_ECC + SP_WORD_SIZE - 1) / SP_WORD_SIZE) * 2 + 1)
+
+#define FP_SIZE_ECC     SP_INT_DIGITS_ECC
+
+typedef struct alt_fp_int {
+    /** Number of words that contain data.  */
+    unsigned int used;
+    /** Maximum number of words in data.  */
+    unsigned int size;
+#ifdef WOLFSSL_SP_INT_NEGATIVE
+    /** Indicates whether number is 0/positive or negative.  */
+    unsigned int sign;
+#endif
+#ifdef HAVE_WOLF_BIGINT
+    /** Unsigned binary (big endian) representation of number. */
+    struct WC_BIGINT raw;
+#endif
+    /** Data of number.  */
+    sp_int_digit dp[SP_INT_DIGITS_ECC];
+} alt_fp_int;
+
+#endif
 #endif /* ALT_ECC_SIZE */
 
 #ifndef WC_ECCKEY_TYPE_DEFINED
@@ -413,7 +453,7 @@ typedef struct {
 enum {
     WC_ECC_FLAG_NONE     = 0x00,
     WC_ECC_FLAG_COFACTOR = 0x01,
-    WC_ECC_FLAG_DEC_SIGN = 0x02,
+    WC_ECC_FLAG_DEC_SIGN = 0x02
 };
 
 /* ECC non-blocking */
@@ -444,7 +484,12 @@ struct ecc_key {
 #endif
     void* heap;         /* heap hint */
     ecc_point pubkey;   /* public key */
-    mp_int    k;        /* private key */
+#ifndef ALT_ECC_SIZE
+    mp_int    k[1];     /* private key */
+#else
+    mp_int*   k;
+    alt_fp_int ka[1];
+#endif
 
 #ifdef WOLFSSL_CAAM
     word32 blackKey;     /* address of key encrypted and in secure memory */
@@ -460,7 +505,11 @@ struct ecc_key {
     byte pubkey_raw[ECC_MAX_CRYPTO_HW_PUBKEY_SIZE];
 #endif
 #if defined(PLUTON_CRYPTO_ECC) || defined(WOLF_CRYPTO_CB)
+    void* devCtx;
     int devId;
+#endif
+#if defined(HAVE_PKCS11)
+    byte isPkcs11 : 1; /* indicate if PKCS11 is preferred */
 #endif
 #ifdef WOLFSSL_SILABS_SE_ACCEL
     sl_se_command_context_t  cmd_ctx;
@@ -541,6 +590,9 @@ struct ecc_key {
 #endif
 };
 
+#define wc_ecc_key_get_priv(key) ((key)->k)
+#define WOLFSSL_HAVE_ECC_KEY_GET_PRIV
+
 
 WOLFSSL_ABI WOLFSSL_API ecc_key* wc_ecc_key_new(void* heap);
 WOLFSSL_ABI WOLFSSL_API void wc_ecc_key_free(ecc_key* key);
@@ -601,6 +653,11 @@ int wc_ecc_shared_secret(ecc_key* private_key, ecc_key* public_key, byte* out,
 WOLFSSL_API
 int wc_ecc_shared_secret_ex(ecc_key* private_key, ecc_point* point,
                              byte* out, word32 *outlen);
+
+/* Internal API for blocking ECDHE call */
+WOLFSSL_LOCAL
+int wc_ecc_shared_secret_gen_sync(ecc_key* private_key,
+    ecc_point* point, byte* out, word32* outlen);
 
 #if defined(WOLFSSL_ATECC508A) || defined(WOLFSSL_ATECC608A) || \
     defined(PLUTON_CRYPTO_ECC) || defined(WOLFSSL_CRYPTOCELL)
@@ -839,8 +896,12 @@ enum ecEncAlgo {
 };
 
 enum ecKdfAlgo {
-    ecHKDF_SHA256 = 1,  /* default */
-    ecHKDF_SHA1   = 2
+    ecHKDF_SHA256      = 1,  /* default */
+    ecHKDF_SHA1        = 2,
+    ecKDF_X963_SHA1    = 3,
+    ecKDF_X963_SHA256  = 4,
+    ecKDF_SHA1         = 5,
+    ecKDF_SHA256       = 6
 };
 
 enum ecMacAlgo {

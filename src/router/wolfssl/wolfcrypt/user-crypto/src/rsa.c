@@ -25,7 +25,7 @@
 #endif
 
 #include <wolfssl/options.h>
-#include <wolfssl/wolfcrypt/settings.h>
+#include <wolfssl/wolfcrypt/types.h>
 
 #ifndef NO_RSA
 
@@ -37,11 +37,11 @@
 #endif
 #include "user_rsa.h"
 
-#ifdef DEBUG_WOLFSSL /* debug done without variadric to allow older compilers */
+#ifdef DEBUG_WOLFSSL /* debug done without variadic to allow older compilers */
     #include <stdio.h>
     #define USER_DEBUG(x) printf x
 #else
-    #define USER_DEBUG(x)
+    #define USER_DEBUG(x) WC_DO_NOTHING
 #endif
 
 #define ASN_INTEGER    0x02
@@ -2042,7 +2042,7 @@ int wc_MakeRsaKey(RsaKey* key, int size, long e, WC_RNG* rng)
 {
     IppStatus ret;
     int scratchSz;
-    int i; /* for trys on calling make key */
+    int i; /* for tries on calling make key */
     int ctxSz;
 
     IppsBigNumState* pSrcPublicExp = NULL;
@@ -2178,7 +2178,7 @@ int wc_MakeRsaKey(RsaKey* key, int size, long e, WC_RNG* rng)
         goto makeKeyEnd;
     }
 
-    /* call IPP to generate keys, if inseficent entropy error call again */
+    /* call IPP to generate keys, if insufficient entropy error call again */
     ret = ippStsInsufficientEntropy;
     while (ret == ippStsInsufficientEntropy) {
         ret = ippsRSA_GenerateKeys(pSrcPublicExp, key->n, key->e,

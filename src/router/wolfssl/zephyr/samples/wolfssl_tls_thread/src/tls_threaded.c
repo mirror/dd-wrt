@@ -43,11 +43,7 @@
 #endif
 
 #define BUFFER_SIZE           2048
-#define STATIC_MEM_SIZE       (96*1024)
-#define THREAD_STACK_SIZE     (13*1024)
-
-/* The stack to use in the server's thread. */
-K_THREAD_STACK_DEFINE(server_stack, THREAD_STACK_SIZE);
+#define STATIC_MEM_SIZE       (192*1024)
 
 #ifdef WOLFSSL_STATIC_MEMORY
     static WOLFSSL_HEAP_HINT* HEAP_HINT_SERVER;
@@ -173,6 +169,16 @@ static int send_server(WOLFSSL* ssl, char* buff, int sz, void* ctx)
     return sz;
 }
 
+/* DO NOT use this in production. You should implement a way
+ * to get the current date. */
+static int verifyIgnoreDateError(int preverify, WOLFSSL_X509_STORE_CTX* store)
+{
+    if (store->error == ASN_BEFORE_DATE_E)
+        return 1; /* override error */
+    else
+        return preverify;
+}
+
 /* Create a new wolfSSL client with a server CA certificate. */
 static int wolfssl_client_new(WOLFSSL_CTX** ctx, WOLFSSL** ssl)
 {
@@ -189,8 +195,11 @@ static int wolfssl_client_new(WOLFSSL_CTX** ctx, WOLFSSL** ssl)
 
     if (ret == 0) {
         /* Load client certificates into WOLFSSL_CTX */
-         if (wolfSSL_CTX_load_verify_buffer(client_ctx, ca_ecc_cert_der_256,
-                sizeof_ca_ecc_cert_der_256, WOLFSSL_FILETYPE_ASN1) !=
+         if (wolfSSL_CTX_load_verify_buffer_ex(client_ctx, ca_ecc_cert_der_256,
+                sizeof_ca_ecc_cert_der_256, WOLFSSL_FILETYPE_ASN1, 0,
+                /* DO NOT use this in production. You should
+                 * implement a way to get the current date. */
+                WOLFSSL_LOAD_FLAG_DATE_ERR_OKAY) !=
                 WOLFSSL_SUCCESS) {
             printf("ERROR: failed to load CA certificate\n");
             ret = -1;
@@ -217,6 +226,11 @@ static int wolfssl_client_new(WOLFSSL_CTX** ctx, WOLFSSL** ssl)
             ret = -1;
         }
     }
+
+    if (ret == 0)
+        wolfSSL_set_verify(client_ssl,
+            WOLFSSL_VERIFY_PEER|WOLFSSL_VERIFY_FAIL_IF_NO_PEER_CERT,
+            verifyIgnoreDateError);
 
 #if defined(WOLFSSL_HAVE_PSA) && defined(HAVE_PK_CALLBACKS)
     if (ret == 0) {
@@ -378,6 +392,10 @@ static int wolfssl_server_new(WOLFSSL_CTX** ctx, WOLFSSL** ssl)
         }
     }
 
+    if (ret == 0)
+        wolfSSL_set_verify(server_ssl, WOLFSSL_VERIFY_PEER,
+            verifyIgnoreDateError);
+
 #if defined(WOLFSSL_HAVE_PSA) && defined(HAVE_PK_CALLBACKS)
     if (ret == 0) {
         if (wolfSSL_set_psa_ctx(server_ssl, &server_psa_ctx)
@@ -493,22 +511,8 @@ static void wolfssl_memstats(WOLFSSL* ssl)
 #endif
 }
 
-
-/* Start the server thread. */
-void start_thread(THREAD_FUNC func, func_args* args, THREAD_TYPE* thread)
-{
-    k_thread_create(thread, server_stack, K_THREAD_STACK_SIZEOF(server_stack),
-                    func, args, NULL, NULL, 5, 0, K_NO_WAIT);
-}
-
-void join_thread(THREAD_TYPE thread)
-{
-    /* Threads are handled in the kernel. */
-}
-
-
 /* Thread to do the server operations. */
-void server_thread(void* arg1, void* arg2, void* arg3)
+void server_thread(void* arg1)
 {
     int ret = 0;
     WOLFSSL_CTX* server_ctx = NULL;
@@ -543,6 +547,7 @@ void server_thread(void* arg1, void* arg2, void* arg3)
         ret = wolfssl_send(server_ssl, msgHTTPIndex);
 
     printf("Server Return: %d\n", ret);
+    printf("Server Error: %d\n", wolfSSL_get_error(server_ssl, ret));
 
 #ifdef WOLFSSL_STATIC_MEMORY
     printf("Server Memory Stats\n");
@@ -579,7 +584,10 @@ int main()
     wc_InitMutex(&server_mutex);
 
     /* Start server */
-    start_thread(server_thread, NULL, &serverThread);
+    if (wolfSSL_NewThread(&serverThread, server_thread, NULL) != 0) {
+        printf("Failed to start server thread\n");
+        return -1;
+    }
 
 #ifdef WOLFSSL_STATIC_MEMORY
     if (wc_LoadStaticMemory(&HEAP_HINT_CLIENT, gMemoryClient,
@@ -618,8 +626,12 @@ int main()
         ret = 0;
 
     printf("Client Return: %d\n", ret);
+    printf("Client Error: %d\n", wolfSSL_get_error(client_ssl, ret));
 
-    join_thread(serverThread);
+    if (wolfSSL_JoinThread(serverThread) != 0) {
+        printf("Failed to join server thread\n");
+        return -1;
+    }
 
 #ifdef WOLFSSL_STATIC_MEMORY
     printf("Client Memory Stats\n");

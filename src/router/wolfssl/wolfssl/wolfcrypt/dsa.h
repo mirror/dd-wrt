@@ -30,7 +30,7 @@
 
 #ifndef NO_DSA
 
-#include <wolfssl/wolfcrypt/integer.h>
+#include <wolfssl/wolfcrypt/wolfmath.h>
 #include <wolfssl/wolfcrypt/random.h>
 
 /* for DSA reverse compatibility */
@@ -66,7 +66,7 @@ enum {
     DSA_MIN_SIG_SIZE = DSA_160_SIG_SIZE,
 
     DSA_MAX_HALF_SIZE = DSA_256_HALF_SIZE,
-    DSA_MAX_SIG_SIZE = DSA_256_SIG_SIZE,
+    DSA_MAX_SIG_SIZE = DSA_256_SIG_SIZE
 };
 
 /* DSA */
@@ -81,8 +81,12 @@ WOLFSSL_API int wc_InitDsaKey_h(DsaKey* key, void* h);
 WOLFSSL_API void wc_FreeDsaKey(DsaKey* key);
 WOLFSSL_API int wc_DsaSign(const byte* digest, byte* out,
                            DsaKey* key, WC_RNG* rng);
+WOLFSSL_API int wc_DsaSign_ex(const byte* digest, word32 digestSz, byte* out,
+                           DsaKey* key, WC_RNG* rng);
 WOLFSSL_API int wc_DsaVerify(const byte* digest, const byte* sig,
                              DsaKey* key, int* answer);
+WOLFSSL_API int wc_DsaVerify_ex(const byte* digest, word32 digestSz,
+                                const byte* sig, DsaKey* key, int* answer);
 WOLFSSL_API int wc_DsaPublicKeyDecode(const byte* input, word32* inOutIdx,
                                       DsaKey* key, word32 inSz);
 WOLFSSL_API int wc_DsaPrivateKeyDecode(const byte* input, word32* inOutIdx,

@@ -7,297 +7,296 @@
 # copy of our FIPS approved code.
 #
 # This should check out all the approved flavors. The command line
-# option selects the flavor.
-#
-#     $ ./fips-check [flavor] [keep]
-#
-#     - flavor: linux (default), ios, android, windows, freertos, linux-ecc, netbsd-selftest, linuxv2, fipsv2-OE-ready, stm32l4-v2, linuxv5, fips-ready, fips-dev
-#
-#     - keep: (default off) XXX-fips-test temp dir around for inspection
-#
+# option selects the flavor. The keep option keeps the output
+# directory.
+
+# These variables may be overridden on the command line.
+MAKE="${MAKE:-make}"
+GIT="${GIT:-git -c advice.detachedHead=false}"
+TEST_DIR="${TEST_DIR:-XXX-fips-test}"
+FLAVOR="${FLAVOR:-linux}"
+KEEP="${KEEP:-no}"
+FIPS_REPO="${FIPS_REPO:-git@github.com:wolfssl/fips.git}"
 
 Usage() {
     cat <<usageText
-Usage: $0 [flavor [keep]]
+Usage: $0 [flavor] [keep]
 Flavor is one of:
-    linux (default)
-    ios
-    android
-    windows
-    freertos
-    openrtos-3.9.2
-    linux-ecc
+    linuxv2 (FIPSv2, use for Win10)
+    fipsv2-OE-ready (ready FIPSv2)
+    solaris
     netbsd-selftest
     marvell-linux-selftest
-    sgx
-    netos-7.6
-    linuxv2 (FIPSv2, use for Win10)
-    stm32l4-v2 (FIPSv2, use for STM32L4)
-    wolfrand
-    solaris
     linuxv5 (current FIPS 140-3)
     fips-ready (ready FIPS 140-3)
     fips-dev (dev FIPS 140-3)
-Keep (default off) retains the XXX-fips-test temp dir for inspection.
+    wolfrand
+Keep (default off) retains the temp dir $TEST_DIR for inspection.
 
 Example:
     $0 windows keep
 usageText
 }
 
-MAKE='make'
-
-LINUX_FIPS_VERSION=v3.2.6
-LINUX_FIPS_REPO=git@github.com:wolfSSL/fips.git
-LINUX_CRYPT_VERSION=v3.2.6
-LINUX_CRYPT_REPO=git@github.com:cyassl/cyassl.git
-
-LINUX_ECC_FIPS_VERSION=v3.10.3
-LINUX_ECC_FIPS_REPO=git@github.com:wolfSSL/fips.git
-LINUX_ECC_CRYPT_VERSION=v3.2.6
-LINUX_ECC_CRYPT_REPO=git@github.com:cyassl/cyassl.git
-
-IOS_FIPS_VERSION=v3.4.8a
-IOS_FIPS_REPO=git@github.com:wolfSSL/fips.git
-IOS_CRYPT_VERSION=v3.4.8.fips
-IOS_CRYPT_REPO=git@github.com:cyassl/cyassl.git
-
-ANDROID_FIPS_VERSION=v3.5.0
-ANDROID_FIPS_REPO=git@github.com:wolfSSL/fips.git
-ANDROID_CRYPT_VERSION=v3.5.0
-ANDROID_CRYPT_REPO=git@github.com:cyassl/cyassl.git
-
-WINDOWS_FIPS_VERSION=v3.6.6
-WINDOWS_FIPS_REPO=git@github.com:wolfSSL/fips.git
-WINDOWS_CRYPT_VERSION=v3.6.6
-WINDOWS_CRYPT_REPO=git@github.com:cyassl/cyassl.git
-
-FREERTOS_FIPS_VERSION=v3.6.1-FreeRTOS
-FREERTOS_FIPS_REPO=git@github.com:wolfSSL/fips.git
-FREERTOS_CRYPT_VERSION=v3.6.1
-FREERTOS_CRYPT_REPO=git@github.com:cyassl/cyassl.git
-
-OPENRTOS_3_9_2_FIPS_VERSION=v3.9.2-OpenRTOS
-OPENRTOS_3_9_2_FIPS_REPO=git@github.com:wolfSSL/fips.git
-OPENRTOS_3_9_2_CRYPT_VERSION=v3.6.1
-OPENRTOS_3_9_2_CRYPT_REPO=git@github.com:cyassl/cyassl.git
-
-#NOTE: Does not include the SGX examples yet, update version once fipsv2 is
-#      finished and merge conflicts can be resolved. This will be tagged as
-#      v3.12.4.sgx-examples
-#SGX_FIPS_VERSION=v3.12.4.sgx-examples
-SGX_FIPS_VERSION=v3.6.6
-SGX_FIPS_REPO=git@github.com:wolfSSL/fips.git
-SGX_CRYPT_VERSION=v3.12.4
-SGX_CRYPT_REPO=git@github.com:cyassl/cyassl.git
-
-NETOS_7_6_FIPS_VERSION=v3.12.6
-NETOS_7_6_FIPS_REPO=git@github.com:wolfSSL/fips.git
-NETOS_7_6_CRYPT_VERSION=v3.12.4
-NETOS_7_6_CRYPT_REPO=git@github.com:cyassl/cyassl.git
-
-# non-FIPS, CAVP only but pull in selftest
-# will reset above variables below in flavor switch
-NETBSD_FIPS_VERSION=v3.14.2b
-NETBSD_FIPS_REPO=git@github.com:wolfssl/fips.git
-NETBSD_CRYPT_VERSION=v3.14.2
-NETBSD_CRYPT_REPO=git@github.com:wolfssl/wolfssl.git
-
-# non-FIPS, CAVP only but pull in selftest
-# will reset above variables below in flavor switch
-MARVELL_LINUX_FIPS_VERSION=v3.14.2b
-MARVELL_LINUX_FIPS_REPO=git@github.com:wolfssl/fips.git
-MARVELL_LINUX_CRYPT_VERSION=v4.1.0-stable
-MARVELL_LINUX_CRYPT_REPO=git@github.com:wolfssl/wolfssl.git
-
-STM32L4_V2_FIPS_VERSION=WCv4.0.1-stable
-STM32L4_V2_FIPS_REPO=git@github.com:wolfSSL/fips.git
-STM32L4_V2_CRYPT_VERSION=WCv4.0.1-stable
-
-FIPS_SRCS=( fips.c fips_test.c )
-WC_MODS=( aes des3 sha sha256 sha512 rsa hmac random aes_asm )
-TEST_DIR=XXX-fips-test
-CRYPT_INC_PATH=cyassl/ctaocrypt
-CRYPT_SRC_PATH=ctaocrypt/src
-RNG_VERSION=v3.6.0
-FIPS_OPTION=v1
-CAVP_SELFTEST_ONLY="no"
-GIT="git -c advice.detachedHead=false"
-
-if [ "$1" == "" ]; then FLAVOR="linux"; else FLAVOR="$1"; fi
-
-if [ "$2" == "keep" ]; then KEEP="yes"; else KEEP="no"; fi
+while [ "$1" ]; do
+  if [ "$1" = 'keep' ]; then KEEP='yes'; else FLAVOR="$1"; fi
+  shift
+done
 
 case "$FLAVOR" in
-ios)
-  FIPS_VERSION=$IOS_FIPS_VERSION
-  FIPS_REPO=$IOS_FIPS_REPO
-  CRYPT_VERSION=$IOS_CRYPT_VERSION
-  CRYPT_REPO=$IOS_CRYPT_REPO
-  ;;
-android)
-  FIPS_VERSION=$ANDROID_FIPS_VERSION
-  FIPS_REPO=$ANDROID_FIPS_REPO
-  CRYPT_VERSION=$ANDROID_CRYPT_VERSION
-  CRYPT_REPO=$ANDROID_CRYPT_REPO
-  ;;
-windows)
-  FIPS_VERSION=$WINDOWS_FIPS_VERSION
-  FIPS_REPO=$WINDOWS_FIPS_REPO
-  CRYPT_VERSION=$WINDOWS_CRYPT_VERSION
-  CRYPT_REPO=$WINDOWS_CRYPT_REPO
-  ;;
-freertos)
-  FIPS_VERSION=$FREERTOS_FIPS_VERSION
-  FIPS_REPO=$FREERTOS_FIPS_REPO
-  CRYPT_VERSION=$FREERTOS_CRYPT_VERSION
-  CRYPT_REPO=$FREERTOS_CRYPT_REPO
-  ;;
-openrtos-3.9.2)
-  FIPS_VERSION=$OPENRTOS_3_9_2_FIPS_VERSION
-  FIPS_REPO=$OPENRTOS_3_9_2_FIPS_REPO
-  CRYPT_VERSION=$OPENRTOS_3_9_2_CRYPT_VERSION
-  CRYPT_REPO=$OPENRTOS_3_9_2_CRYPT_REPO
-  FIPS_CONFLICTS=( aes hmac random sha256 )
-  ;;
-linux)
-  FIPS_VERSION=$LINUX_FIPS_VERSION
-  FIPS_REPO=$LINUX_FIPS_REPO
-  CRYPT_VERSION=$LINUX_CRYPT_VERSION
-  CRYPT_REPO=$LINUX_CRYPT_REPO
-  ;;
-linux-ecc)
-  FIPS_VERSION=$LINUX_ECC_FIPS_VERSION
-  FIPS_REPO=$LINUX_ECC_FIPS_REPO
-  CRYPT_VERSION=$LINUX_ECC_CRYPT_VERSION
-  CRYPT_REPO=$LINUX_ECC_CRYPT_REPO
-  ;;
-linuxv2 | fipsv2-OE-ready)
-  FIPS_VERSION=WCv4-stable
-  FIPS_REPO=git@github.com:wolfssl/fips.git
-  CRYPT_VERSION=WCv4-stable
-  CRYPT_INC_PATH=wolfssl/wolfcrypt
-  CRYPT_SRC_PATH=wolfcrypt/src
-  WC_MODS+=( cmac dh ecc sha3 )
-  RNG_VERSION=WCv4-rng-stable
-  FIPS_SRCS+=( wolfcrypt_first.c wolfcrypt_last.c )
-  FIPS_INCS=( fips.h )
-  FIPS_OPTION=v2
+linuxv2|fipsv2-OE-ready|solaris)
+  FIPS_OPTION='v2'
+  FIPS_FILES=(
+    'wolfcrypt/src/fips.c:WCv4-stable'
+    'wolfcrypt/src/fips_test.c:WCv4-stable'
+    'wolfcrypt/src/wolfcrypt_first.c:WCv4-stable'
+    'wolfcrypt/src/wolfcrypt_last.c:WCv4-stable'
+    'wolfssl/wolfcrypt/fips.h:WCv4-stable'
+  )
+  WOLFCRYPT_FILES=(
+    'wolfcrypt/src/aes.c:WCv4-stable'
+    'wolfcrypt/src/aes_asm.asm:WCv4-stable'
+    'wolfcrypt/src/aes_asm.S:WCv4-stable'
+    'wolfcrypt/src/cmac.c:WCv4-stable'
+    'wolfcrypt/src/des3.c:WCv4-stable'
+    'wolfcrypt/src/dh.c:WCv4-stable'
+    'wolfcrypt/src/ecc.c:WCv4-stable'
+    'wolfcrypt/src/hmac.c:WCv4-stable'
+    'wolfcrypt/src/random.c:WCv4-rng-stable'
+    'wolfcrypt/src/rsa.c:WCv4-stable'
+    'wolfcrypt/src/sha.c:WCv4-stable'
+    'wolfcrypt/src/sha256.c:WCv4-stable'
+    'wolfcrypt/src/sha3.c:WCv4-stable'
+    'wolfcrypt/src/sha512.c:WCv4-stable'
+    'wolfssl/wolfcrypt/aes.h:WCv4-stable'
+    'wolfssl/wolfcrypt/cmac.h:WCv4-stable'
+    'wolfssl/wolfcrypt/des3.h:WCv4-stable'
+    'wolfssl/wolfcrypt/dh.h:WCv4-stable'
+    'wolfssl/wolfcrypt/ecc.h:WCv4-stable'
+    'wolfssl/wolfcrypt/hmac.h:WCv4-stable'
+    'wolfssl/wolfcrypt/random.h:WCv4-rng-stable'
+    'wolfssl/wolfcrypt/rsa.h:WCv4-stable'
+    'wolfssl/wolfcrypt/sha.h:WCv4-stable'
+    'wolfssl/wolfcrypt/sha256.h:WCv4-stable'
+    'wolfssl/wolfcrypt/sha3.h:WCv4-stable'
+    'wolfssl/wolfcrypt/sha512.h:WCv4-stable'
+  )
+  if [ "$FLAVOR" = 'solaris' ]; then MAKE='gmake'; fi
   ;;
 netbsd-selftest)
-  FIPS_VERSION=$NETBSD_FIPS_VERSION
-  FIPS_REPO=$NETBSD_FIPS_REPO
-  CRYPT_VERSION=$NETBSD_CRYPT_VERSION
-  CRYPT_REPO=$NETBSD_CRYPT_REPO
-  FIPS_SRCS=( selftest.c )
-  WC_MODS=( dh ecc rsa dsa aes sha sha256 sha512 hmac random )
-  CRYPT_INC_PATH=wolfssl/wolfcrypt
-  CRYPT_SRC_PATH=wolfcrypt/src
-  CAVP_SELFTEST_ONLY="yes"
+  # non-FIPS, CAVP only but pull in selftest
+  FIPS_OPTION='cavp-selftest'
+  FIPS_FILES=('wolfcrypt/src/selftest.c:v3.14.2b')
+  WOLFCRYPT_FILES=(
+    'wolfcrypt/src/aes.c:v3.14.2'
+    'wolfcrypt/src/dh.c:v3.14.2'
+    'wolfcrypt/src/dsa.c:v3.14.2'
+    'wolfcrypt/src/ecc.c:v3.14.2'
+    'wolfcrypt/src/hmac.c:v3.14.2'
+    'wolfcrypt/src/random.c:v3.14.2'
+    'wolfcrypt/src/rsa.c:v3.14.2'
+    'wolfcrypt/src/sha.c:v3.14.2'
+    'wolfcrypt/src/sha256.c:v3.14.2'
+    'wolfcrypt/src/sha512.c:v3.14.2'
+    'wolfssl/wolfcrypt/aes.h:v3.14.2'
+    'wolfssl/wolfcrypt/dh.h:v3.14.2'
+    'wolfssl/wolfcrypt/dsa.h:v3.14.2'
+    'wolfssl/wolfcrypt/ecc.h:v3.14.2'
+    'wolfssl/wolfcrypt/hmac.h:v3.14.2'
+    'wolfssl/wolfcrypt/random.h:v3.14.2'
+    'wolfssl/wolfcrypt/rsa.h:v3.14.2'
+    'wolfssl/wolfcrypt/sha.h:v3.14.2'
+    'wolfssl/wolfcrypt/sha256.h:v3.14.2'
+    'wolfssl/wolfcrypt/sha512.h:v3.14.2'
+  )
   ;;
 marvell-linux-selftest)
-  FIPS_VERSION=$MARVELL_LINUX_FIPS_VERSION
-  FIPS_REPO=$MARVELL_LINUX_FIPS_REPO
-  CRYPT_VERSION=$MARVELL_LINUX_CRYPT_VERSION
-  CRYPT_REPO=$MARVELL_LINUX_CRYPT_REPO
-  FIPS_SRCS=( selftest.c )
-  WC_MODS=( dh ecc rsa dsa aes sha sha256 sha512 hmac random )
-  CRYPT_INC_PATH=wolfssl/wolfcrypt
-  CRYPT_SRC_PATH=wolfcrypt/src
-  CAVP_SELFTEST_ONLY="yes"
-  CAVP_SELFTEST_OPTION=v2
+  # non-FIPS, CAVP only but pull in selftest
+  FIPS_OPTION='cavp-selftest-v2'
+  FIPS_FILES=('wolfcrypt/src/selftest.c:v3.14.2b')
+  WOLFCRYPT_FILES=(
+    'wolfcrypt/src/aes.c:v4.1.0-stable'
+    'wolfcrypt/src/dh.c:v4.1.0-stable'
+    'wolfcrypt/src/dsa.c:v4.1.0-stable'
+    'wolfcrypt/src/ecc.c:v4.1.0-stable'
+    'wolfcrypt/src/hmac.c:v4.1.0-stable'
+    'wolfcrypt/src/random.c:v4.1.0-stable'
+    'wolfcrypt/src/rsa.c:v4.1.0-stable'
+    'wolfcrypt/src/sha.c:v4.1.0-stable'
+    'wolfcrypt/src/sha256.c:v4.1.0-stable'
+    'wolfcrypt/src/sha512.c:v4.1.0-stable'
+    'wolfssl/wolfcrypt/aes.h:v4.1.0-stable'
+    'wolfssl/wolfcrypt/dh.h:v4.1.0-stable'
+    'wolfssl/wolfcrypt/dsa.h:v4.1.0-stable'
+    'wolfssl/wolfcrypt/ecc.h:v4.1.0-stable'
+    'wolfssl/wolfcrypt/hmac.h:v4.1.0-stable'
+    'wolfssl/wolfcrypt/random.h:v4.1.0-stable'
+    'wolfssl/wolfcrypt/rsa.h:v4.1.0-stable'
+    'wolfssl/wolfcrypt/sha.h:v4.1.0-stable'
+    'wolfssl/wolfcrypt/sha256.h:v4.1.0-stable'
+    'wolfssl/wolfcrypt/sha512.h:v4.1.0-stable'
+  )
   ;;
-sgx)
-  FIPS_VERSION=$SGX_FIPS_VERSION
-  FIPS_REPO=$SGX_FIPS_REPO
-  CRYPT_VERSION=$SGX_CRYPT_VERSION
-  CRYPT_REPO=$SGX_CRYPT_REPO
-  ;;
-netos-7.6)
-  FIPS_VERSION=$NETOS_7_6_FIPS_VERSION
-  FIPS_REPO=$NETOS_7_6_FIPS_REPO
-  CRYPT_VERSION=$NETOS_7_6_CRYPT_VERSION
-  CRYPT_REPO=$NETOS_7_6_CRYPT_REPO
-  ;;
-
 linuxv5)
-  FIPS_REPO="git@github.com:wolfSSL/fips.git"
-  FIPS_VERSION="WCv5.0-RC12"
-  CRYPT_REPO="git@github.com:wolfSSL/wolfssl.git"
-  CRYPT_VERSION="WCv5.0-RC12"
-  CRYPT_INC_PATH="wolfssl/wolfcrypt"
-  CRYPT_SRC_PATH="wolfcrypt/src"
-  WC_MODS=( aes sha sha256 sha512 rsa hmac random cmac dh ecc sha3 kdf
-            aes_asm sha256_asm sha512_asm )
-  RNG_VERSION="WCv5.0-RC12"
-  FIPS_SRCS=( fips.c fips_test.c wolfcrypt_first.c wolfcrypt_last.c )
-  FIPS_INCS=( fips.h )
-  FIPS_OPTION="v5"
-  COPY_DIRECT=( wolfcrypt/src/aes_gcm_asm.S )
+  FIPS_OPTION='v5'
+  FIPS_FILES=(
+    'wolfcrypt/src/fips.c:WCv5.0-RC12'
+    'wolfcrypt/src/fips_test.c:WCv5.0-RC12'
+    'wolfcrypt/src/wolfcrypt_first.c:WCv5.0-RC12'
+    'wolfcrypt/src/wolfcrypt_last.c:WCv5.0-RC12'
+    'wolfssl/wolfcrypt/fips.h:WCv5.0-RC12'
+  )
+  WOLFCRYPT_FILES=(
+    'wolfcrypt/src/aes.c:WCv5.0-RC12'
+    'wolfcrypt/src/aes_asm.asm:WCv5.0-RC12'
+    'wolfcrypt/src/aes_asm.S:WCv5.0-RC12'
+    'wolfcrypt/src/aes_gcm_asm.S:WCv5.0-RC12'
+    'wolfcrypt/src/cmac.c:WCv5.0-RC12'
+    'wolfcrypt/src/dh.c:WCv5.0-RC12'
+    'wolfcrypt/src/ecc.c:WCv5.0-RC12'
+    'wolfcrypt/src/hmac.c:WCv5.0-RC12'
+    'wolfcrypt/src/kdf.c:WCv5.0-RC12'
+    'wolfcrypt/src/random.c:WCv5.0-RC12'
+    'wolfcrypt/src/rsa.c:WCv5.0-RC12'
+    'wolfcrypt/src/sha.c:WCv5.0-RC12'
+    'wolfcrypt/src/sha256.c:WCv5.0-RC12'
+    'wolfcrypt/src/sha256_asm.S:WCv5.0-RC12'
+    'wolfcrypt/src/sha3.c:WCv5.0-RC12'
+    'wolfcrypt/src/sha512.c:WCv5.0-RC12'
+    'wolfcrypt/src/sha512_asm.S:WCv5.0-RC12'
+    'wolfssl/wolfcrypt/aes.h:WCv5.0-RC12'
+    'wolfssl/wolfcrypt/cmac.h:WCv5.0-RC12'
+    'wolfssl/wolfcrypt/dh.h:WCv5.0-RC12'
+    'wolfssl/wolfcrypt/ecc.h:WCv5.0-RC12'
+    'wolfssl/wolfcrypt/fips_test.h:WCv5.0-RC12'
+    'wolfssl/wolfcrypt/hmac.h:WCv5.0-RC12'
+    'wolfssl/wolfcrypt/kdf.h:WCv5.0-RC12'
+    'wolfssl/wolfcrypt/random.h:WCv5.0-RC12'
+    'wolfssl/wolfcrypt/rsa.h:WCv5.0-RC12'
+    'wolfssl/wolfcrypt/sha.h:WCv5.0-RC12'
+    'wolfssl/wolfcrypt/sha256.h:WCv5.0-RC12'
+    'wolfssl/wolfcrypt/sha3.h:WCv5.0-RC12'
+    'wolfssl/wolfcrypt/sha512.h:WCv5.0-RC12'
+  )
   ;;
-fips-ready)
-  FIPS_REPO="git@github.com:wolfSSL/fips.git"
-  FIPS_VERSION="master"
-  CRYPT_INC_PATH=wolfssl/wolfcrypt
-  CRYPT_SRC_PATH=wolfcrypt/src
-  FIPS_SRCS=( fips.c fips_test.c wolfcrypt_first.c wolfcrypt_last.c )
-  FIPS_INCS=( fips.h )
-  FIPS_OPTION=ready
+linuxv5.2.1)
+  FIPS_OPTION='v5'
+  FIPS_FILES=(
+    'wolfcrypt/src/fips.c:v5.2.1-stable'
+    'wolfcrypt/src/fips_test.c:v5.2.1-stable'
+    'wolfcrypt/src/wolfcrypt_first.c:v5.2.1-stable'
+    'wolfcrypt/src/wolfcrypt_last.c:v5.2.1-stable'
+    'wolfssl/wolfcrypt/fips.h:v5.2.1-stable'
+  )
+  WOLFCRYPT_FILES=(
+    'wolfcrypt/src/aes.c:v5.2.1-stable'
+    'wolfcrypt/src/aes_asm.asm:v5.2.1-stable'
+    'wolfcrypt/src/aes_asm.S:v5.2.1-stable'
+    'wolfcrypt/src/aes_gcm_asm.S:v5.2.1-stable'
+    'wolfcrypt/src/cmac.c:v5.2.1-stable'
+    'wolfcrypt/src/dh.c:v5.2.1-stable'
+    'wolfcrypt/src/ecc.c:v5.2.1-stable'
+    'wolfcrypt/src/hmac.c:v5.2.1-stable'
+    'wolfcrypt/src/kdf.c:v5.2.1-stable'
+    'wolfcrypt/src/random.c:v5.2.1-stable'
+    'wolfcrypt/src/rsa.c:v5.2.1-stable'
+    'wolfcrypt/src/sha.c:v5.2.1-stable'
+    'wolfcrypt/src/sha256.c:v5.2.1-stable'
+    'wolfcrypt/src/sha256_asm.S:v5.2.1-stable'
+    'wolfcrypt/src/sha3.c:v5.2.1-stable'
+    'wolfcrypt/src/sha512.c:v5.2.1-stable'
+    'wolfcrypt/src/sha512_asm.S:v5.2.1-stable'
+    'wolfssl/wolfcrypt/aes.h:v5.2.1-stable'
+    'wolfssl/wolfcrypt/cmac.h:v5.2.1-stable'
+    'wolfssl/wolfcrypt/dh.h:v5.2.1-stable'
+    'wolfssl/wolfcrypt/ecc.h:v5.2.1-stable'
+    'wolfssl/wolfcrypt/fips_test.h:v5.2.1-stable'
+    'wolfssl/wolfcrypt/hmac.h:v5.2.1-stable'
+    'wolfssl/wolfcrypt/kdf.h:v5.2.1-stable'
+    'wolfssl/wolfcrypt/random.h:v5.2.1-stable'
+    'wolfssl/wolfcrypt/rsa.h:v5.2.1-stable'
+    'wolfssl/wolfcrypt/sha.h:v5.2.1-stable'
+    'wolfssl/wolfcrypt/sha256.h:v5.2.1-stable'
+    'wolfssl/wolfcrypt/sha3.h:v5.2.1-stable'
+    'wolfssl/wolfcrypt/sha512.h:v5.2.1-stable'
+  )
   ;;
-fips-dev)
-  FIPS_REPO="git@github.com:wolfSSL/fips.git"
-  FIPS_VERSION="master"
-  CRYPT_INC_PATH=wolfssl/wolfcrypt
-  CRYPT_SRC_PATH=wolfcrypt/src
-  FIPS_SRCS+=( wolfcrypt_first.c wolfcrypt_last.c )
-  FIPS_INCS=( fips.h )
-  FIPS_OPTION=dev
-  ;;
-
-stm32l4-v2)
-  FIPS_VERSION=$STM32L4_V2_FIPS_VERSION
-  FIPS_REPO=$STM32L4_V2_FIPS_REPO
-  CRYPT_VERSION=$STM32L4_V2_CRYPT_VERSION
-  CRYPT_INC_PATH=wolfssl/wolfcrypt
-  CRYPT_SRC_PATH=wolfcrypt/src
-# Replace the WC_MODS list for now. Do not want to copy over random.c yet.
-  WC_MODS=( aes des3 sha sha256 sha512 rsa hmac )
-  WC_MODS+=( cmac dh ecc )
-  FIPS_SRCS+=( wolfcrypt_first.c wolfcrypt_last.c )
-  FIPS_INCS=( fips.h )
-  FIPS_OPTION=v2
+fips-ready|fips-dev)
+  FIPS_OPTION='ready'
+  FIPS_FILES=(
+    'wolfcrypt/src/fips.c:master'
+    'wolfcrypt/src/fips_test.c:master'
+    'wolfcrypt/src/wolfcrypt_first.c:master'
+    'wolfcrypt/src/wolfcrypt_last.c:master'
+    'wolfssl/wolfcrypt/fips.h:master'
+  )
+  WOLFCRYPT_FILES=()
+  if [ "$FLAVOR" = 'fips-dev' ]; then FIPS_OPTION='dev'; fi
   ;;
 wolfrand)
-  FIPS_REPO=git@github.com:wolfssl/fips.git
-  FIPS_VERSION=WRv4-stable
-  CRYPT_REPO=git@github.com:wolfssl/wolfssl.git
-  CRYPT_VERSION=WCv4-stable
-  CRYPT_INC_PATH=wolfssl/wolfcrypt
-  CRYPT_SRC_PATH=wolfcrypt/src
-  RNG_VERSION=WCv4-rng-stable
-  WC_MODS=( hmac sha256 random )
-  FIPS_SRCS+=( wolfcrypt_first.c wolfcrypt_last.c )
-  FIPS_INCS=( fips.h )
-  FIPS_OPTION=rand
+  FIPS_OPTION='rand'
+  FIPS_FILES=(
+    'wolfcrypt/src/fips.c:WRv4-stable'
+    'wolfcrypt/src/fips_test.c:WRv4-stable'
+    'wolfcrypt/src/wolfcrypt_first.c:WRv4-stable'
+    'wolfcrypt/src/wolfcrypt_last.c:WRv4-stable'
+    'wolfssl/wolfcrypt/fips.h:WRv4-stable'
+  )
+  WOLFCRYPT_FILES=(
+    'wolfcrypt/src/hmac.c:WCv4-stable'
+    'wolfcrypt/src/random.c:WCv4-rng-stable'
+    'wolfcrypt/src/sha256.c:WCv4-stable'
+    'wolfssl/wolfcrypt/hmac.h:WCv4-stable'
+    'wolfssl/wolfcrypt/random.h:WCv4-rng-stable'
+    'wolfssl/wolfcrypt/sha256.h:WCv4-stable'
+  )
   ;;
-solaris)
-  FIPS_VERSION=WCv4-stable
-  FIPS_REPO=git@github.com:wolfssl/fips.git
-  CRYPT_VERSION=WCv4-stable
-  CRYPT_INC_PATH=wolfssl/wolfcrypt
-  CRYPT_SRC_PATH=wolfcrypt/src
-  WC_MODS+=( cmac dh ecc sha3 )
-  RNG_VERSION=WCv4-rng-stable
-  FIPS_SRCS+=( wolfcrypt_first.c wolfcrypt_last.c )
-  FIPS_INCS=( fips.h )
-  FIPS_OPTION=v2
-  MAKE=gmake
-  ;;
-
 *)
   Usage
   exit 1
 esac
+
+# checkout_files takes an array of pairs of file paths and git tags to
+# checkout. It will check to see if mytag exists and if not will make that
+# tag a branch.
+function checkout_files() {
+    local name
+    local tag
+    for file_entry in "$@"
+    do
+        name=${file_entry%%:*}
+        tag=${file_entry#*:}
+        if ! $GIT rev-parse -q --verify "my$tag" >/dev/null
+        then
+            $GIT branch --no-track "my$tag" "$tag" || exit $?
+        fi
+        $GIT checkout "my$tag" -- "$name" || exit $?
+    done
+}
+
+# copy_fips_files takes an array of pairs of file paths and git tags to
+# checkout. It will check to see if mytag exists and if now will make that
+# tag a branch.  It breaks the filepath apart into file name and path, then
+# copies it from the file from the fips directory to the path.
+function copy_fips_files() {
+    local name
+    local bname
+    local dname
+    local tag
+    for file_entry in "$@"
+    do
+        name=${file_entry%%:*}
+        tag=${file_entry#*:}
+        bname=$(basename "$name")
+        dname=$(dirname "$name")
+        if ! $GIT rev-parse -q --verify "my$tag" >/dev/null
+        then
+            $GIT branch --no-track "my$tag" "$tag" || exit $?
+        fi
+        $GIT checkout "my$tag" -- "$bname" || exit $?
+        cp "$bname" "../$dname"
+    done
+}
 
 if ! $GIT clone . "$TEST_DIR"; then
     echo "fips-check: Couldn't duplicate current working directory."
@@ -306,108 +305,16 @@ fi
 
 pushd "$TEST_DIR" || exit 2
 
-case "$FIPS_OPTION" in
-
-*dev)
-    echo "Don't need to copy in tagged wolfCrypt files for fips-dev."
-    ;;
-
-*ready)
-    echo "Don't need to copy in tagged wolfCrypt files for FIPS Ready."
-    ;;
-
-v1)
-    # make a clone of the last FIPS release tag
-    if ! $GIT clone --depth 1 -b "$CRYPT_VERSION" "$CRYPT_REPO" old-tree; then
-        echo "fips-check: Couldn't checkout the FIPS release."
-        exit 1
-    fi
-
-    for MOD in "${WC_MODS[@]}"
-    do
-        cp "old-tree/$CRYPT_SRC_PATH/${MOD}.c" "$CRYPT_SRC_PATH"
-        cp "old-tree/$CRYPT_INC_PATH/${MOD}.h" "$CRYPT_INC_PATH"
-    done
-
-    # We are using random.c from a separate release.
-    # This is forcefully overwriting any other checkout of the cyassl sources.
-    # Removing this as default behavior for SGX and netos projects.
-    if [ "$CAVP_SELFTEST_ONLY" == "no" ] && [ "$FLAVOR" != "sgx" ] && \
-       [ "$FLAVOR" != "netos-7.6" ];
-    then
-        pushd old-tree || exit 2
-        $GIT fetch origin "$RNG_VERSION" || exit $?
-        $GIT checkout FETCH_HEAD || exit $?
-        popd || exit 2
-        cp "old-tree/$CRYPT_SRC_PATH/random.c" "$CRYPT_SRC_PATH"
-        cp "old-tree/$CRYPT_INC_PATH/random.h" "$CRYPT_INC_PATH"
-    fi
-    ;;
-
-v2|rand|v5*)
-    $GIT branch --no-track "my$CRYPT_VERSION" "$CRYPT_VERSION" || exit $?
-    # Checkout the fips versions of the wolfCrypt files from the repo.
-    for MOD in "${WC_MODS[@]}"
-    do
-        if [ -f "$CRYPT_SRC_PATH/$MOD.c" ]; then
-            $GIT checkout "my$CRYPT_VERSION" -- "$CRYPT_SRC_PATH/$MOD.c" || exit $?
-        fi
-        # aes_asm.S, sha256_asm.S sha512_asm.S
-        if [ -f "$CRYPT_SRC_PATH/$MOD.S" ]; then
-            echo "Checking out asm file: $MOD.S"
-            $GIT checkout "my$CRYPT_VERSION" -- "$CRYPT_SRC_PATH/$MOD.S" || exit $?
-        fi
-        # aes_asm.asm
-        if [ -f "$CRYPT_SRC_PATH/$MOD.asm" ]; then
-            echo "Checking out asm file: $MOD.asm"
-            $GIT checkout "my$CRYPT_VERSION" -- "$CRYPT_SRC_PATH/$MOD.asm" || exit $?
-        fi
-        if [ -f "$CRYPT_INC_PATH/$MOD.h" ]; then
-            $GIT checkout "my$CRYPT_VERSION" -- "$CRYPT_INC_PATH/$MOD.h" || exit $?
-        fi
-    done
-
-    for MOD in "${COPY_DIRECT[@]}"
-    do
-        $GIT checkout "my$CRYPT_VERSION" -- "$MOD" || exit $?
-    done
-
-    $GIT branch --no-track "myrng$RNG_VERSION" "$RNG_VERSION" || exit $?
-    # Checkout the fips versions of the wolfCrypt files from the repo.
-    $GIT checkout "myrng$RNG_VERSION" -- "$CRYPT_SRC_PATH/random.c" "$CRYPT_INC_PATH/random.h" || exit $?
-    ;;
-
-*)
-    echo "fips-check: Invalid FIPS option \"${FIPS_OPTION}\"."
+if ! $GIT clone "$FIPS_REPO" fips
+then
+    echo "fips-check: Couldn't check out FIPS repository."
     exit 1
-    ;;
-esac
+fi
 
-# clone the FIPS repository
-case "$FIPS_OPTION" in
-    *dev)
-        if ! $GIT clone --depth 1 "$FIPS_REPO" fips; then
-            echo "fips-check: Couldn't check out the FIPS repository for fips-dev."
-            exit 1
-        fi
-        ;;
-    *)
-        if ! $GIT clone --depth 1 -b "$FIPS_VERSION" "$FIPS_REPO" fips; then
-            echo "fips-check: Couldn't check out ${FIPS_VERSION} from repository ${FIPS_REPO}."
-            exit 1
-        fi
-        ;;
-esac
-
-for SRC in "${FIPS_SRCS[@]}"
-do
-    cp "fips/$SRC" "$CRYPT_SRC_PATH"
-done
-
-for INC in "${FIPS_INCS[@]}"
-do
-    cp "fips/$INC" "$CRYPT_INC_PATH"
-done
+checkout_files "${WOLFCRYPT_FILES[@]}" || exit 3
+pushd fips || exit 2
+copy_fips_files "${FIPS_FILES[@]}" || exit 3
+popd || exit 2
 
 # When checking out cert 3389 ready code, NIST will no longer perform
 # new certifications on 140-2 modules. If we were to use the latest files from
@@ -415,62 +322,52 @@ done
 # Since OE additions can still be processed for cert3389 we will call 140-2
 # ready "fipsv2-OE-ready" indicating it is ready to use for an OE addition but
 # would not be good for a new certification effort with the latest files.
-if [ "$FLAVOR" = "fipsv2-OE-ready" ]; then
-    OLD_VERSION="    return \"v4.0.0-alpha\";"
-    OE_READY_VERSION="    return \"fipsv2-OE-ready\";"
-    cp "${CRYPT_SRC_PATH}/fips.c" "${CRYPT_SRC_PATH}/fips.c.bak"
-    sed "s/^${OLD_VERSION}/${OE_READY_VERSION}/" "${CRYPT_SRC_PATH}/fips.c.bak" >"${CRYPT_SRC_PATH}/fips.c"
+if [ "$FLAVOR" = 'fipsv2-OE-ready' ] && [ -s wolfcrypt/src/fips.c ]
+then
+    cp wolfcrypt/src/fips.c wolfcrypt/src/fips.c.bak
+    sed "s/v4.0.0-alpha/fipsv2-OE-ready/" wolfcrypt/src/fips.c.bak >wolfcrypt/src/fips.c
 fi
 
 # run the make test
 ./autogen.sh
-if [ "$CAVP_SELFTEST_ONLY" == "yes" ];
-then
-    if [ "$CAVP_SELFTEST_OPTION" == "v2" ]
-    then
-        ./configure --enable-selftest=v2
-    else
-        ./configure --enable-selftest
-    fi
-else
+
+case "$FIPS_OPTION" in
+cavp-selftest)
+    ./configure --enable-selftest
+    ;;
+cavp-selftest-v2)
+    ./configure --enable-selftest=v2
+    ;;
+*)
     ./configure --enable-fips=$FIPS_OPTION
-fi
-if ! $MAKE; then
-    echo "fips-check: Make failed. Debris left for analysis."
+    ;;
+esac
+
+if ! $MAKE
+then
+    echo 'fips-check: Make failed. Debris left for analysis.'
     exit 3
 fi
 
-if [ "$CAVP_SELFTEST_ONLY" == "no" ];
+if [ -s wolfcrypt/src/fips_test.c ]
 then
     NEWHASH=$(./wolfcrypt/test/testwolfcrypt | sed -n 's/hash = \(.*\)/\1/p')
     if [ -n "$NEWHASH" ]; then
-        cp "${CRYPT_SRC_PATH}/fips_test.c" "${CRYPT_SRC_PATH}/fips_test.c.bak"
-        sed "s/^\".*\";/\"${NEWHASH}\";/" "${CRYPT_SRC_PATH}/fips_test.c.bak" >"${CRYPT_SRC_PATH}/fips_test.c"
+        cp wolfcrypt/src/fips_test.c wolfcrypt/src/fips_test.c.bak
+        sed "s/^\".*\";/\"${NEWHASH}\";/" wolfcrypt/src/fips_test.c.bak >wolfcrypt/src/fips_test.c
         make clean
     fi
 fi
 
-if ! $MAKE test; then
-    echo "fips-check: Test failed. Debris left for analysis."
-    exit 3
-fi
-
-if [ ${#FIPS_CONFLICTS[@]} -ne 0 ];
+if ! $MAKE check
 then
-    echo "Due to the way this package is compiled by the customer duplicate"
-    echo "source file names are an issue, renaming:"
-    for FNAME in "${FIPS_CONFLICTS[@]}"
-    do
-        echo "wolfcrypt/src/$FNAME.c to wolfcrypt/src/wc_$FNAME.c"
-        mv "./wolfcrypt/src/$FNAME.c" "./wolfcrypt/src/wc_$FNAME.c"
-    done
-    echo "Confirming files were renamed..."
-    ls -la ./wolfcrypt/src/wc_*.c
+    echo 'fips-check: Test failed. Debris left for analysis.'
+    exit 3
 fi
 
 # Clean up
 popd || exit 2
-if [ "$KEEP" == "no" ];
+if [ "$KEEP" = 'no' ];
 then
     rm -rf "$TEST_DIR"
 fi

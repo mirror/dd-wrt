@@ -69,7 +69,7 @@
 
 enum {
     Ed448    = 0,
-    Ed448ph  = 1,
+    Ed448ph  = 1
 };
 
 #ifndef WC_ED448KEY_TYPE_DEFINED
@@ -92,6 +92,7 @@ struct ed448_key {
     WC_ASYNC_DEV asyncDev;
 #endif
 #if defined(WOLF_CRYPTO_CB)
+    void* devCtx;
     int devId;
 #endif
     void *heap;

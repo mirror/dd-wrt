@@ -53,7 +53,7 @@ function(generate_build_flags)
     if(WOLFSSL_SCTP OR WOLFSSL_USER_SETTINGS)
         set(BUILD_SCTP "yes" PARENT_SCOPE)
     endif()
-    if(WOLFSSL_DTLS_CID OR WOLFSSL_USER_SETTINGS)
+    if(WOLFSSL_DTLS_CID OR WOLFSSL_USER_SETTINGS OR WOLFSSL_DTLS)
         set(BUILD_DTLS_COMMON "yes" PARENT_SCOPE)
     endif()
     set(BUILD_MCAST ${WOLFSSL_MCAST} PARENT_SCOPE)
@@ -195,6 +195,14 @@ function(generate_build_flags)
     endif()
     if(WOLFSSL_OQS OR WOLFSSL_USER_SETTINGS)
         set(BUILD_FALCON "yes" PARENT_SCOPE)
+        set(BUILD_SPHINCS "yes" PARENT_SCOPE)
+        set(BUILD_DILITHIUM "yes" PARENT_SCOPE)
+        set(BUILD_EXT_KYBER "yes" PARENT_SCOPE)
+    endif()
+    if(WOLFSSL_ARIA OR WOLFSSL_USER_SETTINGS)
+        message(STATUS "ARIA functions.cmake found WOLFSSL_ARIA")
+        # we cannot actually build, as we only have pre-compiled bin
+        set(BUILD_ARIA "yes" PARENT_SCOPE)
     endif()
     set(BUILD_INLINE ${WOLFSSL_INLINE} PARENT_SCOPE)
     if(WOLFSSL_OCSP OR WOLFSSL_USER_SETTINGS)
@@ -208,6 +216,7 @@ function(generate_build_flags)
     if(WOLFSSL_CRL_MONITOR)
         set(BUILD_CRL_MONITOR "yes" PARENT_SCOPE)
     endif()
+    set(BUILD_QUIC ${WOLFSSL_QUIC} PARENT_SCOPE)
     set(BUILD_USER_RSA ${WOLFSSL_USER_RSA} PARENT_SCOPE)
     set(BUILD_USER_CRYPTO ${WOLFSSL_USER_CRYPTO} PARENT_SCOPE)
     set(BUILD_WNR ${WOLFSSL_WNR} PARENT_SCOPE)
@@ -304,6 +313,9 @@ function(generate_build_flags)
     if(WOLFSSL_CAAM)
         set(BUILD_CAAM "yes" PARENT_SCOPE)
     endif()
+    if(WOLFSSL_HPKE OR WOLFSSL_USER_SETTINGS)
+        set(BUILD_HPKE "yes" PARENT_SCOPE)
+    endif()
 
     set(BUILD_FLAGS_GENERATED "yes" PARENT_SCOPE)
 endfunction()
@@ -315,43 +327,6 @@ function(generate_lib_src_list LIB_SOURCES)
 
     # Corresponds to src/include.am
     if(BUILD_FIPS)
-         if(BUILD_FIPS_V1)
-              # fips first  file
-              list(APPEND LIB_SOURCES ctaocrypt/src/wolfcrypt_first.c)
-
-              list(APPEND LIB_SOURCES
-                   ctaocrypt/src/hmac.c
-                   ctaocrypt/src/random.c
-                   ctaocrypt/src/sha256.c)
-
-              if(BUILD_RSA)
-                   list(APPEND LIB_SOURCES ctaocrypt/src/rsa.c)
-              endif()
-
-              if(BUILD_AES)
-                   list(APPEND LIB_SOURCES ctaocrypt/src/aes.c)
-              endif()
-
-              if(BUILD_DES3)
-                   list(APPEND LIB_SOURCES ctaocrypt/src/des3.c)
-              endif()
-
-              if(BUILD_SHA)
-                   list(APPEND LIB_SOURCES ctaocrypt/src/sha.c)
-              endif()
-
-              if(BUILD_SHA512)
-                   list(APPEND LIB_SOURCES ctaocrypt/src/sha512.c)
-              endif()
-
-              list(APPEND LIB_SOURCES
-                ctaocrypt/src/fips.c
-                ctaocrypt/src/fips_test.c)
-
-              # fips last file
-              list(APPEND LIB_SOURCES ctaocrypt/src/wolfcrypt_last.c)
-         endif()
-
          if(BUILD_FIPS_V2)
               # FIPSv2 first file
               list(APPEND LIB_SOURCES wolfcrypt/src/wolfcrypt_first.c)
@@ -612,12 +587,17 @@ function(generate_lib_src_list LIB_SOURCES)
          wolfcrypt/src/wc_port.c
          wolfcrypt/src/error.c)
 
+    if(BUILD_ARIA)
+        list(APPEND LIB_SOURCES
+            wolfcrypt/src/port/aria/aria-crypt.c
+            wolfcrypt/src/port/aria/aria-cryptocb.c)
+    endif()
 
     if(NOT BUILD_FIPS_RAND)
-         list(APPEND LIB_SOURCES
-              wolfcrypt/src/wc_encrypt.c
-              wolfcrypt/src/signature.c
-              wolfcrypt/src/wolfmath.c)
+        list(APPEND LIB_SOURCES
+            wolfcrypt/src/wc_encrypt.c
+            wolfcrypt/src/signature.c
+            wolfcrypt/src/wolfmath.c)
     endif()
 
     if(BUILD_MEMORY)
@@ -801,6 +781,18 @@ function(generate_lib_src_list LIB_SOURCES)
               list(APPEND LIB_SOURCES wolfcrypt/src/falcon.c)
          endif()
 
+         if(BUILD_SPHINCS)
+              list(APPEND LIB_SOURCES wolfcrypt/src/sphincs.c)
+         endif()
+
+         if(BUILD_DILITHIUM)
+              list(APPEND LIB_SOURCES wolfcrypt/src/dilithium.c)
+         endif()
+
+         if(BUILD_EXT_KYBER)
+              list(APPEND LIB_SOURCES wolfcrypt/src/ext_kyber.c)
+         endif()
+
          if(BUILD_LIBZ)
               list(APPEND LIB_SOURCES wolfcrypt/src/compress.c)
          endif()
@@ -824,6 +816,7 @@ function(generate_lib_src_list LIB_SOURCES)
                    src/wolfio.c
                    src/keys.c
                    src/ssl.c
+                   src/ocsp.c
                    src/tls.c)
 
               if(BUILD_TLS13)
@@ -853,7 +846,11 @@ function(generate_lib_src_list LIB_SOURCES)
               if(BUILD_DTLS_COMMON)
                    list(APPEND LIB_SOURCES src/dtls.c)
               endif()
-         endif()
+
+              if(BUILD_QUIC)
+                   list(APPEND LIB_SOURCES src/quic.c)
+              endif()
+          endif()
     endif()
 
     # Corresponds to wolfcrypt/src/include.am
@@ -907,6 +904,10 @@ function(generate_lib_src_list LIB_SOURCES)
             wolfcrypt/src/port/caam/wolfcaam_hash.c
             wolfcrypt/src/port/caam/wolfcaam_rsa.c
             wolfcrypt/src/port/caam/wolfcaam_hmac.c)
+    endif()
+
+    if(BUILD_HPKE)
+         list(APPEND LIB_SOURCES wolfcrypt/src/hpke.c)
     endif()
 
     set(LIB_SOURCES ${LIB_SOURCES} PARENT_SCOPE)

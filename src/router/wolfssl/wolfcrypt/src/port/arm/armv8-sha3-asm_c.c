@@ -23,6 +23,7 @@
     #include <config.h>
 #endif /* HAVE_CONFIG_H */
 #include <wolfssl/wolfcrypt/settings.h>
+#include <wolfssl/wolfcrypt/error-crypt.h>
 
 /* Generated using (from wolfssl):
  *   cd ../scripts
@@ -30,6 +31,7 @@
  */
 #ifdef WOLFSSL_ARMASM
 #ifdef __aarch64__
+#ifdef WOLFSSL_ARMASM_INLINE
 #include <wolfssl/wolfcrypt/sha3.h>
 
 #ifdef WOLFSSL_SHA3
@@ -175,7 +177,7 @@ void BlockSha3(unsigned long* state)
         "st1	{v24.1d}, [%x[state]]\n\t"
         : [state] "+r" (state)
         : [L_SHA3_transform_crypto_r] "S" (L_SHA3_transform_crypto_r)
-        : "memory", "x1", "x2", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15", "v16", "v17", "v18", "v19", "v20", "v21", "v22", "v23", "v24", "v25", "v26", "v27", "v28", "v29", "v30", "v31"
+        : "memory", "x1", "x2", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15", "v16", "v17", "v18", "v19", "v20", "v21", "v22", "v23", "v24", "v25", "v26", "v27", "v28", "v29", "v30", "v31", "cc"
     );
 }
 
@@ -183,3 +185,4 @@ void BlockSha3(unsigned long* state)
 #endif /* WOLFSSL_SHA3 */
 #endif /* __aarch64__ */
 #endif /* WOLFSSL_ARMASM */
+#endif /* WOLFSSL_ARMASM_INLINE */

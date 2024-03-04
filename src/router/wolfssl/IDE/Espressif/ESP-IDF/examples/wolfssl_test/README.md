@@ -1,6 +1,28 @@
 # wolfSSL Crypt Test Example
 
-The Example contains of wolfSSL test program.
+This is the ESP32 Version of the [wolfSSL wolfcrypt test application](https://github.com/wolfSSL/wolfssl/tree/master/wolfcrypt/test).
+
+For general information on [wolfSSL examples for Espressif](../README.md), see the
+[README](https://github.com/wolfSSL/wolfssl/blob/master/IDE/Espressif/ESP-IDF/README.md) file.
+
+## ESP Registry
+
+The easiest way to get started with wolfSSL is by using the 
+[ESP Registry](https://components.espressif.com/components/wolfssl/wolfssl/) examples.
+
+```
+. ~/esp/esp-idf/export.sh
+idf.py create-project-from-example "wolfssl/wolfssl^5.6.0-stable:wolfssl_test"
+cd wolfssl_benchmark
+idf.py -b 115200 flash monitor
+```
+
+## VisualGDB
+
+Open the VisualGDB Visual Studio Project file in the [VisualGDB directory](./VisualGDB/README.md) and click the "Start" button.
+No wolfSSL setup is needed. You may need to adjust your specific COM port. The default is `COM20`.
+
+## ESP-IDF Commandline
 
 1. `idf.py menuconfig` to configure the program.  
     1-1. Example Configuration ->
@@ -20,18 +42,27 @@ Reminder than when building on WSL in `/mnt/c` there will be a noticeable perfor
 Example build on WSL, assuming `git clone` from `c:\workspace`:
 
 ```
-# Optionally install wolfSSL component
-# cd /mnt/c/workspace/wolfssl/IDE/Espressif/ESP-IDF
-./setup.sh
+WRK_IDF_PATH=/mnt/c/SysGCC/esp32/esp-idf/v5.1
+
+echo "Run export.sh from ${WRK_IDF_PATH}"
+. ${WRK_IDF_PATH}/export.sh
 
 # switch to test example
 cd /mnt/c/workspace/wolfssl/IDE/Espressif/ESP-IDF/examples/wolfssl_test
 
-# Pick ESP-IDF install directory, this one for v4.4.2 in VisualGDB
-. /mnt/c/SysGCC/esp32/esp-idf/v4.4.2/export.sh
+# Pick ESP-IDF install directory, this one for v5.1 in VisualGDB
+. /mnt/c/SysGCC/esp32/esp-idf/v5.1/export.sh
 
-# build and flash, in this example to COM20
-idf.py build flash -p /dev/ttyS20 -b 921600 monitor
+# set target chipset
+idf.py set-target esp32s3
+
+# erase
+idf.py erase-flash -p /dev/ttyS24 -b 115200
+
+# start with a low upload speed, then increase as found operational
+idf.py 
+# build and flash, in this example to COM24
+idf.py build flash -p /dev/ttyS24 -b 115200 monitor
 ```
 
 ## Example Output
@@ -41,7 +72,7 @@ compatible across the widest ranges of targets. Contact wolfSSL at support@wolfs
 for help in optimizing for your particular application, or see the 
 [docs](https://www.wolfssl.com/documentation/manuals/wolfssl/index.html).
 
-Compiled and flashed with `idf.py build  flash -p /dev/ttyS7 -b 921600 monitor`:
+Compiled and flashed with `idf.py build  flash -p /dev/ttyS7 -b 115200 monitor`:
 
 ```
 ets Jun  8 2016 00:22:57
@@ -140,3 +171,5 @@ I (136548) wolfcrypt_test: Exiting main with return code:  0
 
 I (136548) wolfssl_test: wolf_test_task complete success result code = 0
 ```
+
+See the README.md file in the upper level 'examples' directory for [more information about examples](../README.md).

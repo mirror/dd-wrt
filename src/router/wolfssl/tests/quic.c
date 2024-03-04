@@ -543,10 +543,11 @@ static int ctx_send_alert(WOLFSSL *ssl, WOLFSSL_ENCRYPTION_LEVEL level, uint8_t 
 {
     QuicTestContext *ctx = (QuicTestContext*)wolfSSL_get_app_data(ssl);
 
+    AssertNotNull(ctx);
+
     if (ctx->verbose) {
         printf("[%s] send_alert: level=%d, err=%d\n", ctx->name, level, err);
     }
-    AssertNotNull(ctx);
     ctx->alert_level = level;
     ctx->alert = alert;
     return 1;
@@ -558,6 +559,8 @@ static int ctx_session_ticket_cb(WOLFSSL* ssl,
                                  void* cb_ctx)
 {
     QuicTestContext *ctx = (QuicTestContext*)wolfSSL_get_app_data(ssl);
+
+    AssertNotNull(ctx);
 
     (void)cb_ctx;
     if (ticketSz < 0 || (size_t)ticketSz > sizeof(ctx->ticket)) {
@@ -1154,7 +1157,7 @@ static int test_quic_server_hello(int verbose) {
     /* we have the app secrets */
     check_secrets(&tclient, wolfssl_encryption_application, 32, 32);
     check_secrets(&tserver, wolfssl_encryption_application, 32, 32);
-    /* verify client and server have the same secrets establishd */
+    /* verify client and server have the same secrets established */
     assert_secrets_EQ(&tclient, &tserver, wolfssl_encryption_handshake);
     assert_secrets_EQ(&tclient, &tserver, wolfssl_encryption_application);
     /* AEAD cipher should be known */
@@ -1534,6 +1537,8 @@ static int new_session_cb(WOLFSSL *ssl, WOLFSSL_SESSION *session)
     byte *data;
     int ret = 0;
     int sz;
+
+    AssertNotNull(ctx);
 
     sz = wolfSSL_i2d_SSL_SESSION(session, NULL);
     if (sz <= 0) {

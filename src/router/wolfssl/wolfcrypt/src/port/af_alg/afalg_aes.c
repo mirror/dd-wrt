@@ -58,6 +58,14 @@ static int wc_AesSetup(Aes* aes, const char* type, const char* name, int ivSz, i
     byte* key = (byte*)aes->key;
 #endif
 
+    if (aes->alFd <= 0) {
+        aes->alFd = wc_Afalg_Socket();
+        if (aes->alFd < 0) {
+            WOLFSSL_MSG("Unable to open an AF_ALG socket");
+            return WC_AFALG_SOCK_E;
+        }
+    }
+
     aes->rdFd = wc_Afalg_CreateRead(aes->alFd, type, name);
     if (aes->rdFd < 0) {
         WOLFSSL_MSG("Unable to accept and get AF_ALG read socket");
@@ -71,7 +79,11 @@ static int wc_AesSetup(Aes* aes, const char* type, const char* name, int ivSz, i
         aes->rdFd = WC_SOCK_NOTSET;
         return WC_AFALG_SOCK_E;
     }
+#ifdef WOLFSSL_AFALG_XILINX_AES
+    ForceZero(key, sizeof(aes->msgBuf));
+#else
     ForceZero(key, sizeof(aes->key));
+#endif
 
     /* set up CMSG headers */
     XMEMSET((byte*)&(aes->msg), 0, sizeof(struct msghdr));
@@ -669,7 +681,7 @@ int wc_AesGcmEncrypt(Aes* aes, byte* out, const byte* in, word32 sz,
         XMEMSET(initalCounter, 0, AES_BLOCK_SIZE);
         XMEMCPY(initalCounter, iv, ivSz);
         initalCounter[AES_BLOCK_SIZE - 1] = 1;
-        GHASH(aes, authIn, authInSz, out, sz, authTag, authTagSz);
+        GHASH(&aes->gcm, authIn, authInSz, out, sz, authTag, authTagSz);
         ret = wc_AesEncryptDirect(aes, scratch, initalCounter);
         if (ret < 0) {
             return ret;
@@ -822,7 +834,7 @@ int wc_AesGcmDecrypt(Aes* aes, byte* out, const byte* in, word32 sz,
         XMEMCPY(initalCounter, iv, ivSz);
         initalCounter[AES_BLOCK_SIZE - 1] = 1;
         tag = buf;
-        GHASH(aes, NULL, 0, in, sz, tag, AES_BLOCK_SIZE);
+        GHASH(&aes->gcm, NULL, 0, in, sz, tag, AES_BLOCK_SIZE);
         ret = wc_AesEncryptDirect(aes, scratch, initalCounter);
         if (ret < 0)
             return ret;
@@ -874,7 +886,7 @@ int wc_AesGcmDecrypt(Aes* aes, byte* out, const byte* in, word32 sz,
 
     /* check on tag */
     if (authIn != NULL && authInSz > 0) {
-        GHASH(aes, authIn, authInSz, in, sz, tag, AES_BLOCK_SIZE);
+        GHASH(&aes->gcm, authIn, authInSz, in, sz, tag, AES_BLOCK_SIZE);
         ret = wc_AesEncryptDirect(aes, scratch, initalCounter);
         if (ret < 0)
             return ret;

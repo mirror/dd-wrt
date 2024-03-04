@@ -31,6 +31,12 @@
 #include <wolfssl/wolfcrypt/error-crypt.h>
 #include <wolfssl/wolfcrypt/port/caam/wolfcaam.h>
 
+#ifndef WOLFSSL_HAVE_ECC_KEY_GET_PRIV
+    /* FIPS build has replaced ecc.h. */
+    #define wc_ecc_key_get_priv(key) (&((key)->k))
+    #define WOLFSSL_HAVE_ECC_KEY_GET_PRIV
+#endif
+
 #if defined(FSL_FEATURE_HAS_L1CACHE) || defined(__DCACHE_PRESENT)
 /* Setup for if memory is cached */
 AT_NONCACHEABLE_SECTION(static caam_job_ring_interface_t jr0);
@@ -405,7 +411,7 @@ int wc_CAAM_EccSign(const byte* in, int inlen, byte* out, word32* outlen,
     word32 sSz = MAX_ECC_BYTES;
     int keySz;
     word32 ecdsel;
-    word32 enc;
+    word32 enc = 0;
     status_t status;
     caam_handle_t hndl;
 
@@ -439,13 +445,14 @@ int wc_CAAM_EccSign(const byte* in, int inlen, byte* out, word32* outlen,
     }
     else {
         if (key->blackKey == CAAM_BLACK_KEY_CCM) {
-            if (mp_to_unsigned_bin_len(&key->k, k, kSz + WC_CAAM_MAC_SZ)
-                != MP_OKAY) {
+            if (mp_to_unsigned_bin_len(wc_ecc_key_get_priv(key), k,
+                    kSz + WC_CAAM_MAC_SZ) != MP_OKAY) {
                 return MP_TO_E;
             }
         }
         else {
-            if (mp_to_unsigned_bin_len(&key->k, k, kSz) != MP_OKAY) {
+            if (mp_to_unsigned_bin_len(wc_ecc_key_get_priv(key), k, kSz) !=
+                    MP_OKAY) {
                 return MP_TO_E;
             }
         }
@@ -464,6 +471,9 @@ int wc_CAAM_EccSign(const byte* in, int inlen, byte* out, word32* outlen,
         case CAAM_BLACK_KEY_ECB:
             enc = CAAM_PKHA_ENC_PRI_AESECB;
             break;
+        default:
+            WOLFSSL_MSG("unknown/unsupported key type");
+            return BAD_FUNC_ARG;
     }
 
     if ((wc_ptr_t)in % CAAM_BUFFER_ALIGN) {
@@ -693,13 +703,14 @@ int wc_CAAM_Ecdh(ecc_key* private_key, ecc_key* public_key, byte* out,
     }
 
     if (private_key->blackKey == CAAM_BLACK_KEY_CCM) {
-        if (mp_to_unsigned_bin_len(&private_key->k, k,
+        if (mp_to_unsigned_bin_len(wc_ecc_key_get_priv(private_key), k,
                 keySz + WC_CAAM_MAC_SZ) != MP_OKAY) {
             return MP_TO_E;
         }
     }
     else {
-        if (mp_to_unsigned_bin_len(&private_key->k, k, keySz) != MP_OKAY) {
+        if (mp_to_unsigned_bin_len(wc_ecc_key_get_priv(private_key), k, keySz)
+                != MP_OKAY) {
             return MP_TO_E;
         }
     }
@@ -827,7 +838,7 @@ int SynchronousSendRequest(int type, unsigned int args[4], CAAM_BUFFER *buf,
                 buf[1].Length, (byte*)buf[2].TheAddress,
                 buf[2].Length, (byte*)buf[0].TheAddress,
                 buf[0].Length, CAAM_ENCAP_BLOB,
-                (args[0] = 0)? CAAM_RED_BLOB : CAAM_BLACK_BLOB)
+                (args[0] == 0)? CAAM_RED_BLOB : CAAM_BLACK_BLOB)
                 != kStatus_Success) {
             ret = WC_HW_E;
         }
@@ -838,7 +849,7 @@ int SynchronousSendRequest(int type, unsigned int args[4], CAAM_BUFFER *buf,
                 (byte*)buf[2].TheAddress, buf[2].Length,
                 (byte*)buf[0].TheAddress, buf[0].Length,
                 CAAM_DECAP_BLOB,
-                (args[0] = 0)? CAAM_RED_BLOB : CAAM_BLACK_BLOB)
+                (args[0] == 0)? CAAM_RED_BLOB : CAAM_BLACK_BLOB)
                 != kStatus_Success) {
             ret = WC_HW_E;
         }

@@ -63,17 +63,9 @@ RSA keys can be used to encrypt, decrypt, sign and verify data.
     #include "user_rsa.h"
 #else
 
-#if defined(HAVE_FIPS) && \
-        (!defined(HAVE_FIPS_VERSION) || (HAVE_FIPS_VERSION < 2))
-/* for fips @wc_fips */
-#include <cyassl/ctaocrypt/rsa.h>
-#if defined(CYASSL_KEY_GEN) && !defined(WOLFSSL_KEY_GEN)
-    #define WOLFSSL_KEY_GEN
-#endif
-#else
-    #include <wolfssl/wolfcrypt/integer.h>
-    #include <wolfssl/wolfcrypt/random.h>
-#endif /* HAVE_FIPS && HAVE_FIPS_VERION 1 */
+#include <wolfssl/wolfcrypt/wolfmath.h>
+#include <wolfssl/wolfcrypt/random.h>
+
 #if defined(HAVE_FIPS) && \
         defined(HAVE_FIPS_VERSION) && (HAVE_FIPS_VERSION >= 2)
 #include <wolfssl/wolfcrypt/fips.h>
@@ -100,6 +92,10 @@ RSA keys can be used to encrypt, decrypt, sign and verify data.
 
 #if defined(WOLFSSL_DEVCRYPTO_RSA)
     #include <wolfssl/wolfcrypt/port/devcrypto/wc_devcrypto.h>
+#endif
+
+#if defined(WOLFSSL_RENESAS_FSPSM)
+    #include <wolfssl/wolfcrypt/port/renesas/renesas-fspsm-crypt.h>
 #endif
 
 #ifdef __cplusplus
@@ -180,6 +176,8 @@ enum {
     RSA_MAX_ID_LEN      = 32,
     RSA_MAX_LABEL_LEN   = 32,
 #endif
+
+    WOLF_ENUM_DUMMY_LAST_ELEMENT(RSA)
 };
 
 #ifdef WC_RSA_NONBLOCK
@@ -211,7 +209,11 @@ struct RsaKey {
     byte   keyIdSet;
 #endif
 #ifdef WOLF_CRYPTO_CB
+    void* devCtx;
     int   devId;
+#endif
+#if defined(HAVE_PKCS11)
+    byte isPkcs11 : 1; /* indicate if PKCS11 is preferred */
 #endif
 #ifdef WOLFSSL_ASYNC_CRYPT
     WC_ASYNC_DEV asyncDev;
@@ -257,6 +259,9 @@ struct RsaKey {
 #endif
 #if defined(WOLFSSL_DEVCRYPTO_RSA)
     WC_CRYPTODEV ctx;
+#endif
+#if defined(WOLFSSL_RENESAS_FSPSM)
+    FSPSM_RSA_CTX ctx;
 #endif
 };
 
@@ -352,6 +357,11 @@ WOLFSSL_API int  wc_RsaEncryptSize(const RsaKey* key);
 /* to avoid asn duplicate symbols @wc_fips */
 WOLFSSL_API int  wc_RsaPrivateKeyDecode(const byte* input, word32* inOutIdx,
                                         RsaKey* key, word32 inSz);
+#if !defined(HAVE_FIPS) || \
+        (defined(HAVE_FIPS_VERSION) && (HAVE_FIPS_VERSION > 2))
+WOLFSSL_API int  wc_RsaPrivateKeyValidate(const byte* input, word32* inOutIdx,
+                                          int* keySz, word32 inSz);
+#endif
 WOLFSSL_API int  wc_RsaPublicKeyDecode(const byte* input, word32* inOutIdx,
                                        RsaKey* key, word32 inSz);
 WOLFSSL_API int  wc_RsaPublicKeyDecodeRaw(const byte* n, word32 nSz,

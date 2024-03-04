@@ -26,7 +26,7 @@
 /* Supports CubeMX HAL or Standard Peripheral Library */
 
 #include <wolfssl/wolfcrypt/settings.h>
-#include <wolfssl/wolfcrypt/types.h>
+#include <wolfssl/wolfcrypt/types.h> /* for MATH_INT_T */
 
 #ifdef STM32_HASH
 
@@ -35,10 +35,15 @@
 #ifdef HASH_DIGEST
     /* The HASH_DIGEST register indicates SHA224/SHA256 support */
     #define STM32_HASH_SHA2
-    #define HASH_CR_SIZE 54
-    #define HASH_MAX_DIGEST 32
+    #if defined(WOLFSSL_STM32H5)
+        #define HASH_CR_SIZE    103
+        #define HASH_MAX_DIGEST 64 /* Up to SHA512 */
+    #else
+        #define HASH_CR_SIZE    54
+        #define HASH_MAX_DIGEST 32
+    #endif
 #else
-    #define HASH_CR_SIZE 50
+    #define HASH_CR_SIZE    50
     #define HASH_MAX_DIGEST 20
 #endif
 
@@ -46,11 +51,15 @@
 #if !defined(HASH_ALGOMODE_HASH) && defined(HASH_AlgoMode_HASH)
     #define HASH_ALGOMODE_HASH HASH_AlgoMode_HASH
 #endif
-#if !defined(HASH_DATATYPE_8B) && defined(HASH_DataType_8b)
-    #define HASH_DATATYPE_8B HASH_DataType_8b
+#if !defined(HASH_DATATYPE_8B)
+    #if defined(HASH_DataType_8b)
+        #define HASH_DATATYPE_8B HASH_DataType_8b
+    #elif defined(HASH_BYTE_SWAP)
+        #define HASH_DATATYPE_8B HASH_BYTE_SWAP
+    #endif
 #endif
 #ifndef HASH_STR_NBW
-	#define HASH_STR_NBW HASH_STR_NBLW
+    #define HASH_STR_NBW HASH_STR_NBLW
 #endif
 
 #ifndef STM32_HASH_TIMEOUT
@@ -62,6 +71,25 @@
 #define STM32_HASH_REG_SIZE  4
 #define STM32_HASH_FIFO_SIZE 16 /* FIFO is 16 deep 32-bits wide */
 
+#if (defined(WOLFSSL_STM32U5) || defined(WOLFSSL_STM32H5) || \
+    defined(WOLFSSL_STM32H7)) && !defined(NO_STM32_HASH_FIFO_WORKAROUND)
+    /* workaround for hash FIFO to write one extra to finalize */
+    /* RM: Message Data Feeding: Data are entered into the HASH
+     * one 32-bit word at a time, by writing them into the HASH_DIN register.
+     * The current contents of the HASH_DIN register are transferred to the
+     * 16 words input FIFO each time the register is written with new data.
+     * Hence HASH_DIN and the FIFO form a seventeen 32-bit words length FIFO. */
+    #undef  STM32_HASH_BUFFER_SIZE
+    #define STM32_HASH_BUFFER_SIZE 17
+
+    #undef  STM32_HASH_FIFO_WORKAROUND
+    #define STM32_HASH_FIFO_WORKAROUND
+#endif
+
+#ifndef STM32_HASH_BUFFER_SIZE
+#define STM32_HASH_BUFFER_SIZE STM32_HASH_FIFO_SIZE
+#endif
+
 
 /* STM32 Hash Context */
 typedef struct {
@@ -72,11 +100,13 @@ typedef struct {
     uint32_t HASH_CSR[HASH_CR_SIZE];
 
     /* Hash state / buffers */
-    word32 buffer[STM32_HASH_FIFO_SIZE]; /* partial word buffer */
+    word32 buffer[STM32_HASH_BUFFER_SIZE]; /* partial word buffer */
     word32 buffLen; /* partial word remain */
     word32 loLen;   /* total update bytes
                  (only lsb 6-bits is used for nbr valid bytes in last word) */
+#ifdef STM32_HASH_FIFO_WORKAROUND
     int    fifoBytes; /* number of currently filled FIFO bytes */
+#endif
 } STM32_HASH_Context;
 
 
@@ -95,32 +125,37 @@ int  wc_Stm32_Hash_Final(STM32_HASH_Context* stmCtx, word32 algo,
 #ifndef NO_AES
     #if !defined(STM32_CRYPTO_AES_GCM) && (defined(WOLFSSL_STM32F4) || \
             defined(WOLFSSL_STM32F7) || defined(WOLFSSL_STM32L4) || \
-			defined(WOLFSSL_STM32L5) || defined(WOLFSSL_STM32H7) || \
+            defined(WOLFSSL_STM32L5) || defined(WOLFSSL_STM32H7) || \
             defined(WOLFSSL_STM32U5))
         /* Hardware supports AES GCM acceleration */
         #define STM32_CRYPTO_AES_GCM
     #endif
 
-    #if defined(WOLFSSL_STM32WB)
+    #if defined(WOLFSSL_STM32WB) || defined(WOLFSSL_STM32WL)
         #define STM32_CRYPTO_AES_ONLY /* crypto engine only supports AES */
-        #define CRYP AES1
+        #ifdef WOLFSSL_STM32WB
+            #define CRYP AES1
+        #else
+            #define CRYP AES
+        #endif
         #define STM32_HAL_V2
     #endif
     #if defined(WOLFSSL_STM32L4) || defined(WOLFSSL_STM32L5) || \
         defined(WOLFSSL_STM32U5)
-		#if defined(WOLFSSL_STM32L4) || defined(WOLFSSL_STM32U5)
-        	#define STM32_CRYPTO_AES_ONLY /* crypto engine only supports AES */
-		#endif
+        #if defined(WOLFSSL_STM32L4) || defined(WOLFSSL_STM32U5)
+            #define STM32_CRYPTO_AES_ONLY /* crypto engine only supports AES */
+        #endif
         #define CRYP AES
-		#ifndef CRYP_AES_GCM
-			#define CRYP_AES_GCM CRYP_AES_GCM_GMAC
-		#endif
+        #ifndef CRYP_AES_GCM
+            #define CRYP_AES_GCM CRYP_AES_GCM_GMAC
+        #endif
     #endif
 
     /* Detect newer CubeMX crypto HAL (HAL_CRYP_Encrypt / HAL_CRYP_Decrypt) */
     #if !defined(STM32_HAL_V2) && defined(CRYP_AES_GCM) && \
         (defined(WOLFSSL_STM32F7) || defined(WOLFSSL_STM32L5) || \
-         defined(WOLFSSL_STM32H7) || defined(WOLFSSL_STM32U5))
+         defined(WOLFSSL_STM32H7) || defined(WOLFSSL_STM32U5)) || \
+         defined(WOLFSSL_STM32H5)
         #define STM32_HAL_V2
     #endif
 
@@ -137,25 +172,17 @@ int  wc_Stm32_Hash_Final(STM32_HASH_Context* stmCtx, word32 algo,
     struct Aes;
     #ifdef WOLFSSL_STM32_CUBEMX
         int wc_Stm32_Aes_Init(struct Aes* aes, CRYP_HandleTypeDef* hcryp);
+        void wc_Stm32_Aes_Cleanup(void);
     #else /* Standard Peripheral Library */
         int wc_Stm32_Aes_Init(struct Aes* aes, CRYP_InitTypeDef* cryptInit,
             CRYP_KeyInitTypeDef* keyInit);
+        void wc_Stm32_Aes_Cleanup(void);
     #endif /* WOLFSSL_STM32_CUBEMX */
 #endif /* !NO_AES */
 
 #endif /* STM32_CRYPTO */
 
 #if defined(WOLFSSL_STM32_PKA) && defined(HAVE_ECC)
-#if defined(WOLFSSL_SP_MATH) || defined(WOLFSSL_SP_MATH_ALL)
-    struct sp_int;
-    #define MATH_INT_T struct sp_int
-#elif defined(USE_FAST_MATH)
-    struct fp_int;
-    #define MATH_INT_T struct fp_int
-#else
-    struct mp_int;
-	#define MATH_INT_T struct mp_int
-#endif
 struct ecc_key;
 struct WC_RNG;
 

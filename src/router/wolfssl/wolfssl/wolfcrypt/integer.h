@@ -29,14 +29,17 @@
 #ifndef WOLF_CRYPT_INTEGER_H
 #define WOLF_CRYPT_INTEGER_H
 
-/* may optionally use fast math instead, not yet supported on all platforms and
-   may not be faster on all
-*/
-#include <wolfssl/wolfcrypt/types.h>       /* will set MP_xxBIT if not default */
-#if defined(WOLFSSL_SP_MATH) || defined(WOLFSSL_SP_MATH_ALL)
-    #include <wolfssl/wolfcrypt/sp_int.h>
-#elif defined(USE_FAST_MATH)
-    #include <wolfssl/wolfcrypt/tfm.h>
+/* may optionally use SP math all or fast math instead. The heap math requires
+ * realloc and is not timing resistant. The SP math all is recommended for new
+ * designs.
+ */
+
+#ifndef USE_INTEGER_HEAP_MATH
+
+    /* Some platforms (like FIPS) may only include integer.h for math. */
+    /* Handle variations of fast math, integer and sp math */
+    #include <wolfssl/wolfcrypt/wolfmath.h>
+
 #else
 
 #include <wolfssl/wolfcrypt/random.h>
@@ -66,7 +69,7 @@ extern "C" {
 #else
 
 /* C on the other hand doesn't care */
-#define  OPT_CAST(x)
+#define  OPT_CAST(x) /* null expansion */
 
 #endif /* __cplusplus */
 
@@ -190,6 +193,26 @@ typedef int           mp_err;
    BITS_PER_DIGIT*2) */
 #define MP_WARRAY  ((mp_word)1 << (sizeof(mp_word) * CHAR_BIT - 2 * DIGIT_BIT + 1))
 
+/* No point in dynamically allocating mp_int when it is very small.
+ * The dp field will grow and shrink dynamically.
+ */
+/* Declare a statically allocated mp_int. */
+#define DECL_MP_INT_SIZE(name, bits)    \
+    mp_int name[1]
+/* Declare statically allocated mp_int. */
+#define DECL_MP_INT_SIZE_DYN(name, bits, max) \
+    mp_int name[1]
+/* Zero out mp_int of minimal size. */
+#define NEW_MP_INT_SIZE(name, bits, heap, type) \
+    XMEMSET(name, 0, sizeof(mp_int))
+/* Dispose of static mp_int. */
+#define FREE_MP_INT_SIZE(name, heap, type) WC_DO_NOTHING
+/* Initialize an mp_int. */
+#define INIT_MP_INT_SIZE(name, bits) \
+    mp_init(name)
+/* Type to cast to when using size marcos. */
+#define MP_INT_SIZE     mp_int
+
 #ifdef HAVE_WOLF_BIGINT
     /* raw big integer */
     typedef struct WC_BIGINT {
@@ -238,6 +261,8 @@ typedef int ltm_prime_callback(unsigned char *dst, int len, void *dat);
 #define mp_isword(a, w) \
     ((((a)->used == 1) && ((a)->dp[0] == (w))) || (((w) == 0) && ((a)->used == 0)) \
                                                                ? MP_YES : MP_NO)
+/* Number of bits used based on used field only. */
+#define mp_bitsused(a)   ((a)->used * DIGIT_BIT)
 
 /* number of primes */
 #ifdef MP_8BIT
@@ -288,6 +313,7 @@ MP_API int  mp_unsigned_bin_size(const mp_int * a);
 MP_API int  mp_read_unsigned_bin (mp_int * a, const unsigned char *b, int c);
 MP_API int  mp_to_unsigned_bin_at_pos(int x, mp_int *t, unsigned char *b);
 MP_API int  mp_to_unsigned_bin (mp_int * a, unsigned char *b);
+#define mp_to_unsigned_bin_len_ct mp_to_unsigned_bin_len
 MP_API int  mp_to_unsigned_bin_len(mp_int * a, unsigned char *b, int c);
 MP_API int  mp_exptmod (mp_int * G, mp_int * X, mp_int * P, mp_int * Y);
 MP_API int  mp_exptmod_ex (mp_int * G, mp_int * X, int digits, mp_int * P,
@@ -304,6 +330,8 @@ MP_API int  mp_div_2d (mp_int * a, int b, mp_int * c, mp_int * d);
 MP_API void mp_zero (mp_int * a);
 MP_API void mp_clamp (mp_int * a);
 MP_API int  mp_exch (mp_int * a, mp_int * b);
+MP_API int  mp_cond_swap_ct_ex (mp_int * a, mp_int * b, int c, int m,
+                                mp_int * t);
 MP_API int  mp_cond_swap_ct (mp_int * a, mp_int * b, int c, int m);
 MP_API void mp_rshd (mp_int * a, int b);
 MP_API void mp_rshb (mp_int * a, int b);
@@ -316,6 +344,7 @@ int  fast_mp_invmod (mp_int * a, mp_int * b, mp_int * c);
 MP_API int  mp_invmod_slow (mp_int * a, mp_int * b, mp_int * c);
 MP_API int  mp_cmp_mag (mp_int * a, mp_int * b);
 MP_API int  mp_cmp (mp_int * a, mp_int * b);
+#define mp_cmp_ct(a, b, n) mp_cmp(a, b)
 MP_API int  mp_cmp_d(mp_int * a, mp_digit b);
 MP_API int  mp_set (mp_int * a, mp_digit b);
 MP_API int  mp_is_bit_set (mp_int * a, mp_digit b);
@@ -338,6 +367,7 @@ MP_API int  mp_montgomery_setup (mp_int * n, mp_digit * rho);
 int  fast_mp_montgomery_reduce (mp_int * x, mp_int * n, mp_digit rho);
 MP_API int  mp_montgomery_reduce (mp_int * x, mp_int * n, mp_digit rho);
 #define mp_montgomery_reduce_ex(x, n, rho, ct) mp_montgomery_reduce (x, n, rho)
+#define mp_montgomery_reduce_ct(x, n, rho)     mp_montgomery_reduce (x, n, rho)
 MP_API void mp_dr_setup(mp_int *a, mp_digit *d);
 MP_API int  mp_dr_reduce (mp_int * x, mp_int * n, mp_digit k);
 MP_API int  mp_reduce_2k(mp_int *a, mp_int *n, mp_digit d);
@@ -381,7 +411,7 @@ MP_API int mp_radix_size (mp_int * a, int radix, int *size);
 #ifdef WOLFSSL_DEBUG_MATH
     MP_API void mp_dump(const char* desc, mp_int* a, byte verbose);
 #else
-    #define mp_dump(desc, a, verbose)
+    #define mp_dump(desc, a, verbose) WC_DO_NOTHING
 #endif
 
 #if defined(HAVE_ECC) || defined(WOLFSSL_KEY_GEN) || !defined(NO_RSA) || \
@@ -411,7 +441,6 @@ MP_API int mp_mod_d(mp_int* a, mp_digit b, mp_digit* c);
 #endif
 
 
-#endif /* USE_FAST_MATH */
+#endif /* USE_INTEGER_HEAP_MATH */
 
 #endif  /* WOLF_CRYPT_INTEGER_H */
-

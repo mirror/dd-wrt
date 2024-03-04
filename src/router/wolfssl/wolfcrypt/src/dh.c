@@ -1021,7 +1021,7 @@ static int _ffc_pairwise_consistency_test(DhKey* key,
 /* if not using fixed points use DiscreteLogWorkFactor function for unusual size
    otherwise round up on size needed */
 #ifndef WOLFSSL_DH_CONST
-    #define WOLFSSL_DH_ROUND(x)
+    #define WOLFSSL_DH_ROUND(x) WC_DO_NOTHING
 #else
     #define WOLFSSL_DH_ROUND(x) \
         do {                    \
@@ -1039,7 +1039,7 @@ static int _ffc_pairwise_consistency_test(DhKey* key,
  * modLen - represents L, the size of p in bits
  * divLen - represents N, the size of q in bits
  * return 0 on success, -1 on error */
-static int CheckDhLN(int modLen, int divLen)
+static int CheckDhLN(word32 modLen, word32 divLen)
 {
     int ret = -1;
 
@@ -1076,7 +1076,8 @@ static int CheckDhLN(int modLen, int divLen)
 static int GeneratePrivateDh186(DhKey* key, WC_RNG* rng, byte* priv,
                                 word32* privSz)
 {
-    int qSz, pSz, cSz, err;
+    word32 qSz, pSz, cSz;
+    int err;
 #if defined(WOLFSSL_SMALL_STACK) && !defined(WOLFSSL_NO_MALLOC)
     mp_int* tmpQ = NULL;
     mp_int* tmpX = NULL;
@@ -1093,8 +1094,8 @@ static int GeneratePrivateDh186(DhKey* key, WC_RNG* rng, byte* priv,
         return BAD_FUNC_ARG;
     }
 
-    qSz = mp_unsigned_bin_size(&key->q);
-    pSz = mp_unsigned_bin_size(&key->p);
+    qSz = (word32)mp_unsigned_bin_size(&key->q);
+    pSz = (word32)mp_unsigned_bin_size(&key->p);
 
     /* verify (L,N) pair bit lengths */
     /* Trusted primes don't need to be checked. */
@@ -1167,7 +1168,7 @@ static int GeneratePrivateDh186(DhKey* key, WC_RNG* rng, byte* priv,
 
     /* tmpQ: M = min(2^N,q) - 1 */
     if (err == MP_OKAY)
-        err = mp_2expt(tmpQ, *privSz * 8);
+        err = mp_2expt(tmpQ, (int)*privSz * 8);
 
     if (err == MP_OKAY) {
         if (mp_cmp(tmpQ, &key->q) == MP_GT) {
@@ -1188,8 +1189,8 @@ static int GeneratePrivateDh186(DhKey* key, WC_RNG* rng, byte* priv,
 
     /* copy tmpX into priv */
     if (err == MP_OKAY) {
-        pSz = mp_unsigned_bin_size(tmpX);
-        if (pSz > (int)*privSz) {
+        pSz = (word32)mp_unsigned_bin_size(tmpX);
+        if (pSz > *privSz) {
             WOLFSSL_MSG("DH private key output buffer too small");
             err = BAD_FUNC_ARG;
         } else {
@@ -1235,7 +1236,7 @@ static int GeneratePrivateDh(DhKey* key, WC_RNG* rng, byte* priv,
 #endif
     {
 
-        sz = mp_unsigned_bin_size(&key->p);
+        sz = (word32)mp_unsigned_bin_size(&key->p);
 
         /* Table of predetermined values from the operation
            2 * DiscreteLogWorkFactor(sz * WOLFSSL_BIT_SIZE) /
@@ -1348,10 +1349,10 @@ static int GeneratePublicDh(DhKey* key, byte* priv, word32 privSz,
         ret = MP_TO_E;
 
     if (ret == 0)
-        *pubSz = mp_unsigned_bin_size(y);
+        *pubSz = (word32)mp_unsigned_bin_size(y);
 
     mp_clear(y);
-    mp_clear(x);
+    mp_forcezero(x);
 #if defined(WOLFSSL_SMALL_STACK) && !defined(WOLFSSL_NO_MALLOC)
     XFREE(y, key->heap, DYNAMIC_TYPE_DH);
     XFREE(x, key->heap, DYNAMIC_TYPE_DH);
@@ -1432,7 +1433,7 @@ static int wc_DhGenerateKeyPair_Async(DhKey* key, WC_RNG* rng,
 #elif defined(HAVE_CAVIUM)
     /* TODO: Not implemented - use software for now */
 
-#else /* WOLFSSL_ASYNC_CRYPT_SW */
+#elif defined(WOLFSSL_ASYNC_CRYPT_SW)
     if (wc_AsyncSwInit(&key->asyncDev, ASYNC_SW_DH_GEN)) {
         WC_ASYNC_SW* sw = &key->asyncDev.sw;
         sw->dhGen.key = key;
@@ -2157,7 +2158,7 @@ static int wc_DhAgree_Sync(DhKey* key, byte* agree, word32* agreeSz,
         ret = MP_TO_E;
 
     if (ret == 0)
-        *agreeSz = mp_unsigned_bin_size(z);
+        *agreeSz = (word32)mp_unsigned_bin_size(z);
 
     mp_forcezero(z);
     mp_clear(y);
@@ -2206,7 +2207,7 @@ static int wc_DhAgree_Async(DhKey* key, byte* agree, word32* agreeSz,
 #elif defined(HAVE_CAVIUM)
     /* TODO: Not implemented - use software for now */
 
-#else /* WOLFSSL_ASYNC_CRYPT_SW */
+#elif defined(WOLFSSL_ASYNC_CRYPT_SW)
     if (wc_AsyncSwInit(&key->asyncDev, ASYNC_SW_DH_AGREE)) {
         WC_ASYNC_SW* sw = &key->asyncDev.sw;
         sw->dhAgree.key = key;
@@ -2375,14 +2376,13 @@ int wc_DhExportKeyPair(DhKey* key, byte* priv, word32* pPrivSz,
     byte* pub, word32* pPubSz)
 {
     int ret = 0;
-    word32 pubSz, privSz;
 
     if (key == NULL || (priv && pPrivSz == NULL) || (pub && pPubSz == NULL)) {
         return BAD_FUNC_ARG;
     }
 
     if (priv) {
-        privSz = mp_unsigned_bin_size(&key->priv);
+        word32 privSz = (word32)mp_unsigned_bin_size(&key->priv);
         if (privSz > *pPrivSz) {
             return BUFFER_E;
         }
@@ -2391,7 +2391,7 @@ int wc_DhExportKeyPair(DhKey* key, byte* priv, word32* pPrivSz,
     }
 
     if (pub) {
-        pubSz = mp_unsigned_bin_size(&key->pub);
+        word32 pubSz = (word32)mp_unsigned_bin_size(&key->pub);
         if (pubSz > *pPubSz) {
             return BUFFER_E;
         }
@@ -2592,7 +2592,7 @@ int wc_DhSetNamedKey(DhKey* key, int name)
 
 word32 wc_DhGetNamedKeyMinSize(int name)
 {
-    int size;
+    word32 size;
 
     switch (name) {
         #ifdef HAVE_FFDHE_2048
@@ -2706,11 +2706,13 @@ int wc_DhCmpNamedKey(int name, int noQ,
             goodName = 0;
     }
 
-    cmp = goodName && (pSz == pCmpSz) && (gSz == gCmpSz) &&
-        (noQ || ((qCmp != NULL) && (qSz == qCmpSz) &&
-                 XMEMCMP(q, qCmp, qCmpSz) == 0)) &&
-        (XMEMCMP(p, pCmp, pCmpSz) == 0) &&
-        (XMEMCMP(g, gCmp, gCmpSz) == 0);
+    if (goodName) {
+        cmp = (pSz == pCmpSz) && (gSz == gCmpSz) &&
+            (noQ || ((qCmp != NULL) && (qSz == qCmpSz) &&
+                     XMEMCMP(q, qCmp, qCmpSz) == 0)) &&
+            (XMEMCMP(p, pCmp, pCmpSz) == 0) &&
+            (XMEMCMP(g, gCmp, gCmpSz) == 0);
+    }
 
     return cmp;
 }
@@ -2878,11 +2880,16 @@ int wc_DhGenerateParams(WC_RNG *rng, int modSz, DhKey *dh)
 #else
     mp_int tmp[1], tmp2[2];
 #endif
-    int     groupSz = 0, bufSz = 0,
-            primeCheckCount = 0,
-            primeCheck = MP_NO,
+    word32  groupSz = 0, bufSz = 0,
+            primeCheckCount = 0;
+    int     primeCheck = MP_NO,
             ret = 0;
     unsigned char *buf = NULL;
+
+#if !defined(WOLFSSL_SMALL_STACK) || defined(WOLFSSL_NO_MALLOC)
+    XMEMSET(tmp, 0, sizeof(tmp));
+    XMEMSET(tmp2, 0, sizeof(tmp2));
+#endif
 
     if (rng == NULL || dh == NULL)
         ret = BAD_FUNC_ARG;
@@ -2917,7 +2924,7 @@ int wc_DhGenerateParams(WC_RNG *rng, int modSz, DhKey *dh)
     if (ret == 0) {
         /* modulus size in bytes */
         modSz /= WOLFSSL_BIT_SIZE;
-        bufSz = modSz - groupSz;
+        bufSz = (word32)modSz - groupSz;
 
         /* allocate ram */
         buf = (unsigned char *)XMALLOC(bufSz,
@@ -2932,9 +2939,22 @@ int wc_DhGenerateParams(WC_RNG *rng, int modSz, DhKey *dh)
 
 #if defined(WOLFSSL_SMALL_STACK) && !defined(WOLFSSL_NO_MALLOC)
     if (ret == 0) {
-        if (((tmp = (mp_int *)XMALLOC(sizeof(*tmp), NULL, DYNAMIC_TYPE_WOLF_BIGINT)) == NULL) ||
-            ((tmp2 = (mp_int *)XMALLOC(sizeof(*tmp2), NULL, DYNAMIC_TYPE_WOLF_BIGINT)) == NULL))
+        if ((tmp = (mp_int *)XMALLOC(sizeof(*tmp), NULL,
+                DYNAMIC_TYPE_WOLF_BIGINT)) == NULL) {
             ret = MEMORY_E;
+        }
+        else {
+            XMEMSET(tmp, 0, sizeof(*tmp));
+        }
+    }
+    if (ret == 0) {
+        if ((tmp2 = (mp_int *)XMALLOC(sizeof(*tmp2), NULL,
+                DYNAMIC_TYPE_WOLF_BIGINT)) == NULL) {
+            ret = MEMORY_E;
+        }
+        else {
+            XMEMSET(tmp2, 0, sizeof(*tmp2));
+        }
     }
 #endif
 
@@ -2944,7 +2964,7 @@ int wc_DhGenerateParams(WC_RNG *rng, int modSz, DhKey *dh)
         /* force magnitude */
         buf[0] |= 0xC0;
         /* force even */
-        buf[bufSz - 1] &= ~1;
+        buf[bufSz - 1] &= 0xfe;
 
         if (mp_init_multi(tmp, tmp2, &dh->p, &dh->q, &dh->g, 0)
                 != MP_OKAY) {
@@ -2959,7 +2979,7 @@ int wc_DhGenerateParams(WC_RNG *rng, int modSz, DhKey *dh)
 
     /* make our prime q */
     if (ret == 0) {
-        if (mp_rand_prime(&dh->q, groupSz, rng, NULL) != MP_OKAY)
+        if (mp_rand_prime(&dh->q, (int)groupSz, rng, NULL) != MP_OKAY)
             ret = PRIME_GEN_E;
     }
 
@@ -3089,9 +3109,9 @@ int wc_DhExportParamsRaw(DhKey* dh, byte* p, word32* pSz,
 
     /* get required output buffer sizes */
     if (ret == 0) {
-        pLen = mp_unsigned_bin_size(&dh->p);
-        qLen = mp_unsigned_bin_size(&dh->q);
-        gLen = mp_unsigned_bin_size(&dh->g);
+        pLen = (word32)mp_unsigned_bin_size(&dh->p);
+        qLen = (word32)mp_unsigned_bin_size(&dh->q);
+        gLen = (word32)mp_unsigned_bin_size(&dh->g);
 
         /* return buffer sizes and LENGTH_ONLY_E if buffers are NULL */
         if (p == NULL && q == NULL && g == NULL) {

@@ -37,6 +37,10 @@ This library provides single precision (SP) integer math functions.
 extern "C" {
 #endif
 
+#if defined(WOLFSSL_SP_ARM_ARCH) && !defined(WOLFSSL_ARM_ARCH)
+    #define WOLFSSL_ARM_ARCH    WOLFSSL_SP_ARM_ARCH
+#endif
+
 #if defined(OPENSSL_EXTRA) && !defined(NO_ASN) && \
     !defined(WOLFSSL_SP_INT_NEGATIVE)
     #define WOLFSSL_SP_INT_NEGATIVE
@@ -96,9 +100,16 @@ extern "C" {
     #error "Size of unsigned int not detected"
 #endif
 
-#if !defined(NO_64BIT) && ULONG_MAX == 18446744073709551615ULL && \
+#if defined(WOLF_C89) && !defined(NO_64BIT) && \
+        ULONG_MAX == 18446744073709551615UL
+    #define SP_ULONG_BITS    64
+
+    typedef unsigned long sp_uint64;
+    typedef          long  sp_int64;
+#elif !defined(WOLF_C89) && !defined(NO_64BIT) && \
+        ULONG_MAX == 18446744073709551615ULL && \
         4294967295UL != 18446744073709551615ULL /* verify pre-processor supports
-                                                * 64-bit ULL types */
+                                                 * 64-bit ULL types */
     #define SP_ULONG_BITS    64
 
     typedef unsigned long sp_uint64;
@@ -122,7 +133,14 @@ extern "C" {
 #endif
 
 #ifdef ULLONG_MAX
-    #if ULLONG_MAX == 18446744073709551615ULL
+    #if defined(WOLF_C89) && ULLONG_MAX == 18446744073709551615UL
+        #define SP_ULLONG_BITS    64
+
+        #if SP_ULLONG_BITS > SP_ULONG_BITS
+            typedef unsigned long long sp_uint64;
+            typedef          long long  sp_int64;
+        #endif
+    #elif !defined(WOLF_C89) && ULLONG_MAX == 18446744073709551615ULL
         #define SP_ULLONG_BITS    64
 
         #if SP_ULLONG_BITS > SP_ULONG_BITS
@@ -159,6 +177,13 @@ extern "C" {
 #ifdef WOLFSSL_SP_DIV_32
 #define WOLFSSL_SP_DIV_WORD_HALF
 #endif
+
+/* Detect Cortex M3 (no UMAAL) */
+#if defined(WOLFSSL_SP_ARM_CORTEX_M_ASM) && defined(__ARM_ARCH_7M__)
+    #undef  WOLFSSL_SP_NO_UMAAL
+    #define WOLFSSL_SP_NO_UMAAL
+#endif
+
 
 /* Make sure WOLFSSL_SP_ASM build option defined when requested */
 #if !defined(WOLFSSL_SP_ASM) && ( \
@@ -220,7 +245,7 @@ extern "C" {
 #ifndef SP_WORD_SIZE
     #ifdef NO_64BIT
         #define SP_WORD_SIZE 16
-    #elif !defined(HAVE___UINT128_T)
+    #elif !defined(HAVE___UINT128_T) || defined(_WIN32)
         #define SP_WORD_SIZE 32
     #else
         #define SP_WORD_SIZE 64
@@ -534,9 +559,9 @@ typedef struct sp_ecc_ctx {
     /* No filesystem, no output
      * TODO: Use logging API?
      */
-    #define sp_print(a, s)
-    #define sp_print_digit(a, s)
-    #define sp_print_int(a, s)
+    #define sp_print(a, s) WC_DO_NOTHING
+    #define sp_print_digit(a, s) WC_DO_NOTHING
+    #define sp_print_int(a, s) WC_DO_NOTHING
 
 #endif /* !NO_FILESYSTEM */
 
@@ -642,7 +667,7 @@ typedef struct sp_ecc_ctx {
 /* Sets the multi-precision number negative.
  *
  * Negative support not compiled in, so does nothing. */
-#define sp_setneg(a) do{}while(0)
+#define sp_setneg(a) WC_DO_NOTHING
 #else
 /* Returns whether multi-precision number is negative.
  *
@@ -658,6 +683,9 @@ typedef struct sp_ecc_ctx {
 #define sp_setneg(a)     ((a)->sign = MP_NEG)
 #endif
 
+/* Number of bits used based on used field only. */
+#define sp_bitsused(a)   ((a)->used * SP_WORD_SIZE)
+
 /* Updates the used count to exclude leading zeros.
  *
  * Assumes a is not NULL.
@@ -667,9 +695,9 @@ typedef struct sp_ecc_ctx {
 #define sp_clamp(a)                                               \
     do {                                                          \
         int ii;                                                   \
-        for (ii = (a)->used - 1; ii >= 0 && (a)->dp[ii] == 0; ii--) { \
+        for (ii = (int)(a)->used - 1; ii >= 0 && (a)->dp[ii] == 0; ii--) { \
         }                                                         \
-        (a)->used = ii + 1;                                       \
+        (a)->used = (unsigned int)ii + 1;                         \
     } while (0)
 
 /* Check the compiled and linked math implementation are the same.
@@ -680,16 +708,6 @@ typedef struct sp_ecc_ctx {
  */
 #define CheckFastMathSettings()   (SP_WORD_SIZE == CheckRunTimeFastMath())
 
-
-/* The number of bytes to a sp_int with 'cnt' digits.
- * Must have at least one digit.
- */
-#define MP_INT_SIZEOF(cnt) \
-    (sizeof(sp_int) - (SP_INT_DIGITS - (((cnt) == 0) ? 1 : (cnt))) * \
-     sizeof(sp_int_digit))
-/* The address of the next sp_int after one with 'cnt' digits. */
-#define MP_INT_NEXT(t, cnt) \
-        (sp_int*)(((byte*)(t)) + MP_INT_SIZEOF(cnt))
 
 /**
  * A result of NO.
@@ -746,6 +764,91 @@ typedef struct sp_ecc_ctx {
 #define DIGIT_BIT  SP_WORD_SIZE
 /* Mask of all used bits in word/digit. */
 #define MP_MASK    SP_MASK
+
+#ifdef MP_LOW_MEM
+/* Use algorithms that use less memory. */
+#define WOLFSSL_SP_LOW_MEM
+#endif
+
+
+/* The number of bytes to a sp_int with 'cnt' digits.
+ * Must have at least one digit.
+ */
+#define MP_INT_SIZEOF(cnt)                                              \
+    (sizeof(sp_int_minimal) + (((cnt) <= 1) ? 0 : ((cnt) - 1)) *        \
+     sizeof(sp_int_digit))
+/* The address of the next sp_int after one with 'cnt' digits. */
+#define MP_INT_NEXT(t, cnt) \
+    (sp_int*)(((byte*)(t)) + MP_INT_SIZEOF(cnt))
+
+
+/* Calculate the number of words required to support a number of bits. */
+#define MP_BITS_CNT(bits)                                       \
+        ((((bits) + SP_WORD_SIZE - 1) / SP_WORD_SIZE) * 2 + 1)
+
+#ifdef WOLFSSL_SMALL_STACK
+/*
+ * Dynamic memory allocation of mp_int.
+ */
+/* Declare a dynamically allocated mp_int. */
+#define DECL_MP_INT_SIZE_DYN(name, bits, max)                               \
+    sp_int* name = NULL
+/* Declare a dynamically allocated mp_int. */
+#define DECL_MP_INT_SIZE(name, bits)                                        \
+    sp_int* name = NULL
+/* Allocate an mp_int of minimal size and zero out. */
+#define NEW_MP_INT_SIZE(name, bits, heap, type)                              \
+do {                                                                         \
+    (name) = (mp_int*)XMALLOC(MP_INT_SIZEOF(MP_BITS_CNT(bits)), heap, type); \
+    if ((name) != NULL) {                                                    \
+        XMEMSET(name, 0, MP_INT_SIZEOF(MP_BITS_CNT(bits)));                  \
+    }                                                                        \
+}                                                                            \
+while (0)
+/* Dispose of dynamically allocated mp_int. */
+#define FREE_MP_INT_SIZE(name, heap, type) \
+    XFREE(name, heap, type)
+/* Type to cast to when using size marcos. */
+#define MP_INT_SIZE     sp_int
+/* Must check mp_int pointer for NULL. */
+#define MP_INT_SIZE_CHECK_NULL
+#else
+/*
+ * Static allocation of mp_int.
+ */
+#if defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L) && \
+    !defined(WOLFSSL_SP_NO_DYN_STACK)
+/* Declare a dynamically allocated mp_int. */
+#define DECL_MP_INT_SIZE_DYN(name, bits, max)                   \
+    unsigned char name##d[MP_INT_SIZEOF(MP_BITS_CNT(bits))];    \
+    sp_int* (name) = (sp_int*)name##d
+#elif defined(__cplusplus)
+/* C++ doesn't tolerate parentheses around "name" (-Wparentheses) */
+#define DECL_MP_INT_SIZE_DYN(name, bits, max)                   \
+    unsigned char name##d[MP_INT_SIZEOF(MP_BITS_CNT(max))];     \
+    sp_int* name = (sp_int*)name##d
+#else
+/* Declare a dynamically allocated mp_int. */
+#define DECL_MP_INT_SIZE_DYN(name, bits, max)                   \
+    unsigned char name##d[MP_INT_SIZEOF(MP_BITS_CNT(max))];     \
+    sp_int* (name) = (sp_int*)name##d
+#endif
+/* Declare a statically allocated mp_int. */
+#define DECL_MP_INT_SIZE(name, bits)                            \
+    unsigned char name##d[MP_INT_SIZEOF(MP_BITS_CNT(bits))];    \
+    sp_int* (name) = (sp_int*)name##d
+/* Zero out mp_int of minimal size. */
+#define NEW_MP_INT_SIZE(name, bits, heap, type) \
+    XMEMSET(name, 0, MP_INT_SIZEOF(MP_BITS_CNT(bits)))
+/* Dispose of static mp_int. */
+#define FREE_MP_INT_SIZE(name, heap, type) WC_DO_NOTHING
+/* Type to force compiler to not complain about size. */
+#define MP_INT_SIZE     sp_int_minimal
+#endif
+
+/* Initialize an mp_int to a specific size. */
+#define INIT_MP_INT_SIZE(name, bits) \
+    mp_init_size(name, MP_BITS_CNT(bits))
 
 
 #ifdef HAVE_WOLF_BIGINT
@@ -818,7 +921,7 @@ typedef sp_int_digit mp_digit;
  */
 
 MP_API int sp_init(sp_int* a);
-MP_API int sp_init_size(sp_int* a, int size);
+MP_API int sp_init_size(sp_int* a, unsigned int size);
 MP_API int sp_init_multi(sp_int* n1, sp_int* n2, sp_int* n3, sp_int* n4,
                          sp_int* n5, sp_int* n6);
 MP_API void sp_free(sp_int* a);
@@ -832,6 +935,8 @@ MP_API int sp_init_copy (sp_int* r, const sp_int* a);
 MP_API int sp_copy(const sp_int* a, sp_int* r);
 MP_API int sp_exch(sp_int* a, sp_int* b);
 MP_API int sp_cond_swap_ct(sp_int* a, sp_int* b, int cnt, int swap);
+MP_API int sp_cond_swap_ct_ex(sp_int* a, sp_int* b, int cnt, int swap,
+    sp_int* t);
 
 #ifdef WOLFSSL_SP_INT_NEGATIVE
 MP_API int sp_abs(const sp_int* a, sp_int* r);
@@ -840,6 +945,7 @@ MP_API int sp_abs(const sp_int* a, sp_int* r);
 MP_API int sp_cmp_mag(const sp_int* a, const sp_int* b);
 #endif
 MP_API int sp_cmp(const sp_int* a, const sp_int* b);
+MP_API int sp_cmp_ct(const sp_int* a, const sp_int* b, unsigned int n);
 
 MP_API int sp_is_bit_set(const sp_int* a, unsigned int b);
 MP_API int sp_count_bits(const sp_int* a);
@@ -925,14 +1031,17 @@ MP_API int sp_exptmod_nct(const sp_int* b, const sp_int* e, const sp_int* m,
 
 #if defined(WOLFSSL_SP_MATH_ALL) || defined(OPENSSL_ALL)
 MP_API int sp_div_2d(const sp_int* a, int e, sp_int* r, sp_int* rem);
-MP_API int sp_mod_2d(const sp_int* a, int e, sp_int* r);
 MP_API int sp_mul_2d(const sp_int* a, int e, sp_int* r);
+#endif
+#if defined(WOLFSSL_SP_MATH_ALL) || defined(HAVE_ECC) || defined(OPENSSL_ALL)
+MP_API int sp_mod_2d(const sp_int* a, int e, sp_int* r);
 #endif
 
 MP_API int sp_sqr(const sp_int* a, sp_int* r);
 MP_API int sp_sqrmod(const sp_int* a, const sp_int* m, sp_int* r);
 
-MP_API int sp_mont_red(sp_int* a, const sp_int* m, sp_int_digit mp);
+MP_API int sp_mont_red_ex(sp_int* a, const sp_int* m, sp_int_digit mp, int ct);
+#define sp_mont_red(a, m, mp)               sp_mont_red_ex(a, m, mp, 0)
 MP_API int sp_mont_setup(const sp_int* m, sp_int_digit* rho);
 MP_API int sp_mont_norm(sp_int* norm, const sp_int* m);
 
@@ -940,6 +1049,7 @@ MP_API int sp_unsigned_bin_size(const sp_int* a);
 MP_API int sp_read_unsigned_bin(sp_int* a, const byte* in, word32 inSz);
 MP_API int sp_to_unsigned_bin(const sp_int* a, byte* out);
 MP_API int sp_to_unsigned_bin_len(const sp_int* a, byte* out, int outSz);
+MP_API int sp_to_unsigned_bin_len_ct(const sp_int* a, byte* out, int outSz);
 #ifdef WOLFSSL_SP_MATH_ALL
 MP_API int sp_to_unsigned_bin_at_pos(int o, const sp_int* a,
     unsigned char* out);
@@ -979,7 +1089,8 @@ WOLFSSL_LOCAL void sp_memzero_check(sp_int* sp);
 #define mp_div_3(a, r, rem)                 sp_div_d(a, 3, r, rem)
 #define mp_rshb(A,x)                        sp_rshb(A,x,A)
 #define mp_is_bit_set(a,b)                  sp_is_bit_set(a,(unsigned int)(b))
-#define mp_montgomery_reduce                sp_mont_red
+#define mp_montgomery_reduce(a, m, mp)      sp_mont_red_ex(a, m, mp, 0)
+#define mp_montgomery_reduce_ct(a, m, mp)   sp_mont_red_ex(a, m, mp, 1)
 #define mp_montgomery_setup                 sp_mont_setup
 #define mp_montgomery_calc_normalization    sp_mont_norm
 
@@ -992,6 +1103,7 @@ WOLFSSL_LOCAL void sp_memzero_check(sp_int* sp);
 #define mp_abs                              sp_abs
 #define mp_isneg                            sp_isneg
 #define mp_setneg                           sp_setneg
+#define mp_bitsused                         sp_bitsused
 #define mp_clamp                            sp_clamp
 
 /* One to one mappings. */
@@ -1007,8 +1119,10 @@ WOLFSSL_LOCAL void sp_memzero_check(sp_int* sp);
 #define mp_init_copy                        sp_init_copy
 #define mp_exch                             sp_exch
 #define mp_cond_swap_ct                     sp_cond_swap_ct
+#define mp_cond_swap_ct_ex                  sp_cond_swap_ct_ex
 #define mp_cmp_mag                          sp_cmp_mag
 #define mp_cmp                              sp_cmp
+#define mp_cmp_ct                           sp_cmp_ct
 #define mp_count_bits                       sp_count_bits
 #define mp_cnt_lsb                          sp_cnt_lsb
 #define mp_leading_bit                      sp_leading_bit
@@ -1051,6 +1165,7 @@ WOLFSSL_LOCAL void sp_memzero_check(sp_int* sp);
 #define mp_read_unsigned_bin                sp_read_unsigned_bin
 #define mp_to_unsigned_bin                  sp_to_unsigned_bin
 #define mp_to_unsigned_bin_len              sp_to_unsigned_bin_len
+#define mp_to_unsigned_bin_len_ct           sp_to_unsigned_bin_len_ct
 #define mp_to_unsigned_bin_at_pos           sp_to_unsigned_bin_at_pos
 #define mp_read_radix                       sp_read_radix
 #define mp_tohex                            sp_tohex

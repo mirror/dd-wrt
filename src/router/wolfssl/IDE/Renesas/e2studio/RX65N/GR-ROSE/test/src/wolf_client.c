@@ -136,13 +136,13 @@ void wolfSSL_TLS_client_init(const char* cipherlist)
 
     if ((client_ctx = wolfSSL_CTX_new_ex(wolfSSLv23_client_method_ex(heapHint),
                                                       heapHint)) == NULL) {
-        printf("ERROR: faild to create WOLFSSL_CTX\n");
+        printf("ERROR: failed to create WOLFSSL_CTX\n");
         return;                                                
     }
 
     if ((wolfSSL_CTX_load_static_memory(&client_ctx, NULL, heapBufIO,
                 sizeof(heapBufIO), WOLFMEM_IO_POOL, 10)) != WOLFSSL_SUCCESS) {
-        printf("ERROR: faild to set static memory for IO\n");
+        printf("ERROR: failed to set static memory for IO\n");
         return;
     }
 
@@ -193,7 +193,7 @@ void wolfSSL_TLS_client_init(const char* cipherlist)
         return;
     }
     
-#if defined(WOLFSSL_TLS13) && (WOLFSSL_RENESAS_TSIP_VER >= 115)
+#if defined(WOLFSSL_TLS13)
     if (wolfSSL_CTX_UseSupportedCurve(client_ctx, WOLFSSL_ECC_SECP256R1) 
                                                         != WOLFSSL_SUCCESS) {
         wolfSSL_CTX_free(client_ctx); client_ctx = NULL;
@@ -285,18 +285,18 @@ void wolfSSL_TLS_client( )
     #ifdef WOLFSSL_RENESAS_TSIP_TLS
 
     /* TSIP specific ECC private key */
-    if (tsip_use_PrivateKey_buffer(ssl,
+    if (tsip_use_PrivateKey_buffer_TLS(ssl,
                 (const char*)g_key_block_data.encrypted_user_ecc256_private_key,
                 sizeof(g_key_block_data.encrypted_user_ecc256_private_key),
                 TSIP_ECCP256) != 0) {
-        printf("ERROR tsip_use_PrivateKey_buffer\n");
+        printf("ERROR tsip_use_PrivateKey_buffer_TLS\n");
         goto out;
     }
     
     #else
 
     /* DER format ECC private key */
-    if (wolfSSL_use_PrivateKey_buffer(ssl, 
+    if (wolfSSL_use_PrivateKey_buffer(ssl,
                                     ecc_clikey_der_256,
                                     sizeof_ecc_clikey_der_256, 
                                     WOLFSSL_FILETYPE_ASN1) != SSL_SUCCESS) {
@@ -309,28 +309,25 @@ void wolfSSL_TLS_client( )
 
 #else
 
-    #if defined(WOLFSSL_RENESAS_TSIP_TLS) && !defined(WOLFSSL_TLS13)
+    #if defined(WOLFSSL_RENESAS_TSIP_TLS)
 
-    /* Note 1: TSIP asks client key pair for client authentication.  
-     * Note 2: as of TSIP v1.15, client authentication is not supported by TSIP
-     * for RSA certificate on TLS1.3.
-     */
+    /* Note: TSIP asks client key pair for client authentication. */
 
     /* TSIP specific RSA private key */
-    if (tsip_use_PrivateKey_buffer(ssl,
+    if (tsip_use_PrivateKey_buffer_TLS(ssl,
                (const char*)g_key_block_data.encrypted_user_rsa2048_private_key,
                sizeof(g_key_block_data.encrypted_user_rsa2048_private_key),
                                                         TSIP_RSA2048) != 0) {
-        printf("ERROR tsip_use_PrivateKey_buffer\n");
+        printf("ERROR tsip_use_PrivateKey_buffer_TLS\n");
         goto out;
     }
 
     /* TSIP specific RSA public key */
-    if (tsip_use_PublicKey_buffer(ssl,
+    if (tsip_use_PublicKey_buffer_TLS(ssl,
                 (const char*)g_key_block_data.encrypted_user_rsa2048_public_key,
                 sizeof(g_key_block_data.encrypted_user_rsa2048_public_key),
                                                         TSIP_RSA2048) != 0) {
-        printf("ERROR tsip_use_PublicKey_buffer\n");
+        printf("ERROR tsip_use_PublicKey_buffer_TLS\n");
         goto out;
     }
 

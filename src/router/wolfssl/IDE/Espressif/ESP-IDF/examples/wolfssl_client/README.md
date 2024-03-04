@@ -1,6 +1,20 @@
-#wolfSSL Example
+# wolfSSL TLS Client Example
 
-The Example contains of wolfSSL tls client demo.
+This is the wolfSSL TLS Client demo, typically used with the [Espressif TLS Server](../wolfssl_server/README.md)
+or the CLI [Server](https://github.com/wolfSSL/wolfssl/tree/master/examples/server).
+
+When using the CLI, see the [example parameters](/IDE/Espressif/ESP-IDF/examples#interaction-with-wolfssl-cli).
+
+For general information on [wolfSSL examples for Espressif](../README.md), see the
+[README](https://github.com/wolfSSL/wolfssl/blob/master/IDE/Espressif/ESP-IDF/README.md) file.
+
+## VisualGDB
+
+Open the VisualGDB Visual Studio Project file in the VisualGDB directory and click the "Start" button.
+No wolfSSL setup is needed. You may need to adjust your specific COM port. The default is `COM20`.
+
+## ESP-IDF Commandline
+
 
 1. `idf.py menuconfig` to config the project
 
@@ -24,4 +38,41 @@ When you want to test the wolfSSL client
 
          e.g. Launch ./examples/server/server -v 4 -b -i -d
 
-See the README.md file in the upper level 'examples' directory for more information about examples.
+## SM Ciphers
+
+#### Working Linux Client to ESP32 Server
+
+Command:
+
+```
+cd /mnt/c/workspace/wolfssl-$USER/IDE/Espressif/ESP-IDF/examples/wolfssl_server
+. /mnt/c/SysGCC/esp32/esp-idf/v5.1/export.sh
+idf.py flash -p /dev/ttyS19 -b 115200 monitor
+
+```
+
+```
+cd /mnt/c/workspace/wolfssl-$USER
+
+./examples/client/client  -h 192.168.1.108 -v 4 -l TLS_SM4_GCM_SM3 -c ./certs/sm2/client-sm2.pem -k ./certs/sm2/client-sm2-priv.pem     -A ./certs/sm2/root-sm2.pem -C
+```
+
+Output:
+
+```text
+SSL version is TLSv1.3
+SSL cipher suite is TLS_SM4_GCM_SM3
+SSL curve name is SM2P256V1
+I hear you fa shizzle!
+```
+
+#### Linux client to Linux server:
+
+```
+./examples/client/client  -h 127.0.0.1 -v 4 -l ECDHE-ECDSA-SM4-CBC-SM3     -c ./certs/sm2/client-sm2.pem -k ./certs/sm2/client-sm2-priv.pem     -A ./certs/sm2/root-sm2.pem -C
+
+./examples/server/server                   -v 3 -l ECDHE-ECDSA-SM4-CBC-SM3     -c ./certs/sm2/server-sm2.pem -k ./certs/sm2/server-sm2-priv.pem     -A ./certs/sm2/client-sm2.pem -V
+```
+
+See the README.md file in the upper level 'examples' directory for [more information about examples](../README.md).
+

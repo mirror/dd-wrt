@@ -51,6 +51,7 @@
 #include <wolfssl/wolfcrypt/wc_port.h>
 #include <wolfssl/wolfcrypt/logging.h>
 #include <wolfssl/wolfcrypt/types.h>
+#include <wolfssl/wolfcrypt/wolfmath.h>
 #include <wolfssl/wolfcrypt/asn.h>
 #include <wolfssl/wolfcrypt/md2.h>
 #include <wolfssl/wolfcrypt/md5.h>
@@ -150,12 +151,14 @@
 
 #ifdef OPENSSL_EXTRA
   #ifndef WOLFCRYPT_ONLY
-    #include <wolfssl/openssl/evp.h>
+      #include <wolfssl/openssl/evp.h>
   #endif
     #include <wolfssl/openssl/rand.h>
     #include <wolfssl/openssl/hmac.h>
     #include <wolfssl/openssl/aes.h>
     #include <wolfssl/openssl/des.h>
+    #include <wolfssl/openssl/modes.h>
+    #include <wolfssl/openssl/rc4.h>
 #endif
 
 #if defined(NO_FILESYSTEM)

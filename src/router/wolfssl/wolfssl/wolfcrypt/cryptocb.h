@@ -72,13 +72,23 @@
     #include <wolfssl/wolfcrypt/sha512.h>
 #endif
 
+#ifdef WOLF_CRYPTO_CB_CMD
+/* CryptoCb Commands */
+enum wc_CryptoCbCmdType {
+    WC_CRYPTOCB_CMD_TYPE_NONE = 0,
+    WC_CRYPTOCB_CMD_TYPE_REGISTER,
+    WC_CRYPTOCB_CMD_TYPE_UNREGISTER,
+
+    WC_CRYPTOCB_CMD_TYPE_MAX = WC_CRYPTOCB_CMD_TYPE_UNREGISTER
+};
+#endif
+
 /* Crypto Information Structure for callbacks */
 typedef struct wc_CryptoInfo {
     int algo_type; /* enum wc_AlgoType */
 #if HAVE_ANONYMOUS_INLINE_AGGREGATES
     union {
 #endif
-#if !defined(NO_RSA) || defined(HAVE_ECC)
     struct {
         int type; /* enum wc_PkType */
 #if HAVE_ANONYMOUS_INLINE_AGGREGATES
@@ -107,6 +117,10 @@ typedef struct wc_CryptoInfo {
                 const byte* pubKey;
                 word32      pubKeySz;
             } rsa_check;
+            struct {
+                const RsaKey* key;
+                int*          keySize;
+            } rsa_get_size;
         #endif
         #ifdef HAVE_ECC
             struct {
@@ -191,7 +205,6 @@ typedef struct wc_CryptoInfo {
         };
 #endif
     } pk;
-#endif /* !NO_RSA || HAVE_ECC */
 #if !defined(NO_AES) || !defined(NO_DES3)
     struct {
         int type; /* enum wc_CipherType */
@@ -352,6 +365,12 @@ typedef struct wc_CryptoInfo {
         int type;
     } cmac;
 #endif
+#ifdef WOLF_CRYPTO_CB_CMD
+    struct {      /* uses wc_AlgoType=ALGO_NONE */
+        int type; /* enum wc_CryptoCbCmdType */
+        void *ctx;
+    } cmd;
+#endif
 #if HAVE_ANONYMOUS_INLINE_AGGREGATES
     };
 #endif
@@ -361,10 +380,16 @@ typedef struct wc_CryptoInfo {
 typedef int (*CryptoDevCallbackFunc)(int devId, wc_CryptoInfo* info, void* ctx);
 
 WOLFSSL_LOCAL void wc_CryptoCb_Init(void);
+WOLFSSL_LOCAL void wc_CryptoCb_Cleanup(void);
 WOLFSSL_LOCAL int wc_CryptoCb_GetDevIdAtIndex(int startIdx);
 WOLFSSL_API int  wc_CryptoCb_RegisterDevice(int devId, CryptoDevCallbackFunc cb, void* ctx);
 WOLFSSL_API void wc_CryptoCb_UnRegisterDevice(int devId);
 WOLFSSL_API int wc_CryptoCb_DefaultDevID(void);
+
+#ifdef WOLF_CRYPTO_CB_FIND
+typedef int (*CryptoDevCallbackFind)(int devId, int algoType);
+WOLFSSL_API void wc_CryptoCb_SetDeviceFindCb(CryptoDevCallbackFind cb);
+#endif
 
 #ifdef DEBUG_CRYPTOCB
 WOLFSSL_API void wc_CryptoCb_InfoString(wc_CryptoInfo* info);
@@ -386,6 +411,7 @@ WOLFSSL_LOCAL int wc_CryptoCb_MakeRsaKey(RsaKey* key, int size, long e,
 
 WOLFSSL_LOCAL int wc_CryptoCb_RsaCheckPrivKey(RsaKey* key, const byte* pubKey,
     word32 pubKeySz);
+WOLFSSL_LOCAL int wc_CryptoCb_RsaGetSize(const RsaKey* key, int* keySize);
 #endif /* !NO_RSA */
 
 #ifdef HAVE_ECC

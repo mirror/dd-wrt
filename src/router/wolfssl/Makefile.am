@@ -159,7 +159,6 @@ EXTRA_DIST+= m4/ax_atomic.m4
 
 include cmake/include.am
 include wrapper/include.am
-include cyassl/include.am
 include wolfssl/include.am
 include certs/include.am
 include doc/include.am
@@ -175,6 +174,7 @@ include examples/include.am
 include testsuite/include.am
 include tests/include.am
 include sslSniffer/sslSnifferTest/include.am
+include debian/include.am
 include rpm/include.am
 include linuxkm/include.am
 include zephyr/include.am
@@ -216,7 +216,7 @@ if BUILD_LINUXKM
         CFLAGS_FPU_DISABLE CFLAGS_FPU_ENABLE CFLAGS_SIMD_DISABLE CFLAGS_SIMD_ENABLE \
         CFLAGS_AUTO_VECTORIZE_DISABLE CFLAGS_AUTO_VECTORIZE_ENABLE \
         ASFLAGS_FPU_DISABLE_SIMD_ENABLE ASFLAGS_FPU_ENABLE_SIMD_DISABLE \
-        ASFLAGS_FPUSIMD_DISABLE ASFLAGS_FPUSIMD_ENABLE
+        ASFLAGS_FPUSIMD_DISABLE ASFLAGS_FPUSIMD_ENABLE ENABLED_LINUXKM_BENCHMARKS
 
 module:
 	+$(MAKE) -C linuxkm libwolfssl.ko
@@ -243,7 +243,6 @@ test: check
 tests/unit.log: testsuite/testsuite.log
 scripts/unit.log: testsuite/testsuite.log
 
-DISTCLEANFILES+= cyassl-config
 DISTCLEANFILES+= wolfssl-config
 
 MAINTAINERCLEANFILES+= wolfssl/wolfcrypt/async.h
@@ -265,7 +264,6 @@ maintainer-clean-local:
 	-rm build-aux/install-sh
 	-rm build-aux/ltmain.sh
 	-rm build-aux/missing
-	-rm cyassl-config
 	-rmdir build-aux
 	-rm configure
 	-rm config.log

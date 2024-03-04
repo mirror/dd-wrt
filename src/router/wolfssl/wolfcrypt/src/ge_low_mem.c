@@ -133,7 +133,6 @@ static void barrett_reduce(word32* r, word32 x[64])
   word32 r2[33];
   word32 carry;
   word32 pb = 0;
-  word32 b;
 
   for (i = 0;i < 66;++i) q2[i] = 0;
   for (i = 0;i < 33;++i) r2[i] = 0;
@@ -160,6 +159,7 @@ static void barrett_reduce(word32* r, word32 x[64])
 
   for(i=0;i<32;i++)
   {
+    word32 b;
     pb += r2[i];
     b = lt(r1[i],pb);
     r[i] = r1[i]-pb+(b<<8);
@@ -438,28 +438,6 @@ void ed25519_smult(ge_p3 *r_out, const ge_p3 *p, const byte *e)
 void ge_scalarmult_base(ge_p3 *R,const unsigned char *nonce)
 {
     ed25519_smult(R, &ed25519_base, nonce);
-}
-
-
-/* pack the point h into array s */
-void ge_p3_tobytes(unsigned char *s,const ge_p3 *h)
-{
-    byte x[F25519_SIZE];
-    byte y[F25519_SIZE];
-    byte z1[F25519_SIZE];
-    byte parity;
-
-    fe_inv__distinct(z1, h->Z);
-    fe_mul__distinct(x, h->X, z1);
-    fe_mul__distinct(y, h->Y, z1);
-
-    fe_normalize(x);
-    fe_normalize(y);
-
-    parity = (x[0] & 1) << 7;
-    lm_copy(s, y);
-    fe_normalize(s);
-    s[31] |= parity;
 }
 
 

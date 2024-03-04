@@ -1,5 +1,5 @@
-/* sp_x86_64_asm
- *
+/* sp_x86_64_asm.S */
+/*
  * Copyright (C) 2006-2023 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
@@ -55378,11 +55378,12 @@ _sp_256_mul_avx2_4:
         pushq	%rbx
         movq	%rdx, %rbp
         movq	(%rsi), %rdx
+        movq	8(%rbp), %r14
         # A[0] * B[0]
         mulxq	(%rbp), %r8, %r9
         xorq	%rbx, %rbx
         # A[0] * B[1]
-        mulxq	8(%rbp), %rax, %r10
+        mulxq	%r14, %rax, %r10
         adcxq	%rax, %r9
         # A[0] * B[2]
         mulxq	16(%rbp), %rax, %r11
@@ -55397,7 +55398,7 @@ _sp_256_mul_avx2_4:
         xorq	%rbx, %rbx
         adcxq	%rax, %r9
         # A[1] * B[1]
-        mulxq	8(%rbp), %rax, %r15
+        mulxq	%r14, %rax, %r15
         adoxq	%rcx, %r10
         adcxq	%rax, %r10
         # A[1] * B[2]
@@ -55416,7 +55417,7 @@ _sp_256_mul_avx2_4:
         xorq	%rbx, %rbx
         adcxq	%rax, %r10
         # A[2] * B[1]
-        mulxq	8(%rbp), %rax, %r15
+        mulxq	%r14, %rax, %r15
         adoxq	%rcx, %r11
         adcxq	%rax, %r11
         # A[2] * B[2]
@@ -55805,7 +55806,7 @@ _sp_256_cond_copy_4:
  * a   First number to multiply in Montgomery form.
  * b   Second number to multiply in Montgomery form.
  * m   Modulus (prime).
- * mp  Montgomery mulitplier.
+ * mp  Montgomery multiplier.
  */
 #ifndef __APPLE__
 .text
@@ -55981,11 +55982,10 @@ _sp_256_mont_mul_4:
         adcq	$0x00, %rbx
         sbbq	$0x00, %r9
         movq	$0xffffffff00000001, %rsi
-        movq	%r9, %rax
         # mask m and sub from result if overflow
         #  m[0] = -1 & mask = mask
-        shrq	$32, %rax
         #  m[2] =  0 & mask = 0
+        movl	%r9d, %eax
         andq	%r9, %rsi
         subq	%r9, %r13
         sbbq	%rax, %r14
@@ -56009,7 +56009,7 @@ _sp_256_mont_mul_4:
  * r   Result of squaring.
  * a   Number to square in Montgomery form.
  * m   Modulus (prime).
- * mp  Montgomery mulitplier.
+ * mp  Montgomery multiplier.
  */
 #ifndef __APPLE__
 .text
@@ -56163,11 +56163,10 @@ _sp_256_mont_sqr_4:
         adcq	$0x00, %r15
         sbbq	$0x00, %r8
         movq	$0xffffffff00000001, %rsi
-        movq	%r8, %rax
         # mask m and sub from result if overflow
         #  m[0] = -1 & mask = mask
-        shrq	$32, %rax
         #  m[2] =  0 & mask = 0
+        movl	%r8d, %eax
         andq	%r8, %rsi
         subq	%r8, %r12
         sbbq	%rax, %r13
@@ -56388,11 +56387,10 @@ _sp_256_mont_reduce_4:
         adcq	$0x00, %r15
         sbbq	$0x00, %r8
         movq	$0xffffffff00000001, %rbx
-        movq	%r8, %rax
         # mask m and sub from result if overflow
         #  m[0] = -1 & mask = mask
-        shrq	$32, %rax
         #  m[2] =  0 & mask = 0
+        movl	%r8d, %eax
         andq	%r8, %rbx
         subq	%r8, %r12
         sbbq	%rax, %r13
@@ -56543,13 +56541,12 @@ _sp_256_mont_add_4:
         movq	16(%rsi), %r8
         movq	24(%rsi), %r9
         addq	(%rdx), %rax
-        movq	$0xffffffff, %r10
         adcq	8(%rdx), %rcx
         movq	$0xffffffff00000001, %r11
         adcq	16(%rdx), %r8
         adcq	24(%rdx), %r9
         sbbq	%rsi, %rsi
-        andq	%rsi, %r10
+        movl	%esi, %r10d
         andq	%rsi, %r11
         subq	%rsi, %rax
         sbbq	%r10, %rcx
@@ -56593,13 +56590,13 @@ _sp_256_mont_dbl_4:
         movq	16(%rsi), %rcx
         movq	24(%rsi), %r8
         addq	%rdx, %rdx
-        movq	$0xffffffff, %r9
         adcq	%rax, %rax
         movq	$0xffffffff00000001, %r10
         adcq	%rcx, %rcx
+        movq	%r8, %r11
         adcq	%r8, %r8
-        sbbq	%r11, %r11
-        andq	%r11, %r9
+        sarq	$63, %r11
+        movl	%r11d, %r9d
         andq	%r11, %r10
         subq	%r11, %rdx
         sbbq	%r9, %rax
@@ -56643,13 +56640,12 @@ _sp_256_mont_tpl_4:
         movq	16(%rsi), %rcx
         movq	24(%rsi), %r8
         addq	%rdx, %rdx
-        movq	$0xffffffff, %r9
         adcq	%rax, %rax
         movq	$0xffffffff00000001, %r10
         adcq	%rcx, %rcx
         adcq	%r8, %r8
         sbbq	%r11, %r11
-        andq	%r11, %r9
+        movl	%r11d, %r9d
         andq	%r11, %r10
         subq	%r11, %rdx
         sbbq	%r9, %rax
@@ -56663,13 +56659,12 @@ _sp_256_mont_tpl_4:
         sbbq	$0x00, %rcx
         sbbq	%r10, %r8
         addq	(%rsi), %rdx
-        movq	$0xffffffff, %r9
         adcq	8(%rsi), %rax
         movq	$0xffffffff00000001, %r10
         adcq	16(%rsi), %rcx
         adcq	24(%rsi), %r8
-        sbbq	%r11, %r11
-        andq	%r11, %r9
+        sbbq	$0x00, %r11
+        movl	%r11d, %r9d
         andq	%r11, %r10
         subq	%r11, %rdx
         sbbq	%r9, %rax
@@ -56714,13 +56709,12 @@ _sp_256_mont_sub_4:
         movq	16(%rsi), %r8
         movq	24(%rsi), %r9
         subq	(%rdx), %rax
-        movq	$0xffffffff, %r10
         sbbq	8(%rdx), %rcx
         movq	$0xffffffff00000001, %r11
         sbbq	16(%rdx), %r8
         sbbq	24(%rdx), %r9
         sbbq	%rsi, %rsi
-        andq	%rsi, %r10
+        movl	%esi, %r10d
         andq	%rsi, %r11
         addq	%rsi, %rax
         adcq	%r10, %rcx
@@ -56741,52 +56735,6 @@ _sp_256_mont_sub_4:
 #ifndef __APPLE__
 .size	sp_256_mont_sub_4,.-sp_256_mont_sub_4
 #endif /* __APPLE__ */
-/* Subtract two Montgomery form numbers (r = a - b % m).
- *
- * b is less than the modulus.
- *
- * r   Result of subtration.
- * a   Number to subtract from in Montgomery form.
- * b   Number to subtract with in Montgomery form.
- * m   Modulus (prime).
- */
-#ifndef __APPLE__
-.text
-.globl	sp_256_mont_sub_lower_4
-.type	sp_256_mont_sub_lower_4,@function
-.align	16
-sp_256_mont_sub_lower_4:
-#else
-.section	__TEXT,__text
-.globl	_sp_256_mont_sub_lower_4
-.p2align	4
-_sp_256_mont_sub_lower_4:
-#endif /* __APPLE__ */
-        movq	(%rsi), %rax
-        movq	8(%rsi), %rcx
-        movq	16(%rsi), %r8
-        movq	24(%rsi), %r9
-        subq	(%rdx), %rax
-        movq	$0xffffffff, %r10
-        sbbq	8(%rdx), %rcx
-        movq	$0xffffffff00000001, %r11
-        sbbq	16(%rdx), %r8
-        sbbq	24(%rdx), %r9
-        sbbq	%rsi, %rsi
-        andq	%rsi, %r10
-        andq	%rsi, %r11
-        addq	%rsi, %rax
-        adcq	%r10, %rcx
-        movq	%rax, (%rdi)
-        adcq	$0x00, %r8
-        movq	%rcx, 8(%rdi)
-        adcq	%r11, %r9
-        movq	%r8, 16(%rdi)
-        movq	%r9, 24(%rdi)
-        repz retq
-#ifndef __APPLE__
-.size	sp_256_mont_sub_lower_4,.-sp_256_mont_sub_lower_4
-#endif /* __APPLE__ */
 /* Divide the number by 2 mod the modulus (prime). (r = a / 2 % m)
  *
  * r  Result of division by 2.
@@ -56795,26 +56743,25 @@ _sp_256_mont_sub_lower_4:
  */
 #ifndef __APPLE__
 .text
-.globl	sp_256_div2_4
-.type	sp_256_div2_4,@function
+.globl	sp_256_mont_div2_4
+.type	sp_256_mont_div2_4,@function
 .align	16
-sp_256_div2_4:
+sp_256_mont_div2_4:
 #else
 .section	__TEXT,__text
-.globl	_sp_256_div2_4
+.globl	_sp_256_mont_div2_4
 .p2align	4
-_sp_256_div2_4:
+_sp_256_mont_div2_4:
 #endif /* __APPLE__ */
         movq	(%rsi), %rdx
         movq	8(%rsi), %rax
         movq	16(%rsi), %rcx
         movq	24(%rsi), %r8
-        movq	$0xffffffff, %r9
         movq	$0xffffffff00000001, %r10
         movq	%rdx, %r11
         andq	$0x01, %r11
         negq	%r11
-        andq	%r11, %r9
+        movl	%r11d, %r9d
         andq	%r11, %r10
         addq	%r11, %rdx
         adcq	%r9, %rax
@@ -56832,72 +56779,7 @@ _sp_256_div2_4:
         movq	%r8, 24(%rdi)
         repz retq
 #ifndef __APPLE__
-.size	sp_256_div2_4,.-sp_256_div2_4
-#endif /* __APPLE__ */
-/* Triple a Montgomery form number (r = a + a + a % m).
- *
- * a is less than m.
- *
- * r   Result of Tripling.
- * a   Number to triple in Montgomery form.
- * m   Modulus (prime).
- */
-#ifndef __APPLE__
-.text
-.globl	sp_256_mont_tpl_lower_4
-.type	sp_256_mont_tpl_lower_4,@function
-.align	16
-sp_256_mont_tpl_lower_4:
-#else
-.section	__TEXT,__text
-.globl	_sp_256_mont_tpl_lower_4
-.p2align	4
-_sp_256_mont_tpl_lower_4:
-#endif /* __APPLE__ */
-        movq	(%rsi), %rdx
-        movq	8(%rsi), %rax
-        movq	16(%rsi), %rcx
-        movq	24(%rsi), %r8
-        addq	%rdx, %rdx
-        movq	$0xffffffff, %r9
-        adcq	%rax, %rax
-        movq	$0xffffffff00000001, %r10
-        adcq	%rcx, %rcx
-        adcq	%r8, %r8
-        sbbq	%r11, %r11
-        andq	%r11, %r9
-        andq	%r11, %r10
-        subq	%r11, %rdx
-        sbbq	%r9, %rax
-        sbbq	$0x00, %rcx
-        sbbq	%r10, %r8
-        addq	(%rsi), %rdx
-        movq	$0xffffffff, %r9
-        adcq	8(%rsi), %rax
-        movq	$0xffffffff00000001, %r10
-        adcq	16(%rsi), %rcx
-        adcq	24(%rsi), %r8
-        sbbq	%r11, %r11
-        andq	%r11, %r9
-        andq	%r11, %r10
-        subq	%r11, %rdx
-        sbbq	%r9, %rax
-        sbbq	$0x00, %rcx
-        sbbq	%r10, %r8
-        adcq	$0x00, %r11
-        andq	%r11, %r9
-        andq	%r11, %r10
-        subq	%r11, %rdx
-        sbbq	%r9, %rax
-        movq	%rdx, (%rdi)
-        sbbq	$0x00, %rcx
-        movq	%rax, 8(%rdi)
-        sbbq	%r10, %r8
-        movq	%rcx, 16(%rdi)
-        movq	%r8, 24(%rdi)
-        repz retq
-#ifndef __APPLE__
-.size	sp_256_mont_tpl_lower_4,.-sp_256_mont_tpl_lower_4
+.size	sp_256_mont_div2_4,.-sp_256_mont_div2_4
 #endif /* __APPLE__ */
 /* Two Montgomery numbers, subtract double second from first (r = a - 2.b % m).
  *
@@ -56908,15 +56790,15 @@ _sp_256_mont_tpl_lower_4:
  */
 #ifndef __APPLE__
 .text
-.globl	sp_256_mont_sub_dbl_4
-.type	sp_256_mont_sub_dbl_4,@function
+.globl	sp_256_mont_rsb_sub_dbl_4
+.type	sp_256_mont_rsb_sub_dbl_4,@function
 .align	16
-sp_256_mont_sub_dbl_4:
+sp_256_mont_rsb_sub_dbl_4:
 #else
 .section	__TEXT,__text
-.globl	_sp_256_mont_sub_dbl_4
+.globl	_sp_256_mont_rsb_sub_dbl_4
 .p2align	4
-_sp_256_mont_sub_dbl_4:
+_sp_256_mont_rsb_sub_dbl_4:
 #endif /* __APPLE__ */
         pushq	%r12
         pushq	%r13
@@ -56931,42 +56813,40 @@ _sp_256_mont_sub_dbl_4:
         movq	16(%rdx), %r12
         movq	24(%rdx), %r13
         addq	%r10, %r10
-        movq	$0xffffffff, %r14
         adcq	%r11, %r11
         movq	$0xffffffff00000001, %r15
         adcq	%r12, %r12
         adcq	%r13, %r13
-        sbbq	%rdx, %rdx
-        andq	%rdx, %r14
-        andq	%rdx, %r15
-        subq	%rdx, %r10
+        sbbq	%rsi, %rsi
+        movl	%esi, %r14d
+        andq	%rsi, %r15
+        subq	%rsi, %r10
         sbbq	%r14, %r11
         sbbq	$0x00, %r12
         sbbq	%r15, %r13
-        adcq	$0x00, %rdx
-        andq	%rdx, %r14
-        andq	%rdx, %r15
-        subq	%rdx, %r10
+        adcq	$0x00, %rsi
+        andq	%rsi, %r14
+        andq	%rsi, %r15
+        subq	%rsi, %r10
         sbbq	%r14, %r11
         sbbq	$0x00, %r12
         sbbq	%r15, %r13
         subq	%r10, %rax
-        movq	$0xffffffff, %r14
         sbbq	%r11, %rcx
         movq	$0xffffffff00000001, %r15
         sbbq	%r12, %r8
         sbbq	%r13, %r9
-        sbbq	%rdx, %rdx
-        andq	%rdx, %r14
-        andq	%rdx, %r15
-        addq	%rdx, %rax
+        sbbq	$0x00, %rsi
+        movl	%esi, %r14d
+        andq	%rsi, %r15
+        addq	%rsi, %rax
         adcq	%r14, %rcx
         adcq	$0x00, %r8
         adcq	%r15, %r9
-        adcq	$0x00, %rdx
-        andq	%rdx, %r14
-        andq	%rdx, %r15
-        addq	%rdx, %rax
+        adcq	$0x00, %rsi
+        andq	%rsi, %r14
+        andq	%rsi, %r15
+        addq	%rsi, %rax
         adcq	%r14, %rcx
         movq	%rax, (%rdi)
         adcq	$0x00, %r8
@@ -56974,79 +56854,46 @@ _sp_256_mont_sub_dbl_4:
         adcq	%r15, %r9
         movq	%r8, 16(%rdi)
         movq	%r9, 24(%rdi)
+        movq	(%rdx), %r10
+        movq	8(%rdx), %r11
+        movq	16(%rdx), %r12
+        movq	24(%rdx), %r13
+        subq	%rax, %r10
+        sbbq	%rcx, %r11
+        movq	$0xffffffff00000001, %r15
+        sbbq	%r8, %r12
+        sbbq	%r9, %r13
+        sbbq	%rsi, %rsi
+        movl	%esi, %r14d
+        andq	%rsi, %r15
+        addq	%rsi, %r10
+        adcq	%r14, %r11
+        adcq	$0x00, %r12
+        adcq	%r15, %r13
+        adcq	$0x00, %rsi
+        andq	%rsi, %r14
+        andq	%rsi, %r15
+        addq	%rsi, %r10
+        adcq	%r14, %r11
+        movq	%r10, (%rdx)
+        adcq	$0x00, %r12
+        movq	%r11, 8(%rdx)
+        adcq	%r15, %r13
+        movq	%r12, 16(%rdx)
+        movq	%r13, 24(%rdx)
         popq	%r15
         popq	%r14
         popq	%r13
         popq	%r12
         repz retq
 #ifndef __APPLE__
-.size	sp_256_mont_sub_dbl_4,.-sp_256_mont_sub_dbl_4
-#endif /* __APPLE__ */
-/* Two Montgomery numbers, subtract second from first and double.
- * (r = 2.(a - b) % m).
- *
- * b must have came from a mont_sub operation.
- *
- * r   Result of subtration.
- * a   Number to subtract from in Montgomery form.
- * b   Number to subtract with in Montgomery form.
- * m   Modulus (prime).
- */
-#ifndef __APPLE__
-.text
-.globl	sp_256_mont_dbl_sub_4
-.type	sp_256_mont_dbl_sub_4,@function
-.align	16
-sp_256_mont_dbl_sub_4:
-#else
-.section	__TEXT,__text
-.globl	_sp_256_mont_dbl_sub_4
-.p2align	4
-_sp_256_mont_dbl_sub_4:
-#endif /* __APPLE__ */
-        movq	(%rsi), %rax
-        movq	8(%rsi), %rcx
-        movq	16(%rsi), %r8
-        movq	24(%rsi), %r9
-        subq	(%rdx), %rax
-        movq	$0xffffffff, %r10
-        sbbq	8(%rdx), %rcx
-        movq	$0xffffffff00000001, %r11
-        sbbq	16(%rdx), %r8
-        sbbq	24(%rdx), %r9
-        sbbq	%rdx, %rdx
-        andq	%rdx, %r10
-        andq	%rdx, %r11
-        addq	%rdx, %rax
-        adcq	%r10, %rcx
-        adcq	$0x00, %r8
-        adcq	%r11, %r9
-        addq	%rax, %rax
-        movq	$0xffffffff, %r10
-        adcq	%rcx, %rcx
-        movq	$0xffffffff00000001, %r11
-        adcq	%r8, %r8
-        adcq	%r9, %r9
-        sbbq	%rdx, %rdx
-        andq	%rdx, %r10
-        andq	%rdx, %r11
-        subq	%rdx, %rax
-        sbbq	%r10, %rcx
-        movq	%rax, (%rdi)
-        sbbq	$0x00, %r8
-        movq	%rcx, 8(%rdi)
-        sbbq	%r11, %r9
-        movq	%r8, 16(%rdi)
-        movq	%r9, 24(%rdi)
-        repz retq
-#ifndef __APPLE__
-.size	sp_256_mont_dbl_sub_4,.-sp_256_mont_dbl_sub_4
+.size	sp_256_mont_rsb_sub_dbl_4,.-sp_256_mont_rsb_sub_dbl_4
 #endif /* __APPLE__ */
 #ifndef WC_NO_CACHE_RESISTANT
 /* Touch each possible point that could be being copied.
  *
  * r      Point to copy into.
- * table  Table - start of the entires to access
+ * table  Table - start of the entries to access
  * idx    Index of point to retrieve.
  */
 #ifndef __APPLE__
@@ -57115,7 +56962,7 @@ L_256_get_point_33_4_start_1:
 /* Touch each possible point that could be being copied.
  *
  * r      Point to copy into.
- * table  Table - start of the entires to access
+ * table  Table - start of the entries to access
  * idx    Index of point to retrieve.
  */
 #ifndef __APPLE__
@@ -57174,7 +57021,7 @@ L_256_get_point_33_avx2_4_start:
  * a   First number to multiply in Montgomery form.
  * b   Second number to multiply in Montgomery form.
  * m   Modulus (prime).
- * mp  Montgomery mulitplier.
+ * mp  Montgomery multiplier.
  */
 #ifndef __APPLE__
 .text
@@ -57196,11 +57043,12 @@ _sp_256_mont_mul_avx2_4:
         pushq	%rbx
         movq	%rdx, %rbp
         movq	(%rsi), %rdx
+        movq	8(%rbp), %r14
         # A[0] * B[0]
         mulxq	(%rbp), %r8, %r9
         xorq	%rbx, %rbx
         # A[0] * B[1]
-        mulxq	8(%rbp), %rax, %r10
+        mulxq	%r14, %rax, %r10
         adcxq	%rax, %r9
         # A[0] * B[2]
         mulxq	16(%rbp), %rax, %r11
@@ -57215,7 +57063,7 @@ _sp_256_mont_mul_avx2_4:
         xorq	%rbx, %rbx
         adcxq	%rax, %r9
         # A[1] * B[1]
-        mulxq	8(%rbp), %rax, %r15
+        mulxq	%r14, %rax, %r15
         adoxq	%rcx, %r10
         adcxq	%rax, %r10
         # A[1] * B[2]
@@ -57234,7 +57082,7 @@ _sp_256_mont_mul_avx2_4:
         xorq	%rbx, %rbx
         adcxq	%rax, %r10
         # A[2] * B[1]
-        mulxq	8(%rbp), %rax, %r15
+        mulxq	%r14, %rax, %r15
         adoxq	%rcx, %r11
         adcxq	%rax, %r11
         # A[2] * B[2]
@@ -57324,11 +57172,10 @@ _sp_256_mont_mul_avx2_4:
         adcq	$0x00, %r15
         sbbq	$0x00, %r8
         movq	$0xffffffff00000001, %rsi
-        movq	%r8, %rax
         # mask m and sub from result if overflow
         #  m[0] = -1 & mask = mask
-        shrq	$32, %rax
         #  m[2] =  0 & mask = 0
+        movl	%r8d, %eax
         andq	%r8, %rsi
         subq	%r8, %r12
         sbbq	%rax, %r13
@@ -57355,7 +57202,7 @@ _sp_256_mont_mul_avx2_4:
  * r   Result of squaring.
  * a   Number to square in Montgomery form.
  * m   Modulus (prime).
- * mp  Montgomery mulitplier.
+ * mp  Montgomery multiplier.
  */
 #ifndef __APPLE__
 .text
@@ -57489,11 +57336,10 @@ _sp_256_mont_sqr_avx2_4:
         adcq	$0x00, %r15
         sbbq	$0x00, %r8
         movq	$0xffffffff00000001, %rsi
-        movq	%r8, %rax
         # mask m and sub from result if overflow
         #  m[0] = -1 & mask = mask
-        shrq	$32, %rax
         #  m[2] =  0 & mask = 0
+        movl	%r8d, %eax
         andq	%r8, %rsi
         subq	%r8, %r12
         sbbq	%rax, %r13
@@ -57577,15 +57423,15 @@ _sp_256_cond_sub_avx2_4:
  */
 #ifndef __APPLE__
 .text
-.globl	sp_256_mont_reduce_avx2_order_4
-.type	sp_256_mont_reduce_avx2_order_4,@function
+.globl	sp_256_mont_reduce_order_avx2_4
+.type	sp_256_mont_reduce_order_avx2_4,@function
 .align	16
-sp_256_mont_reduce_avx2_order_4:
+sp_256_mont_reduce_order_avx2_4:
 #else
 .section	__TEXT,__text
-.globl	_sp_256_mont_reduce_avx2_order_4
+.globl	_sp_256_mont_reduce_order_avx2_4
 .p2align	4
-_sp_256_mont_reduce_avx2_order_4:
+_sp_256_mont_reduce_order_avx2_4:
 #endif /* __APPLE__ */
         pushq	%r12
         pushq	%r13
@@ -57729,7 +57575,7 @@ _sp_256_mont_reduce_avx2_order_4:
         popq	%r12
         repz retq
 #ifndef __APPLE__
-.size	sp_256_mont_reduce_avx2_order_4,.-sp_256_mont_reduce_avx2_order_4
+.size	sp_256_mont_reduce_order_avx2_4,.-sp_256_mont_reduce_order_avx2_4
 #endif /* __APPLE__ */
 #endif /* HAVE_INTEL_AVX2 */
 #ifdef HAVE_INTEL_AVX2
@@ -57741,26 +57587,25 @@ _sp_256_mont_reduce_avx2_order_4:
  */
 #ifndef __APPLE__
 .text
-.globl	sp_256_div2_avx2_4
-.type	sp_256_div2_avx2_4,@function
+.globl	sp_256_mont_div2_avx2_4
+.type	sp_256_mont_div2_avx2_4,@function
 .align	16
-sp_256_div2_avx2_4:
+sp_256_mont_div2_avx2_4:
 #else
 .section	__TEXT,__text
-.globl	_sp_256_div2_avx2_4
+.globl	_sp_256_mont_div2_avx2_4
 .p2align	4
-_sp_256_div2_avx2_4:
+_sp_256_mont_div2_avx2_4:
 #endif /* __APPLE__ */
         movq	(%rsi), %rdx
         movq	8(%rsi), %rax
         movq	16(%rsi), %rcx
         movq	24(%rsi), %r8
-        movq	$0xffffffff, %r9
         movq	$0xffffffff00000001, %r10
         movq	%rdx, %r11
         andq	$0x01, %r11
         negq	%r11
-        andq	%r11, %r9
+        movl	%r11d, %r9d
         andq	%r11, %r10
         addq	%r11, %rdx
         adcq	%r9, %rax
@@ -57778,14 +57623,14 @@ _sp_256_div2_avx2_4:
         movq	%r8, 24(%rdi)
         repz retq
 #ifndef __APPLE__
-.size	sp_256_div2_avx2_4,.-sp_256_div2_avx2_4
+.size	sp_256_mont_div2_avx2_4,.-sp_256_mont_div2_avx2_4
 #endif /* __APPLE__ */
 #endif /* HAVE_INTEL_AVX2 */
 #ifndef WC_NO_CACHE_RESISTANT
 /* Touch each possible entry that could be being copied.
  *
  * r      Point to copy into.
- * table  Table - start of the entires to access
+ * table  Table - start of the entries to access
  * idx    Index of entry to retrieve.
  */
 #ifndef __APPLE__
@@ -57845,7 +57690,7 @@ L_256_get_entry_64_4_start_0:
 /* Touch each possible entry that could be being copied.
  *
  * r      Point to copy into.
- * table  Table - start of the entires to access
+ * table  Table - start of the entries to access
  * idx    Index of entry to retrieve.
  */
 #ifndef __APPLE__
@@ -57895,7 +57740,7 @@ L_256_get_entry_64_avx2_4_start:
 /* Touch each possible entry that could be being copied.
  *
  * r      Point to copy into.
- * table  Table - start of the entires to access
+ * table  Table - start of the entries to access
  * idx    Index of entry to retrieve.
  */
 #ifndef __APPLE__
@@ -57955,7 +57800,7 @@ L_256_get_entry_65_4_start_0:
 /* Touch each possible entry that could be being copied.
  *
  * r      Point to copy into.
- * table  Table - start of the entires to access
+ * table  Table - start of the entries to access
  * idx    Index of entry to retrieve.
  */
 #ifndef __APPLE__
@@ -58463,11 +58308,12 @@ _sp_256_mont_mul_order_avx2_4:
         pushq	%rbx
         movq	%rdx, %rbp
         movq	(%rsi), %rdx
+        movq	8(%rbp), %r14
         # A[0] * B[0]
         mulxq	(%rbp), %r8, %r9
         xorq	%rbx, %rbx
         # A[0] * B[1]
-        mulxq	8(%rbp), %rax, %r10
+        mulxq	%r14, %rax, %r10
         adcxq	%rax, %r9
         # A[0] * B[2]
         mulxq	16(%rbp), %rax, %r11
@@ -58482,7 +58328,7 @@ _sp_256_mont_mul_order_avx2_4:
         xorq	%rbx, %rbx
         adcxq	%rax, %r9
         # A[1] * B[1]
-        mulxq	8(%rbp), %rax, %r15
+        mulxq	%r14, %rax, %r15
         adoxq	%rcx, %r10
         adcxq	%rax, %r10
         # A[1] * B[2]
@@ -58501,7 +58347,7 @@ _sp_256_mont_mul_order_avx2_4:
         xorq	%rbx, %rbx
         adcxq	%rax, %r10
         # A[2] * B[1]
-        mulxq	8(%rbp), %rax, %r15
+        mulxq	%r14, %rax, %r15
         adoxq	%rcx, %r11
         adcxq	%rax, %r11
         # A[2] * B[2]
@@ -60712,11 +60558,10 @@ _sp_384_mont_reduce_6:
         # Subtract mod if carry
         negq	%r10
         movq	$0xfffffffffffffffe, %r9
-        movq	%r10, %rcx
+        movl	%r10d, %ecx
         movq	%r10, %r8
-        shrq	$32, %rcx
-        shlq	$32, %r8
         andq	%r10, %r9
+        shlq	$32, %r8
         subq	%rcx, %rbx
         sbbq	%r8, %rbp
         sbbq	%r9, %r11
@@ -60962,7 +60807,6 @@ _sp_384_mont_add_6:
         movq	32(%rsi), %r10
         movq	40(%rsi), %r11
         addq	(%rdx), %rax
-        movq	$0xffffffff, %r12
         adcq	8(%rdx), %rcx
         movq	$0xffffffff00000000, %r13
         adcq	16(%rdx), %r8
@@ -60971,7 +60815,7 @@ _sp_384_mont_add_6:
         adcq	32(%rdx), %r10
         adcq	40(%rdx), %r11
         sbbq	%rsi, %rsi
-        andq	%rsi, %r12
+        movl	%esi, %r12d
         andq	%rsi, %r13
         andq	%rsi, %r14
         subq	%r12, %rax
@@ -61031,16 +60875,16 @@ _sp_384_mont_dbl_6:
         movq	32(%rsi), %r9
         movq	40(%rsi), %r10
         addq	%rdx, %rdx
-        movq	$0xffffffff, %r11
         adcq	%rax, %rax
         movq	$0xffffffff00000000, %r12
         adcq	%rcx, %rcx
         movq	$0xfffffffffffffffe, %r13
         adcq	%r8, %r8
         adcq	%r9, %r9
+        movq	%r10, %r14
         adcq	%r10, %r10
-        sbbq	%r14, %r14
-        andq	%r14, %r11
+        sarq	$63, %r14
+        movl	%r14d, %r11d
         andq	%r14, %r12
         andq	%r14, %r13
         subq	%r11, %rdx
@@ -61100,7 +60944,6 @@ _sp_384_mont_tpl_6:
         movq	32(%rsi), %r9
         movq	40(%rsi), %r10
         addq	%rdx, %rdx
-        movq	$0xffffffff, %r11
         adcq	%rax, %rax
         movq	$0xffffffff00000000, %r12
         adcq	%rcx, %rcx
@@ -61109,7 +60952,7 @@ _sp_384_mont_tpl_6:
         adcq	%r9, %r9
         adcq	%r10, %r10
         sbbq	%r14, %r14
-        andq	%r14, %r11
+        movl	%r14d, %r11d
         andq	%r14, %r12
         andq	%r14, %r13
         subq	%r11, %rdx
@@ -61130,7 +60973,6 @@ _sp_384_mont_tpl_6:
         sbbq	%r14, %r9
         sbbq	%r14, %r10
         addq	(%rsi), %rdx
-        movq	$0xffffffff, %r11
         adcq	8(%rsi), %rax
         movq	$0xffffffff00000000, %r12
         adcq	16(%rsi), %rcx
@@ -61139,7 +60981,7 @@ _sp_384_mont_tpl_6:
         adcq	32(%rsi), %r9
         adcq	40(%rsi), %r10
         sbbq	%r14, %r14
-        andq	%r14, %r11
+        movl	%r14d, %r11d
         andq	%r14, %r12
         andq	%r14, %r13
         subq	%r11, %rdx
@@ -61200,7 +61042,6 @@ _sp_384_mont_sub_6:
         movq	32(%rsi), %r10
         movq	40(%rsi), %r11
         subq	(%rdx), %rax
-        movq	$0xffffffff, %r12
         sbbq	8(%rdx), %rcx
         movq	$0xffffffff00000000, %r13
         sbbq	16(%rdx), %r8
@@ -61209,7 +61050,7 @@ _sp_384_mont_sub_6:
         sbbq	32(%rdx), %r10
         sbbq	40(%rdx), %r11
         sbbq	%rsi, %rsi
-        andq	%rsi, %r12
+        movl	%esi, %r12d
         andq	%rsi, %r13
         andq	%rsi, %r14
         addq	%r12, %rax
@@ -61241,68 +61082,6 @@ _sp_384_mont_sub_6:
 #ifndef __APPLE__
 .size	sp_384_mont_sub_6,.-sp_384_mont_sub_6
 #endif /* __APPLE__ */
-/* Subtract two Montgomery form numbers (r = a - b % m).
- *
- * b is less than the modulus.
- *
- * r   Result of subtration.
- * a   Number to subtract from in Montgomery form.
- * b   Number to subtract with in Montgomery form.
- * m   Modulus (prime).
- */
-#ifndef __APPLE__
-.text
-.globl	sp_384_mont_sub_lower_6
-.type	sp_384_mont_sub_lower_6,@function
-.align	16
-sp_384_mont_sub_lower_6:
-#else
-.section	__TEXT,__text
-.globl	_sp_384_mont_sub_lower_6
-.p2align	4
-_sp_384_mont_sub_lower_6:
-#endif /* __APPLE__ */
-        pushq	%r12
-        pushq	%r13
-        pushq	%r14
-        movq	(%rsi), %rax
-        movq	8(%rsi), %rcx
-        movq	16(%rsi), %r8
-        movq	24(%rsi), %r9
-        movq	32(%rsi), %r10
-        movq	40(%rsi), %r11
-        subq	(%rdx), %rax
-        movq	$0xffffffff, %r12
-        sbbq	8(%rdx), %rcx
-        movq	$0xffffffff00000000, %r13
-        sbbq	16(%rdx), %r8
-        movq	$0xfffffffffffffffe, %r14
-        sbbq	24(%rdx), %r9
-        sbbq	32(%rdx), %r10
-        sbbq	40(%rdx), %r11
-        sbbq	%rsi, %rsi
-        andq	%rsi, %r12
-        andq	%rsi, %r13
-        andq	%rsi, %r14
-        addq	%r12, %rax
-        adcq	%r13, %rcx
-        movq	%rax, (%rdi)
-        adcq	%r14, %r8
-        movq	%rcx, 8(%rdi)
-        adcq	%rsi, %r9
-        movq	%r8, 16(%rdi)
-        adcq	%rsi, %r10
-        movq	%r9, 24(%rdi)
-        adcq	%rsi, %r11
-        movq	%r10, 32(%rdi)
-        movq	%r11, 40(%rdi)
-        popq	%r14
-        popq	%r13
-        popq	%r12
-        repz retq
-#ifndef __APPLE__
-.size	sp_384_mont_sub_lower_6,.-sp_384_mont_sub_lower_6
-#endif /* __APPLE__ */
 /* Divide the number by 2 mod the modulus (prime). (r = a / 2 % m)
  *
  * r  Result of division by 2.
@@ -61311,15 +61090,15 @@ _sp_384_mont_sub_lower_6:
  */
 #ifndef __APPLE__
 .text
-.globl	sp_384_div2_6
-.type	sp_384_div2_6,@function
+.globl	sp_384_mont_div2_6
+.type	sp_384_mont_div2_6,@function
 .align	16
-sp_384_div2_6:
+sp_384_mont_div2_6:
 #else
 .section	__TEXT,__text
-.globl	_sp_384_div2_6
+.globl	_sp_384_mont_div2_6
 .p2align	4
-_sp_384_div2_6:
+_sp_384_mont_div2_6:
 #endif /* __APPLE__ */
         subq	$48, %rsp
         movq	(%rsi), %r11
@@ -61378,165 +61157,13 @@ _sp_384_div2_6:
         addq	$48, %rsp
         repz retq
 #ifndef __APPLE__
-.size	sp_384_div2_6,.-sp_384_div2_6
-#endif /* __APPLE__ */
-/* Double a Montgomery form number (r = a + a % m).
- *
- * a is less than m.
- *
- * r   Result of doubling.
- * a   Number to double in Montgomery form.
- * m   Modulus (prime).
- */
-#ifndef __APPLE__
-.text
-.globl	sp_384_mont_dbl_lower_6
-.type	sp_384_mont_dbl_lower_6,@function
-.align	16
-sp_384_mont_dbl_lower_6:
-#else
-.section	__TEXT,__text
-.globl	_sp_384_mont_dbl_lower_6
-.p2align	4
-_sp_384_mont_dbl_lower_6:
-#endif /* __APPLE__ */
-        pushq	%r12
-        pushq	%r13
-        pushq	%r14
-        movq	(%rsi), %rdx
-        movq	8(%rsi), %rax
-        movq	16(%rsi), %rcx
-        movq	24(%rsi), %r8
-        movq	32(%rsi), %r9
-        movq	40(%rsi), %r10
-        addq	%rdx, %rdx
-        movq	$0xffffffff, %r11
-        adcq	%rax, %rax
-        movq	$0xffffffff00000000, %r12
-        adcq	%rcx, %rcx
-        movq	$0xfffffffffffffffe, %r13
-        adcq	%r8, %r8
-        adcq	%r9, %r9
-        adcq	%r10, %r10
-        sbbq	%r14, %r14
-        andq	%r14, %r11
-        andq	%r14, %r12
-        andq	%r14, %r13
-        subq	%r11, %rdx
-        sbbq	%r12, %rax
-        movq	%rdx, (%rdi)
-        sbbq	%r13, %rcx
-        movq	%rax, 8(%rdi)
-        sbbq	%r14, %r8
-        movq	%rcx, 16(%rdi)
-        sbbq	%r14, %r9
-        movq	%r8, 24(%rdi)
-        sbbq	%r14, %r10
-        movq	%r9, 32(%rdi)
-        movq	%r10, 40(%rdi)
-        popq	%r14
-        popq	%r13
-        popq	%r12
-        repz retq
-#ifndef __APPLE__
-.size	sp_384_mont_dbl_lower_6,.-sp_384_mont_dbl_lower_6
-#endif /* __APPLE__ */
-/* Double a Montgomery form number (r = a + a % m).
- *
- * a is less than m.
- *
- * r   Result of doubling.
- * a   Number to double in Montgomery form.
- * m   Modulus (prime).
- */
-#ifndef __APPLE__
-.text
-.globl	sp_384_mont_tpl_lower_6
-.type	sp_384_mont_tpl_lower_6,@function
-.align	16
-sp_384_mont_tpl_lower_6:
-#else
-.section	__TEXT,__text
-.globl	_sp_384_mont_tpl_lower_6
-.p2align	4
-_sp_384_mont_tpl_lower_6:
-#endif /* __APPLE__ */
-        pushq	%r12
-        pushq	%r13
-        pushq	%r14
-        movq	(%rsi), %rdx
-        movq	8(%rsi), %rax
-        movq	16(%rsi), %rcx
-        movq	24(%rsi), %r8
-        movq	32(%rsi), %r9
-        movq	40(%rsi), %r10
-        addq	%rdx, %rdx
-        movq	$0xffffffff, %r11
-        adcq	%rax, %rax
-        movq	$0xffffffff00000000, %r12
-        adcq	%rcx, %rcx
-        movq	$0xfffffffffffffffe, %r13
-        adcq	%r8, %r8
-        adcq	%r9, %r9
-        adcq	%r10, %r10
-        sbbq	%r14, %r14
-        andq	%r14, %r11
-        andq	%r14, %r12
-        andq	%r14, %r13
-        subq	%r11, %rdx
-        sbbq	%r12, %rax
-        movq	%rdx, (%rdi)
-        sbbq	%r13, %rcx
-        sbbq	%r14, %r8
-        sbbq	%r14, %r9
-        sbbq	%r14, %r10
-        addq	(%rsi), %rdx
-        movq	$0xffffffff, %r11
-        adcq	8(%rsi), %rax
-        movq	$0xffffffff00000000, %r12
-        adcq	16(%rsi), %rcx
-        movq	$0xfffffffffffffffe, %r13
-        adcq	24(%rsi), %r8
-        adcq	32(%rsi), %r9
-        adcq	40(%rsi), %r10
-        sbbq	%r14, %r14
-        andq	%r14, %r11
-        andq	%r14, %r12
-        andq	%r14, %r13
-        subq	%r11, %rdx
-        sbbq	%r12, %rax
-        sbbq	%r13, %rcx
-        sbbq	%r14, %r8
-        sbbq	%r14, %r9
-        sbbq	%r14, %r10
-        adcq	$0x00, %r14
-        andq	%r14, %r11
-        andq	%r14, %r12
-        andq	%r14, %r13
-        subq	%r11, %rdx
-        sbbq	%r12, %rax
-        movq	%rdx, (%rdi)
-        sbbq	%r13, %rcx
-        movq	%rax, 8(%rdi)
-        sbbq	%r14, %r8
-        movq	%rcx, 16(%rdi)
-        sbbq	%r14, %r9
-        movq	%r8, 24(%rdi)
-        sbbq	%r14, %r10
-        movq	%r9, 32(%rdi)
-        movq	%r10, 40(%rdi)
-        popq	%r14
-        popq	%r13
-        popq	%r12
-        repz retq
-#ifndef __APPLE__
-.size	sp_384_mont_tpl_lower_6,.-sp_384_mont_tpl_lower_6
+.size	sp_384_mont_div2_6,.-sp_384_mont_div2_6
 #endif /* __APPLE__ */
 #ifndef WC_NO_CACHE_RESISTANT
 /* Touch each possible point that could be being copied.
  *
  * r      Point to copy into.
- * table  Table - start of the entires to access
+ * table  Table - start of the entries to access
  * idx    Index of point to retrieve.
  */
 #ifndef __APPLE__
@@ -61636,7 +61263,7 @@ L_384_get_point_33_6_start_2:
 /* Touch each possible point that could be being copied.
  *
  * r      Point to copy into.
- * table  Table - start of the entires to access
+ * table  Table - start of the entries to access
  * idx    Index of point to retrieve.
  */
 #ifndef __APPLE__
@@ -62098,15 +61725,15 @@ _sp_384_cond_sub_avx2_6:
  */
 #ifndef __APPLE__
 .text
-.globl	sp_384_div2_avx2_6
-.type	sp_384_div2_avx2_6,@function
+.globl	sp_384_mont_div2_avx2_6
+.type	sp_384_mont_div2_avx2_6,@function
 .align	16
-sp_384_div2_avx2_6:
+sp_384_mont_div2_avx2_6:
 #else
 .section	__TEXT,__text
-.globl	_sp_384_div2_avx2_6
+.globl	_sp_384_mont_div2_avx2_6
 .p2align	4
-_sp_384_div2_avx2_6:
+_sp_384_mont_div2_avx2_6:
 #endif /* __APPLE__ */
         movq	(%rsi), %r11
         xorq	%r10, %r10
@@ -62164,14 +61791,14 @@ _sp_384_div2_avx2_6:
         movq	%r9, 40(%rdi)
         repz retq
 #ifndef __APPLE__
-.size	sp_384_div2_avx2_6,.-sp_384_div2_avx2_6
+.size	sp_384_mont_div2_avx2_6,.-sp_384_mont_div2_avx2_6
 #endif /* __APPLE__ */
 #endif /* HAVE_INTEL_AVX2 */
 #ifndef WC_NO_CACHE_RESISTANT
 /* Touch each possible entry that could be being copied.
  *
  * r      Point to copy into.
- * table  Table - start of the entires to access
+ * table  Table - start of the entries to access
  * idx    Index of entry to retrieve.
  */
 #ifndef __APPLE__
@@ -62241,7 +61868,7 @@ L_384_get_entry_64_6_start_0:
 /* Touch each possible entry that could be being copied.
  *
  * r      Point to copy into.
- * table  Table - start of the entires to access
+ * table  Table - start of the entries to access
  * idx    Index of entry to retrieve.
  */
 #ifndef __APPLE__
@@ -62301,7 +61928,7 @@ L_384_get_entry_64_avx2_6_start:
 /* Touch each possible entry that could be being copied.
  *
  * r      Point to copy into.
- * table  Table - start of the entires to access
+ * table  Table - start of the entries to access
  * idx    Index of entry to retrieve.
  */
 #ifndef __APPLE__
@@ -62371,7 +61998,7 @@ L_384_get_entry_65_6_start_0:
 /* Touch each possible entry that could be being copied.
  *
  * r      Point to copy into.
- * table  Table - start of the entires to access
+ * table  Table - start of the entries to access
  * idx    Index of entry to retrieve.
  */
 #ifndef __APPLE__
@@ -65220,7 +64847,7 @@ _sp_521_cond_copy_9:
  * a   First number to multiply in Montgomery form.
  * b   Second number to multiply in Montgomery form.
  * m   Modulus (prime).
- * mp  Montgomery mulitplier.
+ * mp  Montgomery multiplier.
  */
 #ifndef __APPLE__
 .text
@@ -65817,7 +65444,7 @@ _sp_521_mont_mul_9:
  * r   Result of squaring.
  * a   Number to square in Montgomery form.
  * m   Modulus (prime).
- * mp  Montgomery mulitplier.
+ * mp  Montgomery multiplier.
  */
 #ifndef __APPLE__
 .text
@@ -67016,15 +66643,15 @@ _sp_521_mont_sub_9:
  */
 #ifndef __APPLE__
 .text
-.globl	sp_521_div2_9
-.type	sp_521_div2_9,@function
+.globl	sp_521_mont_div2_9
+.type	sp_521_mont_div2_9,@function
 .align	16
-sp_521_div2_9:
+sp_521_mont_div2_9:
 #else
 .section	__TEXT,__text
-.globl	_sp_521_div2_9
+.globl	_sp_521_mont_div2_9
 .p2align	4
-_sp_521_div2_9:
+_sp_521_mont_div2_9:
 #endif /* __APPLE__ */
         pushq	%r12
         pushq	%r13
@@ -67074,13 +66701,13 @@ _sp_521_div2_9:
         popq	%r12
         repz retq
 #ifndef __APPLE__
-.size	sp_521_div2_9,.-sp_521_div2_9
+.size	sp_521_mont_div2_9,.-sp_521_mont_div2_9
 #endif /* __APPLE__ */
 #ifndef WC_NO_CACHE_RESISTANT
 /* Touch each possible point that could be being copied.
  *
  * r      Point to copy into.
- * table  Table - start of the entires to access
+ * table  Table - start of the entries to access
  * idx    Index of point to retrieve.
  */
 #ifndef __APPLE__
@@ -67225,7 +66852,7 @@ L_521_get_point_33_9_start_2:
 /* Touch each possible point that could be being copied.
  *
  * r      Point to copy into.
- * table  Table - start of the entires to access
+ * table  Table - start of the entries to access
  * idx    Index of point to retrieve.
  */
 #ifndef __APPLE__
@@ -67326,7 +66953,7 @@ L_521_get_point_33_avx2_9_start:
  * a   First number to multiply in Montgomery form.
  * b   Second number to multiply in Montgomery form.
  * m   Modulus (prime).
- * mp  Montgomery mulitplier.
+ * mp  Montgomery multiplier.
  */
 #ifndef __APPLE__
 .text
@@ -67941,7 +67568,7 @@ _sp_521_mont_mul_avx2_9:
  * r   Result of squaring.
  * a   Number to square in Montgomery form.
  * m   Modulus (prime).
- * mp  Montgomery mulitplier.
+ * mp  Montgomery multiplier.
  */
 #ifndef __APPLE__
 .text
@@ -68782,15 +68409,15 @@ L_521_mont_reduce_order_avx2_9_loop:
  */
 #ifndef __APPLE__
 .text
-.globl	sp_521_div2_avx2_9
-.type	sp_521_div2_avx2_9,@function
+.globl	sp_521_mont_div2_avx2_9
+.type	sp_521_mont_div2_avx2_9,@function
 .align	16
-sp_521_div2_avx2_9:
+sp_521_mont_div2_avx2_9:
 #else
 .section	__TEXT,__text
-.globl	_sp_521_div2_avx2_9
+.globl	_sp_521_mont_div2_avx2_9
 .p2align	4
-_sp_521_div2_avx2_9:
+_sp_521_mont_div2_avx2_9:
 #endif /* __APPLE__ */
         pushq	%r12
         pushq	%r13
@@ -68840,14 +68467,14 @@ _sp_521_div2_avx2_9:
         popq	%r12
         repz retq
 #ifndef __APPLE__
-.size	sp_521_div2_avx2_9,.-sp_521_div2_avx2_9
+.size	sp_521_mont_div2_avx2_9,.-sp_521_mont_div2_avx2_9
 #endif /* __APPLE__ */
 #endif /* HAVE_INTEL_AVX2 */
 #ifndef WC_NO_CACHE_RESISTANT
 /* Touch each possible entry that could be being copied.
  *
  * r      Point to copy into.
- * table  Table - start of the entires to access
+ * table  Table - start of the entries to access
  * idx    Index of entry to retrieve.
  */
 #ifndef __APPLE__
@@ -68966,7 +68593,7 @@ L_521_get_entry_64_9_start_1:
 /* Touch each possible entry that could be being copied.
  *
  * r      Point to copy into.
- * table  Table - start of the entires to access
+ * table  Table - start of the entries to access
  * idx    Index of entry to retrieve.
  */
 #ifndef __APPLE__
@@ -69044,7 +68671,7 @@ L_521_get_entry_64_avx2_9_start:
 /* Touch each possible entry that could be being copied.
  *
  * r      Point to copy into.
- * table  Table - start of the entires to access
+ * table  Table - start of the entries to access
  * idx    Index of entry to retrieve.
  */
 #ifndef __APPLE__
@@ -69163,7 +68790,7 @@ L_521_get_entry_65_9_start_1:
 /* Touch each possible entry that could be being copied.
  *
  * r      Point to copy into.
- * table  Table - start of the entires to access
+ * table  Table - start of the entries to access
  * idx    Index of entry to retrieve.
  */
 #ifndef __APPLE__
@@ -77693,15 +77320,15 @@ _sp_1024_mont_sub_16:
  */
 #ifndef __APPLE__
 .text
-.globl	sp_1024_div2_16
-.type	sp_1024_div2_16,@function
+.globl	sp_1024_mont_div2_16
+.type	sp_1024_mont_div2_16,@function
 .align	16
-sp_1024_div2_16:
+sp_1024_mont_div2_16:
 #else
 .section	__TEXT,__text
-.globl	_sp_1024_div2_16
+.globl	_sp_1024_mont_div2_16
 .p2align	4
-_sp_1024_div2_16:
+_sp_1024_mont_div2_16:
 #endif /* __APPLE__ */
         subq	$0x80, %rsp
         movq	(%rsi), %r11
@@ -77840,78 +77467,7 @@ _sp_1024_div2_16:
         addq	$0x80, %rsp
         repz retq
 #ifndef __APPLE__
-.size	sp_1024_div2_16,.-sp_1024_div2_16
-#endif /* __APPLE__ */
-/* Sub b from a into r. (r = a - b)
- *
- * r  A single precision integer.
- * a  A single precision integer.
- * b  A single precision integer.
- */
-#ifndef __APPLE__
-.text
-.globl	sp_1024_sub_16
-.type	sp_1024_sub_16,@function
-.align	16
-sp_1024_sub_16:
-#else
-.section	__TEXT,__text
-.globl	_sp_1024_sub_16
-.p2align	4
-_sp_1024_sub_16:
-#endif /* __APPLE__ */
-        movq	(%rsi), %rcx
-        subq	(%rdx), %rcx
-        movq	8(%rsi), %r8
-        movq	%rcx, (%rdi)
-        sbbq	8(%rdx), %r8
-        movq	16(%rsi), %rcx
-        movq	%r8, 8(%rdi)
-        sbbq	16(%rdx), %rcx
-        movq	24(%rsi), %r8
-        movq	%rcx, 16(%rdi)
-        sbbq	24(%rdx), %r8
-        movq	32(%rsi), %rcx
-        movq	%r8, 24(%rdi)
-        sbbq	32(%rdx), %rcx
-        movq	40(%rsi), %r8
-        movq	%rcx, 32(%rdi)
-        sbbq	40(%rdx), %r8
-        movq	48(%rsi), %rcx
-        movq	%r8, 40(%rdi)
-        sbbq	48(%rdx), %rcx
-        movq	56(%rsi), %r8
-        movq	%rcx, 48(%rdi)
-        sbbq	56(%rdx), %r8
-        movq	64(%rsi), %rcx
-        movq	%r8, 56(%rdi)
-        sbbq	64(%rdx), %rcx
-        movq	72(%rsi), %r8
-        movq	%rcx, 64(%rdi)
-        sbbq	72(%rdx), %r8
-        movq	80(%rsi), %rcx
-        movq	%r8, 72(%rdi)
-        sbbq	80(%rdx), %rcx
-        movq	88(%rsi), %r8
-        movq	%rcx, 80(%rdi)
-        sbbq	88(%rdx), %r8
-        movq	96(%rsi), %rcx
-        movq	%r8, 88(%rdi)
-        sbbq	96(%rdx), %rcx
-        movq	104(%rsi), %r8
-        movq	%rcx, 96(%rdi)
-        sbbq	104(%rdx), %r8
-        movq	112(%rsi), %rcx
-        movq	%r8, 104(%rdi)
-        sbbq	112(%rdx), %rcx
-        movq	120(%rsi), %r8
-        movq	%rcx, 112(%rdi)
-        sbbq	120(%rdx), %r8
-        movq	%r8, 120(%rdi)
-        sbbq	%rax, %rax
-        repz retq
-#ifndef __APPLE__
-.size	sp_1024_sub_16,.-sp_1024_sub_16
+.size	sp_1024_mont_div2_16,.-sp_1024_mont_div2_16
 #endif /* __APPLE__ */
 #ifdef HAVE_INTEL_AVX2
 /* Reduce the number back to 1024 bits using Montgomery reduction.
@@ -79028,15 +78584,15 @@ _sp_1024_mont_sub_avx2_16:
  */
 #ifndef __APPLE__
 .text
-.globl	sp_1024_div2_avx2_16
-.type	sp_1024_div2_avx2_16,@function
+.globl	sp_1024_mont_div2_avx2_16
+.type	sp_1024_mont_div2_avx2_16,@function
 .align	16
-sp_1024_div2_avx2_16:
+sp_1024_mont_div2_avx2_16:
 #else
 .section	__TEXT,__text
-.globl	_sp_1024_div2_avx2_16
+.globl	_sp_1024_mont_div2_avx2_16
 .p2align	4
-_sp_1024_div2_avx2_16:
+_sp_1024_mont_div2_avx2_16:
 #endif /* __APPLE__ */
         movq	(%rsi), %r11
         xorq	%r10, %r10
@@ -79174,7 +78730,7 @@ _sp_1024_div2_avx2_16:
         movq	%r9, 120(%rdi)
         repz retq
 #ifndef __APPLE__
-.size	sp_1024_div2_avx2_16,.-sp_1024_div2_avx2_16
+.size	sp_1024_mont_div2_avx2_16,.-sp_1024_mont_div2_avx2_16
 #endif /* __APPLE__ */
 #endif /* HAVE_INTEL_AVX2 */
 /* Read big endian unsigned byte array into r.

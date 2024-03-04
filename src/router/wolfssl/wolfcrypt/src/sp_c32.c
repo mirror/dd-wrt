@@ -56,6 +56,16 @@
 
 #include <wolfssl/wolfcrypt/sp.h>
 
+#ifdef __IAR_SYSTEMS_ICC__
+#define __asm__        asm
+#define __volatile__   volatile
+#define WOLFSSL_NO_VAR_ASSIGN_REG
+#endif /* __IAR_SYSTEMS_ICC__ */
+#ifdef __KEIL__
+#define __asm__        __asm
+#define __volatile__   volatile
+#endif
+
 #ifndef WOLFSSL_SP_ASM
 #if SP_WORD_SIZE == 32
 #define SP_PRINT_NUM(var, name, total, words, bits)   \
@@ -78,11 +88,14 @@
 #define SP_PRINT_INT(var, name)                       \
     fprintf(stderr, name "=%d\n", var)
 
-#if (((!defined(WC_NO_CACHE_RESISTANT) && \
-      (defined(WOLFSSL_HAVE_SP_RSA) || defined(WOLFSSL_HAVE_SP_DH))) || \
-     (defined(WOLFSSL_SP_SMALL) && !defined(WOLFSSL_SP_FAST_MODEXP))) && \
+#if ((defined(WOLFSSL_HAVE_SP_RSA) || defined(WOLFSSL_HAVE_SP_DH)) && \
+     ((!defined(WC_NO_CACHE_RESISTANT) && \
+       (defined(WOLFSSL_HAVE_SP_RSA) || defined(WOLFSSL_HAVE_SP_DH))) || \
+      (defined(WOLFSSL_SP_SMALL) && !defined(WOLFSSL_SP_FAST_MODEXP))) && \
     !defined(WOLFSSL_RSA_PUBLIC_ONLY)) || (defined(WOLFSSL_SP_SMALL) && \
-    defined(WOLFSSL_HAVE_SP_ECC))
+    defined(WOLFSSL_HAVE_SP_ECC) && (!defined(WOLFSSL_SP_NO_256) || \
+    defined(WOLFSSL_SP_384) || defined(WOLFSSL_SP_521) || \
+    defined(WOLFSSL_SP_1024)))
 /* Mask for address to obfuscate which of the two address will be used. */
 static const size_t addr_mask[2] = { 0, (size_t)-1 };
 #endif
@@ -139,14 +152,14 @@ static void sp_2048_from_mp(sp_digit* r, int size, const mp_int* a)
 {
 #if DIGIT_BIT == 29
     int i;
-    int j = 0;
+    sp_digit j = (sp_digit)0 - (sp_digit)a->used;
+    int o = 0;
 
     for (i = 0; i < size; i++) {
-        sp_digit mask =
-            (((sp_digit)((int)a->used - i - 1)) >> (SP_WORD_SIZE - 1)) - 1;
-        r[i] = a->dp[j] & mask;
-        j += (int)(((sp_digit)1) -
-                   (((sp_digit)((int)a->used - i - 2)) >> (SP_WORD_SIZE - 1)));
+        sp_digit mask = (sp_digit)0 - (j >> 28);
+        r[i] = a->dp[o] & mask;
+        j++;
+        o += (int)(j >> 28);
     }
 #elif DIGIT_BIT > 29
     unsigned int i;
@@ -236,7 +249,7 @@ static void sp_2048_to_bin_72(sp_digit* r, byte* a)
     }
     j = 2055 / 8 - 1;
     a[j] = 0;
-    for (i=0; i<72 && j>=0; i++) {
+    for (i=0; i<71 && j>=0; i++) {
         b = 0;
         /* lint allow cast of mismatch sp_digit and int */
         a[j--] |= (byte)(r[i] << s); /*lint !e9033*/
@@ -1389,7 +1402,7 @@ SP_NOINLINE static void sp_2048_sqr_36(sp_digit* r, const sp_digit* a)
 #endif /* WOLFSSL_SP_SMALL */
 #endif /* (WOLFSSL_HAVE_SP_RSA & !WOLFSSL_RSA_PUBLIC_ONLY) | WOLFSSL_HAVE_SP_DH */
 
-/* Caclulate the bottom digit of -1/a mod 2^n.
+/* Calculate the bottom digit of -1/a mod 2^n.
  *
  * a    A single precision number.
  * rho  Bottom word of inverse.
@@ -1766,7 +1779,7 @@ static void sp_2048_mont_reduce_36(sp_digit* a, const sp_digit* m, sp_digit mp)
  * a   First number to multiply in Montgomery form.
  * b   Second number to multiply in Montgomery form.
  * m   Modulus (prime).
- * mp  Montgomery mulitplier.
+ * mp  Montgomery multiplier.
  */
 SP_NOINLINE static void sp_2048_mont_mul_36(sp_digit* r, const sp_digit* a,
         const sp_digit* b, const sp_digit* m, sp_digit mp)
@@ -1780,7 +1793,7 @@ SP_NOINLINE static void sp_2048_mont_mul_36(sp_digit* r, const sp_digit* a,
  * r   Result of squaring.
  * a   Number to square in Montgomery form.
  * m   Modulus (prime).
- * mp  Montgomery mulitplier.
+ * mp  Montgomery multiplier.
  */
 SP_NOINLINE static void sp_2048_mont_sqr_36(sp_digit* r, const sp_digit* a,
         const sp_digit* m, sp_digit mp)
@@ -2795,7 +2808,7 @@ static void sp_2048_mont_reduce_72(sp_digit* a, const sp_digit* m, sp_digit mp)
  * a   First number to multiply in Montgomery form.
  * b   Second number to multiply in Montgomery form.
  * m   Modulus (prime).
- * mp  Montgomery mulitplier.
+ * mp  Montgomery multiplier.
  */
 SP_NOINLINE static void sp_2048_mont_mul_72(sp_digit* r, const sp_digit* a,
         const sp_digit* b, const sp_digit* m, sp_digit mp)
@@ -2809,7 +2822,7 @@ SP_NOINLINE static void sp_2048_mont_mul_72(sp_digit* r, const sp_digit* a,
  * r   Result of squaring.
  * a   Number to square in Montgomery form.
  * m   Modulus (prime).
- * mp  Montgomery mulitplier.
+ * mp  Montgomery multiplier.
  */
 SP_NOINLINE static void sp_2048_mont_sqr_72(sp_digit* r, const sp_digit* a,
         const sp_digit* m, sp_digit mp)
@@ -3531,7 +3544,7 @@ int sp_RsaPublic_2048(const byte* in, word32 inLen, const mp_int* em,
     sp_digit* m = NULL;
     sp_digit* r = NULL;
     sp_digit* norm = NULL;
-    sp_digit e[1] = {0};
+    sp_uint64 e[1] = {0};
     sp_digit mp = 0;
     int i;
     int err = MP_OKAY;
@@ -3541,7 +3554,7 @@ int sp_RsaPublic_2048(const byte* in, word32 inLen, const mp_int* em,
     }
 
     if (err == MP_OKAY) {
-        if (mp_count_bits(em) > 29) {
+        if (mp_count_bits(em) > 64) {
             err = MP_READ_E;
         }
         else if (inLen > 256U) {
@@ -3570,12 +3583,12 @@ int sp_RsaPublic_2048(const byte* in, word32 inLen, const mp_int* em,
         norm = r;
 
         sp_2048_from_bin(a, 72, in, inLen);
-#if DIGIT_BIT >= 29
-        e[0] = (sp_digit)em->dp[0];
+#if DIGIT_BIT >= 64
+        e[0] = (sp_uint64)em->dp[0];
 #else
-        e[0] = (sp_digit)em->dp[0];
+        e[0] = (sp_uint64)em->dp[0];
         if (em->used > 1) {
-            e[0] |= ((sp_digit)em->dp[1]) << DIGIT_BIT;
+            e[0] |= ((sp_uint64)em->dp[1]) << DIGIT_BIT;
         }
 #endif
         if (e[0] == 0) {
@@ -3594,7 +3607,7 @@ int sp_RsaPublic_2048(const byte* in, word32 inLen, const mp_int* em,
         err = sp_2048_mod_72(a, a, m);
     }
     if (err == MP_OKAY) {
-        for (i=28; i>=0; i--) {
+        for (i=63; i>=0; i--) {
             if ((e[0] >> i) != 0) {
                 break;
             }
@@ -3631,14 +3644,14 @@ int sp_RsaPublic_2048(const byte* in, word32 inLen, const mp_int* em,
     sp_digit* a = NULL;
     sp_digit* m = NULL;
     sp_digit* r = NULL;
-    sp_digit e[1] = {0};
+    sp_uint64 e[1] = {0};
     int err = MP_OKAY;
 
     if (*outLen < 256U) {
         err = MP_TO_E;
     }
     if (err == MP_OKAY) {
-        if (mp_count_bits(em) > 29) {
+        if (mp_count_bits(em) > 64) {
             err = MP_READ_E;
         }
         else if (inLen > 256U) {
@@ -3667,12 +3680,12 @@ int sp_RsaPublic_2048(const byte* in, word32 inLen, const mp_int* em,
         m = r + 72 * 2;
 
         sp_2048_from_bin(a, 72, in, inLen);
-#if DIGIT_BIT >= 29
-        e[0] = (sp_digit)em->dp[0];
+#if DIGIT_BIT >= 64
+        e[0] = (sp_uint64)em->dp[0];
 #else
-        e[0] = (sp_digit)em->dp[0];
+        e[0] = (sp_uint64)em->dp[0];
         if (em->used > 1) {
-            e[0] |= ((sp_digit)em->dp[1]) << DIGIT_BIT;
+            e[0] |= ((sp_uint64)em->dp[1]) << DIGIT_BIT;
         }
 #endif
         if (e[0] == 0) {
@@ -3702,7 +3715,7 @@ int sp_RsaPublic_2048(const byte* in, word32 inLen, const mp_int* em,
             err = sp_2048_mod_72(a, a, m);
 
             if (err == MP_OKAY) {
-                for (i=28; i>=0; i--) {
+                for (i=63; i>=0; i--) {
                     if ((e[0] >> i) != 0) {
                         break;
                     }
@@ -4130,8 +4143,8 @@ static int sp_2048_to_mp(const sp_digit* a, mp_int* r)
     err = mp_grow(r, (2048 + DIGIT_BIT - 1) / DIGIT_BIT);
     if (err == MP_OKAY) { /*lint !e774 case where err is always MP_OKAY*/
 #if DIGIT_BIT == 29
-        XMEMCPY(r->dp, a, sizeof(sp_digit) * 72);
-        r->used = 72;
+        XMEMCPY(r->dp, a, sizeof(sp_digit) * 71);
+        r->used = 71;
         mp_clamp(r);
 #elif DIGIT_BIT < 29
         int i;
@@ -4139,7 +4152,7 @@ static int sp_2048_to_mp(const sp_digit* a, mp_int* r)
         int s = 0;
 
         r->dp[0] = 0;
-        for (i = 0; i < 72; i++) {
+        for (i = 0; i < 71; i++) {
             r->dp[j] |= (mp_digit)(a[i] << s);
             r->dp[j] &= ((sp_digit)1 << DIGIT_BIT) - 1;
             s = DIGIT_BIT - s;
@@ -4164,7 +4177,7 @@ static int sp_2048_to_mp(const sp_digit* a, mp_int* r)
         int s = 0;
 
         r->dp[0] = 0;
-        for (i = 0; i < 72; i++) {
+        for (i = 0; i < 71; i++) {
             r->dp[j] |= ((mp_digit)a[i]) << s;
             if (s + 29 >= DIGIT_BIT) {
     #if DIGIT_BIT != 32 && DIGIT_BIT != 64
@@ -4900,14 +4913,14 @@ static void sp_3072_from_mp(sp_digit* r, int size, const mp_int* a)
 {
 #if DIGIT_BIT == 29
     int i;
-    int j = 0;
+    sp_digit j = (sp_digit)0 - (sp_digit)a->used;
+    int o = 0;
 
     for (i = 0; i < size; i++) {
-        sp_digit mask =
-            (((sp_digit)((int)a->used - i - 1)) >> (SP_WORD_SIZE - 1)) - 1;
-        r[i] = a->dp[j] & mask;
-        j += (int)(((sp_digit)1) -
-                   (((sp_digit)((int)a->used - i - 2)) >> (SP_WORD_SIZE - 1)));
+        sp_digit mask = (sp_digit)0 - (j >> 28);
+        r[i] = a->dp[o] & mask;
+        j++;
+        o += (int)(j >> 28);
     }
 #elif DIGIT_BIT > 29
     unsigned int i;
@@ -5169,7 +5182,7 @@ SP_NOINLINE static void sp_3072_sqr_106(sp_digit* r, const sp_digit* a)
     r[0] = (sp_digit)(c >> 29);
 }
 
-/* Caclulate the bottom digit of -1/a mod 2^n.
+/* Calculate the bottom digit of -1/a mod 2^n.
  *
  * a    A single precision number.
  * rho  Bottom word of inverse.
@@ -5448,7 +5461,7 @@ SP_NOINLINE static void sp_3072_mul_53(sp_digit* r, const sp_digit* a,
  * a   First number to multiply in Montgomery form.
  * b   Second number to multiply in Montgomery form.
  * m   Modulus (prime).
- * mp  Montgomery mulitplier.
+ * mp  Montgomery multiplier.
  */
 SP_NOINLINE static void sp_3072_mont_mul_53(sp_digit* r, const sp_digit* a,
         const sp_digit* b, const sp_digit* m, sp_digit mp)
@@ -5526,7 +5539,7 @@ SP_NOINLINE static void sp_3072_sqr_53(sp_digit* r, const sp_digit* a)
  * r   Result of squaring.
  * a   Number to square in Montgomery form.
  * m   Modulus (prime).
- * mp  Montgomery mulitplier.
+ * mp  Montgomery multiplier.
  */
 SP_NOINLINE static void sp_3072_mont_sqr_53(sp_digit* r, const sp_digit* a,
         const sp_digit* m, sp_digit mp)
@@ -6351,7 +6364,7 @@ static void sp_3072_mont_reduce_106(sp_digit* a, const sp_digit* m, sp_digit mp)
  * a   First number to multiply in Montgomery form.
  * b   Second number to multiply in Montgomery form.
  * m   Modulus (prime).
- * mp  Montgomery mulitplier.
+ * mp  Montgomery multiplier.
  */
 SP_NOINLINE static void sp_3072_mont_mul_106(sp_digit* r, const sp_digit* a,
         const sp_digit* b, const sp_digit* m, sp_digit mp)
@@ -6365,7 +6378,7 @@ SP_NOINLINE static void sp_3072_mont_mul_106(sp_digit* r, const sp_digit* a,
  * r   Result of squaring.
  * a   Number to square in Montgomery form.
  * m   Modulus (prime).
- * mp  Montgomery mulitplier.
+ * mp  Montgomery multiplier.
  */
 SP_NOINLINE static void sp_3072_mont_sqr_106(sp_digit* r, const sp_digit* a,
         const sp_digit* m, sp_digit mp)
@@ -6989,7 +7002,7 @@ int sp_RsaPublic_3072(const byte* in, word32 inLen, const mp_int* em,
     sp_digit* m = NULL;
     sp_digit* r = NULL;
     sp_digit* norm = NULL;
-    sp_digit e[1] = {0};
+    sp_uint64 e[1] = {0};
     sp_digit mp = 0;
     int i;
     int err = MP_OKAY;
@@ -6999,7 +7012,7 @@ int sp_RsaPublic_3072(const byte* in, word32 inLen, const mp_int* em,
     }
 
     if (err == MP_OKAY) {
-        if (mp_count_bits(em) > 29) {
+        if (mp_count_bits(em) > 64) {
             err = MP_READ_E;
         }
         else if (inLen > 384U) {
@@ -7028,12 +7041,12 @@ int sp_RsaPublic_3072(const byte* in, word32 inLen, const mp_int* em,
         norm = r;
 
         sp_3072_from_bin(a, 106, in, inLen);
-#if DIGIT_BIT >= 29
-        e[0] = (sp_digit)em->dp[0];
+#if DIGIT_BIT >= 64
+        e[0] = (sp_uint64)em->dp[0];
 #else
-        e[0] = (sp_digit)em->dp[0];
+        e[0] = (sp_uint64)em->dp[0];
         if (em->used > 1) {
-            e[0] |= ((sp_digit)em->dp[1]) << DIGIT_BIT;
+            e[0] |= ((sp_uint64)em->dp[1]) << DIGIT_BIT;
         }
 #endif
         if (e[0] == 0) {
@@ -7052,7 +7065,7 @@ int sp_RsaPublic_3072(const byte* in, word32 inLen, const mp_int* em,
         err = sp_3072_mod_106(a, a, m);
     }
     if (err == MP_OKAY) {
-        for (i=28; i>=0; i--) {
+        for (i=63; i>=0; i--) {
             if ((e[0] >> i) != 0) {
                 break;
             }
@@ -7089,14 +7102,14 @@ int sp_RsaPublic_3072(const byte* in, word32 inLen, const mp_int* em,
     sp_digit* a = NULL;
     sp_digit* m = NULL;
     sp_digit* r = NULL;
-    sp_digit e[1] = {0};
+    sp_uint64 e[1] = {0};
     int err = MP_OKAY;
 
     if (*outLen < 384U) {
         err = MP_TO_E;
     }
     if (err == MP_OKAY) {
-        if (mp_count_bits(em) > 29) {
+        if (mp_count_bits(em) > 64) {
             err = MP_READ_E;
         }
         else if (inLen > 384U) {
@@ -7125,12 +7138,12 @@ int sp_RsaPublic_3072(const byte* in, word32 inLen, const mp_int* em,
         m = r + 106 * 2;
 
         sp_3072_from_bin(a, 106, in, inLen);
-#if DIGIT_BIT >= 29
-        e[0] = (sp_digit)em->dp[0];
+#if DIGIT_BIT >= 64
+        e[0] = (sp_uint64)em->dp[0];
 #else
-        e[0] = (sp_digit)em->dp[0];
+        e[0] = (sp_uint64)em->dp[0];
         if (em->used > 1) {
-            e[0] |= ((sp_digit)em->dp[1]) << DIGIT_BIT;
+            e[0] |= ((sp_uint64)em->dp[1]) << DIGIT_BIT;
         }
 #endif
         if (e[0] == 0) {
@@ -7160,7 +7173,7 @@ int sp_RsaPublic_3072(const byte* in, word32 inLen, const mp_int* em,
             err = sp_3072_mod_106(a, a, m);
 
             if (err == MP_OKAY) {
-                for (i=28; i>=0; i--) {
+                for (i=63; i>=0; i--) {
                     if ((e[0] >> i) != 0) {
                         break;
                     }
@@ -8205,14 +8218,14 @@ static void sp_3072_from_mp(sp_digit* r, int size, const mp_int* a)
 {
 #if DIGIT_BIT == 28
     int i;
-    int j = 0;
+    sp_digit j = (sp_digit)0 - (sp_digit)a->used;
+    int o = 0;
 
     for (i = 0; i < size; i++) {
-        sp_digit mask =
-            (((sp_digit)((int)a->used - i - 1)) >> (SP_WORD_SIZE - 1)) - 1;
-        r[i] = a->dp[j] & mask;
-        j += (int)(((sp_digit)1) -
-                   (((sp_digit)((int)a->used - i - 2)) >> (SP_WORD_SIZE - 1)));
+        sp_digit mask = (sp_digit)0 - (j >> 27);
+        r[i] = a->dp[o] & mask;
+        j++;
+        o += (int)(j >> 27);
     }
 #elif DIGIT_BIT > 28
     unsigned int i;
@@ -8302,7 +8315,7 @@ static void sp_3072_to_bin_112(sp_digit* r, byte* a)
     }
     j = 3079 / 8 - 1;
     a[j] = 0;
-    for (i=0; i<112 && j>=0; i++) {
+    for (i=0; i<110 && j>=0; i++) {
         b = 0;
         /* lint allow cast of mismatch sp_digit and int */
         a[j--] |= (byte)(r[i] << s); /*lint !e9033*/
@@ -9220,7 +9233,7 @@ SP_NOINLINE static void sp_3072_sqr_112(sp_digit* r, const sp_digit* a)
 }
 
 #endif /* !WOLFSSL_SP_SMALL */
-/* Caclulate the bottom digit of -1/a mod 2^n.
+/* Calculate the bottom digit of -1/a mod 2^n.
  *
  * a    A single precision number.
  * rho  Bottom word of inverse.
@@ -9524,7 +9537,7 @@ static void sp_3072_mont_reduce_56(sp_digit* a, const sp_digit* m, sp_digit mp)
  * a   First number to multiply in Montgomery form.
  * b   Second number to multiply in Montgomery form.
  * m   Modulus (prime).
- * mp  Montgomery mulitplier.
+ * mp  Montgomery multiplier.
  */
 SP_NOINLINE static void sp_3072_mont_mul_56(sp_digit* r, const sp_digit* a,
         const sp_digit* b, const sp_digit* m, sp_digit mp)
@@ -9538,7 +9551,7 @@ SP_NOINLINE static void sp_3072_mont_mul_56(sp_digit* r, const sp_digit* a,
  * r   Result of squaring.
  * a   Number to square in Montgomery form.
  * m   Modulus (prime).
- * mp  Montgomery mulitplier.
+ * mp  Montgomery multiplier.
  */
 SP_NOINLINE static void sp_3072_mont_sqr_56(sp_digit* r, const sp_digit* a,
         const sp_digit* m, sp_digit mp)
@@ -10442,7 +10455,7 @@ static void sp_3072_mont_reduce_112(sp_digit* a, const sp_digit* m, sp_digit mp)
  * a   First number to multiply in Montgomery form.
  * b   Second number to multiply in Montgomery form.
  * m   Modulus (prime).
- * mp  Montgomery mulitplier.
+ * mp  Montgomery multiplier.
  */
 SP_NOINLINE static void sp_3072_mont_mul_112(sp_digit* r, const sp_digit* a,
         const sp_digit* b, const sp_digit* m, sp_digit mp)
@@ -10456,7 +10469,7 @@ SP_NOINLINE static void sp_3072_mont_mul_112(sp_digit* r, const sp_digit* a,
  * r   Result of squaring.
  * a   Number to square in Montgomery form.
  * m   Modulus (prime).
- * mp  Montgomery mulitplier.
+ * mp  Montgomery multiplier.
  */
 SP_NOINLINE static void sp_3072_mont_sqr_112(sp_digit* r, const sp_digit* a,
         const sp_digit* m, sp_digit mp)
@@ -11107,7 +11120,7 @@ int sp_RsaPublic_3072(const byte* in, word32 inLen, const mp_int* em,
     sp_digit* m = NULL;
     sp_digit* r = NULL;
     sp_digit* norm = NULL;
-    sp_digit e[1] = {0};
+    sp_uint64 e[1] = {0};
     sp_digit mp = 0;
     int i;
     int err = MP_OKAY;
@@ -11117,7 +11130,7 @@ int sp_RsaPublic_3072(const byte* in, word32 inLen, const mp_int* em,
     }
 
     if (err == MP_OKAY) {
-        if (mp_count_bits(em) > 28) {
+        if (mp_count_bits(em) > 64) {
             err = MP_READ_E;
         }
         else if (inLen > 384U) {
@@ -11146,12 +11159,12 @@ int sp_RsaPublic_3072(const byte* in, word32 inLen, const mp_int* em,
         norm = r;
 
         sp_3072_from_bin(a, 112, in, inLen);
-#if DIGIT_BIT >= 28
-        e[0] = (sp_digit)em->dp[0];
+#if DIGIT_BIT >= 64
+        e[0] = (sp_uint64)em->dp[0];
 #else
-        e[0] = (sp_digit)em->dp[0];
+        e[0] = (sp_uint64)em->dp[0];
         if (em->used > 1) {
-            e[0] |= ((sp_digit)em->dp[1]) << DIGIT_BIT;
+            e[0] |= ((sp_uint64)em->dp[1]) << DIGIT_BIT;
         }
 #endif
         if (e[0] == 0) {
@@ -11170,7 +11183,7 @@ int sp_RsaPublic_3072(const byte* in, word32 inLen, const mp_int* em,
         err = sp_3072_mod_112(a, a, m);
     }
     if (err == MP_OKAY) {
-        for (i=27; i>=0; i--) {
+        for (i=63; i>=0; i--) {
             if ((e[0] >> i) != 0) {
                 break;
             }
@@ -11207,14 +11220,14 @@ int sp_RsaPublic_3072(const byte* in, word32 inLen, const mp_int* em,
     sp_digit* a = NULL;
     sp_digit* m = NULL;
     sp_digit* r = NULL;
-    sp_digit e[1] = {0};
+    sp_uint64 e[1] = {0};
     int err = MP_OKAY;
 
     if (*outLen < 384U) {
         err = MP_TO_E;
     }
     if (err == MP_OKAY) {
-        if (mp_count_bits(em) > 28) {
+        if (mp_count_bits(em) > 64) {
             err = MP_READ_E;
         }
         else if (inLen > 384U) {
@@ -11243,12 +11256,12 @@ int sp_RsaPublic_3072(const byte* in, word32 inLen, const mp_int* em,
         m = r + 112 * 2;
 
         sp_3072_from_bin(a, 112, in, inLen);
-#if DIGIT_BIT >= 28
-        e[0] = (sp_digit)em->dp[0];
+#if DIGIT_BIT >= 64
+        e[0] = (sp_uint64)em->dp[0];
 #else
-        e[0] = (sp_digit)em->dp[0];
+        e[0] = (sp_uint64)em->dp[0];
         if (em->used > 1) {
-            e[0] |= ((sp_digit)em->dp[1]) << DIGIT_BIT;
+            e[0] |= ((sp_uint64)em->dp[1]) << DIGIT_BIT;
         }
 #endif
         if (e[0] == 0) {
@@ -11278,7 +11291,7 @@ int sp_RsaPublic_3072(const byte* in, word32 inLen, const mp_int* em,
             err = sp_3072_mod_112(a, a, m);
 
             if (err == MP_OKAY) {
-                for (i=27; i>=0; i--) {
+                for (i=63; i>=0; i--) {
                     if ((e[0] >> i) != 0) {
                         break;
                     }
@@ -11706,8 +11719,8 @@ static int sp_3072_to_mp(const sp_digit* a, mp_int* r)
     err = mp_grow(r, (3072 + DIGIT_BIT - 1) / DIGIT_BIT);
     if (err == MP_OKAY) { /*lint !e774 case where err is always MP_OKAY*/
 #if DIGIT_BIT == 28
-        XMEMCPY(r->dp, a, sizeof(sp_digit) * 112);
-        r->used = 112;
+        XMEMCPY(r->dp, a, sizeof(sp_digit) * 110);
+        r->used = 110;
         mp_clamp(r);
 #elif DIGIT_BIT < 28
         int i;
@@ -11715,7 +11728,7 @@ static int sp_3072_to_mp(const sp_digit* a, mp_int* r)
         int s = 0;
 
         r->dp[0] = 0;
-        for (i = 0; i < 112; i++) {
+        for (i = 0; i < 110; i++) {
             r->dp[j] |= (mp_digit)(a[i] << s);
             r->dp[j] &= ((sp_digit)1 << DIGIT_BIT) - 1;
             s = DIGIT_BIT - s;
@@ -11740,7 +11753,7 @@ static int sp_3072_to_mp(const sp_digit* a, mp_int* r)
         int s = 0;
 
         r->dp[0] = 0;
-        for (i = 0; i < 112; i++) {
+        for (i = 0; i < 110; i++) {
             r->dp[j] |= ((mp_digit)a[i]) << s;
             if (s + 28 >= DIGIT_BIT) {
     #if DIGIT_BIT != 32 && DIGIT_BIT != 64
@@ -12548,14 +12561,14 @@ static void sp_4096_from_mp(sp_digit* r, int size, const mp_int* a)
 {
 #if DIGIT_BIT == 29
     int i;
-    int j = 0;
+    sp_digit j = (sp_digit)0 - (sp_digit)a->used;
+    int o = 0;
 
     for (i = 0; i < size; i++) {
-        sp_digit mask =
-            (((sp_digit)((int)a->used - i - 1)) >> (SP_WORD_SIZE - 1)) - 1;
-        r[i] = a->dp[j] & mask;
-        j += (int)(((sp_digit)1) -
-                   (((sp_digit)((int)a->used - i - 2)) >> (SP_WORD_SIZE - 1)));
+        sp_digit mask = (sp_digit)0 - (j >> 28);
+        r[i] = a->dp[o] & mask;
+        j++;
+        o += (int)(j >> 28);
     }
 #elif DIGIT_BIT > 29
     unsigned int i;
@@ -12819,7 +12832,7 @@ SP_NOINLINE static void sp_4096_sqr_142(sp_digit* r, const sp_digit* a)
     r[0] = (sp_digit)(c >> 29);
 }
 
-/* Caclulate the bottom digit of -1/a mod 2^n.
+/* Calculate the bottom digit of -1/a mod 2^n.
  *
  * a    A single precision number.
  * rho  Bottom word of inverse.
@@ -13105,7 +13118,7 @@ SP_NOINLINE static void sp_4096_mul_71(sp_digit* r, const sp_digit* a,
  * a   First number to multiply in Montgomery form.
  * b   Second number to multiply in Montgomery form.
  * m   Modulus (prime).
- * mp  Montgomery mulitplier.
+ * mp  Montgomery multiplier.
  */
 SP_NOINLINE static void sp_4096_mont_mul_71(sp_digit* r, const sp_digit* a,
         const sp_digit* b, const sp_digit* m, sp_digit mp)
@@ -13183,7 +13196,7 @@ SP_NOINLINE static void sp_4096_sqr_71(sp_digit* r, const sp_digit* a)
  * r   Result of squaring.
  * a   Number to square in Montgomery form.
  * m   Modulus (prime).
- * mp  Montgomery mulitplier.
+ * mp  Montgomery multiplier.
  */
 SP_NOINLINE static void sp_4096_mont_sqr_71(sp_digit* r, const sp_digit* a,
         const sp_digit* m, sp_digit mp)
@@ -14009,7 +14022,7 @@ static void sp_4096_mont_reduce_142(sp_digit* a, const sp_digit* m, sp_digit mp)
  * a   First number to multiply in Montgomery form.
  * b   Second number to multiply in Montgomery form.
  * m   Modulus (prime).
- * mp  Montgomery mulitplier.
+ * mp  Montgomery multiplier.
  */
 SP_NOINLINE static void sp_4096_mont_mul_142(sp_digit* r, const sp_digit* a,
         const sp_digit* b, const sp_digit* m, sp_digit mp)
@@ -14023,7 +14036,7 @@ SP_NOINLINE static void sp_4096_mont_mul_142(sp_digit* r, const sp_digit* a,
  * r   Result of squaring.
  * a   Number to square in Montgomery form.
  * m   Modulus (prime).
- * mp  Montgomery mulitplier.
+ * mp  Montgomery multiplier.
  */
 SP_NOINLINE static void sp_4096_mont_sqr_142(sp_digit* r, const sp_digit* a,
         const sp_digit* m, sp_digit mp)
@@ -14647,7 +14660,7 @@ int sp_RsaPublic_4096(const byte* in, word32 inLen, const mp_int* em,
     sp_digit* m = NULL;
     sp_digit* r = NULL;
     sp_digit* norm = NULL;
-    sp_digit e[1] = {0};
+    sp_uint64 e[1] = {0};
     sp_digit mp = 0;
     int i;
     int err = MP_OKAY;
@@ -14657,7 +14670,7 @@ int sp_RsaPublic_4096(const byte* in, word32 inLen, const mp_int* em,
     }
 
     if (err == MP_OKAY) {
-        if (mp_count_bits(em) > 29) {
+        if (mp_count_bits(em) > 64) {
             err = MP_READ_E;
         }
         else if (inLen > 512U) {
@@ -14686,12 +14699,12 @@ int sp_RsaPublic_4096(const byte* in, word32 inLen, const mp_int* em,
         norm = r;
 
         sp_4096_from_bin(a, 142, in, inLen);
-#if DIGIT_BIT >= 29
-        e[0] = (sp_digit)em->dp[0];
+#if DIGIT_BIT >= 64
+        e[0] = (sp_uint64)em->dp[0];
 #else
-        e[0] = (sp_digit)em->dp[0];
+        e[0] = (sp_uint64)em->dp[0];
         if (em->used > 1) {
-            e[0] |= ((sp_digit)em->dp[1]) << DIGIT_BIT;
+            e[0] |= ((sp_uint64)em->dp[1]) << DIGIT_BIT;
         }
 #endif
         if (e[0] == 0) {
@@ -14710,7 +14723,7 @@ int sp_RsaPublic_4096(const byte* in, word32 inLen, const mp_int* em,
         err = sp_4096_mod_142(a, a, m);
     }
     if (err == MP_OKAY) {
-        for (i=28; i>=0; i--) {
+        for (i=63; i>=0; i--) {
             if ((e[0] >> i) != 0) {
                 break;
             }
@@ -14747,14 +14760,14 @@ int sp_RsaPublic_4096(const byte* in, word32 inLen, const mp_int* em,
     sp_digit* a = NULL;
     sp_digit* m = NULL;
     sp_digit* r = NULL;
-    sp_digit e[1] = {0};
+    sp_uint64 e[1] = {0};
     int err = MP_OKAY;
 
     if (*outLen < 512U) {
         err = MP_TO_E;
     }
     if (err == MP_OKAY) {
-        if (mp_count_bits(em) > 29) {
+        if (mp_count_bits(em) > 64) {
             err = MP_READ_E;
         }
         else if (inLen > 512U) {
@@ -14783,12 +14796,12 @@ int sp_RsaPublic_4096(const byte* in, word32 inLen, const mp_int* em,
         m = r + 142 * 2;
 
         sp_4096_from_bin(a, 142, in, inLen);
-#if DIGIT_BIT >= 29
-        e[0] = (sp_digit)em->dp[0];
+#if DIGIT_BIT >= 64
+        e[0] = (sp_uint64)em->dp[0];
 #else
-        e[0] = (sp_digit)em->dp[0];
+        e[0] = (sp_uint64)em->dp[0];
         if (em->used > 1) {
-            e[0] |= ((sp_digit)em->dp[1]) << DIGIT_BIT;
+            e[0] |= ((sp_uint64)em->dp[1]) << DIGIT_BIT;
         }
 #endif
         if (e[0] == 0) {
@@ -14818,7 +14831,7 @@ int sp_RsaPublic_4096(const byte* in, word32 inLen, const mp_int* em,
             err = sp_4096_mod_142(a, a, m);
 
             if (err == MP_OKAY) {
-                for (i=28; i>=0; i--) {
+                for (i=63; i>=0; i--) {
                     if ((e[0] >> i) != 0) {
                         break;
                     }
@@ -15721,14 +15734,14 @@ static void sp_4096_from_mp(sp_digit* r, int size, const mp_int* a)
 {
 #if DIGIT_BIT == 26
     int i;
-    int j = 0;
+    sp_digit j = (sp_digit)0 - (sp_digit)a->used;
+    int o = 0;
 
     for (i = 0; i < size; i++) {
-        sp_digit mask =
-            (((sp_digit)((int)a->used - i - 1)) >> (SP_WORD_SIZE - 1)) - 1;
-        r[i] = a->dp[j] & mask;
-        j += (int)(((sp_digit)1) -
-                   (((sp_digit)((int)a->used - i - 2)) >> (SP_WORD_SIZE - 1)));
+        sp_digit mask = (sp_digit)0 - (j >> 25);
+        r[i] = a->dp[o] & mask;
+        j++;
+        o += (int)(j >> 25);
     }
 #elif DIGIT_BIT > 26
     unsigned int i;
@@ -15818,7 +15831,7 @@ static void sp_4096_to_bin_162(sp_digit* r, byte* a)
     }
     j = 4103 / 8 - 1;
     a[j] = 0;
-    for (i=0; i<162 && j>=0; i++) {
+    for (i=0; i<158 && j>=0; i++) {
         b = 0;
         /* lint allow cast of mismatch sp_digit and int */
         a[j--] |= (byte)(r[i] << s); /*lint !e9033*/
@@ -16745,7 +16758,7 @@ SP_NOINLINE static void sp_4096_sqr_162(sp_digit* r, const sp_digit* a)
 }
 
 #endif /* !WOLFSSL_SP_SMALL */
-/* Caclulate the bottom digit of -1/a mod 2^n.
+/* Calculate the bottom digit of -1/a mod 2^n.
  *
  * a    A single precision number.
  * rho  Bottom word of inverse.
@@ -17064,7 +17077,7 @@ static void sp_4096_mont_reduce_81(sp_digit* a, const sp_digit* m, sp_digit mp)
  * a   First number to multiply in Montgomery form.
  * b   Second number to multiply in Montgomery form.
  * m   Modulus (prime).
- * mp  Montgomery mulitplier.
+ * mp  Montgomery multiplier.
  */
 SP_NOINLINE static void sp_4096_mont_mul_81(sp_digit* r, const sp_digit* a,
         const sp_digit* b, const sp_digit* m, sp_digit mp)
@@ -17078,7 +17091,7 @@ SP_NOINLINE static void sp_4096_mont_mul_81(sp_digit* r, const sp_digit* a,
  * r   Result of squaring.
  * a   Number to square in Montgomery form.
  * m   Modulus (prime).
- * mp  Montgomery mulitplier.
+ * mp  Montgomery multiplier.
  */
 SP_NOINLINE static void sp_4096_mont_sqr_81(sp_digit* r, const sp_digit* a,
         const sp_digit* m, sp_digit mp)
@@ -17969,7 +17982,7 @@ static void sp_4096_mont_reduce_162(sp_digit* a, const sp_digit* m, sp_digit mp)
  * a   First number to multiply in Montgomery form.
  * b   Second number to multiply in Montgomery form.
  * m   Modulus (prime).
- * mp  Montgomery mulitplier.
+ * mp  Montgomery multiplier.
  */
 SP_NOINLINE static void sp_4096_mont_mul_162(sp_digit* r, const sp_digit* a,
         const sp_digit* b, const sp_digit* m, sp_digit mp)
@@ -17983,7 +17996,7 @@ SP_NOINLINE static void sp_4096_mont_mul_162(sp_digit* r, const sp_digit* a,
  * r   Result of squaring.
  * a   Number to square in Montgomery form.
  * m   Modulus (prime).
- * mp  Montgomery mulitplier.
+ * mp  Montgomery multiplier.
  */
 SP_NOINLINE static void sp_4096_mont_sqr_162(sp_digit* r, const sp_digit* a,
         const sp_digit* m, sp_digit mp)
@@ -18632,7 +18645,7 @@ int sp_RsaPublic_4096(const byte* in, word32 inLen, const mp_int* em,
     sp_digit* m = NULL;
     sp_digit* r = NULL;
     sp_digit* norm = NULL;
-    sp_digit e[1] = {0};
+    sp_uint64 e[1] = {0};
     sp_digit mp = 0;
     int i;
     int err = MP_OKAY;
@@ -18642,7 +18655,7 @@ int sp_RsaPublic_4096(const byte* in, word32 inLen, const mp_int* em,
     }
 
     if (err == MP_OKAY) {
-        if (mp_count_bits(em) > 26) {
+        if (mp_count_bits(em) > 64) {
             err = MP_READ_E;
         }
         else if (inLen > 512U) {
@@ -18671,12 +18684,12 @@ int sp_RsaPublic_4096(const byte* in, word32 inLen, const mp_int* em,
         norm = r;
 
         sp_4096_from_bin(a, 162, in, inLen);
-#if DIGIT_BIT >= 26
-        e[0] = (sp_digit)em->dp[0];
+#if DIGIT_BIT >= 64
+        e[0] = (sp_uint64)em->dp[0];
 #else
-        e[0] = (sp_digit)em->dp[0];
+        e[0] = (sp_uint64)em->dp[0];
         if (em->used > 1) {
-            e[0] |= ((sp_digit)em->dp[1]) << DIGIT_BIT;
+            e[0] |= ((sp_uint64)em->dp[1]) << DIGIT_BIT;
         }
 #endif
         if (e[0] == 0) {
@@ -18695,7 +18708,7 @@ int sp_RsaPublic_4096(const byte* in, word32 inLen, const mp_int* em,
         err = sp_4096_mod_162(a, a, m);
     }
     if (err == MP_OKAY) {
-        for (i=25; i>=0; i--) {
+        for (i=63; i>=0; i--) {
             if ((e[0] >> i) != 0) {
                 break;
             }
@@ -18732,14 +18745,14 @@ int sp_RsaPublic_4096(const byte* in, word32 inLen, const mp_int* em,
     sp_digit* a = NULL;
     sp_digit* m = NULL;
     sp_digit* r = NULL;
-    sp_digit e[1] = {0};
+    sp_uint64 e[1] = {0};
     int err = MP_OKAY;
 
     if (*outLen < 512U) {
         err = MP_TO_E;
     }
     if (err == MP_OKAY) {
-        if (mp_count_bits(em) > 26) {
+        if (mp_count_bits(em) > 64) {
             err = MP_READ_E;
         }
         else if (inLen > 512U) {
@@ -18768,12 +18781,12 @@ int sp_RsaPublic_4096(const byte* in, word32 inLen, const mp_int* em,
         m = r + 162 * 2;
 
         sp_4096_from_bin(a, 162, in, inLen);
-#if DIGIT_BIT >= 26
-        e[0] = (sp_digit)em->dp[0];
+#if DIGIT_BIT >= 64
+        e[0] = (sp_uint64)em->dp[0];
 #else
-        e[0] = (sp_digit)em->dp[0];
+        e[0] = (sp_uint64)em->dp[0];
         if (em->used > 1) {
-            e[0] |= ((sp_digit)em->dp[1]) << DIGIT_BIT;
+            e[0] |= ((sp_uint64)em->dp[1]) << DIGIT_BIT;
         }
 #endif
         if (e[0] == 0) {
@@ -18803,7 +18816,7 @@ int sp_RsaPublic_4096(const byte* in, word32 inLen, const mp_int* em,
             err = sp_4096_mod_162(a, a, m);
 
             if (err == MP_OKAY) {
-                for (i=25; i>=0; i--) {
+                for (i=63; i>=0; i--) {
                     if ((e[0] >> i) != 0) {
                         break;
                     }
@@ -19231,8 +19244,8 @@ static int sp_4096_to_mp(const sp_digit* a, mp_int* r)
     err = mp_grow(r, (4096 + DIGIT_BIT - 1) / DIGIT_BIT);
     if (err == MP_OKAY) { /*lint !e774 case where err is always MP_OKAY*/
 #if DIGIT_BIT == 26
-        XMEMCPY(r->dp, a, sizeof(sp_digit) * 162);
-        r->used = 162;
+        XMEMCPY(r->dp, a, sizeof(sp_digit) * 158);
+        r->used = 158;
         mp_clamp(r);
 #elif DIGIT_BIT < 26
         int i;
@@ -19240,7 +19253,7 @@ static int sp_4096_to_mp(const sp_digit* a, mp_int* r)
         int s = 0;
 
         r->dp[0] = 0;
-        for (i = 0; i < 162; i++) {
+        for (i = 0; i < 158; i++) {
             r->dp[j] |= (mp_digit)(a[i] << s);
             r->dp[j] &= ((sp_digit)1 << DIGIT_BIT) - 1;
             s = DIGIT_BIT - s;
@@ -19265,7 +19278,7 @@ static int sp_4096_to_mp(const sp_digit* a, mp_int* r)
         int s = 0;
 
         r->dp[0] = 0;
-        for (i = 0; i < 162; i++) {
+        for (i = 0; i < 158; i++) {
             r->dp[j] |= ((mp_digit)a[i]) << s;
             if (s + 26 >= DIGIT_BIT) {
     #if DIGIT_BIT != 32 && DIGIT_BIT != 64
@@ -20442,14 +20455,14 @@ static void sp_256_from_mp(sp_digit* r, int size, const mp_int* a)
 {
 #if DIGIT_BIT == 29
     int i;
-    int j = 0;
+    sp_digit j = (sp_digit)0 - (sp_digit)a->used;
+    int o = 0;
 
     for (i = 0; i < size; i++) {
-        sp_digit mask =
-            (((sp_digit)((int)a->used - i - 1)) >> (SP_WORD_SIZE - 1)) - 1;
-        r[i] = a->dp[j] & mask;
-        j += (int)(((sp_digit)1) -
-                   (((sp_digit)((int)a->used - i - 2)) >> (SP_WORD_SIZE - 1)));
+        sp_digit mask = (sp_digit)0 - (j >> 28);
+        r[i] = a->dp[o] & mask;
+        j++;
+        o += (int)(j >> 28);
     }
 #elif DIGIT_BIT > 29
     unsigned int i;
@@ -20943,7 +20956,7 @@ static void sp_256_mont_reduce_9(sp_digit* a, const sp_digit* m, sp_digit mp)
  * a   First number to multiply in Montgomery form.
  * b   Second number to multiply in Montgomery form.
  * m   Modulus (prime).
- * mp  Montgomery mulitplier.
+ * mp  Montgomery multiplier.
  */
 SP_NOINLINE static void sp_256_mont_mul_9(sp_digit* r, const sp_digit* a,
         const sp_digit* b, const sp_digit* m, sp_digit mp)
@@ -20957,7 +20970,7 @@ SP_NOINLINE static void sp_256_mont_mul_9(sp_digit* r, const sp_digit* a,
  * r   Result of squaring.
  * a   Number to square in Montgomery form.
  * m   Modulus (prime).
- * mp  Montgomery mulitplier.
+ * mp  Montgomery multiplier.
  */
 SP_NOINLINE static void sp_256_mont_sqr_9(sp_digit* r, const sp_digit* a,
         const sp_digit* m, sp_digit mp)
@@ -20973,10 +20986,10 @@ SP_NOINLINE static void sp_256_mont_sqr_9(sp_digit* r, const sp_digit* a,
  * a   Number to square in Montgomery form.
  * n   Number of times to square.
  * m   Modulus (prime).
- * mp  Montgomery mulitplier.
+ * mp  Montgomery multiplier.
  */
-static void sp_256_mont_sqr_n_9(sp_digit* r, const sp_digit* a, int n,
-        const sp_digit* m, sp_digit mp)
+SP_NOINLINE static void sp_256_mont_sqr_n_9(sp_digit* r,
+    const sp_digit* a, int n, const sp_digit* m, sp_digit mp)
 {
     sp_256_mont_sqr_9(r, a, m, mp);
     for (; n > 1; n--) {
@@ -21217,7 +21230,6 @@ static void sp_256_mont_sub_9(sp_digit* r, const sp_digit* a, const sp_digit* b,
     sp_256_norm_9(r);
 }
 
-#define sp_256_mont_sub_lower_9 sp_256_mont_sub_9
 /* Shift number left one bit.
  * Bottom bit is lost.
  *
@@ -21251,7 +21263,8 @@ SP_NOINLINE static void sp_256_rshift1_9(sp_digit* r, const sp_digit* a)
  * a  Number to divide.
  * m  Modulus (prime).
  */
-static void sp_256_div2_9(sp_digit* r, const sp_digit* a, const sp_digit* m)
+static void sp_256_mont_div2_9(sp_digit* r, const sp_digit* a,
+        const sp_digit* m)
 {
     sp_256_cond_add_9(r, a, m, 0 - (a[0] & 1));
     sp_256_norm_9(r);
@@ -21302,7 +21315,7 @@ static void sp_256_proj_point_dbl_9(sp_point_256* r, const sp_point_256* p,
     /* T2 = Y * Y */
     sp_256_mont_sqr_9(t2, y, p256_mod, p256_mp_mod);
     /* T2 = T2/2 */
-    sp_256_div2_9(t2, t2, p256_mod);
+    sp_256_mont_div2_9(t2, t2, p256_mod);
     /* Y = Y * X */
     sp_256_mont_mul_9(y, y, p->x, p256_mod, p256_mp_mod);
     /* X = T1 * T1 */
@@ -21312,7 +21325,7 @@ static void sp_256_proj_point_dbl_9(sp_point_256* r, const sp_point_256* p,
     /* X = X - Y */
     sp_256_mont_sub_9(x, x, y, p256_mod);
     /* Y = Y - X */
-    sp_256_mont_sub_lower_9(y, y, x, p256_mod);
+    sp_256_mont_sub_9(y, y, x, p256_mod);
     /* Y = Y * T1 */
     sp_256_mont_mul_9(y, y, t1, p256_mod, p256_mp_mod);
     /* Y = Y - T2 */
@@ -21335,7 +21348,8 @@ typedef struct sp_256_proj_point_dbl_9_ctx {
  * p  Point to double.
  * t  Temporary ordinate data.
  */
-static int sp_256_proj_point_dbl_9_nb(sp_ecc_ctx_t* sp_ctx, sp_point_256* r, const sp_point_256* p, sp_digit* t)
+static int sp_256_proj_point_dbl_9_nb(sp_ecc_ctx_t* sp_ctx, sp_point_256* r,
+        const sp_point_256* p, sp_digit* t)
 {
     int err = FP_WOULDBLOCK;
     sp_256_proj_point_dbl_9_ctx* ctx = (sp_256_proj_point_dbl_9_ctx*)sp_ctx->data;
@@ -21409,7 +21423,7 @@ static int sp_256_proj_point_dbl_9_nb(sp_ecc_ctx_t* sp_ctx, sp_point_256* r, con
         break;
     case 11:
         /* T2 = T2/2 */
-        sp_256_div2_9(ctx->t2, ctx->t2, p256_mod);
+        sp_256_mont_div2_9(ctx->t2, ctx->t2, p256_mod);
         ctx->state = 12;
         break;
     case 12:
@@ -21434,7 +21448,7 @@ static int sp_256_proj_point_dbl_9_nb(sp_ecc_ctx_t* sp_ctx, sp_point_256* r, con
         break;
     case 16:
         /* Y = Y - X */
-        sp_256_mont_sub_lower_9(ctx->y, ctx->y, ctx->x, p256_mod);
+        sp_256_mont_sub_9(ctx->y, ctx->y, ctx->x, p256_mod);
         ctx->state = 17;
         break;
     case 17:
@@ -21496,12 +21510,12 @@ static int sp_256_iszero_9(const sp_digit* a)
 static void sp_256_proj_point_add_9(sp_point_256* r,
         const sp_point_256* p, const sp_point_256* q, sp_digit* t)
 {
-    sp_digit* t1 = t;
-    sp_digit* t2 = t + 2*9;
-    sp_digit* t3 = t + 4*9;
-    sp_digit* t4 = t + 6*9;
-    sp_digit* t5 = t + 8*9;
-    sp_digit* t6 = t + 10*9;
+    sp_digit* t6 = t;
+    sp_digit* t1 = t + 2*9;
+    sp_digit* t2 = t + 4*9;
+    sp_digit* t3 = t + 6*9;
+    sp_digit* t4 = t + 8*9;
+    sp_digit* t5 = t + 10*9;
 
     /* U1 = X1*Z2^2 */
     sp_256_mont_sqr_9(t1, q->z, p256_mod, p256_mp_mod);
@@ -21523,17 +21537,9 @@ static void sp_256_proj_point_add_9(sp_point_256* r,
         sp_256_proj_point_dbl_9(r, p, t);
     }
     else {
-        sp_digit maskp;
-        sp_digit maskq;
-        sp_digit maskt;
         sp_digit* x = t6;
         sp_digit* y = t1;
         sp_digit* z = t2;
-        int i;
-
-        maskp = 0 - (q->infinity & (!p->infinity));
-        maskq = 0 - (p->infinity & (!q->infinity));
-        maskt = ~(maskp | maskq);
 
         /* H = U2 - U1 */
         sp_256_mont_sub_9(t2, t2, t1, p256_mod);
@@ -21552,20 +21558,31 @@ static void sp_256_proj_point_add_9(sp_point_256* r,
         sp_256_mont_dbl_9(t3, y, p256_mod);
         sp_256_mont_sub_9(x, x, t3, p256_mod);
         /* Y3 = R*(U1*H^2 - X3) - S1*H^3 */
-        sp_256_mont_sub_lower_9(y, y, x, p256_mod);
+        sp_256_mont_sub_9(y, y, x, p256_mod);
         sp_256_mont_mul_9(y, y, t4, p256_mod, p256_mp_mod);
         sp_256_mont_sub_9(y, y, t5, p256_mod);
-        for (i = 0; i < 9; i++) {
-            r->x[i] = (p->x[i] & maskp) | (q->x[i] & maskq) | (x[i] & maskt);
+        {
+            int i;
+            sp_digit maskp = 0 - (q->infinity & (!p->infinity));
+            sp_digit maskq = 0 - (p->infinity & (!q->infinity));
+            sp_digit maskt = ~(maskp | maskq);
+            sp_digit inf = (sp_digit)(p->infinity & q->infinity);
+
+            for (i = 0; i < 9; i++) {
+                r->x[i] = (p->x[i] & maskp) | (q->x[i] & maskq) |
+                          (x[i] & maskt);
+            }
+            for (i = 0; i < 9; i++) {
+                r->y[i] = (p->y[i] & maskp) | (q->y[i] & maskq) |
+                          (y[i] & maskt);
+            }
+            for (i = 0; i < 9; i++) {
+                r->z[i] = (p->z[i] & maskp) | (q->z[i] & maskq) |
+                          (z[i] & maskt);
+            }
+            r->z[0] |= inf;
+            r->infinity = (word32)inf;
         }
-        for (i = 0; i < 9; i++) {
-            r->y[i] = (p->y[i] & maskp) | (q->y[i] & maskq) | (y[i] & maskt);
-        }
-        for (i = 0; i < 9; i++) {
-            r->z[i] = (p->z[i] & maskp) | (q->z[i] & maskq) | (z[i] & maskt);
-        }
-        r->z[0] |= p->infinity & q->infinity;
-        r->infinity = p->infinity & q->infinity;
     }
 }
 
@@ -21611,12 +21628,12 @@ static int sp_256_proj_point_add_9_nb(sp_ecc_ctx_t* sp_ctx, sp_point_256* r,
 
     switch (ctx->state) {
     case 0: /* INIT */
-        ctx->t1 = t;
-        ctx->t2 = t + 2*9;
-        ctx->t3 = t + 4*9;
-        ctx->t4 = t + 6*9;
-        ctx->t5 = t + 8*9;
-        ctx->t6 = t + 10*9;
+        ctx->t6 = t;
+        ctx->t1 = t + 2*9;
+        ctx->t2 = t + 4*9;
+        ctx->t3 = t + 6*9;
+        ctx->t4 = t + 8*9;
+        ctx->t5 = t + 10*9;
         ctx->x = ctx->t6;
         ctx->y = ctx->t1;
         ctx->z = ctx->t2;
@@ -21723,7 +21740,7 @@ static int sp_256_proj_point_add_9_nb(sp_ecc_ctx_t* sp_ctx, sp_point_256* r,
         break;
     case 21:
         /* Y3 = R*(U1*H^2 - X3) - S1*H^3 */
-        sp_256_mont_sub_lower_9(ctx->y, ctx->y, ctx->x, p256_mod);
+        sp_256_mont_sub_9(ctx->y, ctx->y, ctx->x, p256_mod);
         ctx->state = 22;
         break;
     case 22:
@@ -21736,22 +21753,28 @@ static int sp_256_proj_point_add_9_nb(sp_ecc_ctx_t* sp_ctx, sp_point_256* r,
         break;
     case 24:
     {
-        int i;
-        sp_digit maskp = 0 - (q->infinity & (!p->infinity));
-        sp_digit maskq = 0 - (p->infinity & (!q->infinity));
-        sp_digit maskt = ~(maskp | maskq);
+        {
+            int i;
+            sp_digit maskp = 0 - (q->infinity & (!p->infinity));
+            sp_digit maskq = 0 - (p->infinity & (!q->infinity));
+            sp_digit maskt = ~(maskp | maskq);
+            sp_digit inf = (sp_digit)(p->infinity & q->infinity);
 
-        for (i = 0; i < 9; i++) {
-            r->x[i] = (p->x[i] & maskp) | (q->x[i] & maskq) | (ctx->x[i] & maskt);
+            for (i = 0; i < 9; i++) {
+                r->x[i] = (p->x[i] & maskp) | (q->x[i] & maskq) |
+                          (ctx->x[i] & maskt);
+            }
+            for (i = 0; i < 9; i++) {
+                r->y[i] = (p->y[i] & maskp) | (q->y[i] & maskq) |
+                          (ctx->y[i] & maskt);
+            }
+            for (i = 0; i < 9; i++) {
+                r->z[i] = (p->z[i] & maskp) | (q->z[i] & maskq) |
+                          (ctx->z[i] & maskt);
+            }
+            r->z[0] |= inf;
+            r->infinity = (word32)inf;
         }
-        for (i = 0; i < 9; i++) {
-            r->y[i] = (p->y[i] & maskp) | (q->y[i] & maskq) | (ctx->y[i] & maskt);
-        }
-        for (i = 0; i < 9; i++) {
-            r->z[i] = (p->z[i] & maskp) | (q->z[i] & maskq) | (ctx->z[i] & maskt);
-        }
-        r->z[0] |= p->infinity & q->infinity;
-        r->infinity = p->infinity & q->infinity;
         ctx->state = 25;
         break;
     }
@@ -22172,8 +22195,6 @@ static void sp_256_cond_copy_9(sp_digit* r, const sp_digit* a, const sp_digit m)
 #endif /* WOLFSSL_SP_SMALL */
 }
 
-#define sp_256_mont_dbl_lower_9 sp_256_mont_dbl_9
-#define sp_256_mont_tpl_lower_9 sp_256_mont_tpl_9
 /* Double the Montgomery form projective point p a number of times.
  *
  * r  Result of repeated doubling of point.
@@ -22212,7 +22233,7 @@ static void sp_256_proj_point_dbl_n_9(sp_point_256* p, int i,
         /* A = 3*(X^2 - W) */
         sp_256_mont_sqr_9(t1, x, p256_mod, p256_mp_mod);
         sp_256_mont_sub_9(t1, t1, w, p256_mod);
-        sp_256_mont_tpl_lower_9(a, t1, p256_mod);
+        sp_256_mont_tpl_9(a, t1, p256_mod);
         /* B = X*Y^2 */
         sp_256_mont_sqr_9(t1, y, p256_mod, p256_mp_mod);
         sp_256_mont_mul_9(b, t1, x, p256_mod, p256_mp_mod);
@@ -22221,8 +22242,8 @@ static void sp_256_proj_point_dbl_n_9(sp_point_256* p, int i,
         sp_256_mont_dbl_9(t2, b, p256_mod);
         sp_256_mont_sub_9(x, x, t2, p256_mod);
         /* B = 2.(B - X) */
-        sp_256_mont_sub_lower_9(t2, b, x, p256_mod);
-        sp_256_mont_dbl_lower_9(b, t2, p256_mod);
+        sp_256_mont_sub_9(t2, b, x, p256_mod);
+        sp_256_mont_dbl_9(b, t2, p256_mod);
         /* Z = Z*Y */
         sp_256_mont_mul_9(z, z, y, p256_mod, p256_mp_mod);
         /* t1 = Y^4 */
@@ -22242,7 +22263,7 @@ static void sp_256_proj_point_dbl_n_9(sp_point_256* p, int i,
     /* A = 3*(X^2 - W) */
     sp_256_mont_sqr_9(t1, x, p256_mod, p256_mp_mod);
     sp_256_mont_sub_9(t1, t1, w, p256_mod);
-    sp_256_mont_tpl_lower_9(a, t1, p256_mod);
+    sp_256_mont_tpl_9(a, t1, p256_mod);
     /* B = X*Y^2 */
     sp_256_mont_sqr_9(t1, y, p256_mod, p256_mp_mod);
     sp_256_mont_mul_9(b, t1, x, p256_mod, p256_mp_mod);
@@ -22251,8 +22272,8 @@ static void sp_256_proj_point_dbl_n_9(sp_point_256* p, int i,
     sp_256_mont_dbl_9(t2, b, p256_mod);
     sp_256_mont_sub_9(x, x, t2, p256_mod);
     /* B = 2.(B - X) */
-    sp_256_mont_sub_lower_9(t2, b, x, p256_mod);
-    sp_256_mont_dbl_lower_9(b, t2, p256_mod);
+    sp_256_mont_sub_9(t2, b, x, p256_mod);
+    sp_256_mont_dbl_9(b, t2, p256_mod);
     /* Z = Z*Y */
     sp_256_mont_mul_9(z, z, y, p256_mod, p256_mp_mod);
     /* t1 = Y^4 */
@@ -22262,7 +22283,7 @@ static void sp_256_proj_point_dbl_n_9(sp_point_256* p, int i,
     sp_256_mont_sub_9(y, y, t1, p256_mod);
 #endif /* WOLFSSL_SP_SMALL */
     /* Y = Y/2 */
-    sp_256_div2_9(y, y, p256_mod);
+    sp_256_mont_div2_9(y, y, p256_mod);
 }
 
 /* Double the Montgomery form projective point p a number of times.
@@ -22308,7 +22329,7 @@ static void sp_256_proj_point_dbl_n_store_9(sp_point_256* r,
         /* A = 3*(X^2 - W) */
         sp_256_mont_sqr_9(t1, x, p256_mod, p256_mp_mod);
         sp_256_mont_sub_9(t1, t1, w, p256_mod);
-        sp_256_mont_tpl_lower_9(a, t1, p256_mod);
+        sp_256_mont_tpl_9(a, t1, p256_mod);
         /* B = X*Y^2 */
         sp_256_mont_sqr_9(t1, y, p256_mod, p256_mp_mod);
         sp_256_mont_mul_9(b, t1, x, p256_mod, p256_mp_mod);
@@ -22318,8 +22339,8 @@ static void sp_256_proj_point_dbl_n_store_9(sp_point_256* r,
         sp_256_mont_dbl_9(t2, b, p256_mod);
         sp_256_mont_sub_9(x, x, t2, p256_mod);
         /* B = 2.(B - X) */
-        sp_256_mont_sub_lower_9(t2, b, x, p256_mod);
-        sp_256_mont_dbl_lower_9(b, t2, p256_mod);
+        sp_256_mont_sub_9(t2, b, x, p256_mod);
+        sp_256_mont_dbl_9(b, t2, p256_mod);
         /* Z = Z*Y */
         sp_256_mont_mul_9(r[j].z, z, y, p256_mod, p256_mp_mod);
         z = r[j].z;
@@ -22333,7 +22354,7 @@ static void sp_256_proj_point_dbl_n_store_9(sp_point_256* r,
         sp_256_mont_mul_9(y, b, a, p256_mod, p256_mp_mod);
         sp_256_mont_sub_9(y, y, t1, p256_mod);
         /* Y = Y/2 */
-        sp_256_div2_9(r[j].y, y, p256_mod);
+        sp_256_mont_div2_9(r[j].y, y, p256_mod);
         r[j].infinity = 0;
     }
 }
@@ -22407,8 +22428,8 @@ static void sp_256_proj_point_add_sub_9(sp_point_256* ra,
     sp_256_mont_sub_9(xs, xs, t1, p256_mod);
     /* Y3 = R*(U1*H^2 - X3) - S1*H^3 */
     /* YS = -RS*(U1*H^2 - XS) - S1*H^3 */
-    sp_256_mont_sub_lower_9(ys, ya, xs, p256_mod);
-    sp_256_mont_sub_lower_9(ya, ya, xa, p256_mod);
+    sp_256_mont_sub_9(ys, ya, xs, p256_mod);
+    sp_256_mont_sub_9(ya, ya, xa, p256_mod);
     sp_256_mont_mul_9(ya, ya, t4, p256_mod, p256_mp_mod);
     sp_256_sub_9(t6, p256_mod, t6);
     sp_256_mont_mul_9(ys, ys, t6, p256_mod, p256_mp_mod);
@@ -22492,7 +22513,7 @@ static void sp_256_ecc_recode_6_9(const sp_digit* k, ecc_recode_256* v)
 /* Touch each possible point that could be being copied.
  *
  * r      Point to copy into.
- * table  Table - start of the entires to access
+ * table  Table - start of the entries to access
  * idx    Index of entry to retrieve.
  */
 static void sp_256_get_point_33_9(sp_point_256* r, const sp_point_256* table,
@@ -22600,7 +22621,7 @@ static int sp_256_ecc_mulmod_win_add_sub_9(sp_point_256* r, const sp_point_256* 
     (void)heap;
 
 #ifdef WOLFSSL_SP_SMALL_STACK
-    t = (sp_point_256*)XMALLOC(sizeof(sp_point_256) * 
+    t = (sp_point_256*)XMALLOC(sizeof(sp_point_256) *
         (33+2), heap, DYNAMIC_TYPE_ECC);
     if (t == NULL)
         err = MEMORY_E;
@@ -22719,12 +22740,12 @@ static int sp_256_ecc_mulmod_win_add_sub_9(sp_point_256* r, const sp_point_256* 
 static void sp_256_proj_point_add_qz1_9(sp_point_256* r,
     const sp_point_256* p, const sp_point_256* q, sp_digit* t)
 {
-    sp_digit* t1 = t;
-    sp_digit* t2 = t + 2*9;
-    sp_digit* t3 = t + 4*9;
-    sp_digit* t4 = t + 6*9;
-    sp_digit* t5 = t + 8*9;
-    sp_digit* t6 = t + 10*9;
+    sp_digit* t2 = t;
+    sp_digit* t3 = t + 2*9;
+    sp_digit* t6 = t + 4*9;
+    sp_digit* t1 = t + 6*9;
+    sp_digit* t4 = t + 8*9;
+    sp_digit* t5 = t + 10*9;
 
     /* Calculate values to subtract from P->x and P->y. */
     /* U2 = X2*Z1^2 */
@@ -22740,13 +22761,9 @@ static void sp_256_proj_point_add_qz1_9(sp_point_256* r,
         sp_256_proj_point_dbl_9(r, p, t);
     }
     else {
-        sp_digit maskp;
-        sp_digit maskq;
-        sp_digit maskt;
         sp_digit* x = t2;
-        sp_digit* y = t5;
+        sp_digit* y = t3;
         sp_digit* z = t6;
-        int i;
 
         /* H = U2 - X1 */
         sp_256_mont_sub_9(t2, t2, p->x, p256_mod);
@@ -22755,33 +22772,40 @@ static void sp_256_proj_point_add_qz1_9(sp_point_256* r,
         /* Z3 = H*Z1 */
         sp_256_mont_mul_9(z, p->z, t2, p256_mod, p256_mp_mod);
         /* X3 = R^2 - H^3 - 2*X1*H^2 */
-        sp_256_mont_sqr_9(t1, t4, p256_mod, p256_mp_mod);
-        sp_256_mont_sqr_9(t5, t2, p256_mod, p256_mp_mod);
-        sp_256_mont_mul_9(t3, p->x, t5, p256_mod, p256_mp_mod);
-        sp_256_mont_mul_9(t5, t5, t2, p256_mod, p256_mp_mod);
-        sp_256_mont_sub_9(x, t1, t5, p256_mod);
-        sp_256_mont_dbl_9(t1, t3, p256_mod);
-        sp_256_mont_sub_9(x, x, t1, p256_mod);
+        sp_256_mont_sqr_9(t1, t2, p256_mod, p256_mp_mod);
+        sp_256_mont_mul_9(t3, p->x, t1, p256_mod, p256_mp_mod);
+        sp_256_mont_mul_9(t1, t1, t2, p256_mod, p256_mp_mod);
+        sp_256_mont_sqr_9(t2, t4, p256_mod, p256_mp_mod);
+        sp_256_mont_sub_9(t2, t2, t1, p256_mod);
+        sp_256_mont_dbl_9(t5, t3, p256_mod);
+        sp_256_mont_sub_9(x, t2, t5, p256_mod);
         /* Y3 = R*(X1*H^2 - X3) - Y1*H^3 */
-        sp_256_mont_sub_lower_9(t3, t3, x, p256_mod);
+        sp_256_mont_sub_9(t3, t3, x, p256_mod);
         sp_256_mont_mul_9(t3, t3, t4, p256_mod, p256_mp_mod);
-        sp_256_mont_mul_9(t5, t5, p->y, p256_mod, p256_mp_mod);
-        sp_256_mont_sub_9(y, t3, t5, p256_mod);
+        sp_256_mont_mul_9(t1, t1, p->y, p256_mod, p256_mp_mod);
+        sp_256_mont_sub_9(y, t3, t1, p256_mod);
+        {
+            int i;
+            sp_digit maskp = 0 - (q->infinity & (!p->infinity));
+            sp_digit maskq = 0 - (p->infinity & (!q->infinity));
+            sp_digit maskt = ~(maskp | maskq);
+            sp_digit inf = (sp_digit)(p->infinity & q->infinity);
 
-        maskp = 0 - (q->infinity & (!p->infinity));
-        maskq = 0 - (p->infinity & (!q->infinity));
-        maskt = ~(maskp | maskq);
-        for (i = 0; i < 9; i++) {
-            r->x[i] = (p->x[i] & maskp) | (q->x[i] & maskq) | (x[i] & maskt);
+            for (i = 0; i < 9; i++) {
+                r->x[i] = (p->x[i] & maskp) | (q->x[i] & maskq) |
+                          (x[i] & maskt);
+            }
+            for (i = 0; i < 9; i++) {
+                r->y[i] = (p->y[i] & maskp) | (q->y[i] & maskq) |
+                          (y[i] & maskt);
+            }
+            for (i = 0; i < 9; i++) {
+                r->z[i] = (p->z[i] & maskp) | (q->z[i] & maskq) |
+                          (z[i] & maskt);
+            }
+            r->z[0] |= inf;
+            r->infinity = (word32)inf;
         }
-        for (i = 0; i < 9; i++) {
-            r->y[i] = (p->y[i] & maskp) | (q->y[i] & maskq) | (y[i] & maskt);
-        }
-        for (i = 0; i < 9; i++) {
-            r->z[i] = (p->z[i] & maskp) | (q->z[i] & maskq) | (z[i] & maskt);
-        }
-        r->z[0] |= p->infinity & q->infinity;
-        r->infinity = p->infinity & q->infinity;
     }
 }
 
@@ -22903,7 +22927,7 @@ static int sp_256_gen_stripe_table_9(const sp_point_256* a,
 /* Touch each possible entry that could be being copied.
  *
  * r      Point to copy into.
- * table  Table - start of the entires to access
+ * table  Table - start of the entries to access
  * idx    Index of entry to retrieve.
  */
 static void sp_256_get_entry_256_9(sp_point_256* r,
@@ -23102,7 +23126,7 @@ static THREAD_LS_T int sp_cache_256_inited = 0;
 
 /* Get the cache entry for the point.
  *
- * g      [in]   Point scalar multipling.
+ * g      [in]   Point scalar multiplying.
  * cache  [out]  Cache table to use.
  */
 static void sp_ecc_get_cache_256(const sp_point_256* g, sp_cache_256_t** cache)
@@ -23173,8 +23197,8 @@ static void sp_ecc_get_cache_256(const sp_point_256* g, sp_cache_256_t** cache)
  * heap  Heap to use for allocation.
  * returns MEMORY_E when memory allocation fails and MP_OKAY on success.
  */
-static int sp_256_ecc_mulmod_9(sp_point_256* r, const sp_point_256* g, const sp_digit* k,
-        int map, int ct, void* heap)
+static int sp_256_ecc_mulmod_9(sp_point_256* r, const sp_point_256* g,
+        const sp_digit* k, int map, int ct, void* heap)
 {
 #ifndef FP_ECC
     return sp_256_ecc_mulmod_win_add_sub_9(r, g, k, map, ct, heap);
@@ -23291,7 +23315,7 @@ int sp_ecc_mulmod_256(const mp_int* km, const ecc_point* gm, ecc_point* r,
  *
  * km      Scalar to multiply by.
  * p       Point to multiply.
- * am      Point to add to scalar mulitply result.
+ * am      Point to add to scalar multiply result.
  * inMont  Point to add is in montgomery form.
  * r       Resulting point.
  * map     Indicates whether to convert result to affine.
@@ -23302,7 +23326,7 @@ int sp_ecc_mulmod_add_256(const mp_int* km, const ecc_point* gm,
     const ecc_point* am, int inMont, ecc_point* r, int map, void* heap)
 {
 #ifdef WOLFSSL_SP_SMALL_STACK
-    sp_point_256* point = NULL;    
+    sp_point_256* point = NULL;
     sp_digit* k = NULL;
 #else
     sp_point_256 point[2];
@@ -24759,7 +24783,7 @@ int sp_ecc_mulmod_base_256(const mp_int* km, ecc_point* r, int map, void* heap)
  * the result. If map is true then convert result to affine coordinates.
  *
  * km      Scalar to multiply by.
- * am      Point to add to scalar mulitply result.
+ * am      Point to add to scalar multiply result.
  * inMont  Point to add is in montgomery form.
  * r       Resulting point.
  * map     Indicates whether to convert result to affine.
@@ -24781,7 +24805,7 @@ int sp_ecc_mulmod_base_add_256(const mp_int* km, const ecc_point* am,
     int err = MP_OKAY;
 
 #ifdef WOLFSSL_SP_SMALL_STACK
-    point = (sp_point_256*)XMALLOC(sizeof(sp_point_256) * 2, heap, 
+    point = (sp_point_256*)XMALLOC(sizeof(sp_point_256) * 2, heap,
                                          DYNAMIC_TYPE_ECC);
     if (point == NULL)
         err = MEMORY_E;
@@ -24935,7 +24959,7 @@ int sp_ecc_make_key_256(WC_RNG* rng, mp_int* priv, ecc_point* pub, void* heap)
     sp_point_256* infinity = NULL;
 #endif
     int err = MP_OKAY;
-    
+
 
     (void)heap;
 
@@ -24943,7 +24967,7 @@ int sp_ecc_make_key_256(WC_RNG* rng, mp_int* priv, ecc_point* pub, void* heap)
     #ifdef WOLFSSL_VALIDATE_ECC_KEYGEN
     point = (sp_point_256*)XMALLOC(sizeof(sp_point_256) * 2, heap, DYNAMIC_TYPE_ECC);
     #else
-    point = (sp_point_256*)XMALLOC(sizeof(sp_point_256), heap, DYNAMIC_TYPE_ECC);    
+    point = (sp_point_256*)XMALLOC(sizeof(sp_point_256), heap, DYNAMIC_TYPE_ECC);
     #endif
     if (point == NULL)
         err = MEMORY_E;
@@ -25578,7 +25602,7 @@ static void sp_256_mont_inv_order_9(sp_digit* r, const sp_digit* a,
     sp_256_mont_sqr_n_order_9(t2, t3, 4);
     /* t = a^ff = t2 * t3 */
     sp_256_mont_mul_order_9(t, t2, t3);
-    /* t3= a^ff00 = t ^ 2 ^ 8 */
+    /* t2= a^ff00 = t ^ 2 ^ 8 */
     sp_256_mont_sqr_n_order_9(t2, t, 8);
     /* t = a^ffff = t2 * t */
     sp_256_mont_mul_order_9(t, t2, t);
@@ -25595,7 +25619,11 @@ static void sp_256_mont_inv_order_9(sp_digit* r, const sp_digit* a,
     /* t2= a^ffffffff00000000ffffffffffffffff = t2 * t */
     sp_256_mont_mul_order_9(t2, t2, t);
     /* t2= a^ffffffff00000000ffffffffffffffffbce6 */
-    for (i=127; i>=112; i--) {
+    sp_256_mont_sqr_order_9(t2, t2);
+    sp_256_mont_mul_order_9(t2, t2, a);
+    sp_256_mont_sqr_n_order_9(t2, t2, 5);
+    sp_256_mont_mul_order_9(t2, t2, t3);
+    for (i=121; i>=112; i--) {
         sp_256_mont_sqr_order_9(t2, t2);
         if ((p256_order_low[i / 32] & ((sp_int_digit)1 << (i % 32))) != 0) {
             sp_256_mont_mul_order_9(t2, t2, a);
@@ -26094,8 +26122,8 @@ static int sp_256_mod_inv_9(sp_digit* r, const sp_digit* a, const sp_digit* m)
         }
 
         while (ut > 1 && vt > 1) {
-            if (ut > vt || (ut == vt &&
-                                       sp_256_cmp_9(u, v) >= 0)) {
+            if ((ut > vt) || ((ut == vt) &&
+                    (sp_256_cmp_9(u, v) >= 0))) {
                 sp_256_sub_9(u, u, v);
                 sp_256_norm_9(u);
 
@@ -26189,7 +26217,7 @@ static void sp_256_add_points_9(sp_point_256* p1, const sp_point_256* p2,
  * p2    Public point and temporary.
  * s     Second part of signature as a number.
  * u1    Temporary number.
- * u2    Temproray number.
+ * u2    Temporary number.
  * heap  Heap to use for allocation.
  * returns MEMORY_E when memory allocation fails and MP_OKAY on success.
  */
@@ -26513,7 +26541,7 @@ int sp_ecc_verify_256_nb(sp_ecc_ctx_t* sp_ctx, const byte* hash,
 #endif /* HAVE_ECC_VERIFY */
 
 #ifdef HAVE_ECC_CHECK_KEY
-/* Check that the x and y oridinates are a valid point on the curve.
+/* Check that the x and y ordinates are a valid point on the curve.
  *
  * point  EC point.
  * heap   Heap to use if dynamically allocating.
@@ -26541,18 +26569,20 @@ static int sp_256_ecc_is_point_9(const sp_point_256* point,
     if (err == MP_OKAY) {
         t2 = t1 + 2 * 9;
 
+        /* y^2 - x^3 - a.x = b */
         sp_256_sqr_9(t1, point->y);
         (void)sp_256_mod_9(t1, t1, p256_mod);
         sp_256_sqr_9(t2, point->x);
         (void)sp_256_mod_9(t2, t2, p256_mod);
         sp_256_mul_9(t2, t2, point->x);
         (void)sp_256_mod_9(t2, t2, p256_mod);
-        (void)sp_256_sub_9(t2, p256_mod, t2);
-        sp_256_mont_add_9(t1, t1, t2, p256_mod);
+        sp_256_mont_sub_9(t1, t1, t2, p256_mod);
 
+        /* y^2 - x^3 + 3.x = b, when a = -3  */
         sp_256_mont_add_9(t1, t1, point->x, p256_mod);
         sp_256_mont_add_9(t1, t1, point->x, p256_mod);
         sp_256_mont_add_9(t1, t1, point->x, p256_mod);
+
 
         if (sp_256_cmp_9(t1, p256_b) != 0) {
             err = MP_VAL;
@@ -26567,7 +26597,7 @@ static int sp_256_ecc_is_point_9(const sp_point_256* point,
     return err;
 }
 
-/* Check that the x and y oridinates are a valid point on the curve.
+/* Check that the x and y ordinates are a valid point on the curve.
  *
  * pX  X ordinate of EC point.
  * pY  Y ordinate of EC point.
@@ -27789,14 +27819,14 @@ static void sp_384_from_mp(sp_digit* r, int size, const mp_int* a)
 {
 #if DIGIT_BIT == 26
     int i;
-    int j = 0;
+    sp_digit j = (sp_digit)0 - (sp_digit)a->used;
+    int o = 0;
 
     for (i = 0; i < size; i++) {
-        sp_digit mask =
-            (((sp_digit)((int)a->used - i - 1)) >> (SP_WORD_SIZE - 1)) - 1;
-        r[i] = a->dp[j] & mask;
-        j += (int)(((sp_digit)1) -
-                   (((sp_digit)((int)a->used - i - 2)) >> (SP_WORD_SIZE - 1)));
+        sp_digit mask = (sp_digit)0 - (j >> 25);
+        r[i] = a->dp[o] & mask;
+        j++;
+        o += (int)(j >> 25);
     }
 #elif DIGIT_BIT > 26
     unsigned int i;
@@ -28334,7 +28364,7 @@ static void sp_384_mont_reduce_15(sp_digit* a, const sp_digit* m, sp_digit mp)
  * a   First number to multiply in Montgomery form.
  * b   Second number to multiply in Montgomery form.
  * m   Modulus (prime).
- * mp  Montgomery mulitplier.
+ * mp  Montgomery multiplier.
  */
 SP_NOINLINE static void sp_384_mont_mul_15(sp_digit* r, const sp_digit* a,
         const sp_digit* b, const sp_digit* m, sp_digit mp)
@@ -28348,7 +28378,7 @@ SP_NOINLINE static void sp_384_mont_mul_15(sp_digit* r, const sp_digit* a,
  * r   Result of squaring.
  * a   Number to square in Montgomery form.
  * m   Modulus (prime).
- * mp  Montgomery mulitplier.
+ * mp  Montgomery multiplier.
  */
 SP_NOINLINE static void sp_384_mont_sqr_15(sp_digit* r, const sp_digit* a,
         const sp_digit* m, sp_digit mp)
@@ -28364,10 +28394,10 @@ SP_NOINLINE static void sp_384_mont_sqr_15(sp_digit* r, const sp_digit* a,
  * a   Number to square in Montgomery form.
  * n   Number of times to square.
  * m   Modulus (prime).
- * mp  Montgomery mulitplier.
+ * mp  Montgomery multiplier.
  */
-static void sp_384_mont_sqr_n_15(sp_digit* r, const sp_digit* a, int n,
-        const sp_digit* m, sp_digit mp)
+SP_NOINLINE static void sp_384_mont_sqr_n_15(sp_digit* r,
+    const sp_digit* a, int n, const sp_digit* m, sp_digit mp)
 {
     sp_384_mont_sqr_15(r, a, m, mp);
     for (; n > 1; n--) {
@@ -28630,7 +28660,6 @@ static void sp_384_mont_sub_15(sp_digit* r, const sp_digit* a, const sp_digit* b
     sp_384_norm_15(r);
 }
 
-#define sp_384_mont_sub_lower_15 sp_384_mont_sub_15
 /* Shift number left one bit.
  * Bottom bit is lost.
  *
@@ -28670,7 +28699,8 @@ SP_NOINLINE static void sp_384_rshift1_15(sp_digit* r, const sp_digit* a)
  * a  Number to divide.
  * m  Modulus (prime).
  */
-static void sp_384_div2_15(sp_digit* r, const sp_digit* a, const sp_digit* m)
+static void sp_384_mont_div2_15(sp_digit* r, const sp_digit* a,
+        const sp_digit* m)
 {
     sp_384_cond_add_15(r, a, m, 0 - (a[0] & 1));
     sp_384_norm_15(r);
@@ -28721,7 +28751,7 @@ static void sp_384_proj_point_dbl_15(sp_point_384* r, const sp_point_384* p,
     /* T2 = Y * Y */
     sp_384_mont_sqr_15(t2, y, p384_mod, p384_mp_mod);
     /* T2 = T2/2 */
-    sp_384_div2_15(t2, t2, p384_mod);
+    sp_384_mont_div2_15(t2, t2, p384_mod);
     /* Y = Y * X */
     sp_384_mont_mul_15(y, y, p->x, p384_mod, p384_mp_mod);
     /* X = T1 * T1 */
@@ -28731,7 +28761,7 @@ static void sp_384_proj_point_dbl_15(sp_point_384* r, const sp_point_384* p,
     /* X = X - Y */
     sp_384_mont_sub_15(x, x, y, p384_mod);
     /* Y = Y - X */
-    sp_384_mont_sub_lower_15(y, y, x, p384_mod);
+    sp_384_mont_sub_15(y, y, x, p384_mod);
     /* Y = Y * T1 */
     sp_384_mont_mul_15(y, y, t1, p384_mod, p384_mp_mod);
     /* Y = Y - T2 */
@@ -28754,7 +28784,8 @@ typedef struct sp_384_proj_point_dbl_15_ctx {
  * p  Point to double.
  * t  Temporary ordinate data.
  */
-static int sp_384_proj_point_dbl_15_nb(sp_ecc_ctx_t* sp_ctx, sp_point_384* r, const sp_point_384* p, sp_digit* t)
+static int sp_384_proj_point_dbl_15_nb(sp_ecc_ctx_t* sp_ctx, sp_point_384* r,
+        const sp_point_384* p, sp_digit* t)
 {
     int err = FP_WOULDBLOCK;
     sp_384_proj_point_dbl_15_ctx* ctx = (sp_384_proj_point_dbl_15_ctx*)sp_ctx->data;
@@ -28828,7 +28859,7 @@ static int sp_384_proj_point_dbl_15_nb(sp_ecc_ctx_t* sp_ctx, sp_point_384* r, co
         break;
     case 11:
         /* T2 = T2/2 */
-        sp_384_div2_15(ctx->t2, ctx->t2, p384_mod);
+        sp_384_mont_div2_15(ctx->t2, ctx->t2, p384_mod);
         ctx->state = 12;
         break;
     case 12:
@@ -28853,7 +28884,7 @@ static int sp_384_proj_point_dbl_15_nb(sp_ecc_ctx_t* sp_ctx, sp_point_384* r, co
         break;
     case 16:
         /* Y = Y - X */
-        sp_384_mont_sub_lower_15(ctx->y, ctx->y, ctx->x, p384_mod);
+        sp_384_mont_sub_15(ctx->y, ctx->y, ctx->x, p384_mod);
         ctx->state = 17;
         break;
     case 17:
@@ -28917,12 +28948,12 @@ static int sp_384_iszero_15(const sp_digit* a)
 static void sp_384_proj_point_add_15(sp_point_384* r,
         const sp_point_384* p, const sp_point_384* q, sp_digit* t)
 {
-    sp_digit* t1 = t;
-    sp_digit* t2 = t + 2*15;
-    sp_digit* t3 = t + 4*15;
-    sp_digit* t4 = t + 6*15;
-    sp_digit* t5 = t + 8*15;
-    sp_digit* t6 = t + 10*15;
+    sp_digit* t6 = t;
+    sp_digit* t1 = t + 2*15;
+    sp_digit* t2 = t + 4*15;
+    sp_digit* t3 = t + 6*15;
+    sp_digit* t4 = t + 8*15;
+    sp_digit* t5 = t + 10*15;
 
     /* U1 = X1*Z2^2 */
     sp_384_mont_sqr_15(t1, q->z, p384_mod, p384_mp_mod);
@@ -28944,17 +28975,9 @@ static void sp_384_proj_point_add_15(sp_point_384* r,
         sp_384_proj_point_dbl_15(r, p, t);
     }
     else {
-        sp_digit maskp;
-        sp_digit maskq;
-        sp_digit maskt;
         sp_digit* x = t6;
         sp_digit* y = t1;
         sp_digit* z = t2;
-        int i;
-
-        maskp = 0 - (q->infinity & (!p->infinity));
-        maskq = 0 - (p->infinity & (!q->infinity));
-        maskt = ~(maskp | maskq);
 
         /* H = U2 - U1 */
         sp_384_mont_sub_15(t2, t2, t1, p384_mod);
@@ -28973,20 +28996,31 @@ static void sp_384_proj_point_add_15(sp_point_384* r,
         sp_384_mont_dbl_15(t3, y, p384_mod);
         sp_384_mont_sub_15(x, x, t3, p384_mod);
         /* Y3 = R*(U1*H^2 - X3) - S1*H^3 */
-        sp_384_mont_sub_lower_15(y, y, x, p384_mod);
+        sp_384_mont_sub_15(y, y, x, p384_mod);
         sp_384_mont_mul_15(y, y, t4, p384_mod, p384_mp_mod);
         sp_384_mont_sub_15(y, y, t5, p384_mod);
-        for (i = 0; i < 15; i++) {
-            r->x[i] = (p->x[i] & maskp) | (q->x[i] & maskq) | (x[i] & maskt);
+        {
+            int i;
+            sp_digit maskp = 0 - (q->infinity & (!p->infinity));
+            sp_digit maskq = 0 - (p->infinity & (!q->infinity));
+            sp_digit maskt = ~(maskp | maskq);
+            sp_digit inf = (sp_digit)(p->infinity & q->infinity);
+
+            for (i = 0; i < 15; i++) {
+                r->x[i] = (p->x[i] & maskp) | (q->x[i] & maskq) |
+                          (x[i] & maskt);
+            }
+            for (i = 0; i < 15; i++) {
+                r->y[i] = (p->y[i] & maskp) | (q->y[i] & maskq) |
+                          (y[i] & maskt);
+            }
+            for (i = 0; i < 15; i++) {
+                r->z[i] = (p->z[i] & maskp) | (q->z[i] & maskq) |
+                          (z[i] & maskt);
+            }
+            r->z[0] |= inf;
+            r->infinity = (word32)inf;
         }
-        for (i = 0; i < 15; i++) {
-            r->y[i] = (p->y[i] & maskp) | (q->y[i] & maskq) | (y[i] & maskt);
-        }
-        for (i = 0; i < 15; i++) {
-            r->z[i] = (p->z[i] & maskp) | (q->z[i] & maskq) | (z[i] & maskt);
-        }
-        r->z[0] |= p->infinity & q->infinity;
-        r->infinity = p->infinity & q->infinity;
     }
 }
 
@@ -29032,12 +29066,12 @@ static int sp_384_proj_point_add_15_nb(sp_ecc_ctx_t* sp_ctx, sp_point_384* r,
 
     switch (ctx->state) {
     case 0: /* INIT */
-        ctx->t1 = t;
-        ctx->t2 = t + 2*15;
-        ctx->t3 = t + 4*15;
-        ctx->t4 = t + 6*15;
-        ctx->t5 = t + 8*15;
-        ctx->t6 = t + 10*15;
+        ctx->t6 = t;
+        ctx->t1 = t + 2*15;
+        ctx->t2 = t + 4*15;
+        ctx->t3 = t + 6*15;
+        ctx->t4 = t + 8*15;
+        ctx->t5 = t + 10*15;
         ctx->x = ctx->t6;
         ctx->y = ctx->t1;
         ctx->z = ctx->t2;
@@ -29144,7 +29178,7 @@ static int sp_384_proj_point_add_15_nb(sp_ecc_ctx_t* sp_ctx, sp_point_384* r,
         break;
     case 21:
         /* Y3 = R*(U1*H^2 - X3) - S1*H^3 */
-        sp_384_mont_sub_lower_15(ctx->y, ctx->y, ctx->x, p384_mod);
+        sp_384_mont_sub_15(ctx->y, ctx->y, ctx->x, p384_mod);
         ctx->state = 22;
         break;
     case 22:
@@ -29157,22 +29191,28 @@ static int sp_384_proj_point_add_15_nb(sp_ecc_ctx_t* sp_ctx, sp_point_384* r,
         break;
     case 24:
     {
-        int i;
-        sp_digit maskp = 0 - (q->infinity & (!p->infinity));
-        sp_digit maskq = 0 - (p->infinity & (!q->infinity));
-        sp_digit maskt = ~(maskp | maskq);
+        {
+            int i;
+            sp_digit maskp = 0 - (q->infinity & (!p->infinity));
+            sp_digit maskq = 0 - (p->infinity & (!q->infinity));
+            sp_digit maskt = ~(maskp | maskq);
+            sp_digit inf = (sp_digit)(p->infinity & q->infinity);
 
-        for (i = 0; i < 15; i++) {
-            r->x[i] = (p->x[i] & maskp) | (q->x[i] & maskq) | (ctx->x[i] & maskt);
+            for (i = 0; i < 15; i++) {
+                r->x[i] = (p->x[i] & maskp) | (q->x[i] & maskq) |
+                          (ctx->x[i] & maskt);
+            }
+            for (i = 0; i < 15; i++) {
+                r->y[i] = (p->y[i] & maskp) | (q->y[i] & maskq) |
+                          (ctx->y[i] & maskt);
+            }
+            for (i = 0; i < 15; i++) {
+                r->z[i] = (p->z[i] & maskp) | (q->z[i] & maskq) |
+                          (ctx->z[i] & maskt);
+            }
+            r->z[0] |= inf;
+            r->infinity = (word32)inf;
         }
-        for (i = 0; i < 15; i++) {
-            r->y[i] = (p->y[i] & maskp) | (q->y[i] & maskq) | (ctx->y[i] & maskt);
-        }
-        for (i = 0; i < 15; i++) {
-            r->z[i] = (p->z[i] & maskp) | (q->z[i] & maskq) | (ctx->z[i] & maskt);
-        }
-        r->z[0] |= p->infinity & q->infinity;
-        r->infinity = p->infinity & q->infinity;
         ctx->state = 25;
         break;
     }
@@ -29649,8 +29689,6 @@ static void sp_384_cond_copy_15(sp_digit* r, const sp_digit* a, const sp_digit m
 #endif /* WOLFSSL_SP_SMALL */
 }
 
-#define sp_384_mont_dbl_lower_15 sp_384_mont_dbl_15
-#define sp_384_mont_tpl_lower_15 sp_384_mont_tpl_15
 /* Double the Montgomery form projective point p a number of times.
  *
  * r  Result of repeated doubling of point.
@@ -29689,7 +29727,7 @@ static void sp_384_proj_point_dbl_n_15(sp_point_384* p, int i,
         /* A = 3*(X^2 - W) */
         sp_384_mont_sqr_15(t1, x, p384_mod, p384_mp_mod);
         sp_384_mont_sub_15(t1, t1, w, p384_mod);
-        sp_384_mont_tpl_lower_15(a, t1, p384_mod);
+        sp_384_mont_tpl_15(a, t1, p384_mod);
         /* B = X*Y^2 */
         sp_384_mont_sqr_15(t1, y, p384_mod, p384_mp_mod);
         sp_384_mont_mul_15(b, t1, x, p384_mod, p384_mp_mod);
@@ -29698,8 +29736,8 @@ static void sp_384_proj_point_dbl_n_15(sp_point_384* p, int i,
         sp_384_mont_dbl_15(t2, b, p384_mod);
         sp_384_mont_sub_15(x, x, t2, p384_mod);
         /* B = 2.(B - X) */
-        sp_384_mont_sub_lower_15(t2, b, x, p384_mod);
-        sp_384_mont_dbl_lower_15(b, t2, p384_mod);
+        sp_384_mont_sub_15(t2, b, x, p384_mod);
+        sp_384_mont_dbl_15(b, t2, p384_mod);
         /* Z = Z*Y */
         sp_384_mont_mul_15(z, z, y, p384_mod, p384_mp_mod);
         /* t1 = Y^4 */
@@ -29719,7 +29757,7 @@ static void sp_384_proj_point_dbl_n_15(sp_point_384* p, int i,
     /* A = 3*(X^2 - W) */
     sp_384_mont_sqr_15(t1, x, p384_mod, p384_mp_mod);
     sp_384_mont_sub_15(t1, t1, w, p384_mod);
-    sp_384_mont_tpl_lower_15(a, t1, p384_mod);
+    sp_384_mont_tpl_15(a, t1, p384_mod);
     /* B = X*Y^2 */
     sp_384_mont_sqr_15(t1, y, p384_mod, p384_mp_mod);
     sp_384_mont_mul_15(b, t1, x, p384_mod, p384_mp_mod);
@@ -29728,8 +29766,8 @@ static void sp_384_proj_point_dbl_n_15(sp_point_384* p, int i,
     sp_384_mont_dbl_15(t2, b, p384_mod);
     sp_384_mont_sub_15(x, x, t2, p384_mod);
     /* B = 2.(B - X) */
-    sp_384_mont_sub_lower_15(t2, b, x, p384_mod);
-    sp_384_mont_dbl_lower_15(b, t2, p384_mod);
+    sp_384_mont_sub_15(t2, b, x, p384_mod);
+    sp_384_mont_dbl_15(b, t2, p384_mod);
     /* Z = Z*Y */
     sp_384_mont_mul_15(z, z, y, p384_mod, p384_mp_mod);
     /* t1 = Y^4 */
@@ -29739,7 +29777,7 @@ static void sp_384_proj_point_dbl_n_15(sp_point_384* p, int i,
     sp_384_mont_sub_15(y, y, t1, p384_mod);
 #endif /* WOLFSSL_SP_SMALL */
     /* Y = Y/2 */
-    sp_384_div2_15(y, y, p384_mod);
+    sp_384_mont_div2_15(y, y, p384_mod);
 }
 
 /* Double the Montgomery form projective point p a number of times.
@@ -29785,7 +29823,7 @@ static void sp_384_proj_point_dbl_n_store_15(sp_point_384* r,
         /* A = 3*(X^2 - W) */
         sp_384_mont_sqr_15(t1, x, p384_mod, p384_mp_mod);
         sp_384_mont_sub_15(t1, t1, w, p384_mod);
-        sp_384_mont_tpl_lower_15(a, t1, p384_mod);
+        sp_384_mont_tpl_15(a, t1, p384_mod);
         /* B = X*Y^2 */
         sp_384_mont_sqr_15(t1, y, p384_mod, p384_mp_mod);
         sp_384_mont_mul_15(b, t1, x, p384_mod, p384_mp_mod);
@@ -29795,8 +29833,8 @@ static void sp_384_proj_point_dbl_n_store_15(sp_point_384* r,
         sp_384_mont_dbl_15(t2, b, p384_mod);
         sp_384_mont_sub_15(x, x, t2, p384_mod);
         /* B = 2.(B - X) */
-        sp_384_mont_sub_lower_15(t2, b, x, p384_mod);
-        sp_384_mont_dbl_lower_15(b, t2, p384_mod);
+        sp_384_mont_sub_15(t2, b, x, p384_mod);
+        sp_384_mont_dbl_15(b, t2, p384_mod);
         /* Z = Z*Y */
         sp_384_mont_mul_15(r[j].z, z, y, p384_mod, p384_mp_mod);
         z = r[j].z;
@@ -29810,7 +29848,7 @@ static void sp_384_proj_point_dbl_n_store_15(sp_point_384* r,
         sp_384_mont_mul_15(y, b, a, p384_mod, p384_mp_mod);
         sp_384_mont_sub_15(y, y, t1, p384_mod);
         /* Y = Y/2 */
-        sp_384_div2_15(r[j].y, y, p384_mod);
+        sp_384_mont_div2_15(r[j].y, y, p384_mod);
         r[j].infinity = 0;
     }
 }
@@ -29884,8 +29922,8 @@ static void sp_384_proj_point_add_sub_15(sp_point_384* ra,
     sp_384_mont_sub_15(xs, xs, t1, p384_mod);
     /* Y3 = R*(U1*H^2 - X3) - S1*H^3 */
     /* YS = -RS*(U1*H^2 - XS) - S1*H^3 */
-    sp_384_mont_sub_lower_15(ys, ya, xs, p384_mod);
-    sp_384_mont_sub_lower_15(ya, ya, xa, p384_mod);
+    sp_384_mont_sub_15(ys, ya, xs, p384_mod);
+    sp_384_mont_sub_15(ya, ya, xa, p384_mod);
     sp_384_mont_mul_15(ya, ya, t4, p384_mod, p384_mp_mod);
     sp_384_sub_15(t6, p384_mod, t6);
     sp_384_mont_mul_15(ys, ys, t6, p384_mod, p384_mp_mod);
@@ -29969,7 +30007,7 @@ static void sp_384_ecc_recode_6_15(const sp_digit* k, ecc_recode_384* v)
 /* Touch each possible point that could be being copied.
  *
  * r      Point to copy into.
- * table  Table - start of the entires to access
+ * table  Table - start of the entries to access
  * idx    Index of entry to retrieve.
  */
 static void sp_384_get_point_33_15(sp_point_384* r, const sp_point_384* table,
@@ -30113,7 +30151,7 @@ static int sp_384_ecc_mulmod_win_add_sub_15(sp_point_384* r, const sp_point_384*
     (void)heap;
 
 #ifdef WOLFSSL_SP_SMALL_STACK
-    t = (sp_point_384*)XMALLOC(sizeof(sp_point_384) * 
+    t = (sp_point_384*)XMALLOC(sizeof(sp_point_384) *
         (33+2), heap, DYNAMIC_TYPE_ECC);
     if (t == NULL)
         err = MEMORY_E;
@@ -30232,12 +30270,12 @@ static int sp_384_ecc_mulmod_win_add_sub_15(sp_point_384* r, const sp_point_384*
 static void sp_384_proj_point_add_qz1_15(sp_point_384* r,
     const sp_point_384* p, const sp_point_384* q, sp_digit* t)
 {
-    sp_digit* t1 = t;
-    sp_digit* t2 = t + 2*15;
-    sp_digit* t3 = t + 4*15;
-    sp_digit* t4 = t + 6*15;
-    sp_digit* t5 = t + 8*15;
-    sp_digit* t6 = t + 10*15;
+    sp_digit* t2 = t;
+    sp_digit* t3 = t + 2*15;
+    sp_digit* t6 = t + 4*15;
+    sp_digit* t1 = t + 6*15;
+    sp_digit* t4 = t + 8*15;
+    sp_digit* t5 = t + 10*15;
 
     /* Calculate values to subtract from P->x and P->y. */
     /* U2 = X2*Z1^2 */
@@ -30253,13 +30291,9 @@ static void sp_384_proj_point_add_qz1_15(sp_point_384* r,
         sp_384_proj_point_dbl_15(r, p, t);
     }
     else {
-        sp_digit maskp;
-        sp_digit maskq;
-        sp_digit maskt;
         sp_digit* x = t2;
-        sp_digit* y = t5;
+        sp_digit* y = t3;
         sp_digit* z = t6;
-        int i;
 
         /* H = U2 - X1 */
         sp_384_mont_sub_15(t2, t2, p->x, p384_mod);
@@ -30268,33 +30302,40 @@ static void sp_384_proj_point_add_qz1_15(sp_point_384* r,
         /* Z3 = H*Z1 */
         sp_384_mont_mul_15(z, p->z, t2, p384_mod, p384_mp_mod);
         /* X3 = R^2 - H^3 - 2*X1*H^2 */
-        sp_384_mont_sqr_15(t1, t4, p384_mod, p384_mp_mod);
-        sp_384_mont_sqr_15(t5, t2, p384_mod, p384_mp_mod);
-        sp_384_mont_mul_15(t3, p->x, t5, p384_mod, p384_mp_mod);
-        sp_384_mont_mul_15(t5, t5, t2, p384_mod, p384_mp_mod);
-        sp_384_mont_sub_15(x, t1, t5, p384_mod);
-        sp_384_mont_dbl_15(t1, t3, p384_mod);
-        sp_384_mont_sub_15(x, x, t1, p384_mod);
+        sp_384_mont_sqr_15(t1, t2, p384_mod, p384_mp_mod);
+        sp_384_mont_mul_15(t3, p->x, t1, p384_mod, p384_mp_mod);
+        sp_384_mont_mul_15(t1, t1, t2, p384_mod, p384_mp_mod);
+        sp_384_mont_sqr_15(t2, t4, p384_mod, p384_mp_mod);
+        sp_384_mont_sub_15(t2, t2, t1, p384_mod);
+        sp_384_mont_dbl_15(t5, t3, p384_mod);
+        sp_384_mont_sub_15(x, t2, t5, p384_mod);
         /* Y3 = R*(X1*H^2 - X3) - Y1*H^3 */
-        sp_384_mont_sub_lower_15(t3, t3, x, p384_mod);
+        sp_384_mont_sub_15(t3, t3, x, p384_mod);
         sp_384_mont_mul_15(t3, t3, t4, p384_mod, p384_mp_mod);
-        sp_384_mont_mul_15(t5, t5, p->y, p384_mod, p384_mp_mod);
-        sp_384_mont_sub_15(y, t3, t5, p384_mod);
+        sp_384_mont_mul_15(t1, t1, p->y, p384_mod, p384_mp_mod);
+        sp_384_mont_sub_15(y, t3, t1, p384_mod);
+        {
+            int i;
+            sp_digit maskp = 0 - (q->infinity & (!p->infinity));
+            sp_digit maskq = 0 - (p->infinity & (!q->infinity));
+            sp_digit maskt = ~(maskp | maskq);
+            sp_digit inf = (sp_digit)(p->infinity & q->infinity);
 
-        maskp = 0 - (q->infinity & (!p->infinity));
-        maskq = 0 - (p->infinity & (!q->infinity));
-        maskt = ~(maskp | maskq);
-        for (i = 0; i < 15; i++) {
-            r->x[i] = (p->x[i] & maskp) | (q->x[i] & maskq) | (x[i] & maskt);
+            for (i = 0; i < 15; i++) {
+                r->x[i] = (p->x[i] & maskp) | (q->x[i] & maskq) |
+                          (x[i] & maskt);
+            }
+            for (i = 0; i < 15; i++) {
+                r->y[i] = (p->y[i] & maskp) | (q->y[i] & maskq) |
+                          (y[i] & maskt);
+            }
+            for (i = 0; i < 15; i++) {
+                r->z[i] = (p->z[i] & maskp) | (q->z[i] & maskq) |
+                          (z[i] & maskt);
+            }
+            r->z[0] |= inf;
+            r->infinity = (word32)inf;
         }
-        for (i = 0; i < 15; i++) {
-            r->y[i] = (p->y[i] & maskp) | (q->y[i] & maskq) | (y[i] & maskt);
-        }
-        for (i = 0; i < 15; i++) {
-            r->z[i] = (p->z[i] & maskp) | (q->z[i] & maskq) | (z[i] & maskt);
-        }
-        r->z[0] |= p->infinity & q->infinity;
-        r->infinity = p->infinity & q->infinity;
     }
 }
 
@@ -30416,7 +30457,7 @@ static int sp_384_gen_stripe_table_15(const sp_point_384* a,
 /* Touch each possible entry that could be being copied.
  *
  * r      Point to copy into.
- * table  Table - start of the entires to access
+ * table  Table - start of the entries to access
  * idx    Index of entry to retrieve.
  */
 static void sp_384_get_entry_256_15(sp_point_384* r,
@@ -30639,7 +30680,7 @@ static THREAD_LS_T int sp_cache_384_inited = 0;
 
 /* Get the cache entry for the point.
  *
- * g      [in]   Point scalar multipling.
+ * g      [in]   Point scalar multiplying.
  * cache  [out]  Cache table to use.
  */
 static void sp_ecc_get_cache_384(const sp_point_384* g, sp_cache_384_t** cache)
@@ -30710,8 +30751,8 @@ static void sp_ecc_get_cache_384(const sp_point_384* g, sp_cache_384_t** cache)
  * heap  Heap to use for allocation.
  * returns MEMORY_E when memory allocation fails and MP_OKAY on success.
  */
-static int sp_384_ecc_mulmod_15(sp_point_384* r, const sp_point_384* g, const sp_digit* k,
-        int map, int ct, void* heap)
+static int sp_384_ecc_mulmod_15(sp_point_384* r, const sp_point_384* g,
+        const sp_digit* k, int map, int ct, void* heap)
 {
 #ifndef FP_ECC
     return sp_384_ecc_mulmod_win_add_sub_15(r, g, k, map, ct, heap);
@@ -30828,7 +30869,7 @@ int sp_ecc_mulmod_384(const mp_int* km, const ecc_point* gm, ecc_point* r,
  *
  * km      Scalar to multiply by.
  * p       Point to multiply.
- * am      Point to add to scalar mulitply result.
+ * am      Point to add to scalar multiply result.
  * inMont  Point to add is in montgomery form.
  * r       Resulting point.
  * map     Indicates whether to convert result to affine.
@@ -30839,7 +30880,7 @@ int sp_ecc_mulmod_add_384(const mp_int* km, const ecc_point* gm,
     const ecc_point* am, int inMont, ecc_point* r, int map, void* heap)
 {
 #ifdef WOLFSSL_SP_SMALL_STACK
-    sp_point_384* point = NULL;    
+    sp_point_384* point = NULL;
     sp_digit* k = NULL;
 #else
     sp_point_384 point[2];
@@ -32808,7 +32849,7 @@ int sp_ecc_mulmod_base_384(const mp_int* km, ecc_point* r, int map, void* heap)
  * the result. If map is true then convert result to affine coordinates.
  *
  * km      Scalar to multiply by.
- * am      Point to add to scalar mulitply result.
+ * am      Point to add to scalar multiply result.
  * inMont  Point to add is in montgomery form.
  * r       Resulting point.
  * map     Indicates whether to convert result to affine.
@@ -32830,7 +32871,7 @@ int sp_ecc_mulmod_base_add_384(const mp_int* km, const ecc_point* am,
     int err = MP_OKAY;
 
 #ifdef WOLFSSL_SP_SMALL_STACK
-    point = (sp_point_384*)XMALLOC(sizeof(sp_point_384) * 2, heap, 
+    point = (sp_point_384*)XMALLOC(sizeof(sp_point_384) * 2, heap,
                                          DYNAMIC_TYPE_ECC);
     if (point == NULL)
         err = MEMORY_E;
@@ -32984,7 +33025,7 @@ int sp_ecc_make_key_384(WC_RNG* rng, mp_int* priv, ecc_point* pub, void* heap)
     sp_point_384* infinity = NULL;
 #endif
     int err = MP_OKAY;
-    
+
 
     (void)heap;
 
@@ -32992,7 +33033,7 @@ int sp_ecc_make_key_384(WC_RNG* rng, mp_int* priv, ecc_point* pub, void* heap)
     #ifdef WOLFSSL_VALIDATE_ECC_KEYGEN
     point = (sp_point_384*)XMALLOC(sizeof(sp_point_384) * 2, heap, DYNAMIC_TYPE_ECC);
     #else
-    point = (sp_point_384*)XMALLOC(sizeof(sp_point_384), heap, DYNAMIC_TYPE_ECC);    
+    point = (sp_point_384*)XMALLOC(sizeof(sp_point_384), heap, DYNAMIC_TYPE_ECC);
     #endif
     if (point == NULL)
         err = MEMORY_E;
@@ -34156,8 +34197,8 @@ static int sp_384_mod_inv_15(sp_digit* r, const sp_digit* a, const sp_digit* m)
         }
 
         while (ut > 1 && vt > 1) {
-            if (ut > vt || (ut == vt &&
-                                       sp_384_cmp_15(u, v) >= 0)) {
+            if ((ut > vt) || ((ut == vt) &&
+                    (sp_384_cmp_15(u, v) >= 0))) {
                 sp_384_sub_15(u, u, v);
                 sp_384_norm_15(u);
 
@@ -34257,7 +34298,7 @@ static void sp_384_add_points_15(sp_point_384* p1, const sp_point_384* p2,
  * p2    Public point and temporary.
  * s     Second part of signature as a number.
  * u1    Temporary number.
- * u2    Temproray number.
+ * u2    Temporary number.
  * heap  Heap to use for allocation.
  * returns MEMORY_E when memory allocation fails and MP_OKAY on success.
  */
@@ -34581,7 +34622,7 @@ int sp_ecc_verify_384_nb(sp_ecc_ctx_t* sp_ctx, const byte* hash,
 #endif /* HAVE_ECC_VERIFY */
 
 #ifdef HAVE_ECC_CHECK_KEY
-/* Check that the x and y oridinates are a valid point on the curve.
+/* Check that the x and y ordinates are a valid point on the curve.
  *
  * point  EC point.
  * heap   Heap to use if dynamically allocating.
@@ -34609,18 +34650,20 @@ static int sp_384_ecc_is_point_15(const sp_point_384* point,
     if (err == MP_OKAY) {
         t2 = t1 + 2 * 15;
 
+        /* y^2 - x^3 - a.x = b */
         sp_384_sqr_15(t1, point->y);
         (void)sp_384_mod_15(t1, t1, p384_mod);
         sp_384_sqr_15(t2, point->x);
         (void)sp_384_mod_15(t2, t2, p384_mod);
         sp_384_mul_15(t2, t2, point->x);
         (void)sp_384_mod_15(t2, t2, p384_mod);
-        (void)sp_384_sub_15(t2, p384_mod, t2);
-        sp_384_mont_add_15(t1, t1, t2, p384_mod);
+        sp_384_mont_sub_15(t1, t1, t2, p384_mod);
 
+        /* y^2 - x^3 + 3.x = b, when a = -3  */
         sp_384_mont_add_15(t1, t1, point->x, p384_mod);
         sp_384_mont_add_15(t1, t1, point->x, p384_mod);
         sp_384_mont_add_15(t1, t1, point->x, p384_mod);
+
 
         if (sp_384_cmp_15(t1, p384_b) != 0) {
             err = MP_VAL;
@@ -34635,7 +34678,7 @@ static int sp_384_ecc_is_point_15(const sp_point_384* point,
     return err;
 }
 
-/* Check that the x and y oridinates are a valid point on the curve.
+/* Check that the x and y ordinates are a valid point on the curve.
  *
  * pX  X ordinate of EC point.
  * pY  Y ordinate of EC point.
@@ -35513,14 +35556,14 @@ static void sp_521_from_mp(sp_digit* r, int size, const mp_int* a)
 {
 #if DIGIT_BIT == 25
     int i;
-    int j = 0;
+    sp_digit j = (sp_digit)0 - (sp_digit)a->used;
+    int o = 0;
 
     for (i = 0; i < size; i++) {
-        sp_digit mask =
-            (((sp_digit)((int)a->used - i - 1)) >> (SP_WORD_SIZE - 1)) - 1;
-        r[i] = a->dp[j] & mask;
-        j += (int)(((sp_digit)1) -
-                   (((sp_digit)((int)a->used - i - 2)) >> (SP_WORD_SIZE - 1)));
+        sp_digit mask = (sp_digit)0 - (j >> 24);
+        r[i] = a->dp[o] & mask;
+        j++;
+        o += (int)(j >> 24);
     }
 #elif DIGIT_BIT > 25
     unsigned int i;
@@ -35994,7 +36037,7 @@ static void sp_521_mont_reduce_order_21(sp_digit* a, const sp_digit* m, sp_digit
  * a   First number to multiply in Montgomery form.
  * b   Second number to multiply in Montgomery form.
  * m   Modulus (prime).
- * mp  Montgomery mulitplier.
+ * mp  Montgomery multiplier.
  */
 SP_NOINLINE static void sp_521_mont_mul_21(sp_digit* r, const sp_digit* a,
         const sp_digit* b, const sp_digit* m, sp_digit mp)
@@ -36008,7 +36051,7 @@ SP_NOINLINE static void sp_521_mont_mul_21(sp_digit* r, const sp_digit* a,
  * r   Result of squaring.
  * a   Number to square in Montgomery form.
  * m   Modulus (prime).
- * mp  Montgomery mulitplier.
+ * mp  Montgomery multiplier.
  */
 SP_NOINLINE static void sp_521_mont_sqr_21(sp_digit* r, const sp_digit* a,
         const sp_digit* m, sp_digit mp)
@@ -36024,10 +36067,10 @@ SP_NOINLINE static void sp_521_mont_sqr_21(sp_digit* r, const sp_digit* a,
  * a   Number to square in Montgomery form.
  * n   Number of times to square.
  * m   Modulus (prime).
- * mp  Montgomery mulitplier.
+ * mp  Montgomery multiplier.
  */
-static void sp_521_mont_sqr_n_21(sp_digit* r, const sp_digit* a, int n,
-        const sp_digit* m, sp_digit mp)
+SP_NOINLINE static void sp_521_mont_sqr_n_21(sp_digit* r,
+    const sp_digit* a, int n, const sp_digit* m, sp_digit mp)
 {
     sp_521_mont_sqr_21(r, a, m, mp);
     for (; n > 1; n--) {
@@ -36289,7 +36332,6 @@ static void sp_521_mont_sub_21(sp_digit* r, const sp_digit* a, const sp_digit* b
     sp_521_norm_21(r);
 }
 
-#define sp_521_mont_sub_lower_21 sp_521_mont_sub_21
 /* Shift number left one bit.
  * Bottom bit is lost.
  *
@@ -36335,7 +36377,8 @@ SP_NOINLINE static void sp_521_rshift1_21(sp_digit* r, const sp_digit* a)
  * a  Number to divide.
  * m  Modulus (prime).
  */
-static void sp_521_div2_21(sp_digit* r, const sp_digit* a, const sp_digit* m)
+static void sp_521_mont_div2_21(sp_digit* r, const sp_digit* a,
+        const sp_digit* m)
 {
     sp_521_cond_add_21(r, a, m, 0 - (a[0] & 1));
     sp_521_norm_21(r);
@@ -36386,7 +36429,7 @@ static void sp_521_proj_point_dbl_21(sp_point_521* r, const sp_point_521* p,
     /* T2 = Y * Y */
     sp_521_mont_sqr_21(t2, y, p521_mod, p521_mp_mod);
     /* T2 = T2/2 */
-    sp_521_div2_21(t2, t2, p521_mod);
+    sp_521_mont_div2_21(t2, t2, p521_mod);
     /* Y = Y * X */
     sp_521_mont_mul_21(y, y, p->x, p521_mod, p521_mp_mod);
     /* X = T1 * T1 */
@@ -36396,7 +36439,7 @@ static void sp_521_proj_point_dbl_21(sp_point_521* r, const sp_point_521* p,
     /* X = X - Y */
     sp_521_mont_sub_21(x, x, y, p521_mod);
     /* Y = Y - X */
-    sp_521_mont_sub_lower_21(y, y, x, p521_mod);
+    sp_521_mont_sub_21(y, y, x, p521_mod);
     /* Y = Y * T1 */
     sp_521_mont_mul_21(y, y, t1, p521_mod, p521_mp_mod);
     /* Y = Y - T2 */
@@ -36419,7 +36462,8 @@ typedef struct sp_521_proj_point_dbl_21_ctx {
  * p  Point to double.
  * t  Temporary ordinate data.
  */
-static int sp_521_proj_point_dbl_21_nb(sp_ecc_ctx_t* sp_ctx, sp_point_521* r, const sp_point_521* p, sp_digit* t)
+static int sp_521_proj_point_dbl_21_nb(sp_ecc_ctx_t* sp_ctx, sp_point_521* r,
+        const sp_point_521* p, sp_digit* t)
 {
     int err = FP_WOULDBLOCK;
     sp_521_proj_point_dbl_21_ctx* ctx = (sp_521_proj_point_dbl_21_ctx*)sp_ctx->data;
@@ -36493,7 +36537,7 @@ static int sp_521_proj_point_dbl_21_nb(sp_ecc_ctx_t* sp_ctx, sp_point_521* r, co
         break;
     case 11:
         /* T2 = T2/2 */
-        sp_521_div2_21(ctx->t2, ctx->t2, p521_mod);
+        sp_521_mont_div2_21(ctx->t2, ctx->t2, p521_mod);
         ctx->state = 12;
         break;
     case 12:
@@ -36518,7 +36562,7 @@ static int sp_521_proj_point_dbl_21_nb(sp_ecc_ctx_t* sp_ctx, sp_point_521* r, co
         break;
     case 16:
         /* Y = Y - X */
-        sp_521_mont_sub_lower_21(ctx->y, ctx->y, ctx->x, p521_mod);
+        sp_521_mont_sub_21(ctx->y, ctx->y, ctx->x, p521_mod);
         ctx->state = 17;
         break;
     case 17:
@@ -36585,12 +36629,12 @@ static int sp_521_iszero_21(const sp_digit* a)
 static void sp_521_proj_point_add_21(sp_point_521* r,
         const sp_point_521* p, const sp_point_521* q, sp_digit* t)
 {
-    sp_digit* t1 = t;
-    sp_digit* t2 = t + 2*21;
-    sp_digit* t3 = t + 4*21;
-    sp_digit* t4 = t + 6*21;
-    sp_digit* t5 = t + 8*21;
-    sp_digit* t6 = t + 10*21;
+    sp_digit* t6 = t;
+    sp_digit* t1 = t + 2*21;
+    sp_digit* t2 = t + 4*21;
+    sp_digit* t3 = t + 6*21;
+    sp_digit* t4 = t + 8*21;
+    sp_digit* t5 = t + 10*21;
 
     /* U1 = X1*Z2^2 */
     sp_521_mont_sqr_21(t1, q->z, p521_mod, p521_mp_mod);
@@ -36612,17 +36656,9 @@ static void sp_521_proj_point_add_21(sp_point_521* r,
         sp_521_proj_point_dbl_21(r, p, t);
     }
     else {
-        sp_digit maskp;
-        sp_digit maskq;
-        sp_digit maskt;
         sp_digit* x = t6;
         sp_digit* y = t1;
         sp_digit* z = t2;
-        int i;
-
-        maskp = 0 - (q->infinity & (!p->infinity));
-        maskq = 0 - (p->infinity & (!q->infinity));
-        maskt = ~(maskp | maskq);
 
         /* H = U2 - U1 */
         sp_521_mont_sub_21(t2, t2, t1, p521_mod);
@@ -36641,20 +36677,31 @@ static void sp_521_proj_point_add_21(sp_point_521* r,
         sp_521_mont_dbl_21(t3, y, p521_mod);
         sp_521_mont_sub_21(x, x, t3, p521_mod);
         /* Y3 = R*(U1*H^2 - X3) - S1*H^3 */
-        sp_521_mont_sub_lower_21(y, y, x, p521_mod);
+        sp_521_mont_sub_21(y, y, x, p521_mod);
         sp_521_mont_mul_21(y, y, t4, p521_mod, p521_mp_mod);
         sp_521_mont_sub_21(y, y, t5, p521_mod);
-        for (i = 0; i < 21; i++) {
-            r->x[i] = (p->x[i] & maskp) | (q->x[i] & maskq) | (x[i] & maskt);
+        {
+            int i;
+            sp_digit maskp = 0 - (q->infinity & (!p->infinity));
+            sp_digit maskq = 0 - (p->infinity & (!q->infinity));
+            sp_digit maskt = ~(maskp | maskq);
+            sp_digit inf = (sp_digit)(p->infinity & q->infinity);
+
+            for (i = 0; i < 21; i++) {
+                r->x[i] = (p->x[i] & maskp) | (q->x[i] & maskq) |
+                          (x[i] & maskt);
+            }
+            for (i = 0; i < 21; i++) {
+                r->y[i] = (p->y[i] & maskp) | (q->y[i] & maskq) |
+                          (y[i] & maskt);
+            }
+            for (i = 0; i < 21; i++) {
+                r->z[i] = (p->z[i] & maskp) | (q->z[i] & maskq) |
+                          (z[i] & maskt);
+            }
+            r->z[0] |= inf;
+            r->infinity = (word32)inf;
         }
-        for (i = 0; i < 21; i++) {
-            r->y[i] = (p->y[i] & maskp) | (q->y[i] & maskq) | (y[i] & maskt);
-        }
-        for (i = 0; i < 21; i++) {
-            r->z[i] = (p->z[i] & maskp) | (q->z[i] & maskq) | (z[i] & maskt);
-        }
-        r->z[0] |= p->infinity & q->infinity;
-        r->infinity = p->infinity & q->infinity;
     }
 }
 
@@ -36700,12 +36747,12 @@ static int sp_521_proj_point_add_21_nb(sp_ecc_ctx_t* sp_ctx, sp_point_521* r,
 
     switch (ctx->state) {
     case 0: /* INIT */
-        ctx->t1 = t;
-        ctx->t2 = t + 2*21;
-        ctx->t3 = t + 4*21;
-        ctx->t4 = t + 6*21;
-        ctx->t5 = t + 8*21;
-        ctx->t6 = t + 10*21;
+        ctx->t6 = t;
+        ctx->t1 = t + 2*21;
+        ctx->t2 = t + 4*21;
+        ctx->t3 = t + 6*21;
+        ctx->t4 = t + 8*21;
+        ctx->t5 = t + 10*21;
         ctx->x = ctx->t6;
         ctx->y = ctx->t1;
         ctx->z = ctx->t2;
@@ -36812,7 +36859,7 @@ static int sp_521_proj_point_add_21_nb(sp_ecc_ctx_t* sp_ctx, sp_point_521* r,
         break;
     case 21:
         /* Y3 = R*(U1*H^2 - X3) - S1*H^3 */
-        sp_521_mont_sub_lower_21(ctx->y, ctx->y, ctx->x, p521_mod);
+        sp_521_mont_sub_21(ctx->y, ctx->y, ctx->x, p521_mod);
         ctx->state = 22;
         break;
     case 22:
@@ -36825,22 +36872,28 @@ static int sp_521_proj_point_add_21_nb(sp_ecc_ctx_t* sp_ctx, sp_point_521* r,
         break;
     case 24:
     {
-        int i;
-        sp_digit maskp = 0 - (q->infinity & (!p->infinity));
-        sp_digit maskq = 0 - (p->infinity & (!q->infinity));
-        sp_digit maskt = ~(maskp | maskq);
+        {
+            int i;
+            sp_digit maskp = 0 - (q->infinity & (!p->infinity));
+            sp_digit maskq = 0 - (p->infinity & (!q->infinity));
+            sp_digit maskt = ~(maskp | maskq);
+            sp_digit inf = (sp_digit)(p->infinity & q->infinity);
 
-        for (i = 0; i < 21; i++) {
-            r->x[i] = (p->x[i] & maskp) | (q->x[i] & maskq) | (ctx->x[i] & maskt);
+            for (i = 0; i < 21; i++) {
+                r->x[i] = (p->x[i] & maskp) | (q->x[i] & maskq) |
+                          (ctx->x[i] & maskt);
+            }
+            for (i = 0; i < 21; i++) {
+                r->y[i] = (p->y[i] & maskp) | (q->y[i] & maskq) |
+                          (ctx->y[i] & maskt);
+            }
+            for (i = 0; i < 21; i++) {
+                r->z[i] = (p->z[i] & maskp) | (q->z[i] & maskq) |
+                          (ctx->z[i] & maskt);
+            }
+            r->z[0] |= inf;
+            r->infinity = (word32)inf;
         }
-        for (i = 0; i < 21; i++) {
-            r->y[i] = (p->y[i] & maskp) | (q->y[i] & maskq) | (ctx->y[i] & maskt);
-        }
-        for (i = 0; i < 21; i++) {
-            r->z[i] = (p->z[i] & maskp) | (q->z[i] & maskq) | (ctx->z[i] & maskt);
-        }
-        r->z[0] |= p->infinity & q->infinity;
-        r->infinity = p->infinity & q->infinity;
         ctx->state = 25;
         break;
     }
@@ -37179,8 +37232,6 @@ static void sp_521_cond_copy_21(sp_digit* r, const sp_digit* a, const sp_digit m
 #endif /* WOLFSSL_SP_SMALL */
 }
 
-#define sp_521_mont_dbl_lower_21 sp_521_mont_dbl_21
-#define sp_521_mont_tpl_lower_21 sp_521_mont_tpl_21
 /* Double the Montgomery form projective point p a number of times.
  *
  * r  Result of repeated doubling of point.
@@ -37219,7 +37270,7 @@ static void sp_521_proj_point_dbl_n_21(sp_point_521* p, int i,
         /* A = 3*(X^2 - W) */
         sp_521_mont_sqr_21(t1, x, p521_mod, p521_mp_mod);
         sp_521_mont_sub_21(t1, t1, w, p521_mod);
-        sp_521_mont_tpl_lower_21(a, t1, p521_mod);
+        sp_521_mont_tpl_21(a, t1, p521_mod);
         /* B = X*Y^2 */
         sp_521_mont_sqr_21(t1, y, p521_mod, p521_mp_mod);
         sp_521_mont_mul_21(b, t1, x, p521_mod, p521_mp_mod);
@@ -37228,8 +37279,8 @@ static void sp_521_proj_point_dbl_n_21(sp_point_521* p, int i,
         sp_521_mont_dbl_21(t2, b, p521_mod);
         sp_521_mont_sub_21(x, x, t2, p521_mod);
         /* B = 2.(B - X) */
-        sp_521_mont_sub_lower_21(t2, b, x, p521_mod);
-        sp_521_mont_dbl_lower_21(b, t2, p521_mod);
+        sp_521_mont_sub_21(t2, b, x, p521_mod);
+        sp_521_mont_dbl_21(b, t2, p521_mod);
         /* Z = Z*Y */
         sp_521_mont_mul_21(z, z, y, p521_mod, p521_mp_mod);
         /* t1 = Y^4 */
@@ -37249,7 +37300,7 @@ static void sp_521_proj_point_dbl_n_21(sp_point_521* p, int i,
     /* A = 3*(X^2 - W) */
     sp_521_mont_sqr_21(t1, x, p521_mod, p521_mp_mod);
     sp_521_mont_sub_21(t1, t1, w, p521_mod);
-    sp_521_mont_tpl_lower_21(a, t1, p521_mod);
+    sp_521_mont_tpl_21(a, t1, p521_mod);
     /* B = X*Y^2 */
     sp_521_mont_sqr_21(t1, y, p521_mod, p521_mp_mod);
     sp_521_mont_mul_21(b, t1, x, p521_mod, p521_mp_mod);
@@ -37258,8 +37309,8 @@ static void sp_521_proj_point_dbl_n_21(sp_point_521* p, int i,
     sp_521_mont_dbl_21(t2, b, p521_mod);
     sp_521_mont_sub_21(x, x, t2, p521_mod);
     /* B = 2.(B - X) */
-    sp_521_mont_sub_lower_21(t2, b, x, p521_mod);
-    sp_521_mont_dbl_lower_21(b, t2, p521_mod);
+    sp_521_mont_sub_21(t2, b, x, p521_mod);
+    sp_521_mont_dbl_21(b, t2, p521_mod);
     /* Z = Z*Y */
     sp_521_mont_mul_21(z, z, y, p521_mod, p521_mp_mod);
     /* t1 = Y^4 */
@@ -37269,7 +37320,7 @@ static void sp_521_proj_point_dbl_n_21(sp_point_521* p, int i,
     sp_521_mont_sub_21(y, y, t1, p521_mod);
 #endif /* WOLFSSL_SP_SMALL */
     /* Y = Y/2 */
-    sp_521_div2_21(y, y, p521_mod);
+    sp_521_mont_div2_21(y, y, p521_mod);
 }
 
 /* Double the Montgomery form projective point p a number of times.
@@ -37315,7 +37366,7 @@ static void sp_521_proj_point_dbl_n_store_21(sp_point_521* r,
         /* A = 3*(X^2 - W) */
         sp_521_mont_sqr_21(t1, x, p521_mod, p521_mp_mod);
         sp_521_mont_sub_21(t1, t1, w, p521_mod);
-        sp_521_mont_tpl_lower_21(a, t1, p521_mod);
+        sp_521_mont_tpl_21(a, t1, p521_mod);
         /* B = X*Y^2 */
         sp_521_mont_sqr_21(t1, y, p521_mod, p521_mp_mod);
         sp_521_mont_mul_21(b, t1, x, p521_mod, p521_mp_mod);
@@ -37325,8 +37376,8 @@ static void sp_521_proj_point_dbl_n_store_21(sp_point_521* r,
         sp_521_mont_dbl_21(t2, b, p521_mod);
         sp_521_mont_sub_21(x, x, t2, p521_mod);
         /* B = 2.(B - X) */
-        sp_521_mont_sub_lower_21(t2, b, x, p521_mod);
-        sp_521_mont_dbl_lower_21(b, t2, p521_mod);
+        sp_521_mont_sub_21(t2, b, x, p521_mod);
+        sp_521_mont_dbl_21(b, t2, p521_mod);
         /* Z = Z*Y */
         sp_521_mont_mul_21(r[j].z, z, y, p521_mod, p521_mp_mod);
         z = r[j].z;
@@ -37340,7 +37391,7 @@ static void sp_521_proj_point_dbl_n_store_21(sp_point_521* r,
         sp_521_mont_mul_21(y, b, a, p521_mod, p521_mp_mod);
         sp_521_mont_sub_21(y, y, t1, p521_mod);
         /* Y = Y/2 */
-        sp_521_div2_21(r[j].y, y, p521_mod);
+        sp_521_mont_div2_21(r[j].y, y, p521_mod);
         r[j].infinity = 0;
     }
 }
@@ -37414,8 +37465,8 @@ static void sp_521_proj_point_add_sub_21(sp_point_521* ra,
     sp_521_mont_sub_21(xs, xs, t1, p521_mod);
     /* Y3 = R*(U1*H^2 - X3) - S1*H^3 */
     /* YS = -RS*(U1*H^2 - XS) - S1*H^3 */
-    sp_521_mont_sub_lower_21(ys, ya, xs, p521_mod);
-    sp_521_mont_sub_lower_21(ya, ya, xa, p521_mod);
+    sp_521_mont_sub_21(ys, ya, xs, p521_mod);
+    sp_521_mont_sub_21(ya, ya, xa, p521_mod);
     sp_521_mont_mul_21(ya, ya, t4, p521_mod, p521_mp_mod);
     sp_521_sub_21(t6, p521_mod, t6);
     sp_521_mont_mul_21(ys, ys, t6, p521_mod, p521_mp_mod);
@@ -37499,7 +37550,7 @@ static void sp_521_ecc_recode_6_21(const sp_digit* k, ecc_recode_521* v)
 /* Touch each possible point that could be being copied.
  *
  * r      Point to copy into.
- * table  Table - start of the entires to access
+ * table  Table - start of the entries to access
  * idx    Index of entry to retrieve.
  */
 static void sp_521_get_point_33_21(sp_point_521* r, const sp_point_521* table,
@@ -37679,7 +37730,7 @@ static int sp_521_ecc_mulmod_win_add_sub_21(sp_point_521* r, const sp_point_521*
     (void)heap;
 
 #ifdef WOLFSSL_SP_SMALL_STACK
-    t = (sp_point_521*)XMALLOC(sizeof(sp_point_521) * 
+    t = (sp_point_521*)XMALLOC(sizeof(sp_point_521) *
         (33+2), heap, DYNAMIC_TYPE_ECC);
     if (t == NULL)
         err = MEMORY_E;
@@ -37798,12 +37849,12 @@ static int sp_521_ecc_mulmod_win_add_sub_21(sp_point_521* r, const sp_point_521*
 static void sp_521_proj_point_add_qz1_21(sp_point_521* r,
     const sp_point_521* p, const sp_point_521* q, sp_digit* t)
 {
-    sp_digit* t1 = t;
-    sp_digit* t2 = t + 2*21;
-    sp_digit* t3 = t + 4*21;
-    sp_digit* t4 = t + 6*21;
-    sp_digit* t5 = t + 8*21;
-    sp_digit* t6 = t + 10*21;
+    sp_digit* t2 = t;
+    sp_digit* t3 = t + 2*21;
+    sp_digit* t6 = t + 4*21;
+    sp_digit* t1 = t + 6*21;
+    sp_digit* t4 = t + 8*21;
+    sp_digit* t5 = t + 10*21;
 
     /* Calculate values to subtract from P->x and P->y. */
     /* U2 = X2*Z1^2 */
@@ -37819,13 +37870,9 @@ static void sp_521_proj_point_add_qz1_21(sp_point_521* r,
         sp_521_proj_point_dbl_21(r, p, t);
     }
     else {
-        sp_digit maskp;
-        sp_digit maskq;
-        sp_digit maskt;
         sp_digit* x = t2;
-        sp_digit* y = t5;
+        sp_digit* y = t3;
         sp_digit* z = t6;
-        int i;
 
         /* H = U2 - X1 */
         sp_521_mont_sub_21(t2, t2, p->x, p521_mod);
@@ -37834,33 +37881,40 @@ static void sp_521_proj_point_add_qz1_21(sp_point_521* r,
         /* Z3 = H*Z1 */
         sp_521_mont_mul_21(z, p->z, t2, p521_mod, p521_mp_mod);
         /* X3 = R^2 - H^3 - 2*X1*H^2 */
-        sp_521_mont_sqr_21(t1, t4, p521_mod, p521_mp_mod);
-        sp_521_mont_sqr_21(t5, t2, p521_mod, p521_mp_mod);
-        sp_521_mont_mul_21(t3, p->x, t5, p521_mod, p521_mp_mod);
-        sp_521_mont_mul_21(t5, t5, t2, p521_mod, p521_mp_mod);
-        sp_521_mont_sub_21(x, t1, t5, p521_mod);
-        sp_521_mont_dbl_21(t1, t3, p521_mod);
-        sp_521_mont_sub_21(x, x, t1, p521_mod);
+        sp_521_mont_sqr_21(t1, t2, p521_mod, p521_mp_mod);
+        sp_521_mont_mul_21(t3, p->x, t1, p521_mod, p521_mp_mod);
+        sp_521_mont_mul_21(t1, t1, t2, p521_mod, p521_mp_mod);
+        sp_521_mont_sqr_21(t2, t4, p521_mod, p521_mp_mod);
+        sp_521_mont_sub_21(t2, t2, t1, p521_mod);
+        sp_521_mont_dbl_21(t5, t3, p521_mod);
+        sp_521_mont_sub_21(x, t2, t5, p521_mod);
         /* Y3 = R*(X1*H^2 - X3) - Y1*H^3 */
-        sp_521_mont_sub_lower_21(t3, t3, x, p521_mod);
+        sp_521_mont_sub_21(t3, t3, x, p521_mod);
         sp_521_mont_mul_21(t3, t3, t4, p521_mod, p521_mp_mod);
-        sp_521_mont_mul_21(t5, t5, p->y, p521_mod, p521_mp_mod);
-        sp_521_mont_sub_21(y, t3, t5, p521_mod);
+        sp_521_mont_mul_21(t1, t1, p->y, p521_mod, p521_mp_mod);
+        sp_521_mont_sub_21(y, t3, t1, p521_mod);
+        {
+            int i;
+            sp_digit maskp = 0 - (q->infinity & (!p->infinity));
+            sp_digit maskq = 0 - (p->infinity & (!q->infinity));
+            sp_digit maskt = ~(maskp | maskq);
+            sp_digit inf = (sp_digit)(p->infinity & q->infinity);
 
-        maskp = 0 - (q->infinity & (!p->infinity));
-        maskq = 0 - (p->infinity & (!q->infinity));
-        maskt = ~(maskp | maskq);
-        for (i = 0; i < 21; i++) {
-            r->x[i] = (p->x[i] & maskp) | (q->x[i] & maskq) | (x[i] & maskt);
+            for (i = 0; i < 21; i++) {
+                r->x[i] = (p->x[i] & maskp) | (q->x[i] & maskq) |
+                          (x[i] & maskt);
+            }
+            for (i = 0; i < 21; i++) {
+                r->y[i] = (p->y[i] & maskp) | (q->y[i] & maskq) |
+                          (y[i] & maskt);
+            }
+            for (i = 0; i < 21; i++) {
+                r->z[i] = (p->z[i] & maskp) | (q->z[i] & maskq) |
+                          (z[i] & maskt);
+            }
+            r->z[0] |= inf;
+            r->infinity = (word32)inf;
         }
-        for (i = 0; i < 21; i++) {
-            r->y[i] = (p->y[i] & maskp) | (q->y[i] & maskq) | (y[i] & maskt);
-        }
-        for (i = 0; i < 21; i++) {
-            r->z[i] = (p->z[i] & maskp) | (q->z[i] & maskq) | (z[i] & maskt);
-        }
-        r->z[0] |= p->infinity & q->infinity;
-        r->infinity = p->infinity & q->infinity;
     }
 }
 
@@ -37982,7 +38036,7 @@ static int sp_521_gen_stripe_table_21(const sp_point_521* a,
 /* Touch each possible entry that could be being copied.
  *
  * r      Point to copy into.
- * table  Table - start of the entires to access
+ * table  Table - start of the entries to access
  * idx    Index of entry to retrieve.
  */
 static void sp_521_get_entry_256_21(sp_point_521* r,
@@ -38229,7 +38283,7 @@ static THREAD_LS_T int sp_cache_521_inited = 0;
 
 /* Get the cache entry for the point.
  *
- * g      [in]   Point scalar multipling.
+ * g      [in]   Point scalar multiplying.
  * cache  [out]  Cache table to use.
  */
 static void sp_ecc_get_cache_521(const sp_point_521* g, sp_cache_521_t** cache)
@@ -38300,8 +38354,8 @@ static void sp_ecc_get_cache_521(const sp_point_521* g, sp_cache_521_t** cache)
  * heap  Heap to use for allocation.
  * returns MEMORY_E when memory allocation fails and MP_OKAY on success.
  */
-static int sp_521_ecc_mulmod_21(sp_point_521* r, const sp_point_521* g, const sp_digit* k,
-        int map, int ct, void* heap)
+static int sp_521_ecc_mulmod_21(sp_point_521* r, const sp_point_521* g,
+        const sp_digit* k, int map, int ct, void* heap)
 {
 #ifndef FP_ECC
     return sp_521_ecc_mulmod_win_add_sub_21(r, g, k, map, ct, heap);
@@ -38418,7 +38472,7 @@ int sp_ecc_mulmod_521(const mp_int* km, const ecc_point* gm, ecc_point* r,
  *
  * km      Scalar to multiply by.
  * p       Point to multiply.
- * am      Point to add to scalar mulitply result.
+ * am      Point to add to scalar multiply result.
  * inMont  Point to add is in montgomery form.
  * r       Resulting point.
  * map     Indicates whether to convert result to affine.
@@ -38429,7 +38483,7 @@ int sp_ecc_mulmod_add_521(const mp_int* km, const ecc_point* gm,
     const ecc_point* am, int inMont, ecc_point* r, int map, void* heap)
 {
 #ifdef WOLFSSL_SP_SMALL_STACK
-    sp_point_521* point = NULL;    
+    sp_point_521* point = NULL;
     sp_digit* k = NULL;
 #else
     sp_point_521 point[2];
@@ -40908,7 +40962,7 @@ int sp_ecc_mulmod_base_521(const mp_int* km, ecc_point* r, int map, void* heap)
  * the result. If map is true then convert result to affine coordinates.
  *
  * km      Scalar to multiply by.
- * am      Point to add to scalar mulitply result.
+ * am      Point to add to scalar multiply result.
  * inMont  Point to add is in montgomery form.
  * r       Resulting point.
  * map     Indicates whether to convert result to affine.
@@ -40930,7 +40984,7 @@ int sp_ecc_mulmod_base_add_521(const mp_int* km, const ecc_point* am,
     int err = MP_OKAY;
 
 #ifdef WOLFSSL_SP_SMALL_STACK
-    point = (sp_point_521*)XMALLOC(sizeof(sp_point_521) * 2, heap, 
+    point = (sp_point_521*)XMALLOC(sizeof(sp_point_521) * 2, heap,
                                          DYNAMIC_TYPE_ECC);
     if (point == NULL)
         err = MEMORY_E;
@@ -41085,7 +41139,7 @@ int sp_ecc_make_key_521(WC_RNG* rng, mp_int* priv, ecc_point* pub, void* heap)
     sp_point_521* infinity = NULL;
 #endif
     int err = MP_OKAY;
-    
+
 
     (void)heap;
 
@@ -41093,7 +41147,7 @@ int sp_ecc_make_key_521(WC_RNG* rng, mp_int* priv, ecc_point* pub, void* heap)
     #ifdef WOLFSSL_VALIDATE_ECC_KEYGEN
     point = (sp_point_521*)XMALLOC(sizeof(sp_point_521) * 2, heap, DYNAMIC_TYPE_ECC);
     #else
-    point = (sp_point_521*)XMALLOC(sizeof(sp_point_521), heap, DYNAMIC_TYPE_ECC);    
+    point = (sp_point_521*)XMALLOC(sizeof(sp_point_521), heap, DYNAMIC_TYPE_ECC);
     #endif
     if (point == NULL)
         err = MEMORY_E;
@@ -42302,8 +42356,8 @@ static int sp_521_mod_inv_21(sp_digit* r, const sp_digit* a, const sp_digit* m)
         }
 
         while (ut > 1 && vt > 1) {
-            if (ut > vt || (ut == vt &&
-                                       sp_521_cmp_21(u, v) >= 0)) {
+            if ((ut > vt) || ((ut == vt) &&
+                    (sp_521_cmp_21(u, v) >= 0))) {
                 sp_521_sub_21(u, u, v);
                 sp_521_norm_21(u);
 
@@ -42409,7 +42463,7 @@ static void sp_521_add_points_21(sp_point_521* p1, const sp_point_521* p2,
  * p2    Public point and temporary.
  * s     Second part of signature as a number.
  * u1    Temporary number.
- * u2    Temproray number.
+ * u2    Temporary number.
  * heap  Heap to use for allocation.
  * returns MEMORY_E when memory allocation fails and MP_OKAY on success.
  */
@@ -42742,7 +42796,7 @@ int sp_ecc_verify_521_nb(sp_ecc_ctx_t* sp_ctx, const byte* hash,
 #endif /* HAVE_ECC_VERIFY */
 
 #ifdef HAVE_ECC_CHECK_KEY
-/* Check that the x and y oridinates are a valid point on the curve.
+/* Check that the x and y ordinates are a valid point on the curve.
  *
  * point  EC point.
  * heap   Heap to use if dynamically allocating.
@@ -42770,18 +42824,20 @@ static int sp_521_ecc_is_point_21(const sp_point_521* point,
     if (err == MP_OKAY) {
         t2 = t1 + 2 * 21;
 
+        /* y^2 - x^3 - a.x = b */
         sp_521_sqr_21(t1, point->y);
         (void)sp_521_mod_21(t1, t1, p521_mod);
         sp_521_sqr_21(t2, point->x);
         (void)sp_521_mod_21(t2, t2, p521_mod);
         sp_521_mul_21(t2, t2, point->x);
         (void)sp_521_mod_21(t2, t2, p521_mod);
-        (void)sp_521_sub_21(t2, p521_mod, t2);
-        sp_521_mont_add_21(t1, t1, t2, p521_mod);
+        sp_521_mont_sub_21(t1, t1, t2, p521_mod);
 
+        /* y^2 - x^3 + 3.x = b, when a = -3  */
         sp_521_mont_add_21(t1, t1, point->x, p521_mod);
         sp_521_mont_add_21(t1, t1, point->x, p521_mod);
         sp_521_mont_add_21(t1, t1, point->x, p521_mod);
+
 
         if (sp_521_cmp_21(t1, p521_b) != 0) {
             err = MP_VAL;
@@ -42796,7 +42852,7 @@ static int sp_521_ecc_is_point_21(const sp_point_521* point,
     return err;
 }
 
-/* Check that the x and y oridinates are a valid point on the curve.
+/* Check that the x and y ordinates are a valid point on the curve.
  *
  * pX  X ordinate of EC point.
  * pY  Y ordinate of EC point.
@@ -44421,14 +44477,14 @@ static void sp_1024_from_mp(sp_digit* r, int size, const mp_int* a)
 {
 #if DIGIT_BIT == 25
     int i;
-    int j = 0;
+    sp_digit j = (sp_digit)0 - (sp_digit)a->used;
+    int o = 0;
 
     for (i = 0; i < size; i++) {
-        sp_digit mask =
-            (((sp_digit)((int)a->used - i - 1)) >> (SP_WORD_SIZE - 1)) - 1;
-        r[i] = a->dp[j] & mask;
-        j += (int)(((sp_digit)1) -
-                   (((sp_digit)((int)a->used - i - 2)) >> (SP_WORD_SIZE - 1)));
+        sp_digit mask = (sp_digit)0 - (j >> 24);
+        r[i] = a->dp[o] & mask;
+        j++;
+        o += (int)(j >> 24);
     }
 #elif DIGIT_BIT > 25
     unsigned int i;
@@ -44528,8 +44584,8 @@ static int sp_1024_to_mp(const sp_digit* a, mp_int* r)
     err = mp_grow(r, (1024 + DIGIT_BIT - 1) / DIGIT_BIT);
     if (err == MP_OKAY) { /*lint !e774 case where err is always MP_OKAY*/
 #if DIGIT_BIT == 25
-        XMEMCPY(r->dp, a, sizeof(sp_digit) * 42);
-        r->used = 42;
+        XMEMCPY(r->dp, a, sizeof(sp_digit) * 41);
+        r->used = 41;
         mp_clamp(r);
 #elif DIGIT_BIT < 25
         int i;
@@ -44537,7 +44593,7 @@ static int sp_1024_to_mp(const sp_digit* a, mp_int* r)
         int s = 0;
 
         r->dp[0] = 0;
-        for (i = 0; i < 42; i++) {
+        for (i = 0; i < 41; i++) {
             r->dp[j] |= (mp_digit)(a[i] << s);
             r->dp[j] &= ((sp_digit)1 << DIGIT_BIT) - 1;
             s = DIGIT_BIT - s;
@@ -44562,7 +44618,7 @@ static int sp_1024_to_mp(const sp_digit* a, mp_int* r)
         int s = 0;
 
         r->dp[0] = 0;
-        for (i = 0; i < 42; i++) {
+        for (i = 0; i < 41; i++) {
             r->dp[j] |= ((mp_digit)a[i]) << s;
             if (s + 25 >= DIGIT_BIT) {
     #if DIGIT_BIT != 32 && DIGIT_BIT != 64
@@ -44860,7 +44916,7 @@ static void sp_1024_mont_reduce_42(sp_digit* a, const sp_digit* m, sp_digit mp)
  * a   First number to multiply in Montgomery form.
  * b   Second number to multiply in Montgomery form.
  * m   Modulus (prime).
- * mp  Montgomery mulitplier.
+ * mp  Montgomery multiplier.
  */
 SP_NOINLINE static void sp_1024_mont_mul_42(sp_digit* r, const sp_digit* a,
         const sp_digit* b, const sp_digit* m, sp_digit mp)
@@ -44874,7 +44930,7 @@ SP_NOINLINE static void sp_1024_mont_mul_42(sp_digit* r, const sp_digit* a,
  * r   Result of squaring.
  * a   Number to square in Montgomery form.
  * m   Modulus (prime).
- * mp  Montgomery mulitplier.
+ * mp  Montgomery multiplier.
  */
 SP_NOINLINE static void sp_1024_mont_sqr_42(sp_digit* r, const sp_digit* a,
         const sp_digit* m, sp_digit mp)
@@ -45055,7 +45111,6 @@ static void sp_1024_mont_sub_42(sp_digit* r, const sp_digit* a, const sp_digit* 
     sp_1024_norm_42(r);
 }
 
-#define sp_1024_mont_sub_lower_42 sp_1024_mont_sub_42
 /* Shift number left one bit.
  * Bottom bit is lost.
  *
@@ -45122,7 +45177,8 @@ SP_NOINLINE static void sp_1024_rshift1_42(sp_digit* r, const sp_digit* a)
  * a  Number to divide.
  * m  Modulus (prime).
  */
-static void sp_1024_div2_42(sp_digit* r, const sp_digit* a, const sp_digit* m)
+static void sp_1024_mont_div2_42(sp_digit* r, const sp_digit* a,
+        const sp_digit* m)
 {
     sp_1024_cond_add_42(r, a, m, 0 - (a[0] & 1));
     sp_1024_norm_42(r);
@@ -45173,7 +45229,7 @@ static void sp_1024_proj_point_dbl_42(sp_point_1024* r, const sp_point_1024* p,
     /* T2 = Y * Y */
     sp_1024_mont_sqr_42(t2, y, p1024_mod, p1024_mp_mod);
     /* T2 = T2/2 */
-    sp_1024_div2_42(t2, t2, p1024_mod);
+    sp_1024_mont_div2_42(t2, t2, p1024_mod);
     /* Y = Y * X */
     sp_1024_mont_mul_42(y, y, p->x, p1024_mod, p1024_mp_mod);
     /* X = T1 * T1 */
@@ -45183,7 +45239,7 @@ static void sp_1024_proj_point_dbl_42(sp_point_1024* r, const sp_point_1024* p,
     /* X = X - Y */
     sp_1024_mont_sub_42(x, x, y, p1024_mod);
     /* Y = Y - X */
-    sp_1024_mont_sub_lower_42(y, y, x, p1024_mod);
+    sp_1024_mont_sub_42(y, y, x, p1024_mod);
     /* Y = Y * T1 */
     sp_1024_mont_mul_42(y, y, t1, p1024_mod, p1024_mp_mod);
     /* Y = Y - T2 */
@@ -45206,7 +45262,8 @@ typedef struct sp_1024_proj_point_dbl_42_ctx {
  * p  Point to double.
  * t  Temporary ordinate data.
  */
-static int sp_1024_proj_point_dbl_42_nb(sp_ecc_ctx_t* sp_ctx, sp_point_1024* r, const sp_point_1024* p, sp_digit* t)
+static int sp_1024_proj_point_dbl_42_nb(sp_ecc_ctx_t* sp_ctx, sp_point_1024* r,
+        const sp_point_1024* p, sp_digit* t)
 {
     int err = FP_WOULDBLOCK;
     sp_1024_proj_point_dbl_42_ctx* ctx = (sp_1024_proj_point_dbl_42_ctx*)sp_ctx->data;
@@ -45280,7 +45337,7 @@ static int sp_1024_proj_point_dbl_42_nb(sp_ecc_ctx_t* sp_ctx, sp_point_1024* r, 
         break;
     case 11:
         /* T2 = T2/2 */
-        sp_1024_div2_42(ctx->t2, ctx->t2, p1024_mod);
+        sp_1024_mont_div2_42(ctx->t2, ctx->t2, p1024_mod);
         ctx->state = 12;
         break;
     case 12:
@@ -45305,7 +45362,7 @@ static int sp_1024_proj_point_dbl_42_nb(sp_ecc_ctx_t* sp_ctx, sp_point_1024* r, 
         break;
     case 16:
         /* Y = Y - X */
-        sp_1024_mont_sub_lower_42(ctx->y, ctx->y, ctx->x, p1024_mod);
+        sp_1024_mont_sub_42(ctx->y, ctx->y, ctx->x, p1024_mod);
         ctx->state = 17;
         break;
     case 17:
@@ -45382,12 +45439,12 @@ static int sp_1024_iszero_42(const sp_digit* a)
 static void sp_1024_proj_point_add_42(sp_point_1024* r,
         const sp_point_1024* p, const sp_point_1024* q, sp_digit* t)
 {
-    sp_digit* t1 = t;
-    sp_digit* t2 = t + 2*42;
-    sp_digit* t3 = t + 4*42;
-    sp_digit* t4 = t + 6*42;
-    sp_digit* t5 = t + 8*42;
-    sp_digit* t6 = t + 10*42;
+    sp_digit* t6 = t;
+    sp_digit* t1 = t + 2*42;
+    sp_digit* t2 = t + 4*42;
+    sp_digit* t3 = t + 6*42;
+    sp_digit* t4 = t + 8*42;
+    sp_digit* t5 = t + 10*42;
 
     /* U1 = X1*Z2^2 */
     sp_1024_mont_sqr_42(t1, q->z, p1024_mod, p1024_mp_mod);
@@ -45409,17 +45466,9 @@ static void sp_1024_proj_point_add_42(sp_point_1024* r,
         sp_1024_proj_point_dbl_42(r, p, t);
     }
     else {
-        sp_digit maskp;
-        sp_digit maskq;
-        sp_digit maskt;
         sp_digit* x = t6;
         sp_digit* y = t1;
         sp_digit* z = t2;
-        int i;
-
-        maskp = 0 - (q->infinity & (!p->infinity));
-        maskq = 0 - (p->infinity & (!q->infinity));
-        maskt = ~(maskp | maskq);
 
         /* H = U2 - U1 */
         sp_1024_mont_sub_42(t2, t2, t1, p1024_mod);
@@ -45438,20 +45487,31 @@ static void sp_1024_proj_point_add_42(sp_point_1024* r,
         sp_1024_mont_dbl_42(t3, y, p1024_mod);
         sp_1024_mont_sub_42(x, x, t3, p1024_mod);
         /* Y3 = R*(U1*H^2 - X3) - S1*H^3 */
-        sp_1024_mont_sub_lower_42(y, y, x, p1024_mod);
+        sp_1024_mont_sub_42(y, y, x, p1024_mod);
         sp_1024_mont_mul_42(y, y, t4, p1024_mod, p1024_mp_mod);
         sp_1024_mont_sub_42(y, y, t5, p1024_mod);
-        for (i = 0; i < 42; i++) {
-            r->x[i] = (p->x[i] & maskp) | (q->x[i] & maskq) | (x[i] & maskt);
+        {
+            int i;
+            sp_digit maskp = 0 - (q->infinity & (!p->infinity));
+            sp_digit maskq = 0 - (p->infinity & (!q->infinity));
+            sp_digit maskt = ~(maskp | maskq);
+            sp_digit inf = (sp_digit)(p->infinity & q->infinity);
+
+            for (i = 0; i < 42; i++) {
+                r->x[i] = (p->x[i] & maskp) | (q->x[i] & maskq) |
+                          (x[i] & maskt);
+            }
+            for (i = 0; i < 42; i++) {
+                r->y[i] = (p->y[i] & maskp) | (q->y[i] & maskq) |
+                          (y[i] & maskt);
+            }
+            for (i = 0; i < 42; i++) {
+                r->z[i] = (p->z[i] & maskp) | (q->z[i] & maskq) |
+                          (z[i] & maskt);
+            }
+            r->z[0] |= inf;
+            r->infinity = (word32)inf;
         }
-        for (i = 0; i < 42; i++) {
-            r->y[i] = (p->y[i] & maskp) | (q->y[i] & maskq) | (y[i] & maskt);
-        }
-        for (i = 0; i < 42; i++) {
-            r->z[i] = (p->z[i] & maskp) | (q->z[i] & maskq) | (z[i] & maskt);
-        }
-        r->z[0] |= p->infinity & q->infinity;
-        r->infinity = p->infinity & q->infinity;
     }
 }
 
@@ -45497,12 +45557,12 @@ static int sp_1024_proj_point_add_42_nb(sp_ecc_ctx_t* sp_ctx, sp_point_1024* r,
 
     switch (ctx->state) {
     case 0: /* INIT */
-        ctx->t1 = t;
-        ctx->t2 = t + 2*42;
-        ctx->t3 = t + 4*42;
-        ctx->t4 = t + 6*42;
-        ctx->t5 = t + 8*42;
-        ctx->t6 = t + 10*42;
+        ctx->t6 = t;
+        ctx->t1 = t + 2*42;
+        ctx->t2 = t + 4*42;
+        ctx->t3 = t + 6*42;
+        ctx->t4 = t + 8*42;
+        ctx->t5 = t + 10*42;
         ctx->x = ctx->t6;
         ctx->y = ctx->t1;
         ctx->z = ctx->t2;
@@ -45609,7 +45669,7 @@ static int sp_1024_proj_point_add_42_nb(sp_ecc_ctx_t* sp_ctx, sp_point_1024* r,
         break;
     case 21:
         /* Y3 = R*(U1*H^2 - X3) - S1*H^3 */
-        sp_1024_mont_sub_lower_42(ctx->y, ctx->y, ctx->x, p1024_mod);
+        sp_1024_mont_sub_42(ctx->y, ctx->y, ctx->x, p1024_mod);
         ctx->state = 22;
         break;
     case 22:
@@ -45622,22 +45682,28 @@ static int sp_1024_proj_point_add_42_nb(sp_ecc_ctx_t* sp_ctx, sp_point_1024* r,
         break;
     case 24:
     {
-        int i;
-        sp_digit maskp = 0 - (q->infinity & (!p->infinity));
-        sp_digit maskq = 0 - (p->infinity & (!q->infinity));
-        sp_digit maskt = ~(maskp | maskq);
+        {
+            int i;
+            sp_digit maskp = 0 - (q->infinity & (!p->infinity));
+            sp_digit maskq = 0 - (p->infinity & (!q->infinity));
+            sp_digit maskt = ~(maskp | maskq);
+            sp_digit inf = (sp_digit)(p->infinity & q->infinity);
 
-        for (i = 0; i < 42; i++) {
-            r->x[i] = (p->x[i] & maskp) | (q->x[i] & maskq) | (ctx->x[i] & maskt);
+            for (i = 0; i < 42; i++) {
+                r->x[i] = (p->x[i] & maskp) | (q->x[i] & maskq) |
+                          (ctx->x[i] & maskt);
+            }
+            for (i = 0; i < 42; i++) {
+                r->y[i] = (p->y[i] & maskp) | (q->y[i] & maskq) |
+                          (ctx->y[i] & maskt);
+            }
+            for (i = 0; i < 42; i++) {
+                r->z[i] = (p->z[i] & maskp) | (q->z[i] & maskq) |
+                          (ctx->z[i] & maskt);
+            }
+            r->z[0] |= inf;
+            r->infinity = (word32)inf;
         }
-        for (i = 0; i < 42; i++) {
-            r->y[i] = (p->y[i] & maskp) | (q->y[i] & maskq) | (ctx->y[i] & maskt);
-        }
-        for (i = 0; i < 42; i++) {
-            r->z[i] = (p->z[i] & maskp) | (q->z[i] & maskq) | (ctx->z[i] & maskt);
-        }
-        r->z[0] |= p->infinity & q->infinity;
-        r->infinity = p->infinity & q->infinity;
         ctx->state = 25;
         break;
     }
@@ -46000,8 +46066,6 @@ static void sp_1024_cond_copy_42(sp_digit* r, const sp_digit* a, const sp_digit 
 #endif /* WOLFSSL_SP_SMALL */
 }
 
-#define sp_1024_mont_dbl_lower_42 sp_1024_mont_dbl_42
-#define sp_1024_mont_tpl_lower_42 sp_1024_mont_tpl_42
 /* Double the Montgomery form projective point p a number of times.
  *
  * r  Result of repeated doubling of point.
@@ -46040,7 +46104,7 @@ static void sp_1024_proj_point_dbl_n_42(sp_point_1024* p, int i,
         /* A = 3*(X^2 - W) */
         sp_1024_mont_sqr_42(t1, x, p1024_mod, p1024_mp_mod);
         sp_1024_mont_sub_42(t1, t1, w, p1024_mod);
-        sp_1024_mont_tpl_lower_42(a, t1, p1024_mod);
+        sp_1024_mont_tpl_42(a, t1, p1024_mod);
         /* B = X*Y^2 */
         sp_1024_mont_sqr_42(t1, y, p1024_mod, p1024_mp_mod);
         sp_1024_mont_mul_42(b, t1, x, p1024_mod, p1024_mp_mod);
@@ -46049,8 +46113,8 @@ static void sp_1024_proj_point_dbl_n_42(sp_point_1024* p, int i,
         sp_1024_mont_dbl_42(t2, b, p1024_mod);
         sp_1024_mont_sub_42(x, x, t2, p1024_mod);
         /* B = 2.(B - X) */
-        sp_1024_mont_sub_lower_42(t2, b, x, p1024_mod);
-        sp_1024_mont_dbl_lower_42(b, t2, p1024_mod);
+        sp_1024_mont_sub_42(t2, b, x, p1024_mod);
+        sp_1024_mont_dbl_42(b, t2, p1024_mod);
         /* Z = Z*Y */
         sp_1024_mont_mul_42(z, z, y, p1024_mod, p1024_mp_mod);
         /* t1 = Y^4 */
@@ -46070,7 +46134,7 @@ static void sp_1024_proj_point_dbl_n_42(sp_point_1024* p, int i,
     /* A = 3*(X^2 - W) */
     sp_1024_mont_sqr_42(t1, x, p1024_mod, p1024_mp_mod);
     sp_1024_mont_sub_42(t1, t1, w, p1024_mod);
-    sp_1024_mont_tpl_lower_42(a, t1, p1024_mod);
+    sp_1024_mont_tpl_42(a, t1, p1024_mod);
     /* B = X*Y^2 */
     sp_1024_mont_sqr_42(t1, y, p1024_mod, p1024_mp_mod);
     sp_1024_mont_mul_42(b, t1, x, p1024_mod, p1024_mp_mod);
@@ -46079,8 +46143,8 @@ static void sp_1024_proj_point_dbl_n_42(sp_point_1024* p, int i,
     sp_1024_mont_dbl_42(t2, b, p1024_mod);
     sp_1024_mont_sub_42(x, x, t2, p1024_mod);
     /* B = 2.(B - X) */
-    sp_1024_mont_sub_lower_42(t2, b, x, p1024_mod);
-    sp_1024_mont_dbl_lower_42(b, t2, p1024_mod);
+    sp_1024_mont_sub_42(t2, b, x, p1024_mod);
+    sp_1024_mont_dbl_42(b, t2, p1024_mod);
     /* Z = Z*Y */
     sp_1024_mont_mul_42(z, z, y, p1024_mod, p1024_mp_mod);
     /* t1 = Y^4 */
@@ -46090,7 +46154,7 @@ static void sp_1024_proj_point_dbl_n_42(sp_point_1024* p, int i,
     sp_1024_mont_sub_42(y, y, t1, p1024_mod);
 #endif /* WOLFSSL_SP_SMALL */
     /* Y = Y/2 */
-    sp_1024_div2_42(y, y, p1024_mod);
+    sp_1024_mont_div2_42(y, y, p1024_mod);
 }
 
 /* Double the Montgomery form projective point p a number of times.
@@ -46136,7 +46200,7 @@ static void sp_1024_proj_point_dbl_n_store_42(sp_point_1024* r,
         /* A = 3*(X^2 - W) */
         sp_1024_mont_sqr_42(t1, x, p1024_mod, p1024_mp_mod);
         sp_1024_mont_sub_42(t1, t1, w, p1024_mod);
-        sp_1024_mont_tpl_lower_42(a, t1, p1024_mod);
+        sp_1024_mont_tpl_42(a, t1, p1024_mod);
         /* B = X*Y^2 */
         sp_1024_mont_sqr_42(t1, y, p1024_mod, p1024_mp_mod);
         sp_1024_mont_mul_42(b, t1, x, p1024_mod, p1024_mp_mod);
@@ -46146,8 +46210,8 @@ static void sp_1024_proj_point_dbl_n_store_42(sp_point_1024* r,
         sp_1024_mont_dbl_42(t2, b, p1024_mod);
         sp_1024_mont_sub_42(x, x, t2, p1024_mod);
         /* B = 2.(B - X) */
-        sp_1024_mont_sub_lower_42(t2, b, x, p1024_mod);
-        sp_1024_mont_dbl_lower_42(b, t2, p1024_mod);
+        sp_1024_mont_sub_42(t2, b, x, p1024_mod);
+        sp_1024_mont_dbl_42(b, t2, p1024_mod);
         /* Z = Z*Y */
         sp_1024_mont_mul_42(r[j].z, z, y, p1024_mod, p1024_mp_mod);
         z = r[j].z;
@@ -46161,7 +46225,7 @@ static void sp_1024_proj_point_dbl_n_store_42(sp_point_1024* r,
         sp_1024_mont_mul_42(y, b, a, p1024_mod, p1024_mp_mod);
         sp_1024_mont_sub_42(y, y, t1, p1024_mod);
         /* Y = Y/2 */
-        sp_1024_div2_42(r[j].y, y, p1024_mod);
+        sp_1024_mont_div2_42(r[j].y, y, p1024_mod);
         r[j].infinity = 0;
     }
 }
@@ -46235,8 +46299,8 @@ static void sp_1024_proj_point_add_sub_42(sp_point_1024* ra,
     sp_1024_mont_sub_42(xs, xs, t1, p1024_mod);
     /* Y3 = R*(U1*H^2 - X3) - S1*H^3 */
     /* YS = -RS*(U1*H^2 - XS) - S1*H^3 */
-    sp_1024_mont_sub_lower_42(ys, ya, xs, p1024_mod);
-    sp_1024_mont_sub_lower_42(ya, ya, xa, p1024_mod);
+    sp_1024_mont_sub_42(ys, ya, xs, p1024_mod);
+    sp_1024_mont_sub_42(ya, ya, xa, p1024_mod);
     sp_1024_mont_mul_42(ya, ya, t4, p1024_mod, p1024_mp_mod);
     sp_1024_mont_sub_42(t6, p1024_mod, t6, p1024_mod);
     sp_1024_mont_mul_42(ys, ys, t6, p1024_mod, p1024_mp_mod);
@@ -46364,7 +46428,7 @@ static int sp_1024_ecc_mulmod_win_add_sub_42(sp_point_1024* r, const sp_point_10
     (void)heap;
 
 #ifdef WOLFSSL_SP_SMALL_STACK
-    t = (sp_point_1024*)XMALLOC(sizeof(sp_point_1024) * 
+    t = (sp_point_1024*)XMALLOC(sizeof(sp_point_1024) *
         (65+2), heap, DYNAMIC_TYPE_ECC);
     if (t == NULL)
         err = MEMORY_E;
@@ -46487,12 +46551,12 @@ static int sp_1024_ecc_mulmod_win_add_sub_42(sp_point_1024* r, const sp_point_10
 static void sp_1024_proj_point_add_qz1_42(sp_point_1024* r,
     const sp_point_1024* p, const sp_point_1024* q, sp_digit* t)
 {
-    sp_digit* t1 = t;
-    sp_digit* t2 = t + 2*42;
-    sp_digit* t3 = t + 4*42;
-    sp_digit* t4 = t + 6*42;
-    sp_digit* t5 = t + 8*42;
-    sp_digit* t6 = t + 10*42;
+    sp_digit* t2 = t;
+    sp_digit* t3 = t + 2*42;
+    sp_digit* t6 = t + 4*42;
+    sp_digit* t1 = t + 6*42;
+    sp_digit* t4 = t + 8*42;
+    sp_digit* t5 = t + 10*42;
 
     /* Calculate values to subtract from P->x and P->y. */
     /* U2 = X2*Z1^2 */
@@ -46508,13 +46572,9 @@ static void sp_1024_proj_point_add_qz1_42(sp_point_1024* r,
         sp_1024_proj_point_dbl_42(r, p, t);
     }
     else {
-        sp_digit maskp;
-        sp_digit maskq;
-        sp_digit maskt;
         sp_digit* x = t2;
-        sp_digit* y = t5;
+        sp_digit* y = t3;
         sp_digit* z = t6;
-        int i;
 
         /* H = U2 - X1 */
         sp_1024_mont_sub_42(t2, t2, p->x, p1024_mod);
@@ -46523,33 +46583,40 @@ static void sp_1024_proj_point_add_qz1_42(sp_point_1024* r,
         /* Z3 = H*Z1 */
         sp_1024_mont_mul_42(z, p->z, t2, p1024_mod, p1024_mp_mod);
         /* X3 = R^2 - H^3 - 2*X1*H^2 */
-        sp_1024_mont_sqr_42(t1, t4, p1024_mod, p1024_mp_mod);
-        sp_1024_mont_sqr_42(t5, t2, p1024_mod, p1024_mp_mod);
-        sp_1024_mont_mul_42(t3, p->x, t5, p1024_mod, p1024_mp_mod);
-        sp_1024_mont_mul_42(t5, t5, t2, p1024_mod, p1024_mp_mod);
-        sp_1024_mont_sub_42(x, t1, t5, p1024_mod);
-        sp_1024_mont_dbl_42(t1, t3, p1024_mod);
-        sp_1024_mont_sub_42(x, x, t1, p1024_mod);
+        sp_1024_mont_sqr_42(t1, t2, p1024_mod, p1024_mp_mod);
+        sp_1024_mont_mul_42(t3, p->x, t1, p1024_mod, p1024_mp_mod);
+        sp_1024_mont_mul_42(t1, t1, t2, p1024_mod, p1024_mp_mod);
+        sp_1024_mont_sqr_42(t2, t4, p1024_mod, p1024_mp_mod);
+        sp_1024_mont_sub_42(t2, t2, t1, p1024_mod);
+        sp_1024_mont_dbl_42(t5, t3, p1024_mod);
+        sp_1024_mont_sub_42(x, t2, t5, p1024_mod);
         /* Y3 = R*(X1*H^2 - X3) - Y1*H^3 */
-        sp_1024_mont_sub_lower_42(t3, t3, x, p1024_mod);
+        sp_1024_mont_sub_42(t3, t3, x, p1024_mod);
         sp_1024_mont_mul_42(t3, t3, t4, p1024_mod, p1024_mp_mod);
-        sp_1024_mont_mul_42(t5, t5, p->y, p1024_mod, p1024_mp_mod);
-        sp_1024_mont_sub_42(y, t3, t5, p1024_mod);
+        sp_1024_mont_mul_42(t1, t1, p->y, p1024_mod, p1024_mp_mod);
+        sp_1024_mont_sub_42(y, t3, t1, p1024_mod);
+        {
+            int i;
+            sp_digit maskp = 0 - (q->infinity & (!p->infinity));
+            sp_digit maskq = 0 - (p->infinity & (!q->infinity));
+            sp_digit maskt = ~(maskp | maskq);
+            sp_digit inf = (sp_digit)(p->infinity & q->infinity);
 
-        maskp = 0 - (q->infinity & (!p->infinity));
-        maskq = 0 - (p->infinity & (!q->infinity));
-        maskt = ~(maskp | maskq);
-        for (i = 0; i < 42; i++) {
-            r->x[i] = (p->x[i] & maskp) | (q->x[i] & maskq) | (x[i] & maskt);
+            for (i = 0; i < 42; i++) {
+                r->x[i] = (p->x[i] & maskp) | (q->x[i] & maskq) |
+                          (x[i] & maskt);
+            }
+            for (i = 0; i < 42; i++) {
+                r->y[i] = (p->y[i] & maskp) | (q->y[i] & maskq) |
+                          (y[i] & maskt);
+            }
+            for (i = 0; i < 42; i++) {
+                r->z[i] = (p->z[i] & maskp) | (q->z[i] & maskq) |
+                          (z[i] & maskt);
+            }
+            r->z[0] |= inf;
+            r->infinity = (word32)inf;
         }
-        for (i = 0; i < 42; i++) {
-            r->y[i] = (p->y[i] & maskp) | (q->y[i] & maskq) | (y[i] & maskt);
-        }
-        for (i = 0; i < 42; i++) {
-            r->z[i] = (p->z[i] & maskp) | (q->z[i] & maskq) | (z[i] & maskt);
-        }
-        r->z[0] |= p->infinity & q->infinity;
-        r->infinity = p->infinity & q->infinity;
     }
 }
 
@@ -46801,7 +46868,7 @@ static THREAD_LS_T int sp_cache_1024_inited = 0;
 
 /* Get the cache entry for the point.
  *
- * g      [in]   Point scalar multipling.
+ * g      [in]   Point scalar multiplying.
  * cache  [out]  Cache table to use.
  */
 static void sp_ecc_get_cache_1024(const sp_point_1024* g, sp_cache_1024_t** cache)
@@ -46872,8 +46939,8 @@ static void sp_ecc_get_cache_1024(const sp_point_1024* g, sp_cache_1024_t** cach
  * heap  Heap to use for allocation.
  * returns MEMORY_E when memory allocation fails and MP_OKAY on success.
  */
-static int sp_1024_ecc_mulmod_42(sp_point_1024* r, const sp_point_1024* g, const sp_digit* k,
-        int map, int ct, void* heap)
+static int sp_1024_ecc_mulmod_42(sp_point_1024* r, const sp_point_1024* g,
+        const sp_digit* k, int map, int ct, void* heap)
 {
 #ifndef FP_ECC
     return sp_1024_ecc_mulmod_win_add_sub_42(r, g, k, map, ct, heap);
@@ -50934,7 +51001,7 @@ int sp_ecc_mulmod_base_1024(const mp_int* km, ecc_point* r, int map, void* heap)
  * the result. If map is true then convert result to affine coordinates.
  *
  * km      Scalar to multiply by.
- * am      Point to add to scalar mulitply result.
+ * am      Point to add to scalar multiply result.
  * inMont  Point to add is in montgomery form.
  * r       Resulting point.
  * map     Indicates whether to convert result to affine.
@@ -50956,7 +51023,7 @@ int sp_ecc_mulmod_base_add_1024(const mp_int* km, const ecc_point* am,
     int err = MP_OKAY;
 
 #ifdef WOLFSSL_SP_SMALL_STACK
-    point = (sp_point_1024*)XMALLOC(sizeof(sp_point_1024) * 2, heap, 
+    point = (sp_point_1024*)XMALLOC(sizeof(sp_point_1024) * 2, heap,
                                          DYNAMIC_TYPE_ECC);
     if (point == NULL)
         err = MEMORY_E;
@@ -51172,7 +51239,7 @@ int sp_ecc_mulmod_table_1024(const mp_int* km, const ecc_point* gm, byte* table,
     return err;
 }
 
-/* Multiply p* in projective co-ordinates by q*.
+/* Multiply p* in projective coordinates by q*.
  *
  * r.x = p.x - (p.y * q.y)
  * r.y = (p.x * q.y) + p.y
@@ -51198,7 +51265,7 @@ static void sp_1024_proj_mul_qx1_42(sp_digit* px, sp_digit* py,
     sp_1024_mont_add_42(py, t1, py, p1024_mod);
 }
 
-/* Square p* in projective co-ordinates.
+/* Square p* in projective coordinates.
  *
  *   px' = (p.x + p.y) * (p.x - p.y) = p.x^2 - p.y^2
  *   py' = 2 * p.x * p.y
@@ -53219,7 +53286,7 @@ int sp_ModExp_Fp_star_1024(const mp_int* base, mp_int* exp, mp_int* res)
 }
 
 #endif /* WOLFSSL_SP_SMALL */
-/* Multiply p* by q* in projective co-ordinates.
+/* Multiply p* by q* in projective coordinates.
  *
  *   p.x' = (p.x * q.x) - (p.y * q.y)
  *   p.y' = (p.x * q.y) + (p.y * q.x)
@@ -53334,7 +53401,7 @@ static void sp_1024_accumulate_line_dbl_42(sp_digit* vx, sp_digit* vy,
     /* ty = 4 * p.y ^ 2 */
     sp_1024_mont_sqr_42(ty, ry, p1024_mod, p1024_mp_mod);
     /* t1 = 2 * p.y ^ 2 */
-    sp_1024_div2_42(t1, ty, p1024_mod);
+    sp_1024_mont_div2_42(t1, ty, p1024_mod);
     /* r.x -= 2 * (p.y ^ 2) */
     sp_1024_mont_sub_42(rx, rx, t1, p1024_mod);
     /* p'.z = p.y * 2 * p.z */
@@ -53354,7 +53421,7 @@ static void sp_1024_accumulate_line_dbl_42(sp_digit* vx, sp_digit* vy,
     /* t1 = (4 * p.y^2) ^ 2 = 16 * p.y^4 */
     sp_1024_mont_sqr_42(t1, ty, p1024_mod, p1024_mp_mod);
     /* t1 = 16 * p.y^4 / 2 = 8 * p.y^4 */
-    sp_1024_div2_42(t1, t1, p1024_mod);
+    sp_1024_mont_div2_42(t1, t1, p1024_mod);
     /* p'.y = 4 * p.y^2 * p.x */
     sp_1024_mont_mul_42(p->y, ty, p->x, p1024_mod, p1024_mp_mod);
     /* p'.x = l^2 */
@@ -53772,7 +53839,7 @@ static void sp_1024_accumulate_line_dbl_n_42(sp_digit* vx, sp_digit* vy,
         /* ty = py ^ 2 */
         sp_1024_mont_sqr_42(ty, p->y, p1024_mod, p1024_mp_mod);
         /* t1 = py ^ 2 / 2 */
-        sp_1024_div2_42(t1, ty, p1024_mod);
+        sp_1024_mont_div2_42(t1, ty, p1024_mod);
         /* r.x -= py ^ 2 / 2 */
         sp_1024_mont_sub_42(rx, rx, t1, p1024_mod);
         /* p'.z = py * pz */
@@ -53810,7 +53877,7 @@ static void sp_1024_accumulate_line_dbl_n_42(sp_digit* vx, sp_digit* vy,
     }
 
     /* p'.y = py' / 2 */
-    sp_1024_div2_42(p->y, p->y, p1024_mod);
+    sp_1024_mont_div2_42(p->y, p->y, p1024_mod);
 }
 
 /* Operations to perform based on order - 1.
@@ -54618,7 +54685,7 @@ static void sp_1024_from_bin(sp_digit* r, int size, const byte* a, int n)
     }
 }
 
-/* Check that the x and y oridinates are a valid point on the curve.
+/* Check that the x and y ordinates are a valid point on the curve.
  *
  * point  EC point.
  * heap   Heap to use if dynamically allocating.
@@ -54647,18 +54714,20 @@ static int sp_1024_ecc_is_point_42(const sp_point_1024* point,
     if (err == MP_OKAY) {
         t2 = t1 + 2 * 42;
 
+        /* y^2 - x^3 - a.x = b */
         sp_1024_sqr_42(t1, point->y);
         (void)sp_1024_mod_42(t1, t1, p1024_mod);
         sp_1024_sqr_42(t2, point->x);
         (void)sp_1024_mod_42(t2, t2, p1024_mod);
         sp_1024_mul_42(t2, t2, point->x);
         (void)sp_1024_mod_42(t2, t2, p1024_mod);
-        (void)sp_1024_sub_42(t2, p1024_mod, t2);
-        sp_1024_mont_add_42(t1, t1, t2, p1024_mod);
+        sp_1024_mont_sub_42(t1, t1, t2, p1024_mod);
 
+        /* y^2 - x^3 + 3.x = b, when a = -3  */
         sp_1024_mont_add_42(t1, t1, point->x, p1024_mod);
         sp_1024_mont_add_42(t1, t1, point->x, p1024_mod);
         sp_1024_mont_add_42(t1, t1, point->x, p1024_mod);
+
 
         n = sp_1024_cmp_42(t1, p1024_mod);
         sp_1024_cond_sub_42(t1, t1, p1024_mod, ~(n >> 24));
@@ -54676,7 +54745,7 @@ static int sp_1024_ecc_is_point_42(const sp_point_1024* point,
     return err;
 }
 
-/* Check that the x and y oridinates are a valid point on the curve.
+/* Check that the x and y ordinates are a valid point on the curve.
  *
  * pX  X ordinate of EC point.
  * pY  Y ordinate of EC point.

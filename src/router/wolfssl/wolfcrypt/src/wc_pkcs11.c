@@ -45,6 +45,12 @@
     #include <wolfcrypt/src/misc.c>
 #endif
 
+#ifndef WOLFSSL_HAVE_ECC_KEY_GET_PRIV
+    /* FIPS build has replaced ecc.h. */
+    #define wc_ecc_key_get_priv(key) (&((key)->k))
+    #define WOLFSSL_HAVE_ECC_KEY_GET_PRIV
+#endif
+
 #if defined(NO_PKCS11_RSA) && !defined(NO_RSA)
     #define NO_RSA
 #endif
@@ -68,7 +74,7 @@
 #endif
 
 
-/* Maximim length of the EC parameter string. */
+/* Maximum length of the EC parameter string. */
 #define MAX_EC_PARAM_LEN   16
 
 
@@ -397,11 +403,11 @@ static void pkcs11_val(const char* op, CK_ULONG val)
 }
 #else
 /* Disable logging of PKCS#11 calls and return value. */
-#define PKCS11_RV(op, ev)
+#define PKCS11_RV(op, ev) WC_DO_NOTHING
 /* Disable logging of PKCS#11 calls and value. */
-#define PKCS11_VAL(op, val)
+#define PKCS11_VAL(op, val) WC_DO_NOTHING
 /* Disable logging of PKCS#11 template. */
-#define PKCS11_DUMP_TEMPLATE(name, templ, cnt)
+#define PKCS11_DUMP_TEMPLATE(name, templ, cnt) WC_DO_NOTHING
 #endif
 
 /**
@@ -1184,8 +1190,8 @@ static int Pkcs11CreateEccPrivateKey(CK_OBJECT_HANDLE* privateKey,
 
     ret = Pkcs11EccSetParams(private_key, keyTemplate, 3);
     if (ret == 0) {
-        keyTemplate[4].pValue     = private_key->k.raw.buf;
-        keyTemplate[4].ulValueLen = private_key->k.raw.len;
+        keyTemplate[4].pValue     = wc_ecc_key_get_priv(private_key)->raw.buf;
+        keyTemplate[4].ulValueLen = wc_ecc_key_get_priv(private_key)->raw.len;
 
         PKCS11_DUMP_TEMPLATE("Ec Private Key", keyTemplate, keyTmplCnt);
         rv = session->func->C_CreateObject(session->handle, keyTemplate,
@@ -1426,7 +1432,7 @@ int wc_Pkcs11StoreKey(Pkcs11Token* token, int type, int clear, void* key)
                         ret = ret2;
                 }
                 if (ret == 0 && clear)
-                    mp_forcezero(&eccKey->k);
+                    mp_forcezero(wc_ecc_key_get_priv(eccKey));
                 break;
             }
     #endif
@@ -1714,6 +1720,42 @@ static int Pkcs11GetRsaPublicKey(RsaKey* key, Pkcs11Session* session,
         XFREE(exp, key->heap, DYNAMIC_TYPE_TMP_BUFFER);
     if (mod != NULL)
         XFREE(mod, key->heap, DYNAMIC_TYPE_TMP_BUFFER);
+
+    return ret;
+}
+
+/**
+ * Get the RSA modulus size in bytes from the PKCS#11 object.
+ *
+ * @param  [in]   session  Session object.
+ * @param  [in]   pubkey   Public key object.
+ * @param  [out]  modSize  Size of the modulus in bytes.
+ * @return  WC_HW_E when a PKCS#11 library call fails.
+ * @return  MEMORY_E when a memory allocation fails.
+ * @return  0 on success.
+ */
+static int Pkcs11GetRsaModulusSize(Pkcs11Session* session,
+                                   CK_OBJECT_HANDLE pubKey, int* modSize)
+{
+    int            ret = 0;
+    CK_ATTRIBUTE   tmpl[] = {
+        { CKA_MODULUS,         NULL_PTR, 0 }
+    };
+    CK_ULONG       tmplCnt = sizeof(tmpl) / sizeof(*tmpl);
+    CK_RV rv;
+
+    PKCS11_DUMP_TEMPLATE("Get RSA Modulus Length", tmpl, tmplCnt);
+    rv = session->func->C_GetAttributeValue(session->handle, pubKey, tmpl,
+                                                                       tmplCnt);
+    PKCS11_RV("C_GetAttributeValue", rv);
+    if (rv != CKR_OK) {
+        ret = WC_HW_E;
+    }
+    PKCS11_DUMP_TEMPLATE("RSA Modulus Length", tmpl, tmplCnt);
+
+    if (ret == 0) {
+        *modSize = (int)tmpl[0].ulValueLen;
+    }
 
     return ret;
 }
@@ -2448,7 +2490,8 @@ static int Pkcs11ECDH(Pkcs11Session* session, wc_CryptoInfo* info)
     if (ret == 0) {
         WOLFSSL_MSG("PKCS#11: EC Key Derivation Operation");
 
-        if ((sessionKey = !mp_iszero(&info->pk.ecdh.private_key->k)))
+        if ((sessionKey = !mp_iszero(
+                wc_ecc_key_get_priv(info->pk.ecdh.private_key))))
             ret = Pkcs11CreateEccPrivateKey(&privateKey, session,
                                          info->pk.ecdh.private_key, CKA_DERIVE);
         else if (info->pk.ecdh.private_key->labelLen > 0) {
@@ -2742,7 +2785,8 @@ static int Pkcs11ECDSA_Sign(Pkcs11Session* session, wc_CryptoInfo* info)
     if (ret == 0) {
         WOLFSSL_MSG("PKCS#11: EC Signing Operation");
 
-        if ((sessionKey = !mp_iszero(&info->pk.eccsign.key->k)))
+        if ((sessionKey = !mp_iszero(
+                wc_ecc_key_get_priv(info->pk.eccsign.key))))
             ret = Pkcs11CreateEccPrivateKey(&privateKey, session,
                                                 info->pk.eccsign.key, CKA_SIGN);
         else if (info->pk.eccsign.key->labelLen > 0) {
@@ -2957,7 +3001,6 @@ static int wc_Pkcs11CheckPrivKey_Rsa(RsaKey* priv,
  * @param  [in]  info     Cryptographic operation data.
  * @return  WC_HW_E when a PKCS#11 library call fails.
  * @return  MEMORY_E when a memory allocation fails.
- * @return  MEMORY_E when a memory allocation fails.
  * @return  MP_CMP_E when the public parts are different.
  * @return  0 on success.
  */
@@ -2974,7 +3017,7 @@ static int Pkcs11RsaCheckPrivKey(Pkcs11Session* session, wc_CryptoInfo* info)
                                                   CKK_RSA, session, priv->label,
                                                   priv->labelLen);
         }
-        else if (info->pk.rsa.key->idLen > 0) {
+        else if (priv->idLen > 0) {
             ret = Pkcs11FindKeyById(&privateKey, CKO_PRIVATE_KEY, CKK_RSA,
                                     session, priv->id, priv->idLen);
         }
@@ -2991,6 +3034,52 @@ static int Pkcs11RsaCheckPrivKey(Pkcs11Session* session, wc_CryptoInfo* info)
         /* Compare the extracted public parts with the public key. */
         ret = wc_Pkcs11CheckPrivKey_Rsa(priv, info->pk.rsa_check.pubKey,
                                                    info->pk.rsa_check.pubKeySz);
+    }
+
+    return ret;
+}
+
+/**
+ * Get the size of the RSA key in bytes.
+ *
+ * @param  [in]  session  Session object.
+ * @param  [in]  info     Cryptographic operation data.
+ * @return  WC_HW_E when a PKCS#11 library call fails.
+ * @return  NOT_COMPILED_IN when no modulus, label or id.
+ * @return  0 on success.
+ */
+static int Pkcs11RsaGetSize(Pkcs11Session* session, wc_CryptoInfo* info)
+{
+    int ret = 0;
+    CK_OBJECT_HANDLE privateKey;
+    const RsaKey* priv = info->pk.rsa_get_size.key;
+
+    if (!mp_iszero(&priv->n)) {
+        /* Use the key's modulus MP integer to determine size. */
+        *info->pk.rsa_get_size.keySize = mp_unsigned_bin_size(&priv->n);
+    }
+    else {
+        /* Get the RSA private key object. */
+        if (priv->labelLen > 0) {
+            ret = Pkcs11FindKeyByLabel(&privateKey, CKO_PRIVATE_KEY,
+                                           CKK_RSA, session, (char*)priv->label,
+                                           priv->labelLen);
+        }
+        else if (priv->idLen > 0) {
+            ret = Pkcs11FindKeyById(&privateKey, CKO_PRIVATE_KEY, CKK_RSA,
+                                              session, (unsigned char*)priv->id,
+                                              priv->idLen);
+        }
+        else {
+            /* Lookup is by modulus which is not present. */
+            ret = NOT_COMPILED_IN;
+        }
+
+        if (ret == 0) {
+            /* Lookup the modulus size in bytes. */
+            ret = Pkcs11GetRsaModulusSize(session, privateKey,
+                                                 info->pk.rsa_get_size.keySize);
+        }
     }
 
     return ret;
@@ -3666,7 +3755,12 @@ int wc_Pkcs11_CryptoDevCb(int devId, wc_CryptoInfo* info, void* ctx)
     int ret = 0;
     Pkcs11Token* token = (Pkcs11Token*)ctx;
     Pkcs11Session session;
+
+#ifdef WOLFSSL_PKCS11_RW_TOKENS
+    int readWrite = 1;
+#else
     int readWrite = 0;
+#endif
 
     if (devId <= INVALID_DEVID || info == NULL || ctx == NULL)
         ret = BAD_FUNC_ARG;
@@ -3699,6 +3793,13 @@ int wc_Pkcs11_CryptoDevCb(int devId, wc_CryptoInfo* info, void* ctx)
                     ret = Pkcs11OpenSession(token, &session, readWrite);
                     if (ret == 0) {
                         ret = Pkcs11RsaCheckPrivKey(&session, info);
+                        Pkcs11CloseSession(token, &session);
+                    }
+                    break;
+                case WC_PK_TYPE_RSA_GET_SIZE:
+                    ret = Pkcs11OpenSession(token, &session, readWrite);
+                    if (ret == 0) {
+                        ret = Pkcs11RsaGetSize(&session, info);
                         Pkcs11CloseSession(token, &session);
                     }
                     break;

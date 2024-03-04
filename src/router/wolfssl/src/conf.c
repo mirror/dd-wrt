@@ -143,7 +143,7 @@ WOLFSSL_TXT_DB *wolfSSL_TXT_DB_read(WOLFSSL_BIO *in, int num)
     failed = 0;
 error:
     if (failed && ret) {
-        XFREE(ret, NULL, DYNAMIC_TYPE_OPENSSL);
+        wolfSSL_TXT_DB_free(ret);
         ret = NULL;
     }
     if (buf) {
@@ -158,7 +158,6 @@ long wolfSSL_TXT_DB_write(WOLFSSL_BIO *out, WOLFSSL_TXT_DB *db)
     long totalLen = 0;
     char buf[512]; /* Should be more than enough for a single row */
     char* bufEnd = buf + sizeof(buf);
-    int sz;
     int i;
 
     WOLFSSL_ENTER("wolfSSL_TXT_DB_write");
@@ -172,6 +171,7 @@ long wolfSSL_TXT_DB_write(WOLFSSL_BIO *out, WOLFSSL_TXT_DB *db)
     while (data) {
         char** fields = (char**)data->data.string;
         char* idx = buf;
+        int sz;
 
         if (!fields) {
             WOLFSSL_MSG("Missing row");
@@ -458,6 +458,7 @@ int wolfSSL_CONF_add_string(WOLFSSL_CONF *conf,
     }
     if (wolfSSL_sk_CONF_VALUE_push(conf->data, value) != WOLFSSL_SUCCESS) {
         WOLFSSL_MSG("wolfSSL_sk_CONF_VALUE_push error");
+        wolfssl_sk_pop_type(sk, STACK_TYPE_CONF_VALUE);
         return WOLFSSL_FAILURE;
     }
 
@@ -743,7 +744,7 @@ static char* expandValue(WOLFSSL_CONF *conf, const char* section,
                     strIdx += 2;
                     startIdx = strIdx;
                 }
-                while (*strIdx && (XISALNUM((int)(*strIdx)) || *strIdx == '_'))
+                while (*strIdx && (XISALNUM((unsigned char)*strIdx) || *strIdx == '_'))
                     strIdx++;
                 endIdx = strIdx;
                 if (startIdx == endIdx) {
@@ -948,6 +949,7 @@ int wolfSSL_NCONF_load(WOLFSSL_CONF *conf, const char *file, long *eline)
 
             if (wolfSSL_CONF_add_string(conf, section, newVal) !=
                     WOLFSSL_SUCCESS) {
+                wolfSSL_X509V3_conf_free(newVal);
                 WOLFSSL_MSG("wolfSSL_CONF_add_string error");
                 goto cleanup;
             }
@@ -1110,9 +1112,8 @@ void wolfSSL_CONF_CTX_free(WOLFSSL_CONF_CTX* cctx)
 {
     WOLFSSL_ENTER("wolfSSL_CONF_CTX_free");
 
-    if (cctx) {
-        XFREE(cctx, NULL, DYNAMIC_TYPE_OPENSSL);
-    }
+    XFREE(cctx, NULL, DYNAMIC_TYPE_OPENSSL);
+
     WOLFSSL_LEAVE("wolfSSL_CONF_CTX_free", 1);
 }
 /**
@@ -1499,10 +1500,9 @@ static const conf_cmd_tbl* wolfssl_conf_find_cmd(WOLFSSL_CONF_CTX* cctx,
                                          const char* cmd)
 {
     size_t i = 0;
-    size_t cmdlen = 0;
 
     if (cctx->flags & WOLFSSL_CONF_FLAG_CMDLINE) {
-        cmdlen = XSTRLEN(cmd);
+        size_t cmdlen = XSTRLEN(cmd);
 
         if (cmdlen < 2) {
             WOLFSSL_MSG("bad cmdline command");

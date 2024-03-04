@@ -4,6 +4,27 @@ on:
   workflow_call:
 
 jobs:
+  build_wolfssl:
+    name: Build wolfSSL
+    # Just to keep it the same as the testing target
+    runs-on: ubuntu-latest
+    # This should be a safe limit for the tests to run.
+    timeout-minutes: 4
+    steps:
+      - name: Build wolfSSL
+        uses: wolfSSL/actions-build-autotools-project@v1
+        with:
+          path: wolfssl
+          configure: --enable-openvpn
+          install: true
+
+      - name: Upload built lib
+        uses: actions/upload-artifact@v3
+        with:
+          name: wolf-install-openvpn
+          path: build-dir
+          retention-days: 1
+
   openvpn_check:
     strategy:
       fail-fast: false
@@ -12,13 +33,15 @@ jobs:
         ref: [ master, release/2.6, v2.6.0 ]
     name: ${{ matrix.ref }}
     runs-on: ubuntu-latest
+    # This should be a safe limit for the tests to run.
+    timeout-minutes: 6
+    needs: build_wolfssl
     steps:
-      - name: Build wolfSSL
-        uses: wolfSSL/actions-build-autotools-project@v1
+      - name: Download lib
+        uses: actions/download-artifact@v3
         with:
-          path: wolfssl
-          configure: --enable-openvpn
-          install: true
+          name: wolf-install-openvpn
+          path: build-dir
 
       - name: Install dependencies
         run: |
@@ -29,6 +52,10 @@ jobs:
 
       - if: ${{ matrix.ref != 'master' }}
         name: Build and test openvpn with fsanitize
+        run: |
+          echo 'extra_c_flags=CFLAGS="-fsanitize=address -fno-omit-frame-pointer -O2"' >> $GITHUB_ENV
+
+      - name: Build and test openvpn
         uses: wolfSSL/actions-build-autotools-project@v1
         with:
           repository: OpenVPN/openvpn
@@ -38,19 +65,9 @@ jobs:
             --with-crypto-library=wolfssl
             WOLFSSL_CFLAGS="-I$GITHUB_WORKSPACE/build-dir/include/ -I$GITHUB_WORKSPACE/build-dir/include/wolfssl"
             WOLFSSL_LIBS="-L$GITHUB_WORKSPACE/build-dir/lib -lwolfssl"
-            CFLAGS="-fsanitize=address -fno-omit-frame-pointer -O2"
+            ${{ env.extra_c_flags }}
           check: true
 
-      - if: ${{ matrix.ref == 'master' }}
-        name: Build and test openvpn without fsanitize
-        uses: wolfSSL/actions-build-autotools-project@v1
-        with:
-          repository: OpenVPN/openvpn
-          ref: ${{ matrix.ref }}
-          path: openvpn
-          configure: >-
-            --with-crypto-library=wolfssl
-            WOLFSSL_CFLAGS="-I$GITHUB_WORKSPACE/build-dir/include/ -I$GITHUB_WORKSPACE/build-dir/include/wolfssl"
-            WOLFSSL_LIBS="-L$GITHUB_WORKSPACE/build-dir/lib -lwolfssl"
-          check: true
-
+      - name: Confirm OpenVPN built with wolfSSL
+        working-directory: ./openvpn
+        run: ldd src/openvpn/openvpn | grep wolfssl

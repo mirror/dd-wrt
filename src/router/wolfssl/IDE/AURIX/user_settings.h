@@ -98,7 +98,6 @@ extern unsigned int my_rng_seed_gen(void);
 
     #define WOLFSSL_SP_NO_MALLOC
     //#define WOLFSSL_SP_DIV_32 /* do not use 64-bit divides */
-    //#define WOLFSSL_SP_CACHE_RESISTANT
 
     /* use smaller version of code */
     #define WOLFSSL_SP_SMALL
@@ -205,7 +204,7 @@ extern unsigned int my_rng_seed_gen(void);
             /* use heap allocation for ECC points */
             #define ALT_ECC_SIZE
 
-            /* wolfSSL will compute the FP_MAX_BITS_ECC, but it can be overriden */
+            /* wolfSSL will compute the FP_MAX_BITS_ECC, but it can be overridden */
             //#define FP_MAX_BITS_ECC (256 * 2)
         #endif
 

@@ -63,7 +63,7 @@ const char* wc_GetErrorString(int error)
     case WC_PENDING_E:
         return "wolfCrypt Operation Pending (would block / eagain) error";
 
-    case WC_NOT_PENDING_E:
+    case WC_NO_PENDING_E:
         return "wolfCrypt operation not pending error";
 
     case MP_INIT_E :
@@ -582,6 +582,24 @@ const char* wc_GetErrorString(int error)
 
     case ENTROPY_APT_E:
         return "Entropy Adaptive Proportion Test failed";
+
+    case ASN_DEPTH_E:
+        return "Invalid ASN.1 - depth check";
+
+    case ASN_LEN_E:
+        return "ASN.1 length invalid";
+
+    case SM4_GCM_AUTH_E:
+        return "SM4-GCM Authentication check fail";
+
+    case SM4_CCM_AUTH_E:
+        return "SM4-CCM Authentication check fail";
+
+    case FIPS_DEGRADED_E:
+        return "FIPS module in DEGRADED mode";
+
+    case AES_EAX_AUTH_E:
+        return "AES-EAX Authentication check fail";
 
     default:
         return "unknown error number";

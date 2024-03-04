@@ -29,7 +29,9 @@ EXTRA_DIST += tests/unit.h \
               tests/test-tls13-pq.conf \
               tests/test-tls13-pq-2.conf \
               tests/test-dtls13-pq.conf \
+              tests/test-dtls13-pq-frag.conf \
               tests/test-dtls13-pq-2.conf \
+              tests/test-dtls13-pq-2-frag.conf \
               tests/test-psk.conf \
               tests/test-psk-no-id.conf \
               tests/test-psk-no-id-sha2.conf \
@@ -66,7 +68,9 @@ EXTRA_DIST += tests/unit.h \
               tests/test-dhprime.conf \
               tests/test-p521.conf \
               tests/test-ecc-cust-curves.conf \
+              tests/test-sm2.conf \
               tests/NCONF_test.cnf \
               tests/test-tls-downgrade.conf \
-              tests/TXT_DB.txt
+              tests/TXT_DB.txt \
+              tests/utils.h
 DISTCLEANFILES+= tests/.libs/unit.test

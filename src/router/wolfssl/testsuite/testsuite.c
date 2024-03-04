@@ -25,6 +25,7 @@
 #endif
 
 #include <wolfssl/wolfcrypt/settings.h>
+#include <wolfssl/wolfcrypt/types.h>
 
 #include <wolfssl/ssl.h>
 #include <wolfssl/test.h>
@@ -44,6 +45,7 @@
 #include <examples/server/server.h>
 #include <examples/client/client.h>
 
+#include "tests/utils.h"
 
 #ifndef NO_SHA256
 void file_test(const char* file, byte* check);
@@ -57,6 +59,10 @@ static THREAD_RETURN simple_test(func_args *args);
 static void simple_test(func_args *args);
 #endif
 static int test_tls(func_args* server_args);
+#if !defined(NO_WOLFSSL_SERVER) && !defined(NO_WOLFSSL_CLIENT) && \
+    defined(HAVE_CRL) && defined(HAVE_CRL_MONITOR)
+static int test_crl_monitor(void);
+#endif
 static void show_ciphers(void);
 static void cleanup_output(void);
 static int validate_cleanup_output(void);
@@ -214,6 +220,16 @@ int testsuite_test(int argc, char** argv)
         cleanup_output();
         return server_args.return_code;
     }
+
+#if !defined(NO_WOLFSSL_SERVER) && !defined(NO_WOLFSSL_CLIENT) && \
+    defined(HAVE_CRL) && defined(HAVE_CRL_MONITOR)
+    ret = test_crl_monitor();
+    if (ret != 0) {
+        cleanup_output();
+        return ret;
+    }
+#endif
+
 #endif /* !NETOS */
 
     show_ciphers();
@@ -247,6 +263,148 @@ int testsuite_test(int argc, char** argv)
 }
 
 #if !defined(NO_WOLFSSL_SERVER) && !defined(NO_WOLFSSL_CLIENT) && \
+    defined(HAVE_CRL) && defined(HAVE_CRL_MONITOR)
+#define CRL_MONITOR_TEST_ROUNDS 6
+#define CRL_MONITOR_REM_FILE_ATTEMPTS 20
+
+static int test_crl_monitor(void)
+{
+    func_args server_args;
+    func_args client_args;
+    THREAD_TYPE serverThread;
+    tcp_ready ready;
+    char buf[128];
+    char tmpDir[16];
+    char rounds[4];
+    char portNum[8];
+    const char* serverArgv[] = {
+        "testsuite",
+        "-A", "certs/ca-cert.pem",
+        "--crl-dir", tmpDir,
+        "-C", rounds,
+        "--quieter",
+        "-x",
+        "-p", "0"
+    };
+    const char* clientArgv[] = {
+        "testsuite",
+        "-C",
+        "-c", "certs/server-cert.pem",
+        "-k", "certs/server-key.pem",
+        "--quieter",
+        "-H", "exitWithRet",
+        "-p", portNum
+    };
+    int ret = -1;
+    int i = -1, j;
+
+    printf("\nRunning CRL monitor test\n");
+
+    sprintf(rounds, "%d", CRL_MONITOR_TEST_ROUNDS);
+
+    XMEMSET(&server_args, 0, sizeof(func_args));
+    XMEMSET(&client_args, 0, sizeof(func_args));
+
+    /* Create temp dir */
+    if (create_tmp_dir(tmpDir, sizeof(tmpDir) - 1) == NULL) {
+        fprintf(stderr, "Failed to create tmp dir");
+        goto cleanup;
+    }
+
+    server_args.argv = (char**)serverArgv;
+    server_args.argc = sizeof(serverArgv) / sizeof(*serverArgv);
+    client_args.signal = server_args.signal = &ready;
+    client_args.argv = (char**)clientArgv;
+    client_args.argc = sizeof(clientArgv) / sizeof(*clientArgv);
+
+    InitTcpReady(&ready);
+    start_thread(server_test, &server_args, &serverThread);
+    wait_tcp_ready(&server_args);
+    sprintf(portNum, "%d", server_args.signal->port);
+
+    for (i = 0; i < CRL_MONITOR_TEST_ROUNDS; i++) {
+        int expectFail;
+        if (i % 2 == 0) {
+            /* succeed on even rounds */
+            sprintf(buf, "%s/%s", tmpDir, "crl.pem");
+            if (copy_file("certs/crl/crl.pem", buf) != 0) {
+                fprintf(stderr, "[%d] Failed to copy file to %s\n", i, buf);
+                goto cleanup;
+            }
+            sprintf(buf, "%s/%s", tmpDir, "crl.revoked");
+            /* The monitor can be holding the file handle and this will cause
+             * the remove call to fail. Let's give the monitor a some time to
+             * finish up. */
+            for (j = 0; j < CRL_MONITOR_REM_FILE_ATTEMPTS; j++) {
+                /* i == 0 since there is nothing to delete in the first round */
+                if (i == 0 || rem_file(buf) == 0)
+                    break;
+                XSLEEP_MS(100);
+            }
+            if (j == CRL_MONITOR_REM_FILE_ATTEMPTS) {
+                fprintf(stderr, "[%d] Failed to remove file %s\n", i, buf);
+                goto cleanup;
+            }
+            expectFail = 0;
+        }
+        else {
+            /* fail on odd rounds */
+            sprintf(buf, "%s/%s", tmpDir, "crl.revoked");
+            if (copy_file("certs/crl/crl.revoked", buf) != 0) {
+                fprintf(stderr, "[%d] Failed to copy file to %s\n", i, buf);
+                goto cleanup;
+            }
+            sprintf(buf, "%s/%s", tmpDir, "crl.pem");
+            /* The monitor can be holding the file handle and this will cause
+             * the remove call to fail. Let's give the monitor a some time to
+             * finish up. */
+            for (j = 0; j < CRL_MONITOR_REM_FILE_ATTEMPTS; j++) {
+                if (rem_file(buf) == 0)
+                    break;
+                XSLEEP_MS(100);
+            }
+            if (j == CRL_MONITOR_REM_FILE_ATTEMPTS) {
+                fprintf(stderr, "[%d] Failed to remove file %s\n", i, buf);
+                goto cleanup;
+            }
+            expectFail = 1;
+        }
+        /* Give server a moment to register the file change */
+        XSLEEP_MS(100);
+
+        client_args.return_code = 0;
+        client_test(&client_args);
+
+        if (!expectFail) {
+            if (client_args.return_code != 0) {
+                fprintf(stderr, "[%d] Incorrect return %d\n", i,
+                        client_args.return_code);
+                goto cleanup;
+            }
+        }
+        else {
+            if (client_args.return_code == 0) {
+                fprintf(stderr, "[%d] Expected failure\n", i);
+                goto cleanup;
+            }
+        }
+    }
+
+    join_thread(serverThread);
+    ret = 0;
+cleanup:
+    if (ret != 0 && i >= 0)
+        fprintf(stderr, "test_crl_monitor failed on iteration %d\n", i);
+    sprintf(buf, "%s/%s", tmpDir, "crl.pem");
+    rem_file(buf);
+    sprintf(buf, "%s/%s", tmpDir, "crl.revoked");
+    rem_file(buf);
+    (void)rem_dir(tmpDir);
+    return ret;
+}
+#endif
+
+#if !defined(NO_WOLFSSL_SERVER) && !defined(NO_WOLFSSL_CLIENT) && \
    (!defined(WOLF_CRYPTO_CB_ONLY_RSA) && !defined(WOLF_CRYPTO_CB_ONLY_ECC))
 /* Perform a basic TLS handshake.
  *
@@ -262,6 +420,8 @@ static int test_tls(func_args* server_args)
     func_args echo_args;
     char* myArgv[NUMARGS];
     char arg[3][128];
+
+    printf("\nRunning TLS test\n");
 
     /* Set up command line arguments for echoclient to send input file
      * and write echoed data to temporary output file. */
@@ -374,6 +534,8 @@ static void simple_test(func_args* args)
     char *cliArgv[NUMARGS];
     char argvc[3][32];
 
+    printf("\nRunning simple test\n");
+
     for (i = 0; i < 9; i++)
         svrArgv[i] = argvs[i];
     for (i = 0; i < 3; i++)
@@ -424,149 +586,11 @@ static void simple_test(func_args* args)
 }
 #endif /* !NO_WOLFSSL_SERVER && !NO_WOLFSSL_CLIENT */
 
-
-/* Wait for the server to be ready for a connection.
- *
- * @param [in] args  Object to send to thread.
- */
-void wait_tcp_ready(func_args* args)
-{
-#if defined(_POSIX_THREADS) && !defined(__MINGW32__)
-    PTHREAD_CHECK_RET(pthread_mutex_lock(&args->signal->mutex));
-
-    if (!args->signal->ready)
-        PTHREAD_CHECK_RET(pthread_cond_wait(&args->signal->cond,
-                                            &args->signal->mutex));
-    args->signal->ready = 0; /* reset */
-
-    PTHREAD_CHECK_RET(pthread_mutex_unlock(&args->signal->mutex));
-#elif defined(NETOS)
-    (void)tx_mutex_get(&args->signal->mutex, TX_WAIT_FOREVER);
-
-    /* TODO:
-     * if (!args->signal->ready)
-     *    pthread_cond_wait(&args->signal->cond, &args->signal->mutex);
-     * args->signal->ready = 0; */
-
-    (void)tx_mutex_put(&args->signal->mutex);
-#elif defined(USE_WINDOWS_API)
-    /* Give peer a moment to get running */
-    #if defined(__MINGW32__) || defined(__MINGW64__)
-        Sleep(500);
-    #else
-        _sleep(500);
-    #endif
-    (void)args;
-#else
-    (void)args;
-#endif
-}
-
-
-/* Start a thread.
- *
- * @param [in]  fun     Function to executre in thread.
- * @param [in]  args    Object to send to function in thread.
- * @param [out] thread  Handle to thread.
- */
-void start_thread(THREAD_FUNC fun, func_args* args, THREAD_TYPE* thread)
-{
-#if defined(_POSIX_THREADS) && !defined(__MINGW32__)
-    PTHREAD_CHECK_RET(pthread_create(thread, 0, fun, args));
-    return;
-#elif defined(WOLFSSL_TIRTOS)
-    /* Initialize the defaults and set the parameters. */
-    Task_Params taskParams;
-    Task_Params_init(&taskParams);
-    taskParams.arg0 = (UArg)args;
-    taskParams.stackSize = 65535;
-    *thread = Task_create((Task_FuncPtr)fun, &taskParams, NULL);
-    if (*thread == NULL) {
-        printf("Failed to create new Task\n");
-    }
-    Task_yield();
-#elif defined(NETOS)
-    /* This can be adjusted by defining in user_settings.h, will default to 65k
-     * in the event it is undefined */
-    #ifndef TESTSUITE_THREAD_STACK_SZ
-        #define TESTSUITE_THREAD_STACK_SZ 65535
-    #endif
-    int result;
-    static void * TestSuiteThreadStack = NULL;
-
-    /* Assume only one additional thread is created concurrently. */
-    if (TestSuiteThreadStack == NULL)
-    {
-        TestSuiteThreadStack = (void *)malloc(TESTSUITE_THREAD_STACK_SZ);
-        if (TestSuiteThreadStack == NULL)
-        {
-            printf ("Stack allocation failure.\n");
-            return;
-        }
-    }
-
-    memset (thread, 0, sizeof *thread);
-
-    /* first create the idle thread:
-     * ARGS:
-     * Param1: pointer to thread
-     * Param2: name
-     * Param3 and 4: entry function and input
-     * Param5: pointer to thread stack
-     * Param6: stack size
-     * Param7 and 8: priority level and preempt threshold
-     * Param9 and 10: time slice and auto-start indicator */
-    result = tx_thread_create(thread,
-                       "WolfSSL TestSuiteThread",
-                       (entry_functionType)fun, (ULONG)args,
-                       TestSuiteThreadStack,
-                       TESTSUITE_THREAD_STACK_SZ,
-                       2, 2,
-                       1, TX_AUTO_START);
-    if (result != TX_SUCCESS)
-    {
-        printf("Ethernet Bypass Application: failed to create idle thread!\n");
-    }
-
-#else
-    *thread = (THREAD_TYPE)_beginthreadex(0, 0, fun, args, 0, 0);
-#endif
-}
-
-
-/* Join thread to wait for completion.
- *
- * @param [in] thread  Handle to thread.
- */
-void join_thread(THREAD_TYPE thread)
-{
-#if defined(_POSIX_THREADS) && !defined(__MINGW32__)
-    PTHREAD_CHECK_RET(pthread_join(thread, 0));
-#elif defined(WOLFSSL_TIRTOS)
-    while(1) {
-        if (Task_getMode(thread) == Task_Mode_TERMINATED) {
-            Task_sleep(5);
-            break;
-        }
-        Task_yield();
-    }
-#elif defined(NETOS)
-    /* TODO: */
-#else
-    int res = WaitForSingleObject((HANDLE)thread, INFINITE);
-    assert(res == WAIT_OBJECT_0);
-    res = CloseHandle((HANDLE)thread);
-    assert(res);
-    (void)res; /* Suppress un-used variable warning */
-#endif
-}
-
-
 #ifndef NO_SHA256
 /* Create SHA-256 hash of the file based on filename.
  *
  * @param [in]  file   Name of file.
- * @parma [out] check  Buffer to hold SHA-256 hash.
+ * @param [out] check  Buffer to hold SHA-256 hash.
  */
 void file_test(const char* file, byte* check)
 {

@@ -206,6 +206,7 @@
     \defgroup RSA Algorithms - RSA
     \defgroup SHA Algorithms - SHA 128/224/256/384/512
     \defgroup SipHash Algorithm - SipHash
+    \defgroup SrtpKdf Algorithm - SRTP KDF
     \defgroup SRP Algorithms - SRP
 
     \defgroup ASN ASN.1
@@ -221,7 +222,7 @@
     key operations and reducing the attack surface by restricting access to certificate and keys
     to the SIM.
 
-    IoT-Safe support can be enabled on an existing WOLFSSL_CTX contex, using wolfSSL_CTX_iotsafe_enable().\n
+    IoT-Safe support can be enabled on an existing WOLFSSL_CTX context, using wolfSSL_CTX_iotsafe_enable().\n
     Session created within the context can set the parameters for IoT-Safe key and files usage, and enable
     the public keys callback, with wolfSSL_iotsafe_on().
 

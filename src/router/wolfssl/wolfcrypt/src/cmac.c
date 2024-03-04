@@ -115,8 +115,12 @@ int wc_InitCmac_ex(Cmac* cmac, const byte* key, word32 keySz,
     XMEMSET(cmac, 0, sizeof(Cmac));
 
 #ifdef WOLF_CRYPTO_CB
-    if (devId != INVALID_DEVID) {
-        cmac->devId = devId;
+    /* Set devId regardless of value (invalid or not) */
+    cmac->devId = devId;
+    #ifndef WOLF_CRYPTO_CB_FIND
+    if (devId != INVALID_DEVID)
+    #endif
+    {
         cmac->devCtx = NULL;
 
         ret = wc_CryptoCb_Cmac(cmac, key, keySz, NULL, 0, NULL, NULL,
@@ -133,6 +137,8 @@ int wc_InitCmac_ex(Cmac* cmac, const byte* key, word32 keySz,
         return BAD_FUNC_ARG;
     }
 
+    ret = wc_AesInit(&cmac->aes, heap, devId);
+
 #if defined(WOLFSSL_SE050) && defined(WOLFSSL_SE050_CRYPT)
     cmac->useSWCrypt = useSW;
     if (cmac->useSWCrypt == 1) {
@@ -140,7 +146,10 @@ int wc_InitCmac_ex(Cmac* cmac, const byte* key, word32 keySz,
     }
 #endif
 
-    ret = wc_AesSetKey(&cmac->aes, key, keySz, NULL, AES_ENCRYPTION);
+    if (ret == 0) {
+        ret = wc_AesSetKey(&cmac->aes, key, keySz, NULL, AES_ENCRYPTION);
+    }
+
     if (ret == 0) {
         byte l[AES_BLOCK_SIZE];
 
@@ -178,7 +187,10 @@ int wc_CmacUpdate(Cmac* cmac, const byte* in, word32 inSz)
     }
 
 #ifdef WOLF_CRYPTO_CB
-    if (cmac->devId != INVALID_DEVID) {
+    #ifndef WOLF_CRYPTO_CB_FIND
+    if (cmac->devId != INVALID_DEVID)
+    #endif
+    {
         ret = wc_CryptoCb_Cmac(cmac, NULL, 0, in, inSz,
                 NULL, NULL, 0, NULL);
         if (ret != CRYPTOCB_UNAVAILABLE)
@@ -211,11 +223,28 @@ int wc_CmacUpdate(Cmac* cmac, const byte* in, word32 inSz)
     return ret;
 }
 
+int wc_CmacFree(Cmac* cmac)
+{
+    if (cmac == NULL)
+        return BAD_FUNC_ARG;
+#if defined(WOLFSSL_HASH_KEEP)
+    /* TODO: msg is leaked if wc_CmacFinal() is not called
+     * e.g. when multiple calls to wc_CmacUpdate() and one fails but
+     * wc_CmacFinal() not called. */
+    if (cmac->msg != NULL) {
+        XFREE(cmac->msg, cmac->heap, DYNAMIC_TYPE_TMP_BUFFER);
+    }
+#endif
+    wc_AesFree(&cmac->aes);
+    ForceZero(cmac, sizeof(Cmac));
+    return 0;
+}
 
-int wc_CmacFinal(Cmac* cmac, byte* out, word32* outSz)
+int wc_CmacFinalNoFree(Cmac* cmac, byte* out, word32* outSz)
 {
     int ret;
     const byte* subKey;
+    word32 remainder;
 
     if (cmac == NULL || out == NULL || outSz == NULL) {
         return BAD_FUNC_ARG;
@@ -225,7 +254,10 @@ int wc_CmacFinal(Cmac* cmac, byte* out, word32* outSz)
     }
 
 #ifdef WOLF_CRYPTO_CB
-    if (cmac->devId != INVALID_DEVID) {
+    #ifndef WOLF_CRYPTO_CB_FIND
+    if (cmac->devId != INVALID_DEVID)
+    #endif
+    {
         ret = wc_CryptoCb_Cmac(cmac, NULL, 0, NULL, 0, out, outSz, 0, NULL);
         if (ret != CRYPTOCB_UNAVAILABLE)
             return ret;
@@ -237,7 +269,11 @@ int wc_CmacFinal(Cmac* cmac, byte* out, word32* outSz)
         subKey = cmac->k1;
     }
     else {
-        word32 remainder = AES_BLOCK_SIZE - cmac->bufferSz;
+        /* ensure we will have a valid remainder value */
+        if (cmac->bufferSz > AES_BLOCK_SIZE) {
+            return BAD_STATE_E;
+        }
+        remainder = AES_BLOCK_SIZE - cmac->bufferSz;
 
         if (remainder == 0) {
             remainder = AES_BLOCK_SIZE;
@@ -245,6 +281,7 @@ int wc_CmacFinal(Cmac* cmac, byte* out, word32* outSz)
         if (remainder > 1) {
             XMEMSET(cmac->buffer + AES_BLOCK_SIZE - remainder, 0, remainder);
         }
+
         cmac->buffer[AES_BLOCK_SIZE - remainder] = 0x80;
         subKey = cmac->k2;
     }
@@ -255,21 +292,18 @@ int wc_CmacFinal(Cmac* cmac, byte* out, word32* outSz)
         XMEMCPY(out, cmac->digest, *outSz);
     }
 
-#if defined(WOLFSSL_HASH_KEEP)
-    /* TODO: msg is leaked if wc_CmacFinal() is not called
-     * e.g. when multiple calls to wc_CmacUpdate() and one fails but
-     * wc_CmacFinal() not called. */
-    if (cmac->msg != NULL) {
-        XFREE(cmac->msg, cmac->heap, DYNAMIC_TYPE_TMP_BUFFER);
-        cmac->msg = NULL;
-    }
-#endif
-    wc_AesFree(&cmac->aes);
-    ForceZero(cmac, sizeof(Cmac));
-
-    return ret;
+    return 0;
 }
 
+int wc_CmacFinal(Cmac* cmac, byte* out, word32* outSz) {
+    int ret;
+
+    if (cmac == NULL)
+        return BAD_FUNC_ARG;
+    ret = wc_CmacFinalNoFree(cmac, out, outSz);
+    (void)wc_CmacFree(cmac);
+    return ret;
+}
 
 int wc_AesCmacGenerate(byte* out, word32* outSz,
                        const byte* in, word32 inSz,
@@ -336,7 +370,7 @@ int wc_AesCmacVerify(const byte* check, word32 checkSz,
 
     XMEMSET(a, 0, aSz);
     ret = wc_AesCmacGenerate(a, &aSz, in, inSz, key, keySz);
-    compareRet = ConstantCompare(check, a, min(checkSz, aSz));
+    compareRet = ConstantCompare(check, a, (int)min(checkSz, aSz));
 
     if (ret == 0)
         ret = compareRet ? 1 : 0;

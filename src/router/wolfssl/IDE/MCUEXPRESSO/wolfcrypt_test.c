@@ -78,8 +78,6 @@ static void setup()
 #include "fsl_snvs_hp.h"
 static void setup()
 {
-    uint32_t sec;
-    uint8_t index;
     snvs_hp_rtc_datetime_t rtcDate;
     snvs_hp_rtc_config_t snvsRtcConfig;
 
@@ -138,7 +136,7 @@ int main(void)
         wolfCrypt_Cleanup();
     }
     else {
-    	PRINTF("Failied to initialize wolfCrypt\r\n");
+    	PRINTF("Failed to initialize wolfCrypt\r\n");
     }
 
 #if defined(FREESCALE_KSDK_2_0_TRNG) && defined(FREESCALE_RTC)

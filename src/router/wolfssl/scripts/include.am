@@ -87,6 +87,8 @@ noinst_SCRIPTS+= scripts/unit.test.in
 endif
 endif
 
+dist_noinst_SCRIPTS+= scripts/pem.test
+
 EXTRA_DIST +=  scripts/sniffer-static-rsa.pcap \
                scripts/sniffer-ipv6.pcap \
                scripts/sniffer-tls13-dh.pcap \
@@ -101,7 +103,8 @@ EXTRA_DIST +=  scripts/sniffer-static-rsa.pcap \
                scripts/benchmark.test \
                scripts/memtest.sh \
                scripts/makedistsmall.sh \
-               scripts/openssl_srtp.test
+               scripts/openssl_srtp.test \
+               scripts/aria-cmake-build-test.sh
 
 
 # leave openssl.test as extra until non bash works
@@ -114,8 +117,9 @@ EXTRA_DIST += scripts/stm32l4-v4_0_1_build.sh
 
 EXTRA_DIST += scripts/cleanup_testfiles.sh
 
+EXTRA_DIST += scripts/dtls.test
+
 if BUILD_DTLS13
-EXTRA_DIST += scripts/dtls13.test
 EXTRA_DIST += scripts/dtlscid.test
 endif
 

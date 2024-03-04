@@ -50,6 +50,35 @@
  * Constructor/Destructor/Initializer APIs
  ******************************************************************************/
 
+#if defined(OPENSSL_EXTRA) && !defined(NO_ASN)
+/* Set big number to be negative.
+ *
+ * @param [in, out] bn   Big number to make negative.
+ * @param [in]      neg  Whether number is negative.
+ * @return  1 on success.
+ * @return  -1 when bn or internal representation of bn is NULL.
+ */
+static int wolfssl_bn_set_neg(WOLFSSL_BIGNUM* bn, int neg)
+{
+    int ret = 1;
+
+    if (BN_IS_NULL(bn)) {
+        WOLFSSL_MSG("bn NULL error");
+        ret = -1;
+    }
+#if !defined(WOLFSSL_SP_MATH_ALL) || defined(WOLFSSL_SP_INT_NEGATIVE)
+    else if (neg) {
+        mp_setneg((mp_int*)bn->internal);
+    }
+    else {
+        ((mp_int*)bn->internal)->sign = MP_ZPOS;
+    }
+#endif
+
+    return ret;
+}
+#endif /* OPENSSL_EXTRA && !NO_ASN */
+
 #if defined(OPENSSL_EXTRA) || defined(OPENSSL_EXTRA_X509_SMALL)
 /* Get the internal representation value into an MP integer.
  *
@@ -277,6 +306,9 @@ void wolfSSL_BN_clear(WOLFSSL_BIGNUM* bn)
 #endif /* OPENSSL_EXTRA || OPENSSL_EXTRA_X509_SMALL */
 
 #ifdef OPENSSL_EXTRA
+
+static WOLFSSL_BIGNUM* bn_one = NULL;
+
 /* Return a big number with the value of one.
  *
  * @return  A big number with the value one on success.
@@ -320,6 +352,10 @@ const WOLFSSL_BIGNUM* wolfSSL_BN_value_one(void)
     return one;
 }
 
+static void wolfSSL_BN_free_one(void) {
+    wolfSSL_BN_free(bn_one);
+    bn_one = NULL;
+}
 
 /* Create a new big number with the same value as the one passed in.
  *
@@ -473,7 +509,8 @@ WOLFSSL_BIGNUM* wolfSSL_BN_bin2bn(const unsigned char* data, int len,
         }
         else {
             /* Decode into big number. */
-            if (mp_read_unsigned_bin((mp_int*)ret->internal, data, len) != 0) {
+            if (mp_read_unsigned_bin((mp_int*)ret->internal, data, (word32)len)
+                    != 0) {
                 WOLFSSL_MSG("mp_read_unsigned_bin failure");
                 /* Don't return anything on failure. bn will be freed if set. */
                 ret = NULL;
@@ -521,7 +558,7 @@ static char* wolfssl_bn_bn2radix(const WOLFSSL_BIGNUM* bn, int radix)
 
     if (!err) {
         /* Allocate string. */
-        str = (char*)XMALLOC(len, NULL, DYNAMIC_TYPE_OPENSSL);
+        str = (char*)XMALLOC((size_t)len, NULL, DYNAMIC_TYPE_OPENSSL);
         if (str == NULL) {
             WOLFSSL_MSG("BN_bn2hex malloc string failure");
             err = 1;
@@ -1244,7 +1281,6 @@ static int wolfssl_bn_add_word_int(WOLFSSL_BIGNUM *bn, WOLFSSL_BN_ULONG w,
     int sub)
 {
     int ret = 1;
-    int rc = 0;
 #if DIGIT_BIT < (SIZEOF_LONG * CHAR_BIT)
 #ifdef WOLFSSL_SMALL_STACK
     mp_int* w_mp = NULL;
@@ -1275,6 +1311,7 @@ static int wolfssl_bn_add_word_int(WOLFSSL_BIGNUM *bn, WOLFSSL_BN_ULONG w,
     }
 
     if (ret == 1) {
+        int rc = 0;
 #if DIGIT_BIT < (SIZEOF_LONG * CHAR_BIT)
         if (w > (WOLFSSL_BN_ULONG)MP_MASK) {
             /* Initialize temporary MP integer. */
@@ -1652,22 +1689,30 @@ int wolfSSL_BN_div(WOLFSSL_BIGNUM* dv, WOLFSSL_BIGNUM* rem,
     const WOLFSSL_BIGNUM* a, const WOLFSSL_BIGNUM* d, WOLFSSL_BN_CTX* ctx)
 {
     int ret = 1;
+    WOLFSSL_BIGNUM* res = dv;
 
     /* BN context not needed. */
     (void)ctx;
 
     WOLFSSL_ENTER("wolfSSL_BN_div");
 
+    if (BN_IS_NULL(res)) {
+        res = wolfSSL_BN_new();
+    }
+
     /* Validate parameters. */
-    if (BN_IS_NULL(dv) || BN_IS_NULL(rem) || BN_IS_NULL(a) || BN_IS_NULL(d)) {
+    if (BN_IS_NULL(res) || BN_IS_NULL(rem) || BN_IS_NULL(a) || BN_IS_NULL(d)) {
         ret = 0;
     }
 
     /* Have wolfCrypt perform operation with internal representations. */
     if ((ret == 1) && (mp_div((mp_int*)a->internal, (mp_int*)d->internal,
-            (mp_int*)dv->internal, (mp_int*)rem->internal) != MP_OKAY)) {
+            (mp_int*)res->internal, (mp_int*)rem->internal) != MP_OKAY)) {
         ret = 0;
     }
+
+    if (res != dv)
+        wolfSSL_BN_free(res);
 
     WOLFSSL_LEAVE("wolfSSL_BN_div", ret);
     return ret;
@@ -1741,7 +1786,7 @@ int wolfSSL_BN_mod_add(WOLFSSL_BIGNUM *r, const WOLFSSL_BIGNUM *a,
         ret = 0;
     }
 
-    /* Perfom operation with wolfCrypt. */
+    /* Perform operation with wolfCrypt. */
     if ((ret == 1) && (mp_addmod((mp_int*)a->internal, (mp_int*)b->internal,
             (mp_int*)m->internal, (mp_int*)r->internal) != MP_OKAY)) {
         WOLFSSL_MSG("mp_add_d error");
@@ -1937,7 +1982,7 @@ int wolfSSL_BN_gcd(WOLFSSL_BIGNUM* r, WOLFSSL_BIGNUM* a, WOLFSSL_BIGNUM* b,
  * @param [in]      top      Whether top bits must be set.
  *                           Valid values: WOLFSSL_BN_RAND_TOP_ANY,
  *                           WOLFSSL_BN_RAND_TOP_ONE, WOLFSSL_BN_RAND_TOP_TWO.
- * @param [in]      botttom  Whether bottom bit must be set.
+ * @param [in]      bottom   Whether bottom bit must be set.
  *                           Valid values: WOLFSSL_BN_RAND_BOTTOM_ANY,
                              WOLFSSL_BN_RAND_BOTTOM_ODD.
  * @return  1 on success.
@@ -1949,7 +1994,7 @@ int wolfSSL_BN_gcd(WOLFSSL_BIGNUM* r, WOLFSSL_BIGNUM* a, WOLFSSL_BIGNUM* b,
 int wolfSSL_BN_rand(WOLFSSL_BIGNUM* bn, int bits, int top, int bottom)
 {
     int ret = 1;
-    int len = (bits + 7) / 8;
+    word32 len = (word32)((bits + 7) / 8);
     WC_RNG* rng;
 
     WOLFSSL_ENTER("wolfSSL_BN_rand");
@@ -2045,7 +2090,7 @@ int wolfSSL_BN_rand(WOLFSSL_BIGNUM* bn, int bits, int top, int bottom)
  * @param [in]      top      Whether top bits must be set.
  *                           Valid values: WOLFSSL_BN_RAND_TOP_ANY,
  *                           WOLFSSL_BN_RAND_TOP_ONE, WOLFSSL_BN_RAND_TOP_TWO.
- * @param [in]      botttom  Whether bottom bit must be set.
+ * @param [in]      bottom   Whether bottom bit must be set.
  *                           Valid values: WOLFSSL_BN_RAND_BOTTOM_ANY,
                              WOLFSSL_BN_RAND_BOTTOM_ODD.
  * @return  1 on success.

@@ -52,8 +52,8 @@ extern "C" {
     /* reduce stack use. For variables over 100 bytes allocate from heap */
     #define WOLFSSL_SMALL_STACK
 
-    /* disable the built-in socket support and use the IO callbacks.
-     * Set with wolfSSL_CTX_SetIORecv/wolfSSL_CTX_SetIOSend
+    /* Disable the built-in socket support and use the IO callbacks.
+     * Set IO callbacks with wolfSSL_CTX_SetIORecv/wolfSSL_CTX_SetIOSend
      */
     #define WOLFSSL_USER_IO
 #endif
@@ -61,17 +61,7 @@ extern "C" {
 /* ------------------------------------------------------------------------- */
 /* Math Configuration */
 /* ------------------------------------------------------------------------- */
-#undef USE_FAST_MATH
-#if 1
-    /* fast math (tfmc.) (stack based and timing resistant) */
-    #define USE_FAST_MATH
-    #define TFM_TIMING_RESISTANT
-#else
-    /* normal heap based integer.c (not timing resistant) */
-#endif
-
 /* Wolf Single Precision Math */
-#undef WOLFSSL_SP
 #if 1
     #define WOLFSSL_HAVE_SP_RSA
     #define WOLFSSL_HAVE_SP_DH
@@ -79,8 +69,7 @@ extern "C" {
     //#define WOLFSSL_SP_4096 /* Enable RSA/RH 4096-bit support */
     //#define WOLFSSL_SP_384 /* Enable ECC 384-bit SECP384R1 support */
 
-    //#define WOLFSSL_SP_CACHE_RESISTANT
-    #define WOLFSSL_SP_MATH     /* only SP math - disables integer.c/tfm.c */
+    //#define WOLFSSL_SP_MATH     /* only SP math - disables integer.c/tfm.c */
     #define WOLFSSL_SP_MATH_ALL /* use SP math for all key sizes and curves */
 
     //#define WOLFSSL_SP_NO_MALLOC
@@ -99,7 +88,15 @@ extern "C" {
     //#define WOLFSSL_SP_ARM64_ASM
     //#define WOLFSSL_SP_ARM_THUMB_ASM
     //#define WOLFSSL_SP_ARM_CORTEX_M_ASM
+#elif 1
+    /* Fast Math (tfm.c) (stack based and timing resistant) */
+    #define USE_FAST_MATH
+    #define TFM_TIMING_RESISTANT
+#else
+    /* Normal (integer.c) (heap based, not timing resistant) - not recommended*/
+    #define USE_INTEGER_HEAP_MATH
 #endif
+
 
 /* ------------------------------------------------------------------------- */
 /* Crypto */
@@ -184,7 +181,7 @@ extern "C" {
             /* use heap allocation for ECC points */
             #define ALT_ECC_SIZE
 
-            /* wolfSSL will compute the FP_MAX_BITS_ECC, but it can be overriden */
+            /* wolfSSL will compute the FP_MAX_BITS_ECC, but it can be overridden */
             //#define FP_MAX_BITS_ECC (256 * 2)
         #endif
 
@@ -507,6 +504,9 @@ extern "C" {
 //#define NO_CRYPT_TEST
 //#define NO_CRYPT_BENCHMARK
 //#define WOLFCRYPT_ONLY
+
+/* do not warm when file is included to be built and not required to be */
+#define WOLFSSL_IGNORE_FILE_WARN
 
 /* In-lining of misc.c functions */
 /* If defined, must include wolfcrypt/src/misc.c in build */

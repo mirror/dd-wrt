@@ -6,7 +6,7 @@
     \param key key pointer
     \param keySz size of the key pointer (16, 24 or 32)
     \param type Always WC_CMAC_AES = 1
-    \param unused not used, exists for potential future use around compatiblity
+    \param unused not used, exists for potential future use around compatibility
 
     _Example_
     \code
@@ -23,6 +23,8 @@
     \sa wc_InitCmac_ex
     \sa wc_CmacUpdate
     \sa wc_CmacFinal
+    \sa wc_CmacFinalNoFree
+    \sa wc_CmacFree
 */
 int wc_InitCmac(Cmac* cmac,
                 const byte* key, word32 keySz,
@@ -36,7 +38,7 @@ int wc_InitCmac(Cmac* cmac,
     \param key key pointer
     \param keySz size of the key pointer (16, 24 or 32)
     \param type Always WC_CMAC_AES = 1
-    \param unused not used, exists for potential future use around compatiblity
+    \param unused not used, exists for potential future use around compatibility
     \param heap pointer to the heap hint used for dynamic allocation. Typically used with our static memory option. Can be NULL.
     \param devId ID to use with async hardware. Set to INVALID_DEVID if not using async hardware.
 
@@ -55,6 +57,8 @@ int wc_InitCmac(Cmac* cmac,
     \sa wc_InitCmac_ex
     \sa wc_CmacUpdate
     \sa wc_CmacFinal
+    \sa wc_CmacFinalNoFree
+    \sa wc_CmacFree
 */
 int wc_InitCmac_ex(Cmac* cmac,
                 const byte* key, word32 keySz,
@@ -75,13 +79,38 @@ int wc_InitCmac_ex(Cmac* cmac,
 
     \sa wc_InitCmac
     \sa wc_CmacFinal
+    \sa wc_CmacFinalNoFree
+    \sa wc_CmacFree
 */
 int wc_CmacUpdate(Cmac* cmac,
                   const byte* in, word32 inSz);
 
+
 /*!
     \ingroup CMAC
-    \brief Generate the final result using Cipher-based Message Authentication Code
+    \brief Generate the final result using Cipher-based Message Authentication Code, deferring context cleanup.
+    \return 0 on success
+    \param cmac pointer to the Cmac structure
+    \param out pointer to return the result
+    \param outSz pointer size of output (in/out)
+
+    _Example_
+    \code
+    ret = wc_CmacFinalNoFree(cmac, out, &outSz);
+    (void)wc_CmacFree(cmac);
+    \endcode
+
+    \sa wc_InitCmac
+    \sa wc_CmacFinal
+    \sa wc_CmacFinalNoFree
+    \sa wc_CmacFree
+*/
+int wc_CmacFinalNoFree(Cmac* cmac,
+                 byte* out, word32* outSz);
+
+/*!
+    \ingroup CMAC
+    \brief Generate the final result using Cipher-based Message Authentication Code, and clean up the context with wc_CmacFree().
     \return 0 on success
     \param cmac pointer to the Cmac structure
     \param out pointer to return the result
@@ -93,14 +122,34 @@ int wc_CmacUpdate(Cmac* cmac,
     \endcode
 
     \sa wc_InitCmac
-    \sa wc_CmacFinal
+    \sa wc_CmacFinalNoFree
+    \sa wc_CmacFinalNoFree
+    \sa wc_CmacFree
 */
-int wc_CmacFinal(Cmac* cmac,
-                 byte* out, word32* outSz);
+int wc_CmacFinalNoFree(Cmac* cmac);
 
 /*!
     \ingroup CMAC
-    \brief Single shot fuction for generating a CMAC
+    \brief Clean up allocations in a CMAC context.
+    \return 0 on success
+    \param cmac pointer to the Cmac structure
+
+    _Example_
+    \code
+    ret = wc_CmacFinalNoFree(cmac, out, &outSz);
+    (void)wc_CmacFree(cmac);
+    \endcode
+
+    \sa wc_InitCmac
+    \sa wc_CmacFinalNoFree
+    \sa wc_CmacFinal
+    \sa wc_CmacFree
+*/
+int wc_CmacFree(Cmac* cmac);
+
+/*!
+    \ingroup CMAC
+    \brief Single shot function for generating a CMAC
     \return 0 on success
     \param out pointer to return the result
     \param outSz pointer size of output (in/out)
@@ -122,7 +171,7 @@ int wc_AesCmacGenerate(byte* out, word32* outSz,
 
 /*!
     \ingroup CMAC
-    \brief Single shot fuction for validating a CMAC
+    \brief Single shot function for validating a CMAC
     \return 0 on success
     \param check pointer to return the result
     \param checkSz size of checkout buffer

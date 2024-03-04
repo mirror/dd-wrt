@@ -25,7 +25,7 @@
 
 #include <wolfssl/wolfcrypt/settings.h>
 
-#if defined(WOLFSSL_CAAM) && defined(HAVE_ECC)
+#if defined(WOLFSSL_CAAM) && defined(HAVE_ECC) && defined(WOLFSSL_CAAM_ECC)
 
 #include <wolfssl/wolfcrypt/logging.h>
 #include <wolfssl/wolfcrypt/error-crypt.h>
@@ -45,6 +45,12 @@
 
 #if defined(WOLFSSL_CAAM_DEBUG) || defined(WOLFSSL_CAAM_PRINT)
 #include <stdio.h>
+#endif
+
+#ifndef WOLFSSL_HAVE_ECC_KEY_GET_PRIV
+    /* FIPS build has replaced ecc.h. */
+    #define wc_ecc_key_get_priv(key) (&((key)->k))
+    #define WOLFSSL_HAVE_ECC_KEY_GET_PRIV
 #endif
 
 #if defined(WOLFSSL_DEVCRYPTO_ECDSA)
@@ -79,7 +85,8 @@ static int wc_CAAM_DevEccSign(const byte* in, int inlen, byte* out,
     keySz  = wc_ecc_size(key);
 
     /* private key */
-    if (mp_to_unsigned_bin_len(&key->k, pk, keySz) != MP_OKAY) {
+    if (mp_to_unsigned_bin_len(wc_ecc_key_get_priv(key), pk, keySz) != MP_OKAY)
+    {
         return MP_TO_E;
     }
 
@@ -191,7 +198,8 @@ static int wc_CAAM_DevEcdh(ecc_key* private_key, ecc_key* public_key, byte* out,
     XMEMCPY(qxy+qxSz, qy, qySz);
 
     /* private key */
-    if (mp_to_unsigned_bin_len(&private_key->k, pk, keySz) != MP_OKAY) {
+    if (mp_to_unsigned_bin_len(wc_ecc_key_get_priv(private_key), pk, keySz) !=
+            MP_OKAY) {
         WOLFSSL_MSG("error getting private key buffer");
         return MP_TO_E;
     }
@@ -286,7 +294,7 @@ int wc_CAAM_EccSign(const byte* in, int inlen, byte* out, word32* outlen,
 {
     const ecc_set_type* dp;
     word32 args[4] = {0};
-    CAAM_BUFFER buf[9]  = {0};
+    CAAM_BUFFER buf[9];
     int ret, keySz;
     word32 ecdsel = 0;
     byte r[MAX_ECC_BYTES] = {0};
@@ -330,20 +338,21 @@ int wc_CAAM_EccSign(const byte* in, int inlen, byte* out, word32* outlen,
     }
     else {
         if (key->blackKey == CAAM_BLACK_KEY_CCM) {
-            if (mp_to_unsigned_bin_len(&key->k, pk, keySz + WC_CAAM_MAC_SZ)
-                != MP_OKAY) {
+            if (mp_to_unsigned_bin_len(wc_ecc_key_get_priv(key), pk,
+                    keySz + WC_CAAM_MAC_SZ) != MP_OKAY) {
                 return MP_TO_E;
             }
             buf[idx].Length = keySz + WC_CAAM_MAC_SZ;
         }
         else {
-            if (mp_to_unsigned_bin_len(&key->k, pk, keySz) != MP_OKAY) {
+            if (mp_to_unsigned_bin_len(wc_ecc_key_get_priv(key), pk, keySz) !=
+                    MP_OKAY) {
                 return MP_TO_E;
             }
             buf[idx].Length = keySz;
         }
         buf[idx].TheAddress = (CAAM_ADDRESS)pk;
-        args[0] = key->blackKey; /* potentail black key, not in sm */
+        args[0] = key->blackKey; /* potential black key, not in sm */
     }
     idx++;
 
@@ -402,7 +411,7 @@ static int wc_CAAM_EccVerify_ex(mp_int* r, mp_int *s, const byte* hash,
 {
     const ecc_set_type* dp;
     word32 args[4] = {0};
-    CAAM_BUFFER buf[9] = {0};
+    CAAM_BUFFER buf[9];
     int ret;
     int keySz;
     word32 idx = 0;
@@ -528,7 +537,7 @@ int wc_CAAM_Ecdh(ecc_key* private_key, ecc_key* public_key, byte* out,
 {
     const ecc_set_type* dp;
     word32 args[4] = {0};
-    CAAM_BUFFER buf[9]  = {0};
+    CAAM_BUFFER buf[9];
     int ret, keySz;
     word32 ecdsel = 0; /* ecc parameters in hardware */
     word32 idx    = 0;
@@ -599,14 +608,15 @@ int wc_CAAM_Ecdh(ecc_key* private_key, ecc_key* public_key, byte* out,
         }
 
         if (private_key->blackKey == CAAM_BLACK_KEY_CCM) {
-            if (mp_to_unsigned_bin_len(&private_key->k, pk,
+            if (mp_to_unsigned_bin_len(wc_ecc_key_get_priv(private_key), pk,
                 keySz + WC_CAAM_MAC_SZ) != MP_OKAY) {
                 return MP_TO_E;
             }
             buf[idx].Length = keySz + WC_CAAM_MAC_SZ;
         }
         else {
-            if (mp_to_unsigned_bin_len(&private_key->k, pk, keySz) != MP_OKAY) {
+            if (mp_to_unsigned_bin_len(wc_ecc_key_get_priv(private_key), pk,
+                    keySz) != MP_OKAY) {
                 return MP_TO_E;
             }
             buf[idx].Length = keySz;

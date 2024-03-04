@@ -43,13 +43,7 @@ that can be serialized and deserialized in a cross-platform way.
     #define NO_ASN_TIME /* backwards compatibility with NO_TIME_H */
 #endif
 
-#include <wolfssl/wolfcrypt/integer.h>
-
-/* fips declare of RsaPrivateKeyDecode @wc_fips */
-#if defined(HAVE_FIPS) && !defined(NO_RSA) && \
-    (!defined(HAVE_FIPS_VERSION) || (HAVE_FIPS_VERSION < 2))
-    #include <cyassl/ctaocrypt/rsa.h>
-#endif
+#include <wolfssl/wolfcrypt/wolfmath.h>
 
 #ifndef NO_DH
     #include <wolfssl/wolfcrypt/dh.h>
@@ -64,6 +58,9 @@ that can be serialized and deserialized in a cross-platform way.
     #include <wolfssl/wolfcrypt/md5.h>
 #endif
 #include <wolfssl/wolfcrypt/sha256.h>
+#ifdef WOLFSSL_SM3
+    #include <wolfssl/wolfcrypt/sm3.h>
+#endif
 #include <wolfssl/wolfcrypt/asn_public.h>   /* public interface */
 
 #if defined(NO_SHA) && defined(NO_SHA256)
@@ -95,16 +92,27 @@ enum ASN_Tags {
     ASN_OCTET_STRING      = 0x04,
     ASN_TAG_NULL          = 0x05,
     ASN_OBJECT_ID         = 0x06,
+    ASN_OBJECT_DESC       = 0x07,
+    ASN_INSTANCE_OF       = 0x08,
+    ASN_REAL              = 0x09,
     ASN_ENUMERATED        = 0x0a,
+    ASN_EMBEDDED_PDV      = 0x0b,
     ASN_UTF8STRING        = 0x0c,
+    ASN_RELATIVE_OID      = 0x0d,
     ASN_SEQUENCE          = 0x10,
     ASN_SET               = 0x11,
+    ASN_NUMERICSTRING     = 0x12,
     ASN_PRINTABLE_STRING  = 0x13,
     ASN_T61STRING         = 0x14,
+    ASN_VIDEOTEXSTRING    = 0x15,
     ASN_IA5_STRING        = 0x16,
     ASN_UTC_TIME          = 0x17,
     ASN_GENERALIZED_TIME  = 0x18,
+    ASN_GRAPHICSTRING     = 0x19,
+    ASN_ISO646STRING      = 0x1a,
+    ASN_GENERALSTRING     = 0x1b,
     ASN_UNIVERSALSTRING   = 0x1c,
+    ASN_CHARACTER_STRING  = 0x1d,
     ASN_BMPSTRING         = 0x1e,
     ASN_TYPE_MASK         = 0x1f,
 
@@ -116,6 +124,7 @@ enum ASN_Tags {
     ASN_APPLICATION       = 0x40,
     ASN_CONTEXT_SPECIFIC  = 0x80,
     ASN_PRIVATE           = 0xC0,
+    ASN_CLASS_MASK        = 0xC0,
 
     CRL_EXTENSIONS        = 0xa0,
     ASN_EXTENSIONS        = 0xa3,
@@ -127,6 +136,7 @@ enum ASN_Tags {
     ASN_DIR_TYPE          = 0x04,
     ASN_URI_TYPE          = 0x06, /* the value 6 is from GeneralName OID */
     ASN_IP_TYPE           = 0x07, /* the value 7 is from GeneralName OID */
+    ASN_RID_TYPE          = 0x08,
 
     /* PKCS #7 types */
     ASN_ENC_CONTENT       = 0x00,
@@ -153,7 +163,7 @@ enum ASN_Tags {
 
     /* OneAsymmetricKey Fields */
     ASN_ASYMKEY_ATTRS     = 0x00,
-    ASN_ASYMKEY_PUBKEY    = 0x01,
+    ASN_ASYMKEY_PUBKEY    = 0x01
 };
 
 /* NOTE: If ASN_UTC_TIME_SIZE or ASN_GENERALIZED_TIME_SIZE are ever modified
@@ -184,10 +194,12 @@ enum ASNItem_DataType {
     ASN_DATA_TYPE_REPLACE_BUFFER = 7,
     /* Big number as an mp_int. */
     ASN_DATA_TYPE_MP             = 8,
+    /* Big number as an mp_int that has already been initialized. */
+    ASN_DATA_TYPE_MP_INITED      = 9,
     /* Big number as a positive or negative mp_int. */
-    ASN_DATA_TYPE_MP_POS_NEG     = 9,
+    ASN_DATA_TYPE_MP_POS_NEG     = 10,
     /* ASN.1 CHOICE. A 0 terminated list of tags that are valid. */
-    ASN_DATA_TYPE_CHOICE         = 10,
+    ASN_DATA_TYPE_CHOICE         = 11
 };
 
 /* A template entry describing an ASN.1 item. */
@@ -310,6 +322,7 @@ WOLFSSL_LOCAL void GetASN_Buffer(ASNGetData *dataASN, byte* data,
 WOLFSSL_LOCAL void GetASN_ExpBuffer(ASNGetData *dataASN, const byte* data,
     word32 length);
 WOLFSSL_LOCAL void GetASN_MP(ASNGetData *dataASN, mp_int* num);
+WOLFSSL_LOCAL void GetASN_MP_Inited(ASNGetData *dataASN, mp_int* num);
 WOLFSSL_LOCAL void GetASN_MP_PosNeg(ASNGetData *dataASN, mp_int* num);
 WOLFSSL_LOCAL void GetASN_Choice(ASNGetData *dataASN, const byte* options);
 WOLFSSL_LOCAL void GetASN_Boolean(ASNGetData *dataASN, byte* num);
@@ -397,6 +410,17 @@ WOLFSSL_LOCAL void SetASN_OID(ASNSetData *dataASN, int oid, int oidType);
 #define GetASN_MP(dataASN, num)                                        \
     do {                                                               \
         (dataASN)->dataType = ASN_DATA_TYPE_MP;                        \
+        (dataASN)->data.mp  = num;                                     \
+    } while (0)
+
+/* Setup ASN data item to get a number into an mp_int that is initialized.
+ *
+ * @param [in] dataASN  Dynamic ASN data item.
+ * @param [in] num      Multi-precision number object.
+ */
+#define GetASN_MP_Inited(dataASN, num)                                 \
+    do {                                                               \
+        (dataASN)->dataType = ASN_DATA_TYPE_MP_INITED;                 \
         (dataASN)->data.mp  = num;                                     \
     } while (0)
 
@@ -681,12 +705,14 @@ enum DN_Tags {
     ASN_DNQUALIFIER   = 0x2e,   /* dnQualifier */
 #endif /* WOLFSSL_CERT_NAME_ALL */
 
-    ASN_EMAIL_NAME    = 0x98,   /* not actual OID (see attrEmailOid) */
-    ASN_CUSTOM_NAME   = 0x99,   /* not actual OID (see CertOidField) */
+
+    ASN_CONTENT_TYPE  = 0x97, /* not actual OID (see attrPkcs9ContentTypeOid) */
+    ASN_EMAIL_NAME    = 0x98, /* not actual OID (see attrEmailOid) */
+    ASN_CUSTOM_NAME   = 0x99, /* not actual OID (see CertOidField) */
 
     /* pilot attribute types
      * OID values of 0.9.2342.19200300.100.1.* */
-    ASN_FAVOURITE_DRINK  = 0x05, /* favouriteDrink */
+    ASN_FAVOURITE_DRINK  = 0x13, /* favouriteDrink */
     ASN_DOMAIN_COMPONENT = 0x19  /* DC */
 };
 
@@ -739,6 +765,7 @@ extern const WOLFSSL_ObjectInfo wolfssl_object_info[];
 #define WOLFSSL_USER_ID          "/UID="
 #define WOLFSSL_DOMAIN_COMPONENT "/DC="
 #define WOLFSSL_FAVOURITE_DRINK  "/favouriteDrink="
+#define WOLFSSL_CONTENT_TYPE     "/contentType="
 
 #if defined(WOLFSSL_APACHE_HTTPD)
     /* otherName strings */
@@ -857,10 +884,25 @@ enum ECC_TYPES
 #ifndef WC_ASN_NAME_MAX
     #if defined(OPENSSL_EXTRA) || defined(OPENSSL_EXTRA_X509_SMALL) || \
         defined(WOLFSSL_CERT_EXT)
-        #define WC_ASN_NAME_MAX 330
+        #ifdef WOLFSSL_MULTI_ATTRIB
+            #define WC_ASN_NAME_MAX 360
+        #else
+            #define WC_ASN_NAME_MAX 330
+        #endif
     #else
-        #define WC_ASN_NAME_MAX 256
+        #ifdef WOLFSSL_MULTI_ATTRIB
+            #define WC_ASN_NAME_MAX 330
+        #else
+            #define WC_ASN_NAME_MAX 256
+        #endif
     #endif
+#endif
+
+/* Maximum OID dotted form size. */
+#define ASN1_OID_DOTTED_MAX_SZ         16
+
+#ifndef WOLFSSL_ASN_MAX_LENGTH_SZ
+    #define WOLFSSL_ASN_MAX_LENGTH_SZ 5 /* 1 byte length + 4 bytes of number */
 #endif
 
 enum Misc_ASN {
@@ -869,7 +911,9 @@ enum Misc_ASN {
     ASN_BOOL_SIZE       =   2,     /* including type */
     ASN_ECC_HEADER_SZ   =   2,     /* String type + 1 byte len */
     ASN_ECC_CONTEXT_SZ  =   2,     /* Content specific type + 1 byte len */
-#if defined(NO_SHA) || (!defined(NO_SHA256) && defined(WC_ASN_HASH_SHA256))
+#if defined(WOLFSSL_SM2) && defined(WOLFSSL_SM3)
+    KEYID_SIZE          = WC_SM3_DIGEST_SIZE,
+#elif defined(NO_SHA) || (!defined(NO_SHA256) && defined(WC_ASN_HASH_SHA256))
     KEYID_SIZE          = WC_SHA256_DIGEST_SIZE,
 #else
     KEYID_SIZE          = WC_SHA_DIGEST_SIZE,
@@ -903,18 +947,18 @@ enum Misc_ASN {
 #endif
     MAX_SIG_SZ          = 256,
     MAX_ALGO_SZ         =  20,
-    MAX_SHORT_SZ        =   6,     /* asn int + byte len + 4 byte length */
-    MAX_LENGTH_SZ       =   4,     /* Max length size for DER encoding */
-    MAX_SEQ_SZ          =   5,     /* enum(seq | con) + length(4) */
-    MAX_SET_SZ          =   5,     /* enum(set | con) + length(4) */
-    MAX_OCTET_STR_SZ    =   5,     /* enum(set | con) + length(4) */
-    MAX_EXP_SZ          =   5,     /* enum(contextspec|con|exp) + length(4) */
-    MAX_PRSTR_SZ        =   5,     /* enum(prstr) + length(4) */
+    MAX_LENGTH_SZ       = WOLFSSL_ASN_MAX_LENGTH_SZ, /* Max length size for DER encoding */
+    MAX_SHORT_SZ        = (1 + MAX_LENGTH_SZ),     /* asn int + byte len + 4 byte length */
+    MAX_SEQ_SZ          = (1 + MAX_LENGTH_SZ), /* enum(seq | con) + length(5) */
+    MAX_SET_SZ          = (1 + MAX_LENGTH_SZ), /* enum(set | con) + length(5) */
+    MAX_OCTET_STR_SZ    = (1 + MAX_LENGTH_SZ), /* enum(set | con) + length(5) */
+    MAX_EXP_SZ          = (1 + MAX_LENGTH_SZ), /* enum(contextspec|con|exp) + length(5) */
+    MAX_PRSTR_SZ        = (1 + MAX_LENGTH_SZ), /* enum(prstr) + length(5) */
     MAX_VERSION_SZ      =   5,     /* enum + id + version(byte) + (header(2))*/
-    MAX_ENCODED_DIG_ASN_SZ= 9,     /* enum(bit or octet) + length(4) */
+    MAX_ENCODED_DIG_ASN_SZ = (5 + MAX_LENGTH_SZ),   /* enum(bit or octet) + length(5) */
     MAX_ENCODED_DIG_SZ  =  64 + MAX_ENCODED_DIG_ASN_SZ, /* asn header + sha512 */
-    MAX_RSA_INT_SZ      = 517,     /* RSA raw sz 4096 for bits + tag + len(4) */
-    MAX_DSA_INT_SZ      = 389,     /* DSA raw sz 3072 for bits + tag + len(4) */
+    MAX_RSA_INT_SZ      = (512 + 1 + MAX_LENGTH_SZ), /* RSA raw sz 4096 for bits + tag + len(5) */
+    MAX_DSA_INT_SZ      = (384 + 1 + MAX_LENGTH_SZ), /* DSA raw sz 3072 for bits + tag + len(5) */
     MAX_DSA_PUBKEY_SZ   = (DSA_PUB_INTS * MAX_DSA_INT_SZ) + (2 * MAX_SEQ_SZ) +
                           2 + MAX_LENGTH_SZ, /* Maximum size of a DSA public
                                       key taken from wc_SetDsaPublicKey. */
@@ -964,7 +1008,6 @@ enum Misc_ASN {
     MAX_CERTPOL_NB      = CTC_MAX_CERTPOL_NB,/* Max number of Cert Policy */
     MAX_CERTPOL_SZ      = CTC_MAX_CERTPOL_SZ,
 #endif
-    MAX_AIA_SZ          = 2,       /* Max Authority Info Access extension size*/
     OCSP_NONCE_EXT_SZ   = 35,      /* OCSP Nonce Extension size */
     MAX_OCSP_EXT_SZ     = 58,      /* Max OCSP Extension length */
     MAX_OCSP_NONCE_SZ   = 16,      /* OCSP Nonce size           */
@@ -993,7 +1036,7 @@ enum Misc_ASN {
     PEM_LINE_SZ        = 64,               /* Length of Base64 encoded line, not including new line */
     PEM_LINE_LEN       = PEM_LINE_SZ + 12, /* PEM line max + fudge */
 
-    COUNTRY_CODE_LEN   = 2,        /* RFC 3739 */
+    COUNTRY_CODE_LEN   = 2         /* RFC 3739 */
 };
 
 #ifndef WC_MAX_NAME_ENTRIES
@@ -1051,7 +1094,8 @@ enum Hash_Sum  {
     SHA3_384h = 422,
     SHA3_512h = 423,
     SHAKE128h = 424,
-    SHAKE256h = 425
+    SHAKE256h = 425,
+    SM3h      = 640
 };
 
 #if !defined(NO_DES3) || !defined(NO_AES)
@@ -1085,6 +1129,7 @@ enum Key_Sum {
     RSAPSSk           = 654,
     RSAESOAEPk        = 651, /* 1.2.840.113549.1.1.7 */
     ECDSAk            = 518,
+    SM2k              = 667,
     ED25519k          = 256, /* 1.3.101.112 */
     X25519k           = 254, /* 1.3.101.110 */
     ED448k            = 257, /* 1.3.101.113 */
@@ -1100,7 +1145,7 @@ enum Key_Sum {
     SPHINCS_FAST_LEVEL5k   = 282, /* 1 3 9999 6 9 3 */
     SPHINCS_SMALL_LEVEL1k  = 287, /* 1 3 9999 6 7 10 */
     SPHINCS_SMALL_LEVEL3k  = 285, /* 1 3 9999 6 8 7 */
-    SPHINCS_SMALL_LEVEL5k  = 286, /* 1 3 9999 6 9 7 */
+    SPHINCS_SMALL_LEVEL5k  = 286  /* 1 3 9999 6 9 7 */
 };
 
 #if !defined(NO_AES) || defined(HAVE_PKCS7)
@@ -1125,14 +1170,14 @@ enum Key_Agree {
     dhSinglePass_stdDH_sha224kdf_scheme = 188,
     dhSinglePass_stdDH_sha256kdf_scheme = 189,
     dhSinglePass_stdDH_sha384kdf_scheme = 190,
-    dhSinglePass_stdDH_sha512kdf_scheme = 191,
+    dhSinglePass_stdDH_sha512kdf_scheme = 191
 };
 
 
 
 enum KDF_Sum {
     PBKDF2_OID = 660,
-    MGF1_OID = 652,
+    MGF1_OID = 652
 };
 
 
@@ -1184,8 +1229,9 @@ enum CertificatePolicy_Sum {
     CP_FPKI_COMMON_AUTH_OID = 426, /* 2.16.840.1.101.3.2.1.3.13 */
     CP_FPKI_PIV_AUTH_OID    = 453, /* 2.16.840.1.101.3.2.1.3.40 */
     CP_FPKI_PIV_AUTH_HW_OID = 454, /* 2.16.840.1.101.3.2.1.3.41 */
-    CP_FPKI_PIVI_AUTH_OID   = 458  /* 2.16.840.1.101.3.2.1.3.45 */
+    CP_FPKI_PIVI_AUTH_OID   = 458, /* 2.16.840.1.101.3.2.1.3.45 */
 #endif /* WOLFSSL_FPKI */
+    WOLF_ENUM_DUMMY_LAST_ELEMENT(CertificatePolicy_Sum)
 };
 
 enum SepHardwareName_Sum {
@@ -1196,8 +1242,9 @@ enum AuthInfo_Sum {
     AIA_OCSP_OID      = 116, /* 1.3.6.1.5.5.7.48.1, id-ad-ocsp */
     AIA_CA_ISSUER_OID = 117, /* 1.3.6.1.5.5.7.48.2, id-ad-caIssuers */
     #ifdef WOLFSSL_SUBJ_INFO_ACC
-    AIA_CA_REPO_OID   = 120  /* 1.3.6.1.5.5.7.48.5, id-ad-caRepository */
+    AIA_CA_REPO_OID   = 120, /* 1.3.6.1.5.5.7.48.5, id-ad-caRepository */
     #endif /* WOLFSSL_SUBJ_INFO_ACC */
+    WOLF_ENUM_DUMMY_LAST_ELEMENT(AuthInfo_Sum)
 };
 
 #define ID_PKIX(num) (67+(num)) /* 1.3.6.1.5.5.7.num, id-pkix num */
@@ -1243,7 +1290,7 @@ enum VerifyType {
     VERIFY_OCSP = 3,
     VERIFY_NAME = 4,
     VERIFY_SKIP_DATE = 5,
-    VERIFY_OCSP_CERT = 6,
+    VERIFY_OCSP_CERT = 6
 };
 
 #ifdef WOLFSSL_CERT_EXT
@@ -1253,7 +1300,7 @@ enum KeyIdType {
 };
 #endif
 
-#ifdef WOLFSSL_CERT_REQ
+#if defined(WOLFSSL_CERT_REQ) || defined(WOLFSSL_CERT_NAME_ALL)
 enum CsrAttrType {
     UNSTRUCTURED_NAME_OID = 654,
     PKCS9_CONTENT_TYPE_OID = 655,
@@ -1265,7 +1312,7 @@ enum CsrAttrType {
     INITIALS_OID = 132,
     SURNAME_OID = 93,
     NAME_OID = 130,
-    GIVEN_NAME_OID = 131,
+    GIVEN_NAME_OID = 131
 };
 #endif
 
@@ -1323,6 +1370,10 @@ struct DNS_entry {
 #if defined(OPENSSL_ALL) || defined(WOLFSSL_IP_ALT_NAME)
     char*      ipString; /* human readable form of IP address */
 #endif
+#if defined(OPENSSL_ALL)
+    char*      ridString; /* human readable form of registeredID */
+#endif
+
 #ifdef WOLFSSL_FPKI
     int        oidSum; /* provide oid sum for verification */
 #endif
@@ -1348,7 +1399,7 @@ enum SignatureState {
     SIG_STATE_HASH,
     SIG_STATE_KEY,
     SIG_STATE_DO,
-    SIG_STATE_CHECK,
+    SIG_STATE_CHECK
 };
 
 
@@ -1369,7 +1420,7 @@ enum SignatureState {
 #endif
 #endif /* HAVE_PK_CALLBACKS */
 
-#if defined(WOLFSSL_RENESAS_TSIP_TLS) || defined(WOLFSSL_RENESAS_SCEPROTECT) ||\
+#if defined(WOLFSSL_RENESAS_TSIP_TLS) || defined(WOLFSSL_RENESAS_FSPSM_TLS) ||\
     defined(HAVE_PK_CALLBACKS)
 typedef struct tagCertAttribute {
         byte   verifyByTSIP_SCE;
@@ -1442,7 +1493,7 @@ struct SignatureCtx {
 #endif
 #endif /* HAVE_PK_CALLBACKS */
 #ifndef NO_RSA
-#if defined(WOLFSSL_RENESAS_TSIP_TLS) || defined(WOLFSSL_RENESAS_SCEPROTECT) ||\
+#if defined(WOLFSSL_RENESAS_TSIP_TLS) || defined(WOLFSSL_RENESAS_FSPSM_TLS) ||\
     defined(HAVE_PK_CALLBACKS)
     CertAttribute  CertAtt;
 #endif
@@ -1458,7 +1509,7 @@ enum CertSignState {
     CERTSIGN_STATE_BEGIN,
     CERTSIGN_STATE_DIGEST,
     CERTSIGN_STATE_ENCODE,
-    CERTSIGN_STATE_DO,
+    CERTSIGN_STATE_DO
 };
 
 struct CertSignCtx {
@@ -1617,6 +1668,12 @@ struct DecodedCert {
     int     extCrlInfoSz;            /* length of the URI                */
     byte    extSubjKeyId[KEYID_SIZE]; /* Subject Key ID                  */
     byte    extAuthKeyId[KEYID_SIZE]; /* Authority Key ID                */
+#ifdef WOLFSSL_AKID_NAME
+    const byte* extAuthKeyIdIssuer;  /* Authority Key ID authorityCertIssuer */
+    word32  extAuthKeyIdIssuerSz;    /* Authority Key ID authorityCertIssuer length */
+    const byte* extAuthKeyIdIssuerSN; /* Authority Key ID authorityCertSerialNumber */
+    word32  extAuthKeyIdIssuerSNSz;   /* Authority Key ID authorityCertSerialNumber length */
+#endif
     byte    pathLength;              /* CA basic constraint path length  */
     byte    maxPathLen;              /* max_path_len see RFC 5280 section
                                       * 6.1.2 "Initialization" - (k) for
@@ -1663,6 +1720,9 @@ struct DecodedCert {
 
 #if defined(HAVE_ECC) || defined(HAVE_ED25519) || defined(HAVE_ED448)
     word32  pkCurveOID;           /* Public Key's curve OID */
+    #ifdef WOLFSSL_CUSTOM_CURVES
+        int  pkCurveSize;         /* Public Key's curve size */
+    #endif
 #endif /* HAVE_ECC */
     const byte* beforeDate;
     int     beforeDateLen;
@@ -1810,7 +1870,7 @@ struct DecodedCert {
 #ifndef NO_CERTS
     SignatureCtx sigCtx;
 #endif
-#if defined(WOLFSSL_RENESAS_TSIP) || defined(WOLFSSL_RENESAS_SCEPROTECT)
+#if defined(WOLFSSL_RENESAS_TSIP) || defined(WOLFSSL_RENESAS_FSPSM_TLS)
     byte*  sce_tsip_encRsaKeyIdx;
 #endif
 #ifdef WOLFSSL_MAXQ10XX_TLS
@@ -1871,13 +1931,18 @@ struct DecodedCert {
 #ifdef WOLFSSL_CERT_REQ
     byte isCSR : 1;                /* Do we intend on parsing a CSR? */
 #endif
+#ifdef HAVE_RPK
+    byte isRPK : 1;   /* indicate the cert is Raw-Public-Key cert in RFC7250 */
+#endif
 #if defined(WOLFSSL_CUSTOM_OID) && defined(WOLFSSL_ASN_TEMPLATE) \
     && defined(HAVE_OID_DECODING)
     wc_UnknownExtCallback unknownExtCallback;
 #endif
 };
 
-#ifdef NO_SHA
+#if defined(WOLFSSL_SM2) && defined(WOLFSSL_SM3)
+    #define SIGNER_DIGEST_SIZE WC_SM3_DIGEST_SIZE
+#elif defined(NO_SHA)
     #define SIGNER_DIGEST_SIZE WC_SHA256_DIGEST_SIZE
 #else
     #define SIGNER_DIGEST_SIZE WC_SHA_DIGEST_SIZE
@@ -1890,8 +1955,6 @@ struct Signer {
     word32  keyOID;                  /* key type */
     word16  keyUsage;
     byte    maxPathLen;
-    byte    pathLength;
-    byte    pathLengthSet : 1;
     byte    selfSigned : 1;
     const byte* publicKey;
     int     nameLen;
@@ -1902,17 +1965,26 @@ struct Signer {
 #endif /* IGNORE_NAME_CONSTRAINTS */
     byte    subjectNameHash[SIGNER_DIGEST_SIZE];
                                      /* sha hash of names in certificate */
+    #if defined(HAVE_OCSP) || defined(HAVE_CRL)
+        byte    issuerNameHash[SIGNER_DIGEST_SIZE];
+                                     /* sha hash of issuer names in certificate.
+                                      * Used in OCSP to check for authorized
+                                      * responders. */
+    #endif
     #ifndef NO_SKID
         byte    subjectKeyIdHash[SIGNER_DIGEST_SIZE];
-                                     /* sha hash of names in certificate */
+                                     /* sha hash of key in certificate */
     #endif
     #ifdef HAVE_OCSP
         byte subjectKeyHash[KEYID_SIZE];
     #endif
+#if defined(WOLFSSL_AKID_NAME) || defined(HAVE_CRL)
+    byte serialHash[SIGNER_DIGEST_SIZE]; /* serial number hash */
+#endif
 #ifdef WOLFSSL_SIGNER_DER_CERT
     DerBuffer* derCert;
 #endif
-#if defined(WOLFSSL_RENESAS_TSIP_TLS) || defined(WOLFSSL_RENESAS_SCEPROTECT)
+#if defined(WOLFSSL_RENESAS_TSIP_TLS) || defined(WOLFSSL_RENESAS_FSPSM_TLS)
     word32 cm_idx;
 #endif
     Signer* next;
@@ -1985,7 +2057,10 @@ typedef enum MimeStatus
 #endif /* HAVE_SMIME */
 
 
+WOLFSSL_LOCAL int HashIdAlg(word32 oidSum);
 WOLFSSL_LOCAL int CalcHashId(const byte* data, word32 len, byte* hash);
+WOLFSSL_LOCAL int CalcHashId_ex(const byte* data, word32 len, byte* hash,
+    int hashAlg);
 WOLFSSL_LOCAL int GetName(DecodedCert* cert, int nameType, int maxIdx);
 
 WOLFSSL_ASN_API int wc_BerToDer(const byte* ber, word32 berSz, byte* der,
@@ -1998,6 +2073,8 @@ WOLFSSL_ASN_API DNS_entry* AltNameNew(void* heap);
 #endif /* IGNORE_NAME_CONSTRAINTS */
 WOLFSSL_ASN_API void InitDecodedCert(DecodedCert* cert, const byte* source,
                                      word32 inSz, void* heap);
+WOLFSSL_LOCAL void InitDecodedCert_ex(DecodedCert* cert, const byte* source,
+                                     word32 inSz, void* heap, int devId);
 WOLFSSL_ASN_API void FreeDecodedCert(DecodedCert* cert);
 WOLFSSL_ASN_API int  ParseCert(DecodedCert* cert, int type, int verify,
                                void* cm);
@@ -2020,6 +2097,11 @@ WOLFSSL_API int wc_CheckCertSigPubKey(const byte* cert, word32 certSz,
                                       void* heap, const byte* pubKey,
                                       word32 pubKeySz, int pubKeyOID);
 #endif
+#if (defined(HAVE_ED25519) && defined(HAVE_ED25519_KEY_IMPORT) || \
+    (defined(HAVE_ED448) && defined(HAVE_ED448_KEY_IMPORT)))
+WOLFSSL_LOCAL int wc_CertGetPubKey(const byte* cert, word32 certSz,
+    const unsigned char** pubKey, word32* pubKeySz);
+#endif
 
 #ifdef WOLFSSL_CERT_REQ
 WOLFSSL_LOCAL int CheckCSRSignaturePubKey(const byte* cert, word32 certSz,
@@ -2033,6 +2115,7 @@ WOLFSSL_LOCAL int DecodeToKey(DecodedCert* cert, int verify);
 #ifdef WOLFSSL_ASN_TEMPLATE
 WOLFSSL_LOCAL int DecodeCert(DecodedCert* cert, int verify, int* criticalExt);
 #endif
+WOLFSSL_LOCAL int TryDecodeRPKToKey(DecodedCert* cert);
 WOLFSSL_LOCAL int wc_GetPubX509(DecodedCert* cert, int verify, int* badDate);
 
 WOLFSSL_LOCAL const byte* OidFromId(word32 id, word32 type, word32* oidSz);
@@ -2116,12 +2199,17 @@ WOLFSSL_LOCAL int GetMyVersion(const byte* input, word32* inOutIdx,
                               int* version, word32 maxIdx);
 WOLFSSL_LOCAL int GetInt(mp_int* mpi, const byte* input, word32* inOutIdx,
                          word32 maxIdx);
+WOLFSSL_ASN_API int GetASNInt(const byte* input, word32* inOutIdx, int* len,
+                              word32 maxIdx);
 
 #ifdef HAVE_OID_ENCODING
+    WOLFSSL_API int wc_EncodeObjectId(const word16* in, word32 inSz,
+        byte* out, word32* outSz);
     WOLFSSL_LOCAL int EncodeObjectId(const word16* in, word32 inSz,
         byte* out, word32* outSz);
 #endif
-#ifdef HAVE_OID_DECODING
+#if defined(HAVE_OID_DECODING) || defined(WOLFSSL_ASN_PRINT) || \
+    defined(OPENSSL_ALL)
     WOLFSSL_LOCAL int DecodeObjectId(const byte* in, word32 inSz,
         word16* out, word32* outSz);
 #endif
@@ -2155,12 +2243,17 @@ WOLFSSL_LOCAL word32 SetAlgoID(int algoOID,byte* output,int type,int curveSz);
 WOLFSSL_LOCAL int SetMyVersion(word32 version, byte* output, int header);
 WOLFSSL_LOCAL int SetSerialNumber(const byte* sn, word32 snSz, byte* output,
     word32 outputSz, int maxSnSz);
+/* name is of type WOLFSSL_ASN1_OTHERNAME; use void* to avoid including ssl.h */
+WOLFSSL_LOCAL word32 SetOthername(void *name, byte *output);
+
 #ifndef WOLFSSL_ASN_TEMPLATE
 WOLFSSL_LOCAL int wc_GetSerialNumber(const byte* input, word32* inOutIdx,
     byte* serial, int* serialSz, word32 maxIdx);
 #endif
 WOLFSSL_LOCAL int GetNameHash(const byte* source, word32* idx, byte* hash,
                               int maxIdx);
+WOLFSSL_LOCAL int GetNameHash_ex(const byte* source, word32* idx, byte* hash,
+                                 int maxIdx, word32 sigOID);
 WOLFSSL_LOCAL int wc_CheckPrivateKeyCert(const byte* key, word32 keySz, DecodedCert* der);
 WOLFSSL_LOCAL int wc_CheckPrivateKey(const byte* privKey, word32 privKeySz,
                                      const byte* pubKey, word32 pubKeySz, enum Key_Sum ks);
@@ -2187,6 +2280,8 @@ WOLFSSL_LOCAL int wc_EncodeNameCanonical(EncodedName* name, const char* nameStr,
         byte* r, word32* rLen, byte* s, word32* sLen);
     WOLFSSL_LOCAL int DecodeECC_DSA_Sig(const byte* sig, word32 sigLen,
                                        mp_int* r, mp_int* s);
+    WOLFSSL_LOCAL int DecodeECC_DSA_Sig_Ex(const byte* sig, word32 sigLen,
+                                       mp_int* r, mp_int* s, int init);
 #endif
 #ifndef NO_DSA
 WOLFSSL_LOCAL int StoreDSAParams(byte*, word32*, const mp_int*, const mp_int*,
@@ -2211,6 +2306,14 @@ WOLFSSL_LOCAL int PemToDer(const unsigned char* buff, long sz, int type,
                           int* eccKey);
 WOLFSSL_LOCAL int AllocDer(DerBuffer** der, word32 length, int type, void* heap);
 WOLFSSL_LOCAL void FreeDer(DerBuffer** der);
+
+#if (defined(WOLFSSL_CERT_GEN) && defined(WOLFSSL_CERT_EXT)) || \
+    (defined(OPENSSL_ALL) || defined(OPENSSL_EXTRA))
+WOLFSSL_LOCAL int ParseKeyUsageStr(const char* value, word16* keyUsage,
+        void* heap);
+WOLFSSL_LOCAL int ParseExtKeyUsageStr(const char* value, byte* extKeyUsage,
+        void* heap);
+#endif /* (CERT_GEN && CERT_EXT) || (OPENSSL_ALL || OPENSSL_EXTRA) */
 
 #endif /* !NO_CERTS */
 
@@ -2241,7 +2344,7 @@ enum cert_enums {
     SPHINCS_FAST_LEVEL5_KEY  = 26,
     SPHINCS_SMALL_LEVEL1_KEY = 27,
     SPHINCS_SMALL_LEVEL3_KEY = 28,
-    SPHINCS_SMALL_LEVEL5_KEY = 29,
+    SPHINCS_SMALL_LEVEL5_KEY = 29
 };
 
 #endif /* WOLFSSL_CERT_GEN */
@@ -2316,7 +2419,9 @@ struct CertStatus {
 
 typedef struct OcspEntry OcspEntry;
 
-#ifdef NO_SHA
+#if defined(WOLFSSL_SM2) && defined(WOLFSSL_SM3)
+#define OCSP_DIGEST_SIZE WC_SM3_DIGEST_SIZE
+#elif defined(NO_SHA)
 #define OCSP_DIGEST_SIZE WC_SHA256_DIGEST_SIZE
 #else
 #define OCSP_DIGEST_SIZE WC_SHA_DIGEST_SIZE
@@ -2379,10 +2484,18 @@ struct OcspResponse {
 struct OcspRequest {
     byte   issuerHash[KEYID_SIZE];
     byte   issuerKeyHash[KEYID_SIZE];
+#if defined(WOLFSSL_SM2) && defined(WOLFSSL_SM3)
+    int    hashSz;
+#endif
     byte*  serial;   /* copy of the serial number in source cert */
     int    serialSz;
 #ifdef OPENSSL_EXTRA
     WOLFSSL_ASN1_INTEGER* serialInt;
+#endif
+#if defined(OPENSSL_ALL) || defined(WOLFSSL_NGINX) || \
+    defined(WOLFSSL_HAPROXY) || defined(WOLFSSL_APACHE_HTTPD) || \
+    defined(HAVE_LIGHTY)
+    void* cid; /* WOLFSSL_OCSP_CERTID kept to free */
 #endif
     byte*  url;      /* copy of the extAuthInfo in source cert */
     int    urlSz;
@@ -2518,15 +2631,16 @@ enum PBESTypes {
     PBE_AES128_CBC     = 5,
     PBE_SHA1_40RC2_CBC = 6,
 
-    PBE_SHA1_RC4_128_SUM = 657,
-    PBE_SHA1_DES3_SUM    = 659,
-    PBE_MD5_DES_SUM      = 651,
-    PBE_SHA1_DES_SUM     = 658,
-    PBES2_SUM            = 661,
+    PBE_SHA1_RC4_128_SUM   = 657,
+    PBE_SHA1_DES3_SUM      = 659,
+    PBE_SHA1_40RC2_CBC_SUM = 662,
+    PBE_MD5_DES_SUM        = 651,
+    PBE_SHA1_DES_SUM       = 658,
+    PBES2_SUM              = 661,
 
     PBES2              = 13,       /* algo ID */
     PBES1_MD5_DES      = 3,
-    PBES1_SHA1_DES     = 10,
+    PBES1_SHA1_DES     = 10
 };
 
 enum PKCSTypes {
@@ -2536,7 +2650,7 @@ enum PKCSTypes {
     PKCS8v0             =   0,     /* default PKCS#8 version */
     PKCS8v1             =   1,     /* PKCS#8 version including public key */
     PKCS1v0             =   0,     /* default PKCS#1 version */
-    PKCS1v1             =   1,     /* Multi-prime version */
+    PKCS1v1             =   1     /* Multi-prime version */
 };
 
 #endif /* !NO_ASN || !NO_PWDBASED */

@@ -35,12 +35,6 @@
     #include <wolfssl/wolfcrypt/fips.h>
 #endif /* HAVE_FIPS_VERSION >= 2 */
 
-#if defined(HAVE_FIPS) && \
-        (!defined(HAVE_FIPS_VERSION) || (HAVE_FIPS_VERSION < 2))
-    /* included for fips @wc_fips */
-    #include <cyassl/ctaocrypt/des3.h>
-#endif
-
 #ifdef __cplusplus
     extern "C" {
 #endif
@@ -49,7 +43,7 @@
 enum {
     DES_KEY_SIZE        =  8,  /* des                     */
     DES3_KEY_SIZE       = 24,  /* 3 des ede               */
-    DES_IV_SIZE         =  8,  /* should be the same as DES_BLOCK_SIZE */
+    DES_IV_SIZE         =  8   /* should be the same as DES_BLOCK_SIZE */
 };
 
 

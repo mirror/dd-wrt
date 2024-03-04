@@ -60,6 +60,9 @@
 
 /* THREADING/MUTEX SECTION */
 #ifdef USE_WINDOWS_API
+    #if defined(WOLFSSL_PTHREADS)
+        #include <pthread.h>
+    #endif
     #ifdef WOLFSSL_GAME_BUILD
         #include "system/xtl.h"
     #else
@@ -76,6 +79,9 @@
                 #include <ws2tcpip.h> /* required for InetPton */
             #endif
         #endif /* WOLFSSL_SGX */
+    #endif
+    #ifndef SINGLE_THREADED
+        #include <process.h>
     #endif
 #elif defined(THREADX)
     #ifndef SINGLE_THREADED
@@ -139,7 +145,12 @@
     /* do nothing */
 #elif defined(WOLFSSL_ZEPHYR)
     #ifndef SINGLE_THREADED
-        #include <kernel.h>
+        #ifndef CONFIG_PTHREAD_IPC
+            #error "Need CONFIG_PTHREAD_IPC for threading"
+        #endif
+        #include <zephyr/kernel.h>
+        #include <zephyr/posix/posix_types.h>
+        #include <zephyr/posix/pthread.h>
     #endif
 #elif defined(WOLFSSL_TELIT_M2MB)
 
@@ -219,7 +230,7 @@
             signed char mutexBuffer[portQUEUE_OVERHEAD_BYTES];
             xSemaphoreHandle mutex;
         } wolfSSL_Mutex;
-    #elif defined(USE_WINDOWS_API)
+    #elif defined(USE_WINDOWS_API) && !defined(WOLFSSL_PTHREADS)
         typedef CRITICAL_SECTION wolfSSL_Mutex;
     #elif defined(MAXQ10XX_MUTEX)
         #include <sys/mman.h>
@@ -232,6 +243,7 @@
             typedef pthread_rwlock_t wolfSSL_RwLock;
         #endif
         typedef pthread_mutex_t wolfSSL_Mutex;
+        #define WOLFSSL_MUTEX_INITIALIZER PTHREAD_MUTEX_INITIALIZER
     #elif defined(THREADX)
         typedef TX_MUTEX wolfSSL_Mutex;
     #elif defined(WOLFSSL_DEOS)
@@ -239,7 +251,11 @@
     #elif defined(MICRIUM)
         typedef OS_MUTEX wolfSSL_Mutex;
     #elif defined(EBSNET)
-        typedef RTP_MUTEX wolfSSL_Mutex;
+        #if (defined(RTPLATFORM) && (RTPLATFORM != 0))
+            typedef RTP_MUTEX wolfSSL_Mutex;
+        #else
+            typedef KS_RTIPSEM wolfSSL_Mutex;
+        #endif
     #elif defined(FREESCALE_MQX) || defined(FREESCALE_KSDK_MQX)
         typedef MUTEX_STRUCT wolfSSL_Mutex;
     #elif defined(FREESCALE_FREE_RTOS)
@@ -293,12 +309,48 @@
     typedef wolfSSL_Mutex wolfSSL_RwLock;
 #endif
 
+#ifndef WOLFSSL_NO_ATOMICS
+#ifdef HAVE_C___ATOMIC
+#ifdef __cplusplus
+#if defined(__GNUC__) && defined(__ATOMIC_RELAXED)
+    /* C++ using direct calls to compiler built-in functions */
+    typedef volatile int wolfSSL_Atomic_Int;
+    #define WOLFSSL_ATOMIC_OPS
+#endif
+#else
+    #ifdef WOLFSSL_HAVE_ATOMIC_H
+    /* Default C Implementation */
+    #include <stdatomic.h>
+    typedef atomic_int wolfSSL_Atomic_Int;
+    #define WOLFSSL_ATOMIC_OPS
+    #endif /* WOLFSSL_HAVE_ATOMIC_H */
+#endif
+#elif defined(_MSC_VER)
+    /* Use MSVC compiler intrinsics for atomic ops */
+    #include <intrin.h>
+    typedef volatile long wolfSSL_Atomic_Int;
+    #define WOLFSSL_ATOMIC_OPS
+#endif
+#endif /* WOLFSSL_NO_ATOMICS */
+
+#ifdef WOLFSSL_ATOMIC_OPS
+    WOLFSSL_LOCAL void wolfSSL_Atomic_Int_Init(wolfSSL_Atomic_Int* c, int i);
+    /* Fetch* functions return the value of the counter immediately preceding
+     * the effects of the function. */
+    WOLFSSL_LOCAL int wolfSSL_Atomic_Int_FetchAdd(wolfSSL_Atomic_Int* c, int i);
+    WOLFSSL_LOCAL int wolfSSL_Atomic_Int_FetchSub(wolfSSL_Atomic_Int* c, int i);
+#endif
+
 /* Reference counting. */
 typedef struct wolfSSL_Ref {
-#if !defined(SINGLE_THREADED) && !defined(HAVE_C___ATOMIC)
+#if !defined(SINGLE_THREADED) && !defined(WOLFSSL_ATOMIC_OPS)
     wolfSSL_Mutex mutex;
 #endif
+#ifdef WOLFSSL_ATOMIC_OPS
+    wolfSSL_Atomic_Int count;
+#else
     int count;
+#endif
 } wolfSSL_Ref;
 
 #ifdef SINGLE_THREADED
@@ -308,7 +360,7 @@ typedef struct wolfSSL_Ref {
         (ref)->count = 1;                    \
         *(err) = 0;                          \
     } while(0)
-#define wolfSSL_RefFree(ref)
+#define wolfSSL_RefFree(ref) WC_DO_NOTHING
     #define wolfSSL_RefInc(ref, err)         \
     do {                                     \
         (ref)->count++;                      \
@@ -321,25 +373,24 @@ typedef struct wolfSSL_Ref {
         *(err) = 0;                          \
     } while(0)
 
-#elif defined(HAVE_C___ATOMIC)
+#elif defined(WOLFSSL_ATOMIC_OPS)
 
 #define wolfSSL_RefInit(ref, err)            \
     do {                                     \
-        (ref)->count = 1;                    \
+        wolfSSL_Atomic_Int_Init(&(ref)->count, 1); \
         *(err) = 0;                          \
     } while(0)
-#define wolfSSL_RefFree(ref)
+#define wolfSSL_RefFree(ref) WC_DO_NOTHING
 #define wolfSSL_RefInc(ref, err)             \
     do {                                     \
-        __atomic_fetch_add(&(ref)->count, 1, \
-            __ATOMIC_RELAXED);               \
+        (void)wolfSSL_Atomic_Int_FetchAdd(&(ref)->count, 1); \
         *(err) = 0;                          \
     } while(0)
 #define wolfSSL_RefDec(ref, isZero, err)     \
     do {                                     \
-        __atomic_fetch_sub(&(ref)->count, 1, \
-            __ATOMIC_RELAXED);               \
-        *(isZero) = ((ref)->count == 0);     \
+        int __prev = wolfSSL_Atomic_Int_FetchSub(&(ref)->count, 1); \
+        /* __prev holds the value of count before subtracting 1 */ \
+        *(isZero) = (__prev == 1);     \
         *(err) = 0;                          \
     } while(0)
 
@@ -400,6 +451,7 @@ typedef void (mutex_cb)(int flag, int type, const char* file, int line);
 
 WOLFSSL_API int wc_LockMutex_ex(int flag, int type, const char* file, int line);
 WOLFSSL_API int wc_SetMutexCb(mutex_cb* cb);
+WOLFSSL_API mutex_cb* wc_GetMutexCb(void);
 #endif
 
 /* main crypto initialization function */
@@ -427,13 +479,15 @@ WOLFSSL_ABI WOLFSSL_API int wolfCrypt_Cleanup(void);
     #define XFOPEN(NAME, MODE)       vf_open((const char *)NAME, VO_RDONLY, 0)
     #define XFSEEK                   ebsnet_fseek
     #define XFTELL                   vf_tell
-    #define XREWIND                  vf_rewind
     #define XFREAD(BUF, SZ, AMT, FD) vf_read(FD, BUF, SZ*AMT)
     #define XFWRITE(BUF, SZ, AMT, FD) vf_write(FD, BUF, SZ*AMT)
     #define XFCLOSE                  vf_close
+    #define XSEEK_SET                VSEEK_SET
     #define XSEEK_END                VSEEK_END
     #define XBADFILE                 -1
     #define XFGETS(b,s,f)            -2 /* Not ported yet */
+    #define XSNPRINTF rtp_snprintf
+    #define XFPRINTF fprintf
 
 #elif defined(LSR_FS)
     #include <fs.h>
@@ -441,10 +495,10 @@ WOLFSSL_ABI WOLFSSL_API int wolfCrypt_Cleanup(void);
     #define XFOPEN(NAME, MODE)      fs_open((char*)NAME)
     #define XFSEEK(F, O, W)         (void)F
     #define XFTELL(F)               (F)->len
-    #define XREWIND(F)              (void)F
     #define XFREAD(BUF, SZ, AMT, F) fs_read(F, (char*)BUF, SZ*AMT)
     #define XFWRITE(BUF, SZ, AMT, F) fs_write(F, (char*)BUF, SZ*AMT)
     #define XFCLOSE                 fs_close
+    #define XSEEK_SET               0
     #define XSEEK_END               0
     #define XBADFILE                NULL
     #define XFGETS(b,s,f)           -2 /* Not ported yet */
@@ -454,10 +508,10 @@ WOLFSSL_ABI WOLFSSL_API int wolfCrypt_Cleanup(void);
     #define XFOPEN                  fopen
     #define XFSEEK                  fseek
     #define XFTELL                  ftell
-    #define XREWIND(F)              fseek(F, 0, IO_SEEK_SET)
     #define XFREAD                  fread
     #define XFWRITE                 fwrite
     #define XFCLOSE                 fclose
+    #define XSEEK_SET               IO_SEEK_SET
     #define XSEEK_END               IO_SEEK_END
     #define XBADFILE                NULL
     #define XFGETS                  fgets
@@ -471,10 +525,10 @@ WOLFSSL_ABI WOLFSSL_API int wolfCrypt_Cleanup(void);
     #define XFOPEN     fs_fopen
     #define XFSEEK     fs_fseek
     #define XFTELL     fs_ftell
-    #define XREWIND    fs_rewind
     #define XFREAD     fs_fread
     #define XFWRITE    fs_fwrite
     #define XFCLOSE    fs_fclose
+    #define XSEEK_SET  FS_SEEK_SET
     #define XSEEK_END  FS_SEEK_END
     #define XBADFILE   NULL
     #define XFGETS(b,s,f) -2 /* Not ported yet */
@@ -485,10 +539,10 @@ WOLFSSL_ABI WOLFSSL_API int wolfCrypt_Cleanup(void);
     #define XFOPEN     fopen
     #define XFSEEK     fseek
     #define XFTELL     ftell
-    #define XREWIND    rewind
     #define XFREAD     fread
     #define XFWRITE    fwrite
     #define XFCLOSE    fclose
+    #define XSEEK_SET  PSEEK_SET
     #define XSEEK_END  PSEEK_END
     #define XBADFILE   NULL
 
@@ -499,44 +553,51 @@ WOLFSSL_ABI WOLFSSL_API int wolfCrypt_Cleanup(void);
     #define XFOPEN     mynewt_fopen
     #define XFSEEK     mynewt_fseek
     #define XFTELL     mynewt_ftell
-    #define XREWIND    mynewt_rewind
     #define XFREAD     mynewt_fread
     #define XFWRITE    mynewt_fwrite
     #define XFCLOSE    mynewt_fclose
+    #define XSEEK_SET  0
     #define XSEEK_END  2
     #define XBADFILE   NULL
     #define XFGETS(b,s,f) -2 /* Not ported yet */
 
 #elif defined(WOLFSSL_ZEPHYR)
-    #include <fs/fs.h>
+    #include <zephyr/fs/fs.h>
 
     #define XFILE      struct fs_file_t*
-    #define STAT       struct fs_dirent
 
-    XFILE z_fs_open(const char* filename, const char* perm);
+    /* These are our wrappers for opening and closing files to
+     * make the API more POSIX like. */
+    XFILE z_fs_open(const char* filename, const char* mode);
     int z_fs_close(XFILE file);
 
     #define XFOPEN              z_fs_open
     #define XFCLOSE             z_fs_close
+    #define XFFLUSH             fs_sync
     #define XFSEEK              fs_seek
     #define XFTELL              fs_tell
     #define XFREWIND            fs_rewind
-    #define XREWIND(F)          fs_seek(F, 0, FS_SEEK_SET)
     #define XFREAD(P,S,N,F)     fs_read(F, P, S*N)
     #define XFWRITE(P,S,N,F)    fs_write(F, P, S*N)
+    #define XSEEK_SET           FS_SEEK_SET
     #define XSEEK_END           FS_SEEK_END
     #define XBADFILE            NULL
     #define XFGETS(b,s,f)       -2 /* Not ported yet */
+
+    #define XSTAT               fs_stat
+    #define XSTAT_TYPE          struct fs_dirent
+    #define XS_ISREG(s)         (s == FS_DIR_ENTRY_FILE)
+    #define SEPARATOR_CHAR      ':'
 
 #elif defined(WOLFSSL_TELIT_M2MB)
     #define XFILE                    INT32
     #define XFOPEN(NAME, MODE)       m2mb_fs_open((NAME), 0, (MODE))
     #define XFSEEK(F, O, W)          m2mb_fs_lseek((F), (O), (W))
     #define XFTELL(F)                m2mb_fs_lseek((F), 0, M2MB_SEEK_END)
-    #define XREWIND(F)               (void)F
     #define XFREAD(BUF, SZ, AMT, F)  m2mb_fs_read((F), (BUF), (SZ)*(AMT))
     #define XFWRITE(BUF, SZ, AMT, F) m2mb_fs_write((F), (BUF), (SZ)*(AMT))
     #define XFCLOSE                  m2mb_fs_close
+    #define XSEEK_SET                M2MB_SEEK_SET
     #define XSEEK_END                M2MB_SEEK_END
     #define XBADFILE                 -1
     #define XFGETS(b,s,f)            -2 /* Not ported yet */
@@ -550,10 +611,10 @@ WOLFSSL_ABI WOLFSSL_API int wolfCrypt_Cleanup(void);
     #define XFOPEN(NAME, MODE)       ({ FRESULT res; res = f_open(&curFile, (NAME), (FA_OPEN_ALWAYS | FA_WRITE | FA_READ)); (res == FR_OK) ? &curFile : NULL; })
     #define XFSEEK(F, O, W)          f_lseek((F), (O))
     #define XFTELL(F)                f_tell((F))
-    #define XREWIND(F)               f_rewind((F))
     #define XFREAD(BUF, SZ, AMT, F)  ({ FRESULT res; UINT br; res = f_read((F), (BUF), (SZ)*(AMT), &br); (void)br; res; })
     #define XFWRITE(BUF, SZ, AMT, F) ({ FRESULT res; UINT written; res = f_write((F), (BUF), (SZ)*(AMT), &written); (void)written; res; })
     #define XFCLOSE(F)               f_close((F))
+    #define XSEEK_SET                0
     #define XSEEK_END                0
     #define XBADFILE                 NULL
     #define XFGETS(b,s,f)            f_gets((b), (s), (f))
@@ -565,10 +626,10 @@ WOLFSSL_ABI WOLFSSL_API int wolfCrypt_Cleanup(void);
     #define XFDOPEN    fdopen
     #define XFSEEK     fseek
     #define XFTELL     ftell
-    #define XREWIND(F) XFSEEK(F, 0, SEEK_SET)
     #define XFREAD     fread
     #define XFWRITE    fwrite
     #define XFCLOSE    fclose
+    #define XSEEK_SET  SEEK_SET
     #define XSEEK_END  SEEK_END
     #define XBADFILE   NULL
     #define XFGETS     fgets
@@ -585,10 +646,10 @@ WOLFSSL_ABI WOLFSSL_API int wolfCrypt_Cleanup(void);
     #define XFOPEN    FCL_FOPEN
     #define XFSEEK    FCL_FSEEK
     #define XFTELL    FCL_FTELL
-    #define XREWIND   FCL_REWIND
     #define XFREAD    FCL_FREAD
     #define XFWRITE   FCL_FWRITE
     #define XFCLOSE   FCL_FCLOSE
+    #define XSEEK_SET SEEK_SET
     #define XSEEK_END SEEK_END
     #define XBADFILE  NULL
     #define XFGETS    FCL_FGETS
@@ -624,10 +685,10 @@ WOLFSSL_ABI WOLFSSL_API int wolfCrypt_Cleanup(void);
     #define XFDOPEN    fdopen
     #define XFSEEK     fseek
     #define XFTELL     ftell
-    #define XREWIND    rewind
     #define XFREAD     fread
     #define XFWRITE    fwrite
     #define XFCLOSE    fclose
+    #define XSEEK_SET  SEEK_SET
     #define XSEEK_END  SEEK_END
     #define XBADFILE   NULL
     #define XFGETS     fgets
@@ -638,25 +699,27 @@ WOLFSSL_ABI WOLFSSL_API int wolfCrypt_Cleanup(void);
         && !defined(WOLFSSL_NUCLEUS) && !defined(WOLFSSL_NUCLEUS_1_2)
     #if defined(USE_WINDOWS_API)
         #include <sys/stat.h>
+        #ifndef XSTAT
         #define XSTAT       _stat
+        #endif
         #define XS_ISREG(s) (s & _S_IFREG)
         #define SEPARATOR_CHAR ';'
 
     #elif defined(INTIME_RTOS)
         #include <sys/stat.h>
+        #ifndef XSTAT
         #define XSTAT _stat64
+        #endif
         #define XS_ISREG(s) S_ISREG(s)
         #define SEPARATOR_CHAR ';'
         #define XWRITE      write
         #define XREAD       read
         #define XCLOSE      close
 
-    #elif defined(WOLFSSL_ZEPHYR)
-        #define XSTAT       fs_stat
-        #define XS_ISREG(s) (s == FS_DIR_ENTRY_FILE)
-        #define SEPARATOR_CHAR ':'
     #elif defined(WOLFSSL_TELIT_M2MB)
+        #ifndef XSTAT
         #define XSTAT       m2mb_fs_stat
+        #endif
         #define XS_ISREG(s) (s & M2MB_S_IFREG)
         #define SEPARATOR_CHAR ':'
     #else
@@ -666,7 +729,9 @@ WOLFSSL_ABI WOLFSSL_API int wolfCrypt_Cleanup(void);
         #define XWRITE      write
         #define XREAD       read
         #define XCLOSE      close
+        #ifndef XSTAT
         #define XSTAT       stat
+        #endif
         #define XS_ISREG(s) S_ISREG(s)
         #define SEPARATOR_CHAR ':'
     #endif
@@ -678,10 +743,10 @@ WOLFSSL_ABI WOLFSSL_API int wolfCrypt_Cleanup(void);
 #endif
 
     #ifndef MAX_FILENAME_SZ
-        #define MAX_FILENAME_SZ  256 /* max file name length */
+        #define MAX_FILENAME_SZ (260 + 1) /* max file name length */
     #endif
     #ifndef MAX_PATH
-        #define MAX_PATH 256
+        #define MAX_PATH (260 + 1)
     #endif
 
     WOLFSSL_LOCAL int wc_FileLoad(const char* fname, unsigned char** buf,
@@ -805,7 +870,7 @@ WOLFSSL_ABI WOLFSSL_API int wolfCrypt_Cleanup(void);
     #include "os.h"           /* dc_rtc_api needs    */
     #include "dc_rtc_api.h"   /* to get current time */
 
-    /* uses parital <time.h> structures */
+    /* uses partial <time.h> structures */
     #define XTIME(tl)       (0)
     #define XGMTIME(c, t)   rtpsys_gmtime((c))
 
@@ -906,6 +971,8 @@ WOLFSSL_ABI WOLFSSL_API int wolfCrypt_Cleanup(void);
 
 #elif defined(WOLFSSL_APACHE_MYNEWT)
     #include "os/os_time.h"
+    typedef long time_t;
+    extern time_t mynewt_time(time_t* timer);
     #define XTIME(t1)       mynewt_time((t1))
     #define WOLFSSL_GMTIME
     #define USE_WOLF_TM
@@ -913,9 +980,17 @@ WOLFSSL_ABI WOLFSSL_API int wolfCrypt_Cleanup(void);
 
 #elif defined(WOLFSSL_ZEPHYR)
     #ifndef _POSIX_C_SOURCE
-        #include <posix/time.h>
+        #include <zephyr/posix/time.h>
     #else
-        #include <sys/time.h>
+        #include <time.h>
+    #endif
+
+    #if defined(CONFIG_RTC)
+        #if defined(CONFIG_PICOLIBC) || defined(CONFIG_NEWLIB_LIBC)
+            #include <zephyr/drivers/rtc.h>
+        #else
+            #warning "RTC support needs picolibc or newlib (nano)"
+        #endif
     #endif
 
     time_t z_time(time_t *timer);
@@ -946,7 +1021,7 @@ WOLFSSL_ABI WOLFSSL_API int wolfCrypt_Cleanup(void);
 
 #elif defined(HAL_RTC_MODULE_ENABLED)
     #include <time.h>
-    WOLFSSL_LOCAL time_t* stm32_hal_time(time_t* t1);
+    WOLFSSL_LOCAL time_t stm32_hal_time(time_t* t1);
     #define XTIME(t1) stm32_hal_time(t1)
     #define WOLFSSL_GMTIME
 #else
@@ -988,6 +1063,11 @@ WOLFSSL_ABI WOLFSSL_API int wolfCrypt_Cleanup(void);
     #define XTIME(tl)       time((tl))
     #endif
 #endif
+
+#if defined(WOLFSSL_GMTIME) && !defined(HAVE_GMTIME_R)
+    #define HAVE_GMTIME_R
+#endif
+
 #if !defined(XGMTIME) && !defined(TIME_OVERRIDES)
     /* Always use gmtime_r if available. */
     #if defined(HAVE_GMTIME_S)
@@ -1053,8 +1133,9 @@ WOLFSSL_ABI WOLFSSL_API int wolfCrypt_Cleanup(void);
     extern struct tm* XGMTIME(const time_t* timer, struct tm* tmp);
 #elif defined(WOLFSSL_GMTIME)
     struct tm* gmtime(const time_t* timer);
+    struct tm* gmtime_r(const time_t* timer, struct tm *ret);
 #endif
-#endif /* NO_ASN_TIME */
+#endif /* !NO_ASN_TIME */
 
 
 #ifndef WOLFSSL_LEANPSK
@@ -1097,6 +1178,23 @@ WOLFSSL_ABI WOLFSSL_API int wolfCrypt_Cleanup(void);
         #define WOLFSSL_SCE_GSCE_HANDLE g_sce
     #endif
 #endif
+
+
+    /* AFTER user_settings.h is loaded,
+    ** determine if POSIX multi-threaded: HAVE_PTHREAD  */
+    #if defined(SINGLE_THREADED) || defined(__MINGW32__)
+        /* Never HAVE_PTHREAD in single thread, or non-POSIX mode.
+        ** Reminder: MING32 is win32 threads, not POSIX threads */
+        #undef HAVE_PTHREAD
+    #else
+        /* _POSIX_THREADS is defined by unistd.h so this check needs to happen
+         * after we include all the platform relevant libs. */
+        #ifdef _POSIX_THREADS
+            /* HAVE_PTHREAD == POSIX threads capable and enabled. */
+            #undef HAVE_PTHREAD
+            #define HAVE_PTHREAD 1
+        #endif
+    #endif
 
 #ifdef __cplusplus
     }  /* extern "C" */

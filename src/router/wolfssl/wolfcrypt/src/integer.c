@@ -47,7 +47,7 @@
     #include <wolfcrypt/src/misc.c>
 #endif
 
-#include <wolfssl/wolfcrypt/integer.h>
+#include <wolfssl/wolfcrypt/wolfmath.h>
 
 #if defined(FREESCALE_LTC_TFM)
     #include <wolfssl/wolfcrypt/port/nxp/ksdk_port.h>
@@ -423,7 +423,7 @@ int mp_grow (mp_int * a, int size)
      * in case the operation failed we don't want
      * to overwrite the dp member of a.
      */
-    tmp = OPT_CAST(mp_digit) XREALLOC (a->dp, sizeof (mp_digit) * size, NULL,
+    tmp = (mp_digit *)XREALLOC (a->dp, sizeof (mp_digit) * size, NULL,
                                                            DYNAMIC_TYPE_BIGINT);
     if (tmp == NULL) {
       /* reallocation failed but "a" is still valid [can be freed] */
@@ -551,6 +551,15 @@ int mp_exch (mp_int * a, mp_int * b)
   *a = *b;
   *b = t;
   return MP_OKAY;
+}
+
+int mp_cond_swap_ct_ex (mp_int * a, mp_int * b, int c, int m, mp_int * t)
+{
+    (void)c;
+    (void)t;
+    if (m == 1)
+        mp_exch(a, b);
+    return MP_OKAY;
 }
 
 int mp_cond_swap_ct (mp_int * a, mp_int * b, int c, int m)
@@ -946,7 +955,7 @@ int wolfcrypt_mp_exptmod (mp_int * G, mp_int * X, mp_int * P, mp_int * Y)
   }
 
 #ifdef BN_MP_EXPTMOD_BASE_2
-  if (G->used == 1 && G->dp[0] == 2) {
+  if (G->used == 1 && G->dp[0] == 2 && mp_isodd(P) == MP_YES) {
     return mp_exptmod_base_2(X, P, Y);
   }
 #endif
@@ -976,7 +985,7 @@ int wolfcrypt_mp_exptmod (mp_int * G, mp_int * X, mp_int * P, mp_int * Y)
   }
 #endif
 
-  /* if the modulus is odd or dr != 0 use the montgomery method */
+  /* if the modulus is odd use the montgomery method, or use other known */
 #ifdef BN_MP_EXPTMOD_FAST_C
   if (mp_isodd (P) == MP_YES || dr !=  0) {
     return mp_exptmod_fast (G, X, P, Y, dr);
@@ -1058,7 +1067,7 @@ int mp_invmod (mp_int * a, mp_int * b, mp_int * c)
 int fast_mp_invmod (mp_int * a, mp_int * b, mp_int * c)
 {
   mp_int  x, y, u, v, B, D;
-  int     res, neg, loop_check = 0;
+  int     res, loop_check = 0;
 
   /* 2. [modified] b must be odd   */
   if (mp_iseven (b) == MP_YES) {
@@ -1077,6 +1086,12 @@ int fast_mp_invmod (mp_int * a, mp_int * b, mp_int * c)
 
   /* we need y = |a| */
   if ((res = mp_mod (a, b, &y)) != MP_OKAY) {
+    goto LBL_ERR;
+  }
+
+  if (mp_iszero (&y) == MP_YES) {
+    /* invmod doesn't exist for this a and b */
+    res = MP_VAL;
     goto LBL_ERR;
   }
 
@@ -1168,7 +1183,6 @@ top:
   }
 
   /* b is now the inverse */
-  neg = a->sign;
   while (D.sign == MP_NEG) {
     if ((res = mp_add (&D, b, &D)) != MP_OKAY) {
       goto LBL_ERR;
@@ -1181,7 +1195,6 @@ top:
       }
   }
   mp_exch (&D, c);
-  c->sign = neg;
   res = MP_OKAY;
 
 LBL_ERR:mp_clear(&x);
@@ -1226,6 +1239,13 @@ int mp_invmod_slow (mp_int * a, mp_int * b, mp_int * c)
   if ((res = mp_mod(a, b, &x)) != MP_OKAY) {
     goto LBL_ERR;
   }
+
+  if (mp_iszero (&x) == MP_YES) {
+    /* invmod doesn't exist for this a and b */
+    res = MP_VAL;
+    goto LBL_ERR;
+  }
+
   if (mp_isone(&x)) {
     res = mp_set(c, 1);
     goto LBL_ERR;
@@ -1965,7 +1985,6 @@ int mp_dr_is_modulus(mp_int *a)
    return 1;
 }
 
-
 /* computes Y == G**X mod P, HAC pp.616, Algorithm 14.85
  *
  * Uses a left-to-right k-ary sliding window to compute the modular
@@ -2093,7 +2112,10 @@ int mp_exptmod_fast (mp_int * G, mp_int * X, mp_int * P, mp_int * Y,
      if ((err = mp_reduce_2k_setup(P, &mp)) != MP_OKAY) {
         goto LBL_M;
      }
-     redux = mp_reduce_2k;
+     /* mp of zero is not usable */
+     if (mp != 0) {
+         redux = mp_reduce_2k;
+     }
 #endif
   }
 
@@ -3046,47 +3068,83 @@ int mp_submod(mp_int* a, mp_int* b, mp_int* c, mp_int* d)
 /* d = a + b (mod c) */
 int mp_addmod(mp_int* a, mp_int* b, mp_int* c, mp_int* d)
 {
-   int     res;
-   mp_int  t;
+  int     res;
+  mp_int  t;
 
-   if ((res = mp_init (&t)) != MP_OKAY) {
-     return res;
-   }
+  if ((res = mp_init (&t)) != MP_OKAY) {
+    return res;
+  }
 
-   res = mp_add (a, b, &t);
-   if (res == MP_OKAY) {
-       res = mp_mod (&t, c, d);
-   }
+  res = mp_add (a, b, &t);
+  if (res == MP_OKAY) {
+    res = mp_mod (&t, c, d);
+  }
 
-   mp_clear (&t);
+  mp_clear (&t);
 
-   return res;
+  return res;
 }
 
 /* d = a - b (mod c) - a < c and b < c and positive */
 int mp_submod_ct(mp_int* a, mp_int* b, mp_int* c, mp_int* d)
 {
-    int res;
+  int     res;
+  mp_int  t;
+  mp_int* r = d;
 
-    res = mp_sub(a, b, d);
-    if (res == MP_OKAY && mp_isneg(d)) {
-        res = mp_add(d, c, d);
+  if (c == d) {
+    r = &t;
+
+    if ((res = mp_init (r)) != MP_OKAY) {
+      return res;
     }
+  }
 
-    return res;
+  res = mp_sub (a, b, r);
+  if (res == MP_OKAY) {
+    if (mp_isneg (r)) {
+      res = mp_add (r, c, d);
+    } else if (c == d) {
+      res = mp_copy (r, d);
+    }
+  }
+
+  if (c == d) {
+    mp_clear (r);
+  }
+
+  return res;
 }
 
 /* d = a + b (mod c) - a < c and b < c and positive */
 int mp_addmod_ct(mp_int* a, mp_int* b, mp_int* c, mp_int* d)
 {
-    int res;
+  int     res;
+  mp_int  t;
+  mp_int* r = d;
 
-    res = mp_add(a, b, d);
-    if (res == MP_OKAY && mp_cmp(d, c) != MP_LT) {
-        res = mp_sub(d, c, d);
+  if (c == d) {
+    r = &t;
+
+    if ((res = mp_init (r)) != MP_OKAY) {
+      return res;
     }
+  }
 
-    return res;
+  res = mp_add (a, b, r);
+  if (res == MP_OKAY) {
+    if (mp_cmp (r, c) != MP_LT) {
+      res = mp_sub (r, c, d);
+    } else if (c == d) {
+      res = mp_copy (r, d);
+    }
+  }
+
+  if (c == d) {
+    mp_clear (r);
+  }
+
+  return res;
 }
 
 /* computes b = a*a */
@@ -3280,7 +3338,7 @@ int mp_init_size (mp_int * a, int size)
   size += (MP_PREC * 2) - (size % MP_PREC);
 
   /* alloc mem */
-  a->dp = OPT_CAST(mp_digit) XMALLOC (sizeof (mp_digit) * size, NULL,
+  a->dp = (mp_digit *)XMALLOC (sizeof (mp_digit) * size, NULL,
                                       DYNAMIC_TYPE_BIGINT);
   if (a->dp == NULL) {
     return MP_MEM;
@@ -3303,7 +3361,7 @@ int mp_init_size (mp_int * a, int size)
 }
 
 
-/* the jist of squaring...
+/* the list of squaring...
  * you do like mult except the offset of the tmpx [one that
  * starts closer to zero] can't equal the offset of tmpy.
  * So basically you set up iy like before then you min it with
@@ -4367,9 +4425,6 @@ int mp_add_d (mp_int* a, mp_digit b, mp_int* c) /* //NOLINT(misc-no-recursion) *
   /* old number of used digits in c */
   oldused = c->used;
 
-  /* sign always positive */
-  c->sign = MP_ZPOS;
-
   /* source alias */
   tmpa    = a->dp;
 
@@ -4419,6 +4474,9 @@ int mp_add_d (mp_int* a, mp_digit b, mp_int* c) /* //NOLINT(misc-no-recursion) *
       */
      ix       = 1;
   }
+
+  /* sign always positive */
+  c->sign = MP_ZPOS;
 
   /* now zero to oldused */
   while (ix++ < oldused) {

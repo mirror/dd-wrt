@@ -19,7 +19,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1335, USA
  */
 
-#include <wolfssl/options.h>
+#ifndef WOLFSSL_USER_SETTINGS
+    #include <wolfssl/options.h>
+#endif
 #include <wolfssl/ssl.h>
 #define USE_CERT_BUFFERS_2048
 #include <wolfssl/certs_test.h>
@@ -30,12 +32,8 @@
 #endif
 
 #define BUFFER_SIZE           2048
-#define STATIC_MEM_SIZE       (96*1024)
-#define THREAD_STACK_SIZE     (12*1024)
+#define STATIC_MEM_SIZE       (192*1024)
 #define MAX_SEND_SIZE         256
-
-/* The stack to use in the server's thread. */
-K_THREAD_STACK_DEFINE(server_stack, THREAD_STACK_SIZE);
 
 #ifdef WOLFSSL_STATIC_MEMORY
     static WOLFSSL_HEAP_HINT* HEAP_HINT_SERVER;
@@ -64,6 +62,15 @@ static const char msgHTTPIndex[] =
     "</body>\n"
     "</html>\n";
 
+/* DO NOT use this in production. You should implement a way
+ * to get the current date. */
+static int verifyIgnoreDateError(int preverify, WOLFSSL_X509_STORE_CTX* store)
+{
+    if (store->error == ASN_BEFORE_DATE_E)
+        return 1; /* override error */
+    else
+        return preverify;
+}
 
 /* Create a new wolfSSL client with a server CA certificate. */
 static int wolfssl_client_new(WOLFSSL_CTX** ctx, WOLFSSL** ssl)
@@ -81,8 +88,11 @@ static int wolfssl_client_new(WOLFSSL_CTX** ctx, WOLFSSL** ssl)
 
     if (ret == 0) {
         /* Load client certificates into WOLFSSL_CTX */
-        if (wolfSSL_CTX_load_verify_buffer(client_ctx, ca_cert_der_2048,
-                sizeof_ca_cert_der_2048, WOLFSSL_FILETYPE_ASN1) !=
+        if (wolfSSL_CTX_load_verify_buffer_ex(client_ctx, ca_cert_der_2048,
+                sizeof_ca_cert_der_2048, WOLFSSL_FILETYPE_ASN1, 0,
+                /* DO NOT use this in production. You should
+                 * implement a way to get the current date. */
+                WOLFSSL_LOAD_FLAG_DATE_ERR_OKAY) !=
                 WOLFSSL_SUCCESS) {
             printf("ERROR: failed to load CA certificate\n");
             ret = -1;
@@ -96,6 +106,11 @@ static int wolfssl_client_new(WOLFSSL_CTX** ctx, WOLFSSL** ssl)
             ret = -1;
         }
     }
+
+    if (ret == 0)
+        wolfSSL_set_verify(client_ssl,
+            WOLFSSL_VERIFY_PEER|WOLFSSL_VERIFY_FAIL_IF_NO_PEER_CERT,
+            verifyIgnoreDateError);
 
     if (ret == 0) {
         /* Return newly created wolfSSL context and object */
@@ -169,6 +184,10 @@ static int wolfssl_server_new(WOLFSSL_CTX** ctx, WOLFSSL** ssl)
             ret = -1;
         }
     }
+
+    if (ret == 0)
+        wolfSSL_set_verify(server_ssl, WOLFSSL_VERIFY_PEER,
+            verifyIgnoreDateError);
 
     if (ret == 0) {
         /* Return newly created wolfSSL context and object */
@@ -269,20 +288,6 @@ static void wolfssl_memstats(WOLFSSL* ssl)
 #endif
 }
 
-
-/* Start the server thread. */
-void start_thread(THREAD_FUNC func, func_args* args, THREAD_TYPE* thread)
-{
-    k_thread_create(thread, server_stack, K_THREAD_STACK_SIZEOF(server_stack),
-                    func, args, NULL, NULL, 5, 0, K_NO_WAIT);
-}
-
-void join_thread(THREAD_TYPE thread)
-{
-    /* Threads are handled in the kernel. */
-}
-
-
 int wolfssl_server_accept_tcp(WOLFSSL* ssl, SOCKET_T* fd, SOCKET_T* acceptfd)
 {
     int ret = 0;
@@ -327,7 +332,7 @@ int wolfssl_server_accept_tcp(WOLFSSL* ssl, SOCKET_T* fd, SOCKET_T* acceptfd)
 }
 
 /* Thread to do the server operations. */
-void server_thread(void* arg1, void* arg2, void* arg3)
+void server_thread(void* arg1)
 {
     int           ret = 0;
     WOLFSSL_CTX*  server_ctx = NULL;
@@ -486,12 +491,18 @@ int main()
 #endif
 
     /* Start server */
-    start_thread(server_thread, NULL, &serverThread);
+    if (wolfSSL_NewThread(&serverThread, server_thread, NULL) != 0) {
+        printf("Failed to start server thread\n");
+        return -1;
+    }
 
     k_sleep(Z_TIMEOUT_TICKS(100));
     client_thread();
 
-    join_thread(serverThread);
+    if (wolfSSL_JoinThread(serverThread) != 0) {
+        printf("Failed to join server thread\n");
+        return -1;
+    }
 
     wolfSSL_Cleanup();
 

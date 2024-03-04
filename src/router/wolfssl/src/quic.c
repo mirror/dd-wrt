@@ -130,7 +130,7 @@ static int quic_record_append(WOLFSSL *ssl, QuicRecord *qr, const uint8_t *data,
 
         qr->len = qr_length(qr->data, qr->end);
         if (qr->len > qr->capacity) {
-            uint8_t *ndata = (uint8_t*)XREALLOC(qr->data, qr->len, ssl->head,
+            uint8_t *ndata = (uint8_t*)XREALLOC(qr->data, qr->len, ssl->heap,
                                                 DYNAMIC_TYPE_TMP_BUFFER);
             if (!ndata) {
                 ret = WOLFSSL_FAILURE;
@@ -950,8 +950,18 @@ cleanup:
 
 const WOLFSSL_EVP_CIPHER* wolfSSL_quic_get_aead(WOLFSSL* ssl)
 {
-    WOLFSSL_CIPHER* cipher = wolfSSL_get_current_cipher(ssl);
-    const WOLFSSL_EVP_CIPHER* evp_cipher;
+    WOLFSSL_CIPHER* cipher = NULL;
+    const WOLFSSL_EVP_CIPHER* evp_cipher = NULL;
+
+    if (ssl == NULL) {
+        return NULL;
+    }
+
+    cipher = wolfSSL_get_current_cipher(ssl);
+
+    if (cipher == NULL) {
+        return NULL;
+    }
 
     switch (cipher->cipherSuite) {
 #if !defined(NO_AES) && defined(HAVE_AESGCM)
@@ -997,8 +1007,18 @@ static int evp_cipher_eq(const WOLFSSL_EVP_CIPHER* c1,
 
 const WOLFSSL_EVP_CIPHER* wolfSSL_quic_get_hp(WOLFSSL* ssl)
 {
-    WOLFSSL_CIPHER* cipher = wolfSSL_get_current_cipher(ssl);
-    const WOLFSSL_EVP_CIPHER* evp_cipher;
+    WOLFSSL_CIPHER* cipher = NULL;
+    const WOLFSSL_EVP_CIPHER* evp_cipher = NULL;
+
+    if (ssl == NULL) {
+        return NULL;
+    }
+
+    cipher = wolfSSL_get_current_cipher(ssl);
+
+    if (cipher == NULL) {
+        return NULL;
+    }
 
     switch (cipher->cipherSuite) {
 #if !defined(NO_AES) && defined(HAVE_AESGCM)
@@ -1055,8 +1075,9 @@ size_t wolfSSL_quic_get_aead_tag_len(const WOLFSSL_EVP_CIPHER* aead_cipher)
         ret = 0;
     }
 
+    (void)wolfSSL_EVP_CIPHER_CTX_cleanup(ctx);
 #ifdef WOLFSSL_SMALL_STACK
-    XFREE(ctx, NULL, DYNAMIC_TYPE_TMP_BUF);
+    XFREE(ctx, NULL, DYNAMIC_TYPE_TMP_BUFFER);
 #endif
 
     return ret;

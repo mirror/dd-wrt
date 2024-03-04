@@ -76,8 +76,8 @@ enum {
     MAX_TLS13_HKDF_LABEL_SZ = 47 + WC_MAX_DIGEST_SIZE
 };
 
-WOLFSSL_API int wc_Tls13_HKDF_Extract(byte* prk, const byte* salt, int saltLen,
-                             byte* ikm, int ikmLen, int digest);
+WOLFSSL_API int wc_Tls13_HKDF_Extract(byte* prk, const byte* salt,
+                          word32 saltLen, byte* ikm, word32 ikmLen, int digest);
 
 WOLFSSL_API int wc_Tls13_HKDF_Expand_Label(byte* okm, word32 okmLen,
                              const byte* prk, word32 prkLen,
@@ -104,6 +104,42 @@ WOLFSSL_API int wc_SSH_KDF(byte hashId, byte keyId,
         const byte* sessionId, word32 sessionIdSz);
 
 #endif /* WOLFSSL_WOLFSSH */
+
+#ifdef WC_SRTP_KDF
+/* Label values for purpose. */
+#define WC_SRTP_LABEL_ENCRYPTION        0x00
+#define WC_SRTP_LABEL_MSG_AUTH          0x01
+#define WC_SRTP_LABEL_SALT              0x02
+#define WC_SRTCP_LABEL_ENCRYPTION       0x03
+#define WC_SRTCP_LABEL_MSG_AUTH         0x04
+#define WC_SRTCP_LABEL_SALT             0x05
+#define WC_SRTP_LABEL_HDR_ENCRYPTION    0x06
+#define WC_SRTP_LABEL_HDR_SALT          0x07
+
+/* Length of index for SRTP KDF. */
+#define WC_SRTP_INDEX_LEN               6
+/* Length of index for SRTCP KDF. */
+#define WC_SRTCP_INDEX_LEN              4
+
+/* Maximum length of salt that can be used with SRTP/SRTCP. */
+#define WC_SRTP_MAX_SALT    14
+
+WOLFSSL_API int wc_SRTP_KDF(const byte* key, word32 keySz, const byte* salt,
+    word32 saltSz, int kdrIdx, const byte* index, byte* key1, word32 key1Sz,
+    byte* key2, word32 key2Sz, byte* key3, word32 key3Sz);
+WOLFSSL_API int wc_SRTCP_KDF(const byte* key, word32 keySz, const byte* salt,
+    word32 saltSz, int kdrIdx, const byte* index, byte* key1, word32 key1Sz,
+    byte* key2, word32 key2Sz, byte* key3, word32 key3Sz);
+WOLFSSL_API int wc_SRTP_KDF_label(const byte* key, word32 keySz,
+    const byte* salt, word32 saltSz, int kdrIdx, const byte* index, byte label,
+    byte* outKey, word32 outKeySz);
+WOLFSSL_API int wc_SRTCP_KDF_label(const byte* key, word32 keySz,
+    const byte* salt, word32 saltSz, int kdrIdx, const byte* index, byte label,
+    byte* outKey, word32 outKeySz);
+
+WOLFSSL_API int wc_SRTP_KDF_kdr_to_idx(word32 kdr);
+
+#endif /* WC_SRTP_KDF */
 
 #ifdef __cplusplus
     } /* extern "C" */

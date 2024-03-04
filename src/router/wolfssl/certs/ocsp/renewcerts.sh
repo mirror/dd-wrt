@@ -1,5 +1,14 @@
 #!/bin/sh
 
+# bwrap execution environment to avoid port conflicts
+if [ "${AM_BWRAPPED-}" != "yes" ]; then
+    bwrap_path="$(command -v bwrap)"
+    if [ -n "$bwrap_path" ]; then
+        export AM_BWRAPPED=yes
+        exec "$bwrap_path" --cap-add ALL --unshare-net --dev-bind / / "$0" "$@"
+    fi
+fi
+
 check_result(){
     if [ $1 -ne 0 ]; then
         if [ -n "$2" ]; then
@@ -80,10 +89,10 @@ update_cert server3          "www3.wolfssl.com"                intermediate2-ca 
 update_cert server4          "www4.wolfssl.com"                intermediate2-ca v3_req2 08 # REVOKED
 update_cert server5          "www5.wolfssl.com"                intermediate3-ca v3_req3 09
 
-
 # Create response DER buffer for test
 openssl ocsp -port 22221 -ndays 1000 -index index-ca-and-intermediate-cas.txt -rsigner ocsp-responder-cert.pem -rkey ocsp-responder-key.pem -CA root-ca-cert.pem -partial_chain &
 PID=$!
+sleep 1 # Make sure server is ready
 
 openssl ocsp -issuer ./root-ca-cert.pem -cert ./intermediate1-ca-cert.pem -url http://localhost:22221/ -respout test-response.der -noverify
 openssl ocsp -issuer ./root-ca-cert.pem -cert ./intermediate1-ca-cert.pem -url http://localhost:22221/ -respout test-response-nointern.der -no_intern -noverify
@@ -95,6 +104,7 @@ wait $PID
 # now start up a responder that signs using rsa-pss
 openssl ocsp -port 22221 -ndays 1000 -index index-ca-and-intermediate-cas.txt -rsigner ocsp-responder-cert.pem -rkey ocsp-responder-key.pem -CA root-ca-cert.pem -rsigopt rsa_padding_mode:pss &
 PID=$!
+sleep 1 # Make sure server is ready
 
 openssl ocsp -issuer ./root-ca-cert.pem -cert ./intermediate1-ca-cert.pem -url http://localhost:22221/ -respout test-response-rsapss.der -noverify
 # can verify with the following command

@@ -151,7 +151,7 @@ static WC_INLINE int setup(Aes* aes,
     byte *aad_buf = NULL;
     int err;
 
-    WOLFSSL_XIL_DCACHE_INVALIDATE_RANGE((UINTPTR)aes->keyInit,
+    WOLFSSL_XIL_DCACHE_FLUSH_RANGE((UINTPTR)aes->keyInit,
                                         sizeof(aes->keyInit));
 
     if (XSecure_AesWriteKey(&(aes->xSec.cinst), aes->kup, aes->xKeySize,
@@ -164,7 +164,7 @@ static WC_INLINE int setup(Aes* aes,
         XMEMCPY(iv_, iv, AEAD_NONCE_SZ);
         piv = iv_;
     }
-    WOLFSSL_XIL_DCACHE_INVALIDATE_RANGE((UINTPTR)piv, AEAD_NONCE_SZ);
+    WOLFSSL_XIL_DCACHE_FLUSH_RANGE((UINTPTR)piv, AEAD_NONCE_SZ);
 
     if (init(&(aes->xSec.cinst), aes->kup, aes->xKeySize, XIL_CAST_U64(piv))) {
         WOLFSSL_XIL_MSG("Failed to init");
@@ -195,7 +195,7 @@ static WC_INLINE int setup(Aes* aes,
         XMEMCPY((void* )aad, authIn, authInSz);
     }
 
-    WOLFSSL_XIL_DCACHE_INVALIDATE_RANGE((UINTPTR)aad, authInSz);
+    WOLFSSL_XIL_DCACHE_FLUSH_RANGE((UINTPTR)aad, authInSz);
 
     if (XSecure_AesUpdateAad(&(aes->xSec.cinst), XIL_CAST_U64(authIn),
                              authInSz)) {
@@ -221,7 +221,7 @@ static WC_INLINE int handle_aad(       Aes* aes,
     byte initalCounter[AES_BLOCK_SIZE] = { 0 };
     XMEMCPY(initalCounter, iv, AEAD_NONCE_SZ);
     initalCounter[AES_BLOCK_SIZE - 1] = 1;
-    GHASH(aes, authIn, authInSz, data, sz, authTag, AES_GCM_AUTH_SZ);
+    GHASH(&aes->gcm, authIn, authInSz, data, sz, authTag, AES_GCM_AUTH_SZ);
     ret = wc_AesEncryptDirect(aes, scratch, initalCounter);
     if (ret == 0)
         xorbuf(authTag, scratch, AES_GCM_AUTH_SZ);
@@ -277,7 +277,7 @@ int wc_AesGcmEncrypt(       Aes* aes, byte* out,
 
     if (NEEDS_ALIGNMENT(out, XIL_AESGCM_ALIGN)) {
         if (in != in_aligned) {
-            /* In case `in` has been copied already, re-use that buffer
+            /* In case `in` has been copied already, reuse that buffer
              * and also write to it instead of allocating another one.
              */
             out_aligned = in_aligned;
@@ -296,9 +296,9 @@ int wc_AesGcmEncrypt(       Aes* aes, byte* out,
         out_aligned = out;
     }
 
-    WOLFSSL_XIL_DCACHE_INVALIDATE_RANGE((UINTPTR)in_aligned, sz);
-    WOLFSSL_XIL_DCACHE_INVALIDATE_RANGE((UINTPTR)out_aligned, sz);
-    WOLFSSL_XIL_DCACHE_INVALIDATE_RANGE((UINTPTR)tag, sizeof(tag));
+    WOLFSSL_XIL_DCACHE_FLUSH_RANGE((UINTPTR)in_aligned, sz);
+    WOLFSSL_XIL_DCACHE_FLUSH_RANGE((UINTPTR)out_aligned, sz);
+    WOLFSSL_XIL_DCACHE_FLUSH_RANGE((UINTPTR)tag, sizeof(tag));
 
     if (XSecure_AesEncryptUpdate(&(aes->xSec.cinst), XIL_CAST_U64(in_aligned),
                                  XIL_CAST_U64(out_aligned), sz, TRUE)) {
@@ -313,8 +313,8 @@ int wc_AesGcmEncrypt(       Aes* aes, byte* out,
         ret = WC_HW_E;
         ForceZero(authTag, authTagSz);
     } else {
-        WOLFSSL_XIL_DCACHE_INVALIDATE_RANGE((UINTPTR)out_aligned, sz);
-        WOLFSSL_XIL_DCACHE_INVALIDATE_RANGE((UINTPTR)tag, sizeof(tag));
+        WOLFSSL_XIL_DCACHE_FLUSH_RANGE((UINTPTR)out_aligned, sz);
+        WOLFSSL_XIL_DCACHE_FLUSH_RANGE((UINTPTR)tag, sizeof(tag));
 
         if (aes->aadStyle == SW_AAD) {
             ret = handle_aad(aes, out_aligned, sz, iv, authTag, authIn,
@@ -392,7 +392,7 @@ int  wc_AesGcmDecrypt(       Aes* aes, byte* out,
 
     if (NEEDS_ALIGNMENT(out, XIL_AESGCM_ALIGN)) {
         if (in != in_aligned) {
-            /* In case `in` has been copied already, re-use that buffer
+            /* In case `in` has been copied already, reuse that buffer
              * and also write to it instead of allocating another one.
              */
             out_aligned = in_aligned;
@@ -411,8 +411,8 @@ int  wc_AesGcmDecrypt(       Aes* aes, byte* out,
         out_aligned = out;
     }
 
-    WOLFSSL_XIL_DCACHE_INVALIDATE_RANGE((UINTPTR)in_aligned, sz);
-    WOLFSSL_XIL_DCACHE_INVALIDATE_RANGE((UINTPTR)out_aligned, sz);
+    WOLFSSL_XIL_DCACHE_FLUSH_RANGE((UINTPTR)in_aligned, sz);
+    WOLFSSL_XIL_DCACHE_FLUSH_RANGE((UINTPTR)out_aligned, sz);
 
     if (aes->aadStyle == HW_ENGINE_AAD) {
         /* Use the originally provided tag */
@@ -441,14 +441,14 @@ int  wc_AesGcmDecrypt(       Aes* aes, byte* out,
         goto error_out;
     }
 
-    WOLFSSL_XIL_DCACHE_INVALIDATE_RANGE((UINTPTR)tag, AES_GCM_AUTH_SZ);
+    WOLFSSL_XIL_DCACHE_FLUSH_RANGE((UINTPTR)tag, AES_GCM_AUTH_SZ);
 
     if (XSecure_AesDecryptFinal(&(aes->xSec.cinst), XIL_CAST_U64(tag))) {
         WOLFSSL_XIL_MSG("DecryptFinal failed");
         ret = WC_HW_E;
     } else {
-        WOLFSSL_XIL_DCACHE_INVALIDATE_RANGE((UINTPTR)out_aligned, sz);
-        WOLFSSL_XIL_DCACHE_INVALIDATE_RANGE((UINTPTR)buf, sizeof(buf));
+        WOLFSSL_XIL_DCACHE_FLUSH_RANGE((UINTPTR)out_aligned, sz);
+        WOLFSSL_XIL_DCACHE_FLUSH_RANGE((UINTPTR)buf, sizeof(buf));
 
         if (aes->aadStyle == SW_AAD) {
             if (ConstantCompare(authTag, real_tag, authTagSz) != 0) {
@@ -558,7 +558,7 @@ int  wc_AesGcmEncrypt(Aes* aes, byte* out,
         XMEMSET(initalCounter, 0, AES_BLOCK_SIZE);
         XMEMCPY(initalCounter, iv, ivSz);
         initalCounter[AES_BLOCK_SIZE - 1] = 1;
-        GHASH(aes, authIn, authInSz, out, sz, authTag, authTagSz);
+        GHASH(&aes->gcm, authIn, authInSz, out, sz, authTag, authTagSz);
         ret = wc_AesEncryptDirect(aes, scratch, initalCounter);
         if (ret < 0)
             return ret;
@@ -597,7 +597,7 @@ int  wc_AesGcmDecrypt(Aes* aes, byte* out,
         XMEMCPY(initalCounter, iv, ivSz);
         initalCounter[AES_BLOCK_SIZE - 1] = 1;
         tag = buf;
-        GHASH(aes, NULL, 0, in, sz, tag, AES_GCM_AUTH_SZ);
+        GHASH(&aes->gcm, NULL, 0, in, sz, tag, AES_GCM_AUTH_SZ);
         ret = wc_AesEncryptDirect(aes, scratch, initalCounter);
         if (ret < 0)
             return ret;
@@ -614,7 +614,7 @@ int  wc_AesGcmDecrypt(Aes* aes, byte* out,
 
     /* account for additional data */
     if (authIn != NULL && authInSz > 0) {
-        GHASH(aes, authIn, authInSz, in, sz, tag, AES_GCM_AUTH_SZ);
+        GHASH(&aes->gcm, authIn, authInSz, in, sz, tag, AES_GCM_AUTH_SZ);
         ret = wc_AesEncryptDirect(aes, scratch, initalCounter);
         if (ret < 0)
             return ret;

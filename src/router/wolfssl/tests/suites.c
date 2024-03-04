@@ -61,7 +61,8 @@
 #include "examples/client/client.h"
 #include "examples/server/server.h"
 
-#if !defined(NO_WOLFSSL_SERVER) && !defined(NO_WOLFSSL_CLIENT)
+#if !defined(NO_WOLFSSL_SERVER) && !defined(NO_WOLFSSL_CLIENT) && \
+    !defined(SINGLE_THREADED)
 static WOLFSSL_CTX* cipherSuiteCtx = NULL;
 static char nonblockFlag[] = "-N";
 static char noVerifyFlag[] = "-d";
@@ -303,12 +304,8 @@ static int execute_test_case(int svr_argc, char** svr_argv,
                              int forceCliDefCipherList)
 {
 #if defined(WOLFSSL_TIRTOS) || defined(WOLFSSL_SRTP)
-    func_args cliArgs = {0};
-    func_args svrArgs = {0};
-    cliArgs.argc = cli_argc;
-    cliArgs.argv = cli_argv;
-    svrArgs.argc = svr_argc;
-    svrArgs.argv = svr_argv;
+    func_args cliArgs = {0, NULL, 0, NULL, NULL, NULL};
+    func_args svrArgs = {0, NULL, 0, NULL, NULL, NULL};
 #else
     func_args cliArgs = {cli_argc, cli_argv, 0, NULL, NULL};
     func_args svrArgs = {svr_argc, svr_argv, 0, NULL, NULL};
@@ -329,9 +326,17 @@ static int execute_test_case(int svr_argc, char** svr_argv,
     int         reqClientCert;
 #endif
 
-#if defined(WOLFSSL_SRTP) && !defined(SINGLE_THREADED) && defined(_POSIX_THREADS)
+#if defined(WOLFSSL_SRTP) && defined(WOLFSSL_COND)
     srtp_test_helper srtp_helper;
 #endif
+
+#if defined(WOLFSSL_TIRTOS) || defined(WOLFSSL_SRTP)
+    cliArgs.argc = cli_argc;
+    cliArgs.argv = cli_argv;
+    svrArgs.argc = svr_argc;
+    svrArgs.argv = svr_argv;
+#endif
+
     /* Is Valid Cipher and Version Checks */
     /* build command list for the Is checks below */
     commandLine[0] = '\0';
@@ -460,7 +465,7 @@ static int execute_test_case(int svr_argc, char** svr_argv,
 
     InitTcpReady(&ready);
 
-#if defined(WOLFSSL_SRTP) && !defined(SINGLE_THREADED) && defined(_POSIX_THREADS)
+#if defined(WOLFSSL_SRTP) && defined(WOLFSSL_COND)
     srtp_helper_init(&srtp_helper);
     cliArgs.srtp_helper = &srtp_helper;
     svrArgs.srtp_helper = &srtp_helper;
@@ -580,7 +585,7 @@ static int execute_test_case(int svr_argc, char** svr_argv,
 #endif
     FreeTcpReady(&ready);
 
-#if defined (WOLFSSL_SRTP) &&!defined(SINGLE_THREADED) &&  defined(_POSIX_THREADS)
+#if defined (WOLFSSL_SRTP) && defined(WOLFSSL_COND)
     srtp_helper_free(&srtp_helper);
 #endif
 
@@ -648,7 +653,12 @@ static void test_harness(void* vargs)
         args->return_code = 1;
         return;
     }
-    rewind(file);
+    if (fseek(file, 0, SEEK_SET) < 0) {
+        fprintf(stderr, "error %d fseeking %s\n", errno, fname);
+        fclose(file);
+        args->return_code = 1;
+        return;
+    }
 
     script = (char*)malloc(sz+1);
     if (script == 0) {
@@ -786,7 +796,8 @@ static void test_harness(void* vargs)
 int SuiteTest(int argc, char** argv)
 {
 #if !defined(NO_WOLFSSL_SERVER) && !defined(NO_WOLFSSL_CLIENT) && \
-    !defined(WOLF_CRYPTO_CB_ONLY_RSA) && !defined(WOLF_CRYPTO_CB_ONLY_ECC)
+    !defined(WOLF_CRYPTO_CB_ONLY_RSA) && !defined(WOLF_CRYPTO_CB_ONLY_ECC) && \
+    !defined(SINGLE_THREADED)
     func_args args;
     char argv0[3][80];
     char* myArgv[3];
@@ -959,16 +970,38 @@ int SuiteTest(int argc, char** argv)
         args.return_code = EXIT_FAILURE;
         goto exit;
     }
-    #ifdef HAVE_LIBOQS
-    /* add DTLSv13 pq tests */
-    XSTRLCPY(argv0[1], "tests/test-dtls13-pq-2.conf", sizeof(argv0[1]));
-    printf("starting DTLSv13 post-quantum groups tests\n");
+    #ifdef WOLFSSL_DTLS_CH_FRAG
+    /* add DTLSv13 pq frag tests */
+    XSTRLCPY(argv0[1], "tests/test-dtls13-pq-frag.conf", sizeof(argv0[1]));
+    printf("starting DTLSv13 post-quantum groups tests with fragmentation\n");
     test_harness(&args);
     if (args.return_code != 0) {
         printf("error from script %d\n", args.return_code);
         args.return_code = EXIT_FAILURE;
         goto exit;
     }
+    #endif
+    #ifdef HAVE_LIBOQS
+    /* add DTLSv13 pq 2 tests */
+    XSTRLCPY(argv0[1], "tests/test-dtls13-pq-2.conf", sizeof(argv0[1]));
+    printf("starting DTLSv13 post-quantum 2 groups tests\n");
+    test_harness(&args);
+    if (args.return_code != 0) {
+        printf("error from script %d\n", args.return_code);
+        args.return_code = EXIT_FAILURE;
+        goto exit;
+    }
+    #ifdef WOLFSSL_DTLS_CH_FRAG
+    /* add DTLSv13 pq 2 frag tests */
+    XSTRLCPY(argv0[1], "tests/test-dtls13-pq-2-frag.conf", sizeof(argv0[1]));
+    printf("starting DTLSv13 post-quantum 2 groups tests with fragmentation\n");
+    test_harness(&args);
+    if (args.return_code != 0) {
+        printf("error from script %d\n", args.return_code);
+        args.return_code = EXIT_FAILURE;
+        goto exit;
+    }
+    #endif
     #endif
     #endif
 #endif
@@ -1270,6 +1303,18 @@ int SuiteTest(int argc, char** argv)
     }
 #endif /* HAVE_RSA and HAVE_ECC */
 #endif /* !WC_STRICT_SIG */
+#if defined(WOLFSSL_SM2) && defined(WOLFSSL_SM3) && \
+    (defined(WOLFSSL_SM4_GCM) || defined(WOLFSSL_SM4_CCM))
+    /* add SM2/SM3/SM4 test suites */
+    XSTRLCPY(argv0[1], "tests/test-sm2.conf", sizeof(argv0[1]));
+    printf("starting SM2/SM3/SM4 cipher suite tests\n");
+    test_harness(&args);
+    if (args.return_code != 0) {
+        printf("error from script %d\n", args.return_code);
+        args.return_code = EXIT_FAILURE;
+        goto exit;
+    }
+#endif
 #ifndef NO_PSK
     #ifndef WOLFSSL_NO_TLS12
         #if !defined(NO_RSA) || defined(HAVE_ECC)

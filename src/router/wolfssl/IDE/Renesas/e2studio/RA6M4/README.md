@@ -30,21 +30,21 @@ The wolfssl Project Summary is listed below and is relevant for every project.
 
 |Components|Version|
 |:--|:--|
-|Board Support Package Common Files|v3.5.0|
-|Secure Cryptography Engine on RA6 Protected Mode|v3.5.0|
-|I/O Port|v3.5.0|
-|Arm CMSIS Version 5 - Core (M)|v5.8.0+fsp.3.5.0|
+|Board Support Package Common Files|v3.6.0|
+|Secure Cryptography Engine on RA6 Protected Mode|v3.6.0|
+|I/O Port|v3.6.0|
+|Arm CMSIS Version 5 - Core (M)|v5.8.0+fsp.3.6.0|
 |RA6M4-EK Board Support Files|v3.5.0|
-|Board support package for R7FA6M4AF3CFB|v3.5.0|
-|Board support package for RA6M4|v3.5.0|
-|Board support package for RA6M4 - FSP Data|v3.5.0|
-|FreeRTOS|v10.4.3-LTS.Patch.2+fsp.3.5.0|
-|FreeRTOS - Memory Management - Heap 4|v10.4.3-LTS.Patch.2+fsp.3.5.0|
-|r_ether to FreeRTOS+TCP Wrapper|v3.5.0|
-|Ethernet|v3.5.0|
-|Ethernet PHY|v3.5.0|
-|FreeRTOS+TCP|v2.3.2-LTS.Patch.1+fsp.3.5.0|
-|FreeRTOS - Buffer Allocation 2|v2.3.2-LTS.Patch.1+fsp.3.5.0|
+|Board support package for R7FA6M4AF3CFB|v3.6.0|
+|Board support package for RA6M4|v3.6.0|
+|Board support package for RA6M4 - FSP Data|v3.6.0|
+|FreeRTOS|v10.4.3-LTS.Patch.2+fsp.3.6.0|
+|FreeRTOS - Memory Management - Heap 4|v10.4.3-LTS.Patch.2+fsp.3.6.0|
+|r_ether to FreeRTOS+TCP Wrapper|v3.6.0|
+|Ethernet|v3.6.0|
+|Ethernet PHY|v3.6.0|
+|FreeRTOS+TCP|v2.3.2-LTS.Patch.1+fsp.3.6.0|
+|FreeRTOS - Buffer Allocation 2|v2.3.2-LTS.Patch.1+fsp.3.6.0|
 
 ## Setup Steps and Build wolfSSL Library
 
@@ -102,7 +102,7 @@ The wolfssl Project Summary is listed below and is relevant for every project.
 + Enter `dummy_application` as the project name. Click Next.
 + Under `RA library project`, select `wolfSSL_RA6M4`.
 + Click Finish.
-+ Copy the followng folder and file at `dummy_application` to `test_RA6M4`\
++ Copy the following folder and file at `dummy_application` to `test_RA6M4`\
   script/\
   src/sce_tst_thread_entry.c
   
@@ -136,7 +136,7 @@ The wolfssl Project Summary is listed below and is relevant for every project.
     you can specify "RTT control block" to 0x20020000 0x10000 by Search Range
   
 ## Run Client
-1.) Enable TLS_CLIENT definition in wolfssl_demo.h of test_RA6M4 projet
+1.) Enable TLS_CLIENT definition in wolfssl_demo.h of test_RA6M4 project
 
 2.) Client IP address and Server IP address
 
@@ -168,7 +168,7 @@ $./examples/server/server -b -d -i
 
 ECDSA sign and verify use, launch server with the following option
 ```
-$./examples/server/server -b -d -c -i ./certs/server-ecc.pem -k ./certs/ecc-key.pem
+$./examples/server/server -b -d -i -c ./certs/server-ecc.pem -k ./certs/ecc-key.pem
 ```
 
 5.) Run the example Client
@@ -233,7 +233,7 @@ You will see the following message on J-LinK RTT Viewer when using ECDSA sign an
 
 
 ### Run Multi Client Session example
-1.) Enable TLS_CLIENT and TLS_MULTITHREAD_TEST definition in wolfssl_demo.h of test_RA6M4 projet
+1.) Enable TLS_CLIENT and TLS_MULTITHREAD_TEST definition in wolfssl_demo.h of test_RA6M4 project
 
 2.) Follow [Run Client](#run-client) instruction 
 

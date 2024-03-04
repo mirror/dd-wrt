@@ -14,9 +14,21 @@ jobs:
           '',
           '--enable-all --enable-asn=template',
           '--enable-all --enable-asn=original',
+          '--enable-harden-tls',
+          '--enable-tls13 --enable-session-ticket --enable-dtls --enable-dtls13
+             --enable-opensslextra --enable-sessioncerts 
+             CPPFLAGS=''-DWOLFSSL_DTLS_NO_HVR_ON_RESUME -DHAVE_EXT_CACHE 
+             -DWOLFSSL_TICKET_HAVE_ID -DHAVE_EX_DATA -DSESSION_CACHE_DYNAMIC_MEM'' ',
+          '--enable-all --enable-secure-renegotiation',
+          '--enable-all --enable-haproxy --enable-quic',
+          '--enable-dtls --enable-dtls13 --enable-earlydata 
+             --enable-session-ticket --enable-psk 
+             CPPFLAGS=''-DWOLFSSL_DTLS13_NO_HRR_ON_RESUME'' ',
         ]
     name: make check
     runs-on: ${{ matrix.os }}
+    # This should be a safe limit for the tests to run.
+    timeout-minutes: 14
     steps:
       - name: Build and test wolfSSL
         uses: wolfSSL/actions-build-autotools-project@v1
@@ -35,6 +47,8 @@ jobs:
         ]
     name: make user_setting.h
     runs-on: ${{ matrix.os }}
+    # This should be a safe limit for the tests to run.
+    timeout-minutes: 14
     steps:
       - name: Build and test wolfSSL
         uses: wolfSSL/actions-build-autotools-project@v1
@@ -56,6 +70,8 @@ jobs:
         ]
     name: make user_setting.h (testwolfcrypt only)
     runs-on: ${{ matrix.os }}
+    # This should be a safe limit for the tests to run.
+    timeout-minutes: 14
     steps:
       - name: Build and test wolfSSL
         uses: wolfSSL/actions-build-autotools-project@v1
@@ -75,6 +91,8 @@ jobs:
         os: [ ubuntu-latest, macos-latest ]
     name: make user_setting.h (with sed)
     runs-on: ${{ matrix.os }}
+    # This should be a safe limit for the tests to run.
+    timeout-minutes: 14
     steps:
     - uses: actions/checkout@v3
     - if: ${{ matrix.os == 'macos-latest' }}
@@ -91,6 +109,8 @@ jobs:
   windows_build:
     name: Windows Build Test
     runs-on: windows-latest
+    # This should be a safe limit for the tests to run.
+    timeout-minutes: 6
     env:
       # Path to the solution file relative to the root of the project.
       SOLUTION_FILE_PATH: wolfssl64.sln
@@ -115,3 +135,7 @@ jobs:
       # Add additional options to the MSBuild command line here (like platform or verbosity level).
       # See https://docs.microsoft.com/visualstudio/msbuild/msbuild-command-line-reference
       run: msbuild /m /p:PlatformToolset=v142 /p:Platform=${{env.BUILD_PLATFORM}} /p:Configuration=${{env.BUILD_CONFIGURATION}} ${{env.SOLUTION_FILE_PATH}}
+
+    - name: Run Test
+      working-directory: ${{env.GITHUB_WORKSPACE}}
+      run: Release/x64/testsuite.exe
