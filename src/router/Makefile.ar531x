@@ -449,6 +449,7 @@ endif
 	$(ARCH)-linux-objcopy -O binary $(strip-flags) $(ARCH)-uclibc/lzma_vmlinuxaw_initrd $(ARCH)-uclibc/lzma_vmlinusaw_initrd 
 
 include common.mk
+export MAKE=make
 
 install package: clean_target $(filter-out lib.$(ARCH)-install,$(obj-install)) $(LINUXDIR)/.config 
 	install -d $(TARGETDIR)
