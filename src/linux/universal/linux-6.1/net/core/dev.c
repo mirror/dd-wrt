@@ -635,6 +635,7 @@ EXPORT_SYMBOL(dev_remove_pack);
  *			    Device Interface Subroutines
  *
  *******************************************************************************/
+int netdev_skb_tstamp __read_mostly = 1;
 
 /**
  *	dev_get_iflink	- get 'iflink' value of a interface
@@ -2140,12 +2141,13 @@ static inline void net_timestamp_set(struct sk_buff *skb)
 	skb->tstamp = 0;
 	skb->mono_delivery_time = 0;
 	if (static_branch_unlikely(&netstamp_needed_key))
-		skb->tstamp = ktime_get_real();
+		if (netdev_skb_tstamp)
+			skb->tstamp = ktime_get_real();
 }
 
 #define net_timestamp_check(COND, SKB)				\
 	if (static_branch_unlikely(&netstamp_needed_key)) {	\
-		if ((COND) && !(SKB)->tstamp)			\
+		if (netdev_skb_tstamp && (COND) && !(SKB)->tstamp)			\
 			(SKB)->tstamp = ktime_get_real();	\
 	}							\
 

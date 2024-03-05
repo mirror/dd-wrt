@@ -453,9 +453,11 @@ static inline int neigh_hh_output(const struct hh_cache *hh, struct sk_buff *skb
 	unsigned int hh_alen = 0;
 	unsigned int seq;
 	int hh_len;
+	int retry;
 
 	do {
-		seq = read_seqbegin(&hh->hh_lock);
+		if (!hh_output_relaxed)
+			seq = read_seqbegin(&hh->hh_lock);
 		hh_len = READ_ONCE(hh->hh_len);
 		if (likely(hh_len <= HH_DATA_MOD)) {
 			hh_alen = HH_DATA_MOD;
@@ -477,7 +479,12 @@ static inline int neigh_hh_output(const struct hh_cache *hh, struct sk_buff *skb
 				       hh_alen);
 			}
 		}
-	} while (read_seqretry(&hh->hh_lock, seq));
+
+		retry = 0;
+		if (!hh_output_relaxed)
+			retry = read_seqretry(&hh->hh_lock, seq);
+
+	} while (retry);
 
 	if (WARN_ON_ONCE(skb_headroom(skb) < hh_alen)) {
 		kfree_skb(skb);

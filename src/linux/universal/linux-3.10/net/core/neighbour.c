@@ -2775,6 +2775,9 @@ void neigh_app_ns(struct neighbour *n)
 EXPORT_SYMBOL(neigh_app_ns);
 #endif /* CONFIG_ARPD */
 
+int hh_output_relaxed __read_mostly = 0;
+EXPORT_SYMBOL(hh_output_relaxed);
+
 #ifdef CONFIG_SYSCTL
 static int zero;
 static int unres_qlen_max = INT_MAX / SKB_TRUESIZE(ETH_FRAME_LEN);

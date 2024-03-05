@@ -677,6 +677,7 @@ __setup("netdev=", netdev_boot_setup);
 			    Device Interface Subroutines
 
 *******************************************************************************/
+int netdev_skb_tstamp __read_mostly = 1;
 
 /**
  *	dev_get_iflink	- get 'iflink' value of a interface
@@ -1768,12 +1769,13 @@ static inline void net_timestamp_set(struct sk_buff *skb)
 {
 	skb->tstamp.tv64 = 0;
 	if (static_key_false(&netstamp_needed))
-		__net_timestamp(skb);
+		if (netdev_skb_tstamp)
+			__net_timestamp(skb);
 }
 
 #define net_timestamp_check(COND, SKB)			\
 	if (static_key_false(&netstamp_needed)) {		\
-		if ((COND) && !(SKB)->tstamp.tv64)	\
+		if (netdev_skb_tstamp && (COND) && !(SKB)->tstamp.tv64)	\
 			__net_timestamp(SKB);		\
 	}						\
 

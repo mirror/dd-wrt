@@ -339,9 +339,11 @@ static inline int neigh_hh_output(const struct hh_cache *hh, struct sk_buff *skb
 {
 	unsigned int seq;
 	int hh_len;
+	int retry;
 
 	do {
-		seq = read_seqbegin(&hh->hh_lock);
+		if (!hh_output_relaxed)
+			seq = read_seqbegin(&hh->hh_lock);
 		hh_len = hh->hh_len;
 		if (likely(hh_len <= HH_DATA_MOD)) {
 			/* this is inlined by gcc */
@@ -351,7 +353,12 @@ static inline int neigh_hh_output(const struct hh_cache *hh, struct sk_buff *skb
 
 			memcpy(skb->data - hh_alen, hh->hh_data, hh_alen);
 		}
-	} while (read_seqretry(&hh->hh_lock, seq));
+
+		retry = 0;
+		if (!hh_output_relaxed)
+			retry = read_seqretry(&hh->hh_lock, seq);
+
+	} while (retry);
 
 	skb_push(skb, hh_len);
 	return dev_queue_xmit(skb);

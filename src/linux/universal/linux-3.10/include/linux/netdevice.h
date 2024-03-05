@@ -2683,10 +2683,12 @@ extern struct rtnl_link_stats64 *dev_get_stats(struct net_device *dev,
 extern void netdev_stats_to_stats64(struct rtnl_link_stats64 *stats64,
 				    const struct net_device_stats *netdev_stats);
 
+extern int		netdev_skb_tstamp;
 extern int		netdev_max_backlog;
 extern int		netdev_tstamp_prequeue;
 extern int		weight_p;
 extern int		bpf_jit_enable;
+extern int              hh_output_relaxed;
 
 extern bool netdev_has_upper_dev(struct net_device *dev,
 				 struct net_device *upper_dev);
