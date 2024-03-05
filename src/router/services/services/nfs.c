@@ -79,8 +79,9 @@ void start_nfs(void)
 	if (pidof("rpcbind") <= 0)
 		log_eval("rpcbind");
 	if (pidof("fsidd") <= 0) {
+		int pid;
 		char *argv[] = { "fsidd", NULL };
-		    _log_evalpid(argv, NULL, 0, NULL);
+		    _log_evalpid(argv, NULL, 0, &pid);
 	}
 	if (pidof("rpc.mountd") <= 0)
 		log_eval("rpc.mountd");
