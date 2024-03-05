@@ -25,9 +25,9 @@ libzip: zlib openssl
 	$(MAKE) -C libzip
 
 libzip-install:
-	install -D libzip/lib/libzip.so.5.0 $(INSTALLDIR)/libzip/usr/lib/libzip.so.5.0
-	cd $(INSTALLDIR)/libzip/usr/lib ; ln -s libzip.so.5.0 libzip.so.5  ; true
-	cd $(INSTALLDIR)/libzip/usr/lib ; ln -s libzip.so.5.0 libzip.so  ; true
+	install -D libzip/lib/libzip.so.5.5 $(INSTALLDIR)/libzip/usr/lib/libzip.so.5.5
+	cd $(INSTALLDIR)/libzip/usr/lib ; ln -s libzip.so.5.5 libzip.so.5  ; true
+	cd $(INSTALLDIR)/libzip/usr/lib ; ln -s libzip.so.5.5 libzip.so  ; true
 
 libzip-clean:
 	if [ -e "$(LIBZIP_PKG_BUILD_DIR)/Makefile" ]; then $(MAKE) -C libzip clean ; fi
