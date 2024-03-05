@@ -74,7 +74,7 @@ void start_bonding(void)
 			eval("ifconfig", port, "up");
 		}
 		if (!first) {
-			eval("insmod", "bonding", "miimon=100", "downdelay=200", "updelay=200", mode, count, hash_policy);
+			eval("insmod", "bonding", "miimon=1000", "downdelay=200", "updelay=200", mode, count, hash_policy);
 			first = 1;
 		}
 		eval("ifconfig", tag, "0.0.0.0", "up");
