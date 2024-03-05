@@ -66,10 +66,7 @@ static void unbound_config(void)
 		    "key-cache-size: 100k\n" //
 		    "neg-cache-size: 10k\n"); //
 	fprintf(fp, "num-threads: %d\n", cpucount);
-	if (cpucount > 1)
-		fprintf(fp, "so-reuseport: no\n");
-	else
-		fprintf(fp, "so-reuseport: yes\n");
+	fprintf(fp, "so-reuseport: %s\n", cpucount > 1 ? "no" : "yes");
 	int slabs = 2;
 	while (1) {
 		if (slabs >= cpucount)

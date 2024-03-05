@@ -62,8 +62,8 @@ void start_bonding(void)
 	wordlist = nvram_safe_get("bondings");
 	foreach(word, wordlist, next)
 	{
-		char *port = word;
-		char *tag = strsep(&port, ">");
+		GETENTRYBYIDX(tag, word, 0);
+		GETENTRYBYIDX(port, word, 1);
 
 		if (!tag || !port) {
 			break;
@@ -101,8 +101,8 @@ int isBond(char *ifname)
 	wordlist = nvram_safe_get("bondings");
 	foreach(word, wordlist, next)
 	{
-		char *port = word;
-		char *tag = strsep(&port, ">");
+		GETENTRYBYIDX(tag, word, 0);
+		GETENTRYBYIDX(port, word, 1);
 
 		if (!tag || !port) {
 			break;
