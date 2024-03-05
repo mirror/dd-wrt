@@ -50,12 +50,12 @@ void start_bonding(void)
 {
 	char mode[64];
 	char count[64];
-
+	char hash_policy[64];
 	stop_bonding();
 
 	sprintf(mode, "mode=%s", nvram_default_get("bonding_type", "balance-rr"));
 	sprintf(count, "max_bonds=%s", nvram_default_get("bonding_number", "1"));
-
+	sprintf(hash_policy, "xmit_hash_policy=%s", nvram_default_get("bonding_policy", "layer2+3"));
 	char word[256];
 	char *next, *wordlist;
 	int first = 0;
@@ -74,7 +74,7 @@ void start_bonding(void)
 			eval("ifconfig", port, "up");
 		}
 		if (!first) {
-			eval("insmod", "bonding", "miimon=100", "downdelay=200", "updelay=200", mode, count);
+			eval("insmod", "bonding", "miimon=100", "downdelay=200", "updelay=200", mode, count, hash_policy);
 			first = 1;
 		}
 		eval("ifconfig", tag, "0.0.0.0", "up");
