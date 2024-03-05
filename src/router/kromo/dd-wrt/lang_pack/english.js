@@ -1568,6 +1568,7 @@ networking.bonding="Bonding";
 networking.bonding_legend="Bonding Configuration";
 networking.bondtype="Type";
 networking.bondifaces="Interfaces";
+networking.bondpolicy="Hash Policy";
 networking.bond="Bond";
 networking.slave="Slave";
 networking.stp="STP";
