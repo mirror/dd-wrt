@@ -4680,14 +4680,9 @@ void save_networking(webs_t wp)
 	// save bonds
 	bzero(buffer, 1024);
 #ifdef HAVE_BONDING
-	char *bondingnumber = websGetVar(wp, "bonding_number", NULL);
-
-	if (bondingnumber)
-		nvram_set("bonding_number", bondingnumber);
-	char *bondingtype = websGetVar(wp, "bonding_type", NULL);
-
-	if (bondingtype)
-		nvram_set("bonding_type", bondingtype);
+	nvram_set("bonding_number", websGetVar(wp, "bonding_number", NULL));
+	nvram_set("bonding_type", websGetVar(wp, "bonding_type", NULL));
+	nvram_set("bonding_policy", websGetVar(wp, "bonding_policy", NULL));
 	for (i = 0; i < bondcount; i++) {
 		char *ifname, *tag;
 		char var[32];
