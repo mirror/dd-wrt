@@ -37,7 +37,7 @@ function to_submit(F) {
 							<fieldset>
 								<legend><% tran("superchan.legend"); %></legend>
 								<h2><% tran("superchan.h2feat"); %></h2>
-								<% tran("superchan.featxt"); %>
+								<p>SuperChannel allows the use of special frequencies on <b>capable devices only</b>.<br />These frequencies range between <% get_low_2ghz(); %> Mhz to <% get_high_2ghz(); %> Mhz for the 802.11g band and <% get_low_5ghz(); %> Mhz to <% get_high_5ghz(); %> Mhz for the 802.11a band.<br /><b>This feature is not yet enabled.</b></p>
 								<h2><% tran("superchan.h2disc"); %></h2>
 								<% tran("superchan.lgltxt"); %>
 								<div class="setting">
