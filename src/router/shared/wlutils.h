@@ -210,14 +210,6 @@ static inline int has_ad(const char *prefix)
 	return 0;
 }
 #endif
-#ifdef HAVE_ATH11K
-extern int has_ax(const char *prefix);
-#else
-static inline int has_ax(const char *prefix)
-{
-	return 0;
-}
-#endif
 
 #ifdef HAVE_ATH9K
 extern int has_ibss(const char *prefix);
