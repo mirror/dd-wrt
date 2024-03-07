@@ -238,9 +238,10 @@ for i in $(seq 1 $tunnels); do
 					ip route add $dns4 via $GATEWAY >/dev/null 2>&1
 					if [[ $ipv6_en -eq 1 ]]; then
 						ip -6 route add $dns6 via $GATEWAY6 dev $WAN_IF >/dev/null 2>&1
+						echo "ip -6 route del $dns6 via $GATEWAY6 dev $WAN_IF " >> $WGDNSRT
 					fi
 					echo "ip route del $dns4 via $GATEWAY " >> $WGDNSRT
-					echo "ip -6 route del $dns6 via $GATEWAY6 dev $WAN_IF " >> $WGDNSRT
+					
 				elif [[ $($nv get oet${i}_spbr) -eq 1 ]]; then
 					# route dnsservers via tunnel no need to delete as interface is taken down
 					ip route add $dns4 dev oet${i}
@@ -298,7 +299,7 @@ for i in $(seq 1 $tunnels); do
 				sh $($nv get oet${i}_rtupscript) &
 			fi
 			ip route flush cache
-			ip -6 route flush cache
+			[[ $ipv6_en -eq 1 ]] && ip -6 route flush cache
 			# execute watchdog script
 			if [[ $($nv get oet${i}_failstate) -eq 2 || $($nv get oet${i}_wdog) -eq 1 ]]; then
 				# only start if not already running
