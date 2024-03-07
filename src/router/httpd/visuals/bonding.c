@@ -38,7 +38,7 @@ EJ_VISIBLE void ej_show_bondings(webs_t wp, int argc, char_t **argv)
 	websWrite(wp, "<div class=\"setting\">\n");
 	show_caption(wp, "label", "networking.bondtype", NULL);
 	showOptions(wp, "bonding_type",
-		    "balance-rr active-backup balance-xor broadcast 802.3ad balance-tlb balance-alb weighted-rr duplex",
+		    "balance-rr active-backup balance-xor broadcast 802.3ad balance-tlb balance-alb",
 		    nvram_default_get("bonding_type", "balance-rr"));
 
 	show_caption_pp(wp, NULL, "networking.bondpolicy", "&nbsp;", "&nbsp;");
