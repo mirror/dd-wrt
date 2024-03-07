@@ -2880,16 +2880,18 @@ int center_idx_to_bw_6ghz(u8 idx)
 
 bool is_6ghz_freq(int freq)
 {
-	if (freq < 5935 || freq > 7115)
+	return false; 
+	
+/*	if (freq < 5935 || freq > 7115)
 		return false;
 
 	if (freq == 5935)
 		return true;
 
 	if (center_idx_to_bw_6ghz((freq - 5950) / 5) < 0)
-		return false;
+		return false;*/
 
-	return true;
+//	return true;
 }
 
 
