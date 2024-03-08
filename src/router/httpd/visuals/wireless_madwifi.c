@@ -572,27 +572,34 @@ EJ_VISIBLE void ej_active_wds(webs_t wp, int argc, char_t **argv)
 {
 }
 
-EJ_VISIBLE void ej_low_2ghz(webs_t wp, int argc, char_t **argv)
+EJ_VISIBLE void ej_get_low_2ghz(webs_t wp, int argc, char_t **argv)
 {
 	//	if (is_ath5k("wlan0") || is_ath5k("wlan1"))
 	//		websWrite(wp, "2192");
 	websWrite(wp, "2312");
 }
 
-EJ_VISIBLE void ej_high_2ghz(webs_t wp, int argc, char_t **argv)
+EJ_VISIBLE void ej_get_high_2ghz(webs_t wp, int argc, char_t **argv)
 {
 	websWrite(wp,
 		  "2500"); //some may be able to go up to 2732, but this seems only to affect older ath5k chipsets from our tests
 }
 
-EJ_VISIBLE void ej_high_5ghz(webs_t wp, int argc, char_t **argv)
+EJ_VISIBLE void ej_get_high_5ghz(webs_t wp, int argc, char_t **argv)
 {
-	if ((is_ath10k("wlan0") && has_wave2("wlan0")) || (is_ath10k("wlan1") && has_wave2("wlan1")))
+	if ((is_ath10k("wlan0") && has_wave2("wlan0")) || (is_ath10k("wlan1") && has_wave2("wlan1"))) {
 		websWrite(wp, "6995"); // need to find out the real maximum which is way higher than 7 ghz
+		return;
+	}
+	if ((is_ath10k("wlan0")) || (is_ath10k("wlan1")))
+		websWrite(wp, "6395"); // need to find out the real maximum which is way higher than 7 ghz
+		return;
+	}
+		
 	websWrite(wp, "6100");
 }
 
-EJ_VISIBLE void ej_low_5ghz(webs_t wp, int argc, char_t **argv)
+EJ_VISIBLE void ej_get_low_5ghz(webs_t wp, int argc, char_t **argv)
 {
 	//	if (is_ath5k("wlan0") || is_ath5k("wlan1"))
 	//		websWrite(wp, "4900");
