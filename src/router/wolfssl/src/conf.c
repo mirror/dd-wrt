@@ -308,10 +308,11 @@ WOLFSSL_STRING *wolfSSL_TXT_DB_get_by_index(WOLFSSL_TXT_DB *db, int idx,
 #if defined(OPENSSL_ALL) || defined(WOLFSSL_NGINX) || defined(WOLFSSL_HAPROXY) \
  || defined(HAVE_STUNNEL)
 #ifndef NO_WOLFSSL_STUB
-void wolfSSL_OPENSSL_config(char *config_name)
+int wolfSSL_OPENSSL_config(const char *config_name)
 {
     (void)config_name;
     WOLFSSL_STUB("OPENSSL_config");
+    return 0;
 }
 #endif /* !NO_WOLFSSL_STUB */
 #endif /* OPENSSL_ALL || WOLFSSL_NGINX || WOLFSSL_HAPROXY || HAVE_STUNNEL*/

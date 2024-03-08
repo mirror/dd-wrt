@@ -4905,7 +4905,7 @@ WOLFSSL_API int wolfSSL_DH_set0_key(WOLFSSL_DH *dh, WOLFSSL_BIGNUM *pub_key,
     || defined(WOLFSSL_HAPROXY) \
     || defined(OPENSSL_EXTRA) \
     || defined(HAVE_STUNNEL)
-WOLFSSL_API void wolfSSL_OPENSSL_config(char *config_name);
+WOLFSSL_API int wolfSSL_OPENSSL_config(const char *config_name);
 #endif
 
 #if defined(OPENSSL_ALL) || defined(WOLFSSL_NGINX) || defined(WOLFSSL_HAPROXY)
