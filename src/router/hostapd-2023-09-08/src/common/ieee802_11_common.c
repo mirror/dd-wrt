@@ -2880,9 +2880,8 @@ int center_idx_to_bw_6ghz(u8 idx)
 
 bool is_6ghz_freq(int freq)
 {
-	return false; 
-	
-/*	if (freq < 5935 || freq > 7115)
+#ifdef CONFIG_IEEE80211AX
+	if (freq < 5935 || freq > 7115)
 		return false;
 
 	if (freq == 5935)
@@ -2891,7 +2890,10 @@ bool is_6ghz_freq(int freq)
 	if (center_idx_to_bw_6ghz((freq - 5950) / 5) < 0)
 		return false;*/
 
-//	return true;
+	return true;
+#else
+	return false;
+#endif
 }
 
 
