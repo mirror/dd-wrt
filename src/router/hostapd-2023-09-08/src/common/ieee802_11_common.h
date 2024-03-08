@@ -281,9 +281,16 @@ u8 country_to_global_op_class(const char *country, u8 op_class);
 const struct oper_class_map * get_oper_class(const char *country, u8 op_class);
 int oper_class_bw_to_int(const struct oper_class_map *map);
 int center_idx_to_bw_6ghz(u8 idx);
+#ifdef CONFIG_IEEE80211AX
 bool is_6ghz_freq(int freq);
 bool is_6ghz_op_class(u8 op_class);
 bool is_6ghz_psc_frequency(int freq);
+#else
+static inline bool is_6ghz_freq(int freq) { return false; }
+static inline bool is_6ghz_op_class(u8 op_class) { return false; }
+static inline bool is_6ghz_psc_frequency(int freq) { return false; }
+
+#endif
 int get_6ghz_sec_channel(int channel);
 
 int ieee802_11_parse_candidate_list(const char *pos, u8 *nei_rep,

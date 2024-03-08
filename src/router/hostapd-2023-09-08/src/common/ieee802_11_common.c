@@ -2878,9 +2878,9 @@ int center_idx_to_bw_6ghz(u8 idx)
 }
 
 
+#ifdef CONFIG_IEEE80211AX
 bool is_6ghz_freq(int freq)
 {
-#ifdef CONFIG_IEEE80211AX
 	if (freq < 5935 || freq > 7115)
 		return false;
 
@@ -2891,9 +2891,7 @@ bool is_6ghz_freq(int freq)
 		return false;*/
 
 	return true;
-#else
 	return false;
-#endif
 }
 
 
@@ -2922,6 +2920,7 @@ bool is_6ghz_psc_frequency(int freq)
 	return false;
 }
 
+#endif
 
 /**
  * get_6ghz_sec_channel - Get the relative position of the secondary channel
