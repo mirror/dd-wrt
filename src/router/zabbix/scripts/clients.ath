@@ -1,6 +1,7 @@
 #!/bin/sh
 
 ARP=`grep 0x2 /proc/net/arp | grep -v $(get_wanface) | wc -l`
-WL0=`wl_atheros assoclist | wc -l`
+WL0=`wl_atheros -i wlan0 assoclist | wc -l`
+WL1=`wl_atheros -i wlan1 assoclist | wc -l`
 
-echo `expr $ARP - $WL0`
+echo `expr $ARP - $WL0 - $WL1
