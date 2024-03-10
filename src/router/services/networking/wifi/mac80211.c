@@ -708,14 +708,14 @@ void setupHostAP_generic_ath9k(char *prefix, FILE *fp, int isrepeater, int aoss)
 		country = "DE";
 	fprintf(fp, "country_code=%s\n", country);
 	char *netmode = nvram_nget("%s_net_mode", prefix);
-	if (isath5k || !(!strcmp(netmode, "n2-only") || !strcmp(netmode, "n5-only") || !strcmp(netmode, "ac-only") ||
-			 !strcmp(netmode, "acn-mixed") || !strcmp(netmode, "ax-only") || !strcmp(netmode, "axg-only") ||
-			 !strcmp(netmode, "xacn-mixed"))) {
+
+	if (isath5k || !strcmp(netmode, "ac-only") || !strcmp(netmode, "mixed") || !strcmp(netmode, "acn-mixed") ||
+	    !strcmp(netmode, "ax-only") || !strcmp(netmode, "axg-only") || !strcmp(netmode, "xacn-mixed")) {
 		fprintf(fp, "tx_queue_data2_burst=2.0\n");
-		fprintf(fp, "wmm_ac_be_txop_limit=64\n");
+		fprintf(fp, "wmm_ac_be_txop_limit=0\n");
 	} else {
 		fprintf(fp, "tx_queue_data2_burst=0\n");
-		fprintf(fp, "wmm_ac_be_txop_limit=0\n");
+		fprintf(fp, "wmm_ac_be_txop_limit=64\n");
 	}
 
 	char *akm = nvram_nget("%s_akm", prefix);
