@@ -1,7 +1,7 @@
 <?php declare(strict_types = 0);
 /*
 ** Zabbix
-** Copyright (C) 2001-2023 Zabbix SIA
+** Copyright (C) 2001-2024 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -68,29 +68,19 @@ class CControllerModuleUpdate extends CController {
 			? ($this->hasInput('status') ? MODULE_STATUS_ENABLED : MODULE_STATUS_DISABLED)
 			: ($this->getAction() === 'module.enable' ? MODULE_STATUS_ENABLED : MODULE_STATUS_DISABLED);
 
-		$db_modules_update_names = [];
-
 		$db_modules = API::Module()->get([
 			'output' => ['relative_path', 'status'],
 			'sortfield' => 'relative_path',
 			'preservekeys' => true
 		]);
 
-		$module_manager = new CModuleManager(APP::getRootDir());
 		$module_manager_enabled = new CModuleManager(APP::getRootDir());
 
 		foreach ($db_modules as $moduleid => $db_module) {
 			$new_status = array_key_exists($moduleid, $this->modules) ? $set_status : $db_module['status'];
 
 			if ($new_status == MODULE_STATUS_ENABLED) {
-				$manifest = $module_manager_enabled->addModule($db_module['relative_path']);
-			}
-			else {
-				$manifest = $module_manager->addModule($db_module['relative_path']);
-			}
-
-			if (array_key_exists($moduleid, $this->modules) && $manifest) {
-				$db_modules_update_names[] = $manifest['name'];
+				$module_manager_enabled->addModule($db_module['relative_path']);
 			}
 		}
 
@@ -133,32 +123,28 @@ class CControllerModuleUpdate extends CController {
 
 		if ($result) {
 			if ($this->getAction() === 'module.update') {
-				CMessageHelper::setSuccessTitle(_s('Module updated: %1$s.', $db_modules_update_names[0]));
+				CMessageHelper::setSuccessTitle(_s('Module updated'));
 			}
 			elseif ($set_status == MODULE_STATUS_ENABLED) {
-				CMessageHelper::setSuccessTitle(_n('Module enabled: %1$s.', 'Modules enabled: %1$s.',
-					implode(', ', $db_modules_update_names), count($this->modules)
-				));
+				CMessageHelper::setSuccessTitle(_n('Module enabled', 'Modules enabled', count($this->modules)));
 			}
 			else {
-				CMessageHelper::setSuccessTitle(_n('Module disabled: %1$s.', 'Modules disabled: %1$s.',
-					implode(', ', $db_modules_update_names), count($this->modules)
-				));
+				CMessageHelper::setSuccessTitle(_n('Module disabled', 'Modules disabled', count($this->modules)));
 			}
 		}
 		else {
 			if ($this->getAction() === 'module.update') {
-				CMessageHelper::setErrorTitle(_s('Cannot update module: %1$s.', $db_modules_update_names[0]));
+				CMessageHelper::setErrorTitle(_s('Cannot update module'));
 			}
 			elseif ($set_status == MODULE_STATUS_ENABLED) {
-				CMessageHelper::setErrorTitle(_n('Cannot enable module: %1$s.', 'Cannot enable modules: %1$s.',
-					implode(', ', $db_modules_update_names), count($this->modules)
-				));
+				CMessageHelper::setErrorTitle(
+					_n('Cannot enable module', 'Cannot enable modules', count($this->modules))
+				);
 			}
 			else {
-				CMessageHelper::setErrorTitle(_n('Cannot disable module: %1$s.', 'Cannot disable modules: %1$s.',
-					implode(', ', $db_modules_update_names), count($this->modules)
-				));
+				CMessageHelper::setErrorTitle(
+					_n('Cannot disable module', 'Cannot disable modules', count($this->modules))
+				);
 			}
 		}
 

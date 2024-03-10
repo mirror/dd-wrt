@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2023 Zabbix SIA
+** Copyright (C) 2001-2024 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -53,7 +53,8 @@ typedef enum
 {
 	ZBX_SNMP_TYPE_UNDEFINED,
 	ZBX_SNMP_TYPE_HEX,
-	ZBX_SNMP_TYPE_BITS
+	ZBX_SNMP_TYPE_BITS,
+	ZBX_SNMP_TYPE_STRING,
 }
 zbx_snmp_type_t;
 

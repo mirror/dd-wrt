@@ -2271,7 +2271,7 @@ CREATE TABLE dbversion (
 	optional                 integer         DEFAULT '0'               NOT NULL,
 	PRIMARY KEY (dbversionid)
 );
-INSERT INTO dbversion VALUES ('1','6040000','6040025');
+INSERT INTO dbversion VALUES ('1','6040000','6040026');
 create trigger hosts_insert after insert on hosts
 for each row
 begin

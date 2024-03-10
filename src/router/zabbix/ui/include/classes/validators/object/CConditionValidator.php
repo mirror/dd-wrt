@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2023 Zabbix SIA
+** Copyright (C) 2001-2024 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -69,7 +69,7 @@ class CConditionValidator extends CValidator {
 			$trigger_count = 0;
 			foreach ($object['conditions'] as $condition) {
 				if (array_key_exists('conditiontype', $condition) && array_key_exists('operator', $condition)
-						&& $condition['conditiontype'] == CONDITION_TYPE_TRIGGER
+						&& $condition['conditiontype'] == ZBX_CONDITION_TYPE_TRIGGER
 						&& $condition['operator'] == CONDITION_OPERATOR_EQUAL) {
 					$trigger_count++;
 				}

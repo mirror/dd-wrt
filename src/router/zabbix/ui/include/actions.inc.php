@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2023 Zabbix SIA
+** Copyright (C) 2001-2024 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -42,32 +42,32 @@ function condition_operator2str($operator = null) {
 
 function condition_type2str($type = null) {
 	$types = [
-		CONDITION_TYPE_SUPPRESSED => _('Problem is suppressed'),
-		CONDITION_TYPE_TRIGGER_NAME => _('Trigger name'),
-		CONDITION_TYPE_TRIGGER_SEVERITY => _('Trigger severity'),
-		CONDITION_TYPE_TRIGGER => _('Trigger'),
-		CONDITION_TYPE_HOST_NAME => _('Host name'),
-		CONDITION_TYPE_HOST_GROUP => _('Host group'),
-		CONDITION_TYPE_TEMPLATE => _('Template'),
-		CONDITION_TYPE_HOST => _('Host'),
-		CONDITION_TYPE_TIME_PERIOD => _('Time period'),
-		CONDITION_TYPE_DRULE => _('Discovery rule'),
-		CONDITION_TYPE_DCHECK => _('Discovery check'),
-		CONDITION_TYPE_DOBJECT => _('Discovery object'),
-		CONDITION_TYPE_DHOST_IP => _('Host IP'),
-		CONDITION_TYPE_DSERVICE_TYPE => _('Service type'),
-		CONDITION_TYPE_DSERVICE_PORT => _('Service port'),
-		CONDITION_TYPE_DSTATUS => _('Discovery status'),
-		CONDITION_TYPE_DUPTIME => _('Uptime/Downtime'),
-		CONDITION_TYPE_DVALUE => _('Received value'),
-		CONDITION_TYPE_EVENT_ACKNOWLEDGED => _('Event acknowledged'),
-		CONDITION_TYPE_PROXY => _('Proxy'),
-		CONDITION_TYPE_EVENT_TYPE => _('Event type'),
-		CONDITION_TYPE_HOST_METADATA => _('Host metadata'),
-		CONDITION_TYPE_EVENT_TAG => _('Tag name'),
-		CONDITION_TYPE_EVENT_TAG_VALUE => _('Tag value'),
-		CONDITION_TYPE_SERVICE => _('Service'),
-		CONDITION_TYPE_SERVICE_NAME => _('Service name')
+		ZBX_CONDITION_TYPE_SUPPRESSED => _('Problem is suppressed'),
+		ZBX_CONDITION_TYPE_EVENT_NAME => _('Event name'),
+		ZBX_CONDITION_TYPE_TRIGGER_SEVERITY => _('Trigger severity'),
+		ZBX_CONDITION_TYPE_TRIGGER => _('Trigger'),
+		ZBX_CONDITION_TYPE_HOST_NAME => _('Host name'),
+		ZBX_CONDITION_TYPE_HOST_GROUP => _('Host group'),
+		ZBX_CONDITION_TYPE_TEMPLATE => _('Template'),
+		ZBX_CONDITION_TYPE_HOST => _('Host'),
+		ZBX_CONDITION_TYPE_TIME_PERIOD => _('Time period'),
+		ZBX_CONDITION_TYPE_DRULE => _('Discovery rule'),
+		ZBX_CONDITION_TYPE_DCHECK => _('Discovery check'),
+		ZBX_CONDITION_TYPE_DOBJECT => _('Discovery object'),
+		ZBX_CONDITION_TYPE_DHOST_IP => _('Host IP'),
+		ZBX_CONDITION_TYPE_DSERVICE_TYPE => _('Service type'),
+		ZBX_CONDITION_TYPE_DSERVICE_PORT => _('Service port'),
+		ZBX_CONDITION_TYPE_DSTATUS => _('Discovery status'),
+		ZBX_CONDITION_TYPE_DUPTIME => _('Uptime/Downtime'),
+		ZBX_CONDITION_TYPE_DVALUE => _('Received value'),
+		ZBX_CONDITION_TYPE_EVENT_ACKNOWLEDGED => _('Event acknowledged'),
+		ZBX_CONDITION_TYPE_PROXY => _('Proxy'),
+		ZBX_CONDITION_TYPE_EVENT_TYPE => _('Event type'),
+		ZBX_CONDITION_TYPE_HOST_METADATA => _('Host metadata'),
+		ZBX_CONDITION_TYPE_EVENT_TAG => _('Tag name'),
+		ZBX_CONDITION_TYPE_EVENT_TAG_VALUE => _('Tag value'),
+		ZBX_CONDITION_TYPE_SERVICE => _('Service'),
+		ZBX_CONDITION_TYPE_SERVICE_NAME => _('Service name')
 	];
 
 	return $type !== null
@@ -122,74 +122,74 @@ function actionConditionValueToString(array $actions) {
 			$result[$i][$j] = _('Unknown');
 
 			switch ($condition['conditiontype']) {
-				case CONDITION_TYPE_HOST_GROUP:
+				case ZBX_CONDITION_TYPE_HOST_GROUP:
 					$groupIds[$condition['value']] = $condition['value'];
 					break;
 
-				case CONDITION_TYPE_TRIGGER:
+				case ZBX_CONDITION_TYPE_TRIGGER:
 					$triggerIds[$condition['value']] = $condition['value'];
 					break;
 
-				case CONDITION_TYPE_HOST:
+				case ZBX_CONDITION_TYPE_HOST:
 					$hostIds[$condition['value']] = $condition['value'];
 					break;
 
-				case CONDITION_TYPE_TEMPLATE:
+				case ZBX_CONDITION_TYPE_TEMPLATE:
 					$templateIds[$condition['value']] = $condition['value'];
 					break;
 
-				case CONDITION_TYPE_PROXY:
+				case ZBX_CONDITION_TYPE_PROXY:
 					$proxyIds[$condition['value']] = $condition['value'];
 					break;
 
-				case CONDITION_TYPE_SERVICE:
+				case ZBX_CONDITION_TYPE_SERVICE:
 					$serviceids[$condition['value']] = $condition['value'];
 					break;
 
 				// return values as is for following condition types
-				case CONDITION_TYPE_TRIGGER_NAME:
-				case CONDITION_TYPE_HOST_METADATA:
-				case CONDITION_TYPE_HOST_NAME:
-				case CONDITION_TYPE_TIME_PERIOD:
-				case CONDITION_TYPE_DHOST_IP:
-				case CONDITION_TYPE_DSERVICE_PORT:
-				case CONDITION_TYPE_DUPTIME:
-				case CONDITION_TYPE_DVALUE:
-				case CONDITION_TYPE_EVENT_TAG:
-				case CONDITION_TYPE_EVENT_TAG_VALUE:
-				case CONDITION_TYPE_SERVICE_NAME:
+				case ZBX_CONDITION_TYPE_EVENT_NAME:
+				case ZBX_CONDITION_TYPE_HOST_METADATA:
+				case ZBX_CONDITION_TYPE_HOST_NAME:
+				case ZBX_CONDITION_TYPE_TIME_PERIOD:
+				case ZBX_CONDITION_TYPE_DHOST_IP:
+				case ZBX_CONDITION_TYPE_DSERVICE_PORT:
+				case ZBX_CONDITION_TYPE_DUPTIME:
+				case ZBX_CONDITION_TYPE_DVALUE:
+				case ZBX_CONDITION_TYPE_EVENT_TAG:
+				case ZBX_CONDITION_TYPE_EVENT_TAG_VALUE:
+				case ZBX_CONDITION_TYPE_SERVICE_NAME:
 					$result[$i][$j] = $condition['value'];
 					break;
 
-				case CONDITION_TYPE_EVENT_ACKNOWLEDGED:
+				case ZBX_CONDITION_TYPE_EVENT_ACKNOWLEDGED:
 					$result[$i][$j] = $condition['value'] ? _('Ack') : _('Not Ack');
 					break;
 
-				case CONDITION_TYPE_TRIGGER_SEVERITY:
+				case ZBX_CONDITION_TYPE_TRIGGER_SEVERITY:
 					$result[$i][$j] = CSeverityHelper::getName((int) $condition['value']);
 					break;
 
-				case CONDITION_TYPE_DRULE:
+				case ZBX_CONDITION_TYPE_DRULE:
 					$dRuleIds[$condition['value']] = $condition['value'];
 					break;
 
-				case CONDITION_TYPE_DCHECK:
+				case ZBX_CONDITION_TYPE_DCHECK:
 					$dCheckIds[$condition['value']] = $condition['value'];
 					break;
 
-				case CONDITION_TYPE_DOBJECT:
+				case ZBX_CONDITION_TYPE_DOBJECT:
 					$result[$i][$j] = discovery_object2str($condition['value']);
 					break;
 
-				case CONDITION_TYPE_DSERVICE_TYPE:
+				case ZBX_CONDITION_TYPE_DSERVICE_TYPE:
 					$result[$i][$j] = discovery_check_type2str($condition['value']);
 					break;
 
-				case CONDITION_TYPE_DSTATUS:
+				case ZBX_CONDITION_TYPE_DSTATUS:
 					$result[$i][$j] = discovery_object_status2str($condition['value']);
 					break;
 
-				case CONDITION_TYPE_EVENT_TYPE:
+				case ZBX_CONDITION_TYPE_EVENT_TYPE:
 					$result[$i][$j] = eventType($condition['value']);
 					break;
 			}
@@ -278,44 +278,44 @@ function actionConditionValueToString(array $actions) {
 				$id = $condition['value'];
 
 				switch ($condition['conditiontype']) {
-					case CONDITION_TYPE_HOST_GROUP:
+					case ZBX_CONDITION_TYPE_HOST_GROUP:
 						if (array_key_exists($id, $groups)) {
 							$result[$i][$j] = $groups[$id]['name'];
 						}
 						break;
 
-					case CONDITION_TYPE_TRIGGER:
+					case ZBX_CONDITION_TYPE_TRIGGER:
 						if (array_key_exists($id, $triggers)) {
 							$host = reset($triggers[$id]['hosts']);
 							$result[$i][$j] = $host['name'].NAME_DELIMITER.$triggers[$id]['description'];
 						}
 						break;
 
-					case CONDITION_TYPE_HOST:
+					case ZBX_CONDITION_TYPE_HOST:
 						if (array_key_exists($id, $hosts)) {
 							$result[$i][$j] = $hosts[$id]['name'];
 						}
 						break;
 
-					case CONDITION_TYPE_TEMPLATE:
+					case ZBX_CONDITION_TYPE_TEMPLATE:
 						if (array_key_exists($id, $templates)) {
 							$result[$i][$j] = $templates[$id]['name'];
 						}
 						break;
 
-					case CONDITION_TYPE_PROXY:
+					case ZBX_CONDITION_TYPE_PROXY:
 						if (array_key_exists($id, $proxies)) {
 							$result[$i][$j] = $proxies[$id]['host'];
 						}
 						break;
 
-					case CONDITION_TYPE_DRULE:
+					case ZBX_CONDITION_TYPE_DRULE:
 						if (array_key_exists($id, $dRules)) {
 							$result[$i][$j] = $dRules[$id]['name'];
 						}
 						break;
 
-					case CONDITION_TYPE_DCHECK:
+					case ZBX_CONDITION_TYPE_DCHECK:
 						if (array_key_exists($id, $dChecks)) {
 							$drule = reset($dChecks[$id]['drules']);
 							$type = $dChecks[$id]['type'];
@@ -328,7 +328,7 @@ function actionConditionValueToString(array $actions) {
 						}
 						break;
 
-					case CONDITION_TYPE_SERVICE:
+					case ZBX_CONDITION_TYPE_SERVICE:
 						if (array_key_exists($id, $services)) {
 							$result[$i][$j] = $services[$id]['name'];
 						}
@@ -352,18 +352,18 @@ function actionConditionValueToString(array $actions) {
  * @return array
  */
 function getConditionDescription($condition_type, $operator, $value, $value2) {
-	if ($condition_type == CONDITION_TYPE_EVENT_TAG_VALUE) {
+	if ($condition_type == ZBX_CONDITION_TYPE_EVENT_TAG_VALUE) {
 		$description = [_('Value of tag')];
 		$description[] = ' ';
 		$description[] = italic($value2);
 		$description[] = ' ';
 	}
-	elseif ($condition_type == CONDITION_TYPE_SUPPRESSED) {
+	elseif ($condition_type == ZBX_CONDITION_TYPE_SUPPRESSED) {
 		return ($operator == CONDITION_OPERATOR_YES)
 			? [_('Problem is suppressed')]
 			: [_('Problem is not suppressed')];
 	}
-	elseif ($condition_type == CONDITION_TYPE_EVENT_ACKNOWLEDGED) {
+	elseif ($condition_type == ZBX_CONDITION_TYPE_EVENT_ACKNOWLEDGED) {
 		return $value ? _('Event is acknowledged') : _('Event is not acknowledged');
 	}
 	else {
@@ -709,47 +709,47 @@ function getActionOperationDescriptions(array $operations, int $eventsource, arr
  */
 function get_conditions_by_eventsource($eventsource) {
 	$conditions[EVENT_SOURCE_TRIGGERS] = [
-		CONDITION_TYPE_TRIGGER_NAME,
-		CONDITION_TYPE_TRIGGER,
-		CONDITION_TYPE_TRIGGER_SEVERITY,
-		CONDITION_TYPE_HOST,
-		CONDITION_TYPE_HOST_GROUP,
-		CONDITION_TYPE_SUPPRESSED,
-		CONDITION_TYPE_EVENT_TAG,
-		CONDITION_TYPE_EVENT_TAG_VALUE,
-		CONDITION_TYPE_TEMPLATE,
-		CONDITION_TYPE_TIME_PERIOD
+		ZBX_CONDITION_TYPE_EVENT_NAME,
+		ZBX_CONDITION_TYPE_TRIGGER,
+		ZBX_CONDITION_TYPE_TRIGGER_SEVERITY,
+		ZBX_CONDITION_TYPE_HOST,
+		ZBX_CONDITION_TYPE_HOST_GROUP,
+		ZBX_CONDITION_TYPE_SUPPRESSED,
+		ZBX_CONDITION_TYPE_EVENT_TAG,
+		ZBX_CONDITION_TYPE_EVENT_TAG_VALUE,
+		ZBX_CONDITION_TYPE_TEMPLATE,
+		ZBX_CONDITION_TYPE_TIME_PERIOD
 	];
 	$conditions[EVENT_SOURCE_DISCOVERY] = [
-		CONDITION_TYPE_DHOST_IP,
-		CONDITION_TYPE_DCHECK,
-		CONDITION_TYPE_DOBJECT,
-		CONDITION_TYPE_DRULE,
-		CONDITION_TYPE_DSTATUS,
-		CONDITION_TYPE_PROXY,
-		CONDITION_TYPE_DVALUE,
-		CONDITION_TYPE_DSERVICE_PORT,
-		CONDITION_TYPE_DSERVICE_TYPE,
-		CONDITION_TYPE_DUPTIME
+		ZBX_CONDITION_TYPE_DHOST_IP,
+		ZBX_CONDITION_TYPE_DCHECK,
+		ZBX_CONDITION_TYPE_DOBJECT,
+		ZBX_CONDITION_TYPE_DRULE,
+		ZBX_CONDITION_TYPE_DSTATUS,
+		ZBX_CONDITION_TYPE_PROXY,
+		ZBX_CONDITION_TYPE_DVALUE,
+		ZBX_CONDITION_TYPE_DSERVICE_PORT,
+		ZBX_CONDITION_TYPE_DSERVICE_TYPE,
+		ZBX_CONDITION_TYPE_DUPTIME
 	];
 	$conditions[EVENT_SOURCE_AUTOREGISTRATION] = [
-		CONDITION_TYPE_HOST_NAME,
-		CONDITION_TYPE_HOST_METADATA,
-		CONDITION_TYPE_PROXY
+		ZBX_CONDITION_TYPE_HOST_NAME,
+		ZBX_CONDITION_TYPE_HOST_METADATA,
+		ZBX_CONDITION_TYPE_PROXY
 	];
 	$conditions[EVENT_SOURCE_INTERNAL] = [
-		CONDITION_TYPE_EVENT_TYPE,
-		CONDITION_TYPE_HOST,
-		CONDITION_TYPE_HOST_GROUP,
-		CONDITION_TYPE_EVENT_TAG,
-		CONDITION_TYPE_EVENT_TAG_VALUE,
-		CONDITION_TYPE_TEMPLATE
+		ZBX_CONDITION_TYPE_EVENT_TYPE,
+		ZBX_CONDITION_TYPE_HOST,
+		ZBX_CONDITION_TYPE_HOST_GROUP,
+		ZBX_CONDITION_TYPE_EVENT_TAG,
+		ZBX_CONDITION_TYPE_EVENT_TAG_VALUE,
+		ZBX_CONDITION_TYPE_TEMPLATE
 	];
 	$conditions[EVENT_SOURCE_SERVICE] = [
-		CONDITION_TYPE_SERVICE,
-		CONDITION_TYPE_SERVICE_NAME,
-		CONDITION_TYPE_EVENT_TAG,
-		CONDITION_TYPE_EVENT_TAG_VALUE
+		ZBX_CONDITION_TYPE_SERVICE,
+		ZBX_CONDITION_TYPE_SERVICE_NAME,
+		ZBX_CONDITION_TYPE_EVENT_TAG,
+		ZBX_CONDITION_TYPE_EVENT_TAG_VALUE
 	];
 
 	if (array_key_exists($eventsource, $conditions)) {
@@ -761,7 +761,7 @@ function get_conditions_by_eventsource($eventsource) {
 
 function get_opconditions_by_eventsource($eventsource) {
 	$conditions = [
-		EVENT_SOURCE_TRIGGERS => [CONDITION_TYPE_EVENT_ACKNOWLEDGED],
+		EVENT_SOURCE_TRIGGERS => [ZBX_CONDITION_TYPE_EVENT_ACKNOWLEDGED],
 		EVENT_SOURCE_DISCOVERY => []
 	];
 
@@ -912,75 +912,75 @@ function sortOperations($eventsource, &$operations) {
  * @return array
  */
 function get_operators_by_conditiontype($conditiontype) {
-	$operators[CONDITION_TYPE_HOST_GROUP] = [
+	$operators[ZBX_CONDITION_TYPE_HOST_GROUP] = [
 		CONDITION_OPERATOR_EQUAL,
 		CONDITION_OPERATOR_NOT_EQUAL
 	];
-	$operators[CONDITION_TYPE_TEMPLATE] = [
+	$operators[ZBX_CONDITION_TYPE_TEMPLATE] = [
 		CONDITION_OPERATOR_EQUAL,
 		CONDITION_OPERATOR_NOT_EQUAL
 	];
-	$operators[CONDITION_TYPE_HOST] = [
+	$operators[ZBX_CONDITION_TYPE_HOST] = [
 		CONDITION_OPERATOR_EQUAL,
 		CONDITION_OPERATOR_NOT_EQUAL
 	];
-	$operators[CONDITION_TYPE_TRIGGER] = [
+	$operators[ZBX_CONDITION_TYPE_TRIGGER] = [
 		CONDITION_OPERATOR_EQUAL,
 		CONDITION_OPERATOR_NOT_EQUAL
 	];
-	$operators[CONDITION_TYPE_TRIGGER_NAME] = [
+	$operators[ZBX_CONDITION_TYPE_EVENT_NAME] = [
 		CONDITION_OPERATOR_LIKE,
 		CONDITION_OPERATOR_NOT_LIKE
 	];
-	$operators[CONDITION_TYPE_TRIGGER_SEVERITY] = [
+	$operators[ZBX_CONDITION_TYPE_TRIGGER_SEVERITY] = [
 		CONDITION_OPERATOR_EQUAL,
 		CONDITION_OPERATOR_NOT_EQUAL,
 		CONDITION_OPERATOR_MORE_EQUAL,
 		CONDITION_OPERATOR_LESS_EQUAL
 	];
-	$operators[CONDITION_TYPE_TIME_PERIOD] = [
+	$operators[ZBX_CONDITION_TYPE_TIME_PERIOD] = [
 		CONDITION_OPERATOR_IN,
 		CONDITION_OPERATOR_NOT_IN
 	];
-	$operators[CONDITION_TYPE_SUPPRESSED] = [
+	$operators[ZBX_CONDITION_TYPE_SUPPRESSED] = [
 		CONDITION_OPERATOR_NO,
 		CONDITION_OPERATOR_YES
 	];
-	$operators[CONDITION_TYPE_DRULE] = [
+	$operators[ZBX_CONDITION_TYPE_DRULE] = [
 		CONDITION_OPERATOR_EQUAL,
 		CONDITION_OPERATOR_NOT_EQUAL
 	];
-	$operators[CONDITION_TYPE_DCHECK] = [
+	$operators[ZBX_CONDITION_TYPE_DCHECK] = [
 		CONDITION_OPERATOR_EQUAL,
 		CONDITION_OPERATOR_NOT_EQUAL
 	];
-	$operators[CONDITION_TYPE_DOBJECT] = [
+	$operators[ZBX_CONDITION_TYPE_DOBJECT] = [
 		CONDITION_OPERATOR_EQUAL
 	];
-	$operators[CONDITION_TYPE_PROXY] = [
+	$operators[ZBX_CONDITION_TYPE_PROXY] = [
 		CONDITION_OPERATOR_EQUAL,
 		CONDITION_OPERATOR_NOT_EQUAL
 	];
-	$operators[CONDITION_TYPE_DHOST_IP] = [
+	$operators[ZBX_CONDITION_TYPE_DHOST_IP] = [
 		CONDITION_OPERATOR_EQUAL,
 		CONDITION_OPERATOR_NOT_EQUAL
 	];
-	$operators[CONDITION_TYPE_DSERVICE_TYPE] = [
+	$operators[ZBX_CONDITION_TYPE_DSERVICE_TYPE] = [
 		CONDITION_OPERATOR_EQUAL,
 		CONDITION_OPERATOR_NOT_EQUAL
 	];
-	$operators[CONDITION_TYPE_DSERVICE_PORT] = [
+	$operators[ZBX_CONDITION_TYPE_DSERVICE_PORT] = [
 		CONDITION_OPERATOR_EQUAL,
 		CONDITION_OPERATOR_NOT_EQUAL
 	];
-	$operators[CONDITION_TYPE_DSTATUS] = [
+	$operators[ZBX_CONDITION_TYPE_DSTATUS] = [
 		CONDITION_OPERATOR_EQUAL
 	];
-	$operators[CONDITION_TYPE_DUPTIME] = [
+	$operators[ZBX_CONDITION_TYPE_DUPTIME] = [
 		CONDITION_OPERATOR_MORE_EQUAL,
 		CONDITION_OPERATOR_LESS_EQUAL
 	];
-	$operators[CONDITION_TYPE_DVALUE] = [
+	$operators[ZBX_CONDITION_TYPE_DVALUE] = [
 		CONDITION_OPERATOR_EQUAL,
 		CONDITION_OPERATOR_NOT_EQUAL,
 		CONDITION_OPERATOR_MORE_EQUAL,
@@ -988,41 +988,41 @@ function get_operators_by_conditiontype($conditiontype) {
 		CONDITION_OPERATOR_LIKE,
 		CONDITION_OPERATOR_NOT_LIKE
 	];
-	$operators[CONDITION_TYPE_EVENT_ACKNOWLEDGED] = [
+	$operators[ZBX_CONDITION_TYPE_EVENT_ACKNOWLEDGED] = [
 		CONDITION_OPERATOR_EQUAL
 	];
-	$operators[CONDITION_TYPE_HOST_NAME] = [
+	$operators[ZBX_CONDITION_TYPE_HOST_NAME] = [
 		CONDITION_OPERATOR_LIKE,
 		CONDITION_OPERATOR_NOT_LIKE,
 		CONDITION_OPERATOR_REGEXP,
 		CONDITION_OPERATOR_NOT_REGEXP
 	];
-	$operators[CONDITION_TYPE_EVENT_TYPE] = [
+	$operators[ZBX_CONDITION_TYPE_EVENT_TYPE] = [
 		CONDITION_OPERATOR_EQUAL
 	];
-	$operators[CONDITION_TYPE_HOST_METADATA] = [
+	$operators[ZBX_CONDITION_TYPE_HOST_METADATA] = [
 		CONDITION_OPERATOR_LIKE,
 		CONDITION_OPERATOR_NOT_LIKE,
 		CONDITION_OPERATOR_REGEXP,
 		CONDITION_OPERATOR_NOT_REGEXP
 	];
-	$operators[CONDITION_TYPE_EVENT_TAG] = [
+	$operators[ZBX_CONDITION_TYPE_EVENT_TAG] = [
 		CONDITION_OPERATOR_EQUAL,
 		CONDITION_OPERATOR_NOT_EQUAL,
 		CONDITION_OPERATOR_LIKE,
 		CONDITION_OPERATOR_NOT_LIKE
 	];
-	$operators[CONDITION_TYPE_EVENT_TAG_VALUE] = [
+	$operators[ZBX_CONDITION_TYPE_EVENT_TAG_VALUE] = [
 		CONDITION_OPERATOR_EQUAL,
 		CONDITION_OPERATOR_NOT_EQUAL,
 		CONDITION_OPERATOR_LIKE,
 		CONDITION_OPERATOR_NOT_LIKE
 	];
-	$operators[CONDITION_TYPE_SERVICE] = [
+	$operators[ZBX_CONDITION_TYPE_SERVICE] = [
 		CONDITION_OPERATOR_EQUAL,
 		CONDITION_OPERATOR_NOT_EQUAL
 	];
-	$operators[CONDITION_TYPE_SERVICE_NAME] = [
+	$operators[ZBX_CONDITION_TYPE_SERVICE_NAME] = [
 		CONDITION_OPERATOR_LIKE,
 		CONDITION_OPERATOR_NOT_LIKE
 	];

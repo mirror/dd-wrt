@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2023 Zabbix SIA
+** Copyright (C) 2001-2024 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -674,6 +674,8 @@ typedef struct
 	int			severity;
 
 	zbx_vector_ptr_t	tags;
+	int			suppressed;
+	int			mtime;
 }
 zbx_event_t;
 
@@ -858,7 +860,7 @@ int	zbx_get_proxy_protocol_version_int(const char *version_str);
 #define ZBX_CONDITION_TYPE_HOST_GROUP			0
 #define ZBX_CONDITION_TYPE_HOST				1
 #define ZBX_CONDITION_TYPE_TRIGGER			2
-#define ZBX_CONDITION_TYPE_TRIGGER_NAME			3
+#define ZBX_CONDITION_TYPE_EVENT_NAME			3
 #define ZBX_CONDITION_TYPE_TRIGGER_SEVERITY		4
 /* #define ZBX_CONDITION_TYPE_TRIGGER_VALUE		5	deprecated */
 #define ZBX_CONDITION_TYPE_TIME_PERIOD			6

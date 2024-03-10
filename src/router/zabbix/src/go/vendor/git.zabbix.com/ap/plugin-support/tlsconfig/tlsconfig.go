@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright 2001-2023 Zabbix SIA
+** Copyright 2001-2024 Zabbix SIA
 **
 ** Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 ** documentation files (the "Software"), to deal in the Software without restriction, including without limitation the
@@ -24,8 +24,9 @@ import (
 	"crypto/x509"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"os"
 
+	"git.zabbix.com/ap/plugin-support/errs"
 	"git.zabbix.com/ap/plugin-support/uri"
 )
 
@@ -72,15 +73,107 @@ func (d *Details) Validate(checkCA, checkCertFile, checkKeyFile bool) error {
 	return nil
 }
 
+// GetTLSConfig creates tls.Config from details
+func (d *Details) GetTLSConfig(skipVerify bool) (*tls.Config, error) {
+	rootCertPool := x509.NewCertPool()
+	pem, err := os.ReadFile(d.TlsCaFile)
+	if err != nil {
+		return nil, errs.Wrap(err, "failed to read TLS CA file")
+	}
+
+	if ok := rootCertPool.AppendCertsFromPEM(pem); !ok {
+		return nil, errs.New("failed to append PEM")
+	}
+
+	clientCerts, err := d.LoadCertificates()
+	if err != nil {
+		return nil, err
+	}
+
+	if skipVerify {
+		return &tls.Config{RootCAs: rootCertPool, Certificates: clientCerts, InsecureSkipVerify: skipVerify}, nil
+	}
+
+	url, err := uri.New(d.RawUri, nil)
+	if err != nil {
+		return nil, errs.Wrap(err, "failed to parse uri")
+	}
+
+	return &tls.Config{
+		RootCAs: rootCertPool, Certificates: clientCerts, InsecureSkipVerify: skipVerify, ServerName: url.Host(),
+	}, nil
+}
+
+// LoadCertificates combines cert and key files
+func (d *Details) LoadCertificates() ([]tls.Certificate, error) {
+	if d.TlsCertFile == "" || d.TlsKeyFile == "" {
+		return nil, nil
+	}
+
+	var Certs []tls.Certificate
+
+	certs, err := tls.LoadX509KeyPair(d.TlsCertFile, d.TlsKeyFile)
+	if err != nil {
+		return nil, errs.Wrap(err, "failed to load tls cert and/or key file")
+	}
+
+	Certs = []tls.Certificate{certs}
+
+	return Certs, nil
+}
+
+func VerifyPeerCertificateFunc(
+	dnsName string, rootCAPool *x509.CertPool,
+) func(certificates [][]byte, _ [][]*x509.Certificate) error {
+	return func(certificates [][]byte, _ [][]*x509.Certificate) error {
+		if len(certificates) == 0 {
+			return errs.New("no TLS certificates found")
+		}
+
+		certs := make([]*x509.Certificate, 0, len(certificates))
+
+		for _, c := range certificates {
+			cert, err := x509.ParseCertificate(c)
+			if err != nil {
+				return errs.New("no TLS certificates found")
+			}
+
+			certs = append(certs, cert)
+		}
+
+		opts := x509.VerifyOptions{
+			DNSName:       dnsName,
+			Roots:         rootCAPool,
+			Intermediates: x509.NewCertPool(),
+		}
+
+		for i, cert := range certs {
+			if i == 0 {
+				continue
+			}
+
+			opts.Intermediates.AddCert(cert)
+		}
+
+		_, err := certs[0].Verify(opts)
+		if err != nil {
+			return errs.Wrap(err, "failed to verify certificate")
+		}
+
+		return nil
+	}
+}
+
+// CreateConfig (deprecated) creates tls.Config from details
 func CreateConfig(details Details, skipVerify bool) (*tls.Config, error) {
 	rootCertPool := x509.NewCertPool()
-	pem, err := ioutil.ReadFile(details.TlsCaFile)
+	pem, err := os.ReadFile(details.TlsCaFile)
 	if err != nil {
 		return nil, err
 	}
 
 	if ok := rootCertPool.AppendCertsFromPEM(pem); !ok {
-		return nil, errors.New("Failed to append PEM.")
+		return nil, errs.New("failed to append PEM")
 	}
 
 	clientCerts := make([]tls.Certificate, 0, 1)

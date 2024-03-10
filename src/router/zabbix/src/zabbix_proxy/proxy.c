@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2023 Zabbix SIA
+** Copyright (C) 2001-2024 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -1203,9 +1203,6 @@ static void	proxy_db_init(void)
 {
 	char		*error = NULL;
 	int		db_type, version_check;
-#ifdef HAVE_SQLITE3
-	zbx_stat_t	db_stat;
-#endif
 
 	if (SUCCEED != zbx_db_init(DCget_nextid, program_type, &error))
 	{
@@ -1517,7 +1514,7 @@ int	MAIN_ZABBIX_ENTRY(int flags)
 			case ZBX_PROCESS_TYPE_CONFSYNCER:
 				thread_args.args = &proxyconfig_args;
 				zbx_thread_start(proxyconfig_thread, &thread_args, &threads[i]);
-				if (FAIL == zbx_rtc_wait_config_sync(&rtc, rtc_process_request_func))
+				if (FAIL == zbx_rtc_wait_for_sync_finish(&rtc, rtc_process_request_func))
 					goto out;
 				break;
 			case ZBX_PROCESS_TYPE_TRAPPER:

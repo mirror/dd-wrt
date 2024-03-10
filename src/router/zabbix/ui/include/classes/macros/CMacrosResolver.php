@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2023 Zabbix SIA
+** Copyright (C) 2001-2024 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -936,8 +936,7 @@ class CMacrosResolver extends CMacrosResolverGeneral {
 			if (array_key_exists($data['f_num'], $functionids)) {
 				$macros['item'][$functionids[$data['f_num']]][$data['macro']][] = [
 					'token' => $token,
-					'function' => $data['function'],
-					'parameters' => $data['parameters']
+					'macrofunc' => $data['macrofunc']
 				];
 			}
 		}

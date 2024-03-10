@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2023 Zabbix SIA
+** Copyright (C) 2001-2024 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -834,7 +834,7 @@ class CDRule extends CApiService {
 			'SELECT a.name,c.value'.
 			' FROM actions a,conditions c'.
 			' WHERE a.actionid=c.actionid'.
-				' AND c.conditiontype='.CONDITION_TYPE_DRULE.
+				' AND c.conditiontype='.ZBX_CONDITION_TYPE_DRULE.
 				' AND '.dbConditionString('c.value', $druleids),
 			1
 		);
@@ -851,7 +851,7 @@ class CDRule extends CApiService {
 			' FROM actions a,conditions c,dchecks dc'.
 			' WHERE a.actionid=c.actionid'.
 				' AND '.zbx_dbcast_2bigint('c.value').'=dc.dcheckid'.
-				' AND c.conditiontype='.CONDITION_TYPE_DCHECK.
+				' AND c.conditiontype='.ZBX_CONDITION_TYPE_DCHECK.
 				' AND '.dbConditionString('dc.druleid', $druleids),
 			1
 		);
@@ -882,7 +882,7 @@ class CDRule extends CApiService {
 		$dbActions = DBselect(
 			'SELECT DISTINCT c.actionid'.
 			' FROM conditions c'.
-			' WHERE c.conditiontype='.CONDITION_TYPE_DCHECK.
+			' WHERE c.conditiontype='.ZBX_CONDITION_TYPE_DCHECK.
 				' AND '.dbConditionString('c.value', $dCheckIds).
 			' ORDER BY c.actionid'
 		);
@@ -898,7 +898,7 @@ class CDRule extends CApiService {
 			]);
 
 			DB::delete('conditions', [
-				'conditiontype' => CONDITION_TYPE_DCHECK,
+				'conditiontype' => ZBX_CONDITION_TYPE_DCHECK,
 				'value' => $dCheckIds
 			]);
 		}

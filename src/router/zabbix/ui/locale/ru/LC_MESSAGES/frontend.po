@@ -4,8 +4,8 @@ msgstr ""
 "Project-Id-Version: Zabbix 6.0\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2022-03-17 15:53+0200\n"
-"PO-Revision-Date: 2023-09-07 11:27+0000\n"
-"Last-Translator: Lidija <lidija.marsova@zabbix.com>\n"
+"PO-Revision-Date: 2024-01-12 04:01+0000\n"
+"Last-Translator: Alexey <alexey.pustovalov@zabbix.com>\n"
 "Language-Team: Zabbix translation team\n"
 "Language: ru\n"
 "MIME-Version: 1.0\n"
@@ -214,6 +214,16 @@ msgid_plural "%1$s of %2$s elements in problem state"
 msgstr[0] "%1$s из %2$s элемента в состоянии проблемы"
 msgstr[1] "%1$s из %2$s элементов в состоянии проблемы"
 msgstr[2] "%1$s из %2$s элементов в состоянии проблемы"
+
+#: app/views/administration.miscconfig.edit.php:127
+#, c-format
+msgid "%1$s or %2$s - allows the page to be displayed only in a frame on the same origin as the page itself"
+msgstr ""
+
+#: app/views/administration.miscconfig.edit.php:130
+#, c-format
+msgid "%1$s or %2$s - prevents the page from being displayed in a frame, regardless of the site attempting to do so"
+msgstr ""
 
 #: jsLoader.php:348
 #, c-format
@@ -988,7 +998,7 @@ msgstr "Добавить несколько карт"
 
 #: include/classes/widgets/CWidgetHelper.php:1378
 msgid "Add new data set"
-msgstr "Добавить новый набор данных"
+msgstr "Новый набор данных"
 
 #: app/partials/configuration.host.edit.html.php:256
 #: include/views/configuration.host.prototype.edit.php:267
@@ -1111,7 +1121,7 @@ msgstr "Возраст"
 
 #: app/partials/monitoring.problem.filter.php:116
 msgid "Age less than"
-msgstr "Возраст менее чем"
+msgstr "Давность менее"
 
 #: app/views/administration.script.list.php:164 include/hosts.inc.php:1191
 #: include/items.inc.php:347 include/views/configuration.httpconf.edit.php:98
@@ -1521,7 +1531,7 @@ msgstr "Необходимо выбрать по крайней мере оди�
 #: include/classes/api/services/CRole.php:487
 #, c-format
 msgid "At least one UI element must be enabled for user role \"%1$s\"."
-msgstr "По крайней мере один UI элемент должен быть включен для роли пользователей \"%1$s\"."
+msgstr "По крайней мере один UI элемент должен быть активирован для роли пользователя \"%1$s\"."
 
 #: app/controllers/CControllerPopupLldOperation.php:122
 msgid "At least one action is mandatory."
@@ -1953,7 +1963,7 @@ msgstr "По нижнему краю"
 
 #: include/classes/widgets/forms/CWidgetFormTopHosts.php:133
 msgid "Bottom N"
-msgstr "По нижнему краю"
+msgstr "Последние N"
 
 #: jsLoader.php:276
 msgid "Bring forward"
@@ -2330,6 +2340,10 @@ msgstr "Не удалось изменить тип пользователя с�
 msgid "Cannot clear history"
 msgstr "Не удалось очистить историю"
 
+#: httpconf.php:189 httpconf.php:433 items.php:671 items.php:707
+msgid "Cannot clear history and trends"
+msgstr ""
+
 #: include/classes/api/services/CDiscoveryRule.php:2514
 msgid "Cannot clone graph prototypes."
 msgstr "Не удалось клонировать прототипы графиков."
@@ -2459,7 +2473,7 @@ msgstr "Не удалось создать регулярный отчет"
 #: app/controllers/CControllerServiceCreate.php:96
 #: app/controllers/CControllerServiceCreate.php:184
 msgid "Cannot create service"
-msgstr "Не удалось создать сервис"
+msgstr "Не удалось создать услугу"
 
 #: include/classes/api/services/CService.php:2373
 #: include/classes/api/services/CService.php:2397
@@ -2883,6 +2897,13 @@ msgstr[0] "Не удалось деактивировать способ опо�
 msgstr[1] "Не удалось деактивировать способы оповещения"
 msgstr[2] "Не удалось деактивировать способы оповещения"
 
+#: app/controllers/CControllerModuleUpdate.php:146
+msgid "Cannot disable module"
+msgid_plural "Cannot disable modules"
+msgstr[0] ""
+msgstr[1] ""
+msgstr[2] ""
+
 #: app/controllers/CControllerModuleUpdate.php:165
 #, c-format
 msgid "Cannot disable module: %1$s."
@@ -2985,6 +3006,13 @@ msgid_plural "Cannot enable media types"
 msgstr[0] "Не удалось активировать способ оповещения"
 msgstr[1] "Не удалось активировать способы оповещения"
 msgstr[2] "Не удалось активировать способы оповещения"
+
+#: app/controllers/CControllerModuleUpdate.php:141
+msgid "Cannot enable module"
+msgid_plural "Cannot enable modules"
+msgstr[0] "Не удалось активировать модуль"
+msgstr[1] "Не удалось активировать модули"
+msgstr[2] "Не удалось активировать модули"
 
 #: app/controllers/CControllerModuleUpdate.php:160
 #, c-format
@@ -4037,6 +4065,10 @@ msgstr "Не удалось обновить период обслуживани
 msgid "Cannot update media type"
 msgstr "Не удалось обновить способ оповещений"
 
+#: app/controllers/CControllerModuleUpdate.php:137
+msgid "Cannot update module"
+msgstr ""
+
 #: app/controllers/CControllerModuleUpdate.php:157
 #, c-format
 msgid "Cannot update module: %1$s."
@@ -4427,6 +4459,14 @@ msgstr "Очистить историю"
 #: include/views/configuration.item.edit.php:1073
 msgid "Clear history and trends"
 msgstr "Очистить историю и динамику изменений"
+
+#: include/views/configuration.item.list.php:310
+msgid "Clear history and trends of selected items?"
+msgstr ""
+
+#: include/views/configuration.httpconf.list.php:232
+msgid "Clear history and trends of selected web scenarios?"
+msgstr ""
 
 #: app/views/popup.massupdate.host.php:69
 #: app/views/popup.massupdate.template.php:72
@@ -7795,6 +7835,10 @@ msgstr "Мониторинг журнала событий. Возвращает
 msgid "Event name"
 msgstr "Имя события"
 
+#: app/views/popup.condition.edit.php:819
+msgid "Event name matches Trigger name (with macros expanded) unless a custom Event name is specified in Trigger settings."
+msgstr ""
+
 #: include/classes/helpers/CCorrelationHelper.php:55
 msgid "Event tag pair"
 msgstr "Пара тегов событий"
@@ -9068,6 +9112,10 @@ msgstr "Подсвечивать всю строку"
 #: jsLoader.php:372
 msgid "History"
 msgstr "История"
+
+#: httpconf.php:189 httpconf.php:433 items.php:671 items.php:707
+msgid "History and trends cleared"
+msgstr ""
 
 #: app/views/administration.housekeeping.edit.php:159
 msgid "History and trends compression"
@@ -11788,11 +11836,11 @@ msgstr "Элемент данных не обновлен. Пожалуйста,
 
 #: include/items.inc.php:2089
 msgid "Item will not be refreshed. Specified update interval requires having at least one either flexible or scheduling interval."
-msgstr "Элемент данных не будет обновляться. Заданное значение интервала обновления требует по крайней мере одного из интервалов гибкого или по расписанию."
+msgstr "Элемент данных не будет обновляться. Заданное значение интервала обновления требует по крайней мере одного из интервалов - переменного или по расписанию."
 
 #: include/items.inc.php:2094
 msgid "Item will not be refreshed. Update interval should be between 1s and 1d. Also Scheduled/Flexible intervals can be used."
-msgstr "Элемент данных не будет обновляться. Интервал обновления должен быть между 1s и 1d. Также можно использовать интервалы по расписанию/гибкие."
+msgstr "Элемент данных не будет обновляться. Интервал обновления должен быть между 1s и 1d. Также можно использовать интервалы по расписанию/переменные."
 
 #: include/classes/api/services/CDashboardGeneral.php:447
 #: include/classes/api/services/CDashboardGeneral.php:454
@@ -13380,6 +13428,13 @@ msgstr[0] "Модуль удален: %1$s."
 msgstr[1] "Модуля удалено: %1$s."
 msgstr[2] "Модулей удалено: %1$s."
 
+#: app/controllers/CControllerModuleUpdate.php:132
+msgid "Module disabled"
+msgid_plural "Modules disabled"
+msgstr[0] "Модуль деактивирован"
+msgstr[1] "Модули деактивированы"
+msgstr[2] "Модули деактивированы"
+
 #: app/controllers/CControllerModuleUpdate.php:150
 #, c-format
 msgid "Module disabled: %1$s."
@@ -13388,6 +13443,13 @@ msgstr[0] "Модуль деактивирован: %1$s."
 msgstr[1] "Модуля деактивировано: %1$s."
 msgstr[2] "Модулей деактивировано: %1$s."
 
+#: app/controllers/CControllerModuleUpdate.php:129
+msgid "Module enabled"
+msgid_plural "Modules enabled"
+msgstr[0] "Модуль активирован"
+msgstr[1] "Модули активированы"
+msgstr[2] "Модули активированы"
+
 #: app/controllers/CControllerModuleUpdate.php:145
 #, c-format
 msgid "Module enabled: %1$s."
@@ -13395,6 +13457,10 @@ msgid_plural "Modules enabled: %1$s."
 msgstr[0] "Модуль активирован: %1$s."
 msgstr[1] "Модуля активировано: %1$s."
 msgstr[2] "Модулей активировано: %1$s."
+
+#: app/controllers/CControllerModuleUpdate.php:126
+msgid "Module updated"
+msgstr "Модуль обновлен"
 
 #: app/controllers/CControllerModuleUpdate.php:142
 #, c-format
@@ -14591,6 +14657,11 @@ msgstr "Без унаследованных элементов данных"
 #: include/views/configuration.host.discovery.list.php:162
 msgid "Not supported"
 msgstr "Не поддерживается"
+
+#: app/views/administration.miscconfig.edit.php:138
+#, c-format
+msgid "Note that %1$s or %2$s will be regarded as hostnames if used without single quotes."
+msgstr ""
 
 #: include/hosts.inc.php:229
 msgid "Notes"
@@ -20070,7 +20141,7 @@ msgstr "По верхнему краю"
 
 #: include/classes/widgets/forms/CWidgetFormTopHosts.php:132
 msgid "Top N"
-msgstr "Топ N"
+msgstr "Первые N"
 
 #: include/classes/widgets/CWidgetConfig.php:75
 msgid "Top hosts"
@@ -21200,6 +21271,10 @@ msgstr "Доступен/Недоступен"
 #: app/views/popup.ldap.edit.php:169
 msgid "Use %{ref} in group filter to reference value of this user attribute."
 msgstr "Используйте %{ref} в фильтре группы для ссылки на значение этого пользовательского атрибута."
+
+#: app/views/administration.miscconfig.edit.php:123
+msgid "Use X-Frame-Options HTTP header"
+msgstr ""
 
 #: app/partials/configuration.host.interface.row.php:194
 msgid "Use bulk requests"
@@ -22945,6 +23020,10 @@ msgstr "Ось X"
 msgid "X-Frame-Options HTTP header"
 msgstr "HTTP заголовок X-Frame-Options"
 
+#: app/views/administration.miscconfig.edit.php:125
+msgid "X-Frame-Options HTTP header supported values:"
+msgstr ""
+
 #: include/views/js/monitoring.sysmaps.js.php:448
 msgid "X1"
 msgstr "X1"
@@ -23393,6 +23472,11 @@ msgstr "ожидается относительное время"
 #: app/views/administration.authentication.edit.php:86
 msgid "a special character"
 msgstr "спецсимвол"
+
+#: app/views/administration.miscconfig.edit.php:133
+#, c-format
+msgid "a string of space-separated hostnames; adding %1$s to the list allows the page to be displayed in a frame on the same origin as the page itself"
+msgstr ""
 
 #: include/classes/validators/CApiInputValidator.php:2530
 msgid "a string, number or null value is expected"
@@ -24878,7 +24962,7 @@ msgstr "число"
 
 #: include/classes/api/services/CHostPrototype.php:836
 msgid "object does not exist or belongs to another object"
-msgstr ""
+msgstr "объект не существует или принадлежит другому объекту"
 
 #: app/views/monitoring.widget.problemhosts.view.php:127
 #: include/blocks.inc.php:504

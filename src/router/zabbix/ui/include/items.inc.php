@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2023 Zabbix SIA
+** Copyright (C) 2001-2024 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -2739,4 +2739,21 @@ function sortLldRuleFilterConditions(array $conditions, int $evaltype): array {
 	}
 
 	return array_values($conditions);
+}
+
+/**
+ * @param int   $item_type
+ * @param array $hostids
+ *
+ * @return array
+ */
+function getItemTypeCountByHostId(int $item_type, array $hostids): array {
+	$items_count = API::Item()->get([
+		'countOutput' => true,
+		'groupCount' => true,
+		'hostids' => $hostids,
+		'filter' => ['type' => $item_type]
+	]);
+
+	return array_column($items_count, 'rowscount', 'hostid');
 }

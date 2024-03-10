@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2023 Zabbix SIA
+** Copyright (C) 2001-2024 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -920,12 +920,6 @@ static int	proxy_add_hist_data(struct zbx_json *j, int records_num, const DC_ITE
 		if (HOST_STATUS_MONITORED != dc_items[i].host.status)
 			continue;
 
-		if (PROXY_HISTORY_FLAG_NOVALUE == (hd->flags & PROXY_HISTORY_MASK_NOVALUE))
-		{
-			if (SUCCEED != zbx_is_counted_in_item_queue(dc_items[i].type, dc_items[i].key_orig))
-				continue;
-		}
-
 		if (0 == records_num)
 			zbx_json_addarray(j, ZBX_PROTO_TAG_HISTORY_DATA);
 
@@ -1274,11 +1268,8 @@ static int	process_history_data_value(zbx_history_recv_item_t *item, zbx_agent_v
 		if (0 != value->meta)
 			zbx_set_agent_result_meta(&result, value->lastlogsize, value->mtime);
 
-		if (0 != ZBX_ISSET_VALUE(&result) || 0 != ZBX_ISSET_META(&result))
-		{
-			item->state = ITEM_STATE_NORMAL;
-			process_item_value(item, &result, &value->ts, h_num, NULL);
-		}
+		item->state = ITEM_STATE_NORMAL;
+		process_item_value(item, &result, &value->ts, h_num, NULL);
 
 		zbx_free_agent_result(&result);
 	}

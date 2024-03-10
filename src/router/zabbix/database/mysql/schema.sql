@@ -2275,7 +2275,7 @@ CREATE TABLE `dbversion` (
 	`optional`               integer         DEFAULT '0'               NOT NULL,
 	PRIMARY KEY (dbversionid)
 ) ENGINE=InnoDB;
-INSERT INTO dbversion VALUES ('1','6040000','6040025');
+INSERT INTO dbversion VALUES ('1','6040000','6040026');
 DELIMITER $$
 create trigger hosts_insert after insert on hosts
 for each row

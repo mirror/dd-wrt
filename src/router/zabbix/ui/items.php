@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2023 Zabbix SIA
+** Copyright (C) 2001-2024 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -582,7 +582,7 @@ elseif (hasRequest('add') || hasRequest('update')) {
 			'posts' => getRequest('posts', DB::getDefault('items', 'posts')),
 			'headers' => prepareItemHeaders(getRequest('headers', [])),
 			'status_codes' => getRequest('status_codes', DB::getDefault('items', 'status_codes')),
-			'follow_redirects' => getRequest('follow_redirects', DB::getDefault('items', 'follow_redirects')),
+			'follow_redirects' => getRequest('follow_redirects', HTTPTEST_STEP_FOLLOW_REDIRECTS_OFF),
 			'retrieve_mode' => getRequest('retrieve_mode', $retrieve_mode_default),
 			'output_format' => getRequest('output_format', DB::getDefault('items', 'output_format')),
 			'http_proxy' => getRequest('http_proxy', DB::getDefault('items', 'http_proxy')),
@@ -668,7 +668,7 @@ elseif (hasRequest('add') || hasRequest('update')) {
 elseif (hasRequest('del_history') && hasRequest('itemid')) {
 	$result = (bool) API::History()->clear([getRequest('itemid')]);
 
-	show_messages($result, _('History cleared'), _('Cannot clear history'));
+	show_messages($result, _('History and trends cleared'), _('Cannot clear history and trends'));
 }
 elseif (hasRequest('action') && str_in_array(getRequest('action'), ['item.massenable', 'item.massdisable']) && hasRequest('group_itemid')) {
 	$itemids = getRequest('group_itemid');
@@ -704,7 +704,7 @@ elseif (hasRequest('action') && getRequest('action') === 'item.massclearhistory'
 		$filter_hostids ? uncheckTableRows($checkbox_hash) : uncheckTableRows();
 	}
 
-	show_messages($result, _('History cleared'), _('Cannot clear history'));
+	show_messages($result, _('History and trends cleared'), _('Cannot clear history and trends'));
 }
 elseif (hasRequest('action') && getRequest('action') === 'item.massdelete' && hasRequest('group_itemid')) {
 	$group_itemid = getRequest('group_itemid');

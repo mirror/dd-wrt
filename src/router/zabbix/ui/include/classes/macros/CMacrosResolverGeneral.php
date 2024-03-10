@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2023 Zabbix SIA
+** Copyright (C) 2001-2024 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -1392,7 +1392,7 @@ class CMacrosResolverGeneral {
 					if ($options['html']) {
 						$macro_value = str_replace(["\r\n", "\n"], [" "], $macro_value);
 						$hint_table = (new CTable())
-							->addClass('list-table')
+							->addClass(ZBX_STYLE_LIST_TABLE)
 							->addRow([
 								new CCol($function['name']),
 								new CCol(

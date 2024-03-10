@@ -1,7 +1,7 @@
 <?php declare(strict_types = 0);
 /*
 ** Zabbix
-** Copyright (C) 2001-2023 Zabbix SIA
+** Copyright (C) 2001-2024 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -446,7 +446,7 @@ window.operation_popup = new class {
 			return;
 		}
 		else {
-			if (input.conditiontype == <?= CONDITION_TYPE_EVENT_ACKNOWLEDGED ?>) {
+			if (input.conditiontype == <?= ZBX_CONDITION_TYPE_EVENT_ACKNOWLEDGED ?>) {
 				if (input.value == 1) {
 					input.name = <?= json_encode(_('Event is acknowledged')) ?> + ' ';
 				}

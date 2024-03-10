@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2023 Zabbix SIA
+** Copyright (C) 2001-2024 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -1533,7 +1533,7 @@ class CHost extends CHostGeneral {
 		$actionids = [];
 		$sql = 'SELECT DISTINCT actionid'.
 				' FROM conditions'.
-				' WHERE conditiontype='.CONDITION_TYPE_HOST.
+				' WHERE conditiontype='.ZBX_CONDITION_TYPE_HOST.
 				' AND '.dbConditionString('value', $hostids);
 		$dbActions = DBselect($sql);
 		while ($dbAction = DBfetch($dbActions)) {
@@ -1561,7 +1561,7 @@ class CHost extends CHostGeneral {
 
 		// delete action conditions
 		DB::delete('conditions', [
-			'conditiontype' => CONDITION_TYPE_HOST,
+			'conditiontype' => ZBX_CONDITION_TYPE_HOST,
 			'value' => $hostids
 		]);
 

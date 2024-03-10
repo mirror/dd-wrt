@@ -216,6 +216,16 @@ msgstr[0] "%1$s z %2$s prvku v problémovom stave"
 msgstr[1] "%1$s z %2$s prvkov v problémovom stave"
 msgstr[2] "%1$s z %2$s prvkov v problémovom stave "
 
+#: app/views/administration.miscconfig.edit.php:127
+#, c-format
+msgid "%1$s or %2$s - allows the page to be displayed only in a frame on the same origin as the page itself"
+msgstr ""
+
+#: app/views/administration.miscconfig.edit.php:130
+#, c-format
+msgid "%1$s or %2$s - prevents the page from being displayed in a frame, regardless of the site attempting to do so"
+msgstr ""
+
 #: jsLoader.php:348
 #, c-format
 msgctxt "screen reader"
@@ -2331,6 +2341,10 @@ msgstr "Nemožno zmeniť typ používateľa vlastnej role."
 msgid "Cannot clear history"
 msgstr "Nie je možné zmazať históriu"
 
+#: httpconf.php:189 httpconf.php:433 items.php:671 items.php:707
+msgid "Cannot clear history and trends"
+msgstr ""
+
 #: include/classes/api/services/CDiscoveryRule.php:2514
 msgid "Cannot clone graph prototypes."
 msgstr "Nie je možné klonovať prototypy grafov."
@@ -2884,6 +2898,13 @@ msgstr[0] "Nie je možné zakázať typ média"
 msgstr[1] "Nie je možné zakázať typ média"
 msgstr[2] "Nie je možné zakázať typ média"
 
+#: app/controllers/CControllerModuleUpdate.php:146
+msgid "Cannot disable module"
+msgid_plural "Cannot disable modules"
+msgstr[0] ""
+msgstr[1] ""
+msgstr[2] ""
+
 #: app/controllers/CControllerModuleUpdate.php:165
 #, c-format
 msgid "Cannot disable module: %1$s."
@@ -2986,6 +3007,13 @@ msgid_plural "Cannot enable media types"
 msgstr[0] "Nie je možné povoliť typ média"
 msgstr[1] "Nie je možné povoliť typ média"
 msgstr[2] "Nie je možné povoliť typ média"
+
+#: app/controllers/CControllerModuleUpdate.php:141
+msgid "Cannot enable module"
+msgid_plural "Cannot enable modules"
+msgstr[0] ""
+msgstr[1] ""
+msgstr[2] ""
 
 #: app/controllers/CControllerModuleUpdate.php:160
 #, c-format
@@ -4038,6 +4066,10 @@ msgstr ""
 msgid "Cannot update media type"
 msgstr "Nie je možné aktualizovať typ média"
 
+#: app/controllers/CControllerModuleUpdate.php:137
+msgid "Cannot update module"
+msgstr ""
+
 #: app/controllers/CControllerModuleUpdate.php:157
 #, c-format
 msgid "Cannot update module: %1$s."
@@ -4428,6 +4460,14 @@ msgstr "Vyčistiť históriu"
 #: include/views/configuration.item.edit.php:1073
 msgid "Clear history and trends"
 msgstr "Vyčistiť históriu a trendy"
+
+#: include/views/configuration.item.list.php:310
+msgid "Clear history and trends of selected items?"
+msgstr ""
+
+#: include/views/configuration.httpconf.list.php:232
+msgid "Clear history and trends of selected web scenarios?"
+msgstr ""
 
 #: app/views/popup.massupdate.host.php:69
 #: app/views/popup.massupdate.template.php:72
@@ -7796,6 +7836,10 @@ msgstr "Monitoring logu udalostí. Vráti log"
 msgid "Event name"
 msgstr "Meno eventu"
 
+#: app/views/popup.condition.edit.php:819
+msgid "Event name matches Trigger name (with macros expanded) unless a custom Event name is specified in Trigger settings."
+msgstr ""
+
 #: include/classes/helpers/CCorrelationHelper.php:55
 msgid "Event tag pair"
 msgstr "Pár značiek udalosti"
@@ -9069,6 +9113,10 @@ msgstr "Zvýraznite celý riadok"
 #: jsLoader.php:372
 msgid "History"
 msgstr "História"
+
+#: httpconf.php:189 httpconf.php:433 items.php:671 items.php:707
+msgid "History and trends cleared"
+msgstr ""
 
 #: app/views/administration.housekeeping.edit.php:159
 msgid "History and trends compression"
@@ -13381,6 +13429,13 @@ msgstr[0] "Modul bol odstránený: %1$s."
 msgstr[1] "Moduly boli odstránené: %1$s."
 msgstr[2] "Moduly boli odstránené: %1$s. "
 
+#: app/controllers/CControllerModuleUpdate.php:132
+msgid "Module disabled"
+msgid_plural "Modules disabled"
+msgstr[0] ""
+msgstr[1] ""
+msgstr[2] ""
+
 #: app/controllers/CControllerModuleUpdate.php:150
 #, c-format
 msgid "Module disabled: %1$s."
@@ -13389,6 +13444,13 @@ msgstr[0] "Modul je zakázaný: %1$s."
 msgstr[1] "Moduly sú zakázané: %1$s."
 msgstr[2] "Moduly sú zakázané: %1$s. "
 
+#: app/controllers/CControllerModuleUpdate.php:129
+msgid "Module enabled"
+msgid_plural "Modules enabled"
+msgstr[0] ""
+msgstr[1] ""
+msgstr[2] ""
+
 #: app/controllers/CControllerModuleUpdate.php:145
 #, c-format
 msgid "Module enabled: %1$s."
@@ -13396,6 +13458,10 @@ msgid_plural "Modules enabled: %1$s."
 msgstr[0] "Modul je povolený: %1$s."
 msgstr[1] "Moduly sú povolené: %1$s."
 msgstr[2] "Moduly sú povolené: %1$s. "
+
+#: app/controllers/CControllerModuleUpdate.php:126
+msgid "Module updated"
+msgstr ""
 
 #: app/controllers/CControllerModuleUpdate.php:142
 #, c-format
@@ -14592,6 +14658,11 @@ msgstr "Nededené itemy"
 #: include/views/configuration.host.discovery.list.php:162
 msgid "Not supported"
 msgstr "Nepodporované"
+
+#: app/views/administration.miscconfig.edit.php:138
+#, c-format
+msgid "Note that %1$s or %2$s will be regarded as hostnames if used without single quotes."
+msgstr ""
 
 #: include/hosts.inc.php:229
 msgid "Notes"
@@ -21202,6 +21273,10 @@ msgstr "Doba dostupnosti/nedostupnosti"
 msgid "Use %{ref} in group filter to reference value of this user attribute."
 msgstr "Použite %{ref} v skupinovom filtri na referenčnú hodnotu tohto používateľského atribútu."
 
+#: app/views/administration.miscconfig.edit.php:123
+msgid "Use X-Frame-Options HTTP header"
+msgstr ""
+
 #: app/partials/configuration.host.interface.row.php:194
 msgid "Use bulk requests"
 msgstr "Používať hromadné SNMP dopyty"
@@ -22946,6 +23021,10 @@ msgstr "Os X"
 msgid "X-Frame-Options HTTP header"
 msgstr "Hlavička HTTP X-Frame-Options"
 
+#: app/views/administration.miscconfig.edit.php:125
+msgid "X-Frame-Options HTTP header supported values:"
+msgstr ""
+
 #: include/views/js/monitoring.sysmaps.js.php:448
 msgid "X1"
 msgstr "X1"
@@ -23394,6 +23473,11 @@ msgstr "očakáva sa relatívny čas"
 #: app/views/administration.authentication.edit.php:86
 msgid "a special character"
 msgstr "špeciálna postava"
+
+#: app/views/administration.miscconfig.edit.php:133
+#, c-format
+msgid "a string of space-separated hostnames; adding %1$s to the list allows the page to be displayed in a frame on the same origin as the page itself"
+msgstr ""
 
 #: include/classes/validators/CApiInputValidator.php:2530
 msgid "a string, number or null value is expected"

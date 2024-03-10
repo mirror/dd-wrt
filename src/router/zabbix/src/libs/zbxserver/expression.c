@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2023 Zabbix SIA
+** Copyright (C) 2001-2024 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -3136,6 +3136,7 @@ static int	substitute_simple_macros_impl(const zbx_uint64_t *actionid, const zbx
 		raw_value = 0;
 		pos = token.loc.l;
 		inner_token = token;
+		ret = SUCCEED;
 
 		switch (token.type)
 		{
@@ -3168,7 +3169,7 @@ static int	substitute_simple_macros_impl(const zbx_uint64_t *actionid, const zbx
 					/* Ignore functions with macros not supporting them, but do not skip the */
 					/* whole token, nested macro should be resolved in this case. */
 					pos++;
-					continue;
+					ret = FAIL;
 				}
 				break;
 			case ZBX_TOKEN_USER_MACRO:
@@ -3190,7 +3191,8 @@ static int	substitute_simple_macros_impl(const zbx_uint64_t *actionid, const zbx
 				continue;
 		}
 
-		ret = SUCCEED;
+		if (SUCCEED == ret)
+		{
 
 		if (0 != (macro_type & (MACRO_TYPE_MESSAGE_NORMAL | MACRO_TYPE_MESSAGE_RECOVERY |
 				MACRO_TYPE_MESSAGE_UPDATE |
@@ -3221,7 +3223,7 @@ static int	substitute_simple_macros_impl(const zbx_uint64_t *actionid, const zbx
 
 					pos = token.loc.r;
 				}
-				else if (ZBX_TOKEN_EXPRESSION_MACRO == token.type)
+				else if (ZBX_TOKEN_EXPRESSION_MACRO == inner_token.type)
 				{
 					zbx_timespec_t	ts;
 					char		*errmsg = NULL;
@@ -4793,42 +4795,6 @@ static int	substitute_simple_macros_impl(const zbx_uint64_t *actionid, const zbx
 				}
 			}
 		}
-		else if (0 == indexed_macro && 0 != (macro_type & MACRO_TYPE_INTERFACE_ADDR))
-		{
-			if (ZBX_TOKEN_USER_MACRO == token.type)
-			{
-				zbx_dc_get_user_macro(um_handle, m, &dc_host->hostid, 1, &replace_to);
-				pos = token.loc.r;
-			}
-			else if (0 == strcmp(m, MVAR_HOST_HOST) || 0 == strcmp(m, MVAR_HOSTNAME))
-				replace_to = zbx_strdup(replace_to, dc_host->host);
-			else if (0 == strcmp(m, MVAR_HOST_NAME))
-				replace_to = zbx_strdup(replace_to, dc_host->name);
-			else if (0 == strcmp(m, MVAR_HOST_IP) || 0 == strcmp(m, MVAR_IPADDRESS))
-			{
-				if (SUCCEED == (ret = DCconfig_get_interface_by_type(&interface,
-						dc_host->hostid, INTERFACE_TYPE_AGENT)))
-				{
-					replace_to = zbx_strdup(replace_to, interface.ip_orig);
-				}
-			}
-			else if	(0 == strcmp(m, MVAR_HOST_DNS))
-			{
-				if (SUCCEED == (ret = DCconfig_get_interface_by_type(&interface,
-						dc_host->hostid, INTERFACE_TYPE_AGENT)))
-				{
-					replace_to = zbx_strdup(replace_to, interface.dns_orig);
-				}
-			}
-			else if (0 == strcmp(m, MVAR_HOST_CONN))
-			{
-				if (SUCCEED == (ret = DCconfig_get_interface_by_type(&interface,
-						dc_host->hostid, INTERFACE_TYPE_AGENT)))
-				{
-					replace_to = zbx_strdup(replace_to, interface.addr);
-				}
-			}
-		}
 		else if (0 != (macro_type & (MACRO_TYPE_COMMON | MACRO_TYPE_SNMP_OID)))
 		{
 			if (ZBX_TOKEN_USER_MACRO == token.type)
@@ -5182,6 +5148,7 @@ static int	substitute_simple_macros_impl(const zbx_uint64_t *actionid, const zbx
 						(int)(token.loc.r - token.loc.l + 1), *data + token.loc.l);
 				res = FAIL;
 			}
+		}
 		}
 
 		if (FAIL == ret)
@@ -6827,7 +6794,7 @@ int	zbx_substitute_function_lld_param(const char *e, size_t len, unsigned char k
 		size_t	param_pos, param_len, rel_len = len - (p - e);
 		int	quoted;
 
-		zbx_function_param_parse(p, &param_pos, &param_len, &sep_pos);
+		zbx_lld_trigger_function_param_parse(p, &param_pos, &param_len, &sep_pos);
 
 		/* copy what was before the parameter */
 		zbx_strncpy_alloc(exp, exp_alloc, exp_offset, p, param_pos);

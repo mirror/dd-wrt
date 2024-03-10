@@ -1,6 +1,7 @@
-# git.zabbix.com/ap/plugin-support v1.2.2-0.20230830115138-70c19a28dd7c
-## explicit; go 1.19
+# git.zabbix.com/ap/plugin-support v1.2.2-0.20240118133248-deb0a6afb1b9
+## explicit; go 1.20
 git.zabbix.com/ap/plugin-support/conf
+git.zabbix.com/ap/plugin-support/errs
 git.zabbix.com/ap/plugin-support/log
 git.zabbix.com/ap/plugin-support/metric
 git.zabbix.com/ap/plugin-support/plugin
@@ -10,9 +11,13 @@ git.zabbix.com/ap/plugin-support/std
 git.zabbix.com/ap/plugin-support/tlsconfig
 git.zabbix.com/ap/plugin-support/uri
 git.zabbix.com/ap/plugin-support/zbxerr
+git.zabbix.com/ap/plugin-support/zbxflag
 # github.com/BurntSushi/locker v0.0.0-20171006230638-a6e239ea1c69
 ## explicit
 github.com/BurntSushi/locker
+# github.com/DATA-DOG/go-sqlmock v1.5.0
+## explicit
+github.com/DATA-DOG/go-sqlmock
 # github.com/Microsoft/go-winio v0.6.1
 ## explicit; go 1.17
 github.com/Microsoft/go-winio
@@ -102,8 +107,8 @@ github.com/go-logr/logr
 ## explicit; go 1.12
 github.com/go-ole/go-ole
 github.com/go-ole/go-ole/oleutil
-# github.com/go-sql-driver/mysql v1.6.0
-## explicit; go 1.10
+# github.com/go-sql-driver/mysql v1.7.1
+## explicit; go 1.13
 github.com/go-sql-driver/mysql
 # github.com/goburrow/modbus v0.1.0
 ## explicit
@@ -138,6 +143,13 @@ github.com/godror/godror/odpi/src
 ## explicit; go 1.17
 github.com/godror/knownpb/internal
 github.com/godror/knownpb/timestamppb
+# github.com/google/go-cmp v0.6.0
+## explicit; go 1.13
+github.com/google/go-cmp/cmp
+github.com/google/go-cmp/cmp/internal/diff
+github.com/google/go-cmp/cmp/internal/flags
+github.com/google/go-cmp/cmp/internal/function
+github.com/google/go-cmp/cmp/internal/value
 # github.com/gorilla/websocket v1.4.2
 ## explicit; go 1.12
 github.com/gorilla/websocket
@@ -150,7 +162,7 @@ github.com/mailru/easyjson
 github.com/mailru/easyjson/buffer
 github.com/mailru/easyjson/jlexer
 github.com/mailru/easyjson/jwriter
-# github.com/mattn/go-sqlite3 v1.14.15
+# github.com/mattn/go-sqlite3 v1.14.19
 ## explicit; go 1.16
 github.com/mattn/go-sqlite3
 # github.com/mediocregopher/radix/v3 v3.8.1
@@ -175,9 +187,12 @@ github.com/sokurenko/go-netstat/netstat
 # golang.org/x/mod v0.12.0
 ## explicit; go 1.17
 golang.org/x/mod/semver
-# golang.org/x/net v0.14.0
-## explicit; go 1.17
+# golang.org/x/net v0.18.0
+## explicit; go 1.18
 golang.org/x/net/bpf
+golang.org/x/net/html
+golang.org/x/net/html/atom
+golang.org/x/net/html/charset
 golang.org/x/net/internal/iana
 golang.org/x/net/internal/socket
 golang.org/x/net/internal/socks
@@ -187,16 +202,34 @@ golang.org/x/net/proxy
 # golang.org/x/sync v0.3.0
 ## explicit; go 1.17
 golang.org/x/sync/semaphore
-# golang.org/x/sys v0.11.0
-## explicit; go 1.17
+# golang.org/x/sys v0.14.0
+## explicit; go 1.18
 golang.org/x/sys/execabs
-golang.org/x/sys/internal/unsafeheader
 golang.org/x/sys/unix
 golang.org/x/sys/windows
 golang.org/x/sys/windows/registry
 golang.org/x/sys/windows/svc
 golang.org/x/sys/windows/svc/eventlog
 golang.org/x/sys/windows/svc/mgr
+# golang.org/x/text v0.14.0
+## explicit; go 1.18
+golang.org/x/text/encoding
+golang.org/x/text/encoding/charmap
+golang.org/x/text/encoding/htmlindex
+golang.org/x/text/encoding/internal
+golang.org/x/text/encoding/internal/identifier
+golang.org/x/text/encoding/japanese
+golang.org/x/text/encoding/korean
+golang.org/x/text/encoding/simplifiedchinese
+golang.org/x/text/encoding/traditionalchinese
+golang.org/x/text/encoding/unicode
+golang.org/x/text/internal/language
+golang.org/x/text/internal/language/compact
+golang.org/x/text/internal/tag
+golang.org/x/text/internal/utf8internal
+golang.org/x/text/language
+golang.org/x/text/runes
+golang.org/x/text/transform
 # golang.org/x/tools v0.11.0
 ## explicit; go 1.18
 golang.org/x/tools/cmd/stringer

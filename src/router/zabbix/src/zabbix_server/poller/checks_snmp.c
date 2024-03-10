@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2023 Zabbix SIA
+** Copyright (C) 2001-2024 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -1224,6 +1224,17 @@ reduce_max_vars:
 			goto next;
 		}
 
+		if (NULL == response->variables)
+		{
+			if (1 >= level && 1 < max_vars)
+				goto reduce_max_vars;
+
+			zbx_strlcpy(error, "No values received.", max_error_len);
+			ret = NOTSUPPORTED;
+			running = 0;
+			goto next;
+		}
+
 		/* process response */
 		for (num_vars = 0, var = response->variables; NULL != var; num_vars++, var = var->next_variable)
 		{
@@ -2011,6 +2022,149 @@ static int	snmp_bulkwalk_parse_params(AGENT_REQUEST *request, zbx_vector_snmp_oi
 	return SUCCEED;
 }
 
+/******************************************************************************
+ *                                                                            *
+ * Purpose: quotes string value the same way Net-SNMP library does it         *
+ *                                                                            *
+ * Parameters: buffer      - [OUT] the output buffer                          *
+ *             buffer_size - [IN] the output buffer size                      *
+ *             var         - [IN] SNMP variable                               *
+ *                                                                            *
+ * Return value: SUCCEED - the string was quoted successfully                 *
+ *               FAIL    - output buffer is too small                         *
+ *                                                                            *
+ ******************************************************************************/
+static int	snmp_native_quote_string_value(char *buffer, size_t buffer_size, char *str, size_t len)
+{
+	size_t output_len = 0;
+
+	if (!snmp_cstrcat((unsigned char **)&buffer, &buffer_size, &output_len, 0, "\""))
+	{
+		return FAIL;
+	}
+	if (!sprint_realloc_asciistring((unsigned char **)&buffer, &buffer_size, &output_len, 0, (unsigned char *)str, len))
+	{
+		return FAIL;
+	}
+	if (!snmp_cstrcat((unsigned char **)&buffer, &buffer_size, &output_len, 0, "\""))
+	{
+		return FAIL;
+	}
+
+	return SUCCEED;
+}
+
+/******************************************************************************
+ *                                                                            *
+ * Purpose: quotes string value if Net-SNMP library hasn't quoted it          *
+ *                                                                            *
+ * Parameters: buffer      - [OUT] the output buffer                          *
+ *             buffer_size - [IN] the output buffer size                      *
+ *             var         - [IN] SNMP variable                               *
+ *                                                                            *
+ * Return value: SUCCEED - the string was quoted successfully                 *
+ *               FAIL    - output buffer is too small                         *
+ *                                                                            *
+ * Comments: When producing the output, Net-SNMP library sometimes quotes     *
+ *           string values, sometimes it doesn't quote them. This makes it    *
+ *           impossible to correctly parse string values, because there is    *
+ *           no way for parser to tell if string value was quoted - quote     *
+ *           character in the beginning of the value can either indicate that *
+ *           the value was quoted, or be a part of the actual value. To deal  *
+ *           with this issue, we can analyze the output that was produced by  *
+ *           the library, compare it to raw value and try to guess if the     *
+ *           value was quoted. If it wasn't, we can manually quote the value. *
+ *           This way, string values will always be quoted and parser should  *
+ *           not have issues with parsing them.                               *
+ *                                                                            *
+ *           When formatting string values, Net-SNMP library checks if        *
+ *           display hint is available for specific OID. If yes, then value   *
+ *           is not quoted. If hint is not used, then library outputs it      *
+ *           either as unoquoted Hex-STRING value, or as quoted STRING value, *
+ *           or as quoted empty string without specifying the type.           *
+ *           See sprint_realloc_octet_string() for exact implementation.      *
+ *                                                                            *
+ ******************************************************************************/
+static int	snmp_quote_string_value(char *buffer, size_t buffer_size, struct variable_list *var)
+{
+#define TYPE_STR_HEX_STRING	"Hex-STRING: "
+#define TYPE_STR_STRING		"STRING: "
+	int	ret;
+	char	*buf;
+	char	quoted_buf[MAX_STRING_LEN];
+
+	buf = strstr(buffer, " = ");
+	if (NULL == buf)
+	{
+		zabbix_log(LOG_LEVEL_WARNING, "%s() ' = ' not found in buffer '%s'", __func__, buffer);
+		THIS_SHOULD_NEVER_HAPPEN;
+		ret = FAIL;
+		goto out;
+	}
+	buf += 3;
+
+	if (0 == var->val_len && 0 == strcmp(buf, "\"\""))
+	{
+		ret = SUCCEED;
+		goto out;
+	}
+
+	if (0 == strncmp(buf, TYPE_STR_HEX_STRING, sizeof(TYPE_STR_HEX_STRING) - 1))
+	{
+		ret = SUCCEED;
+		goto out;
+	}
+
+	if (0 != strncmp(buf, TYPE_STR_STRING, sizeof(TYPE_STR_STRING) - 1))
+	{
+		zabbix_log(LOG_LEVEL_WARNING, "%s() expected 'STRING' type in buffer '%s'", __func__, buffer);
+		THIS_SHOULD_NEVER_HAPPEN;
+		ret = FAIL;
+		goto out;
+	}
+	buf += sizeof(TYPE_STR_STRING) - 1;
+
+	buffer_size -= (size_t)(buf - buffer);
+
+	if ('"' == *buf)
+	{
+		if (SUCCEED != snmp_native_quote_string_value(quoted_buf, buffer_size, (char *) var->val.string,
+				var->val_len))
+		{
+			zabbix_log(LOG_LEVEL_WARNING, "%s() quoting value failed, buffer too small", __func__);
+			ret = FAIL;
+			goto out;
+		}
+
+		/* If value produced by Net-SNMP library is the same as "manually quoted string", then we can assume  */
+		/* that the library quoted the value and no further actions are needed.                               */
+		/* If values are different, quote character is probably part of the value, but we cannot just use     */
+		/* quoted_buf as the final result, because value might have been altered to produce the output        */
+		/* because of the display hints. We have to quote the value that was produced by Net-SNMP library,    */
+		/* not the raw value.                                                                                 */
+		if (0 == strcmp(buf, quoted_buf))
+		{
+			ret = SUCCEED;
+			goto out;
+		}
+	}
+
+	if (SUCCEED != snmp_native_quote_string_value(quoted_buf, buffer_size, buf, strlen(buf)))
+	{
+		zabbix_log(LOG_LEVEL_WARNING, "%s() quoting value failed, buffer too small", __func__);
+		ret = FAIL;
+		goto out;
+	}
+
+	zbx_strlcpy(buf, quoted_buf, buffer_size);
+
+	ret = SUCCEED;
+out:
+	return ret;
+#undef TYPE_STR_HEX_STRING
+#undef TYPE_STR_STRING
+}
+
 static int	snmp_bulkwalk(struct snmp_session *ss, int pdu_type, const DC_ITEM *item, zbx_snmp_oid_t *p_oid,
 		char **results, size_t *results_alloc, size_t *results_offset, char *error, size_t max_error_len)
 {
@@ -2054,7 +2208,7 @@ static int	snmp_bulkwalk(struct snmp_session *ss, int pdu_type, const DC_ITEM *i
 			goto out;
 		}
 
-		if (SNMP_ERR_NOSUCHNAME == response->errstat)
+		if (SNMP_ERR_NOSUCHNAME == response->errstat || NULL == response->variables)
 			break;
 
 		for (var = response->variables; NULL != var; var = var->next_variable)
@@ -2070,6 +2224,7 @@ static int	snmp_bulkwalk(struct snmp_session *ss, int pdu_type, const DC_ITEM *i
 					SNMP_NOSUCHINSTANCE != var->type)
 			{
 				char	buffer[MAX_STRING_LEN];
+
 				vars_num++;
 
 				if (SNMP_MSG_GET != pdu_type)
@@ -2084,6 +2239,9 @@ static int	snmp_bulkwalk(struct snmp_session *ss, int pdu_type, const DC_ITEM *i
 					running = 0;
 
 				snprint_variable(buffer, sizeof(buffer), var->name, var->name_length, var);
+
+				if (ASN_OCTET_STR == var->type)
+					snmp_quote_string_value(buffer, sizeof(buffer), var);
 
 				if (NULL != *results)
 					zbx_chrcpy_alloc(results, results_alloc, results_offset, '\n');
@@ -2464,6 +2622,9 @@ static void	zbx_init_snmp(void)
 	sigaddset(&mask, SIGQUIT);
 	zbx_sigmask(SIG_BLOCK, &mask, &orig_mask);
 
+	netsnmp_ds_set_boolean(NETSNMP_DS_LIBRARY_ID, NETSNMP_DS_LIB_DISABLE_PERSISTENT_LOAD, 1);
+	netsnmp_ds_set_boolean(NETSNMP_DS_LIBRARY_ID, NETSNMP_DS_LIB_DISABLE_PERSISTENT_SAVE, 1);
+
 	init_snmp(progname);
 	zbx_snmp_init_done = 1;
 
@@ -2572,7 +2733,6 @@ void	zbx_clear_cache_snmp(unsigned char process_type, int process_num)
 	if (0 == zbx_snmp_init_done)
 		return;
 
-	netsnmp_ds_set_boolean(NETSNMP_DS_LIBRARY_ID, NETSNMP_DS_LIB_DONT_PERSIST_STATE, 1);
 	zbx_shutdown_snmp();
 }
 

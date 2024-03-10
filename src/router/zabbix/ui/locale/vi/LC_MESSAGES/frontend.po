@@ -194,6 +194,16 @@ msgid "%1$s of %2$s element in problem state"
 msgid_plural "%1$s of %2$s elements in problem state"
 msgstr[0] "Trạng thái phần tử %1$s của %2$s gặp vấn đề"
 
+#: app/views/administration.miscconfig.edit.php:127
+#, c-format
+msgid "%1$s or %2$s - allows the page to be displayed only in a frame on the same origin as the page itself"
+msgstr ""
+
+#: app/views/administration.miscconfig.edit.php:130
+#, c-format
+msgid "%1$s or %2$s - prevents the page from being displayed in a frame, regardless of the site attempting to do so"
+msgstr ""
+
 #: jsLoader.php:348
 #, c-format
 msgctxt "screen reader"
@@ -2283,6 +2293,10 @@ msgstr ""
 msgid "Cannot clear history"
 msgstr "Không thể xóa lịch sử"
 
+#: httpconf.php:189 httpconf.php:433 items.php:671 items.php:707
+msgid "Cannot clear history and trends"
+msgstr ""
+
 #: include/classes/api/services/CDiscoveryRule.php:2514
 msgid "Cannot clone graph prototypes."
 msgstr "Không thể sao chép kiểu đồ thị."
@@ -2771,6 +2785,11 @@ msgid "Cannot disable media type"
 msgid_plural "Cannot disable media types"
 msgstr[0] "Không thể vô hiệu hóa kiểu phương tiệnKhông thể vô hiệu hóa các loại phương tiện"
 
+#: app/controllers/CControllerModuleUpdate.php:146
+msgid "Cannot disable module"
+msgid_plural "Cannot disable modules"
+msgstr[0] ""
+
 #: app/controllers/CControllerModuleUpdate.php:165
 #, c-format
 msgid "Cannot disable module: %1$s."
@@ -2847,6 +2866,11 @@ msgstr[0] "Không thể kích hoạt itemKhông thể kích hoạt các ite
 msgid "Cannot enable media type"
 msgid_plural "Cannot enable media types"
 msgstr[0] "Không thể kích hoạt kiểu mediaKhông thể kích hoạt các kiểu media"
+
+#: app/controllers/CControllerModuleUpdate.php:141
+msgid "Cannot enable module"
+msgid_plural "Cannot enable modules"
+msgstr[0] ""
 
 #: app/controllers/CControllerModuleUpdate.php:160
 #, c-format
@@ -3877,6 +3901,10 @@ msgstr ""
 msgid "Cannot update media type"
 msgstr "Không thể cập nhật kiểu media"
 
+#: app/controllers/CControllerModuleUpdate.php:137
+msgid "Cannot update module"
+msgstr ""
+
 #: app/controllers/CControllerModuleUpdate.php:157
 #, c-format
 msgid "Cannot update module: %1$s."
@@ -4263,6 +4291,14 @@ msgstr "Xóa lịch sử"
 #: include/views/configuration.item.edit.php:1073
 msgid "Clear history and trends"
 msgstr "Xóa lịch sử và phương hướng."
+
+#: include/views/configuration.item.list.php:310
+msgid "Clear history and trends of selected items?"
+msgstr ""
+
+#: include/views/configuration.httpconf.list.php:232
+msgid "Clear history and trends of selected web scenarios?"
+msgstr ""
 
 #: app/views/popup.massupdate.host.php:69
 #: app/views/popup.massupdate.template.php:72
@@ -7585,6 +7621,10 @@ msgstr "Theo dõi log sự kiện. Trả về log"
 msgid "Event name"
 msgstr ""
 
+#: app/views/popup.condition.edit.php:819
+msgid "Event name matches Trigger name (with macros expanded) unless a custom Event name is specified in Trigger settings."
+msgstr ""
+
 #: include/classes/helpers/CCorrelationHelper.php:55
 msgid "Event tag pair"
 msgstr "Cặp thẻ sự kiện"
@@ -8852,6 +8892,10 @@ msgstr "Làm nổi bật toàn bộ hàng"
 #: jsLoader.php:372
 msgid "History"
 msgstr "Lịch sử"
+
+#: httpconf.php:189 httpconf.php:433 items.php:671 items.php:707
+msgid "History and trends cleared"
+msgstr ""
 
 #: app/views/administration.housekeeping.edit.php:159
 msgid "History and trends compression"
@@ -13114,10 +13158,20 @@ msgid "Module deleted: %1$s."
 msgid_plural "Modules deleted: %1$s."
 msgstr[0] ""
 
+#: app/controllers/CControllerModuleUpdate.php:132
+msgid "Module disabled"
+msgid_plural "Modules disabled"
+msgstr[0] ""
+
 #: app/controllers/CControllerModuleUpdate.php:150
 #, c-format
 msgid "Module disabled: %1$s."
 msgid_plural "Modules disabled: %1$s."
+msgstr[0] ""
+
+#: app/controllers/CControllerModuleUpdate.php:129
+msgid "Module enabled"
+msgid_plural "Modules enabled"
 msgstr[0] ""
 
 #: app/controllers/CControllerModuleUpdate.php:145
@@ -13125,6 +13179,10 @@ msgstr[0] ""
 msgid "Module enabled: %1$s."
 msgid_plural "Modules enabled: %1$s."
 msgstr[0] ""
+
+#: app/controllers/CControllerModuleUpdate.php:126
+msgid "Module updated"
+msgstr ""
 
 #: app/controllers/CControllerModuleUpdate.php:142
 #, c-format
@@ -14321,6 +14379,11 @@ msgstr ""
 #: include/views/configuration.host.discovery.list.php:162
 msgid "Not supported"
 msgstr "Không được hỗ trợ"
+
+#: app/views/administration.miscconfig.edit.php:138
+#, c-format
+msgid "Note that %1$s or %2$s will be regarded as hostnames if used without single quotes."
+msgstr ""
 
 #: include/hosts.inc.php:229
 msgid "Notes"
@@ -20894,6 +20957,10 @@ msgstr "Thời gian hoạt động/Thời gian ngừng hoạt động"
 msgid "Use %{ref} in group filter to reference value of this user attribute."
 msgstr ""
 
+#: app/views/administration.miscconfig.edit.php:123
+msgid "Use X-Frame-Options HTTP header"
+msgstr ""
+
 #: app/partials/configuration.host.interface.row.php:194
 msgid "Use bulk requests"
 msgstr "Sử dụng yêu cầu số lượng lớn"
@@ -22624,6 +22691,10 @@ msgstr "trục X"
 msgid "X-Frame-Options HTTP header"
 msgstr ""
 
+#: app/views/administration.miscconfig.edit.php:125
+msgid "X-Frame-Options HTTP header supported values:"
+msgstr ""
+
 #: include/views/js/monitoring.sysmaps.js.php:448
 msgid "X1"
 msgstr "X1"
@@ -23065,6 +23136,11 @@ msgstr ""
 
 #: app/views/administration.authentication.edit.php:86
 msgid "a special character"
+msgstr ""
+
+#: app/views/administration.miscconfig.edit.php:133
+#, c-format
+msgid "a string of space-separated hostnames; adding %1$s to the list allows the page to be displayed in a frame on the same origin as the page itself"
 msgstr ""
 
 #: include/classes/validators/CApiInputValidator.php:2530

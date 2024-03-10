@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright 2001-2023 Zabbix SIA
+** Copyright 2001-2024 Zabbix SIA
 **
 ** Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 ** documentation files (the "Software"), to deal in the Software without restriction, including without limitation the
@@ -20,10 +20,11 @@
 package plugin
 
 import (
-	"fmt"
 	"reflect"
 	"regexp"
 	"unicode"
+
+	"git.zabbix.com/ap/plugin-support/errs"
 )
 
 type Metric struct {
@@ -33,92 +34,31 @@ type Metric struct {
 	UsrPrm      bool
 }
 
-var Metrics map[string]*Metric = make(map[string]*Metric)
-var Plugins map[string]Accessor = make(map[string]Accessor)
+var (
+	Metrics map[string]*Metric  = make(map[string]*Metric)
+	Plugins map[string]Accessor = make(map[string]Accessor)
 
-func registerMetric(plugin Accessor, name string, key string, description string) {
-	var usrprm bool
+	metricKeyRe = regexp.MustCompile(`^[A-Za-z0-9\._-]+$`)
+)
 
-	if ok, _ := regexp.MatchString(`^[A-Za-z0-9\._-]+$`, key); !ok {
-		panic(fmt.Sprintf(`cannot register metric "%s" having invalid format`, key))
-	}
-
-	if 0 == len(description) {
-		panic(fmt.Sprintf(`cannot register metric "%s" with empty description`, key))
-	}
-
-	if unicode.IsLower([]rune(description)[0]) {
-		panic(fmt.Sprintf(`cannot register metric "%s" with description without capital first letter: "%s"`, key, description))
-	}
-
-	if description[len(description)-1] != '.' {
-		panic(fmt.Sprintf(`cannot register metric "%s" without dot at the end of description: "%s"`, key, description))
-	}
-
-	if _, ok := Metrics[key]; ok {
-		panic(fmt.Sprintf(`cannot register duplicate metric "%s"`, key))
-	}
-
-	t := reflect.TypeOf(plugin)
-	for i := 0; i < t.NumMethod(); i++ {
-		method := t.Method(i)
-		switch method.Name {
-		case "Export":
-			if _, ok := plugin.(Exporter); !ok {
-				panic(fmt.Sprintf(`the "%s" plugin has %s method, but does implement Exporter interface`, name, method.Name))
-			}
-		case "Collect", "Period":
-			if _, ok := plugin.(Collector); !ok {
-				panic(fmt.Sprintf(`the "%s" plugin has %s method, but does not implement Collector interface`, name, method.Name))
-			}
-		case "Watch":
-			if _, ok := plugin.(Watcher); !ok {
-				panic(fmt.Sprintf(`the "%s" plugin has %s method, but does not implement Watcher interface`, name, method.Name))
-			}
-		case "Configure", "Validate":
-			if _, ok := plugin.(Configurator); !ok {
-				panic(fmt.Sprintf(`the "%s" plugin has %s method, but does not implement Configurator interface`, name, method.Name))
-			}
-		case "Start", "Stop":
-			if _, ok := plugin.(Runner); !ok {
-				panic(fmt.Sprintf(`the "%s" plugin has %s method, but does not implement Runner interface`, name, method.Name))
-			}
-		}
-	}
-	switch plugin.(type) {
-	case Exporter, Collector, Runner, Watcher, Configurator:
-	default:
-		panic(fmt.Sprintf(`plugin "%s" does not implement any plugin interfaces`, name))
-	}
-
-	if p, ok := Plugins[name]; ok {
-		if p != plugin {
-			panic(fmt.Sprintf(`plugin name "%s" has been already registered by other plugin`, name))
-		}
-	} else {
-		Plugins[name] = plugin
-		plugin.Init(name)
-	}
-
-	if name == "UserParameter" {
-		usrprm = true
-	} else {
-		usrprm = false
-	}
-
-	Metrics[key] = &Metric{Plugin: plugin, Key: key, Description: description, UsrPrm: usrprm}
-}
-
-func RegisterMetrics(impl Accessor, name string, params ...string) {
+// RegisterMetrics registers metrics for the given plugin.
+func RegisterMetrics(impl Accessor, name string, params ...string) error {
 	if len(params) < 2 {
-		panic("expected at least one metric and its description")
+		return errs.New("expected at least one metric and its description")
 	}
-	if len(params)&1 != 0 {
-		panic("expected even number of metric and description parameters")
+
+	if len(params)%2 != 0 {
+		return errs.New("expected even number of metric and description parameters")
 	}
+
 	for i := 0; i < len(params); i += 2 {
-		registerMetric(impl, name, params[i], params[i+1])
+		err := registerMetric(impl, name, params[i], params[i+1])
+		if err != nil {
+			return err
+		}
 	}
+
+	return nil
 }
 
 func Get(key string) (acc Accessor, err error) {
@@ -157,4 +97,107 @@ func RestoreUserParamMetrics(metrics map[string]*Metric) {
 	for key, metric := range metrics {
 		Metrics[key] = metric
 	}
+}
+
+func registerMetric(plugin Accessor, name, key, description string) error {
+	var usrprm bool
+
+	ok := metricKeyRe.MatchString(key)
+	if !ok {
+		return errs.Errorf(`cannot register metric "%s" having invalid format`, key)
+	}
+
+	if len(description) == 0 {
+		return errs.Errorf(`cannot register metric "%s" with empty description`, key)
+	}
+
+	if unicode.IsLower([]rune(description)[0]) {
+		return errs.Errorf(
+			`cannot register metric "%s" with description without capital first letter: "%s"`,
+			key,
+			description,
+		)
+	}
+
+	if description[len(description)-1] != '.' {
+		return errs.Errorf(
+			"cannot register metric %q without dot at the end of description: %q",
+			key, description,
+		)
+	}
+
+	if _, ok := Metrics[key]; ok {
+		return errs.Errorf("cannot register duplicate metric %q", key)
+	}
+
+	t := reflect.TypeOf(plugin)
+	for i := 0; i < t.NumMethod(); i++ {
+		method := t.Method(i)
+		switch method.Name {
+		case "Export":
+			if _, ok := plugin.(Exporter); !ok {
+				return errs.Errorf(
+					"the %q plugin has %s method, but does implement Exporter interface",
+					name,
+					method.Name,
+				)
+			}
+		case "Collect", "Period":
+			if _, ok := plugin.(Collector); !ok {
+				return errs.Errorf(
+					"the %q plugin has %s method, but does not implement Collector interface",
+					name,
+					method.Name,
+				)
+			}
+		case "Watch":
+			if _, ok := plugin.(Watcher); !ok {
+				return errs.Errorf(
+					"the %q plugin has %s method, but does not implement Watcher interface",
+					name,
+					method.Name,
+				)
+			}
+		case "Configure", "Validate":
+			if _, ok := plugin.(Configurator); !ok {
+				return errs.Errorf(
+					"the %q plugin has %s method, but does not implement Configurator interface",
+					name,
+					method.Name,
+				)
+			}
+		case "Start", "Stop":
+			if _, ok := plugin.(Runner); !ok {
+				return errs.Errorf(
+					"the %q plugin has %s method, but does not implement Runner interface",
+					name,
+					method.Name,
+				)
+			}
+		}
+	}
+	switch plugin.(type) {
+	case Exporter, Collector, Runner, Watcher, Configurator:
+	default:
+		return errs.Errorf("plugin %q does not implement any plugin interfaces", name)
+	}
+
+	if p, ok := Plugins[name]; ok {
+		if p != plugin {
+			return errs.Errorf("plugin name %q has been already registered by other plugin", name)
+		}
+	} else {
+		Plugins[name] = plugin
+		plugin.Init(name)
+	}
+
+	if name == "UserParameter" {
+		usrprm = true
+	} else {
+		usrprm = false
+	}
+
+	Metrics[key] = &Metric{Plugin: plugin, Key: key, Description: description, UsrPrm: usrprm}
+
+	return nil
 }

@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright 2001-2023 Zabbix SIA
+** Copyright 2001-2024 Zabbix SIA
 **
 ** Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 ** documentation files (the "Software"), to deal in the Software without restriction, including without limitation the
@@ -24,27 +24,61 @@ import (
 	"unicode"
 )
 
+// ZabbixError implements error interface.
+//
+// Deprecated: Use New(), Errorf(), Wrap(), Wrapf(), WrapConst() functions from
+// plugin-support/errs package.
 type ZabbixError struct {
 	err   error
 	cause error
 }
 
+var (
+	ErrorInvalidParams        = New("invalid parameters")
+	ErrorTooFewParameters     = New("too few parameters")
+	ErrorTooManyParameters    = New("too many parameters")
+	ErrorInvalidConfiguration = New("invalid configuration")
+	ErrorCannotFetchData      = New("cannot fetch data")
+	ErrorCannotUnmarshalJSON  = New("cannot unmarshal JSON")
+	ErrorCannotMarshalJSON    = New("cannot marshal JSON")
+	ErrorCannotParseResult    = New("cannot parse result")
+	ErrorConnectionFailed     = New("connection failed")
+	ErrorUnsupportedMetric    = New("unsupported metric")
+	ErrorEmptyResult          = New("empty result")
+	ErrorUnknownSession       = New("unknown session")
+	// ErrOSExitZero is returned when no error has occurred but the program
+	// should exit.
+	ErrorOSExitZero = New("no error; exit 0")
+)
+
 // New creates a new ZabbixError
+//
+// Deprecated: Use New(), Errorf(), Wrap(), Wrapf(), WrapConst() functions from
+// plugin-support/errs package.
 func New(msg string) ZabbixError {
 	return ZabbixError{errors.New(msg), nil}
 }
 
 // Wrap creates a new ZabbixError with wrapped cause
+//
+// Deprecated: Use New(), Errorf(), Wrap(), Wrapf(), WrapConst() functions from
+// plugin-support/errs package.
 func (e ZabbixError) Wrap(cause error) error {
 	return ZabbixError{err: e, cause: cause}
 }
 
 // Unwrap extracts an original underlying error
+//
+// Deprecated: Use New(), Errorf(), Wrap(), Wrapf(), WrapConst() functions from
+// plugin-support/errs package.
 func (e ZabbixError) Unwrap() error {
 	return e.err
 }
 
 // Cause returns a cause of original error
+//
+// Deprecated: Use New(), Errorf(), Wrap(), Wrapf(), WrapConst() functions from
+// plugin-support/errs package.
 func (e ZabbixError) Cause() error {
 	return e.cause
 }
@@ -52,6 +86,9 @@ func (e ZabbixError) Cause() error {
 // Error stringifies an error according to Zabbix requirements:
 // * the first letter must be capitalized;
 // * an error text should be trailed by a dot.
+//
+// Deprecated: Use New(), Errorf(), Wrap(), Wrapf(), WrapConst() functions from
+// plugin-support/errs package.
 func (e ZabbixError) Error() string {
 	var msg string
 
@@ -81,21 +118,9 @@ func (e ZabbixError) Error() string {
 }
 
 // Raw returns a non-modified error message
+//
+// Deprecated: Use New(), Errorf(), Wrap(), Wrapf(), WrapConst() functions from
+// plugin-support/errs package.
 func (e ZabbixError) Raw() string {
 	return e.err.Error()
 }
-
-var (
-	ErrorInvalidParams        = New("invalid parameters")
-	ErrorTooFewParameters     = New("too few parameters")
-	ErrorTooManyParameters    = New("too many parameters")
-	ErrorInvalidConfiguration = New("invalid configuration")
-	ErrorCannotFetchData      = New("cannot fetch data")
-	ErrorCannotUnmarshalJSON  = New("cannot unmarshal JSON")
-	ErrorCannotMarshalJSON    = New("cannot marshal JSON")
-	ErrorCannotParseResult    = New("cannot parse result")
-	ErrorConnectionFailed     = New("connection failed")
-	ErrorUnsupportedMetric    = New("unsupported metric")
-	ErrorEmptyResult          = New("empty result")
-	ErrorUnknownSession       = New("unknown session")
-)

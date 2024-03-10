@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2023 Zabbix SIA
+** Copyright (C) 2001-2024 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -45,9 +45,10 @@ if (array_key_exists('edit', $data)) {
 
 // Name.
 $form_grid->addItem([
-	new CLabel(_('Name'), 'name'),
+	new CLabel(_('Name'), 'column_name'),
 	new CFormField(
 		(new CTextBox('name', $data['name'], false))
+			->setId('column_name')
 			->setWidth(ZBX_TEXTAREA_STANDARD_WIDTH)
 			->setAttribute('autofocus', 'autofocus')
 			->setAriaRequired()
@@ -65,6 +66,7 @@ $form_grid->addItem([
 				CWidgetFieldColumnsList::DATA_HOST_NAME => _('Host name'),
 				CWidgetFieldColumnsList::DATA_TEXT => _('Text')
 			]))
+			->setFocusableElementId('data')
 	)
 ]);
 
@@ -99,7 +101,7 @@ $item_select = (new CPatternSelect([
 $scripts[] = $item_select->getPostJS();
 
 $form_grid->addItem([
-	(new CLabel(_('Item'), 'item'))->setAsteriskMark(),
+	(new CLabel(_('Item'), 'item_ms'))->setAsteriskMark(),
 	new CFormField($item_select)
 ]);
 
@@ -139,6 +141,7 @@ $form_grid->addItem([
 				AGGREGATE_FIRST => _('first'),
 				AGGREGATE_LAST => _('last')
 			]))
+			->setFocusableElementId('aggregate_function')
 	)
 ]);
 
@@ -192,7 +195,7 @@ $form_grid->addItem([
 
 // Base color.
 $form_grid->addItem([
-	new CLabel(_('Base color'), 'base_color'),
+	new CLabel(_('Base color'), 'lbl_base_color'),
 	new CFormField(new CColor('base_color', $data['base_color']))
 ]);
 

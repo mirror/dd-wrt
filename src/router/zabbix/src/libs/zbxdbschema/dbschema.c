@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2023 Zabbix SIA
+** Copyright (C) 2001-2024 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -187,7 +187,7 @@ ZBX_TABLE	tables[] = {
 		{"httptestid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
 		{"name",	"",	NULL,	NULL,	64,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
 		{"delay",	"1m",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"status",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
+		{"status",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL | ZBX_PROXY,	0},
 		{"agent",	"Zabbix",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
 		{"authentication",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL | ZBX_PROXY,	0},
 		{"http_user",	"",	NULL,	NULL,	64,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
@@ -2593,24 +2593,24 @@ ZBX_TABLE	tables[] = {
 };
 
 const zbx_db_table_changelog_t	changelog_tables[] = {
+	{"trigger_tag", 6},
+	{"host_tag", 2},
+	{"triggers", 5},
+	{"dchecks", 10},
+	{"hosts", 1},
+	{"item_preproc", 8},
+	{"httpstep_field", 15},
+	{"connector", 17},
+	{"httpstepitem", 16},
+	{"httptest", 11},
 	{"drules", 9},
+	{"items", 3},
 	{"connector_tag", 18},
 	{"httpstep", 14},
-	{"item_preproc", 8},
-	{"connector", 17},
 	{"functions", 7},
-	{"httptest", 11},
-	{"trigger_tag", 6},
-	{"dchecks", 10},
-	{"httptest_field", 12},
-	{"item_tag", 4},
-	{"host_tag", 2},
 	{"httptestitem", 13},
-	{"hosts", 1},
-	{"items", 3},
-	{"httpstepitem", 16},
-	{"triggers", 5},
-	{"httpstep_field", 15},
+	{"item_tag", 4},
+	{"httptest_field", 12},
 	{0}
 };
 #if defined(HAVE_SQLITE3)
@@ -4888,7 +4888,7 @@ mandatory integer DEFAULT '0' NOT NULL,\n\
 optional integer DEFAULT '0' NOT NULL,\n\
 PRIMARY KEY (dbversionid)\n\
 );\n\
-INSERT INTO dbversion VALUES ('1','6040000','6040025');\n\
+INSERT INTO dbversion VALUES ('1','6040000','6040026');\n\
 create trigger hosts_insert after insert on hosts\n\
 for each row\n\
 begin\n\

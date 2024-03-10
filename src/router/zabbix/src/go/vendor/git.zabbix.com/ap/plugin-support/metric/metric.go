@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright 2001-2023 Zabbix SIA
+** Copyright 2001-2024 Zabbix SIA
 **
 ** Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 ** documentation files (the "Software"), to deal in the Software without restriction, including without limitation the
@@ -28,6 +28,7 @@ import (
 	"strings"
 	"unicode"
 
+	"git.zabbix.com/ap/plugin-support/errs"
 	"git.zabbix.com/ap/plugin-support/zbxerr"
 )
 
@@ -173,7 +174,7 @@ type Metric struct {
 
 // ordinalize convert a given number to an ordinal numeral.
 func ordinalize(num int) string {
-	var ordinals = map[int]string{
+	ordinals := map[int]string{
 		1:  "first",
 		2:  "second",
 		3:  "third",
@@ -307,8 +308,10 @@ func mergeWithSessionData(out map[string]string, metricParams []*Param, session 
 
 		if val == "" {
 			if p.required {
-				return zbxerr.ErrorTooFewParameters.Wrap(
-					fmt.Errorf("%s parameter %q is required", ordNum, p.name))
+				return errs.Wrapf(
+					zbxerr.ErrorTooFewParameters,
+					"%s parameter %q is required", ordNum, p.name,
+				)
 			}
 
 			if p.defaultValue != nil {
@@ -319,7 +322,9 @@ func mergeWithSessionData(out map[string]string, metricParams []*Param, session 
 
 		if p.validator != nil {
 			if err := p.validator.Validate(&val); err != nil {
-				return zbxerr.New(fmt.Sprintf("invalid %s parameter %q", ordNum, p.name)).Wrap(err)
+				return errs.Wrapf(
+					err, "invalid %s parameter %q", ordNum, p.name,
+				)
 			}
 		}
 
@@ -343,7 +348,8 @@ func mergeWithSessionData(out map[string]string, metricParams []*Param, session 
 // * missing required parameter;
 // * value validation is failed.
 func (m *Metric) EvalParams(rawParams []string, sessions interface{}) (
-	params map[string]string, extraParams []string, hardcodedParams map[string]bool, err error) {
+	params map[string]string, extraParams []string, hardcodedParams map[string]bool, err error,
+) {
 	session, err := m.parseRawParams(rawParams, sessions)
 	if err != nil {
 		return
@@ -373,8 +379,9 @@ func (m *Metric) EvalParams(rawParams []string, sessions interface{}) (
 
 		if i >= len(rawParams) || rawParams[i] == "" {
 			if p.required && skipConnIfSessionIsSet {
-				return nil, nil, nil, zbxerr.ErrorTooFewParameters.Wrap(
-					fmt.Errorf("%s parameter %q is required", ordNum, p.name))
+				return nil, nil, nil, errs.Wrapf(
+					zbxerr.ErrorTooFewParameters, "%s parameter %q is required", ordNum, p.name,
+				)
 			}
 
 			if p.defaultValue != nil && skipConnIfSessionIsSet {
@@ -393,7 +400,7 @@ func (m *Metric) EvalParams(rawParams []string, sessions interface{}) (
 
 		if p.validator != nil && skipConnIfSessionIsSet {
 			if err = p.validator.Validate(val); err != nil {
-				return nil, nil, nil, zbxerr.New(fmt.Sprintf("invalid %s parameter %q", ordNum, p.name)).Wrap(err)
+				return nil, nil, nil, errs.Wrapf(err, "invalid %s parameter %q", ordNum, p.name)
 			}
 		}
 

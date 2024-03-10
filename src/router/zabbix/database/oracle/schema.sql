@@ -2275,7 +2275,7 @@ CREATE TABLE dbversion (
 	optional                 number(10)      DEFAULT '0'               NOT NULL,
 	PRIMARY KEY (dbversionid)
 );
-INSERT INTO dbversion VALUES ('1','6040000','6040025');
+INSERT INTO dbversion VALUES ('1','6040000','6040026');
 CREATE SEQUENCE proxy_history_seq
 START WITH 1
 INCREMENT BY 1

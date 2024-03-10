@@ -1,7 +1,7 @@
 <?php declare(strict_types = 0);
 /*
 ** Zabbix
-** Copyright (C) 2001-2023 Zabbix SIA
+** Copyright (C) 2001-2024 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -250,7 +250,7 @@ class CWidgetFieldGraphDataSetView extends CWidgetFieldView {
 							])
 						])
 						->addItem([
-							new CLabel(_('Width')),
+							new CLabel(_('Width'), $field_name.'['.$row_num.'][width]'),
 							new CFormField(
 								(new CRangeControl($field_name.'['.$row_num.'][width]', (int) $value['width']))
 									->setEnabled(!in_array($value['type'], [SVG_GRAPH_TYPE_POINTS, SVG_GRAPH_TYPE_BAR]))
@@ -261,7 +261,7 @@ class CWidgetFieldGraphDataSetView extends CWidgetFieldView {
 							)
 						])
 						->addItem([
-							new CLabel(_('Point size')),
+							new CLabel(_('Point size'), $field_name.'['.$row_num.'][pointsize]'),
 							new CFormField(
 								(new CRangeControl($field_name.'['.$row_num.'][pointsize]', (int) $value['pointsize']))
 									->setEnabled($value['type'] == SVG_GRAPH_TYPE_POINTS)
@@ -272,7 +272,7 @@ class CWidgetFieldGraphDataSetView extends CWidgetFieldView {
 							)
 						])
 						->addItem([
-							new CLabel(_('Transparency')),
+							new CLabel(_('Transparency'), $field_name.'['.$row_num.'][transparency]'),
 							new CFormField(
 								(new CRangeControl($field_name.'['.$row_num.'][transparency]',
 									(int) $value['transparency'])
@@ -284,7 +284,7 @@ class CWidgetFieldGraphDataSetView extends CWidgetFieldView {
 							)
 						])
 						->addItem([
-							new CLabel(_('Fill')),
+							new CLabel(_('Fill'), $field_name.'['.$row_num.'][fill]'),
 							new CFormField(
 								(new CRangeControl($field_name.'['.$row_num.'][fill]', (int) $value['fill']))
 									->setEnabled(!in_array($value['type'], [SVG_GRAPH_TYPE_POINTS, SVG_GRAPH_TYPE_BAR]))

@@ -1,7 +1,7 @@
 <?php declare(strict_types = 0);
 /*
 ** Zabbix
-** Copyright (C) 2001-2023 Zabbix SIA
+** Copyright (C) 2001-2024 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -76,9 +76,10 @@ class WidgetView extends CControllerDashboardWidgetView {
 		$time_now = time();
 
 		$master_column = $configuration[$this->fields_values['column']];
-		$master_items_only_numeric_allowed = self::isNumericOnlyColumn($master_column);
 
-		$master_items = self::getItems($master_column['item'], $master_items_only_numeric_allowed, $groupids, $hostids);
+		$master_items = self::getItems($master_column['item'], self::isNumericOnlyColumn($master_column), $groupids,
+			$hostids
+		);
 		$master_item_values = self::getItemValues($master_items, $master_column, $time_now);
 
 		if (!$master_item_values) {
@@ -88,7 +89,7 @@ class WidgetView extends CControllerDashboardWidgetView {
 			];
 		}
 
-		$master_items_only_numeric_present = $master_items_only_numeric_allowed && !array_filter($master_items,
+		$master_items_only_numeric_present = !array_filter($master_items,
 			static function(array $item): bool {
 				return !in_array($item['value_type'], [ITEM_VALUE_TYPE_FLOAT, ITEM_VALUE_TYPE_UINT64]);
 			}
@@ -321,13 +322,17 @@ class WidgetView extends CControllerDashboardWidgetView {
 		]);
 
 		if ($items) {
-			$single_key = reset($items)['key_'];
+			$processed_hostids = [];
 
-			$items = array_filter($items,
-				static function ($item) use ($single_key): bool {
-					return $item['key_'] === $single_key;
+			$items = array_filter($items, static function ($item) use (&$processed_hostids) {
+				if (array_key_exists($item['hostid'], $processed_hostids)) {
+					return false;
 				}
-			);
+
+				$processed_hostids[$item['hostid']] = true;
+
+				return true;
+			});
 		}
 
 		return $items;

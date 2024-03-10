@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2023 Zabbix SIA
+** Copyright (C) 2001-2024 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -70,7 +70,8 @@ ZBX_THREAD_ENTRY(dbconfig_thread, args)
 	zbx_setproctitle("%s [synced configuration in " ZBX_FS_DBL " sec, idle %d sec]",
 			get_process_type_string(process_type), (sec = zbx_time() - sec), CONFIG_CONFSYNCER_FREQUENCY);
 
-	zbx_rtc_notify_config_sync(dbconfig_args_in->config_timeout, &rtc);
+	zbx_rtc_notify_finished_sync(dbconfig_args_in->config_timeout, ZBX_RTC_CONFIG_SYNC_NOTIFY,
+			get_process_type_string(process_type), &rtc);
 
 	nextcheck = (int)time(NULL) + CONFIG_CONFSYNCER_FREQUENCY;
 

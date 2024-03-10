@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2023 Zabbix SIA
+** Copyright (C) 2001-2024 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -1307,7 +1307,7 @@ static int	strpool_compare(const void *v1, const void *v2)
 	return strcmp(s1, s2);
 }
 
-static void	DCdump_strpool()
+static void	DCdump_strpool(void)
 {
 	zbx_hashset_iter_t	iter;
 	zbx_vector_ptr_t	records;

@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright 2001-2023 Zabbix SIA
+** Copyright 2001-2024 Zabbix SIA
 **
 ** Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 ** documentation files (the "Software"), to deal in the Software without restriction, including without limitation the
@@ -26,12 +26,14 @@ import (
 	"fmt"
 	"net"
 
-	"git.zabbix.com/ap/plugin-support/zbxerr"
+	"git.zabbix.com/ap/plugin-support/errs"
 )
 
-const JSONType = uint32(1)
-const headerTypeLen = 4
-const headerDataLen = 4
+const (
+	JSONType      = uint32(1)
+	headerTypeLen = 4
+	headerDataLen = 4
+)
 
 func Read(conn net.Conn) (dataType uint32, requestData []byte, err error) {
 	reqByteType := make([]byte, headerTypeLen)
@@ -43,7 +45,7 @@ func Read(conn net.Conn) (dataType uint32, requestData []byte, err error) {
 	}
 
 	if JSONType != binary.LittleEndian.Uint32(reqByteType) {
-		err = zbxerr.New(fmt.Sprintf("only json data type (%d) supported", JSONType))
+		err = errs.Errorf("only json data type (%d) supported", JSONType)
 
 		return
 	}

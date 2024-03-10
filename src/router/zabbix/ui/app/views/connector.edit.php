@@ -1,7 +1,7 @@
 <?php declare(strict_types = 0);
 /*
 ** Zabbix
-** Copyright (C) 2001-2023 Zabbix SIA
+** Copyright (C) 2001-2024 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -172,12 +172,11 @@ $connector_tab = (new CFormGrid())
 			->addClass('js-field-max-records')
 			->setAsteriskMark(),
 		(new CFormField([
-			(new CDiv(
-				(new CRadioButtonList('max_records_mode', $data['form']['max_records_mode']))
-					->addValue(_('Unlimited'), 0)
-					->addValue(_('Custom'), 1)
-					->setModern()
-			))->addClass(ZBX_STYLE_FORM_INPUT_MARGIN),
+			(new CRadioButtonList('max_records_mode', $data['form']['max_records_mode']))
+				->addValue(_('Unlimited'), 0)
+				->addValue(_('Custom'), 1)
+				->setModern()
+				->addClass(ZBX_STYLE_FORM_INPUT_MARGIN),
 			(new CNumericBox('max_records', $data['form']['max_records'], 10, false, false, false))
 				->setWidth(ZBX_TEXTAREA_TINY_WIDTH)
 				->setAriaRequired()

@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2023 Zabbix SIA
+** Copyright (C) 2001-2024 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -642,7 +642,7 @@ class CTemplate extends CHostGeneral {
 		$actionids = [];
 		$sql = 'SELECT DISTINCT actionid'.
 			' FROM conditions'.
-			' WHERE conditiontype='.CONDITION_TYPE_TEMPLATE.
+			' WHERE conditiontype='.ZBX_CONDITION_TYPE_TEMPLATE.
 			' AND '.dbConditionString('value', $templateids);
 		$dbActions = DBselect($sql);
 		while ($dbAction = DBfetch($dbActions)) {
@@ -668,7 +668,7 @@ class CTemplate extends CHostGeneral {
 
 		// delete action conditions
 		DB::delete('conditions', [
-			'conditiontype' => CONDITION_TYPE_TEMPLATE,
+			'conditiontype' => ZBX_CONDITION_TYPE_TEMPLATE,
 			'value' => $templateids
 		]);
 

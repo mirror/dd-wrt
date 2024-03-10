@@ -172,7 +172,7 @@ DATA = $(dist_sysconf_DATA)
 am__tagged_files = $(HEADERS) $(SOURCES) $(TAGS_FILES) $(LISP)
 am__DIST_COMMON = $(srcdir)/Makefile.in
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
-ACLOCAL = ${SHELL} '/home/jenkins/workspace/zabbix-release/03-zabbix-release/zabbix-6.4.7/missing' aclocal-1.16
+ACLOCAL = ${SHELL} '/home/jenkins/workspace/zabbix-release/03-zabbix-release/zabbix-6.4.12/missing' aclocal-1.16
 AGENT2_CONFIG_FILE = ${prefix}/etc/zabbix_agent2.conf
 AGENT2_CONFIG_PATH = ${prefix}/etc/zabbix_agent2.d
 AGENT2_CONFIG_PLUGINS_PATH = ${prefix}/etc/zabbix_agent2.d/plugins.d
@@ -185,9 +185,9 @@ ALERT_SCRIPTS_PATH = ${datarootdir}/zabbix/alertscripts
 AMTAR = $${TAR-tar}
 AM_DEFAULT_VERBOSITY = 1
 ARCH = linux
-AUTOCONF = ${SHELL} '/home/jenkins/workspace/zabbix-release/03-zabbix-release/zabbix-6.4.7/missing' autoconf
-AUTOHEADER = ${SHELL} '/home/jenkins/workspace/zabbix-release/03-zabbix-release/zabbix-6.4.7/missing' autoheader
-AUTOMAKE = ${SHELL} '/home/jenkins/workspace/zabbix-release/03-zabbix-release/zabbix-6.4.7/missing' automake-1.16
+AUTOCONF = ${SHELL} '/home/jenkins/workspace/zabbix-release/03-zabbix-release/zabbix-6.4.12/missing' autoconf
+AUTOHEADER = ${SHELL} '/home/jenkins/workspace/zabbix-release/03-zabbix-release/zabbix-6.4.12/missing' autoheader
+AUTOMAKE = ${SHELL} '/home/jenkins/workspace/zabbix-release/03-zabbix-release/zabbix-6.4.12/missing' automake-1.16
 AWK = mawk
 CC = cc
 CCDEPMODE = depmode=gcc3
@@ -219,7 +219,7 @@ GNUTLS_LIBS =
 GO = 
 GOBIN = ${exec_prefix}/sbin
 GOCMD = go
-GOWORKDIR = /home/jenkins/workspace/zabbix-release/03-zabbix-release/zabbix-6.4.7/go/src/zabbix
+GOWORKDIR = /home/jenkins/workspace/zabbix-release/03-zabbix-release/zabbix-6.4.12/go/src/zabbix
 GREP = /usr/bin/grep
 ICONV_CFLAGS = 
 ICONV_LDFLAGS = 
@@ -261,7 +261,7 @@ LIBXML2_LIBS =
 LIBXML2_VERSION = 
 LOAD_MODULE_PATH = ${exec_prefix}/lib/modules
 LTLIBOBJS = 
-MAKEINFO = ${SHELL} '/home/jenkins/workspace/zabbix-release/03-zabbix-release/zabbix-6.4.7/missing' makeinfo
+MAKEINFO = ${SHELL} '/home/jenkins/workspace/zabbix-release/03-zabbix-release/zabbix-6.4.12/missing' makeinfo
 MKDIR_P = /usr/bin/mkdir -p
 MYSQL_CFLAGS = 
 MYSQL_CONFIG = 
@@ -283,10 +283,10 @@ ORACLE_OCI_VERSION =
 PACKAGE = zabbix
 PACKAGE_BUGREPORT = 
 PACKAGE_NAME = Zabbix
-PACKAGE_STRING = Zabbix 6.4.7
+PACKAGE_STRING = Zabbix 6.4.12
 PACKAGE_TARNAME = zabbix
 PACKAGE_URL = 
-PACKAGE_VERSION = 6.4.7
+PACKAGE_VERSION = 6.4.12
 PATH_SEPARATOR = :
 PG_CONFIG = 
 PKG_CONFIG = 
@@ -328,7 +328,7 @@ TLS_LIBS =
 UNIXODBC_CFLAGS = 
 UNIXODBC_LDFLAGS = 
 UNIXODBC_LIBS = 
-VERSION = 6.4.7
+VERSION = 6.4.12
 WEBSERVICE_CONFIG_FILE = ${prefix}/etc/zabbix_web_service.conf
 ZBXGET_LDFLAGS =      
 ZBXGET_LIBS =      
@@ -339,10 +339,10 @@ ZLIB_LDFLAGS =
 ZLIB_LIBS = 
 _libcurl_config = no
 _libnetsnmp_config = 
-abs_builddir = /home/jenkins/workspace/zabbix-release/03-zabbix-release/zabbix-6.4.7/src/go
-abs_srcdir = /home/jenkins/workspace/zabbix-release/03-zabbix-release/zabbix-6.4.7/src/go
-abs_top_builddir = /home/jenkins/workspace/zabbix-release/03-zabbix-release/zabbix-6.4.7
-abs_top_srcdir = /home/jenkins/workspace/zabbix-release/03-zabbix-release/zabbix-6.4.7
+abs_builddir = /home/jenkins/workspace/zabbix-release/03-zabbix-release/zabbix-6.4.12/src/go
+abs_srcdir = /home/jenkins/workspace/zabbix-release/03-zabbix-release/zabbix-6.4.12/src/go
+abs_top_builddir = /home/jenkins/workspace/zabbix-release/03-zabbix-release/zabbix-6.4.12
+abs_top_srcdir = /home/jenkins/workspace/zabbix-release/03-zabbix-release/zabbix-6.4.12
 ac_ct_CC = cc
 am__include = include
 am__leading_dot = .
@@ -369,7 +369,7 @@ host_vendor = pc
 htmldir = ${docdir}
 includedir = ${prefix}/include
 infodir = ${datarootdir}/info
-install_sh = ${SHELL} /home/jenkins/workspace/zabbix-release/03-zabbix-release/zabbix-6.4.7/install-sh
+install_sh = ${SHELL} /home/jenkins/workspace/zabbix-release/03-zabbix-release/zabbix-6.4.12/install-sh
 libdir = ${exec_prefix}/lib
 libexecdir = ${exec_prefix}/libexec
 localedir = ${datarootdir}/locale
@@ -631,9 +631,21 @@ zabbix.com/cmd/zabbix_web_service:
 
 build: ${TARGETS}
 
-clean:
-	go clean ./...
-	rm -f bin/zabbix_agent2 bin/mock_server
+clean: clean-go-build clean-sbom
+
+clean-go-build:
+	-go clean ./...
+	-rm -f bin/mock_server
+	-rm -f bin/zabbix_agent2
+	-rm -f bin/zabbix_web_service
+
+clean-sbom:
+	-rm -f sbom-mod.json
+	-rm -f sbom-mod.xml
+	-rm -f sbom-za2.json
+	-rm -f sbom-za2.xml
+	-rm -f sbom-zws.json
+	-rm -f sbom-zws.xml
 
 install-zabbix.com/cmd/zabbix_agent2:
 	CGO_CFLAGS="${CGO_CFLAGS}" CGO_LDFLAGS="${CGO_LDFLAGS}" GOBIN=${GOBIN} \
@@ -650,19 +662,68 @@ install-zabbix.com/cmd/zabbix_web_service:
 
 install-exec-local: ${INSTALL_TARGETS}
 
-sbom.json:
-	CGO_CFLAGS="${CGO_CFLAGS}" CGO_LDFLAGS="${CGO_LDFLAGS}" cyclonedx-gomod mod \
-		   -output-version 1.4 \
-		   -licenses -assert-licenses -json -output "$@"
+sbom-za2.json:
+	GOARCH="${GOARC}" GOOS="${GOOS}" CGO_CFLAGS="${CGO_CFLAGS}" CGO_LDFLAGS="${CGO_LDFLAGS}" \
+		cyclonedx-gomod app \
+		-main cmd/zabbix_agent2 \
+		-licenses -assert-licenses \
+		-json \
+		-output-version 1.4 \
+		-output "$@"
 
-# cyclonedx-gomod mod defaults to xml as the output format if the -json flag is not given
+# cyclonedx-gomod defaults to xml as the output format if the -json flag is not given
 # there is no way to specify this explicitly
-sbom.xml:
-	CGO_CFLAGS="${CGO_CFLAGS}" CGO_LDFLAGS="${CGO_LDFLAGS}" cyclonedx-gomod mod \
-		   -output-version 1.4 \
-		   -licenses -assert-licenses -output "$@"
+sbom-za2.xml:
+	GOARCH="${GOARC}" GOOS="${GOOS}" CGO_CFLAGS="${CGO_CFLAGS}" CGO_LDFLAGS="${CGO_LDFLAGS}" \
+		cyclonedx-gomod app \
+		-main cmd/zabbix_agent2 \
+		-licenses -assert-licenses \
+		-output-version 1.4 \
+		-output "$@"
 
-sbom: sbom.json
+sbom-za2: sbom-za2.json
+
+sbom-zws.json:
+	GOARCH="${GOARC}" GOOS="${GOOS}" CGO_CFLAGS="${CGO_CFLAGS}" CGO_LDFLAGS="${CGO_LDFLAGS}" \
+		cyclonedx-gomod app \
+		-main cmd/zabbix_web_service \
+		-licenses -assert-licenses \
+		-json \
+		-output-version 1.4 \
+		-output "$@"
+
+# cyclonedx-gomod defaults to xml as the output format if the -json flag is not given
+# there is no way to specify this explicitly
+sbom-zws.xml:
+	GOARCH="${GOARC}" GOOS="${GOOS}" CGO_CFLAGS="${CGO_CFLAGS}" CGO_LDFLAGS="${CGO_LDFLAGS}" \
+		cyclonedx-gomod app \
+		-main cmd/zabbix_web_service \
+		-licenses -assert-licenses \
+		-output-version 1.4 \
+		-output "$@"
+
+sbom-zws: sbom-zws.json
+
+sbom-apps: sbom-za2 sbom-zws
+
+sbom-mod.json:
+	GOARCH="${GOARC}" GOOS="${GOOS}" CGO_CFLAGS="${CGO_CFLAGS}" CGO_LDFLAGS="${CGO_LDFLAGS}" \
+		cyclonedx-gomod mod \
+		-licenses -assert-licenses \
+		-json \
+		-output-version 1.4 \
+		-output "$@"
+
+sbom-mod.xml:
+	GOARCH="${GOARC}" GOOS="${GOOS}" CGO_CFLAGS="${CGO_CFLAGS}" CGO_LDFLAGS="${CGO_LDFLAGS}" \
+		cyclonedx-gomod mod \
+		-licenses -assert-licenses \
+		-output-version 1.4 \
+		-output "$@"
+
+sbom-mod: sbom-mod.json
+
+sbom: sbom-apps sbom-mod
 
 check:
 	CGO_CFLAGS="${CGO_CFLAGS}" CGO_LDFLAGS="${CGO_LDFLAGS}" go test ./...
@@ -670,6 +731,8 @@ style:
 	CGO_CFLAGS="${CGO_CFLAGS}" CGO_LDFLAGS="${CGO_LDFLAGS}" golangci-lint run --new-from-rev=$(NEW_FROM_REV)  ./...
 format:
 	CGO_CFLAGS="${CGO_CFLAGS}" CGO_LDFLAGS="${CGO_LDFLAGS}" go fmt ./... 
+
+.PHONY: all build check clean clean-go-build clean-sbom format sbom sbom-apps sbom-mod sbom-za2 sbom-zws style
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2023 Zabbix SIA
+** Copyright (C) 2001-2024 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -365,7 +365,7 @@ elseif (hasRequest('add') || hasRequest('update')) {
 			'posts' => getRequest('posts', DB::getDefault('items', 'posts')),
 			'headers' => prepareItemHeaders(getRequest('headers', [])),
 			'status_codes' => getRequest('status_codes', DB::getDefault('items', 'status_codes')),
-			'follow_redirects' => getRequest('follow_redirects', DB::getDefault('items', 'follow_redirects')),
+			'follow_redirects' => getRequest('follow_redirects', HTTPTEST_STEP_FOLLOW_REDIRECTS_OFF),
 			'retrieve_mode' => getRequest('retrieve_mode', $retrieve_mode_default),
 			'output_format' => getRequest('output_format', DB::getDefault('items', 'output_format')),
 			'http_proxy' => getRequest('http_proxy', DB::getDefault('items', 'http_proxy')),

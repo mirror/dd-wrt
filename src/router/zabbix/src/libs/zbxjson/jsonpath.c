@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2023 Zabbix SIA
+** Copyright (C) 2001-2024 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -1736,8 +1736,14 @@ static int	jsonpath_extract_value(zbx_jsonobj_t *obj, zbx_jsonpath_t *path, zbx_
 		char	*str = NULL;
 		size_t	str_alloc = 0, str_offset = 0;
 
-		jsonpath_str_copy_value(&str, &str_alloc, &str_offset, ctx.objects.values[0].value);
-		zbx_variant_set_str(value, str);
+		if (ZBX_JSON_TYPE_NULL != ctx.objects.values[0].value->type)
+		{
+			jsonpath_str_copy_value(&str, &str_alloc, &str_offset, ctx.objects.values[0].value);
+			zbx_variant_set_str(value, str);
+		}
+		else
+			zbx_variant_set_none(value);
+
 		ret = SUCCEED;
 	}
 
@@ -1952,7 +1958,12 @@ static int	jsonpath_prepare_numeric_arg(zbx_variant_t *var)
 static void	jsonpath_index_append_result(zbx_hashset_t *index, const char *name, zbx_jsonobj_t *obj,
 		zbx_jsonobj_t *value)
 {
+#if defined(__hpux)
+	/* fix for compiling with HP-UX bundled cc compiler */
+	zbx_jsonobj_index_el_t	el_local = {NULL}, *el;
+#else
 	zbx_jsonobj_index_el_t	el_local = {.value = NULL}, *el;
+#endif
 	size_t			value_alloc = 0, value_offset = 0;
 	zbx_jsonobj_ref_t	ref;
 

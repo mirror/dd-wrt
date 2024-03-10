@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2023 Zabbix SIA
+** Copyright (C) 2001-2024 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -185,6 +185,7 @@ static int	preproc_snmp_walk_to_json_params(const char *params, zbx_vector_snmp_
 			parsed_param.field_name = zbx_strdup(NULL, field_name);
 			parsed_param.format_flag = format_flag;
 			parsed_param.oid_prefix = oid_prefix;
+			oid_prefix = NULL;
 
 			zbx_vector_snmp_walk_to_json_param_append(parsed_params, parsed_param);
 		}
@@ -207,13 +208,10 @@ static int	preproc_snmp_walk_to_json_params(const char *params, zbx_vector_snmp_
 	}
 
 	zbx_free(params2);
+	zbx_free(oid_prefix);
 
 	if (0 != idx % 3)
-	{
-		zbx_free(oid_prefix);
-
 		return FAIL;
-	}
 
 	return SUCCEED;
 }
@@ -276,6 +274,12 @@ static size_t	preproc_snmp_parse_value(const char *ptr, zbx_snmp_value_pair_t *p
 				while ('.' != *(ptr + 1) && '\0' != *(ptr + 1))
 					ptr++;
 			}
+			else if (ZBX_SNMP_TYPE_STRING == p->type)
+			{
+				while ('\0' != *(ptr + 1) &&
+						('\n' != *ptr || '.' != *(ptr + 1) || 0 == isdigit(*(ptr + 2))))
+					ptr++;
+			}
 
 			len = (size_t)(ptr - start);
 		}
@@ -283,25 +287,37 @@ static size_t	preproc_snmp_parse_value(const char *ptr, zbx_snmp_value_pair_t *p
 		p->value = zbx_malloc(NULL, len + 1);
 		memcpy(p->value, start, len);
 		(p->value)[len] = '\0';
-		zbx_remove_chars(p->value, "\n");
-		zbx_rtrim(p->value, " ");
+
+		if (ZBX_SNMP_TYPE_HEX == p->type || ZBX_SNMP_TYPE_BITS == p->type)
+		{
+			zbx_remove_chars(p->value, "\n");
+			zbx_rtrim(p->value, " ");
+		}
 
 		return len;
 	}
 	else
 	{
 		char	*out;
+		int	escape = 0;
+
 		ptr++;
 
-		while ('"' != *ptr)
+		while ('"' != *ptr || 0 != escape)
 		{
 			if ('\0' == *ptr)
 				return 0;
-			if ('\\' == *ptr)
+
+			if (0 == escape)
 			{
-				if ('\0' == *(++ptr))
-					return 0;
+				if ('\\' == *ptr)
+					escape = 1;
 			}
+			else
+			{
+				escape = 0;
+			}
+
 			ptr++;
 		}
 
@@ -314,11 +330,11 @@ static size_t	preproc_snmp_parse_value(const char *ptr, zbx_snmp_value_pair_t *p
 			if ('\\' == *ptr)
 			{
 				ptr++;
-				continue;
 			}
 			*out++ = *ptr++;
 		}
 		*out = '\0';
+
 		return len;
 	}
 }
@@ -370,6 +386,13 @@ reparse_type:
 				goto eol;
 			}
 
+			if (0 == strcmp(type, "NULL") && ('\n' == *data || '\0' == *data))
+			{
+				p->type = ZBX_SNMP_TYPE_UNDEFINED;
+
+				goto eol;
+			}
+
 			*error = strdup("invalid value type format");
 			goto out;
 		}
@@ -394,6 +417,10 @@ reparse_type:
 		else if (0 == strcmp(type, "BITS"))
 		{
 			p->type = ZBX_SNMP_TYPE_BITS;
+		}
+		else if (0 == strcmp(type, "STRING"))
+		{
+			p->type = ZBX_SNMP_TYPE_STRING;
 		}
 		else
 			p->type = ZBX_SNMP_TYPE_UNDEFINED;
@@ -915,12 +942,9 @@ int	item_preproc_snmp_walk_to_json(zbx_variant_t *value, const char *params, cha
 			oobj_local.key = zbx_strdup(NULL, prefix_len + p.oid + 1);
 			zbx_rtrim(oobj_local.key, " ");
 
-			output_value = (zbx_snmp_value_pair_t *)zbx_malloc(NULL,
-					sizeof(zbx_snmp_value_pair_t));
-
-
+			output_value = (zbx_snmp_value_pair_t *)zbx_malloc(NULL, sizeof(zbx_snmp_value_pair_t));
 			output_value->oid = zbx_strdup(NULL, param_field.field_name);
-			output_value->value = zbx_strdup(NULL, p.value);
+			output_value->value = NULL == p.value ? NULL : zbx_strdup(NULL, p.value);
 
 			if (NULL == (oobj_cached = zbx_hashset_search(&grouped_prefixes, &oobj_local)))
 			{
@@ -955,7 +979,10 @@ skip:
 	}
 
 	if (NULL != *errmsg)
+	{
 		ret = FAIL;
+		goto out;
+	}
 
 	if (0 < grouped_prefixes.num_data)
 	{
@@ -996,6 +1023,9 @@ static void	zbx_init_snmp(void)
 	sigaddset(&mask, SIGQUIT);
 	zbx_sigmask(SIG_BLOCK, &mask, &orig_mask);
 
+	netsnmp_ds_set_boolean(NETSNMP_DS_LIBRARY_ID, NETSNMP_DS_LIB_DISABLE_PERSISTENT_LOAD, 1);
+	netsnmp_ds_set_boolean(NETSNMP_DS_LIBRARY_ID, NETSNMP_DS_LIB_DISABLE_PERSISTENT_SAVE, 1);
+
 	init_snmp(progname);
 	netsnmp_init_mib();
 	zbx_snmp_init_done = 1;
@@ -1008,7 +1038,6 @@ void	preproc_init_snmp(void)
 	zbx_init_snmp();
 	netsnmp_ds_set_boolean(NETSNMP_DS_LIBRARY_ID, NETSNMP_DS_LIB_PRINT_NUMERIC_OIDS, 1);
 	netsnmp_ds_set_int(NETSNMP_DS_LIBRARY_ID, NETSNMP_DS_LIB_OID_OUTPUT_FORMAT, NETSNMP_OID_OUTPUT_NUMERIC);
-	netsnmp_ds_set_boolean(NETSNMP_DS_LIBRARY_ID, NETSNMP_DS_LIB_DONT_PERSIST_STATE, 1);
 }
 
 void	preproc_shutdown_snmp(void)

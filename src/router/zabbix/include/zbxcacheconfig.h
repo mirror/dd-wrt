@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2023 Zabbix SIA
+** Copyright (C) 2001-2024 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -226,6 +226,7 @@ typedef struct
 	unsigned char		status;
 	unsigned char		history;
 	unsigned char		trends;
+	unsigned char		has_trigger;
 }
 zbx_history_sync_item_t;
 
@@ -700,6 +701,7 @@ void	zbx_dc_config_history_sync_get_triggers_by_itemids(zbx_hashset_t *trigger_i
 		const zbx_uint64_t *itemids, const zbx_timespec_t *timespecs, int itemids_num);
 void	zbx_dc_config_clean_history_sync_items(zbx_history_sync_item_t *items, int *errcodes, size_t num);
 void	zbx_dc_config_history_sync_unset_existing_itemids(zbx_vector_uint64_t *itemids);
+int	zbx_dc_config_history_get_trends_sec(const char *trends_period, int trends_global, int hk_trends);
 
 void	zbx_dc_config_history_recv_get_items_by_keys(zbx_history_recv_item_t *items, const zbx_host_key_t *keys,
 		int *errcodes, size_t num);
@@ -873,14 +875,6 @@ void	zbx_dc_correlation_rules_get(zbx_correlation_rules_t *rules);
 void	zbx_dc_get_nested_hostgroupids(zbx_uint64_t *groupids, int groupids_num, zbx_vector_uint64_t *nested_groupids);
 void	zbx_dc_get_hostids_by_group_name(const char *name, zbx_vector_uint64_t *hostids);
 
-
-#define ZBX_DC_FLAG_META	0x01	/* contains meta information (lastlogsize and mtime) */
-#define ZBX_DC_FLAG_NOVALUE	0x02	/* entry contains no value */
-#define ZBX_DC_FLAG_LLD		0x04	/* low-level discovery value */
-#define ZBX_DC_FLAG_UNDEF	0x08	/* unsupported or undefined (delta calculation failed) value */
-#define ZBX_DC_FLAG_NOHISTORY	0x10	/* values should not be kept in history */
-#define ZBX_DC_FLAG_NOTRENDS	0x20	/* values should not be kept in trends */
-
 typedef struct zbx_hc_data
 {
 	zbx_history_value_t	value;
@@ -945,6 +939,7 @@ zbx_trigger_dep_t;
 void	zbx_dc_get_trigger_dependencies(const zbx_vector_uint64_t *triggerids, zbx_vector_ptr_t *deps);
 
 void	zbx_dc_reschedule_items(const zbx_vector_uint64_t *itemids, int nextcheck, zbx_uint64_t *proxy_hostids);
+void	zbx_trend_add_new_items(const zbx_vector_uint64_t *itemids);
 
 /* data session support */
 

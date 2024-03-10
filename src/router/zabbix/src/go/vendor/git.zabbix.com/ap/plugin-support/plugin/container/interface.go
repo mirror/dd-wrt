@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright 2001-2023 Zabbix SIA
+** Copyright 2001-2024 Zabbix SIA
 **
 ** Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 ** documentation files (the "Software"), to deal in the Software without restriction, including without limitation the
@@ -40,6 +40,9 @@ func (ctx emptyCtx) Meta() *plugin.Meta {
 }
 func (ctx emptyCtx) GlobalRegexp() plugin.RegexpMatcher {
 	return ctx.matcher
+}
+func (ctx emptyCtx) Delay() string {
+	return ""
 }
 
 type emptyMatcher struct{}

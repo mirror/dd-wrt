@@ -4,8 +4,8 @@ msgstr ""
 "Project-Id-Version: Zabbix 6.0\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2022-03-17 15:53+0200\n"
-"PO-Revision-Date: 2023-07-18 09:33+0000\n"
-"Last-Translator: Sergejs <sergejs.maklakovs@zabbix.com>\n"
+"PO-Revision-Date: 2023-10-20 12:08+0000\n"
+"Last-Translator: Benjamin Candler <root@tanetal.net>\n"
 "Language-Team: Zabbix <info@zabbix.com>\n"
 "Language: de\n"
 "MIME-Version: 1.0\n"
@@ -204,6 +204,16 @@ msgid "%1$s of %2$s element in problem state"
 msgid_plural "%1$s of %2$s elements in problem state"
 msgstr[0] "%1$s von %2$s Elementen in problematischem Zustand"
 msgstr[1] "%1$s von %2$s Elementen in problematischem Zustand"
+
+#: app/views/administration.miscconfig.edit.php:127
+#, c-format
+msgid "%1$s or %2$s - allows the page to be displayed only in a frame on the same origin as the page itself"
+msgstr ""
+
+#: app/views/administration.miscconfig.edit.php:130
+#, c-format
+msgid "%1$s or %2$s - prevents the page from being displayed in a frame, regardless of the site attempting to do so"
+msgstr ""
 
 #: jsLoader.php:348
 #, c-format
@@ -2309,6 +2319,10 @@ msgstr "Der Benutzertyp der eigenen Rolle kann nicht geändert werden."
 msgid "Cannot clear history"
 msgstr "Kann Verlauf nicht leeren"
 
+#: httpconf.php:189 httpconf.php:433 items.php:671 items.php:707
+msgid "Cannot clear history and trends"
+msgstr "Kann Historie und Trends nicht löschen"
+
 #: include/classes/api/services/CDiscoveryRule.php:2514
 msgid "Cannot clone graph prototypes."
 msgstr "Kann Diagramm-Vorlagen nicht klonen."
@@ -2355,12 +2369,12 @@ msgstr[1] "Kann Elemente nicht kopieren"
 #: include/classes/api/services/CDiscoveryRule.php:2475
 #, c-format
 msgid "Cannot copy item prototype with key \"%1$s\" without its master item with key \"%2$s\"."
-msgstr ""
+msgstr "Kann den Datenpunkt-Prototyp mit dem Schlüssel \"%1$s\" nicht ohne dessen Master-Datenpunkt \"%2$s\" kopieren."
 
 #: include/items.inc.php:590
 #, c-format
 msgid "Cannot copy item with key \"%1$s\" without its master item with key \"%2$s\"."
-msgstr ""
+msgstr "Kann den Datenpunkt mit dem Schlüssel \"%1$s\" nicht ohne dessen Master-Datenpunkt \"%2$s\" kopieren."
 
 #: triggers.php:538
 msgid "Cannot copy trigger"
@@ -2828,6 +2842,12 @@ msgid_plural "Cannot disable media types"
 msgstr[0] "Kann Medientyp nicht deaktivieren"
 msgstr[1] "Kann Medientypen nicht deaktivieren"
 
+#: app/controllers/CControllerModuleUpdate.php:146
+msgid "Cannot disable module"
+msgid_plural "Cannot disable modules"
+msgstr[0] ""
+msgstr[1] ""
+
 #: app/controllers/CControllerModuleUpdate.php:165
 #, c-format
 msgid "Cannot disable module: %1$s."
@@ -2918,6 +2938,12 @@ msgid_plural "Cannot enable media types"
 msgstr[0] "Kann Medientyp nicht aktivieren"
 msgstr[1] "Kann Medientypen nicht aktivieren"
 
+#: app/controllers/CControllerModuleUpdate.php:141
+msgid "Cannot enable module"
+msgid_plural "Cannot enable modules"
+msgstr[0] ""
+msgstr[1] ""
+
 #: app/controllers/CControllerModuleUpdate.php:160
 #, c-format
 msgid "Cannot enable module: %1$s."
@@ -2949,7 +2975,7 @@ msgstr "Ausdruck kann nicht ausgewertet werden"
 
 #: include/classes/api/services/CScript.php:1064
 msgid "Cannot execute URL type script."
-msgstr ""
+msgstr "Kann Skript vom Typ URL nicht ausführen."
 
 #: app/controllers/CControllerItemMassCheckNow.php:243
 #: app/controllers/CControllerItemMassCheckNow.php:251
@@ -3958,6 +3984,10 @@ msgstr "Kann Wartungszeitraum nicht aktualisieren"
 msgid "Cannot update media type"
 msgstr "Kann Medientyp nicht ändern"
 
+#: app/controllers/CControllerModuleUpdate.php:137
+msgid "Cannot update module"
+msgstr ""
+
 #: app/controllers/CControllerModuleUpdate.php:157
 #, c-format
 msgid "Cannot update module: %1$s."
@@ -4346,6 +4376,14 @@ msgstr "Verlauf löschen"
 #: include/views/configuration.item.edit.php:1073
 msgid "Clear history and trends"
 msgstr "Verlauf und Trends leeren"
+
+#: include/views/configuration.item.list.php:310
+msgid "Clear history and trends of selected items?"
+msgstr "Historie und Trends der ausgewählten Datenpunkte löschen?"
+
+#: include/views/configuration.httpconf.list.php:232
+msgid "Clear history and trends of selected web scenarios?"
+msgstr ""
 
 #: app/views/popup.massupdate.host.php:69
 #: app/views/popup.massupdate.template.php:72
@@ -7699,6 +7737,10 @@ msgstr "Ereignisprotokoll-Überwachung. Rückgabewert Log"
 msgid "Event name"
 msgstr "Ereignisname"
 
+#: app/views/popup.condition.edit.php:819
+msgid "Event name matches Trigger name (with macros expanded) unless a custom Event name is specified in Trigger settings."
+msgstr ""
+
 #: include/classes/helpers/CCorrelationHelper.php:55
 msgid "Event tag pair"
 msgstr "Ereignis Marker"
@@ -8720,7 +8762,7 @@ msgstr ""
 
 #: app/views/popup.ldap.edit.php:122
 msgid "Group configuration"
-msgstr ""
+msgstr "Gruppenkonfiguration"
 
 #: hostgroups.php:134 hostgroups.php:155
 msgid "Group deleted"
@@ -8974,6 +9016,10 @@ msgstr "Ganze Zeile auswählen"
 #: jsLoader.php:372
 msgid "History"
 msgstr "Verlauf"
+
+#: httpconf.php:189 httpconf.php:433 items.php:671 items.php:707
+msgid "History and trends cleared"
+msgstr "Historie und Trends gelöscht"
 
 #: app/views/administration.housekeeping.edit.php:159
 msgid "History and trends compression"
@@ -9864,7 +9910,7 @@ msgstr "Unzugängliche SLA"
 
 #: app/controllers/CControllerDashboardWidgetEdit.php:452
 msgid "Inaccessible action"
-msgstr ""
+msgstr "Nicht verfügbare Aktion"
 
 #: app/controllers/CControllerPopupScheduledReportEdit.php:121
 #: app/controllers/CControllerScheduledReportEdit.php:303
@@ -9997,7 +10043,7 @@ msgstr "Inkompatible Parameter \"propagation_rule\" und \"propagation_value\" f�
 #: app/controllers/CControllerMediatypeEnable.php:97
 #: app/controllers/CControllerMediatypeEnable.php:108
 msgid "Incomplete configuration"
-msgstr ""
+msgstr "Unvollständige Konfiguration"
 
 #: include/classes/api/services/CMap.php:655
 #: include/classes/api/services/CMap.php:1138
@@ -12766,7 +12812,7 @@ msgstr "März"
 
 #: jsLoader.php:361
 msgid "Mark as cause"
-msgstr ""
+msgstr "Als Ursache markieren"
 
 #: include/views/monitoring.sysmap.edit.php:148
 msgid "Mark elements on trigger status change"
@@ -12869,7 +12915,7 @@ msgstr ""
 #: app/partials/configuration.host.interface.row.php:105
 #: app/views/popup.itemtestedit.view.php:154
 msgid "Max repetition count"
-msgstr ""
+msgstr "Maximale Anzahl Wiederholungen"
 
 #: app/partials/configuration.host.interface.row.php:106
 msgid "Max repetition count is applicable to discovery and snmp.walk only."
@@ -13264,6 +13310,12 @@ msgid_plural "Modules deleted: %1$s."
 msgstr[0] "Modul : %1$s gelöscht."
 msgstr[1] "Module : %1$s gelöscht."
 
+#: app/controllers/CControllerModuleUpdate.php:132
+msgid "Module disabled"
+msgid_plural "Modules disabled"
+msgstr[0] ""
+msgstr[1] ""
+
 #: app/controllers/CControllerModuleUpdate.php:150
 #, c-format
 msgid "Module disabled: %1$s."
@@ -13271,12 +13323,22 @@ msgid_plural "Modules disabled: %1$s."
 msgstr[0] "Modul deaktiviert: %1$s."
 msgstr[1] "Module deaktiviert: %1$s."
 
+#: app/controllers/CControllerModuleUpdate.php:129
+msgid "Module enabled"
+msgid_plural "Modules enabled"
+msgstr[0] ""
+msgstr[1] ""
+
 #: app/controllers/CControllerModuleUpdate.php:145
 #, c-format
 msgid "Module enabled: %1$s."
 msgid_plural "Modules enabled: %1$s."
 msgstr[0] "Modul aktiviert: %1$s."
 msgstr[1] "Module aktiviert: %1$s."
+
+#: app/controllers/CControllerModuleUpdate.php:126
+msgid "Module updated"
+msgstr ""
 
 #: app/controllers/CControllerModuleUpdate.php:142
 #, c-format
@@ -13723,7 +13785,7 @@ msgstr "Neues SLA"
 #: app/views/js/popup.action.edit.js.php:413
 #: app/views/popup.action.edit.php:302
 msgid "New action"
-msgstr ""
+msgstr "Neue Aktion"
 
 #: app/views/popup.service.statusrule.edit.php:94
 msgid "New additional rule"
@@ -13782,7 +13844,7 @@ msgstr "Neue Hostgruppe"
 #: app/controllers/CControllerMaintenanceTimePeriodEdit.php:142
 #: app/views/maintenance.edit.php:259 app/views/maintenance.edit.php:289
 msgid "New maintenance period"
-msgstr ""
+msgstr "Neues Wartungsperiode"
 
 #: app/views/popup.mediatypemapping.edit.php:73
 msgid "New media type mapping"
@@ -14474,6 +14536,11 @@ msgstr "Keine geerbten Datenpunkte"
 #: include/views/configuration.host.discovery.list.php:162
 msgid "Not supported"
 msgstr "Nicht unterstützt"
+
+#: app/views/administration.miscconfig.edit.php:138
+#, c-format
+msgid "Note that %1$s or %2$s will be regarded as hostnames if used without single quotes."
+msgstr ""
 
 #: include/hosts.inc.php:229
 msgid "Notes"
@@ -17773,7 +17840,7 @@ msgstr "Suchmuster ist leer"
 #: app/views/reports.actionlog.list.php:108
 #: widgets/actionlog/includes/WidgetForm.php:61
 msgid "Search string"
-msgstr ""
+msgstr "Suchzeichenkette"
 
 #: app/controllers/CControllerPopupTriggerExpr.php:114
 #: app/controllers/CControllerPopupTriggerExpr.php:1106
@@ -18013,7 +18080,7 @@ msgstr "Dienst"
 #: app/views/monitoring.widget.slareport.view.php:37
 msgctxt "compact table header"
 msgid "Service"
-msgstr ""
+msgstr "Dienst"
 
 #: include/classes/api/services/CService.php:1479
 #: include/classes/api/services/CService.php:1519
@@ -19735,7 +19802,7 @@ msgstr "Dieser Monat bis jetzt"
 
 #: include/classes/widgets/views/widget.item.form.view.php:231
 msgid "This setting applies only to numeric data."
-msgstr ""
+msgstr "Die Einstellung wirkt nur auf numerische Daten."
 
 #: app/views/popup.tophosts.column.edit.php:172
 msgid "This setting applies only to numeric data. Non-numeric data will always be taken from history."
@@ -20712,7 +20779,7 @@ msgstr "Ausgewählte Benutzer entsperren?"
 #: include/views/js/item.preprocessing.js.php:176
 #: include/views/js/item.preprocessing.js.php:222
 msgid "Unchanged"
-msgstr ""
+msgstr "Unverändert"
 
 #: app/views/popup.acknowledge.edit.php:125
 msgid "Undo problem acknowledgement."
@@ -20782,7 +20849,7 @@ msgstr "Unbekannt"
 #: app/views/monitoring.widget.web.view.php:35
 msgctxt "compact table header"
 msgid "Unknown"
-msgstr ""
+msgstr "Unbekannt"
 
 #: app/views/reports.auditlog.list.php:119
 msgid "Unknown action"
@@ -21082,6 +21149,10 @@ msgstr "Uptime/Downtime"
 msgid "Use %{ref} in group filter to reference value of this user attribute."
 msgstr ""
 
+#: app/views/administration.miscconfig.edit.php:123
+msgid "Use X-Frame-Options HTTP header"
+msgstr ""
+
 #: app/partials/configuration.host.interface.row.php:194
 msgid "Use bulk requests"
 msgstr "Massenanfragen nutzen"
@@ -21349,7 +21420,7 @@ msgstr "Benutzername"
 #: app/views/administration.authentication.edit.php:443
 #: app/views/popup.ldap.edit.php:210
 msgid "User name attribute"
-msgstr ""
+msgstr "Benutzername-Attribut"
 
 #: app/views/administration.authentication.edit.php:206
 msgid "User password"
@@ -21479,7 +21550,7 @@ msgstr ""
 
 #: app/views/administration.authentication.edit.php:241
 msgid "Username attribute"
-msgstr ""
+msgstr "Benutzername-Attribut"
 
 #: app/controllers/CControllerPopupGeneric.php:209
 #: app/views/administration.token.list.php:42
@@ -22264,7 +22335,7 @@ msgstr "Wert"
 #: app/views/monitoring.widget.plaintext.view.php:51
 msgctxt "compact table header"
 msgid "Value"
-msgstr ""
+msgstr "Wert"
 
 #: include/classes/api/services/CMap.php:930
 #: include/classes/api/services/CMap.php:1405
@@ -22443,7 +22514,7 @@ msgstr ""
 #: app/views/administration.module.edit.php:39
 #: app/views/administration.module.list.php:76
 msgid "Version"
-msgstr ""
+msgstr "Version"
 
 #: include/classes/data/CItemData.php:826
 msgid "Version of Zabbix agent. Returns string"
@@ -22531,7 +22602,7 @@ msgstr "Warnmeldung"
 
 #: app/partials/administration.system.info.php:154
 msgid "Warning! Unable to retrieve database version."
-msgstr ""
+msgstr "Warnung! Datenbankversion nicht abrufbar."
 
 #: app/partials/administration.system.info.php:166
 #, c-format
@@ -22819,6 +22890,10 @@ msgstr "X-Achse"
 #: app/views/administration.miscconfig.edit.php:113
 msgid "X-Frame-Options HTTP header"
 msgstr "X-Frame-Options-HTTP-Header"
+
+#: app/views/administration.miscconfig.edit.php:125
+msgid "X-Frame-Options HTTP header supported values:"
+msgstr ""
 
 #: include/views/js/monitoring.sysmaps.js.php:448
 msgid "X1"
@@ -23265,6 +23340,11 @@ msgstr "eine relative Zeit wird erwartet"
 #: app/views/administration.authentication.edit.php:86
 msgid "a special character"
 msgstr "ein Sonderzeichen"
+
+#: app/views/administration.miscconfig.edit.php:133
+#, c-format
+msgid "a string of space-separated hostnames; adding %1$s to the list allows the page to be displayed in a frame on the same origin as the page itself"
+msgstr ""
 
 #: include/classes/validators/CApiInputValidator.php:2530
 msgid "a string, number or null value is expected"

@@ -4,8 +4,8 @@ msgstr ""
 "Project-Id-Version: Zabbix 6.0\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2022-03-17 15:53+0200\n"
-"PO-Revision-Date: 2023-04-04 16:25+0000\n"
-"Last-Translator: khvalera <khvalera@ukr.net>\n"
+"PO-Revision-Date: 2023-11-16 00:28+0000\n"
+"Last-Translator: Alex <save2love@gmail.com>\n"
 "Language-Team: Zabbix translation team\n"
 "Language: uk\n"
 "MIME-Version: 1.0\n"
@@ -214,6 +214,16 @@ msgid_plural "%1$s of %2$s elements in problem state"
 msgstr[0] "%1$s з %2$s елемента в стані проблеми"
 msgstr[1] "%1$s з %2$s елементів в стані проблеми"
 msgstr[2] "%1$s з %2$s елементів в стані проблеми"
+
+#: app/views/administration.miscconfig.edit.php:127
+#, c-format
+msgid "%1$s or %2$s - allows the page to be displayed only in a frame on the same origin as the page itself"
+msgstr ""
+
+#: app/views/administration.miscconfig.edit.php:130
+#, c-format
+msgid "%1$s or %2$s - prevents the page from being displayed in a frame, regardless of the site attempting to do so"
+msgstr ""
 
 #: jsLoader.php:348
 #, c-format
@@ -1280,7 +1290,7 @@ msgstr "Альтернативно, ви можете встановити йо�
 
 #: include/classes/data/CItemData.php:1623
 msgid "Amount of guest physical memory that is swapped out to the swap space, \"url\" - VMware service URL, \"uuid\" - VMware virtual machine global unique identifier"
-msgstr ""
+msgstr "Обсяг фізичної пам'яті віртуальної машини, що вивантажено у файл підкачки, \"url\" - URL служби VMware, \"uuid\" - глобальний унікальний ідентифікатор віртуальної машини VMware"
 
 #: include/classes/data/CItemData.php:1442
 msgid "Amount of guest physical memory that is swapped out to the swap space, <url> - VMware service URL, <uuid> - VMware virtual machine host name"
@@ -1288,7 +1298,7 @@ msgstr "Обсяг фізичної пам'яті віртуальної маш�
 
 #: include/classes/data/CItemData.php:1643
 msgid "Amount of host physical memory consumed for backing up guest physical memory pages, \"url\" - VMware service URL, \"uuid\" - VMware virtual machine global unique identifier"
-msgstr ""
+msgstr "Обсяг физичної пам'яті вузла мережі, що використано на резервне копіювання сторінок фізичної памяті віртуальної машини, \"url\" - URL служби VMware, \"uuid\" - глобальний унікальний ідентифікатор віртуальної машини VMware"
 
 #: include/classes/data/CItemData.php:1462
 msgid "Amount of host physical memory consumed for backing up guest physical memory pages, <url> - VMware service URL, <uuid> - VMware virtual machine host name"
@@ -1607,7 +1617,7 @@ msgstr "HTML код авторства"
 
 #: app/views/administration.geomaps.edit.php:86
 msgid "Attribution text"
-msgstr ""
+msgstr "Текст атрибуції"
 
 #: app/views/administration.housekeeping.edit.php:179
 #: include/classes/helpers/CMenuHelper.php:148
@@ -1787,7 +1797,7 @@ msgstr "Середня"
 
 #: include/classes/data/CItemData.php:1715
 msgid "Average number of outstanding read requests to the virtual disk during the collection interval , \"url\" - VMware service URL, \"uuid\" - VMware virtual machine global unique identifier, \"instance\" - disk device instance"
-msgstr ""
+msgstr "Середня кількість невиконаних запитів на читання віртуального диска протягом інтервалу збору даних, \"url\" - URL-адреса служби VMware, \"uuid\" - глобальний унікальний ідентифікатор віртуальної машини VMware, \"instance\" - екземпляр дискового пристрою"
 
 #: include/classes/data/CItemData.php:1522
 msgid "Average number of outstanding read requests to the virtual disk during the collection interval , <url> - VMware service URL, <uuid> - VMware virtual machine host name, <instance> - disk device instance"
@@ -1795,7 +1805,7 @@ msgstr "Середня кількість невиконаних запитів 
 
 #: include/classes/data/CItemData.php:1735
 msgid "Average number of outstanding write requests to the virtual disk during the collection interval, \"url\" - VMware service URL, \"uuid\" - VMware virtual machine global unique identifier, \"instance\" - disk device instance"
-msgstr ""
+msgstr "Середня кількість невиконаних запитів на запис віртуального диска протягом інтервалу збору даних, \"url\" - URL-адреса служби VMware, \"uuid\" - глобальний унікальний ідентифікатор віртуальної машини VMware, \"instance\" - екземпляр дискового пристрою"
 
 #: include/classes/data/CItemData.php:1542
 msgid "Average number of outstanding write requests to the virtual disk during the collection interval, <url> - VMware service URL, <uuid> - VMware virtual machine host name, <instance> - disk device instance"
@@ -2001,7 +2011,7 @@ msgstr "Завантаження CPU. Повертає дробове значе
 
 #: include/classes/data/CItemData.php:1603
 msgid "CPU time spent waiting for swap-in, \"url\" - VMware service URL, \"uuid\" - VMware virtual machine global unique identifier, \"instance\" - CPU instance"
-msgstr ""
+msgstr "Час процесора, витрачений на очікування заміни, \"url\" - URL-адреса служби VMware, \"uuid\" - ім'я хоста віртуальної машини VMware, \"instance\" - екземпляр ЦП"
 
 #: include/classes/data/CItemData.php:1422
 msgid "CPU time spent waiting for swap-in, <url> - VMware service URL, <uuid> - VMware virtual machine host name, <instance> - CPU instance"
@@ -2009,7 +2019,7 @@ msgstr "Час процесора, витрачений на очікуванн�
 
 #: include/classes/data/CItemData.php:1407
 msgid "CPU usage as a percentage during the interval depends on power management or HT, \"url\" - VMware service URL, \"uuid\" - VMware hypervisor global unique identifier"
-msgstr ""
+msgstr "Використання ЦП у відсотках протягом інтервалу залежить від керування живленням або багатопотоковості, \"url\" - URL-адреса служби VMware, \"uuid\" - глобальний унікальний ідентифікатор гіпервізора VMware"
 
 #: include/classes/data/CItemData.php:1274
 msgid "CPU usage as a percentage during the interval depends on power management or HT, <url> - VMware service URL, <uuid> - VMware hypervisor host name"
@@ -2017,11 +2027,11 @@ msgstr "Використання ЦП у відсотках протягом і�
 
 #: include/classes/data/CItemData.php:1399
 msgid "CPU usage as a percentage during the interval, \"url\" - VMware service URL, \"uuid\" - VMware hypervisor global unique identifier"
-msgstr ""
+msgstr "Використання ЦП у відсотках протягом інтервалу, \"url\" - URL-адреса служби VMware, \"uuid\" - глобальний унікальний ідентифікатор гіпервізора VMware"
 
 #: include/classes/data/CItemData.php:1607
 msgid "CPU usage as a percentage during the interval, \"url\" - VMware service URL, \"uuid\" - VMware virtual machine global unique identifier"
-msgstr ""
+msgstr "Використання ЦП у відсотках протягом інтервалу, \"url\" - URL-адреса служби VMware, \"uuid\" - глобальний унікальний ідентифікатор віртуальної машини VMware"
 
 #: include/classes/data/CItemData.php:1266
 msgid "CPU usage as a percentage during the interval, <url> - VMware service URL, <uuid> - VMware hypervisor host name"
@@ -2033,7 +2043,7 @@ msgstr "Використання ЦП у відсотках протягом і�
 
 #: include/classes/data/CItemData.php:1559
 msgid "CPU usage in hertz during the interval on VMware Resource Pool, \"url\" - VMware service URL, \"rpid\" - VMware resource pool id"
-msgstr ""
+msgstr "Використання ЦП у герцах протягом інтервалу в пулі ресурсів VMware, \"url\" - URL-адреса служби VMware, \"rpid\" - ідентифікатор пулу ресурсів VMware"
 
 #: include/classes/data/CItemData.php:1429
 msgid "CPU usage in hertz during the interval on VMware Resource Pool, <url> - VMware service URL, <rpid> - VMware resource pool id"
@@ -2329,6 +2339,10 @@ msgstr "Неможливо змінити тип користувача влас
 #: httpconf.php:189 httpconf.php:433 items.php:901 items.php:981
 msgid "Cannot clear history"
 msgstr "Не вдалося очистити історію"
+
+#: httpconf.php:189 httpconf.php:433 items.php:671 items.php:707
+msgid "Cannot clear history and trends"
+msgstr "Неможливо очистити історію та тренди"
 
 #: include/classes/api/services/CDiscoveryRule.php:2514
 msgid "Cannot clone graph prototypes."
@@ -2883,6 +2897,13 @@ msgstr[0] "Не вдалося дезактивувати метод повід�
 msgstr[1] "Не вдалося дезактивувати методи повідомлень"
 msgstr[2] "Не вдалося дезактивувати методи повідомлень"
 
+#: app/controllers/CControllerModuleUpdate.php:146
+msgid "Cannot disable module"
+msgid_plural "Cannot disable modules"
+msgstr[0] "Не вдалося вимкнути модуль"
+msgstr[1] "Не вдалося вимкнути модулі"
+msgstr[2] "Не вдалося вимкнути модуль"
+
 #: app/controllers/CControllerModuleUpdate.php:165
 #, c-format
 msgid "Cannot disable module: %1$s."
@@ -2985,6 +3006,13 @@ msgid_plural "Cannot enable media types"
 msgstr[0] "Не вдалося активувати метод повідомлень"
 msgstr[1] "Не вдалося активувати методи повідомлень"
 msgstr[2] "Не вдалося активувати методи повідомлень"
+
+#: app/controllers/CControllerModuleUpdate.php:141
+msgid "Cannot enable module"
+msgid_plural "Cannot enable modules"
+msgstr[0] "Не вдалося ввімкнути модуль"
+msgstr[1] "Не вдалося ввімкнути модулі"
+msgstr[2] "Не вдалося ввімкнути модулі"
 
 #: app/controllers/CControllerModuleUpdate.php:160
 #, c-format
@@ -3428,7 +3456,7 @@ msgstr "Неможливо зв’язати шаблон \"%1$s\" із хост
 #: include/classes/api/services/CHostBase.php:806
 #, c-format
 msgid "Cannot link template \"%1$s\" to host \"%2$s\", because it would be linked twice through template \"%3$s\"."
-msgstr ""
+msgstr "Неможливо зв’язати шаблон \"%1$s\" із вузлом \"%2$s\", оскільки він буде двічі зв'язаний через шаблон \"%3$s\"."
 
 #: include/classes/api/services/CHostBase.php:644
 #, c-format
@@ -3454,7 +3482,7 @@ msgstr "Неможливо зв’язати шаблон \"%1$s\" із прот
 #: include/classes/api/services/CHostBase.php:803
 #, c-format
 msgid "Cannot link template \"%1$s\" to host prototype \"%2$s\", because it would be linked twice through template \"%3$s\"."
-msgstr ""
+msgstr "Неможливо зв’язати шаблон \"%1$s\" із прототипом вузла \"%2$s\", оскільки він буде двічі зв'язаний через шаблон \"%3$s\"."
 
 #: include/classes/api/services/CHostBase.php:641
 #, c-format
@@ -3490,37 +3518,37 @@ msgstr "Неможливо пов’язати шаблон «%1$s» із шаб
 #: include/classes/api/services/CHostBase.php:976
 #, c-format
 msgid "Cannot link template \"%1$s\" to template \"%2$s\", because it would be linked to host \"%3$s\" twice."
-msgstr ""
+msgstr "Неможливо зв’язати шаблон \"%1$s\" із шаблоном \"%2$s\", оскільки він буде зв'язаний із вузлом \"%3$s\" двічі."
 
 #: include/classes/api/services/CHostBase.php:973
 #, c-format
 msgid "Cannot link template \"%1$s\" to template \"%2$s\", because it would be linked to host prototype \"%3$s\" twice."
-msgstr ""
+msgstr "Неможливо зв’язати шаблон \"%1$s\" із шаблоном \"%2$s\", оскільки він буде зв'язаний із прототипом вузла \"%3$s\" двічі."
 
 #: include/classes/api/services/CHostBase.php:970
 #, c-format
 msgid "Cannot link template \"%1$s\" to template \"%2$s\", because it would be linked to template \"%3$s\" twice."
-msgstr ""
+msgstr "Неможливо зв’язати шаблон \"%1$s\" із шаблоном \"%2$s\", оскільки він буде зв'язаний із шаблоном \"%3$s\" двічі."
 
 #: include/classes/api/services/CHostBase.php:800
 #, c-format
 msgid "Cannot link template \"%1$s\" to template \"%2$s\", because it would be linked twice through template \"%3$s\"."
-msgstr ""
+msgstr "Неможливо зв’язати шаблон \"%1$s\" із шаблоном \"%2$s\", оскільки він буде двічі зв'язаний через шаблон \"%3$s\"."
 
 #: include/classes/api/services/CHostBase.php:1003
 #, c-format
 msgid "Cannot link template \"%1$s\" to template \"%2$s\", because its parent template \"%3$s\" would be linked to host \"%4$s\" twice."
-msgstr ""
+msgstr "Неможливо зв’язати шаблон \"%1$s\" із шаблоном \"%2$s\", оскільки його батьківський шаблон \"%3$s\" буде зв’язано з вузлом \"%4$s\" двічі."
 
 #: include/classes/api/services/CHostBase.php:1000
 #, c-format
 msgid "Cannot link template \"%1$s\" to template \"%2$s\", because its parent template \"%3$s\" would be linked to host prototype \"%4$s\" twice."
-msgstr ""
+msgstr "Неможливо зв’язати шаблон \"%1$s\" із шаблоном \"%2$s\", оскільки його батьківський шаблон \"%3$s\" буде пов’язано з прототипом вузла \"%4$s\" двічі."
 
 #: include/classes/api/services/CHostBase.php:997
 #, c-format
 msgid "Cannot link template \"%1$s\" to template \"%2$s\", because its parent template \"%3$s\" would be linked to template \"%4$s\" twice."
-msgstr ""
+msgstr "Неможливо зв’язати шаблон \"%1$s\" із шаблоном \"%2$s\", оскільки його батьківський шаблон \"%3$s\" буде зв’язано з шаблоном \"%4$s\" двічі."
 
 #: include/classes/api/services/CHostBase.php:638
 #, c-format
@@ -4037,6 +4065,10 @@ msgstr "Неможливо оновити період обслуговуван�
 msgid "Cannot update media type"
 msgstr "Не вдалося оновити метод повідомлень"
 
+#: app/controllers/CControllerModuleUpdate.php:137
+msgid "Cannot update module"
+msgstr "Не вдалося оновити модуль"
+
 #: app/controllers/CControllerModuleUpdate.php:157
 #, c-format
 msgid "Cannot update module: %1$s."
@@ -4428,6 +4460,14 @@ msgstr "Очистити історію"
 msgid "Clear history and trends"
 msgstr "Очистити історію та динаміку змін"
 
+#: include/views/configuration.item.list.php:310
+msgid "Clear history and trends of selected items?"
+msgstr "Очистити історію та тренди вибраних елементів?"
+
+#: include/views/configuration.httpconf.list.php:232
+msgid "Clear history and trends of selected web scenarios?"
+msgstr "Очистити історію та тренди вибраних веб-сценаріїв?"
+
 #: app/views/popup.massupdate.host.php:69
 #: app/views/popup.massupdate.template.php:72
 msgid "Clear when unlinking"
@@ -4479,11 +4519,11 @@ msgstr "Клонувати"
 #: app/views/configuration.host.edit.php:64
 #: app/views/js/popup.host.edit.js.php:45 host_prototypes.php:177
 msgid "Cloned host parameter values have been modified."
-msgstr ""
+msgstr "Параметри клонованого вузла було змінено."
 
 #: templates.php:196
 msgid "Cloned template parameter values have been modified."
-msgstr ""
+msgstr "Параметри клонованого шаблону було змінено."
 
 #: app/views/popup.import.compare.php:162 app/views/popup.token.view.php:86
 #: include/func.inc.php:1723 include/views/js/monitoring.sysmaps.js.php:339
@@ -6852,7 +6892,7 @@ msgstr "Об'єкт виявлення"
 
 #: include/classes/data/CItemData.php:1307
 msgid "Discovery of VMware clusters, \"url\" - VMware service URL. Returns JSON"
-msgstr ""
+msgstr "Виявлення кластерів VMware, \"url\" - URL-адреса служби VMware. Повертає JSON"
 
 #: include/classes/data/CItemData.php:1222
 msgid "Discovery of VMware clusters, <url> - VMware service URL. Returns JSON"
@@ -6860,7 +6900,7 @@ msgstr "Виявлення кластерів VMware, <url> - URL-адреса �
 
 #: include/classes/data/CItemData.php:1327
 msgid "Discovery of VMware datastores, \"url\" - VMware service URL. Returns JSON"
-msgstr ""
+msgstr "Виявлення сховищ даних VMware, \"url\" - URL-адреса служби VMware. Повертає JSON"
 
 #: include/classes/data/CItemData.php:1230
 msgid "Discovery of VMware datastores, <url> - VMware service URL. Returns JSON"
@@ -6868,7 +6908,7 @@ msgstr "Виявлення сховищ даних VMware, <url> - URL-адре�
 
 #: include/classes/data/CItemData.php:1415
 msgid "Discovery of VMware hypervisor datastores, \"url\" - VMware service URL, \"uuid\" - VMware hypervisor global unique identifier. Returns JSON"
-msgstr ""
+msgstr "Виявлення сховищ даних гіпервізора VMware, \"url\" - URL-адреса служби VMware, \"uuid\" - глобальний унікальний ідентифікатор гіпервізора VMware. Повертає JSON"
 
 #: include/classes/data/CItemData.php:1282
 msgid "Discovery of VMware hypervisor datastores, <url> - VMware service URL, <uuid> - VMware hypervisor host name. Returns JSON"
@@ -6876,7 +6916,7 @@ msgstr "Виявлення сховищ даних гіпервізора VMware
 
 #: include/classes/data/CItemData.php:1503
 msgid "Discovery of VMware hypervisor network interfaces, \"url\" - VMware service URL, \"uuid\" - VMware hypervisor global unique identifier. Returns JSON"
-msgstr ""
+msgstr "Виявлення мережевих інтерфейсів гіпервізора VMware, \"url\" - URL-адреса служби VMware, \"uuid\" - глобальний унікальний ідентифікатор гіпервізора VMware. Повертає JSON"
 
 #: include/classes/data/CItemData.php:1379
 msgid "Discovery of VMware hypervisor network interfaces, <url> - VMware service URL, <uuid> - VMware hypervisor. Returns JSON"
@@ -6884,7 +6924,7 @@ msgstr "Виявлення мережевих інтерфейсів гіпер�
 
 #: include/classes/data/CItemData.php:1439
 msgid "Discovery of VMware hypervisors, \"url\" - VMware service URL. Returns JSON"
-msgstr ""
+msgstr "Виявлення гіпервізорів VMware, \"url\" - URL-адреса служби VMware. Повертає JSON"
 
 #: include/classes/data/CItemData.php:1306
 msgid "Discovery of VMware hypervisors, <url> - VMware service URL. Returns JSON"
@@ -6892,7 +6932,7 @@ msgstr "Виявлення гіпервізорів VMware, <url> – URL-адр
 
 #: include/classes/data/CItemData.php:1751
 msgid "Discovery of VMware virtual machine disk devices, \"url\" - VMware service URL, \"uuid\" - VMware virtual machine global unique identifier. Returns JSON"
-msgstr ""
+msgstr "Виявлення дискових пристроїв віртуальної машини VMware, \"url\" - URL-адреса служби VMware, \"uuid\" - глобальний унікальний ідентифікатор віртуальної машини VMware. Повертає JSON"
 
 #: include/classes/data/CItemData.php:1550
 msgid "Discovery of VMware virtual machine disk devices, <url> - VMware service URL, <uuid> - VMware virtual machine host name. Returns JSON"
@@ -6900,7 +6940,7 @@ msgstr "Виявлення дискових пристроїв віртуаль�
 
 #: include/classes/data/CItemData.php:1763
 msgid "Discovery of VMware virtual machine file systems, \"url\" - VMware service URL, \"uuid\" - VMware virtual machine global unique identifier. Returns JSON"
-msgstr ""
+msgstr "Виявлення файлових систем віртуальної машини VMware, \"url\" - URL-адреса служби VMware, \"uuid\" - глобальний унікальний ідентифікатор віртуальної машини VMware. Повертає JSON"
 
 #: include/classes/data/CItemData.php:1562
 msgid "Discovery of VMware virtual machine file systems, <url> - VMware service URL, <uuid> - VMware virtual machine host name. Returns JSON"
@@ -6908,7 +6948,7 @@ msgstr "Виявлення файлових систем віртуальної 
 
 #: include/classes/data/CItemData.php:1675
 msgid "Discovery of VMware virtual machine network interfaces, \"url\" - VMware service URL, \"uuid\" - VMware virtual machine global unique identifier. Returns JSON"
-msgstr ""
+msgstr "Виявлення мережевих інтерфейсів віртуальної машини VMware, \"url\" - URL-адреса служби VMware, \"uuid\" - глобальний унікальний ідентифікатор віртуальної машини VMware. Повертає JSON"
 
 #: include/classes/data/CItemData.php:1494
 msgid "Discovery of VMware virtual machine network interfaces, <url> - VMware service URL, <uuid> - VMware virtual machine host name. Returns JSON"
@@ -6916,7 +6956,7 @@ msgstr "Виявлення мережевих інтерфейсів вірту�
 
 #: include/classes/data/CItemData.php:1619
 msgid "Discovery of VMware virtual machines, \"url\" - VMware service URL. Returns JSON"
-msgstr ""
+msgstr "Виявлення віртуальних машин VMware, \"url\" - URL-адреса служби VMware. Повертає JSON"
 
 #: include/classes/data/CItemData.php:1438
 msgid "Discovery of VMware virtual machines, <url> - VMware service URL. Returns JSON"
@@ -6969,11 +7009,10 @@ msgid "Discovery rule created"
 msgstr "Правило виявлення створено"
 
 #: app/controllers/CControllerDiscoveryDelete.php:66 host_discovery.php:416
-#, fuzzy
 msgid "Discovery rule deleted"
 msgid_plural "Discovery rules deleted"
 msgstr[0] "Правило виявлення видалено"
-msgstr[1] "Правило виявлення видалено"
+msgstr[1] "Правила виявлення видалено"
 msgstr[2] "Правило виявлення видалено"
 
 #: app/controllers/CControllerDiscoveryDisable.php:71 host_discovery.php:767
@@ -7795,6 +7834,10 @@ msgstr "Моніторинг журналів подій. Повертає за�
 #: include/views/configuration.triggers.edit.php:102
 msgid "Event name"
 msgstr "Ім'я події"
+
+#: app/views/popup.condition.edit.php:819
+msgid "Event name matches Trigger name (with macros expanded) unless a custom Event name is specified in Trigger settings."
+msgstr ""
 
 #: include/classes/helpers/CCorrelationHelper.php:55
 msgid "Event tag pair"
@@ -8949,7 +8992,7 @@ msgstr "Значення апаратного сенсору. Повертає �
 
 #: include/classes/setup/CSetupWizard.php:513
 msgid "HashiCorp Vault"
-msgstr ""
+msgstr "Сховище HashiCorp"
 
 #: app/views/popup.httpstep.php:133 app/views/popup.httpstep.php:161
 #: app/views/popup.massupdate.item.php:115
@@ -9069,6 +9112,10 @@ msgstr "Підсвічувати весь рядок"
 #: jsLoader.php:372
 msgid "History"
 msgstr "Історія"
+
+#: httpconf.php:189 httpconf.php:433 items.php:671 items.php:707
+msgid "History and trends cleared"
+msgstr "Історія та тренди очищені"
 
 #: app/views/administration.housekeeping.edit.php:159
 msgid "History and trends compression"
@@ -9460,12 +9507,12 @@ msgstr "Прототип вузлів мережі з іменем вузла м
 #: include/classes/api/services/CHostPrototype.php:1127
 #, c-format
 msgid "Host prototype with visible name \"%1$s\" already exists in discovery rule \"%2$s\" of host \"%3$s\"."
-msgstr ""
+msgstr "Прототип вузла мережі з видимим ім'ям \"%1$s\" уже існує в правилі виявлення \"%2$s\" вузла мережі \"%3$s\"."
 
 #: include/classes/api/services/CHostPrototype.php:1124
 #, c-format
 msgid "Host prototype with visible name \"%1$s\" already exists in discovery rule \"%2$s\" of template \"%3$s\"."
-msgstr ""
+msgstr "Прототип вузла мережі з видимим ім'ям \"%1$s\" уже існує в правилі виявлення \"%2$s\" шаблону \"%3$s\"."
 
 #: include/classes/api/services/CHostPrototype.php:1026
 #, c-format
@@ -9621,7 +9668,7 @@ msgstr "Я підтверджую видалення всіх макросів"
 
 #: app/partials/massupdate.valuemaps.tab.php:84
 msgid "I confirm to remove all value mappings"
-msgstr ""
+msgstr "Я підтверджую видалення всіх перетвореннь значень"
 
 #: include/discovery.inc.php:60
 msgid "ICMP ping"
@@ -9795,20 +9842,20 @@ msgstr "Якщо активовано HTTP автентифікацію, всі 
 #, c-format
 msgid "If at least %2$s child service has %1$s status or above"
 msgid_plural "If at least %2$s child services have %1$s status or above"
-msgstr[0] ""
-msgstr[1] ""
-msgstr[2] ""
+msgstr[0] "Якщо принаймні %2$s дочірня служба має статус %1$s або вище"
+msgstr[1] "Якщо принаймні %2$s дочірні служби мають статус %1$s або вище"
+msgstr[2] "Якщо принаймні %2$s дочірніх служб мають статус %1$s або вище"
 
 #: include/classes/helpers/CServiceHelper.php:35
 #, c-format
 msgid "If at least %2$s child services have %1$s status or above"
-msgstr ""
+msgstr "Якщо принаймні %2$s дочірні служби мають статус %1$s або вище"
 
 #: include/classes/helpers/CServiceHelper.php:40
 #: include/classes/helpers/CServiceHelper.php:89
 #, c-format
 msgid "If at least %2$s of child services have %1$s status or above"
-msgstr ""
+msgstr "Якщо принаймні %2$s дочірніх служб мають статус %1$s або вище"
 
 #: app/views/popup.lldoverride.php:54
 msgid "If filter matches"
@@ -9818,20 +9865,20 @@ msgstr "При відповідності фільтру"
 #, c-format
 msgid "If less than %2$s child service has %1$s status or below"
 msgid_plural "If less than %2$s child services have %1$s status or below"
-msgstr[0] ""
-msgstr[1] ""
-msgstr[2] ""
+msgstr[0] "Якщо менше %2$s дочірня служба має статус %1$s або нижче"
+msgstr[1] "Якщо менше %2$s дочірніх служб мають статус %1$s або нижче"
+msgstr[2] "Якщо менше %2$s дочірніх служб мають статус %1$s або нижче"
 
 #: include/classes/helpers/CServiceHelper.php:45
 #, c-format
 msgid "If less than %2$s child services have %1$s status or below"
-msgstr ""
+msgstr "Якщо менше %2$s дочірніх служб мають статус %1$s або нижче"
 
 #: include/classes/helpers/CServiceHelper.php:50
 #: include/classes/helpers/CServiceHelper.php:101
 #, c-format
 msgid "If less than %2$s of child services have %1$s status or below"
-msgstr ""
+msgstr "Якщо менше ніж %2$s дочірніх служб мають статус %1$s або нижче"
 
 #: include/classes/api/services/CReport.php:348
 msgid "If no user groups are specified, at least one user must be included in the mailing list."
@@ -9843,7 +9890,7 @@ msgstr "Якщо групи користувачів не вказані, до �
 #: include/classes/helpers/CServiceHelper.php:110
 #, c-format
 msgid "If weight of child services with %1$s status or above is at least %2$s"
-msgstr ""
+msgstr "Якщо вага дочірніх служб зі статусом %1$s або вище становить принаймні %2$s"
 
 #: include/classes/helpers/CServiceHelper.php:65
 #: include/classes/helpers/CServiceHelper.php:70
@@ -9851,7 +9898,7 @@ msgstr ""
 #: include/classes/helpers/CServiceHelper.php:118
 #, c-format
 msgid "If weight of child services with %1$s status or below is less than %2$s"
-msgstr ""
+msgstr "Якщо вага дочірніх служб зі статусом %1$s або нижче менше ніж %2$s"
 
 #: include/func.inc.php:1583 include/func.inc.php:1603
 msgid "If you think this message is wrong, please consult your administrators about getting the necessary permissions."
@@ -9894,7 +9941,7 @@ msgstr "Тип ярлика до картинки"
 #: include/classes/helpers/CUploadFile.php:129
 #, c-format
 msgid "Image size must be less than %1$s."
-msgstr ""
+msgstr "Розмір зображення має бути менше %1$s."
 
 #: app/controllers/CControllerImageUpdate.php:147
 msgid "Image updated"
@@ -10093,7 +10140,7 @@ msgstr "Статистика вхідного трафіку мережевог�
 #: include/classes/api/services/CService.php:1441
 #, c-format
 msgid "Incompatible \"propagation_rule\" and \"propagation_value\" parameters for service \"%1$s\"."
-msgstr ""
+msgstr "Несумісні параметри \"propagation_rule\" і \"propagation_value\" для служби \"%1$s\"."
 
 #: app/controllers/CControllerMediatypeEnable.php:97
 #: app/controllers/CControllerMediatypeEnable.php:108
@@ -10157,11 +10204,11 @@ msgstr "Некоректне SNMP community."
 
 #: include/classes/helpers/CVaultHelper.php:137
 msgid "Incorrect Vault API endpoint."
-msgstr ""
+msgstr "Неправильна кінцева точка Vault API."
 
 #: include/classes/helpers/CVaultHelper.php:61
 msgid "Incorrect Vault token."
-msgstr ""
+msgstr "Невірний токен Vault."
 
 #: include/classes/validators/CActionCondValidator.php:122
 msgid "Incorrect action condition discovery check."
@@ -10210,7 +10257,7 @@ msgstr "Некоректний проксі в умові дії. Проксі �
 
 #: include/classes/api/services/CAction.php:3401
 msgid "Incorrect action condition service. Service does not exist or you have no access to it."
-msgstr ""
+msgstr "Невірна умова дії сервісу. Сервіс не існує або ви не маєте до нього доступу."
 
 #: include/classes/validators/CActionCondValidator.php:155
 msgid "Incorrect action condition trigger severity."
@@ -10311,7 +10358,7 @@ msgstr "Некоректне масове значення для інтерфе
 #: include/classes/api/services/CHost.php:2241
 #, c-format
 msgid "Incorrect characters used for host name \"%1$s\"."
-msgstr ""
+msgstr "Некоректні символи в імені вузла мережі \"%1$s\"."
 
 #: include/classes/api/services/CDiscoveryRule.php:1805
 #, c-format
@@ -10330,13 +10377,13 @@ msgstr "Некоректний довільний вираз \"%2$s\" для п�
 #: include/classes/api/services/CDiscoveryRule.php:1602
 #, c-format
 msgid "Incorrect custom expression \"%2$s\" for override \"%1$s\": %3$s."
-msgstr ""
+msgstr "Неправильний довільний вираз \"%2$s\" для заміни \"%1$s\": %3$s."
 
 #: include/classes/db/MysqlDbBackend.php:69
 #: include/classes/db/PostgresqlDbBackend.php:95
 #, c-format
 msgid "Incorrect default charset for Zabbix database: %1$s."
-msgstr ""
+msgstr "Неправильний набір символів за замовчуванням для бази даних Zabbix: %1$s."
 
 #: include/classes/api/services/CEvent.php:510
 #: include/classes/api/services/CProblem.php:375
@@ -10370,7 +10417,7 @@ msgstr "Некоректні поля для sysmap."
 #: include/classes/setup/CSetupWizard.php:984
 #, c-format
 msgid "Incorrect file path for \"%1$s\": %2$s."
-msgstr ""
+msgstr "Неправильний шлях до файлу для \"%1$s\": %2$s."
 
 #: include/classes/helpers/CUploadFile.php:162
 msgid "Incorrect file upload."
@@ -10389,7 +10436,7 @@ msgstr "Некоректний макрос умови фільтру для п�
 #: include/classes/api/services/CDiscoveryRule.php:1637
 #, c-format
 msgid "Incorrect filter condition macro for override \"%1$s\"."
-msgstr ""
+msgstr "Неправильний макрос умови фільтру для заміни \"%1$s\"."
 
 #: include/classes/api/services/CDiscoveryRule.php:1847
 #, c-format
@@ -10416,18 +10463,18 @@ msgstr "Некоректні вхідні параметри."
 #: include/classes/api/services/CHostInterface.php:801
 #, c-format
 msgid "Incorrect interface DNS parameter \"%1$s\" provided."
-msgstr ""
+msgstr "Для інтерфейсу вказано некоректний параметр DNS \"%1$s\"."
 
 #: include/classes/api/services/CHostInterface.php:846
 #, c-format
 msgid "Incorrect interface port \"%1$s\" provided."
-msgstr ""
+msgstr "Для інтерфейсу вказано некоректний порт \"%1$s\"."
 
 #: include/classes/api/services/CHost.php:2021
 #: include/classes/api/services/CHost.php:2224
 #, c-format
 msgid "Incorrect inventory field \"%1$s\"."
-msgstr ""
+msgstr "Некоректне поле \"%1$s\" інвентарних даних."
 
 #: app/controllers/CControllerActionOperationValidate.php:176
 msgid "Incorrect inventory mode in action operation."
@@ -10483,7 +10530,7 @@ msgstr "Некоректне значення об'єкта."
 #: include/classes/db/OracleDbBackend.php:141
 #, c-format
 msgid "Incorrect parameter \"%1$s\" value: %2$s."
-msgstr ""
+msgstr "Невірне значення: %2$s параметру \"%1$s\"."
 
 #: app/controllers/CControllerPopupDiscoveryCheck.php:58
 #: include/classes/api/services/CDRule.php:496
@@ -10506,7 +10553,7 @@ msgstr "Некоректну відповідь отримано від Zabbix �
 #: app/controllers/CControllerSlaCreateUpdate.php:84
 #, c-format
 msgid "Incorrect schedule: %1$s."
-msgstr ""
+msgstr "Неправильний розклад: %1$s."
 
 #: include/classes/api/services/CEvent.php:491
 #: include/classes/api/services/CProblem.php:356
@@ -10571,7 +10618,7 @@ msgstr "Некоректне значення ID групи користувач
 #: include/classes/api/services/CUser.php:2018
 #: include/classes/validators/CLdapAuthValidator.php:88 index_http.php:79
 msgid "Incorrect user name or password or account is temporarily blocked."
-msgstr ""
+msgstr "Неправильне ім'я користувача чи пароль або обліковий запис тимчасово заблоковано."
 
 #: app/controllers/CControllerActionOperationValidate.php:121
 #: app/controllers/CControllerPopupGeneric.php:478
@@ -10602,7 +10649,7 @@ msgstr "Некоректне значення \"%1$s\" для поля \"%2$s\".
 #: include/validate.inc.php:336
 #, c-format
 msgid "Incorrect value \"%1$s\" for \"%2$s\" field: must be between %3$s and %4$s, and have no more than %5$s digits after the decimal point."
-msgstr ""
+msgstr "Неправильне значення \"%1$s\" для поля \"%2$s\": має бути від %3$s до %4$s і містити не більше %5$s цифр після коми."
 
 #: app/controllers/CControllerAuthenticationUpdate.php:153
 #: include/validate.inc.php:341
@@ -10931,11 +10978,11 @@ msgstr "Інформація"
 
 #: include/classes/data/CItemData.php:1443
 msgid "Info about internal disks of hypervisor required for vmware.datastore.perfcounter, \"url\" - VMware service URL, \"uuid\" - VMware hypervisor global unique identifier. Returns JSON"
-msgstr ""
+msgstr "Інформація про внутрішні диски гіпервізора необхідна для vmware.datastore.perfcounter, \"url\" - URL-адреса служби VMware, \"uuid\" - глобальний унікальний ідентифікатор гіпервізора VMware. Повертає JSON"
 
 #: include/classes/data/CItemData.php:1429
 msgid "Info about internal disks of hypervisor required for vmware.datastore.perfcounter, <url> - VMware service URL, <uuid> - VMware hypervisor host name. Returns JSON"
-msgstr ""
+msgstr "Інформація про внутрішні диски гіпервізора необхідна для vmware.datastore.perfcounter, <url> - URL-адреса служби VMware, <uuid> - ім'я вузла мережі гіпервізора VMware. Повертає JSON"
 
 #: app/views/administration.trigdisplay.edit.php:110 include/items.inc.php:31
 #: jsLoader.php:177
@@ -10965,7 +11012,7 @@ msgstr "Макроси вузла мережі та успадковані"
 
 #: include/views/configuration.host.prototype.edit.php:338
 msgid "Inherited and host prototype macros"
-msgstr ""
+msgstr "Успадковані та прототипи макросів вузла мережі"
 
 #: app/partials/configuration.tags.tab.php:140
 msgid "Inherited and item tags"
@@ -10973,7 +11020,7 @@ msgstr "Успадковані та власні теги"
 
 #: app/partials/configuration.tags.tab.php:135
 msgid "Inherited and scenario tags"
-msgstr ""
+msgstr "Успадковані та сценарні теги"
 
 #: include/views/configuration.template.edit.php:195
 msgid "Inherited and template macros"
@@ -10993,7 +11040,7 @@ msgstr "Початковий вигляд"
 
 #: include/classes/widgets/views/widget.geomap.form.view.php:78
 msgid "Initial view is ignored if the default view is set."
-msgstr ""
+msgstr "Початковий вигляд ігнорується, якщо встановлено перегляд за умовчанням."
 
 #: app/views/popup.triggerexpr.php:258
 msgid "Insert"
@@ -11023,7 +11070,7 @@ msgstr "Ім'я інсталятора"
 #: include/views/js/item.preprocessing.js.php:180
 #: include/views/js/item.preprocessing.js.php:227
 msgid "Integer from BITS"
-msgstr ""
+msgstr "BITS в ціле число"
 
 #: include/classes/helpers/CMenuHelper.php:360
 msgid "Integrations"
@@ -11044,7 +11091,7 @@ msgstr "Інтерфейс зв'язаний з елементом даних \"
 
 #: include/classes/widgets/forms/CWidgetFormHostAvail.php:39
 msgid "Interface type"
-msgstr ""
+msgstr "Тип інтерфейсу"
 
 #: include/classes/api/services/CHostInterface.php:337
 #, c-format
@@ -11065,7 +11112,7 @@ msgstr "У інтерфейсу з IP адресою \"%1$s\" не може бу
 #: app/partials/configuration.host.edit.html.php:242
 #: include/views/configuration.host.prototype.edit.php:249
 msgid "Interfaces"
-msgstr ""
+msgstr "Інтерфейси"
 
 #: app/views/administration.authentication.edit.php:33
 msgctxt "authentication"
@@ -11105,7 +11152,7 @@ msgstr "Внутрішня помилка."
 #: app/views/popup.mediatype.message.php:73
 #: include/classes/helpers/CMediatypeHelper.php:200
 msgid "Internal problem"
-msgstr ""
+msgstr "Внутрішня проблема"
 
 #: app/views/popup.mediatype.message.php:76
 #: include/classes/helpers/CMediatypeHelper.php:211
@@ -11133,7 +11180,7 @@ msgstr "Інтервал"
 #: include/classes/api/services/CRole.php:738
 #, c-format
 msgid "Invalid API method \"%2$s\" for user role \"%1$s\"."
-msgstr ""
+msgstr "Недійсний метод API \"%2$s\" для ролі користувача \"%1$s\"."
 
 #: include/classes/api/services/CHostInterface.php:829
 #, c-format
@@ -11146,30 +11193,30 @@ msgstr "Неправильний JSON. На сервері виникла пом
 
 #: app/controllers/CControllerAuthenticationUpdate.php:171
 msgid "Invalid LDAP JIT provisioning media type mapping configuration."
-msgstr ""
+msgstr "Помилкова конфігурація відповідності способів оповіщення LDAP JIT ініціалізації."
 
 #: app/controllers/CControllerAuthenticationUpdate.php:164
 msgid "Invalid LDAP JIT provisioning user group mapping configuration."
-msgstr ""
+msgstr "Помилкова конфігурація відповідності групи користувачів LDAP JIT ініціалізації."
 
 #: app/controllers/CControllerPopupLdapCheck.php:52
 #: app/controllers/CControllerPopupLdapEdit.php:49
 #: app/controllers/CControllerPopupLdapTestEdit.php:44
 #: app/controllers/CControllerPopupLdapTestSend.php:50
 msgid "Invalid LDAP configuration"
-msgstr ""
+msgstr "Помилкова конфігурація LDAP"
 
 #: app/controllers/CControllerAuthenticationUpdate.php:214
 msgid "Invalid SAML JIT provisioning media type mapping configuration."
-msgstr ""
+msgstr "Помилкова конфігурація відповідності способів оповіщення SAML JIT ініціалізації."
 
 #: app/controllers/CControllerAuthenticationUpdate.php:208
 msgid "Invalid SAML JIT provisioning user group mapping configuration."
-msgstr ""
+msgstr "Помилкова конфігурація відповідності групи користувачів SAML JIT ініціалізації."
 
 #: include/classes/import/readers/CYamlImportReader.php:55
 msgid "Invalid YAML file contents"
-msgstr ""
+msgstr "Неправильний вміст файлу YAML"
 
 #: include/classes/validators/CActionCondValidator.php:113
 #, c-format
@@ -11179,7 +11226,7 @@ msgstr "Неправильна умова дії: %1$s."
 #: app/controllers/CControllerPopupTriggerExpr.php:1571
 #, c-format
 msgid "Invalid condition: %1$s."
-msgstr ""
+msgstr "Неправильна умова: %1$s."
 
 #: app/controllers/CControllerTimeSelectorUpdate.php:219
 msgid "Invalid date."
@@ -11233,7 +11280,7 @@ msgstr "Неправильний ключ \"%1$s\": %2$s."
 #: app/controllers/CControllerPopupMediaTypeMappingCheck.php:42
 #: app/controllers/CControllerPopupMediaTypeMappingEdit.php:44
 msgid "Invalid media type mapping configuration."
-msgstr ""
+msgstr "Неправильна конфігурація зіставлення способу оповіщення."
 
 #: include/classes/core/CJsonRpc.php:187
 msgid "Invalid method parameters."
@@ -11453,7 +11500,7 @@ msgstr "Неправильні параметри."
 
 #: include/classes/core/CJsonRpc.php:176
 msgid "Invalid request."
-msgstr ""
+msgstr "Неправильний запит."
 
 #: include/classes/api/services/CHttpTest.php:786
 #, c-format
@@ -11540,12 +11587,12 @@ msgstr "Неправильний період часу."
 #: app/controllers/CControllerPopupUserGroupMappingCheck.php:42
 #: app/controllers/CControllerPopupUserGroupMappingEdit.php:44
 msgid "Invalid user group mapping configuration."
-msgstr ""
+msgstr "Неправильна конфігурація зіставлення груп користувачів."
 
 #: include/classes/validators/CApiInputValidator.php:2852
 #, c-format
 msgid "Invalid zoomparameter \"%1$s\": %2$s."
-msgstr ""
+msgstr "Неправильний параметр масштабування \"%1$s\": %2$s."
 
 #: app/partials/configuration.host.edit.html.php:526
 #: app/views/popup.massupdate.host.php:294
@@ -11641,7 +11688,7 @@ msgstr "Елемент додано"
 
 #: app/views/popup.itemtestedit.view.php:421
 msgid "Item contains user-defined macros with secret values. Values of these macros should be entered manually."
-msgstr ""
+msgstr "Елемент містить визначені користувачем макроси з секретними значеннями. Значення цих макросів слід вводити вручну."
 
 #: items.php:964
 msgid "Item copied"
@@ -11891,11 +11938,11 @@ msgstr "Інтерфейси JMX"
 
 #: include/classes/html/CButtonExport.php:75
 msgid "JSON"
-msgstr ""
+msgstr "JSON"
 
 #: include/classes/mvc/CController.php:231
 msgid "JSON array input is expected."
-msgstr ""
+msgstr "Очікується вхідний масив JSON."
 
 #: app/views/popup.massupdate.item.php:94
 #: include/views/configuration.host.discovery.edit.php:300
@@ -11907,7 +11954,7 @@ msgstr "JSON дані"
 #: include/classes/api/services/CItemGeneral.php:2663
 #: include/classes/api/services/CItemGeneral.php:2692
 msgid "JSON is expected"
-msgstr ""
+msgstr "Очікується JSON"
 
 #: include/classes/validators/CNewValidator.php:113
 msgid "JSON string is expected"
@@ -11916,7 +11963,7 @@ msgstr "очікувався JSON рядок"
 #: include/classes/core/CJsonRpc.php:146
 #, c-format
 msgid "JSON-RPC error generation failed. No such error \"%1$s\"."
-msgstr ""
+msgstr "Не вдалося створити помилку JSON-RPC. Немає такої помилки \"%1$s\"."
 
 #: include/items.inc.php:1824
 #: include/views/configuration.host.discovery.edit.php:866
@@ -11968,7 +12015,7 @@ msgstr "Період зберігання втрачених ресурсів"
 
 #: include/httptest.inc.php:30
 msgid "Kerberos"
-msgstr ""
+msgstr "Kerberos"
 
 #: app/controllers/CControllerPopupGeneric.php:232
 #: app/controllers/CControllerPopupGeneric.php:243
@@ -12006,7 +12053,7 @@ msgstr "LDAP"
 #: app/views/administration.usergroup.edit.php:88
 #: app/views/popup.ldap.edit.php:157
 msgid "LDAP Server"
-msgstr ""
+msgstr "LDAP сервер"
 
 #: include/perm.inc.php:49
 msgid "LDAP authentication"
@@ -12014,11 +12061,11 @@ msgstr "LDAP аутентифікація"
 
 #: include/classes/api/services/CUser.php:1491
 msgid "LDAP authentication is disabled."
-msgstr ""
+msgstr "Автентифікація LDAP вимкнена."
 
 #: app/views/popup.ldap.edit.php:235
 msgid "LDAP group pattern"
-msgstr ""
+msgstr "Шаблон групи LDAP"
 
 #: app/views/administration.authentication.edit.php:163
 msgid "LDAP host"
@@ -12034,7 +12081,7 @@ msgstr "Вдалий вхід через LDAP"
 
 #: include/classes/api/services/CAuthentication.php:171
 msgid "LDAP must be enabled"
-msgstr ""
+msgstr "LDAP має бути ввімкнено"
 
 #: app/views/administration.authentication.edit.php:336
 msgid "LDAP settings"
@@ -12042,7 +12089,7 @@ msgstr "Налаштування LDAP"
 
 #: app/views/popup.itemtestedit.view.php:299
 msgid "LF"
-msgstr ""
+msgstr "LF"
 
 #: include/views/configuration.host.discovery.edit.php:866
 msgid "LLD macro"
@@ -12055,7 +12102,7 @@ msgstr "LLD макроси"
 
 #: include/classes/api/services/CItemGeneralOld.php:700
 msgid "LLD rule with the same UUID already exists"
-msgstr ""
+msgstr "LLD правило з таким самим UUID вже існує"
 
 #: app/partials/popup.operations.php:257
 #: app/views/configuration.correlation.edit.php:59
@@ -12080,7 +12127,7 @@ msgstr "Мова"
 #: include/classes/api/services/CUser.php:775
 #, c-format
 msgid "Language \"%1$s\" is not supported."
-msgstr ""
+msgstr "Мова \"%1$s\" не підтримується."
 
 #: include/classes/helpers/CPagerHelper.php:232
 msgctxt "page navigation"
@@ -12308,13 +12355,13 @@ msgstr "Лінк"
 #: include/classes/api/services/CMap.php:1476
 #, c-format
 msgid "Link \"selementid1\" field is pointing to a nonexistent map selement ID \"%1$s\" for map \"%2$s\"."
-msgstr ""
+msgstr "Поле посилання \"selementid1\" вказує на неіснуючий ідентифікатор елемента карти \"%1$s\" для карти \"%2$s\"."
 
 #: include/classes/api/services/CMap.php:1014
 #: include/classes/api/services/CMap.php:1484
 #, c-format
 msgid "Link \"selementid2\" field is pointing to a nonexistent map selement ID \"%1$s\" for map \"%2$s\"."
-msgstr ""
+msgstr "Поле посилання \"selementid2\" вказує на неіснуючий ідентифікатор елемента карти \"%1$s\" для карти \"%2$s\"."
 
 #: include/views/js/monitoring.sysmaps.js.php:760
 #: include/views/js/monitoring.sysmaps.js.php:771
@@ -12347,7 +12394,7 @@ msgstr "Приєднані шаблони"
 
 #: include/views/configuration.template.list.php:128
 msgid "Linked to templates"
-msgstr ""
+msgstr "Зв'язано з шаблонами"
 
 #: include/views/js/monitoring.sysmaps.js.php:757
 #: include/views/js/monitoring.sysmaps.js.php:768
@@ -12360,7 +12407,7 @@ msgstr "Список пустий"
 
 #: include/classes/data/CItemData.php:983
 msgid "List of OS processes with attributes. Returns JSON array"
-msgstr ""
+msgstr "Список процесів ОС з атрибутами. Повертає JSON масив"
 
 #: include/classes/data/CItemData.php:1021
 msgid "List of Windows Registry values or keys located at given key. Returns JSON."
@@ -12368,35 +12415,35 @@ msgstr ""
 
 #: include/classes/data/CItemData.php:1831
 msgid "List of Zabbix proxies with name, mode, encryption, compression, version, last seen, host count, item count, required values per second (vps) and compatibility (current/outdated/unsupported). Returns JSON."
-msgstr ""
+msgstr "Список проксі Zabbix із назвою, режимом, шифруванням, стисненням, версією, востаннє помічено, кількість вузлів мережі, необхідні значення в секунду (vps) і сумістність (актуальний/застарілий/не підтримується). Повертає JSON."
 
 #: include/classes/data/CItemData.php:1126
 msgid "List of block devices and their type. Returns JSON"
-msgstr ""
+msgstr "Перелік блокових пристроїв та їх тип. Повертає JSON"
 
 #: include/classes/data/CItemData.php:1034
 msgid "List of detected CPUs/CPU cores. Returns JSON"
-msgstr ""
+msgstr "Список виявлених CPU/ядер CPU. Повертає JSON"
 
 #: include/classes/data/CItemData.php:1142
 msgid "List of directory entries, recursively. Returns JSON"
-msgstr ""
+msgstr "Список записів каталогу, рекурсивно. Повертає JSON"
 
 #: include/classes/data/CItemData.php:1194
 msgid "List of mounted filesystems and their types. Returns JSON"
-msgstr ""
+msgstr "Список змонтованих файлових систем та їх типи. Повертає JSON"
 
 #: include/classes/data/CItemData.php:1198
 msgid "List of mounted filesystems, their types, disk space and inode statistics. Returns JSON"
-msgstr ""
+msgstr "Список змонтованих файлових систем, їх типи, дисковий простір і статистика inode. Повертає JSON"
 
 #: include/classes/data/CItemData.php:922
 msgid "List of network interfaces. Returns JSON"
-msgstr ""
+msgstr "Список мережевих інтерфейсів. Повертає JSON"
 
 #: include/classes/data/CItemData.php:990
 msgid "List of object instances of Windows performance counters, discovered using object names in English. Returns JSON"
-msgstr ""
+msgstr "Список екземплярів об’єктів лічильників продуктивності Windows, виявлених за допомогою назв об’єктів англійською мовою. Повертає JSON"
 
 #: include/classes/data/CItemData.php:986
 msgid "List of object instances of Windows performance counters. Returns JSON"
@@ -12446,7 +12493,7 @@ msgstr "Локальний"
 
 #: include/classes/widgets/fields/CWidgetFieldTimeZone.php:58
 msgid "Local default"
-msgstr ""
+msgstr "Локальне за замовчуванням"
 
 #: include/classes/screens/CScreenHistory.php:267
 #: include/classes/widgets/forms/CWidgetFormClock.php:32
@@ -12550,7 +12597,7 @@ msgstr "Пн"
 #: include/func.inc.php:592 jsLoader.php:226
 msgctxt "month short"
 msgid "M"
-msgstr ""
+msgstr "М"
 
 #: include/hosts.inc.php:154 include/views/inventory.host.list.php:93
 msgid "MAC address A"
@@ -12565,7 +12612,7 @@ msgstr "MAC адреса B"
 #: include/views/js/item.preprocessing.js.php:178
 #: include/views/js/item.preprocessing.js.php:224
 msgid "MAC from Hex-STRING"
-msgstr ""
+msgstr "MAC з Hex-STRING"
 
 #: include/hosts.inc.php:33
 msgid "MD2"
@@ -12656,9 +12703,9 @@ msgstr "Період обслуговування створено"
 #: app/controllers/CControllerMaintenanceDelete.php:61
 msgid "Maintenance period deleted"
 msgid_plural "Maintenance periods deleted"
-msgstr[0] ""
-msgstr[1] ""
-msgstr[2] ""
+msgstr[0] "Період обслуговування видалено"
+msgstr[1] "Періоди обслуговування видалено"
+msgstr[2] "Періоди обслуговування видалено"
 
 #: app/views/popup.maintenance.period.php:162
 msgid "Maintenance period length"
@@ -13231,7 +13278,7 @@ msgstr "Метод не знайдено."
 
 #: include/httptest.inc.php:399
 msgid "Microsoft Edge"
-msgstr ""
+msgstr "Microsoft Edge"
 
 #: include/classes/widgets/forms/CWidgetFormItem.php:107
 #: include/classes/widgets/forms/CWidgetFormItem.php:188
@@ -13251,7 +13298,7 @@ msgstr "Мін"
 
 #: app/views/administration.authentication.edit.php:39
 msgid "Minimum password length"
-msgstr ""
+msgstr "Мінімальна довжина пароля"
 
 #: app/partials/administration.system.info.php:144
 #, c-format
@@ -13261,12 +13308,12 @@ msgstr "Мінімально потрібна версія %1$s бази дан�
 #: include/classes/setup/CFrontendSetup.php:124
 #, c-format
 msgid "Minimum required PHP memory limit is %1$s (configuration option \"memory_limit\")."
-msgstr ""
+msgstr "Мінімально необхідний об'єм пам'яті в PHP - %1$s (параметр конфігурації \"memory_limit\")."
 
 #: include/classes/setup/CFrontendSetup.php:162
 #, c-format
 msgid "Minimum required PHP upload filesize is %1$s (configuration option \"upload_max_filesize\")."
-msgstr ""
+msgstr "Мінімально необхідний розмір файлу, який завантажується в PHP - %1$s (параметр конфігурації \"upload_max_filesize\")."
 
 #: include/classes/setup/CFrontendSetup.php:106
 #, c-format
@@ -13276,7 +13323,7 @@ msgstr "Мінімально потрібна версія PHP - %1$s."
 #: app/views/administration.housekeeping.edit.php:175
 #, c-format
 msgid "Minimum required TimescaleDB version is %1$s."
-msgstr ""
+msgstr "Мінімально необхідна версія TimescaleDB - %1$s."
 
 #: include/classes/setup/CFrontendSetup.php:193
 #, c-format
@@ -13381,6 +13428,13 @@ msgstr[0] "Модуль видалено: %1$s."
 msgstr[1] "Модуля видалено: %1$s."
 msgstr[2] "Модулів видалено: %1$s."
 
+#: app/controllers/CControllerModuleUpdate.php:132
+msgid "Module disabled"
+msgid_plural "Modules disabled"
+msgstr[0] ""
+msgstr[1] ""
+msgstr[2] ""
+
 #: app/controllers/CControllerModuleUpdate.php:150
 #, c-format
 msgid "Module disabled: %1$s."
@@ -13389,6 +13443,13 @@ msgstr[0] "Модуль деактивовано: %1$s."
 msgstr[1] "Модуля деактивовано: %1$s."
 msgstr[2] "Модулів деактивовано: %1$s."
 
+#: app/controllers/CControllerModuleUpdate.php:129
+msgid "Module enabled"
+msgid_plural "Modules enabled"
+msgstr[0] ""
+msgstr[1] ""
+msgstr[2] ""
+
 #: app/controllers/CControllerModuleUpdate.php:145
 #, c-format
 msgid "Module enabled: %1$s."
@@ -13396,6 +13457,10 @@ msgid_plural "Modules enabled: %1$s."
 msgstr[0] "Модуль активовано: %1$s."
 msgstr[1] "Модулю активовано: %1$s."
 msgstr[2] "Модулів активовано: %1$s."
+
+#: app/controllers/CControllerModuleUpdate.php:126
+msgid "Module updated"
+msgstr ""
 
 #: app/controllers/CControllerModuleUpdate.php:142
 #, c-format
@@ -14592,6 +14657,11 @@ msgstr "Не успадковані елементи дані"
 #: include/views/configuration.host.discovery.list.php:162
 msgid "Not supported"
 msgstr "Не підтримується"
+
+#: app/views/administration.miscconfig.edit.php:138
+#, c-format
+msgid "Note that %1$s or %2$s will be regarded as hostnames if used without single quotes."
+msgstr ""
 
 #: include/hosts.inc.php:229
 msgid "Notes"
@@ -21203,6 +21273,10 @@ msgstr "Доступний/Недоступний"
 msgid "Use %{ref} in group filter to reference value of this user attribute."
 msgstr ""
 
+#: app/views/administration.miscconfig.edit.php:123
+msgid "Use X-Frame-Options HTTP header"
+msgstr ""
+
 #: app/partials/configuration.host.interface.row.php:194
 msgid "Use bulk requests"
 msgstr "Використовувати масові запити"
@@ -22947,6 +23021,10 @@ msgstr "Вісь X"
 msgid "X-Frame-Options HTTP header"
 msgstr ""
 
+#: app/views/administration.miscconfig.edit.php:125
+msgid "X-Frame-Options HTTP header supported values:"
+msgstr ""
+
 #: include/views/js/monitoring.sysmaps.js.php:448
 msgid "X1"
 msgstr "X1"
@@ -23388,6 +23466,11 @@ msgstr "очікується відносний час"
 
 #: app/views/administration.authentication.edit.php:86
 msgid "a special character"
+msgstr ""
+
+#: app/views/administration.miscconfig.edit.php:133
+#, c-format
+msgid "a string of space-separated hostnames; adding %1$s to the list allows the page to be displayed in a frame on the same origin as the page itself"
 msgstr ""
 
 #: include/classes/validators/CApiInputValidator.php:2530
