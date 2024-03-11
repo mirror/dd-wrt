@@ -32,7 +32,9 @@
 #ifdef DEBUG
 #define DPRINTF(fmt, ...) fprintf(stderr, "%s(%d): " fmt, __func__, __LINE__, ##__VA_ARGS__)
 #else
-#define DPRINTF(fmt, ...) do {} while (0)
+#define DPRINTF(fmt, ...) \
+	do {              \
+	} while (0)
 #endif
 
 static struct nl_sock *handle;
@@ -42,24 +44,20 @@ static struct nlattr *tb[SWITCH_ATTR_MAX + 1];
 static int refcount = 0;
 
 static struct nla_policy port_policy[SWITCH_ATTR_MAX] = {
-	[SWITCH_PORT_ID] = {.type = NLA_U32 },
-	[SWITCH_PORT_FLAG_TAGGED] = {.type = NLA_FLAG },
+	[SWITCH_PORT_ID] = { .type = NLA_U32 },
+	[SWITCH_PORT_FLAG_TAGGED] = { .type = NLA_FLAG },
 };
 
 static struct nla_policy portmap_policy[SWITCH_PORTMAP_MAX] = {
-	[SWITCH_PORTMAP_SEGMENT] = {.type = NLA_STRING },
-	[SWITCH_PORTMAP_VIRT] = {.type = NLA_U32 },
+	[SWITCH_PORTMAP_SEGMENT] = { .type = NLA_STRING },
+	[SWITCH_PORTMAP_VIRT] = { .type = NLA_U32 },
 };
 
 static struct nla_policy link_policy[SWITCH_LINK_ATTR_MAX] = {
-	[SWITCH_LINK_FLAG_LINK] = {.type = NLA_FLAG },
-	[SWITCH_LINK_FLAG_DUPLEX] = {.type = NLA_FLAG },
-	[SWITCH_LINK_FLAG_ANEG] = {.type = NLA_FLAG },
-	[SWITCH_LINK_FLAG_RX_FLOW] = {.type = NLA_FLAG },
-	[SWITCH_LINK_FLAG_TX_FLOW] = {.type = NLA_FLAG },
-	[SWITCH_LINK_SPEED] = {.type = NLA_U32 },
-	[SWITCH_LINK_FLAG_EEE_100BASET] = {.type = NLA_FLAG },
-	[SWITCH_LINK_FLAG_EEE_1000BASET] = {.type = NLA_FLAG },
+	[SWITCH_LINK_FLAG_LINK] = { .type = NLA_FLAG },		[SWITCH_LINK_FLAG_DUPLEX] = { .type = NLA_FLAG },
+	[SWITCH_LINK_FLAG_ANEG] = { .type = NLA_FLAG },		[SWITCH_LINK_FLAG_RX_FLOW] = { .type = NLA_FLAG },
+	[SWITCH_LINK_FLAG_TX_FLOW] = { .type = NLA_FLAG },	[SWITCH_LINK_SPEED] = { .type = NLA_U32 },
+	[SWITCH_LINK_FLAG_EEE_100BASET] = { .type = NLA_FLAG }, [SWITCH_LINK_FLAG_EEE_1000BASET] = { .type = NLA_FLAG },
 };
 
 static inline void *swlib_alloc(size_t size)
@@ -930,7 +928,6 @@ int has_igmpsnooping(void)
 		if (!strcmp(attr->name, "igmp_snooping")) {
 			swlib_free_all(dev);
 			return 1;
-
 		}
 		attr = attr->next;
 	}

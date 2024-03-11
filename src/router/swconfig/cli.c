@@ -74,7 +74,8 @@ static void print_attrs(const struct switch_attr *attr)
 
 static void list_attributes(struct switch_dev *dev)
 {
-	fprintf(stdout, "%s: %s(%s), ports: %d (cpu @ %d), vlans: %d\n", dev->dev_name, dev->alias, dev->name, dev->ports, dev->cpu_port, dev->vlans);
+	fprintf(stdout, "%s: %s(%s), ports: %d (cpu @ %d), vlans: %d\n", dev->dev_name, dev->alias, dev->name, dev->ports,
+		dev->cpu_port, dev->vlans);
 	fprintf(stdout, "     --switch\n");
 	print_attrs(dev->ops);
 	fprintf(stdout, "     --vlan\n");
@@ -113,18 +114,17 @@ static void print_attr_val(const struct switch_attr *attr, const struct switch_v
 		break;
 	case SWITCH_TYPE_PORTS:
 		for (i = 0; i < val->len; i++) {
-			fprintf(stdout, "%d%s ", val->value.ports[i].id, (val->value.ports[i].flags & SWLIB_PORT_FLAG_TAGGED) ? "t" : "");
+			fprintf(stdout, "%d%s ", val->value.ports[i].id,
+				(val->value.ports[i].flags & SWLIB_PORT_FLAG_TAGGED) ? "t" : "");
 		}
 		break;
 	case SWITCH_TYPE_LINK:
 		link = val->value.link;
 		if (link->link)
-			fprintf(stdout, "port:%d link:up speed:%s %s-duplex %s%s%s%s%s",
-				val->port_vlan,
-				speed_str(link->speed),
-				link->duplex ? "full" : "half",
-				link->tx_flow ? "txflow " : "",
-				link->rx_flow ? "rxflow " : "", link->eee & SWLIB_LINK_FLAG_EEE_100BASET ? "eee100 " : "", link->eee & SWLIB_LINK_FLAG_EEE_1000BASET ? "eee1000 " : "", link->aneg ? "auto" : "");
+			fprintf(stdout, "port:%d link:up speed:%s %s-duplex %s%s%s%s%s", val->port_vlan, speed_str(link->speed),
+				link->duplex ? "full" : "half", link->tx_flow ? "txflow " : "", link->rx_flow ? "rxflow " : "",
+				link->eee & SWLIB_LINK_FLAG_EEE_100BASET ? "eee100 " : "",
+				link->eee & SWLIB_LINK_FLAG_EEE_1000BASET ? "eee1000 " : "", link->aneg ? "auto" : "");
 		else
 			fprintf(stdout, "port:%d link:down", val->port_vlan);
 		break;
@@ -296,7 +296,8 @@ int main(int argc, char **argv)
 				dev = swlib_connect("rtl8366rb");
 		}
 		if (!dev) {
-			fprintf(stderr, "Failed to connect to the switch. Use the \"list\" command to see which switches are available.\n");
+			fprintf(stderr,
+				"Failed to connect to the switch. Use the \"list\" command to see which switches are available.\n");
 			return 1;
 		}
 	}
@@ -345,9 +346,9 @@ int main(int argc, char **argv)
 		print_attr_val(a, &val);
 		putchar('\n');
 		break;
-//      case CMD_LOAD:
-//              swconfig_load_uci(dev, ckey);
-//              break;
+		//      case CMD_LOAD:
+		//              swconfig_load_uci(dev, ckey);
+		//              break;
 	case CMD_HELP:
 		list_attributes(dev);
 		break;
