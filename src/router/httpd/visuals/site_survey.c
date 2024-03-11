@@ -270,11 +270,10 @@ EJ_VISIBLE void ej_dump_site_survey(webs_t wp, int argc, char_t **argv)
 	char speedbuf[32];
 	struct site_survey_list *site_survey_lists;
 	name = argv[0];
-	
 
 	site_survey_lists = open_site_survey(name);
 	if (!site_survey_lists)
-	    return;
+		return;
 	for (i = 0; i < SITE_SURVEY_NUM; i++) {
 		char rates[64];
 

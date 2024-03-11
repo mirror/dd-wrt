@@ -37,13 +37,11 @@ EJ_VISIBLE void ej_show_bondings(webs_t wp, int argc, char_t **argv)
 	show_caption_pp(wp, NULL, "networking.bonding", "<legend>", "</legend>\n");
 	websWrite(wp, "<div class=\"setting\">\n");
 	show_caption(wp, "label", "networking.bondtype", NULL);
-	showOptions(wp, "bonding_type",
-		    "balance-rr active-backup balance-xor broadcast 802.3ad balance-tlb balance-alb",
+	showOptions(wp, "bonding_type", "balance-rr active-backup balance-xor broadcast 802.3ad balance-tlb balance-alb",
 		    nvram_default_get("bonding_type", "balance-rr"));
 
 	show_caption_pp(wp, NULL, "networking.bondpolicy", "&nbsp;", "&nbsp;");
-	showOptions(wp, "bonding_policy",
-		    "layer2 layer2+3 layer3+4 encap2+3 encap3+4",
+	showOptions(wp, "bonding_policy", "layer2 layer2+3 layer3+4 encap2+3 encap3+4",
 		    nvram_default_get("bonding_policy", "layer2"));
 	show_caption_pp(wp, NULL, "networking.bondifaces", "&nbsp;", "&nbsp;");
 	websWrite(wp, "<input class=\"num\" name=\"bonding_number\" size=\"5\" value=\"%s\" />\n",

@@ -595,7 +595,7 @@ EJ_VISIBLE void ej_get_high_5ghz(webs_t wp, int argc, char_t **argv)
 		websWrite(wp, "6395"); // need to find out the real maximum which is way higher than 7 ghz
 		return;
 	}
-		
+
 	websWrite(wp, "6100");
 }
 
