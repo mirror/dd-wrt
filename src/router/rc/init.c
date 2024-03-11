@@ -90,8 +90,7 @@ static void set_term(int fd)
 	/* 
 	 * local modes 
 	 */
-	tty.c_lflag = ISIG | ICANON | ECHO | ECHOE | ECHOK | ECHOCTL | ECHOKE |
-		      IEXTEN;
+	tty.c_lflag = ISIG | ICANON | ECHO | ECHOE | ECHOK | ECHOCTL | ECHOKE | IEXTEN;
 
 	tcsetattr(fd, TCSANOW, &tty);
 }
@@ -192,8 +191,7 @@ pid_t ddrun_shell(int timeout, int nowait)
 #ifdef HAVE_REGISTER
 		else {
 			envp[6] = "SHELL=/sbin/regshell";
-			execve("/sbin/regshell",
-			       (char *[]){ "/sbin/regshell", NULL }, envp);
+			execve("/sbin/regshell", (char *[]){ "/sbin/regshell", NULL }, envp);
 		}
 #endif
 
@@ -221,8 +219,7 @@ static void unmount_fs(void)
 	int a, b;
 	writeprocsys("vm/drop_caches", "3"); // flush fs cache
 	FILE *fp = fopen("/proc/mounts", "rb");
-	while (!feof(fp) && fscanf(fp, "%s %s %s %s %d %d", dev, mpoint, fstype,
-				   flags, &a, &b) == 6) {
+	while (!feof(fp) && fscanf(fp, "%s %s %s %s %d %d", dev, mpoint, fstype, flags, &a, &b) == 6) {
 		if (!strcmp(fstype, "proc"))
 			continue;
 		if (!strcmp(fstype, "sysfs"))
@@ -237,8 +234,7 @@ static void unmount_fs(void)
 			continue;
 		if (!strcmp(fstype, "usbfs"))
 			continue;
-#if defined(HAVE_X86) || defined(HAVE_VENTANA) || defined(HAVE_NEWPORT) || \
-	defined(HAVE_OPENRISC)
+#if defined(HAVE_X86) || defined(HAVE_VENTANA) || defined(HAVE_NEWPORT) || defined(HAVE_OPENRISC)
 		if (!strcmp(mpoint, "/usr/local")) {
 			continue;
 		}
@@ -270,9 +266,7 @@ void shutdown_system(void)
 {
 	int sig;
 	int deadcount = 0;
-	while (pidof("async_commit") > 0 &&
-	       (deadcount++) <
-		       10) // wait for any process of this type to finish
+	while (pidof("async_commit") > 0 && (deadcount++) < 10) // wait for any process of this type to finish
 	{
 		dd_loginfo("init", "wait for nvram write to finish\n");
 		sleep(1);
@@ -294,9 +288,7 @@ void shutdown_system(void)
 		dd_loginfo("init", "Sending SIGTERM to all processes\n");
 		kill(-1, SIGTERM);
 #ifdef HAVE_TRANSMISSION
-		dd_loginfo(
-			"init",
-			"Waiting some seconds to give programs time to flush\n");
+		dd_loginfo("init", "Waiting some seconds to give programs time to flush\n");
 		sleep(10);
 #endif
 		sync();
@@ -307,16 +299,13 @@ void shutdown_system(void)
 		nvram_seti("end_time", time(NULL));
 		nvram_commit();
 		deadcount = 0;
-		while (pidof("async_commit") > 0 &&
-		       (deadcount++) <
-			       10) // wait for any process of this type to finish
+		while (pidof("async_commit") > 0 && (deadcount++) < 10) // wait for any process of this type to finish
 		{
 			dd_loginfo("init", "wait for nvram write to finish\n");
 			sleep(1);
 		}
 		unmount_fs(); // try to unmount a first time
-#if defined(HAVE_X86) || defined(HAVE_VENTANA) || defined(HAVE_NEWPORT) || \
-	defined(HAVE_OPENRISC)
+#if defined(HAVE_X86) || defined(HAVE_VENTANA) || defined(HAVE_NEWPORT) || defined(HAVE_OPENRISC)
 		eval("mount", "-o", "remount,ro", "/usr/local");
 		eval("mount", "-o", "remount,ro", "/");
 		eval("umount", "-r", "-f", "/usr/local");
@@ -381,13 +370,9 @@ void fatal_signal(int sig)
 	}
 
 	if (message)
-		dd_loginfo("init", "%s....................................\n",
-			   message);
+		dd_loginfo("init", "%s....................................\n", message);
 	else
-		dd_loginfo(
-			"init",
-			"Caught signal %d.......................................\n",
-			sig);
+		dd_loginfo("init", "Caught signal %d.......................................\n", sig);
 
 	shutdown_system();
 
@@ -497,26 +482,17 @@ static void check_bootfails(void)
 	if (nvram_match("no_bootfails", "1")) {
 		failcnt = 0;
 	} else if (!failcnt) {
-		dd_loginfo("init",
-			   "no previous bootfails detected! (all ok)\n");
+		dd_loginfo("init", "no previous bootfails detected! (all ok)\n");
 		failcnt++;
 		nvram_seti("boot_fails", failcnt);
 		nvram_async_commit();
 	} else {
 		if (failcnt < 5)
-			dd_loginfo(
-				"init",
-				"boot failed %d times, will reset after 5 attempts\n",
-				failcnt++);
+			dd_loginfo("init", "boot failed %d times, will reset after 5 attempts\n", failcnt++);
 		if (failcnt > 5)
-			dd_loginfo(
-				"init",
-				"boot still failed after reset. hopeless. do not alter count anymore\n");
+			dd_loginfo("init", "boot still failed after reset. hopeless. do not alter count anymore\n");
 		if (failcnt == 5) {
-			dd_loginfo(
-				"init",
-				"boot failed %d times, do reset and reboot\n",
-				failcnt++);
+			dd_loginfo("init", "boot failed %d times, do reset and reboot\n", failcnt++);
 			char *s_ip = nvram_safe_get("lan_ipaddr");
 			char *s_nm = nvram_safe_get("lan_netmask");
 			char *s_gw = nvram_safe_get("lan_gateway");
@@ -536,14 +512,12 @@ static void check_bootfails(void)
 				// to avoid security breaches by controling the main fuse of a building, we disable wifi by default
 				int i = 0;
 				while (ifcount--) {
-					nvram_nset("disabled",
-						   "wlan%d_net_mode", i);
+					nvram_nset("disabled", "wlan%d_net_mode", i);
 					i++;
 				}
 				i = 0;
 				while (wlifcount--) {
-					nvram_nset("disabled", "wl%d_net_mode",
-						   i);
+					nvram_nset("disabled", "wl%d_net_mode", i);
 					i++;
 				}
 			}
@@ -598,8 +572,7 @@ int main(int argc, char **argv)
 	start_service("devinit"); //init /dev /proc etc.
 	writeproc("/proc/sys/kernel/sysrq", "1");
 	check_bootfails();
-#if defined(HAVE_X86) || defined(HAVE_NEWPORT) || \
-	(defined(HAVE_RB600) && !defined(HAVE_WDR4900)) //special treatment
+#if defined(HAVE_X86) || defined(HAVE_NEWPORT) || (defined(HAVE_RB600) && !defined(HAVE_WDR4900)) //special treatment
 	FILE *out = fopen("/tmp/.nvram_done", "wb");
 	putc(1, out);
 	fclose(out);
@@ -663,8 +636,7 @@ int main(int argc, char **argv)
 			       "/sbin:/bin:/usr/sbin:/usr/bin:/jffs/sbin:/jffs/bin:/jffs/usr/sbin:/jffs/usr/bin:/mmc/sbin:/mmc/bin:/mmc/usr/sbin:/mmc/usr/bin:/opt/sbin:/opt/bin:/opt/usr/sbin:/opt/usr/bin",
 			       1);
 			setenv("LD_LIBRARY_PATH",
-			       "/lib:/usr/lib:/jffs/lib:/jffs/usr/lib:/mmc/lib:/mmc/usr/lib:/opt/lib:/opt/usr/lib",
-			       1);
+			       "/lib:/usr/lib:/jffs/lib:/jffs/usr/lib:/mmc/lib:/mmc/usr/lib:/opt/lib:/opt/usr/lib", 1);
 #ifdef HAVE_REGISTER
 			if (isregistered_real())
 #endif
@@ -687,8 +659,7 @@ int main(int argc, char **argv)
 			       "/sbin:/bin:/usr/sbin:/usr/bin:/jffs/sbin:/jffs/bin:/jffs/usr/sbin:/jffs/usr/bin:/mmc/sbin:/mmc/bin:/mmc/usr/sbin:/mmc/usr/bin:/opt/sbin:/opt/bin:/opt/usr/sbin:/opt/usr/bin",
 			       1);
 			setenv("LD_LIBRARY_PATH",
-			       "/lib:/usr/lib:/jffs/lib:/jffs/usr/lib:/mmc/lib:/mmc/usr/lib:/opt/lib:/opt/usr/lib",
-			       1);
+			       "/lib:/usr/lib:/jffs/lib:/jffs/usr/lib:/mmc/lib:/mmc/usr/lib:/opt/lib:/opt/usr/lib", 1);
 			update_timezone();
 			start_service_force("init_start");
 			reset_bootfails();
@@ -709,8 +680,7 @@ int main(int argc, char **argv)
 			 * Wait for user input or state change 
 			 */
 			while (signalled == -1) {
-				if (!noconsole &&
-				    (!shell_pid || kill(shell_pid, 0) != 0))
+				if (!noconsole && (!shell_pid || kill(shell_pid, 0) != 0))
 					shell_pid = ddrun_shell(0, 1);
 				else
 					sigsuspend(&sigset);

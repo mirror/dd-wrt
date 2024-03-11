@@ -53,8 +53,7 @@ int main(int argc, char **argv)
 		_exit(0);
 	}
 
-	unsigned int *
-		radiotime; // 4 byte int number (24 bits from gui + 1 bit for midnight)
+	unsigned int *radiotime; // 4 byte int number (24 bits from gui + 1 bit for midnight)
 	int cnt = getdevicecount();
 	unsigned char *firsttime, *needchange;
 	radiotime = malloc(sizeof(unsigned int *) * cnt);
@@ -68,34 +67,26 @@ int main(int argc, char **argv)
 
 	do {
 		time(&tloc); // get time in seconds since epoch
-		currtime =
-			localtime(&tloc); // convert seconds to date structure
+		currtime = localtime(&tloc); // convert seconds to date structure
 		if (currtime->tm_year > 100) // ntp time must be set
 		{
 			char radio_timer_enable[32];
 			char radio_on_time[32];
 			int i;
 			for (i = 0; i < cnt; i++) {
-				sprintf(radio_timer_enable,
-					"radio%d_timer_enable", i);
+				sprintf(radio_timer_enable, "radio%d_timer_enable", i);
 				sprintf(radio_on_time, "radio%d_on_time", i);
 
 				if (nvram_matchi(radio_timer_enable, 1)) {
-					radiotime[i] = (unsigned int)strtol(
-						nvram_safe_get(radio_on_time),
-						NULL,
-						2); // convert  binary  string  to  long  int
-					radiotime[i] +=
-						((radiotime[i] & 1)
-						 << 24); // duplicate 23-24h bit to the start to take care of midnight
-					radiotime[i] =
-						(radiotime[i] >>
-						 (24 - currtime->tm_hour - 1)) &
-						3; // get pattern only (last two bits)
+					radiotime[i] = (unsigned int)strtol(nvram_safe_get(radio_on_time), NULL,
+									    2); // convert  binary  string  to  long  int
+					radiotime[i] += ((radiotime[i] & 1)
+							 << 24); // duplicate 23-24h bit to the start to take care of midnight
+					radiotime[i] = (radiotime[i] >> (24 - currtime->tm_hour - 1)) &
+						       3; // get pattern only (last two bits)
 				}
 				if (currtime->tm_min != 0)
-					needchange[i] =
-						1; // prevet o be executed more than once when min == 0
+					needchange[i] = 1; // prevet o be executed more than once when min == 0
 				if (firsttime[i]) {
 					// first time change
 					switch (radiotime[i]) {
@@ -111,29 +102,21 @@ int main(int argc, char **argv)
 				if (nvram_matchi(radio_timer_enable, 0))
 					radiotime[i] = 0;
 				/* change when min = 0  or firstime */
-				if (((needchange[i]) &&
-				     currtime->tm_min == 0) ||
-				    (firsttime[i])) {
+				if (((needchange[i]) && currtime->tm_min == 0) || (firsttime[i])) {
 					switch (radiotime[i]) {
 					case 0:
 						break; // do nothing, radio0 timer disabled
 					case 1: // 01 - turn radio on
 						if (!firsttime[i]) {
 							//on first time call the radio is already on, no need to reinit it a second time
-							syslog(LOG_DEBUG,
-							       "Turning radio %d on\n",
-							       i);
+							syslog(LOG_DEBUG, "Turning radio %d on\n", i);
 							char on[32];
-							sprintf(on,
-								"radio_on_%d",
-								i);
+							sprintf(on, "radio_on_%d", i);
 							start_service_force(on);
 						}
 						break;
 					case 2: // 10 - turn radio off
-						syslog(LOG_DEBUG,
-						       "Turning radio %d off\n",
-						       i);
+						syslog(LOG_DEBUG, "Turning radio %d off\n", i);
 						char off[32];
 						sprintf(off, "radio_off_%d", i);
 						start_service_force(off);
@@ -143,12 +126,10 @@ int main(int argc, char **argv)
 						eval("ifconfig", dev, "down");
 						char *next;
 						char var[80];
-						char *vifs = nvram_nget(
-							"wlan%d_vifs", i);
+						char *vifs = nvram_nget("wlan%d_vifs", i);
 						foreach(var, vifs, next)
 						{
-							eval("ifconfig", var,
-							     "down");
+							eval("ifconfig", var, "down");
 						}
 #endif
 						break;

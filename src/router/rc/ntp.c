@@ -64,9 +64,7 @@ static void sync_daemons(void)
 	int i;
 	for (i = 0; i < sizeof(service) / sizeof(struct syncservice); i++) {
 		if (nvram_matchi(service[i].nvram, 1)) {
-			dd_syslog(LOG_DEBUG,
-				  "Restarting %s (time sync change)\n",
-				  service[i].service);
+			dd_syslog(LOG_DEBUG, "Restarting %s (time sync change)\n", service[i].service);
 			eval("service", service[i].service, "restart");
 		}
 	}
@@ -92,24 +90,20 @@ static int do_ntp(void) // called from ntp_main and
 
 	char *argv[] = { "ntpclient", servers, NULL };
 	if (_evalpid(argv, NULL, 20, NULL) != 0) {
-		dd_syslog(LOG_ERR, "cyclic NTP Update failed (servers %s)\n",
-			  servers);
+		dd_syslog(LOG_ERR, "cyclic NTP Update failed (servers %s)\n", servers);
 		return 1;
 	}
 	if (nvram_match("ntp_done", "0"))
 		nvram_seti("start_time", time(NULL));
 	nvram_set("ntp_done", "1");
 
-#if defined(HAVE_VENTANA) || defined(HAVE_NEWPORT) || defined(HAVE_LAGUNA) || \
-	defined(HAVE_STORM) || defined(HAVE_PERU) ||                          \
+#if defined(HAVE_VENTANA) || defined(HAVE_NEWPORT) || defined(HAVE_LAGUNA) || defined(HAVE_STORM) || defined(HAVE_PERU) || \
 	(defined(HAVE_GATEWORX) && !defined(HAVE_NOP8670))
 	eval("hwclock", "-w", "-u");
 #endif
 	gettimeofday(&then, NULL);
-	dd_syslog(LOG_INFO, "Cyclic NTP Update success (servers %s)\n",
-		  servers);
-	dd_syslog(LOG_INFO, "Local timer delta is %ld\n",
-		  (then.tv_sec - now.tv_sec));
+	dd_syslog(LOG_INFO, "Cyclic NTP Update success (servers %s)\n", servers);
+	dd_syslog(LOG_INFO, "Local timer delta is %ld\n", (then.tv_sec - now.tv_sec));
 	if ((abs(now.tv_sec - then.tv_sec) > 100000000)) {
 		int seq;
 		//              for (seq = 1; seq <= NR_RULES; seq++)

@@ -150,16 +150,14 @@ static int send_garp(char *iface)
 
 	while (n_garps--) {
 		setup_garp_broadcast(arp, iface_paddr);
-		rc = sendto(sk, pkt, ARP_HLEN, 0, (struct sockaddr *)&link,
-			    sizeof(struct sockaddr_ll));
+		rc = sendto(sk, pkt, ARP_HLEN, 0, (struct sockaddr *)&link, sizeof(struct sockaddr_ll));
 		if (unlikely(rc == -1)) {
 			perror("sendto");
 			goto out;
 		}
 
 		setup_garp_reply(arp, iface_hw, iface_paddr);
-		rc = sendto(sk, pkt, ARP_HLEN, 0, (struct sockaddr *)&link,
-			    sizeof(struct sockaddr_ll));
+		rc = sendto(sk, pkt, ARP_HLEN, 0, (struct sockaddr *)&link, sizeof(struct sockaddr_ll));
 		if (unlikely(rc == -1)) {
 			perror("sendto");
 			goto out;

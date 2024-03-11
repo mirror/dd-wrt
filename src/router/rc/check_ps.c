@@ -53,8 +53,7 @@ static int search_process(char *name, int count)
 static int check_igmprt(void)
 {
 	char wan_if_buffer[33];
-	if (nvram_match("wan_proto", "disabled") ||
-	    !*(safe_get_wan_face(wan_if_buffer))) // todo: add upstream
+	if (nvram_match("wan_proto", "disabled") || !*(safe_get_wan_face(wan_if_buffer))) // todo: add upstream
 		return 0;
 	return !search_process("igmprt", 1);
 }
@@ -84,8 +83,7 @@ static int check_ddns(void)
 {
 	char wan_if_buffer[33];
 
-	if (nvram_match("ddns_enable", "0") || nvram_invmatch("wanup", "1") ||
-	    nvram_match("wan_proto", "disabled") ||
+	if (nvram_match("ddns_enable", "0") || nvram_invmatch("wanup", "1") || nvram_match("wan_proto", "disabled") ||
 	    !*(safe_get_wan_face(wan_if_buffer))) // todo: add upstream
 		return 0;
 	return !search_process("inadyn", 1);
@@ -100,8 +98,7 @@ static int check_radvd(void)
 
 static int check_httpd(void)
 {
-	if (nvram_match("http_enable", "0") &&
-	    nvram_match("https_enable", "0")) // todo: add upstream
+	if (nvram_match("http_enable", "0") && nvram_match("https_enable", "0")) // todo: add upstream
 		return 0;
 	return !search_process("httpd", 1);
 }
@@ -112,8 +109,7 @@ static int check_antaira_agent(void)
 	char wan_if_buffer[33];
 	if (!nvram_invmatchi("antaira_agent_enable", 0))
 		return;
-	if (nvram_match("wan_proto", "disabled") ||
-	    !*(safe_get_wan_face(wan_if_buffer))) // todo: add upstream
+	if (nvram_match("wan_proto", "disabled") || !*(safe_get_wan_face(wan_if_buffer))) // todo: add upstream
 		return 0;
 	return !search_process("antaira-quick-vpn-agent", 1);
 }
@@ -127,8 +123,7 @@ struct mon mons[] = {
 	{ "upnp", M_LAN, "upnp_enable", "1", NULL, NULL, NULL },
 #endif
 	{ "process_monitor", M_LAN, NULL, NULL, NULL, NULL, NULL },
-	{ "httpd", M_LAN, "http_enable", "1", "https_enable", "1",
-	  &check_httpd },
+	{ "httpd", M_LAN, "http_enable", "1", "https_enable", "1", &check_httpd },
 	{ "dnsmasq", M_LAN, "dnsmasq_enable", "1", NULL, NULL, NULL },
 #ifdef HAVE_SMARTDNS
 	{ "smartdns", M_WAN, "smartdns", "1", NULL, NULL, NULL },
@@ -159,8 +154,7 @@ struct mon mons[] = {
 	{ "igmprt", M_WAN, "block_multicast", "0", NULL, NULL, &check_igmprt },
 #endif
 #ifdef HAVE_TRANSMISSION
-	{ "transmission", M_LAN, "transmission_enable", "1", NULL, NULL,
-	  &check_transmission },
+	{ "transmission", M_LAN, "transmission_enable", "1", NULL, NULL, &check_transmission },
 #endif
 //#ifdef HAVE_PLEX
 //	{ "plex", M_LAN, "plex_enable", "1", NULL, NULL, &check_plex },
@@ -172,8 +166,7 @@ struct mon mons[] = {
 #endif
 	{ "ddns", M_WAN, NULL, NULL, NULL, NULL, &check_ddns },
 #ifdef HAVE_ANTAIRA_AGENT
-	{ "antaira_agent", M_LAN, "antaira_agent_enable", "1", NULL, NULL,
-	  &check_antaira_agent },
+	{ "antaira_agent", M_LAN, "antaira_agent_enable", "1", NULL, NULL, &check_antaira_agent },
 #endif
 	{ NULL, 0, NULL, NULL, NULL, NULL }
 };
@@ -216,8 +209,7 @@ static void checknas(void) // for broadcom v24 only
 /* 
 		 * software wlan led control 
 		 */
-static void
-softcontrol_wlan_led(void) // done in watchdog.c for non-micro builds.
+static void softcontrol_wlan_led(void) // done in watchdog.c for non-micro builds.
 {
 #if defined(HAVE_MICRO) && !defined(HAVE_ADM5120) && !defined(HAVE_WRK54G)
 	int brand;
@@ -241,16 +233,12 @@ softcontrol_wlan_led(void) // done in watchdog.c for non-micro builds.
 			radiostate1 = get_radiostate("wlan1");
 	}
 #else
-	wl_ioctl(get_wl_instance_name(0), WLC_GET_RADIO, &radiostate0,
-		 sizeof(int));
+	wl_ioctl(get_wl_instance_name(0), WLC_GET_RADIO, &radiostate0, sizeof(int));
 	if (cnt == 2)
-		wl_ioctl(get_wl_instance_name(1), WLC_GET_RADIO, &radiostate1,
-			 sizeof(int));
+		wl_ioctl(get_wl_instance_name(1), WLC_GET_RADIO, &radiostate1, sizeof(int));
 	if (cnt == 3) {
-		wl_ioctl(get_wl_instance_name(1), WLC_GET_RADIO, &radiostate1,
-			 sizeof(int));
-		wl_ioctl(get_wl_instance_name(2), WLC_GET_RADIO, &radiostate2,
-			 sizeof(int));
+		wl_ioctl(get_wl_instance_name(1), WLC_GET_RADIO, &radiostate1, sizeof(int));
+		wl_ioctl(get_wl_instance_name(2), WLC_GET_RADIO, &radiostate2, sizeof(int));
 	}
 #endif
 
@@ -335,9 +323,7 @@ static void checkupgrade(void)
 		fclose(in);
 		// prevent double call of
 		// this
-		dd_loginfo(
-			"upgrade",
-			"found firmware upgrade, flashing now, but we will wait for another 30 seconds\n");
+		dd_loginfo("upgrade", "found firmware upgrade, flashing now, but we will wait for another 30 seconds\n");
 again:;
 		sleep(30);
 		in = fopen("/tmp/firmware.bin", "rb");
@@ -351,9 +337,7 @@ again:;
 		unlink("/tmp/cron.d/check_ps"); // deleting cron file to
 		if (newlen != len) {
 			len = newlen;
-			dd_loginfo(
-				"upgrade",
-				"size has changed, wait 30 seconds and try again\n");
+			dd_loginfo("upgrade", "size has changed, wait 30 seconds and try again\n");
 			goto again;
 		}
 #if defined(HAVE_WHRAG108) || defined(HAVE_TW6600) || defined(HAVE_LS5)
@@ -367,15 +351,13 @@ again:;
 		char *d = getdisc();
 		sprintf(disk, "/dev/%s", d);
 		free(d);
-		eval("update-prepare.sh", "/tmp/firmware.bin", disk, "usefile",
-		     "reboot", "usedd");
+		eval("update-prepare.sh", "/tmp/firmware.bin", disk, "usefile", "reboot", "usedd");
 #elif defined(HAVE_VENTANA)
 		eval("mkdir", "-p", "/tmp/new_root");
 		eval("mount", "-n", "-t", "tmpfs", "none", "/tmp/new_root");
 		eval("mkdir", "-p", "/tmp/new_root/tmp");
 		eval("mv", "/tmp/firmware.bin", "/tmp/new_root/tmp");
-		eval("update-prepare.sh", "/tmp/firmware.bin", "rootfs",
-		     "usefile", "reboot");
+		eval("update-prepare.sh", "/tmp/firmware.bin", "rootfs", "usefile", "reboot");
 #elif defined(HAVE_X86) || defined(HAVE_RB600) && !defined(HAVE_WDR4900)
 		eval("mkdir", "-p", "/tmp/new_root");
 		eval("mount", "-n", "-t", "tmpfs", "none", "/tmp/new_root");
@@ -385,8 +367,7 @@ again:;
 		char *d = getdisc();
 		sprintf(disk, "/dev/%s", d);
 		free(d);
-		eval("update-prepare.sh", "/tmp/firmware.bin", disk, "usefile",
-		     "reboot", "usedd");
+		eval("update-prepare.sh", "/tmp/firmware.bin", disk, "usefile", "reboot", "usedd");
 #else
 		eval("fischecksum");
 		eval("write", "/tmp/firmware.bin", "linux");
@@ -428,9 +409,7 @@ static int do_mon(void)
 					continue;
 				}
 			if (!search_process(v->name, count)) {
-				dd_loginfo(
-					v->name,
-					"maybe died, we need to re-exec it\n");
+				dd_loginfo(v->name, "maybe died, we need to re-exec it\n");
 				stop_service(v->name);
 				killall(v->name, SIGKILL);
 				start_service_force_f(v->name);

@@ -39,8 +39,7 @@
 //#define dbG(a,...)
 
 #define dbg(fmt, args...) fprintf(stderr, fmt, ##args)
-#define dbG(fmt, args...) \
-	dbg("%s(0x%04x): " fmt, __FUNCTION__, __LINE__, ##args)
+#define dbG(fmt, args...) dbg("%s(0x%04x): " fmt, __FUNCTION__, __LINE__, ##args)
 
 static void cleanup(void)
 {
@@ -60,8 +59,7 @@ void rpc_parse_nvram_from_httpd(void)
 		return;
 
 	// rpc_qcsapi_set_SSID(WIFINAME, value);
-	rpc_qcsapi_set_SSID_broadcast(WIFINAME,
-				      nvram_default_get("wl1_closed", "0"));
+	rpc_qcsapi_set_SSID_broadcast(WIFINAME, nvram_default_get("wl1_closed", "0"));
 	char *netmode = nvram_safe_get("wl1_net_mode");
 	if ((!strcmp(netmode, "mixed") || !strcmp(netmode, "ac-only")))
 		rpc_qcsapi_set_vht("1");
@@ -83,8 +81,7 @@ void rpc_parse_nvram_from_httpd(void)
 	// rpc_qcsapi_set_bw(value);
 	// rpc_qcsapi_set_channel(value);
 	rpc_qcsapi_set_beacon_type(WIFINAME, nvram_safe_get("wl1_akm"));
-	rpc_qcsapi_set_WPA_encryption_modes(WIFINAME,
-					    nvram_safe_get("wl1_crypto"));
+	rpc_qcsapi_set_WPA_encryption_modes(WIFINAME, nvram_safe_get("wl1_crypto"));
 	rpc_qcsapi_set_key_passphrase(WIFINAME, nvram_safe_get("wl1_wpa_psk"));
 	rpc_qcsapi_set_dtim(nvram_safe_get("wl1_dtim"));
 	rpc_qcsapi_set_beacon_interval(nvram_safe_get("wl1_bcn"));
@@ -192,8 +189,7 @@ QTN_RESET:
 		retval = -1;
 		goto ERROR;
 	} else
-		dbG("Qcsapi qcsapi init takes %ld seconds\n",
-		    uptime() - start_time);
+		dbG("Qcsapi qcsapi init takes %ld seconds\n", uptime() - start_time);
 
 	eval("ifconfig", "br0:2", "down");
 	eval("killall", "tftpd");
@@ -218,16 +214,11 @@ QTN_RESET:
 		qcsapi_mac_addr wl_mac_addr;
 		ret = rpc_qcsapi_interface_get_mac_addr(WIFINAME, &wl_mac_addr);
 		if (ret < 0)
-			dbG("rpc_qcsapi_interface_get_mac_addr, return: %d\n",
-			    ret);
+			dbG("rpc_qcsapi_interface_get_mac_addr, return: %d\n", ret);
 		else {
 			char tmp[32];
-			nvram_set("1:macaddr",
-				  ether_etoa((struct ether_addr *)&wl_mac_addr,
-					     tmp));
-			nvram_set("wl1_hwaddr",
-				  ether_etoa((struct ether_addr *)&wl_mac_addr,
-					     tmp));
+			nvram_set("1:macaddr", ether_etoa((struct ether_addr *)&wl_mac_addr, tmp));
+			nvram_set("wl1_hwaddr", ether_etoa((struct ether_addr *)&wl_mac_addr, tmp));
 		}
 
 		//              rpc_update_wdslist();
@@ -242,8 +233,7 @@ QTN_RESET:
 
 		ret = rpc_qcsapi_wifi_disable_wps(WIFINAME, 1);
 		if (ret < 0)
-			dbG("Qcsapi rpc_qcsapi_wifi_disable_wps %s error, return: %d\n",
-			    WIFINAME, ret);
+			dbG("Qcsapi rpc_qcsapi_wifi_disable_wps %s error, return: %d\n", WIFINAME, ret);
 
 		rpc_set_radio(1, 0, nvram_default_geti("wl1_radio", 1));
 	}

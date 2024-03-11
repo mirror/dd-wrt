@@ -243,8 +243,7 @@ int main(int ac, char *av[])
 			printf("Invalid length. For SPI mode, "
 			       "the length can only be 1, 2, and 4 bytes.\n");
 		else
-			printf("0x%0.*llx\n", (2 * vecarg[1]),
-			       *((unsigned long long *)&vecarg[2]));
+			printf("0x%0.*llx\n", (2 * vecarg[1]), *((unsigned long long *)&vecarg[2]));
 	} else if (strcmp(av[optind], "robowr") == 0) {
 		if ((ac != (optind + 4)) && (ac != (optind + 5)))
 			usage(av[0]);
@@ -258,8 +257,7 @@ int main(int ac, char *av[])
 
 		vecarg[0] = strtoul(av[optind + 1], NULL, 0) << 16;
 		vecarg[0] |= strtoul(av[optind + 2], NULL, 0) & 0xffff;
-		*((unsigned long long *)&vecarg[2]) =
-			strtoull(av[optind + 3], NULL, 0);
+		*((unsigned long long *)&vecarg[2]) = strtoull(av[optind + 3], NULL, 0);
 
 		ifr.ifr_data = (caddr_t)vecarg;
 		if (ioctl(s, SIOCSETCROBOWR, (caddr_t)&ifr) < 0)
@@ -327,12 +325,10 @@ int main(int ac, char *av[])
 
 		if (ac == (optind + 1)) {
 			*(uint *)buf = 0xff;
-		} else if (ac == (optind + 3) &&
-			   strcmp(av[optind + 1], "port") == 0) {
+		} else if (ac == (optind + 3) && strcmp(av[optind + 1], "port") == 0) {
 			*(uint *)buf = 1 << 16;
 			*(uint *)buf |= atoi(av[optind + 2]) & 0xffff;
-		} else if (ac == (optind + 3) &&
-			   strcmp(av[optind + 1], "vid") == 0) {
+		} else if (ac == (optind + 3) && strcmp(av[optind + 1], "vid") == 0) {
 			*(uint *)buf = atoi(av[optind + 2]) & 0xffff;
 		} else {
 			usage(av[0]);
@@ -357,8 +353,7 @@ int main(int ac, char *av[])
 		ifr.ifr_data = (caddr_t)&var;
 		if (ioctl(s, SIOCSETGETVAR, (caddr_t)&ifr) < 0)
 			syserr("etccleardump");
-	} else if ((strcmp(av[optind], "pktc") == 0) ||
-		   (strcmp(av[optind], "pktcbnd") == 0)) {
+	} else if ((strcmp(av[optind], "pktc") == 0) || (strcmp(av[optind], "pktcbnd") == 0)) {
 		/* Get pktc or pktcbnd */
 		if (ac == (optind + 1))
 			var.set = 0;
@@ -367,8 +362,7 @@ int main(int ac, char *av[])
 			vecarg[0] = strtoul(av[optind + 1], NULL, 0);
 		}
 		var.len = sizeof(int);
-		var.cmd = strcmp(av[optind], "pktc") == 0 ? IOV_PKTC :
-							    IOV_PKTCBND;
+		var.cmd = strcmp(av[optind], "pktc") == 0 ? IOV_PKTC : IOV_PKTCBND;
 		var.buf = &vecarg;
 
 		ifr.ifr_data = (caddr_t)&var;
@@ -533,8 +527,7 @@ int main(int ac, char *av[])
 
 		DUMP_BUF_FREE(dbuf_alloc, dbuf);
 #ifdef ET_INGRESS_QOS
-	} else if ((strcmp(av[optind], "dma_rx_thresh") == 0) ||
-		   (strcmp(av[optind], "dma_rx_policy") == 0)) {
+	} else if ((strcmp(av[optind], "dma_rx_thresh") == 0) || (strcmp(av[optind], "dma_rx_policy") == 0)) {
 		/* Get case */
 		if (ac == (optind + 1))
 			var.set = 0;
@@ -543,9 +536,7 @@ int main(int ac, char *av[])
 			vecarg[0] = strtoul(av[optind + 1], NULL, 0);
 		}
 		var.len = sizeof(int);
-		var.cmd = (strcmp(av[optind], "dma_rx_thresh") == 0) ?
-				  IOV_DMA_RX_THRESH :
-				  IOV_DMA_RX_POLICY;
+		var.cmd = (strcmp(av[optind], "dma_rx_thresh") == 0) ? IOV_DMA_RX_THRESH : IOV_DMA_RX_POLICY;
 		var.buf = &vecarg;
 
 		ifr.ifr_data = (caddr_t)&var;
@@ -612,11 +603,9 @@ int main(int ac, char *av[])
 				if (all)
 					printf("phy power save mode for all phys:"
 					       " %d %d %d %d %d \n",
-					       vecarg[0], vecarg[1], vecarg[2],
-					       vecarg[3], vecarg[4]);
+					       vecarg[0], vecarg[1], vecarg[2], vecarg[3], vecarg[4]);
 				else
-					printf("phy power save mode for phy %d mode %d\n",
-					       vecarg[0], vecarg[1]);
+					printf("phy power save mode for phy %d mode %d\n", vecarg[0], vecarg[1]);
 			}
 		} else {
 			usage(av[0]);
@@ -668,8 +657,7 @@ static void et_find(int s, struct ifreq *ifr)
 	ifr->ifr_name[0] = '\0';
 
 	/* eat first two lines */
-	if (!(fp = fopen(proc_net_dev, "r")) || !fgets(buf, sizeof(buf), fp) ||
-	    !fgets(buf, sizeof(buf), fp))
+	if (!(fp = fopen(proc_net_dev, "r")) || !fgets(buf, sizeof(buf), fp) || !fgets(buf, sizeof(buf), fp))
 		goto done;
 
 	while (fgets(buf, sizeof(buf), fp)) {

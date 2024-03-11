@@ -92,8 +92,7 @@ struct EthPacket {
 	u_int8_t data[1500 - 20];
 } __attribute__((packed));
 
-static int read_interface(char *interface, int *ifindex, u_int32_t *addr,
-			  unsigned char *arp)
+static int read_interface(char *interface, int *ifindex, u_int32_t *addr, unsigned char *arp)
 {
 	int fd;
 	struct ifreq ifr;
@@ -214,8 +213,7 @@ static int listen_interface(char *interface)
 	}
 
 	for (;;) {
-		if (check_action() !=
-		    ACT_IDLE) { // Don't execute during upgrading
+		if (check_action() != ACT_IDLE) { // Don't execute during upgrading
 			return L_UPGRADE;
 		}
 		if (check_wan_link(0)) {
@@ -262,16 +260,13 @@ static int listen_interface(char *interface)
 				goto Exit;
 			}
 
-			if (inet_addr(nvram_safe_get("lan_ipaddr")) ==
-			    *(u_int32_t *)packet.daddr) {
+			if (inet_addr(nvram_safe_get("lan_ipaddr")) == *(u_int32_t *)packet.daddr) {
 				DEBUG("dest ip equal to lan ipaddr\n");
 				ret = L_FAIL;
 				goto Exit;
 			}
 
-			DEBUG("inet_addr=%x, packet.daddr=%x",
-			      inet_addr(nvram_safe_get("lan_ipaddr")),
-			      *(u_int32_t *)packet.daddr);
+			DEBUG("inet_addr=%x, packet.daddr=%x", inet_addr(nvram_safe_get("lan_ipaddr")), *(u_int32_t *)packet.daddr);
 
 			// for (i=0; i<34;i++) {
 			// if (i%16==0) printf("\n");
@@ -279,13 +274,9 @@ static int listen_interface(char *interface)
 			// }
 			// printf ("\n");
 
-			DEBUG1("%02X%02X%02X%02X%02X%02X,%02X%02X%02X%02X%02X%02X,%02X%02X\n",
-			       packet.dst_mac[0], packet.dst_mac[1],
-			       packet.dst_mac[2], packet.dst_mac[3],
-			       packet.dst_mac[4], packet.dst_mac[5],
-			       packet.src_mac[0], packet.src_mac[1],
-			       packet.src_mac[2], packet.src_mac[3],
-			       packet.src_mac[4], packet.src_mac[5],
+			DEBUG1("%02X%02X%02X%02X%02X%02X,%02X%02X%02X%02X%02X%02X,%02X%02X\n", packet.dst_mac[0], packet.dst_mac[1],
+			       packet.dst_mac[2], packet.dst_mac[3], packet.dst_mac[4], packet.dst_mac[5], packet.src_mac[0],
+			       packet.src_mac[1], packet.src_mac[2], packet.src_mac[3], packet.src_mac[4], packet.src_mac[5],
 			       packet.type[0], packet.type[1]);
 
 			DEBUG("ip.version = %x", packet.version);
@@ -315,13 +306,10 @@ static int listen_interface(char *interface)
 			check = ntohs(packet.check);
 			packet.check = 0;
 
-			if (check !=
-			    checksum(&(packet.version), sizeof(struct iphdr))) {
+			if (check != checksum(&(packet.version), sizeof(struct iphdr))) {
 				DEBUG("bad IP header checksum, ignoring\n");
-				DEBUG("check received = %X, should be %X",
-				      check,
-				      checksum(&(packet.version),
-					       sizeof(struct iphdr)));
+				DEBUG("check received = %X, should be %X", check,
+				      checksum(&(packet.version), sizeof(struct iphdr)));
 				ret = L_FAIL;
 				goto Exit;
 			}
@@ -329,8 +317,7 @@ static int listen_interface(char *interface)
 			DEBUG("oooooh!!! got some!\n");
 #ifdef HAVE_PPTP
 			if (nvram_match("wan_proto", "pptp")) {
-				inet_aton(nvram_safe_get("pptp_server_ip"),
-					  &ipaddr);
+				inet_aton(nvram_safe_get("pptp_server_ip"), &ipaddr);
 			}
 #ifdef HAVE_L2TP
 			else
@@ -338,29 +325,25 @@ static int listen_interface(char *interface)
 #endif
 #ifdef HAVE_L2TP
 				if (nvram_match("wan_proto", "l2tp")) {
-				inet_aton(nvram_safe_get("lan_ipaddr"),
-					  &ipaddr);
+				inet_aton(nvram_safe_get("lan_ipaddr"), &ipaddr);
 			}
 #endif
 #if defined(HAVE_PPTP) || defined(HAVE_L2TP)
 			else
 #endif
 			{
-				inet_aton(nvram_safe_get("wan_ipaddr"),
-					  &ipaddr);
+				inet_aton(nvram_safe_get("wan_ipaddr"), &ipaddr);
 			}
 
 			inet_aton(nvram_safe_get("wan_netmask"), &netmask);
 			DEBUG("gateway=%08x", ipaddr.s_addr);
 			DEBUG("netmask=%08x", netmask.s_addr);
 
-			if ((ipaddr.s_addr & netmask.s_addr) !=
-			    (*(u_int32_t *)&(packet.daddr) & netmask.s_addr)) {
+			if ((ipaddr.s_addr & netmask.s_addr) != (*(u_int32_t *)&(packet.daddr) & netmask.s_addr)) {
 				if (nvram_match("wan_proto", "l2tp")) {
 					ret = L_SUCCESS;
 					goto Exit;
-				} else if (nvram_match("wan_proto",
-						       "heartbeat")) {
+				} else if (nvram_match("wan_proto", "heartbeat")) {
 					ret = L_SUCCESS;
 					goto Exit;
 				} else {
@@ -409,8 +392,7 @@ retry:
 				if (nvram_match("wan_proto", "heartbeat"))
 					exit(0);
 
-				if (!check_wan_link(
-					    0)) { // Connect fail, we want to re-connect
+				if (!check_wan_link(0)) { // Connect fail, we want to re-connect
 					// session
 					sleep(3);
 					goto retry;

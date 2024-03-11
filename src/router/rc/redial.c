@@ -49,22 +49,18 @@ int main(int argc, char **argv)
 	while (1) {
 #if defined(HAVE_3G)
 #if defined(HAVE_LIBMBIM) || defined(HAVE_UMBIM)
-		if (nvram_match("wan_proto", "3g") &&
-		    nvram_match("3gdata", "mbim")) {
+		if (nvram_match("wan_proto", "3g") && nvram_match("3gdata", "mbim")) {
 			start_service_force("check_mbim");
 		}
 #endif
-		if (nvram_match("wan_proto", "3g") &&
-		    nvram_match("3gdata", "sierradirectip")) {
+		if (nvram_match("wan_proto", "3g") && nvram_match("3gdata", "sierradirectip")) {
 			start_service_force("check_sierradirectip");
-		} else if (nvram_match("wan_proto", "3g") &&
-			   nvram_match("3gnmvariant", "1")) {
+		} else if (nvram_match("wan_proto", "3g") && nvram_match("3gnmvariant", "1")) {
 			start_service_force("check_sierrappp");
 		}
 #endif
 #if defined(HAVE_UQMI) || defined(HAVE_LIBQMI)
-		if (nvram_match("wan_proto", "3g") &&
-		    nvram_match("3gdata", "qmi") && _count == 1) {
+		if (nvram_match("wan_proto", "3g") && nvram_match("3gdata", "qmi") && _count == 1) {
 			start_service_force("check_qmi");
 		}
 #endif
@@ -96,20 +92,17 @@ int main(int argc, char **argv)
 					sleep(1);
 					start_service_force("wan_redial");
 				}
-#if defined(HAVE_PPTP) || defined(HAVE_L2TP) || defined(HAVE_HEARTBEAT) || \
-	defined(HAVE_PPPOATM) || defined(HAVE_PPPOEDUAL)
+#if defined(HAVE_PPTP) || defined(HAVE_L2TP) || defined(HAVE_HEARTBEAT) || defined(HAVE_PPPOATM) || defined(HAVE_PPPOEDUAL)
 				else
 #endif
 #endif
 
 #ifdef HAVE_PPPOEDUAL
-					if (nvram_match("wan_proto",
-							"pppoe_dual")) {
+					if (nvram_match("wan_proto", "pppoe_dual")) {
 					sleep(1);
 					start_service_force("wan_redial");
 				}
-#if defined(HAVE_PPTP) || defined(HAVE_L2TP) || defined(HAVE_HEARTBEAT) || \
-	defined(HAVE_PPPOATM)
+#if defined(HAVE_PPTP) || defined(HAVE_L2TP) || defined(HAVE_HEARTBEAT) || defined(HAVE_PPPOATM)
 				else
 #endif
 #endif
@@ -152,14 +145,11 @@ int main(int argc, char **argv)
 				// we might have to do this.
 
 #ifdef HAVE_HEARTBEAT
-					if (nvram_match("wan_proto",
-							"heartbeat")) {
+					if (nvram_match("wan_proto", "heartbeat")) {
 					if (pidof("bpalogin") == -1) {
-						stop_service_force(
-							"heartbeat_redial");
+						stop_service_force("heartbeat_redial");
 						sleep(1);
-						start_service_force(
-							"heartbeat_redial");
+						start_service_force("heartbeat_redial");
 					}
 
 				}

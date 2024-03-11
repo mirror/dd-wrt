@@ -69,8 +69,7 @@
 #else
 static unsigned int calculate_checksum(int action, char *s, int size);
 #endif
-#define WGR614_LZMA_LOADER_SIZE \
-	0x000919 //loader+400.lzma = 2329 bytes, please change if size changes!
+#define WGR614_LZMA_LOADER_SIZE 0x000919 //loader+400.lzma = 2329 bytes, please change if size changes!
 #define FLASH_SIZE_4M 0x400000
 #define FLASH_SIZE_8M 0x800000
 #define CFE_SIZE_128K 0x020000
@@ -117,8 +116,7 @@ static int mtd_block_is_bad(int fd, int offset)
 	if (mtdtype == MTD_NANDFLASH) {
 		r = ioctl(fd, MEMGETBADBLOCK, &o);
 		if (r < 0) {
-			dd_logerror("flash",
-				    "Failed to get erase block status\n");
+			dd_logerror("flash", "Failed to get erase block status\n");
 			exit(1);
 		}
 	}
@@ -140,8 +138,7 @@ static int mtd_open(const char *mtd, int flags)
 	if ((fp = fopen("/proc/mtd", "r"))) {
 		while (fgets(dev, sizeof(dev), fp)) {
 			if (sscanf(dev, "mtd%d:", &i) && strstr(dev, mtd)) {
-				if (!strcmp(mtd, "nvram") &&
-				    strstr(dev, "nvram_cfe"))
+				if (!strcmp(mtd, "nvram") && strstr(dev, "nvram_cfe"))
 					continue;
 				snprintf(dev, sizeof(dev), "/dev/mtd/%d", i);
 				fclose(fp);
@@ -192,14 +189,11 @@ int mtd_erase(const char *mtd)
 	mtdtype = mtd_info.type;
 	if (mtdtype == MTD_NANDFLASH)
 		dd_loginfo("flash", "Flash is NAND\n");
-	for (erase_info.start = 0; erase_info.start < mtd_info.size;
-	     erase_info.start += mtd_info.erasesize) {
+	for (erase_info.start = 0; erase_info.start < mtd_info.size; erase_info.start += mtd_info.erasesize) {
 		dd_loginfo("flash", "erase[%d]\n", erase_info.start);
 		(void)ioctl(mtd_fd, MEMUNLOCK, &erase_info);
 		if (mtd_block_is_bad(mtd_fd, erase_info.start)) {
-			dd_logerror("flash",
-				    "\nSkipping bad block at 0x%08zx\n",
-				    erase_info.start);
+			dd_logerror("flash", "\nSkipping bad block at 0x%08zx\n", erase_info.start);
 			continue;
 		}
 		if (ioctl(mtd_fd, MEMERASE, &erase_info) != 0) {
@@ -237,14 +231,10 @@ static struct NETGEAR_IDS netgear_ids[] = {
 	{ ROUTER_NETGEAR_R6250, "U12H245T00_NETGEAR" },
 	{ ROUTER_NETGEAR_R6300, "U12H218T00_NETGEAR" },
 	{ ROUTER_NETGEAR_R6300V2, "U12H240T00_NETGEAR", "U12H240T70_NETGEAR" },
-	{ ROUTER_NETGEAR_R6400, "U12H332T20_NETGEAR", "U12H332T30_NETGEAR",
-	  "U12H332T00_NETGEAR" },
-	{ ROUTER_NETGEAR_R6400V2, "U12H332T20_NETGEAR", "U12H332T30_NETGEAR",
-	  "U12H332T00_NETGEAR" },
-	{ ROUTER_NETGEAR_R6700V3, "U12H332T20_NETGEAR", "U12H332T30_NETGEAR",
-	  "U12H332T00_NETGEAR" },
-	{ ROUTER_NETGEAR_R7000, "U12H270T00_NETGEAR", "U12H270T10_NETGEAR",
-	  "QU12H270T00_NETGEAR" },
+	{ ROUTER_NETGEAR_R6400, "U12H332T20_NETGEAR", "U12H332T30_NETGEAR", "U12H332T00_NETGEAR" },
+	{ ROUTER_NETGEAR_R6400V2, "U12H332T20_NETGEAR", "U12H332T30_NETGEAR", "U12H332T00_NETGEAR" },
+	{ ROUTER_NETGEAR_R6700V3, "U12H332T20_NETGEAR", "U12H332T30_NETGEAR", "U12H332T00_NETGEAR" },
+	{ ROUTER_NETGEAR_R7000, "U12H270T00_NETGEAR", "U12H270T10_NETGEAR", "QU12H270T00_NETGEAR" },
 	{ ROUTER_NETGEAR_R7000P, "U12H270T20_NETGEAR" },
 	{ ROUTER_NETGEAR_R8000, "U12H315T00_NETGEAR" },
 	{ ROUTER_NETGEAR_R8500, "U12H334T00_NETGEAR" }
@@ -344,8 +334,7 @@ static int write_main(int argc, char *argv[])
 			}
 			dd_loginfo("flash", "flash to partition %s\n", mtd);
 		} else {
-			dd_logerror("flash", "no boot partition info found\n",
-				    mtd);
+			dd_logerror("flash", "no boot partition info found\n", mtd);
 		}
 		break;
 #endif
@@ -379,8 +368,7 @@ static int write_main(int argc, char *argv[])
 		break;
 	case ROUTER_NETGEAR_WGR614L:
 		if ((fp = fopen("/dev/mtdblock/1", "rb")))
-			count = safe_fread(&trx, 1, sizeof(struct trx_header),
-					   fp);
+			count = safe_fread(&trx, 1, sizeof(struct trx_header), fp);
 		else
 			return -1;
 
@@ -409,8 +397,7 @@ static int write_main(int argc, char *argv[])
 	 * Examine TRX/CHK header 
 	 */
 #ifdef HAVE_WRT160NL
-	dd_loginfo("flash", "size of ETRX header = %d\n",
-		   sizeof(struct etrx_header));
+	dd_loginfo("flash", "size of ETRX header = %d\n", sizeof(struct etrx_header));
 	if ((fp = fopen(path, "r"))) {
 		count = safe_fread(&etrx, 1, sizeof(struct etrx_header), fp);
 	} else
@@ -430,64 +417,41 @@ static int write_main(int argc, char *argv[])
 			dd_loginfo("flash", "Netgear chk format detected\n");
 			char board_id[18];
 			char board_id2[19];
-			safe_fread(&trx, 1,
-				   sizeof(struct chk_header) -
-					   sizeof(struct trx_header),
-				   fp);
+			safe_fread(&trx, 1, sizeof(struct chk_header) - sizeof(struct trx_header), fp);
 			safe_fread(board_id, 1, sizeof(board_id), fp);
 			memcpy(board_id2, board_id, 18);
 			board_id2[18] = 0;
 			int fail = 1;
 			int c = 0;
-			for (i = 0;
-			     i < (sizeof(netgear_ids) / sizeof(netgear_ids[0]));
-			     i++) {
+			for (i = 0; i < (sizeof(netgear_ids) / sizeof(netgear_ids[0])); i++) {
 				if (netgear_ids[i].id == brand) {
-					if (!strncmp(board_id,
-						     netgear_ids[i].name,
-						     sizeof(board_id)))
+					if (!strncmp(board_id, netgear_ids[i].name, sizeof(board_id)))
 						fail = 0;
 					else
 						c++;
-					if (netgear_ids[i].name2 &&
-					    !strncmp(board_id,
-						     netgear_ids[i].name2,
-						     sizeof(board_id)))
+					if (netgear_ids[i].name2 && !strncmp(board_id, netgear_ids[i].name2, sizeof(board_id)))
 						fail = 0;
 					else
 						c++;
-					if (netgear_ids[i].name3 &&
-					    !strncmp(board_id,
-						     netgear_ids[i].name3,
-						     sizeof(board_id)))
+					if (netgear_ids[i].name3 && !strncmp(board_id, netgear_ids[i].name3, sizeof(board_id)))
 						fail = 0;
 					else
 						c++;
 					break;
 				}
 			}
-			if (i ==
-			    (sizeof(netgear_ids) / sizeof(netgear_ids[0]))) {
-				dd_logerror(
-					"flash",
-					"Error: Flash to OEM for board %s not supported yet\n",
-					board_id2);
+			if (i == (sizeof(netgear_ids) / sizeof(netgear_ids[0]))) {
+				dd_logerror("flash", "Error: Flash to OEM for board %s not supported yet\n", board_id2);
 				return -1;
 			}
 			if (fail) {
-				dd_logerror(
-					"flash",
-					"Error: board id! but %s expected %s %s %s %s %s\n",
-					board_id2, c ? netgear_ids[i].name : "",
-					c == 2 ? "and" : "or",
-					c > 1 ? netgear_ids[i].name2 : "",
-					c > 2 ? " or " : "",
-					c > 2 ? netgear_ids[i].name3 : "");
+				dd_logerror("flash", "Error: board id! but %s expected %s %s %s %s %s\n", board_id2,
+					    c ? netgear_ids[i].name : "", c == 2 ? "and" : "or", c > 1 ? netgear_ids[i].name2 : "",
+					    c > 2 ? " or " : "", c > 2 ? netgear_ids[i].name3 : "");
 				return -1;
 			}
 
-			count = safe_fread(&trx, 1, sizeof(struct trx_header),
-					   fp);
+			count = safe_fread(&trx, 1, sizeof(struct trx_header), fp);
 		}
 
 	} else {
@@ -536,8 +500,7 @@ static int write_main(int argc, char *argv[])
 	eval("umount", "-r", "-f", "/jffs");
 	eval("service", "syslog", "start");
 
-#if defined(HAVE_MVEBU) || defined(HAVE_R9000) || defined(HAVE_IPQ806X) || \
-	defined(HAVE_R6800)
+#if defined(HAVE_MVEBU) || defined(HAVE_R9000) || defined(HAVE_IPQ806X) || defined(HAVE_R6800)
 #if defined(HAVE_R9000)
 	int mtddev = getMTD("plex");
 #else
@@ -556,8 +519,7 @@ static int write_main(int argc, char *argv[])
 	/* 
 	 * Open MTD device and get sector size 
 	 */
-	if ((mtd_fd = mtd_open(mtd, O_RDWR)) < 0 ||
-	    ioctl(mtd_fd, MEMGETINFO, &mtd_info) != 0 ||
+	if ((mtd_fd = mtd_open(mtd, O_RDWR)) < 0 || ioctl(mtd_fd, MEMGETINFO, &mtd_info) != 0 ||
 	    mtd_info.erasesize < sizeof(struct trx_header)) {
 		perror(mtd);
 		goto fail;
@@ -579,14 +541,12 @@ static int write_main(int argc, char *argv[])
 	/* 
 	 * See if we have enough memory to store the whole file 
 	 */
-	dd_loginfo("flash", "freeram=[%ld] bufferram=[%ld]\n", info.freeram,
-		   info.bufferram);
+	dd_loginfo("flash", "freeram=[%ld] bufferram=[%ld]\n", info.freeram, info.bufferram);
 	int mul = 1; // temporarily use 1 instead of 4 until we
 
 	// found a a solution
 	if (info.freeram >= (trx.len + 8 * 1024 * 1024)) {
-		dd_loginfo("flash",
-			   "The free memory is enough, writing image once.\n");
+		dd_loginfo("flash", "The free memory is enough, writing image once.\n");
 		/* 
 		 * Begin to write image after all image be downloaded by web upgrade.
 		 * In order to avoid upgrade fail if user unplug the ethernet cable
@@ -597,10 +557,7 @@ static int write_main(int argc, char *argv[])
 		erase_info.length = ROUNDUP(trx.len, mtd_info.erasesize);
 	} else {
 		erase_info.length = mtd_info.erasesize * mul;
-		dd_loginfo(
-			"flash",
-			"The free memory is not enough, writing image per %d bytes.\n",
-			erase_info.length);
+		dd_loginfo("flash", "The free memory is not enough, writing image per %d bytes.\n", erase_info.length);
 	}
 
 	/* 
@@ -609,14 +566,9 @@ static int write_main(int argc, char *argv[])
 	if (!(buf = malloc(erase_info.length))) {
 		mul = 1;
 		erase_info.length = mtd_info.erasesize * mul;
-		dd_loginfo(
-			"flash",
-			"The free memory is not enough, writing image per %d bytes.\n",
-			erase_info.length);
+		dd_loginfo("flash", "The free memory is not enough, writing image per %d bytes.\n", erase_info.length);
 		if (!(buf = malloc(erase_info.length))) {
-			dd_logerror("flash",
-				    "memory allocation of %d bytes failed\n",
-				    erase_info.length);
+			dd_logerror("flash", "memory allocation of %d bytes failed\n", erase_info.length);
 			perror("malloc");
 			goto fail;
 		}
@@ -625,9 +577,7 @@ static int write_main(int argc, char *argv[])
 	/* 
 	 * Calculate CRC over header 
 	 */
-	crc = crc32((uint8 *)&trx.flag_version,
-		    sizeof(struct trx_header) -
-			    OFFSETOF(struct trx_header, flag_version),
+	crc = crc32((uint8 *)&trx.flag_version, sizeof(struct trx_header) - OFFSETOF(struct trx_header, flag_version),
 		    CRC32_INIT_VALUE);
 	crc_data = 0;
 #ifndef NETGEAR_CRC_FAKE
@@ -637,11 +587,9 @@ static int write_main(int argc, char *argv[])
 	/* 
 	 * Write file or URL to MTD device 
 	 */
-	for (erase_info.start = 0; erase_info.start < trx.len;
-	     erase_info.start += count) {
+	for (erase_info.start = 0; erase_info.start < trx.len; erase_info.start += count) {
 		len = MIN(erase_info.length, trx.len - erase_info.start);
-		if ((STORE32_LE(trx.flag_version) & TRX_NO_HEADER) ||
-		    erase_info.start)
+		if ((STORE32_LE(trx.flag_version) & TRX_NO_HEADER) || erase_info.start)
 			count = off = 0;
 		else {
 #ifdef HAVE_WRT160NL
@@ -663,13 +611,8 @@ static int write_main(int argc, char *argv[])
 		 */
 		sum = sum + count;
 
-		if (((count < len) &&
-		     (len - off) > (mtd_info.erasesize * mul)) ||
-		    (count == 0 && feof(fp))) {
-			dd_logerror(
-				"flash",
-				"%s: Truncated file (actual %d expect %d)\n",
-				path, count - off, len - off);
+		if (((count < len) && (len - off) > (mtd_info.erasesize * mul)) || (count == 0 && feof(fp))) {
+			dd_logerror("flash", "%s: Truncated file (actual %d expect %d)\n", path, count - off, len - off);
 			goto fail;
 		}
 		/* 
@@ -682,8 +625,7 @@ static int write_main(int argc, char *argv[])
 
 		if (!squashfound) {
 			for (i = 0; i < (count - off); i++) {
-				unsigned int *sq =
-					(unsigned int *)&buf[off + i];
+				unsigned int *sq = (unsigned int *)&buf[off + i];
 
 				if (*sq == SQUASHFS_MAGIC) {
 					squashfound = 1;
@@ -698,17 +640,12 @@ static int write_main(int argc, char *argv[])
 		 */
 		if (sum == trx.len) {
 			if (crc != trx.crc32) {
-				dd_logerror(
-					"flash",
-					"%s: Bad CRC (0x%08X expected, but 0x%08X calculated)\n",
-					path, trx.crc32, crc);
+				dd_logerror("flash", "%s: Bad CRC (0x%08X expected, but 0x%08X calculated)\n", path, trx.crc32,
+					    crc);
 				goto fail;
 			} else {
-				dd_loginfo("flash", "%s: CRC OK (0x%08X)\n",
-					   mtd, crc);
-				dd_loginfo(
-					"flash",
-					"Writing image to flash, waiting a moment...\n");
+				dd_loginfo("flash", "%s: CRC OK (0x%08X)\n", mtd, crc);
+				dd_loginfo("flash", "Writing image to flash, waiting a moment...\n");
 			}
 			printf("\n");
 		}
@@ -731,16 +668,12 @@ static int write_main(int argc, char *argv[])
 		for (i = 0; i < (length / mtd_info.erasesize); i++) {
 			int redo = 0;
 again:;
-			dd_loginfo("flash", "write block [%d] at [0x%08X]\n",
-				   (base + (i * mtd_info.erasesize)) -
-					   badblocks,
+			dd_loginfo("flash", "write block [%d] at [0x%08X]\n", (base + (i * mtd_info.erasesize)) - badblocks,
 				   base + (i * mtd_info.erasesize));
 			erase_info.start = base + (i * mtd_info.erasesize);
 			(void)ioctl(mtd_fd, MEMUNLOCK, &erase_info);
 			if (mtd_block_is_bad(mtd_fd, erase_info.start)) {
-				dd_loginfo("flash",
-					   "\nSkipping bad block at 0x%08zx\n",
-					   erase_info.start);
+				dd_loginfo("flash", "\nSkipping bad block at 0x%08zx\n", erase_info.start);
 				lseek(mtd_fd, mtd_info.erasesize, SEEK_CUR);
 				length += mtd_info.erasesize;
 				badblocks += mtd_info.erasesize;
@@ -749,15 +682,12 @@ again:;
 #ifndef HAVE_QCA4019
 			if (mtdtype != MTD_NANDFLASH) {
 				if (ioctl(mtd_fd, MEMERASE, &erase_info) != 0) {
-					dd_logerror("flash",
-						    "\nerase/write failed\n");
+					dd_logerror("flash", "\nerase/write failed\n");
 					goto fail;
 				}
 			}
 #endif
-			if (write(mtd_fd,
-				  buf + (i * mtd_info.erasesize) - badblocks,
-				  mtd_info.erasesize) != mtd_info.erasesize) {
+			if (write(mtd_fd, buf + (i * mtd_info.erasesize) - badblocks, mtd_info.erasesize) != mtd_info.erasesize) {
 				dd_loginfo("flash", "\ntry again %d\n", redo++);
 				if (redo < 10)
 					goto again;
@@ -772,9 +702,7 @@ again:;
 	 */
 	int sector_start;
 	char *tmp;
-	if (brand == ROUTER_NETGEAR_WGR614L ||
-	    brand == ROUTER_NETGEAR_WNR834B ||
-	    brand == ROUTER_NETGEAR_WNR834BV2 ||
+	if (brand == ROUTER_NETGEAR_WGR614L || brand == ROUTER_NETGEAR_WNR834B || brand == ROUTER_NETGEAR_WNR834BV2 ||
 	    brand == ROUTER_NETGEAR_WNDR3300
 	    //          || brand == ROUTER_NETGEAR_WNDR4000
 	    || brand == ROUTER_NETGEAR_WNR3500L) {
@@ -805,9 +733,7 @@ again:;
 #endif
 		memcpy(&imageInfo[0], (char *)&trx.len, 4);
 		memcpy(&imageInfo[4], (char *)&cal_chksum, 4);
-		sector_start =
-			((flash_len_chk_addr - cfe_size) / mtd_info.erasesize) *
-			mtd_info.erasesize;
+		sector_start = ((flash_len_chk_addr - cfe_size) / mtd_info.erasesize) * mtd_info.erasesize;
 		if (lseek(mtd_fd, sector_start, SEEK_SET) < 0) {
 			//fprintf( stderr, "Error seeking the file descriptor\n" );
 			goto fail;
@@ -820,8 +746,7 @@ again:;
 		}
 
 		memset(buf, 0, mtd_info.erasesize);
-		if (read(mtd_fd, buf, mtd_info.erasesize) !=
-		    mtd_info.erasesize) {
+		if (read(mtd_fd, buf, mtd_info.erasesize) != mtd_info.erasesize) {
 			//fprintf( stderr, "Error reading last block from MTD device\n" );
 			goto fail;
 		}
@@ -839,29 +764,24 @@ again:;
 			goto fail;
 		}
 
-		tmp = buf +
-		      ((flash_len_chk_addr - cfe_size) % mtd_info.erasesize);
+		tmp = buf + ((flash_len_chk_addr - cfe_size) % mtd_info.erasesize);
 		memcpy(tmp, imageInfo, sizeof(imageInfo));
-		if (write(mtd_fd, buf, mtd_info.erasesize) !=
-		    mtd_info.erasesize) {
+		if (write(mtd_fd, buf, mtd_info.erasesize) != mtd_info.erasesize) {
 			//fprintf( stderr, "Error writing chksum to MTD device\n" );
 			goto fail;
 		}
 		//fprintf( stderr, "TRX LEN = %x , CHECKSUM = %x\n", trx.len, cal_chksum );
 #ifndef NETGEAR_CRC_FAKE
-		dd_loginfo("flash", "Write len/chksum @ 0x%X ...done.\n",
-			   flash_len_chk_addr);
+		dd_loginfo("flash", "Write len/chksum @ 0x%X ...done.\n", flash_len_chk_addr);
 #else
-		dd_loginfo("flash", "Write fake len/chksum @ 0x%X ...done.\n",
-			   flash_len_chk_addr);
+		dd_loginfo("flash", "Write fake len/chksum @ 0x%X ...done.\n", flash_len_chk_addr);
 #endif
 	}
 
 	/* Write old lzma loader */
 	if (brand == ROUTER_NETGEAR_WGR614L) {
 		int offset = trx.offsets[0];
-		sector_start =
-			(offset / mtd_info.erasesize) * mtd_info.erasesize;
+		sector_start = (offset / mtd_info.erasesize) * mtd_info.erasesize;
 		if (lseek(mtd_fd, sector_start, SEEK_SET) < 0) {
 			//fprintf( stderr, "Error seeking the file descriptor\n" );
 			goto fail;
@@ -874,8 +794,7 @@ again:;
 		}
 
 		memset(buf, 0, mtd_info.erasesize);
-		if (read(mtd_fd, buf, mtd_info.erasesize) !=
-		    mtd_info.erasesize) {
+		if (read(mtd_fd, buf, mtd_info.erasesize) != mtd_info.erasesize) {
 			//fprintf( stderr, "Error reading first block from MTD device\n" );
 			goto fail;
 		}
@@ -894,19 +813,16 @@ again:;
 		}
 
 		tmp = buf + (offset % mtd_info.erasesize);
-		if (trx.offsets[1] - trx.offsets[0] >=
-		    WGR614_LZMA_LOADER_SIZE) {
+		if (trx.offsets[1] - trx.offsets[0] >= WGR614_LZMA_LOADER_SIZE) {
 			memcpy(tmp, lzmaloader,
-			       trx.offsets[1] -
-				       trx.offsets[0]); //we asume lzma loader is shorter then gz loader
+			       trx.offsets[1] - trx.offsets[0]); //we asume lzma loader is shorter then gz loader
 			//fprintf( stderr, "LZMA loader size OK, space=%d needed=%d\n", trx.offsets[1] - trx.offsets[0], WGR614_LZMA_LOADER_SIZE );
 		} else {
 			memset(buf, 0,
 			       mtd_info.erasesize); //destroy 1st block, which puts router into tftp mode to allow recover
 			//fprintf( stderr, "LZMA loader size too large, space=%d needed=%d\n", trx.offsets[1] - trx.offsets[0], WGR614_LZMA_LOADER_SIZE );
 		}
-		if (write(mtd_fd, buf, mtd_info.erasesize) !=
-		    mtd_info.erasesize) {
+		if (write(mtd_fd, buf, mtd_info.erasesize) != mtd_info.erasesize) {
 			//fprintf( stderr, "Error writing LZMA loader to MTD device\n" );
 			goto fail;
 		}
@@ -916,8 +832,7 @@ again:;
 
 #ifdef HAVE_BCMMODERN
 	/* Write Belkin magic */
-	if (brand == ROUTER_BELKIN_F7D3301 || brand == ROUTER_BELKIN_F7D3302 ||
-	    brand == ROUTER_BELKIN_F7D4302 ||
+	if (brand == ROUTER_BELKIN_F7D3301 || brand == ROUTER_BELKIN_F7D3302 || brand == ROUTER_BELKIN_F7D4302 ||
 	    brand == ROUTER_BELKIN_F5D8235V3) {
 		sector_start = 0;
 		unsigned int be_magic = STORE32_LE(trxhd);
@@ -935,8 +850,7 @@ again:;
 		}
 
 		memset(buf, 0, mtd_info.erasesize);
-		if (read(mtd_fd, buf, mtd_info.erasesize) !=
-		    mtd_info.erasesize) {
+		if (read(mtd_fd, buf, mtd_info.erasesize) != mtd_info.erasesize) {
 			//fprintf( stderr, "Error reading first block from MTD device\n" );
 			goto fail;
 		}
@@ -955,8 +869,7 @@ again:;
 		}
 
 		memcpy(buf, be_trx, 4);
-		if (write(mtd_fd, buf, mtd_info.erasesize) !=
-		    mtd_info.erasesize) {
+		if (write(mtd_fd, buf, mtd_info.erasesize) != mtd_info.erasesize) {
 			//fprintf( stderr, "Error writing Belkin magic to MTD device\n" );
 			goto fail;
 		}
@@ -1011,8 +924,7 @@ fail:
 			if (!strncmp(path, "/dev",
 				     4)) // break here, if we already called ourself
 				break;
-			sysprintf(
-				"write /dev/mtdblock3 linux2"); //fixup for wxr1900 cfe
+			sysprintf("write /dev/mtdblock3 linux2"); //fixup for wxr1900 cfe
 			break;
 		}
 	}

@@ -127,13 +127,9 @@ static int erase_main(int argc, char *argv[])
 	if (argv[1]) {
 		if (!strcmp(argv[1], "nvram")) {
 			int brand = getRouterBrand();
-			if (brand == ROUTER_MOTOROLA ||
-			    brand == ROUTER_MOTOROLA_V1 ||
-			    brand == ROUTER_MOTOROLA_WE800G ||
-			    brand == ROUTER_RT210W ||
-			    brand == ROUTER_BUFFALO_WZRRSG54) {
-				fprintf(stderr,
-					"Sorry, erasing nvram will turn this router into a brick\n");
+			if (brand == ROUTER_MOTOROLA || brand == ROUTER_MOTOROLA_V1 || brand == ROUTER_MOTOROLA_WE800G ||
+			    brand == ROUTER_RT210W || brand == ROUTER_BUFFALO_WZRRSG54) {
+				fprintf(stderr, "Sorry, erasing nvram will turn this router into a brick\n");
 			} else {
 				nvram_clear();
 				nvram_commit();
@@ -302,8 +298,7 @@ int main(int argc, char **argv)
 	for (i = 0; i < sizeof(maincalls) / sizeof(struct MAIN); i++) {
 		if (strstr(base, maincalls[i].callname)) {
 			if (maincalls[i].execname)
-				return start_main(maincalls[i].execname, argc,
-						  argv);
+				return start_main(maincalls[i].execname, argc, argv);
 			if (maincalls[i].exec)
 				return maincalls[i].exec(argc, argv);
 		}

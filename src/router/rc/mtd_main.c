@@ -88,9 +88,7 @@ static int image_check_bcom(FILE *imagefp, const char *mtd)
 
 	buflen = safe_fread(buf, 1, 32, imagefp);
 	if (buflen < 32) {
-		fprintf(stdout,
-			"Could not get image header, file too small (%d bytes)\n",
-			buflen);
+		fprintf(stdout, "Could not get image header, file too small (%d bytes)\n", buflen);
 		return 0;
 	}
 
@@ -103,17 +101,15 @@ static int image_check_bcom(FILE *imagefp, const char *mtd)
 		/* 
 		 * ignore the first 32 bytes 
 		 */
-		buflen =
-			safe_fread(buf, 1, sizeof(struct trx_header2), imagefp);
+		buflen = safe_fread(buf, 1, sizeof(struct trx_header2), imagefp);
 		break;
 	}
 
 	if (trx->magic != TRX_MAGIC || trx->len < sizeof(struct trx_header2)) {
 		fprintf(stderr, "Bad trx header\n");
-		fprintf(stderr,
-			"If this is a firmware in bin format, like some of the\n"
-			"original firmware files are, use following command to convert to trx:\n"
-			"dd if=firmware.bin of=firmware.trx bs=32 skip=1\n");
+		fprintf(stderr, "If this is a firmware in bin format, like some of the\n"
+				"original firmware files are, use following command to convert to trx:\n"
+				"dd if=firmware.bin of=firmware.trx bs=32 skip=1\n");
 		return 0;
 	}
 
@@ -151,8 +147,7 @@ static int image_check(FILE *imagefp, const char *mtd)
 	systype = SYSTYPE_UNKNOWN;
 	f = fopen("/proc/cpuinfo", "r");
 	while (f && !feof(f) && (fgets(buf, BUFSIZE - 1, f) != NULL)) {
-		if ((strncmp(buf, "system type", 11) == 0) &&
-		    (c = strchr(buf, ':'))) {
+		if ((strncmp(buf, "system type", 11) == 0) && (c = strchr(buf, ':'))) {
 			c += 2;
 			if (strncmp(c, "Broadcom BCM947XX", 17) == 0)
 				systype = SYSTYPE_BROADCOM;
@@ -219,8 +214,7 @@ static int s_mtd_write(FILE *imagefp, const char *mtd, int quiet)
 		 * buffer may contain data already (from trx check) 
 		 */
 		r = buflen;
-		r += safe_fread(writebuf + buflen, 1,
-				mtdInfo.erasesize - buflen, imagefp);
+		r += safe_fread(writebuf + buflen, 1, mtdInfo.erasesize - buflen, imagefp);
 		w += r;
 
 		/* 
@@ -243,9 +237,7 @@ static int s_mtd_write(FILE *imagefp, const char *mtd, int quiet)
 			 */
 			if (mtd_block_is_bad(fd, mtdEraseInfo.start)) {
 				if (!quiet)
-					fprintf(stderr,
-						"\nSkipping bad block at 0x%08zx   ",
-						e);
+					fprintf(stderr, "\nSkipping bad block at 0x%08zx   ", e);
 				skip_bad_blocks += mtdInfo.erasesize;
 				e += mtdInfo.erasesize;
 				// Move the file pointer along over the bad block.
@@ -254,8 +246,7 @@ static int s_mtd_write(FILE *imagefp, const char *mtd, int quiet)
 			}
 
 			if (ioctl(fd, MEMERASE, &mtdEraseInfo) < 0) {
-				fprintf(stderr, "Erasing mtd failed: %s\n",
-					mtd);
+				fprintf(stderr, "Erasing mtd failed: %s\n", mtd);
 				exit(1);
 			}
 			e += mtdInfo.erasesize;
@@ -264,9 +255,7 @@ static int s_mtd_write(FILE *imagefp, const char *mtd, int quiet)
 		if (!quiet)
 			fprintf(stderr, "\b\b\b[w]");
 		if (r < mtdInfo.erasesize) {
-			fprintf(stderr,
-				"\nWarning unaligned data, we use manual padding to avoid errors. size was %d!!!\n",
-				r);
+			fprintf(stderr, "\nWarning unaligned data, we use manual padding to avoid errors. size was %d!!!\n", r);
 		}
 		if ((result = write(fd, writebuf, mtdInfo.erasesize)) < r) {
 			if (result < 0) {
@@ -326,10 +315,8 @@ static int mtd_resetbc(char *mtd)
 	for (i = 0; i < num_bc; i++) {
 		pread(fd, curr, sizeof(*curr), i * mtd_info.oobblock);
 
-		if (curr->magic != BOOTCOUNT_MAGIC &&
-		    curr->magic != 0xffffffff) {
-			fprintf(stderr, "unexpected magic %08x, bailing out\n",
-				curr->magic);
+		if (curr->magic != BOOTCOUNT_MAGIC && curr->magic != 0xffffffff) {
+			fprintf(stderr, "unexpected magic %08x, bailing out\n", curr->magic);
 			goto out;
 		}
 
@@ -341,8 +328,7 @@ static int mtd_resetbc(char *mtd)
 
 	/* no need to do writes when last boot count is already 0 */
 	if (last_count == 0) {
-		fprintf(stderr,
-			"count is already zero, no need to call again\n");
+		fprintf(stderr, "count is already zero, no need to call again\n");
 		goto out;
 	}
 	fprintf(stderr, "reset boot counter\n");
@@ -379,22 +365,21 @@ out:
 
 static void usage(void)
 {
-	fprintf(stderr,
-		"Usage: mtd [<options> ...] <command> [<arguments> ...] <device>\n\n"
-		"The device is in the format of mtdX (eg: mtd4) or its label.\n"
-		"mtd recognizes these commands:\n"
-		"        unlock                  unlock the device\n"
-		"        resetbc                 reset bootcounter for WRT1900AC/WRT1200AC/WRT1900ACv2\n"
-		"        erase                   erase all data on device\n"
-		"        write <imagefile>|-     write <imagefile> (use - for stdin) to device\n"
-		"Following options are available:\n"
-		"        -q                      quiet mode (once: no [w] on writing,\n"
-		"                                           twice: no status messages)\n"
-		"        -r                      reboot after successful command\n"
-		"        -f                      force write without trx checks\n"
-		"        -e <device>             erase <device> before executing the command\n\n"
-		"Example: To write linux.trx to mtd4 labeled as linux and reboot afterwards\n"
-		"         mtd -r write linux.trx linux\n\n");
+	fprintf(stderr, "Usage: mtd [<options> ...] <command> [<arguments> ...] <device>\n\n"
+			"The device is in the format of mtdX (eg: mtd4) or its label.\n"
+			"mtd recognizes these commands:\n"
+			"        unlock                  unlock the device\n"
+			"        resetbc                 reset bootcounter for WRT1900AC/WRT1200AC/WRT1900ACv2\n"
+			"        erase                   erase all data on device\n"
+			"        write <imagefile>|-     write <imagefile> (use - for stdin) to device\n"
+			"Following options are available:\n"
+			"        -q                      quiet mode (once: no [w] on writing,\n"
+			"                                           twice: no status messages)\n"
+			"        -r                      reboot after successful command\n"
+			"        -f                      force write without trx checks\n"
+			"        -e <device>             erase <device> before executing the command\n\n"
+			"Example: To write linux.trx to mtd4 labeled as linux and reboot afterwards\n"
+			"         mtd -r write linux.trx linux\n\n");
 	exit(1);
 }
 
@@ -460,9 +445,7 @@ static int mtd_main(int argc, char **argv)
 		} else {
 			imagefile = argv[1];
 			if ((imagefp = fopen(argv[1], "rb")) < 0) {
-				fprintf(stderr,
-					"Couldn't open image file: %s!\n",
-					imagefile);
+				fprintf(stderr, "Couldn't open image file: %s!\n", imagefile);
 				exit(1);
 			}
 		}
@@ -477,8 +460,7 @@ static int mtd_main(int argc, char **argv)
 				exit(1);
 		} else {
 			if (!mtd_check(device)) {
-				fprintf(stderr,
-					"Can't open device for writing!\n");
+				fprintf(stderr, "Can't open device for writing!\n");
 				exit(1);
 			}
 		}
@@ -518,8 +500,7 @@ static int mtd_main(int argc, char **argv)
 		break;
 	case CMD_WRITE:
 		if (quiet < 2)
-			fprintf(stderr, "Writing from %s to %s ... ", imagefile,
-				device);
+			fprintf(stderr, "Writing from %s to %s ... ", imagefile, device);
 		s_mtd_write(imagefp, device, quiet);
 		fclose(imagefp);
 		if (quiet < 2)

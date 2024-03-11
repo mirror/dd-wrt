@@ -51,11 +51,8 @@ int main(int argc, char **argv)
 		char *action = getenv("ACTION");
 		char *devpath = getenv("BUTTON");
 		char *button = getenv("DEVPATH");
-		dd_logdebug("hotplug",
-			    "event %s, ACTION %s BUTTON %s DEVPATH %s\n",
-			    argv[1], action ? action : "none",
-			    button ? button : "none",
-			    devpath ? devpath : "none");
+		dd_logdebug("hotplug", "event %s, ACTION %s BUTTON %s DEVPATH %s\n", argv[1], action ? action : "none",
+			    button ? button : "none", devpath ? devpath : "none");
 		if (!strcmp(argv[1], "net")) {
 			start_service_force_f("hotplug_net");
 
@@ -91,18 +88,14 @@ int main(int argc, char **argv)
 #endif
 #ifdef HAVE_ATH9K
 		if (!strcmp(argv[1], "regulatory")) {
-			syslog(LOG_DEBUG,
-			       "hotplug: old style regulatory called\n");
+			syslog(LOG_DEBUG, "hotplug: old style regulatory called\n");
 			int r = eval("/sbin/crda");
 			//                      unlink("/tmp/.crdalock");
 			return r;
 		}
 		if (!strcmp(argv[1], "platform")) {
-			if (action && devpath && !strcmp(action, "change") &&
-			    !strcmp(devpath,
-				    "/devices/platform/regulatory.0")) {
-				syslog(LOG_DEBUG,
-				       "hotplug: new style regulatory called\n");
+			if (action && devpath && !strcmp(action, "change") && !strcmp(devpath, "/devices/platform/regulatory.0")) {
+				syslog(LOG_DEBUG, "hotplug: new style regulatory called\n");
 				int r = eval("/sbin/crda");
 				unlink("/tmp/.crdalock");
 				return r;

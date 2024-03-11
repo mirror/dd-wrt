@@ -123,25 +123,20 @@ static int nvram_main(int argc, char **argv)
 				nvram_unset(*argv);
 		} else if (!strncmp(*argv, "commit", 5)) {
 			nvram_commit();
-		} else if (!strncmp(*argv, "clear", 5) ||
-			   !strncmp(*argv, "erase", 5)) {
+		} else if (!strncmp(*argv, "clear", 5) || !strncmp(*argv, "erase", 5)) {
 			nvram_clear();
 			nvram_commit();
-		} else if (!strncmp(*argv, "show", 4) ||
-			   !strncmp(*argv, "getall", 6)) {
+		} else if (!strncmp(*argv, "show", 4) || !strncmp(*argv, "getall", 6)) {
 			nvram_getall(buf, NVRAMSPACE);
 			for (name = buf; *name; name += strlen(name) + 1)
 				puts(name);
-			size = sizeof(struct nvram_header) + (long)name -
-			       (long)buf;
-			fprintf(stderr, "size: %d bytes (%d left)\n", size,
-				NVRAMSPACE - size);
+			size = sizeof(struct nvram_header) + (long)name - (long)buf;
+			fprintf(stderr, "size: %d bytes (%d left)\n", size, NVRAMSPACE - size);
 		} else if (!strncmp(*argv, "backup", 6)) {
 			if (*++argv) {
 				int ret = nvram_backup(*argv);
 				if (ret < 0) {
-					fprintf(stderr, "can't write %s\n",
-						*argv);
+					fprintf(stderr, "can't write %s\n", *argv);
 					free(buf);
 					return 1;
 				}
@@ -152,14 +147,12 @@ static int nvram_main(int argc, char **argv)
 			if (*++argv) {
 				int ret = nvram_restore(*argv, force);
 				if (ret == -1) {
-					fprintf(stderr, "can't write %s\n",
-						*argv);
+					fprintf(stderr, "can't write %s\n", *argv);
 					free(buf);
 					return 1;
 				}
 				if (ret == -2) {
-					fprintf(stderr, "file %s broken\n",
-						*argv);
+					fprintf(stderr, "file %s broken\n", *argv);
 					free(buf);
 					return 1;
 				}
