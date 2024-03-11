@@ -128,8 +128,7 @@ static void copy(FILE *out, size_t inoff, size_t outoff, int len)
 	fprintf(stderr, "\n");
 	if (inoff >= outoff) {
 		for (i = 0; i < (len / 65536); i++) {
-			fprintf(stderr, "copy from %zu to %zu\r",
-				inoff + (i * 65536), outoff + (i * 65536));
+			fprintf(stderr, "copy from %zu to %zu\r", inoff + (i * 65536), outoff + (i * 65536));
 			fseek(out, inoff + (i * 65536), SEEK_SET);
 			fread(mem, 65536, 1, out);
 			fseek(out, outoff + (i * 65536), SEEK_SET);
@@ -144,8 +143,7 @@ static void copy(FILE *out, size_t inoff, size_t outoff, int len)
 	} else {
 		long o = len - 65536;
 		for (i = 0; i < (len / 65536); i++) {
-			fprintf(stderr, "copy from %lu to %lu\r", inoff + o,
-				outoff + o);
+			fprintf(stderr, "copy from %lu to %lu\r", inoff + o, outoff + o);
 			fseek(out, inoff + o, SEEK_SET);
 			fread(mem, 65536, 1, out);
 			fseek(out, outoff + o, SEEK_SET);
@@ -180,46 +178,33 @@ int main_mbr(int argc, char *argv[])
 	int i;
 	fprintf(stderr, "old layout\n");
 	for (i = 0; i < 4; i++) {
-		fprintf(stderr, "p[%d]: start %d end %d active %X type %X\n", i,
-			le32_to_cpu(presentlayout[i].start),
-			le32_to_cpu(presentlayout[i].start) +
-				le32_to_cpu(presentlayout[i].length) - 1,
-			presentlayout[i].active, presentlayout[i].type);
+		fprintf(stderr, "p[%d]: start %d end %d active %X type %X\n", i, le32_to_cpu(presentlayout[i].start),
+			le32_to_cpu(presentlayout[i].start) + le32_to_cpu(presentlayout[i].length) - 1, presentlayout[i].active,
+			presentlayout[i].type);
 	}
 	fprintf(stderr, "new layout\n");
 	for (i = 0; i < 4; i++) {
-		fprintf(stderr, "p[%d]: start %d end %d active %X type %X\n", i,
-			le32_to_cpu(newlayout[i].start),
-			le32_to_cpu(newlayout[i].start) +
-				le32_to_cpu(newlayout[i].length) - 1,
-			newlayout[i].active, newlayout[i].type);
+		fprintf(stderr, "p[%d]: start %d end %d active %X type %X\n", i, le32_to_cpu(newlayout[i].start),
+			le32_to_cpu(newlayout[i].start) + le32_to_cpu(newlayout[i].length) - 1, newlayout[i].active,
+			newlayout[i].type);
 	}
 	struct pte *nvram = &presentlayout[2];
 	fseek(out, le32_to_cpu(nvram->start) * 512, SEEK_SET);
 	uint32_t nvlen = nvram->length * 512;
 	if (nvlen) {
-		if (le32_to_cpu(nvram->start) ==
-		    le32_to_cpu(newlayout[2].start)) {
-			if (le32_to_cpu(nvram->length) >
-			    le32_to_cpu(newlayout[2].length)) {
+		if (le32_to_cpu(nvram->start) == le32_to_cpu(newlayout[2].start)) {
+			if (le32_to_cpu(nvram->length) > le32_to_cpu(newlayout[2].length)) {
 				// if old nvram partition size is bigger than the new partition to be written, we keep the old partition entry as is
-				memcpy(&newlayout[2], &nvram,
-				       sizeof(struct pte));
-				fseek(out, MBR_PARTITION_ENTRY_OFFSET,
-				      SEEK_SET);
+				memcpy(&newlayout[2], &nvram, sizeof(struct pte));
+				fseek(out, MBR_PARTITION_ENTRY_OFFSET, SEEK_SET);
 				fseek(in, MBR_PARTITION_ENTRY_OFFSET, SEEK_SET);
-				fwrite(&newlayout, sizeof(struct pte),
-				       MBR_ENTRY_MAX, in);
-				fwrite(&newlayout, sizeof(struct pte),
-				       MBR_ENTRY_MAX, out);
+				fwrite(&newlayout, sizeof(struct pte), MBR_ENTRY_MAX, in);
+				fwrite(&newlayout, sizeof(struct pte), MBR_ENTRY_MAX, out);
 			}
 		} else {
-			fprintf(stderr,
-				"read nvram from old offset %d with len %d and write to offset %d\n",
-				le32_to_cpu(nvram->start) * 512, nvlen,
-				le32_to_cpu(newlayout[2].start) * 512);
-			copy(out, le32_to_cpu(nvram->start) * 512,
-			     le32_to_cpu(newlayout[2].start) * 512, nvlen);
+			fprintf(stderr, "read nvram from old offset %d with len %d and write to offset %d\n",
+				le32_to_cpu(nvram->start) * 512, nvlen, le32_to_cpu(newlayout[2].start) * 512);
+			copy(out, le32_to_cpu(nvram->start) * 512, le32_to_cpu(newlayout[2].start) * 512, nvlen);
 		}
 	}
 	fseek(in, 0, SEEK_END);
@@ -262,70 +247,42 @@ int main_gpt(int argc, char *argv[])
 	uint32_t n_parts;
 	uint32_t part_entry_len;
 
-	buf = malloc(le32_to_cpu(header.n_parts) *
-		     le32_to_cpu(header.part_entry_len));
-	fread(buf,
-	      le32_to_cpu(header.n_parts) * le32_to_cpu(header.part_entry_len),
-	      1, in);
+	buf = malloc(le32_to_cpu(header.n_parts) * le32_to_cpu(header.part_entry_len));
+	fread(buf, le32_to_cpu(header.n_parts) * le32_to_cpu(header.part_entry_len), 1, in);
 
-	buf2 = malloc(le32_to_cpu(header2.n_parts) *
-		      le32_to_cpu(header2.part_entry_len));
-	fread(buf2,
-	      le32_to_cpu(header2.n_parts) *
-		      le32_to_cpu(header2.part_entry_len),
-	      1, out);
+	buf2 = malloc(le32_to_cpu(header2.n_parts) * le32_to_cpu(header2.part_entry_len));
+	fread(buf2, le32_to_cpu(header2.n_parts) * le32_to_cpu(header2.part_entry_len), 1, out);
 
 	fprintf(stderr, "%d\n", le32_to_cpu(header2.part_entry_len));
 	int i;
 	fprintf(stderr, "old layout\n");
 	for (i = 0; i < 4; i++) {
-		part = (gpt_partition
-				*)&buf2[i * le32_to_cpu(header2.part_entry_len)];
-		fprintf(stderr,
-			"p[%d]: start %lld end %lld flags %llX name %s\n", i,
-			le64_to_cpu(part->lba_start),
-			le64_to_cpu(part->lba_end), le64_to_cpu(part->flags),
-			part->name36);
+		part = (gpt_partition *)&buf2[i * le32_to_cpu(header2.part_entry_len)];
+		fprintf(stderr, "p[%d]: start %lld end %lld flags %llX name %s\n", i, le64_to_cpu(part->lba_start),
+			le64_to_cpu(part->lba_end), le64_to_cpu(part->flags), part->name36);
 	}
 	fprintf(stderr, "new layout\n");
 	for (i = 0; i < 4; i++) {
-		part = (gpt_partition
-				*)&buf[i * le32_to_cpu(header.part_entry_len)];
-		fprintf(stderr,
-			"p[%d]: start %lld end %lld flags %llX name %s\n", i,
-			le64_to_cpu(part->lba_start),
-			le64_to_cpu(part->lba_end), le64_to_cpu(part->flags),
-			part->name36);
+		part = (gpt_partition *)&buf[i * le32_to_cpu(header.part_entry_len)];
+		fprintf(stderr, "p[%d]: start %lld end %lld flags %llX name %s\n", i, le64_to_cpu(part->lba_start),
+			le64_to_cpu(part->lba_end), le64_to_cpu(part->flags), part->name36);
 	}
-	gpt_partition *nvram =
-		(gpt_partition *)&buf2[2 * le32_to_cpu(header2.part_entry_len)];
-	gpt_partition *newnvram =
-		(gpt_partition *)&buf[2 * le32_to_cpu(header.part_entry_len)];
+	gpt_partition *nvram = (gpt_partition *)&buf2[2 * le32_to_cpu(header2.part_entry_len)];
+	gpt_partition *newnvram = (gpt_partition *)&buf[2 * le32_to_cpu(header.part_entry_len)];
 	fseek(out, le64_to_cpu(nvram->lba_start) * 512, SEEK_SET);
-	int64_t nvlen =
-		(le64_to_cpu(nvram->lba_end) - le64_to_cpu(nvram->lba_start)) *
-		512;
+	int64_t nvlen = (le64_to_cpu(nvram->lba_end) - le64_to_cpu(nvram->lba_start)) * 512;
 	if (nvlen > 0) {
 		if (nvram->lba_start == newnvram->lba_start) {
-			if (le64_to_cpu(nvram->lba_end) >
-			    le64_to_cpu(newnvram->lba_end)) {
+			if (le64_to_cpu(nvram->lba_end) > le64_to_cpu(newnvram->lba_end)) {
 				// if old nvram partition size is bigger than the new partition to be written, we keep the old partition entry as is
-				memcpy(newnvram, nvram,
-				       le32_to_cpu(header.part_entry_len));
-				fseek(out,
-				      le32_to_cpu(header.part_entry_len) * 2,
-				      SEEK_SET);
-				fwrite(newnvram,
-				       le32_to_cpu(header.part_entry_len), 1,
-				       out);
+				memcpy(newnvram, nvram, le32_to_cpu(header.part_entry_len));
+				fseek(out, le32_to_cpu(header.part_entry_len) * 2, SEEK_SET);
+				fwrite(newnvram, le32_to_cpu(header.part_entry_len), 1, out);
 			}
 		} else {
-			fprintf(stderr,
-				"read nvram from old offset %lld with len %lld and write to offset %lld\n",
-				le64_to_cpu(nvram->lba_start) * 512, nvlen,
-				le64_to_cpu(newnvram->lba_start) * 512);
-			copy(out, le64_to_cpu(nvram->lba_start) * 512,
-			     le64_to_cpu(newnvram->lba_start) * 512, nvlen);
+			fprintf(stderr, "read nvram from old offset %lld with len %lld and write to offset %lld\n",
+				le64_to_cpu(nvram->lba_start) * 512, nvlen, le64_to_cpu(newnvram->lba_start) * 512);
+			copy(out, le64_to_cpu(nvram->lba_start) * 512, le64_to_cpu(newnvram->lba_start) * 512, nvlen);
 		}
 	}
 	fseek(in, 0, SEEK_END);

@@ -76,8 +76,7 @@ static void init_gpio()
 		exit(1);
 	}
 
-	page = mmap(start, 4096, PROT_READ | PROT_WRITE, MAP_SHARED, fd,
-		    (off_t)GPIO0_BASE);
+	page = mmap(start, 4096, PROT_READ | PROT_WRITE, MAP_SHARED, fd, (off_t)GPIO0_BASE);
 	if (page == MAP_FAILED) {
 		// dd_syslog(LOG_ERR, "Can't mmap GPIO memory space: %s",
 		// strerror(errno));
@@ -107,14 +106,11 @@ static int getbuttonstate()
 }
 #endif
 
-#if defined(HAVE_FONERA) || defined(HAVE_WHRAG108) || defined(HAVE_LS2) ||    \
-	defined(HAVE_CA8) || defined(HAVE_TW6600) || defined(HAVE_LS5) ||     \
-	defined(HAVE_WP54G) || defined(HAVE_NP28G) || defined(HAVE_SOLO51) || \
-	defined(HAVE_OPENRISC)
+#if defined(HAVE_FONERA) || defined(HAVE_WHRAG108) || defined(HAVE_LS2) || defined(HAVE_CA8) || defined(HAVE_TW6600) || \
+	defined(HAVE_LS5) || defined(HAVE_WP54G) || defined(HAVE_NP28G) || defined(HAVE_SOLO51) || defined(HAVE_OPENRISC)
 static int getbuttonstate()
 {
-#if defined(HAVE_EAP3660) || defined(HAVE_EOC2610) || defined(HAVE_EOC1650) || \
-	defined(HAVE_ECB3500)
+#if defined(HAVE_EAP3660) || defined(HAVE_EOC2610) || defined(HAVE_EOC1650) || defined(HAVE_ECB3500)
 	return !get_gpio(5);
 #elif defined(HAVE_WRT54G2)
 	return !get_gpio(7);
@@ -807,14 +803,11 @@ static void handle_reset(void)
 {
 	if ((brand & 0x000f) != 0x000f) {
 		dd_loginfo("resetbutton", "factory default.\n");
-#if !defined(HAVE_XSCALE) && !defined(HAVE_MAGICBOX) &&                        \
-	!defined(HAVE_FONERA) && !defined(HAVE_WHRAG108) &&                    \
-	!defined(HAVE_GATEWORX) && !defined(HAVE_LS2) && !defined(HAVE_CA8) && \
-	!defined(HAVE_TW6600) && !defined(HAVE_LS5) && !defined(HAVE_LSX) &&   \
-	!defined(HAVE_SOLO51)
+#if !defined(HAVE_XSCALE) && !defined(HAVE_MAGICBOX) && !defined(HAVE_FONERA) && !defined(HAVE_WHRAG108) &&                   \
+	!defined(HAVE_GATEWORX) && !defined(HAVE_LS2) && !defined(HAVE_CA8) && !defined(HAVE_TW6600) && !defined(HAVE_LS5) && \
+	!defined(HAVE_LSX) && !defined(HAVE_SOLO51)
 		led_control(LED_DIAG, LED_ON);
-#elif defined(HAVE_WHRHPGN) || defined(HAVE_WZRG300NH) || \
-	defined(HAVE_WZRHPAG300NH) || defined(HAVE_WZRG450)
+#elif defined(HAVE_WHRHPGN) || defined(HAVE_WZRG300NH) || defined(HAVE_WZRHPAG300NH) || defined(HAVE_WZRG450)
 		led_control(LED_DIAG, LED_ON);
 #endif
 		ACTION("ACT_HW_RESTORE");
@@ -871,18 +864,15 @@ static void handle_reset(void)
 		nvram_commit();
 		eval("killall", "ledtool"); // stop blinking on
 		// nvram_commit
-#if !defined(HAVE_XSCALE) && !defined(HAVE_MAGICBOX) &&                        \
-	!defined(HAVE_FONERA) && !defined(HAVE_WHRAG108) &&                    \
-	!defined(HAVE_GATEWORX) && !defined(HAVE_LS2) && !defined(HAVE_CA8) && \
-	!defined(HAVE_TW6600) && !defined(HAVE_LS5) && !defined(HAVE_LSX) &&   \
-	!defined(HAVE_SOLO51)
+#if !defined(HAVE_XSCALE) && !defined(HAVE_MAGICBOX) && !defined(HAVE_FONERA) && !defined(HAVE_WHRAG108) &&                   \
+	!defined(HAVE_GATEWORX) && !defined(HAVE_LS2) && !defined(HAVE_CA8) && !defined(HAVE_TW6600) && !defined(HAVE_LS5) && \
+	!defined(HAVE_LSX) && !defined(HAVE_SOLO51)
 		led_control(LED_DIAG, LED_ON); // turn diag led on,
 		// so we know reset
 		// was pressed and
 		// we're restoring
 		// defaults.
-#elif defined(HAVE_WHRHPGN) || defined(HAVE_WZRG300NH) || \
-	defined(HAVE_WZRHPAG300NH) || defined(HAVE_WZRG450)
+#elif defined(HAVE_WHRHPGN) || defined(HAVE_WZRG300NH) || defined(HAVE_WZRHPAG300NH) || defined(HAVE_WZRG450)
 		led_control(LED_DIAG, LED_ON);
 #endif
 #ifdef HAVE_BUFFALO_SA
@@ -902,8 +892,7 @@ static void handle_reset(void)
 	}
 }
 
-static void control_wifi(int *wifi_mode, char *title, char *post, int i,
-			 int restart)
+static void control_wifi(int *wifi_mode, char *title, char *post, int i, int restart)
 {
 	switch (*wifi_mode) {
 	case 1:
@@ -996,10 +985,8 @@ static void handle_ses(void)
 		int dummy = ses_mode;
 		int dummy2 = ses_mode;
 #ifndef HAVE_BUFFALO
-		control_wifi(&dummy, "SES / AOSS / EZ-setup button", "_0", 0,
-			     0);
-		control_wifi(&dummy2, "SES / AOSS / EZ-setup button", "_1", 1,
-			     1);
+		control_wifi(&dummy, "SES / AOSS / EZ-setup button", "_0", 0, 0);
+		control_wifi(&dummy2, "SES / AOSS / EZ-setup button", "_1", 1, 1);
 #else
 		control_wifi(&dummy, "AOSS button", "_0", 0, 0);
 		control_wifi(&dummy2, "AOSS button", "_1", 1, 1);
@@ -1045,8 +1032,7 @@ static void resetbtn_period_check(int sig)
 
 #ifdef HAVE_MINIDLNA
 	static dlna_counter = 0;
-	if (nvram_match("dlna_enable", "1") &&
-	    nvram_match("dlna_rescan", "1")) {
+	if (nvram_match("dlna_enable", "1") && nvram_match("dlna_rescan", "1")) {
 		dlna_counter++;
 
 		if ((dlna_counter % 3600) == 0) {
@@ -1054,8 +1040,7 @@ static void resetbtn_period_check(int sig)
 		}
 	}
 #endif
-	if (initses == 1 && nvram_matchi("radiooff_boot_off", 1) &&
-	    nvram_matchi("radiooff_button", 1)) {
+	if (initses == 1 && nvram_matchi("radiooff_boot_off", 1) && nvram_matchi("radiooff_button", 1)) {
 		ses_mode = 1;
 		initses = 0;
 	}
@@ -1065,15 +1050,11 @@ static void resetbtn_period_check(int sig)
 	// time(&t);
 	// DEBUG("resetbutton: now time=%d\n", t);
 
-#if defined(HAVE_IPQ806X) || defined(HAVE_MVEBU) || defined(HAVE_MAGICBOX) ||  \
-	defined(HAVE_FONERA) || defined(HAVE_WHRAG108) ||                      \
-	defined(HAVE_GATEWORX) || defined(HAVE_STORM) || defined(HAVE_LS2) ||  \
-	defined(HAVE_CA8) || defined(HAVE_TW6600) || defined(HAVE_LS5) ||      \
-	defined(HAVE_LSX) || defined(HAVE_WP54G) || defined(HAVE_NP28G) ||     \
-	defined(HAVE_SOLO51) || defined(HAVE_OPENRISC) ||                      \
-	defined(HAVE_DANUBE) || defined(HAVE_WDR4900) ||                       \
-	defined(HAVE_VENTANA) || defined(HAVE_AC622) || defined(HAVE_AC722) || \
-	defined(HAVE_EROUTER)
+#if defined(HAVE_IPQ806X) || defined(HAVE_MVEBU) || defined(HAVE_MAGICBOX) || defined(HAVE_FONERA) || defined(HAVE_WHRAG108) ||    \
+	defined(HAVE_GATEWORX) || defined(HAVE_STORM) || defined(HAVE_LS2) || defined(HAVE_CA8) || defined(HAVE_TW6600) ||         \
+	defined(HAVE_LS5) || defined(HAVE_LSX) || defined(HAVE_WP54G) || defined(HAVE_NP28G) || defined(HAVE_SOLO51) ||            \
+	defined(HAVE_OPENRISC) || defined(HAVE_DANUBE) || defined(HAVE_WDR4900) || defined(HAVE_VENTANA) || defined(HAVE_AC622) || \
+	defined(HAVE_AC722) || defined(HAVE_EROUTER)
 	val = getbuttonstate();
 #ifdef HAVE_WRK54G
 	val = !val;
@@ -1139,15 +1120,13 @@ static void resetbtn_period_check(int sig)
 		val = (get_gpio(7) << 7) | (get_gpio(15) << 15);
 		break;
 	case ROUTER_R6800:
-		val = (get_gpio(18) << 18) | (get_gpio(12) << 12) |
-		      (get_gpio(14) << 14);
+		val = (get_gpio(18) << 18) | (get_gpio(12) << 12) | (get_gpio(14) << 14);
 		break;
 	case ROUTER_R6850:
 		val = (get_gpio(7) << 7) | (get_gpio(14) << 14);
 		break;
 	case ROUTER_R6220:
-		val = (get_gpio(7) << 7) | (get_gpio(8) << 8) |
-		      (get_gpio(14) << 14);
+		val = (get_gpio(7) << 7) | (get_gpio(8) << 8) | (get_gpio(14) << 14);
 		break;
 	case ROUTER_BOARD_GW2380:
 	case ROUTER_BOARD_GW2388:
@@ -1163,8 +1142,7 @@ static void resetbtn_period_check(int sig)
 #ifdef HAVE_XSCALE
 			fscanf(fp, "%d", &val);
 #else
-			if (brand ==
-			    ROUTER_NETGEAR_WGR614L) //gpio 7 power led shared with reset button
+			if (brand == ROUTER_NETGEAR_WGR614L) //gpio 7 power led shared with reset button
 			{
 				set_gpio(7, 1); //disable power led
 				val = get_gpio(7) << 7; //read and shift value
@@ -1186,14 +1164,10 @@ static void resetbtn_period_check(int sig)
 
 	int state = 0;
 
-#if defined(HAVE_IPQ806X) || defined(HAVE_MVEBU) || (HAVE_XSCALE) ||          \
-	defined(HAVE_MAGICBOX) || defined(HAVE_FONERA) ||                     \
-	defined(HAVE_WHRAG108) || defined(HAVE_GATEWORX) ||                   \
-	defined(HAVE_STORM) || defined(HAVE_LS2) || defined(HAVE_CA8) ||      \
-	defined(HAVE_TW6600) || defined(HAVE_LS5) || defined(HAVE_LSX) ||     \
-	defined(HAVE_WP54G) || defined(HAVE_NP28G) || defined(HAVE_SOLO51) || \
-	defined(HAVE_OPENRISC) || defined(HAVE_DANUBE) ||                     \
-	defined(HAVE_UNIWIP) || defined(HAVE_EROUTER) ||                      \
+#if defined(HAVE_IPQ806X) || defined(HAVE_MVEBU) || (HAVE_XSCALE) || defined(HAVE_MAGICBOX) || defined(HAVE_FONERA) ||             \
+	defined(HAVE_WHRAG108) || defined(HAVE_GATEWORX) || defined(HAVE_STORM) || defined(HAVE_LS2) || defined(HAVE_CA8) ||       \
+	defined(HAVE_TW6600) || defined(HAVE_LS5) || defined(HAVE_LSX) || defined(HAVE_WP54G) || defined(HAVE_NP28G) ||            \
+	defined(HAVE_SOLO51) || defined(HAVE_OPENRISC) || defined(HAVE_DANUBE) || defined(HAVE_UNIWIP) || defined(HAVE_EROUTER) || \
 	defined(HAVE_VENTANA) || defined(HAVE_WDR4900)
 	state = val;
 	int sesgpio = 0xfff;
@@ -1683,10 +1657,8 @@ static void resetbtn_period_check(int sig)
 #endif
 
 	pushses = 1 << (sesgpio & 0x0ff); // calculate push value from ses gpio
-	pushwifi24 =
-		1 << (wifi24gpio & 0x0ff); // calculate push value from ses gpio
-	pushwifi5 =
-		1 << (wifi5gpio & 0x0ff); // calculate push value from ses gpio
+	pushwifi24 = 1 << (wifi24gpio & 0x0ff); // calculate push value from ses gpio
+	pushwifi5 = 1 << (wifi5gpio & 0x0ff); // calculate push value from ses gpio
 	//
 	//
 	//
@@ -1707,24 +1679,19 @@ static void resetbtn_period_check(int sig)
 			mode = 1;
 		}
 		if (++_count > RESET_WAIT_COUNT) {
-			if (action !=
-			    ACT_IDLE) { // Don't execute during upgrading
+			if (action != ACT_IDLE) { // Don't execute during upgrading
 				dd_loginfo("resetbutton", "nothing to do...\n");
-				resetbtn_alarmtimer(
-					0, 0); /* Stop the timer alarm */
+				resetbtn_alarmtimer(0, 0); /* Stop the timer alarm */
 				return;
 			}
 			handle_reset();
 		}
 	} else if ((sesgpio != 0xfff) &&
-		   (((sesgpio & 0x100) == 0 && (val & pushses)) ||
-		    ((sesgpio & 0x100) == 0x100 && !(val & pushses)))) {
+		   (((sesgpio & 0x100) == 0 && (val & pushses)) || ((sesgpio & 0x100) == 0x100 && !(val & pushses)))) {
 		if (!ses_pushed && (++_count > SES_WAIT)) {
-			if (action !=
-			    ACT_IDLE) { // Don't execute during upgrading
+			if (action != ACT_IDLE) { // Don't execute during upgrading
 				dd_loginfo("resetbutton", "nothing to do...\n");
-				resetbtn_alarmtimer(
-					0, 0); /* Stop the timer alarm */
+				resetbtn_alarmtimer(0, 0); /* Stop the timer alarm */
 				return;
 			}
 			_count = 0;
@@ -1732,14 +1699,11 @@ static void resetbtn_period_check(int sig)
 			handle_ses();
 		}
 	} else if ((wifi24gpio != 0xfff && wifi5gpio == 0xfff) &&
-		   (((wifi24gpio & 0x100) == 0 && (val & pushwifi24)) ||
-		    ((wifi24gpio & 0x100) == 0x100 && !(val & pushwifi24)))) {
+		   (((wifi24gpio & 0x100) == 0 && (val & pushwifi24)) || ((wifi24gpio & 0x100) == 0x100 && !(val & pushwifi24)))) {
 		if (!wifi24_pushed && (++_count > SES_WAIT)) {
-			if (action !=
-			    ACT_IDLE) { // Don't execute during upgrading
+			if (action != ACT_IDLE) { // Don't execute during upgrading
 				dd_loginfo("resetbutton", "nothing to do...\n");
-				resetbtn_alarmtimer(
-					0, 0); /* Stop the timer alarm */
+				resetbtn_alarmtimer(0, 0); /* Stop the timer alarm */
 				return;
 			}
 			_count = 0;
@@ -1748,14 +1712,11 @@ static void resetbtn_period_check(int sig)
 		}
 
 	} else if ((wifi24gpio != 0xfff && wifi5gpio != 0xfff) &&
-		   (((wifi24gpio & 0x100) == 0 && (val & pushwifi24)) ||
-		    ((wifi24gpio & 0x100) == 0x100 && !(val & pushwifi24)))) {
+		   (((wifi24gpio & 0x100) == 0 && (val & pushwifi24)) || ((wifi24gpio & 0x100) == 0x100 && !(val & pushwifi24)))) {
 		if (!wifi24_pushed && (++_count > SES_WAIT)) {
-			if (action !=
-			    ACT_IDLE) { // Don't execute during upgrading
+			if (action != ACT_IDLE) { // Don't execute during upgrading
 				dd_loginfo("resetbutton", "nothing to do...\n");
-				resetbtn_alarmtimer(
-					0, 0); /* Stop the timer alarm */
+				resetbtn_alarmtimer(0, 0); /* Stop the timer alarm */
 				return;
 			}
 			_count = 0;
@@ -1763,14 +1724,11 @@ static void resetbtn_period_check(int sig)
 			handle_wifi24();
 		}
 	} else if ((wifi24gpio != 0xfff && wifi5gpio != 0xfff) &&
-		   (((wifi5gpio & 0x100) == 0 && (val & pushwifi5)) ||
-		    ((wifi5gpio & 0x100) == 0x100 && !(val & pushwifi5)))) {
+		   (((wifi5gpio & 0x100) == 0 && (val & pushwifi5)) || ((wifi5gpio & 0x100) == 0x100 && !(val & pushwifi5)))) {
 		if (!wifi5_pushed && (++_count > SES_WAIT)) {
-			if (action !=
-			    ACT_IDLE) { // Don't execute during upgrading
+			if (action != ACT_IDLE) { // Don't execute during upgrading
 				dd_loginfo("resetbutton", "nothing to do...\n");
-				resetbtn_alarmtimer(
-					0, 0); /* Stop the timer alarm */
+				resetbtn_alarmtimer(0, 0); /* Stop the timer alarm */
 				return;
 			}
 			_count = 0;
@@ -1794,34 +1752,22 @@ static void resetbtn_period_check(int sig)
 			if (_count > UPGRADE_WAIT_COUNT) {
 				char *upgrade_script = "firmware_upgrade.sh";
 				char call[32];
-				dd_loginfo("resetbutton",
-					   "[RESETBUTTON] check:%d count:%d\n",
-					   pidof(upgrade_script), _count);
+				dd_loginfo("resetbutton", "[RESETBUTTON] check:%d count:%d\n", pidof(upgrade_script), _count);
 				if (pidof(upgrade_script) < 0) {
-					sprintf(call, "/%s/%s",
-						nvram_safe_get(
-							"fw_upgrade_dir"),
-						upgrade_script);
+					sprintf(call, "/%s/%s", nvram_safe_get("fw_upgrade_dir"), upgrade_script);
 					if (f_exists(call)) {
-						dd_loginfo(
-							"resetbutton",
-							"[RESETBUTTON] trigger update script: %s\n",
-							call);
+						dd_loginfo("resetbutton", "[RESETBUTTON] trigger update script: %s\n", call);
 						system(call);
 					} else {
-						dd_loginfo(
-							"resetbutton",
-							"[RESETBUTTON] upgrade script not found\n");
+						dd_loginfo("resetbutton", "[RESETBUTTON] upgrade script not found\n");
 						led_control(LED_DIAG, LED_OFF);
 					}
 				}
 			}
 #else
-			if (action !=
-			    ACT_IDLE) { // Don't execute during upgrading
+			if (action != ACT_IDLE) { // Don't execute during upgrading
 				dd_loginfo("resetbutton", "nothing to do...\n");
-				resetbtn_alarmtimer(
-					0, 0); /* Stop the timer alarm */
+				resetbtn_alarmtimer(0, 0); /* Stop the timer alarm */
 				return;
 			}
 #endif
@@ -1834,8 +1780,7 @@ int main(int argc, char *argv[])
 	brand = getRouterBrand();
 #ifndef HAVE_MI424WR
 #if !defined(HAVE_NOP8670) && !defined(HAVE_TONZE)
-	if (((brand < 0x10000) && (brand & 0x000f) == 0x000f) ||
-	    ((brand > 0xffff) && (brand & 0x00ff) == 0x00ff))
+	if (((brand < 0x10000) && (brand & 0x000f) == 0x000f) || ((brand > 0xffff) && (brand & 0x00ff) == 0x00ff))
 #endif
 	{
 		puts("sorry, your unit does not support resetbutton feature\n");

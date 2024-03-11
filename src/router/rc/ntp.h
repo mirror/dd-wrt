@@ -86,13 +86,7 @@ const dstTable dstEntry[] = {
 	  3600 },
 	// dst #9: Australia [first Sunday in October ~ 2:00am, first
 	// Sunday in April]
-	{ { 5, 4, 3, 2, 7, 6, 5, 4, 2, 1, 7, 6, 4, 3, 2 },
-	  { 6, 5, 4, 3, 1, 7, 6, 5, 3, 2, 1, 7, 5, 4, 3 },
-	  10,
-	  4,
-	  1,
-	  0,
-	  3600 },
+	{ { 5, 4, 3, 2, 7, 6, 5, 4, 2, 1, 7, 6, 4, 3, 2 }, { 6, 5, 4, 3, 1, 7, 6, 5, 3, 2, 1, 7, 5, 4, 3 }, 10, 4, 1, 0, 3600 },
 	//08  09  10  11  12  13  14  15  16  17  18  19  20  21  22 <-- year
 	// dst #10: Brazil + some LA countries [3rd Sunday in October ~ 2:00am, 3rd
 	// Sunday in February]

@@ -54,9 +54,8 @@ struct vlan_board_s {
 	int wan_vlan;
 	int lan_vlan;
 } vlan_boards[] = {
-	{ "reference board", "Broadcom Sentry5", BCM_NUM_PORTS, BCM_WAN_PORT,
-	  BCM_LAN_MIN_PORT, BCM_LAN_MAX_PORT, 0, BCM_DEF_WAN_VLAN,
-	  BCM_DEF_LAN_VLAN },
+	{ "reference board", "Broadcom Sentry5", BCM_NUM_PORTS, BCM_WAN_PORT, BCM_LAN_MIN_PORT, BCM_LAN_MAX_PORT, 0,
+	  BCM_DEF_WAN_VLAN, BCM_DEF_LAN_VLAN },
 };
 
 int vlan_configured = 0;
@@ -85,8 +84,7 @@ static int vlan_configure(void)
 	char *lan_br_name;
 	char buf[80];
 	char lan_ifbase_realdev[80], wan_ifbase[80];
-	char name[80], lan_ifbase[80], br_group[80], *next, vlan[4],
-		vlan_wan[4], port[4];
+	char name[80], lan_ifbase[80], br_group[80], *next, vlan[4], vlan_wan[4], port[4];
 	uint bVlan, board_index = 0, i, buf_index = 0, hasBridge = 0;
 	uint bBrcmTag, bMIBAC;
 	uint wan_vid = 0, lan_vid = 0, lan_vids[BCM_NUM_PORTS - 1], vid;
@@ -101,20 +99,13 @@ static int vlan_configure(void)
 
 	if (!bcm_is_robo())
 		return -1;
-	bVlan = (atoi(vlan_enable) > 0) ||
-		(*vlan_enable &&
-		 !strncmp(vlan_enable, "true", strlen(vlan_enable)));
+	bVlan = (atoi(vlan_enable) > 0) || (*vlan_enable && !strncmp(vlan_enable, "true", strlen(vlan_enable)));
 	printf("\n\nBroadcom Enterprise RG/AP\n");
-	printf("\r\nBroadcom ROBO 802.1Q VLAN %s\n",
-	       bVlan > 0 ? "enabled" : "disabled");
+	printf("\r\nBroadcom ROBO 802.1Q VLAN %s\n", bVlan > 0 ? "enabled" : "disabled");
 
-	bMIBAC = (atoi(mibac_enable) > 0) ||
-		 (*(mibac_enable) &&
-		  !strncmp(mibac_enable, "true", strlen(mibac_enable)));
+	bMIBAC = (atoi(mibac_enable) > 0) || (*(mibac_enable) && !strncmp(mibac_enable, "true", strlen(mibac_enable)));
 
-	bBrcmTag = ((atoi(brcmtag_enable) > 0) ||
-		    (*(brcmtag_enable) &&
-		     !strncmp(brcmtag_enable, "true", strlen(brcmtag_enable))));
+	bBrcmTag = ((atoi(brcmtag_enable) > 0) || (*(brcmtag_enable) && !strncmp(brcmtag_enable, "true", strlen(brcmtag_enable))));
 
 	if (*(mibac_interval)) {
 		mibac_int = ROBO_GET_AC_RATE(atoi(mibac_interval));
@@ -188,8 +179,7 @@ static int vlan_configure(void)
 	 * overwriting of the new value when the router starts 
 	 */
 	if (*(restore_wan_ifname)) {
-		if (nvram_set(strcat_r(prefix, "ifname", tmp),
-			      restore_wan_ifname))
+		if (nvram_set(strcat_r(prefix, "ifname", tmp), restore_wan_ifname))
 			return -1;
 		if (nvram_unset("restore_wan_ifname"))
 			return -1;
@@ -207,8 +197,7 @@ static int vlan_configure(void)
 			return -1;
 	}
 	if (*(restore_wan_hwaddr)) {
-		if (nvram_set(strcat_r(prefix, "wan_hwaddr", tmp),
-			      restore_wan_hwaddr))
+		if (nvram_set(strcat_r(prefix, "wan_hwaddr", tmp), restore_wan_hwaddr))
 			return -1;
 		if (nvram_unset("restore_wan_hwaddr"))
 			return -1;
@@ -332,8 +321,7 @@ static int vlan_configure(void)
 		buf_index = 0;
 		hasBridge = 1;
 	}
-	for (i = vlan_boards[board_index].lan_port_start;
-	     i <= vlan_boards[board_index].lan_port_end; i++) {
+	for (i = vlan_boards[board_index].lan_port_start; i <= vlan_boards[board_index].lan_port_end; i++) {
 		if (bBrcmTag)
 			/* 
 			 * use port ids for interface suffixes 
@@ -368,8 +356,7 @@ static int vlan_configure(void)
 	 * vlan processing would set the underlying device to promiscuous mode 
 	 */
 	nvram_set("restore_wan_hwaddr", wan_hwaddr);
-	nvram_set(strcat_r(prefix, "hwaddr", tmp),
-		  nvram_safe_get("lan_hwaddr"));
+	nvram_set(strcat_r(prefix, "hwaddr", tmp), nvram_safe_get("lan_hwaddr"));
 
 	/* 
 	 * now create vlan i/f's 
@@ -383,8 +370,7 @@ static int vlan_configure(void)
 		/* 
 		 * create brcm tag device for wan 
 		 */
-		bcm_reg_brcmtag_dev(lan_ifbase_realdev, "t",
-				    vlan_boards[board_index].wan_port);
+		bcm_reg_brcmtag_dev(lan_ifbase_realdev, "t", vlan_boards[board_index].wan_port);
 		ifconfig(wan_ifbase, IFUP, 0, 0);
 	}
 
@@ -411,8 +397,7 @@ static int vlan_configure(void)
 	/* 
 	 * Bring up WAN interface 
 	 */
-	ifconfig(nvram_safe_get(strcat_r(prefix, "ifname", tmp)), IFUP,
-		 nvram_safe_get(strcat_r(prefix, "ipaddr", tmp)),
+	ifconfig(nvram_safe_get(strcat_r(prefix, "ifname", tmp)), IFUP, nvram_safe_get(strcat_r(prefix, "ipaddr", tmp)),
 		 nvram_safe_get(strcat_r(prefix, "netmask", tmp)));
 	/* 
 	 * now configure wan vlan and enable vlans 
@@ -443,9 +428,7 @@ static int vlan_configure(void)
 		/* 
 		 * set flag to let vlan dev build headers in vlan_dev_hard_header 
 		 */
-		eval("vconfig", "set_flag",
-		     nvram_safe_get(strcat_r(prefix, "wan_ifname", tmp)), "1",
-		     "0");
+		eval("vconfig", "set_flag", nvram_safe_get(strcat_r(prefix, "wan_ifname", tmp)), "1", "0");
 
 	/* 
 	 * now enable switch ports for vlan 
@@ -505,8 +488,7 @@ static int vlan_configure(void)
 	/* 
 	 * now lan vlan 
 	 */
-	for (i = vlan_boards[board_index].lan_port_start;
-	     i <= vlan_boards[board_index].lan_port_end; i++) {
+	for (i = vlan_boards[board_index].lan_port_start; i <= vlan_boards[board_index].lan_port_end; i++) {
 		/* 
 		 * if default, no vconfig, because 
 		 */
@@ -522,14 +504,11 @@ static int vlan_configure(void)
 			 * single vlan for all ports 
 			 */
 			if (i == vlan_boards[board_index].lan_port_start) {
-				bcm_vlan_create(
-					0,
-					lan_vid); /* this is for default case,
+				bcm_vlan_create(0, lan_vid); /* this is for default case,
 								 * which doesn't call vconfig 
 								 */
 				sprintf(vlan, "%d", lan_vid);
-				sprintf(port, "%d",
-					BCM_MII_PORT); /* mii port */
+				sprintf(port, "%d", BCM_MII_PORT); /* mii port */
 				eval("vconfig", "add_port", vlan, port);
 			}
 			sprintf(port, "%d", i);
@@ -548,10 +527,8 @@ static int vlan_configure(void)
 				/* 
 				 * also add mii port 
 				 */
-				sprintf(port, "%d",
-					BCM_MII_PORT); /* mii port */
-				eval("vconfig", "add_port_nountag_nodeftag",
-				     vlan, port);
+				sprintf(port, "%d", BCM_MII_PORT); /* mii port */
+				eval("vconfig", "add_port_nountag_nodeftag", vlan, port);
 			}
 			sprintf(port, "%d", i);
 			eval("vconfig", "add_port", vlan, port);
@@ -571,8 +548,7 @@ static int vlan_configure(void)
 		 */
 		bcm_port_stp_set(BCM_WAN_PORT, BCM_PORT_STP_FORWARD);
 		bcm_port_stp_set(9, BCM_PORT_STP_FORWARD);
-		for (i = vlan_boards[board_index].lan_port_start;
-		     i <= vlan_boards[board_index].lan_port_end; i++)
+		for (i = vlan_boards[board_index].lan_port_start; i <= vlan_boards[board_index].lan_port_end; i++)
 			bcm_port_stp_set(i, BCM_PORT_STP_DISABLE);
 	} else {
 		/* 
@@ -599,16 +575,12 @@ static int vlan_configure(void)
 		 */
 		memcpy(MIBda, eth_addr, sizeof(bcm_mac_t));
 		bcm_byteswap(&MIBda);
-		bcm_write_reg(0, ROBO_MIB_AC_PAGE, ROBO_MIB_AC_DA, MIBda,
-			      sizeof(bcm_mac_t));
+		bcm_write_reg(0, ROBO_MIB_AC_PAGE, ROBO_MIB_AC_DA, MIBda, sizeof(bcm_mac_t));
 		memset(buf, 0, sizeof(bcm_mac_t));
-		bcm_write_reg(0, ROBO_MIB_AC_PAGE, ROBO_MIB_AC_SA, buf,
-			      sizeof(bcm_mac_t));
+		bcm_write_reg(0, ROBO_MIB_AC_PAGE, ROBO_MIB_AC_SA, buf, sizeof(bcm_mac_t));
 		MIBport = PBMP_PORT(BCM_MII_ARL_UC_PORT - 1);
-		bcm_write_reg(0, ROBO_MIB_AC_PAGE, ROBO_MIB_AC_PORT,
-			      (uint8 *)&MIBport, sizeof(MIBport));
-		bcm_write_reg(0, ROBO_MIB_AC_PAGE, ROBO_MIB_AC_RATE,
-			      (uint8 *)&mibac_int, sizeof(char));
+		bcm_write_reg(0, ROBO_MIB_AC_PAGE, ROBO_MIB_AC_PORT, (uint8 *)&MIBport, sizeof(MIBport));
+		bcm_write_reg(0, ROBO_MIB_AC_PAGE, ROBO_MIB_AC_RATE, (uint8 *)&mibac_int, sizeof(char));
 		bcm_read_reg(0, ROBO_MGMT_PAGE, ROBO_GLOBAL_CONFIG, buf, 1);
 		buf[0] |= 0x20; /* enable MIB AC */
 		bcm_write_reg(0, ROBO_MGMT_PAGE, ROBO_GLOBAL_CONFIG, buf, 1);
@@ -620,26 +592,20 @@ static int vlan_configure(void)
 	l2addr.pbmp = PBMP_PORT(i - 1) | PBMP_PORT(BCM_MII_PORT - 1);
 	if (BCM_RET_SUCCESS != (retval = bcm_l2_addr_add(0, &l2addr)))
 		dprintf("failure writing lan l2 addr: %d\n", retval);
-	for (i = vlan_boards[board_index].lan_port_start;
-	     i <= vlan_boards[board_index].lan_port_end; i++) {
+	for (i = vlan_boards[board_index].lan_port_start; i <= vlan_boards[board_index].lan_port_end; i++) {
 		vid = lan_vid;
 		if (i == vlan_boards[board_index].lan_port_start) {
 			bcm_l2_addr_init(&l2addr, eth_addr, vid);
 			l2addr.port = BCM_MII_ARL_UC_PORT - 1;
-			if (BCM_RET_SUCCESS !=
-			    (retval = bcm_l2_addr_add(0, &l2addr)))
-				dprintf("failure writing lan l2 addr: %d\n",
-					retval);
+			if (BCM_RET_SUCCESS != (retval = bcm_l2_addr_add(0, &l2addr)))
+				dprintf("failure writing lan l2 addr: %d\n", retval);
 			/* 
 			 * now multicast entry for BPDUs 
 			 */
 			bcm_l2_addr_init(&l2addr, mcast_addr, vid);
-			l2addr.pbmp = PBMP_PORT(i - 1) |
-				      PBMP_PORT(BCM_MII_PORT - 1);
-			if (BCM_RET_SUCCESS !=
-			    (retval = bcm_l2_addr_add(0, &l2addr)))
-				dprintf("failure writing lan l2 addr: %d\n",
-					retval);
+			l2addr.pbmp = PBMP_PORT(i - 1) | PBMP_PORT(BCM_MII_PORT - 1);
+			if (BCM_RET_SUCCESS != (retval = bcm_l2_addr_add(0, &l2addr)))
+				dprintf("failure writing lan l2 addr: %d\n", retval);
 		}
 	}
 	if (!bBrcmTag) {
@@ -651,8 +617,7 @@ static int vlan_configure(void)
 		 * ARL handle them 
 		 */
 		memset(&mcast_addr, 0, sizeof(mcast_addr));
-		bcm_write_reg(0, ROBO_ARLCTRL_PAGE, ROBO_BPDU_MC_ADDR_REG,
-			      mcast_addr, sizeof(mcast_addr));
+		bcm_write_reg(0, ROBO_ARLCTRL_PAGE, ROBO_BPDU_MC_ADDR_REG, mcast_addr, sizeof(mcast_addr));
 	}
 	vlan_configured = 1;
 	/* 
@@ -666,8 +631,7 @@ static int vlan_configure(void)
 	 */
 	restore_wan_hwaddr = nvram_safe_get("restore_wan_hwaddr");
 	if (*(restore_wan_hwaddr)) {
-		if (nvram_set(strcat_r(prefix, "hwaddr", tmp),
-			      restore_wan_hwaddr))
+		if (nvram_set(strcat_r(prefix, "hwaddr", tmp), restore_wan_hwaddr))
 			return -1;
 		if (nvram_unset("restore_wan_hwaddr"))
 			return -1;
@@ -710,20 +674,17 @@ static int vlan_deconfigure(void)
 		 */
 		for (unit = 0; unit < MAX_NVPARSE; unit++) {
 			snprintf(prefix, sizeof(prefix), "wan%d_", unit);
-			wan_ifname =
-				nvram_safe_get(strcat_r(prefix, "ifname", tmp));
+			wan_ifname = nvram_safe_get(strcat_r(prefix, "ifname", tmp));
 			if (!*wan_ifname)
 				continue;
-			wan_proto =
-				nvram_safe_get(strcat_r(prefix, "proto", tmp));
+			wan_proto = nvram_safe_get(strcat_r(prefix, "proto", tmp));
 			if (!*wan_proto || !strcmp(wan_proto, "disabled"))
 				continue;
 			/* 
 			 * disable the connection if the i/f is not in wan_ifnames 
 			 */
 			if (!wan_valid(wan_ifname)) {
-				nvram_set(strcat_r(prefix, "proto", tmp),
-					  "disabled");
+				nvram_set(strcat_r(prefix, "proto", tmp), "disabled");
 				continue;
 			}
 		}
@@ -739,11 +700,8 @@ static int vlan_deconfigure(void)
 		 * vlan is non-zero, that means that eth0 is wan port 
 		 */
 		if (vlan_boards[board_index].vlan_devno)
-			ifconfig(
-				"eth0", IFUP,
-				nvram_safe_get(strcat_r(prefix, "ipaddr", tmp)),
-				nvram_safe_get(
-					strcat_r(prefix, "netmask", tmp)));
+			ifconfig("eth0", IFUP, nvram_safe_get(strcat_r(prefix, "ipaddr", tmp)),
+				 nvram_safe_get(strcat_r(prefix, "netmask", tmp)));
 
 		/* 
 		 * now bring down brcm tag device for wan device 
@@ -759,11 +717,9 @@ static int vlan_deconfigure(void)
 				bcm_unreg_brcmtag_dev(name);
 			}
 			buf[0] = 0x02; /* turn off managed mode */
-			bcm_write_reg(0, ROBO_CTRL_PAGE, ROBO_SWITCH_MODE, buf,
-				      1);
+			bcm_write_reg(0, ROBO_CTRL_PAGE, ROBO_SWITCH_MODE, buf, 1);
 			buf[0] = 0x00; /* turn off vlan mode */
-			bcm_write_reg(0, ROBO_VLAN_PAGE, ROBO_VLAN_CTRL0, buf,
-				      1);
+			bcm_write_reg(0, ROBO_VLAN_PAGE, ROBO_VLAN_CTRL0, buf, 1);
 			/* 
 			 * now, deconfigure wan vlan 
 			 */
@@ -815,8 +771,7 @@ static int vlan_deconfigure(void)
 	 * now restore environment 
 	 */
 	if (*(restore_wan_ifname)) {
-		if (nvram_set(strcat_r(prefix, "ifname", tmp),
-			      restore_wan_ifname))
+		if (nvram_set(strcat_r(prefix, "ifname", tmp), restore_wan_ifname))
 			return -1;
 		if (nvram_unset("restore_wan_ifname"))
 			return -1;
@@ -834,8 +789,7 @@ static int vlan_deconfigure(void)
 			return -1;
 	}
 	if (*(restore_wan_hwaddr)) {
-		if (nvram_set(strcat_r(prefix, "wan_hwaddr", tmp),
-			      restore_wan_hwaddr))
+		if (nvram_set(strcat_r(prefix, "wan_hwaddr", tmp), restore_wan_hwaddr))
 			return -1;
 		if (nvram_unset("restore_wan_hwaddr"))
 			return -1;

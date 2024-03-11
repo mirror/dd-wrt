@@ -38,7 +38,6 @@
 #include <utils.h>
 #include <wlutils.h>
 
-
 #include "regexp/regexp.c"
 
 static int roaming_daemon(void)
@@ -95,34 +94,28 @@ static int roaming_daemon(void)
 	while (1) {
 		site_survey_lists = open_site_survey(NULL);
 		if (!site_survey_lists)
-		    goto next;
+			goto next;
 		char *bestssid = NULL;
 		int bestrssi = -255;
 
 		for (i = 0; i < SITE_SURVEY_NUM; i++) {
-			if (site_survey_lists[i].BSSID[0] == 0 ||
-			    site_survey_lists[i].channel == 0)
+			if (site_survey_lists[i].BSSID[0] == 0 || site_survey_lists[i].channel == 0)
 				break;
-			if (site_survey_lists[i].SSID[0] ==
-			    0) // empty ssid's or
+			if (site_survey_lists[i].SSID[0] == 0) // empty ssid's or
 				// hidden ssid's are
 				// not supported
 				continue;
 			if (regexec(comp, &site_survey_lists[i].SSID[0])) {
 				if (site_survey_lists[i].RSSI > bestrssi) {
 					bestrssi = site_survey_lists[i].RSSI;
-					bestssid =
-						&site_survey_lists[i].SSID[0];
+					bestssid = &site_survey_lists[i].SSID[0];
 				}
 			}
 		}
 
-		fprintf(stderr, "best result %s with rssi %d for roaming\n",
-			bestssid, bestrssi);
+		fprintf(stderr, "best result %s with rssi %d for roaming\n", bestssid, bestrssi);
 		if (bestssid && !nvram_match("roaming_ssid", bestssid)) {
-			fprintf(stderr,
-				"selecting %s with rssi %d for roaming\n",
-				bestssid, bestrssi);
+			fprintf(stderr, "selecting %s with rssi %d for roaming\n", bestssid, bestrssi);
 			nvram_set("roaming_ssid", bestssid);
 			nvram_seti("roaming_enable", 1);
 #ifdef HAVE_MADWIFI
@@ -133,7 +126,7 @@ static int roaming_daemon(void)
 			eval("killall", "wpa_supplicant");
 			eval("supplicant", ifname, bestssid);
 		}
-		next:;
+next:;
 		sleep(60);
 	}
 }

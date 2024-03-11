@@ -73,8 +73,7 @@ static bool match_ifname(const char *ifname)
 		return true;
 
 	list_for_each_entry(iface, &interfaces, list) {
-		if (!strncmp(ifname, iface->name,
-			     strlen(iface->name) + !iface->partial))
+		if (!strncmp(ifname, iface->name, strlen(iface->name) + !iface->partial))
 			return true;
 	}
 	return false;
@@ -140,8 +139,7 @@ static bool add_gpio(const char *name, bool inversed)
 
 	init_gpio(led_name);
 
-	led = calloc(1, 4 + sizeof(*led) + sizeof(GPIO_PREFIX) + len +
-				sizeof(GPIO_SUFFIX) + 1);
+	led = calloc(1, 4 + sizeof(*led) + sizeof(GPIO_PREFIX) + len + sizeof(GPIO_SUFFIX) + 1);
 	sprintf(led->name, GPIO_PREFIX "gpio%s" GPIO_SUFFIX, led_name);
 	if (stat(led->name, &st) < 0) {
 		fprintf(stderr, "Could not find system GPIO %s\n", led_name);
@@ -178,8 +176,7 @@ static bool add_led(const char *name, bool inversed)
 	memcpy(led_name, name, len);
 	led_name[len] = 0;
 
-	led = calloc(1, sizeof(*led) + sizeof(LED_PREFIX) + len +
-				sizeof(LED_SUFFIX) + 1);
+	led = calloc(1, sizeof(*led) + sizeof(LED_PREFIX) + len + sizeof(LED_SUFFIX) + 1);
 	sprintf(led->name, LED_PREFIX "%s" LED_SUFFIX, led_name);
 	if (stat(led->name, &st) < 0) {
 		fprintf(stderr, "Could not find system LED %s\n", led_name);
@@ -207,8 +204,7 @@ static int interface_cb(struct nl_msg *msg, void *arg)
 	static struct nlattr *tb[NL80211_ATTR_MAX + 1];
 	struct genlmsghdr *gnlh = nlmsg_data(nlmsg_hdr(msg));
 
-	nla_parse(tb, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0),
-		  genlmsg_attrlen(gnlh, 0), NULL);
+	nla_parse(tb, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0), genlmsg_attrlen(gnlh, 0), NULL);
 
 	if (!tb[NL80211_ATTR_IFNAME] || !tb[NL80211_ATTR_IFINDEX])
 		goto out;
@@ -217,8 +213,7 @@ static int interface_cb(struct nl_msg *msg, void *arg)
 		goto out;
 
 	if (list->count++ > 0) {
-		struct wdev_list *newlist = realloc(
-			list, sizeof(*list) + list->count * sizeof(int));
+		struct wdev_list *newlist = realloc(list, sizeof(*list) + list->count * sizeof(int));
 		if (!newlist) {
 			free(list);
 			return NL_SKIP;
@@ -241,15 +236,13 @@ static int station_cb(struct nl_msg *msg, void *arg)
 	struct nlattr *cur;
 	int8_t signal;
 
-	nla_parse(tb, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0),
-		  genlmsg_attrlen(gnlh, 0), NULL);
+	nla_parse(tb, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0), genlmsg_attrlen(gnlh, 0), NULL);
 
 	cur = tb[NL80211_ATTR_STA_INFO];
 	if (!cur)
 		goto out;
 
-	nla_parse(tb_sta, NL80211_STA_INFO_MAX, nla_data(cur), nla_len(cur),
-		  NULL);
+	nla_parse(tb_sta, NL80211_STA_INFO_MAX, nla_data(cur), nla_len(cur), NULL);
 
 	cur = tb_sta[NL80211_STA_INFO_SIGNAL_AVG];
 	if (!cur)

@@ -37,15 +37,14 @@ extern "C" {
 		(nbytes) += 2;                                                 \
 	} while (0)
 
-#define APPEND_CRC32(pbytes, nbytes)                                   \
-	do {                                                           \
-		uint32 tmp = crc32(pbytes, nbytes, CRC32_INIT_VALUE) ^ \
-			     0xffffffff;                               \
-		(pbytes)[(nbytes) + 0] = (tmp >> 0) & 0xff;            \
-		(pbytes)[(nbytes) + 1] = (tmp >> 8) & 0xff;            \
-		(pbytes)[(nbytes) + 2] = (tmp >> 16) & 0xff;           \
-		(pbytes)[(nbytes) + 3] = (tmp >> 24) & 0xff;           \
-		(nbytes) += 4;                                         \
+#define APPEND_CRC32(pbytes, nbytes)                                               \
+	do {                                                                       \
+		uint32 tmp = crc32(pbytes, nbytes, CRC32_INIT_VALUE) ^ 0xffffffff; \
+		(pbytes)[(nbytes) + 0] = (tmp >> 0) & 0xff;                        \
+		(pbytes)[(nbytes) + 1] = (tmp >> 8) & 0xff;                        \
+		(pbytes)[(nbytes) + 2] = (tmp >> 16) & 0xff;                       \
+		(pbytes)[(nbytes) + 3] = (tmp >> 24) & 0xff;                       \
+		(nbytes) += 4;                                                     \
 	} while (0)
 
 #ifdef __cplusplus

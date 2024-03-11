@@ -28,14 +28,11 @@ void remove_oldest_entry(int cur_month, int cur_year)
 			if (month == cur_month && year == cur_year) {
 				return;
 			}
-			snprintf(old, sizeof(old), "traff-%02u-%u", month,
-				 year);
+			snprintf(old, sizeof(old), "traff-%02u-%u", month, year);
 			len = strlen(nvram_safe_get(old));
 			if (len > 0) {
-				dd_syslog(
-					LOG_DEBUG,
-					"ttraff: old data for %d-%d removed, freeing %d bytes of nvram\n",
-					month, year, len + 15);
+				dd_syslog(LOG_DEBUG, "ttraff: old data for %d-%d removed, freeing %d bytes of nvram\n", month, year,
+					  len + 15);
 				nvram_unset(old);
 				return;
 			}
@@ -54,8 +51,7 @@ static int checkbuffer(char **buffer, char *var, int buffersize)
 	return buffersize;
 }
 
-void write_to_nvram(int day, int month, int year, unsigned long long rcvd,
-		    unsigned long long sent)
+void write_to_nvram(int day, int month, int year, unsigned long long rcvd, unsigned long long sent)
 {
 	char *next;
 	char var[80];
@@ -98,32 +94,26 @@ void write_to_nvram(int day, int month, int year, unsigned long long rcvd,
 		if (i == day) {
 			if (strstr(var,
 				   "[")) { //check and correct faulty entries
-				snprintf(temp, sizeof(temp), "%llu:%llu ", rcvd,
-					 sent);
+				snprintf(temp, sizeof(temp), "%llu:%llu ", rcvd, sent);
 			} else { //value OK
 				sscanf(var, "%llu:%llu", &old_rcvd, &old_sent);
-				snprintf(temp, sizeof(temp), "%llu:%llu ",
-					 old_rcvd + rcvd, old_sent + sent);
+				snprintf(temp, sizeof(temp), "%llu:%llu ", old_rcvd + rcvd, old_sent + sent);
 			}
 			buffersize = checkbuffer(&buffer, temp, buffersize);
 			snprintf(buffer, buffersize, "%s%s", buffer, temp);
 		} else if (i == (days + 1)) //make new monthly total
 		{
 			sscanf(var, "[%llu:%llu]", &old_rcvd, &old_sent);
-			snprintf(temp, sizeof(temp), "[%llu:%llu] ",
-				 old_rcvd + rcvd, old_sent + sent);
+			snprintf(temp, sizeof(temp), "[%llu:%llu] ", old_rcvd + rcvd, old_sent + sent);
 			buffersize = checkbuffer(&buffer, temp, buffersize);
 			snprintf(buffer, buffersize, "%s%s", buffer, temp);
 			i++;
 			break;
 		} else {
 			if (strchr(var, ':') != NULL) {
-				buffersize =
-					checkbuffer(&buffer, var, buffersize);
-				snprintf(buffer, buffersize, "%s%s", buffer,
-					 var);
-				buffersize =
-					checkbuffer(&buffer, " ", buffersize);
+				buffersize = checkbuffer(&buffer, var, buffersize);
+				snprintf(buffer, buffersize, "%s%s", buffer, var);
+				buffersize = checkbuffer(&buffer, " ", buffersize);
 				snprintf(buffer, buffersize, "%s ", buffer);
 			}
 		}
@@ -203,11 +193,9 @@ int main(int argc, char **argv)
 	FILE *in;
 
 	if (nvram_match("ttraff_iface", "") || !nvram_exists("ttraff_iface"))
-		strncpy(wanface, safe_get_wan_face(wan_if_buffer),
-			sizeof(wanface));
+		strncpy(wanface, safe_get_wan_face(wan_if_buffer), sizeof(wanface));
 	else
-		strncpy(wanface, nvram_safe_get("ttraff_iface"),
-			sizeof(wanface));
+		strncpy(wanface, nvram_safe_get("ttraff_iface"), sizeof(wanface));
 	strcat(wanface, ":");
 	/* 
 	 * now we can loop and collect data 
@@ -253,8 +241,7 @@ int main(int argc, char **argv)
 		if (in_dev_last > in_dev) // 4GB limit was reached or couter
 		// reseted
 		{
-			megi = (in_dev_last >> 20) +
-			       (in_dev >> 20); // to avarage
+			megi = (in_dev_last >> 20) + (in_dev >> 20); // to avarage
 			//
 			//
 			//
@@ -266,8 +253,7 @@ int main(int argc, char **argv)
 			// gain here
 			// to 0 over
 			// long time
-			in_diff =
-				(in_dev >> 20) * 2; // to avarage loss and gain
+			in_diff = (in_dev >> 20) * 2; // to avarage loss and gain
 			// here to 0 over long time
 			in_dev_last = in_dev;
 		} else {
@@ -278,8 +264,7 @@ int main(int argc, char **argv)
 		if (out_dev_last > out_dev) // 4GB limit was reached or counter
 		// reseted
 		{
-			mego = (out_dev_last >> 20) +
-			       (out_dev >> 20); // to avarage
+			mego = (out_dev_last >> 20) + (out_dev >> 20); // to avarage
 			//
 			//
 			//
@@ -291,8 +276,7 @@ int main(int argc, char **argv)
 			// gain here
 			// to 0 over
 			// long time
-			out_diff =
-				(out_dev >> 20) * 2; // to avarage loss and gain
+			out_diff = (out_dev >> 20) * 2; // to avarage loss and gain
 			// here to 0 over long time
 			out_dev_last = out_dev;
 		} else {
@@ -313,21 +297,18 @@ int main(int argc, char **argv)
 			megcounto = 0;
 			if ((in = fopen("/tmp/.megc", "r")) != NULL) {
 				fgets(line, sizeof(line), in);
-				sscanf(line, "%llu:%llu", &megcounti,
-				       &megcounto);
+				sscanf(line, "%llu:%llu", &megcounti, &megcounto);
 				fclose(in);
 			}
 			in = fopen("/tmp/.megc", "w");
-			sprintf(line, "%llu:%llu", megcounti + megi,
-				megcounto + mego);
+			sprintf(line, "%llu:%llu", megcounti + megi, megcounto + mego);
 			fputs(line, in);
 			fclose(in);
 			megi = 0;
 			mego = 0;
 		}
 
-		if (currtime->tm_hour == 23 && currtime->tm_min == 59 &&
-		    commited == 0) {
+		if (currtime->tm_hour == 23 && currtime->tm_min == 59 && commited == 0) {
 			needcommit = 1;
 		} else {
 			commited = 0;
@@ -338,10 +319,7 @@ int main(int argc, char **argv)
 			nvram_async_commit();
 			commited = 1;
 			needcommit = 0;
-			dd_syslog(
-				LOG_DEBUG,
-				"ttraff: data for %d-%d-%d commited to nvram\n",
-				day, month, year);
+			dd_syslog(LOG_DEBUG, "ttraff: data for %d-%d-%d commited to nvram\n", day, month, year);
 		}
 
 		sleep(58);

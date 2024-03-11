@@ -21,8 +21,7 @@ static int run_wiviz_main(int argc, char **argv)
 			fprintf(fp, "channelsel=hop&");
 		else
 			fprintf(fp, "channelsel=%s&", hopseq);
-		fprintf(fp, "hopdwell=%s&hopseq=%s\n",
-			nvram_safe_get("hopdwell"), hopseq);
+		fprintf(fp, "hopdwell=%s&hopseq=%s\n", nvram_safe_get("hopdwell"), hopseq);
 		fclose(fp);
 		if (pidof("wiviz") > 0)
 			exit(0);

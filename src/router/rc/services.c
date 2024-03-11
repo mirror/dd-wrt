@@ -74,8 +74,7 @@ static void del_routes(char *route)
 		if (!strcmp(ipaddr, "0.0.0.0"))
 			eval("route", "del", "default", "gw", gateway);
 
-		eval("route", "del", "-net", ipaddr, "netmask", netmask, "gw",
-		     gateway);
+		eval("route", "del", "-net", ipaddr, "netmask", netmask, "gw", gateway);
 		// route_del (ifname, atoi (metric) + 1, ipaddr, gateway, netmask);
 	}
 }
@@ -1300,13 +1299,11 @@ static void handle_wireless(void)
 #endif
 	//since start/stop is faster now we need to sleep, otherwise httpd is stopped/started while response is sent to client
 #ifdef HAVE_80211AC
-	restart_fdelay(
-		"httpd",
-		2); // httpd will not accept connection anymore on wan/lan ip changes changes
+	restart_fdelay("httpd",
+		       2); // httpd will not accept connection anymore on wan/lan ip changes changes
 #else
-	restart_fdelay(
-		"httpd",
-		4); // httpd will not accept connection anymore on wan/lan ip changes changes
+	restart_fdelay("httpd",
+		       4); // httpd will not accept connection anymore on wan/lan ip changes changes
 #endif
 #ifdef HAVE_SMBD
 	restart_f("samba3");
@@ -1402,9 +1399,8 @@ static void handle_wireless_2(void)
 #ifdef HAVE_3G
 		if (!nvram_match("wan_proto", "3g"))
 #endif
-			restart_fdelay(
-				"httpd",
-				2); // httpd will not accept connection anymore
+			restart_fdelay("httpd",
+				       2); // httpd will not accept connection anymore
 	}
 	// on wan/lan ip changes changes
 #ifdef HAVE_MADWIFI
@@ -1455,85 +1451,82 @@ static void handle_eop(void)
 	restart("firewall");
 }
 #endif
-static struct SERVICES services_def[] = {
-	{ "dhcp", handle_dhcpd },
-	{ "index", handle_index },
-	{ "router", handle_router },
-	{ "hotspot", handle_hotspot },
-	//      {"anchorfree", handle_anchorfree},
-	{ "services", handle_services },
-#if defined(HAVE_FTP) || defined(HAVE_SAMBA3) || defined(HAVE_MINIDLNA) || \
-	defined(HAVE_RAID)
-	{ "nassrv", handle_nassrv },
+static struct SERVICES services_def[] = { { "dhcp", handle_dhcpd },
+					  { "index", handle_index },
+					  { "router", handle_router },
+					  { "hotspot", handle_hotspot },
+					  //      {"anchorfree", handle_anchorfree},
+					  { "services", handle_services },
+#if defined(HAVE_FTP) || defined(HAVE_SAMBA3) || defined(HAVE_MINIDLNA) || defined(HAVE_RAID)
+					  { "nassrv", handle_nassrv },
 #endif
-	{ "management", handle_management },
+					  { "management", handle_management },
 #ifdef HAVE_3G
-	{ "start_3g", handle_pppoe },
-	{ "stop_3g", handle_spppoe },
+					  { "start_3g", handle_pppoe },
+					  { "stop_3g", handle_spppoe },
 #endif
 #ifdef HAVE_PPPOATM
-	{ "start_pppoa", handle_pppoe },
-	{ "stop_pppoa", handle_spppoe },
+					  { "start_pppoa", handle_pppoe },
+					  { "stop_pppoa", handle_spppoe },
 #endif
-	{ "start_pppoe", handle_pppoe },
-	{ "stop_pppoe", handle_spppoe },
-	{ "start_pptp", handle_pppoe },
-	{ "stop_pptp", handle_spppoe },
-	{ "speedtest", handle_speedtest },
+					  { "start_pppoe", handle_pppoe },
+					  { "stop_pppoe", handle_spppoe },
+					  { "start_pptp", handle_pppoe },
+					  { "stop_pptp", handle_spppoe },
+					  { "speedtest", handle_speedtest },
 #ifdef HAVE_L2TP
-	{ "start_l2tp", handle_pppoe },
+					  { "start_l2tp", handle_pppoe },
 #endif
 #ifdef HAVE_FREERADIUS
-	{ "freeradius", handle_freeradius },
+					  { "freeradius", handle_freeradius },
 #endif
 #ifdef HAVE_HEARTBEAT
-	{ "start_heartbeat", handle_pppoe },
+					  { "start_heartbeat", handle_pppoe },
 #endif
-	{ "stop_pppoe", handle_spppoe },
-	{ "stop_pptp", handle_spppoe },
+					  { "stop_pppoe", handle_spppoe },
+					  { "stop_pptp", handle_spppoe },
 #ifdef HAVE_L2TP
-	{ "stop_l2tp", handle_spppoe },
+					  { "stop_l2tp", handle_spppoe },
 #endif
 #ifdef HAVE_HEARTBEAT
-	{ "stop_heartbeat", handle_spppoe },
+					  { "stop_heartbeat", handle_spppoe },
 #endif
 #ifdef HAVE_SYSCTL_EDIT
-	{ "sysctl", handle_sysctl },
+					  { "sysctl", handle_sysctl },
 #endif
-	{ "filters", handle_filters },
-	{ "routing", handle_routing },
-	{ "alive", handle_alive },
-	{ "forward", handle_forward },
-	{ "qos", handle_qos },
-	{ "forward_upnp", handle_forwardupnp },
-	{ "static_route_del", handle_routedel },
-	{ "ddns", handle_ddns },
-	// {"start_ping", handle_ping},
-	{ "http_upgrade", handle_upgrade },
+					  { "filters", handle_filters },
+					  { "routing", handle_routing },
+					  { "alive", handle_alive },
+					  { "forward", handle_forward },
+					  { "qos", handle_qos },
+					  { "forward_upnp", handle_forwardupnp },
+					  { "static_route_del", handle_routedel },
+					  { "ddns", handle_ddns },
+					  // {"start_ping", handle_ping},
+					  { "http_upgrade", handle_upgrade },
 #ifdef HAVE_MILKFISH
-	{ "milkfish", handle_milkfish },
+					  { "milkfish", handle_milkfish },
 #endif
-	{ "wireless", handle_wireless },
-	{ "wireless_2", handle_wireless_2 },
-	{ "dhcp_release", handle_dhcp_release },
+					  { "wireless", handle_wireless },
+					  { "wireless_2", handle_wireless_2 },
+					  { "dhcp_release", handle_dhcp_release },
 #ifdef HAVE_USB
-	{ "usbdrivers", handle_usbdrivers },
+					  { "usbdrivers", handle_usbdrivers },
 #endif
 #ifdef HAVE_EOP_TUNNEL
-	{ "eop", handle_eop },
+					  { "eop", handle_eop },
 #endif
 #ifdef HAVE_SPOTPASS
-	{ "spotpass", handle_spotpass },
+					  { "spotpass", handle_spotpass },
 #endif
 #ifdef HAVE_IPV6
-	{ "ipv6", handle_ipv6 },
+					  { "ipv6", handle_ipv6 },
 #endif
-	{ "pptp", handle_pptp },
+					  { "pptp", handle_pptp },
 #ifdef HAVE_SPEEDCHECKER
-	{ "speedchecker", handle_speedchecker },
+					  { "speedchecker", handle_speedchecker },
 #endif
-	{ NULL, NULL }
-};
+					  { NULL, NULL } };
 
 static int single_service_helper(void)
 {
@@ -1541,8 +1534,7 @@ static int single_service_helper(void)
 	if (sr) {
 		sr++;
 		nvram_seti("service_running", sr);
-		dd_loginfo("services", "increase delay to %d seconds\n",
-			   sr * 5);
+		dd_loginfo("services", "increase delay to %d seconds\n", sr * 5);
 		return 0;
 	}
 	nvram_seti("service_running", 1);
@@ -1568,8 +1560,7 @@ static int single_service_helper(void)
 		int servicecount = 0;
 
 		while (services_def[servicecount].servicename != NULL) {
-			if (!strcmp(services_def[servicecount].servicename,
-				    service))
+			if (!strcmp(services_def[servicecount].servicename, service))
 				services_def[servicecount].service();
 			servicecount++;
 		}
