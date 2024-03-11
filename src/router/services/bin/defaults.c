@@ -45,8 +45,8 @@ void recover(void)
 {
 	FILE *in = fopen("defaults.bin", "rb");
 	int len, counts, stores;
-	fread(&len, 4, 1, in);	// total count of pairs
-	stores = getc(in);	// count of unique values
+	fread(&len, 4, 1, in); // total count of pairs
+	stores = getc(in); // count of unique values
 	unsigned char *index;
 	index = malloc(sizeof(char) * len);
 	int i;
@@ -75,14 +75,13 @@ void recover(void)
 			fprintf(stderr, "error while validating\n");
 			exit(1);
 		}
-		fprintf(stderr, "check: %s=%s\n", temp,values[index[i]]);
+		fprintf(stderr, "check: %s=%s\n", temp, values[index[i]]);
 	}
 	for (i = 0; i < stores; i++) {
 		free(values[i]);
 	}
 	free(values);
 	free(index);
-
 }
 
 int main(int argc, char *argv[])
@@ -106,7 +105,7 @@ int main(int argc, char *argv[])
 			srouter_defaults[i].value = NULL;
 			int a = 0;
 			fprintf(stderr, "name %s is empty\n", srouter_defaults[i].name);
-			for (a = i; a < len-1; a++) {
+			for (a = i; a < len - 1; a++) {
 				srouter_defaults[a].value = srouter_defaults[a + 1].value;
 				srouter_defaults[a].name = srouter_defaults[a + 1].name;
 			}
@@ -120,20 +119,19 @@ int main(int argc, char *argv[])
 			memset(next, 0, sizeof(*next));
 			next->value = srouter_defaults[i].value;
 			next->next = NULL;
-//                      fprintf(stderr, "%s: store %s\n", srouter_defaults[i].name, srouter_defaults[i].value);
+			//                      fprintf(stderr, "%s: store %s\n", srouter_defaults[i].name, srouter_defaults[i].value);
 			next->index = counts++;
 			stored++;
 			cur->next = next;
 			cur = next;
 		} else {
-//                        fprintf(stderr, "%s: reuse %s (%d)\n", srouter_defaults[i].name, srouter_defaults[i].value, f);
+			//                        fprintf(stderr, "%s: reuse %s (%d)\n", srouter_defaults[i].name, srouter_defaults[i].value, f);
 		}
-
 	}
-//      fprintf(stderr, "stored %d\n", stored);
+	//      fprintf(stderr, "stored %d\n", stored);
 	len -= 1;
-	fwrite(&len, 4, 1, out);	// total count of pairs
-	putc(stored, out);	// amount of unique values
+	fwrite(&len, 4, 1, out); // total count of pairs
+	putc(stored, out); // amount of unique values
 	cur = &head;
 
 	for (i = 0; i < len; i++) {
@@ -163,9 +161,9 @@ int main(int argc, char *argv[])
 			namecur->next = next;
 			namecur = next;
 		} else {
-			fprintf(stderr, "%s: WARNING: already in use %s (%d)\n", srouter_defaults[i].name, srouter_defaults[i].value, f);
+			fprintf(stderr, "%s: WARNING: already in use %s (%d)\n", srouter_defaults[i].name,
+				srouter_defaults[i].value, f);
 		}
-
 	}
 
 	fclose(out);
