@@ -22,6 +22,11 @@
 #include <sys/ioctl.h>		/* FIONREAD */
 #include <fcntl.h>		/* F_GETPIPE_SZ F_SETPIPE_SZ */
 
+#ifndef F_SETPIPE_SZ
+#define F_SETPIPE_SZ	1031
+#define F_GETPIPE_SZ	1032
+#endif
+
 #include "c.h"
 #include "nls.h"
 
