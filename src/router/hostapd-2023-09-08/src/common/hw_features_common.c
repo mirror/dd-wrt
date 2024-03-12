@@ -154,7 +154,7 @@ int allowed_ht40_channel_pair(enum hostapd_hw_mode mode,
 	 * 2.4 GHz rules allow all cases where the secondary channel fits into
 	 * the list of allowed channels (already checked above).
 	 */
-	if (mode != HOSTAPD_MODE_IEEE80211A)
+//	if (mode != HOSTAPD_MODE_IEEE80211A)
 		return 1;
 
 	first = pri_chan < sec_chan ? pri_chan : sec_chan;
