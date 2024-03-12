@@ -189,7 +189,7 @@ static int bcache_verify_checksum(blkid_probe pr, const struct blkid_idmag *mag,
 		return 0;
 
 	/* up to the end of bcs->d[] */
-	csummed_size = offsetof(typeof(*bcs), d) +
+	csummed_size = offsetof(const struct bcache_super_block, d) +
 		sizeof(bcs->d[0]) * le16_to_cpu(bcs->keys);
 	csummed = blkid_probe_get_sb_buffer(pr, mag, csummed_size);
 	csum = ul_crc64_we(csummed + BCACHE_SB_CSUMMED_START,
@@ -229,7 +229,7 @@ static void probe_bcachefs_sb_members(blkid_probe pr,
 	uint64_t sectors = 0;
 	uint8_t i;
 
-	if (BYTES(field) != offsetof(typeof(*members), members[bcs->nr_devices]))
+	if (BYTES(field) != offsetof(struct bcachefs_sb_field_members, members[bcs->nr_devices]))
 		return;
 
 	blkid_probe_set_uuid_as(pr, members->members[dev_idx].uuid, "UUID_SUB");
@@ -249,7 +249,7 @@ static void probe_bcachefs_sb_disk_groups(blkid_probe pr,
 	struct bcachefs_sb_field_disk_groups *disk_groups =
 			(struct bcachefs_sb_field_disk_groups *) field;
 
-	if (BYTES(field) != offsetof(typeof(*disk_groups), disk_groups[bcs->nr_devices]))
+	if (BYTES(field) != offsetof(struct bcachefs_sb_field_disk_groups, disk_groups[bcs->nr_devices]))
 		return;
 
 	blkid_probe_set_id_label(pr, "LABEL_SUB",
