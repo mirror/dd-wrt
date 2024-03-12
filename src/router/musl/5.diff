@@ -1,0 +1,4354 @@
+diff -urpN musl-1.2.4/INSTALL musl-1.2.5/INSTALL
+--- musl-1.2.4/INSTALL	2023-05-02 09:39:41.000000000 +0600
++++ musl-1.2.5/INSTALL	2024-03-01 08:07:33.000000000 +0600
+@@ -97,11 +97,16 @@ and ABI combinations:
+ 
+ * OpenRISC 1000 (or1k)
+ 
+-* RISC-V 64
++* RISC-V
++    * 32-bit and 64-bit
+     * Little endian
+     * Hard, soft, and hard-single/soft-double floating point ABIs
+     * Standard ELF; no shared-text NOMMU support
+ 
++* LoongArch
++    * 64-bit ISA
++    * Hard, soft, and hard-single/soft-double floating point ABIs
++
+ 
+ 
+ Build and Installation Procedure
+diff -urpN musl-1.2.4/VERSION musl-1.2.5/VERSION
+--- musl-1.2.4/VERSION	2023-05-02 09:39:41.000000000 +0600
++++ musl-1.2.5/VERSION	2024-03-01 08:07:33.000000000 +0600
+@@ -1 +1 @@
+-1.2.4
++1.2.5
+diff -urpN musl-1.2.4/WHATSNEW musl-1.2.5/WHATSNEW
+--- musl-1.2.4/WHATSNEW	2023-05-02 09:39:41.000000000 +0600
++++ musl-1.2.5/WHATSNEW	2024-03-01 08:07:33.000000000 +0600
+@@ -2396,3 +2396,45 @@ arch-specific bugs fixed:
+ - sigaction signal mask was bogus on or1k, microblaze, mips, and riscv
+ - powerpc-sf longjmp asm clobbered value argument
+ - or1k poll function passed timeout to syscall in wrong form
++
++
++
++1.2.5 release notes
++
++new features:
++- statx function (linux extension; via syscall and fallback using fstatat)
++- clone function is now usable and gives _Fork-like consistency in child
++- statvfs now provides f_type result
++- preadv2 and pwritev2 (linux extension) syscall wrappers
++- riscv64 TLSDESC support
++
++new ports:
++- loongarch64
++- riscv32
++
++compatibility:
++- DNS resolver can now handle answers with long CNAME chains
++- string.h no longer provides (C23-incompat) non-prototype decl of basename
++- fstatat statx backend now matches stat syscall non-automounting behavior
++- mntent interfaces now handle escaped whitespace in paths/options
++
++standards updates:
++- printf %lc of nul wchar now produces output
++- snprintf and swprintf no longer fail on n > INT_MAX
++- ppoll is now exposed in default feature profile
++
++bugs fixed:
++- some long DNS answers were wrongly rejected despite new TCP support
++- glob could wrongly return GLOB_NOMATCH if aborted before any matches
++- multithreaded set*id could malfunction from thread sequencing logic bug
++- certain use of threads after fork could deadlock thread-list lock
++- posix_spawn child could deadlock in race with async parent death
++- mbrtowc return value was wrong if argument n exceeded UINT_MAX
++- 80-bit extended acoshl and powl got some corner cases wrong
++- syslog incorrectly generated localized timestamps
++
++arch-specific bugs fixed:
++- arm (32-bit) TLSDESC malfunctioned due to addends being processed wrong
++- riscv64 icache flush operation was non-functional
++- sh sigsetjmp failed to properly restore call-saved register r8 on return
++- sh dlsym RTLD_NEXT did not identify calling module correctly
+diff -urpN musl-1.2.4/arch/aarch64/bits/syscall.h.in musl-1.2.5/arch/aarch64/bits/syscall.h.in
+--- musl-1.2.4/arch/aarch64/bits/syscall.h.in	2023-05-02 09:39:41.000000000 +0600
++++ musl-1.2.5/arch/aarch64/bits/syscall.h.in	2024-03-01 08:07:33.000000000 +0600
+@@ -299,4 +299,9 @@
+ #define __NR_landlock_create_ruleset	444
+ #define __NR_landlock_add_rule	445
+ #define __NR_landlock_restrict_self	446
++#define __NR_process_mrelease	448
++#define __NR_futex_waitv	449
++#define __NR_set_mempolicy_home_node	450
++#define __NR_cachestat		451
++#define __NR_fchmodat2		452
+ 
+diff -urpN musl-1.2.4/arch/arm/bits/syscall.h.in musl-1.2.5/arch/arm/bits/syscall.h.in
+--- musl-1.2.4/arch/arm/bits/syscall.h.in	2023-05-02 09:39:41.000000000 +0600
++++ musl-1.2.5/arch/arm/bits/syscall.h.in	2024-03-01 08:07:33.000000000 +0600
+@@ -399,6 +399,11 @@
+ #define __NR_landlock_create_ruleset	444
+ #define __NR_landlock_add_rule	445
+ #define __NR_landlock_restrict_self	446
++#define __NR_process_mrelease	448
++#define __NR_futex_waitv	449
++#define __NR_set_mempolicy_home_node	450
++#define __NR_cachestat		451
++#define __NR_fchmodat2		452
+ 
+ #define __ARM_NR_breakpoint	0x0f0001
+ #define __ARM_NR_cacheflush	0x0f0002
+diff -urpN musl-1.2.4/arch/arm/reloc.h musl-1.2.5/arch/arm/reloc.h
+--- musl-1.2.4/arch/arm/reloc.h	2023-05-02 09:39:41.000000000 +0600
++++ musl-1.2.5/arch/arm/reloc.h	2024-03-01 08:07:33.000000000 +0600
+@@ -26,7 +26,7 @@
+ #define REL_TPOFF       R_ARM_TLS_TPOFF32
+ #define REL_TLSDESC     R_ARM_TLS_DESC
+ 
+-#define TLSDESC_BACKWARDS
++#define TLSDESC_BACKWARDS 1
+ 
+ #define CRTJMP(pc,sp) __asm__ __volatile__( \
+ 	"mov sp,%1 ; bx %0" : : "r"(pc), "r"(sp) : "memory" )
+diff -urpN musl-1.2.4/arch/i386/bits/syscall.h.in musl-1.2.5/arch/i386/bits/syscall.h.in
+--- musl-1.2.4/arch/i386/bits/syscall.h.in	2023-05-02 09:39:41.000000000 +0600
++++ musl-1.2.5/arch/i386/bits/syscall.h.in	2024-03-01 08:07:33.000000000 +0600
+@@ -436,4 +436,10 @@
+ #define __NR_landlock_create_ruleset	444
+ #define __NR_landlock_add_rule	445
+ #define __NR_landlock_restrict_self	446
++#define __NR_memfd_secret	447
++#define __NR_process_mrelease	448
++#define __NR_futex_waitv	449
++#define __NR_set_mempolicy_home_node	450
++#define __NR_cachestat		451
++#define __NR_fchmodat2		452
+ 
+diff -urpN musl-1.2.4/arch/loongarch64/atomic_arch.h musl-1.2.5/arch/loongarch64/atomic_arch.h
+--- musl-1.2.4/arch/loongarch64/atomic_arch.h	1970-01-01 06:00:00.000000000 +0600
++++ musl-1.2.5/arch/loongarch64/atomic_arch.h	2024-03-01 08:07:33.000000000 +0600
+@@ -0,0 +1,53 @@
++#define a_ll a_ll
++static inline int a_ll(volatile int *p)
++{
++	int v;
++	__asm__ __volatile__ (
++		"ll.w %0, %1"
++		: "=r"(v)
++		: "ZC"(*p));
++	return v;
++}
++
++#define a_sc a_sc
++static inline int a_sc(volatile int *p, int v)
++{
++	int r;
++	__asm__ __volatile__ (
++		"sc.w %0, %1"
++		: "=r"(r), "=ZC"(*p)
++		: "0"(v) : "memory");
++	return r;
++}
++
++#define a_ll_p a_ll_p
++static inline void *a_ll_p(volatile void *p)
++{
++	void *v;
++	__asm__ __volatile__ (
++		"ll.d %0, %1"
++		: "=r"(v)
++		: "ZC"(*(void *volatile *)p));
++	return v;
++}
++
++#define a_sc_p a_sc_p
++static inline int a_sc_p(volatile void *p, void *v)
++{
++	long r;
++	__asm__ __volatile__ (
++		"sc.d %0, %1"
++		: "=r"(r), "=ZC"(*(void *volatile *)p)
++		: "0"(v)
++		: "memory");
++	return r;
++}
++
++#define a_barrier a_barrier
++static inline void a_barrier()
++{
++	__asm__ __volatile__ ("dbar 0" : : : "memory");
++}
++
++#define a_pre_llsc  a_barrier
++#define a_post_llsc a_barrier
+diff -urpN musl-1.2.4/arch/loongarch64/bits/alltypes.h.in musl-1.2.5/arch/loongarch64/bits/alltypes.h.in
+--- musl-1.2.4/arch/loongarch64/bits/alltypes.h.in	1970-01-01 06:00:00.000000000 +0600
++++ musl-1.2.5/arch/loongarch64/bits/alltypes.h.in	2024-03-01 08:07:33.000000000 +0600
+@@ -0,0 +1,18 @@
++#define _Addr long
++#define _Int64 long
++#define _Reg long
++
++#define __BYTE_ORDER 1234
++#define __LONG_MAX 0x7fffffffffffffffL
++
++#ifndef __cplusplus
++TYPEDEF int wchar_t;
++#endif
++
++TYPEDEF float float_t;
++TYPEDEF double double_t;
++
++TYPEDEF struct { long long __ll; long double __ld; } max_align_t;
++
++TYPEDEF unsigned nlink_t;
++TYPEDEF int blksize_t;
+diff -urpN musl-1.2.4/arch/loongarch64/bits/fenv.h musl-1.2.5/arch/loongarch64/bits/fenv.h
+--- musl-1.2.4/arch/loongarch64/bits/fenv.h	1970-01-01 06:00:00.000000000 +0600
++++ musl-1.2.5/arch/loongarch64/bits/fenv.h	2024-03-01 08:07:33.000000000 +0600
+@@ -0,0 +1,20 @@
++#define FE_INEXACT    0x010000
++#define FE_UNDERFLOW  0x020000
++#define FE_OVERFLOW   0x040000
++#define FE_DIVBYZERO  0x080000
++#define FE_INVALID    0x100000
++
++#define FE_ALL_EXCEPT 0x1F0000
++
++#define FE_TONEAREST  0x000
++#define FE_TOWARDZERO 0x100
++#define FE_UPWARD     0x200
++#define FE_DOWNWARD   0x300
++
++typedef unsigned fexcept_t;
++
++typedef struct {
++	unsigned __cw;
++} fenv_t;
++
++#define FE_DFL_ENV ((const fenv_t *) -1)
+diff -urpN musl-1.2.4/arch/loongarch64/bits/float.h musl-1.2.5/arch/loongarch64/bits/float.h
+--- musl-1.2.4/arch/loongarch64/bits/float.h	1970-01-01 06:00:00.000000000 +0600
++++ musl-1.2.5/arch/loongarch64/bits/float.h	2024-03-01 08:07:33.000000000 +0600
+@@ -0,0 +1,16 @@
++#define FLT_EVAL_METHOD 0
++
++#define LDBL_TRUE_MIN 6.47517511943802511092443895822764655e-4966L
++#define LDBL_MIN 3.36210314311209350626267781732175260e-4932L
++#define LDBL_MAX 1.18973149535723176508575932662800702e+4932L
++#define LDBL_EPSILON 1.92592994438723585305597794258492732e-34L
++
++#define LDBL_MANT_DIG 113
++#define LDBL_MIN_EXP (-16381)
++#define LDBL_MAX_EXP 16384
++
++#define LDBL_DIG 33
++#define LDBL_MIN_10_EXP (-4931)
++#define LDBL_MAX_10_EXP 4932
++
++#define DECIMAL_DIG 36
+diff -urpN musl-1.2.4/arch/loongarch64/bits/posix.h musl-1.2.5/arch/loongarch64/bits/posix.h
+--- musl-1.2.4/arch/loongarch64/bits/posix.h	1970-01-01 06:00:00.000000000 +0600
++++ musl-1.2.5/arch/loongarch64/bits/posix.h	2024-03-01 08:07:33.000000000 +0600
+@@ -0,0 +1,2 @@
++#define _POSIX_V6_LP64_OFF64 1
++#define _POSIX_V7_LP64_OFF64 1
+diff -urpN musl-1.2.4/arch/loongarch64/bits/reg.h musl-1.2.5/arch/loongarch64/bits/reg.h
+--- musl-1.2.4/arch/loongarch64/bits/reg.h	1970-01-01 06:00:00.000000000 +0600
++++ musl-1.2.5/arch/loongarch64/bits/reg.h	2024-03-01 08:07:33.000000000 +0600
+@@ -0,0 +1,2 @@
++#undef __WORDSIZE
++#define __WORDSIZE 64
+diff -urpN musl-1.2.4/arch/loongarch64/bits/setjmp.h musl-1.2.5/arch/loongarch64/bits/setjmp.h
+--- musl-1.2.4/arch/loongarch64/bits/setjmp.h	1970-01-01 06:00:00.000000000 +0600
++++ musl-1.2.5/arch/loongarch64/bits/setjmp.h	2024-03-01 08:07:33.000000000 +0600
+@@ -0,0 +1 @@
++typedef unsigned long __jmp_buf[23];
+diff -urpN musl-1.2.4/arch/loongarch64/bits/signal.h musl-1.2.5/arch/loongarch64/bits/signal.h
+--- musl-1.2.4/arch/loongarch64/bits/signal.h	1970-01-01 06:00:00.000000000 +0600
++++ musl-1.2.5/arch/loongarch64/bits/signal.h	2024-03-01 08:07:33.000000000 +0600
+@@ -0,0 +1,101 @@
++#if defined(_POSIX_SOURCE) || defined(_POSIX_C_SOURCE) \
++ || defined(_XOPEN_SOURCE) || defined(_GNU_SOURCE) || defined(_BSD_SOURCE)
++
++#if defined(_XOPEN_SOURCE) || defined(_GNU_SOURCE) || defined(_BSD_SOURCE)
++#define MINSIGSTKSZ 4096
++#define SIGSTKSZ 16384
++#endif
++
++#if defined(_GNU_SOURCE)
++#define LARCH_NGREG 32
++#define LARCH_REG_RA 1
++#define LARCH_REG_SP 3
++#define LARCH_REG_S0 23
++#define LARCH_REG_S1 24
++#define LARCH_REG_A0 4
++#define LARCH_REG_S2 25
++#define LARCH_REG_NARGS 8
++#endif
++
++#if defined(_GNU_SOURCE) || defined(_BSD_SOURCE)
++typedef unsigned long greg_t, gregset_t[32];
++
++struct sigcontext {
++	unsigned long sc_pc;
++	unsigned long sc_regs[32];
++	unsigned sc_flags;
++	unsigned long sc_extcontext[] __attribute__((__aligned__(16)));
++};
++#endif
++
++typedef struct {
++	unsigned long __pc;
++	unsigned long __gregs[32];
++	unsigned __flags;
++	unsigned long __extcontext[] __attribute__((__aligned__(16)));
++} mcontext_t;
++
++struct sigaltstack {
++	void *ss_sp;
++	int ss_flags;
++	size_t ss_size;
++};
++
++typedef struct __ucontext
++{
++	unsigned long uc_flags;
++	struct __ucontext *uc_link;
++	stack_t uc_stack;
++	sigset_t uc_sigmask;
++	long __uc_pad;
++	mcontext_t uc_mcontext;
++} ucontext_t;
++
++#define __uc_flags uc_flags
++
++#define SA_NOCLDSTOP 1
++#define SA_NOCLDWAIT 2
++#define SA_SIGINFO   4
++#define SA_ONSTACK   0x08000000
++#define SA_RESTART   0x10000000
++#define SA_NODEFER   0x40000000
++#define SA_RESETHAND 0x80000000
++
++#endif
++
++#define SIGHUP     1
++#define SIGINT     2
++#define SIGQUIT    3
++#define SIGILL     4
++#define SIGTRAP    5
++#define SIGABRT    6
++#define SIGIOT     SIGABRT
++#define SIGBUS     7
++#define SIGFPE     8
++#define SIGKILL    9
++#define SIGUSR1   10
++#define SIGSEGV   11
++#define SIGUSR2   12
++#define SIGPIPE   13
++#define SIGALRM   14
++#define SIGTERM   15
++#define SIGSTKFLT 16
++#define SIGCHLD   17
++#define SIGCONT   18
++#define SIGSTOP   19
++#define SIGTSTP   20
++#define SIGTTIN   21
++#define SIGTTOU   22
++#define SIGURG    23
++#define SIGXCPU   24
++#define SIGXFSZ   25
++#define SIGVTALRM 26
++#define SIGPROF   27
++#define SIGWINCH  28
++#define SIGIO     29
++#define SIGPOLL   SIGIO
++#define SIGPWR    30
++#define SIGSYS    31
++#define SIGUNUSED SIGSYS
++
++#define _NSIG 65
+diff -urpN musl-1.2.4/arch/loongarch64/bits/stat.h musl-1.2.5/arch/loongarch64/bits/stat.h
+--- musl-1.2.4/arch/loongarch64/bits/stat.h	1970-01-01 06:00:00.000000000 +0600
++++ musl-1.2.5/arch/loongarch64/bits/stat.h	2024-03-01 08:07:33.000000000 +0600
+@@ -0,0 +1,18 @@
++struct stat {
++	dev_t st_dev;
++	ino_t st_ino;
++	mode_t st_mode;
++	nlink_t st_nlink;
++	uid_t st_uid;
++	gid_t st_gid;
++	dev_t st_rdev;
++	unsigned long __pad;
++	off_t st_size;
++	blksize_t st_blksize;
++	int __pad2;
++	blkcnt_t st_blocks;
++	struct timespec st_atim;
++	struct timespec st_mtim;
++	struct timespec st_ctim;
++	unsigned __unused[2];
++};
+diff -urpN musl-1.2.4/arch/loongarch64/bits/stdint.h musl-1.2.5/arch/loongarch64/bits/stdint.h
+--- musl-1.2.4/arch/loongarch64/bits/stdint.h	1970-01-01 06:00:00.000000000 +0600
++++ musl-1.2.5/arch/loongarch64/bits/stdint.h	2024-03-01 08:07:33.000000000 +0600
+@@ -0,0 +1,20 @@
++typedef int32_t int_fast16_t;
++typedef int32_t int_fast32_t;
++typedef uint32_t uint_fast16_t;
++typedef uint32_t uint_fast32_t;
++
++#define INT_FAST16_MIN  INT32_MIN
++#define INT_FAST32_MIN  INT32_MIN
++
++#define INT_FAST16_MAX  INT32_MAX
++#define INT_FAST32_MAX  INT32_MAX
++
++#define UINT_FAST16_MAX UINT32_MAX
++#define UINT_FAST32_MAX UINT32_MAX
++
++#define INTPTR_MIN      INT64_MIN
++#define INTPTR_MAX      INT64_MAX
++#define UINTPTR_MAX     UINT64_MAX
++#define PTRDIFF_MIN     INT64_MIN
++#define PTRDIFF_MAX     INT64_MAX
++#define SIZE_MAX        UINT64_MAX
+diff -urpN musl-1.2.4/arch/loongarch64/bits/syscall.h.in musl-1.2.5/arch/loongarch64/bits/syscall.h.in
+--- musl-1.2.4/arch/loongarch64/bits/syscall.h.in	1970-01-01 06:00:00.000000000 +0600
++++ musl-1.2.5/arch/loongarch64/bits/syscall.h.in	2024-03-01 08:07:33.000000000 +0600
+@@ -0,0 +1,316 @@
++#define __NR_io_setup                   0
++#define __NR_io_destroy                 1
++#define __NR_io_submit                  2
++#define __NR_io_cancel                  3
++#define __NR_io_getevents               4
++#define __NR_setxattr                   5
++#define __NR_lsetxattr                  6
++#define __NR_fsetxattr                  7
++#define __NR_getxattr                   8
++#define __NR_lgetxattr                  9
++#define __NR_fgetxattr                  10
++#define __NR_listxattr                  11
++#define __NR_llistxattr                 12
++#define __NR_flistxattr                 13
++#define __NR_removexattr                14
++#define __NR_lremovexattr               15
++#define __NR_fremovexattr               16
++#define __NR_getcwd                     17
++#define __NR_lookup_dcookie             18
++#define __NR_eventfd2                   19
++#define __NR_epoll_create1              20
++#define __NR_epoll_ctl                  21
++#define __NR_epoll_pwait                22
++#define __NR_dup                        23
++#define __NR_dup3                       24
++#define __NR3264_fcntl                  25
++#define __NR_inotify_init1              26
++#define __NR_inotify_add_watch          27
++#define __NR_inotify_rm_watch           28
++#define __NR_ioctl                      29
++#define __NR_ioprio_set                 30
++#define __NR_ioprio_get                 31
++#define __NR_flock                      32
++#define __NR_mknodat                    33
++#define __NR_mkdirat                    34
++#define __NR_unlinkat                   35
++#define __NR_symlinkat                  36
++#define __NR_linkat                     37
++#define __NR_umount2                    39
++#define __NR_mount                      40
++#define __NR_pivot_root                 41
++#define __NR_nfsservctl                 42
++#define __NR3264_statfs                 43
++#define __NR3264_fstatfs                44
++#define __NR3264_truncate               45
++#define __NR3264_ftruncate              46
++#define __NR_fallocate                  47
++#define __NR_faccessat                  48
++#define __NR_chdir                      49
++#define __NR_fchdir                     50
++#define __NR_chroot                     51
++#define __NR_fchmod                     52
++#define __NR_fchmodat                   53
++#define __NR_fchownat                   54
++#define __NR_fchown                     55
++#define __NR_openat                     56
++#define __NR_close                      57
++#define __NR_vhangup                    58
++#define __NR_pipe2                      59
++#define __NR_quotactl                   60
++#define __NR_getdents64                 61
++#define __NR3264_lseek                  62
++#define __NR_read                       63
++#define __NR_write                      64
++#define __NR_readv                      65
++#define __NR_writev                     66
++#define __NR_pread64                    67
++#define __NR_pwrite64                   68
++#define __NR_preadv                     69
++#define __NR_pwritev                    70
++#define __NR3264_sendfile               71
++#define __NR_pselect6                   72
++#define __NR_ppoll                      73
++#define __NR_signalfd4                  74
++#define __NR_vmsplice                   75
++#define __NR_splice                     76
++#define __NR_tee                        77
++#define __NR_readlinkat                 78
++#define __NR_sync                       81
++#define __NR_fsync                      82
++#define __NR_fdatasync                  83
++#define __NR_sync_file_range            84
++#define __NR_timerfd_create             85
++#define __NR_timerfd_settime            86
++#define __NR_timerfd_gettime            87
++#define __NR_utimensat                  88
++#define __NR_acct                       89
++#define __NR_capget                     90
++#define __NR_capset                     91
++#define __NR_personality                92
++#define __NR_exit                       93
++#define __NR_exit_group                 94
++#define __NR_waitid                     95
++#define __NR_set_tid_address            96
++#define __NR_unshare                    97
++#define __NR_futex                      98
++#define __NR_set_robust_list            99
++#define __NR_get_robust_list            100
++#define __NR_nanosleep                  101
++#define __NR_getitimer                  102
++#define __NR_setitimer                  103
++#define __NR_kexec_load                 104
++#define __NR_init_module                105
++#define __NR_delete_module              106
++#define __NR_timer_create               107
++#define __NR_timer_gettime              108
++#define __NR_timer_getoverrun           109
++#define __NR_timer_settime              110
++#define __NR_timer_delete               111
++#define __NR_clock_settime              112
++#define __NR_clock_gettime              113
++#define __NR_clock_getres               114
++#define __NR_clock_nanosleep            115
++#define __NR_syslog                     116
++#define __NR_ptrace                     117
++#define __NR_sched_setparam             118
++#define __NR_sched_setscheduler         119
++#define __NR_sched_getscheduler         120
++#define __NR_sched_getparam             121
++#define __NR_sched_setaffinity          122
++#define __NR_sched_getaffinity          123
++#define __NR_sched_yield                124
++#define __NR_sched_get_priority_max     125
++#define __NR_sched_get_priority_min     126
++#define __NR_sched_rr_get_interval      127
++#define __NR_restart_syscall            128
++#define __NR_kill                       129
++#define __NR_tkill                      130
++#define __NR_tgkill                     131
++#define __NR_sigaltstack                132
++#define __NR_rt_sigsuspend              133
++#define __NR_rt_sigaction               134
++#define __NR_rt_sigprocmask             135
++#define __NR_rt_sigpending              136
++#define __NR_rt_sigtimedwait            137
++#define __NR_rt_sigqueueinfo            138
++#define __NR_rt_sigreturn               139
++#define __NR_setpriority                140
++#define __NR_getpriority                141
++#define __NR_reboot                     142
++#define __NR_setregid                   143
++#define __NR_setgid                     144
++#define __NR_setreuid                   145
++#define __NR_setuid                     146
++#define __NR_setresuid                  147
++#define __NR_getresuid                  148
++#define __NR_setresgid                  149
++#define __NR_getresgid                  150
++#define __NR_setfsuid                   151
++#define __NR_setfsgid                   152
++#define __NR_times                      153
++#define __NR_setpgid                    154
++#define __NR_getpgid                    155
++#define __NR_getsid                     156
++#define __NR_setsid                     157
++#define __NR_getgroups                  158
++#define __NR_setgroups                  159
++#define __NR_uname                      160
++#define __NR_sethostname                161
++#define __NR_setdomainname              162
++#define __NR_getrusage                  165
++#define __NR_umask                      166
++#define __NR_prctl                      167
++#define __NR_getcpu                     168
++#define __NR_gettimeofday               169
++#define __NR_settimeofday               170
++#define __NR_adjtimex                   171
++#define __NR_getpid                     172
++#define __NR_getppid                    173
++#define __NR_getuid                     174
++#define __NR_geteuid                    175
++#define __NR_getgid                     176
++#define __NR_getegid                    177
++#define __NR_gettid                     178
++#define __NR_sysinfo                    179
++#define __NR_mq_open                    180
++#define __NR_mq_unlink                  181
++#define __NR_mq_timedsend               182
++#define __NR_mq_timedreceive            183
++#define __NR_mq_notify                  184
++#define __NR_mq_getsetattr              185
++#define __NR_msgget                     186
++#define __NR_msgctl                     187
++#define __NR_msgrcv                     188
++#define __NR_msgsnd                     189
++#define __NR_semget                     190
++#define __NR_semctl                     191
++#define __NR_semtimedop                 192
++#define __NR_semop                      193
++#define __NR_shmget                     194
++#define __NR_shmctl                     195
++#define __NR_shmat                      196
++#define __NR_shmdt                      197
++#define __NR_socket                     198
++#define __NR_socketpair                 199
++#define __NR_bind                       200
++#define __NR_listen                     201
++#define __NR_accept                     202
++#define __NR_connect                    203
++#define __NR_getsockname                204
++#define __NR_getpeername                205
++#define __NR_sendto                     206
++#define __NR_recvfrom                   207
++#define __NR_setsockopt                 208
++#define __NR_getsockopt                 209
++#define __NR_shutdown                   210
++#define __NR_sendmsg                    211
++#define __NR_recvmsg                    212
++#define __NR_readahead                  213
++#define __NR_brk                        214
++#define __NR_munmap                     215
++#define __NR_mremap                     216
++#define __NR_add_key                    217
++#define __NR_request_key                218
++#define __NR_keyctl                     219
++#define __NR_clone                      220
++#define __NR_execve                     221
++#define __NR3264_mmap                   222
++#define __NR3264_fadvise64              223
++#define __NR_swapon                     224
++#define __NR_swapoff                    225
++#define __NR_mprotect                   226
++#define __NR_msync                      227
++#define __NR_mlock                      228
++#define __NR_munlock                    229
++#define __NR_mlockall                   230
++#define __NR_munlockall                 231
++#define __NR_mincore                    232
++#define __NR_madvise                    233
++#define __NR_remap_file_pages           234
++#define __NR_mbind                      235
++#define __NR_get_mempolicy              236
++#define __NR_set_mempolicy              237
++#define __NR_migrate_pages              238
++#define __NR_move_pages                 239
++#define __NR_rt_tgsigqueueinfo          240
++#define __NR_perf_event_open            241
++#define __NR_accept4                    242
++#define __NR_recvmmsg                   243
++#define __NR_arch_specific_syscall      244
++#define __NR_wait4                      260
++#define __NR_prlimit64                  261
++#define __NR_fanotify_init              262
++#define __NR_fanotify_mark              263
++#define __NR_name_to_handle_at          264
++#define __NR_open_by_handle_at          265
++#define __NR_clock_adjtime              266
++#define __NR_syncfs                     267
++#define __NR_setns                      268
++#define __NR_sendmmsg                   269
++#define __NR_process_vm_readv           270
++#define __NR_process_vm_writev          271
++#define __NR_kcmp                       272
++#define __NR_finit_module               273
++#define __NR_sched_setattr              274
++#define __NR_sched_getattr              275
++#define __NR_renameat2                  276
++#define __NR_seccomp                    277
++#define __NR_getrandom                  278
++#define __NR_memfd_create               279
++#define __NR_bpf                        280
++#define __NR_execveat                   281
++#define __NR_userfaultfd                282
++#define __NR_membarrier                 283
++#define __NR_mlock2                     284
++#define __NR_copy_file_range            285
++#define __NR_preadv2                    286
++#define __NR_pwritev2                   287
++#define __NR_pkey_mprotect              288
++#define __NR_pkey_alloc                 289
++#define __NR_pkey_free                  290
++#define __NR_statx                      291
++#define __NR_io_pgetevents              292
++#define __NR_rseq                       293
++#define __NR_kexec_file_load            294
++#define __NR_pidfd_send_signal          424
++#define __NR_io_uring_setup             425
++#define __NR_io_uring_enter             426
++#define __NR_io_uring_register          427
++#define __NR_open_tree                  428
++#define __NR_move_mount                 429
++#define __NR_fsopen                     430
++#define __NR_fsconfig                   431
++#define __NR_fsmount                    432
++#define __NR_fspick                     433
++#define __NR_pidfd_open                 434
++#define __NR_clone3                     435
++#define __NR_close_range                436
++#define __NR_openat2                    437
++#define __NR_pidfd_getfd                438
++#define __NR_faccessat2                 439
++#define __NR_process_madvise            440
++#define __NR_epoll_pwait2               441
++#define __NR_mount_setattr              442
++#define __NR_quotactl_fd                443
++#define __NR_landlock_create_ruleset    444
++#define __NR_landlock_add_rule          445
++#define __NR_landlock_restrict_self     446
++#define __NR_process_mrelease           448
++#define __NR_futex_waitv                449
++#define __NR_set_mempolicy_home_node    450
++#define __NR_cachestat                  451
++#define __NR_fchmodat2                  452
++#define __NR_map_shadow_stack           453
++#define __NR_futex_wake                 454
++#define __NR_futex_wait                 455
++#define __NR_futex_requeue              456
++#define __NR_fcntl                      __NR3264_fcntl
++#define __NR_statfs                     __NR3264_statfs
++#define __NR_fstatfs                    __NR3264_fstatfs
++#define __NR_truncate                   __NR3264_truncate
++#define __NR_ftruncate                  __NR3264_ftruncate
++#define __NR_lseek                      __NR3264_lseek
++#define __NR_sendfile                   __NR3264_sendfile
++#define __NR_mmap                       __NR3264_mmap
++#define __NR_fadvise64                  __NR3264_fadvise64
+diff -urpN musl-1.2.4/arch/loongarch64/bits/user.h musl-1.2.5/arch/loongarch64/bits/user.h
+--- musl-1.2.4/arch/loongarch64/bits/user.h	1970-01-01 06:00:00.000000000 +0600
++++ musl-1.2.5/arch/loongarch64/bits/user.h	2024-03-01 08:07:33.000000000 +0600
+@@ -0,0 +1,24 @@
++#define ELF_NGREG    45
++#define ELF_NFPREG   34
++
++struct user_regs_struct {
++	unsigned long regs[32];
++	unsigned long orig_a0;
++	unsigned long csr_era;
++	unsigned long csr_badv;
++	unsigned long reserved[10];
++};
++
++struct user_fp_struct {
++	unsigned long fpr[32];
++	unsigned long fcc;
++	unsigned int fcsr;
++};
++
++typedef unsigned long elf_greg_t, elf_gregset_t[ELF_NGREG];
++
++typedef union {
++	double d;
++	float f;
++} elf_fpreg_t;
++typedef elf_fpreg_t elf_fpregset_t[ELF_NFPREG];
+diff -urpN musl-1.2.4/arch/loongarch64/crt_arch.h musl-1.2.5/arch/loongarch64/crt_arch.h
+--- musl-1.2.4/arch/loongarch64/crt_arch.h	1970-01-01 06:00:00.000000000 +0600
++++ musl-1.2.5/arch/loongarch64/crt_arch.h	2024-03-01 08:07:33.000000000 +0600
+@@ -0,0 +1,13 @@
++__asm__(
++".text \n"
++".global " START "\n"
++".type   " START ", @function\n"
++START ":\n"
++"	move $fp, $zero\n"
++"	move $a0, $sp\n"
++".weak _DYNAMIC\n"
++".hidden _DYNAMIC\n"
++"	la.local $a1, _DYNAMIC\n"
++"	bstrins.d $sp, $zero, 3, 0\n"
++"	b " START "_c\n"
++);
+diff -urpN musl-1.2.4/arch/loongarch64/pthread_arch.h musl-1.2.5/arch/loongarch64/pthread_arch.h
+--- musl-1.2.4/arch/loongarch64/pthread_arch.h	1970-01-01 06:00:00.000000000 +0600
++++ musl-1.2.5/arch/loongarch64/pthread_arch.h	2024-03-01 08:07:33.000000000 +0600
+@@ -0,0 +1,11 @@
++static inline uintptr_t __get_tp()
++{
++	register uintptr_t tp __asm__("tp");
++	__asm__ ("" : "=r" (tp) );
++	return tp;
++}
++
++#define TLS_ABOVE_TP
++#define GAP_ABOVE_TP   0
++#define DTP_OFFSET     0
++#define MC_PC          __pc
+diff -urpN musl-1.2.4/arch/loongarch64/reloc.h musl-1.2.5/arch/loongarch64/reloc.h
+--- musl-1.2.4/arch/loongarch64/reloc.h	1970-01-01 06:00:00.000000000 +0600
++++ musl-1.2.5/arch/loongarch64/reloc.h	2024-03-01 08:07:33.000000000 +0600
+@@ -0,0 +1,29 @@
++#ifdef __loongarch_soft_float
++#define FP_SUFFIX "-sf"
++#elif defined __loongarch_single_float
++#define FP_SUFFIX "-sp"
++#else
++#define FP_SUFFIX ""
++#endif
++
++#define LDSO_ARCH "loongarch64" FP_SUFFIX
++
++#define TPOFF_K         0
++
++#define REL_PLT         R_LARCH_JUMP_SLOT
++#define REL_COPY        R_LARCH_COPY
++#define REL_DTPMOD      R_LARCH_TLS_DTPMOD64
++#define REL_DTPOFF      R_LARCH_TLS_DTPREL64
++#define REL_TPOFF       R_LARCH_TLS_TPREL64
++#define REL_RELATIVE    R_LARCH_RELATIVE
++#define REL_SYMBOLIC    R_LARCH_64
++
++#define CRTJMP(pc,sp) __asm__ __volatile__( \
++	"move $sp, %1 ; jr %0" : : "r"(pc), "r"(sp) : "memory" )
++
++#define GETFUNCSYM(fp, sym, got) __asm__ ( \
++	".hidden " #sym "\n" \
++	".align 8 \n" \
++	"	la.local $t1, "#sym" \n" \
++	"	move %0, $t1 \n" \
++	: "=r"(*(fp)) : : "memory" )
+diff -urpN musl-1.2.4/arch/loongarch64/syscall_arch.h musl-1.2.5/arch/loongarch64/syscall_arch.h
+--- musl-1.2.4/arch/loongarch64/syscall_arch.h	1970-01-01 06:00:00.000000000 +0600
++++ musl-1.2.5/arch/loongarch64/syscall_arch.h	2024-03-01 08:07:33.000000000 +0600
+@@ -0,0 +1,137 @@
++#define __SYSCALL_LL_E(x) (x)
++#define __SYSCALL_LL_O(x) (x)
++
++#define SYSCALL_CLOBBERLIST \
++	"$t0", "$t1", "$t2", "$t3", \
++	"$t4", "$t5", "$t6", "$t7", "$t8", "memory"
++
++static inline long __syscall0(long n)
++{
++	register long a7 __asm__("$a7") = n;
++	register long a0 __asm__("$a0");
++
++	__asm__ __volatile__ (
++		"syscall 0"
++		: "=r"(a0)
++		: "r"(a7)
++		: SYSCALL_CLOBBERLIST);
++	return a0;
++}
++
++static inline long __syscall1(long n, long a)
++{
++	register long a7 __asm__("$a7") = n;
++	register long a0 __asm__("$a0") = a;
++
++	__asm__ __volatile__ (
++		"syscall 0"
++		: "+r"(a0)
++		: "r"(a7)
++		: SYSCALL_CLOBBERLIST);
++	return a0;
++}
++
++static inline long __syscall2(long n, long a, long b)
++{
++	register long a7 __asm__("$a7") = n;
++	register long a0 __asm__("$a0") = a;
++	register long a1 __asm__("$a1") = b;
++
++	__asm__ __volatile__ (
++		"syscall 0"
++		: "+r"(a0)
++	        : "r"(a7), "r"(a1)
++		: SYSCALL_CLOBBERLIST);
++	return a0;
++}
++
++static inline long __syscall3(long n, long a, long b, long c)
++{
++	register long a7 __asm__("$a7") = n;
++	register long a0 __asm__("$a0") = a;
++	register long a1 __asm__("$a1") = b;
++	register long a2 __asm__("$a2") = c;
++
++	__asm__ __volatile__ (
++		"syscall 0"
++		: "+r"(a0)
++	        : "r"(a7), "r"(a1), "r"(a2)
++		: SYSCALL_CLOBBERLIST);
++	return a0;
++}
++
++static inline long __syscall4(long n, long a, long b, long c, long d)
++{
++	register long a7 __asm__("$a7") = n;
++	register long a0 __asm__("$a0") = a;
++	register long a1 __asm__("$a1") = b;
++	register long a2 __asm__("$a2") = c;
++	register long a3 __asm__("$a3") = d;
++
++	__asm__ __volatile__ (
++		"syscall 0"
++		: "+r"(a0)
++	        : "r"(a7), "r"(a1), "r"(a2), "r"(a3)
++		: SYSCALL_CLOBBERLIST);
++	return a0;
++}
++
++static inline long __syscall5(long n, long a, long b, long c, long d, long e)
++{
++	register long a7 __asm__("$a7") = n;
++	register long a0 __asm__("$a0") = a;
++	register long a1 __asm__("$a1") = b;
++	register long a2 __asm__("$a2") = c;
++	register long a3 __asm__("$a3") = d;
++	register long a4 __asm__("$a4") = e;
++
++	__asm__ __volatile__ (
++		"syscall 0"
++		: "+r"(a0)
++	        : "r"(a7), "r"(a1), "r"(a2), "r"(a3), "r"(a4)
++		: SYSCALL_CLOBBERLIST);
++	return a0;
++}
++
++static inline long __syscall6(long n, long a, long b, long c, long d, long e, long f)
++{
++	register long a7 __asm__("$a7") = n;
++	register long a0 __asm__("$a0") = a;
++	register long a1 __asm__("$a1") = b;
++	register long a2 __asm__("$a2") = c;
++	register long a3 __asm__("$a3") = d;
++	register long a4 __asm__("$a4") = e;
++	register long a5 __asm__("$a5") = f;
++
++	__asm__ __volatile__ (
++		"syscall 0"
++		: "+r"(a0)
++	        : "r"(a7), "r"(a1), "r"(a2), "r"(a3), "r"(a4), "r"(a5)
++		: SYSCALL_CLOBBERLIST);
++	return a0;
++}
++
++static inline long __syscall7(long n, long a, long b, long c, long d, long e, long f, long g)
++{
++	register long a7 __asm__("$a7") = n;
++	register long a0 __asm__("$a0") = a;
++	register long a1 __asm__("$a1") = b;
++	register long a2 __asm__("$a2") = c;
++	register long a3 __asm__("$a3") = d;
++	register long a4 __asm__("$a4") = e;
++	register long a5 __asm__("$a5") = f;
++	register long a6 __asm__("$a6") = g;
++
++	__asm__ __volatile__ (
++		"syscall 0"
++		: "+r"(a0)
++	        : "r"(a7), "r"(a1), "r"(a2), "r"(a3), "r"(a4), "r"(a5), "r"(a6)
++		: SYSCALL_CLOBBERLIST);
++	return a0;
++}
++
++#define VDSO_USEFUL
++#define VDSO_CGT_SYM "__vdso_clock_gettime"
++#define VDSO_CGT_VER "LINUX_5.10"
++
++#define IPC_64  0
+diff -urpN musl-1.2.4/arch/m68k/bits/syscall.h.in musl-1.2.5/arch/m68k/bits/syscall.h.in
+--- musl-1.2.4/arch/m68k/bits/syscall.h.in	2023-05-02 09:39:41.000000000 +0600
++++ musl-1.2.5/arch/m68k/bits/syscall.h.in	2024-03-01 08:07:33.000000000 +0600
+@@ -416,3 +416,8 @@
+ #define __NR_landlock_create_ruleset	444
+ #define __NR_landlock_add_rule	445
+ #define __NR_landlock_restrict_self	446
++#define __NR_process_mrelease	448
++#define __NR_futex_waitv	449
++#define __NR_set_mempolicy_home_node	450
++#define __NR_cachestat		451
++#define __NR_fchmodat2		452
+diff -urpN musl-1.2.4/arch/microblaze/bits/syscall.h.in musl-1.2.5/arch/microblaze/bits/syscall.h.in
+--- musl-1.2.4/arch/microblaze/bits/syscall.h.in	2023-05-02 09:39:41.000000000 +0600
++++ musl-1.2.5/arch/microblaze/bits/syscall.h.in	2024-03-01 08:07:33.000000000 +0600
+@@ -437,4 +437,9 @@
+ #define __NR_landlock_create_ruleset	444
+ #define __NR_landlock_add_rule	445
+ #define __NR_landlock_restrict_self	446
++#define __NR_process_mrelease	448
++#define __NR_futex_waitv	449
++#define __NR_set_mempolicy_home_node	450
++#define __NR_cachestat		451
++#define __NR_fchmodat2		452
+ 
+diff -urpN musl-1.2.4/arch/mips/bits/syscall.h.in musl-1.2.5/arch/mips/bits/syscall.h.in
+--- musl-1.2.4/arch/mips/bits/syscall.h.in	2023-05-02 09:39:41.000000000 +0600
++++ musl-1.2.5/arch/mips/bits/syscall.h.in	2024-03-01 08:07:33.000000000 +0600
+@@ -418,4 +418,9 @@
+ #define __NR_landlock_create_ruleset	4444
+ #define __NR_landlock_add_rule	4445
+ #define __NR_landlock_restrict_self	4446
++#define __NR_process_mrelease	4448
++#define __NR_futex_waitv	4449
++#define __NR_set_mempolicy_home_node	4450
++#define __NR_cachestat		4451
++#define __NR_fchmodat2		4452
+ 
+diff -urpN musl-1.2.4/arch/mips64/bits/syscall.h.in musl-1.2.5/arch/mips64/bits/syscall.h.in
+--- musl-1.2.4/arch/mips64/bits/syscall.h.in	2023-05-02 09:39:41.000000000 +0600
++++ musl-1.2.5/arch/mips64/bits/syscall.h.in	2024-03-01 08:07:33.000000000 +0600
+@@ -348,4 +348,9 @@
+ #define __NR_landlock_create_ruleset	5444
+ #define __NR_landlock_add_rule	5445
+ #define __NR_landlock_restrict_self	5446
++#define __NR_process_mrelease	5448
++#define __NR_futex_waitv	5449
++#define __NR_set_mempolicy_home_node	5450
++#define __NR_cachestat		5451
++#define __NR_fchmodat2		5452
+ 
+diff -urpN musl-1.2.4/arch/mipsn32/bits/syscall.h.in musl-1.2.5/arch/mipsn32/bits/syscall.h.in
+--- musl-1.2.4/arch/mipsn32/bits/syscall.h.in	2023-05-02 09:39:41.000000000 +0600
++++ musl-1.2.5/arch/mipsn32/bits/syscall.h.in	2024-03-01 08:07:33.000000000 +0600
+@@ -372,4 +372,9 @@
+ #define __NR_landlock_create_ruleset	6444
+ #define __NR_landlock_add_rule	6445
+ #define __NR_landlock_restrict_self	6446
++#define __NR_process_mrelease	6448
++#define __NR_futex_waitv	6449
++#define __NR_set_mempolicy_home_node	6450
++#define __NR_cachestat		6451
++#define __NR_fchmodat2		6452
+ 
+diff -urpN musl-1.2.4/arch/or1k/bits/syscall.h.in musl-1.2.5/arch/or1k/bits/syscall.h.in
+--- musl-1.2.4/arch/or1k/bits/syscall.h.in	2023-05-02 09:39:41.000000000 +0600
++++ musl-1.2.5/arch/or1k/bits/syscall.h.in	2024-03-01 08:07:33.000000000 +0600
+@@ -321,4 +321,9 @@
+ #define __NR_landlock_create_ruleset	444
+ #define __NR_landlock_add_rule	445
+ #define __NR_landlock_restrict_self	446
++#define __NR_process_mrelease	448
++#define __NR_futex_waitv	449
++#define __NR_set_mempolicy_home_node	450
++#define __NR_cachestat		451
++#define __NR_fchmodat2		452
+ 
+diff -urpN musl-1.2.4/arch/powerpc/bits/syscall.h.in musl-1.2.5/arch/powerpc/bits/syscall.h.in
+--- musl-1.2.4/arch/powerpc/bits/syscall.h.in	2023-05-02 09:39:41.000000000 +0600
++++ musl-1.2.5/arch/powerpc/bits/syscall.h.in	2024-03-01 08:07:33.000000000 +0600
+@@ -425,4 +425,9 @@
+ #define __NR_landlock_create_ruleset	444
+ #define __NR_landlock_add_rule	445
+ #define __NR_landlock_restrict_self	446
++#define __NR_process_mrelease	448
++#define __NR_futex_waitv	449
++#define __NR_set_mempolicy_home_node	450
++#define __NR_cachestat		451
++#define __NR_fchmodat2		452
+ 
+diff -urpN musl-1.2.4/arch/powerpc64/bits/syscall.h.in musl-1.2.5/arch/powerpc64/bits/syscall.h.in
+--- musl-1.2.4/arch/powerpc64/bits/syscall.h.in	2023-05-02 09:39:41.000000000 +0600
++++ musl-1.2.5/arch/powerpc64/bits/syscall.h.in	2024-03-01 08:07:33.000000000 +0600
+@@ -397,4 +397,9 @@
+ #define __NR_landlock_create_ruleset	444
+ #define __NR_landlock_add_rule	445
+ #define __NR_landlock_restrict_self	446
++#define __NR_process_mrelease	448
++#define __NR_futex_waitv	449
++#define __NR_set_mempolicy_home_node	450
++#define __NR_cachestat		451
++#define __NR_fchmodat2		452
+ 
+diff -urpN musl-1.2.4/arch/riscv32/atomic_arch.h musl-1.2.5/arch/riscv32/atomic_arch.h
+--- musl-1.2.4/arch/riscv32/atomic_arch.h	1970-01-01 06:00:00.000000000 +0600
++++ musl-1.2.5/arch/riscv32/atomic_arch.h	2024-03-01 08:07:33.000000000 +0600
+@@ -0,0 +1,21 @@
++#define a_barrier a_barrier
++static inline void a_barrier()
++{
++	__asm__ __volatile__ ("fence rw,rw" : : : "memory");
++}
++
++#define a_cas a_cas
++static inline int a_cas(volatile int *p, int t, int s)
++{
++	int old, tmp;
++	__asm__ __volatile__ (
++		"\n1:	lr.w.aqrl %0, (%2)\n"
++		"	bne %0, %3, 1f\n"
++		"	sc.w.aqrl %1, %4, (%2)\n"
++		"	bnez %1, 1b\n"
++		"1:"
++		: "=&r"(old), "=&r"(tmp)
++		: "r"(p), "r"((long)t), "r"((long)s)
++		: "memory");
++	return old;
++}
+diff -urpN musl-1.2.4/arch/riscv32/bits/alltypes.h.in musl-1.2.5/arch/riscv32/bits/alltypes.h.in
+--- musl-1.2.4/arch/riscv32/bits/alltypes.h.in	1970-01-01 06:00:00.000000000 +0600
++++ musl-1.2.5/arch/riscv32/bits/alltypes.h.in	2024-03-01 08:07:33.000000000 +0600
+@@ -0,0 +1,18 @@
++#define _Addr int
++#define _Int64 long long
++#define _Reg int
++
++#define __BYTE_ORDER 1234
++#define __LONG_MAX 0x7fffffffL
++
++#ifndef __cplusplus
++TYPEDEF int wchar_t;
++#endif
++
++TYPEDEF int blksize_t;
++TYPEDEF unsigned int nlink_t;
++
++TYPEDEF float float_t;
++TYPEDEF double double_t;
++
++TYPEDEF struct { long long __ll; long double __ld; } max_align_t;
+diff -urpN musl-1.2.4/arch/riscv32/bits/fenv.h musl-1.2.5/arch/riscv32/bits/fenv.h
+--- musl-1.2.4/arch/riscv32/bits/fenv.h	1970-01-01 06:00:00.000000000 +0600
++++ musl-1.2.5/arch/riscv32/bits/fenv.h	2024-03-01 08:07:33.000000000 +0600
+@@ -0,0 +1,17 @@
++#define FE_INVALID      16
++#define FE_DIVBYZERO    8
++#define FE_OVERFLOW     4
++#define FE_UNDERFLOW    2
++#define FE_INEXACT      1
++
++#define FE_ALL_EXCEPT   31
++
++#define FE_TONEAREST    0
++#define FE_DOWNWARD     2
++#define FE_UPWARD       3
++#define FE_TOWARDZERO   1
++
++typedef unsigned int fexcept_t;
++typedef unsigned int fenv_t;
++
++#define FE_DFL_ENV      ((const fenv_t *) -1)
+diff -urpN musl-1.2.4/arch/riscv32/bits/float.h musl-1.2.5/arch/riscv32/bits/float.h
+--- musl-1.2.4/arch/riscv32/bits/float.h	1970-01-01 06:00:00.000000000 +0600
++++ musl-1.2.5/arch/riscv32/bits/float.h	2024-03-01 08:07:33.000000000 +0600
+@@ -0,0 +1,16 @@
++#define FLT_EVAL_METHOD 0
++
++#define LDBL_TRUE_MIN 6.47517511943802511092443895822764655e-4966L
++#define LDBL_MIN 3.36210314311209350626267781732175260e-4932L
++#define LDBL_MAX 1.18973149535723176508575932662800702e+4932L
++#define LDBL_EPSILON 1.92592994438723585305597794258492732e-34L
++
++#define LDBL_MANT_DIG 113
++#define LDBL_MIN_EXP (-16381)
++#define LDBL_MAX_EXP 16384
++
++#define LDBL_DIG 33
++#define LDBL_MIN_10_EXP (-4931)
++#define LDBL_MAX_10_EXP 4932
++
++#define DECIMAL_DIG 36
+diff -urpN musl-1.2.4/arch/riscv32/bits/ipcstat.h musl-1.2.5/arch/riscv32/bits/ipcstat.h
+--- musl-1.2.4/arch/riscv32/bits/ipcstat.h	1970-01-01 06:00:00.000000000 +0600
++++ musl-1.2.5/arch/riscv32/bits/ipcstat.h	2024-03-01 08:07:33.000000000 +0600
+@@ -0,0 +1 @@
++#define IPC_STAT 0x102
+diff -urpN musl-1.2.4/arch/riscv32/bits/msg.h musl-1.2.5/arch/riscv32/bits/msg.h
+--- musl-1.2.4/arch/riscv32/bits/msg.h	1970-01-01 06:00:00.000000000 +0600
++++ musl-1.2.5/arch/riscv32/bits/msg.h	2024-03-01 08:07:33.000000000 +0600
+@@ -0,0 +1,18 @@
++struct msqid_ds {
++	struct ipc_perm msg_perm;
++	unsigned long __msg_stime_lo;
++	unsigned long __msg_stime_hi;
++	unsigned long __msg_rtime_lo;
++	unsigned long __msg_rtime_hi;
++	unsigned long __msg_ctime_lo;
++	unsigned long __msg_ctime_hi;
++	unsigned long msg_cbytes;
++	msgqnum_t msg_qnum;
++	msglen_t msg_qbytes;
++	pid_t msg_lspid;
++	pid_t msg_lrpid;
++	unsigned long __unused[2];
++	time_t msg_stime;
++	time_t msg_rtime;
++	time_t msg_ctime;
++};
+diff -urpN musl-1.2.4/arch/riscv32/bits/posix.h musl-1.2.5/arch/riscv32/bits/posix.h
+--- musl-1.2.4/arch/riscv32/bits/posix.h	1970-01-01 06:00:00.000000000 +0600
++++ musl-1.2.5/arch/riscv32/bits/posix.h	2024-03-01 08:07:33.000000000 +0600
+@@ -0,0 +1,2 @@
++#define _POSIX_V6_ILP32_OFFBIG 1
++#define _POSIX_V7_ILP32_OFFBIG 1
+diff -urpN musl-1.2.4/arch/riscv32/bits/reg.h musl-1.2.5/arch/riscv32/bits/reg.h
+--- musl-1.2.4/arch/riscv32/bits/reg.h	1970-01-01 06:00:00.000000000 +0600
++++ musl-1.2.5/arch/riscv32/bits/reg.h	2024-03-01 08:07:33.000000000 +0600
+@@ -0,0 +1,2 @@
++#undef __WORDSIZE
++#define __WORDSIZE 32
+diff -urpN musl-1.2.4/arch/riscv32/bits/sem.h musl-1.2.5/arch/riscv32/bits/sem.h
+--- musl-1.2.4/arch/riscv32/bits/sem.h	1970-01-01 06:00:00.000000000 +0600
++++ musl-1.2.5/arch/riscv32/bits/sem.h	2024-03-01 08:07:33.000000000 +0600
+@@ -0,0 +1,18 @@
++struct semid_ds {
++	struct ipc_perm sem_perm;
++	unsigned long __sem_otime_lo;
++	unsigned long __sem_otime_hi;
++	unsigned long __sem_ctime_lo;
++	unsigned long __sem_ctime_hi;
++#if __BYTE_ORDER == __LITTLE_ENDIAN
++	unsigned short sem_nsems;
++	char __sem_nsems_pad[sizeof(long)-sizeof(short)];
++#else
++	char __sem_nsems_pad[sizeof(long)-sizeof(short)];
++	unsigned short sem_nsems;
++#endif
++	long __unused3;
++	long __unused4;
++	time_t sem_otime;
++	time_t sem_ctime;
++};
+diff -urpN musl-1.2.4/arch/riscv32/bits/setjmp.h musl-1.2.5/arch/riscv32/bits/setjmp.h
+--- musl-1.2.4/arch/riscv32/bits/setjmp.h	1970-01-01 06:00:00.000000000 +0600
++++ musl-1.2.5/arch/riscv32/bits/setjmp.h	2024-03-01 08:07:33.000000000 +0600
+@@ -0,0 +1 @@
++typedef unsigned long long __jmp_buf[19];
+diff -urpN musl-1.2.4/arch/riscv32/bits/shm.h musl-1.2.5/arch/riscv32/bits/shm.h
+--- musl-1.2.4/arch/riscv32/bits/shm.h	1970-01-01 06:00:00.000000000 +0600
++++ musl-1.2.5/arch/riscv32/bits/shm.h	2024-03-01 08:07:33.000000000 +0600
+@@ -0,0 +1,31 @@
++#define SHMLBA 4096
++
++struct shmid_ds {
++	struct ipc_perm shm_perm;
++	size_t shm_segsz;
++	unsigned long __shm_atime_lo;
++	unsigned long __shm_atime_hi;
++	unsigned long __shm_dtime_lo;
++	unsigned long __shm_dtime_hi;
++	unsigned long __shm_ctime_lo;
++	unsigned long __shm_ctime_hi;
++	pid_t shm_cpid;
++	pid_t shm_lpid;
++	unsigned long shm_nattch;
++	unsigned long __pad1;
++	unsigned long __pad2;
++	unsigned long __pad3;
++	time_t shm_atime;
++	time_t shm_dtime;
++	time_t shm_ctime;
++};
++
++struct shminfo {
++	unsigned long shmmax, shmmin, shmmni, shmseg, shmall, __unused[4];
++};
++
++struct shm_info {
++	int __used_ids;
++	unsigned long shm_tot, shm_rss, shm_swp;
++	unsigned long __swap_attempts, __swap_successes;
++};
+diff -urpN musl-1.2.4/arch/riscv32/bits/signal.h musl-1.2.5/arch/riscv32/bits/signal.h
+--- musl-1.2.4/arch/riscv32/bits/signal.h	1970-01-01 06:00:00.000000000 +0600
++++ musl-1.2.5/arch/riscv32/bits/signal.h	2024-03-01 08:07:33.000000000 +0600
+@@ -0,0 +1,120 @@
++#if defined(_POSIX_SOURCE) || defined(_POSIX_C_SOURCE) \
++ || defined(_XOPEN_SOURCE) || defined(_GNU_SOURCE) || defined(_BSD_SOURCE)
++
++#if defined(_XOPEN_SOURCE) || defined(_GNU_SOURCE) || defined(_BSD_SOURCE)
++# define MINSIGSTKSZ 2048
++# define SIGSTKSZ 8192
++#endif
++
++typedef unsigned long __riscv_mc_gp_state[32];
++
++struct __riscv_mc_f_ext_state {
++	unsigned int __f[32];
++	unsigned int __fcsr;
++};
++
++struct __riscv_mc_d_ext_state {
++	unsigned long long __f[32];
++	unsigned int __fcsr;
++};
++
++struct __riscv_mc_q_ext_state {
++	unsigned long long __f[64] __attribute__((aligned(16)));
++	unsigned int __fcsr;
++	unsigned int __reserved[3];
++};
++
++union __riscv_mc_fp_state {
++	struct __riscv_mc_f_ext_state __f;
++	struct __riscv_mc_d_ext_state __d;
++	struct __riscv_mc_q_ext_state __q;
++};
++
++typedef struct mcontext_t {
++	__riscv_mc_gp_state __gregs;
++	union __riscv_mc_fp_state __fpregs;
++} mcontext_t;
++
++#if defined(_GNU_SOURCE)
++#define REG_PC 0
++#define REG_RA 1
++#define REG_SP 2
++#define REG_TP 4
++#define REG_S0 8
++#define REG_S1 9
++#define REG_A0 10
++#define REG_S2 18
++#endif
++
++#if defined(_GNU_SOURCE) || defined(_BSD_SOURCE)
++typedef unsigned long greg_t;
++typedef unsigned long gregset_t[32];
++typedef union __riscv_mc_fp_state fpregset_t;
++struct sigcontext {
++	gregset_t gregs;
++	fpregset_t fpregs;
++};
++#endif
++
++struct sigaltstack {
++	void *ss_sp;
++	int ss_flags;
++	size_t ss_size;
++};
++
++typedef struct __ucontext
++{
++	unsigned long uc_flags;
++	struct __ucontext *uc_link;
++	stack_t uc_stack;
++	sigset_t uc_sigmask;
++	mcontext_t uc_mcontext;
++} ucontext_t;
++
++#define SA_NOCLDSTOP 1
++#define SA_NOCLDWAIT 2
++#define SA_SIGINFO   4
++#define SA_ONSTACK   0x08000000
++#define SA_RESTART   0x10000000
++#define SA_NODEFER   0x40000000
++#define SA_RESETHAND 0x80000000
++#define SA_RESTORER  0x04000000
++
++#endif
++
++#define SIGHUP     1
++#define SIGINT     2
++#define SIGQUIT    3
++#define SIGILL     4
++#define SIGTRAP    5
++#define SIGABRT    6
++#define SIGIOT     SIGABRT
++#define SIGBUS     7
++#define SIGFPE     8
++#define SIGKILL    9
++#define SIGUSR1   10
++#define SIGSEGV   11
++#define SIGUSR2   12
++#define SIGPIPE   13
++#define SIGALRM   14
++#define SIGTERM   15
++#define SIGSTKFLT 16
++#define SIGCHLD   17
++#define SIGCONT   18
++#define SIGSTOP   19
++#define SIGTSTP   20
++#define SIGTTIN   21
++#define SIGTTOU   22
++#define SIGURG    23
++#define SIGXCPU   24
++#define SIGXFSZ   25
++#define SIGVTALRM 26
++#define SIGPROF   27
++#define SIGWINCH  28
++#define SIGIO     29
++#define SIGPOLL   SIGIO
++#define SIGPWR    30
++#define SIGSYS    31
++#define SIGUNUSED SIGSYS
++
++#define _NSIG     65
+diff -urpN musl-1.2.4/arch/riscv32/bits/stat.h musl-1.2.5/arch/riscv32/bits/stat.h
+--- musl-1.2.4/arch/riscv32/bits/stat.h	1970-01-01 06:00:00.000000000 +0600
++++ musl-1.2.5/arch/riscv32/bits/stat.h	2024-03-01 08:07:33.000000000 +0600
+@@ -0,0 +1,18 @@
++struct stat {
++	dev_t st_dev;
++	ino_t st_ino;
++	mode_t st_mode;
++	nlink_t st_nlink;
++	uid_t st_uid;
++	gid_t st_gid;
++	dev_t st_rdev;
++	unsigned long long __pad;
++	off_t st_size;
++	blksize_t st_blksize;
++	int __pad2;
++	blkcnt_t st_blocks;
++	struct timespec st_atim;
++	struct timespec st_mtim;
++	struct timespec st_ctim;
++	unsigned __unused[2];
++};
+diff -urpN musl-1.2.4/arch/riscv32/bits/stdint.h musl-1.2.5/arch/riscv32/bits/stdint.h
+--- musl-1.2.4/arch/riscv32/bits/stdint.h	1970-01-01 06:00:00.000000000 +0600
++++ musl-1.2.5/arch/riscv32/bits/stdint.h	2024-03-01 08:07:33.000000000 +0600
+@@ -0,0 +1,20 @@
++typedef int32_t int_fast16_t;
++typedef int32_t int_fast32_t;
++typedef uint32_t uint_fast16_t;
++typedef uint32_t uint_fast32_t;
++
++#define INT_FAST16_MIN  INT32_MIN
++#define INT_FAST32_MIN  INT32_MIN
++
++#define INT_FAST16_MAX  INT32_MAX
++#define INT_FAST32_MAX  INT32_MAX
++
++#define UINT_FAST16_MAX UINT32_MAX
++#define UINT_FAST32_MAX UINT32_MAX
++
++#define INTPTR_MIN      INT32_MIN
++#define INTPTR_MAX      INT32_MAX
++#define UINTPTR_MAX     UINT32_MAX
++#define PTRDIFF_MIN     INT32_MIN
++#define PTRDIFF_MAX     INT32_MAX
++#define SIZE_MAX        UINT32_MAX
+diff -urpN musl-1.2.4/arch/riscv32/bits/syscall.h.in musl-1.2.5/arch/riscv32/bits/syscall.h.in
+--- musl-1.2.4/arch/riscv32/bits/syscall.h.in	1970-01-01 06:00:00.000000000 +0600
++++ musl-1.2.5/arch/riscv32/bits/syscall.h.in	2024-03-01 08:07:33.000000000 +0600
+@@ -0,0 +1,300 @@
++#define __NR_io_setup 0
++#define __NR_io_destroy 1
++#define __NR_io_submit 2
++#define __NR_io_cancel 3
++#define __NR_setxattr 5
++#define __NR_lsetxattr 6
++#define __NR_fsetxattr 7
++#define __NR_getxattr 8
++#define __NR_lgetxattr 9
++#define __NR_fgetxattr 10
++#define __NR_listxattr 11
++#define __NR_llistxattr 12
++#define __NR_flistxattr 13
++#define __NR_removexattr 14
++#define __NR_lremovexattr 15
++#define __NR_fremovexattr 16
++#define __NR_getcwd 17
++#define __NR_lookup_dcookie 18
++#define __NR_eventfd2 19
++#define __NR_epoll_create1 20
++#define __NR_epoll_ctl 21
++#define __NR_epoll_pwait 22
++#define __NR_dup 23
++#define __NR_dup3 24
++#define __NR_fcntl64 25
++#define __NR_inotify_init1 26
++#define __NR_inotify_add_watch 27
++#define __NR_inotify_rm_watch 28
++#define __NR_ioctl 29
++#define __NR_ioprio_set 30
++#define __NR_ioprio_get 31
++#define __NR_flock 32
++#define __NR_mknodat 33
++#define __NR_mkdirat 34
++#define __NR_unlinkat 35
++#define __NR_symlinkat 36
++#define __NR_linkat 37
++#define __NR_umount2 39
++#define __NR_mount 40
++#define __NR_pivot_root 41
++#define __NR_nfsservctl 42
++#define __NR_statfs64 43
++#define __NR_fstatfs64 44
++#define __NR_truncate64 45
++#define __NR_ftruncate64 46
++#define __NR_fallocate 47
++#define __NR_faccessat 48
++#define __NR_chdir 49
++#define __NR_fchdir 50
++#define __NR_chroot 51
++#define __NR_fchmod 52
++#define __NR_fchmodat 53
++#define __NR_fchownat 54
++#define __NR_fchown 55
++#define __NR_openat 56
++#define __NR_close 57
++#define __NR_vhangup 58
++#define __NR_pipe2 59
++#define __NR_quotactl 60
++#define __NR_getdents64 61
++#define __NR__llseek 62
++#define __NR_read 63
++#define __NR_write 64
++#define __NR_readv 65
++#define __NR_writev 66
++#define __NR_pread64 67
++#define __NR_pwrite64 68
++#define __NR_preadv 69
++#define __NR_pwritev 70
++#define __NR_sendfile64 71
++#define __NR_signalfd4 74
++#define __NR_vmsplice 75
++#define __NR_splice 76
++#define __NR_tee 77
++#define __NR_readlinkat 78
++#define __NR_sync 81
++#define __NR_fsync 82
++#define __NR_fdatasync 83
++#define __NR_sync_file_range 84
++#define __NR_timerfd_create 85
++#define __NR_acct 89
++#define __NR_capget 90
++#define __NR_capset 91
++#define __NR_personality 92
++#define __NR_exit 93
++#define __NR_exit_group 94
++#define __NR_waitid 95
++#define __NR_set_tid_address 96
++#define __NR_unshare 97
++#define __NR_set_robust_list 99
++#define __NR_get_robust_list 100
++#define __NR_nanosleep 101
++#define __NR_getitimer 102
++#define __NR_setitimer 103
++#define __NR_kexec_load 104
++#define __NR_init_module 105
++#define __NR_delete_module 106
++#define __NR_timer_create 107
++#define __NR_timer_getoverrun 109
++#define __NR_timer_delete 111
++#define __NR_syslog 116
++#define __NR_ptrace 117
++#define __NR_sched_setparam 118
++#define __NR_sched_setscheduler 119
++#define __NR_sched_getscheduler 120
++#define __NR_sched_getparam 121
++#define __NR_sched_setaffinity 122
++#define __NR_sched_getaffinity 123
++#define __NR_sched_yield 124
++#define __NR_sched_get_priority_max 125
++#define __NR_sched_get_priority_min 126
++#define __NR_restart_syscall 128
++#define __NR_kill 129
++#define __NR_tkill 130
++#define __NR_tgkill 131
++#define __NR_sigaltstack 132
++#define __NR_rt_sigsuspend 133
++#define __NR_rt_sigaction 134
++#define __NR_rt_sigprocmask 135
++#define __NR_rt_sigpending 136
++#define __NR_rt_sigqueueinfo 138
++#define __NR_rt_sigreturn 139
++#define __NR_setpriority 140
++#define __NR_getpriority 141
++#define __NR_reboot 142
++#define __NR_setregid 143
++#define __NR_setgid 144
++#define __NR_setreuid 145
++#define __NR_setuid 146
++#define __NR_setresuid 147
++#define __NR_getresuid 148
++#define __NR_setresgid 149
++#define __NR_getresgid 150
++#define __NR_setfsuid 151
++#define __NR_setfsgid 152
++#define __NR_times 153
++#define __NR_setpgid 154
++#define __NR_getpgid 155
++#define __NR_getsid 156
++#define __NR_setsid 157
++#define __NR_getgroups 158
++#define __NR_setgroups 159
++#define __NR_uname 160
++#define __NR_sethostname 161
++#define __NR_setdomainname 162
++#define __NR_getrusage 165
++#define __NR_umask 166
++#define __NR_prctl 167
++#define __NR_getcpu 168
++#define __NR_getpid 172
++#define __NR_getppid 173
++#define __NR_getuid 174
++#define __NR_geteuid 175
++#define __NR_getgid 176
++#define __NR_getegid 177
++#define __NR_gettid 178
++#define __NR_sysinfo 179
++#define __NR_mq_open 180
++#define __NR_mq_unlink 181
++#define __NR_mq_notify 184
++#define __NR_mq_getsetattr 185
++#define __NR_msgget 186
++#define __NR_msgctl 187
++#define __NR_msgrcv 188
++#define __NR_msgsnd 189
++#define __NR_semget 190
++#define __NR_semctl 191
++#define __NR_semop 193
++#define __NR_shmget 194
++#define __NR_shmctl 195
++#define __NR_shmat 196
++#define __NR_shmdt 197
++#define __NR_socket 198
++#define __NR_socketpair 199
++#define __NR_bind 200
++#define __NR_listen 201
++#define __NR_accept 202
++#define __NR_connect 203
++#define __NR_getsockname 204
++#define __NR_getpeername 205
++#define __NR_sendto 206
++#define __NR_recvfrom 207
++#define __NR_setsockopt 208
++#define __NR_getsockopt 209
++#define __NR_shutdown 210
++#define __NR_sendmsg 211
++#define __NR_recvmsg 212
++#define __NR_readahead 213
++#define __NR_brk 214
++#define __NR_munmap 215
++#define __NR_mremap 216
++#define __NR_add_key 217
++#define __NR_request_key 218
++#define __NR_keyctl 219
++#define __NR_clone 220
++#define __NR_execve 221
++#define __NR_mmap2 222
++#define __NR_fadvise64_64 223
++#define __NR_swapon 224
++#define __NR_swapoff 225
++#define __NR_mprotect 226
++#define __NR_msync 227
++#define __NR_mlock 228
++#define __NR_munlock 229
++#define __NR_mlockall 230
++#define __NR_munlockall 231
++#define __NR_mincore 232
++#define __NR_madvise 233
++#define __NR_remap_file_pages 234
++#define __NR_mbind 235
++#define __NR_get_mempolicy 236
++#define __NR_set_mempolicy 237
++#define __NR_migrate_pages 238
++#define __NR_move_pages 239
++#define __NR_rt_tgsigqueueinfo 240
++#define __NR_perf_event_open 241
++#define __NR_accept4 242
++#define __NR_arch_specific_syscall 244
++#define __NR_prlimit64 261
++#define __NR_fanotify_init 262
++#define __NR_fanotify_mark 263
++#define __NR_name_to_handle_at 264
++#define __NR_open_by_handle_at 265
++#define __NR_syncfs 267
++#define __NR_setns 268
++#define __NR_sendmmsg 269
++#define __NR_process_vm_readv 270
++#define __NR_process_vm_writev 271
++#define __NR_kcmp 272
++#define __NR_finit_module 273
++#define __NR_sched_setattr 274
++#define __NR_sched_getattr 275
++#define __NR_renameat2 276
++#define __NR_seccomp 277
++#define __NR_getrandom 278
++#define __NR_memfd_create 279
++#define __NR_bpf 280
++#define __NR_execveat 281
++#define __NR_userfaultfd 282
++#define __NR_membarrier 283
++#define __NR_mlock2 284
++#define __NR_copy_file_range 285
++#define __NR_preadv2 286
++#define __NR_pwritev2 287
++#define __NR_pkey_mprotect 288
++#define __NR_pkey_alloc 289
++#define __NR_pkey_free 290
++#define __NR_statx 291
++#define __NR_rseq 293
++#define __NR_kexec_file_load 294
++#define __NR_clock_gettime64		403
++#define __NR_clock_settime64		404
++#define __NR_clock_adjtime64		405
++#define __NR_clock_getres_time64	406
++#define __NR_clock_nanosleep_time64	407
++#define __NR_timer_gettime64		408
++#define __NR_timer_settime64		409
++#define __NR_timerfd_gettime64		410
++#define __NR_timerfd_settime64		411
++#define __NR_utimensat_time64		412
++#define __NR_pselect6_time64		413
++#define __NR_ppoll_time64		414
++#define __NR_io_pgetevents_time64	416
++#define __NR_recvmmsg_time64		417
++#define __NR_mq_timedsend_time64	418
++#define __NR_mq_timedreceive_time64	419
++#define __NR_semtimedop_time64		420
++#define __NR_rt_sigtimedwait_time64	421
++#define __NR_futex_time64		422
++#define __NR_sched_rr_get_interval_time64 423
++#define __NR_pidfd_send_signal 424
++#define __NR_io_uring_setup 425
++#define __NR_io_uring_enter 426
++#define __NR_io_uring_register 427
++#define __NR_open_tree		428
++#define __NR_move_mount		429
++#define __NR_fsopen		430
++#define __NR_fsconfig		431
++#define __NR_fsmount		432
++#define __NR_fspick		433
++#define __NR_pidfd_open		434
++#define __NR_clone3		435
++#define __NR_openat2		437
++#define __NR_pidfd_getfd	438
++#define __NR_faccessat2		439
++#define __NR_process_madvise	440
++#define __NR_epoll_pwait2	441
++#define __NR_mount_setattr	442
++#define __NR_landlock_create_ruleset	444
++#define __NR_landlock_add_rule	445
++#define __NR_landlock_restrict_self	446
++#define __NR_process_mrelease	448
++#define __NR_futex_waitv	449
++#define __NR_set_mempolicy_home_node	450
++#define __NR_cachestat		451
++#define __NR_fchmodat2		452
++#define __NR_futex __NR_futex_time64
++
++#define __NR_sysriscv __NR_arch_specific_syscall
++#define __NR_riscv_flush_icache (__NR_sysriscv + 15)
+diff -urpN musl-1.2.4/arch/riscv32/bits/user.h musl-1.2.5/arch/riscv32/bits/user.h
+--- musl-1.2.4/arch/riscv32/bits/user.h	1970-01-01 06:00:00.000000000 +0600
++++ musl-1.2.5/arch/riscv32/bits/user.h	2024-03-01 08:07:33.000000000 +0600
+@@ -0,0 +1,6 @@
++#include <signal.h>
++
++#define ELF_NGREG 32
++#define ELF_NFPREG 33
++typedef unsigned long elf_greg_t, elf_gregset_t[ELF_NGREG];
++typedef union __riscv_mc_fp_state elf_fpregset_t;
+diff -urpN musl-1.2.4/arch/riscv32/crt_arch.h musl-1.2.5/arch/riscv32/crt_arch.h
+--- musl-1.2.4/arch/riscv32/crt_arch.h	1970-01-01 06:00:00.000000000 +0600
++++ musl-1.2.5/arch/riscv32/crt_arch.h	2024-03-01 08:07:33.000000000 +0600
+@@ -0,0 +1,19 @@
++__asm__(
++".section .sdata,\"aw\"\n"
++".text\n"
++".global " START "\n"
++".type " START ",%function\n"
++START ":\n"
++".weak __global_pointer$\n"
++".hidden __global_pointer$\n"
++".option push\n"
++".option norelax\n\t"
++"lla gp, __global_pointer$\n"
++".option pop\n\t"
++"mv a0, sp\n"
++".weak _DYNAMIC\n"
++".hidden _DYNAMIC\n\t"
++"lla a1, _DYNAMIC\n\t"
++"andi sp, sp, -16\n\t"
++"tail " START "_c"
++);
+diff -urpN musl-1.2.4/arch/riscv32/pthread_arch.h musl-1.2.5/arch/riscv32/pthread_arch.h
+--- musl-1.2.4/arch/riscv32/pthread_arch.h	1970-01-01 06:00:00.000000000 +0600
++++ musl-1.2.5/arch/riscv32/pthread_arch.h	2024-03-01 08:07:33.000000000 +0600
+@@ -0,0 +1,13 @@
++static inline uintptr_t __get_tp()
++{
++	uintptr_t tp;
++	__asm__ __volatile__("mv %0, tp" : "=r"(tp));
++	return tp;
++}
++
++#define TLS_ABOVE_TP
++#define GAP_ABOVE_TP 0
++
++#define DTP_OFFSET 0x800
++
++#define MC_PC __gregs[0]
+diff -urpN musl-1.2.4/arch/riscv32/reloc.h musl-1.2.5/arch/riscv32/reloc.h
+--- musl-1.2.4/arch/riscv32/reloc.h	1970-01-01 06:00:00.000000000 +0600
++++ musl-1.2.5/arch/riscv32/reloc.h	2024-03-01 08:07:33.000000000 +0600
+@@ -0,0 +1,22 @@
++#if defined __riscv_float_abi_soft
++#define RISCV_FP_SUFFIX "-sf"
++#elif defined __riscv_float_abi_single
++#define RISCV_FP_SUFFIX "-sp"
++#elif defined __riscv_float_abi_double
++#define RISCV_FP_SUFFIX ""
++#endif
++
++#define LDSO_ARCH "riscv32" RISCV_FP_SUFFIX
++
++#define TPOFF_K 0
++
++#define REL_SYMBOLIC    R_RISCV_32
++#define REL_PLT         R_RISCV_JUMP_SLOT
++#define REL_RELATIVE    R_RISCV_RELATIVE
++#define REL_COPY        R_RISCV_COPY
++#define REL_DTPMOD      R_RISCV_TLS_DTPMOD32
++#define REL_DTPOFF      R_RISCV_TLS_DTPREL32
++#define REL_TPOFF       R_RISCV_TLS_TPREL32
++
++#define CRTJMP(pc,sp) __asm__ __volatile__( \
++	"mv sp, %1 ; jr %0" : : "r"(pc), "r"(sp) : "memory" )
+diff -urpN musl-1.2.4/arch/riscv32/syscall_arch.h musl-1.2.5/arch/riscv32/syscall_arch.h
+--- musl-1.2.4/arch/riscv32/syscall_arch.h	1970-01-01 06:00:00.000000000 +0600
++++ musl-1.2.5/arch/riscv32/syscall_arch.h	2024-03-01 08:07:33.000000000 +0600
+@@ -0,0 +1,80 @@
++#define __SYSCALL_LL_E(x) \
++((union { long long ll; long l[2]; }){ .ll = x }).l[0], \
++((union { long long ll; long l[2]; }){ .ll = x }).l[1]
++#define __SYSCALL_LL_O(x) __SYSCALL_LL_E((x))
++
++#define __asm_syscall(...) \
++	__asm__ __volatile__ ("ecall\n\t" \
++	: "=r"(a0) : __VA_ARGS__ : "memory"); \
++	return a0; \
++
++static inline long __syscall0(long n)
++{
++	register long a7 __asm__("a7") = n;
++	register long a0 __asm__("a0");
++	__asm_syscall("r"(a7))
++}
++
++static inline long __syscall1(long n, long a)
++{
++	register long a7 __asm__("a7") = n;
++	register long a0 __asm__("a0") = a;
++	__asm_syscall("r"(a7), "0"(a0))
++}
++
++static inline long __syscall2(long n, long a, long b)
++{
++	register long a7 __asm__("a7") = n;
++	register long a0 __asm__("a0") = a;
++	register long a1 __asm__("a1") = b;
++	__asm_syscall("r"(a7), "0"(a0), "r"(a1))
++}
++
++static inline long __syscall3(long n, long a, long b, long c)
++{
++	register long a7 __asm__("a7") = n;
++	register long a0 __asm__("a0") = a;
++	register long a1 __asm__("a1") = b;
++	register long a2 __asm__("a2") = c;
++	__asm_syscall("r"(a7), "0"(a0), "r"(a1), "r"(a2))
++}
++
++static inline long __syscall4(long n, long a, long b, long c, long d)
++{
++	register long a7 __asm__("a7") = n;
++	register long a0 __asm__("a0") = a;
++	register long a1 __asm__("a1") = b;
++	register long a2 __asm__("a2") = c;
++	register long a3 __asm__("a3") = d;
++	__asm_syscall("r"(a7), "0"(a0), "r"(a1), "r"(a2), "r"(a3))
++}
++
++static inline long __syscall5(long n, long a, long b, long c, long d, long e)
++{
++	register long a7 __asm__("a7") = n;
++	register long a0 __asm__("a0") = a;
++	register long a1 __asm__("a1") = b;
++	register long a2 __asm__("a2") = c;
++	register long a3 __asm__("a3") = d;
++	register long a4 __asm__("a4") = e;
++	__asm_syscall("r"(a7), "0"(a0), "r"(a1), "r"(a2), "r"(a3), "r"(a4))
++}
++
++static inline long __syscall6(long n, long a, long b, long c, long d, long e, long f)
++{
++	register long a7 __asm__("a7") = n;
++	register long a0 __asm__("a0") = a;
++	register long a1 __asm__("a1") = b;
++	register long a2 __asm__("a2") = c;
++	register long a3 __asm__("a3") = d;
++	register long a4 __asm__("a4") = e;
++	register long a5 __asm__("a5") = f;
++	__asm_syscall("r"(a7), "0"(a0), "r"(a1), "r"(a2), "r"(a3), "r"(a4), "r"(a5))
++}
++
++#define VDSO_USEFUL
++/* We don't have a clock_gettime function.
++#define VDSO_CGT_SYM "__vdso_clock_gettime"
++#define VDSO_CGT_VER "LINUX_2.6" */
++
++#define IPC_64 0
+diff -urpN musl-1.2.4/arch/riscv64/bits/signal.h musl-1.2.5/arch/riscv64/bits/signal.h
+--- musl-1.2.4/arch/riscv64/bits/signal.h	2023-05-02 09:39:41.000000000 +0600
++++ musl-1.2.5/arch/riscv64/bits/signal.h	2024-03-01 08:07:33.000000000 +0600
+@@ -41,7 +41,9 @@ typedef struct mcontext_t {
+ #define REG_SP 2
+ #define REG_TP 4
+ #define REG_S0 8
++#define REG_S1 9
+ #define REG_A0 10
++#define REG_S2 18
+ #endif
+ 
+ #if defined(_GNU_SOURCE) || defined(_BSD_SOURCE)
+diff -urpN musl-1.2.4/arch/riscv64/bits/syscall.h.in musl-1.2.5/arch/riscv64/bits/syscall.h.in
+--- musl-1.2.4/arch/riscv64/bits/syscall.h.in	2023-05-02 09:39:41.000000000 +0600
++++ musl-1.2.5/arch/riscv64/bits/syscall.h.in	2024-03-01 08:07:33.000000000 +0600
+@@ -299,6 +299,11 @@
+ #define __NR_landlock_create_ruleset	444
+ #define __NR_landlock_add_rule	445
+ #define __NR_landlock_restrict_self	446
++#define __NR_process_mrelease	448
++#define __NR_futex_waitv	449
++#define __NR_set_mempolicy_home_node	450
++#define __NR_cachestat		451
++#define __NR_fchmodat2		452
+ 
+ #define __NR_sysriscv __NR_arch_specific_syscall
+ #define __NR_riscv_flush_icache (__NR_sysriscv + 15)
+diff -urpN musl-1.2.4/arch/riscv64/reloc.h musl-1.2.5/arch/riscv64/reloc.h
+--- musl-1.2.4/arch/riscv64/reloc.h	2023-05-02 09:39:41.000000000 +0600
++++ musl-1.2.5/arch/riscv64/reloc.h	2024-03-01 08:07:33.000000000 +0600
+@@ -17,6 +17,7 @@
+ #define REL_DTPMOD      R_RISCV_TLS_DTPMOD64
+ #define REL_DTPOFF      R_RISCV_TLS_DTPREL64
+ #define REL_TPOFF       R_RISCV_TLS_TPREL64
++#define REL_TLSDESC     R_RISCV_TLSDESC
+ 
+ #define CRTJMP(pc,sp) __asm__ __volatile__( \
+ 	"mv sp, %1 ; jr %0" : : "r"(pc), "r"(sp) : "memory" )
+diff -urpN musl-1.2.4/arch/s390x/bits/syscall.h.in musl-1.2.5/arch/s390x/bits/syscall.h.in
+--- musl-1.2.4/arch/s390x/bits/syscall.h.in	2023-05-02 09:39:41.000000000 +0600
++++ musl-1.2.5/arch/s390x/bits/syscall.h.in	2024-03-01 08:07:33.000000000 +0600
+@@ -362,4 +362,10 @@
+ #define __NR_landlock_create_ruleset	444
+ #define __NR_landlock_add_rule	445
+ #define __NR_landlock_restrict_self	446
++#define __NR_memfd_secret	447
++#define __NR_process_mrelease	448
++#define __NR_futex_waitv	449
++#define __NR_set_mempolicy_home_node	450
++#define __NR_cachestat		451
++#define __NR_fchmodat2		452
+ 
+diff -urpN musl-1.2.4/arch/sh/bits/syscall.h.in musl-1.2.5/arch/sh/bits/syscall.h.in
+--- musl-1.2.4/arch/sh/bits/syscall.h.in	2023-05-02 09:39:41.000000000 +0600
++++ musl-1.2.5/arch/sh/bits/syscall.h.in	2024-03-01 08:07:33.000000000 +0600
+@@ -409,4 +409,9 @@
+ #define __NR_landlock_create_ruleset	444
+ #define __NR_landlock_add_rule	445
+ #define __NR_landlock_restrict_self	446
++#define __NR_process_mrelease	448
++#define __NR_futex_waitv	449
++#define __NR_set_mempolicy_home_node	450
++#define __NR_cachestat		451
++#define __NR_fchmodat2		452
+ 
+diff -urpN musl-1.2.4/arch/x32/bits/syscall.h.in musl-1.2.5/arch/x32/bits/syscall.h.in
+--- musl-1.2.4/arch/x32/bits/syscall.h.in	2023-05-02 09:39:41.000000000 +0600
++++ musl-1.2.5/arch/x32/bits/syscall.h.in	2024-03-01 08:07:33.000000000 +0600
+@@ -308,6 +308,12 @@
+ #define __NR_landlock_create_ruleset	(0x40000000 + 444)
+ #define __NR_landlock_add_rule	(0x40000000 + 445)
+ #define __NR_landlock_restrict_self	(0x40000000 + 446)
++#define __NR_memfd_secret	(0x40000000 + 447)
++#define __NR_process_mrelease	(0x40000000 + 448)
++#define __NR_futex_waitv	(0x40000000 + 449)
++#define __NR_set_mempolicy_home_node	(0x40000000 + 450)
++#define __NR_cachestat		(0x40000000 + 451)
++#define __NR_fchmodat2		(0x40000000 + 452)
+ 
+ 
+ #define __NR_rt_sigaction (0x40000000 + 512)
+diff -urpN musl-1.2.4/arch/x86_64/bits/syscall.h.in musl-1.2.5/arch/x86_64/bits/syscall.h.in
+--- musl-1.2.4/arch/x86_64/bits/syscall.h.in	2023-05-02 09:39:41.000000000 +0600
++++ musl-1.2.5/arch/x86_64/bits/syscall.h.in	2024-03-01 08:07:33.000000000 +0600
+@@ -355,4 +355,10 @@
+ #define __NR_landlock_create_ruleset	444
+ #define __NR_landlock_add_rule	445
+ #define __NR_landlock_restrict_self	446
++#define __NR_memfd_secret	447
++#define __NR_process_mrelease	448
++#define __NR_futex_waitv	449
++#define __NR_set_mempolicy_home_node	450
++#define __NR_cachestat		451
++#define __NR_fchmodat2		452
+ 
+diff -urpN musl-1.2.4/configure musl-1.2.5/configure
+--- musl-1.2.4/configure	2023-05-02 09:39:41.000000000 +0600
++++ musl-1.2.5/configure	2024-03-01 08:07:33.000000000 +0600
+@@ -328,6 +328,7 @@ i?86*) ARCH=i386 ;;
+ x86_64-x32*|x32*|x86_64*x32) ARCH=x32 ;;
+ x86_64-nt64*) ARCH=nt64 ;;
+ x86_64*) ARCH=x86_64 ;;
++loongarch64*) ARCH=loongarch64 ;;
+ m68k*) ARCH=m68k ;;
+ mips64*|mipsisa64*) ARCH=mips64 ;;
+ mips*) ARCH=mips ;;
+@@ -336,6 +337,7 @@ or1k*) ARCH=or1k ;;
+ powerpc64*|ppc64*) ARCH=powerpc64 ;;
+ powerpc*|ppc*) ARCH=powerpc ;;
+ riscv64*) ARCH=riscv64 ;;
++riscv32*) ARCH=riscv32 ;;
+ sh[1-9bel-]*|sh|superh*) ARCH=sh ;;
+ s390x*) ARCH=s390x ;;
+ unknown) fail "$0: unable to detect target arch; try $0 --target=..." ;;
+@@ -444,7 +446,20 @@ xno|x) printf "disabled\n" ; optimize=no
+ *) printf "custom\n" ;;
+ esac
+ 
+-test "$optimize" = no || tryflag CFLAGS_AUTO -Os || tryflag CFLAGS_AUTO -O2
++if test "$optimize" = no ; then :
++else
++tryflag CFLAGS_AUTO -O2
++tryflag CFLAGS_AUTO -fno-align-jumps
++tryflag CFLAGS_AUTO -fno-align-functions
++tryflag CFLAGS_AUTO -fno-align-loops
++tryflag CFLAGS_AUTO -fno-align-labels
++tryflag CFLAGS_AUTO -fira-region=one
++tryflag CFLAGS_AUTO -fira-hoist-pressure
++tryflag CFLAGS_AUTO -freorder-blocks-algorithm=simple \
++|| tryflag CFLAGS_AUTO -fno-reorder-blocks
++tryflag CFLAGS_AUTO -fno-prefetch-loop-arrays
++tryflag CFLAGS_AUTO -fno-tree-ch
++fi
+ test "$optimize" = yes && optimize="internal,malloc,string"
+ 
+ if fnmatch 'no|size' "$optimize" ; then :
+@@ -658,6 +673,19 @@ if test "$ARCH" = "aarch64" ; then
+ trycppif __AARCH64EB__ "$t" && SUBARCH=${SUBARCH}_be
+ fi
+ 
++if test "$ARCH" = "loongarch64" ; then
++trycppif __loongarch_soft_float "$t" && SUBARCH=${SUBARCH}-sf
++trycppif __loongarch_single_float "$t" && SUBARCH=${SUBARCH}-sp
++printf "checking whether assembler support FCSRs... "
++echo "__asm__(\"movfcsr2gr \$t0,\$fcsr0\");" > "$tmpc"
++if $CC -c -o /dev/null "$tmpc" >/dev/null 2>&1 ; then
++printf "yes\n"
++else
++printf "no\n"
++CFLAGS_AUTO="$CFLAGS_AUTO -DBROKEN_LOONGARCH_FCSR_ASM"
++fi
++fi
++
+ if test "$ARCH" = "m68k" ; then
+ if trycppif "__HAVE_68881__" ; then : ;
+ elif trycppif "__mcffpu__" ; then SUBARCH="-fp64"
+@@ -700,7 +728,7 @@ trycppif __LITTLE_ENDIAN__ "$t" && SUBAR
+ trycppif _SOFT_FLOAT "$t" && fail "$0: error: soft-float not supported on powerpc64"
+ fi
+ 
+-if test "$ARCH" = "riscv64" ; then
++if test "$ARCH" = "riscv64" -o "$ARCH" = "riscv32" ; then
+ trycppif __riscv_float_abi_soft "$t" && SUBARCH=${SUBARCH}-sf
+ trycppif __riscv_float_abi_single "$t" && SUBARCH=${SUBARCH}-sp
+ fi
+diff -urpN musl-1.2.4/include/elf.h musl-1.2.5/include/elf.h
+--- musl-1.2.4/include/elf.h	2023-05-02 09:39:41.000000000 +0600
++++ musl-1.2.5/include/elf.h	2024-03-01 08:07:33.000000000 +0600
+@@ -315,7 +315,8 @@ typedef struct {
+ #define EM_RISCV	243
+ #define EM_BPF		247
+ #define EM_CSKY		252
+-#define EM_NUM		253
++#define EM_LOONGARCH	258
++#define EM_NUM		259
+ 
+ #define EM_ALPHA	0x9026
+ 
+@@ -558,6 +559,11 @@ typedef struct {
+ 
+ 
+ 
++typedef Elf32_Word Elf32_Relr;
++typedef Elf64_Xword Elf64_Relr;
++
++
++
+ #define ELF32_R_SYM(val)		((val) >> 8)
+ #define ELF32_R_TYPE(val)		((val) & 0xff)
+ #define ELF32_R_INFO(sym, type)		(((sym) << 8) + ((type) & 0xff))
+@@ -698,7 +704,14 @@ typedef struct {
+ #define NT_MIPS_DSP	0x800
+ #define NT_MIPS_FP_MODE	0x801
+ #define NT_MIPS_MSA	0x802
++#define NT_RISCV_CSR	0x900
++#define NT_RISCV_VECTOR	0x901
+ #define NT_VERSION	1
++#define NT_LOONGARCH_CPUCFG	0xa00
++#define NT_LOONGARCH_CSR	0xa01
++#define NT_LOONGARCH_LSX	0xa02
++#define NT_LOONGARCH_LASX	0xa03
++#define NT_LOONGARCH_LBT	0xa04
+ 
+ 
+ 
+@@ -3249,6 +3262,7 @@ enum
+ #define R_RISCV_TLS_DTPREL64    9
+ #define R_RISCV_TLS_TPREL32     10
+ #define R_RISCV_TLS_TPREL64     11
++#define R_RISCV_TLSDESC         12
+ 
+ #define R_RISCV_BRANCH          16
+ #define R_RISCV_JAL             17
+@@ -3275,16 +3289,11 @@ enum
+ #define R_RISCV_SUB16           38
+ #define R_RISCV_SUB32           39
+ #define R_RISCV_SUB64           40
+-#define R_RISCV_GNU_VTINHERIT   41
+-#define R_RISCV_GNU_VTENTRY     42
++#define R_RISCV_GOT32_PCREL     41
+ #define R_RISCV_ALIGN           43
+ #define R_RISCV_RVC_BRANCH      44
+ #define R_RISCV_RVC_JUMP        45
+ #define R_RISCV_RVC_LUI         46
+-#define R_RISCV_GPREL_I         47
+-#define R_RISCV_GPREL_S         48
+-#define R_RISCV_TPREL_I         49
+-#define R_RISCV_TPREL_S         50
+ #define R_RISCV_RELAX           51
+ #define R_RISCV_SUB6            52
+ #define R_RISCV_SET6            53
+@@ -3292,6 +3301,110 @@ enum
+ #define R_RISCV_SET16           55
+ #define R_RISCV_SET32           56
+ #define R_RISCV_32_PCREL        57
++#define R_RISCV_IRELATIVE       58
++#define R_RISCV_PLT32           59
++#define R_RISCV_SET_ULEB128     60
++#define R_RISCV_SUB_ULEB128     61
++#define R_RISCV_TLSDESC_HI20    62
++#define R_RISCV_TLSDESC_LOAD_LO12 63
++#define R_RISCV_TLSDESC_ADD_LO12  64
++#define R_RISCV_TLSDESC_CALL    65
++
++#define EF_LARCH_ABI_MODIFIER_MASK    0x07
++#define EF_LARCH_ABI_SOFT_FLOAT       0x01
++#define EF_LARCH_ABI_SINGLE_FLOAT     0x02
++#define EF_LARCH_ABI_DOUBLE_FLOAT     0x03
++#define EF_LARCH_OBJABI_V1            0x40
++
++#define R_LARCH_NONE                        0
++#define R_LARCH_32                          1
++#define R_LARCH_64                          2
++#define R_LARCH_RELATIVE                    3
++#define R_LARCH_COPY                        4
++#define R_LARCH_JUMP_SLOT                   5
++#define R_LARCH_TLS_DTPMOD32                6
++#define R_LARCH_TLS_DTPMOD64                7
++#define R_LARCH_TLS_DTPREL32                8
++#define R_LARCH_TLS_DTPREL64                9
++#define R_LARCH_TLS_TPREL32                 10
++#define R_LARCH_TLS_TPREL64                 11
++#define R_LARCH_IRELATIVE                   12
++#define R_LARCH_MARK_LA                     20
++#define R_LARCH_MARK_PCREL                  21
++#define R_LARCH_SOP_PUSH_PCREL              22
++#define R_LARCH_SOP_PUSH_ABSOLUTE           23
++#define R_LARCH_SOP_PUSH_DUP                24
++#define R_LARCH_SOP_PUSH_GPREL              25
++#define R_LARCH_SOP_PUSH_TLS_TPREL          26
++#define R_LARCH_SOP_PUSH_TLS_GOT            27
++#define R_LARCH_SOP_PUSH_TLS_GD             28
++#define R_LARCH_SOP_PUSH_PLT_PCREL          29
++#define R_LARCH_SOP_ASSERT                  30
++#define R_LARCH_SOP_NOT                     31
++#define R_LARCH_SOP_SUB                     32
++#define R_LARCH_SOP_SL                      33
++#define R_LARCH_SOP_SR                      34
++#define R_LARCH_SOP_ADD                     35
++#define R_LARCH_SOP_AND                     36
++#define R_LARCH_SOP_IF_ELSE                 37
++#define R_LARCH_SOP_POP_32_S_10_5           38
++#define R_LARCH_SOP_POP_32_U_10_12          39
++#define R_LARCH_SOP_POP_32_S_10_12          40
++#define R_LARCH_SOP_POP_32_S_10_16          41
++#define R_LARCH_SOP_POP_32_S_10_16_S2       42
++#define R_LARCH_SOP_POP_32_S_5_20           43
++#define R_LARCH_SOP_POP_32_S_0_5_10_16_S2   44
++#define R_LARCH_SOP_POP_32_S_0_10_10_16_S2  45
++#define R_LARCH_SOP_POP_32_U                46
++#define R_LARCH_ADD8                        47
++#define R_LARCH_ADD16                       48
++#define R_LARCH_ADD24                       49
++#define R_LARCH_ADD32                       50
++#define R_LARCH_ADD64                       51
++#define R_LARCH_SUB8                        52
++#define R_LARCH_SUB16                       53
++#define R_LARCH_SUB24                       54
++#define R_LARCH_SUB32                       55
++#define R_LARCH_SUB64                       56
++#define R_LARCH_GNU_VTINHERIT               57
++#define R_LARCH_GNU_VTENTRY                 58
++#define R_LARCH_B16                         64
++#define R_LARCH_B21                         65
++#define R_LARCH_B26                         66
++#define R_LARCH_ABS_HI20                    67
++#define R_LARCH_ABS_LO12                    68
++#define R_LARCH_ABS64_LO20                  69
++#define R_LARCH_ABS64_HI12                  70
++#define R_LARCH_PCALA_HI20                  71
++#define R_LARCH_PCALA_LO12                  72
++#define R_LARCH_PCALA64_LO20                73
++#define R_LARCH_PCALA64_HI12                74
++#define R_LARCH_GOT_PC_HI20                 75
++#define R_LARCH_GOT_PC_LO12                 76
++#define R_LARCH_GOT64_PC_LO20               77
++#define R_LARCH_GOT64_PC_HI12               78
++#define R_LARCH_GOT_HI20                    79
++#define R_LARCH_GOT_LO12                    80
++#define R_LARCH_GOT64_LO20                  81
++#define R_LARCH_GOT64_HI12                  82
++#define R_LARCH_TLS_LE_HI20                 83
++#define R_LARCH_TLS_LE_LO12                 84
++#define R_LARCH_TLS_LE64_LO20               85
++#define R_LARCH_TLS_LE64_HI12               86
++#define R_LARCH_TLS_IE_PC_HI20              87
++#define R_LARCH_TLS_IE_PC_LO12              88
++#define R_LARCH_TLS_IE64_PC_LO20            89
++#define R_LARCH_TLS_IE64_PC_HI12            90
++#define R_LARCH_TLS_IE_HI20                 91
++#define R_LARCH_TLS_IE_LO12                 92
++#define R_LARCH_TLS_IE64_LO20               93
++#define R_LARCH_TLS_IE64_HI12               94
++#define R_LARCH_TLS_LD_PC_HI20              95
++#define R_LARCH_TLS_LD_HI20                 96
++#define R_LARCH_TLS_GD_PC_HI20              97
++#define R_LARCH_TLS_GD_HI20                 98
++#define R_LARCH_32_PCREL                    99
++#define R_LARCH_RELAX                       100
+ 
+ #ifdef __cplusplus
+ }
+diff -urpN musl-1.2.4/include/fcntl.h musl-1.2.5/include/fcntl.h
+--- musl-1.2.4/include/fcntl.h	2023-05-02 09:39:41.000000000 +0600
++++ musl-1.2.5/include/fcntl.h	2024-03-01 08:07:33.000000000 +0600
+@@ -184,7 +184,6 @@ struct f_owner_ex {
+ #define SPLICE_F_MORE 4
+ #define SPLICE_F_GIFT 8
+ int fallocate(int, int, off_t, off_t);
+-#define fallocate64 fallocate
+ int name_to_handle_at(int, const char *, struct file_handle *, int *, int);
+ int open_by_handle_at(int, struct file_handle *, int);
+ ssize_t readahead(int, off_t, size_t);
+@@ -207,6 +206,9 @@ ssize_t tee(int, int, size_t, unsigned);
+ #define posix_fadvise64 posix_fadvise
+ #define posix_fallocate64 posix_fallocate
+ #define off64_t off_t
++#if defined(_GNU_SOURCE)
++#define fallocate64 fallocate
++#endif
+ #endif
+ 
+ #ifdef __cplusplus
+diff -urpN musl-1.2.4/include/poll.h musl-1.2.5/include/poll.h
+--- musl-1.2.4/include/poll.h	2023-05-02 09:39:41.000000000 +0600
++++ musl-1.2.5/include/poll.h	2024-03-01 08:07:33.000000000 +0600
+@@ -36,7 +36,7 @@ struct pollfd {
+ 
+ int poll (struct pollfd *, nfds_t, int);
+ 
+-#ifdef _GNU_SOURCE
++#if defined(_GNU_SOURCE) || defined(_BSD_SOURCE)
+ #define __NEED_time_t
+ #define __NEED_struct_timespec
+ #define __NEED_sigset_t
+@@ -45,7 +45,7 @@ int ppoll(struct pollfd *, nfds_t, const
+ #endif
+ 
+ #if _REDIR_TIME64
+-#ifdef _GNU_SOURCE
++#if defined(_GNU_SOURCE) || defined(_BSD_SOURCE)
+ __REDIR(ppoll, __ppoll_time64);
+ #endif
+ #endif
+diff -urpN musl-1.2.4/include/stdc-predef.h musl-1.2.5/include/stdc-predef.h
+--- musl-1.2.4/include/stdc-predef.h	2023-05-02 09:39:41.000000000 +0600
++++ musl-1.2.5/include/stdc-predef.h	2024-03-01 08:07:33.000000000 +0600
+@@ -7,7 +7,12 @@
+ #define __STDC_IEC_559__ 1
+ #endif
+ 
++#if !defined(__STDC_UTF_16__)
+ #define __STDC_UTF_16__ 1
++#endif
++
++#if !defined(__STDC_UTF_32__)
+ #define __STDC_UTF_32__ 1
++#endif
+ 
+ #endif
+diff -urpN musl-1.2.4/include/string.h musl-1.2.5/include/string.h
+--- musl-1.2.4/include/string.h	2023-05-02 09:39:41.000000000 +0600
++++ musl-1.2.5/include/string.h	2024-03-01 08:07:33.000000000 +0600
+@@ -95,9 +95,6 @@ char *strchrnul(const char *, int);
+ char *strcasestr(const char *, const char *);
+ void *memrchr(const void *, int, size_t);
+ void *mempcpy(void *, const void *, size_t);
+-#ifndef __cplusplus
+-char *basename();
+-#endif
+ #endif
+ 
+ #ifdef __cplusplus
+diff -urpN musl-1.2.4/include/sys/stat.h musl-1.2.5/include/sys/stat.h
+--- musl-1.2.4/include/sys/stat.h	2023-05-02 09:39:41.000000000 +0600
++++ musl-1.2.5/include/sys/stat.h	2024-03-01 08:07:33.000000000 +0600
+@@ -18,6 +18,13 @@ extern "C" {
+ #define __NEED_blkcnt_t
+ #define __NEED_struct_timespec
+ 
++#ifdef _GNU_SOURCE
++#define __NEED_int64_t
++#define __NEED_uint64_t
++#define __NEED_uint32_t
++#define __NEED_uint16_t
++#endif
++
+ #include <bits/alltypes.h>
+ 
+ #include <bits/stat.h>
+@@ -98,6 +105,54 @@ int lchmod(const char *, mode_t);
+ #define S_IEXEC S_IXUSR
+ #endif
+ 
++#if defined(_GNU_SOURCE)
++#define STATX_TYPE 1U
++#define STATX_MODE 2U
++#define STATX_NLINK 4U
++#define STATX_UID 8U
++#define STATX_GID 0x10U
++#define STATX_ATIME 0x20U
++#define STATX_MTIME 0x40U
++#define STATX_CTIME 0x80U
++#define STATX_INO 0x100U
++#define STATX_SIZE 0x200U
++#define STATX_BLOCKS 0x400U
++#define STATX_BASIC_STATS 0x7ffU
++#define STATX_BTIME 0x800U
++#define STATX_ALL 0xfffU
++
++struct statx_timestamp {
++	int64_t tv_sec;
++	uint32_t tv_nsec, __pad;
++};
++
++struct statx {
++	uint32_t stx_mask;
++	uint32_t stx_blksize;
++	uint64_t stx_attributes;
++	uint32_t stx_nlink;
++	uint32_t stx_uid;
++	uint32_t stx_gid;
++	uint16_t stx_mode;
++	uint16_t __pad0[1];
++	uint64_t stx_ino;
++	uint64_t stx_size;
++	uint64_t stx_blocks;
++	uint64_t stx_attributes_mask;
++	struct statx_timestamp stx_atime;
++	struct statx_timestamp stx_btime;
++	struct statx_timestamp stx_ctime;
++	struct statx_timestamp stx_mtime;
++	uint32_t stx_rdev_major;
++	uint32_t stx_rdev_minor;
++	uint32_t stx_dev_major;
++	uint32_t stx_dev_minor;
++	uint64_t __pad1[14];
++};
++
++int statx(int, const char *__restrict, int, unsigned, struct statx *__restrict);
++#endif
++
+ #if defined(_LARGEFILE64_SOURCE)
+ #define stat64 stat
+ #define fstat64 fstat
+diff -urpN musl-1.2.4/include/sys/statvfs.h musl-1.2.5/include/sys/statvfs.h
+--- musl-1.2.4/include/sys/statvfs.h	2023-05-02 09:39:41.000000000 +0600
++++ musl-1.2.5/include/sys/statvfs.h	2024-03-01 08:07:33.000000000 +0600
+@@ -23,7 +23,8 @@ struct statvfs {
+ 	unsigned long f_fsid;
+ #endif
+ 	unsigned long f_flag, f_namemax;
+-	int __reserved[6];
++	unsigned int f_type;
++	int __reserved[5];
+ };
+ 
+ int statvfs (const char *__restrict, struct statvfs *__restrict);
+diff -urpN musl-1.2.4/include/sys/uio.h musl-1.2.5/include/sys/uio.h
+--- musl-1.2.4/include/sys/uio.h	2023-05-02 09:39:41.000000000 +0600
++++ musl-1.2.5/include/sys/uio.h	2024-03-01 08:07:33.000000000 +0600
+@@ -39,6 +39,13 @@ ssize_t pwritev (int, const struct iovec
+ #ifdef _GNU_SOURCE
+ ssize_t process_vm_writev(pid_t, const struct iovec *, unsigned long, const struct iovec *, unsigned long, unsigned long);
+ ssize_t process_vm_readv(pid_t, const struct iovec *, unsigned long, const struct iovec *, unsigned long, unsigned long);
++ssize_t preadv2 (int, const struct iovec *, int, off_t, int);
++ssize_t pwritev2 (int, const struct iovec *, int, off_t, int);
++#define RWF_HIPRI 0x00000001
++#define RWF_DSYNC 0x00000002
++#define RWF_SYNC 0x00000004
++#define RWF_NOWAIT 0x00000008
++#define RWF_APPEND 0x00000010
+ #endif
+ 
+ #ifdef __cplusplus
+diff -urpN musl-1.2.4/ldso/dynlink.c musl-1.2.5/ldso/dynlink.c
+--- musl-1.2.4/ldso/dynlink.c	2023-05-02 09:39:41.000000000 +0600
++++ musl-1.2.5/ldso/dynlink.c	2024-03-01 08:07:33.000000000 +0600
+@@ -157,6 +157,8 @@ static struct fdpic_dummy_loadmap app_du
+ 
+ struct debug *_dl_debug_addr = &debug;
+ 
++extern weak hidden char __ehdr_start[];
++
+ extern hidden int __malloc_replaced;
+ 
+ hidden void (*const __init_array_start)(void)=0, (*const __fini_array_start)(void)=0;
+@@ -515,7 +517,7 @@ static void do_relocs(struct dso *dso, s
+ 			break;
+ #endif
+ 		case REL_TLSDESC:
+-			if (stride<3) addend = reloc_addr[1];
++			if (stride<3) addend = reloc_addr[!TLSDESC_BACKWARDS];
+ 			if (def.dso->tls_id > static_tls_cnt) {
+ 				struct td_index *new = malloc(sizeof *new);
+ 				if (!new) {
+@@ -540,13 +542,13 @@ static void do_relocs(struct dso *dso, s
+ 					+ addend;
+ #endif
+ 			}
+-#ifdef TLSDESC_BACKWARDS
+ 			/* Some archs (32-bit ARM at least) invert the order of
+ 			 * the descriptor members. Fix them up here. */
+-			size_t tmp = reloc_addr[0];
+-			reloc_addr[0] = reloc_addr[1];
+-			reloc_addr[1] = tmp;
+-#endif
++			if (TLSDESC_BACKWARDS) {
++				size_t tmp = reloc_addr[0];
++				reloc_addr[0] = reloc_addr[1];
++				reloc_addr[1] = tmp;
++			}
+ 			break;
+ 		default:
+ 			error("Error relocating %s: unsupported relocation type %d",
+@@ -1725,7 +1727,7 @@ hidden void __dls2(unsigned char *base,
+ 	} else {
+ 		ldso.base = base;
+ 	}
+-	Ehdr *ehdr = (void *)ldso.base;
++	Ehdr *ehdr = __ehdr_start ? (void *)__ehdr_start : (void *)ldso.base;
+ 	ldso.name = ldso.shortname = "libc.so";
+ 	ldso.phnum = ehdr->e_phnum;
+ 	ldso.phdr = laddr(&ldso, ehdr->e_phoff);
+diff -urpN musl-1.2.4/src/fenv/loongarch64/fenv.S musl-1.2.5/src/fenv/loongarch64/fenv.S
+--- musl-1.2.4/src/fenv/loongarch64/fenv.S	1970-01-01 06:00:00.000000000 +0600
++++ musl-1.2.5/src/fenv/loongarch64/fenv.S	2024-03-01 08:07:33.000000000 +0600
+@@ -0,0 +1,78 @@
++#ifndef __loongarch_soft_float
++
++#ifdef BROKEN_LOONGARCH_FCSR_ASM
++#define FCSR $r0
++#else
++#define FCSR $fcsr0
++#endif
++
++.global feclearexcept
++.type   feclearexcept,@function
++feclearexcept:
++	li.w    $t0, 0x1f0000
++	and     $a0, $a0, $t0
++	movfcsr2gr $t1, FCSR
++	andn    $t1, $t1, $a0
++	movgr2fcsr FCSR, $t1
++	li.w    $a0, 0
++	jr      $ra
++
++.global feraiseexcept
++.type   feraiseexcept,@function
++feraiseexcept:
++	li.w    $t0, 0x1f0000
++	and     $a0, $a0, $t0
++	movfcsr2gr $t1, FCSR
++	or      $t1, $t1, $a0
++	movgr2fcsr FCSR, $t1
++	li.w    $a0, 0
++	jr      $ra
++
++.global fetestexcept
++.type   fetestexcept,@function
++fetestexcept:
++	li.w    $t0, 0x1f0000
++	and     $a0, $a0, $t0
++	movfcsr2gr $t1, FCSR
++	and     $a0, $t1, $a0
++	jr      $ra
++
++.global fegetround
++.type   fegetround,@function
++fegetround:
++	movfcsr2gr $t0, FCSR
++	andi    $a0, $t0, 0x300
++	jr      $ra
++
++.global __fesetround
++.hidden __fesetround
++.type   __fesetround,@function
++__fesetround:
++	li.w    $t0, 0x300
++	and     $a0, $a0, $t0
++	movfcsr2gr $t1, FCSR
++	andn    $t1, $t1, $t0
++	or      $t1, $t1, $a0
++	movgr2fcsr FCSR, $t1
++	li.w    $a0, 0
++	jr      $ra
++
++.global fegetenv
++.type   fegetenv,@function
++fegetenv:
++	movfcsr2gr $t0, FCSR
++	st.w    $t0, $a0, 0
++	li.w    $a0, 0
++	jr      $ra
++
++.global fesetenv
++.type   fesetenv,@function
++fesetenv:
++	addi.d  $t0, $a0, 1
++	beq     $t0, $r0, 1f
++	ld.w    $t0, $a0, 0
++1:	movgr2fcsr FCSR, $t0
++	li.w    $a0, 0
++	jr      $ra
++
++#endif
+diff -urpN musl-1.2.4/src/fenv/riscv32/fenv-sf.c musl-1.2.5/src/fenv/riscv32/fenv-sf.c
+--- musl-1.2.4/src/fenv/riscv32/fenv-sf.c	1970-01-01 06:00:00.000000000 +0600
++++ musl-1.2.5/src/fenv/riscv32/fenv-sf.c	2024-03-01 08:07:33.000000000 +0600
+@@ -0,0 +1,3 @@
++#ifndef __riscv_flen
++#include "../fenv.c"
++#endif
+diff -urpN musl-1.2.4/src/fenv/riscv32/fenv.S musl-1.2.5/src/fenv/riscv32/fenv.S
+--- musl-1.2.4/src/fenv/riscv32/fenv.S	1970-01-01 06:00:00.000000000 +0600
++++ musl-1.2.5/src/fenv/riscv32/fenv.S	2024-03-01 08:07:33.000000000 +0600
+@@ -0,0 +1,56 @@
++#ifdef __riscv_flen
++
++.global feclearexcept
++.type feclearexcept, %function
++feclearexcept:
++	csrc fflags, a0
++	li a0, 0
++	ret
++
++.global feraiseexcept
++.type feraiseexcept, %function
++feraiseexcept:
++	csrs fflags, a0
++	li a0, 0
++	ret
++
++.global fetestexcept
++.type fetestexcept, %function
++fetestexcept:
++	frflags t0
++	and a0, t0, a0
++	ret
++
++.global fegetround
++.type fegetround, %function
++fegetround:
++	frrm a0
++	ret
++
++.global __fesetround
++.type __fesetround, %function
++__fesetround:
++	fsrm t0, a0
++	li a0, 0
++	ret
++
++.global fegetenv
++.type fegetenv, %function
++fegetenv:
++	frcsr t0
++	sw t0, 0(a0)
++	li a0, 0
++	ret
++
++.global fesetenv
++.type fesetenv, %function
++fesetenv:
++	li t2, -1
++	li t1, 0
++	beq a0, t2, 1f
++	lw t1, 0(a0)
++1:	fscsr t1
++	li a0, 0
++	ret
++
++#endif
+diff -urpN musl-1.2.4/src/internal/dynlink.h musl-1.2.5/src/internal/dynlink.h
+--- musl-1.2.4/src/internal/dynlink.h	2023-05-02 09:39:41.000000000 +0600
++++ musl-1.2.5/src/internal/dynlink.h	2024-03-01 08:07:33.000000000 +0600
+@@ -73,6 +73,10 @@ struct fdpic_dummy_loadmap {
+ #define DL_NOMMU_SUPPORT 0
+ #endif
+ 
++#ifndef TLSDESC_BACKWARDS
++#define TLSDESC_BACKWARDS 0
++#endif
++
+ #if !DL_FDPIC
+ #define IS_RELATIVE(x,s) ( \
+ 	(R_TYPE(x) == REL_RELATIVE) || \
+diff -urpN musl-1.2.4/src/internal/emulate_wait4.c musl-1.2.5/src/internal/emulate_wait4.c
+--- musl-1.2.4/src/internal/emulate_wait4.c	1970-01-01 06:00:00.000000000 +0600
++++ musl-1.2.5/src/internal/emulate_wait4.c	2024-03-01 08:07:33.000000000 +0600
+@@ -0,0 +1,55 @@
++#include <sys/wait.h>
++#include "syscall.h"
++
++#ifndef SYS_wait4
++hidden long __emulate_wait4(int pid, int *status, int options, void *kru, int cp)
++{
++	idtype_t t;
++	int r;
++	siginfo_t info;
++
++	info.si_pid = 0;
++	if (pid < -1) {
++		t = P_PGID;
++		pid = -pid;
++	} else if (pid == -1) {
++		t = P_ALL;
++	} else if (pid == 0) {
++		t = P_PGID;
++	} else {
++		t = P_PID;
++	}
++
++	if (cp) r = __syscall_cp(SYS_waitid, t, pid, &info, options|WEXITED, kru);
++	else r = __syscall(SYS_waitid, t, pid, &info, options|WEXITED, kru);
++
++	if (r<0) return r;
++
++	if (info.si_pid && status) {
++		int sw=0;
++		switch (info.si_code) {
++		case CLD_CONTINUED:
++			sw = 0xffff;
++			break;
++		case CLD_DUMPED:
++			sw = info.si_status&0x7f | 0x80;
++			break;
++		case CLD_EXITED:
++			sw = (info.si_status&0xff) << 8;
++			break;
++		case CLD_KILLED:
++			sw = info.si_status&0x7f;
++			break;
++		case CLD_STOPPED:
++		case CLD_TRAPPED:
++			/* see ptrace(2); the high bits of si_status can contain */
++			/* PTRACE_EVENT_ values which must be preserved */
++			sw = (info.si_status << 8) + 0x7f;
++			break;
++		}
++		*status = sw;
++	}
++
++	return info.si_pid;
++}
++#endif
+diff -urpN musl-1.2.4/src/internal/fork_impl.h musl-1.2.5/src/internal/fork_impl.h
+--- musl-1.2.4/src/internal/fork_impl.h	2023-05-02 09:39:41.000000000 +0600
++++ musl-1.2.5/src/internal/fork_impl.h	2024-03-01 08:07:33.000000000 +0600
+@@ -17,3 +17,5 @@ extern hidden volatile int *const __vmlo
+ hidden void __malloc_atfork(int);
+ hidden void __ldso_atfork(int);
+ hidden void __pthread_key_atfork(int);
++
++hidden void __post_Fork(int);
+diff -urpN musl-1.2.4/src/internal/syscall.h musl-1.2.5/src/internal/syscall.h
+--- musl-1.2.4/src/internal/syscall.h	2023-05-02 09:39:41.000000000 +0600
++++ musl-1.2.5/src/internal/syscall.h	2024-03-01 08:07:33.000000000 +0600
+@@ -391,6 +391,18 @@ static inline long __alt_socketcall(int
+ #define __sys_open_cp(...) __SYSCALL_DISP(__sys_open_cp,,__VA_ARGS__)
+ #define sys_open_cp(...) __syscall_ret(__sys_open_cp(__VA_ARGS__))
+ 
++#ifdef SYS_wait4
++#define __sys_wait4(a,b,c,d) __syscall(SYS_wait4,a,b,c,d)
++#define __sys_wait4_cp(a,b,c,d) __syscall_cp(SYS_wait4,a,b,c,d)
++#else
++hidden long __emulate_wait4(int, int *, int, void *, int);
++#define __sys_wait4(a,b,c,d) __emulate_wait4(a,b,c,d,0)
++#define __sys_wait4_cp(a,b,c,d) __emulate_wait4(a,b,c,d,1)
++#endif
++
++#define sys_wait4(a,b,c,d) __syscall_ret(__sys_wait4(a,b,c,d))
++#define sys_wait4_cp(a,b,c,d) __syscall_ret(__sys_wait4_cp(a,b,c,d))
++
+ hidden void __procfdname(char __buf[static 15+3*sizeof(int)], unsigned);
+ 
+ hidden void *__vdsosym(const char *, const char *);
+diff -urpN musl-1.2.4/src/ldso/loongarch64/dlsym.s musl-1.2.5/src/ldso/loongarch64/dlsym.s
+--- musl-1.2.4/src/ldso/loongarch64/dlsym.s	1970-01-01 06:00:00.000000000 +0600
++++ musl-1.2.5/src/ldso/loongarch64/dlsym.s	2024-03-01 08:07:33.000000000 +0600
+@@ -0,0 +1,7 @@
++.global dlsym
++.hidden __dlsym
++.type   dlsym,@function
++dlsym:
++	move      $a2, $ra
++	la.global $t0, __dlsym
++	jr        $t0
+diff -urpN musl-1.2.4/src/ldso/riscv32/dlsym.s musl-1.2.5/src/ldso/riscv32/dlsym.s
+--- musl-1.2.4/src/ldso/riscv32/dlsym.s	1970-01-01 06:00:00.000000000 +0600
++++ musl-1.2.5/src/ldso/riscv32/dlsym.s	2024-03-01 08:07:33.000000000 +0600
+@@ -0,0 +1,6 @@
++.global dlsym
++.hidden __dlsym
++.type dlsym, %function
++dlsym:
++	mv a2, ra
++	tail __dlsym
+diff -urpN musl-1.2.4/src/ldso/riscv64/tlsdesc.s musl-1.2.5/src/ldso/riscv64/tlsdesc.s
+--- musl-1.2.4/src/ldso/riscv64/tlsdesc.s	1970-01-01 06:00:00.000000000 +0600
++++ musl-1.2.5/src/ldso/riscv64/tlsdesc.s	2024-03-01 08:07:33.000000000 +0600
+@@ -0,0 +1,32 @@
++.text
++.global __tlsdesc_static
++.hidden __tlsdesc_static
++.type __tlsdesc_static,%function
++__tlsdesc_static:
++	ld a0,8(a0)
++	jr t0
++
++.global __tlsdesc_dynamic
++.hidden __tlsdesc_dynamic
++.type __tlsdesc_dynamic,%function
++__tlsdesc_dynamic:
++	add sp,sp,-16
++	sd t1,(sp)
++	sd t2,8(sp)
++
++	ld t2,-8(tp) # t2=dtv
++
++	ld a0,8(a0)  # a0=&{modidx,off}
++	ld t1,8(a0)  # t1=off
++	ld a0,(a0)   # a0=modidx
++	sll a0,a0,3  # a0=8*modidx
++
++	add a0,a0,t2 # a0=dtv+8*modidx
++	ld a0,(a0)   # a0=dtv[modidx]
++	add a0,a0,t1 # a0=dtv[modidx]+off
++	sub a0,a0,tp # a0=dtv[modidx]+off-tp
++
++	ld t1,(sp)
++	ld t2,8(sp)
++	add sp,sp,16
++	jr t0
+diff -urpN musl-1.2.4/src/ldso/sh/dlsym.s musl-1.2.5/src/ldso/sh/dlsym.s
+--- musl-1.2.4/src/ldso/sh/dlsym.s	2023-05-02 09:39:41.000000000 +0600
++++ musl-1.2.5/src/ldso/sh/dlsym.s	2024-03-01 08:07:33.000000000 +0600
+@@ -5,7 +5,7 @@
+ dlsym:
+ 	mov.l L1, r0
+ 1:	braf  r0
+-	 mov.l @r15, r6
++	 sts pr, r6
+ 
+ .align 2
+ L1:	.long __dlsym@PLT-(1b+4-.)
+diff -urpN musl-1.2.4/src/linux/cache.c musl-1.2.5/src/linux/cache.c
+--- musl-1.2.4/src/linux/cache.c	2023-05-02 09:39:41.000000000 +0600
++++ musl-1.2.5/src/linux/cache.c	2024-03-01 08:07:33.000000000 +0600
+@@ -21,7 +21,7 @@ weak_alias(__cachectl, cachectl);
+ #ifdef SYS_riscv_flush_icache
+ 
+ #define VDSO_FLUSH_ICACHE_SYM "__vdso_flush_icache"
+-#define VDSO_FLUSH_ICACHE_VER "LINUX_4.5"
++#define VDSO_FLUSH_ICACHE_VER "LINUX_4.15"
+ 
+ static void *volatile vdso_func;
+ 
+@@ -45,6 +45,7 @@ int __riscv_flush_icache(void *start, vo
+ 		if (!r) return r;
+ 		if (r != -ENOSYS) return __syscall_ret(r);
+ 	}
++	return syscall(SYS_riscv_flush_icache, start, end, flags);
+ }
+ weak_alias(__riscv_flush_icache, riscv_flush_icache);
+ #endif
+diff -urpN musl-1.2.4/src/linux/clone.c musl-1.2.5/src/linux/clone.c
+--- musl-1.2.4/src/linux/clone.c	2023-05-02 09:39:41.000000000 +0600
++++ musl-1.2.5/src/linux/clone.c	2024-03-01 08:07:33.000000000 +0600
+@@ -4,18 +4,62 @@
+ #include <sched.h>
+ #include "pthread_impl.h"
+ #include "syscall.h"
++#include "lock.h"
++#include "fork_impl.h"
++
++struct clone_start_args {
++	int (*func)(void *);
++	void *arg;
++	sigset_t sigmask;
++};
++
++static int clone_start(void *arg)
++{
++	struct clone_start_args *csa = arg;
++	__post_Fork(0);
++	__restore_sigs(&csa->sigmask);
++	return csa->func(csa->arg);
++}
+ 
+ int clone(int (*func)(void *), void *stack, int flags, void *arg, ...)
+ {
++	struct clone_start_args csa;
+ 	va_list ap;
+-	pid_t *ptid, *ctid;
+-	void  *tls;
++	pid_t *ptid = 0, *ctid = 0;
++	void  *tls = 0;
++
++	/* Flags that produce an invalid thread/TLS state are disallowed. */
++	int badflags = CLONE_THREAD | CLONE_SETTLS | CLONE_CHILD_CLEARTID;
++
++	if ((flags & badflags) || !stack)
++		return __syscall_ret(-EINVAL);
+ 
+ 	va_start(ap, arg);
+-	ptid = va_arg(ap, pid_t *);
+-	tls  = va_arg(ap, void *);
+-	ctid = va_arg(ap, pid_t *);
++	if (flags & (CLONE_PIDFD | CLONE_PARENT_SETTID | CLONE_CHILD_SETTID))
++	 	ptid = va_arg(ap, pid_t *);
++	if (flags & CLONE_CHILD_SETTID) {
++		tls = va_arg(ap, void *);
++		ctid = va_arg(ap, pid_t *);
++	}
+ 	va_end(ap);
+ 
+-	return __syscall_ret(__clone(func, stack, flags, arg, ptid, tls, ctid));
++	/* If CLONE_VM is used, it's impossible to give the child a consistent
++	 * thread structure. In this case, the best we can do is assume the
++	 * caller is content with an extremely restrictive execution context
++	 * like the one vfork() would provide. */
++	if (flags & CLONE_VM) return __syscall_ret(
++		__clone(func, stack, flags, arg, ptid, tls, ctid));
++
++	__block_all_sigs(&csa.sigmask);
++	LOCK(__abort_lock);
++
++	/* Setup the a wrapper start function for the child process to do
++	 * mimic _Fork in producing a consistent execution state. */
++	csa.func = func;
++	csa.arg = arg;
++	int ret = __clone(clone_start, stack, flags, &csa, ptid, tls, ctid);
++
++	__post_Fork(ret);
++	__restore_sigs(&csa.sigmask);
++	return __syscall_ret(ret);
+ }
+diff -urpN musl-1.2.4/src/linux/ppoll.c musl-1.2.5/src/linux/ppoll.c
+--- musl-1.2.4/src/linux/ppoll.c	2023-05-02 09:39:41.000000000 +0600
++++ musl-1.2.5/src/linux/ppoll.c	1970-01-01 06:00:00.000000000 +0600
+@@ -1,26 +0,0 @@
+-#define _GNU_SOURCE
+-#include <poll.h>
+-#include <signal.h>
+-#include <errno.h>
+-#include "syscall.h"
+-
+-#define IS32BIT(x) !((x)+0x80000000ULL>>32)
+-#define CLAMP(x) (int)(IS32BIT(x) ? (x) : 0x7fffffffU+((0ULL+(x))>>63))
+-
+-int ppoll(struct pollfd *fds, nfds_t n, const struct timespec *to, const sigset_t *mask)
+-{
+-	time_t s = to ? to->tv_sec : 0;
+-	long ns = to ? to->tv_nsec : 0;
+-#ifdef SYS_ppoll_time64
+-	int r = -ENOSYS;
+-	if (SYS_ppoll == SYS_ppoll_time64 || !IS32BIT(s))
+-		r = __syscall_cp(SYS_ppoll_time64, fds, n,
+-			to ? ((long long[]){s, ns}) : 0,
+-			mask, _NSIG/8);
+-	if (SYS_ppoll == SYS_ppoll_time64 || r != -ENOSYS)
+-		return __syscall_ret(r);
+-	s = CLAMP(s);
+-#endif
+-	return syscall_cp(SYS_ppoll, fds, n,
+-		to ? ((long[]){s, ns}) : 0, mask, _NSIG/8);
+-}
+diff -urpN musl-1.2.4/src/linux/preadv2.c musl-1.2.5/src/linux/preadv2.c
+--- musl-1.2.4/src/linux/preadv2.c	1970-01-01 06:00:00.000000000 +0600
++++ musl-1.2.5/src/linux/preadv2.c	2024-03-01 08:07:33.000000000 +0600
+@@ -0,0 +1,17 @@
++#define _GNU_SOURCE
++#include <sys/uio.h>
++#include <unistd.h>
++#include "syscall.h"
++
++ssize_t preadv2(int fd, const struct iovec *iov, int count, off_t ofs, int flags)
++{
++#ifdef SYS_preadv
++	if (!flags) {
++		if (ofs==-1) return readv(fd, iov, count);
++		return syscall_cp(SYS_preadv, fd, iov, count,
++			(long)(ofs), (long)(ofs>>32));
++	}
++#endif
++	return syscall_cp(SYS_preadv2, fd, iov, count,
++		(long)(ofs), (long)(ofs>>32), flags);
++}
+diff -urpN musl-1.2.4/src/linux/pwritev2.c musl-1.2.5/src/linux/pwritev2.c
+--- musl-1.2.4/src/linux/pwritev2.c	1970-01-01 06:00:00.000000000 +0600
++++ musl-1.2.5/src/linux/pwritev2.c	2024-03-01 08:07:33.000000000 +0600
+@@ -0,0 +1,17 @@
++#define _GNU_SOURCE
++#include <sys/uio.h>
++#include <unistd.h>
++#include "syscall.h"
++
++ssize_t pwritev2(int fd, const struct iovec *iov, int count, off_t ofs, int flags)
++{
++#ifdef SYS_pwritev
++	if (!flags) {
++		if (ofs==-1) return writev(fd, iov, count);
++		return syscall_cp(SYS_pwritev, fd, iov, count,
++			(long)(ofs), (long)(ofs>>32));
++	}
++#endif
++	return syscall_cp(SYS_pwritev2, fd, iov, count,
++		(long)(ofs), (long)(ofs>>32), flags);
++}
+diff -urpN musl-1.2.4/src/linux/statx.c musl-1.2.5/src/linux/statx.c
+--- musl-1.2.4/src/linux/statx.c	1970-01-01 06:00:00.000000000 +0600
++++ musl-1.2.5/src/linux/statx.c	2024-03-01 08:07:33.000000000 +0600
+@@ -0,0 +1,42 @@
++#define _GNU_SOURCE
++#include <sys/stat.h>
++#include <string.h>
++#include <syscall.h>
++#include <sys/sysmacros.h>
++#include <errno.h>
++
++int statx(int dirfd, const char *restrict path, int flags, unsigned mask, struct statx *restrict stx)
++{
++	int ret = __syscall(SYS_statx, dirfd, path, flags, mask, stx);
++
++#ifndef SYS_fstatat
++	return __syscall_ret(ret);
++#endif
++
++	if (ret != -ENOSYS) return __syscall_ret(ret);
++
++	struct stat st;
++	ret = fstatat(dirfd, path, &st, flags);
++	if (ret) return ret;
++
++	stx->stx_dev_major = major(st.st_dev);
++	stx->stx_dev_minor = minor(st.st_dev);
++	stx->stx_ino = st.st_ino;
++	stx->stx_mode = st.st_mode;
++	stx->stx_nlink = st.st_nlink;
++	stx->stx_uid = st.st_uid;
++	stx->stx_gid = st.st_gid;
++	stx->stx_size = st.st_size;
++	stx->stx_blksize = st.st_blksize;
++	stx->stx_blocks = st.st_blocks;
++	stx->stx_atime.tv_sec = st.st_atim.tv_sec;
++	stx->stx_atime.tv_nsec = st.st_atim.tv_nsec;
++	stx->stx_mtime.tv_sec = st.st_mtim.tv_sec;
++	stx->stx_mtime.tv_nsec = st.st_mtim.tv_nsec;
++	stx->stx_ctime.tv_sec = st.st_ctim.tv_sec;
++	stx->stx_ctime.tv_nsec = st.st_ctim.tv_nsec;
++	stx->stx_btime = (struct statx_timestamp){.tv_sec=0, .tv_nsec=0};
++	stx->stx_mask = STATX_BASIC_STATS;
++
++	return 0;
++}
+diff -urpN musl-1.2.4/src/linux/wait4.c musl-1.2.5/src/linux/wait4.c
+--- musl-1.2.4/src/linux/wait4.c	2023-05-02 09:39:41.000000000 +0600
++++ musl-1.2.5/src/linux/wait4.c	2024-03-01 08:07:33.000000000 +0600
+@@ -26,7 +26,7 @@ pid_t wait4(pid_t pid, int *status, int
+ 	}
+ #endif
+ 	char *dest = ru ? (char *)&ru->ru_maxrss - 4*sizeof(long) : 0;
+-	r = __syscall(SYS_wait4, pid, status, options, dest);
++	r = __sys_wait4(pid, status, options, dest);
+ 	if (r>0 && ru && sizeof(time_t) > sizeof(long)) {
+ 		long kru[4];
+ 		memcpy(kru, dest, 4*sizeof(long));
+diff -urpN musl-1.2.4/src/locale/iconv.c musl-1.2.5/src/locale/iconv.c
+--- musl-1.2.4/src/locale/iconv.c	2023-05-02 09:39:41.000000000 +0600
++++ musl-1.2.5/src/locale/iconv.c	2024-03-01 08:07:33.000000000 +0600
+@@ -49,7 +49,7 @@ static const unsigned char charmaps[] =
+ "ucs4\0utf32\0\0\313"
+ "ucs2\0\0\314"
+ "eucjp\0\0\320"
+-"shiftjis\0sjis\0\0\321"
++"shiftjis\0sjis\0cp932\0\0\321"
+ "iso2022jp\0\0\322"
+ "gb18030\0\0\330"
+ "gbk\0\0\331"
+diff -urpN musl-1.2.4/src/math/acoshl.c musl-1.2.5/src/math/acoshl.c
+--- musl-1.2.4/src/math/acoshl.c	2023-05-02 09:39:41.000000000 +0600
++++ musl-1.2.5/src/math/acoshl.c	2024-03-01 08:07:33.000000000 +0600
+@@ -10,14 +10,18 @@ long double acoshl(long double x)
+ long double acoshl(long double x)
+ {
+ 	union ldshape u = {x};
+-	int e = u.i.se & 0x7fff;
++	int e = u.i.se;
+ 
+ 	if (e < 0x3fff + 1)
+-		/* |x| < 2, invalid if x < 1 or nan */
++		/* 0 <= x < 2, invalid if x < 1 */
+ 		return log1pl(x-1 + sqrtl((x-1)*(x-1)+2*(x-1)));
+ 	if (e < 0x3fff + 32)
+-		/* |x| < 0x1p32 */
++		/* 2 <= x < 0x1p32 */
+ 		return logl(2*x - 1/(x+sqrtl(x*x-1)));
++	if (e & 0x8000)
++		/* x < 0 or x = -0, invalid */
++		return (x - x) / (x - x);
++	/* 0x1p32 <= x or nan */
+ 	return logl(x) + 0.693147180559945309417232121458176568L;
+ }
+ #elif LDBL_MANT_DIG == 113 && LDBL_MAX_EXP == 16384
+diff -urpN musl-1.2.4/src/math/powl.c musl-1.2.5/src/math/powl.c
+--- musl-1.2.4/src/math/powl.c	2023-05-02 09:39:41.000000000 +0600
++++ musl-1.2.5/src/math/powl.c	2024-03-01 08:07:33.000000000 +0600
+@@ -212,25 +212,33 @@ long double powl(long double x, long dou
+ 	}
+ 	if (x == 1.0)
+ 		return 1.0; /* 1**y = 1, even if y is nan */
+-	if (x == -1.0 && !isfinite(y))
+-		return 1.0; /* -1**inf = 1 */
+ 	if (y == 0.0)
+ 		return 1.0; /* x**0 = 1, even if x is nan */
+ 	if (y == 1.0)
+ 		return x;
+-	if (y >= LDBL_MAX) {
+-		if (x > 1.0 || x < -1.0)
+-			return INFINITY;
+-		if (x != 0.0)
+-			return 0.0;
+-	}
+-	if (y <= -LDBL_MAX) {
+-		if (x > 1.0 || x < -1.0)
++	/* if y*log2(x) < log2(LDBL_TRUE_MIN)-1 then x^y uflows to 0
++	   if y*log2(x) > -log2(LDBL_TRUE_MIN)+1 > LDBL_MAX_EXP then x^y oflows
++	   if |x|!=1 then |log2(x)| > |log(x)| > LDBL_EPSILON/2 so
++	   x^y oflows/uflows if |y|*LDBL_EPSILON/2 > -log2(LDBL_TRUE_MIN)+1 */
++	if (fabsl(y) > 2*(-LDBL_MIN_EXP+LDBL_MANT_DIG+1)/LDBL_EPSILON) {
++		/* y is not an odd int */
++		if (x == -1.0)
++			return 1.0;
++		if (y == INFINITY) {
++			if (x > 1.0 || x < -1.0)
++				return INFINITY;
+ 			return 0.0;
+-		if (x != 0.0 || y == -INFINITY)
++		}
++		if (y == -INFINITY) {
++			if (x > 1.0 || x < -1.0)
++				return 0.0;
+ 			return INFINITY;
++		}
++		if ((x > 1.0 || x < -1.0) == (y > 0))
++			return huge * huge;
++		return twom10000 * twom10000;
+ 	}
+-	if (x >= LDBL_MAX) {
++	if (x == INFINITY) {
+ 		if (y > 0.0)
+ 			return INFINITY;
+ 		return 0.0;
+@@ -253,7 +261,7 @@ long double powl(long double x, long dou
+ 			yoddint = 1;
+ 	}
+ 
+-	if (x <= -LDBL_MAX) {
++	if (x == -INFINITY) {
+ 		if (y > 0.0) {
+ 			if (yoddint)
+ 				return -INFINITY;
+diff -urpN musl-1.2.4/src/math/riscv32/copysign.c musl-1.2.5/src/math/riscv32/copysign.c
+--- musl-1.2.4/src/math/riscv32/copysign.c	1970-01-01 06:00:00.000000000 +0600
++++ musl-1.2.5/src/math/riscv32/copysign.c	2024-03-01 08:07:33.000000000 +0600
+@@ -0,0 +1,15 @@
++#include <math.h>
++
++#if __riscv_flen >= 64
++
++double copysign(double x, double y)
++{
++	__asm__ ("fsgnj.d %0, %1, %2" : "=f"(x) : "f"(x), "f"(y));
++	return x;
++}
++
++#else
++
++#include "../copysign.c"
++
++#endif
+diff -urpN musl-1.2.4/src/math/riscv32/copysignf.c musl-1.2.5/src/math/riscv32/copysignf.c
+--- musl-1.2.4/src/math/riscv32/copysignf.c	1970-01-01 06:00:00.000000000 +0600
++++ musl-1.2.5/src/math/riscv32/copysignf.c	2024-03-01 08:07:33.000000000 +0600
+@@ -0,0 +1,15 @@
++#include <math.h>
++
++#if __riscv_flen >= 32
++
++float copysignf(float x, float y)
++{
++	__asm__ ("fsgnj.s %0, %1, %2" : "=f"(x) : "f"(x), "f"(y));
++	return x;
++}
++
++#else
++
++#include "../copysignf.c"
++
++#endif
+diff -urpN musl-1.2.4/src/math/riscv32/fabs.c musl-1.2.5/src/math/riscv32/fabs.c
+--- musl-1.2.4/src/math/riscv32/fabs.c	1970-01-01 06:00:00.000000000 +0600
++++ musl-1.2.5/src/math/riscv32/fabs.c	2024-03-01 08:07:33.000000000 +0600
+@@ -0,0 +1,15 @@
++#include <math.h>
++
++#if __riscv_flen >= 64
++
++double fabs(double x)
++{
++	__asm__ ("fabs.d %0, %1" : "=f"(x) : "f"(x));
++	return x;
++}
++
++#else
++
++#include "../fabs.c"
++
++#endif
+diff -urpN musl-1.2.4/src/math/riscv32/fabsf.c musl-1.2.5/src/math/riscv32/fabsf.c
+--- musl-1.2.4/src/math/riscv32/fabsf.c	1970-01-01 06:00:00.000000000 +0600
++++ musl-1.2.5/src/math/riscv32/fabsf.c	2024-03-01 08:07:33.000000000 +0600
+@@ -0,0 +1,15 @@
++#include <math.h>
++
++#if __riscv_flen >= 32
++
++float fabsf(float x)
++{
++	__asm__ ("fabs.s %0, %1" : "=f"(x) : "f"(x));
++	return x;
++}
++
++#else
++
++#include "../fabsf.c"
++
++#endif
+diff -urpN musl-1.2.4/src/math/riscv32/fma.c musl-1.2.5/src/math/riscv32/fma.c
+--- musl-1.2.4/src/math/riscv32/fma.c	1970-01-01 06:00:00.000000000 +0600
++++ musl-1.2.5/src/math/riscv32/fma.c	2024-03-01 08:07:33.000000000 +0600
+@@ -0,0 +1,15 @@
++#include <math.h>
++
++#if __riscv_flen >= 64
++
++double fma(double x, double y, double z)
++{
++	__asm__ ("fmadd.d %0, %1, %2, %3" : "=f"(x) : "f"(x), "f"(y), "f"(z));
++	return x;
++}
++
++#else
++
++#include "../fma.c"
++
++#endif
+diff -urpN musl-1.2.4/src/math/riscv32/fmaf.c musl-1.2.5/src/math/riscv32/fmaf.c
+--- musl-1.2.4/src/math/riscv32/fmaf.c	1970-01-01 06:00:00.000000000 +0600
++++ musl-1.2.5/src/math/riscv32/fmaf.c	2024-03-01 08:07:33.000000000 +0600
+@@ -0,0 +1,15 @@
++#include <math.h>
++
++#if __riscv_flen >= 32
++
++float fmaf(float x, float y, float z)
++{
++	__asm__ ("fmadd.s %0, %1, %2, %3" : "=f"(x) : "f"(x), "f"(y), "f"(z));
++	return x;
++}
++
++#else
++
++#include "../fmaf.c"
++
++#endif
+diff -urpN musl-1.2.4/src/math/riscv32/fmax.c musl-1.2.5/src/math/riscv32/fmax.c
+--- musl-1.2.4/src/math/riscv32/fmax.c	1970-01-01 06:00:00.000000000 +0600
++++ musl-1.2.5/src/math/riscv32/fmax.c	2024-03-01 08:07:33.000000000 +0600
+@@ -0,0 +1,15 @@
++#include <math.h>
++
++#if __riscv_flen >= 64
++
++double fmax(double x, double y)
++{
++	__asm__ ("fmax.d %0, %1, %2" : "=f"(x) : "f"(x), "f"(y));
++	return x;
++}
++
++#else
++
++#include "../fmax.c"
++
++#endif
+diff -urpN musl-1.2.4/src/math/riscv32/fmaxf.c musl-1.2.5/src/math/riscv32/fmaxf.c
+--- musl-1.2.4/src/math/riscv32/fmaxf.c	1970-01-01 06:00:00.000000000 +0600
++++ musl-1.2.5/src/math/riscv32/fmaxf.c	2024-03-01 08:07:33.000000000 +0600
+@@ -0,0 +1,15 @@
++#include <math.h>
++
++#if __riscv_flen >= 32
++
++float fmaxf(float x, float y)
++{
++	__asm__ ("fmax.s %0, %1, %2" : "=f"(x) : "f"(x), "f"(y));
++	return x;
++}
++
++#else
++
++#include "../fmaxf.c"
++
++#endif
+diff -urpN musl-1.2.4/src/math/riscv32/fmin.c musl-1.2.5/src/math/riscv32/fmin.c
+--- musl-1.2.4/src/math/riscv32/fmin.c	1970-01-01 06:00:00.000000000 +0600
++++ musl-1.2.5/src/math/riscv32/fmin.c	2024-03-01 08:07:33.000000000 +0600
+@@ -0,0 +1,15 @@
++#include <math.h>
++
++#if __riscv_flen >= 64
++
++double fmin(double x, double y)
++{
++	__asm__ ("fmin.d %0, %1, %2" : "=f"(x) : "f"(x), "f"(y));
++	return x;
++}
++
++#else
++
++#include "../fmin.c"
++
++#endif
+diff -urpN musl-1.2.4/src/math/riscv32/fminf.c musl-1.2.5/src/math/riscv32/fminf.c
+--- musl-1.2.4/src/math/riscv32/fminf.c	1970-01-01 06:00:00.000000000 +0600
++++ musl-1.2.5/src/math/riscv32/fminf.c	2024-03-01 08:07:33.000000000 +0600
+@@ -0,0 +1,15 @@
++#include <math.h>
++
++#if __riscv_flen >= 32
++
++float fminf(float x, float y)
++{
++	__asm__ ("fmin.s %0, %1, %2" : "=f"(x) : "f"(x), "f"(y));
++	return x;
++}
++
++#else
++
++#include "../fminf.c"
++
++#endif
+diff -urpN musl-1.2.4/src/math/riscv32/sqrt.c musl-1.2.5/src/math/riscv32/sqrt.c
+--- musl-1.2.4/src/math/riscv32/sqrt.c	1970-01-01 06:00:00.000000000 +0600
++++ musl-1.2.5/src/math/riscv32/sqrt.c	2024-03-01 08:07:33.000000000 +0600
+@@ -0,0 +1,15 @@
++#include <math.h>
++
++#if __riscv_flen >= 64
++
++double sqrt(double x)
++{
++	__asm__ ("fsqrt.d %0, %1" : "=f"(x) : "f"(x));
++	return x;
++}
++
++#else
++
++#include "../sqrt.c"
++
++#endif
+diff -urpN musl-1.2.4/src/math/riscv32/sqrtf.c musl-1.2.5/src/math/riscv32/sqrtf.c
+--- musl-1.2.4/src/math/riscv32/sqrtf.c	1970-01-01 06:00:00.000000000 +0600
++++ musl-1.2.5/src/math/riscv32/sqrtf.c	2024-03-01 08:07:33.000000000 +0600
+@@ -0,0 +1,15 @@
++#include <math.h>
++
++#if __riscv_flen >= 32
++
++float sqrtf(float x)
++{
++	__asm__ ("fsqrt.s %0, %1" : "=f"(x) : "f"(x));
++	return x;
++}
++
++#else
++
++#include "../sqrtf.c"
++
++#endif
+diff -urpN musl-1.2.4/src/math/sqrtl.c musl-1.2.5/src/math/sqrtl.c
+--- musl-1.2.4/src/math/sqrtl.c	2023-05-02 09:39:41.000000000 +0600
++++ musl-1.2.5/src/math/sqrtl.c	2024-03-01 08:07:33.000000000 +0600
+@@ -205,7 +205,7 @@ long double sqrtl(long double x)
+ 	top = (top + 0x3fff) >> 1;
+ 
+ 	/* r ~ 1/sqrt(m) */
+-	static const uint64_t three = 0xc0000000;
++	const uint64_t three = 0xc0000000;
+ 	uint64_t r, s, d, u, i;
+ 	i = (ix.hi >> 42) % 128;
+ 	r = (uint32_t)__rsqrt_tab[i] << 16;
+@@ -227,7 +227,7 @@ long double sqrtl(long double x)
+ 	r = mul64(u, r) << 1;
+ 	/* |r sqrt(m) - 1| < 0x1.c001p-59, switch to 128bit */
+ 
+-	static const u128 threel = {.hi=three<<32, .lo=0};
++	const u128 threel = {.hi=three<<32, .lo=0};
+ 	u128 rl, sl, dl, ul;
+ 	rl.hi = r;
+ 	rl.lo = 0;
+diff -urpN musl-1.2.4/src/misc/mntent.c musl-1.2.5/src/misc/mntent.c
+--- musl-1.2.4/src/misc/mntent.c	2023-05-02 09:39:41.000000000 +0600
++++ musl-1.2.5/src/misc/mntent.c	2024-03-01 08:07:33.000000000 +0600
+@@ -20,6 +20,42 @@ int endmntent(FILE *f)
+ 	return 1;
+ }
+ 
++static char *unescape_ent(char *beg)
++{
++	char *dest = beg;
++	const char *src = beg;
++	while (*src) {
++		const char *val;
++		unsigned char cval = 0;
++		if (*src != '\\') {
++			*dest++ = *src++;
++			continue;
++		}
++		if (src[1] == '\\') {
++			++src;
++			*dest++ = *src++;
++			continue;
++		}
++		val = src + 1;
++		for (int i = 0; i < 3; ++i) {
++			if (*val >= '0' && *val <= '7') {
++				cval <<= 3;
++				cval += *val++ - '0';
++			} else {
++				break;
++			}
++		}
++		if (cval) {
++			*dest++ = cval;
++			src = val;
++		} else {
++			*dest++ = *src++;
++		}
++	}
++	*dest = 0;
++	return beg;
++}
++
+ struct mntent *getmntent_r(FILE *f, struct mntent *mnt, char *linebuf, int buflen)
+ {
+ 	int n[8], use_internal = (linebuf == SENTINEL);
+@@ -45,7 +81,7 @@ struct mntent *getmntent_r(FILE *f, stru
+ 		len = strlen(linebuf);
+ 		if (len > INT_MAX) continue;
+ 		for (i = 0; i < sizeof n / sizeof *n; i++) n[i] = len;
+-		sscanf(linebuf, " %n%*s%n %n%*s%n %n%*s%n %n%*s%n %d %d",
++		sscanf(linebuf, " %n%*[^ \t]%n %n%*[^ \t]%n %n%*[^ \t]%n %n%*[^ \t]%n %d %d",
+ 			n, n+1, n+2, n+3, n+4, n+5, n+6, n+7,
+ 			&mnt->mnt_freq, &mnt->mnt_passno);
+ 	} while (linebuf[n[0]] == '#' || n[1]==len);
+@@ -55,10 +91,10 @@ struct mntent *getmntent_r(FILE *f, stru
+ 	linebuf[n[5]] = 0;
+ 	linebuf[n[7]] = 0;
+ 
+-	mnt->mnt_fsname = linebuf+n[0];
+-	mnt->mnt_dir = linebuf+n[2];
+-	mnt->mnt_type = linebuf+n[4];
+-	mnt->mnt_opts = linebuf+n[6];
++	mnt->mnt_fsname = unescape_ent(linebuf+n[0]);
++	mnt->mnt_dir = unescape_ent(linebuf+n[2]);
++	mnt->mnt_type = unescape_ent(linebuf+n[4]);
++	mnt->mnt_opts = unescape_ent(linebuf+n[6]);
+ 
+ 	return mnt;
+ }
+diff -urpN musl-1.2.4/src/misc/syslog.c musl-1.2.5/src/misc/syslog.c
+--- musl-1.2.4/src/misc/syslog.c	2023-05-02 09:39:41.000000000 +0600
++++ musl-1.2.5/src/misc/syslog.c	2024-03-01 08:07:33.000000000 +0600
+@@ -11,6 +11,7 @@
+ #include <fcntl.h>
+ #include "lock.h"
+ #include "fork_impl.h"
++#include "locale_impl.h"
+ 
+ static volatile int lock[1];
+ static char log_ident[32];
+@@ -99,7 +100,7 @@ static void _vsyslog(int priority, const
+ 
+ 	now = time(NULL);
+ 	gmtime_r(&now, &tm);
+-	strftime(timebuf, sizeof timebuf, "%b %e %T", &tm);
++	strftime_l(timebuf, sizeof timebuf, "%b %e %T", &tm, C_LOCALE);
+ 
+ 	pid = (log_opt & LOG_PID) ? getpid() : 0;
+ 	l = snprintf(buf, sizeof buf, "<%d>%s %n%s%s%.0d%s: ",
+diff -urpN musl-1.2.4/src/multibyte/mbrtowc.c musl-1.2.5/src/multibyte/mbrtowc.c
+--- musl-1.2.4/src/multibyte/mbrtowc.c	2023-05-02 09:39:41.000000000 +0600
++++ musl-1.2.5/src/multibyte/mbrtowc.c	2024-03-01 08:07:33.000000000 +0600
+@@ -8,7 +8,7 @@ size_t mbrtowc(wchar_t *restrict wc, con
+ 	static unsigned internal_state;
+ 	unsigned c;
+ 	const unsigned char *s = (const void *)src;
+-	const unsigned N = n;
++	const size_t N = n;
+ 	wchar_t dummy;
+ 
+ 	if (!st) st = (void *)&internal_state;
+diff -urpN musl-1.2.4/src/network/dns_parse.c musl-1.2.5/src/network/dns_parse.c
+--- musl-1.2.4/src/network/dns_parse.c	2023-05-02 09:39:41.000000000 +0600
++++ musl-1.2.5/src/network/dns_parse.c	2024-03-01 08:07:33.000000000 +0600
+@@ -12,16 +12,15 @@ int __dns_parse(const unsigned char *r,
+ 	p = r+12;
+ 	qdcount = r[4]*256 + r[5];
+ 	ancount = r[6]*256 + r[7];
+-	if (qdcount+ancount > 64) return -1;
+ 	while (qdcount--) {
+ 		while (p-r < rlen && *p-1U < 127) p++;
+-		if (p>r+rlen-6 || *p>193 || (*p==193 && p[1]>254))
++		if (p>r+rlen-6)
+ 			return -1;
+ 		p += 5 + !!*p;
+ 	}
+ 	while (ancount--) {
+ 		while (p-r < rlen && *p-1U < 127) p++;
+-		if (p>r+rlen-12 || *p>193 || (*p==193 && p[1]>254))
++		if (p>r+rlen-12)
+ 			return -1;
+ 		p += 1 + !!*p;
+ 		len = p[8]*256 + p[9];
+diff -urpN musl-1.2.4/src/network/getnameinfo.c musl-1.2.5/src/network/getnameinfo.c
+--- musl-1.2.4/src/network/getnameinfo.c	2023-05-02 09:39:41.000000000 +0600
++++ musl-1.2.5/src/network/getnameinfo.c	2024-03-01 08:07:33.000000000 +0600
+@@ -162,8 +162,10 @@ int getnameinfo(const struct sockaddr *r
+ 			query[3] = 0; /* don't need AD flag */
+ 			int rlen = __res_send(query, qlen, reply, sizeof reply);
+ 			buf[0] = 0;
+-			if (rlen > 0)
++			if (rlen > 0) {
++				if (rlen > sizeof reply) rlen = sizeof reply;
+ 				__dns_parse(reply, rlen, dns_parse_callback, buf);
++			}
+ 		}
+ 		if (!*buf) {
+ 			if (flags & NI_NAMEREQD) return EAI_NONAME;
+diff -urpN musl-1.2.4/src/network/lookup_name.c musl-1.2.5/src/network/lookup_name.c
+--- musl-1.2.4/src/network/lookup_name.c	2023-05-02 09:39:41.000000000 +0600
++++ musl-1.2.5/src/network/lookup_name.c	2024-03-01 08:07:33.000000000 +0600
+@@ -109,7 +109,7 @@ struct dpc_ctx {
+ #define RR_CNAME 5
+ #define RR_AAAA 28
+ 
+-#define ABUF_SIZE 768
++#define ABUF_SIZE 4800
+ 
+ static int dns_parse_callback(void *c, int rr, const void *data, int len, const void *packet, int plen)
+ {
+diff -urpN musl-1.2.4/src/process/_Fork.c musl-1.2.5/src/process/_Fork.c
+--- musl-1.2.4/src/process/_Fork.c	2023-05-02 09:39:41.000000000 +0600
++++ musl-1.2.5/src/process/_Fork.c	2024-03-01 08:07:33.000000000 +0600
+@@ -5,24 +5,16 @@
+ #include "lock.h"
+ #include "pthread_impl.h"
+ #include "aio_impl.h"
++#include "fork_impl.h"
+ 
+ static void dummy(int x) { }
+ weak_alias(dummy, __aio_atfork);
+ 
+-pid_t _Fork(void)
++void __post_Fork(int ret)
+ {
+-	pid_t ret;
+-	sigset_t set;
+-	__block_all_sigs(&set);
+-	LOCK(__abort_lock);
+-#ifdef SYS_fork
+-	ret = __syscall(SYS_fork);
+-#else
+-	ret = __syscall(SYS_clone, SIGCHLD, 0);
+-#endif
+ 	if (!ret) {
+ 		pthread_t self = __pthread_self();
+-		self->tid = __syscall(SYS_gettid);
++		self->tid = __syscall(SYS_set_tid_address, &__thread_list_lock);
+ 		self->robust_list.off = 0;
+ 		self->robust_list.pending = 0;
+ 		self->next = self->prev = self;
+@@ -32,6 +24,20 @@ pid_t _Fork(void)
+ 	}
+ 	UNLOCK(__abort_lock);
+ 	if (!ret) __aio_atfork(1);
++}
++
++pid_t _Fork(void)
++{
++	pid_t ret;
++	sigset_t set;
++	__block_all_sigs(&set);
++	LOCK(__abort_lock);
++#ifdef SYS_fork
++	ret = __syscall(SYS_fork);
++#else
++	ret = __syscall(SYS_clone, SIGCHLD, 0);
++#endif
++	__post_Fork(ret);
+ 	__restore_sigs(&set);
+ 	return __syscall_ret(ret);
+ }
+diff -urpN musl-1.2.4/src/process/posix_spawn.c musl-1.2.5/src/process/posix_spawn.c
+--- musl-1.2.4/src/process/posix_spawn.c	2023-05-02 09:39:41.000000000 +0600
++++ musl-1.2.5/src/process/posix_spawn.c	2024-03-01 08:07:33.000000000 +0600
+@@ -4,6 +4,7 @@
+ #include <unistd.h>
+ #include <signal.h>
+ #include <fcntl.h>
++#include <errno.h>
+ #include <sys/wait.h>
+ #include "syscall.h"
+ #include "lock.h"
+@@ -156,7 +157,11 @@ static int child(void *args_vp)
+ fail:
+ 	/* Since sizeof errno < PIPE_BUF, the write is atomic. */
+ 	ret = -ret;
+-	if (ret) while (__syscall(SYS_write, p, &ret, sizeof ret) < 0);
++	if (ret) {
++		int r;
++		do r = __syscall(SYS_write, p, &ret, sizeof ret);
++		while (r<0 && r!=-EPIPE);
++	}
+ 	_exit(127);
+ }
+ 
+diff -urpN musl-1.2.4/src/process/waitpid.c musl-1.2.5/src/process/waitpid.c
+--- musl-1.2.4/src/process/waitpid.c	2023-05-02 09:39:41.000000000 +0600
++++ musl-1.2.5/src/process/waitpid.c	2024-03-01 08:07:33.000000000 +0600
+@@ -3,5 +3,5 @@
+ 
+ pid_t waitpid(pid_t pid, int *status, int options)
+ {
+-	return syscall_cp(SYS_wait4, pid, status, options, 0);
++	return sys_wait4_cp(pid, status, options, 0);
+ }
+diff -urpN musl-1.2.4/src/regex/glob.c musl-1.2.5/src/regex/glob.c
+--- musl-1.2.4/src/regex/glob.c	2023-05-02 09:39:41.000000000 +0600
++++ musl-1.2.5/src/regex/glob.c	2024-03-01 08:07:33.000000000 +0600
+@@ -265,7 +265,7 @@ int glob(const char *restrict pat, int f
+ 			if (append(&tail, pat, strlen(pat), 0))
+ 				return GLOB_NOSPACE;
+ 			cnt++;
+-		} else
++		} else if (!error)
+ 			return GLOB_NOMATCH;
+ 	}
+ 
+diff -urpN musl-1.2.4/src/select/ppoll.c musl-1.2.5/src/select/ppoll.c
+--- musl-1.2.4/src/select/ppoll.c	1970-01-01 06:00:00.000000000 +0600
++++ musl-1.2.5/src/select/ppoll.c	2024-03-01 08:07:33.000000000 +0600
+@@ -0,0 +1,26 @@
++#define _BSD_SOURCE
++#include <poll.h>
++#include <signal.h>
++#include <errno.h>
++#include "syscall.h"
++
++#define IS32BIT(x) !((x)+0x80000000ULL>>32)
++#define CLAMP(x) (int)(IS32BIT(x) ? (x) : 0x7fffffffU+((0ULL+(x))>>63))
++
++int ppoll(struct pollfd *fds, nfds_t n, const struct timespec *to, const sigset_t *mask)
++{
++	time_t s = to ? to->tv_sec : 0;
++	long ns = to ? to->tv_nsec : 0;
++#ifdef SYS_ppoll_time64
++	int r = -ENOSYS;
++	if (SYS_ppoll == SYS_ppoll_time64 || !IS32BIT(s))
++		r = __syscall_cp(SYS_ppoll_time64, fds, n,
++			to ? ((long long[]){s, ns}) : 0,
++			mask, _NSIG/8);
++	if (SYS_ppoll == SYS_ppoll_time64 || r != -ENOSYS)
++		return __syscall_ret(r);
++	s = CLAMP(s);
++#endif
++	return syscall_cp(SYS_ppoll, fds, n,
++		to ? ((long[]){s, ns}) : 0, mask, _NSIG/8);
++}
+diff -urpN musl-1.2.4/src/setjmp/loongarch64/longjmp.S musl-1.2.5/src/setjmp/loongarch64/longjmp.S
+--- musl-1.2.4/src/setjmp/loongarch64/longjmp.S	1970-01-01 06:00:00.000000000 +0600
++++ musl-1.2.5/src/setjmp/loongarch64/longjmp.S	2024-03-01 08:07:33.000000000 +0600
+@@ -0,0 +1,32 @@
++.global _longjmp
++.global longjmp
++.type   _longjmp,@function
++.type   longjmp,@function
++_longjmp:
++longjmp:
++	ld.d    $ra, $a0, 0
++	ld.d    $sp, $a0, 8
++	ld.d    $r21,$a0, 16
++	ld.d    $fp, $a0, 24
++	ld.d    $s0, $a0, 32
++	ld.d    $s1, $a0, 40
++	ld.d    $s2, $a0, 48
++	ld.d    $s3, $a0, 56
++	ld.d    $s4, $a0, 64
++	ld.d    $s5, $a0, 72
++	ld.d    $s6, $a0, 80
++	ld.d    $s7, $a0, 88
++	ld.d    $s8, $a0, 96
++#ifndef __loongarch_soft_float
++	fld.d   $fs0, $a0, 104
++	fld.d   $fs1, $a0, 112
++	fld.d   $fs2, $a0, 120
++	fld.d   $fs3, $a0, 128
++	fld.d   $fs4, $a0, 136
++	fld.d   $fs5, $a0, 144
++	fld.d   $fs6, $a0, 152
++	fld.d   $fs7, $a0, 160
++#endif
++	sltui   $a0, $a1, 1
++	add.d   $a0, $a0, $a1
++	jr      $ra
+diff -urpN musl-1.2.4/src/setjmp/loongarch64/setjmp.S musl-1.2.5/src/setjmp/loongarch64/setjmp.S
+--- musl-1.2.4/src/setjmp/loongarch64/setjmp.S	1970-01-01 06:00:00.000000000 +0600
++++ musl-1.2.5/src/setjmp/loongarch64/setjmp.S	2024-03-01 08:07:33.000000000 +0600
+@@ -0,0 +1,34 @@
++.global __setjmp
++.global _setjmp
++.global setjmp
++.type __setjmp,@function
++.type _setjmp,@function
++.type setjmp,@function
++__setjmp:
++_setjmp:
++setjmp:
++	st.d    $ra, $a0, 0
++	st.d    $sp, $a0, 8
++	st.d    $r21,$a0, 16
++	st.d    $fp, $a0, 24
++	st.d    $s0, $a0, 32
++	st.d    $s1, $a0, 40
++	st.d    $s2, $a0, 48
++	st.d    $s3, $a0, 56
++	st.d    $s4, $a0, 64
++	st.d    $s5, $a0, 72
++	st.d    $s6, $a0, 80
++	st.d    $s7, $a0, 88
++	st.d    $s8, $a0, 96
++#ifndef __loongarch_soft_float
++	fst.d   $fs0, $a0, 104
++	fst.d   $fs1, $a0, 112
++	fst.d   $fs2, $a0, 120
++	fst.d   $fs3, $a0, 128
++	fst.d   $fs4, $a0, 136
++	fst.d   $fs5, $a0, 144
++	fst.d   $fs6, $a0, 152
++	fst.d   $fs7, $a0, 160
++#endif
++	move    $a0, $zero
++	jr      $ra
+diff -urpN musl-1.2.4/src/setjmp/riscv32/longjmp.S musl-1.2.5/src/setjmp/riscv32/longjmp.S
+--- musl-1.2.4/src/setjmp/riscv32/longjmp.S	1970-01-01 06:00:00.000000000 +0600
++++ musl-1.2.5/src/setjmp/riscv32/longjmp.S	2024-03-01 08:07:33.000000000 +0600
+@@ -0,0 +1,42 @@
++.global __longjmp
++.global _longjmp
++.global longjmp
++.type __longjmp, %function
++.type _longjmp,  %function
++.type longjmp,   %function
++__longjmp:
++_longjmp:
++longjmp:
++	lw s0,    0(a0)
++	lw s1,    4(a0)
++	lw s2,    8(a0)
++	lw s3,    12(a0)
++	lw s4,    16(a0)
++	lw s5,    20(a0)
++	lw s6,    24(a0)
++	lw s7,    28(a0)
++	lw s8,    32(a0)
++	lw s9,    36(a0)
++	lw s10,   40(a0)
++	lw s11,   44(a0)
++	lw sp,    48(a0)
++	lw ra,    52(a0)
++
++#ifndef __riscv_float_abi_soft
++	fld fs0,  56(a0)
++	fld fs1,  64(a0)
++	fld fs2,  72(a0)
++	fld fs3,  80(a0)
++	fld fs4,  88(a0)
++	fld fs5,  96(a0)
++	fld fs6,  104(a0)
++	fld fs7,  112(a0)
++	fld fs8,  120(a0)
++	fld fs9,  128(a0)
++	fld fs10, 136(a0)
++	fld fs11, 144(a0)
++#endif
++
++	seqz a0, a1
++	add a0, a0, a1
++	ret
+diff -urpN musl-1.2.4/src/setjmp/riscv32/setjmp.S musl-1.2.5/src/setjmp/riscv32/setjmp.S
+--- musl-1.2.4/src/setjmp/riscv32/setjmp.S	1970-01-01 06:00:00.000000000 +0600
++++ musl-1.2.5/src/setjmp/riscv32/setjmp.S	2024-03-01 08:07:33.000000000 +0600
+@@ -0,0 +1,41 @@
++.global __setjmp
++.global _setjmp
++.global setjmp
++.type __setjmp, %function
++.type _setjmp,  %function
++.type setjmp,   %function
++__setjmp:
++_setjmp:
++setjmp:
++	sw s0,    0(a0)
++	sw s1,    4(a0)
++	sw s2,    8(a0)
++	sw s3,    12(a0)
++	sw s4,    16(a0)
++	sw s5,    20(a0)
++	sw s6,    24(a0)
++	sw s7,    28(a0)
++	sw s8,    32(a0)
++	sw s9,    36(a0)
++	sw s10,   40(a0)
++	sw s11,   44(a0)
++	sw sp,    48(a0)
++	sw ra,    52(a0)
++
++#ifndef __riscv_float_abi_soft
++	fsd fs0,  56(a0)
++	fsd fs1,  64(a0)
++	fsd fs2,  72(a0)
++	fsd fs3,  80(a0)
++	fsd fs4,  88(a0)
++	fsd fs5,  96(a0)
++	fsd fs6,  104(a0)
++	fsd fs7,  112(a0)
++	fsd fs8,  120(a0)
++	fsd fs9,  128(a0)
++	fsd fs10, 136(a0)
++	fsd fs11, 144(a0)
++#endif
++
++	li a0, 0
++	ret
+diff -urpN musl-1.2.4/src/signal/loongarch64/restore.s musl-1.2.5/src/signal/loongarch64/restore.s
+--- musl-1.2.4/src/signal/loongarch64/restore.s	1970-01-01 06:00:00.000000000 +0600
++++ musl-1.2.5/src/signal/loongarch64/restore.s	2024-03-01 08:07:33.000000000 +0600
+@@ -0,0 +1,10 @@
++.global __restore_rt
++.global __restore
++.hidden __restore_rt
++.hidden __restore
++.type   __restore_rt,@function
++.type   __restore,@function
++__restore_rt:
++__restore:
++	li.w    $a7, 139
++	syscall 0
+diff -urpN musl-1.2.4/src/signal/loongarch64/sigsetjmp.s musl-1.2.5/src/signal/loongarch64/sigsetjmp.s
+--- musl-1.2.4/src/signal/loongarch64/sigsetjmp.s	1970-01-01 06:00:00.000000000 +0600
++++ musl-1.2.5/src/signal/loongarch64/sigsetjmp.s	2024-03-01 08:07:33.000000000 +0600
+@@ -0,0 +1,25 @@
++.global sigsetjmp
++.global __sigsetjmp
++.type sigsetjmp,@function
++.type __sigsetjmp,@function
++sigsetjmp:
++__sigsetjmp:
++	beq     $a1, $zero, 1f
++	st.d    $ra, $a0, 184
++	st.d    $s0, $a0, 200  #184+8+8
++	move    $s0, $a0
++
++	la.global  $t0, setjmp
++	jirl       $ra, $t0, 0
++
++	move    $a1, $a0        # Return from 'setjmp' or 'longjmp'
++	move    $a0, $s0
++	ld.d    $ra, $a0, 184
++	ld.d    $s0, $a0, 200 #184+8+8
++
++.hidden __sigsetjmp_tail
++	la.global  $t0, __sigsetjmp_tail
++	jr         $t0
++1:
++	la.global  $t0, setjmp
++	jr         $t0
+diff -urpN musl-1.2.4/src/signal/riscv32/restore.s musl-1.2.5/src/signal/riscv32/restore.s
+--- musl-1.2.4/src/signal/riscv32/restore.s	1970-01-01 06:00:00.000000000 +0600
++++ musl-1.2.5/src/signal/riscv32/restore.s	2024-03-01 08:07:33.000000000 +0600
+@@ -0,0 +1,8 @@
++.global __restore
++.type __restore, %function
++__restore:
++.global __restore_rt
++.type __restore_rt, %function
++__restore_rt:
++	li a7, 139 # SYS_rt_sigreturn
++	ecall
+diff -urpN musl-1.2.4/src/signal/riscv32/sigsetjmp.s musl-1.2.5/src/signal/riscv32/sigsetjmp.s
+--- musl-1.2.4/src/signal/riscv32/sigsetjmp.s	1970-01-01 06:00:00.000000000 +0600
++++ musl-1.2.5/src/signal/riscv32/sigsetjmp.s	2024-03-01 08:07:33.000000000 +0600
+@@ -0,0 +1,23 @@
++.global sigsetjmp
++.global __sigsetjmp
++.type sigsetjmp, %function
++.type __sigsetjmp, %function
++sigsetjmp:
++__sigsetjmp:
++	bnez a1, 1f
++	tail setjmp
++1:
++
++	sw ra, 152(a0)
++	sw s0, 164(a0)
++	mv s0, a0
++
++	call setjmp
++
++	mv a1, a0
++	mv a0, s0
++	lw s0, 164(a0)
++	lw ra, 152(a0)
++
++.hidden __sigsetjmp_tail
++	tail __sigsetjmp_tail
+diff -urpN musl-1.2.4/src/signal/sh/sigsetjmp.s musl-1.2.5/src/signal/sh/sigsetjmp.s
+--- musl-1.2.4/src/signal/sh/sigsetjmp.s	2023-05-02 09:39:41.000000000 +0600
++++ musl-1.2.5/src/signal/sh/sigsetjmp.s	2024-03-01 08:07:33.000000000 +0600
+@@ -27,7 +27,7 @@ __sigsetjmp:
+ 
+ 	mov.l 3f, r0
+ 4:	braf r0
+-	 mov.l @(4+8,r4), r8
++	 mov.l @(4+8,r6), r8
+ 
+ 9:	mov.l 5f, r0
+ 6:	braf r0
+diff -urpN musl-1.2.4/src/stat/fchmodat.c musl-1.2.5/src/stat/fchmodat.c
+--- musl-1.2.4/src/stat/fchmodat.c	2023-05-02 09:39:41.000000000 +0600
++++ musl-1.2.5/src/stat/fchmodat.c	2024-03-01 08:07:33.000000000 +0600
+@@ -5,13 +5,16 @@
+ 
+ int fchmodat(int fd, const char *path, mode_t mode, int flag)
+ {
+-	if (!flag) return syscall(SYS_fchmodat, fd, path, mode, flag);
++	if (!flag) return syscall(SYS_fchmodat, fd, path, mode);
++
++	int ret = __syscall(SYS_fchmodat2, fd, path, mode, flag);
++	if (ret != -ENOSYS) return __syscall_ret(ret);
+ 
+ 	if (flag != AT_SYMLINK_NOFOLLOW)
+ 		return __syscall_ret(-EINVAL);
+ 
+ 	struct stat st;
+-	int ret, fd2;
++	int fd2;
+ 	char proc[15+3*sizeof(int)];
+ 
+ 	if (fstatat(fd, path, &st, flag))
+diff -urpN musl-1.2.4/src/stat/fstatat.c musl-1.2.5/src/stat/fstatat.c
+--- musl-1.2.4/src/stat/fstatat.c	2023-05-02 09:39:41.000000000 +0600
++++ musl-1.2.5/src/stat/fstatat.c	2024-03-01 08:07:33.000000000 +0600
+@@ -36,6 +36,7 @@ static int fstatat_statx(int fd, const c
+ {
+ 	struct statx stx;
+ 
++	flag |= AT_NO_AUTOMOUNT;
+ 	int ret = __syscall(SYS_statx, fd, path, flag, 0x7ff, &stx);
+ 	if (ret) return ret;
+ 
+diff -urpN musl-1.2.4/src/stat/statvfs.c musl-1.2.5/src/stat/statvfs.c
+--- musl-1.2.4/src/stat/statvfs.c	2023-05-02 09:39:41.000000000 +0600
++++ musl-1.2.5/src/stat/statvfs.c	2024-03-01 08:07:33.000000000 +0600
+@@ -39,6 +39,7 @@ static void fixup(struct statvfs *out, c
+ 	out->f_fsid = in->f_fsid.__val[0];
+ 	out->f_flag = in->f_flags;
+ 	out->f_namemax = in->f_namelen;
++	out->f_type = in->f_type;
+ }
+ 
+ int statvfs(const char *restrict path, struct statvfs *restrict buf)
+diff -urpN musl-1.2.4/src/stdio/pclose.c musl-1.2.5/src/stdio/pclose.c
+--- musl-1.2.4/src/stdio/pclose.c	2023-05-02 09:39:41.000000000 +0600
++++ musl-1.2.5/src/stdio/pclose.c	2024-03-01 08:07:33.000000000 +0600
+@@ -7,7 +7,7 @@ int pclose(FILE *f)
+ 	int status, r;
+ 	pid_t pid = f->pipe_pid;
+ 	fclose(f);
+-	while ((r=__syscall(SYS_wait4, pid, &status, 0, 0)) == -EINTR);
++	while ((r=__sys_wait4(pid, &status, 0, 0)) == -EINTR);
+ 	if (r<0) return __syscall_ret(r);
+ 	return status;
+ }
+diff -urpN musl-1.2.4/src/stdio/vfprintf.c musl-1.2.5/src/stdio/vfprintf.c
+--- musl-1.2.4/src/stdio/vfprintf.c	2023-05-02 09:39:41.000000000 +0600
++++ musl-1.2.5/src/stdio/vfprintf.c	2024-03-01 08:07:33.000000000 +0600
+@@ -52,7 +52,7 @@ static const unsigned char states[]['z'-
+ 		S('o') = UINT, S('u') = UINT, S('x') = UINT, S('X') = UINT,
+ 		S('e') = DBL, S('f') = DBL, S('g') = DBL, S('a') = DBL,
+ 		S('E') = DBL, S('F') = DBL, S('G') = DBL, S('A') = DBL,
+-		S('c') = CHAR, S('C') = INT,
++		S('c') = INT, S('C') = UINT,
+ 		S('s') = PTR, S('S') = PTR, S('p') = UIPTR, S('n') = PTR,
+ 		S('m') = NOARG,
+ 		S('l') = LPRE, S('h') = HPRE, S('L') = BIGLPRE,
+@@ -62,7 +62,7 @@ static const unsigned char states[]['z'-
+ 		S('o') = ULONG, S('u') = ULONG, S('x') = ULONG, S('X') = ULONG,
+ 		S('e') = DBL, S('f') = DBL, S('g') = DBL, S('a') = DBL,
+ 		S('E') = DBL, S('F') = DBL, S('G') = DBL, S('A') = DBL,
+-		S('c') = INT, S('s') = PTR, S('n') = PTR,
++		S('c') = UINT, S('s') = PTR, S('n') = PTR,
+ 		S('l') = LLPRE,
+ 	}, { /* 2: ll-prefixed */
+ 		S('d') = LLONG, S('i') = LLONG,
+@@ -437,7 +437,7 @@ static int printf_core(FILE *f, const ch
+ 	unsigned st, ps;
+ 	int cnt=0, l=0;
+ 	size_t i;
+-	char buf[sizeof(uintmax_t)*3+3+LDBL_MANT_DIG/4];
++	char buf[sizeof(uintmax_t)*3];
+ 	const char *prefix;
+ 	int t, pl;
+ 	wchar_t wc[2], *ws;
+@@ -588,6 +588,7 @@ static int printf_core(FILE *f, const ch
+ 			}
+ 			p = MAX(p, z-a + !arg.i);
+ 			break;
++		narrow_c:
+ 		case 'c':
+ 			*(a=z-(p=1))=arg.i;
+ 			fl &= ~ZERO_PAD;
+@@ -602,6 +603,7 @@ static int printf_core(FILE *f, const ch
+ 			fl &= ~ZERO_PAD;
+ 			break;
+ 		case 'C':
++			if (!arg.i) goto narrow_c;
+ 			wc[0] = arg.i;
+ 			wc[1] = 0;
+ 			arg.p = wc;
+diff -urpN musl-1.2.4/src/stdio/vfwprintf.c musl-1.2.5/src/stdio/vfwprintf.c
+--- musl-1.2.4/src/stdio/vfwprintf.c	2023-05-02 09:39:41.000000000 +0600
++++ musl-1.2.5/src/stdio/vfwprintf.c	2024-03-01 08:07:33.000000000 +0600
+@@ -45,7 +45,7 @@ static const unsigned char states[]['z'-
+ 		S('o') = UINT, S('u') = UINT, S('x') = UINT, S('X') = UINT,
+ 		S('e') = DBL, S('f') = DBL, S('g') = DBL, S('a') = DBL,
+ 		S('E') = DBL, S('F') = DBL, S('G') = DBL, S('A') = DBL,
+-		S('c') = CHAR, S('C') = INT,
++		S('c') = INT, S('C') = UINT,
+ 		S('s') = PTR, S('S') = PTR, S('p') = UIPTR, S('n') = PTR,
+ 		S('m') = NOARG,
+ 		S('l') = LPRE, S('h') = HPRE, S('L') = BIGLPRE,
+@@ -55,7 +55,7 @@ static const unsigned char states[]['z'-
+ 		S('o') = ULONG, S('u') = ULONG, S('x') = ULONG, S('X') = ULONG,
+ 		S('e') = DBL, S('f') = DBL, S('g') = DBL, S('a') = DBL,
+ 		S('E') = DBL, S('F') = DBL, S('G') = DBL, S('A') = DBL,
+-		S('c') = INT, S('s') = PTR, S('n') = PTR,
++		S('c') = UINT, S('s') = PTR, S('n') = PTR,
+ 		S('l') = LLPRE,
+ 	}, { /* 2: ll-prefixed */
+ 		S('d') = LLONG, S('i') = LLONG,
+diff -urpN musl-1.2.4/src/stdio/vsnprintf.c musl-1.2.5/src/stdio/vsnprintf.c
+--- musl-1.2.4/src/stdio/vsnprintf.c	2023-05-02 09:39:41.000000000 +0600
++++ musl-1.2.5/src/stdio/vsnprintf.c	2024-03-01 08:07:33.000000000 +0600
+@@ -45,11 +45,6 @@ int vsnprintf(char *restrict s, size_t n
+ 		.cookie = &c,
+ 	};
+ 
+-	if (n > INT_MAX) {
+-		errno = EOVERFLOW;
+-		return -1;
+-	}
+-
+ 	*c.s = 0;
+ 	return vfprintf(&f, fmt, ap);
+ }
+diff -urpN musl-1.2.4/src/stdio/vswprintf.c musl-1.2.5/src/stdio/vswprintf.c
+--- musl-1.2.4/src/stdio/vswprintf.c	2023-05-02 09:39:41.000000000 +0600
++++ musl-1.2.5/src/stdio/vswprintf.c	2024-03-01 08:07:33.000000000 +0600
+@@ -51,9 +51,6 @@ int vswprintf(wchar_t *restrict s, size_
+ 
+ 	if (!n) {
+ 		return -1;
+-	} else if (n > INT_MAX) {
+-		errno = EOVERFLOW;
+-		return -1;
+ 	}
+ 	r = vfwprintf(&f, fmt, ap);
+ 	sw_write(&f, 0, 0);
+diff -urpN musl-1.2.4/src/thread/loongarch64/__set_thread_area.s musl-1.2.5/src/thread/loongarch64/__set_thread_area.s
+--- musl-1.2.4/src/thread/loongarch64/__set_thread_area.s	1970-01-01 06:00:00.000000000 +0600
++++ musl-1.2.5/src/thread/loongarch64/__set_thread_area.s	2024-03-01 08:07:33.000000000 +0600
+@@ -0,0 +1,7 @@
++.global __set_thread_area
++.hidden __set_thread_area
++.type   __set_thread_area,@function
++__set_thread_area:
++	move $tp, $a0
++	move $a0, $zero
++	jr   $ra
+diff -urpN musl-1.2.4/src/thread/loongarch64/__unmapself.s musl-1.2.5/src/thread/loongarch64/__unmapself.s
+--- musl-1.2.4/src/thread/loongarch64/__unmapself.s	1970-01-01 06:00:00.000000000 +0600
++++ musl-1.2.5/src/thread/loongarch64/__unmapself.s	2024-03-01 08:07:33.000000000 +0600
+@@ -0,0 +1,7 @@
++.global __unmapself
++.type   __unmapself, @function
++__unmapself:
++	li.d    $a7, 215   # call munmap
++	syscall 0
++	li.d    $a7, 93    # call exit
++	syscall 0
+diff -urpN musl-1.2.4/src/thread/loongarch64/clone.s musl-1.2.5/src/thread/loongarch64/clone.s
+--- musl-1.2.4/src/thread/loongarch64/clone.s	1970-01-01 06:00:00.000000000 +0600
++++ musl-1.2.5/src/thread/loongarch64/clone.s	2024-03-01 08:07:33.000000000 +0600
+@@ -0,0 +1,29 @@
++#__clone(func, stack, flags, arg, ptid, tls, ctid)
++#         a0,    a1,   a2,    a3,  a4,  a5,   a6
++# sys_clone(flags, stack, ptid, ctid, tls)
++#            a0,    a1,   a2,    a3,  a4
++
++.global __clone
++.hidden __clone
++.type __clone,@function
++__clone:
++	bstrins.d $a1, $zero, 3, 0   #stack to 16 align
++	# Save function pointer and argument pointer on new thread stack
++	addi.d  $a1, $a1, -16
++	st.d    $a0, $a1, 0     # save function pointer
++	st.d    $a3, $a1, 8     # save argument pointer
++	or      $a0, $a2, $zero
++	or      $a2, $a4, $zero
++	or      $a3, $a6, $zero
++	or      $a4, $a5, $zero
++	ori     $a7, $zero, 220
++	syscall 0               # call clone
++
++	beqz    $a0, 1f         # whether child process
++	jirl    $zero, $ra, 0   # parent process return
++1:
++	ld.d    $t8, $sp, 0     # function pointer
++	ld.d    $a0, $sp, 8     # argument pointer
++	jirl    $ra, $t8, 0     # call the user's function
++	ori     $a7, $zero, 93
++	syscall 0               # child process exit
+diff -urpN musl-1.2.4/src/thread/loongarch64/syscall_cp.s musl-1.2.5/src/thread/loongarch64/syscall_cp.s
+--- musl-1.2.4/src/thread/loongarch64/syscall_cp.s	1970-01-01 06:00:00.000000000 +0600
++++ musl-1.2.5/src/thread/loongarch64/syscall_cp.s	2024-03-01 08:07:33.000000000 +0600
+@@ -0,0 +1,29 @@
++.global __cp_begin
++.hidden __cp_begin
++.global __cp_end
++.hidden __cp_end
++.global __cp_cancel
++.hidden __cp_cancel
++.hidden __cancel
++.global __syscall_cp_asm
++.hidden __syscall_cp_asm
++.type   __syscall_cp_asm,@function
++
++__syscall_cp_asm:
++__cp_begin:
++	ld.w $a0, $a0, 0
++	bnez $a0, __cp_cancel
++	move $t8, $a1    # reserve system call number
++	move $a0, $a2
++	move $a1, $a3
++	move $a2, $a4
++	move $a3, $a5
++	move $a4, $a6
++	move $a5, $a7
++	move $a7, $t8
++	syscall 0
++__cp_end:
++	jr $ra
++__cp_cancel:
++	la.local $t8, __cancel
++	jr $t8
+diff -urpN musl-1.2.4/src/thread/riscv32/__set_thread_area.s musl-1.2.5/src/thread/riscv32/__set_thread_area.s
+--- musl-1.2.4/src/thread/riscv32/__set_thread_area.s	1970-01-01 06:00:00.000000000 +0600
++++ musl-1.2.5/src/thread/riscv32/__set_thread_area.s	2024-03-01 08:07:33.000000000 +0600
+@@ -0,0 +1,6 @@
++.global __set_thread_area
++.type   __set_thread_area, %function
++__set_thread_area:
++	mv tp, a0
++	li a0, 0
++	ret
+diff -urpN musl-1.2.4/src/thread/riscv32/__unmapself.s musl-1.2.5/src/thread/riscv32/__unmapself.s
+--- musl-1.2.4/src/thread/riscv32/__unmapself.s	1970-01-01 06:00:00.000000000 +0600
++++ musl-1.2.5/src/thread/riscv32/__unmapself.s	2024-03-01 08:07:33.000000000 +0600
+@@ -0,0 +1,7 @@
++.global __unmapself
++.type __unmapself, %function
++__unmapself:
++	li a7, 215 # SYS_munmap
++	ecall
++	li a7, 93  # SYS_exit
++	ecall
+diff -urpN musl-1.2.4/src/thread/riscv32/clone.s musl-1.2.5/src/thread/riscv32/clone.s
+--- musl-1.2.4/src/thread/riscv32/clone.s	1970-01-01 06:00:00.000000000 +0600
++++ musl-1.2.5/src/thread/riscv32/clone.s	2024-03-01 08:07:33.000000000 +0600
+@@ -0,0 +1,34 @@
++# __clone(func, stack, flags, arg, ptid, tls, ctid)
++#           a0,    a1,    a2,  a3,   a4,  a5,   a6
++
++# syscall(SYS_clone, flags, stack, ptid, tls, ctid)
++#                a7     a0,    a1,   a2,  a3,   a4
++
++.global __clone
++.type  __clone, %function
++__clone:
++	# Save func and arg to stack
++	addi a1, a1, -16
++	sw a0, 0(a1)
++	sw a3, 4(a1)
++
++	# Call SYS_clone
++	mv a0, a2
++	mv a2, a4
++	mv a3, a5
++	mv a4, a6
++	li a7, 220 # SYS_clone
++	ecall
++
++	beqz a0, 1f
++	# Parent
++	ret
++
++	# Child
++1:      lw a1, 0(sp)
++	lw a0, 4(sp)
++	jalr a1
++
++	# Exit
++	li a7, 93 # SYS_exit
++	ecall
+diff -urpN musl-1.2.4/src/thread/riscv32/syscall_cp.s musl-1.2.5/src/thread/riscv32/syscall_cp.s
+--- musl-1.2.4/src/thread/riscv32/syscall_cp.s	1970-01-01 06:00:00.000000000 +0600
++++ musl-1.2.5/src/thread/riscv32/syscall_cp.s	2024-03-01 08:07:33.000000000 +0600
+@@ -0,0 +1,29 @@
++.global __cp_begin
++.hidden __cp_begin
++.global __cp_end
++.hidden __cp_end
++.global __cp_cancel
++.hidden __cp_cancel
++.hidden __cancel
++.global __syscall_cp_asm
++.hidden __syscall_cp_asm
++.type __syscall_cp_asm, %function
++__syscall_cp_asm:
++__cp_begin:
++	lw t0, 0(a0)
++	bnez t0, __cp_cancel
++
++	mv t0, a1
++	mv a0, a2
++	mv a1, a3
++	mv a2, a4
++	mv a3, a5
++	mv a4, a6
++	mv a5, a7
++	lw a6, 0(sp)
++	mv a7, t0
++	ecall
++__cp_end:
++	ret
++__cp_cancel:
++	tail __cancel
+diff -urpN musl-1.2.4/src/thread/synccall.c musl-1.2.5/src/thread/synccall.c
+--- musl-1.2.4/src/thread/synccall.c	2023-05-02 09:39:41.000000000 +0600
++++ musl-1.2.5/src/thread/synccall.c	2024-03-01 08:07:33.000000000 +0600
+@@ -11,7 +11,7 @@ weak_alias(dummy_0, __tl_unlock);
+ 
+ static int target_tid;
+ static void (*callback)(void *), *context;
+-static sem_t target_sem, caller_sem;
++static sem_t target_sem, caller_sem, exit_sem;
+ 
+ static void dummy(void *p)
+ {
+@@ -33,7 +33,7 @@ static void handler(int sig)
+ 	/* Inform caller we've complered the callback and wait
+ 	 * for the caller to release us to return. */
+ 	sem_post(&caller_sem);
+-	sem_wait(&target_sem);
++	sem_wait(&exit_sem);
+ 
+ 	/* Inform caller we are returning and state is destroyable. */
+ 	sem_post(&caller_sem);
+@@ -62,6 +62,7 @@ void __synccall(void (*func)(void *), vo
+ 
+ 	sem_init(&target_sem, 0, 0);
+ 	sem_init(&caller_sem, 0, 0);
++	sem_init(&exit_sem, 0, 0);
+ 
+ 	if (!libc.threads_minus_1 || __syscall(SYS_gettid) != self->tid)
+ 		goto single_threaded;
+@@ -107,12 +108,13 @@ single_threaded:
+ 	/* Only release the caught threads once all threads, including the
+ 	 * caller, have returned from the callback function. */
+ 	for (i=0; i<count; i++)
+-		sem_post(&target_sem);
++		sem_post(&exit_sem);
+ 	for (i=0; i<count; i++)
+ 		sem_wait(&caller_sem);
+ 
+ 	sem_destroy(&caller_sem);
+ 	sem_destroy(&target_sem);
++	sem_destroy(&exit_sem);
+ 
+ 	pthread_setcancelstate(cs, 0);
+ 	__tl_unlock();
+diff -urpN musl-1.2.4/src/time/__year_to_secs.c musl-1.2.5/src/time/__year_to_secs.c
+--- musl-1.2.4/src/time/__year_to_secs.c	2023-05-02 09:39:41.000000000 +0600
++++ musl-1.2.5/src/time/__year_to_secs.c	2024-03-01 08:07:33.000000000 +0600
+@@ -10,9 +10,9 @@ long long __year_to_secs(long long year,
+ 		return 31536000*(y-70) + 86400*leaps;
+ 	}
+ 
+-	int cycles, centuries, leaps, rem;
++	int cycles, centuries, leaps, rem, dummy;
+ 
+-	if (!is_leap) is_leap = &(int){0};
++	if (!is_leap) is_leap = &dummy;
+ 	cycles = (year-100) / 400;
+ 	rem = (year-100) % 400;
+ 	if (rem < 0) {
+diff -urpN musl-1.2.4/src/time/strftime.c musl-1.2.5/src/time/strftime.c
+--- musl-1.2.4/src/time/strftime.c	2023-05-02 09:39:41.000000000 +0600
++++ musl-1.2.5/src/time/strftime.c	2024-03-01 08:07:33.000000000 +0600
+@@ -3,6 +3,7 @@
+ #include <string.h>
+ #include <langinfo.h>
+ #include <locale.h>
++#include <ctype.h>
+ #include <time.h>
+ #include <limits.h>
+ #include "locale_impl.h"
+@@ -233,7 +234,12 @@ size_t __strftime_l(char *restrict s, si
+ 		pad = 0;
+ 		if (*f == '-' || *f == '_' || *f == '0') pad = *f++;
+ 		if ((plus = (*f == '+'))) f++;
+-		width = strtoul(f, &p, 10);
++		if (isdigit(*f)) {
++			width = strtoul(f, &p, 10);
++		} else {
++			width = 0;
++			p = (void *)f;
++		}
+ 		if (*p == 'C' || *p == 'F' || *p == 'G' || *p == 'Y') {
+ 			if (!width && p!=f) width = 1;
+ 		} else {
+diff -urpN musl-1.2.4/src/time/timer_create.c musl-1.2.5/src/time/timer_create.c
+--- musl-1.2.4/src/time/timer_create.c	2023-05-02 09:39:41.000000000 +0600
++++ musl-1.2.5/src/time/timer_create.c	2024-03-01 08:07:33.000000000 +0600
+@@ -61,7 +61,7 @@ static void *start(void *arg)
+ 
+ int timer_create(clockid_t clk, struct sigevent *restrict evp, timer_t *restrict res)
+ {
+-	volatile static int init = 0;
++	static volatile int init = 0;
+ 	pthread_t td;
+ 	pthread_attr_t attr;
+ 	int r;
+diff -urpN musl-1.2.4/src/unistd/faccessat.c musl-1.2.5/src/unistd/faccessat.c
+--- musl-1.2.4/src/unistd/faccessat.c	2023-05-02 09:39:41.000000000 +0600
++++ musl-1.2.5/src/unistd/faccessat.c	2024-03-01 08:07:33.000000000 +0600
+@@ -53,7 +53,7 @@ int faccessat(int fd, const char *filena
+ 	if (pid<0 || __syscall(SYS_read, p[0], &ret, sizeof ret) != sizeof(ret))
+ 		ret = -EBUSY;
+ 	__syscall(SYS_close, p[0]);
+-	__syscall(SYS_wait4, pid, &status, __WCLONE, 0);
++	__sys_wait4(pid, &status, __WCLONE, 0);
+ 
+ 	__restore_sigs(&set);
+ 
+diff -urpN musl-1.2.4/src/unistd/setxid.c musl-1.2.5/src/unistd/setxid.c
+--- musl-1.2.4/src/unistd/setxid.c	2023-05-02 09:39:41.000000000 +0600
++++ musl-1.2.5/src/unistd/setxid.c	2024-03-01 08:07:33.000000000 +0600
+@@ -30,5 +30,5 @@ int __setxid(int nr, int id, int eid, in
+ 	 * trigger the safety kill above. */
+ 	struct ctx c = { .nr = nr, .id = id, .eid = eid, .sid = sid, .ret = 1 };
+ 	__synccall(do_setxid, &c);
+-	return __syscall_ret(c.ret);
++	return __syscall_ret(c.ret > 0 ? -EAGAIN : c.ret);
+ }
+diff -urpN musl-1.2.4/tools/install.sh musl-1.2.5/tools/install.sh
+--- musl-1.2.4/tools/install.sh	2023-05-02 09:39:41.000000000 +0600
++++ musl-1.2.5/tools/install.sh	2024-03-01 08:07:33.000000000 +0600
+@@ -48,7 +48,9 @@ trap 'rm -f "$tmp"' EXIT INT QUIT TERM H
+ umask 077
+ 
+ if test "$symlink" ; then
++umask 000
+ ln -s "$1" "$tmp"
++umask 077
+ else
+ cat < "$1" > "$tmp"
+ chmod "$mode" "$tmp"
