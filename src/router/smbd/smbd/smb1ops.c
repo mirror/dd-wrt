@@ -16,7 +16,7 @@ static struct smb_version_values smb1_server_values = {
 	.protocol_id = SMB10_PROT_ID,
 	.capabilities = SMB1_SERVER_CAPS,
 	.max_read_size = CIFS_DEFAULT_IOSIZE,
-	.max_write_size = MAX_STREAM_PROT_LEN,
+	.max_write_size = CIFS_DEFAULT_IOSIZE,
 	.max_trans_size = CIFS_DEFAULT_IOSIZE,
 	.large_lock_type = LOCKING_ANDX_LARGE_FILES,
 	.exclusive_lock_type = 0,
@@ -67,7 +67,6 @@ static struct smb_version_cmds smb1_server_cmds[256] = {
 	[SMB_COM_SESSION_SETUP_ANDX]	= { .proc = smb_session_setup_andx, },
 	[SMB_COM_LOGOFF_ANDX]           = { .proc = smb_session_disconnect, },
 	[SMB_COM_TREE_CONNECT_ANDX]	= { .proc = smb_tree_connect_andx, },
-	[SMB_COM_QUERY_INFORMATION_DISK] = { .proc = smb_query_information_disk, },
 	[SMB_COM_NT_CREATE_ANDX]	= { .proc = smb_nt_create_andx, },
 	[SMB_COM_NT_CANCEL]		= { .proc = smb_nt_cancel, },
 	[SMB_COM_NT_RENAME]		= { .proc = smb_nt_rename, },
@@ -83,6 +82,9 @@ static struct smb_version_cmds smb1_server_cmds[256] = {
  */
 int init_smb1_server(struct ksmbd_conn *conn)
 {
+	if (!conn)
+		return -EINVAL;
+
 	conn->vals = &smb1_server_values;
 	conn->ops = &smb1_server_ops;
 	conn->cmds = smb1_server_cmds;

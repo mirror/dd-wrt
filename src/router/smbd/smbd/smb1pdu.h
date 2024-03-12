@@ -139,7 +139,6 @@
 #define SMB_COM_SESSION_SETUP_ANDX    0x73
 #define SMB_COM_LOGOFF_ANDX           0x74 /* trivial response */
 #define SMB_COM_TREE_CONNECT_ANDX     0x75
-#define SMB_COM_QUERY_INFORMATION_DISK 0x80
 #define SMB_COM_NT_TRANSACT           0xA0
 #define SMB_COM_NT_TRANSACT_SECONDARY 0xA1
 #define SMB_COM_NT_CREATE_ANDX        0xA2
@@ -178,33 +177,6 @@
 
 /* Action bits */
 #define GUEST_LOGIN 1
-
-struct smb_negotiate_rsp {
-	struct smb_hdr hdr;     /* wct = 17 */
-	__le16 DialectIndex; /* 0xFFFF = no dialect acceptable */
-	__u8 SecurityMode;
-	__le16 MaxMpxCount;
-	__le16 MaxNumberVcs;
-	__le32 MaxBufferSize;
-	__le32 MaxRawSize;
-	__le32 SessionKey;
-	__le32 Capabilities;    /* see below */
-	__le32 SystemTimeLow;
-	__le32 SystemTimeHigh;
-	__le16 ServerTimeZone;
-	__u8 EncryptionKeyLength;
-	__le16 ByteCount;
-	union {
-		unsigned char EncryptionKey[8]; /* cap extended security off */
-		/* followed by Domain name - if extended security is off */
-		/* followed by 16 bytes of server GUID */
-		/* then security blob if cap_extended_security negotiated */
-		struct {
-			unsigned char GUID[SMB1_CLIENT_GUID_SIZE];
-			unsigned char SecurityBlob[1];
-		} __packed extended_response;
-	} __packed u;
-} __packed;
 
 struct smb_com_read_req {
 	struct smb_hdr hdr;     /* wct = 12 */
@@ -468,16 +440,6 @@ struct smb_com_lock_rsp {
 	__u8 AndXCommand;
 	__u8 AndXReserved;
 	__le16 AndXOffset;
-	__le16 ByteCount;
-} __packed;
-
-struct smb_com_query_information_disk_rsp {
-	struct smb_hdr hdr;     /* wct = 5 */
-	__le16 TotalUnits;
-	__le16 BlocksPerUnit;
-	__le16 BlockSize;
-	__le16 FreeUnits;
-	__le16 Pad;
 	__le16 ByteCount;
 } __packed;
 
@@ -1592,9 +1554,7 @@ struct smb_com_setattr_rsp {
 	__le16 ByteCount;        /* bct = 0 */
 } __packed;
 
-#ifdef CONFIG_SMB_INSECURE_SERVER
-extern int init_smb1_server(struct ksmbd_conn *conn);
-#endif
+static int init_smb1_server(struct ksmbd_conn *conn);
 
 /* function prototypes */
 static int init_smb_rsp_hdr(struct ksmbd_work *work);
@@ -1611,9 +1571,7 @@ static int ksmbd_smb1_check_message(struct ksmbd_work *work);
 /* smb1 command handlers */
 static int smb_rename(struct ksmbd_work *work);
 static int smb_negotiate_request(struct ksmbd_work *work);
-#ifdef CONFIG_SMB_INSECURE_SERVER
 static int smb_handle_negotiate(struct ksmbd_work *work);
-#endif
 static int smb_session_setup_andx(struct ksmbd_work *work);
 static int smb_tree_connect_andx(struct ksmbd_work *work);
 static int smb_trans2(struct ksmbd_work *work);
@@ -1637,7 +1595,6 @@ static int smb_closedir(struct ksmbd_work *work);
 static int smb_open_andx(struct ksmbd_work *work);
 static int smb_write(struct ksmbd_work *work);
 static int smb_setattr(struct ksmbd_work *work);
-static int smb_query_information_disk(struct ksmbd_work *work);
 static int smb_checkdir(struct ksmbd_work *work);
 static int smb_process_exit(struct ksmbd_work *work);
 #endif /* __SMB1PDU_H */

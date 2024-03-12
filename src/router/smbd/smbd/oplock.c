@@ -113,7 +113,7 @@ static int alloc_lease(struct oplock_info *opinfo, struct lease_ctx_info *lctx)
 	lease->duration = lctx->duration;
 	memcpy(lease->parent_lease_key, lctx->parent_lease_key, SMB2_LEASE_KEY_SIZE);
 	lease->version = lctx->version;
-	lease->epoch = le16_to_cpu(lctx->epoch);
+	lease->epoch = 0;
 	INIT_LIST_HEAD(&opinfo->lease_entry);
 	opinfo->o_lease = lease;
 
@@ -710,6 +710,18 @@ static int oplock_break_pending(struct oplock_info *opinfo, int req_op_level)
 	return 0;
 }
 
+
+static inline int allocate_oplock_break_buf(struct ksmbd_work *work)
+{
+	work->response_buf = ksmbd_find_buffer(MAX_CIFS_SMALL_BUFFER_SIZE);
+	if (!work->response_buf) {
+		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
+		return -ENOMEM;
+	}
+	work->response_sz = MAX_CIFS_SMALL_BUFFER_SIZE;
+	return 0;
+}
+
 #ifdef CONFIG_SMB_INSECURE_SERVER
 /**
  * smb1_oplock_break_noti() - send smb1 oplock break cmd from conn
@@ -729,7 +741,7 @@ static void __smb1_oplock_break_noti(struct work_struct *wk)
 	struct smb_com_lock_req *req;
 	struct oplock_info *opinfo = work->request_buf;
 
-	if (allocate_interim_rsp_buf(work)) {
+	if (allocate_oplock_break_buf(work)) {
 		pr_err("smb_allocate_rsp_buf failed! ");
 		ksmbd_free_work_struct(work);
 		return;
@@ -837,6 +849,7 @@ static void __smb2_oplock_break_noti(struct work_struct *wk)
 {
 	struct smb2_oplock_break *rsp = NULL;
 	struct ksmbd_work *work = container_of(wk, struct ksmbd_work, work);
+	struct ksmbd_conn *conn = work->conn;
 	struct oplock_break_info *br_info = work->request_buf;
 	struct smb2_hdr *rsp_hdr;
 	struct ksmbd_file *fp;
@@ -845,7 +858,7 @@ static void __smb2_oplock_break_noti(struct work_struct *wk)
 	if (!fp)
 		goto out;
 
-	if (allocate_interim_rsp_buf(work)) {
+	if (allocate_oplock_break_buf(work)) {
 		pr_err("smb2_allocate_rsp_buf failed! ");
 		ksmbd_fd_put(work, fp);
 		goto out;
@@ -853,6 +866,8 @@ static void __smb2_oplock_break_noti(struct work_struct *wk)
 
 	rsp_hdr = smb2_get_msg(work->response_buf);
 	memset(rsp_hdr, 0, sizeof(struct smb2_hdr) + 2);
+	*(__be32 *)work->response_buf =
+		cpu_to_be32(conn->vals->header_size);
 	rsp_hdr->ProtocolId = SMB2_PROTO_NUMBER;
 	rsp_hdr->StructureSize = SMB2_HEADER_STRUCTURE_SIZE;
 	rsp_hdr->CreditRequest = cpu_to_le16(0);
@@ -876,18 +891,16 @@ static void __smb2_oplock_break_noti(struct work_struct *wk)
 		rsp->OplockLevel = SMB2_OPLOCK_LEVEL_NONE;
 	rsp->Reserved = 0;
 	rsp->Reserved2 = 0;
-	rsp->PersistentFid = fp->persistent_id;
-	rsp->VolatileFid = fp->volatile_id;
+	rsp->PersistentFid = cpu_to_le64(fp->persistent_id);
+	rsp->VolatileFid = cpu_to_le64(fp->volatile_id);
 
-	ksmbd_fd_put(work, fp);
-	if (ksmbd_iov_pin_rsp(work, (void *)rsp,
-			      sizeof(struct smb2_oplock_break)))
-		goto out;
+	inc_rfc1001_len(work->response_buf, 24);
 
 	ksmbd_debug(OPLOCK,
 		    "sending oplock break v_id %llu p_id = %llu lock level = %d\n",
 		    rsp->VolatileFid, rsp->PersistentFid, rsp->OplockLevel);
 
+	ksmbd_fd_put(work, fp);
 	ksmbd_conn_write(work);
 
 out:
@@ -897,8 +910,8 @@ out:
 	 * disconnection. waitqueue_active is safe because it
 	 * uses atomic operation for condition.
 	 */
-	if (!atomic_dec_return(&work->conn->r_count) && waitqueue_active(&work->conn->r_count_q))
-		wake_up(&work->conn->r_count_q);
+	if (!atomic_dec_return(&conn->r_count) && waitqueue_active(&conn->r_count_q))
+		wake_up(&conn->r_count_q);
 }
 
 /**
@@ -959,15 +972,18 @@ static void __smb2_lease_break_noti(struct work_struct *wk)
 	struct smb2_lease_break *rsp = NULL;
 	struct ksmbd_work *work = container_of(wk, struct ksmbd_work, work);
 	struct lease_break_info *br_info = work->request_buf;
+	struct ksmbd_conn *conn = work->conn;
 	struct smb2_hdr *rsp_hdr;
 
-	if (allocate_interim_rsp_buf(work)) {
+	if (allocate_oplock_break_buf(work)) {
 		ksmbd_debug(OPLOCK, "smb2_allocate_rsp_buf failed! ");
 		goto out;
 	}
 
 	rsp_hdr = smb2_get_msg(work->response_buf);
 	memset(rsp_hdr, 0, sizeof(struct smb2_hdr) + 2);
+	*(__be32 *)work->response_buf =
+		cpu_to_be32(conn->vals->header_size);
 	rsp_hdr->ProtocolId = SMB2_PROTO_NUMBER;
 	rsp_hdr->StructureSize = SMB2_HEADER_STRUCTURE_SIZE;
 	rsp_hdr->CreditRequest = cpu_to_le16(0);
@@ -996,9 +1012,7 @@ static void __smb2_lease_break_noti(struct work_struct *wk)
 	rsp->AccessMaskHint = 0;
 	rsp->ShareMaskHint = 0;
 
-	if (ksmbd_iov_pin_rsp(work, (void *)rsp,
-			      sizeof(struct smb2_lease_break)))
-		goto out;
+	inc_rfc1001_len(work->response_buf, 44);
 
 	ksmbd_conn_write(work);
 
@@ -1009,8 +1023,8 @@ out:
 	 * disconnection. waitqueue_active is safe because it
 	 * uses atomic operation for condition.
 	 */
-	if (!atomic_dec_return(&work->conn->r_count) && waitqueue_active(&work->conn->r_count_q))
-		wake_up(&work->conn->r_count_q);
+	if (!atomic_dec_return(&conn->r_count) && waitqueue_active(&conn->r_count_q))
+		wake_up(&conn->r_count_q);
 }
 
 /**
@@ -1062,8 +1076,7 @@ static int smb2_lease_break_noti(struct oplock_info *opinfo)
 					     interim_entry);
 			setup_async_work(in_work, NULL, NULL);
 			smb2_send_interim_resp(in_work, STATUS_PENDING);
-			list_del_init(&in_work->interim_entry);
-			release_async_work(in_work);
+			list_del(&in_work->interim_entry);
 		}
 		INIT_WORK(&work->work, __smb2_lease_break_noti);
 		ksmbd_queue_work(work);
@@ -1271,7 +1284,6 @@ static void copy_lease(struct oplock_info *op1, struct oplock_info *op2)
 	       SMB2_LEASE_KEY_SIZE);
 	lease2->duration = lease1->duration;
 	lease2->flags = lease1->flags;
-	lease2->epoch = lease1->epoch++;
 }
 
 static int add_lease_global_list(struct oplock_info *opinfo)
@@ -1634,7 +1646,6 @@ void create_lease_buf(u8 *rbuf, struct lease *lease)
 		memcpy(buf->lcontext.LeaseKey, lease->lease_key,
 		       SMB2_LEASE_KEY_SIZE);
 		buf->lcontext.LeaseFlags = lease->flags;
-		buf->lcontext.Epoch = cpu_to_le16(++lease->epoch);
 		buf->lcontext.LeaseState = lease->state;
 		memcpy(buf->lcontext.ParentLeaseKey, lease->parent_lease_key,
 		       SMB2_LEASE_KEY_SIZE);
@@ -1708,7 +1719,6 @@ struct lease_ctx_info *parse_lease_state(void *open_req)
 			memcpy(lreq->lease_key, lc->lcontext.LeaseKey, SMB2_LEASE_KEY_SIZE);
 			lreq->req_state = lc->lcontext.LeaseState;
 			lreq->flags = lc->lcontext.LeaseFlags;
-			lreq->epoch = lc->lcontext.Epoch;
 			lreq->duration = lc->lcontext.LeaseDuration;
 			memcpy(lreq->parent_lease_key, lc->lcontext.ParentLeaseKey,
 			       SMB2_LEASE_KEY_SIZE);
@@ -1733,12 +1743,11 @@ struct lease_ctx_info *parse_lease_state(void *open_req)
  * smb2_find_context_vals() - find a particular context info in open request
  * @open_req:	buffer containing smb2 file open(create) request
  * @tag:	context name to search for
- * @tag_len:	the length of tag
  *
  * Return:	pointer to requested context, NULL if @str context not found
  *		or error pointer if name length is invalid.
  */
-struct create_context *smb2_find_context_vals(void *open_req, const char *tag, int tag_len)
+struct create_context *smb2_find_context_vals(void *open_req, const char *tag)
 {
 	struct create_context *cc;
 	unsigned int next = 0;
@@ -1772,12 +1781,12 @@ struct create_context *smb2_find_context_vals(void *open_req, const char *tag, i
 		    name_len < 4 ||
 		    name_off + name_len > cc_len ||
 		    (value_off & 0x7) != 0 ||
-		    (value_len && value_off < name_off + (name_len < 8 ? 8 : name_len)) ||
+		    (value_off && (value_off < name_off + name_len)) ||
 		    ((u64)value_off + value_len > cc_len))
 			return ERR_PTR(-EINVAL);
 
 		name = (char *)cc + name_off;
-		if (name_len == tag_len && !memcmp(name, tag, name_len))
+		if (memcmp(name, tag, name_len) == 0)
 			return cc;
 
 		remain_len -= next;
@@ -1893,18 +1902,12 @@ void create_posix_rsp_buf(char *cc, struct ksmbd_file *fp)
 {
 	struct create_posix_rsp *buf;
 	struct inode *inode = file_inode(fp->filp);
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
-	struct mnt_idmap *idmap = file_mnt_idmap(fp->filp);
-	vfsuid_t vfsuid = i_uid_into_vfsuid(idmap, inode);
-	vfsgid_t vfsgid = i_gid_into_vfsgid(idmap, inode);
-#else
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0)
 	struct user_namespace *user_ns = file_mnt_user_ns(fp->filp);
 #endif
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 0, 0)
 	vfsuid_t vfsuid = i_uid_into_vfsuid(user_ns, inode);
 	vfsgid_t vfsgid = i_gid_into_vfsgid(user_ns, inode);
-#endif
 #endif
 
 	buf = (struct create_posix_rsp *)cc;

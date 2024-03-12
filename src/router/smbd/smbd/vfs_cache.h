@@ -64,12 +64,6 @@ struct ksmbd_inode {
 	__le32				m_fattr;
 };
 
-enum {
-	FP_NEW = 0,
-	FP_INITED,
-	FP_CLOSED
-};
-
 struct ksmbd_file {
 	struct file			*filp;
 	char				*filename;
@@ -120,7 +114,6 @@ struct ksmbd_file {
 	/* if ls is happening on directory, below is valid*/
 	struct ksmbd_readdir_data	readdir_data;
 	int				dot_dotdot[2];
-	unsigned int			f_state;
 };
 
 /*
@@ -207,8 +200,6 @@ static void ksmbd_free_global_file_table(void);
 static int ksmbd_file_table_flush(struct ksmbd_work *work);
 
 static void ksmbd_set_fd_limit(unsigned long limit);
-static void ksmbd_update_fstate(struct ksmbd_file_table *ft, struct ksmbd_file *fp,
-			 unsigned int state);
 
 
 /*

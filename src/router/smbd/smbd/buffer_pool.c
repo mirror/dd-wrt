@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 /*
- *   Copyright (C) 2024 Sebastian Gottschall <s.gottschall@dd-wrt.com>
+ *   Copyright (C) 2018 Samsung Electronics Co., Ltd.
  */
 
 #include <linux/kernel.h>
@@ -10,7 +10,6 @@
 #include <linux/slab.h>
 #include <linux/vmalloc.h>
 #include <linux/rwlock.h>
-#include <linux/atomic.h>
 
 #include "glob.h"
 #include "buffer_pool.h"
@@ -18,22 +17,22 @@
 #include "mgmt/ksmbd_ida.h"
 
 static struct kmem_cache *filp_cache;
-static int threads;
+static int threads; 
 struct wm {
-	struct list_head list;
-	size_t sz;
-	size_t realsize;
-	char buffer[0];
+	struct list_head	list;
+	size_t			sz;
+	size_t			realsize;
+	char			buffer[0];
 };
 
 struct wm_list {
-	struct list_head list;
-	size_t sz;
+	struct list_head	list;
+	size_t			sz;
 
-	spinlock_t wm_lock;
-	atomic_t avail_wm;
-	struct list_head idle_wm;
-	wait_queue_head_t wm_wait;
+	spinlock_t		wm_lock;
+	int			avail_wm;
+	struct list_head	idle_wm;
+	wait_queue_head_t	wm_wait;
 };
 
 static LIST_HEAD(wm_lists);
@@ -62,8 +61,8 @@ static inline void *__alloc(size_t size, gfp_t flags)
 			kmalloc_flags |= GFP_NOWAIT;
 		}
 	}
-
-	ret = kmalloc(size, kmalloc_flags);
+	
+	ret = kmalloc(size,  kmalloc_flags);
 
 	/*
 	 * It doesn't really make sense to fallback to vmalloc for sub page
@@ -71,7 +70,7 @@ static inline void *__alloc(size_t size, gfp_t flags)
 	 */
 	if (ret || size <= PAGE_SIZE)
 		return ret;
-
+	
 	return __vmalloc(size, flags, PAGE_KERNEL);
 }
 
@@ -89,13 +88,12 @@ void *_ksmbd_alloc(size_t size, const char *func, int line)
 {
 	void *p;
 #if LINUX_VERSION_CODE <= KERNEL_VERSION(5, 0, 0)
-	p = __alloc(size, GFP_KERNEL);
+ 	p = __alloc(size, GFP_KERNEL);
 #else
 	p = kvmalloc(size, GFP_KERNEL);
 #endif
 	if (!p) {
-		printk(KERN_WARNING "%s: allocation failed at %s:%d\n",
-		       __func__, func, line);
+		printk(KERN_WARNING "%s: allocation failed at %s:%d\n", __func__, func, line);
 	}
 	return p;
 }
@@ -104,27 +102,22 @@ void *_ksmbd_zalloc(size_t size, const char *func, int line)
 {
 	void *p;
 #if LINUX_VERSION_CODE <= KERNEL_VERSION(5, 0, 0)
-	p = __alloc(size, GFP_KERNEL | __GFP_ZERO);
+ 	p = __alloc(size, GFP_KERNEL | __GFP_ZERO);
 #else
 	p = kvmalloc(size, GFP_KERNEL | __GFP_ZERO);
 #endif
 	if (!p) {
-		printk(KERN_WARNING "%s: allocation failed at %s:%d\n",
-		       __func__, func, line);
+		printk(KERN_WARNING "%s: allocation failed at %s:%d\n", __func__, func, line);
 	}
 	return p;
 }
 
 void ksmbd_free(void *ptr)
 {
-#if LINUX_VERSION_CODE <= KERNEL_VERSION(5, 0, 0)
 	__free(ptr);
-#else
-	kvfree(ptr);
-#endif
 }
 
-struct wm *wm_alloc(size_t sz)
+static struct wm *wm_alloc(size_t sz)
 {
 	struct wm *wm;
 	size_t alloc_sz = sz + sizeof(struct wm);
@@ -132,7 +125,7 @@ struct wm *wm_alloc(size_t sz)
 	if (sz > SIZE_MAX - sizeof(struct wm))
 		return NULL;
 #if LINUX_VERSION_CODE <= KERNEL_VERSION(5, 0, 0)
-	wm = __alloc(alloc_sz, GFP_KERNEL);
+ 	wm = __alloc(alloc_sz, GFP_KERNEL);
 #else
 	wm = kvmalloc(alloc_sz, GFP_KERNEL);
 #endif
@@ -143,7 +136,7 @@ struct wm *wm_alloc(size_t sz)
 	return wm;
 }
 
-int register_wm_size_class(size_t sz)
+static int register_wm_size_class(size_t sz)
 {
 	struct wm_list *l, *nl;
 
@@ -153,7 +146,7 @@ int register_wm_size_class(size_t sz)
 	nl = kvmalloc(sizeof(struct wm_list), GFP_KERNEL);
 #endif
 	if (!nl) {
-		printk(KERN_ERR "Out of memory in %s:%d\n", __func__, __LINE__);
+		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 		return -ENOMEM;
 	}
 
@@ -162,13 +155,17 @@ int register_wm_size_class(size_t sz)
 	INIT_LIST_HEAD(&nl->idle_wm);
 	INIT_LIST_HEAD(&nl->list);
 	init_waitqueue_head(&nl->wm_wait);
-	atomic_set(&nl->avail_wm, 0);
+	nl->avail_wm = 0;
 
 	write_lock(&wm_lists_lock);
 	list_for_each_entry(l, &wm_lists, list) {
 		if (l->sz == sz) {
 			write_unlock(&wm_lists_lock);
-			ksmbd_free(nl);
+#if LINUX_VERSION_CODE <= KERNEL_VERSION(5, 0, 0)
+			__free(nl);
+#else
+			kvfree(nl);
+#endif
 			return 0;
 		}
 	}
@@ -178,7 +175,7 @@ int register_wm_size_class(size_t sz)
 	return 0;
 }
 
-struct wm_list *match_wm_list(size_t size)
+static struct wm_list *match_wm_list(size_t size)
 {
 	struct wm_list *l, *rl = NULL;
 
@@ -193,7 +190,7 @@ struct wm_list *match_wm_list(size_t size)
 	return rl;
 }
 
-struct wm_list *search_wm_list(size_t size, size_t *realsize)
+static struct wm_list *search_wm_list(size_t size, size_t *realsize)
 {
 	struct wm_list *l, *rl = NULL;
 	size_t last_size = (size_t)-1;
@@ -210,12 +207,12 @@ struct wm_list *search_wm_list(size_t size, size_t *realsize)
 		}
 	}
 	if (rl)
-		*realsize = rl->sz;
+	    *realsize = rl->sz;
 	read_unlock(&wm_lists_lock);
 	return rl;
 }
 
-struct wm *find_wm(size_t size, const char *name)
+static struct wm *find_wm(size_t size)
 {
 	struct wm_list *wm_list;
 	struct wm *wm;
@@ -232,34 +229,34 @@ struct wm *find_wm(size_t size, const char *name)
 		return NULL;
 
 	while (1) {
+		spin_lock(&wm_list->wm_lock);
 		if (!list_empty(&wm_list->idle_wm)) {
-			spin_lock(&wm_list->wm_lock);
-			wm = list_entry(wm_list->idle_wm.next, struct wm, list);
+			wm = list_entry(wm_list->idle_wm.next,
+					struct wm,
+					list);
 			list_del(&wm->list);
 			spin_unlock(&wm_list->wm_lock);
 			wm->realsize = realsize;
 			return wm;
 		}
 
-		if (atomic_read(&wm_list->avail_wm) > threads) {
-			printk(KERN_INFO "wait1 for release on %s\n", name);
+		if (wm_list->avail_wm > threads) {
+			spin_unlock(&wm_list->wm_lock);
 			wait_event(wm_list->wm_wait,
 				   !list_empty(&wm_list->idle_wm));
-			printk(KERN_INFO "wait1 for release on %s finished\n",
-			       name);
 			continue;
 		}
 
-		atomic_inc(&wm_list->avail_wm);
+		wm_list->avail_wm++;
+		spin_unlock(&wm_list->wm_lock);
 
 		wm = wm_alloc(realsize);
 		if (!wm) {
-			atomic_dec(&wm_list->avail_wm);
-			printk(KERN_INFO "wait for release on %s\n", name);
+			spin_lock(&wm_list->wm_lock);
+			wm_list->avail_wm--;
+			spin_unlock(&wm_list->wm_lock);
 			wait_event(wm_list->wm_wait,
 				   !list_empty(&wm_list->idle_wm));
-			printk(KERN_INFO "wait for release on %s finished\n",
-			       name);
 			continue;
 		}
 		break;
@@ -274,15 +271,16 @@ static void release_wm(struct wm *wm, struct wm_list *wm_list)
 	if (!wm)
 		return;
 
-	if (atomic_read(&wm_list->avail_wm) <= threads) {
-		spin_lock(&wm_list->wm_lock);
+	spin_lock(&wm_list->wm_lock);
+	if (wm_list->avail_wm <= threads) {
 		list_add(&wm->list, &wm_list->idle_wm);
 		spin_unlock(&wm_list->wm_lock);
 		wake_up(&wm_list->wm_wait);
 		return;
 	}
 
-	atomic_dec(&wm_list->avail_wm);
+	wm_list->avail_wm--;
+	spin_unlock(&wm_list->wm_lock);
 	ksmbd_free(wm);
 }
 
@@ -293,9 +291,17 @@ static void wm_list_free(struct wm_list *l)
 	while (!list_empty(&l->idle_wm)) {
 		wm = list_entry(l->idle_wm.next, struct wm, list);
 		list_del(&wm->list);
-		ksmbd_free(wm);
+#if LINUX_VERSION_CODE <= KERNEL_VERSION(5, 0, 0)
+		__free(wm);
+#else
+		kvfree(wm);
+#endif
 	}
-	ksmbd_free(l);
+#if LINUX_VERSION_CODE <= KERNEL_VERSION(5, 0, 0)
+	__free(l);
+#else
+	kvfree(l);
+#endif
 }
 
 static void wm_lists_destroy(void)
@@ -311,7 +317,11 @@ static void wm_lists_destroy(void)
 
 void ksmbd_free_request(void *addr)
 {
-	ksmbd_free(addr);
+#if LINUX_VERSION_CODE <= KERNEL_VERSION(5, 0, 0)
+	__free(addr);
+#else
+	kvfree(addr);
+#endif
 }
 
 void *_ksmbd_alloc_request(size_t size, const char *func, int line)
@@ -323,15 +333,18 @@ void *_ksmbd_alloc_request(size_t size, const char *func, int line)
 	p = kvmalloc(size, GFP_KERNEL);
 #endif
 	if (!p) {
-		printk(KERN_WARNING "%s: allocation failed at %s:%d\n",
-		       __func__, func, line);
+		printk(KERN_WARNING "%s: allocation failed at %s:%d\n", __func__, func, line);
 	}
 	return p;
 }
 
 void ksmbd_free_response(void *buffer)
 {
-	ksmbd_free(buffer);
+#if LINUX_VERSION_CODE <= KERNEL_VERSION(5, 0, 0)
+	__free(buffer);
+#else
+	kvfree(buffer);
+#endif
 }
 
 void *_ksmbd_alloc_response(size_t size, const char *func, int line)
@@ -343,8 +356,7 @@ void *_ksmbd_alloc_response(size_t size, const char *func, int line)
 	p = kvmalloc(size, GFP_KERNEL | __GFP_ZERO);
 #endif
 	if (!p) {
-		printk(KERN_WARNING "%s: allocation failed at %s:%d\n",
-		       __func__, func, line);
+		printk(KERN_WARNING "%s: allocation failed at %s:%d\n", __func__, func, line);
 	}
 	return p;
 }
@@ -353,13 +365,12 @@ void *_ksmbd_find_buffer(size_t size, const char *func, int line)
 {
 	struct wm *wm;
 
-	wm = find_wm(size, func);
+	wm = find_wm(size);
 
 	WARN_ON(!wm);
 	if (wm)
 		return wm->buffer;
-	printk(KERN_WARNING "%s: allocation failed at %s:%d\n", __func__, func,
-	       line);
+	printk(KERN_WARNING "%s: allocation failed at %s:%d\n", __func__, func, line);
 	return NULL;
 }
 
@@ -378,8 +389,7 @@ void ksmbd_release_buffer(void *buffer)
 		release_wm(wm, wm_list);
 }
 
-void *_ksmbd_realloc_response(void *ptr, size_t old_sz, size_t new_sz,
-			      const char *func, int line)
+void *_ksmbd_realloc_response(void *ptr, size_t old_sz, size_t new_sz, const char *func, int line)
 {
 	size_t sz = min(old_sz, new_sz);
 	void *nptr;
@@ -414,7 +424,7 @@ int ksmbd_init_buffer_pools(void)
 	threads = num_online_cpus() * 2;
 	if (ksmbd_work_pool_init())
 		goto out;
-
+	
 	filp_cache = kmem_cache_create("ksmbd_file_cache",
 				       sizeof(struct ksmbd_file), 0,
 				       SLAB_HWCACHE_ALIGN, NULL);

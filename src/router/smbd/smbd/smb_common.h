@@ -243,13 +243,34 @@ struct smb_hdr {
 struct smb_negotiate_req {
 	struct smb_hdr hdr;     /* wct = 0 */
 	__le16 ByteCount;
-	unsigned char DialectsArray[];
+	unsigned char DialectsArray[1];
 } __packed;
 
-struct smb_negotiate_unsupported_rsp {
+struct smb_negotiate_rsp {
 	struct smb_hdr hdr;     /* wct = 17 */
 	__le16 DialectIndex; /* 0xFFFF = no dialect acceptable */
+	__u8 SecurityMode;
+	__le16 MaxMpxCount;
+	__le16 MaxNumberVcs;
+	__le32 MaxBufferSize;
+	__le32 MaxRawSize;
+	__le32 SessionKey;
+	__le32 Capabilities;    /* see below */
+	__le32 SystemTimeLow;
+	__le32 SystemTimeHigh;
+	__le16 ServerTimeZone;
+	__u8 EncryptionKeyLength;
 	__le16 ByteCount;
+	union {
+		unsigned char EncryptionKey[8]; /* cap extended security off */
+		/* followed by Domain name - if extended security is off */
+		/* followed by 16 bytes of server GUID */
+		/* then security blob if cap_extended_security negotiated */
+		struct {
+			unsigned char GUID[SMB1_CLIENT_GUID_SIZE];
+			unsigned char SecurityBlob[1];
+		} __packed extended_response;
+	} __packed u;
 } __packed;
 
 struct filesystem_attribute_info {
@@ -278,14 +299,6 @@ struct filesystem_info {
 	__le32 SectorsPerAllocationUnit;
 	__le32 BytesPerSector;
 } __packed;     /* size info, level 0x103 */
-
-struct filesystem_full_info {
-	__le64 TotalAllocationUnits;
-	__le64 FreeAllocationUnits;
-	__le64 ActualAvailableUnits;
-	__le32 SectorsPerAllocationUnit;
-	__le32 BytesPerSector;
-} __packed;     /* size info, level 0x3ef */
 
 #define EXTENDED_INFO_MAGIC 0x43667364	/* Cfsd */
 #define STRING_LENGTH 28

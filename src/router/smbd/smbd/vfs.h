@@ -229,8 +229,8 @@ static int ksmbd_vfs_query_maximal_access(struct user_namespace *user_ns,
 				   struct dentry *dentry, __le32 *daccess);
 static int ksmbd_vfs_create(struct ksmbd_work *work, const char *name, umode_t mode);
 static int ksmbd_vfs_mkdir(struct ksmbd_work *work, const char *name, umode_t mode);
-static int ksmbd_vfs_read(struct ksmbd_work *work, struct ksmbd_file *fp, size_t count,
-		   loff_t *pos, char *rbuf);
+static int ksmbd_vfs_read(struct ksmbd_work *work, struct ksmbd_file *fp,
+		size_t count, loff_t *pos);
 static int ksmbd_vfs_write(struct ksmbd_work *work, struct ksmbd_file *fp,
 		char *buf, size_t count, loff_t *pos, bool sync,
 		ssize_t *written);
@@ -335,9 +335,9 @@ static struct posix_acl *ksmbd_vfs_get_acl(struct inode *inode, int type);
 static int ksmbd_vfs_set_posix_acl(struct inode *inode, int type,
 		struct posix_acl *acl);
 static int ksmbd_vfs_set_init_posix_acl(struct user_namespace *user_ns,
-				 struct dentry *dentry);
+				 struct inode *inode);
 static int ksmbd_vfs_inherit_posix_acl(struct user_namespace *user_ns,
-				struct dentry *dentry,
+				struct inode *inode,
 		struct inode *parent_inode);
 static void ksmbd_vfs_sector_size(struct inode *inode,
 			   struct ksmbd_fs_sector_size *fs_ss);

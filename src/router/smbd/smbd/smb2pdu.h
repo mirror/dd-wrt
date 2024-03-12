@@ -109,14 +109,12 @@
 
 #define SMB2_PROTO_NUMBER cpu_to_le32(0x424d53fe) /* 'B''M''S' */
 #define SMB2_TRANSFORM_PROTO_NUM cpu_to_le32(0x424d53fd)
-#define SMB2_COMPRESSION_TRANSFORM_ID cpu_to_le32(0x424d53fc)
 
 #define SMB21_DEFAULT_IOSIZE	(1024 * 1024)
 #define SMB3_DEFAULT_IOSIZE	(4 * 1024 * 1024)
 #define SMB3_DEFAULT_TRANS_SIZE	(1024 * 1024)
-#define SMB3_MIN_IOSIZE		(64 * 1024)
-#define SMB3_MAX_IOSIZE		(8 * 1024 * 1024)
-#define SMB3_MAX_MSGSIZE	(4 * 4096)
+#define SMB3_MIN_IOSIZE	(64 * 1024)
+#define SMB3_MAX_IOSIZE	(8 * 1024 * 1024)
 
 /*
  * SMB2 Header Definition
@@ -213,7 +211,7 @@ struct smb2_negotiate_req {
 	__le32 NegotiateContextOffset; /* SMB3.1.1 only. MBZ earlier */
 	__le16 NegotiateContextCount;  /* SMB3.1.1 only. MBZ earlier */
 	__le16 Reserved2;
-	__le16 Dialects[]; /* One dialect (vers=) at a time for now */
+	__le16 Dialects[1]; /* One dialect (vers=) at a time for now */
 } __packed;
 
 /* SecurityMode flags */
@@ -271,15 +269,6 @@ struct smb2_neg_context {
 	__le32  Reserved;
 	/* Followed by array of data */
 } __packed;
-
-/*
- * SaltLength that the server send can be zero, so the only three required
- * fields (all __le16) end up six bytes total, so the minimum context data len
- * in the response is six bytes which accounts for
- *
- *      HashAlgorithmCount, SaltLength, and 1 HashAlgorithm.
- */
-#define MIN_PREAUTH_CTXT_DATA_LEN 6
 
 struct smb2_preauth_neg_context {
 	__le16	ContextType; /* 1 */
@@ -365,7 +354,7 @@ struct smb2_negotiate_rsp {
 	__le16 SecurityBufferOffset;
 	__le16 SecurityBufferLength;
 	__le32 NegotiateContextOffset;	/* Pre:SMB3.1.1 was reserved/ignored */
-	__u8   Buffer[];	/* variable length GSS security buffer */
+	__u8   Buffer[1];	/* variable length GSS security buffer */
 } __packed;
 
 /* Flags */
@@ -902,7 +891,7 @@ struct smb2_ioctl_req {
 	__le32 MaxOutputResponse;
 	__le32 Flags;
 	__le32 Reserved2;
-	__u8   Buffer[];
+	__u8   Buffer[1];
 } __packed;
 
 struct smb2_ioctl_rsp {
@@ -918,7 +907,7 @@ struct smb2_ioctl_rsp {
 	__le32 OutputCount;
 	__le32 Flags;
 	__le32 Reserved2;
-	__u8   Buffer[];
+	__u8   Buffer[1];
 } __packed;
 
 struct validate_negotiate_info_req {
@@ -1559,7 +1548,7 @@ struct smb2_ea_info {
 	__u8   Flags;
 	__u8   EaNameLength;
 	__le16 EaValueLength;
-	char name[];
+	char name[1];
 	/* optionally followed by value */
 } __packed; /* level 15 Query */
 
@@ -1666,7 +1655,6 @@ static int find_matching_smb2_dialect(int start_index, __le16 *cli_dialects,
 static struct file_lock *smb_flock_init(struct file *f);
 static int setup_async_work(struct ksmbd_work *work, void (*fn)(void **),
 		     void **arg);
-static void release_async_work(struct ksmbd_work *work);
 static void smb2_send_interim_resp(struct ksmbd_work *work, __le32 status);
 static struct channel *lookup_chann_list(struct ksmbd_session *sess,
 				  struct ksmbd_conn *conn);

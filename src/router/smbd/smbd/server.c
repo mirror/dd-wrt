@@ -121,10 +121,8 @@ static int __process_request(struct ksmbd_work *work, struct ksmbd_conn *conn,
 	if (check_conn_state(work))
 		return SERVER_HANDLER_CONTINUE;
 
-	if (ksmbd_verify_smb_message(work)) {
-		conn->ops->set_rsp_status(work, STATUS_INVALID_PARAMETER);
+	if (ksmbd_verify_smb_message(work))
 		return SERVER_HANDLER_ABORT;
-	}
 
 	command = conn->ops->get_cmd_val(work);
 	*cmd = command;
@@ -171,7 +169,6 @@ static void __handle_ksmbd_work(struct ksmbd_work *work,
 {
 	u16 command = 0;
 	int rc;
-	bool is_chained = false;
 
 	if (conn->ops->allocate_rsp_buf(work))
 		return;
@@ -194,31 +191,24 @@ static void __handle_ksmbd_work(struct ksmbd_work *work,
 		goto send;
 	}
 
-	do {
-		if (conn->ops->check_user_session) {
-			rc = conn->ops->check_user_session(work);
+	if (conn->ops->check_user_session) {
+		rc = conn->ops->check_user_session(work);
+		if (rc < 0) {
+			command = conn->ops->get_cmd_val(work);
+			conn->ops->set_rsp_status(work,
+					STATUS_USER_SESSION_DELETED);
+			goto send;
+		} else if (rc > 0) {
+			rc = conn->ops->get_ksmbd_tcon(work);
 			if (rc < 0) {
-				if (rc == -EINVAL)
-					conn->ops->set_rsp_status(work,
-						STATUS_INVALID_PARAMETER);
-				else
-					conn->ops->set_rsp_status(work,
-						STATUS_USER_SESSION_DELETED);
+				conn->ops->set_rsp_status(work,
+					STATUS_NETWORK_NAME_DELETED);
 				goto send;
-			} else if (rc > 0) {
-				rc = conn->ops->get_ksmbd_tcon(work);
-				if (rc < 0) {
-					if (rc == -EINVAL)
-						conn->ops->set_rsp_status(work,
-							STATUS_INVALID_PARAMETER);
-					else
-						conn->ops->set_rsp_status(work,
-							STATUS_NETWORK_NAME_DELETED);
-					goto send;
-				}
 			}
 		}
+	}
 
+	do {
 		rc = __process_request(work, conn, &command);
 		if (rc == SERVER_HANDLER_ABORT)
 			break;
@@ -238,13 +228,14 @@ static void __handle_ksmbd_work(struct ksmbd_work *work,
 			}
 		}
 
-		is_chained = is_chained_smb2_message(work);
-
 		if (work->sess &&
 		    (work->sess->sign || smb3_11_final_sess_setup_resp(work) ||
 		     conn->ops->is_sign_req(work, command)))
 			conn->ops->set_sign_rsp(work);
-	} while (is_chained == true);
+	} while (is_chained_smb2_message(work));
+
+	if (work->send_no_response)
+		return;
 
 send:
 	smb3_preauth_hash_rsp(work);
@@ -294,7 +285,6 @@ static void handle_ksmbd_work(struct work_struct *wk)
 static int queue_ksmbd_work(struct ksmbd_conn *conn)
 {
 	struct ksmbd_work *work;
-	int err;
 
 	work = ksmbd_alloc_work_struct();
 	if (!work) {
@@ -306,10 +296,9 @@ static int queue_ksmbd_work(struct ksmbd_conn *conn)
 	work->request_buf = conn->request_buf;
 	conn->request_buf = NULL;
 
-	err = ksmbd_init_smb_server(work);
-	if (err) {
+	if (ksmbd_init_smb_server(work)) {
 		ksmbd_free_work_struct(work);
-		return 0;
+		return -EINVAL;
 	}
 
 	ksmbd_conn_enqueue_request(work);
@@ -540,9 +529,7 @@ ATTRIBUTE_GROUPS(ksmbd_control_class);
 
 static struct class ksmbd_control_class = {
 	.name		= "ksmbd-control",
-#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 4, 0)
 	.owner		= THIS_MODULE,
-#endif
 	.class_groups	= ksmbd_control_class_groups,
 };
 #else
@@ -639,7 +626,6 @@ err_unregister:
 static void __exit ksmbd_server_exit(void)
 {
 	ksmbd_server_shutdown();
-	rcu_barrier();
 	ksmbd_release_inode_hash();
 }
 

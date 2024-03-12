@@ -6,13 +6,10 @@
 
 #include <linux/kernel.h>
 #include <linux/fs.h>
-#include <linux/version.h>
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
-#include <linux/filelock.h>
-#endif
 #include <linux/uaccess.h>
 #include <linux/backing-dev.h>
 #include <linux/writeback.h>
+#include <linux/version.h>
 #include <linux/xattr.h>
 #include <linux/falloc.h>
 #include <linux/genhd.h>
@@ -52,7 +49,6 @@ extern int vfs_path_lookup(struct dentry *, struct vfsmount *,
 			   const char *, unsigned int, struct path *);
 #endif
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 4, 0)
 static char *extract_last_component(char *path)
 {
 	char *p = strrchr(path, '/');
@@ -65,7 +61,6 @@ static char *extract_last_component(char *path)
 	}
 	return p;
 }
-#endif
 
 static void ksmbd_vfs_inherit_owner(struct ksmbd_work *work,
 				    struct inode *parent_inode,
@@ -133,11 +128,7 @@ out_lock:
 	return ret;
 }
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
-int ksmbd_vfs_query_maximal_access(struct mnt_idmap *idmap,
-#else
 int ksmbd_vfs_query_maximal_access(struct user_namespace *user_ns,
-#endif
 				   struct dentry *dentry, __le32 *daccess)
 {
 	struct dentry *parent, *child;
@@ -146,11 +137,7 @@ int ksmbd_vfs_query_maximal_access(struct user_namespace *user_ns,
 	*daccess = cpu_to_le32(FILE_READ_ATTRIBUTES | READ_CONTROL);
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0)
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
-	if (!inode_permission(idmap, d_inode(dentry), MAY_OPEN | MAY_WRITE))
-#else
 	if (!inode_permission(user_ns, d_inode(dentry), MAY_OPEN | MAY_WRITE))
-#endif
 #else
 	if (!inode_permission(d_inode(dentry), MAY_OPEN | MAY_WRITE))
 #endif
@@ -202,77 +189,6 @@ out_lock:
 	return ret;
 }
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 4, 0)
-/**
- * ksmbd_vfs_lock_parent() - lock parent dentry if it is stable
- */
-int ksmbd_vfs_lock_parent(struct dentry *parent, struct dentry *child)
-{
-	inode_lock_nested(d_inode(parent), I_MUTEX_PARENT);
-	if (child->d_parent != parent) {
-		inode_unlock(d_inode(parent));
-		return -ENOENT;
-	}
-
-	return 0;
-}
-
-static int ksmbd_vfs_path_lookup_locked(struct ksmbd_share_config *share_conf,
-					char *pathname, unsigned int flags,
-					struct path *path)
-{
-	struct qstr last;
-	struct filename *filename;
-	struct path *root_share_path = &share_conf->vfs_path;
-	int err, type;
-	struct path parent_path;
-	struct dentry *d;
-
-	if (pathname[0] == '\0') {
-		pathname = share_conf->path;
-		root_share_path = NULL;
-	} else {
-		flags |= LOOKUP_BENEATH;
-	}
-
-	filename = getname_kernel(pathname);
-	if (IS_ERR(filename))
-		return PTR_ERR(filename);
-
-	err = vfs_path_parent_lookup(filename, flags,
-				     &parent_path, &last, &type,
-				     root_share_path);
-	putname(filename);
-	if (err)
-		return err;
-
-	if (unlikely(type != LAST_NORM)) {
-		path_put(&parent_path);
-		return -ENOENT;
-	}
-
-	inode_lock_nested(parent_path.dentry->d_inode, I_MUTEX_PARENT);
-	d = lookup_one_qstr_excl(&last, parent_path.dentry, 0);
-	if (IS_ERR(d))
-		goto err_out;
-
-	if (d_is_negative(d)) {
-		dput(d);
-		goto err_out;
-	}
-
-	path->dentry = d;
-	path->mnt = share_conf->vfs_path.mnt;
-	path_put(&parent_path);
-
-	return 0;
-
-err_out:
-	inode_unlock(parent_path.dentry->d_inode);
-	path_put(&parent_path);
-	return -ENOENT;
-}
-#else
 /**
  * ksmbd_vfs_create() - vfs helper for smb create file
  * @work:	work
@@ -299,13 +215,7 @@ int ksmbd_vfs_create(struct ksmbd_work *work, const char *name, umode_t mode)
 
 	mode |= S_IFREG;
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0)
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
-	err = vfs_create(mnt_idmap(path.mnt), d_inode(path.dentry),
-			 dentry, mode, true);
-#else
-	err = vfs_create(mnt_user_ns(path.mnt), d_inode(path.dentry),
-			 dentry, mode, true);
-#endif
+	err = vfs_create(mnt_user_ns(path.mnt), d_inode(path.dentry), dentry, mode, true);
 #else
 	err = vfs_create(d_inode(path.dentry), dentry, mode, true);
 #endif
@@ -380,14 +290,8 @@ int ksmbd_vfs_mkdir(struct ksmbd_work *work, const char *name, umode_t mode)
 	done_path_create(&path, dentry);
 	return err;
 }
-#endif
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 4, 0)
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
-static ssize_t ksmbd_vfs_getcasexattr(struct mnt_idmap *idmap,
-#else
 static ssize_t ksmbd_vfs_getcasexattr(struct user_namespace *user_ns,
-#endif
 				      struct dentry *dentry, char *attr_name,
 				      int attr_name_len, char **attr_value)
 {
@@ -404,11 +308,7 @@ static ssize_t ksmbd_vfs_getcasexattr(struct user_namespace *user_ns,
 		if (strncasecmp(attr_name, name, attr_name_len))
 			continue;
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
-		value_len = ksmbd_vfs_getxattr(idmap,
-#else
 		value_len = ksmbd_vfs_getxattr(user_ns,
-#endif
 					       dentry,
 					       name,
 					       attr_value);
@@ -431,11 +331,7 @@ static int ksmbd_vfs_stream_read(struct ksmbd_file *fp, char *buf, loff_t *pos,
 	ksmbd_debug(VFS, "read stream data pos : %llu, count : %zd\n",
 		    *pos, count);
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
-	v_len = ksmbd_vfs_getcasexattr(file_mnt_idmap(fp->filp),
-#else
 	v_len = ksmbd_vfs_getcasexattr(file_mnt_user_ns(fp->filp),
-#endif
 				       fp->filp->f_path.dentry,
 				       fp->stream.name,
 				       fp->stream.size,
@@ -519,11 +415,7 @@ static int check_lock_range(struct file *filp, loff_t start, loff_t end,
 		unsigned char type)
 {
 	struct file_lock *flock;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 2, 0)
-	struct file_lock_context *ctx = locks_inode_context(file_inode(filp));
-#else
 	struct file_lock_context *ctx = file_inode(filp)->i_flctx;
-#endif
 	int error = 0;
 
 	if (!ctx || list_empty_careful(&ctx->flc_posix))
@@ -564,11 +456,12 @@ out:
  * Return:	number of read bytes on success, otherwise error
  */
 int ksmbd_vfs_read(struct ksmbd_work *work, struct ksmbd_file *fp, size_t count,
-		   loff_t *pos, char *rbuf)
+		   loff_t *pos)
 {
 	struct file *filp = fp->filp;
 	ssize_t nbytes = 0;
 	char *name;
+	char *rbuf = work->aux_payload_buf;
 	struct inode *inode = d_inode(filp->f_path.dentry);
 	char namebuf[NAME_MAX];
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 14, 0)
@@ -627,13 +520,8 @@ static int ksmbd_vfs_stream_write(struct ksmbd_file *fp, char *buf, loff_t *pos,
 				  size_t count)
 {
 	char *stream_buf = NULL, *wbuf;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
-	struct mnt_idmap *idmap = file_mnt_idmap(fp->filp);
-#else
 	struct user_namespace *user_ns = file_mnt_user_ns(fp->filp);
-#endif
-	size_t size;
-	ssize_t v_len;
+	size_t size, v_len;
 	int err = 0;
 
 	ksmbd_debug(VFS, "write stream data pos : %llu, count : %zd\n",
@@ -645,18 +533,14 @@ static int ksmbd_vfs_stream_write(struct ksmbd_file *fp, char *buf, loff_t *pos,
 		count = (*pos + count) - XATTR_SIZE_MAX;
 	}
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
-	v_len = ksmbd_vfs_getcasexattr(idmap,
-#else
 	v_len = ksmbd_vfs_getcasexattr(user_ns,
-#endif
 				       fp->filp->f_path.dentry,
 				       fp->stream.name,
 				       fp->stream.size,
 				       &stream_buf);
-	if (v_len < 0) {
+	if ((int)v_len < 0) {
 		pr_err("not found stream in xattr : %zd\n", v_len);
-		err = v_len;
+		err = (int)v_len;
 		goto out;
 	}
 
@@ -676,11 +560,7 @@ static int ksmbd_vfs_stream_write(struct ksmbd_file *fp, char *buf, loff_t *pos,
 
 	memcpy(&stream_buf[*pos], buf, count);
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
-	err = ksmbd_vfs_setxattr(idmap,
-#else
 	err = ksmbd_vfs_setxattr(user_ns,
-#endif
 				 fp->filp->f_path.dentry,
 				 fp->stream.name,
 				 (void *)stream_buf,
@@ -981,10 +861,11 @@ int ksmbd_vfs_symlink(struct ksmbd_work *work, const char *name,
 int ksmbd_vfs_readlink(struct path *path, char *buf, int lenp)
 {
 	struct inode *inode;
-	int err, len;
+	int err;
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 10, 0)
 	const char *link;
 	DEFINE_DELAYED_CALL(done);
+	int len;
 #else
 	mm_segment_t old_fs;
 #endif
@@ -1011,19 +892,16 @@ int ksmbd_vfs_readlink(struct path *path, char *buf, int lenp)
 	memcpy(buf, link, len);
 	do_delayed_call(&done);
 
-	return len;
+	return 0;
 #else
 	old_fs = get_fs();
 	set_fs(KERNEL_DS);
 	err = inode->i_op->readlink(path->dentry, (char __user *)buf, lenp);
 	set_fs(old_fs);
-	if (err < 0) {
+	if (err < 0)
 		pr_err("readlink failed, err = %d\n", err);
-		return err;
-	}
-	len = lenp;
 
-	return len;
+	return err;
 #endif
 }
 
@@ -1245,40 +1123,7 @@ static int ksmbd_validate_entry_in_use(struct dentry *src_dent)
 
 	return 0;
 }
-#endif
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 4, 0)
-void ksmbd_vfs_query_maximal_access(struct mnt_idmap *idmap,
-				   struct dentry *dentry, __le32 *daccess)
-{
-	*daccess = cpu_to_le32(FILE_READ_ATTRIBUTES | READ_CONTROL);
-
-	if (!inode_permission(idmap, d_inode(dentry), MAY_OPEN | MAY_WRITE))
-		*daccess |= cpu_to_le32(WRITE_DAC | WRITE_OWNER | SYNCHRONIZE |
-				FILE_WRITE_DATA | FILE_APPEND_DATA |
-				FILE_WRITE_EA | FILE_WRITE_ATTRIBUTES |
-				FILE_DELETE_CHILD);
-
-	if (!inode_permission(idmap, d_inode(dentry), MAY_OPEN | MAY_READ))
-		*daccess |= FILE_READ_DATA_LE | FILE_READ_EA_LE;
-
-	if (!inode_permission(idmap, d_inode(dentry), MAY_OPEN | MAY_EXEC))
-		*daccess |= FILE_EXECUTE_LE;
-
-	if (!inode_permission(idmap, d_inode(dentry->d_parent), MAY_EXEC | MAY_WRITE))
-		*daccess |= FILE_DELETE_LE;
-}
-#else
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
-static int __ksmbd_vfs_rename(struct ksmbd_work *work,
-			      struct mnt_idmap *src_idmap,
-			      struct dentry *src_dent_parent,
-			      struct dentry *src_dent,
-			      struct mnt_idmap *dst_idmap,
-			      struct dentry *dst_dent_parent,
-			      struct dentry *trap_dent,
-			      char *dst_name)
-#else
 static int __ksmbd_vfs_rename(struct ksmbd_work *work,
 			      struct user_namespace *src_user_ns,
 			      struct dentry *src_dent_parent,
@@ -1287,7 +1132,6 @@ static int __ksmbd_vfs_rename(struct ksmbd_work *work,
 			      struct dentry *dst_dent_parent,
 			      struct dentry *trap_dent,
 			      char *dst_name)
-#endif
 {
 	struct dentry *dst_dent;
 	int err;
@@ -1322,16 +1166,6 @@ static int __ksmbd_vfs_rename(struct ksmbd_work *work,
 	err = -ENOTEMPTY;
 	if (dst_dent != trap_dent && !d_really_is_positive(dst_dent)) {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0)
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
-		struct renamedata rd = {
-			.old_mnt_idmap	= src_idmap,
-			.old_dir	= d_inode(src_dent_parent),
-			.old_dentry	= src_dent,
-			.new_mnt_idmap	= dst_idmap,
-			.new_dir	= d_inode(dst_dent_parent),
-			.new_dentry	= dst_dent,
-		};
-#else
 		struct renamedata rd = {
 			.old_mnt_userns	= src_user_ns,
 			.old_dir	= d_inode(src_dent_parent),
@@ -1340,7 +1174,6 @@ static int __ksmbd_vfs_rename(struct ksmbd_work *work,
 			.new_dir	= d_inode(dst_dent_parent),
 			.new_dentry	= dst_dent,
 		};
-#endif
 		err = vfs_rename(&rd);
 #else
 		err = vfs_rename(d_inode(src_dent_parent),
@@ -1404,16 +1237,6 @@ int ksmbd_vfs_fp_rename(struct ksmbd_work *work, struct ksmbd_file *fp,
 	}
 	dput(src_child);
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
-	err = __ksmbd_vfs_rename(work,
-				 idmap,
-				 src_dent_parent,
-				 src_dent,
-				 mnt_idmap(dst_path.mnt),
-				 dst_dent_parent,
-				 trap_dent,
-				 dst_name);
-#else
 	err = __ksmbd_vfs_rename(work,
 				 file_mnt_user_ns(fp->filp),
 				 src_dent_parent,
@@ -1422,7 +1245,6 @@ int ksmbd_vfs_fp_rename(struct ksmbd_work *work, struct ksmbd_file *fp,
 				 dst_dent_parent,
 				 trap_dent,
 				 dst_name);
-#endif
 out_lock:
 	dput(src_dent);
 	dput(dst_dent_parent);
@@ -1515,19 +1337,11 @@ ssize_t ksmbd_vfs_listxattr(struct dentry *dentry, char **list)
 	return size;
 }
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
-static ssize_t ksmbd_vfs_xattr_len(struct mnt_idmap *idmap,
-#else
 static ssize_t ksmbd_vfs_xattr_len(struct user_namespace *user_ns,
-#endif
 				   struct dentry *dentry, char *xattr_name)
 {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0)
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
-	return vfs_getxattr(idmap, dentry, xattr_name, NULL, 0);
-#else
 	return vfs_getxattr(user_ns, dentry, xattr_name, NULL, 0);
-#endif
 #else
 	return vfs_getxattr(dentry, xattr_name, NULL, 0);
 #endif
@@ -1535,22 +1349,14 @@ static ssize_t ksmbd_vfs_xattr_len(struct user_namespace *user_ns,
 
 /**
  * ksmbd_vfs_getxattr() - vfs helper for smb get extended attributes value
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
-+  @idmap:	idmap
-#else
 +  @user_ns:	user namespace
-#endif
  * @dentry:	dentry of file for getting xattrs
  * @xattr_name:	name of xattr name to query
  * @xattr_buf:	destination buffer xattr value
  *
  * Return:	read xattr value length on success, otherwise error
  */
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
-ssize_t ksmbd_vfs_getxattr(struct mnt_idmap *idmap,
-#else
 ssize_t ksmbd_vfs_getxattr(struct user_namespace *user_ns,
-#endif
 			   struct dentry *dentry,
 			   char *xattr_name, char **xattr_buf)
 {
@@ -1558,11 +1364,7 @@ ssize_t ksmbd_vfs_getxattr(struct user_namespace *user_ns,
 	char *buf;
 
 	*xattr_buf = NULL;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
-	xattr_len = ksmbd_vfs_xattr_len(idmap, dentry, xattr_name);
-#else
 	xattr_len = ksmbd_vfs_xattr_len(user_ns, dentry, xattr_name);
-#endif
 	if (xattr_len < 0)
 		return xattr_len;
 
@@ -1573,11 +1375,7 @@ ssize_t ksmbd_vfs_getxattr(struct user_namespace *user_ns,
 	}
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0)
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
-	xattr_len = vfs_getxattr(idmap, dentry, xattr_name,
-#else
 	xattr_len = vfs_getxattr(user_ns, dentry, xattr_name,
-#endif
 				 (void *)buf, xattr_len);
 #else
 	xattr_len = vfs_getxattr(dentry, xattr_name, (void *)buf, xattr_len);
@@ -1591,24 +1389,16 @@ ssize_t ksmbd_vfs_getxattr(struct user_namespace *user_ns,
 
 /**
  * ksmbd_vfs_setxattr() - vfs helper for smb set extended attributes value
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
- * @idmap:	idmap of the relevant mount
-#else
  * @user_ns:	user namespace
-#endif
- * @path:	path of dentry to set XATTR at
- * @attr_name:	xattr name for setxattr
- * @attr_value:	xattr value to set
- * @attr_size:	size of xattr value
+ * @dentry:	dentry to set XATTR at
+ * @name:	xattr name for setxattr
+ * @value:	xattr value to set
+ * @size:	size of xattr value
  * @flags:	destination buffer length
  *
  * Return:	0 on success, otherwise error
  */
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
-int ksmbd_vfs_setxattr(struct mnt_idmap *idmap,
-#else
 int ksmbd_vfs_setxattr(struct user_namespace *user_ns,
-#endif
 		       struct dentry *dentry, const char *attr_name,
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 0, 0)
 		       void *attr_value, size_t attr_size, int flags)
@@ -1619,11 +1409,7 @@ int ksmbd_vfs_setxattr(struct user_namespace *user_ns,
 	int err;
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0)
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
-	err = vfs_setxattr(idmap,
-#else
 	err = vfs_setxattr(user_ns,
-#endif
 			   dentry,
 #else
 	err = vfs_setxattr(dentry,
@@ -1702,13 +1488,8 @@ struct dentry *ksmbd_vfs_kern_path_create(struct ksmbd_work *work,
 	return dent;
 }
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
-int ksmbd_vfs_remove_acl_xattrs(struct mnt_idmap *idmap,
-				struct dentry *dentry)
-#else
 int ksmbd_vfs_remove_acl_xattrs(struct user_namespace *user_ns,
 				struct dentry *dentry)
-#endif
 {
 	char *name, *xattr_list = NULL;
 	ssize_t xattr_list_len;
@@ -1730,15 +1511,7 @@ int ksmbd_vfs_remove_acl_xattrs(struct user_namespace *user_ns,
 			     sizeof(XATTR_NAME_POSIX_ACL_ACCESS) - 1) ||
 		    !strncmp(name, XATTR_NAME_POSIX_ACL_DEFAULT,
 			     sizeof(XATTR_NAME_POSIX_ACL_DEFAULT) - 1)) {
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 2, 0)
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
-			err = vfs_remove_acl(idmap, dentry, name);
-#else
-			err = vfs_remove_acl(user_ns, dentry, name);
-#endif
-#else
 			err = ksmbd_vfs_remove_xattr(user_ns, dentry, name);
-#endif
 			if (err)
 				ksmbd_debug(SMB,
 					    "remove acl xattr failed : %s\n", name);
@@ -1749,11 +1522,7 @@ out:
 	return err;
 }
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
-int ksmbd_vfs_remove_sd_xattrs(struct mnt_idmap *idmap,
-#else
 int ksmbd_vfs_remove_sd_xattrs(struct user_namespace *user_ns,
-#endif
 			       struct dentry *dentry)
 {
 	char *name, *xattr_list = NULL;
@@ -1773,11 +1542,7 @@ int ksmbd_vfs_remove_sd_xattrs(struct user_namespace *user_ns,
 		ksmbd_debug(SMB, "%s, len %zd\n", name, strlen(name));
 
 		if (!strncmp(name, XATTR_NAME_SD, XATTR_NAME_SD_LEN)) {
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
-			err = ksmbd_vfs_remove_xattr(idmap, dentry, name);
-#else
 			err = ksmbd_vfs_remove_xattr(user_ns, dentry, name);
-#endif
 			if (err)
 				ksmbd_debug(SMB, "remove xattr failed : %s\n", name);
 		}
@@ -1787,11 +1552,7 @@ out:
 	return err;
 }
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
-static struct xattr_smb_acl *ksmbd_vfs_make_xattr_posix_acl(struct mnt_idmap *idmap,
-#else
 static struct xattr_smb_acl *ksmbd_vfs_make_xattr_posix_acl(struct user_namespace *user_ns,
-#endif
 							    struct inode *inode,
 							    int acl_type)
 {
@@ -1821,22 +1582,14 @@ static struct xattr_smb_acl *ksmbd_vfs_make_xattr_posix_acl(struct user_namespac
 		switch (pa_entry->e_tag) {
 		case ACL_USER:
 			xa_entry->type = SMB_ACL_USER;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
-			xa_entry->uid = posix_acl_uid_translate(idmap, pa_entry);
-#else
 			xa_entry->uid = posix_acl_uid_translate(user_ns, pa_entry);
-#endif
 			break;
 		case ACL_USER_OBJ:
 			xa_entry->type = SMB_ACL_USER_OBJ;
 			break;
 		case ACL_GROUP:
 			xa_entry->type = SMB_ACL_GROUP;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
-			xa_entry->gid = posix_acl_gid_translate(idmap, pa_entry);
-#else
 			xa_entry->gid = posix_acl_gid_translate(user_ns, pa_entry);
-#endif
 			break;
 		case ACL_GROUP_OBJ:
 			xa_entry->type = SMB_ACL_GROUP_OBJ;
@@ -1865,11 +1618,7 @@ out:
 }
 
 int ksmbd_vfs_set_sd_xattr(struct ksmbd_conn *conn,
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
-			   struct mnt_idmap *idmap,
-#else
 			   struct user_namespace *user_ns,
-#endif
 			   struct dentry *dentry,
 			   struct smb_ntsd *pntsd, int len)
 {
@@ -1906,25 +1655,13 @@ int ksmbd_vfs_set_sd_xattr(struct ksmbd_conn *conn,
 		return rc;
 	}
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
-	smb_acl = ksmbd_vfs_make_xattr_posix_acl(idmap, inode,
-#else
 	smb_acl = ksmbd_vfs_make_xattr_posix_acl(user_ns, inode,
-#endif
 						 ACL_TYPE_ACCESS);
 	if (S_ISDIR(inode->i_mode))
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
-		def_smb_acl = ksmbd_vfs_make_xattr_posix_acl(idmap, inode,
-#else
 		def_smb_acl = ksmbd_vfs_make_xattr_posix_acl(user_ns, inode,
-#endif
 							     ACL_TYPE_DEFAULT);
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
-	rc = ndr_encode_posix_acl(&acl_ndr, idmap, inode,
-#else
 	rc = ndr_encode_posix_acl(&acl_ndr, user_ns, inode,
-#endif
 				  smb_acl, def_smb_acl);
 	if (rc) {
 		pr_err("failed to encode ndr to posix acl\n");
@@ -1944,11 +1681,7 @@ int ksmbd_vfs_set_sd_xattr(struct ksmbd_conn *conn,
 		goto out;
 	}
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
-	rc = ksmbd_vfs_setxattr(idmap, dentry,
-#else
 	rc = ksmbd_vfs_setxattr(user_ns, dentry,
-#endif
 				XATTR_NAME_SD, sd_ndr.data,
 				sd_ndr.offset, 0);
 	if (rc < 0)
@@ -1963,11 +1696,7 @@ out:
 }
 
 int ksmbd_vfs_get_sd_xattr(struct ksmbd_conn *conn,
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
-			   struct mnt_idmap *idmap,
-#else
 			   struct user_namespace *user_ns,
-#endif
 			   struct dentry *dentry,
 			   struct smb_ntsd **pntsd)
 {
@@ -1979,11 +1708,7 @@ int ksmbd_vfs_get_sd_xattr(struct ksmbd_conn *conn,
 	struct xattr_smb_acl *smb_acl = NULL, *def_smb_acl = NULL;
 	__u8 cmp_hash[XATTR_SD_HASH_SIZE] = {0};
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
-	rc = ksmbd_vfs_getxattr(idmap, dentry, XATTR_NAME_SD, &n.data);
-#else
 	rc = ksmbd_vfs_getxattr(user_ns, dentry, XATTR_NAME_SD, &n.data);
-#endif
 	if (rc <= 0)
 		return rc;
 
@@ -1992,25 +1717,13 @@ int ksmbd_vfs_get_sd_xattr(struct ksmbd_conn *conn,
 	if (rc)
 		goto free_n_data;
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
-	smb_acl = ksmbd_vfs_make_xattr_posix_acl(idmap, inode,
-#else
 	smb_acl = ksmbd_vfs_make_xattr_posix_acl(user_ns, inode,
-#endif
 						 ACL_TYPE_ACCESS);
 	if (S_ISDIR(inode->i_mode))
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
-		def_smb_acl = ksmbd_vfs_make_xattr_posix_acl(idmap, inode,
-#else
 		def_smb_acl = ksmbd_vfs_make_xattr_posix_acl(user_ns, inode,
-#endif
 							     ACL_TYPE_DEFAULT);
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
-	rc = ndr_encode_posix_acl(&acl_ndr, idmap, inode, smb_acl,
-#else
 	rc = ndr_encode_posix_acl(&acl_ndr, user_ns, inode, smb_acl,
-#endif
 				  def_smb_acl);
 	if (rc) {
 		pr_err("failed to encode ndr to posix acl\n");
@@ -2057,11 +1770,7 @@ free_n_data:
 	return rc;
 }
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
-int ksmbd_vfs_set_dos_attrib_xattr(struct mnt_idmap *idmap,
-#else
 int ksmbd_vfs_set_dos_attrib_xattr(struct user_namespace *user_ns,
-#endif
 				   struct dentry *dentry,
 				   struct xattr_dos_attrib *da)
 {
@@ -2072,11 +1781,7 @@ int ksmbd_vfs_set_dos_attrib_xattr(struct user_namespace *user_ns,
 	if (err)
 		return err;
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
-	err = ksmbd_vfs_setxattr(idmap, dentry, XATTR_NAME_DOS_ATTRIBUTE,
-#else
 	err = ksmbd_vfs_setxattr(user_ns, dentry, XATTR_NAME_DOS_ATTRIBUTE,
-#endif
 				 (void *)n.data, n.offset, 0);
 	if (err)
 		ksmbd_debug(SMB, "failed to store dos attribute in xattr\n");
@@ -2085,22 +1790,14 @@ int ksmbd_vfs_set_dos_attrib_xattr(struct user_namespace *user_ns,
 	return err;
 }
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
-int ksmbd_vfs_get_dos_attrib_xattr(struct mnt_idmap *idmap,
-#else
 int ksmbd_vfs_get_dos_attrib_xattr(struct user_namespace *user_ns,
-#endif
 				   struct dentry *dentry,
 				   struct xattr_dos_attrib *da)
 {
 	struct ndr n;
 	int err;
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
-	err = ksmbd_vfs_getxattr(idmap, dentry, XATTR_NAME_DOS_ATTRIBUTE,
-#else
 	err = ksmbd_vfs_getxattr(user_ns, dentry, XATTR_NAME_DOS_ATTRIBUTE,
-#endif
 				 (char **)&n.data);
 	if (err > 0) {
 		n.length = err;
@@ -2274,19 +1971,11 @@ int ksmbd_vfs_fqar_lseek(struct ksmbd_file *fp, loff_t start, loff_t length,
 	return ret;
 }
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
-int ksmbd_vfs_remove_xattr(struct mnt_idmap *idmap,
-#else
 int ksmbd_vfs_remove_xattr(struct user_namespace *user_ns,
-#endif
 			   struct dentry *dentry, char *attr_name)
 {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0)
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
-	return vfs_removexattr(idmap, dentry, attr_name);
-#else
 	return vfs_removexattr(user_ns, dentry, attr_name);
-#endif
 #else
 	return vfs_removexattr(dentry, attr_name);
 #endif
@@ -2436,13 +2125,7 @@ static int __dir_empty(struct dir_context *ctx,
 #endif
 	buf->dirent_count++;
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 1, 0)
 	return buf->dirent_count <= 2;
-#else
-	if (buf->dirent_count > 2)
-		return -ENOTEMPTY;
-	return 0;
-#endif
 }
 
 /**
@@ -2597,7 +2280,6 @@ static int ksmbd_vfs_lookup_in_dir(const struct path *dir, char *name,
 	fput(dfilp);
 	return ret;
 }
-#endif
 
 /**
  * ksmbd_vfs_kern_path() - lookup a file and get path info
@@ -2761,43 +2443,6 @@ free_abs_name:
 }
 #endif
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 4, 0)
-/**
- * ksmbd_vfs_remove_file() - vfs helper for smb rmdir or unlink
- * @name:	directory or file name that is relative to share
- *
- * Return:	0 on success, otherwise error
- */
-int ksmbd_vfs_remove_file(struct ksmbd_work *work, const struct path *path)
-{
-	struct mnt_idmap *idmap;
-	struct dentry *parent = path->dentry->d_parent;
-	int err;
-
-	if (ksmbd_override_fsids(work))
-		return -ENOMEM;
-
-	if (!d_inode(path->dentry)->i_nlink) {
-		err = -ENOENT;
-		goto out_err;
-	}
-
-	idmap = mnt_idmap(path->mnt);
-	if (S_ISDIR(d_inode(path->dentry)->i_mode)) {
-		err = vfs_rmdir(idmap, d_inode(parent), path->dentry);
-		if (err && err != -ENOTEMPTY)
-			ksmbd_debug(VFS, "rmdir failed, err %d\n", err);
-	} else {
-		err = vfs_unlink(idmap, d_inode(parent), path->dentry, NULL);
-		if (err)
-			ksmbd_debug(VFS, "unlink failed, err %d\n", err);
-	}
-
-out_err:
-	ksmbd_revert_fsids(work);
-	return err;
-}
-#else
 /**
  * ksmbd_vfs_init_kstat() - convert unix stat information to smb stat format
  * @p:          destination buffer
@@ -2830,32 +2475,16 @@ void *ksmbd_vfs_init_kstat(char **p, struct ksmbd_kstat *ksmbd_kstat)
 	return info;
 }
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
-int ksmbd_vfs_fill_dentry_attrs(struct ksmbd_work *work,
-				struct mnt_idmap *idmap,
-				struct dentry *dentry,
-				struct ksmbd_kstat *ksmbd_kstat)
-#else
 int ksmbd_vfs_fill_dentry_attrs(struct ksmbd_work *work,
 				struct user_namespace *user_ns,
 				struct dentry *dentry,
 				struct ksmbd_kstat *ksmbd_kstat)
-#endif
 {
 	u64 time;
 	int rc;
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0)
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 6, 0)
-	generic_fillattr(idmap, STATX_BASIC_STATS, d_inode(dentry),
-			 ksmbd_kstat->kstat);
-#else
-	generic_fillattr(idmap, d_inode(dentry), ksmbd_kstat->kstat);
-#endif
-#else
 	generic_fillattr(user_ns, d_inode(dentry), ksmbd_kstat->kstat);
-#endif
 #else
 	generic_fillattr(d_inode(dentry), ksmbd_kstat->kstat);
 #endif
@@ -2876,11 +2505,7 @@ int ksmbd_vfs_fill_dentry_attrs(struct ksmbd_work *work,
 				   KSMBD_SHARE_FLAG_STORE_DOS_ATTRS)) {
 		struct xattr_dos_attrib da;
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
-		rc = ksmbd_vfs_get_dos_attrib_xattr(idmap, dentry, &da);
-#else
 		rc = ksmbd_vfs_get_dos_attrib_xattr(user_ns, dentry, &da);
-#endif
 		if (rc > 0) {
 			ksmbd_kstat->file_attributes = cpu_to_le32(da.attr);
 			ksmbd_kstat->create_time = da.create_time;
@@ -2891,13 +2516,8 @@ int ksmbd_vfs_fill_dentry_attrs(struct ksmbd_work *work,
 
 	return 0;
 }
-#endif
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
-ssize_t ksmbd_vfs_casexattr_len(struct mnt_idmap *idmap,
-#else
 ssize_t ksmbd_vfs_casexattr_len(struct user_namespace *user_ns,
-#endif
 				struct dentry *dentry, char *attr_name,
 				int attr_name_len)
 {
@@ -2914,11 +2534,7 @@ ssize_t ksmbd_vfs_casexattr_len(struct user_namespace *user_ns,
 		if (strncasecmp(attr_name, name, attr_name_len))
 			continue;
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
-		value_len = ksmbd_vfs_xattr_len(idmap, dentry, name);
-#else
 		value_len = ksmbd_vfs_xattr_len(user_ns, dentry, name);
-#endif
 		break;
 	}
 
@@ -3104,17 +2720,11 @@ void ksmbd_vfs_posix_lock_unblock(struct file_lock *flock)
 #endif
 }
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
-int ksmbd_vfs_set_init_posix_acl(struct mnt_idmap *idmap,
-				 struct dentry *dentry)
-#else
 int ksmbd_vfs_set_init_posix_acl(struct user_namespace *user_ns,
-				 struct dentry *dentry)
-#endif
+				 struct inode *inode)
 {
 	struct posix_acl_state acl_state;
 	struct posix_acl *acls;
-	struct inode *inode = d_inode(dentry);
 	int rc;
 
 	if (!IS_ENABLED(CONFIG_FS_POSIX_ACL))
@@ -3159,17 +2769,11 @@ int ksmbd_vfs_set_init_posix_acl(struct user_namespace *user_ns,
 	return rc;
 }
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
-int ksmbd_vfs_inherit_posix_acl(struct mnt_idmap *idmap,
-				struct dentry *dentry, struct inode *parent_inode)
-#else
 int ksmbd_vfs_inherit_posix_acl(struct user_namespace *user_ns,
-				struct dentry *dentry, struct inode *parent_inode)
-#endif
+				struct inode *inode, struct inode *parent_inode)
 {
 	struct posix_acl *acls;
 	struct posix_acl_entry *pace;
-	struct inode *inode = d_inode(dentry);
 	int rc, i;
 
 	if (!IS_ENABLED(CONFIG_FS_POSIX_ACL))

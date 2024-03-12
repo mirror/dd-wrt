@@ -121,8 +121,7 @@ struct ksmbd_transport_ops {
 	int (*prepare)(struct ksmbd_transport *t);
 	void (*disconnect)(struct ksmbd_transport *t);
 	void (*shutdown)(struct ksmbd_transport *t);
-	int (*read)(struct ksmbd_transport *t, char *buf,
-		    unsigned int size, int max_retries);
+	int (*read)(struct ksmbd_transport *t, char *buf, unsigned int size);
 	int (*writev)(struct ksmbd_transport *t, struct kvec *iovs, int niov,
 		      int size, bool need_invalidate_rkey,
 		      unsigned int remote_key);
@@ -157,7 +156,7 @@ static int ksmbd_conn_rdma_write(struct ksmbd_conn *conn, void *buf,
 			  unsigned int buflen, u32 remote_key, u64 remote_offset,
 			  u32 remote_len);
 static void ksmbd_conn_enqueue_request(struct ksmbd_work *work);
-static void ksmbd_conn_try_dequeue_request(struct ksmbd_work *work);
+static int ksmbd_conn_try_dequeue_request(struct ksmbd_work *work);
 static void ksmbd_conn_init_server_callbacks(struct ksmbd_conn_ops *ops);
 static int ksmbd_conn_handler_loop(void *p);
 static int ksmbd_conn_transport_init(void);
