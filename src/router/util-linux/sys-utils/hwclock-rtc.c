@@ -30,7 +30,7 @@ struct rtc_param {
 		__u64 uvalue;
 		__s64 svalue;
 		__u64 ptr;
-	};
+	} u;
 	__u32 index;
 	__u32 __pad;
 };
@@ -459,7 +459,7 @@ int get_param_rtc(const struct hwclock_control *ctl,
 	if (id)
 		*id = param.param;
 	if (value)
-		*value = param.uvalue;
+		*value = param.u.uvalue;
 
 	if (ctl->verbose)
 		printf(_("ioctl(%d, RTC_PARAM_GET, param) to %s succeeded.\n"),
@@ -491,7 +491,7 @@ int set_param_rtc(const struct hwclock_control *ctl, const char *opt0)
 		warnx(_("expected <param>=<value>"));
 		goto done;
 	}
-	if (strtoku64(tok, &param.uvalue, 0) != 0) {
+	if (strtoku64(tok, &param.u.uvalue, 0) != 0) {
 		warnx(_("could not convert parameter value to number"));
 		goto done;
 	}

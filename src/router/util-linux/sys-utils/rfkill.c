@@ -78,7 +78,7 @@ struct rfkill_id {
 	union {
 		enum rfkill_type type;
 		uint32_t index;
-	};
+	} u;
 	enum {
 		RFKILL_IS_INVALID,
 		RFKILL_IS_TYPE,
@@ -313,7 +313,7 @@ static struct rfkill_id rfkill_id_to_type(const char *s)
 	if (islower(*s)) {
 		for (p = rfkill_type_strings; p->name != NULL; p++) {
 			if (!strcmp(s, p->name)) {
-				ret.type = p->type;
+				ret.u.type = p->type;
 				if (!strcmp(s, "all"))
 					ret.result = RFKILL_IS_ALL;
 				else
@@ -325,9 +325,9 @@ static struct rfkill_id rfkill_id_to_type(const char *s)
 		/* assume a numeric character implies an index. */
 		char filename[64];
 
-		ret.index = strtou32_or_err(s, _("invalid identifier"));
+		ret.u.index = strtou32_or_err(s, _("invalid identifier"));
 		snprintf(filename, sizeof(filename) - 1,
-			 _PATH_SYS_RFKILL "/rfkill%" PRIu32 "/name", ret.index);
+			 _PATH_SYS_RFKILL "/rfkill%" PRIu32 "/name", ret.u.index);
 		if (access(filename, F_OK) == 0)
 			ret.result = RFKILL_IS_INDEX;
 		else
@@ -360,11 +360,11 @@ static int event_match(struct rfkill_event *event, struct rfkill_id *id)
 	/* filter out unwanted results */
 	switch (id->result) {
 	case RFKILL_IS_TYPE:
-		if (event->type != id->type)
+		if (event->type != id->u.type)
 			return 0;
 		break;
 	case RFKILL_IS_INDEX:
-		if (event->idx != id->index)
+		if (event->idx != id->u.index)
 			return 0;
 		break;
 	case RFKILL_IS_ALL:
@@ -546,13 +546,13 @@ static int __rfkill_block(int fd, struct rfkill_id *id, uint8_t block, const cha
 		warnx(_("invalid identifier: %s"), param);
 		return -1;
 	case RFKILL_IS_TYPE:
-		event.type = id->type;
+		event.type = id->u.type;
 		xasprintf(&message, "type %s", param);
 		break;
 	case RFKILL_IS_INDEX:
 		event.op = RFKILL_OP_CHANGE;
-		event.idx = id->index;
-		xasprintf(&message, "id %d", id->index);
+		event.idx = id->u.index;
+		xasprintf(&message, "id %d", id->u.index);
 		break;
 	case RFKILL_IS_ALL:
 		message = xstrdup("all");
