@@ -592,7 +592,7 @@ EJ_VISIBLE void ej_get_high_5ghz(webs_t wp, int argc, char_t **argv)
 		return;
 	}
 	if ((is_ath10k("wlan0")) || (is_ath10k("wlan1"))) {
-		websWrite(wp, "6395"); // need to find out the real maximum which is way higher than 7 ghz
+		websWrite(wp, "6395"); // tested limit for qca988x
 		return;
 	}
 
