@@ -45,6 +45,10 @@ void start_usteer(void)
 			continue;
 		if (nvram_nmatch("disabled", "%s_mode", dev))
 			continue;
+		if (!nvram_nmatch("1", "%s_80211k", dev))
+			continue;
+		if (!nvram_nmatch("1", "%s_80211v", dev))
+			continue;
 		if (nvram_nmatch("1", "%s_usteer", dev)) {
 			sprintf(busname, "hostapd.%s", dev);
 			eval("ubus", "-t", "10", "wait_for", busname);
@@ -67,6 +71,10 @@ void start_usteer(void)
 		foreach(var, vaps, next)
 		{
 			if (nvram_nmatch("disabled", "%s_mode", var))
+				continue;
+			if (!nvram_nmatch("1", "%s_80211k", var))
+				continue;
+			if (!nvram_nmatch("1", "%s_80211v", var))
 				continue;
 
 			if (nvram_nmatch("1", "%s_usteer", var)) {
