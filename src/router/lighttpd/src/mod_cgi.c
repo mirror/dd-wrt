@@ -9,6 +9,7 @@
 #include "http_cgi.h"
 #include "http_chunk.h"
 #include "http_header.h"
+#include "gw_backend.h" /* gw_upgrade_policy() */
 
 #include "plugin.h"
 
@@ -551,47 +552,15 @@ static handler_t cgi_response_headers(request_st * const r, struct http_response
     /* response headers just completed */
     handler_ctx *hctx = (handler_ctx *)opts->pdata;
 
-    if (light_btst(r->resp_htags, HTTP_HEADER_UPGRADE)) {
-        if (hctx->conf.upgrade && r->http_status == 101) {
-            /* 101 Switching Protocols; transition to transparent proxy */
-            if (r->h2_connect_ext) {
-                r->http_status = 200; /* OK (response status for CONNECT) */
-                http_header_response_unset(r, HTTP_HEADER_UPGRADE,
-                                           CONST_STR_LEN("Upgrade"));
-                http_header_response_unset(r, HTTP_HEADER_OTHER,
-                                         CONST_STR_LEN("Sec-WebSocket-Accept"));
-            }
-            http_response_upgrade_read_body_unknown(r);
-        }
-        else {
-            light_bclr(r->resp_htags, HTTP_HEADER_UPGRADE);
-          #if 0
-            /* preserve prior questionable behavior; likely broken behavior
-             * anyway if backend thinks connection is being upgraded but client
-             * does not receive Connection: upgrade */
-            http_header_response_unset(r, HTTP_HEADER_UPGRADE,
-                                       CONST_STR_LEN("Upgrade"));
-          #endif
-        }
-    }
-    else if (__builtin_expect( (r->h2_connect_ext != 0), 0)
-             && r->http_status < 300) {
-        /*(not handling other 1xx intermediate responses here; not expected)*/
-        http_response_body_clear(r, 0);
-        r->handler_module = NULL;
-        r->http_status = 405; /* Method Not Allowed */
-        return HANDLER_FINISHED;
-    }
-
-    if (hctx->conf.upgrade
-        && !light_btst(r->resp_htags, HTTP_HEADER_UPGRADE)) {
+    if (opts->upgrade && opts->upgrade != 2) {
+        opts->upgrade = 0;
         chunkqueue *cq = &r->reqbody_queue;
-        hctx->conf.upgrade = 0;
         r->reqbody_length = hctx->orig_reqbody_length;
         if (cq->bytes_out == (off_t)r->reqbody_length) {
             cgi_connection_close_fdtocgi(hctx); /*(closes hctx->fdtocgi)*/
         }
     }
+    hctx->conf.upgrade = opts->upgrade;
 
     return HANDLER_GO_ON;
 }
@@ -861,8 +830,7 @@ static int cgi_create_env(request_st * const r, plugin_data * const p, handler_c
 		chunk * const c = cq->first;
 		if (c && c == cq->last && c->type == FILE_CHUNK && c->file.is_temp) {
 			/* request body in single tempfile if not streaming req body */
-			if (-1 == c->file.fd
-			    && 0 != chunkqueue_open_file_chunk(cq, r->conf.errh))
+			if (-1 == c->file.fd && 0 != chunk_open_file_chunk(c, r->conf.errh))
 				return cgi_create_err(r, cgi_fds, NULL);
 		  #ifdef __COVERITY__
 			force_assert(-1 != c->file.fd);
@@ -919,12 +887,6 @@ static int cgi_create_env(request_st * const r, plugin_data * const p, handler_c
 
 		/* create environment */
 
-		http_version_t http_version = r->http_version;
-		if (r->h2_connect_ext) {
-			/*(SERVER_PROTOCOL=HTTP/1.1 instead of HTTP/2.0)*/
-			r->http_version = HTTP_VERSION_1_1;
-			r->http_method = HTTP_METHOD_GET;
-		}
 		if (hctx->conf.upgrade) {
 			r->reqbody_length = hctx->orig_reqbody_length;
 			if (r->reqbody_length < 0)
@@ -935,26 +897,6 @@ static int cgi_create_env(request_st * const r, plugin_data * const p, handler_c
 
 		if (hctx->conf.upgrade)
 			r->reqbody_length = -1;
-		if (r->h2_connect_ext) {
-			r->http_version = http_version; /*(restore from above)*/
-			r->http_method = HTTP_METHOD_CONNECT;
-			/* https://datatracker.ietf.org/doc/html/rfc6455#section-4.1
-			 * 7. The request MUST include a header field with the name
-			 *    |Sec-WebSocket-Key|.  The value of this header field MUST be a
-			 *    nonce consisting of a randomly selected 16-byte value that has
-			 *    been base64-encoded (see Section 4 of [RFC4648]).  The nonce
-			 *    MUST be selected randomly for each connection.
-			 * Note: Sec-WebSocket-Key is not used in RFC8441;
-			 *       include Sec-WebSocket-Key for HTTP/1.1 compatibility;
-			 *       !!not random!! base64-encoded "0000000000000000" */
-			if (!http_header_request_get(r, HTTP_HEADER_OTHER,
-			                             CONST_STR_LEN("Sec-WebSocket-Key")))
-				cgi_env_add(env, CONST_STR_LEN("HTTP_SEC_WEBSOCKET_KEY"),
-				                 CONST_STR_LEN("MDAwMDAwMDAwMDAwMDAwMA=="));
-			/*(Upgrade and Connection should not exist for HTTP/2 request)*/
-			cgi_env_add(env, CONST_STR_LEN("HTTP_UPGRADE"), CONST_STR_LEN("websocket"));
-			cgi_env_add(env, CONST_STR_LEN("HTTP_CONNECTION"), CONST_STR_LEN("upgrade"));
-		}
 
 		/* for valgrind */
 		if (p->env.ld_preload) {
@@ -1112,10 +1054,10 @@ URIHANDLER_FUNC(cgi_is_handled) {
 	if (!S_ISREG(st->st_mode)) return HANDLER_GO_ON;
 	if (p->conf.execute_x_only == 1 && (st->st_mode & (S_IXUSR | S_IXGRP | S_IXOTH)) == 0) return HANDLER_GO_ON;
 
-	if (__builtin_expect( (r->h2_connect_ext != 0), 0) && !p->conf.upgrade) {
-		r->http_status = 405; /* Method Not Allowed */
+	p->conf.upgrade = (unsigned short)
+	  gw_upgrade_policy(r, 0, (int)p->conf.upgrade);
+	if (0 != r->http_status)
 		return HANDLER_FINISHED;
-	}
 
 	if (r->reqbody_length
 	    && p->tempfile_accum
@@ -1134,16 +1076,8 @@ URIHANDLER_FUNC(cgi_is_handled) {
 		hctx->plugin_data = p;
 		hctx->cgi_handler = &ds->value;
 		memcpy(&hctx->conf, &p->conf, sizeof(plugin_config));
-		if (__builtin_expect( (r->h2_connect_ext != 0), 0)) {
-		}
-		else if (!light_btst(r->rqst_htags, HTTP_HEADER_UPGRADE))
-			hctx->conf.upgrade = 0;
-		else if (!hctx->conf.upgrade || r->http_version != HTTP_VERSION_1_1) {
-			hctx->conf.upgrade = 0;
-			http_header_request_unset(r, HTTP_HEADER_UPGRADE,
-			                          CONST_STR_LEN("Upgrade"));
-		}
 		if (hctx->conf.upgrade) {
+			hctx->opts.upgrade = hctx->conf.upgrade;
 			hctx->orig_reqbody_length = r->reqbody_length;
 			r->reqbody_length = -1;
 		}

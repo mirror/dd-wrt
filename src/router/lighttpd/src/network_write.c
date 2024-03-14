@@ -16,7 +16,6 @@
 
 /* on linux 2.4.x you get either sendfile or LFS */
 #if defined HAVE_SYS_SENDFILE_H && defined HAVE_SENDFILE \
- && (!defined _LARGEFILE_SOURCE || defined HAVE_SENDFILE64) \
  && defined(__linux__) && !defined HAVE_SENDFILE_BROKEN
 # ifdef NETWORK_WRITE_USE_SENDFILE
 #  error "can't have more than one sendfile implementation"
@@ -78,9 +77,13 @@
 #endif
 
 #if defined(HAVE_MMAP) || defined(_WIN32) /*(see local sys-mmap.h)*/
-#ifdef ENABLE_MMAP
 # define NETWORK_WRITE_USE_MMAP
-#endif
+# ifdef HAVE_PREADV2
+#  if defined(HAVE_SYS_UIO_H)
+#   include <sys/uio.h>
+#  endif
+#  undef NETWORK_WRITE_USE_MMAP
+# endif
 #endif
 
 
@@ -172,11 +175,14 @@ static int network_write_file_chunk_no_mmap(const int fd, chunkqueue * const cq,
     if (toSend <= 0) return network_remove_finished_chunks(cq, toSend);
     if (toSend > (off_t)sizeof(buf)) toSend = (off_t)sizeof(buf);
 
-    if (c->file.fd < 0 && 0 != chunkqueue_open_file_chunk(cq, errh)) return -1;
+    if (c->file.fd < 0 && 0 != chunk_open_file_chunk(c, errh)) return -1;
 
-    toSend = chunk_file_pread(c->file.fd, buf, toSend, c->offset);
+    toSend = chunk_file_pread_chunk(c, buf, toSend);
     if (toSend <= 0) {
-        log_perror(errh, __FILE__, __LINE__, "read");/* err or unexpected EOF */
+        if (c->file.busy)
+            return -3; /* read I/O would block or signal interrupt; yield */
+        /* -1 error; 0 EOF (unexpected) */
+        log_perror(errh, __FILE__, __LINE__, "read(\"%s\")", c->mem->ptr);
         return -1;
     }
 
@@ -268,8 +274,9 @@ static int network_writev_mem_chunks(const int fd, chunkqueue * const cq, off_t 
     struct iovec chunks[MAX_CHUNKS];
 
     for (const chunk *c = cq->first; c && MEM_CHUNK == c->type; c = c->next) {
-        const off_t c_len = (off_t)buffer_clen(c->mem) - c->offset;
+        off_t c_len = (off_t)buffer_clen(c->mem) - c->offset;
         if (c_len > 0) {
+            if (c_len > *p_max_bytes - toSend) c_len = *p_max_bytes - toSend;
             toSend += c_len;
 
             chunks[num_chunks].iov_base = c->mem->ptr + c->offset;
@@ -310,50 +317,150 @@ static int network_writev_mem_chunks(const int fd, chunkqueue * const cq, off_t 
 #endif
 
 static int network_write_file_chunk_sendfile(const int fd, chunkqueue * const cq, off_t * const p_max_bytes, log_error_st * const errh) {
-    chunk * const c = cq->first;
-    ssize_t wr;
-    off_t offset;
-    off_t toSend;
-    off_t written = 0;
+    chunk *c = cq->first;
+    off_t nbytes;
 
-    offset = c->offset;
-    toSend = c->file.length - c->offset;
-    if (toSend > *p_max_bytes) toSend = *p_max_bytes;
-    if (toSend <= 0) return network_remove_finished_chunks(cq, toSend);
-
-    if (c->file.fd < 0 && 0 != chunkqueue_open_file_chunk(cq, errh)) return -1;
+  #if defined(NETWORK_WRITE_USE_FREEBSD_SENDFILE) \
+   || defined(NETWORK_WRITE_USE_DARWIN_SENDFILE) \
+   || defined(NETWORK_WRITE_USE_SOLARIS_SENDFILEV)
 
     /* Darwin, FreeBSD, and Solaris variants support iovecs and could
      * be optimized to send more than just file in single syscall */
 
+    off_t flen;
+    int hdr_cnt = 0;
+    int trl_cnt = 0;
+    struct iovec headers[MAX_CHUNKS];
+    struct iovec trailers[MAX_CHUNKS];
+
+    if (0 == *p_max_bytes) /*(should not happen)*/
+            return network_remove_finished_chunks(cq, 0);
+
+    nbytes = 0;
+    for (; c && MEM_CHUNK == c->type; c = c->next) {
+        off_t clen = (off_t)buffer_clen(c->mem) - c->offset;
+        if (clen > 0) {
+            if (clen > *p_max_bytes - nbytes) clen = *p_max_bytes - nbytes;
+            nbytes += clen;
+            headers[hdr_cnt].iov_base = c->mem->ptr + c->offset;
+            headers[hdr_cnt].iov_len = (size_t)clen;
+            if (++hdr_cnt == MAX_CHUNKS || nbytes >= *p_max_bytes)
+                break; /*(c->type remains MEM_CHUNK)*/
+        }
+        else if (clen < 0) /*(should not happen; trigger assert)*/
+            return network_remove_finished_chunks(cq, clen);
+    }
+
+    if (!c || FILE_CHUNK != c->type || (flen = c->file.length-c->offset) <= 0) {
+        if (0 == hdr_cnt)
+            return network_remove_finished_chunks(cq, 0);
+        ssize_t wr = writev(fd, headers, hdr_cnt);
+        return network_write_accounting(fd, cq, p_max_bytes, errh, wr, nbytes);
+    }
+
+    /* if (c && FILE_CHUNK == c->type) */
+    if (flen > *p_max_bytes - nbytes) flen = *p_max_bytes - nbytes;
+    nbytes += flen;
+   #if !defined(NETWORK_WRITE_USE_DARWIN_SENDFILE)
+    /* (skip potentially adding trailers on Darwin.  When testing, sendfile()
+     *  on MacOS 11.7.10 appears to corrupt output if file descriptor is
+     *  nonblocking (O_NONBLOCK) and sendfile() returns EAGAIN.  The result in
+     *  'written' is the nbytes of headers and trailers, but missing flen.) */
+    if (nbytes < *p_max_bytes) {
+        chunk * const fc = c; /*(save file chunk)*/
+        for (c = c->next; c && MEM_CHUNK == c->type; c = c->next) {
+            off_t clen = (off_t)buffer_clen(c->mem) - c->offset;
+            if (clen > 0) {
+                if (clen > *p_max_bytes - nbytes) clen = *p_max_bytes - nbytes;
+                nbytes += clen;
+                trailers[trl_cnt].iov_base = c->mem->ptr + c->offset;
+                trailers[trl_cnt].iov_len = (size_t)clen;
+                if (++trl_cnt == MAX_CHUNKS || nbytes >= *p_max_bytes) break;
+            }
+            else if (clen < 0) /*(should not happen; trigger assert)*/
+                return network_remove_finished_chunks(cq, clen);
+        }
+        c = fc; /*(restore file chunk)*/
+    }
+   #endif
+
+  #endif /* FreeBSD Darwin Solaris */
+
+    if (c->file.fd < 0 && 0 != chunk_open_file_chunk(c, errh)) return -1;
+
+    ssize_t wr;
+    off_t written = 0;
+
   #if defined(NETWORK_WRITE_USE_LINUX_SENDFILE)
 
-    wr = sendfile(fd, c->file.fd, &offset, toSend);
+    off_t offset = c->offset;
+    nbytes = c->file.length - c->offset;
+    if (nbytes > *p_max_bytes) nbytes = *p_max_bytes;
+    if (nbytes <= 0) return network_remove_finished_chunks(cq, nbytes);
+
+    wr = sendfile(fd, c->file.fd, &offset, nbytes);
     if (wr > 0) written = (off_t)wr;
 
   #elif defined(NETWORK_WRITE_USE_DARWIN_SENDFILE)
 
-    written = toSend;
-    wr = sendfile(c->file.fd, fd, offset, &written, NULL, 0);
+    written = flen;
+    if (hdr_cnt|trl_cnt) {
+        struct sf_hdtr hdtr = { hdr_cnt ? headers  : NULL, hdr_cnt,
+                                trl_cnt ? trailers : NULL, trl_cnt };
+        wr = sendfile(c->file.fd, fd, c->offset, &written, &hdtr, 0);
+    }
+    else
+        wr = sendfile(c->file.fd, fd, c->offset, &written, NULL, 0);
     /* (for EAGAIN/EINTR written still contains the sent bytes) */
 
   #elif defined(NETWORK_WRITE_USE_FREEBSD_SENDFILE)
 
-    wr = sendfile(c->file.fd, fd, offset, toSend, NULL, &written, 0);
-    /* (for EAGAIN/EINTR written still contains the sent bytes) */
+   #if defined(__FreeBSD__) && defined(SF_NODISKIO)
+    int flags = !c->file.busy ? SF_NODISKIO : 0;
+    c->file.busy = 0;
+    #ifdef SF_FLAGS
+    flags = SF_FLAGS(32, flags);
+    #endif
+   #else /* defined(__DragonFly__) */
+    const int flags = 0;
+   #endif
+    if (hdr_cnt|trl_cnt) {
+        struct sf_hdtr hdtr = { hdr_cnt ? headers  : NULL, hdr_cnt,
+                                trl_cnt ? trailers : NULL, trl_cnt };
+        wr = sendfile(c->file.fd, fd, c->offset, flen, &hdtr, &written, flags);
+    }
+    else
+        wr = sendfile(c->file.fd, fd, c->offset, flen, NULL, &written, flags);
+    /* (for EAGAIN/EINTR/EBUSY written still contains the sent bytes) */
 
   #elif defined(NETWORK_WRITE_USE_SOLARIS_SENDFILEV)
-    {
-        sendfilevec_t fvec;
-        fvec.sfv_fd = c->file.fd;
-        fvec.sfv_flag = 0;
-        fvec.sfv_off = offset;
-        fvec.sfv_len = toSend;
 
-        /* Solaris sendfilev() */
-        wr = sendfilev(fd, &fvec, 1, (size_t *)&written);
-        /* (for EAGAIN/EINTR written still contains the sent bytes) */
+    /* Solaris sendfilev() */
+    /* (This could theoretically be extended to handle multiple FILE_CHUNKs,
+     *  but that is not expected in typical usage, except mod_ssi and Range,
+     *  and p_max_bytes will be quickly exhausted for all but tiny files) */
+    int i = 0;
+    sendfilevec_t fvec[MAX_CHUNKS*2+1];
+    for (; i < hdr_cnt; ++i) {
+        fvec[i].sfv_fd = SFV_FD_SELF;
+        fvec[i].sfv_flag = 0;
+        fvec[i].sfv_off = (off_t)(intptr_t)headers[i].iov_base;
+        fvec[i].sfv_len = headers[i].iov_len;
     }
+    fvec[i].sfv_fd = c->file.fd;
+    fvec[i].sfv_flag = 0;
+    fvec[i].sfv_off = c->offset;
+    fvec[i].sfv_len = (size_t)flen;
+    ++i;
+    for (int j = 0; j < trl_cnt; ++i, ++j) {
+        fvec[i].sfv_fd = SFV_FD_SELF;
+        fvec[i].sfv_flag = 0;
+        fvec[i].sfv_off = (off_t)(intptr_t)trailers[j].iov_base;
+        fvec[i].sfv_len = trailers[j].iov_len;
+    }
+    wr = sendfilev(fd, fvec, i, (size_t *)&written);
+    /* (for EAGAIN/EINTR written still contains the sent bytes) */
+
   #else
 
     wr = -1;
@@ -363,6 +470,11 @@ static int network_write_file_chunk_sendfile(const int fd, chunkqueue * const cq
 
     if (-1 == wr) {
         switch(errno) {
+         #if defined(__FreeBSD__) && defined(SF_NODISKIO)
+          case EBUSY:
+            c->file.busy = 1;
+            break; /* try again later */
+         #endif
           case EAGAIN:
           case EINTR:
             break; /* try again later */
@@ -384,6 +496,15 @@ static int network_write_file_chunk_sendfile(const int fd, chunkqueue * const cq
          #ifdef EAFNOSUPPORT
           case EAFNOSUPPORT:
          #endif
+           #if defined(NETWORK_WRITE_USE_FREEBSD_SENDFILE) \
+            || defined(NETWORK_WRITE_USE_DARWIN_SENDFILE) \
+            || defined(NETWORK_WRITE_USE_SOLARIS_SENDFILEV)
+            if (hdr_cnt) {
+                int rc = network_writev_mem_chunks(fd, cq, p_max_bytes, errh);
+                if (rc != 0) return rc;
+                if (!cq->first || cq->first->type != FILE_CHUNK) return -3;
+            }
+           #endif
            #ifdef NETWORK_WRITE_USE_MMAP
             return network_write_file_chunk_mmap(fd, cq, p_max_bytes, errh);
            #else
@@ -406,7 +527,7 @@ static int network_write_file_chunk_sendfile(const int fd, chunkqueue * const cq
         return -1;
     }
 
-    return (wr >= 0 && written == toSend) ? 0 : -3;
+    return (wr >= 0 && written == nbytes) ? 0 : -3;
 }
 
 #endif
@@ -450,6 +571,11 @@ static int network_write_chunkqueue_writev(const int fd, chunkqueue * const cq, 
 #if defined(NETWORK_WRITE_USE_SENDFILE)
 static int network_write_chunkqueue_sendfile(const int fd, chunkqueue * const cq, off_t max_bytes, log_error_st * const errh) {
     while (NULL != cq->first) {
+      #if defined(NETWORK_WRITE_USE_FREEBSD_SENDFILE) \
+       || defined(NETWORK_WRITE_USE_DARWIN_SENDFILE) \
+       || defined(NETWORK_WRITE_USE_SOLARIS_SENDFILEV)
+        int rc = network_write_file_chunk_sendfile(fd, cq, &max_bytes, errh);
+      #else
         int rc = -1;
 
         switch (cq->first->type) {
@@ -470,6 +596,7 @@ static int network_write_chunkqueue_sendfile(const int fd, chunkqueue * const cq
           #endif
             break;
         }
+      #endif
 
         if (__builtin_expect( (0 != rc), 0)) return (-3 == rc) ? 0 : rc;
     }
@@ -567,7 +694,7 @@ const char * network_write_show_handlers(void) {
       "\t- writev\n"
      #endif
       "\t+ write\n"
-     #ifdef NETWORK_WRITE_USE_MMAP
+     #if defined(NETWORK_WRITE_USE_MMAP) || defined(HAVE_PREADV2)
       "\t+ mmap support\n"
      #else
       "\t- mmap support\n"

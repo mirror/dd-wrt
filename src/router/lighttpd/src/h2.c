@@ -1569,7 +1569,7 @@ h2_parse_headers_frame (struct lshpack_dec * const restrict decoder, const unsig
             hpctx.id = lshpack_idx_http_header[lsx.hpack_index];
 
             if (hpctx.log_request_header)
-                log_error(r->conf.errh, __FILE__, __LINE__,
+                log_debug(r->conf.errh, __FILE__, __LINE__,
                   "fd:%d id:%u rqst: %.*s: %.*s", r->con->fd, r->x.h2.id,
                   (int)hpctx.klen, hpctx.k, (int)hpctx.vlen, hpctx.v);
 
@@ -2142,14 +2142,33 @@ static int
 h2_send_goaway_graceful (connection * const con)
 {
     request_st * const h2r = &con->request;
+    int changed = 0;
     if (h2r->state == CON_STATE_WRITE) {
-        h2_send_goaway(con, H2_E_NO_ERROR);
-        if (0 == con->hx->rused && chunkqueue_is_empty(con->write_queue)) {
-            connection_set_state(h2r, CON_STATE_RESPONSE_END);
-            return 1;
+        h2con * const h2c = (h2con *)con->hx;
+        if (!h2c->sent_goaway) {
+            h2_send_goaway(con, H2_E_NO_ERROR);
+            changed = 1;
         }
+      #if 0
+        /* XXX: (disabled for now)
+         * well-behaved clients should close websocket streams after GOAWAY
+         * (might enable this if that turns out not to be the case) */
+
+        /* For streams in transparent proxy mode, trigger behavior as if
+         * TCP FIN received from client, as tunnels (e.g. websockets) are
+         * otherwise opaque */
+        for (uint32_t i = 0; i < h2c->rused; ++i) {
+            request_st * const r = h2c->r[i];
+            if (r->reqbody_length != -2)
+                continue;
+            if (r->conf.stream_request_body & FDEVENT_STREAM_REQUEST_TCP_FIN)
+                continue;
+            r->conf.stream_request_body |= FDEVENT_STREAM_REQUEST_TCP_FIN;
+            changed = 1;
+        }
+      #endif
     }
-    return 0;
+    return changed;
 }
 
 
@@ -2312,7 +2331,7 @@ __attribute_noinline__
 static void
 h2_log_response_header_lsx(request_st * const r, const lsxpack_header_t * const lsx)
 {
-    log_error(r->conf.errh, __FILE__, __LINE__,
+    log_debug(r->conf.errh, __FILE__, __LINE__,
       "fd:%d id:%u resp: %.*s: %.*s", r->con->fd, r->x.h2.id,
       (int)lsx->name_len, lsx->buf + lsx->name_offset,
       (int)lsx->val_len,  lsx->buf + lsx->val_offset);
@@ -2323,7 +2342,7 @@ __attribute_cold__
 static void
 h2_log_response_header(request_st * const r, const int len, const char * const hdr)
 {
-    log_error(r->conf.errh, __FILE__, __LINE__,
+    log_debug(r->conf.errh, __FILE__, __LINE__,
       "fd:%d id:%u resp: %.*s", r->con->fd, r->x.h2.id, len, hdr);
 }
 
@@ -2552,7 +2571,7 @@ h2_send_headers (request_st * const r, connection * const con)
 __attribute_cold__
 __attribute_noinline__
 static void
-h2_send_headers_block (request_st * const r, connection * const con, const char * const hdrs, const uint32_t hlen, uint32_t flags)
+h2_send_headers_block (request_st * const r, connection * const con, const char *hdrs, const uint32_t hlen, uint32_t flags)
 {
     unsigned short hoff[8192]; /* max num header lines + 3; 16k on stack */
     hoff[0] = 1;                         /* number of lines */
@@ -2564,11 +2583,17 @@ h2_send_headers_block (request_st * const r, connection * const con, const char 
         /* error if headers incomplete or too many header fields */
         log_error(r->conf.errh, __FILE__, __LINE__,
                   "oversized response-header");
+      #if 0 /*(recursive call might add additional 16k stack use)*/
+        h2_send_headers_block(r, con, CONST_STR_LEN(":status: 502\r\n\r\n"), flags);
+        return;
+      #else
         hoff[0] = 1;
         hoff[1] = 0;
-        if (http_header_parse_hoff(CONST_STR_LEN(":status: 500\r\n\r\n"),hoff)){
+        hdrs = ":status: 502\r\n\r\n";
+        if (http_header_parse_hoff(CONST_STR_LEN(":status: 502\r\n\r\n"),hoff)){
             /*(ignore for coverity; static string is successfully parsed)*/
         }
+      #endif
     }
 
     /*(h2_init_con() resized h2r->tmp_buf to 64k; shared with r->tmp_buf)*/
@@ -2661,7 +2686,15 @@ h2_send_1xx (request_st * const r, connection * const con)
         const uint32_t klen = buffer_clen(&ds->key);
         const uint32_t vlen = buffer_clen(&ds->value);
         if (0 == klen || 0 == vlen) continue;
-        buffer_append_str2(b, CONST_STR_LEN("\r\n"), ds->key.ptr, klen);
+        /* HTTP/2 requires lowercase keys */
+        const char *k;
+        if (__builtin_expect( (ds->ext != HTTP_HEADER_OTHER), 1))
+            k = http_header_lc[ds->ext];
+        else {
+            buffer_copy_string_len_lc(r->tmp_buf, ds->key.ptr, klen);
+            k = r->tmp_buf->ptr;
+        }
+        buffer_append_str2(b, CONST_STR_LEN("\r\n"), k, klen);
         buffer_append_str2(b, CONST_STR_LEN(": "), ds->value.ptr, vlen);
     }
     buffer_append_string_len(b, CONST_STR_LEN("\r\n\r\n"));
@@ -2908,13 +2941,20 @@ h2_send_cqdata (request_st * const r, connection * const con, chunkqueue * const
              *  than reference counting file chunks split and duplicated by
              *  chunkqueue_steal() into 16k chunks, and alternating with 8k
              *  chunk buffers containing 9 byte HTTP/2 header frame) */
-            const uint32_t len = dlen < fsize ? dlen : fsize-9;
+            uint32_t len = dlen < fsize ? dlen : fsize-9;
             uint32_t blen = len;
             buffer * const b =         /*(sizeof(dataframe)-3 == 9)*/
               chunkqueue_append_buffer_open_sz(con->write_queue, 9+len);
             char *data = b->ptr+9;     /*(note: not including +1 to _open_sz)*/
-            if (0 == chunkqueue_peek_data(cq, &data, &blen, r->conf.errh)
-                && blen == len) {
+
+            if (0 == chunkqueue_peek_data(cq, &data, &len, r->conf.errh, 1)) {
+                if (__builtin_expect( (0 == len), 0)) {
+                    if (!cq->first->file.busy)
+                        chunkqueue_remove_finished_chunks(cq);
+                    /*(remove empty last chunk)*/
+                    chunkqueue_remove_empty_chunks(con->write_queue);
+                    break; /* yield bandwidth for other ready streams */
+                }
                 dlen -= len;
                 sent += len;
                 dataframe.c[3] = (len >> 16) & 0xFF; /*(+3 to skip align pad)*/
@@ -2926,11 +2966,13 @@ h2_send_cqdata (request_st * const r, connection * const con, chunkqueue * const
                 buffer_commit(b, 9+len);
                 chunkqueue_append_buffer_commit(con->write_queue);
                 chunkqueue_mark_written(cq, len);
+                if (blen != len)
+                    break; /* yield bandwidth for other ready streams */
                 continue;
             }
 
             /*(else remove empty last chunk and fall through to below)*/
-            chunkqueue_remove_empty_chunks(cq);
+            chunkqueue_remove_empty_chunks(con->write_queue);
         }
 
         const uint32_t len = dlen < fsize ? dlen : fsize;
@@ -3413,12 +3455,12 @@ h2_process_streams (connection * const con,
                     uint32_t dlen = (r->x.h2.prio & 1) ? 32768-18 : 8192;
                     if (dlen > (uint32_t)max_bytes) dlen = (uint32_t)max_bytes;
                     dlen = h2_send_cqdata(r, con, &r->write_queue, dlen);
-                    if (dlen) { /*(do not resched (spin) if swin empty window)*/
-                        max_bytes -= (off_t)dlen;
-                        if (!chunkqueue_is_empty(&r->write_queue)) {
-                            resched |= 1;
-                            continue;
-                        }
+                    max_bytes -= (off_t)dlen;
+                    if (!chunkqueue_is_empty(&r->write_queue)) {
+                        /*(do not resched (spin) if swin empty window)*/
+                        if (dlen || r->write_queue.first->file.busy)
+                            resched |= r->write_queue.first->file.busy ? 4 : 1;
+                        continue;
                     }
                 }
                 if (!chunkqueue_is_empty(&r->write_queue)
@@ -3449,7 +3491,7 @@ h2_process_streams (connection * const con,
             }
         }
 
-        if (0 == max_bytes) resched |= 1;
+        if (0 == max_bytes) resched |= 0x100;
     }
 
     if (h2c->sent_goaway > 0 && h2c->rused) {
@@ -3482,10 +3524,15 @@ h2_process_streams (connection * const con,
              * need to resched if still CON_STATE_WRITE, write_queue empty,
              * full frame pending, and frame is not HEADERS or h2c->r not full,
              * which might happen if parsing frames was deferred if write_queue
-             * grew too large generating HTTP/2 replies to various frame types*/
-            if (chunkqueue_is_empty(con->write_queue)
-                && !chunkqueue_is_empty(con->read_queue))
-                resched |= 2;
+             * grew too large generating HTTP/2 replies to various frame types.
+             * Also reschedule if max_bytes write allocation was fully used
+             * (indicating that there is more data from request streams ready)*/
+            if (chunkqueue_is_empty(con->write_queue)) {
+                if (!chunkqueue_is_empty(con->read_queue))
+                    resched |= 2;
+                if (resched & 0x100)
+                    resched |= 1;
+            }
         }
 
         if (chunkqueue_is_empty(con->write_queue)
@@ -3495,10 +3542,13 @@ h2_process_streams (connection * const con,
 
     if (h2r->state == CON_STATE_WRITE) {
         /* (resched & 1) more data is available to write, if still able to write
-         * (resched & 2) resched to read deferred frames from con->read_queue */
+         * (resched & 2) resched to read deferred frames from con->read_queue
+         * (resched & 4) at least one request is waiting for disk I/O
+         * (resched & 0x100) (intermediate flag handled above) */
         /*(con->is_writable set to 0 if !chunkqueue_is_empty(con->write_queue)
          * after trying to write in connection_handle_write() above)*/
-        if (((resched & 1) && con->is_writable>0 && !con->traffic_limit_reached)
+        if (((resched & (1|4))
+             && con->is_writable > 0 && !con->traffic_limit_reached)
             || (resched & 2))
             joblist_append(con);
 
@@ -3538,8 +3588,8 @@ h2_check_timeout (connection * const con, const unix_time64_t cur_ts)
                      * (future: might keep separate timestamp per-request) */
                     if (cur_ts - con->read_idle_ts > rr->conf.max_read_idle) {
                         /* time - out */
-                        if (rr->conf.log_request_handling) {
-                            log_error(rr->conf.errh, __FILE__, __LINE__,
+                        if (rr->conf.log_timeouts) {
+                            log_debug(rr->conf.errh, __FILE__, __LINE__,
                               "request aborted - read timeout: %d", con->fd);
                         }
                         connection_set_state_error(r, CON_STATE_ERROR);
@@ -3557,7 +3607,7 @@ h2_check_timeout (connection * const con, const unix_time64_t cur_ts)
                         /*(see comment further down about max_write_idle)*/
                         /* time - out */
                         if (r->conf.log_timeouts) {
-                            log_error(r->conf.errh, __FILE__, __LINE__,
+                            log_debug(r->conf.errh, __FILE__, __LINE__,
                               "NOTE: a request from %s for %.*s timed out "
                               "after writing %lld bytes. We waited %d seconds. "
                               "If this is a problem, increase "
@@ -3576,8 +3626,8 @@ h2_check_timeout (connection * const con, const unix_time64_t cur_ts)
         else {
             if (cur_ts - con->read_idle_ts > con->keep_alive_idle) {
                 /* time - out */
-                if (r->conf.log_request_handling) {
-                    log_error(r->conf.errh, __FILE__, __LINE__,
+                if (r->conf.log_timeouts) {
+                    log_debug(r->conf.errh, __FILE__, __LINE__,
                               "connection closed - keep-alive timeout: %d",
                               con->fd);
                 }

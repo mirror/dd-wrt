@@ -140,23 +140,17 @@ static int fcgi_env_add(void *venv, const char *key, size_t key_len, const char 
 
 	if (!key || (!val && val_len)) return -1;
 
-	/**
-	 * field length can be 31bit max
-	 *
-	 * HINT: this can't happen as FCGI_MAX_LENGTH is only 16bit
-	 */
-	force_assert(key_len < 0x7fffffffu);
-	force_assert(val_len < 0x7fffffffu);
-
 	if (key_len > 127) {
+		if (key_len > 0x7fffffffu) return -1; /*(should not happen)*/
 		len_enc[0] = ((key_len >> 24) & 0xff) | 0x80;
 		len_enc[1] =  (key_len >> 16) & 0xff;
 		len_enc[2] =  (key_len >>  8) & 0xff;
-		len_enc_len += 3;
+		len_enc_len = 3;
 	}
 	len_enc[len_enc_len++] = key_len & 0xff;
 
 	if (val_len > 127) {
+		if (val_len > 0x7fffffffu) return -1; /*(should not happen)*/
 		len_enc[len_enc_len++] = ((val_len >> 24) & 0xff) | 0x80;
 		len_enc[len_enc_len++] = (val_len >> 16) & 0xff;
 		len_enc[len_enc_len++] = (val_len >> 8) & 0xff;
@@ -214,11 +208,13 @@ static handler_t fcgi_stdin_append(handler_ctx *hctx) {
 		/*(hctx->wb_reqlen already includes reqbody_length)*/
 	}
 
-	if (hctx->wb.bytes_in == hctx->wb_reqlen) {
+	if (hctx->wb.bytes_in == hctx->wb_reqlen && !hctx->opts.upgrade) {
 		/* terminate STDIN */
-		/* (future: must defer ending FCGI_STDIN
-		 *  if might later upgrade protocols
-		 *  and then have more data to send) */
+		/* (defer ending FCGI_STDIN if might later upgrade protocols
+		 *  and then have more data to send (hctx->opts.upgrade))
+		 * (upgrade should not be enabled in lighttpd.conf for FastCGI
+		 *  backends such as fcgiwrap which wait for end of FCGI_STDIN
+		 *  before starting to process the request) (better: fcgi-cgi)*/
 		fcgi_header(&(header), FCGI_STDIN, request_id, 0, 0);
 		chunkqueue_append_mem(&hctx->wb, (const char *)&header, sizeof(header));
 		hctx->wb_reqlen += (int)sizeof(header);
@@ -311,7 +307,7 @@ static int fastcgi_get_packet(handler_ctx *hctx, fastcgi_response_packet *packet
 	if (rblen < (off_t)sizeof(FCGI_Header)) {
 		/* no header */
 		if (hctx->conf.debug && 0 != rblen) {
-			log_error(hctx->r->conf.errh, __FILE__, __LINE__,
+			log_debug(hctx->r->conf.errh, __FILE__, __LINE__,
 			  "FastCGI: header too small: %lld bytes < %zu bytes, "
 			  "waiting for more data", (long long)rblen, sizeof(FCGI_Header));
 		}
@@ -319,7 +315,7 @@ static int fastcgi_get_packet(handler_ctx *hctx, fastcgi_response_packet *packet
 	}
 	char *ptr = (char *)&header;
 	uint32_t rd = sizeof(FCGI_Header);
-	if (chunkqueue_peek_data(hctx->rb, &ptr, &rd, hctx->r->conf.errh) < 0)
+	if (chunkqueue_peek_data(hctx->rb,&ptr,&rd,hctx->r->conf.errh,0) < 0)
 		return -1;
 	if (rd != sizeof(FCGI_Header))
 		return -1;
@@ -357,11 +353,9 @@ static handler_t fcgi_recv_0(const request_st * const r, const handler_ctx * con
 		if (!(fdevent_fdnode_interest(hctx->fdn) & FDEVENT_IN)
 		    && !(r->conf.stream_response_body & FDEVENT_STREAM_RESPONSE_POLLRDHUP))
 			return HANDLER_GO_ON;
-		log_error(r->conf.errh, __FILE__, __LINE__,
-		  "unexpected end-of-file (perhaps the fastcgi process died):"
-		  "pid: %d socket: %s",
-		  hctx->proc->pid, hctx->proc->connection_name->ptr);
 
+		gw_backend_error_trace(hctx, r,
+		  "unexpected end-of-file (perhaps the fastcgi process died)");
 		return HANDLER_ERROR;
 }
 
@@ -472,6 +466,32 @@ static handler_t fcgi_recv_parse(request_st * const r, struct http_response_opts
     return fcgi_recv_parse_loop(r, hctx);
 }
 
+static handler_t fcgi_response_headers(request_st * const r, struct http_response_opts_t *opts) {
+    /* response headers just completed */
+    handler_ctx *hctx = (handler_ctx *)opts->pdata;
+    UNUSED(r);
+
+    /*(see gw_response_headers_upgrade())*/
+    switch (opts->upgrade) {
+      default:
+      case 0:
+        break;
+      case 1:
+        /* (If this were done in gw_response_headers_upgrade()
+         *  if hctx->stdin_append were set and (opts->upgrade == 1),
+         *  then fcgi_response_headers() would not be needed) */
+        opts->upgrade = 0;
+        if (hctx->wb.bytes_in == hctx->wb_reqlen)
+            fcgi_stdin_append(hctx); /* send end FCGI_STDIN */
+        break;
+      case 2:
+        gw_set_transparent(hctx);
+        break;
+    }
+
+    return HANDLER_GO_ON;
+}
+
 static handler_t fcgi_check_extension(request_st * const r, void *p_d, int uri_path_handler) {
 	plugin_data *p = p_d;
 	handler_t rc;
@@ -488,6 +508,7 @@ static handler_t fcgi_check_extension(request_st * const r, void *p_d, int uri_p
 		handler_ctx *hctx = r->plugin_ctx[p->id];
 		hctx->opts.backend = BACKEND_FASTCGI;
 		hctx->opts.parse = fcgi_recv_parse;
+		hctx->opts.headers = fcgi_response_headers;
 		hctx->opts.pdata = hctx;   /*(skip +255 for potential padding)*/
 		hctx->opts.max_per_read = sizeof(FCGI_Header)+FCGI_MAX_LENGTH+1;
 		hctx->stdin_append = fcgi_stdin_append;

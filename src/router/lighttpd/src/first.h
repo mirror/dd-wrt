@@ -20,6 +20,7 @@
 #endif
 
 #if defined(__sun)
+#undef _XOPEN_SOURCE /* WTH, Solaris ?!? */
 #define __EXTENSIONS__
 #endif
 
@@ -68,11 +69,17 @@
 #define _POSIX
 #define __USE_MINGW_ALARM 1
 /* https://sourceforge.net/p/mingw-w64/wiki2/gnu%20printf/ */
+#ifndef __USE_MINGW_ANSI_STDIO
 #define __USE_MINGW_ANSI_STDIO 1
+#endif
 /*#include <stdio.h>*/
+#ifndef __clang__
+#ifndef __MINGW_PRINTF_FORMAT
+#define __MINGW_PRINTF_FORMAT __gnu_printf__
+#endif
 #undef __printf__
-/*#define __printf__ __MINGW_PRINTF_FORMAT*/
-#define __printf__ __gnu_printf__
+#define __printf__ __MINGW_PRINTF_FORMAT
+#endif
 /* override pid_t before <sys/types.h> is included; modified from:
  * /usr/x86_64-w64-mingw32/sys-root/mingw/include/sys/types.h */
 #ifndef _PID_T_
@@ -127,10 +134,17 @@ typedef long long off_t;
 #include <sys/types.h>
 #include <stddef.h>
 
+#if __GNUC__ && (__clang__ || __GNUC__ >= 5) && !defined(__COVERITY__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcpp"
+#endif
 #ifdef __has_include
 #if __has_include(<sys/cdefs.h>)
 #include <sys/cdefs.h>
 #endif
+#endif
+#if __GNUC__ && (__clang__ || __GNUC__ >= 5) && !defined(__COVERITY__)
+#pragma GCC diagnostic pop
 #endif
 
 #ifndef __BEGIN_DECLS

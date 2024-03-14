@@ -28,7 +28,7 @@ option(WITH_NETTLE "with Nettle-support [default: off]")
 option(WITH_PCRE2 "with regex support [default: on]" ON)
 option(WITH_PCRE "with regex support [default: off]")
 option(WITH_WEBDAV_PROPS "with property-support for mod_webdav [default: off]")
-option(WITH_WEBDAV_LOCKS "locks in webdav [default: off]")
+option(WITH_WEBDAV_LOCKS "locks in webdav (obsolete flag; ignored) [default: off]")
 option(WITH_BROTLI "with brotli-support for mod_deflate [default: off]")
 option(WITH_BZIP "with bzip2-support for mod_deflate [default: off]")
 option(WITH_ZLIB "with deflate-support for mod_deflate [default: on]" ON)
@@ -97,10 +97,6 @@ endif()
 if(WITH_WEBDAV_PROPS)
 	set(WITH_XML 1)
 	set(WITH_SQLITE3 1)
-endif()
-
-if(WITH_WEBDAV_LOCKS)
-	set(WITH_UUID 1)
 endif()
 
 check_include_files(sys/inotify.h HAVE_SYS_INOTIFY_H)
@@ -199,6 +195,7 @@ endif()
 check_include_files(sys/uio.h HAVE_SYS_UIO_H)
 if(HAVE_SYS_UIO_H)
 check_function_exists(preadv HAVE_PREADV)
+check_function_exists(preadv2 HAVE_PREADV2)
 check_function_exists(pwritev HAVE_PWRITEV)
 check_function_exists(writev HAVE_WRITEV)
 endif()
@@ -250,7 +247,6 @@ check_function_exists(pipe2 HAVE_PIPE2)
 check_function_exists(pread HAVE_PREAD)
 check_function_exists(pwrite HAVE_PWRITE)
 check_function_exists(sendfile HAVE_SENDFILE)
-check_function_exists(sendfile64 HAVE_SENDFILE64)
 check_function_exists(splice HAVE_SPLICE)
 check_function_exists(srandom HAVE_SRANDOM)
 check_function_exists(strerror_r HAVE_STRERROR_R)
@@ -272,6 +268,10 @@ set(CMAKE_REQUIRED_LIBRARIES "ws2_32")
 endif()
 check_function_exists(inet_aton HAVE_INET_ATON)
 check_function_exists(inet_pton HAVE_INET_PTON)
+if(WIN32)
+set(HAVE_IPV6 1)
+set(HAVE_INET_PTON 1)
+else()
 check_c_source_compiles("
 	#include <sys/types.h>
 	#include <sys/socket.h>
@@ -281,8 +281,6 @@ check_c_source_compiles("
 		struct sockaddr_in6 s; struct in6_addr t=in6addr_any; int i=AF_INET6; s; t.s6_addr[0] = 0;
 		return 0;
 	}" HAVE_IPV6)
-if(WIN32)
-set(HAVE_IPV6 1)
 endif()
 if(CMAKE_SYSTEM_NAME MATCHES "SunOS")
 set(CMAKE_REQUIRED_LIBRARIES)
@@ -677,20 +675,6 @@ else()
 	unset(HAVE_SQLITE3)
 endif()
 
-if(WITH_UUID)
-	check_include_files(uuid/uuid.h HAVE_UUID_UUID_H)
-	check_library_exists(uuid uuid_generate "" NEED_LIBUUID)
-	if(NOT NEED_LIBUUID)
-		check_function_exists(uuid_generate HAVE_LIBUUID)
-	else()
-		set(HAVE_LIBUUID 1)
-	endif()
-else()
-	unset(HAVE_UUID_UUID_H)
-	unset(NEED_LIBUUID)
-	unset(HAVE_LIBUUID)
-endif()
-
 if(WITH_XXHASH)
 	check_include_files(xxhash.h HAVE_XXHASH_H)
 	check_library_exists(xxhash XXH_versionNumber "" HAVE_XXHASH)
@@ -776,7 +760,7 @@ if(WITH_LUA)
 	if(WITH_LUA_VERSION)
 		pkg_search_module(LUA REQUIRED ${WITH_LUA_VERSION})
 	else()
-		pkg_search_module(LUA REQUIRED lua5.4 lua-5.4 lua5.3 lua-5.3 lua5.2 lua-5.2 lua5.1 lua-5.1 lua)
+		pkg_search_module(LUA REQUIRED lua54 lua5.4 lua-5.4 lua53 lua5.3 lua-5.3 lua52 lua5.2 lua-5.2 lua51 lua5.1 lua-5.1 lua)
 	endif()
 	message(STATUS "found lua at: INCDIR: ${LUA_INCLUDE_DIRS} LIBDIR: ${LUA_LIBRARY_DIRS} LDFLAGS: ${LUA_LDFLAGS} CFLAGS: ${LUA_CFLAGS}")
 	set(HAVE_LUA_H  1 "Have liblua header")
@@ -915,7 +899,11 @@ set(L_INSTALL_TARGETS)
 
 add_executable(lighttpd-angel lighttpd-angel.c)
 set(L_INSTALL_TARGETS ${L_INSTALL_TARGETS} lighttpd-angel)
+if(WIN32)
+add_target_properties(lighttpd-angel COMPILE_FLAGS "-DSBIN_DIR=\\\"${CMAKE_INSTALL_FULL_SBINDIR}\\\"")
+else()
 add_target_properties(lighttpd-angel COMPILE_FLAGS "-DSBIN_DIR=\\\\\"${CMAKE_INSTALL_FULL_SBINDIR}\\\\\"")
+endif()
 
 set(SERVER_SRC
 	server.c
@@ -989,6 +977,7 @@ add_executable(test_mod
 	t/test_mod_access.c
 	t/test_mod_alias.c
 	t/test_mod_evhost.c
+	t/test_mod_expire.c
 	t/test_mod_indexfile.c
 	t/test_mod_simple_vhost.c
 	t/test_mod_ssi.c
@@ -1066,11 +1055,6 @@ if(HAVE_SQLITE3_H)
 endif()
 if(HAVE_LIBXML_H)
 	target_link_libraries(mod_webdav ${XML2_LDFLAGS})
-endif()
-if(HAVE_UUID_UUID_H)
-	if(NEED_LIBUUID)
-		set(L_MOD_WEBDAV ${L_MOD_WEBDAV} uuid)
-	endif()
 endif()
 
 target_link_libraries(mod_webdav ${L_MOD_WEBDAV})

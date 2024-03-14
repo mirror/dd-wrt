@@ -276,7 +276,7 @@ static void config_warn_openssl_module (server *srv) {
 			if (0 == strncmp(du->key.ptr, "ssl.", sizeof("ssl.")-1)) {
 				/* mod_openssl should be loaded after mod_extforward */
 				array_insert_value(srv->srvconf.modules, CONST_STR_LEN("mod_openssl"));
-				log_error(srv->errh, __FILE__, __LINE__,
+				log_warn(srv->errh, __FILE__, __LINE__,
 				  "Warning: please add \"mod_openssl\" to server.modules list "
 				  "in lighttpd.conf.  A future release of lighttpd 1.4.x "
 				  "*will not* automatically load mod_openssl and lighttpd "
@@ -384,7 +384,7 @@ static void config_warn_authn_module (server *srv, const char *module, uint32_t 
     buffer_copy_string_len(tb, CONST_STR_LEN("mod_authn_"));
     buffer_append_string_len(tb, module, len);
     array_insert_value(srv->srvconf.modules, BUF_PTR_LEN(tb));
-    log_error(srv->errh, __FILE__, __LINE__,
+    log_warn(srv->errh, __FILE__, __LINE__,
       "Warning: please add \"mod_authn_%s\" to server.modules list "
       "in lighttpd.conf.  A future release of lighttpd 1.4.x will "
       "not automatically load mod_authn_%s and lighttpd will fail "
@@ -428,7 +428,7 @@ static void config_compat_module_load (server *srv) {
                 if (!contains_mod_auth) {
                     contains_mod_auth = 1;
                     if (dyn_name)
-                        log_error(srv->errh, __FILE__, __LINE__,
+                        log_warn(srv->errh, __FILE__, __LINE__,
                           "Warning: mod_auth should be listed in server.modules"
                           " before dynamic backends such as %s", dyn_name);
                 }
@@ -464,7 +464,7 @@ static void config_compat_module_load (server *srv) {
             if (NULL == dyn_name)
                 dyn_name = m->ptr;
             if (!append_mod_staticfile)
-                log_error(srv->errh, __FILE__, __LINE__,
+                log_warn(srv->errh, __FILE__, __LINE__,
                   "Warning: %s should be listed in server.modules"
                   " before mod_staticfile", m->ptr);
         }
@@ -802,8 +802,10 @@ static int config_insert_srvconf(server *srv) {
                     srv->srvconf.network_backend = cpv->v.b;
                 break;
               case 6: /* server.chroot */
+               #ifdef HAVE_CHROOT
                 if (!buffer_is_blank(cpv->v.b))
                     srv->srvconf.changeroot = cpv->v.b;
+               #endif
                 break;
               case 7: /* server.username */
                 if (!buffer_is_blank(cpv->v.b))
@@ -1253,7 +1255,7 @@ static int config_insert(server *srv) {
                #ifndef HAVE_LSTAT
                #ifndef _WIN32
                 if (0 == cpv->v.u)
-                    log_error(srv->errh, __FILE__, __LINE__,
+                    log_warn(srv->errh, __FILE__, __LINE__,
                       "Your system lacks lstat(). "
                       "We can not differentiate symlinks from files. "
                       "Please remove server.follow-symlink from your config.");
@@ -1396,7 +1398,7 @@ int config_finalize(server *srv, const buffer *default_server_tag) {
 
             if (!array_get_element_klen(srv->srvconf.config_touched,
                                         BUF_PTR_LEN(k)))
-                log_error(srv->errh, __FILE__, __LINE__,
+                log_warn(srv->errh, __FILE__, __LINE__,
                   "WARNING: unknown config-key: %s (ignored)", k->ptr);
         }
     }
@@ -1565,6 +1567,7 @@ static void config_print_config(const data_unset *d, buffer * const b, int depth
     }
     else {
         if (dc->cond != CONFIG_COND_ELSE) {
+            buffer_append_string(b, "if ");
             buffer_append_string(b, dc->comp_key);
             buffer_append_string(b, " ");
         }
@@ -1724,70 +1727,7 @@ static void config_log_error_open_syslog(server *srv, log_error_st *errh, const 
     /*assert(errh->fd == STDERR_FILENO);*/
     errh->mode = FDLOG_SYSLOG;
     errh->fd = -1;
-    /* perhaps someone wants to use syslog() */
-    int facility = -1;
-    if (syslog_facility) {
-        static const struct facility_name_st {
-          const char *name;
-          int val;
-        } facility_names[] = {
-            { "auth",     LOG_AUTH }
-          #ifdef LOG_AUTHPRIV
-           ,{ "authpriv", LOG_AUTHPRIV }
-          #endif
-          #ifdef LOG_CRON
-           ,{ "cron",     LOG_CRON }
-          #endif
-           ,{ "daemon",   LOG_DAEMON }
-          #ifdef LOG_FTP
-           ,{ "ftp",      LOG_FTP }
-          #endif
-          #ifdef LOG_KERN
-           ,{ "kern",     LOG_KERN }
-          #endif
-          #ifdef LOG_LPR
-           ,{ "lpr",      LOG_LPR }
-          #endif
-          #ifdef LOG_MAIL
-           ,{ "mail",     LOG_MAIL }
-          #endif
-          #ifdef LOG_NEWS
-           ,{ "news",     LOG_NEWS }
-          #endif
-           ,{ "security", LOG_AUTH }           /* DEPRECATED */
-          #ifdef LOG_SYSLOG
-           ,{ "syslog",   LOG_SYSLOG }
-          #endif
-          #ifdef LOG_USER
-           ,{ "user",     LOG_USER }
-          #endif
-          #ifdef LOG_UUCP
-           ,{ "uucp",     LOG_UUCP }
-          #endif
-           ,{ "local0",   LOG_LOCAL0 }
-           ,{ "local1",   LOG_LOCAL1 }
-           ,{ "local2",   LOG_LOCAL2 }
-           ,{ "local3",   LOG_LOCAL3 }
-           ,{ "local4",   LOG_LOCAL4 }
-           ,{ "local5",   LOG_LOCAL5 }
-           ,{ "local6",   LOG_LOCAL6 }
-           ,{ "local7",   LOG_LOCAL7 }
-        };
-        for (unsigned int i = 0; i < sizeof(facility_names)/sizeof(facility_names[0]); ++i) {
-            const struct facility_name_st *f = facility_names+i;
-            if (0 == strcmp(syslog_facility->ptr, f->name)) {
-                facility = f->val;
-                break;
-            }
-        }
-        if (-1 == facility) {
-            log_error(srv->errh, __FILE__, __LINE__,
-              "unrecognized server.syslog-facility: \"%s\"; "
-              "defaulting to \"daemon\" facility",
-              syslog_facility->ptr);
-        }
-    }
-    openlog("lighttpd", LOG_CONS|LOG_PID, -1==facility ? LOG_DAEMON : facility);
+    fdlog_openlog(srv->errh, syslog_facility);
   #else
     UNUSED(srv);
     UNUSED(errh);
@@ -1937,27 +1877,29 @@ void config_log_error_close(server *srv) {
     if (srv->errh->mode == FDLOG_SYSLOG) {
         srv->errh->mode = FDLOG_FD;
         srv->errh->fd = STDERR_FILENO;
-      #ifdef HAVE_SYSLOG_H
-        closelog();
-      #endif
     }
+  #ifdef HAVE_SYSLOG_H
+    fdlog_closelog();
+  #endif
 }
 
 
 
 typedef struct {
-	const char *source;
-	const char *input;
 	int offset;
 	int size;
+	const char *input;
+	buffer *token;
 
+	char in_key;
+	char parens;
+	char in_cond;
+	char simulate_eol;
+
+	int tid;
 	int line_pos;
 	int line;
-
-	int in_key;
-	int parens;
-	int in_cond;
-	int simulate_eol;
+	const char *source;
 	log_error_st *errh;
 } tokenizer_t;
 
@@ -1968,7 +1910,6 @@ static int config_skip_newline(const tokenizer_t * const t) {
     return 1 + (s[0] == '\r' && s[1] == '\n');
 }
 
-__attribute_noinline__
 __attribute_pure__
 static int config_skip_comment(const tokenizer_t * const t) {
     /*assert(t->input[t->offset] == '#');*/
@@ -1984,7 +1925,9 @@ static int config_tokenizer_err(tokenizer_t *t, const char *file, unsigned int l
     return -1;
 }
 
-static int config_tokenizer(tokenizer_t *t, buffer *token) {
+__attribute_noinline__
+static int config_tokenizer(tokenizer_t *t) {
+    buffer * const token = t->token;
     if (t->simulate_eol) {
         t->simulate_eol = 0;
         t->in_key = 1;
@@ -2089,6 +2032,12 @@ static int config_tokenizer(tokenizer_t *t, buffer *token) {
             break;
           case '"':
            {
+            /* sanity check that previous token was not also TK_STRING */
+            if (t->tid == TK_STRING)
+                return config_tokenizer_err(t, __FILE__, __LINE__,
+                         "strings may be combined with '+' "
+                         "or separated with ',' or '=>' in lists");
+
             /* search for the terminating " */
             const char *start = s + 1;   /*buffer_blank(token);*/
             buffer_copy_string_len(token, CONST_STR_LEN(""));
@@ -2097,7 +2046,7 @@ static int config_tokenizer(tokenizer_t *t, buffer *token) {
             for (i = 1; s[i] && s[i] != '"'; ++i) {
                 if (s[i] == '\\' && s[i+1] == '"') {
                     buffer_append_string_len(token, start, s + i - start);
-                    start = s + ++i; /* step over '"' */
+                    start = s + ++i; /* step over '\\'; include literal '"' */
                 }
             }
 
@@ -2118,7 +2067,7 @@ static int config_tokenizer(tokenizer_t *t, buffer *token) {
           case ')':
             if (!t->parens)
                 return config_tokenizer_err(t, __FILE__, __LINE__,
-                         "close-parens seen open-parens");
+                         "close-parens without open-parens");
             t->offset++;
             t->parens--;
             buffer_copy_string_len(token, s, 1); /* ")" */
@@ -2220,6 +2169,18 @@ static int config_tokenizer(tokenizer_t *t, buffer *token) {
                         return TK_INCLUDE_SHELL;
                     else if (0 == strcmp(token->ptr, "global"))
                         return TK_GLOBAL;
+                    else if (0 == strcmp(token->ptr, "if")) {
+                        /* ignore 'if' immediately prior to condition
+                         * ('if <condition>' or 'else if <condition>') */
+                        int j = i;
+                        while (s[j] == ' ' || s[j] == '\t') ++j;
+                        if (s[j] == '$')
+                            continue;
+                    }
+                    else if (0 == strcmp(token->ptr, "elif")
+                             || 0 == strcmp(token->ptr, "elsif")
+                             || 0 == strcmp(token->ptr, "elseif"))
+                        return TK_ELSE;
                     else if (0 == strcmp(token->ptr, "else"))
                         return TK_ELSE;
                     else
@@ -2244,9 +2205,6 @@ static int config_tokenizer(tokenizer_t *t, buffer *token) {
 
 static int config_parse(server *srv, config_t *context, const char *source, const char *input, int isize) {
 	tokenizer_t t;
-	buffer * const lasttoken = buffer_init();
-	int ret;
-
 	t.source = source;
 	t.input = input;
 	t.size = isize;
@@ -2258,21 +2216,20 @@ static int config_parse(server *srv, config_t *context, const char *source, cons
 	t.parens = 0;
 	t.in_cond = 0;
 	t.simulate_eol = 0;
+	t.tid = -1;
 	t.errh = srv->errh;
 
+	t.token = buffer_init();
 	void * const pParser = configparserAlloc( malloc );
 	force_assert(pParser);
-	do {
-		ret = config_tokenizer(&t, lasttoken);
-		if (__builtin_expect( (ret <= 0), 0))
-			break;
+	while (context->ok && (t.tid = config_tokenizer(&t)) > 0) {
 		buffer * const token = buffer_init();
-		buffer_copy_buffer(token, lasttoken);
-		configparser(pParser, ret, token, context);
+		buffer_copy_buffer(token, t.token);
+		configparser(pParser, t.tid, token, context);
 		/*token = NULL;*/
-	} while (context->ok);
+	}
 
-	if (ret != -1 && context->ok) {
+	if (t.tid != -1 && context->ok) {
 		/* add an EOL at EOF, better than say sorry */
 		buffer * const token = buffer_init();
 		buffer_copy_string(token, "(EOL)");
@@ -2284,18 +2241,18 @@ static int config_parse(server *srv, config_t *context, const char *source, cons
 	}
 	configparserFree(pParser, free);
 
-	if (ret == -1) {
+	if (t.tid == -1) {
 		log_error(t.errh, __FILE__, __LINE__,
-		          "configfile parser failed at: %s", lasttoken->ptr);
+		          "configfile parser failed at: %s", t.token->ptr);
 	} else if (context->ok == 0) {
 		log_error(t.errh, __FILE__, __LINE__, "source: %s line: %d pos: %d "
 		          "parser failed somehow near here: %s",
-		          t.source, t.line, t.offset - t.line_pos, lasttoken->ptr);
-		ret = -1;
+		          t.source, t.line, t.offset - t.line_pos, t.token->ptr);
+		t.tid = -1;
 	}
-	buffer_free(lasttoken);
+	buffer_free(t.token);
 
-	return ret == -1 ? -1 : 0;
+	return t.tid == -1 ? -1 : 0;
 }
 
 __attribute_cold__

@@ -208,7 +208,8 @@ int config_plugin_values_init_block(server * const srv, const array * const ca, 
                 if (v && *v) {
                     char *e;
                     long l = strtol(v, &e, 10);
-                    if (e != v && !*e && l >= 0 && l <= 65535) {
+                    if (e != v && !*e && l >= 0 && l <= 65536) {
+                        if (l == 65536) l = 65535;
                         cpv->v.shrt = (unsigned short)l;
                         break;
                     }
@@ -222,8 +223,11 @@ int config_plugin_values_init_block(server * const srv, const array * const ca, 
                 cpv->v.shrt =
                   (unsigned short)((const data_integer *)du)->value;
                 if (((const data_integer *)du)->value >= 0
-                    && ((const data_integer *)du)->value <= 65535)
+                    && ((const data_integer *)du)->value <= 65536) {
+                    if (((const data_integer *)du)->value == 65536)
+                        cpv->v.shrt = 65535;
                     break;
+                }
                 __attribute_fallthrough__
               default:
                 log_error(srv->errh, __FILE__, __LINE__,
@@ -332,13 +336,13 @@ int config_plugin_values_init(server * const srv, void *p_d, const config_plugin
 
             if (cpk[i].scope == T_CONFIG_SCOPE_SERVER)
                 /* server scope options should be set only in server scope */
-                log_error(srv->errh, __FILE__, __LINE__,
+                log_warn(srv->errh, __FILE__, __LINE__,
                   "DEPRECATED: do not set server options in conditionals, "
                   "variable: %s", cpk[i].k);
             if (cpk[i].scope == T_CONFIG_SCOPE_SOCKET
                 && (dc->comp!=COMP_SERVER_SOCKET || dc->cond!=CONFIG_COND_EQ))
                 /* socket options should be set in socket or global scope */
-                log_error(srv->errh, __FILE__, __LINE__,
+                log_warn(srv->errh, __FILE__, __LINE__,
                   "WARNING: %s must be in global scope or $SERVER[\"socket\"] "
                   "with '==', or else is ignored", cpk[i].k);
         }
@@ -388,7 +392,7 @@ static void config_cond_result_trace(request_st * const r, const data_config * c
       case COND_RESULT_TRUE:  msg = "true"; break;
       default:                msg = "invalid cond_result_t"; break;
     }
-    log_error(r->conf.errh, __FILE__, __LINE__, "%d (%s) result: %s (cond: %s)",
+    log_debug(r->conf.errh, __FILE__, __LINE__, "%d (%s) result: %s (cond: %s)",
               dc->context_ndx, &"uncached"[cached ? 2 : 0], msg, dc->key.ptr);
 }
 
@@ -422,7 +426,7 @@ static cond_result_t config_check_cond_nocache(request_st * const r, const data_
 		 * if the parent is not decided yet or false, we can't be true either 
 		 */
 		if (debug_cond) {
-			log_error(r->conf.errh, __FILE__, __LINE__, "go parent %s", dc->parent->key.ptr);
+			log_debug(r->conf.errh, __FILE__, __LINE__, "go parent %s", dc->parent->key.ptr);
 		}
 
 		switch (config_check_cond_cached(r, dc->parent, debug_cond)) {
@@ -445,7 +449,7 @@ static cond_result_t config_check_cond_nocache(request_st * const r, const data_
 		 * was evaluated as "false" (not unset/skipped/true)
 		 */
 		if (debug_cond) {
-			log_error(r->conf.errh, __FILE__, __LINE__, "go prev %s", dc->prev->key.ptr);
+			log_debug(r->conf.errh, __FILE__, __LINE__, "go prev %s", dc->prev->key.ptr);
 		}
 
 		/* make sure prev is checked first */
@@ -465,7 +469,7 @@ static cond_result_t config_check_cond_nocache(request_st * const r, const data_
 
 	if (!(r->conditional_is_valid & (1 << dc->comp))) {
 		if (debug_cond) {
-			log_error(r->conf.errh, __FILE__, __LINE__,
+			log_debug(r->conf.errh, __FILE__, __LINE__,
 			  "%d %s not available yet", dc->comp, dc->key.ptr);
 		}
 
@@ -531,7 +535,7 @@ static cond_result_t config_check_cond_nocache_eval(request_st * const r, const 
 		l = (buffer *)&empty_string;
 
 	if (debug_cond)
-		log_error(r->conf.errh, __FILE__, __LINE__,
+		log_debug(r->conf.errh, __FILE__, __LINE__,
 			"%s compare to %s", dc->comp_key, l->ptr);
 
 	int match;
@@ -600,7 +604,7 @@ static cond_result_t config_check_cond_calc(request_st * const r, const int cont
     const data_config * const dc = config_reference.data[context_ndx];
     const int debug_cond = r->conf.log_condition_handling;
     if (debug_cond) {
-        log_error(r->conf.errh, __FILE__, __LINE__,
+        log_debug(r->conf.errh, __FILE__, __LINE__,
                   "=== start of condition block ===");
     }
     return config_check_cond_nocache_calc(r, dc, debug_cond, cache);

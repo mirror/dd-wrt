@@ -17,7 +17,9 @@
  * - database query is synchronous and blocks waiting for response
  */
 
+#ifndef _WIN32
 #include <sys/utsname.h>
+#endif
 #include <stdlib.h>
 #include <string.h>
 
@@ -118,6 +120,7 @@ static plugin_config * mod_authn_sasl_parse_opts(server *srv, const array * cons
       array_get_element_klen(opts, CONST_STR_LEN("fqdn"));
     if (NULL != ds) fqdn = ds->value.ptr;
     if (NULL == fqdn) {
+      #ifndef _WIN32
         static struct utsname uts;
         if (uts.nodename[0] == '\0') {
             if (0 != uname(&uts)) {
@@ -126,6 +129,14 @@ static plugin_config * mod_authn_sasl_parse_opts(server *srv, const array * cons
             }
         }
         fqdn = uts.nodename;
+      #else
+        fqdn = getenv("HOSTNAME");
+        if (NULL == fqdn) {
+            log_error(srv->errh, __FILE__, __LINE__,
+              "auth.backend.sasl.opts missing fqdn");
+            return NULL;
+        }
+      #endif
     }
 
     ds = (const data_string *)
@@ -247,8 +258,9 @@ static int mod_authn_sasl_cb_log(void *vreq, int level, const char *message) {
       case SASL_LOG_ERR:
       case SASL_LOG_FAIL:
       case SASL_LOG_WARN: /* (might omit SASL_LOG_WARN if too noisy in logs) */
-        log_error(((request_st *)vreq)->conf.errh, __FILE__, __LINE__,
-                  "%s", message);
+        level = (level == SASL_LOG_WARN) ? 4 : 3; /* LOG_WARNING 4, LOG_ERR 3 */
+        log_pri(((request_st *)vreq)->conf.errh, __FILE__, __LINE__, level,
+                "%s", message);
         break;
     }
     return SASL_OK;

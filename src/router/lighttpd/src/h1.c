@@ -245,7 +245,7 @@ h1_send_headers (request_st * const r)
     r->resp_header_len = buffer_clen(b);
 
     if (r->conf.log_response_header)
-        log_error_multiline(r->conf.errh, __FILE__, __LINE__,
+        log_debug_multiline(r->conf.errh, __FILE__, __LINE__,
                             BUF_PTR_LEN(b), "fd:%d resp: ", r->con->fd);
 
     chunkqueue_prepend_buffer_commit(cq);
@@ -494,7 +494,7 @@ h1_recv_headers (request_st * const r, connection * const con)
 
     r->rqst_header_len = header_len;
     if (r->conf.log_request_header)
-        log_error_multiline(r->conf.errh, __FILE__, __LINE__,
+        log_debug_multiline(r->conf.errh, __FILE__, __LINE__,
                             hdrs, header_len, "fd:%d rqst: ", con->fd);
     http_request_headers_process(r, hdrs, hoff, con->proto_default_port);
     chunkqueue_mark_written(cq, r->rqst_header_len);
@@ -877,8 +877,8 @@ h1_check_timeout (connection * const con, const unix_time64_t cur_ts)
           ? con->keep_alive_idle
           : (int)r->conf.max_read_idle;
         if (cur_ts - con->read_idle_ts > idle_timeout) {
-            if (r->conf.log_request_handling)
-                log_error(r->conf.errh, __FILE__, __LINE__,
+            if (r->conf.log_timeouts)
+                log_debug(r->conf.errh, __FILE__, __LINE__,
                   "connection closed - %s timeout: %d",
                   keep_alive ? "keep-alive" : "read", con->fd);
             request_set_state_error(r, CON_STATE_ERROR);
@@ -911,7 +911,7 @@ h1_check_timeout (connection * const con, const unix_time64_t cur_ts)
         if (cur_ts - con->write_request_ts > r->conf.max_write_idle) {
             /* time - out */
             if (r->conf.log_timeouts) {
-                log_error(r->conf.errh, __FILE__, __LINE__,
+                log_debug(r->conf.errh, __FILE__, __LINE__,
                   "NOTE: a request from %s for %.*s timed out after writing "
                   "%lld bytes. We waited %d seconds. If this is a problem, "
                   "increase server.max-write-idle",

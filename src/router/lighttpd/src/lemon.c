@@ -12,6 +12,7 @@
 
 #include <stdio.h>
 #include <stdarg.h>
+#include <stdint.h>
 #include <string.h>
 #include <ctype.h>
 #include <stdlib.h>
@@ -44,7 +45,7 @@ extern int access(const char *path, int mode);
 #endif
 
 /* #define PRIVATE static */
-#define PRIVATE
+#define PRIVATE static
 
 #ifdef TEST
 #define MAXRHS 5       /* Set low to exercise exception code */
@@ -431,11 +432,11 @@ struct lemon {
   int printPreprocessed;   /* Show preprocessor output on stdout */
   int has_fallback;        /* True if any %fallback is seen in the grammar */
   int nolinenosflag;       /* True if #line statements should not be printed */
-  char *argv0;             /* Name of the program */
+  int argc;                /* Number of command-line arguments */
+  char **argv;             /* Command-line arguments */
 };
 
 #define MemoryCheck(X) if((X)==0){ \
-  extern void memory_error(void); \
   memory_error(); \
 }
 
@@ -543,6 +544,7 @@ static struct action *Action_sort(
   return ap;
 }
 
+PRIVATE
 void Action_add(
   struct action **app,
   enum e_action type,
@@ -617,6 +619,7 @@ struct acttab {
 #define acttab_yylookahead(X,N)  ((X)->aAction[N].lookahead)
 
 /* Free all memory associated with the given acttab */
+PRIVATE
 void acttab_free(acttab *p){
   free( p->aAction );
   free( p->aLookahead );
@@ -624,6 +627,7 @@ void acttab_free(acttab *p){
 }
 
 /* Allocate a new acttab structure */
+PRIVATE
 acttab *acttab_alloc(int nsymbol, int nterminal){
   acttab *p = (acttab *) calloc( 1, sizeof(*p) );
   if( p==0 ){
@@ -641,6 +645,7 @@ acttab *acttab_alloc(int nsymbol, int nterminal){
 ** This routine is called once for each lookahead for a particular
 ** state.
 */
+PRIVATE
 void acttab_action(acttab *p, int lookahead, int action){
   if( p->nLookahead>=p->nLookaheadAlloc ){
     p->nLookaheadAlloc += 25;
@@ -682,6 +687,7 @@ void acttab_action(acttab *p, int lookahead, int action){
 ** a smaller table.  For non-terminal symbols, which are never syntax errors,
 ** makeItSafe can be false.
 */
+PRIVATE
 int acttab_insert(acttab *p, int makeItSafe){
   int i, j, k, n, end;
   assert( p->nLookahead>0 );
@@ -791,6 +797,7 @@ int acttab_insert(acttab *p, int makeItSafe){
 ** Return the size of the action table without the trailing syntax error
 ** entries.
 */
+PRIVATE
 int acttab_action_size(acttab *p){
   int n = p->nAction;
   while( n>0 && p->aAction[n-1].lookahead<0 ){ n--; }
@@ -1010,6 +1017,7 @@ PRIVATE struct state *getstate(struct lemon *lemp)
 /*
 ** Return true if two symbols are the same.
 */
+PRIVATE
 int same_symbol(struct symbol *a, struct symbol *b)
 {
   int i;
@@ -1521,8 +1529,10 @@ void memory_error(void){
   exit(1);
 }
 
-static int nDefine = 0;      /* Number of -D options on the command line */
-static char **azDefine = 0;  /* Name of the -D macros */
+static int nDefine = 0;        /* Number of -D options on the command line */
+static int nDefineUsed = 0;    /* Number of -D options actually used */
+static char **azDefine = 0;    /* Name of the -D macros */
+static char *bDefineUsed = 0;  /* True for every -D macro actually used */
 
 /* This routine is called with the argument to each -D command-line option.
 ** Add the macro defined to the azDefine array.
@@ -1535,6 +1545,12 @@ static void handle_D_option(char *z){
     fprintf(stderr,"out of memory\n");
     exit(1);
   }
+  bDefineUsed = (char*)realloc(bDefineUsed, nDefine);
+  if( bDefineUsed==0 ){
+    fprintf(stderr,"out of memory\n");
+    exit(1);
+  }
+  bDefineUsed[nDefine-1] = 0;
   paz = &azDefine[nDefine-1];
   *paz = (char *) malloc( lemonStrlen(z)+1 );
   if( *paz==0 ){
@@ -1671,7 +1687,6 @@ int main(int argc, char **argv){
   struct lemon lem;
   struct rule *rp;
 
-  (void)argc;
   OptInit(argv,options,stderr);
   if( version ){
      printf("Lemon version 1.0\n");
@@ -1688,7 +1703,8 @@ int main(int argc, char **argv){
   Strsafe_init();
   Symbol_init();
   State_init();
-  lem.argv0 = argv[0];
+  lem.argv = argv;
+  lem.argc = argc;
   lem.filename = OptArg(0);
   lem.basisflag = basisflag;
   lem.nolinenosflag = nolinenosflag;
@@ -1999,7 +2015,7 @@ static int handleflags(int i, FILE *err)
   }else if( op[j].type==OPT_FLAG ){
     *((int*)op[j].arg) = v;
   }else if( op[j].type==OPT_FFLAG ){
-    ((void(*)(int))op[j].fn)(v);
+    ((void(*)(int))(uintptr_t)op[j].fn)(v);
   }else if( op[j].type==OPT_FSTR ){
     op[j].fn(&g_argv[i][2]);
   }else{
@@ -2083,13 +2099,13 @@ static int handleswitch(int i, FILE *err)
         *(double*)(op[j].arg) = dv;
         break;
       case OPT_FDBL:
-        ((void(*)(double))op[j].fn)(dv);
+        ((void(*)(double))(uintptr_t)op[j].fn)(dv);
         break;
       case OPT_INT:
         *(int*)(op[j].arg) = lv;
         break;
       case OPT_FINT:
-        ((void(*)(int))op[j].fn)((int)lv);
+        ((void(*)(int))(uintptr_t)op[j].fn)((int)lv);
         break;
       case OPT_STR:
         *(char**)(op[j].arg) = sv;
@@ -2861,6 +2877,10 @@ static int eval_preprocessor_boolean(char *z, int lineno){
       res = 0;
       for(j=0; j<nDefine; j++){
         if( strncmp(azDefine[j],&z[i],n)==0 && azDefine[j][n]==0 ){
+          if( !bDefineUsed[j] ){
+            bDefineUsed[j] = 1;
+            nDefineUsed++;
+          }
           res = 1;
           break;
         }
@@ -3235,6 +3255,7 @@ PRIVATE FILE *file_open(
 
 /* Print the text of a rule
 */
+PRIVATE
 void rule_print(FILE *out, struct rule *rp){
   int i, j;
   fprintf(out, "%s",rp->lhs->name);
@@ -3291,6 +3312,7 @@ void Reprint(struct lemon *lemp)
 
 /* Print a single rule.
 */
+PRIVATE
 void RulePrint(FILE *fp, struct rule *rp, int iCursor){
   struct symbol *sp;
   int i, j;
@@ -3312,6 +3334,7 @@ void RulePrint(FILE *fp, struct rule *rp, int iCursor){
 
 /* Print the rule for a configuration.
 */
+PRIVATE
 void ConfigPrint(FILE *fp, struct config *cfp){
   RulePrint(fp, cfp->rp, cfp->dot);
 }
@@ -3355,6 +3378,7 @@ char *tag;
 /* Print an action to the given file descriptor.  Return FALSE if
 ** nothing was actually printed.
 */
+PRIVATE
 int PrintAction(
   struct action *ap,          /* The action to print */
   FILE *fp,                   /* Print the action here */
@@ -3678,7 +3702,7 @@ PRIVATE FILE *tplt_open(struct lemon *lemp)
   }else if( access(templatename,004)==0 ){
     tpltname = templatename;
   }else{
-    toFree = tpltname = pathsearch(lemp->argv0,templatename,0);
+    toFree = tpltname = pathsearch(lemp->argv[0],templatename,0);
   }
   if( tpltname==0 ){
     fprintf(stderr,"Can't find the parser driver template file \"%s\".\n",
@@ -3730,6 +3754,7 @@ PRIVATE void tplt_print(FILE *out, struct lemon *lemp, char *str, int *lineno)
 ** The following routine emits code for the destructor for the
 ** symbol sp
 */
+PRIVATE
 void emit_destructor_code(
   FILE *out,
   struct symbol *sp,
@@ -3776,6 +3801,7 @@ void emit_destructor_code(
 /*
 ** Return TRUE (non-zero) if the given symbol has a destructor.
 */
+PRIVATE
 int has_destructor(struct symbol *sp, struct lemon *lemp)
 {
   int ret;
@@ -4093,6 +4119,7 @@ PRIVATE void emit_code(
 ** union, also set the ".dtnum" field of every terminal and nonterminal
 ** symbol.
 */
+PRIVATE
 void print_stack_union(
   FILE *out,                  /* The output stream */
   struct lemon *lemp,         /* The main info structure for this parser */
@@ -4400,7 +4427,17 @@ void ReportTable(
 
   fprintf(out,
      "/* This file is automatically generated by Lemon from input grammar\n"
-     "** source file \"%s\". */\n", lemp->filename); lineno += 2;
+     "** source file \"%s\"", lemp->filename);  lineno++;
+  if( nDefineUsed==0 ){
+    fprintf(out, ".\n*/\n"); lineno += 2;
+  }else{
+    fprintf(out, " with these options:\n**\n"); lineno += 2;
+    for(i=0; i<nDefine; i++){
+      if( !bDefineUsed[i] ) continue;
+      fprintf(out, "**   -D%s\n", azDefine[i]); lineno++;
+    }
+    fprintf(out, "*/\n"); lineno++;
+  }
 
   /* The first %include directive begins with a C-language comment,
   ** then skip over the header comment of the template file

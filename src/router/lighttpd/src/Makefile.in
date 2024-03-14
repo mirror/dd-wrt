@@ -602,7 +602,6 @@ mod_vhostdb_pgsql_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
 @LIGHTTPD_STATIC_FALSE@	$(am__DEPENDENCIES_2) \
 @LIGHTTPD_STATIC_FALSE@	$(am__DEPENDENCIES_1) \
 @LIGHTTPD_STATIC_FALSE@	$(am__DEPENDENCIES_1) \
-@LIGHTTPD_STATIC_FALSE@	$(am__DEPENDENCIES_1) \
 @LIGHTTPD_STATIC_FALSE@	$(am__DEPENDENCIES_1)
 am__mod_webdav_la_SOURCES_DIST = mod_webdav.c
 @LIGHTTPD_STATIC_FALSE@am_mod_webdav_la_OBJECTS =  \
@@ -800,7 +799,6 @@ lighttpd_OBJECTS = $(am_lighttpd_OBJECTS)
 @LIGHTTPD_STATIC_TRUE@	$(am__DEPENDENCIES_1) \
 @LIGHTTPD_STATIC_TRUE@	$(am__DEPENDENCIES_1) \
 @LIGHTTPD_STATIC_TRUE@	$(am__DEPENDENCIES_1) \
-@LIGHTTPD_STATIC_TRUE@	$(am__DEPENDENCIES_1) \
 @LIGHTTPD_STATIC_TRUE@	$(am__DEPENDENCIES_3) \
 @LIGHTTPD_STATIC_TRUE@	$(am__DEPENDENCIES_4) \
 @LIGHTTPD_STATIC_TRUE@	$(am__DEPENDENCIES_5) \
@@ -846,8 +844,9 @@ am__t_test_mod_SOURCES_DIST = base64.c buffer.c burl.c log.c \
 	fdlog.c sys-setjmp.c ck.c fdevent_win32.c fs_win32.c \
 	mod_auth_api.c mod_vhostdb_api.c t/test_mod.c \
 	t/test_mod_access.c t/test_mod_alias.c t/test_mod_evhost.c \
-	t/test_mod_indexfile.c t/test_mod_simple_vhost.c \
-	t/test_mod_ssi.c t/test_mod_staticfile.c t/test_mod_userdir.c
+	t/test_mod_expire.c t/test_mod_indexfile.c \
+	t/test_mod_simple_vhost.c t/test_mod_ssi.c \
+	t/test_mod_staticfile.c t/test_mod_userdir.c
 @LIGHTTPD_STATIC_FALSE@@NO_RDYNAMIC_TRUE@am__objects_24 = t_test_mod-mod_auth_api.$(OBJEXT) \
 @LIGHTTPD_STATIC_FALSE@@NO_RDYNAMIC_TRUE@	t_test_mod-mod_vhostdb_api.$(OBJEXT)
 am__objects_25 = t_test_mod-base64.$(OBJEXT) \
@@ -876,6 +875,7 @@ am_t_test_mod_OBJECTS = $(am__objects_25) \
 	t/test_mod-test_mod_access.$(OBJEXT) \
 	t/test_mod-test_mod_alias.$(OBJEXT) \
 	t/test_mod-test_mod_evhost.$(OBJEXT) \
+	t/test_mod-test_mod_expire.$(OBJEXT) \
 	t/test_mod-test_mod_indexfile.$(OBJEXT) \
 	t/test_mod-test_mod_simple_vhost.$(OBJEXT) \
 	t/test_mod-test_mod_ssi.$(OBJEXT) \
@@ -1104,6 +1104,7 @@ am__depfiles_remade = ./$(DEPDIR)/algo_xxhash.Plo ./$(DEPDIR)/array.Po \
 	t/$(DEPDIR)/test_mod-test_mod_access.Po \
 	t/$(DEPDIR)/test_mod-test_mod_alias.Po \
 	t/$(DEPDIR)/test_mod-test_mod_evhost.Po \
+	t/$(DEPDIR)/test_mod-test_mod_expire.Po \
 	t/$(DEPDIR)/test_mod-test_mod_indexfile.Po \
 	t/$(DEPDIR)/test_mod-test_mod_simple_vhost.Po \
 	t/$(DEPDIR)/test_mod-test_mod_ssi.Po \
@@ -1358,7 +1359,6 @@ SHELL = @SHELL@
 SQLITE_CFLAGS = @SQLITE_CFLAGS@
 SQLITE_LIBS = @SQLITE_LIBS@
 STRIP = @STRIP@
-UUID_LIBS = @UUID_LIBS@
 VERSION = @VERSION@
 WOLFSSL_CFLAGS = @WOLFSSL_CFLAGS@
 WOLFSSL_LIBS = @WOLFSSL_LIBS@
@@ -1489,7 +1489,7 @@ common_module_ldflags = -module -export-dynamic $(common_ldflags)
 @LIGHTTPD_STATIC_FALSE@mod_webdav_la_SOURCES = mod_webdav.c
 @LIGHTTPD_STATIC_FALSE@mod_webdav_la_CFLAGS = $(AM_CFLAGS) $(XML_CFLAGS) $(SQLITE_CFLAGS) 
 @LIGHTTPD_STATIC_FALSE@mod_webdav_la_LDFLAGS = $(common_module_ldflags)
-@LIGHTTPD_STATIC_FALSE@mod_webdav_la_LIBADD = $(common_libadd) $(XML_LIBS) $(SQLITE_LIBS) $(UUID_LIBS) $(ELFTC_LIB)
+@LIGHTTPD_STATIC_FALSE@mod_webdav_la_LIBADD = $(common_libadd) $(XML_LIBS) $(SQLITE_LIBS) $(ELFTC_LIB)
 @BUILD_WITH_LUA_TRUE@@LIGHTTPD_STATIC_FALSE@mod_magnet_la_SOURCES = mod_magnet.c mod_magnet_cache.c algo_hmac.c
 @BUILD_WITH_LUA_TRUE@@LIGHTTPD_STATIC_FALSE@mod_magnet_la_CFLAGS = $(AM_CFLAGS) $(LUA_CFLAGS)
 @BUILD_WITH_LUA_TRUE@@LIGHTTPD_STATIC_FALSE@mod_magnet_la_LDFLAGS = $(common_module_ldflags)
@@ -1622,7 +1622,8 @@ hdr = base64.h buffer.h burl.h network.h log.h http_kv.h keyvalue.h \
 	ls-hpack/lshpack.h \
 	ls-hpack/lsxpack_header.h \
 	ls-hpack/huff-tables.h \
-	compat/fastcgi.h
+	compat/fastcgi.h \
+	compat/sys/queue.h
 
 @LIGHTTPD_STATIC_FALSE@lighttpd_SOURCES = $(src)
 @LIGHTTPD_STATIC_TRUE@lighttpd_SOURCES = $(src) mod_access.c \
@@ -1658,19 +1659,18 @@ hdr = base64.h buffer.h burl.h network.h log.h http_kv.h keyvalue.h \
 @LIGHTTPD_STATIC_FALSE@lighttpd_LDADD = $(common_libadd) $(PCRE_LIB) $(DL_LIB) $(SENDFILE_LIB) $(ATTR_LIB) $(CRYPTO_LIB) $(XXHASH_LIBS) $(FAM_LIBS) $(LIBEV_LIBS) $(LIBUNWIND_LIBS) $(WS2_32_LIB)
 @LIGHTTPD_STATIC_TRUE@lighttpd_LDADD = $(common_libadd) $(CRYPT_LIB) \
 @LIGHTTPD_STATIC_TRUE@	$(CRYPTO_LIB) $(XXHASH_LIBS) $(XML_LIBS) \
-@LIGHTTPD_STATIC_TRUE@	$(SQLITE_LIBS) $(UUID_LIBS) $(ELFTC_LIB) \
-@LIGHTTPD_STATIC_TRUE@	$(PCRE_LIB) $(Z_LIB) $(ZSTD_LIB) \
-@LIGHTTPD_STATIC_TRUE@	$(BZ_LIB) $(BROTLI_LIBS) $(DEFLATE_LIBS) \
-@LIGHTTPD_STATIC_TRUE@	$(DL_LIB) $(SENDFILE_LIB) $(ATTR_LIB) \
-@LIGHTTPD_STATIC_TRUE@	$(FAM_LIBS) $(LIBEV_LIBS) \
-@LIGHTTPD_STATIC_TRUE@	$(LIBUNWIND_LIBS) $(XXHASH_LIBS) \
-@LIGHTTPD_STATIC_TRUE@	$(am__append_29) $(am__append_32) \
-@LIGHTTPD_STATIC_TRUE@	$(am__append_34) $(am__append_36) \
-@LIGHTTPD_STATIC_TRUE@	$(am__append_38) $(am__append_41) \
-@LIGHTTPD_STATIC_TRUE@	$(am__append_44) $(am__append_47) \
-@LIGHTTPD_STATIC_TRUE@	$(am__append_50) $(am__append_52) \
-@LIGHTTPD_STATIC_TRUE@	$(am__append_55) $(am__append_58) \
-@LIGHTTPD_STATIC_TRUE@	$(am__append_61)
+@LIGHTTPD_STATIC_TRUE@	$(SQLITE_LIBS) $(ELFTC_LIB) $(PCRE_LIB) \
+@LIGHTTPD_STATIC_TRUE@	$(Z_LIB) $(ZSTD_LIB) $(BZ_LIB) \
+@LIGHTTPD_STATIC_TRUE@	$(BROTLI_LIBS) $(DEFLATE_LIBS) $(DL_LIB) \
+@LIGHTTPD_STATIC_TRUE@	$(SENDFILE_LIB) $(ATTR_LIB) $(FAM_LIBS) \
+@LIGHTTPD_STATIC_TRUE@	$(LIBEV_LIBS) $(LIBUNWIND_LIBS) \
+@LIGHTTPD_STATIC_TRUE@	$(XXHASH_LIBS) $(am__append_29) \
+@LIGHTTPD_STATIC_TRUE@	$(am__append_32) $(am__append_34) \
+@LIGHTTPD_STATIC_TRUE@	$(am__append_36) $(am__append_38) \
+@LIGHTTPD_STATIC_TRUE@	$(am__append_41) $(am__append_44) \
+@LIGHTTPD_STATIC_TRUE@	$(am__append_47) $(am__append_50) \
+@LIGHTTPD_STATIC_TRUE@	$(am__append_52) $(am__append_55) \
+@LIGHTTPD_STATIC_TRUE@	$(am__append_58) $(am__append_61)
 @LIGHTTPD_STATIC_FALSE@lighttpd_LDFLAGS = -export-dynamic
 @LIGHTTPD_STATIC_TRUE@lighttpd_LDFLAGS = -export-dynamic
 t_test_common_SOURCES = t/test_common.c \
@@ -1695,6 +1695,7 @@ t_test_mod_SOURCES = $(common_src) t/test_mod.c \
                      t/test_mod_access.c \
                      t/test_mod_alias.c \
                      t/test_mod_evhost.c \
+                     t/test_mod_expire.c \
                      t/test_mod_indexfile.c \
                      t/test_mod_simple_vhost.c \
                      t/test_mod_ssi.c \
@@ -2003,6 +2004,8 @@ t/test_mod-test_mod_alias.$(OBJEXT): t/$(am__dirstamp) \
 	t/$(DEPDIR)/$(am__dirstamp)
 t/test_mod-test_mod_evhost.$(OBJEXT): t/$(am__dirstamp) \
 	t/$(DEPDIR)/$(am__dirstamp)
+t/test_mod-test_mod_expire.$(OBJEXT): t/$(am__dirstamp) \
+	t/$(DEPDIR)/$(am__dirstamp)
 t/test_mod-test_mod_indexfile.$(OBJEXT): t/$(am__dirstamp) \
 	t/$(DEPDIR)/$(am__dirstamp)
 t/test_mod-test_mod_simple_vhost.$(OBJEXT): t/$(am__dirstamp) \
@@ -2256,6 +2259,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@t/$(DEPDIR)/test_mod-test_mod_access.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@t/$(DEPDIR)/test_mod-test_mod_alias.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@t/$(DEPDIR)/test_mod-test_mod_evhost.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@t/$(DEPDIR)/test_mod-test_mod_expire.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@t/$(DEPDIR)/test_mod-test_mod_indexfile.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@t/$(DEPDIR)/test_mod-test_mod_simple_vhost.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@t/$(DEPDIR)/test_mod-test_mod_ssi.Po@am__quote@ # am--include-marker
@@ -4505,6 +4509,20 @@ t/test_mod-test_mod_evhost.obj: t/test_mod_evhost.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(t_test_mod_CFLAGS) $(CFLAGS) -c -o t/test_mod-test_mod_evhost.obj `if test -f 't/test_mod_evhost.c'; then $(CYGPATH_W) 't/test_mod_evhost.c'; else $(CYGPATH_W) '$(srcdir)/t/test_mod_evhost.c'; fi`
 
+t/test_mod-test_mod_expire.o: t/test_mod_expire.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(t_test_mod_CFLAGS) $(CFLAGS) -MT t/test_mod-test_mod_expire.o -MD -MP -MF t/$(DEPDIR)/test_mod-test_mod_expire.Tpo -c -o t/test_mod-test_mod_expire.o `test -f 't/test_mod_expire.c' || echo '$(srcdir)/'`t/test_mod_expire.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) t/$(DEPDIR)/test_mod-test_mod_expire.Tpo t/$(DEPDIR)/test_mod-test_mod_expire.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='t/test_mod_expire.c' object='t/test_mod-test_mod_expire.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(t_test_mod_CFLAGS) $(CFLAGS) -c -o t/test_mod-test_mod_expire.o `test -f 't/test_mod_expire.c' || echo '$(srcdir)/'`t/test_mod_expire.c
+
+t/test_mod-test_mod_expire.obj: t/test_mod_expire.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(t_test_mod_CFLAGS) $(CFLAGS) -MT t/test_mod-test_mod_expire.obj -MD -MP -MF t/$(DEPDIR)/test_mod-test_mod_expire.Tpo -c -o t/test_mod-test_mod_expire.obj `if test -f 't/test_mod_expire.c'; then $(CYGPATH_W) 't/test_mod_expire.c'; else $(CYGPATH_W) '$(srcdir)/t/test_mod_expire.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) t/$(DEPDIR)/test_mod-test_mod_expire.Tpo t/$(DEPDIR)/test_mod-test_mod_expire.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='t/test_mod_expire.c' object='t/test_mod-test_mod_expire.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(t_test_mod_CFLAGS) $(CFLAGS) -c -o t/test_mod-test_mod_expire.obj `if test -f 't/test_mod_expire.c'; then $(CYGPATH_W) 't/test_mod_expire.c'; else $(CYGPATH_W) '$(srcdir)/t/test_mod_expire.c'; fi`
+
 t/test_mod-test_mod_indexfile.o: t/test_mod_indexfile.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(t_test_mod_CFLAGS) $(CFLAGS) -MT t/test_mod-test_mod_indexfile.o -MD -MP -MF t/$(DEPDIR)/test_mod-test_mod_indexfile.Tpo -c -o t/test_mod-test_mod_indexfile.o `test -f 't/test_mod_indexfile.c' || echo '$(srcdir)/'`t/test_mod_indexfile.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) t/$(DEPDIR)/test_mod-test_mod_indexfile.Tpo t/$(DEPDIR)/test_mod-test_mod_indexfile.Po
@@ -5045,6 +5063,7 @@ distclean: distclean-am
 	-rm -f t/$(DEPDIR)/test_mod-test_mod_access.Po
 	-rm -f t/$(DEPDIR)/test_mod-test_mod_alias.Po
 	-rm -f t/$(DEPDIR)/test_mod-test_mod_evhost.Po
+	-rm -f t/$(DEPDIR)/test_mod-test_mod_expire.Po
 	-rm -f t/$(DEPDIR)/test_mod-test_mod_indexfile.Po
 	-rm -f t/$(DEPDIR)/test_mod-test_mod_simple_vhost.Po
 	-rm -f t/$(DEPDIR)/test_mod-test_mod_ssi.Po
@@ -5325,6 +5344,7 @@ maintainer-clean: maintainer-clean-am
 	-rm -f t/$(DEPDIR)/test_mod-test_mod_access.Po
 	-rm -f t/$(DEPDIR)/test_mod-test_mod_alias.Po
 	-rm -f t/$(DEPDIR)/test_mod-test_mod_evhost.Po
+	-rm -f t/$(DEPDIR)/test_mod-test_mod_expire.Po
 	-rm -f t/$(DEPDIR)/test_mod-test_mod_indexfile.Po
 	-rm -f t/$(DEPDIR)/test_mod-test_mod_simple_vhost.Po
 	-rm -f t/$(DEPDIR)/test_mod-test_mod_ssi.Po

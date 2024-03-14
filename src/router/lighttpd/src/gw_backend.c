@@ -47,25 +47,32 @@ static int * gw_status_get_counter(gw_host *host, gw_proc *proc, const char *tag
     /*(At the cost of some memory, could prepare strings for host and for proc
      * so that here we would copy ready made string for proc (or if NULL,
      * for host), and then append tag to produce key)*/
+    /*("gw.backend." 11, host->id <=128, proc->id <=10+1, static tag <=11)*/
     char label[288];
     size_t llen = sizeof("gw.backend.")-1, len;
     memcpy(label, "gw.backend.", llen);
 
     len = buffer_clen(host->id);
     if (len) {
+      #ifdef __COVERITY__
         force_assert(len < sizeof(label) - llen);
+      #endif
         memcpy(label+llen, host->id->ptr, len);
         llen += len;
     }
 
     if (proc) {
+      #ifdef __COVERITY__
         force_assert(llen < sizeof(label) - (LI_ITOSTRING_LENGTH + 1));
+      #endif
         label[llen++] = '.';
         len = li_utostrn(label+llen, LI_ITOSTRING_LENGTH, proc->id);
         llen += len;
     }
 
+  #ifdef __COVERITY__
     force_assert(tlen < sizeof(label) - llen);
+  #endif
     memcpy(label+llen, tag, tlen);
     llen += tlen;
     label[llen] = '\0';
@@ -262,7 +269,7 @@ static void gw_proc_connect_success(gw_host *host, gw_proc *proc, int debug, req
     proc->last_used = log_monotonic_secs;
 
     if (debug) {
-        log_error(r->conf.errh, __FILE__, __LINE__,
+        log_debug(r->conf.errh, __FILE__, __LINE__,
           "got proc: pid: %d socket: %s load: %d",
           proc->pid, proc->connection_name->ptr, proc->load);
     }
@@ -306,7 +313,7 @@ static void gw_proc_connect_error(request_st * const r, gw_host *host, gw_proc *
               "Check the manual, section Performance how to handle this.");
           #endif
             if (debug) {
-                log_error(errh, __FILE__, __LINE__,
+                log_debug(errh, __FILE__, __LINE__,
                   "This means that you have more incoming requests than your "
                   "FastCGI backend can handle in parallel.  It might help to "
                   "spawn more FastCGI backends or PHP children; if not, "
@@ -342,7 +349,7 @@ static void gw_proc_release(gw_host *host, gw_proc *proc, int debug, log_error_s
     gw_proc_load_dec(host, proc);
 
     if (debug) {
-        log_error(errh, __FILE__, __LINE__,
+        log_debug(errh, __FILE__, __LINE__,
           "released proc: pid: %d socket: %s load: %u",
           proc->pid, proc->connection_name->ptr, proc->load);
     }
@@ -499,7 +506,7 @@ static int gw_spawn_connection(gw_host * const host, gw_proc * const proc, log_e
     int status;
 
     if (debug) {
-        log_error(errh, __FILE__, __LINE__,
+        log_debug(errh, __FILE__, __LINE__,
           "new proc, socket: %hu %s",
           proc->port, proc->unixsocket ? proc->unixsocket->ptr : "");
     }
@@ -680,7 +687,7 @@ static int gw_spawn_connection(gw_host * const host, gw_proc * const proc, log_e
         proc->pid = 0;
 
         if (debug) {
-            log_error(errh, __FILE__, __LINE__,
+            log_debug(errh, __FILE__, __LINE__,
               "(debug) socket is already used; won't spawn: %s",
               proc->connection_name->ptr);
         }
@@ -865,34 +872,7 @@ static gw_host * gw_host_get(request_st * const r, gw_extension *extension, int 
             ndx = 0;
     }
     else {
-     /*const char *balancing = "";*/
      switch(balance) {
-      case GW_BALANCE_HASH:
-       { /* hash balancing */
-        const uint32_t base_hash =
-          gw_hash(BUF_PTR_LEN(&r->uri.authority),
-                  gw_hash(BUF_PTR_LEN(&r->uri.path), DJBHASH_INIT));
-        uint32_t last_max = UINT32_MAX;
-        for (int k = 0; k < ext_used; ++k) {
-            const gw_host * const host = extension->hosts[k];
-            if (0 == host->active_procs) continue;
-            const uint32_t cur_max = base_hash ^ host->gw_hash;
-          #if 0
-            if (debug) {
-                log_error(r->conf.errh, __FILE__, __LINE__,
-                  "proxy - election: %s %s %s %u", r->uri.path.ptr,
-                  host->host ? host->host->ptr : "",
-                  r->uri.authority.ptr, cur_max);
-            }
-          #endif
-            if (last_max < cur_max || last_max == UINT32_MAX) {
-                last_max = cur_max;
-                ndx = k;
-            }
-        }
-        /*balancing = "hash";*/
-        break;
-       }
       case GW_BALANCE_LEAST_CONNECTION:
        { /* fair balancing */
         for (int k = 0, max_usage = INT_MAX; k < ext_used; ++k) {
@@ -903,7 +883,6 @@ static gw_host * gw_host_get(request_st * const r, gw_extension *extension, int 
                 ndx = k;
             }
         }
-        /*balancing = "least connection";*/
         break;
        }
       case GW_BALANCE_RR:
@@ -932,45 +911,30 @@ static gw_host * gw_host_get(request_st * const r, gw_extension *extension, int 
 
         /* Save new index for next round */
         extension->last_used_ndx = ndx;
-
-        /*balancing = "round-robin";*/
         break;
        }
+      case GW_BALANCE_HASH:
       case GW_BALANCE_STICKY:
-       { /* source sticky balancing */
-        const buffer * const dst_addr_buf = r->dst_addr_buf;
-        const uint32_t base_hash =
-          gw_hash(BUF_PTR_LEN(dst_addr_buf), DJBHASH_INIT);
-        uint32_t last_max = UINT32_MAX;
+       { /* hash balancing or source sticky balancing */
+        const uint32_t base_hash = (balance == GW_BALANCE_HASH)
+          ? gw_hash(BUF_PTR_LEN(&r->uri.authority),
+                    gw_hash(BUF_PTR_LEN(&r->uri.path), DJBHASH_INIT))
+          : gw_hash(BUF_PTR_LEN(r->dst_addr_buf), DJBHASH_INIT);
+        uint32_t last_max = 0;
         for (int k = 0; k < ext_used; ++k) {
             const gw_host * const host = extension->hosts[k];
             if (0 == host->active_procs) continue;
-            const uint32_t cur_max = base_hash ^ host->gw_hash ^ host->port;
-          #if 0
-            if (debug) {
-                log_error(r->conf.errh, __FILE__, __LINE__,
-                  "proxy - election: %s %s %hu %u", dst_addr_buf->ptr,
-                  host->host ? host->host->ptr : "",
-                  host->port, cur_max);
-            }
-          #endif
-            if (last_max < cur_max || last_max == UINT32_MAX) {
+            const uint32_t cur_max = base_hash ^ host->gw_hash;
+            if (last_max <= cur_max) {
                 last_max = cur_max;
                 ndx = k;
             }
         }
-        /*balancing = "sticky";*/
         break;
        }
       default:
         break;
      }
-     #if 0
-     if (debug) {
-        log_error(r->conf.errh, __FILE__, __LINE__,
-          "gw - balancing: %s, hosts: %d", balancing, ext_used);
-     }
-     #endif
     }
 
     if (__builtin_expect( (-1 != ndx), 1)) {
@@ -978,7 +942,7 @@ static gw_host * gw_host_get(request_st * const r, gw_extension *extension, int 
 
         if (debug) {
             gw_host * const host = extension->hosts[ndx];
-            log_error(r->conf.errh, __FILE__, __LINE__,
+            log_debug(r->conf.errh, __FILE__, __LINE__,
               "gw - found a host %s %hu",
               host->host ? host->host->ptr : "", host->port);
             return host;
@@ -1028,7 +992,7 @@ static int gw_establish_connection(request_st * const r, gw_host *host, gw_proc 
       #endif
         {
             if (debug > 2) {
-                log_error(r->conf.errh, __FILE__, __LINE__,
+                log_debug(r->conf.errh, __FILE__, __LINE__,
                   "connect delayed; will continue later: %s",
                   proc->connection_name->ptr);
             }
@@ -1041,7 +1005,7 @@ static int gw_establish_connection(request_st * const r, gw_host *host, gw_proc 
     }
 
     if (debug > 1) {
-        log_error(r->conf.errh, __FILE__, __LINE__,
+        log_debug(r->conf.errh, __FILE__, __LINE__,
           "connect succeeded: %d", gw_fd);
     }
 
@@ -1093,7 +1057,7 @@ static void gw_restart_dead_proc(gw_host * const host, log_error_st * const errh
                 /* restart the child */
 
                 if (debug) {
-                    log_error(errh, __FILE__, __LINE__,
+                    log_debug(errh, __FILE__, __LINE__,
                       "--- gw spawning"
                       "\n\tsocket %s"
                       "\n\tcurrent: 1 / %u",
@@ -1114,7 +1078,7 @@ static void gw_restart_dead_proc(gw_host * const host, log_error_st * const errh
 static void gw_restart_dead_procs(gw_host * const host, log_error_st * const errh, const int debug, const int trigger) {
     for (gw_proc *proc = host->first; proc; proc = proc->next) {
         if (debug > 2) {
-            log_error(errh, __FILE__, __LINE__,
+            log_debug(errh, __FILE__, __LINE__,
               "proc: %s %d %d %d %d", proc->connection_name->ptr,
               proc->state, proc->is_local, proc->load, proc->pid);
         }
@@ -1352,6 +1316,9 @@ int gw_set_defaults_backend(server *srv, gw_plugin_data *p, const array *a, gw_p
      ,{ CONST_STR_LEN("read-timeout"),
         T_CONFIG_INT,
         T_CONFIG_SCOPE_CONNECTION }
+     ,{ CONST_STR_LEN("upgrade"),
+        T_CONFIG_BOOL,
+        T_CONFIG_SCOPE_CONNECTION }
      ,{ NULL, 0,
         T_CONFIG_UNSET,
         T_CONFIG_SCOPE_UNSET }
@@ -1393,7 +1360,8 @@ int gw_set_defaults_backend(server *srv, gw_plugin_data *p, const array *a, gw_p
             data_array * const da_host = (data_array *)da_ext->value.data[n];
 
             if (da_host->type != TYPE_ARRAY
-                || !array_is_kvany(&da_host->value)){
+                || !array_is_kvany(&da_host->value)
+                || buffer_clen(&da_host->key) > 128) {
                 log_error(srv->errh, __FILE__, __LINE__,
                   "unexpected value for gw.server near [%s](string); "
                   "expected ( \"ext\" => "
@@ -1462,7 +1430,7 @@ int gw_set_defaults_backend(server *srv, gw_plugin_data *p, const array *a, gw_p
                         else if (buffer_eq_slen(b, CONST_STR_LEN("authorizer")))
                             host_mode = GW_AUTHORIZER;
                         else
-                            log_error(srv->errh, __FILE__, __LINE__,
+                            log_warn(srv->errh, __FILE__, __LINE__,
                               "WARNING: unknown gw mode: %s "
                               "(ignored, mode set to responder)", b->ptr);
                     }
@@ -1562,6 +1530,9 @@ int gw_set_defaults_backend(server *srv, gw_plugin_data *p, const array *a, gw_p
                     break;
                   case 25:/* read-timeout */
                     host->read_timeout = cpv->v.u;
+                    break;
+                  case 26:/* upgrade */
+                    host->upgrade = (0 != cpv->v.u);
                     break;
                   default:
                     break;
@@ -1703,7 +1674,7 @@ int gw_set_defaults_backend(server *srv, gw_plugin_data *p, const array *a, gw_p
                     host->max_load_per_proc = 0;
 
                 if (s->debug) {
-                    log_error(srv->errh, __FILE__, __LINE__,
+                    log_debug(srv->errh, __FILE__, __LINE__,
                       "--- gw spawning local"
                       "\n\tproc: %s"
                       "\n\tport: %hu"
@@ -1721,7 +1692,7 @@ int gw_set_defaults_backend(server *srv, gw_plugin_data *p, const array *a, gw_p
                     gw_proc * const proc = gw_proc_init(host);
 
                     if (s->debug) {
-                        log_error(srv->errh, __FILE__, __LINE__,
+                        log_debug(srv->errh, __FILE__, __LINE__,
                           "--- gw spawning"
                           "\n\tport: %hu"
                           "\n\tsocket %s"
@@ -1777,7 +1748,7 @@ int gw_set_defaults_backend(server *srv, gw_plugin_data *p, const array *a, gw_p
             }
 
             const buffer * const h = host->host ? host->host : host->unixsocket;
-            host->gw_hash = gw_hash(BUF_PTR_LEN(h), DJBHASH_INIT);
+            host->gw_hash = gw_hash(BUF_PTR_LEN(h), DJBHASH_INIT) ^ host->port;
 
             /* s->exts is list of exts -> hosts
              * s->exts now used as combined list
@@ -1846,6 +1817,7 @@ void gw_set_transparent(gw_handler_ctx *hctx) {
             /*(error, but not critical)*/
         }
     }
+    hctx->host->tcp_fin_propagate = 1; /*(force setting enabled for host)*/
     hctx->wb_reqlen = -1;
     gw_set_state(hctx, GW_STATE_WRITE);
 }
@@ -1949,7 +1921,8 @@ static void gw_conditional_tcp_fin(gw_handler_ctx * const hctx, request_st * con
     /* propagate shutdown SHUT_WR to backend if TCP half-close on con->fd */
     r->conf.stream_request_body |= FDEVENT_STREAM_REQUEST_BACKEND_SHUT_WR;
     r->conf.stream_request_body &= ~FDEVENT_STREAM_REQUEST_POLLIN;
-    r->con->is_readable = 0;
+    if (r->http_version <= HTTP_VERSION_1_1)
+        r->con->is_readable = 0;
     shutdown(hctx->fd, SHUT_WR);
     fdevent_fdnode_event_clr(hctx->ev, hctx->fdn, FDEVENT_OUT);
 }
@@ -2089,7 +2062,7 @@ static handler_t gw_write_request(gw_handler_ctx * const hctx, request_st * cons
             log_error_st * const errh = r->conf.errh;
           #if 0
             if (hctx->conf.debug > 1) {
-                log_error(errh, __FILE__, __LINE__, "sdsx",
+                log_debug(errh, __FILE__, __LINE__, "sdsx",
                   "send data to backend (fd=%d), size=%zu",
                   hctx->fd, chunkqueue_length(&hctx->wb));
             }
@@ -2172,6 +2145,18 @@ static handler_t gw_write_request(gw_handler_ctx * const hctx, request_st * cons
           "(debug) unknown state");
         return HANDLER_ERROR;
     }
+}
+
+
+__attribute_cold__
+__attribute_noinline__
+void gw_backend_error_trace(const gw_handler_ctx * const hctx, const request_st * const r, const char * const msg)
+{
+    log_error(r->conf.errh, __FILE__, __LINE__,
+      "%s on socket: %s (pid:%d) for %s %s?%.*s",
+      msg, hctx->proc->connection_name->ptr, hctx->proc->pid,
+      r->http_host ? r->http_host->ptr : "",
+      r->uri.path.ptr, BUFFER_INTLEN_PTR(&r->uri.query));
 }
 
 
@@ -2454,7 +2439,7 @@ static handler_t gw_recv_response_error(gw_handler_ctx * const hctx, request_st 
             if (proc->disabled_until < log_monotonic_secs
                 && 0 != gw_proc_waitpid(host, proc, errh)) {
                 if (hctx->conf.debug) {
-                    log_error(errh, __FILE__, __LINE__,
+                    log_debug(errh, __FILE__, __LINE__,
                       "--- gw spawning\n\tsocket %s\n\tcurrent: 1/%d",
                       proc->connection_name->ptr, host->num_procs);
                 }
@@ -2466,34 +2451,24 @@ static handler_t gw_recv_response_error(gw_handler_ctx * const hctx, request_st 
             }
         }
 
-        if (r->resp_body_started == 0) {
-            /* nothing has been sent out yet, try to use another child */
+        int reconnect = 0;
+        const char * const msg = (r->resp_body_started == 0)
+          ? hctx->wb.bytes_out == 0
+              /* if nothing has been sent out yet, try to use another child */
+              ? (reconnect = hctx->reconnects++ < 5)
+                  ? "reconnecting; response not received, request not sent"
+                  : "closing connection; response not received, but too many retries"
+              : "closing connection; response not received, but request sent"
+          : !light_btst(r->resp_htags,HTTP_HEADER_UPGRADE) && !r->h2_connect_ext
+              ? "terminating connection; response already sent out, "
+                "but backend returned error"
+              : NULL;
 
-            if (hctx->wb.bytes_out == 0 && hctx->reconnects++ < 5) {
-                log_error(r->conf.errh, __FILE__, __LINE__,
-                  "response not received, request not sent on "
-                  "socket: %s for %s?%.*s, reconnecting",
-                  proc->connection_name->ptr,
-                  r->uri.path.ptr, BUFFER_INTLEN_PTR(&r->uri.query));
+        if (msg) gw_backend_error_trace(hctx, r, msg);
 
-                return gw_reconnect(hctx, r);
-            }
-
-            log_error(r->conf.errh, __FILE__, __LINE__,
-              "response not received, request sent: %lld on "
-              "socket: %s for %s?%.*s, closing connection",
-              (long long)hctx->wb.bytes_out, proc->connection_name->ptr,
-              r->uri.path.ptr, BUFFER_INTLEN_PTR(&r->uri.query));
-        } else if (!light_btst(r->resp_htags, HTTP_HEADER_UPGRADE)
-                   && !r->h2_connect_ext) {
-            log_error(r->conf.errh, __FILE__, __LINE__,
-              "response already sent out, but backend returned error on "
-              "socket: %s for %s?%.*s, terminating connection",
-              proc->connection_name->ptr,
-              r->uri.path.ptr, BUFFER_INTLEN_PTR(&r->uri.query));
-        }
-
-        return gw_backend_error(hctx, r); /* HANDLER_FINISHED */
+        return reconnect
+          ? gw_reconnect(hctx, r)
+          : gw_backend_error(hctx, r); /* HANDLER_FINISHED */
 }
 
 
@@ -2549,6 +2524,44 @@ static handler_t gw_process_fdevent(gw_handler_ctx * const hctx, request_st * co
           "gw: got a FDEVENT_ERR. Don't know why.");
         return gw_backend_error(hctx, r); /* HANDLER_FINISHED */
     }
+
+    return HANDLER_GO_ON;
+}
+
+int gw_upgrade_policy (request_st * const r, const int auth_mode, int upgrade)
+{
+    if (__builtin_expect( (r->h2_connect_ext != 0), 0)) {
+        if (!upgrade && !auth_mode)
+            r->http_status = 405; /* Method Not Allowed */
+    }
+    else if (!light_btst(r->rqst_htags, HTTP_HEADER_UPGRADE))
+        upgrade = 0;
+    else if (!upgrade || r->http_version != HTTP_VERSION_1_1
+             || (0 != r->reqbody_length
+                 && !config_feature_bool(r->con->srv,
+                                         "gw.upgrade-with-request-body", 0))) {
+        upgrade = 0;
+        if (!auth_mode)
+            http_header_request_unset(r, HTTP_HEADER_UPGRADE,
+                                      CONST_STR_LEN("Upgrade"));
+    }
+
+    return upgrade;
+}
+
+static handler_t gw_response_headers_upgrade(request_st * const r, struct http_response_opts_t *opts) {
+    /* response headers just completed */
+    UNUSED(r);
+
+    /* modules setting custom func for hctx->opts.headers should duplicate
+     * steps performed here to support upgrade. */
+
+    /* check if http-header-glue.c:http_response_parse_headers() detected
+     * Upgrade in response headers received from backend */
+    /* gw_handler_ctx must be first member of structure in opts->pdata)
+     * if calling module extends its handler context (hctx) */
+    if (opts->upgrade == 2)
+        gw_set_transparent((gw_handler_ctx *)opts->pdata);
 
     return HANDLER_GO_ON;
 }
@@ -2722,6 +2735,14 @@ handler_t gw_check_extension(request_st * const r, gw_plugin_data * const p, int
         }
     }
 
+    /*(combine host upgrade setting with that of mod_proxy, mod_wstunnel)*/
+    p->conf.upgrade |= host->upgrade;
+
+    p->conf.upgrade =
+      gw_upgrade_policy(r,(gw_mode == GW_AUTHORIZER),p->conf.upgrade);
+    if (0 != r->http_status)
+        return HANDLER_FINISHED;
+
     if (!hctx) hctx = handler_ctx_init(hctx_sz);
 
     hctx->ev               = r->con->srv->ev;
@@ -2745,7 +2766,16 @@ handler_t gw_check_extension(request_st * const r, gw_plugin_data * const p, int
     hctx->conf.balance     = p->conf.balance;
     hctx->conf.proto       = p->conf.proto;
     hctx->conf.debug       = p->conf.debug;
+    /*hctx->conf.upgrade     = p->conf.upgrade;*//*(use hctx->opts.upgrade)*/
 
+    if (p->conf.upgrade) {
+        hctx->opts.upgrade = p->conf.upgrade;
+        hctx->opts.pdata   = hctx;
+        hctx->opts.headers = gw_response_headers_upgrade;
+        /* if a module using gw_backend does not support upgrade, then upon
+         * return from gw_check_extension(), set hctx->opts.upgrade = 0 and also
+         * HANDLER_FINISHED r->http_status = 405 if (r->h2_connect_ext != 0) */
+    }
     hctx->opts.max_per_read =
       !(r->conf.stream_response_body /*(if not streaming response body)*/
         & (FDEVENT_STREAM_RESPONSE|FDEVENT_STREAM_RESPONSE_BUFMIN))
@@ -2764,7 +2794,7 @@ handler_t gw_check_extension(request_st * const r, gw_plugin_data * const p, int
     r->handler_module = p->self;
 
     if (r->conf.log_request_handling) {
-        log_error(r->conf.errh, __FILE__, __LINE__,
+        log_debug(r->conf.errh, __FILE__, __LINE__,
                   "handling the request using %s", p->self->name);
     }
 
@@ -2880,7 +2910,7 @@ static void gw_handle_trigger_host(gw_host * const host, log_error_st * const er
     if (overload && host->num_procs && host->num_procs < host->max_procs) {
         /* overload, spawn new child */
         if (debug) {
-            log_error(errh, __FILE__, __LINE__,
+            log_debug(errh, __FILE__, __LINE__,
               "overload detected, spawning a new child");
         }
 
@@ -2896,7 +2926,7 @@ static void gw_handle_trigger_host(gw_host * const host, log_error_st * const er
 
         /* terminate proc that has been idling for a long time */
         if (debug) {
-            log_error(errh, __FILE__, __LINE__,
+            log_debug(errh, __FILE__, __LINE__,
               "idle-timeout reached, terminating child: socket: %s pid %d",
               proc->unixsocket ? proc->unixsocket->ptr : "", proc->pid);
         }

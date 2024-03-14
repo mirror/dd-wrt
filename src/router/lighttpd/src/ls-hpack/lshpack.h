@@ -35,7 +35,7 @@ extern "C" {
 
 #define LSHPACK_MAJOR_VERSION 2
 #define LSHPACK_MINOR_VERSION 3
-#define LSHPACK_PATCH_VERSION 1
+#define LSHPACK_PATCH_VERSION 3
 
 #define lshpack_strlen_t lsxpack_strlen_t
 #define LSHPACK_MAX_STRLEN LSXPACK_MAX_STRLEN
@@ -219,13 +219,21 @@ lshpack_dec_set_max_capacity (struct lshpack_dec *, unsigned);
  * These structures are not very complicated.
  */
 
-#ifdef _WIN32
-#include "../compat/_WIN32/sys/queue.h"
-#else
+#ifdef __has_include
+#if __has_include(<sys/queue.h>)
 #include <sys/queue.h>
 #endif
+#endif
 
-#ifdef __OpenBSD__
+#ifndef STAILQ_FOREACH
+
+#ifndef SIMPLEQ_FOREACH
+#include "../compat/sys/queue.h"
+#endif
+
+/* OpenBSD and older MacOSX might not define STAILQ,
+ * but ls-hpack usage could use SIMPLEQ as alternative */
+#if defined(SIMPLEQ_FOREACH) && !defined(STAILQ_FOREACH)
 #define STAILQ_HEAD             SIMPLEQ_HEAD
 #define STAILQ_ENTRY            SIMPLEQ_ENTRY
 #define STAILQ_INIT             SIMPLEQ_INIT
@@ -235,6 +243,15 @@ lshpack_dec_set_max_capacity (struct lshpack_dec *, unsigned);
 #define STAILQ_NEXT             SIMPLEQ_NEXT
 #define STAILQ_REMOVE_HEAD      SIMPLEQ_REMOVE_HEAD
 #define STAILQ_FOREACH          SIMPLEQ_FOREACH
+#endif
+
+#endif
+
+#if defined(STAILQ_FIRST) && defined(STAILQ_NEXT) && !defined(STAILQ_FOREACH)
+#define STAILQ_FOREACH(var, head, field)                                \
+        for((var) = STAILQ_FIRST((head));                               \
+           (var);                                                       \
+           (var) = STAILQ_NEXT((var), field))
 #endif
 
 struct lshpack_enc_table_entry;

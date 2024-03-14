@@ -657,14 +657,14 @@ static uint16_t * mod_deflate_encodings_to_flags(const array *encodings) {
       #ifdef USE_BROTLI
         x[i++] = HTTP_ACCEPT_ENCODING_BR;
       #endif
-      #ifdef USE_BZ2LIB
-        x[i++] = HTTP_ACCEPT_ENCODING_BZIP2
-               | HTTP_ACCEPT_ENCODING_X_BZIP2;
-      #endif
       #ifdef USE_ZLIB
         x[i++] = HTTP_ACCEPT_ENCODING_GZIP
                | HTTP_ACCEPT_ENCODING_X_GZIP
                | HTTP_ACCEPT_ENCODING_DEFLATE;
+      #endif
+      #ifdef USE_BZ2LIB
+        x[i++] = HTTP_ACCEPT_ENCODING_BZIP2
+               | HTTP_ACCEPT_ENCODING_X_BZIP2;
       #endif
         x[i] = 0; /* end of list */
         return x;
@@ -734,7 +734,7 @@ SETDEFAULTS_FUNC(mod_deflate_set_defaults) {
         for (; -1 != cpv->k_id; ++cpv) {
             switch (cpv->k_id) {
               case 9: /* compress.filetype */
-                log_error(srv->errh, __FILE__, __LINE__,
+                log_warn(srv->errh, __FILE__, __LINE__,
                   "DEPRECATED: %s replaced with deflate.mimetypes",
                   cpk[cpv->k_id].k);
                 cpv->k_id = 0; /* deflate.mimetypes */
@@ -755,7 +755,7 @@ SETDEFAULTS_FUNC(mod_deflate_set_defaults) {
                 if (0 == cpv->v.a->used) cpv->v.a = NULL;
                 break;
               case 10:/* compress.allowed-encodings */
-                log_error(srv->errh, __FILE__, __LINE__,
+                log_warn(srv->errh, __FILE__, __LINE__,
                   "DEPRECATED: %s replaced with deflate.allowed-encodings",
                   cpk[cpv->k_id].k);
                 cpv->k_id = 1; /* deflate.allowed-encodings */
@@ -765,7 +765,7 @@ SETDEFAULTS_FUNC(mod_deflate_set_defaults) {
                 cpv->vtype = T_CONFIG_LOCAL;
                 break;
               case 12:/* compress.max-filesize */
-                log_error(srv->errh, __FILE__, __LINE__,
+                log_warn(srv->errh, __FILE__, __LINE__,
                   "DEPRECATED: %s replaced with deflate.max-compress-size",
                   cpk[cpv->k_id].k);
                 cpv->k_id = 2; /* deflate.max-compress-size */
@@ -786,7 +786,7 @@ SETDEFAULTS_FUNC(mod_deflate_set_defaults) {
               case 6: /* deflate.work-block-size */
                 break;
               case 13:/* compress.max-loadavg */
-                log_error(srv->errh, __FILE__, __LINE__,
+                log_warn(srv->errh, __FILE__, __LINE__,
                   "DEPRECATED: %s replaced with deflate.max-loadavg",
                   cpk[cpv->k_id].k);
                 cpv->k_id = 7; /* deflate.max-loadavg */
@@ -797,7 +797,7 @@ SETDEFAULTS_FUNC(mod_deflate_set_defaults) {
                   : 0.0;
                 break;
               case 11:/* compress.cache-dir */
-                log_error(srv->errh, __FILE__, __LINE__,
+                log_warn(srv->errh, __FILE__, __LINE__,
                   "DEPRECATED: %s replaced with deflate.cache-dir",
                   cpk[cpv->k_id].k);
                 cpv->k_id = 8; /* deflate.cache-dir */
@@ -846,6 +846,26 @@ SETDEFAULTS_FUNC(mod_deflate_set_defaults) {
     p->defaults.work_block_size = 2048;
     p->defaults.max_loadavg = 0.0;
     p->defaults.sync_flush = 0;
+
+    static const uint16_t available_encodings[] = {
+      #ifdef USE_ZSTD
+        HTTP_ACCEPT_ENCODING_ZSTD,
+      #endif
+      #ifdef USE_BROTLI
+        HTTP_ACCEPT_ENCODING_BR,
+      #endif
+      #ifdef USE_ZLIB
+        HTTP_ACCEPT_ENCODING_GZIP,
+        HTTP_ACCEPT_ENCODING_X_GZIP,
+        HTTP_ACCEPT_ENCODING_DEFLATE,
+      #endif
+      #ifdef USE_BZ2LIB
+        HTTP_ACCEPT_ENCODING_BZIP2,
+        HTTP_ACCEPT_ENCODING_X_BZIP2,
+      #endif
+        0
+    };
+    *(const uint16_t **)&p->defaults.allowed_encodings = available_encodings;
 
     /* initialize p->defaults from global config context */
     if (p->nconfig > 0 && p->cvlist->v.u2[1]) {
@@ -1644,7 +1664,7 @@ static off_t mod_deflate_file_chunk_no_mmap(request_st * const r, handler_ctx * 
 }
 
 
-#ifdef ENABLE_MMAP
+#if 0
 
 static off_t mod_deflate_file_chunk_setjmp_cb (void *dst, const void *src, off_t len)
 {
@@ -1689,7 +1709,7 @@ static off_t mod_deflate_file_chunk(request_st * const r, handler_ctx * const hc
             return -1;
         }
     }
-  #ifdef ENABLE_MMAP
+  #if 0
     return mod_deflate_file_chunk_mmap(r, hctx, c, n);
   #else
     return mod_deflate_file_chunk_no_mmap(r, hctx, c, n);
@@ -1853,15 +1873,6 @@ static int mod_deflate_choose_encoding (const char *value, plugin_data *p, const
 		return HTTP_ACCEPT_ENCODING_BR;
 	} else
 #endif
-#ifdef USE_BZ2LIB
-	if (accept_encoding & HTTP_ACCEPT_ENCODING_BZIP2) {
-		*label = "bzip2";
-		return HTTP_ACCEPT_ENCODING_BZIP2;
-	} else if (accept_encoding & HTTP_ACCEPT_ENCODING_X_BZIP2) {
-		*label = "x-bzip2";
-		return HTTP_ACCEPT_ENCODING_BZIP2;
-	} else
-#endif
 #ifdef USE_ZLIB
 	if (accept_encoding & HTTP_ACCEPT_ENCODING_GZIP) {
 		*label = "gzip";
@@ -1872,6 +1883,15 @@ static int mod_deflate_choose_encoding (const char *value, plugin_data *p, const
 	} else if (accept_encoding & HTTP_ACCEPT_ENCODING_DEFLATE) {
 		*label = "deflate";
 		return HTTP_ACCEPT_ENCODING_DEFLATE;
+	} else
+#endif
+#ifdef USE_BZ2LIB
+	if (accept_encoding & HTTP_ACCEPT_ENCODING_BZIP2) {
+		*label = "bzip2";
+		return HTTP_ACCEPT_ENCODING_BZIP2;
+	} else if (accept_encoding & HTTP_ACCEPT_ENCODING_X_BZIP2) {
+		*label = "x-bzip2";
+		return HTTP_ACCEPT_ENCODING_BZIP2;
 	} else
 #endif
 	if (0 == accept_encoding) {

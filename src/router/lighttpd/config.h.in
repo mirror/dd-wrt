@@ -1,8 +1,5 @@
 /* config.h.in.  Generated from configure.ac by autoheader.  */
 
-/* Use mmap if available */
-#undef ENABLE_MMAP
-
 /* Define to 1 if you have the `arc4random_buf' function. */
 #undef HAVE_ARC4RANDOM_BUF
 
@@ -168,9 +165,6 @@
 /* Have libunwind support */
 #undef HAVE_LIBUNWIND
 
-/* libuuid */
-#undef HAVE_LIBUUID
-
 /* libxml2 */
 #undef HAVE_LIBXML2
 
@@ -290,6 +284,9 @@
 /* Define to 1 if you have the `preadv' function. */
 #undef HAVE_PREADV
 
+/* Define to 1 if you have the `preadv2' function. */
+#undef HAVE_PREADV2
+
 /* Define to 1 if you have the <priv.h> header file. */
 #undef HAVE_PRIV_H
 
@@ -316,9 +313,6 @@
 
 /* Define to 1 if you have the `sendfile' function. */
 #undef HAVE_SENDFILE
-
-/* Define to 1 if you have the `sendfile64' function. */
-#undef HAVE_SENDFILE64
 
 /* solaris sendfilev */
 #undef HAVE_SENDFILEV
@@ -448,9 +442,6 @@
 
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
-
-/* uuid/uuid.h is available */
-#undef HAVE_UUID_UUID_H
 
 /* Define to 1 if you have the <valgrind/valgrind.h> header file. */
 #undef HAVE_VALGRIND_VALGRIND_H

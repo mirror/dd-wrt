@@ -8,7 +8,7 @@ BEGIN {
 
 use strict;
 use IO::Socket;
-use Test::More tests => 161;
+use Test::More tests => 164;
 use LightyTest;
 
 my $tf = LightyTest->new();
@@ -398,11 +398,10 @@ Range: bytes=-0
 EOF
  );
 $t->{RESPONSE} = [ { 'HTTP-Protocol' => 'HTTP/1.1', 'HTTP-Status' => 416, 'HTTP-Content' => <<EOF
-<?xml version="1.0" encoding="iso-8859-1"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-         "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<!DOCTYPE html>
+<html lang="en">
  <head>
+  <meta charset="UTF-8" />
   <title>416 Range Not Satisfiable</title>
  </head>
  <body>
@@ -421,11 +420,10 @@ Range: bytes=25-
 EOF
  );
 $t->{RESPONSE} = [ { 'HTTP-Protocol' => 'HTTP/1.1', 'HTTP-Status' => 416, 'HTTP-Content' => <<EOF
-<?xml version="1.0" encoding="iso-8859-1"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-         "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<!DOCTYPE html>
+<html lang="en">
  <head>
+  <meta charset="UTF-8" />
   <title>416 Range Not Satisfiable</title>
  </head>
  <body>
@@ -606,17 +604,17 @@ ok($tf->handle_http($t) == 0, 'Content-Length for text/plain');
 ## Low-Level Response-Header Parsing - Location
 
 $t->{REQUEST}  = ( <<EOF
-GET /dummydir HTTP/1.0
+GET /subdir HTTP/1.0
 EOF
  );
-$t->{RESPONSE} = [ { 'HTTP-Protocol' => 'HTTP/1.0', 'HTTP-Status' => 301, 'Location' => '/dummydir/' } ];
+$t->{RESPONSE} = [ { 'HTTP-Protocol' => 'HTTP/1.0', 'HTTP-Status' => 301, 'Location' => '/subdir/' } ];
 ok($tf->handle_http($t) == 0, 'internal redirect in directory');
 
 $t->{REQUEST}  = ( <<EOF
-GET /dummydir?foo HTTP/1.0
+GET /subdir?foo HTTP/1.0
 EOF
  );
-$t->{RESPONSE} = [ { 'HTTP-Protocol' => 'HTTP/1.0', 'HTTP-Status' => 301, 'Location' => '/dummydir/?foo' } ];
+$t->{RESPONSE} = [ { 'HTTP-Protocol' => 'HTTP/1.0', 'HTTP-Status' => 301, 'Location' => '/subdir/?foo' } ];
 ok($tf->handle_http($t) == 0, 'internal redirect in directory + querystring');
 
 $t->{REQUEST}  = ( <<EOF
@@ -979,7 +977,7 @@ sub init_testbed {
     unless (-l $l) {
         return 0 unless symlink($f,$l);
     };
-    $f = "$docroot/expire";
+    $f = "$docroot/subdir";
     $l = "$docroot/symlinked";
     $rc = undef;
     unless (-l $l) {
@@ -1021,7 +1019,7 @@ EOF
 
 # symlinked dir in path
 	$t->{REQUEST} = ( <<EOF
-GET /symlinked/access.txt HTTP/1.0
+GET /symlinked/any.txt HTTP/1.0
 Host: symlink.example.org
 EOF
  );
@@ -1058,7 +1056,7 @@ EOF
 
 # symlinked dir in path
 	$t->{REQUEST} = ( <<EOF
-GET /symlinked/access.txt HTTP/1.0
+GET /symlinked/any.txt HTTP/1.0
 Host: nosymlink.example.org
 EOF
  );
@@ -1235,7 +1233,7 @@ EOF
 $t->{RESPONSE} = [ { 'HTTP-Protocol' => 'HTTP/1.0', 'HTTP-Status' => 200 } ];
 ok($tf->handle_http($t) == 0, 'perl via cgi');
 
-if ($^O ne "cygwin") {
+if ($^O ne "cygwin" && $^O ne "msys") {
     $t->{REQUEST}  = ( <<EOF
 GET /cgi.pl%20%20%20 HTTP/1.0
 EOF
@@ -1394,6 +1392,10 @@ ok($tf->handle_http($t) == 0, 'broken header via perl cgi');
 
 ## mod_deflate
 
+SKIP: {
+    my $has_zlib = $tf->has_feature("zlib support");
+    skip "skipping tests requiring zlib", 9 unless $has_zlib;
+
 $t->{REQUEST}  = ( <<EOF
 GET /index.html HTTP/1.0
 Host: deflate.example.org
@@ -1478,6 +1480,35 @@ EOF
  );
 $t->{RESPONSE} = [ { 'HTTP-Protocol' => 'HTTP/1.0', 'HTTP-Status' => 200, '+Vary' => '', 'Content-Encoding' => 'gzip', 'Content-Type' => "text/plain" } ];
 ok($tf->handle_http($t) == 0, 'bzip2 requested but disabled');
+
+}
+
+
+## mod_expire
+
+$t->{REQUEST} = ( <<EOF
+GET /subdir/access.txt HTTP/1.0
+Host: www.example.org
+EOF
+ );
+$t->{RESPONSE}  = [ { 'HTTP-Protocol' => 'HTTP/1.0', 'HTTP-Status' => 200, '+Expires' => '' } ];
+ok($tf->handle_http($t) == 0, 'expires HTTP/1.0');
+
+$t->{REQUEST} = ( <<EOF
+GET /subdir/access.txt HTTP/1.1
+Host: www.example.org
+EOF
+ );
+$t->{RESPONSE}  = [ { 'HTTP-Protocol' => 'HTTP/1.1', 'HTTP-Status' => 200, '+Cache-Control' => '' } ];
+ok($tf->handle_http($t) == 0, 'cache-control HTTP/1.1 by access time');
+
+$t->{REQUEST} = ( <<EOF
+GET /subdir/modification.txt HTTP/1.1
+Host: www.example.org
+EOF
+ );
+$t->{RESPONSE}  = [ { 'HTTP-Protocol' => 'HTTP/1.1', 'HTTP-Status' => 200, '+Cache-Control' => '' } ];
+ok($tf->handle_http($t) == 0, 'cache-control HTTP/1.1 by modification time');
 
 
 ## mod_extforward

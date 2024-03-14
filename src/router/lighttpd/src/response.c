@@ -112,12 +112,12 @@ http_response_physical_path_error (request_st * const r, const int code, const c
     if ((code == 404 && r->conf.log_file_not_found)
         || r->conf.log_request_handling) {
         if (NULL == msg)
-            log_perror(r->conf.errh, __FILE__, __LINE__, "-- ");
+            log_pdebug(r->conf.errh, __FILE__, __LINE__, "-- ");
         else
-            log_error(r->conf.errh, __FILE__, __LINE__, "%s", msg);
-        log_error(r->conf.errh, __FILE__, __LINE__,
+            log_debug(r->conf.errh, __FILE__, __LINE__, "%s", msg);
+        log_debug(r->conf.errh, __FILE__, __LINE__,
           "Path         : %s", r->physical.path.ptr);
-        log_error(r->conf.errh, __FILE__, __LINE__,
+        log_debug(r->conf.errh, __FILE__, __LINE__,
           "URI          : %s", r->uri.path.ptr);
     }
     return HANDLER_FINISHED;
@@ -237,6 +237,8 @@ static handler_t http_response_config (request_st * const r) {
         r->http_version = HTTP_VERSION_1_0;
         /*(when forcing HTTP/1.0, ignore (unlikely) Connection: keep-alive)*/
         r->keep_alive = 0;
+        http_header_request_unset(r, HTTP_HEADER_UPGRADE,
+                                  CONST_STR_LEN("upgrade"));
     }
 
     if (__builtin_expect( (r->reqbody_length > 0), 0)
@@ -292,17 +294,17 @@ http_response_prepare (request_st * const r)
 		#endif
 
 		if (r->conf.log_request_handling) {
-			log_error(r->conf.errh, __FILE__, __LINE__,
+			log_debug(r->conf.errh, __FILE__, __LINE__,
 			  "-- parsed Request-URI");
-			log_error(r->conf.errh, __FILE__, __LINE__,
+			log_debug(r->conf.errh, __FILE__, __LINE__,
 			  "Request-URI     : %s", r->target.ptr);
-			log_error(r->conf.errh, __FILE__, __LINE__,
+			log_debug(r->conf.errh, __FILE__, __LINE__,
 			  "URI-scheme      : %s", r->uri.scheme.ptr);
-			log_error(r->conf.errh, __FILE__, __LINE__,
+			log_debug(r->conf.errh, __FILE__, __LINE__,
 			  "URI-authority   : %s", r->uri.authority.ptr);
-			log_error(r->conf.errh, __FILE__, __LINE__,
+			log_debug(r->conf.errh, __FILE__, __LINE__,
 			  "URI-path (clean): %s", r->uri.path.ptr);
-			log_error(r->conf.errh, __FILE__, __LINE__,
+			log_debug(r->conf.errh, __FILE__, __LINE__,
 			  "URI-query       : %.*s",
 			  BUFFER_INTLEN_PTR(&r->uri.query));
 		}
@@ -381,15 +383,15 @@ http_response_prepare (request_st * const r)
 			if (HANDLER_GO_ON != rc) return rc;
 
 			if (r->conf.log_request_handling) {
-				log_error(r->conf.errh, __FILE__, __LINE__,
+				log_debug(r->conf.errh, __FILE__, __LINE__,
 				  "-- logical -> physical");
-				log_error(r->conf.errh, __FILE__, __LINE__,
+				log_debug(r->conf.errh, __FILE__, __LINE__,
 				  "Doc-Root     : %s", r->physical.doc_root.ptr);
-				log_error(r->conf.errh, __FILE__, __LINE__,
+				log_debug(r->conf.errh, __FILE__, __LINE__,
 				  "Basedir      : %s", r->physical.basedir.ptr);
-				log_error(r->conf.errh, __FILE__, __LINE__,
+				log_debug(r->conf.errh, __FILE__, __LINE__,
 				  "Rel-Path     : %s", r->physical.rel_path.ptr);
-				log_error(r->conf.errh, __FILE__, __LINE__,
+				log_debug(r->conf.errh, __FILE__, __LINE__,
 				  "Path         : %s", r->physical.path.ptr);
 			}
 	}
@@ -401,13 +403,13 @@ http_response_prepare (request_st * const r)
 		if (HANDLER_GO_ON != rc) return rc;
 
 		if (r->conf.log_request_handling) {
-			log_error(r->conf.errh, __FILE__, __LINE__,
+			log_debug(r->conf.errh, __FILE__, __LINE__,
 			  "-- handling subrequest");
-			log_error(r->conf.errh, __FILE__, __LINE__,
+			log_debug(r->conf.errh, __FILE__, __LINE__,
 			  "Path         : %s", r->physical.path.ptr);
-			log_error(r->conf.errh, __FILE__, __LINE__,
+			log_debug(r->conf.errh, __FILE__, __LINE__,
 			  "URI          : %s", r->uri.path.ptr);
-			log_error(r->conf.errh, __FILE__, __LINE__,
+			log_debug(r->conf.errh, __FILE__, __LINE__,
 			  "Pathinfo     : %.*s",
 			  BUFFER_INTLEN_PTR(&r->pathinfo));
 		}
@@ -534,11 +536,10 @@ http_response_static_errdoc (request_st * const r)
     /* build default error-page */
     buffer * const b = chunkqueue_append_buffer_open(&r->write_queue);
     buffer_copy_string_len(b, CONST_STR_LEN(
-      "<?xml version=\"1.0\" encoding=\"iso-8859-1\"?>\n"
-      "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\"\n"
-      "         \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">\n"
-      "<html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\" lang=\"en\">\n"
+      "<!DOCTYPE html>\n"
+      "<html lang=\"en\">\n"
       " <head>\n"
+      "  <meta charset=\"UTF-8\" />\n"
       "  <title>"));
     http_status_append(b, r->http_status);
     buffer_append_string_len(b, CONST_STR_LEN(

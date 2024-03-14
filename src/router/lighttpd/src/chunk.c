@@ -116,6 +116,8 @@ static chunk *chunk_init(void) {
 	c->offset = 0;
 	c->file.length = 0;
 	c->file.is_temp = 0;
+	c->file.busy = 0;
+	c->file.flagmask = 0;
 	c->file.view = NULL;
       #endif
 	c->file.fd = -1;
@@ -169,7 +171,7 @@ static chunk_file_view * chunk_file_view_failed (chunk_file_view *cfv) {
 ssize_t
 chunk_file_pread (int fd, void *buf, size_t count, off_t offset)
 {
-    /*(expects open file for FILE_CHUNK)*/
+    /*(expects open file for non-empty FILE_CHUNK)*/
   #ifndef HAVE_PREAD
     /*(On systems without pread() or equivalent, lseek() is repeated if this
      * func is called in a loop, but this func is generally used on small files,
@@ -188,6 +190,77 @@ chunk_file_pread (int fd, void *buf, size_t count, off_t offset)
       #endif
     } while (-1 == rd && errno == EINTR);
     return rd;
+}
+
+#ifdef HAVE_PREADV2
+#if defined(HAVE_SYS_UIO_H)
+# include <sys/uio.h>
+#endif
+static ssize_t
+chunk_file_preadv2_flags (chunk *c)
+{
+    if (0 == c->file.flagmask) {
+        /* Initialize mask.  About to make syscall to preadv2(), so a
+         * few extra instructions to avoid failing syscall is worthwhile */
+        c->file.flagmask = RWF_NOWAIT;
+
+        /* Do not attempt preadv2() RWF_NOWAIT on temporary files;
+         * strong possibility to be on tmpfs or, if not, likely that tmpfile
+         * will still be in page cache when read after being written */
+        const char * const fn = c->mem->ptr; /* check "/tmp/" or "/dev/shm/" */
+        if (buffer_clen(c->mem) > 5 && fn[4] == '/'
+            && (   (fn[1] == 't' && fn[2] == 'm' && fn[3] == 'p')
+                || (fn[1] == 'd' && fn[2] == 'e' && fn[3] == 'v')))
+            c->file.flagmask = ~RWF_NOWAIT;
+      #if 0
+        /* already set in chunkqueue_get_append_newtempfile()
+         * c->file.is_temp generally should not be set elsewhere
+         * (mod_deflate sets is_temp when writing to cache file)
+         * (mod_webdav sets is_temp when writing file for PUT) */
+        if (c->file.is_temp)
+            c->file.flagmask = ~RWF_NOWAIT;
+      #endif
+    }
+    return (RWF_NOWAIT & c->file.flagmask);
+}
+#endif
+
+ssize_t
+chunk_file_pread_chunk (chunk *c, void *buf, size_t count)
+{
+    /*(expects open file for non-empty FILE_CHUNK)*/
+  #if 0 /*(handled by callers)*/
+    const off_t len = c->file.length - c->offset;
+    if (len < (off_t)count) count = (size_t)len;
+  #endif
+  #ifdef HAVE_PREADV2
+    struct iovec iov[1] = { { buf, count } };
+    const int flags = !c->file.busy ? chunk_file_preadv2_flags(c) : 0;
+    c->file.busy = 0;
+    ssize_t rd = preadv2(c->file.fd, iov, 1, c->offset, flags);
+    if (__builtin_expect( (rd > 0), 1)) {
+        return rd;
+    }
+    if (__builtin_expect( (rd < 0), 1)) {
+        /* EINTR should be rare since sigaction SA_RESTART is set with SIGCHLD
+         * and other signals are expected to be rare.  For convenience, treat
+         * EINTR as if EAGAIN was received so that every caller does not need
+         * to check EINTR. (sigaction() expected to be present with preadv2())
+         * Callers should check c->file.busy before propagating error. */
+        int errnum = errno;
+        if (errnum == EOPNOTSUPP) {  /* WTH?  tmpfs not supported ?!?! */
+            c->file.flagmask = ~RWF_NOWAIT;
+            return chunk_file_pread_chunk(c, buf, count);/*(tail recurse once)*/
+        }
+        c->file.busy = (errnum == EAGAIN || errnum == EINTR);
+        return rd;
+    }
+    /* Linux 5.9 and Linux 5.10 have a bug where preadv2() with the
+     * RWF_NOWAIT flag may return 0 even when not at end of file.
+     * (Unfortunately, Linux 5.10 is a long-term-support (LTS) release) */
+  #endif
+
+    return chunk_file_pread(c->file.fd, buf, count, c->offset);
 }
 
 static void chunk_reset_file_chunk(chunk *c) {
@@ -216,6 +289,8 @@ static void chunk_reset_file_chunk(chunk *c) {
   #endif
 	c->file.fd = -1;
 	c->file.length = 0;
+	c->file.busy = 0;
+	c->file.flagmask = 0;
 	c->type = MEM_CHUNK;
 }
 
@@ -775,6 +850,11 @@ static chunk *chunkqueue_get_append_newtempfile(chunkqueue * const restrict cq, 
     const array * const restrict tempdirs = chunkqueue_default_tempdirs;
     buffer * const restrict template = c->mem;
     c->file.is_temp = 1;
+  #ifdef HAVE_PREADV2
+    /* strong possibility to be on tmpfs or, if not, likely that tmpfile
+     * will still be in page cache when read after being written */
+    c->file.flagmask = ~RWF_NOWAIT;
+  #endif
 
     if (tempdirs && tempdirs->used) {
         /* we have several tempdirs, only if all of them fail we jump out */
@@ -805,6 +885,19 @@ static chunk *chunkqueue_get_append_newtempfile(chunkqueue * const restrict cq, 
     return NULL;
 }
 
+__attribute_cold__
+static int chunkqueue_close_tempchunk (chunk * const restrict c, log_error_st * const restrict errh) {
+    force_assert(0 == c->file.refchg); /*(else should not happen)*/
+    int rc = close(c->file.fd);
+    c->file.fd = -1;
+    if (0 != rc) {
+        log_perror(errh, __FILE__, __LINE__,
+          "close() temp-file %s failed", c->mem->ptr);
+        return 0;
+    }
+    return 1;
+}
+
 static chunk *chunkqueue_get_append_tempfile(chunkqueue * const restrict cq, log_error_st * const restrict errh) {
     /*
      * if the last chunk is
@@ -824,14 +917,8 @@ static chunk *chunkqueue_get_append_tempfile(chunkqueue * const restrict cq, log
             return c; /* ok, take the last chunk for our job */
 
         /* the chunk is too large now, close it */
-        force_assert(0 == c->file.refchg); /*(else should not happen)*/
-        int rc = close(c->file.fd);
-        c->file.fd = -1;
-        if (0 != rc) {
-            log_perror(errh, __FILE__, __LINE__,
-              "close() temp-file %s failed", c->mem->ptr);
+        if (!chunkqueue_close_tempchunk(c, errh))
             return NULL;
-        }
     }
     return chunkqueue_get_append_newtempfile(cq, errh);
 }
@@ -853,14 +940,8 @@ static int chunkqueue_append_tempfile_err(chunkqueue * const cq, log_error_st * 
         chunkqueue_remove_empty_chunks(cq);
     }
     else {/*(close tempfile; avoid later attempts to append)*/
-        force_assert(0 == c->file.refchg); /*(else should not happen)*/
-        int rc = close(c->file.fd);
-        c->file.fd = -1;
-        if (0 != rc) {
-            log_perror(errh, __FILE__, __LINE__,
-              "close() temp-file %s failed", c->mem->ptr);
+        if (!chunkqueue_close_tempchunk(c, errh))
             retry = 0;
-        }
     }
     return retry;
 }
@@ -1356,7 +1437,7 @@ void chunkqueue_compact_mem(chunkqueue *cq, size_t clen) {
      * no data added/removed from chunkqueue; consolidated only */
 }
 
-static int chunk_open_file_chunk(chunk * const restrict c, log_error_st * const restrict errh) {
+int chunk_open_file_chunk(chunk * const restrict c, log_error_st * const restrict errh) {
 	if (-1 == c->file.fd) {
 		/* (permit symlinks; should already have been checked.  However, TOC-TOU remains) */
 		if (-1 == (c->file.fd = fdevent_open_cloexec(c->mem->ptr, 1, O_RDONLY, 0))) {
@@ -1383,10 +1464,6 @@ static int chunk_open_file_chunk(chunk * const restrict c, log_error_st * const 
 	return 0;
 }
 
-int chunkqueue_open_file_chunk(chunkqueue * const restrict cq, log_error_st * const restrict errh) {
-    return chunk_open_file_chunk(cq->first, errh);
-}
-
 
 static ssize_t
 chunkqueue_write_data (const int fd, const void *buf, size_t len)
@@ -1408,16 +1485,16 @@ chunkqueue_write_chunk_file_intermed (const int fd, chunk * const restrict c, lo
     char buf[16384];
     char *data = buf;
     const off_t len = c->file.length - c->offset;
+    /*if (0 == len) return 0;*//*(sanity check)*//*chunkqueue_write_chunk_file*/
     uint32_t dlen = len < (off_t)sizeof(buf) ? (uint32_t)len : sizeof(buf);
     chunkqueue cq = {c,c,0,0,0,0}; /*(fake cq for chunkqueue_peek_data())*/
-    if (0 != chunkqueue_peek_data(&cq, &data, &dlen, errh) && 0 == dlen)
+    if (0 != chunkqueue_peek_data(&cq, &data, &dlen, errh, 0) && 0 == dlen)
         return -1;
     return chunkqueue_write_data(fd, data, dlen);
 }
 
 
 #if defined HAVE_SYS_SENDFILE_H && defined HAVE_SENDFILE \
- && (!defined _LARGEFILE_SOURCE || defined HAVE_SENDFILE64) \
  && defined(__linux__) && !defined HAVE_SENDFILE_BROKEN
 #include <sys/sendfile.h>
 #include <stdint.h>
@@ -1435,7 +1512,6 @@ chunkqueue_write_chunk_file (const int fd, chunk * const restrict c, log_error_s
     if (0 == len) return 0; /*(sanity check)*/
 
   #if defined HAVE_SYS_SENDFILE_H && defined HAVE_SENDFILE \
-   && (!defined _LARGEFILE_SOURCE || defined HAVE_SENDFILE64) \
    && defined(__linux__) && !defined HAVE_SENDFILE_BROKEN
     /* Linux kernel >= 2.6.33 supports sendfile() between most fd types */
     off_t offset = c->offset;
@@ -1576,22 +1652,22 @@ chunk_setjmp_memcpy_cb (void *dst, const void *src, off_t len)
 int
 chunkqueue_peek_data (chunkqueue * const cq,
                       char ** const data, uint32_t * const dlen,
-                      log_error_st * const errh)
+                      log_error_st * const errh, int nowait)
 {
     char * const data_in = *data;
     const uint32_t data_insz = *dlen;
     *dlen = 0;
 
     for (chunk *c = cq->first; c; ) {
-        uint32_t space = data_insz - *dlen;
+        const uint32_t space = data_insz - *dlen;
         switch (c->type) {
           case MEM_CHUNK:
             {
                 uint32_t have = buffer_clen(c->mem) - (uint32_t)c->offset;
-                if (have > space)
-                    have = space;
                 if (__builtin_expect( (0 == have), 0))
                     break;
+                if (have > space)
+                    have = space;
                 if (*dlen)
                     memcpy(data_in + *dlen, c->mem->ptr + c->offset, have);
                 else
@@ -1603,10 +1679,10 @@ chunkqueue_peek_data (chunkqueue * const cq,
           case FILE_CHUNK:
             if (c->file.fd >= 0 || 0 == chunk_open_file_chunk(c, errh)) {
                 off_t len = c->file.length - c->offset;
-                if (len > (off_t)space)
-                    len = (off_t)space;
                 if (__builtin_expect( (0 == len), 0))
                     break;
+                if (len > (off_t)space)
+                    len = (off_t)space;
 
             #if 0 /* XXX: might improve performance on some system workloads */
               #ifdef HAVE_MMAP
@@ -1647,17 +1723,24 @@ chunkqueue_peek_data (chunkqueue * const cq,
               #endif
             #endif
 
-                ssize_t rd = chunk_file_pread(c->file.fd, data_in+*dlen,
-                                              (size_t)len, c->offset);
-                if (rd <= 0) { /* -1 error; 0 EOF (unexpected) */
+                c->file.busy |= !nowait; /* trigger blocking read next try */
+                ssize_t rd =
+                  chunk_file_pread_chunk(c, data_in+*dlen, (size_t)len);
+                if (__builtin_expect( (rd <= 0), 0)) {
+                    if (nowait && c->file.busy) /* yield */
+                        return 0; /* read I/O would block or signal interrupt */
+                    /* -1 error; 0 EOF (unexpected) */
                     log_perror(errh, __FILE__, __LINE__, "read(\"%s\")",
                                c->mem->ptr);
                     return -1;
                 }
 
                 *dlen += (uint32_t)rd;
+                if (nowait && rd != len)
+                    return 0;
                 break;
             }
+            c->file.busy = 0;
             return -1;
 
           default:
@@ -1688,7 +1771,7 @@ chunkqueue_read_data (chunkqueue * const cq,
 {
     char *ptr = data;
     uint32_t len = dlen;
-    if (chunkqueue_peek_data(cq, &ptr, &len, errh) < 0 || len != dlen)
+    if (chunkqueue_peek_data(cq, &ptr, &len, errh, 0) < 0 || len != dlen)
         return -1;
     if (data != ptr) memcpy(data, ptr, len);
     chunkqueue_mark_written(cq, len);
@@ -1711,7 +1794,7 @@ chunkqueue_read_squash (chunkqueue * const restrict cq, log_error_st * const res
     chunk * const c = chunk_acquire((uint32_t)cqlen+1);
     char *data = c->mem->ptr;
     uint32_t dlen = (uint32_t)cqlen;
-    int rc = chunkqueue_peek_data(cq, &data, &dlen, errh);
+    int rc = chunkqueue_peek_data(cq, &data, &dlen, errh, 0);
     if (rc < 0) {
         chunk_release(c);
         return NULL;

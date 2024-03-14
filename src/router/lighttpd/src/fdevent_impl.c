@@ -47,6 +47,10 @@ static int fdevent_select_init(struct fdevents *ev);
 int
 fdevent_config (const char **event_handler_name, log_error_st *errh)
 {
+  #ifndef _WIN32
+    fdevent_socket_nb_cloexec_init();
+  #endif
+
     static const struct ev_map { fdevent_handler_t et; const char *name; }
       event_handlers[] =
     {
@@ -174,10 +178,6 @@ fdevent_init (const char *event_handler, int *max_fds, int *cur_fds, log_error_s
       : 4096;
     int type = fdevent_config(&event_handler, errh);
     if (type <= 0) return NULL;
-
-  #ifndef _WIN32
-    fdevent_socket_nb_cloexec_init();
-  #endif
 
       #ifdef FDEVENT_USE_SELECT
     /* select limits itself
@@ -370,13 +370,13 @@ __attribute_cold__
 static int
 fdevent_linux_sysepoll_init (fdevents *ev)
 {
-    force_assert(EPOLLIN    == FDEVENT_IN);
-    force_assert(EPOLLPRI   == FDEVENT_PRI);
-    force_assert(EPOLLOUT   == FDEVENT_OUT);
-    force_assert(EPOLLERR   == FDEVENT_ERR);
-    force_assert(EPOLLHUP   == FDEVENT_HUP);
+    ck_static_assert(EPOLLIN    == FDEVENT_IN);
+    ck_static_assert(EPOLLPRI   == FDEVENT_PRI);
+    ck_static_assert(EPOLLOUT   == FDEVENT_OUT);
+    ck_static_assert(EPOLLERR   == FDEVENT_ERR);
+    ck_static_assert(EPOLLHUP   == FDEVENT_HUP);
   #ifdef EPOLLRDHUP
-    force_assert(EPOLLRDHUP == FDEVENT_RDHUP);
+    ck_static_assert(EPOLLRDHUP == FDEVENT_RDHUP);
   #endif
 
     ev->type      = FDEVENT_HANDLER_LINUX_SYSEPOLL;
@@ -607,14 +607,14 @@ __attribute_cold__
 static int
 fdevent_solaris_port_init (fdevents *ev)
 {
-    force_assert(POLLIN    == FDEVENT_IN);
-    force_assert(POLLPRI   == FDEVENT_PRI);
-    force_assert(POLLOUT   == FDEVENT_OUT);
-    force_assert(POLLERR   == FDEVENT_ERR);
-    force_assert(POLLHUP   == FDEVENT_HUP);
-    force_assert(POLLNVAL  == FDEVENT_NVAL);
+    ck_static_assert(POLLIN    == FDEVENT_IN);
+    ck_static_assert(POLLPRI   == FDEVENT_PRI);
+    ck_static_assert(POLLOUT   == FDEVENT_OUT);
+    ck_static_assert(POLLERR   == FDEVENT_ERR);
+    ck_static_assert(POLLHUP   == FDEVENT_HUP);
+    ck_static_assert(POLLNVAL  == FDEVENT_NVAL);
   #ifdef POLLRDHUP
-    force_assert(POLLRDHUP == FDEVENT_RDHUP);
+    ck_static_assert(POLLRDHUP == FDEVENT_RDHUP);
   #endif
 
     ev->type        = FDEVENT_HANDLER_SOLARIS_PORT;
@@ -705,14 +705,14 @@ __attribute_cold__
 static int
 fdevent_solaris_devpoll_init (fdevents *ev)
 {
-    force_assert(POLLIN    == FDEVENT_IN);
-    force_assert(POLLPRI   == FDEVENT_PRI);
-    force_assert(POLLOUT   == FDEVENT_OUT);
-    force_assert(POLLERR   == FDEVENT_ERR);
-    force_assert(POLLHUP   == FDEVENT_HUP);
-    force_assert(POLLNVAL  == FDEVENT_NVAL);
+    ck_static_assert(POLLIN    == FDEVENT_IN);
+    ck_static_assert(POLLPRI   == FDEVENT_PRI);
+    ck_static_assert(POLLOUT   == FDEVENT_OUT);
+    ck_static_assert(POLLERR   == FDEVENT_ERR);
+    ck_static_assert(POLLHUP   == FDEVENT_HUP);
+    ck_static_assert(POLLNVAL  == FDEVENT_NVAL);
   #ifdef POLLRDHUP
-    force_assert(POLLRDHUP == FDEVENT_RDHUP);
+    ck_static_assert(POLLRDHUP == FDEVENT_RDHUP);
   #endif
 
     ev->type       = FDEVENT_HANDLER_SOLARIS_DEVPOLL;
@@ -847,14 +847,14 @@ __attribute_cold__
 static int
 fdevent_poll_init (fdevents *ev)
 {
-    force_assert(POLLIN    == FDEVENT_IN);
-    force_assert(POLLPRI   == FDEVENT_PRI);
-    force_assert(POLLOUT   == FDEVENT_OUT);
-    force_assert(POLLERR   == FDEVENT_ERR);
-    force_assert(POLLHUP   == FDEVENT_HUP);
-    force_assert(POLLNVAL  == FDEVENT_NVAL);
+    ck_static_assert(POLLIN    == FDEVENT_IN);
+    ck_static_assert(POLLPRI   == FDEVENT_PRI);
+    ck_static_assert(POLLOUT   == FDEVENT_OUT);
+    ck_static_assert(POLLERR   == FDEVENT_ERR);
+    ck_static_assert(POLLHUP   == FDEVENT_HUP);
+    ck_static_assert(POLLNVAL  == FDEVENT_NVAL);
   #ifdef POLLRDHUP
-    force_assert(POLLRDHUP == FDEVENT_RDHUP);
+    ck_static_assert(POLLRDHUP == FDEVENT_RDHUP);
   #endif
 
     ev->type      = FDEVENT_HANDLER_POLL;

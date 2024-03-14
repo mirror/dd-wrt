@@ -87,6 +87,7 @@
 #include "array.h"
 #include "buffer.h"
 #include "chunk.h"
+#include "fdevent.h"
 #include "http_header.h"
 #include "log.h"
 
@@ -100,13 +101,13 @@
   if (hctx->gw.conf.debug >= MOD_WEBSOCKET_LOG_ERR) { log_error(hctx->errh, __FILE__, __LINE__, (format), __VA_ARGS__); }
 
 #define DEBUG_LOG_WARN(format, ...) \
-  if (hctx->gw.conf.debug >= MOD_WEBSOCKET_LOG_WARN) { log_error(hctx->errh, __FILE__, __LINE__, (format), __VA_ARGS__); }
+  if (hctx->gw.conf.debug >= MOD_WEBSOCKET_LOG_WARN) { log_warn(hctx->errh, __FILE__, __LINE__, (format), __VA_ARGS__); }
 
 #define DEBUG_LOG_INFO(format, ...) \
-  if (hctx->gw.conf.debug >= MOD_WEBSOCKET_LOG_INFO) { log_error(hctx->errh, __FILE__, __LINE__, (format), __VA_ARGS__); }
+  if (hctx->gw.conf.debug >= MOD_WEBSOCKET_LOG_INFO) { log_info(hctx->errh, __FILE__, __LINE__, (format), __VA_ARGS__); }
 
 #define DEBUG_LOG_DEBUG(format, ...) \
-  if (hctx->gw.conf.debug >= MOD_WEBSOCKET_LOG_DEBUG) { log_error(hctx->errh, __FILE__, __LINE__, (format), __VA_ARGS__); }
+  if (hctx->gw.conf.debug >= MOD_WEBSOCKET_LOG_DEBUG) { log_debug(hctx->errh, __FILE__, __LINE__, (format), __VA_ARGS__); }
 
 typedef struct {
     gw_plugin_config gw; /* start must match layout of gw_plugin_config */
@@ -347,10 +348,22 @@ static handler_t wstunnel_create_env(gw_handler_ctx *gwhctx) {
     handler_ctx *hctx = (handler_ctx *)gwhctx;
     request_st * const r = hctx->gw.r;
     handler_t rc;
-    if (0 == r->reqbody_length || r->http_version > HTTP_VERSION_1_1) {
-        http_response_upgrade_read_body_unknown(r);
-        chunkqueue_append_chunkqueue(&r->reqbody_queue, &r->read_queue);
+    if (0 != r->reqbody_length && r->http_version == HTTP_VERSION_1_1) {
+        /* Defer reading websocket protocol from HTTP/1.1 client until
+         * request body has been received, and then discarded.
+         * mod_wstunnel_check_extension() requires GET method for HTTP/1.1
+         * so (r->conf.http_parseopts & HTTP_PARSEOPT_METHOD_GET_BODY) if
+         * r->reqbody_length, which is not the default config */
+        if (r->state == CON_STATE_READ_POST) {
+            r->conf.stream_request_body &=
+              ~(FDEVENT_STREAM_REQUEST | FDEVENT_STREAM_REQUEST_BUFMIN);
+            rc = r->con->reqbody_read(r);
+            if (rc != HANDLER_GO_ON) return rc;
+        }
+        chunkqueue_mark_written(&r->reqbody_queue, r->reqbody_length);
     }
+    http_response_upgrade_read_body_unknown(r);
+    chunkqueue_append_chunkqueue(&r->reqbody_queue, &r->read_queue);
     rc = mod_wstunnel_handshake_create_response(hctx);
     if (rc != HANDLER_GO_ON) return rc;
 
@@ -497,6 +510,7 @@ static handler_t wstunnel_handler_setup (request_st * const r, plugin_data * con
 
     hctx->gw.opts.backend     = BACKEND_PROXY; /*(act proxy-like)*/
     hctx->gw.opts.pdata       = hctx;
+    hctx->gw.opts.headers     = 0; /*(should not be necessary to unset)*/
     hctx->gw.opts.parse       = wstunnel_recv_parse;
     hctx->gw.stdin_append     = wstunnel_stdin_append;
     hctx->gw.create_env       = wstunnel_create_env;
@@ -587,6 +601,7 @@ static handler_t mod_wstunnel_check_extension(request_st * const r, void *p_d) {
 
     mod_wstunnel_patch_config(r, p);
     if (NULL == p->conf.gw.exts) return HANDLER_GO_ON;
+    p->conf.gw.upgrade = 1;
 
     rc = gw_check_extension(r, (gw_plugin_data *)p, 1, sizeof(handler_ctx));
     return (HANDLER_GO_ON == rc && r->handler_module == p->self)
@@ -595,38 +610,44 @@ static handler_t mod_wstunnel_check_extension(request_st * const r, void *p_d) {
 }
 
 TRIGGER_FUNC(mod_wstunnel_handle_trigger) {
-    const plugin_data * const p = p_d;
-    const unix_time64_t cur_ts = log_monotonic_secs + 1;
-
     gw_handle_trigger(srv, p_d);
 
+    const plugin_data * const p = p_d;
+    const unix_time64_t cur_ts = log_monotonic_secs + 1;
+    struct hxcon h1c;
+    h1c.rused = 1;
+
     for (connection *con = srv->conns; con; con = con->next) {
-        request_st * const r = &con->request;
-        handler_ctx *hctx = r->plugin_ctx[p->id];
-        if (NULL == hctx || r->handler_module != p->self)
-            continue;
+        hxcon * const hx = con->hx ? con->hx : (h1c.r[0] = &con->request, &h1c);
+        for (uint32_t i = 0, rused = hx->rused; i < rused; ++i) {
+            request_st * const r = hx->r[i];
+            handler_ctx * const hctx = r->plugin_ctx[p->id];
+            if (NULL == hctx || r->handler_module != p->self)
+                continue;
 
-        if (hctx->gw.state != GW_STATE_WRITE && hctx->gw.state != GW_STATE_READ)
-            continue;
+            if (hctx->gw.state != GW_STATE_WRITE && hctx->gw.state != GW_STATE_READ)
+                continue;
 
-        if (cur_ts - con->read_idle_ts > r->conf.max_read_idle) {
-            DEBUG_LOG_INFO("timeout client (fd=%d)", con->fd);
-            mod_wstunnel_frame_send(hctx,MOD_WEBSOCKET_FRAME_TYPE_CLOSE,NULL,0);
-            gw_handle_request_reset(r, p_d);
-            joblist_append(con);
-            /* avoid server.c closing connection with error due to max_read_idle
-             * (might instead run joblist after plugins_call_handle_trigger())*/
-            con->read_idle_ts = cur_ts;
-            continue;
-        }
+            /* attempt to cleanly close websocket if connection idle timeout
+             * (occurs 1 sec sooner than r->conf.max_read_idle due to +1 above)
+             * (note: >= HTTP/2 affected only if entire connection is idle) */
+            if (__builtin_expect(
+                  (cur_ts - con->read_idle_ts > r->conf.max_read_idle), 0)) {
+                DEBUG_LOG_INFO("timeout client (fd=%d)", con->fd);
+                mod_wstunnel_frame_send(hctx, MOD_WEBSOCKET_FRAME_TYPE_CLOSE, NULL, 0);
+                gw_handle_request_reset(r, p_d);
+                joblist_append(con);
+                continue;
+            }
 
-        if (0 != hctx->hybivers
-            && hctx->conf.ping_interval > 0
-            && (int32_t)hctx->conf.ping_interval + hctx->ping_ts < cur_ts) {
-            hctx->ping_ts = cur_ts;
-            mod_wstunnel_frame_send(hctx, MOD_WEBSOCKET_FRAME_TYPE_PING, CONST_STR_LEN("ping"));
-            joblist_append(con);
-            continue;
+            if (0 != hctx->hybivers
+                && hctx->conf.ping_interval > 0
+                && (int32_t)hctx->conf.ping_interval + hctx->ping_ts < cur_ts) {
+                hctx->ping_ts = cur_ts;
+                mod_wstunnel_frame_send(hctx, MOD_WEBSOCKET_FRAME_TYPE_PING, CONST_STR_LEN("ping"));
+                joblist_append(con);
+                continue;
+            }
         }
     }
 
@@ -931,19 +952,19 @@ static int send_ietf_00(handler_ctx *hctx, mod_wstunnel_frame_type_t type, const
 }
 
 static int recv_ietf_00(handler_ctx *hctx) {
+    buffer_string_prepare_copy(hctx->gw.r->tmp_buf, 65535);
     request_st * const r = hctx->gw.r;
     chunkqueue *cq = &r->reqbody_queue;
     buffer *payload = hctx->frame.payload;
     char *mem;
     DEBUG_LOG_DEBUG("recv data from client (fd=%d), size=%llx",
                     r->con->fd, (long long)chunkqueue_length(cq));
-    for (chunk *c = cq->first; c; c = c->next) {
-        char *frame = c->mem->ptr+c->offset;
-        /*(chunk_remaining_length() on MEM_CHUNK)*/
-        size_t flen = (size_t)(buffer_clen(c->mem) - c->offset);
-        /*(FILE_CHUNK not handled, but might need to add support)*/
-        force_assert(c->type == MEM_CHUNK);
-        for (size_t i = 0; i < flen; ) {
+    while (!chunkqueue_is_empty(cq)) {
+        char *frame = r->tmp_buf->ptr;
+        uint32_t flen = buffer_string_space(r->tmp_buf);
+        if (0 != chunkqueue_peek_data(cq, &frame, &flen, r->conf.errh, 0))
+            return -1;
+        for (uint32_t i = 0; i < flen; ) {
             switch (hctx->frame.state) {
             case MOD_WEBSOCKET_FRAME_STATE_INIT:
                 hctx->frame.ctl.siz = 0;
@@ -963,7 +984,7 @@ static int recv_ietf_00(handler_ctx *hctx) {
             case MOD_WEBSOCKET_FRAME_STATE_READ_PAYLOAD:
                 mem = (char *)memchr(frame+i, 0xff, flen - i);
                 if (mem == NULL) {
-                    DEBUG_LOG_DEBUG("got continuous payload, size=%zx", flen-i);
+                    DEBUG_LOG_DEBUG("got continuous payload, size=%x", flen-i);
                     hctx->frame.ctl.siz += flen - i;
                     if (hctx->frame.ctl.siz > MOD_WEBSOCKET_BUFMAX) {
                         DEBUG_LOG_WARN("frame size has been exceeded: %x",
@@ -1021,10 +1042,8 @@ static int recv_ietf_00(handler_ctx *hctx) {
                 return -1;
             }
         }
+        chunkqueue_mark_written(cq, flen);
     }
-    /* XXX: should add ability to handle and preserve partial frames above */
-    /*(not chunkqueue_reset(); do not reset cq->bytes_in, cq->bytes_out)*/
-    chunkqueue_mark_written(cq, chunkqueue_length(cq));
     return 0;
 }
 
@@ -1104,6 +1123,9 @@ static int send_rfc_6455(handler_ctx *hctx, mod_wstunnel_frame_type_t type, cons
     }
     request_st * const r = hctx->gw.r;
     http_chunk_append_mem(r, mem, len);
+  #ifdef __COVERITY__
+    if (payload == NULL) ck_assert(0 == siz);
+  #endif
     if (siz) http_chunk_append_mem(r, payload, siz);
     DEBUG_LOG_DEBUG("send data to client (fd=%d), frame size=%zx",
                     r->con->fd, len+siz);
@@ -1119,18 +1141,18 @@ static void unmask_payload(handler_ctx *hctx) {
 }
 
 static int recv_rfc_6455(handler_ctx *hctx) {
+    buffer_string_prepare_copy(hctx->gw.r->tmp_buf, 65535);
     request_st * const r = hctx->gw.r;
     chunkqueue *cq = &r->reqbody_queue;
     buffer *payload = hctx->frame.payload;
     DEBUG_LOG_DEBUG("recv data from client (fd=%d), size=%llx",
                     r->con->fd, (long long)chunkqueue_length(cq));
-    for (chunk *c = cq->first; c; c = c->next) {
-        char *frame = c->mem->ptr+c->offset;
-        /*(chunk_remaining_length() on MEM_CHUNK)*/
-        size_t flen = (size_t)(buffer_clen(c->mem) - c->offset);
-        /*(FILE_CHUNK not handled, but might need to add support)*/
-        force_assert(c->type == MEM_CHUNK);
-        for (size_t i = 0; i < flen; ) {
+    while (!chunkqueue_is_empty(cq)) {
+        char *frame = r->tmp_buf->ptr;
+        uint32_t flen = buffer_string_space(r->tmp_buf);
+        if (0 != chunkqueue_peek_data(cq, &frame, &flen, r->conf.errh, 0))
+            return -1;
+        for (uint32_t i = 0; i < flen; ) {
             switch (hctx->frame.state) {
             case MOD_WEBSOCKET_FRAME_STATE_INIT:
                 switch (frame[i] & 0x0f) {
@@ -1248,11 +1270,11 @@ static int recv_rfc_6455(handler_ctx *hctx) {
                     i += (size_t)(hctx->frame.ctl.siz & SIZE_MAX);
                     hctx->frame.ctl.siz = 0;
                     hctx->frame.state = MOD_WEBSOCKET_FRAME_STATE_INIT;
-                    DEBUG_LOG_DEBUG("rest of frame size=%zx", flen - i);
+                    DEBUG_LOG_DEBUG("rest of frame size=%x", flen - i);
                 /* SIZE_MAX < hctx->frame.ctl.siz */
                 }
                 else {
-                    DEBUG_LOG_DEBUG("read payload, size=%zx", flen - i);
+                    DEBUG_LOG_DEBUG("read payload, size=%x", flen - i);
                     buffer_append_string_len(payload, frame+i, flen - i);
                     hctx->frame.ctl.siz -= flen - i;
                     i += flen - i;
@@ -1291,10 +1313,8 @@ static int recv_rfc_6455(handler_ctx *hctx) {
                 return -1;
             }
         }
+        chunkqueue_mark_written(cq, flen);
     }
-    /* XXX: should add ability to handle and preserve partial frames above */
-    /*(not chunkqueue_reset(); do not reset cq->bytes_in, cq->bytes_out)*/
-    chunkqueue_mark_written(cq, chunkqueue_length(cq));
     return 0;
 }
 

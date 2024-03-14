@@ -14,7 +14,7 @@ dnl - if an argument uses more than one line and is not a single
 dnl   function call, the argument should be on different lines than the
 dnl   wrapping braces
 AC_PREREQ([2.60])
-AC_INIT([lighttpd],[1.4.73],[https://redmine.lighttpd.net/projects/lighttpd/boards/2],[lighttpd],[https://www.lighttpd.net/])
+AC_INIT([lighttpd],[1.4.75],[https://redmine.lighttpd.net/projects/lighttpd/boards/2],[lighttpd],[https://www.lighttpd.net/])
 AC_CONFIG_SRCDIR([src/server.c])
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_MACRO_DIR([m4])
@@ -120,7 +120,6 @@ AC_CHECK_HEADERS([\
   sys/uio.h \
   sys/un.h \
   syslog.h \
-  uuid/uuid.h \
 ])
 
 dnl Checks for typedefs, structures, and compiler characteristics.
@@ -764,7 +763,7 @@ if test "x$use_mbedtls" = "xyes"; then
          AC_DEFINE(HAVE_LIBMBEDTLS, [1], [Have libmbedtls library])
          AC_DEFINE(HAVE_LIBMBEDX509, [1], [Have libmbedx509 library])
          AC_DEFINE(HAVE_LIBMBEDCRYPTO, [1], [Have libmbedcrypto library]) ],
-        [],[-lmbedcrypto "$DL_LIB"])
+        [],[-lmbedx509 -lmbedcrypto "$DL_LIB"])
       ],[],[-lmbedcrypto "$DL_LIB"])
     ],[],[])
   LIBS="$OLDLIBS"
@@ -1219,7 +1218,7 @@ if test "$WITH_WEBDAV_PROPS" != no; then
 fi
 
 
-dnl webdav locks (uuid)
+dnl webdav locks (uuid) (obsolete flag; ignored in build)
 AC_MSG_NOTICE([----------------------------------------])
 AC_MSG_CHECKING([for locks in mod_webdav])
 AC_ARG_WITH([webdav-locks],
@@ -1231,39 +1230,12 @@ AC_ARG_WITH([webdav-locks],
 )
 AC_MSG_RESULT([$WITH_WEBDAV_LOCKS])
 
-if test "$WITH_WEBDAV_LOCKS" != no; then
-  if test "$WITH_WEBDAV_PROPS" = no; then
+if test "$WITH_WEBDAV_PROPS" = no; then
+  if test "$WITH_WEBDAV_LOCKS" != no; then
     AC_MSG_ERROR([--with-webdav-locks requires --with-webdav-props])
   fi
-
-  AC_MSG_CHECKING([for libuuid])
-  AC_ARG_WITH([uuid],
-    [AS_HELP_STRING([--with-uuid], [uuid for locks in mod_webdav])],
-    [WITH_UUID=$withval],
-    [WITH_UUID=yes]
-  )
-  AC_MSG_RESULT([$WITH_UUID])
-
-  if test "$WITH_UUID" = no; then
-    AC_MSG_ERROR([--with-webdav-locks requires uuid])
-  fi
-
-  if test "$WITH_UUID" != yes; then
-    UUID_LIBS="-L$WITH_UUID -luuid"
-    CPPFLAGS="$CPPFLAGS -I$WITH_UUID"
-  else
-    AC_CHECK_LIB([uuid], [uuid_unparse],
-      [UUID_LIBS=-luuid],
-      [AC_MSG_ERROR([uuid lib not found, install it or build without --with-webdav-locks])]
-    )
-    AC_CHECK_HEADERS([uuid/uuid.h], [],
-      [AC_MSG_ERROR([uuid headers not found, install them or build without --with-webdav-locks])]
-    )
-  fi
-
-  AC_DEFINE([HAVE_LIBUUID], [1], [libuuid])
-  AC_DEFINE([HAVE_UUID_UUID_H], [1], [uuid/uuid.h is available])
-  AC_SUBST([UUID_LIBS])
+else
+  WITH_WEBDAV_LOCKS="yes"
 fi
 
 dnl xxhash
@@ -1356,7 +1328,7 @@ if test "$WITH_LUA" != no; then
       LUA_CFLAGS="-I$WITH_LUA"
     fi
   else
-    for luaname in lua5.4 lua-5.4 lua5.3 lua-5.3 lua5.2 lua-5.2 lua5.1 lua-5.1 lua; do
+    for luaname in lua54 lua5.4 lua-5.4 lua53 lua5.3 lua-5.3 lua52 lua5.2 lua-5.2 lua51 lua5.1 lua-5.1 lua; do
       if test "$found_lua" = "0"; then
         PKG_CHECK_MODULES([LUA], [$luaname >= 5.1],
           [found_lua=1],
@@ -1467,7 +1439,6 @@ AC_CHECK_FUNCS([\
   pread \
   pwrite \
   sendfile \
-  sendfile64 \
   splice \
   srandom \
   strerror_r \
@@ -1481,7 +1452,7 @@ AC_CHECK_HEADERS([sys/event.h],      [AC_CHECK_FUNCS([kqueue])])
 AC_CHECK_HEADERS([sys/mman.h],       [AC_CHECK_FUNCS([mmap])])
 AC_CHECK_HEADERS([sys/random.h],     [AC_CHECK_FUNCS([getentropy])])
 AC_CHECK_HEADERS([sys/resource.h],   [AC_CHECK_FUNCS([getrlimit])])
-AC_CHECK_HEADERS([sys/uio.h],        [AC_CHECK_FUNCS([preadv pwritev writev])])
+AC_CHECK_HEADERS([sys/uio.h],        [AC_CHECK_FUNCS([preadv preadv2 pwritev writev])])
 if test "$ac_cv_func_poll" = no; then
   AC_CHECK_HEADERS([sys/select.h])
   AC_CHECK_FUNCS([select])
@@ -1524,7 +1495,7 @@ AC_MSG_NOTICE([----------------------------------------])
 AC_MSG_CHECKING([for Large File System support])
 AC_ARG_ENABLE([lfs],
   [AS_HELP_STRING([--enable-lfs],
-    [Turn on Large File System (default)]
+    [Large File System support (enabled; option ignored)]
   )],
   [
     case "${enableval}" in
@@ -1557,7 +1528,7 @@ if test "$ac_cv_func_sendfile" = yes; then
         #include <sys/socket.h>
         #include <sys/uio.h>
         int main(void) {
-          int o = 0;
+          off_t o = 0;
           if (-1 == sendfile(-1, 0, &o, 0) && errno == ENOSYS) return -1;
           return 0;
         }
@@ -1612,28 +1583,23 @@ if test "$ipv6" = true; then
   fi
 fi
 
-# disable mmap by default
 # lighttpd may always use mmap with files it owns (created tmp files)
 AC_MSG_NOTICE([----------------------------------------])
 AC_MSG_CHECKING([use mmap if available])
 AC_ARG_ENABLE([mmap],
   [AS_HELP_STRING([--enable-mmap],
-    [use mmap if available]
+    [use mmap if available (enabled; option ignored)]
   )],
   [
     case "${enableval}" in
     yes) mmap=true ;;
-    no) mmap=false ;;
+    no) mmap=true ;;
     *) AC_MSG_ERROR([bad value ${enableval} for --enable-mmap]) ;;
     esac
   ],
-  [mmap=false]
+  [mmap=true]
 )
 AC_MSG_RESULT([$mmap])
-
-if test "$mmap" = true; then
-  AC_DEFINE([ENABLE_MMAP], [1], [Use mmap if available])
-fi
 
 
 AC_MSG_NOTICE([----------------------------------------])
@@ -1793,7 +1759,7 @@ lighty_track_feature "auth-crypt" "" \
   'test "$found_crypt" != no'
 
 lighty_track_feature "network-ipv6" "" \
-  'test "$ac_cv_ipv6_support" != no'
+  'test "$ipv6" != false'
 
 lighty_track_feature "large-files" "" \
   'test "$ENABLE_LFS" = yes'

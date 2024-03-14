@@ -138,7 +138,7 @@ lib_LTLIBRARIES += mod_webdav.la
 mod_webdav_la_SOURCES = mod_webdav.c
 mod_webdav_la_CFLAGS = $(AM_CFLAGS) $(XML_CFLAGS) $(SQLITE_CFLAGS) 
 mod_webdav_la_LDFLAGS = $(common_module_ldflags)
-mod_webdav_la_LIBADD = $(common_libadd) $(XML_LIBS) $(SQLITE_LIBS) $(UUID_LIBS) $(ELFTC_LIB)
+mod_webdav_la_LIBADD = $(common_libadd) $(XML_LIBS) $(SQLITE_LIBS) $(ELFTC_LIB)
 
 if BUILD_WITH_LUA
 lib_LTLIBRARIES += mod_magnet.la
@@ -371,7 +371,8 @@ hdr = base64.h buffer.h burl.h network.h log.h http_kv.h keyvalue.h \
 	ls-hpack/lshpack.h \
 	ls-hpack/lsxpack_header.h \
 	ls-hpack/huff-tables.h \
-	compat/fastcgi.h
+	compat/fastcgi.h \
+	compat/sys/queue.h
 
 
 DEFS= @DEFS@ -DHAVE_VERSIONSTAMP_H -DLIBRARY_DIR="\"$(libdir)\"" -DSBIN_DIR="\"$(sbindir)\""
@@ -420,7 +421,7 @@ lighttpd_CPPFLAGS = \
 lighttpd_LDADD = \
   $(common_libadd) \
   $(CRYPT_LIB) $(CRYPTO_LIB) $(XXHASH_LIBS) \
-  $(XML_LIBS) $(SQLITE_LIBS) $(UUID_LIBS) $(ELFTC_LIB) \
+  $(XML_LIBS) $(SQLITE_LIBS) $(ELFTC_LIB) \
   $(PCRE_LIB) $(Z_LIB) $(ZSTD_LIB) $(BZ_LIB) $(BROTLI_LIBS) $(DEFLATE_LIBS) \
   $(DL_LIB) $(SENDFILE_LIB) $(ATTR_LIB) \
   $(FAM_LIBS) $(LIBEV_LIBS) $(LIBUNWIND_LIBS)
@@ -522,6 +523,7 @@ t_test_mod_SOURCES = $(common_src) t/test_mod.c \
                      t/test_mod_access.c \
                      t/test_mod_alias.c \
                      t/test_mod_evhost.c \
+                     t/test_mod_expire.c \
                      t/test_mod_indexfile.c \
                      t/test_mod_simple_vhost.c \
                      t/test_mod_ssi.c \

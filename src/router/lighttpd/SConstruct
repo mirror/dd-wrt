@@ -12,7 +12,7 @@ except NameError:
 	string_types = str
 
 package = 'lighttpd'
-version = '1.4.73'
+version = '1.4.75'
 
 underscorify_reg = re.compile('[^A-Z0-9]')
 def underscorify(id):
@@ -264,7 +264,7 @@ vars.AddVariables(
 	PackageVariable('with_pgsql', 'enable pgsql support', 'no'),
 	PackageVariable('with_sasl', 'enable SASL support', 'no'),
 	BoolVariable('with_sqlite3', 'enable sqlite3 support (required for webdav props)', 'no'),
-	BoolVariable('with_uuid', 'enable uuid support (required for webdav locks)', 'no'),
+	BoolVariable('with_uuid', 'enable uuid support (obsolete flag; ignored)', 'no'),
 	# with_valgrind not supported
 	# with_xattr not supported
 	PackageVariable('with_xml', 'enable xml support (required for webdav props)', 'no'),
@@ -290,7 +290,8 @@ env['package'] = package
 env['version'] = version
 if env['CC'] == 'gcc':
 	## we need x-open 6 and bsd 4.3 features
-	env.Append(CCFLAGS = Split('-pipe -Wall -O2 -g -W -pedantic -Wunused -Wshadow -std=gnu99'))
+	## (add -std=gnu99 for ancient gcc compiler versions)
+	env.Append(CCFLAGS = Split('-pipe -Wall -O2 -g -W -pedantic -Wunused -Wshadow'))
 
 env.Append(CPPFLAGS = [
 	'-D_TIME_BITS=64',
@@ -354,7 +355,6 @@ if 1:
 		LIBSQLITE3 = '',
 		LIBSSL = '',
 		LIBSSLCRYPTO = '',
-		LIBUUID = '',
 		LIBWOLFSSL = '',
 		LIBX509 = '',
 		LIBXML2 = '',
@@ -411,7 +411,9 @@ if 1:
 		'explicit_bzero',
 		'explicit_memset',
 		'fork',
+		'getentropy',
 		'getloadavg',
+		'getrandom',
 		'getrlimit',
 		'getuid',
 		'gmtime_r',
@@ -436,11 +438,11 @@ if 1:
 		'posix_spawn_file_actions_addfchdir_np',
 		'pread',
 		'preadv',
+		'preadv2',
 		'pwrite',
 		'pwritev',
 		'select',
 		'sendfile',
-		'sendfile64',
 		'sigaction',
 		'signal',
 		'splice',
@@ -449,8 +451,6 @@ if 1:
 		'timegm',
 		'writev',
 	])
-	autoconf.haveFunc('getentropy', 'sys/random.h')
-	autoconf.haveFunc('getrandom', 'linux/random.h')
 	if re.compile("sunos|solaris").search(env['PLATFORM']):
 		autoconf.haveCHeaders([
 			'port.h',
@@ -458,9 +458,9 @@ if 1:
 			'sys/devpoll.h',
 			'sys/filio.h',
 		])
-		autoconf.haveFunc('port_create', 'port.h')
+		autoconf.haveFunc('port_create')
 		autoconf.haveFunc('sendfilev')
-		autoconf.haveFunc('setpflags', 'priv.h')
+		autoconf.haveFunc('setpflags')
 
 	autoconf.haveTypes(Split('pid_t size_t off_t'))
 
@@ -580,7 +580,7 @@ if 1:
 
 	if env['with_lua']:
 		found_lua = False
-		for lua_name in ['lua5.4', 'lua-5.4', 'lua5.3', 'lua-5.3', 'lua5.2', 'lua-5.2', 'lua5.1', 'lua-5.1', 'lua']:
+		for lua_name in ['lua54','lua5.4','lua-5.4','lua53','lua5.3','lua-5.3','lua52','lua5.2','lua-5.2','lua51','lua5.1','lua-5.1','lua']:
 			print("Searching for lua: " + lua_name + " >= 5.0")
 			if autoconf.CheckParseConfigForLib('LIBLUA', "pkg-config '" + lua_name + " >= 5.0' --cflags --libs"):
 				autoconf.env.Append(CPPFLAGS = [ '-DHAVE_LUA_H' ])
@@ -695,14 +695,6 @@ if 1:
 		autoconf.env.Append(
 			CPPFLAGS = [ '-DHAVE_SQLITE3_H', '-DHAVE_LIBSQLITE3' ],
 			LIBSQLITE3 = 'sqlite3',
-		)
-
-	if env['with_uuid']:
-		if not autoconf.CheckLibWithHeader('uuid', 'uuid/uuid.h', 'C'):
-			fail("Couldn't find uuid")
-		autoconf.env.Append(
-			CPPFLAGS = [ '-DHAVE_UUID_UUID_H', '-DHAVE_LIBUUID' ],
-			LIBUUID = 'uuid',
 		)
 
 	if env['with_xml']:

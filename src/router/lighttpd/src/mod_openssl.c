@@ -37,13 +37,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#ifdef __linux__        /* uname() */
-#include <sys/utsname.h>
-#endif
-#ifdef __FreeBSD__
-#include <sys/sysctl.h> /* sysctlbyname() */
-#endif
-
 /*(not needed)*/
 /* correction; needed for:
  *   SSL_load_client_CA_file()
@@ -631,6 +624,108 @@ mod_openssl_free_config (server *srv, plugin_data * const p)
         }
     }
 }
+
+
+#ifdef SSL_OP_ENABLE_KTLS /* openssl 3.0.0 */
+
+#ifdef __linux__
+#include <sys/utsname.h>/* uname() */
+#include "sys-unistd.h" /* read() close() getuid() */
+__attribute_cold__
+static int
+mod_tls_linux_has_ktls (void)
+{
+    /* file in special proc filesystem returns 0 size to stat(),
+     * so unable to use fdevent_load_file() */
+    static const char file[] = "/proc/sys/net/ipv4/tcp_available_ulp";
+    char buf[1024];
+    int fd = fdevent_open_cloexec(file, 1, O_RDONLY, 0);
+    if (-1 == fd) return -1; /*(/proc not mounted?)*/
+    ssize_t rd = read(fd, buf, sizeof(buf)-1);
+    close(fd);
+    if (-1 == rd) return -1;
+    int has_ktls = 0;
+    if (rd > 0) {
+        buf[rd] = '\0';
+        char *p = buf;
+        has_ktls =
+          (0 == strncmp(p, "tls", 3) ? (p+=3)
+           : (p = strstr(p, " tls")) ? (p+=4) : NULL)
+          && (*p == ' ' || *p == '\n' || *p == '\0');
+    }
+    return has_ktls; /* false if kernel tls module not loaded */
+}
+
+__attribute_cold__
+static int
+mod_tls_linux_modprobe_tls (void)
+{
+    if (0 == getuid()) {
+          char *argv[3];
+          *(const char **)&argv[0] = "/usr/sbin/modprobe";
+          *(const char **)&argv[1] = "tls";
+          *(const char **)&argv[2] = NULL;
+          pid_t pid = /*(send input and output to /dev/null)*/
+            fdevent_fork_execve(argv[0], argv, NULL, -1, -1, STDOUT_FILENO, -1);
+          if (pid > 0)
+            fdevent_waitpid(pid, NULL, 0);
+          return mod_tls_linux_has_ktls();
+    }
+    return 0;
+}
+#endif /* __linux__ */
+
+#ifdef __FreeBSD__
+#include <sys/sysctl.h> /* sysctlbyname() */
+#endif
+
+__attribute_cold__
+static int
+mod_tls_check_kernel_ktls (void)
+{
+    int has_ktls = 0;
+
+   #ifdef __linux__
+    struct utsname uts;
+    if (0 == uname(&uts)) {
+        /* check two or more digit linux major kernel ver or >= kernel 4.13 */
+        /* (avoid #include <stdio.h> for scanf("%d.%d.%d"); limit stdio.h use)*/
+        const char * const v = uts.release;
+        int rv = v[1] != '.' || v[0]-'0' > 4
+              || (v[0]-'0' == 4 && v[3] != '.' /*(last 4.x.x was 4.20.x)*/
+                  && (v[2]-'0' > 1 || (v[2]-'0' == 1 && v[3]-'0' >= 3)));
+        if (rv && 0 == (rv = mod_tls_linux_has_ktls()))
+            rv = mod_tls_linux_modprobe_tls();
+        has_ktls = rv;
+    }
+   #endif
+   #ifdef __FreeBSD__
+    size_t ktls_sz = sizeof(has_ktls);
+    if (0 != sysctlbyname("kern.ipc.tls.enable",
+                          &has_ktls, &ktls_sz, NULL, 0)) {
+      #if 0 /*(not present on kernels < FreeBSD 13 unless backported)*/
+        log_perror(srv->errh, __FILE__, __LINE__,
+          "sysctl(\"kern.ipc.tls.enable\")");
+      #endif
+        has_ktls = -1;
+    }
+   #endif
+
+    /* has_ktls = 1:enabled; 0:disabled; -1:unable to determine */
+    return has_ktls;
+}
+
+__attribute_cold__
+static void
+mod_openssl_check_ktls (void)
+{
+    int rv = mod_tls_check_kernel_ktls();
+
+    /* disable ktls if ktls not available or if unable to determine */
+    ktls_enable = (rv > 0);
+}
+
+#endif /* SSL_OP_ENABLE_KTLS */
 
 
 /* use memory from openssl secure heap for temporary buffers, returned storage
@@ -1288,6 +1383,7 @@ network_ssl_servername_callback (SSL *ssl, int *al, void *srv)
 
 
 #if OPENSSL_VERSION_NUMBER < 0x10101000L \
+ || !(defined(_LP64) || defined(__LP64__) || defined(_WIN64)) \
  || defined(BORINGSSL_API_VERSION) \
  ||(defined(LIBRESSL_VERSION_NUMBER) && LIBRESSL_VERSION_NUMBER < 0x3060000fL)
 static unix_time64_t
@@ -1307,12 +1403,13 @@ mod_openssl_cert_is_active (const X509 *crt)
     const ASN1_TIME *notBefore = X509_get0_notBefore(crt);
     const ASN1_TIME *notAfter  = X509_get0_notAfter(crt);
   #if OPENSSL_VERSION_NUMBER < 0x10101000L \
+   || !(defined(_LP64) || defined(__LP64__) || defined(_WIN64)) \
    || defined(BORINGSSL_API_VERSION) \
    ||(defined(LIBRESSL_VERSION_NUMBER) && LIBRESSL_VERSION_NUMBER < 0x3060000fL)
     const unix_time64_t before = mod_openssl_asn1_time_to_posix(notBefore);
     const unix_time64_t after  = mod_openssl_asn1_time_to_posix(notAfter);
     const unix_time64_t now = log_epoch_secs;
-    return (before <= now && now <= after);
+    return (0 <= before && before <= now && now <= after);
   #else /*(-2 is an error from ASN1_TIME_cmp_time_t(); test cmp for -1, 0, 1)*/
     const unix_time64_t now = log_epoch_secs;
     const int before_cmp = ASN1_TIME_cmp_time_t(notBefore, (time_t)now);
@@ -1468,7 +1565,25 @@ mod_openssl_load_stapling_file (const char *file, log_error_st *errh, buffer *b)
 static unix_time64_t
 mod_openssl_asn1_time_to_posix (const ASN1_TIME *asn1time)
 {
-  #if defined(LIBRESSL_VERSION_NUMBER) && LIBRESSL_VERSION_NUMBER < 0x3050000fL
+  #if defined(BORINGSSL_API_VERSION) && BORINGSSL_API_VERSION >= 19
+
+    int64_t t;
+    return ASN1_TIME_to_posix(asn1time, &t) ? (unix_time64_t)t : -1;
+
+  #elif defined(LIBRESSL_VERSION_NUMBER) && LIBRESSL_VERSION_NUMBER>=0x2050100fL
+
+    struct tm x;
+   #if LIBRESSL_VERSION_NUMBER >= 0x3050000fL
+    if (!ASN1_TIME_to_tm(asn1time, &x))
+        return -1;
+   #else /* LIBRESSL_VERSION_NUMBER >= 0x2050100fL */
+    if (-1 == ASN1_time_parse(asn1time->data, asn1time->length, &x, 0))
+        return -1;
+   #endif
+    time_t t = timegm(&x);
+    return (t != -1) ? TIME64_CAST(t) : t;
+
+  #elif defined(LIBRESSL_VERSION_NUMBER) && LIBRESSL_VERSION_NUMBER <0x3050000fL
     /* LibreSSL was forked from OpenSSL 1.0.1; does not have ASN1_TIME_diff */
 
     /*(Note: all certificate times are expected to use UTC)*/
@@ -1541,11 +1656,23 @@ mod_openssl_asn1_time_to_posix (const ASN1_TIME *asn1time)
 
   #else
 
+   #if OPENSSL_VERSION_NUMBER >= 0x10101000L && !defined(BORINGSSL_API_VERSION)
+
+    struct tm x;
+    if (!ASN1_TIME_to_tm(asn1time, &x))
+        return -1;
+    time_t t = timegm(&x);
+    return (t != -1) ? TIME64_CAST(t) : t;
+
+   #else
+
     /* Note: this does not check for integer overflow of time_t! */
     int day, sec;
     return ASN1_TIME_diff(&day, &sec, NULL, asn1time)
       ? log_epoch_secs + day*86400 + sec
       : -1;
+
+   #endif
 
   #endif
 }
@@ -2516,7 +2643,7 @@ network_init_ssl (server *srv, plugin_config_socket *s, plugin_data *p)
 
 
 #define LIGHTTPD_DEFAULT_CIPHER_LIST \
-"EECDH+AESGCM:AES256+EECDH:CHACHA20:!SHA1:!SHA256:!SHA384"
+"EECDH+AESGCM:CHACHA20:!PSK:!DHE"
 
 
 static int
@@ -3014,27 +3141,7 @@ SETDEFAULTS_FUNC(mod_openssl_set_defaults)
   #endif
 
   #ifdef SSL_OP_ENABLE_KTLS /* openssl 3.0.0 */
-   #ifdef __linux__
-    struct utsname uts;
-    if (0 == uname(&uts)) {
-      /* check two or more digit linux major kernel version or >= kernel 4.17 */
-      /* (avoid #include <stdio.h> for scanf("%d.%d.%d"); limit stdio.h use) */
-      const char * const v = uts.release;
-      ktls_enable = v[1] != '.' || v[0]-'0' > 4
-                 || (v[0]-'0' == 4 && v[3] != '.' /*(last 4.x.x was 4.20.x)*/
-                     && (v[2]-'0' > 1 || (v[2]-'0' == 1 && v[3]-'0' >= 7)));
-    }
-   #endif
-   #ifdef __FreeBSD__
-    size_t ktls_sz = sizeof(ktls_enable);
-    if (0 != sysctlbyname("kern.ipc.tls.enable",
-                          &ktls_enable, &ktls_sz, NULL, 0)) {
-      #if 0 /*(not present on kernels < FreeBSD 13 unless backported)*/
-        log_perror(srv->errh, __FILE__, __LINE__,
-          "sysctl(\"kern.ipc.tls.enable\")");
-      #endif
-    }
-   #endif
+    mod_openssl_check_ktls();
   #endif
 
     return mod_openssl_set_defaults_sockets(srv, p);
@@ -3067,6 +3174,12 @@ mod_openssl_write_err (SSL * const ssl, int wr, connection * const con,
         else if (wr == -1) {
             /* no, but we have errno */
             switch (errno) {
+              case EAGAIN:
+              case EINTR:
+             #if defined(__FreeBSD__) && defined(SF_NODISKIO)
+              case EBUSY:
+             #endif
+                return 0; /* try again later */
               case EPIPE:
               case ECONNRESET:
                 return -2;
@@ -3136,10 +3249,11 @@ connection_write_cq_ssl (connection * const con, chunkqueue * const cq, off_t ma
           : (uint32_t)max_bytes;
         int wr;
 
-        if (0 != chunkqueue_peek_data(cq, &data, &data_len, errh)) return -1;
+        if (0 != chunkqueue_peek_data(cq, &data, &data_len, errh, 1)) return -1;
         if (__builtin_expect( (0 == data_len), 0)) {
-            chunkqueue_remove_finished_chunks(cq);
-            continue;
+            if (!cq->first->file.busy)
+                chunkqueue_remove_finished_chunks(cq);
+            break; /* try again later */
         }
 
         /**
@@ -3164,9 +3278,16 @@ connection_write_cq_ssl (connection * const con, chunkqueue * const cq, off_t ma
             return mod_openssl_write_err(ssl, wr, con, errh);
 
         chunkqueue_mark_written(cq, wr);
-        max_bytes -= wr;
 
-        if ((size_t) wr < data_len) break; /* try again later */
+        /* yield if wrote less than read or read less than requested
+         * (if starting cqlen was less than requested read amount, then
+         *  chunkqueue should be empty now, so no need to calculate that) */
+        if ((uint32_t)wr < data_len || data_len <(LOCAL_SEND_BUFSIZE < max_bytes
+                                                 ?LOCAL_SEND_BUFSIZE
+                                                 :(uint32_t)max_bytes))
+            break; /* try again later */
+
+        max_bytes -= wr;
     }
 
     return 0;
@@ -3192,13 +3313,31 @@ connection_write_cq_ssl_ktls (connection * const con, chunkqueue * const cq, off
         off_t len = c->file.length - c->offset;
         if (len > max_bytes) len = max_bytes;
         if (0 == len) break; /*(FILE_CHUNK or max_bytes should not be 0)*/
-        if (-1 == c->file.fd && 0 != chunkqueue_open_file_chunk(cq, hctx->errh))
+        if (-1 == c->file.fd && 0 != chunk_open_file_chunk(c, hctx->errh))
             return -1;
+
+      #if defined(__FreeBSD__) && defined(SF_NODISKIO)
+
+        int flags = !c->file.busy ? SF_NODISKIO : 0;
+       #ifdef SF_FLAGS
+        flags = SF_FLAGS(32, flags);
+       #endif
+        ossl_ssize_t wr =
+          SSL_sendfile(hctx->ssl, c->file.fd, c->offset, (size_t)len, flags);
+        if (wr < 0) {
+            c->file.busy = (errno == EBUSY);
+            return mod_openssl_write_err(hctx->ssl, (int)wr, con, hctx->errh);
+        }
+        c->file.busy = 0;
+
+      #else
 
         ossl_ssize_t wr =
           SSL_sendfile(hctx->ssl, c->file.fd, c->offset, (size_t)len, 0);
         if (wr < 0)
             return mod_openssl_write_err(hctx->ssl, (int)wr, con, hctx->errh);
+
+      #endif
 
         chunkqueue_mark_written(cq, wr);
         max_bytes -= wr;

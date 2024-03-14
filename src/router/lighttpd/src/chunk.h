@@ -34,7 +34,9 @@ typedef struct chunk {
 		off_t  length; /* end pos + 1 in file (octets to send: file.length - c->offset) */
 
 		int    fd;
-		int is_temp; /* file is temporary and will be deleted if on cleanup */
+		uint8_t is_temp; /* file is temporary and will be deleted if on cleanup */
+		uint8_t busy;    /* file chunk not in page cache; reading might block */
+		uint8_t flagmask;/* (internal; used with preadv2() RWF_NOWAIT) */
 	  #if defined(HAVE_MMAP) || defined(_WIN32) /*(see local sys-mmap.h)*/
 		chunk_file_view *view;
 	  #endif
@@ -54,6 +56,9 @@ typedef struct chunkqueue {
 } chunkqueue;
 
 ssize_t chunk_file_pread (int fd, void *buf, size_t count, off_t offset);
+
+/* attempts non-blocking preadv2 RWF_NOWAIT on Linux, else chunk_file_pread() */
+ssize_t chunk_file_pread_chunk (chunk *c, void *buf, size_t count);
 
 __attribute_returns_nonnull__
 buffer * chunk_buffer_acquire(void);
@@ -151,7 +156,7 @@ void chunkqueue_steal(chunkqueue * restrict dest, chunkqueue * restrict src, off
 int chunkqueue_steal_with_tempfiles(chunkqueue * restrict dest, chunkqueue * restrict src, off_t len, log_error_st * const restrict errh);
 void chunkqueue_append_cq_range (chunkqueue *dst, const chunkqueue *src, off_t offset, off_t len);
 
-int chunkqueue_open_file_chunk(chunkqueue * restrict cq, log_error_st * const restrict errh);
+int chunk_open_file_chunk(chunk * restrict c, log_error_st * restrict errh);
 
 void chunkqueue_compact_mem_offset(chunkqueue *cq);
 void chunkqueue_compact_mem(chunkqueue *cq, size_t clen);
@@ -161,7 +166,7 @@ void chunkqueue_small_resp_optim (chunkqueue * restrict cq);
 ssize_t chunkqueue_write_chunk (int fd, chunkqueue * restrict cq, log_error_st * restrict errh);
 ssize_t chunkqueue_write_chunk_to_pipe (int fd, chunkqueue * restrict cq, log_error_st * restrict errh);
 
-int chunkqueue_peek_data (chunkqueue *cq, char **data, uint32_t *dlen, log_error_st * restrict errh);
+int chunkqueue_peek_data (chunkqueue *cq, char **data, uint32_t *dlen, log_error_st * restrict errh, int nowait);
 int chunkqueue_read_data (chunkqueue *cq, char *data, uint32_t dlen, log_error_st * restrict errh);
 
 chunk * chunkqueue_read_squash (chunkqueue * restrict cq, log_error_st * restrict errh);

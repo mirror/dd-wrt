@@ -679,6 +679,147 @@ FREE_FUNC(mod_gnutls_free)
 }
 
 
+#if GNUTLS_VERSION_NUMBER >= 0x030704
+
+/* mod_tls_* copied from mod_openssl.c */
+
+#ifdef __linux__
+#include <sys/utsname.h>/* uname() */
+#include "sys-unistd.h" /* read() close() getuid() */
+__attribute_cold__
+static int
+mod_tls_linux_has_ktls (void)
+{
+    /* file in special proc filesystem returns 0 size to stat(),
+     * so unable to use fdevent_load_file() */
+    static const char file[] = "/proc/sys/net/ipv4/tcp_available_ulp";
+    char buf[1024];
+    int fd = fdevent_open_cloexec(file, 1, O_RDONLY, 0);
+    if (-1 == fd) return -1; /*(/proc not mounted?)*/
+    ssize_t rd = read(fd, buf, sizeof(buf)-1);
+    close(fd);
+    if (-1 == rd) return -1;
+    int has_ktls = 0;
+    if (rd > 0) {
+        buf[rd] = '\0';
+        char *p = buf;
+        has_ktls =
+          (0 == strncmp(p, "tls", 3) ? (p+=3)
+           : (p = strstr(p, " tls")) ? (p+=4) : NULL)
+          && (*p == ' ' || *p == '\n' || *p == '\0');
+    }
+    return has_ktls; /* false if kernel tls module not loaded */
+}
+
+__attribute_cold__
+static int
+mod_tls_linux_modprobe_tls (void)
+{
+    if (0 == getuid()) {
+          char *argv[3];
+          *(const char **)&argv[0] = "/usr/sbin/modprobe";
+          *(const char **)&argv[1] = "tls";
+          *(const char **)&argv[2] = NULL;
+          pid_t pid = /*(send input and output to /dev/null)*/
+            fdevent_fork_execve(argv[0], argv, NULL, -1, -1, STDOUT_FILENO, -1);
+          if (pid > 0)
+            fdevent_waitpid(pid, NULL, 0);
+          return mod_tls_linux_has_ktls();
+    }
+    return 0;
+}
+#endif /* __linux__ */
+
+#ifdef __FreeBSD__
+#include <sys/sysctl.h> /* sysctlbyname() */
+#endif
+
+__attribute_cold__
+static int
+mod_tls_check_kernel_ktls (void)
+{
+    int has_ktls = 0;
+
+   #ifdef __linux__
+    struct utsname uts;
+    if (0 == uname(&uts)) {
+        /* check two or more digit linux major kernel ver or >= kernel 4.13 */
+        /* (avoid #include <stdio.h> for scanf("%d.%d.%d"); limit stdio.h use)*/
+        const char * const v = uts.release;
+        int rv = v[1] != '.' || v[0]-'0' > 4
+              || (v[0]-'0' == 4 && v[3] != '.' /*(last 4.x.x was 4.20.x)*/
+                  && (v[2]-'0' > 1 || (v[2]-'0' == 1 && v[3]-'0' >= 3)));
+        if (rv && 0 == (rv = mod_tls_linux_has_ktls()))
+            rv = mod_tls_linux_modprobe_tls();
+        has_ktls = rv;
+    }
+   #endif
+   #ifdef __FreeBSD__
+    size_t ktls_sz = sizeof(has_ktls);
+    if (0 != sysctlbyname("kern.ipc.tls.enable",
+                          &has_ktls, &ktls_sz, NULL, 0)) {
+      #if 0 /*(not present on kernels < FreeBSD 13 unless backported)*/
+        log_perror(srv->errh, __FILE__, __LINE__,
+          "sysctl(\"kern.ipc.tls.enable\")");
+      #endif
+        has_ktls = -1;
+    }
+   #endif
+
+    /* has_ktls = 1:enabled; 0:disabled; -1:unable to determine */
+    return has_ktls;
+}
+
+__attribute_cold__
+static int
+mod_gnutls_check_config_ktls (void)
+{
+    /* GnuTLS does not expose _gnutls_config_is_ktls_enabled() (in 3.7.7)
+     * (must wastefully re-parse global config to see if KTLS enabled) */
+    gnutls_datum_t f = { NULL, 0 };
+    const char *fn = gnutls_get_system_config_file();
+    if (NULL == fn) return 0; /*(should not happen)*/
+    int rc = mod_gnutls_load_file(fn, &f, NULL);
+    if (rc < 0) return 0;
+
+    int ktls_enable = 0;
+    for (char *p = (char *)f.data, *q; (p = strstr(p, "ktls")); p += 4) {
+        if (p == (char *)f.data || p[-1] != '\n') continue;
+        q = p+4;
+        while (*q == ' ' || *q == '\t') ++q;
+        if (*q++ != '=') continue;
+        while (*q == ' ' || *q == '\t') ++q;
+        if (0 != strncmp(q, "true", 4)) continue;
+        q += 4;
+        while (*q == ' ' || *q == '\t') ++q;
+        if (*q != '\n' && *q != '\0') continue;
+
+        ktls_enable = 1;
+        break;
+    }
+
+    mod_gnutls_datum_wipe(&f);
+
+    return ktls_enable;
+}
+
+__attribute_cold__
+static void
+mod_gnutls_check_ktls (void)
+{
+    if (!mod_gnutls_check_config_ktls())
+        return;
+
+    /*(warn if disabled:0; skip if enabled:1 or if unable to determine:-1)*/
+    if (!mod_tls_check_kernel_ktls())
+        log_error(NULL, __FILE__, __LINE__,
+          "ktls enabled in GnuTLS system configuration file, "
+          "but not enabled in kernel");
+}
+
+#endif /* GNUTLS_VERSION_NUMBER >= 0x030704 */
+
+
 static void
 mod_gnutls_merge_config_cpv (plugin_config * const pconf, const config_plugin_value_t * const cpv)
 {
@@ -1779,13 +1920,13 @@ static int
 network_init_ssl (server *srv, plugin_config_socket *s, plugin_data *p)
 {
     int rc;
-    UNUSED(p);
 
     /* construct GnuTLS "priority" string
      *
      * default: NORMAL (since GnuTLS 3.3.0, could also use NULL for defaults)
      * SUITEB128 and SUITEB192 are stricter than NORMAL
      * (and are attempted to be supported in mod_gnutls_ssl_conf_ciphersuites())
+     * SECURE is slightly stricter than NORMAL
      */
 
   #if GNUTLS_VERSION_NUMBER < 0x030600
@@ -1833,7 +1974,7 @@ network_init_ssl (server *srv, plugin_config_socket *s, plugin_data *p)
      * GnuTLS by concatenating into a single priority string */
 
     buffer *b = srv->tmp_buf;
-    if (NULL == s->priority_base) s->priority_base = "NORMAL";
+    if (NULL == s->priority_base) s->priority_base = "SECURE";
     buffer_copy_string_len(b, s->priority_base, strlen(s->priority_base));
     if (!buffer_is_blank(&s->priority_str)) {
         buffer_append_char(b, ':');
@@ -1849,7 +1990,7 @@ network_init_ssl (server *srv, plugin_config_socket *s, plugin_data *p)
     }
 
     if (p->defaults.ssl_log_noise)
-        log_error(srv->errh, __FILE__, __LINE__,
+        log_debug(srv->errh, __FILE__, __LINE__,
                   "debug: GnuTLS priority string: %s", b->ptr);
 
     const char *err_pos;
@@ -1865,7 +2006,7 @@ network_init_ssl (server *srv, plugin_config_socket *s, plugin_data *p)
 
 
 #define LIGHTTPD_DEFAULT_CIPHER_LIST \
-"EECDH+AESGCM:AES256+EECDH:CHACHA20:!SHA1:!SHA256:!SHA384"
+"EECDH+AESGCM:CHACHA20:!PSK:!DHE"
 
 
 static int
@@ -2253,6 +2394,10 @@ SETDEFAULTS_FUNC(mod_gnutls_set_defaults)
             mod_gnutls_merge_config(&p->defaults, cpv);
     }
 
+  #if GNUTLS_VERSION_NUMBER >= 0x030704
+    mod_gnutls_check_ktls();
+  #endif
+
     return mod_gnutls_set_defaults_sockets(srv, p);
 }
 
@@ -2406,11 +2551,21 @@ connection_write_cq_ssl (connection * const con, chunkqueue * const cq, off_t ma
           : (uint32_t)max_bytes;
         int wr;
 
-        if (0 != chunkqueue_peek_data(cq, &data, &data_len, errh)) return -1;
+        if (0 != chunkqueue_peek_data(cq, &data, &data_len, errh, 1)) return -1;
         if (__builtin_expect( (0 == data_len), 0)) {
-            chunkqueue_remove_finished_chunks(cq);
-            continue;
+            if (!cq->first->file.busy)
+                chunkqueue_remove_finished_chunks(cq);
+            break; /* try again later */
         }
+
+        /* yield if read less than requested
+         * (if starting cqlen was less than requested read amount, then
+         *  chunkqueue should be empty now, so no need to calculate that)
+         * max_bytes will end up negative at bottom of block and loop exit */
+        if (data_len < ( LOCAL_SEND_BUFSIZE < max_bytes
+                       ? LOCAL_SEND_BUFSIZE
+                       : (uint32_t)max_bytes))
+            max_bytes = 0; /* try again later; trigger loop exit on next iter */
 
         /* gnutls_record_send() copies the data, up to max record size, but if
          * (temporarily) unable to write the entire record, it is documented
@@ -2481,7 +2636,7 @@ connection_write_cq_ssl_ktls (connection * const con, chunkqueue * const cq, off
         off_t len = c->file.length - c->offset;
         if (len > max_bytes) len = max_bytes;
         if (0 == len) break; /*(FILE_CHUNK or max_bytes should not be 0)*/
-        if (-1 == c->file.fd && 0 != chunkqueue_open_file_chunk(cq, hctx->errh))
+        if (-1 == c->file.fd && 0 != chunk_open_file_chunk(c, hctx->errh))
             return -1;
 
         ssize_t wr =
@@ -3182,13 +3337,20 @@ mod_gnutls_ssl_conf_ciphersuites (server *srv, plugin_config_socket *s, buffer *
             return 1;
         }
         else if (0 == strncmp_const(e,
+                  "EECDH+AESGCM:CHACHA20:!PSK:!DHE")) {
+            e += sizeof(
+                  "EECDH+AESGCM:CHACHA20:!PSK:!DHE")-1;
+            buffer_append_string_len(plist,
+              CONST_STR_LEN("+AES-256-GCM:+AES-128-GCM:+CHACHA20-POLY1305:-RSA:-PSK:-DHE-RSA:-AES-256-CCM:-AES-128-CCM:-AES-256-CBC:-AES-128-CBC:"));
+        }
+        else if (0 == strncmp_const(e,
                   "ECDHE+AESGCM:ECDHE+AES256:CHACHA20:!SHA1:!SHA256:!SHA384")
               || 0 == strncmp_const(e,
                   "EECDH+AESGCM:AES256+EECDH:CHACHA20:!SHA1:!SHA256:!SHA384")) {
             e += sizeof(
                   "EECDH+AESGCM:AES256+EECDH:CHACHA20:!SHA1:!SHA256:!SHA384")-1;
             buffer_append_string_len(plist,
-              CONST_STR_LEN("+AES-256-GCM:+AES-128-GCM:+AES-256-CCM:+AES-256-CCM-8:+CHACHA20-POLY1305:"));
+              CONST_STR_LEN("+AES-256-GCM:+AES-128-GCM:+CHACHA20-POLY1305:+AES-256-CCM:+AES-256-CCM-8:-RSA:-PSK:-DHE-RSA:-AES-256-CBC:-AES-128-CBC:"));
         }
 
         if (e != b->ptr && *e != ':' && *e != '\0') {

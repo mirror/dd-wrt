@@ -208,7 +208,8 @@ typedef struct {
 
     const buffer *strip_request_uri;
 
-    unsigned short tcp_fin_propagate;
+    uint8_t upgrade;
+    uint8_t tcp_fin_propagate;
     unsigned short kill_signal; /* we need a setting for this as libfcgi
                                    applications prefer SIGUSR1 while the
                                    rest of the world would use SIGTERM
@@ -272,6 +273,7 @@ typedef struct gw_plugin_config {
     int balance;
     int proto;
     int debug;
+    int upgrade;
 } gw_plugin_config;
 
 /* generic plugin data, shared between all connections */
@@ -360,6 +362,9 @@ int gw_set_defaults_backend(server *srv, gw_plugin_data *p, const array *a, gw_p
 __attribute_cold__
 int gw_get_defaults_balance(server *srv, const buffer *b);
 
+__attribute_cold__
+void gw_backend_error_trace(const gw_handler_ctx * hctx, const request_st *r, const char *msg);
+
 handler_t gw_check_extension(request_st *r, gw_plugin_data *p, int uri_path_handler, size_t hctx_sz);
 handler_t gw_handle_request_reset(request_st *r, void *p_d);
 handler_t gw_handle_subrequest(request_st *r, void *p_d);
@@ -367,5 +372,7 @@ handler_t gw_handle_trigger(server *srv, void *p_d);
 handler_t gw_handle_waitpid_cb(server *srv, void *p_d, pid_t pid, int status);
 
 void gw_set_transparent(gw_handler_ctx *hctx);
+
+int gw_upgrade_policy (request_st *r, int auth_mode, int upgrade);
 
 #endif

@@ -72,12 +72,12 @@ foreach h : headers
 endforeach
 
 # will be needed for auth
+libcrypt = []
 if conf_data.get('HAVE_CRYPT_H')
 	# check if we need libcrypt for crypt_r / crypt
 
 	# crypt_r in default libs?
 	if compiler.has_function('crypt_r', args: defs, prefix: '#include <crypt.h>')
-		libcrypt = []
 		conf_data.set('HAVE_CRYPT_R', 1)
 	# crypt_r in -lcrypt ?
 	elif compiler.has_function('crypt_r', args: defs + ['-lcrypt'], prefix: '#include <crypt.h>')
@@ -85,7 +85,6 @@ if conf_data.get('HAVE_CRYPT_H')
 		conf_data.set('HAVE_CRYPT_R', 1)
 	# crypt in default libs?
 	elif compiler.has_function('crypt', args: defs, prefix: '#include <crypt.h>')
-		libcrypt = []
 		conf_data.set('HAVE_CRYPT', 1)
 	# crypt in -lcrypt ?
 	elif compiler.has_function('crypt', args: defs + ['-lcrypt'], prefix: '#include <crypt.h>')
@@ -95,7 +94,6 @@ if conf_data.get('HAVE_CRYPT_H')
 elif conf_data.get('HAVE_UNISTD_H')
 	# crypt in default libs?
 	if compiler.has_function('crypt', args: defs, prefix: '#include <unistd.h>')
-		libcrypt = []
 		conf_data.set('HAVE_CRYPT', 1)
 	# crypt in -lcrypt ?
 	elif compiler.has_function('crypt', args: defs + ['-lcrypt'], prefix: '#include <unistd.h>')
@@ -141,9 +139,9 @@ functions = {
   'posix_spawn_file_actions_addfchdir_np': 'spawn.h',
   'pread': 'unistd.h',
   'preadv': 'sys/uio.h',
+  'preadv2': 'sys/uio.h',
   'pwrite': 'unistd.h',
   'pwritev': 'sys/uio.h',
-  'sendfile64': 'sys/socket.h',
   'sendfile': 'sys/sendfile.h',
   'sigaction': 'signal.h',
   'signal': 'signal.h',
@@ -179,12 +177,12 @@ conf_data.set('SIZEOF_OFF_T', compiler.sizeof('off_t', args: defs))
 conf_data.set('HAVE_CLOCK_GETTIME', compiler.has_function('clock_gettime', args: defs, prefix: '#include <time.h>'))
 clock_lib = []
 if not conf_data.get('HAVE_CLOCK_GETTIME')
-  rt = compiler.find_library('rt')
+  rt = compiler.find_library('rt', required: false)
   conf_data.set('HAVE_CLOCK_GETTIME', compiler.has_function('clock_gettime', args: defs, dependencies: rt, prefix: '#include <time.h>'))
   if conf_data.get('HAVE_CLOCK_GETTIME')
     clock_lib = rt
   else
-    threads = dependency('threads')
+    threads = dependency('threads', required: false)
     conf_data.set('HAVE_CLOCK_GETTIME', compiler.has_function('clock_gettime', args: defs, dependencies: threads, prefix: '#include <time.h>'))
     if conf_data.get('HAVE_CLOCK_GETTIME')
       clock_lib = threads
@@ -296,7 +294,7 @@ if get_option('with_lua')
 		liblua = dependency(lua_version, required: true)
 	else
 		found_lua = false
-		foreach l: ['lua5.4', 'lua-5.4', 'lua5.3', 'lua-5.3', 'lua5.2', 'lua-5.2', 'lua5.1', 'lua-5.1', 'lua']
+		foreach l: ['lua54','lua5.4','lua-5.4','lua53','lua5.3','lua-5.3','lua52','lua5.2','lua-5.2','lua51','lua5.1','lua-5.1','lua']
 			liblua = dependency(l, required: false)
 			if not(liblua.found())
 				liblua = compiler.find_library(l, required: false)
@@ -444,16 +442,6 @@ conf_data.set('HAVE_SASL', libsasl.found())
 
 #if get_option('with_valgrind')
 #endif
-
-uuid = compiler.has_function('uuid_generate', args: defs, prefix: '#include <uuid/uuid.h>')
-if uuid
-  libuuid = dependency('', required: false)
-else
-  libuuid = dependency('uuid', required: get_option('with_webdav_locks'))
-endif
-
-conf_data.set('HAVE_LIBUUID', uuid)
-conf_data.set('HAVE_UUID_UUID_H', uuid)
 
 libxml2 = dependency('libxml-2.0', required: get_option('with_webdav_props'))
 libsqlite3 = dependency('sqlite3', required: get_option('with_webdav_props'))
@@ -746,6 +734,7 @@ test('test_mod', executable('test_mod',
 		't/test_mod_access.c',
 		't/test_mod_alias.c',
 		't/test_mod_evhost.c',
+		't/test_mod_expire.c',
 		't/test_mod_indexfile.c',
 		't/test_mod_simple_vhost.c',
 		't/test_mod_ssi.c',
@@ -786,7 +775,7 @@ modules = [
 	[ 'mod_status', [ 'mod_status.c' ] ],
 	[ 'mod_userdir', [ 'mod_userdir.c' ] ],
 	[ 'mod_vhostdb', [ 'mod_vhostdb.c', 'mod_vhostdb_api.c' ] ],
-	[ 'mod_webdav', [ 'mod_webdav.c' ], [ libsqlite3, libuuid, libxml2, libelftc ] ],
+	[ 'mod_webdav', [ 'mod_webdav.c' ], [ libsqlite3, libxml2, libelftc ] ],
 	[ 'mod_wstunnel', [ 'mod_wstunnel.c' ], libcrypto ],
 ]
 endif
@@ -877,6 +866,11 @@ if libsasl.found()
 	]
 endif
 
+plugin_suffix = []
+if (host_machine.system() == 'darwin')
+	plugin_suffix = 'so'  # use "so" instead of "dylib"
+endif
+
 foreach mod: modules
 	mod_name = mod.get(0)
 	mod_sources = mod.get(1)
@@ -885,6 +879,7 @@ foreach mod: modules
 		sources: mod_sources,
 		dependencies: [ common_flags, mod_deps ],
 		name_prefix: '',
+		name_suffix: plugin_suffix,
 		install: true,
 		install_dir: moduledir,
 	)

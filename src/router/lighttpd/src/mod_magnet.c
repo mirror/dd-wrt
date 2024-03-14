@@ -830,7 +830,7 @@ static int magnet_md_once(lua_State *L) {
     }
 
     if (dlen) {
-        char dighex[MD_DIGEST_LENGTH_MAX*2+1];
+        char dighex[MD_DIGEST_LENGTH_MAX*2];
         li_tohex_uc(dighex, sizeof(dighex), (char *)digest, dlen);
         lua_pushlstring(L, dighex, dlen*2);
     }
@@ -893,7 +893,7 @@ static int magnet_hmac_once(lua_State *L) {
     }
 
     if (rc) {
-        char dighex[MD_DIGEST_LENGTH_MAX*2+1];
+        char dighex[MD_DIGEST_LENGTH_MAX*2];
         li_tohex_uc(dighex, sizeof(dighex), (char *)digest, dlen);
         lua_pushlstring(L, dighex, dlen*2);
     }
@@ -1645,6 +1645,7 @@ static int magnet_reqhdr_set(lua_State *L) {
       case HTTP_HEADER_CONNECTION:
         /* do not permit modification of Connection, incl add/remove tokens */
         /* future: might provide a different interface to set r->keep_alive = 0,
+         *           (lighty.r.req_item["keep-alive"] = 0)
          *         and also handle in context if HTTP/2 */
       case HTTP_HEADER_TRANSFER_ENCODING:
       case HTTP_HEADER_SET_COOKIE:/*(response hdr;avoid accidental reflection)*/
@@ -1705,6 +1706,7 @@ static int magnet_resphdr_set_kv(lua_State *L, request_st * const r) {
       case HTTP_HEADER_CONNECTION:
         /* do not permit modification of Connection, incl add/remove tokens */
         /* future: might provide a different interface to set r->keep_alive = 0,
+         *           (lighty.r.req_item["keep-alive"] = 0)
          *         and also handle in context if HTTP/2 */
       case HTTP_HEADER_TRANSFER_ENCODING:
         return 0; /* silently ignore; do not allow modification */
@@ -2102,6 +2104,51 @@ magnet_env_set_raddr_by_id (lua_State *L, request_st * const r, const int id,
     return 0;
 }
 
+__attribute_cold__
+static int
+magnet_env_set_protocol_downgrade_http10 (request_st * const r,
+                                          const const_buffer * const val)
+{
+    if (r->http_version != HTTP_VERSION_1_1 || 0 != strcmp(val->ptr,"HTTP/1.0"))
+        return 0;
+
+    /* downgrading HTTP/1.1 to HTTP/1.0 is a workaround for broken clients
+     * - clients sending HTTP/1.1 request but are unable to handle response
+     *     sent with Transfer-Encoding: chunked
+     * - clients sending HTTP/1.1 request body with unspecified length
+     *     (without Content-Length or Transfer-Encoding: chunked)
+     *     mod_magnet lua can use this interface to call the sequence
+     *       r.req_attr["request.protocol"] = "HTTP/1.0"
+     *       local rc = r.req_body.unspecified_len
+     * note: even if downgrading HTTP/1.1 to HTTP/1.0, lighttpd may still
+     *   support if HTTP/1.1 client sent Transfer-Encoding: chunked
+     *   which lighttpd has marked in request with (-1 == r->reqbody_length)*/
+
+    /* reference: response.c:http_response_config() !r->conf.allow_http11 */
+    /* (server.protocol_http11 = "disable") */
+
+    r->http_version = HTTP_VERSION_1_0;
+
+    /*(when forcing HTTP/1.0, ignore (unlikely) Connection: keep-alive)*/
+    /*r->keep_alive = 0;*//*(disabled; use r.req_item["keep-alive"] = 0)*/
+
+    http_header_request_unset(r, HTTP_HEADER_UPGRADE,
+                              CONST_STR_LEN("upgrade"));
+
+    /*(just in case lighty.r.req_env has been initted by prior or current
+     * lua script being run, and might be accessed by current or subsequent
+     * lua script during this request)*/
+    if (http_header_env_get(r, CONST_STR_LEN("SERVER_PROTOCOL"))) {
+        http_header_env_set(r, CONST_STR_LEN("SERVER_PROTOCOL"),
+                               CONST_STR_LEN("HTTP/1.0"));
+        /*(blank it out; slightly more work to extract from array list)*/
+        if (http_header_env_get(r, CONST_STR_LEN("HTTP_UPGRADE")))
+            http_header_env_set(r, CONST_STR_LEN("HTTP_UPGRADE"),
+                                   CONST_STR_LEN(""));
+    }
+    return 0;
+}
+
 #if 0
 __attribute_cold__
 static int
@@ -2130,6 +2177,8 @@ static int magnet_env_set(lua_State *L) {
       case MAGNET_ENV_REQUEST_REMOTE_ADDR:
       case MAGNET_ENV_REQUEST_REMOTE_PORT:
         return magnet_env_set_raddr_by_id(L, r, env_id, &val);
+      case MAGNET_ENV_REQUEST_PROTOCOL:
+        return magnet_env_set_protocol_downgrade_http10(r, &val);
      #if 0 /*(leave read-only for now; change attempts silently ignored)*/
       case MAGNET_ENV_REQUEST_SERVER_NAME:
         return magnet_env_set_server_name(r, &val);
@@ -2461,6 +2510,7 @@ static int magnet_reqbody(lua_State *L) {
             else {
                 log_error(r->conf.errh, __FILE__, __LINE__,
                   "unable to collect request body (handler already set); "
+                  "(prefer to collect in magnet.attract-raw-url-to config) "
                   "(perhaps load mod_magnet earlier in server.modules, "
                   "before mod_%s; or require r.req_env['REMOTE_USER'] before "
                   "attempting r.req_body.collect?)", r->handler_module->name);
@@ -2496,6 +2546,26 @@ static int magnet_reqbody(lua_State *L) {
             }
             else /* reqbody not yet collected */
                 lua_pushnil(L);
+            return 1;
+        }
+        break;
+      case 'u': /* unspecified_len; r.req_body.unspecified_len */
+        if (klen == 15 && 0 == memcmp(k, "unspecified_len", 15)) {
+            /* HTTP/1.0 with unknown request body len might omit Content-Length.
+             * If Connection: keep-alive is not provided (so Connection: close),
+             * then allow reading until EOF if this method is called, instead of
+             * treating request as if Content-Length: 0 was sent (the default).
+             * (Implemented by streaming; not performing request offload.) */
+            if (HTTP_VERSION_1_0 == r->http_version
+                && 0 == r->reqbody_length
+                   /*(r->reqbody == -1 if HTTP/1.1 Transfer-Encoding: chunked)*/
+                && !r->keep_alive
+                && !light_btst(r->rqst_htags, HTTP_HEADER_CONTENT_LENGTH)) {
+                http_response_upgrade_read_body_unknown(r);
+                lua_pushboolean(L, 1);
+            }
+            else
+                lua_pushboolean(L, 0);
             return 1;
         }
         break;
