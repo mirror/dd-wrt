@@ -3621,6 +3621,7 @@ struct nvram_param srouter_defaults[] = {
 	{ "tor_transparent", "0" },
 	{ "tor_bwrate", "100" },
 	{ "tor_bwburst", "200" },
+	{ "tor_strict", "0" },
 #endif
 #ifdef HAVE_UDPXY
 	{ "udpxy_enable", "0" },
