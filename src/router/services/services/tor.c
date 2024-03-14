@@ -118,6 +118,10 @@ void start_tor(void)
 	fprintf(fp, "AutomapHostsOnResolve 1\n");
 	fprintf(fp, "TransPort %s:9040\n", nvram_safe_get("lan_ipaddr"));
 	fprintf(fp, "DNSPort %s:5353\n", nvram_safe_get("lan_ipaddr"));
+	if (nvram_matchi("tor_strict", 1)) {
+		fprintf(fp, "EntryNodes {%s} StrictNodes 1\n", nvram_safe_get("tor_entry"));
+		fprintf(fp, "ExitNodes {%s} StrictNodes 1\n", nvram_safe_get("tor_exit"));
+	}
 	if (nvram_matchi("tor_transparent", 1)) {
 		sysprintf("iptables -t nat -A PREROUTING -i br0 -p udp --dport 53 -j DNAT --to %s:5353",
 			  nvram_safe_get("lan_ipaddr"));
