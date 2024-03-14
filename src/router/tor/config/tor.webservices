@@ -42,6 +42,26 @@
 				<input class="spaceradio" type="radio" name="tor_transparent" value="1" <% nvc("tor_transparent", "1"); %> /><% tran("share.enable"); %>&nbsp;
 				<input class="spaceradio" type="radio" name="tor_transparent" value="0" <% nvc("tor_transparent", "0"); %> /><% tran("share.disable"); %>
 			</div>
+			<div class="setting">
+				<div class="label"><% tran("service.tor_strict"); %></div>
+				<input class="spaceradio" type="radio" name="tor_strict" value="1" <% nvc("tor_strict", "1"); %> onclick="show_layer_ext(this, 'idtorstrict', true)" /><% tran("share.enable"); %>&nbsp;
+				<input class="spaceradio" type="radio" name="tor_strict" value="0" <% nvc("tor_strict", "0"); %> onclick="show_layer_ext(this, 'idtorstrict', false)" /><% tran("share.disable"); %>
+			</div>
+			<div id="idtorstrict">
+				<div class="setting">
+				<div class="label"><% tran("service.tor_entry"); %></div>
+				<% show_isocountrylist("tor_entry"); %>
+				</div>
+				<div class="setting">
+				<div class="label"><% tran("service.tor_exit"); %></div>
+				<% show_isocountrylist("tor_exit"); %>
+				</div>
+			</div>			
 		</div>
+	<script>
+	//<![CDATA[
+	show_layer_ext(document.setup.tor_strict, 'idtorstrict', <% nvem("tor_strict", "1", "1", "0"); %> == 1);
+	//]]>
+	</script>
 </fieldset><br />
 

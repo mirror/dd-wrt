@@ -7,3 +7,6 @@
  "tor_dir"  "TOR directory"  "CHOICE"  "2" "0" "1"  "TRUE" "0"  
  "tor_bridge"  "TOR bridge"  "CHOICE"  "2" "0" "1"  "TRUE" "0"  
  "tor_transparent"  "TOR transparent"  "CHOICE"  "2" "0" "1"  "TRUE" "0"
+ "tor_strict"  "TOR transparent"  "CHOICE"  "2" "0" "1"  "TRUE" "0"
+ "tor_entry"  "TOR Entry Node"  "NULL" "FALSE" "0"  
+ "tor_exit"  "TOR Exit Node"  "NULL" "FALSE" "0"  
