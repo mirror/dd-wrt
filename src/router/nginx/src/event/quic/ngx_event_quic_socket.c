@@ -82,7 +82,6 @@ ngx_quic_open_sockets(ngx_connection_t *c, ngx_quic_connection_t *qc,
 
     if (pkt->validated) {
         qc->path->validated = 1;
-        qc->path->limited = 0;
     }
 
     ngx_quic_path_dbg(c, "set active", qc->path);
@@ -94,8 +93,8 @@ ngx_quic_open_sockets(ngx_connection_t *c, ngx_quic_connection_t *qc,
 
     tmp->sid.seqnum = NGX_QUIC_UNSET_PN; /* temporary socket */
 
-    ngx_memcpy(tmp->sid.id, pkt->odcid.data, pkt->odcid.len);
-    tmp->sid.len = pkt->odcid.len;
+    ngx_memcpy(tmp->sid.id, pkt->dcid.data, pkt->dcid.len);
+    tmp->sid.len = pkt->dcid.len;
 
     if (ngx_quic_listen(c, qc, tmp) != NGX_OK) {
         goto failed;

@@ -44,7 +44,6 @@ struct ngx_quic_compat_s {
     const SSL_QUIC_METHOD        *method;
 
     enum ssl_encryption_level_t   write_level;
-    enum ssl_encryption_level_t   read_level;
 
     uint64_t                      read_record;
     ngx_quic_compat_keys_t        keys;
@@ -55,9 +54,10 @@ struct ngx_quic_compat_s {
 
 
 static void ngx_quic_compat_keylog_callback(const SSL *ssl, const char *line);
-static ngx_int_t ngx_quic_compat_set_encryption_secret(ngx_log_t *log,
+static ngx_int_t ngx_quic_compat_set_encryption_secret(ngx_connection_t *c,
     ngx_quic_compat_keys_t *keys, enum ssl_encryption_level_t level,
     const SSL_CIPHER *cipher, const uint8_t *secret, size_t secret_len);
+static void ngx_quic_compat_cleanup_encryption_secret(void *data);
 static int ngx_quic_compat_add_transport_params_callback(SSL *ssl,
     unsigned int ext_type, unsigned int context, const unsigned char **out,
     size_t *outlen, X509 *x, size_t chainidx, int *al, void *add_arg);
@@ -213,63 +213,90 @@ ngx_quic_compat_keylog_callback(const SSL *ssl, const char *line)
 
     } else {
         com->method->set_read_secret((SSL *) ssl, level, cipher, secret, n);
-        com->read_level = level;
         com->read_record = 0;
 
-        (void) ngx_quic_compat_set_encryption_secret(c->log, &com->keys, level,
+        (void) ngx_quic_compat_set_encryption_secret(c, &com->keys, level,
                                                      cipher, secret, n);
     }
+
+    ngx_explicit_memzero(secret, n);
 }
 
 
 static ngx_int_t
-ngx_quic_compat_set_encryption_secret(ngx_log_t *log,
+ngx_quic_compat_set_encryption_secret(ngx_connection_t *c,
     ngx_quic_compat_keys_t *keys, enum ssl_encryption_level_t level,
     const SSL_CIPHER *cipher, const uint8_t *secret, size_t secret_len)
 {
     ngx_int_t            key_len;
     ngx_str_t            secret_str;
     ngx_uint_t           i;
+    ngx_quic_md_t        key;
     ngx_quic_hkdf_t      seq[2];
     ngx_quic_secret_t   *peer_secret;
     ngx_quic_ciphers_t   ciphers;
+    ngx_pool_cleanup_t  *cln;
 
     peer_secret = &keys->secret;
 
     keys->cipher = SSL_CIPHER_get_id(cipher);
 
-    key_len = ngx_quic_ciphers(keys->cipher, &ciphers, level);
+    key_len = ngx_quic_ciphers(keys->cipher, &ciphers);
 
     if (key_len == NGX_ERROR) {
-        ngx_ssl_error(NGX_LOG_INFO, log, 0, "unexpected cipher");
+        ngx_ssl_error(NGX_LOG_INFO, c->log, 0, "unexpected cipher");
         return NGX_ERROR;
     }
 
-    if (sizeof(peer_secret->secret.data) < secret_len) {
-        ngx_log_error(NGX_LOG_ALERT, log, 0,
-                      "unexpected secret len: %uz", secret_len);
-        return NGX_ERROR;
-    }
+    key.len = key_len;
 
-    peer_secret->secret.len = secret_len;
-    ngx_memcpy(peer_secret->secret.data, secret, secret_len);
-
-    peer_secret->key.len = key_len;
     peer_secret->iv.len = NGX_QUIC_IV_LEN;
 
     secret_str.len = secret_len;
     secret_str.data = (u_char *) secret;
 
-    ngx_quic_hkdf_set(&seq[0], "tls13 key", &peer_secret->key, &secret_str);
+    ngx_quic_hkdf_set(&seq[0], "tls13 key", &key, &secret_str);
     ngx_quic_hkdf_set(&seq[1], "tls13 iv", &peer_secret->iv, &secret_str);
 
     for (i = 0; i < (sizeof(seq) / sizeof(seq[0])); i++) {
-        if (ngx_quic_hkdf_expand(&seq[i], ciphers.d, log) != NGX_OK) {
+        if (ngx_quic_hkdf_expand(&seq[i], ciphers.d, c->log) != NGX_OK) {
             return NGX_ERROR;
         }
     }
 
+    /* register cleanup handler once */
+
+    if (peer_secret->ctx) {
+        ngx_quic_crypto_cleanup(peer_secret);
+
+    } else {
+        cln = ngx_pool_cleanup_add(c->pool, 0);
+        if (cln == NULL) {
+            return NGX_ERROR;
+        }
+
+        cln->handler = ngx_quic_compat_cleanup_encryption_secret;
+        cln->data = peer_secret;
+    }
+
+    if (ngx_quic_crypto_init(ciphers.c, peer_secret, &key, 1, c->log)
+        == NGX_ERROR)
+    {
+        return NGX_ERROR;
+    }
+
+    ngx_explicit_memzero(key.data, key.len);
+
     return NGX_OK;
+}
+
+
+static void
+ngx_quic_compat_cleanup_encryption_secret(void *data)
+{
+    ngx_quic_secret_t *secret = data;
+
+    ngx_quic_crypto_cleanup(secret);
 }
 
 
@@ -410,7 +437,9 @@ ngx_quic_compat_message_callback(int write_p, int version, int content_type,
                        "quic compat tx %s len:%uz ",
                        ngx_quic_level_name(level), len);
 
-        (void) com->method->add_handshake_data(ssl, level, buf, len);
+        if (com->method->add_handshake_data(ssl, level, buf, len) != 1) {
+            goto failed;
+        }
 
         break;
 
@@ -422,11 +451,19 @@ ngx_quic_compat_message_callback(int write_p, int version, int content_type,
                            "quic compat %s alert:%ui len:%uz ",
                            ngx_quic_level_name(level), alert, len);
 
-            (void) com->method->send_alert(ssl, level, alert);
+            if (com->method->send_alert(ssl, level, alert) != 1) {
+                goto failed;
+            }
         }
 
         break;
     }
+
+    return;
+
+failed:
+
+    ngx_post_event(&qc->close, &ngx_posted_events);
 }
 
 
@@ -445,7 +482,7 @@ SSL_provide_quic_data(SSL *ssl, enum ssl_encryption_level_t level,
     u_char                     in[NGX_QUIC_COMPAT_RECORD_SIZE + 1];
     u_char                     out[NGX_QUIC_COMPAT_RECORD_SIZE + 1
                                    + SSL3_RT_HEADER_LENGTH
-                                   + EVP_GCM_TLS_TAG_LEN];
+                                   + NGX_QUIC_TAG_LEN];
 
     c = ngx_ssl_get_connection(ssl);
 
@@ -463,6 +500,7 @@ SSL_provide_quic_data(SSL *ssl, enum ssl_encryption_level_t level,
         rec.log = c->log;
         rec.number = com->read_record++;
         rec.keys = &com->keys;
+        rec.level = level;
 
         if (level == ssl_encryption_initial) {
             n = ngx_min(len, 65535);
@@ -527,7 +565,7 @@ ngx_quic_compat_create_header(ngx_quic_compat_record_t *rec, u_char *out,
 
     } else {
         type = SSL3_RT_APPLICATION_DATA;
-        len += EVP_GCM_TLS_TAG_LEN;
+        len += NGX_QUIC_TAG_LEN;
     }
 
     out[0] = type;
@@ -543,15 +581,14 @@ ngx_quic_compat_create_header(ngx_quic_compat_record_t *rec, u_char *out,
 static ngx_int_t
 ngx_quic_compat_create_record(ngx_quic_compat_record_t *rec, ngx_str_t *res)
 {
-    ngx_str_t            ad, out;
-    ngx_quic_secret_t   *secret;
-    ngx_quic_ciphers_t   ciphers;
-    u_char               nonce[NGX_QUIC_IV_LEN];
+    ngx_str_t           ad, out;
+    ngx_quic_secret_t  *secret;
+    u_char              nonce[NGX_QUIC_IV_LEN];
 
     ad.data = res->data;
     ad.len = ngx_quic_compat_create_header(rec, ad.data, 0);
 
-    out.len = rec->payload.len + EVP_GCM_TLS_TAG_LEN;
+    out.len = rec->payload.len + NGX_QUIC_TAG_LEN;
     out.data = res->data + ad.len;
 
 #ifdef NGX_QUIC_DEBUG_CRYPTO
@@ -559,18 +596,12 @@ ngx_quic_compat_create_record(ngx_quic_compat_record_t *rec, ngx_str_t *res)
                    "quic compat ad len:%uz %xV", ad.len, &ad);
 #endif
 
-    if (ngx_quic_ciphers(rec->keys->cipher, &ciphers, rec->level) == NGX_ERROR)
-    {
-        return NGX_ERROR;
-    }
-
     secret = &rec->keys->secret;
 
     ngx_memcpy(nonce, secret->iv.data, secret->iv.len);
     ngx_quic_compute_nonce(nonce, sizeof(nonce), rec->number);
 
-    if (ngx_quic_tls_seal(ciphers.c, secret, &out,
-                          nonce, &rec->payload, &ad, rec->log)
+    if (ngx_quic_crypto_seal(secret, &out, nonce, &rec->payload, &ad, rec->log)
         != NGX_OK)
     {
         return NGX_ERROR;
@@ -579,32 +610,6 @@ ngx_quic_compat_create_record(ngx_quic_compat_record_t *rec, ngx_str_t *res)
     res->len = ad.len + out.len;
 
     return NGX_OK;
-}
-
-
-enum ssl_encryption_level_t
-SSL_quic_read_level(const SSL *ssl)
-{
-    ngx_connection_t       *c;
-    ngx_quic_connection_t  *qc;
-
-    c = ngx_ssl_get_connection(ssl);
-    qc = ngx_quic_get_connection(c);
-
-    return qc->compat->read_level;
-}
-
-
-enum ssl_encryption_level_t
-SSL_quic_write_level(const SSL *ssl)
-{
-    ngx_connection_t       *c;
-    ngx_quic_connection_t  *qc;
-
-    c = ngx_ssl_get_connection(ssl);
-    qc = ngx_quic_get_connection(c);
-
-    return qc->compat->write_level;
 }
 
 

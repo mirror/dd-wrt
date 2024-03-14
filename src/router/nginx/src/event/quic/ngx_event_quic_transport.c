@@ -578,7 +578,7 @@ ngx_quic_payload_size(ngx_quic_header_t *pkt, size_t pkt_len)
 
     if (ngx_quic_short_pkt(pkt->flags)) {
 
-        len = 1 + pkt->dcid.len + pkt->num_len + EVP_GCM_TLS_TAG_LEN;
+        len = 1 + pkt->dcid.len + pkt->num_len + NGX_QUIC_TAG_LEN;
         if (len > pkt_len) {
             return 0;
         }
@@ -596,7 +596,7 @@ ngx_quic_payload_size(ngx_quic_header_t *pkt, size_t pkt_len)
 
     /* (pkt_len - len) is 'remainder' packet length (see RFC 9000, 17.2) */
     len += ngx_quic_varint_len(pkt_len - len)
-           + pkt->num_len + EVP_GCM_TLS_TAG_LEN;
+           + pkt->num_len + NGX_QUIC_TAG_LEN;
 
     if (len > pkt_len) {
         return 0;
@@ -622,7 +622,7 @@ ngx_quic_create_long_header(ngx_quic_header_t *pkt, u_char *out,
     size_t   rem_len;
     u_char  *p, *start;
 
-    rem_len = pkt->num_len + pkt->payload.len + EVP_GCM_TLS_TAG_LEN;
+    rem_len = pkt->num_len + pkt->payload.len + NGX_QUIC_TAG_LEN;
 
     if (out == NULL) {
         return 5 + 2 + pkt->dcid.len + pkt->scid.len
@@ -1135,6 +1135,9 @@ ngx_quic_parse_frame(ngx_quic_header_t *pkt, u_char *start, u_char *end,
     }
 
     f->level = pkt->level;
+#if (NGX_DEBUG)
+    f->pnum = pkt->pn;
+#endif
 
     return p - start;
 
@@ -1985,7 +1988,7 @@ ngx_quic_init_transport_params(ngx_quic_tp_t *tp, ngx_quic_conf_t *qcf)
      *     tp->preferred_address = NULL
      */
 
-    tp->max_idle_timeout = qcf->timeout;
+    tp->max_idle_timeout = qcf->idle_timeout;
 
     tp->max_udp_payload_size = NGX_QUIC_MAX_UDP_PAYLOAD_SIZE;
 

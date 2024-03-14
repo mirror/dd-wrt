@@ -630,6 +630,10 @@ ngx_quic_do_init_streams(ngx_connection_t *c)
 
     qc->streams.initialized = 1;
 
+    if (!qc->closing && qc->close.timer_set) {
+        ngx_del_timer(&qc->close);
+    }
+
     return NGX_OK;
 }
 
@@ -1093,6 +1097,7 @@ ngx_quic_stream_cleanup_handler(void *data)
                    "quic stream id:0x%xL cleanup", qs->id);
 
     if (ngx_quic_shutdown_stream(c, NGX_RDWR_SHUTDOWN) != NGX_OK) {
+        qs->connection = NULL;
         goto failed;
     }
 

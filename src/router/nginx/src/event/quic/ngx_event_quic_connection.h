@@ -65,6 +65,21 @@ typedef struct ngx_quic_keys_s        ngx_quic_keys_t;
 
 #define ngx_quic_get_socket(c)               ((ngx_quic_socket_t *)((c)->udp))
 
+#define ngx_quic_init_rtt(qc)                                                 \
+    (qc)->avg_rtt = NGX_QUIC_INITIAL_RTT;                                     \
+    (qc)->rttvar = NGX_QUIC_INITIAL_RTT / 2;                                  \
+    (qc)->min_rtt = NGX_TIMER_INFINITE;                                       \
+    (qc)->first_rtt = NGX_TIMER_INFINITE;                                     \
+    (qc)->latest_rtt = 0;
+
+
+typedef enum {
+    NGX_QUIC_PATH_IDLE = 0,
+    NGX_QUIC_PATH_VALIDATING,
+    NGX_QUIC_PATH_WAITING,
+    NGX_QUIC_PATH_MTUD
+} ngx_quic_path_state_e;
+
 
 struct ngx_quic_client_id_s {
     ngx_queue_t                       queue;
@@ -89,19 +104,22 @@ struct ngx_quic_path_s {
     ngx_sockaddr_t                    sa;
     socklen_t                         socklen;
     ngx_quic_client_id_t             *cid;
+    ngx_quic_path_state_e             state;
     ngx_msec_t                        expires;
     ngx_uint_t                        tries;
     ngx_uint_t                        tag;
+    size_t                            mtu;
+    size_t                            mtud;
+    size_t                            max_mtu;
     off_t                             sent;
     off_t                             received;
-    u_char                            challenge1[8];
-    u_char                            challenge2[8];
+    u_char                            challenge[2][8];
     uint64_t                          seqnum;
+    uint64_t                          mtu_pnum[NGX_QUIC_PATH_RETRIES];
     ngx_str_t                         addr_text;
     u_char                            text[NGX_SOCKADDR_STRLEN];
     unsigned                          validated:1;
-    unsigned                          validating:1;
-    unsigned                          limited:1;
+    unsigned                          mtu_unvalidated:1;
 };
 
 
@@ -219,6 +237,8 @@ struct ngx_quic_connection_s {
     ngx_event_t                       pto;
     ngx_event_t                       close;
     ngx_event_t                       path_validation;
+    ngx_event_t                       key_update;
+
     ngx_msec_t                        last_cc;
 
     ngx_msec_t                        first_rtt;
@@ -245,6 +265,8 @@ struct ngx_quic_connection_s {
 
     ngx_quic_streams_t                streams;
     ngx_quic_congestion_t             congestion;
+
+    uint64_t                          rst_pnum;    /* first on validated path */
 
     off_t                             received;
 
