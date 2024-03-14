@@ -28,6 +28,8 @@
 #endif
 #include "json/json.h"
 
+
+
 static int optionsdebug = 0; /* TODO: Should be changed to instance */
 
 static int termstate = REDIR_TERM_INIT;    /* When we were terminated */
@@ -2709,6 +2711,7 @@ static int redir_radius(struct redir_t *redir, struct in_addr *addr,
 			struct redir_conn_t *conn, char reauth) {
   uint8_t user_password[RADIUS_PWSIZE + 1];
   uint8_t chap_password[REDIR_MD5LEN + 2];
+  uint8_t pap_challenge[REDIR_SHA256LEN];
   uint8_t chap_challenge[REDIR_MD5LEN];
   struct radius_packet_t radius_pack;
   struct radius_t *radius;      /* Radius client instance */
@@ -2718,7 +2721,7 @@ static int redir_radius(struct redir_t *redir, struct in_addr *addr,
   fd_set fds;			/* For select() */
   int status;
 
-  MD5_CTX context;
+  SHA256_CONTEXT context;
 
   char url[REDIR_URL_LEN];
   int n, m;
@@ -2761,10 +2764,10 @@ static int redir_radius(struct redir_t *redir, struct in_addr *addr,
   if (redir->secret && *redir->secret) {
     //syslog(LOG_DEBUG, "SECRET: [%s]",redir->secret);
     /* Get MD5 hash on challenge and uamsecret */
-    MD5Init(&context);
-    MD5Update(&context, conn->s_state.redir.uamchal, REDIR_MD5LEN);
-    MD5Update(&context, (uint8_t *) redir->secret, strlen(redir->secret));
-    MD5Final(chap_challenge, &context);
+    SHA256Init(&context);
+    SHA256Update(&context, conn->s_state.redir.uamchal, REDIR_MD5LEN);
+    SHA256Update(&context, (uint8_t *) redir->secret, strlen(redir->secret));
+    SHA256Final(&context, pap_challenge);
   }
   else {
     memcpy(chap_challenge, conn->s_state.redir.uamchal, REDIR_MD5LEN);
@@ -2780,9 +2783,9 @@ static int redir_radius(struct redir_t *redir, struct in_addr *addr,
                 sizeof(user_password));
       } else {
         for (m=0; m < RADIUS_PWSIZE;) {
-          for (n=0; n < REDIR_MD5LEN; m++, n++) {
+          for (n=0; n < REDIR_SHA256LEN; m++, n++) {
             user_password[m] =
-                conn->authdata.v.papmsg.password[m] ^ chap_challenge[n];
+                conn->authdata.v.papmsg.password[m] ^ pap_challenge[n];
           }
         }
       }
@@ -2963,6 +2966,7 @@ static int redir_radius(struct redir_t *redir, struct in_addr *addr,
 
 int is_local_user(struct redir_t *redir, struct redir_conn_t *conn) {
   uint8_t user_password[RADIUS_PWSIZE+1];
+  uint8_t pap_challenge[REDIR_SHA256LEN];
   uint8_t chap_challenge[REDIR_MD5LEN];
   char u[256]; char p[256];
   size_t usernamelen, sz=1024;
@@ -2970,6 +2974,7 @@ int is_local_user(struct redir_t *redir, struct redir_conn_t *conn) {
   int match=0;
   char *line=0;
   MD5_CTX context;
+  SHA256_CONTEXT SHA256context;
   FILE *f;
 
   if (!_options.localusers) return 0;
@@ -2990,10 +2995,10 @@ int is_local_user(struct redir_t *redir, struct redir_conn_t *conn) {
   }/**/
 
   if (redir->secret && *redir->secret) {
-    MD5Init(&context);
-    MD5Update(&context, (uint8_t*)conn->s_state.redir.uamchal, REDIR_MD5LEN);
-    MD5Update(&context, (uint8_t*)redir->secret, strlen(redir->secret));
-    MD5Final(chap_challenge, &context);
+    SHA256Init(&SHA256context);
+    SHA256Update(&SHA256context, (uint8_t*)conn->s_state.redir.uamchal, REDIR_MD5LEN);
+    SHA256Update(&SHA256context, (uint8_t*)redir->secret, strlen(redir->secret));
+    SHA256Final(&SHA256context, pap_challenge);
   }
   else {
     memcpy(chap_challenge, conn->s_state.redir.uamchal, REDIR_MD5LEN);
@@ -3015,9 +3020,9 @@ int is_local_user(struct redir_t *redir, struct redir_conn_t *conn) {
       } else {
         int n, m;
         for (m=0; m < RADIUS_PWSIZE;)
-          for (n=0; n < REDIR_MD5LEN; m++, n++)
+          for (n=0; n < REDIR_SHA256LEN; m++, n++)
             user_password[m] =
-                conn->authdata.v.papmsg.password[m] ^ chap_challenge[n];
+                conn->authdata.v.papmsg.password[m] ^ pap_challenge[n];
       }
       break;
     case REDIR_AUTH_CHAP:
@@ -4036,7 +4041,7 @@ int redir_main(struct redir_t *redir,
         if (!hasnexturl) {
           if (_options.challengetimeout) {
             redir_memcopy(REDIR_CHALLENGE);
-    	  }
+	  }
         } else {
           msg.mtype = REDIR_NOTYET;
         }

@@ -35,6 +35,7 @@
 #include "net.h"
 #include "md5.h"
 #include "dns.h"
+#include "SHA256.h"
 
 #ifndef HAVE_STRLCPY
 extern size_t strlcpy(char *dst, const char *src, size_t dsize);

@@ -9,7 +9,7 @@ cmdline.mini.sh cmdline.mini.gen
 chilliincludedir = $(includedir)/chilli
 chilliinclude_HEADERS = \
 chilli.h session.h garden.h radius.h options.h \
-tun.h ippool.h md5.h redir.h dhcp.h iphash.h \
+tun.h ippool.h md5.h SHA256.h redir.h dhcp.h iphash.h \
 radius_wispr.h radius_coovachilli.h ssl.h dns.h net.h \
 pkt.h conn.h lookup.h chilli_limits.h cmdline.h debug.h \
 radius_pkt.h ../bstring/bstrlib.h ../config.h system.h 
@@ -20,7 +20,7 @@ sbin_PROGRAMS = chilli_multicall
 suid_programs =
 
 libchilli_la_SOURCES = \
-chilli.c tun.c ippool.c radius.c md5.c redir.c dhcp.c \
+chilli.c tun.c ippool.c radius.c md5.c SHA256.c redir.c dhcp.c \
 iphash.c lookup.c system.h util.c options.c statusfile.c conn.c sig.c \
 garden.c dns.c session.c pkt.c chksum.c net.c safe.c
 

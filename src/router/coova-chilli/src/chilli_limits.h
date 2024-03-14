@@ -53,6 +53,7 @@
 #define REDIR_RADIUS_SELECT_TIME      500000 /* microseconds = 0.5 seconds */
 #define REDIR_CHALLEN                     16
 #define REDIR_MD5LEN                      16
+#define REDIR_SHA256LEN					  32
 #define REDIR_MACSTRLEN                   17
 #define REDIR_MAXBUFFER                65535
 
