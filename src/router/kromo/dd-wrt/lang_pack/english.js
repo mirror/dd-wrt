@@ -1850,6 +1850,9 @@ service.tor_bridge="Tor Bridge Mode";
 service.tor_transparent="Transparent Proxy";
 service.tor_bwrate="Bandwidth Rate";
 service.tor_bwburst="Bandwidth Burst";
+service.tor_strict="Strict Exit and Entry Nodes";
+service.tor_exit="Exit Node Country";
+service.tor_entry="Entry Node Country";
 
 //syslog.webservices
 service.syslog_legend="System Log";
