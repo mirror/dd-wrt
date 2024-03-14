@@ -1708,6 +1708,9 @@ service.tor_bridge="Brücken Modus";
 service.tor_transparent="Transparenter Proxy";
 service.tor_bwrate="Bandbreiten Rate";
 service.tor_bwburst="Bandbreitenüberschreitung";
+service.tor_strict="Strikte Eigangs und Ausgangsnodes";
+service.tor_exit="Land der Ausgangsnode";
+service.tor_entry="Land der Eingangsnode";
 
 //pptpd_client.webservices
 service.pptpd_legend="PPTP-Client";
