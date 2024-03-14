@@ -50,13 +50,13 @@
 			<div id="idtorstrict">
 				<div class="setting">
 					<div class="label"><% tran("service.tor_entry"); %></div>
-					<% show_isocountrylist("tor_entry"); %>
-					</div>
+					<% show_countrylist("tor_entry"); %>
+				</div>
 				<div class="setting">
 					<div class="label"><% tran("service.tor_exit"); %></div>
-					<% show_isocountrylist("tor_exit"); %>
-					</div>
-			</div>			
+					<% show_countrylist("tor_exit"); %>
+				</div>
+			</div>
 		</div>
 	<script>
 	//<![CDATA[
