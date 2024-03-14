@@ -118,7 +118,7 @@ void start_tor(void)
 	fprintf(fp, "AutomapHostsOnResolve 1\n");
 	fprintf(fp, "TransPort %s:9040\n", nvram_safe_get("lan_ipaddr"));
 	fprintf(fp, "DNSPort %s:5353\n", nvram_safe_get("lan_ipaddr"));
-	if (nvram_matchi("tor_strict", 1)) {
+	if (nvram_default_matchi("tor_strict", 1, 0)) {
 		fprintf(fp, "EntryNodes {%s} StrictNodes 1\n", nvram_safe_get("tor_entry"));
 		fprintf(fp, "ExitNodes {%s} StrictNodes 1\n", nvram_safe_get("tor_exit"));
 	}
