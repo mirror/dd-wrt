@@ -2955,30 +2955,6 @@ EJ_VISIBLE void ej_getdefaultindex(webs_t wp, int argc, char_t **argv)
 #endif
 }
 
-void showOptionsChooseIso(webs_t wp, char *propname, char *names, char **trans, char *select)
-{
-	char *next;
-	char var[80];
-	int cnt = 0;
-
-	websWrite(wp, "<select name=\"%s\">\n", propname);
-	websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
-	websWrite(wp, "document.write(\"<option value=\\\"null\\\" >\" + share.choice + \"</option>\");\n");
-	foreach(var, names, next)
-	{
-		char *iso = getIsoName(var);
-		if (trans) {
-			websWrite(wp, "document.write(\"<option value=\\\"%s\\\" %s >\" + %s + \"</option>\");\n", iso,
-				  !strcmp(iso, select) ? "selected=\\\"selected\\\"" : "", trans[cnt++]);
-		} else {
-			websWrite(wp, "document.write(\"<option value=\\\"%s\\\" %s >%s</option>\");\n", iso,
-				  !strcmp(iso, select) ? "selected=\\\"selected\\\"" : "", var);
-		}
-	}
-	websWrite(wp, "//]]>\n</script>\n</select>\n");
-}
-
-
 EJ_VISIBLE void ej_show_countrylist(webs_t wp, int argc, char_t **argv)
 {
 	if (argc < 1) {
@@ -2988,17 +2964,6 @@ EJ_VISIBLE void ej_show_countrylist(webs_t wp, int argc, char_t **argv)
 		return;
 	char *list = getCountryList(NULL);
 	showOptionsChoose(wp, argv[0], list, NULL, nvram_safe_get(argv[0]));
-}
-
-EJ_VISIBLE void ej_show_isocountrylist(webs_t wp, int argc, char_t **argv)
-{
-	if (argc < 1) {
-		return;
-	}
-	if (nvram_matchi("nocountrysel", 1))
-		return;
-	char *list = getCountryList(NULL);
-	showOptionsChooseIso(wp, argv[0], list, NULL, nvram_safe_get(argv[0]));
 }
 
 static void mesh_num(webs_t wp, char *prefix, char *name, int len, int def)
