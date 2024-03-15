@@ -277,7 +277,7 @@ static inline void handle_relocations(void *output, unsigned long output_len,
 { }
 #endif
 
-static size_t parse_elf(void *output)
+static void parse_elf(void *output)
 {
 #ifdef CONFIG_X86_64
 	Elf64_Ehdr ehdr;
@@ -293,8 +293,10 @@ static size_t parse_elf(void *output)
 	if (ehdr.e_ident[EI_MAG0] != ELFMAG0 ||
 	   ehdr.e_ident[EI_MAG1] != ELFMAG1 ||
 	   ehdr.e_ident[EI_MAG2] != ELFMAG2 ||
-	   ehdr.e_ident[EI_MAG3] != ELFMAG3)
+	   ehdr.e_ident[EI_MAG3] != ELFMAG3) {
 		error("Kernel is not a valid ELF file");
+		return;
+	}
 
 	debug_putstr("Parsing ELF... ");
 
@@ -326,8 +328,6 @@ static size_t parse_elf(void *output)
 	}
 
 	free(phdrs);
-
-	return ehdr.e_entry - LOAD_PHYSICAL_ADDR;
 }
 
 const unsigned long kernel_total_size = VO__end - VO__text;
@@ -337,7 +337,7 @@ static u8 boot_heap[BOOT_HEAP_SIZE] __aligned(4);
 extern unsigned char input_data[];
 extern unsigned int input_len, output_len;
 
-unsigned long decompress_kernel(unsigned char *outbuf, unsigned long virt_addr,
+void decompress_kernel(unsigned char *outbuf, unsigned long virt_addr,
 				void (*error)(char *x))
 {
 	unsigned long entry;
@@ -349,12 +349,12 @@ unsigned long decompress_kernel(unsigned char *outbuf, unsigned long virt_addr,
 
 	if (__decompress(input_data, input_len, NULL, NULL, outbuf, output_len,
 			 NULL, error) < 0)
-		return ULONG_MAX;
+		return;
 
-	entry = parse_elf(outbuf);
+	parse_elf(outbuf);
 	handle_relocations(outbuf, output_len, virt_addr);
 
-	return entry;
+	return;
 }
 
 /*
@@ -379,7 +379,6 @@ asmlinkage __visible void *extract_kernel(void *rmode, unsigned char *output)
 	unsigned long virt_addr = LOAD_PHYSICAL_ADDR;
 	memptr heap = (memptr)boot_heap;
 	unsigned long needed_size;
-	size_t entry_offset;
 
 	/* Retain x86 boot parameters pointer passed from startup_32/64. */
 	boot_params_ptr = rmode;
@@ -479,16 +478,14 @@ asmlinkage __visible void *extract_kernel(void *rmode, unsigned char *output)
 
 	debug_putstr("\nDecompressing Linux... ");
 
-	entry_offset = decompress_kernel(output, virt_addr, error);
+	decompress_kernel(output, virt_addr, error);
 
-	debug_putstr("done.\nBooting the kernel (entry_offset: 0x");
-	debug_puthex(entry_offset);
-	debug_putstr(").\n");
+	debug_putstr("done.\nBooting the kernel.\n");
 
 	/* Disable exception handling before booting the kernel */
 	cleanup_exception_handling();
 
-	return output + entry_offset;
+	return output;
 }
 
 void fortify_panic(const char *name)

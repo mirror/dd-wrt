@@ -157,7 +157,7 @@ SYM_FUNC_START_LOCAL_NOALIGN(.Lrelocated)
 
 	pushl	%ebp			/* output address */
 	pushl	%esi			/* real mode pointer */
-	call	extract_kernel		/* returns kernel entry point in %eax */
+	call	extract_kernel		/* returns kernel location in %eax */
 	addl	$24, %esp
 
 /*
