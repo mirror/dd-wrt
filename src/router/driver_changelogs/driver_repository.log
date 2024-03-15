@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r7701 | brainslayer | 2024-03-16 01:44:06 +0600 (Sat, 16 Mar 2024) | 1 line
+
+sync firmware rev
+------------------------------------------------------------------------
 r7700 | brainslayer | 2024-03-13 20:46:44 +0600 (Wed, 13 Mar 2024) | 1 line
 
 radio measurements shouldnt spit a error in brcmfmac
