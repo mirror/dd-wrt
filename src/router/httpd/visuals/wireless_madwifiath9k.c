@@ -152,6 +152,15 @@ int active_wireless_if_ath9k(webs_t wp, int argc, char_t **argv, char *ifname, i
 		char *radioname = wc->radioname;
 		if (!*(radioname))
 			radioname = "";
+		else {
+			int i;
+			int len = strlen(radioname);
+			for (i = 0; i < len; i++)
+				if (!isalnum(radioname[i])) {
+					*radioname = 0;
+					break;
+				}
+		}
 		websWrite(wp, "'%s','%s','%s','%s','%dM','%dM','%s','%d','%d','%d','%d','%d','%d','%d','%d','%s','%s'", mac,
 			  radioname, wc->ifname, UPTIME(wc->uptime, str, sizeof(str)), wc->txrate / 10 * mul / div,
 			  wc->rxrate / 10 * mul / div, info, wc->signal + bias, wc->noise + bias, wc->signal - wc->noise, qual,
