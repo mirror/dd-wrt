@@ -337,7 +337,7 @@ static u8 boot_heap[BOOT_HEAP_SIZE] __aligned(4);
 extern unsigned char input_data[];
 extern unsigned int input_len, output_len;
 
-void decompress_kernel(unsigned char *outbuf, unsigned long virt_addr,
+unsigned long decompress_kernel(unsigned char *outbuf, unsigned long virt_addr,
 				void (*error)(char *x))
 {
 	unsigned long entry;
@@ -349,12 +349,12 @@ void decompress_kernel(unsigned char *outbuf, unsigned long virt_addr,
 
 	if (__decompress(input_data, input_len, NULL, NULL, outbuf, output_len,
 			 NULL, error) < 0)
-		return;
+		return ULONG_MAX;
 
 	parse_elf(outbuf);
 	handle_relocations(outbuf, output_len, virt_addr);
 
-	return;
+	return 0;
 }
 
 /*
