@@ -83,7 +83,7 @@
 extern unsigned int output_len;
 extern const unsigned long kernel_total_size;
 
-unsigned long decompress_kernel(unsigned char *outbuf, unsigned long virt_addr,
+void decompress_kernel(unsigned char *outbuf, unsigned long virt_addr,
 				void (*error)(char *x));
 
 extern struct boot_params *boot_params_ptr;
