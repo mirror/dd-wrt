@@ -38,6 +38,7 @@
 #include "libmbfl/mbfl/mbfilter_wchar.h"
 #include "libmbfl/mbfl/eaw_table.h"
 #include "libmbfl/filters/mbfilter_base64.h"
+#include "libmbfl/filters/mbfilter_cjk.h"
 #include "libmbfl/filters/mbfilter_qprint.h"
 #include "libmbfl/filters/mbfilter_htmlent.h"
 #include "libmbfl/filters/mbfilter_uuencode.h"
@@ -290,8 +291,7 @@ static size_t count_commas(const char *p, const char *end) {
  * 	Emits a ValueError in function context and a warning in INI context, in INI context arg_num must be 0.
  */
 static zend_result php_mb_parse_encoding_list(const char *value, size_t value_length,
-	const mbfl_encoding ***return_list, size_t *return_size, bool persistent, uint32_t arg_num,
-	bool allow_pass_encoding)
+	const mbfl_encoding ***return_list, size_t *return_size, bool persistent, uint32_t arg_num)
 {
 	if (value == NULL || value_length == 0) {
 		*return_list = NULL;
@@ -344,8 +344,7 @@ static zend_result php_mb_parse_encoding_list(const char *value, size_t value_le
 					}
 				}
 			} else {
-				const mbfl_encoding *encoding =
-					allow_pass_encoding ? php_mb_get_encoding_or_pass(p1) : mbfl_name2encoding(p1);
+				const mbfl_encoding *encoding = mbfl_name2encoding(p1);
 				if (!encoding) {
 					/* Called from an INI setting modification */
 					if (arg_num == 0) {
@@ -451,8 +450,12 @@ static const zend_encoding *php_mb_zend_encoding_detector(const unsigned char *a
 		list = (const zend_encoding**)MBSTRG(current_detect_order_list);
 		list_size = MBSTRG(current_detect_order_list_size);
 	}
-
-	return (const zend_encoding*)mb_guess_encoding((unsigned char*)arg_string, arg_length, (const mbfl_encoding **)list, list_size, false, false);
+	if (list_size == 1 && ((mbfl_encoding*)*list) == &mbfl_encoding_pass) {
+		/* Emulate behavior of previous implementation; it would never return "pass"
+		 * from an encoding auto-detection operation */
+		return NULL;
+	}
+	return (const zend_encoding*)mb_guess_encoding((unsigned char*)arg_string, arg_length, (const mbfl_encoding**)list, list_size, false, false);
 }
 
 static size_t php_mb_zend_encoding_converter(unsigned char **to, size_t *to_length, const unsigned char *from, size_t from_length, const zend_encoding *encoding_to, const zend_encoding *encoding_from)
@@ -473,7 +476,7 @@ static zend_result php_mb_zend_encoding_list_parser(const char *encoding_list, s
 	return php_mb_parse_encoding_list(
 		encoding_list, encoding_list_len,
 		(const mbfl_encoding ***)return_list, return_size,
-		persistent, /* arg_num */ 0, /* allow_pass_encoding */ 1);
+		persistent, /* arg_num */ 0);
 }
 
 static const zend_encoding *php_mb_zend_internal_encoding_getter(void)
@@ -711,7 +714,7 @@ static PHP_INI_MH(OnUpdate_mbstring_detect_order)
 		return SUCCESS;
 	}
 
-	if (FAILURE == php_mb_parse_encoding_list(ZSTR_VAL(new_value), ZSTR_LEN(new_value), &list, &size, /* persistent */ 1, /* arg_num */ 0, /* allow_pass_encoding */ 0) || size == 0) {
+	if (FAILURE == php_mb_parse_encoding_list(ZSTR_VAL(new_value), ZSTR_LEN(new_value), &list, &size, /* persistent */ 1, /* arg_num */ 0) || size == 0) {
 		return FAILURE;
 	}
 
@@ -727,7 +730,11 @@ static PHP_INI_MH(OnUpdate_mbstring_detect_order)
 static int _php_mb_ini_mbstring_http_input_set(const char *new_value, size_t new_value_length) {
 	const mbfl_encoding **list;
 	size_t size;
-	if (FAILURE == php_mb_parse_encoding_list(new_value, new_value_length, &list, &size, /* persistent */ 1, /* arg_num */ 0, /* allow_pass_encoding */ 1) || size == 0) {
+	if (new_value_length == 4 && strncmp(new_value, "pass", 4) == 0) {
+		list = (const mbfl_encoding**)pecalloc(1, sizeof(mbfl_encoding*), 1);
+		*list = &mbfl_encoding_pass;
+		size = 1;
+	} else if (FAILURE == php_mb_parse_encoding_list(new_value, new_value_length, &list, &size, /* persistent */ 1, /* arg_num */ 0) || size == 0) {
 		return FAILURE;
 	}
 	if (MBSTRG(http_input_list)) {
@@ -1382,7 +1389,7 @@ PHP_FUNCTION(mb_detect_order)
 				RETURN_THROWS();
 			}
 		} else {
-			if (FAILURE == php_mb_parse_encoding_list(ZSTR_VAL(order_str), ZSTR_LEN(order_str), &list, &size, /* persistent */ 0, /* arg_num */ 1, /* allow_pass_encoding */ 0)) {
+			if (FAILURE == php_mb_parse_encoding_list(ZSTR_VAL(order_str), ZSTR_LEN(order_str), &list, &size, /* persistent */ 0, /* arg_num */ 1)) {
 				RETURN_THROWS();
 			}
 		}
@@ -2091,9 +2098,10 @@ static zend_string* mb_get_substr_slow(unsigned char *in, size_t in_len, size_t 
 		if (from >= out_len) {
 			from -= out_len;
 		} else {
-			enc->from_wchar(wchar_buf + from, MIN(out_len - from, len), &buf, !in_len || out_len >= len);
+			size_t needed_codepoints = MIN(out_len - from, len);
+			enc->from_wchar(wchar_buf + from, needed_codepoints, &buf, !in_len || out_len >= len);
 			from = 0;
-			len -= MIN(out_len, len);
+			len -= needed_codepoints;
 		}
 	}
 
@@ -2105,8 +2113,9 @@ static zend_string* mb_get_substr(zend_string *input, size_t from, size_t len, c
 	unsigned char *in = (unsigned char*)ZSTR_VAL(input);
 	size_t in_len = ZSTR_LEN(input);
 
-	if (from >= in_len) {
-		/* No supported text encoding decodes to more than one codepoint per byte
+	if (len == 0 || (from >= in_len && enc != &mbfl_encoding_sjis_mac)) {
+		/* Other than MacJapanese, no supported text encoding decodes to
+		 * more than one codepoint per byte
 		 * So if the number of codepoints to skip >= number of input bytes,
 		 * then definitely the output should be empty */
 		return zend_empty_string;
@@ -2127,30 +2136,6 @@ static zend_string* mb_get_substr(zend_string *input, size_t from, size_t len, c
 			len = in_len;
 		}
 		return zend_string_init_fast((const char*)in, len);
-	} else if (enc->mblen_table) {
-		/* The use of the `mblen_table` means that for encodings like MacJapanese,
-		 * we treat each character in its native charset as "1 character", even if it
-		 * maps to a sequence of several codepoints */
-		const unsigned char *mbtab = enc->mblen_table;
-		unsigned char *limit = in + in_len;
-		while (from && in < limit) {
-			in += mbtab[*in];
-			from--;
-		}
-		if (in >= limit) {
-			return zend_empty_string;
-		} else if (len == MBFL_SUBSTR_UNTIL_END) {
-			return zend_string_init_fast((const char*)in, limit - in);
-		}
-		unsigned char *end = in;
-		while (len && end < limit) {
-			end += mbtab[*end];
-			len--;
-		}
-		if (end > limit) {
-			end = limit;
-		}
-		return zend_string_init_fast((const char*)in, end - in);
 	}
 
 	return mb_get_substr_slow(in, in_len, from, len, enc);
@@ -2343,21 +2328,7 @@ PHP_FUNCTION(mb_substr)
 
 	size_t mblen = 0;
 	if (from < 0 || (!len_is_null && len < 0)) {
-		if (enc->mblen_table) {
-			/* Because we use the `mblen_table` when iterating over the string and
-			 * extracting the requested part, we also need to use it here for counting
-			 * the "length" of the string
-			 * Otherwise, we can get wrong results for text encodings like MacJapanese,
-			 * where one native 'character' can map to a sequence of several codepoints */
-			const unsigned char *mbtab = enc->mblen_table;
-			unsigned char *p = (unsigned char*)ZSTR_VAL(str), *e = p + ZSTR_LEN(str);
-			while (p < e) {
-				p += mbtab[*p];
-				mblen++;
-			}
-		} else {
-			mblen = mb_get_strlen(str, enc);
-		}
+		mblen = mb_get_strlen(str, enc);
 	}
 
 	/* if "from" position is negative, count start position from the end
@@ -2834,7 +2805,7 @@ PHP_FUNCTION(mb_convert_encoding)
 	} else if (from_encodings_str) {
 		if (php_mb_parse_encoding_list(ZSTR_VAL(from_encodings_str), ZSTR_LEN(from_encodings_str),
 				&from_encodings, &num_from_encodings,
-				/* persistent */ 0, /* arg_num */ 3, /* allow_pass_encoding */ 0) == FAILURE) {
+				/* persistent */ 0, /* arg_num */ 3) == FAILURE) {
 			RETURN_THROWS();
 		}
 		free_from_encodings = true;
@@ -3198,7 +3169,7 @@ PHP_FUNCTION(mb_detect_encoding)
 			RETURN_THROWS();
 		}
 	} else if (encoding_str) {
-		if (FAILURE == php_mb_parse_encoding_list(ZSTR_VAL(encoding_str), ZSTR_LEN(encoding_str), &elist, &size, /* persistent */ 0, /* arg_num */ 2, /* allow_pass_encoding */ 0)) {
+		if (FAILURE == php_mb_parse_encoding_list(ZSTR_VAL(encoding_str), ZSTR_LEN(encoding_str), &elist, &size, /* persistent */ 0, /* arg_num */ 2)) {
 			RETURN_THROWS();
 		}
 	} else {
@@ -3599,7 +3570,7 @@ PHP_FUNCTION(mb_convert_variables)
 			RETURN_THROWS();
 		}
 	} else {
-		if (php_mb_parse_encoding_list(ZSTR_VAL(from_enc_str), ZSTR_LEN(from_enc_str), &elist, &elistsz, /* persistent */ 0, /* arg_num */ 2, /* allow_pass_encoding */ 0) == FAILURE) {
+		if (php_mb_parse_encoding_list(ZSTR_VAL(from_enc_str), ZSTR_LEN(from_enc_str), &elist, &elistsz, /* persistent */ 0, /* arg_num */ 2) == FAILURE) {
 			RETURN_THROWS();
 		}
 	}

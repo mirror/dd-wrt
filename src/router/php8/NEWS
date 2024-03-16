@@ -1,6 +1,209 @@
 PHP                                                                        NEWS
 |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-21 Dec 2023, PHP 8.3.1
+14 Mar 2024, PHP 8.3.4
+
+- Core:
+  . Fix ZTS persistent resource crashes on shutdown. (nielsdos)
+
+- Curl:
+  . Fix failing tests due to string changes in libcurl 8.6.0. (Ayesh)
+
+- DOM:
+  . Fix unlikely memory leak in case of namespace removal with extremely deep
+    trees. (nielsdos)
+  . Fix reference access in dimensions for DOMNodeList and DOMNodeMap.
+    (nielsdos)
+
+- Fileinfo:
+  . Fixed bug GH-13344 (finfo::buffer(): Failed identify data 0:(null),
+    backport). (nielsdos)
+
+- FPM:
+  . Fixed bug #75712 (getenv in php-fpm should not read $_ENV, $_SERVER).
+    (Jakub Zelenka)
+
+- GD:
+  . Fixed bug GH-12019 (detection of image formats in system gd library).
+    (Michael Orlitzky)
+
+- MySQLnd:
+  . Fixed bug GH-11950 ([mysqlnd] Fixed not to set CR_MALFORMED_PACKET to error
+    if CR_SERVER_GONE_ERROR is already set). (Saki Takamachi)
+
+- PDO:
+  . Fix various PDORow bugs. (Girgias)
+
+- PGSQL:
+  . Fixed bug GH-13354 (pg_execute/pg_send_query_params/pg_send_execute
+    with null value passed by reference). (George Barbarosie)
+
+- SPL:
+  . Fixed bug GH-13531 (Unable to resize SplfixedArray after being unserialized
+    in PHP 8.2.15). (nielsdos)
+
+- Standard:
+  . Fixed bug GH-13279 (Instable array during in-place modification in uksort).
+    (ilutov)
+  . Fixed array key as hash to string (case insensitive) comparison typo
+    for the second operand buffer size (albeit unused for now). (A. Slepykh)
+
+- XML:
+  . Fixed bug GH-13517 (Multiple test failures when building with
+    --with-expat). (nielsdos)
+
+15 Feb 2024, PHP 8.3.3
+
+- Core:
+  . Fixed timer leak in zend-max-execution-timers builds. (withinboredom)
+  . Fixed bug GH-12349 (linking failure on ARM with mold). (Jan Palus)
+  . Fixed bug GH-13097 (Anonymous class reference in trigger_error / thrown
+    Exception). (nielsdos)
+  . Fixed bug GH-13177 (PHP 8.3.2: final private constructor not allowed
+    when used in trait). (nielsdos)
+  . Fixed bug GH-13215 (GCC 14 build failure). (Remi)
+
+- Curl:
+  . Fix missing error check in curl_multi_init(). (divinity76)
+
+- FPM:
+  . Fixed bug GH-12996 (Incorrect SCRIPT_NAME with Apache ProxyPassMatch when
+    plus in path). (Jakub Zelenka)
+
+- GD:
+  . Fixed bug GH-10344 (imagettfbbox(): Could not find/open font UNC path).
+    (nielsdos)
+  . Fixed bug GH-10614 (imagerotate will turn the picture all black, when
+    rotated 90). (nielsdos)
+
+- LibXML:
+  . Fix crashes with entity references and predefined entities. (nielsdos)
+
+- MySQLnd:
+  . Fixed bug GH-12107 (When running a stored procedure (that returns a result
+    set) twice, PHP crashes). (nielsdos)
+
+- Opcache:
+  . Fixed bug GH-13145 (strtok() is not comptime). (ilutov)
+  . Fixed type inference of range(). (ilutov)
+  . Fixed bug GH-13232 (Segmentation fault will be reported when JIT is off but
+    JIT_debug is still on). (nielsdos)
+
+- OpenSSL:
+  . Fixed LibreSSL undefined reference when OPENSSL_NO_ENGINE not set.
+   (David Carlier).
+
+- PDO_Firebird:
+  . Fix GH-13119 (Changed to convert float and double values ​​into strings using
+    `H` format). (SakiTakamachi)
+
+- Phar:
+  . Fixed bug #71465 (PHAR doesn't know about litespeed). (nielsdos)
+  . Fixed bug GH-13037 (PharData incorrectly extracts zip file). (nielsdos)
+
+- Random:
+  . Fixed bug GH-13138 (Randomizer::pickArrayKeys() does not detect broken
+    engines). (timwolla)
+
+- Session:
+  . Fixed bug GH-12504 (Corrupted session written when there's a fatal error
+    in autoloader). (nielsdos)
+
+- Standard:
+  . Fixed bug GH-13094 (range(9.9, '0') causes segmentation fault). (nielsdos)
+
+- Streams:
+  . Fixed bug GH-13071 (Copying large files using mmap-able source streams may
+    exhaust available memory and fail). (nielsdos)
+
+18 Jan 2024, PHP 8.3.2
+
+- Core:
+  . Fixed bug GH-12953 (false positive SSA integrity verification failed when
+    loading composer classmaps with more than 11k elements). (nielsdos)
+  . Fixed bug GH-12999 (zend_strnlen build when strnlen is unsupported).
+    (rainerjung)
+  . Fixed bug GH-12966 (missing cross-compiling 3rd argument so Autoconf
+    doesn't emit warnings). (Peter Kokot)
+  . Fixed bug GH-12854 (8.3 - as final trait-used method does not correctly
+    report visibility in Reflection). (nielsdos)
+
+- Cli:
+  . Fix incorrect timeout in built-in web server when using router script and
+    max_input_time. (ilutov)
+
+- DOM:
+  . Fixed bug GH-12870 (Creating an xmlns attribute results in a DOMException).
+    (nielsdos)
+  . Fix crash when toggleAttribute() is used without a document. (nielsdos)
+  . Fix crash in adoptNode with attribute references. (nielsdos)
+  . Fixed bug GH-13012 (DOMNode::isEqualNode() is incorrect when attribute
+    order is different). (nielsdos)
+
+- FFI:
+  . Fixed bug GH-9698 (stream_wrapper_register crashes with FFI\CData).
+    (Jakub Zelenka)
+  . Fixed bug GH-12905 (FFI::new interacts badly with observers). (nielsdos)
+
+- GD:
+  . Fixed GH-13082 undefined behavior with GdFont instances handling with
+    imageload* and imagechar*. (David Carlier)
+
+- Intl:
+  . Fixed GH-12943 (IntlDateFormatter::__construct accepts 'C' as valid locale).
+    (David Carlier)
+
+- Hash:
+  . Fixed bug GH-12936 (hash() function hangs endlessly if using sha512 on
+    strings >= 4GiB). (nielsdos)
+
+- MBString:
+  . When operating on a string with invalid encoding, mb_substr (as well
+    as mb_strstr and its variants) defines character indices in the same
+    way as other mbstring functions such as mb_strpos. (Alex Dowad)
+
+- ODBC:
+  . Fix crash on Apache shutdown with persistent connections. (nielsdos)
+
+- Opcache:
+  . Fixed oss-fuzz #64727 (JIT undefined array key warning may overwrite DIM
+    with NULL when DIM is the same var as result). (ilutov)
+  . Added workaround for SELinux mprotect execheap issue.
+    See https://bugzilla.kernel.org/show_bug.cgi?id=218258. (ilutov)
+
+- OpenSSL:
+  . Fixed bug GH-12987 (openssl_csr_sign might leak new cert on error).
+    (Jakub Zelenka)
+
+- PDO:
+  . Fix GH-12969 (Fixed PDO::getAttribute() to get PDO::ATTR_STRINGIFY_FETCHES).
+    (SakiTakamachi)
+
+- PDO_ODBC:
+  . Fixed bug GH-12767 (Unable to turn on autocommit mode with setAttribute()).
+    (SakiTakamachi)
+
+- PGSQL:
+  . Fixed auto_reset_persistent handling and allow_persistent type. (David Carlier)
+  . Fixed bug GH-12974 (Apache crashes on shutdown when using pg_pconnect()).
+    (nielsdos)
+
+- Phar:
+  . Fixed bug #77432 (Segmentation fault on including phar file). (nielsdos)
+
+- PHPDBG:
+  . Fixed bug GH-12962 (Double free of init_file in phpdbg_prompt.c). (nielsdos)
+
+- SimpleXML:
+  . Fix getting the address of an uninitialized property of a SimpleXMLElement
+    resulting in a crash. (nielsdos)
+  . Fixed bug GH-12929 (SimpleXMLElement with stream_wrapper_register can
+    segfault). (nielsdos)
+
+- Tidy:
+  . Fixed bug GH-12980 (tidynode.props.attribute is missing
+    "Boolean Attributes" and empty attributes). (nielsdos)
+
+07 Dec 2023, PHP 8.3.1RC1
 
 - Core:
   . Fixed bug GH-12758 / GH-12768 (Invalid opline in OOM handlers within

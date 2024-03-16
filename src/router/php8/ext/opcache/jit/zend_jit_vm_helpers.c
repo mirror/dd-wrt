@@ -205,7 +205,6 @@ void ZEND_FASTCALL zend_jit_undefined_long_key(EXECUTE_DATA_D)
 	zval *result = EX_VAR(opline->result.var);
 	zval *dim;
 
-	ZVAL_NULL(result);
 	if (opline->op2_type == IS_CONST) {
 		dim = RT_CONSTANT(opline, opline->op2);
 	} else {
@@ -213,6 +212,7 @@ void ZEND_FASTCALL zend_jit_undefined_long_key(EXECUTE_DATA_D)
 	}
 	ZEND_ASSERT(Z_TYPE_P(dim) == IS_LONG);
 	zend_error(E_WARNING, "Undefined array key " ZEND_LONG_FMT, Z_LVAL_P(dim));
+	ZVAL_NULL(result);
 }
 
 void ZEND_FASTCALL zend_jit_undefined_string_key(EXECUTE_DATA_D)
@@ -222,7 +222,6 @@ void ZEND_FASTCALL zend_jit_undefined_string_key(EXECUTE_DATA_D)
 	zval *dim;
 	zend_ulong lval;
 
-	ZVAL_NULL(result);
 	if (opline->op2_type == IS_CONST) {
 		dim = RT_CONSTANT(opline, opline->op2);
 	} else {
@@ -234,6 +233,7 @@ void ZEND_FASTCALL zend_jit_undefined_string_key(EXECUTE_DATA_D)
 	} else {
 		zend_error(E_WARNING, "Undefined array key \"%s\"", Z_STRVAL_P(dim));
 	}
+	ZVAL_NULL(result);
 }
 
 ZEND_OPCODE_HANDLER_RET ZEND_FASTCALL zend_jit_profile_helper(ZEND_OPCODE_HANDLER_ARGS)
@@ -641,6 +641,16 @@ zend_jit_trace_stop ZEND_FASTCALL zend_jit_trace_execute(zend_execute_data *ex, 
 		opline = save_opline;
 #endif
 		return ZEND_JIT_TRACE_STOP_EXCEPTION;
+	}
+
+	trace_flags = ZEND_OP_TRACE_INFO(opline, offset)->trace_flags;
+	if (trace_flags & ZEND_JIT_TRACE_UNSUPPORTED) {
+		TRACE_END(ZEND_JIT_TRACE_END, ZEND_JIT_TRACE_STOP_NOT_SUPPORTED, opline);
+#ifdef HAVE_GCC_GLOBAL_REGS
+		execute_data = save_execute_data;
+		opline = save_opline;
+#endif
+		return ZEND_JIT_TRACE_STOP_NOT_SUPPORTED;
 	}
 
 	if (prev_call) {

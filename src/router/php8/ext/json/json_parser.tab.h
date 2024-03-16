@@ -1,9 +1,8 @@
-/* A Bison parser, made by GNU Bison 3.7.5.  */
+/* A Bison parser, made by GNU Bison 3.0.4.  */
 
 /* Bison interface for Yacc-like parsers in C
 
-   Copyright (C) 1984, 1989-1990, 2000-2015, 2018-2021 Free Software Foundation,
-   Inc.
+   Copyright (C) 1984, 1989-1990, 2000-2015 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -31,10 +30,6 @@
    This special exception was added by the Free Software Foundation in
    version 2.2 of Bison.  */
 
-/* DO NOT RELY ON FEATURES THAT ARE NOT DOCUMENTED in the manual,
-   especially those whose name start with YY_ or yy_.  They are
-   private implementation details that can be changed or removed.  */
-
 #ifndef YY_PHP_JSON_YY_EXT_JSON_JSON_PARSER_TAB_H_INCLUDED
 # define YY_PHP_JSON_YY_EXT_JSON_JSON_PARSER_TAB_H_INCLUDED
 /* Debug traces.  */
@@ -53,37 +48,35 @@
 extern int php_json_yydebug;
 #endif
 
-/* Token kinds.  */
+/* Token type.  */
 #ifndef PHP_JSON_YYTOKENTYPE
 # define PHP_JSON_YYTOKENTYPE
   enum php_json_yytokentype
   {
-    PHP_JSON_YYEMPTY = -2,
-    PHP_JSON_YYEOF = 0,            /* "end of file"  */
-    PHP_JSON_YYerror = 256,        /* error  */
-    PHP_JSON_YYUNDEF = 257,        /* "invalid token"  */
-    PHP_JSON_T_NUL = 258,          /* PHP_JSON_T_NUL  */
-    PHP_JSON_T_TRUE = 259,         /* PHP_JSON_T_TRUE  */
-    PHP_JSON_T_FALSE = 260,        /* PHP_JSON_T_FALSE  */
-    PHP_JSON_T_INT = 261,          /* PHP_JSON_T_INT  */
-    PHP_JSON_T_DOUBLE = 262,       /* PHP_JSON_T_DOUBLE  */
-    PHP_JSON_T_STRING = 263,       /* PHP_JSON_T_STRING  */
-    PHP_JSON_T_ESTRING = 264,      /* PHP_JSON_T_ESTRING  */
-    PHP_JSON_T_EOI = 265,          /* PHP_JSON_T_EOI  */
-    PHP_JSON_T_ERROR = 266         /* PHP_JSON_T_ERROR  */
+    PHP_JSON_T_NUL = 258,
+    PHP_JSON_T_TRUE = 259,
+    PHP_JSON_T_FALSE = 260,
+    PHP_JSON_T_INT = 261,
+    PHP_JSON_T_DOUBLE = 262,
+    PHP_JSON_T_STRING = 263,
+    PHP_JSON_T_ESTRING = 264,
+    PHP_JSON_T_EOI = 265,
+    PHP_JSON_T_ERROR = 266
   };
-  typedef enum php_json_yytokentype php_json_yytoken_kind_t;
 #endif
 
 /* Value type.  */
 #if ! defined PHP_JSON_YYSTYPE && ! defined PHP_JSON_YYSTYPE_IS_DECLARED
+
 union PHP_JSON_YYSTYPE
 {
+
 
 	zval value;
 
 
 };
+
 typedef union PHP_JSON_YYSTYPE PHP_JSON_YYSTYPE;
 # define PHP_JSON_YYSTYPE_IS_TRIVIAL 1
 # define PHP_JSON_YYSTYPE_IS_DECLARED 1

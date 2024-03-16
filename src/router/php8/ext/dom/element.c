@@ -461,7 +461,7 @@ static void dom_deep_ns_redef(xmlNodePtr node, xmlNsPtr ns_to_redefine)
 			if (worklist_size == worklist_capacity) {
 				if (UNEXPECTED(worklist_capacity >= SIZE_MAX / 3 * 2 / sizeof(dom_deep_ns_redef_item))) {
 					/* Shouldn't be possible to hit, but checked for safety anyway */
-					return;
+					goto out;
 				}
 				worklist_capacity = worklist_capacity * 3 / 2;
 				worklist = erealloc(worklist, sizeof(dom_deep_ns_redef_item) * worklist_capacity);
@@ -472,6 +472,7 @@ static void dom_deep_ns_redef(xmlNodePtr node, xmlNsPtr ns_to_redefine)
 		}
 	}
 
+out:
 	efree(worklist);
 }
 
@@ -1554,7 +1555,7 @@ PHP_METHOD(DOMElement, toggleAttribute)
 	}
 
 	/* Step 2 */
-	if (thisp->doc->type == XML_HTML_DOCUMENT_NODE && (thisp->ns == NULL || xmlStrEqual(thisp->ns->href, (const xmlChar *) "http://www.w3.org/1999/xhtml"))) {
+	if (thisp->doc != NULL && thisp->doc->type == XML_HTML_DOCUMENT_NODE && (thisp->ns == NULL || xmlStrEqual(thisp->ns->href, (const xmlChar *) "http://www.w3.org/1999/xhtml"))) {
 		qname_tmp = zend_str_tolower_dup_ex(qname, qname_length);
 		if (qname_tmp != NULL) {
 			qname = qname_tmp;

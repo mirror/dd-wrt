@@ -1596,6 +1596,20 @@ NAMESPACE_ERR: Raised if
 5. the namespaceURI is "http://www.w3.org/2000/xmlns/" and neither the	qualifiedName nor its prefix is "xmlns".
 */
 
+xmlNsPtr dom_get_ns_unchecked(xmlNodePtr nodep, char *uri, char *prefix)
+{
+	xmlNsPtr nsptr = xmlNewNs(nodep, (xmlChar *)uri, (xmlChar *)prefix);
+	if (UNEXPECTED(nsptr == NULL)) {
+		/* Either memory allocation failure, or it's because of a prefix conflict.
+		 * We'll assume a conflict and try again. If it was a memory allocation failure we'll just fail again, whatever.
+		 * This isn't needed for every caller (such as createElementNS & DOMElement::__construct), but isn't harmful and simplifies the mental model "when do I use which function?".
+		 * This branch will also be taken unlikely anyway as in those cases it'll be for allocation failure. */
+		return dom_get_ns_resolve_prefix_conflict(nodep, uri);
+	}
+
+	return nsptr;
+}
+
 /* {{{ xmlNsPtr dom_get_ns(xmlNodePtr nodep, char *uri, int *errorcode, char *prefix) */
 xmlNsPtr dom_get_ns(xmlNodePtr nodep, char *uri, int *errorcode, char *prefix) {
 	xmlNsPtr nsptr;
@@ -1603,16 +1617,9 @@ xmlNsPtr dom_get_ns(xmlNodePtr nodep, char *uri, int *errorcode, char *prefix) {
 	if (! ((prefix && !strcmp (prefix, "xml") && strcmp(uri, (char *)XML_XML_NAMESPACE)) ||
 		   (prefix && !strcmp (prefix, "xmlns") && strcmp(uri, (char *)DOM_XMLNS_NAMESPACE)) ||
 		   (prefix && !strcmp(uri, (char *)DOM_XMLNS_NAMESPACE) && strcmp (prefix, "xmlns")))) {
-		nsptr = xmlNewNs(nodep, (xmlChar *)uri, (xmlChar *)prefix);
+		nsptr = dom_get_ns_unchecked(nodep, uri, prefix);
 		if (UNEXPECTED(nsptr == NULL)) {
-			/* Either memory allocation failure, or it's because of a prefix conflict.
-			 * We'll assume a conflict and try again. If it was a memory allocation failure we'll just fail again, whatever.
-			 * This isn't needed for every caller (such as createElementNS & DOMElement::__construct), but isn't harmful and simplifies the mental model "when do I use which function?".
-			 * This branch will also be taken unlikely anyway as in those cases it'll be for allocation failure. */
-			nsptr = dom_get_ns_resolve_prefix_conflict(nodep, uri);
-			if (UNEXPECTED(nsptr == NULL)) {
-				goto err;
-			}
+			goto err;
 		}
 	} else {
 		goto err;
@@ -1706,6 +1713,8 @@ static zval *dom_nodelist_read_dimension(zend_object *object, zval *offset, int 
 		return NULL;
 	}
 
+	ZVAL_DEREF(offset);
+
 	zend_long lval;
 	if (dom_nodemap_or_nodelist_process_offset_as_named(offset, &lval)) {
 		/* does not support named lookup */
@@ -1719,6 +1728,8 @@ static zval *dom_nodelist_read_dimension(zend_object *object, zval *offset, int 
 
 static int dom_nodelist_has_dimension(zend_object *object, zval *member, int check_empty)
 {
+	ZVAL_DEREF(member);
+
 	zend_long offset;
 	if (dom_nodemap_or_nodelist_process_offset_as_named(member, &offset)) {
 		/* does not support named lookup */
@@ -1778,6 +1789,8 @@ static zval *dom_nodemap_read_dimension(zend_object *object, zval *offset, int t
 		return NULL;
 	}
 
+	ZVAL_DEREF(offset);
+
 	zend_long lval;
 	if (dom_nodemap_or_nodelist_process_offset_as_named(offset, &lval)) {
 		/* exceptional case, switch to named lookup */
@@ -1797,6 +1810,8 @@ static zval *dom_nodemap_read_dimension(zend_object *object, zval *offset, int t
 
 static int dom_nodemap_has_dimension(zend_object *object, zval *member, int check_empty)
 {
+	ZVAL_DEREF(member);
+
 	zend_long offset;
 	if (dom_nodemap_or_nodelist_process_offset_as_named(member, &offset)) {
 		/* exceptional case, switch to named lookup */

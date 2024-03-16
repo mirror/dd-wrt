@@ -611,7 +611,7 @@ function main(): void
                     $show_progress = false;
                     break;
                 case '--version':
-                    echo '$Id: 16b74e5804a66a7e54382751343342b683b37448 $' . "\n";
+                    echo '$Id: 71a8fdc80fe5f1e2b35790f564122648735cbcf1 $' . "\n";
                     exit(1);
 
                 default:
@@ -4138,7 +4138,7 @@ final class Differ
         if ($cFrom === 1) {
             foreach ($to as $toV) {
                 if (($this->isEqual)($from[0], $toV)) {
-                    return [$from[0]];
+                    return [$toV];
                 }
             }
 

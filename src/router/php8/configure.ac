@@ -17,7 +17,7 @@ dnl Basic autoconf initialization, generation of config.nice.
 dnl ----------------------------------------------------------------------------
 
 AC_PREREQ([2.68])
-AC_INIT([PHP],[8.3.1],[https://github.com/php/php-src/issues],[php],[https://www.php.net])
+AC_INIT([PHP],[8.3.4],[https://github.com/php/php-src/issues],[php],[https://www.php.net])
 AC_CONFIG_SRCDIR([main/php_version.h])
 AC_CONFIG_AUX_DIR([build])
 AC_PRESERVE_HELP_ORDER
@@ -1625,15 +1625,16 @@ if test "$PHP_UNDEFINED_SANITIZER" = "yes"; then
     dnl cast to void*. In that case, set -fno-sanitize=function.
     OLD_CFLAGS="$CFLAGS"
     CFLAGS="$CFLAGS -fno-sanitize-recover=undefined"
+    AC_CACHE_CHECK([whether to add -fno-sanitize=function],[php_cv_ubsan_no_function],[
     AC_RUN_IFELSE([AC_LANG_SOURCE([[
 void foo(char *string) {}
 int main(void) {
   void (*f)(void *) = (void (*)(void *))foo;
   f("foo");
 }
-    ]])],,[ubsan_needs_no_function=yes],)
+    ]])],[php_cv_ubsan_no_function=no],[php_cv_ubsan_no_function=yes],[php_cv_ubsan_no_function=no])])
     CFLAGS="$OLD_CFLAGS"
-    if test "$ubsan_needs_no_function" = yes; then
+    if test "$php_cv_ubsan_no_function" = yes; then
       CFLAGS="$CFLAGS -fno-sanitize=function"
       CXXFLAGS="$CFLAGS -fno-sanitize=function"
     fi
@@ -1674,11 +1675,6 @@ PHP_SET_LIBTOOL_VARIABLE([--silent])
 dnl libtool 1.4.3 needs this.
 PHP_SET_LIBTOOL_VARIABLE([--preserve-dup-deps])
 
-dnl This needs to be passed explicitly to allow scan-build compiler overrides.
-PHP_SET_LIBTOOL_VARIABLE([--tag CC])
-
-test -z "$PHP_COMPILE" && PHP_COMPILE='$(LIBTOOL) --mode=compile $(COMPILE) -c $<'
-test -z "$CXX_PHP_COMPILE" && CXX_PHP_COMPILE='$(LIBTOOL) --mode=compile $(CXX_COMPILE) -c $<'
 SHARED_LIBTOOL='$(LIBTOOL)'
 
 CC=$old_CC
