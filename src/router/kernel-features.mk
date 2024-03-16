@@ -575,9 +575,11 @@ define kernelfeatures
 		echo "CONFIG_NFSD_V3=y" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_NFSD_PNFS=y" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_NFSD_V3_ACL is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_NFSD_V2_ACL is not set" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_NFSD_FAULT_INJECTION is not set" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_NFS_DISABLE_UDP_SUPPORT is not set" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_NFSD_V4=y" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_NFSD_V2=y" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_NFSD_BLOCKLAYOUT=y" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_RPCSEC_GSS_KRB5=m" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_NFSD_SCSILAYOUT=y" >> $(LINUXDIR)/.config; \
