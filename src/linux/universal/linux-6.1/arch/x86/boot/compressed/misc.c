@@ -46,7 +46,7 @@ void *memmove(void *dest, const void *src, size_t n);
 /*
  * This is set up by the setup-routine at boot-time
  */
-struct boot_params *boot_params_ptr;
+struct boot_params *boot_params;
 
 struct port_io_ops pio_ops;
 
@@ -132,8 +132,8 @@ void __putstr(const char *s)
 	if (lines == 0 || cols == 0)
 		return;
 
-	x = boot_params_ptr->screen_info.orig_x;
-	y = boot_params_ptr->screen_info.orig_y;
+	x = boot_params->screen_info.orig_x;
+	y = boot_params->screen_info.orig_y;
 
 	while ((c = *s++) != '\0') {
 		if (c == '\n') {
@@ -154,8 +154,8 @@ void __putstr(const char *s)
 		}
 	}
 
-	boot_params_ptr->screen_info.orig_x = x;
-	boot_params_ptr->screen_info.orig_y = y;
+	boot_params->screen_info.orig_x = x;
+	boot_params->screen_info.orig_y = y;
 
 	pos = (x + cols * y) * 2;	/* Update cursor position */
 	outb(14, vidport);
@@ -277,7 +277,7 @@ static inline void handle_relocations(void *output, unsigned long output_len,
 { }
 #endif
 
-static void parse_elf(void *output)
+static size_t parse_elf(void *output)
 {
 #ifdef CONFIG_X86_64
 	Elf64_Ehdr ehdr;
@@ -287,16 +287,15 @@ static void parse_elf(void *output)
 	Elf32_Phdr *phdrs, *phdr;
 #endif
 	void *dest;
+	size_t off;
 	int i;
 
 	memcpy(&ehdr, output, sizeof(ehdr));
 	if (ehdr.e_ident[EI_MAG0] != ELFMAG0 ||
 	   ehdr.e_ident[EI_MAG1] != ELFMAG1 ||
 	   ehdr.e_ident[EI_MAG2] != ELFMAG2 ||
-	   ehdr.e_ident[EI_MAG3] != ELFMAG3) {
+	   ehdr.e_ident[EI_MAG3] != ELFMAG3)
 		error("Kernel is not a valid ELF file");
-		return;
-	}
 
 	debug_putstr("Parsing ELF... ");
 
@@ -305,6 +304,7 @@ static void parse_elf(void *output)
 		error("Failed to allocate space for phdrs");
 
 	memcpy(phdrs, output + ehdr.e_phoff, sizeof(*phdrs) * ehdr.e_phnum);
+	off = ehdr.e_entry - phdrs->p_paddr;
 
 	for (i = 0; i < ehdr.e_phnum; i++) {
 		phdr = &phdrs[i];
@@ -328,33 +328,8 @@ static void parse_elf(void *output)
 	}
 
 	free(phdrs);
-}
 
-const unsigned long kernel_total_size = VO__end - VO__text;
-
-static u8 boot_heap[BOOT_HEAP_SIZE] __aligned(4);
-
-extern unsigned char input_data[];
-extern unsigned int input_len, output_len;
-
-unsigned long decompress_kernel(unsigned char *outbuf, unsigned long virt_addr,
-				void (*error)(char *x))
-{
-	unsigned long entry;
-
-	if (!free_mem_ptr) {
-		free_mem_ptr     = (unsigned long)boot_heap;
-		free_mem_end_ptr = (unsigned long)boot_heap + sizeof(boot_heap);
-	}
-
-	if (__decompress(input_data, input_len, NULL, NULL, outbuf, output_len,
-			 NULL, error) < 0)
-		return ULONG_MAX;
-
-	parse_elf(outbuf);
-	handle_relocations(outbuf, output_len, virt_addr);
-
-	return 0;
+	return off;
 }
 
 /*
@@ -374,21 +349,26 @@ unsigned long decompress_kernel(unsigned char *outbuf, unsigned long virt_addr,
  *             |-------uncompressed kernel image---------|
  *
  */
-asmlinkage __visible void *extract_kernel(void *rmode, unsigned char *output)
+asmlinkage __visible void *extract_kernel(void *rmode, memptr heap,
+				  unsigned char *input_data,
+				  unsigned long input_len,
+				  unsigned char *output,
+				  unsigned long output_len)
 {
+	const unsigned long kernel_total_size = VO__end - VO__text;
 	unsigned long virt_addr = LOAD_PHYSICAL_ADDR;
-	memptr heap = (memptr)boot_heap;
 	unsigned long needed_size;
+	size_t off;
 
 	/* Retain x86 boot parameters pointer passed from startup_32/64. */
-	boot_params_ptr = rmode;
+	boot_params = rmode;
 
 	/* Clear flags intended for solely in-kernel use. */
-	boot_params_ptr->hdr.loadflags &= ~KASLR_FLAG;
+	boot_params->hdr.loadflags &= ~KASLR_FLAG;
 
-	sanitize_boot_params(boot_params_ptr);
+	sanitize_boot_params(boot_params);
 
-	if (boot_params_ptr->screen_info.orig_video_mode == 7) {
+	if (boot_params->screen_info.orig_video_mode == 7) {
 		vidmem = (char *) 0xb0000;
 		vidport = 0x3b4;
 	} else {
@@ -396,8 +376,8 @@ asmlinkage __visible void *extract_kernel(void *rmode, unsigned char *output)
 		vidport = 0x3d4;
 	}
 
-	lines = boot_params_ptr->screen_info.orig_video_lines;
-	cols = boot_params_ptr->screen_info.orig_video_cols;
+	lines = boot_params->screen_info.orig_video_lines;
+	cols = boot_params->screen_info.orig_video_cols;
 
 	init_default_io_ops();
 
@@ -416,7 +396,7 @@ asmlinkage __visible void *extract_kernel(void *rmode, unsigned char *output)
 	 * so that early debugging output from the RSDP parsing code can be
 	 * collected.
 	 */
-	boot_params_ptr->acpi_rsdp_addr = get_rsdp_addr();
+	boot_params->acpi_rsdp_addr = get_rsdp_addr();
 
 	debug_putstr("early console in extract_kernel\n");
 
@@ -434,7 +414,7 @@ asmlinkage __visible void *extract_kernel(void *rmode, unsigned char *output)
 	 * entries. This ensures the full mapped area is usable RAM
 	 * and doesn't include any reserved areas.
 	 */
-	needed_size = max_t(unsigned long, output_len, kernel_total_size);
+	needed_size = max(output_len, kernel_total_size);
 #ifdef CONFIG_X86_64
 	needed_size = ALIGN(needed_size, MIN_KERNEL_ALIGN);
 #endif
@@ -465,7 +445,7 @@ asmlinkage __visible void *extract_kernel(void *rmode, unsigned char *output)
 #ifdef CONFIG_X86_64
 	if (heap > 0x3fffffffffffUL)
 		error("Destination address too large");
-	if (virt_addr + needed_size > KERNEL_IMAGE_SIZE)
+	if (virt_addr + max(output_len, kernel_total_size) > KERNEL_IMAGE_SIZE)
 		error("Destination virtual address is beyond the kernel mapping area");
 #else
 	if (heap > ((-__PAGE_OFFSET-(128<<20)-1) & 0x7fffffff))
@@ -477,15 +457,17 @@ asmlinkage __visible void *extract_kernel(void *rmode, unsigned char *output)
 #endif
 
 	debug_putstr("\nDecompressing Linux... ");
-
-	decompress_kernel(output, virt_addr, error);
-
+	__decompress(input_data, input_len, NULL, NULL, output, output_len,
+			NULL, error);
+	off = parse_elf(output);
+	debug_putaddr(off);
+	handle_relocations(output, output_len, virt_addr);
 	debug_putstr("done.\nBooting the kernel.\n");
 
 	/* Disable exception handling before booting the kernel */
 	cleanup_exception_handling();
 
-	return output;
+	return output + off;
 }
 
 void fortify_panic(const char *name)

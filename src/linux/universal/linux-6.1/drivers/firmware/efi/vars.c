@@ -66,16 +66,8 @@ int efivars_register(struct efivars *efivars,
 		     const struct efivar_operations *ops,
 		     struct kobject *kobject)
 {
-	int rv;
-
 	if (down_interruptible(&efivars_lock))
 		return -EINTR;
-
-	if (__efivars) {
-		pr_warn("efivars already registered\n");
-		rv = -EBUSY;
-		goto out;
-	}
 
 	efivars->ops = ops;
 	efivars->kobject = kobject;
@@ -83,11 +75,10 @@ int efivars_register(struct efivars *efivars,
 	__efivars = efivars;
 
 	pr_info("Registered efivars operations\n");
-	rv = 0;
-out:
+
 	up(&efivars_lock);
 
-	return rv;
+	return 0;
 }
 EXPORT_SYMBOL_GPL(efivars_register);
 
