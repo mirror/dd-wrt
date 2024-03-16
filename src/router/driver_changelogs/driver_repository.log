@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r7703 | brainslayer | 2024-03-16 16:05:01 +0600 (Sat, 16 Mar 2024) | 1 line
+
+fix another regression in the broadcast AQL patch
+------------------------------------------------------------------------
 r7702 | brainslayer | 2024-03-16 15:49:26 +0600 (Sat, 16 Mar 2024) | 2 lines
 
 wifi: mac80211: check/clear fast rx for non-4addr sta VLAN
