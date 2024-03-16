@@ -87,7 +87,7 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("status_router.sys_firmver"); %></div>
-									<% get_firmware_version(); %>
+									<% get_firmware_version_noreg(); %>
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("status_router.sys_kernel"); %></div>
