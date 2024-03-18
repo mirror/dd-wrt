@@ -2,10 +2,10 @@
  * For conditions of distribution and use, see copyright notice in zlib.h
  */
 
-#ifdef ARM_NEON_CHUNKSET
+#ifdef ARM_NEON
 #include "neon_intrins.h"
-#include "../../zbuild.h"
-#include "../generic/chunk_permute_table.h"
+#include "zbuild.h"
+#include "arch/generic/chunk_permute_table.h"
 
 typedef uint8x16_t chunk_t;
 
@@ -68,13 +68,11 @@ static inline chunk_t GET_CHUNK_MAG(uint8_t *buf, uint32_t *chunk_rem, uint32_t 
     lut_rem_pair lut_rem = perm_idx_lut[dist - 3];
     *chunk_rem = lut_rem.remval;
 
-#ifdef Z_MEMORY_SANITIZER
-    /* See note in chunkset_sse41.c for why this is ok */
+    /* See note in chunkset_ssse3.c for why this is ok */
     __msan_unpoison(buf + dist, 16 - dist);
-#endif
 
     /* This version of table is only available on aarch64 */
-#if defined(_M_ARM64) || defined(__aarch64__)
+#if defined(_M_ARM64) || defined(_M_ARM64EC) || defined(__aarch64__)
     uint8x16_t ret_vec = vld1q_u8(buf);
 
     uint8x16_t perm_vec = vld1q_u8(permute_table + lut_rem.idx);
@@ -93,5 +91,9 @@ static inline chunk_t GET_CHUNK_MAG(uint8_t *buf, uint32_t *chunk_rem, uint32_t 
 }
 
 #include "chunkset_tpl.h"
+
+#define INFLATE_FAST     inflate_fast_neon
+
+#include "inffast_tpl.h"
 
 #endif

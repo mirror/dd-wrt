@@ -13,14 +13,16 @@
 #if defined(_WIN32) || defined(__CYGWIN__)
 #  include <fcntl.h>
 #  include <io.h>
-#  include <string.h>
 #  define SET_BINARY_MODE(file) setmode(fileno(file), O_BINARY)
-#  ifdef _MSC_VER
-#    define strcasecmp _stricmp
-#  endif
+#else
+#  define SET_BINARY_MODE(file)
+#endif
+
+#ifdef _MSC_VER
+#  include <string.h>
+#  define strcasecmp _stricmp
 #else
 #  include <strings.h>
-#  define SET_BINARY_MODE(file)
 #endif
 
 #define CHECK_ERR(err, msg) { \
@@ -36,7 +38,7 @@
 /* ===========================================================================
  * deflate() using specialized parameters
  */
-void deflate_params(FILE *fin, FILE *fout, int32_t read_buf_size, int32_t write_buf_size, int32_t level,
+static void deflate_params(FILE *fin, FILE *fout, int32_t read_buf_size, int32_t write_buf_size, int32_t level,
     int32_t window_bits, int32_t mem_level, int32_t strategy, int32_t flush) {
     PREFIX3(stream) c_stream; /* compression stream */
     uint8_t *read_buf;
@@ -121,7 +123,7 @@ void deflate_params(FILE *fin, FILE *fout, int32_t read_buf_size, int32_t write_
 /* ===========================================================================
  * inflate() using specialized parameters
  */
-void inflate_params(FILE *fin, FILE *fout, int32_t read_buf_size, int32_t write_buf_size, int32_t window_bits,
+static void inflate_params(FILE *fin, FILE *fout, int32_t read_buf_size, int32_t write_buf_size, int32_t window_bits,
     int32_t flush) {
     PREFIX3(stream) d_stream; /* decompression stream */
     uint8_t *read_buf;
@@ -165,6 +167,12 @@ void inflate_params(FILE *fin, FILE *fout, int32_t read_buf_size, int32_t write_
 
         do {
             err = PREFIX(inflate)(&d_stream, flush);
+
+            /* Ignore Z_BUF_ERROR if we are finishing and read buffer size is
+             * purposefully limited */
+            if (flush == Z_FINISH && err == Z_BUF_ERROR && read_buf_size != BUFSIZE)
+                err = Z_OK;
+
             if (err == Z_STREAM_END) break;
             CHECK_ERR(err, "inflate");
 
@@ -204,23 +212,23 @@ void inflate_params(FILE *fin, FILE *fout, int32_t read_buf_size, int32_t write_
     free(write_buf);
 }
 
-void show_help(void) {
-    printf("Usage: minideflate [-c][-d][-k] [-f|-h|-R|-F] [-m level] [-r/-t size] [-s flush] [-w bits] [-0 to -9] [input file]\n\n" \
-           "  -c : write to standard output\n" \
-           "  -d : decompress\n" \
-           "  -k : keep input file\n" \
-           "  -f : compress with Z_FILTERED\n" \
-           "  -h : compress with Z_HUFFMAN_ONLY\n" \
-           "  -R : compress with Z_RLE\n" \
-           "  -F : compress with Z_FIXED\n" \
-           "  -m : memory level (1 to 8)\n" \
-           "  -w : window bits..\n" \
+static void show_help(void) {
+    printf("Usage: minideflate [-c][-d][-k] [-f|-h|-R|-F] [-m level] [-r/-t size] [-s flush] [-w bits] [-0 to -9] [input file]\n\n"
+           "  -c : write to standard output\n"
+           "  -d : decompress\n"
+           "  -k : keep input file\n"
+           "  -f : compress with Z_FILTERED\n"
+           "  -h : compress with Z_HUFFMAN_ONLY\n"
+           "  -R : compress with Z_RLE\n"
+           "  -F : compress with Z_FIXED\n"
+           "  -m : memory level (1 to 8)\n"
+           "  -w : window bits..\n"
            "     :   -1 to -15 for raw deflate\n"
            "     :    0 to  15 for deflate (adler32)\n"
            "     :   16 to  31 for gzip (crc32)\n"
-           "  -s : flush type (0 to 5)\n" \
-           "  -r : read buffer size\n" \
-           "  -t : write buffer size\n" \
+           "  -s : flush type (0 to 5)\n"
+           "  -r : read buffer size\n"
+           "  -t : write buffer size\n"
            "  -0 to -9 : compression level\n\n");
 }
 

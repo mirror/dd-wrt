@@ -10,6 +10,7 @@ SUFFIX=
 
 ACLEFLAG=
 NEONFLAG=
+ARMV6FLAG=
 NOLTOFLAG=
 
 SRCDIR=.
@@ -23,7 +24,7 @@ all: \
 	compare256_neon.o compare256_neon.lo \
 	crc32_acle.o crc32_acle.lo \
 	slide_hash_neon.o slide_hash_neon.lo \
-	insert_string_acle.o insert_string_acle.lo
+	slide_hash_armv6.o slide_hash_armv6.lo \
 
 adler32_neon.o:
 	$(CC) $(CFLAGS) $(NEONFLAG) $(NOLTOFLAG) $(INCLUDES) -c -o $@ $(SRCDIR)/adler32_neon.c
@@ -61,11 +62,11 @@ slide_hash_neon.o:
 slide_hash_neon.lo:
 	$(CC) $(SFLAGS) $(NEONFLAG) $(NOLTOFLAG) $(INCLUDES) -c -o $@ $(SRCDIR)/slide_hash_neon.c
 
-insert_string_acle.o:
-	$(CC) $(CFLAGS) $(ACLEFLAG) $(NOLTOFLAG) $(INCLUDES) -c -o $@ $(SRCDIR)/insert_string_acle.c
+slide_hash_armv6.o:
+	$(CC) $(CFLAGS) $(ARMV6FLAG) $(NOLTOFLAG) $(INCLUDES) -c -o $@ $(SRCDIR)/slide_hash_armv6.c
 
-insert_string_acle.lo:
-	$(CC) $(SFLAGS) $(ACLEFLAG) $(NOLTOFLAG) $(INCLUDES) -c -o $@ $(SRCDIR)/insert_string_acle.c
+slide_hash_armv6.lo:
+	$(CC) $(SFLAGS) $(ARMV6FLAG) $(NOLTOFLAG) $(INCLUDES) -c -o $@ $(SRCDIR)/slide_hash_armv6.c
 
 mostlyclean: clean
 clean:
@@ -73,5 +74,5 @@ clean:
 	rm -rf objs
 	rm -f *.gcda *.gcno *.gcov
 
-distclean:
+distclean: clean
 	rm -f Makefile

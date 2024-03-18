@@ -60,32 +60,65 @@ extern int unlink (const char *);
 
 static char *prog;
 
-void error            (const char *msg);
-void gz_compress      (FILE *in, gzFile out);
-#ifdef USE_MMAP
-int  gz_compress_mmap (FILE *in, gzFile out);
-#endif
-void gz_uncompress    (gzFile in, FILE *out);
-void file_compress    (char *file, char *mode, int keep);
-void file_uncompress  (char *file, int keep);
-int  main             (int argc, char *argv[]);
-
 /* ===========================================================================
  * Display error message and exit
  */
-void error(const char *msg) {
+static void error(const char *msg) {
     fprintf(stderr, "%s: %s\n", prog, msg);
     exit(1);
 }
 
 /* ===========================================================================
+ * Display last error message of gzFile, close it and exit
+ */
+
+static void gz_fatal(gzFile file) {
+    int err;
+    fprintf(stderr, "%s: %s\n", prog, PREFIX(gzerror)(file, &err));
+    PREFIX(gzclose)(file);
+    exit(1);
+}
+
+#ifdef USE_MMAP /* MMAP version, Miguel Albrecht <malbrech@eso.org> */
+/* ===========================================================================
+ * Try compressing the input file at once using mmap. Return Z_OK if
+ * success, Z_ERRNO otherwise.
+ */
+static int gz_compress_mmap(FILE *in, gzFile out) {
+    int len;
+    int ifd = fileno(in);
+    char *buf;      /* mmap'ed buffer for the entire input file */
+    off_t buf_len;  /* length of the input file */
+    struct stat sb;
+
+    /* Determine the size of the file, needed for mmap: */
+    if (fstat(ifd, &sb) < 0) return Z_ERRNO;
+    buf_len = sb.st_size;
+    if (buf_len <= 0) return Z_ERRNO;
+
+    /* Now do the actual mmap: */
+    buf = mmap((void *)0, buf_len, PROT_READ, MAP_SHARED, ifd, (off_t)0);
+    if (buf == (char *)(-1)) return Z_ERRNO;
+
+    /* Compress the whole file at once: */
+    len = PREFIX(gzwrite)(out, buf, (unsigned)buf_len);
+
+    if (len != (int)buf_len) gz_fatal(out);
+
+    munmap(buf, buf_len);
+    fclose(in);
+    if (PREFIX(gzclose)(out) != Z_OK) error("failed gzclose");
+    return Z_OK;
+}
+#endif /* USE_MMAP */
+
+/* ===========================================================================
  * Compress input to output then close both files.
  */
 
-void gz_compress(FILE *in, gzFile out) {
+static void gz_compress(FILE *in, gzFile out) {
     char *buf;
     int len;
-    int err;
 
 #ifdef USE_MMAP
     /* Try first compressing with mmap. If mmap fails (minigzip used in a
@@ -108,54 +141,19 @@ void gz_compress(FILE *in, gzFile out) {
         }
         if (len == 0) break;
 
-        if (PREFIX(gzwrite)(out, buf, (unsigned)len) != len) error(PREFIX(gzerror)(out, &err));
+        if (PREFIX(gzwrite)(out, buf, (unsigned)len) != len) gz_fatal(out);
     }
     free(buf);
     fclose(in);
     if (PREFIX(gzclose)(out) != Z_OK) error("failed gzclose");
 }
 
-#ifdef USE_MMAP /* MMAP version, Miguel Albrecht <malbrech@eso.org> */
-
-/* Try compressing the input file at once using mmap. Return Z_OK if
- * if success, Z_ERRNO otherwise.
- */
-int gz_compress_mmap(FILE *in, gzFile out) {
-    int len;
-    int err;
-    int ifd = fileno(in);
-    char *buf;      /* mmap'ed buffer for the entire input file */
-    off_t buf_len;  /* length of the input file */
-    struct stat sb;
-
-    /* Determine the size of the file, needed for mmap: */
-    if (fstat(ifd, &sb) < 0) return Z_ERRNO;
-    buf_len = sb.st_size;
-    if (buf_len <= 0) return Z_ERRNO;
-
-    /* Now do the actual mmap: */
-    buf = mmap((void *)0, buf_len, PROT_READ, MAP_SHARED, ifd, (off_t)0);
-    if (buf == (char *)(-1)) return Z_ERRNO;
-
-    /* Compress the whole file at once: */
-    len = PREFIX(gzwrite)(out, buf, (unsigned)buf_len);
-
-    if (len != (int)buf_len) error(PREFIX(gzerror)(out, &err));
-
-    munmap(buf, buf_len);
-    fclose(in);
-    if (PREFIX(gzclose)(out) != Z_OK) error("failed gzclose");
-    return Z_OK;
-}
-#endif /* USE_MMAP */
-
 /* ===========================================================================
  * Uncompress input to output then close both files.
  */
-void gz_uncompress(gzFile in, FILE *out) {
+static void gz_uncompress(gzFile in, FILE *out) {
     char *buf = (char *)malloc(BUFLENW);
     int len;
-    int err;
 
     if (buf == NULL) error("out of memory");
 
@@ -163,7 +161,7 @@ void gz_uncompress(gzFile in, FILE *out) {
         len = PREFIX(gzread)(in, buf, BUFLENW);
         if (len < 0) {
             free(buf);
-            error(PREFIX(gzerror)(in, &err));
+            gz_fatal(in);
         }
         if (len == 0) break;
 
@@ -183,7 +181,7 @@ void gz_uncompress(gzFile in, FILE *out) {
  * Compress the given file: create a corresponding .gz file and remove the
  * original.
  */
-void file_compress(char *file, char *mode, int keep) {
+static void file_compress(char *file, char *mode, int keep) {
     char outfile[MAX_NAME_LEN];
     FILE *in;
     gzFile out;
@@ -215,7 +213,7 @@ void file_compress(char *file, char *mode, int keep) {
 /* ===========================================================================
  * Uncompress the given file and remove the original.
  */
-void file_uncompress(char *file, int keep) {
+static void file_uncompress(char *file, int keep) {
     char buf[MAX_NAME_LEN];
     char *infile, *outfile;
     FILE *out;
@@ -255,17 +253,17 @@ void file_uncompress(char *file, int keep) {
         unlink(infile);
 }
 
-void show_help(void) {
-    printf("Usage: minigzip [-c] [-d] [-k] [-f|-h|-R|-F|-T] [-A] [-0 to -9] [files...]\n\n" \
-           "  -c : write to standard output\n" \
-           "  -d : decompress\n" \
-           "  -k : keep input files\n" \
-           "  -f : compress with Z_FILTERED\n" \
-           "  -h : compress with Z_HUFFMAN_ONLY\n" \
-           "  -R : compress with Z_RLE\n" \
-           "  -F : compress with Z_FIXED\n" \
-           "  -T : stored raw\n" \
-           "  -A : auto detect type\n" \
+static void show_help(void) {
+    printf("Usage: minigzip [-c] [-d] [-k] [-f|-h|-R|-F|-T] [-A] [-0 to -9] [files...]\n\n"
+           "  -c : write to standard output\n"
+           "  -d : decompress\n"
+           "  -k : keep input files\n"
+           "  -f : compress with Z_FILTERED\n"
+           "  -h : compress with Z_HUFFMAN_ONLY\n"
+           "  -R : compress with Z_RLE\n"
+           "  -F : compress with Z_FIXED\n"
+           "  -T : stored raw\n"
+           "  -A : auto detect type\n"
            "  -0 to -9 : compression level\n\n");
 }
 

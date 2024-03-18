@@ -20,18 +20,18 @@ z_const char * const PREFIX(z_errmsg)[10] = {
     (z_const char *)""
 };
 
-const char zlibng_string[] =
-    " zlib-ng 2.1.0.devel forked from zlib";
+const char PREFIX3(vstring)[] =
+    " zlib-ng 2.1.6";
 
 #ifdef ZLIB_COMPAT
 const char * Z_EXPORT zlibVersion(void) {
     return ZLIB_VERSION;
 }
-#endif
-
+#else
 const char * Z_EXPORT zlibng_version(void) {
     return ZLIBNG_VERSION;
 }
+#endif
 
 unsigned long Z_EXPORT PREFIX(zlibCompileFlags)(void) {
     unsigned long flags;
@@ -87,7 +87,7 @@ unsigned long Z_EXPORT PREFIX(zlibCompileFlags)(void) {
 #  endif
 int Z_INTERNAL z_verbose = verbose;
 
-void Z_INTERNAL z_error(char *m) {
+void Z_INTERNAL z_error(const char *m) {
     fprintf(stderr, "%s\n", m);
     exit(1);
 }
@@ -100,26 +100,26 @@ const char * Z_EXPORT PREFIX(zError)(int err) {
     return ERR_MSG(err);
 }
 
-void Z_INTERNAL *zng_calloc(void *opaque, unsigned items, unsigned size) {
+void Z_INTERNAL *PREFIX(zcalloc)(void *opaque, unsigned items, unsigned size) {
     Z_UNUSED(opaque);
     return zng_alloc((size_t)items * (size_t)size);
 }
 
-void Z_INTERNAL zng_cfree(void *opaque, void *ptr) {
+void Z_INTERNAL PREFIX(zcfree)(void *opaque, void *ptr) {
     Z_UNUSED(opaque);
     zng_free(ptr);
 }
 
 /* Since we support custom memory allocators, some which might not align memory as we expect,
  * we have to ask for extra memory and return an aligned pointer. */
-void Z_INTERNAL *zng_alloc_aligned(zng_calloc_func zalloc, void *opaque, unsigned items, unsigned size, unsigned align) {
+void Z_INTERNAL *PREFIX3(alloc_aligned)(zng_calloc_func zalloc, void *opaque, unsigned items, unsigned size, unsigned align) {
     uintptr_t return_ptr, original_ptr;
     uint32_t alloc_size, align_diff;
     void *ptr;
 
     /* If no custom calloc function used then call zlib-ng's aligned calloc */
-    if (zalloc == zng_calloc)
-        return zng_calloc(opaque, items, size);
+    if (zalloc == NULL || zalloc == PREFIX(zcalloc))
+        return PREFIX(zcalloc)(opaque, items, size);
 
     /* Allocate enough memory for proper alignment and to store the original memory pointer */
     alloc_size = sizeof(void *) + (items * size) + align;
@@ -141,10 +141,10 @@ void Z_INTERNAL *zng_alloc_aligned(zng_calloc_func zalloc, void *opaque, unsigne
     return (void *)return_ptr;
 }
 
-void Z_INTERNAL zng_free_aligned(zng_cfree_func zfree, void *opaque, void *ptr) {
+void Z_INTERNAL PREFIX3(free_aligned)(zng_cfree_func zfree, void *opaque, void *ptr) {
     /* If no custom cfree function used then call zlib-ng's aligned cfree */
-    if (zfree == zng_cfree) {
-        zng_cfree(opaque, ptr);
+    if (zfree == NULL || zfree == PREFIX(zcfree)) {
+        PREFIX(zcfree)(opaque, ptr);
         return;
     }
     if (!ptr)

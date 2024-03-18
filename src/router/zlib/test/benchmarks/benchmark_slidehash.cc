@@ -11,7 +11,8 @@ extern "C" {
 #  include "zbuild.h"
 #  include "zutil_p.h"
 #  include "deflate.h"
-#  include "cpu_features.h"
+#  include "arch_functions.h"
+#  include "../test_cpu_features.h"
 }
 
 #define MAX_RANDOM_INTS 32768
@@ -26,7 +27,7 @@ public:
     void SetUp(const ::benchmark::State& state) {
         l0 = (uint16_t *)zng_alloc(HASH_SIZE * sizeof(uint16_t));
 
-        for (int32_t i = 0; i < HASH_SIZE; i++) {
+        for (uint32_t i = 0; i < HASH_SIZE; i++) {
             l0[i] = rand();
         }
 
@@ -68,19 +69,24 @@ public:
 
 BENCHMARK_SLIDEHASH(c, slide_hash_c, 1);
 
-#ifdef ARM_NEON_SLIDEHASH
-BENCHMARK_SLIDEHASH(neon, slide_hash_neon, arm_cpu_has_neon);
+#ifdef ARM_SIMD
+BENCHMARK_SLIDEHASH(armv6, slide_hash_armv6, test_cpu_features.arm.has_simd);
 #endif
-#ifdef POWER8_VSX_SLIDEHASH
-BENCHMARK_SLIDEHASH(power8, slide_hash_power8, power_cpu_has_arch_2_07);
+#ifdef ARM_NEON
+BENCHMARK_SLIDEHASH(neon, slide_hash_neon, test_cpu_features.arm.has_neon);
 #endif
-#ifdef PPC_VMX_SLIDEHASH
-BENCHMARK_SLIDEHASH(vmx, slide_hash_vmx, power_cpu_has_altivec);
+#ifdef POWER8_VSX
+BENCHMARK_SLIDEHASH(power8, slide_hash_power8, test_cpu_features.power.has_arch_2_07);
 #endif
-
+#ifdef PPC_VMX
+BENCHMARK_SLIDEHASH(vmx, slide_hash_vmx, test_cpu_features.power.has_altivec);
+#endif
+#ifdef RISCV_RVV
+BENCHMARK_SLIDEHASH(rvv, slide_hash_rvv, test_cpu_features.riscv.has_rvv);
+#endif
 #ifdef X86_SSE2
-BENCHMARK_SLIDEHASH(sse2, slide_hash_sse2, x86_cpu_has_sse2);
+BENCHMARK_SLIDEHASH(sse2, slide_hash_sse2, test_cpu_features.x86.has_sse2);
 #endif
 #ifdef X86_AVX2
-BENCHMARK_SLIDEHASH(avx2, slide_hash_avx2, x86_cpu_has_avx2);
+BENCHMARK_SLIDEHASH(avx2, slide_hash_avx2, test_cpu_features.x86.has_avx2);
 #endif

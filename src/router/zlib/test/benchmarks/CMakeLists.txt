@@ -5,6 +5,7 @@ include(FetchContent)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS ON)
+
 enable_language(CXX)
 
 # Search for Google benchmark package
@@ -18,7 +19,7 @@ if(NOT benchmark_FOUND)
         set(GBENCHMARK_REPOSITORY https://github.com/google/benchmark.git)
     endif()
     if(NOT DEFINED GBENCHMARK_TAG)
-        set(GBENCHMARK_TAG v1.7.0)
+        set(GBENCHMARK_TAG v1.7.1)
     endif()
 
     FetchContent_Declare(benchmark
@@ -36,6 +37,7 @@ add_executable(benchmark_zlib
     benchmark_adler32.cc
     benchmark_adler32_copy.cc
     benchmark_compare256.cc
+    benchmark_compare256_rle.cc
     benchmark_crc32.cc
     benchmark_main.cc
     benchmark_slidehash.cc
@@ -52,10 +54,8 @@ if(WIN32)
     target_link_libraries(benchmark_zlib shlwapi)
 endif()
 
-if(ZLIB_ENABLE_TESTS)
-    add_test(NAME benchmark_zlib
-        COMMAND ${CMAKE_CROSSCOMPILING_EMULATOR} $<TARGET_FILE:benchmark_zlib>)
-endif()
+add_test(NAME benchmark_zlib
+    COMMAND ${CMAKE_CROSSCOMPILING_EMULATOR} $<TARGET_FILE:benchmark_zlib>)
 
 if(WITH_BENCHMARK_APPS)
     option(BUILD_ALT_BENCH "Link against alternative zlib implementation" OFF)
@@ -70,7 +70,8 @@ if(WITH_BENCHMARK_APPS)
         FetchContent_GetProperties(PNG)
         if(NOT PNG_POPULATED)
             FetchContent_Populate(PNG)
-            add_subdirectory(${PNG_SOURCE_DIR} ${PNG_BINARY_DIR})
+            set(PNG_INCLUDE_DIR ${png_SOURCE_DIR})
+            add_subdirectory(${png_SOURCE_DIR} ${png_BINARY_DIR})
         endif()
     endif()
 

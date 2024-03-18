@@ -18,11 +18,9 @@
 #define zng_adler32_combine       @ZLIB_SYMBOL_PREFIX@zng_adler32_combine
 #define zng_adler32_combine64     @ZLIB_SYMBOL_PREFIX@zng_adler32_combine64
 #define zng_adler32_z             @ZLIB_SYMBOL_PREFIX@zng_adler32_z
-#ifndef Z_SOLO
-#  define zng_compress              @ZLIB_SYMBOL_PREFIX@zng_compress
-#  define zng_compress2             @ZLIB_SYMBOL_PREFIX@zng_compress2
-#  define zng_compressBound         @ZLIB_SYMBOL_PREFIX@zng_compressBound
-#endif
+#define zng_compress              @ZLIB_SYMBOL_PREFIX@zng_compress
+#define zng_compress2             @ZLIB_SYMBOL_PREFIX@zng_compress2
+#define zng_compressBound         @ZLIB_SYMBOL_PREFIX@zng_compressBound
 #define zng_crc32                 @ZLIB_SYMBOL_PREFIX@zng_crc32
 #define zng_crc32_combine         @ZLIB_SYMBOL_PREFIX@zng_crc32_combine
 #define zng_crc32_combine64       @ZLIB_SYMBOL_PREFIX@zng_crc32_combine64
@@ -48,8 +46,11 @@
 #define zng_deflateSetHeader      @ZLIB_SYMBOL_PREFIX@zng_deflateSetHeader
 #define zng_deflateTune           @ZLIB_SYMBOL_PREFIX@zng_deflateTune
 #define zng_deflate_copyright     @ZLIB_SYMBOL_PREFIX@zng_deflate_copyright
+#define zng_fill_window           @ZLIB_SYMBOL_PREFIX@zng_fill_window
+#define zng_fixedtables           @ZLIB_SYMBOL_PREFIX@zng_fixedtables
+#define zng_flush_pending         @ZLIB_SYMBOL_PREFIX@zng_flush_pending
 #define zng_get_crc_table         @ZLIB_SYMBOL_PREFIX@zng_get_crc_table
-#ifndef Z_SOLO
+#ifdef WITH_GZFILEOP
 #  define zng_gz_error              @ZLIB_SYMBOL_PREFIX@zng_gz_error
 #  define zng_gz_strwinerror        @ZLIB_SYMBOL_PREFIX@zng_gz_strwinerror
 #  define zng_gzbuffer              @ZLIB_SYMBOL_PREFIX@zng_gzbuffer
@@ -113,17 +114,15 @@
 #define zng_inflateUndermine      @ZLIB_SYMBOL_PREFIX@zng_inflateUndermine
 #define zng_inflateValidate       @ZLIB_SYMBOL_PREFIX@zng_inflateValidate
 #define zng_inflate_copyright     @ZLIB_SYMBOL_PREFIX@zng_inflate_copyright
+#define zng_inflate_ensure_window @ZLIB_SYMBOL_PREFIX@zng_inflate_ensure_window
 #define zng_inflate_fast          @ZLIB_SYMBOL_PREFIX@zng_inflate_fast
 #define zng_inflate_table         @ZLIB_SYMBOL_PREFIX@zng_inflate_table
-#ifndef Z_SOLO
-#  define zng_uncompress            @ZLIB_SYMBOL_PREFIX@zng_uncompress
-#  define zng_uncompress2           @ZLIB_SYMBOL_PREFIX@zng_uncompress2
-#endif
+#define zng_read_buf              @ZLIB_SYMBOL_PREFIX@zng_read_buf
+#define zng_uncompress            @ZLIB_SYMBOL_PREFIX@zng_uncompress
+#define zng_uncompress2           @ZLIB_SYMBOL_PREFIX@zng_uncompress2
 #define zng_zError                @ZLIB_SYMBOL_PREFIX@zng_zError
-#ifndef Z_SOLO
-#  define zng_zcalloc               @ZLIB_SYMBOL_PREFIX@zng_zcalloc
-#  define zng_zcfree                @ZLIB_SYMBOL_PREFIX@zng_zcfree
-#endif
+#define zng_zcalloc               @ZLIB_SYMBOL_PREFIX@zng_zcalloc
+#define zng_zcfree                @ZLIB_SYMBOL_PREFIX@zng_zcfree
 #define zng_zlibCompileFlags      @ZLIB_SYMBOL_PREFIX@zng_zlibCompileFlags
 #define zng_zlibVersion           @ZLIB_SYMBOL_PREFIX@zng_zlibVersion
 
@@ -133,7 +132,7 @@
 #define alloc_func            @ZLIB_SYMBOL_PREFIX@alloc_func
 #define charf                 @ZLIB_SYMBOL_PREFIX@charf
 #define free_func             @ZLIB_SYMBOL_PREFIX@free_func
-#ifndef Z_SOLO
+#ifdef WITH_GZFILEOP
 #  define gzFile                @ZLIB_SYMBOL_PREFIX@gzFile
 #endif
 #define gz_header             @ZLIB_SYMBOL_PREFIX@gz_header
@@ -160,9 +159,13 @@
 #define zng_deflateGetParams      @ZLIB_SYMBOL_PREFIX@zng_deflateGetParams
 
 #define zlibng_version         @ZLIB_SYMBOL_PREFIX@zlibng_version
+#define zng_vstring            @ZLIB_SYMBOL_PREFIX@zng_vstring
 #define zng_zError             @ZLIB_SYMBOL_PREFIX@zng_zError
-#define zng_inflateSyncPoint   @ZLIB_SYMBOL_PREFIX@zng_inflateSyncPoint
+
+#define zng_alloc_aligned      @ZLIB_SYMBOL_PREFIX@zng_alloc_aligned
+#define zng_free_aligned       @ZLIB_SYMBOL_PREFIX@zng_free_aligned
 #define zng_get_crc_table      @ZLIB_SYMBOL_PREFIX@zng_get_crc_table
+#define zng_inflateSyncPoint   @ZLIB_SYMBOL_PREFIX@zng_inflateSyncPoint
 #define zng_inflateUndermine   @ZLIB_SYMBOL_PREFIX@zng_inflateUndermine
 #define zng_inflateValidate    @ZLIB_SYMBOL_PREFIX@zng_inflateValidate
 #define zng_inflateCodesUsed   @ZLIB_SYMBOL_PREFIX@zng_inflateCodesUsed

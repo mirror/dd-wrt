@@ -1,6 +1,6 @@
 /* deflate_huff.c -- compress data using huffman encoding only strategy
  *
- * Copyright (C) 1995-2013 Jean-loup Gailly and Mark Adler
+ * Copyright (C) 1995-2024 Jean-loup Gailly and Mark Adler
  * For conditions of distribution and use, see copyright notice in zlib.h
  */
 
@@ -19,7 +19,7 @@ Z_INTERNAL block_state deflate_huff(deflate_state *s, int flush) {
     for (;;) {
         /* Make sure that we have a literal to write. */
         if (s->lookahead == 0) {
-            fill_window(s);
+            PREFIX(fill_window)(s);
             if (s->lookahead == 0) {
                 if (flush == Z_NO_FLUSH)
                     return need_more;

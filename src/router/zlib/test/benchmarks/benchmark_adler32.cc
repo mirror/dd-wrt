@@ -11,7 +11,8 @@
 extern "C" {
 #  include "zbuild.h"
 #  include "zutil_p.h"
-#  include "cpu_features.h"
+#  include "arch_functions.h"
+#  include "../test_cpu_features.h"
 }
 
 #define MAX_RANDOM_INTS (1024 * 1024)
@@ -42,7 +43,7 @@ public:
         uint32_t hash = 0;
 
         for (auto _ : state) {
-            hash = adler32(hash, (const unsigned char *)random_ints, state.range(0));
+            hash = adler32(hash, (const unsigned char *)random_ints, (size_t)state.range(0));
         }
 
         benchmark::DoNotOptimize(hash);
@@ -60,30 +61,34 @@ public:
         } \
         Bench(state, fptr); \
     } \
-    BENCHMARK_REGISTER_F(adler32, name)->Range(2048, MAX_RANDOM_INTS_SIZE);
+    BENCHMARK_REGISTER_F(adler32, name)->Arg(1)->Arg(8)->Arg(12)->Arg(16)->Arg(32)->Arg(64)->Arg(512)->Arg(4<<10)->Arg(32<<10)->Arg(256<<10)->Arg(4096<<10)
 
 BENCHMARK_ADLER32(c, adler32_c, 1);
 
-#ifdef ARM_NEON_ADLER32
-BENCHMARK_ADLER32(neon, adler32_neon, arm_cpu_has_neon);
+#ifdef ARM_NEON
+BENCHMARK_ADLER32(neon, adler32_neon, test_cpu_features.arm.has_neon);
 #endif
 
-#ifdef PPC_VMX_ADLER32
-BENCHMARK_ADLER32(vmx, adler32_vmx, power_cpu_has_altivec);
+#ifdef PPC_VMX
+BENCHMARK_ADLER32(vmx, adler32_vmx, test_cpu_features.power.has_altivec);
 #endif
-#ifdef POWER8_VSX_ADLER32
-BENCHMARK_ADLER32(power8, adler32_power8, power_cpu_has_arch_2_07);
+#ifdef POWER8_VSX
+BENCHMARK_ADLER32(power8, adler32_power8, test_cpu_features.power.has_arch_2_07);
 #endif
 
-#ifdef X86_SSSE3_ADLER32
-BENCHMARK_ADLER32(ssse3, adler32_ssse3, x86_cpu_has_ssse3);
+#ifdef RISCV_RVV
+BENCHMARK_ADLER32(rvv, adler32_rvv, test_cpu_features.riscv.has_rvv);
 #endif
-#ifdef X86_AVX2_ADLER32
-BENCHMARK_ADLER32(avx2, adler32_avx2, x86_cpu_has_avx2);
+
+#ifdef X86_SSSE3
+BENCHMARK_ADLER32(ssse3, adler32_ssse3, test_cpu_features.x86.has_ssse3);
 #endif
-#ifdef X86_AVX512_ADLER32
-BENCHMARK_ADLER32(avx512, adler32_avx512, x86_cpu_has_avx512);
+#ifdef X86_AVX2
+BENCHMARK_ADLER32(avx2, adler32_avx2, test_cpu_features.x86.has_avx2);
 #endif
-#ifdef X86_AVX512VNNI_ADLER32
-BENCHMARK_ADLER32(avx512_vnni, adler32_avx512_vnni, x86_cpu_has_avx512vnni);
+#ifdef X86_AVX512
+BENCHMARK_ADLER32(avx512, adler32_avx512, test_cpu_features.x86.has_avx512);
+#endif
+#ifdef X86_AVX512VNNI
+BENCHMARK_ADLER32(avx512_vnni, adler32_avx512_vnni, test_cpu_features.x86.has_avx512vnni);
 #endif

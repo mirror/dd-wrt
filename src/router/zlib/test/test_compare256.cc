@@ -9,13 +9,17 @@
 
 extern "C" {
 #  include "zbuild.h"
-#  include "zutil_p.h"
-#  include "cpu_features.h"
+#  include "zutil.h"
+#  include "arch_functions.h"
+#  include "test_cpu_features.h"
 }
 
 #include <gtest/gtest.h>
 
+#include "test_shared.h"
+
 #define MAX_COMPARE_SIZE (256)
+
 
 /* Ensure that compare256 returns the correct match length */
 static inline void compare256_match_check(compare256_func compare256) {
@@ -23,11 +27,11 @@ static inline void compare256_match_check(compare256_func compare256) {
     uint8_t *str1;
     uint8_t *str2;
 
-    str1 = (uint8_t *)zng_alloc(MAX_COMPARE_SIZE);
+    str1 = (uint8_t *)PREFIX3(alloc_aligned)(NULL, NULL, 1, MAX_COMPARE_SIZE, 64);
     ASSERT_TRUE(str1 != NULL);
     memset(str1, 'a', MAX_COMPARE_SIZE);
 
-    str2 = (uint8_t *)zng_alloc(MAX_COMPARE_SIZE);
+    str2 = (uint8_t *)PREFIX3(alloc_aligned)(NULL, NULL, 1, MAX_COMPARE_SIZE, 64);
     ASSERT_TRUE(str2 != NULL);
     memset(str2, 'a', MAX_COMPARE_SIZE);
 
@@ -42,8 +46,8 @@ static inline void compare256_match_check(compare256_func compare256) {
             str2[i] = 'a';
     }
 
-    zng_free(str1);
-    zng_free(str2);
+    PREFIX3(free_aligned)(NULL, NULL, str1);
+    PREFIX3(free_aligned)(NULL, NULL, str2);
 }
 
 #define TEST_COMPARE256(name, func, support_flag) \
@@ -57,7 +61,7 @@ static inline void compare256_match_check(compare256_func compare256) {
 
 TEST_COMPARE256(c, compare256_c, 1)
 
-#ifdef UNALIGNED_OK
+#if defined(UNALIGNED_OK) && BYTE_ORDER == LITTLE_ENDIAN
 TEST_COMPARE256(unaligned_16, compare256_unaligned_16, 1)
 #ifdef HAVE_BUILTIN_CTZ
 TEST_COMPARE256(unaligned_32, compare256_unaligned_32, 1)
@@ -67,14 +71,17 @@ TEST_COMPARE256(unaligned_64, compare256_unaligned_64, 1)
 #endif
 #endif
 #if defined(X86_SSE2) && defined(HAVE_BUILTIN_CTZ)
-TEST_COMPARE256(sse2, compare256_sse2, x86_cpu_has_sse2)
+TEST_COMPARE256(sse2, compare256_sse2, test_cpu_features.x86.has_sse2)
 #endif
 #if defined(X86_AVX2) && defined(HAVE_BUILTIN_CTZ)
-TEST_COMPARE256(avx2, compare256_avx2, x86_cpu_has_avx2)
+TEST_COMPARE256(avx2, compare256_avx2, test_cpu_features.x86.has_avx2)
 #endif
 #if defined(ARM_NEON) && defined(HAVE_BUILTIN_CTZLL)
-TEST_COMPARE256(neon, compare256_neon, arm_cpu_has_neon)
+TEST_COMPARE256(neon, compare256_neon, test_cpu_features.arm.has_neon)
 #endif
 #ifdef POWER9
-TEST_COMPARE256(power9, compare256_power9, power_cpu_has_arch_3_00)
+TEST_COMPARE256(power9, compare256_power9, test_cpu_features.power.has_arch_3_00)
+#endif
+#ifdef RISCV_RVV
+TEST_COMPARE256(rvv, compare256_rvv, test_cpu_features.riscv.has_rvv)
 #endif

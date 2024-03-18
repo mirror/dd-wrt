@@ -11,6 +11,8 @@ extern "C" {
 
 #include <gtest/gtest.h>
 
+#include "test_shared.h"
+
 void *zng_calloc_unaligned(void *opaque, unsigned items, unsigned size) {
     uint8_t *pointer = (uint8_t *)calloc(1, (items * size) + 2);
     Z_UNUSED(opaque);
@@ -39,8 +41,8 @@ void zng_cfree_unaligned(void *opaque, void *ptr) {
 }
 
 TEST(zalloc, aligned_64) {
-    void *return_ptr = zng_alloc_aligned(zng_calloc_unaligned, 0, 1, 100, 64);
+    void *return_ptr = PREFIX3(alloc_aligned)(zng_calloc_unaligned, 0, 1, 100, 64);
     ASSERT_TRUE(return_ptr != NULL);
     EXPECT_EQ((intptr_t)return_ptr % 64, 0);
-    zng_free_aligned(zng_cfree_unaligned, 0, return_ptr);
+    PREFIX3(free_aligned)(zng_cfree_unaligned, 0, return_ptr);
 }

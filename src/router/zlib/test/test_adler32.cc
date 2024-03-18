@@ -10,7 +10,8 @@
 
 extern "C" {
 #  include "zbuild.h"
-#  include "cpu_features.h"
+#  include "arch_functions.h"
+#  include "test_cpu_features.h"
 }
 
 #include <gtest/gtest.h>
@@ -364,26 +365,25 @@ INSTANTIATE_TEST_SUITE_P(adler32, adler32_variant, testing::ValuesIn(tests));
 
 TEST_ADLER32(c, adler32_c, 1)
 
-#ifdef ARM_NEON_ADLER32
-TEST_ADLER32(neon, adler32_neon, arm_cpu_has_neon)
-#elif defined(POWER8_VSX_ADLER32)
-TEST_ADLER32(power8, adler32_power8, power_cpu_has_arch_2_07)
-#elif defined(PPC_VMX_ADLER32)
-TEST_ADLER32(vmx, adler32_vmx, power_cpu_has_altivec)
+#ifdef ARM_NEON
+TEST_ADLER32(neon, adler32_neon, test_cpu_features.arm.has_neon)
+#elif defined(POWER8_VSX)
+TEST_ADLER32(power8, adler32_power8, test_cpu_features.power.has_arch_2_07)
+#elif defined(PPC_VMX)
+TEST_ADLER32(vmx, adler32_vmx, test_cpu_features.power.has_altivec)
+#elif defined(RISCV_RVV)
+TEST_ADLER32(rvv, adler32_rvv, test_cpu_features.riscv.has_rvv)
 #endif
 
-#ifdef X86_SSSE3_ADLER32
-TEST_ADLER32(ssse3, adler32_ssse3, x86_cpu_has_ssse3)
+#ifdef X86_SSSE3
+TEST_ADLER32(ssse3, adler32_ssse3, test_cpu_features.x86.has_ssse3)
 #endif
-#ifdef X86_SSE41_ADLER32
-TEST_ADLER32(sse41, adler32_sse41, x86_cpu_has_sse41)
+#ifdef X86_AVX2
+TEST_ADLER32(avx2, adler32_avx2, test_cpu_features.x86.has_avx2)
 #endif
-#ifdef X86_AVX2_ADLER32
-TEST_ADLER32(avx2, adler32_avx2, x86_cpu_has_avx2)
+#ifdef X86_AVX512
+TEST_ADLER32(avx512, adler32_avx512, test_cpu_features.x86.has_avx512)
 #endif
-#ifdef X86_AVX512_ADLER32
-TEST_ADLER32(avx512, adler32_avx512, x86_cpu_has_avx512)
-#endif
-#ifdef X86_AVX512VNNI_ADLER32
-TEST_ADLER32(avx512_vnni, adler32_avx512_vnni, x86_cpu_has_avx512vnni)
+#ifdef X86_AVX512VNNI
+TEST_ADLER32(avx512_vnni, adler32_avx512_vnni, test_cpu_features.x86.has_avx512vnni)
 #endif

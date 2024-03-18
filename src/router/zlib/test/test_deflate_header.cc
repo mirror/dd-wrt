@@ -12,9 +12,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "test_shared.h"
-
 #include <gtest/gtest.h>
+
+#include "test_shared.h"
 
 TEST(deflate, header) {
     PREFIX3(stream) c_stream;
@@ -60,6 +60,9 @@ TEST(deflate, header) {
         if (err == Z_STREAM_END) break;
         EXPECT_EQ(err, Z_OK);
     }
+
+    /* Check CRC32. */
+    EXPECT_EQ(c_stream.adler, 0xb56c3f9dU);
 
     err = PREFIX(deflateEnd)(&c_stream);
     EXPECT_EQ(err, Z_OK);

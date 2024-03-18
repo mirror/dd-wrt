@@ -17,6 +17,7 @@
 #  define ZCOPY_INFLATE_STATE(dst, src) memcpy(dst, src, sizeof(struct inflate_state))
 /* Memory management for the window. Useful for allocation the aligned window. */
 #  define ZALLOC_WINDOW(strm, items, size) ZALLOC(strm, items, size)
+#  define ZCOPY_WINDOW(dest, src, n) memcpy(dest, src, n)
 #  define ZFREE_WINDOW(strm, addr) ZFREE(strm, addr)
 /* Invoked at the end of inflateResetKeep(). Useful for initializing arch-specific extension blocks. */
 #  define INFLATE_RESET_KEEP_HOOK(strm) do {} while (0)
@@ -32,6 +33,10 @@
 #  define INFLATE_MARK_HOOK(strm) do {} while (0)
 /* Invoked at the beginning of inflateSyncPoint(). Useful for performing arch-specific state checks. */
 #  define INFLATE_SYNC_POINT_HOOK(strm) do {} while (0)
+/* Invoked at the beginning of inflateSetDictionary(). Useful for checking arch-specific window data. */
+#  define INFLATE_SET_DICTIONARY_HOOK(strm, dict, dict_len) do {} while (0)
+/* Invoked at the beginning of inflateGetDictionary(). Useful for adjusting arch-specific window data. */
+#  define INFLATE_GET_DICTIONARY_HOOK(strm, dict, dict_len) do {} while (0)
 #endif
 
 /*
@@ -41,9 +46,9 @@
 /* check function to use adler32() for zlib or crc32() for gzip */
 #ifdef GUNZIP
 #  define UPDATE(check, buf, len) \
-    (state->flags ? PREFIX(crc32)(check, buf, len) : functable.adler32(check, buf, len))
+    (state->flags ? PREFIX(crc32)(check, buf, len) : FUNCTABLE_CALL(adler32)(check, buf, len))
 #else
-#  define UPDATE(check, buf, len) functable.adler32(check, buf, len)
+#  define UPDATE(check, buf, len) FUNCTABLE_CALL(adler32)(check, buf, len)
 #endif
 
 /* check macros for header crc */
@@ -120,14 +125,27 @@
         bits -= bits & 7; \
     } while (0)
 
-#endif
-
 /* Set mode=BAD and prepare error message */
 #define SET_BAD(errmsg) \
     do { \
         state->mode = BAD; \
         strm->msg = (char *)errmsg; \
     } while (0)
+
+#define INFLATE_FAST_MIN_HAVE 15
+#define INFLATE_FAST_MIN_LEFT 260
+
+/* Load 64 bits from IN and place the bytes at offset BITS in the result. */
+static inline uint64_t load_64_bits(const unsigned char *in, unsigned bits) {
+    uint64_t chunk;
+    memcpy(&chunk, in, sizeof(chunk));
+
+#if BYTE_ORDER == LITTLE_ENDIAN
+    return chunk << bits;
+#else
+    return ZSWAP64(chunk) << bits;
+#endif
+}
 
 /* Behave like chunkcopy, but avoid writing beyond of legal output. */
 static inline uint8_t* chunkcopy_safe(uint8_t *out, uint8_t *from, uint64_t len, uint8_t *safe) {
@@ -140,6 +158,11 @@ static inline uint8_t* chunkcopy_safe(uint8_t *out, uint8_t *from, uint64_t len,
     /* For all cases without overlap, memcpy is ideal */
     if (!(olap_src || olap_dst)) {
         memcpy(out, from, (size_t)len);
+        return out + len;
+    }
+
+    /* Complete overlap: Source == destination */
+    if (out == from) {
         return out + len;
     }
 
@@ -203,3 +226,5 @@ static inline uint8_t* chunkcopy_safe(uint8_t *out, uint8_t *from, uint64_t len,
 
     return out;
 }
+
+#endif

@@ -1,4 +1,5 @@
-#include "../../zbuild.h"
+#include "zbuild.h"
+#include "arm_features.h"
 
 #if defined(__linux__) && defined(HAVE_SYS_AUXV_H)
 #  include <sys/auxv.h>
@@ -44,7 +45,7 @@ static int arm_has_crc32() {
 }
 
 /* AArch64 has neon. */
-#if !defined(__aarch64__) && !defined(_M_ARM64)
+#if !defined(__aarch64__) && !defined(_M_ARM64) && !defined(_M_ARM64EC)
 static inline int arm_has_neon() {
 #if defined(__linux__) && defined(ARM_AUXV_HAS_NEON)
 #  ifdef HWCAP_ARM_NEON
@@ -71,14 +72,29 @@ static inline int arm_has_neon() {
 }
 #endif
 
-Z_INTERNAL int arm_cpu_has_neon;
-Z_INTERNAL int arm_cpu_has_crc32;
-
-void Z_INTERNAL arm_check_features(void) {
-#if defined(__aarch64__) || defined(_M_ARM64)
-    arm_cpu_has_neon = 1; /* always available */
+/* AArch64 does not have ARMv6 SIMD. */
+#if !defined(__aarch64__) && !defined(_M_ARM64) && !defined(_M_ARM64EC)
+static inline int arm_has_simd() {
+#if defined(__linux__) && defined(HAVE_SYS_AUXV_H)
+    const char *platform = (const char *)getauxval(AT_PLATFORM);
+    return strncmp(platform, "v6l", 3) == 0
+        || strncmp(platform, "v7l", 3) == 0
+        || strncmp(platform, "v8l", 3) == 0;
+#elif defined(ARM_NOCHECK_SIMD)
+    return 1;
 #else
-    arm_cpu_has_neon = arm_has_neon();
+    return 0;
 #endif
-    arm_cpu_has_crc32 = arm_has_crc32();
+}
+#endif
+
+void Z_INTERNAL arm_check_features(struct arm_cpu_features *features) {
+#if defined(__aarch64__) || defined(_M_ARM64) || defined(_M_ARM64EC)
+    features->has_simd = 0; /* never available */
+    features->has_neon = 1; /* always available */
+#else
+    features->has_simd = arm_has_simd();
+    features->has_neon = arm_has_neon();
+#endif
+    features->has_crc32 = arm_has_crc32();
 }
