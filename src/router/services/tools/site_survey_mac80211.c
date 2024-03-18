@@ -1620,9 +1620,9 @@ static int local_open_site_survey(void);
 
 void mac80211_site_survey(char *interface)
 {
-	noise = malloc(6200 * sizeof(int));
-	active = malloc(6200 * sizeof(unsigned long long));
-	busy = malloc(6200 * sizeof(unsigned long long));
+	noise = malloc(7000 * sizeof(int));
+	active = malloc(7000 * sizeof(unsigned long long));
+	busy = malloc(7000 * sizeof(unsigned long long));
 	struct unl unl;
 	unl_genl_init(&unl, "nl80211");
 	site_survey_lists = malloc(sizeof(struct site_survey_list) * SITE_SURVEY_NUM);
