@@ -581,7 +581,7 @@ EJ_VISIBLE void ej_get_low_2ghz(webs_t wp, int argc, char_t **argv)
 
 EJ_VISIBLE void ej_get_high_2ghz(webs_t wp, int argc, char_t **argv)
 {
-	if (is_ipq4019("wlan0") || is_ipq4019("wlan1")) {
+	if (has_ipq4019("wlan0") || has_ipq4019("wlan1")) {
 		websWrite(wp, "2492"); // tested on habanero
 		return;
 	}
@@ -591,7 +591,7 @@ EJ_VISIBLE void ej_get_high_2ghz(webs_t wp, int argc, char_t **argv)
 
 EJ_VISIBLE void ej_get_high_5ghz(webs_t wp, int argc, char_t **argv)
 {
-	if (is_ipq4019("wlan0") || is_ipq4019("wlan1")) {
+	if (has_ipq4019("wlan0") || has_ipq4019("wlan1")) {
 		websWrite(wp, "6115"); // tested on habanero
 		return;
 	}
