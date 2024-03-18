@@ -1229,6 +1229,7 @@ extern int has_half(const char *prefix);
 extern int has_quarter(const char *prefix);
 extern int has_qam256(const char *prefix);
 extern int has_wave2(const char *prefix);
+extern int has_ipq4019(const char *prefix);
 extern int has_ax(const char *prefix);
 extern int has_dualband(const char *prefix);
 extern int has_subquarter(const char *prefix);
@@ -1262,6 +1263,11 @@ static inline int has_qam256(char *prefix)
 }
 
 static inline int has_wave2(char *prefix)
+{
+	return 0;
+}
+
+static inline int has_ipq4019(char *prefix)
 {
 	return 0;
 }
