@@ -2060,14 +2060,14 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 			addbssid(fp, prefix);
 			fprintf(fp, "\tscan_ssid=1\n");
 		}
-		char scanlist[32];
+/*		char scanlist[32];
 		sprintf(scanlist, "%s_scanlist", prefix);
 		char *sl = nvram_default_get(scanlist, "default");
 		if (strcmp(sl, "default")) {
 			char *scanlist = makescanlist(prefix, sl);
 			fprintf(fp, "\tscan_freq=%s\n", scanlist);
 			free(scanlist);
-		}
+		}*/
 
 		if (nvram_nmatch("simple", "%s_bgscan_mode", prefix) || nvram_nmatch("learn", "%s_bgscan_mode", prefix)) {
 			int bgscan_short_int = nvram_ngeti("%s_bgscan_short_int", prefix);

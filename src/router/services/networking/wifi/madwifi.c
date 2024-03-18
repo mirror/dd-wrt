@@ -2946,6 +2946,9 @@ void configure_wifi(void) // madwifi implementation for atheros based
 			break;
 		}
 	}
+		for (i = 0; i < c; i++) {
+			adjust_regulatory(i);
+		}
 	if (hasath9k) {
 		char regdomain[16];
 		char *country;
@@ -2964,6 +2967,9 @@ void configure_wifi(void) // madwifi implementation for atheros based
 #endif
 	}
 #endif
+		for (i = 0; i < c; i++) {
+			adjust_regulatory(i);
+		}
 	for (i = 0; i < c; i++) {
 		sysprintf("rm -f /tmp/wlan%d_configured", (c - 1) - i);
 		sprintf(fwtype_use, "wlan%d_fwtype_use", (c - 1) - i);
@@ -3031,6 +3037,9 @@ void configure_wifi(void) // madwifi implementation for atheros based
 #endif
 		}
 #endif
+		for (i = 0; i < c; i++) {
+			adjust_regulatory(i);
+		}
 #ifdef HAVE_ATH9K
 		for (i = 0; i < c; i++) {
 			/* reset tx power */
@@ -3045,9 +3054,6 @@ void configure_wifi(void) // madwifi implementation for atheros based
 #endif
 	}
 #endif
-		for (i = 0; i < c; i++) {
-			adjust_regulatory(i);
-		}
 	invalidate_channelcache();
 #if 0
 	int dead = 10 * 60;	// after 30 seconds, we can assume that something is hanging
