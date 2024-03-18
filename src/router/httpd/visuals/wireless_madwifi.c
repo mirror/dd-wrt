@@ -587,8 +587,12 @@ EJ_VISIBLE void ej_get_high_2ghz(webs_t wp, int argc, char_t **argv)
 
 EJ_VISIBLE void ej_get_high_5ghz(webs_t wp, int argc, char_t **argv)
 {
+	if (is_ipq4019("wlan0") || is_ipq4019("wlan1")) {
+		websWrite(wp, "6115"); // tested on habanero
+		return;
+	}
 	if ((is_ath10k("wlan0") && has_wave2("wlan0")) || (is_ath10k("wlan1") && has_wave2("wlan1"))) {
-		websWrite(wp, "6995"); // need to find out the real maximum which is way higher than 7 ghz
+		websWrite(wp, "6995"); // need to find out the real maximum which is way higher than 7 ghz 
 		return;
 	}
 	if ((is_ath10k("wlan0")) || (is_ath10k("wlan1"))) {
