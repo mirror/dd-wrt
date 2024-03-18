@@ -56,9 +56,9 @@ zlib:
 	cp -f $(TOP)/zlib/zconf.h $(TOP)/zlib/include
 
 zlib-install:
-	install -D zlib/libz.so.1.2.12.zlib-ng $(INSTALLDIR)/zlib/usr/lib/libz.so.1.2.12
-	cd $(INSTALLDIR)/zlib/usr/lib ; ln -s -f libz.so.1.2.12 libz.so.1  ; true
-	cd $(INSTALLDIR)/zlib/usr/lib ; ln -s -f libz.so.1.2.12 libz.so  ; true
+	install -D zlib/libz.so.1.3.1.zlib-ng $(INSTALLDIR)/zlib/usr/lib/libz.so.1.3.1
+	cd $(INSTALLDIR)/zlib/usr/lib ; ln -s -f libz.so.1.3.1 libz.so.1  ; true
+	cd $(INSTALLDIR)/zlib/usr/lib ; ln -s -f libz.so.1.3.1 libz.so  ; true
 
 zlib-clean:
 	if [ -e "$(ZLIB_PKG_BUILD_DIR)/Makefile" ]; then make -C zlib clean ; fi
