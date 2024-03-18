@@ -581,6 +581,10 @@ EJ_VISIBLE void ej_get_low_2ghz(webs_t wp, int argc, char_t **argv)
 
 EJ_VISIBLE void ej_get_high_2ghz(webs_t wp, int argc, char_t **argv)
 {
+	if (is_ipq4019("wlan0") || is_ipq4019("wlan1")) {
+		websWrite(wp, "2492"); // tested on habanero
+		return;
+	}
 	websWrite(wp,
 		  "2500"); //some may be able to go up to 2732, but this seems only to affect older ath5k chipsets from our tests
 }
