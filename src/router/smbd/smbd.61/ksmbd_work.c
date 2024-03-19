@@ -51,7 +51,7 @@ void ksmbd_free_work_struct(struct ksmbd_work *work)
 #endif
 
 	list_for_each_entry_safe(ar, tmp, &work->aux_read_list, entry) {
-		ksmbd_release_buffer(ar->buf);
+		kvfree(ar->buf);
 		list_del(&ar->entry);
 		kfree(ar);
 	}
