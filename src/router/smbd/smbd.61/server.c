@@ -565,7 +565,7 @@ static int ksmbd_server_shutdown(void)
 	ksmbd_free_global_file_table();
 	destroy_lease_table(NULL);
 	ksmbd_work_pool_destroy();
-	ksmbd_destroy_buffer_pools();
+	ksmbd_exit_file_cache();
 	server_conf_free();
 	return 0;
 }
@@ -586,13 +586,13 @@ static int __init ksmbd_server_init(void)
 	if (ret)
 		goto err_unregister;
 
-	ret = ksmbd_init_buffer_pools();
+	ret = ksmbd_work_pool_init();
 	if (ret)
 		goto err_unregister;
 
-	ret = ksmbd_work_pool_init();
+	ret = ksmbd_init_file_cache();
 	if (ret)
-		goto err_work_pool_init;
+		goto err_destroy_work_pools;
 
 	ret = ksmbd_ipc_init();
 	if (ret)
@@ -624,10 +624,9 @@ err_destroy_file_table:
 err_ipc_release:
 	ksmbd_ipc_release();
 err_exit_file_cache:
+	ksmbd_exit_file_cache();
 err_destroy_work_pools:
 	ksmbd_work_pool_destroy();
-err_work_pool_init:
-	ksmbd_destroy_buffer_pools();
 err_unregister:
 	class_unregister(&ksmbd_control_class);
 
