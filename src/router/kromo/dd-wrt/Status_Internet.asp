@@ -142,7 +142,7 @@ addEvent(window, "unload", function() {
 												</script>
 										</div>
 										<div class="setting" id="wan_signal">
-											<div class="label"><% tran("status_inet.sig_status"); %>Signal Status</div>
+											<div class="label"><% tran("status_inet.sig_status"); %></div>
 											<span id="wan_3g_signal"><% nvram_status_get("wan_3g_signal"); %></span>
 										</div>
 										<div class="setting" id="wan_acname">
