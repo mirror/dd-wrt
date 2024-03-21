@@ -148,7 +148,7 @@ void start_finishupgrade(void)
 	free(smem);
 }
 
-void calcchecksum(void *caldata) // works on little endian only so far. so consider to fix it when using on big endian systems
+void calcchecksum(void *caldata)
 {
 	int i;
 	unsigned short *cdata = (unsigned short *)caldata;
@@ -157,11 +157,11 @@ void calcchecksum(void *caldata) // works on little endian only so far. so consi
 	int size = cdata[0];
 	unsigned short crc = 0;
 	for (i = 0; i < size; i += 2) {
-		crc ^= *ptr_eeprom;
+		crc ^= le16toh(*ptr_eeprom);
 		ptr_eeprom++;
 	}
 	crc = ~crc;
-	cdata[1] = crc;
+	cdata[1] = htole16(crc);
 }
 
 static int getbootdevice(void)
