@@ -1145,7 +1145,7 @@ void start_restore_defaults(void)
 	struct nvram_param *generic = NULL;
 
 	int wrt_brand = getRouterBrand();
-	if (wrt_brand == ROUTER_HABANERO)
+	if (wrt_brand == ROUTER_HABANERO || wrt_brand == ROUTER_ASUS_AC56U)
 		generic = habanero;
 	else
 		generic = ipq806x;

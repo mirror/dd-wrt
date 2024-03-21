@@ -540,6 +540,7 @@ void start_sysinit(void)
 
 	switch (board) {
 	case ROUTER_HABANERO:
+	case ROUTER_ASUS_AC56U:
 		eval("swconfig", "dev", "switch0", "set", "reset", "1");
 		eval("swconfig", "dev", "switch0", "set", "enable_vlan", "1");
 #ifdef HAVE_ANTAIRA
@@ -598,6 +599,7 @@ void start_sysinit(void)
 
 	switch (board) {
 	case ROUTER_HABANERO:
+	case ROUTER_ASUS_AC56U:
 #ifdef HAVE_ANTAIRA
 		eval("insmod", "i2c-gpio-custom", "bus2=2,11,10");
 		eval("insmod", "rtc-pcf8523");
@@ -701,6 +703,7 @@ void start_postnetwork(void)
 	int board = getRouterBrand();
 	switch (board) {
 	case ROUTER_HABANERO:
+	case ROUTER_ASUS_AC56U:
 		break;
 	default:
 		set_gpio(373 + 17, 0); // reset wifi card gpio pin

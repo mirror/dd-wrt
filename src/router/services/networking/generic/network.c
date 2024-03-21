@@ -826,6 +826,7 @@ void start_lan(void)
 		}
 		strncpy(ifr.ifr_name, "eth1", IFNAMSIZ);
 		break;
+	case ROUTER_ASUS_AC56U:
 	case ROUTER_HABANERO:
 		if (getSTA() || getWET() || CANBRIDGE()) {
 			nvram_setz(lan_ifnames, "eth0 eth1 wlan0 wlan1");
