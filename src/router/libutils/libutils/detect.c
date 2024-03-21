@@ -1406,6 +1406,11 @@ generic:;
 		return ROUTER_HABANERO;
 	}
 
+	if (!strncmp(modelstr, "ASUS RT-AC58U", 13)) {
+		setRouter("Asus RT-AC58U");
+		return ROUTER_ASUS_AC58U;
+	}
+
 	if (!strcmp(modelstr, "XR500")) {
 		setRouter("Netgear XR500");
 		return ROUTER_NETGEAR_R7800;
