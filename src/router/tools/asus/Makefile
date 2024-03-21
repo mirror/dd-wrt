@@ -27,7 +27,7 @@ OBJS	= mkimage.o
 #
 # Use native tools and options
 #
-CPPFLAGS   = -idirafter ./include -DTEXT_BASE=$(TEXT_BASE) -DUSE_HOSTCC
+CPPFLAGS   = -idirafter ./include -DTEXT_BASE=$(TEXT_BASE) -DUSE_HOSTCC -DDO_DEPS_ONLY -DBITS_PER_LONG=64
 CFLAGS     = $(HOST_CFLAGS) $(CPPFLAGS) -Os
 AFLAGS	   = -D__ASSEMBLY__ $(CPPFLAGS)
 MAKEDEPEND = makedepend
@@ -36,7 +36,7 @@ STRIP	   = strip
 
 all:	.depend $(BINS) 
 
-mkimage:mkimage.o crc32.o
+mkimage:mkimage.o kwbimage.o imximage.o fit_image.o omapimage.o default_image.o ublimage.o pblimage.o image.o image-fdt.o crc32.o
 	$(CC) $(CFLAGS) $(HOST_LDFLAGS) -o $@ $^
 	$(STRIP) $@
 
