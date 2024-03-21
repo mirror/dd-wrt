@@ -630,6 +630,7 @@ dtb-$(CONFIG_ARCH_QCOM) += \
 	qcom-ipq4019-habanero-dvk-c2.dtb \
 	qcom-ipq4019-ars7235-dvk-c1.dtb \
 	qcom-ipq4019-ars7235-dvk-c2.dtb \
+	qcom-ipq4018-rt-ac58u.dtb \
 	qcom-apq8060-dragonboard.dtb \
 	qcom-apq8064-arrow-sd-600eval.dtb \
 	qcom-apq8064-cm-qs600.dtb \
