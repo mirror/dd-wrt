@@ -39,7 +39,7 @@ usage() {
 Generate_FDT () {
 	FDT="$FDT
 		fdt@$iter {
-			description = \"${ARCH_UPPER} OpenWrt ${DEVICE} device tree blob\";
+			description = \"${ARCH_UPPER} DD-WRT ${DEVICE} device tree blob\";
 			data = /incbin/(\"${1}\");
 			type = \"flat_dt\";
 			arch = \"${ARCH}\";
@@ -57,7 +57,7 @@ Generate_FDT () {
 Generate_Config () {
 	CONFIG="$CONFIG
 		config@$iter {
-			description = \"OpenWrt\";
+			description = \"DD-WRT\";
 			kernel = \"kernel@1\";
 			fdt = \"fdt@$iter\";
 			ramdisk = \"rootfs@1\";
@@ -103,7 +103,7 @@ if [ -n "${DTB}" ]; then
 else
 	CONFIG="
 		config@1 {
-			description = \"OpenWrt\";
+			description = \"DD-WRT\";
 			kernel = \"kernel@1\";
 			fdt = \"fdt@1\";
 		};
@@ -114,12 +114,12 @@ fi
 DATA="/dts-v1/;
 
 / {
-	description = \"${ARCH_UPPER} OpenWrt FIT (Flattened Image Tree)\";
+	description = \"${ARCH_UPPER} DD-WRT FIT (Flattened Image Tree)\";
 	#address-cells = <1>;
 
 	images {
 		kernel@1 {
-			description = \"${ARCH_UPPER} OpenWrt Linux-${VERSION}\";
+			description = \"${ARCH_UPPER} DD-WRT Linux-${VERSION}\";
 			data = /incbin/(\"${KERNEL}\");
 			type = \"kernel\";
 			arch = \"${ARCH}\";
