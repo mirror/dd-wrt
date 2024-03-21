@@ -269,7 +269,6 @@
 			partition5@170000 {
 				label = "ART";
 				reg = <0x00170000 0x00010000>;
-				read-only;
 			};
 			/* 0x00180000 - 0x00200000 unused */
 		};
