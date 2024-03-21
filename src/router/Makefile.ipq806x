@@ -139,10 +139,10 @@ endif
 	$(MAKE) -C $(LINUXDIR) oldconfig
 	
 	if ! grep -q "CONFIG_EMBEDDED_RAMDISK=y" $(LINUXDIR)/.config ; then \
-	    $(MAKE) -j 4 -C $(LINUXDIR) zImage dtbs KALLSYMS_EXTRA_PASS=1 CFLAGS= CROSS_COMPILE="ccache $(ARCH)-openwrt-linux-" ; \
+	    $(MAKE) -j 4 -C $(LINUXDIR) zImage dtbs KALLSYMS_EXTRA_PASS=1 CFLAGS= CROSS_COMPILE="ccache $(ARCH)-openwrt-linux-"; \
 	fi
 	if grep -q "CONFIG_MODULES=y" $(LINUXDIR)/.config ; then \
-	    $(MAKE) -j 4 -C $(LINUXDIR) modules CROSS_COMPILE="ccache $(ARCH)-openwrt-linux-"  CFLAGS= KALLSYMS_EXTRA_PASS=1 ; \
+	    $(MAKE) -j 4 -C $(LINUXDIR) modules CROSS_COMPILE="ccache $(ARCH)-openwrt-linux-"  CFLAGS= KALLSYMS_EXTRA_PASS=1; \
 	fi
 	
 	rm -rf $(TARGETDIR)/lib/modules
@@ -312,6 +312,27 @@ else
 endif
 	gzip -f -9n -c $(LINUXDIR)/arch/arm/boot/Image > $(ARCH)-uclibc/Image.gz
 	-./tools/r7500/mkimage -f $(ARCH)-uclibc/habanero.itb.its $(ARCH)-uclibc/habanero.itb.new
+#	cp -f $(PLATFORMDIR)/zImage.lzma $(PLATFORMDIR)/zImage.img ; \
+	# padded kernel image size
+	@SIZE=`wc -c $(ARCH)-uclibc/Image.lzma | awk '{print $$1}'`; \
+		PAD=`expr 64 - $${SIZE} % 64` ; \
+		dd if=/dev/zero count=1 bs=$${PAD} 2> /dev/null | tr \\000 \\377 >> $(ARCH)-uclibc/Image.lzma
+	./tools/asus/mkits.sh -D qcom-ipq40xx-ap.dkxx -o $(TOP)/$(ARCH)-uclibc/fit-qcom-ipq40xx-ap.dkxx.its -k $(TOP)/$(ARCH)-uclibc/Image.lzma -r $(TOP)/$(ARCH)-uclibc/root.squashfs.new -d $(LINUXDIR)/arch/arm/boot/dts/qcom-ipq4018-rt-ac58u.dtb -C lzma -a 0x80208000 -e 0x80208000 -A arm -v 4.9
+	./tools/asus/mkimage -f $(TOP)/$(ARCH)-uclibc/fit-qcom-ipq40xx-ap.dkxx.its $(TOP)/$(ARCH)-uclibc/asus-ac58u.img
+	#generate ASUS Image
+	@ISIZE=`wc -c $(ARCH)-uclibc/asus-ac58u.img | awk '{print $$1}'` ; \
+		KSIZE=`wc -c $(ARCH)-uclibc/Image.lzma | awk '{print $$1}'` ; \
+		RSIZE=`wc -c $(ARCH)-uclibc/root.squashfs.new | awk '{print $$1}'` ; \
+		PAD2=`expr $${ISIZE} - $${KSIZE} - $${RSIZE}` ; \
+		RFSOFFSET=`expr 64 + $${KSIZE} + $${PAD2}` ; \
+		echo "PAD2: $${PAD2}" ; \
+	tools/asus/mkimage -A arm -O linux -T kernel -C lzma -a 0x80208000 -e 0x80208000 -r $${RFSOFFSET} \
+			-n RT-AC56U -V "4.9" "0.4" "382" "52243-g06ac406" "0" "0" "0" "0" "0" "0" \
+			-d $(TOP)/$(ARCH)-uclibc/asus-ac58u.img $(TOP)/$(ARCH)-uclibc/asus-ac58u.trx
+
+
+
+#	-./tools/ipq40xx/mkits.sh -D asus_ac56u -o $(ARCH)-uclibc/ac58u.itb.its -k $(TOP)/$(ARCH)-uclibc/Image.gz -d $(LINUXDIR)/arch/arm/boot/dts/qcom-ipq4018-asus-ac58u.dtb -C gzip -a 0x80208000 -e 0x80208000 -c "config@1" -A arm -v 4.9
 
 install package: clean_target $(filter-out lib.$(ARCH)-install,$(obj-install)) $(LINUXDIR)/.config
         # Install binaries into target directory
@@ -523,9 +544,11 @@ ifeq ($(CONFIG_ANTAIRA),y)
 else
 	-./tools/ipq40xx/mkits.sh -D 8dev_habanero-dvk-c2 -o $(ARCH)-uclibc/habanero.itb.its -k $(TOP)/$(ARCH)-uclibc/Image.lzma -d $(LINUXDIR)/arch/arm/boot/dts/qcom-ipq4019-habanero-dvk-c2.dtb -C lzma -a 0x80208000 -e 0x80208000 -c "config@1" -A arm -v 4.9
 endif
+	-./tools/ipq40xx/mkits.sh -D asus_ac56u -o $(ARCH)-uclibc/ac58u.itb.its -k $(TOP)/$(ARCH)-uclibc/Image.gz -d $(LINUXDIR)/arch/arm/boot/dts/qcom-ipq4018-asus-ac58u.dtb -C gzip -a 0x80208000 -e 0x80208000 -c "config@1" -A arm -v 4.9
 	cat $(LINUXDIR)/arch/arm/boot/Image | lzma e -si -so -eos -lc1 -lp2 -pb2 -d25 > $(ARCH)-uclibc/Image.lzma
 	gzip -f -9n -c $(LINUXDIR)/arch/arm/boot/Image > $(ARCH)-uclibc/Image.gz
 	-./tools/r7500/mkimage -f $(ARCH)-uclibc/habanero.itb.its $(ARCH)-uclibc/habanero.itb.new
+	-./tools/r7500/mkimage -f $(ARCH)-uclibc/ac58u.itb.its $(ARCH)-uclibc/ac58u.itb.new
 
 	-( dd if=$(ARCH)-uclibc/habanero.itb.new bs=4096k conv=sync count=1; dd if=$(ARCH)-uclibc/root.squashfs.new bs=64k; ) > $(ARCH)-uclibc/habanero.image
 
@@ -543,6 +566,22 @@ endif
 
 	tools/cvimg/cvimg csys $(ARCH)-uclibc/ddwrt-ipq806x-G10-squashfs-nand-factory.ubi $(ARCH)-uclibc/ddwrt-g10.img 0x1200000 0x70000 RN67
 
+	# padded kernel image size
+	@SIZE=`wc -c $(ARCH)-uclibc/Image.lzma | awk '{print $$1}'`; \
+		PAD=`expr 64 - $${SIZE} % 64` ; \
+		dd if=/dev/zero count=1 bs=$${PAD} 2> /dev/null | tr \\000 \\377 >> $(ARCH)-uclibc/Image.lzma
+	./tools/asus/mkits.sh -D qcom-ipq40xx-ap.dkxx -o $(TOP)/$(ARCH)-uclibc/fit-qcom-ipq40xx-ap.dkxx.its -k $(TOP)/$(ARCH)-uclibc/Image.lzma -r $(TOP)/$(ARCH)-uclibc/root.squashfs.new -d $(LINUXDIR)/arch/arm/boot/dts/qcom-ipq4018-rt-ac58u.dtb -C lzma -a 0x80208000 -e 0x80208000 -A arm -v 4.9
+	./tools/asus/mkimage -f $(TOP)/$(ARCH)-uclibc/fit-qcom-ipq40xx-ap.dkxx.its $(TOP)/$(ARCH)-uclibc/asus-ac58u.img
+	#generate ASUS Image
+	@ISIZE=`wc -c $(ARCH)-uclibc/asus-ac58u.img | awk '{print $$1}'` ; \
+		KSIZE=`wc -c $(ARCH)-uclibc/Image.lzma | awk '{print $$1}'` ; \
+		RSIZE=`wc -c $(ARCH)-uclibc/root.squashfs.new | awk '{print $$1}'` ; \
+		PAD2=`expr $${ISIZE} - $${KSIZE} - $${RSIZE}` ; \
+		RFSOFFSET=`expr 64 + $${KSIZE} + $${PAD2}` ; \
+		echo "PAD2: $${PAD2}" ; \
+	tools/asus/mkimage -A arm -O linux -T kernel -C lzma -a 0x80208000 -e 0x80208000 -r $${RFSOFFSET} \
+			-n RT-AC56U -V "4.9" "0.4" "382" "52243-g06ac406" "0" "0" "0" "0" "0" "0" \
+			-d $(TOP)/$(ARCH)-uclibc/asus-ac58u.img $(TOP)/$(ARCH)-uclibc/asus-ac58u.trx
 
 
 
