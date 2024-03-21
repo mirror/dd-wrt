@@ -189,6 +189,9 @@ static int getbuttonstate()
 	case ROUTER_ASROCK_G10:
 		ret = get_gpio(16);
 		break;
+	case ROUTER_ASUS_AC58U:
+		ret = get_gpio(4);
+		break;
 	case ROUTER_HABANERO:
 #ifdef HAVE_ANTAIRA
 		return 0;
