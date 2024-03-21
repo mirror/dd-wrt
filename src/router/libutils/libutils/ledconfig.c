@@ -1649,7 +1649,7 @@ static void getledconfig(struct ledconfig *cfg)
 		cfg->usb_gpio = 0x4; //usb1
 		cfg->usb_gpio1 = 0x5; //usb2
 		break;
-	case ROUTER_ASUS_AC56U:
+	case ROUTER_ASUS_AC58U:
 		break;
 	case ROUTER_HABANERO:
 #ifdef HAVE_ANTAIRA
