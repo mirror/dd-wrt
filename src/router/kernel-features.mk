@@ -467,6 +467,9 @@ define kernelfeatures
 	if [ "$(CONFIG_BONDING)" != "y" ]; then \
 		sed -i 's/\CONFIG_BONDING=m/# CONFIG_BONDING is not set/g' $(LINUXDIR)/.config; \
 	fi	
+	if [ "$(CONFIG_BONDING)" = "y" ]; then \
+		sed -i 's/\# CONFIG_BONDING is not set/CONFIG_BONDING=m/g' $(LINUXDIR)/.config; \
+	fi	
 	if [ "$(CONFIG_SWAP)" != "y" ]; then \
 		sed -i 's/\CONFIG_SWAP=y/# CONFIG_SWAP is not set/g' $(LINUXDIR)/.config; \
 	else \
