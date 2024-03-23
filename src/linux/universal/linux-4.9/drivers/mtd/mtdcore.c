@@ -703,7 +703,6 @@ int mtd_device_parse_register(struct mtd_info *mtd, const char * const *types,
 {
 	struct mtd_partitions parsed;
 	int ret;
-
 	mtd_set_dev_defaults(mtd);
 
 	memset(&parsed, 0, sizeof(parsed));

@@ -1028,7 +1028,6 @@ int add_mtd_partitions(struct mtd_info *master,
 		mutex_lock(&mtd_partitions_mutex);
 		list_add(&slave->list, &mtd_partitions);
 		mutex_unlock(&mtd_partitions_mutex);
-
 		ret = add_mtd_device(&slave->mtd);
 		if (ret) {
 			mutex_lock(&mtd_partitions_mutex);
