@@ -127,6 +127,7 @@ ifeq ($(CONFIG_R7800),y)
 endif
 ifeq ($(CONFIG_HABANERO),y)
 	sed -i 's/\# CONFIG_MTD_ROOTFS_SPLIT is not set/CONFIG_MTD_ROOTFS_SPLIT=y/g' $(LINUXDIR)/.config
+	sed -i 's/\# CONFIG_MTD_UBI_GLUEBI is not set/CONFIG_MTD_UBI_GLUEBI=y/g' $(LINUXDIR)/.config
 endif
 ifeq ($(CONFIG_EA8500),y)
 	sed -i 's/\# CONFIG_ARM_ATAG_DTB_COMPAT is not set/CONFIG_ARM_ATAG_DTB_COMPAT=y/g' $(LINUXDIR)/.config
@@ -324,11 +325,11 @@ endif
 	( dd if=$(ARCH)-uclibc/asus-ac58u.img of=$(ARCH)-uclibc/asus-ac58u.img.new bs=64k conv=sync; )
 	cp -f $(ARCH)-uclibc/asus-ac58u.img.new $(ARCH)-uclibc/asus-ac58u.img
 
-	ISIZE=`wc -c $(ARCH)-uclibc/asus-ac58u.img | awk '{print $$1}'` ; \
-		PAD2=`expr $${ISIZE} - 64` ; \
-		( dd if=$(ARCH)-uclibc/asus-ac58u.img of=$(ARCH)-uclibc/asus-ac58u.img.new bs=$${PAD2} count=1 conv=sync; )
-		
-	cp -f $(ARCH)-uclibc/asus-ac58u.img.new $(ARCH)-uclibc/asus-ac58u.img
+#	ISIZE=`wc -c $(ARCH)-uclibc/asus-ac58u.img | awk '{print $$1}'` ; \
+#		PAD2=`expr $${ISIZE} - 64` ; \
+#		( dd if=$(ARCH)-uclibc/asus-ac58u.img of=$(ARCH)-uclibc/asus-ac58u.img.new bs=$${PAD2} count=1 conv=sync; )		
+#	cp -f $(ARCH)-uclibc/asus-ac58u.img.new $(ARCH)-uclibc/asus-ac58u.img
+
 	cat $(TOP)/$(ARCH)-uclibc/root.squashfs.new >> $(ARCH)-uclibc/asus-ac58u.img
 	#generate ASUS Image
 	@ISIZE=`wc -c $(ARCH)-uclibc/asus-ac58u.img | awk '{print $$1}'` ; \
@@ -338,7 +339,7 @@ endif
 		RFSOFFSET=`expr 64 + $${KSIZE} + $${PAD2}` ; \
 		echo "PAD2: $${PAD2} RFSOFFSET: $${RFSOFFSET}" ; \
 	tools/asus/mkimage -A arm -O linux -T kernel -C lzma -a 0x80208000 -e 0x80208000 -r $${RFSOFFSET} \
-			-n RT-AC56U -V "4.9" "0.4" "382" "52243-g06ac406" "0" "0" "0" "0" "0" "0" \
+			-n RT-AC58U -V "4.9" "0.4" "382" "52243-g06ac406" "0" "0" "0" "0" "0" "0" \
 			-d $(TOP)/$(ARCH)-uclibc/asus-ac58u.img $(TOP)/$(ARCH)-uclibc/asus-ac58u.trx
 
 
@@ -586,11 +587,11 @@ endif
 	( dd if=$(ARCH)-uclibc/asus-ac58u.img of=$(ARCH)-uclibc/asus-ac58u.img.new bs=64k conv=sync; )
 	cp -f $(ARCH)-uclibc/asus-ac58u.img.new $(ARCH)-uclibc/asus-ac58u.img
 
-	ISIZE=`wc -c $(ARCH)-uclibc/asus-ac58u.img | awk '{print $$1}'` ; \
-		PAD2=`expr $${ISIZE} - 64` ; \
-		( dd if=$(ARCH)-uclibc/asus-ac58u.img of=$(ARCH)-uclibc/asus-ac58u.img.new bs=$${PAD2} count=1 conv=sync; )
-		
-	cp -f $(ARCH)-uclibc/asus-ac58u.img.new $(ARCH)-uclibc/asus-ac58u.img
+#	ISIZE=`wc -c $(ARCH)-uclibc/asus-ac58u.img | awk '{print $$1}'` ; \
+#		PAD2=`expr $${ISIZE} - 64` ; \
+#		( dd if=$(ARCH)-uclibc/asus-ac58u.img of=$(ARCH)-uclibc/asus-ac58u.img.new bs=$${PAD2} count=1 conv=sync; )		
+#	cp -f $(ARCH)-uclibc/asus-ac58u.img.new $(ARCH)-uclibc/asus-ac58u.img
+
 	cat $(TOP)/$(ARCH)-uclibc/root.squashfs.new >> $(ARCH)-uclibc/asus-ac58u.img
 	#generate ASUS Image
 	@ISIZE=`wc -c $(ARCH)-uclibc/asus-ac58u.img | awk '{print $$1}'` ; \
@@ -600,7 +601,7 @@ endif
 		RFSOFFSET=`expr 64 + $${KSIZE} + $${PAD2}` ; \
 		echo "PAD2: $${PAD2} RFSOFFSET: $${RFSOFFSET}" ; \
 	tools/asus/mkimage -A arm -O linux -T kernel -C lzma -a 0x80208000 -e 0x80208000 -r $${RFSOFFSET} \
-			-n RT-AC56U -V "4.9" "0.4" "382" "52243-g06ac406" "0" "0" "0" "0" "0" "0" \
+			-n RT-AC58U -V "4.9" "0.4" "382" "52243-g06ac406" "0" "0" "0" "0" "0" "0" \
 			-d $(TOP)/$(ARCH)-uclibc/asus-ac58u.img $(TOP)/$(ARCH)-uclibc/asus-ac58u.trx
 
 
