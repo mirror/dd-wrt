@@ -550,7 +550,7 @@ endif
 	cp $(ARCH)-uclibc/ddwrt-ipq806x-G10-squashfs-nand-factory.ubi $(ARCH)-uclibc/ddwrt-g10-squashfs-nand-factory.ubi
 	
 	cp $(ARCH)-uclibc/ddwrt-ipq806x-EA8500-squashfs-nand-factory.ubi $(ARCH)-uclibc/ddwrt-ea8500-squashfs-nand-factory.ubi
-	
+ifeq ($(CONFIG_HABANERO),y)
 ifeq ($(CONFIG_ANTAIRA),y)
 	-./tools/ipq40xx/mkits.sh -D 8dev_habanero-dvk-c2 -o $(ARCH)-uclibc/habanero.itb.its -k $(TOP)/$(ARCH)-uclibc/Image.lzma -d $(LINUXDIR)/arch/arm/boot/dts/qcom-ipq4019-ars7235-dvk-c2.dtb -C lzma -a 0x80208000 -e 0x80208000 -c "config@1" -A arm -v 4.9
 else
@@ -576,6 +576,7 @@ endif
 
 	tools/cvimg/cvimg csys $(ARCH)-uclibc/ddwrt-ipq806x-G10-squashfs-nand-factory.ubi $(ARCH)-uclibc/ddwrt-g10.img 0x1200000 0x70000 RN67
 
+ifeq ($(CONFIG_HABANERO),y)
 	cat $(LINUXDIR)/arch/arm/boot/Image | lzma e -si -so -eos -lc1 -lp2 -pb2 -d25 > $(ARCH)-uclibc/Image.lzma
 	# padded kernel image size
 	@SIZE=`wc -c $(ARCH)-uclibc/Image.lzma | awk '{print $$1}'`; \
@@ -603,7 +604,7 @@ endif
 	tools/asus/mkimage -A arm -O linux -T kernel -C lzma -a 0x80208000 -e 0x80208000 -r $${RFSOFFSET} \
 			-n RT-AC58U -V "4.9" "0.4" "382" "52243-g06ac406" "0" "0" "0" "0" "0" "0" \
 			-d $(TOP)/$(ARCH)-uclibc/asus-ac58u.img $(TOP)/$(ARCH)-uclibc/asus-ac58u.trx
-
+endif
 
 include rules/all.mk
 
