@@ -550,7 +550,6 @@ endif
 	cp $(ARCH)-uclibc/ddwrt-ipq806x-G10-squashfs-nand-factory.ubi $(ARCH)-uclibc/ddwrt-g10-squashfs-nand-factory.ubi
 	
 	cp $(ARCH)-uclibc/ddwrt-ipq806x-EA8500-squashfs-nand-factory.ubi $(ARCH)-uclibc/ddwrt-ea8500-squashfs-nand-factory.ubi
-ifeq ($(CONFIG_HABANERO),y)
 ifeq ($(CONFIG_ANTAIRA),y)
 	-./tools/ipq40xx/mkits.sh -D 8dev_habanero-dvk-c2 -o $(ARCH)-uclibc/habanero.itb.its -k $(TOP)/$(ARCH)-uclibc/Image.lzma -d $(LINUXDIR)/arch/arm/boot/dts/qcom-ipq4019-ars7235-dvk-c2.dtb -C lzma -a 0x80208000 -e 0x80208000 -c "config@1" -A arm -v 4.9
 else
