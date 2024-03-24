@@ -2814,6 +2814,10 @@ static const struct of_device_id qcom_nandc_of_match[] = {
 	{	.compatible = "qcom,ipq806x-nand",
 		.data = (void *) &ebi2_nandc_data,
 	},
+	{
+		.compatible = "qcom,ipq4019-nand",
+		.data = &ebi2_nandc_bam_data,
+	},
 	{	.compatible = "qcom,ebi2-nandc-bam",
 		.data = (void *) &ebi2_nandc_bam_data,
 	},
