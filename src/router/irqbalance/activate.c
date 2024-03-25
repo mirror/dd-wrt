@@ -62,26 +62,27 @@ static void activate_mapping(struct irq_info *info, void *data __attribute__((un
 	if (!info->assigned_obj)
 		return;
 
-	if (info->flags & IRQ_FLAG_AFFINITY_UNMANAGED)
-		return;
-
 	/* activate only online cpus, otherwise writing to procfs returns EOVERFLOW */
 	cpus_and(applied_mask, cpu_online_map, info->assigned_obj->mask);
 
 	/*
  	 * Don't activate anything for which we have an invalid mask 
  	 */
-	if (check_affinity(info, applied_mask))
+	if (check_affinity(info, applied_mask)) {
+		info->moved = 0; /* nothing to do, mark as done */
 		return;
+	}
 
 	sprintf(buf, "/proc/irq/%i/smp_affinity", info->irq);
 	file = fopen(buf, "w");
+	errsave = errno;
 	if (!file)
 		goto error;
 
 	cpumask_scnprintf(buf, PATH_MAX, applied_mask);
 	ret = fprintf(file, "%s", buf);
 	errsave = errno;
+	fflush(file);
 	if (fclose(file)) {
 		errsave = errno;
 		goto error;
@@ -96,16 +97,17 @@ error:
 		info->irq, strerror(errsave));
 	switch (errsave) {
 	case ENOSPC: /* Specified CPU APIC is full. */
-	case EBUSY: /* Affinity change already in progress. */
 	case EAGAIN: /* Interrupted by signal. */
+	case EBUSY: /* Affinity change already in progress. */
+	case EINVAL: /* IRQ would be bound to no CPU. */
 	case ERANGE: /* CPU in mask is offline. */
 	case ENOMEM: /* Kernel cannot allocate CPU mask. */
 		/* Do not blacklist the IRQ on transient errors. */
 		break;
-	case EINVAL: /* IRQ would be bound to no CPU. */
 	default:
 		/* Any other error is considered permanent. */
-		info->flags |= IRQ_FLAG_AFFINITY_UNMANAGED;
+		info->level = BALANCE_NONE;
+		info->moved = 0; /* migration impossible, mark as done */
 		log(TO_ALL, LOG_WARNING, "IRQ %i affinity is now unmanaged\n",
 			info->irq);
 	}
