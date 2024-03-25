@@ -64,12 +64,7 @@
 #include <sys/prctl.h>
 #include <sys/syscall.h>
 #endif
-#if !defined(AIRBAG_NO_PTHREAD)
-#if defined(__FreeBSD__)
 #include <pthread.h>
-#include <pthread_np.h>
-#endif
-#endif
 
 #if defined(__cplusplus)
 #include <cxxabi.h>
@@ -813,7 +808,8 @@ checkStm:
 		if (!_unwind_GetIP)
 			_unwind_GetIP = (Unwind_GetIP_T)dlsym(handle, "_Unwind_GetIP");
 		if (_unwind_Backtrace && _unwind_GetIP) {
-			struct trace_arg arg = { buffer, -1, size, uc };
+		    	struct trace_arg arg = { .array = buffer, .cfa = 0, .size = size, .cnt = -1 };
+//			struct trace_arg arg = { buffer, -1, size, uc };
 			if (load8((void *)(MCTX_PC(uc)), NULL)) {
 				airbag_printf("%sText at 0x%" FMTBIT "lx is not mapped; trying prior frame pointer.\n", comment,
 					      MCTX_PC(uc));
