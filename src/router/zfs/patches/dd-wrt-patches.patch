@@ -355,22 +355,22 @@ Index: tests/zfs-tests/cmd/readmmap.c
  main(int argc, char **argv)
 Index: include/os/linux/spl/sys/cred.h
 ===================================================================
---- include/os/linux/spl/sys/cred.h	(revision 55237)
-+++ include/os/linux/spl/sys/cred.h	(revision 55236)
-@@ -42,8 +42,6 @@
+--- include/os/linux/spl/sys/cred.h	(revision 55236)
++++ include/os/linux/spl/sys/cred.h	(revision 55237)
+@@ -42,6 +42,8 @@
  #define	GROUP_AT(gi, i)	((gi)->gid[i])
  #endif
  
--extern zidmap_t *zfs_get_init_idmap(void);
--
++extern zidmap_t *zfs_get_init_idmap(void);
++
  #ifdef HAVE_KUIDGID_T
  
  #define	KUID_TO_SUID(x)		(__kuid_val(x))
-@@ -52,6 +50,7 @@
+@@ -50,7 +52,6 @@
  #define	SGID_TO_KGID(x)		(KGIDT_INIT(x))
  #define	KGIDP_TO_SGIDP(x)	(&(x)->val)
  
-+extern zidmap_t *zfs_get_init_idmap(void);
+-extern zidmap_t *zfs_get_init_idmap(void);
  
  #else /* HAVE_KUIDGID_T */
  
