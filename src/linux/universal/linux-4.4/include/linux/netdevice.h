@@ -4096,23 +4096,44 @@ static inline const char *netdev_reg_state(const struct net_device *dev)
 	return " (unknown)";
 }
 
-__printf(3, 4)
+#ifdef CONFIG_NOPRINTK
+__printf(3, 4) __cold
+static inline void netdev_printk(const char *level, const struct net_device *dev,
+		   const char *format, ...) {}
+__printf(2, 3) __cold
+static inline void netdev_emerg(const struct net_device *dev, const char *format, ...) {}
+__printf(2, 3) __cold
+static inline void netdev_alert(const struct net_device *dev, const char *format, ...) {}
+__printf(2, 3) __cold
+static inline void netdev_crit(const struct net_device *dev, const char *format, ...) {}
+__printf(2, 3) __cold
+static inline void netdev_err(const struct net_device *dev, const char *format, ...) {}
+__printf(2, 3) __cold
+static inline void netdev_warn(const struct net_device *dev, const char *format, ...) {}
+__printf(2, 3) __cold
+static inline void netdev_notice(const struct net_device *dev, const char *format, ...) {}
+__printf(2, 3) __cold
+static inline void netdev_info(const struct net_device *dev, const char *format, ...) {}
+
+#else
+__printf(3, 4) __cold
 void netdev_printk(const char *level, const struct net_device *dev,
 		   const char *format, ...);
-__printf(2, 3)
+__printf(2, 3) __cold
 void netdev_emerg(const struct net_device *dev, const char *format, ...);
-__printf(2, 3)
+__printf(2, 3) __cold
 void netdev_alert(const struct net_device *dev, const char *format, ...);
-__printf(2, 3)
+__printf(2, 3) __cold
 void netdev_crit(const struct net_device *dev, const char *format, ...);
-__printf(2, 3)
+__printf(2, 3) __cold
 void netdev_err(const struct net_device *dev, const char *format, ...);
-__printf(2, 3)
+__printf(2, 3) __cold
 void netdev_warn(const struct net_device *dev, const char *format, ...);
-__printf(2, 3)
+__printf(2, 3) __cold
 void netdev_notice(const struct net_device *dev, const char *format, ...);
-__printf(2, 3)
+__printf(2, 3) __cold
 void netdev_info(const struct net_device *dev, const char *format, ...);
+#endif
 
 #define MODULE_ALIAS_NETDEV(device) \
 	MODULE_ALIAS("netdev-" device)
