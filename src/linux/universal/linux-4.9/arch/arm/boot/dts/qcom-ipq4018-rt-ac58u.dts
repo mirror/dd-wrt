@@ -14,13 +14,6 @@
 		reg = <0x80000000 0x8000000>;
 	};
 
-	aliases {
-		led-boot = &power;
-		led-failsafe = &power;
-		led-running = &power;
-		led-upgrade = &power;
-	};
-
 	chosen {
 		bootargs-append = " ubi.mtd=UBI_DEV";
 	};
@@ -136,11 +129,6 @@
 
 	leds {
 		compatible = "gpio-leds";
-
-		power: status {
-			label = "rt-ac58u:blue:status";
-			gpios = <&tlmm 3 GPIO_ACTIVE_HIGH>;
-		};
 
 		wan {
 			label = "rt-ac58u:blue:wan";
