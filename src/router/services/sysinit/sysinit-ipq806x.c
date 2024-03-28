@@ -552,10 +552,13 @@ void start_sysinit(void)
 	detect_wireless_devices(RADIO_ALL);
 
 	switch (board) {
-	case ROUTER_HABANERO:
 	case ROUTER_ASUS_AC58U:
 		eval("swconfig", "dev", "switch0", "set", "reset", "1");
 		eval("swconfig", "dev", "switch0", "set", "enable_vlan", "1");
+		sysprintf("echo phy0tpt > /sys/devices/platform/leds-gpio/leds/rt-ac58u:blue:wlan2G/trigger");
+		sysprintf("echo phy1tpt > /sys/devices/platform/leds-gpio/leds/rt-ac58u:blue:wlan5G/trigger");
+	break;
+	case ROUTER_HABANERO:
 #ifdef HAVE_ANTAIRA
 		eval("insmod", "i2c-gpio-custom", "bus2=2,11,10");
 		eval("insmod", "rtc-pcf8523");
