@@ -154,7 +154,7 @@ void calcchecksum(void *caldata)
 	unsigned short *cdata = (unsigned short *)caldata;
 	unsigned short *ptr_eeprom = (unsigned short *)caldata;
 	cdata[1] = 0; // clear checksum for calculation
-	int size = cdata[0];
+	int size = le16toh(cdata[0]);
 	unsigned short crc = 0;
 	for (i = 0; i < size; i += 2) {
 		crc ^= le16toh(*ptr_eeprom);
@@ -391,9 +391,11 @@ void start_sysinit(void)
 	int mtd = getMTD("art");
 	if (mtd == -1)
 		mtd = getMTD("ART");
+	if (board == ROUTER_ASUS_AC58U)
+		mtd = getMTD("Factory");
+	
 	char *maddr = NULL;
 	sprintf(mtdpath, "/dev/mtdblock/%d", mtd);
-
 	if (board != ROUTER_NETGEAR_R7500)
 		fp = fopen(mtdpath, "rb");
 	if (fp != NULL) {
