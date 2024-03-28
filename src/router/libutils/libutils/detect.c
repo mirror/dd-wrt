@@ -1406,7 +1406,7 @@ generic:;
 		return ROUTER_HABANERO;
 	}
 
-	if (!strncmp(modelstr, "ASUS RT-AC58U", 13)) {
+	if (!strncmp(modelstr, "RT-AC58U", 8)) {
 		setRouter("Asus RT-AC58U");
 		return ROUTER_ASUS_AC58U;
 	}
