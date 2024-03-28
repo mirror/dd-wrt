@@ -1127,6 +1127,9 @@ char *cpustring(void)
 #elif HAVE_ALPINE
 	strcpy(buf, "Annapurna Labs Alpine");
 	return buf;
+#elif HAVE_HABANERO
+	strcpy(buf, "QCA IPQ40XX");
+	return buf;
 #elif HAVE_IPQ806X
 	strcpy(buf, "QCA IPQ806X");
 	return buf;

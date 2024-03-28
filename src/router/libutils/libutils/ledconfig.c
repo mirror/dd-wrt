@@ -1650,6 +1650,8 @@ static void getledconfig(struct ledconfig *cfg)
 		cfg->usb_gpio1 = 0x5; //usb2
 		break;
 	case ROUTER_ASUS_AC58U:
+		cfg->power_gpio = 0x3; // power led
+		cfg->diag_gpio_disabled = 0x3; // power led off
 		break;
 	case ROUTER_HABANERO:
 #ifdef HAVE_ANTAIRA
