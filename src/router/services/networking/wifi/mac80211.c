@@ -525,6 +525,8 @@ void configure_single_ath9k(int count)
 	int board = getRouterBrand();
 	if (board == ROUTER_ASROCK_G10) {
 		getMacAddr(dev, macaddr, sizeof(macaddr));
+	} else if (board == ROUTER_ASUS_AC58U) {
+		getMacAddr(dev, macaddr, sizeof(macaddr));
 	} else {
 		getWirelessMac(macaddr, count);
 		set_hwaddr(dev, macaddr);
