@@ -468,12 +468,14 @@ void start_sysinit(void)
 		calcchecksum(&smem[0x4000]);
 		if (board == ROUTER_ASUS_AC58U) {
 			char ethaddr[32];
-			sscanf(ethaddr, "%02x:%02x:%02x:%02x:%02x:%02x", &smem[6], &smem[7], &smem[8], &smem[9], &smem[10],
-			       &smem[11]);
+			sprintf(ethaddr, "%02x:%02x:%02x:%02x:%02x:%02x", &smem[6]&0xff, &smem[7]&0xff, &smem[8]&0xff, &smem[9]&0xff, &smem[10]&0xff,
+			       &smem[11]&0xff);
 			set_hwaddr("eth1", ethaddr);
-			sscanf(ethaddr, "%02x:%02x:%02x:%02x:%02x:%02x", &smem[0x4000+6], &smem[0x4000+7], &smem[0x4000+8], &smem[0x4000+9], &smem[0x4000+10],
-			       &smem[0x4000+11]);
+			sprintf(ethaddr, "%02x:%02x:%02x:%02x:%02x:%02x", &smem[0x4000+6]&0xff, &smem[0x4000+7]&0xff, &smem[0x4000+8]&0xff, &smem[0x4000+9]&0xff, &smem[0x4000+10]&0xff,
+			       &smem[0x4000+11]&0xff);
 			set_hwaddr("eth0", ethaddr);
+			nvram_set("et0macaddr", ethaddr);
+			nvram_set("et0macaddr_safe", ethaddr);
 		}
 
 		eval("rm", "-f", "/tmp/board1.bin");
