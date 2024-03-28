@@ -791,7 +791,7 @@
 
 #define ROUTER_NETGEAR_R6200 0x10f103
 
-#define ROUTER_ASUS_AC58U 0x1100ff
+#define ROUTER_ASUS_AC58U 0x110104
 
 #define NVROUTER "DD_BOARD"
 #define NVROUTER_ALT "alternate_name"
