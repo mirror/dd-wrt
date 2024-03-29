@@ -307,7 +307,7 @@ static int write_main(int argc, char *argv[])
 	}
 	const char *path = argv[1];
 	const char *mtd = argv[2];
-	int writeubi=0;
+	int writeubi = 0;
 	/* 
 	 * Netgear WGR614v8_L: Read, store and write back old lzma loader from 1st block 
 	 */
@@ -341,7 +341,7 @@ static int write_main(int argc, char *argv[])
 #endif
 	case ROUTER_ASUS_AC58U:
 		writeubi = 1;
-	break;
+		break;
 	case ROUTER_TRENDNET_TEW827:
 	case ROUTER_ASROCK_G10:
 		if (nvram_matchi("bootpartition", 0)) {
@@ -565,7 +565,7 @@ static int write_main(int argc, char *argv[])
 	}
 	if (writeubi) {
 		char cmdline[64];
-		sprintf(cmdline,"ubiupdatevol /dev/ubi0_3 - --size=%d", trx.len); 
+		sprintf(cmdline, "ubiupdatevol /dev/ubi0_3 - --size=%d", trx.len);
 		p = popen(cmdline, "wb");
 	}
 
@@ -660,15 +660,15 @@ static int write_main(int argc, char *argv[])
 		}
 		if (!writeubi) {
 #ifdef HAVE_QCA4019
-		if (!first) {
-			mtd_erase(mtd);
-			first = 1;
-		}
+			if (!first) {
+				mtd_erase(mtd);
+				first = 1;
+			}
 #else
-		if (!first && mtdtype == MTD_NANDFLASH) {
-			mtd_erase(mtd);
-			first = 1;
-		}
+			if (!first && mtdtype == MTD_NANDFLASH) {
+				mtd_erase(mtd);
+				first = 1;
+			}
 #endif
 		}
 		erase_info.length = mtd_info.erasesize;
@@ -682,36 +682,37 @@ again:;
 			dd_loginfo("flash", "write block [%d] at [0x%08X]\n", (base + (i * mtd_info.erasesize)) - badblocks,
 				   base + (i * mtd_info.erasesize));
 			if (!writeubi) {
-			erase_info.start = base + (i * mtd_info.erasesize);
-			(void)ioctl(mtd_fd, MEMUNLOCK, &erase_info);
-			if (mtd_block_is_bad(mtd_fd, erase_info.start)) {
-				dd_loginfo("flash", "\nSkipping bad block at 0x%08zx\n", erase_info.start);
-				lseek(mtd_fd, mtd_info.erasesize, SEEK_CUR);
-				length += mtd_info.erasesize;
-				badblocks += mtd_info.erasesize;
-				continue;
-			}
+				erase_info.start = base + (i * mtd_info.erasesize);
+				(void)ioctl(mtd_fd, MEMUNLOCK, &erase_info);
+				if (mtd_block_is_bad(mtd_fd, erase_info.start)) {
+					dd_loginfo("flash", "\nSkipping bad block at 0x%08zx\n", erase_info.start);
+					lseek(mtd_fd, mtd_info.erasesize, SEEK_CUR);
+					length += mtd_info.erasesize;
+					badblocks += mtd_info.erasesize;
+					continue;
+				}
 #ifndef HAVE_QCA4019
-			if (mtdtype != MTD_NANDFLASH) {
-				if (ioctl(mtd_fd, MEMERASE, &erase_info) != 0) {
-					dd_logerror("flash", "\nerase/write failed\n");
+				if (mtdtype != MTD_NANDFLASH) {
+					if (ioctl(mtd_fd, MEMERASE, &erase_info) != 0) {
+						dd_logerror("flash", "\nerase/write failed\n");
+						goto fail;
+					}
+				}
+#endif
+				if (write(mtd_fd, buf + (i * mtd_info.erasesize) - badblocks, mtd_info.erasesize) !=
+				    mtd_info.erasesize) {
+					dd_loginfo("flash", "\ntry again %d\n", redo++);
+					if (redo < 10)
+						goto again;
 					goto fail;
 				}
-			}
-#endif
-			if (write(mtd_fd, buf + (i * mtd_info.erasesize) - badblocks, mtd_info.erasesize) != mtd_info.erasesize) {
-				dd_loginfo("flash", "\ntry again %d\n", redo++);
-				if (redo < 10)
-					goto again;
-				goto fail;
-			}
 			} else {
 				fwrite(buf + (i * mtd_info.erasesize), 1, mtd_info.erasesize, p);
 			}
 		}
 	}
 	if (writeubi)
-	    pclose(p);
+		pclose(p);
 	dd_loginfo("flash", "\ndone [%d]\n", i * mtd_info.erasesize);
 	/* 
 	 * Netgear: Write len and checksum at the end of mtd1 
