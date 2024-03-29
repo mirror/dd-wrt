@@ -291,6 +291,7 @@ static int write_main(int argc, char *argv[])
 	unsigned int data_len = 0;
 	unsigned int cal_chksum = 0;
 	FILE *fp;
+	FILE *p;
 	char *buf = NULL;
 	int count, len, off;
 	int sum = 0; // for debug
@@ -306,7 +307,7 @@ static int write_main(int argc, char *argv[])
 	}
 	const char *path = argv[1];
 	const char *mtd = argv[2];
-
+	int writeubi=0;
 	/* 
 	 * Netgear WGR614v8_L: Read, store and write back old lzma loader from 1st block 
 	 */
@@ -338,6 +339,9 @@ static int write_main(int argc, char *argv[])
 		}
 		break;
 #endif
+	case ROUTER_ASUS_AC58U:
+		writeubi = 1;
+	break;
 	case ROUTER_TRENDNET_TEW827:
 	case ROUTER_ASROCK_G10:
 		if (nvram_matchi("bootpartition", 0)) {
@@ -559,6 +563,11 @@ static int write_main(int argc, char *argv[])
 		erase_info.length = mtd_info.erasesize * mul;
 		dd_loginfo("flash", "The free memory is not enough, writing image per %d bytes.\n", erase_info.length);
 	}
+	if (writeubi) {
+		char cmdline[64];
+		sprintf(cmdline,"ubiupdatevol /dev/ubi0_3 - --size=%d", trx.len); 
+		p = popen(cmdline, "wb");
+	}
 
 	/* 
 	 * Allocate temporary buffer 
@@ -649,6 +658,7 @@ static int write_main(int argc, char *argv[])
 			}
 			printf("\n");
 		}
+		if (!writeubi) {
 #ifdef HAVE_QCA4019
 		if (!first) {
 			mtd_erase(mtd);
@@ -660,6 +670,7 @@ static int write_main(int argc, char *argv[])
 			first = 1;
 		}
 #endif
+		}
 		erase_info.length = mtd_info.erasesize;
 
 		int length = ROUNDUP(count, mtd_info.erasesize);
@@ -670,6 +681,7 @@ static int write_main(int argc, char *argv[])
 again:;
 			dd_loginfo("flash", "write block [%d] at [0x%08X]\n", (base + (i * mtd_info.erasesize)) - badblocks,
 				   base + (i * mtd_info.erasesize));
+			if (!writeubi) {
 			erase_info.start = base + (i * mtd_info.erasesize);
 			(void)ioctl(mtd_fd, MEMUNLOCK, &erase_info);
 			if (mtd_block_is_bad(mtd_fd, erase_info.start)) {
@@ -693,9 +705,13 @@ again:;
 					goto again;
 				goto fail;
 			}
+			} else {
+				fwrite(buf + (i * mtd_info.erasesize), 1, mtd_info.erasesize, p);
+			}
 		}
 	}
-
+	if (writeubi)
+	    pclose(p);
 	dd_loginfo("flash", "\ndone [%d]\n", i * mtd_info.erasesize);
 	/* 
 	 * Netgear: Write len and checksum at the end of mtd1 
