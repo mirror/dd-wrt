@@ -555,8 +555,17 @@ void start_sysinit(void)
 	case ROUTER_ASUS_AC58U:
 		eval("swconfig", "dev", "switch0", "set", "reset", "1");
 		eval("swconfig", "dev", "switch0", "set", "enable_vlan", "1");
-		sysprintf("echo phy0tpt > /sys/devices/platform/leds-gpio/leds/rt-ac58u:blue:wlan2G/trigger");
-		sysprintf("echo phy1tpt > /sys/devices/platform/leds-gpio/leds/rt-ac58u:blue:wlan5G/trigger");
+		sysprintf("echo phy0tpt > /sys/devices/platform/leds/leds/rt-ac58u:blue:wlan2G/trigger");
+		sysprintf("echo phy1tpt > /sys/devices/platform/leds/leds/rt-ac58u:blue:wlan5G/trigger");
+
+		sysprintf("echo netdev > /sys/devices/platform/leds/leds/rt-ac58u:blue:lan/trigger");
+		sysprintf("echo netdev > /sys/devices/platform/leds/leds/rt-ac58u:blue:wan/trigger");
+
+		sysprintf("echo eth0 > /sys/devices/platform/leds/leds/rt-ac58u:blue:lan/device_name");
+		sysprintf("echo eth1 > /sys/devices/platform/leds/leds/rt-ac58u:blue:wan/device_name");
+
+		sysprintf("echo \"link tx rx\" > /sys/devices/platform/leds/leds/rt-ac58u:blue:lan/mode");
+		sysprintf("echo \"link tx rx\" > /sys/devices/platform/leds/leds/rt-ac58u:blue:wan/mode");
 	break;
 	case ROUTER_HABANERO:
 #ifdef HAVE_ANTAIRA
