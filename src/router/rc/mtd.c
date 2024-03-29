@@ -565,7 +565,7 @@ static int write_main(int argc, char *argv[])
 	}
 	if (writeubi) {
 		char cmdline[64];
-		sprintf(cmdline, "ubiupdatevol /dev/ubi0_3 - --size=%d", trx.len);
+		sprintf(cmdline, "ubiupdatevol /dev/ubi0_3 - --size=%d", ROUNDUP(trx.len, mtd_info.erasesize));
 		p = popen(cmdline, "wb");
 	}
 
