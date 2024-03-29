@@ -86,26 +86,25 @@ static char *sfe_cm_exception_events_string[SFE_CM_EXCEPTION_MAX] = {
  * Per-module structure.
  */
 struct sfe_cm {
-	spinlock_t lock;		/* Lock for SMP correctness */
+	spinlock_t lock; /* Lock for SMP correctness */
 
 	/*
 	 * Control state.
 	 */
-	struct kobject *sys_sfe_cm;	/* sysfs linkage */
+	struct kobject *sys_sfe_cm; /* sysfs linkage */
 
 	/*
 	 * Callback notifiers.
 	 */
-	struct notifier_block dev_notifier;	/* Device notifier */
-	struct notifier_block inet_notifier;	/* IPv4 notifier */
+	struct notifier_block dev_notifier; /* Device notifier */
+	struct notifier_block inet_notifier; /* IPv4 notifier */
 #ifdef SFE_SUPPORT_IPV6
-	struct notifier_block inet6_notifier;	/* IPv6 notifier */
+	struct notifier_block inet6_notifier; /* IPv6 notifier */
 #endif
 	u32 exceptions[SFE_CM_EXCEPTION_MAX];
 };
 
 static struct sfe_cm __sc;
-
 
 /*
  * sfe_cm_incr_exceptions()
@@ -159,7 +158,8 @@ static int sfe_cm_recv(struct sk_buff *skb)
 		 */
 		in_dev = (struct in_device *)dev->ip_ptr;
 		if (unlikely(!in_dev)) {
-			DEBUG_TRACE("no IP processing for device: %s\n", dev->name);
+			DEBUG_TRACE("no IP processing for device: %s\n",
+				    dev->name);
 			return 0;
 		}
 
@@ -168,7 +168,8 @@ static int sfe_cm_recv(struct sk_buff *skb)
 		 * interesting here!
 		 */
 		if (unlikely(!in_dev->ifa_list)) {
-			DEBUG_TRACE("no IP address for device: %s\n", dev->name);
+			DEBUG_TRACE("no IP address for device: %s\n",
+				    dev->name);
 			return 0;
 		}
 
@@ -184,7 +185,8 @@ static int sfe_cm_recv(struct sk_buff *skb)
 		 */
 		in_dev = (struct inet6_dev *)dev->ip6_ptr;
 		if (unlikely(!in_dev)) {
-			DEBUG_TRACE("no IPv6 processing for device: %s\n", dev->name);
+			DEBUG_TRACE("no IPv6 processing for device: %s\n",
+				    dev->name);
 			return 0;
 		}
 
@@ -193,7 +195,8 @@ static int sfe_cm_recv(struct sk_buff *skb)
 		 * interesting here!
 		 */
 		if (unlikely(list_empty(&in_dev->addr_list))) {
-			DEBUG_TRACE("no IPv6 address for device: %s\n", dev->name);
+			DEBUG_TRACE("no IPv6 address for device: %s\n",
+				    dev->name);
 			return 0;
 		}
 
@@ -214,7 +217,10 @@ static int sfe_cm_recv(struct sk_buff *skb)
  * structure, obtain the hardware address.  This means this function also
  * works if the neighbours are routers too.
  */
-static bool sfe_cm_find_dev_and_mac_addr(struct sk_buff *skb, sfe_ip_addr_t *addr, struct net_device **dev, u8 *mac_addr, int is_v4)
+static bool sfe_cm_find_dev_and_mac_addr(struct sk_buff *skb,
+					 sfe_ip_addr_t *addr,
+					 struct net_device **dev, u8 *mac_addr,
+					 int is_v4)
 {
 	struct neighbour *neigh;
 	struct rtable *rt;
@@ -246,7 +252,8 @@ static bool sfe_cm_find_dev_and_mac_addr(struct sk_buff *skb, sfe_ip_addr_t *add
 
 		dst = (struct dst_entry *)rt;
 	} else {
-		rt6 = rt6_lookup(&init_net, (struct in6_addr *)addr->ip6, 0, 0, 0);
+		rt6 = rt6_lookup(&init_net, (struct in6_addr *)addr->ip6, 0, 0,
+				 0);
 		if (!rt6) {
 			goto ret_fail;
 		}
@@ -254,7 +261,7 @@ static bool sfe_cm_find_dev_and_mac_addr(struct sk_buff *skb, sfe_ip_addr_t *add
 		dst = (struct dst_entry *)rt6;
 	}
 
-skip_dst_lookup:	// quarkysg, 21/10/17
+skip_dst_lookup: // quarkysg, 21/10/17
 	rcu_read_lock();
 	neigh = sfe_dst_get_neighbour(dst, addr);
 	if (unlikely(!neigh)) {
@@ -306,10 +313,12 @@ skip_dst_lookup:	// quarkysg, 21/10/17
 
 ret_fail:
 	if (is_v4) {
-		DEBUG_TRACE("failed to find MAC address for IP: %pI4\n", &addr->ip);
+		DEBUG_TRACE("failed to find MAC address for IP: %pI4\n",
+			    &addr->ip);
 
 	} else {
-		DEBUG_TRACE("failed to find MAC address for IP: %pI6\n", addr->ip6);
+		DEBUG_TRACE("failed to find MAC address for IP: %pI6\n",
+			    addr->ip6);
 	}
 
 	return false;
@@ -426,7 +435,8 @@ static unsigned int sfe_cm_post_routing(struct sk_buff *skb, int is_v4)
 	 */
 	acct = nf_conn_acct_find(ct);
 	if (acct) {
-		long long packets = atomic64_read(&SFE_ACCT_COUNTER(acct)[CTINFO2DIR(ctinfo)].packets);
+		long long packets = atomic64_read(
+			&SFE_ACCT_COUNTER(acct)[CTINFO2DIR(ctinfo)].packets);
 		if ((packets > 0xff) && (packets & 0xff)) {
 			/*
 			 * Connection hits slow path at least 256 times, so it must be not able to accelerate.
@@ -457,7 +467,8 @@ static unsigned int sfe_cm_post_routing(struct sk_buff *skb, int is_v4)
 		sic.src_ip.ip = (__be32)orig_tuple.src.u3.ip;
 		sic.dest_ip.ip = (__be32)orig_tuple.dst.u3.ip;
 
-		if (ipv4_is_multicast(sic.src_ip.ip) || ipv4_is_multicast(sic.dest_ip.ip)) {
+		if (ipv4_is_multicast(sic.src_ip.ip) ||
+		    ipv4_is_multicast(sic.dest_ip.ip)) {
 			sfe_cm_incr_exceptions(SFE_CM_EXCEPTION_IS_IPV4_MCAST);
 			DEBUG_TRACE("multicast address\n");
 			return NF_ACCEPT;
@@ -471,22 +482,25 @@ static unsigned int sfe_cm_post_routing(struct sk_buff *skb, int is_v4)
 		sic.dest_ip_xlate.ip = (__be32)reply_tuple.src.u3.ip;
 
 		dscp = ipv4_get_dsfield(ip_hdr(skb)) >> XT_DSCP_SHIFT;
-//		if (dscp)  //allow rewrite of DSCP 0 
+		//		if (dscp)  //allow rewrite of DSCP 0
 		{
 			sic.dest_dscp = dscp;
 			sic.src_dscp = sic.dest_dscp;
 			sic.flags |= SFE_CREATE_FLAG_REMARK_DSCP;
 		}
-	} 
+	}
 #ifdef SFE_SUPPORT_IPV6
 	else {
 		u32 dscp;
 
-		sic.src_ip.ip6[0] = *((struct sfe_ipv6_addr *)&orig_tuple.src.u3.in6);
-		sic.dest_ip.ip6[0] = *((struct sfe_ipv6_addr *)&orig_tuple.dst.u3.in6);
+		sic.src_ip.ip6[0] =
+			*((struct sfe_ipv6_addr *)&orig_tuple.src.u3.in6);
+		sic.dest_ip.ip6[0] =
+			*((struct sfe_ipv6_addr *)&orig_tuple.dst.u3.in6);
 
 		if (ipv6_addr_is_multicast((struct in6_addr *)sic.src_ip.ip6) ||
-		    ipv6_addr_is_multicast((struct in6_addr *)sic.dest_ip.ip6)) {
+		    ipv6_addr_is_multicast(
+			    (struct in6_addr *)sic.dest_ip.ip6)) {
 			sfe_cm_incr_exceptions(SFE_CM_EXCEPTION_IS_IPV6_MCAST);
 			DEBUG_TRACE("multicast address\n");
 			return NF_ACCEPT;
@@ -496,11 +510,13 @@ static unsigned int sfe_cm_post_routing(struct sk_buff *skb, int is_v4)
 		 * NAT'ed addresses - note these are as seen from the 'reply' direction
 		 * When NAT does not apply to this connection these will be identical to the above.
 		 */
-		sic.src_ip_xlate.ip6[0] = *((struct sfe_ipv6_addr *)&reply_tuple.dst.u3.in6);
-		sic.dest_ip_xlate.ip6[0] = *((struct sfe_ipv6_addr *)&reply_tuple.src.u3.in6);
+		sic.src_ip_xlate.ip6[0] =
+			*((struct sfe_ipv6_addr *)&reply_tuple.dst.u3.in6);
+		sic.dest_ip_xlate.ip6[0] =
+			*((struct sfe_ipv6_addr *)&reply_tuple.src.u3.in6);
 
 		dscp = ipv6_get_dsfield(ipv6_hdr(skb)) >> XT_DSCP_SHIFT;
-//		if (dscp)  //allow rewrite of DSCP 0 
+		//		if (dscp)  //allow rewrite of DSCP 0
 		{
 			sic.dest_dscp = dscp;
 			sic.src_dscp = sic.dest_dscp;
@@ -523,8 +539,8 @@ static unsigned int sfe_cm_post_routing(struct sk_buff *skb, int is_v4)
 		sic.dest_td_end = ct->proto.tcp.seen[1].td_end;
 		sic.dest_td_max_end = ct->proto.tcp.seen[1].td_maxend;
 
-		if ((ct->proto.tcp.seen[0].flags & IP_CT_TCP_FLAG_BE_LIBERAL)
-		    || (ct->proto.tcp.seen[1].flags & IP_CT_TCP_FLAG_BE_LIBERAL)) {
+		if ((ct->proto.tcp.seen[0].flags & IP_CT_TCP_FLAG_BE_LIBERAL) ||
+		    (ct->proto.tcp.seen[1].flags & IP_CT_TCP_FLAG_BE_LIBERAL)) {
 			sic.flags |= SFE_CREATE_FLAG_NO_SEQ_CHECK;
 		}
 
@@ -532,7 +548,8 @@ static unsigned int sfe_cm_post_routing(struct sk_buff *skb, int is_v4)
 		 * Don't try to manage a non-established connection.
 		 */
 		if (!test_bit(IPS_ASSURED_BIT, &ct->status)) {
-			sfe_cm_incr_exceptions(SFE_CM_EXCEPTION_TCP_NOT_ASSURED);
+			sfe_cm_incr_exceptions(
+				SFE_CM_EXCEPTION_TCP_NOT_ASSURED);
 			DEBUG_TRACE("non-established connection\n");
 			return NF_ACCEPT;
 		}
@@ -545,10 +562,13 @@ static unsigned int sfe_cm_post_routing(struct sk_buff *skb, int is_v4)
 		spin_lock_bh(&ct->lock);
 		if (ct->proto.tcp.state != TCP_CONNTRACK_ESTABLISHED) {
 			spin_unlock_bh(&ct->lock);
-			sfe_cm_incr_exceptions(SFE_CM_EXCEPTION_TCP_NOT_ESTABLISHED);
-			DEBUG_TRACE("connection in termination state: %#x, s: %pI4:%u, d: %pI4:%u\n",
-				    ct->proto.tcp.state, &sic.src_ip, ntohs(sic.src_port),
-				    &sic.dest_ip, ntohs(sic.dest_port));
+			sfe_cm_incr_exceptions(
+				SFE_CM_EXCEPTION_TCP_NOT_ESTABLISHED);
+			DEBUG_TRACE(
+				"connection in termination state: %#x, s: %pI4:%u, d: %pI4:%u\n",
+				ct->proto.tcp.state, &sic.src_ip,
+				ntohs(sic.src_port), &sic.dest_ip,
+				ntohs(sic.dest_port));
 			return NF_ACCEPT;
 		}
 		spin_unlock_bh(&ct->lock);
@@ -602,13 +622,15 @@ static unsigned int sfe_cm_post_routing(struct sk_buff *skb, int is_v4)
 	 * Get the net device and MAC addresses that correspond to the various source and
 	 * destination host addresses.
 	 */
-	if (!sfe_cm_find_dev_and_mac_addr(NULL, &sic.src_ip, &src_dev_tmp, sic.src_mac, is_v4)) {
+	if (!sfe_cm_find_dev_and_mac_addr(NULL, &sic.src_ip, &src_dev_tmp,
+					  sic.src_mac, is_v4)) {
 		sfe_cm_incr_exceptions(SFE_CM_EXCEPTION_NO_SRC_DEV);
 		return NF_ACCEPT;
 	}
 	src_dev = src_dev_tmp;
 
-	if (!sfe_cm_find_dev_and_mac_addr(NULL, &sic.src_ip_xlate, &dev, sic.src_mac_xlate, is_v4)) {
+	if (!sfe_cm_find_dev_and_mac_addr(NULL, &sic.src_ip_xlate, &dev,
+					  sic.src_mac_xlate, is_v4)) {
 		sfe_cm_incr_exceptions(SFE_CM_EXCEPTION_NO_SRC_XLATE_DEV);
 		goto done1;
 	}
@@ -618,7 +640,8 @@ static unsigned int sfe_cm_post_routing(struct sk_buff *skb, int is_v4)
 	if (unlikely(!is_v4))
 		tmp_skb = skb;
 
-	if (!sfe_cm_find_dev_and_mac_addr(tmp_skb, &sic.dest_ip, &dev, sic.dest_mac, is_v4)) {
+	if (!sfe_cm_find_dev_and_mac_addr(tmp_skb, &sic.dest_ip, &dev,
+					  sic.dest_mac, is_v4)) {
 		sfe_cm_incr_exceptions(SFE_CM_EXCEPTION_NO_DEST_DEV);
 		goto done1;
 	}
@@ -638,7 +661,9 @@ static unsigned int sfe_cm_post_routing(struct sk_buff *skb, int is_v4)
 	else
 		tmp_skb = NULL;
 
-	if (!sfe_cm_find_dev_and_mac_addr(tmp_skb, &sic.dest_ip_xlate, &dest_dev_tmp, sic.dest_mac_xlate, is_v4)) {
+	if (!sfe_cm_find_dev_and_mac_addr(tmp_skb, &sic.dest_ip_xlate,
+					  &dest_dev_tmp, sic.dest_mac_xlate,
+					  is_v4)) {
 		sfe_cm_incr_exceptions(SFE_CM_EXCEPTION_NO_DEST_XLATE_DEV);
 		goto done1;
 	}
@@ -663,7 +688,8 @@ static unsigned int sfe_cm_post_routing(struct sk_buff *skb, int is_v4)
 		dest_br_dev = sfe_dev_get_master(dest_dev);
 		if (!dest_br_dev) {
 			sfe_cm_incr_exceptions(SFE_CM_EXCEPTION_NO_BRIDGE);
-			DEBUG_TRACE("no bridge found for: %s\n", dest_dev->name);
+			DEBUG_TRACE("no bridge found for: %s\n",
+				    dest_dev->name);
 			goto done3;
 		}
 
@@ -678,7 +704,7 @@ static unsigned int sfe_cm_post_routing(struct sk_buff *skb, int is_v4)
 	sic.mark = skb->mark;
 	if (likely(is_v4)) {
 		sfe_ipv4_create_rule(&sic);
-	} 
+	}
 #ifdef SFE_SUPPORT_IPV6
 	else {
 		sfe_ipv6_create_rule(&sic);
@@ -731,13 +757,13 @@ sfe_cm_ipv6_post_routing_hook(hooknum, ops, skb, in_unused, out, okfn)
  */
 #ifdef CONFIG_NF_CONNTRACK_CHAIN_EVENTS
 static int sfe_cm_conntrack_event(struct notifier_block *this,
- 				  unsigned long events, void *ptr)
+				  unsigned long events, void *ptr)
 #else
 static int sfe_cm_conntrack_event(unsigned int events, struct nf_ct_event *item)
 #endif
 {
 #ifdef CONFIG_NF_CONNTRACK_CHAIN_EVENTS
- 	struct nf_ct_event *item = ptr;
+	struct nf_ct_event *item = ptr;
 #endif
 	struct sfe_connection_destroy sid;
 	struct nf_conn *ct = item->ct;
@@ -787,15 +813,17 @@ static int sfe_cm_conntrack_event(unsigned int events, struct nf_ct_event *item)
 		sid.dest_ip.ip = (__be32)orig_tuple.dst.u3.ip;
 
 		sfe_ipv4_destroy_rule(&sid);
-	} 
+	}
 #ifdef SFE_SUPPORT_IPV6
 	else if (likely(nf_ct_l3num(ct) == AF_INET6)) {
-		sid.src_ip.ip6[0] = *((struct sfe_ipv6_addr *)&orig_tuple.src.u3.in6);
-		sid.dest_ip.ip6[0] = *((struct sfe_ipv6_addr *)&orig_tuple.dst.u3.in6);
+		sid.src_ip.ip6[0] =
+			*((struct sfe_ipv6_addr *)&orig_tuple.src.u3.in6);
+		sid.dest_ip.ip6[0] =
+			*((struct sfe_ipv6_addr *)&orig_tuple.dst.u3.in6);
 
 		sfe_ipv6_destroy_rule(&sid);
 	}
-#endif 
+#endif
 	else {
 		DEBUG_TRACE("ignoring non-IPv4 and non-IPv6 connection\n");
 	}
@@ -807,9 +835,9 @@ static int sfe_cm_conntrack_event(unsigned int events, struct nf_ct_event *item)
  * Netfilter conntrack event system to monitor connection tracking changes
  */
 #ifdef CONFIG_NF_CONNTRACK_CHAIN_EVENTS
- static struct notifier_block sfe_cm_conntrack_notifier = {
- 	.notifier_call = sfe_cm_conntrack_event,
- };
+static struct notifier_block sfe_cm_conntrack_notifier = {
+	.notifier_call = sfe_cm_conntrack_event,
+};
 #else
 static struct nf_ct_event_notifier sfe_cm_conntrack_notifier = {
 	.fcn = sfe_cm_conntrack_event,
@@ -856,19 +884,21 @@ static void sfe_cm_sync_rule(struct sfe_connection_sync *sis)
 		tuple.dst.u3.in6 = *((struct in6_addr *)sis->dest_ip.ip6);
 		tuple.src.l3num = AF_INET6;
 
-		DEBUG_TRACE("update connection - p: %d, s: %pI6:%u, d: %pI6:%u\n",
-			    (int)tuple.dst.protonum,
-			    &tuple.src.u3.in6, (unsigned int)ntohs(tuple.src.u.all),
-			    &tuple.dst.u3.in6, (unsigned int)ntohs(tuple.dst.u.all));
+		DEBUG_TRACE(
+			"update connection - p: %d, s: %pI6:%u, d: %pI6:%u\n",
+			(int)tuple.dst.protonum, &tuple.src.u3.in6,
+			(unsigned int)ntohs(tuple.src.u.all), &tuple.dst.u3.in6,
+			(unsigned int)ntohs(tuple.dst.u.all));
 	} else {
 		tuple.src.u3.ip = sis->src_ip.ip;
 		tuple.dst.u3.ip = sis->dest_ip.ip;
 		tuple.src.l3num = AF_INET;
 
-		DEBUG_TRACE("update connection - p: %d, s: %pI4:%u, d: %pI4:%u\n",
-			    (int)tuple.dst.protonum,
-			    &tuple.src.u3.ip, (unsigned int)ntohs(tuple.src.u.all),
-			    &tuple.dst.u3.ip, (unsigned int)ntohs(tuple.dst.u.all));
+		DEBUG_TRACE(
+			"update connection - p: %d, s: %pI4:%u, d: %pI4:%u\n",
+			(int)tuple.dst.protonum, &tuple.src.u3.ip,
+			(unsigned int)ntohs(tuple.src.u.all), &tuple.dst.u3.ip,
+			(unsigned int)ntohs(tuple.dst.u.all));
 	}
 
 	/*
@@ -895,10 +925,15 @@ static void sfe_cm_sync_rule(struct sfe_connection_sync *sis)
 	acct = nf_conn_acct_find(ct);
 	if (acct) {
 		spin_lock_bh(&ct->lock);
-		atomic64_add(sis->src_new_packet_count, &SFE_ACCT_COUNTER(acct)[IP_CT_DIR_ORIGINAL].packets);
-		atomic64_add(sis->src_new_byte_count, &SFE_ACCT_COUNTER(acct)[IP_CT_DIR_ORIGINAL].bytes);
-		atomic64_add(sis->dest_new_packet_count, &SFE_ACCT_COUNTER(acct)[IP_CT_DIR_REPLY].packets);
-		atomic64_add(sis->dest_new_byte_count, &SFE_ACCT_COUNTER(acct)[IP_CT_DIR_REPLY].bytes);
+		atomic64_add(
+			sis->src_new_packet_count,
+			&SFE_ACCT_COUNTER(acct)[IP_CT_DIR_ORIGINAL].packets);
+		atomic64_add(sis->src_new_byte_count,
+			     &SFE_ACCT_COUNTER(acct)[IP_CT_DIR_ORIGINAL].bytes);
+		atomic64_add(sis->dest_new_packet_count,
+			     &SFE_ACCT_COUNTER(acct)[IP_CT_DIR_REPLY].packets);
+		atomic64_add(sis->dest_new_byte_count,
+			     &SFE_ACCT_COUNTER(acct)[IP_CT_DIR_REPLY].bytes);
 		spin_unlock_bh(&ct->lock);
 	}
 
@@ -906,28 +941,32 @@ static void sfe_cm_sync_rule(struct sfe_connection_sync *sis)
 	case IPPROTO_TCP:
 		spin_lock_bh(&ct->lock);
 		if (ct->proto.tcp.seen[0].td_maxwin < sis->src_td_max_window) {
-			ct->proto.tcp.seen[0].td_maxwin = sis->src_td_max_window;
+			ct->proto.tcp.seen[0].td_maxwin =
+				sis->src_td_max_window;
 		}
 		if ((s32)(ct->proto.tcp.seen[0].td_end - sis->src_td_end) < 0) {
 			ct->proto.tcp.seen[0].td_end = sis->src_td_end;
 		}
-		if ((s32)(ct->proto.tcp.seen[0].td_maxend - sis->src_td_max_end) < 0) {
+		if ((s32)(ct->proto.tcp.seen[0].td_maxend -
+			  sis->src_td_max_end) < 0) {
 			ct->proto.tcp.seen[0].td_maxend = sis->src_td_max_end;
 		}
 		if (ct->proto.tcp.seen[1].td_maxwin < sis->dest_td_max_window) {
-			ct->proto.tcp.seen[1].td_maxwin = sis->dest_td_max_window;
+			ct->proto.tcp.seen[1].td_maxwin =
+				sis->dest_td_max_window;
 		}
-		if ((s32)(ct->proto.tcp.seen[1].td_end - sis->dest_td_end) < 0) {
+		if ((s32)(ct->proto.tcp.seen[1].td_end - sis->dest_td_end) <
+		    0) {
 			ct->proto.tcp.seen[1].td_end = sis->dest_td_end;
 		}
-		if ((s32)(ct->proto.tcp.seen[1].td_maxend - sis->dest_td_max_end) < 0) {
+		if ((s32)(ct->proto.tcp.seen[1].td_maxend -
+			  sis->dest_td_max_end) < 0) {
 			ct->proto.tcp.seen[1].td_maxend = sis->dest_td_max_end;
 		}
 		spin_unlock_bh(&ct->lock);
 		break;
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 4, 0))
-	case IPPROTO_UDP:
-		{
+	case IPPROTO_UDP: {
 		const struct nf_conntrack_l4proto *l4proto;
 		unsigned int *timeouts;
 		/*
@@ -942,24 +981,27 @@ static void sfe_cm_sync_rule(struct sfe_connection_sync *sis)
 		 * see any packets. So we have to do the same thing in our stats sync message.
 		 */
 
-
 		if (!test_bit(IPS_ASSURED_BIT, &ct->status) && acct) {
-			if (atomic64_read(&SFE_ACCT_COUNTER(acct)[IP_CT_DIR_REPLY].packets)) {
+			if (atomic64_read(
+				    &SFE_ACCT_COUNTER(acct)[IP_CT_DIR_REPLY]
+					     .packets)) {
 				set_bit(IPS_SEEN_REPLY_BIT, &ct->status);
 				set_bit(IPS_ASSURED_BIT, &ct->status);
 			}
 		}
-		l4proto = __nf_ct_l4proto_find((sis->is_v6 ? AF_INET6 : AF_INET), IPPROTO_UDP);
+		l4proto = __nf_ct_l4proto_find(
+			(sis->is_v6 ? AF_INET6 : AF_INET), IPPROTO_UDP);
 		timeouts = nf_ct_timeout_lookup(&init_net, ct, l4proto);
 		spin_lock_bh(&ct->lock);
 		if (test_bit(IPS_SEEN_REPLY_BIT, &ct->status)) {
-			ct->timeout = nfct_time_stamp + timeouts[UDP_CT_REPLIED];
+			ct->timeout =
+				nfct_time_stamp + timeouts[UDP_CT_REPLIED];
 		} else {
-			ct->timeout = nfct_time_stamp + timeouts[UDP_CT_UNREPLIED];
+			ct->timeout =
+				nfct_time_stamp + timeouts[UDP_CT_UNREPLIED];
 		}
 		spin_unlock_bh(&ct->lock);
-		}
-		break;
+	} break;
 #endif
 	}
 
@@ -972,7 +1014,8 @@ static void sfe_cm_sync_rule(struct sfe_connection_sync *sis)
 /*
  * sfe_cm_device_event()
  */
-static int sfe_cm_device_event(struct notifier_block *this, unsigned long event, void *ptr)
+static int sfe_cm_device_event(struct notifier_block *this, unsigned long event,
+			       void *ptr)
 {
 	struct net_device *dev = SFE_DEV_EVENT_PTR(ptr);
 
@@ -988,7 +1031,8 @@ static int sfe_cm_device_event(struct notifier_block *this, unsigned long event,
 /*
  * sfe_cm_inet_event()
  */
-static int sfe_cm_inet_event(struct notifier_block *this, unsigned long event, void *ptr)
+static int sfe_cm_inet_event(struct notifier_block *this, unsigned long event,
+			     void *ptr)
 {
 	struct net_device *dev = ((struct in_ifaddr *)ptr)->ifa_dev->dev;
 
@@ -1002,7 +1046,8 @@ static int sfe_cm_inet_event(struct notifier_block *this, unsigned long event, v
 /*
  * sfe_cm_inet6_event()
  */
-static int sfe_cm_inet6_event(struct notifier_block *this, unsigned long event, void *ptr)
+static int sfe_cm_inet6_event(struct notifier_block *this, unsigned long event,
+			      void *ptr)
 {
 	struct net_device *dev = ((struct inet6_ifaddr *)ptr)->idev->dev;
 
@@ -1018,8 +1063,7 @@ static int sfe_cm_inet6_event(struct notifier_block *this, unsigned long event, 
  * 	dump exception counters
  */
 static ssize_t sfe_cm_get_exceptions(struct device *dev,
-				     struct device_attribute *attr,
-				     char *buf)
+				     struct device_attribute *attr, char *buf)
 {
 	int idx, len;
 	struct sfe_cm *sc = &__sc;
@@ -1027,7 +1071,10 @@ static ssize_t sfe_cm_get_exceptions(struct device *dev,
 	spin_lock_bh(&sc->lock);
 	for (len = 0, idx = 0; idx < SFE_CM_EXCEPTION_MAX; idx++) {
 		if (sc->exceptions[idx]) {
-			len += snprintf(buf + len, (ssize_t)(PAGE_SIZE - len), "%s = %d\n", sfe_cm_exception_events_string[idx], sc->exceptions[idx]);
+			len += snprintf(buf + len, (ssize_t)(PAGE_SIZE - len),
+					"%s = %d\n",
+					sfe_cm_exception_events_string[idx],
+					sc->exceptions[idx]);
 		}
 	}
 	spin_unlock_bh(&sc->lock);
@@ -1039,8 +1086,7 @@ static ssize_t sfe_cm_get_exceptions(struct device *dev,
  * 	dump stop
  */
 static ssize_t sfe_cm_get_stop(struct device *dev,
-                               struct device_attribute *attr,
-                               char *buf)
+			       struct device_attribute *attr, char *buf)
 {
 	int (*fast_recv)(struct sk_buff *skb);
 	rcu_read_lock();
@@ -1050,8 +1096,8 @@ static ssize_t sfe_cm_get_stop(struct device *dev,
 }
 
 static ssize_t sfe_cm_set_stop(struct device *dev,
-                               struct device_attribute *attr,
-                               const char *buf, size_t count)
+			       struct device_attribute *attr, const char *buf,
+			       size_t count)
 {
 	int ret;
 	u32 num;
@@ -1085,15 +1131,14 @@ static ssize_t sfe_cm_set_stop(struct device *dev,
  * 	dump state of SFE
  */
 static ssize_t sfe_cm_get_defunct_all(struct device *dev,
-                                      struct device_attribute *attr,
-                                      char *buf)
+				      struct device_attribute *attr, char *buf)
 {
 	return snprintf(buf, (ssize_t)PAGE_SIZE, "%d\n", 0);
 }
 
 static ssize_t sfe_cm_set_defunct_all(struct device *dev,
-                                      struct device_attribute *attr,
-                                      const char *buf, size_t count)
+				      struct device_attribute *attr,
+				      const char *buf, size_t count)
 {
 	sfe_ipv4_destroy_all_rules_for_dev(NULL);
 #ifdef SFE_SUPPORT_IPV6
@@ -1108,7 +1153,8 @@ static ssize_t sfe_cm_set_defunct_all(struct device *dev,
 static const struct device_attribute sfe_attrs[] = {
 	__ATTR(exceptions, S_IRUGO, sfe_cm_get_exceptions, NULL),
 	__ATTR(stop, S_IWUSR | S_IRUGO, sfe_cm_get_stop, sfe_cm_set_stop),
-	__ATTR(defunct_all, S_IWUSR | S_IRUGO, sfe_cm_get_defunct_all, sfe_cm_set_defunct_all),
+	__ATTR(defunct_all, S_IWUSR | S_IRUGO, sfe_cm_get_defunct_all,
+	       sfe_cm_set_defunct_all),
 };
 
 /*
@@ -1120,7 +1166,6 @@ static int __init sfe_cm_init(void)
 	int result = -1;
 	size_t i, j;
 	struct net *net;
-
 
 // code block disabled by quarkysg, 14/10/17
 #if 1
@@ -1161,18 +1206,22 @@ static int __init sfe_cm_init(void)
 	 * Register our netfilter hooks.
 	 */
 	for_each_net(net) {
-	result = nf_register_net_hooks(net,sfe_cm_ops_post_routing, ARRAY_SIZE(sfe_cm_ops_post_routing));
-	if (result < 0) {
-		DEBUG_ERROR("can't register nf post routing hook: %d\n", result);
-		goto exit3;
-	}
+		result = nf_register_net_hooks(
+			net, sfe_cm_ops_post_routing,
+			ARRAY_SIZE(sfe_cm_ops_post_routing));
+		if (result < 0) {
+			DEBUG_ERROR("can't register nf post routing hook: %d\n",
+				    result);
+			goto exit3;
+		}
 	}
 
 #ifdef CONFIG_NF_CONNTRACK_EVENTS
 	/*
 	 * Register a notifier hook to get fast notifications of expired connections.
 	 */
-	result = nf_conntrack_register_notifier(&init_net, &sfe_cm_conntrack_notifier);
+	result = nf_conntrack_register_notifier(&init_net,
+						&sfe_cm_conntrack_notifier);
 	if (result < 0) {
 		DEBUG_ERROR("can't register nf notifier hook: %d\n", result);
 		goto exit4;
@@ -1189,7 +1238,7 @@ static int __init sfe_cm_init(void)
 	sfe_ipv6_register_sync_rule_callback(sfe_cm_sync_rule);
 #endif
 #endif
-// end code block disable by quarkysg, 14/10/17
+	// end code block disable by quarkysg, 14/10/17
 
 	printk(KERN_ALERT "sfe-cm: registered\n");
 
@@ -1200,7 +1249,8 @@ static int __init sfe_cm_init(void)
 #ifdef CONFIG_NF_CONNTRACK_EVENTS
 exit4:
 	for_each_net(net) {
-	nf_unregister_net_hooks(net, sfe_cm_ops_post_routing, ARRAY_SIZE(sfe_cm_ops_post_routing));
+		nf_unregister_net_hooks(net, sfe_cm_ops_post_routing,
+					ARRAY_SIZE(sfe_cm_ops_post_routing));
 	}
 #endif
 exit3:
@@ -1219,7 +1269,7 @@ exit1:
 
 	return result;
 #endif
-// end code block disable by quarkysg, 14/10/17
+	// end code block disable by quarkysg, 14/10/17
 }
 
 /*
@@ -1263,7 +1313,8 @@ static void __exit sfe_cm_exit(void)
 
 #endif
 	for_each_net(net) {
-	nf_unregister_net_hooks(net, sfe_cm_ops_post_routing, ARRAY_SIZE(sfe_cm_ops_post_routing));
+		nf_unregister_net_hooks(net, sfe_cm_ops_post_routing,
+					ARRAY_SIZE(sfe_cm_ops_post_routing));
 	}
 #ifdef SFE_SUPPORT_IPV6
 	unregister_inet6addr_notifier(&sc->inet6_notifier);
@@ -1273,13 +1324,10 @@ static void __exit sfe_cm_exit(void)
 
 	kobject_put(sc->sys_sfe_cm);
 #endif
-// end code block disable by quarkysg, 14/10/17
-
+	// end code block disable by quarkysg, 14/10/17
 }
 
-module_init(sfe_cm_init)
-module_exit(sfe_cm_exit)
+module_init(sfe_cm_init) module_exit(sfe_cm_exit)
 
-MODULE_DESCRIPTION("Shortcut Forwarding Engine - Connection Manager");
+	MODULE_DESCRIPTION("Shortcut Forwarding Engine - Connection Manager");
 MODULE_LICENSE("Dual BSD/GPL");
-
