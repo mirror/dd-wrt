@@ -15,7 +15,6 @@
  * OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-
 /*
  * The following are debug macros used throughout the SFE.
  *
@@ -34,17 +33,26 @@
 #define DEBUG_ASSERT(s, ...)
 #define DEBUG_ERROR(s, ...)
 #else
-#define DEBUG_ASSERT(c, s, ...) if (!(c)) { pr_emerg("ASSERT: %s:%d:" s, __FUNCTION__, __LINE__, ##__VA_ARGS__); BUG(); }
-#define DEBUG_ERROR(s, ...) pr_err("%s:%d:" s, __FUNCTION__, __LINE__, ##__VA_ARGS__)
+#define DEBUG_ASSERT(c, s, ...)                                      \
+	if (!(c)) {                                                  \
+		pr_emerg("ASSERT: %s:%d:" s, __FUNCTION__, __LINE__, \
+			 ##__VA_ARGS__);                             \
+		BUG();                                               \
+	}
+#define DEBUG_ERROR(s, ...) \
+	pr_err("%s:%d:" s, __FUNCTION__, __LINE__, ##__VA_ARGS__)
 #endif
 
 #if defined(CONFIG_DYNAMIC_DEBUG)
 /*
  * Compile messages for dynamic enable/disable
  */
-#define DEBUG_WARN(s, ...) pr_debug("%s[%d]:" s, __FUNCTION__, __LINE__, ##__VA_ARGS__)
-#define DEBUG_INFO(s, ...) pr_debug("%s[%d]:" s, __FUNCTION__, __LINE__, ##__VA_ARGS__)
-#define DEBUG_TRACE(s, ...) pr_debug("%s[%d]:" s, __FUNCTION__, __LINE__, ##__VA_ARGS__)
+#define DEBUG_WARN(s, ...) \
+	pr_debug("%s[%d]:" s, __FUNCTION__, __LINE__, ##__VA_ARGS__)
+#define DEBUG_INFO(s, ...) \
+	pr_debug("%s[%d]:" s, __FUNCTION__, __LINE__, ##__VA_ARGS__)
+#define DEBUG_TRACE(s, ...) \
+	pr_debug("%s[%d]:" s, __FUNCTION__, __LINE__, ##__VA_ARGS__)
 #else
 
 /*
@@ -53,25 +61,29 @@
 #if (DEBUG_LEVEL < 2)
 #define DEBUG_WARN(s, ...)
 #else
-#define DEBUG_WARN(s, ...) pr_warn("%s[%d]:" s, __FUNCTION__, __LINE__, ##__VA_ARGS__)
+#define DEBUG_WARN(s, ...) \
+	pr_warn("%s[%d]:" s, __FUNCTION__, __LINE__, ##__VA_ARGS__)
 #endif
 
 #if (DEBUG_LEVEL < 3)
 #define DEBUG_INFO(s, ...)
 #else
-#define DEBUG_INFO(s, ...) pr_notice("%s[%d]:" s, __FUNCTION__, __LINE__, ##__VA_ARGS__)
+#define DEBUG_INFO(s, ...) \
+	pr_notice("%s[%d]:" s, __FUNCTION__, __LINE__, ##__VA_ARGS__)
 #endif
 
 #if (DEBUG_LEVEL < 4)
 #define DEBUG_TRACE(s, ...)
 #else
-#define DEBUG_TRACE(s, ...) pr_info("%s[%d]:" s, __FUNCTION__, __LINE__, ##__VA_ARGS__)
+#define DEBUG_TRACE(s, ...) \
+	pr_info("%s[%d]:" s, __FUNCTION__, __LINE__, ##__VA_ARGS__)
 #endif
 #endif
 
 #ifdef CONFIG_NF_FLOW_COOKIE
-typedef int (*flow_cookie_set_func_t)(u32 protocol, __be32 src_ip, __be16 src_port,
-				      __be32 dst_ip, __be16 dst_port, u16 flow_cookie);
+typedef int (*flow_cookie_set_func_t)(u32 protocol, __be32 src_ip,
+				      __be16 src_port, __be32 dst_ip,
+				      __be16 dst_port, u16 flow_cookie);
 /*
  * sfe_register_flow_cookie_cb
  *	register a function in SFE to let SFE use this function to configure flow cookie for a flow
@@ -90,8 +102,11 @@ int sfe_register_flow_cookie_cb(flow_cookie_set_func_t cb);
  */
 int sfe_unregister_flow_cookie_cb(flow_cookie_set_func_t cb);
 
-typedef int (*sfe_ipv6_flow_cookie_set_func_t)(u32 protocol, __be32 src_ip[4], __be16 src_port,
-						__be32 dst_ip[4], __be16 dst_port, u16 flow_cookie);
+typedef int (*sfe_ipv6_flow_cookie_set_func_t)(u32 protocol, __be32 src_ip[4],
+					       __be16 src_port,
+					       __be32 dst_ip[4],
+					       __be16 dst_port,
+					       u16 flow_cookie);
 
 /*
  * sfe_ipv6_register_flow_cookie_cb
