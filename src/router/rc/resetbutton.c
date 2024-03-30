@@ -1378,6 +1378,10 @@ static void resetbtn_period_check(int sig)
 		val |= get_gpio(32) << 5;
 		val |= get_gpio(5) << 6;
 		break;
+	case ROUTER_ASUS_AC58U:
+		sesgpio = 0x105;
+		val |= get_gpio(63) << 5;
+		break;
 	}
 #endif
 
