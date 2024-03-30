@@ -44,6 +44,7 @@ void start_jffs2(void)
 	char *rwpart = "ddwrt";
 	int itworked = 0;
 	char dev[64];
+	int classic = 0;
 #if defined(HAVE_R9000)
 	int mtd = getMTD("plex");
 #else
@@ -56,6 +57,9 @@ void start_jffs2(void)
 #ifdef HAVE_IPQ806X
 	int brand = getRouterBrand();
 	switch (brand) {
+	case ROUTER_ROUTER_ASUS_AC58U:
+		classic = 1;
+		break;
 	case ROUTER_TRENDNET_TEW827:
 	case ROUTER_ASROCK_G10:
 	case ROUTER_NETGEAR_R9000:
@@ -90,21 +94,31 @@ void start_jffs2(void)
 			itworked = eval("flash_erase", dev, "0", "0");
 			itworked = eval("mkfs.jffs2", "-o", "/dev/mtdblock3", "-n", "-b", "-e", "131072", "-p");
 #elif defined(HAVE_MVEBU) || defined(HAVE_R9000) || defined(HAVE_IPQ806X) || defined(HAVE_R6800)
+			if (classic) {
+				itworked = eval("mtd", "erase", rwpart);
+				itworked = eval("flash_erase", dev, "0", "0");
+			}else{
 			itworked = eval("ubidetach", "-p", dev);
 			itworked = eval("mtd", "erase", dev);
 			itworked = eval("flash_erase", dev, "0", "0");
 			itworked = eval("ubiattach", "-p", dev);
 			itworked = eval("ubimkvol", udev, "-N", "ddwrt", "-m");
+			}
 #else
 			itworked = eval("mtd", "erase", rwpart);
 			itworked = eval("flash_erase", dev, "0", "0");
 #endif
 
 #if defined(HAVE_R9000) || defined(HAVE_MVEBU) || defined(HAVE_IPQ806X) || defined(HAVE_R6800)
+			if (classic) {
+			sprintf(dev, "/dev/mtdblock/%d", getMTD("ddwrt"));
+			itworked += mount(dev, "/jffs", "jffs2", MS_MGC_VAL | MS_NOATIME, NULL);			
+			} else {
 			itworked += mount(upath, "/jffs", "ubifs", MS_MGC_VAL | MS_NOATIME, NULL);
+			}
 #else
 			sprintf(dev, "/dev/mtdblock/%d", getMTD("ddwrt"));
-			itworked += mount(dev, "/jffs", "jffs2", MS_MGC_VAL | MS_NOATIME, NULL);
+			itworked += mount(dev, "/jffs", "jffs2", MS_MGC_VAL | MS_NOATIME, NULL);			
 #endif
 			if (itworked) {
 				nvram_seti("jffs_mounted", 0);
@@ -114,9 +128,15 @@ void start_jffs2(void)
 
 		} else {
 #if defined(HAVE_R9000) || defined(HAVE_MVEBU) || defined(HAVE_IPQ806X) || defined(HAVE_R6800)
+	    if (classic) {
+			itworked = eval("mtd", "unlock", rwpart);
+			sprintf(dev, "/dev/mtdblock/%d", getMTD("ddwrt"));
+			itworked += mount(dev, "/jffs", "jffs2", MS_MGC_VAL | MS_NOATIME, NULL);
+	    }else{
 			sprintf(dev, "/dev/mtd%d", mtd);
 			itworked = eval("ubiattach", "-p", dev);
 			itworked += mount(upath, "/jffs", "ubifs", MS_MGC_VAL | MS_NOATIME, NULL);
+	    }
 #else
 			itworked = eval("mtd", "unlock", rwpart);
 			sprintf(dev, "/dev/mtdblock/%d", getMTD("ddwrt"));
