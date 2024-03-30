@@ -1,5 +1,5 @@
 # This file is part of pound testsuite. -*- autotest -*-
-# Copyright (C) 2022-2023 Sergey Poznyakoff
+# Copyright (C) 2022-2024 Sergey Poznyakoff
 #
 # Pound is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,6 +24,8 @@ AT_CHECK([pound -c -Wno-dns -Wno-include-dir -f pound.cfg],m4_shift($@))])
 
 m4_define([PT_PREREQ_PERL],[perl -v >/dev/null 2>&1 || exit 77])
 
+m4_pushdef([HARNESS_OPTIONS])
+
 ## PT_CHECK(CONFIG, SCRIPT)
 m4_define([PT_CHECK],
 [AT_CHECK([
@@ -41,19 +43,24 @@ End],[$1])
 AT_DATA([input],
 [$2
 ])
-perl $HARNESS --transcript xscript.log input
+perl $HARNESS HARNESS_OPTIONS --transcript xscript.log input
 ],
 m4_shift2($@))])
 
-AT_TESTED([pound])
 AT_INIT
 m4_include([config.at])
+m4_include([loglevcomp.at])
 m4_include([echo.at])
+m4_include([loglevrun.at])
+m4_include([logfmt.at])
+m4_include([logsup.at])
 m4_include([xhttp.at])
 m4_include([checkurl.at])
 m4_include([errfile.at])
 m4_include([maxrequest.at])
 m4_include([rewriteloc.at])
+m4_include([nb.at])
+m4_include([chunked.at])
 
 AT_BANNER([Listener request modification])
 m4_include([lstset.at])
@@ -62,6 +69,10 @@ AT_BANNER([Service selection])
 m4_include([header.at])
 m4_include([host.at])
 m4_include([url.at])
+m4_include([path.at])
+m4_include([stringmatch.at])
+m4_include([query.at])
+m4_include([queryparam.at])
 m4_include([or.at])
 m4_include([not.at])
 m4_include([fromfile.at])
@@ -91,6 +102,9 @@ m4_include([backref.at])
 m4_include([chgvis.at])
 m4_include([rwchain.at])
 
+AT_BANNER([Response Rewriting])
+m4_include([resprw.at])
+
 AT_BANNER([Sessions])
 m4_include([sessip.at])
 m4_include([sessauth.at])
@@ -109,9 +123,19 @@ AT_BANNER([Request routing])
 m4_include([balancing.at])
 m4_include([prio.at])
 
+AT_BANNER([Multiple headers])
+m4_include([multival.at])
+m4_include([chunked2.at])
+
 AT_BANNER([HTTPS])
 m4_include([https.at])
 m4_include([virthost.at])
 
 AT_BANNER([Templates])
 m4_include([template.at])
+
+AT_BANNER([Poundctl])
+m4_include([list.at])
+m4_include([disable.at])
+m4_include([sessctl.at])
+

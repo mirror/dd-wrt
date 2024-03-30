@@ -1,0 +1,96 @@
+# This file is part of pound testsuite. -*- autotest -*-
+# Copyright (C) 2023-2024 Sergey Poznyakoff
+#
+# Pound is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Pound is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with pound.  If not, see <http://www.gnu.org/licenses/>.
+
+AT_SETUP([Rewrite response headers])
+AT_KEYWORDS([rewrite response resprw])
+PT_CHECK([ListenHTTP
+	Service
+		Rewrite response
+			Header "Content-Type: text/(.+)"
+			SetHeader "X-Content-SubType: $1"
+		Else
+			Header "Content-Type: application/(.+)"
+			SetHeader "X-App: $1"
+		End
+		Backend
+			Address
+			Port
+		End
+	End
+End
+],
+[GET /echo/foo
+Host: example.net
+Content-type: text/plain
+end
+
+200
+x-content-subtype: plain
+end
+
+GET /echo/foo
+Host: example.net
+Content-type: application/tar
+end
+
+200
+x-app: tar
+end
+])
+
+PT_CHECK([ListenHTTP
+	Service
+		Rewrite response
+			SetHeader "[X-My-Host: %[host]]"
+		End
+		Backend
+			Address
+			Port
+		End
+	End
+End
+],
+[GET /echo/foo
+Host: example.net
+end
+
+200
+x-my-host: example.net
+end
+])
+
+PT_CHECK([ListenHTTP
+	Service
+		Host -re "[([^:]+)(:.*)?]"
+		Rewrite response
+			SetHeader "X-My-Host: $1"
+		End
+		Backend
+			Address
+			Port
+		End
+	End
+End
+],
+[GET /echo/foo
+Host: example.net
+end
+
+200
+x-my-host: example.net
+end
+])
+AT_CLEANUP

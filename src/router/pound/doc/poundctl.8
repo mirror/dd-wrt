@@ -1,6 +1,6 @@
 .\" Pound - the reverse-proxy load-balancer
 .\" Copyright (C) 2002-2010 Apsis GmbH
-.\" Copyright (C) 2018-2023 Sergey Poznyakoff
+.\" Copyright (C) 2018-2024 Sergey Poznyakoff
 .\"
 .\" Pound is free software; you can redistribute it and/or modify
 .\" it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
 .\"
 .\" You should have received a copy of the GNU General Public License
 .\" along with pound.  If not, see <http://www.gnu.org/licenses/>.
-.TH POUNDCTL 8 "March 3, 2023" "poundctl" "System Manager's Manual"
+.TH POUNDCTL 8 "November 6, 2023" "poundctl" "System Manager's Manual"
 .SH NAME
 poundctl \- control the pound daemon
 .SH SYNOPSIS
@@ -198,14 +198,14 @@ Increases output verbosity level.
 .TP
 .B POUND_TMPL_PATH
 Overrides the template search path.  The value is a column-delimited
-list of directories or file name.  To locate the template file, the
+list of directories or file names.  To locate the template file, the
 path is scanned left-to right.  If an element is a regular file name
 (or a hard or symbolic link to a regular file),
 .B poundctl
 tries to open that file.  If an element is a directory name,
 the program tries to open the file
 .B poundctl.tmpl
-in that directory.  If opening succeeds, scanning stops and templates
+in that directory.  If opening succeeds, further scanning stops and templates
 are read from that file.
 .SH SEE ALSO
 .BR pound (8),

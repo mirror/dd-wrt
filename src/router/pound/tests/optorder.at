@@ -1,5 +1,5 @@
 # This file is part of pound testsuite. -*- autotest -*-
-# Copyright (C) 2023 Sergey Poznyakoff
+# Copyright (C) 2023-2024 Sergey Poznyakoff
 #
 # Pound is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -31,7 +31,7 @@ X-Forwarded-For: 192.0.2.2
 end
 
 200
-x-orig-header-X-Forwarded-For: 127.0.0.1
+x-orig-header-X-Forwarded-For: 192.0.2.2, 127.0.0.1
 end
 ])
 
@@ -47,7 +47,7 @@ PT_CHECK([ListenHTTP
 	End
 End
 ],
-[GET /echo/X
+[GET /echo/Y
 Host: example.com
 end
 

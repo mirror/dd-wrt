@@ -1,0 +1,177 @@
+# This file is part of pound testsuite. -*- autotest -*-
+# Copyright (C) 2023-2024 Sergey Poznyakoff
+#
+# Pound is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Pound is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with pound.  If not, see <http://www.gnu.org/licenses/>.
+AT_SETUP([Disable/Enable])
+AT_KEYWORDS([poundctl disable])
+AT_DATA([test.tmpl],
+[{{define "default" -}}
+
+{{define "print_status" -}}
+{{if .enabled}}enabled{{else}}disabled{{end -}}
+{{end -}}
+
+{{- /* Iterate over all listeners */ -}}
+Listeners:
+
+{{range $lno,$lstn = .listeners -}}
+{{printf "%3d" $lno}}: {{block "default.print_listener" $lstn -}}
+ Listener {{if .name}}"{{.name}}" {{end}}{{.protocol}}://{{.address}} {{template "print_status" .}}
+ {{- /* For each listener, show all its services */ -}}
+ {{block "default.print_services" .services}}
+ {{- range $sno,$svc = .}}
+   {{printf "%3d" $sno}}: {{block "default.print_service" $svc -}}
+   Service {{if .name}}"{{.name}}" {{end}}{{template "print_status" .}}
+  {{- /* List each backend in service */ -}}
+  {{- range $bno,$backend = .backends}}
+      {{printf "%3d" $bno}}: {{block "default.print_backend" $backend -}}
+       {{.type}}{{if eq .type "backend" }} {{.protocol}} {{.address}} {{.priority}} {{if .alive}}alive{{else}}dead{{end}}
+     {{- else if eq .type "redirect" }} {{.code}} {{.url}}{{if .redir_req}} (redirect request){{end}}
+     {{- end}} {{template "print_status" . -}}
+   {{- end}}{{ /* block default.print_backend */ }}
+  {{- end}}{{ /* iterating over backends */ }}
+ {{- end}}{{ /* block default.print_service */ }}
+ {{- end}}{{ /* iterating over services */ }}
+ {{- end}}{{ /* block default.print_services */ }}
+ {{- end}}{{ /* block default.print_listener */ }}
+{{end -}}{{ /* iterating over listeners */ }}
+{{end -}}{{ /* define */ }}
+])
+
+PT_CHECK(
+[Control "pound.ctl"
+ListenHTTP
+	Service "one"
+		Backend
+			Address
+			Port
+		End
+	End
+	Service "two"
+		Backend
+			Address
+			Port
+		End
+	End
+End
+],
+[
+#
+# 1. Disable single backend
+#
+run poundctl -f ./pound.cfg -t ./test.tmpl disable /1/0/0
+status 0
+end
+
+run poundctl -f ./pound.cfg -t ./test.tmpl list
+stdout
+Listeners:
+
+  0: Listener http://pound\.ctl enabled
+     0: Service enabled
+        0: control enabled
+  1: Listener http://127\.0\.0\.1:\d+ enabled
+     0: Service "one" enabled
+        0: backend http 127\.0\.0\.1:\d+ 5 alive disabled
+     1: Service "two" enabled
+        0: backend http 127\.0\.0\.1:\d+ 5 alive enabled
+
+end
+end
+
+#
+# 2. Enable it back.  Do it using service name instead of index.
+#
+run poundctl -f ./pound.cfg -t ./test.tmpl enable /1/one/0
+status 0
+end
+
+run poundctl -f ./pound.cfg -t ./test.tmpl list
+status 0
+stdout
+Listeners:
+
+  0: Listener http://pound\.ctl enabled
+     0: Service enabled
+        0: control enabled
+  1: Listener http://127\.0\.0\.1:\d+ enabled
+     0: Service "one" enabled
+        0: backend http 127\.0\.0\.1:\d+ 5 alive enabled
+     1: Service "two" enabled
+        0: backend http 127\.0\.0\.1:\d+ 5 alive enabled
+
+end
+end
+
+#
+# 3. Attempt to enable non-existing backend.
+#
+run poundctl -f ./pound.cfg -t ./test.tmpl enable /1/three/0
+status 1
+stderr
+poundctl: Not Found
+end
+end
+
+#
+# 4. Disable ae service.
+#
+run poundctl -f ./pound.cfg -t ./test.tmpl disable /1/two
+status 0
+end
+
+run poundctl -f ./pound.cfg -t ./test.tmpl list
+status 0
+stdout
+Listeners:
+
+  0: Listener http://pound\.ctl enabled
+     0: Service enabled
+        0: control enabled
+  1: Listener http://127\.0\.0\.1:\d+ enabled
+     0: Service "one" enabled
+        0: backend http 127\.0\.0\.1:\d+ 5 alive enabled
+     1: Service "two" disabled
+        0: backend http 127\.0\.0\.1:\d+ 5 alive enabled
+
+end
+end
+
+#
+# 5. Disable listener.
+#
+run poundctl -f ./pound.cfg -t ./test.tmpl disable /1
+status 0
+end
+
+run poundctl -f ./pound.cfg -t ./test.tmpl list
+status 0
+stdout
+Listeners:
+
+  0: Listener http://pound\.ctl enabled
+     0: Service enabled
+        0: control enabled
+  1: Listener http://127\.0\.0\.1:\d+ disabled
+     0: Service "one" enabled
+        0: backend http 127\.0\.0\.1:\d+ 5 alive enabled
+     1: Service "two" disabled
+        0: backend http 127\.0\.0\.1:\d+ 5 alive enabled
+
+end
+end
+
+])
+
+AT_CLEANUP

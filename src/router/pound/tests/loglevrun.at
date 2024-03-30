@@ -1,0 +1,69 @@
+# This file is part of pound testsuite. -*- autotest -*-
+# Copyright (C) 2023-2024 Sergey Poznyakoff
+#
+# Pound is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Pound is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with pound.  If not, see <http://www.gnu.org/licenses/>.
+
+AT_SETUP([Traditional log levels (output)])
+AT_KEYWORDS([log loglevel LogLevel])
+m4_pushdef([PT_CHECK_LOG_LEVEL],
+[m4_pushdef([HARNESS_OPTIONS],[--log-level=$1])
+PT_CHECK(
+[ListenHTTP
+	Service "default"
+                Backend
+                        Address
+                        Port
+                End
+	End
+End],
+[GET /echo/foo
+Host: example.com
+end
+
+200
+end
+])
+m4_popdef([HARNESS_OPTIONS])
+AT_CHECK([cat pound.log | sed -e 's/^pound: //' \
+   -e '/^starting/d' \
+   -e '/^shutting down/d' \
+   -e '/obtained address/d' \
+   -e '/waiting for [[0-9][0-9]]* active threads to terminate/d'm4_if([$2],,,[ $2])],
+[0],
+[m4_shift2($@)])])
+
+PT_CHECK_LOG_LEVEL(0)
+
+PT_CHECK_LOG_LEVEL(1,[],
+ [127.0.0.1 GET /echo/foo HTTP/1.1 - HTTP/1.1 200 OK
+])
+
+PT_CHECK_LOG_LEVEL(2,
+ [[-e 's/\(127\.0\.0\.1\):[0-9][0-9]*/\1:PORT/g' \
+   -e 's/\(example\.com\):[0-9][0-9]*/\1:PORT/g' \
+   -e 's/[0-9][0-9]*\.[0-9][0-9][0-9] sec$/0.000 sec/']],
+ [127.0.0.1 GET /echo/foo HTTP/1.1 - HTTP/1.1 200 OK (example.com:PORT/default -> 127.0.0.1:PORT) 0.000 sec
+])
+
+PT_CHECK_LOG_LEVEL(3,
+[[-e '/example\.com:[0-9][0-9]* 127\.0\.0\.1 - - \[[0-9][0-9]\/[A-Z][a-z][a-z]\/[0-9][0-9][0-9][0-9]:[0-9][0-9]:[0-9][0-9]:[0-9][0-9] [+-][0-9][0-9][0-9][0-9]\] "GET \/echo\/foo HTTP\/1.1" 200 - "" "[^"]*"/d']])
+
+PT_CHECK_LOG_LEVEL(4,
+[[-e '/^127\.0\.0\.1 - - \[[0-9][0-9]\/[A-Z][a-z][a-z]\/[0-9][0-9][0-9][0-9]:[0-9][0-9]:[0-9][0-9]:[0-9][0-9] [+-][0-9][0-9][0-9][0-9]\] "GET \/echo\/foo HTTP\/1.1" 200 - "" "[^"]*"$/d']])
+
+PT_CHECK_LOG_LEVEL(5,
+[[-e '/^example\.com:[0-9][0-9]* 127\.0\.0\.1 - - \[[0-9][0-9]\/[A-Z][a-z][a-z]\/[0-9][0-9][0-9][0-9]:[0-9][0-9]:[0-9][0-9]:[0-9][0-9] [+-][0-9][0-9][0-9][0-9]\] "GET \/echo\/foo HTTP\/1.1" 200 - "" "[^"]*" (default -> 127\.0\.0\.1:[0-9][0-9]*) [0-9][0-9]*\.[0-9][0-9][0-9] sec$/d']])
+
+m4_popdef([PT_CHECK_LOG_LEVEL])
+AT_CLEANUP

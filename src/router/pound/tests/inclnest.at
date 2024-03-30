@@ -1,4 +1,4 @@
-# Copyright (C) 2023 Sergey Poznyakoff
+# Copyright (C) 2023-2024 Sergey Poznyakoff
 #
 # Pound is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,7 +18,7 @@ AT_KEYWORDS([include inclnest])
 AT_CHECK([
 mkdir conf
 
-AT_DATA([conf/svc1],
+AT_DATA([conf/svc1.cfg],
 [Service
 	Host "example.org"
 	Backend
@@ -29,7 +29,7 @@ End
 Include "svc2.cfg"
 ])
 
-AT_DATA([conf/svc2],
+AT_DATA([conf/svc2.cfg],
 [Service
 	Host "example.com"
 	Backend
@@ -39,7 +39,7 @@ AT_DATA([conf/svc2],
 End
 ])
 
-AT_DATA([conf/main],
+AT_DATA([conf/main.cfg],
 [ListenHTTP
 End
 Include "svc1.cfg"
@@ -68,9 +68,6 @@ end
 ])
 
 perl $HARNESS --include-dir=conf \
-              --preproc conf/svc1 \
-	      --preproc conf/svc2 \
-	      --preproc conf/main \
 	      --transcript xscript.log input
 ])
 

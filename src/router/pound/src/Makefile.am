@@ -1,6 +1,6 @@
 # Pound - the reverse-proxy load-balancer                -*- automake -*-
 # Copyright (C) 2002-2010 Apsis GmbH
-# Copyright (C) 2018-2023 Sergey Poznyakoff
+# Copyright (C) 2018-2024 Sergey Poznyakoff
 #
 # Pound is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -26,8 +26,10 @@ LDADD = libpound.a @PCREPOSIX_LIBS@ @PTHREAD_LIBS@
 
 sbin_PROGRAMS=pound
 pound_SOURCES=\
+ bauth.c\
  config.c\
  http.c\
+ log.c\
  metrics.c\
  pound.c\
  svc.c
@@ -35,8 +37,8 @@ pound_SOURCES=\
 noinst_LIBRARIES = libpound.a
 libpound_a_SOURCES = json.c json.h mem.c progname.c tmpl.c
 
-pkgdata_DATA = poundctl.tmpl
-EXTRA_DIST = poundctl.tmpl
+pkgdata_DATA = poundctl.tmpl mvh.inc
+EXTRA_DIST = poundctl.tmpl mvh.inc
 
 install-exec-hook:
 	-@if test "$${EUID:-65535}" -eq 0; then \
@@ -48,7 +50,7 @@ install-exec-hook:
 		done; \
 	fi
 
-noinst_HEADERS=pound.h extern.h list.h
+noinst_HEADERS=pound.h extern.h list.h ht.h
 
 if SET_DH_AUTO
 DHSRC =

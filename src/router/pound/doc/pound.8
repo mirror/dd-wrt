@@ -1,6 +1,6 @@
 .\" Pound - the reverse-proxy load-balancer
 .\" Copyright (C) 2002-2010 Apsis GmbH
-.\" Copyright (C) 2018-2023 Sergey Poznyakoff
+.\" Copyright (C) 2018-2024 Sergey Poznyakoff
 .\"
 .\" Pound is free software; you can redistribute it and/or modify
 .\" it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
 .\"
 .\" You should have received a copy of the GNU General Public License
 .\" along with pound.  If not, see <http://www.gnu.org/licenses/>.
-.TH POUND 8 "April 19, 2023" "pound" "System Manager's Manual"
+.TH POUND 8 "October 22, 2023" "pound" "System Manager's Manual"
 .SH NAME
 pound \- HTTP/HTTPS reverse-proxy and load-balancer
 .SH SYNOPSIS
@@ -233,7 +233,7 @@ server.
 .TP
 \fB\-e\fR
 Log to standard error (standard output for \fBLOG_DEBUG\fR and
-\fBLOG_INFO\fR facilities).  This option implies \fIforeground mode\fR
+\fBLOG_INFO\fR severity levels).  This option implies \fIforeground mode\fR
 (\fB\-F\fR) and overrides the \fILogLevel\fR configuration setting.
 .TP
 \fB\-F\fR
@@ -269,7 +269,7 @@ section below, for a detailed discussion of this file.
 .TP
 \fB\-v\fR
 Verbose mode: during startup, error messages will be sent to stderr
-(stdout for \fBLOG_DEBUG\fR and \fBLOG_INFO\fR facilities).  If
+(stdout for \fBLOG_DEBUG\fR and \fBLOG_INFO\fR severity levels).  If
 .B pound
 was configured to log to syslog, error diagnostics will be duplicated
 there as well.  After startup the configuration settings take effect.
@@ -477,24 +477,105 @@ Using a \fB\-\fR (dash) for the facility name causes
 .B pound
 to log to stdout/stderr.
 .TP
+\fBLogFormat\fR "\fIname\fR" "\fIformat_def\fR"
+Define HTTP log format.  \fIName\fR is a string uniquely identifying
+this format.  \fIFormat_def\fR is the format string definition.  See
+below, section
+.BR "REQUEST LOGGING" ,
+for a detailed description.
+.TP
 \fBLogLevel\fR \fIn\fR
-Specify the logging level: 0 for no logging, 1 (default) for regular
-logging, 2 for extended logging (show chosen backend server as well),
-3 for Apache-like format (Combined Log Format with Virtual Host), 4
-(same as 3 but without the virtual host information) and 5 (same as 4
-but with information about the
+Specify the logging level using built-in format indices: 0 for no
+logging, 1 (default) for regular logging, 2 for extended logging (show
+chosen backend server as well), 3 for Apache-like format (Combined Log
+Format with Virtual Host), 4 (same as 3 but without the virtual host
+information) and 5 (same as 3 but with information about the
 .B Service
 and
 .B Backend
 used).
 This value can be overridden for specific listeners.
+.IP
+See
+below, section
+.BR "REQUEST LOGGING" ,
+for a detailed description.
+.TP
+\fBLogLevel\fR "\fIname\fR"
+Select a named format for logging HTTP requests.  \fIName\fR can
+be either one of five built-in format names
+.RB ( null ,
+.BR regular ,
+.BR extended ,
+.BR vhost_combined ,
+.BR combined ,
+or
+.BR detailed ),
+or a format name defined earlier via the
+.B LogFormat
+directive.  See section
+.BR "REQUEST LOGGING" ,
+for a detailed discussion.
+.TP
+\fBForwardedHeader\fR \fIname\fR
+Defines the name of the HTTP header that carries the list of proxies
+the request has passed through.  It is used to report the originator
+IP address when logging.  See the description of
+.B %a
+specifier in
+.BR "REQUEST LOGGING" .
+The default is
+.BR X\-Forwarded\-For .
+.TP
+.B TrustedIP
+Defines a list of
+.I trusted proxy
+IP addresses, which is used to determine the originator IP.  See the
+description of
+.B %a
+specifier in
+.BR "REQUEST LOGGING" ,
+for a detailed discussion.
+.IP
+This statement is a special form of \fBACL\fR statement, described
+below.  It can appear as a \fIsection\fR or \fIdirective\fR.  When
+used as a section, it is followed by a list of one or more CIDRs
+each appearing on a separate line.  The \fBEnd\fR keyword terminates
+the statement, e.g.:
+.IP
+.RS
+.EX
+TrustedIP
+  "127.0.0.1/8"
+  "10.16.0.0/16"
+End
+.EE
+.RE
+.IP
+In directive form, this statement takes single argument, the name of
+an access control list defined earlier using the \fBACL\fR statement,
+e.g.
+.IP
+.RS
+.EX
+TrustedIP "proxy_addresses"
+.EE
+.RE
 .TP
 \fBIgnoreCase\fR \fIbool\fR
-Ignore case when matching URLs (default: \fIfalse\fR). This value can be
-overridden for specific services.
+Ignore case when doing regex matching (default: \fIfalse\fR). This
+directive sets the default for the following service matching
+directives:
+.BR URL ,
+.BR Path ,
+.BR QueryParam ,
+.BR Query ,
+.BR StringMatch ,
+as well as for the \fBDeleteHeader\fR modification directive.  Its
+value can be overridden for specific services.
 .IP
 This statement is deprecated and will be removed in future versions.
-Please, use the \fB\-icase\fR option to the \fBURL\fR directive
+Please, use the \fB\-icase\fR option to the service matching directive
 instead.  See the discussion of \fIoptions\fR in
 .B Service Matching Directives
 section below.
@@ -541,7 +622,7 @@ This value can be overridden for specific backends.
 \fBGrace\fR \fIn\fR
 How long should
 .B pound
-continue to answer existing connections after a receiving and INT or HUP
+continue to answer existing connections after a receiving a INT or HUP
 signal (default: 30 seconds). The configured listeners are closed
 immediately. You can bypass this behaviour by stopping
 .B pound
@@ -560,6 +641,15 @@ Set the control socket path.
 See the
 .B Control socket
 section below, for a detailed description of this feature.
+.TP
+\fBCombineHeaders\fR ... \fBEnd\fR
+Declare names of the headers that can appear multiple times in a
+message, and that should be combined into one value.  Header names
+must appear one per line between \fBCombineHeaders\fR and \fBEnd\fR.
+.IP
+See the section
+.BR "MULTI-VALUE HEADERS" ,
+for a detailed discussion of this feature.
 .TP
 \fBIncludeDir\fR "\fIdir\fR"
 Sets the \fIinclude directory\fR.  This is the directory
@@ -621,9 +711,6 @@ the following:
 .RS
 .nr step 1 1
 .IP \n[step].
-PID file is used only in daemon mode (\fBDaemon on\fR in the
-configuration file).
-.IP \n+[step].
 When running with a supervisor, this file holds PID of the supervisor
 process.  Otherwise, it holds PID of the main
 .B pound
@@ -718,9 +805,7 @@ that must be resolvable at run-time, or a full pathname of a UNIX
 socket.  Either this parameter or
 .B SocketFrom
 (see below) must be present. The address 0.0.0.0 may be used as an
-alias for 'all available addresses on this machine', but this practice
-is strongly discouraged, as it will interfere with the rewriting
-mechanisms (see below).
+alias for 'all available addresses on this machine'.
 .TP
 \fBPort\fR \fIport\fR
 The port number or service name that
@@ -772,9 +857,17 @@ only to the request path -
 .B pound
 will still check that the request is syntactically correct.
 .TP
+\fBErr400\fR "\fIfilename\fR"
+A file with the text to be displayed if an Error 400 occurs.
+.TP
+\fBErr401\fR "\fIfilename\fR"
+A file with the text to be displayed if an Error 401 occurs.
+.TP
+\fBErr403\fR "\fIfilename\fR"
+A file with the text to be displayed if an Error 401 occurs.
+.TP
 \fBErr404\fR "\fIfilename\fR"
 A file with the text to be displayed if an Error 404 occurs.
-Default text: "Not Found.".
 .TP
 \fBErr413\fR "\fIfilename\fR"
 A file with the text to be displayed if an Error 413 occurs.
@@ -782,24 +875,20 @@ Default text: "Request too large.".
 .TP
 \fBErr414\fR "\fIfilename\fR"
 A file with the text to be displayed if an Error 414 occurs.
-Default text: "Request URI is too long.".
 .TP
 \fBErr500\fR "\fIfilename\fR"
 A file with the text to be displayed if an Error 500 occurs.
-Default text: "An internal server error occurred. Please try again later.".
 .TP
 \fBErr501\fR "\fIfilename\fR"
 A file with the text to be displayed if an Error 501 occurs.
-Default text: "This method may not be used.".
 .TP
 \fBErr503\fR "\fIfilename\fR"
 A file with the text to be displayed if an Error 503 occurs.
-Default text: "The service is not available. Please try again later.".
 .TP
 \fBMaxRequest\fR \fIn\fR
-Request maximal size. All requests will be limited to these many
-bytes. If a request contains more data than allowed, an error 413 is
-returned. Default: unlimited.
+Maximum allowed size of incoming request. All requests will be limited
+to these many bytes. If a request contains more data than allowed, an
+error 413 is returned. Default: unlimited.
 .TP
 \fBRewriteLocation\fR 0|1|2
 If set to 1, force
@@ -818,10 +907,61 @@ to change the "Destination:" header in requests. The header is changed
 to point to the backend itself with the correct protocol. Default:
 \fIfalse\fR.
 .TP
-\fBLogLevel\fR \fIvalue\fR
-Override the global
+\fBLogLevel\fR \fIn\fR
+Log HTTP requests using built-in format \fIn\fR.  This statement
+configures logging specific for this listener, overriding the
+global
 .B LogLevel
-value.
+setting.  See
+.BR "REQUEST LOGGING" ,
+for a detailed discussion.
+.TP
+\fBLogLevel\fR "\fIname\fR"
+Select a named format for logging HTTP requests.  \fIName\fR can
+be either one of five built-in format names
+.RB ( null ,
+.BR regular ,
+.BR extended ,
+.BR vhost_combined ,
+.BR combined ,
+or
+.BR detailed ),
+or a format name defined earlier via the
+.B LogFormat
+directive.
+.IP
+This statement configures logging specific for this listener,
+overriding the global
+.B LogLevel
+setting.  See section
+.BR "REQUEST LOGGING" ,
+for a detailed discussion.
+.TP
+\fBForwardedHeader\fR \fIname\fR
+Defines the name of the HTTP header that carries the list of proxies
+the request has passed through.  It is used to report the originator
+IP address when logging.  See the description of
+.B %a
+specifier in
+.BR "REQUEST LOGGING" .
+This statement overrides the \fBForwardedHeader\fR directive from the
+global scope.
+.IP
+The default is
+.BR X\-Forwarded\-For .
+.TP
+.B TrustedIP
+Defines a list of
+.I trusted proxy
+IP addresses, which is used to determine the originator IP.  See the
+description of
+.B %a
+specifier in
+.BR "REQUEST LOGGING" ,
+for a detailed discussion.
+.IP
+This statement overrides the \fBTrustedIP\fR directive from the
+global scope.
 .TP
 \fBService\fR [ "\fIname\fR" ]
 This defines a private service (see below for service definition
@@ -879,37 +1019,123 @@ See the description of \fBHeaderOption\fR directive in \fBGLOBAL
 DIRECTIVES\fR section, and section \fBBUILT-IN HEADERS\fR, for a
 detailed discussion of various header modification directives and
 their effect.
+.SS String expansion
+Some of the statements described below take as their arguments string
+values that undergo several \fIexpansions\fR before use.  These
+expansions are as follows:
+.TP
+.B Backreference expansion
+Backrefence is a construct that refers to a \fIparenthesized
+group\fR within a regular expression matched by one of service
+matching directives described above.  During backreference expansion,
+each occurrence of such construct in a string is replaced with the
+actual value of that parenthesized group.
+.IP
+Syntactically backreference can take two forms.  The construct
+\fB$\fIN\fR (\fIN\fR is a decimal number)
+refers to \fIN\fRth parenthesized subexpression of the most
+recently matched statement, and \fB$\fIN\fB(\fIM\fB)\fR refers to
+\fIN\fRth parenthesized subexpression of \fIM\fRth recently matched
+statement.  Numbering of subexpressions starts at 1 (\fB$0\fR refers
+to the entire matching string).  Numbering of matches starts
+at 0.
+.IP
+For example, given the following statements
+.IP
+.EX
+Host -re "www\\.(.+)"
+Header -re -icase "^Content-Type: *(.*)"
+Path "^/static(/.*)?"
+.EE
+.IP
+\fB$1\fR refers to the subgroup of \fBPath\fR, \fB$1(1)\fR - to that of
+\fBHeader\fR, and \fB$1(2)\fR - to that of \fBHost\fR.
+.IP
+Curly braces may be used to avoid incorrectly parsing text fragment
+that follows the reference as being its part.  This is useful if the
+reference is immediately followed by a decimal digit or opening
+parenthesis, as in: \fB"${1}(text)"\fR.
+.IP
+To insert a literal dollar or percent sign in
+.IR url ,
+use
+.B $$
+or
+.BR $% ,
+correspondingly.
+.TP
+.B Request accessor interpretation
+Request accessor is \fB%[\fIname\fR\fB]\fR, where \fIname\fR denotes
+part of the incoming request to access.  Accessors are interpreted and
+replaced with the corresponding part of the request.  Some accessors
+take an argument, which is specified after accessor name and is delimited
+from it by one or more whitespace characters.
+.IP
+The following accessors are defined:
+.RS
+.TP
+.B url
+Request URL.
+.TP
+.B path
+Request path.
+.TP
+.B query
+Query part.
+.TP
+\fBparam \fINAME\fR
+The value of the query parameter \fINAME\fR.
+.TP
+\fBheader \fINAME\fR
+The value of HTTP header \fINAME\fR.
+.TP
+.B host
+Hostname part of the \fBHost\fR header.  If the latter
+does not include port number, it is equivalent to \fB%[header
+host]\fR.
+.B port
+If the value of the \fBHost\fR header includes port number,
+\fB%[port]\fR evaluates to port number with the leading colon
+character. Otherwise, it evaluates to empty string.
 .SS Modification directives
 The following directives modify the incoming request prior to passing
-it to the selected service.  These are discussed in detail
+it to the selected service. These are discussed in detail
 in section
 .BR "REQUEST MODIFICATION" ,
 below.
 .TP
 \fBDeleteHeader\fR "\fIheader\fB: \fIpattern\fR"
 Remove certain headers from the incoming requests. All occurrences of
-the matching header will be removed.
+the matching header will be removed. The argument is treated verbatim.
 .TP
 \fBSetHeader\fR "\fIheader\fB: \fIvalue\fR"
-Add header to the request passed to the backend server. Specified
-header line is added verbatim. Use multiple \fBHeaderAdd\fR
-directives if you need to add more than one header.
+Add header to the request passed to the backend server. Argument
+undergoes string expansion as described above. The expanded value must
+be a valid header line.
 .TP
 \fBSetURL\fR "\fIvalue\fR"
-Sets the URL part of the request.
+Sets the URL part of the request. Argument is subject to string expansion.
 .TP
 \fBSetPath\fR "\fIvalue\fR"
-Sets the path part.
+Sets the path part of the request. Argument is subject to string expansion.
 .TP
 \fBSetQuery\fR "\fIvalue\fR"
-Sets the query part.
+Sets the query part of the request. Argument is subject to string expansion.
 .TP
 \fBSetQueryParam\fR "\fIname\fR" "\fIvalue\fR"
-Modifies the query.  Sets the query parameter \fIname\fR to \fIvalue\fR.
+Modifies the query.  Sets the query parameter \fIname\fR to
+\fIvalue\fR. The \fIvalue\fR argument is subject to string expansion.
 .TP
-.BR Rewrite " ... [ " Else " ... ] " End
-Conditionally apply request modification depending on whether request
-matches certain conditions.
+.BR Rewrite " [" request | response "] ... [ " Else " ... ] " End
+Conditionally modify request or response depending on whether it
+matches certain conditions.  If the argument is omitted, \fBrequest\fR
+is assumed.
+.IP
+Request modification is described in detail in section
+.B "REQUEST MODIFICATION DIRECTIVES" .
+.IP
+Response modification is covered by section
+.BR "RESPONSE MODIFICATION" .
 .SS Compatibility directives
 The following directives are retained for compatibility with previous
 versions of
@@ -947,10 +1173,15 @@ defined for HTTP listeners are applicable to HTTPS listeners as well. The
 following additional directives are also available:
 .TP
 \fBCert\fR "\fIfilename\fR"
-Specify the server certificate. The
+Specify the server certificate.  \fIFilename\fR is either a
 .I certificate file
-is the file containing the certificate, possibly a certificate chain
-and the signature for this server. This directive is
+name, or the name of a directory containing certificate files.
+.IP
+.I Certificate file
+is a file containing the certificate, possibly a certificate chain
+and the signature for this server, in that order.
+.IP
+This directive is
 .B mandatory
 for HTTPS listeners.
 .IP
@@ -1053,7 +1284,8 @@ All configuration directives enclosed between
 and
 .B End
 are specific to a single service. They can be subdivided into two
-categories: \fIservice matching directives\fR and \fIbackend definitions\fR.
+categories: \fIservice matching directives\fR and \fIbackend
+definitions\fR.
 .SS Service Matching Directives
 These directives determine whether a particular request should be
 handled by this service.  When a request arrives, each service is
@@ -1086,12 +1318,24 @@ The ACL definition is finished with a
 .B End
 keyword on a line by itself.
 .sp
-Semantically it is equivalent to the named ACL reference described above.
+Semantically it is equivalent to the named ACL reference described
+above.
 .TP
-\fBURL\fR [\fIoptions\fR] "\fIpattern\fR"
-Match the URL of the incoming request.  By default, \fIpattern\fR is
-treated as case-sensitive extended regular expression.  This can be
-changed by \fIoptions\fR, described below.
+\fBBasicAuth\fR "\fIfilename\fR"
+Evaluates to true if the incoming request passes basic authorization
+as described in RFC 7617.  \fIfilename\fR is the name of a plain text
+file containing usernames and passwords, created with
+.BR htpasswd (1)
+or similar utility.  Unless it starts with a slash, it is taken
+relative to the \fBIncludeDir\fR directory.  The file is cached in
+the memory on the first authorization attempt, so that further
+authorizations do not result in disk operations.  The file will
+be rescanned if \fBPound\fR notices that its modification time has
+changed.
+.IP
+See the section entitled
+.BR "BASIC AUTHENTICATION" ,
+for a detailed discussion.
 .TP
 \fBHeader\fR [\fIoptions\fR] "\fIpattern\fR"
 The request must contain at least one header matching the given
@@ -1122,10 +1366,21 @@ section.
 Match the path part of the incoming request.
 .TP
 \fBQuery\fR [\fIoptions\fR] "\fIpattern\fR"
-Match the query part of the incoming request.
+Match the query part of the incoming request. The argument must be
+properly percent-encoded, if it contains whitespace or other
+non-printable characters.
 .TP
 \fBQueryParam\fR "\fIname\fR" [\fIoptions\fR] "\fIpattern\fR"
 Match the value of the query parameter \fIname\fR.
+.TP
+\fBStringMatch\fR "\fIstring\fR" [\fIoptions\fR] "\fIpattern\fR"
+Expand \fIstring\fR as described in \fBString expansion\fR (see below)
+and match the resulting value against \fIpattern\fR.
+.TP
+\fBURL\fR [\fIoptions\fR] "\fIpattern\fR"
+Match the URL of the incoming request.  By default, \fIpattern\fR is
+treated as case-sensitive extended regular expression.  This can be
+changed by \fIoptions\fR, described below.
 .PP
 The \fIoptions\fR argument in the above directives can be used to
 select the comparison method.  It consists of zero or more option
@@ -1247,9 +1502,16 @@ Sets the query part.
 \fBSetQueryParam\fR "\fIname\fR" "\fIvalue\fR"
 Modifies the query.  Sets the query parameter \fIname\fR to \fIvalue\fR.
 .TP
-.BR Rewrite " ... [ " Else " ... ] " End
-Conditionally apply request modification depending on whether request
-matches certain conditions.
+.BR Rewrite " [" request | response "] ... [ " Else " ... ] " End
+Conditionally modify request or response depending on whether it
+matches certain conditions.  If the argument is omitted, \fBrequest\fR
+is assumed.
+.IP
+Request modification is described in detail in section
+.B "REQUEST MODIFICATION DIRECTIVES" .
+.IP
+Response modification is covered by section
+.BR "RESPONSE MODIFICATION" .
 .SS Backend definitions
 .TP
 \fBBalancer\fR \fBrandom\fR | \fBiwrr\fR
@@ -1293,65 +1555,8 @@ or
 .IP
 The redirection destination is determined by the actual
 .I url
-you specify.  It can contain references to parenthesized subexpressions
-in the eight recently matched request matching directives of the enclosing
-.BR Service .
-Syntactically, \fB$\fIN\fR (\fIN\fR is a decimal number)
-refers to \fIN\fRth parenthesized subexpression of the most
-recently matched statement, and \fB$\fIN\fB(\fIM\fB)\fR refers to
-\fIN\fRth parenthesized subexpression of \fIM\fRth recently matched
-statement.  Numbering of subexpressions starts at 1 (\fB$0\fR refers
-to the entire matching string).  Numbering of matches starts
-at 0.
-.IP
-For example, given the following statements
-.IP
-.EX
-Host -re "www\\.(.+)"
-Header -re -icase "^Content-Type: *(.*)"
-Path "^/static(/.*)?"
-.EE
-.IP
-\fB$1\fR refers to the subgroup of \fBPath\fR, \fB$1(1)\fR - to that of
-\fBHeader\fR, and \fB$1(2)\fR - to that of \fBHost\fR.
-.IP
-Curly braces may be used to avoid incorrectly parsing text fragment
-that follows the reference as being its part.  This is useful if the
-reference is immediately followed by a decimal digit or opening
-parenthesis, as in: \fB"${1}(text)"\fR.
-.IP
-To insert a literal dollar or percent sign in
-.IR url ,
-use
-.B $$
-or
-.BR $% ,
-correspondingly.
-.IP
-Beside these constructs,
-.I request accessors
-can be used.  A request accessor is
-.IP
-.RS
-.EX
-.IR %[ name ]
-.EE
-.RE
-.IP
-where \fIname\fR is one of:
-.BR url ,
-.BR path ,
-.BR query ,
-.BR param ,
-and
-.BR header ,
-denoting the corresponding part of the request.  The
-.B param
-and
-.B header
-accessors take a single argument: the name of the query parameter or
-HTPP header.  Accessors are explained in detail in section
-.BR "REQUEST MODIFICATION DIRECTIVES" .
+you specify.  It is expanded as described in \fBString expansion\fR
+above.
 .IP
 For compatibility with previous \fBpound\fR versions, if no
 \fB$\fIN\fR references are found in
@@ -1460,12 +1665,78 @@ Start
 with this service disabled (\fItrue\fR) or enabled (\fIfalse\fR). If
 started as disabled, the service can be later enabled with
 .BR poundctl (8).
+.TP
+\fBForwardedHeader\fR \fIname\fR
+Defines the name of the HTTP header that carries the list of proxies
+the request has passed through.  It is used to report the originator
+IP address when logging.  See the description of
+.B %a
+specifier in
+.BR "REQUEST LOGGING" .
+This statement overrides the \fBForwardedHeader\fR directive from the
+listener scope.
+.IP
+The default is
+.BR X\-Forwarded\-For .
+.TP
+.B TrustedIP
+Defines a list of
+.I trusted proxy
+IP addresses, which is used to determine the originator IP.  See the
+description of
+.B %a
+specifier in
+.BR "REQUEST LOGGING" ,
+for a detailed discussion.
+.IP
+This statement overrides the \fBTrustedIP\fR directive from the
+listener scope.
+.TP
+.BI LogSuppress " class"
+Suppresses HTTP logging for requests that resulted in status codes
+from the specified
+.IR class .
+Valid status classes are:
+.IP
+.RS
+.TP
+.IR info " or " 1
+.I 1xx
+response codes.
+.TP
+.IR success " or " 2
+.I 2xx
+response codes.
+.TP
+.IR redirect " or " 3
+.I 3xx
+response codes.
+.TP
+.IR clterr " or " 4
+.I 4xx
+response codes.
+.TP
+.IR srverr " or " 5
+.I 5xx
+response codes.
+.TP
+.I all
+All response codes.
+.RE
+.IP
+Multiple arguments are allowed.
+.IP
+This statement is designed for services that receive a constant stream
+of similar HTTP requests from a controlled set of IP addresses, such
+as e.g. Openmetric services.  See the \fBMetric\fR section below for
+an example.
 .SH "ACME"
 This statement creates a \fIservice\fR specially crafted for answering
 ACME HTTP-01 challenge requests (see
 .BR https://letsencrypt.org/docs/challenge-types/#http-01-challenge ).
 It takes a single argument specifying a directory where ACME
-challenges are stored.
+challenges are stored. The argument is subject to string expansion
+(see the subsection \fBString expansion\fR, above).
 .PP
 It is supposed that another program is started
 periodically, which checks for certificates approaching their
@@ -1474,12 +1745,23 @@ challenges in that directory.
 .SH "Backend"
 A backend is a definition of a single backend server
 .B pound
-will use to reply to incoming requests.  All configuration directives
-enclosed between
+will use to reply to incoming requests.  Backends are defined via
+a
+.B Backend
+statement.  There are two forms of this statement:
+.I service-specific
+and
+.I global
+(or
+.IR named )
+backend.  These will be discussed later in this section.
+All configuration directives enclosed between
 .B Backend
 and
 .B End
-are specific to a single backend. The following directives are available:
+are specific to a single backend.
+
+The following directives are available:
 .TP
 \fBAddress\fR \fIaddress\fR
 The address that
@@ -1501,6 +1783,14 @@ parameter for non Unix-domain backends.
 .TP
 \fBHTTPS\fR
 The backend is using HTTPS.
+.TP
+\fBServerName\fR "\fIname\fR"
+Specify the name to use for server name identification (\fBSNI\fR).
+This directive also rewrites the \fBHost:\fR header for this
+particular backend.  This means you don't have to use \fBSetHeader\fR
+in addition to it.
+.IP
+This directive may appear only after the \fBHTTPS\fR directive.
 .TP
 \fBCert\fR "\fIfilename\fR"
 Specify the certificate that
@@ -1559,6 +1849,82 @@ Start
 with this backend disabled (1) or enabled (0). If started as disabled, the
 backend can be later enabled with
 .BR poundctl (8).
+.SS Global and per-service backends
+A
+.B Backend
+definition can appear as a part of the service, i.e. in a
+.B Service
+section.
+or globally.  In the latter case, the
+.B Backend
+keyword must be followed by a symbolic name assigned to this backend, e.g.:
+.PP
+.EX
+Backend "name"
+  ...
+End
+.EE
+.PP
+This name must uniquely identify the backend among other globally
+defined backends.  A global backend is attached to a service using
+the
+.B UseBackend
+statement.  It takes the symbolic name of the backend as its argument.
+The statement
+.PP
+.EX
+UseBackend "name"
+.EE
+.PP
+has essentially the same effect as if full backend definition appeared
+instead of it in this place.  A substantial difference between the use
+of service-specific and global backends is that a single global
+backend can be used in multiple services.  In a way,
+.B UseBackend
+statement
+.I expands
+to a backend definition within the service.
+.PP
+Furthermore, you can
+also adjust the \fBPriority\fR and \fBDisabled\fR parameters of the
+global backend definition for use in a particular service.  To do
+so, use the following syntax:
+.PP
+.EX
+Backend "name"
+  Priority 3
+  Disabled no
+End
+.EE
+.PP
+In this form, the
+.B Backend
+statement acts as
+.BR UseBackend .
+Two directives can appear within such
+.B Backend
+statement:
+.BR Priority ,
+and
+.BR Disabled .
+They override the settings defined in the global backend "\fIname\fR".
+.PP
+Notice, that in spite of their similarity, the two
+.I named
+forms of the
+.B Backend
+statement serve different purposes: when used in global scope, a named
+.B Backend
+.I defines
+a backend for further use in various services, and when used
+within a service, it
+.I creates a copy
+of the backend defined elsewhere and
+.I attaches
+it to this service.
+.PP
+The actual global definition may appear before as well as after
+service or services it is used in.
 .SH "Emergency"
 The emergency server will be used once all existing backends are "dead".
 All configuration directives enclosed between
@@ -1646,6 +2012,20 @@ To control access to the telemetry endpoint, use the
 .B ACL
 statement.
 .PP
+The \fBLogSuppress\fR directive can be used in openmetric
+services to suppress logging of served HTTP requests.
+.PP
+For example:
+.PP
+.EX
+Service
+    URL "/metrics"
+    Metrics
+    ACL "secure"
+    LogSuppress success
+End
+.EE
+.PP
 The metrics output is sufficiently self-documented by
 .B # HELP
 descriptor lines.
@@ -1701,7 +2081,7 @@ will be overwritten.  Otherwise, new header will be added to the end
 of the header list.
 .TP
 \fBDeleteHeader\fR [\fIoptions\fR] "\fIpattern\fR"
-Remove from the request all headers matchibg \fIpattern\fR.  By
+Remove from the request all headers matching \fIpattern\fR.  By
 default, \fIpattern\fR is treated as extended POSIX regular
 expression.  One or more \fIoptions\fR can be supplied to modify
 the default behavior.  The \fIoptions\fR argument in the above
@@ -1729,37 +2109,8 @@ Case-insensitive comparison.
 .RE
 .PP
 The \fIvalue\fR argument in the above directives is subject to
-.IR "request evaluation" ,
-during which ny occurrence of
-.I request accessors
-found in it is replaced them with the values they produce.
-Syntactically, a request accessor is:
-.PP
-.EX
-\fB%[ \fINAME\fR [\fIARG\fR] \fB]\fR
-.EE
-.PP
-where \fINAME\fR is the accessor name and \fIARG\fR is optional
-argument.  Notice, that square brackets shown in bold are part
-of the accessor, whereas those enclosing \fIARG\fR are used to
-denote its optional nature.
-.PP
-The following accessors are defined:
-.TP
-.B url
-Returns the URL part of the request.
-.TP
-.B path
-Returns the path part of the request.
-.TP
-.B query
-Returns the query part of the request.
-.TP
-.BI param " NAME"
-Returns the value of the query parameter \fINAME\fR.
-.TP
-.BI header " NAME"
-Returns the value of the HTTP header \fINAME\fR.
+string expansion. Refer to subsection \fBString expansions\fR, for
+details.
 .PP
 The
 .B Rewrite
@@ -1774,7 +2125,7 @@ Syntactically, a
 block is:
 .PP
 .EX
-.B Rewrite
+.BR Rewrite " [" request "]"
 \&.
 \&.
 \&.
@@ -1813,14 +2164,9 @@ with any other extension, the action depends on the host being
 addressed.  The path is prefixed with "/static" if the host is
 "example.org", and with "/assets" otherwise.
 .PP
-When used in this context, arguments to request modification
-directives are also subject to
-.I backreference expansion
-similar to that discussed in the description of the \fBRedirect\fR
-statement, in section
-.B Service
-above.  To illustrate this, here's the
-above example rewritten using backreferences instead of accessors:
+To illustrate the effects of string expansion, here's the the above
+example rewritten using backreference expansion instead of request
+accessors:
 .PP
 .EX
 Rewrite
@@ -1925,6 +2271,419 @@ Certificate serial number (decimal).
 .TP
 .B X\-SSL\-Certificate
 The full client certificate (PEM-format multi-line)
+.SH RESPONSE MODIFICATION
+Headers in the response obtained from a regular backend or generated
+with a \fBError\fR backend can be modified before sending them back to
+the requesting server.  A special form of the \fBRewrite\fR directive
+is provided for this purpose:
+.PP
+.EX
+.B Rewrite response
+\&.
+\&.
+\&.
+.B Else
+\&.
+\&.
+\&.
+.B End
+.EE
+.PP
+where dots stand for any number of response matching and modification
+statements.  The \fBElse\fR part is optional; any number
+of \fBElse\fR blocks can be supplied, thus providing for conditional
+branching.
+.PP
+This directive can be used in
+.BR ListenHTTP ,
+.BR ListenHTTPS ,
+and
+.B Service
+definitions.
+.PP
+Response matching statements are:
+.TP
+\fBHeader\fR [\fIoptions\fR] "\fIpattern\fR"
+Matches if the response contains at least one header matching the given
+\fIpattern\fR.
+.TP
+\fBStringMatch\fR "\fIstring\fR" [\fIoptions\fR] "\fIpattern\fR"
+Expand \fIstring\fR as described in \fBString expansion\fR (see below)
+and match the resulting value against \fIpattern\fR.
+.IP
+By default, \fIpattern\fR is treated as
+case-insensitive extended regular expression.  This can be changed by
+\fIoptions\fR, as described in
+section
+.BR "Service Matching Directives" ,
+above.
+.TP
+.B Match
+The \fBMatch\fR statement is as described in section
+.BR "Match statement" ,
+except that only directives described above are allowed within it.
+.TP
+.B Not
+Placed before any of the above directives, reverts its result.
+.PP
+Following \fIresponse modification\fR statements are defined:
+.TP
+\fBDeleteHeader\fR "\fIheader\fB: \fIpattern\fR"
+Remove matching headers from the response.
+.TP
+\fBSetHeader\fR "\fIheader\fB: \fIvalue\fR"
+Add header to the response.  Argument
+undergoes string expansion as described above. The expanded value must
+be a valid header line.
+.SH MULTI-VALUE HEADERS
+HTTP protocol allows for certain headers to appear in the message
+multiple times.  Namely, multiple headers with the same header name
+are permitted if that header field is defined as a comma-separated
+list.  The standard specifies that such fields can be combined in
+a single \fIheader: value\fR pair, by appending each subsequent field
+value to the previous one, each separated by a comma.
+.PP
+.B Pound
+is able to perform such combining both on incoming requests and on
+responses.  To enable this feature, declare names of headers
+that can be combined using the
+.B CombineHeaders
+section statement.  This statement must be followed by header names,
+each on a separate line, and terminated with an
+.B End
+statement.  E.g.:
+.PP
+.EX
+CombineHeaders
+    "Accept"
+    "Allow"
+    "Forwarded"
+End
+.EE
+.PP
+You can also store header names in a file, and include that file after
+.BR CombineHeaders ,
+e.g.:
+.PP
+.EX
+CombineHeaders
+    Include "multivalue.txt"
+End
+.EE
+.SH BASIC AUTHENTICATION
+To limit access to a service or services to certain authenticated
+users, use a combination of \fBBasicAuth\fR matching and response
+modification.
+.PP
+The \fBBasicAuth\fR matching directive evaluates to true, if the
+incoming request contains Authorization header with scheme "Basic",
+such that user name and password obtained from it match a line in the
+given disk file.  The file must be a plain-text file created with
+.BR htpasswd (1)
+or similar utility, i.e. each non-empty line of it must contain
+username and password hash separated by a colon.  Password hash can be
+one of:
+.nr step 1 1
+.IP \n[step].
+Password in plain text.
+.IP \n+[step].
+Hash created by the system
+.BR crypt (3)
+function.
+.IP \n+[step].
+Password hashed using SHA1 algorithm and encoded in base64.
+This hash must be prefixed by
+.BR {SHA} .
+.IP \n+[step].
+Apache-style \fIapr1\fR hash.
+.PP
+Combined with the response rewriting described above, this can be
+used to implement basic HTTP authentication in
+.B Pound
+as shown in the following example:
+.PP
+.EX
+  Service "auth"
+      Not BasicAuth "/etc/pound/htpass"
+      Rewrite response
+          SetHeader "WWW-Authenticate: Basic realm=\\"Restricted access\\""
+      End
+      Error 401
+  End
+.EE
+.PP
+Placing this service definition before others ensures that services
+defined below it will be tried only if the incoming request passes
+basic authentication.
+.SH REQUEST LOGGING
+Logging of HTTP requests and responses is controlled by
+.B LogLevel
+directive.  This directive can appear either in global scope, in which
+case it affects all listeners defined below it, or in listener scope,
+in which case it affects only this listener, overriding the global
+setting.
+.PP
+Argument to the
+.B LogLevel
+directive can be either an integer number in range 0 through 5
+(inclusive), or a quoted string.  Numeric value identifies one of
+the
+.I built-in
+log formats, described later in this section.  String value refers
+either to a built-in format name, or to a user-defined format name.
+In the latter case, the named format must be defined earlier using the
+.B LogFormat
+statement.
+.SS Format specification
+The syntax of the
+.B LogFormat
+statement is:
+.PP
+.EX
+LogFormat "\fIname\fR" "\fIformat_string\fR"
+.EE
+.PP
+First argument, \fIname\fR, is a unique identifier for this format,
+which will be used later to refer to it.  \fIFormat_string\fR is
+a character string composed of ordinary characters (not \fB%\fR),
+which are copied unchanged to the resulting log message, and
+conversion specifications, each of which are replaced by a
+corresponding piece of information about the request or reply.
+.PP
+Conversion specifications are single characters prefixed with a
+percent sign.  Depending on the specification, an optional
+\fIconversion argument\fR in curly brackets may appear between
+\fB%\fR and conversion character.
+.PP
+The following conversion characters are defined:
+.TP
+.B %%
+Replaced with the percent sign.
+.TP
+.B %a
+Originator IP address of the request.  If the request contains
+the \fBX\-Forwarded\-For\fR header and \fBTrustedIP\fR ACL is
+defined, the value of the header is consulted to obtain the IP
+address.  The value must be a comma-delimited list of intermediate
+useragent IP addresses.  To determine the actual useragent IP, the
+list is traversed from right to left, until an IP is found that is not
+listed in \fBTrustedIP\fR ACL.
+.IP
+If \fBX\-Forwarded\-For\fR header is not present, or \fBTrustedIP\fR
+is not defined, or the above algorithm does not return an IP address,
+\fB%a\fR expands to the actual remote IP address the request came from
+(same as \fB%h\fR).
+.IP
+The \fBTrustedIP\fR ACL can be defined in global scope, or in
+\fBListenHTTP\fR (\fBListenHTTPS\fR) section, or in \fBService\fR
+section.  Most-specific ACL overrides least-specific ones, that is
+\fBTrustedIP\fR defined in \fBService\fR will be used, if it is
+defined.  If not, the one defined in listener will be used, etc.
+The syntax of the \fBTrustedIP\fR statement is the same as that of
+\fBACL\fR, i.e.
+.IP
+.RS
+.EX
+TrustedIP "\fIname\fR"
+.EE
+.RE
+.IP
+refers to the named ACL \fIname\fR (which must be defined earlier),
+and
+.IP
+.RS
+.EX
+TrustedIP
+  "\fICIDR0\fR"
+  "\fICIDR1\fR"
+  ...
+End
+.EE
+.RE
+.IP
+defines the list of trusted IPs in place.
+.IP
+\fBForwardedHeader\fR statement defines the name of the header to use
+instead of \fBX\-Forwarded\-For\fR.  As \fBTrustedIP\fR, this
+statement can appear in global, listener, or in service scope.
+.TP
+.B %A
+Local IP address of the listener.
+.TP
+.B %B
+Size of response in bytes, excluding headers.
+.TP
+.B %b
+Same as \fB%B\fR, but in \fICLF\fR format, i.e. a dash is used when
+response size is zero.
+.TP
+.B %D
+The time taken to serve the request, in microseconds.
+.TP
+.B %h
+Client IP address of the request.
+.TP
+.B %H
+The request protocol.
+.TP
+.BI %{ VARNAME }i
+The contents of \fIVARNAME:\fR header line in the request.  Changes
+made by header modification directives affect this.
+.TP
+.BI %{ VARNAME }I
+Same as \fB%i\fR, except that if no such header is present in the
+request, a dash is substituted.
+.TP
+.BI %{ OBJNAME }L
+Location of the
+.B Pound
+object that is involved in handling the request.  Valid values for
+.I OBJNAME
+are:
+.BR listener ,
+.BR service ,
+and
+.BR backend .
+The location gives position in the configuration file where the object
+was defined, and is formatted as
+.IP
+.EX
+.IR NAME : LN1 . COL1 - LN2 . COL2
+.EE
+.IP
+where
+.I NAME
+is the configuration file name,
+.I LN1
+and
+.I COL1
+are number of line and column where the object definition begins,
+and
+.I LN2
+and
+.I COL2
+are number of line and column where it ends.  Line and column numbers
+start with 1.
+.TP
+.B %m
+The request method.
+.TP
+.BI %{ OBJNAME }N
+Name of the
+.B Pound
+object that is involved in handling the request.  Valid values for
+.I OBJNAME
+are:
+.BR listener ,
+.BR service ,
+and
+.BR backend .
+.TP
+.B %P
+Thread ID of the serving thread.
+.TP
+.B %q
+The query string prepended with a \fB?\fR if it exists, otherwise an
+empty string.
+.TP
+.B %r
+First line of request.
+.TP
+.B %s
+Response status code.
+.TP
+.B %>s
+First line of the response.
+.TP
+.B %t
+Time the request was received, in the format
+.BR "[18/Sep/2011:19:18:28 -0400]" .
+The last number indicates the timezone offset from UTC.
+.TP
+.B %{format}t
+Time the request was received, in the format specified by the argument
+.RB ( strftime (3)).
+If the format starts with \fBbegin:\fR (default) the time is taken at
+the beginning of the request processing.  If it starts with \fRend:\fR
+it is the time after the response from the backend has been sent back
+to the requester.  In addition to
+.BR strftime (3)
+formats, the following specifications are recognized:
+.RS
+.RE
+.TP
+.B sec
+Number of seconds since the Epoch.
+.TP
+.B msec
+Number of milliseconds since the Epoch.
+.TP
+.B usec
+Number of microseconds since the Epoch.
+.TP
+.B msec_frac
+Millisecond fraction of the time.
+.TP
+.B usec_frac
+Microsecond fraction of the time.
+.RE
+.TP
+.B %T
+The time taken to process the request, in seconds.
+.TP
+.BI %{ UNIT }T
+The time taken to process the request, in a time unit given by
+\fIUNIT\fR.  Valid units are \fBms\fR for milliseconds, \fBus\fR for
+microseconds, \fBs\fR for seconds, and \fBf\fR for seconds with
+fractional part.  Using \fBs\fR gives the same result as \fB%T\fR
+without any format; using \fBus\fR gives the same result as \fB%D\fR.
+.TP
+.B %u
+Remote user if the request was authenticated.
+.TP
+.B %U
+The URL path requested.  This is affected by request modification
+directives.
+.TP
+.B %v
+The listener name.
+.SS Built-in formats
+There are five built-in formats.  These can be identified either by
+their numeric index in the format table, or by symbolic name.  The
+table below describes each built-in format using the format
+specification string:
+.TP
+.BR 0 ", " null
+No request logging at all.
+.TP
+.BR 1 ", " regular
+.EX
+"%a %r \- %>s"
+.EE
+.TP
+.BR 2 ", " extended
+.EX
+"%a %r \- %>s (%{Host}i/%{service}N \-> %{backend}N) %{f}T sec"
+.EE
+.TP
+.BR 3 ", " vhost_combined
+(Split in two lines for readability)
+.EX
+"%{Host}I %a - %u %t \(rs\(dq%r\(rs\(dq %s %b \(rs\(dq%{Referer}i\(rs\(dq \(rs
+\(rs\(dq%{User\-Agent}i\(rs\(dq"
+.EE
+.TP
+.BR 4 ", " combined
+.EX
+"%a \- %u %t \(rs\(dq%r\(rs\(dq %s %b \(rs\(dq%{Referer}i\(rs\(dq \(rs\(dq%{User\-Agent}i\(rs\(dq"
+.EE
+.TP
+.BR 5 ", " detailed
+(Split in two lines for readability)
+.EX
+"%{Host}I %a - %u %t \(rs\(dq%r\(rs\(dq %s %b \(rs\(dq%{Referer}i\(rs\(dq \(rs
+\(rs\(dq%{User\-Agent}\(rs\(dq (%{service}N \-> %{backend}N) %{f}T sec"
+.EE
 .SH SECURITY
 .PP
 In general,
@@ -1938,7 +2697,7 @@ so using a \fBRootJail\fR directive is only for extra security bonus points.
 .PP
 .B Pound
 tries to sanitize all HTTP/HTTPS requests: the request itself, the
-headers and the contents are checked for conformance to the RFC's and
+headers and the contents are checked for conformance to the RFCs and
 only valid requests are passed to the backend servers. This is not
 absolutely fool-proof - as the recent Apache problem with chunked
 transfers demonstrated. However, given the current standards, this is

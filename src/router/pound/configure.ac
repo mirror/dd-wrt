@@ -1,6 +1,6 @@
 # Pound - the reverse-proxy load-balancer                -*- autoconf -*-
 # Copyright (C) 2002-2010 Apsis GmbH
-# Copyright (C) 2018-2023 Sergey Poznyakoff
+# Copyright (C) 2018-2024 Sergey Poznyakoff
 #
 # Pound is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,13 +14,13 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with pound.  If not, see <http://www.gnu.org/licenses/>.
-AC_PREREQ([2.69])
-AC_INIT([pound],[4.8],[gray@gnu.org],
+AC_PREREQ([2.71])
+AC_INIT([pound],[4.11],[gray@gnu.org],
 	[pound],[https://github.com/graygnuorg/pound])
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_SRCDIR([src/pound.c])
 AC_CONFIG_HEADERS([config.h])
-AM_INIT_AUTOMAKE([1.15.1 gnu tar-ustar])
+AM_INIT_AUTOMAKE([1.16.5 gnu tar-ustar])
 AC_CANONICAL_HOST
 
 # Checks for programs.
@@ -30,6 +30,7 @@ AC_PROG_RANLIB
 # Checks for libraries.
 AX_PTHREAD([CC="$PTHREAD_CC"],
 	   [AC_MSG_ERROR([No suitable pthread library found])])
+AC_CHECK_LIB(crypt, crypt)
 
 AC_SUBST(SSL_CPPFLAGS)
 AC_SUBST(SSL_LDFLAGS)
@@ -54,6 +55,12 @@ AC_MSG_RESULT([$openssl_v3])
 CPPFLAGS=$saved_CPPFLAGS
 LDFLAGS=$saved_LDFLAGS
 AM_CONDITIONAL([OPENSSL_V3],[test "$openssl_v3" = "yes"])
+
+# Check for structures
+AC_CHECK_MEMBERS([struct stat.st_mtim],[],[],
+ [#include <sys/types.h>
+#include <sys/stat.h>
+])
 
 AC_ARG_WITH([t_rsa],
  [AS_HELP_STRING([--with-t_rsa=nnn],[Timeout for RSA ephemeral keys generation])],
@@ -155,7 +162,7 @@ AC_DEFINE_UNQUOTED([SET_DH_AUTO],[$SET_DH_AUTO],
 
 PND_PCREPOSIX
 
-AC_CHECK_HEADERS([getopt.h pthread.h openssl/ssl.h openssl/engine.h])
+AC_CHECK_HEADERS([getopt.h pthread.h crypt.h openssl/ssl.h openssl/engine.h])
 
 AC_TYPE_UID_T
 AC_TYPE_PID_T

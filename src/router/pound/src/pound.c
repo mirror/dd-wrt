@@ -1,7 +1,7 @@
 /*
  * Pound - the reverse-proxy load-balancer
  * Copyright (C) 2002-2010 Apsis GmbH
- * Copyright (C) 2018-2023 Sergey Poznyakoff
+ * Copyright (C) 2018-2024 Sergey Poznyakoff
  *
  * Pound is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -46,6 +46,9 @@ int n_listeners;                /* Number of listeners */
 regex_t HEADER,			/* Allowed header */
   CONN_UPGRD,			/* upgrade in connection header */
   LOCATION;			/* the host we are redirected to */
+
+char *forwarded_header;         /* "forwarded" header name */
+ACL *trusted_ips;               /* Trusted IP addresses */
 
 #ifndef  SOL_TCP
 /* for systems without the definition */
@@ -316,7 +319,7 @@ pound_http_dequeue (void)
 	    {
 	      /*
 	       * worker_count might have changed while we were waiting,
-	       * so check again if the mimnimal worker count is reached.
+	       * so check again if the minimal worker count is reached.
 	       */
 	      if (worker_count == worker_min_count)
 		continue;
@@ -362,6 +365,7 @@ pound_http_destroy (POUND_HTTP *arg)
 {
   free (arg->from_host.ai_addr);
 
+  free (arg->orig_forwarded_header);
   http_request_free (&arg->request);
   http_request_free (&arg->response);
 
@@ -1073,7 +1077,10 @@ main (const int argc, char **argv)
 		}
 	    }
 
-	  listen (lstn->sock, 512);
+	  if (listen (lstn->sock, 512))
+	    abend ("can't listen on %s: %s",
+                   addr2str (abuf, sizeof (abuf), &lstn->addr, 0),
+                   strerror (errno));
 	}
       n_listeners++;
     }

@@ -1,0 +1,186 @@
+# This file is part of pound testsuite. -*- autotest -*-
+# Copyright (C) 2023-2024 Sergey Poznyakoff
+#
+# Pound is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Pound is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with pound.  If not, see <http://www.gnu.org/licenses/>.
+AT_SETUP([Session control])
+AT_KEYWORDS([poundctl sessctl])
+AT_DATA([test.tmpl],
+[{{define "milliseconds" -}}
+{{ div . 1000000 | printf "%.2f" }}
+{{- end}}
+
+{{define "print_status" -}}
+{{if .enabled}}enabled{{else}}disabled{{end -}}
+{{end -}}
+
+{{define "default" -}}
+{{if exists . "listeners" -}}
+{{- /* Iterate over all listeners */ -}}
+Listeners:
+
+{{range $lno,$lstn = .listeners -}}
+{{printf "%3d" $lno}}: {{block "default.print_listener" $lstn -}}
+ Listener {{if .name}}"{{.name}}" {{end}}{{.protocol}}://{{.address}} {{template "print_status" .}}
+ {{- /* For each listener, show all its services */ -}}
+ {{block "default.print_services" .services}}
+ {{- range $sno,$svc = .}}
+   {{printf "%3d" $sno}}: {{block "default.print_service" $svc -}}
+   Service {{if .name}}"{{.name}}" {{end}}{{template "print_status" .}}, {{.tot_pri}}
+  {{- /* List each backend in service */ -}}
+  {{- range $bno,$backend = .backends}}
+      {{printf "%3d" $bno}}: {{block "default.print_backend" $backend -}}
+       {{.type}}{{if eq .type "backend" }} {{.protocol}} {{.address}} {{.priority}} {{if .alive}}alive{{else}}dead{{end}}
+     {{- else if eq .type "redirect" }} {{.code}} {{.url}}{{if .redir_req}} (redirect request){{end}}
+     {{- end}} {{template "print_status" .}}
+     {{- if exists . "stats"}} - {{with .stats -}}
+       {{.request_count}} requests{{if gt .request_count 0}}, {{template "milliseconds" .request_time_avg}} ms avg, {{template "milliseconds" .request_time_stddev}} stddev{{end}}
+       {{- end}}
+     {{- end}}
+   {{- end}}{{ /* block default.print_backend */ }}
+  {{- end}}{{ /* iterating over backends */ }}
+  {{- /* Show session type supported by the service */ }}
+     Session type: {{.session_type}}
+       {{- if len .sessions}}
+	 {{- /* List all sessions */ }}
+	 {{- range $i, $sess = .sessions}}
+       {{$i}}. Session {{$sess.key}} {{$sess.backend}} {{$sess.expire}}
+	 {{- end}}{{ /* ranging over sessions */ -}}
+       {{end}}{{ /* if len */ }}
+ {{- end}}{{ /* block default.print_service */ }}
+ {{- end}}{{ /* iterating over services */ }}
+ {{- end}}{{ /* block default.print_services */ }}
+ {{- end}}{{ /* block default.print_listener */ }}
+{{end}}{{ /* iterating over listeners */ }}
+{{- if len .services}}
+Global services:
+{{block "default.print_services" .services}}
+{{end -}}{{ /* if len .services */ }}
+{{else if exists . "services" -}}
+{{block "default.print_listener" .}}
+{{else if exists . "backends" -}}
+{{block "default.print_service" .}}
+{{else -}}
+{{block "default.print_backend" .}}
+{{end -}}
+{{end -}}{{ /* define */ }}
+])
+
+PT_CHECK(
+[Control "pound.ctl"
+ListenHTTP
+	Service
+		Session
+			Type Header
+			TTL 300
+			ID  "X-Session"
+		End
+		Backend
+			Address
+			Port
+		End
+		Backend
+			Address
+			Port
+		End
+	End
+End
+],
+[#
+# 1. Initialize three sessions.
+#
+GET /echo/foo
+X-Session: 1
+end
+
+200
+end
+
+GET /echo/foo
+X-Session: 2
+end
+
+200
+end
+
+GET /echo/foo
+X-Session: 3
+end
+
+200
+end
+
+#
+# 2. Get initial listing.
+#
+run poundctl -f ./pound.cfg -t ./test.tmpl list /1
+status 0
+stdout
+Listener http://127\.0\.0\.1:\d+ enabled
+     0: Service enabled, 10
+        0: backend http 127\.0\.0\.1:\d+ 5 alive enabled
+        1: backend http 127\.0\.0\.1:\d+ 5 alive enabled
+     Session type: HEADER
+       0. Session 1 [[01]] \d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}
+       1. Session 2 [[01]] \d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}
+       2. Session 3 [[01]] \d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}
+$
+end
+end
+
+#
+# 3. Delete one session.
+#
+run poundctl -f ./pound.cfg -t ./test.tmpl delete /1/0 2
+status 0
+end
+
+run poundctl -f ./pound.cfg -t ./test.tmpl list /1
+status 0
+stdout
+Listener http://127\.0\.0\.1:\d+ enabled
+     0: Service enabled, 10
+        0: backend http 127\.0\.0\.1:\d+ 5 alive enabled
+        1: backend http 127\.0\.0\.1:\d+ 5 alive enabled
+     Session type: HEADER
+       0. Session 1 [[01]] \d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}
+       1. Session 3 [[01]] \d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}
+$
+end
+end
+
+#
+# 4. Add new session.
+#
+run poundctl -f ./pound.cfg -t ./test.tmpl add /1/0/1 2
+status 0
+end
+
+run poundctl -f ./pound.cfg -t ./test.tmpl list /1
+status 0
+stdout
+Listener http://127\.0\.0\.1:\d+ enabled
+     0: Service enabled, 10
+        0: backend http 127\.0\.0\.1:\d+ 5 alive enabled
+        1: backend http 127\.0\.0\.1:\d+ 5 alive enabled
+     Session type: HEADER
+       0. Session 1 [[01]] \d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}
+       1. Session 3 [[01]] \d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}
+       2. Session 2 1 \d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}
+$
+end
+end
+
+])
+
+AT_CLEANUP

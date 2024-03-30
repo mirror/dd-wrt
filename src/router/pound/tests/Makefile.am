@@ -1,6 +1,6 @@
 ## Makefile for the pound testsuite
 ## Process this file with automake to produce Makefile.in.
-## Copyright (C) 2022-2023 Sergey Poznyakoff
+## Copyright (C) 2022-2024 Sergey Poznyakoff
 ##
 ## Pound is free software; you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -68,13 +68,17 @@ TESTSUITE_AT = \
  bemix.at\
  checkurl.at\
  chgvis.at\
+ chunked.at\
+ chunked2.at\
  config.at\
+ disable.at\
  echo.at\
  errfile.at\
  error.at\
  experr.at\
  fromfile.at\
  headdeny.at\
+ header.at\
  headrem.at\
  headrequire.at\
  host.at\
@@ -83,25 +87,38 @@ TESTSUITE_AT = \
  incldir.at\
  inclnest.at\
  inclscope.at\
+ list.at\
+ logfmt.at\
+ loglevcomp.at\
+ loglevrun.at\
+ logsup.at\
  lstset.at\
  maxrequest.at\
+ multival.at\
+ nb.at\
  not.at\
  optfwd.at\
  optorder.at\
  optssl.at\
  or.at\
+ path.at\
  prio.at\
+ query.at\
+ queryparam.at\
  reqacc.at\
  redirect.at\
+ resprw.at\
  rewriteloc.at\
  rwchain.at\
  sessauth.at\
+ sessctl.at\
  sesscookie.at\
  sesshdr.at\
  sessip.at\
  sessparm.at\
  sessurl.at\
  set.at\
+ stringmatch.at\
  template.at\
  url.at\
  virthost.at\

@@ -1,7 +1,7 @@
 /*
  * Pound - the reverse-proxy load-balancer
  * Copyright (C) 2002-2010 Apsis GmbH
- * Copyright (C) 2018-2023 Sergey Poznyakoff
+ * Copyright (C) 2018-2024 Sergey Poznyakoff
  *
  * Pound is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -80,7 +80,7 @@ get_socket_name (void)
   if (!fp)
     {
       if (errno != ENOENT || verbose_option)
-	errormsg (0, errno, "can't open %s", strerror (errno));
+	errormsg (0, errno, "can't open %s", conf_name);
       return NULL;
     }
   while (fgets (buf, sizeof (buf), fp))
@@ -307,12 +307,13 @@ xgets (BIO *bio, char *buf, int len)
 }
 
 int
-read_response_line (BIO *bio, char **ret_status, int *ret_version)
+read_response_line (BIO *bio, char *ret_status, size_t size, int *ret_version)
 {
   char buf[MAXBUF];
   int ver;
   char *p, *end;
   long code;
+  size_t len;
 
   xgets (bio, buf, sizeof (buf));
   if (strncmp (buf, "HTTP/1.", 7))
@@ -339,7 +340,11 @@ read_response_line (BIO *bio, char **ret_status, int *ret_version)
     }
 
   p = end + strspn (end, " \n");
-  *ret_status = p;
+  len = strlen (p);
+  if (len >= size)
+    len = size-1;
+  memcpy (ret_status, p, len);
+  ret_status[len] = 0;
   *ret_version = ver;
   return code;
 }
@@ -348,7 +353,6 @@ struct json_value *
 read_response (BIO *bio)
 {
   int code;
-  char *status;
   long content_length = -1;
   char buf[MAXBUF];
   int ver;
@@ -370,9 +374,9 @@ read_response (BIO *bio)
   DEFHDR (content_length, "Content-Length");
   DEFHDR (connection, "Connection");
 
-  if ((code = read_response_line (bio, &status, &ver)) != 200)
+  if ((code = read_response_line (bio, buf, sizeof (buf), &ver)) != 200)
     {
-      errormsg (1, 0, "%s", status);
+      errormsg (1, 0, "%s", buf);
     }
 
   for (;;)

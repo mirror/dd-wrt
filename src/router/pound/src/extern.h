@@ -21,13 +21,17 @@ extern unsigned alive_to;	/* check interval for resurrection */
 extern int daemonize;		/* run as daemon */
 extern int enable_supervisor;   /* run supervisor process */
 extern int log_facility;	/* log facility to use */
-extern int print_log;           /* print log messages to stdout/stderr during startupb
-				 */
+extern int print_log;           /* print log messages to stdout/stderr during
+				   startup */
 extern int enable_backend_stats;
 
 extern regex_t HEADER,		/* Allowed header */
   CONN_UPGRD,			/* upgrade in connection header */
   LOCATION;			/* the host we are redirected to */
+
+#define DEFAULT_FORWARDED_HEADER "X-Forwarded-For"
+extern char *forwarded_header;  /* "forwarded" header name */
+extern ACL *trusted_ips;        /* Trusted IP addresses */
 
 #ifndef  SOL_TCP
 /* for systems without the definition */

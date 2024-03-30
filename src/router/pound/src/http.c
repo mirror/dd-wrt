@@ -1,7 +1,7 @@
 /*
  * Pound - the reverse-proxy load-balancer
  * Copyright (C) 2002-2010 Apsis GmbH
- * Copyright (C) 2018-2023 Sergey Poznyakoff
+ * Copyright (C) 2018-2024 Sergey Poznyakoff
  *
  * Pound is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -47,6 +47,24 @@ bio_http_reply_start (BIO *bio, int proto, int code, char const *text,
   BIO_printf (bio, "%s\r\n", headers ? headers : "");
 }
 
+static int http_headers_send (BIO *be, HTTP_HEADER_LIST *head, int safe);
+
+static void
+bio_http_reply_start_list (BIO *bio, int proto, int code, char const *text,
+			   HTTP_HEADER_LIST *head,
+			   CONTENT_LENGTH len)
+{
+  BIO_printf (bio, "HTTP/1.%d %d %s\r\n", proto, code, text);
+  if (proto == 1)
+    {
+      BIO_printf (bio,
+		  "Content-Length: %"PRICLEN"\r\n"
+		  "Connection: close\r\n", len);
+    }
+  http_headers_send (bio, head, 1);
+  BIO_printf (bio, "\r\n");
+}
+
 /*
  * Emit to BIO response line with the given CODE and descriptive TEXT,
  * followed by HEADERS (may be NULL) and given CONTENT.  TYPE and
@@ -80,6 +98,20 @@ static HTTP_STATUS http_status[] = {
     "Bad Request",
     "Your browser (or proxy) sent a request that"
     " this server could not understand."
+  },
+  [HTTP_STATUS_UNAUTHORIZED] = {
+    401,
+    "Unauthorized",
+    "This server could not verify that you are authorized to access"
+    " the document requested.  Either you supplied the wrong credentials"
+    " (e.g., bad password), or your browser doesn't understand how to supply"
+    " the credentials required."
+  },
+  [HTTP_STATUS_FORBIDDEN] = {
+    403,
+    "Forbidden",
+    "You don't have permission to access this resource."
+    " It is either read-protected or not readable by the server."
   },
   [HTTP_STATUS_NOT_FOUND] = {
     404,
@@ -231,12 +263,6 @@ submatch_reset (struct submatch *sm)
   sm->matchn = 0;
 }
 
-static void
-submatch_queue_init (struct submatch_queue *smq)
-{
-  memset (smq, 0, sizeof (*smq));
-}
-
 void
 submatch_queue_free (struct submatch_queue *smq)
 {
@@ -249,9 +275,9 @@ submatch_queue_free (struct submatch_queue *smq)
 }
 
 static struct submatch *
-submatch_queue_get (struct submatch_queue *smq, int n)
+submatch_queue_get (struct submatch_queue const *smq, int n)
 {
-  return smq->sm + (smq->cur + SMQ_SIZE - n) % SMQ_SIZE;
+  return (struct submatch *)(smq->sm + (smq->cur + SMQ_SIZE - n) % SMQ_SIZE);
 }
 
 static struct submatch *
@@ -284,13 +310,12 @@ submatch_exec (regex_t const *re, char const *subject, struct submatch *sm)
   return res;
 }
 
-static int http_request_get_url (struct http_request *, char const **);
-static int http_request_get_query (struct http_request *, char const **);
 static int http_request_get_query_param (struct http_request *,
 					 char const *, size_t,
 					 struct query_param **);
 
-typedef int (*accessor_func) (struct http_request *, char const *, int, char const **);
+typedef int (*accessor_func) (struct http_request *, char const *, int,
+			      char const **, size_t *);
 
 struct accessor
 {
@@ -301,47 +326,116 @@ struct accessor
 
 static int
 accessor_url (struct http_request *req, char const *arg, int arglen,
-	      char const **ret_val)
+	      char const **ret_val, size_t *ret_len)
 {
-  return http_request_get_url (req, ret_val);
+  char const *val;
+  int rc = http_request_get_url (req, &val);
+  if (rc == RETRIEVE_OK && val)
+    {
+      *ret_len = strlen (val);
+      *ret_val = val;
+    }
+  return rc;
 }
 
 static int
 accessor_path (struct http_request *req, char const *arg, int arglen,
-	       char const **ret_val)
+	       char const **ret_val, size_t *ret_len)
 {
-  return http_request_get_path (req, ret_val);
+  char const *val;
+  int rc = http_request_get_path (req, &val);
+  if (rc == RETRIEVE_OK && val)
+    {
+      *ret_len = strlen (val);
+      *ret_val = val;
+    }
+  return rc;
 }
 
 static int
 accessor_query (struct http_request *req, char const *arg, int arglen,
-		char const **ret_val)
+		char const **ret_val, size_t *ret_len)
 {
-  return http_request_get_query (req, ret_val);
+  char const *val;
+  int rc = http_request_get_query (req, &val);
+  if (rc == RETRIEVE_OK && val)
+    {
+      *ret_len = strlen (val);
+      *ret_val = val;
+    }
+  return rc;
 }
 
 static int
 accessor_param (struct http_request *req, char const *arg, int arglen,
-		char const **ret_val)
+		char const **ret_val, size_t *ret_len)
 {
   struct query_param *qp;
   int rc;
   if ((rc = http_request_get_query_param (req, arg, arglen, &qp)) == RETRIEVE_OK)
-    *ret_val = qp->value;
+    {
+      *ret_val = qp->value;
+      if (qp->value)
+	*ret_len = strlen (qp->value);
+    }
   return rc;
 }
 
 static int
 accessor_header (struct http_request *req, char const *arg, int arglen,
-		 char const **ret_val)
+		 char const **ret_val, size_t *ret_len)
 {
   struct http_header *hdr;
 
   if ((hdr = http_header_list_locate_name (&req->headers, arg, arglen)) == NULL)
     return RETRIEVE_NOT_FOUND;
 
-  *ret_val = http_header_get_value (hdr);
+  if ((*ret_val = http_header_get_value (hdr)) != NULL)
+    *ret_len = strlen (*ret_val);
   return RETRIEVE_OK;
+}
+
+static int
+accessor_host (struct http_request *req, char const *arg, int arglen,
+	       char const **ret_val, size_t *ret_len)
+{
+  char const *host;
+  size_t len;
+  int rc = accessor_header (req, "host", 4, &host, &len);
+  if (rc == RETRIEVE_OK && host)
+    {
+      char *p;
+      *ret_val = host;
+      if ((p = memchr (host, ':', len)) != NULL)
+	*ret_len = p - host;
+      else
+	*ret_len = len;
+    }
+  return rc;
+}
+
+static int
+accessor_port (struct http_request *req, char const *arg, int arglen,
+	       char const **ret_val, size_t *ret_len)
+{
+  char const *host;
+  size_t len;
+  int rc = accessor_header (req, "host", 4, &host, &len);
+  if (rc == RETRIEVE_OK && host)
+    {
+      char *p;
+      if ((p = memchr (host, ':', len)) != NULL)
+	{
+	  *ret_val = p;
+	  *ret_len = len - (p - host);
+	}
+      else
+	{
+	  *ret_val = host + len;
+	  *ret_len = 0;
+	}
+    }
+  return rc;
 }
 
 static struct accessor accessors[] = {
@@ -350,6 +444,8 @@ static struct accessor accessors[] = {
   { "query",    accessor_query },
   { "param",    accessor_param, 1 },
   { "header",   accessor_header, 1 },
+  { "host",     accessor_host },
+  { "port",     accessor_port },
   { NULL }
 };
 
@@ -436,8 +532,8 @@ find_accessor (char const *input, size_t len, char **ret_arg, size_t *ret_arglen
  */
 static int
 expand_string_to_buffer (struct stringbuf *sb, char const *str,
-			 struct submatch_queue *smq, char *what,
-			 struct http_request *req)
+			 POUND_HTTP *phttp,
+			 struct http_request *req, char *what)
 {
   char *p;
   char const *start = str; /* Save the string for error reporting. */
@@ -451,7 +547,8 @@ expand_string_to_buffer (struct stringbuf *sb, char const *str,
       str += len;
       if (*str == 0)
 	break;
-      else if ((str[0] == '$' && (str[1] == '$' || str[1] == '%')) || str[1] == 0)
+      else if ((str[0] == '$' && (str[1] == '$' || str[1] == '%')) ||
+	       str[1] == 0)
 	{
 	  stringbuf_add_char (sb, str[0]);
 	  str += 2;
@@ -473,7 +570,8 @@ expand_string_to_buffer (struct stringbuf *sb, char const *str,
 	  q = strchr (str + 2, ']');
 	  if (q == NULL)
 	    {
-	      logmsg (LOG_WARNING, "%s \"%s\": unclosed %%[ at offset %d", what, start, (int)(str - start));
+	      logmsg (LOG_WARNING, "%s \"%s\": unclosed %%[ at offset %d",
+		      what, start, (int)(str - start));
 	      stringbuf_add (sb, str, 2);
 	      str += 2;
 	      result = -1;
@@ -486,9 +584,9 @@ expand_string_to_buffer (struct stringbuf *sb, char const *str,
 	    {
 	      stringbuf_add (sb, str, len + 1);
 	    }
-	  else if (acc (req, arg, arglen, &val) == 0 && val)
+	  else if (acc (&phttp->request, arg, arglen, &val, &len) == 0 && val)
 	    {
-	      stringbuf_add_string (sb, val);
+	      stringbuf_add (sb, val, len);
 	      if (result >= 0)
 		result++;
 	    }
@@ -522,7 +620,10 @@ expand_string_to_buffer (struct stringbuf *sb, char const *str,
 		  if (errno || *p != ')')
 		    {
 		      int len = str - start + 1;
-		      logmsg (LOG_WARNING, "%s \"%s\": missing closing parenthesis in reference started in position %d ", what, start, len);
+		      logmsg (LOG_WARNING,
+			      "%s \"%s\": missing closing parenthesis in"
+			      " reference started in position %d ",
+			      what, start, len);
 		      stringbuf_add (sb, str, p - str);
 		      str = p;
 		      result = -1;
@@ -531,7 +632,9 @@ expand_string_to_buffer (struct stringbuf *sb, char const *str,
 		  if (n < 0 || n >= SMQ_SIZE)
 		    {
 		      int len = p - str + 1;
-		      logmsg (LOG_WARNING, "%s \"%s\" refers to non-existing group %*.*s", what, start, len, len, str);
+		      logmsg (LOG_WARNING,
+			      "%s \"%s\" refers to non-existing group %*.*s",
+			      what, start, len, len, str);
 		      stringbuf_add (sb, str, p - str);
 		      str = p;
 		      result = -1;
@@ -546,7 +649,9 @@ expand_string_to_buffer (struct stringbuf *sb, char const *str,
 		  if (*p != '}')
 		    {
 		      int n = str - start + 1;
-		      logmsg (LOG_WARNING, "%s \"%s\": missing closing brace in reference started in position %d", what, start, n);
+		      logmsg (LOG_WARNING,
+			      "%s \"%s\": missing closing brace in reference"
+			      " started in position %d", what, start, n);
 		      stringbuf_add (sb, str, p - str);
 		      str = p;
 		      result = -1;
@@ -555,7 +660,7 @@ expand_string_to_buffer (struct stringbuf *sb, char const *str,
 		  p++;
 		}
 
-	      sm = submatch_queue_get (smq, refno);
+	      sm = submatch_queue_get (&phttp->smq, refno);
 
 	      if (sm->subject && groupno <= sm->matchn)
 		{
@@ -568,7 +673,9 @@ expand_string_to_buffer (struct stringbuf *sb, char const *str,
 		{
 		  int n = p - str;
 		  stringbuf_add (sb, str, n);
-		  logmsg (LOG_WARNING, "%s \"%s\" refers to non-existing group %*.*s", what, start, n, n, str);
+		  logmsg (LOG_WARNING,
+			  "%s \"%s\" refers to non-existing group %*.*s",
+			  what, start, n, n, str);
 		  result = -1;
 		}
 	      str = p;
@@ -577,7 +684,9 @@ expand_string_to_buffer (struct stringbuf *sb, char const *str,
       else
 	{
 	  int n = str - start + 1;
-	  logmsg (LOG_WARNING, "%s \"%s\": unescaped %% character in position %d", what, start, n);
+	  logmsg (LOG_WARNING,
+		  "%s \"%s\": unescaped %% character in position %d",
+		  what, start, n);
 	  stringbuf_add_char (sb, *str);
 	  str++;
 	  result = -1;
@@ -587,29 +696,29 @@ expand_string_to_buffer (struct stringbuf *sb, char const *str,
 }
 
 char *
-expand_string (char const *str, struct submatch_queue *smq, char *what,
-	       struct http_request *req)
+expand_string (char const *str, POUND_HTTP *phttp, struct http_request *req,
+	       char *what)
 {
   struct stringbuf sb;
   char *p = NULL;
 
   stringbuf_init_log (&sb);
-  if (expand_string_to_buffer (&sb, str, smq, what, req) == -1
+  if (expand_string_to_buffer (&sb, str, phttp, req, what) == -1
       || (p = stringbuf_finish (&sb)) == NULL)
     stringbuf_free (&sb);
   return p;
 }
 
 static char *
-expand_url (char const *url, struct http_request *req,
-	    struct submatch_queue *smq, int has_uri)
+expand_url (char const *url, POUND_HTTP *phttp, int has_uri)
 {
   struct stringbuf sb;
   char *p;
 
   stringbuf_init_log (&sb);
 
-  switch (expand_string_to_buffer (&sb, url, smq, "Redirect expression", req))
+  switch (expand_string_to_buffer (&sb, url, phttp, &phttp->request,
+				   "Redirect expression"))
     {
     case -1:
       stringbuf_free (&sb);
@@ -624,7 +733,7 @@ expand_url (char const *url, struct http_request *req,
 
   /* For compatibility with previous versions */
   if (!has_uri)
-    stringbuf_add_string (&sb, req->url);
+    stringbuf_add_string (&sb, phttp->request.url);
 
   if ((p = stringbuf_finish (&sb)) == NULL)
     stringbuf_free (&sb);
@@ -632,7 +741,7 @@ expand_url (char const *url, struct http_request *req,
 }
 
 static int rewrite_apply (REWRITE_RULE_HEAD *rewrite_rules,
-			  struct http_request *request, struct sockaddr *addr);
+			  struct http_request *request, POUND_HTTP *phttp);
 
 /*
  * Reply with a redirect
@@ -674,15 +783,19 @@ redirect_response (POUND_HTTP *phttp)
       break;
 
     default:
-      logmsg (LOG_NOTICE, "INTERNAL ERROR: unsupported status code %d passed to redirect_response; please report", code);
+      logmsg (LOG_NOTICE,
+	      "INTERNAL ERROR: unsupported status code %d passed to"
+	      " redirect_response; please report", code);
       return HTTP_STATUS_INTERNAL_SERVER_ERROR;
     }
 
-  if (rewrite_apply (&phttp->lstn->rewrite, &phttp->request, phttp->from_host.ai_addr) ||
-      rewrite_apply (&phttp->svc->rewrite, &phttp->request, phttp->from_host.ai_addr))
+  if (rewrite_apply (&phttp->lstn->rewrite[REWRITE_REQUEST], &phttp->request,
+		     phttp) ||
+      rewrite_apply (&phttp->svc->rewrite[REWRITE_REQUEST], &phttp->request,
+		     phttp))
     return HTTP_STATUS_INTERNAL_SERVER_ERROR;
 
-  xurl = expand_url (redirect->url, &phttp->request, &phttp->smq, redirect->has_uri);
+  xurl = expand_url (redirect->url, phttp, redirect->has_uri);
   if (!xurl)
     {
       return HTTP_STATUS_INTERNAL_SERVER_ERROR;
@@ -700,8 +813,9 @@ redirect_response (POUND_HTTP *phttp)
   for (i = 0; xurl[i]; i++)
     {
       if (isalnum (xurl[i]) || xurl[i] == '_' || xurl[i] == '.'
-	  || xurl[i] == ':' || xurl[i] == '/' || xurl[i] == '?' || xurl[i] == '&'
-	  || xurl[i] == ';' || xurl[i] == '-' || xurl[i] == '=')
+	  || xurl[i] == ':' || xurl[i] == '/' || xurl[i] == '?'
+	  || xurl[i] == '&' || xurl[i] == ';' || xurl[i] == '-'
+	  || xurl[i] == '=')
 	stringbuf_add_char (&sb_url, xurl[i]);
       else
 	stringbuf_printf (&sb_url, "%%%02x", xurl[i]);
@@ -757,7 +871,8 @@ redirect_response (POUND_HTTP *phttp)
  * Read and write some binary data
  */
 static int
-copy_bin (BIO *cl, BIO *be, CONTENT_LENGTH cont, CONTENT_LENGTH *res_bytes, int no_write)
+copy_bin (BIO *cl, BIO *be, CONTENT_LENGTH cont, CONTENT_LENGTH *res_bytes,
+	  int no_write)
 {
   char buf[MAXBUF];
   int res;
@@ -790,11 +905,13 @@ acme_response (POUND_HTTP *phttp)
   char *file_name;
   int rc = HTTP_STATUS_OK;
 
-  if (rewrite_apply (&phttp->lstn->rewrite, &phttp->request, phttp->from_host.ai_addr) ||
-      rewrite_apply (&phttp->svc->rewrite, &phttp->request, phttp->from_host.ai_addr))
+  if (rewrite_apply (&phttp->lstn->rewrite[REWRITE_REQUEST], &phttp->request,
+		     phttp) ||
+      rewrite_apply (&phttp->svc->rewrite[REWRITE_REQUEST], &phttp->request,
+		     phttp))
     return HTTP_STATUS_INTERNAL_SERVER_ERROR;
 
-  file_name = expand_url ("$1", &phttp->request, &phttp->smq, 1);
+  file_name = expand_url ("$1", phttp, 1);
 
   if ((fd = openat (phttp->backend->v.acme.wd, file_name, O_RDONLY)) == -1)
     {
@@ -836,47 +953,89 @@ acme_response (POUND_HTTP *phttp)
   return rc;
 }
 
+int
+parse_header_text (HTTP_HEADER_LIST *head, char const *text)
+{
+  struct stringbuf sb;
+  int res = 0;
+
+  stringbuf_init_log (&sb);
+  while (*text)
+    {
+      char *hdr;
+      int len = strcspn (text, "\r\n");
+
+      if (len == 0)
+	break;
+
+      stringbuf_reset (&sb);
+      stringbuf_add (&sb, text, len);
+      if ((hdr = stringbuf_finish (&sb)) == NULL ||
+	  http_header_list_append (head, hdr, H_REPLACE))
+	{
+	  res = -1;
+	  break;
+	}
+
+      text += len;
+      if (*text == '\r')
+	text++;
+      if (*text == '\n')
+	text++;
+    }
+  stringbuf_free (&sb);
+  return res;
+}
+
 static int
 error_response (POUND_HTTP *phttp)
 {
   int err = phttp->backend->v.error.status;
-  char *text = phttp->backend->v.error.text;
+  const char *text = phttp->backend->v.error.text
+			? phttp->backend->v.error.text
+			: phttp->lstn->http_err[err]
+			    ? phttp->lstn->http_err[err]
+			    : http_status[err].text;
+  size_t len = strlen (text);
+  struct http_request req;
+  BIO *bin;
 
-  if (rewrite_apply (&phttp->lstn->rewrite, &phttp->request, phttp->from_host.ai_addr) ||
-      rewrite_apply (&phttp->svc->rewrite, &phttp->request, phttp->from_host.ai_addr))
+  http_request_init (&req);
+  if (parse_header_text (&req.headers, err_headers))
     return HTTP_STATUS_INTERNAL_SERVER_ERROR;
 
-  if (text)
+  if (rewrite_apply (&phttp->lstn->rewrite[REWRITE_RESPONSE], &req, phttp) ||
+      rewrite_apply (&phttp->svc->rewrite[REWRITE_RESPONSE], &req, phttp))
+    return HTTP_STATUS_INTERNAL_SERVER_ERROR;
+
+  bin = BIO_new_mem_buf (text, len);
+
+  bio_http_reply_start_list (phttp->cl,
+			     phttp->request.version,
+			     http_status[err].code,
+			     http_status[err].reason,
+			     &req.headers,
+			     (CONTENT_LENGTH) len);
+  if (copy_bin (bin, phttp->cl, len, NULL, 0))
     {
-      size_t len = strlen (text);
-      BIO *bin = BIO_new_mem_buf (text, len);
-      bio_http_reply_start (phttp->cl, phttp->request.version,
-			    http_status[err].code,
-			    http_status[err].reason,
-			    err_headers, "text/html",
-			    (CONTENT_LENGTH) len);
-      if (copy_bin (bin, phttp->cl, len, NULL, 0))
-	{
-	  if (errno)
-	    logmsg (LOG_NOTICE, "(%"PRItid") error sending response %d: %s",
-		    POUND_TID (), http_status[err].code, strerror (errno));
-	}
-
-      BIO_free (bin);
-      BIO_flush (phttp->cl);
+      if (errno)
+	logmsg (LOG_NOTICE, "(%"PRItid") error sending response %d: %s",
+		POUND_TID (), http_status[err].code, strerror (errno));
     }
-  else
-    http_err_reply (phttp, err);
 
+  BIO_free (bin);
+  BIO_flush (phttp->cl);
+  http_request_free
+    (&req);
   phttp->response_code = http_status[err].code;
   return 0;
 }
 
 /*
  * Get a "line" from a BIO, strip the trailing newline, skip the input
- * stream if buffer too small
- * The result buffer is NULL terminated
- * Return 0 on success
+ * stream if buffer too small.
+ * The result buffer is NULL terminated.
+ * Return 0 on success.
  */
 static int
 get_line (BIO *in, char *const buf, int bufsize)
@@ -981,16 +1140,98 @@ strip_eol (char *lin)
   return 0;
 }
 
+/*
+ * Convert string ARG into numeric value of type CONTENT_LENGTH.
+ * Input:
+ *   arg    -   string to convert
+ *   base   -   conversion base: 10 or 16
+ * Output:
+ *   retval -  converted value
+ *   endptr -  if not NULL, pointer to the character in arg at which the
+ *             conversion stopped,
+ * Return value:
+ *   0      - success
+ *  -1      - invalid input (including overflow)
+ */
+int
+strtoclen (char const *arg, int base, CONTENT_LENGTH *retval, char **endptr)
+{
+  int c;
+  int rc = 0;
+  char const *s = arg;
+  CONTENT_LENGTH val = 0;
+  CONTENT_LENGTH cutoff = CONTENT_LENGTH_MAX / (CONTENT_LENGTH) base;
+  CONTENT_LENGTH cutlim = CONTENT_LENGTH_MAX % (CONTENT_LENGTH) base;
+
+  for (c = *s; c != '\0'; c = *++s)
+    {
+      if (c >= '0' && c <= '9')
+        c -= '0';
+      else if (base == 16)
+	{
+	  if (c >= 'a' && c <= 'f')
+	    c -= 'a' - 10;
+	  else if (c >= 'A' && c <= 'F')
+	    c -= 'A' - 10;
+	  else
+	    break;
+	}
+      else
+	break;
+      if (val > cutoff || (val == cutoff && c > cutlim))
+	{
+	  /* Overflow. */
+	  rc = -1;
+	  break;
+	}
+      else
+        {
+          val *= (CONTENT_LENGTH) base;
+          val += c;
+        }
+    }
+
+  if (rc == 0)
+    {
+      if (s == arg)
+	rc = -1;
+      else if (val < 0)
+	rc = -1;
+    }
+  *retval = val;
+  if (endptr)
+    *endptr = (char*)s;
+  return rc;
+}
+
+enum
+  {
+    CL_HEADER,
+    CL_CHUNK
+  };
+
 CONTENT_LENGTH
-get_content_length (char const *arg, int base)
+get_content_length (char const *arg, int mode)
 {
   char *p;
   CONTENT_LENGTH n;
 
-  errno = 0;
-  n = STRTOCLEN (arg, &p, base);
-  if (errno || n < 0 || (*p && !isspace (*p)))
+  if (mode == CL_HEADER)
+    {
+      while (*arg == ' ' || *arg == '\t')
+	arg++;
+    }
+
+  if (strtoclen (arg, mode == CL_HEADER ? 10 : 16, &n, &p))
     return NO_CONTENT_LENGTH;
+  while (*p == ' ' || *p == '\t')
+    p++;
+  if (*p)
+    {
+      if (!(mode == CL_CHUNK && *p == ';'))
+	return NO_CONTENT_LENGTH;
+    }
+
   return n;
 }
 
@@ -998,7 +1239,8 @@ get_content_length (char const *arg, int base)
  * Copy chunked
  */
 static int
-copy_chunks (BIO *cl, BIO *be, CONTENT_LENGTH *res_bytes, int no_write, CONTENT_LENGTH max_size)
+copy_chunks (BIO *cl, BIO *be, CONTENT_LENGTH *res_bytes, int no_write,
+	     CONTENT_LENGTH max_size)
 {
   char buf[MAXBUF];
   CONTENT_LENGTH cont, tot_size;
@@ -1011,29 +1253,31 @@ copy_chunks (BIO *cl, BIO *be, CONTENT_LENGTH *res_bytes, int no_write, CONTENT_
 	  logmsg (LOG_NOTICE, "(%"PRItid" chunked read error: %s",
 		  POUND_TID (),
 		  strerror (errno));
-	  return -1;
+	  return res < 0
+	         ? HTTP_STATUS_INTERNAL_SERVER_ERROR
+	         : HTTP_STATUS_BAD_REQUEST;
 	}
       else if (res > 0)
 	/*
 	 * EOF
 	 */
-	return 0;
+	return HTTP_STATUS_OK;
 
-      if ((cont = get_content_length (buf, 16)) == NO_CONTENT_LENGTH)
+      if ((cont = get_content_length (buf, CL_CHUNK)) == NO_CONTENT_LENGTH)
 	{
 	  /*
 	   * not chunk header
 	   */
 	  logmsg (LOG_NOTICE, "(%"PRItid") bad chunk header <%s>: %s",
 		  POUND_TID (), buf, strerror (errno));
-	  return -2;
+	  return HTTP_STATUS_BAD_REQUEST;
 	}
       if (!no_write)
 	if (BIO_printf (be, "%s\r\n", buf) <= 0)
 	  {
 	    logmsg (LOG_NOTICE, "(%"PRItid") error write chunked: %s",
 		    POUND_TID (), strerror (errno));
-	    return -3;
+	    return HTTP_STATUS_INTERNAL_SERVER_ERROR;
 	  }
 
       tot_size += cont;
@@ -1041,7 +1285,7 @@ copy_chunks (BIO *cl, BIO *be, CONTENT_LENGTH *res_bytes, int no_write, CONTENT_
 	{
 	  logmsg (LOG_WARNING, "(%"PRItid") chunk content too large",
 		  POUND_TID ());
-	  return -4;
+	  return HTTP_STATUS_PAYLOAD_TOO_LARGE;
 	}
 
       if (cont > 0)
@@ -1049,9 +1293,9 @@ copy_chunks (BIO *cl, BIO *be, CONTENT_LENGTH *res_bytes, int no_write, CONTENT_
 	  if (copy_bin (cl, be, cont, res_bytes, no_write))
 	    {
 	      if (errno)
-		logmsg (LOG_NOTICE, "(%"PRItid") error copy chunk cont: %s",
-			POUND_TID (), strerror (errno));
-	      return -4;
+		logmsg (LOG_NOTICE, "(%"PRItid") error copyinh chunk of length %"PRICLEN": %s",
+			POUND_TID (), cont, strerror (errno));
+	      return HTTP_STATUS_INTERNAL_SERVER_ERROR;
 	    }
 	}
       else
@@ -1064,13 +1308,15 @@ copy_chunks (BIO *cl, BIO *be, CONTENT_LENGTH *res_bytes, int no_write, CONTENT_
 	  logmsg (LOG_NOTICE, "(%"PRItid") error after chunk: %s",
 		  POUND_TID (),
 		  strerror (errno));
-	  return -5;
+	  return res < 0
+	         ? HTTP_STATUS_INTERNAL_SERVER_ERROR
+	         : HTTP_STATUS_BAD_REQUEST;
 	}
       else if (res > 0)
 	{
 	  logmsg (LOG_NOTICE, "(%"PRItid") unexpected EOF after chunk",
 		  POUND_TID ());
-	  return -5;
+	  return HTTP_STATUS_BAD_REQUEST;
 	}
       if (buf[0])
 	logmsg (LOG_NOTICE, "(%"PRItid") unexpected after chunk \"%s\"",
@@ -1080,7 +1326,7 @@ copy_chunks (BIO *cl, BIO *be, CONTENT_LENGTH *res_bytes, int no_write, CONTENT_
 	  {
 	    logmsg (LOG_NOTICE, "(%"PRItid") error after chunk write: %s",
 		    POUND_TID (), strerror (errno));
-	    return -6;
+	    return HTTP_STATUS_INTERNAL_SERVER_ERROR;
 	  }
     }
   /*
@@ -1093,7 +1339,9 @@ copy_chunks (BIO *cl, BIO *be, CONTENT_LENGTH *res_bytes, int no_write, CONTENT_
 	  logmsg (LOG_NOTICE, "(%"PRItid") error post-chunk: %s",
 		  POUND_TID (),
 		  strerror (errno));
-	  return -7;
+	  return res < 0
+	         ? HTTP_STATUS_INTERNAL_SERVER_ERROR
+	         : HTTP_STATUS_BAD_REQUEST;
 	}
       else if (res > 0)
 	break;
@@ -1102,7 +1350,7 @@ copy_chunks (BIO *cl, BIO *be, CONTENT_LENGTH *res_bytes, int no_write, CONTENT_
 	  {
 	    logmsg (LOG_NOTICE, "(%"PRItid") error post-chunk write: %s",
 		    POUND_TID (), strerror (errno));
-	    return -8;
+	    return HTTP_STATUS_INTERNAL_SERVER_ERROR;
 	  }
       if (!buf[0])
 	break;
@@ -1112,9 +1360,9 @@ copy_chunks (BIO *cl, BIO *be, CONTENT_LENGTH *res_bytes, int no_write, CONTENT_
       {
 	logmsg (LOG_NOTICE, "(%"PRItid") copy_chunks flush error: %s",
 		POUND_TID (), strerror (errno));
-	return -4;
+	return HTTP_STATUS_INTERNAL_SERVER_ERROR;
       }
-  return 0;
+  return HTTP_STATUS_OK;
 }
 
 static int err_to = -1;
@@ -1343,18 +1591,175 @@ static struct method_def methods[] = {
 };
 
 static struct method_def *
-find_method (const char *str, int group)
+find_method (const char *str, int len)
 {
   struct method_def *m;
 
   for (m = methods; m->name; m++)
     {
-      if (strncasecmp (m->name, str, m->length) == 0)
+      if (len == m->length && strncasecmp (m->name, str, m->length) == 0)
 	return m;
     }
   return NULL;
 }
+
+char const *
+method_name (int meth)
+{
+  if (meth < 0 || meth >= sizeof (methods) / sizeof (methods[0]))
+    return "BAD";
+  return methods[meth].name;
+}
 
+/*
+ * Table of headers whose value is a comma-separated list, and which
+ * therefore are allowed to occur multiple times in the same message.
+ *
+ * RFC 7230, sect. 3.2.2
+ *  A sender MUST NOT generate multiple header fields with the same field
+ *  name in a message unless either the entire field value for that
+ *  header field is defined as a comma-separated list [i.e., #(values)]
+ *  or the header field is a well-known exception (as noted below).
+ *
+ *  A recipient MAY combine multiple header fields with the same field
+ *  name into one "field-name: field-value" pair, without changing the
+ *  semantics of the message, by appending each subsequent field value to
+ *  the combined field value in order, separated by a comma.
+ *
+ * Headers from that table are rebuilt as described above in order to
+ * simplify header matching.
+ */
+typedef struct
+{
+  char *name;
+  size_t len;
+} HEADER_NAME;
+
+/*
+ * A modified version of strhash function from OpenSSL.
+ */
+static unsigned long
+strhash_ci (const char *c, size_t len)
+{
+  unsigned long ret = 0;
+  long n;
+  unsigned long v;
+  int r;
+
+  if ((c == NULL) || (*c == '\0'))
+    return ret;
+
+  n = 0x100;
+  while (len--)
+    {
+      v = n | tolower (*c);
+      n += 0x100;
+      r = (int)((v >> 2) ^ v) & 0x0f;
+      /* cast to uint64_t to avoid 32 bit shift of 32 bit value */
+      ret = (ret << r) | (unsigned long)((uint64_t)ret >> (32 - r));
+      ret &= 0xFFFFFFFFL;
+      ret ^= v * v;
+      c++;
+    }
+  return (ret >> 16) ^ ret;
+}
+
+static unsigned long
+HEADER_NAME_hash (const HEADER_NAME *hname)
+{
+  return strhash_ci (hname->name, hname->len);
+}
+
+static int
+HEADER_NAME_cmp (const HEADER_NAME *a, const HEADER_NAME *b)
+{
+  return a->len != b->len || strncasecmp (a->name, b->name, a->len);
+}
+
+#define HT_TYPE HEADER_NAME
+#define HT_TYPE_HASH_FN_DEFINED 1
+#define HT_TYPE_CMP_FN_DEFINED 1
+#define HT_NO_FOREACH
+#define HT_NO_HASH_FREE
+#define HT_NO_DELETE
+#include "ht.h"
+
+static HEADER_NAME_HASH *combinable_headers;
+
+/* Add header to the multi-value header table. */
+void
+combinable_header_add (char const *name)
+{
+  HEADER_NAME *hname;
+
+  if (!combinable_headers)
+    {
+      if ((combinable_headers = HEADER_NAME_HASH_NEW ()) == NULL)
+	xnomem ();
+    }
+  XZALLOC (hname);
+  hname->name = xstrdup (name);
+  hname->len = strlen (name);
+  if (HEADER_NAME_INSERT (combinable_headers, hname))
+    {
+      free (hname->name);
+      free (hname);
+    }
+}
+
+/* Return true if the name given is a name of a combinble multi-value header. */
+int
+is_combinable_header (struct http_header *hdr)
+{
+  HEADER_NAME key;
+  if (!combinable_headers)
+    return 0;
+  key.name = (char*) http_header_name_ptr (hdr);
+  key.len = http_header_name_len (hdr);
+  return HEADER_NAME_RETRIEVE (combinable_headers, &key) != NULL;
+}
+
+/*
+ * Find first occurrence of TOK in a comma-separated list of values SUBJ.
+ * Use case-insensitive comparison unless CI is 0.  Ignore whitespace.
+ *
+ * Return pointer to the first occurrence of TOK, if found or NULL
+ * otherwise.
+ * Unless NEXTP is NULL, initialize it with the pointer to the next item in
+ * SUBJ.
+ */
+static char *
+cs_locate_token (char const *subj, char const *tok, int ci, char **nextp)
+{
+  size_t toklen = strlen (tok);
+  char const *next = NULL;
+
+  while (*subj)
+    {
+      size_t i, len;
+
+      while (*subj && isspace (*subj))
+	subj++;
+      if (!*subj)
+	return NULL;
+      len = strcspn (subj, ",");
+      for (i = len; i > 0; i--)
+	if (!isspace (subj[i-1]))
+	  break;
+      next = subj + len;
+      if (*next)
+	next++;
+      if (i == toklen && (ci ? strncasecmp : strncmp) (subj, tok, i) == 0)
+	break;
+      subj = next;
+    }
+
+  if (nextp)
+    *nextp = (char*) next;
+
+  return *subj != 0 ? (char*) subj : NULL;
+}
+
 static int
 qualify_header (struct http_header *hdr)
 {
@@ -1449,6 +1854,8 @@ http_header_change (struct http_header *hdr, char const *text, int alloc)
     ctext = (char*)text;
   free (hdr->header);
   hdr->header = ctext;
+  free (hdr->value);
+  hdr->value = NULL;
   qualify_header (hdr);
   return 0;
 }
@@ -1503,15 +1910,31 @@ http_header_list_locate (HTTP_HEADER_LIST *head, int code)
 }
 
 struct http_header *
-http_header_list_locate_name (HTTP_HEADER_LIST *head, char const *name, size_t len)
+http_header_list_locate_name (HTTP_HEADER_LIST *head, char const *name,
+			      size_t len)
 {
   struct http_header *hdr;
   if (len == 0)
     len = strcspn (name, ":");
   DLIST_FOREACH (hdr, head, link)
     {
-      if (hdr->name_end - hdr->name_start == len &&
-	  strncasecmp (hdr->header + hdr->name_start, name, len) == 0)
+      if (http_header_name_len (hdr) == len &&
+	  strncasecmp (http_header_name_ptr (hdr), name, len) == 0)
+	return hdr;
+    }
+  return NULL;
+}
+
+/* Return next header with the same name as hdr. */
+struct http_header *
+http_header_list_next (struct http_header *hdr)
+{
+  size_t len = http_header_name_len (hdr);
+  char const *name = http_header_name_ptr (hdr);
+  while ((hdr = DLIST_NEXT (hdr, link)) != NULL)
+    {
+      if (http_header_name_len (hdr) == len &&
+	  strncasecmp (http_header_name_ptr (hdr), name, len) == 0)
 	return hdr;
     }
   return NULL;
@@ -1532,10 +1955,38 @@ http_header_list_append (HTTP_HEADER_LIST *head, char *text, int replace)
 
   if ((hdr = http_header_list_locate_name (head, text, 0)) != NULL)
     {
-      if (replace)
-	return http_header_change (hdr, text, 1);
-      else
-	return 0;
+      switch (replace)
+	{
+	case H_KEEP:
+	  return 0;
+
+	case H_REPLACE:
+	  return http_header_change (hdr, text, 1);
+
+	case H_APPEND:
+	  {
+	    char *val = http_header_get_value (hdr);
+	    if (*val)
+	      {
+		struct stringbuf sb;
+
+		stringbuf_init_log (&sb);
+		stringbuf_add (&sb, hdr->header,
+			       hdr->val_end - hdr->name_start);
+		stringbuf_add_char (&sb, ',');
+		val = text + hdr->name_end + 1;
+		if (!isspace (*val))
+		  stringbuf_add_char (&sb, ' ');
+		stringbuf_add_string (&sb, val);
+		val = stringbuf_finish (&sb);
+		if (!val)
+		  return -1;
+		return http_header_change (hdr, val, 0);
+	      }
+	    else
+	      http_header_change (hdr, text, 1);
+	  }
+	}
     }
   else if ((hdr = http_header_alloc (text)) == NULL)
     return -1;
@@ -1740,7 +2191,7 @@ http_request_get_request_line (struct http_request *req, char const **str)
   return 0;
 }
 
-static char const *
+char const *
 http_request_orig_line (struct http_request *req)
 {
   if (!req)
@@ -1749,7 +2200,7 @@ http_request_orig_line (struct http_request *req)
 	  req->request ? req->request : "";
 }
 
-static int
+int
 http_request_get_url (struct http_request *req, char const **retval)
 {
   *retval = req->url;
@@ -1803,7 +2254,7 @@ http_request_set_path (struct http_request *req, char const *path)
   return http_request_rebuild_url (req);
 }
 
-static int
+int
 http_request_get_query (struct http_request *req, char const **retval)
 {
   if (http_request_split (req))
@@ -2004,12 +2455,6 @@ http_request_set_query_param (struct http_request *req, char const *name,
 }
 
 static char const *
-http_request_user_name (struct http_request *req)
-{
-  return (req && req->user) ? req->user : "-";
-}
-
-static char const *
 http_request_header_value (struct http_request *req, int code)
 {
   struct http_header *hdr;
@@ -2030,7 +2475,6 @@ http_request_free (struct http_request *req)
   free (req->request);
   http_header_list_free (&req->headers);
   free (req->url);
-  free (req->user);
   free (req->path);
   free (req->query);
   http_request_free_query (req);
@@ -2038,11 +2482,89 @@ http_request_free (struct http_request *req)
   http_request_init (req);
 }
 
+typedef struct
+{
+  struct http_header *hdr;
+  struct stringbuf sb;
+} COMPOSE_HEADER;
+
+static unsigned long
+COMPOSE_HEADER_hash (const COMPOSE_HEADER *cp)
+{
+  return strhash_ci (http_header_name_ptr (cp->hdr),
+		     http_header_name_len (cp->hdr));
+}
+
+static int
+COMPOSE_HEADER_cmp (const COMPOSE_HEADER *a, const COMPOSE_HEADER *b)
+{
+  size_t alen, blen;
+  alen = http_header_name_len (a->hdr);
+  blen = http_header_name_len (b->hdr);
+  return alen != blen || strncasecmp (http_header_name_ptr (a->hdr),
+				      http_header_name_ptr (b->hdr), alen);
+}
+
+#define HT_TYPE COMPOSE_HEADER
+#define HT_TYPE_HASH_FN_DEFINED 1
+#define HT_TYPE_CMP_FN_DEFINED 1
+#define HT_NO_DELETE 1
+#include "ht.h"
+
+static void
+compose_header_free (COMPOSE_HEADER *hdr, void *data)
+{
+  stringbuf_free (&hdr->sb);
+  free (hdr);
+}
+
+static void
+compose_header_hash_free (COMPOSE_HEADER_HASH *chash)
+{
+  if (chash)
+    {
+      COMPOSE_HEADER_FOREACH (chash, compose_header_free, NULL);
+      COMPOSE_HEADER_HASH_FREE (chash);
+    }
+}
+
+static void
+compose_header_finish (COMPOSE_HEADER *chdr, void *data)
+{
+  int *errp = data;
+
+  if (*errp == 0)
+    {
+      char *val = stringbuf_finish (&chdr->sb);
+      if (val)
+	http_header_change (chdr->hdr, val, 0);
+      else
+	{
+	  *errp = 1;
+	  stringbuf_free (&chdr->sb);
+	}
+    }
+  else
+    stringbuf_free (&chdr->sb);
+  free (chdr);
+}
+
 static int
 http_request_read (BIO *in, const LISTENER *lstn, struct http_request *req)
 {
   char buf[MAXBUF];
   int res;
+  COMPOSE_HEADER_HASH *chash = NULL;
+
+  if (combinable_headers)
+    {
+      chash = COMPOSE_HEADER_HASH_NEW ();
+      if (!chash)
+	{
+	  lognomem ();
+	  return -1;
+	}
+    }
 
   http_request_init (req);
 
@@ -2064,6 +2586,7 @@ http_request_read (BIO *in, const LISTENER *lstn, struct http_request *req)
   if ((req->request = strdup (buf)) == NULL)
     {
       lognomem ();
+      compose_header_hash_free (chash);
       return -1;
     }
 
@@ -2074,6 +2597,7 @@ http_request_read (BIO *in, const LISTENER *lstn, struct http_request *req)
       if (get_line (in, buf, sizeof (buf)))
 	{
 	  http_request_free (req);
+	  compose_header_hash_free (chash);
 	  /*
 	   * this is not necessarily an error, EOF/timeout are possible
 	   */
@@ -2086,34 +2610,97 @@ http_request_read (BIO *in, const LISTENER *lstn, struct http_request *req)
       if ((hdr = http_header_alloc (buf)) == NULL)
 	{
 	  http_request_free (req);
+	  compose_header_hash_free (chash);
 	  return -1;
 	}
       else if (hdr->code == HEADER_ILLEGAL)
 	http_header_free (hdr);
       else
-	DLIST_INSERT_TAIL (&req->headers, hdr, link);
+	{
+	  if (is_combinable_header (hdr))
+	    {
+	      COMPOSE_HEADER *comp, key;
+
+	      key.hdr = hdr;
+	      if ((comp = COMPOSE_HEADER_RETRIEVE (chash, &key)) != NULL)
+		{
+		  stringbuf_add (&comp->sb, ", ", 2);
+		  stringbuf_add (&comp->sb, hdr->header + hdr->val_start,
+				 hdr->val_end - hdr->val_start);
+		  http_header_free (hdr);
+		  if (stringbuf_err (&comp->sb))
+		    {
+		      http_request_free (req);
+		      compose_header_hash_free (chash);
+		      return -1;
+		    }
+		  continue;
+		}
+	      else
+		{
+		  if ((comp = malloc (sizeof (*comp))) == NULL)
+		    {
+		      lognomem ();
+		      http_request_free (req);
+		      compose_header_hash_free (chash);
+		      return -1;
+		    }
+		  comp->hdr = hdr;
+		  stringbuf_init_log (&comp->sb);
+		  stringbuf_add (&comp->sb, http_header_name_ptr (hdr),
+				 http_header_name_len (hdr));
+		  stringbuf_add (&comp->sb, ": ", 2);
+		  stringbuf_add (&comp->sb, hdr->header + hdr->val_start,
+				 hdr->val_end - hdr->val_start);
+		  if (stringbuf_err (&comp->sb))
+		    {
+		      http_request_free (req);
+		      compose_header_hash_free (chash);
+		      return -1;
+		    }
+		  COMPOSE_HEADER_INSERT (chash, comp);
+		}
+	    }
+	  DLIST_INSERT_TAIL (&req->headers, hdr, link);
+	}
     }
+
+  /* Finalize multiple-value headers */
+  if (chash)
+    {
+      res = 0;
+      COMPOSE_HEADER_FOREACH (chash, compose_header_finish, &res);
+      COMPOSE_HEADER_HASH_FREE (chash);
+      if (res)
+	{
+	  http_request_free (req);
+	  return -1;
+	}
+    }
+
   return 0;
 }
 
 /*
- * Extrace username from the Basic Authorization header.
+ * Extract username and/or password from the Basic Authorization header.
  * Input:
  *   hdrval   - value of the Authorization header;
  * Output:
- *   u_name   - return pointer address
+ *   u_name   - return pointer address for user name
+ *   u_pass   - return pointer address for password (can be NULL)
  * Return value:
  *   0        - Success. Name returned in *u_name.
  *   1        - Not a Basic Authorization header.
  *  -1        - Other error.
  */
 static int
-get_user (char *hdrval, char **u_name)
+get_basic_auth (char const *hdrval, char **u_name, char **u_pass)
 {
   size_t len;
   BIO *bb, *b64;
   int inlen, u_len;
   char buf[MAXBUF], *q;
+  int rc;
 
   if (strncasecmp (hdrval, "Basic", 5))
     return 1;
@@ -2162,17 +2749,47 @@ get_user (char *hdrval, char **u_name)
       return -1;
     }
 
+  rc = -1;
   if ((q = memchr (buf, ':', inlen)) != NULL)
     {
+      char *p, *pass;
+
       u_len = q - buf;
-      if ((q = malloc (u_len + 1)) != NULL)
+      if ((p = malloc (u_len + 1)) != NULL)
 	{
-	  memcpy (q, buf, u_len);
-	  q[u_len] = 0;
-	  *u_name = q;
-	  return 0;
+	  memcpy (p, buf, u_len);
+	  p[u_len] = 0;
+	  *u_name = p;
+
+	  inlen -= u_len;
+	  if (u_pass == NULL)
+	    rc = 0;
+	  else if ((pass = malloc (inlen)) != NULL)
+	    {
+	      memcpy (pass, q + 1, inlen-1);
+	      pass[inlen-1] = 0;
+	      *u_pass = pass;
+	      rc = 0;
+	    }
+	  else
+	    free (p);
 	}
     }
+  memset (buf, 0, sizeof (buf));
+  return rc;
+}
+
+int
+http_request_get_basic_auth (struct http_request *req,
+			     char **u_name, char **u_pass)
+{
+  struct http_header *hdr;
+  char const *val;
+
+  if ((hdr = http_header_list_locate (&req->headers,
+				      HEADER_AUTHORIZATION)) != NULL &&
+      (val = http_header_get_value (hdr)) != NULL)
+    return get_basic_auth (val, u_name, u_pass);
   return -1;
 }
 
@@ -2228,7 +2845,8 @@ parse_http_request (struct http_request *req, int group)
 }
 
 static int
-match_headers (HTTP_HEADER_LIST *headers, regex_t const *re, struct submatch *sm)
+match_headers (HTTP_HEADER_LIST *headers, regex_t const *re,
+	       struct submatch *sm)
 {
   struct http_header *hdr;
 
@@ -2241,8 +2859,8 @@ match_headers (HTTP_HEADER_LIST *headers, regex_t const *re, struct submatch *sm
 }
 
 int
-match_cond (const SERVICE_COND *cond, struct sockaddr *srcaddr,
-	    struct http_request *req, struct submatch_queue *smq)
+match_cond (SERVICE_COND *cond, POUND_HTTP *phttp,
+	    struct http_request *req)
 {
   int res = 1;
   SERVICE_COND *subcond;
@@ -2251,32 +2869,33 @@ match_cond (const SERVICE_COND *cond, struct sockaddr *srcaddr,
   switch (cond->type)
     {
     case COND_ACL:
-      res = acl_match (cond->acl, srcaddr) == 0;
+      res = acl_match (cond->acl, phttp->from_host.ai_addr) == 0;
       break;
 
     case COND_URL:
       if (http_request_get_url (req, &str) == -1)
 	res = -1;
       else
-	res = submatch_exec (&cond->re, str, submatch_queue_push (smq));
+	res = submatch_exec (&cond->re, str, submatch_queue_push (&phttp->smq));
       break;
 
     case COND_PATH:
       if (http_request_get_path (req, &str) == -1)
 	res = -1;
       else
-	res = submatch_exec (&cond->re, str, submatch_queue_push (smq));
+	res = submatch_exec (&cond->re, str, submatch_queue_push (&phttp->smq));
       break;
 
     case COND_QUERY:
       if (http_request_get_query (req, &str) == -1)
 	res = -1;
       else
-	res = submatch_exec (&cond->re, str, submatch_queue_push (smq));
+	res = submatch_exec (&cond->re, str, submatch_queue_push (&phttp->smq));
       break;
 
     case COND_QUERY_PARAM:
-      switch (http_request_get_query_param_value (req, cond->qp.name, &str))
+      switch (http_request_get_query_param_value (req, cond->sm.string->value,
+						  &str))
 	{
 	case RETRIEVE_ERROR:
 	  res = -1;
@@ -2290,23 +2909,26 @@ match_cond (const SERVICE_COND *cond, struct sockaddr *srcaddr,
 	  if (str == NULL)
 	    res = 0;
 	  else
-	    res = submatch_exec (&cond->qp.re, str, submatch_queue_push (smq));
+	    res = submatch_exec (&cond->sm.re, str,
+				 submatch_queue_push (&phttp->smq));
 	}
       break;
 
     case COND_HDR:
-      res = match_headers (&req->headers, &cond->re, submatch_queue_push (smq));
+      res = match_headers (&req->headers, &cond->re,
+			   submatch_queue_push (&phttp->smq));
       break;
 
     case COND_HOST:
-      res = match_headers (&req->headers, &cond->re, submatch_queue_push (smq));
+      res = match_headers (&req->headers, &cond->re,
+			   submatch_queue_push (&phttp->smq));
       if (res)
 	{
 	  /*
 	   * On match, adjust subgroup references and subject pointer
 	   * to refer to the Host: header value.
 	   */
-	  struct submatch *sm = submatch_queue_get (smq, 0);
+	  struct submatch *sm = submatch_queue_get (&phttp->smq, 0);
 	  int n, i;
 	  char const *s = sm->subject;
 	  regmatch_t *mv = sm->matchv;
@@ -2341,17 +2963,38 @@ match_cond (const SERVICE_COND *cond, struct sockaddr *srcaddr,
 	}
       break;
 
+    case COND_BASIC_AUTH:
+      res = basic_auth (&cond->pwfile, req) == 0;
+      break;
+
+    case COND_STRING_MATCH:
+      {
+	char *subj;
+
+	subj = expand_string (cond->sm.string->value, phttp, req,
+			      "string_match");
+	if (subj)
+	  {
+	    res = submatch_exec (&cond->sm.re, subj,
+				 submatch_queue_push (&phttp->smq));
+	    free (subj);
+	  }
+	else
+	  res = -1;
+      }
+      break;
+
     case COND_BOOL:
       if (cond->bool.op == BOOL_NOT)
 	{
 	  subcond = SLIST_FIRST (&cond->bool.head);
-	  res = ! match_cond (subcond, srcaddr, req, smq);
+	  res = ! match_cond (subcond, phttp, req);
 	}
       else
 	{
 	  SLIST_FOREACH (subcond, &cond->bool.head, next)
 	    {
-	      res = match_cond (subcond, srcaddr, req, smq);
+	      res = match_cond (subcond, phttp, req);
 	      if ((cond->bool.op == BOOL_AND) ? (res == 0) : (res == 1))
 		break;
 	    }
@@ -2362,59 +3005,7 @@ match_cond (const SERVICE_COND *cond, struct sockaddr *srcaddr,
   return res;
 }
 
-/*
- * HTTP Logging
- */
-
-static char *
-anon_addr2str (char *buf, size_t size, struct addrinfo const *from_host)
-{
-  if (from_host->ai_family == AF_UNIX)
-    {
-      strncpy (buf, "socket", size);
-    }
-  else
-    {
-      addr2str (buf, size, from_host, 1);
-      if (anonymise)
-	{
-	  char *last;
-
-	  if ((last = strrchr (buf, '.')) != NULL
-	      || (last = strrchr (buf, ':')) != NULL)
-	    strcpy (++last, "0");
-	}
-    }
-  return buf;
-}
-
 #define LOG_TIME_SIZE   32
-
-/*
- * Apache log-file-style time format
- */
-static char *
-log_time_str (char *res, size_t size, struct timespec const *ts)
-{
-  struct tm tm;
-  strftime (res, size, "%d/%b/%Y:%H:%M:%S %z", localtime_r (&ts->tv_sec, &tm));
-  return res;
-}
-
-#define LOG_BYTES_SIZE  32
-
-/*
- * Apache log-file-style number format
- */
-static char *
-log_bytes (char *res, size_t size, CONTENT_LENGTH cnt)
-{
-  if (cnt > 0)
-    snprintf (res, size, "%"PRICLEN, cnt);
-  else
-    strcpy (res, "-");
-  return res;
-}
 
 static char *
 log_duration (char *buf, size_t size, struct timespec const *start)
@@ -2425,198 +3016,33 @@ log_duration (char *buf, size_t size, struct timespec const *start)
   snprintf (buf, size, "%ld.%03ld", diff.tv_sec, diff.tv_nsec / 1000000);
   return buf;
 }
-
-static void
-http_log_0 (POUND_HTTP *phttp)
-{
-  /* nothing */
-}
-
-static void
-http_log_1 (POUND_HTTP *phttp)
-{
-  char buf[MAX_ADDR_BUFSIZE];
-  logmsg (LOG_INFO, "%s %s - %s",
-	  anon_addr2str (buf, sizeof (buf), &phttp->from_host),
-	  http_request_orig_line (&phttp->request),
-	  http_request_orig_line (&phttp->response));
-}
-
-static char *
-be_service_name (BACKEND *be)
-{
-  switch (be->be_type)
-    {
-    case BE_BACKEND:
-      if (be->service->name)
-	return be->service->name;
-      break;
-    case BE_REDIRECT:
-      return "(redirect)";
-    case BE_ACME:
-      return "(acme)";
-    case BE_CONTROL:
-      return "(control)";
-    case BE_ERROR:
-      return "(error)";
-    case BE_METRICS:
-      return "(metrics)";
-    }
-  return "-";
-}
-
-static void
-http_log_2 (POUND_HTTP *phttp)
-{
-  char caddr[MAX_ADDR_BUFSIZE];
-  char baddr[MAX_ADDR_BUFSIZE];
-  char timebuf[LOG_TIME_SIZE];
-  char const *v_host = http_request_host (&phttp->request);
-
-  if (v_host)
-    logmsg (LOG_INFO,
-	    "%s %s - %s (%s/%s -> %s) %s sec",
-	    anon_addr2str (caddr, sizeof (caddr), &phttp->from_host),
-	    http_request_orig_line (&phttp->request),
-	    http_request_orig_line (&phttp->response),
-	    v_host, be_service_name (phttp->backend),
-	    str_be (baddr, sizeof (baddr), phttp->backend),
-	    log_duration (timebuf, sizeof (timebuf), &phttp->start_req));
-  else
-    logmsg (LOG_INFO,
-	    "%s %s - %s (%s -> %s) %s sec",
-	    anon_addr2str (caddr, sizeof (caddr), &phttp->from_host),
-	    http_request_orig_line (&phttp->request),
-	    http_request_orig_line (&phttp->response),
-	    be_service_name (phttp->backend),
-	    str_be (baddr, sizeof (baddr), phttp->backend),
-	    log_duration (timebuf, sizeof (timebuf), &phttp->start_req));
-}
-
-static void
-http_log_3 (POUND_HTTP *phttp)
-{
-  char caddr[MAX_ADDR_BUFSIZE];
-  char timebuf[LOG_TIME_SIZE];
-  char bytebuf[LOG_BYTES_SIZE];
-  struct http_request *req = &phttp->request;
-  char const *v_host = http_request_host (req);
-  char *referer = NULL;
-  char *u_agent = NULL;
-  struct http_header *hdr;
-
-  if ((hdr = http_header_list_locate (&req->headers, HEADER_REFERER)) != NULL)
-    referer = http_header_get_value (hdr);
-  if ((hdr = http_header_list_locate (&req->headers, HEADER_USER_AGENT)) != NULL)
-    u_agent = http_header_get_value (hdr);
-
-  logmsg (LOG_INFO,
-	  "%s %s - %s [%s] \"%s\" %03d %s \"%s\" \"%s\"",
-	  v_host ? v_host : "-",
-	  anon_addr2str (caddr, sizeof (caddr), &phttp->from_host),
-	  http_request_user_name (req),
-	  log_time_str (timebuf, sizeof (timebuf), &phttp->start_req),
-	  http_request_orig_line (req),
-	  phttp->response_code,
-	  log_bytes (bytebuf, sizeof (bytebuf), phttp->res_bytes),
-	  referer ? referer : "",
-	  u_agent ? u_agent : "");
-}
-
-static void
-http_log_4 (POUND_HTTP *phttp)
-{
-  struct http_request *req = &phttp->request;
-  char caddr[MAX_ADDR_BUFSIZE];
-  char timebuf[LOG_TIME_SIZE];
-  char bytebuf[LOG_BYTES_SIZE];
-  char *referer = NULL;
-  char *u_agent = NULL;
-  struct http_header *hdr;
-
-  if ((hdr = http_header_list_locate (&req->headers, HEADER_REFERER)) != NULL)
-    referer = http_header_get_value (hdr);
-  if ((hdr = http_header_list_locate (&req->headers, HEADER_USER_AGENT)) != NULL)
-    u_agent = http_header_get_value (hdr);
-
-  logmsg (LOG_INFO,
-	  "%s - %s [%s] \"%s\" %03d %s \"%s\" \"%s\"",
-	  anon_addr2str (caddr, sizeof (caddr), &phttp->from_host),
-	  http_request_user_name (req),
-	  log_time_str (timebuf, sizeof (timebuf), &phttp->start_req),
-	  http_request_orig_line (req),
-	  phttp->response_code,
-	  log_bytes (bytebuf, sizeof (bytebuf), phttp->res_bytes),
-	  referer ? referer : "",
-	  u_agent ? u_agent : "");
-}
-
-static void
-http_log_5 (POUND_HTTP *phttp)
-{
-  struct http_request *req = &phttp->request;
-  char caddr[MAX_ADDR_BUFSIZE];
-  char baddr[MAX_ADDR_BUFSIZE];
-  char timebuf[LOG_TIME_SIZE];
-  char dbuf[LOG_TIME_SIZE];
-  char bytebuf[LOG_BYTES_SIZE];
-  char const *v_host = http_request_host (req);
-  char *referer = NULL;
-  char *u_agent = NULL;
-  struct http_header *hdr;
-
-  if ((hdr = http_header_list_locate (&req->headers, HEADER_REFERER)) != NULL)
-    referer = http_header_get_value (hdr);
-  if ((hdr = http_header_list_locate (&req->headers, HEADER_USER_AGENT)) != NULL)
-    u_agent = http_header_get_value (hdr);
-
-  logmsg (LOG_INFO,
-	  "%s %s - %s [%s] \"%s\" %03d %s \"%s\" \"%s\" (%s -> %s) %s sec",
-	  v_host ? v_host : "-",
-	  anon_addr2str (caddr, sizeof (caddr), &phttp->from_host),
-	  http_request_user_name (req),
-	  log_time_str (timebuf, sizeof (timebuf), &phttp->start_req),
-	  http_request_orig_line (req),
-	  phttp->response_code,
-	  log_bytes (bytebuf, sizeof (bytebuf), phttp->res_bytes),
-	  referer ? referer : "",
-	  u_agent ? u_agent : "",
-	  be_service_name (phttp->backend),
-	  str_be (baddr, sizeof (baddr), phttp->backend),
-	  log_duration (dbuf, sizeof (dbuf), &phttp->start_req));
-}
-
-static void (*http_logger[]) (POUND_HTTP *phttp) = {
-  http_log_0,
-  http_log_1,
-  http_log_2,
-  http_log_3,
-  http_log_4,
-  http_log_5
-};
-
-static void
-http_log (POUND_HTTP *phttp)
-{
-  http_logger[phttp->lstn->log_level] (phttp);
-}
 
+static int
+http_headers_send (BIO *be, HTTP_HEADER_LIST *head, int safe)
+{
+  struct http_header *hdr;
+  DLIST_FOREACH (hdr, head, link)
+    {
+      if (safe &&
+	  (hdr->code == HEADER_CONTENT_LENGTH ||
+	   hdr->code == HEADER_CONNECTION))
+	continue;
+      if (BIO_printf (be, "%s\r\n", hdr->header) <= 0)
+	return -1;
+    }
+  return 0;
+}
+
 static int
 http_request_send (BIO *be, struct http_request *req)
 {
-  struct http_header *hdr;
   char const *s;
 
   if (http_request_get_request_line (req, &s))
     return -1;
   if (BIO_printf (be, "%s\r\n", s) <= 0)
     return -1;
-  DLIST_FOREACH (hdr, &req->headers, link)
-    {
-      if (BIO_printf (be, "%s\r\n", hdr->header) <= 0)
-	return -1;
-    }
-  return 0;
+  return http_headers_send (be, &req->headers, 0);
 }
 
 static int
@@ -2632,7 +3058,7 @@ add_forwarded_headers (POUND_HTTP *phttp)
   stringbuf_printf (&sb, "X-Forwarded-For: %s",
 		    addr2str (caddr, sizeof (caddr), &phttp->from_host, 1));
   if ((str = stringbuf_finish (&sb)) == NULL
-      || http_header_list_append (&phttp->request.headers, str, H_REPLACE))
+      || http_header_list_append (&phttp->request.headers, str, H_APPEND))
     {
       stringbuf_free (&sb);
       return -1;
@@ -2786,13 +3212,11 @@ add_ssl_headers (POUND_HTTP *phttp)
 
 static int rewrite_rule_check (REWRITE_RULE *rule,
 			       struct http_request *request,
-			       struct sockaddr *srcaddr,
-			       struct submatch_queue *smq);
+			       POUND_HTTP *phttp);
 
 static int
 rewrite_op_apply (REWRITE_OP_HEAD *head, struct http_request *request,
-		  struct sockaddr *srcaddr,
-		  struct submatch_queue *smq)
+		  POUND_HTTP *phttp)
 {
   int res = 0;
   REWRITE_OP *op;
@@ -2813,7 +3237,7 @@ rewrite_op_apply (REWRITE_OP_HEAD *head, struct http_request *request,
       switch (op->type)
 	{
 	case REWRITE_REWRITE_RULE:
-	  res = rewrite_rule_check (op->v.rule, request, srcaddr, smq);
+	  res = rewrite_rule_check (op->v.rule, request, phttp);
 	  break;
 
 	case REWRITE_HDR_DEL:
@@ -2821,7 +3245,7 @@ rewrite_op_apply (REWRITE_OP_HEAD *head, struct http_request *request,
 	  break;
 
 	case REWRITE_HDR_SET:
-	  if ((s = expand_string (op->v.str, smq, "Header", request)) != NULL)
+	  if ((s = expand_string (op->v.str, phttp, request, "Header")) != NULL)
 	    {
 	      res = http_header_list_append (&request->headers, s, H_REPLACE);
 	      free (s);
@@ -2831,7 +3255,8 @@ rewrite_op_apply (REWRITE_OP_HEAD *head, struct http_request *request,
 	  break;
 
 	case REWRITE_QUERY_PARAM_SET:
-	  if ((s = expand_string (op->v.qp.value, smq, "query parameter", request)) != NULL)
+	  if ((s = expand_string (op->v.qp.value, phttp, request,
+				  "query parameter")) != NULL)
 	    {
 	      res = http_request_set_query_param (request, op->v.qp.name, s);
 	      free (s);
@@ -2841,7 +3266,8 @@ rewrite_op_apply (REWRITE_OP_HEAD *head, struct http_request *request,
 	  break;
 
 	default:
-	  if ((s = expand_string (op->v.str, smq, rwtab[op->type].name, request)) != NULL)
+	  if ((s = expand_string (op->v.str, phttp, request,
+				  rwtab[op->type].name)) != NULL)
 	    {
 	      res = rwtab[op->type].setter (request, s);
 	      free (s);
@@ -2859,15 +3285,15 @@ rewrite_op_apply (REWRITE_OP_HEAD *head, struct http_request *request,
 
 static int
 rewrite_rule_check (REWRITE_RULE *rule, struct http_request *request,
-		    struct sockaddr *srcaddr, struct submatch_queue *smq)
+		    POUND_HTTP *phttp)
 {
   int res = 0;
 
   do
     {
-      if (match_cond (&rule->cond, srcaddr, request, smq))
+      if (match_cond (&rule->cond, phttp, request))
 	{
-	  res = rewrite_op_apply (&rule->ophead, request, srcaddr, smq);
+	  res = rewrite_op_apply (&rule->ophead, request, phttp);
 	  break;
 	}
     }
@@ -2877,19 +3303,16 @@ rewrite_rule_check (REWRITE_RULE *rule, struct http_request *request,
 
 static int
 rewrite_apply (REWRITE_RULE_HEAD *rewrite_rules,
-	       struct http_request *request, struct sockaddr *addr)
+	       struct http_request *request, POUND_HTTP *phttp)
 {
   int res = 0;
   REWRITE_RULE *rule;
-  struct submatch_queue smq;
 
-  submatch_queue_init (&smq);
   SLIST_FOREACH (rule, rewrite_rules, next)
     {
-      if ((res = rewrite_rule_check (rule, request, addr, &smq)) != 0)
+      if ((res = rewrite_rule_check (rule, request, phttp)) != 0)
 	break;
     }
-  submatch_queue_free (&smq);
   return res;
 }
 
@@ -2939,8 +3362,10 @@ force_http_10 (POUND_HTTP *phttp)
 
     case 2:
       {
-	char const *agent = http_request_header_value (&phttp->request, HEADER_USER_AGENT);
-	return (phttp->ssl != NULL && agent != NULL && strstr (agent, "MSIE") != NULL);
+	char const *agent = http_request_header_value (&phttp->request,
+						       HEADER_USER_AGENT);
+	return (phttp->ssl != NULL && agent != NULL &&
+		strstr (agent, "MSIE") != NULL);
       }
 
     default:
@@ -2979,7 +3404,7 @@ backend_response (POUND_HTTP *phttp)
   phttp->res_bytes = 0;
   do
     {
-      int chunked; /* True if request contains Transfer-Enconding: chunked */
+      int chunked; /* True if request contains Transfer-Encoding: chunked */
 
       /* Free previous response, if any */
       http_request_free (&phttp->response);
@@ -2992,9 +3417,18 @@ backend_response (POUND_HTTP *phttp)
 		  addr2str (caddr, sizeof (caddr), &phttp->from_host, 1),
 		  str_be (caddr2, sizeof (caddr2), phttp->backend),
 		  phttp->request.request, strerror (errno),
-		  log_duration (duration_buf, sizeof (duration_buf), &phttp->start_req));
+		  log_duration (duration_buf, sizeof (duration_buf),
+				&phttp->start_req));
 	  return HTTP_STATUS_INTERNAL_SERVER_ERROR;
 	}
+
+      if (rewrite_apply (&phttp->lstn->rewrite[REWRITE_RESPONSE],
+			 &phttp->response,
+			 phttp) ||
+	  rewrite_apply (&phttp->svc->rewrite[REWRITE_RESPONSE],
+			 &phttp->response,
+			 phttp))
+	return HTTP_STATUS_INTERNAL_SERVER_ERROR;
 
       be_11 = (phttp->response.request[7] == '1');
       phttp->response_code = strtol (phttp->response.request+9, NULL, 10);
@@ -3047,14 +3481,14 @@ backend_response (POUND_HTTP *phttp)
 	    case HEADER_UPGRADE:
 	      if ((val = http_header_get_value (hdr)) == NULL)
 		return HTTP_STATUS_INTERNAL_SERVER_ERROR;
-	      if (!strcasecmp ("websocket", val))
+	      if (cs_locate_token (val, "websocket", 1, NULL))
 		phttp->ws_state |= WSS_RESP_HEADER_UPGRADE_WEBSOCKET;
 	      break;
 
 	    case HEADER_TRANSFER_ENCODING:
 	      if ((val = http_header_get_value (hdr)) == NULL)
 		return HTTP_STATUS_INTERNAL_SERVER_ERROR;
-	      if (!strcasecmp ("chunked", val))
+	      if (cs_locate_token (val, "chunked", 1, NULL))
 		{
 		  chunked = 1;
 		  phttp->no_cont = 0;
@@ -3064,7 +3498,7 @@ backend_response (POUND_HTTP *phttp)
 	    case HEADER_CONTENT_LENGTH:
 	      if ((val = http_header_get_value (hdr)) == NULL)
 		return HTTP_STATUS_INTERNAL_SERVER_ERROR;
-	      if ((content_length = get_content_length (val, 10)) == NO_CONTENT_LENGTH)
+	      if ((content_length = get_content_length (val, CL_HEADER)) == NO_CONTENT_LENGTH)
 		{
 		  logmsg (LOG_WARNING, "(%"PRItid") invalid content length: %s",
 			  POUND_TID (), val);
@@ -3080,7 +3514,8 @@ backend_response (POUND_HTTP *phttp)
 		  char const *v_host = http_request_host (&phttp->request);
 		  char const *path;
 		  if (v_host && v_host[0] &&
-		      need_rewrite (val, v_host, phttp->lstn, phttp->backend, &path))
+		      need_rewrite (val, v_host, phttp->lstn, phttp->backend,
+				    &path))
 		    {
 		      struct stringbuf sb;
 		      char *p;
@@ -3111,7 +3546,8 @@ backend_response (POUND_HTTP *phttp)
 		  char const *v_host = http_request_host (&phttp->request);
 		  char const *path;
 		  if (v_host && v_host[0] &&
-		      need_rewrite (val, v_host, phttp->lstn, phttp->backend, &path))
+		      need_rewrite (val, v_host, phttp->lstn, phttp->backend,
+				    &path))
 		    {
 		      struct stringbuf sb;
 		      char *p;
@@ -3126,7 +3562,8 @@ backend_response (POUND_HTTP *phttp)
 			{
 			  stringbuf_free (&sb);
 			  logmsg (LOG_WARNING,
-				  "(%"PRItid") rewrite Content-location - out of memory: %s",
+				  "(%"PRItid") rewrite Content-location - "
+				  "out of memory: %s",
 				  POUND_TID (), strerror (errno));
 			  return HTTP_STATUS_INTERNAL_SERVER_ERROR;
 			}
@@ -3186,7 +3623,8 @@ backend_response (POUND_HTTP *phttp)
 	       * had Transfer-encoding: chunked so read/write all
 	       * the chunks (HTTP/1.1 only)
 	       */
-	      if (copy_chunks (phttp->be, phttp->cl, &phttp->res_bytes, skip, 0))
+	      if (copy_chunks (phttp->be, phttp->cl, &phttp->res_bytes,
+			       skip, 0) != HTTP_STATUS_OK)
 		{
 		  /*
 		   * copy_chunks() has its own error messages
@@ -3200,7 +3638,8 @@ backend_response (POUND_HTTP *phttp)
 	       * may have had Content-length, so do raw reads/writes
 	       * for the length
 	       */
-	      if (copy_bin (phttp->be, phttp->cl, content_length, &phttp->res_bytes, skip))
+	      if (copy_bin (phttp->be, phttp->cl, content_length,
+			    &phttp->res_bytes, skip))
 		{
 		  if (errno)
 		    logmsg (LOG_NOTICE,
@@ -3459,7 +3898,8 @@ send_to_backend (POUND_HTTP *phttp, int chunked, CONTENT_LENGTH content_length)
    * had no back-end before
    */
   if (phttp->lstn->rewr_dest &&
-      (hdr = http_header_list_locate (&phttp->request.headers, HEADER_DESTINATION)) != NULL)
+      (hdr = http_header_list_locate (&phttp->request.headers,
+				      HEADER_DESTINATION)) != NULL)
     {
       regmatch_t matches[4];
 
@@ -3511,8 +3951,30 @@ send_to_backend (POUND_HTTP *phttp, int chunked, CONTENT_LENGTH content_length)
 	lognomem ();
     }
 
-  if (rewrite_apply (&phttp->lstn->rewrite, &phttp->request, phttp->from_host.ai_addr)
-      || rewrite_apply (&phttp->svc->rewrite, &phttp->request, phttp->from_host.ai_addr))
+  if (phttp->backend->v.reg.servername)
+    {
+      struct stringbuf sb;
+      char *hf;
+      int rc;
+
+      stringbuf_init_log (&sb);
+      stringbuf_printf (&sb, "Host: %s", phttp->backend->v.reg.servername);
+      hf = stringbuf_finish (&sb);
+      if (!hf)
+	{
+	  stringbuf_free (&sb);
+	  return HTTP_STATUS_INTERNAL_SERVER_ERROR;
+	}
+      rc = http_header_list_append (&phttp->request.headers, hf, H_REPLACE);
+      stringbuf_free (&sb);
+      if (rc)
+	return HTTP_STATUS_INTERNAL_SERVER_ERROR;
+    }
+
+  if (rewrite_apply (&phttp->lstn->rewrite[REWRITE_REQUEST], &phttp->request,
+		     phttp)
+      || rewrite_apply (&phttp->svc->rewrite[REWRITE_REQUEST], &phttp->request,
+			phttp))
     return HTTP_STATUS_INTERNAL_SERVER_ERROR;
 
   /*
@@ -3543,18 +4005,21 @@ send_to_backend (POUND_HTTP *phttp, int chunked, CONTENT_LENGTH content_length)
        * had Transfer-encoding: chunked so read/write all the chunks
        * (HTTP/1.1 only)
        */
-      if (copy_chunks (phttp->cl, phttp->be, NULL,
-		       phttp->backend->be_type != BE_BACKEND,
-		       phttp->lstn->max_req))
+      int rc = copy_chunks (phttp->cl, phttp->be, NULL,
+			    phttp->backend->be_type != BE_BACKEND,
+			    phttp->lstn->max_req);
+      if (rc != HTTP_STATUS_OK)
 	{
 	  logmsg (LOG_NOTICE,
-		  "(%"PRItid") e500 for %s copy_chunks to %s/%s (%s sec)",
+		  "(%"PRItid") e%d for %s copy_chunks to %s/%s (%s sec)",
 		  POUND_TID (),
+		  pound_to_http_status(rc),
 		  addr2str (caddr, sizeof (caddr), &phttp->from_host, 1),
 		  str_be (caddr2, sizeof (caddr2), phttp->backend),
 		  phttp->request.request,
-		  log_duration (duration_buf, sizeof (duration_buf), &phttp->start_req));
-	  return HTTP_STATUS_INTERNAL_SERVER_ERROR;
+		  log_duration (duration_buf, sizeof (duration_buf),
+				&phttp->start_req));
+	  return rc;
 	}
     }
   else if (content_length > 0)
@@ -3562,7 +4027,8 @@ send_to_backend (POUND_HTTP *phttp, int chunked, CONTENT_LENGTH content_length)
       /*
        * had Content-length, so do raw reads/writes for the length
        */
-      if (copy_bin (phttp->cl, phttp->be, content_length, NULL, phttp->backend->be_type != BE_BACKEND))
+      if (copy_bin (phttp->cl, phttp->be, content_length, NULL,
+		    phttp->backend->be_type != BE_BACKEND))
 	{
 	  logmsg (LOG_NOTICE,
 		  "(%"PRItid") e500 for %s error copy client cont to %s/%s: %s (%s sec)",
@@ -3586,7 +4052,8 @@ send_to_backend (POUND_HTTP *phttp, int chunked, CONTENT_LENGTH content_length)
 	      addr2str (caddr, sizeof (caddr), &phttp->from_host, 1),
 	      str_be (caddr2, sizeof (caddr2), phttp->backend),
 	      phttp->request.request, strerror (errno),
-	      log_duration (duration_buf, sizeof (duration_buf), &phttp->start_req));
+	      log_duration (duration_buf, sizeof (duration_buf),
+			    &phttp->start_req));
       return HTTP_STATUS_INTERNAL_SERVER_ERROR;
     }
   return 0;
@@ -3627,6 +4094,8 @@ open_backend (POUND_HTTP *phttp, BACKEND *backend, int sock)
 	  logmsg (LOG_WARNING, "(%"PRItid") be SSL_new: failed", POUND_TID ());
 	  return HTTP_STATUS_SERVICE_UNAVAILABLE;
 	}
+      if (backend->v.reg.servername)
+	SSL_set_tlsext_host_name (be_ssl, backend->v.reg.servername);
       SSL_set_bio (be_ssl, phttp->be, phttp->be);
       if ((bb = BIO_new (BIO_f_ssl ())) == NULL)
 	{
@@ -3705,21 +4174,24 @@ select_backend (POUND_HTTP *phttp)
 		  break;
 
 		default:
-		  logmsg (LOG_WARNING, "(%"PRItid") e503 backend: unknown family %d",
+		  logmsg (LOG_WARNING,
+			  "(%"PRItid") e503 backend: unknown family %d",
 			  POUND_TID (), backend->v.reg.addr.ai_family);
 		  return HTTP_STATUS_SERVICE_UNAVAILABLE;
 		}
 
 	      if ((sock = socket (sock_proto, SOCK_STREAM, 0)) < 0)
 		{
-		  logmsg (LOG_WARNING, "(%"PRItid") e503 backend %s socket create: %s",
+		  logmsg (LOG_WARNING,
+			  "(%"PRItid") e503 backend %s socket create: %s",
 			  POUND_TID (),
 			  str_be (caddr, sizeof (caddr), backend),
 			  strerror (errno));
 		  return HTTP_STATUS_SERVICE_UNAVAILABLE;
 		}
 
-	      if (connect_nb (sock, &backend->v.reg.addr, backend->v.reg.conn_to) == 0)
+	      if (connect_nb (sock, &backend->v.reg.addr,
+			      backend->v.reg.conn_to) == 0)
 		{
 		  int res;
 
@@ -3776,14 +4248,14 @@ select_backend (POUND_HTTP *phttp)
 }
 
 static void
-backend_update_stats (BACKEND *be, struct timespec const *start)
+backend_update_stats (BACKEND *be, struct timespec const *start,
+		      struct timespec const *end)
 {
-  struct timespec diff, end;
+  struct timespec diff;
   double t;
 
-  clock_gettime (CLOCK_REALTIME, &end);
   pthread_mutex_lock (&be->mut);
-  diff = timespec_sub (&end, start);
+  diff = timespec_sub (end, start);
   t = (double) diff.tv_sec * 1e9 + diff.tv_nsec;
   be->avgtime = (be->numreq * be->avgtime + t) / (be->numreq + 1);
   be->avgsqtime = (be->numreq * be->avgsqtime + t*t) / (be->numreq + 1);
@@ -3799,7 +4271,7 @@ do_http (POUND_HTTP *phttp)
 {
   int cl_11;  /* Whether client connection is using HTTP/1.1 */
   int res;  /* General-purpose result variable */
-  int chunked; /* True if request contains Transfer-Enconding: chunked
+  int chunked; /* True if request contains Transfer-Encoding: chunked
 		* FIXME: this belongs to struct http_request, perhaps.
 		*/
   BIO *bb;
@@ -3938,7 +4410,7 @@ do_http (POUND_HTTP *phttp)
 	    case HEADER_CONNECTION:
 	      if ((val = http_header_get_value (hdr)) == NULL)
 		goto err;
-	      if (!strcasecmp ("close", val))
+	      if (cs_locate_token (val, "close", 1, NULL))
 		phttp->conn_closed = 1;
 	      /*
 	       * Connection: upgrade
@@ -3950,23 +4422,43 @@ do_http (POUND_HTTP *phttp)
 	    case HEADER_UPGRADE:
 	      if ((val = http_header_get_value (hdr)) == NULL)
 		goto err;
-	      if (!strcasecmp ("websocket", val))
+	      if (cs_locate_token (val, "websocket", 1, NULL))
 		phttp->ws_state |= WSS_REQ_HEADER_UPGRADE_WEBSOCKET;
 	      break;
 
 	    case HEADER_TRANSFER_ENCODING:
 	      if ((val = http_header_get_value (hdr)) == NULL)
 		goto err;
-	      if (!strcasecmp ("chunked", val))
-		chunked = 1;
-	      else
+	      else if (chunked)
 		{
 		  logmsg (LOG_NOTICE,
-			  "(%"PRItid") e400 multiple Transfer-encoding \"%s\" from %s",
+			  "(%"PRItid") e400 multiple Transfer-encoding: chunked on \"%s\" from %s",
 			  POUND_TID (), phttp->request.url,
 			  addr2str (caddr, sizeof (caddr), &phttp->from_host, 1));
 		  http_err_reply (phttp, HTTP_STATUS_BAD_REQUEST);
 		  return;
+		}
+	      else
+		{
+		  char *next;
+		  if (cs_locate_token (val, "chunked", 1, &next))
+		    {
+		      if (*next)
+			{
+			  /*
+			   * When the "chunked" transfer-coding is used,
+			   * it MUST be the last transfer-coding applied
+			   * to the message-body.
+			   */
+			  logmsg (LOG_NOTICE,
+				  "(%"PRItid") e400 multiple Transfer-encoding on \"%s\" from %s",
+				  POUND_TID (), phttp->request.url,
+				  addr2str (caddr, sizeof (caddr), &phttp->from_host, 1));
+			  http_err_reply (phttp, HTTP_STATUS_BAD_REQUEST);
+			  return;
+			}
+		      chunked = 1;
+		    }
 		}
 	      break;
 
@@ -3982,7 +4474,7 @@ do_http (POUND_HTTP *phttp)
 		  http_err_reply (phttp, HTTP_STATUS_BAD_REQUEST);
 		  return;
 		}
-	      else if ((content_length = get_content_length (val, 10)) == NO_CONTENT_LENGTH)
+	      else if ((content_length = get_content_length (val, CL_HEADER)) == NO_CONTENT_LENGTH)
 		{
 		  logmsg (LOG_NOTICE,
 			  "(%"PRItid") e400 Content-length bad value \"%s\" from %s",
@@ -4018,20 +4510,12 @@ do_http (POUND_HTTP *phttp)
 	       * FIXME: This should not happen.  See the handling of
 	       * HEADER_ILLEGAL in http_header_list_append.
 	       */
-	      if (phttp->lstn->log_level > 0)
-		{
-		  logmsg (LOG_NOTICE, "(%"PRItid") bad header from %s (%s)",
-			  POUND_TID (),
-			  addr2str (caddr, sizeof (caddr), &phttp->from_host, 1),
-			  hdr->header);
-		}
-	      http_header_list_remove (&phttp->request.headers, hdr);
-	      break;
+	      logmsg (LOG_NOTICE, "(%"PRItid") bad header from %s (%s)",
+		      POUND_TID (),
+		      addr2str (caddr, sizeof (caddr), &phttp->from_host, 1),
+		      hdr->header);
 
-	    case HEADER_AUTHORIZATION:
-	      if ((val = http_header_get_value (hdr)) == NULL)
-		goto err;
-	      get_user (val, &phttp->request.user);
+	      http_header_list_remove (&phttp->request.headers, hdr);
 	      break;
 	    }
 	}
@@ -4055,7 +4539,8 @@ do_http (POUND_HTTP *phttp)
       if (phttp->lstn->max_req > 0 && content_length > 0
 	  && content_length > phttp->lstn->max_req)
 	{
-	  logmsg (LOG_NOTICE, "(%"PRItid") e413 request too large (%"PRICLEN") from %s",
+	  logmsg (LOG_NOTICE,
+		  "(%"PRItid") e413 request too large (%"PRICLEN") from %s",
 		  POUND_TID (), content_length,
 		  addr2str (caddr, sizeof (caddr), &phttp->from_host, 1));
 	  http_err_reply (phttp, HTTP_STATUS_PAYLOAD_TOO_LARGE);
@@ -4078,8 +4563,7 @@ do_http (POUND_HTTP *phttp)
        * check that the requested URL still fits the old back-end (if
        * any)
        */
-      if ((phttp->svc = get_service (phttp->lstn, phttp->from_host.ai_addr,
-				     &phttp->request, &phttp->smq)) == NULL)
+      if ((phttp->svc = get_service (phttp)) == NULL)
 	{
 	  char const *v_host = http_request_host (&phttp->request);
 	  logmsg (LOG_NOTICE, "(%"PRItid") e503 no service \"%s\" from %s %s",
@@ -4107,6 +4591,8 @@ do_http (POUND_HTTP *phttp)
 
       phttp->res_bytes = 0;
       http_request_free (&phttp->response);
+
+      save_forwarded_header (phttp);
 
       clock_gettime (CLOCK_REALTIME, &be_start);
       switch (phttp->backend->be_type)
@@ -4138,10 +4624,15 @@ do_http (POUND_HTTP *phttp)
 	    /* Process the response. */
 	    res = backend_response (phttp);
 	  break;
+
+	case BE_BACKEND_REF:
+	  /* shouldn't happen */
+	  abort ();
 	}
 
+      clock_gettime (CLOCK_REALTIME, &phttp->end_req);
       if (enable_backend_stats)
-	backend_update_stats (phttp->backend, &be_start);
+	backend_update_stats (phttp->backend, &be_start, &phttp->end_req);
 
       if (res == -1)
 	break;

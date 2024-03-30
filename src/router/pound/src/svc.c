@@ -1,7 +1,7 @@
 /*
  * Pound - the reverse-proxy load-balancer
  * Copyright (C) 2002-2010 Apsis GmbH
- * Copyright (C) 2022-2023 Sergey Poznyakoff
+ * Copyright (C) 2022-2024 Sergey Poznyakoff
  *
  * Pound is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,48 +20,6 @@
 #include "pound.h"
 #include "extern.h"
 #include "json.h"
-
-/*
- * basic hashing function, based on fmv
- */
-static unsigned long
-session_hash (const SESSION *e)
-{
-  unsigned long res;
-  char *k;
-
-  k = e->key;
-  res = 2166136261;
-  while (*k)
-    res = ((res ^ *k++) * 16777619) & 0xFFFFFFFF;
-  return res;
-}
-
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
-static IMPLEMENT_LHASH_HASH_FN (session, SESSION)
-#endif
-
-static int
-session_cmp (const SESSION *d1, const SESSION *d2)
-{
-  return strcmp (d1->key, d2->key);
-}
-
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
-static IMPLEMENT_LHASH_COMP_FN (session, SESSION)
-#endif
-
-#if OPENSSL_VERSION_NUMBER >= 0x10100000L
-# define SESSION_HASH_NEW() lh_SESSION_new (session_hash, session_cmp)
-# define SESSION_INSERT(tab, node) lh_SESSION_insert (tab, node)
-# define SESSION_RETRIEVE(tab, node) lh_SESSION_retrieve (tab, node)
-# define SESSION_DELETE(tab, node) lh_SESSION_delete (tab, node)
-#else /* OPENSSL_VERSION_NUMBER >= 0x10000000L */
-# define SESSION_HASH_NEW() LHM_lh_new (SESSION, session)
-# define SESSION_INSERT(tab, node) LHM_lh_insert (SESSION, tab, node)
-# define SESSION_RETRIEVE(tab, node) LHM_lh_retrieve (SESSION, tab, node)
-# define SESSION_DELETE(tab, node) LHM_lh_delete (SESSION, tab, node)
-#endif
 
 SESSION_TABLE *
 session_table_new (void)
@@ -363,28 +321,24 @@ str_be (char *buf, size_t size, BACKEND *be)
 }
 
 static int
-match_service (const SERVICE *svc, struct sockaddr *srcaddr,
-	       struct http_request *req,
-	       struct submatch_queue *smq)
+match_service (SERVICE *svc, POUND_HTTP *phttp)
 {
-  return match_cond (&svc->cond, srcaddr, req, smq);
+  return match_cond (&svc->cond, phttp, &phttp->request);
 }
 
 /*
  * Find the right service for a request
  */
 SERVICE *
-get_service (const LISTENER *lstn, struct sockaddr *srcaddr,
-	     struct http_request *req,
-	     struct submatch_queue *smq)
+get_service (POUND_HTTP *phttp)
 {
   SERVICE *svc;
 
-  SLIST_FOREACH (svc, &lstn->services, next)
+  SLIST_FOREACH (svc, &phttp->lstn->services, next)
     {
       if (svc->disabled)
 	continue;
-      if (match_service (svc, srcaddr, req, smq))
+      if (match_service (svc, phttp))
 	return svc;
     }
 
@@ -393,7 +347,7 @@ get_service (const LISTENER *lstn, struct sockaddr *srcaddr,
     {
       if (svc->disabled)
 	continue;
-      if (match_service (svc, srcaddr, req, smq))
+      if (match_service (svc, phttp))
 	return svc;
     }
 
@@ -1103,85 +1057,92 @@ need_rewrite (const char *location, const char *v_host,
 int
 connect_nb (const int sockfd, const struct addrinfo *serv_addr, const int to)
 {
-  int flags, res, error;
-  socklen_t len;
+  int flags;
   struct pollfd p;
+  char caddr[MAX_ADDR_BUFSIZE];
 
   if ((flags = fcntl (sockfd, F_GETFL, 0)) < 0)
     {
-      logmsg (LOG_WARNING, "(%"PRItid") connect_nb: fcntl GETFL failed: %s",
-	      POUND_TID (), strerror (errno));
+      logmsg (LOG_WARNING, "(%"PRItid") connect_nb: %s: fcntl GETFL failed: %s",
+	      POUND_TID (),
+	      addr2str (caddr, sizeof (caddr), serv_addr, 0),
+	      strerror (errno));
       return -1;
     }
   if (fcntl (sockfd, F_SETFL, flags | O_NONBLOCK) < 0)
     {
-      logmsg (LOG_WARNING, "(%"PRItid") connect_nb: fcntl SETFL failed: %s",
-	      POUND_TID (), strerror (errno));
+      logmsg (LOG_WARNING, "(%"PRItid") connect_nb: %s: fcntl SETFL failed: %s",
+	      POUND_TID (),
+	      addr2str (caddr, sizeof (caddr), serv_addr, 0),
+	      strerror (errno));
       return -1;
     }
 
-  error = 0;
-  if ((res = connect (sockfd, serv_addr->ai_addr, serv_addr->ai_addrlen)) < 0)
-    if (errno != EINPROGRESS)
-      {
-	logmsg (LOG_WARNING, "(%"PRItid") connect_nb: connect failed: %s",
-		POUND_TID (), strerror (errno));
-	return -1;
-      }
-
-  if (res == 0)
+  if (connect (sockfd, serv_addr->ai_addr, serv_addr->ai_addrlen) < 0)
     {
-      /* connect completed immediately (usually localhost) */
-      if (fcntl (sockfd, F_SETFL, flags) < 0)
+      if (errno != EINPROGRESS)
 	{
-	  logmsg (LOG_WARNING, "(%"PRItid") connect_nb: fcntl reSETFL failed: %s",
-		  POUND_TID (), strerror (errno));
+	  logmsg (LOG_WARNING, "(%"PRItid") connect_nb: %s: connect failed: %s",
+		  POUND_TID (),
+		  addr2str (caddr, sizeof (caddr), serv_addr, 0),
+		  strerror (errno));
 	  return -1;
 	}
-      return 0;
-    }
 
-  memset (&p, 0, sizeof (p));
-  p.fd = sockfd;
-  p.events = POLLOUT;
-  if ((res = poll (&p, 1, to * 1000)) != 1)
-    {
-      if (res == 0)
+      memset (&p, 0, sizeof (p));
+      p.fd = sockfd;
+      p.events = POLLOUT;
+      switch (poll (&p, 1, to * 1000))
 	{
-	  /* timeout */
-	  logmsg (LOG_WARNING, "(%"PRItid") connect_nb: poll timed out",
-		  POUND_TID ());
-	  errno = ETIMEDOUT;
-	}
-      else
-	logmsg (LOG_WARNING, "(%"PRItid") connect_nb: poll failed: %s",
-		POUND_TID (), strerror (errno));
-      return -1;
-    }
+	case 1:
+	  break;
 
-  /* socket is writeable == operation completed */
-  len = sizeof (error);
-  if (getsockopt (sockfd, SOL_SOCKET, SO_ERROR, &error, &len) < 0)
-    {
-      logmsg (LOG_WARNING, "(%"PRItid") connect_nb: getsockopt failed: %s",
-	      POUND_TID (), strerror (errno));
-      return -1;
+	case 0:
+	  /* timeout */
+	  logmsg (LOG_WARNING, "(%"PRItid") connect_nb: %s: poll timed out",
+		  POUND_TID (),
+		  addr2str (caddr, sizeof (caddr), serv_addr, 0));
+	  errno = ETIMEDOUT;
+	  return -1;
+
+	default:
+	  logmsg (LOG_WARNING, "(%"PRItid") connect_nb: %s: poll failed: %s",
+		  POUND_TID (),
+		  addr2str (caddr, sizeof (caddr), serv_addr, 0),
+		  strerror (errno));
+	  return -1;
+	}
+
+      if (!(p.revents & POLLOUT))
+	{
+	  int error;
+	  socklen_t len = sizeof (error);
+	  if (getsockopt (sockfd, SOL_SOCKET, SO_ERROR, &error, &len) == 0)
+	    {
+	      logmsg (LOG_WARNING,
+		      "(%"PRItid") connect_nb: %s: connection failed: %s",
+		      POUND_TID (),
+		      addr2str (caddr, sizeof (caddr), serv_addr, 0),
+		      strerror (error));
+	      errno = error;
+	    }
+	  else
+	    logmsg (LOG_WARNING,
+		    "(%"PRItid") connect_nb: %s: getsockopt failed: %s",
+		    POUND_TID (),
+		    addr2str (caddr, sizeof (caddr), serv_addr, 0),
+		    strerror (errno));
+	  return -1;
+	}
     }
 
   /* restore file status flags */
   if (fcntl (sockfd, F_SETFL, flags) < 0)
     {
-      logmsg (LOG_WARNING, "(%"PRItid") connect_nb: fcntl reSETFL failed: %s",
-	      POUND_TID (), strerror (errno));
-      return -1;
-    }
-
-  if (error)
-    {
-      /* getsockopt() shows an error */
-      errno = error;
-      logmsg (LOG_WARNING, "(%"PRItid") connect_nb: error after getsockopt: %s",
-	      POUND_TID (), strerror (errno));
+      logmsg (LOG_WARNING, "(%"PRItid") connect_nb: %s: fcntl restore SETFL failed: %s",
+	      POUND_TID (),
+	      addr2str (caddr, sizeof (caddr), serv_addr, 0),
+	      strerror (errno));
       return -1;
     }
 
@@ -1253,7 +1214,7 @@ touch_be (void *data)
 	{
 	  be->v.reg.alive = 1;
 	  str_be (buf, sizeof (buf), be);
-	  logmsg (LOG_NOTICE, "Backend %s resurrect", buf);
+	  logmsg (LOG_NOTICE, "Backend %s resurrected", buf);
 	  if (!be->disabled)
 	    {
 	      pthread_mutex_lock (&be->service->mut);
@@ -1702,6 +1663,9 @@ backend_type_str (BACKEND_TYPE t)
 
     case BE_METRICS:
       return "metrics";
+
+    default: /* BE_BACKEND_REF can't happen at this stage. */
+      break;
     }
 
   return "UNKNOWN";
@@ -1809,6 +1773,10 @@ backend_serialize (BACKEND *be)
 	      case BE_CONTROL:
 	      case BE_METRICS:
 		/* FIXME */
+		break;
+
+	      case BE_BACKEND_REF:
+		/* Can't happen */
 		break;
 
 	      case BE_ERROR:
@@ -2660,4 +2628,73 @@ SSLINFO_callback (const SSL * ssl, int where, int rc)
       // Reject any followup renegotiations
       *reneg_state = RENEG_REJECT;
     }
+}
+
+int
+foreach_listener (LISTENER_ITERATOR itr, void *data)
+{
+  LISTENER *lstn;
+  int rc = 0;
+  SLIST_FOREACH (lstn, &listeners, next)
+    {
+      if ((rc = itr (lstn, data)) != 0)
+	break;
+    }
+  return rc;
+}
+
+int
+foreach_service (SERVICE_ITERATOR itr, void *data)
+{
+  LISTENER *lstn;
+  SERVICE *svc;
+
+  SLIST_FOREACH (lstn, &listeners, next)
+    {
+      SLIST_FOREACH (svc, &lstn->services, next)
+	{
+	  int rc;
+	  if ((rc = itr (svc, data)) != 0)
+	    return rc;
+	}
+    }
+
+  SLIST_FOREACH (svc, &services, next)
+    {
+      int rc;
+      if ((rc = itr (svc, data)) != 0)
+	return rc;
+    }
+
+  return 0;
+}
+
+struct service_backends_iterator
+{
+  BACKEND_ITERATOR itr;
+  void *data;
+};
+
+static int
+itr_service_backends (SERVICE *svc, void *data)
+{
+  struct service_backends_iterator *itp = data;
+  BACKEND *be;
+  SLIST_FOREACH (be, &svc->backends, next)
+    {
+      int rc;
+      if ((rc = itp->itr (be, itp->data)) != 0)
+	return rc;
+    }
+  return 0;
+}
+
+int
+foreach_backend (BACKEND_ITERATOR itr, void *data)
+{
+  struct service_backends_iterator bitr;
+
+  bitr.itr = itr;
+  bitr.data = data;
+  return foreach_service (itr_service_backends, &bitr);
 }

@@ -1,11 +1,295 @@
-Pound -- history of user-visible changes. 2023-05-28
+Pound -- history of user-visible changes. 2024-01-03
 See the end of file for copying conditions.
 
 Pound is a continuation of the software originally developed by
 Robert Segall at Apsis GmbH, which was officially discontinued
-on 2022-09-19.  See the README.md file for details.
+on 2022-09-19.  See the README file for details.
 
 Please send pound bug reports to <gray@gnu.org>
+
+Version 4.11, 2024-01-03
+
+* Combining multi-value headers
+
+HTTP protocol allows for certain headers to appear in the message
+multiple times.  Namely, multiple headers with the same header name
+are permitted if that header field is defined as a comma-separated
+list.  The standard specifies that such fields can be combined in
+a single "header: value" pair, by appending each subsequent field
+value to the previous one, each separated by a comma.
+
+Pound is able to perform such combining on incoming requests as well
+as on responses.  To enable this feature, declare names of headers
+that can be combined using the CombineHeader statement, e.g.:
+
+    CombineHeaders
+	"Accept"
+	"Allow"
+	"Forwarded"
+    End
+
+Pound distribution includes file "mvh.inc" which declares all
+multiple-value headers in a form suitable for inclusion to the main
+pound configuration file.  This file is installed in the package
+data directory, which is normally /usr/local/share/pound or
+/usr/share/pound, depending on the installation prefix used.
+
+* SNI in HTTPS backends
+
+New directive ServerName is provided for use in Backend section after
+HTTPS statement.  This directive sets the host name to be used in server
+name identification (SNI).  Its argument is a quoted string specifying
+the host name.  This directive also rewrites the Host: header
+accordingly.  Example usage:
+
+    Backend
+	HTTPS
+	Address 192.0.2.1
+	Port 443
+	ServerName "www.example.org"
+    End
+
+* "Cert" statement in "ListenHTTPS" section
+
+Argument to the "Cert" statement in "ListenHTTPS" section can be
+the name of a directory containing certificate files.  All files from
+that directory will be loaded.
+
+Version 4.10, 2023-10-13
+
+* Global "Backend" definitions
+
+A "Backend" statement is allowed to appear in global scope.  In this
+case it must be followed by a symbolic name, as in:
+
+  Backend "name"
+    ...
+  End
+
+The "name" must uniquely identify this backend among other backends
+defined in global scope.
+
+Global backend definitions can be used in services using the
+"UseBackend" statement:
+
+  UseBackend "name"
+
+A single globally defined backend can be used in multiple services.
+Its actual global definition may appear before as well as after the
+service or services it is used in.
+
+A named form of Backend statement is also allowed for use in
+Service sections.  In this case it acts as "UseBackend" statement,
+except that statements between "Backend" and "End" modify the
+parameters of the backend for use in this particular service.  Only
+two statements are allowed in such named form: "Priority" and
+"Disabled".  The following example attaches the globally defined
+backend "assets" to the service and modifies its priority:
+
+  Backend "assets"
+    Priority 8
+  End
+
+* Response header modification
+
+The "Rewrite" statement accepts optional argument specifying whether
+it applies to the incoming request, or to the response.  The following
+statement applies to requests and is exactly equivalent to "Rewrite"
+without argument:
+
+  Rewrite request
+    ...
+  End
+
+In contrast, the following statement:
+
+  Rewrite response
+    ...
+  End
+
+applies to the response (received from the regular backend or generated
+by error backend).  In this form, the set of statements that can
+appear inside the section (denoted by ellipsis above) is limited to
+the following: "Not", "Match", "Header", "StringMatch",
+"SetHeader", and "DeleteHeader".  For example:
+
+  Rewrite response
+    Match
+      Header "Content-Type: text/(.*)"
+    End
+    SetHeader "X-Text-Type: $1"
+  End
+
+The same applies to "Else" branches.
+
+* Basic authentication
+
+New request matching statement "BasicAuth" is implemented.  Its
+syntax is:
+
+  BasicAuth "FILE"
+
+It evaluates to true, if the incoming request contains Authorization
+header with scheme "Basic", such that user name and password obtained
+from it match a line in the given disk file.  FILE must be a
+plain-text file created with htpasswd(1) or similar utility, i.e. each
+non-empty line of it must contain username and password hash separated
+by a colon.  Password hash can be one of:
+
+  . Password in plain text.
+  . Hash created by the system crypt(3) function.
+  . Password hashed using SHA1 algorithm and encoded in base64.
+    This hash must be prefixed by {SHA}
+  . Apache-style "APR1" hash.
+
+Combined with the response rewriting described above, this can be
+used to implement basic HTTP authentication in Pound as shown in
+the following example:
+
+  Service "auth"
+      Not BasicAuth "/etc/pound/htpass"
+      Rewrite response
+	  SetHeader "WWW-Authenticate: Basic realm=\"Restricted access\""
+      End
+      Error 401
+  End
+
+Unless the file name starts with a slash, it is taken relative to the
+"IncludeDir" directory.  The file is cached in the memory on the first
+authorization attempt, so that further authorizations do not result in
+disk i/o operations.  It will be rescanned if Pound notices that the
+file's modification time has changed.
+
+* Bugfixes
+
+** The Host statement assumes exact match by default.
+** Fix detection of duplicate Transfer-Encoding headers.
+
+Version 4.9, 2023-08-22
+
+* HTTP request logging
+
+In addition to six built-in log formats, you can define your own
+"named" formats and use them in the LogLevel directive.  Log format is
+defined using the following statement:
+
+  LogFormat "name" "format_string"
+
+The "name" argument specifies a string uniquely identifying this
+format.  "Format_string" is the format specification.  It is
+modelled after Apache's mod_log_config LogFormat string.  For example,
+the built-in format 3 is defined as:
+
+  "%a - %u %t \"%r\" %s %b \"%{Referer}i\" \"%{User-Agent}i\""
+
+The LogLevel directive has been extended to take symbolic format name
+as argument.  For example:
+
+  LogLevel "my_format"
+
+The traditional built-in formats are assigned the following symbolic names:
+
+  0 - "null"
+  1 - "regular"
+  2 - "extended"
+  3 - "vhost_combined"
+  4 - "combined"
+  5 - "detailed"
+
+So, instead of
+
+  LogLevel 3
+
+one may write
+
+  LogLevel "vhost_combined"
+
+* New statements: ForwardedHeader and TrustedIP
+
+These statements control how the %a log format conversion specifier
+determines the originator IP address:
+
+  ForwardedHeader "name"
+    Defines the name of HTTP header that carries the list of
+    proxies the request has passed through.  It is used to
+    report the originator IP address when logging.
+
+    The default is "X-Forwarded-For".  This statement can be
+    used in global, listener, and service scope.
+
+  TrustedIP
+    Defines a list of trusted proxy IP addresses, which is used to
+    determine the originator IP.  This is a special form of the ACL
+    statement and, as the latter, it can appear in two forms: directive
+    and section.
+
+    In directive form, it takes a single argument referring to a
+    named access control list, which must have been defined previously
+    using the ACL statement.
+
+    In section form, it is followed by a list of one or more CIDRs
+    each appearing on a separate line.  The End directive on a
+    separate line terminates the statement.
+
+    This statement can be used in global, listener, and service scope.
+
+* New service statement: LogSuppress
+
+Suppresses HTTP logs for requests that resulted in response status
+codes from a particular group or groups.  The statement takes one or more
+arguments specifying status code groups to suppress log messages for:
+
+  info or 1      1xx status codes
+  success or 2   2xx status codes
+  redirect or 3  3xx status codes
+  clterr or 4    4xx status codes
+  srverr or 5    5xx status codes
+  all            all status codes
+
+Suggested usage is for special services that are likely to accept
+large numbers of similar requests, such as Openmetrics services.  For
+example:
+
+   Service "metrics"
+       URL "/metrics"
+       Metrics
+       LogSuppress success
+   End
+
+* New request matching directive: StringMatch
+
+The syntax is:
+
+  StringMatch "SUBJECT" [OPTIONS] "PATTERN"
+
+OPTIONS are usual matcher options.  The directive matches if SUBJECT,
+after backreference expansion and accessor interpretation, matches
+PATTERN.
+
+This directive allows you to build complex service selection criteria.
+For example:
+
+  Service
+      Host "^foobar\.(.+)$"
+      StringMatch "$1" -file "domain.list"
+      ...
+  End
+
+The service above will be used for requests whose Host header value is
+"foobar." followed by a domain name from the file "domain.list".
+
+* New request accessors: host and port
+
+The %[host] accessor returns the hostname part of the Host header
+value.  The %[port] accessor returns port number with leading
+column character.  If no explicit port number is given in the Host
+value, %[port] returns empty string.
+
+* Bugfixes
+
+** Fix the QueryParam statement.
+
+** Improve testsuite and documentation.
 
 Version 4.8, 2023-05-28
 
@@ -613,7 +897,7 @@ Version 4.0, 2022-12-02
 =========================================================================
 Copyright information:
 
-Copyright (C) 2018-2023 Sergey Poznyakoff
+Copyright (C) 2018-2024 Sergey Poznyakoff
 
    Permission is granted to anyone to make or distribute verbatim copies
    of this document as received, in any medium, provided that the

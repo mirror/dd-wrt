@@ -1,5 +1,5 @@
 # This file is part of pound testsuite. -*- autotest -*-
-# Copyright (C) 2022-2023 Sergey Poznyakoff
+# Copyright (C) 2022-2024 Sergey Poznyakoff
 #
 # Pound is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,10 +21,10 @@ m4_pushdef([ERR501],
 <body>
 <p>This method is not allowed.</p>
 <p>This is custom error page was supplied using the Err501 directive.</p>
-</body>
-])
+</body>])
 
-AT_DATA([501.html],[ERR501])
+AT_DATA([501.html],[ERR501
+])
 
 PT_CHECK([ListenHTTP
 	Err501 "501.html"

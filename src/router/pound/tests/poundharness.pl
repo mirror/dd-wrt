@@ -1,5 +1,5 @@
 # This file is part of pound testsuite
-# Copyright (C) 2018-2023 Sergey Poznyakoff
+# Copyright (C) 2018-2024 Sergey Poznyakoff
 #
 # Pound is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,6 +22,7 @@ use Getopt::Long;
 use HTTP::Tiny;
 use POSIX qw(:sys_wait_h);
 use Cwd qw(abs_path);
+use File::Spec;
 
 my $config = 'pound.cfi:pound.cfg';
 my @preproc_files;
@@ -75,9 +76,16 @@ sub cleanup {
 ## Signal handling and program cleanup
 ## -----------------------------------
 
+my %status_codes;
+
 $SIG{QUIT} = $SIG{HUP} = $SIG{TERM} = $SIG{INT} = \&cleanup;
-$SIG{CHLD} = sub {
-    waitpid($pound_pid, 0);
+sub sigchild {
+    my $pid = waitpid(-1, 0);
+    if ($pid != $pound_pid) {
+	$status_codes{$pid} = $?;
+	$SIG{CHLD} = \&sigchild;
+	return;
+    }
     $pound_pid = 0;
     if (WIFEXITED($?)) {
 	if (WEXITSTATUS($?)) {
@@ -86,6 +94,7 @@ $SIG{CHLD} = sub {
 	    if ($verbose) {
 		print "pound finished\n";
 	    }
+	    $SIG{CHLD} = \&sigchild;
 	    return;
 	}
     } elsif (WIFSIGNALED($?)) {
@@ -95,6 +104,8 @@ $SIG{CHLD} = sub {
     }
     exit(EX_ERROR);
 };
+$SIG{CHLD} = \&sigchild;
+
 END {
     cleanup;
 }
@@ -164,8 +175,36 @@ exit ($ps->failures ? EX_FAILURE : EX_SUCCESS);
 ## Configuration file processing
 ## -----------------------------
 
+sub dequote {
+    my $arg = shift;
+    $arg =~ s/^\"(.+)\"$/$1/;
+    return $arg;
+}
+
+sub addport {
+    my ($infile, $outfile, $port) = @_;
+    open(my $in, '<', $infile)
+	or die "can't open $infile for reading: $!";
+    open(my $out, '>', $outfile)
+	or die "can't create $outfile: $!";
+    while (<$in>) {
+	chomp;
+	print $out "$_:$port\n";
+    }
+    close $in;
+    close $out;
+}
+
 sub preproc {
-    my ($infile, $outfile, $init) = @_;
+    my ($infile, $outfile, $init, $initstate) = @_;
+    if (!$init && $include_dir) {
+	unless (File::Spec->file_name_is_absolute($infile)) {
+	    $infile = File::Spec->catfile($include_dir, $infile)
+	}
+	unless (File::Spec->file_name_is_absolute($outfile)) {
+	    $outfile = File::Spec->catfile($include_dir, $outfile)
+	}
+    }
     if ($verbose) {
 	print "Preprocessing $infile into $outfile\n";
     }
@@ -179,25 +218,30 @@ sub preproc {
 	ST_LISTENER => 1,
 	ST_SERVICE => 2,
 	ST_BACKEND => 3,
-	ST_SESSION => 4
+	ST_SESSION => 4,
+	ST_SECTION => 5
     };
     my @state;
-    unshift @state, ST_INIT;
+    unshift @state, $initstate // ST_INIT;
     if ($init) {
 	print $out <<EOT;
 # Initial settings by $0
 Daemon 0
 LogFacility -
-LogLevel $log_level
 EOT
-;
+    ;
+	if ($log_level >= 0) {
+	    print $out "LogLevel $log_level\n";
+	}
     }
     my $be;
     while (<$in>) {
 	chomp;
 	if (/^\s*(?:#.)?$/) {
 	    ;
-	} elsif (/^\s*(Daemon|LogFacility|LogLevel)/i) {
+	} elsif (/^\s*(Daemon|LogFacility)/i) {
+	    $_ = "# Commented out: $_";
+	} elsif ($log_level >= 0 && /^\s*LogLevel/i) {
 	    $_ = "# Commented out: $_";
 	} elsif (/^(\s*)Listen(HTTPS?)/i) {
 	    unshift @state, ST_LISTENER;
@@ -209,6 +253,12 @@ EOT
 	    print $out "# Addition by $0\n";
 	    print $out "$1\tSocketFrom \"".$lst->sockname."\"\n";
 	    next;
+	} elsif (/^(?<indent>\s*)Include\s+(?<arg>.+)/) {
+	    my $arg = dequote($+{arg});
+	    my $file = $arg . '.pha';
+	    preproc($arg, $file, 0, $state[0]);
+	    print $out "$+{indent}# Edited by $0\n";
+	    $_ = "$+{indent}Include \"$file\"";
 	} elsif (/^\s*Service/i) {
 	    unshift @state, ST_SERVICE;
 	} elsif (/^\s*Session/i) {
@@ -219,6 +269,8 @@ EOT
 	    if ($verbose) {
 		print "$infile:$.: Backend ".$be->ident . ": " . $be->address."\n";
 	    }
+	} elsif (/^s*(TrustedIP|ACL|CombineHeaders)\b/) {
+	    unshift @state, ST_SECTION
 	} elsif (/^\s*End/i) {
 	    shift @state
 	} elsif ($state[0] == ST_BACKEND) {
@@ -230,6 +282,42 @@ EOT
 	} elsif ($state[0] == ST_LISTENER) {
 	    if (/^\s*(Address|Port|SocketFrom)/i) {
 		    $_ = "# Commented out: $_";
+	    }
+	} elsif ($state[0] == ST_SERVICE) {
+	    if (/^(\s*)Host\s+(.+)\s*$/) {
+		if (my $lst = $listeners->last()) {
+		    my $indent = $1;
+		    my $hostline = $2;
+		    my @opts;
+		    my $exact = 1;
+		    my $file;
+		    while ($hostline =~ m/^\s*(-\S+)(.*)/) {
+			push @opts, $1;
+			if ($1 eq '-re' || $1 eq '-beg' || $1 eq '-end') {
+			    $exact = 0;
+			} elsif ($1 eq '-file') {
+			    $file = 1;
+			}
+			$hostline = $2;
+		    }
+		    $hostline =~ s/^\s+//;
+		    $hostline = dequote($hostline);
+		    if ($exact || @opts == 0) {
+			if ($file) {
+			    my $ofile = $hostline . '.port';
+			    addport($hostline, $ofile, $lst->port);
+			    $hostline = $ofile;
+			} else {
+			    $hostline = $hostline . ':' . $lst->port;
+			}
+			print $out "$indent# Edited by $0\n"
+		    }
+		    $_ = $indent . "Host";
+		    if (@opts) {
+			$_ .= ' ' . join(' ', @opts);
+		    }
+		    $_ .= " \"$hostline\"";
+		}
 	    }
 	} elsif (/^\s*Socket/) {
 	    $_ = "# Commented out: $_";
@@ -272,6 +360,9 @@ use warnings;
 use Carp;
 use HTTP::Tiny;
 use Data::Dumper;
+use IO::Select;
+use IPC::Open3;
+use Symbol 'gensym';
 
 sub new {
     my ($class, $file, $xscript) = @_;
@@ -312,7 +403,15 @@ sub send_and_expect {
 	$options{headers} = $self->{REQ}{HEADERS};
     }
     if (exists($self->{REQ}{BODY})) {
-	$options{content} = $self->{REQ}{BODY};
+	my $body = $self->{REQ}{BODY};
+	if ($body =~ /@@/) {
+	    my @chunks = split /@@/, $body;
+	    $options{content} = sub {
+		return shift(@chunks)
+	    }
+	} else {
+	    $options{content} = $body;
+	}
     }
     if ($verbose) {
 	print "URL $self->{REQ}{METHOD} $url\n";
@@ -453,6 +552,8 @@ sub assert {
 	if (exists($self->{EXP}{BODY}) &&
 	    $self->{EXP}{BODY} ne $response->{content}) {
 	    print STDERR "$self->{filename}:$self->{EXP}{BEG}-$self->{EXP}{END}: response content mismatch\n";
+	    print STDERR "EXP '".$self->{EXP}{BODY}."'\n";
+	    print STDERR "GOT '".$response->{content}."'\n";
 	}
     }
     return 1
@@ -533,6 +634,10 @@ sub parse_req {
 
 	    next;
 	}
+	if (m/^run\s+(.+)$/) {
+	    $self->parse_runcom($1);
+	    next;
+	}
 	if (/^end$/) {
 	    if ($self->{REQ}{BEG}) {
 		$self->{REQ}{END} = $self->{line};
@@ -584,7 +689,16 @@ sub parse_headers {
 	}
 
 	if (/^(?<name>[A-Za-z][A-Za-z0-9_-]*):\s*(?<value>.*)$/) {
-	    $self->{REQ}{HEADERS}{lc($+{name})} = $self->expandvars($+{value});
+	    my $name = lc($+{name});
+	    if (exists($self->{REQ}{HEADERS}{$name})) {
+		my $val = $self->{REQ}{HEADERS}{$name};
+		if (ref($val) ne 'ARRAY') {
+		    $self->{REQ}{HEADERS}{$name} = [$val];
+		}
+		push @{$self->{REQ}{HEADERS}{$name}}, $self->expandvars($+{value})
+	    } else {
+		$self->{REQ}{HEADERS}{lc($+{name})} = $self->expandvars($+{value});
+	    }
 	} else {
 	    $self->syntax_error;
 	    return;
@@ -623,6 +737,148 @@ sub parse_body {
     }
     $self->{eof} = 1;
     $self->syntax_error("unexpected end of file");
+}
+
+sub parse_runcom {
+    my ($self, $command) = @_;
+    my $fh = $self->{fh};
+
+    my $collect;
+
+    $self->{RUNCOM} = {
+	command => $command,
+	BEG => $self->{line}
+    };
+    while (<$fh>) {
+	$self->{line}++;
+	chomp;
+
+	if ($collect && s{^\\}{}) {
+	    push @{$self->{RUNCOM}{$collect}}, $_;
+	    next;
+	}
+
+	if (/^end$/) {
+	    if ($collect) {
+		$collect = undef;
+		next;
+	    }
+	    $self->{RUNCOM}{END} = $self->{line};
+	    $self->runcom;
+	    return;
+	}
+
+	if ($collect) {
+	    push @{$self->{RUNCOM}{$collect}}, $_;
+	    next;
+	}
+
+	if (/^status\s+(\d+)/) {
+	    $self->{RUNCOM}{status} = $1;
+	    next;
+	}
+
+	if (/^(stdout|stderr)\s*$/) {
+	    $collect = $1;
+	    next;
+	}
+
+	$self->syntax_error;
+    }
+    $self->{eof} = 1;
+    $self->syntax_error("unexpected end of file");
+}
+
+sub runcom {
+    my $self = shift;
+
+    my ($child_stdin, $child_stdout, $child_stderr);
+    $child_stderr = gensym();
+    %status_codes = ();
+    my $pid = open3($child_stdin, $child_stdout, $child_stderr,
+		    $self->{RUNCOM}{command});
+    close $child_stdin;
+
+    my $sel = IO::Select->new();
+    $sel->add($child_stdout, $child_stderr);
+    my $CHUNK_SIZE = 1000;
+    my @ready;
+    my %data = ( $child_stdout => '', $child_stderr => '' );
+
+    while (!defined($status_codes{$pid}) && (@ready = $sel->can_read)) {
+	foreach my $fh (@ready) {
+	    my $data;
+	    while (1) {
+		my $len = sysread($fh, $data{$fh}, $CHUNK_SIZE,
+				  length($data{$fh}));
+		die "sysread: $!" unless defined($len);
+		if ($len == 0) {
+		    $sel->remove($fh);
+		    $fh->close;
+		    last;
+		}
+	    }
+	}
+    }
+
+    if (!defined($status_codes{$pid})) {
+	sleep 10; # FIXME: hardcoded timeout
+    }
+
+    my $code;
+    if (!defined($status_codes{$pid})) {
+	die "failed to execute " . $self->{RUNCOM}{command} . ": $!";
+    } elsif ($status_codes{$pid} & 127) {
+	die "\"".$self->{RUNCOM}{command}."\" terminated on signal ".($status_codes{$pid} & 127);
+    } else {
+	$code = $status_codes{$pid} >> 8;
+    }
+
+    if (my $fh = $self->{xscript}) {
+	print $fh "Command: " . $self->{RUNCOM}{command} . "\n";
+	print $fh "Status code: $code\n";
+	print $fh "Stdout:\n";
+	print $fh $data{$child_stdout};
+	print $fh "\nEnd\n";
+	print $fh "Stderr:\n";
+	print $fh $data{$child_stderr};
+	print $fh "\nEnd\n";
+    }
+
+    $self->{tests}++;
+    if (exists($self->{RUNCOM}{status}) && $code != $self->{RUNCOM}{status}) {
+	$self->{failures}++;
+	if (my $fh = $self->{xscript}) {
+	    print $fh "$self->{filename}:$self->{RUNCOM}{BEG}-$self->{RUNCOM}{END}: exit code differs\n";
+	    return 0;
+	}
+    }
+
+    if (exists($self->{RUNCOM}{stdout})) {
+	my $s = join("\n", @{$self->{RUNCOM}{stdout}});
+	if ($data{$child_stdout} !~ m{$s}ms) {
+	    $self->{failures}++;
+	    if (my $fh = $self->{xscript}) {
+		print $fh "$self->{filename}:$self->{RUNCOM}{BEG}-$self->{RUNCOM}{END}: stdout differs\n";
+		print $fh "rx: $s\n";
+		return 0;
+	    }
+	}
+    }
+
+    if (exists($self->{RUNCOM}{stderr})) {
+	my $s = join("\n", @{$self->{RUNCOM}{stderr}});
+	if ($data{$child_stderr} !~ m{$s}ms) {
+	    $self->{failures}++;
+	    if (my $fh = $self->{xscript}) {
+		print $fh "$self->{filename}:$self->{RUNCOM}{BEG}-$self->{RUNCOM}{END}: stderr differs\n";
+		print $fh "rx: $s\n";
+		return 0;
+	    }
+	}
+    }
+
+    return 1
 }
 
 sub parse_expect {
@@ -727,9 +983,9 @@ sub parse_expect_body {
 	    return;
 	}
 
-	if (/^(?:#.*)?$/) {
-	    next;
-	}
+	# if (/^(?:#.*)?$/) {
+	#     next;
+	# }
 
 	if (/\\(.*)/) {
 	    push @{$self->{EXP}{BODY}}, $1;
@@ -927,6 +1183,13 @@ sub keepopen { shift->{keepopen} }
 sub count { scalar @{shift->{listeners}} }
 sub create {
     my ($self, $ident, $proto) = @_;
+    if (defined($proto) && lc($proto) eq 'HTTPS') {
+	my ($ok, $why) = HTTP::Tiny->can_ssl;
+	unless ($ok) {
+	    print STDERR "testing HTTPS is not supported: $why\n";
+	    exit(main::EX_SKIP);
+	}
+    }
     my $lst = Listener->new($self->count(), $ident, $self->keepopen, $proto);
     if ($self->keepopen) {
 	$lst->set_pass_fd("lst".$self->count().".sock");
@@ -937,6 +1200,10 @@ sub create {
 sub get {
     my ($self, $n) = @_;
     return ${$self->{listeners}}[$n];
+}
+sub last {
+    my ($self) = @_;
+    return $self->get($self->count - 1)
 }
 sub send_fd {
     my $self = shift;
@@ -1117,9 +1384,22 @@ sub ParseHeader {
 
 sub GetBody {
     my $http = shift;
-    if (my $len = $http->header('Content-Length')) {
+    if ($http->header('Transfer-Encoding')//'' eq 'chunked') {
+	my @chunks;
+	my $chunk_ext;
+	while (my $chunk_size_ext = $http->getline()) {
+	    (my $chunk_size, $chunk_ext) = split /;/, $chunk_size_ext, 2;
+	    my $len = hex($chunk_size);
+	    last if $len == 0;
+	    read($http->{fh}, my $chunk, $len);
+	    push @chunks, $chunk_size_ext, $chunk;
+	    read($http->{fh}, my $s, 2);
+	    # FIXME: error checking
+	}
+	$http->{BODY} = join("\n", @chunks);
+    } elsif (my $len = $http->header('Content-Length')) {
 	read($http->{fh}, $http->{BODY}, $len);
-    }
+    } # FIXME: else...
 }
 
 sub parse {
@@ -1170,20 +1450,35 @@ I<SCRIPT>
 
 =head1 DESCRIPTION
 
-Upon startup, B<poundharness> reads B<pound> configuration file F<pound.cfi>
+Upon startup, B<poundharness> reads B<pound> configuration file F<pound.cfi>,
 modifies the settings as described below and writes the resulting configuration
 to B<pound.cfg>.  During modification, the following statements are removed:
-B<Daemon>, B<LogFacility> and B<LogLevel> and replaced with the settings
-suitable for running B<pound> as a subordinate process.  In particular,
+B<Daemon>, B<LogFacility> and B<LogLevel>.  The settings suitable for running
+B<pound> as a subordinate process are inserted istead.  In particular,
 B<LogLevel> is set from the value passed with the B<--log-level> command
 line option.  For each B<ListenHTTP> and B<ListenHTTPS> section, the actual
 socket configuration (i.e. the B<Address>, B<Port>, or B<SocketFrom> statements)
-is removed, an IPv4 socket is opened and pound to the arbitrary unused port at
+is removed, an IPv4 socket is opened, bound to the arbitrary unused port at
 127.0.0.1, and then passed to B<pound> using the B<SocketFrom> statement.
 Similar operation is performed on each B<Backend>, except that the created
 socket information is stored in the B<Address> and B<Port> statements that
 replace the removed ones and a backend HTTP server is started listening
 on that socket.
+
+B<Include> statements are processed in the following manner: the file
+supplied as the argument is preprocessed and the result is written to
+a file with the name obtained by appending suffix C<.pha> to the original
+name.  An B<Include> statement with this name is output.
+
+When a B<Host> statement with exact comparison method is encountered,
+a colon and actual port number of the enclosing listener is appended
+to its argument.  If the argument is a file name, this operation is performed
+on each line of the file and the result is written to the file F<I<file>.port>.
+This file name is used in the output.  If B<Host> appears in a top-level
+B<Service>, port number of the last declared listener is used instead.
+If no listeners are defined (i.e. if the B<Service> statement appears
+before the first listener), the statement is output unmodified.  Notice,
+that this means that it cannot be matched.
 
 When this configuration processing is finished, B<pound> is started in
 foreground mode.  When it is up and ready to serve requests, the I<SCRIPT>
@@ -1191,7 +1486,7 @@ file is opened and processed.  It consists of a series of HTTP requests and
 expected responses.  Each request is sent to the specified listener (the one
 created in the preprocessing step described above), and the obtained response
 is compared with the expectation.  If it matches, the test succeeds.  See
-the section B<SCRIPT FILE>], for a detailed discussion of the script file
+the section B<SCRIPT FILE>, for a detailed discussion of the script file
 format.
 
 When all the tests from I<SCRIPT> are run, the program terminates.  Its
@@ -1218,7 +1513,8 @@ I<SRC> defaults to F<pound.cfi>.
 
 =item B<-l>, B<--log-level=> I<N>
 
-Set B<pound> I<LogLevel> configuration parameter.
+Set B<pound> I<LogLevel> configuration parameter.  If I<N> is B<-1>,
+I<LogLevel> set in the configuration file is used.
 
 =item B<-s>, B<--statistics>
 
@@ -1240,21 +1536,36 @@ Write test transcript to I<FILE>.
 
 =head1 SCRIPT FILE
 
-B<Poundharness> script file consists of a sequence of HTTP requests and
-expected responses.  Empty lines end comments (lines starting with B<#>)
+B<Poundharness> script file consists of a sequence of send/expect
+stanzas.  Empty lines end comments (lines starting with B<#>)
 are allowed between them.
 
+Two types of send/expect stanzas are available:
+
+=head2 HTTP send/expect
+
+An HTTP send/expect defined a HTTP requests and expected response.
+
 A request starts with a line specifying the request method in uppercase
-(e.g. B<GET>, B<POST>, etc.) followed by the URI.  This line may be followed
+(e.g. B<GET>, B<POST>, etc.) followed by an URI.  This line may be followed
 by arbitrary number of HTTP headers, newline and request body.  The request
 is terminated with the word B<end> on a line alone.
+
+The sequence B<@@> has a special meaning when used in the body.  These
+characters instruct B<poundharness> to send the body using B<chunked> transfer
+coding and indicate the beginning of each chunk.
 
 An expected response must follow each request.  It begins with a
 three digit response code on a line alone.  The code may be followed by
 any number of response headers.  If present, the test will succeed only
 if the actual response contains all expected headers and their corresponding
-values coincide. Header lines starting with a minus sign denote headers,
-that must be absent in the response. E.g. the header line
+values coincide.  Header values are compared literally, except when the
+expected header value begins and ends with a slash, in which case regular
+expression matching is used.  To start header value with a literal slash,
+precede it with a backslash.
+
+Header lines starting with a minus sign denote headers, that must be absent
+in the response. E.g. the header line
 
     -X-Forwarded-Proto: https
 
@@ -1265,7 +1576,7 @@ Headers may be followed by a newline and response body (content).  If
 present, it will be matched literally against the actual response.
 The response is terminated with the word B<end> on a line alone.
 
-The values of both request and expected headers may contain the following
+Values of both request and expected headers may contain the following
 I<variables>, which are expanded when reading the file:
 
 =over 4
@@ -1278,7 +1589,7 @@ Expands to the full address of the I<n>th listener (I<IP>:I<PORT>).
 
 Expands to the IP address of the I<n>th listener.
 
-= B<${LISTENERI<n>:PORT}>
+=item B<${LISTENERI<n>:PORT}>
 
 Expands to the port number of the I<n>th listener.
 
@@ -1318,6 +1629,37 @@ the configuration file.  The B<server> statement affects all requests that
 follow it up to the next B<server> statement or end of file, whichever
 occurs first.
 
+=head2 External program send/expect
+
+This type of stanza allow you to run an external program and examine its
+exit code, standard output and error streams.  It is inlcuded mainly for
+testing the B<poundctl> command.
+
+The stanza begins with the keyword B<run> followed by the command
+and its argument.  It can be followed by one or more of expect statements:
+
+=over 4
+
+=item B<status> I<N>
+
+Expect program to return exit status I<N> (a decimal number).
+
+=item B<stdout>
+
+Expect text on stdout.  Everything below this keyword and up to the
+B<end> keyword appearing on a line alone is taken to be the expected
+text.  When matching actiual program output, this text is treated as
+Perl multi-line regular expression (see the B<m> and B<s> flags in
+B<perlre>).  To expect a line containing the word C<end> alone, prefix
+it with a backslash.
+
+=item B<stderr>
+
+Expect text on stderr.  See the description of B<stdout> above for
+its syntax.
+
+=back
+
 =head1 BACKENDS
 
 Each B<Backend> statement in the configuration file causes creation of
@@ -1349,6 +1691,9 @@ Copy of the original URI.
 The value of the header I<header> in the request.
 
 =back
+
+If the body was sent using B<chunked> encoding, it is reproduced
+verbatim, instead of reconstructing it as per RFC 9112, 7.1.3.
 
 =head2 /redirect
 
@@ -1393,6 +1738,14 @@ Keeps PID of the running B<pound> instance.
 
 Temporary UNIX sockets for passing created socket descriptors to B<pound>.
 These are removed on success.
+
+=item I<FILE>.pha
+
+Preprocessed output of the include file I<FILE>.
+
+=item I<FILE>.port
+
+Preprocessed output of the I<FILE> from B<Host -file "I<FILE>"> statement.
 
 =back
 

@@ -1,7 +1,7 @@
 /*
  * Pound - the reverse-proxy load-balancer
  * Copyright (C) 2002-2010 Apsis GmbH
- * Copyright (C) 2018-2023 Sergey Poznyakoff
+ * Copyright (C) 2018-2024 Sergey Poznyakoff
  *
  * This file is part of Pound.
  *
@@ -48,6 +48,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <fnmatch.h>
+#include <limits.h>
 
 #if HAVE_GETOPT_H
 # include <getopt.h>
@@ -106,15 +107,17 @@
 
 #ifdef  HAVE_LONG_LONG_INT
 typedef long long CONTENT_LENGTH;
-# define STRTOCLEN strtoll
+# define CONTENT_LENGTH_MAX LLONG_MAX
 # define PRICLEN "lld"
 #else
 typedef long CONTENT_LENGTH;
-# define STRTOCLEN strtol
+# define CONTENT_LENGTH_MAX LONG_MAX
 # define PRICLEN "ld"
 #endif
 
 #define NO_CONTENT_LENGTH ((CONTENT_LENGTH) -1)
+
+int strtoclen (char const *arg, int base, CONTENT_LENGTH *retval, char **endptr);
 
 #ifndef DEFAULT_WORKER_MIN
 # define DEFAULT_WORKER_MIN 5
@@ -199,11 +202,15 @@ enum
     METH_CONNECT,
   };
 
+char const *method_name (int meth);
+
 /* HTTP errors */
 enum
   {
     HTTP_STATUS_OK,                // 200
     HTTP_STATUS_BAD_REQUEST,       // 400
+    HTTP_STATUS_UNAUTHORIZED,      // 401
+    HTTP_STATUS_FORBIDDEN,         // 403
     HTTP_STATUS_NOT_FOUND,         // 404
     HTTP_STATUS_PAYLOAD_TOO_LARGE, // 413
     HTTP_STATUS_URI_TOO_LONG,      // 414
@@ -253,6 +260,28 @@ timespec_sub (struct timespec const *a, struct timespec const *b)
 /* List definitions. */
 #include "list.h"
 
+/* Locations in the source file */
+struct locus_point
+{
+  char const *filename;
+  int line;
+  int col;
+};
+
+struct locus_range
+{
+  struct locus_point beg, end;
+};
+
+typedef struct workdir
+{
+  DLIST_ENTRY (workdir) link;
+  int refcount;
+  int fd;
+  char name[1];
+} WORKDIR;
+
+
 /* Header types */
 enum
   {
@@ -285,12 +314,26 @@ struct http_header
   DLIST_ENTRY (http_header) link;
 };
 
+static inline char const *
+http_header_name_ptr (struct http_header *hdr)
+{
+  return hdr->header + hdr->name_start;
+}
+
+static inline size_t
+http_header_name_len (struct http_header *hdr)
+{
+  return hdr->name_end - hdr->name_start;
+}
+
 typedef DLIST_HEAD(,http_header) HTTP_HEADER_LIST;
 
+/* Append modes: what to do if the header with that name already exist. */
 enum
   {
-    H_DROP,
-    H_REPLACE
+    H_KEEP,     /* Keep old header, discard changes. */
+    H_REPLACE,  /* Replace old header with the new one. */
+    H_APPEND    /* Append to the value (assume #(values)) */
   };
 
 int http_header_list_append (HTTP_HEADER_LIST *head, char *text, int replace);
@@ -312,7 +355,6 @@ struct http_request
   int method;                /* Method code (see METH_* constants above) */
   int version;               /* HTTP minor version: 0 or 1 */
   char *url;                 /* URL part of the request */
-  char *user;                /* Username extracted from Authorization header */
   char *path;                /* URL Path */
   char *query;               /* URL query */
   QUERY_HEAD query_head;
@@ -374,7 +416,8 @@ typedef enum
     BE_ACME,
     BE_CONTROL,
     BE_ERROR,
-    BE_METRICS
+    BE_METRICS,
+    BE_BACKEND_REF,     /* See be_name in BACKEND */
   }
   BACKEND_TYPE;
 
@@ -386,6 +429,7 @@ struct be_regular
   unsigned conn_to;	/* connection time-out */
   unsigned ws_to;	/* websocket time-out */
   SSL_CTX *ctx;		/* CTX for SSL connections */
+  char *servername;     /* SNI */
 };
 
 struct be_redirect
@@ -410,6 +454,7 @@ struct be_error
 typedef struct _backend
 {
   struct _service *service;     /* Back pointer to the owning service */
+  char *locus;                  /* Location in the config file */
   BACKEND_TYPE be_type;         /* Backend type */
   int priority;			/* priority */
   int disabled;			/* true if the back-end is disabled */
@@ -428,6 +473,7 @@ typedef struct _backend
     struct be_acme acme;
     struct be_redirect redirect;
     struct be_error error;
+    char *be_name;              /* Name of the backend; Used during parsing. */
   } v;
 
 } BACKEND;
@@ -453,16 +499,13 @@ typedef struct session
   DLIST_ENTRY (session) link;
 } SESSION;
 
-/* maximal session key size */
 #define KEY_SIZE    127
 
-#if OPENSSL_VERSION_NUMBER >= 0x10100000L
-DEFINE_LHASH_OF (SESSION);
-#elif OPENSSL_VERSION_NUMBER >= 0x10000000L
-DECLARE_LHASH_OF (SESSION);
-#endif
-
-typedef LHASH_OF (SESSION) SESSION_HASH;
+#define HT_TYPE SESSION
+#define HT_NAME_FIELD key
+#define HT_NO_FOREACH
+#define HT_NO_HASH_FREE
+#include "ht.h"
 
 typedef struct
 {
@@ -494,14 +537,40 @@ enum service_cond_type
     COND_QUERY, /* Raw query match. */
     COND_QUERY_PARAM, /* Query parameter match */
     COND_HDR,   /* Header match. */
-    COND_HOST,  /* Special case od COND_HDR: matches the value of the
+    COND_HOST,  /* Special case of COND_HDR: matches the value of the
 		   Host: header */
+    COND_BASIC_AUTH,  /* Check if request passes basic auth. */
+    COND_STRING_MATCH,/* String match. */
   };
 
-struct query_param_match
+typedef struct string_ref
 {
-  char *name;
+  unsigned refcount;
+  char value[1];
+} STRING_REF;
+
+struct string_match
+{
+  STRING_REF *string;
   regex_t re;
+};
+
+struct user_pass
+{
+  SLIST_ENTRY (user_pass) link;
+  char *pass;
+  char user[1];
+};
+
+typedef SLIST_HEAD(,user_pass) USER_PASS_HEAD;
+
+struct pass_file
+{
+  WORKDIR *wd;
+  char *filename;
+  struct locus_range locus;
+  struct timespec mtim;
+  USER_PASS_HEAD head;
 };
 
 typedef struct _service_cond
@@ -513,7 +582,8 @@ typedef struct _service_cond
     regex_t re;
     struct bool_service_cond bool;
     struct _service_cond *cond;
-    struct query_param_match qp;
+    struct string_match sm;  /* COND_QUERY_PARAM and COND_STRING_MATCH */
+    struct pass_file pwfile; /* COND_BASIC_AUTH */
   };
   SLIST_ENTRY (_service_cond) next;
 } SERVICE_COND;
@@ -581,12 +651,19 @@ typedef enum
     BALANCER_IWRR,
   } BALANCER;
 
+enum
+  {
+    REWRITE_REQUEST,
+    REWRITE_RESPONSE
+  };
+
 /* service definition */
 typedef struct _service
 {
   char *name;			/* symbolic name */
+  char *locus;                  /* Location in the config file */
   SERVICE_COND cond;
-  REWRITE_RULE_HEAD rewrite;
+  REWRITE_RULE_HEAD rewrite[2];
   BACKEND_HEAD backends;
   BACKEND *emergency;
   int abs_pri;			/* abs total priority for all back-ends */
@@ -602,10 +679,17 @@ typedef struct _service
   char *sess_id;                /* Session anchor ID */
   SESSION_TABLE *sessions;	/* currently active sessions */
   int disabled;			/* true if the service is disabled */
+  /* Logging */
+  char *forwarded_header;       /* "forwarded" header name */
+  ACL *trusted_ips;             /* Trusted IP addresses */
+  int log_suppress_mask;        /* Suppress HTTP logging for these status
+				   codes.  A bitmask. */
   SLIST_ENTRY (_service) next;
 } SERVICE;
 
 typedef SLIST_HEAD (,_service) SERVICE_HEAD;
+
+#define STATUS_MASK(s) (1 << ((s) / 100))
 
 typedef struct _pound_ctx
 {
@@ -618,6 +702,15 @@ typedef struct _pound_ctx
 
 typedef SLIST_HEAD (,_pound_ctx) POUND_CTX_HEAD;
 
+/* HTTP logger */
+#define MAX_HTTP_LOG_FORMATS 32
+
+int http_log_format_compile (char const *name, char const *fmt,
+			     void (*logfn) (void *, int, char const *, int),
+			     void *logdata);
+int http_log_format_find (char const *name);
+int http_log_format_check (int n);
+
 /* Additional listener options */
 #define HDROPT_NONE              0   /* Nothing special */
 #define HDROPT_FORWARDED_HEADERS 0x1 /* Add X-Forwarded headers */
@@ -627,6 +720,7 @@ typedef SLIST_HEAD (,_pound_ctx) POUND_CTX_HEAD;
 typedef struct _listener
 {
   char *name;			/* symbolic name */
+  char *locus;                  /* Location in the config file */
   struct addrinfo addr;		/* Socket address */
   int mode;                     /* File mode for AF_UNIX */
   int chowner;                  /* Change to effective owner, for AF_UNIX */
@@ -635,7 +729,7 @@ typedef struct _listener
   int clnt_check;		/* client verification mode */
   int noHTTPS11;		/* HTTP 1.1 mode for SSL */
   int header_options;           /* additional header options */
-  REWRITE_RULE_HEAD rewrite;
+  REWRITE_RULE_HEAD rewrite[2];
   int verb;			/* allowed HTTP verb group */
   unsigned to;			/* client time-out */
   int has_pat;			/* was a URL pattern defined? */
@@ -646,6 +740,8 @@ typedef struct _listener
   int rewr_dest;		/* rewrite destination header */
   int disabled;			/* true if the listener is disabled */
   int log_level;		/* log level for this listener */
+  char *forwarded_header;       /* "forwarded" header name */
+  ACL *trusted_ips;             /* Trusted IP addresses */
   int allow_client_reneg;	/* Allow Client SSL Renegotiation */
   SERVICE_HEAD services;
   SLIST_ENTRY (_listener) next;
@@ -740,7 +836,9 @@ typedef struct _pound_http
   struct http_request response;
 
   struct timespec start_req; /* Time when original request was received */
+  struct timespec end_req;   /* Time after the response was sent */
 
+  char *orig_forwarded_header; /* Original value of forwarded header */
   int response_code;
 
   CONTENT_LENGTH res_bytes;
@@ -750,24 +848,8 @@ typedef struct _pound_http
 
 typedef SLIST_HEAD(,_pound_http) POUND_HTTP_HEAD;
 
-/* control request stuff */
-typedef enum
-{
-  CTRL_LST,
-  CTRL_EN_LSTN, CTRL_DE_LSTN,
-  CTRL_EN_SVC, CTRL_DE_SVC,
-  CTRL_EN_BE, CTRL_DE_BE,
-  CTRL_ADD_SESS, CTRL_DEL_SESS
-} CTRL_CODE;
-
-typedef struct
-{
-  CTRL_CODE cmd;
-  int listener;
-  int service;
-  int backend;
-  char key[KEY_SIZE + 1];
-} CTRL_CMD;
+void save_forwarded_header (POUND_HTTP *phttp);
+void http_log (POUND_HTTP *phttp);
 
 /* add a request to the queue */
 int pound_http_enqueue (int sock, LISTENER *lstn, struct sockaddr *sa, socklen_t salen);
@@ -796,8 +878,7 @@ char *addr2str (char *, int, const struct addrinfo *, int);
 char *str_be (char *buf, size_t size, BACKEND *be);
 
 /* Find the right service for a request */
-SERVICE *get_service (const LISTENER *, struct sockaddr *,
-		      struct http_request *, struct submatch_queue *);
+SERVICE *get_service (POUND_HTTP *);
 
 /* Find the right back-end for a request */
 BACKEND *get_backend (POUND_HTTP *phttp);
@@ -891,6 +972,7 @@ struct stringbuf
 
 void stringbuf_init (struct stringbuf *sb, void (*nomem) (void));
 void stringbuf_reset (struct stringbuf *sb);
+int stringbuf_truncate (struct stringbuf *sb, size_t len);
 char *stringbuf_finish (struct stringbuf *sb);
 void stringbuf_free (struct stringbuf *sb);
 int stringbuf_add (struct stringbuf *sb, char const *str, size_t len);
@@ -900,6 +982,8 @@ int stringbuf_vprintf (struct stringbuf *sb, char const *fmt, va_list ap);
 int stringbuf_printf (struct stringbuf *sb, char const *fmt, ...)
   ATTR_PRINTFLIKE(2,3);
 char *stringbuf_set (struct stringbuf *sb, int c, size_t n);
+int stringbuf_strftime (struct stringbuf *sb, char const *fmt,
+			const struct tm *tm);
 
 static inline int
 stringbuf_err (struct stringbuf *sb)
@@ -1001,10 +1085,11 @@ struct json_value *workers_serialize (void);
 struct json_value *pound_serialize (void);
 int metrics_response (POUND_HTTP *phttp);
 
-int match_cond (const SERVICE_COND *cond, struct sockaddr *srcaddr,
-		struct http_request *req, struct submatch_queue *smq);
+int match_cond (SERVICE_COND *cond, POUND_HTTP *phttp,
+		struct http_request *req);
 
 struct http_header *http_header_list_locate_name (HTTP_HEADER_LIST *head, char const *name, size_t len);
+struct http_header *http_header_list_next (struct http_header *hdr);
 char *http_header_get_value (struct http_header *hdr);
 
 /*
@@ -1018,9 +1103,32 @@ enum
     RETRIEVE_ERROR = -1
   };
 
+int http_request_get_url (struct http_request *, char const **);
+int http_request_get_query (struct http_request *, char const **);
 int http_request_get_path (struct http_request *req, char const **retval);
 int http_request_get_query_param_value (struct http_request *req,
 					char const *name,
 					char const **retval);
+char const *http_request_orig_line (struct http_request *req);
+int http_request_get_basic_auth (struct http_request *req,
+				 char **u_name, char **u_pass);
 
 void service_lb_init (SERVICE *svc);
+
+FILE *fopen_wd (WORKDIR *wd, const char *filename);
+void fopen_error (int pri, int ec, WORKDIR *wd, const char *filename,
+		  struct locus_range *loc);
+
+typedef int (*LISTENER_ITERATOR) (LISTENER *, void *);
+int foreach_listener (LISTENER_ITERATOR itr, void *data);
+
+typedef int (*SERVICE_ITERATOR) (SERVICE *, void *);
+int foreach_service (SERVICE_ITERATOR itr, void *data);
+
+typedef int (*BACKEND_ITERATOR) (BACKEND *, void *);
+int foreach_backend (BACKEND_ITERATOR itr, void *data);
+
+int basic_auth (struct pass_file *pwf, struct http_request *req);
+
+void combinable_header_add (char const *name);
+int is_combinable_header (struct http_header *hdr);

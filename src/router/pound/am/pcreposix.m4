@@ -23,7 +23,7 @@
 #
 # LICENSE
 #
-# Copyright (C) 2023 Sergey Poznyakoff
+# Copyright (C) 2023-2024 Sergey Poznyakoff
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -54,6 +54,32 @@ AC_DEFUN([PND_PCREPOSIX],
      PCREPOSIX_CFLAGS=$($PCRE2_CONFIG --cflags-posix)
      PCREPOSIX_LIBS=$($PCRE2_CONFIG --libs-posix)
      status_pcreposix=2
+     # Debian build of pcre2posix is badly broken.  For some obscure
+     # reason its maintainer decided to rename reg* functions by
+     # prefixing them with PCRE2, which defeats the main purpose of the
+     # library.  To make matters even worse, he didn't do the same to the
+     # regex_t type, which means that linking with Debian build of
+     # libpcre2posix results in memory overrruns when regcomp is called
+     # (pcre2posix definition of regex_t is smaller than the one in libc).
+     #
+     # The code below attempts to detect the deficiency and install a
+     # workaround.
+     saved_CFLAGS=$CFLAGS
+     CFLAGS="$CFLAGS $PCREPOSIX_CFLAGS"
+     saved_LIBS=$LIBS
+     LIBS="$LIBS $PCREPOSIX_LIBS"
+     AC_LINK_IFELSE(
+         [AC_LANG_PROGRAM([], [PCRE2regcomp()])],
+	 [AC_DEFINE([regcomp],[PCRE2regcomp],
+	            [Compensate for Debian deficiency])
+	  AC_DEFINE([regexec],[PCRE2regexec],
+	            [Compensate for Debian deficiency])
+	  AC_DEFINE([regerror],[PCRE2regerror],
+	            [Compensate for Debian deficiency])
+	  AC_DEFINE([regfree],[PCRE2regfree],
+	            [Compensate for Debian deficiency])])
+     LIBS=$saved_LIBS
+     CFLAGS=$saved_CFLAGS
    else
      AC_CHECK_HEADERS([pcreposix.h pcre/pcreposix.h])
      AC_CHECK_LIB([pcre],[pcre_compile],

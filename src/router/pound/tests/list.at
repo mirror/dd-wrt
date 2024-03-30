@@ -1,0 +1,260 @@
+# This file is part of pound testsuite. -*- autotest -*-
+# Copyright (C) 2023-2024 Sergey Poznyakoff
+#
+# Pound is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Pound is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with pound.  If not, see <http://www.gnu.org/licenses/>.
+AT_SETUP([List])
+AT_KEYWORDS([poundctl list])
+AT_DATA([test.tmpl],
+[{{define "default.core" -}}
+Server time: {{ .timestamp }}
+Pound version: {{ .version }}
+PID: {{ .pid }}
+{{with .workers -}}
+Workers:
+  Min:     {{ .min }}
+  Max:     {{ .max }}
+  Current: {{ .count }}
+  Active:  {{ .active }}
+Idle timeout: {{ .timeout }}
+{{end}}{{ /* with */ -}}
+{{end}}{{ /* define */ }}
+
+{{define "milliseconds" -}}
+{{ div . 1000000 | printf "%.2f" }}
+{{- end}}
+
+{{define "print_status" -}}
+{{if .enabled}}enabled{{else}}disabled{{end -}}
+{{end -}}
+
+{{define "default" -}}
+
+{{- /* The code below deduces the type of object passed to it by
+       presence of certain attributes:
+
+	 "listeners"  -  entire listing as requested by poundctl list
+	 "services"   -  single listener as requested by poundctl list /L
+			 Notice that this attribute is present in the full
+			 listing as well, so presence of "listeners" should
+			 be checked first.
+	 "backends"   -  single service as requested by poundctl list /L/S
+
+       otherwise, a backend listing (poundctl list /L/S/B) is assumed. */ -}}
+
+{{if exists . "listeners" -}}
+{{- /* Iterate over all listeners */ -}}
+Listeners:
+
+{{range $lno,$lstn = .listeners -}}
+{{printf "%3d" $lno}}: {{block "default.print_listener" $lstn -}}
+ Listener {{if .name}}"{{.name}}" {{end}}{{.protocol}}://{{.address}} {{template "print_status" .}}
+ {{- /* For each listener, show all its services */ -}}
+ {{block "default.print_services" .services}}
+ {{- range $sno,$svc = .}}
+   {{printf "%3d" $sno}}: {{block "default.print_service" $svc -}}
+   Service {{if .name}}"{{.name}}" {{end}}{{template "print_status" .}}, {{.tot_pri}}
+  {{- /* List each backend in service */ -}}
+  {{- range $bno,$backend = .backends}}
+      {{printf "%3d" $bno}}: {{block "default.print_backend" $backend -}}
+       {{.type}}{{if eq .type "backend" }} {{.protocol}} {{.address}} {{.priority}} {{if .alive}}alive{{else}}dead{{end}}
+     {{- else if eq .type "redirect" }} {{.code}} {{.url}}{{if .redir_req}} (redirect request){{end}}
+     {{- end}} {{template "print_status" .}}
+     {{- if exists . "stats"}} - {{with .stats -}}
+       {{.request_count}} requests{{if gt .request_count 0}}, {{template "milliseconds" .request_time_avg}} ms avg, {{template "milliseconds" .request_time_stddev}} stddev{{end}}
+       {{- end}}
+     {{- end}}
+   {{- end}}{{ /* block default.print_backend */ }}
+  {{- end}}{{ /* iterating over backends */ }}
+  {{- /* Show session type supported by the service */ }}
+     Session type: {{.session_type}}
+       {{- if len .sessions}}
+	 {{- /* List all sessions */ }}
+	 {{- range $i, $sess = .sessions}}
+       {{$i}}. Session {{$sess.key}} {{$sess.backend}} {{$sess.expire}}
+	 {{- end}}{{ /* ranging over sessions */ -}}
+       {{end}}{{ /* if len */ }}
+ {{- end}}{{ /* block default.print_service */ }}
+ {{- end}}{{ /* iterating over services */ }}
+ {{- end}}{{ /* block default.print_services */ }}
+ {{- end}}{{ /* block default.print_listener */ }}
+{{end}}{{ /* iterating over listeners */ }}
+{{- if len .services}}
+Global services:
+{{block "default.print_services" .services}}
+{{end -}}{{ /* if len .services */ }}
+{{else if exists . "services" -}}
+{{block "default.print_listener" .}}
+{{else if exists . "backends" -}}
+{{block "default.print_service" .}}
+{{else -}}
+{{block "default.print_backend" .}}
+{{end -}}
+{{end -}}{{ /* define */ }}
+])
+
+PT_CHECK(
+[Control "pound.ctl"
+
+Service "default"
+	Backend
+		Address
+		Port
+	End
+End
+
+ListenHTTP
+	Service "one"
+		Backend
+			Address
+			Port
+		End
+	End
+	Service "two"
+		Backend
+			Address
+			Port
+		End
+	End
+End
+],
+[#
+# 1. List all listeners/services/backends.
+#
+run poundctl -f ./pound.cfg -t ./test.tmpl
+status 0
+stdout
+Listeners:
+
+  0: Listener http://pound\.ctl enabled
+     0: Service enabled, 1
+        0: control enabled
+     Session type: NONE
+  1: Listener http://127\.0\.0\.1:\d+ enabled
+     0: Service "one" enabled, 5
+        0: backend http 127\.0\.0\.1:\d+ 5 alive enabled
+     Session type: NONE
+     1: Service "two" enabled, 5
+        0: backend http 127\.0\.0\.1:\d+ 5 alive enabled
+     Session type: NONE
+
+Global services:
+
+     0: Service "default" enabled, 5
+        0: backend http 127\.0\.0\.1:\d+ 5 alive enabled
+     Session type: NONE
+
+$
+end
+end
+
+#
+# 2. List one listener.
+#
+run poundctl -f ./pound.cfg -t ./test.tmpl list /1
+status 0
+stdout
+Listener http://127\.0\.0\.1:\d+ enabled
+     0: Service "one" enabled, 5
+        0: backend http 127\.0\.0\.1:\d+ 5 alive enabled
+     Session type: NONE
+     1: Service "two" enabled, 5
+        0: backend http 127\.0\.0\.1:\d+ 5 alive enabled
+     Session type: NONE
+$     
+end
+end
+
+#
+# 3. List one service.
+#
+run poundctl -f ./pound.cfg -t ./test.tmpl list /1/1
+status 0
+stdout
+Service "two" enabled, 5
+        0: backend http 127\.0\.0\.1:\d+ 5 alive enabled
+     Session type: NONE
+$
+end
+end
+
+#
+# 4. List one service by name.
+#
+run poundctl -f ./pound.cfg -t ./test.tmpl list /1/two
+status 0
+stdout
+Service "two" enabled, 5
+        0: backend http 127\.0\.0\.1:\d+ 5 alive enabled
+     Session type: NONE
+$
+end
+end
+
+#
+# 5. List global service.
+#
+run poundctl -f ./pound.cfg -t ./test.tmpl list /-/0
+status 0
+stdout
+Service "default" enabled, 5
+        0: backend http 127\.0\.0\.1:\d+ 5 alive enabled
+     Session type: NONE
+$
+end
+end
+
+#
+# 6. List global service by name.
+#
+run poundctl -f ./pound.cfg -t ./test.tmpl list /-/default
+status 0
+stdout
+Service "default" enabled, 5
+        0: backend http 127\.0\.0\.1:\d+ 5 alive enabled
+     Session type: NONE
+$
+end
+end
+
+#
+# 7. List one backend.
+#
+run poundctl -f ./pound.cfg -t ./test.tmpl list /1/two/0
+status 0
+stdout
+backend http 127\.0\.0\.1:\d+ 5 alive enabled
+$
+end
+end
+
+#
+# 8. Request specific template.
+#
+run poundctl -f ./pound.cfg -t ./test.tmpl -T default.core
+status 0
+stdout
+Server time: \d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}
+Pound version: AT_PACKAGE_VERSION
+PID: \d+
+Workers:
+  Min:     \d+
+  Max:     \d+
+  Current: \d+
+  Active:  \d+
+Idle timeout: \d+  
+$
+end
+end
+])
+AT_CLEANUP

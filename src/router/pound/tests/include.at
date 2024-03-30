@@ -1,4 +1,4 @@
-# Copyright (C) 2023 Sergey Poznyakoff
+# Copyright (C) 2023-2024 Sergey Poznyakoff
 #
 # Pound is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -37,10 +37,10 @@ End
 ])
 
 AT_DATA([pound.cfi],
-[Include "svc1.cfg"
-ListenHTTP
+[ListenHTTP
+Include "svc1"
 End
-Include "svc2.cfg"
+Include "svc2"
 ])
 
 AT_DATA([input],
@@ -61,7 +61,7 @@ x-backend-number: 1
 end
 ])
 
-perl $HARNESS --preproc svc1 --preproc svc2 --transcript xscript.log input
+perl $HARNESS --transcript xscript.log input
 ])
 
 AT_CLEANUP

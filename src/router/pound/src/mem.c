@@ -1,5 +1,5 @@
 /* This file is part of pound
- * Copyright (C) 2020-2023 Sergey Poznyakoff
+ * Copyright (C) 2020-2024 Sergey Poznyakoff
  *
  * Pound is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -149,6 +149,15 @@ stringbuf_expand (struct stringbuf *sb, size_t len)
 }
 
 int
+stringbuf_truncate (struct stringbuf *sb, size_t len)
+{
+  if (len > sb->size)
+    return stringbuf_expand (sb, len - sb->size);
+  sb->len = len;
+  return 0;
+}
+
+int
 stringbuf_add_char (struct stringbuf *sb, int c)
 {
   if (stringbuf_expand (sb, 1))
@@ -237,4 +246,34 @@ stringbuf_printf (struct stringbuf *sb, char const *fmt, ...)
   rc = stringbuf_vprintf (sb, fmt, ap);
   va_end (ap);
   return rc;
+}
+
+int
+stringbuf_strftime (struct stringbuf *sb, char const *fmt, const struct tm *tm)
+{
+  for (;;)
+    {
+      size_t bufsize = sb->size - sb->len;
+      size_t n;
+
+      n = strftime (sb->base + sb->len, bufsize, fmt, tm);
+      if (n > 0)
+	{
+	  sb->len += n;
+	  break;
+	}
+      else
+	{
+	  char *p = mem2nrealloc (sb->base, &sb->size, 1);
+	  if (p == NULL)
+	    {
+	      if (sb->nomem)
+		sb->nomem ();
+	      sb->err = 1;
+	      return -1;
+	    }
+	  sb->base = p;
+	}
+    }
+  return 0;
 }

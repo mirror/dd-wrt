@@ -1,0 +1,2816 @@
+2024-01-03  Sergey Poznyakoff  <gray@gnu.org>
+
+        Version 4.11
+
+
+2024-01-03  Sergey Poznyakoff  <gray@gnu.org>
+
+        Update copyright years
+
+
+2023-12-14  Sergey Poznyakoff  <gray@gnu.org>
+
+        Spell-checking
+
+
+2023-12-14  Sergey Poznyakoff  <gray@gnu.org>
+
+        Minor fix
+
+        * tests/Makefile.am: Add header.at to distribution.
+
+2023-11-25  Sergey Poznyakoff  <gray@gnu.org>
+
+        Rewrite content length parser
+
+        * src/config.c (assign_CONTENT_LENGTH): Use strtoclen
+        * src/http.c (strtoclen): New function.
+        (get_content_length): Use strtoclen. Strict input checking.
+        (copy_chunks): Return internal status code. All uses changed.
+        * src/pound.h (STRTOCLEN): Remove.
+        (CONTENT_LENGTH_MAX): New macro.
+        * tests/poundharness.pl: Implement chunked transfer coding.
+        * tests/Makefile.am: Add new test.
+        * tests/chunked.at: New test.
+        * tests/errfile.at: Fix trailing newlines in macro definitions.
+        * tests/error.at: Likewise.
+        * tests/testsuite.at: Include new test.
+
+2023-11-25  Sergey Poznyakoff  <gray@gnu.org>
+
+        New file for declaring combinable multi-value headers
+
+        * src/mvh.inc: New file.
+        * src/Makefile.am (pkgdata_DATA): Add mvh.inc
+        * NEWS: Document changes.
+        * doc/poundctl.8: Minor changes.
+
+2023-11-04  Sergey Poznyakoff  <gray@gnu.org>
+
+        Minor change
+
+        * src/config.c: Warn about non-regular files.
+
+2023-11-04  Sergey Poznyakoff  <gray@gnu.org>
+
+        Argument to Cert statement in ListenHTTPS can be a directory
+
+        * NEWS: Document changes.
+        * doc/pound.8: Document changes.
+        * src/config.c (openssl_error_at_locus_range): Change signature. 
+        Take filename as argument.
+        (conf_openssl_error): Likewise. All uses changed.
+        (load_cert): New function.
+        (https_parse_cert): Load all files from the directory.
+        * src/mem.c (stringbuf_truncate): New function.
+        * src/pound.h: New prototype.
+
+2023-10-22  Sergey Poznyakoff  <gray@gnu.org>
+
+        Optionally coalesce multiple-value headers to one value.
+
+        * src/ht.h: New file.
+        * src/pound.h (H_APPEND): New header insertion mode.
+        (combinable_header_add): New proto. Use ht.h to generate service
+        hash tables. Remove long unused CTRL_ definitions.
+        * src/Makefile.am: Add ht.h
+        * src/config.c: New statement CombineHeaders. Use ht.h to
+        generate backend hash tables.
+        * src/http.c (combinable_header_add, is_combinable_header): New
+        functions.
+        (cs_locate_token): New function.
+        (http_header_list_append): Handle H_APPEND.
+        (http_request_read): For headers from multival_header list,
+        coalesce multiple headers into a single comma-separated one.
+        (add_forwarded_headers): Append X-Forwarded-For to the existing
+        header, if any.
+        (backend_response): Use cs_locate_token to look for values in
+        multi-value headers.
+        (do_http): Likewise. Bail out on multiple Transfer-Encoding
+        headers.
+
+        * tests/poundharness.pl (parse_headers): Support multiple
+        headers.
+        * tests/optorder.at: Fix expectation.
+        * tests/chunked2.at: New file.
+        * tests/multival.at: New file.
+        * tests/Makefile.am: Add new tests.
+        * tests/testsuite.at: Likewise.
+
+2023-10-22  Sergey Poznyakoff  <gray@gnu.org>
+
+        Implement SNI for HTTPS backends
+
+        * src/pound.h (be_regular): New field: servername.
+        * src/config.c (disable_proto): Fix improper dereferencing of
+        call_data.
+        (backend_parse_servername): New function.
+        (backend_parsetab): New statement: ServerName.
+        * src/http.c (send_to_backend): Rewrite Host: header if
+        servername is set in the backend.
+        (open_backend): Set SNI if servername is set.
+        * doc/pound.8: Document changes.
+
+2023-10-13  Sergey Poznyakoff  <gray@gnu.org>
+
+        Version 4.10
+
+
+2023-10-10  Sergey Poznyakoff  <gray@gnu.org>
+
+        Improve manpage
+
+
+2023-10-12  Sergey Poznyakoff  <gray@gnu.org>
+
+        Fix detection of multiple Transfer-Encoding headers
+
+
+2023-10-11  Sergey Poznyakoff  <gray@gnu.org>
+
+        Add missing include file
+
+        * src/pound.h: Include limits.h
+
+2023-10-11  Sergey Poznyakoff  <gray@gnu.org>
+
+        Don't allow leading '+' in content lengths either
+
+
+2023-10-11  Sergey Poznyakoff  <gray@gnu.org>
+
+        Strict checking of the content and chunk lengths
+
+        * src/http.c (CL_HEADER, CL_CHUNK): New constants.
+        (get_content_length): Don't allow for sign or 0x prefix. In
+        CL_CHUNK mode, accept optional transfer extension part.
+
+2023-09-15  Sergey Poznyakoff  <gray@gnu.org>
+
+        Revamp nonblocking connection routine
+
+        * src/svc.c (connect_nb): Rewrite.  Query SO_ERROR only if poll 
+        returned an exception.
+
+2023-09-14  Sergey Poznyakoff  <gray@gnu.org>
+
+        Host config directive uses exact match by default.
+
+        * src/config.c (parse_cond_host): Use exact match by default.
+        * tests/poundharness.pl (preproc): Process included files 
+        recursively. Process arguments to Host directives.
+        * tests/incldir.at: Don't use --preproc options on the names of
+        included files.  They are processed automatically. Move first
+        include inside the ListenHTTP statement.
+        * tests/inclnest.at: Likewise.
+        * tests/include.at: Likewise.
+        * tests/resprw.at: Use explicit -re option to Host.
+        * NEWS: Document changes.
+
+2023-09-12  Sergey Poznyakoff  <gray@gnu.org>
+
+        Bugfix: always honor -e
+
+        * src/config.c (parse_config_file): Take second argument to 
+        control log_facility settings.  Ignore setting from
+        configuration file if it is true,
+        (config_parse): Pass stderr_option to parse_config_file.
+
+2023-09-11  Sergey Poznyakoff  <gray@gnu.org>
+
+        Make sure all password files remain accessible in daemon and
+        RootJail modes.
+
+        This partially reverts 65b0579c91.
+
+        * src/pound.h (WORKDIR): New data type.
+        (pass_file): New field: wd.
+        (fopen_wd): New proto.
+        (fopen_error): Change signature.
+        * src/bauth.c (pass_file_fill): Use fopen_wd.
+        * src/config.c (include_fd): Remove static.
+        (workdir_head, include_wd): New variables.
+        (workdir_get, workdir_ref)
+        (workdir_unref, workdir_free)
+        (workdir_cleanup): New functions.
+        (fopen_wd): New function.
+        (fopen_include): Restore static qualifier. Rewrite as a wrapper 
+        over fopen_wd.
+        (fopen_error): New argument: wd.
+        (assign_string_from_file): Use fopen_wd.
+        (listener_pass_file_fixup, service_pass_file_fixup): New
+        functions.
+        (parse_config_file): Fix-up wd members of struct pass_file in 
+        conditionals when in daemon or rootjail mode. Clean up workdir
+        list when done.
+
+2023-09-10  Sergey Poznyakoff  <gray@gnu.org>
+
+        Minor changes
+
+
+2023-09-09  Sergey Poznyakoff  <gray@gnu.org>
+
+        Version 4.9.91
+
+
+2023-09-08  Sergey Poznyakoff  <gray@gnu.org>
+
+        testsuite: remove useless AT_TESTED directive
+
+
+2023-09-08  Sergey Poznyakoff  <gray@gnu.org>
+
+        BasicAuth: Cache password file
+
+        * configure.ac: Check if struct stat has st_mtim member.
+        * src/bauth.c (basic_auth_internal): Use cached file content. 
+        Re-read it if file's mtime changed.
+        * src/pound.h (user_pass): New struct.
+        (USER_PASS_HEAD): New data type.
+        (pass_file): New fields: mtim, head.
+        * NEWS: Document changes.
+        * doc/pound.8: Likewise.
+
+2023-09-08  Sergey Poznyakoff  <gray@gnu.org>
+
+        BasicAuth: read relative file names from IncludeDir
+
+        * src/bauth.c (basic_auth_internal): Use fopen_include. Remove
+        const qualifier from first argument (for future use).
+        * src/config.c (open_include_dir): Assume CWD if dir is NULL.
+        (fopen_include): Remove static qualifier.
+        (fopen_error): New function.
+        (parse_config_file): If in daemon or rootjail mode, make sure
+        include_fd is an actual fd, not AT_FDCWD. Don't free namelist:
+        its elements may be referenced by some objects in the
+        configuration.
+        * src/http.c (match_cond): Change signature: remove const from
+        the first argument.
+        * src/pound.h (pass_file): Remove dir and dirname. Use
+        include_dir for relative names.
+        (match_cond): Change signature.
+        (fopen_include, fopen_error): New functions.
+        * src/svc.c (match_service): Change signature.
+
+2023-09-08  Sergey Poznyakoff  <gray@gnu.org>
+
+        Bugfixes
+
+        * doc/pound.8: Escape literal backslashes.
+        * src/poundctl.c (read_response_line): Don't return local
+        variable address.
+
+2023-09-08  Sergey Poznyakoff  <gray@gnu.org>
+
+        Mention backend IP:PORT in connect_nb messages
+
+
+2023-09-03  Sergey Poznyakoff  <gray@gnu.org>
+
+        Version 4.9.90
+
+
+2023-09-03  Sergey Poznyakoff  <gray@gnu.org>
+
+        Document recent changes
+
+
+2023-09-03  Sergey Poznyakoff  <gray@gnu.org>
+
+        Fix basicauth in RootJail mode.
+
+        * src/bauth.c (basic_auth_internal)
+        (basic_auth): Get pointer to struct pass_file as argument.
+        * src/config.c (parse_cond_basic_auth): Initialize cond->pwfile.
+        (parse_config_file): If RootJail is requested, open directories 
+        for each struct pass_file used in conditionals.
+        * src/pound.h (locus_point, locus_range): New struct definitions
+        (from config.c)
+        (struct pass_file): New struct.
+        (SERVICE_COND): Change type of pwfile to struct pass_file.
+        * src/svc.c (foreach_listener, foreach_service): New functions.
+
+2023-09-03  Sergey Poznyakoff  <gray@gnu.org>
+
+        Use EVP digest routines for basic auth support
+
+        * src/bauth.c: Rewrite using EVP.
+
+2023-09-02  Sergey Poznyakoff  <gray@gnu.org>
+
+        Add missing copyleft header.
+
+
+2023-09-02  Sergey Poznyakoff  <gray@gnu.org>
+
+        Expand request accessors in Rewrite response statements
+
+        * src/http.c (expand_string_to_buffer)
+        (expand_string,expand_url,rewrite_apply)
+        (match_cond,rewrite_op_apply,rewrite_rule_check): Simplify
+        calling convention. Pass a pointer to POUND_HTTP as argument. 
+        All uses changed.
+        * src/pound.h (get_service, match_cond): Change prototypes.
+        * tests/resprw.at: New test.
+        * tests/Makefile.am: Add new test.
+        * tests/testsuite.at: Likewise.
+
+2023-09-02  Sergey Poznyakoff  <gray@gnu.org>
+
+        Rewrite statement allows for rewriting responses as well as
+        requests.
+
+        * NEWS: Document changes.
+        * src/config.c: Rewrite statement accepts optional argument 
+        specifying what object to apply rewrites to: request or
+        response.
+        "Rewrite response" construct allows for a limited set of request 
+        matching and modification statements.
+        * src/http.c (err_401_headers): Remove. All uses changed.
+        (parse_header_text): New function.
+        (error_response,backend_response): Apply response rewriting
+        procedures.
+        (http_headers_send): New function.
+        (http_request_send): Use http_headers_send.
+        * src/pound.h (REWRITE_REQUEST, REWRITE_RESPONSE): New
+        constants.
+        (SERVICE): Change type of the rewrite field to array of two 
+        REWRITE_RULE_HEAD.  All uses changed.
+        (LISTENER): Likewise.
+        * tests/error.at: Fix typo in the error text.
+
+2023-08-27  Sergey Poznyakoff  <gray@gnu.org>
+
+        Initial support for basic auth
+
+        * NEWS: Update.
+        * configure.ac: Check for crypt(3) and crypt.h
+        * src/Makefile.am: Add new source.
+        * src/bauth.c: New file.
+        * src/config.c (MATCH_CONDITIONS): New condition: BasicAuth
+        (http_parsetab,https_parsetab): New statement Err401 and Err403.
+        * src/http.c (http_status): Add HTTP_STATUS_UNAUTHORIZED and 
+        HTTP_STATUS_FORBIDDEN.
+        (err_401_headers): New static.
+        (bio_err_reply,error_response): Use err_401_headers for 
+        HTTP_STATUS_UNAUTHORIZED.
+        (error_response): Remove useless calls to rewrite_apply.
+        (http_request_get_basic_auth): New function.
+        (match_cond): Handle COND_BASIC_AUTH.
+        (do_http): Remove special handling of the Authorization header. 
+        It is done on request now.
+        * src/log.c (i_user_name): Rewrite.
+        * src/pound.h (HTTP_STATUS_UNAUTHORIZED)
+        (HTTP_STATUS_FORBIDDEN): New constants.
+        (http_request): Remove user field. All uses removed.
+        (COND_BASIC_AUTH): New condition type.
+        (SERVICE_COND): New (nameless union) field: pwfile.
+        (http_request_get_basic_auth, basic_auth): New protos.
+
+2023-08-26  Sergey Poznyakoff  <gray@gnu.org>
+
+        Add tests for poundctl
+
+        * src/poundctl.c (get_socket_name): Fix error message.
+        * tests/poundharness.pl: Implement external program send/expect 
+        sequences.
+        * tests/disable.at: New test.
+        * tests/list.at: New test.
+        * tests/sessctl.at: New test.
+        * tests/Makefile.am: Add new tests.
+        * tests/testsuite.at: Include new tests.
+
+2023-08-25  Sergey Poznyakoff  <gray@gnu.org>
+
+        Global backend definitions
+
+        * NEWS: Document changes.
+        * doc/pound.8: Likewise.
+        * src/config.c (NAMED_BACKEND, NAMED_BACKEND_TABLE): New types.
+        (POUND_DEFAULTS): New field: named_backend_table.
+        (parse_backend_internal): Take start locus as additional
+        argument.
+        (parse_backend): Support a form with one string label.
+        (service_parsetab): New statement: UseBackend.
+        (top_level_parsetab): New statement: Backend.
+        (parse_config_file): Initialize named_backend_table. Use it on 
+        successful parse termination to resolve references to globally 
+        defined backends and free afterwards.
+        * src/pound.h (BE_BACKEND_REF): New intermediate backend type.
+        (BACKEND): New field: v.be_name.
+        (foreach_backend): New proto.
+        * src/svc.c (foreach_backend): New function.
+
+        * tests/nb.at: New test file.
+        * tests/Makefile.am: Add new test.
+        * tests/testsuite.at: Include new test.
+
+2023-08-25  Sergey Poznyakoff  <gray@gnu.org>
+
+        Work around broken pcre2posix builds on Debian systems
+
+        * am/pcreposix.m4: Detect if reg*() functions in libpcre2posix 
+        have been renamed to PCRE2reg*(), and rename them back if so.
+
+2023-08-23  Sergey Poznyakoff  <gray@gnu.org>
+
+        Update software requirements in README.md
+
+
+2023-08-22  Sergey Poznyakoff  <gray@gnu.org>
+
+        Version 4.9
+
+
+2023-08-22  Sergey Poznyakoff  <gray@gnu.org>
+
+        Add the "log" testsuite keyword
+
+
+2023-08-22  Sergey Poznyakoff  <gray@gnu.org>
+
+        Reword some descriptions
+
+
+2023-08-21  Sergey Poznyakoff  <gray@gnu.org>
+
+        Version 4.8.91
+
+
+2023-08-20  Sergey Poznyakoff  <gray@gnu.org>
+
+        Improve logging configuration
+
+        This introduces new service configuration statement SuppressLog,
+        which suppresses HTTP logging for particular classes of response
+        status codes, introduces new log format conversion specifier
+        %{OBJ}L, which is expanded to the location of the object OBJ
+        (listener, service, or backend) in the configuration file, and
+        replaces specifiers %L, %R, and %S with
+        ${listener}N, ${backend}N, and %{service}N, correspondingly.
+
+        * NEWS: Document changes.
+        * doc/pound.8: Likewise.
+        * src/config.c (parse_backend_internal)
+        (parse_redirect_backend,parse_error_backend)
+        (parse_service,parse_acme,
+        (parse_listen_http,parse_listen_https)
+        (parse_control): Initialize locus field.
+        (canned_log_format): Change format definitions.
+        (parse_log_suppress): New function.
+        (service_parsetab): New statement: LogSuppress.
+        * src/log.c: Support for new specifier.
+        (http_log): Use log_suppress_mask to decide whether to suppress 
+        log message.
+        * src/pound.c (main): Check return from listen.
+        * src/pound.h (BACKEND, SERVICE, LISTENER): New field: locus.
+        (SERVICE): New field: log_suppress_mask.
+        (STATUS_MASK): New define.
+
+        * tests/logsup.at: New test.
+        * tests/Makefile.am: Add new test.
+        * tests/testsuite.at: Likewise.
+        * tests/logfmt.at: Update formats.
+
+2023-08-16  Sergey Poznyakoff  <gray@gnu.org>
+
+        Log format: use %{NAME}N for Pound object name
+
+
+2023-08-16  Sergey Poznyakoff  <gray@gnu.org>
+
+        Revamp log format parser to speed-up the generated
+        log-formatting code.
+
+
+2023-08-16  Sergey Poznyakoff  <gray@gnu.org>
+
+        New log conversion specifier: %L (listener name)
+
+
+2023-08-10  Sergey Poznyakoff  <gray@gnu.org>
+
+        Optionally use X-Forwarded-For header to log originating ip.
+
+        * NEWS: Document changes.
+        * doc/pound.8: Document changes.
+        * src/config.c (service_parsetab)
+        (http_parsetab,https_parsetab): New statements: ForwardedHeader
+        and TrustedIP.
+        * src/extern.h (forwarded_header,trusted_ips): New externs.
+        * src/http.c (do_http): Stash away the forwarded header before
+        calling the backend (which may modify it).
+        * src/log.c (i_forwarded_ip): New function. Try to obtain
+        originator IP from the forwarded header.
+        (http_log_spec): Use i_forwarded_ip to handle '%a'.
+        * src/pound.c (forwarded_header, trusted_ips): New variables.
+        (pound_http_destroy): Free orig_forwarded_header.
+        * src/pound.h (SERVICE, LISTENER): New fields: forwarded_header, 
+        trusted_ips.
+        (POUND_HTTP): New field: orig_forwarded_header.
+
+2023-08-09  Sergey Poznyakoff  <gray@gnu.org>
+
+        Document new features
+
+
+2023-08-09  Sergey Poznyakoff  <gray@gnu.org>
+
+        Implement LogFormat directive
+
+        * src/config.c (POUND_DEFAULTS): Revert to int log_level.
+        (log_format_diag): Change signature.
+        (parse_log_level): String argument refers to the name of
+        user-defined format, which must have been declared previously 
+        using the LogFormat directive.
+        (parse_log_format): New function.
+        (top_level_parsetab): New statement: LogFormat.
+        (parse_config_file): Compile all built-in formats before
+        proceeding.
+        * src/log.c (http_log_prog): New field: name.
+        (http_log_format_compile): New function.
+        (http_log_format_find,http_log_format_check): New functions.
+        (http_log): Get format prog from the format table.
+        * src/pound.h (MAX_HTTP_LOG_FORMATS): New constant.
+        (HTTP_LOG_PROG): Remove typedef.
+        (http_log_compile): Remove proto.
+        (http_log_format_compile,http_log_format_find)
+        (http_log_format_check): New protos.
+        * tests/Makefile.am: Add new test.
+        * tests/testsuite.at: Include new test.
+        * tests/logfmt.at: New file.
+        * tests/loglevrun.at: Add keywords.
+        * tests/loglevcomp.at: Likewise.
+        * tests/poundharness.pl: Negative --log-level value means don't
+        touch existing LogLevel statement.
+
+2023-08-09  Sergey Poznyakoff  <gray@gnu.org>
+
+        Configurable logging
+
+        * src/Makefile.am: Add new source.
+        * src/config.c (parse_log_level): Accept both canned format
+        numbers
+        (levels) and log format specifications.
+        * src/http.c (method_name): New function.
+        (http_request_orig_line)
+        (http_request_get_url,http_request_get_query)
+        (http_request_user_name): Removed.
+        (anon_addr2str): Move to log.c
+        (http_log): Remove.
+        (do_http): Store end time in POUND_HTTP.end_req
+        * src/log.c: New file.
+        * src/mem.c (stringbuf_strftime): New function.
+        * src/pound.h (method_name): New proto.
+        (HTTP_LOG_PROG): New data type.
+        (http_log_compile): New proto.
+        (LISTENER): Replace log_level with HTTP_LOG_PROG log_prog
+        (POUND_HTTP): New field: end_req.
+        (http_log, stringbuf_strftime): New protos.
+        (http_request_get_url,http_request_get_query): New protos.
+        * tests/Makefile.am: Add new tests.
+        * tests/testsuite.at: Include new tests.
+        * tests/loglevcomp.at: New file.
+        * tests/loglevrun.at: New file.
+
+2023-08-08  Sergey Poznyakoff  <gray@gnu.org>
+
+        Minor fix
+
+        * src/http.c (find_method): Use 2nd argument (length).
+
+2023-08-08  Sergey Poznyakoff  <gray@gnu.org>
+
+        Bugfixes
+
+        * src/config.c (build_regex): Remove leading caret from the
+        expression, if prefix is supplied in MATCH_RE mode. This makes
+        Host "^x" work as expected.
+        * src/http.c (http_header_change): Clear cached value. This way
+        changes become visible to matching directives that follow.
+
+2023-08-08  Sergey Poznyakoff  <gray@gnu.org>
+
+        Minor fix
+
+        * src/config.c (close_include_dir): Reset include_fd.
+
+2023-08-08  Sergey Poznyakoff  <gray@gnu.org>
+
+        Improve the description of StringMatch
+
+
+2023-08-07  Sergey Poznyakoff  <gray@gnu.org>
+
+        Bugfix
+
+        * src/config.c (input_open): Don't use include_dir if include_fd
+        is AT_FDCWD.
+
+2023-08-07  Sergey Poznyakoff  <gray@gnu.org>
+
+        Spell checking
+
+
+2023-08-07  Sergey Poznyakoff  <gray@gnu.org>
+
+        Implement StringMatch matcher, host and port accessors.
+
+        * NEWS: Document changes.
+        * configure.ac: Version 4.8.90.
+        * doc/pound.8: Likewise.
+        * src/config.c (build_regex): Fix the exact matching,
+        * src/http.c (parse_cond_matcher): Implement COND_STRING_MATCH.
+        (MATCH_CONDITIONS): Add StringMatch.
+        (accessors): change signatures.
+        (accessor_host, accessor_port): New accessors.
+        (rewrite_apply): Change signature: take struct submatch_queue
+        pointer as last argument. All uses changed.
+        (match_cond): Implement COND_STRING_MATCH.
+        * src/pound.h (query_param_match): Remove struct definition.
+        (STRING_REF, struct string_match): New types.
+        (SERVICE_COND): Replace struct query_param_match with
+        string_match.
+        * tests/Makefile.am: Add new tests.
+        * tests/testsuite.at: Include new tests.
+
+2023-07-25  Sergey Poznyakoff  <gray@gnu.org>
+
+        Minor improvement
+
+
+2023-07-25  Sergey Poznyakoff  <gray@gnu.org>
+
+        Improve testsuite and documentation
+
+        * README.md: Document testsuite and bug reporting.
+        * tests/poundharness.pl: Skip tests if a HTTPS listener is
+        required but HTTP::Tiny does not support SSL.
+
+2023-05-28  Sergey Poznyakoff  <gray@gnu.org>
+
+        Version 4.8
+
+
+2023-05-11  Sergey Poznyakoff  <gray@gnu.org>
+
+        poundctl: ignore empty lines in pound.cfg
+
+
+2023-05-11  Sergey Poznyakoff  <gray@gnu.org>
+
+        Fix improper use of va_list
+
+        * NEWS: Document changes.
+        * configure.ac: Version 4.7.90
+        * src/pound.c (vlogmsg): Use va_copy to reuse va_list.
+
+2023-05-08  Sergey Poznyakoff  <gray@gnu.org>
+
+        Support for libpcre2posix
+
+        * Makefile.am (ACLOCAL_AMFLAGS): New variable.
+        * NEWS: Document changes.
+        * README.md: Likewise.
+        * acinclude.m4: Rename to am/ax_pthread.m4
+        * am/pcreposix.m4: New file.
+        * configure.ac: Use PND_PCREPOSIX macro.
+        * src/Makefile.am: Update.
+        * src/pound.h: Include pcre2posix.h if available.
+
+2023-04-19  Sergey Poznyakoff  <gray@gnu.org>
+
+        Spelling fixes
+
+
+2023-04-17  Sergey Poznyakoff  <gray@gnu.org>
+
+        Version 4.7
+
+
+2023-04-17  Sergey Poznyakoff  <gray@gnu.org>
+
+        Revise the docs
+
+
+2023-04-06  Sergey Poznyakoff  <gray@gnu.org>
+
+        poundctl: parse the block form of Control statement
+
+
+2023-04-05  Sergey Poznyakoff  <gray@gnu.org>
+
+        Block form of the Control statement.
+
+        The Control statement in block form allows the user to specify
+        socket file mode and change its ownership.
+
+        * NEWS: Document changes.
+        * doc/pound.8: Document changes.
+        * src/config.c (push_input): Fix diagnostic message.
+        (listener_alloc): Initialize mode.
+        (parse_control_socket,parse_control): New functions.  Support 
+        inline and block forms of the Control statement.
+        * src/pound.c (main): Optionally set socket mode and ownership.
+        * src/pound.h (LISTENER): New fields: mode and chowner.
+
+2023-04-04  Sergey Poznyakoff  <gray@gnu.org>
+
+        Reword the "thread terminating" message.
+
+        Change proposed by Simon Matter.
+
+2023-04-04  Sergey Poznyakoff  <gray@gnu.org>
+
+        Log backend responses properly
+
+        * src/http.c (backend_response): Don't free phttp->response
+        prematurely. It is needed for http_log in the caller.
+
+2023-03-30  Sergey Poznyakoff  <gray@gnu.org>
+
+        Fix eventual double-free in get_user.
+
+
+2023-03-30  Sergey Poznyakoff  <gray@gnu.org>
+
+        Minor fixes
+
+        * configure.ac: Use canonical host to guess if the program is
+        going to be linked with glibc and set the
+        early_pthread_cancel_probe accordingly.
+        * src/pound.c (unlink_file_location): Close fd.
+        * NEWS: Update.
+        * README.md: Update.
+
+2023-03-29  Sergey Poznyakoff  <gray@gnu.org>
+
+        More RootJail related changes
+
+        Content of files supplied with Error statements is read at
+        startup. PID file and control socket are properly removed on
+        exit even after chroot.
+
+        * NEWS: Document changes.
+        * README.md: Likewise.
+        * doc/pound.8: Likewise.
+        * src/config.c (parse_error_backend): Read the file here and
+        store its content in error.text.
+        (parse_control_global): Use unlink_at_exit.
+        * src/http.c (error_response): Send error.text instead of
+        opening the file and reading it.
+        * src/pound.c (unlink_at_exit): New function.  Arrange for the
+        file to be removed even in jail mode.
+        (pidfile_create): Use unlink_at_exit.
+        * src/pound.h (be_error): Replace file (file name) with text
+        (file content).
+        (unlink_file): Remove proto.
+        (unlink_at_exit): New proto.
+        * src/svc.c (str_be, backend_serialize): Reflect the changes.
+
+2023-03-29  Sergey Poznyakoff  <gray@gnu.org>
+
+        Fix the libgcc_s.so.1 must be installed problem in RootJail.
+
+        * NEWS: Document changes.
+        * README.md: Likewise.
+        * configure.ac: New option: --enable-pthread-cancel-probe Define
+        EARLY_PTHREAD_CANCEL_PROBE to 1 if libgcc_s is present,
+        * src/pound.c (main): when in chroot mode, if
+        EARLY_PTHREAD_CANCEL_PROBE is defined, do a call to
+        pthread_cancel prior to chrooting. This forces loading
+        libgcc_s.so so that it remains available after chroot.
+
+2023-03-28  Sergey Poznyakoff  <gray@gnu.org>
+
+        Mark compatibility header dh.h as nodist
+
+        * src/Makefile.am (nodist_pound_SOURCES): New variable.
+
+2023-03-28  Sergey Poznyakoff  <gray@gnu.org>
+
+        Minor fix
+
+        * src/Makefile.am (LDADD): Remove path spec from libpound.a
+
+2023-03-28  Sergey Poznyakoff  <gray@gnu.org>
+
+        Update the manpage.
+
+
+2023-03-28  Sergey Poznyakoff  <gray@gnu.org>
+
+        Fix the ACME statement when used together with RootJail.
+
+        See https://github.com/graygnuorg/pound/issues/6
+
+        * src/pound.h (be_acme): Remove the dir field. New field: wd
+        (descriptor of the directory for challenges).
+        * src/config.c (parse_acme): Open the acme directory early,
+        before chroot is eventually is called.
+        * src/http.c (acme_response): Use openat to open the challenge
+        file.
+        * src/svc.c: Reflect changes to struct be_acme.
+
+2023-03-18  Sergey Poznyakoff  <gray@gnu.org>
+
+        Include directive is allowed anyplace
+
+        * NEWS: Document changes.
+        * doc/pound.8: Likewise.
+        * src/config.c (parse_statement, parse_acl): Allow for an
+        "Include".
+
+        * tests/Makefile.am: Add new test.
+        * tests/testsuite.at: Include new test.
+        * tests/inclscope.at: New test.
+
+2023-03-18  Sergey Poznyakoff  <gray@gnu.org>
+
+        Include directory setting takes effect after pushing first
+        source
+
+        This ensures a consistent behavior of -f
+
+2023-03-18  Sergey Poznyakoff  <gray@gnu.org>
+
+        List full pathname in diagnostic messages.
+
+        * src/config.c (pathname_alloc): New function.
+        (include_dir): New static.
+        (open_include_dir,close_include_dir): Maintain include_dir
+        value.
+        (push_input): Improve diagnostic message.
+
+2023-03-18  Sergey Poznyakoff  <gray@gnu.org>
+
+        Compatibility fix
+
+        * src/config.c (config_parse): Apply the default include
+        directory setting only unless explicitly requested otherwise.
+
+2023-03-13  Sergey Poznyakoff  <gray@gnu.org>
+
+        Support for -file option to request matching directives.
+
+        The -file option instructs the directive to treat its argument
+        as the name of a file to read patterns from.
+
+        * NEWS: Document changes.
+        * doc/pound.8: Likewise.
+        * src/config.c (open_include_dir, close_include_dir)
+        (fopen_include): New functions.
+        (input_open): Use fopen_include.
+        (push_input): Use fstatat.
+        (parse_match_mode): Support the -file option.
+        (parse_cond_matcher): Rewrite taking into account eventual -file
+        option and other subtleties.  All uses changed.
+        (top_level_parsetab): New statement: IncludeDir.
+        (feature): New feature: include-dir.
+        (pound_settings): Add include directory.
+        (config_parse): Use SYSCONFDIR as include directory by default.
+        * src/extern.h (FEATURE_INCLUDE_DIR): New feature.
+        * tests/fromfile.at: New test.
+        * tests/include.at: New test.
+        * tests/incldir.at: New test.
+        * tests/inclnest.at: New test.
+        * tests/Makefile.am: Add new files.
+        * tests/testsuite.at: Include new tests.
+        (PT_CONF): Pass the -W[no-]include-dir option to pound.
+        * tests/poundharness.pl: New options: --preproc and
+        --include-dir.
+        (runner): Pass the -W[no-]include-dir option to pound.
+
+2023-03-08  Sergey Poznyakoff  <gray@gnu.org>
+
+        Minor fix
+
+        * src/pound.c (detach): Check return values from chdir, open,
+        and dup.
+
+2023-03-07  Sergey Poznyakoff  <gray@gnu.org>
+
+        Version 4.6
+
+
+2023-03-07  Sergey Poznyakoff  <gray@gnu.org>
+
+        Update the docs
+
+
+2023-03-07  Sergey Poznyakoff  <gray@gnu.org>
+
+        Housekeeping: github workflows
+
+
+2023-03-07  Sergey Poznyakoff  <gray@gnu.org>
+
+        Check the use of backends in services for correctness
+
+        * NEWS: Document changes.
+        * doc/pound.8: Document changes.
+        * src/config.c (parse_service): Bail out if multiple special
+        backends are used.  Emit a warning if multiple Redirect backends
+        are used or if one or more redirects is mixed with regular
+        backends.
+
+        * tests/bemix.at: New test.
+        * tests/Makefile.am: Add new test.
+        * tests/testsuite.at: Include new test.
+        * tests/balancing.at: Fix typo.
+
+2023-03-06  Sergey Poznyakoff  <gray@gnu.org>
+
+        Implement interleaved weighted round robin balancing strategy
+
+        * src/config.c (POUND_DEFAULTS): New field: balancer.
+        (parse_service): Initialize balancer.
+        (service_parsetab,top_level_parsetab): New keyword: Balancer.
+        * src/pound.h (BALANCER): New type.
+        (SERVICE): New fields: max_pri, balancer, iwrr_round, iwrr_cur.
+        (service_balancer_init): New proto.
+        * src/svc.c (service_lb_init)
+        (service_lb_select_backend): New functions. Use
+        service_lb_select_backend instead of rand_backend everywhere.
+        * tests/balancing.at: Use IWRR during testing.
+        * tests/prio.at: Likewise.
+        * tests/poundharness.pl: Used with stats request, index=N
+        parameter requests the percentage of requests handled by Nth
+        backend.
+
+        * NEWS: Document new features.
+        * doc/pound.8: Likewise.
+
+2023-03-06  Sergey Poznyakoff  <gray@gnu.org>
+
+        Fix typos in list macros
+
+        * src/list.h (DLIST_INSERT_AFTER)
+        (DLIST_INSERT_BEFORE): Use field argument instead of the
+        hardcoded name.
+
+2023-03-05  Sergey Poznyakoff  <gray@gnu.org>
+
+        Avoid modulo bias
+
+
+2023-03-03  Sergey Poznyakoff  <gray@gnu.org>
+
+        Control maximum number of working threads
+
+
+2023-03-03  Sergey Poznyakoff  <gray@gnu.org>
+
+        Make sure "name" attribute is always present in the
+        serialization of listener and service
+
+
+2023-03-03  Sergey Poznyakoff  <gray@gnu.org>
+
+        Identify listeners and services by their names (labels) as well
+        as indices
+
+        * src/config.c (parse_listen_http)
+        (parse_listen_https): Handle optional listener name.  Make sure
+        it is unique.
+        (parse_service): Make sure service name is unique.
+        * src/pound.h (LISTENER): New field: name.
+        * src/poundctl.tmpl: Show listener name, if available.
+        * svc.c (get_nth_listener, get_nth_service)
+        (get_nth_backend,ctl_getnum): Remove.
+        (IDENT): New data type.
+        (ctl_getident,locate_listener,locate_service)
+        (locate_backend): New functions.
+        (service_serialize): Represent NULL service name as null.
+        (listener_serialize): Add listener name.
+        (ctl_service,ctl_listener): Identify objects by their ids or
+        numbers.
+
+        * NEWS: Document changes.
+        * doc/pound.8: Likewise.
+        * doc/poundctl.8: Likewise.
+
+2023-03-02  Sergey Poznyakoff  <gray@gnu.org>
+
+        Allocate service name as necessary
+
+
+2023-02-28  Sergey Poznyakoff  <gray@gnu.org>
+
+        Fix memory leak in add_forwarded_headers
+
+
+2023-02-20  Sergey Poznyakoff  <gray@gnu.org>
+
+        Enable buffering for plain HTTP backends
+
+        * src/http.c (open_backend): Always push buffered BIO
+
+2023-02-20  Sergey Poznyakoff  <gray@gnu.org>
+
+        Version 4.5.90
+
+
+2023-02-20  Sergey Poznyakoff  <gray@gnu.org>
+
+        Rewrite session handling
+
+        * src/config.c: Remove struct service_session.  The session
+        parameters are stored directly in the SERVICE object.
+        * src/http.c (http_request_get_path)
+        (http_header_list_locate_name, http_header_get_value): Now
+        global.
+        (http_request_rebuild_query): Accept parameters with NULL value. 
+        Free the query field before assigning it.
+        (match_cond): Return 0 if the parameter has NULL value.
+        * src/pound.h (SERVICE): Remove sess_start and sess_pat.  New
+        field: sess_id.
+        (get_backend): Change signature.
+        (upd_session): Change signature.
+        (http_request_get_path)
+        (http_header_list_locate_name, http_header_get_value): New
+        protos.
+        * src/svc.c: Rewrite session handling functions using http
+        request and header functions.
+
+2023-02-19  Sergey Poznyakoff  <gray@gnu.org>
+
+        Don't decode request parts. Return 500 on string expansion
+        errors.
+
+        Mandatory percent decoding creates more problems than it solves.
+        It can perhaps be used optionally in request matching, but that
+        is left for further consideration.
+
+        * doc/pound.8: Document changes.
+        * src/http.c: Don't urldecode request parts.
+        (expand_string_to_buffer): Return -1 if invalid barckreferences
+        or accessors are encountered. Don't bail out on
+        percent-encodings.
+        (expand_string): Handle error return from
+        expand_string_to_buffer.
+        * src/pound.h (http_request): Remove storage for decoded values.
+
+        * tests/poundharness.pl (getline): Handle undefined return
+        graciously.
+        (ParseRequest): Terminate thread on EOF.
+
+        * tests/backref.at: Update expected values.
+        * tests/experr.at: Likewise.
+        * tests/lstset.at: Likewise.
+        * tests/redirect.at: Likewise.
+        * tests/reqacc.at: Likewise.
+        * tests/set.at: Likewise.
+
+2023-02-18  Sergey Poznyakoff  <gray@gnu.org>
+
+        Changes in poundharness
+
+        * tests/poundharness.pl: Run read_and_process in main thread. 
+        Don't join threads on exit: all threads must be in detached
+        state.
+        (read_and_process): Rewrite. Start one thread per each backend. 
+        Within it, use the traditional endless loop (accept && do).
+
+2023-02-18  Sergey Poznyakoff  <gray@gnu.org>
+
+        Fix percent encoding/decoding of the path part.
+
+        Remove fragment handling: let's not meddle in the affairs of
+        clients.
+
+        * NEWS: Reflect changes.
+        * doc/pound.8: Likewise.
+        * src/pound.h (http_request): Remove frag_raw and frag. New
+        field path_raw.
+        * src/http.c (expand_string_to_buffer): Don't allow subject 
+        indexes after compatibility references (%N).
+        (urlencode): Take additional argument indicating whether the 
+        string being encoded is a path.
+        (http_request_rebuild_url): Use path_raw.
+        (http_request_get_path): Decode path if necessary.
+        (http_request_free): Free path_raw.
+        * src/config.c: Remove fragment directives.
+        * tests/backref.at: Expect encoded URI.
+        * tests/experr.at: Likewise.
+        * tests/lstset.at: Remove fragment tests.
+        * tests/reqacc.at: Likewise.
+        * tests/set.at: Likewise.
+
+2023-02-18  Sergey Poznyakoff  <gray@gnu.org>
+
+        Improve tests
+
+        * src/http.c (expand_string_to_buffer): Improve error reporting.
+        * tests/Makefile.am: Add new tests.
+        * tests/testsuite.at: Likewise.
+        * tests/poundharness.pl (process_http_request): Add x-orig- 
+        headers when returning 404.
+        * tests/backref.at: New file.
+        * tests/experr.at: New file.
+        * tests/header.at: New file.
+        * tests/lstset.at: New file.
+        * tests/not.at: Don't use obsolete/deprecated directives.
+        * tests/or.at: Likewise.
+        * tests/reqacc.at: Likewise.
+        * tests/virthost.at: Likewise.
+
+2023-02-17  Sergey Poznyakoff  <gray@gnu.org>
+
+        Improve request matching and implement request modification
+        directives.
+
+        Implement request accessors. Test rewrite rules.
+
+        Keep a cyclic queue of submatches
+
+        Up to 8 recent matches can be referenced in arguments to request 
+        modification directives.  The notation $N refers to the Nth sub- 
+        expression of the most recent match.  The notation $N(M) refers 
+        to the Nth subexpression of the Mth recent match (match indexes 
+        are 0-based).  For compatibility with versions 4.4-4.5, %N is 
+        taken to mean $N(1).
+
+        * src/http.c: Rewrite http_request support.
+        (match_cond): Move from svc.c. Add support for new condition
+        types.
+        (rewrite_apply): New function.
+        (send_to_backend): Call rewrite_apply.
+        (expand_string_to_buffer,expand_string): New function.
+        (expand_url): Rewrite using expand_string_to_buffer.
+        (urldecode,urlencode): New functions.
+        (submatch_reset,submatch_queue_init)
+        (submatch_queue_get,submatch_queue_push)
+        (submatch_queue_free): New functions.
+        (expand_string_to_buffer): Rewrite using submatch_queue.  All 
+        uses changed. Implement request accessors. Fix dead loop
+        occurring when invalid percent sequence is encountered.
+        (match_cond): Change signature. Use submatch_queue_push to get
+        new submatch slot each time it is needed.
+        (rewrite_rule_check, rewrite_op_apply): Change signature. All
+        uses changed.
+        (expand_string_to_buffer): Support ${N} notation along with $N.
+        Count accessor expansions in the return value.
+        (send_to_backend): Apply listener's rewrite rules.
+        (http_request_rebuild): Replace with three functions, invoked
+        when needed: http_request_rebuild_line,
+        http_request_rebuild_url, and http_request_rebuild_query.
+        (http_header_list_filter): Bugfix: revert condition.
+        * src/pound.c (pound_http_enqueue): Add explanatory comment.
+        (pound_http_destroy): Call submatch_queue_free.
+        * src/pound.h (query_param,QUERY_HEAD): New aggregate types.
+        (http_request): New fields: path, query_raw, query, frag_raw, 
+        frag, orig_request_line, flags.
+        (be_redirect): Rename append_uri to has_uri, to avoid confusion.
+        (COND_PATH,COND_QUERY,COND_QUERY_PARAM,COND_FRAG): New cond
+        types.
+        (query_param_match): New aggregate type.
+        (SERVICE_COND): New union member: qp.
+        (REWRITE_OP,REWRITE_OP_HEAD)
+        (REWRITE_RULE_HEAD,REWRITE_RULE): New aggregate types.
+        (SERVICE): New field: rewrite.
+        (struct submatch): Subject is allocated, so remove the const 
+        qualifier.
+        (get_service): Simplify signature.
+        (match_cond): New proto.
+        (SMQ_SIZE): New constant.
+        (submatch_queue): New struct.
+        (submatch_free): Remove proto.
+        (submatch_queue_free): New proto.
+        (POUND_HTTP): Remove field sm. New field smq.
+        (get_service): Change signature.
+        (LISTENER): Remove head_off and add_header. New field: rewrite.
+        (http_request): Replace "flags" field with "split". HRF_*
+        constants removed as well.
+        * src/svc.c (match_service,get_service): Change signature.
+        * src/config.c (input): Remove field: ready. New fields: putback 
+        and putback_index.
+        (input_gettkn, input_putback): Rewrite putback handling. New
+        block statement: Rewrite ... [Else ...] End New statements:
+        Path, Query, QueryParam, Fragment, SetHeader, DeleteHeader,
+        SetURL, SetPath, SetQuery, SetQueryParam, SetFragment. Remove
+        "AND" and "OR" block statements (these were undocumented
+        shortcuts for "Match AND" and "Match OR").
+        (parse_header_remove): New function. Handles HeaderRemove
+        (HeadRemove) keywords. HeaderAdd, and AddHeader are handled as
+        synonims of SetHeader. LISTENERs rewrite field. Fix formation of
+        regular expression for matchers. Allow for "set" statements
+        without enclosing Rewrite block.
+
+        * tests/Makefile.am: Add new tests.
+        * tests/testsuite.at: Likewise.
+        * tests/chgvis.at: New file.
+        * tests/reqacc.at: New file.
+        * tests/rwchain.at: New file.
+        * tests/set.at: New file.
+        * tests/headrem.at: Rewrite test to catch eventual bugs in 
+        http_header_list_filter.
+
+        * NEWS: Document changes.
+        * doc/pound.8: Likewise.
+
+2023-02-12  Sergey Poznyakoff  <gray@gnu.org>
+
+        Version 4.5
+
+
+2023-02-10  Sergey Poznyakoff  <gray@gnu.org>
+
+        Implement metrics backend
+
+        This backend type implements openmetrics telemetry endpoint.
+
+2023-02-08  Sergey Poznyakoff  <gray@gnu.org>
+
+        Update the poundctl.tmpl.5 manpage
+
+
+2023-02-07  Sergey Poznyakoff  <gray@gnu.org>
+
+        Arithmetic functions in templates
+
+        * NEWS: Update.
+        * src/tmpl.c: Implement arithmetic functions.
+        * doc/poundctl.tmpl.5: Document arithmetic functions.
+        * src/poundctl.tmpl: Convert times to milliseconds.
+
+2023-02-05  Sergey Poznyakoff  <gray@gnu.org>
+
+        Rename statistics fields
+
+
+2023-02-05  Sergey Poznyakoff  <gray@gnu.org>
+
+        Include standard deviation in the backend request statistics
+
+        * src/http.c (backend_update_stats): Maintain average squared
+        time per request.
+        * src/pound.h (BACKEND): New field: sqavg;
+        * src/poundctl.tmpl: Display number of requests and stddev.
+        * src/svc.c (backend_stats_serialize): New function: build 
+        backend statistics object.
+        (backend_serialize): Call backend_stats_serialize.
+
+2023-02-05  Sergey Poznyakoff  <gray@gnu.org>
+
+        Always compile supervisor code
+
+
+2023-02-05  Sergey Poznyakoff  <gray@gnu.org>
+
+        Revamp logging functions
+
+        * NEWS: Document changes.
+        * doc/pound.8: Likewise.
+        * src/config.c (config_parse): New options: -F, -e.
+        * src/pound.c (vlogmsg): Moved from svc.c.  In verbose mode, log 
+        to syslog as well (if requested).
+        (logmsg): Moved from svc.c
+        (abend): New function.
+        (detach): New function.
+        (main): Use detach to daemonize. Pass log_facility as third
+        argument to openlog.
+        * src/pound.h (abend): New proto.
+
+2023-02-04  Sergey Poznyakoff  <gray@gnu.org>
+
+        Bugfixes
+
+        * src/config.c (parse_error_backend): Initialize local variable.
+        * src/http.c (bio_http_reply_start): Don't use Content-Type:
+        with HTTP 1.0
+        (http_err_reply): Mark connection as closed.
+        (error_response): Set response_code explicitly. Return 0 on
+        success
+        (required by the caller).
+
+2023-02-04  Sergey Poznyakoff  <gray@gnu.org>
+
+        Core statistics in the control output
+
+        * src/pound.c (workers_serialize): New function.
+        * src/pound.h (workers_serialize): New proto.
+        * src/poundctl.tmpl: Output core statistics.
+        * src/svc.c: Add core statistics.
+        * NEWS: Reflect changes.
+
+2023-02-03  Sergey Poznyakoff  <gray@gnu.org>
+
+        Optionally maintain request timing statistics
+
+        * src/config.c (top_level_parsetab): New statement: BackendStats
+        * src/extern.h (enable_backend_stats): New extern.
+        * src/http.c (backend_update_stats): New function.
+        (do_http): Update stats.
+        * src/pound.c (enable_backend_stats): New global.
+        * src/poundctl.tmpl: Print average request processing time.
+        * src/svc.c (backend_serialize): If backend stats are enabled, 
+        add avg_request_time.
+
+2023-02-03  Sergey Poznyakoff  <gray@gnu.org>
+
+        Version 4.4.90
+
+
+2023-02-03  Sergey Poznyakoff  <gray@gnu.org>
+
+        New special backend: Error
+
+        * NEWS: Document changes.
+        * doc/pound.8: Likewise.
+        * src/config.c: New configuration directive: Error (Service
+        section).
+        * src/http.c (error_response): New function.
+        (do_http): Handle the BE_ERROR backend type.
+        * src/pound.h (BE_ERROR): New backend type.
+        (struct be_error): New data type.
+        (BACKEND): Add be_error field.
+        (http_status_to_pound,pound_to_http_status): New protos.
+        * src/svc.c: Handle the BE_ERROR backend type.
+
+        * tests/error.at: New file.
+        * tests/Makefile.am: Add new test.
+        * tests/testsuite.at: Likewise.
+        * tests/errfile.at: Pop the ERR501 define.
+
+2023-02-03  Sergey Poznyakoff  <gray@gnu.org>
+
+        Revamp the BACKEND structure as a union of specific backend
+        types
+
+        * src/pound.h (be_regular, be_redirect)
+        (be_acme): New data types.
+        (BACKEND): Pack type-specific fields into a union.
+        * src/config.c: Reflect changes.
+        * src/http.c: Likewise.
+        * src/svc.c: Likewise.
+
+2023-02-03  Sergey Poznyakoff  <gray@gnu.org>
+
+        Support 303 and 308 redirection codes.
+
+
+2023-02-02  Sergey Poznyakoff  <gray@gnu.org>
+
+        Improve formatting of the error responses
+
+        * src/http.c (HTTP_STATUS): New field: reason.
+        (bio_err_reply): Format the default error page, unless non-NULL 
+        content is given.
+        (err_reply): Remove. All uses updated.
+        * tests/errfile.at: Make custom page sufficiently distinct from 
+        the default one.
+
+2023-02-02  Sergey Poznyakoff  <gray@gnu.org>
+
+        Bugfixes.
+
+        * src/http.c (close_backend): New function.
+        (select_backend): Avoid fd leaks if same backend as the
+        currently active one is returned.
+        (do_http): Remove useless initializations.
+
+2023-02-01  Sergey Poznyakoff  <gray@gnu.org>
+
+        Replace LONG with a special type (typedef) for holding content
+        length values
+
+        * src/config.c: Change handling of MaxRequest directive.
+        * src/extern.h (CHUNK_HEAD): Remove extern.
+        * src/http.c: Use CONTENT_LENGTH instead of LONG.
+        (get_content_length): New function.  Use it to get the value of
+        a content length from its string representation. Use 0 instead
+        of L0, and NO_CONTENT_LENGTH instead of L_1.
+        * src/pound.c: Remove CHUNK_HEAD.
+        * src/pound.h (CONTENT_LENGTH): New typedef.
+        (STRTOCLEN,PRICLEN): New defines.
+        (NO_CONTENT_LENGTH): New define.
+        (LONG,L0,L_1,STRTOL,ATOL,PRILONG): Remove.
+        (POUND_HTTP): Change type of the res_bytes fields.
+        (LISTENER): Change type of the max_req field.
+        * src/svc.c (vlogmsg): serialize access to stdout and stderr.
+
+2023-02-01  Sergey Poznyakoff  <gray@gnu.org>
+
+        Bugfix
+
+        * src/pound.c (pound_http_dequeue): Keep track of the actual
+        worker count.
+
+2023-01-31  Sergey Poznyakoff  <gray@gnu.org>
+
+        Use response code to decide about ws_state, content availability
+        etc.
+
+        * src/extern.h (RESP_SKIP, RESP_IGN): Remove.
+        * src/pound.c: Likewise.
+        * src/http.c (backend_response): Use response code alone,
+        instead of relying on regexps.
+
+2023-01-31  Sergey Poznyakoff  <gray@gnu.org>
+
+        Move backend selection and backend handling code to separate
+        functions.
+
+        * src/http.c (redirect_response,acme_response)
+        (http_log,backend_response): Simplify arguments.
+        (bio_callback): Handle BIO_CB_FREE.
+        (set_callback): Change signature. Allocate the callback
+        argument. It will be freed by bio_callback.
+        (send_to_backend): New function.
+        (open_backend,select_backend): New functions.
+        (do_http): Use send_to_backend and select_backend.
+        * src/pound.h (POUND_HTTP): New fields: svc, backend,
+        reneg_state.
+        (control_response): Change signature.
+        * src/svc.c (control_response): Simplify arguments.
+
+2023-01-31  Sergey Poznyakoff  <gray@gnu.org>
+
+        Fix missing extern
+
+
+2023-01-30  Sergey Poznyakoff  <gray@gnu.org>
+
+        Rename THR_ARG to POUND_HTTP.
+
+        Queue management functions renamed accordingly:
+
+        s/thr_arg_enqueue/pound_http_enqueue/g 
+        s/thr_arg_dequeue/pound_http_dequeue/g 
+        s/thr_arg_destroy/pound_http_destroy/g
+
+2023-01-30  Sergey Poznyakoff  <gray@gnu.org>
+
+        Move backend to client interaction into a separate function.
+
+        * src/http.c (redirect_reply): Rename to redirect_response,
+        change signature.
+        (acme_reply): Rename to acme_response, change signature.
+        (http_log): Change signature. Take all information from THR_ARG
+        and backend.
+        (backend_response): New function.
+        (do_http): Move backend -> client part to backend_response, call 
+        that function.
+        * src/pound.h (THR_ARG): New fields: ws_state, no_cont,
+        conn_closed, start_req, response_code, res_bytes.
+        * src/svc.c (control_reply): Rename to control_response. Change 
+        signture.
+
+2023-01-26  Sergey Poznyakoff  <gray@gnu.org>
+
+        Discontinue support for RPC over HTTP
+
+        * NEWS: Document changes.
+        * doc/pound.8: Document changes.
+        * src/config.c (listener_parse_xhttp): Allowed range for xHTTP
+        is now 0..3
+        * src/http.c: Remove RPC over HTTP cruft.
+        * src/pound.h: Likewise.
+        * tests/xhttp.at: Remove related tests.
+
+2023-01-26  Sergey Poznyakoff  <gray@gnu.org>
+
+        Always use the same version in responses as the one in the
+        request.
+
+        * src/http.c (bio_http_reply_start,bio_http_reply)
+        (bio_err_reply): New functions.
+        (err_reply): Take THR_ARG* as arg 1. All uses updated.
+        (redirect_reply): Use bio_http_reply to format response
+        according to the HTTP version in request.
+        (acme_reply): Use bio_http_reply_start for the same purpose.
+        (force_http_10): New function.
+        (do_http): Remove force_10 local.
+
+2023-01-21  Sergey Poznyakoff  <gray@gnu.org>
+
+        Fix typo in README.md
+
+
+2023-01-20  Sergey Poznyakoff  <gray@gnu.org>
+
+        Revise the README.md
+
+
+2023-01-19  Sergey Poznyakoff  <gray@gnu.org>
+
+        Fix recent version number in NEWS
+
+
+2023-01-19  Sergey Poznyakoff  <gray@gnu.org>
+
+        Version 4.4
+
+
+2023-01-19  Sergey Poznyakoff  <gray@gnu.org>
+
+        Revise the docs
+
+
+2023-01-19  Sergey Poznyakoff  <gray@gnu.org>
+
+        Remove references to now not existing Apsis web page and
+        address.
+
+
+2023-01-19  Sergey Poznyakoff  <gray@gnu.org>
+
+        Fix expansion of %0 in Host matcher.
+
+        * src/http.c (expand_url): Fix subgroup range checking
+        * src/pound.h (COND_HOST): New SERVICE_COND type.
+        * src/config.c (parse_cond_host): Create COND_HOST node.
+        * src/svc.c (match_cond): For COND_HOST, adjust subject and
+        regmatch_t offset so they refer to the header value.
+
+2023-01-19  Sergey Poznyakoff  <gray@gnu.org>
+
+        Back-references to headers in Redirect and ACME statements
+
+        * NEWS: Document changes.
+        * doc/pound.8: Document changes.
+        * doc/poundctl.tmpl.5: Spell check
+        * src/config.c: Rewrite handling of URL, Header and Host
+        directives.
+        * src/http.c (expand_url): Assume sm points to an array of two
+        struct submatch element. Treat $N as references to sm[SM_URL]
+        and %N as references to sm[SM_HDR].
+        * src/pound.c (thr_arg_destroy): Free both sm elements.
+        * src/pound.h (struct submatch): New field: subject.
+        (THR_ARG): Change type of sm.
+        * src/svc.c (submatch_reset): Reset subject to NULL.
+        (match_headers, match_cond): Rewrite submatch handling.
+        * tests/redirect.at: Add new tests.
+        * tests/url.at: Add new tests.
+
+2023-01-18  Sergey Poznyakoff  <gray@gnu.org>
+
+        Add "all" keyword to HeaderOption
+
+
+2023-01-18  Sergey Poznyakoff  <gray@gnu.org>
+
+        Revise header modification directives.
+
+        * src/config.c (POUND_DEFAULTS): New field: header_options.
+        (parse_header_options): New function.
+        (listener_alloc): Initialize header_options.
+        (http_parsetab, https_parsetab, top_level_parsetab): New
+        directive: HeaderOption.
+        * src/http.c (http_header_list_locate_name): New function.
+        (http_header_list_append): Check if the header being added is
+        already in the list.  If so, act as instructed by the "replace"
+        argument.
+        (http_header_list_append_list): Likewise.
+        (add_forwarded_headers): New function.
+        (do_http): Apply all header modifications after having selected
+        the service.  First, canned headers are added, then user-defined
+        headers added, then header removal directives are applied.
+        * src/pound.h (http_header_list_append): Change signature.  All
+        uses changed.
+
+        * tests/Makefile.am: Add new tests.
+        * tests/https.at: Remove unnecessary ClientCert directive.
+        * tests/optfwd.at: New test.
+        * tests/optorder.at: New test.
+        * tests/optssl.at: New test.
+        * tests/poundharness.pl: New variable expansions: LISTENER:PORT
+        and LISTENER:IP.  Same for BACKEND.
+        * tests/testsuite.at: Include new tests.
+
+        * NEWS: Document changes.
+        * doc/pound.8: Document changes.
+        * configure.ac: Version 4.3.90
+
+2023-01-17  Sergey Poznyakoff  <gray@gnu.org>
+
+        Minor fixes
+
+
+2023-01-17  Sergey Poznyakoff  <gray@gnu.org>
+
+        Fix request parsing
+
+        * src/pound.h (http_request): New fields: method, version, url.
+        (cpURL): Remove.
+        * src/http.c (http_request_free): Free url.
+        (parse_http_request): Rewrite.
+        (do_http): Document int variables. Remove url buffer.
+        * src/svc.c (cpURL): Remove.
+
+2023-01-17  Sergey Poznyakoff  <gray@gnu.org>
+
+        Revert debugging changes
+
+
+2023-01-16  Sergey Poznyakoff  <gray@gnu.org>
+
+        Revise need_rewrite
+
+        * src/http.c (do_http): Check for lstn->rewr_loc prior to
+        calling need_rewrite.  Get rid of the loc_path buffer.
+        (http_request_free): Free user.
+        * src/svc.c (need_rewrite): Change signature.  Return a pointer
+        to the path portion of the location, instead of copying it to a
+        fixed-size buffer.  Don't modify the original location.
+
+2023-01-16  Sergey Poznyakoff  <gray@gnu.org>
+
+        Keep http-processing data in the structure passed to do_http.
+
+        * src/pound.h (THR_ARG): Keep http-processing data during
+        do_http.
+        * src/http.c (listener_err_reply): Remove.
+        (http_err_reply): New function,
+        (add_ssl_headers): Change signature.
+        (clean_all): Remove macro.
+        (do_http): Rewrite using new THR_ARG fields.  Simplify error
+        handling.
+        (thr_http): Destroy arg after return from do_http.
+        * src/pound.c (put_thr_arg): Rename to thr_arg_enqueue; change 
+        signature.  All uses changed.
+        (get_thr_arg): Rename to thr_arg_dequeue.  All uses changed.
+        (thr_arg_destroy): New function.
+
+2023-01-16  Sergey Poznyakoff  <gray@gnu.org>
+
+        Switch to doubly-linked list storage for headers
+
+        * src/config.c (append_string_line): Remove.
+        (append_header): New function. Used for HeaderAdd statements.
+        * src/http.c (qualify_header)
+        (http_header_alloc,http_header_free)
+        (http_header_change,http_header_copy_value)
+        (http_header_get_value,http_header_list_append)
+        (http_header_list_append_list,http_header_list_free)
+        (http_header_list_remove,http_header_list_filter)
+        (http_header_list_locate): New functions.
+        (http_request_line,http_request_header_value)
+        (http_request_host): Request accessors.
+        (http_request_free,http_request_read): New functions.
+        (get_headers): Remove.
+        (get_user): Change signature.
+        (http_log_0, http_log_1, http_log_2, http_log_3)
+        (http_log_4, http_log_5, http_log): Simplify argument list. Take
+        request and response (struct http_request *) instead of several
+        textual arguments.  Retrieve data from both as needed.
+        (http_request_send, add_ssl_headers): New functions.
+        (do_http): Remove most fixed-size buffers.  Keep collected 
+        request and response for as long as needed.
+        * src/pound.h (MAXHEADERS): Remove.
+        (http_header,http_request)
+        (HTTP_HEADER_LIST): New data types.
+        (http_header_list_append,http_request_free): New protos.
+        (http_request_init): New inline function.
+        (LISTENER): Rename add_head to add_header, change its type to
+        HTTP_HEADER_LIST.
+        (get_service,upd_session): Change signatures.
+        (check_header): Remove.
+        * src/svc.c (check_header): Remove.
+        (match_headers,match_cond,match_service)
+        (get_service,get_HEADERS,get_backend)
+        (upd_session): Change signature.
+        * tests/atlocal.in: Define PERL_HTTP_TINY_IPV4_ONLY.
+
+2023-01-13  Sergey Poznyakoff  <gray@gnu.org>
+
+        Change handling of the basic authorization header
+
+        * src/pound.c (AUTHORIZATION): Remove. All uses changed.
+        * src/http.c (get_user): New function.
+        (do_http): Use get_user to extract user name from the header
+        value.
+        * src/pound.h (HEADER_ constants): Use enum.
+        (HEADER_AUTHORIZATION): New constant.
+        * src/svc.c (check_header): Handle "Authorization" header.
+
+2023-01-13  Sergey Poznyakoff  <gray@gnu.org>
+
+        Version 4.3
+
+
+2023-01-12  Sergey Poznyakoff  <gray@gnu.org>
+
+        Ensure proper handling of memory allocation failures.
+
+        * src/pound.h (stringbuf): New fields: nomem, err.
+        (stringbuf_init): Change signature.
+        (stringbuf_add, stringbuf_add_char, stringbuf_add_string)
+        (stringbuf_vprintf, stringbuf_printf): Change return type.
+        (stringbuf_err): New function.
+        (xstringbuf_init, stringbuf_init_log): New functions.
+
+        * src/json.h: Protect against double inclusion.
+        * src/list.h: Likewise.
+
+        * src/json.c (json_array_insert, json_array_append)
+        (json_array_set, json_array_get): Bail out if any of input
+        pointers is NULL.
+
+        * src/mem.c (stringbuf_init): Change signature.  Second argument 
+        supplies memory allocation failure hook (can be NULL).
+        (stringbuf_expand): Static function.  Return error code.  Call 
+        nomem handler on out of memory errors.
+        (stringbuf_add_char, stringbuf_add, stringbuf_add_string)
+        (stringbuf_vprintf): Use stringbuf_expand.  Return error code.
+        (stringbuf_printf): Return error code.
+        (stringbuf_set): Use stringbuf_expand.  Return NULL on memory
+        failures.
+        (stringbuf_finish): Fail if stringbuf error indication is set.
+
+        * src/poundctl.c: Bail out on memory allocation failures.
+        * src/tmpl.c: Likewise.
+        * src/config.c: Likewise.
+
+        * src/http.c: Use stringbuf_init_log.  Handle memory allocation 
+        errors gracefully.
+        * src/pound.c (lognomem): New function. During startup, use
+        functions that exit on memory allocation failures. During normal
+        operation, handle such failures gracefully.
+        * src/svc.c (service_session_serialize, backend_serialize)
+        (backends_serialize, service_serialize)
+        (listener_serialize, pound_serialize)
+        (send_json_reply, list_handler, disable_handler)
+        (session_remove_handler, session_add_handler) : Handle memory
+        allocation failures in stringbuf and json functions gracefully.
+
+2023-01-11  Sergey Poznyakoff  <gray@gnu.org>
+
+        Fix parsing of the certificate subject
+
+        * src/config.c (get_subjectaltnames): Change signature. Assume 
+        subjectAltNames may be partially filled.
+        (https_parse_cert): Use X509_NAME_get_index_by_NID to parse
+        subject.
+        * src/pound.h (POUND_CTX): Change types of subjectAltNames
+        (char*) and subjectAltNameCount (size_t).
+
+2023-01-10  Sergey Poznyakoff  <gray@gnu.org>
+
+        Manpage formatting fixes
+
+
+2023-01-10  Sergey Poznyakoff  <gray@gnu.org>
+
+        templates: Use is_empty in "if" clauses as well.
+
+        * src/tmpl.c (is_true): Rewrite via is_empty.
+        * doc/poundctl.tmpl.5: Reflect changes.
+        * configure.ac: Raise patchlevel number
+        * NEWS: Update.
+
+2023-01-09  Sergey Poznyakoff  <gray@gnu.org>
+
+        templates: allow for variable assignments in {{with}}
+
+        * doc/Makefile.am (dist_man_MANS): Add poundctl.tmpl.5
+        * doc/poundctl.tmpl.5: New file.
+        * src/poundctl.tmpl: Implement xml output template.
+        * src/tmpl.c (is_empty): New function.
+        (tmpl_with): New structure.
+        (tmpl_action_free): Handle TMPL_ACT_WITH separately.
+        (tmpl_action_eval): Use is_empty when checking the pipeline
+        value in with.  Inherit variables from the current environment. 
+        When evaluating range, create temporary environment.
+        (with_action_parser): Allow for optional variable assignment
+        between
+        {{with and }}.
+
+2023-01-09  Sergey Poznyakoff  <gray@gnu.org>
+
+        Fix some json attributes
+
+        * src/svc.c (service_serialize): Rename "ads_pri" to "abs_pri"
+        (fix typo).
+        (listener_serialize): Rename "enabled" to "active" (for
+        consistency).
+        * src/poundctl.tmpl: Use "active" instead of "enabled".
+
+2023-01-08  Sergey Poznyakoff  <gray@gnu.org>
+
+        Update copyright years
+
+
+2023-01-08  Sergey Poznyakoff  <gray@gnu.org>
+
+        Improve template
+
+        * src/poundctl.c (find_template_file): Initialize undefined
+        variable.
+        * src/poundctl.tmpl: Ignore extra newlines in else clauses.
+
+2023-01-08  Sergey Poznyakoff  <gray@gnu.org>
+
+        Bugfix
+
+
+2023-01-08  Sergey Poznyakoff  <gray@gnu.org>
+
+        Fix template to support listener/service/backend specifications
+
+        * doc/poundctl.8: Document changes.
+        * src/config.c (print_version): Move to progname.c, with minor 
+        changes.
+        * src/pound.h (POUND_TMPL_PATH): Search for ~/.poundctl.tmpl
+        first.
+        (string_value_type, string_value): New types.
+        (print_version): New proto.
+        * src/poundctl.c: Change options names: -f supplies the pound 
+        config file name, -t supplies the template file name.
+        (command_add_session)
+        (command_delete_session): Use templates.
+        (usage): Print bug-reporting info.
+        (find_template_file): Path can contain both directory and
+        regular file names.
+        (main): Support the -V option.
+        * src/poundctl.tmpl: Implement heuristics to determine the kind 
+        of object passed.
+        * src/tmpl.c: New builtin functions: typeof and exists.
+
+2023-01-07  Sergey Poznyakoff  <gray@gnu.org>
+
+        Implement template engine for poundctl
+
+
+2022-12-31  Sergey Poznyakoff  <gray@gnu.org>
+
+        Minor fix in poundctl
+
+        * src/poundctl.c (print_services): Fix conditional to avoid 
+        spurious error message.
+
+2022-12-31  Sergey Poznyakoff  <gray@gnu.org>
+
+        Version 4.2
+
+
+2022-12-27  Sergey Poznyakoff  <gray@gnu.org>
+
+        Minor changes.
+
+        * NEWS: Update.
+        * src/json.c: Add missing checks for failed memory allocations.
+        (json_memabrt): New global.  Points to a function that will be 
+        invoked when an out-of-memory error occurs.
+        * src/json.h (json_memabrt): New proto.
+
+2022-12-22  Sergey Poznyakoff  <gray@gnu.org>
+
+        Minor fix
+
+
+2022-12-22  Sergey Poznyakoff  <gray@gnu.org>
+
+        Minor fix
+
+        * src/poundctl.c (print_services): Skip empty arrays.
+
+2022-12-22  Sergey Poznyakoff  <gray@gnu.org>
+
+        Rewrite http logging (access-style logs)
+
+        * src/config.c (parse_session): Free string buffer.
+        (parse_log_level): New function.  Make sure the provided log
+        level value is between 0 and 5.
+        * src/http.c (redirect_reply, copy_bin, acme_reply)
+        (get_line, copy_chunks, bio_callback)
+        (is_readable, get_headers): Remove superfluous const qualifiers.
+        (http_log): New function. Single entry point for producing http
+        logs.
+        (do_http): Use http_log.
+        * src/pound.h (timespec_cmp, timespec_sub): New inline
+        functions.
+        (str_be): Remove macro.  Redefine as function prototype.
+        * src/svc.c (str_be): New function.
+
+2022-12-20  Sergey Poznyakoff  <gray@gnu.org>
+
+        Clean-up http status code usage
+
+
+2022-12-19  Sergey Poznyakoff  <gray@gnu.org>
+
+        Bugfix
+
+        * src/poundctl.c (xgets): Remove trailing \r\n
+
+2022-12-19  Sergey Poznyakoff  <gray@gnu.org>
+
+        Don't allow to disable control interface.
+
+
+2022-12-19  Sergey Poznyakoff  <gray@gnu.org>
+
+        Use REST API for control requests.
+
+        * configure.ac: Check for ranlib.
+        * doc/poundctl.8: Rewrite.
+        * src/Makefile.am (libpound.a): New non-installable library.
+        * src/config.c: Move memory management functions to mem.c
+        (sess_type_to_str): New function.
+        (listener_parse_xhttp): Set an integer verb class in the range 
+        0-4
+        (listener_alloc): Set verb class 0
+        (parse_control_global): New function.  Define a special
+        listener/ service/backend for handling control requests.
+        * src/extern.h (ctrl_name,control_sock): Remove.
+        * src/http.c (do_http): Parse HTTP request line into method, uri 
+        and HTTP version. Handle control requests (backend type
+        BE_CONTROL) separately.
+        * src/json.c: New file.
+        * src/json.h: New file.
+        * src/mem.c: New file.
+        * src/pound.c (ctrl_name,control_sock): Remove.
+        (server): Don't start separate thr_control thread. Flush cleanup
+        queue before exiting.
+        * src/pound.h: HTTP method definitions.
+        (BE_CONTROL): New backend type.
+        (LISTENER): Change type of verb to int - a verb class number.
+        (thr_control): Remove.
+        (control_reply,pound_atexit,unlink_file): New proto.
+        * src/poundctl.c: Rewrite from scratch.
+        * src/svc.c: Rewrite control request processing from scratch.
+
+2022-12-18  Sergey Poznyakoff  <gray@gnu.org>
+
+        Fix the DLIST_REMOVE_HEAD macro
+
+
+2022-12-16  Sergey Poznyakoff  <gray@gnu.org>
+
+        Minor fix
+
+
+2022-12-16  Sergey Poznyakoff  <gray@gnu.org>
+
+        Version 4.1.90
+
+
+2022-12-16  Sergey Poznyakoff  <gray@gnu.org>
+
+        Redo periodic operation support
+
+        The timer thread is rewritten completely in order to do periodic 
+        operations (such as backend probing and session expiration) 
+        precisely when needed and lower the incurred CPU usage.
+
+        Timer thread now supports scheduling of arbitrary periodic jobs 
+        and schedule editing.
+
+        Whenever a backend is marked as dead, a periodic job is
+        scheduled for "alive_to" seconds from the current time, which
+        will probe the backend and either mark it as alive (if it
+        responds) or reschedule itself for a later time (if it does
+        not).  Thus, no unnecessary iterations over
+        listeners/servers/backends occur.
+
+        The "haport" feature has been removed, as I see no much use in
+        it now.
+
+        Sessions are kept on per-service basis in a combined structure 
+        consisting of a hash table (to quickly look-up a session) and a
+        doubly-linked list (to provide for session expiration). 
+        Sessions within the latter are sorted by their expiration time. 
+        A periodic job is scheduled to the expiration time of the first
+        session in the list, i.e. the least recently used one.  When the
+        job has removed the expired session, it reschedules itself to
+        the expiration time of the next session (which becomes first in
+        the list), if any.
+
+        * src/list.h: Bugfixes.
+        * src/pound.h (struct session): Replace last access time with 
+        expiration time (struct timespec).
+        (EXPIRE_TO, HOST_TO): Remove.
+        (job_enqueue_unlocked, job_enqueue_after_unlocked)
+        (job_enqueue, job_enqueue_after)
+        (job_rearm_unlocked,job_rearm): New protos.
+        (BACKEND): New field: service.  Remove field: resurrect,
+        ha_addr.
+
+        * src/svc.c: Revamp session support. Remove do_expire. Sessions
+        are stored in per-service session tables and are ordered by
+        their expiration time.  The expire_sessions periodic job is
+        scheduled to the expiration time of the first session in the
+        list, i.e. the least recently used one.
+        (touch_be): New function.
+        (kill_be): Enqueue the touch_be job if the backend went offline.
+        (do_resurrect): Remove.
+        (job_head, job_mutex, job_cond): New static.
+        (job_enqueue_unlocked, job_enqueue_after_unlocked)
+        (job_enqueue, job_enqueue_after): New functions.
+        (thr_timer): Rewrite.
+
+        * src/config.c (parse_service): Set pointer to the owner service 
+        for each backend.
+        * tests/config.at: Remove the haport check.
+
+2022-12-15  Sergey Poznyakoff  <gray@gnu.org>
+
+        Minor fix
+
+        * src/http.c (do_http): Use ai_addrlen==0 to check for not
+        defined address.
+
+2022-12-14  Sergey Poznyakoff  <gray@gnu.org>
+
+        Add doubly-linked list macros.  Rewrite backend availability
+        checking
+
+        * src/list.h: New file.
+        * src/Makefile.am: Add new file.
+        * src/pound.h: Include list.h
+        * src/svc.c (do_resurect): Rewrite.  Rename to do_resurrect.
+        (session-related functions): Use DLIST_* macros.
+
+2022-12-13  Sergey Poznyakoff  <gray@gnu.org>
+
+        Rewrite timer thread.  Clean up unused vars.
+
+
+2022-12-13  Sergey Poznyakoff  <gray@gnu.org>
+
+        Use SSL_CTX_set_dh_auto when available
+
+
+2022-12-13  Sergey Poznyakoff  <gray@gnu.org>
+
+        Rewrite session tracking code
+
+        * README.md: Update.
+        * configure.ac: Check for librt.
+        * src/config.c: Remove support for OpenSSL prior to 1.0 Move
+        session hashing code to svc.c
+        * src/http.c: Remove support for OpenSSL prior to 1.0.
+        * src/pound.c: Likewise.
+        * src/pound.h (TABNODE): Rename to SESSION. Remove contents
+        field, replace it with backend. Link session into a doubly-linked
+        list, ordered by access time (least recently used first).
+        (SESSION_TABLE): New structure.
+        (session_table_new): New function.
+        (SERVICE): Change type of the "sessions" field to
+        SESSION_TABLE*.
+        * src/svc.c: Remove support for OpenSSL prior to 1.0 Rewrite
+        session tracking.
+
+2022-12-10  Sergey Poznyakoff  <gray@gnu.org>
+
+        Version 4.1
+
+
+2022-12-10  Sergey Poznyakoff  <gray@gnu.org>
+
+        Bugfix
+
+        * src/config.c (backend_parsetab): Restore missing "Disabled"
+        keyword.
+
+2022-12-09  Sergey Poznyakoff  <gray@gnu.org>
+
+        Bugfix
+
+        * src/pound.c (active_threads_wait): Fix timeout calculation.
+
+2022-12-09  Sergey Poznyakoff  <gray@gnu.org>
+
+        Disable idle timeout for initial worker threads.
+
+
+2022-12-09  Sergey Poznyakoff  <gray@gnu.org>
+
+        Rework the worker model
+
+        * NEWS: Document changes.
+        * doc/pound.8: Document changes.
+        * configure.ac: Version 4.0.90
+        * src/config.c: New configuration parameters: WorkerMinCount, 
+        WorkerMaxCount and WorkerIdleTimeout.
+        * src/extern.h (numthreads): Remove.
+        (worker_min_count, worker_max_count)
+        (worker_idle_timeout): New externs.
+        * src/http.c (thr_http): Return if get_thr_arg returns NULL.
+        * src/pound.c (numthreads): Remove.
+        (worker_min_count, worker_max_count)
+        (worker_idle_timeout): New variables.
+        (put_thr_arg): Start new worker if all existing workers are busy 
+        and worker_max_count is not yet reached.
+        (get_thr_arg): Return NULL if a spare thread remains idle for 
+        too long.
+        * src/pound.h (DEFAULT_NUMTHREADS): Remove.
+        (DEFAULT_WORKER_MIN, DEFAULT_WORKER_MAX)
+        (DEFAULT_WORKER_IDLE_TIMEOUT): New defines.
+
+2022-12-09  Sergey Poznyakoff  <gray@gnu.org>
+
+        New configuration directive: PIDFile
+
+
+2022-12-08  Sergey Poznyakoff  <gray@gnu.org>
+
+        Create PID file and have OpenSSL open /dev/urandom before
+        chrooting
+
+
+2022-12-08  Sergey Poznyakoff  <gray@gnu.org>
+
+        Clean-up in the service matching code.
+
+        This commit updates (and, partially, reverts) a816aada0f. The
+        HeaderRequest and HeaderDeny, introduced in a816aada0f, are
+        removed.  New statement "Header" is added as a replacement for 
+        HeaderRequest.  The "HeadDeny" is implemented as "Not Header",
+        which should really be used instead of it.
+
+        * NEWS: Reflect changes.
+        * doc/pound.8: Likewise.
+        * README.md: Revise the docs.
+        * src/config.c: The HeaderRequest and HeaderDeny, introduced in
+        a816aada0f, are removed.  New statement "Header" is added as a
+        replacement for HeaderRequest.
+        * src/pound.h (BOOL_NOT): New constant.
+        (COND_HDR_DENY): Remove.  Use a combination of
+        COND_BOOL(BOOL_NOT) and COND_HDR to implement it.
+        (COND_HDR_REQ): Rename to COND_HDR.
+        (COND_COMPOUND): Rename to COND_BOOL.
+        * src/svc.c (match_cond): Update accordingly.
+
+2022-12-07  Sergey Poznyakoff  <gray@gnu.org>
+
+        Bugfixes
+
+        * NEWS: Update.
+        * src/config.c (assign_log_facility): Check return value from 
+        gettkn_expect_mask.
+        * src/http.c (do_http): Fix logging the response code.
+
+2022-12-07  Sergey Poznyakoff  <gray@gnu.org>
+
+        New statement: Host
+
+
+2022-12-07  Sergey Poznyakoff  <gray@gnu.org>
+
+        New configuration keyword: "not"
+
+        * NEWS: Document changes.
+        * doc/pound.8: Document changes.
+        * src/config.c: Fix ACL handling (ACL lists not needed after the
+        previous commit). New keyword "not" negates the result of a
+        request matching directive.
+        * src/pound.h (ACL_REF): Remove.
+        (ACL_HEAD): Change definition.
+        (simple_service_cond): Remove unused data type.
+        (COND_NEGATE): New condition type.
+        (acl_list_match): Remove.
+        (acl_match): New prototype.
+        * src/svc.c (match_cond): Rewrite ACL handling. Handle
+        COND_NEGATE.
+        * tests/not.at: New test.
+        * tests/Makefile.am: Add new test.
+        * tests/testsuite.at: Add new test.
+
+2022-12-07  Sergey Poznyakoff  <gray@gnu.org>
+
+        Use logical operators to join request matching directives.
+
+        * NEWS: Document changes.
+        * doc/pound.8: Document changes.
+        * src/config.c: Change parsing of the request matching
+        directives.
+        * src/pound.h (SERVICE_COND): New type.
+        * src/svc.c (match_service): Rewrite.
+        * tests/or.at: New test.
+        * tests/Makefile.am: Add new test.
+        * tests/testsuite.at: Likewise.
+
+2022-12-06  Sergey Poznyakoff  <gray@gnu.org>
+
+        Bugfix
+
+        * src/svc.c (match_headers): Upper limit is MAXHEADERS-1 because 
+        this function is passed &headers[1]
+
+2022-12-06  Sergey Poznyakoff  <gray@gnu.org>
+
+        Add new test.
+
+        * tests/headdeny.at: New test.
+        * tests/Makefile.am: Add new test.
+        * tests/testsuite.at: Likewise.
+        * doc/pound.8: Fix typo.
+        * src/svc.c (match_service): Minor fix.
+
+2022-12-06  Sergey Poznyakoff  <gray@gnu.org>
+
+        Alternative spelling for header matching/manipulation directives
+
+        * NEWS: Document changes.
+        * doc/pound.8: Document changes.
+        * src/config.c (service_parsetab): New directives:
+        "HeaderRequire" and "HeaderDeny", synonymous to "HeadRequire"
+        and "HeadDeny", correspondingly.
+        (http_parsetab,https_parsetab): New directives "HeaderRemove"
+        and
+        "HeaderAdd", synonymous to "HeadRemove" and "AddHeader",
+        correspondingly.
+
+2022-12-05  Sergey Poznyakoff  <gray@gnu.org>
+
+        ACL support
+
+        * NEWS: Document changes.
+        * doc/pound.8: Document changes.
+        * src/config.c: New statement "ACL", in global and service
+        contexts.
+        * src/pound.h (ACL, ACL_REF, ACL_HEAD): New aggregate types.
+        (acl_list_match): New proto.
+        (struct _service): New field: acl.
+        (get_service): Change signature.
+        * src/svc.c (get_service): Take source address as argument.  Use 
+        acl_list_match.
+        * src/http.c: Update calls to get_service.
+
+2022-12-04  Sergey Poznyakoff  <gray@gnu.org>
+
+        New service type: ACME
+
+        The ACME service handles ACME HTTP-01 challenges.  It is defined
+        as follows:
+
+          ListenHTTP
+           ACME "directory"
+
+        Its argument specifies the directory where ACME challenges are
+        stored.
+
+        * NEWS: Document changes.
+        * doc/pound.8: Document changes.
+        * src/config.c (http_parsetab): New statement: Err404, ACME.
+        * src/http.c (redirect_reply) Return HTTP status code.
+        (acme_reply): New function.
+        (do_http): Handle ACME challenge requests.
+        * src/pound.h (SLIST_PUSH): Bugfix: initialize (ent)->field.
+        (BACKEND_TYPE): New enum.
+        (struct _backend): be_type: change type to BACKEND_TYPE.  All
+        uses changed. New field: redir_code.
+        * src/svc.c: Update.
+        * tests/Makefile.am: Add new test.
+        * tests/acme.at: New test.
+        * tests/testsuite.at: Add new test.
+
+2022-12-03  Sergey Poznyakoff  <gray@gnu.org>
+
+        URL expansion in Redirect statement
+
+        The URL argument to the Redirect statement can contain
+        references to parenthesized subexpressions in the most recently
+        matched URL statement of the enclosing Service.  References are
+        of the form $N, where N is the number of the parenthesized
+        subgroup.  To insert literal $ sign, use $$.
+
+        * src/config.c (stringbuf_add): New function.
+        (parse_service): Warn if service defines no backends.
+        * src/http.c (expand_url): New function.
+        (redirect_reply): Rewrite.  Expand subexpressions in the
+        redirect URL.
+        (clean_all): Free sm (struct submatch).
+        (do_http): New variable sm keeps submatches obtained from
+        matching the recent URL statement in the service.
+        * src/pound.h (submatch): New data type.
+        (get_service): Change signature.
+        (stringbuf_add): New proto.
+        * src/svc.c (match_service): Take pointer to struct submatch as
+        fourth argument.  Fill it with submatches from the most recent
+        matched URL.
+        (get_service): Likewise. Fix iteration over headers.
+        * tests/redirect.at: Test URL expansion in Redirect statements.
+        * doc/pound.8: Document changes.
+        * NEWS: Document changes.
+
+2022-12-03  Sergey Poznyakoff  <gray@gnu.org>
+
+        Fix redirection code
+
+        * src/http.c (redirect_reply): Don't use %zu specifier.
+        * tests/Makefile.am: Add new test.
+        * tests/testsuite.at: Add new test.
+        * tests/redirect.at: New test.
+
+2022-12-03  Sergey Poznyakoff  <gray@gnu.org>
+
+        Use sizeof to pass size of a buffer
+
+
+2022-12-02  Sergey Poznyakoff  <gray@gnu.org>
+
+        Version 4.0
+
+
+2022-12-02  Sergey Poznyakoff  <gray@gnu.org>
+
+        Minor fix
+
+        * src/http.c (redirect_reply): Don't use fixed-size buffers.
+        This is mainly to avoid spurious compiler diagnostics and
+        diminish stack usage.
+
+2022-12-01  Sergey Poznyakoff  <gray@gnu.org>
+
+        Various fixes
+
+        * configure.ac: Change email address. Fix m4 quoting. Rewrite
+        checks for libraries. Print status summary at the end of run.
+        * doc/pound.8: Change email address.
+        * doc/poundctl.8: Likewise.
+        * src/Makefile.am (noinst_HEADERS): Remove stray entry.
+        * src/config.c: Fix help output alignment.
+        * src/http.c (do_http): Remove unnecessary debug message.
+        * tests/https.at: Use 2048 bit RSA to prevent OpenSSL from 
+        complaining.
+        * tests/virthost.at: Likewise.
+
+2022-12-01  Sergey Poznyakoff  <gray@gnu.org>
+
+        Optionally disable DNS lookups
+
+        * doc/pound.8: Document the -W option.
+        * src/config.c: New option -W. Use -W no-dns to disable DNS
+        lookups.
+        * src/extern.h (feature_is_set): New prototype.
+        * src/svc.c (get_host): Disable DNS lookups if FEATURE_DNS is
+        unset.
+        * tests/poundharness.pl: Use -Wno-dns.
+        * tests/testsuite.at: Likewise.
+
+2022-12-01  Sergey Poznyakoff  <gray@gnu.org>
+
+        Switch to gnu strictness level
+
+
+2022-12-01  Sergey Poznyakoff  <gray@gnu.org>
+
+        Build README from README.md
+
+        * .gitignore: Add README
+        * Makefile.am: Add maintainer rules.  Build README.
+        * README.md: Minor changes.
+        * configure.ac: Test if we're building from cloned git repo.
+        * md2txt.pl: New file.
+
+2022-11-25  Sergey Poznyakoff  <gray@gnu.org>
+
+        Add NEWS
+
+
+2022-11-23  Sergey Poznyakoff  <gray@gnu.org>
+
+        Revise pound.8
+
+
+2022-11-23  Sergey Poznyakoff  <gray@gnu.org>
+
+        Switch to deep directory structure
+
+
+2022-11-23  Sergey Poznyakoff  <gray@gnu.org>
+
+        Fix typo
+
+
+2022-11-23  Sergey Poznyakoff  <gray@gnu.org>
+
+        Tests for load balancing
+
+        * tests/Makefile.am: Add new tests.
+        * tests/testsuite.at: Likewise.
+        * tests/poundharness.pl: Implement statistics mode.
+        * tests/balancing.at: New file.
+        * tests/prio.at: New file.
+        * tests/sessauth.at: New file.
+        * tests/sesscookie.at: New file.
+        * tests/sesshdr.at: New file.
+        * tests/sessip.at: New file.
+        * tests/sessparm.at: New file.
+        * tests/sessurl.at: New file.
+
+2022-11-21  Sergey Poznyakoff  <gray@gnu.org>
+
+        config: apply range limiting to the Priority value
+
+
+2022-11-21  Sergey Poznyakoff  <gray@gnu.org>
+
+        Remove superfluous typecasts
+
+
+2022-11-21  Sergey Poznyakoff  <gray@gnu.org>
+
+        Provide macros for printing pthread_t.  Other minor fixes.
+
+
+2022-11-21  Sergey Poznyakoff  <gray@gnu.org>
+
+        Fix typos in extract_cn and is_class
+
+
+2022-11-21  Sergey Poznyakoff  <gray@gnu.org>
+
+        Fix default configuration file pathname * config.c
+        (config_parse): Remove superfluous SYSCONFDIR.
+
+
+2022-11-20  Sergey Poznyakoff  <gray@gnu.org>
+
+        Fix SocketFrom server/client interaction
+
+        * pound.c (main): Don't try to create|bind|listen if the socket
+        descriptor is not -1, i.e. if it has been obtained via
+        SocketFrom
+        * tests/poundharness.pl: listen on the created socket if it is
+        going to be passed to pound.
+
+2022-11-20  Sergey Poznyakoff  <gray@gnu.org>
+
+        Rewrite list support using macros.
+
+        * pound.h: Move externs to extern.h
+        (SLIST_HEAD,SLIST_HEAD_INITIALIZER,SLIST_ENTRY)
+        (SLIST_INIT,SLIST_PUSH,SLIST_SHIFT,SLIST_FOREACH)
+        (SLIST_COPY,SLIST_FIRST,SLIST_EMPTY,SLIST_NEXT): New macros.
+        (MATCHER, BACKEND, SERVICE)
+        (POUND_CTX, LISTENER): Change type of the next field.
+        (MATCHER_HEAD, BACKEND_HEAD, SERVICE_HEAD)
+        (POUND_CTX_HEAD, LISTENER_HEAD): New aggregate types.
+        * extern.h: New file.
+        * Makefile.am (noinst_HEADERS): Add new files.
+        * config.c: Include extern.h Use SLIST macros to manipulate
+        lists.
+        (parse_emergency): Only one emergency block is allowed.
+        * http.c: Use SLIST macros to manipulate lists.
+        * pound.c: Likewise.
+        * svc.c: Likewise.
+        * poundctl.c: Likewise.
+
+        * tests/Makefile.am: Add new files.
+        * tests/testsuite.at: Likewise.
+        * tests/https.at: New file.
+        * tests/virthost.at: New file.
+        * tests/poundharness.pl: Add https support and regex matching
+        for headers.
+
+2022-11-19  Sergey Poznyakoff  <gray@gnu.org>
+
+        Minor fixes in manpages
+
+
+2022-11-19  Sergey Poznyakoff  <gray@gnu.org>
+
+        Minor fixes
+
+        * config.c (assign_port_internal): Fix hints initialization.
+        * configure.ac: Version 4.0-rc1
+        * README.md: Update.
+        * pound.8: Update.
+        * pound.h (_listener): Remove unused field disable_ssl_v2
+
+2022-11-18  Sergey Poznyakoff  <gray@gnu.org>
+
+        Reorganize documentation files
+
+
+2022-11-18  Sergey Poznyakoff  <gray@gnu.org>
+
+        Bugfixes
+
+        * config.c (parser_loop): Don't modify call_data in the loop.
+        (session_type_parser): Case-insensitive comparison.
+
+2022-11-16  Sergey Poznyakoff  <gray@gnu.org>
+
+        Improve configuration parser. Add two new tests.
+
+        * config.c (parser_loop): Pass session data. All uses updated.
+        (pound_defaults): Remove static variable.
+        (parse_config_file): Initialize defaults in a static variable
+        and pass a pointer to it as both call and session data to
+        parser_loop.
+        * pound.8: Fix typo.
+        * pound.c: Remove leftover casts to void.
+        * pound.h (logmsg,stringbuf_printf): Mark as printf-like,
+        * tests/Makefile.am: Add new tests.
+        * tests/testsuite.at: Add new tests.
+        * tests/headrequire.at: New test.
+        * tests/url.at: New test.
+        * tests/poundharness.pl: Require Perl 5.26.3 or later (needed
+        for sufficiently new HTTP::Tiny, with support for 'pear' request
+        option). Minor fix in the END handler.
+
+2022-11-16  Sergey Poznyakoff  <gray@gnu.org>
+
+        Rewrite addr2str
+
+
+2022-11-16  Sergey Poznyakoff  <gray@gnu.org>
+
+        Minor fix in configuration parser
+
+        * config.c (input_gettkn): Fix recognition of literals that
+        begin with identifier-like sequence (hostnames, in particular).
+        (assign_address_internal): accept any token that has the str
+        field initialized.
+
+2022-11-16  Sergey Poznyakoff  <gray@gnu.org>
+
+        Print compilation defaults on -V
+
+
+2022-11-15  Sergey Poznyakoff  <gray@gnu.org>
+
+        Remove deprecated and obsolescent checks from configure.ac
+
+
+2022-11-15  Sergey Poznyakoff  <gray@gnu.org>
+
+        Rewrite startup and shutdown sequence.  Rewrite supervisor.
+
+        * config.c: New global statement: "Supervisor".
+        * http.c (thr_http): Decrease active thread count upon return
+        from do_http.
+        * pound.8: Document changes.
+        * pound.c: (enable_supervisor, n_listeners)
+        (active_threads): New globals.
+        (get_thr_arg): Increase active_threads.
+        (active_threads_decr): New function.
+        (active_threads_wait): New function. Move main
+        listen-and-dispatch code into a separate thread. Rewrite
+        supervisor and main.
+        * pound.h (enable_supervisor): New extern.
+        (active_threads_decr): New proto.
+
+2022-11-15  Sergey Poznyakoff  <gray@gnu.org>
+
+        Fix connection dequeuing
+
+
+2022-11-15  Sergey Poznyakoff  <gray@gnu.org>
+
+        manpage: consistently use "backend" instead of "back-end"
+
+
+2022-11-15  Sergey Poznyakoff  <gray@gnu.org>
+
+        Fix bugs in handling of MaxRequests and RewriteLocation; add
+        more tests.
+
+        MaxRequests: upon receiving too big a request, error 501 was
+        returned, which is not appropriate.  Change this to return 413
+        instead.  Introduced new listener statement to customize the
+        error message.
+
+        RewriteLocation: Minor bug in handling of the '1' value.  If
+        location pointed to the listener with the wrong protocol, it was
+        not rewritten.
+
+        * config.c: New listener statement: Err413
+        * http.c (h413): New variable.
+        (do_http): Fix bug in max. request size handling: return 413, 
+        instead of 510.
+        * pound.h (_listener): New field: err413.
+        * svc.c (need_rewrite): Fix listener protocol comparison.
+        * pound.8: Document Err413
+        * tests/Makefile.am: Add new tests.
+        * tests/testsuite.at: Likewise.
+        * tests/poundharness.pl: Fix cleanup after send. Headers (both
+        request and expected) may contain variables:
+        ${LISTENER[N]} and ${BACKEND[N]}. Header lines starting with
+        dash mean that this header may not be present in the request. 
+        Fix cleanup after send and content comparison. Add
+        x-backend-ident header to the backend responses. New endpoint:
+        /redirect
+        * tests/config.at: Move definition of PT_CONF to testsuite.at
+        * tests/addheader.at: New test.
+        * tests/checkurl.at: New test.
+        * tests/errfile.at: New test.
+        * tests/headrem.at: New test.
+        * tests/maxrequest.at: New test.
+        * tests/rewriteloc.at: New test.
+        * tests/xhttp.at: Remove erroneous comment.
+
+2022-11-14  Sergey Poznyakoff  <gray@gnu.org>
+
+        Add support for http testing.  Two new tests.
+
+        * config.c: New statement: SocketFrom.
+        * pound.8: Document the SocketFrom statement.
+        * pound.c (main): Support UNIX sockets for listeners.
+        * pound.h (stringbuf_finish): New proto.
+        * tests/Makefile.am: Add new tests.
+        * tests/testsuite.at: Likewise.
+        * tests/atlocal.in (HARNESS): New variable.
+        * tests/echo.at: New test.
+        * tests/xhttp.at: New test.
+        * tests/poundharness.pl: New auxiliary program.
+
+2022-11-11  Sergey Poznyakoff  <gray@gnu.org>
+
+        Introduce the testsuite
+
+
+2022-11-09  Sergey Poznyakoff  <gray@gnu.org>
+
+        Rewrite configuration file parser from scratch.  Proof-read the
+        docs.
+
+        Use simple recursive descent parser.  Improve error checking and
+        reporting. Remove some arbitrary limits (e.g. read buffer size
+        and number of include nesting).
+
+2022-11-06  Sergey Poznyakoff  <gray@gnu.org>
+
+        Minor fix
+
+
+2022-11-06  Sergey Poznyakoff  <gray@gnu.org>
+
+        Fix build for OpenSSL 3.x
+
+        * configure.ac: Remove deprecated calls.  Remove checks for
+        headers that are always present.  Check for OpenSSL version.
+        * Makefile.am: Build dh*.h conditionally
+        * pound.h: Include ISO C89 header files unconditionally.
+        (RSA_tmp_callback, DH_tmp_callback): Remove.
+        (POUND_SSL_CTX_init): New proto.
+        * pound.c: Don't use RETSIGTYPE.
+        (main): Disable supervisor if daemonize is off. Don't call
+        init_timer: it is done in thr_timer now.
+        * config.c: Use POUND_SSL_CTX_init for version-specific
+        initialization. Disable SSLEngine statement for OpenSSL 3.0 and
+        newer.
+        * poundctl.c: Fix various buffer size issues. Always check
+        returns from read and write.
+        * http.c: Set BIO callback depending on OpenSSL version.
+        * svc.c: Remove obsolete varargs cruft.
+        (POUND_SSL_CTX_init): New function.
+        (thr_timer): Call init_timer at start up.
+
+2022-11-05  Sergey Poznyakoff  <gray@gnu.org>
+
+        Minor changes
+
+        * GPL.txt: Rename to COPYING
+        * Makefile.am: Add EXTRA_DIST
+        * z2_2_5_1.py: Remove.
+        * z2_2_6_1.py: Remove.
+
+2022-11-05  Sergey Poznyakoff  <gray@gnu.org>
+
+        Use ax_pthread instead of its "decompiled" inline version
+
+        * acinclude.m4: New file.
+        * configure.ac: New file.
+
+2022-11-05  Sergey Poznyakoff  <gray@gnu.org>
+
+        Reindent sources
+
+
+2020-01-24  Sergey Poznyakoff  <gray@gnu.org.ua>
+
+        configure.ac: fix a typo in --with-dh option handling
+
+
+2018-12-05  Sergey Poznyakoff  <gray@gnu.org>
+
+        ws: use symbolic constants
+
+
+2018-12-10  Sergey Poznyakoff  <gray@gnu.org>
+
+        Update README;
+
+
+2018-12-10  GitHub  <gray@gnu.org>
+
+        Merge pull request #1 from patrodyne/master
+
+        Added patch for WebSocket support.
+2018-12-01  Rick O'Sullivan  <rick.osullivan@patrodyne.org>
+
+        Added patch for WebSocket support.
+
+
+2018-05-12  Sergey Poznyakoff  <gray@gnu.org>
+
+        Version 2.8
+
+
+2018-05-12  Sergey Poznyakoff  <gray@gnu.org>
+
+        Remove support for multi-line headers (sync with uplink)
+
+        * configure.ac: Remove the --enable-cert1l option.
+        * config.c (config_parse): Likewise.
+        * http.c (do_http) [CERT1L]: Remove useless buf argument in call 
+        to BIO_printf. Remove #if condition.
+        [!CERT1L]: Remove.
+        * svc.c (check_header): Don't handle header continuations.
+
+2018-04-21  Sergey Poznyakoff  <gray@gnu.org>
+
+        Fix processing of the --enable-cert1l configuration option
+
+
+2018-03-19  Sergey Poznyakoff  <gray@gnu.org>
+
+        Bugfix
+
+        * http.c: Stop if BIO_read returns <= 0
+
+2018-03-03  Sergey Poznyakoff  <gray@gnu.org>
+
+        Update the docs
+
+        Add the bootstrap script.
+
+2018-03-02  Sergey Poznyakoff  <gray@gnu.org>
+
+        Make sure dh headers are rebuilt when needed
+
+        * Makefile.am: Build dh.h by concatenating two dh headers.
+        * configure.ac: Check if --with-dh gives acceptable key length.
+        * .gitignore: Update.
+
+2018-03-02  Sergey Poznyakoff  <gray@gnu.org>
+
+        Minor cleanup
+
+        * configure.ac: New subst variables SSL_CPPFLAGS and
+        SSL_LDFLAGS. Avoid modifying CFLAGS directly, unless absolutely
+        necessary.
+        * Makefile.am: Use SSL_CPPFLAGS and SSL_LDFLAGS
+        * config.c (get_subjectaltnames): Remove useless memory
+        allocation.
+        (IMPLEMENT_LHASH_HASH_FN,IMPLEMENT_LHASH_COMP_FN): Not needed 
+        for OpenSSL version 1.1
+        * http.c: Remove declarations of unused variables.
+        * pound.c (l_init, l_id, l_lock): Not used in OpenSSL 1.1.
+        Protect with #if. Remove declarations of unused variables.
+        * pound.h (get_thr_qlen): Use explicit return type.
+        * poundctl.c: Remove declarations of unused variables.
+        * svc.c: Likewise.
+
+2018-03-02  Sergey Poznyakoff  <gray@gnu.org>
+
+        Fix the use of macros, following e0eac50c.
+
+        * http.c: Change #ifdef to #if.
+        [CERT1L]: Fix format in call to BIO_printf.
+        * pound.c: Change #ifdef to #if.
+
+2018-03-02  Sergey Poznyakoff  <gray@gnu.org>
+
+        Define preprocessor symbols in config.h instead of the command
+        line.
+
+        Avoid duplicating symbols.
+
+        Force specific ownership and privileges on the installed files
+        only when installing them as root.
+
+2018-03-01  Sergey Poznyakoff  <gray@gnu.org>
+
+        Fix file modes.
+
+
+2018-03-01  Sergey Poznyakoff  <gray@gnu.org>
+
+        Convert Makefile.in to Makefile.am
+
+
+2018-03-01  Sergey Poznyakoff  <gray@gnu.org>
+
+        Restore configure.ac from configure
+
+        Remove autogenerated files from the repository
+
+2018-03-01  Sergey Poznyakoff  <gray@gnu.org>
+
+        Update README
+
+
+2018-02-28  Sergey Poznyakoff  <gray@gnu.org>
+
+        Support for Openssl 1.1
+
+
+2018-02-28  Sergey Poznyakoff  <gray@gnu.org>
+
+        Initial commit
+
+
+Local Variables:
+mode: change-log
+version-control: never
+buffer-read-only: t
+End:

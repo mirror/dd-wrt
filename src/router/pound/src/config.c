@@ -1,7 +1,7 @@
 /*
  * Pound - the reverse-proxy load-balancer
  * Copyright (C) 2002-2010 Apsis GmbH
- * Copyright (C) 2018-2023 Sergey Poznyakoff
+ * Copyright (C) 2018-2024 Sergey Poznyakoff
  *
  * Pound is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,6 +21,8 @@
 #include "extern.h"
 #include <openssl/x509v3.h>
 #include <assert.h>
+#include <dirent.h>
+#include <sys/stat.h>
 
 
 /*
@@ -46,19 +48,6 @@ typedef unsigned TOKENMASK;
 #define T_ANY 0 /* any token, including newline */
 /* Unquoted character sequence */
 #define T_UNQ (T_BIT (T_IDENT) | T_BIT (T_NUMBER) | T_BIT (T_LITERAL))
-
-/* Locations in the source file */
-struct locus_point
-{
-  char const *filename;
-  int line;
-  int col;
-};
-
-struct locus_range
-{
-  struct locus_point beg, end;
-};
 
 /* Token structure */
 struct token
@@ -331,10 +320,15 @@ regcomp_error_at_locus_range (struct locus_range const *loc, int rc, regex_t *rx
 }
 
 static void
-openssl_error_at_locus_range (struct locus_range const *loc, char const *msg)
+openssl_error_at_locus_range (struct locus_range const *loc,
+			      char const *filename, char const *msg)
 {
   unsigned long n = ERR_get_error ();
-  conf_error_at_locus_range (loc, "%s: %s", msg, ERR_error_string (n, NULL));
+  if (filename)
+    conf_error_at_locus_range (loc, "%s: %s: %s", filename, msg,
+			       ERR_error_string (n, NULL));
+  else
+    conf_error_at_locus_range (loc, "%s: %s", msg, ERR_error_string (n, NULL));
 
   if ((n = ERR_get_error ()) != 0)
     {
@@ -379,6 +373,8 @@ pathname_alloc (char const *dir, char const *name)
   return np->name;
 }
 
+//FIXME
+#if 0
 static char const *
 name_alloc (char const *name)
 {
@@ -400,44 +396,157 @@ name_list_free (void)
       name_list = next;
     }
 }
+#endif
 
-static int include_fd = AT_FDCWD;
+typedef DLIST_HEAD (, workdir) WORKDIR_HEAD;
+
+static WORKDIR_HEAD workdir_head = DLIST_HEAD_INITIALIZER (workdir_head);
+
+static char *
+xgetcwd (void)
+{
+  char *buf = NULL;
+  size_t size = 0;
+
+  for (;;)
+    {
+      buf = x2nrealloc (buf, &size, 1);
+      if (getcwd (buf, size) != NULL)
+	break;
+      if (errno != ERANGE)
+	{
+	  logmsg (LOG_CRIT, "getcwd: %s", strerror (errno));
+	  exit (1);
+	}
+    }
+  return buf;
+}
+
+static WORKDIR *
+workdir_get (char const *name)
+{
+  WORKDIR *wp;
+  char *cwd = NULL;
+  int fd;
+
+  if (name == NULL)
+    {
+      cwd = xgetcwd ();
+      name = cwd;
+    }
+
+  DLIST_FOREACH (wp, &workdir_head, link)
+    if (strcmp (wp->name, name) == 0)
+      {
+	wp->refcount++;
+	free (cwd);
+	return wp;
+      }
+
+  if (cwd)
+    fd = AT_FDCWD;
+  else if ((fd = open (name, O_RDONLY | O_NONBLOCK | O_DIRECTORY)) == -1)
+    {
+      free (cwd);
+      return NULL;
+    }
+
+  wp = xzalloc (sizeof (*wp) + strlen (name));
+  strcpy (wp->name, name);
+  wp->refcount = 1;
+  wp->fd = fd;
+  DLIST_PUSH (&workdir_head, wp, link);
+  free (cwd);
+  return wp;
+}
+
+static inline WORKDIR *
+workdir_ref (WORKDIR *wd)
+{
+  wd->refcount++;
+  return wd;
+}
+
+static inline void
+workdir_unref (WORKDIR *wd)
+{
+  assert (wd->refcount > 0);
+  wd->refcount--;
+}
+
+static void
+workdir_free (WORKDIR *wd)
+{
+  if (wd->refcount == 0)
+    {
+      DLIST_REMOVE (&workdir_head, wd, link);
+      if (wd->fd != AT_FDCWD)
+	close (wd->fd);
+      free (wd);
+    }
+}
+
+static void
+workdir_cleanup (void)
+{
+  WORKDIR *wp, *tmp;
+  DLIST_FOREACH_SAFE (wp, tmp, &workdir_head, link)
+    {
+      workdir_free (wp);
+    }
+}
+
 static char const *include_dir = SYSCONFDIR;
+static WORKDIR *include_wd;
 
 static void
 close_include_dir (void)
 {
-  if (include_fd != AT_FDCWD)
+  if (include_wd)
     {
-      close (include_fd);
-      include_dir = NULL;
+      workdir_free (include_wd);
+      include_wd = NULL;
     }
 }
 
-static int
+static WORKDIR *
 open_include_dir (char const *dir)
 {
-  int fd;
-
-  if (dir == NULL)
-    fd = AT_FDCWD;
-  else if ((fd = open (dir, O_RDONLY | O_NONBLOCK | O_DIRECTORY)) == -1)
-    return -1;
-
   close_include_dir ();
-  include_dir = dir ? name_alloc (dir) : NULL;
-  include_fd = fd;
-  return fd;
+  return include_wd = workdir_get (dir);
+}
+
+FILE *
+fopen_wd (WORKDIR *wd, const char *filename)
+{
+  int fd;
+  int dirfd = AT_FDCWD;
+
+  if (!wd)
+    wd = include_wd;
+  if (wd)
+    dirfd = wd->fd;
+  if ((fd = openat (dirfd, filename, O_RDONLY)) == -1)
+    return NULL;
+  return fdopen (fd, "r");
 }
 
 static FILE *
 fopen_include (const char *filename)
 {
-  int fd;
+  return fopen_wd (include_wd, filename);
+}
 
-  if ((fd = openat (include_fd, filename, O_RDONLY)) == -1)
-    return NULL;
-  return fdopen (fd, "r");
+void
+fopen_error (int pri, int ec, WORKDIR *wd, const char *filename,
+	     struct locus_range *loc)
+{
+  if (filename[0] == '/' || wd == NULL)
+    conf_error_at_locus_range (loc, "can't open %s: %s",
+			       filename, strerror (ec));
+  else
+    conf_error_at_locus_range (loc, "can't open %s/%s: %s",
+			       wd->name, filename, strerror (ec));
 }
 
 /*
@@ -472,7 +581,10 @@ input_open (char const *filename, struct stat *st)
     }
   input->ino = st->st_ino;
   input->devno = st->st_dev;
-  input->locus.filename = pathname_alloc (include_dir, filename);
+  if (include_wd == NULL || include_wd->fd == AT_FDCWD)
+    input->locus.filename = xstrdup (filename);
+  else
+    input->locus.filename = pathname_alloc (include_wd->name, filename);
   input->locus.line = 1;
   input->locus.col = 0;
   return input;
@@ -678,8 +790,8 @@ last_token_locus_range (void)
 #define conf_regcomp_error(rc, rx, expr) \
   regcomp_error_at_locus_range (last_token_locus_range (), rc, rx, expr)
 
-#define conf_openssl_error(msg) \
-  openssl_error_at_locus_range (last_token_locus_range (), msg)
+#define conf_openssl_error(file, msg)				\
+  openssl_error_at_locus_range (last_token_locus_range (), file, msg)
 
 static int
 push_input (const char *filename)
@@ -687,12 +799,12 @@ push_input (const char *filename)
   struct stat st;
   struct input *input;
 
-  if (fstatat (include_fd, filename, &st, 0))
+  if (fstatat (include_wd->fd, filename, &st, 0))
     {
-      if (include_fd == AT_FDCWD)
+      if (include_wd->fd == AT_FDCWD)
 	conf_error ("can't stat %s: %s", filename, strerror (errno));
       else
-	conf_error ("can't stat %s/%s: %s", include_dir, filename,
+	conf_error ("can't stat %s/%s: %s", include_wd->name, filename,
 		    strerror (errno));
       return -1;
     }
@@ -907,7 +1019,79 @@ parser_loop (PARSER_TABLE *ptab, void *call_data, void *section_data,
 {
   return parse_statement (ptab, call_data, section_data, 0, retrange);
 }
+
+/*
+ * Named backends
+ */
+typedef struct named_backend
+{
+  char *name;
+  struct locus_range locus;
+  int priority;
+  int disabled;
+  struct be_regular bereg;
+  SLIST_ENTRY (named_backend) link;
+} NAMED_BACKEND;
 
+#define HT_TYPE NAMED_BACKEND
+#include "ht.h"
+
+typedef struct named_backend_table
+{
+  NAMED_BACKEND_HASH *hash;
+  SLIST_HEAD(,named_backend) head;
+} NAMED_BACKEND_TABLE;
+
+static void
+named_backend_table_init (NAMED_BACKEND_TABLE *tab)
+{
+  tab->hash = NAMED_BACKEND_HASH_NEW ();
+  SLIST_INIT (&tab->head);
+}
+
+static void
+named_backend_table_free (NAMED_BACKEND_TABLE *tab)
+{
+  NAMED_BACKEND_HASH_FREE (tab->hash);
+  while (!SLIST_EMPTY (&tab->head))
+    {
+      NAMED_BACKEND *ent = SLIST_FIRST (&tab->head);
+      SLIST_SHIFT (&tab->head, link);
+      free (ent);
+    }
+}
+
+static NAMED_BACKEND *
+named_backend_insert (NAMED_BACKEND_TABLE *tab, char const *name,
+		      struct locus_range const *locus,
+		      BACKEND *be)
+{
+  NAMED_BACKEND *bp, *old;
+
+  bp = xmalloc (sizeof (*bp) + strlen (name) + 1);
+  bp->name = (char*) (bp + 1);
+  strcpy (bp->name, name);
+  bp->locus = *locus;
+  bp->priority = be->priority;
+  bp->disabled = be->disabled;
+  bp->bereg = be->v.reg;
+  if ((old = NAMED_BACKEND_INSERT (tab->hash, bp)) != NULL)
+    {
+      free (bp);
+      return old;
+    }
+  SLIST_PUSH (&tab->head, bp, link);
+  return NULL;
+}
+
+static NAMED_BACKEND *
+named_backend_retrieve (NAMED_BACKEND_TABLE *tab, char const *name)
+{
+  NAMED_BACKEND key;
+
+  key.name = (char*) name;
+  return NAMED_BACKEND_RETRIEVE (tab->hash, &key);
+}
 
 typedef struct
 {
@@ -920,6 +1104,7 @@ typedef struct
   unsigned ignore_case;
   int header_options;
   BALANCER balancer;
+  NAMED_BACKEND_TABLE named_backend_table;
 } POUND_DEFAULTS;
 
 static int
@@ -928,7 +1113,7 @@ parse_includedir (void *call_data, void *section_data)
   struct token *tok = gettkn_expect (T_STRING);
   if (!tok)
     return PARSER_FAIL;
-  if (open_include_dir (tok->str) == -1)
+  if (open_include_dir (tok->str) == NULL)
     {
       conf_error ("can't open directory %s: %s", tok->str, strerror (errno));
       return PARSER_FAIL;
@@ -981,18 +1166,18 @@ assign_string_from_file (void *call_data, void *section_data)
   struct token *tok = gettkn_expect (T_STRING);
   if (!tok)
     return PARSER_FAIL;
-  if (stat (tok->str, &st))
+  if ((fp = fopen_include (tok->str)) == NULL)
+    {
+      fopen_error (LOG_ERR, errno, include_wd, tok->str, &tok->locus);
+      return PARSER_FAIL;
+    }
+  if (fstat (fileno (fp), &st))
     {
       conf_error ("can't stat %s: %s", tok->str, strerror (errno));
       return PARSER_FAIL;
     }
   // FIXME: Check st_size bounds.
   s = xmalloc (st.st_size + 1);
-  if ((fp = fopen (tok->str, "r")) == NULL)
-    {
-      conf_error ("can't open %s: %s", tok->str, strerror (errno));
-      return PARSER_FAIL;
-    }
   if (fread (s, st.st_size, 1, fp) != 1)
     {
       conf_error ("%s: read error: %s", tok->str, strerror (errno));
@@ -1121,9 +1306,7 @@ assign_CONTENT_LENGTH (void *call_data, void *section_data)
   if (!tok)
     return PARSER_FAIL;
 
-  errno = 0;
-  n = STRTOCLEN (tok->str, &p, 10);
-  if (errno || *p)
+  if (strtoclen (tok->str, 10, &n, &p) || *p)
     {
       conf_error ("%s", "bad long number");
       return PARSER_FAIL;
@@ -1502,13 +1685,14 @@ parse_cidr (ACL *acl)
 
 /*
  * List of named ACLs.
- * There shouldn't be many of them so it's perhaps no use in implementing
+ * There shouldn't be many of them, so it's perhaps no use in implementing
  * more sophisticated data structures than a mere singly-linked list.
  */
 static ACL_HEAD acl_list = SLIST_HEAD_INITIALIZER (acl_list);
 
 /*
- * Return a pointer to the named ACL or NULL if no ACL with such name is found.
+ * Return a pointer to the named ACL, or NULL if no ACL with such name is
+ * found.
  */
 static ACL *
 acl_by_name (char const *name)
@@ -1633,6 +1817,12 @@ parse_acl_ref (ACL **ret_acl)
     }
   return PARSER_OK;
 }
+
+static int
+assign_acl (void *call_data, void *section_data)
+{
+  return parse_acl_ref (call_data);
+}
 
 static int
 parse_ECDHCurve (void *call_data, void *section_data)
@@ -1697,7 +1887,7 @@ backend_parse_https (void *call_data, void *section_data)
 
   if ((be->v.reg.ctx = SSL_CTX_new (SSLv23_client_method ())) == NULL)
     {
-      conf_openssl_error ("SSL_CTX_new");
+      conf_openssl_error (NULL, "SSL_CTX_new");
       return PARSER_FAIL;
     }
 
@@ -1744,19 +1934,19 @@ backend_parse_cert (void *call_data, void *section_data)
 
   if (SSL_CTX_use_certificate_chain_file (be->v.reg.ctx, tok->str) != 1)
     {
-      conf_openssl_error ("SSL_CTX_use_certificate_chain_file");
+      conf_openssl_error (tok->str, "SSL_CTX_use_certificate_chain_file");
       return PARSER_FAIL;
     }
 
   if (SSL_CTX_use_PrivateKey_file (be->v.reg.ctx, tok->str, SSL_FILETYPE_PEM) != 1)
     {
-      conf_openssl_error ("SSL_CTX_use_PrivateKey_file");
+      conf_openssl_error (tok->str, "SSL_CTX_use_PrivateKey_file");
       return PARSER_FAIL;
     }
 
   if (SSL_CTX_check_private_key (be->v.reg.ctx) != 1)
     {
-      conf_openssl_error ("SSL_CTX_check_private_key failed");
+      conf_openssl_error (tok->str, "SSL_CTX_check_private_key failed");
       return PARSER_FAIL;
     }
 
@@ -1779,6 +1969,25 @@ backend_assign_ciphers (void *call_data, void *section_data)
     return PARSER_FAIL;
 
   SSL_CTX_set_cipher_list (be->v.reg.ctx, tok->str);
+  return PARSER_OK;
+}
+
+static int
+backend_parse_servername (void *call_data, void *section_data)
+{
+  BACKEND *be = call_data;
+  struct token *tok;
+
+  if (be->v.reg.ctx == NULL)
+    {
+      conf_error ("%s", "HTTPS must be used before this statement");
+      return PARSER_FAIL;
+    }
+
+  if ((tok = gettkn_expect (T_STRING)) == NULL)
+    return PARSER_FAIL;
+  be->v.reg.servername = xstrdup (tok->str);
+
   return PARSER_OK;
 }
 
@@ -1829,7 +2038,7 @@ set_proto_opt (int *opt)
 static int
 disable_proto (void *call_data, void *section_data)
 {
-  SSL_CTX *ctx = call_data;
+  SSL_CTX *ctx = *(SSL_CTX**) call_data;
   int n = 0;
 
   if (ctx == NULL)
@@ -1858,6 +2067,14 @@ static PARSER_TABLE backend_parsetab[] = {
   { "Cert",      backend_parse_cert },
   { "Ciphers",   backend_assign_ciphers },
   { "Disable",   disable_proto,  NULL, offsetof (BACKEND, v.reg.ctx) },
+  { "Disabled",  assign_bool,    NULL, offsetof (BACKEND, disabled) },
+  { "ServerName",backend_parse_servername, NULL },
+  { NULL }
+};
+
+static PARSER_TABLE use_backend_parsetab[] = {
+  { "End",       parse_end },
+  { "Priority",  backend_assign_priority, NULL, offsetof (BACKEND, priority) },
   { "Disabled",  assign_bool,    NULL, offsetof (BACKEND, disabled) },
   { NULL }
 };
@@ -1896,8 +2113,19 @@ check_addrinfo (struct addrinfo const *addr, struct locus_range const *range, ch
   return PARSER_OK;
 }
 
+static char *
+format_locus_str (struct locus_range *rp)
+{
+  struct stringbuf sb;
+
+  xstringbuf_init (&sb);
+  stringbuf_format_locus_range (&sb, rp);
+  return stringbuf_finish (&sb);
+}
+
 static BACKEND *
-parse_backend_internal (PARSER_TABLE *table, POUND_DEFAULTS *dfl)
+parse_backend_internal (PARSER_TABLE *table, POUND_DEFAULTS *dfl,
+			struct locus_point *beg)
 {
   BACKEND *be;
   struct locus_range range;
@@ -1915,9 +2143,11 @@ parse_backend_internal (PARSER_TABLE *table, POUND_DEFAULTS *dfl)
 
   if (parser_loop (table, be, dfl, &range))
     return NULL;
-
+  if (beg)
+    range.beg = *beg;
   if (check_addrinfo (&be->v.reg.addr, &range, "Backend") != PARSER_OK)
     return NULL;
+  be->locus = format_locus_str (&range);
 
   return be;
 }
@@ -1927,10 +2157,58 @@ parse_backend (void *call_data, void *section_data)
 {
   BACKEND_HEAD *head = call_data;
   BACKEND *be;
+  struct token *tok;
+  struct locus_point beg = last_token_locus_range ()->beg;
 
-  be = parse_backend_internal (backend_parsetab, section_data);
-  if (!be)
+  if ((tok = gettkn_any ()) == NULL)
     return PARSER_FAIL;
+
+  if (tok->type == T_STRING)
+    {
+      struct locus_range range;
+
+      range.beg = beg;
+
+      XZALLOC (be);
+      be->be_type = BE_BACKEND_REF;
+      be->v.be_name = xstrdup (tok->str);
+      be->priority = -1;
+      be->disabled = -1;
+      pthread_mutex_init (&be->mut, NULL);
+
+      if (parser_loop (use_backend_parsetab, be, section_data, &range))
+	return PARSER_FAIL;
+      be->locus = format_locus_str (&tok->locus);
+    }
+  else
+    {
+      putback_tkn (tok);
+      be = parse_backend_internal (backend_parsetab, section_data, &beg);
+      if (!be)
+	return PARSER_FAIL;
+    }
+
+  SLIST_PUSH (head, be, next);
+
+  return PARSER_OK;
+}
+
+static int
+parse_use_backend (void *call_data, void *section_data)
+{
+  BACKEND_HEAD *head = call_data;
+  BACKEND *be;
+  struct token *tok;
+
+  if ((tok = gettkn_expect (T_STRING)) == NULL)
+    return PARSER_FAIL;
+
+  XZALLOC (be);
+  be->be_type = BE_BACKEND_REF;
+  be->v.be_name = xstrdup (tok->str);
+  be->locus = format_locus_str (&tok->locus);
+  be->priority = 5;
+  pthread_mutex_init (&be->mut, NULL);
 
   SLIST_PUSH (head, be, next);
 
@@ -1948,7 +2226,7 @@ parse_emergency (void *call_data, void *section_data)
   dfl.be_connto = 120;
   dfl.ws_to = 120;
 
-  be = parse_backend_internal (emergency_parsetab, &dfl);
+  be = parse_backend_internal (emergency_parsetab, &dfl, NULL);
   if (!be)
     return PARSER_FAIL;
 
@@ -2087,14 +2365,20 @@ build_regex (struct stringbuf *sb, int mode, char const *expr, char const *pfx)
   switch (mode)
     {
     case MATCH_EXACT:
+      stringbuf_add_char (sb, '^');
       if (pfx)
 	stringbuf_add_string (sb, pfx);
       stringbuf_escape_regex (sb, expr);
+      stringbuf_add_char (sb, '$');
       break;
 
     case MATCH_RE:
       if (pfx)
-	stringbuf_add_string (sb, pfx);
+	{
+	  stringbuf_add_string (sb, pfx);
+	  if (expr[0] == '^')
+	    expr++;
+	}
       stringbuf_add_string (sb, expr);
       break;
 
@@ -2148,9 +2432,33 @@ parse_regex_compat (regex_t *regex, int flags)
   return PARSER_OK;
 }
 
+STRING_REF *
+string_ref_alloc (char const *str)
+{
+  STRING_REF *ref = xmalloc (sizeof (*ref) + strlen (str));
+  ref->refcount = 1;
+  strcpy (ref->value, str);
+  return ref;
+}
+
+STRING_REF *
+string_ref_incr (STRING_REF *ref)
+{
+  if (ref)
+    ref->refcount++;
+  return ref;
+}
+
+void
+string_ref_free (STRING_REF *ref)
+{
+  if (ref && --ref->refcount == 0)
+    free (ref);
+}
+
 static int
-parse_cond_matcher (SERVICE_COND *top_cond, enum service_cond_type type,
-		    int mode, int flags, char *param_name)
+parse_cond_matcher_0 (SERVICE_COND *top_cond, enum service_cond_type type,
+		      int mode, int flags, char const *string)
 {
   struct token *tok;
   int rc;
@@ -2172,15 +2480,26 @@ parse_cond_matcher (SERVICE_COND *top_cond, enum service_cond_type type,
       FILE *fp;
       char *p;
       char buf[MAXBUF];
+      STRING_REF *ref = NULL;
 
       if ((fp = fopen_include (tok->str)) == NULL)
 	{
-	  conf_error ("can't open file %s: %s", tok->str, strerror (errno));
+	  fopen_error (LOG_ERR, errno, include_wd, tok->str, &tok->locus);
 	  return PARSER_FAIL;
 	}
 
       cond = service_cond_append (top_cond, COND_BOOL);
       cond->bool.op = BOOL_OR;
+
+      switch (type)
+	{
+	case COND_QUERY_PARAM:
+	case COND_STRING_MATCH:
+	  ref = string_ref_alloc (string);
+	  break;
+	default:
+	  break;
+	}
 
       while ((p = fgets (buf, sizeof buf, fp)) != NULL)
 	{
@@ -2205,13 +2524,19 @@ parse_cond_matcher (SERVICE_COND *top_cond, enum service_cond_type type,
 	      conf_regcomp_error (rc, &hc->re, NULL);
 	      return PARSER_FAIL;
 	    }
-	  if (type == COND_QUERY_PARAM)
+	  switch (type)
 	    {
-	      regex_t re = hc->re;
-	      hc->qp.re = re;
-	      hc->qp.name = xstrdup (param_name);
+	    case COND_QUERY_PARAM:
+	    case COND_STRING_MATCH:
+	      memmove (&hc->sm.re, &hc->re, sizeof (hc->sm.re));
+	      hc->sm.string = string_ref_incr (ref);
+	      break;
+
+	    default:
+	      break;
 	    }
 	}
+      string_ref_free (ref);
       fclose (fp);
     }
   else
@@ -2224,16 +2549,36 @@ parse_cond_matcher (SERVICE_COND *top_cond, enum service_cond_type type,
 	  conf_regcomp_error (rc, &cond->re, NULL);
 	  return PARSER_FAIL;
 	}
-      if (type == COND_QUERY_PARAM)
+      switch (type)
 	{
-	  regex_t re = cond->re;
-	  cond->qp.re = re;
-	  cond->qp.name = xstrdup (param_name);
+	case COND_QUERY_PARAM:
+	case COND_STRING_MATCH:
+	  memmove (&cond->sm.re, &cond->re, sizeof (cond->sm.re));
+	  cond->sm.string = string_ref_alloc (string);
+	  break;
+
+	default:
+	  break;
 	}
     }
   stringbuf_free (&sb);
 
   return PARSER_OK;
+}
+
+static int
+parse_cond_matcher (SERVICE_COND *top_cond, enum service_cond_type type,
+		    int mode, int flags, char const *string)
+{
+  int rc;
+  char *string_copy;
+  if (string)
+    string_copy = xstrdup (string);
+  else
+    string_copy = NULL;
+  rc = parse_cond_matcher_0 (top_cond, type, mode, flags, string_copy);
+  free (string_copy);
+  return rc;
 }
 
 static int
@@ -2277,12 +2622,35 @@ parse_cond_query_param_matcher (void *call_data, void *section_data)
   POUND_DEFAULTS *dfl = section_data;
   int flags = REG_EXTENDED | (dfl->ignore_case ? REG_ICASE : 0);
   struct token *tok;
+  char *string;
+  int rc;
 
   if ((tok = gettkn_expect (T_STRING)) == NULL)
     return PARSER_FAIL;
+  string = xstrdup (tok->str);
+  rc = parse_cond_matcher (top_cond, COND_QUERY_PARAM, MATCH_RE, flags,
+			   string);
+  free (string);
+  return rc;
+}
 
-  return parse_cond_matcher (top_cond, COND_QUERY_PARAM, MATCH_RE, flags,
-			     tok->str);
+static int
+parse_cond_string_matcher (void *call_data, void *section_data)
+{
+  SERVICE_COND *top_cond = call_data;
+  POUND_DEFAULTS *dfl = section_data;
+  int flags = REG_EXTENDED | (dfl->ignore_case ? REG_ICASE : 0);
+  struct token *tok;
+  char *string;
+  int rc;
+
+  if ((tok = gettkn_expect (T_STRING)) == NULL)
+    return PARSER_FAIL;
+  string = xstrdup (tok->str);
+  rc = parse_cond_matcher (top_cond, COND_STRING_MATCH, MATCH_RE, flags,
+			   string);
+  free (string);
+  return rc;
 }
 
 static int
@@ -2306,8 +2674,21 @@ parse_cond_head_deny_matcher (void *call_data, void *section_data)
 static int
 parse_cond_host (void *call_data, void *section_data)
 {
-  return parse_cond_matcher (call_data, COND_HOST, MATCH_RE,
+  return parse_cond_matcher (call_data, COND_HOST, MATCH_EXACT,
 			     REG_EXTENDED | REG_ICASE, NULL);
+}
+
+static int
+parse_cond_basic_auth (void *call_data, void *section_data)
+{
+  SERVICE_COND *cond = service_cond_append (call_data, COND_BASIC_AUTH);
+  struct token *tok;
+
+  if ((tok = gettkn_expect (T_STRING)) == NULL)
+    return PARSER_FAIL;
+  cond->pwfile.locus = tok->locus;
+  cond->pwfile.filename = xstrdup (tok->str);
+  return PARSER_OK;
 }
 
 static int
@@ -2318,6 +2699,9 @@ parse_redirect_backend (void *call_data, void *section_data)
   int code = 302;
   BACKEND *be;
   regmatch_t matches[5];
+  struct locus_range range;
+
+  range.beg = last_token_locus_range ()->beg;
 
   if ((tok = gettkn_any ()) == NULL)
     return PARSER_FAIL;
@@ -2344,6 +2728,8 @@ parse_redirect_backend (void *call_data, void *section_data)
 	return PARSER_FAIL;
     }
 
+  range.end = last_token_locus_range ()->end;
+
   if (tok->type != T_STRING)
     {
       conf_error ("expected %s, but found %s", token_type_str (T_STRING), token_type_str (tok->type));
@@ -2351,6 +2737,7 @@ parse_redirect_backend (void *call_data, void *section_data)
     }
 
   XZALLOC (be);
+  be->locus = format_locus_str (&range);
   be->be_type = BE_REDIRECT;
   be->priority = 1;
   pthread_mutex_init (&be->mut, NULL);
@@ -2382,6 +2769,9 @@ parse_error_backend (void *call_data, void *section_data)
   char *text = NULL;
   BACKEND *be;
   int rc;
+  struct locus_range range;
+
+  range.beg = last_token_locus_range ()->beg;
 
   if ((tok = gettkn_expect (T_NUMBER)) == NULL)
     return PARSER_FAIL;
@@ -2410,7 +2800,10 @@ parse_error_backend (void *call_data, void *section_data)
       return PARSER_FAIL;
     }
 
+  range.end = last_token_locus_range ()->end;
+
   XZALLOC (be);
+  be->locus = format_locus_str (&range);
   be->be_type = BE_ERROR;
   be->priority = 1;
   pthread_mutex_init (&be->mut, NULL);
@@ -2561,6 +2954,8 @@ static int parse_not_cond (void *call_data, void *section_data);
   { "QueryParam", parse_cond_query_param_matcher, data, off },	\
   { "Header", parse_cond_hdr_matcher, data, off },		\
   { "Host", parse_cond_host, data, off },			\
+  { "BasicAuth", parse_cond_basic_auth, data, off },		\
+  { "StringMatch", parse_cond_string_matcher, data, off },	\
   { "Match", parse_match, data, off },				\
   { "NOT", parse_not_cond, data, off },				\
     /* compatibility keywords */				\
@@ -2749,12 +3144,89 @@ parse_sub_rewrite (void *call_data, void *section_data)
   op->v.rule = rewrite_rule_alloc (NULL);
   return parser_loop (rewrite_rule_parsetab, op->v.rule, section_data, NULL);
 }
+
+#define MATCH_RESPONSE_CONDITIONS(data, off)			\
+  { "Header", parse_cond_hdr_matcher, data, off },		\
+  { "StringMatch", parse_cond_string_matcher, data, off },	\
+  { "Match", parse_match, data, off },				\
+  { "NOT", parse_not_cond, data, off }
+
+#define REWRITE_RESPONSE_OPS(data, off)						\
+  { "SetHeader", parse_set_header, data, off },				\
+  { "DeleteHeader", parse_delete_header, data, off }
+
+static int parse_response_else (void *call_data, void *section_data);
+static int parse_response_sub_rewrite (void *call_data, void *section_data);
+
+static PARSER_TABLE response_rewrite_rule_parsetab[] = {
+  { "End", parse_end },
+  { "Rewrite", parse_response_sub_rewrite, NULL, offsetof (REWRITE_RULE, ophead) },
+  { "Else", parse_response_else, NULL, offsetof (REWRITE_RULE, iffalse) },
+  MATCH_RESPONSE_CONDITIONS (NULL, offsetof (REWRITE_RULE, cond)),
+  REWRITE_RESPONSE_OPS (NULL, offsetof (REWRITE_RULE, ophead)),
+  { NULL }
+};
+
+static PARSER_TABLE response_else_rule_parsetab[] = {
+  { "End", parse_end_else },
+  { "Rewrite", parse_response_sub_rewrite, NULL, offsetof (REWRITE_RULE, ophead) },
+  { "Else", parse_else, NULL, offsetof (REWRITE_RULE, iffalse) },
+  MATCH_RESPONSE_CONDITIONS (NULL, offsetof (REWRITE_RULE, cond)),
+  REWRITE_RESPONSE_OPS (NULL, offsetof (REWRITE_RULE, ophead)),
+  { NULL }
+};
+
+static int
+parse_response_else (void *call_data, void *section_data)
+{
+  REWRITE_RULE *rule = rewrite_rule_alloc (NULL);
+  *(REWRITE_RULE**)call_data = rule;
+  return parser_loop (response_else_rule_parsetab, rule, section_data, NULL);
+}
+
+static int
+parse_response_sub_rewrite (void *call_data, void *section_data)
+{
+  REWRITE_OP *op = rewrite_op_alloc (call_data, REWRITE_REWRITE_RULE);
+  op->v.rule = rewrite_rule_alloc (NULL);
+  return parser_loop (response_rewrite_rule_parsetab, op->v.rule, section_data, NULL);
+}
 
 static int
 parse_rewrite (void *call_data, void *section_data)
 {
-  REWRITE_RULE *rule = rewrite_rule_alloc (call_data);
-  return parser_loop (rewrite_rule_parsetab, rule, section_data, NULL);
+  struct token *tok;
+  PARSER_TABLE *table;
+  REWRITE_RULE_HEAD *rw = call_data, *head;
+
+  if ((tok = gettkn_any ()) == NULL)
+    return PARSER_FAIL;
+  if (tok->type == T_IDENT)
+    {
+      if (strcasecmp (tok->str, "response") == 0)
+	{
+	  table = response_rewrite_rule_parsetab;
+	  head = &rw[REWRITE_RESPONSE];
+	}
+      else if (strcasecmp (tok->str, "request") == 0)
+	{
+	  table = rewrite_rule_parsetab;
+	  head = &rw[REWRITE_REQUEST];
+	}
+      else
+	{
+	  conf_error ("expected response, request, or newline, but found %s",
+		      token_type_str (tok->type));
+	  return PARSER_FAIL;
+	}
+    }
+  else
+    {
+      putback_tkn (tok);
+      table = rewrite_rule_parsetab;
+      head = &rw[REWRITE_REQUEST];
+    }
+  return parser_loop (table, rewrite_rule_alloc (head), section_data, NULL);
 }
 
 static REWRITE_RULE *
@@ -2823,6 +3295,65 @@ parse_balancer (void *call_data, void *section_data)
   return PARSER_OK;
 }
 
+static int
+parse_log_suppress (void *call_data, void *section_data)
+{
+  int *result_ptr = call_data;
+  struct token *tok;
+  int n;
+  int result = 0;
+  int type;
+  static struct kwtab status_table[] = {
+    { "all",      STATUS_MASK (100) | STATUS_MASK (200) |
+		  STATUS_MASK (300) | STATUS_MASK (400) | STATUS_MASK (500) },
+    { "info",     STATUS_MASK (100) },
+    { "success",  STATUS_MASK (200) },
+    { "redirect", STATUS_MASK (300) },
+    { "clterr",   STATUS_MASK (400) },
+    { "srverr",   STATUS_MASK (500) },
+    { NULL }
+  };
+
+  if ((tok = gettkn_expect_mask (T_UNQ)) == NULL)
+    return PARSER_FAIL;
+
+  do
+    {
+      if (strlen (tok->str) == 1 && isdigit (tok->str[0]))
+	{
+	  n = tok->str[0] - '0';
+	  if (n <= 0 || n >= sizeof (status_table) / sizeof (status_table[0]))
+	    {
+	      conf_error ("%s", "unsupported status mask");
+	      return PARSER_FAIL;
+	    }
+	  n = STATUS_MASK (n * 100);
+	}
+      else if (kw_to_tok (status_table, tok->str, 1, &n) != 0)
+	{
+	  conf_error ("%s", "unsupported status mask");
+	  return PARSER_FAIL;
+	}
+      result |= n;
+    }
+  while ((type = gettkn (&tok)) != EOF && type != T_ERROR &&
+	 T_MASK_ISSET (T_UNQ, type));
+
+  if (type == T_ERROR)
+    return PARSER_FAIL;
+  if (type == EOF)
+    {
+      conf_error ("%s", "unexpected end of file");
+      return PARSER_FAIL;
+    }
+
+  putback_tkn (tok);
+
+  *result_ptr = result;
+
+  return PARSER_OK;
+}
+
 static PARSER_TABLE service_parsetab[] = {
   { "End", parse_end },
 
@@ -2841,10 +3372,14 @@ static PARSER_TABLE service_parsetab[] = {
   { "Redirect", parse_redirect_backend, NULL, offsetof (SERVICE, backends) },
   { "Error", parse_error_backend, NULL, offsetof (SERVICE, backends) },
   { "Backend", parse_backend, NULL, offsetof (SERVICE, backends) },
+  { "UseBackend", parse_use_backend, NULL, offsetof (SERVICE, backends) },
   { "Emergency", parse_emergency, NULL, offsetof (SERVICE, emergency) },
   { "Metrics", parse_metrics, NULL, offsetof (SERVICE, backends) },
   { "Session", parse_session },
   { "Balancer", parse_balancer, NULL, offsetof (SERVICE, balancer) },
+  { "ForwardedHeader", assign_string, NULL, offsetof (SERVICE, forwarded_header) },
+  { "TrustedIP", assign_acl, NULL, offsetof (SERVICE, trusted_ips) },
+  { "LogSuppress", parse_log_suppress, NULL, offsetof (SERVICE, log_suppress_mask) },
   { NULL }
 };
 
@@ -2963,6 +3498,7 @@ parse_service (void *call_data, void *section_data)
 
       SLIST_PUSH (head, svc, next);
     }
+  svc->locus = format_locus_str (&range);
   return PARSER_OK;
 }
 
@@ -2978,6 +3514,9 @@ parse_acme (void *call_data, void *section_data)
   int rc;
   static char re_acme[] = "^/\\.well-known/acme-challenge/(.+)";
   int fd;
+  struct locus_range range;
+
+  range.beg = last_token_locus_range ()->beg;
 
   if ((tok = gettkn_expect (T_STRING)) == NULL)
     return PARSER_FAIL;
@@ -3014,6 +3553,9 @@ parse_acme (void *call_data, void *section_data)
 
   svc->sess_type = SESS_NONE;
   pthread_mutex_init (&svc->mut, NULL);
+
+  range.end = last_token_locus_range ()->beg;
+  svc->locus = format_locus_str (&range);
 
   svc->tot_pri = 1;
   svc->abs_pri = 1;
@@ -3189,10 +3731,145 @@ parse_rewritelocation (void *call_data, void *section_data)
   return assign_int_range (call_data, 0, 2);
 }
 
+struct canned_log_format
+{
+  char *name;
+  char *fmt;
+};
+
+static struct canned_log_format canned_log_format[] = {
+  /* 0 - not used */
+  { "null", "" },
+  /* 1 - regular logging */
+  { "regular", "%a %r - %>s" },
+  /* 2 - extended logging (show chosen backend server as well) */
+  { "extended", "%a %r - %>s (%{Host}i/%{service}N -> %{backend}N) %{f}T sec" },
+  /* 3 - Apache-like format (Combined Log Format with Virtual Host) */
+  { "vhost_combined", "%{Host}I %a - %u %t \"%r\" %s %b \"%{Referer}i\" \"%{User-Agent}i\"" },
+  /* 4 - same as 3 but without the virtual host information */
+  { "combined", "%a - %u %t \"%r\" %s %b \"%{Referer}i\" \"%{User-Agent}i\"" },
+  /* 5 - same as 3 but with information about the Service and Backend used */
+  { "detailed", "%{Host}I %a - %u %t \"%r\" %s %b \"%{Referer}i\" \"%{User-Agent}i\" (%{service}N -> %{backend}N) %{f}T sec" },
+};
+static int max_canned_log_format =
+  sizeof (canned_log_format) / sizeof (canned_log_format[0]);
+
+struct log_format_data
+{
+  struct locus_range *locus;
+  int fn;
+  int fatal;
+};
+
+void
+log_format_diag (void *data, int fatal, char const *msg, int off)
+{
+  struct log_format_data *ld = data;
+  if (ld->fn == -1)
+    {
+      struct locus_range loc = *ld->locus;
+      loc.beg.col += off;
+      loc.end = loc.beg;
+      conf_error_at_locus_range (&loc, "%s", msg);
+    }
+  else
+    {
+      conf_error_at_locus_range (ld->locus, "INTERNAL ERROR: error compiling built-in format %d", ld->fn);
+      conf_error_at_locus_range (ld->locus, "%s: near %s", msg,
+				 canned_log_format[ld->fn].fmt + off);
+      conf_error_at_locus_range (ld->locus, "please report");
+    }
+  ld->fatal = fatal;
+}
+
+static void
+compile_canned_formats (void)
+{
+  struct log_format_data ld;
+  int i;
+
+  ld.locus = NULL;
+  ld.fatal = 0;
+
+  for (i = 0; i < max_canned_log_format; i++)
+    {
+      ld.fn = i;
+      if (http_log_format_compile (canned_log_format[i].name,
+				   canned_log_format[i].fmt,
+				   log_format_diag, &ld) == -1 || ld.fatal)
+	exit (1);
+    }
+}
+
 static int
 parse_log_level (void *call_data, void *section_data)
 {
-  return assign_int_range (call_data, 0, 5);
+  int log_level;
+  int *log_level_ptr = call_data;
+  struct token *tok = gettkn_expect_mask (T_BIT (T_STRING) | T_BIT (T_NUMBER));
+  if (!tok)
+    return PARSER_FAIL;
+
+  if (tok->type == T_STRING)
+    {
+      log_level = http_log_format_find (tok->str);
+      if (log_level == -1)
+	{
+	  conf_error ("undefined format: %s", tok->str);
+	  return PARSER_FAIL;
+	}
+    }
+  else
+    {
+      char *p;
+      long n;
+
+      errno = 0;
+      n = strtol (tok->str, &p, 10);
+      if (errno || *p || n < 0 || n > INT_MAX)
+	{
+	  conf_error ("%s", "unsupported log level number");
+	  return PARSER_FAIL;
+	}
+      if (http_log_format_check (n))
+	{
+	  conf_error ("%s", "undefined log level");
+	  return PARSER_FAIL;
+	}
+      log_level = n;
+    }
+  *log_level_ptr = log_level;
+  return PARSER_OK;
+}
+
+static int
+parse_log_format (void *call_data, void *section_data)
+{
+  struct token *tok;
+  char *name;
+  struct log_format_data ld;
+  int rc;
+
+  if ((tok = gettkn_expect (T_STRING)) == NULL)
+    return PARSER_FAIL;
+  name = strdup (tok->str);
+  if ((tok = gettkn_expect (T_STRING)) == NULL)
+    {
+      free (name);
+      return PARSER_FAIL;
+    }
+
+  ld.locus = &tok->locus;
+  ld.fn = -1;
+  ld.fatal = 0;
+
+  if (http_log_format_compile (name, tok->str, log_format_diag, &ld) == -1 ||
+      ld.fatal)
+    rc = PARSER_FAIL;
+  else
+    rc = PARSER_OK;
+  free (name);
+  return rc;
 }
 
 static int
@@ -3261,6 +3938,8 @@ static PARSER_TABLE http_parsetab[] = {
   { "Client", assign_timeout, NULL, offsetof (LISTENER, to) },
   { "CheckURL", listener_parse_checkurl },
   { "Err400", assign_string_from_file, NULL, offsetof (LISTENER, http_err[HTTP_STATUS_BAD_REQUEST]) },
+  { "Err401", assign_string_from_file, NULL, offsetof (LISTENER, http_err[HTTP_STATUS_UNAUTHORIZED]) },
+  { "Err403", assign_string_from_file, NULL, offsetof (LISTENER, http_err[HTTP_STATUS_FORBIDDEN]) },
   { "Err404", assign_string_from_file, NULL, offsetof (LISTENER, http_err[HTTP_STATUS_NOT_FOUND]) },
   { "Err413", assign_string_from_file, NULL, offsetof (LISTENER, http_err[HTTP_STATUS_PAYLOAD_TOO_LARGE]) },
   { "Err414", assign_string_from_file, NULL, offsetof (LISTENER, http_err[HTTP_STATUS_URI_TOO_LONG]) },
@@ -3284,12 +3963,15 @@ static PARSER_TABLE http_parsetab[] = {
   { "AddHeader", SETFN_SVC_NAME (set_header), NULL, offsetof (LISTENER, rewrite) },
   { "HeaderRemove", parse_header_remove, NULL, offsetof (LISTENER, rewrite) },
   { "HeadRemove", parse_header_remove, NULL, offsetof (LISTENER, rewrite) },
+
   { "RewriteLocation", parse_rewritelocation, NULL, offsetof (LISTENER, rewr_loc) },
   { "RewriteDestination", assign_bool, NULL, offsetof (LISTENER, rewr_dest) },
   { "LogLevel", parse_log_level, NULL, offsetof (LISTENER, log_level) },
   { "Service", parse_service, NULL, offsetof (LISTENER, services) },
   { "ACME", parse_acme, NULL, offsetof (LISTENER, services) },
-  { NULL }
+  { "ForwardedHeader", assign_string, NULL, offsetof (LISTENER, forwarded_header) },
+  { "TrustedIP", assign_acl, NULL, offsetof (LISTENER, trusted_ips) },
+{ NULL }
 };
 
 static LISTENER *
@@ -3306,7 +3988,8 @@ listener_alloc (POUND_DEFAULTS *dfl)
   lst->log_level = dfl->log_level;
   lst->verb = 0;
   lst->header_options = dfl->header_options;
-  SLIST_INIT (&lst->rewrite);
+  SLIST_INIT (&lst->rewrite[REWRITE_REQUEST]);
+  SLIST_INIT (&lst->rewrite[REWRITE_RESPONSE]);
   SLIST_INIT (&lst->services);
   SLIST_INIT (&lst->ctx_head);
   return lst;
@@ -3355,6 +4038,8 @@ parse_listen_http (void *call_data, void *section_data)
 
   if (check_addrinfo (&lst->addr, &range, "ListenHTTP") != PARSER_OK)
     return PARSER_FAIL;
+
+  lst->locus = format_locus_str (&range);
 
   SLIST_PUSH (list_head, lst, next);
   return PARSER_OK;
@@ -3408,43 +4093,32 @@ get_subjectaltnames (X509 *x509, POUND_CTX *pc, size_t san_max)
 }
 
 static int
-https_parse_cert (void *call_data, void *section_data)
+load_cert (char const *filename, LISTENER *lst)
 {
-  LISTENER *lst = call_data;
-  struct token *tok;
   POUND_CTX *pc;
-
-  if (lst->has_other)
-    {
-      conf_error ("%s", "Cert directives MUST precede other SSL-specific directives");
-      return PARSER_FAIL;
-    }
-
-  if ((tok = gettkn_expect (T_STRING)) == NULL)
-    return PARSER_FAIL;
 
   XZALLOC (pc);
 
   if ((pc->ctx = SSL_CTX_new (SSLv23_server_method ())) == NULL)
     {
-      conf_openssl_error ("SSL_CTX_new");
+      conf_openssl_error (NULL, "SSL_CTX_new");
       return PARSER_FAIL;
     }
 
-  if (SSL_CTX_use_certificate_chain_file (pc->ctx, tok->str) != 1)
+  if (SSL_CTX_use_certificate_chain_file (pc->ctx, filename) != 1)
     {
-      conf_openssl_error ("SSL_CTX_use_certificate_chain_file");
+      conf_openssl_error (filename, "SSL_CTX_use_certificate_chain_file");
       return PARSER_FAIL;
     }
-  if (SSL_CTX_use_PrivateKey_file (pc->ctx, tok->str, SSL_FILETYPE_PEM) != 1)
+  if (SSL_CTX_use_PrivateKey_file (pc->ctx, filename, SSL_FILETYPE_PEM) != 1)
     {
-      conf_openssl_error ("SSL_CTX_use_PrivateKey_file");
+      conf_openssl_error (filename, "SSL_CTX_use_PrivateKey_file");
       return PARSER_FAIL;
     }
 
   if (SSL_CTX_check_private_key (pc->ctx) != 1)
     {
-      conf_openssl_error ("SSL_CTX_check_private_key");
+      conf_openssl_error (filename, "SSL_CTX_check_private_key");
       return PARSER_FAIL;
     }
 
@@ -3457,9 +4131,10 @@ https_parse_cert (void *call_data, void *section_data)
     int i;
     size_t san_max;
 
-    if ((fcert = fopen (tok->str, "r")) == NULL)
+    if ((fcert = fopen (filename, "r")) == NULL)
       {
-	conf_error ("%s", "ListenHTTPS: could not open certificate file");
+	conf_error ("%s: could not open certificate file: %s", filename,
+		    strerror (errno));
 	return PARSER_FAIL;
       }
 
@@ -3468,7 +4143,7 @@ https_parse_cert (void *call_data, void *section_data)
 
     if (!x509)
       {
-	conf_error ("%s", "could not get certificate subject");
+	conf_error ("%s: could not get certificate subject", filename);
 	return PARSER_FAIL;
       }
 
@@ -3505,17 +4180,99 @@ https_parse_cert (void *call_data, void *section_data)
 
     if (pc->server_name == NULL)
       {
-	conf_error ("%s", "no CN in certificate subject name\n");
+	conf_error ("%s: no CN in certificate subject name", filename);
 	return PARSER_FAIL;
       }
   }
 #else
   if (res->ctx)
-    conf_error ("%s", "multiple certificates not supported");
+    conf_error ("%s: multiple certificates not supported", filename);
 #endif
   SLIST_PUSH (&lst->ctx_head, pc, next);
 
   return PARSER_OK;
+}
+
+static int
+https_parse_cert (void *call_data, void *section_data)
+{
+  LISTENER *lst = call_data;
+  struct token *tok;
+  struct stat st;
+
+  if (lst->has_other)
+    {
+      conf_error ("%s", "Cert directives MUST precede other SSL-specific directives");
+      return PARSER_FAIL;
+    }
+
+  if ((tok = gettkn_expect (T_STRING)) == NULL)
+    return PARSER_FAIL;
+
+  if (stat (tok->str, &st))
+    {
+      conf_error ("%s: stat error: %s", tok->str, strerror (errno));
+      return PARSER_FAIL;
+    }
+
+  if (S_ISREG (st.st_mode))
+    return load_cert (tok->str, lst);
+
+  if (S_ISDIR (st.st_mode))
+    {
+      DIR *dp;
+      struct dirent *ent;
+      struct stringbuf namebuf;
+      size_t dirlen;
+      int rc = PARSER_OK;
+
+      dirlen = strlen (tok->str);
+      while (dirlen > 0 && tok->str[dirlen-1] == '/')
+	dirlen--;
+
+      xstringbuf_init (&namebuf);
+      stringbuf_add (&namebuf, tok->str, dirlen);
+      stringbuf_add_char (&namebuf, '/');
+      dirlen++;
+
+      dp = opendir (tok->str);
+      if (dp == NULL)
+	{
+	  conf_error ("%s: error opening directory: %s", tok->str,
+		      strerror (errno));
+	  stringbuf_free (&namebuf);
+	  return PARSER_FAIL;
+	}
+
+      while ((ent = readdir (dp)) != NULL)
+	{
+	  char *filename;
+
+	  if (strcmp (ent->d_name, ".") == 0 || strcmp (ent->d_name, "..") == 0)
+	    continue;
+
+	  stringbuf_add_string (&namebuf, ent->d_name);
+	  filename = stringbuf_finish (&namebuf);
+	  if (stat (filename, &st))
+	    {
+	      conf_error ("%s: stat error: %s", filename, strerror (errno));
+	    }
+	  else if (S_ISREG (st.st_mode))
+	    {
+	      if ((rc = load_cert (filename, lst)) != PARSER_OK)
+		break;
+	    }
+	  else
+	    conf_error ("warning: ignoring %s: not a regular file", filename);
+	  stringbuf_truncate (&namebuf, dirlen);
+	}
+      closedir (dp);
+      stringbuf_free (&namebuf);
+      return rc;
+    }
+
+  conf_error ("%s: not a regular file or directory", tok->str);
+  return PARSER_FAIL;
 }
 
 static int
@@ -3726,7 +4483,7 @@ https_parse_calist (void *call_data, void *section_data)
 
   if ((cert_names = SSL_load_client_CA_file (tok->str)) == NULL)
     {
-      conf_openssl_error ("SSL_load_client_CA_file");
+      conf_openssl_error (NULL, "SSL_load_client_CA_file");
       return PARSER_FAIL;
     }
 
@@ -3756,7 +4513,7 @@ https_parse_verifylist (void *call_data, void *section_data)
   SLIST_FOREACH (pc, &lst->ctx_head, next)
     if (SSL_CTX_load_verify_locations (pc->ctx, tok->str, NULL) != 1)
       {
-	conf_openssl_error ("SSL_CTX_load_verify_locations");
+	conf_openssl_error (NULL, "SSL_CTX_load_verify_locations");
 	return PARSER_FAIL;
       }
 
@@ -3787,13 +4544,13 @@ https_parse_crlist (void *call_data, void *section_data)
       store = SSL_CTX_get_cert_store (pc->ctx);
       if ((lookup = X509_STORE_add_lookup (store, X509_LOOKUP_file ())) == NULL)
 	{
-	  conf_openssl_error ("X509_STORE_add_lookup");
+	  conf_openssl_error (NULL, "X509_STORE_add_lookup");
 	  return PARSER_FAIL;
 	}
 
       if (X509_load_crl_file (lookup, tok->str, X509_FILETYPE_PEM) != 1)
 	{
-	  conf_openssl_error ("X509_load_crl_file failed");
+	  conf_openssl_error (tok->str, "X509_load_crl_file failed");
 	  return PARSER_FAIL;
 	}
 
@@ -3819,6 +4576,8 @@ static PARSER_TABLE https_parsetab[] = {
   { "Client", assign_timeout, NULL, offsetof (LISTENER, to) },
   { "CheckURL", listener_parse_checkurl },
   { "Err400", assign_string_from_file, NULL, offsetof (LISTENER, http_err[HTTP_STATUS_BAD_REQUEST]) },
+  { "Err401", assign_string_from_file, NULL, offsetof (LISTENER, http_err[HTTP_STATUS_UNAUTHORIZED]) },
+  { "Err403", assign_string_from_file, NULL, offsetof (LISTENER, http_err[HTTP_STATUS_FORBIDDEN]) },
   { "Err404", assign_string_from_file, NULL, offsetof (LISTENER, http_err[HTTP_STATUS_NOT_FOUND]) },
   { "Err413", assign_string_from_file, NULL, offsetof (LISTENER, http_err[HTTP_STATUS_PAYLOAD_TOO_LARGE]) },
   { "Err414", assign_string_from_file, NULL, offsetof (LISTENER, http_err[HTTP_STATUS_URI_TOO_LONG]) },
@@ -3846,6 +4605,8 @@ static PARSER_TABLE https_parsetab[] = {
   { "RewriteLocation", parse_rewritelocation, NULL, offsetof (LISTENER, rewr_loc) },
   { "RewriteDestination", assign_bool, NULL, offsetof (LISTENER, rewr_dest) },
   { "LogLevel", parse_log_level, NULL, offsetof (LISTENER, log_level) },
+  { "ForwardedHeader", assign_string, NULL, offsetof (LISTENER, forwarded_header) },
+  { "TrustedIP", assign_acl, NULL, offsetof (LISTENER, trusted_ips) },
   { "Service", parse_service, NULL, offsetof (LISTENER, services) },
   { "Cert", https_parse_cert },
   { "ClientCert", https_parse_client_cert },
@@ -3902,6 +4663,8 @@ parse_listen_https (void *call_data, void *section_data)
   if (check_addrinfo (&lst->addr, &range, "ListenHTTPS") != PARSER_OK)
     return PARSER_FAIL;
 
+  lst->locus = format_locus_str (&range);
+
   if (SLIST_EMPTY (&lst->ctx_head))
     {
       conf_error_at_locus_range (&range, "Cert statement is missing");
@@ -3915,7 +4678,7 @@ parse_listen_https (void *call_data, void *section_data)
       if (!SSL_CTX_set_tlsext_servername_callback (ctx, SNI_server_name)
 	  || !SSL_CTX_set_tlsext_servername_arg (ctx, &lst->ctx_head))
 	{
-	  conf_openssl_error ("can't set SNI callback");
+	  conf_openssl_error (NULL, "can't set SNI callback");
 	  return PARSER_FAIL;
 	}
     }
@@ -4027,8 +4790,10 @@ parse_control (void *call_data, void *section_data)
       break;
 
     case T_STRING:
+      range.beg = last_token_locus_range ()->beg;
       putback_tkn (tok);
       rc = parse_control_socket (&lst->addr, section_data);
+      range.end = last_token_locus_range ()->end;
       break;
 
     default:
@@ -4040,11 +4805,13 @@ parse_control (void *call_data, void *section_data)
     return PARSER_FAIL;
 
   lst->verb = 1; /* Need PUT and DELETE methods */
+  lst->locus = format_locus_str (&range);
   /* Register listener in the global listener list */
   SLIST_PUSH (&listeners, lst, next);
 
   /* Create service */
   XZALLOC (svc);
+  lst->locus = format_locus_str (&range);
   SLIST_INIT (&svc->backends);
   svc->sess_type = SESS_NONE;
   pthread_mutex_init (&svc->mut, NULL);
@@ -4056,6 +4823,7 @@ parse_control (void *call_data, void *section_data)
 
   /* Create backend */
   XZALLOC (be);
+  be->locus = format_locus_str (&range);
   be->be_type = BE_CONTROL;
   be->priority = 1;
   pthread_mutex_init (&be->mut, NULL);
@@ -4064,7 +4832,97 @@ parse_control (void *call_data, void *section_data)
 
   return PARSER_OK;
 }
+
+static int
+parse_named_backend (void *call_data, void *section_data)
+{
+  NAMED_BACKEND_TABLE *tab = call_data;
+  struct token *tok;
+  BACKEND *be;
+  struct locus_range range;
+  NAMED_BACKEND *olddef;
+  char *name;
 
+  range.beg = last_token_locus_range ()->beg;
+
+  if ((tok = gettkn_expect (T_STRING)) == NULL)
+    return PARSER_FAIL;
+
+  name = xstrdup (tok->str);
+
+  be = parse_backend_internal (backend_parsetab, section_data, NULL);
+  if (!be)
+    return PARSER_FAIL;
+  range.end = last_token_locus_range ()->end;
+  if (check_addrinfo (&be->v.reg.addr, &range, "Backend") != PARSER_OK)
+    return PARSER_FAIL;
+
+  olddef = named_backend_insert (tab, name, &range, be);
+  free (name);
+  pthread_mutex_destroy (&be->mut);
+  free (be->locus);
+  free (be);
+  // FIXME: free address on failure only.
+
+  if (olddef)
+    {
+      conf_error_at_locus_range (&range, "redefinition of named backend %s",
+				 olddef->name);
+      conf_error_at_locus_range (&olddef->locus,
+				 "original definition was here");
+      return PARSER_FAIL;
+    }
+
+  return PARSER_OK;
+}
+
+static int
+parse_combine_headers (void *call_data, void *section_data)
+{
+  struct token *tok;
+
+  if ((tok = gettkn_any ()) == NULL)
+    return PARSER_FAIL;
+
+  if (tok->type != '\n')
+    {
+      conf_error ("expected newline, but found %s", token_type_str (tok->type));
+      return PARSER_FAIL;
+    }
+
+  for (;;)
+    {
+      int rc;
+      if ((tok = gettkn_any ()) == NULL)
+	return PARSER_FAIL;
+      if (tok->type == '\n')
+	continue;
+      if (tok->type == T_IDENT)
+	{
+	  if (strcasecmp (tok->str, "end") == 0)
+	    break;
+	  if (strcasecmp (tok->str, "include") == 0)
+	    {
+	      if ((rc = parse_include (NULL, NULL)) == PARSER_FAIL)
+		return rc;
+	      continue;
+	    }
+	  conf_error ("expected quoted string, \"Include\", or \"End\", but found %s",
+		      token_type_str (tok->type));
+	  return PARSER_FAIL;
+	}
+      if (tok->type == T_STRING)
+	combinable_header_add (tok->str);
+      else
+	{
+	  conf_error ("expected quoted string, \"Include\", or \"End\", but found %s",
+		      token_type_str (tok->type));
+	  return PARSER_FAIL;
+	}
+    }
+  return PARSER_OK;
+}
+
 static PARSER_TABLE top_level_parsetab[] = {
   { "IncludeDir", parse_includedir },
   { "User", assign_string, &user },
@@ -4079,6 +4937,7 @@ static PARSER_TABLE top_level_parsetab[] = {
   { "Grace", assign_timeout, &grace },
   { "LogFacility", assign_log_facility, NULL, offsetof (POUND_DEFAULTS, facility) },
   { "LogLevel", parse_log_level, NULL, offsetof (POUND_DEFAULTS, log_level) },
+  { "LogFormat", parse_log_format },
   { "Alive", assign_timeout, &alive_to },
   { "Client", assign_timeout, NULL, offsetof (POUND_DEFAULTS, clnt_to) },
   { "TimeOut", assign_timeout, NULL, offsetof (POUND_DEFAULTS, be_to) },
@@ -4093,21 +4952,150 @@ static PARSER_TABLE top_level_parsetab[] = {
   { "Anonymise", int_set_one, &anonymise },
   { "Anonymize", int_set_one, &anonymise },
   { "Service", parse_service, &services },
+  { "Backend", parse_named_backend, NULL, offsetof (POUND_DEFAULTS, named_backend_table) },
   { "ListenHTTP", parse_listen_http, &listeners },
   { "ListenHTTPS", parse_listen_https, &listeners },
   { "ACL", parse_named_acl, NULL },
   { "PidFile", assign_string, &pid_name },
   { "BackendStats", assign_bool, &enable_backend_stats },
+  { "ForwardedHeader", assign_string, &forwarded_header },
+  { "TrustedIP", assign_acl, &trusted_ips },
+  { "CombineHeaders", parse_combine_headers },
   { NULL }
 };
 
+static int
+resolve_backend_ref (BACKEND *be, void *data)
+{
+  if (be->be_type == BE_BACKEND_REF)
+    {
+      NAMED_BACKEND_TABLE *tab = data;
+      NAMED_BACKEND *nb;
+
+      nb = named_backend_retrieve (tab, be->v.be_name);
+      if (!nb)
+	{
+	  logmsg (LOG_ERR, "%s: named backend %s is not declared",
+		  be->locus, be->v.be_name);
+	  return -1;
+	}
+      free (be->v.be_name);
+      be->be_type = BE_BACKEND;
+      be->v.reg = nb->bereg;
+      if (be->priority == -1)
+	be->priority = nb->priority;
+      if (be->disabled == -1)
+	be->disabled = nb->disabled;
+    }
+  return 0;
+}
+
+/*
+ * Fix-up password file structures for use in restricted chroot
+ * environment.
+ */
+static int
+cond_pass_file_fixup (SERVICE_COND *cond)
+{
+  int rc = 0;
+
+  switch (cond->type)
+    {
+    case COND_BASIC_AUTH:
+      if (cond->pwfile.filename[0] == '/')
+	{
+	  if (root_jail)
+	    {
+	      /* Split file name into directory and base name, */
+	      char *p = strrchr (cond->pwfile.filename, '/');
+	      if (p != NULL)
+		{
+		  char *dir = cond->pwfile.filename;
+		  *p++ = 0;
+		  cond->pwfile.filename = xstrdup (p);
+		  if ((cond->pwfile.wd = workdir_get (dir)) == NULL)
+		    {
+		      conf_error_at_locus_range (&cond->pwfile.locus,
+						 "can't open directory %s: %s",
+						 dir,
+						 strerror (errno));
+		      free (dir);
+		      rc = -1;
+		      break;
+		    }
+		  free (dir);
+		}
+	    }
+	}
+      else
+	cond->pwfile.wd = workdir_ref (include_wd);
+      break;
+
+    case COND_BOOL:
+      {
+	SERVICE_COND *subcond;
+	SLIST_FOREACH (subcond, &cond->bool.head, next)
+	  {
+	    if ((rc = cond_pass_file_fixup (subcond)) != 0)
+	      break;
+	  }
+      }
+      break;
+
+    default:
+      break;
+    }
+  return rc;
+}
+
+static int
+rule_pass_file_fixup (REWRITE_RULE *rule)
+{
+  int rc = 0;
+  do
+    {
+      if ((rc = cond_pass_file_fixup (&rule->cond)) != 0)
+	break;
+    }
+  while ((rule = rule->iffalse) != NULL);
+  return rc;
+}
+
+static int
+pass_file_fixup (REWRITE_RULE_HEAD *head)
+{
+  REWRITE_RULE *rule;
+  int rc = 0;
+
+  SLIST_FOREACH (rule, head, next)
+    {
+      if ((rc = rule_pass_file_fixup (rule)) != 0)
+	break;
+    }
+  return rc;
+}
+
+static int
+service_pass_file_fixup (SERVICE *svc, void *data)
+{
+  if (cond_pass_file_fixup (&svc->cond))
+    return -1;
+  return pass_file_fixup (&svc->rewrite[REWRITE_REQUEST]);
+}
+
+static int
+listener_pass_file_fixup (LISTENER *lstn, void *data)
+{
+  return pass_file_fixup (&lstn->rewrite[REWRITE_REQUEST]);
+}
+
 int
-parse_config_file (char const *file)
+parse_config_file (char const *file, int nosyslog)
 {
   int res = -1;
   POUND_DEFAULTS pound_defaults = {
-    .facility = LOG_DAEMON,
     .log_level = 1,
+    .facility = LOG_DAEMON,
     .clnt_to = 10,
     .be_to = 15,
     .ws_to = 600,
@@ -4117,20 +5105,53 @@ parse_config_file (char const *file)
     .balancer = BALANCER_RANDOM
   };
 
-  if (push_input (file) == 0)
+  named_backend_table_init (&pound_defaults.named_backend_table);
+  compile_canned_formats ();
+  open_include_dir (NULL);
+  res = push_input (file);
+  workdir_unref (include_wd);
+  if (res == 0)
     {
       open_include_dir (include_dir);
       res = parser_loop (top_level_parsetab, &pound_defaults, &pound_defaults, NULL);
-      close_include_dir ();
       if (res == 0)
 	{
 	  if (cur_input)
 	    exit (1);
+	  if (foreach_backend (resolve_backend_ref,
+			       &pound_defaults.named_backend_table))
+	    exit (1);
 	  if (worker_min_count > worker_max_count)
 	    abend ("WorkerMinCount is greater than WorkerMaxCount");
-	  log_facility = pound_defaults.facility;
+	  if (!nosyslog)
+	    log_facility = pound_defaults.facility;
+
+	  if (root_jail || daemonize)
+	    {
+	      if (foreach_listener (listener_pass_file_fixup, NULL)
+		  || foreach_service (service_pass_file_fixup, NULL))
+		exit (1);
+	      if (include_wd->refcount > 0 && include_wd->fd == AT_FDCWD)
+		{
+		  int fd = openat (include_wd->fd, ".",
+				   O_RDONLY | O_NONBLOCK | O_DIRECTORY);
+		  if (fd == -1)
+		    {
+		      logmsg (LOG_CRIT,
+			      "can't open current working directory: %s",
+			      strerror (errno));
+		      exit (1);
+		    }
+		  include_wd->fd = fd;
+		}
+	    }
+	  workdir_unref (include_wd);
 	}
     }
+  named_backend_table_free (&pound_defaults.named_backend_table);
+  if (include_wd->refcount == 0)
+    include_wd = NULL;
+  workdir_cleanup ();
   return res;
 }
 
@@ -4330,9 +5351,8 @@ config_parse (int argc, char **argv)
       exit (1);
     }
 
-  if (parse_config_file (conf_name))
+  if (parse_config_file (conf_name, stderr_option))
     exit (1);
-  name_list_free ();
 
   if (check_only)
     {
@@ -4349,12 +5369,7 @@ config_parse (int argc, char **argv)
   if (foreground_option)
     daemonize = 0;
 
-  if (daemonize == 0)
-    {
-      if (stderr_option)
-	log_facility = -1;
-    }
-  else
+  if (daemonize)
     {
       if (log_facility == -1)
 	log_facility = LOG_DAEMON;
