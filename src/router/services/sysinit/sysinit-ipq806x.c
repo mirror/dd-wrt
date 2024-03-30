@@ -627,10 +627,10 @@ void start_sysinit(void)
 	case ROUTER_ASUS_AC58U:
 		nvram_seti("sw_cpuport", 0);
 		nvram_seti("sw_wan", 5);
-		nvram_seti("sw_lan1", 1);
-		nvram_seti("sw_lan2", 2);
-		nvram_seti("sw_lan3", 3);
-		nvram_seti("sw_lan4", 4);
+		nvram_seti("sw_lan1", 4);
+		nvram_seti("sw_lan2", 3);
+		nvram_seti("sw_lan3", 2);
+		nvram_seti("sw_lan4", 1);
 		break;
 	case ROUTER_HABANERO:
 #ifdef HAVE_ANTAIRA
