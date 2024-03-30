@@ -3053,6 +3053,15 @@ void load_drivers(int boot)
 		}
 	}
 #endif
+#ifdef HAVE_IPQ806X
+	if (nvram_matchi("usb_enable", 1)) {
+		int brand = getRouterBrand();
+		insmod("ledtrig-usbport");
+		if (brand == ROUTER_ASUS_AC58U) {
+			set_led_usbport("rt-ac58u\\:blue\\:usb", "usb3-port1 usb3-port2 usb2-port1");
+		}
+	}
+#endif
 }
 
 void start_drivers_net(void)
