@@ -393,7 +393,7 @@ void start_sysinit(void)
 		mtd = getMTD("ART");
 	if (board == ROUTER_ASUS_AC58U)
 		mtd = getMTD("Factory");
-	
+
 	char *maddr = NULL;
 	sprintf(mtdpath, "/dev/mtdblock/%d", mtd);
 	if (board != ROUTER_NETGEAR_R7500)
@@ -468,11 +468,12 @@ void start_sysinit(void)
 		calcchecksum(&smem[0x4000]);
 		if (board == ROUTER_ASUS_AC58U) {
 			char ethaddr[32];
-			sprintf(ethaddr, "%02x:%02x:%02x:%02x:%02x:%02x", smem[6]&0xff, smem[7]&0xff, smem[8]&0xff, smem[9]&0xff, smem[10]&0xff,
-			       smem[11]&0xff);
+			sprintf(ethaddr, "%02x:%02x:%02x:%02x:%02x:%02x", smem[6] & 0xff, smem[7] & 0xff, smem[8] & 0xff,
+				smem[9] & 0xff, smem[10] & 0xff, smem[11] & 0xff);
 			set_hwaddr("eth1", ethaddr);
-			sprintf(ethaddr, "%02x:%02x:%02x:%02x:%02x:%02x", smem[0x4000+6]&0xff, smem[0x4000+7]&0xff, smem[0x4000+8]&0xff, smem[0x4000+9]&0xff, smem[0x4000+10]&0xff,
-			       smem[0x4000+11]&0xff);
+			sprintf(ethaddr, "%02x:%02x:%02x:%02x:%02x:%02x", smem[0x4000 + 6] & 0xff, smem[0x4000 + 7] & 0xff,
+				smem[0x4000 + 8] & 0xff, smem[0x4000 + 9] & 0xff, smem[0x4000 + 10] & 0xff,
+				smem[0x4000 + 11] & 0xff);
 			set_hwaddr("eth0", ethaddr);
 			nvram_set("et0macaddr", ethaddr);
 			nvram_set("et0macaddr_safe", ethaddr);
@@ -566,7 +567,7 @@ void start_sysinit(void)
 
 		sysprintf("echo \"link tx rx\" > /sys/devices/platform/leds/leds/rt-ac58u:blue:lan/mode");
 		sysprintf("echo \"link tx rx\" > /sys/devices/platform/leds/leds/rt-ac58u:blue:wan/mode");
-	break;
+		break;
 	case ROUTER_HABANERO:
 #ifdef HAVE_ANTAIRA
 		eval("insmod", "i2c-gpio-custom", "bus2=2,11,10");
@@ -623,8 +624,15 @@ void start_sysinit(void)
 	}
 
 	switch (board) {
-	case ROUTER_HABANERO:
 	case ROUTER_ASUS_AC58U:
+		nvram_seti("sw_cpuport", 0);
+		nvram_seti("sw_wan", 5);
+		nvram_seti("sw_lan1", 1);
+		nvram_seti("sw_lan2", 2);
+		nvram_seti("sw_lan3", 3);
+		nvram_seti("sw_lan4", 4);
+		break;
+	case ROUTER_HABANERO:
 #ifdef HAVE_ANTAIRA
 		eval("insmod", "i2c-gpio-custom", "bus2=2,11,10");
 		eval("insmod", "rtc-pcf8523");
