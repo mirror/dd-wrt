@@ -57,7 +57,7 @@ void start_jffs2(void)
 #ifdef HAVE_IPQ806X
 	int brand = getRouterBrand();
 	switch (brand) {
-	case ROUTER_ROUTER_ASUS_AC58U:
+	case ROUTER_ASUS_AC58U:
 		classic = 1;
 		break;
 	case ROUTER_TRENDNET_TEW827:
