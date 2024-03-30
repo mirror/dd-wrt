@@ -603,6 +603,9 @@ ifeq ($(CONFIG_HABANERO),y)
 	tools/asus/mkimage -A arm -O linux -T kernel -C lzma -a 0x80208000 -e 0x80208000 -r $${RFSOFFSET} \
 			-n RT-AC58U -V "4.9" "0.4" "382" "52243-g06ac406" "0" "0" "0" "0" "0" "0" \
 			-d $(TOP)/$(ARCH)-uclibc/asus-ac58u.img $(TOP)/$(ARCH)-uclibc/asus-ac58u.trx
+
+	-./tools/trx_n -m 55000000 -o $(ARCH)-uclibc/ac58.bin $(ARCH)-uclibc/asus-ac58u.img
+
 endif
 
 include rules/all.mk
