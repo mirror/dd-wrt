@@ -864,7 +864,7 @@ static int raspi_prob(void)
 					sb = (struct squashfs_super_block *)buf;
 					int len;
 
-				    	printk(KERN_EMERG "\nfound squashfs at %X with %d len\n",offset, le64_to_cpu(sb->bytes_used));
+				    	printk(KERN_INFO "\nfound squashfs at %X with %d len\n",offset, le64_to_cpu(sb->bytes_used));
 					rt2880_partitions[3].size=(((flash->mtd.size)-nvramsize)-bootsize);					
 					rt2880_partitions[4].offset = offset;					
 					rt2880_partitions[4].size = rt2880_partitions[3].size-(offset-bootsize);					

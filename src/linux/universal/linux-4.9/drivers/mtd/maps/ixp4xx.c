@@ -296,7 +296,7 @@ static int ixp4xx_flash_probe(struct platform_device *dev)
 
 	/* Use the fast version */
 	info->map.write = ixp4xx_write16;
-	printk(KERN_EMERG "scanning for root partition\n");
+	printk(KERN_INFO "scanning for root partition\n");
 	mtd = info->mtd;
 	offset = 0;
 	buf = info->map.virt;
@@ -312,7 +312,7 @@ static int ixp4xx_flash_probe(struct platform_device *dev)
 	erasesize = 0x20000;
 #endif
 	while ((offset + erasesize) < mtd->size) {
-		printk(KERN_EMERG "[0x%08X]\r", offset);
+		printk(KERN_INFO "[0x%08X]\r", offset);
 		if (*((__u32 *)buf) == SQUASHFS_MAGIC_SWAP || *((__u16 *)buf) == 0x1985) {
 			struct squashfs_super_block *sb = (struct squashfs_super_block *)buf;
 			if (*((__u16 *)buf) != 0x1985) {
@@ -323,12 +323,12 @@ static int ixp4xx_flash_probe(struct platform_device *dev)
 				filesyssize = tmplen - offset;
 			}
 
-			printk(KERN_EMERG "\nfound squashfs/jffs2 at %X\n", offset);
+			printk(KERN_INFO "\nfound squashfs/jffs2 at %X\n", offset);
 			dir_parts[ROOTFS].offset = offset;
 			//detect now compex board
-			//printk(KERN_EMERG "id = %s\n",(char*)(info->map.virt+0x23d6));
+			//printk(KERN_INFO "id = %s\n",(char*)(info->map.virt+0x23d6));
 			if (!strncmp((char *)(info->map.virt + 0x23d6), "myloram.bin", 11)) {
-				printk(KERN_EMERG "Compex WP188 detected!\n");
+				printk(KERN_INFO "Compex WP188 detected!\n");
 				dir_parts[BOOT].size = 0x40000;
 				dir_parts[BOOT].offset = 0;
 				dir_parts[DIR].size = 0x1000;
@@ -359,17 +359,17 @@ static int ixp4xx_flash_probe(struct platform_device *dev)
 			p = (unsigned char *)(info->map.virt + mtd->size - erasesize);
 #endif
 			fis = (struct fis_image_desc *)p;
-			printk(KERN_EMERG "scan redboot from %p\n", fis);
+			printk(KERN_INFO "scan redboot from %p\n", fis);
 			while (1) {
 				if (fis->name[BOOT] == 0xff) {
 					goto def;
 				}
 				if (!strncmp(fis->name, "RedBoot", 7) && strncmp(fis->name, "RedBoot config", 14)) {
-					printk(KERN_EMERG "found RedBoot partition at [0x%08lX]\n", fis->flash_base);
+					printk(KERN_INFO "found RedBoot partition at [0x%08lX]\n", fis->flash_base);
 					dir_parts[BOOT].size = fis->size;
 				}
 				if (!strncmp(fis->name, "RedBoot config", 14)) {
-					printk(KERN_EMERG "found RedBoot config partition at [0x%08lX]\n", fis->flash_base);
+					printk(KERN_INFO "found RedBoot config partition at [0x%08lX]\n", fis->flash_base);
 					dir_parts[DIR].size = mtd->erasesize;
 					dir_parts[DIR].offset = fis->flash_base & (mtd->size - 1);
 #ifdef CONFIG_TONZE
@@ -391,12 +391,12 @@ static int ixp4xx_flash_probe(struct platform_device *dev)
 					foundconfig = 1;
 				}
 				if (!strncmp(fis->name, "linux", 5) || !strncmp(fis->name, "vmlinux", 7) || !strncmp(fis->name, "kernel", 6)) {
-					printk(KERN_EMERG "found linux partition at [0x%08lX]\n", fis->flash_base);
+					printk(KERN_INFO "found linux partition at [0x%08lX]\n", fis->flash_base);
 					dir_parts[LINUX].offset = fis->flash_base & (mtd->size - 1);
 					dir_parts[LINUX].size = dir_parts[ROOTFS].offset - dir_parts[LINUX].offset + dir_parts[ROOTFS].size;
 				}
 				if (!strncmp(fis->name, "FIS directory", 13)) {
-					printk(KERN_EMERG "found config partition at [0x%08lX]\n", fis->flash_base);
+					printk(KERN_INFO "found config partition at [0x%08lX]\n", fis->flash_base);
 					dir_parts[FIS].offset = (fis->flash_base & (mtd->size - 1));
 					dir_parts[FIS].size = mtd->erasesize;
 #ifdef CONFIG_TONZE

@@ -175,7 +175,7 @@ int __init init_ar531x(void)
 			unsigned char *buf = (unsigned char *)0xbe000000;
 			while ((offset + mymtd->erasesize) < mymtd->size) {
 				if (*((__u32 *)buf) == SQUASHFS_MAGIC_SWAP) {
-					printk(KERN_EMERG
+					printk(KERN_INFO
 					       "\nfound squashfs at %X\n",
 					       offset);
 					sb = (struct squashfs_super_block *)buf;
@@ -211,7 +211,7 @@ int __init init_ar531x(void)
 						}
 						if (!strcmp
 						    (fis->name, "RedBoot")) {
-							printk(KERN_EMERG
+							printk(KERN_INFO
 							       "found RedBoot partition at [0x%08lX]\n",
 							       fis->flash_base);
 							dir_parts[0].size =
@@ -223,7 +223,7 @@ int __init init_ar531x(void)
 								"vmlinux", 7)
 						    || !strcmp(fis->name,
 							       "kernel")) {
-							printk(KERN_EMERG
+							printk(KERN_INFO
 							       "found linux partition at [0x%08lX]\n",
 							       fis->flash_base);
 							dir_parts[1].offset =

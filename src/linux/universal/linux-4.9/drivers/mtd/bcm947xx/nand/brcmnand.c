@@ -1037,7 +1037,7 @@ init_brcmnand_mtd_partitions(struct mtd_info *mtd, size_t size)
 
 	if ((!strncmp(nvram_safe_get("boardnum"),"2013",4) || !strncmp(nvram_safe_get("boardnum"),"2014",4)) && nvram_match("boardtype", "0x0646")
 	    && nvram_match("boardrev", "0x1110")) {
-		printk(KERN_EMERG "Buffalo WZR-900DHP dualboot\n");
+		printk(KERN_INFO "Buffalo WZR-900DHP dualboot\n");
 		isbufdual = 1;
 	}
 
@@ -1055,7 +1055,7 @@ init_brcmnand_mtd_partitions(struct mtd_info *mtd, size_t size)
 	}
 
 	if (nvram_match("model","RT-AC87U")) {
-		printk(KERN_EMERG "Asus AC87U\n");
+		printk(KERN_INFO "Asus AC87U\n");
 		offset = 0x4000000;
 	}
 
@@ -1081,7 +1081,7 @@ init_brcmnand_mtd_partitions(struct mtd_info *mtd, size_t size)
 	if (boardnum == 00 && nvram_match("boardtype", "0x0665")
 	    && nvram_match("boardrev", "0x1103")
 	    && nvram_match("melco_id", "RD_BB13049")) {
-		printk(KERN_EMERG "Buffalo WXR-1900DHP dualboot part\n");
+		printk(KERN_INFO "Buffalo WXR-1900DHP dualboot part\n");
 		isbufdual = 1;
 		offset = 0x6000000;
 		size -= 0x100000;

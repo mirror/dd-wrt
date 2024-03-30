@@ -860,7 +860,6 @@ static int split_squashfs(struct mtd_info *master, int offset, int *split_offset
 			"from \"%s\"\n", master->name);
 		return -EINVAL;
 	}
-	printk(KERN_EMERG " magic %X vs %X\n",sb.s_magic, SQUASHFS_MAGIC);
 	if (SQUASHFS_MAGIC != sb.s_magic ) {
 		printk(KERN_ALERT "split_squashfs: no squashfs found in \"%s\"\n",
 			master->name);
@@ -1055,7 +1054,7 @@ int add_mtd_partitions(struct mtd_info *master,
 			    mtd_read(master,offset,4, &retlen, (u_char *)&buf);
 			    if (SQUASHFS_MAGIC == le32_to_cpu(buf))
 				    {
-				    	printk(KERN_EMERG "\nfound squashfs at %X\n",offset);
+				    	printk(KERN_INFO "\nfound squashfs at %X\n",offset);
 				    	struct mtd_partition part;
 				    	part.name = "rootfs";
 				    	part.offset = offset;
@@ -1328,7 +1327,7 @@ int ra_mtd_write(int num, loff_t to, size_t len, const u_char *buf)
 	struct mtd_info *mtd;
 	struct erase_info ei;
 	u_char *bak = NULL;
-//	printk(KERN_EMERG "writing to partition %d, offset %d, len %d\n",num,to,len);
+//	printk(KERN_INFO "writing to partition %d, offset %d, len %d\n",num,to,len);
 #ifdef CONFIG_RT2880_FLASH_8M
         /* marklin 20080605 : return read mode for ST */
         Flash_SetModeRead();
@@ -1355,7 +1354,7 @@ int ra_mtd_write(int num, loff_t to, size_t len, const u_char *buf)
 		return ret;
 	}
 	if (rdlen != mtd->erasesize)
-		printk(KERN_EMERG "warning: ra_mtd_write: rdlen is not equal to erasesize\n");
+		printk(KERN_INFO "warning: ra_mtd_write: rdlen is not equal to erasesize\n");
 
 	memcpy(bak + to, buf, len);
 
@@ -1393,7 +1392,7 @@ int ra_mtd_read(int num,int from, int len, u_char *buf)
 
 	ret = mtd_read(mtd, from, len, &rdlen, buf);
 	if (rdlen != len)
-		printk(KERN_EMERG "warning: ra_mtd_read: rdlen is not equal to len\n");
+		printk(KERN_INFO "warning: ra_mtd_read: rdlen is not equal to len\n");
 
 	put_mtd_device(mtd);
 	return ret;

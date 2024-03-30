@@ -504,7 +504,7 @@ static unsigned int guessflashsize(void *base)
 			break;
 		}
 	}
-	printk(KERN_EMERG "guessed flashsize = %dM\n", size >> 20);
+	printk(KERN_INFO "guessed flashsize = %dM\n", size >> 20);
 	return size;
 
 }

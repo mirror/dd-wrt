@@ -745,14 +745,14 @@ static int spiflash_probe(struct platform_device *pdev)
 	mtd->_write = spiflash_write;
 #endif
 	mtd->owner = THIS_MODULE;
-	printk(KERN_EMERG "scanning for root partition\n");
+	printk(KERN_INFO "scanning for root partition\n");
 	
 	offset = 0;
 	buf = 0xa8000000;
 	int compex=0;
 		if (!strncmp((char*)(buf+0x26da),"myloram.bin",11))
 		    {
-		    printk(KERN_EMERG "Compex device detected\n");
+		    printk(KERN_INFO "Compex device detected\n");
 		    dir_parts[0].size=0x20000;
 		    dir_parts[0].offset=0;
 		    dir_parts[7].size=mtd->size;
@@ -765,10 +765,10 @@ static int spiflash_probe(struct platform_device *pdev)
 
 	while((offset+mtd->erasesize)<mtd->size)
 	    {
-//	    printk(KERN_EMERG "[0x%08X]\n",offset);
+//	    printk(KERN_INFO "[0x%08X]\n",offset);
 	    if (*((__u32 *) buf) == SQUASHFS_MAGIC_SWAP) 
 		{
-		printk(KERN_EMERG "\nfound squashfs at %X\n",offset);
+		printk(KERN_INFO "\nfound squashfs at %X\n",offset);
 		sb = (struct squashfs_super_block *) buf;
 		dir_parts[2].offset = offset;
 		
@@ -804,14 +804,14 @@ static int spiflash_probe(struct platform_device *pdev)
 		    }
 		if (!strcmp(fis->name,"RedBoot"))
 		    {
-		    printk(KERN_EMERG "found RedBoot partition at [0x%08lX]\n",fis->flash_base);
+		    printk(KERN_INFO "found RedBoot partition at [0x%08lX]\n",fis->flash_base);
 		    dir_parts[0].size=fis->size;
 		    dir_parts[7].offset=0;
 		    dir_parts[1].offset=fis->size;
 		    }
 		if (!strcmp(fis->name,"linux") || !strncmp(fis->name,"vmlinux",7) || !strcmp(fis->name,"kernel"))
 		    {
-		    printk(KERN_EMERG "found linux partition at [0x%08lX]\n",fis->flash_base);
+		    printk(KERN_INFO "found linux partition at [0x%08lX]\n",fis->flash_base);
 		    if (dir_parts[2].offset==dir_parts[1].offset) // image begins with rootfs instead of kernel
 			dir_parts[1].size=fis->size+rootsize;		    
 		    else

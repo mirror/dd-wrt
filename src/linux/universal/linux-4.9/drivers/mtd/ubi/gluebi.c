@@ -337,7 +337,7 @@ static int create_rootfs_partition(struct mtd_info *mtd,
 			    mtd_read(mtd,offset,4, &retlen, (u_char *)&buf);
 			    if (SQUASHFS_MAGIC == le32_to_cpu(buf) || SQUASHFS_MAGIC_SWAP == le32_to_cpu(buf))
 				    {
-				    	printk(KERN_EMERG "\nfound squashfs at %X\n",offset);
+				    	printk(KERN_INFO "\nfound squashfs at %X\n",offset);
 				    	part->name = "rootfs";
 				    	part->offset = offset;
 				    	part->size = mtd->size - offset; 

@@ -43,13 +43,13 @@ static DECLARE_MUTEX(ar7240_flash_sem);
 /* GLOBAL FUNCTIONS */
 void ar7240_flash_spi_down(void)
 {
-//printk(KERN_EMERG "spi down\n");
+//printk(KERN_INFO "spi down\n");
 	down(&ar7240_flash_sem);
 }
 
 void ar7240_flash_spi_up(void)
 {
-//printk(KERN_EMERG "spi up\n");
+//printk(KERN_INFO "spi up\n");
 	up(&ar7240_flash_sem);
 }
 
@@ -84,58 +84,58 @@ int guessbootsize(void *offset, unsigned int maxscan)
 	return 0x50000;
 #endif
 	if (!strncmp((char *)(ofsb + 0x29da), "myloram.bin", 11) || !strncmp((char *)(ofsb + 0x2aba), "myloram.bin", 11)) {
-		printk(KERN_EMERG "compex WP72E detected\n");
+		printk(KERN_INFO "compex WP72E detected\n");
 		nocalibration = 1;
 		return 0x30000;	// compex, lzma image
 	}
 
 	for (i = 0; i < maxscan; i += 16384) {
 		if (ofs[i] == 0x6d000080) {
-			printk(KERN_EMERG "redboot or compatible detected\n");
+			printk(KERN_INFO "redboot or compatible detected\n");
 			return 0x70000;	// redboot, lzma image
 		}
 		if (ofs[i] == 0x5ea3a417) {
-			printk(KERN_EMERG "alpha SEAMA found\n");
+			printk(KERN_INFO "alpha SEAMA found\n");
 			return i * 4;	// redboot, lzma image
 		}
 		if (ofs[i] == 0x27051956) {
-			printk(KERN_EMERG "uboot detected\n");
+			printk(KERN_INFO "uboot detected\n");
 			return i * 4;	// uboot, lzma image
 		}
 		if (ofs[i] == 0x77617061) {
-			printk(KERN_EMERG "DAP3662 bootloader\n");
+			printk(KERN_INFO "DAP3662 bootloader\n");
 			return 0x70000;	// uboot, lzma image
 		}
 		if (ofs[i] == 0x7761706e) {
-			printk(KERN_EMERG "DAP2230 bootloader\n");
+			printk(KERN_INFO "DAP2230 bootloader\n");
 			return 0x70000;	// uboot, lzma image
 		}
 		if (ofs[i] == 0x32303033) {
-			printk(KERN_EMERG "WNR2000 uboot detected\n");
+			printk(KERN_INFO "WNR2000 uboot detected\n");
 			return 0x50000;	// uboot, lzma image
 		}
 		if (ofs[i] == 0x32323030) {
-			printk(KERN_EMERG "WNR2200 uboot detected\n");
+			printk(KERN_INFO "WNR2200 uboot detected\n");
 			return 0x50000;	// uboot, lzma image
 		}
 		if (ofs[i] == 0x01000000 && ofs[i + 1] == 0x44442d57) {
-			printk(KERN_EMERG "tplink uboot detected\n");
+			printk(KERN_INFO "tplink uboot detected\n");
 			return i * 4;	// uboot, lzma image
 		}
 		if (ofs[i] == 0x01000000 && ofs[i + 1] == 0x54502D4C) {
-			printk(KERN_EMERG "tplink uboot detected\n");
+			printk(KERN_INFO "tplink uboot detected\n");
 			return i * 4;	// uboot, lzma image
 		}
 		if (ofs[i + 15] == 0x27051956) {
-			printk(KERN_EMERG "WRT160NL uboot detected\n");
+			printk(KERN_INFO "WRT160NL uboot detected\n");
 			return i * 4;	// uboot, lzma image
 		}
 		if (ofs[i] == SQUASHFS_MAGIC_SWAP) {
-			printk(KERN_EMERG "ZCom quirk found\n");
+			printk(KERN_INFO "ZCom quirk found\n");
 			zcom = 1;
 			for (a = i; a < maxscan; a += 16384) {
 				if (ofs[a] == 0x27051956) {
-					printk(KERN_EMERG "ZCom quirk kernel offset %d\n", a * 4);
+					printk(KERN_INFO "ZCom quirk kernel offset %d\n", a * 4);
 					zcomoffset = a * 4;
 				}
 
@@ -306,13 +306,13 @@ static int __init ar7240_flash_init(void)
 		mtd->_read = ar7240_flash_read;
 		mtd->_write = ar7240_flash_write;
 
-		printk(KERN_EMERG "scanning for root partition\n");
+		printk(KERN_INFO "scanning for root partition\n");
 
 		offset = 0;
 
 		guess = guessbootsize(buf, mtd->size);
 		if (guess > 0) {
-			printk(KERN_EMERG "guessed bootloader size = %X\n", guess);
+			printk(KERN_INFO "guessed bootloader size = %X\n", guess);
 			dir_parts[0].offset = 0;
 			dir_parts[0].size = guess;
 			dir_parts[7].size = guess;
@@ -322,11 +322,11 @@ static int __init ar7240_flash_init(void)
 			dir_parts[8].size = mtd->erasesize;
 		}
 		while ((offset + mtd->erasesize) < mtd->size) {
-//                      printk(KERN_EMERG "[0x%08X] = [0x%08X]!=[0x%08X]\n",offset,*((unsigned int *) buf),SQUASHFS_MAGIC_SWAP);
+//                      printk(KERN_INFO "[0x%08X] = [0x%08X]!=[0x%08X]\n",offset,*((unsigned int *) buf),SQUASHFS_MAGIC_SWAP);
 			__u32 *check2 = (__u32 *)&buf[0x60];
 			__u32 *check3 = (__u32 *)&buf[0xc0];
 			if (*((__u32 *)buf) == SQUASHFS_MAGIC_SWAP || *check2 == SQUASHFS_MAGIC_SWAP || *check3 == SQUASHFS_MAGIC_SWAP) {
-				printk(KERN_EMERG "\nfound squashfs at %X\n", offset);
+				printk(KERN_INFO "\nfound squashfs at %X\n", offset);
 				if (*check2 == SQUASHFS_MAGIC_SWAP) {
 					buf += 0x60;
 					offset += 0x60;
@@ -339,7 +339,7 @@ static int __init ar7240_flash_init(void)
 				}
 				sb = (struct squashfs_super_block *)buf;
 				if (le16_to_cpu(sb->compression) != 4) {
-					printk(KERN_EMERG "ignore compression type %d\n", le16_to_cpu(sb->compression));
+					printk(KERN_INFO "ignore compression type %d\n", le16_to_cpu(sb->compression));
 					continue;
 				}
 				dir_parts[2].offset = offset;
