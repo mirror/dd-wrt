@@ -97,12 +97,12 @@ void start_jffs2(void)
 			if (classic) {
 				itworked = eval("mtd", "erase", rwpart);
 				itworked = eval("flash_erase", dev, "0", "0");
-			}else{
-			itworked = eval("ubidetach", "-p", dev);
-			itworked = eval("mtd", "erase", dev);
-			itworked = eval("flash_erase", dev, "0", "0");
-			itworked = eval("ubiattach", "-p", dev);
-			itworked = eval("ubimkvol", udev, "-N", "ddwrt", "-m");
+			} else {
+				itworked = eval("ubidetach", "-p", dev);
+				itworked = eval("mtd", "erase", dev);
+				itworked = eval("flash_erase", dev, "0", "0");
+				itworked = eval("ubiattach", "-p", dev);
+				itworked = eval("ubimkvol", udev, "-N", "ddwrt", "-m");
 			}
 #else
 			itworked = eval("mtd", "erase", rwpart);
@@ -111,14 +111,14 @@ void start_jffs2(void)
 
 #if defined(HAVE_R9000) || defined(HAVE_MVEBU) || defined(HAVE_IPQ806X) || defined(HAVE_R6800)
 			if (classic) {
-			sprintf(dev, "/dev/mtdblock/%d", getMTD("ddwrt"));
-			itworked += mount(dev, "/jffs", "jffs2", MS_MGC_VAL | MS_NOATIME, NULL);			
+				sprintf(dev, "/dev/mtdblock/%d", getMTD("ddwrt"));
+				itworked += mount(dev, "/jffs", "jffs2", MS_MGC_VAL | MS_NOATIME, NULL);
 			} else {
-			itworked += mount(upath, "/jffs", "ubifs", MS_MGC_VAL | MS_NOATIME, NULL);
+				itworked += mount(upath, "/jffs", "ubifs", MS_MGC_VAL | MS_NOATIME, NULL);
 			}
 #else
 			sprintf(dev, "/dev/mtdblock/%d", getMTD("ddwrt"));
-			itworked += mount(dev, "/jffs", "jffs2", MS_MGC_VAL | MS_NOATIME, NULL);			
+			itworked += mount(dev, "/jffs", "jffs2", MS_MGC_VAL | MS_NOATIME, NULL);
 #endif
 			if (itworked) {
 				nvram_seti("jffs_mounted", 0);
@@ -128,15 +128,15 @@ void start_jffs2(void)
 
 		} else {
 #if defined(HAVE_R9000) || defined(HAVE_MVEBU) || defined(HAVE_IPQ806X) || defined(HAVE_R6800)
-	    if (classic) {
-			itworked = eval("mtd", "unlock", rwpart);
-			sprintf(dev, "/dev/mtdblock/%d", getMTD("ddwrt"));
-			itworked += mount(dev, "/jffs", "jffs2", MS_MGC_VAL | MS_NOATIME, NULL);
-	    }else{
-			sprintf(dev, "/dev/mtd%d", mtd);
-			itworked = eval("ubiattach", "-p", dev);
-			itworked += mount(upath, "/jffs", "ubifs", MS_MGC_VAL | MS_NOATIME, NULL);
-	    }
+			if (classic) {
+				itworked = eval("mtd", "unlock", rwpart);
+				sprintf(dev, "/dev/mtdblock/%d", getMTD("ddwrt"));
+				itworked += mount(dev, "/jffs", "jffs2", MS_MGC_VAL | MS_NOATIME, NULL);
+			} else {
+				sprintf(dev, "/dev/mtd%d", mtd);
+				itworked = eval("ubiattach", "-p", dev);
+				itworked += mount(upath, "/jffs", "ubifs", MS_MGC_VAL | MS_NOATIME, NULL);
+			}
 #else
 			itworked = eval("mtd", "unlock", rwpart);
 			sprintf(dev, "/dev/mtdblock/%d", getMTD("ddwrt"));
