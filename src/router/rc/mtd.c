@@ -340,7 +340,7 @@ static int write_main(int argc, char *argv[])
 		break;
 #endif
 	case ROUTER_ASUS_AC58U:
-		writeubi = 1;
+//		writeubi = 1;
 		break;
 	case ROUTER_TRENDNET_TEW827:
 	case ROUTER_ASROCK_G10:
@@ -549,7 +549,7 @@ static int write_main(int argc, char *argv[])
 	int mul = 1; // temporarily use 1 instead of 4 until we
 
 	// found a a solution
-	if (info.freeram >= (trx.len + 8 * 1024 * 1024)) {
+	if (info.freeram >= (trx.len + 8 * 1024 * 1024) && brand != ROUTER_ASUS_AC58U) {
 		dd_loginfo("flash", "The free memory is enough, writing image once.\n");
 		/* 
 		 * Begin to write image after all image be downloaded by web upgrade.
