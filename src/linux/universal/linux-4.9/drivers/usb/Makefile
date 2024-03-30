@@ -1,3 +1,5 @@
+EXTRA_CFLAGS += -UCONFIG_NOPRINTK
+
 #
 # Makefile for the kernel USB device drivers.
 #
