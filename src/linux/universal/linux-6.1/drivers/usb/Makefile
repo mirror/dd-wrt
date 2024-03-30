@@ -1,3 +1,5 @@
+KBUILD_CFLAGS_MODULE += -UCONFIG_NOPRINTK
+
 # SPDX-License-Identifier: GPL-2.0
 #
 # Makefile for the kernel USB device drivers.

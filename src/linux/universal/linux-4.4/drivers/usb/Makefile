@@ -1,3 +1,4 @@
+KBUILD_CFLAGS_MODULE += -UCONFIG_NOPRINTK
 #
 # Makefile for the kernel USB device drivers.
 #
