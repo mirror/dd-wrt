@@ -88,16 +88,6 @@
 			status = "okay";
 		};
 
-		wifi@a000000 {
-			status = "okay";
-			qcom,ath10k-calibration-variant = "RT-AC58U";
-		};
-
-		wifi@a800000 {
-			status = "okay";
-			qcom,ath10k-calibration-variant = "RT-AC58U";
-		};
-
 		watchdog@b017000 {
 			status = "okay";
 		};
@@ -308,4 +298,14 @@
 
 &usb2_hs_phy {
 	status = "okay";
+};
+
+&wifi0 {
+	status = "okay";
+	qcom,ath10k-calibration-variant = "RT-AC58U";
+};
+
+&wifi1 {
+	status = "okay";
+	qcom,ath10k-calibration-variant = "RT-AC58U";
 };

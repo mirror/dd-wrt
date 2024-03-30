@@ -645,7 +645,6 @@ dtb-$(CONFIG_ARCH_QCOM) += \
 	qcom-ipq4019-ap.dk04.1-c1.dtb \
 	qcom-ipq4019-fritz4040.dtb \
 	qcom-ipq4019-nbg6617.dtb \
-	qcom-ipq4019-rt-ac58u.dtb \
 	qcom-ipq8064-ap148.dtb \
 	qcom-ipq8064-c2600.dtb \
 	qcom-ipq8064-d7800.dtb \

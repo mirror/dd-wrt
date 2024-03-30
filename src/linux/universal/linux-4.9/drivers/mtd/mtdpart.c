@@ -876,11 +876,9 @@ static int split_squashfs(struct mtd_info *master, int offset, int *split_offset
 	}
 
 	len = le64_to_cpu(sb.bytes_used);
-	len += (offset & 0x000fffff);
-	len +=  (master->erasesize - 1);
-	len &= ~(master->erasesize - 1);
-	len -= (offset & 0x000fffff);
-	*split_offset = offset + len;
+	*split_offset = offset + len + master->erasesize - 1;
+	*split_offset /= master->erasesize;
+	*split_offset *= master->erasesize;
 
 	return 0;
 }
@@ -891,6 +889,7 @@ static int split_rootfs_data(struct mtd_info *master, struct mtd_info *rpart, co
 	struct mtd_part *slave = NULL;
 	struct mtd_part *spart;
 	int ret, split_offset = 0;
+	unsigned int s;
 
 	spart = PART(rpart);
 	ret = split_squashfs(master, spart->offset, &split_offset);
@@ -912,8 +911,10 @@ static int split_rootfs_data(struct mtd_info *master, struct mtd_info *rpart, co
 	strcpy(dpart->name, ROOTFS_SPLIT_NAME);
 
 	dpart->size = rpart->size - (split_offset - spart->offset);
- 	dpart->size /= 65536;
- 	dpart->size *= 65536;
+	s = dpart->size;
+ 	s /= (int)master->erasesize;
+ 	s *= (int)master->erasesize;
+ 	dpart->size = s;
 #ifdef CONFIG_SOC_MT7620_OPENWRT
 	// todo: add proper board detection
 	dpart->size -= 0x110000;
