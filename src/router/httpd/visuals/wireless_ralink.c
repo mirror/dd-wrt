@@ -298,7 +298,7 @@ int active_wireless_if(webs_t wp, int argc, char_t **argv, char *ifname, int *cn
 				bzero(&HTSetting, sizeof(HTSetting));
 				memcpy(&HTSetting, &table.Entry[i].TxRate, sizeof(HTSetting));
 				TxRxRateFor11n(&HTSetting, &rate);
-				snprintf(tx, 8, "%d.%d", rate / 1000, rate % 1000);
+				snprintf(tx, 9, "%d.%dM", rate / 1000, rate % 1000);
 
 				bzero(&HTSetting, sizeof(HTSetting));
 				HTSetting.field.MCS = table.Entry[i].LastRxRate & 0x7F;
@@ -307,7 +307,7 @@ int active_wireless_if(webs_t wp, int argc, char_t **argv, char *ifname, int *cn
 				HTSetting.field.STBC = (table.Entry[i].LastRxRate >> 9) & 0x3;
 				HTSetting.field.MODE = (table.Entry[i].LastRxRate >> 14) & 0x3;
 				TxRxRateFor11n(&HTSetting, &rate);
-				snprintf(rx, 8, "%d.%d", rate / 1000, rate % 1000);
+				snprintf(rx, 9, "%d.%dM", rate / 1000, rate % 1000);
 
 				int ht = 0;
 				int sgi = 0;

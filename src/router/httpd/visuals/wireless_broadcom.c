@@ -277,10 +277,10 @@ int active_wireless_if(webs_t wp, int argc, char_t **argv, char *iface, char *vi
 						int tx = sta2->tx_rate;
 						int rx = sta2->rx_rate;
 						if (tx > 0)
-							sprintf(txrate, "%dM", tx / 1000);
+							sprintf(txrate, "%d.%dM", tx / 1000, tx % 1000);
 
 						if (rx > 0)
-							sprintf(rxrate, "%dM", rx / 1000);
+							sprintf(rxrate, "%d.%dM", rx / 1000, rx % 1000);
 						strcpy(time, UPTIME(sta2->in, str, sizeof(str)));
 					}
 					break;
@@ -290,10 +290,10 @@ int active_wireless_if(webs_t wp, int argc, char_t **argv, char *iface, char *vi
 						int tx = sta3->tx_rate;
 						int rx = sta3->rx_rate;
 						if (tx > 0)
-							sprintf(txrate, "%dM", tx / 1000);
+							sprintf(txrate, "%d.%dM", tx / 1000, tx % 1000);
 
 						if (rx > 0)
-							sprintf(rxrate, "%dM", rx / 1000);
+							sprintf(rxrate, "%d.%dM", rx / 1000, rx % 1000);
 						strcpy(time, UPTIME(sta3->in, str, sizeof(str)));
 					}
 					sprintf(info, "LEGACY");
@@ -310,10 +310,10 @@ int active_wireless_if(webs_t wp, int argc, char_t **argv, char *iface, char *vi
 						int tx = sta4->tx_rate;
 						int rx = sta4->rx_rate;
 						if (tx > 0)
-							sprintf(txrate, "%dM", tx / 1000);
+							sprintf(txrate, "%d.%dM", tx / 1000, tx % 1000);
 
 						if (rx > 0)
-							sprintf(rxrate, "%dM", rx / 1000);
+							sprintf(rxrate, "%d.%dM", rx / 1000, rx % 1000);
 						strcpy(time, UPTIME(sta4->in, str, sizeof(str)));
 					}
 					chain_rssi[0] = sta4->rssi[0];
