@@ -23,6 +23,10 @@ enum {
 	MSG_EXCESSIVE, MSG_MSGDUMP, MSG_DEBUG, MSG_INFO, MSG_WARNING, MSG_ERROR
 };
 
+#ifndef CONFIG_MSG_MIN_PRIORITY
+#define CONFIG_MSG_MIN_PRIORITY 0
+#endif
+
 #ifdef CONFIG_NO_STDOUT_DEBUG
 
 #define wpa_debug_print_timestamp() do { } while (0)
@@ -36,6 +40,7 @@ enum {
 #define wpa_debug_open_file(p) do { } while (0)
 #define wpa_debug_close_file() do { } while (0)
 #define wpa_debug_setup_stdout() do { } while (0)
+#define wpa_debug_stop_log(void) do { } while (0)
 #define wpa_dbg(args...) do { } while (0)
 
 static inline int wpa_debug_reopen_file(void)
@@ -58,9 +63,6 @@ void _wpa_hexdump_ascii(int level, const char *title, const void *buf,
 			size_t len, int show);
 extern int wpa_debug_show_keys;
 
-#ifndef CONFIG_MSG_MIN_PRIORITY
-#define CONFIG_MSG_MIN_PRIORITY 0
-#endif
 
 /**
  * wpa_debug_printf_timestamp - Print timestamp for debug output
