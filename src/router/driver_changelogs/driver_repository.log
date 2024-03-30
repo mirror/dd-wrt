@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r7740 | brainslayer | 2024-03-30 16:53:36 +0000 (Sat, 30 Mar 2024) | 1 line
+
+we need a different limit for rt56u. 128mb ram isnt perfect for 2 wave2 radios, so we need to reduce buffer sizes
+------------------------------------------------------------------------
 r7739 | brainslayer | 2024-03-30 13:25:32 +0000 (Sat, 30 Mar 2024) | 1 line
 
 enable lowmem already on 120 mb limit
