@@ -2687,7 +2687,6 @@ static int qcom_nandc_probe(struct platform_device *pdev)
 	struct resource *res;
 	int ret;
 	struct qcom_nand_driver_data *driver_data;
-
 	nandc = devm_kzalloc(&pdev->dev, sizeof(*nandc), GFP_KERNEL);
 	if (!nandc)
 		return -ENOMEM;
@@ -2742,22 +2741,19 @@ static int qcom_nandc_probe(struct platform_device *pdev)
 		goto err_setup;
 
 	for_each_available_child_of_node(dn, child) {
-		if (of_device_is_compatible(child, "qcom,nandcs")) {
-			host = devm_kzalloc(dev, sizeof(*host), GFP_KERNEL);
-			if (!host) {
-				of_node_put(child);
-				ret = -ENOMEM;
-				goto err_cs_init;
-			}
-
-			ret = qcom_nand_host_init(nandc, host, child);
-			if (ret) {
-				devm_kfree(dev, host);
-				continue;
-			}
-
-			list_add_tail(&host->node, &nandc->host_list);
+		host = devm_kzalloc(dev, sizeof(*host), GFP_KERNEL);
+		if (!host) {
+			of_node_put(child);
+			ret = -ENOMEM;
+			goto err_cs_init;
 		}
+		ret = qcom_nand_host_init(nandc, host, child);
+		if (ret) {
+			devm_kfree(dev, host);
+			continue;
+ 		}
+
+		list_add_tail(&host->node, &nandc->host_list);
 	}
 
 	if (list_empty(&nandc->host_list)) {
