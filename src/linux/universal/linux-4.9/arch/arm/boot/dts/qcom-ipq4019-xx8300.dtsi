@@ -245,9 +245,8 @@
 			};
 
 			partition@b880000 {
-				label = "syscfg";
+				label = "ddwrt";
 				reg = <0xb880000 0x4680000>;
-				read-only;
 			};
 		};
 	};
