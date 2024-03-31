@@ -135,6 +135,14 @@ ifeq ($(CONFIG_EA8500),y)
 	echo "CONFIG_ARM_ATAG_DTB_COMPAT_CMDLINE_EXTEND=y" >> $(LINUXDIR)/.config
 	echo "# CONFIG_ARM_ATAG_DTB_COMPAT_CMDLINE_MANGLE is not set" >> $(LINUXDIR)/.config
 endif
+ifeq ($(CONFIG_EA8300),y)
+	sed -i 's/\# CONFIG_ARM_ATAG_DTB_COMPAT is not set/CONFIG_ARM_ATAG_DTB_COMPAT=y/g' $(LINUXDIR)/.config
+	echo "# CONFIG_ARM_ATAG_DTB_COMPAT_CMDLINE_FROM_BOOTLOADER is not set" >> $(LINUXDIR)/.config
+	echo "CONFIG_ARM_ATAG_DTB_COMPAT_CMDLINE_EXTEND=y" >> $(LINUXDIR)/.config
+	echo "# CONFIG_ARM_ATAG_DTB_COMPAT_CMDLINE_MANGLE is not set" >> $(LINUXDIR)/.config
+	sed -i 's/\# CONFIG_AUTO_ZRELADDR is not set/CONFIG_AUTO_ZRELADDR=y/g' $(LINUXDIR)/.config
+	echo "# CONFIG_EFI is not set" >> $(LINUXDIR)/.config
+endif
 
 	$(kernelfeatures)
 	$(MAKE) -C $(LINUXDIR) oldconfig
@@ -356,7 +364,7 @@ endif
 	dd if=$(TOP)/$(ARCH)-uclibc/linksys_ea8300.itb of=$(TOP)/$(ARCH)-uclibc/linksys_ea8300.bin bs=5120k conv=sync
 	cat $(ARCH)-uclibc/ddwrt-ipq806x-EA8300-squashfs-nand-factory.ubi >> $(TOP)/$(ARCH)-uclibc/linksys_ea8300.bin
 	let size="$$(stat -c%s arm-uclibc/linksys_ea8300.bin)" pad="2048" offset="256" pad="(pad - ((size + offset) % pad)) % pad"; dd if=/dev/zero bs=$$pad count=1 | tr '\000' '\377' >> $(TOP)/$(ARCH)-uclibc/linksys_ea8300.bin
-	printf ".LINKSYS.01000409%-15s%08X%-8s%-16s" "EA8300" "$(cksum $(TOP)/$(ARCH)-uclibc/linksys_ea8300.bin | cut -d ' ' -f1)" "0" "K0000000F0246434" >> $(TOP)/$(ARCH)-uclibc/linksys_ea8300.bin
+	printf ".LINKSYS.01000409%-15s%08X%-8s%-16s" "EA8300" "$$(cksum arm-uclibc/linksys_ea8300.bin | cut -d ' ' -f1)" "0" "K0000000F0246434" >> $(TOP)/$(ARCH)-uclibc/linksys_ea8300.bin
 	dd if=/dev/zero bs=192 count=1 >> $(TOP)/$(ARCH)-uclibc/linksys_ea8300.bin
 
 
@@ -636,8 +644,27 @@ ifeq ($(CONFIG_HABANERO),y)
 	dd if=$(TOP)/$(ARCH)-uclibc/linksys_ea8300.itb of=$(TOP)/$(ARCH)-uclibc/linksys_ea8300.bin bs=5120k conv=sync
 	cat $(ARCH)-uclibc/ddwrt-ipq806x-EA8300-squashfs-nand-factory.ubi >> $(TOP)/$(ARCH)-uclibc/linksys_ea8300.bin
 	let size="$$(stat -c%s arm-uclibc/linksys_ea8300.bin)" pad="2048" offset="256" pad="(pad - ((size + offset) % pad)) % pad"; dd if=/dev/zero bs=$$pad count=1 | tr '\000' '\377' >> $(TOP)/$(ARCH)-uclibc/linksys_ea8300.bin
-	printf ".LINKSYS.01000409%-15s%08X%-8s%-16s" "EA8300" "$(cksum $(TOP)/$(ARCH)-uclibc/linksys_ea8300.bin | cut -d ' ' -f1)" "0" "K0000000F0246434" >> $(TOP)/$(ARCH)-uclibc/linksys_ea8300.bin
+	printf ".LINKSYS.01000409%-15s%08X%-8s%-16s" "EA8300" "$$(cksum arm-uclibc/linksys_ea8300.bin | cut -d ' ' -f1)" "0" "K0000000F0246434" >> $(TOP)/$(ARCH)-uclibc/linksys_ea8300.bin
 	dd if=/dev/zero bs=192 count=1 >> $(TOP)/$(ARCH)-uclibc/linksys_ea8300.bin
+
+	-./tools/trx_n -m 55000000 -o $(ARCH)-uclibc/linksys_ea8300-webflash.bin $(ARCH)-uclibc/linksys_ea8300.bin
+
+
+	./tools/ipq40xx/mkits.sh -D linksys_mr8300 \
+		    -o $(TOP)/$(ARCH)-uclibc/fit-linksys_mr8300.its \
+		    -k $(TOP)/$(ARCH)-uclibc/uImage \
+		    -d $(LINUXDIR)/arch/arm/boot/dts/qcom-ipq4019-mr8300.dtb \
+		    -C none -a 0x80208000 -e 0x80208000 -c "config@1" -A arm -v 4.9
+
+	tools/r7500/mkimage -f $(TOP)/$(ARCH)-uclibc/fit-linksys_mr8300.its $(TOP)/$(ARCH)-uclibc/linksys_mr8300.itb
+	dd if=$(TOP)/$(ARCH)-uclibc/linksys_mr8300.itb of=$(TOP)/$(ARCH)-uclibc/linksys_mr8300.bin bs=5120k conv=sync
+	cat $(ARCH)-uclibc/ddwrt-ipq806x-EA8300-squashfs-nand-factory.ubi >> $(TOP)/$(ARCH)-uclibc/linksys_mr8300.bin
+	let size="$$(stat -c%s arm-uclibc/linksys_mr8300.bin)" pad="2048" offset="256" pad="(pad - ((size + offset) % pad)) % pad"; dd if=/dev/zero bs=$$pad count=1 | tr '\000' '\377' >> $(TOP)/$(ARCH)-uclibc/linksys_mr8300.bin
+	printf ".LINKSYS.01000409%-15s%08X%-8s%-16s" "MR8300" "$$(cksum arm-uclibc/linksys_mr8300.bin | cut -d ' ' -f1)" "0" "K0000000F0246434" >> $(TOP)/$(ARCH)-uclibc/linksys_mr8300.bin
+	dd if=/dev/zero bs=192 count=1 >> $(TOP)/$(ARCH)-uclibc/linksys_mr8300.bin
+
+	-./tools/trx_n -m 55000000 -o $(ARCH)-uclibc/linksys_mr8300-webflash.bin $(ARCH)-uclibc/linksys_mr8300.bin
+
 endif
 
 include rules/all.mk
