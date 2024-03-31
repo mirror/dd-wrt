@@ -808,7 +808,13 @@ checkStm:
 		if (!_unwind_GetIP)
 			_unwind_GetIP = (Unwind_GetIP_T)dlsym(handle, "_Unwind_GetIP");
 		if (_unwind_Backtrace && _unwind_GetIP) {
+#if defined(__i386__)
+			struct trace_arg arg = { .array = buffer, .size = size, .cnt = -1 };
+#elif defined(__arm__)
+			struct trace_arg arg = { .array = buffer, .size = size, .cnt = -1 };
+#else
 		    	struct trace_arg arg = { .array = buffer, .cfa = 0, .size = size, .cnt = -1 };
+#endif
 //			struct trace_arg arg = { buffer, -1, size, uc };
 			if (load8((void *)(MCTX_PC(uc)), NULL)) {
 				airbag_printf("%sText at 0x%" FMTBIT "lx is not mapped; trying prior frame pointer.\n", comment,
