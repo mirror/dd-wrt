@@ -1605,6 +1605,8 @@ int writevaproc(char *value, char *fmt, ...);
 
 void MAC_ADD(char *mac);
 void MAC_SUB(char *mac);
+void mac_add(char *mac);
+void mac_sub(char *mac);
 
 extern char *get_ipfrominterface(char *ifname, char *ip);
 extern struct in_addr inet_netaddr_of(struct in_addr addr, struct in_addr msk);
