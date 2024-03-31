@@ -553,7 +553,7 @@ static int mac80211_cb_stations(struct nl_msg *msg, void *data)
 	struct genlmsghdr *gnlh = nlmsg_data(nlmsg_hdr(msg));
 	struct nl80211_sta_flag_update *sta_flags;
 	char dev[20];
-	int gottx=0;
+	int gottx = 0;
 	struct statdata *d = data;
 	struct mac80211_info *mac80211_info = d->mac80211_info;
 	mac80211_info->wci = add_to_wifi_clients(mac80211_info->wci);

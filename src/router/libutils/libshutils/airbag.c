@@ -813,9 +813,9 @@ checkStm:
 #elif defined(__arm__)
 			struct trace_arg arg = { .array = buffer, .size = size, .cnt = -1 };
 #else
-		    	struct trace_arg arg = { .array = buffer, .cfa = 0, .size = size, .cnt = -1 };
+			struct trace_arg arg = { .array = buffer, .cfa = 0, .size = size, .cnt = -1 };
 #endif
-//			struct trace_arg arg = { buffer, -1, size, uc };
+			//			struct trace_arg arg = { buffer, -1, size, uc };
 			if (load8((void *)(MCTX_PC(uc)), NULL)) {
 				airbag_printf("%sText at 0x%" FMTBIT "lx is not mapped; trying prior frame pointer.\n", comment,
 					      MCTX_PC(uc));
