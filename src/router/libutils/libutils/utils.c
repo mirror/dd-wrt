@@ -1817,58 +1817,6 @@ int writestr(char *path, char *a)
 
 #define PER_MAC_LEN 18 // contain '\0'
 
-static void s_MAC_ADD(char *mac, int inc)
-{
-	int i, j;
-	unsigned char m[6];
-	for (j = 0, i = 0; i < PER_MAC_LEN; i += 3, j++) {
-		if (mac[i] >= 'A' && mac[i] <= 'F')
-			mac[i] = mac[i] - 55;
-		if (mac[i + 1] >= 'A' && mac[i + 1] <= 'F')
-			mac[i + 1] = mac[i + 1] - 55;
-		if (mac[i] >= 'a' && mac[i] <= 'f')
-			mac[i] = mac[i] - 87;
-		if (mac[i + 1] >= 'a' && mac[i + 1] <= 'f')
-			mac[i + 1] = mac[i + 1] - 87;
-		if (mac[i] >= '0' && mac[i] <= '9')
-			mac[i] = mac[i] - 48;
-		if (mac[i + 1] >= '0' && mac[i + 1] <= '9')
-			mac[i + 1] = mac[i + 1] - 48;
-		m[j] = mac[i] * 16 + mac[i + 1];
-	}
-	for (i = 5; i >= 3; i--) {
-		if (inc > 0) {
-			if (m[i] == 0xFF) {
-				m[i] = 0x0;
-				continue;
-			} else {
-				m[i] = m[i] + inc;
-				break;
-			}
-		} else {
-			if (m[i] == 0x00) {
-				m[i] = 0xFF;
-				continue;
-			} else {
-				m[i] = m[i] + inc;
-				break;
-			}
-		}
-	}
-	sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", m[0], m[1], m[2], m[3], m[4], m[5]);
-}
-
-void MAC_ADD(char *mac)
-{
-	s_MAC_ADD(mac, 1);
-}
-
-void MAC_SUB(char *mac)
-{
-	s_MAC_ADD(mac, -1);
-}
-
-
 static void s_mac_add(char *m, int inc)
 {
 	int i, j;
@@ -1891,6 +1839,39 @@ static void s_mac_add(char *m, int inc)
 			}
 		}
 	}
+}
+
+static void s_MAC_ADD(char *mac, int inc)
+{
+	int i, j;
+	unsigned char m[6];
+	for (j = 0, i = 0; i < PER_MAC_LEN; i += 3, j++) {
+		if (mac[i] >= 'A' && mac[i] <= 'F')
+			mac[i] = mac[i] - 55;
+		if (mac[i + 1] >= 'A' && mac[i + 1] <= 'F')
+			mac[i + 1] = mac[i + 1] - 55;
+		if (mac[i] >= 'a' && mac[i] <= 'f')
+			mac[i] = mac[i] - 87;
+		if (mac[i + 1] >= 'a' && mac[i + 1] <= 'f')
+			mac[i + 1] = mac[i + 1] - 87;
+		if (mac[i] >= '0' && mac[i] <= '9')
+			mac[i] = mac[i] - 48;
+		if (mac[i + 1] >= '0' && mac[i + 1] <= '9')
+			mac[i + 1] = mac[i + 1] - 48;
+		m[j] = mac[i] * 16 + mac[i + 1];
+	}
+	s_mac_add(m, inc);
+	sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", m[0], m[1], m[2], m[3], m[4], m[5]);
+}
+
+void MAC_ADD(char *mac)
+{
+	s_MAC_ADD(mac, 1);
+}
+
+void MAC_SUB(char *mac)
+{
+	s_MAC_ADD(mac, -1);
 }
 
 void mac_add(char *mac)
