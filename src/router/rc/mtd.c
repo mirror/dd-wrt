@@ -494,7 +494,13 @@ static int write_main(int argc, char *argv[])
 #ifdef HAVE_PLEX
 	stop_service("plex");
 #endif
-	killall("process_monitor", SIGTERM);
+#ifdef HAVE_IPV6
+	stop_service("radvd");
+#endif
+	stop_service("resetbutton");
+	stop_service("cron");
+	stop_service("process_monitor");
+	stop_service("wland");
 	killall("wdswatchdog.sh", SIGTERM);
 	killall("schedulerb.sh", SIGTERM);
 	killall("proxywatchdog.sh", SIGTERM);
