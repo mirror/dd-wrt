@@ -691,6 +691,8 @@ void *getUEnv(char *name)
 	FILE *fp;
 	if (brand == ROUTER_LINKSYS_EA8500) {
 		fp = fopen("/dev/mtdblock/10", "rb");
+	} else if (brand == ROUTER_LINKSYS_EA8300) {
+		fp = fopen("/dev/mtdblock/7", "rb");
 	} else {
 		fp = fopen("/dev/mtdblock/3", "rb");
 	}
