@@ -1868,6 +1868,41 @@ void MAC_SUB(char *mac)
 	s_MAC_ADD(mac, -1);
 }
 
+
+static void s_mac_add(char *m, int inc)
+{
+	int i, j;
+	for (i = 5; i >= 3; i--) {
+		if (inc > 0) {
+			if (m[i] == 0xFF) {
+				m[i] = 0x0;
+				continue;
+			} else {
+				m[i] = m[i] + inc;
+				break;
+			}
+		} else {
+			if (m[i] == 0x00) {
+				m[i] = 0xFF;
+				continue;
+			} else {
+				m[i] = m[i] + inc;
+				break;
+			}
+		}
+	}
+}
+
+void mac_add(char *mac)
+{
+	s_mac_add(mac, 1);
+}
+
+void mac_sub(char *mac)
+{
+	s_mac_add(mac, -1);
+}
+
 int buf_to_file(char *path, char *buf)
 {
 	FILE *fp;
