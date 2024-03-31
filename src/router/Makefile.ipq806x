@@ -558,7 +558,7 @@ endif
 		$(ARCH)-uclibc/ddwrt-ipq806x-EA8500-squashfs-nand-factory.ubi \
 		-v -p 128KiB -m 2048
 
-	./tools/ubi/ubinize-image.sh --kernel --roofs $(ARCH)-uclibc/root.squashfs.new \
+	./tools/ubi/ubinize-image-new.sh --rootfs $(ARCH)-uclibc/root.squashfs.new \
 		$(ARCH)-uclibc/ddwrt-ipq806x-EA8300-squashfs-nand-factory.ubi \
 		-p 128KiB -m 2048 -E 5
 
