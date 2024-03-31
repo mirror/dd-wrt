@@ -144,7 +144,7 @@ ifeq ($(CONFIG_EA8300),y)
 	echo "# CONFIG_ARM_ATAG_DTB_COMPAT_CMDLINE_MANGLE is not set" >> $(LINUXDIR)/.config
 	sed -i 's/\# CONFIG_AUTO_ZRELADDR is not set/CONFIG_AUTO_ZRELADDR=y/g' $(LINUXDIR)/.config
 	echo "# CONFIG_EFI is not set" >> $(LINUXDIR)/.config
-	sed -i 's/\# CONFIG_OPTIMIZE_INLINING  is not set/CONFIG_OPTIMIZE_INLINING=y/g' $(LINUXDIR)/.config
+	sed -i 's/\# CONFIG_OPTIMIZE_INLINING is not set/CONFIG_OPTIMIZE_INLINING=y/g' $(LINUXDIR)/.config
 endif
 
 	$(kernelfeatures)
