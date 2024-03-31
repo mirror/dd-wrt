@@ -1416,6 +1416,11 @@ generic:;
 		return ROUTER_LINKSYS_EA8300;
 	}
 
+	if (!strncmp(modelstr, "MR8300", 8)) {
+		setRouter("Linksys MR8300");
+		return ROUTER_LINKSYS_EA8300;
+	}
+
 	if (!strcmp(modelstr, "XR500")) {
 		setRouter("Netgear XR500");
 		return ROUTER_NETGEAR_R7800;
