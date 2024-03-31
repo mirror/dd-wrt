@@ -518,24 +518,24 @@ void start_sysinit(void)
 				smem[0x4000 + 11] & 0xff);
 			MAC_ADD(ethaddr);
 			set_hwaddr("eth0", ethaddr);
-		mac_add(&smem[0x8006]);
-		mac_add(&smem[0x8006]);
-		mac_add(&smem[0x8006]);
-		mac_add(&smem[0x8006]);
-		calcchecksum(&smem[0x8000]);
-		fp = fopen("/tmp/board3.bin", "wb");
-		fwrite(&smem[0x8000], 12064, 1, fp);
-		fclose(fp);
-		mac_add(&smem[0x6]);
-		mac_add(&smem[0x6]);
-		calcchecksum(smem);
-		mac_add(&smem[0x4006]);
-		mac_add(&smem[0x4006]);
-		mac_add(&smem[0x4006]);
-		calcchecksum(&smem[0x4000]);
+			mac_add(&smem[0x8006]);
+			mac_add(&smem[0x8006]);
+			mac_add(&smem[0x8006]);
+			mac_add(&smem[0x8006]);
+			calcchecksum(&smem[0x8000]);
+			fp = fopen("/tmp/board3.bin", "wb");
+			fwrite(&smem[0x8000], 12064, 1, fp);
+			fclose(fp);
+			mac_add(&smem[0x6]);
+			mac_add(&smem[0x6]);
+			calcchecksum(smem);
+			mac_add(&smem[0x4006]);
+			mac_add(&smem[0x4006]);
+			mac_add(&smem[0x4006]);
+			calcchecksum(&smem[0x4000]);
 		} else {
-		calcchecksum(smem);
-		calcchecksum(&smem[0x4000]);
+			calcchecksum(smem);
+			calcchecksum(&smem[0x4000]);
 		}
 
 		eval("rm", "-f", "/tmp/board1.bin");
