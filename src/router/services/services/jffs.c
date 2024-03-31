@@ -66,6 +66,7 @@ void start_jffs2(void)
 		ubidev = 1;
 		break;
 	case ROUTER_LINKSYS_EA8500:
+	case ROUTER_LINKSYS_EA8300:
 	default:
 		ubidev = 0;
 		break;
