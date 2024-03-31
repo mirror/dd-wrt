@@ -493,8 +493,6 @@ void start_sysinit(void)
 			eval("ifconfig", "eth1", "down");
 			eval("ifconfig", "eth0", "down");
 		}
-		calcchecksum(smem);
-		calcchecksum(&smem[0x4000]);
 		if (board == ROUTER_ASUS_AC58U) {
 			char ethaddr[32];
 			sprintf(ethaddr, "%02x:%02x:%02x:%02x:%02x:%02x", smem[6] & 0xff, smem[7] & 0xff, smem[8] & 0xff,
@@ -510,19 +508,34 @@ void start_sysinit(void)
 
 		if (board == ROUTER_LINKSYS_EA8300) {
 			char ethaddr[32];
-			calcchecksum(&smem[0x8000]);
 			sprintf(ethaddr, "%02x:%02x:%02x:%02x:%02x:%02x", smem[6] & 0xff, smem[7] & 0xff, smem[8] & 0xff,
 				smem[9] & 0xff, smem[10] & 0xff, smem[11] & 0xff);
+			nvram_set("et0macaddr", ethaddr);
+			nvram_set("et0macaddr_safe", ethaddr);
 			set_hwaddr("eth1", ethaddr);
 			sprintf(ethaddr, "%02x:%02x:%02x:%02x:%02x:%02x", smem[0x4000 + 6] & 0xff, smem[0x4000 + 7] & 0xff,
 				smem[0x4000 + 8] & 0xff, smem[0x4000 + 9] & 0xff, smem[0x4000 + 10] & 0xff,
 				smem[0x4000 + 11] & 0xff);
+			MAC_ADD(ethaddr);
 			set_hwaddr("eth0", ethaddr);
-			nvram_set("et0macaddr", ethaddr);
-			nvram_set("et0macaddr_safe", ethaddr);
+		mac_add(&smem[0x8006]);
+		mac_add(&smem[0x8006]);
+		mac_add(&smem[0x8006]);
+		mac_add(&smem[0x8006]);
+		calcchecksum(&smem[0x8000]);
 		fp = fopen("/tmp/board3.bin", "wb");
 		fwrite(&smem[0x8000], 12064, 1, fp);
 		fclose(fp);
+		mac_add(&smem[0x6]);
+		mac_add(&smem[0x6]);
+		calcchecksum(smem);
+		mac_add(&smem[0x4006]);
+		mac_add(&smem[0x4006]);
+		mac_add(&smem[0x4006]);
+		calcchecksum(&smem[0x4000]);
+		} else {
+		calcchecksum(smem);
+		calcchecksum(&smem[0x4000]);
 		}
 
 		eval("rm", "-f", "/tmp/board1.bin");
