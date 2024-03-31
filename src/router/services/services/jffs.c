@@ -63,10 +63,10 @@ void start_jffs2(void)
 	case ROUTER_TRENDNET_TEW827:
 	case ROUTER_ASROCK_G10:
 	case ROUTER_NETGEAR_R9000:
+	case ROUTER_LINKSYS_EA8300:
 		ubidev = 1;
 		break;
 	case ROUTER_LINKSYS_EA8500:
-	case ROUTER_LINKSYS_EA8300:
 	default:
 		ubidev = 0;
 		break;
