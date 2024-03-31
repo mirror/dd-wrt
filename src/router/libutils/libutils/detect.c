@@ -1411,6 +1411,11 @@ generic:;
 		return ROUTER_ASUS_AC58U;
 	}
 
+	if (!strncmp(modelstr, "EA8300", 8)) {
+		setRouter("Linksys EA8300");
+		return ROUTER_LINKSYS_EA8300;
+	}
+
 	if (!strcmp(modelstr, "XR500")) {
 		setRouter("Netgear XR500");
 		return ROUTER_NETGEAR_R7800;
