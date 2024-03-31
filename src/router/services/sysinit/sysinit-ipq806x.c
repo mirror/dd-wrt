@@ -533,7 +533,6 @@ void start_sysinit(void)
 		fwrite(&smem[0x4000], 12064, 1, fp);
 		fclose(fp);
 		free(smem);
-		free(smem);
 	}
 	/* 
 	 * 
@@ -582,6 +581,10 @@ void start_sysinit(void)
 			nvram_seti("bootpartition", 1);
 		else
 			nvram_seti("bootpartition", 0);
+		break;
+	case ROUTER_LINKSYS_EA8300:
+		if (!nvram_match("nobcreset", "1"))
+			eval("mtd", "resetbc", "s_env");
 		break;
 	case ROUTER_LINKSYS_EA8500:
 		if (maddr) {
