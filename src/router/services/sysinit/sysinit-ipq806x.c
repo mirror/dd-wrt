@@ -570,7 +570,6 @@ void start_sysinit(void)
 	 */
 
 	//insmod("qdpc-host.ko");
-	eval("mount", "-t", "ubifs", "-o", "sync", "ubi0:rootfs_data", "/jffs");
 
 	switch (board) {
 	case ROUTER_TRENDNET_TEW827:
@@ -583,6 +582,7 @@ void start_sysinit(void)
 			nvram_seti("bootpartition", 1);
 		else
 			nvram_seti("bootpartition", 0);
+		eval("mount", "-t", "ubifs", "-o", "sync", "ubi0:rootfs_data", "/jffs");
 		break;
 	case ROUTER_ASROCK_G10:
 		if (maddr) {
@@ -594,6 +594,7 @@ void start_sysinit(void)
 			nvram_seti("bootpartition", 1);
 		else
 			nvram_seti("bootpartition", 0);
+		eval("mount", "-t", "ubifs", "-o", "sync", "ubi0:rootfs_data", "/jffs");
 		break;
 	case ROUTER_LINKSYS_EA8300:
 		if (!nvram_match("nobcreset", "1"))
