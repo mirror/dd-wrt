@@ -342,6 +342,22 @@ endif
 			-n RT-AC58U -V "4.9" "0.4" "382" "52243-g06ac406" "0" "0" "0" "0" "0" "0" \
 			-d $(TOP)/$(ARCH)-uclibc/asus-ac58u.img $(TOP)/$(ARCH)-uclibc/asus-ac58u.trx
 
+	./tools/ubi/ubinize-image-new.sh --rootfs $(ARCH)-uclibc/root.squashfs.new \
+		$(ARCH)-uclibc/ddwrt-ipq806x-EA8300-squashfs-nand-factory.ubi \
+		-p 128KiB -m 2048 -E 5
+
+	./tools/ipq40xx/mkits.sh -D linksys_ea8300 \
+		    -o $(TOP)/$(ARCH)-uclibc/fit-linksys_ea8300.its \
+		    -k $(TOP)/$(ARCH)-uclibc/uImage \
+		    -d $(LINUXDIR)/arch/arm/boot/dts/qcom-ipq4019-ea8300.dtb \
+		    -C none -a 0x80208000 -e 0x80208000 -c "config@1" -A arm -v 4.9
+
+	tools/r7500/mkimage -f $(TOP)/$(ARCH)-uclibc/fit-linksys_ea8300.its $(TOP)/$(ARCH)-uclibc/linksys_ea8300.itb
+	dd if=$(TOP)/$(ARCH)-uclibc/linksys_ea8300.itb of=$(TOP)/$(ARCH)-uclibc/linksys_ea8300.bin bs=5120k conv=sync
+	cat $(ARCH)-uclibc/ddwrt-ipq806x-EA8300-squashfs-nand-factory.ubi >> $(TOP)/$(ARCH)-uclibc/linksys_ea8300.bin
+	let size="$$(stat -c%s arm-uclibc/linksys_ea8300.bin)" pad="2048" offset="256" pad="(pad - ((size + offset) % pad)) % pad"; dd if=/dev/zero bs=$$pad count=1 | tr '\000' '\377' >> $(TOP)/$(ARCH)-uclibc/linksys_ea8300.bin
+	printf ".LINKSYS.01000409%-15s%08X%-8s%-16s" "EA8300" "$(cksum $(TOP)/$(ARCH)-uclibc/linksys_ea8300.bin | cut -d ' ' -f1)" "0" "K0000000F0246434" >> $(TOP)/$(ARCH)-uclibc/linksys_ea8300.bin
+	dd if=/dev/zero bs=192 count=1 >> $(TOP)/$(ARCH)-uclibc/linksys_ea8300.bin
 
 
 #	-./tools/ipq40xx/mkits.sh -D asus_ac56u -o $(ARCH)-uclibc/ac58u.itb.its -k $(TOP)/$(ARCH)-uclibc/Image.gz -d $(LINUXDIR)/arch/arm/boot/dts/qcom-ipq4018-asus-ac58u.dtb -C gzip -a 0x80208000 -e 0x80208000 -c "config@1" -A arm -v 4.9
@@ -542,6 +558,10 @@ endif
 		$(ARCH)-uclibc/ddwrt-ipq806x-EA8500-squashfs-nand-factory.ubi \
 		-v -p 128KiB -m 2048
 
+	./tools/ubi/ubinize-image.sh --kernel --roofs $(ARCH)-uclibc/root.squashfs.new \
+		$(ARCH)-uclibc/ddwrt-ipq806x-EA8300-squashfs-nand-factory.ubi \
+		-p 128KiB -m 2048 -E 5
+
 #	cd $(ARCH)-uclibc && ../tools/wrt1900ac/ubinize -v -m 2048 -p 128KiB -s 512 -O 2048 -o root.squashfs.ubi ubinize.cfg && cd ..
 
 #	dd if=$(ARCH)-uclibc/ddwrt-ipq806x-AP148-squashfs-nand-factory.ubi of=$(ARCH)-uclibc/ddwrt-ipq806x-AP148-squashfs-nand-factory-final.ubi bs=2M conv=sync
@@ -606,6 +626,18 @@ ifeq ($(CONFIG_HABANERO),y)
 
 	-./tools/trx_n -m 55000000 -o $(ARCH)-uclibc/ac58.bin $(ARCH)-uclibc/asus-ac58u.img
 
+	./tools/ipq40xx/mkits.sh -D linksys_ea8300 \
+		    -o $(TOP)/$(ARCH)-uclibc/fit-linksys_ea8300.its \
+		    -k $(TOP)/$(ARCH)-uclibc/uImage \
+		    -d $(LINUXDIR)/arch/arm/boot/dts/qcom-ipq4019-ea8300.dtb \
+		    -C none -a 0x80208000 -e 0x80208000 -c "config@1" -A arm -v 4.9
+
+	tools/r7500/mkimage -f $(TOP)/$(ARCH)-uclibc/fit-linksys_ea8300.its $(TOP)/$(ARCH)-uclibc/linksys_ea8300.itb
+	dd if=$(TOP)/$(ARCH)-uclibc/linksys_ea8300.itb of=$(TOP)/$(ARCH)-uclibc/linksys_ea8300.bin bs=5120k conv=sync
+	cat $(ARCH)-uclibc/ddwrt-ipq806x-EA8300-squashfs-nand-factory.ubi >> $(TOP)/$(ARCH)-uclibc/linksys_ea8300.bin
+	let size="$$(stat -c%s arm-uclibc/linksys_ea8300.bin)" pad="2048" offset="256" pad="(pad - ((size + offset) % pad)) % pad"; dd if=/dev/zero bs=$$pad count=1 | tr '\000' '\377' >> $(TOP)/$(ARCH)-uclibc/linksys_ea8300.bin
+	printf ".LINKSYS.01000409%-15s%08X%-8s%-16s" "EA8300" "$(cksum $(TOP)/$(ARCH)-uclibc/linksys_ea8300.bin | cut -d ' ' -f1)" "0" "K0000000F0246434" >> $(TOP)/$(ARCH)-uclibc/linksys_ea8300.bin
+	dd if=/dev/zero bs=192 count=1 >> $(TOP)/$(ARCH)-uclibc/linksys_ea8300.bin
 endif
 
 include rules/all.mk
