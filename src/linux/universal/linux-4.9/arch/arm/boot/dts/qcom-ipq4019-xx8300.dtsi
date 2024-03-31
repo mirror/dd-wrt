@@ -22,7 +22,8 @@
 
 / {
 	chosen {
-		bootargs-append = " root=/dev/ubiblock0_0 rootfstype=squashfs ro";
+		bootargs-append = "console=ttyMSM0,115200n8 root=/dev/ubiblock0_0 rootfstype=squashfs ro";
+		linux,stdout-path = "serial0:115200n8";
 	};
 
 
@@ -101,6 +102,10 @@
 		};
 
 		ess-switch@c000000 {
+			status = "okay";
+		};
+
+		edma@c080000 {
 			status = "okay";
 		};
 
@@ -209,7 +214,7 @@
 			};
 
 			partition@780000 {
-				label = "kernel";
+				label = "linux";
 				reg = <0x780000 0x5800000>;
 			};
 
@@ -219,13 +224,18 @@
 			};
 
 			partition@5f80000 {
-				label = "alt_kernel";
+				label = "linux2";
 				reg = <0x5f80000 0x5800000>;
 			};
 
 			partition@6480000 {
-				label = "alt_rootfs";
-				reg = <0x6480000 0x5300000>;
+				label = "rootfs2";
+				reg = <0x6480000 0x5200000>;
+			};
+
+			partition@b680000 {
+				label = "nvram";
+				reg = <0xb680000 0x100000>;
 			};
 
 			partition@b780000 {

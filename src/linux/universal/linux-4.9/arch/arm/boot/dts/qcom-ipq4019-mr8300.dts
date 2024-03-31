@@ -5,7 +5,7 @@
 #include "qcom-ipq4019-xx8300.dtsi"
 
 / {
-	model = "Linksys EA8300 (Dallas)";
+	model = "Linksys MR8300 (Dallas)";
 	compatible = "linksys,ea8300", "qcom,ipq4019";
 
 	aliases {
