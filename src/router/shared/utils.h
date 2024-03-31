@@ -793,6 +793,8 @@
 
 #define ROUTER_ASUS_AC58U 0x110104
 
+#define ROUTER_LINKSYS_EA8300 0x11113b
+
 #define NVROUTER "DD_BOARD"
 #define NVROUTER_ALT "alternate_name"
 

@@ -192,6 +192,9 @@ static int getbuttonstate()
 	case ROUTER_ASUS_AC58U:
 		ret = get_gpio(4);
 		break;
+	case ROUTER_LINKSYS_EA8300:
+		ret = get_gpio(50);
+		break;
 	case ROUTER_HABANERO:
 #ifdef HAVE_ANTAIRA
 		return 0;
@@ -1381,6 +1384,10 @@ static void resetbtn_period_check(int sig)
 	case ROUTER_ASUS_AC58U:
 		sesgpio = 0x105;
 		val |= get_gpio(63) << 5;
+		break;
+	case ROUTER_LINKSYS_EA8300:
+		sesgpio = 0x105;
+		val |= get_gpio(18) << 5;
 		break;
 	}
 #endif

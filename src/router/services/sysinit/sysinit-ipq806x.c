@@ -315,6 +315,32 @@ void *get_deviceinfo(char *var)
 	return NULL;
 }
 
+void *get_deviceinfo_ea8300(char *var)
+{
+	static char res[256];
+	bzero(res, sizeof(res));
+	FILE *fp = fopen("/dev/mtdblock/9", "rb");
+	if (!fp)
+		return NULL;
+	char newname[64];
+	snprintf(newname, 64, "%s=", var);
+	char *mem = safe_malloc(0x2000);
+	fread(mem, 0x2000, 1, fp);
+	fclose(fp);
+	int s = (0x2000 - 1) - strlen(newname);
+	int i;
+	int l = strlen(newname);
+	for (i = 0; i < s; i++) {
+		if (!strncmp(mem + i, newname, l)) {
+			strncpy(res, mem + i + l, 17);
+			free(mem);
+			return res;
+		}
+	}
+	free(mem);
+	return NULL;
+}
+
 void *get_deviceinfo_g10(char *var)
 {
 	static char res[256];
@@ -404,6 +430,8 @@ void start_sysinit(void)
 			maddr = getUEnv("lan_mac");
 		if (board == ROUTER_LINKSYS_EA8500)
 			maddr = get_deviceinfo("hw_mac_addr");
+		if (board == ROUTER_LINKSYS_EA8300)
+			maddr = get_deviceinfo_ea8300("hw_mac_addr");
 
 		if (board == ROUTER_ASROCK_G10) {
 			static char mg10[20];
@@ -424,16 +452,17 @@ void start_sysinit(void)
 		}
 
 		fseek(fp, 0x1000, SEEK_SET);
-		char *smem = malloc(0x8000);
-		fread(smem, 0x8000, 1, fp);
+		char *smem = malloc(0xC000);
+		fread(smem, 0xC000, 1, fp);
 
 		fclose(fp);
-		if (maddr && (board == ROUTER_TRENDNET_TEW827 || board == ROUTER_LINKSYS_EA8500 ||
+		if (maddr && (board == ROUTER_TRENDNET_TEW827 || board == ROUTER_LINKSYS_EA8500 || board == ROUTER_LINKSYS_EA8300 ||
 			      board == ROUTER_ASROCK_G10)) { // board calibration data with real mac addresses
 			int i;
 			for (i = 0; i < 6; i++) {
 				smem[i + 6] = newmac[i];
 				smem[i + 6 + 0x4000] = newmac[i];
+				smem[i + 6 + 0x8000] = newmac[i];
 			}
 		}
 		if (board == ROUTER_NETGEAR_R7800) {
@@ -479,6 +508,23 @@ void start_sysinit(void)
 			nvram_set("et0macaddr_safe", ethaddr);
 		}
 
+		if (board == ROUTER_LINKSYS_EA8300) {
+			char ethaddr[32];
+			calcchecksum(&smem[0x8000]);
+			sprintf(ethaddr, "%02x:%02x:%02x:%02x:%02x:%02x", smem[6] & 0xff, smem[7] & 0xff, smem[8] & 0xff,
+				smem[9] & 0xff, smem[10] & 0xff, smem[11] & 0xff);
+			set_hwaddr("eth1", ethaddr);
+			sprintf(ethaddr, "%02x:%02x:%02x:%02x:%02x:%02x", smem[0x4000 + 6] & 0xff, smem[0x4000 + 7] & 0xff,
+				smem[0x4000 + 8] & 0xff, smem[0x4000 + 9] & 0xff, smem[0x4000 + 10] & 0xff,
+				smem[0x4000 + 11] & 0xff);
+			set_hwaddr("eth0", ethaddr);
+			nvram_set("et0macaddr", ethaddr);
+			nvram_set("et0macaddr_safe", ethaddr);
+		fp = fopen("/tmp/board3.bin", "wb");
+		fwrite(&smem[0x8000], 12064, 1, fp);
+		fclose(fp);
+		}
+
 		eval("rm", "-f", "/tmp/board1.bin");
 		fp = fopen("/tmp/board1.bin", "wb");
 		fwrite(smem, 12064, 1, fp);
@@ -486,6 +532,7 @@ void start_sysinit(void)
 		fp = fopen("/tmp/board2.bin", "wb");
 		fwrite(&smem[0x4000], 12064, 1, fp);
 		fclose(fp);
+		free(smem);
 		free(smem);
 	}
 	/* 
@@ -556,17 +603,21 @@ void start_sysinit(void)
 	case ROUTER_ASUS_AC58U:
 		eval("swconfig", "dev", "switch0", "set", "reset", "1");
 		eval("swconfig", "dev", "switch0", "set", "enable_vlan", "1");
+
 		sysprintf("echo phy0tpt > /sys/devices/platform/leds/leds/rt-ac58u:blue:wlan2G/trigger");
 		sysprintf("echo phy1tpt > /sys/devices/platform/leds/leds/rt-ac58u:blue:wlan5G/trigger");
 
 		sysprintf("echo netdev > /sys/devices/platform/leds/leds/rt-ac58u:blue:lan/trigger");
 		sysprintf("echo netdev > /sys/devices/platform/leds/leds/rt-ac58u:blue:wan/trigger");
-
 		sysprintf("echo eth0 > /sys/devices/platform/leds/leds/rt-ac58u:blue:lan/device_name");
 		sysprintf("echo eth1 > /sys/devices/platform/leds/leds/rt-ac58u:blue:wan/device_name");
 
 		sysprintf("echo \"link tx rx\" > /sys/devices/platform/leds/leds/rt-ac58u:blue:lan/mode");
 		sysprintf("echo \"link tx rx\" > /sys/devices/platform/leds/leds/rt-ac58u:blue:wan/mode");
+		break;
+	case ROUTER_LINKSYS_EA8300:
+		eval("swconfig", "dev", "switch0", "set", "reset", "1");
+		eval("swconfig", "dev", "switch0", "set", "enable_vlan", "1");
 		break;
 	case ROUTER_HABANERO:
 #ifdef HAVE_ANTAIRA
@@ -625,6 +676,14 @@ void start_sysinit(void)
 
 	switch (board) {
 	case ROUTER_ASUS_AC58U:
+		nvram_seti("sw_cpuport", 0);
+		nvram_seti("sw_wan", 5);
+		nvram_seti("sw_lan1", 4);
+		nvram_seti("sw_lan2", 3);
+		nvram_seti("sw_lan3", 2);
+		nvram_seti("sw_lan4", 1);
+		break;
+	case ROUTER_LINKSYS_EA8300:
 		nvram_seti("sw_cpuport", 0);
 		nvram_seti("sw_wan", 5);
 		nvram_seti("sw_lan1", 4);
@@ -737,6 +796,7 @@ void start_postnetwork(void)
 	switch (board) {
 	case ROUTER_HABANERO:
 	case ROUTER_ASUS_AC58U:
+	case ROUTER_LINKSYS_EA8300:
 		break;
 	default:
 		set_gpio(373 + 17, 0); // reset wifi card gpio pin

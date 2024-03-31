@@ -1145,7 +1145,7 @@ void start_restore_defaults(void)
 	struct nvram_param *generic = NULL;
 
 	int wrt_brand = getRouterBrand();
-	if (wrt_brand == ROUTER_HABANERO || wrt_brand == ROUTER_ASUS_AC58U)
+	if (wrt_brand == ROUTER_HABANERO || wrt_brand == ROUTER_ASUS_AC58U || wrt_brand == ROUTER_LINKSYS_EA8300)
 		generic = habanero;
 	else
 		generic = ipq806x;
@@ -3059,6 +3059,9 @@ void load_drivers(int boot)
 		insmod("ledtrig-usbport");
 		if (brand == ROUTER_ASUS_AC58U) {
 			set_led_usbport("rt-ac58u\\:blue\\:usb", "usb1-port1 usb2-port1 usb3-port1");
+		}
+		if (brand == ROUTER_LINKSYS_EA8300) {
+			set_led_usbport("green\\:usb", "usb1-port1 usb2-port1 usb3-port1");
 		}
 	}
 #endif
