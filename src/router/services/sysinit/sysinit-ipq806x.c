@@ -437,7 +437,7 @@ void start_sysinit(void)
 			hw_version = get_deviceinfo_ea8300("hw_revision");
 			if (!hw_version)
 				hw_version = "1.0";
-			if (cert_region)
+			if (!cert_region)
 				cert_region = "US";
 		}
 
