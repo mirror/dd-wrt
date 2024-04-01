@@ -421,6 +421,8 @@ void start_sysinit(void)
 		mtd = getMTD("Factory");
 
 	char *maddr = NULL;
+	char *cert_region = NULL;
+	char *hw_version = NULL;
 	sprintf(mtdpath, "/dev/mtdblock/%d", mtd);
 	if (board != ROUTER_NETGEAR_R7500)
 		fp = fopen(mtdpath, "rb");
@@ -430,8 +432,14 @@ void start_sysinit(void)
 			maddr = getUEnv("lan_mac");
 		if (board == ROUTER_LINKSYS_EA8500)
 			maddr = get_deviceinfo("hw_mac_addr");
-		if (board == ROUTER_LINKSYS_EA8300)
-			maddr = get_deviceinfo_ea8300("hw_mac_addr");
+		if (board == ROUTER_LINKSYS_EA8300) {
+			cert_region = get_deviceinfo_ea8300("hw_mac_addr");
+			hw_version = get_deviceinfo_ea8300("hw_revision");
+			if (!hw_version)
+				hw_version = "1.0";
+			if (cert_region)
+				cert_region = "US";
+		}
 
 		if (board == ROUTER_ASROCK_G10) {
 			static char mg10[20];
@@ -533,6 +541,37 @@ void start_sysinit(void)
 			mac_add(&smem[0x4006]);
 			mac_add(&smem[0x4006]);
 			calcchecksum(&smem[0x4000]);
+			// setup calibration data
+
+			eval("cp", "-f", "/lib/firmware/ath10k/QCA9888/hw2.0/ea8300/fcc.bin", "/tmp/qca9888.bin");
+			eval("cp", "-f", "/lib/firmware/ath10k/IPQ4019/hw1.0/ea8300/fcc.bin", "/tmp/ipq4019.bin");
+			char *postfix = ".bin";
+			char *file = "fcc";
+			if (!strcmp(cert_region, "US"))
+				file = "fcc";
+			if (!strcmp(cert_region, "CA"))
+				file = "ic";
+			if (!strcmp(cert_region, "AU"))
+				file = "au";
+			if (!strcmp(cert_region, "AH"))
+				file = "ah";
+			if (!strcmp(cert_region, "AP"))
+				file = "ap";
+			if (!strcmp(cert_region, "EU"))
+				file = "eu";
+			if (!strcmp(cert_region, "HK"))
+				file = "hk";
+			if (!strcmp(cert_region, "PH"))
+				file = "ph";
+			if (!strcmp(file, "fcc") || !strcmp(file, "eu") || !strcmp(file, "ic")) {
+				if (!strcmp(hw_version, "1.1"))
+					postfix = "1.1.bin";
+				char copy[128];
+				sprintf(copy, "/lib/firmware/ath10k/IPQ4019/hw1.0/ea8300/%s%s", file, postfix);
+				eval("cp", "-f", copy, "/tmp/ipq4019.bin");
+				sprintf(copy, "/lib/firmware/ath10k/QCA9888/hw2.0/ea8300/ea8300/%s%s", file, postfix);
+				eval("cp", "-f", copy, "/tmp/qca9888.bin");
+			}
 		} else {
 			calcchecksum(smem);
 			calcchecksum(&smem[0x4000]);
