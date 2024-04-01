@@ -553,7 +553,6 @@ static int mac80211_cb_stations(struct nl_msg *msg, void *data)
 	struct genlmsghdr *gnlh = nlmsg_data(nlmsg_hdr(msg));
 	struct nl80211_sta_flag_update *sta_flags;
 	char dev[20];
-	int gottx = 0;
 	struct statdata *d = data;
 	struct mac80211_info *mac80211_info = d->mac80211_info;
 	mac80211_info->wci = add_to_wifi_clients(mac80211_info->wci);
@@ -686,7 +685,6 @@ static int mac80211_cb_stations(struct nl_msg *msg, void *data)
 		} else {
 			if (rinfo[NL80211_RATE_INFO_BITRATE]) {
 				mac80211_info->wci->txrate = nla_get_u16(rinfo[NL80211_RATE_INFO_BITRATE]);
-				gottx = 1;
 			}
 
 			if (rinfo[NL80211_RATE_INFO_MCS]) {
@@ -722,7 +720,7 @@ static int mac80211_cb_stations(struct nl_msg *msg, void *data)
 		}
 	}
 #ifdef HAVE_ATH10K
-	if (!gottx && d->iftype && sinfo[NL80211_STA_INFO_EXPECTED_THROUGHPUT]) {
+	if (d->iftype && sinfo[NL80211_STA_INFO_EXPECTED_THROUGHPUT]) {
 		unsigned int tx = nla_get_u32(sinfo[NL80211_STA_INFO_EXPECTED_THROUGHPUT]);
 		tx = tx * 1000;
 		tx = tx / 1024;
