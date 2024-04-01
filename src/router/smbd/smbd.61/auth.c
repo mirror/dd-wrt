@@ -125,25 +125,25 @@ static int ksmbd_enc_md4(unsigned char *md4_hash, unsigned char *link_str,
 
 	ctx = ksmbd_crypto_ctx_find_md4();
 	if (!ctx) {
-		printk(KERN_ERR "Crypto md4 allocation error\n");
+		ksmbd_debug(AUTH, "Crypto md4 allocation error\n");
 		return -ENOMEM;
 	}
 
 	rc = crypto_shash_init(CRYPTO_MD4(ctx));
 	if (rc) {
-		printk(KERN_ERR "Could not init md4 shash\n");
+		ksmbd_debug(AUTH, "Could not init md4 shash\n");
 		goto out;
 	}
 
 	rc = crypto_shash_update(CRYPTO_MD4(ctx), link_str, link_len);
 	if (rc) {
-		printk(KERN_ERR "Could not update with link_str\n");
+		ksmbd_debug(AUTH, "Could not update with link_str\n");
 		goto out;
 	}
 
 	rc = crypto_shash_final(CRYPTO_MD4(ctx), md4_hash);
 	if (rc)
-		printk(KERN_ERR "Could not generate md4 hash\n");
+		ksmbd_debug(AUTH, "Could not generate md4 hash\n");
 out:
 	ksmbd_release_crypto_ctx(ctx);
 	return rc;
@@ -158,31 +158,31 @@ static int ksmbd_enc_update_sess_key(unsigned char *md5_hash, char *nonce,
 
 	ctx = ksmbd_crypto_ctx_find_md5();
 	if (!ctx) {
-		printk(KERN_ERR "Crypto md5 allocation error\n");
+		ksmbd_debug(AUTH, "Crypto md5 allocation error\n");
 		return -ENOMEM;
 	}
 
 	rc = crypto_shash_init(CRYPTO_MD5(ctx));
 	if (rc) {
-		printk(KERN_ERR "Could not init md5 shash\n");
+		ksmbd_debug(AUTH, "Could not init md5 shash\n");
 		goto out;
 	}
 
 	rc = crypto_shash_update(CRYPTO_MD5(ctx), server_challenge, len);
 	if (rc) {
-		printk(KERN_ERR "Could not update with challenge\n");
+		ksmbd_debug(AUTH, "Could not update with challenge\n");
 		goto out;
 	}
 
 	rc = crypto_shash_update(CRYPTO_MD5(ctx), nonce, len);
 	if (rc) {
-		printk(KERN_ERR "Could not update with nonce\n");
+		ksmbd_debug(AUTH, "Could not update with nonce\n");
 		goto out;
 	}
 
 	rc = crypto_shash_final(CRYPTO_MD5(ctx), md5_hash);
 	if (rc)
-		printk(KERN_ERR "Could not generate md5 hash\n");
+		ksmbd_debug(AUTH, "Could not generate md5 hash\n");
 out:
 	ksmbd_release_crypto_ctx(ctx);
 	return rc;
@@ -204,7 +204,7 @@ static int ksmbd_gen_sess_key(struct ksmbd_session *sess, char *hash,
 
 	ctx = ksmbd_crypto_ctx_find_hmacmd5();
 	if (!ctx) {
-		printk(KERN_ERR "could not crypto alloc hmacmd5\n");
+		ksmbd_debug(AUTH, "could not crypto alloc hmacmd5\n");
 		return -ENOMEM;
 	}
 
@@ -212,13 +212,13 @@ static int ksmbd_gen_sess_key(struct ksmbd_session *sess, char *hash,
 				 hash,
 				 CIFS_HMAC_MD5_HASH_SIZE);
 	if (rc) {
-		printk(KERN_ERR "hmacmd5 set key fail error %d\n", rc);
+		ksmbd_debug(AUTH, "hmacmd5 set key fail error %d\n", rc);
 		goto out;
 	}
 
 	rc = crypto_shash_init(CRYPTO_HMACMD5(ctx));
 	if (rc) {
-		printk(KERN_ERR "could not init hmacmd5 error %d\n", rc);
+		ksmbd_debug(AUTH, "could not init hmacmd5 error %d\n", rc);
 		goto out;
 	}
 
@@ -226,13 +226,13 @@ static int ksmbd_gen_sess_key(struct ksmbd_session *sess, char *hash,
 				 hmac,
 				 SMB2_NTLMV2_SESSKEY_SIZE);
 	if (rc) {
-		printk(KERN_ERR "Could not update with response error %d\n", rc);
+		ksmbd_debug(AUTH, "Could not update with response error %d\n", rc);
 		goto out;
 	}
 
 	rc = crypto_shash_final(CRYPTO_HMACMD5(ctx), sess->sess_key);
 	if (rc) {
-		printk(KERN_ERR "Could not generate hmacmd5 hash error %d\n", rc);
+		ksmbd_debug(AUTH, "Could not generate hmacmd5 hash error %d\n", rc);
 		goto out;
 	}
 
@@ -251,7 +251,7 @@ static int calc_ntlmv2_hash(struct ksmbd_conn *conn, struct ksmbd_session *sess,
 
 	ctx = ksmbd_crypto_ctx_find_hmacmd5();
 	if (!ctx) {
-		printk(KERN_ERR "can't generate ntlmv2 hash\n");
+		ksmbd_debug(AUTH, "can't generate ntlmv2 hash\n");
 		return -ENOMEM;
 	}
 
@@ -259,13 +259,13 @@ static int calc_ntlmv2_hash(struct ksmbd_conn *conn, struct ksmbd_session *sess,
 				  user_passkey(sess->user),
 				  CIFS_ENCPWD_SIZE);
 	if (ret) {
-		printk(KERN_ERR "Could not set NT Hash as a key\n");
+		ksmbd_debug(AUTH, "Could not set NT Hash as a key\n");
 		goto out;
 	}
 
 	ret = crypto_shash_init(CRYPTO_HMACMD5(ctx));
 	if (ret) {
-		printk(KERN_ERR "could not init hmacmd5\n");
+		ksmbd_debug(AUTH, "could not init hmacmd5\n");
 		goto out;
 	}
 
@@ -289,7 +289,7 @@ static int calc_ntlmv2_hash(struct ksmbd_conn *conn, struct ksmbd_session *sess,
 				  (char *)uniname,
 				  UNICODE_LEN(conv_len));
 	if (ret) {
-		printk(KERN_ERR "Could not update with user\n");
+		ksmbd_debug(AUTH, "Could not update with user\n");
 		goto out;
 	}
 
@@ -312,13 +312,13 @@ static int calc_ntlmv2_hash(struct ksmbd_conn *conn, struct ksmbd_session *sess,
 				  (char *)domain,
 				  UNICODE_LEN(conv_len));
 	if (ret) {
-		printk(KERN_ERR "Could not update with domain\n");
+		ksmbd_debug(AUTH, "Could not update with domain\n");
 		goto out;
 	}
 
 	ret = crypto_shash_final(CRYPTO_HMACMD5(ctx), ntlmv2_hash);
 	if (ret)
-		printk(KERN_ERR "Could not generate md5 hash\n");
+		ksmbd_debug(AUTH, "Could not generate md5 hash\n");
 out:
 	kfree(uniname);
 	kfree(domain);

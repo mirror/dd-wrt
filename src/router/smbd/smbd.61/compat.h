@@ -8,9 +8,6 @@ struct xattr_dos_attrib;
 
 /* linux vfs */
 int compat_inode_permission(struct path *path, struct inode *inode, int mask);
-void compat_generic_fillattr(struct path *path, u32 request_mask,
-			     struct inode *inode, struct kstat *kstat);
-
 
 /* ksmbd vfs */
 ssize_t compat_ksmbd_vfs_getxattr(struct path *path, struct dentry *dentry,

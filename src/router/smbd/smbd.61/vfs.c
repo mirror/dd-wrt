@@ -583,18 +583,34 @@ static int check_lock_range(struct file *filp, loff_t start, loff_t end,
 		return 0;
 
 	spin_lock(&ctx->flc_lock);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 9, 0)
+	for_each_file_lock(flock, &ctx->flc_posix) {
+#else
 	list_for_each_entry(flock, &ctx->flc_posix, fl_list) {
+#endif
 		/* check conflict locks */
 		if (flock->fl_end >= start && end >= flock->fl_start) {
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 9, 0)
+			if (lock_is_read(flock)) {
+#else
 			if (flock->fl_type == F_RDLCK) {
+#endif
 				if (type == WRITE) {
 					pr_err("not allow write by shared lock\n");
 					error = 1;
 					goto out;
 				}
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 9, 0)
+			} else if (lock_is_write(flock)) {
+#else
 			} else if (flock->fl_type == F_WRLCK) {
+#endif
 				/* check owner in lock */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 9, 0)
+				if (flock->c.flc_file != filp) {
+#else
 				if (flock->fl_file != filp) {
+#endif
 					error = 1;
 					pr_err("not allow rw access by exclusive lock from other opens\n");
 					goto out;
@@ -1221,7 +1237,7 @@ int ksmbd_vfs_remove_file(struct ksmbd_work *work, char *name)
 	if (ksmbd_override_fsids(work))
 		return -ENOMEM;
 
-	err = ksmbd_vfs_kern_path(work, name, LOOKUP_NO_SYMLINKS, &path, false);
+	err = ksmbd_vfs_kern_path(work, name, LOOKUP_FOLLOW, &path, false);
 	if (err) {
 		ksmbd_debug(VFS, "can't get %s, err %d\n", name, err);
 		ksmbd_revert_fsids(work);
@@ -1302,16 +1318,11 @@ int ksmbd_vfs_link(struct ksmbd_work *work, const char *oldname,
 	struct path oldpath, newpath;
 	struct dentry *dentry;
 	int err;
-	int flags = LOOKUP_NO_SYMLINKS;
 
 	if (ksmbd_override_fsids(work))
 		return -ENOMEM;
 
-	if (test_share_config_flag(work->tcon->share_conf,
-				   KSMBD_SHARE_FLAG_FOLLOW_SYMLINKS))
-		flags = LOOKUP_FOLLOW;
-
-	err = kern_path(oldname, flags, &oldpath);
+	err = kern_path(oldname, LOOKUP_FOLLOW, &oldpath);
 	if (err) {
 		pr_err("cannot get linux path for %s, err = %d\n",
 		       oldname, err);
@@ -1618,7 +1629,6 @@ int ksmbd_vfs_fp_rename(struct ksmbd_work *work, struct ksmbd_file *fp,
 	struct dentry *src_dent, *trap_dent, *src_child;
 	char *dst_name;
 	int err;
-	int flags = LOOKUP_NO_SYMLINKS;
 
 	dst_name = extract_last_component(newname);
 	if (!dst_name) {
@@ -3264,13 +3274,22 @@ int ksmbd_vfs_copy_file_ranges(struct ksmbd_work *work,
 
 void ksmbd_vfs_posix_lock_wait(struct file_lock *flock)
 {
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 9, 0)
+	wait_event(flock->c.flc_wait, !flock->c.flc_blocker);
+#else
 	wait_event(flock->fl_wait, !flock->fl_blocker);
+#endif
 }
 
 int ksmbd_vfs_posix_lock_wait_timeout(struct file_lock *flock, long timeout)
 {
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 9, 0)
+	return wait_event_interruptible_timeout(flock->c.flc_wait,
+						!flock->c.flc_blocker,
+#else
 	return wait_event_interruptible_timeout(flock->fl_wait,
 						!flock->fl_blocker,
+#endif
 						timeout);
 }
 

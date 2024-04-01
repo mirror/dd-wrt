@@ -8,14 +8,6 @@
 #endif
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 6, 0)
-void compat_generic_fillattr(struct path *path, u32 request_mask,
-			     struct inode *inode, struct kstat *kstat)
-{
-	generic_fillattr(mnt_idmap(path->mnt), request_mask,
-			 inode, kstat);
-
-}
-
 int compat_ksmbd_vfs_get_dos_attrib_xattr(const struct path *path,
 					  struct dentry *dentry,
 					  struct xattr_dos_attrib *da)
@@ -43,13 +35,6 @@ ssize_t compat_ksmbd_vfs_getxattr(struct path *path, struct dentry *dentry,
 int compat_inode_permission(struct path *path, struct inode *inode, int mask)
 {
 	return inode_permission(mnt_idmap(path->mnt), inode, mask);
-
-}
-
-void compat_generic_fillattr(struct path *path, u32 request_mask,
-			     struct inode *inode, struct kstat *kstat)
-{
-	generic_fillattr(mnt_idmap(path->mnt), inode, kstat);
 
 }
 
@@ -82,12 +67,6 @@ int compat_inode_permission(struct path *path, struct inode *inode, int mask)
 	return inode_permission(mnt_user_ns(path->mnt), inode, mask);
 
 }
-void compat_generic_fillattr(struct path *path, u32 request_mask,
-			     struct inode *inode, struct kstat *kstat)
-{
-	generic_fillattr(mnt_user_ns(path->mnt), inode, kstat);
-
-}
 
 int compat_ksmbd_vfs_get_dos_attrib_xattr(const struct path *path,
 					  struct dentry *dentry,
@@ -117,11 +96,6 @@ int compat_inode_permission(struct path *path, struct inode *inode, int mask)
 {
 	return inode_permission(inode, mask);
 
-}
-void compat_generic_fillattr(struct path *path, u32 request_mask,
-			     struct inode *inode, struct kstat *kstat)
-{
-	generic_fillattr(inode, kstat);
 }
 int compat_ksmbd_vfs_get_dos_attrib_xattr(const struct path *path,
 					  struct dentry *dentry,
