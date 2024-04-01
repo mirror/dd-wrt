@@ -138,7 +138,7 @@
 			opp-microvolt = <1100000>;
 			clock-latency-ns = <256000>;
  		};
-/*		opp-768000000 {
+		opp-768000000 {
 			opp-hz = /bits/ 64 <768000000>;
 			opp-microvolt = <1100000>;
 			clock-latency-ns = <256000>;
@@ -153,7 +153,6 @@
 			opp-microvolt = <1100000>;
 			clock-latency-ns = <256000>;
 		};
-*/
 	};
 
 	pmu {
