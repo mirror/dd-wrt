@@ -587,4 +587,6 @@ source "drivers/crypto/chelsio/Kconfig"
 
 source "drivers/crypto/al/Kconfig"
 
+source "drivers/crypto/msm/Kconfig"
+
 endif # CRYPTO_HW
