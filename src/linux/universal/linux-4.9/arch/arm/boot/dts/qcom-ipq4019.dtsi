@@ -380,6 +380,44 @@
 			status = "disabled";
 		};
 
+		qcom_crypto: qcrypto@8e20000 {
+			compatible = "qcom,qcrypto";
+			reg = <0x8e20000 0x20000>,
+				<0x8e04000 0x20000>;
+			reg-names = "crypto-base","crypto-bam-base";
+			interrupts = <GIC_SPI 207 0>;
+			qcom,bam-pipe-pair = <1>;
+			qcom,ce-hw-instance = <0>;
+			qcom,ce-hw-shared = <1>;
+			qcom,ce-device = <0>;
+			qcom,ce-opp-freq= <125000000>;
+			clocks = <&gcc GCC_CRYPTO_CLK>,
+				<&gcc GCC_CRYPTO_AXI_CLK>,
+				<&gcc GCC_CRYPTO_AHB_CLK>;
+
+			clock-names = "core_clk", "bus_clk", "iface_clk";
+			status = "ok";
+		};
+
+		qcom_cedev: qcedev@8e20000 {
+			compatible = "qcom,qcedev";
+			reg = <0x8e20000  0x20000>,
+				<0x8e04000  0x20000>;
+			reg-names = "crypto-base","crypto-bam-base";
+			interrupts = <0 207 0>;
+			qcom,bam-pipe-pair = <1>;
+			qcom,ce-hw-instance = <0>;
+			qcom,ce-hw-shared = <1>;
+			qcom,ce-device = <0>;
+			qcom,ce-opp-freq= <125000000>;
+			clocks = <&gcc GCC_CRYPTO_CLK>,
+				<&gcc GCC_CRYPTO_AXI_CLK>,
+				<&gcc GCC_CRYPTO_AHB_CLK>;
+
+			clock-names = "core_clk", "bus_clk", "iface_clk";
+			status = "ok";
+		};
+
                 acc0: clock-controller@b088000 {
                         compatible = "qcom,kpss-acc-v2";
                         reg = <0x0b088000 0x1000>, <0xb008000 0x1000>;
