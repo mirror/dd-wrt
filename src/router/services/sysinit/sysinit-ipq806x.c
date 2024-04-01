@@ -569,7 +569,7 @@ void start_sysinit(void)
 				char copy[128];
 				sprintf(copy, "/lib/firmware/ath10k/IPQ4019/hw1.0/ea8300/%s%s", file, postfix);
 				eval("cp", "-f", copy, "/tmp/ipq4019.bin");
-				sprintf(copy, "/lib/firmware/ath10k/QCA9888/hw2.0/ea8300/ea8300/%s%s", file, postfix);
+				sprintf(copy, "/lib/firmware/ath10k/QCA9888/hw2.0/ea8300/%s%s", file, postfix);
 				eval("cp", "-f", copy, "/tmp/qca9888.bin");
 			}
 		} else {
