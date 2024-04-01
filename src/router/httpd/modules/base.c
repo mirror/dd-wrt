@@ -892,13 +892,13 @@ static int do_spectral_scan(unsigned char method, struct mime_handler *handler, 
 	fclose(fp);
 	if (is_ath10k(ifname) && has_wave2(ifname)) {
 		sprintf(dest, "%s/spectral_bins", path);
-		writestr(dest, "64");
+		writestr(dest, "256");
 		sprintf(dest, "%s/spectral_scan_ctl", path);
 		writestr(dest, "manual");
 		writestr(dest, "trigger");
 	} else if (is_ath10k(ifname)) {
 		sprintf(dest, "%s/spectral_bins", path);
-		writestr(dest, "64");
+		writestr(dest, "256");
 		sprintf(dest, "%s/spectral_scan_ctl", path);
 		writestr(dest, "manual");
 		writestr(dest, "trigger");
