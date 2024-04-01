@@ -550,7 +550,7 @@ void start_sysinit(void)
 			// setup calibration data
 
 			eval("cp", "-f", "/lib/firmware/ath10k/QCA9888/hw2.0/ea8300/fcc.bin", "/tmp/qca9888.bin");
-			eval("cp", "-f", "/lib/firmware/ath10k/IPQ4019/hw1.0/ea8300/fcc.bin", "/tmp/ipq4019.bin");
+			eval("cp", "-f", "/lib/firmware/ath10k/QCA4019/hw1.0/ea8300/fcc.bin", "/tmp/ipq4019.bin");
 			char *postfix = ".bin";
 			char *file = "fcc";
 			if (!strncmp(cert_region, "US", 2))
@@ -573,7 +573,7 @@ void start_sysinit(void)
 				if (!strncmp(hw_version, "1.1", 3))
 					postfix = "1.1.bin";
 				char copy[128];
-				sprintf(copy, "/lib/firmware/ath10k/IPQ4019/hw1.0/ea8300/%s%s", file, postfix);
+				sprintf(copy, "/lib/firmware/ath10k/QCA4019/hw1.0/ea8300/%s%s", file, postfix);
 				eval("cp", "-f", copy, "/tmp/ipq4019.bin");
 				sprintf(copy, "/lib/firmware/ath10k/QCA9888/hw2.0/ea8300/%s%s", file, postfix);
 				eval("cp", "-f", copy, "/tmp/qca9888.bin");
