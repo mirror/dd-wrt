@@ -433,7 +433,7 @@ void start_sysinit(void)
 		if (board == ROUTER_LINKSYS_EA8500)
 			maddr = get_deviceinfo("hw_mac_addr");
 		if (board == ROUTER_LINKSYS_EA8300) {
-			cert_region = get_deviceinfo_ea8300("hw_mac_addr");
+			cert_region = get_deviceinfo_ea8300("cert_region");
 			hw_version = get_deviceinfo_ea8300("hw_revision");
 			if (!hw_version)
 				hw_version = "1.0";
