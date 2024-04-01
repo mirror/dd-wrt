@@ -565,6 +565,8 @@ void start_sysinit(void)
 				file = "ap";
 			if (!strncmp(cert_region, "EU", 2))
 				file = "eu";
+			if (!strncmp(cert_region, "ME", 2))
+				file = "eu";
 			if (!strncmp(cert_region, "HK", 2))
 				file = "hk";
 			if (!strncmp(cert_region, "PH", 2))
