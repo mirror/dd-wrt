@@ -484,6 +484,14 @@ endif
 	rm -rf $(INSTALLDIR)/ath9k/lib/firmware/ath10k/QCA9887
 	rm -rf $(INSTALLDIR)/ath9k/lib/firmware/ath10k/QCA9984
 	rm -rf $(INSTALLDIR)/ath9k/lib/firmware/ath10k/QCA99X0
+ifneq ($(CONFIG_EA8300),y)
+	rm -rf $(INSTALLDIR)/ath9k/lib/firmware/ath10k/QCA9888/hw2.0/ea8300
+	rm -rf $(INSTALLDIR)/ath9k/lib/firmware/ath10k/QCA4019/hw1.0/ea8300
+else
+	cd $(INSTALLDIR)/ath9k/lib/firmware/ath10k/QCA4019/hw1.0/ && rm -f board-2.bin && ln -s /tmp/ipq4019.bin board-2.bin
+	cd $(INSTALLDIR)/ath9k/lib/firmware/ath10k/QCA9888/hw2.0/ && rm -f board-2.bin && ln -s /tmp/qca9888.bin board-2.bin
+endif
+	
 endif
 endif
 ifeq ($(CONFIG_MVEBU),y)
