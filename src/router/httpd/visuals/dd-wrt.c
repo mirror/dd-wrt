@@ -58,6 +58,11 @@
 #endif
 
 #ifdef HAVE_OVERCLOCKING
+#ifdef HAVE_HABANERO
+static unsigned int qca4019_clocks[] = {
+	48, 200, 384, 413, 448, 500, 512, 537, 565, 597, 632, 672, 716, 768, 823, 896, 0
+};
+#endif
 #ifdef HAVE_ALPINE
 static unsigned int alpine_clocks[] = {
 	533, 800, 1200, 1400, 1500, 1600, 1700, 1800, 1900, 2000, 0
@@ -177,6 +182,12 @@ EJ_VISIBLE void ej_show_clocks(webs_t wp, int argc, char_t **argv)
 		nvram_set("clkfreq", "1700");
 	}
 	c = alpine_clocks;
+#elif defined(HAVE_HABANERO)
+	if (!*oclk) {
+		oclk = "716";
+		nvram_set("clkfreq", "716");
+	}
+	c = qca4019_clocks;
 #elif defined(HAVE_NORTHSTAR)
 	switch (rev) {
 	case 11:
