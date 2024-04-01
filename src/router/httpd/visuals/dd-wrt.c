@@ -59,9 +59,7 @@
 
 #ifdef HAVE_OVERCLOCKING
 #ifdef HAVE_HABANERO
-static unsigned int qca4019_clocks[] = {
-	48, 200, 384, 413, 448, 500, 512, 537, 565, 597, 632, 672, 716, 768, 823, 896, 0
-};
+static unsigned int qca4019_clocks[] = { 48, 200, 384, 413, 448, 500, 512, 537, 565, 597, 632, 672, 716, 768, 823, 896, 0 };
 #endif
 #ifdef HAVE_ALPINE
 static unsigned int alpine_clocks[] = {
