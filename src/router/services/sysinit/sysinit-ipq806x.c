@@ -433,12 +433,18 @@ void start_sysinit(void)
 		if (board == ROUTER_LINKSYS_EA8500)
 			maddr = get_deviceinfo("hw_mac_addr");
 		if (board == ROUTER_LINKSYS_EA8300) {
-			cert_region = get_deviceinfo_ea8300("cert_region");
-			hw_version = get_deviceinfo_ea8300("hw_revision");
-			if (!hw_version)
-				hw_version = "1.0";
-			if (!cert_region)
+			maddr = get_deviceinfo_ea8300("cert_region");
+			if (!maddr)
 				cert_region = "US";
+			else
+				cert_region = strdup(maddr);
+				
+			maddr = get_deviceinfo_ea8300("hw_revision");
+			if (!maddr)
+				hw_version = "1.0";
+			else
+				hw_version = strdup(maddr);
+			maddr = get_deviceinfo_ea8300("hw_mac_addr");
 		}
 
 		if (board == ROUTER_ASROCK_G10) {
@@ -547,24 +553,24 @@ void start_sysinit(void)
 			eval("cp", "-f", "/lib/firmware/ath10k/IPQ4019/hw1.0/ea8300/fcc.bin", "/tmp/ipq4019.bin");
 			char *postfix = ".bin";
 			char *file = "fcc";
-			if (!strcmp(cert_region, "US"))
+			if (!strncmp(cert_region, "US", 2))
 				file = "fcc";
-			if (!strcmp(cert_region, "CA"))
+			if (!strncmp(cert_region, "CA", 2))
 				file = "ic";
-			if (!strcmp(cert_region, "AU"))
+			if (!strncmp(cert_region, "AU", 2))
 				file = "au";
-			if (!strcmp(cert_region, "AH"))
+			if (!strncmp(cert_region, "AH", 2))
 				file = "ah";
-			if (!strcmp(cert_region, "AP"))
+			if (!strncmp(cert_region, "AP", 2))
 				file = "ap";
-			if (!strcmp(cert_region, "EU"))
+			if (!strncmp(cert_region, "EU", 2))
 				file = "eu";
-			if (!strcmp(cert_region, "HK"))
+			if (!strncmp(cert_region, "HK", 2))
 				file = "hk";
-			if (!strcmp(cert_region, "PH"))
+			if (!strncmp(cert_region, "PH", 2))
 				file = "ph";
 			if (!strcmp(file, "fcc") || !strcmp(file, "eu") || !strcmp(file, "ic")) {
-				if (!strcmp(hw_version, "1.1"))
+				if (!strncmp(hw_version, "1.1", 3))
 					postfix = "1.1.bin";
 				char copy[128];
 				sprintf(copy, "/lib/firmware/ath10k/IPQ4019/hw1.0/ea8300/%s%s", file, postfix);
