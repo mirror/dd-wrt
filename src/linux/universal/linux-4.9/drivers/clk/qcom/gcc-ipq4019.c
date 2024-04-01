@@ -587,8 +587,12 @@ static const struct freq_tbl ftbl_gcc_apps_clk[] = {
 	F(632000000, P_DDRPLLAPSS, 1, 0, 0),
 	F(672000000, P_DDRPLLAPSS, 1, 0, 0),
 	F(716000000, P_DDRPLLAPSS, 1, 0, 0),
+//	F(768000000, P_DDRPLLAPSS, 1, 0, 0),
+//	F(823000000, P_DDRPLLAPSS, 1, 0, 0),
+//	F(896000000, P_DDRPLLAPSS, 1, 0, 0),
 	{ }
 };
+
 
 static struct clk_rcg2 apps_clk_src = {
 	.cmd_rcgr = 0x1900c,
