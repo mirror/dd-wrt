@@ -1652,8 +1652,8 @@ static void getledconfig(struct ledconfig *cfg)
 	case ROUTER_LINKSYS_EA8300:
 		cfg->diag_gpio = 0x2f; // power led off
 		cfg->connected_gpio = 0x31; // wan led
-		cfg->ses_gpio = 0x2e; // wps led
-		cfg->ses2_gpio = 0x16; // 
+		cfg->sec0_gpio = 0x2e; // wps led
+		cfg->sec1_gpio = 0x16; // 
 		cfg->power_gpio = 0x2d; // power led
 		break;
 	case ROUTER_ASUS_AC58U:
