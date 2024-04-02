@@ -165,7 +165,8 @@ static int hostapd_reload(struct wpa_supplicant *wpa_s, struct wpa_bss *bss)
 	if (bss->has_vht) {
 		if (asprintf(&cmd, "UPDATE channel=%d frequency=%d chwidth=%d sec_chan=%d sec_idx0=%d sec_idx1=%d hw_mode=%d ieee80211n=%d", 
 		    channel, 
-		    bss->freq,bss->vht_oper.vht_op_info_chwidth, 
+		    bss->freq,
+		    bss->vht_oper.vht_op_info_chwidth, 
 		    sec_chan, 
 		    bss->vht_oper.vht_op_info_chan_center_freq_seg0_idx, 
 		    bss->vht_oper.vht_op_info_chan_center_freq_seg1_idx, 
