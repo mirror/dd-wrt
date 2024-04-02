@@ -191,8 +191,10 @@ static struct hostapd_config *hostapd_ctrl_iface_config_read(const char *fname)
 		} else if ((val = get_option(opt, "sec_idx1_freq="))) {
 			conf->vht_oper_centr_freq_seg1_idx_freq = atoi(val);
 		} else if ((val = get_option(opt, "sec_idx0="))) {
+			conf->vht_oper_centr_freq_seg0_idx_freq = 0;
 			conf->vht_oper_centr_freq_seg0_idx = atoi(val);
 		} else if ((val = get_option(opt, "sec_idx1="))) {
+			conf->vht_oper_centr_freq_seg1_idx_freq = 0;
 			conf->vht_oper_centr_freq_seg1_idx = atoi(val);
 		} else if ((val = get_option(opt, "hw_mode=")))
 			conf->hw_mode = atoi(val);
