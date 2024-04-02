@@ -500,6 +500,7 @@ static u32 fc_conn_hash_v6(sfe_ip_addr_t *saddr, sfe_ip_addr_t *daddr,
 static int fast_classifier_update_protocol(struct sfe_connection_create *p_sic,
 					   struct nf_conn *ct)
 {
+	int locked;
 	switch (p_sic->protocol) {
 	case IPPROTO_TCP:
 		p_sic->src_td_window_scale = ct->proto.tcp.seen[0].td_scale;
@@ -521,9 +522,10 @@ static int fast_classifier_update_protocol(struct sfe_connection_create *p_sic,
 		 * state can not be SYN_SENT, SYN_RECV because connection is assured
 		 * Not managed states: FIN_WAIT, CLOSE_WAIT, LAST_ACK, TIME_WAIT, CLOSE.
 		 */
-		spin_lock_bh(&ct->lock); // this here might deadlock
-		if (ct->proto.tcp.state != TCP_CONNTRACK_ESTABLISHED) {
-			spin_unlock_bh(&ct->lock);
+		locked = spin_trylock(&ct->lock); // this here might deadlock
+			if (ct->proto.tcp.state != TCP_CONNTRACK_ESTABLISHED) {
+			    if (locked)
+				    spin_unlock(&ct->lock);
 			fast_classifier_incr_exceptions(
 				FAST_CL_EXCEPTION_TCP_NOT_ESTABLISHED);
 			DEBUG_TRACE(
@@ -533,7 +535,8 @@ static int fast_classifier_update_protocol(struct sfe_connection_create *p_sic,
 				ntohs(p_sic->dest_port));
 			return 0;
 		}
-		spin_unlock_bh(&ct->lock);
+		if (locked)
+			spin_unlock(&ct->lock);
 		break;
 
 	case IPPROTO_UDP:
