@@ -161,7 +161,7 @@ static int hostapd_reload(struct wpa_supplicant *wpa_s, struct wpa_bss *bss)
 		    sec_chan,
 		    bss->vht_oper.vht_op_info_chan_center_freq_seg0_idx,
 		    bss->vht_oper.vht_op_info_chan_center_freq_seg1_idx,
-		    bss->vht_oper.vht_op_info_chan_center_freq_seg1_idx ? bss->freq + ((bss->vht_oper.vht_op_info_chan_center_freq_seg0_idx - channel) * 5) : 0,
+		    bss->vht_oper.vht_op_info_chan_center_freq_seg0_idx ? bss->freq + ((bss->vht_oper.vht_op_info_chan_center_freq_seg0_idx - channel) * 5) : 0,
 		    bss->vht_oper.vht_op_info_chan_center_freq_seg1_idx ? bss->freq + ((bss->vht_oper.vht_op_info_chan_center_freq_seg1_idx - channel) * 5) : 0,
 		    hw_mode, !!bss->ht_capab) < 0)
 		return -1;
