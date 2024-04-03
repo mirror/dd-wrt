@@ -1,3 +1,4 @@
+#undef CONFIG_NOPRINTK
 /*
  * Quick & dirty crypto testing module.
  *
