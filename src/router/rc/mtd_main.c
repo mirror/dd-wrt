@@ -180,9 +180,8 @@ static int mtd_check(char *mtd)
 		return 0;
 	}
 	mtdtype = mtdInfo.type;
-
 	close(fd);
-	return 1;
+	return 0;
 }
 
 static int s_mtd_write(FILE *imagefp, const char *mtd, int quiet)
@@ -306,9 +305,7 @@ int mtd_resetbc(const char *mtd)
 	int ret;
 	int retval = 0;
 
-	DLOG_OPEN();
-
-	fd = mtd_check_open(mtd);
+	fd = mtd_open(mtd, O_RDWR | O_SYNC);
 
 	if (ioctl(fd, MEMGETINFO, &mtd_info) < 0) {
 		fprintf(stderr,"Unable to obtain mtd_info for given partition name.");
@@ -320,14 +317,14 @@ int mtd_resetbc(const char *mtd)
 
 	/* Detect need to override increment (for EA6350v3) */
 
-	if (mtd_info.writesize < BC_OFFSET_INCREMENT_MIN) {
+	if (mtd_info.oobblock < BC_OFFSET_INCREMENT_MIN) {
 
 		bc_offset_increment = BC_OFFSET_INCREMENT_MIN;
 		fprintf(stdout,"Offset increment set to %i for writesize of %i",
-			   bc_offset_increment, mtd_info.writesize);
+			   bc_offset_increment, mtd_info.oobblock);
 	} else {
 
-		bc_offset_increment = mtd_info.writesize;
+		bc_offset_increment = mtd_info.oobblock;
 	}
 
 	num_bc = mtd_info.size / bc_offset_increment;
