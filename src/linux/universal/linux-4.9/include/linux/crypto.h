@@ -109,10 +109,13 @@
  */
 #define CRYPTO_ALG_OPTIONAL_KEY		0x00004000
 
+
 /*
  * Don't trigger module loading
  */
 #define CRYPTO_NOLOAD			0x00008000
+
+#define CRYPTO_ALG_ALLOCATES_MEMORY	0x00010000
 
 /*
  * Transform masks and values (for crt_flags).
