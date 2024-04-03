@@ -165,7 +165,7 @@ else
 obj-$(CONFIG_NTFS3G) += antfs ntfs-3g
 endif
 endif
-obj-$(CONFIG_SPEEDTEST_CLI) += bearssl curl-static speedtest-cli zlib
+obj-$(CONFIG_SPEEDTEST_CLI) += bearssl curl-static speedtest-cli
 obj-$(CONFIG_RADAUTH) += radauth
 ifneq ($(CONFIG_FONERA),y)
 ifneq ($(CONFIG_XSCALE),y)
