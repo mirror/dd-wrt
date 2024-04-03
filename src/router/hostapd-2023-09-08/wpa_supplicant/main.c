@@ -204,7 +204,7 @@ int main(int argc, char *argv[])
 
 	for (;;) {
 		c = getopt(argc, argv,
-			   "b:Bc:C:D:de:f:g:G:hHi:I:KLMm:nNo:O:p:P:qsTtuv::W");
+			   "b:Bc:C:D:de:f:g:G:hH:i:I:KLMm:nNo:O:p:P:qsTtuv::W");
 		if (c < 0)
 			break;
 		switch (c) {
@@ -345,6 +345,7 @@ int main(int argc, char *argv[])
 			os_memset(iface, 0, sizeof(*iface));
 			break;
 		default:
+			fprintf(stderr, "illegal argument %c\n",c);
 			usage();
 			exitcode = 0;
 			goto out;
