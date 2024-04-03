@@ -278,6 +278,14 @@ static int s_mtd_write(FILE *imagefp, const char *mtd, int quiet)
 
 #define BOOTCOUNT_MAGIC 0x20110811
 
+/*
+ * EA6350v3, and potentially other NOR-boot devices,
+ * use an offset increment of 16 between records,
+ * not mtd_info_user.writesize (often 1 on NOR devices).
+ */
+
+#define BC_OFFSET_INCREMENT_MIN 16
+
 struct bootcounter {
 	uint32_t magic;
 	uint32_t count;
@@ -286,37 +294,55 @@ struct bootcounter {
 
 static char page[2048];
 
-static int mtd_resetbc(char *mtd)
+int mtd_resetbc(const char *mtd)
 {
 	struct mtd_info_user mtd_info;
 	struct bootcounter *curr = (struct bootcounter *)page;
 	unsigned int i;
+	unsigned int bc_offset_increment;
 	int last_count = 0;
 	int num_bc;
 	int fd;
 	int ret;
+	int retval = 0;
 
-	if (!mtd_check(mtd))
-		return -1;
+	DLOG_OPEN();
 
-	fd = mtd_open(mtd, O_RDWR | O_SYNC);
-	if (fd < 0) {
-		fprintf(stderr, "error while opening mtd\n");
-		return -1;
-	}
+	fd = mtd_check_open(mtd);
 
 	if (ioctl(fd, MEMGETINFO, &mtd_info) < 0) {
-		fprintf(stderr, "failed to get mtd info!\n");
-		return -1;
+		fprintf(stderr,"Unable to obtain mtd_info for given partition name.");
+
+		retval = -1;
+		goto out;
 	}
-	//      num_bc = mtd_info.size / mtd_info.writesize;
-	num_bc = mtd_info.size / mtd_info.oobblock;
+
+
+	/* Detect need to override increment (for EA6350v3) */
+
+	if (mtd_info.writesize < BC_OFFSET_INCREMENT_MIN) {
+
+		bc_offset_increment = BC_OFFSET_INCREMENT_MIN;
+		fprintf(stdout,"Offset increment set to %i for writesize of %i",
+			   bc_offset_increment, mtd_info.writesize);
+	} else {
+
+		bc_offset_increment = mtd_info.writesize;
+	}
+
+	num_bc = mtd_info.size / bc_offset_increment;
 
 	for (i = 0; i < num_bc; i++) {
-		pread(fd, curr, sizeof(*curr), i * mtd_info.oobblock);
+		pread(fd, curr, sizeof(*curr), i * bc_offset_increment);
 
-		if (curr->magic != BOOTCOUNT_MAGIC && curr->magic != 0xffffffff) {
-			fprintf(stderr, "unexpected magic %08x, bailing out\n", curr->magic);
+		/* Existing code assumes erase is to 0xff; left as-is (2019) */
+
+		if (curr->magic != BOOTCOUNT_MAGIC &&
+		    curr->magic != 0xffffffff) {
+			fprintf(stderr,"Unexpected magic %08x at offset %08x; aborting.",
+				 curr->magic, i * bc_offset_increment);
+
+			retval = -2;
 			goto out;
 		}
 
@@ -326,41 +352,61 @@ static int mtd_resetbc(char *mtd)
 		last_count = curr->count;
 	}
 
-	/* no need to do writes when last boot count is already 0 */
-	if (last_count == 0) {
-		fprintf(stderr, "count is already zero, no need to call again\n");
+
+	if (last_count == 0) {	/* bootcount is already 0 */
+
+		retval = 0;
 		goto out;
 	}
-	fprintf(stderr, "reset boot counter\n");
+
+
 	if (i == num_bc) {
+		fprintf(stdout,"Boot-count log full with %i entries; erasing (expected occasionally).",
+			    i);
+
 		struct erase_info_user erase_info;
 		erase_info.start = 0;
 		erase_info.length = mtd_info.size;
 
-		/* erase block */
 		ret = ioctl(fd, MEMERASE, &erase_info);
 		if (ret < 0) {
-			fprintf(stderr, "failed to erase block: %i\n", ret);
-			return -1;
+			fprintf(stderr,"Failed to erase boot-count log MTD; ioctl() MEMERASE returned %i",
+				 ret);
+
+			retval = -3;
+			goto out;
 		}
 
 		i = 0;
 	}
 
-	memset(curr, 0xff, mtd_info.oobblock);
+	memset(curr, 0xff, bc_offset_increment);
 
 	curr->magic = BOOTCOUNT_MAGIC;
 	curr->count = 0;
 	curr->checksum = BOOTCOUNT_MAGIC;
 
-	ret = pwrite(fd, curr, mtd_info.oobblock, i * mtd_info.oobblock);
-	if (ret < 0)
-		fprintf(stderr, "failed to write: %i\n", ret);
-	sync();
+	/* Assumes bc_offset_increment is a multiple of mtd_info.writesize */
+
+	ret = pwrite(fd, curr, bc_offset_increment, i * bc_offset_increment);
+	if (ret < 0) {
+		fprintf(stderr,"Failed to write boot-count log entry; pwrite() returned %i",
+			 errno);
+		retval = -4;
+		goto out;
+
+	} else {
+		sync();
+
+		fprintf(stdout,"Boot count sucessfully reset to zero.");
+
+		retval = 0;
+		goto out;
+	}
+
 out:
 	close(fd);
-
-	return 0;
+	return retval;
 }
 
 static void usage(void)
