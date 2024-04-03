@@ -517,18 +517,114 @@ source "drivers/crypto/qat/Kconfig"
 
 config CRYPTO_DEV_QCE
 	tristate "Qualcomm crypto engine accelerator"
-	depends on (ARCH_QCOM || COMPILE_TEST) && HAS_DMA && HAS_IOMEM
-	select CRYPTO_AES
-	select CRYPTO_DES
-	select CRYPTO_ECB
-	select CRYPTO_CBC
-	select CRYPTO_XTS
-	select CRYPTO_CTR
-	select CRYPTO_BLKCIPHER
+	depends on ARCH_QCOM || COMPILE_TEST
+	depends on HAS_IOMEM
 	help
 	  This driver supports Qualcomm crypto engine accelerator
 	  hardware. To compile this driver as a module, choose M here. The
 	  module will be called qcrypto.
+
+config CRYPTO_DEV_QCE_SKCIPHER
+	bool
+	depends on CRYPTO_DEV_QCE
+	select CRYPTO_AES
+	select CRYPTO_LIB_DES
+	select CRYPTO_ECB
+	select CRYPTO_CBC
+	select CRYPTO_XTS
+	select CRYPTO_CTR
+	select CRYPTO_SKCIPHER
+
+config CRYPTO_DEV_QCE_SHA
+	bool
+	depends on CRYPTO_DEV_QCE
+	select CRYPTO_SHA1
+	select CRYPTO_SHA256
+
+config CRYPTO_DEV_QCE_AEAD
+	bool
+	depends on CRYPTO_DEV_QCE
+	select CRYPTO_AUTHENC
+	select CRYPTO_LIB_DES
+
+choice
+	prompt "Algorithms enabled for QCE acceleration"
+	default CRYPTO_DEV_QCE_ENABLE_ALL
+	depends on CRYPTO_DEV_QCE
+	help
+	  This option allows to choose whether to build support for all algorithms
+	  (default), hashes-only, or skciphers-only.
+
+	  The QCE engine does not appear to scale as well as the CPU to handle
+	  multiple crypto requests.  While the ipq40xx chips have 4-core CPUs, the
+	  QCE handles only 2 requests in parallel.
+
+	  Ipsec throughput seems to improve when disabling either family of
+	  algorithms, sharing the load with the CPU.  Enabling skciphers-only
+	  appears to work best.
+
+	config CRYPTO_DEV_QCE_ENABLE_ALL
+		bool "All supported algorithms"
+		select CRYPTO_DEV_QCE_SKCIPHER
+		select CRYPTO_DEV_QCE_SHA
+		select CRYPTO_DEV_QCE_AEAD
+		help
+		  Enable all supported algorithms:
+			- AES (CBC, CTR, ECB, XTS)
+			- 3DES (CBC, ECB)
+			- DES (CBC, ECB)
+			- SHA1, HMAC-SHA1
+			- SHA256, HMAC-SHA256
+
+	config CRYPTO_DEV_QCE_ENABLE_SKCIPHER
+		bool "Symmetric-key ciphers only"
+		select CRYPTO_DEV_QCE_SKCIPHER
+		help
+		  Enable symmetric-key ciphers only:
+			- AES (CBC, CTR, ECB, XTS)
+			- 3DES (ECB, CBC)
+			- DES (ECB, CBC)
+
+	config CRYPTO_DEV_QCE_ENABLE_SHA
+		bool "Hash/HMAC only"
+		select CRYPTO_DEV_QCE_SHA
+		help
+		  Enable hashes/HMAC algorithms only:
+			- SHA1, HMAC-SHA1
+			- SHA256, HMAC-SHA256
+
+	config CRYPTO_DEV_QCE_ENABLE_AEAD
+		bool "AEAD algorithms only"
+		select CRYPTO_DEV_QCE_AEAD
+		help
+		  Enable AEAD algorithms only:
+			- authenc()
+			- ccm(aes)
+			- rfc4309(ccm(aes))
+endchoice
+
+config CRYPTO_DEV_QCE_SW_MAX_LEN
+	int "Default maximum request size to use software for AES"
+	depends on CRYPTO_DEV_QCE && CRYPTO_DEV_QCE_SKCIPHER
+	default 512
+	help
+	  This sets the default maximum request size to perform AES requests
+	  using software instead of the crypto engine.  It can be changed by
+	  setting the aes_sw_max_len parameter.
+
+	  Small blocks are processed faster in software than hardware.
+	  Considering the 256-bit ciphers, software is 2-3 times faster than
+	  qce at 256-bytes, 30% faster at 512, and about even at 768-bytes.
+	  With 128-bit keys, the break-even point would be around 1024-bytes.
+
+	  The default is set a little lower, to 512 bytes, to balance the
+	  cost in CPU usage.  The minimum recommended setting is 16-bytes
+	  (1 AES block), since AES-GCM will fail if you set it lower.
+	  Setting this to zero will send all requests to the hardware.
+
+	  Note that 192-bit keys are not supported by the hardware and are
+	  always processed by the software fallback, and all DES requests
+	  are done by the hardware.
 
 config CRYPTO_DEV_VMX
 	bool "Support for VMX cryptographic acceleration instructions"
