@@ -1143,6 +1143,7 @@ int hostapd_signal_handle_event(struct hostapd_data *hapd, int rssi, int type, c
     
 		
 	if (type < ARRAY_SIZE(types) && rssi && type != PROBE_REQ) {  // don't clutter the log with probes.
+		if ((rssi < hapd->conf->signal_auth_min))
     		hostapd_logger(hapd, addr, HOSTAPD_MODULE_MLME, HOSTAPD_LEVEL_INFO, "%s request, signal %i %s", 
             		types[type], rssi,
             		(rssi >= hapd->conf->signal_auth_min) ? "(Accepted)" : "(DENIED) (signal too weak for authentication)");
