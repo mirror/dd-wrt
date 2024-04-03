@@ -70,7 +70,6 @@
 		nand-ecc-step-size = <512>;
 
 		nand-is-boot-medium;
-		qcom,boot-partitions = <0x0 0x0c80000>;
 
 			partitions {
 			compatible = "fixed-partitions";
