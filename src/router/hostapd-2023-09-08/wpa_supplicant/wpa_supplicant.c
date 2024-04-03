@@ -183,7 +183,10 @@ static int hostapd_reload(struct wpa_supplicant *wpa_s, struct wpa_bss *bss)
 		     channel, bss->freq, sec_chan, hw_mode, !!bss->ht_capab) < 0)
 		return -1;
 	}
-	fprintf(stderr,"send command %s\n",cmd);
+	wpa_msg(wpa_s, MSG_INFO, "WPA: Send MSG to hostapd %s", cmd);
+
+
+//	fprintf(stderr,"send command %s\n",cmd);
 //	char log[256];
 //	sprintf(log,"echo \"send command %s\n\" >> /tmp/send.log\n",cmd);
 //	system(log);
