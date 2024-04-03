@@ -1,3 +1,4 @@
+<h2><% tran("service.transmission_legend"); %></h2>
 <fieldset>
 	<legend><% tran("service.transmission_legend"); %></legend>
 	<div class="setting">
