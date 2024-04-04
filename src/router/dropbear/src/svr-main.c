@@ -31,6 +31,8 @@
 #include "dbrandom.h"
 #include "crypto_desc.h"
 
+int check_blocklist(const char *service, char *ip);
+
 static size_t listensockets(int *sock, size_t sockcount, int *maxfd);
 static void sigchld_handler(int dummy);
 static void sigsegv_handler(int);
@@ -275,6 +277,8 @@ static void main_noinetd(int argc, char ** argv, const char* multipath) {
 
 			/* Limit the number of unauthenticated connections per IP */
 			getaddrstring(&remoteaddr, &remote_host, NULL, 0);
+			if (check_blocklist("dropbear", remote_host))
+				goto out;
 
 			num_unauthed_for_addr = 0;
 			num_unauthed_total = 0;

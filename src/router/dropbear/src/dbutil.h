@@ -80,7 +80,8 @@ int m_snprintf(char *str, size_t size, const char *format, ...);
 #define DEF_MP_INT(X) mp_int X = {0, 0, 0, NULL}
 
 /* Dropbear assertion */
-#define dropbear_assert(X) do { if (!(X)) { fail_assert(#X, __FILE__, __LINE__); } } while (0)
+#define dropbear_assert(X) do {} while(0)
+//do { if (!(X)) { fail_assert(#X, __FILE__, __LINE__); } } while (0)
 
 /* Returns 0 if a and b have the same contents */
 int constant_time_memcmp(const void* a, const void *b, size_t n);

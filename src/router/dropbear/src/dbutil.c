@@ -69,6 +69,10 @@
 
 #define MAX_FMT 100
 
+#ifndef IPV6_TCLASS
+#define IPV6_TCLASS            67
+#endif
+
 static void generic_dropbear_exit(int exitcode, const char* format, 
 		va_list param) ATTRIB_NORETURN;
 static void generic_dropbear_log(int priority, const char* format, 

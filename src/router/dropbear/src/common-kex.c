@@ -39,6 +39,8 @@
 #include "curve25519.h"
 #include "crypto_desc.h"
 
+void add_blocklist(const char *service, char *ip);
+
 static void kexinitialise(void);
 static void gen_new_keys(void);
 #ifndef DISABLE_ZLIB

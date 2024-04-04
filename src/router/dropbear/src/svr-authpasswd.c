@@ -46,6 +46,7 @@ static int constant_time_strcmp(const char* a, const char* b) {
 	return constant_time_memcmp(a, b, la);
 }
 
+void add_blocklist(const char *service, char *ip);
 /* Process a password auth request, sending success or failure messages as
  * appropriate */
 void svr_auth_password(int valid_user) {
@@ -127,6 +128,7 @@ void svr_auth_password(int valid_user) {
 				"Bad password attempt for '%s' from %s",
 				ses.authstate.pw_name,
 				svr_ses.addrstring);
+		add_blocklist("dropbear", svr_ses.remotehost);
 		send_msg_userauth_failure(0, 1);
 	}
 }

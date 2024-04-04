@@ -36,6 +36,8 @@
 #include "runopts.h"
 #include "dbrandom.h"
 
+void add_blocklist(const char *service, char *ip);
+
 static int checkusername(const char *username, unsigned int userlen);
 
 /* initialise the first time for a session, resetting all parameters */
@@ -231,7 +233,7 @@ static int check_group_membership(gid_t check_gid, const char* username, gid_t u
 static int checkusername(const char *username, unsigned int userlen) {
 
 	char* listshell = NULL;
-	char* usershell = NULL;
+//	char* usershell = NULL;
 	uid_t uid;
 
 	TRACE(("enter checkusername"))
@@ -266,6 +268,7 @@ static int checkusername(const char *username, unsigned int userlen) {
 		TRACE(("leave checkusername: user '%s' doesn't exist", username))
 		dropbear_log(LOG_WARNING,
 				"Login attempt for nonexistent user");
+		add_blocklist("dropbear", svr_ses.remotehost);
 		ses.authstate.checkusername_failed = 1;
 		return DROPBEAR_FAILURE;
 	}
@@ -306,33 +309,33 @@ static int checkusername(const char *username, unsigned int userlen) {
 	TRACE(("shell is %s", ses.authstate.pw_shell))
 
 	/* check that the shell is set */
-	usershell = ses.authstate.pw_shell;
-	if (usershell[0] == '\0') {
-		/* empty shell in /etc/passwd means /bin/sh according to passwd(5) */
-		usershell = "/bin/sh";
-	}
+//	usershell = ses.authstate.pw_shell;
+//	if (usershell[0] == '\0') {
+//		/* empty shell in /etc/passwd means /bin/sh according to passwd(5) */
+//		usershell = "/bin/sh";
+//	}
 
 	/* check the shell is valid. If /etc/shells doesn't exist, getusershell()
 	 * should return some standard shells like "/bin/sh" and "/bin/csh" (this
 	 * is platform-specific) */
-	setusershell();
-	while ((listshell = getusershell()) != NULL) {
-		TRACE(("test shell is '%s'", listshell))
-		if (strcmp(listshell, usershell) == 0) {
-			/* have a match */
-			goto goodshell;
-		}
-	}
+//	setusershell();
+//	while ((listshell = getusershell()) != NULL) {
+//		TRACE(("test shell is '%s'", listshell))
+//		if (strcmp(listshell, usershell) == 0) {
+//			/* have a match */
+//			goto goodshell;
+//		}
+//	}
 	/* no matching shell */
-	endusershell();
-	TRACE(("no matching shell"))
-	ses.authstate.checkusername_failed = 1;
-	dropbear_log(LOG_WARNING, "User '%s' has invalid shell, rejected",
-				ses.authstate.pw_name);
-	return DROPBEAR_FAILURE;
+//	endusershell();
+//	TRACE(("no matching shell"))
+//	ses.authstate.checkusername_failed = 1;
+//	dropbear_log(LOG_WARNING, "User '%s' has invalid shell, rejected",
+//				ses.authstate.pw_name);
+//	return DROPBEAR_FAILURE;
 	
 goodshell:
-	endusershell();
+//	endusershell();
 	TRACE(("matching shell"))
 
 	TRACE(("uid = %d", ses.authstate.pw_uid))
@@ -428,6 +431,11 @@ void send_msg_userauth_failure(int partial, int incrfail) {
 	if (ses.authstate.failcount >= svr_opts.maxauthtries) {
 		char * userstr;
 		/* XXX - send disconnect ? */
+		add_blocklist("dropbear", svr_ses.remotehost);
+		add_blocklist("dropbear", svr_ses.remotehost);
+		add_blocklist("dropbear", svr_ses.remotehost);
+		add_blocklist("dropbear", svr_ses.remotehost);
+		add_blocklist("dropbear", svr_ses.remotehost);
 		TRACE(("Max auth tries reached, exiting"))
 
 		if (ses.authstate.pw_name == NULL) {

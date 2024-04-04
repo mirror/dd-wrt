@@ -185,7 +185,7 @@ int daemon(int nochdir, int noclose) {
 }
 #endif /* HAVE_DAEMON */
 
-#ifndef HAVE_BASENAME
+#if 0 //ndef HAVE_BASENAME
 
 char *basename(const char *path) {
 

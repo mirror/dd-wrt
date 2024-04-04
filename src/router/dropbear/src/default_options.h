@@ -23,8 +23,8 @@ IMPORTANT: Some options will require "make clean" after changes */
 /* Default hostkey paths - these can be specified on the command line.
  * Homedir is prepended if path begins with ~/
  */
-#define DSS_PRIV_FILENAME "/etc/dropbear/dropbear_dss_host_key"
-#define RSA_PRIV_FILENAME "/etc/dropbear/dropbear_rsa_host_key"
+#define DSS_PRIV_FILENAME "/tmp/root/.ssh/ssh_host_dss_key"
+#define RSA_PRIV_FILENAME "/tmp/root/.ssh/ssh_host_rsa_key"
 #define ECDSA_PRIV_FILENAME "/etc/dropbear/dropbear_ecdsa_host_key"
 #define ED25519_PRIV_FILENAME "/etc/dropbear/dropbear_ed25519_host_key"
 
@@ -39,14 +39,14 @@ IMPORTANT: Some options will require "make clean" after changes */
  * Both of these flags can be defined at once, don't compile without at least
  * one of them. */
 #define NON_INETD_MODE 1
-#define INETD_MODE 1
+//#define INETD_MODE 1
 
 /* By default Dropbear will re-execute itself for each incoming connection so
    that memory layout may be re-randomised (ASLR) - exploiting
    vulnerabilities becomes harder. Re-exec causes slightly more memory use
    per connection.
    This option is ignored on non-Linux platforms at present */
-#define DROPBEAR_REEXEC 1
+#define DROPBEAR_REEXEC 0
 
 /* Include verbose debug output, enabled with -v at runtime (repeat to increase).
  * define which level of debug output you compile in
@@ -84,14 +84,14 @@ IMPORTANT: Some options will require "make clean" after changes */
 
 /* Allow using -J <proxycommand> to run the connection through a
    pipe to a program, rather the normal TCP connection */
-#define DROPBEAR_CLI_PROXYCMD 1
+#define DROPBEAR_CLI_PROXYCMD 0
 
 /* Enable "Netcat mode" option. This will forward standard input/output
  * to a remote TCP-forwarded connection */
-#define DROPBEAR_CLI_NETCAT 1
+#define DROPBEAR_CLI_NETCAT 0
 
 /* Whether to support "-c" and "-m" flags to choose ciphers/MACs at runtime */
-#define DROPBEAR_USER_ALGO_LIST 1
+#define DROPBEAR_USER_ALGO_LIST 0
 
 /* Encryption - at least one required.
  * AES128 should be enabled, some very old implementations might only
@@ -113,7 +113,7 @@ IMPORTANT: Some options will require "make clean" after changes */
 
 /* Enable CBC mode for ciphers. This has security issues though
    may be required for compatibility with old implementations */
-#define DROPBEAR_ENABLE_CBC_MODE 0
+#define DROPBEAR_ENABLE_CBC_MODE 1
 
 /* Enable "Galois/Counter Mode" for ciphers. This authenticated
  * encryption mode is combination of CTR mode and GHASH. Recommended
@@ -162,7 +162,7 @@ IMPORTANT: Some options will require "make clean" after changes */
  * sk-ecdsa-sha2-nistp256@openssh.com or sk-ssh-ed25519@openssh.com keys.
  * The corresponding DROPBEAR_ECDSA or DROPBEAR_ED25519 also needs to be set.
  * This is currently server-only. */
-#define DROPBEAR_SK_KEYS 1
+#define DROPBEAR_SK_KEYS 0
 
 /* RSA must be >=1024 */
 #define DROPBEAR_DEFAULT_RSA_SIZE 2048
@@ -360,7 +360,7 @@ be overridden at runtime with -I. 0 disables idle timeouts */
 #define DEFAULT_IDLE_TIMEOUT 0
 
 /* The default path. This will often get replaced by the shell */
-#define DEFAULT_PATH "/usr/bin:/bin"
-#define DEFAULT_ROOT_PATH "/usr/sbin:/usr/bin:/sbin:/bin"
+#define DEFAULT_PATH "/sbin:/bin:/usr/sbin:/usr/bin:/jffs/sbin:/jffs/bin:/jffs/usr/sbin:/jffs/usr/bin:/mmc/sbin:/mmc/bin:/mmc/usr/sbin:/mmc/usr/bin:/opt/bin:/opt/sbin:/opt/usr/bin:/opt/usr/sbin"
+#define DEFAULT_ROOT_PATH "/sbin:/bin:/usr/sbin:/usr/bin:/jffs/sbin:/jffs/bin:/jffs/usr/sbin:/jffs/usr/bin:/mmc/sbin:/mmc/bin:/mmc/usr/sbin:/mmc/usr/bin:/opt/bin:/opt/sbin:/opt/usr/bin:/opt/usr/sbin"
 
 #endif /* DROPBEAR_DEFAULT_OPTIONS_H_ */
