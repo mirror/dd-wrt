@@ -315,31 +315,6 @@ static int write_main(int argc, char *argv[])
 
 	char *part;
 	switch (brand) {
-#if defined(HAVE_MVEBU) || defined(HAVE_IPQ806X)
-	case ROUTER_WRT_1900AC:
-	case ROUTER_WRT_1200AC:
-	case ROUTER_WRT_1900ACV2:
-	case ROUTER_WRT_1900ACS:
-	case ROUTER_WRT_3200ACM:
-	case ROUTER_WRT_32X:
-	case ROUTER_LINKSYS_EA8500:
-	case ROUTER_LINKSYS_EA8300:
-		part = getUEnv("boot_part");
-		if (part) {
-			dd_loginfo("flash", "boot partiton is %s\n", part);
-			if (!strcmp(part, "2")) {
-				mtd = "linux";
-				eval("ubootenv", "set", "boot_part", "1");
-			} else {
-				mtd = "linux2";
-				eval("ubootenv", "set", "boot_part", "2");
-			}
-			dd_loginfo("flash", "flash to partition %s\n", mtd);
-		} else {
-			dd_logerror("flash", "no boot partition info found\n", mtd);
-		}
-		break;
-#endif
 	case ROUTER_ASUS_AC58U:
 //		writeubi = 1;
 		break;
@@ -901,6 +876,33 @@ again:;
 		dd_loginfo("flash", "Write Belkin magic...done.\n");
 	} // end
 #endif
+#if defined(HAVE_MVEBU) || defined(HAVE_IPQ806X)
+	switch (brand) {
+	case ROUTER_WRT_1900AC:
+	case ROUTER_WRT_1200AC:
+	case ROUTER_WRT_1900ACV2:
+	case ROUTER_WRT_1900ACS:
+	case ROUTER_WRT_3200ACM:
+	case ROUTER_WRT_32X:
+	case ROUTER_LINKSYS_EA8500:
+	case ROUTER_LINKSYS_EA8300:
+		part = getUEnv("boot_part");
+		if (part) {
+			dd_loginfo("flash", "boot partiton is %s\n", part);
+			if (!strcmp(part, "2")) {
+				mtd = "linux";
+				eval("ubootenv", "set", "boot_part", "1");
+			} else {
+				mtd = "linux2";
+				eval("ubootenv", "set", "boot_part", "2");
+			}
+			dd_loginfo("flash", "flash to partition %s\n", mtd);
+		} else {
+			dd_logerror("flash", "no boot partition info found\n", mtd);
+		}
+		break;
+#endif
+	}
 
 	ret = 0;
 fail:
