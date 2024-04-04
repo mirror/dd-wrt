@@ -1,7 +1,6 @@
 DROPBEAR_OPTS = $(MIPS16_OPT) $(LTO) -DDISABLE_X11FWD
 
 dropbear-configure: nvram libutils-configure libutils zlib-configure zlib
-	cd dropbear && autoconf
 	cd dropbear && ./configure \
 				--host=$(ARCH)-linux \
 				--disable-pam \
