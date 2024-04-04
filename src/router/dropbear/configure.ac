@@ -7,7 +7,6 @@
 
 AC_PREREQ([2.59])
 AC_INIT
-AC_CONFIG_SRCDIR(buffer.c)
 
 # Record which revision is being built
 if test -s "`which hg`" && test -d "$srcdir/.hg"; then
@@ -201,7 +200,7 @@ esac
 AC_CHECK_TOOL(AR, ar, :)
 AC_CHECK_TOOL(RANLIB, ranlib, :)
 AC_CHECK_TOOL(STRIP, strip, :)
-AC_CHECK_TOOL(INSTALL, install, :)
+AC_PROG_INSTALL
 
 dnl Can't use login() or logout() with uclibc
 AC_CHECK_DECL(__UCLIBC__,
@@ -210,9 +209,16 @@ AC_CHECK_DECL(__UCLIBC__,
 	AC_MSG_NOTICE([Using uClibc - login() and logout() probably don't work, so we won't use them.])
 	],,)
 
-found_crypt_func=here
-CRYPTLIB="-lcrypt"
-AC_SUBST(CRYPTLIB)	
+dnl We test for crypt() specially. On Linux (and others?) it resides in libcrypt
+dnl but we don't want link all binaries to -lcrypt, just dropbear server.
+dnl OS X doesn't need -lcrypt
+AC_CHECK_FUNC(crypt, found_crypt_func=here)
+AC_CHECK_LIB(crypt, crypt,
+	[
+	CRYPTLIB="-lcrypt"
+	found_crypt_func=here
+	])
+AC_SUBST(CRYPTLIB)
 if test "t$found_crypt_func" = there; then
 AC_DEFINE(HAVE_CRYPT, 1, [crypt() function])
 fi
@@ -882,7 +888,9 @@ fi
 # flags that should be set in Makefile but not for configure tests
 CFLAGS="$CFLAGS $LATE_CFLAGS"
 
-AC_CONFIG_HEADERS([config.h])
+AC_CONFIG_AUX_DIR([src])
+
+AC_CONFIG_HEADERS([config.h:src/config.h.in])
 AC_CONFIG_FILES(Makefile $LIBTOM_FILES test/Makefile)
 AC_OUTPUT
 

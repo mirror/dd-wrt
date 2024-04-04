@@ -14,9 +14,7 @@
 
 #include "dbmalloc.h"
 #define XMALLOC m_malloc
-#ifndef XFREE
 #define XFREE m_free_direct
-#endif
 #define XREALLOC m_realloc
 #define XCALLOC m_calloc
 
