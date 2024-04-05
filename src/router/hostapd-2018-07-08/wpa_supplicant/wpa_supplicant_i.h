@@ -310,7 +310,7 @@ struct wpa_global {
 
 #ifdef UBUS_SUPPORT
 	struct ubus_object ubus_global;
-#emdif
+#endif
 };
 
 
