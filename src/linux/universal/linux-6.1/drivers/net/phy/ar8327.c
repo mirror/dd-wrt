@@ -610,28 +610,6 @@ ar8327_hw_config_pdata(struct ar8xxx_priv *priv,
 }
 
 #ifdef CONFIG_OF
-static void
-ar8327_gpio_reset(struct ar8xxx_priv *priv, struct device_node *np)
-{
-	int msec;
-	int reset_init;
-	bool active_high;
-	struct gpio_desc *reset;
-
-	active_high = of_property_read_bool(np, "reset-active-high");
-	reset_init = active_high ? GPIOD_OUT_HIGH : GPIOD_OUT_LOW;
-	reset = devm_gpiod_get_optional(priv->pdev, "reset", reset_init);
-	if (!reset)
-		return;
-
-	of_property_read_u32(np, "reset-duration", &msec);
-	if (msec > 20)
-		msleep(msec);
-	else
-		usleep_range(msec * 1000, msec * 1000 + 1000);
-
-	gpiod_set_value_cansleep(reset, !active_high);
-}
 
 static int
 ar8327_hw_config_of(struct ar8xxx_priv *priv, struct device_node *np)
@@ -640,8 +618,6 @@ ar8327_hw_config_of(struct ar8xxx_priv *priv, struct device_node *np)
 	const __be32 *paddr;
 	int len;
 	int i;
-
-	ar8327_gpio_reset(priv, np);
 
 	paddr = of_get_property(np, "qca,ar8327-initvals", &len);
 	if (!paddr || len < (2 * sizeof(*paddr)))
