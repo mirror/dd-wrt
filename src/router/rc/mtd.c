@@ -338,8 +338,8 @@ static int write_main(int argc, char *argv[])
 			dd_logerror("flash", "no boot partition info found\n", mtd);
 		}
 		break;
-#endif
 	}
+#endif
 
 	switch (brand) {
 	case ROUTER_ASUS_AC58U:
