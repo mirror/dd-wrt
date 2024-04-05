@@ -923,8 +923,8 @@ again:;
 			}
 		}
 		break;
-#endif
 	}
+#endif
 
 	ret = 0;
 fail:
