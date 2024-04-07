@@ -343,7 +343,7 @@ static int write_main(int argc, char *argv[])
 
 	switch (brand) {
 	case ROUTER_ASUS_AC58U:
-//		writeubi = 1;
+		writeubi = 1;
 		break;
 	case ROUTER_TRENDNET_TEW827:
 	case ROUTER_ASROCK_G10:
@@ -572,11 +572,11 @@ static int write_main(int argc, char *argv[])
 		erase_info.length = mtd_info.erasesize * mul;
 		dd_loginfo("flash", "The free memory is not enough, writing image per %d bytes.\n", erase_info.length);
 	}
-	if (writeubi) {
+/*	if (writeubi) {
 		char cmdline[64];
 		sprintf(cmdline, "ubiupdatevol /dev/ubi0_3 - --size=%d", ROUNDUP(trx.len, mtd_info.erasesize));
 		p = popen(cmdline, "wb");
-	}
+	}*/
 
 	/* 
 	 * Allocate temporary buffer 
@@ -690,7 +690,7 @@ static int write_main(int argc, char *argv[])
 again:;
 			dd_loginfo("flash", "write block [%d] at [0x%08X]\n", (base + (i * mtd_info.erasesize)) - badblocks,
 				   base + (i * mtd_info.erasesize));
-			if (!writeubi) {
+//			if (!writeubi) {
 				erase_info.start = base + (i * mtd_info.erasesize);
 				(void)ioctl(mtd_fd, MEMUNLOCK, &erase_info);
 				if (mtd_block_is_bad(mtd_fd, erase_info.start)) {
@@ -700,14 +700,20 @@ again:;
 					badblocks += mtd_info.erasesize;
 					continue;
 				}
+		if (writeubi) {
+					if (ioctl(mtd_fd, MEMERASE, &erase_info) != 0) {
+						dd_logerror("flash", "\nerase/write failed\n");
+						goto fail;
+					}
+		} else {
 #ifndef HAVE_QCA4019
 				if (mtdtype != MTD_NANDFLASH) {
 					if (ioctl(mtd_fd, MEMERASE, &erase_info) != 0) {
 						dd_logerror("flash", "\nerase/write failed\n");
 						goto fail;
-					}
 				}
 #endif
+		}
 				if (write(mtd_fd, buf + (i * mtd_info.erasesize) - badblocks, mtd_info.erasesize) !=
 				    mtd_info.erasesize) {
 					dd_loginfo("flash", "\ntry again %d\n", redo++);
@@ -715,13 +721,13 @@ again:;
 						goto again;
 					goto fail;
 				}
-			} else {
-				fwrite(buf + (i * mtd_info.erasesize), 1, mtd_info.erasesize, p);
-			}
+//			} else {
+//				fwrite(buf + (i * mtd_info.erasesize), 1, mtd_info.erasesize, p);
+//			}
 		}
 	}
-	if (writeubi)
-		pclose(p);
+//	if (writeubi)
+//		pclose(p);
 	dd_loginfo("flash", "\ndone [%d]\n", i * mtd_info.erasesize);
 	/* 
 	 * Netgear: Write len and checksum at the end of mtd1 
