@@ -711,6 +711,7 @@ again:;
 					if (ioctl(mtd_fd, MEMERASE, &erase_info) != 0) {
 						dd_logerror("flash", "\nerase/write failed\n");
 						goto fail;
+					}
 				}
 #endif
 		}
