@@ -946,9 +946,10 @@ static void _dns_server_audit_log(struct dns_server_post_context *context)
 				 tm.min, tm.sec, tm.usec / 1000);
 	}
 
-	tlog_printf(dns_audit, "%s%s query %s, type %d, time %lums, speed: %.1fms, result %s\n", req_time, req_host,
-				request->domain, request->qtype, get_tick_count() - request->send_tick,
-				((float)request->ping_time) / 10, req_result);
+	tlog_printf(dns_audit, "%s%s query %s, type %d, time %lums, speed: %.1fms, group %s, result %s\n", req_time,
+				req_host, request->domain, request->qtype, get_tick_count() - request->send_tick,
+				((float)request->ping_time) / 10,
+				request->dns_group_name[0] != '\0' ? request->dns_group_name : DNS_SERVER_GROUP_DEFAULT, req_result);
 }
 
 static void _dns_rrs_result_log(struct dns_server_post_context *context, struct dns_ip_address *addr_map)
@@ -2390,7 +2391,7 @@ static int _dns_request_post(struct dns_server_post_context *context)
 
 	tlog(TLOG_INFO, "result: %s, client: %s, qtype: %d, id: %d, group: %s, time: %lums", request->domain,
 		 get_host_by_addr(clientip, sizeof(clientip), (struct sockaddr *)&request->addr), request->qtype, request->id,
-		 request->dns_group_name[0] != '\0' ? request->dns_group_name : "default",
+		 request->dns_group_name[0] != '\0' ? request->dns_group_name : DNS_SERVER_GROUP_DEFAULT,
 		 get_tick_count() - request->send_tick);
 
 	ret = _dns_reply_inpacket(request, context->inpacket, context->inpacket_len);
@@ -2622,6 +2623,10 @@ static int _dns_server_request_complete_with_all_IPs(struct dns_request *request
 				 request->ip_addr[5], request->ip_addr[6], request->ip_addr[7], request->ip_addr[8],
 				 request->ip_addr[9], request->ip_addr[10], request->ip_addr[11], request->ip_addr[12],
 				 request->ip_addr[13], request->ip_addr[14], request->ip_addr[15]);
+		}
+
+		if (request->rcode == DNS_RC_SERVFAIL && request->has_ip) {
+			request->rcode = DNS_RC_NOERROR;
 		}
 	}
 
@@ -4482,7 +4487,7 @@ static int _dns_server_reply_passthrough(struct dns_server_post_context *context
 
 		tlog(TLOG_INFO, "result: %s, client: %s, qtype: %d, id: %d, group: %s, time: %lums", request->domain,
 			 get_host_by_addr(clientip, sizeof(clientip), (struct sockaddr *)&request->addr), request->qtype,
-			 request->id, request->dns_group_name[0] != '\0' ? request->dns_group_name : "default",
+			 request->id, request->dns_group_name[0] != '\0' ? request->dns_group_name : DNS_SERVER_GROUP_DEFAULT,
 			 get_tick_count() - request->send_tick);
 	}
 
@@ -6686,6 +6691,7 @@ static void _dns_server_mdns_query_setup_server_group(struct dns_request *reques
 	}
 
 	*group_name = DNS_SERVER_GROUP_MDNS;
+	safe_strncpy(request->dns_group_name, DNS_SERVER_GROUP_MDNS, sizeof(request->dns_group_name));
 	return;
 }
 
@@ -6827,18 +6833,35 @@ static int _dns_server_setup_request_conf(struct dns_request *request)
 	return 0;
 }
 
+static void _dns_server_setup_dns_group_name(struct dns_request *request, const char **server_group_name)
+{
+	const char *group_name = NULL;
+	const char *temp_group_name = NULL;
+	if (request->conn) {
+		group_name = request->conn->dns_group;
+	}
+
+	temp_group_name = _dns_server_get_request_server_groupname(request);
+	if (temp_group_name != NULL) {
+		group_name = temp_group_name;
+	}
+
+	if (request->dns_group_name[0] != '\0') {
+		group_name = request->dns_group_name;
+	} else {
+		safe_strncpy(request->dns_group_name, group_name, sizeof(request->dns_group_name));
+	}
+
+	*server_group_name = group_name;
+}
+
 static int _dns_server_do_query(struct dns_request *request, int skip_notify_event)
 {
 	int ret = -1;
 	const char *server_group_name = NULL;
-	const char *dns_group = NULL;
 	struct dns_query_options options;
 	char *request_domain = request->domain;
 	char domain_buffer[DNS_MAX_CNAME_LEN * 2];
-
-	if (request->conn) {
-		dns_group = request->conn->dns_group;
-	}
 
 	request->send_tick = get_tick_count();
 
@@ -6849,16 +6872,7 @@ static int _dns_server_do_query(struct dns_request *request, int skip_notify_eve
 	/* lookup domain rule */
 	_dns_server_get_domain_rule(request);
 
-	if (request->dns_group_name[0] == '\0') {
-		if (dns_group) {
-			safe_strncpy(request->dns_group_name, dns_group, sizeof(request->dns_group_name));
-		}
-	}
-
-	server_group_name = _dns_server_get_request_server_groupname(request);
-	if (server_group_name == NULL) {
-		server_group_name = request->dns_group_name;
-	}
+	_dns_server_setup_dns_group_name(request, &server_group_name);
 
 	if (_dns_server_setup_request_conf(request) != 0) {
 		goto errout;
@@ -7838,7 +7852,6 @@ static int _dns_server_tcp_process_one_request(struct dns_server_conn_tcp_client
 					goto errout;
 				}
 
-
 				if (http_decode_data == NULL) {
 					http_decode_data = malloc(DNS_IN_PACKSIZE);
 					if (http_decode_data == NULL) {
@@ -8720,7 +8733,7 @@ static int _dns_create_socket(const char *host_ip, int type)
 	snprintf(port_str, sizeof(port_str), "%d", port);
 	gai = _dns_server_getaddr(host, port_str, type, 0);
 	if (gai == NULL) {
-		tlog(TLOG_ERROR, "get address failed.\n");
+		tlog(TLOG_ERROR, "get address failed.");
 		goto errout;
 	}
 
@@ -8786,6 +8799,8 @@ errout:
 	if (gai) {
 		freeaddrinfo(gai);
 	}
+
+	tlog(TLOG_ERROR, "add server failed, host-ip: %s, type: %d", host_ip, type);
 	return -1;
 }
 
@@ -8986,6 +9001,8 @@ static int _dns_server_socket(void)
 
 	for (i = 0; i < dns_conf_bind_ip_num; i++) {
 		struct dns_bind_ip *bind_ip = &dns_conf_bind_ip[i];
+		tlog(TLOG_INFO, "bind ip %s, type %d", bind_ip->ip, bind_ip->type);
+
 		switch (bind_ip->type) {
 		case DNS_BIND_TYPE_UDP:
 			if (_dns_server_socket_udp(bind_ip) != 0) {
@@ -9282,6 +9299,8 @@ int dns_server_init(void)
 	INIT_LIST_HEAD(&server.conn_list);
 	time(&server.cache_save_time);
 	atomic_set(&server.request_num, 0);
+	pthread_mutex_init(&server.request_list_lock, NULL);
+	INIT_LIST_HEAD(&server.request_list);
 
 	epollfd = epoll_create1(EPOLL_CLOEXEC);
 	if (epollfd < 0) {
@@ -9295,8 +9314,6 @@ int dns_server_init(void)
 		goto errout;
 	}
 
-	pthread_mutex_init(&server.request_list_lock, NULL);
-	INIT_LIST_HEAD(&server.request_list);
 	server.epoll_fd = epollfd;
 	atomic_set(&server.run, 1);
 

@@ -3017,6 +3017,27 @@ errout:
 	return -1;
 }
 
+static int _bind_is_ip_valid(const char *ip)
+{
+	struct sockaddr_storage addr;
+	socklen_t addr_len = sizeof(addr);
+	char ip_check[MAX_IP_LEN];
+	int port_check = -1;
+
+	if (parse_ip(ip, ip_check, &port_check) != 0) {
+		if (port_check != -1 && ip_check[0] == '\0') {
+			return 0;
+		}
+		return -1;
+	}
+
+	if (getaddr_by_host(ip_check, (struct sockaddr *)&addr, &addr_len) != 0) {
+		return -1;
+	}
+
+	return 0;
+}
+
 static int _config_bind_ip(int argc, char *argv[], DNS_BIND_TYPE type)
 {
 	int index = dns_conf_bind_ip_num;
@@ -3053,14 +3074,19 @@ static int _config_bind_ip(int argc, char *argv[], DNS_BIND_TYPE type)
 	};
 	/* clang-format on */
 	if (argc <= 1) {
-		tlog(TLOG_ERROR, "invalid parameter.");
+		tlog(TLOG_ERROR, "bind: invalid parameter.");
 		goto errout;
 	}
 
 	ip = argv[1];
-	if (index >= DNS_MAX_SERVERS) {
+	if (index >= DNS_MAX_BIND_IP) {
 		tlog(TLOG_WARN, "exceeds max server number, %s", ip);
 		return 0;
+	}
+
+	if (_bind_is_ip_valid(ip) != 0) {
+		tlog(TLOG_ERROR, "bind ip address invalid: %s", ip);
+		return -1;
 	}
 
 	for (i = 0; i < dns_conf_bind_ip_num; i++) {
@@ -3073,7 +3099,7 @@ static int _config_bind_ip(int argc, char *argv[], DNS_BIND_TYPE type)
 			continue;
 		}
 
-		tlog(TLOG_WARN, "Bind server %s, type %d, already configured, skip.", ip, type);
+		tlog(TLOG_WARN, "bind server %s, type %d, already configured, skip.", ip, type);
 		return 0;
 	}
 
