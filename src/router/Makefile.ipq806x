@@ -678,6 +678,22 @@ ifeq ($(CONFIG_HABANERO),y)
 
 	-./tools/trx_n -m 55000000 -o $(ARCH)-uclibc/linksys_mr8300-webflash.bin $(ARCH)-uclibc/linksys_mr8300.bin
 
+
+	./tools/ipq40xx/mkits.sh -D linksys_mr9000 \
+		    -o $(TOP)/$(ARCH)-uclibc/fit-linksys_mr9000.its \
+		    -k $(TOP)/$(ARCH)-uclibc/uImage \
+		    -d $(LINUXDIR)/arch/arm/boot/dts/qcom-ipq4019-mr9000.dtb \
+		    -C none -a 0x80208000 -e 0x80208000 -c "config@1" -A arm -v 4.9
+
+	tools/r7500/mkimage -f $(TOP)/$(ARCH)-uclibc/fit-linksys_mr9000.its $(TOP)/$(ARCH)-uclibc/linksys_mr9000.itb
+	dd if=$(TOP)/$(ARCH)-uclibc/linksys_mr9000.itb of=$(TOP)/$(ARCH)-uclibc/linksys_mr9000.bin bs=5120k conv=sync
+	cat $(ARCH)-uclibc/ddwrt-ipq806x-EA9000-squashfs-nand-factory.ubi >> $(TOP)/$(ARCH)-uclibc/linksys_mr9000.bin
+	let size="$$(stat -c%s arm-uclibc/linksys_mr9000.bin)" pad="2048" offset="256" pad="(pad - ((size + offset) % pad)) % pad"; dd if=/dev/zero bs=$$pad count=1 | tr '\000' '\377' >> $(TOP)/$(ARCH)-uclibc/linksys_mr9000.bin
+	printf ".LINKSYS.01000409%-15s%08X%-8s%-16s" "MR9000" "$$(cksum arm-uclibc/linksys_mr9000.bin | cut -d ' ' -f1)" "0" "K0000000F0246434" >> $(TOP)/$(ARCH)-uclibc/linksys_mr9000.bin
+	dd if=/dev/zero bs=192 count=1 >> $(TOP)/$(ARCH)-uclibc/linksys_mr9000.bin
+
+	-./tools/trx_n -m 55000000 -o $(ARCH)-uclibc/linksys_mr9000-webflash.bin $(ARCH)-uclibc/linksys_mr9000.bin
+
 endif
 
 include rules/all.mk
