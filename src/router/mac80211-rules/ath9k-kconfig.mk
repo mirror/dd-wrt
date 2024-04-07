@@ -479,17 +479,20 @@ else
 ifeq ($(CONFIG_HABANERO),y)
 	-cp $(MAC80211_PATH)/ipq-wifi/board-8dev_habanero-dvk.qca4019 $(INSTALLDIR)/ath9k/lib/firmware/ath10k/QCA4019/hw1.0/board-2.bin
 endif
-	rm -rf $(INSTALLDIR)/ath9k/lib/firmware/ath10k/QCA9888
+#	rm -rf $(INSTALLDIR)/ath9k/lib/firmware/ath10k/QCA9888
 	rm -rf $(INSTALLDIR)/ath9k/lib/firmware/ath10k/QCA988X
 	rm -rf $(INSTALLDIR)/ath9k/lib/firmware/ath10k/QCA9887
-	rm -rf $(INSTALLDIR)/ath9k/lib/firmware/ath10k/QCA9984
+#	rm -rf $(INSTALLDIR)/ath9k/lib/firmware/ath10k/QCA9984
 	rm -rf $(INSTALLDIR)/ath9k/lib/firmware/ath10k/QCA99X0
 ifneq ($(CONFIG_EA8300),y)
 	rm -rf $(INSTALLDIR)/ath9k/lib/firmware/ath10k/QCA9888/hw2.0/ea8300
 	rm -rf $(INSTALLDIR)/ath9k/lib/firmware/ath10k/QCA4019/hw1.0/ea8300
+	rm -rf $(INSTALLDIR)/ath9k/lib/firmware/ath10k/QCA9984/hw1.0/mr9000
 else
 	cd $(INSTALLDIR)/ath9k/lib/firmware/ath10k/QCA4019/hw1.0/ && rm -f board-2.bin && ln -s /tmp/ipq4019.bin board-2.bin
 	cd $(INSTALLDIR)/ath9k/lib/firmware/ath10k/QCA9888/hw2.0/ && rm -f board-2.bin && ln -s /tmp/qca9888.bin board-2.bin
+	cp -f $(INSTALLDIR)/ath9k/lib/firmware/ath10k/QCA9984/hw1.0/mr9000/* $(INSTALLDIR)/ath9k/lib/firmware/ath10k/QCA9984/hw1.0/
+	rm -rf $(INSTALLDIR)/ath9k/lib/firmware/ath10k/QCA9984/hw1.0/mr9000
 endif
 endif
 endif
