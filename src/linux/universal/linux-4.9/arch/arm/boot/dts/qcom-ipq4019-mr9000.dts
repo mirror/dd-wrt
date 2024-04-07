@@ -5,8 +5,23 @@
 #include "qcom-ipq4019-xx8300.dtsi"
 
 / {
-	model = "Linksys MR8300 (Dallas)";
-	compatible = "linksys,ea8300", "qcom,ipq4019";
+	model = "Linksys MR9000 (Dallas)";
+	compatible = "linksys,ea9000", "qcom,ipq4019";
+
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		ramoops@87500000 {
+			compatible = "ramoops";
+			reg = <0x87500000 0x600000>;
+			console-size = <0x200000>;
+			pmsg-size    = <0x200000>;
+			record-size  = <0x200000>;
+			ecc-size = <16>;
+		};
+	};
 
 	aliases {
 		serial0 = &blsp1_uart1;
@@ -70,19 +85,44 @@
 	};
 };
 
+&mdio {
+	status = "okay";
+	pinctrl-0 = <&mdio_pins>;
+	pinctrl-names = "default";
+	reset-gpios = <&tlmm 54 GPIO_ACTIVE_LOW>;
+	reset-delay-us = <2000>;
+	reset-post-delay-us = <1000>;
+};
+
+&tlmm {
+	status = "okay";
+	mdio_pins: mdio_pinmux {
+		mux_1 {
+			pins = "gpio6";
+			function = "mdio";
+			bias-pull-up;
+		};
+		mux_2 {
+			pins = "gpio7";
+			function = "mdc";
+			bias-pull-up;
+		};
+	};
+};
+
 &wifi0 {
 	status = "okay";
-	qcom,ath10k-calibration-variant = "linksys-ea8300-fcc";
+	qcom,ath10k-calibration-variant = "linksys-mr9000-fcc";
 };
 
 &wifi1 {
 	status = "okay";
 	ieee80211-freq-limit = <4800000 5490000>;
-	qcom,ath10k-calibration-variant = "linksys-ea8300-fcc";
+	qcom,ath10k-calibration-variant = "linksys-mr9000-fcc";
 };
 
 &wifi2 {
 	status = "okay";
 	ieee80211-freq-limit = <5490000 6115000>;
-	qcom,ath10k-calibration-variant = "linksys-ea8300-fcc";
+	qcom,ath10k-calibration-variant = "linksys-mr9000-fcc";
 };
