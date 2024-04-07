@@ -1,0 +1,48 @@
+ced7e0c8ca4be414095ad46b6363eaf8fb227d07:
+  title: 'net/qla3xxx: switch from ''pci_'' to ''dma_'' API'
+  mainline: 41fb4c1ba7478fe34c7e094e124e4ee4513b9763
+  upstream: 4c731d37cdd8bb66e4a6cff0ce69eb6ecf4e7620
+fda9db2ddde56d0a4fa6e08604c5c02ed4656190:
+  title: 'net/qla3xxx: fix potential memleak in ql_alloc_buffer_queues'
+  mainline: 89f45c30172c80e55c887f32f1af8e184124577b
+  upstream: 39437c89a3074b3e869dab2d0e65148923e327a5
+1aa3bd40236223e2a8404b76d65e0e3c31ab91ba:
+  title: 'asix: Add check for usbnet_get_endpoints'
+  mainline: eaac6a2d26b65511e164772bec6918fcbc61938e
+  upstream: 1d267835dadc8cec3bd3da252171bb335f507cd3
+73a7f8a478ab010be26db513967aacc263263b85:
+  title: 'bnxt_en: Remove mis-applied code from bnxt_cfg_ntp_filters()'
+  mainline: e009b2efb7a8850498796b360043ac25c8d3d28f
+  upstream: b39d97468acf9651ff68e44f0e0c7ebac4ecdca7
+ff510bc907debb02a00d5be80c678fb54042eb01:
+  title: 'mm/memory-failure: check the mapcount of the precise page'
+  mainline: c79c5a0a00a9457718056b588f312baadf44e471
+  upstream: c6f50413f2aacc919b5de443aa080b94f5ebb21d
+e5e8870a91aa5d8eeae9dfd3d6ab6cc6932a3f2b:
+  title: 'mm: fix unmap_mapping_range high bits shift bug'
+  mainline: 9eab0421fa94a3dde0d1f7e36ab3294fc306c99d
+  upstream: 2db1c46c3913b8bc92fed235a344de2671fe9d8d
+8d576e5e8705890e3f9f2bd0f5fe0de0832ac61f:
+  title: 'fuse: nlookup missing decrement in fuse_direntplus_link'
+  mainline: b8bd342d50cbf606666488488f9fea374aceb2d5
+  upstream: 437d8898fbf40b92516aef697b5638acccb7a6f9
+24f1cf2efb69d6cc0cb5d50291f9eb4c95e6f29c:
+  title: 'netfilter: nf_tables: Reject tables of unsupported family'
+  mainline: f1082dd31fe461d482d69da2a8eccfeb7bf07ac2
+  upstream: 087d38ae0fd5a9a41b949e97601b4b0d09336f19
+895547de81e54a04152a30c1dc1de41be55245e5:
+  title: 'net: add a route cache full diagnostic message'
+  mainline: 22c2ad616b74f3de2256b242572ab449d031d941
+  upstream: 47468fae2704151503214f4d4327c164118247fd
+2ee1663e55e8977ff4e86354691f47a45ab20acc:
+  title: 'net/dst: use a smaller percpu_counter batch for dst entries accounting'
+  mainline: cf86a086a18095e33e0637cb78cda1fcf5280852
+  upstream: 9635bd0a5296e2e725c6b33e530d0ef582e2f64e
+e0411760af63f47a43cf1971cd2328ec449645cf:
+  title: 'ipv6: make ip6_rt_gc_expire an atomic_t'
+  mainline: 9cb7c013420f98fa6fd12fc6a5dc055170c108db
+  upstream: b4cfbeaebeb355dbaefb218470055de2e8a73020
+12cda1d5779e05665140a7e8fc88297e4ef9b418:
+  title: 'ipv6: remove max_size check inline with ipv4'
+  mainline: af6d10345ca76670c1b7c37799f0d5576ccef277
+  upstream: 95372b040ae689293c6863b90049f1af68410c8b

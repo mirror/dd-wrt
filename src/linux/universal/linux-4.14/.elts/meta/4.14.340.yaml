@@ -1,0 +1,152 @@
+292ea5ee570c5edd64c505d5a645f421c342327c:
+  title: 'net/sched: Retire CBQ qdisc'
+  mainline: 051d442098421c28c7951625652f61b1e15c4bd5
+  upstream: 23e01e29002a015975bfe9da401ca2068cef8cc0
+48f4bae5b9694dcb5cf7d760fca89c76bbb4786a:
+  title: 'net/sched: Retire ATM qdisc'
+  mainline: fb38306ceb9e770adfb5ffa6e3c64047b55f7a07
+  upstream: d9d084b263dcbd6b35ff4732b3eb78b5e61fcac1
+e8321667659838270cf620dbb9f52be23ed92cc1:
+  title: 'net/sched: Retire dsmark qdisc'
+  mainline: bbe77c14ee6185a61ba6d5e435c1cbb489d2a9ed
+  upstream: 88f8fcd4d137174a88795a9da5f3e92bda04cabb
+45dea6f77d434e7b87f21e13eb7a0781321084f0:
+  title: 'memcg: add refcnt for pcpu stock to avoid UAF problem in drain_all_stock()'
+  mainline: 1a3e1f40962c445b997151a542314f3c6097f8c3
+  upstream: 9e46a20397f443d02d6c6f1a72077370e8cbc8da
+c352221909a64672b1725ee06095c35aa3b652d2:
+  title: 'nilfs2: replace WARN_ONs for invalid DAT metadata block requests'
+  mainline: 5124a0a549857c4b87173280e192eea24dea72ad
+  upstream: b06dec684e11ea944d896ac78cec1602e5157eb8
+9c31d18305176ac3339d2e7fb16e23a78bd6147f:
+  title: 'sched/rt: Fix sysctl_sched_rr_timeslice intial value'
+  mainline: c7fcb99877f9f542c918509b2801065adcaf46fa
+  upstream: 41b7572dea9f7196d075b40d5ac8aafdb5f4b0d4
+6d01d5fde49ee90ac890b2a96c8c7a8bc291805c:
+  title: 'sched/rt: sysctl_sched_rr_timeslice show default timeslice after reset'
+  mainline: c1fc6484e1fb7cc2481d169bfef129a1b0676abe
+  upstream: 1f80bc015277247c9fd9646f7c21f1c728b5d908
+7ccbe0f58d447aea568811db944b7c6d15a5feb7:
+  title: 'sched/rt: Disallow writing invalid values to sched_rt_period_us'
+  mainline: 079be8fc630943d9fc70a97807feb73d169ee3fc
+  upstream: 2d931472d4740d3ada7011cc4c3499948d3a22fa
+93331ecf6b4e7b6b2027b2c6ffa0fad20fc9a2d4:
+  title: 'scsi: target: core: Add TMF to tmr_list handling'
+  mainline: 83ab68168a3d990d5ff39ab030ad5754cbbccb25
+  upstream: 425a571a7e6fc389954cf2564e1edbba3740e171
+ad947ce27c06a8e0004da911805699199e04f6a2:
+  title: 'dmaengine: shdma: increase size of ''dev_id'''
+  mainline: 404290240827c3bb5c4e195174a8854eef2f89ac
+  upstream: bcbaa5ce276fc342cbae3b3148b2af85d3679d80
+5a5772e0f601b64f0f8a3abc4f6dad020235e429:
+  title: 'wifi: cfg80211: fix missing interfaces when dumping'
+  mainline: a6e4f85d3820d00694ed10f581f4c650445dbcda
+  upstream: 31b8419692ae51d2671676eace947b428004d2ea
+b1e9a26d3a909e8207d9f17f75592e8b94a1da9f:
+  title: 'wifi: mac80211: fix race condition on enabling fast-xmit'
+  mainline: bcbc84af1183c8cf3d1ca9b78540c2185cd85e7f
+  upstream: 76fad1174a0cae6fc857b9f88b261a2e4f07d587
+dbe08f914e17a73f39417420d22dd7730e079ba9:
+  title: 'fbdev: savage: Error out if pixclock equals zero'
+  mainline: 04e5eac8f3ab2ff52fa191c187a46d4fdbc1e288
+  upstream: 224453de8505aede1890f007be973925a3edf6a1
+dc8cc812cd193503fa1ffbac6770e2f82f9671bd:
+  title: 'fbdev: sis: Error out if pixclock equals zero'
+  mainline: e421946be7d9bf545147bea8419ef8239cb7ca52
+  upstream: 84246c35ca34207114055a87552a1c4289c8fd7e
+050de50371ba2727fcaffb5a438cfc70eeee3d03:
+  title: 'ahci: asm1166: correct count of reported ports'
+  mainline: 0077a504e1a4468669fd2e011108db49133db56e
+  upstream: 3f25115864b2abfac4f9267475ed9419073aa560
+e08ae878b02e2f2953a7556c05a25ca5c3628c24:
+  title: 'ext4: avoid allocating blocks from corrupted group in ext4_mb_try_best_found()'
+  mainline: 4530b3660d396a646aad91a787b6ab37cf604b53
+  upstream: 21f8cfe79f776287459343e9cfa6055af61328ea
+a8bb8329743029dd77a6bbc7ffaf8ec83c1384c3:
+  title: 'ext4: avoid allocating blocks from corrupted group in ext4_mb_find_by_goal()'
+  mainline: 832698373a25950942c04a512daa652c18a9b513
+  upstream: 5a6dcc4ad0f7f7fa8e8d127b5526e7c5f2d38a43
+d8f22636a42eb332f53a25f4271827716a9780cc:
+  title: 'regulator: pwm-regulator: Add validity checks in continuous .get_voltage'
+  mainline: c92688cac239794e4a1d976afa5203a4d3a2ac0e
+  upstream: 733f4c36e68cc664e0083d4ff1d5e9fadee2120b
+974906d0d9cab75a506494745ff92b214bada2e3:
+  title: 'hwmon: (coretemp) Enlarge per package core count limit'
+  mainline: 34cf8c657cf0365791cdc658ddbca9cc907726ce
+  upstream: 171977332b38f271cd08dede4a792182a811a994
+da86812addd2aba615e37f3d02a02859cd7c5493:
+  title: 'firewire: core: send bus reset promptly on gap count error'
+  mainline: 7ed4380009e96d9e9c605e12822e987b35b05648
+  upstream: 98fc79aad9ce694cbcc202570befb8f9150cbea6
+f2a5b354a969fc3cb9fc291ba5e622f0ff943618:
+  title: 'virtio-blk: Ensure no requests in virtqueues before deleting vqs.'
+  mainline: 4ce6e2db00de8103a0687fb0f65fd17124a51aaa
+  upstream: 2b5128c714d863cd8d259aa9d87bed2d6aa6a5a8
+b7436a25cb86e673b0b19506d3ba9dcdcf01e3de:
+  title: 's390/qeth: Fix potential loss of L3-IP@ in case of network issues'
+  mainline: 2fe8a236436fe40d8d26a1af8d150fc80f04ee1a
+  upstream: 07dbb1c86a81f96c779b2267ca1994f61bc1e585
+5cf1aceb57dea1645112c6673b1e633805ccffcf:
+  title: 'mm: memcontrol: switch to rcu protection in drain_all_stock()'
+  mainline: e1a366be5cb4f849ec4de170d50eebc08bb0af20
+  upstream: 9b78faee4829e8d4bc88f59aa125e219ad834003
+6b9f863739cf9b288aebc3b47a9a0b46d82fb076:
+  title: 'dm-crypt: don''t modify the data when using authenticated encryption'
+  mainline: 50c70240097ce41fe6bce6478b80478281e4d0f7
+  upstream: 43a202bd552976497474ae144942e32cc5f34d7e
+462d9e209c0fca1e4dda298d209725ef39d73b10:
+  title: 'gtp: fix use-after-free and null-ptr-deref in gtp_genl_dump_pdp()'
+  mainline: 136cfaca22567a03bbb3bf53a43d8cb5748b80ec
+  upstream: f0ecdfa679189d26aedfe24212d4e69e42c2c861
+f951d454d97724fb80e7820728e35223e0207304:
+  title: 'l2tp: pass correct message length to ip6_append_data'
+  mainline: 359e54a93ab43d32ee1bff3c2f9f10cb9f6b6e79
+  upstream: 4c3ce64bc9d36ca9164dd6c77ff144c121011aae
+9449bb501c2106ff6a1032aabdbb30d11d3e2501:
+  title: 'usb: gadget: ncm: Avoid dropping datagrams of properly parsed NTBs'
+  mainline: 76c51146820c5dac629f21deafab0a7039bc3ccd
+  upstream: 059285e04ebb273d32323fbad5431c5b94f77e48
+4bad3089552677d750edc4ccd0fbd2a52f53eef6:
+  title: 'IB/hfi1: Fix a memleak in init_credit_return'
+  mainline: 809aa64ebff51eb170ee31a95f83b2d21efa32e2
+  upstream: 2e4f9f20b32658ef3724aa46f7aef4908d2609e3
+e32d2194770b6278678ca69981d21be95ae314c6:
+  title: 'RDMA/srpt: Support specifying the srpt_service_guid parameter'
+  mainline: fdfa083549de5d50ebf7f6811f33757781e838c0
+  upstream: 84f1dac960cfa210a3b7a7522e6c2320ae91932b
+e0a38c97a50cc65f0ce9d3f6673d999ebf4248d4:
+  title: 'RDMA/srpt: fix function pointer cast warnings'
+  mainline: eb5c7465c3240151cd42a55c7ace9da0026308a1
+  upstream: e333db03ab6ee3bd3596739724250a9a374dd466
+768622287c4688a25c6f37a3f667a8ed20f5d515:
+  title: 'scsi: jazz_esp: Only build if SCSI core is builtin'
+  mainline: 9ddf190a7df77b77817f955fdb9c2ae9d1c9c9a3
+  upstream: 63a1b5c7bc8623b084b034419c6253debfa4d3cf
+757db7bb5082d313c77dd568323136ddd4b15139:
+  title: 'nouveau: fix function cast warnings'
+  mainline: 0affdba22aca5573f9d989bcb1d71d32a6a03efe
+  upstream: ba9ec8d32f0f9feda6c2c044dcd72ca214485040
+3a93a1d1d4110d0c826efd53e3dbde8ebfc4ca84:
+  title: 'ipv6: sr: fix possible use-after-free and null-ptr-deref'
+  mainline: 5559cea2d5aa3018a5f00dd2aca3427ba09b386b
+  upstream: 953f42934533c151f440cd32390044d2396b87aa
+29ac1aef647719e9c7cd6aeff459910bf5062b96:
+  title: 'packet: move from strlcpy with unused retval to strscpy'
+  mainline: 8fc9d51ea2d32a05f7d7cf86a25cc86ecc57eb45
+  upstream: a2b855119ec4a0142abf5ce354ea82f368dce778
+92a10e44f1361057e751ccfb7fe3f22cd5053523:
+  title: 's390: use the correct count for __iowrite64_copy()'
+  mainline: 723a2cc8d69d4342b47dfddbfe6c19f1b135f09b
+  upstream: 2b505745a91e84338e4b728314f858a1b60b67e2
+b47f8d88b2f28b8e2467bdd48ca8016adf4f1943:
+  title: 'PCI/MSI: Prevent MSI hardware interrupt number truncation'
+  mainline: db744ddd59be798c2627efbfc71f707f5a935a40
+  upstream: 343be31cc008a2f267863011934fb0aac6a9c8e2
+57c80836ce9e30d1512614cd4e7802f31676c8b0:
+  title: 'KVM: arm64: vgic-its: Test for valid IRQ in its_sync_lpi_pending_table()'
+  mainline: 8d3a7dfb801d157ac423261d7cd62c33e95375f8
+  upstream: c2462b26faab4d40a78fc2862387bd615e0b7c25
+d9bf292a90ce3928db273d3cbba8b9a9fd588e9c:
+  title: 'fs/aio: Restrict kiocb_set_cancel_fn() to I/O submitted via libaio'
+  mainline: b820de741ae48ccf50dd95e297889c286ff4f760
+  upstream: 337b543e274fe7a8f47df3c8293cc6686ffa620f

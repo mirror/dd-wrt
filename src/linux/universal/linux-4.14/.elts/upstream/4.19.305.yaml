@@ -1,0 +1,100 @@
+df02150025a3ac134a29c3a847b334f53d4b0c4a:
+  title: 'nfc: llcp_core: Hold a ref to llcp_local->dev when holding a ref to llcp_local'
+  mainline: c95f919567d6f1914f13350af61a1b044ac85014
+  skipped: commit is already present in branch
+e4f367ae64ff2ab90407e21ce0928b749a0c0c50:
+  title: 'i40e: Fix filter input checks to prevent config with invalid values'
+  mainline: 3e48041d9820c17e0a51599d12e66c6e12a8d08d
+  skipped: missing prerequisite
+67188c52c06ad8bf3890d9a2dc8cedc9a707cb61:
+  title: 'net: sched: em_text: fix possible memory leak in em_text_destroy()'
+  mainline: 8fcb0382af6f1ef50936f1be05b8149eb2f88496
+  skipped: commit is already present in branch
+ee49874f862ffa7d155fa4b2ef12a4ad1504c184:
+  title: 'ARM: sun9i: smp: Fix array-index-out-of-bounds read in sunxi_mc_smp_init'
+  mainline: 72ad3b772b6d393701df58ba1359b0bb346a19ed
+  skipped: missing prerequisite
+fe7f1685f44bf8c24e3d9d9bb5196c668513aedb:
+  title: 'net: bcmgenet: Fix FCS generation for fragmented skbuffs'
+  mainline: e584f2ff1e6cc9b1d99e8a6b0f3415940d1b3eb3
+  skipped: commit is already present in branch
+0c220aefdb064f4fff02732ecd302f0901b15dc0:
+  title: 'net: Save and restore msg_namelen in sock_sendmsg'
+  mainline: 01b2885d9415152bcb12ff1f7788f500a74ea0ed
+  skipped: missing prerequisite
+af9ec305b68635ae6d8eb957e91e723bfee0d336:
+  title: 'i40e: fix use-after-free in i40e_aqc_add_filters()'
+  mainline: 6a15584e99db8918b60e507539c7446375dcf366
+  skipped: commit is already present in branch
+d94b35454b1ff91f3d1cb12198b00b71ec3341aa:
+  title: 'i40e: Restore VF MSI-X state during PCI reset'
+  mainline: 371e576ff3e8580d91d49026e5d5faebf5565558
+  skipped: missing prerequisite
+4c731d37cdd8bb66e4a6cff0ce69eb6ecf4e7620:
+  title: 'net/qla3xxx: switch from ''pci_'' to ''dma_'' API'
+  mainline: 41fb4c1ba7478fe34c7e094e124e4ee4513b9763
+  backport: ced7e0c8ca4be414095ad46b6363eaf8fb227d07
+39437c89a3074b3e869dab2d0e65148923e327a5:
+  title: 'net/qla3xxx: fix potential memleak in ql_alloc_buffer_queues'
+  mainline: 89f45c30172c80e55c887f32f1af8e184124577b
+  backport: fda9db2ddde56d0a4fa6e08604c5c02ed4656190
+1d267835dadc8cec3bd3da252171bb335f507cd3:
+  title: 'asix: Add check for usbnet_get_endpoints'
+  mainline: eaac6a2d26b65511e164772bec6918fcbc61938e
+  backport: 1aa3bd40236223e2a8404b76d65e0e3c31ab91ba
+b39d97468acf9651ff68e44f0e0c7ebac4ecdca7:
+  title: 'bnxt_en: Remove mis-applied code from bnxt_cfg_ntp_filters()'
+  mainline: e009b2efb7a8850498796b360043ac25c8d3d28f
+  backport: 73a7f8a478ab010be26db513967aacc263263b85
+c6f50413f2aacc919b5de443aa080b94f5ebb21d:
+  title: 'mm/memory-failure: check the mapcount of the precise page'
+  mainline: c79c5a0a00a9457718056b588f312baadf44e471
+  backport: ff510bc907debb02a00d5be80c678fb54042eb01
+50f8b0a96c88f78c2e40cdb93557385c2ce5f5e8:
+  title: 'firewire: ohci: suppress unexpected system reboot in AMD Ryzen machines and ASM108x/VT630x PCIe cards'
+  mainline: ac9184fbb8478dab4a0724b279f94956b69be827
+  skipped: commit is already present in branch
+2db1c46c3913b8bc92fed235a344de2671fe9d8d:
+  title: 'mm: fix unmap_mapping_range high bits shift bug'
+  mainline: 9eab0421fa94a3dde0d1f7e36ab3294fc306c99d
+  backport: e5e8870a91aa5d8eeae9dfd3d6ab6cc6932a3f2b
+4a2d650b8fb83b0ceb37279dcc7ceafd10b578a3:
+  title: 'mmc: rpmb: fixes pause retune on all RPMB partitions.'
+  mainline: e7794c14fd73e5eb4a3e0ecaa5334d5a17377c50
+  skipped: commit is already present in branch
+74f6bca1532e013ff5745414288088486b4e9251:
+  title: 'mmc: core: Cancel delayed work before releasing host'
+  mainline: 1036f69e251380573e256568cf814506e3fb9988
+  skipped: commit is already present in branch
+437d8898fbf40b92516aef697b5638acccb7a6f9:
+  title: 'fuse: nlookup missing decrement in fuse_direntplus_link'
+  mainline: b8bd342d50cbf606666488488f9fea374aceb2d5
+  backport: 8d576e5e8705890e3f9f2bd0f5fe0de0832ac61f
+087d38ae0fd5a9a41b949e97601b4b0d09336f19:
+  title: 'netfilter: nf_tables: Reject tables of unsupported family'
+  mainline: f1082dd31fe461d482d69da2a8eccfeb7bf07ac2
+  backport: 24f1cf2efb69d6cc0cb5d50291f9eb4c95e6f29c
+5e2cf4c8777cb3fdafecdbce263ba5d975910f03:
+  title: 'PCI: Extract ATS disabling to a helper function'
+  mainline: f18b1137d38c091cc8c16365219f0a1d4a30b3d1
+  skipped: depends on missing commit b48fea52b951f0652c39ea8b3362338d909fca79
+610003d742341dddca03a83beb7c61f1f079b8c5:
+  title: 'PCI: Disable ATS for specific Intel IPU E2000 devices'
+  mainline: a18615b1cfc04f00548c60eb9a77e0ce56e848fd
+  skipped: depends on missing commit b48fea52b951f0652c39ea8b3362338d909fca79
+47468fae2704151503214f4d4327c164118247fd:
+  title: 'net: add a route cache full diagnostic message'
+  mainline: 22c2ad616b74f3de2256b242572ab449d031d941
+  backport: 895547de81e54a04152a30c1dc1de41be55245e5
+9635bd0a5296e2e725c6b33e530d0ef582e2f64e:
+  title: 'net/dst: use a smaller percpu_counter batch for dst entries accounting'
+  mainline: cf86a086a18095e33e0637cb78cda1fcf5280852
+  backport: 2ee1663e55e8977ff4e86354691f47a45ab20acc
+b4cfbeaebeb355dbaefb218470055de2e8a73020:
+  title: 'ipv6: make ip6_rt_gc_expire an atomic_t'
+  mainline: 9cb7c013420f98fa6fd12fc6a5dc055170c108db
+  backport: e0411760af63f47a43cf1971cd2328ec449645cf
+95372b040ae689293c6863b90049f1af68410c8b:
+  title: 'ipv6: remove max_size check inline with ipv4'
+  mainline: af6d10345ca76670c1b7c37799f0d5576ccef277
+  backport: 12cda1d5779e05665140a7e8fc88297e4ef9b418

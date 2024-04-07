@@ -1,0 +1,64 @@
+ec343a55b687a452f5e87f3b52bf9f155864df65:
+  title: 'netlink: Fix kernel-infoleak-after-free in __skb_datagram_iter'
+  mainline: 661779e1fcafe1b74b3f3fe8e980c1e207fea1fd
+  backport: 07621fa295c2e2079f3acb75c9649378ca78538b
+32793f71f212db99560816a0916ff060e46dfc6f:
+  title: 'tun: Fix xdp_rxq_info''s queue_index when detaching'
+  mainline: 2a770cdc4382b457ca3d43d03f0f0064f905a0d0
+  skipped: fixes patch not in branch
+750e313184ea9f6866a8131c13be44f946881951:
+  title: 'lan78xx: enable auto speed configuration for LAN7850 if no EEPROM is detected'
+  mainline: 0e67899abfbfdea0c3c0ed3fd263ffc601c5c157
+  backport: 86fb5280f208f4c5718b1bc55098978712d4de00
+31e9b04a715e28aa740da64af1a3ab56373551bf:
+  title: 'net: usb: dm9601: fix wrong return value in dm9601_mdio_read'
+  mainline: c68b2c9eba38ec3f60f4894b189090febf4d8d22
+  backport: b784cefd731fce7ef16cddf44b634f02d9bc280f
+e0b278650f07acf2e0932149183458468a731c03:
+  title: 'Bluetooth: Avoid potential use-after-free in hci_error_reset'
+  mainline: 2449007d3f73b2842c9734f45f0aadb522daf592
+  backport: 169f7f2453d78302d84a9962aab95eb6d35a73c2
+afec8f772296dd8e5a2a6f83bbf99db1b9ca877f:
+  title: 'Bluetooth: hci_event: Fix handling of HCI_EV_IO_CAPA_REQUEST'
+  mainline: 7e74aa53a68bf60f6019bd5d9a9a1406ec4d4865
+  backport: 16da27d838b852af3745e22afe9d4b7223b12fd7
+4debb1e930570f20caa59d815c50a89fa33124d7:
+  title: 'Bluetooth: Enforce validation on max value of connection interval'
+  mainline: e4b019515f950b4e6e5b74b2e1bb03a90cb33039
+  backport: a007eac0cabb4160b86b7b7c0bbd06a67384c1b2
+00cf21ac526011a29fc708f8912da446fac19f7b:
+  title: 'efi/capsule-loader: fix incorrect allocation size'
+  mainline: fccfa646ef3628097d59f7d9c1a3e84d4b6bb45e
+  backport: 32c6bed3090320e251c2a671ee21909665a8affa
+d4d813c0a14d6bf52d810a55db06a2e7e3d98eaa:
+  title: 'power: supply: bq27xxx-i2c: Do not free non existing IRQ'
+  mainline: 2df70149e73e79783bcbc7db4fa51ecef0e2022c
+  backport: b525907dcaacff60d1754d6cc8d627a1346ffd0e
+0832312bae111b350330aaba1bcbae74b369e8ab:
+  title: 'ALSA: Drop leftover snd-rtctimer stuff from Makefile'
+  mainline: 4df49712eb54141be00a9312547436d55677f092
+  backport: 41c783fd39f24fdaf17d5307cbc27ca10e262a22
+01129059d5141d62fae692f7a336ae3bc712d3eb:
+  title: 'gtp: fix use-after-free and null-ptr-deref in gtp_newlink()'
+  mainline: 616d82c3cfa2a2146dd7e3ae47bda7e877ee549e
+  backport: 2197924b93ee10ba74ad07390b1c2dbd57deba9f
+d38d31bbbb9dc0d4d71a45431eafba03d0bc150d:
+  title: 'wifi: nl80211: reject iftype change with mesh ID change'
+  mainline: f78c1375339a291cba492a70eaf12ec501d28a8e
+  backport: b56ad919b0fe95c06df2ddb0e28571abde834205
+11d7a2e429c02d51e2dc90713823ea8b8d3d3a84:
+  title: 'btrfs: dev-replace: properly validate device names'
+  mainline: 9845664b9ee47ce7ee7ea93caf47d39a9d4552c4
+  backport: c5e84b933695e646431020169931c1ba19ade2b9
+229d1418ce7ef2ee367d685c9780905888de1254:
+  title: 'mmc: core: Fix eMMC initialization with 1-bit bus connection'
+  mainline: ff3206d2186d84e4f77e1378ba1d225633f17b9b
+  backport: 2b5f5b754028ec92420b62132826e7b1e9a194e6
+cb5466783793e66272624cf71925ae1d1ba32083:
+  title: 'cachefiles: fix memory leak in cachefiles_add_cache()'
+  mainline: e21a2f17566cbd64926fb8f16323972f7a064444
+  backport: 8a7e4f19620e2d2f46af573941c9fafef41bda78
+3815150a859730a267387759a1c1e086d16b8775:
+  title: 'gpio: 74x164: Enable output pins after registers are reset'
+  mainline: 530b1dbd97846b110ea8a94c7cc903eca21786e5
+  backport: d5fb3070026f21b1cddcbba5d01b070a47a09091
