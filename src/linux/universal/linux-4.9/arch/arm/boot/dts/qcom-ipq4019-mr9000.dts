@@ -112,13 +112,13 @@
 
 &wifi0 {
 	status = "okay";
-	qcom,ath10k-calibration-variant = "linksys-mr9000-fcc";
+	qcom,ath10k-calibration-variant = "linksys-ea8300-fcc";
 };
 
 &wifi1 {
 	status = "okay";
 	ieee80211-freq-limit = <4800000 5490000>;
-	qcom,ath10k-calibration-variant = "linksys-mr9000-fcc";
+	qcom,ath10k-calibration-variant = "linksys-ea8300-fcc";
 };
 
 &wifi2 {
