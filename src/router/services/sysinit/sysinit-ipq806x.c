@@ -565,6 +565,8 @@ void start_sysinit(void)
 			char *file = "fcc";
 			if (!strncmp(cert_region, "US", 2))
 				file = "fcc";
+			if (!strncmp(cert_region, "EU", 2))
+				file = "eu";
 			if (!strncmp(cert_region, "CA", 2))
 				file = "ic";
 			if (!strncmp(cert_region, "AU", 2))
@@ -573,17 +575,39 @@ void start_sysinit(void)
 				file = "ah";
 			if (!strncmp(cert_region, "AP", 2))
 				file = "ap";
-			if (!strncmp(cert_region, "EU", 2))
-				file = "eu";
-			if (!strncmp(cert_region, "ME", 2))
-				file = "eu";
 			if (!strncmp(cert_region, "HK", 2))
 				file = "hk";
 			if (!strncmp(cert_region, "PH", 2))
 				file = "ph";
-			if (!strcmp(file, "fcc") || !strcmp(file, "eu") || !strcmp(file, "ic")) {
-				if (!strncmp(hw_version, "1.1", 3))
-					postfix = "1.1.bin";
+			if (nvram_match("DD_BOARD", "Linksys MR9000")) {
+				if (!strncmp(cert_region, "ME", 2))
+					file = "me";
+				if (!strncmp(cert_region, "CN", 2))
+					file = "cn";
+				if (!strncmp(cert_region, "JP", 2))
+					file = "jp";
+				if (!strncmp(cert_region, "KR", 2))
+					file = "kr";
+				if (!strncmp(cert_region, "ID", 2))
+					file = "id";
+				if (!strncmp(cert_region, "IN", 2))
+					file = "in";
+				if (!strncmp(cert_region, "TH", 2))
+					file = "th";
+				if (!strncmp(cert_region, "SG", 2))
+					file = "sg";
+				char copy[128];
+				sprintf(copy, "/lib/firmware/ath10k/QCA4019/hw1.0/mr9000/%s%s", file, postfix);
+				eval("cp", "-f", copy, "/tmp/ipq4019.bin");
+				sprintf(copy, "/lib/firmware/ath10k/QCA9984/hw1.0/mr9000/%s%s", file, postfix);
+				eval("cp", "-f", copy, "/tmp/qca9984.bin");
+			} else {
+				if (!strncmp(cert_region, "ME", 2))
+					file = "eu";
+				if (!strcmp(file, "fcc") || !strcmp(file, "eu") || !strcmp(file, "ic")) {
+					if (!strncmp(hw_version, "1.1", 3))
+						postfix = "1.1.bin";
+				}
 				char copy[128];
 				sprintf(copy, "/lib/firmware/ath10k/QCA4019/hw1.0/ea8300/%s%s", file, postfix);
 				eval("cp", "-f", copy, "/tmp/ipq4019.bin");
