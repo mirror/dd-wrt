@@ -475,11 +475,11 @@ static ParseRes __ieee802_11_parse_elems(void *ctx, const u8 *start, size_t len,
 							     elems,
 							     show_errors)) {
 				unknown++;
-			   if (ctx) {
-			   	hostapd_logger(ctx, NULL, HOSTAPD_MODULE_IEEE80211,
-			       HOSTAPD_LEVEL_INFO,"parse vendor failed (id=%d elen=%d)",
-				   id, elen);
-			    }
+//			   if (ctx) {
+//			   	hostapd_logger(ctx, NULL, HOSTAPD_MODULE_IEEE80211,
+//			       HOSTAPD_LEVEL_INFO,"parse vendor failed (id=%d elen=%d)",
+//				   id, elen);
+//			    }
 			}
 			break;
 		case WLAN_EID_RSN:
