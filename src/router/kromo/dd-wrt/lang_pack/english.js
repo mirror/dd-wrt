@@ -608,7 +608,7 @@ config.legend2="Restore Settings";
 config.mess2="Select a file to restore";
 config.mess3="W A R N I N G";
 config.mess4="Only upload a backup file generated with DD-WRT's firmware and from the same model of router.<br />Do not upload any backup configuration files that were not created by this interface!";
-config.force="Forcefully restore backup file. Ignore router model check";
+config.force="Ignore router model check";
 //help container
 var hconfig=new Object();
 hconfig.right2="You may backup your current configuration in case you need to reset the router back to factory default settings.<br /><br />Tip: Over terminal type <b>nvram show > /tmp/mybackup.txt</b> and grab that file to your desktop for a human readable backup of your current configuration, which can be used for reference purposes only.";
