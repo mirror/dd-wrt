@@ -132,8 +132,9 @@ static int nv_file_in(char *url, webs_t wp, size_t len, char *boundary)
 				}
 				len -= strlen(buf);
 				buf[1] = '\0'; // we only want the 1st digit
-				force = atoi(buf);		
-		} else 			if (strstr(buf, "name=\"file\"")) {
+				force = atoi(buf);
+		dd_syslog(LOG_INFO, "force backup restore %d",force);
+		} else 	if (strstr(buf, "name=\"file\"")) {
 				break;
 			}
 		}
