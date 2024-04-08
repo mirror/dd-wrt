@@ -670,12 +670,12 @@ static ParseRes __ieee802_11_parse_elems(void *ctx, const u8 *start, size_t len,
 		wpa_printf(MSG_INFO,
 			   "IEEE 802.11 element (%d) parse failed @%d",
 			   elem->id, (int) (start + len - (const u8 *) elem));
-			   if (ctx) {
-			   	hostapd_logger(ctx, NULL, HOSTAPD_MODULE_IEEE80211,
-			       HOSTAPD_LEVEL_INFO,
-			   "IEEE 802.11 element (%d) parse failed @%d",
-			   elem->id, (int) (start + len - (const u8 *) elem));
-			    }
+//			   if (ctx) {
+//			   	hostapd_logger(ctx, NULL, HOSTAPD_MODULE_IEEE80211,
+//			       HOSTAPD_LEVEL_INFO,
+//			   "IEEE 802.11 element (%d) parse failed @%d",
+//			   elem->id, (int) (start + len - (const u8 *) elem));
+//			    }
 
 		//wpa_hexdump(MSG_MSGDUMP, "IEs", start, len);
 //		return ParseFailed;
