@@ -362,6 +362,7 @@ include rules/microhttpd.mk
 include rules/nodogsplash.mk
 include rules/opennds.mk
 include rules/btop.mk
+include rules/envtools.mk
 
 #
 # Generic rules
