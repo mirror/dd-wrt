@@ -224,7 +224,7 @@
 
 			partition@5f80000 {
 				label = "linux2";
-				reg = <0x5f80000 0x5800000>;
+				reg = <0x5f80000 0x5700000>;
 			};
 
 			partition@6480000 {
