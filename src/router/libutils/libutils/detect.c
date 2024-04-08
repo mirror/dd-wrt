@@ -1411,17 +1411,17 @@ generic:;
 		return ROUTER_ASUS_AC58U;
 	}
 
-	if (!strncmp(modelstr, "EA8300", 8)) {
+	if (!strncmp(modelstr, "EA8300", 6)) {
 		setRouter("Linksys EA8300");
 		return ROUTER_LINKSYS_EA8300;
 	}
 
-	if (!strncmp(modelstr, "MR8300", 8)) {
+	if (!strncmp(modelstr, "MR8300", 6)) {
 		setRouter("Linksys MR8300");
 		return ROUTER_LINKSYS_EA8300;
 	}
 
-	if (!strncmp(modelstr, "MR9000", 8)) {
+	if (!strncmp(modelstr, "MR9000", 6)) {
 		setRouter("Linksys MR9000");
 		return ROUTER_LINKSYS_EA8300;
 	}
