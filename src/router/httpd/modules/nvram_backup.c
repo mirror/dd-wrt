@@ -119,14 +119,14 @@ static int nv_file_in(char *url, webs_t wp, size_t len, char *boundary)
 
 		if (strstr(buf, "name=\"force\"")) {
 				while (len > 0 && strcmp(buf, "\n") && strcmp(buf, "\r\n")) {
-					if (!wfgets(buf, MIN(len + 1, 1024), stream, NULL)) {
+					if (!wfgets(buf, MIN(len + 1, 1024), wp, NULL)) {
 						debug_free(buf);
 						return -1;
 					}
 
 					len -= strlen(buf);
 				}
-				if (!wfgets(buf, MIN(len + 1, 1024), stream, NULL)) {
+				if (!wfgets(buf, MIN(len + 1, 1024), wp, NULL)) {
 					debug_free(buf);
 					return -1;
 				}
