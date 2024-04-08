@@ -83,11 +83,13 @@ typedef struct {
 	uint32_t magic_end;
 } ipq_smem_bootconfig_v2_info_t;
 
-void set_envtools(char *mtd, char *offset, char *envsize, char *blocksize)
+void set_envtools(int mtd, char *offset, char *envsize, char *blocksize)
 {
+	char m[32];
+	sprintf(m,"/dev/mtd%d",mtd);
 	FILE *fp = fopen("/tmp/fw_env.config", "wb");
 	if (fp) {
-		fprintf(fp, "%s\t%s\t%s\t%s\n", mtd, offset, envsize, blocksize);
+		fprintf(fp, "%s\t%s\t%s\t%s\n", m, offset, envsize, blocksize);
 		fclose(fp);
 	}
 }
@@ -625,6 +627,12 @@ void start_sysinit(void)
 	 */
 
 	//insmod("qdpc-host.ko");
+	mtd = getMTD("APPSBLENV");
+	if (mtd==-1)
+		mtd = getMTD("u_env");
+	if (mtd!=-1)
+	set_envtools(mtd, "0x0", "0x20000", "0x20000");
+	
 
 	switch (board) {
 	case ROUTER_TRENDNET_TEW827:
@@ -654,7 +662,7 @@ void start_sysinit(void)
 	case ROUTER_LINKSYS_EA8300:
 		if (!nvram_match("nobcreset", "1"))
 			eval("mtd", "resetbc", "s_env");
-		set_envtools("/dev/mtd7", "0x0", "0x40000", "0x20000");
+		set_envtools(7, "0x0", "0x40000", "0x20000");
 		break;
 	case ROUTER_LINKSYS_EA8500:
 		if (maddr) {
@@ -665,15 +673,15 @@ void start_sysinit(void)
 		}
 		if (!nvram_match("nobcreset", "1"))
 			eval("mtd", "resetbc", "s_env");
-		set_envtools("/dev/mtd10", "0x0", "0x20000", "0x20000");
+		set_envtools(10, "0x0", "0x20000", "0x20000");
 		break;
 	case ROUTER_NETGEAR_R7500V2:
 	case ROUTER_NETGEAR_R7800:
-		set_envtools("/dev/mtd2", "0x0", "0x40000", "0x20000");
+		set_envtools(2, "0x0", "0x40000", "0x20000");
 		break;
 
 	case ROUTER_NETGEAR_R7500:
-		set_envtools("/dev/mtd10", "0x0", "0x20000", "0x20000");
+		set_envtools(10, "0x0", "0x20000", "0x20000");
 	default:
 		break;
 	}
