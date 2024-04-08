@@ -491,8 +491,7 @@ ifneq ($(CONFIG_EA8300),y)
 else
 	cd $(INSTALLDIR)/ath9k/lib/firmware/ath10k/QCA4019/hw1.0/ && rm -f board-2.bin && ln -s /tmp/ipq4019.bin board-2.bin
 	cd $(INSTALLDIR)/ath9k/lib/firmware/ath10k/QCA9888/hw2.0/ && rm -f board-2.bin && ln -s /tmp/qca9888.bin board-2.bin
-	cp -f $(INSTALLDIR)/ath9k/lib/firmware/ath10k/QCA9984/hw1.0/mr9000/* $(INSTALLDIR)/ath9k/lib/firmware/ath10k/QCA9984/hw1.0/
-	rm -rf $(INSTALLDIR)/ath9k/lib/firmware/ath10k/QCA9984/hw1.0/mr9000
+	cd $(INSTALLDIR)/ath9k/lib/firmware/ath10k/QCA9984/hw1.0/ && rm -f board-2.bin && ln -s /tmp/qca9984.bin board-2.bin
 endif
 endif
 endif
