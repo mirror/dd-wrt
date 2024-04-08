@@ -911,13 +911,24 @@ again:;
 #endif
 #if defined(HAVE_MVEBU) || defined(HAVE_IPQ806X)
 	switch (brand) {
+	case ROUTER_LINKSYS_EA8500:
+		part = getUEnv("boot_part");
+		if (part) {
+			dd_loginfo("flash", "boot partiton is %s\n", part);
+			if (!strcmp(part, "2")) {
+				eval("fw_setenv", "boot_part", "1");
+			} else {
+				eval("fw_setenv", "boot_part", "2");
+			}
+		}
+	
+	break;
 	case ROUTER_WRT_1900AC:
 	case ROUTER_WRT_1200AC:
 	case ROUTER_WRT_1900ACV2:
 	case ROUTER_WRT_1900ACS:
 	case ROUTER_WRT_3200ACM:
 	case ROUTER_WRT_32X:
-	case ROUTER_LINKSYS_EA8500:
 	case ROUTER_LINKSYS_EA8300:
 		part = getUEnv("boot_part");
 		if (part) {
