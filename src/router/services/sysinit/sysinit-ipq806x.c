@@ -83,6 +83,14 @@ typedef struct {
 	uint32_t magic_end;
 } ipq_smem_bootconfig_v2_info_t;
 
+void set_envtools(char *mtd, char *offset, char *envsize, char *blocksize)
+{
+	FILE *fp = fopen("/tmp/fw_env.config", "wb");
+	if (fp) {
+		fprintf(fp, "%s\t%s\t%s\t%s\n", mtd, offset, envsize, blocksize);
+		fclose(fp);
+	}
+}
 void start_finishupgrade(void)
 {
 	char mtdpath[64];
@@ -438,7 +446,7 @@ void start_sysinit(void)
 				cert_region = "US";
 			else
 				cert_region = strdup(maddr);
-				
+
 			maddr = get_deviceinfo_ea8300("hw_revision");
 			if (!maddr)
 				hw_version = "1.0";
@@ -646,6 +654,7 @@ void start_sysinit(void)
 	case ROUTER_LINKSYS_EA8300:
 		if (!nvram_match("nobcreset", "1"))
 			eval("mtd", "resetbc", "s_env");
+		set_envtools("/dev/mtd7", "0x0", "0x40000", "0x20000");
 		break;
 	case ROUTER_LINKSYS_EA8500:
 		if (maddr) {
@@ -656,7 +665,15 @@ void start_sysinit(void)
 		}
 		if (!nvram_match("nobcreset", "1"))
 			eval("mtd", "resetbc", "s_env");
+		set_envtools("/dev/mtd10", "0x0", "0x20000", "0x20000");
 		break;
+	case ROUTER_NETGEAR_R7500V2:
+	case ROUTER_NETGEAR_R7800:
+		set_envtools("/dev/mtd2", "0x0", "0x40000", "0x20000");
+		break;
+
+	case ROUTER_NETGEAR_R7500:
+		set_envtools("/dev/mtd10", "0x0", "0x20000", "0x20000");
 	default:
 		break;
 	}
