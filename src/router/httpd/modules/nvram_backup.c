@@ -102,6 +102,7 @@ static int nv_file_in(char *url, webs_t wp, size_t len, char *boundary)
 {
 	char buf[1024];
 	wp->restore_ret = EINVAL;
+	int force = 0;
 #ifdef HAVE_REGISTER
 	if (!wp->isregistered_real) {
 		return -1;
@@ -115,7 +116,24 @@ static int nv_file_in(char *url, webs_t wp, size_t len, char *boundary)
 			return -1;
 		len -= strlen(buf);
 		if (!strncasecmp(buf, "Content-Disposition:", 20)) {
-			if (strstr(buf, "name=\"file\"")) {
+
+		if (strstr(buf, "name=\"force\"")) {
+				while (len > 0 && strcmp(buf, "\n") && strcmp(buf, "\r\n")) {
+					if (!wfgets(buf, MIN(len + 1, 1024), stream, NULL)) {
+						debug_free(buf);
+						return -1;
+					}
+
+					len -= strlen(buf);
+				}
+				if (!wfgets(buf, MIN(len + 1, 1024), stream, NULL)) {
+					debug_free(buf);
+					return -1;
+				}
+				len -= strlen(buf);
+				buf[1] = '\0'; // we only want the 1st digit
+				force = atoi(buf);		
+		} else 			if (strstr(buf, "name=\"file\"")) {
 				break;
 			}
 		}
@@ -155,7 +173,7 @@ static int nv_file_in(char *url, webs_t wp, size_t len, char *boundary)
 		xorFileMove("/tmp/restore.bin", 'K');
 #endif /*HAVE_ANTAIRA */
 
-	int ret = nvram_restore("/tmp/restore.bin", 0);
+	int ret = nvram_restore("/tmp/restore.bin", force);
 	if (ret < 0)
 		wp->restore_ret = 99;
 	else
@@ -229,7 +247,6 @@ static int td_file_in(char *url, webs_t wp, size_t len,
 	char *buf = malloc(2048);
 	char *name = NULL;
 	char *data = NULL;
-
 	/*
 	 * Look for our part 
 	 */
