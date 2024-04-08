@@ -116,8 +116,7 @@ static int nv_file_in(char *url, webs_t wp, size_t len, char *boundary)
 			return -1;
 		len -= strlen(buf);
 		if (!strncasecmp(buf, "Content-Disposition:", 20)) {
-
-		if (strstr(buf, "name=\"force\"")) {
+			if (strstr(buf, "name=\"force\"")) {
 				while (len > 0 && strcmp(buf, "\n") && strcmp(buf, "\r\n")) {
 					if (!wfgets(buf, MIN(len + 1, 1024), wp, NULL)) {
 						debug_free(buf);
@@ -133,8 +132,8 @@ static int nv_file_in(char *url, webs_t wp, size_t len, char *boundary)
 				len -= strlen(buf);
 				buf[1] = '\0'; // we only want the 1st digit
 				force = atoi(buf);
-		dd_syslog(LOG_INFO, "force backup restore %d",force);
-		} else 	if (strstr(buf, "name=\"file\"")) {
+				dd_syslog(LOG_INFO, "force backup restore %d", force);
+			} else if (strstr(buf, "name=\"file\"")) {
 				break;
 			}
 		}
