@@ -18,9 +18,9 @@ boinc-configure: zlib openssl curl
 	--enable-dynamic-client-linkage \
 	--with-boinc-platform=$(ARCH)-linux-uclibc \
 	--with-boinc-alt-platform=$(ARCH)-generic-router-openwrt \
-	CFLAGS="-I$(TOP)/curl/include -I$(TOP)/openssl/include -I$(TOP)/zlib/include -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-	CXXFLAGS="-I$(TOP)/curl/include -I$(TOP)/openssl/include -I$(TOP)/zlib/include -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-	CPPFLAGS="-I$(TOP)/curl/include -I$(TOP)/openssl/include -I$(TOP)/zlib/include -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+	CFLAGS="$(COPTS) -I$(TOP)/curl/include -I$(TOP)/openssl/include -I$(TOP)/zlib/include -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+	CXXFLAGS="$(COPTS) -I$(TOP)/curl/include -I$(TOP)/openssl/include -I$(TOP)/zlib/include -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+	CPPFLAGS="$(COPTS) -I$(TOP)/curl/include -I$(TOP)/openssl/include -I$(TOP)/zlib/include -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 	LDFLAGS="-L$(TOP)/curl/build/lib/.libs -lcurl -L$(TOP)/openssl -lcrypto -lssl -L$(TOP)/zlib -lz -ffunction-sections -fdata-sections -Wl,--gc-sections"
 	$(MAKE) -C boinc/lib
 
@@ -37,9 +37,9 @@ boinc-configure: zlib openssl curl
 	--enable-dynamic-client-linkage \
 	--with-boinc-platform=$(ARCH)-linux-uclibc \
 	--with-boinc-alt-platform=$(ARCH)-generic-router-openwrt \
-	CFLAGS="-I$(TOP)/curl/include -I$(TOP)/openssl/include -I$(TOP)/zlib/include -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-	CXXFLAGS="-I$(TOP)/curl/include -I$(TOP)/openssl/include -I$(TOP)/zlib/include -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-	CPPFLAGS="-I$(TOP)/curl/include -I$(TOP)/openssl/include -I$(TOP)/zlib/include -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+	CFLAGS="$(COPTS) -I$(TOP)/curl/include -I$(TOP)/openssl/include -I$(TOP)/zlib/include -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+	CXXFLAGS="$(COPTS) -I$(TOP)/curl/include -I$(TOP)/openssl/include -I$(TOP)/zlib/include -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+	CPPFLAGS="$(COPTS) -I$(TOP)/curl/include -I$(TOP)/openssl/include -I$(TOP)/zlib/include -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 	LDFLAGS="-L$(TOP)/curl/build/lib/.libs -lcurl -L$(TOP)/openssl -L$(TOP)/boinc/lib/.libs/ -lboinc -lcrypto -lssl -L$(TOP)/zlib -lz -ffunction-sections -fdata-sections -Wl,--gc-sections"
 
 boinc: zlib openssl curl
