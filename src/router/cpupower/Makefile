@@ -186,7 +186,7 @@ all: libcpupower $(OUTPUT)cpupower $(COMPILE_NLS) $(COMPILE_BENCH)
 
 $(OUTPUT)lib/%.o: $(LIB_SRC) $(LIB_HEADERS)
 	$(ECHO) "  CC      " $@
-	$(QUIET) $(CC) $(CFLAGS) -fPIC -o $@ -c lib/$*.c
+	$(QUIET) $(CC) $(CFLAGS) $(LTO) -DNEED_PRINTF -fPIC -o $@ -c lib/$*.c
 
 $(OUTPUT)libcpupower.so.$(LIB_MAJ): $(LIB_OBJS)
 #	$(ECHO) "  LD      " $@
@@ -203,14 +203,14 @@ $(UTIL_OBJS): $(UTIL_HEADERS)
 
 $(OUTPUT)%.o: %.c
 	$(ECHO) "  CC      " $@
-	$(QUIET) $(CC) $(CFLAGS) -I./lib -I ./utils -I$(TOP)/pciutils/lib -o $@ -c $*.c
+	$(QUIET) $(CC) $(CFLAGS) $(LTO) -DNEED_PRINTF -I./lib -I ./utils -I$(TOP)/pciutils/lib -o $@ -c $*.c
 
 $(OUTPUT)cpupower: $(UTIL_OBJS) $(OUTPUT)libcpupower.so.$(LIB_MAJ)
 	$(ECHO) "  CC      " $@
 ifeq ($(strip $(STATIC)),true)
-	$(QUIET) $(CC) $(CFLAGS) $(LDFLAGS) $(UTIL_OBJS) -L$(TOP)/pciutils/lib -lrt -lpci -L$(OUTPUT) -o $@
+	$(QUIET) $(CC) $(CFLAGS) $(LTO) -DNEED_PRINTF $(LDFLAGS) $(UTIL_OBJS) -L$(TOP)/pciutils/lib -lrt -lpci -L$(OUTPUT) -o $@
 else
-	$(QUIET) $(CC) $(CFLAGS) $(LDFLAGS) $(UTIL_OBJS) -L$(TOP)/pciutils/lib -lcpupower -lrt -lpci -L$(OUTPUT) -o $@
+	$(QUIET) $(CC) $(CFLAGS) $(LTO) -DNEED_PRINTF $(LDFLAGS) $(UTIL_OBJS) -L$(TOP)/pciutils/lib -lcpupower -lrt -lpci -L$(OUTPUT) -o $@
 endif
 	$(QUIET) $(STRIPCMD) $@
 
