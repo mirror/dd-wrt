@@ -200,7 +200,7 @@ $(UTIL_OBJS): $(UTIL_HEADERS)
 
 $(OUTPUT)%.o: %.c
 	$(ECHO) "  CC      " $@
-	$(QUIET) $(CC) $(CFLAGS) -I./lib -I ./utils -o $@ -c $*.c
+	$(QUIET) $(CC) $(CFLAGS) -I./lib -I ./utils -I$(TOP)/pciutils/lib -o $@ -c $*.c
 
 $(OUTPUT)cpupower: $(UTIL_OBJS)
 	$(ECHO) "  CC      " $@
