@@ -84,10 +84,10 @@ FILE *prepare_output(const char *dirname)
 		}
 
 		filename = filename_tmp;
-		snprintf(filename, len - 1, "%s/benchmark_%s_%s_%li.log",
+		snprintf(filename, len - 1, "%s/benchmark_%s_%s_%lli.log",
 			dirname, sysdata.nodename, sysdata.release, time(NULL));
 	} else {
-		snprintf(filename, len - 1, "%s/benchmark_%li.log",
+		snprintf(filename, len - 1, "%s/benchmark_%lli.log",
 			dirname, time(NULL));
 	}
 
