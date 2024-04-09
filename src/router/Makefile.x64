@@ -253,6 +253,13 @@ endif
 
 include common.mk
 
+strip:
+	export STRIP_KMOD="$(LINUXDIR)/scripts/strip-kmod.sh" && \
+	export STRIP="sstrip" && \
+	$(LINUXDIR)/scripts/rstrip.sh $(TARGETDIR)
+
+
+
 install package: clean_target $(filter-out lib.$(ARCH)-install,$(obj-install)) $(LINUXDIR)/.config
         # Install binaries into target directory
 	# Install binaries into target directory
@@ -453,6 +460,12 @@ endif
 	./tools/wrap $(ARCH)-uclibc/dd-wrt_vga_2GB.image $(ARCH)-uclibc/dd-wrt-vga-webupgrade_2GB.bin
 	./tools/wrap $(ARCH)-uclibc/dd-wrt_serial_2GB.image $(ARCH)-uclibc/dd-wrt-serial-webupgrade_2GB.bin
 	cd grub-efi && ./makeefi.sh
+
+	./tools/wrap grub-efi/efi-vga.img $(ARCH)-uclibc/dd-wrt-vga-efi-webupgrade.bin
+	./tools/wrap grub-efi/efi.img $(ARCH)-uclibc/dd-wrt-serial-efi-webupgrade.bin
+	./tools/wrap grub-efi/efi-vga-big.img $(ARCH)-uclibc/dd-wrt-vga-efi-webupgrade_2GB.bin
+	./tools/wrap grub-efi/efi-big.img $(ARCH)-uclibc/dd-wrt-serial-efi-webupgrade_2GB.bin
+
 #	mkdir -p $(TARGETDIR)/boot/grub
 #	cp $(INSTALLDIR)/grub/usr/local/lib/grub/i386-pc/stage2_eltorito $(TARGETDIR)/boot/grub
 #	mkisofs -R -b boot/grub/stage2_eltorito -no-emul-boot  -boot-load-size 4 -boot-info-table -o grub.iso $(TARGETDIR)
