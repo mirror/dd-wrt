@@ -94,14 +94,7 @@ INSTALL_SCRIPT = ${INSTALL} -m 644
 HOSTCC = gcc
 MKDIR = mkdir
 
-# 64bit library detection
-include ../../scripts/Makefile.arch
-
-ifeq ($(IS_64_BIT), 1)
-libdir ?=	/usr/lib64
-else
-libdir ?=	/usr/lib
-endif
+libdir =	/usr/lib
 
 # Now we set up the build system
 #
