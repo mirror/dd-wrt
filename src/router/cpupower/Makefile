@@ -39,7 +39,7 @@ CPUFREQ_BENCH ?= true
 # Do not build libraries, but build the code in statically
 # Libraries are still built, otherwise the Makefile code would
 # be rather ugly.
-export STATIC ?= false
+export STATIC ?= true
 
 # Prefix to the directories we're installing to
 DESTDIR ?= $(INSTALLDIR)
@@ -107,7 +107,7 @@ export CROSS CC AR STRIP RANLIB CFLAGS LDFLAGS LIB_OBJS
 cc-supports = ${shell if $(CC) ${1} -S -o /dev/null -x c /dev/null > /dev/null 2>&1; then echo "$(1)"; fi;}
 
 # use '-Os' optimization if available, else use -O2
-OPTIMIZATION := $(call cc-supports,-Os,-O2)
+OPTIMIZATION := -O2
 
 WARNINGS := -Wall -Wchar-subscripts -Wpointer-arith -Wsign-compare
 WARNINGS += $(call cc-supports,-Wno-pointer-sign)
@@ -115,7 +115,7 @@ WARNINGS += $(call cc-supports,-Wdeclaration-after-statement)
 WARNINGS += -Wshadow
 
 override CFLAGS += -DVERSION=\"$(VERSION)\" -DPACKAGE=\"$(PACKAGE)\" \
-		-DPACKAGE_BUGREPORT=\"$(PACKAGE_BUGREPORT)\" -D_GNU_SOURCE
+		-DPACKAGE_BUGREPORT=\"$(PACKAGE_BUGREPORT)\" -D_GNU_SOURCE -DNEED_PRINTF $(COPTS) $(MIPS16_OPT) $(LTO)  $(OPTIMIZATION)
 
 UTIL_OBJS =  utils/helpers/amd.o utils/helpers/msr.o \
 	utils/helpers/sysfs.o utils/helpers/misc.o utils/helpers/cpuid.o \
@@ -187,20 +187,12 @@ endif
 
 # the actual make rules
 
-all: libcpupower $(OUTPUT)cpupower $(COMPILE_NLS) $(COMPILE_BENCH)
+all: $(OUTPUT)cpupower $(COMPILE_NLS) $(COMPILE_BENCH)
 
 $(OUTPUT)lib/%.o: $(LIB_SRC) $(LIB_HEADERS)
 	$(ECHO) "  CC      " $@
 	$(QUIET) $(CC) $(CFLAGS) -fPIC -o $@ -c lib/$*.c
 
-$(OUTPUT)libcpupower.so.$(LIB_MAJ): $(LIB_OBJS)
-	$(ECHO) "  LD      " $@
-	$(QUIET) $(CC) -shared $(CFLAGS) $(LDFLAGS) -o $@ \
-		-Wl,-soname,libcpupower.so.$(LIB_MIN) $(LIB_OBJS)
-	@ln -sf $(@F) $(OUTPUT)libcpupower.so
-	@ln -sf $(@F) $(OUTPUT)libcpupower.so.$(LIB_MIN)
-
-libcpupower: $(OUTPUT)libcpupower.so.$(LIB_MAJ)
 
 # Let all .o files depend on its .c file and all headers
 # Might be worth to put this into utils/Makefile at some point of time
@@ -210,10 +202,10 @@ $(OUTPUT)%.o: %.c
 	$(ECHO) "  CC      " $@
 	$(QUIET) $(CC) $(CFLAGS) -I./lib -I ./utils -o $@ -c $*.c
 
-$(OUTPUT)cpupower: $(UTIL_OBJS) $(OUTPUT)libcpupower.so.$(LIB_MAJ)
+$(OUTPUT)cpupower: $(UTIL_OBJS)
 	$(ECHO) "  CC      " $@
 ifeq ($(strip $(STATIC)),true)
-	$(QUIET) $(CC) $(CFLAGS) $(LDFLAGS) $(UTIL_OBJS) -lrt -lpci -L$(OUTPUT) -o $@
+	$(QUIET) $(CC) $(CFLAGS) $(LDFLAGS) $(UTIL_OBJS) -L$(TOP)/pciutils/lib -lrt -lpci -L$(OUTPUT) -o $@
 else
 	$(QUIET) $(CC) $(CFLAGS) $(LDFLAGS) $(UTIL_OBJS) -lcpupower -lrt -lpci -L$(OUTPUT) -o $@
 endif
@@ -243,7 +235,7 @@ update-po: $(OUTPUT)po/$(PACKAGE).pot
 		fi; \
 	done;
 
-compile-bench: $(OUTPUT)libcpupower.so.$(LIB_MAJ)
+compile-bench:
 	@V=$(V) confdir=$(confdir) $(MAKE) -C bench O=$(OUTPUT)
 
 # we compile into subdirectories. if the target directory is not the
@@ -261,19 +253,10 @@ clean:
 	-find $(OUTPUT) \( -not -type d \) -and \( -name '*~' -o -name '*.[oas]' \) -type f -print \
 	 | xargs rm -f
 	-rm -f $(OUTPUT)cpupower
-	-rm -f $(OUTPUT)libcpupower.so*
 	-rm -rf $(OUTPUT)po/*.gmo
 	-rm -rf $(OUTPUT)po/*.pot
 	$(MAKE) -C bench O=$(OUTPUT) clean
 
-
-install-lib: libcpupower
-	$(INSTALL) -d $(DESTDIR)${libdir}
-	$(CP) $(OUTPUT)libcpupower.so* $(DESTDIR)${libdir}/
-	$(INSTALL) -d $(DESTDIR)${includedir}
-	$(INSTALL_DATA) lib/cpufreq.h $(DESTDIR)${includedir}/cpufreq.h
-	$(INSTALL_DATA) lib/cpuidle.h $(DESTDIR)${includedir}/cpuidle.h
-	$(INSTALL_DATA) lib/powercap.h $(DESTDIR)${includedir}/powercap.h
 
 install-tools: $(OUTPUT)cpupower
 	$(INSTALL) -d $(DESTDIR)${bindir}
@@ -301,16 +284,15 @@ install-gmo: create-gmo
 
 install-bench: compile-bench
 	@#DESTDIR must be set from outside to survive
-	@sbindir=$(sbindir) bindir=$(bindir) docdir=$(docdir) confdir=$(confdir) $(MAKE) -C bench O=$(OUTPUT) install
+	@sbindir=$(sbindir) bindir=$(bindir) docdir=$(docdir) confdir=$(confdir) $(MAKE) -C bench O=$(OUTPUT) DESTDIR=$(INSTALLDIR) install
 
 ifeq ($(strip $(STATIC)),true)
-install: all install-tools install-man $(INSTALL_NLS) $(INSTALL_BENCH)
+install: all install-tools $(INSTALL_BENCH)
 else
 install: all install-lib install-tools install-man $(INSTALL_NLS) $(INSTALL_BENCH)
 endif
 
 uninstall:
-	- rm -f $(DESTDIR)${libdir}/libcpupower.*
 	- rm -f $(DESTDIR)${includedir}/cpufreq.h
 	- rm -f $(DESTDIR)${includedir}/cpuidle.h
 	- rm -f $(DESTDIR)${bindir}/utils/cpupower
@@ -325,4 +307,4 @@ uninstall:
 		rm -f $(DESTDIR)${localedir}/$$HLANG/LC_MESSAGES/cpupower.mo; \
 	  done;
 
-.PHONY: all utils libcpupower update-po create-gmo install-lib install-tools install-man install-gmo install uninstall clean
+.PHONY: all utils update-po create-gmo install-lib install-tools install-man install-gmo install uninstall clean
