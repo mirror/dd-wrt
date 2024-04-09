@@ -26,7 +26,7 @@ endif
 DEBUG ?=	false
 
 # make the build silent. Set this to something else to make it noisy again.
-V ?=		false
+V ?=		true
 
 # Internationalization support (output in different languages).
 # Requires gettext.
@@ -39,7 +39,7 @@ CPUFREQ_BENCH ?= true
 # Do not build libraries, but build the code in statically
 # Libraries are still built, otherwise the Makefile code would
 # be rather ugly.
-export STATIC ?= true
+export STATIC ?= false
 
 # Prefix to the directories we're installing to
 DESTDIR ?= $(INSTALLDIR)
@@ -53,11 +53,11 @@ DESTDIR ?= $(INSTALLDIR)
 
 VERSION:=			$(shell ./utils/version-gen.sh)
 LIB_MAJ=			0.0.1
-LIB_MIN=			0
+LIB_MIN=			1
 
 PACKAGE =			cpupower
 PACKAGE_BUGREPORT =		linux-pm@vger.kernel.org
-LANGUAGES = 			de fr it cs pt
+LANGUAGES = 			de fr it cs pt ka
 
 
 # Directory definitions. These are default and most probably
@@ -85,7 +85,7 @@ INSTALL_SCRIPT = ${INSTALL} -m 644
 # If you are running a cross compiler, you may want to set this
 # to something more interesting, like "arm-linux-".  If you want
 # to compile vs uClibc, that can be done here as well.
-CROSS = #/usr/i386-linux-uclibc/usr/bin/i386-uclibc-
+#CROSS = #/usr/i386-linux-uclibc/usr/bin/i386-uclibc-
 #CC = $(CROSS)gcc
 #LD = $(CROSS)gcc
 #AR = $(CROSS)ar
@@ -93,7 +93,15 @@ CROSS = #/usr/i386-linux-uclibc/usr/bin/i386-uclibc-
 #RANLIB = $(CROSS)ranlib
 HOSTCC = gcc
 MKDIR = mkdir
+
+# 64bit library detection
+include ../../scripts/Makefile.arch
+
+ifeq ($(IS_64_BIT), 1)
+libdir ?=	/usr/lib64
+else
 libdir ?=	/usr/lib
+endif
 
 # Now we set up the build system
 #
@@ -106,7 +114,7 @@ export CROSS CC AR STRIP RANLIB CFLAGS LDFLAGS LIB_OBJS
 cc-supports = ${shell if $(CC) ${1} -S -o /dev/null -x c /dev/null > /dev/null 2>&1; then echo "$(1)"; fi;}
 
 # use '-Os' optimization if available, else use -O2
-OPTIMIZATION := $(call cc-supports,-Os,-O2) $(MIPS16_OPT) $(LTO)
+OPTIMIZATION := $(call cc-supports,-Os,-O2)
 
 WARNINGS := -Wall -Wchar-subscripts -Wpointer-arith -Wsign-compare
 WARNINGS += $(call cc-supports,-Wno-pointer-sign)
@@ -114,7 +122,7 @@ WARNINGS += $(call cc-supports,-Wdeclaration-after-statement)
 WARNINGS += -Wshadow
 
 override CFLAGS += -DVERSION=\"$(VERSION)\" -DPACKAGE=\"$(PACKAGE)\" \
-		-DPACKAGE_BUGREPORT=\"$(PACKAGE_BUGREPORT)\" -D_GNU_SOURCE -DNEED_PRINTF
+		-DPACKAGE_BUGREPORT=\"$(PACKAGE_BUGREPORT)\" -D_GNU_SOURCE
 
 UTIL_OBJS =  utils/helpers/amd.o utils/helpers/msr.o \
 	utils/helpers/sysfs.o utils/helpers/misc.o utils/helpers/cpuid.o \
@@ -123,9 +131,10 @@ UTIL_OBJS =  utils/helpers/amd.o utils/helpers/msr.o \
 	utils/idle_monitor/hsw_ext_idle.o \
 	utils/idle_monitor/amd_fam14h_idle.o utils/idle_monitor/cpuidle_sysfs.o \
 	utils/idle_monitor/mperf_monitor.o utils/idle_monitor/cpupower-monitor.o \
+	utils/idle_monitor/rapl_monitor.o \
 	utils/cpupower.o utils/cpufreq-info.o utils/cpufreq-set.o \
 	utils/cpupower-set.o utils/cpupower-info.o utils/cpuidle-info.o \
-	utils/cpuidle-set.o
+	utils/cpuidle-set.o utils/powercap-info.o
 
 UTIL_SRC := $(UTIL_OBJS:.o=.c)
 
@@ -135,9 +144,12 @@ UTIL_HEADERS = utils/helpers/helpers.h utils/idle_monitor/cpupower-monitor.h \
 	utils/helpers/bitmask.h \
 	utils/idle_monitor/idle_monitors.h utils/idle_monitor/idle_monitors.def
 
-LIB_HEADERS = 	lib/cpufreq.h lib/cpupower.h lib/cpuidle.h lib/acpi_cppc.h
-LIB_SRC = 	lib/cpufreq.c lib/cpupower.c lib/cpuidle.c lib/acpi_cppc.c
-LIB_OBJS = 	lib/cpufreq.o lib/cpupower.o lib/cpuidle.o lib/acpi_cppc.o
+LIB_HEADERS = 	lib/cpufreq.h lib/cpupower.h lib/cpuidle.h lib/acpi_cppc.h \
+	lib/powercap.h
+LIB_SRC = 	lib/cpufreq.c lib/cpupower.c lib/cpuidle.c lib/acpi_cppc.c \
+	lib/powercap.c
+LIB_OBJS = 	lib/cpufreq.o lib/cpupower.o lib/cpuidle.o lib/acpi_cppc.o \
+	lib/powercap.o
 LIB_OBJS :=	$(addprefix $(OUTPUT),$(LIB_OBJS))
 
 override CFLAGS +=	-pipe
@@ -176,7 +188,7 @@ ifeq ($(strip $(DEBUG)),true)
 	STRIPCMD = /bin/true -Since_we_are_debugging
 else
 	override CFLAGS += $(OPTIMIZATION) -fomit-frame-pointer
-	STRIPCMD = /bin/true -Since_we_are_debugging
+	STRIPCMD = $(STRIP) -s --remove-section=.note --remove-section=.comment
 endif
 
 
@@ -186,14 +198,14 @@ all: libcpupower $(OUTPUT)cpupower $(COMPILE_NLS) $(COMPILE_BENCH)
 
 $(OUTPUT)lib/%.o: $(LIB_SRC) $(LIB_HEADERS)
 	$(ECHO) "  CC      " $@
-	$(QUIET) $(CC) $(CFLAGS) $(LTO) -DNEED_PRINTF -fPIC -o $@ -c lib/$*.c
+	$(QUIET) $(CC) $(CFLAGS) -fPIC -o $@ -c lib/$*.c
 
 $(OUTPUT)libcpupower.so.$(LIB_MAJ): $(LIB_OBJS)
-#	$(ECHO) "  LD      " $@
-#	$(QUIET) $(CC) -shared $(CFLAGS) $(LDFLAGS) -o $@ \
-#		-Wl,-soname,libcpupower.so.$(LIB_MIN) $(LIB_OBJS)
-#	@ln -sf $(@F) $(OUTPUT)libcpupower.so
-#	@ln -sf $(@F) $(OUTPUT)libcpupower.so.$(LIB_MIN)
+	$(ECHO) "  LD      " $@
+	$(QUIET) $(CC) -shared $(CFLAGS) $(LDFLAGS) -o $@ \
+		-Wl,-soname,libcpupower.so.$(LIB_MIN) $(LIB_OBJS)
+	@ln -sf $(@F) $(OUTPUT)libcpupower.so
+	@ln -sf $(@F) $(OUTPUT)libcpupower.so.$(LIB_MIN)
 
 libcpupower: $(OUTPUT)libcpupower.so.$(LIB_MAJ)
 
@@ -203,14 +215,14 @@ $(UTIL_OBJS): $(UTIL_HEADERS)
 
 $(OUTPUT)%.o: %.c
 	$(ECHO) "  CC      " $@
-	$(QUIET) $(CC) $(CFLAGS) $(LTO) -DNEED_PRINTF -I./lib -I ./utils -I$(TOP)/pciutils/lib -o $@ -c $*.c
+	$(QUIET) $(CC) $(CFLAGS) -I./lib -I ./utils -o $@ -c $*.c
 
 $(OUTPUT)cpupower: $(UTIL_OBJS) $(OUTPUT)libcpupower.so.$(LIB_MAJ)
 	$(ECHO) "  CC      " $@
 ifeq ($(strip $(STATIC)),true)
-	$(QUIET) $(CC) $(CFLAGS) $(LTO) -DNEED_PRINTF $(LDFLAGS) $(UTIL_OBJS) -L$(TOP)/pciutils/lib -lrt -lpci -L$(OUTPUT) -o $@
+	$(QUIET) $(CC) $(CFLAGS) $(LDFLAGS) $(UTIL_OBJS) -lrt -lpci -L$(OUTPUT) -o $@
 else
-	$(QUIET) $(CC) $(CFLAGS) $(LTO) -DNEED_PRINTF $(LDFLAGS) $(UTIL_OBJS) -L$(TOP)/pciutils/lib -lcpupower -lrt -lpci -L$(OUTPUT) -o $@
+	$(QUIET) $(CC) $(CFLAGS) $(LDFLAGS) $(UTIL_OBJS) -lcpupower -lrt -lpci -L$(OUTPUT) -o $@
 endif
 	$(QUIET) $(STRIPCMD) $@
 
@@ -265,10 +277,16 @@ clean:
 install-lib: libcpupower
 	$(INSTALL) -d $(DESTDIR)${libdir}
 	$(CP) $(OUTPUT)libcpupower.so* $(DESTDIR)${libdir}/
+	$(INSTALL) -d $(DESTDIR)${includedir}
+	$(INSTALL_DATA) lib/cpufreq.h $(DESTDIR)${includedir}/cpufreq.h
+	$(INSTALL_DATA) lib/cpuidle.h $(DESTDIR)${includedir}/cpuidle.h
+	$(INSTALL_DATA) lib/powercap.h $(DESTDIR)${includedir}/powercap.h
 
 install-tools: $(OUTPUT)cpupower
 	$(INSTALL) -d $(DESTDIR)${bindir}
 	$(INSTALL_PROGRAM) $(OUTPUT)cpupower $(DESTDIR)${bindir}
+	$(INSTALL) -d $(DESTDIR)${bash_completion_dir}
+	$(INSTALL_SCRIPT) cpupower-completion.sh '$(DESTDIR)${bash_completion_dir}/cpupower'
 
 install-man:
 	$(INSTALL_DATA) -D man/cpupower.1 $(DESTDIR)${mandir}/man1/cpupower.1
@@ -279,6 +297,7 @@ install-man:
 	$(INSTALL_DATA) -D man/cpupower-set.1 $(DESTDIR)${mandir}/man1/cpupower-set.1
 	$(INSTALL_DATA) -D man/cpupower-info.1 $(DESTDIR)${mandir}/man1/cpupower-info.1
 	$(INSTALL_DATA) -D man/cpupower-monitor.1 $(DESTDIR)${mandir}/man1/cpupower-monitor.1
+	$(INSTALL_DATA) -D man/cpupower-powercap-info.1 $(DESTDIR)${mandir}/man1/cpupower-powercap-info.1
 
 install-gmo: create-gmo
 	$(INSTALL) -d $(DESTDIR)${localedir}
@@ -289,12 +308,12 @@ install-gmo: create-gmo
 
 install-bench: compile-bench
 	@#DESTDIR must be set from outside to survive
-	@sbindir=$(sbindir) bindir=$(bindir) docdir=$(docdir) confdir=$(confdir) $(MAKE) -C bench O=$(OUTPUT) DESTDIR=$(INSTALLDIR) install
+	@sbindir=$(sbindir) bindir=$(bindir) docdir=$(docdir) confdir=$(confdir) $(MAKE) -C bench O=$(OUTPUT) install
 
 ifeq ($(strip $(STATIC)),true)
-install: all install-tools $(INSTALL_BENCH)
+install: all install-tools install-man $(INSTALL_NLS) $(INSTALL_BENCH)
 else
-install: all install-lib install-tools $(INSTALL_BENCH)
+install: all install-lib install-tools install-man $(INSTALL_NLS) $(INSTALL_BENCH)
 endif
 
 uninstall:
@@ -308,6 +327,7 @@ uninstall:
 	- rm -f $(DESTDIR)${mandir}/man1/cpupower-set.1
 	- rm -f $(DESTDIR)${mandir}/man1/cpupower-info.1
 	- rm -f $(DESTDIR)${mandir}/man1/cpupower-monitor.1
+	- rm -f $(DESTDIR)${mandir}/man1/cpupower-powercap-info.1
 	- for HLANG in $(LANGUAGES); do \
 		rm -f $(DESTDIR)${localedir}/$$HLANG/LC_MESSAGES/cpupower.mo; \
 	  done;
