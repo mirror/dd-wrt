@@ -1286,11 +1286,13 @@ struct ieee80211_local {
 	struct list_head active_txqs[IEEE80211_NUM_ACS];
 	u16 schedule_round[IEEE80211_NUM_ACS];
 	u16 airtime_flags;
+	u32 aql_txq_limit_bc;
 	u32 aql_txq_limit_low[IEEE80211_NUM_ACS];
 	u32 aql_txq_limit_high[IEEE80211_NUM_ACS];
 	bool turboqam;
 	u32 aql_threshold;
 	atomic_t aql_total_pending_airtime;
+	atomic_t aql_bc_pending_airtime;
 	atomic_t aql_ac_pending_airtime[IEEE80211_NUM_ACS];
 
 	const struct ieee80211_ops *ops;

@@ -202,7 +202,7 @@ static void rcu_free_regdom(const struct ieee80211_regdomain *r)
 	kfree_rcu((struct ieee80211_regdomain *)r, rcu_head);
 }
 
-static struct regulatory_request *get_last_request(void)
+struct regulatory_request *get_last_request(void)
 {
 	return rcu_dereference_rtnl(last_request);
 }
@@ -1937,7 +1937,10 @@ static void handle_channel(struct wiphy *wiphy,
 
 	rrule = freq_reg_info(wiphy, orig_chan_freq);
 	if (IS_ERR(rrule)) {
-#ifndef HAVE_SUPERCHANNEL
+#ifdef HAVE_SUPERCHANNEL
+	if (wiphy->no_enable)
+#endif
+	{
 		/* check for adjacent match, therefore get rules for
 		 * chan - 20 MHz and chan + 20 MHz and test
 		 * if reg rules are adjacent
@@ -2000,7 +2003,7 @@ disable_chan:
 				 chan->center_freq, chan->freq_offset);
 			chan->flags |= IEEE80211_CHAN_DISABLED;
 		}
-#endif
+	}
 		return;
 	}
 
@@ -2307,7 +2310,7 @@ static void reg_process_ht_flags(struct wiphy *wiphy)
 		reg_process_ht_flags_band(wiphy, wiphy->bands[band]);
 }
 
-static void reg_call_notifier(struct wiphy *wiphy,
+void reg_call_notifier(struct wiphy *wiphy,
 			      struct regulatory_request *request)
 {
 	if (wiphy->reg_notifier)

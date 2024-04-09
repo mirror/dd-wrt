@@ -68,7 +68,6 @@ bool ath_is_mybeacon(struct ath_common *common, struct ieee80211_hdr *hdr)
 }
 EXPORT_SYMBOL(ath_is_mybeacon);
 
-#ifdef CONFIG_PRINTK
 void ath_printk(const char *level, const struct ath_common* common,
 		const char *fmt, ...)
 {
@@ -91,7 +90,7 @@ void ath_printk(const char *level, const struct ath_common* common,
 	va_end(args);
 }
 EXPORT_SYMBOL(ath_printk);
-#endif
+
 const char *ath_bus_type_strings[] = {
 	[ATH_PCI] = "pci",
 	[ATH_AHB] = "ahb",

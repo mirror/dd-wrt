@@ -246,6 +246,38 @@ static const struct file_operations turboqam_ops = {
 	.llseek = default_llseek,
 };
 
+static ssize_t aql_pending_read(struct file *file,
+				char __user *user_buf,
+				size_t count, loff_t *ppos)
+{
+	struct ieee80211_local *local = file->private_data;
+	char buf[400];
+	int len = 0;
+
+	len = scnprintf(buf, sizeof(buf),
+			"AC     AQL pending\n"
+			"VO     %u us\n"
+			"VI     %u us\n"
+			"BE     %u us\n"
+			"BK     %u us\n"
+			"BC/MC  %u us\n"
+			"total  %u us\n",
+			atomic_read(&local->aql_ac_pending_airtime[IEEE80211_AC_VO]),
+			atomic_read(&local->aql_ac_pending_airtime[IEEE80211_AC_VI]),
+			atomic_read(&local->aql_ac_pending_airtime[IEEE80211_AC_BE]),
+			atomic_read(&local->aql_ac_pending_airtime[IEEE80211_AC_BK]),
+			atomic_read(&local->aql_bc_pending_airtime),
+			atomic_read(&local->aql_total_pending_airtime));
+	return simple_read_from_buffer(user_buf, count, ppos,
+				       buf, len);
+}
+
+static const struct file_operations aql_pending_ops = {
+	.read = aql_pending_read,
+	.open = simple_open,
+	.llseek = default_llseek,
+};
+
 static ssize_t aql_txq_limit_read(struct file *file,
 				  char __user *user_buf,
 				  size_t count,
@@ -260,7 +292,8 @@ static ssize_t aql_txq_limit_read(struct file *file,
 			"VO	%u		%u\n"
 			"VI	%u		%u\n"
 			"BE	%u		%u\n"
-			"BK	%u		%u\n",
+			"BK	%u		%u\n"
+			"BC/MC	%u\n",
 			local->aql_txq_limit_low[IEEE80211_AC_VO],
 			local->aql_txq_limit_high[IEEE80211_AC_VO],
 			local->aql_txq_limit_low[IEEE80211_AC_VI],
@@ -268,7 +301,8 @@ static ssize_t aql_txq_limit_read(struct file *file,
 			local->aql_txq_limit_low[IEEE80211_AC_BE],
 			local->aql_txq_limit_high[IEEE80211_AC_BE],
 			local->aql_txq_limit_low[IEEE80211_AC_BK],
-			local->aql_txq_limit_high[IEEE80211_AC_BK]);
+			local->aql_txq_limit_high[IEEE80211_AC_BK],
+			local->aql_txq_limit_bc);
 	return simple_read_from_buffer(user_buf, count, ppos,
 				       buf, len);
 }
@@ -293,6 +327,11 @@ static ssize_t aql_txq_limit_write(struct file *file,
 		buf[count - 1] = '\0';
 	else
 		buf[count] = '\0';
+
+	if (sscanf(buf, "mcast %u", &q_limit_low) == 1) {
+		local->aql_txq_limit_bc = q_limit_low;
+		return count;
+	}
 
 	if (sscanf(buf, "%u %u %u", &ac, &q_limit_low, &q_limit_high) != 3)
 		return -EINVAL;
@@ -690,6 +729,7 @@ void debugfs_hw_add(struct ieee80211_local *local)
 	DEBUGFS_ADD(hw_conf);
 	DEBUGFS_ADD_MODE(force_tx_status, 0600);
 	DEBUGFS_ADD_MODE(aql_enable, 0600);
+	DEBUGFS_ADD(aql_pending);
 
 	if (local->ops->wake_tx_queue)
 		DEBUGFS_ADD_MODE_MAC80211(aqm, 0600);

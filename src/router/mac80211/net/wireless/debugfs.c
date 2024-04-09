@@ -96,15 +96,17 @@ static const struct file_operations ht40allow_map_ops = {
 	.open = simple_open,
 	.llseek = default_llseek,
 };
+struct regulatory_request *get_last_request(void);
+void reg_call_notifier(struct wiphy *wiphy, struct regulatory_request *request);
 
 static ssize_t chandata_write(struct file *file, const char __user *user_buf,
 			      size_t count, loff_t *ppos)
 {
+	struct regulatory_request *lr = get_last_request();
 	struct wiphy *wiphy = file->private_data;
 	char *buf, *p, *next, *end;
 	ssize_t ret = -EINVAL;
 	int disabled;
-	static bool no_enable=false;
 
 	buf = kmalloc(count + 1, GFP_KERNEL);
 	if (!buf)
@@ -122,11 +124,11 @@ static ssize_t chandata_write(struct file *file, const char __user *user_buf,
 	ret = count;
 	switch (buf[0]) {
 	case '?':
-		no_enable = false;
+		wiphy->no_enable = false;
 		goto out;
 		break;
 	case '@':
-		no_enable = true;
+		wiphy->no_enable = true;
 		goto out;
 		break;
 	case '-':
@@ -136,12 +138,19 @@ static ssize_t chandata_write(struct file *file, const char __user *user_buf,
 #ifndef HAVE_SUPERCHANNEL
 		goto out;
 #endif
-		if (no_enable)
+		if (wiphy->no_enable) {
+			printk(KERN_INFO "sc not available. ignore\n");
 			goto out;
+		}
 		disabled = 0;
 		break;
-	default:
+	case 'c':
+		if (lr)
+			reg_call_notifier(wiphy, lr);
 		goto out;
+		break;
+	default:
+		break;
 	}
 
 	rtnl_lock();

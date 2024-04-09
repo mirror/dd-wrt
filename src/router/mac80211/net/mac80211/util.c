@@ -4039,9 +4039,9 @@ u32 ieee80211_chandef_downgrade(struct cfg80211_chan_def *c)
 	case NL80211_CHAN_WIDTH_16:
 	case NL80211_CHAN_WIDTH_5:
 	case NL80211_CHAN_WIDTH_10:
-		WARN_ON_ONCE(1);
-		/* keep c->width */
-		ret = IEEE80211_STA_DISABLE_HT | IEEE80211_STA_DISABLE_VHT;
+//		WARN_ON_ONCE(1);
+//		/* keep c->width */
+//		ret = IEEE80211_STA_DISABLE_HT | IEEE80211_STA_DISABLE_VHT;
 		break;
 	}
 

@@ -112,7 +112,8 @@ void rate_control_rate_update(struct ieee80211_local *local,
 		spin_unlock_bh(&sta->rate_ctrl_lock);
 		rcu_read_unlock();
 	}
-	drv_sta_rc_update(local, sta->sdata, &sta->sta, changed);
+	if (sta->uploaded)
+		drv_sta_rc_update(local, sta->sdata, &sta->sta, changed);
 }
 
 int ieee80211_rate_control_register(const struct rate_control_ops *ops)
@@ -572,8 +573,6 @@ static void rate_idx_match_mask(s8 *rate_idx, u16 *rate_flags,
 		/* if HT BSS, and we handle a data frame, also try HT rates */
 		switch (chan_width) {
 		case NL80211_CHAN_WIDTH_20_NOHT:
-		case NL80211_CHAN_WIDTH_5:
-		case NL80211_CHAN_WIDTH_10:
 			return;
 		default:
 			break;

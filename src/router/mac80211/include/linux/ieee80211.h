@@ -1736,6 +1736,14 @@ struct ieee80211_ht_operation {
 	u8 basic_set[16];
 } __packed;
 
+struct ieee80211_ht_operation_ext {
+	u16 primary_freq;
+	u8 ht_param;
+	__le16 operation_mode;
+	__le16 stbc_param;
+	u8 basic_set[16];
+} __packed;
+
 /* for ht_param */
 #define IEEE80211_HT_PARAM_CHA_SEC_OFFSET		0x03
 #define		IEEE80211_HT_PARAM_CHA_SEC_NONE		0x00
@@ -1890,6 +1898,13 @@ struct ieee80211_vht_operation {
 	u8 chan_width;
 	u8 center_freq_seg0_idx;
 	u8 center_freq_seg1_idx;
+	__le16 basic_mcs_set;
+} __packed;
+
+struct ieee80211_vht_operation_ext {
+	u8 chan_width;
+	u16 center_freq_seg0_idx;
+	u16 center_freq_seg1_idx;
 	__le16 basic_mcs_set;
 } __packed;
 

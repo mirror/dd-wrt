@@ -181,8 +181,6 @@ ieee80211_ibss_build_presp(struct ieee80211_sub_if_data *sdata,
 
 	/* add HT capability and information IEs */
 	if (chandef->width != NL80211_CHAN_WIDTH_20_NOHT &&
-	    chandef->width != NL80211_CHAN_WIDTH_5 &&
-	    chandef->width != NL80211_CHAN_WIDTH_10 &&
 	    sband->ht_cap.ht_supported) {
 		struct ieee80211_sta_ht_cap ht_cap;
 
@@ -436,7 +434,7 @@ static void ieee80211_sta_join_ibss(struct ieee80211_sub_if_data *sdata,
 	case NL80211_CHAN_WIDTH_5:
 	case NL80211_CHAN_WIDTH_10:
 		cfg80211_chandef_create(&chandef, cbss->channel,
-					NL80211_CHAN_NO_HT);
+					chan_type);
 		chandef.width = sdata->u.ibss.chandef.width;
 		break;
 	case NL80211_CHAN_WIDTH_80:
@@ -791,11 +789,11 @@ ieee80211_ibss_process_chanswitch(struct ieee80211_sub_if_data *sdata,
 
 	sta_flags = IEEE80211_STA_DISABLE_VHT;
 	switch (ifibss->chandef.width) {
-	case NL80211_CHAN_WIDTH_5:
-	case NL80211_CHAN_WIDTH_10:
 	case NL80211_CHAN_WIDTH_20_NOHT:
 		sta_flags |= IEEE80211_STA_DISABLE_HT;
 		fallthrough;
+	case NL80211_CHAN_WIDTH_5:
+	case NL80211_CHAN_WIDTH_10:
 	case NL80211_CHAN_WIDTH_20:
 		sta_flags |= IEEE80211_STA_DISABLE_40MHZ;
 		break;
@@ -1048,9 +1046,7 @@ static void ieee80211_update_sta_info(struct ieee80211_sub_if_data *sdata,
 	}
 
 	if (sta && elems->ht_operation && elems->ht_cap_elem &&
-	    sdata->u.ibss.chandef.width != NL80211_CHAN_WIDTH_20_NOHT &&
-	    sdata->u.ibss.chandef.width != NL80211_CHAN_WIDTH_5 &&
-	    sdata->u.ibss.chandef.width != NL80211_CHAN_WIDTH_10) {
+	    sdata->u.ibss.chandef.width != NL80211_CHAN_WIDTH_20_NOHT) {
 		/* we both use HT */
 		struct ieee80211_ht_cap htcap_ie;
 		struct cfg80211_chan_def chandef;
