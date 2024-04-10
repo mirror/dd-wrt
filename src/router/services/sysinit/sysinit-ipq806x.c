@@ -97,7 +97,7 @@ void start_finishupgrade(void)
 {
 	char mtdpath[64];
 	int mtd = getMTD("BOOTCONFIG");
-	sprintf(mtdpath, "/dev/mtdblock/%d", mtd);
+	sprintf(mtdpath, "/dev/mtd%d", mtd);
 
 	ipq_smem_bootconfig_info_t *ipq_smem_bootconfig_info = NULL;
 	ipq_smem_bootconfig_v2_info_t *ipq_smem_bootconfig_v2_info = NULL;
@@ -178,7 +178,7 @@ static int getbootdevice(void)
 {
 	char mtdpath[64];
 	int mtd = getMTD("BOOTCONFIG");
-	sprintf(mtdpath, "/dev/mtdblock/%d", mtd);
+	sprintf(mtdpath, "/dev/mtd%d", mtd);
 	ipq_smem_bootconfig_info_t *ipq_smem_bootconfig_info = NULL;
 	ipq_smem_bootconfig_v2_info_t *ipq_smem_bootconfig_v2_info = NULL;
 	int ret = -1;
@@ -329,7 +329,7 @@ void *get_deviceinfo_ea8300(char *var)
 {
 	static char res[256];
 	bzero(res, sizeof(res));
-	FILE *fp = fopen("/dev/mtdblock/9", "rb");
+	FILE *fp = fopen("/dev/mtd9", "rb");
 	if (!fp)
 		return NULL;
 	char newname[64];
@@ -355,7 +355,7 @@ void *get_deviceinfo_g10(char *var)
 {
 	static char res[256];
 	bzero(res, sizeof(res));
-	FILE *fp = fopen("/dev/mtdblock/9", "rb");
+	FILE *fp = fopen("/dev/mtd9", "rb");
 	if (!fp)
 		return NULL;
 	char newname[64];
@@ -386,7 +386,7 @@ static void setasrockcountry(void)
 	char rev = -1;
 	char rev5 = -1;
 #define defstr "HW.RegionDomain="
-	FILE *fp = popen("cat /dev/mtdblock9|grep HW.RegionDomain=", "r");
+	FILE *fp = popen("cat /dev/mtd9|grep HW.RegionDomain=", "r");
 	if (!fp)
 		return;
 	fread(buf, 1, 18, fp);
