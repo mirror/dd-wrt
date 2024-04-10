@@ -411,7 +411,7 @@ int mountd_main(int argc, char **argv)
 	int nodetach = 0;
 	int c;
 
-	while ((c = getopt_long(argc, argv, "p:n::C:P:vVh", opts, NULL)) != EOF)
+	while ((c = getopt_long(argc, argv, "p:n::c:u:vVh", opts, NULL)) != EOF)
 		switch (c) {
 		case 'p':
 			global_conf.tcp_port = cp_get_group_kv_long(optarg);
@@ -419,11 +419,11 @@ int mountd_main(int argc, char **argv)
 		case 'n':
 			nodetach = !optarg ?: cp_get_group_kv_long(optarg);
 			break;
-		case 'C':
+		case 'c':
 			g_free(global_conf.smbconf);
 			global_conf.smbconf = g_strdup(optarg);
 			break;
-		case 'P':
+		case 'u':
 			g_free(global_conf.pwddb);
 			global_conf.pwddb = g_strdup(optarg);
 			break;
