@@ -165,6 +165,10 @@ int main(int argc, char **argv)
 					sleep(1);
 					start_service_force("wan_redial");
 				}
+				else if (nvram_match("wan_proto", "android")) {
+					sleep(1);
+					start_service_force("wan_redial");
+				}
 #endif
 				exit(0);
 				break;
