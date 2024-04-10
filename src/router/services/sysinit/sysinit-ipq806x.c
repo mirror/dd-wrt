@@ -303,7 +303,7 @@ void *get_deviceinfo(char *var)
 {
 	static char res[256];
 	bzero(res, sizeof(res));
-	FILE *fp = fopen("/dev/mtdblock/12", "rb");
+	FILE *fp = fopen("/dev/mtd12", "rb");
 	if (!fp)
 		return NULL;
 	char newname[64];
@@ -433,7 +433,7 @@ void start_sysinit(void)
 	char *maddr = NULL;
 	char *cert_region = NULL;
 	char *hw_version = NULL;
-	sprintf(mtdpath, "/dev/mtdblock/%d", mtd);
+	sprintf(mtdpath, "/dev/mtd%d", mtd);
 	if (board != ROUTER_NETGEAR_R7500)
 		fp = fopen(mtdpath, "rb");
 	if (fp != NULL) {
