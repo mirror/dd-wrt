@@ -13,9 +13,5 @@ $(man_MANS): %: %.in; @$(in_script) $< >$@
 CLEANFILES = $(man_MANS)
 
 install-exec-hook: uninstall-hook
-	$(MKDIR_P) $(DESTDIR)$(sbindir)
-	( cd $(DESTDIR)$(sbindir) && \
-	  $(LN_S) $(libexecdir)/ksmbd.tools ksmbd.control )
 
 uninstall-hook:
-	-rm $(DESTDIR)$(sbindir)/ksmbd.control

@@ -329,8 +329,8 @@ int set_tool_main(char *name)
 		tool_main = addshare_main;
 	else if (!strcmp(name, "ksmbd.adduser"))
 		tool_main = adduser_main;
-	else if (!strcmp(name, "ksmbd.control"))
-		tool_main = control_main;
+//	else if (!strcmp(name, "ksmbd.control"))
+//		tool_main = control_main;
 	else if (!strcmp(name, "ksmbd.mountd"))
 		tool_main = mountd_main;
 	else
