@@ -670,6 +670,7 @@ void start_sysinit(void)
 		else
 			nvram_seti("bootpartition", 0);
 		eval("mount", "-t", "ubifs", "-o", "sync", "ubi0:rootfs_data", "/jffs");
+		set_envtools(3, "0x0", "0x40000", "0x20000");
 		break;
 	case ROUTER_ASROCK_G10:
 		if (maddr) {
