@@ -374,6 +374,11 @@ EJ_VISIBLE void ej_show_connectiontype(webs_t wp, int argc, char_t **argv)
 		  "<option value=\"iphone\" %s ><script type=\"text/javascript\">Capture(idx.iphone_tether)</script></option>\n",
 		  nvram_selmatch(wp, "wan_proto", "iphone") ? "selected=\"selected\"" : "");
 #endif
+#ifdef HAVE_IPETH
+	websWrite(wp,
+		  "<option value=\"android\" %s ><script type=\"text/javascript\">Capture(idx.android_tether)</script></option>\n",
+		  nvram_selmatch(wp, "wan_proto", "android") ? "selected=\"selected\"" : "");
+#endif
 #ifdef HAVE_3G
 #ifdef HAVE_BUFFALO
 	char *region = getUEnv("region");
