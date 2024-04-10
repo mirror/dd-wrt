@@ -43,7 +43,7 @@ static void usage(int status)
 			"  -d, --delete          delete USER from user database\n"
 			"  -p, --password=PWD    use PWD as user password instead of prompting;\n"
 			"                        PWD must be UTF-8 and [0, " STR(MAX_NT_PWD_LEN) ") bytes\n"
-			"  -P, --pwddb=PWDDB     use PWDDB as user database instead of\n"
+			"  -i, --pwddb=PWDDB     use PWDDB as user database instead of\n"
 			"                        `" PATH_PWDDB "'\n"
 			"  -C, --config=CONF     use CONF as configuration file instead of\n"
 			"                        `" PATH_SMBCONF "'\n"
@@ -75,7 +75,7 @@ int adduser_main(int argc, char **argv)
 	command_fn *command = NULL;
 	int c;
 
-	while ((c = getopt_long(argc, argv, "audp:P:C:vVh", opts, NULL)) != EOF)
+	while ((c = getopt_long(argc, argv, "audp:i:C:vVh", opts, NULL)) != EOF)
 		switch (c) {
 		case 'a':
 			command = command_add_user;
@@ -90,7 +90,7 @@ int adduser_main(int argc, char **argv)
 			g_free(password);
 			password = g_strdup(optarg);
 			break;
-		case 'P':
+		case 'i':
 			g_free(pwddb);
 			pwddb = g_strdup(optarg);
 			break;
