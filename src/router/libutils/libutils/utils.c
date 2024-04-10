@@ -564,6 +564,30 @@ int check_wan_link(int num)
 				wan_link = 0;
 		}
 	} else
+	if (nvram_match("wan_proto", "android")) {
+		FILE *fp;
+		if ((fp = fopen("/proc/net/dev", "r"))) {
+			char line[256];
+			while (fgets(line, sizeof(line), fp) != NULL) {
+				if (strstr(line, "usb0")) {
+					int sock;
+					struct ifreq ifr;
+					if ((sock = socket(AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0)
+						break;
+					bzero(&ifr, sizeof(struct ifreq));
+					strncpy(ifr.ifr_name, "usb0", IFNAMSIZ);
+					ioctl(sock, SIOCGIFFLAGS, &ifr);
+					if ((ifr.ifr_flags & (IFF_RUNNING | IFF_UP)) == (IFF_RUNNING | IFF_UP))
+						wan_link = 1;
+					close(sock);
+					break;
+				}
+			}
+			fclose(fp);
+			if (nvram_match("wan_ipaddr", "0.0.0.0") || nvram_match("wan_ipaddr", ""))
+				wan_link = 0;
+		}
+	} else
 #endif
 	{
 		if (nvram_invmatch("wan_ipaddr", "0.0.0.0"))
@@ -1960,6 +1984,9 @@ char *safe_get_wan_face(char *localwanface)
 #ifdef HAVE_IPETH
 	else if (nvram_match("wan_proto", "iphone")) {
 		strlcpy(localwanface, "iph0", IFNAMSIZ);
+	}
+	else if (nvram_match("wan_proto", "android")) {
+		strlcpy(localwanface, "usb0", IFNAMSIZ);
 	}
 #endif
 	else
