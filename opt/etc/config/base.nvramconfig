@@ -18,7 +18,7 @@
  "dtag_vlan8" "DTAG VDSL VLAN 8 support" "CHOICE" "2" "0" "1" "FALSE" "0"
  "dtag_bng" "DTAG VDSL BNG support" "CHOICE" "2" "0" "1" "FALSE" "0"
  "wan_vlantag" "Vlan Tag ID" "RANGE" "1" "4096" "FALSE" "0"
- "wan_proto"  "WAN Protocol"  "CHOICE" "10" "disabled"  "dhcp" "dhcp_auth"  "static"  "pppoe"  "pptp"  "l2tp"  "heartbeat" "3g" "iphone"  "FALSE" "3"
+ "wan_proto"  "WAN Protocol"  "CHOICE" "11" "disabled"  "dhcp" "dhcp_auth"  "static"  "pppoe"  "pptp"  "l2tp"  "heartbeat" "3g" "iphone" "android"  "FALSE" "3"
  "wan_priority"  "VLAN Priority"  "CHOICE" "2"  "0"  "1"  "FALSE" "0"
  "dhcp_userclass" "DHCP userclass"  "NAME"  "127"  "TRUE" "3"
  "dhcp_clientid" "DHCP clientid"  "NAME"  "127"  "TRUE" "3"
