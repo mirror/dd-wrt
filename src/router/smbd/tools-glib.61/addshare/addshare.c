@@ -45,7 +45,7 @@ static void usage(int status)
 			"                       this option can be given multiple times\n"
 			"  -C, --config=CONF    use CONF as configuration file instead of\n"
 			"                       `" PATH_SMBCONF "'\n"
-			"  -P, --pwddb=PWDDB    use PWDDB as user database instead of\n"
+			"  -i, --pwddb=PWDDB    use PWDDB as user database instead of\n"
 			"                       `" PATH_PWDDB "'\n"
 			"  -v, --verbose        be verbose\n"
 			"  -V, --version        output version information and exit\n"
@@ -77,7 +77,7 @@ int addshare_main(int argc, char **argv)
 	command_fn *command = NULL;
 	int c;
 
-	while ((c = getopt_long(argc, argv, "audo:C:P:vVh", opts, NULL)) != EOF)
+	while ((c = getopt_long(argc, argv, "audo:C:i:vVh", opts, NULL)) != EOF)
 		switch (c) {
 		case 'a':
 			command = command_add_share;
@@ -95,7 +95,7 @@ int addshare_main(int argc, char **argv)
 			g_free(smbconf);
 			smbconf = g_strdup(optarg);
 			break;
-		case 'P':
+		case 'i':
 			g_free(pwddb);
 			pwddb = g_strdup(optarg);
 			break;
