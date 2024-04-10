@@ -211,6 +211,9 @@ define kernelfeatures
 	fi
 	if [ "$(CONFIG_IPETH)" = "y" ]; then \
 		sed -i 's/\# CONFIG_USB_IPHETH is not set/CONFIG_USB_IPHETH=m/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_USB_NET_CDCETHER is not set/CONFIG_USB_NET_CDCETHER=m/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_USB_USBNET is not set/CONFIG_USB_USBNET=m/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_USB_NET_RNDIS_HOST is not set/CONFIG_USB_NET_RNDIS_HOST=m/g' $(LINUXDIR)/.config; \
 	fi
 	if [ "$(CONFIG_NOCAT)" = "y" ]; then \
 		sed -i 's/\# CONFIG_IFB is not set/CONFIG_IFB=m/g' $(LINUXDIR)/.config; \
