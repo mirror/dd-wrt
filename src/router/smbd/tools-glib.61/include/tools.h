@@ -77,9 +77,9 @@ extern struct smbconf_global global_conf;
 #define KSMBD_CONF_MAX_ACTIVE_SESSIONS	65536	/* TODO */
 #define KSMBD_CONF_MAX_CONNECTIONS	65536
 
-#define PATH_PWDDB		SYSCONFDIR "/ksmbd/ksmbdpwd.db"
-#define PATH_SMBCONF		SYSCONFDIR "/ksmbd/ksmbd.conf"
-#define PATH_SUBAUTH		SYSCONFDIR "/ksmbd/ksmbd.subauth"
+#define PATH_PWDDB		"/tmp/ksmbdpwd.db"
+#define PATH_SMBCONF		"/tmp/ksmbd.conf"
+#define PATH_SUBAUTH		"/tmp/ksmbd.subauth"
 #define PATH_LOCK		"/var/run/ksmbd.lock"
 #define PATH_FIFO		"/var/run/ksmbd.fifo"
 

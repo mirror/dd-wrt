@@ -390,21 +390,16 @@ static void process_global_conf_kv(char *k, char *v)
 	}
 
 	if (!cp_key_cmp(k, "map to guest")) {
+		global_conf.map_to_guest = KSMBD_CONF_MAP_TO_GUEST_NEVER;
 		if (!cp_key_cmp(v, "bad user"))
 			global_conf.map_to_guest =
 				KSMBD_CONF_MAP_TO_GUEST_BAD_USER;
-/* broken */
-#if 0
-		else if (!cp_key_cmp(v, "bad password"))
+		if (!cp_key_cmp(v, "bad password"))
 			global_conf.map_to_guest =
 				KSMBD_CONF_MAP_TO_GUEST_BAD_PASSWORD;
-		else if (!cp_key_cmp(v, "bad uid"))
+		if (!cp_key_cmp(v, "bad uid"))
 			global_conf.map_to_guest =
 				KSMBD_CONF_MAP_TO_GUEST_BAD_UID;
-#endif
-		else
-			global_conf.map_to_guest =
-				KSMBD_CONF_MAP_TO_GUEST_NEVER;
 		return;
 	}
 
