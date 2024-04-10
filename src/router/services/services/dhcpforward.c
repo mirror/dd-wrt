@@ -134,6 +134,9 @@ void start_dhcpfwd(void)
 		else if (strcmp(wan_proto, "iphone") == 0) {
 			fprintf(fp, "if	iph0	false	true	true\n");
 		}
+		else if (strcmp(wan_proto, "android") == 0) {
+			fprintf(fp, "if	usb0	false	true	true\n");
+		}
 #endif
 #ifdef HAVE_L2TP
 		else if (strcmp(wan_proto, "l2tp") == 0) {
