@@ -1251,6 +1251,7 @@ idx.dsl_mdm_bdg="DSL Modem Bridge";
 idx.pppoe_dual="PPPoE Dual (MLPPP)";
 idx.heartbeat_sig="Heartbeat Signal";
 idx.iphone_tether="iPhone Tethering";
+idx.android_tether="Android Tethering";
 idx.mobile_bb="Mobile Broadband";
 idx.dhcp_auth="DHCP Authentication";
 idx.dhcp6c_auth="DHCP IPv6 Authentication";
