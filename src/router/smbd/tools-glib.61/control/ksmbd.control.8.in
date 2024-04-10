@@ -1,0 +1,63 @@
+.TH KSMBD.CONTROL "8" "" "ksmbd-tools @ksmbd_tools_version@" "System Administration"
+.SH NAME
+ksmbd.control \- control ksmbd.mountd and ksmbd daemons
+.SH SYNOPSIS
+.B ksmbd.control
+[\-v] \-s
+.br
+.B ksmbd.control
+[\-v] \-r
+.br
+.B ksmbd.control
+[\-v] \-l
+.br
+.B ksmbd.control
+[\-v] \-d \fI\,COMPONENT\/\fR
+.br
+.B ksmbd.control
+[\-v] \-c
+.SH DESCRIPTION
+\fBksmbd.control\fR controls \fBksmbd.mountd\fP(8) user mode and \fBksmbd\fR kernel mode daemons.
+.SH OPTIONS
+.TP
+\fB\-s\fR, \fB\-\-shutdown\fR
+Shutdown both \fBksmbd.mountd\fR and \fBksmbd\fR and exit.
+.TP
+\fB\-r\fR, \fB\-\-reload\fR
+Notify \fBksmbd.mountd\fR of changes and exit.
+.TP
+\fB\-l\fR, \fB\-\-list\fR
+List \fBksmbd.mountd\fR shares and exit.
+.TP
+\fB\-d\fR, \fB\-\-debug\fR=\fI\,COMPONENT\/\fR
+Toggle \fBksmbd\fR debug printing for \fI\,COMPONENT\/\fR and exit.
+\fI\,COMPONENT\/\fR is \fBall\fR, \fBsmb\fR, \fBauth\fR, \fBvfs\fR, \fBoplock\fR, \fBipc\fR, \fBconn\fR, or \fBrdma\fR.
+Enabled ones are output enclosed in brackets (\fB[]\fR).
+.TP
+\fB\-c\fR, \fB\-\-ksmbd-version\fR
+Output \fBksmbd\fR version information and exit.
+.TP
+\fB\-v\fR, \fB\-\-verbose\fR
+Be verbose.
+.TP
+\fB\-V\fR, \fB\-\-version\fR
+Output version information and exit.
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+Display this help and exit.
+.SH "EXIT STATUS"
+The exit status is 0 on success and 1 on failure.
+.SH COPYRIGHT
+Copyright \(co 2015-2022 ksmbd-tools contributors.
+License GPLv2: GNU GPL version 2 <https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html>.
+.br
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.
+.SH "REPORTING BUGS"
+For bug reports, use the issue tracker at https://github.com/cifsd-team/ksmbd-tools/issues.
+.SH "SEE ALSO"
+.TP
+\fBUtilities\fR
+\fBksmbd.addshare\fP(8),
+\fBksmbd.adduser\fP(8),
+\fBksmbd.mountd\fP(8)

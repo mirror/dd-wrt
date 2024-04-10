@@ -1,0 +1,27 @@
+.TH KSMBDPWD.DB "5" "" "ksmbd-tools @ksmbd_tools_version@" "File Formats and Conventions"
+.SH NAME
+ksmbdpwd.db \- the user database for ksmbd.mountd
+.SH DESCRIPTION
+\fBksmbdpwd.db\fR is the user database for \fBksmbd.mountd\fP(8) user mode daemon.
+\fBksmbd.adduser\fP(8) may be used for configuring users for \fBksmbdpwd.db\fR.
+\fBksmbd.adduser\fR notifies \fBksmbd.mountd\fR of changes, if it had made any, by sending the \fBSIGHUP\fR signal to \fBksmbd.mountd\fR.
+\fBksmbd.control --reload\fR can be used for notifying \fBksmbd.mountd\fR of changes when not using \fBksmbd.adduser\fR.
+\fBksmbdpwd.db\fR is expected to be at \fB@sysconfdir@/ksmbd/ksmbdpwd.db\fR by default. \" PATH_PWDDB
+.SH "FILE FORMAT"
+\fBksmbdpwd.db\fR consists of users separated by newlines.
+Each user consists of a name and a password, in that order, separated by a colon (\fB:\fR).
+The name must be UTF-8 and [1, 48) bytes. \" KSMBD_REQ_MAX_ACCOUNT_NAME_SZ
+The password is created from the user-input UTF-8 password, [0, 129) bytes, by converting it to UTF-16LE, then MD4-hashing it, and finally Base64-encoding and padding it. \" MAX_NT_PWD_LEN
+.SH COPYRIGHT
+Copyright \(co 2015-2022 ksmbd-tools contributors.
+License GPLv2: GNU GPL version 2 <https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html>.
+.br
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.
+.SH "REPORTING BUGS"
+For bug reports, use the issue tracker at https://github.com/cifsd-team/ksmbd-tools/issues.
+.SH "SEE ALSO"
+.TP
+\fBUtilities\fR
+\fBksmbd.adduser\fP(8),
+\fBksmbd.mountd\fP(8)

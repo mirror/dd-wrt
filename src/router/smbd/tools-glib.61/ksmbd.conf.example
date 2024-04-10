@@ -1,0 +1,63 @@
+; see ksmbd.conf(5) for details
+
+[global]
+	; global parameters
+	bind interfaces only = no
+	deadtime = 0
+	guest account = nobody
+	interfaces = 
+	ipc timeout = 0
+	kerberos keytab file = 
+	kerberos service name = 
+	map to guest = never
+	max active sessions = 1024
+	max connections = 128
+	max open files = 10000
+	netbios name = KSMBD SERVER
+	restrict anonymous = 0
+	root directory = 
+	server max protocol = SMB3_11
+	server min protocol = SMB2_10
+	server multi channel support = no
+	server signing = disabled
+	server string = SMB SERVER
+	share:fake_fscaps = 64
+	smb2 leases = no
+	smb2 max credits = 8192
+	smb2 max read = 4MB
+	smb2 max trans = 1MB
+	smb2 max write = 4MB
+	smb3 encryption = auto
+	smbd max io size = 8MB
+	tcp port = 445
+	workgroup = WORKGROUP
+	durable handles = no
+
+	; default share parameters
+	browseable = yes
+	comment = 
+	create mask = 0744
+	crossmnt = yes
+	directory mask = 0755
+	force create mode = 0000
+	force directory mode = 0000
+	force group = 
+	force user = 
+	guest ok = no
+	hide dot files = yes
+	inherit owner = no
+	invalid users = 
+	oplocks = yes
+	path = 
+	read list = 
+	read only = ; yes
+	store dos attributes = yes
+	valid users = 
+	veto files = 
+	vfs objects = 
+	write list = 
+
+[example]
+	; share parameters
+	comment = read only /tmp access
+	path = /tmp

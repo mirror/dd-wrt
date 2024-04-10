@@ -1,0 +1,61 @@
+dist: jammy
+
+language: c
+
+notifications:
+ - email: true
+
+before_install:
+ - sudo apt-get install libnl-3-dev libnl-genl-3-dev krb5-multidev heimdal-multidev ninja-build
+ - gcc --version
+ - g++ --version
+ - pip3 install --user meson
+ - PATH=$HOME/.local/bin:$PATH
+
+jobs:
+ include:
+  -
+    before_script:
+     - ./autogen.sh
+     - ./configure
+    name: "autotools build without krb5"
+    script:
+     - make DISTCHECK_CONFIGURE_FLAGS=--enable-krb5=no distcheck
+  -
+    before_script:
+     - ./autogen.sh
+     - ./configure
+    name: "autotools build with mit krb5"
+    script:
+     - make DISTCHECK_CONFIGURE_FLAGS="LIBKRB5_CFLAGS='$(krb5-config.mit --cflags)' LIBKRB5_LIBS='$(krb5-config.mit --libs)' --enable-krb5" distcheck
+  -
+    before_script:
+     - ./autogen.sh
+     - ./configure
+    name: "autotools build with heimdal krb5"
+    script:
+     - make DISTCHECK_CONFIGURE_FLAGS="LIBKRB5_CFLAGS='$(krb5-config.heimdal --cflags)' LIBKRB5_LIBS='$(krb5-config.heimdal --libs) -lasn1' --enable-krb5" distcheck
+  -
+    before_script:
+     - mkdir build
+     - cd build
+    name: "meson build without krb5"
+    script:
+     - meson -Dkrb5=disabled ..
+     - meson dist
+  -
+    before_script:
+     - mkdir build
+     - cd build
+    name: "meson build with mit krb5"
+    script:
+     - meson -Dkrb5=enabled ..
+     - meson dist
+  -
+    before_script:
+     - mkdir build
+     - cd build
+    name: "meson build with heimdal krb5"
+    script:
+     - meson -Dkrb5=enabled -Dkrb5_name=heimdal-krb5 ..
+     - meson dist

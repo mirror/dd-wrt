@@ -1,0 +1,66 @@
+.TH KSMBD.ADDUSER "8" "" "ksmbd-tools @ksmbd_tools_version@" "System Administration"
+.SH NAME
+ksmbd.adduser \- configure users for ksmbdpwd.db of ksmbd.mountd
+.SH SYNOPSIS
+.B ksmbd.adduser
+[\-v] [\-P \fI\,PWDDB\/\fR] [\-C \fI\,CONF\/\fR] [\-a | \-u | \-d] [\-p \fI\,PWD\/\fR] \fI\,USER\/\fR
+.SH DESCRIPTION
+\fBksmbd.adduser\fR configures users for \fBksmbdpwd.db\fP(5) user database of \fBksmbd.mountd\fP(8) user mode daemon.
+\fBksmbd.adduser\fR can parse \fBksmbd.conf\fP(5) configuration file so as to guard against deletion of users that are depended on.
+\fBksmbd.adduser\fR notifies \fBksmbd.mountd\fR of changes if it had made any.
+.SH OPTIONS
+.PP
+If neither \fB\-a\fR, \fB\-u\fR, nor \fB\-d\fR is given, either add or update \fI\,USER\/\fR.
+\fI\,USER\/\fR must be UTF-8 and [1, 48) bytes. \" KSMBD_REQ_MAX_ACCOUNT_NAME_SZ
+\fI\,USER\/\fR cannot contain colon (\fB:\fR).
+.TP
+\fB\-a\fR, \fB\-\-add\/\fR
+Add \fI\,USER\/\fR to user database.
+.TP
+\fB\-u\fR, \fB\-\-update\/\fR
+Update \fI\,USER\/\fR in user database.
+.TP
+\fB\-d\fR, \fB\-\-delete\/\fR
+Delete \fI\,USER\/\fR from user database.
+.TP
+\fB\-p\fR, \fB\-\-password\fR=\fI\,PWD\/\fR
+Use \fI\,PWD\/\fR as user password instead of prompting.
+\fI\,PWD\/\fR must be UTF-8 and [0, 129) bytes. \" MAX_NT_PWD_LEN
+.TP
+\fB\-P\fR, \fB\-\-pwddb\fR=\fI\,PWDDB\/\fR
+Use \fI\,PWDDB\/\fR as user database instead of \fB@sysconfdir@/ksmbd/ksmbdpwd.db\fR. \" PATH_PWDDB
+.TP
+\fB\-C\fR, \fB\-\-config\fR=\fI\,CONF\/\fR
+Use \fI\,CONF\/\fR as configuration file instead of \fB@sysconfdir@/ksmbd/ksmbd.conf\fR. \" PATH_SMBCONF
+.TP
+\fB\-v\fR, \fB\-\-verbose\fR
+Be verbose.
+.TP
+\fB\-V\fR, \fB\-\-version\fR
+Output version information and exit.
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+Display this help and exit.
+.SH "EXIT STATUS"
+The exit status is 0 on success and 1 on failure.
+Failure to notify \fBksmbd.mountd\fR of changes has no effect on exit status.
+.SH COPYRIGHT
+Copyright \(co 2015-2022 ksmbd-tools contributors.
+License GPLv2: GNU GPL version 2 <https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html>.
+.br
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.
+.SH "REPORTING BUGS"
+For bug reports, use the issue tracker at https://github.com/cifsd-team/ksmbd-tools/issues.
+.SH "SEE ALSO"
+.TP
+\fBUser Database\fR
+\fBksmbdpwd.db\fP(5)
+.TP
+\fBConfiguration File\fR
+\fBksmbd.conf\fP(5)
+.TP
+\fBUtilities\fR
+\fBksmbd.addshare\fP(8),
+\fBksmbd.control\fP(8),
+\fBksmbd.mountd\fP(8)

@@ -1,0 +1,68 @@
+.TH KSMBD.ADDSHARE "8" "" "ksmbd-tools @ksmbd_tools_version@" "System Administration"
+.SH NAME
+ksmbd.addshare \- configure shares for ksmbd.conf of ksmbd.mountd
+.SH SYNOPSIS
+.B ksmbd.addshare
+[\-v] [\-C \fI\,CONF\/\fR] [\-P \fI\,PWDDB\/\fR] [\-a | \-u | \-d] [\-o \fI\,OPT\/\fR]... \fI\,SHARE\/\fR
+.SH DESCRIPTION
+\fBksmbd.addshare\fR configures shares for \fBksmbd.conf\fP(5) configuration file of \fBksmbd.mountd\fP(8) user mode daemon.
+\fBksmbd.addshare\fR modifies \fBksmbd.conf\fR such that its existing formatting is not retained.
+\fBksmbd.addshare\fR can parse \fBksmbdpwd.db\fP(5) user database so as to provide completions when prompting.
+\fBksmbd.addshare\fR notifies \fBksmbd.mountd\fR of changes if it had made any.
+\fBksmbd.addshare\fR will only make changes that do not require restarting \fBksmbd.mountd\fR and \fBksmbd\fR to take effect.
+.SH OPTIONS
+.PP
+If neither \fB\-a\fR, \fB\-u\fR, nor \fB\-d\fR is given, either add or update \fI\,SHARE\/\fR.
+\fI\,SHARE\/\fR must be UTF-8 and [1, 64) bytes. \" KSMBD_REQ_MAX_SHARE_NAME
+\fI\,SHARE\/\fR is case-insensitive.
+.TP
+\fB\-a\fR, \fB\-\-add\/\fR
+Add \fI\,SHARE\/\fR to configuration file.
+.TP
+\fB\-u\fR, \fB\-\-update\/\fR
+Update \fI\,SHARE\/\fR in configuration file.
+.TP
+\fB\-d\fR, \fB\-\-delete\/\fR
+Delete \fI\,SHARE\/\fR from configuration file.
+.TP
+\fB\-o\fR, \fB\-\-option\fR=\fI\,OPT\/\fR
+Use \fI\,OPT\/\fR as share parameter instead of prompting.
+This option can be given multiple times.
+.TP
+\fB\-C\fR, \fB\-\-config\fR=\fI\,CONF\/\fR
+Use \fI\,CONF\/\fR as configuration file instead of \fB@sysconfdir@/ksmbd/ksmbd.conf\fR. \" PATH_SMBCONF
+.TP
+\fB\-P\fR, \fB\-\-pwddb\fR=\fI\,PWDDB\/\fR
+Use \fI\,PWDDB\/\fR as user database instead of \fB@sysconfdir@/ksmbd/ksmbdpwd.db\fR. \" PATH_PWDDB
+.TP
+\fB\-v\fR, \fB\-\-verbose\fR
+Be verbose.
+.TP
+\fB\-V\fR, \fB\-\-version\fR
+Output version information and exit.
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+Display this help and exit.
+.SH "EXIT STATUS"
+The exit status is 0 on success and 1 on failure.
+Failure to notify \fBksmbd.mountd\fR of changes has no effect on exit status.
+.SH COPYRIGHT
+Copyright \(co 2015-2022 ksmbd-tools contributors.
+License GPLv2: GNU GPL version 2 <https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html>.
+.br
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.
+.SH "REPORTING BUGS"
+For bug reports, use the issue tracker at https://github.com/cifsd-team/ksmbd-tools/issues.
+.SH "SEE ALSO"
+.TP
+\fBConfiguration File\fR
+\fBksmbd.conf\fP(5)
+.TP
+\fBUser Database\fR
+\fBksmbdpwd.db\fP(5)
+.TP
+\fBUtilities\fR
+\fBksmbd.adduser\fP(8),
+\fBksmbd.control\fP(8),
+\fBksmbd.mountd\fP(8)

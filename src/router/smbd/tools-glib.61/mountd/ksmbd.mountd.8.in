@@ -1,0 +1,60 @@
+.TH KSMBD.MOUNTD "8" "" "ksmbd-tools @ksmbd_tools_version@" "System Administration"
+.SH NAME
+ksmbd.mountd \- start ksmbd.mountd and ksmbd daemons
+.SH SYNOPSIS
+.B ksmbd.mountd
+[\-v] [\-p \fI\,PORT\/\fR] [\-n[\fI\,WAY\/\fR]] [\-C \fI\,CONF\/\fR] [\-P \fI\,PWDDB\/\fR]
+.SH DESCRIPTION
+\fBksmbd.mountd\fR starts \fBksmbd.mountd\fR user mode and \fBksmbd\fR kernel mode daemons.
+\fBksmbd.mountd\fR has to parse \fBksmbd.conf\fP(5) configuration file in order to start.
+\fBksmbd.mountd\fR can parse \fBksmbdpwd.db\fP(5) user database so as to support non-guest sessions.
+.SH OPTIONS
+.TP
+\fB\-p\fR, \fB\-\-port\fR=\fI\,PORT\/\fR
+Bind to \fI\,PORT\/\fR instead of TCP port \fB445\fR.
+.TP
+\fB\-n\fR, \fB\-\-nodetach\fR[=\fI\,WAY\/\fR]
+Do not detach process from foreground.
+If \fI\,WAY\/\fR is \fB1\fR, become process group leader (default).
+If \fI\,WAY\/\fR is \fB0\fR, detach.
+.TP
+\fB\-C\fR, \fB\-\-config\fR=\fI\,CONF\/\fR
+Use \fI\,CONF\/\fR as configuration file instead of \fB@sysconfdir@/ksmbd/ksmbd.conf\fR. \" PATH_SMBCONF
+.TP
+\fB\-P\fR, \fB\-\-pwddb\fR=\fI\,PWDDB\/\fR
+Use \fI\,PWDDB\/\fR as user database instead of \fB@sysconfdir@/ksmbd/ksmbdpwd.db\fR. \" PATH_PWDDB
+.TP
+\fB\-v\fR, \fB\-\-verbose\fR
+Be verbose.
+.TP
+\fB\-V\fR, \fB\-\-version\fR
+Output version information and exit.
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+Display this help and exit.
+.SH "EXIT STATUS"
+The exit status is 0 on success and 1 on failure.
+When detaching process from foreground, exit status is 0 if daemonization succeeded.
+.SH SIGNALS
+\fBksmbd.mountd\fR can be notified of changes to \fBksmbd.conf\fR or \fBksmbdpwd.db\fR by sending it the \fBSIGHUP\fR signal.
+The manager process of \fBksmbd.mountd\fR has its PID stored in \fB@runstatedir@/ksmbd.lock\fR. \" PATH_LOCK
+.SH COPYRIGHT
+Copyright \(co 2015-2022 ksmbd-tools contributors.
+License GPLv2: GNU GPL version 2 <https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html>.
+.br
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.
+.SH "REPORTING BUGS"
+For bug reports, use the issue tracker at https://github.com/cifsd-team/ksmbd-tools/issues.
+.SH "SEE ALSO"
+.TP
+\fBConfiguration File\fR
+\fBksmbd.conf\fP(5)
+.TP
+\fBUser Database\fR
+\fBksmbdpwd.db\fP(5)
+.TP
+\fBUtilities\fR
+\fBksmbd.addshare\fP(8),
+\fBksmbd.adduser\fP(8),
+\fBksmbd.control\fP(8)

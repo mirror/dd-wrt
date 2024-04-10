@@ -1,0 +1,25 @@
+option(
+  'rundir',
+  type: 'string',
+  description: 'Directory to store modifiable per-process data (LOCALSTATEDIR/run by default)',
+)
+
+option(
+  'systemdsystemunitdir',
+  type: 'string',
+  description: 'Directory to install systemd unit file (query pkg-config by default)',
+)
+
+option(
+  'krb5',
+  type: 'feature',
+  value: 'disabled',
+  description: 'Support for Kerberos 5 authentication',
+)
+
+option(
+  'krb5_name',
+  type: 'string',
+  value: 'krb5',
+  description: 'Dependency name used when checking Kerberos 5 support',
+)

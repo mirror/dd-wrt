@@ -1,0 +1,24 @@
+Original Author and Creator
+===========================
+Namjae Jeon <linkinjeon@gmail.com>
+
+Maintainers
+===============
+Namjae Jeon <linkinjeon@gmail.com>
+
+Patch Contributors and Developers
+---------------------------------
+Atte Heikkilä <atteh.mailbox@gmail.com>
+Marios Makassikis <mmakassikis@freebox.fr>
+Rosen Penev <rosenp@gmail.com>
+Sergey Senozhatsky <sergey.senozhatsky@gmail.com> (Resolve overall architecture issues and make close to the mainline. and his work cause ksmbd 2.0 to be reborn)
+Taeyang Mok <t.mok@samsung.com> (various ksmbd works)
+Yunjae Lim <yunjae.lim@samsung.com> (compatibility works for several windows version and MS-SMB2 testsuite)
+Hyunchul Lee <hyc.lee@gmail.com> (SMBDirect works)
+Gibeom Kim <gibeomii.kim@samsung.com>
+Pankaj Sharma <pankaj.s01@samsung.com>
+Anupam Aggarwal <anupam.al@samsung.com>
+Mayank Singh <mayank.singh@samsung.com>
+kumar sourav <kumar.sourav@samsung.com>
+Vivek Trivedi <t.vivek@samsung.com>
+Amit Sahrawat <a.sahrawat@samsung.com>
