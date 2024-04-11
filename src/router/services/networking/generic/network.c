@@ -3986,6 +3986,7 @@ void run_wan(int status)
 		}
 		insmod("usbnet");
 		insmod("cdc_ether");
+		insmod("cdc_ncm");
 		insmod("rndis_host");
 		eval("ifconfig", "usb0", "up");
 		run_dhcpc("usb0", NULL, NULL, 1, 0, 0);
