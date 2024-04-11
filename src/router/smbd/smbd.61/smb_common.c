@@ -686,7 +686,6 @@ int ksmbd_smb_check_shared_mode(struct file *filp, struct ksmbd_file *curr_fp)
 {
 	int rc = 0;
 	struct ksmbd_file *prev_fp;
-	return 0;
 
 	/*
 	 * Lookup fp in master fp list, and check desired access and
