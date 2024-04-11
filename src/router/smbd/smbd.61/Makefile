@@ -11,7 +11,7 @@ $(error CONFIG_SMB_SERVER_SMBDIRECT is supported in the kernel above 4.12 versio
 endif
 endif
 
-EXTRA_CFLAGS += -DCONFIG_SMB_INSECURE_SERVER=1 -g -I$(TOP)/smbd/smbd -DCONFIG_SMB_SERVER_KERBEROS5=1 -Wno-unused-function
+EXTRA_CFLAGS += -DCONFIG_SMB_INSECURE_SERVER=1 -I$(TOP)/smbd/smbd -DCONFIG_SMB_SERVER_KERBEROS5=1 -Wno-unused-function
 
 obj-$(CONFIG_SMB_SERVER) += ksmbd.o
 
