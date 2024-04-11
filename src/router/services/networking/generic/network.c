@@ -3988,8 +3988,13 @@ void run_wan(int status)
 		insmod("cdc_ether");
 		insmod("cdc_ncm");
 		insmod("rndis_host");
+		sleep(2);
 		eval("ifconfig", "usb0", "up");
-		run_dhcpc("usb0", NULL, NULL, 1, 0, 0);
+		eval("ifconfig", "wwan0", "up");
+		if (ifexists("usb0"))
+			run_dhcpc("usb0", NULL, NULL, 1, 0, 0);
+		else
+			run_dhcpc("wwan0", NULL, NULL, 1, 0, 0);
 		if (status != REDIAL) {
 			start_redial();
 		}
