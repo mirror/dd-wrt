@@ -660,6 +660,9 @@ int ksmbd_tcp_set_interfaces(char *ifc_list, int ifc_list_sz)
 		for_each_netdev(&init_net, netdev) {
 			if (netdev->priv_flags & IFF_BRIDGE_PORT)
 				continue;
+			if (netdev->type != ARPHRD_ETHER || netdev->addr_len != ETH_ALEN ||
+			    !is_valid_ether_addr(netdev->dev_addr))
+				continue;
 			if (!alloc_iface(kstrdup(netdev->name, GFP_KERNEL)))
 				return -ENOMEM;
 		}

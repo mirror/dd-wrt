@@ -1382,7 +1382,7 @@ int ksmbd_vfs_rename(struct ksmbd_work *work, const struct path *old_path,
 	struct ksmbd_share_config *share_conf = work->tcon->share_conf;
 	struct ksmbd_file *parent_fp;
 	int new_type;
-	int err, lookup_flags = LOOKUP_NO_SYMLINKS;
+	int err, lookup_flags = LOOKUP_FOLLOW;
 
 	if (ksmbd_override_fsids(work))
 		return -ENOMEM;
