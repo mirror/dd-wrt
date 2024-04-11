@@ -3996,8 +3996,10 @@ void run_wan(int status)
 			run_dhcpc("usb0", NULL, NULL, 1, 0, 0);
 		else if (ifexists("wwan0"))
 			run_dhcpc("wwan0", NULL, NULL, 1, 0, 0);
-		else continue;
+		else { 
 		sleep(1);
+		continue;
+		}
 		}
 		if (status != REDIAL) {
 			start_redial();
