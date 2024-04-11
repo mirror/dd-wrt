@@ -164,8 +164,7 @@ int main(int argc, char **argv)
 				else if (nvram_match("wan_proto", "iphone")) {
 					sleep(1);
 					start_service_force("wan_redial");
-				}
-				else if (nvram_match("wan_proto", "android")) {
+				} else if (nvram_match("wan_proto", "android")) {
 					sleep(1);
 					start_service_force("wan_redial");
 				}

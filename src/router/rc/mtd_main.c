@@ -308,22 +308,18 @@ int mtd_resetbc(const char *mtd)
 	fd = mtd_open(mtd, O_RDWR | O_SYNC);
 
 	if (ioctl(fd, MEMGETINFO, &mtd_info) < 0) {
-		fprintf(stderr,"Unable to obtain mtd_info for given partition name.");
+		fprintf(stderr, "Unable to obtain mtd_info for given partition name.");
 
 		retval = -1;
 		goto out;
 	}
 
-
 	/* Detect need to override increment (for EA6350v3) */
 
 	if (mtd_info.oobblock < BC_OFFSET_INCREMENT_MIN) {
-
 		bc_offset_increment = BC_OFFSET_INCREMENT_MIN;
-		fprintf(stdout,"Offset increment set to %i for writesize of %i",
-			   bc_offset_increment, mtd_info.oobblock);
+		fprintf(stdout, "Offset increment set to %i for writesize of %i", bc_offset_increment, mtd_info.oobblock);
 	} else {
-
 		bc_offset_increment = mtd_info.oobblock;
 	}
 
@@ -334,10 +330,8 @@ int mtd_resetbc(const char *mtd)
 
 		/* Existing code assumes erase is to 0xff; left as-is (2019) */
 
-		if (curr->magic != BOOTCOUNT_MAGIC &&
-		    curr->magic != 0xffffffff) {
-			fprintf(stderr,"Unexpected magic %08x at offset %08x; aborting.",
-				 curr->magic, i * bc_offset_increment);
+		if (curr->magic != BOOTCOUNT_MAGIC && curr->magic != 0xffffffff) {
+			fprintf(stderr, "Unexpected magic %08x at offset %08x; aborting.", curr->magic, i * bc_offset_increment);
 
 			retval = -2;
 			goto out;
@@ -349,17 +343,14 @@ int mtd_resetbc(const char *mtd)
 		last_count = curr->count;
 	}
 
-
-	if (last_count == 0) {	/* bootcount is already 0 */
+	if (last_count == 0) { /* bootcount is already 0 */
 
 		retval = 0;
 		goto out;
 	}
 
-
 	if (i == num_bc) {
-		fprintf(stdout,"Boot-count log full with %i entries; erasing (expected occasionally).",
-			    i);
+		fprintf(stdout, "Boot-count log full with %i entries; erasing (expected occasionally).", i);
 
 		struct erase_info_user erase_info;
 		erase_info.start = 0;
@@ -367,8 +358,7 @@ int mtd_resetbc(const char *mtd)
 
 		ret = ioctl(fd, MEMERASE, &erase_info);
 		if (ret < 0) {
-			fprintf(stderr,"Failed to erase boot-count log MTD; ioctl() MEMERASE returned %i",
-				 ret);
+			fprintf(stderr, "Failed to erase boot-count log MTD; ioctl() MEMERASE returned %i", ret);
 
 			retval = -3;
 			goto out;
@@ -387,15 +377,14 @@ int mtd_resetbc(const char *mtd)
 
 	ret = pwrite(fd, curr, bc_offset_increment, i * bc_offset_increment);
 	if (ret < 0) {
-		fprintf(stderr,"Failed to write boot-count log entry; pwrite() returned %i",
-			 errno);
+		fprintf(stderr, "Failed to write boot-count log entry; pwrite() returned %i", errno);
 		retval = -4;
 		goto out;
 
 	} else {
 		sync();
 
-		fprintf(stdout,"Boot count sucessfully reset to zero.");
+		fprintf(stdout, "Boot count sucessfully reset to zero.");
 
 		retval = 0;
 		goto out;

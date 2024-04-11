@@ -921,8 +921,8 @@ again:;
 				eval("fw_setenv", "boot_part", "2");
 			}
 		}
-	
-	break;
+
+		break;
 	case ROUTER_WRT_1900AC:
 	case ROUTER_WRT_1200AC:
 	case ROUTER_WRT_1900ACV2:
