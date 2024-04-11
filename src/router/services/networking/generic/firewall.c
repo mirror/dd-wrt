@@ -3319,8 +3319,10 @@ static void run_firewall6(char *vifs)
 	eval("ip6tables", "-t", "mangle", "-A", "FORWARD", "-p", "tcp", "-m", "tcp", "--tcp-flags", "SYN,RST", "SYN", "-j",
 	     "TCPMSS", "--clamp-mss-to-pmtu");
 
-	if (nvram_match("wan_proto", "iphone") || nvram_match("wan_proto", "android") || nvram_match("wan_proto", "3g"))
-		eval("ip6tables", "-t", "mangle", "-I", "POSTROUTING", "-j", "HL", "--hl-set", "65");
+	if (nvram_match("wan_proto", "iphone") || nvram_match("wan_proto", "android") || nvram_match("wan_proto", "3g")) {
+		eval("ip6tables", "-t", "mangle", "-D", "POSTROUTING", "-o", wanface, "-j", "HL", "--hl-set", "65");
+		eval("ip6tables", "-t", "mangle", "-I", "POSTROUTING", "-o", wanface, "-j", "HL", "--hl-set", "65");
+	}
 
 	/* Permit IMCPv6 echo requests (ping) but use but ratelimit it for preventing ping flooding */
 	eval("ip6tables", "-A", "INPUT", "-p", "ipv6-icmp", "--icmpv6-type", "128", "-j", log_accept, "-m", "limit", "--limit",
