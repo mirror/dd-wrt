@@ -215,6 +215,8 @@ define kernelfeatures
 		sed -i 's/\# CONFIG_USB_USBNET is not set/CONFIG_USB_USBNET=m/g' $(LINUXDIR)/.config; \
 		sed -i 's/\# CONFIG_USB_NET_CDC_NCM is not set/CONFIG_USB_NET_CDC_NCM=m/g' $(LINUXDIR)/.config; \
 		sed -i 's/\# CONFIG_USB_NET_RNDIS_HOST is not set/CONFIG_USB_NET_RNDIS_HOST=m/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_IP6_NF_TARGET_HL is not set/CONFIG_IP6_NF_TARGET_HL=y/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_IP_NF_TARGET_TTL is not set/CONFIG_IP_NF_TARGET_TTL=y/g' $(LINUXDIR)/.config; \
 		echo "# CONFIG_USB_VL600 is not set" >> $(LINUXDIR)/.config; \
 	fi
 	if [ "$(CONFIG_NOCAT)" = "y" ]; then \
