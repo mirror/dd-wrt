@@ -676,7 +676,9 @@ void reset_hwaddr(char *ifname)
 }
 
 #ifdef HAVE_3G
-#define CANBRIDGE() (nvram_match("wan_proto", "disabled") || nvram_match("wan_proto", "3g") || nvram_match("wan_proto", "iphone") || nvram_match("wan_proto", "android"))
+#define CANBRIDGE()                                                                                                      \
+	(nvram_match("wan_proto", "disabled") || nvram_match("wan_proto", "3g") || nvram_match("wan_proto", "iphone") || \
+	 nvram_match("wan_proto", "android"))
 #else
 #define CANBRIDGE() nvram_match("wan_proto", "disabled")
 #endif
@@ -3976,8 +3978,7 @@ void run_wan(int status)
 		if (status != REDIAL) {
 			start_redial();
 		}
-	}
-	else if (strcmp(wan_proto, "android") == 0) {
+	} else if (strcmp(wan_proto, "android") == 0) {
 		if (!nvram_matchi("usb_enable", 1)) {
 			nvram_seti("usb_enable",
 				   1); //  simply enable it, otherwise 3g might not work
@@ -3988,18 +3989,18 @@ void run_wan(int status)
 		insmod("cdc_ether");
 		insmod("cdc_ncm");
 		insmod("rndis_host");
-		int deadcount=10;
-		while(deadcount--) {
-		eval("ifconfig", "usb0", "up");
-		eval("ifconfig", "wwan0", "up");
-		if (ifexists("usb0"))
-			run_dhcpc("usb0", NULL, NULL, 1, 0, 0);
-		else if (ifexists("wwan0"))
-			run_dhcpc("wwan0", NULL, NULL, 1, 0, 0);
-		else { 
-		sleep(1);
-		continue;
-		}
+		int deadcount = 10;
+		while (deadcount--) {
+			eval("ifconfig", "usb0", "up");
+			eval("ifconfig", "wwan0", "up");
+			if (ifexists("usb0"))
+				run_dhcpc("usb0", NULL, NULL, 1, 0, 0);
+			else if (ifexists("wwan0"))
+				run_dhcpc("wwan0", NULL, NULL, 1, 0, 0);
+			else {
+				sleep(1);
+				continue;
+			}
 		}
 		if (status != REDIAL) {
 			start_redial();

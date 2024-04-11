@@ -134,8 +134,7 @@ void start_dhcpfwd(void)
 #ifdef HAVE_IPETH
 		else if (strcmp(wan_proto, "iphone") == 0) {
 			fprintf(fp, "if	iph0	false	true	true\n");
-		}
-		else if (strcmp(wan_proto, "android") == 0) {
+		} else if (strcmp(wan_proto, "android") == 0) {
 			fprintf(fp, "if	%s	false	true	true\n", safe_get_wan_face(buf));
 		}
 #endif
