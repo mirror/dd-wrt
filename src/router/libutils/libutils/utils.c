@@ -580,6 +580,21 @@ int check_wan_link(int num)
 					if ((ifr.ifr_flags & (IFF_RUNNING | IFF_UP)) == (IFF_RUNNING | IFF_UP))
 						wan_link = 1;
 					close(sock);
+					nvram_set("wwan","0");
+					break;
+				}
+				if (strstr(line, "wwan0")) {
+					int sock;
+					struct ifreq ifr;
+					if ((sock = socket(AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0)
+						break;
+					bzero(&ifr, sizeof(struct ifreq));
+					strncpy(ifr.ifr_name, "wwan0", IFNAMSIZ);
+					ioctl(sock, SIOCGIFFLAGS, &ifr);
+					if ((ifr.ifr_flags & (IFF_RUNNING | IFF_UP)) == (IFF_RUNNING | IFF_UP))
+						wan_link = 1;
+					close(sock);
+					nvram_set("wwan","1");
 					break;
 				}
 			}
