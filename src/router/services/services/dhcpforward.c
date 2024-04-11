@@ -54,6 +54,7 @@ void start_dhcpfwd(void)
 	int mdhcpcount = 0;
 	int hasfwd = 0;
 	int i;
+	char buf[32];
 	if (nvram_exists("mdhcpd_count")) {
 		mdhcpcount = nvram_geti("mdhcpd_count");
 		for (i = 0; i < mdhcpcount; i++) {
@@ -135,7 +136,7 @@ void start_dhcpfwd(void)
 			fprintf(fp, "if	iph0	false	true	true\n");
 		}
 		else if (strcmp(wan_proto, "android") == 0) {
-			fprintf(fp, "if	usb0	false	true	true\n");
+			fprintf(fp, "if	%s	false	true	true\n", safe_get_wan_face(buf));
 		}
 #endif
 #ifdef HAVE_L2TP
