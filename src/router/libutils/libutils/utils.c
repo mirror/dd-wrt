@@ -563,8 +563,7 @@ int check_wan_link(int num)
 			if (nvram_match("wan_ipaddr", "0.0.0.0") || nvram_match("wan_ipaddr", ""))
 				wan_link = 0;
 		}
-	} else
-	if (nvram_match("wan_proto", "android")) {
+	} else if (nvram_match("wan_proto", "android")) {
 		FILE *fp;
 		if ((fp = fopen("/proc/net/dev", "r"))) {
 			char line[256];
@@ -1997,13 +1996,12 @@ char *safe_get_wan_face(char *localwanface)
 #ifdef HAVE_IPETH
 	else if (nvram_match("wan_proto", "iphone")) {
 		strlcpy(localwanface, "iph0", IFNAMSIZ);
-	}
-	else if (nvram_match("wan_proto", "android")) {
+	} else if (nvram_match("wan_proto", "android")) {
 		if (ifexists("usb0"))
 			strlcpy(localwanface, "usb0", IFNAMSIZ);
 		if (ifexists("wwan0"))
 			strlcpy(localwanface, "wwan0", IFNAMSIZ);
-		
+
 	}
 #endif
 	else
