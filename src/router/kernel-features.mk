@@ -218,6 +218,30 @@ define kernelfeatures
 		sed -i 's/\# CONFIG_IP6_NF_TARGET_HL is not set/CONFIG_IP6_NF_TARGET_HL=y/g' $(LINUXDIR)/.config; \
 		sed -i 's/\# CONFIG_IP_NF_TARGET_TTL is not set/CONFIG_IP_NF_TARGET_TTL=y/g' $(LINUXDIR)/.config; \
 		echo "# CONFIG_USB_VL600 is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_USB_NET_AX8817X is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_USB_NET_AX88179_178A is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_USB_NET_CDC_EEM is not set" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_USB_NET_CDC_NCM=m" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_USB_NET_HUAWEI_CDC_NCM is not set" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_USB_NET_CDC_MBIM=m" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_USB_NET_DM9601 is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_USB_NET_SR9700 is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_USB_NET_SR9800 is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_USB_NET_SMSC75XX is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_USB_NET_SMSC95XX is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_USB_NET_GL620A is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_USB_NET_NET1080 is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_USB_NET_PLUSB is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_USB_NET_MCS7830 is not set" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_USB_NET_RNDIS_HOST=m" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_USB_NET_CDC_SUBSET is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_USB_NET_ZAURUS is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_USB_NET_CX82310_ETH is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_USB_NET_KALMIA is not set" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_USB_NET_QMI_WWAN=m" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_USB_SIERRA_NET=m" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_USB_NET_INT51X1 is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_USB_NET_CH9200 is not set" >> $(LINUXDIR)/.config; \
 	fi
 	if [ "$(CONFIG_NOCAT)" = "y" ]; then \
 		sed -i 's/\# CONFIG_IFB is not set/CONFIG_IFB=m/g' $(LINUXDIR)/.config; \
