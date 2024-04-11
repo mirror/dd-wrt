@@ -2963,7 +2963,10 @@ static void mangle_table(char *wanface, char *wanaddr, char *vifs)
 	/*
 	 * Clamp TCP MSS to PMTU of WAN interface 
 	 */
+	
 	save2file_A_forward("-p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu");
+	if (nvram_match("wan_proto","iphone") || nvram_match("wan_proto","android") || nvram_match("wan_proto","3g"))
+		save2file_I_postrouting("-o %s -j TTL --ttl-set 65", wanface);
 #ifdef HAVE_PRIVOXY
 	if ((nvram_matchi("privoxy_enable", 1)) && (nvram_matchi("wshaper_enable", 1))) {
 		save2file("-I OUTPUT -p tcp --sport 8118 -j IMQ --todev 0");
@@ -3315,6 +3318,10 @@ static void run_firewall6(char *vifs)
 	     "TCPMSS", "--clamp-mss-to-pmtu");
 	eval("ip6tables", "-t", "mangle", "-A", "FORWARD", "-p", "tcp", "-m", "tcp", "--tcp-flags", "SYN,RST", "SYN", "-j",
 	     "TCPMSS", "--clamp-mss-to-pmtu");
+
+	if (nvram_match("wan_proto","iphone") || nvram_match("wan_proto","android") || nvram_match("wan_proto","3g"))
+		eval("ip6tables","-t","mangle","-I","POSTROUTING","-j","HL","--hl-set","65");
+
 	/* Permit IMCPv6 echo requests (ping) but use but ratelimit it for preventing ping flooding */
 	eval("ip6tables", "-A", "INPUT", "-p", "ipv6-icmp", "--icmpv6-type", "128", "-j", log_accept, "-m", "limit", "--limit",
 	     "30/minute");
