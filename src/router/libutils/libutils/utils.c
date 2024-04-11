@@ -580,7 +580,6 @@ int check_wan_link(int num)
 					if ((ifr.ifr_flags & (IFF_RUNNING | IFF_UP)) == (IFF_RUNNING | IFF_UP))
 						wan_link = 1;
 					close(sock);
-					nvram_set("wwan","0");
 					break;
 				}
 				if (strstr(line, "wwan0")) {
@@ -594,7 +593,6 @@ int check_wan_link(int num)
 					if ((ifr.ifr_flags & (IFF_RUNNING | IFF_UP)) == (IFF_RUNNING | IFF_UP))
 						wan_link = 1;
 					close(sock);
-					nvram_set("wwan","1");
 					break;
 				}
 			}
@@ -2001,7 +1999,11 @@ char *safe_get_wan_face(char *localwanface)
 		strlcpy(localwanface, "iph0", IFNAMSIZ);
 	}
 	else if (nvram_match("wan_proto", "android")) {
-		strlcpy(localwanface, "usb0", IFNAMSIZ);
+		if (ifexists("usb0"))
+			strlcpy(localwanface, "usb0", IFNAMSIZ);
+		if (ifexists("wwan0"))
+			strlcpy(localwanface, "wwan0", IFNAMSIZ);
+		
 	}
 #endif
 	else
