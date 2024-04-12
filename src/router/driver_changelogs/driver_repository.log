@@ -1,4 +1,16 @@
 ------------------------------------------------------------------------
+r7772 | brainslayer | 2024-04-12 12:31:58 +0700 (Fri, 12 Apr 2024) | 1 line
+
+remove bad patch from ben
+------------------------------------------------------------------------
+r7771 | brainslayer | 2024-04-12 12:28:51 +0700 (Fri, 12 Apr 2024) | 1 line
+
+this patch by ben grear breaks eapol frames if they are unencrypted
+------------------------------------------------------------------------
+r7770 | brainslayer | 2024-04-12 12:12:33 +0700 (Fri, 12 Apr 2024) | 1 line
+
+format code
+------------------------------------------------------------------------
 r7769 | brainslayer | 2024-04-11 17:56:03 +0700 (Thu, 11 Apr 2024) | 1 line
 
 allow vht160 for 9984 no matter what vendor says
