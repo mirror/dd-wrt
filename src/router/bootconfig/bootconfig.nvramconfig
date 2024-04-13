@@ -11,3 +11,4 @@
 "boot_l1tf" "l1tf mitigation" "CHOICE" "2" "0" "1"  "FALSE" "0"
 "boot_pstate" "enforce amd pstate" "CHOICE" "2" "0" "1"  "FALSE" "0"
 "boot_nospec_store_bypass_disable" "l1tf mitigation" "CHOICE" "2" "0" "1" "FALSE" "0"
+"boot_nopti" "pti mitigation" "CHOICE" "2" "0" "1" "FALSE" "0"

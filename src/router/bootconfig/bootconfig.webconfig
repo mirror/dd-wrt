@@ -70,4 +70,9 @@
 		<input class="spaceradio" type="radio" value="0" name="boot_nospec_store_bypass_disable" <% nvram_checked("boot_nospec_store_bypass_disable","0"); %> /><% tran("share.deflt"); %>&nbsp;
 		<input class="spaceradio" type="radio" value="1" name="boot_nospec_store_bypass_disable" <% nvram_checked("boot_nospec_store_bypass_disable","1"); %> /><% tran("share.disabled"); %>
 	</div>
+	<div class="setting">
+		<div class="label"><% tran("management.nopti"); %></div>
+		<input class="spaceradio" type="radio" value="0" name="boot_nopti" <% nvram_checked("boot_nopti","0"); %> /><% tran("share.deflt"); %>&nbsp;
+		<input class="spaceradio" type="radio" value="1" name="boot_nopti" <% nvram_checked("boot_nopti","1"); %> /><% tran("share.disabled"); %>
+	</div>
 </fieldset><br/>
