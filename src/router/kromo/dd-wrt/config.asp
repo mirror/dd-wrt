@@ -48,12 +48,12 @@ addEvent(window, "unload", function() {
 							<fieldset>
 								<legend><% tran("config.legend2"); %></legend>
 								<div class="setting">
-									<div class="label"><% tran("config.mess2"); %></div>
-									<input type="file" name="file" size="40" />
-								</div>
-								<div class="setting">
 									<div class="label"><% tran("config.force"); %></div>
 									<input type="checkbox" value="1" name="force" />
+								</div>
+								<div class="setting">
+									<div class="label"><% tran("config.mess2"); %></div>
+									<input type="file" name="file" size="40" />
 								</div>
 							</fieldset><br />
 							<div class="warning">
