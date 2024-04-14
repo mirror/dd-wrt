@@ -506,6 +506,8 @@ static int decode_seq(bitstr_t *bs, const struct field_t *f,
 	ext = (f->attr & EXT) ? get_bit(bs) : 0;
 
 	/* Get fields bitmap */
+	if (f->sz > 32)
+		return H323_ERROR_RANGE;
 	bmp = get_bitmap(bs, f->sz);
 	if (base)
 		*(unsigned int *)base = bmp;
@@ -557,6 +559,8 @@ static int decode_seq(bitstr_t *bs, const struct field_t *f,
 	/* Get the extension bitmap */
 	bmp2_len = get_bits(bs, 7) + 1;
 	CHECK_BOUND(bs, (bmp2_len + 7) >> 3);
+	if (bmp2_len > 32)
+		return H323_ERROR_RANGE;
 	bmp2 = get_bitmap(bs, bmp2_len);
 	bmp |= bmp2 >> f->sz;
 	if (base)

@@ -43,3 +43,7 @@ d1f0467fd | btrfs: check if root is readonly while setting security xattr
 35529d6b8 | nfc: pn533: Wait for out_urb's completion in pn533_usb_send_frame()
 74a10924f | x86/speculation: Add force option to GDS mitigation
 d19a80db7 | netfilter: nf_tables: incorrect error path handling with NFT_MSG_NEWRULE
+5cbe4f220 | jbd2: fix potential data lost in recovering journal raced with synchronizing fs bdev
+
+4.19.y:
+f8f51085b | lsm: new security_file_ioctl_compat() hook

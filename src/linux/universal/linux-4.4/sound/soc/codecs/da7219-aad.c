@@ -575,7 +575,7 @@ static struct da7219_aad_pdata *da7219_aad_of_to_pdata(struct snd_soc_codec *cod
 		aad_pdata->mic_det_thr =
 			da7219_aad_of_mic_det_thr(codec, of_val32);
 	else
-		aad_pdata->mic_det_thr = DA7219_AAD_MIC_DET_THR_500_OHMS;
+		aad_pdata->mic_det_thr = DA7219_AAD_MIC_DET_THR_200_OHMS;
 
 	if (of_property_read_u32(aad_np, "dlg,jack-ins-deb", &of_val32) >= 0)
 		aad_pdata->jack_ins_deb =

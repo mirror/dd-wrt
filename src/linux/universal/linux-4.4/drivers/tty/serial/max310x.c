@@ -1236,7 +1236,7 @@ static int max310x_probe(struct device *dev, struct max310x_devtype *devtype,
 	if (!ret)
 		return 0;
 
-	dev_err(dev, "Unable to reguest IRQ %i\n", irq);
+	dev_err(dev, "Unable to request IRQ %i\n", irq);
 
 	mutex_destroy(&s->mutex);
 

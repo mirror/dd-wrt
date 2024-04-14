@@ -4356,7 +4356,7 @@ static int i40e_pf_wait_txq_disabled(struct i40e_pf *pf)
 {
 	int v, ret = 0;
 
-	for (v = 0; v < pf->hw.func_caps.num_vsis; v++) {
+	for (v = 0; v < pf->num_alloc_vsi; v++) {
 		/* No need to wait for FCoE VSI queues */
 		if (pf->vsi[v] && pf->vsi[v]->type != I40E_VSI_FCOE) {
 			ret = i40e_vsi_wait_txq_disabled(pf->vsi[v]);

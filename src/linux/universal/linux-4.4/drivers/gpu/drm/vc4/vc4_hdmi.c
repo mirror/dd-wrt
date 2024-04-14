@@ -196,7 +196,7 @@ static int vc4_hdmi_connector_get_modes(struct drm_connector *connector)
 
 	edid = drm_get_edid(connector, vc4->hdmi->ddc);
 	if (!edid)
-		return -ENODEV;
+		return 0;
 
 	vc4_encoder->hdmi_monitor = drm_detect_hdmi_monitor(edid);
 	drm_mode_connector_update_edid_property(connector, edid);

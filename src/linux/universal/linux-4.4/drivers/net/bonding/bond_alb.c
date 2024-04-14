@@ -986,7 +986,8 @@ static void alb_send_learning_packets(struct slave *slave, u8 mac_addr[],
 		if (netif_is_macvlan(upper) && !strict_match) {
 			tags = bond_verify_device_path(bond->dev, upper, 0);
 			if (IS_ERR_OR_NULL(tags))
-				BUG();
+				break;
+
 			alb_send_lp_vid(slave, upper->dev_addr,
 					tags[0].vlan_proto, tags[0].vlan_id);
 			kfree(tags);
