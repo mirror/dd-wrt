@@ -52,6 +52,10 @@ addEvent(window, "unload", function() {
 									<input type="checkbox" value="1" name="force" />
 								</div>
 								<div class="setting">
+									<div class="label"><% tran("config.keepip"); %></div>
+									<input type="checkbox" value="1" name="keepip" />
+								</div>
+								<div class="setting">
 									<div class="label"><% tran("config.mess2"); %></div>
 									<input type="file" name="file" size="40" />
 								</div>
