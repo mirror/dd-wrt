@@ -3299,8 +3299,8 @@ static void sd_read_block_zero(struct scsi_disk *sdkp)
 	put_unaligned_be32(0, &cmd[2]); /* Logical block address 0 */
 	put_unaligned_be16(1, &cmd[7]);	/* Transfer 1 logical block */
 
-	scsi_execute_cmd(sdkp->device, cmd, REQ_OP_DRV_IN, buffer, buf_len,
-			 SD_TIMEOUT, sdkp->max_retries, NULL);
+	scsi_execute_req(sdkp->device, cmd, DMA_FROM_DEVICE, buffer, buf_len,
+			 NULL, SD_TIMEOUT, sdkp->max_retries, NULL);
 	kfree(buffer);
 }
 
