@@ -134,7 +134,7 @@ static int nv_file_in(char *url, webs_t wp, size_t len, char *boundary)
 				buf[1] = '\0'; // we only want the 1st digit
 				keepip = atoi(buf);
 				dd_syslog(LOG_INFO, "keep router ip %d", force);
-			else if (strstr(buf, "name=\"force\"")) {
+			} else if (strstr(buf, "name=\"force\"")) {
 				while (len > 0 && strcmp(buf, "\n") && strcmp(buf, "\r\n")) {
 					if (!wfgets(buf, MIN(len + 1, 1024), wp, NULL)) {
 						debug_free(buf);
