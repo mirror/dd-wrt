@@ -103,7 +103,7 @@ static int nv_file_in(char *url, webs_t wp, size_t len, char *boundary)
 	char buf[1024];
 	wp->restore_ret = EINVAL;
 	int force = 0;
-	int keepip;
+	int keepip = 0;
 #ifdef HAVE_REGISTER
 	if (!wp->isregistered_real) {
 		return -1;
@@ -191,14 +191,16 @@ static int nv_file_in(char *url, webs_t wp, size_t len, char *boundary)
 		xorFileMove("/tmp/restore.bin", 'K');
 #endif /*HAVE_ANTAIRA */
 	char lanip[64];
-	strncpy(lanip,64, nvram_safe_get("lan_ipaddr");
+	strncpy(lanip, 64, nvram_safe_get("lan_ipaddr"));
 	int ret = nvram_restore("/tmp/restore.bin", force);
 	if (ret < 0)
 		wp->restore_ret = 99;
 	else
 		wp->restore_ret = 0;
-	nvram_set("lan_ipaddr", lanip);
-	nvram commit();
+	if (keepip) {
+		nvram_set("lan_ipaddr", lanip);
+		nvram commit();
+	}
 	unlink("/tmp/restore.bin");
 	eval("sync");
 	eval("umount", "/usr/local");
