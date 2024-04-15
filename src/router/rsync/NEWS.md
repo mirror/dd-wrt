@@ -1,4 +1,4 @@
-# NEWS for rsync 3.3.0 (UNRELEASED)
+# NEWS for rsync 3.3.0 (6 Apr 2024)
 
 ## Changes in this version:
 
@@ -10,11 +10,17 @@
 - Fixed an buffer overflow in the checksum2 code if SHA1 is being used for
   the checksum2 algorithm.
 
-- Fixed a string-comparison issue in the internal file-list code that affected
-  tr_TR.utf-8.
+- Fixed an issue when rsync is compiled using `_FORTIFY_SOURCE` so that the
+  extra tests don't complain about a strlcpy() limit value (which was too
+  large, even though it wasn't possible for the larger value to cause an
+  overflow).
 
 - Add a backtick to the list of characters that the filename quoting needs to
   escape using backslashes.
+
+- Fixed a string-comparison issue in the internal handling of `--progress` (a
+  locale such as tr_TR.utf-8 needed the internal triggering of `--info` options
+  to use upper-case flag names to ensure that they match).
 
 - Make sure that a local transfer marks the sender side as trusted.
 
@@ -25,9 +31,11 @@
   openssl library.
 
 - Fixed a problem in the daemon auth for older protocols (29 and before) if the
-  openssl library is being used to compute md4 checksums.
+  openssl library is being used to compute MD4 checksums.
 
 - Fixed `rsync -VV` on Cygwin -- it needed a flush of stdout.
+
+- Fixed an old stats bug that counted devices as symlinks.
 
 ### ENHANCEMENTS:
 
@@ -45,6 +53,13 @@
 
 - Changed the mapfrom & mapto perl scripts (in the support dir) into a single
   python script named idmap.  Converted a couple more perl scripts into python.
+
+- Changed the mnt-excl perl script (in the support dir) into a python script.
+
+### DEVELOPER RELATED:
+
+ - Updated config.guess (timestamp 2023-01-01) and config.sub (timestamp
+   2023-01-21).
 
 ------------------------------------------------------------------------------
 
@@ -100,7 +115,7 @@
 
 - The `--fuzzy` option was optimized a bit to try to cut down on the amount of
   computations when considering a big pool of files. The simple heuristic from
-  Kenneth Finnegan resuled in about a 2x speedup.
+  Kenneth Finnegan resulted in about a 2x speedup.
 
 - If rsync is forced to use protocol 29 or before (perhaps due to talking to an
   rsync before 3.0.0), the modify time of a file is limited to 4-bytes.  Rsync
@@ -4747,7 +4762,7 @@
 
 | RELEASE DATE | VER.   | DATE OF COMMIT\* | PROTOCOL    |
 |--------------|--------|------------------|-------------|
-| ?? May 2023  | 3.3.0  |                  | 31          |
+| 06 Apr 2024  | 3.3.0  |                  | 31          |
 | 20 Oct 2022  | 3.2.7  |                  | 31          |
 | 09 Sep 2022  | 3.2.6  |                  | 31          |
 | 14 Aug 2022  | 3.2.5  |                  | 31          |

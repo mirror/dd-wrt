@@ -1,4 +1,4 @@
-.TH "rsync" "1" "29 Apr 2023" "rsync 3.3.0pre1" "User Commands"
+.TH "rsync" "1" "6 Apr 2024" "rsync 3.3.0" "User Commands"
 .\" prefix=/usr
 .P
 .SH "NAME"
@@ -308,7 +308,7 @@ to be copied to different destination directories using more than one copy.
 .P
 While a copy of a case-ignoring filesystem to a case-ignoring filesystem can
 work out fairly well, if no \fB\-\-delete-during\fP or \fB\-\-delete-before\fP option is
-active, rsync can potentially update an existing file on the receiveing side
+active, rsync can potentially update an existing file on the receiving side
 without noticing that the upper-/lower-case of the filename should be changed
 to match the sender.
 .P
@@ -2157,7 +2157,8 @@ memory.  It is a sanity-check value for each individual allocation.
 See the \fB\-\-max-size\fP option for a description of how SIZE can be
 specified.  The default suffix if none is given is bytes.
 .IP
-Beginning in 3.2.3, a value of 0 specifies no limit.
+Beginning in 3.2.7, a value of 0 is an easy way to specify SIZE_MAX (the
+largest limit possible).
 .IP
 You can set a default value using the environment variable
 \fBRSYNC_MAX_ALLOC\fP using the same SIZE values as supported by this
@@ -5010,7 +5011,7 @@ Please report bugs! See the web site at
 .P
 .SH "VERSION"
 .P
-This manpage is current for version 3.3.0pre1 of rsync.
+This manpage is current for version 3.3.0 of rsync.
 .P
 .SH "INTERNAL OPTIONS"
 .P

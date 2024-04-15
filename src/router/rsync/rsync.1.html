@@ -256,7 +256,7 @@ the <a href="#opt--files-from"><code>--files-from</code></a> option.  Any files 
 to be copied to different destination directories using more than one copy.</p>
 <p>While a copy of a case-ignoring filesystem to a case-ignoring filesystem can
 work out fairly well, if no <code>--delete-during</code> or <code>--delete-before</code> option is
-active, rsync can potentially update an existing file on the receiveing side
+active, rsync can potentially update an existing file on the receiving side
 without noticing that the upper-/lower-case of the filename should be changed
 to match the sender.</p>
 <h2 id="ADVANCED_USAGE">ADVANCED USAGE<a href="#ADVANCED_USAGE" class="tgt"></a></h2>
@@ -1979,7 +1979,8 @@ consume more memory.</p>
 memory.  It is a sanity-check value for each individual allocation.</p>
 <p>See the <a href="#opt--max-size"><code>--max-size</code></a> option for a description of how SIZE can be
 specified.  The default suffix if none is given is bytes.</p>
-<p>Beginning in 3.2.3, a value of 0 specifies no limit.</p>
+<p>Beginning in 3.2.7, a value of 0 is an easy way to specify SIZE_MAX (the
+largest limit possible).</p>
 <p>You can set a default value using the environment variable
 <a href="#RSYNC_MAX_ALLOC"><code>RSYNC_MAX_ALLOC</code></a> using the same SIZE values as supported by this
 option.  If the remote rsync doesn't understand the <code>--max-alloc</code> option,
@@ -4478,7 +4479,7 @@ the comments on the <a href="#opt--modify-window"><code>--modify-window</code></
 </ul>
 <p>Please report bugs! See the web site at <a href="https://rsync.samba.org/">https://rsync.samba.org/</a>.</p>
 <h2 id="VERSION">VERSION<a href="#VERSION" class="tgt"></a></h2>
-<p>This manpage is current for version 3.3.0pre1 of rsync.</p>
+<p>This manpage is current for version 3.3.0 of rsync.</p>
 <h2 id="INTERNAL_OPTIONS">INTERNAL OPTIONS<a href="#INTERNAL_OPTIONS" class="tgt"></a></h2>
 <p>The options <code>--server</code> and <code>--sender</code> are used internally by rsync, and should
 never be typed by a user under normal circumstances.  Some awareness of these
@@ -4509,5 +4510,5 @@ people have later contributed to it. It is currently maintained by Wayne
 Davison.</p>
 <p>Mailing lists for support and development are available at
 <a href="https://lists.samba.org/">https://lists.samba.org/</a>.</p>
-<div style="float: right"><p><i>29 Apr 2023</i></p></div>
+<div style="float: right"><p><i>6 Apr 2024</i></p></div>
 </body></html>
