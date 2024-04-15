@@ -1,0 +1,40 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html><head>
+<meta type="copyright" content="Copyright (C) 1996-2023 The Squid Software Foundation and contributors">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title>NAPAKA: Zahtevanega naslova URL ni bilo mogoče naložiti.</title>
+<style type="text/css"><!-- 
+ %l
+
+body
+:lang(fa) { direction: rtl; font-size: 100%; font-family: Tahoma, Roya, sans-serif; float: right; }
+:lang(he) { direction: rtl; }
+ --></style>
+</head><body id="%c">
+<div id="titles">
+<h1>NAPAKA</h1>
+<h2>Zahtevanega naslova URL ni bilo mogoče naložiti</h2>
+</div>
+<hr>
+
+<div id="content">
+<p>Prišlo je do napake med poskusom nalaganja naslova URL: <a href="%U">%U</a></p>
+
+<blockquote id="error">
+<p><b>Napaka pri pisanju</b></p>
+</blockquote>
+
+<p id="sysmsg">Sistem je odvrnil: <i>%E</i></p>
+
+<p>Med pisanjem v omrežje je prišlo do napake. Ponovite zahtevo!</p>
+
+<p>Skrbnik vašega predpomnilnika je <a href="mailto:%w%W">%w</a>.</p>
+<br>
+</div>
+
+<hr>
+<div id="footer">
+<p>Ustvaril %h (%s) dne %T</p>
+<!-- %c -->
+</div>
+</body></html>

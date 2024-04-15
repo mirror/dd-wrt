@@ -1,0 +1,60 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html><head>
+<meta type="copyright" content="Copyright (C) 1996-2023 The Squid Software Foundation and contributors">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title>Վեբ բրաուզերի կարգաբերումներ</title>
+<style type="text/css"><!--
+ %l
+
+body
+:lang(fa) { direction: rtl; font-size: 100%; font-family: Tahoma, Roya, sans-serif; float: right; }
+:lang(he) { direction: rtl; }
+ --></style>
+</head><body id="%c">
+<div id="titles">
+<h1>ՍԽԱԼ</h1>
+<h2>Վեբ բրաուզերի կարգաբերումներ</h2>
+</div>
+<hr>
+
+<div id="content">
+<blockquote id="error">
+<p>Այս ցանցից օգտվելու համար Ձեր բրաուզերը անհրաժեշտ է կարգաբերել</p>
+</blockquote>
+
+<p>Ինչպես փնտրել այս կարգաբերումները քո բրաուզերում:</p>
+
+<div id="firefox">
+For Firefox browsers go to:
+<ul>
+<li>Գործիքներ -&gt; Կարգաբերումներ -&gt; Լրացուցիչ -&gt; Ցանց -&gt; Կապի կարգաբերումներ</li>
+<li>HTTP proxy դաշտում նշիր proxy name %h և port %b.</li>
+</ul>
+</div>
+
+<div id="microsoft">
+For Internet Explorer browsers go to:
+<ul>
+<li>Գործիքներ -&gt; Ինտերնետ կարգաբերումներ -&gt; Կապ -&gt; LAN կարգաբերումներ -&gt;Պրոքսի</li>
+<li>HTTP proxy դաշտում նշիր proxy name %h և port %b.</li>
+</ul>
+</div>
+
+<div id="opera">
+For Opera browsers go to:
+<ul>
+<li>Գործիքներ -&gt; Նախընտրություններ -&gt; Լրացուցիչ -&gt; Ցանց -&gt; Պրոքսի սերվերներ</li>
+<li>HTTP proxy դաշտում նշիր proxy name %h և port %b.</li>
+</ul>
+</div>
+
+<p>Ձեր քեշի կառավարիչը <a href="mailto:%w%W">%w</a> է.</p>
+<br>
+</div>
+
+<hr>
+<div id="footer">
+<p>Ստեղծված է %T by %h (%s)</p>
+<!-- %c -->
+</div>
+</body></html>

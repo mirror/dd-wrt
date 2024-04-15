@@ -6638,8 +6638,9 @@ maintainer-clean-generic:
 clean: clean-recursive
 
 clean-am: clean-binPROGRAMS clean-checkPROGRAMS clean-generic \
-	clean-libexecPROGRAMS clean-libtool clean-noinstLTLIBRARIES \
-	clean-noinstPROGRAMS clean-sbinPROGRAMS mostlyclean-am
+	clean-libexecPROGRAMS clean-libtool clean-local \
+	clean-noinstLTLIBRARIES clean-noinstPROGRAMS \
+	clean-sbinPROGRAMS mostlyclean-am
 
 distclean: distclean-recursive
 		-rm -f ./$(DEPDIR)/AccessLogEntry.Po
@@ -7260,25 +7261,25 @@ uninstall-man: uninstall-man8
 .PHONY: $(am__recursive_targets) CTAGS GTAGS TAGS all all-am \
 	am--depfiles check check-TESTS check-am clean \
 	clean-binPROGRAMS clean-checkPROGRAMS clean-generic \
-	clean-libexecPROGRAMS clean-libtool clean-noinstLTLIBRARIES \
-	clean-noinstPROGRAMS clean-sbinPROGRAMS cscopelist-am ctags \
-	ctags-am distclean distclean-compile distclean-generic \
-	distclean-libtool distclean-tags distdir dvi dvi-am html \
-	html-am info info-am install install-am install-binPROGRAMS \
-	install-data install-data-am install-data-local \
-	install-dataDATA install-dvi install-dvi-am install-exec \
-	install-exec-am install-html install-html-am install-info \
-	install-info-am install-libexecPROGRAMS install-man \
-	install-man8 install-pdf install-pdf-am install-ps \
-	install-ps-am install-sbinPROGRAMS install-strip \
-	install-sysconfDATA installcheck installcheck-am installdirs \
-	installdirs-am maintainer-clean maintainer-clean-generic \
-	mostlyclean mostlyclean-compile mostlyclean-generic \
-	mostlyclean-libtool pdf pdf-am ps ps-am recheck tags tags-am \
-	uninstall uninstall-am uninstall-binPROGRAMS \
-	uninstall-dataDATA uninstall-libexecPROGRAMS uninstall-local \
-	uninstall-man uninstall-man8 uninstall-sbinPROGRAMS \
-	uninstall-sysconfDATA
+	clean-libexecPROGRAMS clean-libtool clean-local \
+	clean-noinstLTLIBRARIES clean-noinstPROGRAMS \
+	clean-sbinPROGRAMS cscopelist-am ctags ctags-am distclean \
+	distclean-compile distclean-generic distclean-libtool \
+	distclean-tags distdir dvi dvi-am html html-am info info-am \
+	install install-am install-binPROGRAMS install-data \
+	install-data-am install-data-local install-dataDATA \
+	install-dvi install-dvi-am install-exec install-exec-am \
+	install-html install-html-am install-info install-info-am \
+	install-libexecPROGRAMS install-man install-man8 install-pdf \
+	install-pdf-am install-ps install-ps-am install-sbinPROGRAMS \
+	install-strip install-sysconfDATA installcheck installcheck-am \
+	installdirs installdirs-am maintainer-clean \
+	maintainer-clean-generic mostlyclean mostlyclean-compile \
+	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
+	recheck tags tags-am uninstall uninstall-am \
+	uninstall-binPROGRAMS uninstall-dataDATA \
+	uninstall-libexecPROGRAMS uninstall-local uninstall-man \
+	uninstall-man8 uninstall-sbinPROGRAMS uninstall-sysconfDATA
 
 .PRECIOUS: Makefile
 
@@ -7381,6 +7382,9 @@ install-data-local: install-sysconfDATA install-dataDATA
 uninstall-local: squid.conf.default
 	@$(SHELL) $(top_srcdir)/scripts/remove-cfg.sh "$(RM)" $(DESTDIR)$(DEFAULT_MIME_TABLE) $(srcdir)/mime.conf.default
 	@$(SHELL) $(top_srcdir)/scripts/remove-cfg.sh "$(RM)" $(DESTDIR)$(DEFAULT_CONFIG_FILE) squid.conf.default
+
+clean-local:
+	-rm -rf cf_gen.dSYM
 
 test_tools.cc: $(top_srcdir)/test-suite/test_tools.cc
 	cp $(top_srcdir)/test-suite/test_tools.cc .

@@ -1,0 +1,40 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html><head>
+<meta type="copyright" content="Copyright (C) 1996-2023 The Squid Software Foundation and contributors">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title>FEL: Beg&auml;rd URL kunde inte h&auml;mtas</title>
+<style type="text/css"><!-- 
+ %l
+
+body
+:lang(fa) { direction: rtl; font-size: 100%; font-family: Tahoma, Roya, sans-serif; float: right; }
+:lang(he) { direction: rtl; }
+ --></style>
+</head><body id="%c">
+<div id="titles">
+<h1>FEL</h1>
+<h2>Den beg&auml;rda URL:en kunde inte h&auml;mtas</h2>
+</div>
+<hr>
+
+<div id="content">
+<p><b>Felaktigt Svarsmeddelande</b> fel p&aring;tr&auml;ffades n&auml;r f&ouml;rfr&aring;gan skulle behandlas:</p>
+
+<blockquote id="data">
+<pre>%R</pre>
+</blockquote>
+
+<p>HTTP svarsmeddelandet ifr&aring;n den kontaktade servern &auml;r felaktigt och kunde inte tolkas. V&auml;nligen kontakta den ansvariga f&ouml;r webbservern ifr&aring;ga.</p>
+
+<p>Din cacheserver administrat&ouml;r man eventuellt ge dig mera information om det specifika problemet med denna sida.</p>
+
+<p>Din cacheserver administrat&ouml;r &auml;r <a href="mailto:%w%W">%w</a>.</p>
+<br>
+</div>
+
+<hr>
+<div id="footer">
+<p>Skapad %T av %h (%s)</p>
+<!-- %c -->
+</div>
+</body></html>

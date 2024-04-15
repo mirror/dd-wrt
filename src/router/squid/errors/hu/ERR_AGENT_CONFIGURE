@@ -1,0 +1,60 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html><head>
+<meta type="copyright" content="Copyright (C) 1996-2023 The Squid Software Foundation and contributors">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title>A böngésző konfigurálása</title>
+<style type="text/css"><!--
+ %l
+
+body
+:lang(fa) { direction: rtl; font-size: 100%; font-family: Tahoma, Roya, sans-serif; float: right; }
+:lang(he) { direction: rtl; }
+ --></style>
+</head><body id="%c">
+<div id="titles">
+<h1>HIBA</h1>
+<h2>A böngésző konfigurálása</h2>
+</div>
+<hr>
+
+<div id="content">
+<blockquote id="error">
+<p>A hálózat használatához módosítania kell a böngésző beállításait.</p>
+</blockquote>
+
+<p>Ezeket a beállításokat az alábbi menüpontokon keresztül találhatja meg:</p>
+
+<div id="firefox">
+For Firefox browsers go to:
+<ul>
+<li>Eszközök -&gt; Beállítások -&gt; Fejlett -&gt; Hálózat -&gt; Kapcsolatbeállítások</li>
+<li>A HTTP proxy mezőben adja meg a proxy nevét (%h) és portszámát (%b).</li>
+</ul>
+</div>
+
+<div id="microsoft">
+For Internet Explorer browsers go to:
+<ul>
+<li>Eszközök -&gt; Internetbeállítások -&gt; Kapcsolat -&gt; Helyi hálózat beállításai -&gt; Proxy</li>
+<li>A HTTP proxy mezőben adja meg a proxy nevét (%h) és portszámát (%b).</li>
+</ul>
+</div>
+
+<div id="opera">
+For Opera browsers go to:
+<ul>
+<li>Eszközök -&gt; Beállítások -&gt; Fejlett -&gt; Hálózat -&gt; Proxyszerverek</li>
+<li>A HTTP proxy mezőben adja meg a proxy nevét (%h) és portszámát (%b).</li>
+</ul>
+</div>
+
+<p>A proxyszerver üzemeltetőjének e-mail címe: <a href="mailto:%w%W">%w</a>.</p>
+<br>
+</div>
+
+<hr>
+<div id="footer">
+<p>Dátum: %T, szerveradatok: %h (%s)</p>
+<!-- %c -->
+</div>
+</body></html>

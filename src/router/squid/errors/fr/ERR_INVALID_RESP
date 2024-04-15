@@ -1,0 +1,40 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html><head>
+<meta type="copyright" content="Copyright (C) 1996-2023 The Squid Software Foundation and contributors">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title>ERREUR : l'URL demandée n'a pas pu être chargée</title>
+<style type="text/css"><!-- 
+ %l
+
+body
+:lang(fa) { direction: rtl; font-size: 100%; font-family: Tahoma, Roya, sans-serif; float: right; }
+:lang(he) { direction: rtl; }
+ --></style>
+</head><body id="%c">
+<div id="titles">
+<h1>ERREUR</h1>
+<h2>L'URL demandée n'a pas pu être trouvée</h2>
+</div>
+<hr>
+
+<div id="content">
+<p><b>Réponse invalide</b> une erreur a été rencontrée en essayant de traiter la requête :</p>
+
+<blockquote id="data">
+<pre>%R</pre>
+</blockquote>
+
+<p>La réponse HTTP reçu, qui a été envoyée par le serveur n'a pas pu être compris ou a été mal formulé. Veuillez contacter le responsable du site.</p>
+
+<p>Si nécessaire, votre administrateur proxy peut vous fournir plus de détails sur la nature exacte du problème.</p>
+
+<p>Votre administrateur proxy est <a href="mailto:%w%W">%w</a>.</p>
+<br>
+</div>
+
+<hr>
+<div id="footer">
+<p>Générée le %T par %h (%s)</p>
+<!-- %c -->
+</div>
+</body></html>

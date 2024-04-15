@@ -1,0 +1,38 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html><head>
+<meta type="copyright" content="Copyright (C) 1996-2023 The Squid Software Foundation and contributors">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title>NAPAKA: Zahtevanega naslova URL ni bilo mogoče naložiti.</title>
+<style type="text/css"><!-- 
+ %l
+
+body
+:lang(fa) { direction: rtl; font-size: 100%; font-family: Tahoma, Roya, sans-serif; float: right; }
+:lang(he) { direction: rtl; }
+ --></style>
+</head><body id="%c">
+<div id="titles">
+<h1>NAPAKA</h1>
+<h2>Zahtevanega naslova URL ni bilo mogoče naložiti</h2>
+</div>
+<hr>
+
+<div id="content">
+<p>Prišlo je do napake med poskusom nalaganja naslova URL: <a href="%U">%U</a></p>
+
+<blockquote id="error">
+<p><b>V predpomnilniku ni najti veljavnega dokumenta, podana pa je bila direktiva <q>only-if-cached</q>.</b></p>
+</blockquote>
+
+<p>Podali ste zahtevo s predpomnilniško kontrolno direktivo <q>only-if-cached</q>. Dokumenta ni bilo mogoče najti v predpomnilniku <em>ali pa</em> je zahteval ponovno preverjanje, ki ga direktiva <q>only-if-cached</q> ne dopušča.</p>
+
+<p>Skrbnik vašega predpomnilnika je <a href="mailto:%w%W">%w</a>.</p>
+<br>
+</div>
+
+<hr>
+<div id="footer">
+<p>Ustvaril %h (%s) dne %T</p>
+<!-- %c -->
+</div>
+</body></html>

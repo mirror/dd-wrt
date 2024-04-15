@@ -184,10 +184,6 @@ AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
 am__v_lt_0 = --silent
 am__v_lt_1 = 
-negotiate_kerberos_auth_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX \
-	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CXXLD) \
-	$(AM_CXXFLAGS) $(CXXFLAGS) $(negotiate_kerberos_auth_LDFLAGS) \
-	$(LDFLAGS) -o $@
 am_negotiate_kerberos_auth_test_OBJECTS =  \
 	negotiate_kerberos_auth_test.$(OBJEXT)
 negotiate_kerberos_auth_test_OBJECTS =  \
@@ -196,10 +192,6 @@ negotiate_kerberos_auth_test_DEPENDENCIES =  \
 	$(top_builddir)/lib/libmiscencoding.la $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_2) $(am__DEPENDENCIES_2) \
 	$(am__DEPENDENCIES_2)
-negotiate_kerberos_auth_test_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX \
-	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CXXLD) \
-	$(AM_CXXFLAGS) $(CXXFLAGS) \
-	$(negotiate_kerberos_auth_test_LDFLAGS) $(LDFLAGS) -o $@
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -773,7 +765,6 @@ negotiate_kerberos_auth_SOURCES = \
 	negotiate_kerberos_auth.cc \
 	negotiate_kerberos_pac.cc
 
-negotiate_kerberos_auth_LDFLAGS = 
 negotiate_kerberos_auth_LDADD = \
 	$(top_builddir)/lib/libmiscencoding.la \
 	$(COMPAT_LIB) \
@@ -784,7 +775,6 @@ negotiate_kerberos_auth_LDADD = \
 negotiate_kerberos_auth_test_SOURCES = \
 	negotiate_kerberos_auth_test.cc
 
-negotiate_kerberos_auth_test_LDFLAGS = 
 negotiate_kerberos_auth_test_LDADD = \
 	$(top_builddir)/lib/libmiscencoding.la \
 	$(COMPAT_LIB) \
@@ -888,11 +878,11 @@ clean-libexecPROGRAMS:
 
 negotiate_kerberos_auth$(EXEEXT): $(negotiate_kerberos_auth_OBJECTS) $(negotiate_kerberos_auth_DEPENDENCIES) $(EXTRA_negotiate_kerberos_auth_DEPENDENCIES) 
 	@rm -f negotiate_kerberos_auth$(EXEEXT)
-	$(AM_V_CXXLD)$(negotiate_kerberos_auth_LINK) $(negotiate_kerberos_auth_OBJECTS) $(negotiate_kerberos_auth_LDADD) $(LIBS)
+	$(AM_V_CXXLD)$(CXXLINK) $(negotiate_kerberos_auth_OBJECTS) $(negotiate_kerberos_auth_LDADD) $(LIBS)
 
 negotiate_kerberos_auth_test$(EXEEXT): $(negotiate_kerberos_auth_test_OBJECTS) $(negotiate_kerberos_auth_test_DEPENDENCIES) $(EXTRA_negotiate_kerberos_auth_test_DEPENDENCIES) 
 	@rm -f negotiate_kerberos_auth_test$(EXEEXT)
-	$(AM_V_CXXLD)$(negotiate_kerberos_auth_test_LINK) $(negotiate_kerberos_auth_test_OBJECTS) $(negotiate_kerberos_auth_test_LDADD) $(LIBS)
+	$(AM_V_CXXLD)$(CXXLINK) $(negotiate_kerberos_auth_test_OBJECTS) $(negotiate_kerberos_auth_test_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)

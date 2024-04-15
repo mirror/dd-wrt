@@ -1,0 +1,60 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html><head>
+<meta type="copyright" content="Copyright (C) 1996-2023 The Squid Software Foundation and contributors">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title>Конфігурація браузера</title>
+<style type="text/css"><!--
+ %l
+
+body
+:lang(fa) { direction: rtl; font-size: 100%; font-family: Tahoma, Roya, sans-serif; float: right; }
+:lang(he) { direction: rtl; }
+ --></style>
+</head><body id="%c">
+<div id="titles">
+<h1>ПОМИЛКА</h1>
+<h2>Конфігурація браузера</h2>
+</div>
+<hr>
+
+<div id="content">
+<blockquote id="error">
+<p>Конфігурація Вашого браузера потребує коригувань для використання цієї мережі.</p>
+</blockquote>
+
+<p>Як знайти ці налаштування у Вашому браузері:</p>
+
+<div id="firefox">
+For Firefox browsers go to:
+<ul>
+<li>Інструменти -&gt; Опції -&gt; Додатково -&gt; Мережа -&gt; Параметри з'єднання</li>
+<li>In the HTTP proxy box type the proxy name %h and port %b.</li>
+</ul>
+</div>
+
+<div id="microsoft">
+For Internet Explorer browsers go to:
+<ul>
+<li>Інструменти -&gt; Властивості браузера -&gt; З'єднання -&gt; Налаштування LAN -&gt; Проксі</li>
+<li>In the HTTP proxy box type the proxy name %h and port %b.</li>
+</ul>
+</div>
+
+<div id="opera">
+For Opera browsers go to:
+<ul>
+<li>Інструменти -&gt; Налаштування -&gt; Додатково -&gt; Мережа -&gt; Проксі сервера</li>
+<li>In the HTTP proxy box type the proxy name %h and port %b.</li>
+</ul>
+</div>
+
+<p>Адміністратор даного кешу <a href="mailto:%w%W">%w</a>.</p>
+<br>
+</div>
+
+<hr>
+<div id="footer">
+<p>Згенеровано %T на %h (%s)</p>
+<!-- %c -->
+</div>
+</body></html>

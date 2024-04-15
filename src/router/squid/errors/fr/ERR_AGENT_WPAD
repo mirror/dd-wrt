@@ -1,0 +1,60 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html><head>
+<meta type="copyright" content="Copyright (C) 1996-2023 The Squid Software Foundation and contributors">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title>Configuration du navigateur Web</title>
+<style type="text/css"><!--
+ %l
+
+body
+:lang(fa) { direction: rtl; font-size: 100%; font-family: Tahoma, Roya, sans-serif; float: right; }
+:lang(he) { direction: rtl; }
+ --></style>
+</head><body id="%c">
+<div id="titles">
+<h1>ERREUR</h1>
+<h2>Configuration du navigateur Web</h2>
+</div>
+<hr>
+
+<div id="content">
+<blockquote id="error">
+<p>Vous devez corriger la configuration de votre navigateur Web, pour qu'il soit utilisé dans ce réseau</p>
+</blockquote>
+
+<p>Comment trouver ces réglages dans votre navigateur :</p>
+
+<div id="firefox">
+For Firefox browsers go to:
+<ul>
+<li>Outils -&gt; Options -&gt; Avancé -&gt; Réseau -&gt; Paramètres de Connexion</li>
+<li>Sélectionnez détection automatique dans les paramètres du proxy pour ce réseau</li>
+</ul>
+</div>
+
+<div id="microsoft">
+For Internet Explorer browsers go to:
+<ul>
+<li>Outils -&gt; Options Internet -&gt; Connexion -&gt; Paramètres LAN -&gt; Proxy</li>
+<li>Sélectionnez le paramètre détection automatique</li>
+</ul>
+</div>
+
+<div id="opera">
+For Opera browsers go to:
+<ul>
+<li>Outils -&gt; Préférences -&gt; Avancé -&gt; Réseau -&gt; Serveur Proxy</li>
+<li>Utilisez la sélection automatique pour configurer le proxy</li>
+</ul>
+</div>
+
+<p>Votre administrateur proxy est <a href="mailto:%w%W">%w</a>.</p>
+<br>
+</div>
+
+<hr>
+<div id="footer">
+<p>Générée le %T par %h (%s)</p>
+<!-- %c -->
+</div>
+</body></html>

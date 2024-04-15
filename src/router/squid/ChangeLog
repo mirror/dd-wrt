@@ -1,3 +1,22 @@
+Changes in squid-6.9 (7 Apr 2024)
+	- Regression Bug 5349: basic_nis_auth build error: unterminated #ifndef
+	- Bug 5069: Keep listening after getsockname() error
+	- Bug 5360: FwdState::noteDestinationsEnd() assertion "err"
+	- Reduce stale errno usage
+	- Plug memory leak in handling cache manager requests
+	- Fix error: template-id not allowed for constructor in C++20
+	- Improve release packaging automation
+
+Changes in squid-6.8 (4 Mar 2024)
+
+	- Bug 5344: mgr:config segfaults without logformat
+	- Bug 5343: Fix build on GCC 14
+	- Fix infinite recursion when parsing malformed HTTP chunks
+	- Fix max-stale in default refresh_pattern
+	- Fix marking of problematic cached IP addresses
+	- Improved portability to MacOS
+	- ... and some documentation improvements
+
 Changes in squid-6.7 (4 Feb 2024)
 
 	- Bug 5337: workaround for crash on startup if -a option is used

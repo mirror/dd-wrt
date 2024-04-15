@@ -1,0 +1,39 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html><head>
+<meta type="copyright" content="Copyright (C) 1996-2023 The Squid Software Foundation and contributors">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title>ՍԽԱԼ: Քեշի կառավառման մուտքն արգելված է</title>
+<style type="text/css"><!-- 
+ %l
+
+body
+:lang(fa) { direction: rtl; font-size: 100%; font-family: Tahoma, Roya, sans-serif; float: right; }
+:lang(he) { direction: rtl; }
+ --></style>
+</head><body id="%c">
+<div id="titles">
+<h1>ՍԽԱԼ</h1>
+<h2>Քեշի կառավառման մուտքն արգելված է.</h2>
+</div>
+<hr>
+
+<div id="content">
+<p>URL-ի ստացման ընթացքում առաջացավ հետևյալ սխալը: <a href="%U">%U</a></p>
+
+<blockquote id="error">
+<p><b>Քեշի կառավառման մուտքն արգելված է.</b></p>
+</blockquote>
+
+<p>Ներողություն,Դուք չեք կարող քեշի կառավարման համակարգից իրականացնել հետևյալ հարցումը %U մինչև աութենտիֆիկացիան չանցնեք.</p>
+
+<p>Աութենտիֆիկացիայի հետ խնդիրներ առաջանալու դեպքում խնդրվում է դիմել<a href="mailto:%w%W">քեշի կառավարիչին</a>.</p>
+
+<br>
+</div>
+
+<hr>
+<div id="footer">
+<p>Ստեղծված է %T by %h (%s)</p>
+<!-- %c -->
+</div>
+</body></html>

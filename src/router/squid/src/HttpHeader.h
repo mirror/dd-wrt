@@ -6,8 +6,8 @@
  * Please see the COPYING and CONTRIBUTORS files for details.
  */
 
-#ifndef SQUID_HTTPHEADER_H
-#define SQUID_HTTPHEADER_H
+#ifndef SQUID_SRC_HTTPHEADER_H
+#define SQUID_SRC_HTTPHEADER_H
 
 #include "anyp/ProtocolVersion.h"
 #include "base/LookupTable.h"
@@ -137,7 +137,7 @@ public:
     void putTime(Http::HdrType id, time_t htime);
     void putStr(Http::HdrType id, const char *str);
     void putAuth(const char *auth_scheme, const char *realm);
-    void putCc(const HttpHdrCc * cc);
+    void putCc(const HttpHdrCc &cc);
     void putContRange(const HttpHdrContRange * cr);
     void putRange(const HttpHdrRange * range);
     void putSc(HttpHdrSc *sc);
@@ -205,5 +205,5 @@ void httpHeaderCalcMask(HttpHeaderMask * mask, Http::HdrType http_hdr_type_enums
 
 void httpHeaderInitModule(void);
 
-#endif /* SQUID_HTTPHEADER_H */
+#endif /* SQUID_SRC_HTTPHEADER_H */
 

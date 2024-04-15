@@ -1,0 +1,53 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html><head>
+<meta type="copyright" content="Copyright (C) 1996-2023 The Squid Software Foundation and contributors">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title>שגיאה: הכתובת ה URL מבוקשת לא נגישה</title>
+<style type="text/css"><!-- 
+ %l
+
+body
+:lang(fa) { direction: rtl; font-size: 100%; font-family: Tahoma, Roya, sans-serif; float: right; }
+:lang(he) { direction: rtl; }
+ --></style>
+</head><body id="%c">
+<div id="titles">
+<h1>שגיאה</h1>
+<h2>לא ניתן לגשת אל הכתובת המבוקשת</h2>
+</div>
+<hr>
+
+<div id="content">
+<p><b> בקשה לא חוקית </b> אירעה שגיאה בעת ביצוע הבקשה:</p>
+
+<blockquote id="data">
+<pre>%R</pre>
+</blockquote>
+
+<p>Some possible problems are:</p>
+<ul>
+<li id="missing-method"><p>סוג בקשה לא ידוע או חסר</p></li>
+<li id="missing-url"><p>כתובת URL חסרה.</p></li>
+<li id="missing-protocol"><p>Missing HTTP Identifier (HTTP/1.0).</p></li>
+<li><p>הבקשה גדולה מידי.</p></li>
+<li><p>חסר Content-Length בשביל בקשות POST או PUT</p></li>
+<li><p>תווים לא חוקיים בשם השרת; קווים תחתונים אסורים</p></li>
+<li><p>HTTP/1.1 <q>Expect:</q> feature is being asked from an HTTP/1.0 software.</p></li>
+</ul>
+
+<p>מנהל השרת הוא <a href="mailto:%w%W">%w</a>. </p>
+<br>
+</div>
+
+<script language="javascript">
+if ('%M' != '[unknown method]') document.getElementById('missing-method').style.display = 'none';
+if ('%u' != '[no URL]') document.getElementById('missing-url').style.display = 'none';
+if ('%P' != '[unknown protocol]') document.getElementById('missing-protocol').style.display = 'none';
+</script>
+
+<hr>
+<div id="footer">
+<p>נוצר %T על ידי %h (%s)</p>
+<!-- %c -->
+</div>
+</body></html>

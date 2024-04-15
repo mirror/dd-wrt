@@ -6,8 +6,8 @@
  * Please see the COPYING and CONTRIBUTORS files for details.
  */
 
-#ifndef SQUID_SPLAY_H
-#define SQUID_SPLAY_H
+#ifndef SQUID_INCLUDE_SPLAY_H
+#define SQUID_INCLUDE_SPLAY_H
 
 #include "fatal.h"
 #include <stack>
@@ -23,7 +23,7 @@ public:
     typedef void SPLAYWALKEE(Value const & nodedata, void *state);
     static void DefaultFree (Value &aValue) {delete aValue;}
 
-    SplayNode<V> (Value const &);
+    SplayNode(const Value &);
     Value data;
     mutable SplayNode<V> *left;
     mutable SplayNode<V> *right;
@@ -491,5 +491,5 @@ SplayConstIterator<V>::operator * () const
     return toVisit.top()->data;
 }
 
-#endif /* SQUID_SPLAY_H */
+#endif /* SQUID_INCLUDE_SPLAY_H */
 

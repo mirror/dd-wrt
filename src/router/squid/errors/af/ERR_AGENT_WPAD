@@ -1,0 +1,60 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html><head>
+<meta type="copyright" content="Copyright (C) 1996-2023 The Squid Software Foundation and contributors">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title>Webblaaier se opstelling</title>
+<style type="text/css"><!--
+ %l
+
+body
+:lang(fa) { direction: rtl; font-size: 100%; font-family: Tahoma, Roya, sans-serif; float: right; }
+:lang(he) { direction: rtl; }
+ --></style>
+</head><body id="%c">
+<div id="titles">
+<h1>FOUT</h1>
+<h2>Webblaaier se opstelling</h2>
+</div>
+<hr>
+
+<div id="content">
+<blockquote id="error">
+<p>Die opstelling van u webblaaier moet reggestel word om hierdie netwerk te gebruik.</p>
+</blockquote>
+
+<p>Hoe om hierdie instellings in die blaaier te vind:</p>
+
+<div id="firefox">
+For Firefox browsers go to:
+<ul>
+<li>Nutsgoed -&gt; Opsies -&gt; Gevorderd -&gt; Netwerk -&gt; Verbinding</li>
+<li>Kies "Outospeur instaanopstelling vir hierdie netwerk"</li>
+</ul>
+</div>
+
+<div id="microsoft">
+For Internet Explorer browsers go to:
+<ul>
+<li>Tools -&gt; Internet Options -&gt; Connection -&gt; LAN Settings -&gt;Proxy</li>
+<li>Select Automatically detect settings</li>
+</ul>
+</div>
+
+<div id="opera">
+For Opera browsers go to:
+<ul>
+<li>Tools -&gt; Preferences -&gt; Advanced -&gt; Network -&gt; Proxy Servers</li>
+<li>Select Use Automatic proxy configuration</li>
+</ul>
+</div>
+
+<p>Die kasbediener se administrateur is <a href="mailto:%w%W">%w</a>.</p>
+<br>
+</div>
+
+<hr>
+<div id="footer">
+<p>Gegenereer op %T deur %h (%s)</p>
+<!-- %c -->
+</div>
+</body></html>
