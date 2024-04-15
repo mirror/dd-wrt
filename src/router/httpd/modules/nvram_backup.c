@@ -199,7 +199,7 @@ static int nv_file_in(char *url, webs_t wp, size_t len, char *boundary)
 		wp->restore_ret = 0;
 	if (keepip) {
 		nvram_set("lan_ipaddr", lanip);
-		nvram commit();
+		nvram_commit();
 	}
 	unlink("/tmp/restore.bin");
 	eval("sync");
