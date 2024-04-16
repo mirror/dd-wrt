@@ -127,7 +127,9 @@ static irqreturn_t mfgpt_tick(int irq, void *dev_id)
 		cs5535_mfgpt_write(cs5535_event_clock, MFGPT_REG_SETUP,
 				MFGPT_SETUP_CNTEN | MFGPT_SETUP_CMP2);
 
-	cs5535_clockevent.event_handler(&cs5535_clockevent);
+	if (cs5535_clockevent.event_handler)
+		cs5535_clockevent.event_handler(&cs5535_clockevent);
+
 	return IRQ_HANDLED;
 }
 

@@ -707,7 +707,7 @@ config XO1_RFKILL
 	  laptop.
 
 config PCENGINES_APU2
-	tristate "PC Engines APUv2/3 front button and LEDs driver"
+	tristate "PC Engines APUv2/3/4/5/6 front button and LEDs driver"
 	depends on INPUT && INPUT_KEYBOARD && GPIOLIB
 	depends on LEDS_CLASS
 	select GPIO_AMD_FCH
@@ -715,7 +715,7 @@ config PCENGINES_APU2
 	select LEDS_GPIO
 	help
 	  This driver provides support for the front button and LEDs on
-	  PC Engines APUv2/APUv3 board.
+	  PC Engines APUv2/APUv3/APUv4/APUv5/APUv6 board.
 
 	  To compile this driver as a module, choose M here: the module
 	  will be called pcengines-apuv2.
