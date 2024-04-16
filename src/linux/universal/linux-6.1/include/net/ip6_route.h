@@ -148,7 +148,7 @@ static inline int ip6_route_get_saddr(struct net *net, struct fib6_info *f6i,
 	return err;
 }
 
-struct rt6_info __weak *rt6_lookup(struct net *net, const struct in6_addr *daddr,
+struct rt6_info *rt6_lookup(struct net *net, const struct in6_addr *daddr,
 			    const struct in6_addr *saddr, int oif,
 			    const struct sk_buff *skb, int flags);
 u32 rt6_multipath_hash(const struct net *net, const struct flowi6 *fl6,
