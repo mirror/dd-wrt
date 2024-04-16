@@ -252,8 +252,7 @@ static bool sfe_cm_find_dev_and_mac_addr(struct sk_buff *skb,
 
 		dst = (struct dst_entry *)rt;
 	} else {
-		if (rt6_lookup)
-			rt6 = rt6_lookup(&init_net,
+		rt6 = rt6_lookup(&init_net,
 					 (struct in6_addr *)addr->ip6, 0, 0, 0);
 		if (!rt6) {
 			goto ret_fail;
