@@ -113,7 +113,7 @@ static inline int ip6_route_get_saddr(struct net *net, struct rt6_info *rt,
 	return err;
 }
 
-struct rt6_info * __weak rt6_lookup(struct net *net, const struct in6_addr *daddr,
+struct rt6_info * rt6_lookup(struct net *net, const struct in6_addr *daddr,
 			    const struct in6_addr *saddr, int oif, int flags);
 
 struct dst_entry *icmp6_dst_alloc(struct net_device *dev, struct flowi6 *fl6);
