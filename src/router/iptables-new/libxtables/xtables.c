@@ -463,7 +463,6 @@ static bool proc_file_exists(const char *filename)
 	return true;
 }
 
-#if 0
 int xtables_load_ko(const char *modprobe, bool quiet)
 {
 	static bool loaded = false;
@@ -483,7 +482,6 @@ int xtables_load_ko(const char *modprobe, bool quiet)
 
 	return ret;
 }
-#endif
 
 /**
  * xtables_strtou{i,l} - string to number conversion
