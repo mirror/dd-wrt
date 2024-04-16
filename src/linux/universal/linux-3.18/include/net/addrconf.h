@@ -79,7 +79,7 @@ struct inet6_ifaddr *ipv6_get_ifaddr(struct net *net,
 				     const struct in6_addr *addr,
 				     struct net_device *dev, int strict);
 
-int __weak ipv6_dev_get_saddr(struct net *net, const struct net_device *dev,
+int ipv6_dev_get_saddr(struct net *net, const struct net_device *dev,
 		       const struct in6_addr *daddr, unsigned int srcprefs,
 		       struct in6_addr *saddr);
 int __ipv6_get_lladdr(struct inet6_dev *idev, struct in6_addr *addr,
@@ -213,8 +213,8 @@ bool ipv6_chk_acast_addr_src(struct net *net, struct net_device *dev,
 			     const struct in6_addr *addr);
 
 /* Device notifier */
-int __weak register_inet6addr_notifier(struct notifier_block *nb);
-int __weak unregister_inet6addr_notifier(struct notifier_block *nb);
+int register_inet6addr_notifier(struct notifier_block *nb);
+int unregister_inet6addr_notifier(struct notifier_block *nb);
 int inet6addr_notifier_call_chain(unsigned long val, void *v);
 
 void inet6_netconf_notify_devconf(struct net *net, int type, int ifindex,
