@@ -158,6 +158,8 @@ struct qcom_smp2p {
 
 	struct list_head inbound;
 	struct list_head outbound;
+
+	bool need_ssr_ack;
 };
 
 static void qcom_smp2p_kick(struct qcom_smp2p *smp2p)
@@ -306,7 +308,7 @@ static irqreturn_t qcom_smp2p_intr(int irq, void *data)
 		ack_restart = qcom_smp2p_check_ssr(smp2p);
 		qcom_smp2p_notify_in(smp2p);
 
-		if (ack_restart)
+		if (ack_restart || smp2p->need_ssr_ack)
 			qcom_smp2p_do_ssr_ack(smp2p);
 	}
 
@@ -427,6 +429,7 @@ static int qcom_smp2p_outbound_entry(struct qcom_smp2p *smp2p,
 
 	/* Make the logical entry reference the physical value */
 	entry->value = &out->entries[out->valid_entries].value;
+	smp2p->need_ssr_ack = of_property_read_bool(node, "qcom,smp2p-feature-ssr-ack");
 
 	out->valid_entries++;
 

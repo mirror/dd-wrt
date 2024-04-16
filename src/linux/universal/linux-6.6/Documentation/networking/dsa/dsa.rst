@@ -66,7 +66,8 @@ Switch tagging protocols
 ------------------------
 
 DSA supports many vendor-specific tagging protocols, one software-defined
-tagging protocol, and a tag-less mode as well (``DSA_TAG_PROTO_NONE``).
+tagging protocol, a tag-less mode as well (``DSA_TAG_PROTO_NONE``) and an
+out-of-band tagging protocol (``DSA_TAG_PROTO_OOB``).
 
 The exact format of the tag protocol is vendor specific, but in general, they
 all contain something which:
@@ -216,6 +217,16 @@ tagging protocol may require the DSA master to operate in promiscuous mode, to
 receive all frames regardless of the value of the MAC DA. This can be done by
 setting the ``promisc_on_master`` property of the ``struct dsa_device_ops``.
 Note that this assumes a DSA-unaware master driver, which is the norm.
+
+Some SoCs have a tight integration between the conduit network interface and the
+embedded switch, such that the DSA tag isn't transmitted in the packet data,
+but through another media, using so-called out-of-band tagging. In that case,
+the host MAC driver is in charge of transmitting the tag to the switch.
+An example is the IPQ4019 SoC, that transmits the tag between the ipqess
+ethernet controller and the qca8k switch using the DMA descriptor. In that
+configuration, tag-chaining is permitted, but the OOB tag will always be the
+top-most switch in the tree. The tagger (``DSA_TAG_PROTO_OOB``) uses skb
+extensions to transmit the tag to and from the MAC driver.
 
 Master network devices
 ----------------------

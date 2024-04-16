@@ -1755,49 +1755,49 @@ static unsigned int sdhci_msm_get_min_clock(struct sdhci_host *host)
 	return SDHCI_MSM_MIN_CLOCK;
 }
 
-/*
- * __sdhci_msm_set_clock - sdhci_msm clock control.
- *
- * Description:
- * MSM controller does not use internal divider and
- * instead directly control the GCC clock as per
- * HW recommendation.
- **/
-static void __sdhci_msm_set_clock(struct sdhci_host *host, unsigned int clock)
-{
-	u16 clk;
+// /*
+//  * __sdhci_msm_set_clock - sdhci_msm clock control.
+//  *
+//  * Description:
+//  * MSM controller does not use internal divider and
+//  * instead directly control the GCC clock as per
+//  * HW recommendation.
+//  **/
+// static void __sdhci_msm_set_clock(struct sdhci_host *host, unsigned int clock)
+// {
+// 	u16 clk;
 
-	sdhci_writew(host, 0, SDHCI_CLOCK_CONTROL);
+// 	sdhci_writew(host, 0, SDHCI_CLOCK_CONTROL);
 
-	if (clock == 0)
-		return;
+// 	if (clock == 0)
+// 		return;
 
-	/*
-	 * MSM controller do not use clock divider.
-	 * Thus read SDHCI_CLOCK_CONTROL and only enable
-	 * clock with no divider value programmed.
-	 */
-	clk = sdhci_readw(host, SDHCI_CLOCK_CONTROL);
-	sdhci_enable_clk(host, clk);
-}
+// 	/*
+// 	 * MSM controller do not use clock divider.
+// 	 * Thus read SDHCI_CLOCK_CONTROL and only enable
+// 	 * clock with no divider value programmed.
+// 	 */
+// 	clk = sdhci_readw(host, SDHCI_CLOCK_CONTROL);
+// 	sdhci_enable_clk(host, clk);
+// }
 
-/* sdhci_msm_set_clock - Called with (host->lock) spinlock held. */
-static void sdhci_msm_set_clock(struct sdhci_host *host, unsigned int clock)
-{
-	struct sdhci_pltfm_host *pltfm_host = sdhci_priv(host);
-	struct sdhci_msm_host *msm_host = sdhci_pltfm_priv(pltfm_host);
+// /* sdhci_msm_set_clock - Called with (host->lock) spinlock held. */
+// static void sdhci_msm_set_clock(struct sdhci_host *host, unsigned int clock)
+// {
+// 	struct sdhci_pltfm_host *pltfm_host = sdhci_priv(host);
+// 	struct sdhci_msm_host *msm_host = sdhci_pltfm_priv(pltfm_host);
 
-	if (!clock) {
-		host->mmc->actual_clock = msm_host->clk_rate = 0;
-		goto out;
-	}
+// 	if (!clock) {
+// 		host->mmc->actual_clock = msm_host->clk_rate = 0;
+// 		goto out;
+// 	}
 
-	sdhci_msm_hc_select_mode(host);
+// 	sdhci_msm_hc_select_mode(host);
 
-	msm_set_clock_rate_for_bus_mode(host, clock);
-out:
-	__sdhci_msm_set_clock(host, clock);
-}
+// 	msm_set_clock_rate_for_bus_mode(host, clock);
+// out:
+// 	__sdhci_msm_set_clock(host, clock);
+// }
 
 /*****************************************************************************\
  *                                                                           *
@@ -2320,7 +2320,7 @@ MODULE_DEVICE_TABLE(of, sdhci_msm_dt_match);
 
 static const struct sdhci_ops sdhci_msm_ops = {
 	.reset = sdhci_and_cqhci_reset,
-	.set_clock = sdhci_msm_set_clock,
+	.set_clock = sdhci_set_clock,
 	.get_min_clock = sdhci_msm_get_min_clock,
 	.get_max_clock = sdhci_msm_get_max_clock,
 	.set_bus_width = sdhci_set_bus_width,

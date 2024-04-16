@@ -141,7 +141,7 @@ static void *vcc_seq_next(struct seq_file *seq, void *v, loff_t *pos)
 static void pvc_info(struct seq_file *seq, struct atm_vcc *vcc)
 {
 	static const char *const class_name[] = {
-		"off", "UBR", "CBR", "VBR", "ABR"};
+		"off","UBR","CBR","NTR-VBR","ABR","ANY","RT-VBR","UBR+","GFR"};
 	static const char *const aal_name[] = {
 		"---",	"1",	"2",	"3/4",	/*  0- 3 */
 		"???",	"5",	"???",	"???",	/*  4- 7 */

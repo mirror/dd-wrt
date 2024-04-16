@@ -38,6 +38,8 @@ static bool node_has_compatible(struct device_node *pp)
 	return of_get_property(pp, "compatible", NULL);
 }
 
+static int mangled_rootblock;
+
 static int parse_fixed_partitions(struct mtd_info *master,
 				  const struct mtd_partition **pparts,
 				  struct mtd_part_parser_data *data)
@@ -48,6 +50,7 @@ static int parse_fixed_partitions(struct mtd_info *master,
 	struct device_node *mtd_node;
 	struct device_node *ofpart_node;
 	const char *partname;
+	const char *owrtpart = "ubi";
 	struct device_node *pp;
 	int nr_parts, i, ret = 0;
 	bool dedicated = true;
@@ -152,9 +155,13 @@ static int parse_fixed_partitions(struct mtd_info *master,
 		parts[i].size = of_read_number(reg + a_cells, s_cells);
 		parts[i].of_node = pp;
 
-		partname = of_get_property(pp, "label", &len);
-		if (!partname)
-			partname = of_get_property(pp, "name", &len);
+		if (mangled_rootblock && (i == mangled_rootblock)) {
+			partname = owrtpart;
+		} else {
+			partname = of_get_property(pp, "label", &len);
+			if (!partname)
+				partname = of_get_property(pp, "name", &len);
+		}
 		parts[i].name = partname;
 
 		if (of_get_property(pp, "read-only", &len))
@@ -270,6 +277,18 @@ static int __init ofpart_parser_init(void)
 	register_mtd_parser(&ofoldpart_parser);
 	return 0;
 }
+
+static int __init active_root(char *str)
+{
+	get_option(&str, &mangled_rootblock);
+
+	if (!mangled_rootblock)
+		return 1;
+
+	return 1;
+}
+
+__setup("mangled_rootblock=", active_root);
 
 static void __exit ofpart_parser_exit(void)
 {

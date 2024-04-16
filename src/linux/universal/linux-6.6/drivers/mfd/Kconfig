@@ -2274,6 +2274,15 @@ config SGI_MFD_IOC3
 	  If you have an SGI Origin, Octane, or a PCI IOC3 card,
 	  then say Y. Otherwise say N.
 
+config MFD_IEI_WT61P803_PUZZLE
+	tristate "IEI WT61P803 PUZZLE MCU driver"
+	depends on SERIAL_DEV_BUS
+	select MFD_CORE
+	help
+	  IEI WT61P803 PUZZLE is a system power management microcontroller
+	  used for fan control, temperature sensor reading, LED control
+	  and system identification.
+
 config MFD_INTEL_M10_BMC_CORE
         tristate
         select MFD_CORE

@@ -212,6 +212,8 @@ enum {
 };
 
 #define VENDOR_ID_REG				(LMI_BASE_ADDR + 0x44)
+#define DEBUG_MUX_CTRL_REG			(LMI_BASE_ADDR + 0x208)
+#define     DIS_ORD_CHK				BIT(30)
 
 /* PCIe core controller registers */
 #define CTRL_CORE_BASE_ADDR			0x18000
@@ -559,6 +561,11 @@ static void advk_pcie_setup_hw(struct advk_pcie *pcie)
 	reg = PCIE_CORE_CTRL2_RESERVED |
 		PCIE_CORE_CTRL2_TD_ENABLE;
 	advk_writel(pcie, reg, PCIE_CORE_CTRL2_REG);
+
+	/* Disable ordering checks, workaround for erratum 3.12 "PCIe completion timeout" */
+	reg = advk_readl(pcie, DEBUG_MUX_CTRL_REG);
+	reg |= DIS_ORD_CHK;
+	advk_writel(pcie, reg, DEBUG_MUX_CTRL_REG);
 
 	/* Set lane X1 */
 	reg = advk_readl(pcie, PCIE_CORE_CTRL0_REG);
@@ -1660,6 +1667,9 @@ static irqreturn_t advk_pcie_irq_handler(int irq, void *arg)
 {
 	struct advk_pcie *pcie = arg;
 	u32 status;
+
+	/* Full memory barrier (ARM dsb sy), workaround for erratum 3.12 "PCIe completion timeout" */
+	mb();
 
 	status = advk_readl(pcie, HOST_CTRL_INT_STATUS_REG);
 	if (!(status & PCIE_IRQ_CORE_INT))

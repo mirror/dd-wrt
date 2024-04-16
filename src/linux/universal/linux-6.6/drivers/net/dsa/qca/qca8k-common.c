@@ -412,7 +412,7 @@ static int qca8k_vlan_del(struct qca8k_priv *priv, u8 port, u16 vid)
 
 	/* Check if we're the last member to be removed */
 	del = true;
-	for (i = 0; i < QCA8K_NUM_PORTS; i++) {
+	for (i = 0; i < priv->ds->num_ports; i++) {
 		mask = QCA8K_VTU_FUNC0_EG_MODE_PORT_NOT(i);
 
 		if ((reg & mask) != mask) {
@@ -653,7 +653,7 @@ int qca8k_port_bridge_join(struct dsa_switch *ds, int port,
 	cpu_port = dsa_to_port(ds, port)->cpu_dp->index;
 	port_mask = BIT(cpu_port);
 
-	for (i = 0; i < QCA8K_NUM_PORTS; i++) {
+	for (i = 0; i < ds->num_ports; i++) {
 		if (dsa_is_cpu_port(ds, i))
 			continue;
 		if (!dsa_port_offloads_bridge(dsa_to_port(ds, i), &bridge))
@@ -685,7 +685,7 @@ void qca8k_port_bridge_leave(struct dsa_switch *ds, int port,
 
 	cpu_port = dsa_to_port(ds, port)->cpu_dp->index;
 
-	for (i = 0; i < QCA8K_NUM_PORTS; i++) {
+	for (i = 0; i < ds->num_ports; i++) {
 		if (dsa_is_cpu_port(ds, i))
 			continue;
 		if (!dsa_port_offloads_bridge(dsa_to_port(ds, i), &bridge))

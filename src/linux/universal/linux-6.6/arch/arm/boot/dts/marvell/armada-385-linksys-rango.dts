@@ -12,8 +12,8 @@
 
 / {
 	model = "Linksys WRT3200ACM";
-	compatible = "linksys,rango", "linksys,armada385", "marvell,armada385",
-		     "marvell,armada380";
+	compatible = "linksys,wrt3200acm", "linksys,rango", "linksys,armada385",
+		     "marvell,armada385", "marvell,armada380";
 };
 
 &expander0 {
@@ -154,6 +154,18 @@
 			label = "unused_area";
 			reg = <0x260000 0x5c0000>;   /* 5.75MiB */
 		};
+	};
+};
+
+&pcie1 {
+	mwlwifi {
+		marvell,chainmask = <4 4>;
+	};
+};
+
+&pcie2 {
+	mwlwifi {
+		marvell,chainmask = <4 4>;
 	};
 };
 

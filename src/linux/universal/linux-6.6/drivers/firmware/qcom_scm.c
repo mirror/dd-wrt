@@ -315,6 +315,17 @@ static int qcom_scm_set_boot_addr(void *entry, const u8 *cpu_bits)
 	desc.args[0] = flags;
 	desc.args[1] = virt_to_phys(entry);
 
+	/*
+	 * Factory firmware doesn't support the atomic variant. Non-atomic SCMs
+	 * require ugly DMA invalidation support that was dropped upstream a
+	 * while ago. For more info, see:
+	 *
+	 *  [RFC] qcom_scm: IPQ4019 firmware does not support atomic API?
+	 *  https://lore.kernel.org/linux-arm-msm/20200913201608.GA3162100@bDebian/
+	 */
+	if (of_machine_is_compatible("google,wifi"))
+		return qcom_scm_call(__scm ? __scm->dev : NULL, &desc, NULL);
+
 	return qcom_scm_call_atomic(__scm ? __scm->dev : NULL, &desc, NULL);
 }
 
@@ -409,6 +420,29 @@ int qcom_scm_set_remote_state(u32 state, u32 id)
 	return ret ? : res.result[0];
 }
 EXPORT_SYMBOL_GPL(qcom_scm_set_remote_state);
+
+static int qcom_scm_disable_sdi(void)
+{
+	int ret;
+	struct qcom_scm_desc desc = {
+		.svc = QCOM_SCM_SVC_BOOT,
+		.cmd = QCOM_SCM_BOOT_SDI_CONFIG,
+		.args[0] = 1, /* Disable watchdog debug */
+		.args[1] = 0, /* Disable SDI */
+		.arginfo = QCOM_SCM_ARGS(2),
+		.owner = ARM_SMCCC_OWNER_SIP,
+	};
+	struct qcom_scm_res res;
+
+	ret = qcom_scm_clk_enable();
+	if (ret)
+		return ret;
+	ret = qcom_scm_call(__scm->dev, &desc, &res);
+
+	qcom_scm_clk_disable();
+
+	return ret ? : res.result[0];
+}
 
 static int __qcom_scm_set_dload_mode(struct device *dev, bool enable)
 {
@@ -1467,6 +1501,13 @@ static int qcom_scm_probe(struct platform_device *pdev)
 
 	__get_convention();
 
+
+	/*
+	 * Disable SDI if indicated by DT that it is enabled by default.
+	 */
+	if (of_property_read_bool(pdev->dev.of_node, "qcom,sdi-enabled"))
+		qcom_scm_disable_sdi();
+
 	/*
 	 * If requested enable "download mode", from this point on warmboot
 	 * will cause the boot stages to enter download mode, unless
@@ -1481,7 +1522,8 @@ static int qcom_scm_probe(struct platform_device *pdev)
 static void qcom_scm_shutdown(struct platform_device *pdev)
 {
 	/* Clean shutdown, disable download mode to allow normal restart */
-	qcom_scm_set_download_mode(false);
+	if (download_mode)
+		qcom_scm_set_download_mode(false);
 }
 
 static const struct of_device_id qcom_scm_dt_match[] = {

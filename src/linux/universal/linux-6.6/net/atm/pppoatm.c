@@ -422,6 +422,12 @@ static int pppoatm_assign_vcc(struct atm_vcc *atmvcc, void __user *arg)
 	atmvcc->user_back = pvcc;
 	atmvcc->push = pppoatm_push;
 	atmvcc->pop = pppoatm_pop;
+#if IS_ENABLED(CONFIG_ATM_MPOA_INTEL_DSL_PHY_SUPPORT)
+	if (atm_hook_mpoa_setup) /* PPPoA */
+		atm_hook_mpoa_setup(atmvcc, 2,
+			pvcc->encaps == e_llc ? 1 : 0,
+			ppp_device(&pvcc->chan));
+#endif
 	atmvcc->release_cb = pppoatm_release_cb;
 	__module_get(THIS_MODULE);
 	atmvcc->owner = THIS_MODULE;

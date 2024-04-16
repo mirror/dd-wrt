@@ -20,6 +20,14 @@
 #include <linux/platform_device.h>
 
 #define TCSR_USB_PORT_SEL	0xb0
+#define TCSR_USB_HSPHY_CONFIG	0xC
+
+#define TCSR_ESS_INTERFACE_SEL_OFFSET   0x0
+#define TCSR_ESS_INTERFACE_SEL_MASK     0xf
+
+#define TCSR_WIFI0_GLB_CFG_OFFSET	0x0
+#define TCSR_WIFI1_GLB_CFG_OFFSET	0x4
+#define TCSR_PNOC_SNOC_MEMTYPE_M0_M2	0x4
 
 static int tcsr_probe(struct platform_device *pdev)
 {
@@ -36,6 +44,32 @@ static int tcsr_probe(struct platform_device *pdev)
 	if (!of_property_read_u32(node, "qcom,usb-ctrl-select", &val)) {
 		dev_err(&pdev->dev, "setting usb port select = %d\n", val);
 		writel(val, base + TCSR_USB_PORT_SEL);
+	}
+
+	if (!of_property_read_u32(node, "qcom,usb-hsphy-mode-select", &val)) {
+		dev_info(&pdev->dev, "setting usb hs phy mode select = %x\n", val);
+		writel(val, base + TCSR_USB_HSPHY_CONFIG);
+	}
+
+	if (!of_property_read_u32(node, "qcom,ess-interface-select", &val)) {
+		u32 tmp = 0;
+		dev_info(&pdev->dev, "setting ess interface select = %x\n", val);
+		tmp = readl(base + TCSR_ESS_INTERFACE_SEL_OFFSET);
+		tmp = tmp & (~TCSR_ESS_INTERFACE_SEL_MASK);
+		tmp = tmp | (val&TCSR_ESS_INTERFACE_SEL_MASK);
+		writel(tmp, base + TCSR_ESS_INTERFACE_SEL_OFFSET);
+        }
+
+	if (!of_property_read_u32(node, "qcom,wifi_glb_cfg", &val)) {
+		dev_info(&pdev->dev, "setting wifi_glb_cfg = %x\n", val);
+		writel(val, base + TCSR_WIFI0_GLB_CFG_OFFSET);
+		writel(val, base + TCSR_WIFI1_GLB_CFG_OFFSET);
+	}
+
+	if (!of_property_read_u32(node, "qcom,wifi_noc_memtype_m0_m2", &val)) {
+		dev_info(&pdev->dev,
+			"setting wifi_noc_memtype_m0_m2 = %x\n", val);
+		writel(val, base + TCSR_PNOC_SNOC_MEMTYPE_M0_M2);
 	}
 
 	return 0;

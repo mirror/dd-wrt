@@ -642,6 +642,41 @@ not_relocated:	mov	r0, #0
 		bic	r4, r4, #1
 		blne	cache_on
 
+/* Set the Qualcom IPQ40xx watchdog timeout to 30 seconds
+ * if it is enabled, so that there is time for kernel
+ * to decompress, boot, and take over the watchdog.
+ * data and functionality from drivers/watchdog/qcom-wdt.c
+ * address from arch/arm/boot/dts/qcom-ipq4019.dtsi
+ */
+#ifdef CONFIG_ARCH_IPQ40XX
+watchdog_set:
+		/* offsets:
+		 * 0x04 reset	(=1 resets countdown)
+		 * 0x08 enable	(=0 disables)
+		 * 0x0c status	(=1 when SoC was reset by watchdog)
+		 * 0x10 bark	(=timeout warning in ticks)
+		 * 0x14 bite	(=timeout reset in ticks)
+		 * clock rate is 1<<15 hertz
+		 */
+		.equ watchdog, 0x0b017000	@Store watchdog base address
+		movw r0, #:lower16:watchdog
+		movt r0, #:upper16:watchdog
+		ldr r1, [r0, #0x08]	@Get enabled?
+		cmp r1, #1		@If not enabled, do not change
+		bne watchdog_finished
+		mov r1, #0
+		str r1, [r0, #0x08]	@Disable the watchdog
+		mov r1, #1
+		str r1, [r0, #0x04]	@Pet the watchdog
+		mov r1, #30		@30 seconds timeout
+		lsl r1, r1, #15		@converted to ticks
+		str r1, [r0, #0x10]	@Set the bark timeout
+		str r1, [r0, #0x14]	@Set the bite timeout
+		mov r1, #1
+		str r1, [r0, #0x08]	@Enable the watchdog
+watchdog_finished:
+#endif /* CONFIG_ARCH_IPQ40XX */
+
 /*
  * The C runtime environment should now be setup sufficiently.
  * Set up some pointers, and start decompressing.

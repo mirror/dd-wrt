@@ -82,6 +82,7 @@ Hardware Monitoring Kernel Drivers
    ibmaem
    ibm-cffps
    ibmpowernv
+   iei-wt61p803-puzzle-hwmon
    ina209
    ina2xx
    ina238

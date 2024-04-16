@@ -298,4 +298,11 @@ config QCOM_INLINE_CRYPTO_ENGINE
 	tristate
 	select QCOM_SCM
 
+config QCOM_TCSR
+	tristate "QCOM Top Control and Status Registers"
+	depends on ARCH_QCOM
+	help
+	  Say y here to enable TCSR support.  The TCSR provides control
+	  functions for various peripherals.
+
 endmenu

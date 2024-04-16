@@ -31,6 +31,7 @@
 /* Modular too */
 #include <linux/module.h>
 
+#include "common.h"
 #include "lec.h"
 #include "mpc.h"
 #include "resources.h"
@@ -645,6 +646,10 @@ static int atm_mpoa_vcc_attach(struct atm_vcc *vcc, void __user *arg)
 	vcc->proto_data = mpc->dev;
 	vcc->push = mpc_push;
 
+#if IS_ENABLED(CONFIG_ATM_MPOA_INTEL_DSL_PHY_SUPPORT)
+	if (atm_hook_mpoa_setup) /* IPoA, LLC */
+		atm_hook_mpoa_setup(vcc, 3, 1, mpc->dev);
+#endif
 	return 0;
 }
 
