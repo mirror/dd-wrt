@@ -1,0 +1,165 @@
+Index: mvsw61xx.c
+===================================================================
+--- mvsw61xx.c	(revision 52220)
++++ mvsw61xx.c	(working copy)
+@@ -686,6 +686,40 @@
+ 
+ 	mvsw61xx_vtu_program(dev);
+ 
++	/* port mirroring */
++	/* reset all mirror registers */
++	for (i = 0; i < dev->ports; i++) {
++		reg = sr16(dev, MV_PORTREG(CONTROL2, i));
++		reg &= ~(MV_MIRROR_RX_SRC_MASK | MV_MIRROR_TX_SRC_MASK);
++		sw16(dev, MV_PORTREG(CONTROL2, i), reg);
++	}
++	reg = sr16(dev, MV_GLOBALREG(MONITOR_CTRL));
++	reg |= MV_MIRROR_RX_DEST_MASK | MV_MIRROR_TX_DEST_MASK;
++	sw16(dev, MV_GLOBALREG(MONITOR_CTRL), reg);
++
++	/* now enable mirroring if necessary */
++	if (state->mirror_rx) {
++		/* set ingress monitor source */
++		reg = sr16(dev, MV_PORTREG(CONTROL2, state->source_port)) & ~MV_MIRROR_RX_SRC_MASK;
++		reg |= state->mirror_rx << MV_MIRROR_RX_SRC_SHIFT;
++		sw16(dev, MV_PORTREG(CONTROL2, state->source_port), reg);
++		/* set ingress monitor destination */
++		reg = sr16(dev, MV_GLOBALREG(MONITOR_CTRL)) & ~MV_MIRROR_RX_DEST_MASK;
++		reg |= state->monitor_port << MV_MIRROR_RX_DEST_SHIFT;
++		sw16(dev, MV_GLOBALREG(MONITOR_CTRL), reg);
++	}
++
++	if (state->mirror_tx) {
++		/* set egress monitor source */
++		reg = sr16(dev, MV_PORTREG(CONTROL2, state->source_port)) & ~MV_MIRROR_TX_SRC_MASK;
++		reg |= state->mirror_tx << MV_MIRROR_TX_SRC_SHIFT;
++		sw16(dev, MV_PORTREG(CONTROL2, state->source_port), reg);
++		/* set egress monitor destination */
++		reg = sr16(dev, MV_GLOBALREG(MONITOR_CTRL)) & ~MV_MIRROR_TX_DEST_MASK;
++		reg |= state->monitor_port << MV_MIRROR_TX_DEST_SHIFT;
++		sw16(dev, MV_GLOBALREG(MONITOR_CTRL), reg);
++	}
++
+ 	return 0;
+ }
+ 
+@@ -775,6 +809,11 @@
+ 
+ 	state->vlan_enabled = 0;
+ 
++	state->mirror_rx = false;
++	state->mirror_tx = false;
++	state->source_port = 0;
++	state->monitor_port = 0;
++
+ 	mvsw61xx_update_state(dev);
+ 
+ 	/* Hack Hack Hack */
+@@ -922,7 +961,6 @@
+ 
+ static const struct switch_attr mvsw61xx_global[] = {
+ 	{
+-		.id = MVSW61XX_ENABLE_VLAN,
+ 		.type = SWITCH_TYPE_INT,
+ 		.name = "enable_vlan",
+ 		.description = "Enable 802.1q VLAN support",
+Index: mvsw61xx.h
+===================================================================
+--- mvsw61xx.h	(revision 52220)
++++ mvsw61xx.h	(working copy)
+@@ -63,7 +63,6 @@
+ };
+ #define MV_PORT_STATUS_SPEED_SHIFT	8
+ #define MV_PORT_STATUS_SPEED_MASK	(3 << 8)
+-#define MV_PORT_STATUS_PHYDETECT	(1 << 12)
+ 
+ enum {
+ 	MV_PORTCTRL_DISABLED		= (0 << 0),
+@@ -166,6 +165,7 @@
+ 	MV_GLOBAL_VTU_DATA1		= 0x07,
+ 	MV_GLOBAL_VTU_DATA2		= 0x08,
+ 	MV_GLOBAL_VTU_DATA3		= 0x09,
++	MV_GLOBAL_MONITOR_CTRL		= 0x1a,
+ 	MV_GLOBAL_CONTROL2		= 0x1c,
+ };
+ #define MV_GLOBALREG(_type) MV_SWITCH_GLOBAL, MV_GLOBAL_##_type
+@@ -194,27 +194,9 @@
+ enum {
+ 	MV_CONTROL_RESET		= (1 << 15),
+ 	MV_CONTROL_PPU_ENABLE		= (1 << 14),
+-	MV_CONTROL_ANEG			= (1 << 12),
+-	MV_CONTROL_ANEG_RESTART		= (1 << 9),
+ };
+ 
+ enum {
+-	MV_1000CONTROL_ADV1000FULL	= (1 << 9),
+-	MV_1000CONTROL_ADV1000HALF	= (1 << 8),
+-};
+-
+-enum {
+-	MV_ANEG_ADV10HALF		= (1 << 5),
+-	MV_ANEG_ADV10FULL		= (1 << 6),
+-	MV_ANEG_ADV100HALF		= (1 << 7),
+-	MV_ANEG_ADV100FULL		= (1 << 8),
+-	MV_ANEG_ADV100T4		= (1 << 9),
+-	MV_ANEG_ADVPAUSE		= (1 << 10),
+-	MV_ANEG_ADVASYMPAUSE		= (1 << 11),
+-};
+-
+-
+-enum {
+ 	MV_VTUCTL_EGRESS_UNMODIFIED	= (0 << 0),
+ 	MV_VTUCTL_EGRESS_UNTAGGED	= (1 << 0),
+ 	MV_VTUCTL_EGRESS_TAGGED		= (2 << 0),
+@@ -261,6 +243,16 @@
+ #define MV_FDB_HI_SHIFT			4
+ #define MV_FDB_LO_SHIFT			12
+ 
++#define MV_MIRROR_RX_DEST_MASK		0xf000
++#define MV_MIRROR_TX_DEST_MASK		0x0f00
++#define MV_MIRROR_RX_DEST_SHIFT		12
++#define MV_MIRROR_TX_DEST_SHIFT		8
++
++#define MV_MIRROR_RX_SRC_SHIFT		4
++#define MV_MIRROR_RX_SRC_MASK		(1 << MV_MIRROR_RX_SRC_SHIFT)
++#define MV_MIRROR_TX_SRC_SHIFT		5
++#define MV_MIRROR_TX_SRC_MASK		(1 << MV_MIRROR_TX_SRC_SHIFT)
++
+ /* Marvell Specific PHY register */
+ #define MII_MV_SPEC_CTRL		16
+ enum {
+@@ -274,21 +266,6 @@
+ #define MV_REG_FIBER_SERDES		0xf
+ #define MV_PAGE_FIBER_SERDES		0x1
+ 
+-#define PHY_ADDR(_n, _type) _n, _type
+-#define PHY_CONTROL_REG 0
+-#define PHY_ANEG_REG 4
+-#define PHY_1000CONTROL_REG 9
+-#define PHY_SPECCONTROL_REG 16
+-#define PHY_PAGE_REG 22
+-
+-#define PHY_PAGE_MASK 0xFF
+-#define PHY_CONTROL_PWR (1<<11)
+-#define PHY_SPECCONTROL_PWR (1<<2)
+-
+-#define MV_SWITCH_GLOBAL2_SMI_COMMAND 0x18
+-#define MV_SWITCH_GLOBAL2_SMI_DATA 0x19
+-#define MV6176_MAX_PHY 4
+-
+ struct mvsw61xx_state {
+ 	struct switch_dev dev;
+ 	struct mii_bus *bus;
+@@ -318,6 +295,12 @@
+ 		u32 port_sstate;
+ 	} vlans[MV_VLANS];
+ 
++	/* mirroring */
++	bool mirror_rx;
++	bool mirror_tx;
++	int source_port;
++	int monitor_port;
++
+ 	char buf[128];
+ };
+ 
