@@ -1600,9 +1600,9 @@ int do_command6(int argc, char *argv[], char **table,
 	if (!*handle)
 		*handle = ip6tc_init(*table);
 
-//	/* try to insmod the module if iptc_init failed */
-//	if (!*handle && xtables_load_ko(xtables_modprobe_program, false) != -1)
-//		*handle = ip6tc_init(*table);
+	/* try to insmod the module if iptc_init failed */
+	if (!*handle && xtables_load_ko(xtables_modprobe_program, false) != -1)
+		*handle = ip6tc_init(*table);
 
 	if (!*handle)
 		xtables_error(VERSION_PROBLEM,
