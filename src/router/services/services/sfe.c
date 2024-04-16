@@ -32,6 +32,7 @@
 void start_sfe(void)
 {
 	if (nvram_match("sfe", "1")) {
+		eval("modprobe","ipv6");
 		insmod("shortcut-fe");
 		insmod("shortcut-fe-ipv6");
 		insmod("fast-classifier");
