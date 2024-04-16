@@ -2965,8 +2965,10 @@ static void mangle_table(char *wanface, char *wanaddr, char *vifs)
 	 */
 
 	save2file_A_forward("-p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu");
-	if (nvram_match("wan_proto", "iphone") || nvram_match("wan_proto", "android") || nvram_match("wan_proto", "3g"))
+	if (nvram_match("wan_proto", "iphone") || nvram_match("wan_proto", "android") || nvram_match("wan_proto", "3g")) {
+		insmod("xt_HL");
 		save2file_I_postrouting("-o %s -j TTL --ttl-set 65", wanface);
+	}
 #ifdef HAVE_PRIVOXY
 	if ((nvram_matchi("privoxy_enable", 1)) && (nvram_matchi("wshaper_enable", 1))) {
 		save2file("-I OUTPUT -p tcp --sport 8118 -j IMQ --todev 0");
@@ -3320,6 +3322,7 @@ static void run_firewall6(char *vifs)
 	     "TCPMSS", "--clamp-mss-to-pmtu");
 
 	if (nvram_match("wan_proto", "iphone") || nvram_match("wan_proto", "android") || nvram_match("wan_proto", "3g")) {
+		insmod("xt_HL");
 		eval("ip6tables", "-t", "mangle", "-D", "POSTROUTING", "-o", wanface, "-j", "HL", "--hl-set", "65");
 		eval("ip6tables", "-t", "mangle", "-I", "POSTROUTING", "-o", wanface, "-j", "HL", "--hl-set", "65");
 	}
