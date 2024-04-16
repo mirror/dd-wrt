@@ -282,8 +282,8 @@ bool ipv6_chk_acast_addr_src(struct net *net, struct net_device *dev,
 			     const struct in6_addr *addr);
 
 /* Device notifier */
-int __weak register_inet6addr_notifier(struct notifier_block *nb);
-int __weak unregister_inet6addr_notifier(struct notifier_block *nb);
+int register_inet6addr_notifier(struct notifier_block *nb);
+int unregister_inet6addr_notifier(struct notifier_block *nb);
 int inet6addr_notifier_call_chain(unsigned long val, void *v);
 
 int register_inet6addr_validator_notifier(struct notifier_block *nb);
