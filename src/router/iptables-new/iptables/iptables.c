@@ -1590,8 +1590,8 @@ int do_command4(int argc, char *argv[], char **table,
 		*handle = iptc_init(*table);
 
 	/* try to insmod the module if iptc_init failed */
-	if (!*handle && xtables_load_ko(xtables_modprobe_program, false) != -1)
-		*handle = iptc_init(*table);
+//	if (!*handle && xtables_load_ko(xtables_modprobe_program, false) != -1)
+//		*handle = iptc_init(*table);
 
 	if (!*handle)
 		xtables_error(VERSION_PROBLEM,

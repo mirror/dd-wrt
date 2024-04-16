@@ -76,11 +76,11 @@ create_handle(const struct iptables_restore_cb *cb, const char *tablename)
 
 	handle = cb->ops->init(tablename);
 
-	if (!handle) {
-		/* try to insmod the module if iptc_init failed */
-		xtables_load_ko(xtables_modprobe_program, false);
-		handle = cb->ops->init(tablename);
-	}
+//	if (!handle) {
+//		/* try to insmod the module if iptc_init failed */
+//		xtables_load_ko(xtables_modprobe_program, false);
+//		handle = cb->ops->init(tablename);
+//	}
 
 	if (!handle)
 		xtables_error(PARAMETER_PROBLEM, "%s: unable to initialize "
