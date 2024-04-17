@@ -1,3 +1,34 @@
+Changes in version 0.4.8.11 - 2024-04-10
+  This is a minor release mostly to upgrade the fallbackdir list. Worth noting
+  also that directory authority running this version will now automatically
+  reject relays running the end of life 0.4.7.x version.
+
+  o Minor feature (authority):
+    - Reject 0.4.7.x series at the authority level. Closes ticket 40896.
+
+  o Minor feature (dirauth, tor26):
+    - New IP address and keys.
+
+  o Minor feature (directory authority):
+    - Allow BandwidthFiles "node_id" KeyValue without the dollar sign at
+      the start of the hexdigit, in order to easier database queries
+      combining Tor documents in which the relays fingerprint does not
+      include it. Fixes bug 40891; bugfix on 0.4.7 (all supported
+      versions of Tor).
+
+  o Minor features (fallbackdir):
+    - Regenerate fallback directories generated on April 10, 2024.
+
+  o Minor features (geoip data):
+    - Update the geoip files to match the IPFire Location Database, as
+      retrieved on 2024/04/10.
+
+  o Minor bugfixes (directory authorities):
+    - Add a warning when publishing a vote or signatures to another
+      directory authority fails. Fixes bug 40910; bugfix
+      on 0.2.0.3-alpha.
+
+
 Changes in version 0.4.8.10 - 2023-12-08
   This is a security release fixing a high severity bug (TROVE-2023-007)
   affecting Exit relays supporting Conflux. We strongly recommend to update as
@@ -238,6 +269,10 @@ Changes in version 0.4.8.3-rc - 2023-08-04
       retrieved on 2023/07/26.
     - Update the geoip files to match the IPFire Location Database, as
       retrieved on 2023/08/04.
+
+  o Minor features (bridge):
+    - warn when a bridge is also configure to be an exit relay.
+      Closes ticket 40819.
 
   o Minor bugfixes (compilation):
     - Fix all -Werror=enum-int-mismatch warnings. No behavior change.
