@@ -199,30 +199,6 @@
  #define NDPI_CURRENT_PROTO NDPI_PROTOCOL_UNKNOWN
  #endif
 
- #define NDPI_LOG_ERR(mod, args...)		                                 \
-  if(mod && mod->ndpi_log_level >= NDPI_LOG_ERROR) {	                         \
-    if(mod != NULL && mod->ndpi_debug_printf != NULL)		                         \
-      (*(mod->ndpi_debug_printf))(NDPI_CURRENT_PROTO, mod, NDPI_LOG_ERROR , __FILE__, __FUNCTION__, __LINE__, args); \
-  }
-
- #define NDPI_LOG_INFO(mod, args...)		                                 \
-  if(mod && mod->ndpi_log_level >= NDPI_LOG_TRACE) {	                         \
-    if(mod != NULL && mod->ndpi_debug_printf != NULL)		                         \
-      (*(mod->ndpi_debug_printf))(NDPI_CURRENT_PROTO, mod, NDPI_LOG_TRACE , __FILE__, __FUNCTION__, __LINE__, args); \
-  }
-
- #define NDPI_LOG_DBG(mod, args...)		                                 \
-  if(mod && mod->ndpi_log_level >= NDPI_LOG_DEBUG) {	                         \
-    if(mod != NULL && mod->ndpi_debug_printf != NULL)		                         \
-      (*(mod->ndpi_debug_printf))(NDPI_CURRENT_PROTO, mod, NDPI_LOG_DEBUG , __FILE__, __FUNCTION__, __LINE__, args); \
-  }
-
- #define NDPI_LOG_DBG2(mod, args...)		                                 \
-  if(mod && mod->ndpi_log_level >= NDPI_LOG_DEBUG_EXTRA) {	                         \
-    if(mod != NULL && mod->ndpi_debug_printf != NULL)		                         \
-      (*(mod->ndpi_debug_printf))(NDPI_CURRENT_PROTO, mod, NDPI_LOG_DEBUG_EXTRA , __FILE__, __FUNCTION__, __LINE__, args); \
-  }
-
 #else							/* not defined NDPI_ENABLE_DEBUG_MESSAGES */
 # ifdef WIN32
 # define NDPI_LOG(...) {}
@@ -231,11 +207,13 @@
 # define NDPI_LOG_DBG(...) {}
 # define NDPI_LOG_DBG2(...) {}
 # else
+#ifndef NDPI_LOG
 # define NDPI_LOG(proto, mod, log_level, args...) { /* printf(args); */ }
 # define NDPI_LOG_ERR(mod, args...)  { printf(args); }
 # define NDPI_LOG_INFO(mod, args...) { /* printf(args); */ }
 # define NDPI_LOG_DBG(mod,  args...) { /* printf(args); */ }
 # define NDPI_LOG_DBG2(mod, args...) { /* printf(args); */ }
+#endif
 # endif
 #endif							/* NDPI_ENABLE_DEBUG_MESSAGES */
 

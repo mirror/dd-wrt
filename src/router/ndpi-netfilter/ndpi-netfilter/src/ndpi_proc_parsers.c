@@ -654,7 +654,7 @@ return ret;
  * [-]prefix ([[(tcp|udp|any):]port[-port]:]protocol)+
  */
 
-int _parse_ndpi_ipdef(struct ndpi_net *n,char *cmd, int family) {
+static int _parse_ndpi_ipdef(struct ndpi_net *n,char *cmd, int family) {
 int f_op = 0; // 1 if delete
 char *addr,c;
 ndpi_prefix_t *prefix;

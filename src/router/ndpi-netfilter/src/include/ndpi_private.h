@@ -533,14 +533,6 @@ struct ndpi_detection_module_struct {
 # define NDPI_LOG_DBG2(mod, ...) { (void)mod; }
 # else
 # define NDPI_LOG(proto, mod, log_level, args...) { /* printf(args); */ }
-# ifndef FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
-#  define NDPI_LOG_ERR(mod, args...)  { (void)mod; printf(args); }
-# else
-#  define NDPI_LOG_ERR(mod, args...)  { (void)mod; /* printf(args); */ }
-# endif
-# define NDPI_LOG_INFO(mod, args...) { (void)mod; /* printf(args); */ }
-# define NDPI_LOG_DBG(mod,  args...) { (void)mod; /* printf(args); */ }
-# define NDPI_LOG_DBG2(mod, args...) { (void)mod; /* printf(args); */ }
 # endif
 #endif /* NDPI_ENABLE_DEBUG_MESSAGES */
 
@@ -657,7 +649,7 @@ NDPI_STATIC u_int16_t icmp4_checksum(u_int8_t const * const buf, size_t len);
 
 NDPI_STATIC ndpi_risk_enum ndpi_network_risk_ptree_match(struct ndpi_detection_module_struct *ndpi_str,
 					     struct in_addr *pin /* network byte order */);
-int ndpi_handle_rule(struct ndpi_detection_module_struct *, char *);
+NDPI_STATIC int ndpi_handle_rule(struct ndpi_detection_module_struct *, char *);
 #ifndef __KERNEL__
 NDPI_STATIC int load_protocols_file_fd(struct ndpi_detection_module_struct *ndpi_mod, FILE *fd);
 NDPI_STATIC int load_categories_file_fd(struct ndpi_detection_module_struct *ndpi_str, FILE *fd, void *user_data);

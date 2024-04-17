@@ -242,7 +242,7 @@ extern "C" {
    * Loading ip lists
    *
    */
-  void ndpi_load_ip_lists(struct ndpi_detection_module_struct *ndpi_str);
+  NDPI_STATIC void ndpi_load_ip_lists(struct ndpi_detection_module_struct *ndpi_str);
 
   /**
    * Completes the initialization (2nd step)
