@@ -81,12 +81,9 @@ ssize_t n_hostdef_proc_read(struct file *file, char __user *buf,
 	if(_DBG_TRACE_GPROC_H)
 		pr_info("read: start ppos %lld\n",*ppos);
 
-	while(hdp < NDPI_NUM_BITS ) {
-		if(!cpos) {
-			strcpy(lbuf,"#Proto:host\n");
-			l = strlen(lbuf);
-		}
+	l = snprintf(lbuf,sizeof(lbuf),"#Proto:host\n");
 
+	while(hdp < NDPI_NUM_BITS ) {
 		ph = n->hosts_tmp ? n->hosts_tmp->p[hdp]:
 				    n->hosts->p[hdp];
 		host = NULL;
@@ -97,11 +94,8 @@ ssize_t n_hostdef_proc_read(struct file *file, char __user *buf,
 				t_proto = unkproto;
 			}
 			pl = strlen(t_proto);
-			i = 0; p = 0;
-			for( ; (uint8_t)ph->s[hdh] ;
-					hdh += (uint8_t)ph->s[hdh] + 2) {
+			for(i = 0, p = 0; (hl = (uint8_t)ph->s[hdh]) != 0; hdh += hl + 2) {
 				host = &ph->s[hdh+1];
-				hl = strlen(host);
 
 				if(i && l - p + hl > 132) break;
 

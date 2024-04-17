@@ -245,6 +245,16 @@ static ndpi_prefix_t * ndpi_New_Prefix2 (int family, void *dest, int bitlen, ndp
       }
       memcpy (&prefix->add.sin, dest, sizeof(struct in_addr));
     }
+    else if(family == AF_MAC) {
+      default_bitlen = 48;
+      if(prefix == NULL) {
+        prefix = (ndpi_prefix_t*)ndpi_calloc(1, sizeof (ndpi_prefix_t));
+        if(!prefix)
+          return (NULL);
+        dynamic_allocated++;
+      }
+      memcpy (prefix->add.mac, dest, 6);
+    }
     else {
       return (NULL);
     }
@@ -323,17 +333,31 @@ ndpi_patricia_new (u_int16_t maxbits)
  * before deleting the node
  */
 void
-ndpi_Clear_Patricia (ndpi_patricia_tree_t *patricia, ndpi_void_fn_t func)
+ndpi_Clear_Patricia (ndpi_patricia_tree_t *patricia, 
+		ndpi_patricia_node_t *Xrn,
+		ndpi_void_fn_t func)
 {
   if(!patricia)
     return;
 
-  if(patricia->head) {
+  if(!Xrn)
+	Xrn = patricia->head;
 
+  if(Xrn) {
     ndpi_patricia_node_t *Xstack[PATRICIA_MAXBITS+1];
     ndpi_patricia_node_t **Xsp = Xstack;
-    ndpi_patricia_node_t *Xrn = patricia->head;
-
+    ndpi_patricia_node_t *parent;
+    parent = Xrn->parent;
+    if(parent) {
+	    Xrn->parent = NULL;
+	    if(parent->l == Xrn) {
+		parent->l = NULL;
+	    } else if(parent->r == Xrn)
+		    	parent->r = NULL;
+    } else {
+	if(Xrn == patricia->head)
+		patricia->head = NULL;
+    }
     while (Xrn) {
       ndpi_patricia_node_t *l = Xrn->l;
       ndpi_patricia_node_t *r = Xrn->r;
@@ -363,14 +387,14 @@ ndpi_Clear_Patricia (ndpi_patricia_tree_t *patricia, ndpi_void_fn_t func)
       }
     }
   }
-  assert (patricia->num_active_node == 0);
+  assert (!patricia->head && patricia->num_active_node == 0);
   /* ndpi_DeleteEntry (patricia); */
 }
 
 void
 ndpi_patricia_destroy (ndpi_patricia_tree_t *patricia, ndpi_void_fn_t func)
 {
-  ndpi_Clear_Patricia (patricia, func);
+  ndpi_Clear_Patricia (patricia, NULL, func);
   ndpi_DeleteEntry (patricia);
   num_active_patricia--;
 }

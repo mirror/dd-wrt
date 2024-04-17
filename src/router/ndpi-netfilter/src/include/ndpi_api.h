@@ -1,7 +1,7 @@
 /*
  * ndpi_api.h
  *
- * Copyright (C) 2011-20 - ntop.org
+ * Copyright (C) 2011-24 - ntop.org
  *
  * This file is part of nDPI, an open source deep packet inspection
  * library based on the OpenDPI and PACE technology by ipoque GmbH
@@ -239,6 +239,12 @@ extern "C" {
   NDPI_STATIC struct ndpi_detection_module_struct *ndpi_init_detection_module(struct ndpi_global_context *g_ctx);
 
   /**
+   * Loading ip lists
+   *
+   */
+  void ndpi_load_ip_lists(struct ndpi_detection_module_struct *ndpi_str);
+
+  /**
    * Completes the initialization (2nd step)
    *
    * @par ndpi_str = the struct created for the protocol detection
@@ -367,8 +373,7 @@ extern "C" {
    * @return the ID of the master protocol detected
    *
    */
-  NDPI_STATIC u_int16_t ndpi_get_flow_masterprotocol(struct ndpi_detection_module_struct *ndpi_struct,
-					 struct ndpi_flow_struct *flow);
+  NDPI_STATIC u_int16_t ndpi_get_flow_masterprotocol(struct ndpi_flow_struct *flow);
 
   /**
    * Get the app protocol of the passed flows for the detected module
@@ -379,8 +384,7 @@ extern "C" {
    * @return the ID of the app protocol detected
    *
    */
-  NDPI_STATIC u_int16_t ndpi_get_flow_appprotocol(struct ndpi_detection_module_struct *ndpi_str,
-				      struct ndpi_flow_struct *flow);
+  NDPI_STATIC u_int16_t ndpi_get_flow_appprotocol(struct ndpi_flow_struct *flow);
 
   /**
    * Get the category of the passed flows for the detected module
@@ -391,8 +395,7 @@ extern "C" {
    * @return the ID of the category
    *
    */
-  NDPI_STATIC ndpi_protocol_category_t ndpi_get_flow_category(struct ndpi_detection_module_struct *ndpi_str,
-						  struct ndpi_flow_struct *flow);
+  NDPI_STATIC ndpi_protocol_category_t ndpi_get_flow_category(struct ndpi_flow_struct *flow);
 
   /**
    * Get the ndpi protocol data of the passed flows for the detected module
@@ -403,8 +406,7 @@ extern "C" {
    * @par    ndpi_proto   = the output struct where to store the requested information
    *
    */
-  NDPI_STATIC void ndpi_get_flow_ndpi_proto(struct ndpi_detection_module_struct *ndpi_str,
-				struct ndpi_flow_struct *flow,
+  NDPI_STATIC void ndpi_get_flow_ndpi_proto(struct ndpi_flow_struct *flow,
 				struct ndpi_proto * ndpi_proto);
 
 
@@ -564,8 +566,7 @@ extern "C" {
    * @return  the buffer contains the master_protocol and protocol name
    *
    */
-  NDPI_STATIC char* ndpi_protocol2id(struct ndpi_detection_module_struct *ndpi_mod,
-			 ndpi_protocol proto, char *buf, u_int buf_len);
+  NDPI_STATIC char* ndpi_protocol2id(ndpi_protocol proto, char *buf, u_int buf_len);
 
   /**
    * Find out if a given category is custom/user-defined
@@ -607,8 +608,7 @@ extern "C" {
    * @return  1 = the subprotocol is informative, 0 otherwise.
    *
    */
-  NDPI_STATIC u_int8_t ndpi_is_subprotocol_informative(struct ndpi_detection_module_struct *ndpi_mod,
-					   u_int16_t protoId);
+  NDPI_STATIC u_int8_t ndpi_is_subprotocol_informative(u_int16_t protoId);
 
   /**
    * Set hostname-based protocol
@@ -701,8 +701,7 @@ extern "C" {
    * @return  the string name of the breed ID
    *
    */
-  NDPI_STATIC char* ndpi_get_proto_breed_name(struct ndpi_detection_module_struct *ndpi_struct,
-				  ndpi_protocol_breed_t breed_id);
+  NDPI_STATIC char* ndpi_get_proto_breed_name(ndpi_protocol_breed_t breed_id);
 
   /**
    * Return the ID of the protocol
@@ -898,8 +897,7 @@ extern "C" {
    * @return  the HTTP method information about the flow
    *
    */
-  NDPI_STATIC ndpi_http_method ndpi_get_http_method(struct ndpi_detection_module_struct *ndpi_mod,
-					struct ndpi_flow_struct *flow);
+  NDPI_STATIC ndpi_http_method ndpi_get_http_method(struct ndpi_flow_struct *flow);
 
   /**
    * Get the HTTP url
@@ -909,8 +907,7 @@ extern "C" {
    * @return  the HTTP method information about the flow
    *
    */
-  NDPI_STATIC char* ndpi_get_http_url(struct ndpi_detection_module_struct *ndpi_mod,
-			  struct ndpi_flow_struct *flow);
+  NDPI_STATIC char* ndpi_get_http_url(struct ndpi_flow_struct *flow);
 
   /**
    * Get the HTTP content-type
@@ -920,8 +917,7 @@ extern "C" {
    * @return  the HTTP method information about the flow
    *
    */
-  NDPI_STATIC char* ndpi_get_http_content_type(struct ndpi_detection_module_struct *ndpi_mod,
-				   struct ndpi_flow_struct *flow);
+  NDPI_STATIC char* ndpi_get_http_content_type(struct ndpi_flow_struct *flow);
 
   /* NDPI_PROTOCOL_TOR */
   /**
@@ -945,6 +941,7 @@ extern "C" {
    *
    */
   NDPI_STATIC void* ndpi_init_automa(void);
+  NDPI_STATIC void *ndpi_init_automa_domain(void);
 
   /**
    * Free Aho-Corasick automata allocated with ndpi_init_automa();
@@ -1080,9 +1077,9 @@ extern "C" {
   /* LRU cache */
   NDPI_STATIC struct ndpi_lru_cache* ndpi_lru_cache_init(u_int32_t num_entries, u_int32_t ttl, int shared);
   NDPI_STATIC void ndpi_lru_free_cache(struct ndpi_lru_cache *c);
-  NDPI_STATIC u_int8_t ndpi_lru_find_cache(struct ndpi_lru_cache *c, u_int32_t key,
+  NDPI_STATIC u_int8_t ndpi_lru_find_cache(struct ndpi_lru_cache *c, u_int64_t key,
 			       u_int16_t *value, u_int8_t clean_key_when_found, u_int32_t now_sec);
-  NDPI_STATIC void ndpi_lru_add_to_cache(struct ndpi_lru_cache *c, u_int32_t key, u_int16_t value, u_int32_t now_sec);
+  NDPI_STATIC void ndpi_lru_add_to_cache(struct ndpi_lru_cache *c, u_int64_t key, u_int16_t value, u_int32_t now_sec);
   NDPI_STATIC void ndpi_lru_get_stats(struct ndpi_lru_cache *c, struct ndpi_lru_cache_stats *stats);
 
   /**
@@ -1120,15 +1117,11 @@ extern "C" {
   NDPI_STATIC int ndpi_flowv6_flow_hash(u_int8_t l4_proto, struct ndpi_in6_addr *src_ip, struct ndpi_in6_addr *dst_ip,
 			    u_int16_t src_port, u_int16_t dst_port, u_int8_t icmp_type, u_int8_t icmp_code,
 			    u_char *hash_buf, u_int8_t hash_buf_len);
-  NDPI_STATIC u_int8_t ndpi_extra_dissection_possible(struct ndpi_detection_module_struct *ndpi_struct,
-					  struct ndpi_flow_struct *flow);
+  NDPI_STATIC u_int8_t ndpi_extra_dissection_possible(struct ndpi_detection_module_struct *ndpi_str,
+                                          struct ndpi_flow_struct *flow);
   NDPI_STATIC u_int8_t ndpi_is_safe_ssl_cipher(u_int32_t cipher);
   NDPI_STATIC u_int16_t ndpi_guess_host_protocol_id(struct ndpi_detection_module_struct *ndpi_struct,
 					struct ndpi_flow_struct *flow);
-  NDPI_STATIC int ndpi_has_human_readeable_string(struct ndpi_detection_module_struct *ndpi_struct,
-				      char *buffer, u_int buffer_size,
-				      u_int8_t min_string_match_len, /* Will return 0 if no string > min_string_match_len have been found */
-				      char *outbuf, u_int outbuf_len);
   /* Return a flow info string (summarized). Does only work for DNS/HTTP/TLS/QUIC. */
   NDPI_STATIC const char* ndpi_get_flow_info(struct ndpi_flow_struct const * const flow,
                                  ndpi_protocol const * const l7_protocol);
@@ -1148,10 +1141,9 @@ extern "C" {
   NDPI_STATIC const char* ndpi_cipher2str(u_int32_t cipher, char unknown_cipher[8]);
 #ifndef __KERNEL__    
   NDPI_STATIC const char* ndpi_tunnel2str(ndpi_packet_tunnel tt);
-  NDPI_STATIC int ndpi_has_human_readeable_string(struct ndpi_detection_module_struct *ndpi_struct,
-				      NDPI_STATIC char *buffer, u_int buffer_size,
+  NDPI_STATIC int ndpi_has_human_readeable_string(char *buffer, u_int buffer_size,
 				      u_int8_t min_string_match_len, /* Will return 0 if no string > min_string_match_len have been found */
-				      NDPI_STATIC char *outbuf, u_int outbuf_len);
+				      char *outbuf, u_int outbuf_len);
   NDPI_STATIC int ndpi_dpi2json(struct ndpi_detection_module_struct *ndpi_struct,
 		    struct ndpi_flow_struct *flow,
 		    ndpi_protocol l7_protocol,
@@ -1778,7 +1770,6 @@ extern "C" {
 
   /* ******************************* */
 
-  u_int64_t ndpi_quick_hash64(const char *str, u_int str_len);
   NDPI_STATIC u_int32_t ndpi_hash_string(const char *str);
   NDPI_STATIC u_int32_t ndpi_rev_hash_string(const char *str);
   NDPI_STATIC u_int32_t ndpi_hash_string_len(const char *str, u_int len);
@@ -1805,8 +1796,7 @@ extern "C" {
 
   NDPI_STATIC ndpi_risk_enum ndpi_validate_url(char *url);
 
-  NDPI_STATIC u_int8_t ndpi_is_protocol_detected(struct ndpi_detection_module_struct *ndpi_str,
-				     ndpi_protocol proto);
+  NDPI_STATIC u_int8_t ndpi_is_protocol_detected(ndpi_protocol proto);
   NDPI_STATIC void ndpi_serialize_risk(ndpi_serializer *serializer, ndpi_risk risk);
   NDPI_STATIC void ndpi_serialize_risk_score(ndpi_serializer *serializer, ndpi_risk_enum risk);
   NDPI_STATIC void ndpi_serialize_confidence(ndpi_serializer *serializer, ndpi_confidence_t confidence);
@@ -1816,6 +1806,7 @@ extern "C" {
                             ndpi_confidence_t confidence,
                             ndpi_protocol l7_protocol);
 #endif /* KERNEL */
+  NDPI_STATIC u_int64_t ndpi_quick_hash64(const char *str, u_int str_len);
   NDPI_STATIC void ndpi_sha256(const u_char *data, size_t data_len, u_int8_t sha_hash[32]);
   NDPI_STATIC u_int16_t ndpi_crc16_ccit(const void* data, size_t n_bytes);
   NDPI_STATIC u_int16_t ndpi_crc16_ccit_false(const void *data, size_t n_bytes);
@@ -2037,18 +2028,16 @@ extern "C" {
   */
 
   NDPI_STATIC ndpi_bitmap* ndpi_bitmap_alloc(void);
-  NDPI_STATIC ndpi_bitmap* ndpi_bitmap_alloc_size(u_int32_t size);
   NDPI_STATIC void ndpi_bitmap_free(ndpi_bitmap* b);
   NDPI_STATIC ndpi_bitmap* ndpi_bitmap_copy(ndpi_bitmap* b);
   NDPI_STATIC u_int64_t ndpi_bitmap_cardinality(ndpi_bitmap* b);
   NDPI_STATIC bool ndpi_bitmap_is_empty(ndpi_bitmap* b);
-  NDPI_STATIC void ndpi_bitmap_set(ndpi_bitmap* b, u_int32_t value);
-  NDPI_STATIC void ndpi_bitmap_unset(ndpi_bitmap* b, u_int32_t value);
-  NDPI_STATIC bool ndpi_bitmap_isset(ndpi_bitmap* b, u_int32_t value);
-  NDPI_STATIC void ndpi_bitmap_clear(ndpi_bitmap* b);
+  NDPI_STATIC void ndpi_bitmap_set(ndpi_bitmap* b, u_int64_t value);
+  NDPI_STATIC void ndpi_bitmap_unset(ndpi_bitmap* b, u_int64_t value);
+  NDPI_STATIC bool ndpi_bitmap_isset(ndpi_bitmap* b, u_int64_t value);
 
   NDPI_STATIC size_t ndpi_bitmap_serialize(ndpi_bitmap* b, char **buf);
-  NDPI_STATIC ndpi_bitmap* ndpi_bitmap_deserialize(char *buf);
+  NDPI_STATIC ndpi_bitmap* ndpi_bitmap_deserialize(char *buf, size_t buf_len);
 
   NDPI_STATIC void ndpi_bitmap_and(ndpi_bitmap* a, ndpi_bitmap* b_and);
   NDPI_STATIC ndpi_bitmap* ndpi_bitmap_and_alloc(ndpi_bitmap* a, ndpi_bitmap* b_and);
@@ -2060,7 +2049,7 @@ extern "C" {
 
   NDPI_STATIC ndpi_bitmap_iterator* ndpi_bitmap_iterator_alloc(ndpi_bitmap* b);
   NDPI_STATIC void ndpi_bitmap_iterator_free(ndpi_bitmap* b);
-  NDPI_STATIC bool ndpi_bitmap_iterator_next(ndpi_bitmap_iterator* i, u_int32_t *value);
+  NDPI_STATIC bool ndpi_bitmap_iterator_next(ndpi_bitmap_iterator* i, u_int64_t *value);
 
   /* ******************************* */
 
@@ -2074,12 +2063,12 @@ extern "C" {
       is not allowed
    */
 
-  NDPI_STATIC ndpi_bitmap64* ndpi_bitmap64_alloc(void);
-  NDPI_STATIC bool ndpi_bitmap64_set(ndpi_bitmap64 *b, u_int64_t value);
-  NDPI_STATIC bool ndpi_bitmap64_compress(ndpi_bitmap64 *b);
-  NDPI_STATIC bool ndpi_bitmap64_isset(ndpi_bitmap64 *b, u_int64_t value);
-  NDPI_STATIC void ndpi_bitmap64_free(ndpi_bitmap64 *b);
-  NDPI_STATIC u_int32_t ndpi_bitmap64_size(ndpi_bitmap64 *b);
+  NDPI_STATIC ndpi_bitmap64_fuse* ndpi_bitmap64_fuse_alloc(void);
+  NDPI_STATIC bool ndpi_bitmap64_fuse_set(ndpi_bitmap64_fuse *b, u_int64_t value);
+  NDPI_STATIC bool ndpi_bitmap64_fuse_compress(ndpi_bitmap64_fuse *b);
+  NDPI_STATIC bool ndpi_bitmap64_fuse_isset(ndpi_bitmap64_fuse *b, u_int64_t value);
+  NDPI_STATIC void ndpi_bitmap64_fuse_free(ndpi_bitmap64_fuse *b);
+  NDPI_STATIC u_int32_t ndpi_bitmap64_fuse_size(ndpi_bitmap64_fuse *b);
 
   /* ******************************* */
 

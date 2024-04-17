@@ -25,19 +25,20 @@ str_collect_t *str_collect_init(size_t num_start) {
 str_collect_t *c;
 
     if(!num_start)
-	    num_start =  64;
+	    num_start =  128;
 
-    c = (str_collect_t *)kmalloc(sizeof(str_collect_t) + num_start + 1, GFP_KERNEL);
+    c = (str_collect_t *)kmalloc(sizeof(str_collect_t)-sizeof(c->s) + num_start + 1, GFP_KERNEL);
     if(!c) 
 	return c;
 
     c->max  = num_start;
     c->last = 0;
-    c->s[0] = '\0';
+    c->s[0] = '\0'; // last string 
     return c;
 }
 
 str_collect_t *str_collect_copy(str_collect_t *c,int add_size) {
+    if(add_size > 0 && add_size < 128) add_size = 128;
 
     str_collect_t *n = str_collect_init(c->last + 1 + add_size);
     if(n) {
@@ -125,7 +126,6 @@ char *rstr;
     }
 
     nsn = slen + 3;
-    if(nsn < 128) nsn = 128;
 
     if(c) {
 	if(c->last + nsn >= c->max-1) {
@@ -143,10 +143,13 @@ char *rstr;
     }
 
     rstr = &c->s[c->last];
-    *rstr++ = slen;
-    strncpy(rstr,str,slen+1);
-    c->last += slen + 2;
-    c->s[c->last] = '\0'; // eol
+    *rstr++ = (char)(slen & 0xff);
+    memcpy(rstr,str,slen);
+    rstr += slen;
+    *rstr++ = '\0';
+    *rstr = '\0';
+
+    c->last = rstr - c->s;
     return rstr;
 }
 

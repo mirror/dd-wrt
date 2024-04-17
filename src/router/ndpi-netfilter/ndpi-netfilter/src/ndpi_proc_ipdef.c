@@ -31,6 +31,13 @@ int n_ipdef_proc_close(struct inode *inode, struct file *file)
         return 0;
 }
 
+int n_ip6def_proc_close(struct inode *inode, struct file *file)
+{
+        struct ndpi_net *n = pde_data(file_inode(file));
+	generic_proc_close(n,parse_ndpi_ip6def,W_BUF_IP);
+        return 0;
+}
+
 ssize_t
 n_ipdef_proc_write(struct file *file, const char __user *buffer,
                      size_t length, loff_t *loff)
@@ -39,12 +46,21 @@ n_ipdef_proc_write(struct file *file, const char __user *buffer,
 			parse_ndpi_ipdef, 4060 , W_BUF_IP);
 }
 
-ssize_t n_ipdef_proc_read(struct file *file, char __user *buf,
-                              size_t count, loff_t *ppos)
+ssize_t
+n_ip6def_proc_write(struct file *file, const char __user *buffer,
+                     size_t length, loff_t *loff)
+{
+	return generic_proc_write(pde_data(file_inode(file)), buffer, length, loff,
+			parse_ndpi_ip6def, 4060 , W_BUF_IP);
+}
+
+static ssize_t _n_ipdef_proc_read(struct file *file, char __user *buf,
+                              size_t count, loff_t *ppos,
+			      int family)
 {
         struct ndpi_net *n = pde_data(file_inode(file));
-	ndpi_patricia_tree_t *pt;
 	ndpi_prefix_t *px;
+	ndpi_patricia_tree_t *pt;
 	ndpi_patricia_node_t *Xstack[PATRICIA_MAXBITS+1], **Xsp, *node;
 	char lbuf[512];
 	char ibuf[64];
@@ -52,12 +68,15 @@ ssize_t n_ipdef_proc_read(struct file *file, char __user *buf,
 	loff_t cpos;
 
 	cpos = 0; bp = 0;
-	pt = n->ndpi_struct->protocols_ptree;
+
+	pt = family == AF_INET ? n->ndpi_struct->protocols_ptree:n->ndpi_struct->protocols_ptree6;
+
 	Xsp = &Xstack[0];
-	node = pt->head;
+	node = pt ? pt->head: NULL;
 	while (node) {
 	    if (node->prefix) {
-		l = cpos ? 0: snprintf(lbuf,sizeof(lbuf),"#ip              proto\n");
+		l = cpos ? 0: snprintf(lbuf,sizeof(lbuf),"#ip%s              proto\n",
+			family == AF_INET ? "":"v6");
 		
 		px = node->prefix;
 		{
@@ -121,4 +140,13 @@ ssize_t n_ipdef_proc_read(struct file *file, char __user *buf,
 	    node = Xsp != Xstack ? *(--Xsp): NULL;
 	}
 	return bp;
+}
+
+ssize_t n_ipdef_proc_read(struct file *file, char __user *buf,
+                              size_t count, loff_t *ppos) {
+	return _n_ipdef_proc_read(file, buf, count, ppos, AF_INET);
+}
+ssize_t n_ip6def_proc_read(struct file *file, char __user *buf,
+                              size_t count, loff_t *ppos) {
+	return _n_ipdef_proc_read(file, buf, count, ppos, AF_INET6);
 }

@@ -90,6 +90,8 @@ typedef struct default_ports_tree_node {
   ((ndpi_int_one_line_struct).ptr != NULL && \
    memcmp((ndpi_int_one_line_struct).ptr, string_to_compare, string_to_compare_length) == 0)
 
+#define NDPI_MAX_PARSE_LINES_PER_PACKET                         64
+
 struct ndpi_int_one_line_struct {
   const u_int8_t *ptr;
   u_int16_t len;
@@ -260,6 +262,9 @@ struct ndpi_detection_module_config_struct {
   int tls_sha1_fingerprint_enabled;
   /* Limit for tls buffer size */
   int tls_buf_size_limit;
+  int tls_ja3c_fingerprint_enabled;
+  int tls_ja3s_fingerprint_enabled;
+  int tls_ja4c_fingerprint_enabled;
 
   int smtp_opportunistic_tls_enabled;
 
@@ -270,6 +275,8 @@ struct ndpi_detection_module_config_struct {
   int ftp_opportunistic_tls_enabled;
 
   int stun_opportunistic_tls_enabled;
+  int stun_max_packets_extra_dissection;
+  int stun_mapped_address_enabled;
 
   int dns_subclassification_enabled;
   int dns_parse_response_enabled;
@@ -459,6 +466,137 @@ struct ndpi_detection_module_struct {
 #define NDPI_HOSTNAME_NORM_ALL (NDPI_HOSTNAME_NORM_LC | NDPI_HOSTNAME_NORM_REPLACE_IC | NDPI_HOSTNAME_NORM_STRIP_EOLSP)
 
 
+#define NDPI_DEFAULT_MAX_TCP_RETRANSMISSION_WINDOW_SIZE 0x10000
+
+#define NDPI_PARSE_PACKET_LINE_INFO(ndpi_struct,flow,packet)		\
+                        if (packet->packet_lines_parsed_complete != 1) {        \
+			  ndpi_parse_packet_line_info(ndpi_struct,flow);	\
+                        }
+
+#define MAX_PACKET_COUNTER                                   65000
+
+
+/* Log macros */
+
+#ifdef NDPI_ENABLE_DEBUG_MESSAGES
+ #define NDPI_LOG(proto, m, loglevel, args...)		                                 \
+  {								                         \
+    struct ndpi_detection_module_struct *mod = (struct ndpi_detection_module_struct*) m; \
+    if(mod && mod->cfg.log_level >= loglevel) {	                                 \
+      if(mod != NULL && mod->ndpi_debug_printf != NULL)		                         \
+        (*(mod->ndpi_debug_printf))(proto, mod, loglevel, __FILE__, __FUNCTION__, __LINE__, args); \
+    } \
+  }
+
+ /* We must define NDPI_CURRENT_PROTO before include ndpi_main.h !!!
+  *
+  * #include "ndpi_protocol_ids.h"
+  * #define NDPI_CURRENT_PROTO NDPI_PROTOCOL_XXXX
+  * #include "ndpi_api.h"
+  *
+  */
+
+ #ifndef NDPI_CURRENT_PROTO
+ #define NDPI_CURRENT_PROTO NDPI_PROTOCOL_UNKNOWN
+ #endif
+
+ #define NDPI_LOG_ERR(mod, args...)		                                 \
+  if(mod && mod->cfg.log_level >= NDPI_LOG_ERROR) {	                         \
+    if(mod != NULL && mod->ndpi_debug_printf != NULL)		                         \
+      (*(mod->ndpi_debug_printf))(NDPI_CURRENT_PROTO, mod, NDPI_LOG_ERROR , __FILE__, __FUNCTION__, __LINE__, args); \
+  }
+
+ #define NDPI_LOG_INFO(mod, args...)		                                 \
+  if(mod && mod->cfg.log_level >= NDPI_LOG_TRACE) {	                         \
+    if(mod != NULL && mod->ndpi_debug_printf != NULL)		                         \
+      (*(mod->ndpi_debug_printf))(NDPI_CURRENT_PROTO, mod, NDPI_LOG_TRACE , __FILE__, __FUNCTION__, __LINE__, args); \
+  }
+
+ #define NDPI_LOG_DBG(mod, args...)		                                 \
+  if(mod && mod->cfg.log_level >= NDPI_LOG_DEBUG) {	                         \
+    if(mod != NULL && mod->ndpi_debug_printf != NULL)		                         \
+      (*(mod->ndpi_debug_printf))(NDPI_CURRENT_PROTO, mod, NDPI_LOG_DEBUG , __FILE__, __FUNCTION__, __LINE__, args); \
+  }
+
+ #define NDPI_LOG_DBG2(mod, args...)		                                 \
+  if(mod && mod->cfg.log_level >= NDPI_LOG_DEBUG_EXTRA) {	                         \
+    if(mod != NULL && mod->ndpi_debug_printf != NULL)		                         \
+      (*(mod->ndpi_debug_printf))(NDPI_CURRENT_PROTO, mod, NDPI_LOG_DEBUG_EXTRA , __FILE__, __FUNCTION__, __LINE__, args); \
+  }
+
+#else /* not defined NDPI_ENABLE_DEBUG_MESSAGES */
+# ifdef WIN32
+# define NDPI_LOG(mod, ...) { (void)mod; }
+# define NDPI_LOG_ERR(mod, ...) { (void)mod; }
+# define NDPI_LOG_INFO(mod, ...) { (void)mod; }
+# define NDPI_LOG_DBG(mod, ...) { (void)mod; }
+# define NDPI_LOG_DBG2(mod, ...) { (void)mod; }
+# else
+# define NDPI_LOG(proto, mod, log_level, args...) { /* printf(args); */ }
+# ifndef FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
+#  define NDPI_LOG_ERR(mod, args...)  { (void)mod; printf(args); }
+# else
+#  define NDPI_LOG_ERR(mod, args...)  { (void)mod; /* printf(args); */ }
+# endif
+# define NDPI_LOG_INFO(mod, args...) { (void)mod; /* printf(args); */ }
+# define NDPI_LOG_DBG(mod,  args...) { (void)mod; /* printf(args); */ }
+# define NDPI_LOG_DBG2(mod, args...) { (void)mod; /* printf(args); */ }
+# endif
+#endif /* NDPI_ENABLE_DEBUG_MESSAGES */
+
+
+/* Protocol bitmasks */
+
+#define NDPI_SELECTION_BITMASK_PROTOCOL_IP			(1<<0)
+#define NDPI_SELECTION_BITMASK_PROTOCOL_INT_TCP			(1<<1)
+#define NDPI_SELECTION_BITMASK_PROTOCOL_INT_UDP			(1<<2)
+#define NDPI_SELECTION_BITMASK_PROTOCOL_INT_TCP_OR_UDP		(1<<3)
+#define NDPI_SELECTION_BITMASK_PROTOCOL_HAS_PAYLOAD		(1<<4)
+#define NDPI_SELECTION_BITMASK_PROTOCOL_NO_TCP_RETRANSMISSION	(1<<5)
+#define NDPI_SELECTION_BITMASK_PROTOCOL_IPV6			(1<<6)
+#define NDPI_SELECTION_BITMASK_PROTOCOL_IPV4_OR_IPV6		(1<<7)
+#define NDPI_SELECTION_BITMASK_PROTOCOL_COMPLETE_TRAFFIC	(1<<8)
+/* now combined detections */
+
+/* v4 */
+#define NDPI_SELECTION_BITMASK_PROTOCOL_TCP (NDPI_SELECTION_BITMASK_PROTOCOL_IP | NDPI_SELECTION_BITMASK_PROTOCOL_INT_TCP)
+#define NDPI_SELECTION_BITMASK_PROTOCOL_UDP (NDPI_SELECTION_BITMASK_PROTOCOL_IP | NDPI_SELECTION_BITMASK_PROTOCOL_INT_UDP)
+#define NDPI_SELECTION_BITMASK_PROTOCOL_TCP_OR_UDP (NDPI_SELECTION_BITMASK_PROTOCOL_IP | NDPI_SELECTION_BITMASK_PROTOCOL_INT_TCP_OR_UDP)
+
+/* v6 */
+#define NDPI_SELECTION_BITMASK_PROTOCOL_V6_TCP (NDPI_SELECTION_BITMASK_PROTOCOL_IPV6 | NDPI_SELECTION_BITMASK_PROTOCOL_INT_TCP)
+#define NDPI_SELECTION_BITMASK_PROTOCOL_V6_UDP (NDPI_SELECTION_BITMASK_PROTOCOL_IPV6 | NDPI_SELECTION_BITMASK_PROTOCOL_INT_UDP)
+#define NDPI_SELECTION_BITMASK_PROTOCOL_V6_TCP_OR_UDP (NDPI_SELECTION_BITMASK_PROTOCOL_IPV6 | NDPI_SELECTION_BITMASK_PROTOCOL_INT_TCP_OR_UDP)
+
+/* v4 or v6 */
+#define NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP (NDPI_SELECTION_BITMASK_PROTOCOL_IPV4_OR_IPV6 | NDPI_SELECTION_BITMASK_PROTOCOL_INT_TCP)
+#define NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_UDP (NDPI_SELECTION_BITMASK_PROTOCOL_IPV4_OR_IPV6 | NDPI_SELECTION_BITMASK_PROTOCOL_INT_UDP)
+#define NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_OR_UDP (NDPI_SELECTION_BITMASK_PROTOCOL_IPV4_OR_IPV6 | NDPI_SELECTION_BITMASK_PROTOCOL_INT_TCP_OR_UDP)
+
+/* does it make sense to talk about udp with payload ??? have you ever seen empty udp packets ? */
+#define NDPI_SELECTION_BITMASK_PROTOCOL_UDP_WITH_PAYLOAD		(NDPI_SELECTION_BITMASK_PROTOCOL_UDP | NDPI_SELECTION_BITMASK_PROTOCOL_HAS_PAYLOAD)
+#define NDPI_SELECTION_BITMASK_PROTOCOL_V6_UDP_WITH_PAYLOAD		(NDPI_SELECTION_BITMASK_PROTOCOL_V6_UDP | NDPI_SELECTION_BITMASK_PROTOCOL_HAS_PAYLOAD)
+#define NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_UDP_WITH_PAYLOAD		(NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_UDP | NDPI_SELECTION_BITMASK_PROTOCOL_HAS_PAYLOAD)
+
+#define NDPI_SELECTION_BITMASK_PROTOCOL_TCP_WITHOUT_RETRANSMISSION	(NDPI_SELECTION_BITMASK_PROTOCOL_TCP | NDPI_SELECTION_BITMASK_PROTOCOL_NO_TCP_RETRANSMISSION)
+#define NDPI_SELECTION_BITMASK_PROTOCOL_V6_TCP_WITHOUT_RETRANSMISSION	(NDPI_SELECTION_BITMASK_PROTOCOL_V6_TCP | NDPI_SELECTION_BITMASK_PROTOCOL_NO_TCP_RETRANSMISSION)
+#define NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_WITHOUT_RETRANSMISSION	(NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP | NDPI_SELECTION_BITMASK_PROTOCOL_NO_TCP_RETRANSMISSION)
+
+#define NDPI_SELECTION_BITMASK_PROTOCOL_TCP_OR_UDP_WITHOUT_RETRANSMISSION	(NDPI_SELECTION_BITMASK_PROTOCOL_TCP_OR_UDP | NDPI_SELECTION_BITMASK_PROTOCOL_NO_TCP_RETRANSMISSION)
+#define NDPI_SELECTION_BITMASK_PROTOCOL_V6_TCP_OR_UDP_WITHOUT_RETRANSMISSION	(NDPI_SELECTION_BITMASK_PROTOCOL_V6_TCP_OR_UDP | NDPI_SELECTION_BITMASK_PROTOCOL_NO_TCP_RETRANSMISSION)
+#define NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_OR_UDP_WITHOUT_RETRANSMISSION	(NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_OR_UDP | NDPI_SELECTION_BITMASK_PROTOCOL_NO_TCP_RETRANSMISSION)
+
+#define NDPI_SELECTION_BITMASK_PROTOCOL_TCP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION	(NDPI_SELECTION_BITMASK_PROTOCOL_TCP | NDPI_SELECTION_BITMASK_PROTOCOL_NO_TCP_RETRANSMISSION | NDPI_SELECTION_BITMASK_PROTOCOL_HAS_PAYLOAD)
+#define NDPI_SELECTION_BITMASK_PROTOCOL_V6_TCP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION	(NDPI_SELECTION_BITMASK_PROTOCOL_V6_TCP | NDPI_SELECTION_BITMASK_PROTOCOL_NO_TCP_RETRANSMISSION | NDPI_SELECTION_BITMASK_PROTOCOL_HAS_PAYLOAD)
+#define NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION	(NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP | NDPI_SELECTION_BITMASK_PROTOCOL_NO_TCP_RETRANSMISSION | NDPI_SELECTION_BITMASK_PROTOCOL_HAS_PAYLOAD)
+
+#define NDPI_SELECTION_BITMASK_PROTOCOL_TCP_OR_UDP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION	(NDPI_SELECTION_BITMASK_PROTOCOL_TCP_OR_UDP | NDPI_SELECTION_BITMASK_PROTOCOL_NO_TCP_RETRANSMISSION | NDPI_SELECTION_BITMASK_PROTOCOL_HAS_PAYLOAD)
+#define NDPI_SELECTION_BITMASK_PROTOCOL_V6_TCP_OR_UDP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION	(NDPI_SELECTION_BITMASK_PROTOCOL_V6_TCP_OR_UDP | NDPI_SELECTION_BITMASK_PROTOCOL_NO_TCP_RETRANSMISSION | NDPI_SELECTION_BITMASK_PROTOCOL_HAS_PAYLOAD)
+#define NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_OR_UDP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION	(NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_OR_UDP | NDPI_SELECTION_BITMASK_PROTOCOL_NO_TCP_RETRANSMISSION | NDPI_SELECTION_BITMASK_PROTOCOL_HAS_PAYLOAD)
+
+
+
+
 
 /* Generic */
 
@@ -477,16 +615,14 @@ NDPI_STATIC void ndpi_set_detected_protocol(struct ndpi_detection_module_struct 
 				u_int16_t lower_detected_protocol,
 				ndpi_confidence_t confidence);
 
-NDPI_STATIC void reset_detected_protocol(struct ndpi_detection_module_struct *ndpi_struct,
-			     struct ndpi_flow_struct *flow);
+NDPI_STATIC void reset_detected_protocol(struct ndpi_flow_struct *flow);
 
 NDPI_STATIC void ndpi_set_detected_protocol_keeping_master(struct ndpi_detection_module_struct *ndpi_str,
 					       struct ndpi_flow_struct *flow,
 					       u_int16_t detected_protocol,
 					       ndpi_confidence_t confidence);
 
-NDPI_STATIC void change_category(struct ndpi_detection_module_struct *ndpi_struct,
-		     struct ndpi_flow_struct *flow,
+NDPI_STATIC void change_category(struct ndpi_flow_struct *flow,
 		     ndpi_protocol_category_t protocol_category);
 
 
@@ -495,11 +631,8 @@ NDPI_STATIC char *ndpi_user_agent_set(struct ndpi_flow_struct *flow, const u_int
 
 NDPI_STATIC void ndpi_parse_packet_line_info(struct ndpi_detection_module_struct *ndpi_struct,
 					  struct ndpi_flow_struct *flow);
-NDPI_STATIC void ndpi_parse_packet_line_info_any(struct ndpi_detection_module_struct *ndpi_struct,
-					      struct ndpi_flow_struct *flow);
+NDPI_STATIC void ndpi_parse_packet_line_info_any(struct ndpi_flow_struct *flow);
 
-NDPI_STATIC int ndpi_handle_rule(struct ndpi_detection_module_struct *ndpi_str, 
-                            char *rule);
 NDPI_STATIC void load_common_alpns(struct ndpi_detection_module_struct *ndpi_str);
 NDPI_STATIC u_int8_t is_a_common_alpn(struct ndpi_detection_module_struct *ndpi_str,
 			    const char *alpn_to_check, u_int alpn_to_check_len);
@@ -514,7 +647,6 @@ NDPI_STATIC u_int8_t ends_with(struct ndpi_detection_module_struct *ndpi_struct,
 
 NDPI_STATIC u_int ndpi_search_tcp_or_udp_raw(struct ndpi_detection_module_struct *ndpi_struct,
 				 struct ndpi_flow_struct *flow,
-				 u_int8_t protocol,
 				 u_int32_t saddr, u_int32_t daddr);
 
 NDPI_STATIC u_int32_t ip_port_hash_funct(u_int32_t ip, u_int16_t port);
@@ -525,7 +657,7 @@ NDPI_STATIC u_int16_t icmp4_checksum(u_int8_t const * const buf, size_t len);
 
 NDPI_STATIC ndpi_risk_enum ndpi_network_risk_ptree_match(struct ndpi_detection_module_struct *ndpi_str,
 					     struct in_addr *pin /* network byte order */);
-
+int ndpi_handle_rule(struct ndpi_detection_module_struct *, char *);
 #ifndef __KERNEL__
 NDPI_STATIC int load_protocols_file_fd(struct ndpi_detection_module_struct *ndpi_mod, FILE *fd);
 NDPI_STATIC int load_categories_file_fd(struct ndpi_detection_module_struct *ndpi_str, FILE *fd, void *user_data);
@@ -578,13 +710,12 @@ NDPI_STATIC const uint8_t *get_crypto_data(struct ndpi_detection_module_struct *
 
 /* RTP */
 NDPI_STATIC int is_valid_rtp_payload_type(uint8_t type);
-NDPI_STATIC int is_rtp_or_rtcp(struct ndpi_detection_module_struct *ndpi_struct,
-                          struct ndpi_flow_struct *flow);
+NDPI_STATIC int is_rtp_or_rtcp(struct ndpi_detection_module_struct *ndpi_struct);
 NDPI_STATIC u_int8_t rtp_get_stream_type(u_int8_t payloadType, ndpi_multimedia_flow_type *s_type);
 
 /* Bittorrent */
-NDPI_STATIC u_int32_t make_bittorrent_host_key(struct ndpi_flow_struct *flow, int client, int offset);
-NDPI_STATIC u_int32_t make_bittorrent_peers_key(struct ndpi_flow_struct *flow);
+NDPI_STATIC u_int64_t make_bittorrent_host_key(struct ndpi_flow_struct *flow, int client, int offset);
+NDPI_STATIC u_int64_t make_bittorrent_peers_key(struct ndpi_flow_struct *flow);
 NDPI_STATIC int search_into_bittorrent_cache(struct ndpi_detection_module_struct *ndpi_struct,
                                   struct ndpi_flow_struct *flow);
 NDPI_STATIC void ndpi_bittorrent_init(struct ndpi_detection_module_struct *ndpi_struct,
@@ -599,7 +730,7 @@ NDPI_STATIC int stun_search_into_zoom_cache(struct ndpi_detection_module_struct 
 NDPI_STATIC int tpkt_verify_hdr(const struct ndpi_packet_struct * const packet);
 
 /* Mining Protocols (Ethereum, Monero, ...) */
-NDPI_STATIC u_int32_t mining_make_lru_cache_key(struct ndpi_flow_struct *flow);
+NDPI_STATIC u_int64_t mining_make_lru_cache_key(struct ndpi_flow_struct *flow);
 
 
 /* Protocols init */
@@ -683,7 +814,6 @@ NDPI_STATIC void init_shoutcast_dissector(struct ndpi_detection_module_struct *n
 NDPI_STATIC void init_sip_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
 NDPI_STATIC void init_imo_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
 NDPI_STATIC void init_skinny_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-NDPI_STATIC void init_skype_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
 NDPI_STATIC void init_smb_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
 NDPI_STATIC void init_snmp_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
 NDPI_STATIC void init_socrates_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
@@ -835,6 +965,14 @@ NDPI_STATIC void init_cip_dissector(struct ndpi_detection_module_struct *ndpi_st
 NDPI_STATIC void init_gearman_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
 NDPI_STATIC void init_tencent_games_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
 NDPI_STATIC void init_gaijin_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_c1222_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_dlep_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_bfd_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_netease_games_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_pathofexile_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_pfcp_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_flute_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_lolwildrift_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
 
 #endif
 

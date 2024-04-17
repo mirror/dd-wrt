@@ -65,6 +65,9 @@ int ndpi_load_geoip(struct ndpi_detection_module_struct *ndpi_str,
 
   return(0);
 #else
+  (void)ndpi_str;
+  (void)ip_city_data;
+  (void)ip_as_data;
   return(-3);
 #endif
 }
@@ -78,6 +81,8 @@ void ndpi_free_geoip(struct ndpi_detection_module_struct *ndpi_str) {
 
   ndpi_free(ndpi_str->mmdb_city);
   ndpi_free(ndpi_str->mmdb_as);
+#else
+  (void)ndpi_str;
 #endif
 }
 
@@ -108,6 +113,10 @@ int ndpi_get_geoip_asn(struct ndpi_detection_module_struct *ndpi_str, char *ip, 
 
     return(0);
   }
+#else
+  (void)ndpi_str;
+  (void)ip;
+  (void)asn;
 #endif
 
   return(-2);
@@ -163,6 +172,13 @@ int ndpi_get_geoip_country_continent(struct ndpi_detection_module_struct *ndpi_s
 
     return(0);
   }
+#else
+  (void)ndpi_str;
+  (void)ip;
+  (void)country_code;
+  (void)country_code_len;
+  (void)continent;
+  (void)continent_len;
 #endif
 
   return(-2);

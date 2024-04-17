@@ -23,9 +23,11 @@ NDPI_STATIC int ndpi_print_port_range(ndpi_port_range_t *pt,
 NDPI_STATIC int parse_n_proto(char *pr,ndpi_port_range_t *np,ndpi_mod_str_t *ndpi_str);
 NDPI_STATIC int parse_l4_proto(char *pr,ndpi_port_range_t *np);
 NDPI_STATIC int parse_port_range(char *pr,ndpi_port_range_t *np);
-NDPI_STATIC int parse_ndpi_ipdef_cmd(struct ndpi_net *n, int f_op, ndpi_prefix_t *prefix, char *arg);
+NDPI_STATIC int parse_ndpi_ipdef_cmd(struct ndpi_net *n, int f_op, ndpi_prefix_t *prefix, char *arg,
+		int family,const char *);
 
 NDPI_STATIC int parse_ndpi_ipdef(struct ndpi_net *n,char *cmd);
+NDPI_STATIC int parse_ndpi_ip6def(struct ndpi_net *n,char *cmd);
 NDPI_STATIC int parse_ndpi_hostdef(struct ndpi_net *n,char *cmd);
 NDPI_STATIC int parse_ndpi_proto(struct ndpi_net *n,char *cmd);
 NDPI_STATIC int parse_ndpi_debug(struct ndpi_net *n,char *cmd);

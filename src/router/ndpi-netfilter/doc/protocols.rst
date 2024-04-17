@@ -40,6 +40,7 @@ Redis Serialization Protocol
 
 References: `Protocol Specs: <https://redis.io/docs/reference/protocol-spec/`_
 
+
 .. _Proto 201:
 
 `NDPI_PROTOCOL_GOOGLE_MEET`
@@ -602,3 +603,106 @@ References: `Main site <https://www.tencentgames.com/>`_
 Protocols used in various games from Gaijin Entertainment.
 
 References: `Main site <https://gaijin.net/>`_
+
+
+.. _Proto 397:
+
+`NDPI_PROTOCOL_C1222`
+====================
+ANSI C12.22 (IEEE Std 1703) describe a protocol for transporting ANSI C12.19 table data over networks. It's mostly used to communicate with electric meters.
+
+References: `Paid specs <https://www.nema.org/Standards/view/American-National-Standard-for-Protocol-Specification-for-Interfacing-to-Data-Communication-Networks/>`_
+
+
+.. _Proto 398:
+
+`NDPI_PROTOCOL_HUAWEI`
+======================
+Generic Huawei traffic.
+
+References: `Main site <https://www.huawei.com/>`_
+
+
+.. _Proto 399:
+
+`NDPI_PROTOCOL_HUAWEI_CLOUD`
+============================
+Huawei Mobile Cloud.
+
+References: `Main site <https://cloud.huawei.com/>`_
+
+
+.. _Proto 400:
+
+`NDPI_PROTOCOL_DLEP`
+=====================
+The Dynamic Link ExchangeProtocol (DLEP) is a radio aware routing (RAR) protocol.
+
+References: `RFC <https://datatracker.ietf.org/doc/html/rfc8175>`_
+
+
+.. _Proto 401:
+
+`NDPI_PROTOCOL_BFD`
+=====================
+Bidirectional Forwarding Detection is a network protocol that is used to detect faults between two routers or switches.
+
+References: `RFC <https://datatracker.ietf.org/doc/html/rfc5880>`_
+
+
+.. _Proto 402:
+
+`NDPI_PROTOCOL_NETEASE_GAMES`
+============================
+Traffic of various NetEase games.
+
+References: `Main site <https://www.neteasegames.com/>`_
+
+
+.. _Proto 403:
+
+`NDPI_PROTOCOL_PATHOFEXILE`
+============================
+Path of Exile is a free-to-play online Action RPG.
+
+References: `Main site <https://pathofexile.com/>`_
+
+
+.. _Proto 404:
+
+`NDPI_PROTOCOL_GOOGLE_CALL`
+===========================
+Audio/video calls made by (any) Google applications (i.e Google Meet).
+
+References: `Main site: <https://meet.google.com/>`_
+
+Notes:
+
+- nDPI usually uses different protocol ids for the generic application traffic and for its "realtime" traffic (examples: NDPI_PROTOCOL_MEET/NDPI_PROTOCOL_GOOGLE_CALL, NDPI_PROTOCOL_WHATSAPP/NDPI_PROTOCOL_WHATSAPP_CALL, ...)
+
+
+.. _Proto 405:
+
+`NDPI_PROTOCOL_PFCP`
+=====================
+PFCP is a protocol used for communicating between control plane (CP) and user plane (UP) functions in 4G and 5G networks.
+
+References: `Protocol Specs: <https://www.etsi.org/deliver/etsi_ts/129200_129299/129244/16.05.00_60/ts_129244v160500p.pdf>`_
+
+
+.. _Proto 406:
+
+`NDPI_PROTOCOL_FLUTE`
+=====================
+File Delivery over Unidirectional Transport.
+
+References: `RFC <https://datatracker.ietf.org/doc/html/rfc6726>`_
+
+
+.. _Proto 407:
+
+`NDPI_PROTOCOL_LOLWILDRIFT`
+============================
+League of Legends: Wild Rift is a mobile MOBA game.
+
+References: `Main site <https://wildrift.leagueoflegends.com/>`_

@@ -656,7 +656,8 @@ static int quic_get_pn_cipher_algo(int cipher_algo, int *hp_cipher_mode)
  * algorithm output.
  */
 static int quic_hp_cipher_prepare(struct ndpi_detection_module_struct *ndpi_struct,
-				  quic_hp_cipher *hp_cipher, int hash_algo, int cipher_algo, uint8_t *secret, u_int32_t version)
+                                  quic_hp_cipher *hp_cipher, int hash_algo, int cipher_algo,
+                                  uint8_t *secret, u_int32_t version)
 {
 #if 0
   /* Clear previous state (if any). */
@@ -687,7 +688,8 @@ static int quic_hp_cipher_prepare(struct ndpi_detection_module_struct *ndpi_stru
   return 1;
 }
 static int quic_pp_cipher_prepare(struct ndpi_detection_module_struct *ndpi_struct,
-				  quic_pp_cipher *pp_cipher, int hash_algo, int cipher_algo, int cipher_mode, uint8_t *secret, u_int32_t version)
+                                  quic_pp_cipher *pp_cipher, int hash_algo, int cipher_algo,
+                                  int cipher_mode, uint8_t *secret, u_int32_t version)
 {
 #if 0
   /* Clear previous state (if any). */
@@ -712,7 +714,8 @@ static int quic_pp_cipher_prepare(struct ndpi_detection_module_struct *ndpi_stru
   return 1;
 }
 static int quic_ciphers_prepare(struct ndpi_detection_module_struct *ndpi_struct,
-				quic_ciphers *ciphers, int hash_algo, int cipher_algo, int cipher_mode, uint8_t *secret, u_int32_t version)
+                                quic_ciphers *ciphers, int hash_algo, int cipher_algo,
+                                int cipher_mode, uint8_t *secret, u_int32_t version)
 {
   int ret;
 
@@ -995,7 +998,7 @@ static int quic_derive_initial_secrets(struct ndpi_detection_module_struct *ndpi
 
 static uint8_t *decrypt_initial_packet(struct ndpi_detection_module_struct *ndpi_struct,
 				       const uint8_t *orig_dest_conn_id, uint8_t orig_dest_conn_id_len,
-				       const uint8_t *dest_conn_id, uint8_t dest_conn_id_len,
+				       uint8_t dest_conn_id_len,
 				       uint8_t source_conn_id_len, uint32_t version,
 				       uint32_t *clear_payload_len)
 {
@@ -1063,8 +1066,7 @@ static uint8_t *decrypt_initial_packet(struct ndpi_detection_module_struct *ndpi
     quic_ciphers_reset(&ciphers);
     return NULL;
   }
-  quic_decrypt_message(ndpi_struct,
-		       &ciphers.pp_cipher, &packet->payload[0], pn_offset + payload_length,
+  quic_decrypt_message(ndpi_struct, &ciphers.pp_cipher, &packet->payload[0], pn_offset + payload_length,
 		       offset, first_byte, pkn_len, packet_number, &decryption);
 
   quic_ciphers_reset(&ciphers);
@@ -1384,7 +1386,7 @@ static uint8_t *get_clear_payload(struct ndpi_detection_module_struct *ndpi_stru
     clear_payload = decrypt_initial_packet(ndpi_struct,
 					   flow->l4.udp.quic_orig_dest_conn_id,
 					   flow->l4.udp.quic_orig_dest_conn_id_len,
-					   dest_conn_id, dest_conn_id_len,
+					   dest_conn_id_len,
 					   source_conn_id_len, version,
 					   clear_payload_len);
   }
@@ -1483,10 +1485,10 @@ void process_chlo(struct ndpi_detection_module_struct *ndpi_struct,
 	char str[128];
 
 	snprintf(str, sizeof(str), "Invalid host %s", flow->host_server_name);
-	ndpi_set_risk(ndpi_struct, flow, NDPI_INVALID_CHARACTERS, str);
+	ndpi_set_risk(flow, NDPI_INVALID_CHARACTERS, str);
 	
 	/* This looks like an attack */
-	ndpi_set_risk(ndpi_struct, flow, NDPI_POSSIBLE_EXPLOIT, NULL);
+	ndpi_set_risk(flow, NDPI_POSSIBLE_EXPLOIT, NULL);
       }
       
       sni_found = 1;
@@ -1514,12 +1516,11 @@ void process_chlo(struct ndpi_detection_module_struct *ndpi_struct,
   /* Add check for missing SNI */
   if(flow->host_server_name[0] == '\0') {
     /* This is a bit suspicious */
-    ndpi_set_risk(ndpi_struct, flow, NDPI_TLS_MISSING_SNI, NULL);
+    ndpi_set_risk(flow, NDPI_TLS_MISSING_SNI, NULL);
   }
 }
 
-static int may_be_gquic_rej(struct ndpi_detection_module_struct *ndpi_struct,
-			    struct ndpi_flow_struct *flow)
+static int may_be_gquic_rej(struct ndpi_detection_module_struct *ndpi_struct)
 {
   struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
   void *ptr;
@@ -1540,7 +1541,7 @@ static int may_be_gquic_rej(struct ndpi_detection_module_struct *ndpi_struct,
 }
 
 static int may_be_0rtt(struct ndpi_detection_module_struct *ndpi_struct,
-		       struct ndpi_flow_struct *flow, uint32_t *version)
+		       uint32_t *version)
 {
   struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
   u_int8_t first_byte;
@@ -1696,7 +1697,7 @@ static int may_be_initial_pkt(struct ndpi_detection_module_struct *ndpi_struct,
 /* ***************************************************************** */
 
 static int eval_extra_processing(struct ndpi_detection_module_struct *ndpi_struct,
-				 struct ndpi_flow_struct *flow)
+                                 struct ndpi_flow_struct *flow)
 {
   u_int32_t version = flow->protos.tls_quic.quic_version;
 
@@ -1798,8 +1799,7 @@ static int ndpi_search_quic_extra(struct ndpi_detection_module_struct *ndpi_stru
   return 0;
 }
 
-static int is_vn(struct ndpi_detection_module_struct *ndpi_struct,
-		 struct ndpi_flow_struct *flow)
+static int is_vn(struct ndpi_detection_module_struct *ndpi_struct)
 {
   struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
   u_int32_t version;
@@ -1860,7 +1860,7 @@ static int ndpi_search_quic_extra_vn(struct ndpi_detection_module_struct *ndpi_s
     return 1; /* Keep going */
 
   if(flow->l4.udp.quic_vn_pair == 0) {
-    if(is_vn(ndpi_struct, flow)) {
+    if(is_vn(ndpi_struct)) {
       NDPI_LOG_DBG(ndpi_struct, "Valid VN\n");
       flow->l4.udp.quic_vn_pair = 1;
       return 1;
@@ -1907,7 +1907,7 @@ static void ndpi_search_quic(struct ndpi_detection_module_struct *ndpi_struct,
   is_initial_quic = may_be_initial_pkt(ndpi_struct, &version);
   if(!is_initial_quic) {
     if(!is_ch_reassembler_pending(flow)) { /* Better safe than sorry */
-      ret = may_be_0rtt(ndpi_struct, flow, &version);
+      ret = may_be_0rtt(ndpi_struct, &version);
       if(ret == 1) {
         NDPI_LOG_DBG(ndpi_struct, "Found 0-RTT, keep looking for Initial\n");
         flow->l4.udp.quic_0rtt_found = 1;
@@ -1925,7 +1925,7 @@ static void ndpi_search_quic(struct ndpi_detection_module_struct *ndpi_struct,
         flow->protos.tls_quic.quic_version = 0; /* unknown */
         return;
       }
-      ret = may_be_gquic_rej(ndpi_struct, flow);
+      ret = may_be_gquic_rej(ndpi_struct);
       if(ret == 1) {
         NDPI_LOG_INFO(ndpi_struct, "GQUIC REJ\n");
         ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_QUIC, NDPI_PROTOCOL_UNKNOWN, NDPI_CONFIDENCE_DPI);

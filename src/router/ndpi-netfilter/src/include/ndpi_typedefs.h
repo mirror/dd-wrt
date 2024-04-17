@@ -1,5 +1,5 @@
 /*
-E * ndpi_typedefs.h
+ * ndpi_typedefs.h
  *
  * Copyright (C) 2011-23 - ntop.org
  *
@@ -181,7 +181,8 @@ typedef enum {
   NDPI_FULLY_ENCRYPTED,        /* This (unknown) session is fully encrypted */
   NDPI_TLS_ALPN_SNI_MISMATCH,  /* Invalid ALPN/SNI combination */
   NDPI_MALWARE_HOST_CONTACTED, /* Flow client contacted a malware host */
-				 
+  NDPI_BINARY_TRANSFER_ATTEMPT,/* Attempt to transfer something in binary format */
+  
   /* Leave this as last member */
   NDPI_MAX_RISK /* must be <= 63 due to (**) */
 } ndpi_risk_enum;
@@ -451,7 +452,7 @@ PACK_ON
 struct ndpi_mpls_header
 {
   /* Before using this strcut to parse an MPLS header, you will need to convert
-   * the 4-byte data to the correct endianess with ntohl(). */
+   * the 4-byte data to the correct endianness with ntohl(). */
 #if defined(__LITTLE_ENDIAN__)
   u_int32_t ttl:8, s:1, exp:3, label:20;
 #elif defined(__BIG_ENDIAN__)
@@ -610,7 +611,7 @@ struct ndpi_vxlanhdr {
 #define NDPI_GRE_STRICT      ntohs(0x0800)
 #define NDPI_GRE_REC         ntohs(0x0700)
 #define NDPI_GRE_ACK         ntohs(0x0080)
-#define NDPI_GRE_FLAGS       ntohs(0x00f8)
+#define NDPI_GRE_FLAGS       ntohs(0x0078)
 #define NDPI_GRE_VERSION     ntohs(0x0007)
 
 #define NDPI_GRE_IS_CSUM(f)		((f) & NDPI_GRE_CSUM)
@@ -836,7 +837,7 @@ typedef enum {
 } lru_cache_scope;
 
 struct ndpi_lru_cache_entry {
-  u_int32_t key; /* Store the whole key to avoid ambiguities */
+  u_int64_t key; /* Store the whole key to avoid ambiguities */
   u_int32_t is_full:1, value:16, pad:15;
   u_int32_t timestamp; /* sec */
 };
@@ -918,6 +919,9 @@ struct ndpi_flow_tcp_struct {
   /* NDPI_PROTOCOL_SSH */
   u_int32_t ssh_stage:3;
 
+  /* NDPI_PROTOCOL_KAFKA */
+  u_int32_t kafka_stage:1;
+
   /* NDPI_PROTOCOL_VNC */
   u_int32_t vnc_stage:2;			// 0 - 3
 
@@ -971,6 +975,9 @@ struct ndpi_flow_tcp_struct {
 
   /* NDPI_PROTOCOL_RADMIN */
   u_int32_t radmin_stage:1;
+
+  /* NDPI_PROTOCOL_KAFKA */
+  u_int32_t kafka_correlation_id;
 };
 
 /* ************************************************** */
@@ -992,15 +999,15 @@ struct ndpi_flow_udp_struct {
   u_int32_t quic_0rtt_found:1;
   u_int32_t quic_vn_pair:1;
 
+  /* NDPI_PROTOCOL_LOLWILDRIFT */
+  u_int32_t lolwildrift_stage:1;
+
   /* NDPI_PROTOCOL_EPICGAMES */
   u_int32_t epicgames_stage:1;
   u_int32_t epicgames_word;
 
   /* NDPI_PROTOCOL_RAKNET */
   u_int32_t raknet_custom:1;
-
-  /* NDPI_PROTOCOL_SKYPE */
-  u_int8_t skype_crc[4];
 
   /* NDPI_PROTOCOL_EAQ */
   u_int8_t eaq_pkt_id;
@@ -1231,6 +1238,7 @@ typedef struct ndpi_proto {
 
 typedef void ndpi_bitmap;
 typedef void ndpi_bitmap64;
+typedef void ndpi_bitmap64_fuse; /* probabilistic */
 typedef void ndpi_bitmap_iterator;
 typedef void ndpi_filter;
     
@@ -1245,7 +1253,7 @@ typedef struct {
 typedef struct {
   struct {
     u_int16_t class_id;
-    ndpi_bitmap64 *domains;
+    ndpi_bitmap64_fuse *domains;
   } classes[MAX_NUM_NDPI_DOMAIN_CLASSIFICATIONS];
 } ndpi_domain_classify;
 
@@ -1366,7 +1374,15 @@ struct ndpi_flow_struct {
   } kerberos_buf;
 
   struct {
-    u_int8_t maybe_dtls;
+    u_int8_t maybe_dtls : 1, is_turn : 1, pad : 6;
+    struct {
+      union {
+        u_int32_t v4;
+        u_int8_t v6[16];
+      } address; /* Network-order */
+      u_int16_t port;
+      u_int16_t is_ipv6: 1, _pad: 15;
+    } mapped_address;
   } stun;
 
   struct {
@@ -1594,8 +1610,8 @@ struct ndpi_flow_struct {
 _Static_assert(sizeof(((struct ndpi_flow_struct *)0)->protos) <= 256,
                "Size of the struct member protocols increased to more than 256 bytes, "
                "please check if this change is necessary.");
-_Static_assert(sizeof(struct ndpi_flow_struct) <= 1008,
-               "Size of the flow struct increased to more than 1008 bytes, "
+_Static_assert(sizeof(struct ndpi_flow_struct) <= 1032,
+               "Size of the flow struct increased to more than 1032 bytes, "
                "please check if this change is necessary.");
 #endif
 #endif

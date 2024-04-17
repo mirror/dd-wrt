@@ -480,6 +480,10 @@ static inline void _node_free_data(ndpi_patricia_node_t *node) {
 	node->data = NULL;
 }
 
+static void pt_node_free_data(void *data) {
+	_node_free_data((ndpi_patricia_node_t *)data);
+}
+
 NDPI_STATIC void *ndpi_port_add_one_range(void *data, ndpi_port_range_t *np,int op,
 		ndpi_mod_str_t *ndpi_str)
 {
@@ -522,14 +526,17 @@ if(pd && (pd->count[0] + pd->count[1]) == 0) {
 return pd;
 }
 
-int parse_ndpi_ipdef_cmd(struct ndpi_net *n, int f_op, ndpi_prefix_t *prefix, char *arg) {
+int parse_ndpi_ipdef_cmd(struct ndpi_net *n, int f_op, ndpi_prefix_t *prefix, char *arg,
+		int family, const char *paddr) {
 char *d1,*d2;
 int f_op2=0;
 int ret = 0;
-
+ndpi_patricia_tree_t *pt;
 ndpi_port_range_t np = { .start=0, .end=0, .l4_proto = 2, .proto = NDPI_PROTOCOL_UNKNOWN };
 ndpi_patricia_node_t *node;
-ndpi_patricia_tree_t *pt;
+
+pt = family == AF_INET ? 
+	n->ndpi_struct->protocols_ptree:n->ndpi_struct->protocols_ptree6;
 
 if(*arg == '-') {
 	f_op2=1;
@@ -566,11 +573,27 @@ if(d1) {
 spin_lock_bh (&n->ipq_lock);
 
 do {
-pt = n->ndpi_struct->protocols_ptree;
 node = ndpi_patricia_search_exact(pt,prefix);
 DP(node ? "%s: Found node\n":"%s: Node not found\n");
 if(f_op || f_op2) { // delete
-	if(!node) break;
+	if(!node && np.proto >= NDPI_NUM_BITS && // -xxxx any
+		np.l4_proto == 2 && !np.start && !np.end) {
+		if(!prefix->bitlen && pt->head) {
+			ndpi_Clear_Patricia(pt,NULL,pt_node_free_data);
+			break;
+		}
+		node = ndpi_patricia_lookup(pt, prefix);
+		if(node) {
+			pr_err("prefix len %d node %d\n",prefix->bitlen,node?1:0);
+			ndpi_Clear_Patricia(pt,node,pt_node_free_data);
+			break;
+		}
+		break;
+	}
+	if(!node) {
+		pr_err("Can't delete %s with tcp or udp\n",paddr);
+		break;
+	}
 	// -xxxx any
 	if(np.proto >= NDPI_NUM_BITS && 
 		np.l4_proto == 2 && !np.start && !np.end) {
@@ -631,11 +654,12 @@ return ret;
  * [-]prefix ([[(tcp|udp|any):]port[-port]:]protocol)+
  */
 
-int parse_ndpi_ipdef(struct ndpi_net *n,char *cmd) {
+int _parse_ndpi_ipdef(struct ndpi_net *n,char *cmd, int family) {
 int f_op = 0; // 1 if delete
 char *addr,c;
 ndpi_prefix_t *prefix;
 int res = 0;
+
 
 SKIP_SPACE_C;
 if(*cmd == '#') return 0;
@@ -650,7 +674,7 @@ if (*cmd) *cmd++ = 0;
 SKIP_SPACE_C;
 if(!*addr) return 1;
 DP("%s: prefix %s\n",addr);
-prefix = ndpi_ascii2prefix(AF_INET,addr);
+prefix = ndpi_ascii2prefix(family,addr);
 if(!prefix) {
 	DP("%s: bad IP '%s'\n",addr);
 	return 1;
@@ -661,7 +685,7 @@ while(*cmd && !res) {
 	SKIP_NONSPACE_C;
 	if(*cmd) *cmd++ = 0;
 	SKIP_SPACE_C;
-	if(parse_ndpi_ipdef_cmd(n,f_op,prefix,t)) res=1;
+	if(parse_ndpi_ipdef_cmd(n,f_op,prefix,t,family,addr)) res=1;
 }
 
 ndpi_Deref_Prefix(prefix);
@@ -669,11 +693,18 @@ ndpi_Deref_Prefix(prefix);
 return res;
 }
 
+int parse_ndpi_ipdef(struct ndpi_net *n,char *cmd) {
+	return _parse_ndpi_ipdef(n,cmd,AF_INET);
+}
+int parse_ndpi_ip6def(struct ndpi_net *n,char *cmd) {
+	return _parse_ndpi_ipdef(n,cmd,AF_INET6);
+}
 
 /********************* ndpi proto *********************************/
 
 int parse_ndpi_proto(struct ndpi_net *n,char *cmd) {
 	char *v,*m,*hid;
+	struct ndpi_detection_module_struct *ndpi_str = n->ndpi_struct;
 	v = cmd;
 	if(!*v) return 0;
 /*
@@ -753,19 +784,19 @@ int parse_ndpi_proto(struct ndpi_net *n,char *cmd) {
 				}
 			}
 			if(*e) *e = '\0';
-			e_proto = ndpi_get_proto_by_name(n->ndpi_struct,v);
+			e_proto = ndpi_get_proto_by_name(ndpi_str,v);
 			if(e_proto != NDPI_PROTOCOL_UNKNOWN) {
 				pr_err("NDPI: '%s' exists\n",v);
 				return 0;
 			}
 			v--;
 			*v = '@';
-			id = ndpi_handle_rule(n->ndpi_struct, v);
+			id = ndpi_handle_rule(ndpi_str, v);
 			if(id < 0) {
 				pr_err("NDPI: ndpi_handle_rule error %d\n",id);
 				return 1;
 			}
-			e_proto = ndpi_get_proto_by_name(n->ndpi_struct,v+1);
+			e_proto = ndpi_get_proto_by_name(ndpi_str,v+1);
 			if(_DBG_TRACE_SPROC)
 				pr_info("NDPI: add custom protocol %x\n",e_proto);
 			n->mark[e_proto].mark = e_proto;
@@ -774,9 +805,9 @@ int parse_ndpi_proto(struct ndpi_net *n,char *cmd) {
 		}
 		if(!any && !all) {
 		    if(kstrtoint(hid,16,&id)) {
-			id = -1;
-			id = ndpi_get_proto_by_name(n->ndpi_struct,hid);
-			if(id == NDPI_PROTOCOL_UNKNOWN && !(all || any)) {
+			id = ndpi_get_proto_by_name(ndpi_str,hid);
+			if(id == NDPI_PROTOCOL_UNKNOWN && 
+			   strcasecmp(ndpi_str->proto_defaults[id].protoName,hid)) {
 				pr_err("NDPI: '%s' unknown protocol or not hexID\n",hid);
 				return 1;
 			}
@@ -856,7 +887,7 @@ int parse_ndpi_proto(struct ndpi_net *n,char *cmd) {
 		}
 		/* all or any */
 		for(i=0; i < NDPI_NUM_BITS; i++) {
-			const char *t_proto = ndpi_get_proto_by_id(n->ndpi_struct,i);
+			const char *t_proto = ndpi_get_proto_by_id(ndpi_str,i);
 			if(!t_proto) continue;
 			if(any && !i) continue;
 

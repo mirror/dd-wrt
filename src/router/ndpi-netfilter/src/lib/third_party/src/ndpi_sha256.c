@@ -17,12 +17,15 @@
 /*************************** HEADER FILES ***************************/
 #ifndef __KERNEL__
 #include <stdlib.h>
+#include <stdint.h>
+#include <string.h>
 #include <memory.h>
 #else
 #include <asm/byteorder.h>
 #include <linux/kernel.h>
 #include <linux/version.h>
 #include <linux/types.h>
+#include <linux/string.h>
 #endif
 #include "ndpi_sha256.h"
 

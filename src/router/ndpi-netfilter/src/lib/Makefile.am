@@ -35,9 +35,8 @@ libndpi_a_SOURCES = ndpi_content_match.c.inc \
 		     ndpi_filter.c \
 		     ndpi_geoip.c \
 		     ndpi_binary_bitmap.c \
-		     ndpi_domain_classify.c \
-		     ndpi_bitmap64.c \
-		     ndpi_binary_bitmap.c \
+		     ndpi_bitmap64_fuse.c \
+		     ndpi_bitmap.c \
 		     ndpi_hash.c \
 		     protocols/activision.c \
 		     protocols/afp.c \
@@ -52,10 +51,12 @@ libndpi_a_SOURCES = ndpi_content_match.c.inc \
 		     protocols/amqp.c \
 		     protocols/bacnet.c \
 		     protocols/beckhoff_ads.c \
+		     protocols/bfd.c \
 		     protocols/bgp.c \
 		     protocols/bitcoin.c \
 		     protocols/bittorrent.c \
 		     protocols/bjnp.c \
+		     protocols/c1222.c \
 		     protocols/can.c \
 		     protocols/capwap.c \
 		     protocols/cassandra.c \
@@ -75,6 +76,7 @@ libndpi_a_SOURCES = ndpi_content_match.c.inc \
 		     protocols/dhcpv6.c \
 		     protocols/diameter.c \
 		     protocols/discord.c \
+		     protocols/dlep.c \
 		     protocols/dns.c \
 		     protocols/dnscrypt.c \
 		     protocols/dnp3.c \
@@ -91,6 +93,7 @@ libndpi_a_SOURCES = ndpi_content_match.c.inc \
 		     protocols/fastcgi.c \
 		     protocols/fins.c \
 		     protocols/fix.c \
+		     protocols/flute.c \
 		     protocols/ftp_control.c \
 		     protocols/ftp_data.c \
 		     protocols/gaijin_entertainment.c \
@@ -132,6 +135,7 @@ libndpi_a_SOURCES = ndpi_content_match.c.inc \
 		     protocols/kismet.c \
 		     protocols/kontiki.c \
 		     protocols/ldap.c \
+		     protocols/lol_wild_rift.c \
 		     protocols/lotus_notes.c \
 		     protocols/line.c \
 		     protocols/lisp.c \
@@ -157,6 +161,7 @@ libndpi_a_SOURCES = ndpi_content_match.c.inc \
 		     protocols/natpmp.c \
 		     protocols/nats.c \
 		     protocols/nest_log_sink.c \
+		     protocols/netease_games.c \
 		     protocols/netbios.c \
 		     protocols/netflow.c \
 		     protocols/nintendo.c \
@@ -171,6 +176,8 @@ libndpi_a_SOURCES = ndpi_content_match.c.inc \
 		     protocols/openvpn.c \
 		     protocols/ookla.c \
 		     protocols/oracle.c \
+		     protocols/path_of_exile.c \
+		     protocols/pfcp.c \
 		     protocols/postgres.c \
 		     protocols/ppstream.c \
 		     protocols/pptp.c \
@@ -200,7 +207,6 @@ libndpi_a_SOURCES = ndpi_content_match.c.inc \
 		     protocols/sflow.c \
 		     protocols/sip.c \
 		     protocols/skinny.c \
-		     protocols/skype.c \
 		     protocols/slp.c \
 		     protocols/smb.c \
 		     protocols/snmp_proto.c \
@@ -280,6 +286,7 @@ libndpi_a_SOURCES = ndpi_content_match.c.inc \
 		     third_party/src/hll/MurmurHash3.c \
 		     third_party/src/hll/hll.c \
 		     third_party/src/gcrypt_light.c \
+		     third_party/src/roaring.c \
 		     third_party/src/ndpi_sha256.c
 
 lib_LIBRARIES = libndpi.a

@@ -425,6 +425,17 @@ typedef enum {
   NDPI_PROTOCOL_GEARMAN               = 394,
   NDPI_PROTOCOL_TENCENTGAMES          = 395,
   NDPI_PROTOCOL_GAIJIN                = 396,
+  NDPI_PROTOCOL_C1222                 = 397,
+  NDPI_PROTOCOL_HUAWEI                = 398,
+  NDPI_PROTOCOL_HUAWEI_CLOUD          = 399,
+  NDPI_PROTOCOL_DLEP                  = 400,
+  NDPI_PROTOCOL_BFD                   = 401,
+  NDPI_PROTOCOL_NETEASE_GAMES         = 402,
+  NDPI_PROTOCOL_PATHOFEXILE           = 403,
+  NDPI_PROTOCOL_GOOGLE_CALL           = 404, /* Voip/audio/video calls from Google Chat/Meet/... */
+  NDPI_PROTOCOL_PFCP                  = 405,
+  NDPI_PROTOCOL_FLUTE                 = 406,
+  NDPI_PROTOCOL_LOLWILDRIFT           = 407,
 
 #ifdef CUSTOM_NDPI_PROTOCOLS
 #include "../../../nDPI-custom/custom_ndpi_protocol_ids.h"

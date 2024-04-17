@@ -355,6 +355,8 @@ tls_buf_size: The maximum buffer size in kB for the TLS protocol. default 8, ran
   2. In both directions at least one packet with a payload is transmitted.
   3. Three or more packets with payload are transmitted in one (any) direction.
 
+/proc/net/xt_ndpi/ip6_proto - show and change IPv6 and port based protocols settings. See ip_proto.
+
 /proc/net/xt_ndpi/host_proto - show and change host based settings (used in DNS,HTTP,SSL)
 
   View current settings:
@@ -362,6 +364,10 @@ tls_buf_size: The maximum buffer size in kB for the TLS protocol. default 8, ran
 
   Change settings:
   "echo 'protoname:host[,host...][ protoname:host[,host...]]' >/proc/net/xt_ndpi/host_proto"
+
+  If the hostname begins with a "|" character, a match is checked from the beginning of the line.
+  If the hostname ends with a "|" character, a match is made to the end of the string.
+  "|name|" this is an exact string match.
 
   Delete match:
   "echo '-protoname:host' >/proc/net/xt_ndpi/host_proto"

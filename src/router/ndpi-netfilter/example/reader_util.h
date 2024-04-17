@@ -301,6 +301,17 @@ typedef struct ndpi_flow_info {
   } http;
 
   struct {
+    struct {
+      union {
+        u_int32_t v4;
+        u_int8_t v6[16];
+      } address;
+      u_int16_t port;
+      u_int16_t is_ipv6: 1, _pad: 15;
+    } mapped_address;
+  } stun;
+  
+  struct {
     char *username, *password;
   } telnet;
 

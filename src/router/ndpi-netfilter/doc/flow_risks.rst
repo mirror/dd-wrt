@@ -105,7 +105,7 @@ A `DGA <https://en.wikipedia.org/wiki/Domain_generation_algorithm>`_ is used to 
 
 NDPI_MALFORMED_PACKET
 =====================
-This risk is generated when a packet (e.g. a DNS packet) has an unexpected formt. This can indicate a protocol error or more often an attempt to jeopardize a valid protocol to carry other type of data.
+This risk is generated when a packet (e.g. a DNS packet) has an unexpected format. This can indicate a protocol error or more often an attempt to jeopardize a valid protocol to carry other type of data.
 
 .. _Risk 018:
 
@@ -247,7 +247,7 @@ Additionally, some TLS protocol fields are checked for printable characters as w
 
 NDPI_POSSIBLE_EXPLOIT
 =====================
-The risk is set whenever a possible exploit (e.g. `Log4J/Log4Shell <https://en.wikipedia.org/wiki/Log4Shell>`_) is detected.
+The risk is set whenever a possible exploit attempt (e.g. `Log4J/Log4Shell <https://en.wikipedia.org/wiki/Log4Shell>`_) is detected.
 
 .. _Risk 041:
 
@@ -328,3 +328,9 @@ Invalid TLS ALPN/SNI mismatch. For instance ALPN advertises the flow as h2 (HTTP
 NDPI_MALWARE_CONTACTED
 ======================
 Client contacted a server host labelled as malware.
+
+.. _Risk 054:
+
+NDPI_BINARY_TRANSFER_ATTEMPT
+============================
+HTTP only: this risk indicates that a binary data application has been attempted (but failed).

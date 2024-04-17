@@ -211,7 +211,7 @@ static void print_safe_str(char *msg,bt_parse_data_cb_t *cbd) {
 #define STREQ(a,b) !strcmp(a,b)
 
 
-static void cb_data(bt_parse_data_cb_t *cbd,int *ret) {
+static void cb_data(bt_parse_data_cb_t *cbd) {
   struct bt_parse_protocol *p = &(cbd->p);
   const u_int8_t *s;
   const char *ss;
@@ -493,8 +493,7 @@ const u_int8_t *bt_decode(const u_int8_t *b, size_t *l, int *ret, bt_parse_data_
       b = bt_decode(b,l,ret,cbd);
       if(*ret < 0 || *l == 0) goto bad_data;
       if(!in_buf_range(b)) goto bad_data;
-      cb_data(cbd,ret);
-      if(*ret < 0) goto bad_data;
+      cb_data(cbd);
       cbd->t = 0;
     } while (*b != 'e' && *l != 0);
     b++; (*l)--;
@@ -518,8 +517,7 @@ const u_int8_t *bt_decode(const u_int8_t *b, size_t *l, int *ret, bt_parse_data_
       b = bt_decode(b,l,ret,cbd);
       if(*ret < 0 || *l == 0) goto bad_data;
       if(!in_buf_range(b)) goto bad_data;
-      cb_data(cbd,ret);
-      if(*ret < 0) goto bad_data;
+      cb_data(cbd);
       cbd->t = 0;
       *ls = 0;
     } while (*b != 'e' && l != 0);

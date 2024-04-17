@@ -117,7 +117,6 @@ u_int16_t max_pattern_len               = 8;
 /* *********************************************************** */
 
 int ndpi_analyze_payload(struct ndpi_flow_info *flow,
-			 u_int8_t src_to_dst_direction,
 			 u_int8_t *payload,
 			 u_int16_t payload_len,
 			 u_int32_t packet_id) {
@@ -197,7 +196,6 @@ int ndpi_analyze_payload(struct ndpi_flow_info *flow,
 /* *********************************************************** */
 
 void ndpi_payload_analyzer(struct ndpi_flow_info *flow,
-			   u_int8_t src_to_dst_direction,
 			   u_int8_t *payload, u_int16_t payload_len,
 			   u_int32_t packet_id) {
   u_int16_t i, j;
@@ -218,7 +216,7 @@ void ndpi_payload_analyzer(struct ndpi_flow_info *flow,
   for(i=0; i<scan_len; i++) {
     for(j=min_pattern_len; j <= max_pattern_len; j++) {
       if((i+j) < payload_len) {
-	if(ndpi_analyze_payload(flow, src_to_dst_direction, &payload[i], j, packet_id) == -1) {
+	if(ndpi_analyze_payload(flow, &payload[i], j, packet_id) == -1) {
           LOG(NDPI_LOG_ERROR, "Error ndpi_analyze_payload (allocation failure)\n");
 	}
       }
@@ -696,7 +694,6 @@ static struct ndpi_flow_info *get_ndpi_flow_info(struct ndpi_workflow * workflow
 						 ndpi_packet_tunnel tunnel_type,
 						 const struct ndpi_iphdr *iph,
 						 const struct ndpi_ipv6hdr *iph6,
-						 u_int16_t ip_offset,
 						 u_int16_t ipsize,
 						 u_int16_t l4_packet_len,
 						 u_int16_t l4_offset,
@@ -982,7 +979,6 @@ static struct ndpi_flow_info *get_ndpi_flow_info6(struct ndpi_workflow * workflo
 						  u_int16_t vlan_id,
 						  ndpi_packet_tunnel tunnel_type,
 						  const struct ndpi_ipv6hdr *iph6,
-						  u_int16_t ip_offset,
 						  u_int16_t ipsize,
 						  struct ndpi_tcphdr **tcph,
 						  struct ndpi_udphdr **udph,
@@ -1011,7 +1007,7 @@ static struct ndpi_flow_info *get_ndpi_flow_info6(struct ndpi_workflow * workflo
   iph.protocol = l4proto;
 
   return(get_ndpi_flow_info(workflow, 6, vlan_id, tunnel_type,
-			    &iph, iph6, ip_offset, ipsize,
+			    &iph, iph6, ipsize,
 			    ip_len, l4ptr - (const u_int8_t *)iph6,
 			    tcph, udph, sport, dport,
 			    proto, payload,
@@ -1338,6 +1334,12 @@ void process_ndpi_collected_info(struct ndpi_workflow * workflow, struct ndpi_fl
     }
   }
 
+  if(flow->ndpi_flow->stun.mapped_address.port) {
+    memcpy(&flow->stun.mapped_address.address, &flow->ndpi_flow->stun.mapped_address.address, 16);
+    flow->stun.mapped_address.port = flow->ndpi_flow->stun.mapped_address.port;
+    flow->stun.mapped_address.is_ipv6 = flow->ndpi_flow->stun.mapped_address.is_ipv6;
+  }
+
   flow->multimedia_flow_type = flow->ndpi_flow->flow_multimedia_type;
   
   /* HTTP metadata are "global" not in `flow->ndpi_flow->protos` union; for example, we can have
@@ -1455,7 +1457,6 @@ static struct ndpi_proto packet_processing(struct ndpi_workflow * workflow,
 					   ndpi_packet_tunnel tunnel_type,
 					   const struct ndpi_iphdr *iph,
 					   struct ndpi_ipv6hdr *iph6,
-					   u_int16_t ip_offset,
 					   u_int16_t ipsize, u_int16_t rawsize,
 					   const struct pcap_pkthdr *header,
 					   const u_char *packet,
@@ -1478,7 +1479,7 @@ static struct ndpi_proto packet_processing(struct ndpi_workflow * workflow,
   if(iph)
     flow = get_ndpi_flow_info(workflow, IPVERSION, vlan_id,
 			      tunnel_type, iph, NULL,
-			      ip_offset, ipsize,
+			      ipsize,
 			      ntohs(iph->tot_len) ? (ntohs(iph->tot_len) - (iph->ihl * 4)) : ipsize - (iph->ihl * 4) /* TSO */,
 			      iph->ihl * 4,
 			      &tcph, &udph, &sport, &dport,
@@ -1486,7 +1487,7 @@ static struct ndpi_proto packet_processing(struct ndpi_workflow * workflow,
 			      &payload, &payload_len, &src_to_dst_direction, when);
   else
     flow = get_ndpi_flow_info6(workflow, vlan_id,
-			       tunnel_type, iph6, ip_offset, ipsize,
+			       tunnel_type, iph6, ipsize,
 			       &tcph, &udph, &sport, &dport,
 			       &proto,
 			       &payload, &payload_len, &src_to_dst_direction, when);
@@ -1579,7 +1580,7 @@ static struct ndpi_proto packet_processing(struct ndpi_workflow * workflow,
 #endif
 
     if(enable_payload_analyzer && (payload_len > 0))
-      ndpi_payload_analyzer(flow, src_to_dst_direction,
+      ndpi_payload_analyzer(flow,
 			    payload, payload_len,
 			    workflow->stats.ip_packet_count);
 
@@ -1638,7 +1639,7 @@ static struct ndpi_proto packet_processing(struct ndpi_workflow * workflow,
       }
 
       if((!skip) && ((flow->src2dst_packets+flow->dst2src_packets) < 100)) {
-	if(ndpi_has_human_readeable_string(workflow->ndpi_struct, (char*)packet, header->caplen,
+	if(ndpi_has_human_readeable_string((char*)packet, header->caplen,
 					   human_readeable_string_len,
 					   flow->human_readeable_string_buffer,
 					   sizeof(flow->human_readeable_string_buffer)) == 1)
@@ -1934,10 +1935,9 @@ static uint32_t ndpi_is_valid_gre_tunnel(const struct pcap_pkthdr *header,
   struct ndpi_gre_basehdr *grehdr = (struct ndpi_gre_basehdr*)&packet[offset];
   offset += sizeof(struct ndpi_gre_basehdr);
   /*
-    rfc-1701
     The GRE flags are encoded in the first two octets.  Bit 0 is the
     most significant bit, bit 15 is the least significant bit.  Bits
-    13 through 15 are reserved for the Version field.  Bits 5 through
+    13 through 15 are reserved for the Version field.  Bits 9 through
     12 are reserved for future use and MUST be transmitted as zero.
   */
   if(NDPI_GRE_IS_FLAGS(grehdr->flags))
@@ -2537,8 +2537,8 @@ struct ndpi_proto ndpi_workflow_process_packet(struct ndpi_workflow * workflow,
 
   /* process the packet */
   return(packet_processing(workflow, time_ms, vlan_id, nf_mark, tunnel_type, iph, iph6,
-			   ip_offset, header->caplen - ip_offset,
-			   header->caplen, header, packet, header->ts,
+			   header->caplen - ip_offset, header->caplen, 
+			   header, packet, header->ts,
 			   flow_risk));
 }
 

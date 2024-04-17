@@ -110,7 +110,7 @@ NDPI_STATIC ndpi_patricia_node_t * ndpi_patricia_search_best2 (ndpi_patricia_tre
 NDPI_STATIC ndpi_patricia_node_t *ndpi_patricia_lookup (ndpi_patricia_tree_t *patricia, ndpi_prefix_t *prefix);
 NDPI_STATIC void ndpi_patricia_remove (ndpi_patricia_tree_t *patricia, ndpi_patricia_node_t *node);
 // ndpi_patricia_tree_t *ndpi_New_Patricia (u_int16_t maxbits);
-NDPI_STATIC void ndpi_Clear_Patricia (ndpi_patricia_tree_t *patricia, void_fn_t func);
+NDPI_STATIC void ndpi_Clear_Patricia (ndpi_patricia_tree_t *patricia, ndpi_patricia_node_t *start,void_fn_t func);
 NDPI_STATIC void ndpi_Destroy_Patricia (ndpi_patricia_tree_t *patricia, void_fn_t func);
 NDPI_STATIC void ndpi_patricia_process (ndpi_patricia_tree_t *patricia, void_fn2_t func);
 NDPI_STATIC ndpi_prefix_t *ndpi_ascii2prefix (int family, char *string);

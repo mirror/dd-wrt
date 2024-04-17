@@ -47,6 +47,7 @@ NDPI_STATIC char *strtok_r(char *str, const char *delim, char **saveptr);
 #define le64toh(v) le64_to_cpu(v)
 #define le32toh(v) le32_to_cpu(v)
 #define le16toh(v) le16_to_cpu(v)
+#define be32toh(v) be32_to_cpu(v)
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3,17,0)
 typedef __s64 time64_t;
 #endif
