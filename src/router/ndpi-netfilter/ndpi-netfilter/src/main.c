@@ -2998,7 +2998,6 @@ static void __net_exit ndpi_net_exit(struct net *net)
 #if defined(CONFIG_NF_CONNTRACK_LABELS)
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 8, 0)
 	net->ct.label_words = n->labels_word;
-#endif
 #elif LINUX_VERSION_CODE < KERNEL_VERSION(6, 7, 0)
  	net->ct.labels_used--;
 #else

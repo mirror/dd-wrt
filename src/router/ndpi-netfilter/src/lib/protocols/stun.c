@@ -526,7 +526,7 @@ static int keep_extra_dissection(struct ndpi_detection_module_struct *ndpi_struc
   return 1;
 }
 
-static u_int32_t __get_master(struct ndpi_flow_struct *flow) {
+static u_int32_t __get_master_stun(struct ndpi_flow_struct *flow) {
 
   if(flow->detected_protocol_stack[1] != NDPI_PROTOCOL_UNKNOWN)
     return flow->detected_protocol_stack[1];
@@ -563,7 +563,7 @@ static int stun_search_again(struct ndpi_detection_module_struct *ndpi_struct,
     NDPI_LOG_DBG(ndpi_struct, "Still STUN\n");
     if(is_stun(ndpi_struct, flow, &app_proto)) { /* To extract other metadata */
       if(is_new_subclassification_better(ndpi_struct, flow, app_proto)) {
-        ndpi_int_stun_add_connection(ndpi_struct, flow, app_proto, __get_master(flow));
+        ndpi_int_stun_add_connection(ndpi_struct, flow, app_proto, __get_master_stun(flow));
       }
     }
   } else if(first_byte <= 15) {
@@ -704,8 +704,8 @@ static int stun_search_again(struct ndpi_detection_module_struct *ndpi_struct,
           /* STUN -> STUN/RTP, or
              DTLS -> DTLS/SRTP */
           ndpi_int_stun_add_connection(ndpi_struct, flow,
-                                       __get_master(flow) == NDPI_PROTOCOL_STUN ? NDPI_PROTOCOL_RTP: NDPI_PROTOCOL_SRTP,
-                                       __get_master(flow));
+                                       __get_master_stun(flow) == NDPI_PROTOCOL_STUN ? NDPI_PROTOCOL_RTP: NDPI_PROTOCOL_SRTP,
+                                       __get_master_stun(flow));
         }
       }
     } else if(rtp_rtcp == IS_RTCP) {
@@ -721,12 +721,7 @@ static int stun_search_again(struct ndpi_detection_module_struct *ndpi_struct,
 
 /* ************************************************************ */
 
-int ndpi_stun_cache_enable=
-#ifndef __KERNEL__
-	1;
-#else
-	0;
-#endif
+//extern int ndpi_stun_cache_enable;
 
 /* ************************************************************ */
 
@@ -891,7 +886,7 @@ static void ndpi_search_stun(struct ndpi_detection_module_struct *ndpi_struct, s
   }
 
   if(is_stun(ndpi_struct, flow, &app_proto)) {
-    ndpi_int_stun_add_connection(ndpi_struct, flow, app_proto, __get_master(flow));
+    ndpi_int_stun_add_connection(ndpi_struct, flow, app_proto, __get_master_stun(flow));
     return;
   }
 

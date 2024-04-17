@@ -9239,7 +9239,7 @@ void ndpi_parse_packet_line_info(struct ndpi_detection_module_struct *ndpi_str, 
 
 /* ********************************************************************************* */
 
-void ndpi_parse_packet_line_info_any(struct ndpi_detection_module_struct *ndpi_str) {
+NDPI_STATIC void ndpi_parse_packet_line_info_any(struct ndpi_detection_module_struct *ndpi_str) {
   struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_str);
   u_int32_t a;
   u_int16_t end = packet->payload_packet_len;

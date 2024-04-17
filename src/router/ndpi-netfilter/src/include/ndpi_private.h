@@ -631,7 +631,7 @@ NDPI_STATIC char *ndpi_user_agent_set(struct ndpi_flow_struct *flow, const u_int
 
 NDPI_STATIC void ndpi_parse_packet_line_info(struct ndpi_detection_module_struct *ndpi_struct,
 					  struct ndpi_flow_struct *flow);
-NDPI_STATIC void ndpi_parse_packet_line_info_any(struct ndpi_flow_struct *flow);
+NDPI_STATIC void ndpi_parse_packet_line_info_any(struct ndpi_detection_module_struct *ndpi_struct);
 
 NDPI_STATIC void load_common_alpns(struct ndpi_detection_module_struct *ndpi_str);
 NDPI_STATIC u_int8_t is_a_common_alpn(struct ndpi_detection_module_struct *ndpi_str,

@@ -382,8 +382,7 @@ NDPI_STATIC char *ndpi_user_agent_set(struct ndpi_flow_struct *flow, const u_int
 
 NDPI_STATIC void ndpi_parse_packet_line_info(struct ndpi_detection_module_struct *ndpi_struct,
 					  struct ndpi_flow_struct *flow);
-NDPI_STATIC void ndpi_parse_packet_line_info_any(struct ndpi_detection_module_struct *ndpi_struct,
-					      struct ndpi_flow_struct *flow);
+NDPI_STATIC void ndpi_parse_packet_line_info_any(struct ndpi_detection_module_struct *ndpi_struct);
 
 NDPI_STATIC void load_common_alpns(struct ndpi_detection_module_struct *ndpi_str);
 NDPI_STATIC u_int8_t is_a_common_alpn(struct ndpi_detection_module_struct *ndpi_str,
@@ -402,7 +401,6 @@ NDPI_STATIC u_int16_t check_for_email_address(struct ndpi_detection_module_struc
 
 NDPI_STATIC u_int ndpi_search_tcp_or_udp_raw(struct ndpi_detection_module_struct *ndpi_struct,
 				 struct ndpi_flow_struct *flow,
-				 u_int8_t protocol,
 				 u_int32_t saddr, u_int32_t daddr);
 
 NDPI_STATIC u_int32_t ip_port_hash_funct(u_int32_t ip, u_int16_t port);

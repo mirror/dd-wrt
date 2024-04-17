@@ -48,7 +48,6 @@ extern "C"
 #endif
 NDPI_STATIC u_int ndpi_search_tcp_or_udp_raw(struct ndpi_detection_module_struct *ndpi_struct,
 				 struct ndpi_flow_struct *flow,
-				 u_int8_t protocol,
 				 u_int32_t saddr, u_int32_t daddr);
 
 NDPI_STATIC void ndpi_bittorrent_init(struct ndpi_detection_module_struct *ndpi_struct,
