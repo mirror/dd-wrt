@@ -40,8 +40,6 @@ extern int ksmbd_debug_types;
 
 #define ksmbd_debug(type, fmt, ...)				\
 	do {							\
-		if (ksmbd_debug_types & KSMBD_DEBUG_##type)	\
-			pr_info(fmt, ##__VA_ARGS__);		\
 	} while (0)
 
 #define UNICODE_LEN(x)		((x) * 2)
