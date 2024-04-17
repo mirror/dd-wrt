@@ -78,6 +78,7 @@ l7filters filters_list[] = {
 	{ "bearshare", PDPI_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
 	{ "beckhoff_ads", NDPI_ONLY, 0, NULL },
+	{ "bfd", NDPI_ONLY, 0, NULL },
 #endif
 	{ "bgp", DPI, 0, NULL },
 	{ "biff", L7_ONLY, 0, NULL },
@@ -89,6 +90,7 @@ l7filters filters_list[] = {
 #ifdef HAVE_OPENDPI
 	{ "bjnp", NDPI_ONLY, 0, NULL },
 	{ "bloomberg", NDPI_ONLY, 0, NULL },
+	{ "c1222", NDPI_ONLY, 0, NULL },
 	{ "cachefly", NDPI_ONLY, 0, NULL },
 	{ "can", NDPI_ONLY, 0, NULL },
 	{ "capwap", NDPI_ONLY, 0, NULL },
@@ -150,6 +152,7 @@ l7filters filters_list[] = {
 #ifdef HAVE_OPENDPI
 	{ "discord", NDPI_ONLY, 0, NULL },
 	{ "disneyplus", NDPI_ONLY, 0, NULL },
+	{ "dlep", NDPI_ONLY, 0, NULL },
 	{ "dnp3", NDPI_ONLY, 0, NULL },
 #endif
 	{ "dns", DPI, 0, NULL },
@@ -201,6 +204,7 @@ l7filters filters_list[] = {
 #endif
 	{ "flash", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
+	{ "flute", NDPI_ONLY, 0, NULL },
 	{ "forticlient", NDPI_ONLY, 0, NULL },
 #endif
 	{ "freegate_dns", L7_ONLY, 0, NULL },
@@ -236,6 +240,7 @@ l7filters filters_list[] = {
 	{ "gogobox", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
 	{ "google", NDPI_ONLY, 0, NULL },
+	{ "googlecall", NDPI_ONLY, 0, NULL },
 	{ "googlechat", NDPI_ONLY, 0, NULL },
 	{ "googleclassroom", NDPI_ONLY, 0, NULL },
 	{ "googlecloud", NDPI_ONLY, 0, NULL },
@@ -310,6 +315,8 @@ l7filters filters_list[] = {
 	{ "http susp user-agent", NDPI_RISK, 11, "http" },
 	{ "http susp url", NDPI_RISK, 13, "http" },
 	{ "http/tls/quic numeric hostname/sni", NDPI_RISK, 12, "http,tls,quic" },
+	{ "huawei", NDPI_ONLY, 0, NULL },
+	{ "huawei_cloud", NDPI_ONLY, 0, NULL },
 	{ "hulu", NDPI_ONLY, 0, NULL },
 	{ "i3d", NDPI_ONLY, 0, NULL },
 	{ "iax", NDPI_ONLY, 0, NULL },
@@ -381,6 +388,7 @@ l7filters filters_list[] = {
 #ifdef HAVE_OPENDPI
 	{ "livestream", NDPI_ONLY, 0, NULL },
 	{ "llmnr", NDPI_ONLY, 0, NULL },
+	{ "lol_wild_rift", NDPI_ONLY, 0, NULL },
 	{ "lotusnotes", NDPI_ONLY, 0, NULL },
 #endif
 	{ "lpd", L7_ONLY, 0, NULL },
@@ -436,6 +444,7 @@ l7filters filters_list[] = {
 	{ "ncp", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
 	{ "nestlogsink", NDPI_ONLY, 0, NULL },
+	{ "netease_games", DPI, 0, NULL },
 #endif
 	{ "netbios", DPI, 0, NULL },
 #ifdef HAVE_OPENDPI
@@ -473,6 +482,7 @@ l7filters filters_list[] = {
 	{ "outlook", NDPI_ONLY, 0, NULL },
 	{ "pandora", NDPI_ONLY, 0, NULL },
 	{ "pastebin", NDPI_ONLY, 0, NULL },
+	{ "path_of_exile", NDPI_ONLY, 0, NULL },
 #endif
 	{ "pcanywhere", L7_ONLY, 0, NULL },
 	{ "pdf", L7_ONLY, 0, NULL },
@@ -481,6 +491,7 @@ l7filters filters_list[] = {
 #endif
 	{ "perl", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
+	{ "pfcp", NDPI_ONLY, 0, NULL },
 	{ "pgm", NDPI_ONLY, 0, NULL },
 	{ "pia", NDPI_ONLY, 0, NULL },
 	{ "pinterest", NDPI_ONLY, 0, NULL },
