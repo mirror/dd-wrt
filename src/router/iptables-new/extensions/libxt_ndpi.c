@@ -457,6 +457,17 @@ static char *prot_short_str[NDPI_NUM_BITS] = {
 	"gearman",
 	"tencentgames",
 	"gaijin",
+	"c1222",
+	"huawei",
+	"huawei_cloud",
+	"dlep",
+	"bfd",
+	"netease_games",
+	"path_of_exile",
+	"google_call",
+	"pfcp",
+	"flute",
+	"lol_wild_rift",
 	NULL,
 };
 
