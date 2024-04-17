@@ -464,7 +464,7 @@ static char *prot_short_str[NDPI_NUM_BITS] = {
 	"bfd",
 	"netease_games",
 	"path_of_exile",
-	"google_call",
+	"googlecall",
 	"pfcp",
 	"flute",
 	"lol_wild_rift",
