@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r7782 | brainslayer | 2024-04-18 14:00:20 +0700 (Thu, 18 Apr 2024) | 1 line
+
+wake txq is a requirement
+------------------------------------------------------------------------
 r7781 | brainslayer | 2024-04-18 13:54:38 +0700 (Thu, 18 Apr 2024) | 1 line
 
 special txq handling for devices with low memory
