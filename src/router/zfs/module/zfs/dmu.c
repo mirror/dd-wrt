@@ -569,8 +569,10 @@ dmu_buf_hold_array_by_dnode(dnode_t *dn, uint64_t offset, uint64_t length,
 	for (i = 0; i < nblks; i++) {
 		dmu_buf_impl_t *db = dbuf_hold(dn, blkid + i, tag);
 		if (db == NULL) {
-			if (zs)
-				dmu_zfetch_run(zs, missed, B_TRUE);
+			if (zs) {
+				dmu_zfetch_run(&dn->dn_zfetch, zs, missed,
+				    B_TRUE);
+			}
 			rw_exit(&dn->dn_struct_rwlock);
 			dmu_buf_rele_array(dbp, nblks, tag);
 			if (read)
@@ -606,7 +608,7 @@ dmu_buf_hold_array_by_dnode(dnode_t *dn, uint64_t offset, uint64_t length,
 		zfs_racct_write(length, nblks);
 
 	if (zs)
-		dmu_zfetch_run(zs, missed, B_TRUE);
+		dmu_zfetch_run(&dn->dn_zfetch, zs, missed, B_TRUE);
 	rw_exit(&dn->dn_struct_rwlock);
 
 	if (read) {
@@ -2265,11 +2267,13 @@ dmu_read_l0_bps(objset_t *os, uint64_t object, uint64_t offset, uint64_t length,
 
 		if (bp == NULL) {
 			/*
-			 * The block was created in this transaction group,
-			 * so it has no BP yet.
+			 * The file size was increased, but the block was never
+			 * written, otherwise we would either have the block
+			 * pointer or the dirty record and would not get here.
+			 * It is effectively a hole, so report it as such.
 			 */
-			error = SET_ERROR(EAGAIN);
-			goto out;
+			BP_ZERO(&bps[i]);
+			continue;
 		}
 		/*
 		 * Make sure we clone only data blocks.
@@ -2361,19 +2365,17 @@ dmu_brt_clone(objset_t *os, uint64_t object, uint64_t offset, uint64_t length,
 		ASSERT3U(dr->dr_txg, ==, tx->tx_txg);
 		dl = &dr->dt.dl;
 		dl->dr_overridden_by = *bp;
-		dl->dr_brtwrite = B_TRUE;
-		dl->dr_override_state = DR_OVERRIDDEN;
-		if (BP_IS_HOLE(bp)) {
-			BP_SET_LOGICAL_BIRTH(&dl->dr_overridden_by, 0);
-			BP_SET_PHYSICAL_BIRTH(&dl->dr_overridden_by, 0);
-		} else {
-			BP_SET_LOGICAL_BIRTH(&dl->dr_overridden_by,
-			    dr->dr_txg);
+		if (!BP_IS_HOLE(bp) || BP_GET_LOGICAL_BIRTH(bp) != 0) {
 			if (!BP_IS_EMBEDDED(bp)) {
-				BP_SET_PHYSICAL_BIRTH(&dl->dr_overridden_by,
+				BP_SET_BIRTH(&dl->dr_overridden_by, dr->dr_txg,
 				    BP_GET_BIRTH(bp));
+			} else {
+				BP_SET_LOGICAL_BIRTH(&dl->dr_overridden_by,
+				    dr->dr_txg);
 			}
 		}
+		dl->dr_brtwrite = B_TRUE;
+		dl->dr_override_state = DR_OVERRIDDEN;
 
 		mutex_exit(&db->db_mtx);
 
