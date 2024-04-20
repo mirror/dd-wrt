@@ -163,10 +163,10 @@ endif
 	$(kernelfeatures)
 	make -C $(LINUXDIR) oldconfig
 	if ! grep -q "CONFIG_EMBEDDED_RAMDISK=y" $(LINUXDIR)/.config ; then \
-	    $(MAKE) -j $(shell getconf _NPROCESSORS_ONLN) -C $(LINUXDIR) bzImage CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-" ; \
+	    $(MAKE) -C $(LINUXDIR) bzImage CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-" ; \
 	fi
 	if grep -q "CONFIG_MODULES=y" $(LINUXDIR)/.config ; then \
-	    $(MAKE) -j  $(shell getconf _NPROCESSORS_ONLN) -C $(LINUXDIR) modules CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-" ;\
+	    $(MAKE) -C $(LINUXDIR) modules CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-" ;\
 	fi
 	rm -rf $(TARGETDIR)/lib/modules
 	$(MAKE) -C $(LINUXDIR) modules_install DEPMOD=/bin/true INSTALL_MOD_PATH=$(TARGETDIR)
@@ -243,7 +243,7 @@ endif
 	rm -f $(LINUXDIR)/vmlinux
 	if ! grep -q "CONFIG_EMBEDDED_RAMDISK=y" $(LINUXDIR)/.config ; then \
 	    #$(MAKE) -j 4 -C $(LINUXDIR) bzImage EXTRA_LDSFLAGS="-I$(LINUXDIR) -include symtab.h" CROSS_COMPILE="ccache x86_64-linux-uclibc-" ; \
-	    $(MAKE) -j  $(shell getconf _NPROCESSORS_ONLN) -C $(LINUXDIR) bzImage EXTRA_LDSFLAGS="-I$(LINUXDIR)" CROSS_COMPILE="ccache x86_64-linux-uclibc-" ; \
+	    $(MAKE) -C $(LINUXDIR) bzImage EXTRA_LDSFLAGS="-I$(LINUXDIR)" CROSS_COMPILE="ccache x86_64-linux-uclibc-" ; \
 	fi
 	
 #	cat $(LINUXDIR)/vmlinus | lzma e -si -so -eos -lc1 -lp2 -pb2 > lzma-loader/rb500/vmlinux.lzma
