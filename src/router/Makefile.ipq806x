@@ -596,14 +596,14 @@ endif
 
 	-( dd if=$(ARCH)-uclibc/habanero.itb.new bs=4096k conv=sync count=1; dd if=$(ARCH)-uclibc/root.squashfs.new bs=64k; ) > $(ARCH)-uclibc/habanero.image
 
-	--./tools/trx_n -m 55000000 -o $(ARCH)-uclibc/habanero.bin $(ARCH)-uclibc/habanero.image
-	-./tools/trx_n -m 55000000 -o $(ARCH)-uclibc/ddwrt-netgear-R7500v1.bin $(ARCH)-uclibc/ddwrt-R7500v1.bin 
-	-./tools/trx_n -m 55000000 -o $(ARCH)-uclibc/ddwrt-netgear-R7500v2.bin $(ARCH)-uclibc/ddwrt-R7500v2.bin
-	-./tools/trx_n -m 55000000 -o $(ARCH)-uclibc/ddwrt-netgear-R7800.bin $(ARCH)-uclibc/ddwrt-R7800.bin
-	-./tools/trx_n -m 55000000 -o $(ARCH)-uclibc/ddwrt-netgear-XR500.bin $(ARCH)-uclibc/ddwrt-XR500.bin
-	-./tools/trx_n -m 55000000 -o $(ARCH)-uclibc/ddwrt-trendnet-tew827.bin $(ARCH)-uclibc/ddwrt-ipq806x-TEW827-squashfs-nand-factory.ubi
-	-./tools/trx_n -m 55000000 -o $(ARCH)-uclibc/ddwrt-asrock-g10.bin $(ARCH)-uclibc/ddwrt-ipq806x-G10-squashfs-nand-factory.ubi
-	-./tools/trx_n -m 55000000 -o $(ARCH)-uclibc/ddwrt-Linksys-EA8500.bin $(ARCH)-uclibc/ddwrt-EA8500.bin
+	--./tools/trx_n -m 60000000 -o $(ARCH)-uclibc/habanero.bin $(ARCH)-uclibc/habanero.image
+	-./tools/trx_n -m 60000000 -o $(ARCH)-uclibc/ddwrt-netgear-R7500v1.bin $(ARCH)-uclibc/ddwrt-R7500v1.bin 
+	-./tools/trx_n -m 60000000 -o $(ARCH)-uclibc/ddwrt-netgear-R7500v2.bin $(ARCH)-uclibc/ddwrt-R7500v2.bin
+	-./tools/trx_n -m 60000000 -o $(ARCH)-uclibc/ddwrt-netgear-R7800.bin $(ARCH)-uclibc/ddwrt-R7800.bin
+	-./tools/trx_n -m 60000000 -o $(ARCH)-uclibc/ddwrt-netgear-XR500.bin $(ARCH)-uclibc/ddwrt-XR500.bin
+	-./tools/trx_n -m 60000000 -o $(ARCH)-uclibc/ddwrt-trendnet-tew827.bin $(ARCH)-uclibc/ddwrt-ipq806x-TEW827-squashfs-nand-factory.ubi
+	-./tools/trx_n -m 60000000 -o $(ARCH)-uclibc/ddwrt-asrock-g10.bin $(ARCH)-uclibc/ddwrt-ipq806x-G10-squashfs-nand-factory.ubi
+	-./tools/trx_n -m 60000000 -o $(ARCH)-uclibc/ddwrt-Linksys-EA8500.bin $(ARCH)-uclibc/ddwrt-EA8500.bin
 	
 	cd tools && ./r7500/mkimage -f sysupgrade-ubi.its $(TOP)/$(ARCH)-uclibc/tew827-upgrade.bin
 	cat tools/tew827.tag >> $(ARCH)-uclibc/tew827-upgrade.bin
@@ -639,7 +639,7 @@ ifeq ($(CONFIG_HABANERO),y)
 			-n RT-AC58U -V "4.9" "0.4" "382" "52243-g06ac406" "0" "0" "0" "0" "0" "0" \
 			-d $(TOP)/$(ARCH)-uclibc/asus-ac58u.img $(TOP)/$(ARCH)-uclibc/asus-ac58u.trx
 
-	-./tools/trx_n -m 55000000 -o $(ARCH)-uclibc/ac58.bin $(ARCH)-uclibc/asus-ac58u.img
+	-./tools/trx_n -m 60000000 -o $(ARCH)-uclibc/ac58.bin $(ARCH)-uclibc/asus-ac58u.img
 
 	./tools/ipq40xx/mkits.sh -D linksys_ea8300 \
 		    -o $(TOP)/$(ARCH)-uclibc/fit-linksys_ea8300.its \
@@ -654,7 +654,7 @@ ifeq ($(CONFIG_HABANERO),y)
 	printf ".LINKSYS.01000409%-15s%08X%-8s%-16s" "EA8300" "$$(cksum arm-uclibc/linksys_ea8300.bin | cut -d ' ' -f1)" "0" "K0000000F0246434" >> $(TOP)/$(ARCH)-uclibc/linksys_ea8300.bin
 	dd if=/dev/zero bs=192 count=1 >> $(TOP)/$(ARCH)-uclibc/linksys_ea8300.bin
 
-	-./tools/trx_n -m 55000000 -o $(ARCH)-uclibc/linksys_ea8300-webflash.bin $(ARCH)-uclibc/linksys_ea8300.bin
+	-./tools/trx_n -m 60000000 -o $(ARCH)-uclibc/linksys_ea8300-webflash.bin $(ARCH)-uclibc/linksys_ea8300.bin
 
 
 	./tools/ipq40xx/mkits.sh -D linksys_mr8300 \
@@ -670,7 +670,7 @@ ifeq ($(CONFIG_HABANERO),y)
 	printf ".LINKSYS.01000409%-15s%08X%-8s%-16s" "MR8300" "$$(cksum arm-uclibc/linksys_mr8300.bin | cut -d ' ' -f1)" "0" "K0000000F0246434" >> $(TOP)/$(ARCH)-uclibc/linksys_mr8300.bin
 	dd if=/dev/zero bs=192 count=1 >> $(TOP)/$(ARCH)-uclibc/linksys_mr8300.bin
 
-	-./tools/trx_n -m 55000000 -o $(ARCH)-uclibc/linksys_mr8300-webflash.bin $(ARCH)-uclibc/linksys_mr8300.bin
+	-./tools/trx_n -m 60000000 -o $(ARCH)-uclibc/linksys_mr8300-webflash.bin $(ARCH)-uclibc/linksys_mr8300.bin
 
 
 	./tools/ipq40xx/mkits.sh -D linksys_mr9000 \
@@ -686,7 +686,7 @@ ifeq ($(CONFIG_HABANERO),y)
 	printf ".LINKSYS.01000409%-15s%08X%-8s%-16s" "MR9000" "$$(cksum arm-uclibc/linksys_mr9000.bin | cut -d ' ' -f1)" "0" "K0000000F0246434" >> $(TOP)/$(ARCH)-uclibc/linksys_mr9000.bin
 	dd if=/dev/zero bs=192 count=1 >> $(TOP)/$(ARCH)-uclibc/linksys_mr9000.bin
 
-	-./tools/trx_n -m 55000000 -o $(ARCH)-uclibc/linksys_mr9000-webflash.bin $(ARCH)-uclibc/linksys_mr9000.bin
+	-./tools/trx_n -m 60000000 -o $(ARCH)-uclibc/linksys_mr9000-webflash.bin $(ARCH)-uclibc/linksys_mr9000.bin
 
 endif
 
