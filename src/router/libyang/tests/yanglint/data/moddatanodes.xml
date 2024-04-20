@@ -1,0 +1,17 @@
+<dnc xmlns="urn:yanglint:moddatanodes">
+  <lf>x</lf>
+  <lfl>1</lfl>
+  <lfl>2</lfl>
+  <con>
+    <lt>
+      <kalf>ka1</kalf>
+      <kblf>kb1</kblf>
+      <vlf>v1</vlf>
+    </lt>
+    <lt>
+      <kalf>ka2</kalf>
+      <kblf>kb2</kblf>
+      <vlf>v2</vlf>
+    </lt>
+  </con>
+</dnc>

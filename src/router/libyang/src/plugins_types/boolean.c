@@ -15,15 +15,13 @@
 #include "plugins_types.h"
 
 #include <stdint.h>
-#include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 
 #include "libyang.h"
 
 /* additional internal headers for some useful simple macros */
-#include "common.h"
 #include "compat.h"
+#include "ly_common.h"
 #include "plugins_internal.h" /* LY_TYPE_*_STR */
 
 /**
@@ -35,7 +33,7 @@
  * | 1 | yes | `int8_t *` | 0 for false, otherwise true |
  */
 
-API LY_ERR
+LIBYANG_API_DEF LY_ERR
 lyplg_type_store_boolean(const struct ly_ctx *ctx, const struct lysc_type *type, const void *value, size_t value_len,
         uint32_t options, LY_VALUE_FORMAT format, void *UNUSED(prefix_data), uint32_t hints,
         const struct lysc_node *UNUSED(ctx_node), struct lyd_value *storage, struct lys_glob_unres *UNUSED(unres),
@@ -60,7 +58,7 @@ lyplg_type_store_boolean(const struct ly_ctx *ctx, const struct lysc_type *type,
         i = *(int8_t *)value;
         storage->boolean = i ? 1 : 0;
 
-        /* store canonical value */
+        /* store canonical value, it always is */
         ret = lydict_insert(ctx, i ? "true" : "false", 0, &storage->_canonical);
         LY_CHECK_GOTO(ret, cleanup);
 
@@ -105,20 +103,28 @@ cleanup:
     return ret;
 }
 
-API LY_ERR
-lyplg_type_compare_boolean(const struct lyd_value *val1, const struct lyd_value *val2)
+LIBYANG_API_DEF LY_ERR
+lyplg_type_compare_boolean(const struct ly_ctx *UNUSED(ctx), const struct lyd_value *val1, const struct lyd_value *val2)
 {
-    if (val1->realtype != val2->realtype) {
-        return LY_ENOT;
-    }
-
     if (val1->boolean != val2->boolean) {
         return LY_ENOT;
     }
     return LY_SUCCESS;
 }
 
-API const void *
+LIBYANG_API_DEF int
+lyplg_type_sort_boolean(const struct ly_ctx *UNUSED(ctx), const struct lyd_value *val1, const struct lyd_value *val2)
+{
+    if (val1->boolean > val2->boolean) {
+        return 1;
+    } else if (val1->boolean < val2->boolean) {
+        return -1;
+    } else {
+        return 0;
+    }
+}
+
+LIBYANG_API_DEF const void *
 lyplg_type_print_boolean(const struct ly_ctx *UNUSED(ctx), const struct lyd_value *value, LY_VALUE_FORMAT format,
         void *UNUSED(prefix_data), ly_bool *dynamic, size_t *value_len)
 {
@@ -157,10 +163,11 @@ const struct lyplg_type_record plugins_boolean[] = {
         .plugin.store = lyplg_type_store_boolean,
         .plugin.validate = NULL,
         .plugin.compare = lyplg_type_compare_boolean,
-        .plugin.sort = NULL,
+        .plugin.sort = lyplg_type_sort_boolean,
         .plugin.print = lyplg_type_print_boolean,
         .plugin.duplicate = lyplg_type_dup_simple,
-        .plugin.free = lyplg_type_free_simple
+        .plugin.free = lyplg_type_free_simple,
+        .plugin.lyb_data_len = 1,
     },
     {0}
 };

@@ -1,0 +1,8 @@
+<notification xmlns="urn:ietf:params:xml:ns:netconf:notification:1.0">
+  <eventTime>2010-12-06T08:00:01Z</eventTime>
+  <con xmlns="urn:yanglint:modnotif">
+    <nfn>
+      <lf>nested</lf>
+    </nfn>
+  </con>
+</notification>

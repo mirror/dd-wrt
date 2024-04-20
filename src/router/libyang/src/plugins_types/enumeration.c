@@ -12,17 +12,19 @@
  *     https://opensource.org/licenses/BSD-3-Clause
  */
 
+#define _GNU_SOURCE /* strdup */
+
 #include "plugins_types.h"
 
 #include <stdint.h>
-#include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "libyang.h"
 
 /* additional internal headers for some useful simple macros */
-#include "common.h"
 #include "compat.h"
+#include "ly_common.h"
 #include "plugins_internal.h" /* LY_TYPE_*_STR */
 
 /**
@@ -31,10 +33,10 @@
  *
  * | Size (B) | Mandatory | Type | Meaning |
  * | :------  | :-------: | :--: | :-----: |
- * | 4        | yes | `int32 *` | assigned value of the enum |
+ * | 4        | yes | `int32 *` | assigned little-endian value of the enum |
  */
 
-API LY_ERR
+LIBYANG_API_DEF LY_ERR
 lyplg_type_store_enum(const struct ly_ctx *ctx, const struct lysc_type *type, const void *value, size_t value_len,
         uint32_t options, LY_VALUE_FORMAT format, void *UNUSED(prefix_data), uint32_t hints,
         const struct lysc_node *UNUSED(ctx_node), struct lyd_value *storage, struct lys_glob_unres *UNUSED(unres),
@@ -44,6 +46,8 @@ lyplg_type_store_enum(const struct ly_ctx *ctx, const struct lysc_type *type, co
     LY_ERR ret = LY_SUCCESS;
     LY_ARRAY_COUNT_TYPE u;
     ly_bool found = 0;
+    int64_t num = 0;
+    int32_t num_val;
 
     /* init storage */
     memset(storage, 0, sizeof *storage);
@@ -57,9 +61,14 @@ lyplg_type_store_enum(const struct ly_ctx *ctx, const struct lysc_type *type, co
             goto cleanup;
         }
 
+        /* convert the value to host byte order */
+        memcpy(&num, value, value_len);
+        num = le64toh(num);
+        num_val = num;
+
         /* find the matching enumeration value item */
         LY_ARRAY_FOR(type_enum->enums, u) {
-            if (type_enum->enums[u].value == *(int32_t *)value) {
+            if (type_enum->enums[u].value == num_val) {
                 found = 1;
                 break;
             }
@@ -67,35 +76,44 @@ lyplg_type_store_enum(const struct ly_ctx *ctx, const struct lysc_type *type, co
 
         if (!found) {
             /* value not found */
-            ret = ly_err_new(err, LY_EVALID, LYVE_DATA, NULL, NULL, "Invalid enumeration value % " PRIi32 ".",
-                    *(int32_t *)value);
+            ret = ly_err_new(err, LY_EVALID, LYVE_DATA, NULL, NULL, "Invalid enumeration value % " PRIi32 ".", num_val);
             goto cleanup;
         }
-    } else {
-        /* check hints */
-        ret = lyplg_type_check_hints(hints, value, value_len, type->basetype, NULL, err);
+
+        /* store value */
+        storage->enum_item = &type_enum->enums[u];
+
+        /* canonical settings via dictionary due to free callback */
+        ret = lydict_insert(ctx, type_enum->enums[u].name, 0, &storage->_canonical);
         LY_CHECK_GOTO(ret, cleanup);
 
-        /* find the matching enumeration value item */
-        LY_ARRAY_FOR(type_enum->enums, u) {
-            if (!ly_strncmp(type_enum->enums[u].name, value, value_len)) {
-                found = 1;
-                break;
-            }
-        }
+        /* success */
+        goto cleanup;
+    }
 
-        if (!found) {
-            /* enum not found */
-            ret = ly_err_new(err, LY_EVALID, LYVE_DATA, NULL, NULL, "Invalid enumeration value \"%.*s\".", (int)value_len,
-                    (char *)value);
-            goto cleanup;
+    /* check hints */
+    ret = lyplg_type_check_hints(hints, value, value_len, type->basetype, NULL, err);
+    LY_CHECK_GOTO(ret, cleanup);
+
+    /* find the matching enumeration value item */
+    LY_ARRAY_FOR(type_enum->enums, u) {
+        if (!ly_strncmp(type_enum->enums[u].name, value, value_len)) {
+            found = 1;
+            break;
         }
+    }
+
+    if (!found) {
+        /* enum not found */
+        ret = ly_err_new(err, LY_EVALID, LYVE_DATA, NULL, NULL, "Invalid enumeration value \"%.*s\".", (int)value_len,
+                (char *)value);
+        goto cleanup;
     }
 
     /* store value */
     storage->enum_item = &type_enum->enums[u];
 
-    /* store canonical value */
+    /* store canonical value, it always is */
     if (options & LYPLG_TYPE_STORE_DYNAMIC) {
         ret = lydict_insert_zc(ctx, (char *)value, &storage->_canonical);
         options &= ~LYPLG_TYPE_STORE_DYNAMIC;
@@ -116,16 +134,48 @@ cleanup:
     return ret;
 }
 
-API const void *
+LIBYANG_API_DEF int
+lyplg_type_sort_enum(const struct ly_ctx *UNUSED(ctx), const struct lyd_value *val1,
+        const struct lyd_value *val2)
+{
+    if (val1->enum_item->value > val2->enum_item->value) {
+        return -1;
+    } else if (val1->enum_item->value < val2->enum_item->value) {
+        return 1;
+    } else {
+        return 0;
+    }
+}
+
+LIBYANG_API_DEF const void *
 lyplg_type_print_enum(const struct ly_ctx *UNUSED(ctx), const struct lyd_value *value, LY_VALUE_FORMAT format,
         void *UNUSED(prefix_data), ly_bool *dynamic, size_t *value_len)
 {
+    int64_t prev_num = 0, num = 0;
+    void *buf;
+
     if (format == LY_VALUE_LYB) {
-        *dynamic = 0;
-        if (value_len) {
-            *value_len = 4;
+        prev_num = num = value->enum_item->value;
+        num = htole64(num);
+        if (num == prev_num) {
+            /* values are equal, little-endian */
+            *dynamic = 0;
+            if (value_len) {
+                *value_len = 4;
+            }
+            return &value->enum_item->value;
+        } else {
+            /* values differ, big-endian */
+            buf = calloc(1, 4);
+            LY_CHECK_RET(!buf, NULL);
+
+            *dynamic = 1;
+            if (value_len) {
+                *value_len = 4;
+            }
+            memcpy(buf, &num, 4);
+            return buf;
         }
-        return &value->enum_item->value;
     }
 
     /* use the cached canonical value */
@@ -155,10 +205,11 @@ const struct lyplg_type_record plugins_enumeration[] = {
         .plugin.store = lyplg_type_store_enum,
         .plugin.validate = NULL,
         .plugin.compare = lyplg_type_compare_simple,
-        .plugin.sort = NULL,
+        .plugin.sort = lyplg_type_sort_enum,
         .plugin.print = lyplg_type_print_enum,
         .plugin.duplicate = lyplg_type_dup_simple,
-        .plugin.free = lyplg_type_free_simple
+        .plugin.free = lyplg_type_free_simple,
+        .plugin.lyb_data_len = 4,
     },
     {0}
 };

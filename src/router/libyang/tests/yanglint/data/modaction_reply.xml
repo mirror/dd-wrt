@@ -1,0 +1,8 @@
+<con xmlns="urn:yanglint:modaction">
+  <ls>
+    <lfkey>kv</lfkey>
+    <act>
+      <lfo>-56</lfo>
+    </act>
+  </ls>
+</con>

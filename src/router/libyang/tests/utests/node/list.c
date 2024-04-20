@@ -49,7 +49,7 @@ static void
 test_schema_yang(void **state)
 {
     const char *schema;
-    const struct lys_module *mod;
+    struct lys_module *mod;
     struct lysc_node_list *lysc_leaf;
     struct lysc_node *lysc_node;
 
@@ -169,8 +169,8 @@ test_schema_yang(void **state)
             "leaf group{type string;}"
             "}");
     UTEST_INVALID_MODULE(schema, LYS_IN_YANG, NULL, LY_EVALID);
-    CHECK_LOG_CTX("Invalid value \"-1\" of \"max-elements\".",
-            "Line number 5.");
+    CHECK_LOG_CTX("Parsing module \"TERR_0\" failed.", NULL, 0);
+    CHECK_LOG_CTX("Invalid value \"-1\" of \"max-elements\".", NULL, 5);
 
     schema = MODULE_CREATE_YANG("TERR_0", "list user {"
             "key uid;"
@@ -181,8 +181,8 @@ test_schema_yang(void **state)
             "leaf group{type string;}"
             "}");
     UTEST_INVALID_MODULE(schema, LYS_IN_YANG, NULL, LY_EVALID);
-    CHECK_LOG_CTX("Value \"4294967298\" is out of \"max-elements\" bounds.",
-            "Line number 5.");
+    CHECK_LOG_CTX("Parsing module \"TERR_0\" failed.", NULL, 0);
+    CHECK_LOG_CTX("Value \"4294967298\" is out of \"max-elements\" bounds.", NULL, 5);
 
     schema = MODULE_CREATE_YANG("TERR_0", "list user {"
             "key uid;"
@@ -193,8 +193,7 @@ test_schema_yang(void **state)
             "leaf group{type string;}"
             "}");
     UTEST_INVALID_MODULE(schema, LYS_IN_YANG, NULL, LY_EVALID);
-    CHECK_LOG_CTX("List min-elements 20 is bigger than max-elements 10.",
-            "/TERR_0:user");
+    CHECK_LOG_CTX("List min-elements 20 is bigger than max-elements 10.", "/TERR_0:user", 0);
 
     schema = MODULE_CREATE_YANG("TERR_0", "list user {"
             "key uid;"
@@ -205,8 +204,8 @@ test_schema_yang(void **state)
             "leaf group{type string;}"
             "}");
     UTEST_INVALID_MODULE(schema, LYS_IN_YANG, NULL, LY_EVALID);
-    CHECK_LOG_CTX("Invalid value \"-1\" of \"min-elements\".",
-            "Line number 5.");
+    CHECK_LOG_CTX("Parsing module \"TERR_0\" failed.", NULL, 0);
+    CHECK_LOG_CTX("Invalid value \"-1\" of \"min-elements\".", NULL, 5);
 
     schema = MODULE_CREATE_YANG("TERR_0", "list user {"
             "key uid;"
@@ -216,8 +215,8 @@ test_schema_yang(void **state)
             "leaf group{type string;}"
             "}");
     UTEST_INVALID_MODULE(schema, LYS_IN_YANG, NULL, LY_EVALID);
-    CHECK_LOG_CTX("Duplicate keyword \"key\".",
-            "Line number 5.");
+    CHECK_LOG_CTX("Parsing module \"TERR_0\" failed.", NULL, 0);
+    CHECK_LOG_CTX("Duplicate keyword \"key\".", NULL, 5);
 
     schema = MODULE_CREATE_YANG("T6", "list user {"
             "config false;"
@@ -283,8 +282,8 @@ test_schema_yang(void **state)
             "leaf group{type string;}"
             "}");
     UTEST_INVALID_MODULE(schema, LYS_IN_YANG, NULL, LY_EVALID);
-    CHECK_LOG_CTX("Invalid value \"systeme\" of \"ordered-by\".",
-            "Line number 5.");
+    CHECK_LOG_CTX("Parsing module \"TERROR0\" failed.", NULL, 0);
+    CHECK_LOG_CTX("Invalid value \"systeme\" of \"ordered-by\".", NULL, 5);
 
     schema = MODULE_CREATE_YANG("TERROR0", "list \"\" {"
             "key uid;"
@@ -295,8 +294,8 @@ test_schema_yang(void **state)
             "leaf group{type string;}"
             "}");
     UTEST_INVALID_MODULE(schema, LYS_IN_YANG, NULL, LY_EVALID);
-    CHECK_LOG_CTX("Statement argument is required.",
-            "Line number 5.");
+    CHECK_LOG_CTX("Parsing module \"TERROR0\" failed.", NULL, 0);
+    CHECK_LOG_CTX("Statement argument is required.", NULL, 5);
 
     schema = MODULE_CREATE_YANG("T9", "list user {"
             "key uid;"
@@ -361,7 +360,7 @@ static void
 test_schema_yin(void **state)
 {
     const char *schema;
-    const struct lys_module *mod;
+    struct lys_module *mod;
     struct lysc_node_list *lysc_leaf;
     struct lysc_node *lysc_node;
 
@@ -390,8 +389,7 @@ test_schema_yin(void **state)
             "   <leaf name=\"group\"><type name=\"string\"/></leaf>"
             "</list>");
     UTEST_INVALID_MODULE(schema, LYS_IN_YIN, NULL, LY_EVALID);
-    CHECK_LOG_CTX("The list's key \"u<id\" not found.",
-            "/T00:user");
+    CHECK_LOG_CTX("The list's key \"u<id\" not found.", "/T00:user", 0);
 
     schema = MODULE_CREATE_YIN("T1", "<list name=\"user\"> "
             "   <key value=\"uid\"/>"
@@ -500,8 +498,8 @@ test_schema_yin(void **state)
             "   <leaf name=\"uid\"> <type name=\"int32\"> </leaf>"
             "</list>");
     UTEST_INVALID_MODULE(schema, LYS_IN_YIN, NULL, LY_EVALID);
-    CHECK_LOG_CTX("Invalid value \"-1\" of \"value\" attribute in \"max-elements\" element.",
-            "Line number 10.");
+    CHECK_LOG_CTX("Parsing module \"TERR_0\" failed.", NULL, 0);
+    CHECK_LOG_CTX("Invalid value \"-1\" of \"value\" attribute in \"max-elements\" element.", NULL, 8);
 
     schema = MODULE_CREATE_YIN("TERR_0",
             "<list name=\"user\">"
@@ -513,8 +511,8 @@ test_schema_yin(void **state)
             "   <leaf name=\"group\"> <type name=\"string\"/>  </leaf>"
             "</list>");
     UTEST_INVALID_MODULE(schema, LYS_IN_YIN, NULL, LY_EVALID);
-    CHECK_LOG_CTX("Value \"4294967298\" of \"value\" attribute in \"max-elements\" element is out of bounds.",
-            "Line number 10.");
+    CHECK_LOG_CTX("Parsing module \"TERR_0\" failed.", NULL, 0);
+    CHECK_LOG_CTX("Value \"4294967298\" of \"value\" attribute in \"max-elements\" element is out of bounds.", NULL, 8);
 
     schema = MODULE_CREATE_YIN("TERR_0",
             "<list name=\"user\">"
@@ -526,8 +524,9 @@ test_schema_yin(void **state)
             "   <leaf name=\"group\"> <type name=\"string\"/> </leaf>"
             "</list>");
     UTEST_INVALID_MODULE(schema, LYS_IN_YIN, NULL, LY_EVALID);
+    CHECK_LOG_CTX("Parsing module \"TERR_0\" failed.", NULL, 0);
     CHECK_LOG_CTX("Invalid combination of min-elements and max-elements: min value 20 is bigger than the max value 10.",
-            "Line number 10.");
+            NULL, 8);
 
     schema = MODULE_CREATE_YIN("TERR_0",
             "<list name=\"user\">"
@@ -539,8 +538,8 @@ test_schema_yin(void **state)
             "   <leaf name=\"group\"> <type name=\"string\"/> </leaf>"
             "</list>");
     UTEST_INVALID_MODULE(schema, LYS_IN_YIN, NULL, LY_EVALID);
-    CHECK_LOG_CTX("Value \"-1\" of \"value\" attribute in \"min-elements\" element is out of bounds.",
-            "Line number 10.");
+    CHECK_LOG_CTX("Parsing module \"TERR_0\" failed.", NULL, 0);
+    CHECK_LOG_CTX("Value \"-1\" of \"value\" attribute in \"min-elements\" element is out of bounds.", NULL, 8);
 
     schema = MODULE_CREATE_YIN("TERR_0",
             "<list name=\"user\">"
@@ -551,8 +550,8 @@ test_schema_yin(void **state)
             "   <leaf name=\"group\"> <type name=\"string\"/> </leaf>"
             "</list>");
     UTEST_INVALID_MODULE(schema, LYS_IN_YIN, NULL, LY_EVALID);
-    CHECK_LOG_CTX("Redefinition of \"key\" sub-element in \"list\" element.",
-            "Line number 10.");
+    CHECK_LOG_CTX("Parsing module \"TERR_0\" failed.", NULL, 0);
+    CHECK_LOG_CTX("Redefinition of \"key\" sub-element in \"list\" element.", NULL, 8);
 
     schema = MODULE_CREATE_YIN("T6",
             "<list name=\"user\">"
@@ -622,8 +621,9 @@ test_schema_yin(void **state)
             "   <leaf name=\"group\"><type name=\"string\"/> </leaf>"
             "</list>");
     UTEST_INVALID_MODULE(schema, LYS_IN_YIN, NULL, LY_EVALID);
+    CHECK_LOG_CTX("Parsing module \"TERROR0\" failed.", NULL, 0);
     CHECK_LOG_CTX("Invalid value \"systeme\" of \"value\" attribute in \"ordered-by\" element. Valid values are \"system\" and \"user\".",
-            "Line number 10.");
+            NULL, 8);
 
     schema = MODULE_CREATE_YIN("T_DEFS1",
             "<list name=\"user\">"
@@ -652,7 +652,7 @@ test_schema_print(void **state)
 {
     const char *schema_yang, *schema_yin;
     char *printed;
-    const struct lys_module *mod;
+    struct lys_module *mod;
 
     /* test print yang to yin */
     schema_yang = MODULE_CREATE_YANG("PRINT0",
@@ -690,6 +690,7 @@ test_schema_print(void **state)
 
     /* test print yin to yang */
     schema_yang = MODULE_CREATE_YANG("PRINT1",
+            "\n"
             "  list user {\n"
             "    key \"uid name\";\n"
             "    unique \"name\";\n"
@@ -774,7 +775,7 @@ test_xml(void **state)
     /* check first item */
     CHECK_PARSE_LYD_PARAM(data, LYD_XML, 0, LYD_VALIDATE_PRESENT, LY_SUCCESS, tree);
     list_tree = (void *)tree;
-    CHECK_LYD_NODE_INNER(list_tree, 1, 0, 0, 0, 1, 0, 0, 1);
+    CHECK_LYD_NODE_INNER(list_tree, 1, 0, 1, 0, 1, 0, 0, 1);
     list_leaf = (void *) list_tree->child;
     assert_string_equal(list_leaf->schema->name, "uid");
     CHECK_LYD_NODE_TERM(list_leaf, 0, 0, 1, 1, 1, UINT32, "0", 0);
@@ -813,7 +814,7 @@ test_xml(void **state)
     /* check first item */
     CHECK_PARSE_LYD_PARAM(data, LYD_XML, 0, LYD_VALIDATE_PRESENT, LY_SUCCESS, tree);
     list_tree = (void *)tree;
-    CHECK_LYD_NODE_INNER(list_tree, 1, 0, 0, 0, 1, 0, 0, 1);
+    CHECK_LYD_NODE_INNER(list_tree, 1, 0, 1, 0, 1, 0, 0, 1);
     list_leaf = (void *) list_tree->child;
     assert_string_equal(list_leaf->schema->name, "uid");
     CHECK_LYD_NODE_TERM(list_leaf, 0, 0, 1, 1, 1, UINT32, "0", 0);
@@ -851,8 +852,7 @@ test_xml(void **state)
     /* check first item */
     CHECK_PARSE_LYD_PARAM(data, LYD_XML, 0, LYD_VALIDATE_PRESENT, LY_EVALID, tree);
     assert_null(tree);
-    CHECK_LOG_CTX("Duplicate instance of \"user\".",
-            "Schema location /T0:user, data location /T0:user[uid='0'].");
+    CHECK_LOG_CTX("Duplicate instance of \"user\".", "/T0:user[uid='0']", 0);
 
     data =
             "<user xmlns=\"urn:tests:T0\">"
@@ -869,7 +869,7 @@ test_xml(void **state)
     CHECK_PARSE_LYD_PARAM(data, LYD_XML, 0, LYD_VALIDATE_PRESENT, LY_EVALID, tree);
     assert_null(tree);
     CHECK_LOG_CTX("Unique data leaf(s) \"name group\" not satisfied in \"/T0:user[uid='0']\" and \"/T0:user[uid='1']\".",
-            "Schema location /T0:user, data location /T0:user[uid='1'].");
+            "/T0:user[uid='1']", 0);
 
     /* double key */
     schema = MODULE_CREATE_YANG("T1", "list user {"
@@ -893,13 +893,13 @@ test_xml(void **state)
     /* check first item */
     CHECK_PARSE_LYD_PARAM(data, LYD_XML, 0, LYD_VALIDATE_PRESENT, LY_SUCCESS, tree);
     list_tree = (void *)tree;
-    CHECK_LYD_NODE_INNER(list_tree, 1, 0, 0, 0, 1, 0, 0, 1);
+    CHECK_LYD_NODE_INNER(list_tree, 1, 0, 1, 0, 1, 0, 0, 1);
     list_leaf = (void *) list_tree->child;
     assert_string_equal(list_leaf->schema->name, "uid");
     CHECK_LYD_NODE_TERM(list_leaf, 0, 0, 1, 1, 1, UINT32, "0", 0);
     list_leaf = (void *) list_leaf->next;
     assert_string_equal(list_leaf->schema->name, "group");
-    CHECK_LYD_NODE_TERM(list_leaf, 0, 0, 1, 1, 1, STRING, "User");
+    CHECK_LYD_NODE_TERM(list_leaf, 0, 0, 1, 1, 1, STRING, "Admin");
     list_leaf = (void *) list_leaf->next;
     assert_string_equal(list_leaf->schema->name, "name");
     CHECK_LYD_NODE_TERM(list_leaf, 0, 0, 0, 1, 1, STRING, "Tomáš Novák");
@@ -911,7 +911,7 @@ test_xml(void **state)
     CHECK_LYD_NODE_TERM(list_leaf, 0, 0, 1, 1, 1, UINT32, "0", 0);
     list_leaf = (void *) list_leaf->next;
     assert_string_equal(list_leaf->schema->name, "group");
-    CHECK_LYD_NODE_TERM(list_leaf, 0, 0, 1, 1, 1, STRING, "Admin");
+    CHECK_LYD_NODE_TERM(list_leaf, 0, 0, 1, 1, 1, STRING, "User");
     list_leaf = (void *) list_leaf->next;
     assert_string_equal(list_leaf->schema->name, "name");
     CHECK_LYD_NODE_TERM(list_leaf, 0, 0, 0, 1, 1, STRING, "Tomáš Novák");
@@ -931,8 +931,7 @@ test_xml(void **state)
     /* check first item */
     CHECK_PARSE_LYD_PARAM(data, LYD_XML, 0, LYD_VALIDATE_PRESENT, LY_EVALID, tree);
     assert_null(tree);
-    CHECK_LOG_CTX("Duplicate instance of \"user\".",
-            "Schema location /T1:user, data location /T1:user[uid='0'][group='User'].");
+    CHECK_LOG_CTX("Duplicate instance of \"user\".", "/T1:user[uid='0'][group='User']", 0);
 
     /* min elements max elements */
     schema = MODULE_CREATE_YANG("T2",
@@ -963,7 +962,7 @@ test_xml(void **state)
             "</user>";
     CHECK_PARSE_LYD_PARAM(data, LYD_XML, 0, LYD_VALIDATE_PRESENT, LY_SUCCESS, tree);
     list_tree = (void *)tree;
-    CHECK_LYD_NODE_INNER(list_tree, 1, 0, 0, 0, 1, 0, 0, 1);
+    CHECK_LYD_NODE_INNER(list_tree, 1, 0, 1, 0, 1, 0, 0, 1);
     list_leaf = (void *) list_tree->child;
     assert_string_equal(list_leaf->schema->name, "uid");
     CHECK_LYD_NODE_TERM(list_leaf, 0, 0, 1, 1, 1, UINT32, "0", 0);
@@ -1027,7 +1026,7 @@ test_xml(void **state)
             "</user>";
     CHECK_PARSE_LYD_PARAM(data, LYD_XML, 0, LYD_VALIDATE_PRESENT, LY_SUCCESS, tree);
     list_tree = (void *)tree;
-    CHECK_LYD_NODE_INNER(list_tree, 1, 0, 0, 0, 1, 0, 0, 1);
+    CHECK_LYD_NODE_INNER(list_tree, 1, 0, 1, 0, 1, 0, 0, 1);
     list_tree = (void *) list_tree->next;
     CHECK_LYD_NODE_INNER(list_tree, 1, 0, 0, 0, 1, 0, 0, 1);
     list_tree = (void *) list_tree->next;
@@ -1052,8 +1051,7 @@ test_xml(void **state)
             "</user>";
     CHECK_PARSE_LYD_PARAM(data, LYD_XML, 0, LYD_VALIDATE_PRESENT, LY_EVALID, tree);
     assert_null(tree);
-    CHECK_LOG_CTX("Too few \"user\" instances.",
-            "Schema location /T2:user.");
+    CHECK_LOG_CTX("Too few \"user\" instances.", "/T2:user", 0);
 
     data =
             "<user xmlns=\"urn:tests:T2\">"
@@ -1088,8 +1086,7 @@ test_xml(void **state)
             "</user>";
     CHECK_PARSE_LYD_PARAM(data, LYD_XML, 0, LYD_VALIDATE_PRESENT, LY_EVALID, tree);
     assert_null(tree);
-    CHECK_LOG_CTX("Too many \"user\" instances.",
-            "Schema location /T2:user, data location /T2:user[uid='5'].");
+    CHECK_LOG_CTX("Too many \"user\" instances.", "/T2:user[uid='5']", 0);
 
     /* empty list */
     schema = MODULE_CREATE_YANG("T_EMPTY_LIST",
@@ -1139,7 +1136,7 @@ test_json(void **state)
 
     CHECK_PARSE_LYD_PARAM(data, LYD_JSON, 0, LYD_VALIDATE_PRESENT, LY_SUCCESS, tree);
     list_tree = (void *)tree;
-    CHECK_LYD_NODE_INNER(list_tree, 1, 0, 0, 0, 1, 0, 0, 1);
+    CHECK_LYD_NODE_INNER(list_tree, 1, 0, 1, 0, 1, 0, 0, 1);
     list_leaf = (void *) list_tree->child;
     assert_string_equal(list_leaf->schema->name, "uid");
     CHECK_LYD_NODE_TERM(list_leaf, 0, 0, 1, 1, 1, UINT32, "0", 0);
@@ -1173,7 +1170,7 @@ test_json(void **state)
     /* check first item */
     CHECK_PARSE_LYD_PARAM(data, LYD_JSON, 0, LYD_VALIDATE_PRESENT, LY_SUCCESS, tree);
     list_tree = (void *)tree;
-    CHECK_LYD_NODE_INNER(list_tree, 1, 0, 0, 0, 1, 0, 0, 1);
+    CHECK_LYD_NODE_INNER(list_tree, 1, 0, 1, 0, 1, 0, 0, 1);
     list_leaf = (void *) list_tree->child;
     assert_string_equal(list_leaf->schema->name, "uid");
     CHECK_LYD_NODE_TERM(list_leaf, 0, 0, 1, 1, 1, UINT32, "0", 0);
@@ -1204,8 +1201,7 @@ test_json(void **state)
             "]}";
     CHECK_PARSE_LYD_PARAM(data, LYD_JSON, 0, LYD_VALIDATE_PRESENT, LY_EVALID, tree);
     assert_null(tree);
-    CHECK_LOG_CTX("Duplicate instance of \"user\".",
-            "Schema location /T0:user, data location /T0:user[uid='0'], line number 1.");
+    CHECK_LOG_CTX("Duplicate instance of \"user\".", "/T0:user[uid='0']", 0);
 
     data =
             "{\"T0:user\": ["
@@ -1215,7 +1211,7 @@ test_json(void **state)
     CHECK_PARSE_LYD_PARAM(data, LYD_JSON, 0, LYD_VALIDATE_PRESENT, LY_EVALID, tree);
     assert_null(tree);
     CHECK_LOG_CTX("Unique data leaf(s) \"name group\" not satisfied in \"/T0:user[uid='0']\" and \"/T0:user[uid='1']\".",
-            "Schema location /T0:user, data location /T0:user[uid='1'], line number 1.");
+            "/T0:user[uid='1']", 0);
 
     /* double key */
     schema = MODULE_CREATE_YANG("T1", "list user {"
@@ -1232,13 +1228,13 @@ test_json(void **state)
             "]}";
     CHECK_PARSE_LYD_PARAM(data, LYD_JSON, 0, LYD_VALIDATE_PRESENT, LY_SUCCESS, tree);
     list_tree = (void *)tree;
-    CHECK_LYD_NODE_INNER(list_tree, 1, 0, 0, 0, 1, 0, 0, 1);
+    CHECK_LYD_NODE_INNER(list_tree, 1, 0, 1, 0, 1, 0, 0, 1);
     list_leaf = (void *) list_tree->child;
     assert_string_equal(list_leaf->schema->name, "uid");
     CHECK_LYD_NODE_TERM(list_leaf, 0, 0, 1, 1, 1, UINT32, "0", 0);
     list_leaf = (void *) list_leaf->next;
     assert_string_equal(list_leaf->schema->name, "group");
-    CHECK_LYD_NODE_TERM(list_leaf, 0, 0, 1, 1, 1, STRING, "User");
+    CHECK_LYD_NODE_TERM(list_leaf, 0, 0, 1, 1, 1, STRING, "Admin");
     list_leaf = (void *) list_leaf->next;
     assert_string_equal(list_leaf->schema->name, "name");
     CHECK_LYD_NODE_TERM(list_leaf, 0, 0, 0, 1, 1, STRING, "Jan Kuba");
@@ -1250,7 +1246,7 @@ test_json(void **state)
     CHECK_LYD_NODE_TERM(list_leaf, 0, 0, 1, 1, 1, UINT32, "0", 0);
     list_leaf = (void *) list_leaf->next;
     assert_string_equal(list_leaf->schema->name, "group");
-    CHECK_LYD_NODE_TERM(list_leaf, 0, 0, 1, 1, 1, STRING, "Admin");
+    CHECK_LYD_NODE_TERM(list_leaf, 0, 0, 1, 1, 1, STRING, "User");
     list_leaf = (void *) list_leaf->next;
     assert_string_equal(list_leaf->schema->name, "name");
     CHECK_LYD_NODE_TERM(list_leaf, 0, 0, 0, 1, 1, STRING, "Jan Kuba");
@@ -1264,8 +1260,7 @@ test_json(void **state)
     /* check first item */
     CHECK_PARSE_LYD_PARAM(data, LYD_JSON, 0, LYD_VALIDATE_PRESENT, LY_EVALID, tree);
     assert_null(tree);
-    CHECK_LOG_CTX("Duplicate instance of \"user\".",
-            "Schema location /T1:user, data location /T1:user[uid='0'][group='User'], line number 1.");
+    CHECK_LOG_CTX("Duplicate instance of \"user\".", "/T1:user[uid='0'][group='User']", 0);
 
     /* min elements max elements */
     schema = MODULE_CREATE_YANG("T2",
@@ -1287,7 +1282,7 @@ test_json(void **state)
 
     CHECK_PARSE_LYD_PARAM(data, LYD_JSON, 0, LYD_VALIDATE_PRESENT, LY_SUCCESS, tree);
     list_tree = (void *)tree;
-    CHECK_LYD_NODE_INNER(list_tree, 1, 0, 0, 0, 1, 0, 0, 1);
+    CHECK_LYD_NODE_INNER(list_tree, 1, 0, 1, 0, 1, 0, 0, 1);
     list_leaf = (void *) list_tree->child;
     assert_string_equal(list_leaf->schema->name, "uid");
     CHECK_LYD_NODE_TERM(list_leaf, 0, 0, 1, 1, 1, UINT32, "0", 0);
@@ -1333,7 +1328,7 @@ test_json(void **state)
             "]}";
     CHECK_PARSE_LYD_PARAM(data, LYD_JSON, 0, LYD_VALIDATE_PRESENT, LY_SUCCESS, tree);
     list_tree = (void *)tree;
-    CHECK_LYD_NODE_INNER(list_tree, 1, 0, 0, 0, 1, 0, 0, 1);
+    CHECK_LYD_NODE_INNER(list_tree, 1, 0, 1, 0, 1, 0, 0, 1);
     list_tree = (void *) list_tree->next;
     CHECK_LYD_NODE_INNER(list_tree, 1, 0, 0, 0, 1, 0, 0, 1);
     list_tree = (void *) list_tree->next;
@@ -1352,8 +1347,7 @@ test_json(void **state)
             "]}";
     CHECK_PARSE_LYD_PARAM(data, LYD_JSON, 0, LYD_VALIDATE_PRESENT, LY_EVALID, tree);
     assert_null(tree);
-    CHECK_LOG_CTX("Too few \"user\" instances.",
-            "Schema location /T2:user, line number 1.");
+    CHECK_LOG_CTX("Too few \"user\" instances.", "/T2:user", 0);
 
     data =
             "{\"T2:user\": ["
@@ -1366,8 +1360,7 @@ test_json(void **state)
             "]}";
     CHECK_PARSE_LYD_PARAM(data, LYD_JSON, 0, LYD_VALIDATE_PRESENT, LY_EVALID, tree);
     assert_null(tree);
-    CHECK_LOG_CTX("Too many \"user\" instances.",
-            "Schema location /T2:user, data location /T2:user[uid='5'], line number 1.");
+    CHECK_LOG_CTX("Too many \"user\" instances.", "/T2:user[uid='5']", 0);
 
     schema = MODULE_CREATE_YANG("T_EMPTY_LIST",
             "container user_list {"

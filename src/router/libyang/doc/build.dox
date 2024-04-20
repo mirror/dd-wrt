@@ -58,7 +58,7 @@
  * ENABLE_VALGRIND_TESTS | Build tests with valgrind.                                                         | OFF
  * ENABLE_COVERAGE       | Build code coverage report from tests.                                             | OFF
  * ENABLE_FUZZ_TARGETS   | Build target programs suitable for fuzzing with AFL.                               | OFF
- * ENABLE_STATIC         | Build static (.a) library                                                          | OFF
+ * BUILD_SHARED_LIBS     | Build shared (.so) instead of static (.a) library                                  | ON
  * INTERNAL_DOCS         | Include developers notes and internal API description into generated Documentation | OFF
  *
  * Here is the list of available important targets for the `make(1)` tool:
@@ -85,7 +85,7 @@
  * ENABLE_VALGRIND_TESTS | Build tests with valgrind.                                                         | ON
  * ENABLE_COVERAGE       | Build code coverage report from tests.                                             | OFF
  * ENABLE_FUZZ_TARGETS   | Build target programs suitable for fuzzing with AFL.                               | OFF
- * ENABLE_STATIC         | Build static (.a) library                                                          | OFF
+ * BUILD_SHARED_LIBS     | Build shared (.so) instead of static (.a) library                                  | ON
  * INTERNAL_DOCS         | Include developers notes and internal API description into generated Documentation | OFF
  *
  * Here is the list of available important targets for the `make(1)` tool:

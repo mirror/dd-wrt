@@ -17,10 +17,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "common.h"
 #include "compat.h"
 #include "hash_table.h"
 #include "log.h"
+#include "ly_common.h"
 #include "plugins_types.h"
 #include "tree.h"
 #include "tree_data.h"
@@ -39,13 +39,15 @@ lyd_hash(struct lyd_node *node)
     }
 
     /* hash always starts with the module and schema name */
-    node->hash = dict_hash_multi(0, node->schema->module->name, strlen(node->schema->module->name));
-    node->hash = dict_hash_multi(node->hash, node->schema->name, strlen(node->schema->name));
+    node->hash = lyht_hash_multi(0, node->schema->module->name, strlen(node->schema->module->name));
+    node->hash = lyht_hash_multi(node->hash, node->schema->name, strlen(node->schema->name));
 
     if (node->schema->nodetype == LYS_LIST) {
         if (node->schema->flags & LYS_KEYLESS) {
-            /* key-less list simply adds its schema name again to the hash, just so that it differs from the first-instance hash */
-            node->hash = dict_hash_multi(node->hash, node->schema->name, strlen(node->schema->name));
+            /* key-less list simply calls hash function again with empty key,
+             * just so that it differs from the first-instance hash
+             */
+            node->hash = lyht_hash_multi(node->hash, NULL, 0);
         } else {
             struct lyd_node_inner *list = (struct lyd_node_inner *)node;
 
@@ -54,7 +56,7 @@ lyd_hash(struct lyd_node *node)
                 struct lyd_node_term *key = (struct lyd_node_term *)iter;
 
                 hash_key = key->value.realtype->plugin->print(NULL, &key->value, LY_VALUE_LYB, NULL, &dyn, &key_len);
-                node->hash = dict_hash_multi(node->hash, hash_key, key_len);
+                node->hash = lyht_hash_multi(node->hash, hash_key, key_len);
                 if (dyn) {
                     free((void *)hash_key);
                 }
@@ -65,14 +67,14 @@ lyd_hash(struct lyd_node *node)
         struct lyd_node_term *llist = (struct lyd_node_term *)node;
 
         hash_key = llist->value.realtype->plugin->print(NULL, &llist->value, LY_VALUE_LYB, NULL, &dyn, &key_len);
-        node->hash = dict_hash_multi(node->hash, hash_key, key_len);
+        node->hash = lyht_hash_multi(node->hash, hash_key, key_len);
         if (dyn) {
             free((void *)hash_key);
         }
     }
 
     /* finish the hash */
-    node->hash = dict_hash_multi(node->hash, NULL, 0);
+    node->hash = lyht_hash_multi(node->hash, NULL, 0);
 
     return LY_SUCCESS;
 }
@@ -119,14 +121,14 @@ lyd_hash_table_val_equal(void *val1_p, void *val2_p, ly_bool mod, void *UNUSED(c
  * @return LY_ERR value.
  */
 static LY_ERR
-lyd_insert_hash_add(struct hash_table *ht, struct lyd_node *node, ly_bool empty_ht)
+lyd_insert_hash_add(struct ly_ht *ht, struct lyd_node *node, ly_bool empty_ht)
 {
     uint32_t hash;
 
     assert(ht && node && node->schema);
 
     /* add node itself */
-    if (lyht_insert(ht, &node, node->hash, NULL)) {
+    if (lyht_insert_no_check(ht, &node, node->hash, NULL)) {
         LOGINT_RET(LYD_CTX(node));
     }
 
@@ -134,9 +136,9 @@ lyd_insert_hash_add(struct hash_table *ht, struct lyd_node *node, ly_bool empty_
     if ((node->schema->nodetype & (LYS_LIST | LYS_LEAFLIST)) &&
             (!node->prev->next || (node->prev->schema != node->schema))) {
         /* get the simple hash */
-        hash = dict_hash_multi(0, node->schema->module->name, strlen(node->schema->module->name));
-        hash = dict_hash_multi(hash, node->schema->name, strlen(node->schema->name));
-        hash = dict_hash_multi(hash, NULL, 0);
+        hash = lyht_hash_multi(0, node->schema->module->name, strlen(node->schema->module->name));
+        hash = lyht_hash_multi(hash, node->schema->name, strlen(node->schema->name));
+        hash = lyht_hash_multi(hash, NULL, 0);
 
         /* remove any previous stored instance, only if we did not start with an empty HT */
         if (!empty_ht && node->next && (node->next->schema == node->schema)) {
@@ -180,8 +182,7 @@ lyd_insert_hash(struct lyd_node *node)
             }
         }
         if (u >= LYD_HT_MIN_ITEMS) {
-            /* create hash table, insert all the children */
-            node->parent->children_ht = lyht_new(1, sizeof(struct lyd_node *), lyd_hash_table_val_equal, NULL, 1);
+            node->parent->children_ht = lyht_new(lyht_get_fixed_size(u), sizeof(struct lyd_node *), lyd_hash_table_val_equal, NULL, 1);
             LY_LIST_FOR(node->parent->child, iter) {
                 if (iter->schema) {
                     LY_CHECK_RET(lyd_insert_hash_add(node->parent->children_ht, iter, 1));
@@ -214,9 +215,9 @@ lyd_unlink_hash(struct lyd_node *node)
     /* first instance of the (leaf-)list, needs to be removed from HT */
     if ((node->schema->nodetype & (LYS_LIST | LYS_LEAFLIST)) && (!node->prev->next || (node->prev->schema != node->schema))) {
         /* get the simple hash */
-        hash = dict_hash_multi(0, node->schema->module->name, strlen(node->schema->module->name));
-        hash = dict_hash_multi(hash, node->schema->name, strlen(node->schema->name));
-        hash = dict_hash_multi(hash, NULL, 0);
+        hash = lyht_hash_multi(0, node->schema->module->name, strlen(node->schema->module->name));
+        hash = lyht_hash_multi(hash, node->schema->name, strlen(node->schema->name));
+        hash = lyht_hash_multi(hash, NULL, 0);
 
         /* remove the instance */
         if (lyht_remove(node->parent->children_ht, &node, hash)) {

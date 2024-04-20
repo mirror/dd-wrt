@@ -1,0 +1,39 @@
+module sm {
+    yang-version 1.1;
+    namespace "urn:sm";
+    prefix "sm";
+
+    import ietf-yang-schema-mount {
+        prefix yangmnt;
+    }
+    import ietf-interfaces {
+        prefix if;
+    }
+
+    container root {
+        yangmnt:mount-point "root";
+    }
+    container root2 {
+        yangmnt:mount-point "root";
+    }
+    container root3 {
+        list ls {
+            key name;
+            leaf name {
+                type string;
+            }
+            yangmnt:mount-point "mnt-root";
+        }
+    }
+    leaf target {
+        type string;
+    }
+
+    augment /if:interfaces/if:interface {
+        leaf sm-name {
+            type leafref {
+                path "/sm:target";
+            }
+        }
+    }
+}

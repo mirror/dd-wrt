@@ -1,0 +1,62 @@
+source [expr {[info exists ::env(TESTS_DIR)] ? "$env(TESTS_DIR)/non-interactive/ly.tcl" : "ly.tcl"}]
+
+set mdir "$::env(YANG_MODULES_DIR)"
+set ddir "$::env(TESTS_DIR)/data"
+set err1 "Operational datastore takes effect only with RPCs/Actions/Replies/Notification input data types"
+
+test data_operational_twice {it is not allowed to specify more than one --operational parameter} {
+    ly_cmd_err "-t notif -O $ddir/modconfig.xml -O $ddir/modleaf.xml" "cannot be set multiple times"
+} {}
+
+test data_operational_no_type {--operational should be with parameter --type} {
+    ly_cmd_err "-O $ddir/modconfig.xml $mdir/modoper-leafref.yang $ddir/modoper_leafref_notif.xml" $err1
+} {}
+
+test data_operational_missing {--operational is omitted and the datastore contents is in the data file} {
+    ly_cmd_err "$mdir/modoper-leafref.yang $ddir/modoper_leafref_notif_err.xml" "Failed to parse input data file"
+} {}
+
+test data_operational_wrong_type {data are not defined as an operation} {
+    ly_cmd_wrn "-t data -O $ddir/modconfig.xml $mdir/modleaf.yang $ddir/modleaf.xml" $err1
+} {}
+
+test data_operational_datastore_with_unknown_data {unknown data are ignored} {
+    ly_cmd "-t rpc -O $ddir/modmandatory_invalid.xml $mdir/modrpc.yang $ddir/modrpc.xml"
+} {}
+
+test data_operational_empty_datastore {datastore is considered empty because it contains unknown data} {
+    ly_cmd "-t rpc -O $ddir/modmandatory_invalid.xml $mdir/modrpc.yang $ddir/modrpc.xml"
+    set msg "parent \"/modnotif:con\" not found in the operational data"
+    ly_cmd_err "-t notif -O $ddir/modmandatory_invalid.xml $mdir/modnotif.yang $ddir/modnotif.xml" $msg
+} {}
+
+test data_operational_notif_leafref {--operational data is referenced from notification-leafref} {
+    ly_cmd "-t notif -O $ddir/modconfig.xml $mdir/modoper-leafref.yang $ddir/modoper_leafref_notif.xml"
+} {}
+
+test data_operational_nested_notif_leafref {--operational data is referenced from nested-notification-leafref} {
+    ly_cmd "-t notif -O $ddir/modoper_leafref_ds.xml $mdir/modoper-leafref.yang $ddir/modoper_leafref_notif2.xml"
+} {}
+
+test data_operational_nested_notif_parent_missing {--operational data are invalid due to missing parent node} {
+    set msg "klf='key_val']\" not found in the operational data"
+    ly_cmd_err "-t notif -O $ddir/modconfig.xml $mdir/modoper-leafref.yang $ddir/modoper_leafref_notif2.xml" $msg
+} {}
+
+test data_operational_action_leafref {--operational data is referenced from action-leafref} {
+    ly_cmd "-t rpc -O $ddir/modoper_leafref_ds.xml $mdir/modoper-leafref.yang $ddir/modoper_leafref_action.xml"
+} {}
+
+test data_operational_action_reply_leafref {--operational data is referenced from action-leafref output} {
+    ly_cmd "-t reply -O $ddir/modoper_leafref_ds.xml $mdir/modoper-leafref.yang $ddir/modoper_leafref_action_reply.xml"
+} {}
+
+test data_operational_rpc_leafref {--operational data is referenced from rpc-leafref} {
+    ly_cmd "-t rpc -O $ddir/modconfig.xml $mdir/modoper-leafref.yang $ddir/modoper_leafref_rpc.xml"
+} {}
+
+test data_operational_rpc_reply_leafref {--operational data is referenced from rpc-leafref output} {
+    ly_cmd "-t reply -O $ddir/modconfig.xml $mdir/modoper-leafref.yang $ddir/modoper_leafref_rpc_reply.xml"
+} {}
+
+cleanupTests

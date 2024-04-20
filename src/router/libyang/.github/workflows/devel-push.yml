@@ -1,0 +1,109 @@
+name: libyang devel push
+on:
+  push:
+    branches:
+      - devel
+
+env:
+  COVERITY_PROJECT: CESNET%2Flibyang
+
+jobs:
+  build:
+    name: ${{ matrix.config.name }}
+    runs-on: ${{ matrix.config.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+          - {
+            name: "Coverity",
+            os: "ubuntu-latest",
+            build-type: "Debug",
+            cc: "clang",
+            options: "",
+            packager: "sudo apt-get",
+            packages: "",
+            snaps: "",
+            make-prepend: "cov-build --dir cov-int",
+            make-target: ""
+          }
+          - {
+            name: "Codecov",
+            os: "ubuntu-latest",
+            build-type: "Debug",
+            cc: "gcc",
+            options: "-DENABLE_COVERAGE=ON",
+            packager: "sudo apt-get",
+            packages: "libcmocka-dev lcov",
+            snaps: "",
+            make-prepend: "",
+            make-target: ""
+          }
+
+    steps:
+      - uses: actions/checkout@main
+
+      - name: Deps-packages
+        shell: bash
+        run: |
+          ${{ matrix.config.packager }} update
+          if ${{ matrix.config.packages != '' }}
+            then ${{ matrix.config.packager }} install ${{ matrix.config.packages }}
+          fi
+          if ${{ matrix.config.snaps != '' }}
+            then sudo snap install ${{ matrix.config.snaps }}
+          fi
+
+      - name: Deps-coverity
+        shell: bash
+        working-directory: ${{ github.workspace }}
+        run: |
+          wget -q https://scan.coverity.com/download/linux64 --post-data "token=$TOKEN&project=$COVERITY_PROJECT" -O coverity-tools.tar.gz
+          mkdir coverity-tools
+          tar xzf coverity-tools.tar.gz --strip 1 -C coverity-tools
+        env:
+          TOKEN: ${{ secrets.COVERITY_SCAN_TOKEN }}
+        if: ${{ matrix.config.name == 'Coverity' }}
+
+      - name: Configure
+        shell: bash
+        working-directory: ${{ github.workspace }}
+        run: |
+          mkdir build
+          cd build
+          CC=${{ matrix.config.cc }} cmake -DCMAKE_BUILD_TYPE=${{ matrix.config.build-type }} ${{ matrix.config.options }} ..
+
+      - name: Build
+        shell: bash
+        working-directory: ${{ github.workspace }}/build
+        run: |
+          export LC_ALL=C.UTF-8
+          export PATH=/snap/bin:${{ github.workspace }}/coverity-tools/bin:$PATH
+          ${{ matrix.config.make-prepend }} make ${{ matrix.config.make-target }}
+
+      - name: Test
+        shell: bash
+        working-directory: ${{ github.workspace }}/build
+        run: ctest --output-on-failure
+
+      - name: Upload to Coverity.com
+        shell: bash
+        working-directory: ${{ github.workspace }}/build
+        run: |
+          tar czvf libyang.tgz cov-int
+          curl \
+            --form token=$TOKEN \
+            --form email=mvasko@cesnet.cz \
+            --form file=@libyang.tgz \
+            --form version="`./yanglint -v | cut -d\" \" -f2`" \
+            --form description="libyang YANG library" \
+            https://scan.coverity.com/builds?project=$COVERITY_PROJECT
+        env:
+          TOKEN: ${{ secrets.COVERITY_SCAN_TOKEN }}
+        if: ${{ matrix.config.name == 'Coverity' }}
+
+      - name: Upload to Codecov.io
+        shell: bash
+        working-directory: ${{ github.workspace }}/build
+        run: bash <(curl -s https://codecov.io/bash)
+        if: ${{ matrix.config.name == 'Codecov' }}

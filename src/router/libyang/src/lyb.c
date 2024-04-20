@@ -20,8 +20,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "common.h"
 #include "compat.h"
+#include "ly_common.h"
 #include "tree_schema.h"
 
 /**
@@ -39,8 +39,8 @@ lyb_generate_hash(const struct lysc_node *node, uint8_t collision_id)
     LYB_HASH hash;
 
     /* generate full hash */
-    full_hash = dict_hash_multi(0, mod->name, strlen(mod->name));
-    full_hash = dict_hash_multi(full_hash, node->name, strlen(node->name));
+    full_hash = lyht_hash_multi(0, mod->name, strlen(mod->name));
+    full_hash = lyht_hash_multi(full_hash, node->name, strlen(node->name));
     if (collision_id) {
         size_t ext_len;
 
@@ -51,9 +51,9 @@ lyb_generate_hash(const struct lysc_node *node, uint8_t collision_id)
             /* use one more byte from the module name than before */
             ext_len = collision_id;
         }
-        full_hash = dict_hash_multi(full_hash, mod->name, ext_len);
+        full_hash = lyht_hash_multi(full_hash, mod->name, ext_len);
     }
-    full_hash = dict_hash_multi(full_hash, NULL, 0);
+    full_hash = lyht_hash_multi(full_hash, NULL, 0);
 
     /* use the shortened hash */
     hash = full_hash & (LYB_HASH_MASK >> collision_id);

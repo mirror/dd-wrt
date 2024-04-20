@@ -1,4 +1,4 @@
-libyang2 ({{ version }}-{{ release }}) unstable; urgency=medium
+libyang3 ({{ version }}-{{ release }}) unstable; urgency=medium
 
   * upstream packaging
 

@@ -1,0 +1,21 @@
+module modmerge {
+  namespace "urn:yanglint:modmerge";
+  prefix mm;
+
+  container mmc {
+    leaf en {
+      type enumeration {
+        enum zero;
+        enum one;
+      }
+    }
+    leaf lm {
+      type int16;
+      must "../en != 'zero'";
+    }
+    leaf lf {
+      type string;
+    }
+  }
+
+}

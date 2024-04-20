@@ -1,0 +1,8 @@
+module modimp-path {
+  namespace "urn:yanglint:modimp-path";
+  prefix ip;
+
+  import modpath {
+    prefix mp;
+  }
+}

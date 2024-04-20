@@ -1,0 +1,19 @@
+module modnotif {
+  yang-version 1.1;
+  namespace "urn:yanglint:modnotif";
+  prefix mn;
+
+  container con {
+    notification nfn {
+      leaf lf {
+        type string;
+      }
+    }
+  }
+
+  notification nfg {
+    leaf lf {
+      type string;
+    }
+  }
+}

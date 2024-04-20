@@ -16,8 +16,8 @@
 
 #include <stdio.h>
 
-#include "common.h"
 #include "log.h"
+#include "ly_common.h"
 #include "out.h"
 #include "out_internal.h"
 #include "printer_internal.h"
@@ -47,7 +47,7 @@ lyd_print_(struct ly_out *out, const struct lyd_node *root, LYD_FORMAT format, u
     return ret;
 }
 
-API LY_ERR
+LIBYANG_API_DEF LY_ERR
 lyd_print_all(struct ly_out *out, const struct lyd_node *root, LYD_FORMAT format, uint32_t options)
 {
     LY_CHECK_ARG_RET(NULL, out, !(options & LYD_PRINT_WITHSIBLINGS), LY_EINVAL);
@@ -71,7 +71,7 @@ lyd_print_all(struct ly_out *out, const struct lyd_node *root, LYD_FORMAT format
     return LY_SUCCESS;
 }
 
-API LY_ERR
+LIBYANG_API_DEF LY_ERR
 lyd_print_tree(struct ly_out *out, const struct lyd_node *root, LYD_FORMAT format, uint32_t options)
 {
     LY_CHECK_ARG_RET(NULL, out, !(options & LYD_PRINT_WITHSIBLINGS), LY_EINVAL);
@@ -85,7 +85,7 @@ lyd_print_tree(struct ly_out *out, const struct lyd_node *root, LYD_FORMAT forma
     return LY_SUCCESS;
 }
 
-API LY_ERR
+LIBYANG_API_DEF LY_ERR
 lyd_print_mem(char **strp, const struct lyd_node *root, LYD_FORMAT format, uint32_t options)
 {
     LY_ERR ret;
@@ -102,7 +102,7 @@ lyd_print_mem(char **strp, const struct lyd_node *root, LYD_FORMAT format, uint3
     return ret;
 }
 
-API LY_ERR
+LIBYANG_API_DEF LY_ERR
 lyd_print_fd(int fd, const struct lyd_node *root, LYD_FORMAT format, uint32_t options)
 {
     LY_ERR ret;
@@ -116,7 +116,7 @@ lyd_print_fd(int fd, const struct lyd_node *root, LYD_FORMAT format, uint32_t op
     return ret;
 }
 
-API LY_ERR
+LIBYANG_API_DEF LY_ERR
 lyd_print_file(FILE *f, const struct lyd_node *root, LYD_FORMAT format, uint32_t options)
 {
     LY_ERR ret;
@@ -130,7 +130,7 @@ lyd_print_file(FILE *f, const struct lyd_node *root, LYD_FORMAT format, uint32_t
     return ret;
 }
 
-API LY_ERR
+LIBYANG_API_DEF LY_ERR
 lyd_print_path(const char *path, const struct lyd_node *root, LYD_FORMAT format, uint32_t options)
 {
     LY_ERR ret;
@@ -144,7 +144,7 @@ lyd_print_path(const char *path, const struct lyd_node *root, LYD_FORMAT format,
     return ret;
 }
 
-API LY_ERR
+LIBYANG_API_DEF LY_ERR
 lyd_print_clb(ly_write_clb writeclb, void *user_data, const struct lyd_node *root, LYD_FORMAT format, uint32_t options)
 {
     LY_ERR ret;

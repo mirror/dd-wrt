@@ -78,7 +78,7 @@ struct ly_ctx;
  * @return LY_EINVAL in case of invalid input parameters.
  * @return LY_EMEM in case of memory allocation failure.
  */
-LY_ERR lydict_insert(const struct ly_ctx *ctx, const char *value, size_t len, const char **str_p);
+LIBYANG_API_DECL LY_ERR lydict_insert(const struct ly_ctx *ctx, const char *value, size_t len, const char **str_p);
 
 /**
  * @brief Insert string into dictionary - zerocopy version. If the string is
@@ -97,7 +97,7 @@ LY_ERR lydict_insert(const struct ly_ctx *ctx, const char *value, size_t len, co
  * @return LY_EINVAL in case of invalid input parameters.
  * @return LY_EMEM in case of memory allocation failure.
  */
-LY_ERR lydict_insert_zc(const struct ly_ctx *ctx, char *value, const char **str_p);
+LIBYANG_API_DECL LY_ERR lydict_insert_zc(const struct ly_ctx *ctx, char *value, const char **str_p);
 
 /**
  * @brief Remove specified string from the dictionary. It decrement reference
@@ -111,7 +111,7 @@ LY_ERR lydict_insert_zc(const struct ly_ctx *ctx, char *value, const char **str_
  * @return LY_ENOTFOUND if the value was not found.
  * @return LY_ERR on other errors.
  */
-LY_ERR lydict_remove(const struct ly_ctx *ctx, const char *value);
+LIBYANG_API_DECL LY_ERR lydict_remove(const struct ly_ctx *ctx, const char *value);
 
 /** @} dict */
 

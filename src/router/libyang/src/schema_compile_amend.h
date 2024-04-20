@@ -1,9 +1,10 @@
 /**
  * @file schema_compile_amend.h
  * @author Radek Krejci <rkrejci@cesnet.cz>
+ * @author Michal Vasko <mvasko@cesnet.cz>
  * @brief Header for schema compilation of augments, deviations, and refines.
  *
- * Copyright (c) 2015 - 2020 CESNET, z.s.p.o.
+ * Copyright (c) 2015 - 2024 CESNET, z.s.p.o.
  *
  * This source code is licensed under BSD 3-Clause License (the "License").
  * You may not use this file except in compliance with the License.
@@ -23,16 +24,29 @@ struct lysp_node;
 struct lysc_node;
 struct lysc_ctx;
 struct lysp_node_uses;
+struct lys_glob_unres;
 struct lys_module;
+
+/**
+ * @brief Compiled parsed schema-node-id.
+ */
+struct lysc_nodeid {
+    const char *str;        /**< Original schema-node-id, just a pointer (do not free). */
+
+    const char **prefix;    /**< Array of node prefixes in the dictionary, NULL if none. */
+    const char **name;      /**< Array of node name in the dictionary. */
+    uint32_t count;         /**< Number of items in @p prefix and @p name arrays */
+};
 
 /**
  * @brief Compiled parsed augment structure. Just a temporary storage for applying the augment to data.
  */
 struct lysc_augment {
-    struct lyxp_expr *nodeid;                    /**< augment target */
+    struct lysc_nodeid *nodeid;                  /**< augment target */
     const struct lysp_module *aug_pmod;          /**< module where the augment is defined, for top-level augments
                                                       used to resolve prefixes, for uses augments used as the context pmod */
     const struct lysc_node *nodeid_ctx_node;     /**< nodeid context node for relative targets */
+    const struct lysp_ext_instance *ext;         /**< parent extension instance, in case the augment is from one */
 
     struct lysp_node_augment *aug_p;             /**< pointer to the parsed augment to apply */
 };
@@ -41,7 +55,7 @@ struct lysc_augment {
  * @brief Compiled parsed deviation structure. Just a temporary storage for applying the deviation to data.
  */
 struct lysc_deviation {
-    struct lyxp_expr *nodeid;                    /**< deviation target, taken from the first deviation in
+    struct lysc_nodeid *nodeid;                  /**< deviation target, taken from the first deviation in
                                                       ::lysc_deviation.dev_pmods array, this module is used for resolving
                                                       prefixes used in the nodeid. */
 
@@ -55,7 +69,7 @@ struct lysc_deviation {
  * @brief Compiled parsed refine structure. Just a temporary storage for applying the refine to data.
  */
 struct lysc_refine {
-    struct lyxp_expr *nodeid;                    /**< refine target */
+    struct lysc_nodeid *nodeid;                  /**< refine target */
     const struct lysp_module *nodeid_pmod;       /**< module where the nodeid is defined, used to resolve prefixes */
     const struct lysc_node *nodeid_ctx_node;     /**< nodeid context node */
     struct lysp_node_uses *uses_p;               /**< parsed uses node of the refine, for tracking recursive refines */
@@ -68,7 +82,7 @@ struct lysc_refine {
  *
  * @param[in] ctx Compile context.
  * @param[in] uses_p Parsed uses structure with augments and refines.
- * @param[in] ctx_node Context node of @p uses_p meaning its first data definiition parent.
+ * @param[in] ctx_node Context node of @p uses_p meaning its first data definition parent.
  * @return LY_ERR value.
  */
 LY_ERR lys_precompile_uses_augments_refines(struct lysc_ctx *ctx, struct lysp_node_uses *uses_p,
@@ -78,11 +92,11 @@ LY_ERR lys_precompile_uses_augments_refines(struct lysc_ctx *ctx, struct lysp_no
  * @brief Duplicate qname structure.
  *
  * @param[in] ctx libyang context.
- * @param[in,out] qname Structure to fill.
  * @param[in] orig_qname Structure to read from.
+ * @param[in,out] qname Structure to fill.
  * @return LY_ERR value.
  */
-LY_ERR lysp_qname_dup(const struct ly_ctx *ctx, struct lysp_qname *qname, const struct lysp_qname *orig_qname);
+LY_ERR lysp_qname_dup(const struct ly_ctx *ctx, const struct lysp_qname *orig_qname, struct lysp_qname *qname);
 
 /**
  * @brief Free a compiled augment temporary structure.
@@ -114,23 +128,23 @@ void lysc_refine_free(const struct ly_ctx *ctx, struct lysc_refine *rfn);
  * @param[in] ctx libyang context.
  * @param[in] dev_pnode Parsed node to free.
  */
-void lysp_dev_node_free(const struct ly_ctx *ctx, struct lysp_node *dev_pnode);
+void lysp_dev_node_free(struct lysc_ctx *cctx, struct lysp_node *dev_pnode);
 
 /**
- * @brief Compile and apply any precompiled deviations and refines targetting a node.
+ * @brief Compile and apply any precompiled deviations and refines targeting a node.
  *
  * @param[in] ctx Compile context.
  * @param[in] pnode Parsed node to consider.
  * @param[in] parent First compiled parent of @p pnode.
  * @param[out] dev_pnode Copy of parsed node @p pnode with deviations and refines, if any. NULL if there are none.
- * @param[out] no_supported Whether a not-supported deviation is defined for the node.
+ * @param[out] not_supported Whether a not-supported deviation is defined for the node.
  * @return LY_ERR value.
  */
 LY_ERR lys_compile_node_deviations_refines(struct lysc_ctx *ctx, const struct lysp_node *pnode,
         const struct lysc_node *parent, struct lysp_node **dev_pnode, ly_bool *not_supported);
 
 /**
- * @brief Compile and apply any precompiled top-level or uses augments targetting a node.
+ * @brief Compile and apply any precompiled top-level or uses augments targeting a node.
  *
  * @param[in] ctx Compile context.
  * @param[in] node Compiled node to consider.
@@ -155,14 +169,16 @@ LY_ERR lys_precompile_own_augments(struct lysc_ctx *ctx);
 LY_ERR lys_precompile_own_deviations(struct lysc_ctx *ctx);
 
 /**
- * @brief Compile top-level augments and deviations defined in the current module.
- * Generally, just add the module refence to the target modules. But in case
- * of foreign augments, they are directly applied.
+ * @brief Add references to target modules of top-level augments and deviations in a module and all its submodules.
+ * Adds the module reference to the target modules and if not implemented, implement them (but not compile).
  *
- * @param[in] ctx Compile context.
- * @return LY_ERR value.
+ * @param[in] mod Module to process.
+ * @param[in,out] unres Global unres to use.
+ * @return LY_SUCCESS on success.
+ * @return LY_ERECOMPILE on required recompilation of the dep set.
+ * @return LY_ERR on error.
  */
-LY_ERR lys_precompile_augments_deviations(struct lysc_ctx *ctx);
+LY_ERR lys_precompile_augments_deviations(struct lys_module *mod, struct lys_glob_unres *unres);
 
 /**
  * @brief Revert precompilation of module augments and deviations. Meaning remove its reference from

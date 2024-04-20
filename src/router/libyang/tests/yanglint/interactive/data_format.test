@@ -1,0 +1,23 @@
+source [expr {[info exists ::env(TESTS_DIR)] ? "$env(TESTS_DIR)/interactive/ly.tcl" : "ly.tcl"}]
+
+set ddir "$::env(TESTS_DIR)/data"
+
+test data_format_xml {Print data in xml format} {
+-setup $ly_setup -cleanup $ly_cleanup -body {
+    ly_cmd "load modleaf"
+    ly_cmd "data -f xml $ddir/modleaf.xml" "<lfl xmlns=\"urn:yanglint:modleaf\">7</lfl>"
+}}
+
+test data_format_json {Print data in json format} {
+-setup $ly_setup -cleanup $ly_cleanup -body {
+    ly_cmd "load modleaf"
+    ly_cmd "data -f json $ddir/modleaf.xml" "{\r\n  \"modleaf:lfl\": 7\r\n}"
+}}
+
+test data_format_lyb_err {Print data in lyb format} {
+-setup $ly_setup -cleanup $ly_cleanup -body {
+    ly_cmd "load modleaf"
+    ly_cmd_err "data -f lyb $ddir/modleaf.xml" "The LYB format requires the -o"
+}}
+
+cleanupTests

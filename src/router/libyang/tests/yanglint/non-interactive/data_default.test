@@ -1,0 +1,31 @@
+source [expr {[info exists ::env(TESTS_DIR)] ? "$env(TESTS_DIR)/non-interactive/ly.tcl" : "ly.tcl"}]
+
+set mods "$::env(YANG_MODULES_DIR)/ietf-netconf-with-defaults@2011-06-01.yang $::env(YANG_MODULES_DIR)/moddefault.yang"
+set data "$::env(TESTS_DIR)/data/moddefault.xml"
+
+test data_default_not_set {Print data without --default parameter} {
+    ly_cmd "-f xml $mods $data" "</lf>.*</di>\n</mdc>"
+    ly_cmd "-f json $mods $data" "lf\".*di\"\[^\"]*"
+} {}
+
+test data_default_all {data --default all} {
+    ly_cmd "-d all -f xml $mods $data" "</lf>.*</di>.*</ds>\n</mdc>"
+    ly_cmd "-d all -f json $mods $data" "lf\".*di\".*ds\"\[^\"]*"
+} {}
+
+test data_default_all_tagged {data --default all-tagged} {
+    ly_cmd "-d all-tagged -f xml $mods $data" "</lf>.*<di.*default.*</di>.*<ds.*default.*</ds>\n</mdc>"
+    ly_cmd "-d all-tagged -f json $mods $data" "lf\".*di\".*ds\".*@ds\".*default\"\[^\"]*"
+} {}
+
+test data_default_trim {data --default trim} {
+    ly_cmd "-d trim -f xml $mods $data" "</lf>\n</mdc>"
+    ly_cmd "-d trim -f json $mods $data" "lf\"\[^\"]*"
+} {}
+
+test data_default_implicit_tagged {data --default implicit-tagged} {
+    ly_cmd "-d implicit-tagged -f xml $mods $data" "</lf>.*<di>5</di>.*<ds.*default.*</ds>\n</mdc>"
+    ly_cmd "-d implicit-tagged -f json $mods $data" "lf\".*di\"\[^@]*ds\".*default\"\[^\"]*"
+} {}
+
+cleanupTests

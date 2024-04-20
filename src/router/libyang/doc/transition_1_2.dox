@@ -1,0 +1,406 @@
+/**
+ * @page transition1_2 Transition Manual (1.x -> 2.0)
+ *
+ * [TOC]
+ *
+ * Rewriting libyang codebase and creating libyang version 2.0 was motivated mainly by improving long term maintainability.
+ * Especially some of the features and design decisions become killers for further development and maintaining the libyang
+ * codebase. On the other hand, most of the principles introduced in libyang 1.x to handle YANG schemas and manipulate
+ * instantiated data have proved successful. Therefore, we have decided to keep the basic mechanisms from version 1.x and
+ * remove the problematic features and modify the improper design decisions. Despite the vision to keep with the mechanisms
+ * also the API, the new version became a great opportunity to clean up the API and improve its usability mainly by unifying
+ * how the libyang functions are used. So, in the end, this manual is not just a description of the removed features listing
+ * removed, modified or added functions. The API should be even better prepared for adding new features and functions.
+ * Shortly, almost everything has changed at least a little, so you cannot move from version 1.x to 2.0 just by replacing
+ * code snippets. However, we believe that the change is good and libyang 2.0 is simply better.
+ *
+ * In this Manual, we want to introduce the differences between libyang 1.x and 2.0. It is intended for the transition
+ * from 1.x to 2.0, so if you are new to libyang, simply go to the @ref howto section, this Manual is not for you.
+ *
+ * The complete generated list of changes (without any additional notes) can be found in
+ * <a href="../compat_report_1_2.html">the compatibility report</a>.
+ *
+ * @section transition1_2General General Changes
+ *
+ *
+ * @subsection transition1_2GeneralErros Errors Handling
+ *
+ * The most visible change is probably the changed approach to handling errors. While libyang 1.x was using variable
+ * *ly_errno* to provide error information in case the called function failed, there is no such variable in libyang 2.0.
+ * On the other hand, most API functions now return ::LY_ERR values directly stating the result. In addition, in case
+ * the error is somehow connected with the [context](@ref howtoContext), more detailed error information can be obtained
+ * from the context handler itself. Mainly this change is responsible for the backward incompatibility of almost all
+ * functions between versions 1.x and 2.0.
+ *
+ * Here is the overview of the changed / removed / added functions connected with errors and logging.
+ *
+ * libyang 1.x               | libyang 2.0                          | Notes
+ * :-------------------------|:-------------------------------------|:-------------------------------------------------------
+ * -                         | ::ly_err_last()                      | New API for handling errors.
+ * ly_verb_dbg()             | ::ly_log_dbg_groups()                | Rename to align with the names of the accepted values.
+ * ly_verb()                 | ::ly_log_level()                     | ^
+ *
+ * More information about error handling in libyang 2.0 can be found at @ref howtoErrors page.
+ *
+ * @subsection transition1_2GeneralInOut Input / Output Processing
+ *
+ * libyang 2.0 introduces input (::ly_in) and output (::ly_out) handlers covering the specific input sources for parsers and
+ * output targets for printers. They are supposed mainly to simplify parser's and printer's API to avoid the need for
+ * separate functions for each source/target. The handlers can be used repeatedly to split the inputs or join the outputs.
+ *
+ * More information can be found at @ref howtoInput and @ref howtoOutput pages.
+ *
+ *
+ * @subsection transition1_2GeneralOutputFormatting Output Formatting
+ *
+ * In libyang 1.x, there was an inconsistency in printing schemas and data. While the schemas were always printed formatted,
+ * the data were printed by default without additional indentation. It is clearly visible in the YIN format of the schema,
+ * which is XML, and the XML encoding of the data. While there was a possibility to format data output with the LYP_FORMAT
+ * flag, it wasn't possible to change schema output formatting.
+ *
+ * libyang 2.0 unifies the behavior of all printers. By default, all the output formats are formatted now. Both, the data as
+ * well as the schema printers, accept the option to remove additional formatting (different for the specific format, usually
+ * indentations and blank lines): ::LYD_PRINT_SHRINK for the data printer and ::LYS_PRINT_SHRINK for the schema printer.
+ *
+ *
+ * @subsection transition1_2GeneralXPath Addressing
+ *
+ * If you compare the @ref howtoXPath page from libyang 1.x and 2.0 documentation, you will be probably confused since they
+ * seem very different. In fact, we have tried to simplify the API by removing the original Schema path format from the
+ * public API. Since this format is used in YANG format, libyang still supports it internally, but it is not possible to use
+ * it anywhere in the API. The new formats XPath and Path, mentioned at the @ref howtoXPath page, are both the Data paths
+ * used in libyang 1.x. The Path format is a subset of XPath format limited to refer to a single node.
+ *
+ * This change was reflected in functions serving to get a node based on the specified path. Unfortunately, when comparing
+ * old and new API, the transition can be confusing since the names are sometimes overloaded (be careful mainly of
+ * ::lys_find_path()). The following table depicts the changes, but probably a better approach is to handle the functions as
+ * a completely new API.
+ *
+ * libyang 1.x               | libyang 2.0                          | Notes
+ * :-------------------------|:-------------------------------------|:-------------------------------------------------------
+ * ly_ctx_find_path()        | -                                    | To simplify the different [types of paths](@ref howtoXPath), the Schema path format is not supported for now. If there will be use cases for it, it can be re-added later, but for now try using ::lys_find_xpath().
+ * %lys_find_path()          | -                                    | To simplify the different [types of paths](@ref howtoXPath), the Schema path format is not supported for now. If there will be use cases for it, it can be re-added later, but for now try using ::lys_find_xpath().
+ * ly_ctx_get_node()         | ::lys_find_path()                    | Renamed to unify API functions, note that there was lys_find_path in libyang 1.x with different functionality in comparison to the function of the same name from libyang 2.0.
+ * -                         | ::lys_find_path_atoms()              | Extension of ::lys_find_path().
+ * -                         | ::lys_find_lypath_atoms()            | ^
+ * -                         | ::lys_find_xpath()                   | New function reflecting updated @ref howtoXPath\.
+ * lys_xpath_atomize()       | ::lys_find_xpath_atoms()             | Rename to unify with the new API, extends ::lys_find_xpath().
+ * -                         | ::lys_find_expr_atoms()              | Extension of ::lys_find_xpath().
+ * %lyd_path()               | ::lyd_path()                         | Same purpose, just extended functionality.
+ * lyd_find_path()           | ::lyd_find_xpath()                   | Rename to unify with the new API.
+ * -                         | ::lyd_find_path()                    | Simplified version of ::lyd_find_path().
+ * -                         | ::lyxp_get_expr()                    | Added functionality due to the changed representation of XPath expressions.
+ * ly_path_data2schema()     | -                                    | Removed since the schema path is not available in API.
+ * ly_path_xml2json()        | -                                    | Removed since done internally, note that even the generic XML parser is not available now.
+ * lys_node_xpath_atomize()  | -                                    | Removed as useless/redundant, use ::lys_find_xpath_atoms().
+ *
+ * @section transition1_2Context Context
+ *
+ * Context, as a concept of a storage interconnecting YANG modules into a YANG schema and YANG schema with the instantiated
+ * data, was preserved. However, it is now more supposed to be prepared just once before connecting it with any instantiated
+ * data. The possibility of removing YANG modules from the context was completely dropped. Furthermore, we would like to
+ * introduce some kind of context lock to completely abandon any change of the YANG modules after starting work with the
+ * instantiated data.
+ *
+ * Another change to note is the removed destructor of private data (::lysc_node.priv) in ::ly_ctx_destroy(). The mechanism
+ * was not reliable with the context recompilation and the splitted parsed and compiled schema trees or the complexity of
+ * YANG extensions. It is better to let the caller maintain the allocated data directly via some memory pool or using
+ * ::lysc_tree_dfs_full() since he is the best to know where the additional data were added.
+ * 
+ * The meaining of the ::lysc_node.priv pointer can be now also changed by ::LY_CTX_SET_PRIV_PARSED context option, which
+ * makes libyang to connect the original parsed schema node structure (::lysp_node) into the compiled nodes via their 'priv'
+ * pointer. 
+ *
+ * Other significant changes connected with the context are depicted in the following table.
+ *
+ * libyang 1.x               | libyang 2.0                          | Notes
+ * :-------------------------|:-------------------------------------|:-------------------------------------------------------
+ * ly_ctx_clean()            | -                                    | Removed functionality of manipulating with the context and the modules already placed in the context.
+ * ly_ctx_remove_module()    | -                                    | ^
+ * ly_ctx_set_module_data_clb() and the associated ly_module_data_clb type. | - | ^
+ * ly_ctx_get_disabled_module() and the associated ly_ctx_get_disabled_module_iter() | - | ^
+ * ly_ctx_info()             | ::ly_ctx_get_yanglib_data()          | Clarification of what to expect as the output of the function and possibility to specify custom content ID.
+ * ly_ctx_get_module_set_id() | ::ly_ctx_get_change_count()          | The functionality is the same but the exact meaning of the value was clarified.
+ * -                         | ::ly_ctx_unset_searchdir_last()      | Extend the functionality of the ::ly_ctx_unset_searchdir() to make its use easier.
+ * ly_ctx_get_module_older() | -                                    | Removed functionality.
+ * -                         | ::ly_ctx_get_module_implemented()    | Supplement for ::ly_ctx_get_module()
+ * -                         | ::ly_ctx_get_module_latest()         | ^
+ * -                         | ::ly_ctx_get_module_implemented_ns() | Supplement for ::ly_ctx_get_module_ns()
+ * -                         | ::ly_ctx_get_module_latest_ns()      | ^
+ * -                         | ::ly_ctx_get_submodule_latest()      | Supplement for ::ly_ctx_get_submodule()
+ * -                         | ::ly_ctx_get_submodule2_latest()     | Supplement for ::ly_ctx_get_submodule2()
+ * ly_ctx_get_module_by_ns() | ::ly_ctx_get_module_ns ()            | Redesign the API - replace some of the parameters with standalone supplement functions.
+ * ly_ctx_unset_searchdirs() | ::ly_ctx_unset_searchdir()           | Simplify API and instead of index numbers, work with the values themselves.
+ * ly_ctx_set*()             | ::ly_ctx_set_options()               | API simplification.
+ * ly_ctx_unset*()           | ::ly_ctx_unset_options()             | ^
+ * ly_ctx_destroy()          | ::ly_ctx_destroy()                   | The destructor callback parameter was removed, see the notes above.
+ *
+ *
+ * @section transition1_2Schemas YANG Modules (Schema)
+ *
+ * The most significant change between libyang 1.x and 2.0 can be found in schema structures. The schema tree now has two
+ * different forms - parsed and compiled trees. While the parsed tree reflects the source of the YANG module, the compiled
+ * tree represents the final tree used to validate the instantiated data. Both formats can be found inside the covering
+ * ::lys_module structure. More about the new structures can be found at @ref howtoSchema page.
+ *
+ * This is an essential change allowing speed up and simplification of data validation, but requiring carefully determine
+ * which format is more suitable for the specific use case. As mentioned, the compiled trees are better for data validation
+ * and getting information about the intentioned structure of the schema with all the applied groupings, type modifications,
+ * augments, deviations, and any defined if-features. On the other hand, the parsed trees are useful for the schema format conversions since they
+ * provide the original structure of the modules. There is a number of new functions intended to work only with the
+ * parsed or the compiled tree. These functions are prefixed with `lysp_` and `lysp_` prefixes.
+ *
+ * Schema parser, as well as printer functions, are now extended to accept new
+ * [input / output handlers](@ref transition1_2GeneralInOut). The previous API working directly with inputs and outputs is
+ * preserved (or slightly changed), but the functions can be limited in the functionality of the new API. More information
+ * can be found at @ref howtoSchemaParsers and @ref howtoSchemaPrinters pages.
+ *
+ * libyang 1.x                  | libyang 2.0                     | Notes
+ * :----------------------------|:--------------------------------|:---------------------------------------------------------
+ * -                            | ::lys_parse()                   | New generic schema parser API using [generic input handler](@ref howtoInput).
+ * -                            | ::lys_print_module()            | New generic schema printer API using [generic output handler](@ref howtoOutput).
+ * -                            | ::lys_print_node()              | ^
+ * -                            | ::lys_print_submodule()         | ^
+ *
+ *
+ * The following table introduces other significant changes in the API functions connected with the schema.
+ *
+ * libyang 1.x                  | libyang 2.0                     | Notes
+ * :----------------------------|:--------------------------------|:---------------------------------------------------------
+ * lys_set_private()            | -                               | Not needed, all ::lysc_node compatible structures have this pointer so it can be accessed directly.
+ * lys_is_disabled()            | -                               | Make no sense since the nodes disabled by if-feature are not present in the compiled tree.
+ * lys_features_list()          | -                               | Not needed, the list of features is available in the parsed tree of the module and submodule.
+ * lys_features_enable(), lys_features_enable_force() | ::lys_set_implemented()         | Set of enabled features can be changed but it causes the whole context (all the modules) to recompile.
+ * lys_features_disable(), lys_features_disable_force() | -       | ^
+ * lys_features_state()         | -                               | Redesign of the features handling in the schema tree, the feature's status is newly directly visible as ::LYS_FENABLED flag (in parsed feature structure).
+ * -                            | ::lys_feature_value()           | Simplified API to get feature's state only based on a feature name string.
+ * -                            | ::lysp_feature_next()           | After redesigning features handling, this function helps to iterate over all features connected with the module.
+ * lys_iffeature_value()        | ::lysc_iffeature_value()        | Renamed, but note that after features handling redesign, the compiled if-feature structure to evaluate is only in ::lysp_feature.iffeatures_c.
+ * lys_iffeature_value()        | -                               | Not needed since the if-feature statements are directly applied onto the compiled tree.
+ * lys_is_disabled()            | -                               | ^
+ * lys_parent()                 | -                               | The compiled tree is more straightforward without the need to take care of nodes added via augments.
+ * lys_main_module()            | -                               | The compiled tree does not include submodules, so there is always only the main module.
+ * lys_node_module()            | -                               | ^
+ * lys_set_enabled()            | -                               | It is not possible to change context this way (remove or disable modules).
+ * lys_set_disabled()           | -                               | ^
+ * -                            | ::lys_find_child()              | Helpers wrapper around ::lys_getnext().
+ * -                            | ::lys_getnext_ext()             | Alternative to ::lys_getnext() allowing processing schema trees inside extension instances.
+ * -                            | ::lys_nodetype2str()            | New functionality.
+ * lys_is_key()                 | ::lysc_is_key()                 | Renamed to connect with the compiled schema tree.
+ * -                            | ::lysc_is_userordered()         | Added functionality to simplify the examination of generic compiled schema nodes.
+ * -                            | ::lysc_is_np_cont()             | ^
+ * -                            | ::lysc_node_child()             | ^
+ * -                            | ::lysc_node_actions()           | ^
+ * -                            | ::lysc_node_notifs()            | ^
+ * -                            | ::lysp_node_child()             | Added functionality to simplify the examination of generic parsed schema nodes.
+ * -                            | ::lysp_node_actions()           | ^
+ * -                            | ::lysp_node_notifs()            | ^
+ * -                            | ::lysp_node_groupings()         | ^
+ * -                            | ::lysp_node_typedefs()          | ^
+ * -                            | ::lysc_tree_dfs_full()          | Alternative DFS passing implementation to ::LYSC_TREE_DFS_BEGIN macro.
+ * -                            | ::lysc_module_dfs_full()        | Supplement functionality to ::lysc_tree_dfs_full().
+ * lys_path(), lys_data_path()  | ::lysc_path()                   | Redesigned functionality.
+ * lys_data_path_pattern()      | -                               | Removed as useless
+ * lys_implemented_module()     | ::ly_ctx_get_module_implemented() | Removed, the same result can be simply achieved using ::ly_ctx_get_module_implemented().
+ *
+ * There is a set of functions available to implement data type plugins for storing and manipulating data values in a more
+ * natural way to the specific data type. For example, IPv4 address type is defined as a string with a pattern, but it is
+ * more effective and usual to store and handle IPv4 as a 32-bit number.
+ *
+ * libyang 1.x                  | libyang 2.0                      | Notes
+ * :----------------------------|:---------------------------------|:--------------------------------------------------------
+ * lys_getnext_union_type()     | -                                | Removed after the type representation redesign.
+ * -                            | ::lyplg_type_identity_isderived()| Helper functions for base types.
+ * -                            | ::lyplg_type_parse_dec64()       | ^
+ * -                            | ::lyplg_type_parse_int()         | ^
+ * -                            | ::lyplg_type_parse_uint()        | ^
+ * -                            | ::lyplg_type_validate_patterns() | ^
+ * -                            | ::lyplg_type_validate_range()    | ^
+ * -                            | ::lyplg_type_get_prefix()        | Helper functions for processing prefixes in data values.
+ * -                            | ::lyplg_type_prefix_data_new()   | ^
+ * -                            | ::lyplg_type_prefix_data_dup()   | ^
+ * -                            | ::lyplg_type_prefix_data_free()  | ^
+ *
+ *
+ * YANG extensions are supported via [extension plugins API](@ref pluginsExtensions) allowing to implement specific extension
+ * and load its support into libyang as a shared module. libyang implements several extensions on its own (see
+ * @ref howtoPluginsExtensions), but even these internal implementations use the same API. The API and [mechanism of loading
+ * external plugins](@ref howtoPlugins) changed a lot in contrast to libyang 1.x. The plugins are now loaded automatically
+ * with creating the first libyang context. The only public function to handle external plugins is ::lyplg_add().
+ *
+ *
+ * libyang 1.x                  | libyang 2.0                     | Notes
+ * :----------------------------|:--------------------------------|:---------------------------------------------------------
+ * lys_ext_complex_get_substmt()| lysc_ext_substmt()              | Changed design of the extensions and the way how it's substatements are accessed.
+ * lys_ext_instance_presence()  | lysc_ext_substmt()              | ^
+ * lys_ext_instance_substmt()   | lysc_ext_substmt()              | ^
+ * ly_clean_plugins()           | -                               | Manipulating external plugins (from plugins directories) is now automatically connected with creating (first) and destroying (last) libyang contexts.
+ * ly_get_loaded_plugins()      | -                               | ^
+ * ly_load_plugins()            | -                               | ^
+ * ly_register_exts()           | ::lyplg_add()                   | Redesigned to a common function for any plugin type.
+ * ly_register_types()          | ::lyplg_add()                   | ^
+ *
+ *
+ * @section transition1_2Data Data Instances
+ *
+ * Conceptually, the data tree did not change as much as the schema tree. There is still a generic ::lyd_node structure that
+ * maps according to the schema node's nodetype to some of the other lyd_node_* structures. All the data nodes were extended
+ * by hashes to improve performance when searching and processing data trees. The hashes are used for example in the
+ * lyd_find_* functions.
+ *
+ * All the data nodes are also implicitly ordered following the order of the schema nodes. This is the
+ * reason to change the insertion function. Only the user-ordered lists and leaf-lists can be now placed relative to other
+ * instances of the same list/leaf-list. Otherwise, the data instance is always inserted/created at the correct place beside
+ * the right sibling nodes.
+ *
+ * For any functions that are available on inputs of different scale (node, subtree, all siblings, whole data tree),
+ * there are several variants of the specific function with suffix specifying what exactly the processed input will be
+ * (_single, _tree, _siblings, _all). This way the behavior is always clear in the code.
+ *
+ * libyang 1.x                  | libyang 2.0                     | Notes
+ * :----------------------------|:--------------------------------|:---------------------------------------------------------
+ * %lyd_insert_after()          | ::lyd_insert_after()            | Changed meaning by limiting applicability only to user-ordered list and leaf-list instances.
+ * %lyd_insert_before()         | ::lyd_insert_before()           | ^
+ * lyd_schema_sort()            | -                               | Not necessary since the nodes are sorted implicitly.
+ *
+ *
+ * Parsing data instances in XML format is newly done directly, without any interstep. Therefore, complete XML API
+ * (lyxml_*() functions) from libyang 1.x was removed.
+ *
+ * Parser's API was simplified to avoid variadic parameters. The functions are newly split to parsed data, notifications,
+ * RPCs and replies to the RPCs. Similarly to the schema parsers, also the new data parser API works with
+ * [input handlers](@ref transition1_2GeneralInOut). The data printer's API was also extended to use new
+ * [output handlers](@ref transition1_2GeneralInOut). However, part of the previous API working directly with inputs
+ * and outputs was preserved. More information about the data parser and printer can be found at
+ * @ref howtoDataParsers and @ref howtoDataPrinters pages.
+ *
+ * libyang 1.x                  | libyang 2.0                     | Notes
+ * :----------------------------|:--------------------------------|:---------------------------------------------------------
+ * -                            | ::lyd_parse_data()              | Redesigned data tree parser.
+ * lyd_parse_xml()              | -                               | XML tree format was removed.
+ * lyd_parse_fd()               | ::lyd_parse_data_fd()           | Renamed and limited to data trees only.
+ * lyd_parse_mem()              | ::lyd_parse_data_mem()          | ^
+ * lyd_parse_path()             | ::lyd_parse_data_path()         | ^
+ * -                            | ::lyd_parse_ext_data()          | Separated function for parsing data trees matching a schema tree of the given extension instance.
+ * -                            | ::lyd_parse_op()                | Separated function for parsing RPCs, actions, replies, and notifications.
+ * -                            | ::lyd_parse_ext_op()            | Separated function for parsing RPCs, actions, replies, and notifications of the given extension instance.
+ * -                            | ::lyd_print_all()               | New API accepting ::ly_out.
+ * -                            | ::lyd_print_tree()              | ^
+ *
+ *
+ * Data validation is still done as part of the parser's process. The standalone functionality is available to check the
+ * result of data manipulation with the values of the terminal nodes or with the structure of the data tree. In contrast to
+ * libyang 1.x, adding the default nodes was made available as a standalone function to simplify the data manipulation
+ * process before the final validation.
+ *
+ * Many validation flags were removed because they became obsolete (LYD_OPT_DESTRUCT, LYD_OPT_WHENAUTODEL,
+ * LYD_OPT_NOEXTDEPS, LYD_OPT_DATA_NO_YANGLIB, LYD_OPT_VAL_DIFF) or we consider them redundant (LYD_OPT_OBSOLETE,
+ * LYD_OPT_NOSIBLINGS, LYD_OPT_DATA_ADD_YANGLIB). As for LYD_OPT_TRUSTED, this option was mostly replaced with
+ * ::LYD_PARSE_ONLY because both skip validation but with the significant difference that LYD_OPT_TRUSTED also sets
+ * the data node flags to be considered validated. The current option ::LYD_PARSE_ONLY does not do this because
+ * there is now much better support for working with non-validated data trees. Also, in case an invalid tree was marked
+ * as validated, it could lead to some undesired behavior, which is now avoided.
+ *
+ * Worth mentioning is a difference in the LYB format, which now also stores its validation flags. So, in case
+ * a validated data tree is stored, it is also loaded as validated.
+ *
+ * libyang 1.x                  | libyang 2.0                     | Notes
+ * :----------------------------|:--------------------------------|:---------------------------------------------------------
+ * lyd_validate()               | ::lyd_validate_all(), ::lyd_validate_op() | Redesigned functionality.
+ * lyd_validate_modules()       | ::lyd_validate_module()         | ^
+ * lyd_validate_value(), lyd_value_type() | ::lyd_value_validate()          | Redesigned functionality.
+ * -                            | ::lyd_new_implicit_all()        | New in API to explicitly add default nodes, previously done only as part of the validation process.
+ * -                            | ::lyd_new_implicit_module()     | Supplement functionality to ::lyd_new_implicit_all().
+ * -                            | ::lyd_new_implicit_tree()       | ^
+ *
+ *
+ * The `diff` functionality was completely redesigned. Instead of the array of operations to transform one tree into another,
+ * the difference between two data trees has newly a form of the annotated data tree describing the differences. A number of
+ * functions to use the diff tree was added into API. To simply compare just nodes, there are the `compare` functions.
+ *
+ * libyang 1.x                  | libyang 2.0                     | Notes
+ * :----------------------------|:--------------------------------|:---------------------------------------------------------
+ * lyd_diff()                   | ::lyd_diff_tree()               | Redesigned functionality.
+ * -                            | ::lyd_diff_siblings()           | Supplement functionality to ::lyd_diff_tree().
+ * -                            | ::lyd_diff_apply_all()          | ^
+ * -                            | ::lyd_diff_apply_module()       | ^
+ * -                            | ::lyd_diff_merge_all()          | ^
+ * -                            | ::lyd_diff_merge_module()       | ^
+ * -                            | ::lyd_diff_merge_tree()         | ^
+ * -                            | ::lyd_diff_reverse_all()        | ^
+ * lyd_free_diff()              | -                               | Removed.
+ * lyd_free_val_diff()          | -                               | Removed.
+ * -                            | ::lyd_compare_single()          | Added functionality.
+ * -                            | ::lyd_compare_meta()            | Supplement functionality to ::lyd_compare_single()
+ * -                            | ::lyd_compare_siblings()        | ^
+ *
+ *
+ * For now, the functionality of moving data between two different contexts is not implemented. If you have a real use case
+ * for this functionality, let us know.
+ *
+ * libyang 1.x                  | libyang 2.0                     | Notes
+ * :----------------------------|:--------------------------------|:---------------------------------------------------------
+ * lyd_dup()                    | ::lyd_dup_single()              | Redesigned functionality.
+ * lyd_dup_withsiblings()       | ::lyd_dup_siblings()            | ^
+ * -                            | ::lyd_dup_meta_single()         | Supplement functionality to ::lyd_dup_single().
+ * lyd_dup_to_ctx()             | -                               | Transferring data from one context to another is not supported.
+ * lyd_merge()                  | ::lyd_merge_tree()              | Renamed.
+ * -                            | ::lyd_merge_siblings()          | Supplement functionality to ::lyd_merge_tree()
+ * lyd_merge_to_ctx()           | -                               | Transferring data from one context to another is not supported.
+ *
+ *
+ * There is a significant change in the value structure in terminal nodes. Thanks to the changes in the schema tree,
+ * it is now much more straightforward to get the type of the value and work with the alternative representation of the value
+ * fitting better to its type. There is also a new API for the type plugins (see @ref howtoPluginsTypes). Even the base YANG
+ * data types are now implemented using this API and can be taken as examples for implementing derived data types.
+ *
+ * libyang 1.x                  | libyang 2.0                     | Notes
+ * :----------------------------|:--------------------------------|:---------------------------------------------------------
+ * lyd_new(), lyd_new_output()  | ::lyd_new_inner(), ::lyd_new_list(), ::lyd_new_list2() | Redesigned functionality to better fit new lyd_node structures, creating RPC's output data is now done via a flag parameter of the functions.
+ * lyd_new_leaf(), lyd_new_output_leaf() | ::lyd_new_term()       | ^
+ * lyd_new_anydata(), lyd_new_output_anydata() | ::lyd_new_any()  | ^
+ * lyd_new_yangdata()           | ::lyd_new_ext_inner(), ::lyd_new_ext_list(), ::lyd_new_ext_term(), ::lyd_new_ext_any() | Additional functionality to lyd_new_* functions to cover top-level nodes in extension instances.
+ * lyd_insert_attr()            | ::lyd_new_meta()                | Unify naming used in other functions with the similar functionality.
+ * -                            | ::lyd_new_attr()                | Added functionality to store the data (temporarily) not connected with schema definitions.
+ * -                            | ::lyd_new_attr2()               | ^
+ * -                            | ::lyd_new_opaq()                | ^
+ * -                            | ::lyd_new_opaq2()               | ^
+ * -                            | ::lyd_new_path2()               | Supplement functionality to ::lyd_new_path().
+ * LYD_PATH_OPT_NOPARENTRET     | ::lyd_new_path2()               | ::lyd_new_path2() returns both the first parent and the wanted node.
+ * LYD_PATH_OPT_EDIT            | ::LYD_NEW_PATH_OPAQ             | This functionality was replaced by opaq nodes.
+ * -                            | ::lyd_new_ext_path()            | Supplement functionality to ::lyd_new_path() covering data defined in extension instances.
+ * lyd_insert()                 | ::lyd_insert_child()            | Renamed to better distinguish from ::lyd_insert_sibling().
+ * lyd_change_leaf()            | ::lyd_change_term()             | Align naming with changed names of data structures.
+ * -                            | ::lyd_change_meta()             | Transferred functionality of ::lyd_change_term() to metadata.
+ * -                            | ::lyd_any_copy_value()          | Added functionality.
+ * lyd_free()                   | ::lyd_free_tree()               | Renamed.
+ * lyd_free_withsiblings()      | ::lyd_free_all()                | ^
+ * -                            | ::lyd_free_siblings()           | Supplement functionality to ::lyd_free_siblings().
+ * lyd_free_attr()              | ::lyd_free_attr_single()        | Renamed.
+ * -                            | ::lyd_free_attr_siblings()      | Supplement functionality to ::lyd_free_attr_single().
+ * -                            | ::lyd_free_meta_single()        | Added functionality.
+ * -                            | ::lyd_free_meta_siblings()      | ^
+ * lyd_unlink()                 | ::lyd_unlink_tree()             | Renamed.
+ *
+ *
+ * Here is the table of other changes in data API.
+ *
+ * libyang 1.x                  | libyang 2.0                     | Notes
+ * :----------------------------|:--------------------------------|:---------------------------------------------------------
+ * lyd_find_instance()          | -                               | Removed.
+ * lyd_find_sibling()           | -                               | Removed, functionality can be replaced by ::lyd_find_sibling_val().
+ * lyd_find_sibling_set()       | -                               | ^
+ * -                            | ::lyd_find_sibling_first()      | Alternative function to ::lyd_find_sibling_val().
+ * -                            | ::lyd_find_meta()               | New functionality.
+ * lyd_wd_default()             | ::lyd_is_default()              | Renamed to unlink from with-default capability.
+ * -                            | ::lyd_parent()                  | New wrapper to get generic ::lyd_node pointer of the parent.
+ * -                            | ::lyd_child(), ::lyd_child_no_keys() | New wrapper to cover all children possibilities hidden behind a generic ::lyd_node structure.
+ * -                            | ::lyd_owner_module()            | Added functionality.
+ * -                            | ::lyd_value_compare()           | Added Functionality.
+ * -                            | ::lyd_find_target()             | Added functionality for the instance-identifier representation.
+ * lyd_node_module()            | -                               | Not necessary since the connection with the compiled modules is much more straightforward.
+ * lyd_leaf_type()              | -                               | Not necessary since the real type information is much more clear from the new ::lyd_value.
+ * lyd_dec64_to_double()        | -                               | Removed as useless.
+ * lyd_node_should_print()      | -                               | ^
+
+ */

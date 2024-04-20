@@ -1,0 +1,17 @@
+source [expr {[info exists ::env(TESTS_DIR)] ? "$env(TESTS_DIR)/non-interactive/ly.tcl" : "ly.tcl"}]
+
+set mdir $::env(YANG_MODULES_DIR)
+
+test make_impl_no_set {Import while --make-implemented is not set} {
+    ly_cmd "-l $mdir/modleafref.yang" "I modleafref\n.*I modleaf"
+} {}
+
+test make_impl_set_once {--make-implemented} {
+    ly_cmd "-l -i $mdir/modmust.yang" "I modmust\n.*I modleaf"
+} {}
+
+test make_impl_set_twice {-i -i} {
+    ly_cmd "-l -i -i $mdir/modimp-type.yang" "I modimp-type\n.*I modtypedef"
+} {}
+
+cleanupTests

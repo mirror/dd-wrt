@@ -4,7 +4,7 @@ To update this package, first import the changes from upstream:
 - git fetch --all
 
 Find the latest version:
-VERSION=$(git describe --tags $(git rev-list '--tags=v1*' --max-count=1) | sed 's/^v//')
+VERSION=$(git describe --tags $(git rev-list '--tags=v2*' --max-count=1) | sed 's/^v//')
 echo $VERSION
 
 Update debian/sid branch

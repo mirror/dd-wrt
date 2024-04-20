@@ -58,7 +58,7 @@ fi
             COMMAND bash ./abibase.sh
             COMMAND ${ABI_CHECKER} -l lib${LIB_TARGET}${CMAKE_SHARED_LIBRARY_SUFFIX}
             -old abibase/build/lib${LIB_TARGET}.*.dump
-            -new ./lib${LIB_TARGET}.${LIB_SOVERSION_FULL}.dump -s
+            -new ./lib${LIB_TARGET}.${LIB_SOVERSION_FULL}.dump
             DEPENDS ${LIB_TARGET} abi-dump
             BYPRODUCTS ${CMAKE_BINARY_DIR}/compat_reports/lib${LIB_TARGET}${CMAKE_SHARED_LIBRARY_SUFFIX}/*_to_${LIB_SOVERSION_FULL}/compat_report.html
             WORKING_DIRECTORY ${CMAKE_BINARY_DIR}

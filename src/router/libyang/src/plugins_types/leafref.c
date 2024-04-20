@@ -11,20 +11,21 @@
  *
  *     https://opensource.org/licenses/BSD-3-Clause
  */
+#define _GNU_SOURCE /* strdup */
 
 #include "plugins_types.h"
 
 #include <assert.h>
 #include <stdint.h>
-#include <stdio.h>
 #include <stdlib.h>
 
 #include "libyang.h"
 
 /* additional internal headers for some useful simple macros */
-#include "common.h"
 #include "compat.h"
+#include "ly_common.h"
 #include "plugins_internal.h" /* LY_TYPE_*_STR */
+#include "tree_data_internal.h" /* lyd_link_leafref_node */
 
 /**
  * @page howtoDataLYB LYB Binary Format
@@ -35,7 +36,7 @@
  * | exact same format as the leafref target ||||
  */
 
-API LY_ERR
+LIBYANG_API_DEF LY_ERR
 lyplg_type_store_leafref(const struct ly_ctx *ctx, const struct lysc_type *type, const void *value, size_t value_len,
         uint32_t options, LY_VALUE_FORMAT format, void *prefix_data, uint32_t hints, const struct lysc_node *ctx_node,
         struct lyd_value *storage, struct lys_glob_unres *unres, struct ly_err_item **err)
@@ -62,13 +63,15 @@ lyplg_type_store_leafref(const struct ly_ctx *ctx, const struct lysc_type *type,
     }
 }
 
-API LY_ERR
-lyplg_type_validate_leafref(const struct ly_ctx *UNUSED(ctx), const struct lysc_type *type, const struct lyd_node *ctx_node,
+LIBYANG_API_DEF LY_ERR
+lyplg_type_validate_leafref(const struct ly_ctx *ctx, const struct lysc_type *type, const struct lyd_node *ctx_node,
         const struct lyd_node *tree, struct lyd_value *storage, struct ly_err_item **err)
 {
     LY_ERR ret;
     struct lysc_type_leafref *type_lr = (struct lysc_type_leafref *)type;
-    char *errmsg = NULL;
+    char *errmsg = NULL, *path;
+    struct ly_set *targets = NULL;
+    uint32_t i;
 
     *err = NULL;
 
@@ -77,36 +80,52 @@ lyplg_type_validate_leafref(const struct ly_ctx *UNUSED(ctx), const struct lysc_
         return LY_SUCCESS;
     }
 
-    /* check leafref target existence */
-    if (lyplg_type_resolve_leafref(type_lr, ctx_node, storage, tree, NULL, &errmsg)) {
-        ret = ly_err_new(err, LY_EVALID, LYVE_DATA, NULL, NULL, errmsg);
+    ret = lyplg_type_resolve_leafref(type_lr, ctx_node, storage, tree, (ly_ctx_get_options(ctx) & LY_CTX_LEAFREF_LINKING) ? &targets : NULL, &errmsg);
+    if (ret != LY_SUCCESS) {
+        path = lyd_path(ctx_node, LYD_PATH_STD, NULL, 0);
+        ret = ly_err_new(err, LY_EVALID, LYVE_DATA, path, strdup("instance-required"), "%s", errmsg);
         free(errmsg);
-        return ret;
+        goto cleanup;
     }
 
-    return LY_SUCCESS;
+    if (ly_ctx_get_options(ctx) & LY_CTX_LEAFREF_LINKING) {
+        for (i = 0; i < targets->count; ++i) {
+            ret = lyd_link_leafref_node((struct lyd_node_term *)targets->dnodes[i], (struct lyd_node_term *)ctx_node);
+            LY_CHECK_GOTO(ret, cleanup);
+        }
+    }
+
+cleanup:
+    ly_set_free(targets, NULL);
+    return ret;
 }
 
-API LY_ERR
-lyplg_type_compare_leafref(const struct lyd_value *val1, const struct lyd_value *val2)
+LIBYANG_API_DEF LY_ERR
+lyplg_type_compare_leafref(const struct ly_ctx *ctx, const struct lyd_value *val1, const struct lyd_value *val2)
 {
-    return val1->realtype->plugin->compare(val1, val2);
+    return val1->realtype->plugin->compare(ctx, val1, val2);
 }
 
-API const void *
+LIBYANG_API_DEF int
+lyplg_type_sort_leafref(const struct ly_ctx *ctx, const struct lyd_value *val1, const struct lyd_value *val2)
+{
+    return val1->realtype->plugin->sort(ctx, val1, val2);
+}
+
+LIBYANG_API_DEF const void *
 lyplg_type_print_leafref(const struct ly_ctx *ctx, const struct lyd_value *value, LY_VALUE_FORMAT format,
         void *prefix_data, ly_bool *dynamic, size_t *value_len)
 {
     return value->realtype->plugin->print(ctx, value, format, prefix_data, dynamic, value_len);
 }
 
-API LY_ERR
+LIBYANG_API_DEF LY_ERR
 lyplg_type_dup_leafref(const struct ly_ctx *ctx, const struct lyd_value *original, struct lyd_value *dup)
 {
     return original->realtype->plugin->duplicate(ctx, original, dup);
 }
 
-API void
+LIBYANG_API_DEF void
 lyplg_type_free_leafref(const struct ly_ctx *ctx, struct lyd_value *value)
 {
     value->realtype->plugin->free(ctx, value);
@@ -129,10 +148,11 @@ const struct lyplg_type_record plugins_leafref[] = {
         .plugin.store = lyplg_type_store_leafref,
         .plugin.validate = lyplg_type_validate_leafref,
         .plugin.compare = lyplg_type_compare_leafref,
-        .plugin.sort = NULL,
+        .plugin.sort = lyplg_type_sort_leafref,
         .plugin.print = lyplg_type_print_leafref,
         .plugin.duplicate = lyplg_type_dup_leafref,
-        .plugin.free = lyplg_type_free_leafref
+        .plugin.free = lyplg_type_free_leafref,
+        .plugin.lyb_data_len = -1,
     },
     {0}
 };

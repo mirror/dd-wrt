@@ -57,7 +57,7 @@ test_when(void **state)
     UTEST_ADD_MODULE(schema, LYS_IN_YANG, NULL, NULL);
 
     CHECK_PARSE_LYD_PARAM("<c xmlns=\"urn:tests:a\">hey</c>", LYD_XML, 0, LYD_VALIDATE_PRESENT, LY_EVALID, tree);
-    CHECK_LOG_CTX("When condition \"/cont/b = 'val_b'\" not satisfied.", "Schema location /a:c, data location /a:c.");
+    CHECK_LOG_CTX("When condition \"/cont/b = 'val_b'\" not satisfied.", "/a:c", 0);
 
     LYD_TREE_CREATE("<cont xmlns=\"urn:tests:a\"><b>val_b</b></cont><c xmlns=\"urn:tests:a\">hey</c>", tree);
     CHECK_LYSC_NODE(tree->next->schema, NULL, 0, LYS_CONFIG_W | LYS_STATUS_CURR, 1, "c", 0, LYS_LEAF, 0, 0, NULL, 1);
@@ -105,10 +105,10 @@ test_mandatory_when(void **state)
     UTEST_ADD_MODULE(schema, LYS_IN_YANG, NULL, NULL);
 
     CHECK_PARSE_LYD_PARAM("<d xmlns=\"urn:tests:a\">hey</d>", LYD_XML, 0, LYD_VALIDATE_PRESENT, LY_EVALID, tree);
-    CHECK_LOG_CTX("When condition \"../c = 'val_c'\" not satisfied.", "Schema location /a:d, data location /a:d.");
+    CHECK_LOG_CTX("When condition \"../c = 'val_c'\" not satisfied.", "/a:d", 0);
 
     CHECK_PARSE_LYD_PARAM("<cont xmlns=\"urn:tests:a\"><b>hey</b></cont>", LYD_XML, 0, LYD_VALIDATE_PRESENT, LY_EVALID, tree);
-    CHECK_LOG_CTX("When condition \"../a = 'val_a'\" not satisfied.", "Schema location /a:cont/b, data location /a:cont/b.");
+    CHECK_LOG_CTX("When condition \"../a = 'val_a'\" not satisfied.", "/a:cont/b", 0);
 
     LYD_TREE_CREATE("<c xmlns=\"urn:tests:a\">val_c</c><d xmlns=\"urn:tests:a\">hey</d>", tree);
     CHECK_LYSC_NODE(tree->next->next->schema, NULL, 0, LYS_CONFIG_W | LYS_STATUS_CURR | LYS_MAND_TRUE, 1, "d", 0, LYS_LEAF, 0, 0, NULL, 1);
@@ -118,6 +118,48 @@ test_mandatory_when(void **state)
     LYD_TREE_CREATE("<cont xmlns=\"urn:tests:a\"><a>val_a</a><b>hey</b></cont>", tree);
     CHECK_LYSC_NODE(lyd_child(tree)->next->schema, NULL, 0, LYS_CONFIG_W | LYS_STATUS_CURR | LYS_MAND_TRUE, 1, "b", 0, LYS_LEAF, tree->schema, 0, NULL, 1);
     assert_int_equal(LYD_WHEN_TRUE, lyd_child(tree)->next->flags);
+    lyd_free_all(tree);
+}
+
+static void
+test_type_incomplete_when(void **state)
+{
+    struct lys_module *mod;
+    struct lyd_node *tree;
+    const char *schema =
+            "module a {\n"
+            "    namespace urn:tests:a;\n"
+            "    prefix a;\n"
+            "    yang-version 1.1;\n"
+            "\n"
+            "    container cont {\n"
+            "        when \"../c = 'val_c'\";\n"
+            "        leaf a {\n"
+            "            type leafref {\n"
+            "                path \"/a:c\";\n"
+            "            }\n"
+            "        }\n"
+            "        leaf b {\n"
+            "            type string;\n"
+            "        }\n"
+            "    }\n"
+            "    leaf c {\n"
+            "        type string;\n"
+            "    }\n"
+            "}";
+
+    UTEST_ADD_MODULE(schema, LYS_IN_YANG, NULL, &mod);
+
+    LYD_TREE_CREATE("<cont xmlns=\"urn:tests:a\"><a>val_c</a><b>val</b></cont><c xmlns=\"urn:tests:a\">val_c</c>", tree);
+
+    /* make the when false */
+    assert_int_equal(LY_SUCCESS, lyd_change_term(tree->next, "wrong-val"));
+
+    /* autodelete when with a leafref */
+    assert_int_equal(LY_SUCCESS, lyd_validate_module(&tree, mod, 0, NULL));
+    assert_string_equal(LYD_NAME(tree), "c");
+    assert_null(tree->next);
+
     lyd_free_all(tree);
 }
 
@@ -154,13 +196,13 @@ test_mandatory(void **state)
     UTEST_ADD_MODULE(schema, LYS_IN_YANG, NULL, NULL);
 
     CHECK_PARSE_LYD_PARAM("<d xmlns=\"urn:tests:b\"/>", LYD_XML, 0, LYD_VALIDATE_PRESENT, LY_EVALID, tree);
-    CHECK_LOG_CTX("Mandatory choice \"choic\" data do not exist.", "Schema location /b:choic.");
+    CHECK_LOG_CTX_APPTAG("Mandatory choice \"choic\" data do not exist.", "/b:choic", 0, "missing-choice");
 
     CHECK_PARSE_LYD_PARAM("<l xmlns=\"urn:tests:b\">string</l><d xmlns=\"urn:tests:b\"/>", LYD_XML, 0, LYD_VALIDATE_PRESENT, LY_EVALID, tree);
-    CHECK_LOG_CTX("Mandatory node \"c\" instance does not exist.", "Schema location /b:c.");
+    CHECK_LOG_CTX("Mandatory node \"c\" instance does not exist.", "/b:c", 0);
 
     CHECK_PARSE_LYD_PARAM("<a xmlns=\"urn:tests:b\">string</a>", LYD_XML, 0, LYD_VALIDATE_PRESENT, LY_EVALID, tree);
-    CHECK_LOG_CTX("Mandatory node \"c\" instance does not exist.", "Schema location /b:c.");
+    CHECK_LOG_CTX("Mandatory node \"c\" instance does not exist.", "/b:c", 0);
 
     LYD_TREE_CREATE("<a xmlns=\"urn:tests:b\">string</a><c xmlns=\"urn:tests:b\">string2</c>", tree);
     lyd_free_siblings(tree);
@@ -204,12 +246,12 @@ test_minmax(void **state)
     CHECK_PARSE_LYD_PARAM("<l xmlns=\"urn:tests:c\">mate</l>"
             "<d xmlns=\"urn:tests:c\"/>",
             LYD_XML, 0, LYD_VALIDATE_PRESENT, LY_EVALID, tree);
-    CHECK_LOG_CTX("Too few \"l\" instances.", "Schema location /c:choic/b/l.");
+    CHECK_LOG_CTX_APPTAG("Too few \"l\" instances.", "/c:choic/b/l", 0, "too-few-elements");
 
     CHECK_PARSE_LYD_PARAM("<l xmlns=\"urn:tests:c\">val1</l>"
             "<l xmlns=\"urn:tests:c\">val2</l>",
             LYD_XML, 0, LYD_VALIDATE_PRESENT, LY_EVALID, tree);
-    CHECK_LOG_CTX("Too few \"l\" instances.", "Schema location /c:choic/b/l.");
+    CHECK_LOG_CTX_APPTAG("Too few \"l\" instances.", "/c:choic/b/l", 0, "too-few-elements");
 
     LYD_TREE_CREATE("<l xmlns=\"urn:tests:c\">val1</l>"
             "<l xmlns=\"urn:tests:c\">val2</l>"
@@ -225,7 +267,7 @@ test_minmax(void **state)
             "<lt xmlns=\"urn:tests:c\"><k>val4</k></lt>"
             "<lt xmlns=\"urn:tests:c\"><k>val5</k></lt>"
             "<lt xmlns=\"urn:tests:c\"><k>val6</k></lt>", LYD_XML, 0, LYD_VALIDATE_PRESENT, LY_EVALID, tree);
-    CHECK_LOG_CTX("Too many \"lt\" instances.", "Schema location /c:lt, data location /c:lt[k='val5'].");
+    CHECK_LOG_CTX_APPTAG("Too many \"lt\" instances.", "/c:lt[k='val5']", 0, "too-many-elements");
 }
 
 const char *schema_d =
@@ -312,8 +354,8 @@ test_unique(void **state)
             "    <k>val2</k>\n"
             "    <l1>same</l1>\n"
             "</lt>", LYD_XML, 0, LYD_VALIDATE_PRESENT, LY_EVALID, tree);
-    CHECK_LOG_CTX("Unique data leaf(s) \"l1\" not satisfied in \"/d:lt[k='val1']\" and \"/d:lt[k='val2']\".",
-            "Schema location /d:lt, data location /d:lt[k='val2'].");
+    CHECK_LOG_CTX_APPTAG("Unique data leaf(s) \"l1\" not satisfied in \"/d:lt[k='val1']\" and \"/d:lt[k='val2']\".",
+            "/d:lt[k='val2']", 0, "data-not-unique");
 
     /* now try with more instances */
     LYD_TREE_CREATE("<lt xmlns=\"urn:tests:d\">\n"
@@ -410,8 +452,8 @@ test_unique(void **state)
             "    <k>val8</k>\n"
             "    <l1>8</l1>\n"
             "</lt>", LYD_XML, 0, LYD_VALIDATE_PRESENT, LY_EVALID, tree);
-    CHECK_LOG_CTX("Unique data leaf(s) \"l1\" not satisfied in \"/d:lt[k='val7']\" and \"/d:lt[k='val2']\".",
-            "Schema location /d:lt, data location /d:lt[k='val2'].");
+    CHECK_LOG_CTX_APPTAG("Unique data leaf(s) \"l1\" not satisfied in \"/d:lt[k='val7']\" and \"/d:lt[k='val2']\".",
+            "/d:lt[k='val2']", 0, "data-not-unique");
 }
 
 static void
@@ -535,8 +577,8 @@ test_unique_nested(void **state)
             "        <l3>3</l3>\n"
             "    </lt3>\n"
             "</lt2>", LYD_XML, 0, LYD_VALIDATE_PRESENT, LY_EVALID, tree);
-    CHECK_LOG_CTX("Unique data leaf(s) \"l3\" not satisfied in \"/d:lt2[k='val2']/lt3[kk='val3']\" and \"/d:lt2[k='val2']/lt3[kk='val1']\".",
-            "Schema location /d:lt2/lt3, data location /d:lt2[k='val2']/lt3[kk='val1'].");
+    CHECK_LOG_CTX_APPTAG("Unique data leaf(s) \"l3\" not satisfied in \"/d:lt2[k='val2']/lt3[kk='val3']\" and "
+            "\"/d:lt2[k='val2']/lt3[kk='val1']\".", "/d:lt2[k='val2']/lt3[kk='val1']", 0, "data-not-unique");
 
     CHECK_PARSE_LYD_PARAM("<lt2 xmlns=\"urn:tests:d\">\n"
             "    <k>val1</k>\n"
@@ -573,8 +615,8 @@ test_unique_nested(void **state)
             "    </cont>\n"
             "    <l4>5</l4>\n"
             "</lt2>", LYD_XML, 0, LYD_VALIDATE_PRESENT, LY_EVALID, tree);
-    CHECK_LOG_CTX("Unique data leaf(s) \"cont/l2 l4\" not satisfied in \"/d:lt2[k='val4']\" and \"/d:lt2[k='val2']\".",
-            "Schema location /d:lt2, data location /d:lt2[k='val2'].");
+    CHECK_LOG_CTX_APPTAG("Unique data leaf(s) \"cont/l2 l4\" not satisfied in \"/d:lt2[k='val4']\" and \"/d:lt2[k='val2']\".",
+            "/d:lt2[k='val2']", 0, "data-not-unique");
 
     CHECK_PARSE_LYD_PARAM("<lt2 xmlns=\"urn:tests:d\">\n"
             "    <k>val1</k>\n"
@@ -619,8 +661,8 @@ test_unique_nested(void **state)
             "    <l5>3</l5>\n"
             "    <l6>3</l6>\n"
             "</lt2>", LYD_XML, 0, LYD_VALIDATE_PRESENT, LY_EVALID, tree);
-    CHECK_LOG_CTX("Unique data leaf(s) \"l5 l6\" not satisfied in \"/d:lt2[k='val5']\" and \"/d:lt2[k='val3']\".",
-            "Schema location /d:lt2, data location /d:lt2[k='val3'].");
+    CHECK_LOG_CTX_APPTAG("Unique data leaf(s) \"l5 l6\" not satisfied in \"/d:lt2[k='val5']\" and \"/d:lt2[k='val3']\".",
+            "/d:lt2[k='val3']", 0, "data-not-unique");
 }
 
 static void
@@ -681,28 +723,28 @@ test_dup(void **state)
 
     CHECK_PARSE_LYD_PARAM("<d xmlns=\"urn:tests:e\">25</d><d xmlns=\"urn:tests:e\">50</d>",
             LYD_XML, 0, LYD_VALIDATE_PRESENT, LY_EVALID, tree);
-    CHECK_LOG_CTX("Duplicate instance of \"d\".", "Schema location /e:d, data location /e:d.");
+    CHECK_LOG_CTX("Duplicate instance of \"d\".", "/e:d", 0);
 
     CHECK_PARSE_LYD_PARAM("<lt xmlns=\"urn:tests:e\"><k>A</k></lt>"
             "<lt xmlns=\"urn:tests:e\"><k>B</k></lt>"
             "<lt xmlns=\"urn:tests:e\"><k>A</k></lt>",
             LYD_XML, 0, LYD_VALIDATE_PRESENT, LY_EVALID, tree);
-    CHECK_LOG_CTX("Duplicate instance of \"lt\".", "Schema location /e:lt, data location /e:lt[k='A'].");
+    CHECK_LOG_CTX("Duplicate instance of \"lt\".", "/e:lt[k='A']", 0);
 
     CHECK_PARSE_LYD_PARAM("<ll xmlns=\"urn:tests:e\">A</ll>"
             "<ll xmlns=\"urn:tests:e\">B</ll>"
             "<ll xmlns=\"urn:tests:e\">B</ll>",
             LYD_XML, 0, LYD_VALIDATE_PRESENT, LY_EVALID, tree);
-    CHECK_LOG_CTX("Duplicate instance of \"ll\".", "Schema location /e:ll, data location /e:ll[.='B'].");
+    CHECK_LOG_CTX("Duplicate instance of \"ll\".", "/e:ll[.='B']", 0);
 
     CHECK_PARSE_LYD_PARAM("<cont xmlns=\"urn:tests:e\"></cont><cont xmlns=\"urn:tests:e\"/>",
             LYD_XML, 0, LYD_VALIDATE_PRESENT, LY_EVALID, tree);
-    CHECK_LOG_CTX("Duplicate instance of \"cont\".", "Schema location /e:cont, data location /e:cont.");
+    CHECK_LOG_CTX("Duplicate instance of \"cont\".", "/e:cont", 0);
 
     /* same tests again but using hashes */
     CHECK_PARSE_LYD_PARAM("<cont xmlns=\"urn:tests:e\"><d>25</d><d>50</d><ll>1</ll><ll>2</ll><ll>3</ll><ll>4</ll></cont>",
             LYD_XML, 0, LYD_VALIDATE_PRESENT, LY_EVALID, tree);
-    CHECK_LOG_CTX("Duplicate instance of \"d\".", "Schema location /e:cont/d, data location /e:cont/d, line number 1.");
+    CHECK_LOG_CTX("Duplicate instance of \"d\".", "/e:cont/d", 1);
 
     CHECK_PARSE_LYD_PARAM("<cont xmlns=\"urn:tests:e\"><ll>1</ll><ll>2</ll><ll>3</ll><ll>4</ll>"
             "<lt><k>a</k></lt>"
@@ -711,12 +753,12 @@ test_dup(void **state)
             "<lt><k>d</k></lt>"
             "<lt><k>c</k></lt></cont>",
             LYD_XML, 0, LYD_VALIDATE_PRESENT, LY_EVALID, tree);
-    CHECK_LOG_CTX("Duplicate instance of \"lt\".", "Schema location /e:cont/lt, data location /e:cont/lt[k='c'], line number 1.");
+    CHECK_LOG_CTX("Duplicate instance of \"lt\".", "/e:cont/lt[k='c']", 1);
 
     CHECK_PARSE_LYD_PARAM("<cont xmlns=\"urn:tests:e\"><ll>1</ll><ll>2</ll><ll>3</ll><ll>4</ll>"
             "<ll>a</ll><ll>b</ll><ll>c</ll><ll>d</ll><ll>d</ll></cont>",
             LYD_XML, 0, LYD_VALIDATE_PRESENT, LY_EVALID, tree);
-    CHECK_LOG_CTX("Duplicate instance of \"ll\".", "Schema location /e:cont/ll, data location /e:cont/ll[.='d'], line number 1.");
+    CHECK_LOG_CTX("Duplicate instance of \"ll\".", "/e:cont/ll[.='d']", 1);
 
     /* cases */
     CHECK_PARSE_LYD_PARAM("<l xmlns=\"urn:tests:e\">a</l>"
@@ -724,20 +766,20 @@ test_dup(void **state)
             "<l xmlns=\"urn:tests:e\">c</l>"
             "<l xmlns=\"urn:tests:e\">b</l>",
             LYD_XML, 0, LYD_VALIDATE_PRESENT, LY_EVALID, tree);
-    CHECK_LOG_CTX("Duplicate instance of \"l\".", "Schema location /e:choic/b/l, data location /e:l[.='b'].");
+    CHECK_LOG_CTX("Duplicate instance of \"l\".", "/e:l[.='b']", 0);
 
     CHECK_PARSE_LYD_PARAM("<l xmlns=\"urn:tests:e\">a</l><l xmlns=\"urn:tests:e\">b</l>"
             "<l xmlns=\"urn:tests:e\">c</l>"
             "<a xmlns=\"urn:tests:e\">aa</a>",
             LYD_XML, 0, LYD_VALIDATE_PRESENT, LY_EVALID, tree);
-    CHECK_LOG_CTX("Data for both cases \"a\" and \"b\" exist.", "Schema location /e:choic.");
+    CHECK_LOG_CTX("Data for both cases \"a\" and \"b\" exist.", "/e:choic", 0);
 }
 
 static void
 test_defaults(void **state)
 {
     struct lyd_node *tree, *node, *diff;
-    const struct lys_module *mod;
+    struct lys_module *mod;
     const char *schema =
             "module f {\n"
             "    namespace urn:tests:f;\n"
@@ -1050,13 +1092,11 @@ test_state(void **state)
             "  </cont2>\n"
             "</cont>\n";
     CHECK_PARSE_LYD_PARAM(data, LYD_XML, LYD_PARSE_ONLY | LYD_PARSE_NO_STATE, 0, LY_EVALID, tree);
-    CHECK_LOG_CTX("Unexpected data state node \"cont2\" found.",
-            "Schema location /h:cont/cont2, data location /h:cont, line number 3.");
+    CHECK_LOG_CTX("Unexpected data state node \"cont2\" found.", "/h:cont/cont2", 3);
 
     CHECK_PARSE_LYD_PARAM(data, LYD_XML, LYD_PARSE_ONLY, 0, LY_SUCCESS, tree);
     assert_int_equal(LY_EVALID, lyd_validate_all(&tree, NULL, LYD_VALIDATE_PRESENT | LYD_VALIDATE_NO_STATE, NULL));
-    CHECK_LOG_CTX("Unexpected data state node \"cont2\" found.",
-            "Schema location /h:cont/cont2, data location /h:cont/cont2.");
+    CHECK_LOG_CTX("Unexpected data state node \"cont2\" found.", "/h:cont/cont2", 0);
     lyd_free_all(tree);
 }
 
@@ -1078,6 +1118,13 @@ test_must(void **state)
             "            must \"../l = 'right'\";\n"
             "            type string;\n"
             "        }\n"
+            "        leaf l3 {\n"
+            "            must \"../l = 'left'\" {\n"
+            "                error-app-tag \"not-left\";\n"
+            "                error-message \"l leaf is not left\";\n"
+            "            }\n"
+            "            type string;\n"
+            "        }\n"
             "    }\n"
             "}";
 
@@ -1087,14 +1134,105 @@ test_must(void **state)
             "  <l>wrong</l>\n"
             "  <l2>val</l2>\n"
             "</cont>\n", LYD_XML, 0, LYD_VALIDATE_PRESENT, LY_EVALID, tree);
-    CHECK_LOG_CTX("Must condition \"../l = 'right'\" not satisfied.",
-            "Schema location /i:cont/l2, data location /i:cont/l2.");
+    CHECK_LOG_CTX_APPTAG("Must condition \"../l = 'right'\" not satisfied.", "/i:cont/l2", 0, "must-violation");
 
     LYD_TREE_CREATE("<cont xmlns=\"urn:tests:i\">\n"
             "  <l>right</l>\n"
             "  <l2>val</l2>\n"
             "</cont>\n", tree);
     lyd_free_all(tree);
+
+    CHECK_PARSE_LYD_PARAM("<cont xmlns=\"urn:tests:i\">\n"
+            "  <l>wrong</l>\n"
+            "  <l3>val</l3>\n"
+            "</cont>\n", LYD_XML, 0, LYD_VALIDATE_PRESENT, LY_EVALID, tree);
+    CHECK_LOG_CTX_APPTAG("l leaf is not left", "/i:cont/l3", 0, "not-left");
+}
+
+static void
+test_multi_error(void **state)
+{
+    struct lyd_node *tree;
+    const char *schema =
+            "module ii {\n"
+            "    namespace urn:tests:ii;\n"
+            "    prefix ii;\n"
+            "    yang-version 1.1;\n"
+            "\n"
+            "    container cont {\n"
+            "        leaf l {\n"
+            "            type string;\n"
+            "        }\n"
+            "        leaf l2 {\n"
+            "            must \"../l = 'right'\";\n"
+            "            type string;\n"
+            "        }\n"
+            "        leaf l3 {\n"
+            "            must \"../l = 'left'\" {\n"
+            "                error-app-tag \"not-left\";\n"
+            "                error-message \"l leaf is not left\";\n"
+            "            }\n"
+            "            type string;\n"
+            "        }\n"
+            "        leaf-list ll {\n"
+            "            type uint32;\n"
+            "            min-elements 2;\n"
+            "        }\n"
+            "    }\n"
+            "}";
+    const char *data;
+
+    UTEST_ADD_MODULE(schema, LYS_IN_YANG, NULL, NULL);
+
+    /* xml */
+    data =
+            "<cont xmlns=\"urn:tests:ii\">\n"
+            "  <l>wrong</l>\n"
+            "  <l>wrong2</l>\n"
+            "  <l2>val</l2>\n"
+            "  <l3>val</l3>\n"
+            "  <ll>ahoy</ll>\n"
+            "</cont>\n";
+    CHECK_PARSE_LYD_PARAM(data, LYD_XML, 0, LYD_VALIDATE_PRESENT | LYD_VALIDATE_MULTI_ERROR, LY_EVALID, tree);
+    CHECK_LOG_CTX_APPTAG("Too few \"ll\" instances.", "/ii:cont/ll", 0, "too-few-elements");
+    CHECK_LOG_CTX_APPTAG("l leaf is not left", "/ii:cont/l3", 0, "not-left");
+    CHECK_LOG_CTX_APPTAG("Must condition \"../l = 'right'\" not satisfied.", "/ii:cont/l2", 0, "must-violation");
+    CHECK_LOG_CTX_APPTAG("Invalid type uint32 value \"ahoy\".", "/ii:cont/ll", 6, NULL);
+
+    /* json */
+    data = "{\n"
+            "  \"ii:cont\": {\n"
+            "    \"l\": \"wrong\",\n"
+            "    \"l\": \"wrong2\",\n"
+            "    \"l2\": \"val\",\n"
+            "    \"l3\": \"val\",\n"
+            "    \"ll\": [\"ahoy\"]\n"
+            "  }\n"
+            "}\n";
+    CHECK_PARSE_LYD_PARAM(data, LYD_JSON, 0, LYD_VALIDATE_PRESENT | LYD_VALIDATE_MULTI_ERROR, LY_EVALID, tree);
+    CHECK_LOG_CTX_APPTAG("Too few \"ll\" instances.", "/ii:cont/ll", 0, "too-few-elements");
+    CHECK_LOG_CTX_APPTAG("l leaf is not left", "/ii:cont/l3", 0, "not-left");
+    CHECK_LOG_CTX_APPTAG("Must condition \"../l = 'right'\" not satisfied.", "/ii:cont/l2", 0, "must-violation");
+    CHECK_LOG_CTX_APPTAG("Invalid non-number-encoded uint32 value \"ahoy\".", "/ii:cont/ll", 7, NULL);
+
+    /* validation */
+    data = "{\n"
+            "  \"ii:cont\": {\n"
+            "    \"l\": \"wrong\",\n"
+            "    \"l\": \"wrong2\",\n"
+            "    \"l2\": \"val\",\n"
+            "    \"l3\": \"val\",\n"
+            "    \"ll\": [25]\n"
+            "  }\n"
+            "}\n";
+    CHECK_PARSE_LYD_PARAM(data, LYD_JSON, LYD_PARSE_ONLY, 0, LY_SUCCESS, tree);
+    assert_int_equal(LY_EVALID, lyd_validate_all(&tree, NULL, LYD_VALIDATE_PRESENT | LYD_VALIDATE_MULTI_ERROR, NULL));
+    lyd_free_tree(tree);
+    CHECK_LOG_CTX_APPTAG("Too few \"ll\" instances.", "/ii:cont/ll", 0, "too-few-elements");
+    CHECK_LOG_CTX_APPTAG("l leaf is not left", "/ii:cont/l3", 0, "not-left");
+    CHECK_LOG_CTX_APPTAG("Must condition \"../l = 'right'\" not satisfied.", "/ii:cont/l2", 0, "must-violation");
+    CHECK_LOG_CTX_APPTAG("Duplicate instance of \"l\".", "/ii:cont/l", 0, NULL);
+    CHECK_LOG_CTX_APPTAG("Duplicate instance of \"l\".", "/ii:cont/l", 0, NULL);
 }
 
 const char *schema_j =
@@ -1155,6 +1293,7 @@ test_action(void **state)
     struct lyd_node *tree, *op_tree;
 
     UTEST_ADD_MODULE(schema_j, LYS_IN_YANG, feats_j, NULL);
+    UTEST_LOG_CTX_CLEAN;
 
     assert_int_equal(LY_SUCCESS, ly_in_new_memory(
             "<cont xmlns=\"urn:tests:j\">\n"
@@ -1170,8 +1309,8 @@ test_action(void **state)
 
     /* missing leafref */
     assert_int_equal(LY_EVALID, lyd_validate_op(op_tree, NULL, LYD_TYPE_RPC_YANG, NULL));
-    CHECK_LOG_CTX("Invalid leafref value \"target\" - no existing target instance \"/lf3\".",
-            "Schema location /j:cont/l1/act/input/lf2, data location /j:cont/l1[k='val1']/act/lf2.");
+    CHECK_LOG_CTX("Invalid leafref value \"target\" - no target instance \"/lf3\" with the same value.",
+            "/j:cont/l1[k='val1']/act/lf2", 0);
     ly_in_free(in, 0);
 
     CHECK_PARSE_LYD_PARAM("<cont xmlns=\"urn:tests:j\">\n"
@@ -1182,8 +1321,7 @@ test_action(void **state)
 
     /* input must false */
     assert_int_equal(LY_EVALID, lyd_validate_op(op_tree, tree, LYD_TYPE_RPC_YANG, NULL));
-    CHECK_LOG_CTX("Must condition \"../../lf1 = 'true'\" not satisfied.",
-            "Data location /j:cont/l1[k='val1']/act.");
+    CHECK_LOG_CTX("Must condition \"../../lf1 = 'true'\" not satisfied.", "/j:cont/l1[k='val1']/act", 0);
 
     lyd_free_all(tree);
     CHECK_PARSE_LYD_PARAM("<cont xmlns=\"urn:tests:j\">\n"
@@ -1200,12 +1338,54 @@ test_action(void **state)
 }
 
 static void
+test_rpc(void **state)
+{
+    const char *schema, *data;
+    struct ly_in *in;
+    struct lyd_node *tree;
+
+    /* Testing constraint violation in RPC. */
+    schema =
+            "module val-str {\n"
+            "  namespace \"urn:vstr\";\n"
+            "  prefix v;\n"
+            "\n"
+            "  rpc modify-user-password {\n"
+            "    input {\n"
+            "      leaf old-password {\n"
+            "        type string {\n"
+            "          length \"4..8\";\n"
+            "        }\n"
+            "      }\n"
+            "      leaf new-password {\n"
+            "        type string {\n"
+            "          length \"4..8\";\n"
+            "        }\n"
+            "      }\n"
+            "    }\n"
+            "  }\n"
+            "}\n";
+    UTEST_ADD_MODULE(schema, LYS_IN_YANG, NULL, NULL);
+    data =
+            "<modify-user-password xmlns=\"urn:vstr\">\n"
+            "   <old-password>12345</old-password>\n"
+            "   <new-password>123</new-password>\n"
+            "</modify-user-password>";
+    assert_int_equal(LY_SUCCESS, ly_in_new_memory(data, &in));
+    assert_int_equal(LY_EVALID, lyd_parse_op(UTEST_LYCTX, NULL, in, LYD_XML, LYD_TYPE_RPC_YANG, &tree, NULL));
+    CHECK_LOG_CTX("Unsatisfied length - string \"123\" length is not allowed.",
+            "/val-str:modify-user-password/new-password", 3);
+    ly_in_free(in, 0);
+}
+
+static void
 test_reply(void **state)
 {
     struct ly_in *in;
     struct lyd_node *tree, *op_tree;
 
     UTEST_ADD_MODULE(schema_j, LYS_IN_YANG, feats_j, NULL);
+    UTEST_LOG_CTX_CLEAN;
 
     assert_int_equal(LY_SUCCESS, ly_in_new_memory(
             "<cont xmlns=\"urn:tests:j\">\n"
@@ -1222,8 +1402,8 @@ test_reply(void **state)
 
     /* missing leafref */
     assert_int_equal(LY_EVALID, lyd_validate_op(op_tree, NULL, LYD_TYPE_REPLY_YANG, NULL));
-    CHECK_LOG_CTX("Invalid leafref value \"target\" - no existing target instance \"/lf4\".",
-            "Schema location /j:cont/l1/act/output/lf2, data location /j:cont/l1[k='val1']/act/lf2.");
+    CHECK_LOG_CTX("Invalid leafref value \"target\" - no target instance \"/lf4\" with the same value.",
+            "/j:cont/l1[k='val1']/act/lf2", 0);
 
     CHECK_PARSE_LYD_PARAM("<cont xmlns=\"urn:tests:j\">\n"
             "  <lf1>not true</lf1>\n"
@@ -1233,7 +1413,7 @@ test_reply(void **state)
 
     /* input must false */
     assert_int_equal(LY_EVALID, lyd_validate_op(op_tree, tree, LYD_TYPE_REPLY_YANG, NULL));
-    CHECK_LOG_CTX("Must condition \"../../lf1 = 'true2'\" not satisfied.", "Data location /j:cont/l1[k='val1']/act.");
+    CHECK_LOG_CTX("Must condition \"../../lf1 = 'true2'\" not satisfied.", "/j:cont/l1[k='val1']/act", 0);
 
     lyd_free_all(tree);
     CHECK_PARSE_LYD_PARAM("<cont xmlns=\"urn:tests:j\">\n"
@@ -1249,6 +1429,92 @@ test_reply(void **state)
     lyd_free_all(tree);
 }
 
+static void
+test_case(void **state)
+{
+    struct lyd_node *tree;
+    const char *schema =
+            "module k {\n"
+            "  namespace urn:tests:k;\n"
+            "  prefix k;\n"
+            "  yang-version 1.1;\n"
+            "\n"
+            "  container ch {\n"
+            "    choice a0 {\n"
+            "      case v0 {\n"
+            "        leaf g0 {\n"
+            "          type string;\n"
+            "        }\n"
+            "      }\n"
+            "      case v1 {\n"
+            "        choice a1 {\n"
+            "          case r0 {\n"
+            "            leaf g1 {\n"
+            "              type string;\n"
+            "            }\n"
+            "          }\n"
+            "          case r1 {\n"
+            "            leaf g2 {\n"
+            "              type string;\n"
+            "            }\n"
+            "            leaf g3 {\n"
+            "              type string;\n"
+            "            }\n"
+            "          }\n"
+            "          case r2 {\n"
+            "            leaf g4 {\n"
+            "              type string;\n"
+            "            }\n"
+            "          }\n"
+            "        }\n"
+            "      }\n"
+            "      case v2 {\n"
+            "        choice a2 {\n"
+            "          case y0 {\n"
+            "            leaf g5 {\n"
+            "              type string;\n"
+            "            }\n"
+            "          }\n"
+            "          case y1 {\n"
+            "            leaf g6 {\n"
+            "              type string;\n"
+            "            }\n"
+            "            leaf g7 {\n"
+            "              type string;\n"
+            "            }\n"
+            "          }\n"
+            "          case y2 {\n"
+            "            leaf g8 {\n"
+            "              type string;\n"
+            "            }\n"
+            "          }\n"
+            "        }\n"
+            "      }\n"
+            "    }\n"
+            "  }\n"
+            "}";
+
+    UTEST_ADD_MODULE(schema, LYS_IN_YANG, NULL, NULL);
+
+    CHECK_PARSE_LYD_PARAM(
+            "{\n"
+            "  \"k:ch\": {\n"
+            "    \"g0\": \"value_g0\",\n"
+            "    \"g7\": \"value_g7\"\n"
+            "  }\n"
+            "}\n", LYD_JSON, 0, LYD_VALIDATE_PRESENT, LY_EVALID, tree);
+    CHECK_LOG_CTX("Data for both cases \"v0\" and \"v2\" exist.", "/k:ch", 6);
+
+    CHECK_PARSE_LYD_PARAM(
+            "{\n"
+            "  \"k:ch\": {\n"
+            "    \"g7\": \"value_g7\",\n"
+            "    \"g0\": \"value_g0\"\n"
+            "  }\n"
+            "}\n", LYD_JSON, 0, LYD_VALIDATE_PRESENT, LY_EVALID, tree);
+    CHECK_LOG_CTX("Data for both cases \"v0\" and \"v2\" exist.", "/k:ch", 6);
+}
+
 int
 main(void)
 {
@@ -1256,6 +1522,7 @@ main(void)
         UTEST(test_when),
         UTEST(test_mandatory),
         UTEST(test_mandatory_when),
+        UTEST(test_type_incomplete_when),
         UTEST(test_minmax),
         UTEST(test_unique),
         UTEST(test_unique_nested),
@@ -1263,8 +1530,11 @@ main(void)
         UTEST(test_defaults),
         UTEST(test_state),
         UTEST(test_must),
+        UTEST(test_multi_error),
         UTEST(test_action),
+        UTEST(test_rpc),
         UTEST(test_reply),
+        UTEST(test_case),
     };
 
     return cmocka_run_group_tests(tests, NULL, NULL);

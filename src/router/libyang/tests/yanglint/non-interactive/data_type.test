@@ -1,0 +1,107 @@
+source [expr {[info exists ::env(TESTS_DIR)] ? "$env(TESTS_DIR)/non-interactive/ly.tcl" : "ly.tcl"}]
+
+set mdir "$::env(YANG_MODULES_DIR)"
+set ddir "$::env(TESTS_DIR)/data"
+set modnc "$mdir/ietf-netconf@2011-06-01.yang"
+
+test data_type_data {data --type data} {
+    ly_cmd "-t data $mdir/modconfig.yang $ddir/modconfig.xml"
+} {}
+
+test data_type_config {data --type config} {
+    ly_cmd_err "-t config $mdir/modconfig.yang $ddir/modconfig.xml" "Unexpected data state node \"lff\""
+    ly_cmd "-t config $mdir/modconfig.yang $ddir/modconfig2.xml"
+} {}
+
+test data_type_get {data --type get} {
+    ly_cmd_err "-t data $mdir/modleafref.yang $ddir/modleafref2.xml" "Invalid leafref value"
+    ly_cmd "-t get $mdir/modleafref.yang $ddir/modleafref2.xml"
+} {}
+
+test data_type_getconfig_no_state {No state node for data --type getconfig} {
+    ly_cmd_err "-t getconfig $mdir/modconfig.yang $ddir/modconfig.xml" "Unexpected data state node \"lff\""
+    ly_cmd "-t getconfig $mdir/modconfig.yang $ddir/modconfig2.xml"
+} {}
+
+test data_type_getconfig_parse_only {No validation performed for data --type getconfig} {
+    ly_cmd_err "-t data $mdir/modleafref.yang $ddir/modleafref2.xml" "Invalid leafref value"
+    ly_cmd "-t getconfig $mdir/modleafref.yang $ddir/modleafref2.xml"
+} {}
+
+test data_type_edit_no_state {No state node for data --type edit} {
+    ly_cmd_err "-t edit $mdir/modconfig.yang $ddir/modconfig.xml" "Unexpected data state node \"lff\""
+    ly_cmd "-t edit $mdir/modconfig.yang $ddir/modconfig2.xml"
+} {}
+
+test data_type_edit_parse_only {No validation performed for data --type edit} {
+    ly_cmd_err "-t data $mdir/modleafref.yang $ddir/modleafref2.xml" "Invalid leafref value"
+    ly_cmd "-t edit $mdir/modleafref.yang $ddir/modleafref2.xml"
+} {}
+
+test data_type_rpc {Validation of rpc-statement by data --type rpc} {
+    ly_cmd_err "-t rpc $mdir/modleaf.yang $ddir/modleaf.xml" "Missing the operation node."
+    ly_cmd "-t rpc $mdir/modrpc.yang $ddir/modrpc.xml"
+} {}
+
+test data_type_rpc_nc {Validation of rpc-statement by data --type nc-rpc} {
+    ly_cmd_err "-t nc-rpc $modnc $mdir/modleaf.yang $ddir/modleaf.xml" "Missing NETCONF <rpc> envelope"
+    ly_cmd "-t nc-rpc $modnc $mdir/modrpc.yang $ddir/modrpc_nc.xml"
+} {}
+
+test data_type_rpc_reply {Validation of rpc-reply by data --type reply} {
+    ly_cmd_err "-t rpc $mdir/modleaf.yang $ddir/modleaf.xml" "Missing the operation node."
+    ly_cmd_wrn "-t reply -R $ddir/modrpc.xml $mdir/modrpc.yang $ddir/modrpc_reply.xml" "needed only for NETCONF"
+    ly_cmd "-t reply $mdir/modrpc.yang $ddir/modrpc_reply.xml"
+} {}
+
+test data_type_rpc_reply_nc {Validation of rpc-reply by data --type nc-reply} {
+    set err1 "Missing NETCONF <rpc-reply> envelope"
+    ly_cmd_err "-t nc-reply -R $ddir/modrpc_nc.xml $mdir/modrpc.yang $mdir/modleaf.yang $ddir/modleaf.xml" $err1
+    ly_cmd_err "-t nc-reply $mdir/modrpc.yang $ddir/modrpc_reply_nc.xml" "Missing source RPC"
+    ly_cmd "-t nc-reply -R $ddir/modrpc_nc.xml $mdir/modrpc.yang $ddir/modrpc_reply_nc.xml"
+} {}
+
+test data_type_rpc_action {Validation of action-statement by data --type rpc} {
+    ly_cmd_err "-t rpc $mdir/modleaf.yang $ddir/modleaf.xml" "Missing the operation node."
+    ly_cmd "-t rpc -O $ddir/modaction_ds.xml $mdir/modaction.yang $ddir/modaction.xml"
+} {}
+
+test data_type_rpc_action_nc {Validation of action-statement by data --type nc-rpc} {
+    ly_cmd_err "-t nc-rpc $mdir/modleaf.yang $ddir/modleaf.xml" "Missing NETCONF <rpc> envelope"
+    ly_cmd "-t nc-rpc -O $ddir/modaction_ds.xml $mdir/modaction.yang $ddir/modaction_nc.xml"
+} {}
+
+test data_type_rpc_action_reply {Validation of action-reply by data --type reply} {
+    ly_cmd_err "-t rpc $mdir/modleaf.yang $ddir/modleaf.xml" "Missing the operation node."
+    ly_cmd "-t reply -O $ddir/modaction_ds.xml $mdir/modaction.yang $ddir/modaction_reply.xml"
+} {}
+
+test data_type_rpc_action_reply_nc {Validation of action-reply by data --type nc-reply} {
+    set err1 "Missing NETCONF <rpc-reply> envelope"
+    set err2 "operational parameter needed"
+    ly_cmd_err "-t nc-reply -R $ddir/modaction_nc.xml $mdir/modaction.yang $mdir/modleaf.yang $ddir/modleaf.xml" $err1
+    ly_cmd_err "-t nc-reply $mdir/modaction.yang $ddir/modaction_reply_nc.xml" "Missing source RPC"
+    ly_cmd_err "-t nc-reply -R $ddir/modaction_nc.xml $mdir/modaction.yang $ddir/modaction_reply_nc.xml" $err2
+    ly_cmd "-t nc-reply -O $ddir/modaction_ds.xml -R $ddir/modaction_nc.xml $mdir/modaction.yang $ddir/modaction_reply_nc.xml"
+} {}
+
+test data_type_notif {Validation of notification-statement by data --type notif} {
+    ly_cmd_err "-t notif $mdir/modleaf.yang $ddir/modleaf.xml" "Missing the operation node."
+    ly_cmd "-t notif $mdir/modnotif.yang $ddir/modnotif2.xml"
+} {}
+
+test data_type_notif_nc {Validation of notification-statement by data --type nc-notif} {
+    ly_cmd_err "-t nc-notif $modnc $mdir/modleaf.yang $ddir/modleaf.xml" "Missing NETCONF <notification> envelope"
+    ly_cmd "-t nc-notif $modnc $mdir/modnotif.yang $ddir/modnotif2_nc.xml"
+} {}
+
+test data_type_notif_nested {Validation of nested-notification-statement by data --type notif} {
+    ly_cmd "-t notif -O $ddir/modnotif_ds.xml $mdir/modnotif.yang $ddir/modnotif.xml"
+} {}
+
+test data_type_notif_nested_nc {Validation of nested-notification-statement by data --type nc-notif} {
+    ly_cmd_err "-t nc-notif $modnc $mdir/modleaf.yang $ddir/modleaf.xml" "Missing NETCONF <notification> envelope"
+    ly_cmd "-t nc-notif -O $ddir/modnotif_ds.xml $modnc $mdir/modnotif.yang $ddir/modnotif_nc.xml"
+} {}
+
+cleanupTests

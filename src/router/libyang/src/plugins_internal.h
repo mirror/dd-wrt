@@ -1,9 +1,10 @@
 /**
  * @file plugins_internal.h
  * @author Radek Krejci <rkrejci@cesnet.cz>
+ * @author Michal Vasko <mvasko@cesnet.cz>
  * @brief internal functions to support extension and type plugins.
  *
- * Copyright (c) 2019-2021 CESNET, z.s.p.o.
+ * Copyright (c) 2019-2022 CESNET, z.s.p.o.
  *
  * This source code is licensed under BSD 3-Clause License (the "License").
  * You may not use this file except in compliance with the License.
@@ -19,7 +20,7 @@
 
 #include "plugins.h"
 #include "plugins_exts.h"
-#include "tree_schema.h"
+#include "plugins_types.h"
 
 #define LY_TYPE_UNKNOWN_STR "unknown"               /**< text representation of ::LY_TYPE_UNKNOWN */
 #define LY_TYPE_BINARY_STR "binary"                 /**< text representation of ::LY_TYPE_BINARY */
@@ -47,11 +48,12 @@
  *
  * Covers both the types and extensions plugins.
  *
+ * @param[in] builtin_type_plugins_only Whether to load only built-in YANG type plugins and no included extension plugins.
  * @return LY_SUCCESS in case of success
  * @return LY_EINT in case of internal error
  * @return LY_EMEM in case of memory allocation failure.
  */
-LY_ERR lyplg_init(void);
+LY_ERR lyplg_init(ly_bool builtin_type_plugins_only);
 
 /**
  * @brief Remove (unload) all the plugins currently available.
@@ -59,17 +61,28 @@ LY_ERR lyplg_init(void);
 void lyplg_clean(void);
 
 /**
- * @brief Find the plugin matching the provided attributes.
+ * @brief Find a type plugin.
  *
- * @param[in] type Type of the plugin to find (type or extension)
- * @param[in] module Name of the module where the type/extension is defined. Must not be NULL, in case of plugins for
+ * @param[in] ctx The optional context for which the plugin should be find. If NULL, only shared plugins will be searched
+ * @param[in] module Name of the module where the type is defined. Must not be NULL, in case of plugins for
  * built-in types, the module is "".
- * @param[in] revision The revision of the module for which the plugin is implemented. NULL is not a wildcard, it matches
+ * @param[in] revision Revision of the module for which the plugin is implemented. NULL is not a wildcard, it matches
  * only the plugins with NULL revision specified.
- * @param[in] name Name of the type/extension which the plugin implements.
- * @return NULL if the plugin matching the restrictions is not present.
- * @return Pointer to the matching ::ly_type_plugin or ::lyext_plugin according to the plugin's @p type.
+ * @param[in] name Name of the type which the plugin implements.
+ * @return Found type plugin, NULL if none found.
  */
-void *lyplg_find(enum LYPLG type, const char *module, const char *revision, const char *name);
+struct lyplg_type *lyplg_type_plugin_find(const struct ly_ctx *ctx, const char *module, const char *revision, const char *name);
+
+/**
+ * @brief Find an extension plugin.
+ *
+ * @param[in] ctx The optional context for which the plugin should be find. If NULL, only shared plugins will be searched
+ * @param[in] module Name of the module where the extension is defined.
+ * @param[in] revision Revision of the module for which the plugin is implemented. NULL is not a wildcard, it matches
+ * only the plugins with NULL revision specified.
+ * @param[in] name Name of the extension which the plugin implements.
+ * @return Found extension record, NULL if none found.
+ */
+struct lyplg_ext_record *lyplg_ext_record_find(const struct ly_ctx *ctx, const char *module, const char *revision, const char *name);
 
 #endif /* LY_PLUGINS_INTERNAL_H_ */

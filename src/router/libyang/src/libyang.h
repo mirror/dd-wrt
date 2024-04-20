@@ -1,9 +1,10 @@
 /**
  * @file libyang.h
  * @author Radek Krejci <rkrejci@cesnet.cz>
+ * @author Michal Vasko <mvasko@cesnet.cz>
  * @brief The main libyang public header.
  *
- * Copyright (c) 2015 - 2018 CESNET, z.s.p.o.
+ * Copyright (c) 2015 - 2024 CESNET, z.s.p.o.
  *
  * This source code is licensed under BSD 3-Clause License (the "License").
  * You may not use this file except in compliance with the License.
@@ -25,6 +26,7 @@ extern "C" {
 #include "dict.h"
 #include "in.h"
 #include "log.h"
+#include "metadata.h"
 #include "out.h"
 #include "parser_data.h"
 #include "parser_schema.h"
@@ -35,8 +37,20 @@ extern "C" {
 #include "tree_data.h"
 #include "tree_schema.h"
 
+/**
+ * @brief libyang v3 compatibility macros with v2.
+ */
+#define ly_strerrcode ly_strerr
+#define ly_last_errmsg ly_last_logmsg
+#define ly_errcode(ctx) (ly_err_last(ctx) ? ly_err_last(ctx)->err : 0)
+#define ly_errmsg(ctx) (ly_err_last(ctx) ? ly_err_last(ctx)->msg : NULL)
+#define ly_errpath(ctx) (ly_err_last(ctx) ? (ly_err_last(ctx)->data_path ? ly_err_last(ctx)->data_path : ly_err_last(ctx)->schema_path) : NULL)
+#define ly_vecode(ctx) (ly_err_last(ctx) ? ly_err_last(ctx)->vecode : 0)
+
 /*
  * The following headers are supposed to be included explicitly:
+ * - hash_table.h
+ * - metadata.h
  * - plugins_types.h
  * - plugins_exts.h
  */
@@ -58,13 +72,14 @@ extern "C" {
  * - Support for [default values in the instance data](@ref howtoDataWD) ([RFC 6243](https://tools.ietf.org/html/rfc6243)).
  * - Support for [YANG extensions and user types](@ref howtoPlugins).
  * - Support for [YANG Metadata](@ref howtoDataMetadata) ([RFC 7952](https://tools.ietf.org/html/rfc6243)).
+ * - Support for [YANG Schema Mount](@ref howtoDataMountpoint) ([RFC 8528](https://tools.ietf.org/html/rfc8528)).
  *
  * The current implementation covers YANG 1.0 ([RFC 6020](https://tools.ietf.org/html/rfc6020)) as well as
  * YANG 1.1 ([RFC 7950](https://tools.ietf.org/html/rfc7950)).
  *
  * @section about-license License
  *
- * Copyright (c) 2015-2021 CESNET, z.s.p.o.
+ * Copyright (c) 2015-2024 CESNET, z.s.p.o.
  *
  * (The BSD 3-Clause License)
  *

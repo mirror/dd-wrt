@@ -109,7 +109,7 @@ struct ly_out;
  * @param[in] options [Data printer flags](@ref dataprinterflags) except ::LYD_PRINT_WITHSIBLINGS.
  * @return LY_ERR value.
  */
-LY_ERR lyd_print_all(struct ly_out *out, const struct lyd_node *root, LYD_FORMAT format, uint32_t options);
+LIBYANG_API_DECL LY_ERR lyd_print_all(struct ly_out *out, const struct lyd_node *root, LYD_FORMAT format, uint32_t options);
 
 /**
  * @brief Print the selected data subtree.
@@ -120,7 +120,7 @@ LY_ERR lyd_print_all(struct ly_out *out, const struct lyd_node *root, LYD_FORMAT
  * @param[in] options [Data printer flags](@ref dataprinterflags) except ::LYD_PRINT_WITHSIBLINGS.
  * @return LY_ERR value.
  */
-LY_ERR lyd_print_tree(struct ly_out *out, const struct lyd_node *root, LYD_FORMAT format, uint32_t options);
+LIBYANG_API_DECL LY_ERR lyd_print_tree(struct ly_out *out, const struct lyd_node *root, LYD_FORMAT format, uint32_t options);
 
 /**
  * @brief Print data tree in the specified format.
@@ -131,7 +131,7 @@ LY_ERR lyd_print_tree(struct ly_out *out, const struct lyd_node *root, LYD_FORMA
  * @param[in] options [Data printer flags](@ref dataprinterflags).
  * @return LY_ERR value.
  */
-LY_ERR lyd_print_mem(char **strp, const struct lyd_node *root, LYD_FORMAT format, uint32_t options);
+LIBYANG_API_DECL LY_ERR lyd_print_mem(char **strp, const struct lyd_node *root, LYD_FORMAT format, uint32_t options);
 
 /**
  * @brief Print data tree in the specified format.
@@ -142,7 +142,7 @@ LY_ERR lyd_print_mem(char **strp, const struct lyd_node *root, LYD_FORMAT format
  * @param[in] options [Data printer flags](@ref dataprinterflags).
  * @return LY_ERR value.
  */
-LY_ERR lyd_print_fd(int fd, const struct lyd_node *root, LYD_FORMAT format, uint32_t options);
+LIBYANG_API_DECL LY_ERR lyd_print_fd(int fd, const struct lyd_node *root, LYD_FORMAT format, uint32_t options);
 
 /**
  * @brief Print data tree in the specified format.
@@ -153,7 +153,7 @@ LY_ERR lyd_print_fd(int fd, const struct lyd_node *root, LYD_FORMAT format, uint
  * @param[in] options [Data printer flags](@ref dataprinterflags).
  * @return LY_ERR value.
  */
-LY_ERR lyd_print_file(FILE *f, const struct lyd_node *root, LYD_FORMAT format, uint32_t options);
+LIBYANG_API_DECL LY_ERR lyd_print_file(FILE *f, const struct lyd_node *root, LYD_FORMAT format, uint32_t options);
 
 /**
  * @brief Print data tree in the specified format.
@@ -164,7 +164,7 @@ LY_ERR lyd_print_file(FILE *f, const struct lyd_node *root, LYD_FORMAT format, u
  * @param[in] options [Data printer flags](@ref dataprinterflags).
  * @return LY_ERR value.
  */
-LY_ERR lyd_print_path(const char *path, const struct lyd_node *root, LYD_FORMAT format, uint32_t options);
+LIBYANG_API_DECL LY_ERR lyd_print_path(const char *path, const struct lyd_node *root, LYD_FORMAT format, uint32_t options);
 
 /**
  * @brief Print data tree in the specified format.
@@ -176,7 +176,27 @@ LY_ERR lyd_print_path(const char *path, const struct lyd_node *root, LYD_FORMAT 
  * @param[in] options [Data printer flags](@ref dataprinterflags).
  * @return LY_ERR value.
  */
-LY_ERR lyd_print_clb(ly_write_clb writeclb, void *user_data, const struct lyd_node *root, LYD_FORMAT format, uint32_t options);
+LIBYANG_API_DECL LY_ERR lyd_print_clb(ly_write_clb writeclb, void *user_data, const struct lyd_node *root,
+        LYD_FORMAT format, uint32_t options);
+
+/**
+ * @brief Check whether the node should be printed based on the printing options.
+ *
+ * @param[in] node Node to check.
+ * @param[in] options [Data printer flags](@ref dataprinterflags).
+ * @return 0 if not,
+ * @return non-0 if should be printed.
+ */
+LIBYANG_API_DECL ly_bool lyd_node_should_print(const struct lyd_node *node, uint32_t options);
+
+/**
+ * @brief Check whether the metadata should be printed.
+ *
+ * @param[in] meta Metadata to check.
+ * @return 0 if not,
+ * @return non-0 if should be printed.
+ */
+LIBYANG_API_DECL ly_bool lyd_metadata_should_print(const struct lyd_meta *meta);
 
 #ifdef __cplusplus
 }

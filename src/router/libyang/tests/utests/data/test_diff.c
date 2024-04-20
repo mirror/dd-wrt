@@ -4,7 +4,7 @@
  * @author Michal Vasko <mvasko@cesnet.cz>
  * @brief tests for lyd_diff()
  *
- * Copyright (c) 2020 CESNET, z.s.p.o.
+ * Copyright (c) 2020 - 2023 CESNET, z.s.p.o.
  *
  * This source code is licensed under BSD 3-Clause License (the "License").
  * You may not use this file except in compliance with the License.
@@ -17,128 +17,142 @@
 
 #include "libyang.h"
 
-#define CHECK_PARSE_LYD(INPUT, MODEL) \
-                CHECK_PARSE_LYD_PARAM(INPUT, LYD_XML, LYD_PARSE_ONLY, 0, LY_SUCCESS, MODEL)
+#define CHECK_PARSE_LYD(INPUT, OUTPUT) \
+        CHECK_PARSE_LYD_PARAM(INPUT, LYD_XML, LYD_PARSE_ONLY, 0, LY_SUCCESS, OUTPUT)
 
-#define CHECK_LYD_STRING(IN_MODEL, TEXT) \
-                CHECK_LYD_STRING_PARAM(IN_MODEL, TEXT, LYD_XML, LYD_PRINT_WITHSIBLINGS)
+#define CHECK_LYD_STRING(INPUT, TEXT) \
+        CHECK_LYD_STRING_PARAM(INPUT, TEXT, LYD_XML, LYD_PRINT_WITHSIBLINGS)
 
-#define CHECK_PARSE_LYD_DIFF(INPUT_1, INPUT_2, OUT_MODEL) \
-                assert_int_equal(LY_SUCCESS, lyd_diff_siblings(INPUT_1, INPUT_2, 0, &OUT_MODEL));\
-                assert_non_null(OUT_MODEL)
+#define CHECK_PARSE_LYD_DIFF(INPUT_1, INPUT_2, OUT_DIFF) \
+        assert_int_equal(LY_SUCCESS, lyd_diff_siblings(INPUT_1, INPUT_2, 0, &OUT_DIFF));\
+        assert_non_null(OUT_DIFF)
 
-#define TEST_DIFF_3(XML_1, XML_2, XML_3, DIFF_1, DIFF_2, MERGE) \
-                { \
-    /*decladation*/\
-                    struct lyd_node *model_1;\
-                    struct lyd_node *model_2;\
-                    struct lyd_node *model_3;\
-    /*create*/\
-                    CHECK_PARSE_LYD(XML_1, model_1);\
-                    CHECK_PARSE_LYD(XML_2, model_2);\
-                    CHECK_PARSE_LYD(XML_3, model_3);\
-    /* diff1 */ \
-                    struct lyd_node *diff1;\
-                    CHECK_PARSE_LYD_DIFF(model_1, model_2, diff1); \
-                    CHECK_LYD_STRING(diff1, DIFF_1); \
-                    assert_int_equal(lyd_diff_apply_all(&model_1, diff1), LY_SUCCESS); \
-                    CHECK_LYD(model_1, model_2); \
-    /* diff2 */ \
-                    struct lyd_node *diff2;\
-                    CHECK_PARSE_LYD_DIFF(model_2, model_3, diff2); \
-                    CHECK_LYD_STRING(diff2, DIFF_2); \
-                    assert_int_equal(lyd_diff_apply_all(&model_2, diff2), LY_SUCCESS);\
-                    CHECK_LYD(model_2, model_3);\
-    /* merge */ \
-                    assert_int_equal(lyd_diff_merge_all(&diff1, diff2, 0), LY_SUCCESS);\
-                    CHECK_LYD_STRING(diff1, MERGE); \
-    /* CREAR ENV */ \
-                    lyd_free_all(model_1);\
-                    lyd_free_all(model_2);\
-                    lyd_free_all(model_3);\
-                    lyd_free_all(diff1);\
-                    lyd_free_all(diff2);\
-                }
+#define TEST_DIFF_3(XML1, XML2, XML3, DIFF1, DIFF2, MERGE) \
+        { \
+            struct lyd_node *data1;\
+            struct lyd_node *data2;\
+            struct lyd_node *data3;\
+        /*create*/\
+            CHECK_PARSE_LYD(XML1, data1);\
+            CHECK_PARSE_LYD(XML2, data2);\
+            CHECK_PARSE_LYD(XML3, data3);\
+        /* diff1 */ \
+            struct lyd_node *diff1;\
+            CHECK_PARSE_LYD_DIFF(data1, data2, diff1); \
+            CHECK_LYD_STRING(diff1, DIFF1); \
+            assert_int_equal(lyd_diff_apply_all(&data1, diff1), LY_SUCCESS); \
+            CHECK_LYD(data1, data2); \
+        /* diff2 */ \
+            struct lyd_node *diff2;\
+            CHECK_PARSE_LYD_DIFF(data2, data3, diff2); \
+            CHECK_LYD_STRING(diff2, DIFF2); \
+            assert_int_equal(lyd_diff_apply_all(&data2, diff2), LY_SUCCESS);\
+            CHECK_LYD(data2, data3);\
+        /* merge */ \
+            assert_int_equal(lyd_diff_merge_all(&diff1, diff2, 0), LY_SUCCESS);\
+            CHECK_LYD_STRING(diff1, MERGE); \
+        /* cleanup */ \
+            lyd_free_all(data1);\
+            lyd_free_all(data2);\
+            lyd_free_all(data3);\
+            lyd_free_all(diff1);\
+            lyd_free_all(diff2);\
+        }
 
-const char *schema =
+const char *schema1 =
         "module defaults {\n"
         "    yang-version 1.1;\n"
         "    namespace \"urn:libyang:tests:defaults\";\n"
         "    prefix df;\n"
-        "\n"
+        ""
         "    feature unhide;\n"
-        "\n"
+        ""
         "    typedef defint32 {\n"
         "        type int32;\n"
         "        default \"42\";\n"
         "    }\n"
-        "\n"
+        ""
         "    leaf hiddenleaf {\n"
         "        if-feature \"unhide\";\n"
         "        type int32;\n"
         "        default \"42\";\n"
         "    }\n"
-        "\n"
+        ""
         "    container df {\n"
         "        leaf foo {\n"
         "            type defint32;\n"
         "        }\n"
-        "\n"
+        ""
         "        leaf hiddenleaf {\n"
         "            if-feature \"unhide\";\n"
         "            type int32;\n"
         "            default \"42\";\n"
         "        }\n"
-        "\n"
+        ""
         "        container bar {\n"
         "            presence \"\";\n"
         "            leaf hi {\n"
         "                type int32;\n"
         "                default \"42\";\n"
         "            }\n"
-        "\n"
+        ""
         "            leaf ho {\n"
         "                type int32;\n"
         "                mandatory true;\n"
         "            }\n"
         "        }\n"
-        "\n"
+        ""
         "        leaf-list llist {\n"
         "            type defint32;\n"
         "            ordered-by user;\n"
         "        }\n"
-        "\n"
+        ""
         "        list ul {\n"
         "            key \"l1\";\n"
         "            ordered-by user;\n"
         "            leaf l1 {\n"
         "                type string;\n"
         "            }\n"
-        "\n"
+        ""
         "            leaf l2 {\n"
         "                type int32;\n"
         "            }\n"
+        ""
+        "            container cont {\n"
+        "                leaf l3 {\n"
+        "                    type string;\n"
+        "                }\n"
+        "            }\n"
         "        }\n"
-        "\n"
+        ""
         "        leaf-list dllist {\n"
         "            type uint8;\n"
         "            default \"1\";\n"
         "            default \"2\";\n"
         "            default \"3\";\n"
         "        }\n"
-        "\n"
+        ""
         "        list list {\n"
         "            key \"name\";\n"
         "            leaf name {\n"
         "                type string;\n"
         "            }\n"
-        "\n"
+        ""
         "            leaf value {\n"
         "                type int32;\n"
         "                default \"42\";\n"
         "            }\n"
-        "        }\n"
-        "\n"
+        "            list list2 {\n"
+        "                key \"name2\";\n"
+        "                leaf name2 {\n"
+        "                    type string;\n"
+        "                }\n"
+        "                leaf value2 {\n"
+        "                    type int32;\n"
+        "                }\n"
+        "            }\n"
+        "        }\n";
+const char *schema2 =
         "        choice select {\n"
         "            default \"a\";\n"
         "            case a {\n"
@@ -147,18 +161,18 @@ const char *schema =
         "                        type int32;\n"
         "                        default \"42\";\n"
         "                    }\n"
-        "\n"
+        ""
         "                    leaf a2 {\n"
         "                        type int32;\n"
         "                        default \"24\";\n"
         "                    }\n"
         "                }\n"
         "            }\n"
-        "\n"
+        ""
         "            leaf b {\n"
         "                type string;\n"
         "            }\n"
-        "\n"
+        ""
         "            container c {\n"
         "                presence \"\";\n"
         "                leaf x {\n"
@@ -167,14 +181,14 @@ const char *schema =
         "                }\n"
         "            }\n"
         "        }\n"
-        "\n"
+        ""
         "        choice select2 {\n"
         "            default \"s2b\";\n"
         "            leaf s2a {\n"
         "                type int32;\n"
         "                default \"42\";\n"
         "            }\n"
-        "\n"
+        ""
         "            case s2b {\n"
         "                choice s2b {\n"
         "                    default \"b1\";\n"
@@ -183,18 +197,18 @@ const char *schema =
         "                            type int32;\n"
         "                            default \"42\";\n"
         "                        }\n"
-        "\n"
+        ""
         "                        leaf b1_2 {\n"
         "                            type string;\n"
         "                        }\n"
-        "\n"
+        ""
         "                        leaf b1_status {\n"
         "                            type int32;\n"
         "                            default \"42\";\n"
         "                            config false;\n"
         "                        }\n"
         "                    }\n"
-        "\n"
+        ""
         "                    leaf b2 {\n"
         "                        type int32;\n"
         "                        default \"42\";\n"
@@ -207,66 +221,66 @@ const char *schema =
         "            leaf l1 {\n"
         "                type string;\n"
         "            }\n"
-        "\n"
+        ""
         "            leaf l2 {\n"
         "                type int32;\n"
         "            }\n"
         "        }\n"
-        "\n"
+        ""
         "        leaf-list kll {\n"
         "            config \"false\";\n"
         "            type string;\n"
         "        }\n"
         "    }\n"
-        "\n"
+        ""
         "    container hidden {\n"
         "        leaf foo {\n"
         "            type int32;\n"
         "            default \"42\";\n"
         "        }\n"
-        "\n"
+        ""
         "        leaf baz {\n"
         "            type int32;\n"
         "            default \"42\";\n"
         "        }\n"
-        "\n"
+        ""
         "        leaf papa {\n"
         "            type int32;\n"
         "            default \"42\";\n"
         "            config false;\n"
         "        }\n"
         "    }\n"
-        "\n"
+        ""
         "    rpc rpc1 {\n"
         "        input {\n"
         "            leaf inleaf1 {\n"
         "                type string;\n"
         "            }\n"
-        "\n"
+        ""
         "            leaf inleaf2 {\n"
         "                type string;\n"
         "                default \"def1\";\n"
         "            }\n"
         "        }\n"
-        "\n"
+        ""
         "        output {\n"
         "            leaf outleaf1 {\n"
         "                type string;\n"
         "                default \"def2\";\n"
         "            }\n"
-        "\n"
+        ""
         "            leaf outleaf2 {\n"
         "                type string;\n"
         "            }\n"
         "        }\n"
         "    }\n"
-        "\n"
+        ""
         "    notification notif {\n"
         "        leaf ntfleaf1 {\n"
         "            type string;\n"
         "            default \"def3\";\n"
         "        }\n"
-        "\n"
+        ""
         "        leaf ntfleaf2 {\n"
         "            type string;\n"
         "        }\n"
@@ -276,8 +290,17 @@ const char *schema =
 static int
 setup(void **state)
 {
+    char *schema;
+
     UTEST_SETUP;
+
+    /* create one schema, longer than 4095 chars */
+    schema = malloc(strlen(schema1) + strlen(schema2) + 1);
+    strcpy(schema, schema1);
+    strcat(schema, schema2);
+
     UTEST_ADD_MODULE(schema, LYS_IN_YANG, NULL, NULL);
+    free(schema);
 
     return 0;
 }
@@ -295,6 +318,8 @@ test_invalid(void **state)
     struct lyd_node *diff = NULL;
 
     assert_int_equal(lyd_diff_siblings(model_1, lyd_child(model_1), 0, &diff), LY_EINVAL);
+    CHECK_LOG_CTX("Invalid arguments - cannot create diff for unrelated data (lyd_diff()).", NULL, 0);
+
     assert_int_equal(lyd_diff_siblings(NULL, NULL, 0, NULL), LY_EINVAL);
 
     lyd_free_all(model_1);
@@ -450,6 +475,46 @@ test_empty_nested(void **state)
 }
 
 static void
+test_delete_merge(void **state)
+{
+    (void) state;
+    struct lyd_node *diff1, *diff2;
+    const char *xml1 =
+            "<df xmlns=\"urn:libyang:tests:defaults\" xmlns:yang=\"urn:ietf:params:xml:ns:yang:1\" yang:operation=\"none\">\n"
+            "  <list>\n"
+            "    <name>a</name>\n"
+            "    <list2 yang:operation=\"delete\">\n"
+            "      <name2>a</name2>\n"
+            "    </list2>\n"
+            "  </list>\n"
+            "</df>\n";
+    const char *xml2 =
+            "<df xmlns=\"urn:libyang:tests:defaults\" xmlns:yang=\"urn:ietf:params:xml:ns:yang:1\" yang:operation=\"none\">\n"
+            "  <list yang:operation=\"delete\">\n"
+            "    <name>a</name>\n"
+            "  </list>\n"
+            "</df>\n";
+    const char *xml_merge =
+            "<df xmlns=\"urn:libyang:tests:defaults\" xmlns:yang=\"urn:ietf:params:xml:ns:yang:1\" yang:operation=\"none\">\n"
+            "  <list yang:operation=\"delete\">\n"
+            "    <name>a</name>\n"
+            "    <list2 yang:operation=\"delete\">\n"
+            "      <name2>a</name2>\n"
+            "    </list2>\n"
+            "  </list>\n"
+            "</df>\n";
+
+    CHECK_PARSE_LYD(xml1, diff1);
+    CHECK_PARSE_LYD(xml2, diff2);
+
+    assert_int_equal(lyd_diff_merge_all(&diff1, diff2, 0), LY_SUCCESS);
+    CHECK_LYD_STRING(diff1, xml_merge);
+
+    lyd_free_all(diff1);
+    lyd_free_all(diff2);
+}
+
+static void
 test_leaf(void **state)
 {
     (void) state;
@@ -577,6 +642,126 @@ test_list(void **state)
             "</df>\n";
 
     TEST_DIFF_3(xml1, xml2, xml3, out_diff_1, out_diff_2, out_merge);
+}
+
+static void
+test_nested_list(void **state)
+{
+    struct lyd_node *data1, *data2, *diff;
+    const char *xml1, *xml2;
+
+    (void) state;
+
+    xml1 =
+            "<df xmlns=\"urn:libyang:tests:defaults\">"
+            "  <list>"
+            "    <name>n0</name>"
+            "    <value>26</value>"
+            "    <list2>"
+            "      <name2>n22</name2>"
+            "      <value2>26</value2>"
+            "    </list2>"
+            "    <list2>"
+            "      <name2>n23</name2>"
+            "      <value2>26</value2>"
+            "    </list2>"
+            "  </list>"
+            "  <list>"
+            "    <name>n1</name>"
+            "    <value>25</value>"
+            "    <list2>"
+            "      <name2>n22</name2>"
+            "      <value2>26</value2>"
+            "    </list2>"
+            "  </list>"
+            "  <list>"
+            "    <name>n2</name>"
+            "    <value>25</value>"
+            "    <list2>"
+            "      <name2>n22</name2>"
+            "      <value2>26</value2>"
+            "    </list2>"
+            "  </list>"
+            "  <list>"
+            "    <name>n3</name>"
+            "    <value>25</value>"
+            "    <list2>"
+            "      <name2>n22</name2>"
+            "      <value2>26</value2>"
+            "    </list2>"
+            "  </list>"
+            "  <list>"
+            "    <name>n4</name>"
+            "    <value>25</value>"
+            "    <list2>"
+            "      <name2>n22</name2>"
+            "      <value2>26</value2>"
+            "    </list2>"
+            "  </list>"
+            "</df>";
+    xml2 =
+            "<df xmlns=\"urn:libyang:tests:defaults\">"
+            "  <list>"
+            "    <name>n0</name>"
+            "    <value>30</value>"
+            "    <list2>"
+            "      <name2>n23</name2>"
+            "      <value2>26</value2>"
+            "    </list2>"
+            "  </list>"
+            "</df>";
+
+    CHECK_PARSE_LYD(xml1, data1);
+    CHECK_PARSE_LYD(xml2, data2);
+    CHECK_PARSE_LYD_DIFF(data1, data2, diff);
+
+    CHECK_LYD_STRING(diff,
+            "<df xmlns=\"urn:libyang:tests:defaults\" xmlns:yang=\"urn:ietf:params:xml:ns:yang:1\" yang:operation=\"none\">\n"
+            "  <list>\n"
+            "    <name>n0</name>\n"
+            "    <value yang:operation=\"replace\" yang:orig-default=\"false\" yang:orig-value=\"26\">30</value>\n"
+            "    <list2 yang:operation=\"delete\">\n"
+            "      <name2>n22</name2>\n"
+            "      <value2>26</value2>\n"
+            "    </list2>\n"
+            "  </list>\n"
+            "  <list yang:operation=\"delete\">\n"
+            "    <name>n1</name>\n"
+            "    <value>25</value>\n"
+            "    <list2>\n"
+            "      <name2>n22</name2>\n"
+            "      <value2>26</value2>\n"
+            "    </list2>\n"
+            "  </list>\n"
+            "  <list yang:operation=\"delete\">\n"
+            "    <name>n2</name>\n"
+            "    <value>25</value>\n"
+            "    <list2>\n"
+            "      <name2>n22</name2>\n"
+            "      <value2>26</value2>\n"
+            "    </list2>\n"
+            "  </list>\n"
+            "  <list yang:operation=\"delete\">\n"
+            "    <name>n3</name>\n"
+            "    <value>25</value>\n"
+            "    <list2>\n"
+            "      <name2>n22</name2>\n"
+            "      <value2>26</value2>\n"
+            "    </list2>\n"
+            "  </list>\n"
+            "  <list yang:operation=\"delete\">\n"
+            "    <name>n4</name>\n"
+            "    <value>25</value>\n"
+            "    <list2>\n"
+            "      <name2>n22</name2>\n"
+            "      <value2>26</value2>\n"
+            "    </list2>\n"
+            "  </list>\n"
+            "</df>\n");
+
+    lyd_free_all(data1);
+    lyd_free_all(data2);
+    lyd_free_all(diff);
 }
 
 static void
@@ -797,6 +982,197 @@ test_userord_list(void **state)
             "  <ul yang:operation=\"none\">\n"
             "    <l1>c</l1>\n"
             "    <l2 yang:operation=\"replace\" yang:orig-default=\"false\" yang:orig-value=\"3\">33</l2>\n"
+            "  </ul>\n"
+            "</df>\n";
+
+    TEST_DIFF_3(xml1, xml2, xml3, out_diff_1, out_diff_2, out_merge);
+}
+
+static void
+test_userord_list2(void **state)
+{
+    (void) state;
+    const char *xml1 =
+            "<df xmlns=\"urn:libyang:tests:defaults\">\n"
+            "  <ul>\n"
+            "    <l1>d</l1>\n"
+            "    <l2>4</l2>\n"
+            "  </ul>\n"
+            "</df>\n";
+    const char *xml2 =
+            "<df xmlns=\"urn:libyang:tests:defaults\">\n"
+            "  <ul>\n"
+            "    <l1>c</l1>\n"
+            "    <l2>3</l2>\n"
+            "  </ul>\n"
+            "  <ul>\n"
+            "    <l1>d</l1>\n"
+            "    <l2>4</l2>\n"
+            "  </ul>\n"
+            "</df>\n";
+    const char *xml3 =
+            "<df xmlns=\"urn:libyang:tests:defaults\">\n"
+            "  <ul>\n"
+            "    <l1>a</l1>\n"
+            "    <l2>1</l2>\n"
+            "  </ul>\n"
+            "  <ul>\n"
+            "    <l1>b</l1>\n"
+            "    <l2>2</l2>\n"
+            "  </ul>\n"
+            "  <ul>\n"
+            "    <l1>c</l1>\n"
+            "    <l2>3</l2>\n"
+            "  </ul>\n"
+            "  <ul>\n"
+            "    <l1>d</l1>\n"
+            "    <l2>4</l2>\n"
+            "  </ul>\n"
+            "</df>\n";
+
+    const char *out_diff_1 =
+            "<df xmlns=\"urn:libyang:tests:defaults\" xmlns:yang=\"urn:ietf:params:xml:ns:yang:1\" yang:operation=\"none\">\n"
+            "  <ul yang:operation=\"create\" yang:key=\"\">\n"
+            "    <l1>c</l1>\n"
+            "    <l2>3</l2>\n"
+            "  </ul>\n"
+            "</df>\n";
+    const char *out_diff_2 =
+            "<df xmlns=\"urn:libyang:tests:defaults\" xmlns:yang=\"urn:ietf:params:xml:ns:yang:1\" yang:operation=\"none\">\n"
+            "  <ul yang:operation=\"create\" yang:key=\"\">\n"
+            "    <l1>a</l1>\n"
+            "    <l2>1</l2>\n"
+            "  </ul>\n"
+            "  <ul yang:operation=\"create\" yang:key=\"[l1='a']\">\n"
+            "    <l1>b</l1>\n"
+            "    <l2>2</l2>\n"
+            "  </ul>\n"
+            "</df>\n";
+    const char *out_merge =
+            "<df xmlns=\"urn:libyang:tests:defaults\" xmlns:yang=\"urn:ietf:params:xml:ns:yang:1\" yang:operation=\"none\">\n"
+            "  <ul yang:operation=\"create\" yang:key=\"\">\n"
+            "    <l1>c</l1>\n"
+            "    <l2>3</l2>\n"
+            "  </ul>\n"
+            "  <ul yang:key=\"\" yang:operation=\"create\">\n"
+            "    <l1>a</l1>\n"
+            "    <l2>1</l2>\n"
+            "  </ul>\n"
+            "  <ul yang:key=\"[l1='a']\" yang:operation=\"create\">\n"
+            "    <l1>b</l1>\n"
+            "    <l2>2</l2>\n"
+            "  </ul>\n"
+            "</df>\n";
+
+    TEST_DIFF_3(xml1, xml2, xml3, out_diff_1, out_diff_2, out_merge);
+}
+
+static void
+test_userord_list3(void **state)
+{
+    (void) state;
+    const char *xml1 =
+            "<df xmlns=\"urn:libyang:tests:defaults\">\n"
+            "  <ul>\n"
+            "    <l1>a</l1>\n"
+            "    <l2>1</l2>\n"
+            "  </ul>\n"
+            "  <ul>\n"
+            "    <l1>b</l1>\n"
+            "    <l2>2</l2>\n"
+            "  </ul>\n"
+            "  <ul>\n"
+            "    <l1>c</l1>\n"
+            "    <cont>\n"
+            "      <l3>val1</l3>\n"
+            "    </cont>\n"
+            "  </ul>\n"
+            "  <ul>\n"
+            "    <l1>d</l1>\n"
+            "    <l2>4</l2>\n"
+            "  </ul>\n"
+            "</df>\n";
+    const char *xml2 =
+            "<df xmlns=\"urn:libyang:tests:defaults\">\n"
+            "  <ul>\n"
+            "    <l1>c</l1>\n"
+            "    <l2>3</l2>\n"
+            "    <cont>\n"
+            "      <l3>val2</l3>\n"
+            "    </cont>\n"
+            "  </ul>\n"
+            "  <ul>\n"
+            "    <l1>a</l1>\n"
+            "    <l2>1</l2>\n"
+            "  </ul>\n"
+            "  <ul>\n"
+            "    <l1>d</l1>\n"
+            "    <l2>44</l2>\n"
+            "  </ul>\n"
+            "  <ul>\n"
+            "    <l1>b</l1>\n"
+            "    <l2>2</l2>\n"
+            "  </ul>\n"
+            "</df>\n";
+    const char *xml3 =
+            "<df xmlns=\"urn:libyang:tests:defaults\">\n"
+            "  <ul>\n"
+            "    <l1>a</l1>\n"
+            "  </ul>\n"
+            "  <ul>\n"
+            "    <l1>c</l1>\n"
+            "    <l2>3</l2>\n"
+            "    <cont>\n"
+            "      <l3>val2</l3>\n"
+            "    </cont>\n"
+            "  </ul>\n"
+            "  <ul>\n"
+            "    <l1>d</l1>\n"
+            "    <l2>44</l2>\n"
+            "  </ul>\n"
+            "  <ul>\n"
+            "    <l1>b</l1>\n"
+            "    <l2>2</l2>\n"
+            "  </ul>\n"
+            "</df>\n";
+
+    const char *out_diff_1 =
+            "<df xmlns=\"urn:libyang:tests:defaults\" xmlns:yang=\"urn:ietf:params:xml:ns:yang:1\" yang:operation=\"none\">\n"
+            "  <ul yang:operation=\"replace\" yang:key=\"\" yang:orig-key=\"[l1='b']\">\n"
+            "    <l1>c</l1>\n"
+            "    <l2 yang:operation=\"create\">3</l2>\n"
+            "    <cont yang:operation=\"none\">\n"
+            "      <l3 yang:operation=\"replace\" yang:orig-default=\"false\" yang:orig-value=\"val1\">val2</l3>\n"
+            "    </cont>\n"
+            "  </ul>\n"
+            "  <ul yang:operation=\"replace\" yang:key=\"[l1='a']\" yang:orig-key=\"[l1='b']\">\n"
+            "    <l1>d</l1>\n"
+            "    <l2 yang:operation=\"replace\" yang:orig-default=\"false\" yang:orig-value=\"4\">44</l2>\n"
+            "  </ul>\n"
+            "</df>\n";
+    const char *out_diff_2 =
+            "<df xmlns=\"urn:libyang:tests:defaults\" xmlns:yang=\"urn:ietf:params:xml:ns:yang:1\" yang:operation=\"none\">\n"
+            "  <ul yang:operation=\"replace\" yang:key=\"\" yang:orig-key=\"[l1='c']\">\n"
+            "    <l1>a</l1>\n"
+            "    <l2 yang:operation=\"delete\">1</l2>\n"
+            "  </ul>\n"
+            "</df>\n";
+    const char *out_merge =
+            "<df xmlns=\"urn:libyang:tests:defaults\" xmlns:yang=\"urn:ietf:params:xml:ns:yang:1\" yang:operation=\"none\">\n"
+            "  <ul yang:operation=\"replace\" yang:key=\"\" yang:orig-key=\"[l1='b']\">\n"
+            "    <l1>c</l1>\n"
+            "    <l2 yang:operation=\"create\">3</l2>\n"
+            "    <cont yang:operation=\"none\">\n"
+            "      <l3 yang:operation=\"replace\" yang:orig-default=\"false\" yang:orig-value=\"val1\">val2</l3>\n"
+            "    </cont>\n"
+            "  </ul>\n"
+            "  <ul yang:operation=\"replace\" yang:key=\"[l1='a']\" yang:orig-key=\"[l1='b']\">\n"
+            "    <l1>d</l1>\n"
+            "    <l2 yang:operation=\"replace\" yang:orig-default=\"false\" yang:orig-value=\"4\">44</l2>\n"
+            "  </ul>\n"
+            "  <ul yang:key=\"\" yang:orig-key=\"[l1='c']\" yang:operation=\"replace\">\n"
+            "    <l1>a</l1>\n"
+            "    <l2 yang:operation=\"delete\">1</l2>\n"
             "  </ul>\n"
             "</df>\n";
 
@@ -1068,12 +1444,16 @@ main(void)
         UTEST(test_empty1, setup),
         UTEST(test_empty2, setup),
         UTEST(test_empty_nested, setup),
+        UTEST(test_delete_merge, setup),
         UTEST(test_leaf, setup),
         UTEST(test_list, setup),
+        UTEST(test_nested_list, setup),
         UTEST(test_userord_llist, setup),
         UTEST(test_userord_llist2, setup),
         UTEST(test_userord_mix, setup),
         UTEST(test_userord_list, setup),
+        UTEST(test_userord_list2, setup),
+        UTEST(test_userord_list3, setup),
         UTEST(test_keyless_list, setup),
         UTEST(test_state_llist, setup),
         UTEST(test_wd, setup),

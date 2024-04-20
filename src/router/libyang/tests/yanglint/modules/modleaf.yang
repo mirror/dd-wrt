@@ -1,0 +1,8 @@
+module modleaf {
+  namespace "urn:yanglint:modleaf";
+  prefix l;
+
+  leaf lfl {
+    type uint16;
+  }
+}

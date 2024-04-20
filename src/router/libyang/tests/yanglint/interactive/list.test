@@ -1,0 +1,34 @@
+source [expr {[info exists ::env(TESTS_DIR)] ? "$env(TESTS_DIR)/interactive/ly.tcl" : "ly.tcl"}]
+namespace import uti::regex_xml_elements uti::regex_json_pairs
+
+set modules {ietf-yang-library ietf-inet-types}
+
+test list_basic {basic test} {
+-setup $ly_setup -cleanup $ly_cleanup -body {
+    ly_cmd "list" "ietf-yang-types"
+}}
+
+test list_format_xml {list --format xml} {
+-setup $ly_setup -cleanup $ly_cleanup -body {
+    ly_cmd "clear -y"
+    ly_cmd "list -f xml" [regex_xml_elements $modules "name"]
+}}
+
+test list_format_json {list --format json} {
+-setup $ly_setup -cleanup $ly_cleanup -body {
+    ly_cmd "clear -y"
+    ly_cmd "list -f json" [regex_json_pairs $modules "name"]
+}}
+
+test list_ietf_yang_library {Error due to missing ietf-yang-library} {
+-setup $ly_setup -cleanup $ly_cleanup -body {
+    ly_cmd_err "list -f xml" "Module \"ietf-yang-library\" is not implemented."
+}}
+
+test list_bad_format {Error due to bad format} {
+-setup $ly_setup -cleanup $ly_cleanup -body {
+    ly_cmd "clear -y"
+    ly_cmd_err "list -f csv" "Unknown output format csv"
+}}
+
+cleanupTests

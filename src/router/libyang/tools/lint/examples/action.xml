@@ -1,10 +1,8 @@
-<action xmlns="urn:ietf:params:xml:ns:yang:1">
-  <cont1 xmlns="urn:module4">
-    <list>
-      <leaf1>key_val</leaf1>
-      <act>
-        <leaf2>some_input</leaf2>
-      </act>
-    </list>
-  </cont1>
-</action>
+<cont1 xmlns="urn:module4">
+  <list>
+    <leaf1>key_val</leaf1>
+    <act>
+      <leaf2>some_input</leaf2>
+    </act>
+  </list>
+</cont1>

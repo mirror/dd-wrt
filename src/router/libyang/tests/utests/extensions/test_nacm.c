@@ -30,7 +30,7 @@ setup(void **state)
 static void
 test_deny_all(void **state)
 {
-    const struct lys_module *mod;
+    struct lys_module *mod;
     struct lysc_node_container *cont;
     struct lysc_node_leaf *leaf;
     struct lysc_ext_instance *e;
@@ -48,7 +48,7 @@ test_deny_all(void **state)
     assert_int_equal(LY_ARRAY_COUNT(cont->exts), 1);
     assert_int_equal(LY_ARRAY_COUNT(leaf->exts), 1); /* NACM extensions inherit */
     assert_ptr_equal(e->def, leaf->exts[0].def);
-    assert_int_equal(1, *((uint8_t *)e->data)); /* plugin's value for default-deny-all */
+    assert_int_equal(1, *((uint8_t *)e->compiled)); /* plugin's value for default-deny-all */
     assert_null(cont->next->exts);
 
     /* ignored - valid with warning */
@@ -56,24 +56,24 @@ test_deny_all(void **state)
             "import ietf-netconf-acm {revision-date 2018-02-14; prefix nacm;}"
             "nacm:default-deny-all;}";
     assert_int_equal(LY_SUCCESS, lys_parse_mem(UTEST_LYCTX, data, LYS_IN_YANG, NULL));
-    CHECK_LOG_CTX("Extension plugin \"libyang 2 - NACM, version 1\": "
+    CHECK_LOG_CTX("Ext plugin \"ly2 NACM v1\": "
             "Extension nacm:default-deny-all is allowed only in a data nodes, but it is placed in \"module\" statement.",
-            "/b:{extension='nacm:default-deny-all'}");
+            "/b:{extension='nacm:default-deny-all'}", 0);
 
     /* invalid */
     data = "module aa {yang-version 1.1; namespace urn:tests:extensions:nacm:aa; prefix en;"
             "import ietf-netconf-acm {revision-date 2018-02-14; prefix nacm;}"
             "leaf l { type string; nacm:default-deny-all; nacm:default-deny-write;}}";
     assert_int_equal(LY_EVALID, lys_parse_mem(UTEST_LYCTX, data, LYS_IN_YANG, NULL));
-    CHECK_LOG_CTX("Extension plugin \"libyang 2 - NACM, version 1\": "
+    CHECK_LOG_CTX("Ext plugin \"ly2 NACM v1\": "
             "Extension nacm:default-deny-write is mixed with nacm:default-deny-all.",
-            "/aa:l/{extension='nacm:default-deny-write'}");
+            "/aa:l/{extension='nacm:default-deny-all'}", 0);
 }
 
 static void
 test_deny_write(void **state)
 {
-    const struct lys_module *mod;
+    struct lys_module *mod;
     struct lysc_node_container *cont;
     struct lysc_node_leaf *leaf;
     struct lysc_ext_instance *e;
@@ -91,25 +91,25 @@ test_deny_write(void **state)
     assert_int_equal(LY_ARRAY_COUNT(cont->exts), 1);
     assert_int_equal(LY_ARRAY_COUNT(leaf->exts), 1); /* NACM extensions inherit */
     assert_ptr_equal(e->def, leaf->exts[0].def);
-    assert_int_equal(2, *((uint8_t *)e->data)); /* plugin's value for default-deny-write */
+    assert_int_equal(2, *((uint8_t *)e->compiled)); /* plugin's value for default-deny-write */
 
     /* ignored - valid with warning */
     data = "module b {yang-version 1.1; namespace urn:tests:extensions:nacm:b; prefix en;"
             "import ietf-netconf-acm {revision-date 2018-02-14; prefix nacm;}"
             "notification notif {nacm:default-deny-write;}}";
     assert_int_equal(LY_SUCCESS, lys_parse_mem(UTEST_LYCTX, data, LYS_IN_YANG, NULL));
-    CHECK_LOG_CTX("Extension plugin \"libyang 2 - NACM, version 1\": "
+    CHECK_LOG_CTX("Ext plugin \"ly2 NACM v1\": "
             "Extension nacm:default-deny-write is not allowed in notification statement.",
-            "/b:notif/{extension='nacm:default-deny-write'}");
+            "/b:notif/{extension='nacm:default-deny-write'}", 0);
 
     /* invalid */
     data = "module aa {yang-version 1.1; namespace urn:tests:extensions:nacm:aa; prefix en;"
             "import ietf-netconf-acm {revision-date 2018-02-14; prefix nacm;}"
             "leaf l { type string; nacm:default-deny-write; nacm:default-deny-write;}}";
     assert_int_equal(LY_EVALID, lys_parse_mem(UTEST_LYCTX, data, LYS_IN_YANG, NULL));
-    CHECK_LOG_CTX("Extension plugin \"libyang 2 - NACM, version 1\": "
+    CHECK_LOG_CTX("Ext plugin \"ly2 NACM v1\": "
             "Extension nacm:default-deny-write is instantiated multiple times.",
-            "/aa:l/{extension='nacm:default-deny-write'}");
+            "/aa:l/{extension='nacm:default-deny-write'}", 0);
 }
 
 int

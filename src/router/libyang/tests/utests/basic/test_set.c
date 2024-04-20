@@ -1,4 +1,4 @@
-/*
+/**
  * @file test_set.c
  * @author: Radek Krejci <rkrejci@cesnet.cz>
  * @brief unit tests for functions from set.c
@@ -47,7 +47,7 @@ test_basics(void **UNUSED(state))
     assert_non_null(set->objs[0]);
 
     /* check the presence of the testing data */
-    assert_int_not_equal(0, ly_set_contains(set, str, &index));
+    assert_int_equal(1, ly_set_contains(set, str, &index));
     assert_int_equal(0, index);
     assert_int_equal(0, ly_set_contains(set, str - 1, NULL));
 
@@ -70,42 +70,31 @@ test_basics(void **UNUSED(state))
 }
 
 static void
-test_inval(void **state)
+test_inval(void **UNUSED(state))
 {
-    struct ly_set set;
-
-    memset(&set, 0, sizeof set);
-
-    ly_set_clean(NULL, NULL);
-    CHECK_LOG(NULL, NULL);
-
-    ly_set_erase(NULL, NULL);
-    CHECK_LOG(NULL, NULL);
-
-    ly_set_free(NULL, NULL);
-    CHECK_LOG(NULL, NULL);
+    struct ly_set set = {0};
 
     assert_int_equal(LY_EINVAL, ly_set_dup(NULL, NULL, NULL));
-    CHECK_LOG("Invalid argument set (ly_set_dup()).", NULL);
+    CHECK_LOG_LASTMSG("Invalid argument set (ly_set_dup()).");
 
     assert_int_equal(LY_EINVAL, ly_set_add(NULL, NULL, 0, NULL));
-    CHECK_LOG("Invalid argument set (ly_set_add()).", NULL);
+    CHECK_LOG_LASTMSG("Invalid argument set (ly_set_add()).");
 
     assert_int_equal(LY_EINVAL, ly_set_merge(NULL, NULL, 0, NULL));
-    CHECK_LOG("Invalid argument trg (ly_set_merge()).", NULL);
+    CHECK_LOG_LASTMSG("Invalid argument trg (ly_set_merge()).");
     assert_int_equal(LY_SUCCESS, ly_set_merge(&set, NULL, 0, NULL));
 
     assert_int_equal(LY_EINVAL, ly_set_rm_index(NULL, 0, NULL));
-    CHECK_LOG("Invalid argument set (ly_set_rm_index()).", NULL);
+    CHECK_LOG_LASTMSG("Invalid argument set (ly_set_rm_index()).");
     assert_int_equal(LY_EINVAL, ly_set_rm_index(&set, 1, NULL));
-    CHECK_LOG("Invalid argument index (ly_set_rm_index()).", NULL);
+    CHECK_LOG_LASTMSG("Invalid argument index (ly_set_rm_index()).");
 
     assert_int_equal(LY_EINVAL, ly_set_rm(NULL, NULL, NULL));
-    CHECK_LOG("Invalid argument set (ly_set_rm()).", NULL);
+    CHECK_LOG_LASTMSG("Invalid argument set (ly_set_rm()).");
     assert_int_equal(LY_EINVAL, ly_set_rm(&set, NULL, NULL));
-    CHECK_LOG("Invalid argument object (ly_set_rm()).", NULL);
+    CHECK_LOG_LASTMSG("Invalid argument object (ly_set_rm()).");
     assert_int_equal(LY_EINVAL, ly_set_rm(&set, &set, NULL));
-    CHECK_LOG("Invalid argument object (ly_set_rm()).", NULL);
+    CHECK_LOG_LASTMSG("Invalid argument object (ly_set_rm()).");
 }
 
 static void
@@ -134,7 +123,7 @@ test_duplication(void **UNUSED(state))
     ly_set_free(new, NULL);
 
     /* duplicate the set - with duplicator, so the new set will point to a different buffer with the same content */
-    assert_int_equal(LY_SUCCESS, ly_set_dup(orig, (void *(*)(void *))strdup, &new));
+    assert_int_equal(LY_SUCCESS, ly_set_dup(orig, (void *(*)(const void *))strdup, &new));
     assert_non_null(new);
     assert_ptr_not_equal(orig, new);
     assert_int_equal(orig->count, new->count);
@@ -211,7 +200,7 @@ test_merge(void **UNUSED(state))
 
     /* merge without checking duplicities - two items are added into one;
      * here also with duplicator */
-    assert_int_equal(LY_SUCCESS, ly_set_merge(&one, &two, 1, (void *(*)(void *))strdup));
+    assert_int_equal(LY_SUCCESS, ly_set_merge(&one, &two, 1, (void *(*)(const void *))strdup));
     assert_int_equal(3, one.count);
     assert_ptr_not_equal(one.objs[1], two.objs[0]);
     assert_string_equal(one.objs[1], two.objs[0]);

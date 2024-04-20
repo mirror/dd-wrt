@@ -1,0 +1,68 @@
+module modoper-leafref {
+  yang-version 1.1;
+  namespace "urn:yanglint:modoper-leafref";
+  prefix mol;
+
+  import modconfig {
+    prefix mc;
+  }
+
+  container cond {
+    list list {
+      key "klf";
+      leaf klf {
+        type string;
+      }
+      action act {
+        input {
+          leaf lfi {
+            type leafref {
+              path "/mc:mcc/mc:lft";
+            }
+          }
+        }
+        output {
+          leaf lfo {
+            type leafref {
+              path "/mc:mcc/mc:lft";
+            }
+          }
+        }
+      }
+      notification notif {
+        leaf lfn {
+          type leafref {
+            path "/mc:mcc/mc:lft";
+          }
+        }
+      }
+    }
+  }
+
+  rpc rpcg {
+    input {
+      leaf lfi {
+        type leafref {
+          path "/mc:mcc/mc:lft";
+        }
+      }
+    }
+    output {
+      container cono {
+        leaf lfo {
+          type leafref {
+            path "/mc:mcc/mc:lft";
+          }
+        }
+      }
+    }
+  }
+
+  notification notifg {
+    leaf lfr {
+      type leafref {
+        path "/mc:mcc/mc:lft";
+      }
+    }
+  }
+}

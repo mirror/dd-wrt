@@ -1,4 +1,4 @@
-/*
+/**
  * @file test_xml.c
  * @author: Radek Krejci <rkrejci@cesnet.cz>
  * @brief unit tests for functions from xml.c
@@ -23,7 +23,6 @@
 #include "xml.h"
 
 LY_ERR lyxml_ns_add(struct lyxml_ctx *xmlctx, const char *prefix, size_t prefix_len, char *uri);
-LY_ERR lyxml_ns_rm(struct lyxml_ctx *xmlctx);
 
 static void
 test_element(void **state)
@@ -44,29 +43,42 @@ test_element(void **state)
     str = "</element>";
     assert_int_equal(LY_SUCCESS, ly_in_new_memory(str, &in));
     assert_int_equal(LY_EVALID, lyxml_ctx_new(UTEST_LYCTX, in, &xmlctx));
-    CHECK_LOG_CTX("Stray closing element tag (\"element\").", "Line number 1.");
+    CHECK_LOG_CTX("Stray closing element tag (\"element\").", NULL, 1);
     ly_in_free(in, 0);
 
     /* no element */
-    UTEST_LOG_CLEAN;
     str = "no data present";
     assert_int_equal(LY_SUCCESS, ly_in_new_memory(str, &in));
     assert_int_equal(LY_EVALID, lyxml_ctx_new(UTEST_LYCTX, in, &xmlctx));
-    CHECK_LOG_CTX("Invalid character sequence \"no data present\", expected element tag start ('<').", "Line number 1.");
+    CHECK_LOG_CTX("Invalid character sequence \"no data present\", expected element tag start ('<').", NULL, 1);
     ly_in_free(in, 0);
 
     /* not supported DOCTYPE */
     str = "<!DOCTYPE greeting SYSTEM \"hello.dtd\"><greeting/>";
     assert_int_equal(LY_SUCCESS, ly_in_new_memory(str, &in));
     assert_int_equal(LY_EVALID, lyxml_ctx_new(UTEST_LYCTX, in, &xmlctx));
-    CHECK_LOG_CTX("Document Type Declaration not supported.", "Line number 1.");
+    CHECK_LOG_CTX("Document Type Declaration not supported.", NULL, 1);
     ly_in_free(in, 0);
 
     /* invalid XML */
     str = "<!NONSENSE/>";
     assert_int_equal(LY_SUCCESS, ly_in_new_memory(str, &in));
     assert_int_equal(LY_EVALID, lyxml_ctx_new(UTEST_LYCTX, in, &xmlctx));
-    CHECK_LOG_CTX("Unknown XML section \"<!NONSENSE/>\".", "Line number 1.");
+    CHECK_LOG_CTX("Unknown XML section \"<!NONSENSE/>\".", NULL, 1);
+    ly_in_free(in, 0);
+
+    /* namespace ambiguity */
+    str = "<element xmlns=\"urn1\" xmlns=\"urn2\"/>";
+    assert_int_equal(LY_SUCCESS, ly_in_new_memory(str, &in));
+    assert_int_equal(LY_EVALID, lyxml_ctx_new(UTEST_LYCTX, in, &xmlctx));
+    CHECK_LOG_CTX("Duplicate default XML namespaces \"urn1\" and \"urn2\".", NULL, 1);
+    ly_in_free(in, 0);
+
+    /* prefix duplicate */
+    str = "<element xmlns:a=\"urn1\" xmlns:a=\"urn2\"/>";
+    assert_int_equal(LY_SUCCESS, ly_in_new_memory(str, &in));
+    assert_int_equal(LY_EVALID, lyxml_ctx_new(UTEST_LYCTX, in, &xmlctx));
+    CHECK_LOG_CTX("Duplicate XML NS prefix \"a\" used for namespaces \"urn1\" and \"urn2\".", NULL, 1);
     ly_in_free(in, 0);
 
     /* unqualified element */
@@ -122,7 +134,7 @@ test_element(void **state)
     ly_in_free(in, 0);
 
     /* headers and comments */
-    str = "<?xml version=\"1.0\"?>  <!-- comment --> <![CDATA[<greeting>Hello, world!</greeting>]]> <?TEST xxx?> <element/>";
+    str = "<?xml version=\"1.0\"?>  <!-- comment --> <?TEST xxx?> <element/>";
     assert_int_equal(LY_SUCCESS, ly_in_new_memory(str, &in));
     assert_int_equal(LY_SUCCESS, lyxml_ctx_new(UTEST_LYCTX, in, &xmlctx));
     assert_int_equal(LYXML_ELEMENT, xmlctx->status);
@@ -197,7 +209,7 @@ test_element(void **state)
     assert_int_equal(LYXML_ELEM_CONTENT, xmlctx->status);
 
     assert_int_equal(LY_EVALID, lyxml_ctx_next(xmlctx));
-    CHECK_LOG_CTX("Opening (\"yin:element\") and closing (\"element\") elements tag mismatch.", "Line number 1.");
+    CHECK_LOG_CTX("Opening (\"yin:element\") and closing (\"element\") elements tag mismatch.", NULL, 1);
     lyxml_ctx_free(xmlctx);
     ly_in_free(in, 0);
 
@@ -207,7 +219,7 @@ test_element(void **state)
     assert_int_equal(LY_SUCCESS, lyxml_ctx_new(UTEST_LYCTX, in, &xmlctx));
     assert_int_equal(LY_SUCCESS, lyxml_ctx_next(xmlctx));
     assert_int_equal(LY_EVALID, lyxml_ctx_next(xmlctx));
-    CHECK_LOG_CTX("Invalid character sequence \"/>\", expected element tag termination ('>').", "Line number 1.");
+    CHECK_LOG_CTX("Invalid character sequence \"/>\", expected element tag termination ('>').", NULL, 1);
     lyxml_ctx_free(xmlctx);
     ly_in_free(in, 0);
 
@@ -233,14 +245,14 @@ test_element(void **state)
     str = "<¢:element>";
     assert_int_equal(LY_SUCCESS, ly_in_new_memory(str, &in));
     assert_int_equal(LY_EVALID, lyxml_ctx_new(UTEST_LYCTX, in, &xmlctx));
-    CHECK_LOG_CTX("Identifier \"¢:element>\" starts with an invalid character.", "Line number 1.");
+    CHECK_LOG_CTX("Identifier \"¢:element>\" starts with an invalid character.", NULL, 1);
     ly_in_free(in, 0);
 
     str = "<yin:c⁐element>";
     assert_int_equal(LY_SUCCESS, ly_in_new_memory(str, &in));
     assert_int_equal(LY_SUCCESS, lyxml_ctx_new(UTEST_LYCTX, in, &xmlctx));
     assert_int_equal(LY_EVALID, lyxml_ctx_next(xmlctx));
-    CHECK_LOG_CTX("Invalid character sequence \"⁐element>\", expected element tag end ('>' or '/>') or an attribute.", "Line number 1.");
+    CHECK_LOG_CTX("Invalid character sequence \"⁐element>\", expected element tag end ('>' or '/>') or an attribute.", NULL, 1);
     lyxml_ctx_free(xmlctx);
     ly_in_free(in, 0);
 
@@ -289,7 +301,7 @@ test_element(void **state)
     assert_true(!strncmp("text", xmlctx->value, xmlctx->value_len));
 
     assert_int_equal(LY_EVALID, lyxml_ctx_next(xmlctx));
-    CHECK_LOG_CTX("Opening (\"a\") and closing (\"b\") elements tag mismatch.", "Line number 1.");
+    CHECK_LOG_CTX("Opening (\"a\") and closing (\"b\") elements tag mismatch.", NULL, 1);
     lyxml_ctx_free(xmlctx);
     ly_in_free(in, 0);
 }
@@ -306,19 +318,19 @@ test_attribute(void **state)
     str = "<e unknown/>";
     assert_int_equal(LY_SUCCESS, ly_in_new_memory(str, &in));
     assert_int_equal(LY_EVALID, lyxml_ctx_new(UTEST_LYCTX, in, &xmlctx));
-    CHECK_LOG_CTX("Invalid character sequence \"/>\", expected '='.", "Line number 1.");
+    CHECK_LOG_CTX("Invalid character sequence \"/>\", expected '='.", NULL, 1);
     ly_in_free(in, 0);
 
     str = "<e xxx=/>";
     assert_int_equal(LY_SUCCESS, ly_in_new_memory(str, &in));
     assert_int_equal(LY_EVALID, lyxml_ctx_new(UTEST_LYCTX, in, &xmlctx));
-    CHECK_LOG_CTX("Invalid character sequence \"/>\", expected either single or double quotation mark.", "Line number 1.");
+    CHECK_LOG_CTX("Invalid character sequence \"/>\", expected either single or double quotation mark.", NULL, 1);
     ly_in_free(in, 0);
 
     str = "<e xxx\n = yyy/>";
     assert_int_equal(LY_SUCCESS, ly_in_new_memory(str, &in));
     assert_int_equal(LY_EVALID, lyxml_ctx_new(UTEST_LYCTX, in, &xmlctx));
-    CHECK_LOG_CTX("Invalid character sequence \"yyy/>\", expected either single or double quotation mark.", "Line number 2.");
+    CHECK_LOG_CTX("Invalid character sequence \"yyy/>\", expected either single or double quotation mark.", NULL, 2);
     ly_in_free(in, 0);
 
     /* valid attribute */
@@ -377,7 +389,7 @@ test_text(void **state)
     /* empty value but in single quotes */
     assert_int_equal(LY_SUCCESS, ly_in_new_memory("=\'\'", &in));
     xmlctx->in = in;
-    LOG_LOCINIT(NULL, NULL, NULL, in);
+    ly_log_location(NULL, NULL, NULL, in);
     xmlctx->status = LYXML_ATTRIBUTE;
     assert_int_equal(LY_SUCCESS, lyxml_ctx_next(xmlctx));
     assert_int_equal(LYXML_ATTR_CONTENT, xmlctx->status);
@@ -389,7 +401,7 @@ test_text(void **state)
     /* empty element content - only formating before defining child */
     assert_int_equal(LY_SUCCESS, ly_in_new_memory(">\n  <y>", &in));
     xmlctx->in = in;
-    LOG_LOCINIT(NULL, NULL, NULL, in);
+    ly_log_location(NULL, NULL, NULL, in);
     xmlctx->status = LYXML_ELEMENT;
     assert_int_equal(LY_SUCCESS, lyxml_ctx_next(xmlctx));
     assert_int_equal(LYXML_ELEM_CONTENT, xmlctx->status);
@@ -401,21 +413,22 @@ test_text(void **state)
     /* empty element content is invalid - missing content terminating character < */
     assert_int_equal(LY_SUCCESS, ly_in_new_memory("", &in));
     xmlctx->in = in;
-    LOG_LOCINIT(NULL, NULL, NULL, in);
+    ly_log_location(NULL, NULL, NULL, in);
     xmlctx->status = LYXML_ELEM_CONTENT;
     assert_int_equal(LY_EVALID, lyxml_ctx_next(xmlctx));
-    CHECK_LOG_CTX("Unexpected end-of-input.", "Line number 1.");
+    CHECK_LOG_CTX("Unexpected end-of-input.", NULL, 1);
     ly_in_free(in, 0);
 
     assert_int_equal(LY_SUCCESS, ly_in_new_memory("xxx", &in));
     xmlctx->in = in;
-    LOG_LOCINIT(NULL, NULL, NULL, in);
+    ly_log_location(NULL, NULL, NULL, in);
     xmlctx->status = LYXML_ELEM_CONTENT;
     assert_int_equal(LY_EVALID, lyxml_ctx_next(xmlctx));
-    CHECK_LOG_CTX("Invalid character sequence \"xxx\", expected element tag start ('<').", "Line number 1.");
+    CHECK_LOG_CTX("Invalid character sequence \"xxx\", expected element tag start ('<').", NULL, 1);
     ly_in_free(in, 0);
 
     lyxml_ctx_free(xmlctx);
+    ly_log_location_revert(0, 0, 0, 4);
 
     /* valid strings */
     str = "<a>€𠜎Øn \n&lt;&amp;&quot;&apos;&gt; &#82;&#x4f;&#x4B;</a>";
@@ -434,11 +447,23 @@ test_text(void **state)
     /* test using n-bytes UTF8 hexadecimal code points */
     assert_int_equal(LY_SUCCESS, ly_in_new_memory("=\'&#x0024;&#x00A2;&#x20ac;&#x10348;\'", &in));
     xmlctx->in = in;
-    LOG_LOCINIT(NULL, NULL, NULL, in);
+    ly_log_location(NULL, NULL, NULL, in);
     xmlctx->status = LYXML_ATTRIBUTE;
     assert_int_equal(LY_SUCCESS, lyxml_ctx_next(xmlctx));
     assert_int_equal(LYXML_ATTR_CONTENT, xmlctx->status);
     assert_true(!strncmp("$¢€𐍈", xmlctx->value, xmlctx->value_len));
+    assert_int_equal(xmlctx->ws_only, 0);
+    assert_int_equal(xmlctx->dynamic, 1);
+    ly_in_free(in, 0);
+
+    /* CDATA value */
+    assert_int_equal(LY_SUCCESS, ly_in_new_memory(">   <![CDATA[    special non-escaped chars <>&\"'  ]]>  </a>", &in));
+    xmlctx->in = in;
+    ly_log_location(NULL, NULL, NULL, in);
+    xmlctx->status = LYXML_ATTR_CONTENT;
+    assert_int_equal(LY_SUCCESS, lyxml_ctx_next(xmlctx));
+    assert_int_equal(LYXML_ELEM_CONTENT, xmlctx->status);
+    assert_true(!strncmp("       special non-escaped chars <>&\"'    ", xmlctx->value, xmlctx->value_len));
     assert_int_equal(xmlctx->ws_only, 0);
     assert_int_equal(xmlctx->dynamic, 1);
     free((char *)xmlctx->value);
@@ -447,61 +472,62 @@ test_text(void **state)
     /* invalid characters in string */
     assert_int_equal(LY_SUCCESS, ly_in_new_memory("=\'&#x52\'", &in));
     xmlctx->in = in;
-    LOG_LOCINIT(NULL, NULL, NULL, in);
+    ly_log_location(NULL, NULL, NULL, in);
     xmlctx->status = LYXML_ATTRIBUTE;
     assert_int_equal(LY_EVALID, lyxml_ctx_next(xmlctx));
-    CHECK_LOG_CTX("Invalid character sequence \"'\", expected ;.", "Line number 1.");
+    CHECK_LOG_CTX("Invalid character sequence \"'\", expected ;.", NULL, 1);
     ly_in_free(in, 0);
 
     assert_int_equal(LY_SUCCESS, ly_in_new_memory("=\"&#82\"", &in));
     xmlctx->in = in;
-    LOG_LOCINIT(NULL, NULL, NULL, in);
+    ly_log_location(NULL, NULL, NULL, in);
     xmlctx->status = LYXML_ATTRIBUTE;
     assert_int_equal(LY_EVALID, lyxml_ctx_next(xmlctx));
-    CHECK_LOG_CTX("Invalid character sequence \"\"\", expected ;.", "Line number 1.");
+    CHECK_LOG_CTX("Invalid character sequence \"\"\", expected ;.", NULL, 1);
     ly_in_free(in, 0);
 
     assert_int_equal(LY_SUCCESS, ly_in_new_memory("=\"&nonsense;\"", &in));
     xmlctx->in = in;
-    LOG_LOCINIT(NULL, NULL, NULL, in);
+    ly_log_location(NULL, NULL, NULL, in);
     xmlctx->status = LYXML_ATTRIBUTE;
     assert_int_equal(LY_EVALID, lyxml_ctx_next(xmlctx));
-    CHECK_LOG_CTX("Entity reference \"&nonsense;\" not supported, only predefined references allowed.", "Line number 1.");
+    CHECK_LOG_CTX("Entity reference \"&nonsense;\" not supported, only predefined references allowed.", NULL, 1);
     ly_in_free(in, 0);
 
     assert_int_equal(LY_SUCCESS, ly_in_new_memory(">&#o122;", &in));
     xmlctx->in = in;
-    LOG_LOCINIT(NULL, NULL, NULL, in);
+    ly_log_location(NULL, NULL, NULL, in);
     xmlctx->status = LYXML_ELEMENT;
     assert_int_equal(LY_EVALID, lyxml_ctx_next(xmlctx));
-    CHECK_LOG_CTX("Invalid character reference \"&#o122;\".", "Line number 1.");
+    CHECK_LOG_CTX("Invalid character reference \"&#o122;\".", NULL, 1);
     ly_in_free(in, 0);
 
     assert_int_equal(LY_SUCCESS, ly_in_new_memory("=\'&#x06;\'", &in));
     xmlctx->in = in;
-    LOG_LOCINIT(NULL, NULL, NULL, in);
+    ly_log_location(NULL, NULL, NULL, in);
     xmlctx->status = LYXML_ATTRIBUTE;
     assert_int_equal(LY_EVALID, lyxml_ctx_next(xmlctx));
-    CHECK_LOG_CTX("Invalid character reference \"&#x06;\'\" (0x00000006).", "Line number 1.");
+    CHECK_LOG_CTX("Invalid character reference \"&#x06;\'\" (0x00000006).", NULL, 1);
     ly_in_free(in, 0);
 
     assert_int_equal(LY_SUCCESS, ly_in_new_memory("=\'&#xfdd0;\'", &in));
     xmlctx->in = in;
-    LOG_LOCINIT(NULL, NULL, NULL, in);
+    ly_log_location(NULL, NULL, NULL, in);
     xmlctx->status = LYXML_ATTRIBUTE;
     assert_int_equal(LY_EVALID, lyxml_ctx_next(xmlctx));
-    CHECK_LOG_CTX("Invalid character reference \"&#xfdd0;\'\" (0x0000fdd0).", "Line number 1.");
+    CHECK_LOG_CTX("Invalid character reference \"&#xfdd0;\'\" (0x0000fdd0).", NULL, 1);
     ly_in_free(in, 0);
 
     assert_int_equal(LY_SUCCESS, ly_in_new_memory("=\'&#xffff;\'", &in));
     xmlctx->in = in;
-    LOG_LOCINIT(NULL, NULL, NULL, in);
+    ly_log_location(NULL, NULL, NULL, in);
     xmlctx->status = LYXML_ATTRIBUTE;
     assert_int_equal(LY_EVALID, lyxml_ctx_next(xmlctx));
-    CHECK_LOG_CTX("Invalid character reference \"&#xffff;\'\" (0x0000ffff).", "Line number 1.");
+    CHECK_LOG_CTX("Invalid character reference \"&#xffff;\'\" (0x0000ffff).", NULL, 1);
     ly_in_free(in, 0);
 
     lyxml_ctx_free(xmlctx);
+    ly_log_location_revert(0, 0, 0, 9);
 }
 
 static void

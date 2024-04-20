@@ -1,0 +1,74 @@
+/**
+ * @page transition2_3 Transition Manual (2.x -> 3.0)
+ *
+ * [TOC]
+ *
+ * Non-backwards-compatible changes between libyang version 2 and 3 are rather minor and can be summarized as providing
+ * structured error information (instead of a single message), unifying **lyd_new_*()** function options, and some
+ * minor changes such as removing deprecated functions or making a few functions inlined. However, there is another
+ * large change that has not affected the API, specifically configuration system-ordered lists and leaf-lists are now
+ * ordered based on their keys/values, respectively. Except for moderately slower performance and negligible increased
+ * memory requirements, it should not affect existing applications (assuming they do not rely on the previous order of
+ * these instances).
+ *
+ * The complete generated list of changes (without any additional notes) can be found in
+ * <a href="../compat_report_2_3.html">the compatibility report</a>.
+ *
+ * @section transition2_3Logging Logging
+ *
+ * Except for some function adjustments, ::ly_err_item has been changed to provide every piece of error information in a
+ * separate member to allow for easier processing.
+ *
+ * Here is the overview of the changed / removed / added functions connected to logging.
+ *
+ * libyang 2.x               | libyang 3.0                          | Notes
+ * :-------------------------|:-------------------------------------|:-------------------------------------------------------
+ * ly_last_errmsg()          | ::ly_last_logmsg()                   | Function renamed with the same functionality.
+ * ly_strerrcode()           | ::ly_strerr()                        | Function renamed with the same functionality.
+ * ly_errcode()              | -                                    | Now requires ::ly_err_last() call.
+ * ly_errmsg()               | -                                    | ^
+ * ly_errpath()              | -                                    | ^
+ * ly_vecode()               | -                                    | ^
+ *
+ *
+ *
+ * @section transition2_3New Data Creation
+ *
+ * libyang 2.x               | libyang 3.0                          | Notes
+ * :-------------------------|:-------------------------------------|:-------------------------------------------------------
+ * lyd_find_xpath3()         | ::lyd_find_xpath3()                  | Optional prefix data parameter added.
+ * LYD_NEW_PATH_OUTPUT       | ::LYD_NEW_VAL_OUTPUT                 | Some LYD_NEW_PATH_* options now also used for other lyd_new_* functions.
+ * LYD_NEW_PATH_BIN_VALUE    | ::LYD_NEW_VAL_BIN                    | ^
+ * LYD_NEW_PATH_CANON_VALUE  | ::LYD_NEW_VAL_CANON                  | ^
+ * lyd_new_path()            | ::lyd_new_path()                     | All options now in a single bitmap parameter of @ref newvaloptions.
+ * lyd_new_any()             | ::lyd_new_any()                      | ^
+ * lyd_new_list()            | ::lyd_new_list()                     | ^
+ * lyd_new_list2()           | ::lyd_new_list2()                    | ^
+ * lyd_new_list3()           | ::lyd_new_list3()                    | ^
+ * lyd_new_meta()            | ::lyd_new_meta()                     | ^
+ * lyd_new_meta2()           | ::lyd_new_meta2()                    | ^
+ * lyd_new_term()            | ::lyd_new_term()                     | ^
+ * lyd_new_list3_bin()       | ::lyd_new_list3()                    | Functionality now merged into the single function.
+ * lyd_new_list3_canon()     | ^                                    | ^
+ * lyd_new_list_bin()        | ::lyd_new_list()                     | Functionality now merged into the single function.
+ * lyd_new_list_canon()      | ^                                    | ^
+ * lyd_new_term_canon()      | ::lyd_new_term()                     | Functionality now merged into the single function.
+ *
+ *
+ *
+ * @section transition2_3Minor Other Minor Changes
+ *
+ * Except for the function changes below, ::lysc_type now has a copy of the typedef name, if applicable. There
+ * are use-cases when this information is needed even in the compiled schema tree such as checking the real type of
+ * a union value.
+ *
+ * libyang 2.x               | libyang 3.0                          | Notes
+ * :-------------------------|:-------------------------------------|:-------------------------------------------------------
+ * lyd_child()               | ::lyd_child()                        | Now an inlined function for better performance.
+ * lyd_get_value()           | ::lyd_get_value()                    | ^
+ * lyd_parent()              | ::lyd_parent()                       | ^
+ * lyd_find_xpath4()         | ::lyd_find_xpath3()                  | Previous lyd_find_xpath3 was removed to reduce symbols.
+ * lyd_target()              | -                                    | Deprecated.
+ * ly_ctx_reset_latests()    | -                                    | ^
+ *
+ */

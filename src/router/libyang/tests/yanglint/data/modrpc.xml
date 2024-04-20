@@ -1,0 +1,3 @@
+<rpc xmlns="urn:yanglint:modrpc">
+  <lfi>some_input</lfi>
+</rpc>

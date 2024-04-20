@@ -1,0 +1,7 @@
+module modfeature {
+  namespace "urn:yanglint:modfeature";
+  prefix l;
+
+  feature ftr1;
+  feature ftr2;
+}
