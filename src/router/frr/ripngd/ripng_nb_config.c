@@ -35,7 +35,7 @@ int ripngd_instance_create(struct nb_cb_create_args *args)
 	const char *vrf_name;
 	int socket;
 
-	vrf_name = yang_dnode_get_string(args->dnode, "./vrf");
+	vrf_name = yang_dnode_get_string(args->dnode, "vrf");
 	vrf = vrf_lookup_by_name(vrf_name);
 
 	/*
@@ -262,7 +262,7 @@ int ripngd_instance_offset_list_create(struct nb_cb_create_args *args)
 		return NB_OK;
 
 	ripng = nb_running_get_entry(args->dnode, NULL, true);
-	ifname = yang_dnode_get_string(args->dnode, "./interface");
+	ifname = yang_dnode_get_string(args->dnode, "interface");
 
 	offset = ripng_offset_list_new(ripng, ifname);
 	nb_running_set_entry(args->dnode, offset);
@@ -278,7 +278,7 @@ int ripngd_instance_offset_list_destroy(struct nb_cb_destroy_args *args)
 	if (args->event != NB_EV_APPLY)
 		return NB_OK;
 
-	direct = yang_dnode_get_enum(args->dnode, "./direction");
+	direct = yang_dnode_get_enum(args->dnode, "direction");
 
 	offset = nb_running_unset_entry(args->dnode);
 	if (offset->direct[direct].alist_name) {
@@ -369,6 +369,22 @@ int ripngd_instance_passive_interface_destroy(struct nb_cb_destroy_args *args)
 }
 
 /*
+ * XPath: /frr-ripng:ripng/instance/distribute-list
+ */
+int ripngd_instance_distribute_list_create(struct nb_cb_create_args *args)
+{
+	struct ripng *ripng;
+
+	if (args->event != NB_EV_APPLY)
+		return NB_OK;
+
+	ripng = nb_running_get_entry(args->dnode, NULL, true);
+	group_distribute_list_create_helper(args, ripng->distribute_ctx);
+
+	return NB_OK;
+}
+
+/*
  * XPath: /frr-ripngd:ripngd/instance/redistribute
  */
 int ripngd_instance_redistribute_create(struct nb_cb_create_args *args)
@@ -380,7 +396,7 @@ int ripngd_instance_redistribute_create(struct nb_cb_create_args *args)
 		return NB_OK;
 
 	ripng = nb_running_get_entry(args->dnode, NULL, true);
-	type = yang_dnode_get_enum(args->dnode, "./protocol");
+	type = yang_dnode_get_enum(args->dnode, "protocol");
 
 	ripng->redist[type].enabled = true;
 
@@ -396,7 +412,7 @@ int ripngd_instance_redistribute_destroy(struct nb_cb_destroy_args *args)
 		return NB_OK;
 
 	ripng = nb_running_get_entry(args->dnode, NULL, true);
-	type = yang_dnode_get_enum(args->dnode, "./protocol");
+	type = yang_dnode_get_enum(args->dnode, "protocol");
 
 	ripng->redist[type].enabled = false;
 	if (ripng->redist[type].route_map.name) {
@@ -420,7 +436,7 @@ void ripngd_instance_redistribute_apply_finish(
 	int type;
 
 	ripng = nb_running_get_entry(args->dnode, NULL, true);
-	type = yang_dnode_get_enum(args->dnode, "./protocol");
+	type = yang_dnode_get_enum(args->dnode, "protocol");
 
 	if (ripng->enabled)
 		ripng_redistribute_conf_update(ripng, type);

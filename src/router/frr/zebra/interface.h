@@ -201,6 +201,9 @@ struct zebra_if {
 	ifindex_t link_ifindex;
 	struct interface *link;
 
+#define INTERFACE_SPEED_ERROR_READ    -1
+#define INTERFACE_SPEED_ERROR_UNKNOWN -2
+
 	uint8_t speed_update_count;
 	struct event *speed_update;
 
@@ -217,8 +220,6 @@ struct zebra_if {
 };
 
 DECLARE_HOOK(zebra_if_extra_info, (struct vty * vty, struct interface *ifp),
-	     (vty, ifp));
-DECLARE_HOOK(zebra_if_config_wr, (struct vty * vty, struct interface *ifp),
 	     (vty, ifp));
 
 #define IS_ZEBRA_IF_VRF(ifp)                                                   \
@@ -283,7 +284,6 @@ extern void if_refresh(struct interface *);
 extern void if_flags_update(struct interface *, uint64_t);
 extern int if_subnet_add(struct interface *, struct connected *);
 extern int if_subnet_delete(struct interface *, struct connected *);
-extern int ipv6_address_configured(struct interface *ifp);
 extern void if_handle_vrf_change(struct interface *ifp, vrf_id_t vrf_id);
 extern void zebra_if_update_link(struct interface *ifp, ifindex_t link_ifindex,
 				 ns_id_t ns_id);
@@ -308,17 +308,27 @@ extern void cli_show_affinity(struct vty *vty, const struct lyd_node *dnode,
  */
 extern int zebra_if_set_protodown(struct interface *ifp, bool down,
 				  enum protodown_reasons new_reason);
-extern int if_ip_address_install(struct interface *ifp, struct prefix *prefix,
-				 const char *label, struct prefix *pp);
-extern int if_ipv6_address_install(struct interface *ifp, struct prefix *prefix,
-				   const char *label);
-extern int if_ip_address_uinstall(struct interface *ifp, struct prefix *prefix);
+extern void if_ip_address_install(struct interface *ifp, struct prefix *prefix,
+				  const char *label, struct prefix *pp);
+extern void if_ip_address_uninstall(struct interface *ifp,
+				    struct prefix *prefix, struct prefix *pp);
+extern void if_ipv6_address_install(struct interface *ifp,
+				    struct prefix *prefix);
+extern void if_ipv6_address_uninstall(struct interface *ifp,
+				      struct prefix *prefix);
 extern int if_shutdown(struct interface *ifp);
 extern int if_no_shutdown(struct interface *ifp);
+extern void if_arp(struct interface *ifp, bool enable);
 extern int if_multicast_set(struct interface *ifp);
 extern int if_multicast_unset(struct interface *ifp);
 extern int if_linkdetect(struct interface *ifp, bool detect);
 extern void if_addr_wakeup(struct interface *ifp);
+
+void link_param_cmd_set_uint32(struct interface *ifp, uint32_t *field,
+			       uint32_t type, uint32_t value);
+void link_param_cmd_set_float(struct interface *ifp, float *field,
+			      uint32_t type, float value);
+void link_param_cmd_unset(struct interface *ifp, uint32_t type);
 
 /* Nexthop group connected functions */
 extern void if_nhg_dependents_add(struct interface *ifp,

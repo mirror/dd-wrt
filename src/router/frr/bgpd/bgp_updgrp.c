@@ -128,6 +128,7 @@ static void conf_copy(struct peer *dst, struct peer *src, afi_t afi,
 
 	dst->bgp = src->bgp;
 	dst->sort = src->sort;
+	dst->sub_sort = src->sub_sort;
 	dst->as = src->as;
 	dst->v_routeadv = src->v_routeadv;
 	dst->flags = src->flags;
@@ -342,6 +343,7 @@ static unsigned int updgrp_hash_key_make(const void *p)
 	key = 0;
 
 	key = jhash_1word(peer->sort, key); /* EBGP or IBGP */
+	key = jhash_1word(peer->sub_sort, key); /* OAD */
 	key = jhash_1word((peer->flags & PEER_UPDGRP_FLAGS), key);
 	key = jhash_1word((flags & PEER_UPDGRP_AF_FLAGS), key);
 	key = jhash_1word((uint32_t)peer->addpath_type[afi][safi], key);
@@ -447,19 +449,18 @@ static unsigned int updgrp_hash_key_make(const void *p)
 	 * STATEMENT STAYS UP TO DATE
 	 */
 	if (bgp_debug_neighbor_events(peer)) {
-		zlog_debug(
-			"%pBP Update Group Hash: sort: %d UpdGrpFlags: %ju UpdGrpAFFlags: %ju",
-			peer, peer->sort,
-			(intmax_t)CHECK_FLAG(peer->flags, PEER_UPDGRP_FLAGS),
-			(intmax_t)CHECK_FLAG(flags, PEER_UPDGRP_AF_FLAGS));
-		zlog_debug(
-			"%pBP Update Group Hash: addpath: %u UpdGrpCapFlag: %u UpdGrpCapAFFlag: %u route_adv: %u change local as: %u, as_path_loop_detection: %d",
-			peer, (uint32_t)peer->addpath_type[afi][safi],
-			CHECK_FLAG(peer->cap, PEER_UPDGRP_CAP_FLAGS),
-			CHECK_FLAG(peer->af_cap[afi][safi],
-				   PEER_UPDGRP_AF_CAP_FLAGS),
-			peer->v_routeadv, peer->change_local_as,
-			peer->as_path_loop_detection);
+		zlog_debug("%pBP Update Group Hash: sort: %d sub_sort: %d UpdGrpFlags: %ju UpdGrpAFFlags: %ju",
+			   peer, peer->sort, peer->sub_sort,
+			   (intmax_t)CHECK_FLAG(peer->flags, PEER_UPDGRP_FLAGS),
+			   (intmax_t)CHECK_FLAG(flags, PEER_UPDGRP_AF_FLAGS));
+		zlog_debug("%pBP Update Group Hash: addpath: %u UpdGrpCapFlag: %ju UpdGrpCapAFFlag: %u route_adv: %u change local as: %u, as_path_loop_detection: %d",
+			   peer, (uint32_t)peer->addpath_type[afi][safi],
+			   (intmax_t)CHECK_FLAG(peer->cap,
+						PEER_UPDGRP_CAP_FLAGS),
+			   CHECK_FLAG(peer->af_cap[afi][safi],
+				      PEER_UPDGRP_AF_CAP_FLAGS),
+			   peer->v_routeadv, peer->change_local_as,
+			   peer->as_path_loop_detection);
 		zlog_debug(
 			"%pBP Update Group Hash: max packet size: %u pmax_out: %u Peer Group: %s rmap out: %s",
 			peer, peer->max_packet_size, peer->pmax_out[afi][safi],
@@ -1698,14 +1699,14 @@ static int updgrp_policy_update_walkcb(struct update_group *updgrp, void *arg)
 				 */
 				UNSET_FLAG(subgrp->sflags,
 					   SUBGRP_STATUS_DEFAULT_ORIGINATE);
-				subgroup_default_originate(subgrp, 0);
+				subgroup_default_originate(subgrp, false);
 			} else {
 				/*
 				 * This is a explicit withdraw, since the
 				 * routemap is not present in routemap lib. need
-				 * to pass 1 for withdraw arg.
+				 * to pass `true` for withdraw arg.
 				 */
-				subgroup_default_originate(subgrp, 1);
+				subgroup_default_originate(subgrp, true);
 			}
 		}
 		update_subgroup_set_needs_refresh(subgrp, 0);
@@ -2101,7 +2102,7 @@ update_group_default_originate_route_map_walkcb(struct update_group *updgrp,
 			 */
 			UNSET_FLAG(subgrp->sflags,
 				   SUBGRP_STATUS_DEFAULT_ORIGINATE);
-			subgroup_default_originate(subgrp, 0);
+			subgroup_default_originate(subgrp, false);
 		}
 	}
 

@@ -32,6 +32,8 @@ DECLARE_MGROUP(BFDD);
 DECLARE_MTYPE(BFDD_CONTROL);
 DECLARE_MTYPE(BFDD_NOTIFICATION);
 
+#define BFDD_SOCK_NAME "%s/bfdd.sock", frr_runstatedir
+
 /* bfd Authentication Type. */
 #define BFD_AUTH_NULL 0
 #define BFD_AUTH_SIMPLE 1
@@ -193,7 +195,7 @@ struct bfd_key {
 	uint16_t mhop;
 	struct in6_addr peer;
 	struct in6_addr local;
-	char ifname[INTERFACE_NAMSIZ];
+	char ifname[IFNAMSIZ];
 	char vrfname[VRF_NAMSIZ];
 } __attribute__((packed));
 
@@ -782,6 +784,7 @@ void bfdd_cli_init(void);
  */
 void bfdd_zclient_init(struct zebra_privs_t *bfdd_priv);
 void bfdd_zclient_stop(void);
+void bfdd_zclient_terminate(void);
 void bfdd_zclient_unregister(vrf_id_t vrf_id);
 void bfdd_zclient_register(vrf_id_t vrf_id);
 void bfdd_sessions_enable_vrf(struct vrf *vrf);

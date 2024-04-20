@@ -340,15 +340,14 @@ static void bgp_capability_orf_not_support(struct peer *peer, iana_afi_t afi,
 			peer->host, afi, safi, type, mode);
 }
 
-static const struct message orf_type_str[] = {
-	{ORF_TYPE_RESERVED, "Reserved"},
-	{ORF_TYPE_PREFIX, "Prefixlist"},
-	{0}};
+const struct message orf_type_str[] = { { ORF_TYPE_RESERVED, "Reserved" },
+					{ ORF_TYPE_PREFIX, "Prefixlist" },
+					{ 0 } };
 
-static const struct message orf_mode_str[] = {{ORF_MODE_RECEIVE, "Receive"},
-					      {ORF_MODE_SEND, "Send"},
-					      {ORF_MODE_BOTH, "Both"},
-					      {0}};
+const struct message orf_mode_str[] = { { ORF_MODE_RECEIVE, "Receive" },
+					{ ORF_MODE_SEND, "Send" },
+					{ ORF_MODE_BOTH, "Both" },
+					{ 0 } };
 
 static int bgp_capability_orf_entry(struct peer *peer,
 				    struct capability_header *hdr)
@@ -623,16 +622,16 @@ static int bgp_capability_llgr(struct peer *peer,
 /* Unlike other capability parsing routines, this one returns 0 on error */
 static as_t bgp_capability_as4(struct peer *peer, struct capability_header *hdr)
 {
-	SET_FLAG(peer->cap, PEER_CAP_AS4_RCV);
-
 	if (hdr->length != CAPABILITY_CODE_AS4_LEN) {
 		flog_err(EC_BGP_PKT_OPEN,
 			 "%s AS4 capability has incorrect data length %d",
 			 peer->host, hdr->length);
-		return 0;
+		return -1;
 	}
 
 	as_t as4 = stream_getl(BGP_INPUT(peer));
+
+	SET_FLAG(peer->cap, PEER_CAP_AS4_RCV);
 
 	if (BGP_DEBUG(as4, AS4))
 		zlog_debug(
@@ -663,10 +662,8 @@ static int bgp_capability_addpath(struct peer *peer,
 	struct stream *s = BGP_INPUT(peer);
 	size_t end = stream_get_getp(s) + hdr->length;
 
-	SET_FLAG(peer->cap, PEER_CAP_ADDPATH_RCV);
-
 	/* Verify length is a multiple of 4 */
-	if (hdr->length % 4) {
+	if (hdr->length % CAPABILITY_CODE_ADDPATH_LEN) {
 		flog_warn(
 			EC_BGP_CAPABILITY_INVALID_LENGTH,
 			"Add Path: Received invalid length %d, non-multiple of 4",
@@ -674,23 +671,38 @@ static int bgp_capability_addpath(struct peer *peer,
 		return -1;
 	}
 
-	while (stream_get_getp(s) + 4 <= end) {
+	SET_FLAG(peer->cap, PEER_CAP_ADDPATH_RCV);
+
+	while (stream_get_getp(s) + CAPABILITY_CODE_ADDPATH_LEN <= end) {
 		afi_t afi;
 		safi_t safi;
 		iana_afi_t pkt_afi = stream_getw(s);
 		iana_safi_t pkt_safi = stream_getc(s);
 		uint8_t send_receive = stream_getc(s);
 
+		/* If any other value (other than 1-3) is received, then
+		 * the capability SHOULD be treated as not understood
+		 * and ignored.
+		 */
+		if (!send_receive || send_receive > 3) {
+			flog_warn(EC_BGP_CAPABILITY_INVALID_DATA,
+				  "Add Path: Received invalid send/receive value %u in Add Path capability",
+				  send_receive);
+			continue;
+		}
+
 		if (bgp_debug_neighbor_events(peer))
-			zlog_debug(
-				"%s OPEN has %s capability for afi/safi: %s/%s%s%s",
-				peer->host,
-				lookup_msg(capcode_str, hdr->code, NULL),
-				iana_afi2str(pkt_afi), iana_safi2str(pkt_safi),
-				(send_receive & BGP_ADDPATH_RX) ? ", receive"
-								: "",
-				(send_receive & BGP_ADDPATH_TX) ? ", transmit"
-								: "");
+			zlog_debug("%s OPEN has %s capability for afi/safi: %s/%s%s%s",
+				   peer->host,
+				   lookup_msg(capcode_str, hdr->code, NULL),
+				   iana_afi2str(pkt_afi),
+				   iana_safi2str(pkt_safi),
+				   CHECK_FLAG(send_receive, BGP_ADDPATH_RX)
+					   ? ", receive"
+					   : "",
+				   CHECK_FLAG(send_receive, BGP_ADDPATH_TX)
+					   ? ", transmit"
+					   : "");
 
 		/* Convert AFI, SAFI to internal values, check. */
 		if (bgp_map_afi_safi_iana2int(pkt_afi, pkt_safi, &afi, &safi)) {
@@ -709,13 +721,19 @@ static int bgp_capability_addpath(struct peer *peer,
 			continue;
 		}
 
-		if (send_receive & BGP_ADDPATH_RX)
+		if (CHECK_FLAG(send_receive, BGP_ADDPATH_RX))
 			SET_FLAG(peer->af_cap[afi][safi],
 				 PEER_CAP_ADDPATH_AF_RX_RCV);
+		else
+			UNSET_FLAG(peer->af_cap[afi][safi],
+				   PEER_CAP_ADDPATH_AF_RX_RCV);
 
-		if (send_receive & BGP_ADDPATH_TX)
+		if (CHECK_FLAG(send_receive, BGP_ADDPATH_TX))
 			SET_FLAG(peer->af_cap[afi][safi],
 				 PEER_CAP_ADDPATH_AF_TX_RCV);
+		else
+			UNSET_FLAG(peer->af_cap[afi][safi],
+				   PEER_CAP_ADDPATH_AF_TX_RCV);
 	}
 
 	return 0;
@@ -800,8 +818,6 @@ static int bgp_capability_hostname(struct peer *peer,
 	size_t end = stream_get_getp(s) + hdr->length;
 	uint8_t len;
 
-	SET_FLAG(peer->cap, PEER_CAP_HOSTNAME_RCV);
-
 	len = stream_getc(s);
 	if (stream_get_getp(s) + len > end) {
 		flog_warn(
@@ -859,6 +875,8 @@ static int bgp_capability_hostname(struct peer *peer,
 		peer->domainname = XSTRDUP(MTYPE_BGP_PEER_HOST, str);
 	}
 
+	SET_FLAG(peer->cap, PEER_CAP_HOSTNAME_RCV);
+
 	if (bgp_debug_neighbor_events(peer)) {
 		zlog_debug("%s received hostname %s, domainname %s", peer->host,
 			   peer->hostname, peer->domainname);
@@ -869,13 +887,15 @@ static int bgp_capability_hostname(struct peer *peer,
 
 static int bgp_capability_role(struct peer *peer, struct capability_header *hdr)
 {
-	SET_FLAG(peer->cap, PEER_CAP_ROLE_RCV);
 	if (hdr->length != CAPABILITY_CODE_ROLE_LEN) {
 		flog_warn(EC_BGP_CAPABILITY_INVALID_LENGTH,
 			  "Role: Received invalid length %d", hdr->length);
 		return -1;
 	}
+
 	uint8_t role = stream_getc(BGP_INPUT(peer));
+
+	SET_FLAG(peer->cap, PEER_CAP_ROLE_RCV);
 
 	peer->remote_role = role;
 	return 0;
@@ -1020,6 +1040,7 @@ static int bgp_capability_parse(struct peer *peer, size_t length,
 						BGP_NOTIFY_OPEN_MALFORMED_ATTR);
 				return -1;
 			}
+			break;
 		/* we deliberately ignore unknown codes, see below */
 		default:
 			break;
@@ -1876,8 +1897,9 @@ uint16_t bgp_open_capability(struct stream *s, struct peer *peer,
 		stream_putc(s, CAPABILITY_CODE_DYNAMIC_LEN);
 	}
 
-	/* Hostname capability */
-	if (cmd_hostname_get()) {
+	/* FQDN capability */
+	if (CHECK_FLAG(peer->flags, PEER_FLAG_CAPABILITY_FQDN)
+	    && cmd_hostname_get()) {
 		SET_FLAG(peer->cap, PEER_CAP_HOSTNAME_ADV);
 		stream_putc(s, BGP_OPEN_OPT_CAP);
 		rcapp = stream_get_endp(s); /* Ptr to length placeholder */
@@ -1929,8 +1951,7 @@ uint16_t bgp_open_capability(struct stream *s, struct peer *peer,
 	 * or disable its use, and that switch MUST be off by default.
 	 */
 	if (peergroup_flag_check(peer, PEER_FLAG_CAPABILITY_SOFT_VERSION) ||
-	    CHECK_FLAG(peer->bgp->flags, BGP_FLAG_SOFT_VERSION_CAPABILITY) ||
-	    peer->sort == BGP_PEER_IBGP) {
+	    peer->sort == BGP_PEER_IBGP || peer->sub_sort == BGP_PEER_EBGP_OAD) {
 		SET_FLAG(peer->cap, PEER_CAP_SOFT_VERSION_ADV);
 		stream_putc(s, BGP_OPEN_OPT_CAP);
 		rcapp = stream_get_endp(s);

@@ -826,7 +826,8 @@ static zclient_handler *const bfd_handlers[] = {
 
 void bfdd_zclient_init(struct zebra_privs_t *bfdd_priv)
 {
-	if_zapi_callbacks(bfd_ifp_create, NULL, NULL, bfd_ifp_destroy);
+	hook_register_prio(if_real, 0, bfd_ifp_create);
+	hook_register_prio(if_unreal, 0, bfd_ifp_destroy);
 	zclient = zclient_new(master, &zclient_options_default, bfd_handlers,
 			      array_size(bfd_handlers));
 	assert(zclient != NULL);
@@ -856,6 +857,11 @@ void bfdd_zclient_stop(void)
 
 	/* Clean-up and free ptm clients data memory. */
 	pc_free_all();
+}
+
+void bfdd_zclient_terminate(void)
+{
+	zclient_free(zclient);
 }
 
 

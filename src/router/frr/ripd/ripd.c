@@ -6,6 +6,11 @@
 
 #include <zebra.h>
 
+#ifdef CRYPTO_OPENSSL
+#include <openssl/evp.h>
+#include <openssl/hmac.h>
+#endif
+
 #include "vrf.h"
 #include "if.h"
 #include "command.h"
@@ -29,8 +34,10 @@
 #include "privs.h"
 #include "lib_errors.h"
 #include "northbound_cli.h"
+#include "mgmt_be_client.h"
 #include "network.h"
 #include "lib/printfrr.h"
+#include "frrdistance.h"
 
 #include "ripd/ripd.h"
 #include "ripd/rip_nb.h"
@@ -403,7 +410,6 @@ static int rip_filter(int rip_distribute, struct prefix_ipv4 *p,
 static int rip_nexthop_check(struct rip *rip, struct in_addr *addr)
 {
 	struct interface *ifp;
-	struct listnode *cnode;
 	struct connected *ifc;
 	struct prefix *p;
 
@@ -411,7 +417,7 @@ static int rip_nexthop_check(struct rip *rip, struct in_addr *addr)
 	   invalid nexthop. */
 
 	FOR_ALL_INTERFACES (rip->vrf, ifp) {
-		for (ALL_LIST_ELEMENTS_RO(ifp->connected, cnode, ifc)) {
+		frr_each (if_connected, ifp->connected, ifc) {
 			p = ifc->address;
 
 			if (p->family == AF_INET
@@ -2212,8 +2218,8 @@ void rip_output_process(struct connected *ifc, struct sockaddr_in *to,
 				}
 
 			if (!suppress && rinfo->type == ZEBRA_ROUTE_CONNECT) {
-				for (ALL_LIST_ELEMENTS_RO(ifc->ifp->connected,
-							  listnode, tmp_ifc))
+				frr_each (if_connected, ifc->ifp->connected,
+					  tmp_ifc)
 					if (prefix_match((struct prefix *)p,
 							 tmp_ifc->address)) {
 						suppress = 1;
@@ -2322,8 +2328,8 @@ void rip_output_process(struct connected *ifc, struct sockaddr_in *to,
 
 			if (rinfo->metric_out != RIP_METRIC_INFINITY &&
 			    rinfo->type == ZEBRA_ROUTE_CONNECT) {
-				for (ALL_LIST_ELEMENTS_RO(ifc->ifp->connected,
-							  listnode, tmp_ifc))
+				frr_each (if_connected, ifc->ifp->connected,
+					  tmp_ifc)
 					if (prefix_match((struct prefix *)p,
 							 tmp_ifc->address)) {
 						rinfo->metric_out =
@@ -2436,7 +2442,6 @@ static void rip_update_interface(struct connected *ifc, uint8_t version,
 /* Update send to all interface and neighbor. */
 static void rip_update_process(struct rip *rip, int route_type)
 {
-	struct listnode *ifnode, *ifnnode;
 	struct connected *connected;
 	struct interface *ifp;
 	struct rip_interface *ri;
@@ -2475,8 +2480,7 @@ static void rip_update_process(struct rip *rip, int route_type)
 				   ifp->ifindex);
 
 		/* send update on each connected network */
-		for (ALL_LIST_ELEMENTS(ifp->connected, ifnode, ifnnode,
-				       connected)) {
+		frr_each (if_connected, ifp->connected, connected) {
 			if (connected->address->family == AF_INET) {
 				if (vsend & RIPv1)
 					rip_update_interface(connected, RIPv1,
@@ -2767,7 +2771,6 @@ int rip_request_send(struct sockaddr_in *to, struct interface *ifp,
 {
 	struct rte *rte;
 	struct rip_packet rip_packet;
-	struct listnode *node, *nnode;
 
 	memset(&rip_packet, 0, sizeof(rip_packet));
 
@@ -2791,7 +2794,7 @@ int rip_request_send(struct sockaddr_in *to, struct interface *ifp,
 	}
 
 	/* send request on each connected network */
-	for (ALL_LIST_ELEMENTS(ifp->connected, node, nnode, connected)) {
+	frr_each (if_connected, ifp->connected, connected) {
 		struct prefix_ipv4 *p;
 
 		p = (struct prefix_ipv4 *)connected->address;
@@ -3251,44 +3254,37 @@ DEFUN (show_ip_rip_status,
 	return CMD_SUCCESS;
 }
 
-/* RIP configuration write function. */
-static int config_write_rip(struct vty *vty)
+#include "ripd/ripd_clippy.c"
+
+/*
+ * XPath: /frr-ripd:clear-rip-route
+ */
+DEFPY_YANG (clear_ip_rip,
+       clear_ip_rip_cmd,
+       "clear ip rip [vrf WORD]",
+       CLEAR_STR
+       IP_STR
+       "Clear IP RIP database\n"
+       VRF_CMD_HELP_STR)
 {
-	struct rip *rip;
-	int write = 0;
+	struct list *input;
+	int ret;
 
-	RB_FOREACH(rip, rip_instance_head, &rip_instances) {
-		char xpath[XPATH_MAXLEN];
-		struct lyd_node *dnode;
+	input = list_new();
+	if (vrf) {
+		struct yang_data *yang_vrf;
 
-		snprintf(xpath, sizeof(xpath),
-			 "/frr-ripd:ripd/instance[vrf='%s']", rip->vrf_name);
-
-		dnode = yang_dnode_get(running_config->dnode, xpath);
-		assert(dnode);
-
-		nb_cli_show_dnode_cmds(vty, dnode, false);
-
-		/* Distribute configuration. */
-		config_write_distribute(vty, rip->distribute_ctx);
-
-		vty_out(vty, "exit\n");
-
-		write = 1;
+		yang_vrf = yang_data_new("/frr-ripd:clear-rip-route/input/vrf",
+					 vrf);
+		listnode_add(input, yang_vrf);
 	}
 
-	return write;
-}
+	ret = nb_cli_rpc(vty, "/frr-ripd:clear-rip-route", input, NULL);
 
-static int config_write_rip(struct vty *vty);
-/* RIP node structure. */
-static struct cmd_node rip_node = {
-	.name = "rip",
-	.node = RIP_NODE,
-	.parent_node = CONFIG_NODE,
-	.prompt = "%s(config-router)# ",
-	.config_write = config_write_rip,
-};
+	list_delete(&input);
+
+	return ret;
+}
 
 /* Distribute-list update functions. */
 static void rip_distribute_update(struct distribute_ctx *ctx,
@@ -3651,8 +3647,6 @@ static int rip_vrf_disable(struct vrf *vrf)
 void rip_vrf_init(void)
 {
 	vrf_init(rip_vrf_new, rip_vrf_enable, rip_vrf_disable, rip_vrf_delete);
-
-	vrf_cmd_init(NULL);
 }
 
 void rip_vrf_terminate(void)
@@ -3663,20 +3657,18 @@ void rip_vrf_terminate(void)
 /* Allocate new rip structure and set default value. */
 void rip_init(void)
 {
-	/* Install top nodes. */
-	install_node(&rip_node);
-
 	/* Install rip commands. */
 	install_element(VIEW_NODE, &show_ip_rip_cmd);
 	install_element(VIEW_NODE, &show_ip_rip_status_cmd);
-
-	install_default(RIP_NODE);
+	install_element(ENABLE_NODE, &clear_ip_rip_cmd);
 
 	/* Debug related init. */
 	rip_debug_init();
+	/* Enable mgmt be debug */
+	mgmt_be_client_lib_vty_init();
 
 	/* Access list install. */
-	access_list_init();
+	access_list_init_new(true);
 	access_list_add_hook(rip_distribute_update_all_wrapper);
 	access_list_delete_hook(rip_distribute_update_all_wrapper);
 
@@ -3690,6 +3682,4 @@ void rip_init(void)
 
 	route_map_add_hook(rip_routemap_update);
 	route_map_delete_hook(rip_routemap_update);
-
-	if_rmap_init(RIP_NODE);
 }

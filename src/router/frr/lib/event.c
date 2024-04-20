@@ -6,6 +6,8 @@
 /* #define DEBUG */
 
 #include <zebra.h>
+
+#include <signal.h>
 #include <sys/resource.h>
 
 #include "frrevent.h"
@@ -54,11 +56,6 @@ static int event_timer_cmp(const struct event *a, const struct event *b)
 }
 
 DECLARE_HEAP(event_timer_list, struct event, timeritem, event_timer_cmp);
-
-#if defined(__APPLE__)
-#include <mach/mach.h>
-#include <mach/mach_time.h>
-#endif
 
 #define AWAKEN(m)                                                              \
 	do {                                                                   \
@@ -216,7 +213,7 @@ static void cpu_record_print(struct vty *vty, uint8_t filter)
 				"Active   Runtime(ms)   Invoked Avg uSec Max uSecs");
 			vty_out(vty, " Avg uSec Max uSecs");
 			vty_out(vty,
-				"  CPU_Warn Wall_Warn Starv_Warn Type   Thread\n");
+				"  CPU_Warn Wall_Warn Starv_Warn   Type  Event\n");
 
 			if (cpu_records_count(m->cpu_records)) {
 				struct cpu_event_history *rec;
@@ -232,13 +229,13 @@ static void cpu_record_print(struct vty *vty, uint8_t filter)
 	}
 
 	vty_out(vty, "\n");
-	vty_out(vty, "Total thread statistics\n");
+	vty_out(vty, "Total Event statistics\n");
 	vty_out(vty, "-------------------------\n");
 	vty_out(vty, "%30s %18s %18s\n", "",
 		"CPU (user+system):", "Real (wall-clock):");
 	vty_out(vty, "Active   Runtime(ms)   Invoked Avg uSec Max uSecs");
-	vty_out(vty, " Avg uSec Max uSecs  CPU_Warn Wall_Warn");
-	vty_out(vty, "  Type  Thread\n");
+	vty_out(vty, " Avg uSec Max uSecs  CPU_Warn Wall_Warn Starv_Warn");
+	vty_out(vty, "   Type  Event\n");
 
 	if (tmp.total_calls > 0)
 		vty_out_cpu_event_history(vty, &tmp);
@@ -307,13 +304,16 @@ static uint8_t parse_filter(const char *filterstr)
 	return filter;
 }
 
-DEFUN_NOSH (show_thread_cpu,
-	    show_thread_cpu_cmd,
-	    "show thread cpu [FILTER]",
-	    SHOW_STR
-	    "Thread information\n"
-	    "Thread CPU usage\n"
-	    "Display filter (rwtex)\n")
+#if CONFDATE > 20240707
+	CPP_NOTICE("Remove `show thread ...` commands")
+#endif
+DEFUN_NOSH (show_event_cpu,
+            show_event_cpu_cmd,
+            "show event cpu [FILTER]",
+            SHOW_STR
+            "Event information\n"
+            "Event CPU usage\n"
+            "Display filter (rwtexb)\n")
 {
 	uint8_t filter = (uint8_t)-1U;
 	int idx = 0;
@@ -331,6 +331,14 @@ DEFUN_NOSH (show_thread_cpu,
 	cpu_record_print(vty, filter);
 	return CMD_SUCCESS;
 }
+
+ALIAS(show_event_cpu,
+      show_thread_cpu_cmd,
+      "show thread cpu [FILTER]",
+      SHOW_STR
+      "Thread information\n"
+      "Thread CPU usage\n"
+      "Display filter (rwtex)\n")
 
 DEFPY (service_cputime_stats,
        service_cputime_stats_cmd,
@@ -373,7 +381,7 @@ DEFPY (service_walltime_warning,
 	return CMD_SUCCESS;
 }
 
-static void show_thread_poll_helper(struct vty *vty, struct event_loop *m)
+static void show_event_poll_helper(struct vty *vty, struct event_loop *m)
 {
 	const char *name = m->name ? m->name : "main";
 	char underline[strlen(name) + 1];
@@ -414,24 +422,30 @@ static void show_thread_poll_helper(struct vty *vty, struct event_loop *m)
 	}
 }
 
-DEFUN_NOSH (show_thread_poll,
-	    show_thread_poll_cmd,
-	    "show thread poll",
-	    SHOW_STR
-	    "Thread information\n"
-	    "Show poll FD's and information\n")
+DEFUN_NOSH (show_event_poll,
+            show_event_poll_cmd,
+            "show event poll",
+            SHOW_STR
+            "Event information\n"
+            "Event Poll Information\n")
 {
 	struct listnode *node;
 	struct event_loop *m;
 
 	frr_with_mutex (&masters_mtx) {
 		for (ALL_LIST_ELEMENTS_RO(masters, node, m))
-			show_thread_poll_helper(vty, m);
+			show_event_poll_helper(vty, m);
 	}
 
 	return CMD_SUCCESS;
 }
 
+ALIAS(show_event_poll,
+      show_thread_poll_cmd,
+      "show thread poll",
+      SHOW_STR
+      "Thread information\n"
+      "Show poll FD's and information\n")
 
 DEFUN (clear_thread_cpu,
        clear_thread_cpu_cmd,
@@ -458,7 +472,7 @@ DEFUN (clear_thread_cpu,
 	return CMD_SUCCESS;
 }
 
-static void show_thread_timers_helper(struct vty *vty, struct event_loop *m)
+static void show_event_timers_helper(struct vty *vty, struct event_loop *m)
 {
 	const char *name = m->name ? m->name : "main";
 	char underline[strlen(name) + 1];
@@ -475,28 +489,37 @@ static void show_thread_timers_helper(struct vty *vty, struct event_loop *m)
 	}
 }
 
-DEFPY_NOSH (show_thread_timers,
-	    show_thread_timers_cmd,
-	    "show thread timers",
-	    SHOW_STR
-	    "Thread information\n"
-	    "Show all timers and how long they have in the system\n")
+DEFPY_NOSH (show_event_timers,
+            show_event_timers_cmd,
+            "show event timers",
+            SHOW_STR
+            "Event information\n"
+            "Show all timers and how long they have in the system\n")
 {
 	struct listnode *node;
 	struct event_loop *m;
 
 	frr_with_mutex (&masters_mtx) {
 		for (ALL_LIST_ELEMENTS_RO(masters, node, m))
-			show_thread_timers_helper(vty, m);
+			show_event_timers_helper(vty, m);
 	}
 
 	return CMD_SUCCESS;
 }
 
+ALIAS(show_event_timers,
+      show_thread_timers_cmd,
+      "show thread timers",
+      SHOW_STR
+      "Thread information\n"
+      "Show all timers and how long they have in the system\n")
+
 void event_cmd_init(void)
 {
 	install_element(VIEW_NODE, &show_thread_cpu_cmd);
+	install_element(VIEW_NODE, &show_event_cpu_cmd);
 	install_element(VIEW_NODE, &show_thread_poll_cmd);
+	install_element(VIEW_NODE, &show_event_poll_cmd);
 	install_element(ENABLE_NODE, &clear_thread_cpu_cmd);
 
 	install_element(CONFIG_NODE, &service_cputime_stats_cmd);
@@ -504,6 +527,7 @@ void event_cmd_init(void)
 	install_element(CONFIG_NODE, &service_walltime_warning_cmd);
 
 	install_element(VIEW_NODE, &show_thread_timers_cmd);
+	install_element(VIEW_NODE, &show_event_timers_cmd);
 }
 /* CLI end ------------------------------------------------------------------ */
 
@@ -519,6 +543,7 @@ static void initializer(void)
 	pthread_key_create(&thread_current, NULL);
 }
 
+#define STUPIDLY_LARGE_FD_SIZE 100000
 struct event_loop *event_master_create(const char *name)
 {
 	struct event_loop *rv;
@@ -543,6 +568,13 @@ struct event_loop *event_master_create(const char *name)
 	if (rv->fd_limit == 0) {
 		getrlimit(RLIMIT_NOFILE, &limit);
 		rv->fd_limit = (int)limit.rlim_cur;
+	}
+
+	if (rv->fd_limit > STUPIDLY_LARGE_FD_SIZE) {
+		zlog_warn("FD Limit set: %u is stupidly large.  Is this what you intended?  Consider using --limit-fds also limiting size to %u",
+			  rv->fd_limit, STUPIDLY_LARGE_FD_SIZE);
+
+		rv->fd_limit = STUPIDLY_LARGE_FD_SIZE;
 	}
 
 	rv->read = XCALLOC(MTYPE_EVENT_POLL,
@@ -1594,11 +1626,69 @@ static int thread_process_io_helper(struct event_loop *m, struct event *thread,
 	return 1;
 }
 
+static inline void thread_process_io_inner_loop(struct event_loop *m,
+						unsigned int num,
+						struct pollfd *pfds, nfds_t *i,
+						uint32_t *ready)
+{
+	/* no event for current fd? immediately continue */
+	if (pfds[*i].revents == 0)
+		return;
+
+	*ready = *ready + 1;
+
+	/*
+	 * Unless someone has called event_cancel from another
+	 * pthread, the only thing that could have changed in
+	 * m->handler.pfds while we were asleep is the .events
+	 * field in a given pollfd. Barring event_cancel() that
+	 * value should be a superset of the values we have in our
+	 * copy, so there's no need to update it. Similarily,
+	 * barring deletion, the fd should still be a valid index
+	 * into the master's pfds.
+	 *
+	 * We are including POLLERR here to do a READ event
+	 * this is because the read should fail and the
+	 * read function should handle it appropriately
+	 */
+	if (pfds[*i].revents & (POLLIN | POLLHUP | POLLERR)) {
+		thread_process_io_helper(m, m->read[pfds[*i].fd], POLLIN,
+					 pfds[*i].revents, *i);
+	}
+	if (pfds[*i].revents & POLLOUT)
+		thread_process_io_helper(m, m->write[pfds[*i].fd], POLLOUT,
+					 pfds[*i].revents, *i);
+
+	/*
+	 * if one of our file descriptors is garbage, remove the same
+	 * from both pfds + update sizes and index
+	 */
+	if (pfds[*i].revents & POLLNVAL) {
+		memmove(m->handler.pfds + *i, m->handler.pfds + *i + 1,
+			(m->handler.pfdcount - *i - 1) * sizeof(struct pollfd));
+		m->handler.pfdcount--;
+		m->handler.pfds[m->handler.pfdcount].fd = 0;
+		m->handler.pfds[m->handler.pfdcount].events = 0;
+
+		memmove(pfds + *i, pfds + *i + 1,
+			(m->handler.copycount - *i - 1) * sizeof(struct pollfd));
+		m->handler.copycount--;
+		m->handler.copy[m->handler.copycount].fd = 0;
+		m->handler.copy[m->handler.copycount].events = 0;
+
+		*i = *i - 1;
+	}
+}
+
 /**
  * Process I/O events.
  *
  * Walks through file descriptor array looking for those pollfds whose .revents
  * field has something interesting. Deletes any invalid file descriptors.
+ *
+ * Try to impart some impartiality to handling of io.  The event
+ * system will cycle through the fd's available for io
+ * giving each one a chance to go first.
  *
  * @param m the thread master
  * @param num the number of active file descriptors (return value of poll())
@@ -1607,58 +1697,15 @@ static void thread_process_io(struct event_loop *m, unsigned int num)
 {
 	unsigned int ready = 0;
 	struct pollfd *pfds = m->handler.copy;
+	nfds_t i, last_read = m->last_read % m->handler.copycount;
 
-	for (nfds_t i = 0; i < m->handler.copycount && ready < num; ++i) {
-		/* no event for current fd? immediately continue */
-		if (pfds[i].revents == 0)
-			continue;
+	for (i = last_read; i < m->handler.copycount && ready < num; ++i)
+		thread_process_io_inner_loop(m, num, pfds, &i, &ready);
 
-		ready++;
+	for (i = 0; i < last_read && ready < num; ++i)
+		thread_process_io_inner_loop(m, num, pfds, &i, &ready);
 
-		/*
-		 * Unless someone has called event_cancel from another
-		 * pthread, the only thing that could have changed in
-		 * m->handler.pfds while we were asleep is the .events
-		 * field in a given pollfd. Barring event_cancel() that
-		 * value should be a superset of the values we have in our
-		 * copy, so there's no need to update it. Similarily,
-		 * barring deletion, the fd should still be a valid index
-		 * into the master's pfds.
-		 *
-		 * We are including POLLERR here to do a READ event
-		 * this is because the read should fail and the
-		 * read function should handle it appropriately
-		 */
-		if (pfds[i].revents & (POLLIN | POLLHUP | POLLERR)) {
-			thread_process_io_helper(m, m->read[pfds[i].fd], POLLIN,
-						 pfds[i].revents, i);
-		}
-		if (pfds[i].revents & POLLOUT)
-			thread_process_io_helper(m, m->write[pfds[i].fd],
-						 POLLOUT, pfds[i].revents, i);
-
-		/*
-		 * if one of our file descriptors is garbage, remove the same
-		 * from both pfds + update sizes and index
-		 */
-		if (pfds[i].revents & POLLNVAL) {
-			memmove(m->handler.pfds + i, m->handler.pfds + i + 1,
-				(m->handler.pfdcount - i - 1)
-					* sizeof(struct pollfd));
-			m->handler.pfdcount--;
-			m->handler.pfds[m->handler.pfdcount].fd = 0;
-			m->handler.pfds[m->handler.pfdcount].events = 0;
-
-			memmove(pfds + i, pfds + i + 1,
-				(m->handler.copycount - i - 1)
-					* sizeof(struct pollfd));
-			m->handler.copycount--;
-			m->handler.copy[m->handler.copycount].fd = 0;
-			m->handler.copy[m->handler.copycount].events = 0;
-
-			i--;
-		}
-	}
+	m->last_read++;
 }
 
 /* Add all timers that have popped to the ready list. */
@@ -1836,12 +1883,6 @@ struct event *event_fetch(struct event_loop *m, struct event *fetch)
 	} while (!thread && m->spin);
 
 	return fetch;
-}
-
-static unsigned long timeval_elapsed(struct timeval a, struct timeval b)
-{
-	return (((a.tv_sec - b.tv_sec) * TIMER_SECOND_MICRO)
-		+ (a.tv_usec - b.tv_usec));
 }
 
 unsigned long event_consumed_time(RUSAGE_T *now, RUSAGE_T *start,

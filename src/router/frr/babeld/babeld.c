@@ -242,7 +242,7 @@ babel_get_myid(void)
     /* We failed to get a global EUI64 from the interfaces we were given.
      Let's try to find an interface with a MAC address. */
     for(i = 1; i < 256; i++) {
-        char buf[INTERFACE_NAMSIZ], *ifname;
+        char buf[IFNAMSIZ], *ifname;
         unsigned char eui[8];
         ifname = if_indextoname(i, buf);
         if(ifname == NULL)
@@ -696,9 +696,8 @@ DEFPY (babel_set_smoothing_half_life,
 
 DEFUN (babel_distribute_list,
        babel_distribute_list_cmd,
-       "distribute-list [prefix] ACCESSLIST4_NAME <in|out> [WORD]",
+       "distribute-list ACCESSLIST4_NAME <in|out> [WORD]",
        "Filter networks in routing updates\n"
-       "Specify a prefix\n"
        "Access-list name\n"
        "Filter incoming routing updates\n"
        "Filter outgoing routing updates\n"
@@ -710,16 +709,26 @@ DEFUN (babel_distribute_list,
 	if (argv[argc - 1]->type == VARIABLE_TKN)
 		ifname = argv[argc - 1]->arg;
 
-	return distribute_list_parser(prefix, true, argv[2 + prefix]->text,
+	return distribute_list_parser(babel_routing_process->distribute_ctx,
+				      prefix, true, argv[2 + prefix]->text,
 				      argv[1 + prefix]->arg, ifname);
 }
 
+ALIAS (babel_distribute_list,
+       babel_distribute_list_prefix_cmd,
+       "distribute-list prefix PREFIXLIST4_NAME <in|out> [WORD]",
+       "Filter networks in routing updates\n"
+       "Specify a prefix list\n"
+       "Prefix-list name\n"
+       "Filter incoming routing updates\n"
+       "Filter outgoing routing updates\n"
+       "Interface name\n")
+
 DEFUN (babel_no_distribute_list,
        babel_no_distribute_list_cmd,
-       "no distribute-list [prefix] ACCESSLIST4_NAME <in|out> [WORD]",
+       "no distribute-list ACCESSLIST4_NAME <in|out> [WORD]",
        NO_STR
        "Filter networks in routing updates\n"
-       "Specify a prefix\n"
        "Access-list name\n"
        "Filter incoming routing updates\n"
        "Filter outgoing routing updates\n"
@@ -731,17 +740,28 @@ DEFUN (babel_no_distribute_list,
 	if (argv[argc - 1]->type == VARIABLE_TKN)
 		ifname = argv[argc - 1]->arg;
 
-	return distribute_list_no_parser(vty, prefix, true,
+	return distribute_list_no_parser(babel_routing_process->distribute_ctx,
+					 vty, prefix, true,
 					 argv[3 + prefix]->text,
 					 argv[2 + prefix]->arg, ifname);
 }
 
+ALIAS (babel_no_distribute_list,
+       babel_no_distribute_list_prefix_cmd,
+       "no distribute-list prefix PREFIXLIST4_NAME <in|out> [WORD]",
+       NO_STR
+       "Filter networks in routing updates\n"
+       "Specify a prefix list\n"
+       "Prefix-list name\n"
+       "Filter incoming routing updates\n"
+       "Filter outgoing routing updates\n"
+       "Interface name\n")
+
 DEFUN (babel_ipv6_distribute_list,
        babel_ipv6_distribute_list_cmd,
-       "ipv6 distribute-list [prefix] ACCESSLIST6_NAME <in|out> [WORD]",
+       "ipv6 distribute-list ACCESSLIST6_NAME <in|out> [WORD]",
        "IPv6\n"
        "Filter networks in routing updates\n"
-       "Specify a prefix\n"
        "Access-list name\n"
        "Filter incoming routing updates\n"
        "Filter outgoing routing updates\n"
@@ -753,17 +773,28 @@ DEFUN (babel_ipv6_distribute_list,
 	if (argv[argc - 1]->type == VARIABLE_TKN)
 		ifname = argv[argc - 1]->arg;
 
-	return distribute_list_parser(prefix, false, argv[3 + prefix]->text,
+	return distribute_list_parser(babel_routing_process->distribute_ctx,
+				      prefix, false, argv[3 + prefix]->text,
 				      argv[2 + prefix]->arg, ifname);
 }
 
+ALIAS (babel_ipv6_distribute_list,
+       babel_ipv6_distribute_list_prefix_cmd,
+       "ipv6 distribute-list prefix PREFIXLIST6_NAME <in|out> [WORD]",
+       "IPv6\n"
+       "Filter networks in routing updates\n"
+       "Specify a prefix list\n"
+       "Prefix-list name\n"
+       "Filter incoming routing updates\n"
+       "Filter outgoing routing updates\n"
+       "Interface name\n")
+
 DEFUN (babel_no_ipv6_distribute_list,
        babel_no_ipv6_distribute_list_cmd,
-       "no ipv6 distribute-list [prefix] ACCESSLIST6_NAME <in|out> [WORD]",
+       "no ipv6 distribute-list ACCESSLIST6_NAME <in|out> [WORD]",
        NO_STR
        "IPv6\n"
        "Filter networks in routing updates\n"
-       "Specify a prefix\n"
        "Access-list name\n"
        "Filter incoming routing updates\n"
        "Filter outgoing routing updates\n"
@@ -775,10 +806,23 @@ DEFUN (babel_no_ipv6_distribute_list,
 	if (argv[argc - 1]->type == VARIABLE_TKN)
 		ifname = argv[argc - 1]->arg;
 
-	return distribute_list_no_parser(vty, prefix, false,
+	return distribute_list_no_parser(babel_routing_process->distribute_ctx,
+					 vty, prefix, false,
 					 argv[4 + prefix]->text,
 					 argv[3 + prefix]->arg, ifname);
 }
+
+ALIAS (babel_no_ipv6_distribute_list,
+       babel_no_ipv6_distribute_list_prefix_cmd,
+       "no ipv6 distribute-list prefix PREFIXLIST6_NAME <in|out> [WORD]",
+       NO_STR
+       "IPv6\n"
+       "Filter networks in routing updates\n"
+       "Specify a prefix list\n"
+       "Prefix-list name\n"
+       "Filter incoming routing updates\n"
+       "Filter outgoing routing updates\n"
+       "Interface name\n")
 
 void
 babeld_quagga_init(void)
@@ -797,9 +841,13 @@ babeld_quagga_init(void)
     install_element(BABEL_NODE, &babel_set_smoothing_half_life_cmd);
 
     install_element(BABEL_NODE, &babel_distribute_list_cmd);
+    install_element(BABEL_NODE, &babel_distribute_list_prefix_cmd);
     install_element(BABEL_NODE, &babel_no_distribute_list_cmd);
+    install_element(BABEL_NODE, &babel_no_distribute_list_prefix_cmd);
     install_element(BABEL_NODE, &babel_ipv6_distribute_list_cmd);
+    install_element(BABEL_NODE, &babel_ipv6_distribute_list_prefix_cmd);
     install_element(BABEL_NODE, &babel_no_ipv6_distribute_list_cmd);
+    install_element(BABEL_NODE, &babel_no_ipv6_distribute_list_prefix_cmd);
 
     vrf_cmd_init(NULL);
 

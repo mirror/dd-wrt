@@ -37,6 +37,7 @@ static void keychain_free(struct keychain *keychain)
 static struct key *key_new(void)
 {
 	struct key *key = XCALLOC(MTYPE_KEY, sizeof(struct key));
+
 	QOBJ_REG(key, key);
 	return key;
 }
@@ -77,7 +78,7 @@ static int key_cmp_func(void *arg1, void *arg2)
 static void key_delete_func(struct key *key)
 {
 	if (key->string)
-		free(key->string);
+		XFREE(MTYPE_KEY, key->string);
 	key_free(key);
 }
 
@@ -1186,6 +1187,20 @@ static const struct cmd_variable_handler keychain_var_handlers[] = {
 	{.tokenname = "KCHAIN_NAME", .completions = keychain_active_config},
 	{.completions = NULL}
 };
+
+void keychain_terminate(void)
+{
+	struct keychain *keychain;
+
+	while (listcount(keychain_list)) {
+		keychain = listgetdata(listhead(keychain_list));
+
+		listnode_delete(keychain_list, keychain);
+		keychain_delete(keychain);
+	}
+
+	list_delete(&keychain_list);
+}
 
 void keychain_init(void)
 {

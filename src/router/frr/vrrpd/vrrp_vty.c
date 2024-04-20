@@ -62,11 +62,11 @@ DEFPY_YANG(vrrp_vrid,
 
 void cli_show_vrrp(struct vty *vty, const struct lyd_node *dnode, bool show_defaults)
 {
-	const char *vrid = yang_dnode_get_string(dnode, "./virtual-router-id");
-	const char *ver = yang_dnode_get_string(dnode, "./version");
+	const char *vrid = yang_dnode_get_string(dnode, "virtual-router-id");
+	const char *ver = yang_dnode_get_string(dnode, "version");
 
 	vty_out(vty, " vrrp %s", vrid);
-	if (show_defaults || !yang_dnode_is_default(dnode, "./version"))
+	if (show_defaults || !yang_dnode_is_default(dnode, "version"))
 		vty_out(vty, " version %s", ver);
 	vty_out(vty, "\n");
 }
@@ -200,7 +200,11 @@ DEFPY_YANG(vrrp_ip,
       VRRP_IP_STR)
 {
 	int op = no ? NB_OP_DESTROY : NB_OP_CREATE;
-	nb_cli_enqueue_change(vty, "./v4/virtual-address", op, ip_str);
+	char xpath[XPATH_MAXLEN];
+
+	snprintf(xpath, sizeof(xpath), "./v4/virtual-address[.='%s']", ip_str);
+
+	nb_cli_enqueue_change(vty, xpath, op, NULL);
 
 	return nb_cli_apply_changes(vty, VRRP_XPATH_ENTRY, vrid);
 }
@@ -228,7 +232,11 @@ DEFPY_YANG(vrrp_ip6,
       VRRP_IP_STR)
 {
 	int op = no ? NB_OP_DESTROY : NB_OP_CREATE;
-	nb_cli_enqueue_change(vty, "./v6/virtual-address", op, ipv6_str);
+	char xpath[XPATH_MAXLEN];
+
+	snprintf(xpath, sizeof(xpath), "./v6/virtual-address[.='%s']", ipv6_str);
+
+	nb_cli_enqueue_change(vty, xpath, op, NULL);
 
 	return nb_cli_apply_changes(vty, VRRP_XPATH_ENTRY, vrid);
 }

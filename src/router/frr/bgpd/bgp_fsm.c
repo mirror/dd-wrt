@@ -445,7 +445,7 @@ void bgp_timer_set(struct peer_connection *connection)
 
 		EVENT_OFF(peer->connection->t_pmax_restart);
 		EVENT_OFF(peer->t_refresh_stalepath);
-	/* fallthru */
+		fallthrough;
 	case Clearing:
 		EVENT_OFF(connection->t_start);
 		EVENT_OFF(connection->t_connect);
@@ -562,42 +562,45 @@ void bgp_delayopen_timer(struct event *thread)
 }
 
 /* BGP Peer Down Cause */
-const char *const peer_down_str[] = {"",
-				     "Router ID changed",
-				     "Remote AS changed",
-				     "Local AS change",
-				     "Cluster ID changed",
-				     "Confederation identifier changed",
-				     "Confederation peer changed",
-				     "RR client config change",
-				     "RS client config change",
-				     "Update source change",
-				     "Address family activated",
-				     "Admin. shutdown",
-				     "User reset",
-				     "BGP Notification received",
-				     "BGP Notification send",
-				     "Peer closed the session",
-				     "Neighbor deleted",
-				     "Peer-group add member",
-				     "Peer-group delete member",
-				     "Capability changed",
-				     "Passive config change",
-				     "Multihop config change",
-				     "NSF peer closed the session",
-				     "Intf peering v6only config change",
-				     "BFD down received",
-				     "Interface down",
-				     "Neighbor address lost",
-				     "No path to specified Neighbor",
-				     "Waiting for Peer IPv6 LLA",
-				     "Waiting for VRF to be initialized",
-				     "No AFI/SAFI activated for peer",
-				     "AS Set config change",
-				     "Waiting for peer OPEN",
-				     "Reached received prefix count",
-				     "Socket Error",
-				     "Admin. shutdown (RTT)"};
+const char *const peer_down_str[] = {
+	"",
+	"Router ID changed",
+	"Remote AS changed",
+	"Local AS change",
+	"Cluster ID changed",
+	"Confederation identifier changed",
+	"Confederation peer changed",
+	"RR client config change",
+	"RS client config change",
+	"Update source change",
+	"Address family activated",
+	"Admin. shutdown",
+	"User reset",
+	"BGP Notification received",
+	"BGP Notification send",
+	"Peer closed the session",
+	"Neighbor deleted",
+	"Peer-group add member",
+	"Peer-group delete member",
+	"Capability changed",
+	"Passive config change",
+	"Multihop config change",
+	"NSF peer closed the session",
+	"Intf peering v6only config change",
+	"BFD down received",
+	"Interface down",
+	"Neighbor address lost",
+	"No path to specified Neighbor",
+	"Waiting for Peer IPv6 LLA",
+	"Waiting for VRF to be initialized",
+	"No AFI/SAFI activated for peer",
+	"AS Set config change",
+	"Waiting for peer OPEN",
+	"Reached received prefix count",
+	"Socket Error",
+	"Admin. shutdown (RTT)",
+	"Suppress Fib Turned On or Off",
+};
 
 static void bgp_graceful_restart_timer_off(struct peer_connection *connection,
 					   struct peer *peer)
@@ -2384,6 +2387,7 @@ void bgp_fsm_nht_update(struct peer_connection *connection, struct peer *peer,
 		    && (peer->gtsm_hops == BGP_GTSM_HOPS_CONNECTED
 			|| peer->bgp->fast_convergence))
 			BGP_EVENT_ADD(connection, TCP_fatal_error);
+		break;
 	case Clearing:
 	case Deleted:
 	case BGP_STATUS_MAX:
@@ -2716,7 +2720,7 @@ int bgp_gr_lookup_n_update_all_peer(struct bgp *bgp,
 	return BGP_GR_SUCCESS;
 }
 
-int bgp_gr_update_all(struct bgp *bgp, int global_gr_cmd)
+int bgp_gr_update_all(struct bgp *bgp, enum global_gr_command global_gr_cmd)
 {
 	enum global_mode global_new_state = GLOBAL_INVALID;
 	enum global_mode global_old_state = GLOBAL_INVALID;
@@ -2870,7 +2874,8 @@ enum peer_mode bgp_peer_gr_mode_get(struct peer *peer)
 	return peer->peer_gr_present_state;
 }
 
-int bgp_neighbor_graceful_restart(struct peer *peer, int peer_gr_cmd)
+int bgp_neighbor_graceful_restart(struct peer *peer,
+				  enum peer_gr_command peer_gr_cmd)
 {
 	enum peer_mode peer_new_state = PEER_INVALID;
 	enum peer_mode peer_old_state = PEER_INVALID;
@@ -2929,8 +2934,8 @@ int bgp_neighbor_graceful_restart(struct peer *peer, int peer_gr_cmd)
 	return result;
 }
 
-unsigned int bgp_peer_gr_action(struct peer *peer, int old_peer_state,
-				int new_peer_state)
+unsigned int bgp_peer_gr_action(struct peer *peer, enum peer_mode old_peer_state,
+				enum peer_mode new_peer_state)
 {
 	if (BGP_DEBUG(graceful_restart, GRACEFUL_RESTART))
 		zlog_debug(
@@ -2938,7 +2943,7 @@ unsigned int bgp_peer_gr_action(struct peer *peer, int old_peer_state,
 			__func__, print_peer_gr_mode(old_peer_state),
 			print_peer_gr_mode(new_peer_state));
 
-	int bgp_gr_global_mode = GLOBAL_INVALID;
+	enum global_mode bgp_gr_global_mode = GLOBAL_INVALID;
 	unsigned int ret = BGP_GR_FAILURE;
 
 	if (old_peer_state == new_peer_state) {
@@ -2970,10 +2975,10 @@ unsigned int bgp_peer_gr_action(struct peer *peer, int old_peer_state,
 
 		BGP_PEER_GR_GLOBAL_INHERIT_UNSET(peer);
 
-		if (new_peer_state == bgp_gr_global_mode) {
-			/*This is incremental updates i.e no tear down
-			 *of the existing session
-			 *as the peer is already working in the same mode.
+		if ((int)new_peer_state == (int)bgp_gr_global_mode) {
+			/* This is incremental updates i.e no tear down
+			 * of the existing session
+			 * as the peer is already working in the same mode.
 			 */
 			ret = BGP_GR_SUCCESS;
 		} else {
@@ -3000,8 +3005,7 @@ unsigned int bgp_peer_gr_action(struct peer *peer, int old_peer_state,
 
 		BGP_PEER_GR_GLOBAL_INHERIT_SET(peer);
 
-		if (old_peer_state == bgp_gr_global_mode) {
-
+		if ((int)old_peer_state == (int)bgp_gr_global_mode) {
 			/* This is incremental updates
 			 *i.e no tear down of the existing session
 			 *as the peer is already working in the same mode.

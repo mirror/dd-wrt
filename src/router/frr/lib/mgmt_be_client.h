@@ -14,52 +14,18 @@ extern "C" {
 
 #include "northbound.h"
 #include "mgmt_pb.h"
-#include "mgmtd/mgmt_defines.h"
-
-/***************************************************************
- * Client IDs
- ***************************************************************/
-
-/*
- * Add enum value for each supported component, wrap with
- * #ifdef HAVE_COMPONENT
- */
-enum mgmt_be_client_id {
-	MGMTD_BE_CLIENT_ID_MIN = 0,
-	MGMTD_BE_CLIENT_ID_INIT = -1,
-#ifdef HAVE_STATICD
-	MGMTD_BE_CLIENT_ID_STATICD,
-#endif
-	MGMTD_BE_CLIENT_ID_MAX
-};
-
-#define FOREACH_MGMTD_BE_CLIENT_ID(id)			\
-	for ((id) = MGMTD_BE_CLIENT_ID_MIN;		\
-	     (id) < MGMTD_BE_CLIENT_ID_MAX; (id)++)
+#include "mgmt_defines.h"
 
 /***************************************************************
  * Constants
  ***************************************************************/
 
-#define MGMTD_BE_CLIENT_ERROR_STRING_MAX_LEN 32
-
-#define MGMTD_BE_DEFAULT_CONN_RETRY_INTVL_SEC 5
-
-#define MGMTD_BE_MSG_PROC_DELAY_USEC 10
-#define MGMTD_BE_MAX_NUM_MSG_PROC 500
-
-#define MGMTD_BE_MSG_WRITE_DELAY_MSEC 1
+#define MGMTD_BE_MAX_NUM_MSG_PROC  500
 #define MGMTD_BE_MAX_NUM_MSG_WRITE 1000
+#define MGMTD_BE_MAX_MSG_LEN	   (64 * 1024)
 
-#define GMGD_BE_MAX_NUM_REQ_ITEMS 64
-
-#define MGMTD_BE_MSG_MAX_LEN 16384
-
-#define MGMTD_SOCKET_BE_SEND_BUF_SIZE 65535
-#define MGMTD_SOCKET_BE_RECV_BUF_SIZE MGMTD_SOCKET_BE_SEND_BUF_SIZE
-
-#define MGMTD_MAX_CFG_CHANGES_IN_BATCH				\
-	((10 * MGMTD_BE_MSG_MAX_LEN) /				\
+#define MGMTD_MAX_CFG_CHANGES_IN_BATCH                                         \
+	((10 * MGMTD_BE_MAX_MSG_LEN) /                                         \
 	 (MGMTD_MAX_XPATH_LEN + MGMTD_MAX_YANG_VALUE_LEN))
 
 /*
@@ -68,11 +34,11 @@ enum mgmt_be_client_id {
  * that gets added to sent message
  */
 #define MGMTD_BE_CFGDATA_PACKING_EFFICIENCY 0.8
-#define MGMTD_BE_CFGDATA_MAX_MSG_LEN                                        \
-	(MGMTD_BE_MSG_MAX_LEN * MGMTD_BE_CFGDATA_PACKING_EFFICIENCY)
+#define MGMTD_BE_CFGDATA_MAX_MSG_LEN                                           \
+	(MGMTD_BE_MAX_MSG_LEN * MGMTD_BE_CFGDATA_PACKING_EFFICIENCY)
 
-#define MGMTD_BE_MAX_BATCH_IDS_IN_REQ                                       \
-	(MGMTD_BE_MSG_MAX_LEN - 128) / sizeof(uint64_t)
+#define MGMTD_BE_MAX_BATCH_IDS_IN_REQ                                          \
+	(MGMTD_BE_MAX_MSG_LEN - 128) / sizeof(uint64_t)
 
 #define MGMTD_BE_CONTAINER_NODE_VAL "<<container>>"
 
@@ -94,42 +60,26 @@ struct mgmt_be_client_txn_ctx {
  * Callbacks:
  *	client_connect_notify: called when connection is made/lost to mgmtd.
  *	txn_notify: called when a txn has been created
+ *	notify_cbs: callbacks for notifications.
+ *	nnotify_cbs: number of notification callbacks.
+ *
  */
 struct mgmt_be_client_cbs {
 	void (*client_connect_notify)(struct mgmt_be_client *client,
 				      uintptr_t usr_data, bool connected);
-
+	void (*subscr_done)(struct mgmt_be_client *client, uintptr_t usr_data,
+			    bool success);
 	void (*txn_notify)(struct mgmt_be_client *client, uintptr_t usr_data,
 			   struct mgmt_be_client_txn_ctx *txn_ctx,
 			   bool destroyed);
+
+	const char **notif_xpaths;
+	uint nnotif_xpaths;
 };
 
 /***************************************************************
  * Global data exported
  ***************************************************************/
-
-extern const char *mgmt_be_client_names[MGMTD_BE_CLIENT_ID_MAX + 1];
-
-static inline const char *mgmt_be_client_id2name(enum mgmt_be_client_id id)
-{
-	if (id > MGMTD_BE_CLIENT_ID_MAX)
-		id = MGMTD_BE_CLIENT_ID_MAX;
-	return mgmt_be_client_names[id];
-}
-
-static inline enum mgmt_be_client_id
-mgmt_be_client_name2id(const char *name)
-{
-	enum mgmt_be_client_id id;
-
-	FOREACH_MGMTD_BE_CLIENT_ID (id) {
-		if (!strncmp(mgmt_be_client_names[id], name,
-			     MGMTD_CLIENT_NAME_MAX_LEN))
-			return id;
-	}
-
-	return MGMTD_BE_CLIENT_ID_MAX;
-}
 
 extern struct debug mgmt_dbg_be_client;
 
@@ -137,12 +87,12 @@ extern struct debug mgmt_dbg_be_client;
  * API prototypes
  ***************************************************************/
 
-#define MGMTD_BE_CLIENT_DBG(fmt, ...)                                          \
+#define debug_be_client(fmt, ...)                                              \
 	DEBUGD(&mgmt_dbg_be_client, "BE-CLIENT: %s: " fmt, __func__,           \
 	       ##__VA_ARGS__)
-#define MGMTD_BE_CLIENT_ERR(fmt, ...)                                          \
+#define log_err_be_client(fmt, ...)                                            \
 	zlog_err("BE-CLIENT: %s: ERROR: " fmt, __func__, ##__VA_ARGS__)
-#define MGMTD_DBG_BE_CLIENT_CHECK()                                            \
+#define debug_check_be_client()                                                \
 	DEBUG_MODE_CHECK(&mgmt_dbg_be_client, DEBUG_MODE_ALL)
 
 /**
@@ -181,7 +131,7 @@ extern void mgmt_debug_be_client_show_debug(struct vty *vty);
  *    The client object.
  *
  * reg_yang_xpaths
- *    Yang xpath(s) that needs to be [un]-subscribed from/to
+ *    Yang xpath(s) that needs to be subscribed to
  *
  * num_xpaths
  *    Number of xpaths
@@ -189,9 +139,9 @@ extern void mgmt_debug_be_client_show_debug(struct vty *vty);
  * Returns:
  *    MGMTD_SUCCESS on success, MGMTD_* otherwise.
  */
-extern int mgmt_be_send_subscr_req(struct mgmt_be_client *client,
-				   bool subscr_xpaths, int num_xpaths,
-				   char **reg_xpaths);
+extern int mgmt_be_send_subscr_req(struct mgmt_be_client *client_ctx,
+				   int n_config_xpaths, char **config_xpaths,
+				   int n_oper_xpaths, char **oper_xpaths);
 
 /*
  * Destroy backend client and cleanup everything.

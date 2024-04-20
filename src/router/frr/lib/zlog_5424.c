@@ -13,6 +13,9 @@
  */
 
 #include "zebra.h"
+#include <fcntl.h>
+
+#include "frrsendmmsg.h"
 
 #include "zlog_5424.h"
 
@@ -913,7 +916,7 @@ static int zlog_5424_open(struct zlog_cfg_5424 *zcf, int sock_type)
 		}
 
 		flags = O_NONBLOCK;
-		/* fallthru */
+		fallthrough;
 
 	case ZLOG_5424_DST_FILE:
 		if (!zcf->filename)

@@ -339,6 +339,8 @@ void ospf_if_free(struct ospf_interface *oi)
 
 	assert(oi->state == ISM_Down);
 
+	ospf_opaque_type9_lsa_if_cleanup(oi);
+
 	ospf_opaque_type9_lsa_term(oi);
 
 	QOBJ_UNREG(oi);
@@ -378,26 +380,6 @@ void ospf_if_free(struct ospf_interface *oi)
 int ospf_if_is_up(struct ospf_interface *oi)
 {
 	return if_is_up(oi->ifp);
-}
-
-struct ospf_interface *ospf_if_exists(struct ospf_interface *oic)
-{
-	struct listnode *node;
-	struct ospf *ospf;
-	struct ospf_interface *oi;
-
-	if (!oic)
-		return NULL;
-
-	ospf = oic->ospf;
-	if (ospf == NULL)
-		return NULL;
-
-	for (ALL_LIST_ELEMENTS_RO(ospf->oiflist, node, oi))
-		if (oi == oic)
-			return oi;
-
-	return NULL;
 }
 
 /* Lookup OSPF interface by router LSA posistion */
@@ -932,7 +914,7 @@ struct ospf_interface *ospf_vl_new(struct ospf *ospf,
 {
 	struct ospf_interface *voi;
 	struct interface *vi;
-	char ifname[INTERFACE_NAMSIZ];
+	char ifname[IFNAMSIZ];
 	struct ospf_area *area;
 	struct in_addr area_id;
 	struct connected *co;
@@ -962,7 +944,7 @@ struct ospf_interface *ospf_vl_new(struct ospf *ospf,
 	UNSET_FLAG(vi->status, ZEBRA_INTERFACE_LINKDETECTION);
 	co = connected_new();
 	co->ifp = vi;
-	listnode_add(vi->connected, co);
+	if_connected_add_tail(vi->connected, co);
 
 	p = prefix_ipv4_new();
 	p->family = AF_INET;
@@ -1167,7 +1149,7 @@ static int ospf_vl_set_params(struct ospf_area *area,
 				if (IS_DEBUG_OSPF_EVENT)
 					zlog_debug(
 						"found back link through VL");
-			/* fallthru */
+				fallthrough;
 			case LSA_LINK_TYPE_TRANSIT:
 			case LSA_LINK_TYPE_POINTOPOINT:
 				if (!IPV4_ADDR_SAME(&vl_data->peer_addr,
@@ -1562,8 +1544,10 @@ void ospf_reset_hello_timer(struct interface *ifp, struct in_addr addr,
 
 void ospf_if_init(void)
 {
-	if_zapi_callbacks(ospf_ifp_create, ospf_ifp_up,
-			  ospf_ifp_down, ospf_ifp_destroy);
+	hook_register_prio(if_real, 0, ospf_ifp_create);
+	hook_register_prio(if_up, 0, ospf_ifp_up);
+	hook_register_prio(if_down, 0, ospf_ifp_down);
+	hook_register_prio(if_unreal, 0, ospf_ifp_destroy);
 
 	/* Initialize Zebra interface data structure. */
 	hook_register_prio(if_add, 0, ospf_if_new_hook);

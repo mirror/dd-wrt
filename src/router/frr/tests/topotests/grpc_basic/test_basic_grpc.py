@@ -30,7 +30,7 @@ GRPCP_OSPFD = 50055
 GRPCP_PIMD = 50056
 
 pytestmark = [
-    # pytest.mark.mgmtd -- Need a new non-protocol marker
+    pytest.mark.mgmtd,
     # pytest.mark.bfdd,
     # pytest.mark.isisd,
     # pytest.mark.ospfd,
@@ -142,7 +142,7 @@ def test_shutdown_checks(tgen):
     time.sleep(1)
     try:
         for r in tgen.routers().values():
-            r.net.stopRouter()
+            r.net.stopRouter(False)
             r.net.checkRouterCores()
     finally:
         if p:

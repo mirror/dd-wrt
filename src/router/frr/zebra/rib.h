@@ -85,24 +85,11 @@ struct route_entry {
 	 */
 	struct nhg_hash_entry *nhe;
 
-	/* Nexthop group from FIB (optional), reflecting what is actually
-	 * installed in the FIB if that differs. The 'backup' group is used
-	 * when backup nexthops are present in the route's nhg.
-	 */
-	struct nexthop_group fib_ng;
-	struct nexthop_group fib_backup_ng;
-
 	/* Nexthop group hash entry IDs. The "installed" id is the id
 	 * used in linux/netlink, if available.
 	 */
 	uint32_t nhe_id;
 	uint32_t nhe_installed_id;
-
-	/* Tag */
-	route_tag_t tag;
-
-	/* Uptime. */
-	time_t uptime;
 
 	/* Type of this route. */
 	int type;
@@ -160,7 +147,20 @@ struct route_entry {
 	/* Distance. */
 	uint8_t distance;
 
+	/* Tag */
+	route_tag_t tag;
+
+	/* Uptime. */
+	time_t uptime;
+
 	struct re_opaque *opaque;
+
+	/* Nexthop group from FIB (optional), reflecting what is actually
+	 * installed in the FIB if that differs. The 'backup' group is used
+	 * when backup nexthops are present in the route's nhg.
+	 */
+	struct nexthop_group fib_ng;
+	struct nexthop_group fib_backup_ng;
 };
 
 #define RIB_SYSTEM_ROUTE(R) RSYSTEM_ROUTE((R)->type)
@@ -169,7 +169,7 @@ struct route_entry {
 
 /* Define route types that are equivalent to "connected". */
 #define RIB_CONNECTED_ROUTE(R)                                                 \
-	((R)->type == ZEBRA_ROUTE_CONNECT || (R)->type == ZEBRA_ROUTE_NHRP)
+	((R)->type == ZEBRA_ROUTE_CONNECT || (R)->type == ZEBRA_ROUTE_LOCAL || (R)->type == ZEBRA_ROUTE_NHRP)
 
 /* meta-queue structure:
  * sub-queue 0: nexthop group objects
@@ -345,6 +345,8 @@ extern void _route_entry_dump(const char *func, union prefixconstptr pp,
 			      union prefixconstptr src_pp,
 			      const struct route_entry *re);
 
+void zebra_rib_route_entry_free(struct route_entry *re);
+
 struct route_entry *
 zebra_rib_route_entry_new(vrf_id_t vrf_id, int type, uint8_t instance,
 			  uint32_t flags, uint32_t nhe_id, uint32_t table_id,
@@ -414,7 +416,8 @@ extern void rib_update_table(struct route_table *table,
 extern void rib_sweep_route(struct event *t);
 extern void rib_sweep_table(struct route_table *table);
 extern void rib_close_table(struct route_table *table);
-extern void rib_init(void);
+extern void zebra_rib_init(void);
+extern void zebra_rib_terminate(void);
 extern unsigned long rib_score_proto(uint8_t proto, unsigned short instance);
 extern unsigned long rib_score_proto_table(uint8_t proto,
 					   unsigned short instance,
@@ -429,6 +432,7 @@ extern int rib_queue_nhg_ctx_add(struct nhg_ctx *ctx);
 
 /* Enqueue incoming nhg from proto daemon for processing */
 extern int rib_queue_nhe_add(struct nhg_hash_entry *nhe);
+extern int rib_queue_nhe_del(struct nhg_hash_entry *nhe);
 
 /* Enqueue evpn route for processing */
 int zebra_rib_queue_evpn_route_add(vrf_id_t vrf_id, const struct ethaddr *rmac,
@@ -626,8 +630,6 @@ extern int rib_add_gr_run(afi_t afi, vrf_id_t vrf_id, uint8_t proto,
 extern void zebra_vty_init(void);
 
 extern pid_t pid;
-
-extern bool v6_rr_semantics;
 
 extern uint32_t rt_table_main_id;
 

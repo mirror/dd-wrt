@@ -6,6 +6,7 @@
 #ifndef _ZEBRA_THREAD_H
 #define _ZEBRA_THREAD_H
 
+#include <signal.h>
 #include <zebra.h>
 #include <pthread.h>
 #include <poll.h>
@@ -91,6 +92,8 @@ struct event_loop {
 	pthread_mutex_t mtx;
 	pthread_t owner;
 
+	nfds_t last_read;
+
 	bool ready_run_loop;
 	RUSAGE_T last_getrusage;
 };
@@ -152,6 +155,12 @@ struct cpu_event_history {
 
 /* Struct timeval's tv_usec one second value.  */
 #define TIMER_SECOND_MICRO 1000000L
+
+static inline unsigned long timeval_elapsed(struct timeval a, struct timeval b)
+{
+	return (((a.tv_sec - b.tv_sec) * TIMER_SECOND_MICRO)
+		+ (a.tv_usec - b.tv_usec));
+}
 
 /* Event yield time.  */
 #define EVENT_YIELD_TIME_SLOT 10 * 1000L /* 10ms */

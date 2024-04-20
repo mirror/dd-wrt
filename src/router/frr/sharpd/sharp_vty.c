@@ -27,8 +27,35 @@
 
 DEFINE_MTYPE_STATIC(SHARPD, SRV6_LOCATOR, "SRv6 Locator");
 
+DEFPY(watch_neighbor, watch_neighbor_cmd,
+      "sharp watch [vrf NAME$vrf_name] neighbor",
+      "Sharp routing Protocol\n"
+      "Watch for changes\n"
+      "The vrf we would like to watch if non-default\n"
+      "The NAME of the vrf\n"
+      "Neighbor events\n")
+{
+	struct vrf *vrf;
+
+	if (!vrf_name)
+		vrf_name = VRF_DEFAULT_NAME;
+	vrf = vrf_lookup_by_name(vrf_name);
+
+	if (!vrf) {
+		vty_out(vty, "The vrf NAME specified: %s does not exist\n",
+			vrf_name);
+		return CMD_WARNING;
+	}
+
+	sharp_zebra_register_neigh(vrf->vrf_id, AFI_IP, true);
+
+	return CMD_SUCCESS;
+}
+
+
 DEFPY(watch_redistribute, watch_redistribute_cmd,
-      "sharp watch [vrf NAME$vrf_name] redistribute " FRR_REDIST_STR_SHARPD,
+      "[no] sharp watch [vrf NAME$vrf_name] redistribute " FRR_REDIST_STR_SHARPD,
+      NO_STR
       "Sharp routing Protocol\n"
       "Watch for changes\n"
       "The vrf we would like to watch if non-default\n"
@@ -49,7 +76,7 @@ DEFPY(watch_redistribute, watch_redistribute_cmd,
 	}
 
 	source = proto_redistnum(AFI_IP, argv[argc-1]->text);
-	sharp_redistribute_vrf(vrf, source);
+	sharp_redistribute_vrf(vrf, source, !no);
 
 	return CMD_SUCCESS;
 }
@@ -1419,6 +1446,7 @@ void sharp_vty_init(void)
 	install_element(ENABLE_NODE, &remove_routes_cmd);
 	install_element(ENABLE_NODE, &vrf_label_cmd);
 	install_element(ENABLE_NODE, &sharp_nht_data_dump_cmd);
+	install_element(ENABLE_NODE, &watch_neighbor_cmd);
 	install_element(ENABLE_NODE, &watch_redistribute_cmd);
 	install_element(ENABLE_NODE, &watch_nexthop_v6_cmd);
 	install_element(ENABLE_NODE, &watch_nexthop_v4_cmd);

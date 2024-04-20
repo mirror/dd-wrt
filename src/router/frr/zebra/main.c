@@ -5,6 +5,10 @@
 
 #include <zebra.h>
 
+#ifdef GNU_LINUX
+#include <linux/rtnetlink.h>
+#endif
+
 #include <lib/version.h>
 #include "getopt.h"
 #include "command.h"
@@ -21,6 +25,7 @@
 #include "affinitymap.h"
 #include "routemap.h"
 #include "routing_nb.h"
+#include "mgmt_be_client.h"
 
 #include "zebra/zebra_router.h"
 #include "zebra/zebra_errors.h"
@@ -54,12 +59,12 @@ pid_t pid;
 /* Pacify zclient.o in libfrr, which expects this variable. */
 struct event_loop *master;
 
+struct mgmt_be_client *mgmt_be_client;
+
 /* Route retain mode flag. */
 int retain_mode = 0;
 
 int graceful_restart;
-
-bool v6_rr_semantics = false;
 
 /* Receive buffer size for kernel control sockets */
 #define RCVBUFSIZE_MIN 4194304
@@ -140,6 +145,10 @@ static void sigint(void)
 
 	zlog_notice("Terminating on signal");
 
+	nb_oper_cancel_all_walks();
+	mgmt_be_client_destroy(mgmt_be_client);
+	mgmt_be_client = NULL;
+
 	atomic_store_explicit(&zrouter.in_shutdown, true,
 			      memory_order_relaxed);
 
@@ -195,6 +204,12 @@ static void sigint(void)
 
 	list_delete(&zrouter.client_list);
 
+	/*
+	 * Besides other clean-ups zebra's vrf_disable() also enqueues installed
+	 * routes for removal from the kernel, unless ZEBRA_VRF_RETAIN is set.
+	 */
+	vrf_iterate(vrf_disable);
+
 	/* Indicate that all new dplane work has been enqueued. When that
 	 * work is complete, the dataplane will enqueue an event
 	 * with the 'finalize' function.
@@ -226,7 +241,16 @@ void zebra_finalize(struct event *dummy)
 	/* Final shutdown of ns resources */
 	ns_walk_func(zebra_ns_final_shutdown, NULL, NULL);
 
+	zebra_rib_terminate();
 	zebra_router_terminate();
+
+	zebra_mpls_terminate();
+
+	zebra_pw_terminate();
+
+	zebra_srv6_terminate();
+
+	label_manager_terminate();
 
 	ns_terminate();
 	frr_fini();
@@ -271,19 +295,23 @@ static const struct frr_yang_module_info *const zebra_yang_modules[] = {
 };
 /* clang-format on */
 
-FRR_DAEMON_INFO(
-	zebra, ZEBRA, .vty_port = ZEBRA_VTY_PORT, .flags = FRR_NO_ZCLIENT,
-
+/* clang-format off */
+FRR_DAEMON_INFO(zebra, ZEBRA,
+	.vty_port = ZEBRA_VTY_PORT,
 	.proghelp =
 		"Daemon which manages kernel routing table management and\nredistribution between different routing protocols.",
 
-	.signals = zebra_signals, .n_signals = array_size(zebra_signals),
+	.flags = FRR_NO_ZCLIENT,
+
+	.signals = zebra_signals,
+	.n_signals = array_size(zebra_signals),
 
 	.privs = &zserv_privs,
 
 	.yang_modules = zebra_yang_modules,
 	.n_yang_modules = array_size(zebra_yang_modules),
 );
+/* clang-format on */
 
 /* Main startup routine. */
 int main(int argc, char **argv)
@@ -385,7 +413,7 @@ int main(int argc, char **argv)
 			vrf_configure_backend(VRF_BACKEND_NETNS);
 			break;
 		case OPTION_V6_RR_SEMANTICS:
-			v6_rr_semantics = true;
+			zrouter.v6_rr_semantics = true;
 			break;
 		case OPTION_ASIC_OFFLOAD:
 			if (!strcmp(optarg, "notify_on_offload"))
@@ -408,7 +436,7 @@ int main(int argc, char **argv)
 	/* Zebra related initialize. */
 	zebra_router_init(asic_offload, notify_on_ack, v6_with_v4_nexthop);
 	zserv_init();
-	rib_init();
+	zebra_rib_init();
 	zebra_if_init();
 	zebra_debug_init();
 
@@ -418,8 +446,12 @@ int main(int argc, char **argv)
 	zebra_ns_init();
 	router_id_cmd_init();
 	zebra_vty_init();
-	access_list_init();
+	mgmt_be_client = mgmt_be_client_create("zebra", NULL, 0,
+					       zrouter.master);
+	access_list_init_new(true);
 	prefix_list_init();
+
+	rtadv_init();
 	rtadv_cmd_init();
 /* PTM socket */
 #ifdef ZEBRA_PTM_SUPPORT

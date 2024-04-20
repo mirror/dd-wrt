@@ -9,6 +9,9 @@
  */
 
 #include <zebra.h>
+
+#include <signal.h>
+#include <fcntl.h>
 #include <sys/wait.h>
 
 #include "ldpd.h"
@@ -101,7 +104,6 @@ void ldp_agentx_enabled(void)
 enum ldpd_process ldpd_process;
 
 #define LDP_DEFAULT_CONFIG	"ldpd.conf"
-#define LDP_VTY_PORT		2612
 
 /* Master of threads. */
 struct event_loop *master;
@@ -194,6 +196,7 @@ static const struct frr_yang_module_info *const ldpd_yang_modules[] = {
 	&frr_vrf_info,
 };
 
+/* clang-format off */
 FRR_DAEMON_INFO(ldpd, LDP,
 	.vty_port = LDP_VTY_PORT,
 
@@ -207,6 +210,7 @@ FRR_DAEMON_INFO(ldpd, LDP,
 	.yang_modules = ldpd_yang_modules,
 	.n_yang_modules = array_size(ldpd_yang_modules),
 );
+/* clang-format on */
 
 static void ldp_config_fork_apply(struct event *t)
 {
@@ -229,11 +233,7 @@ main(int argc, char *argv[])
 	int			 lflag = 0, eflag = 0;
 	int			 pipe_parent2ldpe[2], pipe_parent2ldpe_sync[2];
 	int			 pipe_parent2lde[2], pipe_parent2lde_sync[2];
-	char			*ctl_sock_name;
 	bool                    ctl_sock_used = false;
-
-	snprintf(ctl_sock_path, sizeof(ctl_sock_path), LDPD_SOCKET,
-		 "", "");
 
 	ldpd_process = PROC_MAIN;
 	log_procname = log_procnames[ldpd_process];
@@ -260,21 +260,8 @@ main(int argc, char *argv[])
 			break;
 		case OPTION_CTLSOCK:
 			ctl_sock_used = true;
-			ctl_sock_name = strrchr(LDPD_SOCKET, '/');
-			if (ctl_sock_name)
-				/* skip '/' */
-				ctl_sock_name++;
-			else
-				/*
-				 * LDPD_SOCKET configured as relative path
-				 * during config? Should really never happen for
-				 * sensible config
-				 */
-				ctl_sock_name = (char *)LDPD_SOCKET;
-			strlcpy(ctl_sock_path, optarg, sizeof(ctl_sock_path));
-			strlcat(ctl_sock_path, "/", sizeof(ctl_sock_path));
-			strlcat(ctl_sock_path, ctl_sock_name,
-			    sizeof(ctl_sock_path));
+			snprintf(ctl_sock_path, sizeof(ctl_sock_path),
+				 "%s/" LDPD_SOCK_NAME, optarg);
 			break;
 		case 'n':
 			init.instance = atoi(optarg);
@@ -292,9 +279,9 @@ main(int argc, char *argv[])
 		}
 	}
 
-	if (ldpd_di.pathspace && !ctl_sock_used)
-		snprintf(ctl_sock_path, sizeof(ctl_sock_path), LDPD_SOCKET,
-			 "/", ldpd_di.pathspace);
+	if (!ctl_sock_used)
+		snprintf(ctl_sock_path, sizeof(ctl_sock_path),
+			 "%s/" LDPD_SOCK_NAME, frr_runstatedir);
 
 	strlcpy(init.user, ldpd_privs.user, sizeof(init.user));
 	strlcpy(init.group, ldpd_privs.group, sizeof(init.group));

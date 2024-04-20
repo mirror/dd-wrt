@@ -617,6 +617,7 @@ static struct test_segment misc_segments[] =
 			},
 			2,
 			SHOULD_ERR,
+			-1,
 		},
 		{
 			"dyn-empty",
@@ -835,7 +836,7 @@ static void parse_test(struct peer *peer, struct test_segment *t, int type)
 	switch (type) {
 	case CAPABILITY:
 		len += 2; /* to cover the OPT-Param header */
-		_FALLTHROUGH
+		fallthrough;
 	case OPT_PARAM:
 		printf("len: %u\n", len);
 		/* peek_for_as4 wants getp at capibility*/

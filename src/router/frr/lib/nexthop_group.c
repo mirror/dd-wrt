@@ -81,7 +81,8 @@ uint8_t nexthop_group_nexthop_num(const struct nexthop_group *nhg)
 	return num;
 }
 
-uint8_t nexthop_group_nexthop_num_no_recurse(const struct nexthop_group *nhg)
+static uint8_t
+nexthop_group_nexthop_num_no_recurse(const struct nexthop_group *nhg)
 {
 	struct nexthop *nhop;
 	uint8_t num = 0;
@@ -98,20 +99,6 @@ uint8_t nexthop_group_active_nexthop_num(const struct nexthop_group *nhg)
 	uint8_t num = 0;
 
 	for (ALL_NEXTHOPS_PTR(nhg, nhop)) {
-		if (CHECK_FLAG(nhop->flags, NEXTHOP_FLAG_ACTIVE))
-			num++;
-	}
-
-	return num;
-}
-
-uint8_t
-nexthop_group_active_nexthop_num_no_recurse(const struct nexthop_group *nhg)
-{
-	struct nexthop *nhop;
-	uint8_t num = 0;
-
-	for (nhop = nhg->nexthop; nhop; nhop = nhop->next) {
 		if (CHECK_FLAG(nhop->flags, NEXTHOP_FLAG_ACTIVE))
 			num++;
 	}
@@ -180,7 +167,7 @@ static struct nexthop *nhg_nh_find(const struct nexthop_group *nhg,
 						 &nexthop->gate, &nh->gate);
 			if (ret != 0)
 				continue;
-			/* Intentional Fall-Through */
+			fallthrough;
 		case NEXTHOP_TYPE_IFINDEX:
 			if (nexthop->ifindex != nh->ifindex)
 				continue;
@@ -1248,9 +1235,9 @@ void nexthop_group_disable_vrf(struct vrf *vrf)
 	struct nexthop_hold *nhh;
 
 	RB_FOREACH (nhgc, nhgc_entry_head, &nhgc_entries) {
-		struct listnode *node;
+		struct listnode *node, *nnode;
 
-		for (ALL_LIST_ELEMENTS_RO(nhgc->nhg_list, node, nhh)) {
+		for (ALL_LIST_ELEMENTS(nhgc->nhg_list, node, nnode, nhh)) {
 			struct nexthop nhop;
 			struct nexthop *nh;
 
@@ -1271,6 +1258,10 @@ void nexthop_group_disable_vrf(struct vrf *vrf)
 				nhg_hooks.del_nexthop(nhgc, nh);
 
 			nexthop_free(nh);
+
+			list_delete_node(nhgc->nhg_list, node);
+
+			nhgl_delete(nhh);
 		}
 	}
 }

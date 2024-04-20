@@ -5,6 +5,12 @@
  */
 
 #include <zebra.h>
+#include <sys/stat.h>
+
+#ifdef CRYPTO_OPENSSL
+#include <openssl/evp.h>
+#include <openssl/hmac.h>
+#endif
 
 #include "linklist.h"
 #include "if.h"

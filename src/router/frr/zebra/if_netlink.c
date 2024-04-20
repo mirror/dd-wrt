@@ -17,6 +17,8 @@
 #define _LINUX_IF_H
 #define _LINUX_IP_H
 
+#include <linux/netlink.h>
+#include <linux/rtnetlink.h>
 //#include <net/if_ether.h>
 #include <linux/if_bridge.h>
 #include <linux/if_link.h>
@@ -216,6 +218,8 @@ static void netlink_determine_zebra_iftype(const char *kind,
 		*zif_type = ZEBRA_IF_VETH;
 	else if (strcmp(kind, "bond") == 0)
 		*zif_type = ZEBRA_IF_BOND;
+	else if (strcmp(kind, "team") == 0)
+		*zif_type = ZEBRA_IF_BOND;
 	else if (strcmp(kind, "gre") == 0)
 		*zif_type = ZEBRA_IF_GRE;
 }
@@ -258,6 +262,7 @@ static uint32_t get_iflink_speed(struct interface *interface, int *error)
 	int sd;
 	int rc;
 	const char *ifname = interface->name;
+	uint32_t ret;
 
 	if (error)
 		*error = 0;
@@ -282,7 +287,7 @@ static uint32_t get_iflink_speed(struct interface *interface, int *error)
 					   ifname, errno, safe_strerror(errno));
 			/* no vrf socket creation may probably mean vrf issue */
 			if (error)
-				*error = -1;
+				*error = INTERFACE_SPEED_ERROR_READ;
 			return 0;
 		}
 		/* Get the current link state for the interface */
@@ -296,14 +301,20 @@ static uint32_t get_iflink_speed(struct interface *interface, int *error)
 				ifname, errno, safe_strerror(errno));
 		/* no device means interface unreachable */
 		if (errno == ENODEV && error)
-			*error = -1;
+			*error = INTERFACE_SPEED_ERROR_READ;
 		ecmd.speed_hi = 0;
 		ecmd.speed = 0;
 	}
 
 	close(sd);
 
-	return ((uint32_t)ecmd.speed_hi << 16) | ecmd.speed;
+	ret = ((uint32_t)ecmd.speed_hi << 16) | ecmd.speed;
+	if (ret == UINT32_MAX) {
+		if (error)
+			*error = INTERFACE_SPEED_ERROR_UNKNOWN;
+		ret = 0;
+	}
+	return ret;
 }
 
 uint32_t kernel_get_speed(struct interface *ifp, int *error)
@@ -999,68 +1010,13 @@ static ssize_t netlink_intf_msg_encoder(struct zebra_dplane_ctx *ctx, void *buf,
 
 	op = dplane_ctx_get_op(ctx);
 
-	switch (op) {
-	case DPLANE_OP_INTF_UPDATE:
+	if (op == DPLANE_OP_INTF_UPDATE)
 		cmd = RTM_SETLINK;
-		break;
-	case DPLANE_OP_INTF_INSTALL:
+	else if (op == DPLANE_OP_INTF_INSTALL)
 		cmd = RTM_NEWLINK;
-		break;
-	case DPLANE_OP_INTF_DELETE:
+	else if (op == DPLANE_OP_INTF_DELETE)
 		cmd = RTM_DELLINK;
-		break;
-	case DPLANE_OP_NONE:
-	case DPLANE_OP_ROUTE_INSTALL:
-	case DPLANE_OP_ROUTE_UPDATE:
-	case DPLANE_OP_ROUTE_DELETE:
-	case DPLANE_OP_ROUTE_NOTIFY:
-	case DPLANE_OP_NH_INSTALL:
-	case DPLANE_OP_NH_UPDATE:
-	case DPLANE_OP_NH_DELETE:
-	case DPLANE_OP_LSP_INSTALL:
-	case DPLANE_OP_LSP_DELETE:
-	case DPLANE_OP_LSP_NOTIFY:
-	case DPLANE_OP_LSP_UPDATE:
-	case DPLANE_OP_PW_INSTALL:
-	case DPLANE_OP_PW_UNINSTALL:
-	case DPLANE_OP_SYS_ROUTE_ADD:
-	case DPLANE_OP_SYS_ROUTE_DELETE:
-	case DPLANE_OP_ADDR_INSTALL:
-	case DPLANE_OP_ADDR_UNINSTALL:
-	case DPLANE_OP_MAC_INSTALL:
-	case DPLANE_OP_MAC_DELETE:
-	case DPLANE_OP_NEIGH_INSTALL:
-	case DPLANE_OP_NEIGH_UPDATE:
-	case DPLANE_OP_NEIGH_DELETE:
-	case DPLANE_OP_NEIGH_DISCOVER:
-	case DPLANE_OP_VTEP_ADD:
-	case DPLANE_OP_VTEP_DELETE:
-	case DPLANE_OP_RULE_ADD:
-	case DPLANE_OP_RULE_DELETE:
-	case DPLANE_OP_RULE_UPDATE:
-	case DPLANE_OP_BR_PORT_UPDATE:
-	case DPLANE_OP_IPTABLE_ADD:
-	case DPLANE_OP_IPTABLE_DELETE:
-	case DPLANE_OP_IPSET_ADD:
-	case DPLANE_OP_IPSET_ENTRY_ADD:
-	case DPLANE_OP_IPSET_ENTRY_DELETE:
-	case DPLANE_OP_IPSET_DELETE:
-	case DPLANE_OP_NEIGH_IP_INSTALL:
-	case DPLANE_OP_NEIGH_IP_DELETE:
-	case DPLANE_OP_NEIGH_TABLE_UPDATE:
-	case DPLANE_OP_GRE_SET:
-	case DPLANE_OP_INTF_ADDR_ADD:
-	case DPLANE_OP_INTF_ADDR_DEL:
-	case DPLANE_OP_INTF_NETCONFIG:
-	case DPLANE_OP_TC_QDISC_INSTALL:
-	case DPLANE_OP_TC_QDISC_UNINSTALL:
-	case DPLANE_OP_TC_CLASS_ADD:
-	case DPLANE_OP_TC_CLASS_DELETE:
-	case DPLANE_OP_TC_CLASS_UPDATE:
-	case DPLANE_OP_TC_FILTER_ADD:
-	case DPLANE_OP_TC_FILTER_DELETE:
-	case DPLANE_OP_TC_FILTER_UPDATE:
-	case DPLANE_OP_STARTUP_STAGE:
+	else {
 		flog_err(
 			EC_ZEBRA_NHG_FIB_UPDATE,
 			"Context received for kernel interface update with incorrect OP code (%u)",
@@ -1474,6 +1430,9 @@ int netlink_interface_addr_dplane(struct nlmsghdr *h, ns_id_t ns_id,
 	/* Flags. */
 	if (kernel_flags & IFA_F_SECONDARY)
 		dplane_ctx_intf_set_secondary(ctx);
+
+	if (kernel_flags & IFA_F_NOPREFIXROUTE)
+		dplane_ctx_intf_set_noprefixroute(ctx);
 
 	/* Label */
 	if (tb[IFA_LABEL]) {

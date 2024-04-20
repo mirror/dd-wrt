@@ -27,6 +27,8 @@ This document will focus on the later implementation: *bfdd*.
 Starting BFD
 ============
 
+.. include:: config-include.rst
+
 *bfdd* default configuration file is :file:`bfdd.conf`. *bfdd* searches
 the current directory first then |INSTALL_PREFIX_ETC|/bfdd.conf. All of
 *bfdd*'s command must be configured in :file:`bfdd.conf`.
@@ -44,9 +46,7 @@ may also be specified (:ref:`common-invocation-options`).
       /usr/lib/frr/bfdd --bfdctl /tmp/bfdd.sock
 
 
-   The default UNIX socket location is:
-
-      #define BFDD_CONTROL_SOCKET "|INSTALL_PREFIX_STATE|/bfdd.sock"
+   The default UNIX socket location is |INSTALL_PREFIX_STATE|/bfdd.sock
 
    This option overrides the location addition that the -N option provides
    to the bfdd.sock

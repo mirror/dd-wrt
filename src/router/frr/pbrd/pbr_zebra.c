@@ -178,7 +178,7 @@ static int rule_notify_owner(ZAPI_CALLBACK_ARGS)
 	enum zapi_rule_notify_owner note;
 	struct pbr_map_sequence *pbrms;
 	struct pbr_map_interface *pmi;
-	char ifname[INTERFACE_NAMSIZ + 1];
+	char ifname[IFNAMSIZ + 1];
 	uint64_t installed;
 
 	if (!zapi_rule_notify_decode(zclient->ibuf, &seqno, &priority, &unique,
@@ -222,6 +222,8 @@ static int rule_notify_owner(ZAPI_CALLBACK_ARGS)
 static void zebra_connected(struct zclient *zclient)
 {
 	DEBUGD(&pbr_dbg_zebra, "%s: Registering for fun and profit", __func__);
+
+	zebra_route_notify_send(ZEBRA_ROUTE_NOTIFY_REQUEST, zclient, true);
 	zclient_send_reg_requests(zclient, VRF_DEFAULT);
 }
 
@@ -364,38 +366,30 @@ void route_delete(struct pbr_nexthop_group_cache *pnhgc, afi_t afi)
 	}
 }
 
-static int pbr_zebra_nexthop_update(ZAPI_CALLBACK_ARGS)
+static void pbr_zebra_nexthop_update(struct vrf *vrf, struct prefix *matched,
+				     struct zapi_route *nhr)
 {
-	struct zapi_route nhr;
-	struct prefix matched;
 	uint32_t i;
 
-	if (!zapi_nexthop_update_decode(zclient->ibuf, &matched, &nhr)) {
-		zlog_err("Failure to decode Nexthop update message");
-		return 0;
-	}
-
 	if (DEBUG_MODE_CHECK(&pbr_dbg_zebra, DEBUG_MODE_ALL)) {
-
 		DEBUGD(&pbr_dbg_zebra,
 		       "%s: Received Nexthop update: %pFX against %pFX",
-		       __func__, &matched, &nhr.prefix);
+		       __func__, matched, &nhr->prefix);
 
 		DEBUGD(&pbr_dbg_zebra, "%s:   (Nexthops(%u)", __func__,
-		       nhr.nexthop_num);
+		       nhr->nexthop_num);
 
-		for (i = 0; i < nhr.nexthop_num; i++) {
+		for (i = 0; i < nhr->nexthop_num; i++) {
 			DEBUGD(&pbr_dbg_zebra,
 			       "%s:     Type: %d: vrf: %d, ifindex: %d gate: %pI4",
-			       __func__, nhr.nexthops[i].type,
-			       nhr.nexthops[i].vrf_id, nhr.nexthops[i].ifindex,
-			       &nhr.nexthops[i].gate.ipv4);
+			       __func__, nhr->nexthops[i].type,
+			       nhr->nexthops[i].vrf_id, nhr->nexthops[i].ifindex,
+			       &nhr->nexthops[i].gate.ipv4);
 		}
 	}
 
-	nhr.prefix = matched;
-	pbr_nht_nexthop_update(&nhr);
-	return 1;
+	nhr->prefix = *matched;
+	pbr_nht_nexthop_update(nhr);
 }
 
 extern struct zebra_privs_t pbr_privs;
@@ -405,18 +399,26 @@ static zclient_handler *const pbr_handlers[] = {
 	[ZEBRA_INTERFACE_ADDRESS_DELETE] = interface_address_delete,
 	[ZEBRA_ROUTE_NOTIFY_OWNER] = route_notify_owner,
 	[ZEBRA_RULE_NOTIFY_OWNER] = rule_notify_owner,
-	[ZEBRA_NEXTHOP_UPDATE] = pbr_zebra_nexthop_update,
 };
 
 void pbr_zebra_init(void)
 {
-	struct zclient_options opt = { .receive_notify = true };
-
-	zclient = zclient_new(master, &opt, pbr_handlers,
+	zclient = zclient_new(master, &zclient_options_default, pbr_handlers,
 			      array_size(pbr_handlers));
 
 	zclient_init(zclient, ZEBRA_ROUTE_PBR, 0, &pbr_privs);
 	zclient->zebra_connected = zebra_connected;
+	zclient->nexthop_update = pbr_zebra_nexthop_update;
+}
+
+void pbr_zebra_destroy(void)
+{
+	if (zclient == NULL)
+		return;
+
+	zclient_stop(zclient);
+	zclient_free(zclient);
+	zclient = NULL;
 }
 
 void pbr_send_rnh(struct nexthop *nhop, bool reg)

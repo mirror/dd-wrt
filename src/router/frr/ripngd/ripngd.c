@@ -23,6 +23,7 @@
 #include "lib_errors.h"
 #include "northbound_cli.h"
 #include "network.h"
+#include "mgmt_be_client.h"
 
 #include "ripngd/ripngd.h"
 #include "ripngd/ripng_route.h"
@@ -392,11 +393,10 @@ static void ripng_nexthop_rte(struct rte *rte, struct sockaddr_in6 *from,
 /* If ifp has same link-local address then return 1. */
 static int ripng_lladdr_check(struct interface *ifp, struct in6_addr *addr)
 {
-	struct listnode *node;
 	struct connected *connected;
 	struct prefix *p;
 
-	for (ALL_LIST_ELEMENTS_RO(ifp->connected, node, connected)) {
+	frr_each (if_connected, ifp->connected, connected) {
 		p = connected->address;
 
 		if (p->family == AF_INET6
@@ -2231,6 +2231,38 @@ DEFUN (show_ipv6_ripng_status,
 	return CMD_SUCCESS;
 }
 
+#include "ripngd/ripngd_clippy.c"
+
+/*
+ * XPath: /frr-ripngd:clear-ripng-route
+ */
+DEFPY_YANG (clear_ipv6_rip,
+       clear_ipv6_rip_cmd,
+       "clear ipv6 ripng [vrf WORD]",
+       CLEAR_STR
+       IPV6_STR
+       "Clear IPv6 RIP database\n"
+       VRF_CMD_HELP_STR)
+{
+	struct list *input;
+	int ret;
+
+	input = list_new();
+	if (vrf) {
+		struct yang_data *yang_vrf;
+
+		yang_vrf = yang_data_new(
+			"/frr-ripngd:clear-ripng-route/input/vrf", vrf);
+		listnode_add(input, yang_vrf);
+	}
+
+	ret = nb_cli_rpc(vty, "/frr-ripngd:clear-ripng-route", input, NULL);
+
+	list_delete(&input);
+
+	return ret;
+}
+
 /* Update ECMP routes to zebra when ECMP is disabled. */
 void ripng_ecmp_disable(struct ripng *ripng)
 {
@@ -2267,45 +2299,6 @@ void ripng_ecmp_disable(struct ripng *ripng)
 			ripng_event(ripng, RIPNG_TRIGGERED_UPDATE, 0);
 		}
 }
-
-/* RIPng configuration write function. */
-static int ripng_config_write(struct vty *vty)
-{
-	struct ripng *ripng;
-	int write = 0;
-
-	RB_FOREACH(ripng, ripng_instance_head, &ripng_instances) {
-		char xpath[XPATH_MAXLEN];
-		struct lyd_node *dnode;
-
-		snprintf(xpath, sizeof(xpath),
-			 "/frr-ripngd:ripngd/instance[vrf='%s']",
-			 ripng->vrf_name);
-
-		dnode = yang_dnode_get(running_config->dnode, xpath);
-		assert(dnode);
-
-		nb_cli_show_dnode_cmds(vty, dnode, false);
-
-		config_write_distribute(vty, ripng->distribute_ctx);
-
-		vty_out(vty, "exit\n");
-
-		write = 1;
-	}
-
-	return write;
-}
-
-static int ripng_config_write(struct vty *vty);
-/* RIPng node structure. */
-static struct cmd_node cmd_ripng_node = {
-	.name = "ripng",
-	.node = RIPNG_NODE,
-	.parent_node = CONFIG_NODE,
-	.prompt = "%s(config-router)# ",
-	.config_write = ripng_config_write,
-};
 
 static void ripng_distribute_update(struct distribute_ctx *ctx,
 				    struct distribute *dist)
@@ -2674,8 +2667,6 @@ void ripng_vrf_init(void)
 {
 	vrf_init(ripng_vrf_new, ripng_vrf_enable, ripng_vrf_disable,
 		 ripng_vrf_delete);
-
-	vrf_cmd_init(NULL);
 }
 
 void ripng_vrf_terminate(void)
@@ -2686,20 +2677,19 @@ void ripng_vrf_terminate(void)
 /* Initialize ripng structure and set commands. */
 void ripng_init(void)
 {
-	/* Install RIPNG_NODE. */
-	install_node(&cmd_ripng_node);
-
 	/* Install ripng commands. */
 	install_element(VIEW_NODE, &show_ipv6_ripng_cmd);
 	install_element(VIEW_NODE, &show_ipv6_ripng_status_cmd);
-
-	install_default(RIPNG_NODE);
+	install_element(ENABLE_NODE, &clear_ipv6_rip_cmd);
 
 	ripng_if_init();
 	ripng_debug_init();
 
+	/* Enable mgmt be debug */
+	mgmt_be_client_lib_vty_init();
+
 	/* Access list install. */
-	access_list_init();
+	access_list_init_new(true);
 	access_list_add_hook(ripng_distribute_update_all_wrapper);
 	access_list_delete_hook(ripng_distribute_update_all_wrapper);
 
@@ -2713,6 +2703,4 @@ void ripng_init(void)
 
 	route_map_add_hook(ripng_routemap_update);
 	route_map_delete_hook(ripng_routemap_update);
-
-	if_rmap_init(RIPNG_NODE);
 }

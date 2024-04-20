@@ -209,6 +209,8 @@ struct zebra_router {
 	bool notify_on_ack;
 	bool v6_with_v4_nexthop;
 
+	bool v6_rr_semantics;
+
 	/*
 	 * If the asic is notifying us about successful nexthop
 	 * allocation/control.  Some developers have made their
@@ -231,6 +233,8 @@ struct zebra_router {
 	bool allow_delete;
 
 	uint8_t protodown_r_bit;
+
+	uint64_t nexthop_weight_scale_value;
 };
 
 #define GRACEFUL_RESTART_TIME 60
@@ -246,6 +250,9 @@ extern void zebra_router_terminate(void);
 extern struct zebra_router_table *zebra_router_find_zrt(struct zebra_vrf *zvrf,
 							uint32_t tableid,
 							afi_t afi, safi_t safi);
+extern struct zebra_router_table *
+zebra_router_find_next_zrt(struct zebra_vrf *zvrf, uint32_t tableid, afi_t afi,
+			   safi_t safi);
 extern struct route_table *zebra_router_find_table(struct zebra_vrf *zvrf,
 						   uint32_t tableid, afi_t afi,
 						   safi_t safi);

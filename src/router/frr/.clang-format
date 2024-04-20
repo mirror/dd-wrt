@@ -77,10 +77,11 @@ FixNamespaceComments: false
 ForEachMacros:
   # lib: outliers:
   - 'FOR_ALL_INTERFACES'
-  - 'FOR_ALL_INTERFACES_ADDRESSES'
   # libyang outliers:
   - 'LY_FOR_KEYS'
   - 'LY_LIST_FOR'
+  - 'LYD_LIST_FOR_INST'
+  - 'LYD_LIST_FOR_INST_SAFE'
   - 'LY_TREE_FOR'
   - 'LY_TREE_DFS_BEGIN'
   - 'LYD_TREE_DFS_BEGIN'
@@ -103,6 +104,7 @@ ForEachMacros:
   - 'FOREACH_AFI_SAFI'
   - 'FOREACH_AFI_SAFI_NSF'
   - 'FOREACH_BE_APPLY_BATCH_IN_LIST'
+  - 'FOREACH_BE_CLIENT_BITS'
   - 'FOREACH_BE_TXN_BATCH_IN_LIST'
   - 'FOREACH_BE_TXN_IN_LIST'
   - 'FOREACH_CMT_REC'

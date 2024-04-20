@@ -12,6 +12,11 @@
  */
 
 #include <zebra.h>
+#include <sys/ioctl.h>
+
+#ifdef GNU_LINUX
+#include <linux/filter.h>
+#endif
 
 #ifdef BFD_LINUX
 #include <linux/if_packet.h>

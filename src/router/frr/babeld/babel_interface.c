@@ -695,6 +695,11 @@ interface_reset(struct interface *ifp)
            babel_ifp->cost,
            babel_ifp->ipv4 ? ", IPv4" : "");
 
+    if (babel_ifp->ipv4 != NULL){
+		free(babel_ifp->ipv4);
+		babel_ifp->ipv4 = NULL;
+    }
+
     return 1;
 }
 
@@ -734,12 +739,11 @@ int
 is_interface_ll_address(struct interface *ifp, const unsigned char *address)
 {
     struct connected *connected;
-    struct listnode *node;
 
     if(!if_up(ifp))
         return 0;
 
-    FOR_ALL_INTERFACES_ADDRESSES(ifp, connected, node) {
+    frr_each (if_connected, ifp->connected, connected) {
 	    if (connected->address->family == AF_INET6
 		&& memcmp(&connected->address->u.prefix6, address,
 			  IPV6_MAX_BYTELEN)
@@ -1345,5 +1349,9 @@ babel_interface_allocate (void)
 static void
 babel_interface_free (babel_interface_nfo *babel_ifp)
 {
+    if (babel_ifp->ipv4){
+        free(babel_ifp->ipv4);
+        babel_ifp->ipv4 = NULL;
+    }
     XFREE(MTYPE_BABEL_IF, babel_ifp);
 }

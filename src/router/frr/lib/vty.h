@@ -229,12 +229,9 @@ struct vty {
 	 * CLI command and we are waiting on the reply so we can respond to the
 	 * vty user. */
 	const char *mgmt_req_pending_cmd;
+	uintptr_t mgmt_req_pending_data;
 	bool mgmt_locked_candidate_ds;
 	bool mgmt_locked_running_ds;
-	/* Need to track when we file-lock in vtysh to re-lock on end/conf t
-	 * workaround
-	 */
-	bool vtysh_file_locked;
 };
 
 static inline void vty_push_context(struct vty *vty, int node, uint64_t id)
@@ -377,7 +374,7 @@ extern bool vty_set_include(struct vty *vty, const char *regexp);
  */
 extern int vty_json(struct vty *vty, struct json_object *json);
 extern int vty_json_no_pretty(struct vty *vty, struct json_object *json);
-extern void vty_json_empty(struct vty *vty);
+extern void vty_json_empty(struct vty *vty, struct json_object *json);
 /* post fd to be passed to the vtysh client
  * fd is owned by the VTY code after this and will be closed when done
  */
@@ -412,15 +409,19 @@ extern bool vty_mgmt_fe_enabled(void);
 extern bool vty_mgmt_should_process_cli_apply_changes(struct vty *vty);
 
 extern bool mgmt_vty_read_configs(void);
-extern int vty_mgmt_send_config_data(struct vty *vty, bool implicit_commit);
+extern int vty_mgmt_send_config_data(struct vty *vty, const char *xpath_base,
+				     bool implicit_commit);
 extern int vty_mgmt_send_commit_config(struct vty *vty, bool validate_only,
 				       bool abort);
 extern int vty_mgmt_send_get_req(struct vty *vty, bool is_config,
 				 Mgmtd__DatastoreId datastore,
 				 const char **xpath_list, int num_req);
+extern int vty_mgmt_send_get_data_req(struct vty *vty, uint8_t datastore,
+				      LYD_FORMAT result_type, uint8_t flags,
+				      uint8_t defaults, const char *xpath);
 extern int vty_mgmt_send_lockds_req(struct vty *vty, Mgmtd__DatastoreId ds_id,
 				    bool lock, bool scok);
-extern void vty_mgmt_resume_response(struct vty *vty, bool success);
+extern void vty_mgmt_resume_response(struct vty *vty, int ret);
 
 static inline bool vty_needs_implicit_commit(struct vty *vty)
 {

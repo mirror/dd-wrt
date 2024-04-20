@@ -36,6 +36,8 @@ static void lptest_init(void);
 static void lptest_finish(void);
 #endif
 
+static void bgp_sync_label_manager(struct event *e);
+
 /*
  * Remember where pool data are kept
  */
@@ -448,13 +450,16 @@ void bgp_lp_get(
 
 	if (lp_fifo_count(&lp->requests) > lp->pending_count) {
 		if (!bgp_zebra_request_label_range(MPLS_LABEL_BASE_ANY,
-						   lp->next_chunksize))
+						   lp->next_chunksize, true))
 			return;
 
 		lp->pending_count += lp->next_chunksize;
 		if ((lp->next_chunksize << 1) <= LP_CHUNK_SIZE_MAX)
 			lp->next_chunksize <<= 1;
 	}
+
+	event_add_timer(bm->master, bgp_sync_label_manager, NULL, 1,
+			&bm->t_bgp_sync_label_manager);
 }
 
 void bgp_lp_release(
@@ -494,8 +499,18 @@ void bgp_lp_release(
 				bf_release_index(chunk->allocated_map, index);
 				chunk->nfree += 1;
 				deallocated = true;
+				break;
 			}
 			assert(deallocated);
+			if (deallocated &&
+			    chunk->nfree == chunk->last - chunk->first + 1 &&
+			    lp_fifo_count(&lp->requests) == 0) {
+				bgp_zebra_release_label_range(chunk->first,
+							      chunk->last);
+				list_delete_node(lp->chunks, node);
+				lp_chunk_free(chunk);
+				lp->next_chunksize = LP_CHUNK_SIZE_MIN;
+			}
 		}
 	}
 }
@@ -547,6 +562,10 @@ static void bgp_sync_label_manager(struct event *e)
 				zlog_debug("%s: out of labels, await more",
 					   __func__);
 			}
+
+			lp_fifo_add_tail(&lp->requests, lf);
+			event_add_timer(bm->master, bgp_sync_label_manager,
+					NULL, 1, &bm->t_bgp_sync_label_manager);
 			break;
 		}
 
@@ -572,9 +591,6 @@ static void bgp_sync_label_manager(struct event *e)
 finishedrequest:
 		XFREE(MTYPE_BGP_LABEL_FIFO, lf);
 	}
-
-	event_add_timer(bm->master, bgp_sync_label_manager, NULL, 1,
-			&bm->t_bgp_sync_label_manager);
 }
 
 void bgp_lp_event_chunk(uint32_t first, uint32_t last)
@@ -642,7 +658,7 @@ void bgp_lp_event_zebra_up(void)
 	}
 
 	/* round up */
-	chunks_needed = (labels_needed / lp->next_chunksize) + 1;
+	chunks_needed = (labels_needed + lp->next_chunksize - 1) / lp->next_chunksize;
 	labels_needed = chunks_needed * lp->next_chunksize;
 
 	/*
@@ -650,10 +666,10 @@ void bgp_lp_event_zebra_up(void)
 	 */
 	list_delete_all_node(lp->chunks);
 
-	if (!bgp_zebra_request_label_range(MPLS_LABEL_BASE_ANY, labels_needed))
+	if (labels_needed && !bgp_zebra_request_label_range(MPLS_LABEL_BASE_ANY,
+							    labels_needed, true))
 		return;
-
-	lp->pending_count = labels_needed;
+	lp->pending_count += labels_needed;
 
 	/*
 	 * Invalidate any existing labels and requeue them as requests

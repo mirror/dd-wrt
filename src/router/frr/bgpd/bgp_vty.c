@@ -5,6 +5,10 @@
 
 #include <zebra.h>
 
+#ifdef GNU_LINUX
+#include <linux/rtnetlink.h> //RT_TABLE_XXX
+#endif
+
 #include "command.h"
 #include "lib/json.h"
 #include "lib/sockopt.h"
@@ -122,12 +126,17 @@ FRR_CFG_DEFAULT_BOOL(BGP_SOFT_VERSION_CAPABILITY,
 	{ .val_bool = true, .match_profile = "datacenter", },
 	{ .val_bool = false },
 );
+FRR_CFG_DEFAULT_BOOL(BGP_ENFORCE_FIRST_AS,
+	{ .val_bool = false, .match_version = "< 9.1", },
+	{ .val_bool = true },
+);
 
 DEFINE_HOOK(bgp_inst_config_write,
 		(struct bgp *bgp, struct vty *vty),
 		(bgp, vty));
 DEFINE_HOOK(bgp_snmp_update_last_changed, (struct bgp *bgp), (bgp));
 DEFINE_HOOK(bgp_snmp_init_stats, (struct bgp *bgp), (bgp));
+DEFINE_HOOK(bgp_snmp_traps_config_write, (struct vty * vty), (vty));
 
 static struct peer_group *listen_range_exists(struct bgp *bgp,
 					      struct prefix *range, int exact);
@@ -310,7 +319,7 @@ static int bgp_srv6_locator_unset(struct bgp *bgp)
 	/* refresh functions */
 	for (ALL_LIST_ELEMENTS(bgp->srv6_functions, node, nnode, func)) {
 		listnode_delete(bgp->srv6_functions, func);
-		XFREE(MTYPE_BGP_SRV6_FUNCTION, func);
+		srv6_function_free(func);
 	}
 
 	/* refresh tovpn_sid */
@@ -614,6 +623,8 @@ int bgp_get_vty(struct bgp **bgp, as_t *as, const char *name,
 		if (DFLT_BGP_SOFT_VERSION_CAPABILITY)
 			SET_FLAG((*bgp)->flags,
 				 BGP_FLAG_SOFT_VERSION_CAPABILITY);
+		if (DFLT_BGP_ENFORCE_FIRST_AS)
+			SET_FLAG((*bgp)->flags, BGP_FLAG_ENFORCE_FIRST_AS);
 
 		ret = BGP_SUCCESS;
 	}
@@ -1591,8 +1602,9 @@ DEFUN_NOSH (router_bgp,
 		 * - update asnotation if explicitly mentioned
 		 */
 		if (CHECK_FLAG(bgp->vrf_flags, BGP_VRF_AUTO)) {
-			XFREE(MTYPE_BGP, bgp->as_pretty);
-			bgp->as_pretty = XSTRDUP(MTYPE_BGP, argv[idx_asn]->arg);
+			XFREE(MTYPE_BGP_NAME, bgp->as_pretty);
+			bgp->as_pretty = XSTRDUP(MTYPE_BGP_NAME,
+						 argv[idx_asn]->arg);
 			if (!CHECK_FLAG(bgp->config, BGP_CONFIG_ASNOTATION) &&
 			    asnotation != ASNOTATION_UNDEFINED) {
 				SET_FLAG(bgp->config, BGP_CONFIG_ASNOTATION);
@@ -2827,6 +2839,23 @@ DEFUN(no_bgp_ebgp_requires_policy, no_bgp_ebgp_requires_policy_cmd,
 	return CMD_SUCCESS;
 }
 
+DEFPY(bgp_enforce_first_as,
+      bgp_enforce_first_as_cmd,
+      "[no] bgp enforce-first-as",
+      NO_STR
+      BGP_STR
+      "Enforce the first AS for EBGP routes\n")
+{
+	VTY_DECLVAR_CONTEXT(bgp, bgp);
+
+	if (no)
+		UNSET_FLAG(bgp->flags, BGP_FLAG_ENFORCE_FIRST_AS);
+	else
+		SET_FLAG(bgp->flags, BGP_FLAG_ENFORCE_FIRST_AS);
+
+	return CMD_SUCCESS;
+}
+
 DEFPY(bgp_lu_uses_explicit_null, bgp_lu_uses_explicit_null_cmd,
       "[no] bgp labeled-unicast <explicit-null|ipv4-explicit-null|ipv6-explicit-null>$value",
       NO_STR BGP_STR
@@ -3231,6 +3260,8 @@ DEFUN (bgp_graceful_restart_disable,
 	GR_DISABLE)
 {
 	int ret = BGP_GR_FAILURE;
+	struct listnode *node, *nnode;
+	struct peer *peer;
 
 	if (BGP_DEBUG(graceful_restart, GRACEFUL_RESTART))
 		zlog_debug(
@@ -3248,6 +3279,15 @@ DEFUN (bgp_graceful_restart_disable,
 			"[BGP_GR] bgp_graceful_restart_disable_cmd : END ");
 	vty_out(vty,
 		"Graceful restart configuration changed, reset all peers to take effect\n");
+
+	for (ALL_LIST_ELEMENTS(bgp->peer, node, nnode, peer)) {
+		bgp_capability_send(peer, AFI_IP, SAFI_UNICAST,
+				    CAPABILITY_CODE_RESTART,
+				    CAPABILITY_ACTION_UNSET);
+		bgp_capability_send(peer, AFI_IP, SAFI_UNICAST,
+				    CAPABILITY_CODE_LLGR,
+				    CAPABILITY_ACTION_UNSET);
+	}
 
 	return bgp_vty_return(vty, ret);
 }
@@ -5706,6 +5746,37 @@ DEFUN (no_neighbor_dont_capability_negotiate,
 				   PEER_FLAG_DONT_CAPABILITY);
 }
 
+/* neighbor capability fqdn */
+DEFPY (neighbor_capability_fqdn,
+       neighbor_capability_fqdn_cmd,
+       "[no$no] neighbor <A.B.C.D|X:X::X:X|WORD>$neighbor capability fqdn",
+       NO_STR
+       NEIGHBOR_STR
+       NEIGHBOR_ADDR_STR2
+       "Advertise capability to the peer\n"
+       "Advertise fqdn capability to the peer\n")
+{
+	struct peer *peer;
+	int ret;
+
+	peer = peer_and_group_lookup_vty(vty, neighbor);
+	if (!peer)
+		return CMD_WARNING_CONFIG_FAILED;
+
+	if (no)
+		ret = peer_flag_unset_vty(vty, neighbor,
+					  PEER_FLAG_CAPABILITY_FQDN);
+	else
+		ret = peer_flag_set_vty(vty, neighbor,
+					PEER_FLAG_CAPABILITY_FQDN);
+
+	bgp_capability_send(peer, AFI_IP, SAFI_UNICAST, CAPABILITY_CODE_FQDN,
+			    no ? CAPABILITY_ACTION_UNSET
+			       : CAPABILITY_ACTION_SET);
+
+	return ret;
+}
+
 /* neighbor capability extended next hop encoding */
 DEFUN (neighbor_capability_enhe,
        neighbor_capability_enhe_cmd,
@@ -5831,24 +5902,37 @@ DEFUN (neighbor_capability_orf_prefix,
 	struct peer *peer;
 	afi_t afi = bgp_node_afi(vty);
 	safi_t safi = bgp_node_safi(vty);
+	int ret;
 
 	peer = peer_and_group_lookup_vty(vty, peer_str);
 	if (!peer)
 		return CMD_WARNING_CONFIG_FAILED;
 
-	if (strmatch(argv[idx_send_recv]->text, "send"))
-		return peer_af_flag_set_vty(vty, peer_str, afi, safi,
-					    PEER_FLAG_ORF_PREFIX_SM);
+	if (strmatch(argv[idx_send_recv]->text, "send")) {
+		ret = peer_af_flag_set_vty(vty, peer_str, afi, safi,
+					   PEER_FLAG_ORF_PREFIX_SM);
+		bgp_capability_send(peer, afi, safi, CAPABILITY_CODE_ORF,
+				    CAPABILITY_ACTION_SET);
+		return ret;
+	}
 
-	if (strmatch(argv[idx_send_recv]->text, "receive"))
-		return peer_af_flag_set_vty(vty, peer_str, afi, safi,
-					    PEER_FLAG_ORF_PREFIX_RM);
+	if (strmatch(argv[idx_send_recv]->text, "receive")) {
+		ret = peer_af_flag_set_vty(vty, peer_str, afi, safi,
+					   PEER_FLAG_ORF_PREFIX_RM);
+		bgp_capability_send(peer, afi, safi, CAPABILITY_CODE_ORF,
+				    CAPABILITY_ACTION_SET);
+		return ret;
+	}
 
-	if (strmatch(argv[idx_send_recv]->text, "both"))
-		return peer_af_flag_set_vty(vty, peer_str, afi, safi,
-					    PEER_FLAG_ORF_PREFIX_SM)
-		       | peer_af_flag_set_vty(vty, peer_str, afi, safi,
-					      PEER_FLAG_ORF_PREFIX_RM);
+	if (strmatch(argv[idx_send_recv]->text, "both")) {
+		ret = peer_af_flag_set_vty(vty, peer_str, afi, safi,
+					   PEER_FLAG_ORF_PREFIX_SM) |
+		      peer_af_flag_set_vty(vty, peer_str, afi, safi,
+					   PEER_FLAG_ORF_PREFIX_RM);
+		bgp_capability_send(peer, afi, safi, CAPABILITY_CODE_ORF,
+				    CAPABILITY_ACTION_SET);
+		return ret;
+	}
 
 	return CMD_WARNING_CONFIG_FAILED;
 }
@@ -5883,24 +5967,37 @@ DEFUN (no_neighbor_capability_orf_prefix,
 	struct peer *peer;
 	afi_t afi = bgp_node_afi(vty);
 	safi_t safi = bgp_node_safi(vty);
+	int ret;
 
 	peer = peer_and_group_lookup_vty(vty, peer_str);
 	if (!peer)
 		return CMD_WARNING_CONFIG_FAILED;
 
-	if (strmatch(argv[idx_send_recv]->text, "send"))
-		return peer_af_flag_unset_vty(vty, peer_str, afi, safi,
-					      PEER_FLAG_ORF_PREFIX_SM);
+	if (strmatch(argv[idx_send_recv]->text, "send")) {
+		ret = peer_af_flag_unset_vty(vty, peer_str, afi, safi,
+					     PEER_FLAG_ORF_PREFIX_SM);
+		bgp_capability_send(peer, afi, safi, CAPABILITY_CODE_ORF,
+				    CAPABILITY_ACTION_UNSET);
+		return ret;
+	}
 
-	if (strmatch(argv[idx_send_recv]->text, "receive"))
-		return peer_af_flag_unset_vty(vty, peer_str, afi, safi,
-					      PEER_FLAG_ORF_PREFIX_RM);
+	if (strmatch(argv[idx_send_recv]->text, "receive")) {
+		ret = peer_af_flag_unset_vty(vty, peer_str, afi, safi,
+					     PEER_FLAG_ORF_PREFIX_RM);
+		bgp_capability_send(peer, afi, safi, CAPABILITY_CODE_ORF,
+				    CAPABILITY_ACTION_UNSET);
+		return ret;
+	}
 
-	if (strmatch(argv[idx_send_recv]->text, "both"))
-		return peer_af_flag_unset_vty(vty, peer_str, afi, safi,
-					      PEER_FLAG_ORF_PREFIX_SM)
-		       | peer_af_flag_unset_vty(vty, peer_str, afi, safi,
-						PEER_FLAG_ORF_PREFIX_RM);
+	if (strmatch(argv[idx_send_recv]->text, "both")) {
+		ret = peer_af_flag_unset_vty(vty, peer_str, afi, safi,
+					     PEER_FLAG_ORF_PREFIX_SM) |
+		      peer_af_flag_unset_vty(vty, peer_str, afi, safi,
+					     PEER_FLAG_ORF_PREFIX_RM);
+		bgp_capability_send(peer, afi, safi, CAPABILITY_CODE_ORF,
+				    CAPABILITY_ACTION_UNSET);
+		return ret;
+	}
 
 	return CMD_WARNING_CONFIG_FAILED;
 }
@@ -6386,6 +6483,32 @@ ALIAS_HIDDEN(
 	"Send Extended Community attributes\n"
 	"Send Standard Community attributes\n"
 	"Send Large Community attributes\n")
+
+DEFPY (neighbor_ecommunity_rpki,
+       neighbor_ecommunity_rpki_cmd,
+       "[no$no] neighbor <A.B.C.D|X:X::X:X|WORD>$neighbor send-community extended rpki",
+       NO_STR
+       NEIGHBOR_STR
+       NEIGHBOR_ADDR_STR2
+       "Send Community attribute to this neighbor\n"
+       "Send Extended Community attributes\n"
+       "Send RPKI Extended Community attributes\n")
+{
+	struct peer *peer;
+	afi_t afi = bgp_node_afi(vty);
+	safi_t safi = bgp_node_safi(vty);
+
+	peer = peer_and_group_lookup_vty(vty, neighbor);
+	if (!peer)
+		return CMD_WARNING_CONFIG_FAILED;
+
+	if (no)
+		return peer_af_flag_unset_vty(vty, neighbor, afi, safi,
+					      PEER_FLAG_SEND_EXT_COMMUNITY_RPKI);
+	else
+		return peer_af_flag_set_vty(vty, neighbor, afi, safi,
+					    PEER_FLAG_SEND_EXT_COMMUNITY_RPKI);
+}
 
 /* neighbor soft-reconfig. */
 DEFUN (neighbor_soft_reconfiguration,
@@ -6898,6 +7021,28 @@ DEFPY(no_neighbor_role,
 			    CAPABILITY_ACTION_UNSET);
 
 	return ret;
+}
+
+DEFPY (neighbor_oad,
+       neighbor_oad_cmd,
+       "[no$no] neighbor <A.B.C.D|X:X::X:X|WORD>$neighbor oad",
+       NO_STR
+       NEIGHBOR_STR
+       NEIGHBOR_ADDR_STR2
+       "Set peering session type to EBGP-OAD\n")
+{
+	struct peer *peer;
+
+	peer = peer_and_group_lookup_vty(vty, neighbor);
+	if (!peer)
+		return CMD_WARNING_CONFIG_FAILED;
+
+	if (no)
+		peer->sub_sort = 0;
+	else if (peer->sort == BGP_PEER_EBGP)
+		peer->sub_sort = BGP_PEER_EBGP_OAD;
+
+	return CMD_SUCCESS;
 }
 
 /* disable-connected-check */
@@ -8840,13 +8985,21 @@ DEFUN(neighbor_disable_addpath_rx,
 	struct peer *peer;
 	afi_t afi = bgp_node_afi(vty);
 	safi_t safi = bgp_node_safi(vty);
+	int ret;
+	int action;
 
 	peer = peer_and_group_lookup_vty(vty, peer_str);
 	if (!peer)
 		return CMD_WARNING_CONFIG_FAILED;
 
-	return peer_af_flag_set_vty(vty, peer_str, afi, safi,
-				    PEER_FLAG_DISABLE_ADDPATH_RX);
+	action = bgp_addpath_capability_action(peer->addpath_type[afi][safi], 0);
+
+	ret = peer_af_flag_set_vty(vty, peer_str, afi, safi,
+				   PEER_FLAG_DISABLE_ADDPATH_RX);
+
+	bgp_capability_send(peer, afi, safi, CAPABILITY_CODE_ADDPATH, action);
+
+	return ret;
 }
 
 DEFUN(no_neighbor_disable_addpath_rx,
@@ -8861,13 +9014,21 @@ DEFUN(no_neighbor_disable_addpath_rx,
 	struct peer *peer;
 	afi_t afi = bgp_node_afi(vty);
 	safi_t safi = bgp_node_safi(vty);
+	int ret;
+	int action;
 
 	peer = peer_and_group_lookup_vty(vty, peer_str);
 	if (!peer)
 		return CMD_WARNING_CONFIG_FAILED;
 
-	return peer_af_flag_unset_vty(vty, peer_str, afi, safi,
-				      PEER_FLAG_DISABLE_ADDPATH_RX);
+	action = bgp_addpath_capability_action(peer->addpath_type[afi][safi], 0);
+
+	ret = peer_af_flag_unset_vty(vty, peer_str, afi, safi,
+				     PEER_FLAG_DISABLE_ADDPATH_RX);
+
+	bgp_capability_send(peer, afi, safi, CAPABILITY_CODE_ADDPATH, action);
+
+	return ret;
 }
 
 DEFUN (neighbor_addpath_tx_all_paths,
@@ -8879,13 +9040,15 @@ DEFUN (neighbor_addpath_tx_all_paths,
 {
 	int idx_peer = 1;
 	struct peer *peer;
+	afi_t afi = bgp_node_afi(vty);
+	safi_t safi = bgp_node_safi(vty);
 
 	peer = peer_and_group_lookup_vty(vty, argv[idx_peer]->arg);
 	if (!peer)
 		return CMD_WARNING_CONFIG_FAILED;
 
-	bgp_addpath_set_peer_type(peer, bgp_node_afi(vty), bgp_node_safi(vty),
-				  BGP_ADDPATH_ALL, 0);
+	bgp_addpath_set_peer_type(peer, afi, safi, BGP_ADDPATH_ALL, 0);
+
 	return CMD_SUCCESS;
 }
 
@@ -8905,20 +9068,20 @@ DEFUN (no_neighbor_addpath_tx_all_paths,
 {
 	int idx_peer = 2;
 	struct peer *peer;
+	afi_t afi = bgp_node_afi(vty);
+	safi_t safi = bgp_node_safi(vty);
 
 	peer = peer_and_group_lookup_vty(vty, argv[idx_peer]->arg);
 	if (!peer)
 		return CMD_WARNING_CONFIG_FAILED;
 
-	if (peer->addpath_type[bgp_node_afi(vty)][bgp_node_safi(vty)]
-	    != BGP_ADDPATH_ALL) {
+	if (peer->addpath_type[afi][safi] != BGP_ADDPATH_ALL) {
 		vty_out(vty,
 			"%% Peer not currently configured to transmit all paths.");
 		return CMD_WARNING_CONFIG_FAILED;
 	}
 
-	bgp_addpath_set_peer_type(peer, bgp_node_afi(vty), bgp_node_safi(vty),
-				  BGP_ADDPATH_NONE, 0);
+	bgp_addpath_set_peer_type(peer, afi, safi, BGP_ADDPATH_NONE, 0);
 
 	return CMD_SUCCESS;
 }
@@ -9298,13 +9461,13 @@ DEFPY (af_rd_vpn_export,
 			   bgp_get_default(), bgp);
 
 	if (yes) {
-		bgp->vpn_policy[afi].tovpn_rd_pretty =
-			XSTRDUP(MTYPE_BGP, rd_str);
+		bgp->vpn_policy[afi].tovpn_rd_pretty = XSTRDUP(MTYPE_BGP_NAME,
+							       rd_str);
 		bgp->vpn_policy[afi].tovpn_rd = prd;
 		SET_FLAG(bgp->vpn_policy[afi].flags,
 			 BGP_VPN_POLICY_TOVPN_RD_SET);
 	} else {
-		XFREE(MTYPE_BGP, bgp->vpn_policy[afi].tovpn_rd_pretty);
+		XFREE(MTYPE_BGP_NAME, bgp->vpn_policy[afi].tovpn_rd_pretty);
 		UNSET_FLAG(bgp->vpn_policy[afi].flags,
 			   BGP_VPN_POLICY_TOVPN_RD_SET);
 	}
@@ -9394,7 +9557,7 @@ DEFPY (af_label_vpn_export,
        "Automatically assign a label\n")
 {
 	VTY_DECLVAR_CONTEXT(bgp, bgp);
-	mpls_label_t label = MPLS_LABEL_NONE;
+	mpls_label_t label = (mpls_label_t)label_val;
 	afi_t afi;
 	int idx = 0;
 	bool yes = true;
@@ -9402,24 +9565,28 @@ DEFPY (af_label_vpn_export,
 	if (argv_find(argv, argc, "no", &idx))
 		yes = false;
 
-	/* If "no ...", squash trailing parameter */
-	if (!yes)
-		label_auto = NULL;
-
-	if (yes) {
-		if (!label_auto)
-			label = label_val; /* parser should force unsigned */
-	}
-
 	afi = vpn_policy_getafi(vty, bgp, false);
 	if (afi == AFI_MAX)
 		return CMD_WARNING_CONFIG_FAILED;
 
-
-	if (label_auto && CHECK_FLAG(bgp->vpn_policy[afi].flags,
-				     BGP_VPN_POLICY_TOVPN_LABEL_AUTO))
-		/* no change */
-		return CMD_SUCCESS;
+	if (yes) {
+		if (label_auto && CHECK_FLAG(bgp->vpn_policy[afi].flags,
+					     BGP_VPN_POLICY_TOVPN_LABEL_AUTO))
+			/* no change */
+			return CMD_SUCCESS;
+		if (!label_auto && label == bgp->vpn_policy[afi].tovpn_label)
+			/* no change */
+			return CMD_SUCCESS;
+	} else {
+		if (label_auto && !CHECK_FLAG(bgp->vpn_policy[afi].flags,
+					      BGP_VPN_POLICY_TOVPN_LABEL_AUTO))
+			/* no match */
+			return CMD_WARNING_CONFIG_FAILED;
+		if (!label_auto && label_val &&
+		    label != bgp->vpn_policy[afi].tovpn_label)
+			/* no change */
+			return CMD_WARNING_CONFIG_FAILED;
+	}
 
 	/*
 	 * pre-change: un-export vpn routes (vpn->vrf routes unaffected)
@@ -9427,9 +9594,16 @@ DEFPY (af_label_vpn_export,
 	vpn_leak_prechange(BGP_VPN_POLICY_DIR_TOVPN, afi,
 			   bgp_get_default(), bgp);
 
-	if (!label_auto && CHECK_FLAG(bgp->vpn_policy[afi].flags,
-				      BGP_VPN_POLICY_TOVPN_LABEL_AUTO)) {
+	if (CHECK_FLAG(bgp->vpn_policy[afi].flags,
+		       BGP_VPN_POLICY_TOVPN_LABEL_MANUAL_REG)) {
+		bgp_zebra_release_label_range(bgp->vpn_policy[afi].tovpn_label,
+					      bgp->vpn_policy[afi].tovpn_label);
+		UNSET_FLAG(bgp->vpn_policy[afi].flags,
+			   BGP_VPN_POLICY_TOVPN_LABEL_MANUAL_REG);
 
+	} else if (CHECK_FLAG(bgp->vpn_policy[afi].flags,
+			      BGP_VPN_POLICY_TOVPN_LABEL_AUTO)) {
+		/* release any previous auto label */
 		if (bgp->vpn_policy[afi].tovpn_label != MPLS_LABEL_NONE) {
 
 			/*
@@ -9446,16 +9620,32 @@ DEFPY (af_label_vpn_export,
 				       &bgp->vpn_policy[afi],
 				       bgp->vpn_policy[afi].tovpn_label);
 		}
-		UNSET_FLAG(bgp->vpn_policy[afi].flags,
-			   BGP_VPN_POLICY_TOVPN_LABEL_AUTO);
 	}
 
-	bgp->vpn_policy[afi].tovpn_label = label;
-	if (label_auto) {
-		SET_FLAG(bgp->vpn_policy[afi].flags,
-			 BGP_VPN_POLICY_TOVPN_LABEL_AUTO);
-		bgp_lp_get(LP_TYPE_VRF, &bgp->vpn_policy[afi],
-			   vpn_leak_label_callback);
+	if (yes) {
+		if (label_auto) {
+			SET_FLAG(bgp->vpn_policy[afi].flags,
+				 BGP_VPN_POLICY_TOVPN_LABEL_AUTO);
+			/* fetch a label */
+			bgp->vpn_policy[afi].tovpn_label = MPLS_LABEL_NONE;
+			bgp_lp_get(LP_TYPE_VRF, &bgp->vpn_policy[afi],
+				   vpn_leak_label_callback);
+		} else {
+			bgp->vpn_policy[afi].tovpn_label = label;
+			UNSET_FLAG(bgp->vpn_policy[afi].flags,
+				   BGP_VPN_POLICY_TOVPN_LABEL_AUTO);
+			if (bgp->vpn_policy[afi].tovpn_label >=
+				    MPLS_LABEL_UNRESERVED_MIN &&
+			    bgp_zebra_request_label_range(bgp->vpn_policy[afi]
+								  .tovpn_label,
+							  1, false))
+				SET_FLAG(bgp->vpn_policy[afi].flags,
+					 BGP_VPN_POLICY_TOVPN_LABEL_MANUAL_REG);
+		}
+	} else {
+		UNSET_FLAG(bgp->vpn_policy[afi].flags,
+			   BGP_VPN_POLICY_TOVPN_LABEL_AUTO);
+		bgp->vpn_policy[afi].tovpn_label = MPLS_LABEL_NONE;
 	}
 
 	/* post-change: re-export vpn routes */
@@ -10506,7 +10696,7 @@ static int bgp_clear_prefix(struct vty *vty, const char *view_name,
 /* one clear bgp command to rule them all */
 DEFUN (clear_ip_bgp_all,
        clear_ip_bgp_all_cmd,
-       "clear [ip] bgp [<view|vrf> VIEWVRFNAME] [<ipv4|ipv6|l2vpn> [<unicast|multicast|vpn|labeled-unicast|flowspec|evpn>]] <*|A.B.C.D$neighbor|X:X::X:X$neighbor|WORD$neighbor|ASNUM|external|peer-group PGNAME> [<soft [<in|out>]|in [prefix-filter]|out|message-stats>]",
+       "clear [ip] bgp [<view|vrf> VIEWVRFNAME] [<ipv4|ipv6|l2vpn> [<unicast|multicast|vpn|labeled-unicast|flowspec|evpn>]] <*|A.B.C.D$neighbor|X:X::X:X$neighbor|WORD$neighbor|ASNUM|external|peer-group PGNAME> [<soft [<in|out>]|in [prefix-filter]|out|message-stats|capabilities>]",
        CLEAR_STR
        IP_STR
        BGP_STR
@@ -10529,7 +10719,8 @@ DEFUN (clear_ip_bgp_all,
        BGP_SOFT_IN_STR
        "Push out prefix-list ORF and do inbound soft reconfig\n"
        BGP_SOFT_OUT_STR
-       "Reset message statistics\n")
+       "Reset message statistics\n"
+       "Resend capabilities\n")
 {
 	char *vrf = NULL;
 
@@ -10586,7 +10777,7 @@ DEFUN (clear_ip_bgp_all,
 		clr_sort = clear_external;
 	}
 
-	/* [<soft [<in|out>]|in [prefix-filter]|out|message-stats>] */
+	/* [<soft [<in|out>]|in [prefix-filter]|out|message-stats|capabilities>] */
 	if (argv_find(argv, argc, "soft", &idx)) {
 		if (argv_find(argv, argc, "in", &idx)
 		    || argv_find(argv, argc, "out", &idx))
@@ -10603,6 +10794,8 @@ DEFUN (clear_ip_bgp_all,
 		clr_type = BGP_CLEAR_SOFT_OUT;
 	} else if (argv_find(argv, argc, "message-stats", &idx)) {
 		clr_type = BGP_CLEAR_MESSAGE_STATS;
+	} else if (argv_find(argv, argc, "capabilities", &idx)) {
+		clr_type = BGP_CLEAR_CAPABILITIES;
 	} else
 		clr_type = BGP_CLEAR_SOFT_NONE;
 
@@ -11534,8 +11727,9 @@ static int bgp_show_summary(struct vty *vty, struct bgp *bgp, int afi, int safi,
 						: bgp->name);
 			} else {
 				vty_out(vty,
-					"BGP router identifier %pI4, local AS number %s vrf-id %d",
+					"BGP router identifier %pI4, local AS number %s %s vrf-id %d",
 					&bgp->router_id, bgp->as_pretty,
+					bgp->name_pretty,
 					bgp->vrf_id == VRF_UNKNOWN
 						? -1
 						: (int)bgp->vrf_id);
@@ -12152,12 +12346,10 @@ static void bgp_show_summary_afi_safi(struct vty *vty, struct bgp *bgp, int afi,
 									 safi,
 									 true));
 					} else {
-						vty_out(vty,
-							"\n%s Summary (%s):\n",
+						vty_out(vty, "\n%s Summary:\n",
 							get_afi_safi_str(afi,
 									 safi,
-									 false),
-							bgp->name_pretty);
+									 false));
 					}
 				}
 				bgp_show_summary(vty, bgp, afi, safi, fpeer,
@@ -16780,10 +16972,11 @@ ALIAS_HIDDEN(
 
 DEFUN (bgp_redistribute_ipv4_ospf,
        bgp_redistribute_ipv4_ospf_cmd,
-       "redistribute <ospf|table> (1-65535)",
+       "redistribute <ospf|table|table-direct> (1-65535)",
        "Redistribute information from another routing protocol\n"
        "Open Shortest Path First (OSPFv2)\n"
        "Non-main Kernel Routing Table\n"
+       "Non-main Kernel Routing Table - Direct\n"
        "Instance ID/Table ID\n")
 {
 	VTY_DECLVAR_CONTEXT(bgp, bgp);
@@ -16803,7 +16996,18 @@ DEFUN (bgp_redistribute_ipv4_ospf,
 				argv[idx_ospf_table]->arg);
 			return CMD_WARNING_CONFIG_FAILED;
 		}
-		protocol = ZEBRA_ROUTE_TABLE;
+		if (strncmp(argv[idx_ospf_table]->arg, "table-direct",
+			    strlen("table-direct")) == 0) {
+			protocol = ZEBRA_ROUTE_TABLE_DIRECT;
+			if (instance == RT_TABLE_MAIN ||
+			    instance == RT_TABLE_LOCAL) {
+				vty_out(vty,
+					"%% 'table-direct', can not use %u routing table\n",
+					instance);
+				return CMD_WARNING_CONFIG_FAILED;
+			}
+		} else
+			protocol = ZEBRA_ROUTE_TABLE;
 	}
 
 	bgp_redist_add(bgp, AFI_IP, protocol, instance);
@@ -16811,18 +17015,20 @@ DEFUN (bgp_redistribute_ipv4_ospf,
 }
 
 ALIAS_HIDDEN(bgp_redistribute_ipv4_ospf, bgp_redistribute_ipv4_ospf_hidden_cmd,
-	     "redistribute <ospf|table> (1-65535)",
+	     "redistribute <ospf|table|table-direct> (1-65535)",
 	     "Redistribute information from another routing protocol\n"
 	     "Open Shortest Path First (OSPFv2)\n"
 	     "Non-main Kernel Routing Table\n"
+	     "Non-main Kernel Routing Table - Direct\n"
 	     "Instance ID/Table ID\n")
 
 DEFUN (bgp_redistribute_ipv4_ospf_rmap,
        bgp_redistribute_ipv4_ospf_rmap_cmd,
-       "redistribute <ospf|table> (1-65535) route-map RMAP_NAME",
+       "redistribute <ospf|table|table-direct> (1-65535) route-map RMAP_NAME",
        "Redistribute information from another routing protocol\n"
        "Open Shortest Path First (OSPFv2)\n"
        "Non-main Kernel Routing Table\n"
+       "Non-main Kernel Routing Table - Direct\n"
        "Instance ID/Table ID\n"
        "Route map reference\n"
        "Pointer to route-map entries\n")
@@ -16838,6 +17044,8 @@ DEFUN (bgp_redistribute_ipv4_ospf_rmap,
 	struct route_map *route_map =
 		route_map_lookup_warn_noexist(vty, argv[idx_word]->arg);
 
+	instance = strtoul(argv[idx_number]->arg, NULL, 10);
+
 	if (strncmp(argv[idx_ospf_table]->arg, "o", 1) == 0)
 		protocol = ZEBRA_ROUTE_OSPF;
 	else {
@@ -16847,10 +17055,20 @@ DEFUN (bgp_redistribute_ipv4_ospf_rmap,
 				argv[idx_ospf_table]->arg);
 			return CMD_WARNING_CONFIG_FAILED;
 		}
-		protocol = ZEBRA_ROUTE_TABLE;
+		if (strncmp(argv[idx_ospf_table]->arg, "table-direct",
+			    strlen("table-direct")) == 0) {
+			protocol = ZEBRA_ROUTE_TABLE_DIRECT;
+			if (instance == RT_TABLE_MAIN ||
+			    instance == RT_TABLE_LOCAL) {
+				vty_out(vty,
+					"%% 'table-direct', can not use %u routing table\n",
+					instance);
+				return CMD_WARNING_CONFIG_FAILED;
+			}
+		} else
+			protocol = ZEBRA_ROUTE_TABLE;
 	}
 
-	instance = strtoul(argv[idx_number]->arg, NULL, 10);
 	red = bgp_redist_add(bgp, AFI_IP, protocol, instance);
 	changed =
 		bgp_redistribute_rmap_set(red, argv[idx_word]->arg, route_map);
@@ -16859,20 +17077,22 @@ DEFUN (bgp_redistribute_ipv4_ospf_rmap,
 
 ALIAS_HIDDEN(bgp_redistribute_ipv4_ospf_rmap,
 	     bgp_redistribute_ipv4_ospf_rmap_hidden_cmd,
-	     "redistribute <ospf|table> (1-65535) route-map RMAP_NAME",
+	     "redistribute <ospf|table|table-direct> (1-65535) route-map RMAP_NAME",
 	     "Redistribute information from another routing protocol\n"
 	     "Open Shortest Path First (OSPFv2)\n"
 	     "Non-main Kernel Routing Table\n"
+	     "Non-main Kernel Routing Table - Direct\n"
 	     "Instance ID/Table ID\n"
 	     "Route map reference\n"
 	     "Pointer to route-map entries\n")
 
 DEFUN (bgp_redistribute_ipv4_ospf_metric,
        bgp_redistribute_ipv4_ospf_metric_cmd,
-       "redistribute <ospf|table> (1-65535) metric (0-4294967295)",
+       "redistribute <ospf|table|table-direct> (1-65535) metric (0-4294967295)",
        "Redistribute information from another routing protocol\n"
        "Open Shortest Path First (OSPFv2)\n"
        "Non-main Kernel Routing Table\n"
+       "Non-main Kernel Routing Table - Direct\n"
        "Instance ID/Table ID\n"
        "Metric for redistributed routes\n"
        "Default metric\n")
@@ -16887,6 +17107,8 @@ DEFUN (bgp_redistribute_ipv4_ospf_metric,
 	int protocol;
 	bool changed;
 
+	instance = strtoul(argv[idx_number]->arg, NULL, 10);
+
 	if (strncmp(argv[idx_ospf_table]->arg, "o", 1) == 0)
 		protocol = ZEBRA_ROUTE_OSPF;
 	else {
@@ -16896,10 +17118,20 @@ DEFUN (bgp_redistribute_ipv4_ospf_metric,
 				argv[idx_ospf_table]->arg);
 			return CMD_WARNING_CONFIG_FAILED;
 		}
-		protocol = ZEBRA_ROUTE_TABLE;
+		if (strncmp(argv[idx_ospf_table]->arg, "table-direct",
+			    strlen("table-direct")) == 0) {
+			protocol = ZEBRA_ROUTE_TABLE_DIRECT;
+			if (instance == RT_TABLE_MAIN ||
+			    instance == RT_TABLE_LOCAL) {
+				vty_out(vty,
+					"%% 'table-direct', can not use %u routing table\n",
+					instance);
+				return CMD_WARNING_CONFIG_FAILED;
+			}
+		} else
+			protocol = ZEBRA_ROUTE_TABLE;
 	}
 
-	instance = strtoul(argv[idx_number]->arg, NULL, 10);
 	metric = strtoul(argv[idx_number_2]->arg, NULL, 10);
 
 	red = bgp_redist_add(bgp, AFI_IP, protocol, instance);
@@ -16910,20 +17142,22 @@ DEFUN (bgp_redistribute_ipv4_ospf_metric,
 
 ALIAS_HIDDEN(bgp_redistribute_ipv4_ospf_metric,
 	     bgp_redistribute_ipv4_ospf_metric_hidden_cmd,
-	     "redistribute <ospf|table> (1-65535) metric (0-4294967295)",
+	     "redistribute <ospf|table|table-direct> (1-65535) metric (0-4294967295)",
 	     "Redistribute information from another routing protocol\n"
 	     "Open Shortest Path First (OSPFv2)\n"
 	     "Non-main Kernel Routing Table\n"
+	     "Non-main Kernel Routing Table - Direct\n"
 	     "Instance ID/Table ID\n"
 	     "Metric for redistributed routes\n"
 	     "Default metric\n")
 
 DEFUN (bgp_redistribute_ipv4_ospf_rmap_metric,
        bgp_redistribute_ipv4_ospf_rmap_metric_cmd,
-       "redistribute <ospf|table> (1-65535) route-map RMAP_NAME metric (0-4294967295)",
+       "redistribute <ospf|table|table-direct> (1-65535) route-map RMAP_NAME metric (0-4294967295)",
        "Redistribute information from another routing protocol\n"
        "Open Shortest Path First (OSPFv2)\n"
        "Non-main Kernel Routing Table\n"
+       "Non-main Kernel Routing Table - Direct\n"
        "Instance ID/Table ID\n"
        "Route map reference\n"
        "Pointer to route-map entries\n"
@@ -16943,6 +17177,8 @@ DEFUN (bgp_redistribute_ipv4_ospf_rmap_metric,
 	struct route_map *route_map =
 		route_map_lookup_warn_noexist(vty, argv[idx_word]->arg);
 
+	instance = strtoul(argv[idx_number]->arg, NULL, 10);
+
 	if (strncmp(argv[idx_ospf_table]->arg, "o", 1) == 0)
 		protocol = ZEBRA_ROUTE_OSPF;
 	else {
@@ -16952,10 +17188,20 @@ DEFUN (bgp_redistribute_ipv4_ospf_rmap_metric,
 				argv[idx_ospf_table]->arg);
 			return CMD_WARNING_CONFIG_FAILED;
 		}
-		protocol = ZEBRA_ROUTE_TABLE;
+		if (strncmp(argv[idx_ospf_table]->arg, "table-direct",
+			    strlen("table-direct")) == 0) {
+			protocol = ZEBRA_ROUTE_TABLE_DIRECT;
+			if (instance == RT_TABLE_MAIN ||
+			    instance == RT_TABLE_LOCAL) {
+				vty_out(vty,
+					"%% 'table-direct', can not use %u routing table\n",
+					instance);
+				return CMD_WARNING_CONFIG_FAILED;
+			}
+		} else
+			protocol = ZEBRA_ROUTE_TABLE;
 	}
 
-	instance = strtoul(argv[idx_number]->arg, NULL, 10);
 	metric = strtoul(argv[idx_number_2]->arg, NULL, 10);
 
 	red = bgp_redist_add(bgp, AFI_IP, protocol, instance);
@@ -16969,10 +17215,11 @@ DEFUN (bgp_redistribute_ipv4_ospf_rmap_metric,
 ALIAS_HIDDEN(
 	bgp_redistribute_ipv4_ospf_rmap_metric,
 	bgp_redistribute_ipv4_ospf_rmap_metric_hidden_cmd,
-	"redistribute <ospf|table> (1-65535) route-map RMAP_NAME metric (0-4294967295)",
+	"redistribute <ospf|table|table-direct> (1-65535) route-map RMAP_NAME metric (0-4294967295)",
 	"Redistribute information from another routing protocol\n"
 	"Open Shortest Path First (OSPFv2)\n"
 	"Non-main Kernel Routing Table\n"
+        "Non-main Kernel Routing Table - Direct\n"
 	"Instance ID/Table ID\n"
 	"Route map reference\n"
 	"Pointer to route-map entries\n"
@@ -16981,10 +17228,11 @@ ALIAS_HIDDEN(
 
 DEFUN (bgp_redistribute_ipv4_ospf_metric_rmap,
        bgp_redistribute_ipv4_ospf_metric_rmap_cmd,
-       "redistribute <ospf|table> (1-65535) metric (0-4294967295) route-map RMAP_NAME",
+       "redistribute <ospf|table|table-direct> (1-65535) metric (0-4294967295) route-map RMAP_NAME",
        "Redistribute information from another routing protocol\n"
        "Open Shortest Path First (OSPFv2)\n"
        "Non-main Kernel Routing Table\n"
+       "Non-main Kernel Routing Table - Direct\n"
        "Instance ID/Table ID\n"
        "Metric for redistributed routes\n"
        "Default metric\n"
@@ -17004,6 +17252,8 @@ DEFUN (bgp_redistribute_ipv4_ospf_metric_rmap,
 	struct route_map *route_map =
 		route_map_lookup_warn_noexist(vty, argv[idx_word]->arg);
 
+	instance = strtoul(argv[idx_number]->arg, NULL, 10);
+
 	if (strncmp(argv[idx_ospf_table]->arg, "o", 1) == 0)
 		protocol = ZEBRA_ROUTE_OSPF;
 	else {
@@ -17012,8 +17262,18 @@ DEFUN (bgp_redistribute_ipv4_ospf_metric_rmap,
 				"%% Only default BGP instance can use '%s'\n",
 				argv[idx_ospf_table]->arg);
 			return CMD_WARNING_CONFIG_FAILED;
-		}
-		protocol = ZEBRA_ROUTE_TABLE;
+		} else if (strncmp(argv[idx_ospf_table]->arg, "table-direct",
+				   strlen("table-direct")) == 0) {
+			protocol = ZEBRA_ROUTE_TABLE_DIRECT;
+			if (instance == RT_TABLE_MAIN ||
+			    instance == RT_TABLE_LOCAL) {
+				vty_out(vty,
+					"%% 'table-direct', can not use %u routing table\n",
+					instance);
+				return CMD_WARNING_CONFIG_FAILED;
+			}
+		} else
+			protocol = ZEBRA_ROUTE_TABLE;
 	}
 
 	instance = strtoul(argv[idx_number]->arg, NULL, 10);
@@ -17030,10 +17290,11 @@ DEFUN (bgp_redistribute_ipv4_ospf_metric_rmap,
 ALIAS_HIDDEN(
 	bgp_redistribute_ipv4_ospf_metric_rmap,
 	bgp_redistribute_ipv4_ospf_metric_rmap_hidden_cmd,
-	"redistribute <ospf|table> (1-65535) metric (0-4294967295) route-map RMAP_NAME",
+	"redistribute <ospf|table|table-direct> (1-65535) metric (0-4294967295) route-map RMAP_NAME",
 	"Redistribute information from another routing protocol\n"
 	"Open Shortest Path First (OSPFv2)\n"
 	"Non-main Kernel Routing Table\n"
+        "Non-main Kernel Routing Table - Direct\n"
 	"Instance ID/Table ID\n"
 	"Metric for redistributed routes\n"
 	"Default metric\n"
@@ -17042,11 +17303,12 @@ ALIAS_HIDDEN(
 
 DEFUN (no_bgp_redistribute_ipv4_ospf,
        no_bgp_redistribute_ipv4_ospf_cmd,
-       "no redistribute <ospf|table> (1-65535) [{metric (0-4294967295)|route-map RMAP_NAME}]",
+       "no redistribute <ospf|table|table-direct> (1-65535) [{metric (0-4294967295)|route-map RMAP_NAME}]",
        NO_STR
        "Redistribute information from another routing protocol\n"
        "Open Shortest Path First (OSPFv2)\n"
        "Non-main Kernel Routing Table\n"
+       "Non-main Kernel Routing Table - Direct\n"
        "Instance ID/Table ID\n"
        "Metric for redistributed routes\n"
        "Default metric\n"
@@ -17059,6 +17321,8 @@ DEFUN (no_bgp_redistribute_ipv4_ospf,
 	unsigned short instance;
 	int protocol;
 
+	instance = strtoul(argv[idx_number]->arg, NULL, 10);
+
 	if (strncmp(argv[idx_ospf_table]->arg, "o", 1) == 0)
 		protocol = ZEBRA_ROUTE_OSPF;
 	else {
@@ -17068,21 +17332,32 @@ DEFUN (no_bgp_redistribute_ipv4_ospf,
 				argv[idx_ospf_table]->arg);
 			return CMD_WARNING_CONFIG_FAILED;
 		}
-		protocol = ZEBRA_ROUTE_TABLE;
+		if (strncmp(argv[idx_ospf_table]->arg, "table-direct",
+			    strlen("table-direct")) == 0) {
+			protocol = ZEBRA_ROUTE_TABLE_DIRECT;
+			if (instance == RT_TABLE_MAIN ||
+			    instance == RT_TABLE_LOCAL) {
+				vty_out(vty,
+					"%% 'table-direct', can not use %u routing table\n",
+					instance);
+				return CMD_WARNING_CONFIG_FAILED;
+			}
+		} else
+			protocol = ZEBRA_ROUTE_TABLE;
 	}
 
-	instance = strtoul(argv[idx_number]->arg, NULL, 10);
 	bgp_redistribute_unset(bgp, AFI_IP, protocol, instance);
 	return CMD_SUCCESS;
 }
 
 ALIAS_HIDDEN(
 	no_bgp_redistribute_ipv4_ospf, no_bgp_redistribute_ipv4_ospf_hidden_cmd,
-	"no redistribute <ospf|table> (1-65535) [{metric (0-4294967295)|route-map RMAP_NAME}]",
+	"no redistribute <ospf|table|table-direct> (1-65535) [{metric (0-4294967295)|route-map RMAP_NAME}]",
 	NO_STR
 	"Redistribute information from another routing protocol\n"
 	"Open Shortest Path First (OSPFv2)\n"
 	"Non-main Kernel Routing Table\n"
+	"Non-main Kernel Routing Table - Direct\n"
 	"Instance ID/Table ID\n"
 	"Metric for redistributed routes\n"
 	"Default metric\n"
@@ -17427,8 +17702,8 @@ bool peergroup_flag_check(struct peer *peer, uint64_t flag)
 	return !!CHECK_FLAG(peer->flags_override, flag);
 }
 
-static bool peergroup_af_flag_check(struct peer *peer, afi_t afi, safi_t safi,
-				    uint64_t flag)
+bool peergroup_af_flag_check(struct peer *peer, afi_t afi, safi_t safi,
+			     uint64_t flag)
 {
 	if (!peer_group_active(peer)) {
 		if (CHECK_FLAG(peer->af_flags_invert[afi][safi], flag))
@@ -17876,6 +18151,9 @@ static void bgp_config_write_peer_global(struct vty *vty, struct bgp *bgp,
 				? " strict-mode"
 				: "");
 
+	if (peer->sub_sort == BGP_PEER_EBGP_OAD)
+		vty_out(vty, " neighbor %s oad\n", addr);
+
 	/* ttl-security hops */
 	if (peer->gtsm_hops != BGP_GTSM_HOPS_DISABLED) {
 		if (!peer_group_active(peer)
@@ -17900,8 +18178,13 @@ static void bgp_config_write_peer_global(struct vty *vty, struct bgp *bgp,
 			addr);
 
 	/* enforce-first-as */
-	if (peergroup_flag_check(peer, PEER_FLAG_ENFORCE_FIRST_AS))
-		vty_out(vty, " neighbor %s enforce-first-as\n", addr);
+	if (CHECK_FLAG(bgp->flags, BGP_FLAG_ENFORCE_FIRST_AS)) {
+		if (!peergroup_flag_check(peer, PEER_FLAG_ENFORCE_FIRST_AS))
+			vty_out(vty, " no neighbor %s enforce-first-as\n", addr);
+	} else {
+		if (peergroup_flag_check(peer, PEER_FLAG_ENFORCE_FIRST_AS))
+			vty_out(vty, " neighbor %s enforce-first-as\n", addr);
+	}
 
 	/* update-source */
 	if (peergroup_flag_check(peer, PEER_FLAG_UPDATE_SOURCE)) {
@@ -17966,13 +18249,29 @@ static void bgp_config_write_peer_global(struct vty *vty, struct bgp *bgp,
 	}
 
 	/* capability software-version */
-	if (peergroup_flag_check(peer, PEER_FLAG_CAPABILITY_SOFT_VERSION))
-		vty_out(vty, " neighbor %s capability software-version\n",
-			addr);
+	if (CHECK_FLAG(bgp->flags, BGP_FLAG_SOFT_VERSION_CAPABILITY)) {
+		if (!peergroup_flag_check(peer,
+					  PEER_FLAG_CAPABILITY_SOFT_VERSION))
+			vty_out(vty,
+				" no neighbor %s capability software-version\n",
+				addr);
+	} else {
+		if (peergroup_flag_check(peer,
+					 PEER_FLAG_CAPABILITY_SOFT_VERSION))
+			vty_out(vty,
+				" neighbor %s capability software-version\n",
+				addr);
+	}
 
 	/* dont-capability-negotiation */
 	if (peergroup_flag_check(peer, PEER_FLAG_DONT_CAPABILITY))
 		vty_out(vty, " neighbor %s dont-capability-negotiate\n", addr);
+
+	/* capability fqdn */
+	if (peergroup_flag_check(peer, PEER_FLAG_CAPABILITY_FQDN))
+		vty_out(vty,
+			" no neighbor %s capability fqdn\n",
+			addr);
 
 	/* override-capability */
 	if (peergroup_flag_check(peer, PEER_FLAG_OVERRIDE_CAPABILITY))
@@ -18189,6 +18488,12 @@ static void bgp_config_write_peer_af(struct vty *vty, struct bgp *bgp,
 
 		if (flag_slcomm)
 			vty_out(vty, "  no neighbor %s send-community large\n",
+				addr);
+
+		if (peergroup_af_flag_check(peer, afi, safi,
+					    PEER_FLAG_SEND_EXT_COMMUNITY_RPKI))
+			vty_out(vty,
+				"  no neighbor %s send-community extended rpki\n",
 				addr);
 	}
 
@@ -18434,6 +18739,8 @@ int bgp_config_write(struct vty *vty)
 	safi_t safi;
 	uint32_t tovpn_sid_index = 0;
 
+	hook_call(bgp_snmp_traps_config_write, vty);
+
 	if (bm->rmap_update_timer != RMAP_DEFAULT_UPDATE_TIMER)
 		vty_out(vty, "bgp route-map delay-timer %u\n",
 			bm->rmap_update_timer);
@@ -18521,6 +18828,15 @@ int bgp_config_write(struct vty *vty)
 			vty_out(vty, " %sbgp ebgp-requires-policy\n",
 				CHECK_FLAG(bgp->flags,
 					   BGP_FLAG_EBGP_REQUIRES_POLICY)
+					? ""
+					: "no ");
+
+		/* bgp enforce-first-as */
+		if (!!CHECK_FLAG(bgp->flags, BGP_FLAG_ENFORCE_FIRST_AS) !=
+		    SAVE_BGP_ENFORCE_FIRST_AS)
+			vty_out(vty, " %sbgp enforce-first-as\n",
+				CHECK_FLAG(bgp->flags,
+					   BGP_FLAG_ENFORCE_FIRST_AS)
 					? ""
 					: "no ");
 
@@ -19443,6 +19759,9 @@ void bgp_vty_init(void)
 	install_element(BGP_NODE, &neighbor_role_strict_cmd);
 	install_element(BGP_NODE, &no_neighbor_role_cmd);
 
+	/* "neighbor oad" commands. */
+	install_element(BGP_NODE, &neighbor_oad_cmd);
+
 	/* "neighbor aigp" commands. */
 	install_element(BGP_NODE, &neighbor_aigp_cmd);
 
@@ -19515,6 +19834,9 @@ void bgp_vty_init(void)
 	/* bgp ebgp-requires-policy */
 	install_element(BGP_NODE, &bgp_ebgp_requires_policy_cmd);
 	install_element(BGP_NODE, &no_bgp_ebgp_requires_policy_cmd);
+
+	/* bgp enforce-first-as */
+	install_element(BGP_NODE, &bgp_enforce_first_as_cmd);
 
 	/* bgp labeled-unicast explicit-null */
 	install_element(BGP_NODE, &bgp_lu_uses_explicit_null_cmd);
@@ -20058,6 +20380,15 @@ void bgp_vty_init(void)
 	install_element(BGP_VPNV6_NODE, &neighbor_send_community_type_cmd);
 	install_element(BGP_VPNV6_NODE, &no_neighbor_send_community_cmd);
 	install_element(BGP_VPNV6_NODE, &no_neighbor_send_community_type_cmd);
+	install_element(BGP_NODE, &neighbor_ecommunity_rpki_cmd);
+	install_element(BGP_IPV4_NODE, &neighbor_ecommunity_rpki_cmd);
+	install_element(BGP_IPV4M_NODE, &neighbor_ecommunity_rpki_cmd);
+	install_element(BGP_IPV4L_NODE, &neighbor_ecommunity_rpki_cmd);
+	install_element(BGP_IPV6_NODE, &neighbor_ecommunity_rpki_cmd);
+	install_element(BGP_IPV6M_NODE, &neighbor_ecommunity_rpki_cmd);
+	install_element(BGP_IPV6L_NODE, &neighbor_ecommunity_rpki_cmd);
+	install_element(BGP_VPNV4_NODE, &neighbor_ecommunity_rpki_cmd);
+	install_element(BGP_VPNV6_NODE, &neighbor_ecommunity_rpki_cmd);
 
 	/* "neighbor route-reflector" commands.*/
 	install_element(BGP_NODE, &neighbor_route_reflector_client_hidden_cmd);
@@ -20292,6 +20623,9 @@ void bgp_vty_init(void)
 	/* "neighbor dont-capability-negotiate" commands. */
 	install_element(BGP_NODE, &neighbor_dont_capability_negotiate_cmd);
 	install_element(BGP_NODE, &no_neighbor_dont_capability_negotiate_cmd);
+
+	/* "neighbor capability fqdn" command. */
+	install_element(BGP_NODE, &neighbor_capability_fqdn_cmd);
 
 	/* "neighbor ebgp-multihop" commands. */
 	install_element(BGP_NODE, &neighbor_ebgp_multihop_cmd);

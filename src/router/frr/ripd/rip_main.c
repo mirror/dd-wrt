@@ -22,6 +22,7 @@
 #include "libfrr.h"
 #include "routemap.h"
 #include "bfd.h"
+#include "mgmt_be_client.h"
 
 #include "ripd/ripd.h"
 #include "ripd/rip_bfd.h"
@@ -53,6 +54,8 @@ struct zebra_privs_t ripd_privs = {
 /* Master of threads. */
 struct event_loop *master;
 
+struct mgmt_be_client *mgmt_be_client;
+
 static struct frr_daemon_info ripd_di;
 
 /* SIGHUP handler. */
@@ -67,12 +70,31 @@ static void sighup(void)
 /* SIGINT handler. */
 static void sigint(void)
 {
+	struct vrf *vrf;
+
 	zlog_notice("Terminating on signal");
 
 	bfd_protocol_integration_set_shutdown(true);
+
+
+	nb_oper_cancel_all_walks();
+	mgmt_be_client_destroy(mgmt_be_client);
+	mgmt_be_client = NULL;
+
+	RB_FOREACH (vrf, vrf_name_head, &vrfs_by_name) {
+		if (!vrf->info)
+			continue;
+
+		rip_clean(vrf->info);
+	}
+
 	rip_vrf_terminate();
 	if_rmap_terminate();
 	rip_zclient_stop();
+
+	route_map_finish();
+
+	keychain_terminate();
 	frr_fini();
 
 	exit(0);
@@ -111,15 +133,23 @@ static const struct frr_yang_module_info *const ripd_yang_modules[] = {
 	&frr_vrf_info,
 };
 
-FRR_DAEMON_INFO(ripd, RIP, .vty_port = RIP_VTY_PORT,
+/* clang-format off */
+FRR_DAEMON_INFO(ripd, RIP,
+	.vty_port = RIP_VTY_PORT,
+	.proghelp = "Implementation of the RIP routing protocol.",
 
-		.proghelp = "Implementation of the RIP routing protocol.",
+	.signals = ripd_signals,
+	.n_signals = array_size(ripd_signals),
 
-		.signals = ripd_signals, .n_signals = array_size(ripd_signals),
+	.privs = &ripd_privs,
 
-		.privs = &ripd_privs, .yang_modules = ripd_yang_modules,
-		.n_yang_modules = array_size(ripd_yang_modules),
+	.yang_modules = ripd_yang_modules,
+	.n_yang_modules = array_size(ripd_yang_modules),
+
+	/* mgmtd will load the per-daemon config file now */
+	.flags = FRR_NO_SPLIT_CONFIG,
 );
+/* clang-format on */
 
 #define DEPRECATED_OPTIONS ""
 
@@ -165,7 +195,9 @@ int main(int argc, char **argv)
 	/* RIP related initialization. */
 	rip_init();
 	rip_if_init();
-	rip_cli_init();
+
+	mgmt_be_client = mgmt_be_client_create("ripd", NULL, 0, master);
+
 	rip_zclient_init(master);
 	rip_bfd_init(master);
 

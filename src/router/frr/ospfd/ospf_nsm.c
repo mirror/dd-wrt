@@ -107,7 +107,7 @@ static void nsm_timer_set(struct ospf_neighbor *nbr)
 	case NSM_Down:
 		EVENT_OFF(nbr->t_inactivity);
 		EVENT_OFF(nbr->t_hello_reply);
-	/* fallthru */
+		fallthrough;
 	case NSM_Attempt:
 	case NSM_Init:
 	case NSM_TwoWay:
@@ -219,7 +219,7 @@ static int ospf_db_summary_add(struct ospf_neighbor *nbr, struct ospf_lsa *lsa)
 	case OSPF_OPAQUE_LINK_LSA:
 		/* Exclude type-9 LSAs that does not have the same "oi" with
 		 * "nbr". */
-		if (ospf_if_exists(lsa->oi) != nbr->oi)
+		if (lsa->oi != nbr->oi)
 			return 0;
 		break;
 	case OSPF_OPAQUE_AREA_LSA:

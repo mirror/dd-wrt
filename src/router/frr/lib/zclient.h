@@ -98,6 +98,7 @@ typedef enum {
 	ZEBRA_INTERFACE_UP,
 	ZEBRA_INTERFACE_DOWN,
 	ZEBRA_INTERFACE_SET_MASTER,
+	ZEBRA_INTERFACE_SET_ARP,
 	ZEBRA_INTERFACE_SET_PROTODOWN,
 	ZEBRA_ROUTE_ADD,
 	ZEBRA_ROUTE_DELETE,
@@ -216,11 +217,11 @@ typedef enum {
 	ZEBRA_NEIGH_DISCOVER,
 	ZEBRA_ROUTE_NOTIFY_REQUEST,
 	ZEBRA_CLIENT_CLOSE_NOTIFY,
-	ZEBRA_NHRP_NEIGH_ADDED,
-	ZEBRA_NHRP_NEIGH_REMOVED,
-	ZEBRA_NHRP_NEIGH_GET,
-	ZEBRA_NHRP_NEIGH_REGISTER,
-	ZEBRA_NHRP_NEIGH_UNREGISTER,
+	ZEBRA_NEIGH_ADDED,
+	ZEBRA_NEIGH_REMOVED,
+	ZEBRA_NEIGH_GET,
+	ZEBRA_NEIGH_REGISTER,
+	ZEBRA_NEIGH_UNREGISTER,
 	ZEBRA_NEIGH_IP_ADD,
 	ZEBRA_NEIGH_IP_DEL,
 	ZEBRA_CONFIGURE_ARP,
@@ -293,6 +294,8 @@ struct zapi_cap {
 typedef int (zclient_handler)(ZAPI_CALLBACK_ARGS);
 /* clang-format on */
 
+struct zapi_route;
+
 /* Structure for the zebra client. */
 struct zclient {
 	/* The thread master we schedule ourselves on */
@@ -301,11 +304,13 @@ struct zclient {
 	/* Privileges to change socket values */
 	struct zebra_privs_t *privs;
 
-	/* Do we care about failure events for route install? */
-	bool receive_notify;
-
 	/* Is this a synchronous client? */
 	bool synchronous;
+
+	/* Auxiliary clients don't execute standard library handlers
+	 * (which otherwise would duplicate VRF/interface add/delete/etc.
+	 */
+	bool auxiliary;
 
 	/* BFD enabled with bfd_protocol_integration_init() */
 	bool bfd_integration;
@@ -347,6 +352,19 @@ struct zclient {
 	/* Pointer to the callback functions. */
 	void (*zebra_connected)(struct zclient *);
 	void (*zebra_capabilities)(struct zclient_capabilities *cap);
+
+	/*
+	 * match -> is the prefix that the calling daemon asked to be matched
+	 * against.
+	 * nhr->prefix -> is the actual prefix that was matched against in the
+	 * rib itself.
+	 *
+	 * This distinction is made because a LPM can be made if there is a
+	 * covering route.  This way the upper level protocol can make a
+	 * decision point about whether or not it wants to use the match or not.
+	 */
+	void (*nexthop_update)(struct vrf *vrf, struct prefix *match,
+			       struct zapi_route *nhr);
 
 	int (*handle_error)(enum zebra_error_types error);
 
@@ -629,7 +647,7 @@ struct zapi_sr_policy {
 };
 
 struct zapi_pw {
-	char ifname[INTERFACE_NAMSIZ];
+	char ifname[IFNAMSIZ];
 	ifindex_t ifindex;
 	int type;
 	int af;
@@ -642,7 +660,7 @@ struct zapi_pw {
 };
 
 struct zapi_pw_status {
-	char ifname[INTERFACE_NAMSIZ];
+	char ifname[IFNAMSIZ];
 	ifindex_t ifindex;
 	uint32_t status;
 };
@@ -819,11 +837,18 @@ extern char *zclient_evpn_dump_macip_flags(uint8_t flags, char *buf,
 enum zebra_neigh_state { ZEBRA_NEIGH_INACTIVE = 0, ZEBRA_NEIGH_ACTIVE = 1 };
 
 struct zclient_options {
-	bool receive_notify;
 	bool synchronous;
+
+	/* auxiliary = don't call common lib/ handlers that manage bits.
+	 * Those should only run once, on the "main" zclient, which this is
+	 * not.  (This is also set for synchronous clients.)
+	 */
+	bool auxiliary;
 };
 
-extern struct zclient_options zclient_options_default;
+extern const struct zclient_options zclient_options_default;
+extern const struct zclient_options zclient_options_sync;
+extern const struct zclient_options zclient_options_auxiliary;
 
 /* link layer representation for GRE like interfaces
  * ip_in is the underlay IP, ip_out is the tunnel dest
@@ -843,6 +868,7 @@ extern struct zclient_options zclient_options_default;
 
 struct zapi_neigh_ip {
 	int cmd;
+	int ip_len;
 	struct ipaddr ip_in;
 	struct ipaddr ip_out;
 	ifindex_t index;
@@ -851,7 +877,7 @@ struct zapi_neigh_ip {
 int zclient_neigh_ip_decode(struct stream *s, struct zapi_neigh_ip *api);
 int zclient_neigh_ip_encode(struct stream *s, uint16_t cmd, union sockunion *in,
 			    union sockunion *out, struct interface *ifp,
-			    int ndm_state);
+			    int ndm_state, int ip_len);
 
 /*
  * We reserve the top 4 bits for l2-NHG, everything else
@@ -865,12 +891,12 @@ int zclient_neigh_ip_encode(struct stream *s, uint16_t cmd, union sockunion *in,
 	((uint32_t)250000000) /* Bottom 28 bits then rounded down */
 #define ZEBRA_NHG_PROTO_SPACING (ZEBRA_NHG_PROTO_UPPER / ZEBRA_ROUTE_MAX)
 #define ZEBRA_NHG_PROTO_LOWER                                                  \
-	(ZEBRA_NHG_PROTO_SPACING * (ZEBRA_ROUTE_CONNECT + 1))
+	(ZEBRA_NHG_PROTO_SPACING * (ZEBRA_ROUTE_LOCAL + 1))
 
 extern uint32_t zclient_get_nhg_start(uint32_t proto);
 
 extern struct zclient *zclient_new(struct event_loop *m,
-				   struct zclient_options *opt,
+				   const struct zclient_options *opt,
 				   zclient_handler *const *handlers,
 				   size_t n_handlers);
 
@@ -1011,6 +1037,9 @@ extern int zclient_read_header(struct stream *s, int sock, uint16_t *size,
  */
 extern bool zapi_parse_header(struct stream *zmsg, struct zmsghdr *hdr);
 
+extern enum zclient_send_status zclient_interface_set_arp(struct zclient *client,
+							  struct interface *ifp,
+							  bool arp_enable);
 extern enum zclient_send_status
 zclient_interface_set_master(struct zclient *client, struct interface *master,
 			     struct interface *slave);
@@ -1019,9 +1048,6 @@ extern struct connected *zebra_interface_address_read(int, struct stream *,
 						      vrf_id_t);
 extern struct nbr_connected *
 zebra_interface_nbr_address_read(int, struct stream *, vrf_id_t);
-extern struct interface *zebra_interface_vrf_update_read(struct stream *s,
-							 vrf_id_t vrf_id,
-							 vrf_id_t *new_vrf_id);
 extern int zebra_router_id_update_read(struct stream *s, struct prefix *rid);
 
 extern struct interface *zebra_interface_link_params_read(struct stream *s,
@@ -1123,18 +1149,6 @@ int zapi_nexthop_from_nexthop(struct zapi_nexthop *znh,
 			      const struct nexthop *nh);
 int zapi_backup_nexthop_from_nexthop(struct zapi_nexthop *znh,
 				     const struct nexthop *nh);
-/*
- * match -> is the prefix that the calling daemon asked to be matched
- * against.
- * nhr->prefix -> is the actual prefix that was matched against in the
- * rib itself.
- *
- * This distinction is made because a LPM can be made if there is a
- * covering route.  This way the upper level protocol can make a decision
- * point about whether or not it wants to use the match or not.
- */
-extern bool zapi_nexthop_update_decode(struct stream *s, struct prefix *match,
-				       struct zapi_route *nhr);
 const char *zapi_nexthop2str(const struct zapi_nexthop *znh, char *buf,
 			     int bufsize);
 
@@ -1155,6 +1169,15 @@ static inline void zapi_route_set_blackhole(struct zapi_route *api,
 	api->nexthops[0].vrf_id = VRF_DEFAULT;
 	api->nexthops[0].bh_type = bh_type;
 	SET_FLAG(api->message, ZAPI_MESSAGE_NEXTHOP);
+};
+
+static inline void zapi_route_set_nhg_id(struct zapi_route *api,
+					 uint32_t *nhg_id)
+{
+	api->nexthop_num = 0;
+	api->nhgid = *nhg_id;
+	if (api->nhgid)
+		SET_FLAG(api->message, ZAPI_MESSAGE_NHG);
 };
 
 extern enum zclient_send_status
@@ -1303,6 +1326,9 @@ enum zapi_opaque_registry {
  * Returns 0 for success or -1 on an I/O error.
  */
 extern enum zclient_send_status zclient_send_hello(struct zclient *client);
+
+extern void zclient_register_neigh(struct zclient *zclient, vrf_id_t vrf_id,
+				   afi_t afi, bool reg);
 
 extern enum zclient_send_status
 zclient_send_neigh_discovery_req(struct zclient *zclient,

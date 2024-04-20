@@ -6,8 +6,14 @@
 #ifndef _QUAGGA_BGP_DEBUG_H
 #define _QUAGGA_BGP_DEBUG_H
 
+#include "hook.h"
+#include "vty.h"
+
 #include "bgp_attr.h"
 #include "bgp_updgrp.h"
+
+DECLARE_HOOK(bgp_hook_config_write_debug, (struct vty *vty, bool running),
+	     (vty, running));
 
 /* sort of packet direction */
 #define DUMP_ON        1
@@ -96,6 +102,9 @@ extern struct list *bgp_debug_zebra_prefixes;
 
 struct bgp_debug_filter {
 	char *host;
+	char *plist_name;
+	struct prefix_list *plist_v4;
+	struct prefix_list *plist_v6;
 	struct prefix *p;
 };
 
@@ -109,6 +118,7 @@ struct bgp_debug_filter {
 #define BGP_DEBUG_UPDATE_IN           0x01
 #define BGP_DEBUG_UPDATE_OUT          0x02
 #define BGP_DEBUG_UPDATE_PREFIX       0x04
+#define BGP_DEBUG_UPDATE_DETAIL       0x08
 #define BGP_DEBUG_ZEBRA               0x01
 #define BGP_DEBUG_ALLOW_MARTIANS      0x01
 #define BGP_DEBUG_NHT                 0x01
@@ -123,9 +133,6 @@ struct bgp_debug_filter {
 #define BGP_DEBUG_PBR_ERROR           0x02
 #define BGP_DEBUG_EVPN_MH_ES          0x01
 #define BGP_DEBUG_EVPN_MH_RT          0x02
-
-#define BGP_DEBUG_PACKET_SEND         0x01
-#define BGP_DEBUG_PACKET_SEND_DETAIL  0x02
 
 #define BGP_DEBUG_GRACEFUL_RESTART     0x01
 

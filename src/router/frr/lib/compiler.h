@@ -32,8 +32,8 @@ extern "C" {
 #if __clang_major__ > 3 || (__clang_major__ == 3 && __clang_minor__ >= 5)
 #  define _RET_NONNULL    , returns_nonnull
 #endif
-#if __has_attribute(fallthrough)
-#  define _FALLTHROUGH __attribute__((fallthrough));
+#if __has_attribute(fallthrough) && !defined(__cplusplus)
+#  define fallthrough __attribute__((fallthrough));
 #endif
 # define _CONSTRUCTOR(x)  constructor(x)
 # define _DEPRECATED(x) deprecated(x)
@@ -56,8 +56,8 @@ extern "C" {
 #if __GNUC__ < 5
 #  define __has_attribute(x) 0
 #endif
-#if __GNUC__ >= 7
-#  define _FALLTHROUGH __attribute__((fallthrough));
+#if __GNUC__ >= 7 && !defined(__cplusplus)
+#  define fallthrough __attribute__((fallthrough));
 #endif
 #endif
 
@@ -112,8 +112,8 @@ extern "C" {
 #ifndef _ALLOC_SIZE
 # define _ALLOC_SIZE(x)
 #endif
-#ifndef _FALLTHROUGH
-#define _FALLTHROUGH
+#if !defined(fallthrough) && !defined(__cplusplus)
+#define fallthrough
 #endif
 #ifndef _DEPRECATED
 #define _DEPRECATED(x) deprecated
@@ -424,10 +424,10 @@ _Static_assert(sizeof(_uint64_t) == 8 && sizeof(_int64_t) == 8,
  * type.)
  */
 #ifndef __cplusplus
-#define prefixtype(uname, typename, fieldname) typename *fieldname;
+#define uniontype(uname, typename, fieldname) typename *fieldname;
 #define TRANSPARENT_UNION __attribute__((transparent_union))
 #else
-#define prefixtype(uname, typename, fieldname)                                 \
+#define uniontype(uname, typename, fieldname)                                  \
 	typename *fieldname;                                                   \
 	uname(typename *x)                                                     \
 	{                                                                      \

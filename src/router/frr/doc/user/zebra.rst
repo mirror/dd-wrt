@@ -50,7 +50,8 @@ Besides the common invocation options (:ref:`common-invocation-options`), the
    When *Zebra* starts with this option, the VRF backend is based on Linux
    network namespaces. That implies that all network namespaces discovered by
    ZEBRA will create an associated VRF. The other daemons will operate on the VRF
-   VRF defined by *Zebra*, as usual.
+   VRF defined by *Zebra*, as usual. If this option is specified when running
+   *Zebra*, one must also specify the same option for *mgmtd*.
 
    .. seealso:: :ref:`zebra-vrf`
 
@@ -177,16 +178,15 @@ Standard Commands
    work on non-linux systems at all. 'enable' and 'disable' will respectively turn
    on and off mpls on the given interface.
 
-.. clicmd:: multicast
+.. clicmd:: multicast <enable|disable>
 
 
    Enable or disable multicast flag for the interface.
 
 
-.. clicmd:: bandwidth (1-10000000)
+.. clicmd:: bandwidth (1-1000000)
 
-
-   Set bandwidth value of the interface in kilobits/sec. This is for
+   Set bandwidth value of the interface in Megabits/sec. This is for
    calculating OSPF cost. This command does not affect the actual device
    configuration.
 
@@ -213,20 +213,14 @@ Link Parameters Commands
 
 .. clicmd:: link-params
 
+   Enter into the link parameters sub node. This command activates the link
+   parameters and allows to configure routing information that could be used
+   as part of Traffic Engineering on this interface. MPLS-TE must be enabled at
+   the OSPF (:ref:`ospf-traffic-engineering`) or ISIS
+   (:ref:`isis-traffic-engineering`) router level in complement to this. To
+   disable link parameters, use the ``no`` version of this command.
 
-   Enter into the link parameters sub node. At least 'enable' must be
-   set to activate the link parameters, and consequently routing
-   information that could be used as part of Traffic Engineering on
-   this interface. MPLS-TE must be enable at the OSPF
-   (:ref:`ospf-traffic-engineering`) or ISIS
-   (:ref:`isis-traffic-engineering`) router level in complement to
-   this.
-
-   Under link parameter statement, the following commands set the different TE values:
-
-.. clicmd:: enable
-
-   Enable link parameters for this interface.
+Under link parameter statement, the following commands set the different TE values:
 
 .. clicmd:: metric (0-4294967295)
 
@@ -252,7 +246,7 @@ Link Parameters Commands
    as specified in RFC3630 (OSPF) or RFC5305 (ISIS). Admin-group is also known
    as Resource Class/Color in the OSPF protocol.
 
-.. clicmd:: [no] affinity AFFINITY-MAP-NAME
+.. clicmd:: affinity AFFINITY-MAP-NAME
 
    This commands configures the Traffic Engineering Admin-Group of the
    interface using the affinity-map definitions (:ref:`affinity-map`).
@@ -263,7 +257,7 @@ Link Parameters Commands
    ``admin-grp`` and ``affinity`` commands provide two ways of setting
    admin-groups. They cannot be both set on the same interface.
 
-.. clicmd:: [no] affinity-mode [extended|standard|both]
+.. clicmd:: affinity-mode [extended|standard|both]
 
    This commands configures which admin-group format is set by the affinity
    command. ``extended`` Admin-Group is the default and uses the RFC7308 format.
@@ -783,9 +777,25 @@ presence of the entry.
    21     Static       10.125.0.2  IPv4 Explicit Null
 
 
+MPLS label chunks
+-----------------
+
+MPLS label chunks are handled in the zebra label manager service,
+which ensures a same label value or label chunk can not be used by
+multiple CP routing daemons at the same time.
+
+Label requests originate from CP routing daemons, and are resolved
+over the default MPLS range (16-1048575). There are two kind of
+requests:
+- Static label requests request an exact label value or range. For
+instance, segment routing label blocks requests originating from
+IS-IS are part of it.
+- Dynamic label requests only need a range of label values. The
+'bgp l3vpn export auto' command uses such requests.
+
 Allocated label chunks table can be dumped using the command
 
-.. clicmd:: show debugging label-table
+.. clicmd:: show debugging label-table [json]
 
 ::
 
@@ -795,6 +805,15 @@ Allocated label chunks table can be dumped using the command
    Proto isis: [1200/1300]
    Proto ospf: [20000/21000]
    Proto isis: [22000/23000]
+
+.. clicmd:: mpls label dynamic-block (16-1048575) (16-1048575)
+
+   Define a range of labels where dynamic label requests will
+   allocate label chunks from. This command guarantees that
+   static label values outside that range will not conflict
+   with the dynamic label requests. When the dynamic-block
+   range is configured, static label requests that match that
+   range are not accepted.
 
 .. _zebra-srv6:
 
@@ -812,6 +831,35 @@ In that case, user must configure initial srv6 setting on
 FRR's cli or frr.conf or zebra.conf. This section shows how
 to configure SRv6 on FRR. Of course SRv6 can be used as standalone,
 and this section also helps that case.
+
+.. clicmd:: show segment-routing srv6 manager [json]
+
+   This command dumps the SRv6 information configured on zebra, including
+   the encapsulation parameters (e.g., the IPv6 source address used for
+   the encapsulated packets).
+
+   Example::
+
+      router# sh segment-routing srv6 manager
+      Parameters:
+      Encapsulation:
+         Source Address:
+            Configured: fc00:0:1::1
+
+
+   To get the same information in json format, you can use the ``json`` keyword::
+
+      rose-srv6# sh segment-routing srv6 manager json
+      {
+        "parameters":{
+          "encapsulation":{
+            "sourceAddress":{
+              "configured":"fc00:0:1::1"
+            }
+          }
+        }
+      }
+
 
 .. clicmd:: show segment-routing srv6 locator [json]
 
@@ -972,6 +1020,14 @@ and this section also helps that case.
        behavior usid
       !
    ...
+
+.. clicmd:: encapsulation
+
+   Configure parameters for SRv6 encapsulation.
+
+.. clicmd:: source-address X:X::X:X
+
+   Configure the source address of the outer encapsulating IPv6 header.
 
 .. _multicast-rib-commands:
 
@@ -1433,8 +1489,6 @@ zebra Terminal Mode Commands
    If the ``json`` option is specified, output is displayed in JSON format.
 
 .. clicmd:: show ip prefix-list [NAME]
-
-.. clicmd:: show route-map [NAME]
 
 .. clicmd:: show ip protocol
 

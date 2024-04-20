@@ -22,6 +22,7 @@
 #include "defaults.h"
 #include "lib/printfrr.h"
 #include "keychain.h"
+#include "frrdistance.h"
 
 #include "ospfd/ospfd.h"
 #include "ospfd/ospf_asbr.h"
@@ -1871,7 +1872,7 @@ DEFUN (no_ospf_area_import_list,
 
 DEFUN (ospf_area_filter_list,
        ospf_area_filter_list_cmd,
-       "area <A.B.C.D|(0-4294967295)> filter-list prefix PREFIXLIST_NAME <in|out>",
+       "area <A.B.C.D|(0-4294967295)> filter-list prefix PREFIXLIST4_NAME <in|out>",
        "OSPF area parameters\n"
        "OSPF area ID in IP address format\n"
        "OSPF area ID as a decimal value\n"
@@ -1916,7 +1917,7 @@ DEFUN (ospf_area_filter_list,
 
 DEFUN (no_ospf_area_filter_list,
        no_ospf_area_filter_list_cmd,
-       "no area <A.B.C.D|(0-4294967295)> filter-list prefix PREFIXLIST_NAME <in|out>",
+       "no area <A.B.C.D|(0-4294967295)> filter-list prefix PREFIXLIST4_NAME <in|out>",
        NO_STR
        "OSPF area parameters\n"
        "OSPF area ID in IP address format\n"
@@ -5709,7 +5710,7 @@ DEFPY(show_ip_ospf_neighbor_id,
 					"%% OSPF is not enabled in vrf %s\n",
 					vrf_name);
 			else
-				vty_json_empty(vty);
+				vty_json_empty(vty, NULL);
 			return CMD_SUCCESS;
 		}
 		ret = show_ip_ospf_neighbor_id_common(
@@ -6210,7 +6211,7 @@ DEFPY(show_ip_ospf_neighbor_int,
 
 	if (!ospf || !ospf->oi_running) {
 		if (json)
-			vty_json_empty(vty);
+			vty_json_empty(vty, NULL);
 		return ret;
 	}
 
@@ -6220,7 +6221,7 @@ DEFPY(show_ip_ospf_neighbor_int,
 	ifp = if_lookup_by_name(ifname, vrf_id);
 	if (!ifp) {
 		if (json)
-			vty_json_empty(vty);
+			vty_json_empty(vty, NULL);
 		else
 			vty_out(vty, "No such interface.\n");
 		return ret;
@@ -6257,7 +6258,7 @@ DEFPY(show_ip_ospf_neighbor_int_detail,
 					"%% OSPF is not enabled in vrf %s\n",
 					vrf_name);
 			else
-				vty_json_empty(vty);
+				vty_json_empty(vty, NULL);
 			return CMD_SUCCESS;
 		}
 		return show_ip_ospf_neighbor_int_detail_common(
@@ -8301,7 +8302,7 @@ DEFUN_HIDDEN (ospf_dead_interval,
 
 DEFUN (ip_ospf_dead_interval_minimal,
        ip_ospf_dead_interval_minimal_addr_cmd,
-       "ip ospf dead-interval minimal hello-multiplier (1-10) [A.B.C.D]",
+       "ip ospf dead-interval minimal hello-multiplier (2-20) [A.B.C.D]",
        "IP Information\n"
        "OSPF interface commands\n"
        "Interval time after which a neighbor is declared down\n"
@@ -8322,7 +8323,7 @@ DEFUN (ip_ospf_dead_interval_minimal,
 
 DEFUN (no_ip_ospf_dead_interval,
        no_ip_ospf_dead_interval_cmd,
-       "no ip ospf dead-interval [<(1-65535)|minimal hello-multiplier (1-10)> [A.B.C.D]]",
+       "no ip ospf dead-interval [<(1-65535)|minimal hello-multiplier (2-20)> [A.B.C.D]]",
        NO_STR
        "IP Information\n"
        "OSPF interface commands\n"
@@ -8389,7 +8390,7 @@ DEFUN (no_ip_ospf_dead_interval,
 
 DEFUN_HIDDEN (no_ospf_dead_interval,
               no_ospf_dead_interval_cmd,
-              "no ospf dead-interval [<(1-65535)|minimal hello-multiplier (1-10)> [A.B.C.D]]",
+              "no ospf dead-interval [<(1-65535)|minimal hello-multiplier (2-20)> [A.B.C.D]]",
               NO_STR
               "OSPF interface commands\n"
               "Interval time after which a neighbor is declared down\n"

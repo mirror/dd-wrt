@@ -599,16 +599,16 @@ def test_nexthop_groups():
     count = 0
     dups = []
     nhg_id = route_get_nhg_id("6.6.6.1/32")
-    while (len(dups) != 3) and count < 10:
+    while (len(dups) != 4) and count < 10:
         output = net["r1"].cmd('vtysh -c "show nexthop-group rib %d"' % nhg_id)
 
         dups = re.findall(r"(via 1\.1\.1\.1)", output)
-        if len(dups) != 3:
+        if len(dups) != 4:
             count += 1
             sleep(1)
 
     # Should find 3, itself is inactive
-    assert len(dups) == 3, (
+    assert len(dups) == 4, (
         "Route 6.6.6.1/32 with Nexthop Group ID=%d has wrong number of resolved nexthops"
         % nhg_id
     )
@@ -951,26 +951,24 @@ def test_bgp_summary():
                 actual = re.sub(r"Total number.*", "", actual)
                 actual = re.sub(r"Displayed.*", "", actual)
                 # Remove IPv4 Unicast Summary (Title only)
-                actual = re.sub(r"IPv4 Unicast Summary \(VRF default\):", "", actual)
+                actual = re.sub(r"IPv4 Unicast Summary:", "", actual)
                 # Remove IPv4 Multicast Summary (all of it)
-                actual = re.sub(r"IPv4 Multicast Summary \(VRF default\):", "", actual)
+                actual = re.sub(r"IPv4 Multicast Summary:", "", actual)
                 actual = re.sub(r"No IPv4 Multicast neighbor is configured", "", actual)
                 # Remove IPv4 VPN Summary (all of it)
-                actual = re.sub(r"IPv4 VPN Summary \(VRF default\):", "", actual)
+                actual = re.sub(r"IPv4 VPN Summary:", "", actual)
                 actual = re.sub(r"No IPv4 VPN neighbor is configured", "", actual)
                 # Remove IPv4 Encap Summary (all of it)
-                actual = re.sub(r"IPv4 Encap Summary \(VRF default\):", "", actual)
+                actual = re.sub(r"IPv4 Encap Summary:", "", actual)
                 actual = re.sub(r"No IPv4 Encap neighbor is configured", "", actual)
                 # Remove Unknown Summary (all of it)
-                actual = re.sub(r"Unknown Summary \(VRF default\):", "", actual)
+                actual = re.sub(r"Unknown Summary:", "", actual)
                 actual = re.sub(r"No Unknown neighbor is configured", "", actual)
                 # Make Connect/Active/Idle the same (change them all to Active)
                 actual = re.sub(r" Connect ", "  Active ", actual)
                 actual = re.sub(r"    Idle ", "  Active ", actual)
 
-                actual = re.sub(
-                    r"IPv4 labeled-unicast Summary \(VRF default\):", "", actual
-                )
+                actual = re.sub(r"IPv4 labeled-unicast Summary:", "", actual)
                 actual = re.sub(
                     r"No IPv4 labeled-unicast neighbor is configured", "", actual
                 )
@@ -1108,27 +1106,25 @@ def test_bgp_ipv6_summary():
             actual = re.sub(r"Total number.*", "", actual)
             actual = re.sub(r"Displayed.*", "", actual)
             # Remove IPv4 Unicast Summary (Title only)
-            actual = re.sub(r"IPv6 Unicast Summary \(VRF default\):", "", actual)
+            actual = re.sub(r"IPv6 Unicast Summary:", "", actual)
             # Remove IPv4 Multicast Summary (all of it)
-            actual = re.sub(r"IPv6 Multicast Summary \(VRF default\):", "", actual)
+            actual = re.sub(r"IPv6 Multicast Summary:", "", actual)
             actual = re.sub(r"No IPv6 Multicast neighbor is configured", "", actual)
             # Remove IPv4 VPN Summary (all of it)
-            actual = re.sub(r"IPv6 VPN Summary \(VRF default\):", "", actual)
+            actual = re.sub(r"IPv6 VPN Summary:", "", actual)
             actual = re.sub(r"No IPv6 VPN neighbor is configured", "", actual)
             # Remove IPv4 Encap Summary (all of it)
-            actual = re.sub(r"IPv6 Encap Summary \(VRF default\):", "", actual)
+            actual = re.sub(r"IPv6 Encap Summary:", "", actual)
             actual = re.sub(r"No IPv6 Encap neighbor is configured", "", actual)
             # Remove Unknown Summary (all of it)
-            actual = re.sub(r"Unknown Summary \(VRF default\):", "", actual)
+            actual = re.sub(r"Unknown Summary:", "", actual)
             actual = re.sub(r"No Unknown neighbor is configured", "", actual)
             # Make Connect/Active/Idle the same (change them all to Active)
             actual = re.sub(r" Connect ", "  Active ", actual)
             actual = re.sub(r"    Idle ", "  Active ", actual)
 
             # Remove Labeled Unicast Summary (all of it)
-            actual = re.sub(
-                r"IPv6 labeled-unicast Summary \(VRF default\):", "", actual
-            )
+            actual = re.sub(r"IPv6 labeled-unicast Summary:", "", actual)
             actual = re.sub(
                 r"No IPv6 labeled-unicast neighbor is configured", "", actual
             )

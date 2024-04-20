@@ -193,30 +193,9 @@ struct bgp_path_info_extra_vrfleak {
 	struct prefix nexthop_orig;
 };
 
-/* Ancillary information to struct bgp_path_info,
- * used for uncommonly used data (aggregation, MPLS, etc.)
- * and lazily allocated to save memory.
- */
-struct bgp_path_info_extra {
-	/* Pointer to dampening structure.  */
-	struct bgp_damp_info *damp_info;
-
-	/** List of aggregations that suppress this path. */
-	struct list *aggr_suppressors;
-
-	/* Nexthop reachability check.  */
-	uint32_t igpmetric;
-
-	/* MPLS label(s) - VNI(s) for EVPN-VxLAN  */
-	mpls_label_t label[BGP_MAX_LABELS];
-	uint32_t num_labels;
-
-	/*For EVPN*/
-	struct bgp_path_info_extra_evpn *evpn;
-
 #ifdef ENABLE_BGP_VNC
+struct bgp_path_info_extra_vnc {
 	union {
-
 		struct {
 			void *rfapi_handle; /* export: NVE advertising this
 					       route */
@@ -239,8 +218,36 @@ struct bgp_path_info_extra {
 			struct prefix aux_prefix; /* AFI_L2VPN: the IP addr,
 						     if family set */
 		} import;
-
 	} vnc;
+};
+#endif
+
+/* Ancillary information to struct bgp_path_info,
+ * used for uncommonly used data (aggregation, MPLS, etc.)
+ * and lazily allocated to save memory.
+ */
+struct bgp_path_info_extra {
+	/* Pointer to dampening structure.  */
+	struct bgp_damp_info *damp_info;
+
+	/** List of aggregations that suppress this path. */
+	struct list *aggr_suppressors;
+
+	/* Nexthop reachability check.  */
+	uint32_t igpmetric;
+
+	/* MPLS label(s) - VNI(s) for EVPN-VxLAN  */
+	mpls_label_t label[BGP_MAX_LABELS];
+	uint32_t num_labels;
+
+	/* timestamp of the rib installation */
+	time_t bgp_rib_uptime;
+
+	/*For EVPN*/
+	struct bgp_path_info_extra_evpn *evpn;
+
+#ifdef ENABLE_BGP_VNC
+	struct bgp_path_info_extra_vnc *vnc;
 #endif
 
 	/* For flowspec*/
@@ -366,6 +373,8 @@ struct bgp_static {
 	/* Import check status.  */
 	uint8_t valid;
 
+	uint16_t encap_tunneltype;
+
 	/* IGP metric. */
 	uint32_t igpmetric;
 
@@ -391,7 +400,6 @@ struct bgp_static {
 	/* EVPN */
 	esi_t *eth_s_id;
 	struct ethaddr *router_mac;
-	uint16_t encap_tunneltype;
 	struct prefix gatewayIp;
 };
 
@@ -412,10 +420,22 @@ struct bgp_aggregate {
 	/* AS set generation. */
 	uint8_t as_set;
 
+	/* Optional modify flag to override ORIGIN */
+	uint8_t origin;
+
+	/** Are there MED mismatches? */
+	bool med_mismatched;
+	/* MED matching state. */
+	/** Did we get the first MED value? */
+	bool med_initialized;
+	/** Match only equal MED. */
+	bool match_med;
+
 	/* Route-map for aggregated route. */
 	struct {
 		char *name;
 		struct route_map *map;
+		bool changed;
 	} rmap;
 
 	/* Suppress-count. */
@@ -426,9 +446,6 @@ struct bgp_aggregate {
 
 	/* Count of routes of origin type egp under this aggregate. */
 	unsigned long egp_origin_count;
-
-	/* Optional modify flag to override ORIGIN */
-	uint8_t origin;
 
 	/* Hash containing the communities of all the
 	 * routes under this aggregate.
@@ -465,13 +482,6 @@ struct bgp_aggregate {
 	/* SAFI configuration. */
 	safi_t safi;
 
-	/** Match only equal MED. */
-	bool match_med;
-	/* MED matching state. */
-	/** Did we get the first MED value? */
-	bool med_initialized;
-	/** Are there MED mismatches? */
-	bool med_mismatched;
 	/** MED value found in current group. */
 	uint32_t med_matched_value;
 
@@ -674,6 +684,12 @@ DECLARE_HOOK(bgp_process,
 	      struct peer *peer, bool withdraw),
 	     (bgp, afi, safi, bn, peer, withdraw));
 
+/* called when a route is updated in the rib */
+DECLARE_HOOK(bgp_route_update,
+	     (struct bgp *bgp, afi_t afi, safi_t safi, struct bgp_dest *bn,
+	      struct bgp_path_info *old_route, struct bgp_path_info *new_route),
+	     (bgp, afi, safi, bn, old_route, new_route));
+
 /* BGP show options */
 #define BGP_SHOW_OPT_JSON (1 << 0)
 #define BGP_SHOW_OPT_WIDE (1 << 1)
@@ -698,7 +714,8 @@ extern void bgp_announce_route(struct peer *peer, afi_t afi, safi_t safi,
 			       bool force);
 extern void bgp_stop_announce_route_timer(struct peer_af *paf);
 extern void bgp_announce_route_all(struct peer *);
-extern void bgp_default_originate(struct peer *, afi_t, safi_t, int);
+extern void bgp_default_originate(struct peer *peer, afi_t afi, safi_t safi,
+				  bool withdraw);
 extern void bgp_soft_reconfig_table_task_cancel(const struct bgp *bgp,
 						const struct bgp_table *table,
 						const struct peer *peer);
@@ -905,6 +922,7 @@ extern void bgp_aggregate_toggle_suppressed(struct bgp_aggregate *aggregate,
 extern void subgroup_announce_reset_nhop(uint8_t family, struct attr *attr);
 const char *
 bgp_path_selection_reason2str(enum bgp_path_selection_reason reason);
+extern bool bgp_path_suppressed(struct bgp_path_info *pi);
 extern bool bgp_addpath_encode_rx(struct peer *peer, afi_t afi, safi_t safi);
 extern const struct prefix_rd *bgp_rd_from_dest(const struct bgp_dest *dest,
 						safi_t safi);

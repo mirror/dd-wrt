@@ -259,13 +259,12 @@ static void nhrp_interface_update_address(struct interface *ifp, afi_t afi,
 	struct nhrp_afi_data *if_ad = &nifp->afi[afi];
 	struct nhrp_cache *nc;
 	struct connected *c, *best;
-	struct listnode *cnode;
 	union sockunion addr;
 	char buf[PREFIX_STRLEN];
 
 	/* Select new best match preferring primary address */
 	best = NULL;
-	for (ALL_LIST_ELEMENTS_RO(ifp->connected, cnode, c)) {
+	frr_each (if_connected, ifp->connected, c) {
 		if (PREFIX_FAMILY(c->address) != family)
 			continue;
 		if (best == NULL) {
@@ -352,6 +351,7 @@ void nhrp_interface_update(struct interface *ifp)
 		if (!if_ad->configured) {
 			os_configure_dmvpn(ifp->ifindex, ifp->name,
 					   afi2family(afi));
+			nhrp_interface_update_arp(ifp, true);
 			nhrp_send_zebra_configure_arp(ifp, afi2family(afi));
 			if_ad->configured = 1;
 			nhrp_interface_update_address(ifp, afi, 1);

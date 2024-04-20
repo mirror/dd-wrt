@@ -33,18 +33,18 @@ frr_top_src = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 daemon_flags = {
     "lib/agentx.c": "VTYSH_ISISD|VTYSH_RIPD|VTYSH_OSPFD|VTYSH_OSPF6D|VTYSH_BGPD|VTYSH_ZEBRA",
-    "lib/filter.c": "VTYSH_ACL",
-    "lib/filter_cli.c": "VTYSH_ACL",
+    "lib/filter.c": "VTYSH_ACL_SHOW",
+    "lib/filter_cli.c": "VTYSH_ACL_CONFIG",
     "lib/if.c": "VTYSH_INTERFACE",
     "lib/keychain.c": "VTYSH_KEYS",
-    "lib/mgmt_be_client.c": "VTYSH_STATICD",
-    "lib/mgmt_fe_client.c": "VTYSH_MGMTD",
+    "lib/mgmt_be_client.c": "VTYSH_MGMT_BACKEND",
+    "lib/mgmt_fe_client.c": "VTYSH_MGMT_FRONTEND",
     "lib/lib_vty.c": "VTYSH_ALL",
     "lib/log_vty.c": "VTYSH_ALL",
     "lib/nexthop_group.c": "VTYSH_NH_GROUP",
     "lib/resolver.c": "VTYSH_NHRPD|VTYSH_BGPD",
-    "lib/routemap.c": "VTYSH_RMAP",
-    "lib/routemap_cli.c": "VTYSH_RMAP",
+    "lib/routemap.c": "VTYSH_RMAP_SHOW",
+    "lib/routemap_cli.c": "VTYSH_RMAP_CONFIG",
     "lib/spf_backoff.c": "VTYSH_ISISD",
     "lib/event.c": "VTYSH_ALL",
     "lib/vrf.c": "VTYSH_VRF",
@@ -206,10 +206,7 @@ class CommandEntry:
                 }
 
         if defun_file == "lib/if_rmap.c":
-            if v6_cmd:
-                return {"VTYSH_RIPNGD"}
-            else:
-                return {"VTYSH_RIPD"}
+            return {"VTYSH_MGMTD"}
 
         return {}
 
@@ -327,17 +324,7 @@ class CommandEntry:
     def load(cls, xref):
         nodes = NodeDict()
 
-        mgmtname = "mgmtd/libmgmt_be_nb.la"
         for cmd_name, origins in xref.get("cli", {}).items():
-            # If mgmtd has a yang version of a CLI command, make it the only daemon
-            # to handle it.  For now, daemons can still be compiling their cmds into the
-            # binaries to allow for running standalone with CLI config files. When they
-            # do this they will also be present in the xref file, but we want to ignore
-            # those in vtysh.
-            if "yang" in origins.get(mgmtname, {}).get("attrs", []):
-                CommandEntry.process(nodes, cmd_name, mgmtname, origins[mgmtname])
-                continue
-
             for origin, spec in origins.items():
                 CommandEntry.process(nodes, cmd_name, origin, spec)
         return nodes

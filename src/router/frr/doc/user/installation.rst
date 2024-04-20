@@ -234,10 +234,9 @@ options from the list below.
    assigned to the realm. See the tc man page.  This option is currently not
    compatible with the usage of nexthop groups in the linux kernel itself.
 
-.. option:: --disable-irdp
+.. option:: --enable-irdp
 
-   Disable IRDP server support.  This is enabled by default if we have
-   both `struct in_pktinfo` and `struct icmphdr` available to us.
+   Enable IRDP server support. This is deprecated.
 
 .. option:: --disable-rtadv
 
@@ -394,13 +393,20 @@ options to the configuration script.
 
 .. option:: --sysconfdir <dir>
 
-   Look for configuration files in `dir` [`prefix`/etc]. Note that sample
-   configuration files will be installed here.
+   Look for configuration files in `dir`/frr [`prefix`/etc]. Note that sample
+   configuration files will be installed here.  Should be ``/etc`` unless
+   your platform splits package configuration locations.
 
 .. option:: --localstatedir <dir>
 
-   Configure zebra to use `dir` for local state files, such as pid files and
-   unix sockets.
+   Configure base directory for local state.  Indirectly controls
+   ``--runstatedir``.  Should be ``/var`` in most cases.
+
+.. option:: --runstatedir <dir>
+
+   Configure FRR to use `dir`/frr for local state files, such as pid files and
+   unix sockets.  Should be ``/var/run`` (default through ``--localstatedir``)
+   or ``/run`` in most cases.
 
 .. option:: --with-scriptdir <dir>
 
@@ -579,9 +585,9 @@ the options you chose:
 
    ./configure \
        --prefix=/usr \
-       --localstatedir=/var/run/frr \
+       --sysconfdir=/etc \
+       --localstatedir=/var \
        --sbindir=/usr/lib/frr \
-       --sysconfdir=/etc/frr \
        --enable-pimd \
        --enable-watchfrr \
        ...

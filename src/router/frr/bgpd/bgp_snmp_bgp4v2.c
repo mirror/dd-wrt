@@ -32,6 +32,7 @@
 SNMP_LOCAL_VARIABLES
 
 static oid bgpv2_oid[] = {BGP4V2MIB};
+static oid bgpv2_trap_oid[] = { BGP4V2MIB, 0 };
 static struct in_addr bgp_empty_addr = {};
 
 static struct peer *peer_lookup_all_vrf(struct ipaddr *addr)
@@ -435,7 +436,6 @@ bgp4v2PathAttrLookup(struct variable *v, oid name[], size_t *length,
 	struct bgp_path_info *path, *min;
 	struct bgp_dest *dest;
 	union sockunion su;
-	unsigned int len;
 	struct ipaddr paddr = {};
 	size_t namelen = v ? v->namelen : BGP4V2_NLRI_ENTRY_OFFSET;
 	sa_family_t family;
@@ -445,20 +445,28 @@ bgp4v2PathAttrLookup(struct variable *v, oid name[], size_t *length,
 	size_t afi_len;
 	long prefix_type = 0;
 	long peer_addr_type = 0;
+	long nrli_index = 1;
+	long cur_index = 0;
 
 	/* Bgp4V2AddressFamilyIdentifierTC limited to IPv6 */
 	if (name[namelen - 1] > IANA_AFI_IPV6)
 		return NULL;
 	afi = afi_iana2int(name[namelen - 1]);
 	afi_len = afi == AFI_IP ? IN_ADDR_SIZE : IN6_ADDR_SIZE;
+	assert(IS_VALID_AFI(afi));
 
 #define BGP_NLRI_ENTRY_OFFSET namelen
+#define BGP4V2_NLRI_V4_V4_OFFSET IN_ADDR_SIZE + IN_ADDR_SIZE + 5
+#define BGP4V2_NLRI_V4_V6_OFFSET IN_ADDR_SIZE + IN6_ADDR_SIZE + 5
+#define BGP4V2_NLRI_V6_V6_OFFSET IN6_ADDR_SIZE + IN6_ADDR_SIZE + 5
 
 
 	sockunion_init(&su);
 
 	if (exact) {
-		if (*length - namelen != BGP_NLRI_ENTRY_OFFSET)
+		if (*length - namelen != BGP4V2_NLRI_V4_V4_OFFSET &&
+		    *length - namelen != BGP4V2_NLRI_V4_V6_OFFSET &&
+		    *length - namelen != BGP4V2_NLRI_V6_V6_OFFSET)
 			return NULL;
 
 		/* Set OID offset for prefix type */
@@ -502,12 +510,17 @@ bgp4v2PathAttrLookup(struct variable *v, oid name[], size_t *length,
 		su.sin.sin_family = family;
 
 		/* get bgp4V2PeerRemoteAddr*/
-		if (family == AF_INET)
+		if (family == AF_INET) {
 			oid2in_addr(offset, IN_ADDR_SIZE, &su.sin.sin_addr);
-		else
+			offset += IN_ADDR_SIZE;
+		} else {
 			oid2in6_addr(offset, &su.sin6.sin6_addr);
+			offset += IN6_ADDR_SIZE;
+		}
 
-		/* bgp4V2NlriIndex currently ignored */
+		/* bgp4V2NlriIndex */
+		nrli_index = *offset;
+		offset++;
 
 		/* Lookup node */
 		dest = bgp_node_lookup(bgp->rib[afi][safi], addr);
@@ -515,8 +528,11 @@ bgp4v2PathAttrLookup(struct variable *v, oid name[], size_t *length,
 			for (path = bgp_dest_get_bgp_path_info(dest); path;
 			     path = path->next)
 				if (sockunion_same(&path->peer->connection->su,
-						   &su))
-					return path;
+						   &su)) {
+					cur_index++;
+					if (cur_index == nrli_index)
+						return path;
+				}
 
 			bgp_dest_unlock_node(dest);
 		}
@@ -527,11 +543,9 @@ bgp4v2PathAttrLookup(struct variable *v, oid name[], size_t *length,
 	/* Set OID offset for prefix type */
 	offset = name + namelen;
 	offsetlen = *length - namelen;
-	len = offsetlen;
 
 	if (offsetlen == 0) {
 		dest = bgp_table_top(bgp->rib[afi][SAFI_UNICAST]);
-		safi = SAFI_UNICAST;
 	} else {
 
 		/* bgp4V2NlriAfi  is already get  */
@@ -571,18 +585,13 @@ bgp4v2PathAttrLookup(struct variable *v, oid name[], size_t *length,
 		offsetlen--;
 
 		/* get node */
-		dest = bgp_node_get(bgp->rib[afi][safi], addr);
+		dest = bgp_node_lookup(bgp->rib[afi][safi], addr);
 	}
 
 	if (!dest)
 		return NULL;
 
 	if (offsetlen > 0) {
-		len = offsetlen;
-		if (len > afi_len)
-			len = afi_len;
-
-
 		/* get bgp4V2PeerRemoteAddrType */
 		peer_addr_type = *offset;
 		if (peer_addr_type == IANA_AFI_IPV4)
@@ -591,10 +600,17 @@ bgp4v2PathAttrLookup(struct variable *v, oid name[], size_t *length,
 			family = AF_INET6;
 		offset++;
 
-		if (family == AF_INET)
+		if (family == AF_INET) {
 			oid2in_addr(offset, IN_ADDR_SIZE, &paddr.ip._v4_addr);
-		else
+			offset += IN_ADDR_SIZE;
+		} else {
 			oid2in6_addr(offset, &paddr.ip._v6_addr);
+			offset += IN6_ADDR_SIZE;
+		}
+		/* get bgp4V2NlriIndex	*/
+		nrli_index = *offset;
+		offset++;
+
 	} else {
 		/* default case  start with ipv4*/
 		if (afi == AFI_IP)
@@ -602,11 +618,13 @@ bgp4v2PathAttrLookup(struct variable *v, oid name[], size_t *length,
 		else
 			family = AF_INET6;
 		memset(&paddr.ip, 0, sizeof(paddr.ip));
+		nrli_index = 1;
 	}
 
 	do {
 		min = NULL;
 		min_family = 0;
+		cur_index = 0;
 
 		for (path = bgp_dest_get_bgp_path_info(dest); path;
 		     path = path->next) {
@@ -616,19 +634,44 @@ bgp4v2PathAttrLookup(struct variable *v, oid name[], size_t *length,
 			if (path_family < family)
 				continue;
 
-			if (family == AF_INET
-			    && IPV4_ADDR_CMP(&paddr.ip._v4_addr,
-					     &path->peer->connection->su.sin.sin_addr)
-				       >= 0)
+			if (family == AF_INET &&
+			    IPV4_ADDR_CMP(&paddr.ip._v4_addr,
+					  &path->peer->connection->su.sin
+						   .sin_addr) > 0)
 				continue;
-			else if (family == AF_INET6
-				 && IPV6_ADDR_CMP(
-					    &paddr.ip._v6_addr,
-					    &path->peer->connection->su.sin6.sin6_addr)
-					    >= 0)
+			else if (family == AF_INET6 &&
+				 IPV6_ADDR_CMP(&paddr.ip._v6_addr,
+					       &path->peer->connection->su.sin6
+							.sin6_addr) > 0)
 				continue;
 
-			/* first valid path its the  min*/
+			if (family == AF_INET &&
+			    IPV4_ADDR_CMP(&paddr.ip._v4_addr,
+					  &path->peer->connection->su.sin
+						   .sin_addr) == 0) {
+				if (cur_index == nrli_index) {
+					min = path;
+					min_family = family;
+					nrli_index++;
+					break;
+				}
+				cur_index++;
+				continue;
+			} else if (family == AF_INET6 &&
+				   IPV6_ADDR_CMP(&paddr.ip._v6_addr,
+						 &path->peer->connection->su
+							  .sin6.sin6_addr) == 0) {
+				if (cur_index == nrli_index) {
+					min = path;
+					min_family = family;
+					nrli_index++;
+					break;
+				}
+				cur_index++;
+				continue;
+			}
+
+			/* first valid path its the  min peer addr*/
 			if (!min) {
 				min = path;
 				min_family = path_family;
@@ -704,7 +747,7 @@ bgp4v2PathAttrLookup(struct variable *v, oid name[], size_t *length,
 
 			/* Encode bgp4V2NlriIndex*/
 
-			*offset = 1;
+			*offset = nrli_index;
 			offset++;
 
 			*length = offset - name;
@@ -718,6 +761,7 @@ bgp4v2PathAttrLookup(struct variable *v, oid name[], size_t *length,
 		}
 
 		memset(&paddr.ip, 0, sizeof(paddr.ip));
+		nrli_index = 1;
 
 	} while ((dest = bgp_route_next(dest)));
 
@@ -895,6 +939,37 @@ static uint8_t *bgp4v2PathAttrTable(struct variable *v, oid name[],
 	}
 	return NULL;
 }
+
+/* BGP V2 Traps. */
+static struct trap_object bgpv2TrapEstListv4[] = {
+	{ 6, { 1, 2, 1, BGP4V2_PEER_STATE, 1, 1 } },
+	{ 6, { 1, 2, 1, BGP4V2_PEER_LOCAL_PORT, 1, 1 } },
+	{ 6, { 1, 2, 1, BGP4V2_PEER_REMOTE_PORT, 1, 1 } }
+};
+
+static struct trap_object bgpv2TrapEstListv6[] = {
+	{ 6, { 1, 2, 1, BGP4V2_PEER_STATE, 1, 2 } },
+	{ 6, { 1, 2, 1, BGP4V2_PEER_LOCAL_PORT, 1, 2 } },
+	{ 6, { 1, 2, 1, BGP4V2_PEER_REMOTE_PORT, 1, 2 } }
+};
+
+static struct trap_object bgpv2TrapBackListv4[] = {
+	{ 6, { 1, 2, 1, BGP4V2_PEER_STATE, 1, 1 } },
+	{ 6, { 1, 2, 1, BGP4V2_PEER_LOCAL_PORT, 1, 1 } },
+	{ 6, { 1, 2, 1, BGP4V2_PEER_REMOTE_PORT, 1, 1 } },
+	{ 6, { 1, 3, 1, BGP4V2_PEER_LAST_ERROR_CODE_RECEIVED, 1, 1 } },
+	{ 6, { 1, 3, 1, BGP4V2_PEER_LAST_ERROR_SUBCODE_RECEIVED, 1, 1 } },
+	{ 6, { 1, 3, 1, BGP4V2_PEER_LAST_ERROR_RECEIVED_TEXT, 1, 1 } }
+};
+
+static struct trap_object bgpv2TrapBackListv6[] = {
+	{ 6, { 1, 2, 1, BGP4V2_PEER_STATE, 1, 2 } },
+	{ 6, { 1, 2, 1, BGP4V2_PEER_LOCAL_PORT, 1, 2 } },
+	{ 6, { 1, 2, 1, BGP4V2_PEER_REMOTE_PORT, 1, 2 } },
+	{ 6, { 1, 3, 1, BGP4V2_PEER_LAST_ERROR_CODE_RECEIVED, 1, 2 } },
+	{ 6, { 1, 3, 1, BGP4V2_PEER_LAST_ERROR_SUBCODE_RECEIVED, 1, 2 } },
+	{ 6, { 1, 3, 1, BGP4V2_PEER_LAST_ERROR_RECEIVED_TEXT, 1, 2 } }
+};
 
 static struct variable bgpv2_variables[] = {
 	/* bgp4V2PeerEntry */
@@ -1514,6 +1589,79 @@ static struct variable bgpv2_variables[] = {
 	 6,
 	 {1, 9, 1, BGP4V2_NLRI_PATH_ATTR_UNKNOWN, 1, 2}},
 };
+
+int bgpv2TrapEstablished(struct peer *peer)
+{
+	oid index[sizeof(oid) * IN6_ADDR_SIZE];
+	size_t length;
+
+	if (!CHECK_FLAG(bm->options, BGP_OPT_TRAPS_BGP4MIBV2))
+		return 0;
+
+	/* Check if this peer just went to Established */
+	if ((peer->connection->ostatus != OpenConfirm) ||
+	    !(peer_established(peer->connection)))
+		return 0;
+
+	switch (sockunion_family(&peer->connection->su)) {
+	case AF_INET:
+		oid_copy_in_addr(index, &peer->connection->su.sin.sin_addr);
+		length = IN_ADDR_SIZE;
+		smux_trap(bgpv2_variables, array_size(bgpv2_variables),
+			  bgpv2_trap_oid, array_size(bgpv2_trap_oid), bgpv2_oid,
+			  sizeof(bgpv2_oid) / sizeof(oid), index, length,
+			  bgpv2TrapEstListv4, array_size(bgpv2TrapEstListv4),
+			  BGP4V2ESTABLISHED);
+		break;
+	case AF_INET6:
+		oid_copy_in6_addr(index, &peer->connection->su.sin6.sin6_addr);
+		length = IN6_ADDR_SIZE;
+		smux_trap(bgpv2_variables, array_size(bgpv2_variables),
+			  bgpv2_trap_oid, array_size(bgpv2_trap_oid), bgpv2_oid,
+			  sizeof(bgpv2_oid) / sizeof(oid), index, length,
+			  bgpv2TrapEstListv6, array_size(bgpv2TrapEstListv6),
+			  BGP4V2ESTABLISHED);
+		break;
+	default:
+		break;
+	}
+
+	return 0;
+}
+
+int bgpv2TrapBackwardTransition(struct peer *peer)
+{
+	oid index[sizeof(oid) * IN6_ADDR_SIZE];
+	size_t length;
+
+	if (!CHECK_FLAG(bm->options, BGP_OPT_TRAPS_BGP4MIBV2))
+		return 0;
+
+	switch (sockunion_family(&peer->connection->su)) {
+	case AF_INET:
+		oid_copy_in_addr(index, &peer->connection->su.sin.sin_addr);
+		length = IN_ADDR_SIZE;
+		smux_trap(bgpv2_variables, array_size(bgpv2_variables),
+			  bgpv2_trap_oid, array_size(bgpv2_trap_oid), bgpv2_oid,
+			  sizeof(bgpv2_oid) / sizeof(oid), index, length,
+			  bgpv2TrapBackListv4, array_size(bgpv2TrapBackListv4),
+			  BGP4V2BACKWARDTRANSITION);
+		break;
+	case AF_INET6:
+		oid_copy_in6_addr(index, &peer->connection->su.sin6.sin6_addr);
+		length = IN6_ADDR_SIZE;
+		smux_trap(bgpv2_variables, array_size(bgpv2_variables),
+			  bgpv2_trap_oid, array_size(bgpv2_trap_oid), bgpv2_oid,
+			  sizeof(bgpv2_oid) / sizeof(oid), index, length,
+			  bgpv2TrapBackListv6, array_size(bgpv2TrapBackListv6),
+			  BGP4V2BACKWARDTRANSITION);
+		break;
+	default:
+		break;
+	}
+
+	return 0;
+}
 
 int bgp_snmp_bgp4v2_init(struct event_loop *tm)
 {

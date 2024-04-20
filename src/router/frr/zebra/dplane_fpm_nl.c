@@ -19,6 +19,9 @@
 #include <string.h>
 
 #include "lib/zebra.h"
+
+#include <linux/rtnetlink.h>
+
 #include "lib/json.h"
 #include "lib/libfrr.h"
 #include "lib/frratomic.h"
@@ -42,7 +45,12 @@
 #include "fpm/fpm.h"
 
 #define SOUTHBOUND_DEFAULT_ADDR INADDR_LOOPBACK
-#define SOUTHBOUND_DEFAULT_PORT 2620
+
+/*
+ * Time in seconds that if the other end is not responding
+ * something terrible has gone wrong.  Let's fix that.
+ */
+#define DPLANE_FPM_NL_WEDGIE_TIME 15
 
 /**
  * FPM header:
@@ -90,6 +98,7 @@ struct fpm_nl_ctx {
 	struct event *t_event;
 	struct event *t_nhg;
 	struct event *t_dequeue;
+	struct event *t_wedged;
 
 	/* zebra events. */
 	struct event *t_lspreset;
@@ -207,7 +216,7 @@ DEFUN(fpm_set_address, fpm_set_address_cmd,
 		memset(sin, 0, sizeof(*sin));
 		sin->sin_family = AF_INET;
 		sin->sin_port =
-			port ? htons(port) : htons(SOUTHBOUND_DEFAULT_PORT);
+			port ? htons(port) : htons(FPM_DEFAULT_PORT);
 #ifdef HAVE_STRUCT_SOCKADDR_SA_LEN
 		sin->sin_len = sizeof(*sin);
 #endif /* HAVE_STRUCT_SOCKADDR_SA_LEN */
@@ -225,7 +234,7 @@ DEFUN(fpm_set_address, fpm_set_address_cmd,
 	sin6 = (struct sockaddr_in6 *)&gfnc->addr;
 	memset(sin6, 0, sizeof(*sin6));
 	sin6->sin6_family = AF_INET6;
-	sin6->sin6_port = port ? htons(port) : htons(SOUTHBOUND_DEFAULT_PORT);
+	sin6->sin6_port = port ? htons(port) : htons(FPM_DEFAULT_PORT);
 #ifdef HAVE_STRUCT_SOCKADDR_SA_LEN
 	sin6->sin6_len = sizeof(*sin6);
 #endif /* HAVE_STRUCT_SOCKADDR_SA_LEN */
@@ -392,7 +401,7 @@ static int fpm_write_config(struct vty *vty)
 		written = 1;
 		sin = (struct sockaddr_in *)&gfnc->addr;
 		vty_out(vty, "fpm address %pI4", &sin->sin_addr);
-		if (sin->sin_port != htons(SOUTHBOUND_DEFAULT_PORT))
+		if (sin->sin_port != htons(FPM_DEFAULT_PORT))
 			vty_out(vty, " port %d", ntohs(sin->sin_port));
 
 		vty_out(vty, "\n");
@@ -401,7 +410,7 @@ static int fpm_write_config(struct vty *vty)
 		written = 1;
 		sin6 = (struct sockaddr_in6 *)&gfnc->addr;
 		vty_out(vty, "fpm address %pI6", &sin6->sin6_addr);
-		if (sin6->sin6_port != htons(SOUTHBOUND_DEFAULT_PORT))
+		if (sin6->sin6_port != htons(FPM_DEFAULT_PORT))
 			vty_out(vty, " port %d", ntohs(sin6->sin6_port));
 
 		vty_out(vty, "\n");
@@ -859,7 +868,7 @@ static int fpm_nl_enqueue(struct fpm_nl_ctx *fnc, struct zebra_dplane_ctx *ctx)
 		if (op == DPLANE_OP_ROUTE_DELETE)
 			break;
 
-		/* FALL THROUGH */
+		fallthrough;
 	case DPLANE_OP_ROUTE_INSTALL:
 		rv = netlink_route_multipath_msg_encode(RTM_NEWROUTE, ctx,
 							&nl_buf[nl_buf_len],
@@ -969,6 +978,7 @@ static int fpm_nl_enqueue(struct fpm_nl_ctx *fnc, struct zebra_dplane_ctx *ctx)
 	case DPLANE_OP_TC_FILTER_ADD:
 	case DPLANE_OP_TC_FILTER_DELETE:
 	case DPLANE_OP_TC_FILTER_UPDATE:
+	case DPLANE_OP_SRV6_ENCAP_SRCADDR_SET:
 	case DPLANE_OP_NONE:
 	case DPLANE_OP_STARTUP_STAGE:
 		break;
@@ -1364,6 +1374,18 @@ static void fpm_rmac_reset(struct event *t)
 			&fnc->t_rmacwalk);
 }
 
+static void fpm_process_wedged(struct event *t)
+{
+	struct fpm_nl_ctx *fnc = EVENT_ARG(t);
+
+	zlog_warn("%s: Connection unable to write to peer for over %u seconds, resetting",
+		  __func__, DPLANE_FPM_NL_WEDGIE_TIME);
+
+	atomic_fetch_add_explicit(&fnc->counters.connection_errors, 1,
+				  memory_order_relaxed);
+	FPM_RECONNECT(fnc);
+}
+
 static void fpm_process_queue(struct event *t)
 {
 	struct fpm_nl_ctx *fnc = EVENT_ARG(t);
@@ -1408,9 +1430,13 @@ static void fpm_process_queue(struct event *t)
 				  processed_contexts, memory_order_relaxed);
 
 	/* Re-schedule if we ran out of buffer space */
-	if (no_bufs)
-		event_add_timer(fnc->fthread->master, fpm_process_queue, fnc, 0,
+	if (no_bufs) {
+		event_add_event(fnc->fthread->master, fpm_process_queue, fnc, 0,
 				&fnc->t_dequeue);
+		event_add_timer(fnc->fthread->master, fpm_process_wedged, fnc,
+				DPLANE_FPM_NL_WEDGIE_TIME, &fnc->t_wedged);
+	} else
+		EVENT_OFF(fnc->t_wedged);
 
 	/*
 	 * Let the dataplane thread know if there are items in the
@@ -1614,7 +1640,7 @@ static int fpm_nl_process(struct zebra_dplane_provider *prov)
 	if (atomic_load_explicit(&fnc->counters.ctxqueue_len,
 				 memory_order_relaxed)
 	    > 0)
-		event_add_timer(fnc->fthread->master, fpm_process_queue, fnc, 0,
+		event_add_event(fnc->fthread->master, fpm_process_queue, fnc, 0,
 				&fnc->t_dequeue);
 
 	/* Ensure dataplane thread is rescheduled if we hit the work limit */

@@ -386,6 +386,7 @@ int bgp_find_or_add_nexthop(struct bgp *bgp_route, struct bgp *bgp_nexthop,
 	bnc = bnc_find(tree, &p, srte_color, ifindex);
 	if (!bnc) {
 		bnc = bnc_new(tree, &p, srte_color, ifindex);
+		bnc->afi = afi;
 		bnc->bgp = bgp_nexthop;
 		if (BGP_DEBUG(nht, NHT))
 			zlog_debug("Allocated bnc %pFX(%d)(%u)(%s) peer %p",
@@ -405,7 +406,7 @@ int bgp_find_or_add_nexthop(struct bgp *bgp_route, struct bgp *bgp_nexthop,
 	if (pi && is_route_parent_evpn(pi))
 		bnc->is_evpn_gwip_nexthop = true;
 
-	if (is_bgp_static_route) {
+	if (is_bgp_static_route && !CHECK_FLAG(bnc->flags, BGP_STATIC_ROUTE)) {
 		SET_FLAG(bnc->flags, BGP_STATIC_ROUTE);
 
 		/* If we're toggling the type, re-register */
@@ -897,52 +898,60 @@ void bgp_nht_interface_events(struct peer *peer)
 				bnc->ifindex_ipv6_ll, NULL);
 }
 
-void bgp_parse_nexthop_update(int command, vrf_id_t vrf_id)
+void bgp_nexthop_update(struct vrf *vrf, struct prefix *match,
+			struct zapi_route *nhr)
 {
 	struct bgp_nexthop_cache_head *tree = NULL;
 	struct bgp_nexthop_cache *bnc_nhc, *bnc_import;
-	struct bgp *bgp;
-	struct prefix match;
-	struct zapi_route nhr;
+	struct bgp *bgp, *bgp_default;
+	struct bgp_path_info *pi;
+	struct bgp_dest *dest;
+	safi_t safi;
 	afi_t afi;
 
-	bgp = bgp_lookup_by_vrf_id(vrf_id);
-	if (!bgp) {
-		flog_err(
-			EC_BGP_NH_UPD,
-			"parse nexthop update: instance not found for vrf_id %u",
-			vrf_id);
+	if (!vrf->info) {
+		flog_err(EC_BGP_NH_UPD,
+			 "parse nexthop update: instance not found for vrf_id %u",
+			 vrf->vrf_id);
 		return;
 	}
 
-	if (!zapi_nexthop_update_decode(zclient->ibuf, &match, &nhr)) {
-		zlog_err("%s[%s]: Failure to decode nexthop update", __func__,
-			 bgp->name_pretty);
-		return;
-	}
-
-	afi = family2afi(match.family);
+	bgp = (struct bgp *)vrf->info;
+	afi = family2afi(match->family);
 	tree = &bgp->nexthop_cache_table[afi];
 
-	bnc_nhc = bnc_find(tree, &match, nhr.srte_color, 0);
-	if (!bnc_nhc) {
-		if (BGP_DEBUG(nht, NHT))
-			zlog_debug(
-				"parse nexthop update %pFX(%u)(%s): bnc info not found for nexthop cache",
-				&nhr.prefix, nhr.srte_color, bgp->name_pretty);
-	} else
-		bgp_process_nexthop_update(bnc_nhc, &nhr, false);
+	bnc_nhc = bnc_find(tree, match, nhr->srte_color, 0);
+	if (bnc_nhc)
+		bgp_process_nexthop_update(bnc_nhc, nhr, false);
+	else if (BGP_DEBUG(nht, NHT))
+		zlog_debug("parse nexthop update %pFX(%u)(%s): bnc info not found for nexthop cache",
+			   &nhr->prefix, nhr->srte_color,
+			   bgp->name_pretty);
 
 	tree = &bgp->import_check_table[afi];
 
-	bnc_import = bnc_find(tree, &match, nhr.srte_color, 0);
-	if (!bnc_import) {
-		if (BGP_DEBUG(nht, NHT))
-			zlog_debug(
-				"parse nexthop update %pFX(%u)(%s): bnc info not found for import check",
-				&nhr.prefix, nhr.srte_color, bgp->name_pretty);
-	} else
-		bgp_process_nexthop_update(bnc_import, &nhr, true);
+	bnc_import = bnc_find(tree, match, nhr->srte_color, 0);
+	if (bnc_import) {
+		bgp_process_nexthop_update(bnc_import, nhr, true);
+
+		bgp_default = bgp_get_default();
+		safi = nhr->safi;
+		if (bgp != bgp_default && bgp->rib[afi][safi]) {
+			dest = bgp_afi_node_get(bgp->rib[afi][safi], afi, safi,
+						match, NULL);
+
+			for (pi = bgp_dest_get_bgp_path_info(dest); pi;
+			     pi = pi->next)
+				if (pi->peer == bgp->peer_self &&
+				    pi->type == ZEBRA_ROUTE_BGP &&
+				    pi->sub_type == BGP_ROUTE_STATIC)
+					vpn_leak_from_vrf_update(bgp_default,
+								 bgp, pi);
+		}
+	} else if (BGP_DEBUG(nht, NHT))
+		zlog_debug("parse nexthop update %pFX(%u)(%s): bnc info not found for import check",
+			   &nhr->prefix, nhr->srte_color,
+			   bgp->name_pretty);
 
 	/*
 	 * HACK: if any BGP route is dependant on an SR-policy that doesn't
@@ -955,7 +964,7 @@ void bgp_parse_nexthop_update(int command, vrf_id_t vrf_id)
 	 * which should provide a better infrastructure to solve this issue in
 	 * a more efficient and elegant way.
 	 */
-	if (nhr.srte_color == 0 && bnc_nhc) {
+	if (nhr->srte_color == 0 && bnc_nhc) {
 		struct bgp_nexthop_cache *bnc_iter;
 
 		frr_each (bgp_nexthop_cache, &bgp->nexthop_cache_table[afi],
@@ -965,7 +974,7 @@ void bgp_parse_nexthop_update(int command, vrf_id_t vrf_id)
 			    CHECK_FLAG(bnc_iter->flags, BGP_NEXTHOP_VALID))
 				continue;
 
-			bgp_process_nexthop_update(bnc_iter, &nhr, false);
+			bgp_process_nexthop_update(bnc_iter, nhr, false);
 		}
 	}
 }
@@ -1170,6 +1179,11 @@ static void register_zebra_rnh(struct bgp_nexthop_cache *bnc)
  */
 static void unregister_zebra_rnh(struct bgp_nexthop_cache *bnc)
 {
+	struct bgp_nexthop_cache *import;
+	struct bgp_nexthop_cache *nexthop;
+
+	struct bgp *bgp = bnc->bgp;
+
 	/* Check if we have already registered */
 	if (!CHECK_FLAG(bnc->flags, BGP_NEXTHOP_REGISTERED))
 		return;
@@ -1178,6 +1192,19 @@ static void unregister_zebra_rnh(struct bgp_nexthop_cache *bnc)
 		UNSET_FLAG(bnc->flags, BGP_NEXTHOP_REGISTERED);
 		return;
 	}
+
+	import = bnc_find(&bgp->import_check_table[bnc->afi], &bnc->prefix, 0,
+			  0);
+	nexthop = bnc_find(&bgp->nexthop_cache_table[bnc->afi], &bnc->prefix, 0,
+			   0);
+
+	/*
+	 * If this entry has both a import and a nexthop entry
+	 * then let's not send the unregister quite as of yet
+	 * wait until we only have 1 left
+	 */
+	if (import && nexthop)
+		return;
 
 	sendmsg_zebra_rnh(bnc, ZEBRA_NEXTHOP_UNREGISTER);
 }
@@ -1557,91 +1584,4 @@ void bgp_nht_dereg_enhe_cap_intfs(struct peer *peer)
 		zclient_send_interface_radv_req(zclient, nhop->vrf_id, ifp, 0,
 						0);
 	}
-}
-
-/****************************************************************************
- * L3 NHGs are used for fast failover of nexthops in the dplane. These are
- * the APIs for allocating L3 NHG ids. Management of the L3 NHG itself is
- * left to the application using it.
- * PS: Currently EVPN host routes is the only app using L3 NHG for fast
- * failover of remote ES links.
- ***************************************************************************/
-static bitfield_t bgp_nh_id_bitmap;
-static uint32_t bgp_l3nhg_start;
-
-/* XXX - currently we do nothing on the callbacks */
-static void bgp_l3nhg_add_cb(const char *name)
-{
-}
-
-static void bgp_l3nhg_modify_cb(const struct nexthop_group_cmd *nhgc)
-{
-}
-
-static void bgp_l3nhg_add_nexthop_cb(const struct nexthop_group_cmd *nhgc,
-				     const struct nexthop *nhop)
-{
-}
-
-static void bgp_l3nhg_del_nexthop_cb(const struct nexthop_group_cmd *nhgc,
-				     const struct nexthop *nhop)
-{
-}
-
-static void bgp_l3nhg_del_cb(const char *name)
-{
-}
-
-static void bgp_l3nhg_zebra_init(void)
-{
-	static bool bgp_l3nhg_zebra_inited;
-	if (bgp_l3nhg_zebra_inited)
-		return;
-
-	bgp_l3nhg_zebra_inited = true;
-	bgp_l3nhg_start = zclient_get_nhg_start(ZEBRA_ROUTE_BGP);
-	nexthop_group_init(bgp_l3nhg_add_cb, bgp_l3nhg_modify_cb,
-			   bgp_l3nhg_add_nexthop_cb, bgp_l3nhg_del_nexthop_cb,
-			   bgp_l3nhg_del_cb);
-}
-
-
-void bgp_l3nhg_init(void)
-{
-	uint32_t id_max;
-
-	id_max = MIN(ZEBRA_NHG_PROTO_SPACING - 1, 16 * 1024);
-	bf_init(bgp_nh_id_bitmap, id_max);
-	bf_assign_zero_index(bgp_nh_id_bitmap);
-
-	if (BGP_DEBUG(nht, NHT) || BGP_DEBUG(evpn_mh, EVPN_MH_ES))
-		zlog_debug("bgp l3_nhg range %u - %u", bgp_l3nhg_start + 1,
-			   bgp_l3nhg_start + id_max);
-}
-
-void bgp_l3nhg_finish(void)
-{
-	bf_free(bgp_nh_id_bitmap);
-}
-
-uint32_t bgp_l3nhg_id_alloc(void)
-{
-	uint32_t nhg_id = 0;
-
-	bgp_l3nhg_zebra_init();
-	bf_assign_index(bgp_nh_id_bitmap, nhg_id);
-	if (nhg_id)
-		nhg_id += bgp_l3nhg_start;
-
-	return nhg_id;
-}
-
-void bgp_l3nhg_id_free(uint32_t nhg_id)
-{
-	if (!nhg_id || (nhg_id <= bgp_l3nhg_start))
-		return;
-
-	nhg_id -= bgp_l3nhg_start;
-
-	bf_release_index(bgp_nh_id_bitmap, nhg_id);
 }

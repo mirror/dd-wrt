@@ -278,6 +278,7 @@ int zebra2proto(int proto)
 		proto = RTPROT_ZEBRA;
 		break;
 	case ZEBRA_ROUTE_CONNECT:
+	case ZEBRA_ROUTE_LOCAL:
 	case ZEBRA_ROUTE_KERNEL:
 		proto = RTPROT_KERNEL;
 		break;
@@ -366,7 +367,8 @@ static inline int proto2zebra(int proto, int family, bool is_nexthop)
 			proto = ZEBRA_ROUTE_NHG;
 			break;
 		}
-		/* Intentional fall thru */
+		proto = ZEBRA_ROUTE_KERNEL;
+		break;
 	default:
 		/*
 		 * When a user adds a new protocol this will show up
@@ -1025,6 +1027,8 @@ int netlink_route_change_read_unicast_internal(struct nlmsghdr *h,
 						 re, ng, startup, ctx);
 			if (ng)
 				nexthop_group_delete(&ng);
+			if (ctx)
+				zebra_rib_route_entry_free(re);
 		} else {
 			/*
 			 * I really don't see how this is possible
@@ -2208,7 +2212,8 @@ ssize_t netlink_route_multipath_msg_encode(int cmd, struct zebra_dplane_ctx *ctx
 	req->n.nlmsg_flags = NLM_F_CREATE | NLM_F_REQUEST;
 
 	if (((cmd == RTM_NEWROUTE) &&
-	     ((p->family == AF_INET) || v6_rr_semantics)) ||
+	     ((p->family == AF_INET) || kernel_nexthops_supported() ||
+	      zrouter.v6_rr_semantics)) ||
 	    force_rr)
 		req->n.nlmsg_flags |= NLM_F_REPLACE;
 
@@ -2622,7 +2627,7 @@ static bool _netlink_nexthop_build_group(struct nlmsghdr *n, size_t req_size,
 
 			if (IS_ZEBRA_DEBUG_KERNEL) {
 				if (i == 0)
-					snprintf(buf, sizeof(buf1), "group %u",
+					snprintf(buf, sizeof(buf), "group %u",
 						 grp[i].id);
 				else {
 					snprintf(buf1, sizeof(buf1), "/%u",
@@ -3087,8 +3092,8 @@ netlink_put_route_update_msg(struct nl_batch *bth, struct zebra_dplane_ctx *ctx)
 	} else if (dplane_ctx_get_op(ctx) == DPLANE_OP_ROUTE_INSTALL) {
 		cmd = RTM_NEWROUTE;
 	} else if (dplane_ctx_get_op(ctx) == DPLANE_OP_ROUTE_UPDATE) {
-
-		if (p->family == AF_INET || v6_rr_semantics) {
+		if (p->family == AF_INET || kernel_nexthops_supported() ||
+		    zrouter.v6_rr_semantics) {
 			/* Single 'replace' operation */
 
 			/*
@@ -4237,11 +4242,11 @@ static int netlink_ipneigh_change(struct nlmsghdr *h, int len, ns_id_t ns_id)
 	 * - struct ethaddr mac; (for NEW)
 	 */
 	if (h->nlmsg_type == RTM_NEWNEIGH)
-		cmd = ZEBRA_NHRP_NEIGH_ADDED;
+		cmd = ZEBRA_NEIGH_ADDED;
 	else if (h->nlmsg_type == RTM_GETNEIGH)
-		cmd = ZEBRA_NHRP_NEIGH_GET;
+		cmd = ZEBRA_NEIGH_GET;
 	else if (h->nlmsg_type == RTM_DELNEIGH)
-		cmd = ZEBRA_NHRP_NEIGH_REMOVED;
+		cmd = ZEBRA_NEIGH_REMOVED;
 	else {
 		zlog_debug("%s(): unknown nlmsg type %u", __func__,
 			   h->nlmsg_type);
@@ -4251,20 +4256,18 @@ static int netlink_ipneigh_change(struct nlmsghdr *h, int len, ns_id_t ns_id)
 		/* copy LLADDR information */
 		l2_len = RTA_PAYLOAD(tb[NDA_LLADDR]);
 	}
-	if (l2_len == IPV4_MAX_BYTELEN || l2_len == 0) {
-		union sockunion link_layer_ipv4;
 
-		if (l2_len) {
-			sockunion_family(&link_layer_ipv4) = AF_INET;
-			memcpy((void *)sockunion_get_addr(&link_layer_ipv4),
-			       RTA_DATA(tb[NDA_LLADDR]), l2_len);
-		} else
-			sockunion_family(&link_layer_ipv4) = AF_UNSPEC;
-		zsend_nhrp_neighbor_notify(
-			cmd, ifp, &ip,
-			netlink_nbr_entry_state_to_zclient(ndm->ndm_state),
-			&link_layer_ipv4);
-	}
+	union sockunion link_layer_ipv4;
+
+	if (l2_len) {
+		sockunion_family(&link_layer_ipv4) = AF_INET;
+		memcpy((void *)sockunion_get_addr(&link_layer_ipv4),
+		       RTA_DATA(tb[NDA_LLADDR]), l2_len);
+	} else
+		sockunion_family(&link_layer_ipv4) = AF_UNSPEC;
+	zsend_neighbor_notify(cmd, ifp, &ip,
+			      netlink_nbr_entry_state_to_zclient(ndm->ndm_state),
+			      &link_layer_ipv4, l2_len);
 
 	if (h->nlmsg_type == RTM_GETNEIGH)
 		return 0;
@@ -4717,77 +4720,24 @@ static ssize_t netlink_neigh_msg_encoder(struct zebra_dplane_ctx *ctx,
 					 void *buf, size_t buflen)
 {
 	ssize_t ret = 0;
+	enum dplane_op_e op;
 
-	switch (dplane_ctx_get_op(ctx)) {
-	case DPLANE_OP_NEIGH_INSTALL:
-	case DPLANE_OP_NEIGH_UPDATE:
-	case DPLANE_OP_NEIGH_DISCOVER:
-	case DPLANE_OP_NEIGH_IP_INSTALL:
+	op = dplane_ctx_get_op(ctx);
+	if (op == DPLANE_OP_NEIGH_INSTALL || op == DPLANE_OP_NEIGH_UPDATE ||
+	    op == DPLANE_OP_NEIGH_DISCOVER || op == DPLANE_OP_NEIGH_IP_INSTALL)
 		ret = netlink_neigh_update_ctx(ctx, RTM_NEWNEIGH, buf, buflen);
-		break;
-	case DPLANE_OP_NEIGH_DELETE:
-	case DPLANE_OP_NEIGH_IP_DELETE:
+	else if (op == DPLANE_OP_NEIGH_DELETE || op == DPLANE_OP_NEIGH_IP_DELETE)
 		ret = netlink_neigh_update_ctx(ctx, RTM_DELNEIGH, buf, buflen);
-		break;
-	case DPLANE_OP_VTEP_ADD:
+	else if (op == DPLANE_OP_VTEP_ADD)
 		ret = netlink_vxlan_flood_update_ctx(ctx, RTM_NEWNEIGH, buf,
 						     buflen);
-		break;
-	case DPLANE_OP_VTEP_DELETE:
+	else if (op == DPLANE_OP_VTEP_DELETE)
 		ret = netlink_vxlan_flood_update_ctx(ctx, RTM_DELNEIGH, buf,
 						     buflen);
-		break;
-	case DPLANE_OP_NEIGH_TABLE_UPDATE:
+	else if (op == DPLANE_OP_NEIGH_TABLE_UPDATE)
 		ret = netlink_neigh_table_update_ctx(ctx, buf, buflen);
-		break;
-	case DPLANE_OP_ROUTE_INSTALL:
-	case DPLANE_OP_ROUTE_UPDATE:
-	case DPLANE_OP_ROUTE_DELETE:
-	case DPLANE_OP_ROUTE_NOTIFY:
-	case DPLANE_OP_NH_INSTALL:
-	case DPLANE_OP_NH_UPDATE:
-	case DPLANE_OP_NH_DELETE:
-	case DPLANE_OP_LSP_INSTALL:
-	case DPLANE_OP_LSP_UPDATE:
-	case DPLANE_OP_LSP_DELETE:
-	case DPLANE_OP_LSP_NOTIFY:
-	case DPLANE_OP_PW_INSTALL:
-	case DPLANE_OP_PW_UNINSTALL:
-	case DPLANE_OP_SYS_ROUTE_ADD:
-	case DPLANE_OP_SYS_ROUTE_DELETE:
-	case DPLANE_OP_ADDR_INSTALL:
-	case DPLANE_OP_ADDR_UNINSTALL:
-	case DPLANE_OP_MAC_INSTALL:
-	case DPLANE_OP_MAC_DELETE:
-	case DPLANE_OP_RULE_ADD:
-	case DPLANE_OP_RULE_DELETE:
-	case DPLANE_OP_RULE_UPDATE:
-	case DPLANE_OP_BR_PORT_UPDATE:
-	case DPLANE_OP_IPTABLE_ADD:
-	case DPLANE_OP_IPTABLE_DELETE:
-	case DPLANE_OP_IPSET_ADD:
-	case DPLANE_OP_IPSET_DELETE:
-	case DPLANE_OP_IPSET_ENTRY_ADD:
-	case DPLANE_OP_IPSET_ENTRY_DELETE:
-	case DPLANE_OP_GRE_SET:
-	case DPLANE_OP_INTF_ADDR_ADD:
-	case DPLANE_OP_INTF_ADDR_DEL:
-	case DPLANE_OP_INTF_NETCONFIG:
-	case DPLANE_OP_INTF_INSTALL:
-	case DPLANE_OP_INTF_UPDATE:
-	case DPLANE_OP_INTF_DELETE:
-	case DPLANE_OP_TC_QDISC_INSTALL:
-	case DPLANE_OP_TC_QDISC_UNINSTALL:
-	case DPLANE_OP_TC_CLASS_ADD:
-	case DPLANE_OP_TC_CLASS_DELETE:
-	case DPLANE_OP_TC_CLASS_UPDATE:
-	case DPLANE_OP_TC_FILTER_ADD:
-	case DPLANE_OP_TC_FILTER_DELETE:
-	case DPLANE_OP_TC_FILTER_UPDATE:
-	case DPLANE_OP_NONE:
-	case DPLANE_OP_STARTUP_STAGE:
+	else
 		ret = -1;
-	}
 
 	return ret;
 }

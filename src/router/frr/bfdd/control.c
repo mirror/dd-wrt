@@ -12,6 +12,9 @@
 
 #include <zebra.h>
 
+#include <fcntl.h>
+#include <sys/stat.h>
+
 #include <sys/un.h>
 
 #include "bfd.h"
@@ -92,11 +95,11 @@ int control_init(const char *path)
 	mode_t umval;
 	struct sockaddr_un sun_ = {
 		.sun_family = AF_UNIX,
-		.sun_path = BFDD_CONTROL_SOCKET,
 	};
 
-	if (path)
-		strlcpy(sun_.sun_path, path, sizeof(sun_.sun_path));
+	assert(path);
+
+	strlcpy(sun_.sun_path, path, sizeof(sun_.sun_path));
 
 	/* Remove previously created sockets. */
 	unlink(sun_.sun_path);

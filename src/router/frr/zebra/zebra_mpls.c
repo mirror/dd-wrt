@@ -616,8 +616,9 @@ static int nhlfe_nexthop_active_ipv4(struct zebra_nhlfe *nhlfe,
 
 		for (match_nh = match->nhe->nhg.nexthop; match_nh;
 		     match_nh = match_nh->next) {
-			if (match->type == ZEBRA_ROUTE_CONNECT
-			    || nexthop->ifindex == match_nh->ifindex) {
+			if ((match->type == ZEBRA_ROUTE_CONNECT ||
+			     match->type == ZEBRA_ROUTE_LOCAL) ||
+			    nexthop->ifindex == match_nh->ifindex) {
 				nexthop->ifindex = match_nh->ifindex;
 				return 1;
 			}
@@ -659,9 +660,10 @@ static int nhlfe_nexthop_active_ipv6(struct zebra_nhlfe *nhlfe,
 
 	/* Locate a valid connected route. */
 	RNODE_FOREACH_RE (rn, match) {
-		if ((match->type == ZEBRA_ROUTE_CONNECT)
-		    && !CHECK_FLAG(match->status, ROUTE_ENTRY_REMOVED)
-		    && CHECK_FLAG(match->flags, ZEBRA_FLAG_SELECTED))
+		if (((match->type == ZEBRA_ROUTE_CONNECT ||
+		      match->type == ZEBRA_ROUTE_LOCAL)) &&
+		    !CHECK_FLAG(match->status, ROUTE_ENTRY_REMOVED) &&
+		    CHECK_FLAG(match->flags, ZEBRA_FLAG_SELECTED))
 			break;
 	}
 
@@ -1182,6 +1184,7 @@ static char *nhlfe2str(const struct zebra_nhlfe *nhlfe, char *buf, int size)
 		break;
 	case NEXTHOP_TYPE_IFINDEX:
 		snprintf(buf, size, "Ifindex: %u", nexthop->ifindex);
+		break;
 	case NEXTHOP_TYPE_BLACKHOLE:
 		break;
 	}
@@ -1769,9 +1772,7 @@ void zebra_mpls_lsp_dplane_result(struct zebra_dplane_ctx *ctx)
 
 	label = dplane_ctx_get_in_label(ctx);
 
-	switch (op) {
-	case DPLANE_OP_LSP_INSTALL:
-	case DPLANE_OP_LSP_UPDATE:
+	if (op == DPLANE_OP_LSP_INSTALL || op == DPLANE_OP_LSP_UPDATE) {
 		/* Look for zebra LSP object */
 		zvrf = zebra_vrf_lookup_by_id(VRF_DEFAULT);
 		lsp_table = zvrf->lsp_table;
@@ -1782,7 +1783,7 @@ void zebra_mpls_lsp_dplane_result(struct zebra_dplane_ctx *ctx)
 			if (IS_ZEBRA_DEBUG_DPLANE)
 				zlog_debug("LSP ctx %p: in-label %u not found",
 					   ctx, dplane_ctx_get_in_label(ctx));
-			break;
+			return;
 		}
 
 		/* TODO -- Confirm that this result is still 'current' */
@@ -1793,7 +1794,7 @@ void zebra_mpls_lsp_dplane_result(struct zebra_dplane_ctx *ctx)
 			flog_warn(EC_ZEBRA_LSP_INSTALL_FAILURE,
 				  "LSP Install Failure: in-label %u",
 				  lsp->ile.in_label);
-			break;
+			return;
 		}
 
 		/* Update zebra object */
@@ -1814,74 +1815,16 @@ void zebra_mpls_lsp_dplane_result(struct zebra_dplane_ctx *ctx)
 				      ? ZEBRA_SR_POLICY_LABEL_CREATED
 				      : ZEBRA_SR_POLICY_LABEL_UPDATED;
 		zebra_sr_policy_label_update(label, update_mode);
-		break;
-
-	case DPLANE_OP_LSP_DELETE:
+	} else if (op == DPLANE_OP_LSP_DELETE) {
 		if (status != ZEBRA_DPLANE_REQUEST_SUCCESS) {
 			flog_warn(EC_ZEBRA_LSP_DELETE_FAILURE,
 				  "LSP Deletion Failure: in-label %u",
 				  dplane_ctx_get_in_label(ctx));
-			break;
+			return;
 		}
 		zebra_sr_policy_label_update(label,
 					     ZEBRA_SR_POLICY_LABEL_REMOVED);
-		break;
-
-	case DPLANE_OP_LSP_NOTIFY:
-	case DPLANE_OP_NONE:
-	case DPLANE_OP_ROUTE_INSTALL:
-	case DPLANE_OP_ROUTE_UPDATE:
-	case DPLANE_OP_ROUTE_DELETE:
-	case DPLANE_OP_ROUTE_NOTIFY:
-	case DPLANE_OP_NH_INSTALL:
-	case DPLANE_OP_NH_UPDATE:
-	case DPLANE_OP_NH_DELETE:
-	case DPLANE_OP_PW_INSTALL:
-	case DPLANE_OP_PW_UNINSTALL:
-	case DPLANE_OP_SYS_ROUTE_ADD:
-	case DPLANE_OP_SYS_ROUTE_DELETE:
-	case DPLANE_OP_ADDR_INSTALL:
-	case DPLANE_OP_ADDR_UNINSTALL:
-	case DPLANE_OP_MAC_INSTALL:
-	case DPLANE_OP_MAC_DELETE:
-	case DPLANE_OP_NEIGH_INSTALL:
-	case DPLANE_OP_NEIGH_UPDATE:
-	case DPLANE_OP_NEIGH_DELETE:
-	case DPLANE_OP_VTEP_ADD:
-	case DPLANE_OP_VTEP_DELETE:
-	case DPLANE_OP_RULE_ADD:
-	case DPLANE_OP_RULE_DELETE:
-	case DPLANE_OP_RULE_UPDATE:
-	case DPLANE_OP_NEIGH_DISCOVER:
-	case DPLANE_OP_BR_PORT_UPDATE:
-	case DPLANE_OP_IPTABLE_ADD:
-	case DPLANE_OP_IPTABLE_DELETE:
-	case DPLANE_OP_IPSET_ADD:
-	case DPLANE_OP_IPSET_DELETE:
-	case DPLANE_OP_IPSET_ENTRY_ADD:
-	case DPLANE_OP_IPSET_ENTRY_DELETE:
-	case DPLANE_OP_NEIGH_IP_INSTALL:
-	case DPLANE_OP_NEIGH_IP_DELETE:
-	case DPLANE_OP_NEIGH_TABLE_UPDATE:
-	case DPLANE_OP_GRE_SET:
-	case DPLANE_OP_INTF_ADDR_ADD:
-	case DPLANE_OP_INTF_ADDR_DEL:
-	case DPLANE_OP_INTF_NETCONFIG:
-	case DPLANE_OP_INTF_INSTALL:
-	case DPLANE_OP_INTF_UPDATE:
-	case DPLANE_OP_INTF_DELETE:
-	case DPLANE_OP_TC_QDISC_INSTALL:
-	case DPLANE_OP_TC_QDISC_UNINSTALL:
-	case DPLANE_OP_TC_CLASS_ADD:
-	case DPLANE_OP_TC_CLASS_DELETE:
-	case DPLANE_OP_TC_CLASS_UPDATE:
-	case DPLANE_OP_TC_FILTER_ADD:
-	case DPLANE_OP_TC_FILTER_DELETE:
-	case DPLANE_OP_TC_FILTER_UPDATE:
-	case DPLANE_OP_STARTUP_STAGE:
-		break;
-
-	} /* Switch */
+	}
 }
 
 /*
@@ -4093,10 +4036,12 @@ void zebra_mpls_turned_on(void)
 	if (!mpls_enabled) {
 		mpls_processq_init();
 		mpls_enabled = true;
-	}
 
-	hook_register(zserv_client_close, zebra_mpls_cleanup_fecs_for_client);
-	hook_register(zserv_client_close, zebra_mpls_cleanup_zclient_labels);
+		hook_register(zserv_client_close,
+			      zebra_mpls_cleanup_fecs_for_client);
+		hook_register(zserv_client_close,
+			      zebra_mpls_cleanup_zclient_labels);
+	}
 }
 
 /*
@@ -4114,4 +4059,10 @@ void zebra_mpls_init(void)
 	}
 
 	zebra_mpls_turned_on();
+}
+
+void zebra_mpls_terminate(void)
+{
+	hook_unregister(zserv_client_close, zebra_mpls_cleanup_fecs_for_client);
+	hook_unregister(zserv_client_close, zebra_mpls_cleanup_zclient_labels);
 }

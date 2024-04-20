@@ -14,7 +14,8 @@ extern "C" {
 
 #include "mgmt_pb.h"
 #include "frrevent.h"
-#include "mgmtd/mgmt_defines.h"
+#include "mgmt_defines.h"
+#include "mgmt_msg_native.h"
 
 /***************************************************************
  * Macros
@@ -25,22 +26,11 @@ extern "C" {
  * connections.
  */
 
-#define MGMTD_FE_CLIENT_ERROR_STRING_MAX_LEN 32
-
-#define MGMTD_FE_DEFAULT_CONN_RETRY_INTVL_SEC 5
-
 #define MGMTD_FE_MSG_PROC_DELAY_USEC 10
-#define MGMTD_FE_MAX_NUM_MSG_PROC 500
 
-#define MGMTD_FE_MSG_WRITE_DELAY_MSEC 1
+#define MGMTD_FE_MAX_NUM_MSG_PROC  500
 #define MGMTD_FE_MAX_NUM_MSG_WRITE 100
-
-#define GMGD_FE_MAX_NUM_REQ_ITEMS 64
-
-#define MGMTD_FE_MSG_MAX_LEN 9000
-
-#define MGMTD_SOCKET_FE_SEND_BUF_SIZE 65535
-#define MGMTD_SOCKET_FE_RECV_BUF_SIZE MGMTD_SOCKET_FE_SEND_BUF_SIZE
+#define MGMTD_FE_MAX_MSG_LEN	   (64 * 1024)
 
 /***************************************************************
  * Data-structures
@@ -115,6 +105,26 @@ struct mgmt_fe_client_cbs {
 			   uintptr_t user_data, uint64_t req_id,
 			   Mgmtd__DatastoreId ds_id,
 			   Mgmtd__YangData **yang_data, size_t num_data);
+
+	/* Called when get-tree result is returned */
+	int (*get_tree_notify)(struct mgmt_fe_client *client,
+			       uintptr_t user_data, uint64_t client_id,
+			       uint64_t session_id, uintptr_t session_ctx,
+			       uint64_t req_id, Mgmtd__DatastoreId ds_id,
+			       LYD_FORMAT result_type, void *result, size_t len,
+			       int partial_error);
+
+	/* Called with asynchronous notifications from backends */
+	int (*async_notification)(struct mgmt_fe_client *client,
+				  uintptr_t user_data, uint64_t client_id,
+				  uint64_t session_id, uintptr_t session_ctx,
+				  const char *result);
+
+	/* Called when new native error is returned */
+	int (*error_notify)(struct mgmt_fe_client *client, uintptr_t user_data,
+			    uint64_t client_id, uint64_t session_id,
+			    uintptr_t session_ctx, uint64_t req_id, int error,
+			    const char *errstr);
 };
 
 extern struct debug mgmt_dbg_fe_client;
@@ -123,12 +133,12 @@ extern struct debug mgmt_dbg_fe_client;
  * API prototypes
  ***************************************************************/
 
-#define MGMTD_FE_CLIENT_DBG(fmt, ...)                                          \
+#define debug_fe_client(fmt, ...)                                              \
 	DEBUGD(&mgmt_dbg_fe_client, "FE-CLIENT: %s: " fmt, __func__,           \
 	       ##__VA_ARGS__)
-#define MGMTD_FE_CLIENT_ERR(fmt, ...)                                          \
+#define log_err_fe_client(fmt, ...)                                            \
 	zlog_err("FE-CLIENT: %s: ERROR: " fmt, __func__, ##__VA_ARGS__)
-#define MGMTD_DBG_FE_CLIENT_CHECK()                                            \
+#define debug_check_fe_client()                                                \
 	DEBUG_MODE_CHECK(&mgmt_dbg_fe_client, DEBUG_MODE_ALL)
 
 /*
@@ -364,6 +374,42 @@ extern int mgmt_fe_send_regnotify_req(struct mgmt_fe_client *client,
 				      int num_reqs);
 
 /*
+ * Send GET-DATA to MGMTD daemon.
+ *
+ * client
+ *    Client object.
+ *
+ * session_id
+ *    Client session ID.
+ *
+ * req_id
+ *    Client request ID.
+ *
+ * datastore
+ *    Datastore for getting data.
+ *
+ * result_type
+ *    The LYD_FORMAT of the result.
+ *
+ * flags
+ *    Flags to control the behavior of the request.
+ *
+ * defaults
+ *    Options to control the reporting of default values.
+ *
+ * xpath
+ *    the xpath to get.
+ *
+ * Returns:
+ *    0 on success, otherwise msg_conn_send_msg() return values.
+ */
+extern int mgmt_fe_send_get_data_req(struct mgmt_fe_client *client,
+				     uint64_t session_id, uint64_t req_id,
+				     uint8_t datastore, LYD_FORMAT result_type,
+				     uint8_t flags, uint8_t defaults,
+				     const char *xpath);
+
+/*
  * Destroy library and cleanup everything.
  */
 extern void mgmt_fe_client_destroy(struct mgmt_fe_client *client);
@@ -378,6 +424,17 @@ extern uint mgmt_fe_client_session_count(struct mgmt_fe_client *client);
  */
 extern bool
 mgmt_fe_client_current_msg_short_circuit(struct mgmt_fe_client *client);
+
+/**
+ * Get the name of the client
+ *
+ * Args:
+ *	The client object.
+ *
+ * Return:
+ *	The name of the client.
+ */
+extern const char *mgmt_fe_client_name(struct mgmt_fe_client *client);
 
 #ifdef __cplusplus
 }

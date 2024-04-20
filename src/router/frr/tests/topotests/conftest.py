@@ -17,6 +17,7 @@ from pathlib import Path
 
 import lib.fixtures
 import pytest
+from lib.common_config import generate_support_bundle
 from lib.micronet_compat import Mininet
 from lib.topogen import diagnose_env, get_topogen
 from lib.topolog import get_test_logdir, logger
@@ -103,6 +104,12 @@ def pytest_addoption(parser):
     )
 
     parser.addoption(
+        "--gdb-use-emacs",
+        action="store_true",
+        help="Use emacsclient to run gdb instead of a shell",
+    )
+
+    parser.addoption(
         "--logd",
         action="append",
         metavar="DAEMON[,ROUTER[,...]",
@@ -167,6 +174,24 @@ def pytest_addoption(parser):
         help="Options to pass to `perf record`.",
     )
 
+    parser.addoption(
+        "--rr-daemons",
+        metavar="DAEMON[,DAEMON...]",
+        help="Comma-separated list of daemons to run `rr` on, or 'all'",
+    )
+
+    parser.addoption(
+        "--rr-routers",
+        metavar="ROUTER[,ROUTER...]",
+        help="Comma-separated list of routers to run `rr` on, or 'all'",
+    )
+
+    parser.addoption(
+        "--rr-options",
+        metavar="OPTS",
+        help="Options to pass to `rr record`.",
+    )
+
     rundir_help = "directory for running in and log files"
     parser.addini("rundir", rundir_help, default="/tmp/topotests")
     parser.addoption("--rundir", metavar="DIR", help=rundir_help)
@@ -200,6 +225,12 @@ def pytest_addoption(parser):
         "--valgrind-extra",
         action="store_true",
         help="Generate suppression file, and enable more precise (slower) valgrind checks",
+    )
+
+    parser.addoption(
+        "--valgrind-leak-kinds",
+        metavar="KIND[,KIND...]",
+        help="Comma-separated list of valgrind leak kinds or 'all'",
     )
 
     parser.addoption(
@@ -568,6 +599,11 @@ def pytest_runtest_setup(item):
     module = item.parent.module
     script_dir = os.path.abspath(os.path.dirname(module.__file__))
     os.environ["PYTEST_TOPOTEST_SCRIPTDIR"] = script_dir
+    os.environ["CONFIGDIR"] = script_dir
+
+
+def pytest_exception_interact(node, call, report):
+    generate_support_bundle()
 
 
 def pytest_runtest_makereport(item, call):

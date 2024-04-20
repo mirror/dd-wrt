@@ -534,6 +534,7 @@ void pbr_nht_set_seq_nhg_data(struct pbr_map_sequence *pbrms,
 	case NEXTHOP_TYPE_IPV4:
 	case NEXTHOP_TYPE_IPV4_IFINDEX:
 		pbrms->family = AF_INET;
+		break;
 	case NEXTHOP_TYPE_IFINDEX:
 	case NEXTHOP_TYPE_BLACKHOLE:
 		break;
@@ -649,7 +650,15 @@ static void pbr_nht_release_individual_nexthop(struct pbr_map_sequence *pbrms)
 
 void pbr_nht_delete_individual_nexthop(struct pbr_map_sequence *pbrms)
 {
-	pbr_map_delete_nexthops(pbrms);
+	struct pbr_map *pbrm = pbrms->parent;
+
+	/* The idea here is to send a delete command to zebra only once,
+	 * and set 'valid' and 'installed' to false only when the last
+	 * rule is being deleted. In other words, the pbr common should be
+	 * updated only when the last rule is being updated or deleted.
+	 */
+	if (pbrm->seqnumbers->count == 1)
+		pbr_map_delete_nexthops(pbrms);
 
 	pbr_nht_release_individual_nexthop(pbrms);
 }
@@ -889,7 +898,7 @@ static void pbr_nht_individual_nexthop_update(struct pbr_nexthop_cache *pnhc,
 			pbr_nht_individual_nexthop_interface_update(pnhc, pnhi);
 			break;
 		}
-		/* Intentional fall thru */
+		fallthrough;
 	case NEXTHOP_TYPE_IPV4_IFINDEX:
 	case NEXTHOP_TYPE_IPV4:
 	case NEXTHOP_TYPE_IPV6:

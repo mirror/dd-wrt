@@ -41,17 +41,24 @@ RUN apt update && apt upgrade -y && \
         cmake \
         libpcre2-dev \
     && \
+    # GRPC extra build requirements
+    apt-get install -y \
+        libgrpc-dev \
+        libgrpc++-dev \
+        protobuf-compiler-grpc \
+    && \
     # Runtime/triage/testing requirements
     apt-get install -y \
         curl \
         gdb \
+        kmod \
         iproute2 \
         iputils-ping \
         liblua5.3-dev \
         libssl-dev \
         lua5.3 \
         net-tools \
-        python2 \
+        python3 \
         python3-pip \
         snmp \
         snmp-mibs-downloader \
@@ -66,17 +73,12 @@ RUN apt update && apt upgrade -y && \
     wget https://raw.githubusercontent.com/FRRouting/frr-mibs/main/iana/IANA-IPPM-METRICS-REGISTRY-MIB -O /usr/share/snmp/mibs/iana/IANA-IPPM-METRICS-REGISTRY-MIB && \
     wget https://raw.githubusercontent.com/FRRouting/frr-mibs/main/ietf/SNMPv2-PDU -O /usr/share/snmp/mibs/ietf/SNMPv2-PDU && \
     wget https://raw.githubusercontent.com/FRRouting/frr-mibs/main/ietf/IPATM-IPMC-MIB -O /usr/share/snmp/mibs/ietf/IPATM-IPMC-MIB && \
-    curl https://bootstrap.pypa.io/pip/2.7/get-pip.py --output /tmp/get-pip.py && \
-    python2 /tmp/get-pip.py && \
-    rm -f  /tmp/get-pip.py && \
     python3 -m pip install wheel && \
-    python3 -m pip install pytest && \
-    python3 -m pip install pytest-sugar && \
-    python3 -m pip install pytest-xdist && \
-    python3 -m pip install "scapy>=2.4.2" && \
+    python3 -m pip install 'protobuf<4' grpcio grpcio-tools && \
+    python3 -m pip install 'pytest>=6.2.4' 'pytest-xdist>=2.3.0' && \
+    python3 -m pip install 'scapy>=2.4.5' && \
     python3 -m pip install xmltodict && \
-    python3 -m pip install grpcio grpcio-tools && \
-    python2 -m pip install 'exabgp<4.0.0'
+    python3 -m pip install git+https://github.com/Exa-Networks/exabgp@0659057837cd6c6351579e9f0fa47e9fb7de7311
 
 RUN groupadd -r -g 92 frr && \
       groupadd -r -g 85 frrvty && \
@@ -93,7 +95,7 @@ USER frr:frr
 RUN cd && pwd && ls -al && \
     git clone https://github.com/CESNET/libyang.git && \
     cd libyang && \
-    git checkout v2.1.80 && \
+    git checkout v2.1.128 && \
     mkdir build; cd build && \
     cmake -DCMAKE_INSTALL_PREFIX:PATH=/usr \
           -DCMAKE_BUILD_TYPE:String="Release" .. && \
@@ -106,14 +108,15 @@ RUN cd ~/frr && \
     ./bootstrap.sh && \
     ./configure \
        --prefix=/usr \
-       --localstatedir=/var/run/frr \
+       --sysconfdir=/etc \
+       --localstatedir=/var \
        --sbindir=/usr/lib/frr \
-       --sysconfdir=/etc/frr \
        --enable-sharpd \
        --enable-multipath=64 \
        --enable-user=frr \
        --enable-group=frr \
        --enable-config-rollbacks \
+       --enable-grpc \
        --enable-vty-group=frrvty \
        --enable-snmp=agentx \
        --enable-scripting \

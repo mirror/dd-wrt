@@ -864,6 +864,7 @@ bool attrhash_cmp(const void *p1, const void *p2)
 		    attr1->df_alg == attr2->df_alg &&
 		    attr1->nh_ifindex == attr2->nh_ifindex &&
 		    attr1->nh_lla_ifindex == attr2->nh_lla_ifindex &&
+		    attr1->nh_flags == attr2->nh_flags &&
 		    attr1->distance == attr2->distance &&
 		    srv6_l3vpn_same(attr1->srv6_l3vpn, attr2->srv6_l3vpn) &&
 		    srv6_vpn_same(attr1->srv6_vpn, attr2->srv6_vpn) &&
@@ -1381,6 +1382,15 @@ bgp_attr_malformed(struct bgp_attr_parser_args *args, uint8_t subcode,
 			(args->startp - STREAM_DATA(BGP_INPUT(peer)))
 				+ args->total);
 
+	/* Partial optional attributes that are malformed should not cause
+	 * the whole session to be reset. Instead treat it as a withdrawal
+	 * of the routes, if possible.
+	 */
+	if (CHECK_FLAG(flags, BGP_ATTR_FLAG_TRANS) &&
+	    CHECK_FLAG(flags, BGP_ATTR_FLAG_OPTIONAL) &&
+	    CHECK_FLAG(flags, BGP_ATTR_FLAG_PARTIAL))
+		return BGP_ATTR_PARSE_WITHDRAW;
+
 	switch (args->type) {
 	/* where an attribute is relatively inconsequential, e.g. it does not
 	 * affect route selection, and can be safely ignored, then any such
@@ -1390,6 +1400,7 @@ bgp_attr_malformed(struct bgp_attr_parser_args *args, uint8_t subcode,
 	case BGP_ATTR_AS4_AGGREGATOR:
 	case BGP_ATTR_AGGREGATOR:
 	case BGP_ATTR_ATOMIC_AGGREGATE:
+	case BGP_ATTR_PREFIX_SID:
 		return BGP_ATTR_PARSE_PROCEED;
 
 	/* Core attributes, particularly ones which may influence route
@@ -1417,19 +1428,21 @@ bgp_attr_malformed(struct bgp_attr_parser_args *args, uint8_t subcode,
 					  BGP_NOTIFY_UPDATE_ERR, subcode,
 					  notify_datap, length);
 		return BGP_ATTR_PARSE_ERROR;
+	default:
+		/* Unknown attributes, that are handled by this function
+		 * should be treated as withdraw, to prevent one more CVE
+		 * from being introduced.
+		 * RFC 7606 says:
+		 * The "treat-as-withdraw" approach is generally preferred
+		 * and the "session reset" approach is discouraged.
+		 */
+		flog_err(EC_BGP_ATTR_FLAG,
+			 "%s(%u) attribute received, while it is not known how to handle it, treating as withdraw",
+			 lookup_msg(attr_str, args->type, NULL), args->type);
+		break;
 	}
 
-	/* Partial optional attributes that are malformed should not cause
-	 * the whole session to be reset. Instead treat it as a withdrawal
-	 * of the routes, if possible.
-	 */
-	if (CHECK_FLAG(flags, BGP_ATTR_FLAG_TRANS)
-	    && CHECK_FLAG(flags, BGP_ATTR_FLAG_OPTIONAL)
-	    && CHECK_FLAG(flags, BGP_ATTR_FLAG_PARTIAL))
-		return BGP_ATTR_PARSE_WITHDRAW;
-
-	/* default to reset */
-	return BGP_ATTR_PARSE_ERROR_NOTIFYPLS;
+	return BGP_ATTR_PARSE_WITHDRAW;
 }
 
 /* Find out what is wrong with the path attribute flag bits and log the error.
@@ -1839,7 +1852,9 @@ bgp_attr_local_pref(struct bgp_attr_parser_args *args)
 	 * UPDATE message SHALL be handled using the approach of "treat-as-
 	 * withdraw".
 	 */
-	if (peer->sort == BGP_PEER_IBGP && length != 4) {
+	if ((peer->sort == BGP_PEER_IBGP ||
+	     peer->sub_sort == BGP_PEER_EBGP_OAD) &&
+	    length != 4) {
 		flog_err(EC_BGP_ATTR_LEN,
 			 "LOCAL_PREF attribute length isn't 4 [%u]", length);
 		return bgp_attr_malformed(args, BGP_NOTIFY_UPDATE_ATTR_LENG_ERR,
@@ -1849,7 +1864,7 @@ bgp_attr_local_pref(struct bgp_attr_parser_args *args)
 	/* If it is contained in an UPDATE message that is received from an
 	   external peer, then this attribute MUST be ignored by the
 	   receiving speaker. */
-	if (peer->sort == BGP_PEER_EBGP) {
+	if (peer->sort == BGP_PEER_EBGP && peer->sub_sort != BGP_PEER_EBGP_OAD) {
 		STREAM_FORWARD_GETP(peer->curr, length);
 		return BGP_ATTR_PARSE_PROCEED;
 	}
@@ -2321,11 +2336,8 @@ int bgp_mp_reach_parse(struct bgp_attr_parser_args *args,
 				/*
 				 * NOTE: intentional fall through
 				 * - for consistency in rx processing
-				 *
-				 * The following comment is to signal GCC this intention
-				 * and suppress the warning
 				 */
-	/* FALLTHRU */
+		fallthrough;
 	case BGP_ATTR_NHLEN_IPV4:
 		stream_get(&attr->mp_nexthop_global_in, s, IPV4_MAX_BYTELEN);
 		/* Probably needed for RFC 2283 */
@@ -3144,8 +3156,6 @@ enum bgp_attr_parse_ret bgp_attr_prefix_sid(struct bgp_attr_parser_args *args)
 	struct attr *const attr = args->attr;
 	enum bgp_attr_parse_ret ret;
 
-	attr->flag |= ATTR_FLAG_BIT(BGP_ATTR_PREFIX_SID);
-
 	uint8_t type;
 	uint16_t length;
 	size_t headersz = sizeof(type) + sizeof(length);
@@ -3194,6 +3204,8 @@ enum bgp_attr_parse_ret bgp_attr_prefix_sid(struct bgp_attr_parser_args *args)
 				args->total);
 		}
 	}
+
+	SET_FLAG(attr->flag, ATTR_FLAG_BIT(BGP_ATTR_PREFIX_SID));
 
 	return BGP_ATTR_PARSE_PROCEED;
 }
@@ -3267,7 +3279,8 @@ static enum bgp_attr_parse_ret bgp_attr_aigp(struct bgp_attr_parser_args *args)
 	 * the default value of AIGP_SESSION SHOULD be "enabled".
 	 */
 	if (peer->sort == BGP_PEER_EBGP &&
-	    !CHECK_FLAG(peer->flags, PEER_FLAG_AIGP)) {
+	    (!CHECK_FLAG(peer->flags, PEER_FLAG_AIGP) ||
+	     peer->sub_sort != BGP_PEER_EBGP_OAD)) {
 		zlog_warn(
 			"%pBP received AIGP attribute, but eBGP peer do not support it",
 			peer);
@@ -4492,7 +4505,8 @@ bgp_size_t bgp_packet_attribute(struct bgp *bgp, struct peer *peer,
 	}
 
 	/* Local preference. */
-	if (peer->sort == BGP_PEER_IBGP || peer->sort == BGP_PEER_CONFED) {
+	if (peer->sort == BGP_PEER_IBGP || peer->sort == BGP_PEER_CONFED ||
+	    peer->sub_sort == BGP_PEER_EBGP_OAD) {
 		stream_putc(s, BGP_ATTR_FLAG_TRANS);
 		stream_putc(s, BGP_ATTR_LOCAL_PREF);
 		stream_putc(s, 4);
@@ -4858,6 +4872,7 @@ bgp_size_t bgp_packet_attribute(struct bgp *bgp, struct peer *peer,
 	/* AIGP */
 	if (bpi && attr->flag & ATTR_FLAG_BIT(BGP_ATTR_AIGP) &&
 	    (CHECK_FLAG(peer->flags, PEER_FLAG_AIGP) ||
+	     peer->sub_sort == BGP_PEER_EBGP_OAD ||
 	     peer->sort != BGP_PEER_EBGP)) {
 		/* At the moment only AIGP Metric TLV exists for AIGP
 		 * attribute. If more comes in, do not forget to update

@@ -32,8 +32,7 @@ Configuring OSPF
 Therefore *zebra* must be running before invoking *ospfd*. Also, if *zebra* is
 restarted then *ospfd* must be too.
 
-Like other daemons, *ospfd* configuration is done in :abbr:`OSPF` specific
-configuration file :file:`ospfd.conf` when the integrated config is not used.
+.. include:: config-include.rst
 
 .. _ospf-multi-instance:
 
@@ -853,7 +852,7 @@ Graceful Restart
    affects the restarting router.
    By default 'strict-lsa-checking' is enabled"
 
-.. clicmd:: graceful-restart helper supported-grace-time
+.. clicmd:: graceful-restart helper supported-grace-time (10-1800)
 
 
    Supports as HELPER for configured grace period.

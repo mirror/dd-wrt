@@ -31,7 +31,8 @@ from copy import deepcopy
 import lib.topolog as topolog
 from lib.micronet_compat import Node
 from lib.topolog import logger
-from munet.base import Timeout
+from munet.base import commander, get_exec_path_host, Timeout
+from munet.testing.util import retry
 
 from lib import micronet
 
@@ -1261,8 +1262,8 @@ def rlimit_atleast(rname, min_value, raises=False):
 
 def fix_netns_limits(ns):
     # Maximum read and write socket buffer sizes
-    sysctl_atleast(ns, "net.ipv4.tcp_rmem", [10 * 1024, 87380, 16 * 2 ** 20])
-    sysctl_atleast(ns, "net.ipv4.tcp_wmem", [10 * 1024, 87380, 16 * 2 ** 20])
+    sysctl_atleast(ns, "net.ipv4.tcp_rmem", [10 * 1024, 87380, 16 * 2**20])
+    sysctl_atleast(ns, "net.ipv4.tcp_wmem", [10 * 1024, 87380, 16 * 2**20])
 
     sysctl_assure(ns, "net.ipv4.conf.all.rp_filter", 0)
     sysctl_assure(ns, "net.ipv4.conf.default.rp_filter", 0)
@@ -1321,8 +1322,8 @@ def fix_host_limits():
     sysctl_atleast(None, "net.core.netdev_max_backlog", 4 * 1024)
 
     # Maximum read and write socket buffer sizes
-    sysctl_atleast(None, "net.core.rmem_max", 16 * 2 ** 20)
-    sysctl_atleast(None, "net.core.wmem_max", 16 * 2 ** 20)
+    sysctl_atleast(None, "net.core.rmem_max", 16 * 2**20)
+    sysctl_atleast(None, "net.core.wmem_max", 16 * 2**20)
 
     # Garbage Collection Settings for ARP and Neighbors
     sysctl_atleast(None, "net.ipv4.neigh.default.gc_thresh2", 4 * 1024)
@@ -1363,6 +1364,8 @@ def setup_node_tmpdir(logdir, name):
 class Router(Node):
     "A Node with IPv4/IPv6 forwarding enabled"
 
+    gdb_emacs_router = None
+
     def __init__(self, name, *posargs, **params):
         # Backward compatibility:
         #   Load configuration defaults like topogen.
@@ -1380,6 +1383,8 @@ class Router(Node):
         )
 
         self.perf_daemons = {}
+        self.rr_daemons = {}
+        self.valgrind_gdb_daemons = {}
 
         # If this topology is using old API and doesn't have logdir
         # specified, then attempt to generate an unique logdir.
@@ -1420,6 +1425,7 @@ class Router(Node):
             "pathd": 0,
             "snmpd": 0,
             "mgmtd": 0,
+            "snmptrapd": 0,
         }
         self.daemons_options = {"zebra": ""}
         self.reportCores = True
@@ -1799,7 +1805,12 @@ class Router(Node):
         gdb_breakpoints = g_pytest_config.get_option_list("--gdb-breakpoints")
         gdb_daemons = g_pytest_config.get_option_list("--gdb-daemons")
         gdb_routers = g_pytest_config.get_option_list("--gdb-routers")
+        gdb_use_emacs = bool(g_pytest_config.option.gdb_use_emacs)
+        rr_daemons = g_pytest_config.get_option_list("--rr-daemons")
+        rr_routers = g_pytest_config.get_option_list("--rr-routers")
+        rr_options = g_pytest_config.get_option("--rr-options", "")
         valgrind_extra = bool(g_pytest_config.option.valgrind_extra)
+        valgrind_leak_kinds = g_pytest_config.option.valgrind_leak_kinds
         valgrind_memleaks = bool(g_pytest_config.option.valgrind_memleaks)
         strace_daemons = g_pytest_config.get_option_list("--strace-daemons")
 
@@ -1875,6 +1886,15 @@ class Router(Node):
             # do not since apparently presence of the pidfile impacts BGP GR
             self.cmd_status("rm -f {0}.pid {0}.vty".format(runbase))
 
+            def do_gdb_or_rr(gdb):
+                routers = gdb_routers if gdb else rr_routers
+                daemons = gdb_daemons if gdb else rr_daemons
+                return (
+                    (routers or daemons)
+                    and (not routers or self.name in routers or "all" in routers)
+                    and (not daemons or daemon in daemons or "all" in daemons)
+                )
+
             rediropt = " > {0}.out 2> {0}.err".format(daemon)
             if daemon == "snmpd":
                 binary = "/usr/sbin/snmpd"
@@ -1883,6 +1903,15 @@ class Router(Node):
                     daemon_opts
                 ) + "{}.pid -x /etc/frr/agentx".format(runbase)
                 # check_daemon_files.append(runbase + ".pid")
+            elif daemon == "snmptrapd":
+                binary = "/usr/sbin/snmptrapd"
+                cmdenv = ""
+                cmdopt = (
+                    "{} ".format(daemon_opts)
+                    + "-C -c /etc/{}/snmptrapd.conf".format(self.routertype)
+                    + " -p {}.pid".format(runbase)
+                    + " -LF 6-7 {}/{}/snmptrapd.log".format(self.logdir, self.name)
+                )
             else:
                 binary = os.path.join(self.daemondir, daemon)
                 check_daemon_files.extend([runbase + ".pid", runbase + ".vty"])
@@ -1901,13 +1930,23 @@ class Router(Node):
                     supp_file = os.path.abspath(
                         os.path.join(this_dir, "../../../tools/valgrind.supp")
                     )
-                    cmdenv += " /usr/bin/valgrind --num-callers=50 --log-file={1}/{2}.valgrind.{0}.%p --leak-check=full --suppressions={3}".format(
-                        daemon, self.logdir, self.name, supp_file
+
+                    valgrind_logbase = f"{self.logdir}/{self.name}.valgrind.{daemon}"
+                    if do_gdb_or_rr(True):
+                        cmdenv += " exec"
+                    cmdenv += (
+                        " /usr/bin/valgrind --num-callers=50"
+                        f" --log-file={valgrind_logbase}.%p"
+                        f" --leak-check=full --suppressions={supp_file}"
                     )
+                    if valgrind_leak_kinds:
+                        cmdenv += f" --show-leak-kinds={valgrind_leak_kinds}"
                     if valgrind_extra:
                         cmdenv += (
                             " --gen-suppressions=all --expensive-definedness-checks=yes"
                         )
+                    if do_gdb_or_rr(True):
+                        cmdenv += " --vgdb-error=0"
                 elif daemon in strace_daemons or "all" in strace_daemons:
                     cmdenv = "strace -f -D -o {1}/{2}.strace.{0} ".format(
                         daemon, self.logdir, self.name
@@ -1922,16 +1961,22 @@ class Router(Node):
                         tail_log_files.append(
                             "{}/{}/{}.log".format(self.logdir, self.name, daemon)
                         )
+
             if extra_opts:
                 cmdopt += " " + extra_opts
 
+            if do_gdb_or_rr(True) and do_gdb_or_rr(False):
+                logger.warning("cant' use gdb and rr at same time")
+
             if (
-                (gdb_routers or gdb_daemons)
-                and (
-                    not gdb_routers or self.name in gdb_routers or "all" in gdb_routers
-                )
-                and (not gdb_daemons or daemon in gdb_daemons or "all" in gdb_daemons)
-            ):
+                not gdb_use_emacs or Router.gdb_emacs_router or valgrind_memleaks
+            ) and do_gdb_or_rr(True):
+                if Router.gdb_emacs_router is not None:
+                    logger.warning(
+                        "--gdb-use-emacs can only run a single router and daemon, using"
+                        " new window"
+                    )
+
                 if daemon == "snmpd":
                     cmdopt += " -f "
 
@@ -1941,9 +1986,133 @@ class Router(Node):
                     gdbcmd += " -ex 'set breakpoint pending on'"
                 for bp in gdb_breakpoints:
                     gdbcmd += " -ex 'b {}'".format(bp)
-                gdbcmd += " -ex 'run {}'".format(cmdopt)
 
-                self.run_in_window(gdbcmd, daemon)
+                if not valgrind_memleaks:
+                    gdbcmd += " -ex 'run {}'".format(cmdopt)
+                    self.run_in_window(gdbcmd, daemon)
+
+                    logger.info(
+                        "%s: %s %s launched in gdb window",
+                        self,
+                        self.routertype,
+                        daemon,
+                    )
+
+                else:
+                    cmd = " ".join([cmdenv, binary, cmdopt])
+                    p = self.popen(cmd)
+                    self.valgrind_gdb_daemons[daemon] = p
+                    if p.poll() and p.returncode:
+                        self.logger.error(
+                            '%s: Failed to launch "%s" (%s) with perf using: %s',
+                            self,
+                            daemon,
+                            p.returncode,
+                            cmd,
+                        )
+                        assert False, "Faled to launch valgrind with gdb"
+                    logger.debug(
+                        "%s: %s %s started with perf", self, self.routertype, daemon
+                    )
+                    # Now read the erorr log file until we ae given launch priority
+                    timeout = Timeout(30)
+                    vpid = None
+                    for remaining in timeout:
+                        try:
+                            fname = f"{valgrind_logbase}.{p.pid}"
+                            logging.info("Checking %s for valgrind launch info", fname)
+                            o = open(fname, encoding="ascii").read()
+                        except FileNotFoundError:
+                            logging.info("%s not present yet", fname)
+                        else:
+                            m = re.search(r"target remote \| (.*vgdb) --pid=(\d+)", o)
+                            if m:
+                                vgdb_cmd = m.group(0)
+                                break
+                        time.sleep(1)
+                    else:
+                        assert False, "Faled to get launch info for valgrind with gdb"
+
+                    gdbcmd += f" -ex '{vgdb_cmd}'"
+                    gdbcmd += " -ex 'c'"
+                    self.run_in_window(gdbcmd, daemon)
+
+                    logger.info(
+                        "%s: %s %s launched in gdb window",
+                        self,
+                        self.routertype,
+                        daemon,
+                    )
+            elif gdb_use_emacs and do_gdb_or_rr(True):
+                assert Router.gdb_emacs_router is None
+                Router.gdb_emacs_router = self
+
+                assert not valgrind_memleaks, "vagrind gdb in emacs not supported yet"
+
+                if daemon == "snmpd":
+                    cmdopt += " -f "
+                cmdopt += rediropt
+
+                sudo_path = get_exec_path_host("sudo")
+                ecbin = [
+                    sudo_path,
+                    "-Eu",
+                    os.environ["SUDO_USER"],
+                    get_exec_path_host("emacsclient"),
+                ]
+                pre_cmd = self._get_pre_cmd(True, False, ns_only=True, root_level=True)
+                # why fail:? gdb -i=mi -iex='set debuginfod enabled off' {binary} "
+                gdbcmd = f"{sudo_path} {pre_cmd} gdb -i=mi {binary} "
+
+                commander.cmd_raises(
+                    ecbin
+                    + [
+                        "--eval",
+                        f'(gdb "{gdbcmd}"))',
+                    ]
+                )
+
+                elcheck = (
+                    '(ignore-errors (with-current-buffer "*gud-nsenter*"'
+                    " (and (string-match-p"
+                    ' "(gdb) "'
+                    " (buffer-substring-no-properties "
+                    '  (- (point-max) 10) (point-max))) "ready")))'
+                )
+
+                @retry(10)
+                def emacs_gdb_ready():
+                    check = commander.cmd_nostatus(ecbin + ["--eval", elcheck])
+                    return None if "ready" in check else False
+
+                emacs_gdb_ready()
+
+                # target gdb commands
+                cmd = "set breakpoint pending on"
+                self.cmd_raises(
+                    ecbin
+                    + [
+                        "--eval",
+                        f'(gud-gdb-run-command-fetch-lines "{cmd}" "*gud-gdb*")',
+                    ]
+                )
+                # gdb breakpoints
+                for bp in gdb_breakpoints:
+                    self.cmd_raises(
+                        ecbin
+                        + [
+                            "--eval",
+                            f'(gud-gdb-run-command-fetch-lines "br {bp}" "*gud-gdb*")',
+                        ]
+                    )
+
+                self.cmd_raises(
+                    ecbin
+                    + [
+                        "--eval",
+                        f'(gud-gdb-run-command-fetch-lines "run {cmdopt}" "*gud-gdb*")',
+                    ]
+                )
 
                 logger.info(
                     "%s: %s %s launched in gdb window", self, self.routertype, daemon
@@ -1969,8 +2138,31 @@ class Router(Node):
                     logger.debug(
                         "%s: %s %s started with perf", self, self.routertype, daemon
                     )
+            elif do_gdb_or_rr(False):
+                cmdopt += rediropt
+                cmd = " ".join(
+                    [
+                        "rr record -o {} {} --".format(self.rundir / "rr", rr_options),
+                        binary,
+                        cmdopt,
+                    ]
+                )
+                p = self.popen(cmd)
+                self.rr_daemons[daemon] = p
+                if p.poll() and p.returncode:
+                    self.logger.error(
+                        '%s: Failed to launch "%s" (%s) with rr using: %s',
+                        self,
+                        daemon,
+                        p.returncode,
+                        cmd,
+                    )
+                else:
+                    logger.debug(
+                        "%s: %s %s started with rr", self, self.routertype, daemon
+                    )
             else:
-                if daemon != "snmpd":
+                if daemon != "snmpd" and daemon != "snmptrapd":
                     cmdopt += " -d "
                 cmdopt += rediropt
 
@@ -2212,6 +2404,8 @@ class Router(Node):
 
         for daemon in self.daemons:
             if daemon == "snmpd":
+                continue
+            if daemon == "snmptrapd":
                 continue
             if (self.daemons[daemon] == 1) and not (daemon in daemonsRunning):
                 sys.stderr.write("%s: Daemon %s not running\n" % (self.name, daemon))

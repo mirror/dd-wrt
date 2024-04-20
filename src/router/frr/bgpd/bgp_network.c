@@ -484,10 +484,23 @@ static void bgp_accept(struct event *thread)
 			/* Dynamic neighbor has been created, let it proceed */
 			connection1->fd = bgp_sock;
 
+			if (bgp_set_socket_ttl(connection1) < 0) {
+				peer1->last_reset = PEER_DOWN_SOCKET_ERROR;
+				zlog_err("%s: Unable to set min/max TTL on peer %s (dynamic), error received: %s(%d)",
+					 __func__, peer1->host,
+					 safe_strerror(errno), errno);
+				return;
+			}
+
 			/* Set the user configured MSS to TCP socket */
 			if (CHECK_FLAG(peer1->flags, PEER_FLAG_TCP_MSS))
 				sockopt_tcp_mss_set(bgp_sock, peer1->tcp_mss);
 
+			frr_with_privs (&bgpd_privs) {
+				vrf_bind(peer1->bgp->vrf_id, bgp_sock,
+					 bgp_get_bound_name(connection1));
+			}
+			bgp_peer_reg_with_nht(peer1);
 			bgp_fsm_change_status(connection1, Active);
 			EVENT_OFF(connection1->t_start);
 
@@ -693,7 +706,6 @@ int bgp_update_address(struct interface *ifp, const union sockunion *dst,
 {
 	struct prefix *p, *sel, d;
 	struct connected *connected;
-	struct listnode *node;
 	int common;
 
 	if (!sockunion2hostprefix(dst, &d))
@@ -702,7 +714,7 @@ int bgp_update_address(struct interface *ifp, const union sockunion *dst,
 	sel = NULL;
 	common = -1;
 
-	for (ALL_LIST_ELEMENTS_RO(ifp->connected, node, connected)) {
+	frr_each (if_connected, ifp->connected, connected) {
 		p = connected->address;
 		if (p->family != d.family)
 			continue;

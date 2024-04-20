@@ -230,6 +230,7 @@ struct dplane_intf_info {
 #define DPLANE_INTF_BROADCAST   (1 << 2)
 #define DPLANE_INTF_HAS_DEST    DPLANE_INTF_CONNECTED
 #define DPLANE_INTF_HAS_LABEL   (1 << 4)
+#define DPLANE_INTF_NOPREFIXROUTE (1 << 5)
 
 	/* Interface address/prefix */
 	struct prefix prefix;
@@ -356,6 +357,13 @@ struct dplane_tc_filter_info {
 };
 
 /*
+ * SRv6 encapsulation params context for the dataplane
+ */
+struct dplane_srv6_encap_ctx {
+	struct in6_addr srcaddr;
+};
+
+/*
  * The context block used to exchange info about route updates across
  * the boundary between the zebra main context (and pthread) and the
  * dataplane layer (and pthread).
@@ -391,7 +399,7 @@ struct zebra_dplane_ctx {
 	vrf_id_t zd_vrf_id;
 	uint32_t zd_table_id;
 
-	char zd_ifname[INTERFACE_NAMSIZ];
+	char zd_ifname[IFNAMSIZ];
 	ifindex_t zd_ifindex;
 
 	/* Support info for different kinds of updates */
@@ -417,6 +425,7 @@ struct zebra_dplane_ctx {
 		struct dplane_gre_ctx gre;
 		struct dplane_netconf_info netconf;
 		enum zebra_dplane_startup_notifications spot;
+		struct dplane_srv6_encap_ctx srv6_encap;
 	} u;
 
 	/* Namespace info, used especially for netlink kernel communication */
@@ -597,6 +606,9 @@ static struct zebra_dplane_globals {
 
 	_Atomic uint32_t dg_tcs_in;
 	_Atomic uint32_t dg_tcs_errors;
+
+	_Atomic uint32_t dg_srv6_encap_srcaddr_set_in;
+	_Atomic uint32_t dg_srv6_encap_srcaddr_set_errors;
 
 	/* Dataplane pthread */
 	struct frr_pthread *dg_pthread;
@@ -860,6 +872,7 @@ static void dplane_ctx_free_internal(struct zebra_dplane_ctx *ctx)
 	case DPLANE_OP_GRE_SET:
 	case DPLANE_OP_INTF_NETCONFIG:
 	case DPLANE_OP_STARTUP_STAGE:
+	case DPLANE_OP_SRV6_ENCAP_SRCADDR_SET:
 		break;
 	}
 }
@@ -1185,6 +1198,11 @@ const char *dplane_op2str(enum dplane_op_e op)
 		break;
 	case DPLANE_OP_STARTUP_STAGE:
 		ret = "STARTUP_STAGE";
+		break;
+
+	case DPLANE_OP_SRV6_ENCAP_SRCADDR_SET:
+		ret = "SRV6_ENCAP_SRCADDR_SET";
+		break;
 	}
 
 	return ret;
@@ -2541,6 +2559,13 @@ bool dplane_ctx_intf_is_connected(const struct zebra_dplane_ctx *ctx)
 	return (ctx->u.intf.flags & DPLANE_INTF_CONNECTED);
 }
 
+bool dplane_ctx_intf_is_noprefixroute(const struct zebra_dplane_ctx *ctx)
+{
+	DPLANE_CTX_VALID(ctx);
+
+	return (ctx->u.intf.flags & DPLANE_INTF_NOPREFIXROUTE);
+}
+
 bool dplane_ctx_intf_is_secondary(const struct zebra_dplane_ctx *ctx)
 {
 	DPLANE_CTX_VALID(ctx);
@@ -2569,6 +2594,13 @@ void dplane_ctx_intf_set_secondary(struct zebra_dplane_ctx *ctx)
 	ctx->u.intf.flags |= DPLANE_INTF_SECONDARY;
 }
 
+void dplane_ctx_intf_set_noprefixroute(struct zebra_dplane_ctx *ctx)
+{
+	DPLANE_CTX_VALID(ctx);
+
+	ctx->u.intf.flags |= DPLANE_INTF_NOPREFIXROUTE;
+}
+
 void dplane_ctx_intf_set_broadcast(struct zebra_dplane_ctx *ctx)
 {
 	DPLANE_CTX_VALID(ctx);
@@ -2582,6 +2614,16 @@ const struct prefix *dplane_ctx_get_intf_addr(
 	DPLANE_CTX_VALID(ctx);
 
 	return &(ctx->u.intf.prefix);
+}
+
+
+/* Accessors for SRv6 encapsulation source address information */
+const struct in6_addr *
+dplane_ctx_get_srv6_encap_srcaddr(const struct zebra_dplane_ctx *ctx)
+{
+	DPLANE_CTX_VALID(ctx);
+
+	return &(ctx->u.srv6_encap.srcaddr);
 }
 
 void dplane_ctx_set_intf_addr(struct zebra_dplane_ctx *ctx,
@@ -5858,6 +5900,59 @@ done:
 }
 
 /*
+ * Common helper api for SRv6 encapsulation source address set
+ */
+enum zebra_dplane_result
+dplane_srv6_encap_srcaddr_set(const struct in6_addr *addr, ns_id_t ns_id)
+{
+	enum zebra_dplane_result result = ZEBRA_DPLANE_REQUEST_FAILURE;
+	struct zebra_dplane_ctx *ctx = NULL;
+	enum dplane_op_e op = DPLANE_OP_SRV6_ENCAP_SRCADDR_SET;
+	int ret;
+	struct zebra_ns *zns;
+
+	if (!addr)
+		return result;
+
+	if (IS_ZEBRA_DEBUG_DPLANE_DETAIL) {
+		zlog_debug("init dplane ctx %s: addr %pI6", dplane_op2str(op),
+			   addr);
+	}
+
+	zns = zebra_ns_lookup(ns_id);
+	if (!zns)
+		return result;
+
+	ctx = dplane_ctx_alloc();
+
+	ctx->zd_op = op;
+	ctx->zd_status = ZEBRA_DPLANE_REQUEST_SUCCESS;
+
+	dplane_ctx_ns_init(ctx, zns, false);
+
+	/* Init the SRv6 encap source address specific data area */
+	memcpy(&ctx->u.srv6_encap.srcaddr, addr,
+	       sizeof(ctx->u.srv6_encap.srcaddr));
+
+	/* Update counter */
+	atomic_fetch_add_explicit(&zdplane_info.dg_srv6_encap_srcaddr_set_in, 1,
+				  memory_order_relaxed);
+
+	/* Enqueue context for processing */
+	ret = dplane_update_enqueue(ctx);
+
+	if (ret == AOK)
+		result = ZEBRA_DPLANE_REQUEST_QUEUED;
+	else {
+		atomic_fetch_add_explicit(&zdplane_info
+						   .dg_srv6_encap_srcaddr_set_errors,
+					  1, memory_order_relaxed);
+		dplane_ctx_free(&ctx);
+	}
+	return result;
+}
+
+/*
  * Handler for 'show dplane'
  */
 int dplane_show_helper(struct vty *vty, bool detailed)
@@ -6582,6 +6677,12 @@ static void kernel_dplane_log_detail(struct zebra_dplane_ctx *ctx)
 	case DPLANE_OP_TC_FILTER_UPDATE:
 	case DPLANE_OP_STARTUP_STAGE:
 		break;
+
+	case DPLANE_OP_SRV6_ENCAP_SRCADDR_SET:
+		zlog_debug("Dplane SRv6 encap source address set op %s, addr %pI6",
+			   dplane_op2str(dplane_ctx_get_op(ctx)),
+			   &ctx->u.srv6_encap.srcaddr);
+		break;
 	}
 }
 
@@ -6752,6 +6853,13 @@ static void kernel_dplane_handle_result(struct zebra_dplane_ctx *ctx)
 	case DPLANE_OP_INTF_NETCONFIG:
 		break;
 
+	case DPLANE_OP_SRV6_ENCAP_SRCADDR_SET:
+		if (res != ZEBRA_DPLANE_REQUEST_SUCCESS)
+			atomic_fetch_add_explicit(&zdplane_info
+							   .dg_srv6_encap_srcaddr_set_errors,
+						  1, memory_order_relaxed);
+		break;
+
 	case DPLANE_OP_NONE:
 	case DPLANE_OP_STARTUP_STAGE:
 		if (res != ZEBRA_DPLANE_REQUEST_SUCCESS)
@@ -6860,6 +6968,31 @@ static int kernel_dplane_process_func(struct zebra_dplane_provider *prov)
 	return 0;
 }
 
+static int kernel_dplane_shutdown_func(struct zebra_dplane_provider *prov,
+				       bool early)
+{
+	struct zebra_dplane_ctx *ctx;
+
+	if (early)
+		return 1;
+
+	ctx = dplane_provider_dequeue_in_ctx(prov);
+	while (ctx) {
+		dplane_ctx_free(&ctx);
+
+		ctx = dplane_provider_dequeue_in_ctx(prov);
+	}
+
+	ctx = dplane_provider_dequeue_out_ctx(prov);
+	while (ctx) {
+		dplane_ctx_free(&ctx);
+
+		ctx = dplane_provider_dequeue_out_ctx(prov);
+	}
+
+	return 1;
+}
+
 #ifdef DPLANE_TEST_PROVIDER
 
 /*
@@ -6932,12 +7065,10 @@ static void dplane_provider_init(void)
 {
 	int ret;
 
-	ret = dplane_provider_register("Kernel",
-				       DPLANE_PRIO_KERNEL,
+	ret = dplane_provider_register("Kernel", DPLANE_PRIO_KERNEL,
 				       DPLANE_PROV_FLAGS_DEFAULT, NULL,
 				       kernel_dplane_process_func,
-				       NULL,
-				       NULL, NULL);
+				       kernel_dplane_shutdown_func, NULL, NULL);
 
 	if (ret != AOK)
 		zlog_err("Unable to register kernel dplane provider: %d",
@@ -7338,6 +7469,7 @@ static void dplane_thread_loop(struct event *event)
 void zebra_dplane_shutdown(void)
 {
 	struct zebra_dplane_provider *dp;
+	struct zebra_dplane_ctx *ctx;
 
 	if (IS_ZEBRA_DEBUG_DPLANE)
 		zlog_debug("Zebra dataplane shutdown called");
@@ -7365,8 +7497,25 @@ void zebra_dplane_shutdown(void)
 	}
 
 	/* TODO -- Clean-up provider objects */
+	dp = dplane_prov_list_first(&zdplane_info.dg_providers);
+	while (dp) {
+		dplane_prov_list_del(&zdplane_info.dg_providers, dp);
+		XFREE(MTYPE_DP_PROV, dp);
+
+		dp = dplane_prov_list_first(&zdplane_info.dg_providers);
+	}
 
 	/* TODO -- Clean queue(s), free memory */
+	DPLANE_LOCK();
+	{
+		ctx = dplane_ctx_list_pop(&zdplane_info.dg_update_list);
+		while (ctx) {
+			dplane_ctx_free(&ctx);
+
+			ctx = dplane_ctx_list_pop(&zdplane_info.dg_update_list);
+		}
+	}
+	DPLANE_UNLOCK();
 }
 
 /*

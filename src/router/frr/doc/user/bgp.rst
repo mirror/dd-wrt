@@ -14,10 +14,7 @@ interdomain routing protocol. BGP-4 is described in :rfc:`1771` and updated by
 Starting BGP
 ============
 
-The default configuration file of *bgpd* is :file:`bgpd.conf`. *bgpd* searches
-the current directory first, followed by |INSTALL_PREFIX_ETC|/bgpd.conf. All of
-*bgpd*'s commands must be configured in :file:`bgpd.conf` when the integrated
-config is not being used.
+.. include:: config-include.rst
 
 *bgpd* specific invocation options are described below. Common options may also
 be specified (:ref:`common-invocation-options`).
@@ -494,8 +491,8 @@ Require policy on EBGP
 
       exit1# show bgp summary
 
-      IPv4 Unicast Summary (VRF default):
-      BGP router identifier 10.10.10.1, local AS number 65001 vrf-id 0
+      IPv4 Unicast Summary:
+      BGP router identifier 10.10.10.1, local AS number 65001 VRF default vrf-id 0
       BGP table version 4
       RIB entries 7, using 1344 bytes of memory
       Peers 2, using 43 KiB of memory
@@ -526,6 +523,27 @@ Reject routes with AS_SET or AS_CONFED_SET types
 .. clicmd:: bgp reject-as-sets
 
    This command enables rejection of incoming and outgoing routes having AS_SET or AS_CONFED_SET type.
+
+Enforce first AS
+----------------
+
+.. clicmd:: bgp enforce-first-as
+
+   To configure a router to deny an update received from an external BGP (eBGP)
+   peer that does not list its autonomous system number at the beginning of
+   the `AS_PATH` in the incoming update, use the ``bgp enforce-first-as`` command
+   in router configuration mode.
+
+   In order to exclude an arbitrary neighbor from this enforcement, use the
+   command ``no neighbor NAME enforce-first-as``. And vice-versa if a global
+   enforcement is disabled, you can override this behavior per neighbor too.
+
+   Default: enabled.
+
+.. note::
+
+   If you have a peering to RS (Route-Server), most likely you MUST disable the
+   first AS enforcement.
 
 Suppress duplicate updates
 --------------------------
@@ -1309,9 +1327,30 @@ section for the specific AF to redistribute into. Protocol availability for
 redistribution is determined by BGP AF; for example, you cannot redistribute
 OSPFv3 into ``address-family ipv4 unicast`` as OSPFv3 supports IPv6.
 
-.. clicmd:: redistribute <babel|connected|eigrp|isis|kernel|openfabric|ospf|ospf6|rip|ripng|sharp|static|table> [metric (0-4294967295)] [route-map WORD]
+.. clicmd:: redistribute <babel|connected|eigrp|isis|kernel|openfabric|ospf|ospf6|rip|ripng|sharp|static> [metric (0-4294967295)] [route-map WORD]
 
 Redistribute routes from other protocols into BGP.
+
+.. clicmd:: redistribute <table|table-direct> (1-65535)] [metric (0-4294967295)] [route-map WORD]
+
+   Redistribute routes from a routing table ID into BGP. There are two
+   techniques for redistribution:
+
+   - Standard Table Redistribution ``table (1-65535)``:
+        - Routes from the specified routing table ID are imported into the
+          default routing table using the ``ip import-table ID`` command.
+        - These routes are identified by the protocol type "T[ID]" when
+          displayed with ``show (ip|ipv6) route``.
+        - The ``redistribute table ID`` command then integrates these routes
+          into BGP.
+
+   - Direct Table Redistribution ``table-direct (1-65535)``:
+        - This method directly imports routes from the designated routing table
+          ID into BGP, omitting the step of adding to the default routing table.
+        - This method is especially relevant when the specified table ID is
+          checked against routing by appending the appropriate `ip rules`.
+
+Redistribute routes from a routing table number into BGP.
 
 .. clicmd:: redistribute vnc-direct
 
@@ -1432,6 +1471,23 @@ Defining Peers
    peers ASN is the same as mine as specified under the :clicmd:`router bgp ASN`
    command the connection will be denied.
 
+.. clicmd:: neighbor PEER oad
+
+   Mark a peer belonging to the One Administrative Domain.
+
+   Some networks span more than one autonomous system and require more
+   flexibility in the propagation of path attributes.It is worth noting that
+   these multi-AS networks have a common or single administrative entity.
+   These networks are said to belong to One Administrative Domain (OAD).
+   It is desirable to carry IBGP-only attributes across EBGP peerings when
+   the peers belong to an OAD.
+
+   Enabling this peering sub-type will allow the propagation of non-transitive
+   attributes across EBGP peerings (e.g. local-preference). Make sure to
+   turn this peering type on for all peers in the OAD.
+
+   Disabled by default.
+
 .. clicmd:: bgp listen range <A.B.C.D/M|X:X::X:X/M> peer-group PGNAME
 
    Accept connections from any peers in the specified prefix. Configuration
@@ -1509,7 +1565,10 @@ Configuring Peers
    Discard updates received from the specified (eBGP) peer if the AS_PATH
    attribute does not contain the PEER's ASN as the first AS_PATH segment.
 
-   Default: disabled.
+   You can enable or disable this enforcement globally too using
+   ``bgp enforce-first-as`` command.
+
+   Default: enabled.
 
 .. clicmd:: neighbor PEER extended-optional-parameters
 
@@ -1545,7 +1604,10 @@ Configuring Peers
 
    Configure an unnumbered BGP peer. ``PEER`` should be an interface name. The
    session will be established via IPv6 link locals. Use ``internal`` for iBGP
-   and ``external`` for eBGP sessions, or specify an ASN if you wish.
+   and ``external`` for eBGP sessions, or specify an ASN if you wish.  Finally
+   this connection type is meant for point to point connections.  If you are
+   on an ethernet segment and attempt to use this with more than one bgp
+   neighbor, only one neighbor will come up, due to how this feature works.
 
 .. clicmd:: neighbor PEER next-hop-self [force]
 
@@ -1564,10 +1626,12 @@ Configuring Peers
 
 .. clicmd:: neighbor PEER update-source <IFNAME|ADDRESS>
 
-   Specify the IPv4 source address to use for the :abbr:`BGP` session to this
-   neighbour, may be specified as either an IPv4 address directly or as an
+   Specify the IPv4 or IPv6 source address to use for the :abbr:`BGP` session to this
+   neighbour, may be specified as either an IP address directly or as an
    interface name (in which case the *zebra* daemon MUST be running in order
-   for *bgpd* to be able to retrieve interface state).
+   for *bgpd* to be able to retrieve interface state).  When there are multiple
+   addresses on the choosen IFNAME then BGP will use the address that matches
+   the most number of bits in comparison to the destination peer address.
 
    .. code-block:: frr
 
@@ -1610,7 +1674,18 @@ Configuring Peers
    modifying the `net.core.optmem_max` sysctl to a larger value to
    avoid out of memory errors from the linux kernel.
 
-.. clicmd:: neighbor PEER send-community
+.. clicmd:: neighbor PEER send-community <both|all|extended|standard|large>
+
+   Send the communities to the peer.
+
+   Default: enabled.
+
+.. clicmd:: neighbor PEER send-community extended rpki
+
+   Send the extended RPKI communities to the peer. RPKI extended community
+   can be send only to iBGP and eBGP-OAD peers.
+
+   Default: enabled.
 
 .. clicmd:: neighbor PEER weight WEIGHT
 
@@ -1729,6 +1804,18 @@ Configuring Peers
 
    This includes changing graceful-restart (LLGR also) timers,
    enabling/disabling add-path, and other supported capabilities.
+
+.. clicmd:: neighbor PEER capability fqdn 
+
+   Allow BGP to negotiate the FQDN Capability with its peers.
+
+   FQDN Capability defines a new BGP message (CAPABILITY) allowing the
+   use of peer's name and domain name.
+
+   This capability is activated by default. The ``no neighbor PEER capability
+   fqdn`` avoid negotiation of that capability. This is useful for peers who
+   are not supporting this capability or supporting BGP Capabilities 
+   Negotiation RFC 2842.
 
 .. clicmd:: neighbor <A.B.C.D|X:X::X:X|WORD> accept-own
 
@@ -1860,8 +1947,8 @@ Configuring Peers
 
    .. code-block:: frr
 
-      IPv4 Unicast Summary (VRF default):
-      BGP router identifier 10.0.0.6, local AS number 65001 vrf-id 0
+      IPv4 Unicast Summary:
+      BGP router identifier 10.0.0.6, local AS number 65001 VRF default vrf-id 0
       BGP table version 12
       RIB entries 23, using 4600 bytes of memory
       Peers 3, using 2174 KiB of memory
@@ -2058,7 +2145,6 @@ Capability Negotiation
 ^^^^^^^^^^^^^^^^^^^^^^
 
 .. clicmd:: neighbor PEER strict-capability-match
-
 
    Strictly compares remote capabilities and local capabilities. If
    capabilities are different, send Unsupported Capability error then reset
@@ -2986,7 +3072,33 @@ address-family:
 
    Specifies the route-target list to be attached to a route (export) or the
    route-target list to match against (import) when exporting/importing between
-   the current unicast VRF and VPN.
+   the current unicast VRF and VPN. The `rt vpn export RTLIST` command is not
+   mandatory and can be replaced or completed by the `set extcommunity rt`
+   command in the route-map attached with the `route-map vpn export`. The below
+   configuration illustrates how the route target is selected based on the
+   prefixes, and not solely on vrf criterium:
+
+   .. code-block:: frr
+
+      access-list acl1 permit 192.0.2.0/24
+      access-list acl2 permit 192.0.3.0/24
+      route-map rmap permit 10
+       match address acl1
+       set extcommunity rt 65001:10
+      !
+      route-map rmap permit 20
+       match address acl1
+       set extcommunity rt 65001:20
+      !
+      router bgp 65001 vrf vrf1
+       !
+       address-family ipv4 unicast
+        rd vpn export 65001:1
+        import vpn
+        export vpn
+        rt vpn import 65001:1
+        route-map vpn export rmap
+
 
    The RTLIST is a space-separated list of route-targets, which are BGP
    extended community values as described in
@@ -3374,7 +3486,7 @@ The import filtering described in item (2) is constrained just to Type-2
 The EVPN MAC-VRF Site-of-Origin can be configured using a single CLI command
 under ``address-family l2vpn evpn`` of the EVPN underlay BGP instance.
 
-.. clicmd:: [no] mac-vrf soo <site-of-origin-string>
+.. clicmd:: mac-vrf soo <site-of-origin-string>
 
 Example configuration:
 
@@ -3520,7 +3632,7 @@ route maybe fragmented.
 The number of EVIs per-EAD route can be configured via the following
 BGP command -
 
-.. clicmd:: [no] ead-es-frag evi-limit (1-1000)
+.. clicmd:: ead-es-frag evi-limit (1-1000)
 
 Sample Configuration
 ^^^^^^^^^^^^^^^^^^^^^
@@ -3698,7 +3810,7 @@ When default route is present in R2'2 BGP table, 10.139.224.0/20 and 192.0.2.1/3
    *> 192.0.2.1/32     10.10.10.1               0             0 1 i
    *> 192.0.2.5/32     10.10.10.1               0             0 1 i
 
-   Displayed  4 routes and 4 total paths
+   Displayed 4 routes and 4 total paths
    Router2# show ip bgp neighbors 10.10.20.3
 
    !--- Output suppressed.
@@ -3746,7 +3858,7 @@ When default route is not present in R2'2 BGP table, 10.139.224.0/20 and 192.0.2
    *> 192.0.2.1/32     10.10.10.1               0             0 1 i
    *> 192.0.2.5/32     10.10.10.1               0             0 1 i
 
-   Displayed  3 routes and 3 total paths
+   Displayed 3 routes and 3 total paths
 
    Router2# show ip bgp neighbors 10.10.20.3
 
@@ -3815,11 +3927,19 @@ Debugging
    information on BGP events such as peer connection / disconnection, session
    establishment / teardown, and capability negotiation.
 
-.. clicmd:: debug bgp updates
+.. clicmd:: debug bgp updates [detail]
 
    Enable or disable debugging for BGP updates. This provides information on
    BGP UPDATE messages transmitted and received between local and remote
    instances.
+
+   If ``detail`` is specified, the output will include the full BGP UPDATE with
+   detailed information such as attribute length, withdraw length, and more.
+
+.. clicmd:: debug bgp updates <in|out> [<A.B.C.D|X:X::X:X|WORD> [prefix-list WORD]]
+
+   Enable or disable debugging for BGP updates. Optionally, you can specify
+   a prefix-list to filter the updates for an arbitrary neighbor.
 
 .. clicmd:: debug bgp keepalives
 
@@ -3920,6 +4040,26 @@ The following are available in the top level *enable* mode:
 
    Clear BGP message statistics for a specified peer or for all peers,
    optionally filtered by activated address-family and sub-address-family.
+
+.. clicmd:: clear bgp [ipv4|ipv6] [unicast] PEER|\* capabilities
+
+   Clear specific BGP capabilities for a specified peer or for all peers. This
+   includes such capabilities like FQDN capability, that can't be controlled by
+   any other configuration knob.
+
+   For example, if you want to change the FQDN, you MUST reset the BGP session
+   in order to send a new FQDN capability to the peer. This command allows you
+   to resend FQDN capability without resetting the session.
+
+   .. code-block:: frr
+
+      hostname bgp-new.example.com
+      clear bgp 10.10.10.1 capabilities
+
+.. note::
+
+   Changing the hostname is possible only when connected to the specific daemon.
+   If you change the hostname via ``vtysh``, it won't be changed.
 
 The following are available in the ``router bgp`` mode:
 
@@ -4044,8 +4184,8 @@ structure is extended with :clicmd:`show bgp [afi] [safi]`.
 
       exit1# show ip bgp summary wide
 
-      IPv4 Unicast Summary (VRF default):
-      BGP router identifier 192.168.100.1, local AS number 65534 vrf-id 0
+      IPv4 Unicast Summary:
+      BGP router identifier 192.168.100.1, local AS number 65534 VRF default vrf-id 0
       BGP table version 3
       RIB entries 5, using 920 bytes of memory
       Peers 1, using 27 KiB of memory
@@ -4339,7 +4479,7 @@ incoming/outgoing directions.
          Origin incomplete, metric 0, weight 32768, valid, sourced, bestpath-from-AS Local, best (First path received)
          Last update: Wed May  8 12:54:41 2023
 
-   Displayed  2 routes and 2 total paths
+   Displayed 2 routes and 2 total paths
 
 .. code-block:: frr
 
@@ -4364,7 +4504,7 @@ incoming/outgoing directions.
          Origin incomplete, metric 0, weight 32768, valid, sourced, bestpath-from-AS Local, best (First path received)
          Last update: Wed May  8 12:45:01 2023
 
-   Displayed  2 routes and 2 total paths
+   Displayed 2 routes and 2 total paths
 
    Instance vrf3:
 
@@ -4389,7 +4529,7 @@ incoming/outgoing directions.
          Extended Community: RT:65000:1009 ET:8 Rmac:00:02:00:00:00:58
          Last update: Fri May  8 02:41:55 2023
 
-   Displayed  2 routes and 2 total paths
+   Displayed 2 routes and 2 total paths
 
 
 .. code-block:: frr
@@ -4417,7 +4557,7 @@ incoming/outgoing directions.
          Extended Community: RT:65000:1009 ET:8 Rmac:00:02:00:00:00:58
          Last update: Fri May  8 02:23:55 2023
 
-   Displayed  2 routes and 2 total paths
+   Displayed 2 routes and 2 total paths
 
 .. _bgp-display-routes-by-community:
 
