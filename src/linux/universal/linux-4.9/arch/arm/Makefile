@@ -53,6 +53,12 @@ AS		+= -EL
 LD		+= -EL
 endif
 
+ifeq ($(CONFIG_AEABI),y)
+CFLAGS_ABI	:=-mabi=aapcs-linux -mfpu=vfp
+else
+CFLAGS_ABI	:=$(call cc-option,-mapcs-32,-mabi=apcs-gnu) $(call cc-option,-mno-thumb-interwork,)
+endif
+
 #
 # The Scalar Replacement of Aggregates (SRA) optimization pass in GCC 4.9 and
 # later may result in code being generated that handles signed short and signed
@@ -69,14 +75,25 @@ arch-$(CONFIG_CPU_32v7M)	=-D__LINUX_ARM_ARCH__=7 -march=armv7-m
 
 ifeq ($(CONFIG_ARCH_ALPINE),y)
 arch-$(CONFIG_CPU_32v7)		=-D__LINUX_ARM_ARCH__=7 -mcpu=cortex-a15 -mtune=cortex-a15
+CFLAGS_ABI	:=-mabi=aapcs-linux  -mfpu=neon-vfpv4
 else
 ifeq ($(CONFIG_ARCH_QCOM),y)
 arch-$(CONFIG_CPU_32v7)		=-D__LINUX_ARM_ARCH__=7 -mcpu=cortex-a15 -mtune=cortex-a15
+CFLAGS_ABI	:=-mabi=aapcs-linux  -mfpu=neon-vfpv4
+else
+ifeq ($(CONFIG_ARCH_MVEBU),y)
+arch-$(CONFIG_CPU_32v7)		=-D__LINUX_ARM_ARCH__=7  -mcpu=cortex-a9 -mtune=cortex-a9
+ifeq ($(CONFIG_ARMADAXP),y)
+CFLAGS_ABI	:=-mabi=aapcs-linux -mfpu=vfpv3-d16
+else
+CFLAGS_ABI	:=-mabi=aapcs-linux -mfpu=neon
+endif
 else
 ifeq ($(CONFIG_ARM_VIRT_EXT),y)
 arch-$(CONFIG_CPU_32v7)		=-D__LINUX_ARM_ARCH__=7 -march=armv7ve
 else
 arch-$(CONFIG_CPU_32v7)		=-D__LINUX_ARM_ARCH__=7 -march=armv7-a
+endif
 endif
 endif
 endif
@@ -117,11 +134,6 @@ tune-$(CONFIG_CPU_V6K)		=-mtune=arm1136j-s
 # Evaluate tune cc-option calls now
 tune-y := $(tune-y)
 
-ifeq ($(CONFIG_AEABI),y)
-CFLAGS_ABI	:=-mabi=aapcs-linux -mfpu=vfp
-else
-CFLAGS_ABI	:=$(call cc-option,-mapcs-32,-mabi=apcs-gnu) $(call cc-option,-mno-thumb-interwork,)
-endif
 
 ifeq ($(CONFIG_ARM_UNWIND),y)
 CFLAGS_ABI	+=-funwind-tables
