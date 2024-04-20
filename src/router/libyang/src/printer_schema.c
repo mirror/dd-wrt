@@ -16,14 +16,14 @@
 
 #include <stdio.h>
 
+#include "common.h"
 #include "compat.h"
 #include "log.h"
-#include "ly_common.h"
 #include "out_internal.h"
 #include "printer_internal.h"
 #include "tree_schema.h"
 
-LIBYANG_API_DEF LY_ERR
+API LY_ERR
 lys_print_module(struct ly_out *out, const struct lys_module *module, LYS_OUTFORMAT format, size_t line_length,
         uint32_t options)
 {
@@ -70,6 +70,11 @@ lys_print_module(struct ly_out *out, const struct lys_module *module, LYS_OUTFOR
         }
         ret = tree_print_module(out, module, options, line_length);
         break;
+    /* TODO not yet implemented
+    case LYS_OUT_INFO:
+        ret = info_print_model(out, module, target_node);
+        break;
+    */
     default:
         LOGERR(module->ctx, LY_EINVAL, "Unsupported output format.");
         ret = LY_EINVAL;
@@ -79,7 +84,7 @@ lys_print_module(struct ly_out *out, const struct lys_module *module, LYS_OUTFOR
     return ret;
 }
 
-LIBYANG_API_DEF LY_ERR
+API LY_ERR
 lys_print_submodule(struct ly_out *out, const struct lysp_submodule *submodule, LYS_OUTFORMAT format,
         size_t line_length, uint32_t options)
 {
@@ -100,6 +105,11 @@ lys_print_submodule(struct ly_out *out, const struct lysp_submodule *submodule, 
     case LYS_OUT_TREE:
         ret = tree_print_parsed_submodule(out, submodule, options, line_length);
         break;
+    /* TODO not yet implemented
+    case LYS_OUT_INFO:
+        ret = info_print_model(out, module, target_node);
+        break;
+    */
     default:
         LOGERR(submodule->mod->ctx, LY_EINVAL, "Unsupported output format.");
         ret = LY_EINVAL;
@@ -122,7 +132,7 @@ lys_print_(struct ly_out *out, const struct lys_module *module, LYS_OUTFORMAT fo
     return ret;
 }
 
-LIBYANG_API_DEF LY_ERR
+API LY_ERR
 lys_print_mem(char **strp, const struct lys_module *module, LYS_OUTFORMAT format, uint32_t options)
 {
     struct ly_out *out;
@@ -136,7 +146,7 @@ lys_print_mem(char **strp, const struct lys_module *module, LYS_OUTFORMAT format
     return lys_print_(out, module, format, options);
 }
 
-LIBYANG_API_DEF LY_ERR
+API LY_ERR
 lys_print_fd(int fd, const struct lys_module *module, LYS_OUTFORMAT format, uint32_t options)
 {
     struct ly_out *out;
@@ -147,7 +157,7 @@ lys_print_fd(int fd, const struct lys_module *module, LYS_OUTFORMAT format, uint
     return lys_print_(out, module, format, options);
 }
 
-LIBYANG_API_DEF LY_ERR
+API LY_ERR
 lys_print_file(FILE *f, const struct lys_module *module, LYS_OUTFORMAT format, uint32_t options)
 {
     struct ly_out *out;
@@ -158,7 +168,7 @@ lys_print_file(FILE *f, const struct lys_module *module, LYS_OUTFORMAT format, u
     return lys_print_(out, module, format, options);
 }
 
-LIBYANG_API_DEF LY_ERR
+API LY_ERR
 lys_print_path(const char *path, const struct lys_module *module, LYS_OUTFORMAT format, uint32_t options)
 {
     struct ly_out *out;
@@ -169,7 +179,7 @@ lys_print_path(const char *path, const struct lys_module *module, LYS_OUTFORMAT 
     return lys_print_(out, module, format, options);
 }
 
-LIBYANG_API_DEF LY_ERR
+API LY_ERR
 lys_print_clb(ly_write_clb writeclb, void *user_data, const struct lys_module *module, LYS_OUTFORMAT format, uint32_t options)
 {
     struct ly_out *out;
@@ -180,7 +190,7 @@ lys_print_clb(ly_write_clb writeclb, void *user_data, const struct lys_module *m
     return lys_print_(out, module, format, options);
 }
 
-LIBYANG_API_DEF LY_ERR
+API LY_ERR
 lys_print_node(struct ly_out *out, const struct lysc_node *node, LYS_OUTFORMAT format, size_t line_length, uint32_t options)
 {
     LY_ERR ret;
@@ -194,6 +204,11 @@ lys_print_node(struct ly_out *out, const struct lysc_node *node, LYS_OUTFORMAT f
     case LYS_OUT_YANG_COMPILED:
         ret = yang_print_compiled_node(out, node, options);
         break;
+    /* TODO not yet implemented
+    case LYS_OUT_YIN:
+        ret = yin_print_parsed(out, module);
+        break;
+    */
     case LYS_OUT_TREE:
         ret = tree_print_compiled_node(out, node, options, line_length);
         break;

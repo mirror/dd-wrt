@@ -1,10 +1,9 @@
 /**
  * @file log.h
  * @author Radek Krejci <rkrejci@cesnet.cz>
- * @author Michal Vasko <mvasko@cesnet.cz>
  * @brief Logger manipulation routines and error definitions.
  *
- * Copyright (c) 2015 - 2022 CESNET, z.s.p.o.
+ * Copyright (c) 2015 - 2018 CESNET, z.s.p.o.
  *
  * This source code is licensed under BSD 3-Clause License (the "License").
  * You may not use this file except in compliance with the License.
@@ -17,8 +16,6 @@
 #define LY_LOG_H_
 
 #include <stdint.h>
-
-#include "ly_config.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -78,33 +75,34 @@ typedef uint8_t ly_bool;
  * @{
  *
  * Publicly visible functions and values of the libyang logger. For more
- * information, see @ref howtoLogger.
+ * information, see \ref howtoLogger.
  */
 
 /**
  * @typedef LY_LOG_LEVEL
  * @brief Verbosity levels of the libyang logger.
  */
-typedef enum {
-    LY_LLERR = 0, /**< Print only error messages. */
-    LY_LLWRN = 1, /**< Print error and warning messages, default value. */
+typedef enum
+{
+    LY_LLERR = 0, /**< Print only error messages, default value. */
+    LY_LLWRN = 1, /**< Print error and warning messages. */
     LY_LLVRB = 2, /**< Besides errors and warnings, print some other verbose messages. */
-    LY_LLDBG = 3  /**< Print all messages including some development debug messages (be careful,
-                       without subsequently calling ::ly_log_dbg_groups() no debug messages will be printed!). */
+    LY_LLDBG = 3 /**< Print all messages including some development debug messages (be careful,
+     without subsequently calling ::ly_log_dbg_groups() no debug messages will be printed!). */
 } LY_LOG_LEVEL;
 
 /**
  * @brief Set logger verbosity level.
  *
- * To get the current value, the function must be called twice resetting the level by the received value.
+ * To get the current value, the function must be called twice resetting the level by the reived value.
  *
  * @param[in] level Verbosity level.
  * @return Previous verbosity level.
  */
-LIBYANG_API_DECL LY_LOG_LEVEL ly_log_level(LY_LOG_LEVEL level);
+LY_LOG_LEVEL ly_log_level(LY_LOG_LEVEL level);
 
 /**
- * @ingroup log
+ * @ingroup logger
  * @defgroup logopts Logging options
  *
  * Logging option bits of libyang.
@@ -127,20 +125,14 @@ LIBYANG_API_DECL LY_LOG_LEVEL ly_log_level(LY_LOG_LEVEL level);
 /**
  * @brief Set logger options. Default is #LY_LOLOG | #LY_LOSTORE_LAST.
  *
- * To get the current value, the function must be called twice resetting the level by the received value.
+ * To get the current value, the function must be called twice resetting the level by the reived value.
  *
  * @param[in] opts Bitfield of @ref logopts.
  * @return Previous logger options.
  */
-LIBYANG_API_DECL uint32_t ly_log_options(uint32_t opts);
+uint32_t ly_log_options(uint32_t opts);
 
-/**
- * @brief Set temporary thread-safe logger options overwriting those set by ::ly_log_options().
- *
- * @param[in] opts Pointer to the temporary @ref logopts. If NULL, restores the effect of global logger options.
- * @return Previous temporary options.
- */
-LIBYANG_API_DECL uint32_t *ly_temp_log_options(uint32_t *opts);
+#ifndef NDEBUG
 
 /**
  * @ingroup log
@@ -153,9 +145,8 @@ LIBYANG_API_DECL uint32_t *ly_temp_log_options(uint32_t *opts);
  * @{
  */
 
-#define LY_LDGDICT      0x01    /**< Dictionary additions and deletions. */
-#define LY_LDGXPATH     0x02    /**< XPath parsing end evaluation. */
-#define LY_LDGDEPSETS   0x04    /**< Dependency module sets for schema compilation. */
+#define LY_LDGDICT  0x01 /**< Dictionary additions and deletions. */
+#define LY_LDGXPATH 0x02 /**< XPath parsing end evaluation. */
 
 /**
  * @}
@@ -164,39 +155,45 @@ LIBYANG_API_DECL uint32_t *ly_temp_log_options(uint32_t *opts);
 /**
  * @brief Enable specific debugging messages (independent of log level).
  *
- * To get the current value, the function must be called twice resetting the level by the received value.
- * Note: does not have any effect on non-debug (Release) builds
+ * To get the current value, the function must be called twice resetting the level by the reived value.
  *
  * @param[in] dbg_groups Bitfield of enabled debug message groups (see @ref dbggroup).
  * @return Previous options bitfield.
  */
-LIBYANG_API_DECL uint32_t ly_log_dbg_groups(uint32_t dbg_groups);
+uint32_t ly_log_dbg_groups(uint32_t dbg_groups);
+
+#endif
 
 /**
  * @brief Logger callback.
  *
+ * !IMPORTANT! If an error has a specific error-app-tag defined in the model, it will NOT be set
+ *             at the time of calling this callback. It will be set right after, so to retrieve it
+ *             it must be checked afterwards with ::ly_errapptag().
+ *
  * @param[in] level Log level of the message.
  * @param[in] msg Message.
- * @param[in] data_path Optional data path of the related node.
- * @param[in] schema_path Optional schema path of the related node.
- * @param[in] line Optional related input line.
+ * @param[in] path Optional path of the concerned node.
  */
-typedef void (*ly_log_clb)(LY_LOG_LEVEL level, const char *msg, const char *data_path, const char *schema_path,
-        uint64_t line);
+typedef void (*ly_log_clb)(LY_LOG_LEVEL level, const char *msg, const char *path);
 
 /**
  * @brief Set logger callback.
  *
  * @param[in] clb Logging callback.
+ * @param[in] path flag to resolve and provide path as the third parameter of the callback function. In case of
+ *            validation and some other errors, it can be useful to get the path to the problematic element. Note,
+ *            that according to the tree type and the specific situation, the path can slightly differs (keys
+ *            presence) or it can be NULL, so consider it as an optional parameter. If the flag is 0, libyang will
+ *            not bother with resolving the path.
  */
-LIBYANG_API_DECL void ly_set_log_clb(ly_log_clb clb);
+void ly_set_log_clb(ly_log_clb clb, ly_bool path);
 
 /**
  * @brief Get logger callback.
- *
  * @return Logger callback (can be NULL).
  */
-LIBYANG_API_DECL ly_log_clb ly_get_log_clb(void);
+ly_log_clb ly_get_log_clb(void);
 
 /** @} log */
 
@@ -219,6 +216,13 @@ LIBYANG_API_DECL ly_log_clb ly_get_log_clb(void);
  *
  * To print a specific error information via libyang logger, there is ::ly_err_print().
  *
+ * To simplify access to the last error record in the context, there is a set of functions returning important error information.
+ * - ::ly_errapptag()
+ * - ::ly_errcode()
+ * - ::ly_vecode()
+ * - ::ly_errmsg()
+ * - ::ly_errpath()
+ *
  * \note API for this group of functions is described in the [error information module](@ref errors).
  */
 
@@ -234,7 +238,8 @@ LIBYANG_API_DECL ly_log_clb ly_get_log_clb(void);
  * @typedef LY_ERR
  * @brief libyang's error codes returned by the libyang functions.
  */
-typedef enum {
+typedef enum
+{
     LY_SUCCESS = 0, /**< no error, not set by functions, included just to complete #LY_ERR enumeration */
     LY_EMEM,        /**< Memory allocation failure */
     LY_ESYS,        /**< System call failure */
@@ -256,7 +261,7 @@ typedef enum {
 } LY_ERR;
 
 /**
- * @ingroup log
+ * @ingroup logger
  * @typedef LY_VECODE
  * @brief libyang's codes of validation error. Whenever ly_errno is set to LY_EVALID, the ly_vecode is also set
  * to the appropriate LY_VECODE value.
@@ -280,59 +285,88 @@ typedef enum {
  * @brief Libyang full error structure.
  */
 struct ly_err_item {
-    LY_LOG_LEVEL level;         /**< error (message) log level */
-    LY_ERR err;                 /**< error code number */
-    LY_VECODE vecode;           /**< validation error code, if any */
-    char *msg;                  /**< error message */
-    char *data_path;            /**< error data path related to the error, if any */
-    char *schema_path;          /**< error schema path related to the error, if any */
-    uint64_t line;              /**< input line the error occured on, if available */
-    char *apptag;               /**< error-app-tag, if any */
-    struct ly_err_item *next;   /**< next error item */
-    struct ly_err_item *prev;   /**< previous error item, points to the last item for the ifrst item */
+    LY_LOG_LEVEL level;
+    LY_ERR no;
+    LY_VECODE vecode;
+    char *msg;
+    char *path;
+    char *apptag;
+    struct ly_err_item *next;
+    struct ly_err_item *prev; /* first item's prev points to the last item */
 };
 
 /**
- * @brief Get human-readable error message for an error code.
+ * @brief Get the last (thread, context-specific) validation error code.
  *
- * @param[in] err Error code.
- * @return String error message.
+ * This value is set only if ly_errno is #LY_EVALID.
+ *
+ * @param[in] ctx Relative context.
+ * @return Validation error code.
  */
-LIBYANG_API_DECL const char *ly_strerr(LY_ERR err);
+LY_VECODE ly_vecode(const struct ly_ctx *ctx);
 
 /**
- * @brief Get human-readable error message for a validation error code.
+ * @brief Get the last (thread, context-specific) error code.
  *
- * @param[in] vecode Validation error code.
- * @return String error message.
+ * @param[in] ctx Relative context.
+ * @return LY_ERR value of the last error code.
  */
-LIBYANG_API_DECL const char *ly_strvecode(LY_VECODE vecode);
+LY_ERR ly_errcode(const struct ly_ctx *ctx);
 
 /**
- * @brief Get the last (thread-specific) full logged error message.
+ * @brief Get the last (thread, context-specific) error message. If the coresponding module defined
+ * a specific error message, it will be used instead the default one.
  *
- * This function is useful for getting errors from functions that do not have any context accessible and includes
- * any additional information such as the path or line where the error occurred.
+ * Sometimes, the error message is extended with path of the element where the problem is.
+ * The path is available via ::ly_errpath().
  *
- * @return Last generated error message.
+ * @param[in] ctx Relative context.
+ * @return Text of the last error message, empty string if there is no error.
  */
-LIBYANG_API_DECL const char *ly_last_logmsg(void);
+const char *ly_errmsg(const struct ly_ctx *ctx);
+
+/**
+ * @brief Get the last (thread, context-specific) path of the element where was an error.
+ *
+ * The path always corresponds to the error message available via ::ly_errmsg(), so
+ * whenever a subsequent error message is printed, the path is erased or rewritten.
+ * The path reflects the type of the processed tree - data path for data tree functions
+ * and schema path in case of schema tree functions. In case of processing YIN schema
+ * or XML data, the path can be just XML path. In such a case, the corresponding
+ * ly_vecode (value 1-3) is set.
+ *
+ * @param[in] ctx Relative context.
+ * @return Path of the error element, empty string if error path does not apply to the last error.
+ */
+const char *ly_errpath(const struct ly_ctx *ctx);
+
+/**
+ * @brief Get the last (thread, context-specific) error-app-tag if there was a specific one defined
+ * in the module for the last error.
+ *
+ * The app-tag always corresponds to the error message available via ::ly_errmsg(), so
+ * whenever a subsequent error message is printed, the app-tag is erased or rewritten.
+ *
+ * @param[in] ctx Relative context.
+ * @return Error-app-tag of the last error, empty string if the error-app-tag does not apply to the last error.
+ */
+const char *ly_errapptag(const struct ly_ctx *ctx);
 
 /**
  * @brief Get the first (thread, context-specific) generated error structure.
  *
  * @param[in] ctx Relative context.
- * @return First error structure, NULL if none available.
+ * @return The first error structure (can be NULL), do not modify!
  */
-LIBYANG_API_DECL const struct ly_err_item *ly_err_first(const struct ly_ctx *ctx);
+struct ly_err_item *ly_err_first(const struct ly_ctx *ctx);
 
 /**
  * @brief Get the latest (thread, context-specific) generated error structure.
  *
  * @param[in] ctx Relative context.
- * @return Last error structure, NULL if none available.
+ * @return The last error structure (can be NULL), do not modify!
  */
-LIBYANG_API_DECL const struct ly_err_item *ly_err_last(const struct ly_ctx *ctx);
+struct ly_err_item *ly_err_last(const struct ly_ctx *ctx);
 
 /**
  * @brief Print the error structure as if just generated.
@@ -340,17 +374,17 @@ LIBYANG_API_DECL const struct ly_err_item *ly_err_last(const struct ly_ctx *ctx)
  * @param[in] ctx Optional context to store the message in.
  * @param[in] eitem Error item structure to print.
  */
-LIBYANG_API_DECL void ly_err_print(const struct ly_ctx *ctx, const struct ly_err_item *eitem);
+void ly_err_print(const struct ly_ctx *ctx, struct ly_err_item *eitem);
 
 /**
  * @brief Free error structures from a context.
  *
- * If @p eitem is not set, free all the error structures.
+ * If \p eitem is not set, free all the error structures.
  *
  * @param[in] ctx Relative context.
  * @param[in] eitem Oldest error structure to remove, optional.
  */
-LIBYANG_API_DECL void ly_err_clean(struct ly_ctx *ctx, struct ly_err_item *eitem);
+void ly_err_clean(struct ly_ctx *ctx, struct ly_err_item *eitem);
 
 /** @} errors */
 

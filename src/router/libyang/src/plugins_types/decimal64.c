@@ -14,14 +14,17 @@
 
 #include "plugins_types.h"
 
+#include <inttypes.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "libyang.h"
 
 /* additional internal headers for some useful simple macros */
+#include "common.h"
 #include "compat.h"
-#include "ly_common.h"
 #include "plugins_internal.h" /* LY_TYPE_*_STR */
 
 /**
@@ -30,10 +33,8 @@
  *
  * | Size (B) | Mandatory | Type | Meaning |
  * | :------  | :-------: | :--: | :-----: |
- * | 8        | yes | `int64_t *` | little-endian value represented without floating point |
+ * | 8        | yes | `int64_t *` | value represented without floating point |
  */
-
-static LY_ERR lyplg_type_validate_decimal64(const struct ly_ctx *UNUSED(ctx), const struct lysc_type *type, const struct lyd_node *UNUSED(ctx_node), const struct lyd_node *UNUSED(tree), struct lyd_value *storage, struct ly_err_item **err);
 
 /**
  * @brief Convert decimal64 number to canonical string.
@@ -54,7 +55,6 @@ decimal64_num2str(int64_t num, struct lysc_type_dec *type, char **str)
 
     if (num) {
         int count = sprintf(ret, "%" PRId64 " ", num);
-
         if (((num > 0) && ((count - 1) <= type->fraction_digits)) || ((count - 2) <= type->fraction_digits)) {
             /* we have 0. value, print the value with the leading zeros
              * (one for 0. and also keep the correct with of num according
@@ -82,7 +82,7 @@ decimal64_num2str(int64_t num, struct lysc_type_dec *type, char **str)
     return LY_SUCCESS;
 }
 
-LIBYANG_API_DEF LY_ERR
+API LY_ERR
 lyplg_type_store_decimal64(const struct ly_ctx *ctx, const struct lysc_type *type, const void *value, size_t value_len,
         uint32_t options, LY_VALUE_FORMAT format, void *UNUSED(prefix_data), uint32_t hints,
         const struct lysc_node *UNUSED(ctx_node), struct lyd_value *storage, struct lys_glob_unres *UNUSED(unres),
@@ -105,9 +105,8 @@ lyplg_type_store_decimal64(const struct ly_ctx *ctx, const struct lysc_type *typ
             goto cleanup;
         }
 
-        /* we have the decimal64 number, in host byte order */
-        memcpy(&num, value, value_len);
-        num = le64toh(num);
+        /* we have the decimal64 number */
+        num = *(int64_t *)value;
     } else {
         /* check hints */
         ret = lyplg_type_check_hints(hints, value, value_len, type->basetype, NULL, err);
@@ -142,9 +141,10 @@ lyplg_type_store_decimal64(const struct ly_ctx *ctx, const struct lysc_type *typ
         LY_CHECK_GOTO(ret, cleanup);
     }
 
-    if (!(options & LYPLG_TYPE_STORE_ONLY)) {
-        /* validate value */
-        ret = lyplg_type_validate_decimal64(ctx, type, NULL, NULL, storage, err);
+    if (type_dec->range) {
+        /* check range of the number */
+        ret = lyplg_type_validate_range(type->basetype, type_dec->range, num, storage->_canonical,
+                strlen(storage->_canonical), err);
         LY_CHECK_GOTO(ret, cleanup);
     }
 
@@ -159,35 +159,13 @@ cleanup:
     return ret;
 }
 
-/**
- * @brief Implementation of ::lyplg_type_validate_clb for the built-in decimal64 type.
- */
-static LY_ERR
-lyplg_type_validate_decimal64(const struct ly_ctx *UNUSED(ctx), const struct lysc_type *type, const struct lyd_node *UNUSED(ctx_node),
-        const struct lyd_node *UNUSED(tree), struct lyd_value *storage, struct ly_err_item **err)
+API LY_ERR
+lyplg_type_compare_decimal64(const struct lyd_value *val1, const struct lyd_value *val2)
 {
-    LY_ERR ret;
-    struct lysc_type_dec *type_dec = (struct lysc_type_dec *)type;
-    int64_t num;
-
-    LY_CHECK_ARG_RET(NULL, type, storage, err, LY_EINVAL);
-    *err = NULL;
-    num = storage->dec64;
-
-    if (type_dec->range) {
-        /* check range of the number */
-        ret = lyplg_type_validate_range(type->basetype, type_dec->range, num, storage->_canonical,
-                strlen(storage->_canonical), err);
-        LY_CHECK_RET(ret);
+    if (val1->realtype != val2->realtype) {
+        return LY_ENOT;
     }
 
-    return LY_SUCCESS;
-}
-
-LIBYANG_API_DEF LY_ERR
-lyplg_type_compare_decimal64(const struct ly_ctx *UNUSED(ctx), const struct lyd_value *val1,
-        const struct lyd_value *val2)
-{
     /* if type is the same, the fraction digits are, too */
     if (val1->dec64 != val2->dec64) {
         return LY_ENOT;
@@ -195,46 +173,16 @@ lyplg_type_compare_decimal64(const struct ly_ctx *UNUSED(ctx), const struct lyd_
     return LY_SUCCESS;
 }
 
-LIBYANG_API_DEF int
-lyplg_type_sort_decimal64(const struct ly_ctx *UNUSED(ctx), const struct lyd_value *val1, const struct lyd_value *val2)
-{
-    if (val1->dec64 > val2->dec64) {
-        return 1;
-    } else if (val1->dec64 < val2->dec64) {
-        return -1;
-    } else {
-        return 0;
-    }
-}
-
-LIBYANG_API_DEF const void *
+API const void *
 lyplg_type_print_decimal64(const struct ly_ctx *UNUSED(ctx), const struct lyd_value *value, LY_VALUE_FORMAT format,
         void *UNUSED(prefix_data), ly_bool *dynamic, size_t *value_len)
 {
-    int64_t num = 0;
-    void *buf;
-
     if (format == LY_VALUE_LYB) {
-        num = htole64(value->dec64);
-        if (num == value->dec64) {
-            /* values are equal, little-endian */
-            *dynamic = 0;
-            if (value_len) {
-                *value_len = sizeof value->dec64;
-            }
-            return &value->dec64;
-        } else {
-            /* values differ, big-endian */
-            buf = calloc(1, sizeof value->dec64);
-            LY_CHECK_RET(!buf, NULL);
-
-            *dynamic = 1;
-            if (value_len) {
-                *value_len = sizeof value->dec64;
-            }
-            memcpy(buf, &num, sizeof value->dec64);
-            return buf;
+        *dynamic = 0;
+        if (value_len) {
+            *value_len = sizeof value->dec64;
         }
+        return &value->dec64;
     }
 
     /* use the cached canonical value */
@@ -262,13 +210,12 @@ const struct lyplg_type_record plugins_decimal64[] = {
 
         .plugin.id = "libyang 2 - decimal64, version 1",
         .plugin.store = lyplg_type_store_decimal64,
-        .plugin.validate = lyplg_type_validate_decimal64,
+        .plugin.validate = NULL,
         .plugin.compare = lyplg_type_compare_decimal64,
-        .plugin.sort = lyplg_type_sort_decimal64,
+        .plugin.sort = NULL,
         .plugin.print = lyplg_type_print_decimal64,
         .plugin.duplicate = lyplg_type_dup_simple,
-        .plugin.free = lyplg_type_free_simple,
-        .plugin.lyb_data_len = 8,
+        .plugin.free = lyplg_type_free_simple
     },
     {0}
 };

@@ -1,8 +1,1 @@
-<cont1 xmlns="urn:module4">
-  <list>
-    <leaf1>key_val</leaf1>
-    <act>
-      <leaf3>some_output</leaf3>
-    </act>
-  </list>
-</cont1>
+<leaf3 xmlns="urn:module4">some_output</leaf3>

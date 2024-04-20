@@ -24,9 +24,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#ifndef _MSC_VER
 #include <sys/time.h>
-#endif
 #include <time.h>
 #include <unistd.h>
 
@@ -86,9 +84,9 @@ vasprintf(char **strp, const char *fmt, va_list ap)
 ssize_t
 getline(char **lineptr, size_t *n, FILE *stream)
 {
-    static char chunk[256];
+    static char line[256];
     char *ptr;
-    ssize_t len, written;
+    ssize_t len;
 
     if (!lineptr || !n) {
         errno = EINVAL;
@@ -99,31 +97,28 @@ getline(char **lineptr, size_t *n, FILE *stream)
         return -1;
     }
 
-    *n = *lineptr ? *n : 0;
-    written = 0;
-    while (fgets(chunk, sizeof(chunk), stream)) {
-        len = strlen(chunk);
-        if ((size_t)(written + len) > *n) {
-            ptr = realloc(*lineptr, *n + sizeof(chunk));
-            if (!ptr) {
-                return -1;
-            }
-            *lineptr = ptr;
-            *n = *n + sizeof(chunk);
-        }
-        memcpy(*lineptr + written, &chunk, len);
-        written += len;
-        if ((*lineptr)[written - 1] == '\n') {
-            break;
-        }
-    }
-    if (written) {
-        (*lineptr)[written] = '\0';
-    } else {
-        written = -1;
+    if (!fgets(line, 256, stream)) {
+        return -1;
     }
 
-    return written;
+    ptr = strchr(line, '\n');
+    if (ptr) {
+        *ptr = '\0';
+    }
+
+    len = strlen(line);
+
+    if (len + 1 < 256) {
+        ptr = realloc(*lineptr, 256);
+        if (!ptr) {
+            return -1;
+        }
+        *lineptr = ptr;
+        *n = 256;
+    }
+
+    strcpy(*lineptr, line);
+    return len;
 }
 
 #endif
@@ -205,7 +200,6 @@ get_current_dir_name(void)
 
 #endif
 
-#ifndef _MSC_VER
 #ifndef HAVE_PTHREAD_MUTEX_TIMEDLOCK
 int
 pthread_mutex_timedlock(pthread_mutex_t *mutex, const struct timespec *abstime)
@@ -253,131 +247,4 @@ pthread_mutex_timedlock(pthread_mutex_t *mutex, const struct timespec *abstime)
     return rc;
 }
 
-#endif
-#endif
-
-#ifndef HAVE_REALPATH
-#ifdef _WIN32
-char *
-realpath(const char *path, char *resolved_path)
-{
-    char *resolved = _fullpath(resolved_path, path, PATH_MAX);
-
-    if ((_access(resolved, 0) == -1) && (errno == ENOENT)) {
-        return NULL;
-    }
-    return resolved;
-}
-
-#elif defined (__NetBSD__)
-char *
-realpath(const char *path, char *resolved_path)
-{
-    ssize_t nbytes;
-
-    nbytes = readlink(path, resolved_path, PATH_MAX);
-    if (nbytes == -1) {
-        return NULL;
-    }
-    return resolved_path;
-}
-
-#else
-#error No realpath() implementation for this platform is available.
-#endif
-#endif
-
-#ifndef HAVE_LOCALTIME_R
-#ifdef _WIN32
-struct tm *
-localtime_r(const time_t *timep, struct tm *result)
-{
-    errno_t res = localtime_s(result, timep);
-
-    if (res) {
-        return NULL;
-    } else {
-        return result;
-    }
-}
-
-#else
-#error No localtime_r() implementation for this platform is available.
-#endif
-#endif
-
-#ifndef HAVE_GMTIME_R
-#ifdef _WIN32
-struct tm *
-gmtime_r(const time_t *timep, struct tm *result)
-{
-    errno_t res = gmtime_s(result, timep);
-
-    if (res) {
-        return NULL;
-    } else {
-        return result;
-    }
-}
-
-#else
-#error No gmtime_r() implementation for this platform is available.
-#endif
-#endif
-
-#ifndef HAVE_TIMEGM
-time_t
-timegm(struct tm *tm)
-{
-    pthread_mutex_t tz_lock = PTHREAD_MUTEX_INITIALIZER;
-    time_t ret;
-    char *tz;
-
-    pthread_mutex_lock(&tz_lock);
-
-    tz = getenv("TZ");
-    if (tz) {
-        tz = strdup(tz);
-    }
-    setenv("TZ", "", 1);
-    tzset();
-
-    ret = mktime(tm);
-
-    if (tz) {
-        setenv("TZ", tz, 1);
-        free(tz);
-    } else {
-        unsetenv("TZ");
-    }
-    tzset();
-
-    pthread_mutex_unlock(&tz_lock);
-
-    return ret;
-}
-
-#endif
-
-#ifndef HAVE_SETENV
-#ifdef _WIN32
-int
-setenv(const char *name, const char *value, int overwrite)
-{
-    int errcode = 0;
-
-    if (!overwrite) {
-        size_t envsize = 0;
-
-        errcode = getenv_s(&envsize, NULL, 0, name);
-        if (errcode || envsize) {
-            return errcode;
-        }
-    }
-    return _putenv_s(name, value);
-}
-
-#else
-#error No setenv() implementation for this platform is available.
-#endif
 #endif

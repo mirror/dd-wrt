@@ -1,4 +1,4 @@
-module ietf-netconf-acm-when {
+module ietf-netconf-acm-when2 {
   namespace "urn:ietf:params:xml:ns:yang:ietf-netconf-acm";
   prefix nacm;
 

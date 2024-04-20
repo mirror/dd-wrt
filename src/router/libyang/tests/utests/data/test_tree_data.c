@@ -1,9 +1,9 @@
 /**
  * @file test_tree_data.c
- * @author Radek Krejci <rkrejci@cesnet.cz>
- * @brief unit tests for functions from tree_data.c
+ * @author: Radek Krejci <rkrejci@cesnet.cz>
+ * @brief unit tests for functions from tress_data.c
  *
- * Copyright (c) 2018-2023 CESNET, z.s.p.o.
+ * Copyright (c) 2018-2019 CESNET, z.s.p.o.
  *
  * This source code is licensed under BSD 3-Clause License (the "License").
  * You may not use this file except in compliance with the License.
@@ -14,8 +14,8 @@
 #define _UTEST_MAIN_
 #include "utests.h"
 
+#include "common.h"
 #include "libyang.h"
-#include "ly_common.h"
 #include "path.h"
 #include "xpath.h"
 
@@ -45,7 +45,7 @@ setup(void **state)
             "import \"ietf-inet-types\" {prefix inet;}"
             "typedef optional-ip-address {type union {"
             "   type inet:ip-address;"
-            "   type string;"
+            "   type string {pattern \"\";}"
             "}}"
             "container cont {"
             "   list nexthop {min-elements 1; key \"gateway\";"
@@ -100,7 +100,7 @@ test_compare(void **state)
     data2 = "<l2 xmlns=\"urn:tests:a\"><c><x>b</x></c></l2>";
     CHECK_PARSE_LYD(data1, 0, LYD_VALIDATE_PRESENT, tree1);
     CHECK_PARSE_LYD(data2, 0, LYD_VALIDATE_PRESENT, tree2);
-    assert_int_equal(LY_ENOT, lyd_compare_single(tree1->next, tree2->next, LYD_COMPARE_FULL_RECURSION));
+    assert_int_equal(LY_ENOT, lyd_compare_single(tree1->next, tree2->next, 0));
     assert_int_equal(LY_SUCCESS, lyd_compare_single(tree1->next->next, tree2->next, 0));
     lyd_free_all(tree1);
     lyd_free_all(tree2);
@@ -143,14 +143,6 @@ test_compare(void **state)
     data1 = "<any xmlns=\"urn:tests:a\"><x>x</x><x>y</x></any>";
     CHECK_PARSE_LYD(data1, 0, LYD_VALIDATE_PRESENT, tree1);
     assert_int_equal(LY_SUCCESS, lyd_compare_single(tree1, tree2, 0));
-    lyd_free_all(tree1);
-    lyd_free_all(tree2);
-
-    data1 = "<c xmlns=\"urn:tests:a\"><x>c</x><x>a</x><x>b</x></c>";
-    data2 = "<c xmlns=\"urn:tests:a\"><x>a</x><x>b</x><x>c</x></c>";
-    CHECK_PARSE_LYD(data1, 0, LYD_VALIDATE_PRESENT, tree1);
-    CHECK_PARSE_LYD(data2, 0, LYD_VALIDATE_PRESENT, tree2);
-    assert_int_equal(LY_SUCCESS, lyd_compare_single(tree1, tree2, LYD_COMPARE_FULL_RECURSION));
     lyd_free_all(tree1);
     lyd_free_all(tree2);
 }
@@ -204,7 +196,7 @@ test_compare_diff_ctx(void **state)
     data2 = "<l2 xmlns=\"urn:tests:b\"><c><x>b</x></c></l2>";
     CHECK_PARSE_LYD_PARAM_CTX(UTEST_LYCTX, data1, 0, tree1);
     CHECK_PARSE_LYD_PARAM_CTX(ctx2, data2, 0, tree2);
-    assert_int_equal(LY_SUCCESS, lyd_compare_single(tree1, tree2, 0));
+    assert_int_equal(LY_ENOT, lyd_compare_single(tree1, tree2, 0));
     lyd_free_all(tree1);
     lyd_free_all(tree2);
 
@@ -218,7 +210,7 @@ test_compare_diff_ctx(void **state)
     data2 = "<l2 xmlns=\"urn:tests:b\"><c><x>b</x></c></l2>";
     CHECK_PARSE_LYD_PARAM_CTX(UTEST_LYCTX, data1, 0, tree1);
     CHECK_PARSE_LYD_PARAM_CTX(ctx2, data2, 0, tree2);
-    assert_int_equal(LY_SUCCESS, lyd_compare_single(tree1, tree2, 0));
+    assert_int_equal(LY_ENOT, lyd_compare_single(tree1, tree2, 0));
     lyd_free_all(tree1);
     lyd_free_all(tree2);
 
@@ -337,7 +329,8 @@ test_dup(void **state)
 
     data = "<l2 xmlns=\"urn:tests:a\"><c><x>b</x></c></l2>";
     CHECK_PARSE_LYD(data, 0, LYD_VALIDATE_PRESENT, tree1);
-    assert_int_equal(LY_SUCCESS, lyd_dup_single(lyd_child(lyd_child(tree1->next)), NULL, LYD_DUP_WITH_PARENTS, &tree2));
+    assert_int_equal(LY_SUCCESS, lyd_dup_single(((struct lyd_node_inner *)((struct lyd_node_inner *)tree1->next)->child)->child, NULL,
+            LYD_DUP_WITH_PARENTS, &tree2));
     int unsigned flag = LYS_CONFIG_R | LYS_SET_ENUM;
 
     CHECK_LYSC_NODE(tree2->schema, NULL, 0, flag, 1, "x", 1, LYS_LEAF, 1, 0, NULL, 0);
@@ -359,8 +352,8 @@ test_dup(void **state)
     data = "<l2 xmlns=\"urn:tests:a\"><c><x>b</x></c></l2>";
     CHECK_PARSE_LYD(data, 0, LYD_VALIDATE_PRESENT, tree1);
     assert_int_equal(LY_SUCCESS, lyd_dup_single(tree1->next, NULL, 0, &tree2));
-    assert_int_equal(LY_SUCCESS, lyd_dup_single(lyd_child(lyd_child(tree1->next)), (struct lyd_node_inner *)tree2,
-            LYD_DUP_WITH_PARENTS, NULL));
+    assert_int_equal(LY_SUCCESS, lyd_dup_single(((struct lyd_node_inner *)((struct lyd_node_inner *)tree1->next)->child)->child,
+            (struct lyd_node_inner *)tree2, LYD_DUP_WITH_PARENTS, NULL));
     assert_int_equal(LY_SUCCESS, lyd_compare_single(tree1->next, tree2, LYD_COMPARE_FULL_RECURSION));
     lyd_free_all(tree1);
     lyd_free_all(tree2);
@@ -370,7 +363,6 @@ test_dup(void **state)
     CHECK_PARSE_LYD(data, 0, LYD_VALIDATE_PRESENT, tree1);
     assert_int_equal(LY_EINVAL, lyd_dup_single(((struct lyd_node_inner *)tree1)->child->prev,
             (struct lyd_node_inner *)tree1->next, LYD_DUP_WITH_PARENTS, NULL));
-    CHECK_LOG_CTX("None of the duplicated node \"c\" schema parents match the provided parent \"c\".", NULL, 0);
     lyd_free_all(tree1);
 }
 
@@ -396,11 +388,11 @@ test_target(void **state)
             "</c></l2>";
 
     CHECK_PARSE_LYD(data, 0, LYD_VALIDATE_PRESENT, tree);
-    assert_int_equal(LY_SUCCESS, ly_path_parse(UTEST_LYCTX, NULL, path_str, strlen(path_str), 0, LY_PATH_BEGIN_EITHER,
+    assert_int_equal(LY_SUCCESS, ly_path_parse(UTEST_LYCTX, NULL, path_str, strlen(path_str), LY_PATH_BEGIN_EITHER, LY_PATH_LREF_FALSE,
             LY_PATH_PREFIX_OPTIONAL, LY_PATH_PRED_SIMPLE, &exp));
-    assert_int_equal(LY_SUCCESS, ly_path_compile(UTEST_LYCTX, NULL, NULL, NULL, exp, LY_PATH_OPER_INPUT,
-            LY_PATH_TARGET_SINGLE, 1, LY_VALUE_JSON, NULL, &path));
-    assert_int_equal(LY_SUCCESS, lyd_find_target(path, tree, (struct lyd_node **)&term));
+    assert_int_equal(LY_SUCCESS, ly_path_compile(UTEST_LYCTX, NULL, NULL, NULL, exp, LY_PATH_LREF_FALSE, LY_PATH_OPER_INPUT,
+            LY_PATH_TARGET_SINGLE, LY_VALUE_JSON, NULL, NULL, &path));
+    term = lyd_target(path, tree);
 
     const int unsigned flag = LYS_CONFIG_R | LYS_SET_ENUM | LYS_ORDBY_USER;
 
@@ -496,309 +488,7 @@ test_find_path(void **state)
     assert_int_equal(LY_SUCCESS, lyd_find_path(root, "/c:cont/nexthop[gateway='10.0.0.1']", 0, NULL));
     assert_int_equal(LY_SUCCESS, lyd_find_path(root, "/c:cont/nexthop[gateway='2100::1']", 0, NULL));
     assert_int_equal(LY_SUCCESS, lyd_find_path(root, "/c:cont/pref[.='fc00::/64']", 0, NULL));
-
-    assert_int_equal(LY_EVALID, lyd_find_path(root, "/cont", 0, NULL));
-    CHECK_LOG_CTX("Prefix missing for \"cont\" in path.", "/c:cont", 0);
-    assert_int_equal(LY_SUCCESS, lyd_find_path(root, "nexthop[gateway='2100::1']", 0, NULL));
-
     lyd_free_all(root);
-}
-
-static void
-test_data_hash(void **state)
-{
-    struct lyd_node *tree;
-    const char *schema, *data;
-
-    schema =
-            "module test-data-hash {"
-            "  yang-version 1.1;"
-            "  namespace \"urn:tests:tdh\";"
-            "  prefix t;"
-            "  container c {"
-            "    leaf-list ll {"
-            "      type string;"
-            "    }"
-            "  }"
-            "}";
-
-    UTEST_ADD_MODULE(schema, LYS_IN_YANG, NULL, NULL);
-
-    /* The number of <ll/> must be greater or equal to LYD_HT_MIN_ITEMS
-     * for the correct test run. It should guarantee the creation of a hash table.
-     */
-    assert_true(LYD_HT_MIN_ITEMS <= 4);
-    data =
-            "<c xmlns='urn:tests:tdh'>"
-            "  <ll/>"
-            "  <ll/>"
-            "  <ll/>"
-            "  <ll/>"
-            "</c>";
-
-    /* The run must not crash due to the assert that checks the hash. */
-    CHECK_PARSE_LYD_PARAM(data, LYD_XML, 0, LYD_VALIDATE_PRESENT, LY_EVALID, tree);
-    CHECK_LOG_CTX("Duplicate instance of \"ll\".", "/test-data-hash:c/ll[.='']", 1);
-    lyd_free_all(tree);
-}
-
-static void
-test_lyxp_vars(void **UNUSED(state))
-{
-    struct lyxp_var *vars;
-
-    /* Test free. */
-    vars = NULL;
-    lyxp_vars_free(vars);
-
-    /* Bad arguments for lyxp_vars_add(). */
-    assert_int_equal(LY_EINVAL, lyxp_vars_set(NULL, "var1", "val1"));
-    assert_int_equal(LY_EINVAL, lyxp_vars_set(&vars, NULL, "val1"));
-    assert_int_equal(LY_EINVAL, lyxp_vars_set(&vars, "var1", NULL));
-    lyxp_vars_free(vars);
-    vars = NULL;
-
-    /* Add one item. */
-    assert_int_equal(LY_SUCCESS, lyxp_vars_set(&vars, "var1", "val1"));
-    assert_int_equal(LY_ARRAY_COUNT(vars), 1);
-    assert_string_equal(vars[0].name, "var1");
-    assert_string_equal(vars[0].value, "val1");
-    lyxp_vars_free(vars);
-    vars = NULL;
-
-    /* Add three items. */
-    assert_int_equal(LY_SUCCESS, lyxp_vars_set(&vars, "var1", "val1"));
-    assert_int_equal(LY_SUCCESS, lyxp_vars_set(&vars, "var2", "val2"));
-    assert_int_equal(LY_SUCCESS, lyxp_vars_set(&vars, "var3", "val3"));
-    assert_int_equal(LY_ARRAY_COUNT(vars), 3);
-    assert_string_equal(vars[0].name, "var1");
-    assert_string_equal(vars[0].value, "val1");
-    assert_string_equal(vars[1].name, "var2");
-    assert_string_equal(vars[1].value, "val2");
-    assert_string_equal(vars[2].name, "var3");
-    assert_string_equal(vars[2].value, "val3");
-    lyxp_vars_free(vars);
-    vars = NULL;
-
-    /* Change value of a variable. */
-    assert_int_equal(LY_SUCCESS, lyxp_vars_set(&vars, "var1", "val1"));
-    assert_int_equal(LY_SUCCESS, lyxp_vars_set(&vars, "var2", "val2"));
-    assert_int_equal(LY_SUCCESS, lyxp_vars_set(&vars, "var1", "new_value"));
-    assert_string_equal(vars[0].name, "var1");
-    assert_string_equal(vars[0].value, "new_value");
-    assert_string_equal(vars[1].name, "var2");
-    assert_string_equal(vars[1].value, "val2");
-    lyxp_vars_free(vars);
-    vars = NULL;
-}
-
-static void
-test_data_leafref_nodes(void **state)
-{
-    struct lyd_node *tree, *iter;
-    struct lyd_node_term *target_node = NULL, *leafref_node;
-    const struct lyd_leafref_links_rec *rec;
-    const char *schema, *data, *value;
-
-    ly_ctx_set_options(UTEST_LYCTX, LY_CTX_LEAFREF_LINKING);
-
-    schema =
-            "module test-data-hash {"
-            "  yang-version 1.1;"
-            "  namespace \"urn:tests:tdh\";"
-            "  prefix t;"
-            "  leaf-list ll {"
-            "    type string;"
-            "  }"
-            "  container c1 {"
-            "    leaf ref1 {"
-            "      type leafref {"
-            "        path \"../../ll\";"
-            "      }"
-            "    }"
-            "  }"
-            "  leaf ref2 {"
-            "    type leafref {"
-            "      path \"../ll\";"
-            "    }"
-            "  }"
-            "}";
-
-    UTEST_ADD_MODULE(schema, LYS_IN_YANG, NULL, NULL);
-
-    data =
-            "{"
-            "  \"test-data-hash:ll\": [\"qwe\", \"asd\"],"
-            "  \"test-data-hash:c1\": { \"ref1\": \"qwe\"},"
-            "  \"test-data-hash:ref2\": \"asd\""
-            "}";
-
-    /* The run must not crash due to the assert that checks the hash. */
-    CHECK_PARSE_LYD_PARAM(data, LYD_JSON, 0, LYD_VALIDATE_PRESENT, LY_SUCCESS, tree);
-    LY_LIST_FOR(tree, iter) {
-        if (strcmp(iter->schema->name, "ll") == 0) {
-            value = lyd_get_value(iter);
-            if (strcmp(value, "asd") == 0) {
-                target_node = (struct lyd_node_term *)iter;
-            }
-        }
-        if (strcmp(iter->schema->name, "ref2") == 0) {
-            leafref_node = (struct lyd_node_term *)iter;
-        }
-    }
-
-    /* verify state after leafref plugin validation */
-    assert_int_equal(LY_SUCCESS, lyd_leafref_get_links(target_node, &rec));
-    assert_int_equal(1, LY_ARRAY_COUNT(rec->leafref_nodes));
-    assert_ptr_equal(rec->leafref_nodes[0], leafref_node);
-    assert_int_equal(LY_SUCCESS, lyd_leafref_get_links(leafref_node, &rec));
-    assert_int_equal(1, LY_ARRAY_COUNT(rec->target_nodes));
-    assert_ptr_equal(rec->target_nodes[0], target_node);
-    /* value modification of target */
-    assert_int_equal(LY_SUCCESS, lyd_change_term((struct lyd_node *)target_node, "ASD"));
-    assert_int_equal(LY_ENOTFOUND, lyd_leafref_get_links(target_node, &rec));
-    assert_int_equal(LY_ENOTFOUND, lyd_leafref_get_links(leafref_node, &rec));
-    /* change back to original value */
-    assert_int_equal(LY_SUCCESS, lyd_change_term((struct lyd_node *)target_node, "asd"));
-    assert_int_equal(LY_ENOTFOUND, lyd_leafref_get_links(target_node, &rec));
-    assert_int_equal(LY_ENOTFOUND, lyd_leafref_get_links(leafref_node, &rec));
-    /* linking the whole tree again */
-    assert_int_equal(LY_SUCCESS, lyd_leafref_link_node_tree(tree));
-    assert_int_equal(LY_SUCCESS, lyd_leafref_get_links(target_node, &rec));
-    assert_int_equal(1, LY_ARRAY_COUNT(rec->leafref_nodes));
-    assert_ptr_equal(rec->leafref_nodes[0], leafref_node);
-    assert_int_equal(LY_SUCCESS, lyd_leafref_get_links(leafref_node, &rec));
-    assert_int_equal(1, LY_ARRAY_COUNT(rec->target_nodes));
-    assert_ptr_equal(rec->target_nodes[0], target_node);
-    /* value modification of leafref */
-    assert_int_equal(LY_SUCCESS, lyd_change_term((struct lyd_node *)leafref_node, "qwe"));
-    assert_int_equal(LY_ENOTFOUND, lyd_leafref_get_links(target_node, &rec));
-    assert_int_equal(LY_ENOTFOUND, lyd_leafref_get_links(leafref_node, &rec));
-    assert_int_equal(LY_SUCCESS, lyd_change_term((struct lyd_node *)leafref_node, "asd"));
-    assert_int_equal(LY_ENOTFOUND, lyd_leafref_get_links(target_node, &rec));
-    assert_int_equal(LY_ENOTFOUND, lyd_leafref_get_links(leafref_node, &rec));
-    /* linking the whole tree again */
-    assert_int_equal(LY_SUCCESS, lyd_leafref_link_node_tree(tree));
-    assert_int_equal(LY_SUCCESS, lyd_leafref_get_links(target_node, &rec));
-    assert_int_equal(1, LY_ARRAY_COUNT(rec->leafref_nodes));
-    assert_ptr_equal(rec->leafref_nodes[0], leafref_node);
-    assert_int_equal(LY_SUCCESS, lyd_leafref_get_links(leafref_node, &rec));
-    assert_int_equal(1, LY_ARRAY_COUNT(rec->target_nodes));
-    assert_ptr_equal(rec->target_nodes[0], target_node);
-    /* freeing whole tree */
-    lyd_free_all(tree);
-}
-
-static void
-test_data_leafref_nodes2(void **state)
-{
-    struct lyd_node *tree, *iter;
-    const char *schema, *data;
-    struct lyd_node_term *leafref_node = NULL;
-    const struct lyd_node_term *target_node1, *target_node2;
-    const struct lyd_leafref_links_rec *rec;
-
-    ly_ctx_set_options(UTEST_LYCTX, LY_CTX_LEAFREF_LINKING);
-
-    schema =
-            "module test-data-hash {"
-            "  yang-version 1.1;"
-            "  namespace \"urn:tests:tdh\";"
-            "  prefix t;"
-            "  list l1 {"
-            "    key \"l1 l2\";"
-            "    leaf l1 {"
-            "      type string;"
-            "    }"
-            "    leaf l2 {"
-            "      type string;"
-            "    }"
-            "  }"
-            "  leaf ref1 {"
-            "    type leafref {"
-            "      path \"../l1/l1\";"
-            "    }"
-            "  }"
-            "  leaf-list ll1 {"
-            "    type string;"
-            "    config false;"
-            "  }"
-            "  leaf ref2 {"
-            "    type leafref {"
-            "      path \"../ll1\";"
-            "    }"
-            "    config false;"
-            "  }"
-            "}";
-
-    UTEST_ADD_MODULE(schema, LYS_IN_YANG, NULL, NULL);
-
-    data =
-            "{"
-            "  \"test-data-hash:l1\": ["
-            "    {\"l1\": \"A\", \"l2\": \"B\"},"
-            "    {\"l1\": \"A\", \"l2\": \"C\"}"
-            "  ],"
-            "  \"test-data-hash:ref1\": \"A\","
-            "  \"test-data-hash:ll1\": [\"asd\", \"qwe\", \"asd\"],"
-            "  \"test-data-hash:ref2\": \"asd\""
-            "}";
-
-    /* The run must not crash due to the assert that checks the hash. */
-    CHECK_PARSE_LYD_PARAM(data, LYD_JSON, 0, LYD_VALIDATE_PRESENT, LY_SUCCESS, tree);
-    LY_LIST_FOR(tree, iter) {
-        if (strcmp(iter->schema->name, "ref1") == 0) {
-            leafref_node = (struct lyd_node_term *)iter;
-        }
-    }
-
-    /* verify state after leafref plugin validation */
-    assert_int_equal(LY_SUCCESS, lyd_leafref_get_links(leafref_node, &rec));
-    assert_int_equal(2, LY_ARRAY_COUNT(rec->target_nodes));
-    target_node1 = rec->target_nodes[0];
-    target_node2 = rec->target_nodes[1];
-    assert_int_equal(LY_SUCCESS, lyd_leafref_get_links(target_node1, &rec));
-    assert_int_equal(1, LY_ARRAY_COUNT(rec->leafref_nodes));
-    assert_ptr_equal(rec->leafref_nodes[0], leafref_node);
-    assert_int_equal(LY_SUCCESS, lyd_leafref_get_links(target_node2, &rec));
-    assert_int_equal(1, LY_ARRAY_COUNT(rec->leafref_nodes));
-    assert_ptr_equal(rec->leafref_nodes[0], leafref_node);
-    /* value modification of leafref to remove all links*/
-    assert_int_equal(LY_SUCCESS, lyd_change_term((struct lyd_node *)leafref_node, "qwe"));
-    assert_int_equal(LY_ENOTFOUND, lyd_leafref_get_links(leafref_node, &rec));
-    assert_int_equal(LY_ENOTFOUND, lyd_leafref_get_links(target_node1, &rec));
-    assert_int_equal(LY_ENOTFOUND, lyd_leafref_get_links(target_node2, &rec));
-    /* linking the whole tree again */
-    assert_int_equal(LY_SUCCESS, lyd_change_term((struct lyd_node *)leafref_node, "A"));
-    assert_int_equal(LY_SUCCESS, lyd_leafref_link_node_tree(tree));
-    assert_int_equal(LY_SUCCESS, lyd_leafref_get_links(leafref_node, &rec));
-    assert_int_equal(2, LY_ARRAY_COUNT(rec->target_nodes));
-    assert_int_equal(LY_SUCCESS, lyd_leafref_get_links(target_node1, &rec));
-    assert_int_equal(1, LY_ARRAY_COUNT(rec->leafref_nodes));
-    assert_ptr_equal(rec->leafref_nodes[0], leafref_node);
-    assert_int_equal(LY_SUCCESS, lyd_leafref_get_links(target_node2, &rec));
-    assert_int_equal(1, LY_ARRAY_COUNT(rec->leafref_nodes));
-    assert_ptr_equal(rec->leafref_nodes[0], leafref_node);
-
-    /* verify duplicated value in leaf-list */
-    LY_LIST_FOR(tree, iter) {
-        if (strcmp(iter->schema->name, "ref2") == 0) {
-            leafref_node = (struct lyd_node_term *)iter;
-        }
-    }
-
-    assert_int_equal(LY_SUCCESS, lyd_leafref_get_links(leafref_node, &rec));
-    assert_int_equal(2, LY_ARRAY_COUNT(rec->target_nodes));
-    target_node1 = rec->target_nodes[0];
-    target_node2 = rec->target_nodes[1];
-    assert_int_equal(LY_SUCCESS, lyd_leafref_get_links(target_node1, &rec));
-    assert_int_equal(1, LY_ARRAY_COUNT(rec->leafref_nodes));
-    assert_ptr_equal(rec->leafref_nodes[0], leafref_node);
-    assert_int_equal(LY_SUCCESS, lyd_leafref_get_links(target_node2, &rec));
-    assert_int_equal(1, LY_ARRAY_COUNT(rec->leafref_nodes));
-    assert_ptr_equal(rec->leafref_nodes[0], leafref_node);
-    /* freeing whole tree */
-    lyd_free_all(tree);
 }
 
 int
@@ -812,10 +502,6 @@ main(void)
         UTEST(test_list_pos, setup),
         UTEST(test_first_sibling, setup),
         UTEST(test_find_path, setup),
-        UTEST(test_data_hash, setup),
-        UTEST(test_lyxp_vars),
-        UTEST(test_data_leafref_nodes),
-        UTEST(test_data_leafref_nodes2),
     };
 
     return cmocka_run_group_tests(tests, NULL, NULL);

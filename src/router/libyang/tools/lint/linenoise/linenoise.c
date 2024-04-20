@@ -137,28 +137,28 @@ static char **history = NULL;
 /* The linenoiseState structure represents the state during line editing.
  * We pass this state to functions implementing specific editing
  * functionalities. */
-struct linenoiseState lss;
+struct linenoiseState ls;
 
 enum KEY_ACTION{
-    KEY_NULL = 0,	    /* NULL */
-    CTRL_A = 1,         /* Ctrl+a */
-    CTRL_B = 2,         /* Ctrl-b */
-    CTRL_C = 3,         /* Ctrl-c */
-    CTRL_D = 4,         /* Ctrl-d */
-    CTRL_E = 5,         /* Ctrl-e */
-    CTRL_F = 6,         /* Ctrl-f */
-    CTRL_H = 8,         /* Ctrl-h */
-    TAB = 9,            /* Tab */
-    CTRL_K = 11,        /* Ctrl+k */
-    CTRL_L = 12,        /* Ctrl+l */
-    ENTER = 13,         /* Enter */
-    CTRL_N = 14,        /* Ctrl-n */
-    CTRL_P = 16,        /* Ctrl-p */
-    CTRL_T = 20,        /* Ctrl-t */
-    CTRL_U = 21,        /* Ctrl+u */
-    CTRL_W = 23,        /* Ctrl+w */
-    ESC = 27,           /* Escape */
-    BACKSPACE =  127    /* Backspace */
+	KEY_NULL = 0,	    /* NULL */
+	CTRL_A = 1,         /* Ctrl+a */
+	CTRL_B = 2,         /* Ctrl-b */
+	CTRL_C = 3,         /* Ctrl-c */
+	CTRL_D = 4,         /* Ctrl-d */
+	CTRL_E = 5,         /* Ctrl-e */
+	CTRL_F = 6,         /* Ctrl-f */
+	CTRL_H = 8,         /* Ctrl-h */
+	TAB = 9,            /* Tab */
+	CTRL_K = 11,        /* Ctrl+k */
+	CTRL_L = 12,        /* Ctrl+l */
+	ENTER = 13,         /* Enter */
+	CTRL_N = 14,        /* Ctrl-n */
+	CTRL_P = 16,        /* Ctrl-p */
+	CTRL_T = 20,        /* Ctrl-t */
+	CTRL_U = 21,        /* Ctrl+u */
+	CTRL_W = 23,        /* Ctrl+w */
+	ESC = 27,           /* Escape */
+	BACKSPACE =  127    /* Backspace */
 };
 
 static void linenoiseAtExit(void);
@@ -180,7 +180,7 @@ FILE *lndebug_fp = NULL;
         fflush(lndebug_fp); \
     } while (0)
 #else
-#define lndebug(...)
+#define lndebug(fmt, ...)
 #endif
 
 /* ======================= Low level terminal handling ====================== */
@@ -230,7 +230,7 @@ int linenoiseEnableRawMode(int fd) {
 
     /* put terminal in raw mode after flushing */
     if (tcsetattr(fd,TCSAFLUSH,&raw) < 0) goto fatal;
-    lss.rawmode = 1;
+    ls.rawmode = 1;
     return 0;
 
 fatal:
@@ -240,8 +240,8 @@ fatal:
 
 void linenoiseDisableRawMode(int fd) {
     /* Don't even check the return value as it's too late. */
-    if (lss.rawmode && tcsetattr(fd,TCSAFLUSH,&orig_termios) != -1)
-        lss.rawmode = 0;
+    if (ls.rawmode && tcsetattr(fd,TCSAFLUSH,&orig_termios) != -1)
+        ls.rawmode = 0;
 }
 
 /* Use the ESC [6n escape sequence to query the horizontal cursor position
@@ -414,10 +414,7 @@ static char completeLine(struct linenoiseState *ls) {
 
         /* Learn the number of hints that fit a line */
         hint_line_count = 0;
-        do {
-            /* Still fits, always at least one hint */
-            ++hint_line_count;
-
+        while (1) {
             char_count = 0;
             if (hint_line_count) {
                 char_count += hint_line_count * (hint_len + 2);
@@ -425,7 +422,19 @@ static char completeLine(struct linenoiseState *ls) {
             char_count += hint_len;
 
             /* Too much */
-        } while (char_count <= w.ws_col);
+            if (char_count > w.ws_col) {
+                break;
+            }
+
+            /* Still fits */
+            ++hint_line_count;
+        }
+
+        /* No hint fits, too bad */
+        if (!hint_line_count) {
+            freeCompletions(&lc);
+            return c;
+        }
 
         while (c == 9) {
             /* Second tab */
@@ -697,13 +706,10 @@ static void refreshMultiLine(struct linenoiseState *l) {
 /* Calls the two low level functions refreshSingleLine() or
  * refreshMultiLine() according to the selected mode. */
 void linenoiseRefreshLine(void) {
-    /* Update columns in case the terminal was resized */
-    lss.cols = getColumns(STDIN_FILENO, STDOUT_FILENO);
-
     if (mlmode)
-        refreshMultiLine(&lss);
+        refreshMultiLine(&ls);
     else
-        refreshSingleLine(&lss);
+        refreshSingleLine(&ls);
 }
 
 /* Insert the character 'c' at cursor current position.
@@ -843,42 +849,42 @@ static int linenoiseEdit(int stdin_fd, int stdout_fd, char *buf, size_t buflen, 
 {
     /* Populate the linenoise state that we pass to functions implementing
      * specific editing functionalities. */
-    lss.ifd = stdin_fd;
-    lss.ofd = stdout_fd;
-    lss.buf = buf;
-    lss.buflen = buflen;
-    lss.prompt = prompt;
-    lss.plen = strlen(prompt);
-    lss.oldpos = lss.pos = 0;
-    lss.len = 0;
-    lss.cols = getColumns(stdin_fd, stdout_fd);
-    lss.maxrows = 0;
-    lss.history_index = 0;
+    ls.ifd = stdin_fd;
+    ls.ofd = stdout_fd;
+    ls.buf = buf;
+    ls.buflen = buflen;
+    ls.prompt = prompt;
+    ls.plen = strlen(prompt);
+    ls.oldpos = ls.pos = 0;
+    ls.len = 0;
+    ls.cols = getColumns(stdin_fd, stdout_fd);
+    ls.maxrows = 0;
+    ls.history_index = 0;
 
     /* Buffer starts empty. */
-    lss.buf[0] = '\0';
-    lss.buflen--; /* Make sure there is always space for the nulterm */
+    ls.buf[0] = '\0';
+    ls.buflen--; /* Make sure there is always space for the nulterm */
 
     /* The latest history entry is always our current buffer, that
      * initially is just an empty string. */
     linenoiseHistoryAdd("");
 
-    if (write(lss.ofd,prompt,lss.plen) == -1) return -1;
+    if (write(ls.ofd,prompt,ls.plen) == -1) return -1;
     while(1) {
         char c = 0;
         int nread;
         char seq[3];
 
-        nread = read(lss.ifd,&c,sizeof c);
-        if (nread <= 0) return lss.len;
+        nread = read(ls.ifd,&c,sizeof c);
+        if (nread <= 0) return ls.len;
 
         /* Only autocomplete when the callback is set. It returns < 0 when
          * there was an error reading from fd. Otherwise it will return the
          * character that should be handled next. */
         if (c == 9 && completionCallback != NULL) {
-            c = completeLine(&lss);
+            c = completeLine(&ls);
             /* Return on errors */
-            if (c < 0) return lss.len;
+            if (c < 0) return ls.len;
             /* Read next character when 0 */
             if (c == 0) continue;
         }
@@ -887,19 +893,19 @@ static int linenoiseEdit(int stdin_fd, int stdout_fd, char *buf, size_t buflen, 
         case ENTER:    /* enter */
             history_len--;
             free(history[history_len]);
-            if (mlmode) linenoiseEditMoveEnd(&lss);
-            return (int)lss.len;
+            if (mlmode) linenoiseEditMoveEnd(&ls);
+            return (int)ls.len;
         case CTRL_C:     /* ctrl-c */
             errno = EAGAIN;
             return -1;
         case BACKSPACE:   /* backspace */
         case 8:     /* ctrl-h */
-            linenoiseEditBackspace(&lss);
+            linenoiseEditBackspace(&ls);
             break;
         case CTRL_D:     /* ctrl-d, remove char at right of cursor, or if the
                             line is empty, act as end-of-file. */
-            if (lss.len > 0) {
-                linenoiseEditDelete(&lss);
+            if (ls.len > 0) {
+                linenoiseEditDelete(&ls);
             } else {
                 history_len--;
                 free(history[history_len]);
@@ -907,61 +913,64 @@ static int linenoiseEdit(int stdin_fd, int stdout_fd, char *buf, size_t buflen, 
             }
             break;
         case CTRL_T:    /* ctrl-t, swaps current character with previous. */
-            if (lss.pos > 0 && lss.pos < lss.len) {
-                int aux = buf[lss.pos-1];
-                buf[lss.pos-1] = buf[lss.pos];
-                buf[lss.pos] = aux;
-                if (lss.pos != lss.len-1) lss.pos++;
+            if (ls.pos > 0 && ls.pos < ls.len) {
+                int aux = buf[ls.pos-1];
+                buf[ls.pos-1] = buf[ls.pos];
+                buf[ls.pos] = aux;
+                if (ls.pos != ls.len-1) ls.pos++;
                 linenoiseRefreshLine();
             }
             break;
         case CTRL_B:     /* ctrl-b */
-            linenoiseEditMoveLeft(&lss);
+            linenoiseEditMoveLeft(&ls);
             break;
         case CTRL_F:     /* ctrl-f */
-            linenoiseEditMoveRight(&lss);
+            linenoiseEditMoveRight(&ls);
             break;
         case CTRL_P:    /* ctrl-p */
-            linenoiseEditHistoryNext(&lss, LINENOISE_HISTORY_PREV);
+            linenoiseEditHistoryNext(&ls, LINENOISE_HISTORY_PREV);
             break;
         case CTRL_N:    /* ctrl-n */
-            linenoiseEditHistoryNext(&lss, LINENOISE_HISTORY_NEXT);
+            linenoiseEditHistoryNext(&ls, LINENOISE_HISTORY_NEXT);
             break;
         case ESC:    /* escape sequence */
             /* Read the next two bytes representing the escape sequence.
              * Use two calls to handle slow terminals returning the two
              * chars at different times. */
-            if (read(lss.ifd,seq,1) == -1) break;
-            if (read(lss.ifd,seq+1,1) == -1) break;
+            if (read(ls.ifd,seq,1) == -1) break;
+            if (read(ls.ifd,seq+1,1) == -1) break;
 
             /* ESC [ sequences. */
             if (seq[0] == '[') {
                 if (seq[1] >= '0' && seq[1] <= '9') {
                     /* Extended escape, read additional byte. */
-                    if (read(lss.ifd, seq + 2, 1) == -1) break;
-                    if ((seq[1] == '3') && (seq[2] == '~')) {
-                        /* Delete key. */
-                        linenoiseEditDelete(&lss);
+                    if (read(ls.ifd,seq+2,1) == -1) break;
+                    if (seq[2] == '~') {
+                        switch(seq[1]) {
+                        case '3': /* Delete key. */
+                            linenoiseEditDelete(&ls);
+                            break;
+                        }
                     }
                 } else {
                     switch(seq[1]) {
                     case 'A': /* Up */
-                        linenoiseEditHistoryNext(&lss, LINENOISE_HISTORY_PREV);
+                        linenoiseEditHistoryNext(&ls, LINENOISE_HISTORY_PREV);
                         break;
                     case 'B': /* Down */
-                        linenoiseEditHistoryNext(&lss, LINENOISE_HISTORY_NEXT);
+                        linenoiseEditHistoryNext(&ls, LINENOISE_HISTORY_NEXT);
                         break;
                     case 'C': /* Right */
-                        linenoiseEditMoveRight(&lss);
+                        linenoiseEditMoveRight(&ls);
                         break;
                     case 'D': /* Left */
-                        linenoiseEditMoveLeft(&lss);
+                        linenoiseEditMoveLeft(&ls);
                         break;
                     case 'H': /* Home */
-                        linenoiseEditMoveHome(&lss);
+                        linenoiseEditMoveHome(&ls);
                         break;
                     case 'F': /* End*/
-                        linenoiseEditMoveEnd(&lss);
+                        linenoiseEditMoveEnd(&ls);
                         break;
                     }
                 }
@@ -971,43 +980,43 @@ static int linenoiseEdit(int stdin_fd, int stdout_fd, char *buf, size_t buflen, 
             else if (seq[0] == 'O') {
                 switch(seq[1]) {
                 case 'H': /* Home */
-                    linenoiseEditMoveHome(&lss);
+                    linenoiseEditMoveHome(&ls);
                     break;
                 case 'F': /* End*/
-                    linenoiseEditMoveEnd(&lss);
+                    linenoiseEditMoveEnd(&ls);
                     break;
                 }
             }
             break;
         default:
-            if (linenoiseEditInsert(&lss,c)) return -1;
+            if (linenoiseEditInsert(&ls,c)) return -1;
             break;
         case CTRL_U: /* Ctrl+u, delete the whole line. */
             buf[0] = '\0';
-            lss.pos = lss.len = 0;
+            ls.pos = ls.len = 0;
             linenoiseRefreshLine();
             break;
         case CTRL_K: /* Ctrl+k, delete from current to end of line. */
-            buf[lss.pos] = '\0';
-            lss.len = lss.pos;
+            buf[ls.pos] = '\0';
+            ls.len = ls.pos;
             linenoiseRefreshLine();
             break;
         case CTRL_A: /* Ctrl+a, go to the start of the line */
-            linenoiseEditMoveHome(&lss);
+            linenoiseEditMoveHome(&ls);
             break;
         case CTRL_E: /* ctrl+e, go to the end of the line */
-            linenoiseEditMoveEnd(&lss);
+            linenoiseEditMoveEnd(&ls);
             break;
         case CTRL_L: /* ctrl+l, clear screen */
             linenoiseClearScreen();
             linenoiseRefreshLine();
             break;
         case CTRL_W: /* ctrl+w, delete previous word */
-            linenoiseEditDeletePrevWord(&lss);
+            linenoiseEditDeletePrevWord(&ls);
             break;
         }
     }
-    return lss.len;
+    return ls.len;
 }
 
 /* This special mode is used by linenoise in order to print scan codes

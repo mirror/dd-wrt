@@ -1,0 +1,175 @@
+module yang {
+  namespace "urn:ietf:params:xml:ns:yang:1";
+  prefix yang;
+
+  import ietf-yang-metadata {
+    prefix md;
+    revision-date 2016-08-05;
+  }
+
+  organization
+    "libyang";
+
+  contact
+    "Web:    <https://github.com/CESNET/libyang/>
+     Author: Radek Krejci <rkrejci@cesnet.cz>";
+
+  description
+    "This is a kind of fake model with no data, typedefs or anything
+     else. libyang uses this module to implement various YANG attributes
+     defined in RFC 6020.";
+
+  revision 2021-04-07 {
+    description
+      "Added metadata for key-less list and state leaf-list diff.";
+  }
+
+  revision 2020-06-17 {
+    description
+      "Added metadata for diff.";
+  }
+
+  revision 2017-02-20 {
+    description
+      "Added metadata for NETCONF's edit-config manipulation with ordered
+       lists and leaf-lists.";
+    reference
+      "RFC 7950: The YANG 1.1 Data Modeling Language";
+  }
+
+  revision 2016-02-11 {
+    description
+      "Initial revision";
+    reference
+      "RFC 6020: YANG - A Data Modeling Language for
+       the Network Configuration Protocol (NETCONF)";
+  }
+
+  md:annotation insert {
+    type enumeration {
+      enum first;
+      enum last;
+      enum before;
+      enum after;
+    }
+    reference "RFC7950 section 7.8.6. and section 7.7.9.";
+    description
+      "In user ordered leaf-list, this attribute can be used to control
+       where in the leaf-list the entry is inserted. It can be used during
+       the NETCONF <edit-config> \"create\" operations to insert a new list or
+       leaf-list entry, or during \"merge\" or \"replace\" operations to insert
+       a new list or leaf-list entry or move an existing one.
+
+       If the value is \"before\" or \"after\", the \"value\"/\"key\" attribute
+       MUST also be used to specify an existing entry in the list or leaf-list.
+
+       If no \"insert\" attribute is present in the \"create\" operation, it
+       defaults to \"last\".";
+  }
+
+  md:annotation value {
+    type string;
+    reference "RFC7950 section 7.7.9.";
+    description
+      "In user ordered leaf-list, this attribute must be used if the attribute
+       insert is used and specifies before/after which existing instance the
+       new instance should be inserted.";
+  }
+
+  md:annotation key {
+    type string;
+    reference "RFC7950 section 7.8.6.";
+    description
+      "In user ordered list, this attribute must be used if the attribute
+       insert is used and specifies before/after which existing instance the
+       new instance should be inserted.";
+  }
+
+  md:annotation position {
+    type union {
+        type empty;
+        type uint32 {
+            range 1..max;
+        }
+    }
+    description
+      "In key-less list or state leaf-list, this attribute must be used if
+       the attribute insert is used and specifies the instance position
+       before/after which the new instance should be inserted.";
+  }
+
+  md:annotation operation {
+    type enumeration {
+      enum none {
+        description
+          "The node existed in both data trees but there is a nested node
+           with another operation. In case of a leaf, only its default
+           flag changed.";
+      }
+      enum create {
+        description
+          "The node did not exist in the first tree and was created in the
+           second tree.";
+      }
+      enum delete {
+        description
+          "The node existed in the first tree and was deleted in the second
+           tree.";
+      }
+      enum replace {
+        description
+          "The node value was changed or the node was moved for
+           leaves/anyxml/anydata and user-ordered lists/leaf-lists,
+           respectively.";
+      }
+    }
+    reference "RFC6241 section 7.2.";
+    description
+      "Operation of a node in a diff. If a node has no operation,
+       it is inherited from its nearest parent with an operation.
+       Top-level nodes must always have an operation.
+
+       User-ordered lists/leaf-lists with operation 'create' and
+       'replace' MUST also have the 'key', 'value', or 'position'
+       metadata defined. It specifies the preceding instance.
+       In case the value of this metadata is empty, the node was
+       created/moved on the first position.
+
+       All the operations keep the meaning of edit-config operations
+       with similar names but some are further restricted, meaning
+       they are used for only a subset of use-cases.";
+  }
+
+  md:annotation orig-default {
+    type boolean;
+    description
+      "Information about the previous default state of the node.";
+  }
+
+  md:annotation orig-value {
+    type string;
+    description
+      "Previous value of a changed leaf. Alternatively, its meaning
+       is the same as the \"value\" attribute but identifies the original
+       leaf-list instance rather than the new one.";
+  }
+
+  md:annotation orig-key {
+    type string;
+    description
+      "Its meaning is the same as the \"key\" attribute but identifies
+       the original list instance rather than the new one.";
+  }
+
+  md:annotation orig-position {
+    type union {
+        type empty;
+        type uint32 {
+            range 1..max;
+        }
+    }
+    description
+      "Its meaning is the same as the \"position\" attribute but identifies
+       the original list instance rather than the new one.";
+  }
+}

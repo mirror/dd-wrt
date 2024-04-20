@@ -1,10 +1,10 @@
 [project]
-name = "libyang"
-make_archive_script = "distro/scripts/make-archive.sh"
+name = "libyang2"
+make_archive_script = "tools/make-dev-archive.sh"
 
 [upstream]
-archive_url = "https://github.com/CESNET/libyang/archive/v{{ version }}/libyang-{{ version }}.tar.gz"
-version_script = "distro/scripts/upstream-version.sh"
+archive_url = "https://github.com/CESNET/libyang/archive/refs/tags/v{{ version }}.tar.gz"
+version_script = "tools/upstream-version.sh"
 
 [apkg]
-compat = 2
+compat = 1

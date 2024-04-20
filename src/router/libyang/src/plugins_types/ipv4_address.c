@@ -12,21 +12,17 @@
  *     https://opensource.org/licenses/BSD-3-Clause
  */
 
-#define _GNU_SOURCE /* strndup */
+#define _GNU_SOURCE /* asprintf, strdup */
+#include <sys/cdefs.h>
 
-#include "plugins_internal.h"
 #include "plugins_types.h"
 
-#ifdef _WIN32
-# include <winsock2.h>
-# include <ws2tcpip.h>
-#else
-#  include <arpa/inet.h>
-#  if defined (__FreeBSD__) || defined (__NetBSD__) || defined (__OpenBSD__)
-#    include <netinet/in.h>
-#    include <sys/socket.h>
-#  endif
+#include <arpa/inet.h>
+#if defined (__FreeBSD__) || defined (__NetBSD__) || defined (__OpenBSD__)
+#include <netinet/in.h>
+#include <sys/socket.h>
 #endif
+#include <assert.h>
 #include <ctype.h>
 #include <errno.h>
 #include <stdint.h>
@@ -35,8 +31,8 @@
 
 #include "libyang.h"
 
+#include "common.h"
 #include "compat.h"
-#include "ly_common.h"
 
 /**
  * @page howtoDataLYB LYB Binary Format
@@ -157,7 +153,7 @@ lyplg_type_store_ipv4_address(const struct ly_ctx *ctx, const struct lysc_type *
 
         /* store zone, if any */
         if (value_len > 4) {
-            ret = lydict_insert(ctx, value_str + 4, value_len - 4, &val->zone);
+            ret = lydict_insert(ctx, value + 4, value_len - 4, &val->zone);
             LY_CHECK_GOTO(ret, cleanup);
         } else {
             val->zone = NULL;
@@ -211,10 +207,13 @@ cleanup:
  * @brief Implementation of ::lyplg_type_compare_clb for the ipv4-address ietf-inet-types type.
  */
 static LY_ERR
-lyplg_type_compare_ipv4_address(const struct ly_ctx *UNUSED(ctx), const struct lyd_value *val1,
-        const struct lyd_value *val2)
+lyplg_type_compare_ipv4_address(const struct lyd_value *val1, const struct lyd_value *val2)
 {
     struct lyd_value_ipv4_address *v1, *v2;
+
+    if (val1->realtype != val2->realtype) {
+        return LY_ENOT;
+    }
 
     LYD_VALUE_GET(val1, v1);
     LYD_VALUE_GET(val2, v2);
@@ -224,35 +223,6 @@ lyplg_type_compare_ipv4_address(const struct ly_ctx *UNUSED(ctx), const struct l
         return LY_ENOT;
     }
     return LY_SUCCESS;
-}
-
-/**
- * @brief Implementation of ::lyplg_type_sort_clb for the ipv4-address ietf-inet-types type.
- */
-static int
-lyplg_type_sort_ipv4_address(const struct ly_ctx *UNUSED(ctx), const struct lyd_value *val1,
-        const struct lyd_value *val2)
-{
-    struct lyd_value_ipv4_address *v1, *v2;
-    int cmp;
-
-    LYD_VALUE_GET(val1, v1);
-    LYD_VALUE_GET(val2, v2);
-
-    cmp = memcmp(&v1->addr, &v2->addr, sizeof v1->addr);
-    if (cmp != 0) {
-        return cmp;
-    }
-
-    if (!v1->zone && v2->zone) {
-        return -1;
-    } else if (v1->zone && !v2->zone) {
-        return 1;
-    } else if (v1->zone && v2->zone) {
-        return strcmp(v1->zone, v2->zone);
-    }
-
-    return 0;
 }
 
 /**
@@ -303,7 +273,7 @@ lyplg_type_print_ipv4_address(const struct ly_ctx *ctx, const struct lyd_value *
         /* get the address in string */
         if (!inet_ntop(AF_INET, &val->addr, ret, INET_ADDRSTRLEN)) {
             free(ret);
-            LOGERR(ctx, LY_ESYS, "Failed to get IPv4 address in string (%s).", strerror(errno));
+            LOGERR(ctx, LY_EVALID, "Failed to get IPv4 address in string (%s).", strerror(errno));
             return NULL;
         }
 
@@ -338,26 +308,26 @@ lyplg_type_dup_ipv4_address(const struct ly_ctx *ctx, const struct lyd_value *or
     LY_ERR ret;
     struct lyd_value_ipv4_address *orig_val, *dup_val;
 
-    memset(dup, 0, sizeof *dup);
-
-    ret = lydict_insert(ctx, original->_canonical, 0, &dup->_canonical);
-    LY_CHECK_GOTO(ret, error);
+    ret = lydict_insert(ctx, original->_canonical, ly_strlen(original->_canonical), &dup->_canonical);
+    LY_CHECK_RET(ret);
 
     LYPLG_TYPE_VAL_INLINE_PREPARE(dup, dup_val);
-    LY_CHECK_ERR_GOTO(!dup_val, ret = LY_EMEM, error);
+    if (!dup_val) {
+        lydict_remove(ctx, dup->_canonical);
+        return LY_EMEM;
+    }
 
     LYD_VALUE_GET(original, orig_val);
-
     memcpy(&dup_val->addr, &orig_val->addr, sizeof orig_val->addr);
     ret = lydict_insert(ctx, orig_val->zone, 0, &dup_val->zone);
-    LY_CHECK_GOTO(ret, error);
+    if (ret) {
+        lydict_remove(ctx, dup->_canonical);
+        LYPLG_TYPE_VAL_INLINE_DESTROY(dup_val);
+        return ret;
+    }
 
     dup->realtype = original->realtype;
     return LY_SUCCESS;
-
-error:
-    lyplg_type_free_ipv4_address(ctx, dup);
-    return ret;
 }
 
 /**
@@ -369,7 +339,6 @@ lyplg_type_free_ipv4_address(const struct ly_ctx *ctx, struct lyd_value *value)
     struct lyd_value_ipv4_address *val;
 
     lydict_remove(ctx, value->_canonical);
-    value->_canonical = NULL;
     LYD_VALUE_GET(value, val);
     if (val) {
         lydict_remove(ctx, val->zone);
@@ -394,11 +363,10 @@ const struct lyplg_type_record plugins_ipv4_address[] = {
         .plugin.store = lyplg_type_store_ipv4_address,
         .plugin.validate = NULL,
         .plugin.compare = lyplg_type_compare_ipv4_address,
-        .plugin.sort = lyplg_type_sort_ipv4_address,
+        .plugin.sort = NULL,
         .plugin.print = lyplg_type_print_ipv4_address,
         .plugin.duplicate = lyplg_type_dup_ipv4_address,
-        .plugin.free = lyplg_type_free_ipv4_address,
-        .plugin.lyb_data_len = -1,
+        .plugin.free = lyplg_type_free_ipv4_address
     },
     {0}
 };

@@ -32,15 +32,6 @@ const char *schema_a = "module a {\n"
         "      type string;\n"
         "    }\n"
         "  }\n"
-        "  list l11 {\n"
-        "    key \"a\";\n"
-        "    leaf a {\n"
-        "      type uint32;\n"
-        "    }\n"
-        "    leaf b {\n"
-        "      type uint32;\n"
-        "    }\n"
-        "  }\n"
         "  leaf foo {\n"
         "    type uint16;\n"
         "  }\n"
@@ -55,7 +46,6 @@ const char *schema_a = "module a {\n"
         "  anydata any {\n"
         "    config false;\n"
         "  }\n"
-        "  anyxml anyx;\n"
         "  leaf-list ll2 {\n"
         "    config false;\n"
         "    type string;\n"
@@ -96,7 +86,7 @@ const char *schema_a = "module a {\n"
 static void
 test_top_level(void **state)
 {
-    struct lys_module *mod;
+    const struct lys_module *mod;
     struct lyd_node *node, *rpc;
 
     UTEST_ADD_MODULE(schema_a, LYS_IN_YANG, NULL, &mod);
@@ -106,16 +96,16 @@ test_top_level(void **state)
     lyd_free_tree(node);
 
     assert_int_equal(lyd_new_list2(NULL, mod, "l1", "[]", 0, &node), LY_EVALID);
-    CHECK_LOG_CTX("Unexpected XPath token \"]\" (\"]\").", "/a:l1", 0);
+    CHECK_LOG_CTX("Unexpected XPath token \"]\" (\"]\").", "Schema location /a:l1.");
 
     assert_int_equal(lyd_new_list2(NULL, mod, "l1", "[key1='a'][key2='b']", 0, &node), LY_ENOTFOUND);
-    CHECK_LOG_CTX("Not found node \"key1\" in path.", "/a:l1", 0);
+    CHECK_LOG_CTX("Not found node \"key1\" in path.", "Schema location /a:l1.");
 
     assert_int_equal(lyd_new_list2(NULL, mod, "l1", "[a='a'][b='b'][c='c']", 0, &node), LY_EVALID);
-    CHECK_LOG_CTX("Key expected instead of leaf \"c\" in path.", "/a:l1", 0);
+    CHECK_LOG_CTX("Key expected instead of leaf \"c\" in path.", "Schema location /a:l1.");
 
     assert_int_equal(lyd_new_list2(NULL, mod, "c", "[a='a'][b='b']", 0, &node), LY_ENOTFOUND);
-    CHECK_LOG_CTX("List node \"c\" not found.", NULL, 0);
+    CHECK_LOG_CTX("List node \"c\" not found.", NULL);
 
     assert_int_equal(lyd_new_list2(NULL, mod, "l1", "[a='a'][b='b']", 0, &node), LY_SUCCESS);
     lyd_free_tree(node);
@@ -129,52 +119,15 @@ test_top_level(void **state)
     assert_int_equal(lyd_new_list2(NULL, mod, "l1", "[a=   'a']\n[b  =\t'b']", 0, &node), LY_SUCCESS);
     lyd_free_tree(node);
 
-    const char *key_vals[] = {"a", "b"};
-
-    assert_int_equal(lyd_new_list3(NULL, mod, "l1", key_vals, NULL, 0, &node), LY_SUCCESS);
-    lyd_free_tree(node);
-
-    uint32_t val_lens[] = {1, 1};
-
-    assert_int_equal(lyd_new_list3(NULL, mod, "l1", key_vals, val_lens, LYD_NEW_VAL_BIN, &node), LY_SUCCESS);
-    lyd_free_tree(node);
-
-    assert_int_equal(lyd_new_list3(NULL, mod, "l1", key_vals, val_lens, LYD_NEW_VAL_CANON, &node), LY_SUCCESS);
-    lyd_free_tree(node);
-    assert_int_equal(lyd_new_list3(NULL, mod, "l1", key_vals, val_lens, LYD_NEW_VAL_CANON | LYD_NEW_VAL_STORE_ONLY, &node), LY_EINVAL);
-    CHECK_LOG_CTX("Invalid argument !(store_only && (format == LY_VALUE_CANON || format == LY_VALUE_LYB)) (lyd_new_list3()).", NULL, 0);
-
-    assert_int_equal(lyd_new_list(NULL, mod, "l1", LYD_NEW_VAL_BIN, &node, "val_a", 5, "val_b", 5), LY_SUCCESS);
-    lyd_free_tree(node);
-    assert_int_equal(lyd_new_list(NULL, mod, "l1", LYD_NEW_VAL_BIN | LYD_NEW_VAL_STORE_ONLY, &node, "val_a", 5, "val_b", 5), LY_EINVAL);
-    CHECK_LOG_CTX("Invalid argument !(store_only && (format == LY_VALUE_CANON || format == LY_VALUE_LYB)) (lyd_new_list()).", NULL, 0);
-
-    assert_int_equal(lyd_new_list(NULL, mod, "l1", LYD_NEW_VAL_CANON, &node, "val_a", "val_b"), LY_SUCCESS);
-    lyd_free_tree(node);
-    assert_int_equal(lyd_new_list(NULL, mod, "l1", LYD_NEW_VAL_CANON | LYD_NEW_VAL_STORE_ONLY, &node, "val_a", "val_b"), LY_EINVAL);
-    CHECK_LOG_CTX("Invalid argument !(store_only && (format == LY_VALUE_CANON || format == LY_VALUE_LYB)) (lyd_new_list()).", NULL, 0);
-
     /* leaf */
     assert_int_equal(lyd_new_term(NULL, mod, "foo", "[a='a'][b='b'][c='c']", 0, &node), LY_EVALID);
-    CHECK_LOG_CTX("Invalid type uint16 value \"[a='a'][b='b'][c='c']\".", "/a:foo", 0);
+    CHECK_LOG_CTX("Invalid uint16 value \"[a='a'][b='b'][c='c']\".", "Schema location /a:foo.");
 
     assert_int_equal(lyd_new_term(NULL, mod, "c", "value", 0, &node), LY_ENOTFOUND);
-    CHECK_LOG_CTX("Term node \"c\" not found.", NULL, 0);
+    CHECK_LOG_CTX("Term node \"c\" not found.", NULL);
 
     assert_int_equal(lyd_new_term(NULL, mod, "foo", "256", 0, &node), LY_SUCCESS);
     lyd_free_tree(node);
-
-    assert_int_equal(lyd_new_term(NULL, mod, "foo", "25", LYD_NEW_VAL_BIN, &node), LY_EINVAL);
-    CHECK_LOG_CTX("Invalid argument !(options & 0x04) (lyd_new_term()).", NULL, 0);
-    assert_int_equal(lyd_new_term_bin(NULL, mod, "foo", "25", 2, LYD_NEW_VAL_BIN, &node), LY_SUCCESS);
-    lyd_free_tree(node);
-    assert_int_equal(lyd_new_term_bin(NULL, mod, "foo", "25", 2, LYD_NEW_VAL_STORE_ONLY, &node), LY_EINVAL);
-    CHECK_LOG_CTX("Invalid argument !(store_only && (format == LY_VALUE_CANON || format == LY_VALUE_LYB)) (_lyd_new_term()).", NULL, 0);
-
-    assert_int_equal(lyd_new_term(NULL, mod, "foo", "25", LYD_NEW_VAL_CANON, &node), LY_SUCCESS);
-    lyd_free_tree(node);
-    assert_int_equal(lyd_new_term(NULL, mod, "foo", "25", LYD_NEW_VAL_CANON | LYD_NEW_VAL_STORE_ONLY, &node), LY_EINVAL);
-    CHECK_LOG_CTX("Invalid argument !(store_only && (format == LY_VALUE_CANON || format == LY_VALUE_LYB)) (_lyd_new_term()).", NULL, 0);
 
     /* leaf-list */
     assert_int_equal(lyd_new_term(NULL, mod, "ll", "ahoy", 0, &node), LY_SUCCESS);
@@ -185,20 +138,18 @@ test_top_level(void **state)
     lyd_free_tree(node);
 
     assert_int_equal(lyd_new_inner(NULL, mod, "l1", 0, &node), LY_ENOTFOUND);
-    CHECK_LOG_CTX("Inner node (container, notif, RPC, or action) \"l1\" not found.", NULL, 0);
+    CHECK_LOG_CTX("Inner node (not a list) \"l1\" not found.", NULL);
 
     assert_int_equal(lyd_new_inner(NULL, mod, "l2", 0, &node), LY_ENOTFOUND);
-    CHECK_LOG_CTX("Inner node (container, notif, RPC, or action) \"l2\" not found.", NULL, 0);
+    CHECK_LOG_CTX("Inner node (not a list) \"l2\" not found.", NULL);
 
     /* anydata */
-    assert_int_equal(lyd_new_any(NULL, mod, "any", "{\"node\":\"val\"}", LYD_ANYDATA_STRING, 0, &node), LY_SUCCESS);
-    lyd_free_tree(node);
-    assert_int_equal(lyd_new_any(NULL, mod, "any", "<node>val</node>", LYD_ANYDATA_STRING, 0, &node), LY_SUCCESS);
+    assert_int_equal(lyd_new_any(NULL, mod, "any", "some-value", 0, LYD_ANYDATA_STRING, 0, &node), LY_SUCCESS);
     lyd_free_tree(node);
 
     /* key-less list */
     assert_int_equal(lyd_new_list2(NULL, mod, "l2", "[a='a'][b='b']", 0, &node), LY_EVALID);
-    CHECK_LOG_CTX("List predicate defined for keyless list \"l2\" in path.", "/a:l2", 0);
+    CHECK_LOG_CTX("List predicate defined for keyless list \"l2\" in path.", "Schema location /a:l2.");
 
     assert_int_equal(lyd_new_list2(NULL, mod, "l2", "", 0, &node), LY_SUCCESS);
     lyd_free_tree(node);
@@ -213,7 +164,7 @@ test_top_level(void **state)
     assert_int_equal(lyd_new_inner(NULL, mod, "oper", 0, &rpc), LY_SUCCESS);
     assert_int_equal(lyd_new_term(rpc, mod, "param", "22", 0, &node), LY_SUCCESS);
     assert_int_equal(LY_TYPE_STRING, ((struct lysc_node_leaf *)node->schema)->type->basetype);
-    assert_int_equal(lyd_new_term(rpc, mod, "param", "22", LYD_NEW_VAL_OUTPUT, &node), LY_SUCCESS);
+    assert_int_equal(lyd_new_term(rpc, mod, "param", "22", 1, &node), LY_SUCCESS);
     assert_int_equal(LY_TYPE_INT8, ((struct lysc_node_leaf *)node->schema)->type->basetype);
     lyd_free_tree(rpc);
 }
@@ -249,7 +200,7 @@ test_path(void **state)
 {
     LY_ERR ret;
     struct lyd_node *root, *node, *parent;
-    struct lys_module *mod;
+    const struct lys_module *mod;
     char *str;
 
     UTEST_ADD_MODULE(schema_a, LYS_IN_YANG, NULL, &mod);
@@ -282,7 +233,7 @@ test_path(void **state)
     /* try LYD_NEWOPT_OPAQ */
     ret = lyd_new_path2(NULL, UTEST_LYCTX, "/a:l1", NULL, 0, 0, 0, NULL, NULL);
     assert_int_equal(ret, LY_EINVAL);
-    CHECK_LOG_CTX("Predicate missing for list \"l1\" in path \"/a:l1\".", "/a:l1", 0);
+    CHECK_LOG_CTX("Predicate missing for list \"l1\" in path \"/a:l1\".", "Schema location /a:l1.");
 
     ret = lyd_new_path2(NULL, UTEST_LYCTX, "/a:l1", NULL, 0, 0, LYD_NEW_PATH_OPAQ, NULL, &root);
     assert_int_equal(ret, LY_SUCCESS);
@@ -293,29 +244,12 @@ test_path(void **state)
 
     ret = lyd_new_path2(NULL, UTEST_LYCTX, "/a:foo", NULL, 0, 0, 0, NULL, NULL);
     assert_int_equal(ret, LY_EVALID);
-    CHECK_LOG_CTX("Invalid type uint16 empty value.", "/a:foo", 0);
+    CHECK_LOG_CTX("Invalid empty uint16 value.", "Schema location /a:foo.");
 
     ret = lyd_new_path2(NULL, UTEST_LYCTX, "/a:foo", NULL, 0, 0, LYD_NEW_PATH_OPAQ, NULL, &root);
     assert_int_equal(ret, LY_SUCCESS);
     assert_non_null(root);
     assert_null(root->schema);
-
-    lyd_free_tree(root);
-
-    ret = lyd_new_path(NULL, UTEST_LYCTX, "/a:l11", NULL, LYD_NEW_PATH_OPAQ, &root);
-    assert_int_equal(ret, LY_SUCCESS);
-    assert_non_null(root);
-    assert_null(root->schema);
-
-    ret = lyd_new_path(root, NULL, "a", NULL, LYD_NEW_PATH_OPAQ, NULL);
-    assert_int_equal(ret, LY_SUCCESS);
-    assert_non_null(lyd_child(root));
-    assert_null(lyd_child(root)->schema);
-
-    ret = lyd_new_path(root, NULL, "b", NULL, LYD_NEW_PATH_OPAQ, NULL);
-    assert_int_equal(ret, LY_SUCCESS);
-    assert_non_null(lyd_child(root)->next);
-    assert_null(lyd_child(root)->next->schema);
 
     lyd_free_tree(root);
 
@@ -328,7 +262,6 @@ test_path(void **state)
 
     ret = lyd_new_path2(root, NULL, "/a:c2/l3[1]", NULL, 0, 0, 0, NULL, &node);
     assert_int_equal(ret, LY_EEXIST);
-    CHECK_LOG_CTX("Path \"/a:c2/l3[1]\" already exists.", "/a:c2/l3[1]", 0);
 
     ret = lyd_new_path2(root, NULL, "/a:c2/l3[2]/x", "val2", 0, 0, 0, NULL, &node);
     assert_int_equal(ret, LY_SUCCESS);
@@ -387,7 +320,6 @@ test_path(void **state)
 
     ret = lyd_new_path2(root, NULL, "/a:ll2[1]", "", 0, 0, 0, NULL, &node);
     assert_int_equal(ret, LY_EEXIST);
-    CHECK_LOG_CTX("Path \"/a:ll2[1]\" already exists.", "/a:ll2[1]", 0);
 
     ret = lyd_new_path2(root, NULL, "/a:ll2[2]", "val2", 0, 0, 0, NULL, &node);
     assert_int_equal(ret, LY_SUCCESS);
@@ -402,83 +334,12 @@ test_path(void **state)
 
     ret = lyd_new_path2(root, NULL, "/a:ll2[3][.='val3']", NULL, 0, 0, 0, NULL, &node);
     assert_int_equal(ret, LY_EVALID);
-    CHECK_LOG_CTX("Unparsed characters \"[.='val3']\" left at the end of path.", NULL, 0);
 
     lyd_print_mem(&str, root, LYD_XML, LYD_PRINT_WITHSIBLINGS);
     assert_string_equal(str,
             "<ll2 xmlns=\"urn:tests:a\">val</ll2>\n"
             "<ll2 xmlns=\"urn:tests:a\">val2</ll2>\n"
             "<ll2 xmlns=\"urn:tests:a\">val3</ll2>\n");
-    free(str);
-    lyd_free_siblings(root);
-
-    /* anydata */
-    ret = lyd_new_path2(NULL, UTEST_LYCTX, "/a:any", "<elem>val</elem>", 0, LYD_ANYDATA_XML, 0, &root, NULL);
-    assert_int_equal(ret, LY_SUCCESS);
-    assert_non_null(root);
-
-    lyd_print_mem(&str, root, LYD_XML, LYD_PRINT_WITHSIBLINGS);
-    assert_string_equal(str,
-            "<any xmlns=\"urn:tests:a\">\n"
-            "  <elem>val</elem>\n"
-            "</any>\n");
-    free(str);
-    lyd_print_mem(&str, root, LYD_JSON, LYD_PRINT_WITHSIBLINGS);
-    assert_string_equal(str,
-            "{\n"
-            "  \"a:any\": {\n"
-            "    \"elem\": \"val\"\n"
-            "  }\n"
-            "}\n");
-    free(str);
-    lyd_free_siblings(root);
-
-    /* anyxml */
-    ret = lyd_new_path2(NULL, UTEST_LYCTX, "/a:anyx", "<a/><b/><c/>", 0, LYD_ANYDATA_XML, 0, &root, NULL);
-    assert_int_equal(ret, LY_SUCCESS);
-    assert_non_null(root);
-
-    lyd_print_mem(&str, root, LYD_XML, LYD_PRINT_WITHSIBLINGS);
-    assert_string_equal(str,
-            "<anyx xmlns=\"urn:tests:a\">\n"
-            "  <a/>\n"
-            "  <b/>\n"
-            "  <c/>\n"
-            "</anyx>\n");
-    free(str);
-    lyd_print_mem(&str, root, LYD_JSON, LYD_PRINT_WITHSIBLINGS);
-    assert_string_equal(str,
-            "{\n"
-            "  \"a:anyx\": {\n"
-            "    \"a\": [null],\n"
-            "    \"b\": [null],\n"
-            "    \"c\": [null]\n"
-            "  }\n"
-            "}\n");
-    free(str);
-    lyd_free_siblings(root);
-
-    ret = lyd_new_path2(NULL, UTEST_LYCTX, "/a:anyx", "{\"a\":[null],\"b\":[null],\"c\":[null]}", 0, LYD_ANYDATA_JSON, 0, &root, NULL);
-    assert_int_equal(ret, LY_SUCCESS);
-    assert_non_null(root);
-
-    lyd_print_mem(&str, root, LYD_XML, LYD_PRINT_WITHSIBLINGS);
-    assert_string_equal(str,
-            "<anyx xmlns=\"urn:tests:a\">\n"
-            "  <a/>\n"
-            "  <b/>\n"
-            "  <c/>\n"
-            "</anyx>\n");
-    free(str);
-    lyd_print_mem(&str, root, LYD_JSON, LYD_PRINT_WITHSIBLINGS);
-    assert_string_equal(str,
-            "{\n"
-            "  \"a:anyx\": {\n"
-            "    \"a\": [null],\n"
-            "    \"b\": [null],\n"
-            "    \"c\": [null]\n"
-            "  }\n"
-            "}\n");
     free(str);
     lyd_free_siblings(root);
 }
@@ -488,7 +349,7 @@ test_path_ext(void **state)
 {
     LY_ERR ret;
     struct lyd_node *root, *node;
-    struct lys_module *mod;
+    const struct lys_module *mod;
     const char *mod_str = "module ext {yang-version 1.1; namespace urn:tests:extensions:ext; prefix e;"
             "import ietf-restconf {revision-date 2017-01-26; prefix rc;}"
             "rc:yang-data template {container c {leaf x {type string;} leaf y {type string;} leaf z {type string;}}}}";

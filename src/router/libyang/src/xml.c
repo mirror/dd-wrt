@@ -4,7 +4,7 @@
  * @author Michal Vasko <mvasko@cesnet.cz>
  * @brief Generic XML parser implementation for libyang
  *
- * Copyright (c) 2015 - 2021 CESNET, z.s.p.o.
+ * Copyright (c) 2015 - 2018 CESNET, z.s.p.o.
  *
  * This source code is licensed under BSD 3-Clause License (the "License").
  * You may not use this file except in compliance with the License.
@@ -23,9 +23,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "common.h"
 #include "compat.h"
 #include "in_internal.h"
-#include "ly_common.h"
 #include "out_internal.h"
 #include "tree.h"
 #include "tree_schema_internal.h"
@@ -156,44 +156,11 @@ lyxml_parse_identifier(struct lyxml_ctx *xmlctx, const char **start, const char 
 LY_ERR
 lyxml_ns_add(struct lyxml_ctx *xmlctx, const char *prefix, size_t prefix_len, char *uri)
 {
-    LY_ERR rc = LY_SUCCESS;
+    LY_ERR ret = LY_SUCCESS;
     struct lyxml_ns *ns;
-    uint32_t i;
-
-    /* check for duplicates */
-    if (xmlctx->ns.count) {
-        i = xmlctx->ns.count;
-        do {
-            --i;
-            ns = xmlctx->ns.objs[i];
-            if (ns->depth < xmlctx->elements.count) {
-                /* only namespaces of parents, no need to check further */
-                break;
-            } else if (prefix && ns->prefix && !ly_strncmp(ns->prefix, prefix, prefix_len)) {
-                if (!strcmp(ns->uri, uri)) {
-                    /* exact same prefix and namespace, ignore */
-                    goto cleanup;
-                }
-
-                LOGVAL(xmlctx->ctx, LYVE_SYNTAX, "Duplicate XML NS prefix \"%s\" used for namespaces \"%s\" and \"%s\".",
-                        ns->prefix, ns->uri, uri);
-                rc = LY_EVALID;
-                goto cleanup;
-            } else if (!prefix && !ns->prefix) {
-                if (!strcmp(ns->uri, uri)) {
-                    /* exact same default namespace, ignore */
-                    goto cleanup;
-                }
-
-                LOGVAL(xmlctx->ctx, LYVE_SYNTAX, "Duplicate default XML namespaces \"%s\" and \"%s\".", ns->uri, uri);
-                rc = LY_EVALID;
-                goto cleanup;
-            }
-        } while (i);
-    }
 
     ns = malloc(sizeof *ns);
-    LY_CHECK_ERR_GOTO(!ns, LOGMEM(xmlctx->ctx); rc = LY_EMEM, cleanup);
+    LY_CHECK_ERR_RET(!ns, LOGMEM(xmlctx->ctx), LY_EMEM);
 
     /* we need to connect the depth of the element where the namespace is defined with the
      * namespace record to be able to maintain (remove) the record when the parser leaves
@@ -203,48 +170,36 @@ lyxml_ns_add(struct lyxml_ctx *xmlctx, const char *prefix, size_t prefix_len, ch
     ns->uri = uri;
     if (prefix) {
         ns->prefix = strndup(prefix, prefix_len);
-        LY_CHECK_ERR_GOTO(!ns->prefix, LOGMEM(xmlctx->ctx); free(ns); rc = LY_EMEM, cleanup);
+        LY_CHECK_ERR_RET(!ns->prefix, LOGMEM(xmlctx->ctx); free(ns->uri); free(ns), LY_EMEM);
     } else {
         ns->prefix = NULL;
     }
 
-    rc = ly_set_add(&xmlctx->ns, ns, 1, NULL);
-    LY_CHECK_ERR_GOTO(rc, free(ns->prefix); free(ns), cleanup);
+    ret = ly_set_add(&xmlctx->ns, ns, 1, NULL);
+    LY_CHECK_ERR_RET(ret, free(ns->prefix); free(ns->uri); free(ns), ret);
 
-    /* successfully stored */
-    uri = NULL;
-
-cleanup:
-    free(uri);
-    return rc;
+    return LY_SUCCESS;
 }
 
+/**
+ * @brief Remove all the namespaces defined in the element recently closed (removed from the xmlctx->elements).
+ *
+ * @param[in] xmlctx XML context to work with.
+ */
 void
 lyxml_ns_rm(struct lyxml_ctx *xmlctx)
 {
-    struct lyxml_ns *ns;
-    uint32_t u;
-
-    if (!xmlctx->ns.count) {
-        return;
-    }
-
-    u = xmlctx->ns.count;
-    do {
-        --u;
-        ns = (struct lyxml_ns *)xmlctx->ns.objs[u];
-
-        if (ns->depth != xmlctx->elements.count + 1) {
+    for (uint32_t u = xmlctx->ns.count - 1; u + 1 > 0; --u) {
+        if (((struct lyxml_ns *)xmlctx->ns.objs[u])->depth != xmlctx->elements.count + 1) {
             /* we are done, the namespaces from a single element are supposed to be together */
             break;
         }
-
         /* remove the ns structure */
-        free(ns->prefix);
-        free(ns->uri);
-        free(ns);
+        free(((struct lyxml_ns *)xmlctx->ns.objs[u])->prefix);
+        free(((struct lyxml_ns *)xmlctx->ns.objs[u])->uri);
+        free(xmlctx->ns.objs[u]);
         --xmlctx->ns.count;
-    } while (u);
+    }
 
     if (!xmlctx->ns.count) {
         /* cleanup the xmlctx's namespaces storage */
@@ -256,17 +211,9 @@ const struct lyxml_ns *
 lyxml_ns_get(const struct ly_set *ns_set, const char *prefix, size_t prefix_len)
 {
     struct lyxml_ns *ns;
-    uint32_t u;
 
-    if (!ns_set->count) {
-        return NULL;
-    }
-
-    u = ns_set->count;
-    do {
-        --u;
+    for (uint32_t u = ns_set->count - 1; u + 1 > 0; --u) {
         ns = (struct lyxml_ns *)ns_set->objs[u];
-
         if (prefix && prefix_len) {
             if (ns->prefix && !ly_strncmp(ns->prefix, prefix, prefix_len)) {
                 return ns;
@@ -275,7 +222,7 @@ lyxml_ns_get(const struct ly_set *ns_set, const char *prefix, size_t prefix_len)
             /* default namespace */
             return ns;
         }
-    } while (u);
+    }
 
     return NULL;
 }
@@ -305,8 +252,8 @@ lyxml_skip_until_end_or_after_otag(struct lyxml_ctx *xmlctx)
             }
             return LY_SUCCESS;
         } else if (xmlctx->in->current[0] != '<') {
-            LOGVAL(ctx, LY_VCODE_INSTREXP, LY_VCODE_INSTREXP_len(xmlctx->in->current), xmlctx->in->current,
-                    "element tag start ('<')");
+            LOGVAL(ctx, LY_VCODE_INSTREXP, LY_VCODE_INSTREXP_len(xmlctx->in->current),
+                    xmlctx->in->current, "element tag start ('<')");
             return LY_EVALID;
         }
         move_input(xmlctx, 1);
@@ -320,9 +267,15 @@ lyxml_skip_until_end_or_after_otag(struct lyxml_ctx *xmlctx)
                 sectname = "Comment";
                 endtag = "-->";
                 endtag_len = ly_strlen_const("-->");
+            } else if (!strncmp(xmlctx->in->current, "[CDATA[", ly_strlen_const("[CDATA["))) {
+                /* CDATA section */
+                move_input(xmlctx, ly_strlen_const("[CDATA["));
+                sectname = "CData";
+                endtag = "]]>";
+                endtag_len = ly_strlen_const("]]>");
             } else if (!strncmp(xmlctx->in->current, "DOCTYPE", ly_strlen_const("DOCTYPE"))) {
                 /* Document type declaration - not supported */
-                LOGVAL(ctx, LY_VCODE_NSUPP, "Document Type Declaration");
+                LOGVAL(ctx,  LY_VCODE_NSUPP, "Document Type Declaration");
                 return LY_EVALID;
             } else {
                 LOGVAL(ctx, LYVE_SYNTAX, "Unknown XML section \"%.20s\".", &xmlctx->in->current[-2]);
@@ -374,53 +327,6 @@ lyxml_parse_qname(struct lyxml_ctx *xmlctx, const char **prefix, size_t *prefix_
 }
 
 /**
- * @brief Prepare buffer for new data.
- *
- * @param[in] ctx Context for logging.
- * @param[in,out] in XML input data.
- * @param[in,out] offset Current offset in @p in.
- * @param[in] need_space Needed additional free space that is allocated.
- * @param[in,out] buf Dynamic buffer.
- * @param[in,out] len Current @p buf length (used characters).
- * @param[in,out] size Current @p buf size (allocated characters).
- * @return LY_ERR value.
- */
-static LY_ERR
-lyxml_parse_value_use_buf(const struct ly_ctx *ctx, const char **in, size_t *offset, size_t need_space, char **buf,
-        size_t *len, size_t *size)
-{
-#define BUFSIZE 24
-#define BUFSIZE_STEP 128
-
-    if (!*buf) {
-        /* prepare output buffer */
-        *buf = malloc(BUFSIZE);
-        LY_CHECK_ERR_RET(!*buf, LOGMEM(ctx), LY_EMEM);
-        *size = BUFSIZE;
-    }
-
-    /* allocate needed space */
-    while (*len + *offset + need_space >= *size) {
-        *buf = ly_realloc(*buf, *size + BUFSIZE_STEP);
-        LY_CHECK_ERR_RET(!*buf, LOGMEM(ctx), LY_EMEM);
-        *size += BUFSIZE_STEP;
-    }
-
-    if (*offset) {
-        /* store what we have so far */
-        memcpy(&(*buf)[*len], *in, *offset);
-        *len += *offset;
-        *in += *offset;
-        *offset = 0;
-    }
-
-    return LY_SUCCESS;
-
-#undef BUFSIZE
-#undef BUFSIZE_STEP
-}
-
-/**
  * @brief Parse XML text content (value).
  *
  * @param[in] xmlctx XML context to use.
@@ -434,12 +340,16 @@ lyxml_parse_value_use_buf(const struct ly_ctx *ctx, const char **in, size_t *off
 static LY_ERR
 lyxml_parse_value(struct lyxml_ctx *xmlctx, char endchar, char **value, size_t *length, ly_bool *ws_only, ly_bool *dynamic)
 {
+#define BUFSIZE 24
+#define BUFSIZE_STEP 128
+
     const struct ly_ctx *ctx = xmlctx->ctx; /* shortcut */
-    const char *in = xmlctx->in->current, *start, *in_aux, *p;
+    const char *in = xmlctx->in->current, *start, *in_aux;
     char *buf = NULL;
     size_t offset;   /* read offset in input buffer */
     size_t len;      /* length of the output string (write offset in output buffer) */
     size_t size = 0; /* size of the output buffer */
+    void *p;
     uint32_t n;
     size_t u;
     ly_bool ws = 1;
@@ -456,10 +366,29 @@ lyxml_parse_value(struct lyxml_ctx *xmlctx, char endchar, char **value, size_t *
             /* non WS */
             ws = 0;
 
-            /* use buffer and allocate enough for the offset and next character,
+            if (!buf) {
+                /* prepare output buffer */
+                buf = malloc(BUFSIZE);
+                LY_CHECK_ERR_RET(!buf, LOGMEM(ctx), LY_EMEM);
+                size = BUFSIZE;
+            }
+
+            /* allocate enough for the offset and next character,
              * we will need 4 bytes at most since we support only the predefined
              * (one-char) entities and character references */
-            LY_CHECK_RET(lyxml_parse_value_use_buf(ctx, &in, &offset, 4, &buf, &len, &size));
+            while (len + offset + 4 >= size) {
+                buf = ly_realloc(buf, size + BUFSIZE_STEP);
+                LY_CHECK_ERR_RET(!buf, LOGMEM(ctx), LY_EMEM);
+                size += BUFSIZE_STEP;
+            }
+
+            if (offset) {
+                /* store what we have so far */
+                memcpy(&buf[len], in, offset);
+                len += offset;
+                in += offset;
+                offset = 0;
+            }
 
             ++offset;
             if (in[offset] != '#') {
@@ -486,7 +415,7 @@ lyxml_parse_value(struct lyxml_ctx *xmlctx, char endchar, char **value, size_t *
                 }
                 offset = 0;
             } else {
-                p = &in[offset - 1];
+                p = (void *)&in[offset - 1];
                 /* character reference */
                 ++offset;
                 if (isdigit(in[offset])) {
@@ -505,55 +434,23 @@ lyxml_parse_value(struct lyxml_ctx *xmlctx, char endchar, char **value, size_t *
                         n = (LY_BASE_HEX * n) + u;
                     }
                 } else {
-                    LOGVAL(ctx, LYVE_SYNTAX, "Invalid character reference \"%.12s\".", p);
+                    LOGVAL(ctx, LYVE_SYNTAX, "Invalid character reference \"%.*s\".", 12, p);
                     goto error;
 
                 }
 
-                if (in[offset] != ';') {
-                    LOGVAL(ctx, LY_VCODE_INSTREXP, LY_VCODE_INSTREXP_len(&in[offset]), &in[offset], ";");
-                    goto error;
-                }
+                LY_CHECK_ERR_GOTO(in[offset] != ';',
+                        LOGVAL(ctx, LY_VCODE_INSTREXP,
+                        LY_VCODE_INSTREXP_len(&in[offset]), &in[offset], ";"),
+                        error);
                 ++offset;
-                if (ly_pututf8(&buf[len], n, &u)) {
-                    LOGVAL(ctx, LYVE_SYNTAX, "Invalid character reference \"%.12s\" (0x%08" PRIx32 ").", p, n);
-                    goto error;
-                }
+                LY_CHECK_ERR_GOTO(ly_pututf8(&buf[len], n, &u),
+                        LOGVAL(ctx, LYVE_SYNTAX, "Invalid character reference \"%.*s\" (0x%08x).", 12, p, n),
+                        error);
                 len += u;
                 in += offset;
                 offset = 0;
             }
-        } else if (!strncmp(in + offset, "<![CDATA[", ly_strlen_const("<![CDATA["))) {
-            /* CDATA, find the end */
-            in_aux = strstr(in + offset + ly_strlen_const("<![CDATA["), "]]>");
-            if (!in_aux) {
-                LOGVAL(xmlctx->ctx, LY_VCODE_NTERM, "CDATA");
-                goto error;
-            }
-            u = in_aux - (in + offset + ly_strlen_const("<![CDATA["));
-
-            /* use buffer, allocate enough for the whole CDATA */
-            LY_CHECK_RET(lyxml_parse_value_use_buf(ctx, &in, &offset, u, &buf, &len, &size));
-
-            /* skip CDATA tag */
-            in += ly_strlen_const("<![CDATA[");
-            assert(!offset);
-
-            /* analyze CDATA for non WS and newline chars */
-            for (n = 0; n < u; ++n) {
-                if (in[n] == '\n') {
-                    LY_IN_NEW_LINE(xmlctx->in);
-                } else if (!is_xmlws(in[n])) {
-                    ws = 0;
-                }
-            }
-
-            /* copy CDATA */
-            memcpy(buf + len, in, u);
-            len += u;
-
-            /* move input skipping the end tag */
-            in += u + ly_strlen_const("]]>");
         } else if (in[offset] == endchar) {
             /* end of string */
             if (buf) {
@@ -561,9 +458,7 @@ lyxml_parse_value(struct lyxml_ctx *xmlctx, char endchar, char **value, size_t *
                 buf = ly_realloc(buf, len + offset + 1);
                 LY_CHECK_ERR_RET(!buf, LOGMEM(ctx), LY_EMEM);
                 size = len + offset + 1;
-                if (offset) {
-                    memcpy(&buf[len], in, offset);
-                }
+                memcpy(&buf[len], in, offset);
 
                 /* set terminating NULL byte */
                 buf[len + offset] = '\0';
@@ -610,6 +505,9 @@ success:
 
     xmlctx->in->current = in;
     return LY_SUCCESS;
+
+#undef BUFSIZE
+#undef BUFSIZE_STEP
 }
 
 /**
@@ -688,7 +586,6 @@ lyxml_open_element(struct lyxml_ctx *xmlctx, const char *prefix, size_t prefix_l
     LY_ERR ret = LY_SUCCESS;
     struct lyxml_elem *e;
     const char *prev_input;
-    uint64_t prev_line;
     char *value;
     size_t parsed, value_len;
     ly_bool ws_only, dynamic, is_ns;
@@ -704,8 +601,10 @@ lyxml_open_element(struct lyxml_ctx *xmlctx, const char *prefix, size_t prefix_l
 
     LY_CHECK_RET(ly_set_add(&xmlctx->elements, e, 1, NULL));
     if (xmlctx->elements.count > LY_MAX_BLOCK_DEPTH) {
-        LOGERR(xmlctx->ctx, LY_EINVAL, "The maximum number of open elements has been exceeded.");
-        return LY_EINVAL;
+        LOGERR(xmlctx->ctx, LY_EINVAL,
+                "The maximum number of open elements has been exceeded.");
+        ret = LY_EINVAL;
+        goto cleanup;
     }
 
     /* skip WS */
@@ -713,7 +612,6 @@ lyxml_open_element(struct lyxml_ctx *xmlctx, const char *prefix, size_t prefix_l
 
     /* parse and store all namespaces */
     prev_input = xmlctx->in->current;
-    prev_line = xmlctx->in->line;
     is_ns = 1;
     while ((xmlctx->in->current[0] != '\0') && !(ret = ly_getutf8(&xmlctx->in->current, &c, &parsed))) {
         if (!is_xmlqnamestartchar(c)) {
@@ -747,14 +645,12 @@ lyxml_open_element(struct lyxml_ctx *xmlctx, const char *prefix, size_t prefix_l
         if (is_ns) {
             /* we can actually skip all the namespaces as there is no reason to parse them again */
             prev_input = xmlctx->in->current;
-            prev_line = xmlctx->in->line;
         }
     }
 
 cleanup:
     if (!ret) {
         xmlctx->in->current = prev_input;
-        xmlctx->in->line = prev_line;
     }
     return ret;
 }
@@ -922,7 +818,7 @@ lyxml_ctx_new(const struct ly_ctx *ctx, struct ly_in *in, struct lyxml_ctx **xml
     xmlctx->ctx = ctx;
     xmlctx->in = in;
 
-    ly_log_location(NULL, NULL, NULL, in);
+    LOG_LOCINIT(NULL, NULL, NULL, in);
 
     /* parse next element, if any */
     LY_CHECK_GOTO(ret = lyxml_next_element(xmlctx, &xmlctx->prefix, &xmlctx->prefix_len, &xmlctx->name,
@@ -1141,149 +1037,29 @@ cleanup:
     return ret;
 }
 
-/**
- * @brief Free all namespaces in XML context.
- *
- * @param[in] xmlctx XML context to use.
- */
-static void
-lyxml_ns_rm_all(struct lyxml_ctx *xmlctx)
-{
-    struct lyxml_ns *ns;
-    uint32_t i;
-
-    for (i = 0; i < xmlctx->ns.count; ++i) {
-        ns = xmlctx->ns.objs[i];
-
-        free(ns->prefix);
-        free(ns->uri);
-        free(ns);
-    }
-    ly_set_erase(&xmlctx->ns, NULL);
-}
-
 void
 lyxml_ctx_free(struct lyxml_ctx *xmlctx)
 {
+    uint32_t u;
+
     if (!xmlctx) {
         return;
     }
 
-    ly_log_location_revert(0, 0, 0, 1);
+    LOG_LOCBACK(0, 0, 0, 1);
 
     if (((xmlctx->status == LYXML_ELEM_CONTENT) || (xmlctx->status == LYXML_ATTR_CONTENT)) && xmlctx->dynamic) {
         free((char *)xmlctx->value);
     }
     ly_set_erase(&xmlctx->elements, free);
-    lyxml_ns_rm_all(xmlctx);
+    for (u = xmlctx->ns.count - 1; u + 1 > 0; --u) {
+        /* remove the ns structure */
+        free(((struct lyxml_ns *)xmlctx->ns.objs[u])->prefix);
+        free(((struct lyxml_ns *)xmlctx->ns.objs[u])->uri);
+        free(xmlctx->ns.objs[u]);
+    }
+    ly_set_erase(&xmlctx->ns, NULL);
     free(xmlctx);
-}
-
-/**
- * @brief Duplicate an XML element.
- *
- * @param[in] elem Element to duplicate.
- * @return Element duplicate.
- * @return NULL on error.
- */
-static struct lyxml_elem *
-lyxml_elem_dup(const struct lyxml_elem *elem)
-{
-    struct lyxml_elem *dup;
-
-    dup = malloc(sizeof *dup);
-    LY_CHECK_ERR_RET(!dup, LOGMEM(NULL), NULL);
-
-    memcpy(dup, elem, sizeof *dup);
-
-    return dup;
-}
-
-/**
- * @brief Duplicate an XML namespace.
- *
- * @param[in] ns Namespace to duplicate.
- * @return Namespace duplicate.
- * @return NULL on error.
- */
-static struct lyxml_ns *
-lyxml_ns_dup(const struct lyxml_ns *ns)
-{
-    struct lyxml_ns *dup;
-
-    dup = malloc(sizeof *dup);
-    LY_CHECK_ERR_RET(!dup, LOGMEM(NULL), NULL);
-
-    if (ns->prefix) {
-        dup->prefix = strdup(ns->prefix);
-        LY_CHECK_ERR_RET(!dup->prefix, LOGMEM(NULL); free(dup), NULL);
-    } else {
-        dup->prefix = NULL;
-    }
-    dup->uri = strdup(ns->uri);
-    LY_CHECK_ERR_RET(!dup->uri, LOGMEM(NULL); free(dup->prefix); free(dup), NULL);
-    dup->depth = ns->depth;
-
-    return dup;
-}
-
-LY_ERR
-lyxml_ctx_backup(struct lyxml_ctx *xmlctx, struct lyxml_ctx *backup)
-{
-    uint32_t i;
-
-    /* first make shallow copy */
-    memcpy(backup, xmlctx, sizeof *backup);
-
-    if ((xmlctx->status == LYXML_ELEM_CONTENT) && xmlctx->dynamic) {
-        /* it was backed up, do not free */
-        xmlctx->dynamic = 0;
-    }
-
-    /* backup in */
-    backup->b_current = xmlctx->in->current;
-    backup->b_line = xmlctx->in->line;
-
-    /* duplicate elements */
-    backup->elements.objs = malloc(xmlctx->elements.size * sizeof(struct lyxml_elem));
-    LY_CHECK_ERR_RET(!backup->elements.objs, LOGMEM(xmlctx->ctx), LY_EMEM);
-    for (i = 0; i < xmlctx->elements.count; ++i) {
-        backup->elements.objs[i] = lyxml_elem_dup(xmlctx->elements.objs[i]);
-        LY_CHECK_RET(!backup->elements.objs[i], LY_EMEM);
-    }
-
-    /* duplicate ns */
-    backup->ns.objs = malloc(xmlctx->ns.size * sizeof(struct lyxml_ns));
-    LY_CHECK_ERR_RET(!backup->ns.objs, LOGMEM(xmlctx->ctx), LY_EMEM);
-    for (i = 0; i < xmlctx->ns.count; ++i) {
-        backup->ns.objs[i] = lyxml_ns_dup(xmlctx->ns.objs[i]);
-        LY_CHECK_RET(!backup->ns.objs[i], LY_EMEM);
-    }
-
-    return LY_SUCCESS;
-}
-
-void
-lyxml_ctx_restore(struct lyxml_ctx *xmlctx, struct lyxml_ctx *backup)
-{
-    if (((xmlctx->status == LYXML_ELEM_CONTENT) || (xmlctx->status == LYXML_ATTR_CONTENT)) && xmlctx->dynamic) {
-        /* free dynamic value */
-        free((char *)xmlctx->value);
-    }
-
-    /* free elements */
-    ly_set_erase(&xmlctx->elements, free);
-
-    /* free ns */
-    lyxml_ns_rm_all(xmlctx);
-
-    /* restore in */
-    xmlctx->in->current = backup->b_current;
-    xmlctx->in->line = backup->b_line;
-    backup->in = xmlctx->in;
-
-    /* restore backup */
-    memcpy(xmlctx, backup, sizeof *xmlctx);
 }
 
 LY_ERR

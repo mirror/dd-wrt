@@ -12,22 +12,18 @@
  *     https://opensource.org/licenses/BSD-3-Clause
  */
 
-#define _GNU_SOURCE /* strndup */
+#define _GNU_SOURCE /* asprintf, strdup */
+#include <sys/cdefs.h>
 
-#include "plugins_internal.h"
 #include "plugins_types.h"
 
-#ifdef _WIN32
-# include <winsock2.h>
-# include <ws2tcpip.h>
-#else
-#  include <arpa/inet.h>
-#  if defined (__FreeBSD__) || defined (__NetBSD__) || defined (__OpenBSD__)
-#    include <netinet/in.h>
-#    include <sys/socket.h>
-#  endif
+#include <arpa/inet.h>
+#if defined (__FreeBSD__) || defined (__NetBSD__) || defined (__OpenBSD__)
+#include <netinet/in.h>
+#include <sys/socket.h>
 #endif
 #include <assert.h>
+#include <ctype.h>
 #include <errno.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -35,8 +31,8 @@
 
 #include "libyang.h"
 
+#include "common.h"
 #include "compat.h"
-#include "ly_common.h"
 
 /**
  * @page howtoDataLYB LYB Binary Format
@@ -178,10 +174,13 @@ cleanup:
  * @brief Implementation of ::lyplg_type_compare_clb for the ipv6-address-no-zone ietf-inet-types type.
  */
 static LY_ERR
-lyplg_type_compare_ipv6_address_no_zone(const struct ly_ctx *UNUSED(ctx), const struct lyd_value *val1,
-        const struct lyd_value *val2)
+lyplg_type_compare_ipv6_address_no_zone(const struct lyd_value *val1, const struct lyd_value *val2)
 {
     struct lyd_value_ipv6_address_no_zone *v1, *v2;
+
+    if (val1->realtype != val2->realtype) {
+        return LY_ENOT;
+    }
 
     LYD_VALUE_GET(val1, v1);
     LYD_VALUE_GET(val2, v2);
@@ -190,21 +189,6 @@ lyplg_type_compare_ipv6_address_no_zone(const struct ly_ctx *UNUSED(ctx), const 
         return LY_ENOT;
     }
     return LY_SUCCESS;
-}
-
-/**
- * @brief Implementation of ::lyplg_type_sort_clb for the ipv6-address-no-zone ietf-inet-types type.
- */
-static int
-lyplg_type_sort_ipv6_address_no_zone(const struct ly_ctx *UNUSED(ctx), const struct lyd_value *val1,
-        const struct lyd_value *val2)
-{
-    struct lyd_value_ipv6_address_no_zone *v1, *v2;
-
-    LYD_VALUE_GET(val1, v1);
-    LYD_VALUE_GET(val2, v2);
-
-    return memcmp(&v1->addr, &v2->addr, sizeof v1->addr);
 }
 
 /**
@@ -236,7 +220,7 @@ lyplg_type_print_ipv6_address_no_zone(const struct ly_ctx *ctx, const struct lyd
         /* get the address in string */
         if (!inet_ntop(AF_INET6, &val->addr, ret, INET6_ADDRSTRLEN)) {
             free(ret);
-            LOGERR(ctx, LY_ESYS, "Failed to get IPv6 address in string (%s).", strerror(errno));
+            LOGERR(ctx, LY_EVALID, "Failed to get IPv6 address in string (%s).", strerror(errno));
             return NULL;
         }
 
@@ -266,23 +250,20 @@ lyplg_type_dup_ipv6_address_no_zone(const struct ly_ctx *ctx, const struct lyd_v
     LY_ERR ret;
     struct lyd_value_ipv6_address_no_zone *orig_val, *dup_val;
 
-    memset(dup, 0, sizeof *dup);
-
-    ret = lydict_insert(ctx, original->_canonical, 0, &dup->_canonical);
-    LY_CHECK_GOTO(ret, error);
+    ret = lydict_insert(ctx, original->_canonical, ly_strlen(original->_canonical), &dup->_canonical);
+    LY_CHECK_RET(ret);
 
     LYPLG_TYPE_VAL_INLINE_PREPARE(dup, dup_val);
-    LY_CHECK_ERR_GOTO(!dup_val, ret = LY_EMEM, error);
+    if (!dup_val) {
+        lydict_remove(ctx, dup->_canonical);
+        return LY_EMEM;
+    }
 
     LYD_VALUE_GET(original, orig_val);
     memcpy(&dup_val->addr, &orig_val->addr, sizeof orig_val->addr);
 
     dup->realtype = original->realtype;
     return LY_SUCCESS;
-
-error:
-    lyplg_type_free_ipv6_address_no_zone(ctx, dup);
-    return ret;
 }
 
 /**
@@ -294,7 +275,6 @@ lyplg_type_free_ipv6_address_no_zone(const struct ly_ctx *ctx, struct lyd_value 
     struct lyd_value_ipv6_address_no_zone *val;
 
     lydict_remove(ctx, value->_canonical);
-    value->_canonical = NULL;
     LYD_VALUE_GET(value, val);
     LYPLG_TYPE_VAL_INLINE_DESTROY(val);
 }
@@ -316,11 +296,10 @@ const struct lyplg_type_record plugins_ipv6_address_no_zone[] = {
         .plugin.store = lyplg_type_store_ipv6_address_no_zone,
         .plugin.validate = NULL,
         .plugin.compare = lyplg_type_compare_ipv6_address_no_zone,
-        .plugin.sort = lyplg_type_sort_ipv6_address_no_zone,
+        .plugin.sort = NULL,
         .plugin.print = lyplg_type_print_ipv6_address_no_zone,
         .plugin.duplicate = lyplg_type_dup_ipv6_address_no_zone,
-        .plugin.free = lyplg_type_free_ipv6_address_no_zone,
-        .plugin.lyb_data_len = 16,
+        .plugin.free = lyplg_type_free_ipv6_address_no_zone
     },
     {0}
 };

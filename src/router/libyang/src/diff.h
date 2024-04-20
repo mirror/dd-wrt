@@ -55,7 +55,7 @@ enum lyd_diff_op {
  * @param[in,out] diff Diff to append to.
  * @return LY_ERR value.
  */
-LIBYANG_API_DECL LY_ERR lyd_diff_add(const struct lyd_node *node, enum lyd_diff_op op, const char *orig_default, const char *orig_value,
+LY_ERR lyd_diff_add(const struct lyd_node *node, enum lyd_diff_op op, const char *orig_default, const char *orig_value,
         const char *key, const char *value, const char *position, const char *orig_key, const char *orig_position,
         struct lyd_node **diff);
 

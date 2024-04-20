@@ -103,6 +103,22 @@ setup(void **state)
     CHECK_LYD_STRING_PARAM(IN_MODEL, TEXT, LYD_XML, PRINT_OPTION)
 
 static void
+test_leaf(void **state)
+{
+    struct lyd_node *tree;
+    const char *data, *result;
+
+    #if 0
+    /* test on print int8 is in file ./tests/utests/types/int8.c */
+    data = "<int8 xmlns=\"urn:tests:types\">\n 15 \t\n  </int8>";
+    result = "<int8 xmlns=\"urn:tests:types\">15</int8>";
+    CHECK_PARSE_LYD(data, 0, LYD_VALIDATE_PRESENT, tree);
+    CHECK_LYD_STRING(tree, LYD_PRINT_SHRINK | LYD_PRINT_WITHSIBLINGS, result);
+    lyd_free_all(tree);
+    #endif
+}
+
+static void
 test_anydata(void **state)
 {
     struct lyd_node *tree;
@@ -145,8 +161,7 @@ test_anydata(void **state)
             "  <cont>\n"
             "    <elem1 xmlns=\"urn:tests:defs\">\n"
             "      <elem2 xmlns=\"urn:tests:types\" xmlns:defs=\"urn:tests:defs\" xmlns:defaults=\"urn:defaults\" "
-            "defs:attr1=\"defaults:val\" attr2=\"/defaults:node/defs:node2\">\n"
-            "      </elem2>\n"
+            "defs:attr1=\"defaults:val\" attr2=\"/defaults:node/defs:node2\"/>\n"
             "    </elem1>\n"
             "  </cont>\n"
             "</any>\n";
@@ -336,6 +351,7 @@ int
 main(void)
 {
     const struct CMUnitTest tests[] = {
+        UTEST(test_leaf, setup),
         UTEST(test_anydata, setup),
         UTEST(test_defaults, setup),
     };

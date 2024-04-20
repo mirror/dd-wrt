@@ -1,0 +1,57 @@
+name: coverity-scan
+on:
+  schedule:
+    - cron: '0 6 * * *'  # Dayly at 06:00 UTC
+
+jobs:
+  coverity-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+        with:
+          ref: devel
+
+      - name: Download Coverity Build Tool
+        shell: bash
+        working-directory: ${{ github.workspace }}
+        run: |
+          wget -q https://scan.coverity.com/download/linux64 --post-data "token=$TOKEN&project=CESNET%2Flibyang" -O coverity-tools.tar.gz
+          mkdir coverity-tools
+          tar xzf coverity-tools.tar.gz --strip 1 -C coverity-tools
+        env:
+          TOKEN: ${{ secrets.COVERITY_SCAN_TOKEN }}
+
+      - name: Fixed world writable dirs
+        run: |
+          chmod go-w $HOME
+          sudo chmod -R go-w /usr/share
+
+      - name: Configure
+        shell: bash
+        working-directory: ${{ github.workspace }}
+        run: |
+          mkdir build
+          cd build
+          CC=clang cmake -DCMAKE_BUILD_TYPE=Debug ..
+
+      - name: Build with cov-build
+        shell: bash
+        working-directory: ${{ github.workspace }}/build
+        run: |
+          export PATH=${{ github.workspace }}/coverity-tools/bin:$PATH
+          cov-build --dir cov-int make
+
+      - name: Submit the result to Coverity Scan
+        shell: bash
+        working-directory: ${{ github.workspace }}/build
+        run: |
+          tar czvf libyang.tgz cov-int
+          curl \
+            --form token=$TOKEN \
+            --form email=rkrejci@cesnet.cz \
+            --form file=@libyang.tgz \
+            --form version="`./yanglint -v | cut -d\" \" -f2`" \
+            --form description="libyang library" \
+            https://scan.coverity.com/builds?project=CESNET%2Flibyang
+        env:
+          TOKEN: ${{ secrets.COVERITY_SCAN_TOKEN }}

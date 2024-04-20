@@ -19,9 +19,4 @@
 
 #define TESTS_DIR_MODULES_YANG TESTS_SRC"/modules/yang"
 
-/**
- * @brief Macro for support of callgrind header and macros.
- */
-#cmakedefine HAVE_CALLGRIND
-
 #endif /* LYTEST_CONFIG_H_ */

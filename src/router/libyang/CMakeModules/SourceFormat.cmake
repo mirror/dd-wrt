@@ -2,11 +2,7 @@
 
 # check that format checking is available - always use before SOURCE_FORMAT
 macro(SOURCE_FORMAT_ENABLE)
-    if(NOT ${ARGC} EQUAL 1)
-        message(FATAL_ERROR "source_format_enable() needs the required Uncrustify version!")
-    endif()
-
-    find_package(Uncrustify ${ARGV0})
+    find_package(Uncrustify 0.71)
     if(UNCRUSTIFY_FOUND)
         set(SOURCE_FORMAT_ENABLED TRUE)
     else()

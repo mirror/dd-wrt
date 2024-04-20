@@ -1,10 +1,9 @@
 /**
  * @file plugins_types.c
  * @author Radek Krejci <rkrejci@cesnet.cz>
- * @author Michal Vasko <mvasko@cesnet.cz>
  * @brief Built-in types plugins and interface for user types plugins.
  *
- * Copyright (c) 2019 - 2022 CESNET, z.s.p.o.
+ * Copyright (c) 2019 CESNET, z.s.p.o.
  *
  * This source code is licensed under BSD 3-Clause License (the "License").
  * You may not use this file except in compliance with the License.
@@ -14,22 +13,21 @@
  */
 
 #define _GNU_SOURCE /* asprintf, strdup */
+#include <sys/cdefs.h>
 
 #include "plugins_types.h"
 
-#include <assert.h>
 #include <ctype.h>
 #include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
+#include "common.h"
 #include "compat.h"
 #include "context.h"
 #include "dict.h"
-#include "ly_common.h"
 #include "path.h"
-#include "plugins_internal.h"
 #include "schema_compile.h"
 #include "set.h"
 #include "tree.h"
@@ -47,23 +45,27 @@ static const struct lys_module *
 ly_schema_resolve_prefix(const struct ly_ctx *UNUSED(ctx), const char *prefix, size_t prefix_len, const void *prefix_data)
 {
     const struct lysp_module *prefix_mod = prefix_data;
+    struct lys_module *m = NULL;
     LY_ARRAY_COUNT_TYPE u;
     const char *local_prefix;
 
     local_prefix = prefix_mod->is_submod ? ((struct lysp_submodule *)prefix_mod)->prefix : prefix_mod->mod->prefix;
     if (!prefix_len || !ly_strncmp(local_prefix, prefix, prefix_len)) {
         /* it is the prefix of the module itself */
-        return prefix_mod->mod;
+        m = prefix_mod->mod;
     }
 
     /* search in imports */
-    LY_ARRAY_FOR(prefix_mod->imports, u) {
-        if (!ly_strncmp(prefix_mod->imports[u].prefix, prefix, prefix_len)) {
-            return prefix_mod->imports[u].module;
+    if (!m) {
+        LY_ARRAY_FOR(prefix_mod->imports, u) {
+            if (!ly_strncmp(prefix_mod->imports[u].prefix, prefix, prefix_len)) {
+                m = prefix_mod->imports[u].module;
+                break;
+            }
         }
     }
 
-    return NULL;
+    return m;
 }
 
 /**
@@ -77,7 +79,7 @@ ly_schema_resolved_resolve_prefix(const struct ly_ctx *UNUSED(ctx), const char *
     LY_ARRAY_COUNT_TYPE u;
 
     LY_ARRAY_FOR(prefixes, u) {
-        if ((!prefixes[u].prefix && !prefix_len) || (prefixes[u].prefix && !ly_strncmp(prefixes[u].prefix, prefix, prefix_len))) {
+        if (!ly_strncmp(prefixes[u].prefix, prefix, prefix_len)) {
             return prefixes[u].mod;
         }
     }
@@ -133,7 +135,6 @@ ly_resolve_prefix(const struct ly_ctx *ctx, const void *prefix, size_t prefix_le
         mod = ly_schema_resolved_resolve_prefix(ctx, prefix, prefix_len, prefix_data);
         break;
     case LY_VALUE_XML:
-    case LY_VALUE_STR_NS:
         mod = ly_xml_resolve_prefix(ctx, prefix, prefix_len, prefix_data);
         break;
     case LY_VALUE_CANON:
@@ -146,26 +147,23 @@ ly_resolve_prefix(const struct ly_ctx *ctx, const void *prefix, size_t prefix_le
     return mod;
 }
 
-LIBYANG_API_DEF const struct lys_module *
-lyplg_type_identity_module(const struct ly_ctx *ctx, const struct lysc_node *ctx_node, const char *prefix,
-        size_t prefix_len, LY_VALUE_FORMAT format, const void *prefix_data)
+API const struct lys_module *
+lyplg_type_identity_module(const struct ly_ctx *ctx, const struct lysc_node *ctx_node,
+        const char *prefix, size_t prefix_len, LY_VALUE_FORMAT format, const void *prefix_data)
 {
     if (prefix_len) {
         return ly_resolve_prefix(ctx, prefix, prefix_len, format, prefix_data);
     } else {
         switch (format) {
         case LY_VALUE_SCHEMA:
-            /* use local module */
-            return ly_schema_resolve_prefix(ctx, prefix, prefix_len, prefix_data);
         case LY_VALUE_SCHEMA_RESOLVED:
-            /* use local module */
-            return ly_schema_resolved_resolve_prefix(ctx, prefix, prefix_len, prefix_data);
+            /* use context node module, handles augments */
+            return ctx_node->module;
         case LY_VALUE_CANON:
         case LY_VALUE_JSON:
         case LY_VALUE_LYB:
-        case LY_VALUE_STR_NS:
             /* use context node module (as specified) */
-            return ctx_node ? ctx_node->module : NULL;
+            return ctx_node->module;
         case LY_VALUE_XML:
             /* use the default namespace */
             return ly_xml_resolve_prefix(ctx, NULL, 0, prefix_data);
@@ -221,52 +219,24 @@ ly_schema_resolved_get_prefix(const struct lys_module *mod, void *prefix_data)
 }
 
 /**
- * @brief Get prefix for XML print.
- *
- * @param[in] mod Module whose prefix to get.
- * @param[in,out] prefix_data Set of used modules in the print. If @p mod is found in this set, no string (prefix) is
- * returned.
- * @return Prefix to print, may be NULL if the default namespace should be used.
+ * @brief Simply return module local prefix. Also, store the module in a set.
  */
 static const char *
 ly_xml_get_prefix(const struct lys_module *mod, void *prefix_data)
 {
-    struct ly_set *mods = prefix_data;
-    uint32_t i;
+    struct ly_set *ns_list = prefix_data;
 
-    /* first is the local module */
-    assert(mods->count);
-    if (mods->objs[0] == mod) {
-        return NULL;
-    }
-
-    /* check for duplicates in the rest of the modules and add there */
-    for (i = 1; i < mods->count; ++i) {
-        if (mods->objs[i] == mod) {
-            break;
-        }
-    }
-    if (i == mods->count) {
-        LY_CHECK_RET(ly_set_add(mods, (void *)mod, 1, NULL), NULL);
-    }
-
-    /* return the prefix */
+    LY_CHECK_RET(ly_set_add(ns_list, (void *)mod, 0, NULL), NULL);
     return mod->prefix;
 }
 
 /**
- * @brief Get prefix for JSON print.
- *
- * @param[in] mod Module whose prefix to get.
- * @param[in] prefix_data Current local module, may be NULL. If it matches @p mod, no string (preifx) is returned.
- * @return Prefix (module name) to print, may be NULL if the default module should be used.
+ * @brief Simply return module name.
  */
 static const char *
-ly_json_get_prefix(const struct lys_module *mod, void *prefix_data)
+ly_json_get_prefix(const struct lys_module *mod, void *UNUSED(prefix_data))
 {
-    const struct lys_module *local_mod = prefix_data;
-
-    return (local_mod == mod) ? NULL : mod->name;
+    return mod->name;
 }
 
 const char *
@@ -282,7 +252,6 @@ ly_get_prefix(const struct lys_module *mod, LY_VALUE_FORMAT format, void *prefix
         prefix = ly_schema_resolved_get_prefix(mod, prefix_data);
         break;
     case LY_VALUE_XML:
-    case LY_VALUE_STR_NS:
         prefix = ly_xml_get_prefix(mod, prefix_data);
         break;
     case LY_VALUE_CANON:
@@ -295,48 +264,27 @@ ly_get_prefix(const struct lys_module *mod, LY_VALUE_FORMAT format, void *prefix
     return prefix;
 }
 
-LIBYANG_API_DEF const char *
+API const char *
 lyplg_type_get_prefix(const struct lys_module *mod, LY_VALUE_FORMAT format, void *prefix_data)
 {
     return ly_get_prefix(mod, format, prefix_data);
 }
 
-LIBYANG_API_DEF LY_ERR
-lyplg_type_compare_simple(const struct ly_ctx *ctx, const struct lyd_value *val1, const struct lyd_value *val2)
+API LY_ERR
+lyplg_type_compare_simple(const struct lyd_value *val1, const struct lyd_value *val2)
 {
-    const char *can1, *can2;
+    if (val1->realtype != val2->realtype) {
+        return LY_ENOT;
+    }
 
-    can1 = lyd_value_get_canonical(ctx, val1);
-    can2 = lyd_value_get_canonical(ctx, val2);
-    if (can1 == can2) {
+    if (val1->_canonical == val2->_canonical) {
         return LY_SUCCESS;
     }
 
     return LY_ENOT;
 }
 
-LIBYANG_API_DEF int
-lyplg_type_sort_simple(const struct ly_ctx *ctx, const struct lyd_value *val1, const struct lyd_value *val2)
-{
-    int cmp;
-    const char *can1, *can2;
-
-    can1 = lyd_value_get_canonical(ctx, val1);
-    can2 = lyd_value_get_canonical(ctx, val2);
-    if (can1 && can2) {
-        cmp = strcmp(can1, can2);
-        return cmp;
-    } else if (!can1 && can2) {
-        return -1;
-    } else if (can1 && !can2) {
-        return 1;
-    } else {
-        /* !can1 && !can2 */
-        return 0;
-    }
-}
-
-LIBYANG_API_DEF const void *
+API const void *
 lyplg_type_print_simple(const struct ly_ctx *UNUSED(ctx), const struct lyd_value *value, LY_VALUE_FORMAT UNUSED(format),
         void *UNUSED(prefix_data), ly_bool *dynamic, size_t *value_len)
 {
@@ -344,29 +292,28 @@ lyplg_type_print_simple(const struct ly_ctx *UNUSED(ctx), const struct lyd_value
         *dynamic = 0;
     }
     if (value_len) {
-        *value_len = ly_strlen(value->_canonical);
+        *value_len = strlen(value->_canonical);
     }
     return value->_canonical;
 }
 
-LIBYANG_API_DEF LY_ERR
+API LY_ERR
 lyplg_type_dup_simple(const struct ly_ctx *ctx, const struct lyd_value *original, struct lyd_value *dup)
 {
-    memset(dup, 0, sizeof *dup);
-    LY_CHECK_RET(lydict_insert(ctx, original->_canonical, 0, &dup->_canonical));
+    LY_CHECK_RET(lydict_insert(ctx, original->_canonical, strlen(original->_canonical), &dup->_canonical));
     memcpy(dup->fixed_mem, original->fixed_mem, sizeof dup->fixed_mem);
     dup->realtype = original->realtype;
     return LY_SUCCESS;
 }
 
-LIBYANG_API_DEF void
+API void
 lyplg_type_free_simple(const struct ly_ctx *ctx, struct lyd_value *value)
 {
     lydict_remove(ctx, value->_canonical);
     value->_canonical = NULL;
 }
 
-LIBYANG_API_DEF LY_ERR
+API LY_ERR
 lyplg_type_parse_int(const char *datatype, int base, int64_t min, int64_t max, const char *value, size_t value_len,
         int64_t *ret, struct ly_err_item **err)
 {
@@ -378,22 +325,20 @@ lyplg_type_parse_int(const char *datatype, int base, int64_t min, int64_t max, c
     for ( ; value_len && isspace(*value); ++value, --value_len) {}
 
     if (!value || !value_len || !value[0]) {
-        return ly_err_new(err, LY_EVALID, LYVE_DATA, NULL, NULL, "Invalid type %s empty value.", datatype);
+        return ly_err_new(err, LY_EVALID, LYVE_DATA, NULL, NULL, "Invalid empty %s value.", datatype);
     }
 
     switch (ly_parse_int(value, value_len, min, max, base, ret)) {
     case LY_EDENIED:
-        return ly_err_new(err, LY_EVALID, LYVE_DATA, NULL, NULL,
-                "Value \"%.*s\" is out of type %s min/max bounds.", (int)value_len, value, datatype);
+        return ly_err_new(err, LY_EVALID, LYVE_DATA, NULL, NULL, "Value is out of %s's min/max bounds.", datatype);
     case LY_SUCCESS:
         return LY_SUCCESS;
     default:
-        return ly_err_new(err, LY_EVALID, LYVE_DATA, NULL, NULL,
-                "Invalid type %s value \"%.*s\".", datatype, (int)value_len, value);
+        return ly_err_new(err, LY_EVALID, LYVE_DATA, NULL, NULL, "Invalid %s value \"%.*s\".", datatype, (int)value_len, value);
     }
 }
 
-LIBYANG_API_DEF LY_ERR
+API LY_ERR
 lyplg_type_parse_uint(const char *datatype, int base, uint64_t max, const char *value, size_t value_len, uint64_t *ret,
         struct ly_err_item **err)
 {
@@ -405,23 +350,23 @@ lyplg_type_parse_uint(const char *datatype, int base, uint64_t max, const char *
     for ( ; value_len && isspace(*value); ++value, --value_len) {}
 
     if (!value || !value_len || !value[0]) {
-        return ly_err_new(err, LY_EVALID, LYVE_DATA, NULL, NULL, "Invalid type %s empty value.", datatype);
+        return ly_err_new(err, LY_EVALID, LYVE_DATA, NULL, NULL, "Invalid empty %s value.", datatype);
     }
 
     *err = NULL;
     switch (ly_parse_uint(value, value_len, max, base, ret)) {
     case LY_EDENIED:
         return ly_err_new(err, LY_EVALID, LYVE_DATA, NULL, NULL,
-                "Value \"%.*s\" is out of type %s min/max bounds.", (int)value_len, value, datatype);
+                "Value \"%.*s\" is out of %s's min/max bounds.", (int)value_len, value, datatype);
     case LY_SUCCESS:
         return LY_SUCCESS;
     default:
         return ly_err_new(err, LY_EVALID, LYVE_DATA, NULL, NULL,
-                "Invalid type %s value \"%.*s\".", datatype, (int)value_len, value);
+                "Invalid %s value \"%.*s\".", datatype, (int)value_len, value);
     }
 }
 
-LIBYANG_API_DEF LY_ERR
+API LY_ERR
 lyplg_type_parse_dec64(uint8_t fraction_digits, const char *value, size_t value_len, int64_t *ret, struct ly_err_item **err)
 {
     LY_ERR ret_val;
@@ -438,7 +383,7 @@ lyplg_type_parse_dec64(uint8_t fraction_digits, const char *value, size_t value_
     if (!value_len) {
         return ly_err_new(err, LY_EVALID, LYVE_DATA, NULL, NULL, "Invalid empty decimal64 value.");
     } else if (!isdigit(value[len]) && (value[len] != '-') && (value[len] != '+')) {
-        return ly_err_new(err, LY_EVALID, LYVE_DATA, NULL, NULL, "Invalid %zu. character of decimal64 value \"%.*s\".",
+        return ly_err_new(err, LY_EVALID, LYVE_DATA, NULL, NULL, "Invalid %lu. character of decimal64 value \"%.*s\".",
                 len + 1, (int)value_len, value);
     }
 
@@ -481,7 +426,6 @@ decimal:
     if (len + trailing_zeros < value_len) {
         /* consume trailing whitespaces to check that there is nothing after it */
         uint64_t u;
-
         for (u = len + trailing_zeros; u < value_len && isspace(value[u]); ++u) {}
         if (u != value_len) {
             return ly_err_new(err, LY_EVALID, LYVE_DATA, NULL, NULL,
@@ -517,7 +461,7 @@ decimal:
     return ret_val;
 }
 
-LIBYANG_API_DEF LY_ERR
+API LY_ERR
 lyplg_type_validate_patterns(struct lysc_pattern **patterns, const char *str, size_t str_len, struct ly_err_item **err)
 {
     int rc, match_opts;
@@ -545,19 +489,17 @@ lyplg_type_validate_patterns(struct lysc_pattern **patterns, const char *str, si
 
         if ((rc != PCRE2_ERROR_NOMATCH) && (rc < 0)) {
             PCRE2_UCHAR pcre2_errmsg[LY_PCRE2_MSG_LIMIT] = {0};
-
             pcre2_get_error_message(rc, pcre2_errmsg, LY_PCRE2_MSG_LIMIT);
 
-            return ly_err_new(err, LY_ESYS, 0, NULL, NULL, "%s", (const char *)pcre2_errmsg);
+            return ly_err_new(err, LY_ESYS, 0, NULL, NULL, (const char *)pcre2_errmsg);
         } else if (((rc == PCRE2_ERROR_NOMATCH) && !patterns[u]->inverted) ||
                 ((rc != PCRE2_ERROR_NOMATCH) && patterns[u]->inverted)) {
             char *eapptag = patterns[u]->eapptag ? strdup(patterns[u]->eapptag) : NULL;
 
             if (patterns[u]->emsg) {
-                return ly_err_new(err, LY_EVALID, LYVE_DATA, NULL, eapptag, "%s", patterns[u]->emsg);
+                return ly_err_new(err, LY_EVALID, LYVE_DATA, NULL, eapptag, patterns[u]->emsg);
             } else {
                 const char *inverted = patterns[u]->inverted ? "inverted " : "";
-
                 return ly_err_new(err, LY_EVALID, LYVE_DATA, NULL, eapptag,
                         LY_ERRMSG_NOPATTERN, (int)str_len, str, inverted, patterns[u]->expr);
             }
@@ -566,7 +508,7 @@ lyplg_type_validate_patterns(struct lysc_pattern **patterns, const char *str, si
     return LY_SUCCESS;
 }
 
-LIBYANG_API_DEF LY_ERR
+API LY_ERR
 lyplg_type_validate_range(LY_DATA_TYPE basetype, struct lysc_range *range, int64_t value, const char *strval,
         size_t strval_len, struct ly_err_item **err)
 {
@@ -581,9 +523,8 @@ lyplg_type_validate_range(LY_DATA_TYPE basetype, struct lysc_range *range, int64
             /* unsigned */
             if ((uint64_t)value < range->parts[u].min_u64) {
                 char *eapptag = range->eapptag ? strdup(range->eapptag) : NULL;
-
                 if (range->emsg) {
-                    return ly_err_new(err, LY_EVALID, LYVE_DATA, NULL, eapptag, "%s", range->emsg);
+                    return ly_err_new(err, LY_EVALID, LYVE_DATA, NULL, eapptag, range->emsg);
                 } else {
                     return ly_err_new(err, LY_EVALID, LYVE_DATA, NULL, eapptag,
                             is_length ? LY_ERRMSG_NOLENGTH : LY_ERRMSG_NORANGE, (int)strval_len, strval);
@@ -594,9 +535,8 @@ lyplg_type_validate_range(LY_DATA_TYPE basetype, struct lysc_range *range, int64
             } else if (u == LY_ARRAY_COUNT(range->parts) - 1) {
                 /* we have the last range part, so the value is out of bounds */
                 char *eapptag = range->eapptag ? strdup(range->eapptag) : NULL;
-
                 if (range->emsg) {
-                    return ly_err_new(err, LY_EVALID, LYVE_DATA, NULL, eapptag, "%s", range->emsg);
+                    return ly_err_new(err, LY_EVALID, LYVE_DATA, NULL, eapptag, range->emsg);
                 } else {
                     return ly_err_new(err, LY_EVALID, LYVE_DATA, NULL, eapptag,
                             is_length ? LY_ERRMSG_NOLENGTH : LY_ERRMSG_NORANGE, (int)strval_len, strval);
@@ -606,9 +546,8 @@ lyplg_type_validate_range(LY_DATA_TYPE basetype, struct lysc_range *range, int64
             /* signed */
             if (value < range->parts[u].min_64) {
                 char *eapptag = range->eapptag ? strdup(range->eapptag) : NULL;
-
                 if (range->emsg) {
-                    return ly_err_new(err, LY_EVALID, LYVE_DATA, NULL, eapptag, "%s", range->emsg);
+                    return ly_err_new(err, LY_EVALID, LYVE_DATA, NULL, eapptag, range->emsg);
                 } else {
                     return ly_err_new(err, LY_EVALID, LYVE_DATA, NULL, eapptag, LY_ERRMSG_NORANGE, (int)strval_len, strval);
                 }
@@ -618,9 +557,8 @@ lyplg_type_validate_range(LY_DATA_TYPE basetype, struct lysc_range *range, int64
             } else if (u == LY_ARRAY_COUNT(range->parts) - 1) {
                 /* we have the last range part, so the value is out of bounds */
                 char *eapptag = range->eapptag ? strdup(range->eapptag) : NULL;
-
                 if (range->emsg) {
-                    return ly_err_new(err, LY_EVALID, LYVE_DATA, NULL, eapptag, "%s", range->emsg);
+                    return ly_err_new(err, LY_EVALID, LYVE_DATA, NULL, eapptag, range->emsg);
                 } else {
                     return ly_err_new(err, LY_EVALID, LYVE_DATA, NULL, eapptag, LY_ERRMSG_NORANGE, (int)strval_len, strval);
                 }
@@ -631,7 +569,7 @@ lyplg_type_validate_range(LY_DATA_TYPE basetype, struct lysc_range *range, int64
     return LY_SUCCESS;
 }
 
-LIBYANG_API_DEF LY_ERR
+API LY_ERR
 lyplg_type_prefix_data_new(const struct ly_ctx *ctx, const void *value, size_t value_len, LY_VALUE_FORMAT format,
         const void *prefix_data, LY_VALUE_FORMAT *format_p, void **prefix_data_p)
 {
@@ -641,7 +579,7 @@ lyplg_type_prefix_data_new(const struct ly_ctx *ctx, const void *value, size_t v
     return ly_store_prefix_data(ctx, value, value_len, format, prefix_data, format_p, (void **)prefix_data_p);
 }
 
-LIBYANG_API_DEF LY_ERR
+API LY_ERR
 lyplg_type_prefix_data_dup(const struct ly_ctx *ctx, LY_VALUE_FORMAT format, const void *orig, void **dup)
 {
     LY_CHECK_ARG_RET(NULL, dup, LY_EINVAL);
@@ -654,7 +592,7 @@ lyplg_type_prefix_data_dup(const struct ly_ctx *ctx, LY_VALUE_FORMAT format, con
     return ly_dup_prefix_data(ctx, format, orig, (void **)dup);
 }
 
-LIBYANG_API_DEF void
+API void
 lyplg_type_prefix_data_free(LY_VALUE_FORMAT format, void *prefix_data)
 {
     ly_free_prefix_data(format, prefix_data);
@@ -677,9 +615,8 @@ type_get_hints_base(uint32_t hints)
     }
 }
 
-LIBYANG_API_DEF LY_ERR
-lyplg_type_check_hints(uint32_t hints, const char *value, size_t value_len, LY_DATA_TYPE type, int *base,
-        struct ly_err_item **err)
+API LY_ERR
+lyplg_type_check_hints(uint32_t hints, const char *value, size_t value_len, LY_DATA_TYPE type, int *base, struct ly_err_item **err)
 {
     LY_CHECK_ARG_RET(NULL, value || !value_len, err, LY_EINVAL);
 
@@ -746,82 +683,7 @@ lyplg_type_check_hints(uint32_t hints, const char *value, size_t value_len, LY_D
     return LY_SUCCESS;
 }
 
-LIBYANG_API_DEF LY_ERR
-lyplg_type_check_status(const struct lysc_node *ctx_node, uint16_t val_flags, LY_VALUE_FORMAT format, void *prefix_data,
-        const char *val_name, struct ly_err_item **err)
-{
-    LY_ERR ret;
-    const struct lys_module *mod2;
-    uint16_t flg1, flg2;
-
-    if (format != LY_VALUE_SCHEMA) {
-        /* nothing/unable to check */
-        return LY_SUCCESS;
-    }
-
-    mod2 = ((struct lysp_module *)prefix_data)->mod;
-
-    if (mod2 == ctx_node->module) {
-        /* use flags of the context node since the definition is local */
-        flg1 = (ctx_node->flags & LYS_STATUS_MASK) ? (ctx_node->flags & LYS_STATUS_MASK) : LYS_STATUS_CURR;
-    } else {
-        /* definition is foreign (deviation, refine), always current */
-        flg1 = LYS_STATUS_CURR;
-    }
-    flg2 = (val_flags & LYS_STATUS_MASK) ? (val_flags & LYS_STATUS_MASK) : LYS_STATUS_CURR;
-
-    if ((flg1 < flg2) && (ctx_node->module == mod2)) {
-        ret = ly_err_new(err, LY_EVALID, LYVE_REFERENCE, NULL, NULL,
-                "A %s definition \"%s\" is not allowed to reference %s value \"%s\".",
-                flg1 == LYS_STATUS_CURR ? "current" : "deprecated", ctx_node->name,
-                flg2 == LYS_STATUS_OBSLT ? "obsolete" : "deprecated", val_name);
-        return ret;
-    }
-
-    return LY_SUCCESS;
-}
-
-LIBYANG_API_DEF LY_ERR
-lyplg_type_lypath_check_status(const struct lysc_node *ctx_node, const struct ly_path *path, LY_VALUE_FORMAT format,
-        void *prefix_data, struct ly_err_item **err)
-{
-    LY_ERR ret;
-    LY_ARRAY_COUNT_TYPE u;
-    const struct lys_module *val_mod;
-    const struct lysc_node *node;
-    uint16_t flg1, flg2;
-
-    if (format != LY_VALUE_SCHEMA) {
-        /* nothing to check */
-        return LY_SUCCESS;
-    }
-
-    val_mod = ((struct lysp_module *)prefix_data)->mod;
-    if (val_mod == ctx_node->module) {
-        /* use flags of the context node since the definition is local */
-        flg1 = (ctx_node->flags & LYS_STATUS_MASK) ? (ctx_node->flags & LYS_STATUS_MASK) : LYS_STATUS_CURR;
-    } else {
-        /* definition is foreign (deviation, refine), always current */
-        flg1 = LYS_STATUS_CURR;
-    }
-
-    LY_ARRAY_FOR(path, u) {
-        node = path[u].node;
-
-        flg2 = (node->flags & LYS_STATUS_MASK) ? (node->flags & LYS_STATUS_MASK) : LYS_STATUS_CURR;
-        if ((flg1 < flg2) && (val_mod == node->module)) {
-            ret = ly_err_new(err, LY_EVALID, LYVE_REFERENCE, NULL, NULL,
-                    "A %s definition \"%s\" is not allowed to reference %s value \"%s\".",
-                    flg1 == LYS_STATUS_CURR ? "current" : "deprecated", ctx_node->name,
-                    flg2 == LYS_STATUS_OBSLT ? "obsolete" : "deprecated", node->name);
-            return ret;
-        }
-    }
-
-    return LY_SUCCESS;
-}
-
-LIBYANG_API_DEF LY_ERR
+API LY_ERR
 lyplg_type_lypath_new(const struct ly_ctx *ctx, const char *value, size_t value_len, uint32_t options,
         LY_VALUE_FORMAT format, void *prefix_data, const struct lysc_node *ctx_node, struct lys_glob_unres *unres,
         struct ly_path **path, struct ly_err_item **err)
@@ -829,8 +691,6 @@ lyplg_type_lypath_new(const struct ly_ctx *ctx, const char *value, size_t value_
     LY_ERR ret = LY_SUCCESS;
     struct lyxp_expr *exp = NULL;
     uint32_t prefix_opt = 0;
-    struct ly_err_item *e;
-    const char *err_fmt = NULL;
 
     LY_CHECK_ARG_RET(ctx, ctx, value, ctx_node, path, err, LY_EINVAL);
 
@@ -846,48 +706,36 @@ lyplg_type_lypath_new(const struct ly_ctx *ctx, const char *value, size_t value_
     case LY_VALUE_CANON:
     case LY_VALUE_LYB:
     case LY_VALUE_JSON:
-    case LY_VALUE_STR_NS:
         prefix_opt = LY_PATH_PREFIX_STRICT_INHERIT;
         break;
     }
 
-    /* remember the current last error */
-    e = (struct ly_err_item *)ly_err_last(ctx);
-
     /* parse the value */
-    ret = ly_path_parse(ctx, ctx_node, value, value_len, 0, LY_PATH_BEGIN_ABSOLUTE, prefix_opt, LY_PATH_PRED_SIMPLE, &exp);
+    ret = ly_path_parse(ctx, ctx_node, value, value_len, LY_PATH_BEGIN_ABSOLUTE, LY_PATH_LREF_FALSE,
+            prefix_opt, LY_PATH_PRED_SIMPLE, &exp);
     if (ret) {
-        err_fmt = "Invalid instance-identifier \"%.*s\" value - syntax error%s%s";
+        ret = ly_err_new(err, LY_EVALID, LYVE_DATA, NULL, NULL,
+                "Invalid instance-identifier \"%.*s\" value - syntax error.", (int)value_len, value);
         goto cleanup;
     }
 
     if (options & LYPLG_TYPE_STORE_IMPLEMENT) {
         /* implement all prefixes */
-        ret = lys_compile_expr_implement(ctx, exp, format, prefix_data, 1, unres, NULL);
-        if (ret) {
-            err_fmt = "Failed to implement a module referenced by instance-identifier \"%.*s\"%s%s";
-            goto cleanup;
-        }
+        LY_CHECK_GOTO(ret = lys_compile_expr_implement(ctx, exp, format, prefix_data, 1, unres, NULL), cleanup);
     }
 
     /* resolve it on schema tree */
-    ret = ly_path_compile(ctx, NULL, ctx_node, NULL, exp, (ctx_node->flags & LYS_IS_OUTPUT) ?
-            LY_PATH_OPER_OUTPUT : LY_PATH_OPER_INPUT, LY_PATH_TARGET_SINGLE, 1, format, prefix_data, path);
+    ret = ly_path_compile(ctx, NULL, ctx_node, NULL, exp, LY_PATH_LREF_FALSE, (ctx_node->flags & LYS_IS_OUTPUT) ?
+            LY_PATH_OPER_OUTPUT : LY_PATH_OPER_INPUT, LY_PATH_TARGET_SINGLE, format, prefix_data, unres, path);
     if (ret) {
-        err_fmt = "Invalid instance-identifier \"%.*s\" value - semantic error%s%s";
+        ret = ly_err_new(err, ret, LYVE_DATA, NULL, NULL,
+                "Invalid instance-identifier \"%.*s\" value - semantic error.", (int)value_len, value);
         goto cleanup;
     }
 
 cleanup:
     lyxp_expr_free(ctx, exp);
     if (ret) {
-        /* generate error, spend the context error, if any */
-        e = e ? e->next : (struct ly_err_item *)ly_err_last(ctx);
-        ret = ly_err_new(err, LY_EVALID, LYVE_DATA, NULL, NULL, err_fmt, (int)value_len, value, e ? ": " : ".", e ? e->msg : "");
-        if (e) {
-            ly_err_clean((struct ly_ctx *)ctx, e);
-        }
-
         ly_path_free(ctx, *path);
         *path = NULL;
     }
@@ -895,31 +743,28 @@ cleanup:
     return ret;
 }
 
-LIBYANG_API_DEF void
+API void
 lyplg_type_lypath_free(const struct ly_ctx *ctx, struct ly_path *path)
 {
     ly_path_free(ctx, path);
 }
 
-LIBYANG_API_DEF LY_ERR
+API LY_ERR
 lyplg_type_make_implemented(struct lys_module *mod, const char **features, struct lys_glob_unres *unres)
 {
-    if (mod->implemented) {
-        return LY_SUCCESS;
-    }
+    LY_CHECK_RET(lys_set_implemented_r(mod, features, unres));
 
-    LY_CHECK_RET(lys_implement(mod, features, unres));
-    LY_CHECK_RET(lys_compile(mod, &unres->ds_unres));
+    if (unres->recompile) {
+        return LY_ERECOMPILE;
+    }
 
     return LY_SUCCESS;
 }
 
-LIBYANG_API_DEF LY_ERR
+API LY_ERR
 lyplg_type_identity_isderived(const struct lysc_ident *base, const struct lysc_ident *der)
 {
     LY_ARRAY_COUNT_TYPE u;
-
-    assert(base->module->ctx == der->module->ctx);
 
     LY_ARRAY_FOR(base->derived, u) {
         if (der == base->derived[u]) {
@@ -932,191 +777,62 @@ lyplg_type_identity_isderived(const struct lysc_ident *base, const struct lysc_i
     return LY_ENOTFOUND;
 }
 
-/**
- * @brief Try to generate a path to the leafref target with its value to enable the use of hash-based search.
- *
- * @param[in] path Leafref path.
- * @param[in] ctx_node Leafref context node.
- * @param[in] format Format of @p path.
- * @param[in] prefix_data Prefix data of @p path.
- * @param[in] target_val Leafref target value.
- * @param[out] target_path Generated path with the target value.
- * @return LY_SUCCESS on success.
- * @return LY_ENOT if no matching target exists.
- * @return LY_ERR on error.
- */
-static LY_ERR
-lyplg_type_resolve_leafref_get_target_path(const struct lyxp_expr *path, const struct lysc_node *ctx_node,
-        LY_VALUE_FORMAT format, void *prefix_data, const char *target_val, struct lyxp_expr **target_path)
-{
-    LY_ERR rc = LY_SUCCESS;
-    uint8_t oper;
-    struct ly_path *p = NULL;
-    char *str_path = NULL, quot;
-    int len;
-    ly_bool list_key = 0;
-
-    *target_path = NULL;
-
-    /* compile, has already been so it must succeed */
-    oper = (ctx_node->flags & LYS_IS_OUTPUT) ? LY_PATH_OPER_OUTPUT : LY_PATH_OPER_INPUT;
-    if (ly_path_compile_leafref(ctx_node->module->ctx, ctx_node, NULL, path, oper, LY_PATH_TARGET_MANY, format,
-            prefix_data, &p)) {
-        /* the target was found before but is disabled so it was removed */
-        return LY_ENOT;
-    }
-
-    /* check whether we can search for a list instance with a specific key value */
-    if (lysc_is_key(p[LY_ARRAY_COUNT(p) - 1].node)) {
-        if ((LY_ARRAY_COUNT(p) >= 2) && (p[LY_ARRAY_COUNT(p) - 2].node->nodetype == LYS_LIST)) {
-            if ((path->tokens[path->used - 1] == LYXP_TOKEN_NAMETEST) &&
-                    (path->tokens[path->used - 2] == LYXP_TOKEN_OPER_PATH) &&
-                    (path->tokens[path->used - 3] == LYXP_TOKEN_NAMETEST)) {
-                list_key = 1;
-            } /* else again, should be possible but does not make sense */
-        } /* else allowed despite not making sense */
-    }
-
-    if (list_key) {
-        /* get the length of the orig expression without the last "/" and the key node */
-        len = path->tok_pos[path->used - 3] + path->tok_len[path->used - 3];
-
-        /* generate the string path evaluated using hashes */
-        quot = strchr(target_val, '\'') ? '\"' : '\'';
-        if (asprintf(&str_path, "%.*s[%s=%c%s%c]/%s", len, path->expr, path->expr + path->tok_pos[path->used - 1],
-                quot, target_val, quot, path->expr + path->tok_pos[path->used - 1]) == -1) {
-            LOGMEM(ctx_node->module->ctx);
-            rc = LY_EMEM;
-            goto cleanup;
-        }
-
-    } else {
-        /* leaf will not be found using hashes, but generate the path just to unify it */
-        assert(p[LY_ARRAY_COUNT(p) - 1].node->nodetype & LYD_NODE_TERM);
-
-        /* generate the string path evaluated using hashes */
-        quot = strchr(target_val, '\'') ? '\"' : '\'';
-        if (asprintf(&str_path, "%s[.=%c%s%c]", path->expr, quot, target_val, quot) == -1) {
-            LOGMEM(ctx_node->module->ctx);
-            rc = LY_EMEM;
-            goto cleanup;
-        }
-    }
-
-    /* parse into an expression */
-    LY_CHECK_GOTO(lyxp_expr_parse(ctx_node->module->ctx, str_path, 0, 1, target_path), cleanup);
-
-cleanup:
-    ly_path_free(ctx_node->module->ctx, p);
-    free(str_path);
-    return rc;
-}
-
-LIBYANG_API_DEF LY_ERR
+API LY_ERR
 lyplg_type_resolve_leafref(const struct lysc_type_leafref *lref, const struct lyd_node *node, struct lyd_value *value,
-        const struct lyd_node *tree, struct ly_set **targets, char **errmsg)
+        const struct lyd_node *tree, struct lyd_node **target, char **errmsg)
 {
-    LY_ERR rc = LY_SUCCESS;
-    struct lyxp_expr *target_path = NULL;
-    const struct ly_err_item *e;
+    LY_ERR ret;
     struct lyxp_set set = {0};
-    const char *val_str, *xp_err_msg;
+    const char *val_str;
     uint32_t i;
-    int r;
+    int rc;
 
-    LY_CHECK_ARG_RET(NULL, lref, node, value, errmsg, LY_EINVAL);
-
-    *errmsg = NULL;
-    if (targets) {
-        *targets = NULL;
-    }
-
-    /* get the canonical value */
-    val_str = lyd_value_get_canonical(LYD_CTX(node), value);
-
-    if (!strchr(val_str, '\"') || !strchr(val_str, '\'')) {
-        /* get the path with the value */
-        r = lyplg_type_resolve_leafref_get_target_path(lref->path, node->schema, LY_VALUE_SCHEMA_RESOLVED, lref->prefixes,
-                val_str, &target_path);
-        if (r == LY_ENOT) {
-            goto cleanup;
-        } else if (r) {
-            rc = r;
-            goto cleanup;
-        }
-    } /* else value with both ' and ", XPath does not support that */
-
-    /* find the target data instance(s) */
-    rc = lyxp_eval(LYD_CTX(node), target_path ? target_path : lref->path, node->schema->module,
-            LY_VALUE_SCHEMA_RESOLVED, lref->prefixes, node, node, tree, NULL, &set, LYXP_IGNORE_WHEN);
-    if (rc) {
-        e = ly_err_last(LYD_CTX(node));
-        if (e && (e->err == rc)) {
-            xp_err_msg = e->msg;
-        } else {
-            xp_err_msg = NULL;
-        }
-
-        if (xp_err_msg) {
-            r = asprintf(errmsg, "Invalid leafref value \"%s\" - XPath evaluation error (%s).", val_str, xp_err_msg);
-        } else {
-            r = asprintf(errmsg, "Invalid leafref value \"%s\" - XPath evaluation error.", val_str);
-        }
-        if (r == -1) {
+    /* find all target data instances */
+    ret = lyxp_eval(lref->cur_mod->ctx, lref->path, lref->cur_mod, LY_VALUE_SCHEMA_RESOLVED, lref->prefixes, node, tree,
+            &set, 0);
+    if (ret) {
+        ret = LY_ENOTFOUND;
+        val_str = lref->plugin->print(lref->cur_mod->ctx, value, LY_VALUE_CANON, NULL, NULL, NULL);
+        if (asprintf(errmsg, "Invalid leafref value \"%s\" - XPath evaluation error.", val_str) == -1) {
             *errmsg = NULL;
-            rc = LY_EMEM;
+            ret = LY_EMEM;
         }
-        goto cleanup;
+        goto error;
     }
 
-    /* check the result */
-    if (target_path) {
-        /* no or exact match(es) */
-        i = 0;
-    } else {
-        /* check whether any matches */
-        for (i = 0; i < set.used; ++i) {
-            if (set.val.nodes[i].type != LYXP_NODE_ELEM) {
-                continue;
-            }
-            if (((struct lyd_node_term *)set.val.nodes[i].node)->value.realtype != value->realtype) {
-                continue;
-            }
+    /* check whether any matches */
+    for (i = 0; i < set.used; ++i) {
+        if (set.val.nodes[i].type != LYXP_NODE_ELEM) {
+            continue;
+        }
 
-            if (!lref->plugin->compare(LYD_CTX(node), &((struct lyd_node_term *)set.val.nodes[i].node)->value, value)) {
-                break;
-            }
+        if (!lref->plugin->compare(&((struct lyd_node_term *)set.val.nodes[i].node)->value, value)) {
+            break;
         }
     }
-
     if (i == set.used) {
-        /* no match found */
-        rc = LY_ENOTFOUND;
-        if (asprintf(errmsg, LY_ERRMSG_NOLREF_VAL, val_str, lref->path->expr) == -1) {
+        ret = LY_ENOTFOUND;
+        val_str = lref->plugin->print(lref->cur_mod->ctx, value, LY_VALUE_CANON, NULL, NULL, NULL);
+        if (set.used) {
+            rc = asprintf(errmsg, LY_ERRMSG_NOLREF_VAL, val_str, lref->path->expr);
+        } else {
+            rc = asprintf(errmsg, LY_ERRMSG_NOLREF_INST, val_str, lref->path->expr);
+        }
+        if (rc == -1) {
             *errmsg = NULL;
-            rc = LY_EMEM;
+            ret = LY_EMEM;
         }
-        goto cleanup;
-    }
-    if (targets) {
-        LY_CHECK_GOTO(rc = ly_set_new(targets), cleanup);
-        for (i = 0; i < set.used; ++i) {
-            if (set.val.nodes[i].type != LYXP_NODE_ELEM) {
-                continue;
-            }
-            if (((struct lyd_node_term *)set.val.nodes[i].node)->value.realtype != value->realtype) {
-                continue;
-            }
-
-            if (!lref->plugin->compare(LYD_CTX(node), &((struct lyd_node_term *)set.val.nodes[i].node)->value, value)) {
-                rc = ly_set_add(*targets, set.val.nodes[i].node, 0, NULL);
-                LY_CHECK_GOTO(rc, cleanup);
-            }
-        }
+        goto error;
     }
 
-cleanup:
-    lyxp_expr_free(LYD_CTX(node), target_path);
+    if (target) {
+        *target = set.val.nodes[i].node;
+    }
+
     lyxp_set_free_content(&set);
-    return rc;
+    return LY_SUCCESS;
+
+error:
+    lyxp_set_free_content(&set);
+    return ret;
 }

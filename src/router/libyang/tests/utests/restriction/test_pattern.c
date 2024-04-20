@@ -48,7 +48,7 @@
         const char *data = "<port xmlns=\"urn:tests:" MOD_NAME "\">" DATA "</port>"; \
         CHECK_PARSE_LYD_PARAM(data, LYD_XML, 0, LYD_VALIDATE_PRESENT, LY_SUCCESS, tree); \
         CHECK_LYSC_NODE(tree->schema, NULL, 0, 0x5, 1, "port", 0, LYS_LEAF, 0, 0, 0, 0); \
-        CHECK_LYD_NODE_TERM((struct lyd_node_term *)tree, 0, 0, 0, 0, 1, TYPE, __VA_ARGS__); \
+        CHECK_LYD_NODE_TERM((struct lyd_node_term *)tree, 0, 0, 0, 0, 1, TYPE, ## __VA_ARGS__); \
         lyd_free_all(tree); \
     }
 
@@ -58,7 +58,7 @@
         const char *data = "{\"" MOD_NAME ":port\":" DATA "}"; \
         CHECK_PARSE_LYD_PARAM(data, LYD_JSON, 0, LYD_VALIDATE_PRESENT, LY_SUCCESS, tree); \
         CHECK_LYSC_NODE(tree->schema, NULL, 0, 0x5, 1, "port", 0, LYS_LEAF, 0, 0, 0, 0); \
-        CHECK_LYD_NODE_TERM((struct lyd_node_term *)tree, 0, 0, 0, 0, 1, TYPE, __VA_ARGS__); \
+        CHECK_LYD_NODE_TERM((struct lyd_node_term *)tree, 0, 0, 0, 0, 1, TYPE, ## __VA_ARGS__); \
         lyd_free_all(tree); \
     }
 
@@ -82,10 +82,11 @@ static void
 test_schema_yang(void **state)
 {
     const char *schema;
-    struct lys_module *mod;
+    const struct lys_module *mod;
     struct lysc_node_leaf *lysc_leaf;
     struct lysp_node_leaf *lysp_leaf;
     struct lysc_pattern *pattern;
+    struct lysc_range *range;
 
     schema = MODULE_CREATE_YANG("T0", "leaf port {type string {"
             "pattern \"[A-Za-z]*\"{"
@@ -180,10 +181,11 @@ static void
 test_schema_yin(void **state)
 {
     const char *schema;
-    struct lys_module *mod;
+    const struct lys_module *mod;
     struct lysc_node_leaf *lysc_leaf;
     struct lysp_node_leaf *lysp_leaf;
     struct lysc_pattern *pattern;
+    struct lysc_range *range;
 
     schema = MODULE_CREATE_YIN("T0", "<leaf name=\"port\"> <type name=\"string\">"
             "<pattern value=\"[A-Za-z]*\">"
@@ -286,7 +288,7 @@ test_schema_print(void **state)
 {
     const char *schema_yang, *schema_yin;
     char *printed;
-    struct lys_module *mod;
+    const struct lys_module *mod;
 
     /* test print yang to yin */
     schema_yang = MODULE_CREATE_YANG("PRINT0", "leaf port {type string {"
@@ -318,7 +320,6 @@ test_schema_print(void **state)
 
     /* test print yin to yang */
     schema_yang = MODULE_CREATE_YANG("PRINT1",
-            "\n"
             "  leaf port {\n"
             "    type string {\n"
             "      pattern \"[A-Z]*\" {\n"
@@ -375,9 +376,12 @@ test_data_xml(void **state)
     TEST_SUCCESS_XML("TPATTERN_0", "AHOJ", STRING, "AHOJ");
     /* test print error */
     TEST_ERROR_XML("TPATTERN_0", "T128");
-    CHECK_LOG_CTX("pattern 0 error message", "/TPATTERN_0:port", 1);
+    CHECK_LOG_CTX("pattern 0 error message",
+            "Schema location /TPATTERN_0:port, line number 1.");
     TEST_ERROR_XML("TPATTERN_0", "ahoj");
-    CHECK_LOG_CTX("pattern 1 error message", "/TPATTERN_0:port", 1);
+    CHECK_LOG_CTX("pattern 1 error message",
+            "Schema location /TPATTERN_0:port, line number 1.");
+
 }
 
 int

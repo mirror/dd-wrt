@@ -23,18 +23,18 @@
  */
 
 /**
- * @brief Compile simple extension instances.
+ * @brief Compile NAMC's extension instances.
  *
  * Implementation of ::lyplg_ext_compile_clb callback set as lyext_plugin::compile.
  */
 static LY_ERR
-hint_compile(struct lysc_ctx *cctx, const struct lysp_ext_instance *extp, struct lysc_ext_instance *ext)
+hint_compile(struct lysc_ctx *cctx, const struct lysp_ext_instance *p_ext, struct lysc_ext_instance *c_ext)
 {
     /* check that the extension is instantiated at an allowed place - data node */
-    if (!(ext->parent_stmt & LY_STMT_DATA_NODE_MASK)) {
-        lyplg_ext_compile_log(cctx, ext, LY_LLWRN, 0,
+    if (!LY_STMT_IS_DATA_NODE(c_ext->parent_stmt)) {
+        lyplg_ext_log(c_ext, LY_LLWRN, 0, lysc_ctx_get_path(cctx),
                 "Extension %s is allowed only in a data nodes, but it is placed in \"%s\" statement.",
-                extp->name, lyplg_ext_stmt2str(ext->parent_stmt));
+                p_ext->name, ly_stmt2str(c_ext->parent_stmt));
         return LY_ENOT;
     }
 
@@ -50,15 +50,11 @@ LYPLG_EXTENSIONS = {
         .revision = NULL,
         .name = "hint",
 
-        .plugin.id = "ly2 simple test v1",
-        .plugin.parse = NULL,
-        .plugin.compile = hint_compile,
-        .plugin.printer_info = NULL,
-        .plugin.node = NULL,
-        .plugin.snode = NULL,
+        .plugin.id = "libyang 2 - simple test, version 1",
+        .plugin.compile = &hint_compile,
         .plugin.validate = NULL,
-        .plugin.pfree = NULL,
-        .plugin.cfree = NULL
+        .plugin.sprinter = NULL,
+        .plugin.free = NULL
     },
     {0} /* terminating zeroed item */
 };
@@ -78,15 +74,13 @@ LYPLG_TYPES = {
         .revision = NULL,
         .name = "note",
 
-        .plugin.id = "ly2 simple test v1",
+        .plugin.id = "libyang 2 - simple test, version 1",
         .plugin.store = lyplg_type_store_string,
         .plugin.validate = NULL,
         .plugin.compare = lyplg_type_compare_simple,
-        .plugin.sort = NULL,
         .plugin.print = lyplg_type_print_simple,
         .plugin.duplicate = lyplg_type_dup_simple,
-        .plugin.free = lyplg_type_free_simple,
-        .plugin.lyb_data_len = 0
+        .plugin.free = lyplg_type_free_simple
     },
     {0}
 };

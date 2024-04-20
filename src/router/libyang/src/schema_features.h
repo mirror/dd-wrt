@@ -30,20 +30,21 @@ struct lysp_qname;
  * @return LY_SUCCESS on success.
  * @return LY_ERR on error.
  */
-LY_ERR lys_eval_iffeatures(const struct ly_ctx *ctx, const struct lysp_qname *iffeatures, ly_bool *enabled);
+LY_ERR lys_eval_iffeatures(const struct ly_ctx *ctx, struct lysp_qname *iffeatures, ly_bool *enabled);
 
 /**
- * @brief Check whether all enabled features have their if-features satisfied.
+ * @brief Enable features in a parsed module with their consolidation and checking that they really
+ * can be enabled and have all their if-features true.
  *
- * @param[in] pmod Parsed module features to check.
+ * @param[in] pmod Parsed module to modify.
+ * @param[in] features Array of features ended with NULL to enable. NULL for all features disabled, '*' for all enabled.
  * @return LY_SUCCESS on success.
- * @return LY_EDENIED if there was an enabled feature with disabled if-feature.
+ * @return LY_ERR on error.
  */
-LY_ERR lys_check_features(const struct lysp_module *pmod);
+LY_ERR lys_enable_features(struct lysp_module *pmod, const char **features);
 
 /**
- * @brief Set the specified features of a parsed module ignoring their own if-features. These are all checked before
- * compiling the module(s).
+ * @brief Set the specified features of a parsed module, with all the checks.
  *
  * @param[in] pmod Parsed module to modify.
  * @param[in] features Array of features ended with NULL to be enabled if the module is being implemented.
@@ -57,11 +58,18 @@ LY_ERR lys_check_features(const struct lysp_module *pmod);
 LY_ERR lys_set_features(struct lysp_module *pmod, const char **features);
 
 /**
- * @brief Compile if-features of features in the provided module and all its submodules.
+ * @brief Compile if-features of features in the current module and all its submodules.
  *
- * @param[in] pmod Parsed module to process.
+ * @param[in] ctx Compile context.
  * @return LY_ERR value.
  */
 LY_ERR lys_compile_feature_iffeatures(struct lysp_module *pmod);
+
+/**
+ * @brief Free all auxiliary if-feature structures in a parsed module used for compilation.
+ *
+ * @param[in] pmod Module to update.
+ */
+void lys_free_feature_iffeatures(struct lysp_module *pmod);
 
 #endif /* LY_SCHEMA_FEATURES_H_ */

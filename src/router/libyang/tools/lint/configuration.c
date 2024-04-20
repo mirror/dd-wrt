@@ -37,14 +37,14 @@ get_yanglint_dir(void)
     char *user_home, *yl_dir;
 
     if (!(pw = getpwuid(getuid()))) {
-        YLMSG_E("Determining home directory failed (%s).", strerror(errno));
+        YLMSG_E("Determining home directory failed (%s).\n", strerror(errno));
         return NULL;
     }
     user_home = pw->pw_dir;
 
     yl_dir = malloc(strlen(user_home) + 1 + strlen(YL_DIR) + 1);
     if (!yl_dir) {
-        YLMSG_E("Memory allocation failed (%s).", strerror(errno));
+        YLMSG_E("Memory allocation failed (%s).\n", strerror(errno));
         return NULL;
     }
     sprintf(yl_dir, "%s/%s", user_home, YL_DIR);
@@ -53,17 +53,14 @@ get_yanglint_dir(void)
     if (ret == -1) {
         if (errno == ENOENT) {
             /* directory does not exist */
-            YLMSG_W("Configuration directory \"%s\" does not exist, creating it.", yl_dir);
+            YLMSG_W("Configuration directory \"%s\" does not exist, creating it.\n", yl_dir);
             if (mkdir(yl_dir, 00700)) {
-                if (errno != EEXIST) {
-                    /* parallel execution, yay */
-                    YLMSG_E("Configuration directory \"%s\" cannot be created (%s).", yl_dir, strerror(errno));
-                    free(yl_dir);
-                    return NULL;
-                }
+                YLMSG_E("Configuration directory \"%s\" cannot be created (%s).\n", yl_dir, strerror(errno));
+                free(yl_dir);
+                return NULL;
             }
         } else {
-            YLMSG_E("Configuration directory \"%s\" exists but cannot be accessed (%s).", yl_dir, strerror(errno));
+            YLMSG_E("Configuration directory \"%s\" exists but cannot be accessed (%s).\n", yl_dir, strerror(errno));
             free(yl_dir);
             return NULL;
         }
@@ -83,16 +80,16 @@ load_config(void)
 
     history_file = malloc(strlen(yl_dir) + 9);
     if (!history_file) {
-        YLMSG_E("Memory allocation failed (%s).", strerror(errno));
+        YLMSG_E("Memory allocation failed (%s).\n", strerror(errno));
         free(yl_dir);
         return;
     }
 
     sprintf(history_file, "%s/history", yl_dir);
     if (access(history_file, F_OK) && (errno == ENOENT)) {
-        YLMSG_W("No saved history.");
+        YLMSG_W("No saved history.\n");
     } else if (linenoiseHistoryLoad(history_file)) {
-        YLMSG_E("Failed to load history.");
+        YLMSG_E("Failed to load history.\n");
     }
 
     free(history_file);
@@ -110,14 +107,14 @@ store_config(void)
 
     history_file = malloc(strlen(yl_dir) + 9);
     if (!history_file) {
-        YLMSG_E("Memory allocation failed (%s).", strerror(errno));
+        YLMSG_E("Memory allocation failed (%s).\n", strerror(errno));
         free(yl_dir);
         return;
     }
 
     sprintf(history_file, "%s/history", yl_dir);
     if (linenoiseHistorySave(history_file)) {
-        YLMSG_E("Failed to save history.");
+        YLMSG_E("Failed to save history.\n");
     }
 
     free(history_file);

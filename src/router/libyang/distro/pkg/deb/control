@@ -1,4 +1,4 @@
-Source: libyang3
+Source: libyang2
 Section: libs
 Homepage: https://github.com/CESNET/libyang/
 Maintainer: Ondřej Surý <ondrej@debian.org>
@@ -6,17 +6,15 @@ Priority: optional
 Standards-Version: 4.5.0
 Build-Depends: cmake,
                debhelper (>= 10),
-               libcmocka-dev <!nocheck>,
                libpcre2-dev,
                pkg-config
-Vcs-Browser: https://github.com/CESNET/libyang/tree/master
-Vcs-Git: https://github.com/CESNET/libyang.git
+Vcs-Browser: https://github.com/CESNET/libyang/tree/libyang2
+Vcs-Git: https://github.com/CESNET/libyang.git -b libyang2
 
-Package: libyang3
+Package: libyang2
 Depends: ${misc:Depends},
          ${shlibs:Depends}
 Architecture: any
-Multi-Arch: same
 Description: parser toolkit for IETF YANG data modeling - runtime
  Libyang implements functions to process schemas expressed in the
  YANG data modeling language defined by the IETF in RFCs 6020/7950.
@@ -29,14 +27,13 @@ Description: parser toolkit for IETF YANG data modeling - runtime
  The library is implemented in C and provides an API for other software
  to use in processing configurations.
 
-Package: libyang-dev
+Package: libyang2-dev
 Depends: libpcre2-dev,
-         libyang3 (= ${binary:Version}),
+         libyang2 (= ${binary:Version}),
          ${misc:Depends}
-Conflicts: libyang2-dev
+Conflicts: libyang-dev
 Section: libdevel
 Architecture: any
-Multi-Arch: same
 Description: parser toolkit for IETF YANG data modeling - development files
  Libyang implements functions to process schemas expressed in the
  YANG data modeling language defined by the IETF in RFCs 6020/7950.
@@ -49,25 +46,25 @@ Description: parser toolkit for IETF YANG data modeling - development files
  This package contains the C headers, a pkgconfig file, and .so entry point
  for libyang.
 
-Package: libyang-tools
-Depends: libyang3 (= ${binary:Version}),
+Package: libyang2-tools
+Depends: libyang2 (= ${binary:Version}),
          ${misc:Depends},
          ${shlibs:Depends}
-Breaks: libyang2-tools (<< ${source:Version})
-Replaces: libyang2-tools (<< ${source:Version})
+Breaks: libyang-tools (<< ${source:Version})
+Replaces: libyang-tools (<< ${source:Version})
 Section: devel
 Architecture: any
-Multi-Arch: foreign
 Description: parser toolkit for IETF YANG data modeling - executable tools
  This package provides the "yanglint" and "yangre" tools which can be used
  during the creation of IETF YANG schemas.  The tools are not generally
  useful for normal operation where libyang primarily processes configuration
  data, not schemas.
 
-Package: libyang-modules
-Section: devel
+Package: libyang-tools
+Depends: libyang2-tools (>= ${source:Version}),
+         ${misc:Depends}
+Section: oldlibs
 Architecture: all
-Description: parser toolkit for IETF YANG data modeling - YANG modules
- This package provides the IETF YANG modules used by libyang. These modules
- are embedded into libyang so this package is not necessary for libyang
- operation.
+Description: parser toolkit for IETF YANG data modeling [dummy package]
+ This is empty dependency package to pull the executable tools.  It's
+ safe to remove.

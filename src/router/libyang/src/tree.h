@@ -124,7 +124,7 @@ extern "C" {
  */
 #define LY_ARRAY_FOR_ITER(ARRAY, TYPE, ITER) \
     for (ITER = ARRAY; \
-         (ARRAY) && ((char *)ITER - (char *)ARRAY)/(sizeof(TYPE)) < (*((LY_ARRAY_COUNT_TYPE*)(ARRAY) - 1)); \
+         (ARRAY) && ((void*)ITER - (void*)ARRAY)/(sizeof(TYPE)) < (*((LY_ARRAY_COUNT_TYPE*)(ARRAY) - 1)); \
          ITER = (TYPE*)ITER + 1)
 
 /**
@@ -199,7 +199,8 @@ extern "C" {
 /**
  * @brief YANG built-in types
  */
-typedef enum {
+typedef enum
+{
     LY_TYPE_UNKNOWN = 0, /**< Unknown type */
     LY_TYPE_BINARY, /**< Any binary data ([RFC 6020 sec 9.8](http://tools.ietf.org/html/rfc6020#section-9.8)) */
     LY_TYPE_UINT8, /**< 8-bit unsigned integer ([RFC 6020 sec 9.2](http://tools.ietf.org/html/rfc6020#section-9.2)) */
@@ -224,7 +225,7 @@ typedef enum {
 #define LY_DATA_TYPE_COUNT 20 /**< Number of different types */
 
 /**
- * @brief Stringfield YANG built-in data types
+ * @brief Stringified YANG built-in data types
  */
 extern const char *ly_data_type2str[LY_DATA_TYPE_COUNT];
 
@@ -237,8 +238,7 @@ typedef enum {
     LY_VALUE_SCHEMA_RESOLVED, /**< resolved YANG schema value, prefixes map to module structures directly */
     LY_VALUE_XML,             /**< XML data value, prefixes map to XML namespace prefixes */
     LY_VALUE_JSON,            /**< JSON data value, prefixes map to module names */
-    LY_VALUE_LYB,             /**< LYB data binary value, prefix mapping is type-specific (but usually like JSON) */
-    LY_VALUE_STR_NS           /**< any data format value, prefixes map to XML namespace prefixes */
+    LY_VALUE_LYB              /**< LYB data binary value, prefix mapping is type-specific (but usually like JSON) */
 } LY_VALUE_FORMAT;
 
 /** @} trees */

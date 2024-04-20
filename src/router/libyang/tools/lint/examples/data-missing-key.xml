@@ -1,8 +1,8 @@
-<nacm xmlns="urn:ietf:params:xml:ns:yang:ietf-netconf-acm">
+<nacm xmlns="urn:ietf:params:xml:ns:yang:ietf-netconf-acm" xmlns:nc="urn:ietf:params:xml:ns:netconf:base:1.0">
   <rule-list>
     <name>almighty</name>
     <group>almighty</group>
-    <group>test</group>
+    <group nc:operation="create">test</group>
     <rule>
       <module-name>*</module-name>
       <access-operations>*</access-operations>

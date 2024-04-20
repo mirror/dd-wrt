@@ -2,10 +2,9 @@
  * @file cmd_searchpath.c
  * @author Michal Vasko <mvasko@cesnet.cz>
  * @author Radek Krejci <rkrejci@cesnet.cz>
- * @author Adam Piecek <piecek@cesnet.cz>
  * @brief 'searchpath' command of the libyang's yanglint tool.
  *
- * Copyright (c) 2015-2023 CESNET, z.s.p.o.
+ * Copyright (c) 2015-2020 CESNET, z.s.p.o.
  *
  * This source code is licensed under BSD 3-Clause License (the "License").
  * You may not use this file except in compliance with the License.
@@ -25,62 +24,51 @@
 #include "libyang.h"
 
 #include "common.h"
-#include "yl_opt.h"
 
 void
 cmd_searchpath_help(void)
 {
     printf("Usage: searchpath [--clear] [<modules-dir-path> ...]\n"
-            "                  Set paths of directories where to search for imports and includes\n"
-            "                  of the schema modules. Subdirectories are also searched. The current\n"
-            "                  working directory and the path of the module being added is used implicitly.\n"
-            "                  The 'load' command uses these paths to search even for the schema modules\n"
-            "                  to be loaded.\n");
+            "                  Set paths of directories where to search for imports and\n"
+            "                  includes of the schema modules. The current working directory\n"
+            "                  and the path of the module being added is used implicitly.\n"
+            "                  The 'load' command uses these paths to search even for the\n"
+            "                  schema modules to be loaded.\n");
 }
 
-int
-cmd_searchpath_opt(struct yl_opt *yo, const char *cmdline, char ***posv, int *posc)
+void
+cmd_searchpath(struct ly_ctx **ctx, const char *cmdline)
 {
-    int rc = 0, argc = 0;
+    int argc = 0;
+    char **argv = NULL;
     int opt, opt_index;
     struct option options[] = {
         {"clear", no_argument, NULL, 'c'},
         {"help", no_argument, NULL, 'h'},
         {NULL, 0, NULL, 0}
     };
+    int8_t cleared = 0;
 
-    if ((rc = parse_cmdline(cmdline, &argc, &yo->argv))) {
-        return rc;
+    if (parse_cmdline(cmdline, &argc, &argv)) {
+        goto cleanup;
     }
 
-    while ((opt = getopt_long(argc, yo->argv, commands[CMD_SEARCHPATH].optstring, options, &opt_index)) != -1) {
+    while ((opt = getopt_long(argc, argv, "ch", options, &opt_index)) != -1) {
         switch (opt) {
         case 'c':
-            yo->searchdir_unset = 1;
+            ly_ctx_unset_searchdir(*ctx, NULL);
+            cleared = 1;
             break;
         case 'h':
             cmd_searchpath_help();
-            return 1;
+            goto cleanup;
         default:
-            YLMSG_E("Unknown option.");
-            return 1;
+            YLMSG_E("Unknown option.\n");
+            goto cleanup;
         }
     }
 
-    *posv = &yo->argv[optind];
-    *posc = argc - optind;
-
-    return 0;
-}
-
-int
-cmd_searchpath_exec(struct ly_ctx **ctx, struct yl_opt *yo, const char *posv)
-{
-    int rc = 0;
-
-    if (yo->searchdir_unset) {
-        ly_ctx_unset_searchdir(*ctx, NULL);
-    } else if (!yo->searchdir_unset && !posv) {
+    if (!cleared && (argc == optind)) {
         /* no argument - print the paths */
         const char * const *dirs = ly_ctx_get_searchdirs(*ctx);
 
@@ -88,9 +76,15 @@ cmd_searchpath_exec(struct ly_ctx **ctx, struct yl_opt *yo, const char *posv)
         for (uint32_t i = 0; dirs[i]; ++i) {
             printf("    %s\n", dirs[i]);
         }
-    } else {
-        rc = ly_ctx_set_searchdir(*ctx, posv);
+        goto cleanup;
     }
 
-    return rc;
+    for (int i = 0; i < argc - optind; i++) {
+        if (ly_ctx_set_searchdir(*ctx, argv[optind + i])) {
+            goto cleanup;
+        }
+    }
+
+cleanup:
+    free_cmdline(argv);
 }

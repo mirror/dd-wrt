@@ -1,4 +1,4 @@
-/**
+/*
  * @file test_plugins.c
  * @author: Radek Krejci <rkrejci@cesnet.cz>
  * @brief unit tests for functions from set.c
@@ -17,7 +17,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "ly_config.h"
+#include "config.h"
 #include "plugins.h"
 #include "plugins_internal.h"
 
@@ -35,16 +35,32 @@ const char *simple = "module libyang-plugins-simple {"
 static void
 test_add_invalid(void **state)
 {
-    (void)state;
     assert_int_equal(LY_ESYS, lyplg_add(TESTS_BIN "/plugins/plugin_does_not_exist" LYPLG_SUFFIX));
+
+#ifdef __APPLE__
+    CHECK_LOG("Loading \""TESTS_BIN "/plugins/plugin_does_not_exist" LYPLG_SUFFIX "\" as a plugin failed "
+            "(dlopen("TESTS_BIN "/plugins/plugin_does_not_exist" LYPLG_SUFFIX ", 2): image not found).", NULL);
+#else
+    CHECK_LOG("Loading \""TESTS_BIN "/plugins/plugin_does_not_exist" LYPLG_SUFFIX "\" as a plugin failed "
+            "("TESTS_BIN "/plugins/plugin_does_not_exist" LYPLG_SUFFIX ": cannot open shared object file: "
+            "No such file or directory).", NULL);
+#endif
+
+    assert_int_equal(LY_EINVAL, lyplg_add(TESTS_BIN "/plugins/plugin_invalid" LYPLG_SUFFIX));
+#ifndef __APPLE__
+    /* OS X prints address of the symbol being searched and cmocka doesn't support wildcards in string checking assert */
+    CHECK_LOG("Processing user type plugin \""TESTS_BIN "/plugins/plugin_invalid"LYPLG_SUFFIX "\" failed, "
+            "missing type plugins information ("TESTS_BIN "/plugins/plugin_invalid"LYPLG_SUFFIX ": "
+            "undefined symbol: plugins_types__).", NULL);
+#endif
 }
 
 static void
 test_add_simple(void **state)
 {
-    struct lys_module *mod;
+    const struct lys_module *mod;
     struct lysc_node_leaf *leaf;
-    struct lyplg_ext_record *record_e;
+    struct lyplg_ext *plugin_e;
     struct lyplg_type *plugin_t;
 
     assert_int_equal(LY_SUCCESS, lyplg_add(TESTS_BIN "/plugins/plugin_simple" LYPLG_SUFFIX));
@@ -54,23 +70,78 @@ test_add_simple(void **state)
     leaf = (struct lysc_node_leaf *)mod->compiled->data;
     assert_int_equal(LYS_LEAF, leaf->nodetype);
 
-    assert_non_null(plugin_t = lyplg_type_plugin_find(NULL, "libyang-plugins-simple", NULL, "note"));
-    assert_string_equal("ly2 simple test v1", plugin_t->id);
+    assert_non_null(plugin_t = lyplg_find(LYPLG_TYPE, "libyang-plugins-simple", NULL, "note"));
+    assert_string_equal("libyang 2 - simple test, version 1", plugin_t->id);
     assert_ptr_equal(leaf->type->plugin, plugin_t);
 
     assert_int_equal(1, LY_ARRAY_COUNT(leaf->exts));
-    assert_non_null(record_e = lyplg_ext_record_find(NULL, "libyang-plugins-simple", NULL, "hint"));
-    assert_string_equal("ly2 simple test v1", record_e->plugin.id);
-    assert_ptr_equal(leaf->exts[0].def->plugin, &record_e->plugin);
+    assert_non_null(plugin_e = lyplg_find(LYPLG_EXTENSION, "libyang-plugins-simple", NULL, "hint"));
+    assert_string_equal("libyang 2 - simple test, version 1", plugin_e->id);
+    assert_ptr_equal(leaf->exts[0].def->plugin, plugin_e);
 
     /* the second loading of the same plugin - still success */
     assert_int_equal(LY_SUCCESS, lyplg_add(TESTS_BIN "/plugins/plugin_simple" LYPLG_SUFFIX));
 }
 
 static void
+test_validation(void **state)
+{
+    const struct lys_module *mod;
+    struct lyd_node *tree;
+    const char *data;
+    const char *schema = "module libyang-plugins-validate {"
+            "  namespace urn:libyang:tests:plugins:validate;"
+            "  prefix v;"
+            "  extension extra-validation;"
+            "  typedef note { type string { v:extra-validation;}}"
+            "  leaf test1 {"
+            "    type v:note;"
+            "  }"
+            "  leaf test2 {"
+            "    type string;"
+            "    v:extra-validation;"
+            "  }"
+            "  leaf test3 {"
+            "    type string {v:extra-validation;}"
+            "  }"
+            "  leaf test4 {"
+            "    type string;"
+            "  }"
+            "}";
+
+    assert_int_equal(LY_SUCCESS, lyplg_add(TESTS_BIN "/plugins/plugin_validate" LYPLG_SUFFIX));
+
+    UTEST_ADD_MODULE(schema, LYS_IN_YANG, NULL, &mod);
+
+    /* test1 - extra-validation done based on typedef's extension */
+    data = "<test1 xmlns=\"urn:libyang:tests:plugins:validate\">xxx</test1>";
+    assert_int_equal(LY_SUCCESS, lyd_parse_data_mem(UTEST_LYCTX, data, LYD_XML, 0, LYD_VALIDATE_PRESENT, &tree));
+    CHECK_LOG_CTX("Extension plugin \"libyang 2 - validation test, version 1\": extra validation callback invoked on test1", NULL);
+    lyd_free_all(tree);
+
+    /* test2 - extra-validation done based on node's extension */
+    data = "<test2 xmlns=\"urn:libyang:tests:plugins:validate\">xxx</test2>";
+    assert_int_equal(LY_SUCCESS, lyd_parse_data_mem(UTEST_LYCTX, data, LYD_XML, 0, LYD_VALIDATE_PRESENT, &tree));
+    CHECK_LOG_CTX("Extension plugin \"libyang 2 - validation test, version 1\": extra validation callback invoked on test2", NULL);
+    lyd_free_all(tree);
+
+    /* test3 - extra-validation done based on node type's extension */
+    data = "<test3 xmlns=\"urn:libyang:tests:plugins:validate\">xxx</test3>";
+    assert_int_equal(LY_SUCCESS, lyd_parse_data_mem(UTEST_LYCTX, data, LYD_XML, 0, LYD_VALIDATE_PRESENT, &tree));
+    CHECK_LOG_CTX("Extension plugin \"libyang 2 - validation test, version 1\": extra validation callback invoked on test3", NULL);
+    lyd_free_all(tree);
+
+    /* test4 - extra-validation not done */
+    data = "<test4 xmlns=\"urn:libyang:tests:plugins:validate\">xxx</test4>";
+    assert_int_equal(LY_SUCCESS, lyd_parse_data_mem(UTEST_LYCTX, data, LYD_XML, 0, LYD_VALIDATE_PRESENT, &tree));
+    CHECK_LOG_CTX(NULL, NULL);
+    lyd_free_all(tree);
+}
+
+static void
 test_not_implemented(void **state)
 {
-    struct lys_module *mod;
+    const struct lys_module *mod;
     struct lyd_node *tree;
     const char *schema = "module libyang-plugins-unknown {"
             "  namespace urn:libyang:tests:plugins:unknown;"
@@ -91,52 +162,9 @@ test_not_implemented(void **state)
     free(printed);
 
     assert_int_equal(LY_SUCCESS, lyd_parse_data_mem(UTEST_LYCTX, data, LYD_XML, 0, LYD_VALIDATE_PRESENT, &tree));
-    CHECK_LOG_CTX(NULL, NULL, 0);
+    CHECK_LOG_CTX(NULL, NULL);
 
     lyd_free_all(tree);
-}
-
-static LY_ERR
-parse_clb(struct lysp_ctx *UNUSED(pctx), struct lysp_ext_instance *ext)
-{
-    struct lysp_node_leaf *leaf;
-
-    leaf = (struct lysp_node_leaf *)ext->parent;
-    leaf->flags |= LYS_STATUS_OBSLT;
-    return LY_SUCCESS;
-}
-
-struct lyplg_ext_record memory_recs[] = {
-    {
-        .module = "libyang-plugins-simple",
-        .revision = NULL,
-        .name = "hint",
-
-        .plugin.id = "memory-plugin-v1",
-        .plugin.parse = parse_clb,
-        .plugin.compile = NULL,
-        .plugin.printer_info = NULL,
-        .plugin.node = NULL,
-        .plugin.snode = NULL,
-        .plugin.validate = NULL,
-        .plugin.pfree = NULL,
-        .plugin.cfree = NULL
-    },
-    {0} /* terminating zeroed item */
-};
-
-static void
-test_simple_from_memory(void **state)
-{
-    struct lys_module *mod;
-    struct lysc_node_leaf *leaf;
-
-    lyplg_add_extension_plugin(UTEST_LYCTX, LYPLG_EXT_API_VERSION, memory_recs);
-    UTEST_ADD_MODULE(simple, LYS_IN_YANG, NULL, &mod);
-
-    leaf = (struct lysc_node_leaf *)mod->compiled->data;
-    assert_int_equal(LYS_LEAF, leaf->nodetype);
-    assert_true(leaf->flags & LYS_STATUS_OBSLT);
 }
 
 int
@@ -145,8 +173,8 @@ main(void)
     const struct CMUnitTest tests[] = {
         UTEST(test_add_invalid),
         UTEST(test_add_simple),
+        UTEST(test_validation),
         UTEST(test_not_implemented),
-        UTEST(test_simple_from_memory),
     };
 
     return cmocka_run_group_tests(tests, NULL, NULL);

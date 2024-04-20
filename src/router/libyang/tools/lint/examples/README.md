@@ -1,3 +1,5 @@
+YANGLINT IS NOT YET PREPARED FOR USE, EXAMPLES MAY NOT WORK YET!!!
+
 # YANGLINT - Interactive Mode Examples
 
 This text provides several use-case of the `yanglint(1)` interactive
@@ -14,16 +16,15 @@ To show all available command of the `yanglint(1)`, use the `help` command:
 > help
 Available commands:
   help            Display commands description
-  add             Add a new module from a specific file
-  load            Load a new schema from the searchdirs
-  print           Print a module
+  add             Add a new model
+  print           Print model
   data            Load, validate and optionally print instance data
-  list            List all the loaded modules
-  feature         Print all features of module(s) with their state
-  searchpath      Print/set the search path(s) for schemas
-  clear           Clear the context - remove all the loaded modules
+  xpath           Get data nodes satisfying an XPath expression
+  list            List all the loaded models
+  feature         Print/enable/disable all/specific features of models
+  searchpath      Set the search path for models
+  clear           Clear the context - remove all the loaded models
   verb            Change verbosity
-  debug           Display specific debug message groups
   quit            Quit the program
   ?               Display commands description
   exit            Quit the program
@@ -32,12 +33,7 @@ To show the information about the specific command, use the `help` command in
 combination with the command name you are interested in:
 ```
 > help searchpath
-Usage: searchpath [--clear] [<modules-dir-path> ...]
-                  Set paths of directories where to search for imports and includes
-                  of the schema modules. Subdirectories are also searched. The current
-                  working directory and the path of the module being added is used implicitly.
-                  The 'load' command uses these paths to search even for the schema modules
-                  to be loaded.
+searchpath <model-dir-path>
 ```
 
 The input files referred in this document are available together with this
@@ -60,13 +56,11 @@ Preparation:
 Output:
 
 ```
-List of the loaded models:
-    i ietf-yang-metadata@2016-08-05
-    I yang@2022-06-16
-    i ietf-inet-types@2013-07-15
-    i ietf-yang-types@2013-07-15
-    I ietf-yang-schema-mount@2019-01-14
-    I module1
+List of the loaded models (mod-set-id 5):
+        ietf-inet-types@2013-07-15
+        ietf-yang-types@2013-07-15
+        ietf-yang-library@2015-07-03
+        module1
 ```
 
 Command and its output:
@@ -74,7 +68,7 @@ Command and its output:
 ```
 > add module1b.yang
 libyang[0]: Two different modules ("module1" and "module1b") have the same namespace "urn:yanglint:module".
-libyang[0]: Parsing module "module1b" failed.
+libyang[0]: Module "module1b" parsing failed.
 ```
 
 ## Yang Data Model Validation
@@ -104,8 +98,8 @@ Command and its output:
 
 ```
 > add module2.yin
-libyang[0]: Unexpected attribute "value" of "type" element. (path: Line number 8.)
-libyang[0]: Parsing module "module2" failed.
+libyang[0]: Missing argument "name" to keyword "type".
+libyang[0]: Module "module1" parsing failed.
 ```
 
 Similarly, there is a typo in `module2.yang`.
@@ -125,11 +119,15 @@ Command and its output:
 
 ```
 > add module3.yang
-libyang[1]: Schema node "a" for parent "/module3:c" not found; in expr "../c/a" with context node "/module3:m".
+libyang[0]: Schema node "a" not found (../c/a).
+libyang[0]: Path is related to the previous error message. (path: /module3:m)
+libyang[0]: Module "module3" parsing failed.
 ```
 
-Note that libyang prints only a warning in this case because it is not
-specified that XPath expressions must refer to existing nodes.
+Note that libyang does not provide line numbers of the error. Instead it tries to
+print the path to the related node. in some cases (as this one) it is not able
+to print the path immediately so the path (to the node `m` which refers node which
+does not exist) is printed in the second message.
 
 ## Data Validation
 
@@ -157,17 +155,21 @@ We use option `-t` to specify type of the data in `datastore.xml`. By the
 data (with at least all the mandatory nodes as required by the loaded schemas),
 but without the status data. More examples of different data types will follow.
 
+To handle unknown data as error, use strict mode (`-s` option).
+
 Command and its output:
 
 ```
-> data -t config datastore.xml
-libyang[0]: No module with namespace "urn:ietf:params:xml:ns:yang:ietf-interfaces" in the context. (path: Line number 20.)
-YANGLINT[E]: Failed to parse input data file "datastore.xml".
+> data -t config -s datastore.xml
+libyang[0]: Unknown element "interfaces". (path: /)
+Failed to parse data.
 ```
 
 Note that in case of working with complete datastore including the status data
 (no `-t` option is specified), `yanglint(1)` has to add status data from its
-internal `ietf-yang-library` module.
+internal `ietf-yang-library` module. Using the `-s` option in this case forces
+validation in time of parsing the input file so it is expected to include also
+the mandatory status data from the `ietf-yang-library` module.
 
 **RPC and RPC-reply**
 
@@ -186,19 +188,19 @@ Command and its output:
 > data -t rpc rpc.xml
 ```
 
-Reply to this RPC can be validated too, but it must be nested in the original
-RPC element.
+Reply to this RPC can be validated too, but it must be specified, to which
+RPC it is a reply to, because it is not included in the reply itself.
 
 Command and its output:
 
 ```
-> data -t reply ../tools/lint/examples/rpc-reply.xml
+> data -t rpcreply rpc-reply.xml rpc.xml
 ```
 
 **action and action-reply**
 
 Actions are validated the same way as RPCs except you need to be careful
-about the input file structure. No NETCONF-specific envelopes are expected.
+about the input file structure.
 
 Preparation
 
@@ -264,7 +266,7 @@ Preparation:
 Command and its output:
 
 ```
-> data -t config datastore.xml
+> data -t config -s datastore.xml
 ```
 
 **Different data content types**
@@ -286,8 +288,8 @@ Command and its output:
 
 ```
 > data -t edit config-missing-key.xml
-libyang[0]: Node "nam" not found as a child of "group" node. (path: Schema location "/ietf-netconf-acm:nacm/groups/group", data location "/ietf-netconf-acm:group", line number 19.)
-YANGLINT[E]: Failed to parse input data file "config-missing-key.xml".
+libyang[0]: Invalid (mixed names) opening (nam) and closing (name) element tags. (path: /nacm/groups/group/nam)
+Failed to parse data.
 ```
 
 **State information in edit-config XML**
@@ -296,8 +298,8 @@ Command and its output:
 
 ```
 > data -t edit config-unknown-element.xml
-libyang[0]: Unexpected data state node "denied-operations" found. (path: Schema location "/ietf-netconf-acm:nacm/denied-operations", data location "/ietf-netconf-acm:nacm", line number 24.)
-YANGLINT[E]: Failed to parse input data file "config-unknown-element.xml".
+libyang[0]: Unknown element "denied-operations". (path: /ietf-netconf-acm:nacm/denied-operations)
+Failed to parse data.
 ```
 
 **Missing required element in NETCONF data**
@@ -306,8 +308,8 @@ Command and its output:
 
 ```
 > data data-missing-key.xml
-libyang[0]: List instance is missing its key "name". (path: Schema location "/ietf-netconf-acm:nacm/rule-list/rule", data location "/ietf-netconf-acm:rule", line number 10.)
-YANGLINT[E]: Failed to parse input data file "data-missing-key.xml".
+libyang[0]: Missing required element "name" in "rule". (path: /ietf-netconf-acm:nacm/rule-list[name='almighty']/rule)
+Failed to parse data.
 ```
 
 **Malformed XML**
@@ -316,16 +318,16 @@ Command and its output:
 
 ```
 > data data-malformed-xml.xml
-libyang[0]: Node "nam" not found as a child of "rule" node. (path: Schema location "/ietf-netconf-acm:nacm/rule-list/rule", data location "/ietf-netconf-acm:rule", line number 8.)
-YANGLINT[E]: Failed to parse input data file "data-malformed-xml.xml".
+libyang[0]: Invalid (mixed names) opening (nam) and closing (rule) element tags. (path: /nacm/rule-list/rule/nam)
+Failed to parse data.
 ```
 
 Command and its output:
 
 ```
 > data data-malformed-xml2.xml
-libyang[0]: Child element "module-name" inside a terminal node "name" found. (path: Schema location "/ietf-netconf-acm:nacm/rule-list/rule/name", data location "/ietf-netconf-acm:name", line number 7.)
-YANGLINT[E]: Failed to parse input data file "data-malformed-xml2.xml".
+libyang[0]: Invalid (mixed names) opening (module-name) and closing (name) element tags. (path: /nacm/rule-list/rule/name/module-name)
+Failed to parse data.
 ```
 
 **Bad value**
@@ -334,8 +336,8 @@ Command and its output:
 
 ```
 > data data-out-of-range-value.xml
-libyang[0]: Value "-1" is out of type uint32 min/max bounds. (path: Schema location "/ietf-netconf-acm:nacm/denied-operations", data location "/ietf-netconf-acm:nacm", line number 24.)
-YANGLINT[E]: Failed to parse input data file "data-out-of-range-value.xml".
+libyang[0]: Invalid value "-1" in "denied-operations" element. (path: /ietf-netconf-acm:nacm/denied-operations)
+Failed to parse data.
 ```
 
 ## Validation of "when" Statement in Data
@@ -353,9 +355,11 @@ Command and its output:
 
 ```
 > data data-acm.xml
-libyang[0]: When condition "../denied-operations > 0" not satisfied. (path: Schema location "/ietf-netconf-acm-when:nacm/denied-data-writes", data location "/ietf-netconf-acm-when:nacm/denied-data-writes".)
-YANGLINT[E]: Failed to parse input data file "data-acm.xml".
 ```
+
+The command succeeds. It is because `yanglint(1)` (via `libyang`) performs
+autodeletion - the not satisfied `when` condition in `denied-data-writes`
+causes its automatic (silent) deletion.
 
 ## Printing a Data Model
 
@@ -373,35 +377,95 @@ Command and its output:
 ```
 > print ietf-netconf-acm
 module: ietf-netconf-acm
-  +--rw nacm
-     +--rw enable-nacm?              boolean
-     +--rw read-default?             action-type
-     +--rw write-default?            action-type
-     +--rw exec-default?             action-type
-     +--rw enable-external-groups?   boolean
-     +--ro denied-operations         yang:zero-based-counter32
-     +--ro denied-data-writes        yang:zero-based-counter32
-     +--ro denied-notifications      yang:zero-based-counter32
-     +--rw groups
-     |  +--rw group* [name]
-     |     +--rw name         group-name-type
-     |     +--rw user-name*   user-name-type
-     +--rw rule-list* [name]
-        +--rw name     string
-        +--rw group*   union
-        +--rw rule* [name]
-           +--rw name                 string
-           +--rw module-name?         union
-           +--rw (rule-type)?
-           |  +--:(protocol-operation)
-           |  |  +--rw rpc-name?   union
-           |  +--:(notification)
-           |  |  +--rw notification-name?   union
-           |  +--:(data-node)
-           |     +--rw path    node-instance-identifier
-           +--rw access-operations?   union
-           +--rw action               action-type
-           +--rw comment?             string
+   +--rw nacm
+      +--rw enable-nacm?              boolean <true>
+      +--rw read-default?             action-type <permit>
+      +--rw write-default?            action-type <deny>
+      +--rw exec-default?             action-type <permit>
+      +--rw enable-external-groups?   boolean <true>
+      +--ro denied-operations         ietf-yang-types:zero-based-counter32
+      +--ro denied-data-writes        ietf-yang-types:zero-based-counter32
+      +--ro denied-notifications      ietf-yang-types:zero-based-counter32
+      +--rw groups
+      |  +--rw group* [name]
+      |     +--rw name         group-name-type
+      |     +--rw user-name*   user-name-type
+      +--rw rule-list* [name]
+         +--rw name     string
+         +--rw group*   union
+         +--rw rule* [name]
+            +--rw name                 string
+            +--rw module-name?         union <*>
+            +--rw (rule-type)?
+            |  +--:(protocol-operation)
+            |  |  +--rw rpc-name?             union
+            |  +--:(notification)
+            |  |  +--rw notification-name?    union
+            |  +--:(data-node)
+            |     +--rw path                  node-instance-identifier
+            +--rw access-operations?   union <*>
+            +--rw action               action-type
+            +--rw comment?             string
+>
+```
+
+**Obtain information about model**
+
+Command and its output:
+
+```
+> print -f info ietf-netconf-acm
+Module:    ietf-netconf-acm
+Namespace: urn:ietf:params:xml:ns:yang:ietf-netconf-acm
+Prefix:    nacm
+Desc:      NETCONF Access Control Model.
+
+           Copyright (c) 2012 IETF Trust and the persons identified as
+           authors of the code.  All rights reserved.
+
+           Redistribution and use in source and binary forms, with or
+           without modification, is permitted pursuant to, and subject
+           to the license terms contained in, the Simplified BSD
+           License set forth in Section 4.c of the IETF Trust's
+           Legal Provisions Relating to IETF Documents
+           (http://trustee.ietf.org/license-info).
+
+           This version of this YANG module is part of RFC 6536; see
+           the RFC itself for full legal notices.
+Reference:
+Org:       IETF NETCONF (Network Configuration) Working Group
+Contact:   WG Web:   <http://tools.ietf.org/wg/netconf/>
+           WG List:  <mailto:netconf@ietf.org>
+
+           WG Chair: Mehmet Ersue
+                     <mailto:mehmet.ersue@nsn.com>
+
+           WG Chair: Bert Wijnen
+                     <mailto:bertietf@bwijnen.net>
+
+           Editor:   Andy Bierman
+                     <mailto:andy@yumaworks.com>
+
+           Editor:   Martin Bjorklund
+                     <mailto:mbj@tail-f.com>
+YANG ver:  1.0
+Deviated:  no
+Implement: yes
+URI:
+Revisions: 2012-02-22
+Includes:
+Imports:   yang:ietf-yang-types
+Typedefs:  user-name-type
+           matchall-string-type
+           access-operations-type
+           group-name-type
+           action-type
+           node-instance-identifier
+Idents:
+Features:
+Augments:
+Deviation:
+Data:      container "nacm"
 ```
 
 **Print information about specific model part**
@@ -409,19 +473,58 @@ module: ietf-netconf-acm
 Command and its output:
 
 ```
-> print -f info -P /ietf-netconf-acm:nacm/ietf-netconf-acm:enable-nacm ietf-netconf-acm
-leaf enable-nacm {
-  ietf-netconf-acm:default-deny-all;
-  type boolean;
-  default "true";
-  config true;
-  status current;
-  description
-    "Enables or disables all NETCONF access control
-     enforcement.  If 'true', then enforcement
-     is enabled.  If 'false', then enforcement
-     is disabled.";
-}
+> print -f info -t /ietf-netconf-acm:nacm/ietf-netconf-acm:enable-nacm ietf-netconf-ac
+Leaf:      enable-nacm
+Module:    ietf-netconf-acm
+Desc:      Enables or disables all NETCONF access control
+           enforcement.  If 'true', then enforcement
+           is enabled.  If 'false', then enforcement
+           is disabled.
+Reference:
+Config:    read-write
+Status:    current
+Mandatory: no
+Type:      boolean
+Units:
+Default:   true
+If-feats:
+When:
+Must:
+NACM:      default-deny-all
+```
+
+## Query using NETCONF data
+
+Preparation:
+
+```
+> clear
+> add ietf-netconf-acm.yang
+```
+
+**Print all `user-name` elements that occure in data**
+
+Command and its output:
+
+```
+> xpath -e //ietf-netconf-acm:user-name data-acm.xml
+Result:
+        Leaflist "user-name" (val: smith)
+        Leaflist "user-name" (val: smith)
+        Leaflist "user-name" (val: doe)
+
+```
+
+**Print all data that satisfies condition**
+
+Command and its output:
+
+```
+> xpath -e //ietf-netconf-acm:user-name[text()="smith"] data-acm.xml
+Result:
+        Leaflist "user-name" (val: smith)
+        Leaflist "user-name" (val: smith)
+
 ```
 
 ## Usage of `feature` in Yang
@@ -431,7 +534,7 @@ Preparation:
 ```
 > clear
 > add ietf-interfaces.yang
-> add ietf-ip.yang -F ietf-ip:*
+> add ietf-ip.yang
 > add iana-if-type.yang
 ```
 
@@ -439,10 +542,7 @@ Note: This example also shows `JSON` output of the command.
 
 Command and its output:
 ```
-> feature ietf-ip
-ietf-ip features:
-        ipv4-non-contiguous-netmasks (on)
-        ipv6-privacy-autoconf        (on)
+> feature -e * ietf-ip
 > data -f json -t config data-ip.xml
 {
   "ietf-interfaces:interfaces": {
@@ -470,67 +570,3 @@ ietf-ip features:
 }
 ```
 
-## YANG modules with the Schema Mount extension
-
-In these examples the non-interactive `yanglint` is used to simplify creating the context, a `yang-library` data file is
-used. The working directory is `libyang/tools/lint/examples` and *libyang* must be installed.
-
-**Print tree output of a model with Schema Mount**
-
-Command and its output:
-
-```
-$ yanglint -f tree -p . -Y sm-context-main.xml -x sm-context-extension.xml sm-main.yang
-module: sm-main
-  +--mp root* [node]
-  |  +--rw node    string
-  +--mp root2
-  +--rw root3
-     +--mp my-list* [name]
-        +--rw things/* [name]
-        |  +--rw name         -> /if:interfaces/if:interface/if:name
-        |  +--rw attribute?   uint32
-        +--rw not-compiled/
-        |  +--rw first?    string
-        |  +--rw second?   string
-        +--rw interfaces@
-        |  +--rw interface* [name]
-        |     +--rw name    string
-        |     +--rw type    identityref
-        +--rw name    string
-```
-
-**Validating and printing mounted data**
-
-Command and its output:
-
-```
-$ yanglint -f json -t config -p . -Y sm-context-main.xml -x sm-context-extension.xml sm-data.xml
-{
-  "ietf-interfaces:interfaces": {
-    "interface": [
-      {
-        "name": "eth0",
-        "type": "iana-if-type:ethernetCsmacd"
-      },
-      {
-        "name": "eth1",
-        "type": "iana-if-type:ethernetCsmacd"
-      }
-    ]
-  },
-  "sm-main:root3": {
-    "my-list": [
-      {
-        "name": "list item 1",
-        "sm-extension:things": [
-          {
-            "name": "eth0",
-            "attribute": 1
-          }
-        ]
-      }
-    ]
-  }
-}
-```

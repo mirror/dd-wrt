@@ -17,9 +17,6 @@
 
 #include "./linenoise/linenoise.h"
 
-/**
- * @brief Command line completion callback.
- */
 void complete_cmd(const char *buf, const char *hint, linenoiseCompletions *lc);
 
 #endif /* COMPLETION_H_ */

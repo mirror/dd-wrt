@@ -1,18 +1,9 @@
 #!/bin/sh
 
 set -e
-
-# Setup the test file
-trap 'rm -f "${TESTFILE}"; rmdir "${TESTDIR}"' EXIT
-TESTDIR=$(mktemp -d /tmp/yanglint.XXXXXX)
-TESTFILE="${TESTDIR}/ietf-interfaces.yang"
-
-# Unpack or copy the test file
 if test -f /usr/share/doc/libyang-tools/examples/ietf-interfaces.yang.gz; then
-	gunzip -c < /usr/share/doc/libyang-tools/examples/ietf-interfaces.yang.gz > "${TESTFILE}"
+	gunzip -c < /usr/share/doc/libyang-tools/examples/ietf-interfaces.yang.gz > /tmp/ietf-interfaces.yang
 else
-	cp /usr/share/doc/libyang-tools/examples/ietf-interfaces.yang "${TESTFILE}"
+	cp /usr/share/doc/libyang-tools/examples/ietf-interfaces.yang /tmp/ietf-interfaces.yang
 fi
-
-# Lint the test file
-yanglint "${TESTFILE}"
+yanglint /tmp/ietf-interfaces.yang
