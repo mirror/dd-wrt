@@ -1,0 +1,25 @@
+source [expr {[info exists ::env(TESTS_DIR)] ? "$env(TESTS_DIR)/non-interactive/ly.tcl" : "ly.tcl"}]
+
+set mdir $::env(YANG_MODULES_DIR)
+
+test debug_dict {Check debug message DICT} {
+-constraints {[ly_opt_exists "-G"]} -body {
+    ly_cmd_wrn "-V -V -G dict $mdir/modleaf.yang" "DICT"
+}}
+
+test debug_xpath {Check debug message XPATH} {
+-constraints {[ly_opt_exists "-G"]} -body {
+    ly_cmd_wrn "-V -V -G xpath $mdir/modmust.yang" "XPATH"
+}}
+
+test debug_dep_sets {Check debug message DEPSETS} {
+-constraints {[ly_opt_exists "-G"]} -body {
+    ly_cmd_wrn "-V -V -G dep-sets $mdir/modleaf.yang" "DEPSETS"
+}}
+
+test debug_depsets_xpath {Check debug message DEPSETS and XPATH} {
+-constraints {[ly_opt_exists "-G"]} -body {
+    ly_cmd_wrn "-V -V -G dep-sets,xpath $mdir/modmust.yang" "DEPSETS.*XPATH"
+}}
+
+cleanupTests

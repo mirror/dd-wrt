@@ -61,7 +61,7 @@ struct linenoiseState {
     int history_index;  /* The history index we are currently editing. */
 };
 
-extern struct linenoiseState ls;
+extern struct linenoiseState lss;
 
 typedef struct linenoiseCompletions {
     int path;

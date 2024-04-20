@@ -12,18 +12,20 @@
  *     https://opensource.org/licenses/BSD-3-Clause
  */
 
-#define _GNU_SOURCE /* asprintf, strdup */
-#include <sys/cdefs.h>
+#define _GNU_SOURCE /* strndup */
 
 #include "plugins_types.h"
 
-#include <arpa/inet.h>
-#if defined (__FreeBSD__) || defined (__NetBSD__) || defined (__OpenBSD__)
-#include <netinet/in.h>
-#include <sys/socket.h>
+#ifdef _WIN32
+# include <winsock2.h>
+# include <ws2tcpip.h>
+#else
+#  include <arpa/inet.h>
+#  if defined (__FreeBSD__) || defined (__NetBSD__) || defined (__OpenBSD__)
+#    include <netinet/in.h>
+#    include <sys/socket.h>
+#  endif
 #endif
-#include <assert.h>
-#include <ctype.h>
 #include <errno.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -130,10 +132,6 @@ lyplg_type_compare_ipv4_address_no_zone(const struct lyd_value *val1, const stru
 {
     struct lyd_value_ipv4_address_no_zone *v1, *v2;
 
-    if (val1->realtype != val2->realtype) {
-        return LY_ENOT;
-    }
-
     LYD_VALUE_GET(val1, v1);
     LYD_VALUE_GET(val2, v2);
 
@@ -212,7 +210,8 @@ const struct lyplg_type_record plugins_ipv4_address_no_zone[] = {
         .plugin.sort = NULL,
         .plugin.print = lyplg_type_print_ipv4_address_no_zone,
         .plugin.duplicate = lyplg_type_dup_simple,
-        .plugin.free = lyplg_type_free_simple
+        .plugin.free = lyplg_type_free_simple,
+        .plugin.lyb_data_len = 4,
     },
     {0}
 };

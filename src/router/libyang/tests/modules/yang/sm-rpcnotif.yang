@@ -1,0 +1,25 @@
+module sm-rpcnotif {
+  yang-version 1.1;
+  namespace "urn:rpcnotif";
+  prefix "smrn";
+
+  container cont {
+    notification cn;
+    action cr {
+      input {
+        leaf in {
+          type string;
+        }
+      }
+      output {
+        leaf out {
+          type string;
+        }
+      }
+    }
+  }
+  rpc r1;
+  rpc r2;
+  notification n1;
+  notification n2;
+}

@@ -1,0 +1,29 @@
+source [expr {[info exists ::env(TESTS_DIR)] ? "$env(TESTS_DIR)/non-interactive/ly.tcl" : "ly.tcl"}]
+
+set mdir "$::env(YANG_MODULES_DIR)"
+set ddir "$::env(TESTS_DIR)/data"
+
+test ext_data_schema_mount_tree {Print tree output of a model with Schema Mount} {
+    # mounting node lfl from modleaf.yang into modsm.yang
+    set out1 "--mp root.*--rw lfl/"
+    ly_cmd "-f tree -p $mdir -y -x $ddir/modsm_ctx_ext.xml $mdir/modsm.yang" $out1
+} {}
+
+test ext_data_schema_mount_tree_yanglibfile {Print tree output of a model with Schema Mount and --yang-library-file} {
+    # yang-library-file context contains an augment node 'alf' for modsm
+    set out1 "--mp root.*--rw lfl/.*--rw msa:alf?"
+    ly_cmd "-f tree -p $mdir -Y $ddir/modsm_ctx_main.xml -x $ddir/modsm_ctx_ext.xml $mdir/modsm.yang" $out1
+} {}
+
+test ext_data_schema_mount_xml {Validating and printing mounted data} {
+    ly_cmd "-f xml -t config -p $mdir -y -x $ddir/modsm_ctx_ext.xml $mdir/modsm.yang $ddir/modsm.xml" "</lfl>"
+} {}
+
+test ext_data_schema_mount_xml_yanglibfile {Validating and printing mounted data with --yang-library-file} {
+    set yanglibfile "$ddir/modsm_ctx_main.xml"
+    set extdata "$ddir/modsm_ctx_ext.xml"
+    set out1 "</lfl>.*</alf>"
+    ly_cmd "-f xml -t config -p $mdir -Y $yanglibfile -x $extdata $mdir/modsm.yang $ddir/modsm2.xml" $out1
+} {}
+
+cleanupTests

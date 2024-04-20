@@ -1,0 +1,12 @@
+module modimp-type {
+  namespace "urn:yanglint:modimp-type";
+  prefix mit;
+
+  import modtypedef {
+    prefix mtd;
+  }
+
+  leaf lf {
+    type mtd:mui8;
+  }
+}

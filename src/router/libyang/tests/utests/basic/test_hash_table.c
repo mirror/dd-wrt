@@ -1,4 +1,4 @@
-/*
+/**
  * @file test_hash_table.c
  * @author: Radek Krejci <rkrejci@cesnet.cz>
  * @brief unit tests for functions from hash_table.c
@@ -18,8 +18,6 @@
 
 #include "common.h"
 #include "hash_table.h"
-
-struct ht_rec *lyht_get_rec(unsigned char *recs, uint16_t rec_size, uint32_t idx);
 
 static void
 test_invalid_arguments(void **state)
@@ -83,7 +81,7 @@ static void
 test_ht_basic(void **state)
 {
     uint32_t i;
-    struct hash_table *ht;
+    struct ly_ht *ht;
 
     assert_non_null(ht = lyht_new(8, sizeof(int), ht_equal_clb, NULL, 0));
 
@@ -96,15 +94,14 @@ test_ht_basic(void **state)
     assert_int_equal(LY_ENOTFOUND, lyht_remove(ht, &i, i));
     CHECK_LOG("Invalid argument hash (lyht_remove_with_resize_cb()).", NULL);
 
-    lyht_free(ht);
+    lyht_free(ht, NULL);
 }
 
 static void
 test_ht_resize(void **state)
 {
     uint32_t i;
-    struct ht_rec *rec;
-    struct hash_table *ht;
+    struct ly_ht *ht;
 
     assert_non_null(ht = lyht_new(8, sizeof(int), ht_equal_clb, NULL, 1));
     assert_int_equal(8, ht->size);
@@ -120,13 +117,12 @@ test_ht_resize(void **state)
     for (i = 0; i < 16; ++i) {
         if ((i >= 2) && (i < 8)) {
             /* inserted data on indexes 2-7 */
-            rec = lyht_get_rec(ht->recs, ht->rec_size, i);
-            assert_int_equal(1, rec->hits);
-            assert_int_equal(i, rec->hash);
+            assert_int_not_equal(UINT32_MAX, ht->hlists[i].first);
+            assert_int_equal(LY_SUCCESS, lyht_find(ht, &i, i, NULL));
         } else {
             /* nothing otherwise */
-            rec = lyht_get_rec(ht->recs, ht->rec_size, i);
-            assert_int_equal(0, rec->hits);
+            assert_int_equal(UINT32_MAX, ht->hlists[i].first);
+            assert_int_equal(LY_ENOTFOUND, lyht_find(ht, &i, i, NULL));
         }
     }
 
@@ -153,7 +149,7 @@ test_ht_resize(void **state)
     }
 
     /* cleanup */
-    lyht_free(ht);
+    lyht_free(ht, NULL);
 }
 
 static void
@@ -162,8 +158,10 @@ test_ht_collisions(void **UNUSED(state))
 #define GET_REC_INT(rec) (*((uint32_t *)&(rec)->val))
 
     uint32_t i;
-    struct ht_rec *rec;
-    struct hash_table *ht;
+    struct ly_ht_rec *rec;
+    struct ly_ht *ht;
+    uint32_t rec_idx;
+    int count;
 
     assert_non_null(ht = lyht_new(8, sizeof(int), ht_equal_clb, NULL, 1));
 
@@ -172,66 +170,69 @@ test_ht_collisions(void **UNUSED(state))
     }
 
     /* check all records */
-    for (i = 0; i < 2; ++i) {
-        rec = lyht_get_rec(ht->recs, ht->rec_size, i);
-        assert_int_equal(rec->hits, 0);
+    for (i = 0; i < 8; ++i) {
+        if (i == 2) {
+            assert_int_not_equal(UINT32_MAX, ht->hlists[i].first);
+        } else {
+            assert_int_equal(UINT32_MAX, ht->hlists[i].first);
+        }
     }
-    rec = lyht_get_rec(ht->recs, ht->rec_size, i);
-    assert_int_equal(rec->hits, 4);
-    assert_int_equal(GET_REC_INT(rec), i);
-    ++i;
-    for ( ; i < 6; ++i) {
-        rec = lyht_get_rec(ht->recs, ht->rec_size, i);
-        assert_int_equal(rec->hits, 1);
-        assert_int_equal(GET_REC_INT(rec), i);
+    for (i = 0; i < 8; ++i) {
+        if ((i >= 2) && (i < 6)) {
+            assert_int_equal(LY_SUCCESS, lyht_find(ht, &i, 2, NULL));
+        } else {
+            assert_int_equal(LY_ENOTFOUND, lyht_find(ht, &i, 2, NULL));
+        }
     }
-    for ( ; i < 8; ++i) {
-        rec = lyht_get_rec(ht->recs, ht->rec_size, i);
-        assert_int_equal(rec->hits, 0);
+    rec_idx = ht->hlists[2].first;
+    count = 0;
+    while (rec_idx != UINT32_MAX) {
+        rec = lyht_get_rec(ht->recs, ht->rec_size, rec_idx);
+        rec_idx = rec->next;
+        assert_int_equal(rec->hash, 2);
+        count++;
     }
+    assert_int_equal(count, 4);
 
     i = 4;
     assert_int_equal(lyht_remove(ht, &i, 2), 0);
 
     rec = lyht_get_rec(ht->recs, ht->rec_size, i);
-    assert_int_equal(rec->hits, -1);
 
     i = 2;
     assert_int_equal(lyht_remove(ht, &i, 2), 0);
 
     /* check all records */
-    for (i = 0; i < 2; ++i) {
-        rec = lyht_get_rec(ht->recs, ht->rec_size, i);
-        assert_int_equal(rec->hits, 0);
+    for (i = 0; i < 8; ++i) {
+        if (i == 2) {
+            assert_int_not_equal(UINT32_MAX, ht->hlists[i].first);
+        } else {
+            assert_int_equal(UINT32_MAX, ht->hlists[i].first);
+        }
     }
-    rec = lyht_get_rec(ht->recs, ht->rec_size, i);
-    assert_int_equal(rec->hits, 2);
-    assert_int_equal(GET_REC_INT(rec), 5);
-    ++i;
-    rec = lyht_get_rec(ht->recs, ht->rec_size, i);
-    assert_int_equal(rec->hits, 1);
-    assert_int_equal(GET_REC_INT(rec), 3);
-    ++i;
-    for ( ; i < 6; ++i) {
-        rec = lyht_get_rec(ht->recs, ht->rec_size, i);
-        assert_int_equal(rec->hits, -1);
+    for (i = 0; i < 8; ++i) {
+        if ((i == 3) || (i == 5)) {
+            assert_int_equal(LY_SUCCESS, lyht_find(ht, &i, 2, NULL));
+        } else {
+            assert_int_equal(LY_ENOTFOUND, lyht_find(ht, &i, 2, NULL));
+        }
     }
-    for ( ; i < 8; ++i) {
-        rec = lyht_get_rec(ht->recs, ht->rec_size, i);
-        assert_int_equal(rec->hits, 0);
+    rec_idx = ht->hlists[2].first;
+    count = 0;
+    while (rec_idx != UINT32_MAX) {
+        rec = lyht_get_rec(ht->recs, ht->rec_size, rec_idx);
+        rec_idx = rec->next;
+        assert_int_equal(rec->hash, 2);
+        count++;
     }
+    assert_int_equal(count, 2);
 
-    for (i = 0; i < 3; ++i) {
-        assert_int_equal(lyht_find(ht, &i, 2, NULL), LY_ENOTFOUND);
-    }
-    assert_int_equal(lyht_find(ht, &i, 2, NULL), LY_SUCCESS);
-    ++i;
-    assert_int_equal(lyht_find(ht, &i, 2, NULL), LY_ENOTFOUND);
-    ++i;
-    assert_int_equal(lyht_find(ht, &i, 2, NULL), LY_SUCCESS);
-    ++i;
-    for ( ; i < 8; ++i) {
-        assert_int_equal(lyht_find(ht, &i, 2, NULL), LY_ENOTFOUND);
+    for (i = 0; i < 8; ++i) {
+        if ((i == 3) || (i == 5)) {
+            assert_int_equal(lyht_find(ht, &i, 2, NULL), LY_SUCCESS);
+        } else {
+            assert_int_equal(lyht_find(ht, &i, 2, NULL), LY_ENOTFOUND);
+        }
     }
 
     i = 3;
@@ -240,20 +241,11 @@ test_ht_collisions(void **UNUSED(state))
     assert_int_equal(lyht_remove(ht, &i, 2), 0);
 
     /* check all records */
-    for (i = 0; i < 2; ++i) {
-        rec = lyht_get_rec(ht->recs, ht->rec_size, i);
-        assert_int_equal(rec->hits, 0);
-    }
-    for ( ; i < 6; ++i) {
-        rec = lyht_get_rec(ht->recs, ht->rec_size, i);
-        assert_int_equal(rec->hits, -1);
-    }
-    for ( ; i < 8; ++i) {
-        rec = lyht_get_rec(ht->recs, ht->rec_size, i);
-        assert_int_equal(rec->hits, 0);
+    for (i = 0; i < 8; ++i) {
+        assert_int_equal(UINT32_MAX, ht->hlists[i].first);
     }
 
-    lyht_free(ht);
+    lyht_free(ht, NULL);
 }
 
 int

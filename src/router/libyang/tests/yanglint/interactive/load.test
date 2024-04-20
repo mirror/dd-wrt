@@ -1,0 +1,45 @@
+source [expr {[info exists ::env(TESTS_DIR)] ? "$env(TESTS_DIR)/interactive/ly.tcl" : "ly.tcl"}]
+
+test load_basic {} {
+-setup $ly_setup -cleanup $ly_cleanup -body {
+    ly_cmd "load modleafref"
+    ly_cmd "list" "I modleafref\r.*I modleaf"
+}}
+
+test load_with_feature {Load module with feature} {
+-setup $ly_setup -cleanup $ly_cleanup -body {
+    ly_cmd "load --feature modfeature:ftr2 modfeature"
+    ly_cmd "feature -a" "modfeature:\r\n\tftr1 \\(off\\)\r\n\tftr2 \\(on\\)"
+}}
+
+test load_make_implemented_once {load --make-implemented} {
+-setup $ly_setup -cleanup $ly_cleanup -body {
+    ly_ignore "load modmust"
+    ly_cmd "list" "I modmust\r.*i modleaf"
+    ly_cmd "clear"
+    ly_cmd "searchpath $::env(YANG_MODULES_DIR)"
+    ly_cmd "load -i modmust"
+    ly_cmd "list" "I modmust\r.*I modleaf"
+}}
+
+test load_make_implemented_twice {load -i -i} {
+-setup $ly_setup -cleanup $ly_cleanup -body {
+    ly_cmd "load modimp-type"
+    ly_cmd "list" "I modimp-type\r.*i modtypedef"
+    ly_cmd "clear"
+    ly_cmd "searchpath $::env(YANG_MODULES_DIR)"
+    ly_cmd "load -i -i modimp-type"
+    ly_cmd "list" "I modimp-type\r.*I modtypedef"
+}}
+
+test load_extended_leafref_enabled {Valid module with --extended-leafref option} {
+-setup $ly_setup -cleanup $ly_cleanup -body {
+    ly_cmd "load -X modextleafref"
+}}
+
+test load_extended_leafref_disabled {Expected error if --extended-leafref is not set} {
+-setup $ly_setup -cleanup $ly_cleanup -body {
+    ly_cmd_err "load modextleafref" "Unexpected XPath token \"FunctionName\""
+}}
+
+cleanupTests

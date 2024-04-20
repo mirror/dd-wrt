@@ -14,11 +14,8 @@
 
 #include "plugins_types.h"
 
-#include <inttypes.h>
 #include <stdint.h>
-#include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 
 #include "libyang.h"
 
@@ -33,7 +30,7 @@
  *
  * | Size (B) | Mandatory | Type | Meaning |
  * | :------  | :-------: | :--: | :-----: |
- * | 8        | yes | `int64_t *` | value represented without floating point |
+ * | 8        | yes | `int64_t *` | little-endian value represented without floating point |
  */
 
 /**
@@ -55,6 +52,7 @@ decimal64_num2str(int64_t num, struct lysc_type_dec *type, char **str)
 
     if (num) {
         int count = sprintf(ret, "%" PRId64 " ", num);
+
         if (((num > 0) && ((count - 1) <= type->fraction_digits)) || ((count - 2) <= type->fraction_digits)) {
             /* we have 0. value, print the value with the leading zeros
              * (one for 0. and also keep the correct with of num according
@@ -82,7 +80,7 @@ decimal64_num2str(int64_t num, struct lysc_type_dec *type, char **str)
     return LY_SUCCESS;
 }
 
-API LY_ERR
+LIBYANG_API_DEF LY_ERR
 lyplg_type_store_decimal64(const struct ly_ctx *ctx, const struct lysc_type *type, const void *value, size_t value_len,
         uint32_t options, LY_VALUE_FORMAT format, void *UNUSED(prefix_data), uint32_t hints,
         const struct lysc_node *UNUSED(ctx_node), struct lyd_value *storage, struct lys_glob_unres *UNUSED(unres),
@@ -105,8 +103,9 @@ lyplg_type_store_decimal64(const struct ly_ctx *ctx, const struct lysc_type *typ
             goto cleanup;
         }
 
-        /* we have the decimal64 number */
-        num = *(int64_t *)value;
+        /* we have the decimal64 number, in host byte order */
+        memcpy(&num, value, value_len);
+        num = le64toh(num);
     } else {
         /* check hints */
         ret = lyplg_type_check_hints(hints, value, value_len, type->basetype, NULL, err);
@@ -159,13 +158,9 @@ cleanup:
     return ret;
 }
 
-API LY_ERR
+LIBYANG_API_DEF LY_ERR
 lyplg_type_compare_decimal64(const struct lyd_value *val1, const struct lyd_value *val2)
 {
-    if (val1->realtype != val2->realtype) {
-        return LY_ENOT;
-    }
-
     /* if type is the same, the fraction digits are, too */
     if (val1->dec64 != val2->dec64) {
         return LY_ENOT;
@@ -173,16 +168,34 @@ lyplg_type_compare_decimal64(const struct lyd_value *val1, const struct lyd_valu
     return LY_SUCCESS;
 }
 
-API const void *
+LIBYANG_API_DEF const void *
 lyplg_type_print_decimal64(const struct ly_ctx *UNUSED(ctx), const struct lyd_value *value, LY_VALUE_FORMAT format,
         void *UNUSED(prefix_data), ly_bool *dynamic, size_t *value_len)
 {
+    int64_t num = 0;
+    void *buf;
+
     if (format == LY_VALUE_LYB) {
-        *dynamic = 0;
-        if (value_len) {
-            *value_len = sizeof value->dec64;
+        num = htole64(value->dec64);
+        if (num == value->dec64) {
+            /* values are equal, little-endian */
+            *dynamic = 0;
+            if (value_len) {
+                *value_len = sizeof value->dec64;
+            }
+            return &value->dec64;
+        } else {
+            /* values differ, big-endian */
+            buf = calloc(1, sizeof value->dec64);
+            LY_CHECK_RET(!buf, NULL);
+
+            *dynamic = 1;
+            if (value_len) {
+                *value_len = sizeof value->dec64;
+            }
+            memcpy(buf, &num, sizeof value->dec64);
+            return buf;
         }
-        return &value->dec64;
     }
 
     /* use the cached canonical value */
@@ -215,7 +228,8 @@ const struct lyplg_type_record plugins_decimal64[] = {
         .plugin.sort = NULL,
         .plugin.print = lyplg_type_print_decimal64,
         .plugin.duplicate = lyplg_type_dup_simple,
-        .plugin.free = lyplg_type_free_simple
+        .plugin.free = lyplg_type_free_simple,
+        .plugin.lyb_data_len = 8,
     },
     {0}
 };

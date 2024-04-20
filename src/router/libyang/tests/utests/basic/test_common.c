@@ -1,4 +1,4 @@
-/*
+/**
  * @file test_common.c
  * @author: Radek Krejci <rkrejci@cesnet.cz>
  * @brief unit tests for functions from common.c
@@ -26,30 +26,30 @@ test_utf8(void **UNUSED(state))
 
     /* test invalid UTF-8 characters in lyxml_getutf8
      * - https://en.wikipedia.org/wiki/UTF-8 */
-    buf[0] = 0x04;
+    buf[0] = (char)0x04;
     assert_int_equal(LY_EINVAL, ly_getutf8(&str, &c, &len));
-    buf[0] = 0x80;
-    assert_int_equal(LY_EINVAL, ly_getutf8(&str, &c, &len));
-
-    buf[0] = 0xc0;
-    buf[1] = 0x00;
-    assert_int_equal(LY_EINVAL, ly_getutf8(&str, &c, &len));
-    buf[1] = 0x80;
+    buf[0] = (char)0x80;
     assert_int_equal(LY_EINVAL, ly_getutf8(&str, &c, &len));
 
-    buf[0] = 0xe0;
-    buf[1] = 0x00;
-    buf[2] = 0x80;
+    buf[0] = (char)0xc0;
+    buf[1] = (char)0x00;
     assert_int_equal(LY_EINVAL, ly_getutf8(&str, &c, &len));
-    buf[1] = 0x80;
+    buf[1] = (char)0x80;
     assert_int_equal(LY_EINVAL, ly_getutf8(&str, &c, &len));
 
-    buf[0] = 0xf0;
-    buf[1] = 0x00;
-    buf[2] = 0x80;
-    buf[3] = 0x80;
+    buf[0] = (char)0xe0;
+    buf[1] = (char)0x00;
+    buf[2] = (char)0x80;
     assert_int_equal(LY_EINVAL, ly_getutf8(&str, &c, &len));
-    buf[1] = 0x80;
+    buf[1] = (char)0x80;
+    assert_int_equal(LY_EINVAL, ly_getutf8(&str, &c, &len));
+
+    buf[0] = (char)0xf0;
+    buf[1] = (char)0x00;
+    buf[2] = (char)0x80;
+    buf[3] = (char)0x80;
+    assert_int_equal(LY_EINVAL, ly_getutf8(&str, &c, &len));
+    buf[1] = (char)0x80;
     assert_int_equal(LY_EINVAL, ly_getutf8(&str, &c, &len));
 }
 

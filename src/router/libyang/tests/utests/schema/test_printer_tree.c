@@ -22,7 +22,7 @@
 
 #define TEST_LOCAL_SETUP \
     char *printed; \
-    const struct lys_module *mod; \
+    struct lys_module *mod; \
     const char *orig; \
     const char *expect; \
     assert_int_equal(LY_SUCCESS, ly_out_new_memory(&printed, 0, &UTEST_OUT));
@@ -37,7 +37,7 @@ static void
 base_sections(void **state)
 {
     TEST_LOCAL_SETUP;
-    const struct lys_module *modxx;
+    struct lys_module *modxx;
 
     orig =
             "module a01xx {\n"
@@ -1574,6 +1574,7 @@ print_compiled_node(void **state)
             "  yang-version 1.1;\n"
             "  namespace \"x:y\";\n"
             "  prefix x;\n"
+            "\n"
             "  container g {\n"
             "    leaf a {\n"
             "      type string;\n"
@@ -1585,6 +1586,12 @@ print_compiled_node(void **state)
             "      }\n"
             "      leaf c {\n"
             "        type string;\n"
+            "      }\n"
+            "      list l {\n"
+            "        key \"ip\";\n"
+            "        leaf ip {\n"
+            "          type string;\n"
+            "        }\n"
             "      }\n"
             "    }\n"
             "  }\n"
@@ -1610,13 +1617,31 @@ print_compiled_node(void **state)
 
     ly_out_reset(UTEST_OUT);
 
+    /* pyang -f tree --tree-path /g/h/l */
+    expect =
+            "module: a26\n"
+            "  +--rw g\n"
+            "     +--rw h\n"
+            "        +--rw l* [ip]\n"
+            "           +--rw ip    string\n";
+
+    node = lys_find_path(UTEST_LYCTX, NULL, "/a26:g/h/l", 0);
+    CHECK_POINTER(node, 1);
+    assert_int_equal(LY_SUCCESS, lys_print_node(UTEST_OUT, node, LYS_OUT_TREE, 72, 0));
+    assert_int_equal(strlen(expect), ly_out_printed(UTEST_OUT));
+    assert_string_equal(printed, expect);
+
+    ly_out_reset(UTEST_OUT);
+
     /* pyang -f tree --tree-path /g/h */
     expect =
             "module: a26\n"
             "  +--rw g\n"
             "     +--rw h\n"
             "        +--rw b    string\n"
-            "        +--rw c?   string\n";
+            "        +--rw c?   string\n"
+            "        +--rw l* [ip]\n"
+            "           +--rw ip    string\n";
 
     node = lys_find_path(UTEST_LYCTX, NULL, "/a26:g/h", 0);
     CHECK_POINTER(node, 1);
@@ -1638,6 +1663,59 @@ print_compiled_node(void **state)
     assert_int_equal(strlen(expect), ly_out_printed(UTEST_OUT));
     assert_string_equal(printed, expect);
 
+    ly_ctx_unset_options(UTEST_LYCTX, LY_CTX_SET_PRIV_PARSED);
+
+    TEST_LOCAL_TEARDOWN;
+}
+
+static void
+print_compiled_node_augment(void **state)
+{
+    TEST_LOCAL_SETUP;
+    const struct lysc_node *node;
+
+    orig =
+            "module b26xx {\n"
+            "  yang-version 1.1;\n"
+            "  namespace \"xx:y\";\n"
+            "  prefix xx;\n"
+            "  container c;\n"
+            "}\n";
+
+    UTEST_ADD_MODULE(orig, LYS_IN_YANG, NULL, &mod);
+
+    /* module with import statement */
+    orig =
+            "module b26 {\n"
+            "  yang-version 1.1;\n"
+            "  namespace \"x:y\";\n"
+            "  prefix x;\n"
+            "\n"
+            "  import b26xx {\n"
+            "    prefix xx;\n"
+            "  }\n"
+            "\n"
+            "  augment \"/xx:c\" {\n"
+            "    container e;\n"
+            "  }\n"
+            "}\n";
+
+    UTEST_ADD_MODULE(orig, LYS_IN_YANG, NULL, &mod);
+
+    /* pyang -f tree --tree-path /c/e ... but prefixes modified */
+    expect =
+            "module: b26\n"
+            "  +--rw xx:c\n"
+            "     +--rw e\n";
+
+    /* using lysc tree */
+    ly_ctx_set_options(UTEST_LYCTX, LY_CTX_SET_PRIV_PARSED);
+    node = lys_find_path(UTEST_LYCTX, NULL, "/b26xx:c/b26:e", 0);
+    CHECK_POINTER(node, 1);
+    assert_int_equal(LY_SUCCESS, lys_print_node(UTEST_OUT, node, LYS_OUT_TREE, 72, 0));
+    assert_int_equal(strlen(expect), ly_out_printed(UTEST_OUT));
+    assert_string_equal(printed, expect);
+    ly_out_reset(UTEST_OUT);
     ly_ctx_unset_options(UTEST_LYCTX, LY_CTX_SET_PRIV_PARSED);
 
     TEST_LOCAL_TEARDOWN;
@@ -1841,6 +1919,567 @@ yang_data(void **state)
     TEST_LOCAL_TEARDOWN;
 }
 
+static LY_ERR
+getter(const struct lysc_ext_instance *ext, void *user_data, void **ext_data, ly_bool *ext_data_free)
+{
+    struct ly_ctx *ctx;
+    struct lyd_node *data = NULL;
+
+    ctx = ext->module->ctx;
+    if (user_data) {
+        assert_int_equal(LY_SUCCESS, lyd_parse_data_mem(ctx, user_data, LYD_XML, 0, LYD_VALIDATE_PRESENT, &data));
+    }
+
+    *ext_data = data;
+    *ext_data_free = 1;
+    return LY_SUCCESS;
+}
+
+#define SM_MODNAME_EXT "sm-extension"
+#define SM_MOD_EXT_NAMESPACE "urn:sm-ext"
+#define SM_PREF "sm"
+#define SCHEMA_REF_INLINE "<inline></inline>"
+#define SCHEMA_REF_SHARED(REF) "<shared-schema>"REF"</shared-schema>"
+
+#define EXT_DATA(MPMOD_NAME, MODULES, SCHEMA_REF) \
+    "<yang-library xmlns=\"urn:ietf:params:xml:ns:yang:ietf-yang-library\"\n" \
+    "   xmlns:ds=\"urn:ietf:params:xml:ns:yang:ietf-datastores\">\n" \
+    "<module-set>\n" \
+    "   <name>test-set</name>\n" \
+    "   <module>\n" \
+    "      <name>"SM_MODNAME_EXT"</name>\n" \
+    "      <namespace>"SM_MOD_EXT_NAMESPACE"</namespace>\n" \
+    "   </module>\n" \
+    MODULES \
+    "</module-set>\n" \
+    "<content-id>1</content-id>\n" \
+    "</yang-library>\n" \
+    "<modules-state xmlns=\"urn:ietf:params:xml:ns:yang:ietf-yang-library\">\n" \
+    "<module-set-id>1</module-set-id>\n" \
+    "</modules-state>\n" \
+    "<schema-mounts xmlns=\"urn:ietf:params:xml:ns:yang:ietf-yang-schema-mount\">\n" \
+    "<namespace>\n" \
+    "   <prefix>"SM_PREF"</prefix>\n" \
+    "   <uri>x:"MPMOD_NAME"</uri>\n" \
+    "</namespace>\n" \
+    "<mount-point>\n" \
+    "   <module>"MPMOD_NAME"</module>\n" \
+    "   <label>mnt-root</label>\n" \
+    SCHEMA_REF \
+    "</mount-point>\n" \
+    "</schema-mounts>"
+
+#define SM_MOD_MAIN(NAME, BODY) \
+    "module "NAME" {\n" \
+    "  yang-version 1.1;\n" \
+    "  namespace \"x:"NAME"\";\n" \
+    "  prefix \"x\";\n" \
+    "  import ietf-yang-schema-mount {\n" \
+    "    prefix yangmnt;\n" \
+    "  }\n" \
+    BODY \
+    "}"
+
+static void
+mount_point(void **state)
+{
+    char *data;
+
+    TEST_LOCAL_SETUP;
+    ly_ctx_set_options(UTEST_LYCTX, LY_CTX_SET_PRIV_PARSED);
+
+    /* interested in sm-extension.yang and sm-mod.yang */
+    assert_int_equal(LY_SUCCESS, ly_ctx_set_searchdir(UTEST_LYCTX, TESTS_DIR_MODULES_YANG));
+
+    /*
+     * 'mp' flag for list and container
+     */
+    orig = SM_MOD_MAIN("a29",
+            "list lt {\n"
+            "  key \"name\";\n"
+            "  leaf name {\n"
+            "    type string;\n"
+            "  }\n"
+            "  yangmnt:mount-point \"mnt-root\";\n"
+            "}\n"
+            "container cont {\n"
+            "  yangmnt:mount-point \"mnt-root\";\n"
+            "}\n");
+    expect =
+            "module: a29\n"
+            "  +--mp lt* [name]\n"
+            "  |  +--rw name    string\n"
+            "  +--mp cont\n";
+    UTEST_ADD_MODULE(orig, LYS_IN_YANG, NULL, &mod);
+    TEST_LOCAL_PRINT(mod, 72);
+    assert_int_equal(strlen(expect), ly_out_printed(UTEST_OUT));
+    assert_string_equal(printed, expect);
+    ly_out_reset(UTEST_OUT);
+
+    /*
+     * mount schema by 'inline' schema-ref
+     */
+    orig = SM_MOD_MAIN("a30",
+            "list lt {\n"
+            "  key \"name\";\n"
+            "  leaf name {\n"
+            "    type string;\n"
+            "  }\n"
+            "  yangmnt:mount-point \"mnt-root\";\n"
+            "}\n");
+    expect =
+            "module: a30\n"
+            "  +--mp lt* [name]\n"
+            "     +--rw tlist/* [name]\n"
+            "     |  +--rw name    uint32\n"
+            "     +--rw tcont/\n"
+            "     |  +--rw tleaf?   uint32\n"
+            "     +--rw name    string\n";
+    data = EXT_DATA("a30", "", SCHEMA_REF_INLINE);
+    ly_ctx_set_ext_data_clb(UTEST_LYCTX, getter, data);
+    UTEST_ADD_MODULE(orig, LYS_IN_YANG, NULL, &mod);
+    TEST_LOCAL_PRINT(mod, 72);
+    assert_int_equal(strlen(expect), ly_out_printed(UTEST_OUT));
+    assert_string_equal(printed, expect);
+    ly_out_reset(UTEST_OUT);
+
+    /*
+     * mount schema into empty container
+     */
+    orig = SM_MOD_MAIN("a31",
+            "container cont {\n"
+            "  yangmnt:mount-point \"mnt-root\";\n"
+            "}\n"
+            "leaf lf {\n"
+            "  type string;\n"
+            "}\n");
+    expect =
+            "module: a31\n"
+            "  +--mp cont\n"
+            "  |  +--rw tlist/* [name]\n"
+            "  |  |  +--rw name    uint32\n"
+            "  |  +--rw tcont/\n"
+            "  |     +--rw tleaf?   uint32\n"
+            "  +--rw lf?     string\n";
+    data = EXT_DATA("a31", "", SCHEMA_REF_INLINE);
+    ly_ctx_set_ext_data_clb(UTEST_LYCTX, getter, data);
+    UTEST_ADD_MODULE(orig, LYS_IN_YANG, NULL, &mod);
+    TEST_LOCAL_PRINT(mod, 72);
+    assert_int_equal(strlen(expect), ly_out_printed(UTEST_OUT));
+    assert_string_equal(printed, expect);
+    ly_out_reset(UTEST_OUT);
+
+    /*
+     * mount schema into non-empty container
+     */
+    orig = SM_MOD_MAIN("a32",
+            "container cont {\n"
+            "  leaf lf1 {\n"
+            "    type string;\n"
+            "  }\n"
+            "  yangmnt:mount-point \"mnt-root\";\n"
+            "  leaf lf2 {\n"
+            "    type string;\n"
+            "  }\n"
+            "}\n");
+    expect =
+            "module: a32\n"
+            "  +--mp cont\n"
+            "     +--rw tlist/* [name]\n"
+            "     |  +--rw name    uint32\n"
+            "     +--rw tcont/\n"
+            "     |  +--rw tleaf?   uint32\n"
+            "     +--rw lf1?   string\n"
+            "     +--rw lf2?   string\n";
+    data = EXT_DATA("a32", "", SCHEMA_REF_INLINE);
+    ly_ctx_set_ext_data_clb(UTEST_LYCTX, getter, data);
+    UTEST_ADD_MODULE(orig, LYS_IN_YANG, NULL, &mod);
+    TEST_LOCAL_PRINT(mod, 72);
+    assert_int_equal(strlen(expect), ly_out_printed(UTEST_OUT));
+    assert_string_equal(printed, expect);
+    ly_out_reset(UTEST_OUT);
+
+    /*
+     * mounting with parent-reference
+     */
+    orig = SM_MOD_MAIN("a33",
+            "list pr {\n"
+            "  key \"name\";\n"
+            "  leaf name {\n"
+            "    type string;\n"
+            "  }\n"
+            "  leaf prlf {\n"
+            "    type string;\n"
+            "  }\n"
+            "}\n"
+            "leaf lf {\n"
+            "  type string;\n"
+            "}\n"
+            "container cont {\n"
+            "  yangmnt:mount-point \"mnt-root\";\n"
+            "  list lt {\n"
+            "    key \"name\";\n"
+            "    leaf name {\n"
+            "      type string;\n"
+            "    }\n"
+            "  }\n"
+            "}\n");
+    expect =
+            "module: a33\n"
+            "  +--rw pr* [name]\n"
+            "  |  +--rw name    string\n"
+            "  |  +--rw prlf?   string\n"
+            "  +--rw lf?     string\n"
+            "  +--mp cont\n"
+            "     +--rw tlist/* [name]\n"
+            "     |  +--rw name    uint32\n"
+            "     +--rw tcont/\n"
+            "     |  +--rw tleaf?   uint32\n"
+            "     +--rw pr@* [name]\n"
+            "     |  +--rw prlf?   string\n"
+            "     +--rw lf@?     string\n"
+            "     +--rw lt* [name]\n"
+            "        +--rw name    string\n";
+    data = EXT_DATA("a33", "", SCHEMA_REF_SHARED(
+            "<parent-reference>/"SM_PREF ":pr/"SM_PREF ":prlf</parent-reference>\n"
+            "<parent-reference>/"SM_PREF ":lf</parent-reference>\n"));
+    ly_ctx_set_ext_data_clb(UTEST_LYCTX, getter, data);
+    UTEST_ADD_MODULE(orig, LYS_IN_YANG, NULL, &mod);
+    TEST_LOCAL_PRINT(mod, 72);
+    assert_int_equal(strlen(expect), ly_out_printed(UTEST_OUT));
+    assert_string_equal(printed, expect);
+    ly_out_reset(UTEST_OUT);
+
+    /*
+     * mounting with parent-reference into empty container
+     */
+    orig = SM_MOD_MAIN("a34",
+            "container cont {\n"
+            "  yangmnt:mount-point \"mnt-root\";\n"
+            "}\n"
+            "leaf lf {\n"
+            "  type string;\n"
+            "}\n");
+    expect =
+            "module: a34\n"
+            "  +--mp cont\n"
+            "  |  +--rw tlist/* [name]\n"
+            "  |  |  +--rw name    uint32\n"
+            "  |  +--rw tcont/\n"
+            "  |  |  +--rw tleaf?   uint32\n"
+            "  |  +--rw lf@?     string\n"
+            "  +--rw lf?     string\n";
+    data = EXT_DATA("a34", "",
+            SCHEMA_REF_SHARED(
+            "<parent-reference>/"SM_PREF ":lf</parent-reference>\n"));
+    ly_ctx_set_ext_data_clb(UTEST_LYCTX, getter, data);
+    UTEST_ADD_MODULE(orig, LYS_IN_YANG, NULL, &mod);
+    TEST_LOCAL_PRINT(mod, 72);
+    assert_int_equal(strlen(expect), ly_out_printed(UTEST_OUT));
+    assert_string_equal(printed, expect);
+    ly_out_reset(UTEST_OUT);
+
+    /*
+     * mounting module which is only parsed
+     */
+    orig = SM_MOD_MAIN("a35",
+            "import sm-mod {\n"
+            "  prefix smm;\n"
+            "}\n"
+            "container pr {\n"
+            "  leaf prlf {\n"
+            "    type uint32;\n"
+            "  }\n"
+            "}\n"
+            "list lt {\n"
+            "  key \"name\";\n"
+            "  yangmnt:mount-point \"mnt-root\";\n"
+            "  leaf name {\n"
+            "    type string;\n"
+            "  }\n"
+            "}\n");
+    expect =
+            "module: a35\n"
+            "  +--rw pr\n"
+            "  |  +--rw prlf?   uint32\n"
+            "  +--mp lt* [name]\n"
+            "     +--rw tlist/* [name]\n"
+            "     |  +--rw name    uint32\n"
+            "     +--rw tcont/\n"
+            "     |  +--rw tleaf?   uint32\n"
+            "     +--mp ncmp/\n"
+            "     +--rw not-compiled/\n"
+            "     |  +--rw first?    string\n"
+            "     |  +--rw second?   string\n"
+            "     +--rw pr@\n"
+            "     |  +--rw prlf?   uint32\n"
+            "     +--rw name    string\n";
+    data = EXT_DATA("a35",
+            "<module>\n"
+            "   <name>sm-mod</name>\n"
+            "   <namespace>urn:sm-mod</namespace>\n"
+            "</module>\n",
+            SCHEMA_REF_SHARED(
+            "<parent-reference>/"SM_PREF ":pr/"SM_PREF ":prlf</parent-reference>\n"));
+    ly_ctx_set_ext_data_clb(UTEST_LYCTX, getter, data);
+    UTEST_ADD_MODULE(orig, LYS_IN_YANG, NULL, &mod);
+    TEST_LOCAL_PRINT(mod, 72);
+    assert_int_equal(strlen(expect), ly_out_printed(UTEST_OUT));
+    assert_string_equal(printed, expect);
+    ly_out_reset(UTEST_OUT);
+
+    /*
+     * notifications and rpcs in mounted module
+     */
+    orig = SM_MOD_MAIN("a36",
+            "container cont {\n"
+            "  yangmnt:mount-point \"mnt-root\";\n"
+            "}\n");
+    expect =
+            "module: a36\n"
+            "  +--mp cont\n"
+            "     +--rw tlist/* [name]\n"
+            "     |  +--rw name    uint32\n"
+            "     +--rw tcont/\n"
+            "     |  +--rw tleaf?   uint32\n"
+            "     +--rw cont/\n"
+            "     |  +---x cr\n"
+            "     |  |  +---w input\n"
+            "     |  |  |  +---w in?   string\n"
+            "     |  |  +--ro output\n"
+            "     |  |     +--ro out?   string\n"
+            "     |  +---n cn\n"
+            "     +---x r1/\n"
+            "     +---x r2/\n"
+            "     +---n n1/\n"
+            "     +---n n2/\n";
+    data = EXT_DATA("a36",
+            "<module>\n"
+            "   <name>sm-rpcnotif</name>\n"
+            "   <namespace>urn:rpcnotif</namespace>\n"
+            "</module>\n",
+            SCHEMA_REF_INLINE);
+    ly_ctx_set_ext_data_clb(UTEST_LYCTX, getter, data);
+    UTEST_ADD_MODULE(orig, LYS_IN_YANG, NULL, &mod);
+    TEST_LOCAL_PRINT(mod, 72);
+    assert_int_equal(strlen(expect), ly_out_printed(UTEST_OUT));
+    assert_string_equal(printed, expect);
+    ly_out_reset(UTEST_OUT);
+
+    /*
+     * parent-ref composes the '@' subtree
+     */
+    orig = SM_MOD_MAIN("a37",
+            "container pr {\n"
+            "  leaf ignored_node {\n"
+            "    type string;\n"
+            "  }\n"
+            "  container cont {\n"
+            "    leaf ignored_lf {\n"
+            "      type uint32;\n"
+            "    }\n"
+            "  }\n"
+            "  container ignored_subtree {\n"
+            "    leaf ignored_lf {\n"
+            "      type uint32;\n"
+            "    }\n"
+            "  }\n"
+            "  container cont_sibl {\n"
+            "    leaf slf {\n"
+            "      type string;\n"
+            "    }\n"
+            "  }\n"
+            "  leaf lf {\n"
+            "    type uint32;\n"
+            "  }\n"
+            "}\n"
+            "container cont_mount {\n"
+            "  yangmnt:mount-point \"mnt-root\";\n"
+            "}\n");
+    expect =
+            "module: a37\n"
+            "  +--rw pr\n"
+            "  |  +--rw ignored_node?      string\n"
+            "  |  +--rw cont\n"
+            "  |  |  +--rw ignored_lf?   uint32\n"
+            "  |  +--rw ignored_subtree\n"
+            "  |  |  +--rw ignored_lf?   uint32\n"
+            "  |  +--rw cont_sibl\n"
+            "  |  |  +--rw slf?   string\n"
+            "  |  +--rw lf?                uint32\n"
+            "  +--mp cont_mount\n"
+            "     +--rw tlist/* [name]\n"
+            "     |  +--rw name    uint32\n"
+            "     +--rw tcont/\n"
+            "     |  +--rw tleaf?   uint32\n"
+            "     +--rw pr@\n"
+            "        +--rw cont\n"
+            "        +--rw cont_sibl\n"
+            "        |  +--rw slf?   string\n"
+            "        +--rw lf?          uint32\n";
+    data = EXT_DATA("a37", "", SCHEMA_REF_SHARED(
+            "<parent-reference>/"SM_PREF ":pr/"SM_PREF ":cont_sibl/slf</parent-reference>\n"
+            "<parent-reference>/"SM_PREF ":pr/"SM_PREF ":cont</parent-reference>\n"
+            "<parent-reference>/"SM_PREF ":pr/"SM_PREF ":lf</parent-reference>\n"));
+    ly_ctx_set_ext_data_clb(UTEST_LYCTX, getter, data);
+    UTEST_ADD_MODULE(orig, LYS_IN_YANG, NULL, &mod);
+    TEST_LOCAL_PRINT(mod, 72);
+    assert_int_equal(strlen(expect), ly_out_printed(UTEST_OUT));
+    assert_string_equal(printed, expect);
+    ly_out_reset(UTEST_OUT);
+
+    ly_ctx_unset_options(UTEST_LYCTX, LY_CTX_SET_PRIV_PARSED);
+    TEST_LOCAL_TEARDOWN;
+}
+
+static void
+structure(void **state)
+{
+    TEST_LOCAL_SETUP;
+
+    orig =
+            "module example-module {\n"
+            "  yang-version 1.1;\n"
+            "  namespace \"urn:example:example-module\";\n"
+            "  prefix exm;\n"
+            "\n"
+            "  import ietf-yang-structure-ext {\n"
+            "    prefix sx;\n"
+            "  }\n"
+            "\n"
+            "  sx:structure address-book {\n"
+            "    list address {\n"
+            "      key \"last first\";\n"
+            "      leaf last {\n"
+            "        type string;\n"
+            "      }\n"
+            "      leaf first {\n"
+            "        type string;\n"
+            "      }\n"
+            "      leaf street {\n"
+            "        type string;\n"
+            "      }\n"
+            "      leaf city {\n"
+            "        type string;\n"
+            "      }\n"
+            "      leaf state {\n"
+            "        type string;\n"
+            "      }\n"
+            "    }\n"
+            "  }\n"
+            "}\n";
+
+    /* from RFC 8791, Appendix A.1 */
+    expect =
+            "module: example-module\n"
+            "\n"
+            "  structure address-book:\n"
+            "    +-- address* [last first]\n"
+            "       +-- last      string\n"
+            "       +-- first     string\n"
+            "       +-- street?   string\n"
+            "       +-- city?     string\n"
+            "       +-- state?    string\n";
+
+    UTEST_ADD_MODULE(orig, LYS_IN_YANG, NULL, &mod);
+    TEST_LOCAL_PRINT(mod, 72);
+    assert_int_equal(strlen(expect), ly_out_printed(UTEST_OUT));
+    assert_string_equal(printed, expect);
+    ly_out_reset(UTEST_OUT);
+
+    /* using lysc tree */
+    ly_ctx_set_options(UTEST_LYCTX, LY_CTX_SET_PRIV_PARSED);
+    TEST_LOCAL_PRINT(mod, 72);
+    assert_int_equal(strlen(expect), ly_out_printed(UTEST_OUT));
+    assert_string_equal(printed, expect);
+    ly_out_reset(UTEST_OUT);
+    ly_ctx_unset_options(UTEST_LYCTX, LY_CTX_SET_PRIV_PARSED);
+
+    orig =
+            "module example-module-aug {\n"
+            "  yang-version 1.1;\n"
+            "  namespace \"urn:example:example-module-aug\";\n"
+            "  prefix exma;\n"
+            "\n"
+            "  import ietf-yang-structure-ext {\n"
+            "    prefix sx;\n"
+            "  }\n"
+            "  import example-module {\n"
+            "    prefix exm;\n"
+            "  }\n"
+            "\n"
+            "  sx:augment-structure \"/exm:address-book/exm:address\" {\n"
+            "    leaf county {\n"
+            "      type string;\n"
+            "    }\n"
+            "    leaf zipcode {\n"
+            "      type string;\n"
+            "    }\n"
+            "  }\n"
+            "}\n";
+
+    /* from RFC 8791, Appendix A.2 */
+    expect =
+            "module: example-module-aug\n"
+            "\n"
+            "  augment-structure /exm:address-book/exm:address:\n"
+            "    +-- county?    string\n"
+            "    +-- zipcode?   string\n";
+
+    UTEST_ADD_MODULE(orig, LYS_IN_YANG, NULL, &mod);
+    TEST_LOCAL_PRINT(mod, 72);
+    assert_int_equal(strlen(expect), ly_out_printed(UTEST_OUT));
+    assert_string_equal(printed, expect);
+    ly_out_reset(UTEST_OUT);
+
+    /* using lysc tree */
+    ly_ctx_set_options(UTEST_LYCTX, LY_CTX_SET_PRIV_PARSED);
+    TEST_LOCAL_PRINT(mod, 72);
+    assert_int_equal(strlen(expect), ly_out_printed(UTEST_OUT));
+    assert_string_equal(printed, expect);
+    ly_out_reset(UTEST_OUT);
+    ly_ctx_unset_options(UTEST_LYCTX, LY_CTX_SET_PRIV_PARSED);
+
+    TEST_LOCAL_TEARDOWN;
+}
+
+static void
+annotation(void **state)
+{
+    TEST_LOCAL_SETUP;
+
+    orig =
+            "module ann {\n"
+            "  yang-version 1.1;\n"
+            "  namespace \"urn:example:ann\";\n"
+            "  prefix an;\n"
+            "\n"
+            "  import ietf-yang-metadata {\n"
+            "    prefix md;\n"
+            "  }\n"
+            "\n"
+            "  leaf lf1 {\n"
+            "    type string;\n"
+            "  }\n"
+            "  md:annotation avalue {\n"
+            "    type string;\n"
+            "  }\n"
+            "}\n";
+
+    expect =
+            "module: ann\n"
+            "  +--rw lf1?   string\n";
+
+    /* annotation is ignored without error message */
+    UTEST_ADD_MODULE(orig, LYS_IN_YANG, NULL, &mod);
+    TEST_LOCAL_PRINT(mod, 72);
+    assert_int_equal(strlen(expect), ly_out_printed(UTEST_OUT));
+    assert_string_equal(printed, expect);
+    ly_out_reset(UTEST_OUT);
+
+    TEST_LOCAL_TEARDOWN;
+}
+
 int
 main(void)
 {
@@ -1871,8 +2510,12 @@ main(void)
         UTEST(transition_between_rpc_and_notif),
         UTEST(local_augment),
         UTEST(print_compiled_node),
+        UTEST(print_compiled_node_augment),
         UTEST(print_parsed_submodule),
         UTEST(yang_data),
+        UTEST(mount_point),
+        UTEST(structure),
+        UTEST(annotation),
     };
 
     return cmocka_run_group_tests(tests, NULL, NULL);

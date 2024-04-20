@@ -83,7 +83,7 @@ enum LYPLG {
  * @return LY_EINVAL when pathname is NULL or the plugin contains invalid content for this libyang version.
  * @return LY_ESYS when the plugin file cannot be loaded.
  */
-LY_ERR lyplg_add(const char *pathname);
+LIBYANG_API_DECL LY_ERR lyplg_add(const char *pathname);
 
 /** @} plugins */
 

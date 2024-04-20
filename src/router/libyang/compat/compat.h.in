@@ -3,7 +3,7 @@
  * @author Michal Vasko <mvasko@cesnet.cz>
  * @brief compatibility functions header
  *
- * Copyright (c) 2021 CESNET, z.s.p.o.
+ * Copyright (c) 2021 - 2023 CESNET, z.s.p.o.
  *
  * This source code is licensed under BSD 3-Clause License (the "License").
  * You may not use this file except in compliance with the License.
@@ -15,12 +15,19 @@
 #ifndef _COMPAT_H_
 #define _COMPAT_H_
 
+#ifdef _WIN32
+/* headers are broken on Windows, which means that some of them simply *have* to come first */
+# include <winsock2.h>
+# include <ws2tcpip.h>
+#endif
+
 #include <limits.h>
 #include <pthread.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <sys/types.h>
 #include <time.h>
+#include <unistd.h>
 
 #ifndef __WORDSIZE
 #  if defined __x86_64__ && !defined __ILP32__
@@ -40,7 +47,7 @@
 #  endif
 #endif
 
-#if (@CMAKE_C_COMPILER_ID@ == GNU) || (@CMAKE_C_COMPILER_ID@ == Clang)
+#if defined (__GNUC__) || defined (__llvm__)
 # define UNUSED(x) UNUSED_ ## x __attribute__((__unused__))
 # define _PACKED __attribute__((__packed__))
 #else
@@ -58,6 +65,14 @@
 #cmakedefine HAVE_STRCHRNUL
 #cmakedefine HAVE_GET_CURRENT_DIR_NAME
 #cmakedefine HAVE_PTHREAD_MUTEX_TIMEDLOCK
+#cmakedefine HAVE_REALPATH
+#cmakedefine HAVE_LOCALTIME_R
+#cmakedefine HAVE_GMTIME_R
+#cmakedefine HAVE_TIMEGM
+#cmakedefine HAVE_STRPTIME
+#cmakedefine HAVE_MMAP
+#cmakedefine HAVE_STRCASECMP
+#cmakedefine HAVE_SETENV
 
 #ifndef bswap64
 #define bswap64(val) \
@@ -102,10 +117,18 @@
 
 # define ATOMIC_STORE_RELAXED(var, x) ((var) = (x))
 # define ATOMIC_LOAD_RELAXED(var) (var)
-# define ATOMIC_INC_RELAXED(var) __sync_fetch_and_add(&(var), 1)
-# define ATOMIC_ADD_RELAXED(var, x) __sync_fetch_and_add(&(var), x)
-# define ATOMIC_DEC_RELAXED(var) __sync_fetch_and_sub(&(var), 1)
-# define ATOMIC_SUB_RELAXED(var, x) __sync_fetch_and_sub(&(var), x)
+# ifndef _WIN32
+#  define ATOMIC_INC_RELAXED(var) __sync_fetch_and_add(&(var), 1)
+#  define ATOMIC_ADD_RELAXED(var, x) __sync_fetch_and_add(&(var), x)
+#  define ATOMIC_DEC_RELAXED(var) __sync_fetch_and_sub(&(var), 1)
+#  define ATOMIC_SUB_RELAXED(var, x) __sync_fetch_and_sub(&(var), x)
+# else
+#  include <windows.h>
+#  define ATOMIC_INC_RELAXED(var) InterlockedExchangeAdd(&(var), 1)
+#  define ATOMIC_ADD_RELAXED(var, x) InterlockedExchangeAdd(&(var), x)
+#  define ATOMIC_DEC_RELAXED(var) InterlockedExchangeAdd(&(var), -1)
+#  define ATOMIC_SUB_RELAXED(var, x) InterlockedExchangeAdd(&(var), -(x))
+# endif
 #endif
 
 #ifndef HAVE_VDPRINTF
@@ -153,6 +176,38 @@ char *get_current_dir_name(void);
 
 #ifndef HAVE_PTHREAD_MUTEX_TIMEDLOCK
 int pthread_mutex_timedlock(pthread_mutex_t *mutex, const struct timespec *abstime);
+#endif
+
+#ifndef HAVE_REALPATH
+char *realpath(const char *path, char *resolved_path);
+#endif
+
+#ifndef HAVE_LOCALTIME_R
+struct tm *localtime_r(const time_t *timep, struct tm *result);
+#endif
+
+#ifndef HAVE_GMTIME_R
+struct tm *gmtime_r(const time_t *timep, struct tm *result);
+#endif
+
+#ifndef HAVE_TIMEGM
+# if defined (_WIN32)
+#  define timegm _mkgmtime
+# else
+#  error No timegm() implementation for this platform is available.
+# endif
+#endif
+
+#ifndef HAVE_STRPTIME
+char *strptime(const char *s, const char *format, struct tm *tm);
+#endif
+
+#if defined (_WIN32)
+# define strtok_r strtok_s
+#endif
+
+#ifndef HAVE_SETENV
+int setenv(const char *name, const char *value, int overwrite);
 #endif
 
 #endif /* _COMPAT_H_ */

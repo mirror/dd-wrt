@@ -12,19 +12,21 @@
  *     https://opensource.org/licenses/BSD-3-Clause
  */
 
-#define _GNU_SOURCE /* asprintf, strdup */
-#include <sys/cdefs.h>
+#define _GNU_SOURCE /* strndup */
 
 #include "plugins_types.h"
 
-#include <arpa/inet.h>
-#if defined (__FreeBSD__) || defined (__NetBSD__) || defined (__OpenBSD__)
-#include <netinet/in.h>
-#include <sys/socket.h>
+#ifdef _WIN32
+# include <winsock2.h>
+# include <ws2tcpip.h>
+#else
+#  include <arpa/inet.h>
+#  if defined (__FreeBSD__) || defined (__NetBSD__) || defined (__OpenBSD__)
+#    include <netinet/in.h>
+#    include <sys/socket.h>
+#  endif
 #endif
-#include <assert.h>
-#include <errno.h>
-#include <inttypes.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -42,6 +44,8 @@
  * | 4 | yes | `struct in_addr *` | IPv4 address in network-byte order |
  * | 1 | yes | `uint8_t *` | prefix length up to 32 |
  */
+
+#define LYB_VALUE_LEN 5
 
 static void lyplg_type_free_ipv4_prefix(const struct ly_ctx *ctx, struct lyd_value *value);
 
@@ -125,9 +129,9 @@ lyplg_type_store_ipv4_prefix(const struct ly_ctx *ctx, const struct lysc_type *t
 
     if (format == LY_VALUE_LYB) {
         /* validation */
-        if (value_len != 5) {
-            ret = ly_err_new(err, LY_EVALID, LYVE_DATA, NULL, NULL, "Invalid LYB ipv4-prefix value size %zu (expected 5).",
-                    value_len);
+        if (value_len != LYB_VALUE_LEN) {
+            ret = ly_err_new(err, LY_EVALID, LYVE_DATA, NULL, NULL, "Invalid LYB ipv4-prefix value size %zu (expected %d).",
+                    value_len, LYB_VALUE_LEN);
             goto cleanup;
         }
         if (((uint8_t *)value)[4] > 32) {
@@ -199,10 +203,6 @@ lyplg_type_compare_ipv4_prefix(const struct lyd_value *val1, const struct lyd_va
 {
     struct lyd_value_ipv4_prefix *v1, *v2;
 
-    if (val1->realtype != val2->realtype) {
-        return LY_ENOT;
-    }
-
     LYD_VALUE_GET(val1, v1);
     LYD_VALUE_GET(val2, v2);
 
@@ -227,7 +227,7 @@ lyplg_type_print_ipv4_prefix(const struct ly_ctx *ctx, const struct lyd_value *v
     if (format == LY_VALUE_LYB) {
         *dynamic = 0;
         if (value_len) {
-            *value_len = sizeof *val;
+            *value_len = LYB_VALUE_LEN;
         }
         return val;
     }
@@ -273,20 +273,23 @@ lyplg_type_dup_ipv4_prefix(const struct ly_ctx *ctx, const struct lyd_value *ori
     LY_ERR ret;
     struct lyd_value_ipv4_prefix *orig_val, *dup_val;
 
-    ret = lydict_insert(ctx, original->_canonical, ly_strlen(original->_canonical), &dup->_canonical);
-    LY_CHECK_RET(ret);
+    memset(dup, 0, sizeof *dup);
+
+    ret = lydict_insert(ctx, original->_canonical, 0, &dup->_canonical);
+    LY_CHECK_GOTO(ret, error);
 
     LYPLG_TYPE_VAL_INLINE_PREPARE(dup, dup_val);
-    if (!dup_val) {
-        lydict_remove(ctx, dup->_canonical);
-        return LY_EMEM;
-    }
+    LY_CHECK_ERR_GOTO(!dup_val, ret = LY_EMEM, error);
 
     LYD_VALUE_GET(original, orig_val);
     memcpy(dup_val, orig_val, sizeof *orig_val);
 
     dup->realtype = original->realtype;
     return LY_SUCCESS;
+
+error:
+    lyplg_type_free_ipv4_prefix(ctx, dup);
+    return ret;
 }
 
 /**
@@ -298,6 +301,7 @@ lyplg_type_free_ipv4_prefix(const struct ly_ctx *ctx, struct lyd_value *value)
     struct lyd_value_ipv4_prefix *val;
 
     lydict_remove(ctx, value->_canonical);
+    value->_canonical = NULL;
     LYD_VALUE_GET(value, val);
     LYPLG_TYPE_VAL_INLINE_DESTROY(val);
 }
@@ -322,7 +326,8 @@ const struct lyplg_type_record plugins_ipv4_prefix[] = {
         .plugin.sort = NULL,
         .plugin.print = lyplg_type_print_ipv4_prefix,
         .plugin.duplicate = lyplg_type_dup_ipv4_prefix,
-        .plugin.free = lyplg_type_free_ipv4_prefix
+        .plugin.free = lyplg_type_free_ipv4_prefix,
+        .plugin.lyb_data_len = LYB_VALUE_LEN,
     },
     {0}
 };

@@ -1,3 +1,5 @@
-<cont2 xmlns="urn:module4">
-  <leaf6/>
-</cont2>
+<rpc xmlns="urn:module4">
+  <cont2>
+    <leaf6/>
+  </cont2>
+</rpc>

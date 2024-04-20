@@ -1,0 +1,24 @@
+source [expr {[info exists ::env(TESTS_DIR)] ? "$env(TESTS_DIR)/interactive/ly.tcl" : "ly.tcl"}]
+
+set mdir $::env(YANG_MODULES_DIR)
+
+variable ly_setup {
+    spawn $TUT
+    ly_skip_warnings
+}
+
+test searchpath_basic {} {
+-setup $ly_setup -cleanup $ly_cleanup -body {
+    ly_cmd "searchpath $mdir"
+    ly_cmd "searchpath" "$mdir"
+    ly_cmd "load modleaf"
+}}
+
+test searchpath_clear {searchpath --clear} {
+-setup $ly_setup -cleanup $ly_cleanup -body {
+    ly_cmd "searchpath $mdir"
+    ly_cmd "searchpath --clear"
+    ly_cmd_err "load modleaf" "Data model \"modleaf\" not found in local searchdirs"
+}}
+
+cleanupTests

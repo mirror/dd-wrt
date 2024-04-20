@@ -19,17 +19,23 @@
 #include <assert.h>
 #include <ctype.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <inttypes.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#ifndef _WIN32
 #include <sys/mman.h>
+#else
+#include <io.h>
+#endif
 #include <sys/stat.h>
 #include <unistd.h>
 
 #include "compat.h"
 #include "tree_schema_internal.h"
+#include "xml.h"
 
 void *
 ly_realloc(void *ptr, size_t size)
@@ -62,10 +68,6 @@ ly_strncmp(const char *refstr, const char *str, size_t str_len)
         return rc ? rc : 1;
     }
 }
-
-#define LY_OVERFLOW_ADD(MAX, X, Y) ((X > MAX - Y) ? 1 : 0)
-
-#define LY_OVERFLOW_MUL(MAX, X, Y) ((X > MAX / Y) ? 1 : 0)
 
 LY_ERR
 ly_strntou8(const char *nptr, size_t len, uint8_t *ret)
@@ -174,19 +176,14 @@ ly_getutf8(const char **input, uint32_t *utf8_char, size_t *bytes_read)
     uint32_t c, aux;
     size_t len;
 
-    if (bytes_read) {
-        (*bytes_read) = 0;
-    }
-
     c = (*input)[0];
-    LY_CHECK_RET(!c, LY_EINVAL);
 
     if (!(c & 0x80)) {
         /* one byte character */
         len = 1;
 
         if ((c < 0x20) && (c != 0x9) && (c != 0xa) && (c != 0xd)) {
-            return LY_EINVAL;
+            goto error;
         }
     } else if ((c & 0xe0) == 0xc0) {
         /* two bytes character */
@@ -194,12 +191,12 @@ ly_getutf8(const char **input, uint32_t *utf8_char, size_t *bytes_read)
 
         aux = (*input)[1];
         if ((aux & 0xc0) != 0x80) {
-            return LY_EINVAL;
+            goto error;
         }
         c = ((c & 0x1f) << 6) | (aux & 0x3f);
 
         if (c < 0x80) {
-            return LY_EINVAL;
+            goto error;
         }
     } else if ((c & 0xf0) == 0xe0) {
         /* three bytes character */
@@ -209,14 +206,14 @@ ly_getutf8(const char **input, uint32_t *utf8_char, size_t *bytes_read)
         for (uint64_t i = 1; i <= 2; i++) {
             aux = (*input)[i];
             if ((aux & 0xc0) != 0x80) {
-                return LY_EINVAL;
+                goto error;
             }
 
             c = (c << 6) | (aux & 0x3f);
         }
 
         if ((c < 0x800) || ((c > 0xd7ff) && (c < 0xe000)) || (c > 0xfffd)) {
-            return LY_EINVAL;
+            goto error;
         }
     } else if ((c & 0xf8) == 0xf0) {
         /* four bytes character */
@@ -226,17 +223,17 @@ ly_getutf8(const char **input, uint32_t *utf8_char, size_t *bytes_read)
         for (uint64_t i = 1; i <= 3; i++) {
             aux = (*input)[i];
             if ((aux & 0xc0) != 0x80) {
-                return LY_EINVAL;
+                goto error;
             }
 
             c = (c << 6) | (aux & 0x3f);
         }
 
         if ((c < 0x1000) || (c > 0x10ffff)) {
-            return LY_EINVAL;
+            goto error;
         }
     } else {
-        return LY_EINVAL;
+        goto error;
     }
 
     (*utf8_char) = c;
@@ -244,6 +241,163 @@ ly_getutf8(const char **input, uint32_t *utf8_char, size_t *bytes_read)
     if (bytes_read) {
         (*bytes_read) = len;
     }
+    return LY_SUCCESS;
+
+error:
+    if (bytes_read) {
+        (*bytes_read) = 0;
+    }
+    return LY_EINVAL;
+}
+
+/**
+ * @brief Check whether an UTF-8 string is equal to a hex string after a bitwise and.
+ *
+ * (input & 0x[arg1][arg3][arg5]...) == 0x[arg2][arg4][arg6]...
+ *
+ * @param[in] input UTF-8 string.
+ * @param[in] bytes Number of bytes to compare.
+ * @param[in] ... 2x @p bytes number of bytes to perform bitwise and and equality operations.
+ * @return Result of the operation.
+ */
+static int
+ly_utf8_and_equal(const char *input, uint8_t bytes, ...)
+{
+    va_list ap;
+    int i, and, byte;
+
+    va_start(ap, bytes);
+    for (i = 0; i < bytes; ++i) {
+        and = va_arg(ap, int);
+        byte = va_arg(ap, int);
+
+        /* compare each byte */
+        if (((uint8_t)input[i] & and) != (uint8_t)byte) {
+            return 0;
+        }
+    }
+    va_end(ap);
+
+    return 1;
+}
+
+/**
+ * @brief Check whether an UTF-8 string is smaller than a hex string.
+ *
+ * input < 0x[arg1][arg2]...
+ *
+ * @param[in] input UTF-8 string.
+ * @param[in] bytes Number of bytes to compare.
+ * @param[in] ... @p bytes number of bytes to compare with.
+ * @return Result of the operation.
+ */
+static int
+ly_utf8_less(const char *input, uint8_t bytes, ...)
+{
+    va_list ap;
+    int i, byte;
+
+    va_start(ap, bytes);
+    for (i = 0; i < bytes; ++i) {
+        byte = va_arg(ap, int);
+
+        /* compare until bytes differ */
+        if ((uint8_t)input[i] > (uint8_t)byte) {
+            return 0;
+        } else if ((uint8_t)input[i] < (uint8_t)byte) {
+            return 1;
+        }
+    }
+    va_end(ap);
+
+    /* equals */
+    return 0;
+}
+
+/**
+ * @brief Check whether an UTF-8 string is greater than a hex string.
+ *
+ * input > 0x[arg1][arg2]...
+ *
+ * @param[in] input UTF-8 string.
+ * @param[in] bytes Number of bytes to compare.
+ * @param[in] ... @p bytes number of bytes to compare with.
+ * @return Result of the operation.
+ */
+static int
+ly_utf8_greater(const char *input, uint8_t bytes, ...)
+{
+    va_list ap;
+    int i, byte;
+
+    va_start(ap, bytes);
+    for (i = 0; i < bytes; ++i) {
+        byte = va_arg(ap, int);
+
+        /* compare until bytes differ */
+        if ((uint8_t)input[i] > (uint8_t)byte) {
+            return 1;
+        } else if ((uint8_t)input[i] < (uint8_t)byte) {
+            return 0;
+        }
+    }
+    va_end(ap);
+
+    /* equals */
+    return 0;
+}
+
+LY_ERR
+ly_checkutf8(const char *input, size_t in_len, size_t *utf8_len)
+{
+    size_t len;
+
+    if (!(input[0] & 0x80)) {
+        /* one byte character */
+        len = 1;
+
+        if (ly_utf8_less(input, 1, 0x20) && (input[0] != 0x9) && (input[0] != 0xa) && (input[0] != 0xd)) {
+            /* invalid control characters */
+            return LY_EINVAL;
+        }
+    } else if (((input[0] & 0xe0) == 0xc0) && (in_len > 1)) {
+        /* two bytes character */
+        len = 2;
+
+        /* (input < 0xC280) || (input > 0xDFBF) || ((input & 0xE0C0) != 0xC080) */
+        if (ly_utf8_less(input, 2, 0xC2, 0x80) || ly_utf8_greater(input, 2, 0xDF, 0xBF) ||
+                !ly_utf8_and_equal(input, 2, 0xE0, 0xC0, 0xC0, 0x80)) {
+            return LY_EINVAL;
+        }
+    } else if (((input[0] & 0xf0) == 0xe0) && (in_len > 2)) {
+        /* three bytes character */
+        len = 3;
+
+        /* (input >= 0xEDA080) && (input <= 0xEDBFBF) */
+        if (!ly_utf8_less(input, 3, 0xED, 0xA0, 0x80) && !ly_utf8_greater(input, 3, 0xED, 0xBF, 0xBF)) {
+            /* reject UTF-16 surrogates */
+            return LY_EINVAL;
+        }
+
+        /* (input < 0xE0A080) || (input > 0xEFBFBF) || ((input & 0xF0C0C0) != 0xE08080) */
+        if (ly_utf8_less(input, 3, 0xE0, 0xA0, 0x80) || ly_utf8_greater(input, 3, 0xEF, 0xBF, 0xBF) ||
+                !ly_utf8_and_equal(input, 3, 0xF0, 0xE0, 0xC0, 0x80, 0xC0, 0x80)) {
+            return LY_EINVAL;
+        }
+    } else if (((input[0] & 0xf8) == 0xf0) && (in_len > 3)) {
+        /* four bytes character */
+        len = 4;
+
+        /* (input < 0xF0908080) || (input > 0xF48FBFBF) || ((input & 0xF8C0C0C0) != 0xF0808080) */
+        if (ly_utf8_less(input, 4, 0xF0, 0x90, 0x80, 0x80) || ly_utf8_greater(input, 4, 0xF4, 0x8F, 0xBF, 0xBF) ||
+                !ly_utf8_and_equal(input, 4, 0xF8, 0xF0, 0xC0, 0x80, 0xC0, 0x80, 0xC0, 0x80)) {
+            return LY_EINVAL;
+        }
+    } else {
+        return LY_EINVAL;
+    }
+
+    *utf8_len = len;
     return LY_SUCCESS;
 }
 
@@ -256,6 +410,7 @@ ly_pututf8(char *dst, uint32_t value, size_t *bytes_written)
                 (value != 0x09) &&
                 (value != 0x0a) &&
                 (value != 0x0d)) {
+            /* valid UTF8 but not YANG string character */
             return LY_EINVAL;
         }
 
@@ -335,10 +490,10 @@ ly_utf8len(const char *str, size_t bytes)
     return len;
 }
 
-size_t
+int
 LY_VCODE_INSTREXP_len(const char *str)
 {
-    size_t len = 0;
+    int len = 0;
 
     if (!str) {
         return len;
@@ -349,6 +504,7 @@ LY_VCODE_INSTREXP_len(const char *str)
     return len;
 }
 
+#ifdef HAVE_MMAP
 LY_ERR
 ly_mmap(struct ly_ctx *ctx, int fd, size_t *length, void **addr)
 {
@@ -406,6 +562,79 @@ ly_munmap(void *addr, size_t length)
     }
     return LY_SUCCESS;
 }
+
+#else
+
+LY_ERR
+ly_mmap(struct ly_ctx *ctx, int fd, size_t *length, void **addr)
+{
+    struct stat sb;
+    size_t m;
+
+    assert(length);
+    assert(addr);
+    assert(fd >= 0);
+
+#if _WIN32
+    if (_setmode(fd, _O_BINARY) == -1) {
+        LOGERR(ctx, LY_ESYS, "Failed to switch the file descriptor to binary mode.", strerror(errno));
+        return LY_ESYS;
+    }
+#endif
+
+    if (fstat(fd, &sb) == -1) {
+        LOGERR(ctx, LY_ESYS, "Failed to stat the file descriptor (%s) for the mmap().", strerror(errno));
+        return LY_ESYS;
+    }
+    if (!S_ISREG(sb.st_mode)) {
+        LOGERR(ctx, LY_EINVAL, "File to mmap() is not a regular file.");
+        return LY_ESYS;
+    }
+    if (!sb.st_size) {
+        *addr = NULL;
+        return LY_SUCCESS;
+    }
+    /* On Windows, the mman-win32 mmap() emulation uses CreateFileMapping and MapViewOfFile, and these functions
+     * do not allow mapping more than "length of file" bytes for PROT_READ. Remapping existing mappings is not allowed, either.
+     * At that point the path of least resistance is just reading the file in as-is. */
+    m = sb.st_size + 1;
+    char *buf = calloc(m, 1);
+
+    if (!buf) {
+        LOGERR(ctx, LY_ESYS, "ly_mmap: malloc() failed (%s).", strerror(errno));
+    }
+    *addr = buf;
+    *length = m;
+
+    lseek(fd, 0, SEEK_SET);
+    ssize_t to_read = m - 1;
+
+    while (to_read > 0) {
+        ssize_t n = read(fd, buf, to_read);
+
+        if (n == 0) {
+            return LY_SUCCESS;
+        } else if (n < 0) {
+            if (errno == EINTR) {
+                continue; // can I get this on Windows?
+            }
+            LOGERR(ctx, LY_ESYS, "ly_mmap: read() failed (%s).", strerror(errno));
+        }
+        to_read -= n;
+        buf += n;
+    }
+    return LY_SUCCESS;
+}
+
+LY_ERR
+ly_munmap(void *addr, size_t length)
+{
+    (void)length;
+    free(addr);
+    return LY_SUCCESS;
+}
+
+#endif
 
 LY_ERR
 ly_strcat(char **dest, const char *format, ...)

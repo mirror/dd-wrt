@@ -1,4 +1,4 @@
-/*
+/**
  * @file test_set.c
  * @author: Radek Krejci <rkrejci@cesnet.cz>
  * @brief unit tests for functions from set.c
@@ -47,7 +47,7 @@ test_basics(void **UNUSED(state))
     assert_non_null(set->objs[0]);
 
     /* check the presence of the testing data */
-    assert_int_not_equal(0, ly_set_contains(set, str, &index));
+    assert_int_equal(1, ly_set_contains(set, str, &index));
     assert_int_equal(0, index);
     assert_int_equal(0, ly_set_contains(set, str - 1, NULL));
 
@@ -134,7 +134,7 @@ test_duplication(void **UNUSED(state))
     ly_set_free(new, NULL);
 
     /* duplicate the set - with duplicator, so the new set will point to a different buffer with the same content */
-    assert_int_equal(LY_SUCCESS, ly_set_dup(orig, (void *(*)(void *))strdup, &new));
+    assert_int_equal(LY_SUCCESS, ly_set_dup(orig, (void *(*)(const void *))strdup, &new));
     assert_non_null(new);
     assert_ptr_not_equal(orig, new);
     assert_int_equal(orig->count, new->count);
@@ -211,7 +211,7 @@ test_merge(void **UNUSED(state))
 
     /* merge without checking duplicities - two items are added into one;
      * here also with duplicator */
-    assert_int_equal(LY_SUCCESS, ly_set_merge(&one, &two, 1, (void *(*)(void *))strdup));
+    assert_int_equal(LY_SUCCESS, ly_set_merge(&one, &two, 1, (void *(*)(const void *))strdup));
     assert_int_equal(3, one.count);
     assert_ptr_not_equal(one.objs[1], two.objs[0]);
     assert_string_equal(one.objs[1], two.objs[0]);

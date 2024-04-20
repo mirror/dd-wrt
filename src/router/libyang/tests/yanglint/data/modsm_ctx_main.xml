@@ -1,0 +1,17 @@
+<yang-library xmlns="urn:ietf:params:xml:ns:yang:ietf-yang-library">
+  <module-set>
+    <name>main-set</name>
+    <module>
+      <name>modsm</name>
+      <namespace>urn:yanglint:modsm</namespace>
+    </module>
+    <module>
+      <name>modsm-augment</name>
+      <namespace>urn:yanglint:modsm-augment</namespace>
+    </module>
+  </module-set>
+  <content-id>1</content-id>
+</yang-library>
+<modules-state xmlns="urn:ietf:params:xml:ns:yang:ietf-yang-library">
+  <module-set-id>1</module-set-id>
+</modules-state>

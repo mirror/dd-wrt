@@ -48,7 +48,7 @@
         const char *data = "<port xmlns=\"urn:tests:" MOD_NAME "\">" DATA "</port>"; \
         CHECK_PARSE_LYD_PARAM(data, LYD_XML, 0, LYD_VALIDATE_PRESENT, LY_SUCCESS, tree); \
         CHECK_LYSC_NODE(tree->schema, NULL, 0, 0x5, 1, "port", 0, LYS_LEAF, 0, 0, 0, 0); \
-        CHECK_LYD_NODE_TERM((struct lyd_node_term *)tree, 0, 0, 0, 0, 1, TYPE, ## __VA_ARGS__); \
+        CHECK_LYD_NODE_TERM((struct lyd_node_term *)tree, 0, 0, 0, 0, 1, TYPE, __VA_ARGS__); \
         lyd_free_all(tree); \
     }
 
@@ -58,8 +58,24 @@
         const char *data = "{\"" MOD_NAME ":port\":\"" DATA "\"}"; \
         CHECK_PARSE_LYD_PARAM(data, LYD_JSON, 0, LYD_VALIDATE_PRESENT, LY_SUCCESS, tree); \
         CHECK_LYSC_NODE(tree->schema, NULL, 0, 0x5, 1, "port", 0, LYS_LEAF, 0, 0, 0, 0); \
-        CHECK_LYD_NODE_TERM((struct lyd_node_term *)tree, 0, 0, 0, 0, 1, TYPE, ## __VA_ARGS__); \
+        CHECK_LYD_NODE_TERM((struct lyd_node_term *)tree, 0, 0, 0, 0, 1, TYPE, __VA_ARGS__); \
         lyd_free_all(tree); \
+    }
+
+#define TEST_SUCCESS_LYB(MOD_NAME, NODE_NAME, DATA) \
+    { \
+        struct lyd_node *tree_1; \
+        struct lyd_node *tree_2; \
+        char *xml_out, *data; \
+        data = "<" NODE_NAME " xmlns=\"urn:tests:" MOD_NAME "\">" DATA "</" NODE_NAME ">"; \
+        CHECK_PARSE_LYD_PARAM(data, LYD_XML, LYD_PARSE_ONLY | LYD_PARSE_STRICT, 0, LY_SUCCESS, tree_1); \
+        assert_int_equal(lyd_print_mem(&xml_out, tree_1, LYD_LYB, LYD_PRINT_WITHSIBLINGS), 0); \
+        assert_int_equal(LY_SUCCESS, lyd_parse_data_mem(UTEST_LYCTX, xml_out, LYD_LYB, LYD_PARSE_ONLY | LYD_PARSE_STRICT, 0, &tree_2)); \
+        assert_non_null(tree_2); \
+        CHECK_LYD(tree_1, tree_2); \
+        free(xml_out); \
+        lyd_free_all(tree_1); \
+        lyd_free_all(tree_2); \
     }
 
 #define TEST_ERROR_XML(MOD_NAME, DATA) \
@@ -82,7 +98,7 @@ static void
 test_schema_yang(void **state)
 {
     const char *schema;
-    const struct lys_module *mod;
+    struct lys_module *mod;
     struct lysc_node_leaf *lysc_leaf;
     struct lysp_node_leaf *lysp_leaf;
     struct lysc_type_bits *lysc_type;
@@ -163,8 +179,7 @@ test_schema_yang(void **state)
             "leaf port {type my_type {"
             "   bit ten {position 11;} bit two;}}");
     UTEST_INVALID_MODULE(schema, LYS_IN_YANG, NULL, LY_EVALID);
-    CHECK_LOG_CTX("Invalid bits - position of the item \"ten\" has changed from 10 to 11 in the derived type.",
-            "/TERR_0:port");
+    CHECK_LOG_CTX("Invalid bits - position of the item \"ten\" has changed from 10 to 11 in the derived type.", "Path \"/TERR_0:port\".");
 
     /* add new bit */
     schema = MODULE_CREATE_YANG("TERR_1", "typedef my_type{type bits {"
@@ -172,16 +187,15 @@ test_schema_yang(void **state)
             "leaf port {type my_type {"
             "   bit ten {position 10;} bit two;  bit test;}}");
     UTEST_INVALID_MODULE(schema, LYS_IN_YANG, NULL, LY_EVALID);
-    CHECK_LOG_CTX("Invalid bits - derived type adds new item \"test\".",
-            "/TERR_1:port");
+    CHECK_LOG_CTX("Invalid bits - derived type adds new item \"test\".", "Path \"/TERR_1:port\".");
 
     /* different max value => autoadd index */
     schema = MODULE_CREATE_YANG("TERR_2", "leaf port {type bits {"
             " bit first {position -1;} bit second;"
             "}}");
     UTEST_INVALID_MODULE(schema, LYS_IN_YANG, NULL, LY_EVALID);
-    CHECK_LOG_CTX("Invalid value \"-1\" of \"position\".",
-            "Line number 5.");
+    CHECK_LOG_CTX("Parsing module \"TERR_2\" failed.", NULL);
+    CHECK_LOG_CTX("Invalid value \"-1\" of \"position\".", "Line number 5.");
 
     /* different max value => autoadd index */
     schema = MODULE_CREATE_YANG("TERR_3", "leaf port {type bits {"
@@ -189,49 +203,71 @@ test_schema_yang(void **state)
             "}}");
     UTEST_INVALID_MODULE(schema, LYS_IN_YANG, NULL, LY_EVALID);
     CHECK_LOG_CTX("Invalid bits - it is not possible to auto-assign bit position for \"second\" since the highest value is already 4294967295.",
-            "/TERR_3:port");
+            "Path \"/TERR_3:port\".");
 
     schema = MODULE_CREATE_YANG("TERR_4", "leaf port {type bits {"
             " bit first {position 10;} bit \"\";"
             "}}");
     UTEST_INVALID_MODULE(schema, LYS_IN_YANG, NULL, LY_EVALID);
-    CHECK_LOG_CTX("Statement argument is required.",
-            "Line number 5.");
+    CHECK_LOG_CTX("Parsing module \"TERR_4\" failed.", NULL);
+    CHECK_LOG_CTX("Statement argument is required.", "Line number 5.");
 
     /* wrong character */
     schema = MODULE_CREATE_YANG("TERR_5", "leaf port {type bits {"
             " bit first {position 10;} bit abcd^;"
             "}}");
     UTEST_INVALID_MODULE(schema, LYS_IN_YANG, NULL, LY_EVALID);
-    CHECK_LOG_CTX("Invalid identifier character '^' (0x005e).",
-            "Line number 5.");
+    CHECK_LOG_CTX("Parsing module \"TERR_5\" failed.", NULL);
+    CHECK_LOG_CTX("Invalid identifier character '^' (0x005e).", "Line number 5.");
 
     schema = MODULE_CREATE_YANG("TERR_6", "leaf port {type bits {"
             " bit hi; bit hi;"
             "}}");
     UTEST_INVALID_MODULE(schema, LYS_IN_YANG, NULL, LY_EVALID);
-    CHECK_LOG_CTX("Duplicate identifier \"hi\" of bit statement.",
-            "Line number 5.");
+    CHECK_LOG_CTX("Parsing module \"TERR_6\" failed.", NULL);
+    CHECK_LOG_CTX("Duplicate identifier \"hi\" of bit statement.", "Line number 5.");
 
     /* wrong character */
     schema = MODULE_CREATE_YANG("TERR_7", "leaf port {type bits {"
             " bit first {position 10;} bit \"ab&cd\";"
             "}}");
     UTEST_INVALID_MODULE(schema, LYS_IN_YANG, NULL, LY_EVALID);
-    CHECK_LOG_CTX("Invalid identifier character '&' (0x0026).",
-            "Line number 5.");
+    CHECK_LOG_CTX("Parsing module \"TERR_7\" failed.", NULL);
+    CHECK_LOG_CTX("Invalid identifier character '&' (0x0026).", "Line number 5.");
 
     schema = MODULE_CREATE_YANG("TERR_8", "leaf port {type bits {"
             " bit first {position 10;} bit \"4abcd\";"
             "}}");
     UTEST_INVALID_MODULE(schema, LYS_IN_YANG, NULL, LY_EVALID);
-    CHECK_LOG_CTX("Invalid identifier first character '4' (0x0034).",
-            "Line number 5.");
+    CHECK_LOG_CTX("Parsing module \"TERR_8\" failed.", NULL);
+    CHECK_LOG_CTX("Invalid identifier first character '4' (0x0034).", "Line number 5.");
 
     schema = MODULE_CREATE_YANG("TERR_9", "leaf port {type bits;}");
     UTEST_INVALID_MODULE(schema, LYS_IN_YANG, NULL, LY_EVALID);
-    CHECK_LOG_CTX("Missing bit substatement for bits type.",
-            "/TERR_9:port");
+    CHECK_LOG_CTX("Missing bit substatement for bits type.", "Path \"/TERR_9:port\".");
+
+    /* new features of YANG 1.1 in YANG 1.0 */
+    schema = "module TERR_10 {"
+            "  namespace \"urn:tests:TERR_10\";"
+            "  prefix pref;"
+            "  feature f;"
+            "  leaf l {type bits {"
+            "    bit one {if-feature f;}"
+            "  }}"
+            "}";
+    UTEST_INVALID_MODULE(schema, LYS_IN_YANG, NULL, LY_EVALID);
+    CHECK_LOG_CTX("Parsing module \"TERR_10\" failed.", NULL);
+    CHECK_LOG_CTX("Invalid keyword \"if-feature\" as a child of \"bit\" - the statement is allowed only in YANG 1.1 modules.",
+            "Line number 1.");
+
+    schema = "module TERR_11 {"
+            "  namespace \"urn:tests:TERR_10\";"
+            "  prefix pref;"
+            "  typedef mytype {type bits {bit one;}}"
+            "  leaf l {type mytype {bit one;}}"
+            "}";
+    UTEST_INVALID_MODULE(schema, LYS_IN_YANG, NULL, LY_EVALID);
+    CHECK_LOG_CTX("Bits type can be subtyped only in YANG 1.1 modules.", "Path \"/TERR_11:l\".");
 
     /* feature is not present */
     schema = MODULE_CREATE_YANG("IF_0", "feature f;"
@@ -276,7 +312,7 @@ static void
 test_schema_yin(void **state)
 {
     const char *schema;
-    const struct lys_module *mod;
+    struct lys_module *mod;
     struct lysc_node_leaf *lysc_leaf;
     struct lysp_node_leaf *lysp_leaf;
     struct lysc_type_bits *lysc_type;
@@ -379,8 +415,7 @@ test_schema_yin(void **state)
             "   <bit name=\"ten\"> <position value=\"11\"/> </bit> <bit name=\"two\"/>"
             "</type></leaf>");
     UTEST_INVALID_MODULE(schema, LYS_IN_YIN, NULL, LY_EVALID);
-    CHECK_LOG_CTX("Invalid bits - position of the item \"ten\" has changed from 10 to 11 in the derived type.",
-            "/TERR_0:port");
+    CHECK_LOG_CTX("Invalid bits - position of the item \"ten\" has changed from 10 to 11 in the derived type.", "Path \"/TERR_0:port\".");
 
     /* add new bit */
     schema = MODULE_CREATE_YIN("TERR_1",
@@ -396,8 +431,7 @@ test_schema_yin(void **state)
             "   <bit name=\"test\"/>"
             "</type></leaf>");
     UTEST_INVALID_MODULE(schema, LYS_IN_YIN, NULL, LY_EVALID);
-    CHECK_LOG_CTX("Invalid bits - derived type adds new item \"test\".",
-            "/TERR_1:port");
+    CHECK_LOG_CTX("Invalid bits - derived type adds new item \"test\".", "Path \"/TERR_1:port\".");
 
     /* different max value => autoadd index */
     schema = MODULE_CREATE_YIN("TERR_2",
@@ -406,8 +440,8 @@ test_schema_yin(void **state)
             "   <bit name=\"second\">"
             "</type></leaf>");
     UTEST_INVALID_MODULE(schema, LYS_IN_YIN, NULL, LY_EVALID);
-    CHECK_LOG_CTX("Invalid value \"-1\" of \"value\" attribute in \"position\" element.",
-            "Line number 10.");
+    CHECK_LOG_CTX("Parsing module \"TERR_2\" failed.", NULL);
+    CHECK_LOG_CTX("Invalid value \"-1\" of \"value\" attribute in \"position\" element.", "Line number 8.");
 
     /* different max value => autoadd index */
     schema = MODULE_CREATE_YIN("TERR_3",
@@ -417,7 +451,7 @@ test_schema_yin(void **state)
             "</type></leaf>");
     UTEST_INVALID_MODULE(schema, LYS_IN_YIN, NULL, LY_EVALID);
     CHECK_LOG_CTX("Invalid bits - it is not possible to auto-assign bit position for \"second\" since the highest value is already 4294967295.",
-            "/TERR_3:port");
+            "Path \"/TERR_3:port\".");
 
     schema = MODULE_CREATE_YIN("TERR_4",
             "<leaf name=\"port\"> <type name=\"bits\">"
@@ -425,8 +459,8 @@ test_schema_yin(void **state)
             "  <bit name=\"second\"/>"
             "</type></leaf>");
     UTEST_INVALID_MODULE(schema, LYS_IN_YIN, NULL, LY_EVALID);
-    CHECK_LOG_CTX("Invalid identifier first character ' ' (0x0020).",
-            "Line number 10.");
+    CHECK_LOG_CTX("Parsing module \"TERR_4\" failed.", NULL);
+    CHECK_LOG_CTX("Invalid identifier first character ' ' (0x0020).", "Line number 8.");
 
     schema = MODULE_CREATE_YIN("TERR_5",
             "<leaf name=\"port\"> <type name=\"bits\">"
@@ -434,8 +468,8 @@ test_schema_yin(void **state)
             "  <bit name=\"second\"/>"
             "</type></leaf>");
     UTEST_INVALID_MODULE(schema, LYS_IN_YIN, NULL, LY_EVALID);
-    CHECK_LOG_CTX("Invalid identifier character ' ' (0x0020).",
-            "Line number 10.");
+    CHECK_LOG_CTX("Parsing module \"TERR_5\" failed.", NULL);
+    CHECK_LOG_CTX("Invalid identifier character ' ' (0x0020).", "Line number 8.");
 
     schema = MODULE_CREATE_YIN("TERR_6",
             "<leaf name=\"port\"> <type name=\"bits\">"
@@ -443,8 +477,8 @@ test_schema_yin(void **state)
             "  <bit name=\"hi\"/>"
             "</type></leaf>");
     UTEST_INVALID_MODULE(schema, LYS_IN_YIN, NULL, LY_EVALID);
-    CHECK_LOG_CTX("Duplicate identifier \"hi\" of bit statement.",
-            "Line number 10.");
+    CHECK_LOG_CTX("Parsing module \"TERR_6\" failed.", NULL);
+    CHECK_LOG_CTX("Duplicate identifier \"hi\" of bit statement.", "Line number 8.");
 
     schema = MODULE_CREATE_YIN("TERR_7",
             "<leaf name=\"port\"> <type name=\"bits\">"
@@ -452,8 +486,8 @@ test_schema_yin(void **state)
             "  <bit name=\"second\"/>"
             "</type></leaf>");
     UTEST_INVALID_MODULE(schema, LYS_IN_YIN, NULL, LY_EVALID);
-    CHECK_LOG_CTX("Invalid identifier first character '4' (0x0034).",
-            "Line number 10.");
+    CHECK_LOG_CTX("Parsing module \"TERR_7\" failed.", NULL);
+    CHECK_LOG_CTX("Invalid identifier first character '4' (0x0034).", "Line number 8.");
 
     /* TEST EMPTY NAME*/
     schema = MODULE_CREATE_YIN("TERR_8",
@@ -462,8 +496,8 @@ test_schema_yin(void **state)
             "  <bit name=\"second\"/>"
             "</type></leaf>");
     UTEST_INVALID_MODULE(schema, LYS_IN_YIN, NULL, LY_EVALID);
-    CHECK_LOG_CTX("Empty identifier is not allowed.",
-            "Line number 10.");
+    CHECK_LOG_CTX("Parsing module \"TERR_8\" failed.", NULL);
+    CHECK_LOG_CTX("Empty identifier is not allowed.", "Line number 8.");
 }
 
 static void
@@ -471,7 +505,7 @@ test_schema_print(void **state)
 {
     const char *schema_yang, *schema_yin;
     char *printed;
-    const struct lys_module *mod;
+    struct lys_module *mod;
 
     /* test print yang to yin */
     schema_yang = MODULE_CREATE_YANG("PRINT0",
@@ -522,7 +556,7 @@ test_schema_print(void **state)
             "      }\n"
             "      bit twelve;\n"
             "    }\n"
-            "  }\n"
+            "  }\n\n"
             "  leaf port {\n"
             "    type my_type {\n"
             "      bit ten {\n"
@@ -587,13 +621,13 @@ test_data_xml(void **state)
 
     TEST_ERROR_XML("T0", "twelvea");
     CHECK_LOG_CTX("Invalid bit \"twelvea\".",
-            "Schema location /T0:port, line number 1.");
+            "Schema location \"/T0:port\", line number 1.");
     TEST_ERROR_XML("T0", "twelve t");
     CHECK_LOG_CTX("Invalid bit \"t\".",
-            "Schema location /T0:port, line number 1.");
+            "Schema location \"/T0:port\", line number 1.");
     TEST_ERROR_XML("T0", "ELEVEN");
     CHECK_LOG_CTX("Invalid bit \"ELEVEN\".",
-            "Schema location /T0:port, line number 1.");
+            "Schema location \"/T0:port\", line number 1.");
 
     /* empty value  */
     data = "<port xmlns=\"urn:tests:T0\"/>"; \
@@ -636,6 +670,21 @@ test_data_json(void **state)
     TEST_ERROR_JSON("T0", "ELEVEN");
     CHECK_LOG_CTX("Invalid character sequence \"ELEVEN}\", expected a JSON value.",
             "Line number 1.");
+}
+
+static void
+test_data_lyb(void **state)
+{
+    const char *schema;
+
+    schema = MODULE_CREATE_YANG("lyb", "typedef my_type{type bits {"
+            "  bit ten {position 10;} bit eleven; bit two {position 2;} bit twelve;"
+            "  bit _test-end...;}}"
+            "leaf port {type my_type;}");
+    UTEST_ADD_MODULE(schema, LYS_IN_YANG, NULL, NULL);
+    TEST_SUCCESS_LYB("lyb", "port", "ten twelve");
+    TEST_SUCCESS_LYB("lyb", "port", "two");
+    TEST_SUCCESS_LYB("lyb", "port", "");
 }
 
 static void
@@ -753,9 +802,9 @@ test_plugin_store(void **state)
 {
     const char *val_text = NULL;
     struct ly_err_item *err = NULL;
-    const struct lys_module *mod;
+    struct lys_module *mod;
     struct lyd_value value = {0};
-    struct lyplg_type *type = lyplg_find(LYPLG_TYPE, "", NULL, ly_data_type2str[LY_TYPE_BITS]);
+    struct lyplg_type *type = lyplg_type_plugin_find("", NULL, ly_data_type2str[LY_TYPE_BITS]);
     struct lysc_type *lysc_type;
     struct lysc_type lysc_type_test;
     LY_ERR ly_ret;
@@ -847,9 +896,9 @@ static void
 test_plugin_compare(void **state)
 {
     struct ly_err_item *err = NULL;
-    const struct lys_module *mod;
+    struct lys_module *mod;
     struct lyd_value values[10];
-    struct lyplg_type *type = lyplg_find(LYPLG_TYPE, "", NULL, ly_data_type2str[LY_TYPE_BITS]);
+    struct lyplg_type *type = lyplg_type_plugin_find("", NULL, ly_data_type2str[LY_TYPE_BITS]);
     struct lysc_type *lysc_type;
     LY_ERR ly_ret;
     const char *schema;
@@ -900,30 +949,6 @@ test_plugin_compare(void **state)
     assert_int_equal(LY_ENOT,    type->compare(&diff_type_val, &(values[1])));
     type->free(UTEST_LYCTX, &(diff_type_val));
 
-    /*
-     * derivated type add some limitations
-     */
-    diff_type_text = val_init[2];
-    diff_type = ((struct lysc_node_leaf *)mod->compiled->data->next->next)->type;
-    ly_ret = diff_type->plugin->store(UTEST_LYCTX, diff_type, diff_type_text, strlen(diff_type_text),
-            0, LY_VALUE_XML, NULL, LYD_VALHINT_STRING, NULL, &diff_type_val, NULL, &err);
-    assert_int_equal(LY_SUCCESS, ly_ret);
-    assert_int_equal(LY_ENOT, type->compare(&diff_type_val, &(values[2])));
-    assert_int_equal(LY_ENOT, type->compare(&diff_type_val, &(values[1])));
-    type->free(UTEST_LYCTX, &(diff_type_val));
-
-    /*
-     * different type (STRING)
-     */
-    diff_type_text = val_init[2];
-    diff_type = ((struct lysc_node_leaf *)mod->compiled->data->next->next->next)->type;
-    ly_ret = diff_type->plugin->store(UTEST_LYCTX, diff_type, diff_type_text, strlen(diff_type_text),
-            0, LY_VALUE_XML, NULL, LYD_VALHINT_STRING, NULL, &diff_type_val, NULL, &err);
-    assert_int_equal(LY_SUCCESS, ly_ret);
-    assert_int_equal(LY_ENOT, type->compare(&diff_type_val, &(values[2])));
-    assert_int_equal(LY_ENOT, type->compare(&diff_type_val, &(values[0])));
-    type->free(UTEST_LYCTX, &(diff_type_val));
-
     /* delete values */
     for (unsigned int it = 0; it < sizeof(val_init) / sizeof(val_init[0]); it++) {
         type->free(UTEST_LYCTX, &(values[it]));
@@ -934,9 +959,9 @@ static void
 test_plugin_print(void **state)
 {
     struct ly_err_item *err = NULL;
-    const struct lys_module *mod;
+    struct lys_module *mod;
     struct lyd_value values[10];
-    struct lyplg_type *type = lyplg_find(LYPLG_TYPE, "", NULL, ly_data_type2str[LY_TYPE_BITS]);
+    struct lyplg_type *type = lyplg_type_plugin_find("", NULL, ly_data_type2str[LY_TYPE_BITS]);
     struct lysc_type *lysc_type;
     LY_ERR ly_ret;
     const char *schema;
@@ -976,9 +1001,9 @@ static void
 test_plugin_dup(void **state)
 {
     struct ly_err_item *err = NULL;
-    const struct lys_module *mod;
+    struct lys_module *mod;
     struct lyd_value values[10];
-    struct lyplg_type *type = lyplg_find(LYPLG_TYPE, "", NULL, ly_data_type2str[LY_TYPE_BITS]);
+    struct lyplg_type *type = lyplg_type_plugin_find("", NULL, ly_data_type2str[LY_TYPE_BITS]);
     struct lysc_type *lysc_type;
     const char *schema;
     LY_ERR ly_ret;
@@ -1049,6 +1074,7 @@ main(void)
         UTEST(test_schema_print),
         UTEST(test_data_xml),
         UTEST(test_data_json),
+        UTEST(test_data_lyb),
         UTEST(test_diff),
         UTEST(test_print),
 

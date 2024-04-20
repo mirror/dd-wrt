@@ -1,0 +1,4 @@
+module modcwd {
+  namespace "urn:yanglint:modcwd";
+  prefix mc;
+}

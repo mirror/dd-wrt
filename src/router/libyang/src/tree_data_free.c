@@ -19,6 +19,7 @@
 #include "dict.h"
 #include "hash_table.h"
 #include "log.h"
+#include "plugins_exts/metadata.h"
 #include "plugins_types.h"
 #include "tree.h"
 #include "tree_data.h"
@@ -67,13 +68,13 @@ lyd_free_meta(struct lyd_meta *meta, ly_bool siblings)
     }
 }
 
-API void
+LIBYANG_API_DEF void
 lyd_free_meta_single(struct lyd_meta *meta)
 {
     lyd_free_meta(meta, 0);
 }
 
-API void
+LIBYANG_API_DEF void
 lyd_free_meta_siblings(struct lyd_meta *meta)
 {
     lyd_free_meta(meta, 1);
@@ -125,13 +126,13 @@ lyd_free_attr(const struct ly_ctx *ctx, struct lyd_attr *attr, ly_bool siblings)
     }
 }
 
-API void
+LIBYANG_API_DEF void
 lyd_free_attr_single(const struct ly_ctx *ctx, struct lyd_attr *attr)
 {
     lyd_free_attr(ctx, attr, 0);
 }
 
-API void
+LIBYANG_API_DEF void
 lyd_free_attr_siblings(const struct ly_ctx *ctx, struct lyd_attr *attr)
 {
     lyd_free_attr(ctx, attr, 1);
@@ -165,7 +166,7 @@ lyd_free_subtree(struct lyd_node *node, ly_bool top)
         ly_free_prefix_data(opaq->format, opaq->val_prefix_data);
     } else if (node->schema->nodetype & LYD_NODE_INNER) {
         /* remove children hash table in case of inner data node */
-        lyht_free(((struct lyd_node_inner *)node)->children_ht);
+        lyht_free(((struct lyd_node_inner *)node)->children_ht, NULL);
         ((struct lyd_node_inner *)node)->children_ht = NULL;
 
         /* free the children */
@@ -188,16 +189,21 @@ lyd_free_subtree(struct lyd_node *node, ly_bool top)
 
     /* unlink only the nodes from the first level, nodes in subtree are freed all, so no unlink is needed */
     if (top) {
-        lyd_unlink_tree(node);
+        lyd_unlink(node);
     }
 
     free(node);
 }
 
-API void
+LIBYANG_API_DEF void
 lyd_free_tree(struct lyd_node *node)
 {
     if (!node) {
+        return;
+    }
+
+    if (lysc_is_key(node->schema) && node->parent) {
+        LOGERR(LYD_CTX(node), LY_EINVAL, "Cannot free a list key \"%s\", free the list instance instead.", LYD_NAME(node));
         return;
     }
 
@@ -222,18 +228,23 @@ lyd_free_(struct lyd_node *node, ly_bool top)
     }
 
     LY_LIST_FOR_SAFE(node, next, iter) {
+        if (lysc_is_key(iter->schema) && iter->parent) {
+            LOGERR(LYD_CTX(iter), LY_EINVAL, "Cannot free a list key \"%s\", free the list instance instead.", LYD_NAME(iter));
+            return;
+        }
+
         /* in case of the top-level nodes (node->parent is NULL), no unlinking needed */
         lyd_free_subtree(iter, iter->parent ? 1 : 0);
     }
 }
 
-API void
+LIBYANG_API_DEF void
 lyd_free_siblings(struct lyd_node *node)
 {
     lyd_free_(node, 0);
 }
 
-API void
+LIBYANG_API_DEF void
 lyd_free_all(struct lyd_node *node)
 {
     lyd_free_(node, 1);

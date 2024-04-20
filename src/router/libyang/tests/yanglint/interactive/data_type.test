@@ -1,0 +1,140 @@
+source [expr {[info exists ::env(TESTS_DIR)] ? "$env(TESTS_DIR)/interactive/ly.tcl" : "ly.tcl"}]
+
+set ddir "$::env(TESTS_DIR)/data"
+
+test data_type_data {data --type data} {
+-setup $ly_setup -cleanup $ly_cleanup -body {
+    ly_cmd "load modconfig"
+    ly_cmd "data -t data $ddir/modconfig.xml"
+}}
+
+test data_type_config {data --type config} {
+-setup $ly_setup -cleanup $ly_cleanup -body {
+    ly_cmd "load modconfig"
+    ly_cmd_err "data -t config $ddir/modconfig.xml" "Unexpected data state node \"lff\""
+    ly_cmd "data -t config $ddir/modconfig2.xml"
+}}
+
+test data_type_get {data --type get} {
+-setup $ly_setup -cleanup $ly_cleanup -body {
+    ly_cmd "load modleafref"
+    ly_cmd_err "data -t data $ddir/modleafref2.xml" "Invalid leafref value"
+    ly_cmd "data -t get $ddir/modleafref2.xml"
+}}
+
+test data_type_getconfig_no_state {No state node for data --type getconfig} {
+-setup $ly_setup -cleanup $ly_cleanup -body {
+    ly_cmd "load modconfig"
+    ly_cmd_err "data -t getconfig $ddir/modconfig.xml" "Unexpected data state node \"lff\""
+    ly_cmd "data -t getconfig $ddir/modconfig2.xml"
+}}
+
+test data_type_getconfig_parse_only {No validation performed for data --type getconfig} {
+-setup $ly_setup -cleanup $ly_cleanup -body {
+    ly_cmd "load modleafref"
+    ly_cmd_err "data -t data $ddir/modleafref2.xml" "Invalid leafref value"
+    ly_cmd "data -t getconfig $ddir/modleafref2.xml"
+}}
+
+test data_type_edit_no_state {No state node for data --type edit} {
+-setup $ly_setup -cleanup $ly_cleanup -body {
+    ly_cmd "load modconfig"
+    ly_cmd_err "data -t edit $ddir/modconfig.xml" "Unexpected data state node \"lff\""
+    ly_cmd "data -t edit $ddir/modconfig2.xml"
+}}
+
+test data_type_edit_parse_only {No validation performed for data --type edit} {
+-setup $ly_setup -cleanup $ly_cleanup -body {
+    ly_cmd "load modleafref"
+    ly_cmd_err "data -t data $ddir/modleafref2.xml" "Invalid leafref value"
+    ly_cmd "data -t edit $ddir/modleafref2.xml"
+}}
+
+test data_type_rpc {Validation of rpc-statement by data --type rpc} {
+-setup $ly_setup -cleanup $ly_cleanup -body {
+    ly_cmd "load modrpc modleaf"
+    ly_cmd_err "data -t rpc $ddir/modleaf.xml" "Missing the operation node."
+    ly_cmd "data -t rpc $ddir/modrpc.xml"
+}}
+
+test data_type_rpc_nc {Validation of rpc-statement by data --type nc-rpc} {
+-setup $ly_setup -cleanup $ly_cleanup -body {
+    ly_cmd "load modrpc modleaf ietf-netconf"
+    ly_cmd_err "data -t nc-rpc $ddir/modleaf.xml" "Missing NETCONF <rpc> envelope"
+    ly_cmd "data -t nc-rpc $ddir/modrpc_nc.xml"
+}}
+
+test data_type_rpc_reply {Validation of rpc-reply by data --type reply} {
+-setup $ly_setup -cleanup $ly_cleanup -body {
+    ly_cmd "load modrpc modleaf"
+    ly_cmd_err "data -t rpc $ddir/modleaf.xml" "Missing the operation node."
+    ly_cmd_wrn "data -t reply -R $ddir/modrpc.xml $ddir/modrpc_reply.xml" "needed only for NETCONF"
+    ly_cmd "data -t reply $ddir/modrpc_reply.xml"
+}}
+
+test data_type_rpc_reply_nc {Validation of rpc-reply by data --type nc-reply} {
+-setup $ly_setup -cleanup $ly_cleanup -body {
+    ly_cmd "load modrpc modleaf"
+    ly_cmd_err "data -t nc-reply -R $ddir/modrpc_nc.xml $ddir/modleaf.xml" "Missing NETCONF <rpc-reply> envelope"
+    ly_cmd_err "data -t nc-reply $ddir/modrpc_reply_nc.xml" "Missing source RPC"
+    ly_cmd "data -t nc-reply -R $ddir/modrpc_nc.xml $ddir/modrpc_reply_nc.xml"
+}}
+
+test data_type_rpc_action {Validation of action-statement by data --type rpc} {
+-setup $ly_setup -cleanup $ly_cleanup -body {
+    ly_cmd "load modaction modleaf"
+    ly_cmd_err "data -t rpc $ddir/modleaf.xml" "Missing the operation node."
+    ly_cmd "data -t rpc -O $ddir/modaction_ds.xml $ddir/modaction.xml"
+}}
+
+test data_type_rpc_action_nc {Validation of action-statement by data --type nc-rpc} {
+-setup $ly_setup -cleanup $ly_cleanup -body {
+    ly_cmd "load modaction modleaf"
+    ly_cmd_err "data -t nc-rpc $ddir/modleaf.xml" "Missing NETCONF <rpc> envelope"
+    ly_cmd "data -t nc-rpc -O $ddir/modaction_ds.xml $ddir/modaction_nc.xml"
+}}
+
+test data_type_rpc_action_reply {Validation of action-reply by data --type reply} {
+-setup $ly_setup -cleanup $ly_cleanup -body {
+    ly_cmd "load modaction modleaf"
+    ly_cmd_err "data -t rpc $ddir/modleaf.xml" "Missing the operation node."
+    ly_cmd "data -t reply -O $ddir/modaction_ds.xml $ddir/modaction_reply.xml"
+}}
+
+test data_type_rpc_action_reply_nc {Validation of action-reply by data --type nc-reply} {
+-setup $ly_setup -cleanup $ly_cleanup -body {
+    ly_cmd "load modaction modleaf"
+    ly_cmd_err "data -t nc-reply -R $ddir/modaction_nc.xml $ddir/modleaf.xml" "Missing NETCONF <rpc-reply> envelope"
+    ly_cmd_err "data -t nc-reply $ddir/modaction_reply_nc.xml" "Missing source RPC"
+    ly_cmd_err "data -t nc-reply -R $ddir/modaction_nc.xml $ddir/modaction_reply_nc.xml" "operational parameter needed"
+    ly_cmd "data -t nc-reply -O $ddir/modaction_ds.xml -R $ddir/modaction_nc.xml $ddir/modaction_reply_nc.xml"
+}}
+
+test data_type_notif {Validation of notification-statement by data --type notif} {
+-setup $ly_setup -cleanup $ly_cleanup -body {
+    ly_cmd "load modnotif modleaf"
+    ly_cmd_err "data -t notif $ddir/modleaf.xml" "Missing the operation node."
+    ly_cmd "data -t notif $ddir/modnotif2.xml"
+}}
+
+test data_type_notif_nc {Validation of notification-statement by data --type nc-notif} {
+-setup $ly_setup -cleanup $ly_cleanup -body {
+    ly_cmd "load modnotif modleaf ietf-netconf"
+    ly_cmd_err "data -t nc-notif $ddir/modleaf.xml" "Missing NETCONF <notification> envelope"
+    ly_cmd "data -t nc-notif $ddir/modnotif2_nc.xml"
+}}
+
+test data_type_notif_nested {Validation of nested-notification-statement by data --type notif} {
+-setup $ly_setup -cleanup $ly_cleanup -body {
+    ly_cmd "load modnotif modleaf"
+    ly_cmd "data -t notif -O $ddir/modnotif_ds.xml $ddir/modnotif.xml"
+}}
+
+test data_type_notif_nested_nc {Validation of nested-notification-statement by data --type nc-notif} {
+-setup $ly_setup -cleanup $ly_cleanup -body {
+    ly_cmd "load modnotif modleaf ietf-netconf"
+    ly_cmd_err "data -t nc-notif $ddir/modleaf.xml" "Missing NETCONF <notification> envelope"
+    ly_cmd "data -t nc-notif -O $ddir/modnotif_ds.xml $ddir/modnotif_nc.xml"
+}}
+
+cleanupTests

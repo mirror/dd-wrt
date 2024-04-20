@@ -1,0 +1,37 @@
+source [expr {[info exists ::env(TESTS_DIR)] ? "$env(TESTS_DIR)/interactive/ly.tcl" : "ly.tcl"}]
+
+test feature_all_default {Default output of feature --all} {
+-setup $ly_setup -cleanup $ly_cleanup -body {
+    ly_cmd "feature -a" "yang:\r\n\t(none)\r\n\r\nietf-yang-schema-mount:\r\n\t(none)\r\n" -ex
+}}
+
+test feature_all_add_module {Add module with only one feature and call feature --all} {
+-setup $ly_setup -cleanup $ly_cleanup -body {
+    ly_cmd "load --feature modfeature:ftr1 modfeature"
+    ly_cmd "feature -a" "modfeature:\r\n\tftr1 \\(on\\)\r\n\tftr2 \\(off\\)"
+}}
+
+test feature_all_on {Add module with all enabled features and call feature --all} {
+-setup $ly_setup -cleanup $ly_cleanup -body {
+    ly_cmd "load --feature modfeature:* modfeature"
+    ly_cmd "feature -a" "modfeature:\r\n\tftr1 \\(on\\)\r\n\tftr2 \\(on\\)"
+}}
+
+test feature_one_module {Show features for one module} {
+-setup $ly_setup -cleanup $ly_cleanup -body {
+    ly_cmd "load ietf-ip"
+    ly_cmd "feature -f ietf-ip" " -F ietf-ip:ipv4-non-contiguous-netmasks,ipv6-privacy-autoconf" -ex
+}}
+
+test feature_more_modules {Show a mix of modules with and without features} {
+-setup $ly_setup -cleanup $ly_cleanup -body {
+
+    set features " -F modfeature:ftr1,ftr2\
+-F modleaf:\
+-F ietf-ip:ipv4-non-contiguous-netmasks,ipv6-privacy-autoconf"
+
+    ly_cmd "load ietf-ip modleaf modfeature"
+    ly_cmd "feature -f modfeature modleaf ietf-ip" $features -ex
+}}
+
+cleanupTests

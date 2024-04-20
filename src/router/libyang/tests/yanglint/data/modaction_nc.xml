@@ -1,0 +1,13 @@
+<rpc message-id="101"
+     xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
+  <action xmlns="urn:ietf:params:xml:ns:yang:1">
+    <con xmlns="urn:yanglint:modaction">
+      <ls>
+        <lfkey>kv</lfkey>
+        <act>
+          <lfi>some_input</lfi>
+        </act>
+      </ls>
+    </con>
+  </action>
+</rpc>

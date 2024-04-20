@@ -1,0 +1,33 @@
+source [expr {[info exists ::env(TESTS_DIR)] ? "$env(TESTS_DIR)/interactive/ly.tcl" : "ly.tcl"}]
+
+set mdir $::env(YANG_MODULES_DIR)
+
+test debug_dict {Check debug message DICT} {
+-setup $ly_setup -cleanup $ly_cleanup -constraints {[yanglint_debug]} -body {
+    ly_cmd "verb debug"
+    ly_cmd "debug dict"
+    ly_cmd "load modleaf" "DICT"
+}}
+
+test debug_xpath {Check debug message XPATH} {
+-setup $ly_setup -cleanup $ly_cleanup -constraints {[yanglint_debug]} -body {
+    ly_cmd "verb debug"
+    ly_cmd "debug xpath"
+    ly_cmd "load modmust" "XPATH"
+}}
+
+test debug_dep_sets {Check debug message DEPSETS} {
+-setup $ly_setup -cleanup $ly_cleanup -constraints {[yanglint_debug]} -body {
+    ly_cmd "verb debug"
+    ly_cmd "debug dep-sets"
+    ly_cmd "load modleaf" "DEPSETS"
+}}
+
+test debug_depsets_xpath {Check debug message DEPSETS and XPATH} {
+-setup $ly_setup -cleanup $ly_cleanup -constraints {[yanglint_debug]} -body {
+    ly_cmd "verb debug"
+    ly_cmd "debug dep-sets xpath"
+    ly_cmd "load modmust" "DEPSETS.*XPATH"
+}}
+
+cleanupTests

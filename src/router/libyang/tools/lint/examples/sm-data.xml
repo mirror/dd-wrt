@@ -1,0 +1,19 @@
+<interfaces xmlns="urn:ietf:params:xml:ns:yang:ietf-interfaces">
+  <interface>
+    <name>eth0</name>
+    <type xmlns:ift="urn:ietf:params:xml:ns:yang:iana-if-type">ift:ethernetCsmacd</type>
+  </interface>
+  <interface>
+    <name>eth1</name>
+    <type xmlns:ift="urn:ietf:params:xml:ns:yang:iana-if-type">ift:ethernetCsmacd</type>
+  </interface>
+</interfaces>
+<root3 xmlns="urn:sm-main">
+  <my-list>
+    <name>list item 1</name>
+    <things xmlns="urn:sm-ext">
+      <name>eth0</name>
+      <attribute>1</attribute>
+    </things>
+  </my-list>
+</root3>

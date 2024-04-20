@@ -21,9 +21,11 @@ libyang.so.2 libyang2 #MINVER#
  ly_ctx_internal_modules_count@Base 2.0.0~
  ly_ctx_load_module@Base 2.0.0~
  ly_ctx_new@Base 2.0.0~
+ ly_ctx_new_yldata@Base 2.1.4~
  ly_ctx_new_ylmem@Base 2.0.0~
  ly_ctx_new_ylpath@Base 2.0.0~
  ly_ctx_reset_latests@Base 2.0.0~
+ ly_ctx_set_ext_data_clb@Base 2.1.4~
  ly_ctx_set_module_imp_clb@Base 2.0.0~
  ly_ctx_set_options@Base 2.0.0~
  ly_ctx_set_searchdir@Base 2.0.0~
@@ -83,7 +85,10 @@ libyang.so.2 libyang2 #MINVER#
  ly_set_new@Base 2.0.0~
  ly_set_rm@Base 2.0.0~
  ly_set_rm_index@Base 2.0.0~
- ly_stmt2str@Base 2.0.0~
+ ly_time_str2time@Base 2.0.7~
+ ly_time_str2ts@Base 2.0.7~
+ ly_time_time2str@Base 2.0.7~
+ ly_time_ts2str@Base 2.0.7~
  ly_vecode@Base 2.0.0~
  ly_write@Base 2.0.0~
  lyd_any_copy_value@Base 2.0.0~
@@ -106,13 +111,22 @@ libyang.so.2 libyang2 #MINVER#
  lyd_diff_tree@Base 2.0.0~
  lyd_dup_meta_single@Base 2.0.0~
  lyd_dup_siblings@Base 2.0.0~
+ lyd_dup_siblings_to_ctx@Base 2.1.4~
  lyd_dup_single@Base 2.0.0~
+ lyd_dup_single_to_ctx@Base 2.1.4~
+ lyd_eval_xpath2@Base 2.0.112~
+ lyd_eval_xpath3@Base 2.1.4~
+ lyd_eval_xpath@Base 2.0.112~
  lyd_find_meta@Base 2.0.0~
  lyd_find_path@Base 2.0.0~
  lyd_find_sibling_dup_inst_set@Base 2.0.0~
  lyd_find_sibling_first@Base 2.0.0~
  lyd_find_sibling_opaq_next@Base 2.0.0~
  lyd_find_sibling_val@Base 2.0.0~
+ lyd_find_target@Base 2.0.112~
+ lyd_find_xpath2@Base 2.0.112~
+ lyd_find_xpath3@Base 2.1.4~
+ lyd_find_xpath4@Base 2.1.4~
  lyd_find_xpath@Base 2.0.0~
  lyd_first_sibling@Base 2.0.0~
  lyd_free_all@Base 2.0.0~
@@ -129,6 +143,7 @@ libyang.so.2 libyang2 #MINVER#
  lyd_is_default@Base 2.0.0~
  lyd_list_pos@Base 2.0.0~
  lyd_lyb_data_length@Base 2.0.0~
+ lyd_merge_module@Base 2.0.7~
  lyd_merge_siblings@Base 2.0.0~
  lyd_merge_tree@Base 2.0.0~
  lyd_new_any@Base 2.0.0~
@@ -145,6 +160,8 @@ libyang.so.2 libyang2 #MINVER#
  lyd_new_inner@Base 2.0.0~
  lyd_new_list2@Base 2.0.0~
  lyd_new_list@Base 2.0.0~
+ lyd_new_list_bin@Base 2.0.112~
+ lyd_new_list_canon@Base 2.0.112~
  lyd_new_meta2@Base 2.0.0~
  lyd_new_meta@Base 2.0.0~
  lyd_new_opaq2@Base 2.0.0~
@@ -154,6 +171,7 @@ libyang.so.2 libyang2 #MINVER#
  lyd_new_term@Base 2.0.0~
  lyd_new_term_bin@Base 2.0.0~
  lyd_new_term_canon@Base 2.0.0~
+ lyd_node_should_print@Base 2.1.4~
  lyd_owner_module@Base 2.0.0~
  lyd_parse_data@Base 2.0.0~
  lyd_parse_data_fd@Base 2.0.0~
@@ -162,6 +180,7 @@ libyang.so.2 libyang2 #MINVER#
  lyd_parse_ext_data@Base 2.0.0~
  lyd_parse_ext_op@Base 2.0.0~
  lyd_parse_op@Base 2.0.0~
+ lyd_parse_opaq_error@Base 2.1.4~
  lyd_path@Base 2.0.0~
  lyd_print_all@Base 2.0.0~
  lyd_print_clb@Base 2.0.0~
@@ -171,6 +190,7 @@ libyang.so.2 libyang2 #MINVER#
  lyd_print_path@Base 2.0.0~
  lyd_print_tree@Base 2.0.0~
  lyd_target@Base 2.0.0~
+ lyd_unlink_siblings@Base 2.0.112~
  lyd_unlink_tree@Base 2.0.0~
  lyd_validate_all@Base 2.0.0~
  lyd_validate_module@Base 2.0.0~
@@ -182,30 +202,52 @@ libyang.so.2 libyang2 #MINVER#
  lydict_insert_zc@Base 2.0.0~
  lydict_remove@Base 2.0.0~
  lyplg_add@Base 2.0.0~
- lyplg_ext_instance_substatements_free@Base 2.0.0~
- lyplg_ext_log@Base 2.0.0~
- lyplg_type_bits_bitmap_size@Base 2.0.0~
- lyplg_type_bits_is_bit_set@Base 2.0.0~
+ lyplg_ext_cfree_instance_substatements@Base 2.1.4~
+ lyplg_ext_compile_extension_instance@Base 2.1.4~
+ lyplg_ext_compile_get_ctx@Base 2.1.4~
+ lyplg_ext_compile_get_cur_mod@Base 2.1.4~
+ lyplg_ext_compile_get_options@Base 2.1.4~
+ lyplg_ext_compile_get_pmod@Base 2.1.4~
+ lyplg_ext_compile_log@Base 2.1.4~
+ lyplg_ext_compile_log_path@Base 2.1.4~
+ lyplg_ext_get_data@Base 2.1.4~
+ lyplg_ext_get_storage@Base 2.1.4~
+ lyplg_ext_insert@Base 2.1.4~
+ lyplg_ext_nodetype2stmt@Base 2.1.4~
+ lyplg_ext_parse_extension_instance@Base 2.1.4~
+ lyplg_ext_parse_get_cur_pmod@Base 2.1.4~
+ lyplg_ext_parse_log@Base 2.1.4~
+ lyplg_ext_parsed_get_storage@Base 2.1.4~
+ lyplg_ext_pfree_instance_substatements@Base 2.1.4~
+ lyplg_ext_print_get_level@Base 2.1.4~
+ lyplg_ext_print_get_options@Base 2.1.4~
+ lyplg_ext_print_get_out@Base 2.1.4~
+ lyplg_ext_print_info_extension_instance@Base 2.1.4~
+ lyplg_ext_schema_mount_create_context@Base 2.1.4~
+ lyplg_ext_stmt2str@Base 2.1.4~
+ lyplg_type_bits_bitmap_size@Base 2.0.7~
+ lyplg_type_bits_is_bit_set@Base 2.0.7~
  lyplg_type_check_hints@Base 2.0.0~
- lyplg_type_compare_binary@Base 2.0.0~
- lyplg_type_compare_bits@Base 2.0.0~
- lyplg_type_compare_boolean@Base 2.0.0~
- lyplg_type_compare_decimal64@Base 2.0.0~
+ lyplg_type_check_status@Base 2.0.112~
+ lyplg_type_compare_binary@Base 2.0.7~
+ lyplg_type_compare_bits@Base 2.0.7~
+ lyplg_type_compare_boolean@Base 2.0.7~
+ lyplg_type_compare_decimal64@Base 2.0.7~
  lyplg_type_compare_identityref@Base 2.0.0~
  lyplg_type_compare_instanceid@Base 2.0.0~
- lyplg_type_compare_int@Base 2.0.0~
+ lyplg_type_compare_int@Base 2.0.7~
  lyplg_type_compare_leafref@Base 2.0.0~
  lyplg_type_compare_simple@Base 2.0.0~
- lyplg_type_compare_uint@Base 2.0.0~
+ lyplg_type_compare_uint@Base 2.0.7~
  lyplg_type_compare_union@Base 2.0.0~
- lyplg_type_dup_binary@Base 2.0.0~
+ lyplg_type_dup_binary@Base 2.0.7~
  lyplg_type_dup_bits@Base 2.0.0~
  lyplg_type_dup_instanceid@Base 2.0.0~
  lyplg_type_dup_leafref@Base 2.0.0~
  lyplg_type_dup_simple@Base 2.0.0~
  lyplg_type_dup_union@Base 2.0.0~
  lyplg_type_dup_xpath10@Base 2.0.0~
- lyplg_type_free_binary@Base 2.0.0~
+ lyplg_type_free_binary@Base 2.0.7~
  lyplg_type_free_bits@Base 2.0.0~
  lyplg_type_free_instanceid@Base 2.0.0~
  lyplg_type_free_leafref@Base 2.0.0~
@@ -215,6 +257,7 @@ libyang.so.2 libyang2 #MINVER#
  lyplg_type_get_prefix@Base 2.0.0~
  lyplg_type_identity_isderived@Base 2.0.0~
  lyplg_type_identity_module@Base 2.0.0~
+ lyplg_type_lypath_check_status@Base 2.0.112~
  lyplg_type_lypath_free@Base 2.0.0~
  lyplg_type_lypath_new@Base 2.0.0~
  lyplg_type_make_implemented@Base 2.0.0~
@@ -224,19 +267,20 @@ libyang.so.2 libyang2 #MINVER#
  lyplg_type_prefix_data_dup@Base 2.0.0~
  lyplg_type_prefix_data_free@Base 2.0.0~
  lyplg_type_prefix_data_new@Base 2.0.0~
- lyplg_type_print_binary@Base 2.0.0~
- lyplg_type_print_bits@Base 2.0.0~
- lyplg_type_print_boolean@Base 2.0.0~
- lyplg_type_print_decimal64@Base 2.0.0~
- lyplg_type_print_enum@Base 2.0.0~
+ lyplg_type_print_binary@Base 2.0.7~
+ lyplg_type_print_bits@Base 2.0.7~
+ lyplg_type_print_boolean@Base 2.0.7~
+ lyplg_type_print_decimal64@Base 2.0.7~
+ lyplg_type_print_enum@Base 2.0.7~
  lyplg_type_print_identityref@Base 2.0.0~
  lyplg_type_print_instanceid@Base 2.0.0~
- lyplg_type_print_int@Base 2.0.0~
+ lyplg_type_print_int@Base 2.0.7~
  lyplg_type_print_leafref@Base 2.0.0~
  lyplg_type_print_simple@Base 2.0.0~
- lyplg_type_print_uint@Base 2.0.0~
+ lyplg_type_print_uint@Base 2.0.7~
  lyplg_type_print_union@Base 2.0.0~
  lyplg_type_print_xpath10@Base 2.0.0~
+ lyplg_type_print_xpath10_value@Base 2.1.4~
  lyplg_type_resolve_leafref@Base 2.0.0~
  lyplg_type_store_binary@Base 2.0.0~
  lyplg_type_store_bits@Base 2.0.0~
@@ -257,6 +301,7 @@ libyang.so.2 libyang2 #MINVER#
  lyplg_type_validate_patterns@Base 2.0.0~
  lyplg_type_validate_range@Base 2.0.0~
  lyplg_type_validate_union@Base 2.0.0~
+ lyplg_type_xpath10_print_token@Base 2.1.4~
  lys_feature_value@Base 2.0.0~
  lys_find_child@Base 2.0.0~
  lys_find_expr_atoms@Base 2.0.0~
@@ -267,7 +312,7 @@ libyang.so.2 libyang2 #MINVER#
  lys_find_xpath_atoms@Base 2.0.0~
  lys_getnext@Base 2.0.0~
  lys_getnext_ext@Base 2.0.0~
- lys_nodetype2stmt@Base 2.0.0~
+ lys_identity_iffeature_value@Base 2.0.112~
  lys_nodetype2str@Base 2.0.0~
  lys_parse@Base 2.0.0~
  lys_parse_fd@Base 2.0.0~
@@ -283,13 +328,7 @@ libyang.so.2 libyang2 #MINVER#
  lys_print_submodule@Base 2.0.0~
  lys_search_localfile@Base 2.0.0~
  lys_set_implemented@Base 2.0.0~
- lys_ypr_ctx_get_level@Base 2.0.0~
- lys_ypr_ctx_get_options@Base 2.0.0~
- lys_ypr_ctx_get_out@Base 2.0.0~
- lysc_ctx_get_ctx@Base 2.0.0~
- lysc_ctx_get_options@Base 2.0.0~
- lysc_ctx_get_path@Base 2.0.0~
- lysc_ext_substmt@Base 2.0.0~
+ lysc_data_node@Base 2.1.4~
  lysc_has_when@Base 2.0.0~
  lysc_iffeature_value@Base 2.0.0~
  lysc_module_dfs_full@Base 2.0.0~
@@ -298,6 +337,7 @@ libyang.so.2 libyang2 #MINVER#
  lysc_node_musts@Base 2.0.0~
  lysc_node_notifs@Base 2.0.0~
  lysc_node_when@Base 2.0.0~
+ lysc_owner_module@Base 2.0.112~
  lysc_path@Base 2.0.0~
  lysc_tree_dfs_full@Base 2.0.0~
  lysp_feature_next@Base 2.0.0~
@@ -307,3 +347,5 @@ libyang.so.2 libyang2 #MINVER#
  lysp_node_notifs@Base 2.0.0~
  lysp_node_typedefs@Base 2.0.0~
  lyxp_get_expr@Base 2.0.0~
+ lyxp_vars_free@Base 2.0.112~
+ lyxp_vars_set@Base 2.0.112~

@@ -1,0 +1,9 @@
+<mcc xmlns="urn:yanglint:modconfig">
+  <lft>rw</lft>
+  <lff>ro</lff>
+</mcc>
+<cond xmlns="urn:yanglint:modoper-leafref">
+  <list>
+    <klf>key_val</klf>
+  </list>
+</cond>

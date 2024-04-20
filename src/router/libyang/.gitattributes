@@ -1,0 +1,3 @@
+# the tests check that LF is kept as a LF in the checkout
+tests/modules/yang/ietf-netconf@*.yang -text
+tests/modules/yang/ietf-netconf-nmda@*.yang -text

@@ -1,0 +1,59 @@
+source [expr {[info exists ::env(TESTS_DIR)] ? "$env(TESTS_DIR)/interactive/ly.tcl" : "ly.tcl"}]
+
+set mdir $::env(YANG_MODULES_DIR)
+
+test add_basic {} {
+-setup $ly_setup -cleanup $ly_cleanup -body {
+    ly_cmd "add $mdir/modleafref.yang"
+    ly_cmd "list" "I modleafref\r.*I modleaf"
+}}
+
+test add_disable_searchdir_once {add --disable-searchdir} {
+-setup $ly_setup -cleanup $ly_cleanup -constraints {!ctest} -body {
+    ly_cmd "add $mdir/modimp-cwd.yang"
+    ly_cmd "clear"
+    ly_cmd_err "add -D $mdir/modimp-cwd.yang" "not found in local searchdirs"
+}}
+
+test add_disable_searchdir_twice {add -D -D} {
+-setup $ly_setup -cleanup $ly_cleanup -constraints {!ctest} -body {
+    ly_cmd "add $mdir/ietf-ip.yang"
+    ly_cmd "clear"
+    ly_cmd_err "add -D -D $mdir/ietf-ip.yang" "Loading \"ietf-interfaces\" module failed."
+}}
+
+test add_with_feature {Add module with feature} {
+-setup $ly_setup -cleanup $ly_cleanup -body {
+    ly_cmd "add --feature modfeature:ftr2 $mdir/modfeature.yang"
+    ly_cmd "feature -a" "modfeature:\r\n\tftr1 \\(off\\)\r\n\tftr2 \\(on\\)"
+}}
+
+test add_make_implemented_once {add --make-implemented} {
+-setup $ly_setup -cleanup $ly_cleanup -body {
+    ly_ignore "add $mdir/modmust.yang"
+    ly_cmd "list" "I modmust\r.*i modleaf"
+    ly_cmd "clear"
+    ly_ignore "add -i $mdir/modmust.yang"
+    ly_cmd "list" "I modmust\r.*I modleaf"
+}}
+
+test add_make_implemented_twice {add -i -i} {
+-setup $ly_setup -cleanup $ly_cleanup -body {
+    ly_cmd "add $mdir/modimp-type.yang"
+    ly_cmd "list" "I modimp-type\r.*i modtypedef"
+    ly_cmd "clear"
+    ly_cmd "add -i -i $mdir/modimp-type.yang"
+    ly_cmd "list" "I modimp-type\r.*I modtypedef"
+}}
+
+test add_extended_leafref_enabled {Valid module with --extended-leafref option} {
+-setup $ly_setup -cleanup $ly_cleanup -body {
+    ly_cmd "add -X $mdir/modextleafref.yang"
+}}
+
+test add_extended_leafref_disabled {Expected error if --extended-leafref is not set} {
+-setup $ly_setup -cleanup $ly_cleanup -body {
+    ly_cmd_err "add $mdir/modextleafref.yang" "Unexpected XPath token \"FunctionName\""
+}}
+
+cleanupTests

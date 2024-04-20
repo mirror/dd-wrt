@@ -368,6 +368,8 @@
  * -                            | ::lyd_new_opaq()                | ^
  * -                            | ::lyd_new_opaq2()               | ^
  * -                            | ::lyd_new_path2()               | Supplement functionality to ::lyd_new_path().
+ * LYD_PATH_OPT_NOPARENTRET     | ::lyd_new_path2()               | ::lyd_new_path2() returns both the first parent and the wanted node.
+ * LYD_PATH_OPT_EDIT            | ::LYD_NEW_PATH_OPAQ             | This functionality was replaced by opaq nodes.
  * -                            | ::lyd_new_ext_path()            | Supplement functionality to ::lyd_new_path() covering data defined in extension instances.
  * lyd_insert()                 | ::lyd_insert_child()            | Renamed to better distinguish from ::lyd_insert_sibling().
  * lyd_change_leaf()            | ::lyd_change_term()             | Align naming with changed names of data structures.

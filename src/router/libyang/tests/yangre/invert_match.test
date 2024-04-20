@@ -1,0 +1,28 @@
+source [expr {[info exists ::env(TESTS_DIR)] ? "$env(TESTS_DIR)/ly.tcl" : "ly.tcl"}]
+
+test invert_match_from_help1 {Test the first pattern from help via invert match} {
+    ly_cmd_err {-p {"[0-9a-fA-F]*"} -i {1F}} "not conform to inverted"
+    ly_cmd {-p {"[0-9a-fA-F]*"} -i {GUN}}
+} {}
+
+test invert_match_from_help2 {Test the second pattern from help via invert match} {
+    ly_cmd_err {-p {'[a-zA-Z0-9\-_.]*'} -i {a-b}} "not conform to inverted"
+    ly_cmd {-p {'[a-zA-Z0-9\-_.]*'} -i {%@}}
+} {}
+
+test invert_match_from_help3 {Test the third pattern from help via invert match} {
+    ly_cmd_err {-p {[xX][mM][lL].*} -i {xml-encoding}} "not conform to inverted"
+    ly_cmd {-p {[xX][mM][lL].*} -i {json}}
+} {}
+
+test invert_match_three_at_once {Test three inverted patterns and once} {
+    ly_cmd_err {-p {"[0-9a-zA-Z]*"} -i -p {'[a-zA-Z0-9\-_.]*'} -i -p {[xX][mM][lL].*} -i {xml}} "not conform to inverted"
+    ly_cmd {-p {"[0-9a-zA-Z]*"} -i -p {'[a-zA-Z0-9\-_.]*'} -i -p {[xX][mM][lL].*} -i {%@}}
+} {}
+
+test invert_match_second_is_not {Test three patterns but the second one is not inverted} {
+    ly_cmd_err {-p {"[0-9a-zA-Z]*"} -i -p {'[a-zA-Z0-9\-_.]*'} -i -p {[xX][mM][lL].*} -i {o_O}} "not conform to inverted"
+    ly_cmd {-p {"[0-9a-zA-Z]*"} -i -p {'[a-zA-Z0-9\-_.]*'} -p {[xX][mM][lL].*} -i {o_O}}
+} {}
+
+cleanupTests

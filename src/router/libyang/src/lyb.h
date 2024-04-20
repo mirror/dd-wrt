@@ -3,7 +3,7 @@
  * @author Michal Vasko <mvasko@cesnet.cz>
  * @brief Header for LYB format printer & parser
  *
- * Copyright (c) 2020 CESNET, z.s.p.o.
+ * Copyright (c) 2020 - 2022 CESNET, z.s.p.o.
  *
  * This source code is licensed under BSD 3-Clause License (the "License").
  * You may not use this file except in compliance with the License.
@@ -19,70 +19,11 @@
 #include <stdint.h>
 
 #include "parser_internal.h"
-#include "set.h"
-#include "tree.h"
 
-struct hash_table;
 struct ly_ctx;
-struct lyd_node;
 struct lysc_node;
 
-struct lylyb_ctx {
-    const struct ly_ctx *ctx;
-    uint64_t line;             /* current line */
-    struct ly_in *in;          /* input structure */
-
-    const struct lys_module **models;
-
-    struct lyd_lyb_subtree {
-        size_t written;
-        size_t position;
-        uint8_t inner_chunks;
-    } *subtrees;
-    LY_ARRAY_COUNT_TYPE subtree_size;
-
-    /* LYB printer only */
-    struct lyd_lyb_sib_ht {
-        struct lysc_node *first_sibling;
-        struct hash_table *ht;
-    } *sib_hts;
-};
-
-/**
- * @brief Internal structure for LYB parser/printer.
- *
- * Note that the structure maps to the lyd_ctx which is common for all the data parsers
- */
-struct lyd_lyb_ctx {
-    const struct lysc_ext_instance *ext; /**< extension instance possibly changing document root context of the data being parsed */
-    union {
-        struct {
-            uint32_t parse_opts;   /**< various @ref dataparseroptions. */
-            uint32_t val_opts;     /**< various @ref datavalidationoptions. */
-        };
-        uint32_t print_options;
-    };
-    uint32_t int_opts;             /**< internal data parser options */
-    uint32_t path_len;             /**< used bytes in the path buffer */
-    char path[LYD_PARSER_BUFSIZE]; /**< buffer for the generated path */
-    struct ly_set node_when;       /**< set of nodes with "when" conditions */
-    struct ly_set node_exts;       /**< set of nodes and extensions connected with a plugin providing own validation callback */
-    struct ly_set node_types;      /**< set of nodes validated with LY_EINCOMPLETE result */
-    struct ly_set meta_types;      /**< set of metadata validated with LY_EINCOMPLETE result */
-    struct lyd_node *op_node;      /**< if an RPC/action/notification is being parsed, store the pointer to it */
-
-    /* callbacks */
-    lyd_ctx_free_clb free;           /* destructor */
-
-    struct lylyb_ctx *lybctx;      /* lyb format context */
-};
-
-/**
- * @brief Destructor for the lylyb_ctx structure
- */
-void lyd_lyb_ctx_free(struct lyd_ctx *lydctx);
-
-/**
+/*
  * LYB format
  *
  * Unlike XML or JSON, it is binary format so most data are represented in similar way but in binary.
@@ -92,30 +33,88 @@ void lyd_lyb_ctx_free(struct lyd_ctx *lydctx);
  * an array of hashes is created with each next hash one bit shorter until a unique sequence of all these
  * hashes is found and then all of them are stored.
  *
- * - tree structure is represented as individual strictly bounded subtrees. Each subtree begins
- * with its metadata, which consist of 1) the whole subtree length in bytes and 2) number
- * of included metadata chunks of nested subtrees.
+ * - tree structure is represented as individual strictly bounded "siblings". Each "siblings" begins
+ * with its metadata, which consist of 1) the whole "sibling" length in bytes and 2) number
+ * of included metadata chunks of nested "siblings".
  *
- * - since length of a subtree is not known before it is printed, holes are first written and
- * after the subtree is printed, they are filled with actual valid metadata. As a consequence,
+ * - since length of a "sibling" is not known before it is printed, holes are first written and
+ * after the "sibling" is printed, they are filled with actual valid metadata. As a consequence,
  * LYB data cannot be directly printed into streams!
  *
  * - data are preceded with information about all the used modules. It is needed because of
  * possible augments and deviations which must be known beforehand, otherwise schema hashes
  * could be matched to the wrong nodes.
+ *
+ * This is a short summary of the format:
+ * @verbatim
+
+ sb          = siblings_start
+ se          = siblings_end
+ siblings    = zero-LYB_SIZE_BYTES | (sb instance+ se)
+ instance    = node_type model hash node
+ model       = 16bit_zero | (model_name_length model_name revision)
+ node        = opaq | leaflist | list | any | inner | leaf
+ opaq        = opaq_data siblings
+ leaflist    = sb leaf+ se
+ list        = sb (node_header siblings)+ se
+ any         = node_header anydata_data
+ inner       = node_header siblings
+ leaf        = node_header term_value
+ node_header = metadata node_flags
+
+ @endverbatim
  */
 
-/* just a shortcut */
-#define LYB_LAST_SUBTREE(lybctx) lybctx->subtrees[LY_ARRAY_COUNT(lybctx->subtrees) - 1]
+/**
+ * @brief LYB data node type
+ */
+enum lylyb_node_type {
+    LYB_NODE_TOP,   /**< top-level node */
+    LYB_NODE_CHILD, /**< child node with a parent */
+    LYB_NODE_OPAQ,  /**< opaque node */
+    LYB_NODE_EXT    /**< nested extension data node */
+};
 
-/* struct lyd_lyb_subtree allocation step */
-#define LYB_SUBTREE_STEP 4
+/**
+ * @brief LYB format parser context
+ */
+struct lylyb_ctx {
+    const struct ly_ctx *ctx;
+    uint64_t line;             /* current line */
+    struct ly_in *in;          /* input structure */
+
+    const struct lys_module **models;
+
+    struct lyd_lyb_sibling {
+        size_t written;
+        size_t position;
+        uint16_t inner_chunks;
+    } *siblings;
+    LY_ARRAY_COUNT_TYPE sibling_size;
+
+    /* LYB printer only */
+    struct lyd_lyb_sib_ht {
+        struct lysc_node *first_sibling;
+        struct ly_ht *ht;
+    } *sib_hts;
+};
+
+/**
+ * @brief Destructor for the lylyb_ctx structure
+ */
+void lyd_lyb_ctx_free(struct lyd_ctx *lydctx);
+
+/* just a shortcut */
+#define LYB_LAST_SIBLING(lybctx) lybctx->siblings[LY_ARRAY_COUNT(lybctx->siblings) - 1]
+
+/* struct lyd_lyb_sibling allocation step */
+#define LYB_SIBLING_STEP 4
 
 /* current LYB format version */
-#define LYB_VERSION_NUM 0x10
+#define LYB_VERSION_NUM 0x05
 
 /* LYB format version mask of the header byte */
-#define LYB_VERSION_MASK 0x10
+#define LYB_VERSION_MASK 0x0F
 
 /**
  * LYB schema hash constants
@@ -149,20 +148,19 @@ void lyd_lyb_ctx_free(struct lyd_ctx *lydctx);
 #define LYB_HASH_COLLISION_ID 0x80
 
 /* How many bytes are reserved for one data chunk SIZE (8B is maximum) */
-#define LYB_SIZE_BYTES 1
+#define LYB_SIZE_BYTES 2
 
 /* Maximum size that will be written into LYB_SIZE_BYTES (must be large enough) */
-#define LYB_SIZE_MAX UINT8_MAX
+#define LYB_SIZE_MAX UINT16_MAX
 
 /* How many bytes are reserved for one data chunk inner chunk count */
-#define LYB_INCHUNK_BYTES 1
+#define LYB_INCHUNK_BYTES 2
 
 /* Maximum size that will be written into LYB_INCHUNK_BYTES (must be large enough) */
-#define LYB_INCHUNK_MAX UINT8_MAX
+#define LYB_INCHUNK_MAX UINT16_MAX
 
 /* Just a helper macro */
 #define LYB_META_BYTES (LYB_INCHUNK_BYTES + LYB_SIZE_BYTES)
-#define LYB_BYTE_MASK 0xff
 
 /* model revision as XXXX XXXX XXXX XXXX (2B) (year is offset from 2000)
  *                   YYYY YYYM MMMD DDDD */
@@ -172,9 +170,6 @@ void lyd_lyb_ctx_free(struct lyd_ctx *lydctx);
 #define LYB_REV_MONTH_MASK  0x01E0U
 #define LYB_REV_MONTH_SHIFT 5
 #define LYB_REV_DAY_MASK    0x001fU
-
-/* Type large enough for all meta data */
-#define LYB_META uint16_t
 
 /**
  * @brief Get single hash for a schema node to be used for LYB data. Read from cache, if possible.

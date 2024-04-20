@@ -17,4 +17,3 @@ endfunction(ly_add_plugin)
 
 ly_add_plugin(NAME invalid SOURCES invalid.c)
 ly_add_plugin(NAME simple SOURCES simple.c)
-ly_add_plugin(NAME validate SOURCES validate.c)

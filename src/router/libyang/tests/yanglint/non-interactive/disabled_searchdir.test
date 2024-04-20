@@ -1,0 +1,18 @@
+source [expr {[info exists ::env(TESTS_DIR)] ? "$env(TESTS_DIR)/non-interactive/ly.tcl" : "ly.tcl"}]
+
+set mdir $env(YANG_MODULES_DIR)
+
+# Test should be skipped if called by ctest.
+test disable_searchdir_once {Unsuccessfully imports module due to disabled cwd searching} {
+-constraints {!ctest} -body {
+    ly_cmd "$mdir/modimp-cwd.yang"
+    ly_cmd_err "-D $mdir/modimp-cwd.yang" "not found in local searchdirs"
+}}
+
+test disable_searchdir_twice {Unsuccessfully imports module due to -D -D} {
+    ly_cmd "$mdir/ietf-ip.yang"
+    ly_cmd_err "-D -D $mdir/ietf-ip.yang" "Loading \"ietf-interfaces\" module failed."
+} {}
+
+cleanupTests
+

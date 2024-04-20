@@ -179,6 +179,7 @@ test_batch(void **state)
 
     for (int32_t i = 0; i < 11; ++i) {
         struct lyd_node *source;
+
         CHECK_PARSE_LYD_PARAM(data[i], LYD_XML, LYD_PARSE_ONLY, 0, LY_SUCCESS, source);
         assert_int_equal(LY_SUCCESS, lyd_merge_siblings(&target, source, LYD_MERGE_DESTRUCT));
     }

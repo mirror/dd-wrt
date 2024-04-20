@@ -1,9 +1,10 @@
 /**
  * @file string.c
  * @author Radek Krejci <rkrejci@cesnet.cz>
+ * @author Michal Vasko <mvasko@cesnet.cz>
  * @brief Built-in string type plugin.
  *
- * Copyright (c) 2019-2021 CESNET, z.s.p.o.
+ * Copyright (c) 2019 - 2023 CESNET, z.s.p.o.
  *
  * This source code is licensed under BSD 3-Clause License (the "License").
  * You may not use this file except in compliance with the License.
@@ -15,7 +16,6 @@
 #include "plugins_types.h"
 
 #include <stdint.h>
-#include <stdio.h>
 #include <stdlib.h>
 
 #include "libyang.h"
@@ -34,7 +34,30 @@
  * | string length | yes | `char *` | string itself |
  */
 
-API LY_ERR
+/**
+ * @brief Check string value for invalid characters.
+ *
+ * @param[in] value String to check.
+ * @param[in] value_len Length of @p value.
+ * @param[out] err Generated error on error.
+ * @return LY_ERR value.
+ */
+static LY_ERR
+string_check_chars(const char *value, size_t value_len, struct ly_err_item **err)
+{
+    size_t len, parsed = 0;
+
+    while (value_len - parsed) {
+        if (ly_checkutf8(value + parsed, value_len - parsed, &len)) {
+            return ly_err_new(err, LY_EVALID, LYVE_DATA, NULL, NULL, "Invalid character 0x%hhx.", value[parsed]);
+        }
+        parsed += len;
+    }
+
+    return LY_SUCCESS;
+}
+
+LIBYANG_API_DEF LY_ERR
 lyplg_type_store_string(const struct ly_ctx *ctx, const struct lysc_type *type, const void *value, size_t value_len,
         uint32_t options, LY_VALUE_FORMAT UNUSED(format), void *UNUSED(prefix_data), uint32_t hints,
         const struct lysc_node *UNUSED(ctx_node), struct lyd_value *storage, struct lys_glob_unres *UNUSED(unres),
@@ -46,6 +69,12 @@ lyplg_type_store_string(const struct ly_ctx *ctx, const struct lysc_type *type, 
     /* init storage */
     memset(storage, 0, sizeof *storage);
     storage->realtype = type;
+
+    if (!(options & LYPLG_TYPE_STORE_IS_UTF8)) {
+        /* check the UTF-8 encoding */
+        ret = string_check_chars(value, value_len, err);
+        LY_CHECK_GOTO(ret, cleanup);
+    }
 
     /* check hints */
     ret = lyplg_type_check_hints(hints, value, value_len, type->basetype, NULL, err);
@@ -103,7 +132,8 @@ const struct lyplg_type_record plugins_string[] = {
         .plugin.sort = NULL,
         .plugin.print = lyplg_type_print_simple,
         .plugin.duplicate = lyplg_type_dup_simple,
-        .plugin.free = lyplg_type_free_simple
+        .plugin.free = lyplg_type_free_simple,
+        .plugin.lyb_data_len = -1,
     },
     {0}
 };
