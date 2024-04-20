@@ -1,1 +1,0 @@
-char *dirname(char *path);

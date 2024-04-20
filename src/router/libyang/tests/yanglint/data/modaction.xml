@@ -1,8 +1,0 @@
-<con xmlns="urn:yanglint:modaction">
-  <ls>
-    <lfkey>kv</lfkey>
-    <act>
-      <lfi>some_input</lfi>
-    </act>
-  </ls>
-</con>

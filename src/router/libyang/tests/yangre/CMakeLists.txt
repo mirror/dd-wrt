@@ -1,8 +1,0 @@
-find_program(PATH_TCLSH NAMES tclsh)
-if(NOT PATH_TCLSH)
-    message(WARNING "'tclsh' not found! The yangre test will not be available.")
-else()
-    add_test(NAME "yangre" COMMAND "tclsh" "${CMAKE_CURRENT_SOURCE_DIR}/all.tcl")
-    set_property(TEST "yangre" APPEND PROPERTY ENVIRONMENT "TESTS_DIR=${CMAKE_CURRENT_SOURCE_DIR}")
-    set_property(TEST "yangre" APPEND PROPERTY ENVIRONMENT "YANGRE=${PROJECT_BINARY_DIR}")
-endif()

@@ -1,4 +1,0 @@
-module modpath {
-  namespace "urn:yanglint:modpath";
-  prefix mp;
-}

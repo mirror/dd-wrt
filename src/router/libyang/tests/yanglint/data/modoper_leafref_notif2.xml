@@ -1,8 +1,0 @@
-<cond xmlns="urn:yanglint:modoper-leafref">
-  <list>
-    <klf>key_val</klf>
-    <notif>
-      <lfn>rw</lfn>
-    </notif>
-  </list>
-</cond>

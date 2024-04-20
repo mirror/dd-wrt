@@ -1,7 +1,0 @@
-<mcc xmlns="urn:yanglint:modconfig">
-  <lft>rw</lft>
-  <lff>ro</lff>
-</mcc>
-<notifg xmlns="urn:yanglint:modoper-leafref">
-  <lf>rw</lf>
-</notifg>

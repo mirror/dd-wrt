@@ -1,8 +1,0 @@
-module modimp-cwd {
-  namespace "urn:yanglint:modimp-cwd";
-  prefix ic;
-
-  import modcwd {
-    prefix mc;
-  }
-}

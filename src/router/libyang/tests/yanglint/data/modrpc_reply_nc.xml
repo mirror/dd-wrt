@@ -1,6 +1,0 @@
-<rpc-reply message-id="101"
-     xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
-  <con xmlns="urn:yanglint:modrpc">
-    <lfo>-56</lfo>
-  </con>
-</rpc-reply>

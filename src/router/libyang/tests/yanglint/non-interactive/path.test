@@ -1,9 +1,0 @@
-source [expr {[info exists ::env(TESTS_DIR)] ? "$env(TESTS_DIR)/non-interactive/ly.tcl" : "ly.tcl"}]
-
-set mdir $env(YANG_MODULES_DIR)
-
-test path_basic {} {
-    ly_cmd "-p $::env(TESTS_DIR)/data $::env(YANG_MODULES_DIR)/modimp-path.yang"
-} {}
-
-cleanupTests

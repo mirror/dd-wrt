@@ -1,8 +1,0 @@
-module modtypedef {
-  namespace "urn:yanglint:typedef";
-  prefix mt;
-
-  typedef mui8 {
-    type uint8;
-  }
-}

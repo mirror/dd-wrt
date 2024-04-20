@@ -1,8 +1,0 @@
-submodule modsub {
-  yang-version 1.1;
-  belongs-to modinclude {
-    prefix mi;
-  }
-
-  container msc;
-}
