@@ -46,6 +46,23 @@ void nf_unregister_queue_handler(void)
 }
 EXPORT_SYMBOL(nf_unregister_queue_handler);
 
+#if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
+static const struct nf_queue_handler __rcu *queue_imq_handler __read_mostly;
+
+void nf_register_queue_imq_handler(const struct nf_queue_handler *qh)
+{
+	rcu_assign_pointer(queue_imq_handler, qh);
+}
+EXPORT_SYMBOL_GPL(nf_register_queue_imq_handler);
+
+void nf_unregister_queue_imq_handler(void)
+{
+	RCU_INIT_POINTER(queue_imq_handler, NULL);
+	synchronize_rcu();
+}
+EXPORT_SYMBOL_GPL(nf_unregister_queue_imq_handler);
+#endif
+
 static void nf_queue_sock_put(struct sock *sk)
 {
 #ifdef CONFIG_INET
@@ -154,15 +171,27 @@ static void nf_ip6_saveroute(const struct sk_buff *skb,
 }
 
 static int __nf_queue(struct sk_buff *skb, const struct nf_hook_state *state,
-		      unsigned int index, unsigned int queuenum)
+		      unsigned int index, unsigned int verdict)
 {
 	struct nf_queue_entry *entry = NULL;
 	const struct nf_queue_handler *qh;
 	unsigned int route_key_size;
+	unsigned int queuetype = verdict & NF_VERDICT_MASK;
+	unsigned int queuenum  = verdict >> NF_VERDICT_QBITS;
 	int status;
 
 	/* QUEUE == DROP if no one is waiting, to be safe. */
-	qh = rcu_dereference(nf_queue_handler);
+	if (queuetype == NF_IMQ_QUEUE) {
+#if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
+		qh = rcu_dereference(queue_imq_handler);
+#else
+		BUG();
+		return -ESRCH;
+#endif
+	} else {
+		qh = rcu_dereference(nf_queue_handler);
+	}
+
 	if (!qh)
 		return -ESRCH;
 
@@ -237,8 +266,16 @@ int nf_queue(struct sk_buff *skb, struct nf_hook_state *state,
 {
 	int ret;
 
-	ret = __nf_queue(skb, state, index, verdict >> NF_VERDICT_QBITS);
+	ret = __nf_queue(skb, state, index, verdict);
 	if (ret < 0) {
+
+#if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
+	/* IMQ Bypass */
+	if (ret == -ECANCELED && skb->imq_flags == 0) {
+		return 1;
+	}
+#endif
+
 		if (ret == -ESRCH &&
 		    (verdict & NF_VERDICT_FLAG_QUEUE_BYPASS))
 			return 1;
@@ -341,6 +378,7 @@ next_hook:
 		local_bh_enable();
 		break;
 	case NF_QUEUE:
+	case NF_IMQ_QUEUE:
 		err = nf_queue(skb, &entry->state, i, verdict);
 		if (err == 1)
 			goto next_hook;

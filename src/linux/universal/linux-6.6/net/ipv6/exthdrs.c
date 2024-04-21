@@ -982,7 +982,7 @@ static bool ipv6_hop_jumbo(struct sk_buff *skb, int optoff)
 		goto drop;
 	}
 
-	pkt_len = ntohl(*(__be32 *)(nh + optoff + 2));
+	pkt_len = ntohl(net_hdr_word(nh + optoff + 2));
 	if (pkt_len <= IPV6_MAXPLEN) {
 		icmpv6_param_prob_reason(skb, ICMPV6_HDR_FIELD, optoff + 2,
 					 SKB_DROP_REASON_IP_INHDR);

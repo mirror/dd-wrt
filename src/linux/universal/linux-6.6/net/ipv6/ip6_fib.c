@@ -141,7 +141,7 @@ static __be32 addr_bit_set(const void *token, int fn_bit)
 	 * See include/asm-generic/bitops/le.h.
 	 */
 	return (__force __be32)(1 << ((~fn_bit ^ BITOP_BE32_SWIZZLE) & 0x1f)) &
-	       addr[fn_bit >> 5];
+	       net_hdr_word(&addr[fn_bit >> 5]);
 }
 
 struct fib6_info *fib6_info_alloc(gfp_t gfp_flags, bool with_fib6_nh)

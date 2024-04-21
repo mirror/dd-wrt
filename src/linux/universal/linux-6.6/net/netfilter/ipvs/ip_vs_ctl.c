@@ -3430,7 +3430,7 @@ static bool ip_vs_is_af_valid(int af)
 	if (af == AF_INET)
 		return true;
 #ifdef CONFIG_IP_VS_IPV6
-	if (af == AF_INET6 && ipv6_mod_enabled())
+	if (af == AF_INET6 && ipv6_mod_enabled && ipv6_mod_enabled())
 		return true;
 #endif
 	return false;

@@ -168,8 +168,8 @@ int xfrm_parse_spi(struct sk_buff *skb, u8 nexthdr, __be32 *spi, __be32 *seq)
 	if (!pskb_may_pull(skb, hlen))
 		return -EINVAL;
 
-	*spi = *(__be32 *)(skb_transport_header(skb) + offset);
-	*seq = *(__be32 *)(skb_transport_header(skb) + offset_seq);
+	*spi = net_hdr_word(skb_transport_header(skb) + offset);
+	*seq = net_hdr_word(skb_transport_header(skb) + offset_seq);
 	return 0;
 }
 EXPORT_SYMBOL(xfrm_parse_spi);

@@ -35,6 +35,7 @@
 #include <linux/ipsec.h>
 #include <linux/times.h>
 #include <linux/slab.h>
+#include <asm/unaligned.h>
 #include <linux/uaccess.h>
 #include <linux/ipv6.h>
 #include <linux/icmpv6.h>
@@ -897,10 +898,10 @@ static void tcp_v6_send_response(const struct sock *sk, struct sk_buff *skb, u32
 	topt = (__be32 *)(t1 + 1);
 
 	if (tsecr) {
-		*topt++ = htonl((TCPOPT_NOP << 24) | (TCPOPT_NOP << 16) |
-				(TCPOPT_TIMESTAMP << 8) | TCPOLEN_TIMESTAMP);
-		*topt++ = htonl(tsval);
-		*topt++ = htonl(tsecr);
+		put_unaligned_be32((TCPOPT_NOP << 24) | (TCPOPT_NOP << 16) |
+				(TCPOPT_TIMESTAMP << 8) | TCPOLEN_TIMESTAMP, topt++);
+		put_unaligned_be32(tsval, topt++);
+		put_unaligned_be32(tsecr, topt++);
 	}
 
 	if (mrst)

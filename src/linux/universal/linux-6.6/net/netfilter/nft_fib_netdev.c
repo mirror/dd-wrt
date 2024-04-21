@@ -35,7 +35,7 @@ static void nft_fib_netdev_eval(const struct nft_expr *expr,
 		}
 		break;
 	case ETH_P_IPV6:
-		if (!ipv6_mod_enabled())
+		if (!ipv6_mod_enabled || !ipv6_mod_enabled())
 			break;
 		switch (priv->result) {
 		case NFT_FIB_RESULT_OIF:

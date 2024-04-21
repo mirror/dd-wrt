@@ -29,10 +29,12 @@ static const unsigned int udp_timeouts[UDP_CT_MAX] = {
 	[UDP_CT_REPLIED]	= 120*HZ,
 };
 
-static unsigned int *udp_get_timeouts(struct net *net)
+unsigned int *udp_get_timeouts(struct net *net)
 {
 	return nf_udp_pernet(net)->timeouts;
 }
+
+EXPORT_SYMBOL(udp_get_timeouts);
 
 static void udp_error_log(const struct sk_buff *skb,
 			  const struct nf_hook_state *state,

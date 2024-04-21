@@ -499,7 +499,7 @@ int ipv6_recv_error(struct sock *sk, struct msghdr *msg, int len, int *addr_len)
 				ipv6_iface_scope_id(&sin->sin6_addr,
 						    IP6CB(skb)->iif);
 		} else {
-			ipv6_addr_set_v4mapped(*(__be32 *)(nh + serr->addr_offset),
+			ipv6_addr_set_v4mapped(net_hdr_word(nh + serr->addr_offset),
 					       &sin->sin6_addr);
 			sin->sin6_scope_id = 0;
 		}
@@ -853,12 +853,12 @@ int ip6_datagram_send_ctl(struct net *net, struct sock *sk,
 			}
 
 			if (fl6->flowlabel&IPV6_FLOWINFO_MASK) {
-				if ((fl6->flowlabel^*(__be32 *)CMSG_DATA(cmsg))&~IPV6_FLOWINFO_MASK) {
+				if ((fl6->flowlabel^net_hdr_word(CMSG_DATA(cmsg)))&~IPV6_FLOWINFO_MASK) {
 					err = -EINVAL;
 					goto exit_f;
 				}
 			}
-			fl6->flowlabel = IPV6_FLOWINFO_MASK & *(__be32 *)CMSG_DATA(cmsg);
+			fl6->flowlabel = IPV6_FLOWINFO_MASK & net_hdr_word(CMSG_DATA(cmsg));
 			break;
 
 		case IPV6_2292HOPOPTS:

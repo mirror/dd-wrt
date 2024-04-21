@@ -19,6 +19,7 @@ config VSOCKETS
 config VSOCKETS_DIAG
 	tristate "Virtual Sockets monitoring interface"
 	depends on VSOCKETS
+	select SOCK_DIAG
 	default y
 	help
 	  Support for PF_VSOCK sockets monitoring interface used by the ss tool.
