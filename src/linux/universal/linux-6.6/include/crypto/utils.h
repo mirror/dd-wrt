@@ -8,6 +8,7 @@
 #define _CRYPTO_UTILS_H
 
 #include <asm/unaligned.h>
+#include <linux/bitops.h>
 #include <linux/compiler_attributes.h>
 #include <linux/types.h>
 

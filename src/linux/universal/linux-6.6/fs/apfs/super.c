@@ -14,6 +14,9 @@
 #include <linux/statfs.h>
 #include <linux/seq_file.h>
 #include "apfs.h"
+#include "version.h"
+
+#define APFS_MODULE_ID_STRING	"linux-apfs by eafer (" GIT_COMMIT ")"
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 16, 0) /* iversion came in 4.16 */
 #include <linux/iversion.h>
@@ -110,11 +113,8 @@ static struct buffer_head *apfs_read_super_copy(struct super_block *sb)
 		apfs_err(sb, "not an apfs filesystem");
 		goto fail;
 	}
-	if (!apfs_obj_verify_csum(sb, bh)) {
-		apfs_err(sb, "inconsistent container superblock");
-		err = -EFSBADCRC;
-		goto fail;
-	}
+	if (!apfs_obj_verify_csum(sb, bh))
+		apfs_notice(sb, "backup superblock seems corrupted");
 	return bh;
 
 fail:
@@ -152,14 +152,16 @@ out_unlock:
 	mutex_unlock(&nxs_mutex);
 }
 
+static int apfs_check_nx_features(struct super_block *sb);
+
 /**
- * apfs_map_main_super - Find the container superblock and map it into memory
+ * apfs_read_main_super - Find the container superblock and read it into memory
  * @sb:	superblock structure
  *
  * Returns a negative error code in case of failure.  On success, returns 0
- * and sets the nx_raw, nx_object and nx_xid fields of APFS_NXI(@sb).
+ * and sets the nx_raw and nx_xid fields of APFS_NXI(@sb).
  */
-static int apfs_map_main_super(struct super_block *sb)
+static int apfs_read_main_super(struct super_block *sb)
 {
 	struct apfs_nxsb_info *nxi = APFS_NXI(sb);
 	struct buffer_head *bh;
@@ -228,20 +230,20 @@ static int apfs_map_main_super(struct super_block *sb)
 		desc_bh = NULL;
 	}
 
+	nxi->nx_raw = kmalloc(sb->s_blocksize, GFP_KERNEL);
+	if (!nxi->nx_raw) {
+		err = -ENOMEM;
+		goto fail;
+	}
+	memcpy(nxi->nx_raw, bh->b_data, sb->s_blocksize);
+	nxi->nx_bno = bno;
 	nxi->nx_xid = xid;
-	nxi->nx_raw = msb_raw;
-	nxi->nx_object.sb = sb; /* XXX: these "objects" never made any sense */
-	nxi->nx_object.block_nr = bno;
-	nxi->nx_object.oid = le64_to_cpu(msb_raw->nx_o.o_oid);
-	nxi->nx_object.o_bh = bh;
-	nxi->nx_object.data = bh->b_data;
 
 	/* For now we only support blocksize < PAGE_SIZE */
 	nxi->nx_blocksize = sb->s_blocksize;
 	nxi->nx_blocksize_bits = sb->s_blocksize_bits;
 
-	return 0;
-
+	err = apfs_check_nx_features(sb);
 fail:
 	brelse(bh);
 	return err;
@@ -251,9 +253,8 @@ fail:
  * apfs_update_software_info - Write the module info to a modified volume
  * @sb: superblock structure
  *
- * Does nothing if the module information is already present at index zero of
- * the apfs_modified_by array.  Otherwise, writes it there after shifting the
- * rest of the entries to the right.
+ * Writes this module's information to index zero of the apfs_modified_by
+ * array, shifting the rest of the entries to the right.
  */
 static void apfs_update_software_info(struct super_block *sb)
 {
@@ -266,31 +267,34 @@ static void apfs_update_software_info(struct super_block *sb)
 	ASSERT(strlen(APFS_MODULE_ID_STRING) < APFS_MODIFIED_NAMELEN);
 	mod_by = raw->apfs_modified_by;
 
-	/* This check could be optimized away, but does it matter? */
-	if (!strcmp(mod_by->id, APFS_MODULE_ID_STRING))
-		return;
 	memmove(mod_by + 1, mod_by, (APFS_MAX_HIST - 1) * sizeof(*mod_by));
-
 	memset(mod_by->id, 0, sizeof(mod_by->id));
-	strcpy(mod_by->id, APFS_MODULE_ID_STRING);
+	strscpy(mod_by->id, APFS_MODULE_ID_STRING, sizeof(mod_by->id));
 	mod_by->timestamp = cpu_to_le64(ktime_get_real_ns());
 	mod_by->last_xid = cpu_to_le64(APFS_NXI(sb)->nx_xid);
 }
 
+static struct file_system_type apfs_fs_type;
+
 /**
- * apfs_unmap_main_super - Clean up apfs_map_main_super()
+ * apfs_free_main_super - Clean up apfs_read_main_super()
  * @sbi:	in-memory superblock info
  *
  * It also cleans up after apfs_attach_nxi(), so the name is no longer accurate.
  */
-static inline void apfs_unmap_main_super(struct apfs_sb_info *sbi)
+static inline void apfs_free_main_super(struct apfs_sb_info *sbi)
 {
 	struct apfs_nxsb_info *nxi = sbi->s_nxi;
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 5, 0)
 	fmode_t mode = FMODE_READ | FMODE_EXCL;
-	struct apfs_object *obj = NULL;
+#endif
+	struct apfs_ephemeral_object_info *eph_list = NULL;
+	int i;
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 5, 0)
 	if (nxi->nx_flags & APFS_READWRITE)
 		mode |= FMODE_WRITE;
+#endif
 
 	lockdep_assert_held(&nxs_mutex);
 
@@ -298,14 +302,34 @@ static inline void apfs_unmap_main_super(struct apfs_sb_info *sbi)
 	if (--nxi->nx_refcnt)
 		goto out;
 
-	obj = &nxi->nx_object;
-	obj->data = NULL;
-	brelse(obj->o_bh);
-	obj->o_bh = NULL;
-	obj = NULL;
+	/* Clean up all the ephemeral objects in memory */
+	eph_list = nxi->nx_eph_list;
+	if (eph_list) {
+		for (i = 0; i < nxi->nx_eph_count; ++i) {
+			kfree(eph_list[i].object);
+			eph_list[i].object = NULL;
+		}
+		kfree(eph_list);
+		eph_list = nxi->nx_eph_list = NULL;
+		nxi->nx_eph_count = 0;
+	}
 
+	kfree(nxi->nx_raw);
+	nxi->nx_raw = NULL;
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 9, 0)
+	fput(nxi->nx_bdev_file);
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(6, 8, 0)
+	bdev_release(nxi->nx_bdev_handle);
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(6, 5, 0)
+	blkdev_put(nxi->nx_bdev, &apfs_fs_type);
+#else
 	blkdev_put(nxi->nx_bdev, mode);
+#endif
+
 	list_del(&nxi->nx_list);
+	kfree(nxi->nx_spaceman);
+	nxi->nx_spaceman = NULL;
 	kfree(nxi);
 out:
 	sbi->s_nxi = NULL;
@@ -448,13 +472,7 @@ int apfs_map_volume_super(struct super_block *sb, bool write)
 	 * Snapshots could get mounted during a transaction, so the fletcher
 	 * checksum doesn't have to be valid.
 	 */
-	err = apfs_map_volume_super_bno(sb, vsb, !write && !sbi->s_snap_name);
-	if (err)
-		return err;
-
-	if (write)
-		apfs_update_software_info(sb);
-	return 0;
+	return apfs_map_volume_super_bno(sb, vsb, !write && !sbi->s_snap_name);
 
 fail:
 	brelse(bh);
@@ -659,7 +677,10 @@ static void apfs_put_super(struct super_block *sb)
 {
 	struct apfs_sb_info *sbi = APFS_SB(sb);
 
-	/* Update the volume's unmount time */
+	/* Cleanups won't reschedule themselves during unmount */
+	flush_work(&sbi->s_orphan_cleanup_work);
+
+	/* Stop flushing orphans and update the volume as needed */
 	if (!(sb->s_flags & SB_RDONLY)) {
 		struct apfs_superblock *vsb_raw;
 		struct buffer_head *vsb_bh;
@@ -673,6 +694,7 @@ static void apfs_put_super(struct super_block *sb)
 		apfs_assert_in_transaction(sb, &vsb_raw->apfs_o);
 		ASSERT(buffer_trans(vsb_bh));
 
+		apfs_update_software_info(sb);
 		vsb_raw->apfs_unmount_time = cpu_to_le64(ktime_get_real_ns());
 		set_buffer_csum(vsb_bh);
 
@@ -700,7 +722,7 @@ fail:
 	mutex_lock(&nxs_mutex);
 	apfs_put_omap(sbi->s_omap);
 	sbi->s_omap = NULL;
-	apfs_unmap_main_super(sbi);
+	apfs_free_main_super(sbi);
 	mutex_unlock(&nxs_mutex);
 
 	sb->s_fs_info = NULL;
@@ -738,6 +760,7 @@ static struct inode *apfs_alloc_inode(struct super_block *sb)
 	dstream->ds_ext_dirty = false;
 	ai->i_nchildren = 0;
 	INIT_LIST_HEAD(&ai->i_list);
+	ai->i_cleaned = false;
 	return &ai->vfs_inode;
 }
 
@@ -761,6 +784,10 @@ static void init_once(void *p)
 	spin_lock_init(&dstream->ds_ext_lock);
 	inode_init_once(&ai->vfs_inode);
 }
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 9, 0)
+#define SLAB_MEM_SPREAD	0
+#endif
 
 static int __init init_inodecache(void)
 {
@@ -868,10 +895,11 @@ static int apfs_count_used_blocks(struct super_block *sb, u64 *count)
 		vol_id = le64_to_cpu(msb_raw->nx_fs_oid[i]);
 		if (vol_id == 0) /* All volumes have been checked */
 			break;
-		err = apfs_omap_lookup_block(sb, omap, vol_id, &vol_bno,
-					     false /* write */);
-		if (err)
+		err = apfs_omap_lookup_newest_block(sb, omap, vol_id, &vol_bno, false /* write */);
+		if (err) {
+			apfs_err(sb, "omap lookup failed for vol id 0x%llx", vol_id);
 			break;
+		}
 
 		bh = apfs_sb_bread(sb, vol_bno);
 		if (!bh) {
@@ -947,6 +975,8 @@ static int apfs_show_options(struct seq_file *seq, struct dentry *root)
 
 	if (sbi->s_vol_nr != 0)
 		seq_printf(seq, ",vol=%u", sbi->s_vol_nr);
+	if (sbi->s_snap_name)
+		seq_printf(seq, ",snap=%s", sbi->s_snap_name);
 	if (uid_valid(sbi->s_uid))
 		seq_printf(seq, ",uid=%u", from_kuid(&init_user_ns,
 						     sbi->s_uid));
@@ -959,11 +989,14 @@ static int apfs_show_options(struct seq_file *seq, struct dentry *root)
 	return 0;
 }
 
-/* TODO: don't ignore @wait */
 int apfs_sync_fs(struct super_block *sb, int wait)
 {
 	struct apfs_max_ops maxops = {0};
 	int err;
+
+	/* TODO: actually start the commit and return without waiting? */
+	if (wait == 0)
+		return 0;
 
 	err = apfs_transaction_start(sb, maxops);
 	if (err)
@@ -1176,34 +1209,39 @@ static int parse_options(struct super_block *sb, char *options)
 
 out:
 	apfs_set_nx_flags(sb, nx_flags);
-	if ((nxi->nx_flags & APFS_READWRITE) && !(sb->s_flags & SB_RDONLY))
-		apfs_notice(sb, "experimental write support is enabled");
-	else
-		sb->s_flags |= SB_RDONLY;
+	if (!(sb->s_flags & SB_RDONLY)) {
+		if (nxi->nx_flags & APFS_READWRITE) {
+			apfs_notice(sb, "experimental write support is enabled");
+		} else {
+			apfs_warn(sb, "experimental writes disabled to avoid data loss");
+			apfs_warn(sb, "if you really want them, check the README");
+			sb->s_flags |= SB_RDONLY;
+		}
+	}
 	return 0;
 }
 
 /**
- * apfs_check_features - Check for unsupported features in the filesystem
+ * apfs_check_nx_features - Check for unsupported features in the container
  * @sb: superblock structure
  *
  * Returns -EINVAL if unsupported incompatible features are found, otherwise
  * returns 0.
  */
-static int apfs_check_features(struct super_block *sb)
+static int apfs_check_nx_features(struct super_block *sb)
 {
-	struct apfs_nx_superblock *msb_raw = APFS_NXI(sb)->nx_raw;
-	struct apfs_superblock *vsb_raw = APFS_SB(sb)->s_vsb_raw;
+	struct apfs_nx_superblock *msb_raw = NULL;
 	u64 features;
 
-	ASSERT(msb_raw);
-	ASSERT(vsb_raw);
+	msb_raw = APFS_NXI(sb)->nx_raw;
+	if (!msb_raw) {
+		apfs_alert(sb, "feature checks are misplaced");
+		return -EINVAL;
+	}
 
 	features = le64_to_cpu(msb_raw->nx_incompatible_features);
 	if (features & ~APFS_NX_SUPPORTED_INCOMPAT_MASK) {
-		apfs_warn(sb,
-			  "unknown incompatible container features (0x%llx)",
-			  features);
+		apfs_warn(sb, "unknown incompatible container features (0x%llx)", features);
 		return -EINVAL;
 	}
 	if (features & APFS_NX_INCOMPAT_FUSION) {
@@ -1211,10 +1249,38 @@ static int apfs_check_features(struct super_block *sb)
 		return -EINVAL;
 	}
 
+	features = le64_to_cpu(msb_raw->nx_readonly_compatible_features);
+	if (features & ~APFS_NX_SUPPORTED_ROCOMPAT_MASK) {
+		apfs_warn(sb, "unknown read-only compatible container features (0x%llx)", features);
+		if (!sb_rdonly(sb)) {
+			apfs_warn(sb, "container can't be mounted read-write");
+			return -EINVAL;
+		}
+	}
+	return 0;
+}
+
+/**
+ * apfs_check_vol_features - Check for unsupported features in the volume
+ * @sb: superblock structure
+ *
+ * Returns -EINVAL if unsupported incompatible features are found, otherwise
+ * returns 0.
+ */
+static int apfs_check_vol_features(struct super_block *sb)
+{
+	struct apfs_superblock *vsb_raw = NULL;
+	u64 features;
+
+	vsb_raw = APFS_SB(sb)->s_vsb_raw;
+	if (!vsb_raw) {
+		apfs_alert(sb, "feature checks are misplaced");
+		return -EINVAL;
+	}
+
 	features = le64_to_cpu(vsb_raw->apfs_incompatible_features);
 	if (features & ~APFS_SUPPORTED_INCOMPAT_MASK) {
-		apfs_warn(sb, "unknown incompatible volume features (0x%llx)",
-			  features);
+		apfs_warn(sb, "unknown incompatible volume features (0x%llx)", features);
 		return -EINVAL;
 	}
 	if (features & APFS_INCOMPAT_DATALESS_SNAPS) {
@@ -1246,29 +1312,14 @@ static int apfs_check_features(struct super_block *sb)
 	if (!(features & APFS_FS_UNENCRYPTED))
 		apfs_warn(sb, "volume is encrypted, may not be read correctly");
 
-	features = le64_to_cpu(msb_raw->nx_readonly_compatible_features);
-	if (features & ~APFS_NX_SUPPORTED_ROCOMPAT_MASK) {
-		apfs_warn(sb,
-		     "unknown read-only compatible container features (0x%llx)",
-		     features);
-		if (!sb_rdonly(sb)) {
-			apfs_warn(sb, "container can't be mounted read-write");
-			return -EINVAL;
-		}
-	}
-
 	features = le64_to_cpu(vsb_raw->apfs_readonly_compatible_features);
 	if (features & ~APFS_SUPPORTED_ROCOMPAT_MASK) {
-		apfs_warn(sb,
-			"unknown read-only compatible volume features (0x%llx)",
-			features);
+		apfs_warn(sb, "unknown read-only compatible volume features (0x%llx)", features);
 		if (!sb_rdonly(sb)) {
 			apfs_warn(sb, "volume can't be mounted read-write");
 			return -EINVAL;
 		}
 	}
-
-	/* TODO: add checks for encryption, snapshots? */
 	return 0;
 }
 
@@ -1320,10 +1371,31 @@ static int apfs_setup_bdi(struct super_block *sb)
 
 #endif
 
+static void apfs_set_trans_buffer_limit(struct super_block *sb)
+{
+	struct apfs_sb_info *sbi = APFS_SB(sb);
+	unsigned long memsize_in_blocks;
+	struct sysinfo info = {0};
+
+	si_meminfo(&info);
+	memsize_in_blocks = info.totalram << (PAGE_SHIFT - sb->s_blocksize_bits);
+
+	/*
+	 * Buffer heads are not reclaimed while they are part of the current
+	 * transaction, so systems with little memory will crash if we don't
+	 * commit often enough. This hack should make that happen in general,
+	 * but I still need to get the reclaim to work eventually (TODO).
+	 */
+	if (memsize_in_blocks >= 16 * TRANSACTION_BUFFERS_MAX)
+		sbi->s_trans_buffers_max = TRANSACTION_BUFFERS_MAX;
+	else
+		sbi->s_trans_buffers_max = memsize_in_blocks / 16;
+}
+
 static int apfs_fill_super(struct super_block *sb, void *data, int silent)
 {
 	struct apfs_sb_info *sbi = APFS_SB(sb);
-	struct inode *root;
+	struct inode *root = NULL, *priv = NULL;
 	int err;
 
 	ASSERT(sbi);
@@ -1332,6 +1404,8 @@ static int apfs_fill_super(struct super_block *sb, void *data, int silent)
 	err = apfs_setup_bdi(sb);
 	if (err)
 		return err;
+
+	apfs_set_trans_buffer_limit(sb);
 
 	sbi->s_uid = INVALID_UID;
 	sbi->s_gid = INVALID_GID;
@@ -1343,7 +1417,7 @@ static int apfs_fill_super(struct super_block *sb, void *data, int silent)
 	if (err)
 		return err;
 
-	err = apfs_check_features(sb);
+	err = apfs_check_vol_features(sb);
 	if (err)
 		goto failed_omap;
 
@@ -1385,11 +1459,19 @@ static int apfs_fill_super(struct super_block *sb, void *data, int silent)
 		err = PTR_ERR(root);
 		goto failed_mount;
 	}
+
 	sb->s_root = d_make_root(root);
 	if (!sb->s_root) {
 		apfs_err(sb, "unable to get root dentry");
 		err = -ENOMEM;
 		goto failed_mount;
+	}
+
+	INIT_WORK(&sbi->s_orphan_cleanup_work, apfs_orphan_cleanup_work);
+	if (!(sb->s_flags & SB_RDONLY)) {
+		priv = sbi->s_private_dir;
+		if (APFS_I(priv)->i_nchildren)
+			schedule_work(&sbi->s_orphan_cleanup_work);
 	}
 	return 0;
 
@@ -1438,19 +1520,35 @@ static int apfs_test_super(struct super_block *sb, void *data)
 }
 
 /**
- * apfs_set_super - Assign a fake bdev and an info struct to a superblock
+ * apfs_set_super - Assign the device and an info struct to a superblock
  * @sb:		superblock structure to set
  * @data:	superblock info for the volume being mounted
  */
 static int apfs_set_super(struct super_block *sb, void *data)
 {
-	int err = set_anon_super(sb, data);
-	if (!err)
-		sb->s_fs_info = data;
-	return err;
-}
+	struct apfs_sb_info *sbi = data;
+	struct apfs_nxsb_info *nxi = sbi->s_nxi;
+	int err;
 
-static struct file_system_type apfs_fs_type;
+	/*
+	 * This fake device number will be unique to this volume-snapshot
+	 * combination. It gets reported by stat(), so that userland tools can
+	 * use it to tell different mountpoints apart.
+	 */
+	err = get_anon_bdev(&sbi->s_anon_dev);
+	if (err)
+		return err;
+
+	/*
+	 * This is the actual device number, shared by all volumes and
+	 * snapshots. It gets reported by the mountinfo file, and it seems that
+	 * udisks uses it to decide if a device is mounted, so it must be set.
+	 */
+	sb->s_dev = nxi->nx_bdev->bd_dev;
+
+	sb->s_fs_info = sbi;
+	return 0;
+}
 
 /*
  * Wrapper for lookup_bdev() that supports older kernels.
@@ -1480,7 +1578,11 @@ static int apfs_lookup_bdev(const char *pathname, dev_t *dev)
  *
  * Returns 0 on success, or a negative error code in case of failure.
  */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 5, 0)
+static int apfs_attach_nxi(struct apfs_sb_info *sbi, const char *dev_name, blk_mode_t mode)
+#else
 static int apfs_attach_nxi(struct apfs_sb_info *sbi, const char *dev_name, fmode_t mode)
+#endif
 {
 	struct apfs_nxsb_info *nxi;
 	dev_t dev = 0;
@@ -1494,13 +1596,38 @@ static int apfs_attach_nxi(struct apfs_sb_info *sbi, const char *dev_name, fmode
 
 	nxi = apfs_nx_find_by_dev(dev);
 	if (!nxi) {
-		struct block_device *bdev;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 9, 0)
+		struct file *file = NULL;
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(6, 8, 0)
+		struct bdev_handle *handle = NULL;
+#endif
+		struct block_device *bdev = NULL;
 
 		nxi = kzalloc(sizeof(*nxi), GFP_KERNEL);
 		if (!nxi)
 			return -ENOMEM;
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 9, 0)
+		file = bdev_file_open_by_path(dev_name, mode, &apfs_fs_type, NULL);
+		if (IS_ERR(file)) {
+			kfree(nxi);
+			return PTR_ERR(file);
+		}
+		nxi->nx_bdev_file = file;
+		bdev = file_bdev(file);
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(6, 8, 0)
+		handle = bdev_open_by_path(dev_name, mode, &apfs_fs_type, NULL);
+		if (IS_ERR(handle)) {
+			kfree(nxi);
+			return PTR_ERR(handle);
+		}
+		nxi->nx_bdev_handle = handle;
+		bdev = handle->bdev;
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(6, 5, 0)
+		bdev = blkdev_get_by_path(dev_name, mode, &apfs_fs_type, NULL);
+#else
 		bdev = blkdev_get_by_path(dev_name, mode, &apfs_fs_type);
+#endif
 		if (IS_ERR(bdev)) {
 			kfree(nxi);
 			return PTR_ERR(bdev);
@@ -1527,7 +1654,11 @@ static struct dentry *apfs_mount(struct file_system_type *fs_type, int flags,
 	struct apfs_nxsb_info *nxi;
 	struct super_block *sb;
 	struct apfs_sb_info *sbi;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 5, 0)
+	blk_mode_t mode = sb_open_mode(flags);
+#else
 	fmode_t mode = FMODE_READ | FMODE_EXCL;
+#endif
 	int error = 0;
 
 	mutex_lock(&nxs_mutex);
@@ -1544,8 +1675,10 @@ static struct dentry *apfs_mount(struct file_system_type *fs_type, int flags,
 	if (sbi->s_snap_name)
 		flags |= SB_RDONLY;
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 5, 0)
 	if (!(flags & SB_RDONLY))
 		mode |= FMODE_WRITE;
+#endif
 
 	error = apfs_attach_nxi(sbi, dev_name, mode);
 	if (error)
@@ -1563,16 +1696,18 @@ static struct dentry *apfs_mount(struct file_system_type *fs_type, int flags,
 			goto out_deactivate_super;
 		}
 		/* Only one superblock per volume */
-		apfs_unmap_main_super(sbi);
+		apfs_free_main_super(sbi);
 		kfree(sbi->s_snap_name);
 		sbi->s_snap_name = NULL;
 		kfree(sbi);
 		sbi = NULL;
 	} else {
-		error = apfs_map_main_super(sb);
+		error = apfs_read_main_super(sb);
 		if (error)
 			goto out_deactivate_super;
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 5, 0)
 		sb->s_mode = mode;
+#endif
 		snprintf(sb->s_id, sizeof(sb->s_id), "%xg", sb->s_dev);
 		error = apfs_fill_super(sb, data, flags & SB_SILENT ? 1 : 0);
 		if (error)
@@ -1586,7 +1721,7 @@ static struct dentry *apfs_mount(struct file_system_type *fs_type, int flags,
 out_deactivate_super:
 	deactivate_locked_super(sb);
 out_unmap_super:
-	apfs_unmap_main_super(sbi);
+	apfs_free_main_super(sbi);
 out_free_sbi:
 	kfree(sbi->s_snap_name);
 	kfree(sbi);
@@ -1595,11 +1730,19 @@ out_unlock:
 	return ERR_PTR(error);
 }
 
+static void apfs_kill_sb(struct super_block *sb)
+{
+	dev_t anon_dev = APFS_SB(sb)->s_anon_dev;
+
+	generic_shutdown_super(sb);
+	free_anon_bdev(anon_dev);
+}
+
 static struct file_system_type apfs_fs_type = {
 	.owner		= THIS_MODULE,
 	.name		= "apfs",
 	.mount		= apfs_mount,
-	.kill_sb	= kill_anon_super,
+	.kill_sb	= apfs_kill_sb,
 	.fs_flags	= FS_REQUIRES_DEV,
 };
 MODULE_ALIAS_FS("apfs");
@@ -1625,6 +1768,7 @@ static void __exit exit_apfs_fs(void)
 
 MODULE_AUTHOR("Ernesto A. Fernández");
 MODULE_DESCRIPTION("Apple File System");
+MODULE_VERSION(GIT_COMMIT);
 MODULE_LICENSE("GPL");
 module_init(init_apfs_fs)
 module_exit(exit_apfs_fs)

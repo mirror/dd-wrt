@@ -52,7 +52,7 @@ struct prefix_info {
 	__be32			reserved2;
 
 	struct in6_addr		prefix;
-};
+} MIPS_ENABLED(__attribute__((packed, aligned(2))));
 
 /* rfc4861 4.6.2: IPv6 PIO is 32 bytes in size */
 static_assert(sizeof(struct prefix_info) == 32);

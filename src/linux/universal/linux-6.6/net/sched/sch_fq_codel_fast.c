@@ -24,6 +24,7 @@
 #include <linux/version.h>
 #include <net/inet_ecn.h>
 #include <net/netlink.h>
+#include <net/gso.h>
 #include "pkt_sched.h"
 #include <net/pkt_cls.h>
 #include "codel.h"

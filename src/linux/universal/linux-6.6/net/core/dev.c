@@ -10758,8 +10758,6 @@ void netdev_run_todo(void)
 		kobject_put(&dev->dev.kobj);
 	}
 }
-int (*fast_nat_recv)(struct sk_buff *skb) __rcu __read_mostly;
-EXPORT_SYMBOL_GPL(fast_nat_recv);
 
 /* Convert net_device_stats to rtnl_link_stats64. rtnl_link_stats64 has
  * all the same fields in the same order as net_device_stats, with only

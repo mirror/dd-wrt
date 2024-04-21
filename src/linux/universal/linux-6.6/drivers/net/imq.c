@@ -32,6 +32,7 @@
 #include <net/pkt_sched.h>
 #include <net/netfilter/nf_queue.h>
 #include <net/sock.h>
+#include <net/gso.h>
 #include <linux/ip.h>
 #include <linux/ipv6.h>
 #include <linux/if_vlan.h>

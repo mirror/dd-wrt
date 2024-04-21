@@ -119,6 +119,8 @@ bool sch_direct_xmit(struct sk_buff *skb, struct Qdisc *q,
 
 void __qdisc_run(struct Qdisc *q);
 
+struct sk_buff *qdisc_dequeue_skb(struct Qdisc *q, bool *validate);
+
 static inline void qdisc_run(struct Qdisc *q)
 {
 	if (qdisc_run_begin(q)) {

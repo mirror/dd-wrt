@@ -25,7 +25,7 @@ struct udphdr {
 	__be16	dest;
 	__be16	len;
 	__sum16	check;
-};
+} MIPS_ENABLED(__attribute__((packed, aligned(2))));
 
 /* UDP socket options */
 #define UDP_CORK	1	/* Never send partially complete segments */

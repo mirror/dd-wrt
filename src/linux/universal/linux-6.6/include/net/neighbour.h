@@ -286,8 +286,10 @@ static inline bool neigh_key_eq128(const struct neighbour *n, const void *pkey)
 	const u32 *n32 = (const u32 *)n->primary_key;
 	const u32 *p32 = pkey;
 
-	return ((n32[0] ^ p32[0]) | (n32[1] ^ p32[1]) |
-		(n32[2] ^ p32[2]) | (n32[3] ^ p32[3])) == 0;
+	return ((n32[0] ^ net_hdr_word(&p32[0])) |
+		(n32[1] ^ net_hdr_word(&p32[1])) |
+		(n32[2] ^ net_hdr_word(&p32[2])) |
+		(n32[3] ^ net_hdr_word(&p32[3]))) == 0;
 }
 
 static inline struct neighbour *___neigh_lookup_noref(
@@ -491,9 +493,11 @@ static inline int neigh_hh_output(const struct hh_cache *hh, struct sk_buff *skb
 	unsigned int hh_alen = 0;
 	unsigned int seq;
 	unsigned int hh_len;
-
+	int retry;
+	
 	do {
-		seq = read_seqbegin(&hh->hh_lock);
+		if (!hh_output_relaxed)
+			seq = read_seqbegin(&hh->hh_lock);
 		hh_len = READ_ONCE(hh->hh_len);
 		if (likely(hh_len <= HH_DATA_MOD)) {
 			hh_alen = HH_DATA_MOD;
@@ -515,7 +519,12 @@ static inline int neigh_hh_output(const struct hh_cache *hh, struct sk_buff *skb
 				       hh_alen);
 			}
 		}
-	} while (read_seqretry(&hh->hh_lock, seq));
+
+		retry = 0;
+		if (!hh_output_relaxed)
+			retry = read_seqretry(&hh->hh_lock, seq);
+
+	} while (retry);
 
 	if (WARN_ON_ONCE(skb_headroom(skb) < hh_alen)) {
 		kfree_skb(skb);

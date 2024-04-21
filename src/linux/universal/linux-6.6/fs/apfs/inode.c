@@ -64,17 +64,15 @@ static int apfs_create_dstream_rec(struct apfs_dstream_info *dstream)
 {
 	struct super_block *sb = dstream->ds_sb;
 	struct apfs_sb_info *sbi = APFS_SB(sb);
-	struct apfs_key key;
 	struct apfs_query *query;
 	struct apfs_dstream_id_key raw_key;
 	struct apfs_dstream_id_val raw_val;
 	int ret;
 
-	apfs_init_dstream_id_key(dstream->ds_id, &key);
 	query = apfs_alloc_query(sbi->s_cat_root, NULL /* parent */);
 	if (!query)
 		return -ENOMEM;
-	query->key = &key;
+	apfs_init_dstream_id_key(dstream->ds_id, &query->key);
 	query->flags |= APFS_QUERY_CAT | APFS_QUERY_EXACT;
 
 	ret = apfs_btree_query(sb, &query);
@@ -190,7 +188,6 @@ int apfs_dstream_adj_refcnt(struct apfs_dstream_info *dstream, u32 delta)
 {
 	struct super_block *sb = dstream->ds_sb;
 	struct apfs_sb_info *sbi = APFS_SB(sb);
-	struct apfs_key key;
 	struct apfs_query *query;
 	struct apfs_dstream_id_val raw_val;
 	void *raw = NULL;
@@ -199,11 +196,10 @@ int apfs_dstream_adj_refcnt(struct apfs_dstream_info *dstream, u32 delta)
 
 	ASSERT(APFS_I(dstream->ds_inode)->i_has_dstream);
 
-	apfs_init_dstream_id_key(dstream->ds_id, &key);
 	query = apfs_alloc_query(sbi->s_cat_root, NULL /* parent */);
 	if (!query)
 		return -ENOMEM;
-	query->key = &key;
+	apfs_init_dstream_id_key(dstream->ds_id, &query->key);
 	query->flags |= APFS_QUERY_CAT | APFS_QUERY_EXACT;
 
 	ret = apfs_btree_query(sb, &query);
@@ -268,7 +264,6 @@ static int apfs_create_crypto_rec(struct inode *inode)
 	struct super_block *sb = inode->i_sb;
 	struct apfs_sb_info *sbi = APFS_SB(sb);
 	struct apfs_dstream_info *dstream = &APFS_I(inode)->i_dstream;
-	struct apfs_key key;
 	struct apfs_query *query;
 	struct apfs_crypto_state_key raw_key;
 	int ret;
@@ -276,11 +271,10 @@ static int apfs_create_crypto_rec(struct inode *inode)
 	if (inode->i_size || inode->i_blocks) /* Already has a dstream */
 		return 0;
 
-	apfs_init_crypto_state_key(dstream->ds_id, &key);
 	query = apfs_alloc_query(sbi->s_cat_root, NULL /* parent */);
 	if (!query)
 		return -ENOMEM;
-	query->key = &key;
+	apfs_init_crypto_state_key(dstream->ds_id, &query->key);
 	query->flags |= APFS_QUERY_CAT | APFS_QUERY_EXACT;
 
 	ret = apfs_btree_query(sb, &query);
@@ -288,14 +282,16 @@ static int apfs_create_crypto_rec(struct inode *inode)
 		goto out;
 
 	apfs_key_set_hdr(APFS_TYPE_CRYPTO_STATE, dstream->ds_id, &raw_key);
-	if(sbi->s_dflt_pfk) {
+	if (sbi->s_dflt_pfk) {
 		struct apfs_crypto_state_val *raw_val = sbi->s_dflt_pfk;
-		unsigned key_len = le16_to_cpu(raw_val->state.key_len);
+		unsigned int key_len = le16_to_cpu(raw_val->state.key_len);
+
 		ret = apfs_btree_insert(query, &raw_key, sizeof(raw_key), raw_val, sizeof(*raw_val) + key_len);
 		if (ret)
 			apfs_err(sb, "insertion failed for id 0x%llx", dstream->ds_id);
 	} else {
 		struct apfs_crypto_state_val raw_val;
+
 		raw_val.refcnt = cpu_to_le32(1);
 		raw_val.state.major_version = cpu_to_le16(APFS_WMCS_MAJOR_VERSION);
 		raw_val.state.minor_version = cpu_to_le16(APFS_WMCS_MINOR_VERSION);
@@ -318,7 +314,7 @@ out:
  * apfs_dflt_key_class - Returns default key class for files in volume
  * @sb: volume superblock
  */
-static unsigned apfs_dflt_key_class(struct super_block *sb)
+static unsigned int apfs_dflt_key_class(struct super_block *sb)
 {
 	struct apfs_sb_info *sbi = APFS_SB(sb);
 
@@ -341,7 +337,6 @@ static unsigned apfs_dflt_key_class(struct super_block *sb)
 int apfs_crypto_adj_refcnt(struct super_block *sb, u64 crypto_id, int delta)
 {
 	struct apfs_sb_info *sbi = APFS_SB(sb);
-	struct apfs_key key;
 	struct apfs_query *query;
 	struct apfs_crypto_state_val *raw_val;
 	char *raw;
@@ -350,11 +345,10 @@ int apfs_crypto_adj_refcnt(struct super_block *sb, u64 crypto_id, int delta)
 	if (!crypto_id)
 		return 0;
 
-	apfs_init_crypto_state_key(crypto_id, &key);
 	query = apfs_alloc_query(sbi->s_cat_root, NULL /* parent */);
 	if (!query)
 		return -ENOMEM;
-	query->key = &key;
+	apfs_init_crypto_state_key(crypto_id, &query->key);
 	query->flags |= APFS_QUERY_CAT | APFS_QUERY_EXACT;
 
 	ret = apfs_btree_query(sb, &query);
@@ -394,23 +388,21 @@ int APFS_CRYPTO_ADJ_REFCNT_MAXOPS(void)
 static int apfs_crypto_set_key(struct super_block *sb, u64 crypto_id, struct apfs_crypto_state_val *new_val)
 {
 	struct apfs_sb_info *sbi = APFS_SB(sb);
-	struct apfs_key key;
 	struct apfs_query *query;
 	struct apfs_crypto_state_val *raw_val;
 	char *raw;
 	int ret;
-	unsigned pfk_len;
+	unsigned int pfk_len;
 
 	if (!crypto_id)
 		return 0;
 
 	pfk_len = le16_to_cpu(new_val->state.key_len);
 
-	apfs_init_crypto_state_key(crypto_id, &key);
 	query = apfs_alloc_query(sbi->s_cat_root, NULL /* parent */);
 	if (!query)
 		return -ENOMEM;
-	query->key = &key;
+	apfs_init_crypto_state_key(crypto_id, &query->key);
 	query->flags |= APFS_QUERY_CAT | APFS_QUERY_EXACT;
 
 	ret = apfs_btree_query(sb, &query);
@@ -441,24 +433,22 @@ out:
  * @max_len: maximum allowed value of val->state.key_len
  */
 static int apfs_crypto_get_key(struct super_block *sb, u64 crypto_id, struct apfs_crypto_state_val *val,
-			       unsigned max_len)
+			       unsigned int max_len)
 {
 	struct apfs_sb_info *sbi = APFS_SB(sb);
-	struct apfs_key key;
 	struct apfs_query *query;
 	struct apfs_crypto_state_val *raw_val;
 	char *raw;
 	int ret;
-	unsigned pfk_len;
+	unsigned int pfk_len;
 
 	if (!crypto_id)
 		return -ENOENT;
 
-	apfs_init_crypto_state_key(crypto_id, &key);
 	query = apfs_alloc_query(sbi->s_cat_root, NULL /* parent */);
 	if (!query)
 		return -ENOMEM;
-	query->key = &key;
+	apfs_init_crypto_state_key(crypto_id, &query->key);
 	query->flags |= APFS_QUERY_CAT | APFS_QUERY_EXACT;
 
 	ret = apfs_btree_query(sb, &query);
@@ -468,7 +458,7 @@ static int apfs_crypto_get_key(struct super_block *sb, u64 crypto_id, struct apf
 	raw_val = (void *)raw + query->off;
 
 	pfk_len = le16_to_cpu(raw_val->state.key_len);
-	if(pfk_len > max_len) {
+	if (pfk_len > max_len) {
 		ret = -ENOSPC;
 		goto out;
 	}
@@ -486,6 +476,9 @@ int __apfs_write_begin(struct file *file, struct address_space *mapping, loff_t 
 	struct apfs_dstream_info *dstream = &APFS_I(inode)->i_dstream;
 	struct super_block *sb = inode->i_sb;
 	struct page *page;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 7, 0)
+	struct folio *folio;
+#endif
 	struct buffer_head *bh, *head;
 	unsigned int blocksize, block_start, block_end, from, to;
 	pgoff_t index = pos >> PAGE_SHIFT;
@@ -501,7 +494,7 @@ int __apfs_write_begin(struct file *file, struct address_space *mapping, loff_t 
 		return err;
 	}
 
-	if(apfs_vol_is_encrypted(sb)) {
+	if (apfs_vol_is_encrypted(sb)) {
 		err = apfs_create_crypto_rec(inode);
 		if (err) {
 			apfs_err(sb, "crypto creation failed for ino 0x%llx", apfs_ino(inode));
@@ -518,8 +511,16 @@ int __apfs_write_begin(struct file *file, struct address_space *mapping, loff_t 
 #endif
 	if (!page)
 		return -ENOMEM;
-	if (!page_has_buffers(page))
+	if (!page_has_buffers(page)) {
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 7, 0)
 		create_empty_buffers(page, sb->s_blocksize, 0);
+#else
+		folio = page_folio(page);
+		bh = folio_buffers(folio);
+		if (!bh)
+			bh = create_empty_buffers(folio, sb->s_blocksize, 0);
+#endif
+	}
 
 	/* CoW moves existing blocks, so read them but mark them as unmapped */
 	head = page_buffers(page);
@@ -679,6 +680,12 @@ static void apfs_noop_invalidate_folio(struct folio *folio, size_t offset, size_
 
 /* bmap is not implemented to avoid issues with CoW on swapfiles */
 static const struct address_space_operations apfs_aops = {
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 18, 0)
+	.dirty_folio	= block_dirty_folio,
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(5, 14, 0)
+	.set_page_dirty	= __set_page_dirty_buffers,
+#endif
+
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 19, 0)
 	.read_folio	= apfs_read_folio,
 #else
@@ -716,11 +723,13 @@ static void apfs_inode_set_ops(struct inode *inode, dev_t rdev, bool compressed)
 	switch (inode->i_mode & S_IFMT) {
 	case S_IFREG:
 		inode->i_op = &apfs_file_inode_operations;
-		if (compressed)
+		if (compressed) {
 			inode->i_fop = &apfs_compress_file_operations;
-		else
+			inode->i_mapping->a_ops = &apfs_compress_aops;
+		} else {
 			inode->i_fop = &apfs_file_operations;
-		inode->i_mapping->a_ops = &apfs_aops;
+			inode->i_mapping->a_ops = &apfs_aops;
+		}
 		break;
 	case S_IFDIR:
 		inode->i_op = &apfs_dir_inode_operations;
@@ -789,9 +798,19 @@ static int apfs_inode_from_query(struct apfs_query *query, struct inode *inode)
 		ai->i_nchildren = le32_to_cpu(inode_val->nchildren);
 	}
 
-	inode->i_atime = ns_to_timespec64(le64_to_cpu(inode_val->access_time));
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 6, 0)
 	inode->i_ctime = ns_to_timespec64(le64_to_cpu(inode_val->change_time));
+#else
+	inode_set_ctime_to_ts(inode, ns_to_timespec64(le64_to_cpu(inode_val->change_time)));
+#endif
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 7, 0)
+	inode->i_atime = ns_to_timespec64(le64_to_cpu(inode_val->access_time));
 	inode->i_mtime = ns_to_timespec64(le64_to_cpu(inode_val->mod_time));
+#else
+	inode_set_atime_to_ts(inode, ns_to_timespec64(le64_to_cpu(inode_val->access_time)));
+	inode_set_mtime_to_ts(inode, ns_to_timespec64(le64_to_cpu(inode_val->mod_time)));
+#endif
 	ai->i_crtime = ns_to_timespec64(le64_to_cpu(inode_val->create_time));
 
 	dstream->ds_size = inode->i_size = inode->i_blocks = 0;
@@ -854,23 +873,22 @@ static struct apfs_query *apfs_inode_lookup(const struct inode *inode)
 {
 	struct super_block *sb = inode->i_sb;
 	struct apfs_sb_info *sbi = APFS_SB(sb);
-	struct apfs_key key;
 	struct apfs_query *query;
 	int ret;
-
-	apfs_init_inode_key(apfs_ino(inode), &key);
 
 	query = apfs_alloc_query(sbi->s_cat_root, NULL /* parent */);
 	if (!query)
 		return ERR_PTR(-ENOMEM);
-	query->key = &key;
+	apfs_init_inode_key(apfs_ino(inode), &query->key);
 	query->flags |= APFS_QUERY_CAT | APFS_QUERY_EXACT;
 
 	ret = apfs_btree_query(sb, &query);
 	if (!ret)
 		return query;
 
-	apfs_err(sb, "query failed for id 0x%llx", apfs_ino(inode));
+	/* Don't complain if an orphan is already gone */
+	if (!current_work() || ret != -ENODATA)
+		apfs_err(sb, "query failed for id 0x%llx", apfs_ino(inode));
 	apfs_free_query(query);
 	return ERR_PTR(ret);
 }
@@ -924,7 +942,6 @@ static int apfs_check_dstream_refcnt(struct inode *inode)
 	struct apfs_dstream_info *dstream = &ai->i_dstream;
 	struct super_block *sb = inode->i_sb;
 	struct apfs_sb_info *sbi = APFS_SB(sb);
-	struct apfs_key key;
 	struct apfs_query *query = NULL;
 	struct apfs_dstream_id_val raw_val;
 	void *raw = NULL;
@@ -936,11 +953,10 @@ static int apfs_check_dstream_refcnt(struct inode *inode)
 		return 0;
 	}
 
-	apfs_init_dstream_id_key(dstream->ds_id, &key);
 	query = apfs_alloc_query(sbi->s_cat_root, NULL /* parent */);
 	if (!query)
 		return -ENOMEM;
-	query->key = &key;
+	apfs_init_dstream_id_key(dstream->ds_id, &query->key);
 	query->flags |= APFS_QUERY_CAT | APFS_QUERY_EXACT;
 
 	ret = apfs_btree_query(sb, &query);
@@ -991,8 +1007,10 @@ struct inode *apfs_iget(struct super_block *sb, u64 cnid)
 	down_read(&nxi->nx_big_sem);
 	query = apfs_inode_lookup(inode);
 	if (IS_ERR(query)) {
-		apfs_err(sb, "lookup failed for ino 0x%llx", cnid);
 		err = PTR_ERR(query);
+		/* Don't complain if an orphan is already gone */
+		if (!current_work() || err != -ENODATA)
+			apfs_err(sb, "lookup failed for ino 0x%llx", cnid);
 		goto fail;
 	}
 	err = apfs_inode_from_query(query, inode);
@@ -1030,6 +1048,7 @@ int apfs_getattr(struct vfsmount *mnt, struct dentry *dentry,
 	struct inode *inode = d_inode(dentry);
 
 	generic_fillattr(inode, stat);
+	stat->dev = APFS_SB(inode->i_sb)->s_anon_dev;
 	stat->ino = apfs_ino(inode);
 	return 0;
 }
@@ -1073,10 +1092,13 @@ int apfs_getattr(struct mnt_idmap *idmap,
 	generic_fillattr(inode, stat);
 #elif LINUX_VERSION_CODE < KERNEL_VERSION(6, 3, 0)
 	generic_fillattr(mnt_userns, inode, stat);
-#else
+#elif LINUX_VERSION_CODE < KERNEL_VERSION(6, 6, 0)
 	generic_fillattr(idmap, inode, stat);
+#else
+	generic_fillattr(idmap, request_mask, inode, stat);
 #endif
 
+	stat->dev = APFS_SB(inode->i_sb)->s_anon_dev;
 	stat->ino = apfs_ino(inode);
 	return 0;
 }
@@ -1096,6 +1118,9 @@ static int apfs_build_inode_val(struct inode *inode, struct qstr *qname,
 {
 	struct apfs_inode_val *val;
 	struct apfs_x_field xkey;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 7, 0)
+	struct timespec64 ts;
+#endif
 	int total_xlen, val_len;
 	bool is_device = S_ISCHR(inode->i_mode) || S_ISBLK(inode->i_mode);
 	__le32 rdev;
@@ -1114,7 +1139,12 @@ static int apfs_build_inode_val(struct inode *inode, struct qstr *qname,
 	val->parent_id = cpu_to_le64(APFS_I(inode)->i_parent_id);
 	val->private_id = cpu_to_le64(apfs_ino(inode));
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 7, 0)
 	val->mod_time = cpu_to_le64(timespec64_to_ns(&inode->i_mtime));
+#else
+	ts = inode_get_mtime(inode);
+	val->mod_time = cpu_to_le64(timespec64_to_ns(&ts));
+#endif
 	val->create_time = val->change_time = val->access_time = val->mod_time;
 
 	if (S_ISDIR(inode->i_mode))
@@ -1225,7 +1255,7 @@ static int apfs_create_dstream_xfield(struct inode *inode,
 
 	dstream_raw.size = cpu_to_le64(inode->i_size);
 	dstream_raw.alloced_size = cpu_to_le64(apfs_alloced_size(dstream));
-	if(apfs_vol_is_encrypted(inode->i_sb))
+	if (apfs_vol_is_encrypted(inode->i_sb))
 		dstream_raw.default_crypto_id = cpu_to_le64(dstream->ds_id);
 
 	/* TODO: can we assume that all inode records have an xfield blob? */
@@ -1476,9 +1506,22 @@ int apfs_update_inode(struct inode *inode, char *new_name)
 	if (gid_valid(sbi->s_gid))
 		inode_raw->group = cpu_to_le32(ai->i_saved_gid);
 
-	inode_raw->access_time = cpu_to_le64(timespec64_to_ns(&inode->i_atime));
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 6, 0)
 	inode_raw->change_time = cpu_to_le64(timespec64_to_ns(&inode->i_ctime));
+#else
+	struct timespec64 ictime = inode_get_ctime(inode);
+	inode_raw->change_time = cpu_to_le64(timespec64_to_ns(&ictime));
+#endif
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 7, 0)
+	inode_raw->access_time = cpu_to_le64(timespec64_to_ns(&inode->i_atime));
 	inode_raw->mod_time = cpu_to_le64(timespec64_to_ns(&inode->i_mtime));
+#else
+	struct timespec64 ts = inode_get_mtime(inode);
+	inode_raw->mod_time = cpu_to_le64(timespec64_to_ns(&ts));
+	ts = inode_get_atime(inode);
+	inode_raw->access_time = cpu_to_le64(timespec64_to_ns(&ts));
+#endif
 	inode_raw->create_time = cpu_to_le64(timespec64_to_ns(&ai->i_crtime));
 
 	if (S_ISDIR(inode->i_mode)) {
@@ -1501,13 +1544,16 @@ int APFS_UPDATE_INODE_MAXOPS(void)
  * apfs_delete_inode - Delete an inode record
  * @inode: the vfs inode to delete
  *
- * Returns 0 on success or a negative error code in case of failure.
+ * Returns 0 on success or a negative error code in case of failure, which may
+ * be -EAGAIN if the inode was not deleted in full.
  */
 static int apfs_delete_inode(struct inode *inode)
 {
 	struct super_block *sb = inode->i_sb;
+	struct apfs_inode_info *ai = APFS_I(inode);
 	struct apfs_dstream_info *dstream = NULL;
 	struct apfs_query *query;
+	u64 old_dstream_id;
 	int ret;
 
 	ret = apfs_delete_all_xattrs(inode);
@@ -1515,6 +1561,9 @@ static int apfs_delete_inode(struct inode *inode)
 		apfs_err(sb, "xattr deletion failed for ino 0x%llx", apfs_ino(inode));
 		return ret;
 	}
+
+	dstream = &ai->i_dstream;
+	old_dstream_id = dstream->ds_id;
 
 	/*
 	 * This is very wasteful since all the new extents and references will
@@ -1527,12 +1576,27 @@ static int apfs_delete_inode(struct inode *inode)
 		return ret;
 	}
 
-	/* TODO: truncate an orphan inode in multiple transactions */
-	dstream = &APFS_I(inode)->i_dstream;
-	ret = apfs_truncate(dstream, 0 /* new_size */);
+	/* TODO: what about partial deletion of xattrs? Is that allowed? */
+	ret = apfs_inode_delete_front(inode);
 	if (ret) {
-		apfs_err(sb, "truncation failed for ino 0x%llx", apfs_ino(inode));
-		return ret;
+		/*
+		 * If the inode had too many extents, only the first few get
+		 * deleted and the inode remains in the orphan list for now.
+		 * I don't know why the deletion starts at the front, but it
+		 * seems to be what the official driver does.
+		 */
+		if (ret != -EAGAIN) {
+			apfs_err(sb, "head deletion failed for ino 0x%llx", apfs_ino(inode));
+			return ret;
+		}
+		if (dstream->ds_id != old_dstream_id) {
+			ret = apfs_update_inode(inode, NULL /* new_name */);
+			if (ret) {
+				apfs_err(sb, "dstream id update failed for orphan 0x%llx", apfs_ino(inode));
+				return ret;
+			}
+		}
+		return -EAGAIN;
 	}
 
 	ret = apfs_put_dstream_rec(dstream);
@@ -1540,6 +1604,8 @@ static int apfs_delete_inode(struct inode *inode)
 		apfs_err(sb, "failed to put dstream for ino 0x%llx", apfs_ino(inode));
 		return ret;
 	}
+	dstream = NULL;
+	ai->i_has_dstream = false;
 
 	query = apfs_inode_lookup(inode);
 	if (IS_ERR(query)) {
@@ -1548,40 +1614,189 @@ static int apfs_delete_inode(struct inode *inode)
 	}
 	ret = apfs_btree_remove(query);
 	apfs_free_query(query);
-	if (ret)
+	if (ret) {
 		apfs_err(sb, "removal failed for ino 0x%llx", apfs_ino(inode));
+		return ret;
+	}
+
+	ai->i_cleaned = true;
 	return ret;
 }
 #define APFS_DELETE_INODE_MAXOPS	1
 
+/**
+ * apfs_clean_single_orphan - Clean the given orphan file
+ * @inode:	inode for the file to clean
+ *
+ * Returns 0 on success or a negative error code in case of failure, which may
+ * be -EAGAIN if the file could not be deleted in full.
+ */
+static int apfs_clean_single_orphan(struct inode *inode)
+{
+	struct super_block *sb = inode->i_sb;
+	struct apfs_max_ops maxops = {0}; /* TODO: rethink this stuff */
+	u64 ino = apfs_ino(inode);
+	bool eagain = false;
+	int err;
+
+	err = apfs_transaction_start(sb, maxops);
+	if (err)
+		return err;
+	err = apfs_delete_inode(inode);
+	if (err) {
+		if (err != -EAGAIN) {
+			apfs_err(sb, "failed to delete orphan 0x%llx", ino);
+			goto fail;
+		}
+		eagain = true;
+	} else {
+		err = apfs_delete_orphan_link(inode);
+		if (err) {
+			apfs_err(sb, "failed to unlink orphan 0x%llx", ino);
+			goto fail;
+		}
+	}
+	err = apfs_transaction_commit(sb);
+	if (err)
+		goto fail;
+	return eagain ? -EAGAIN : 0;
+
+fail:
+	apfs_transaction_abort(sb);
+	return err;
+}
+
+/**
+ * apfs_clean_any_orphan - Pick an orphan and delete as much as reasonable
+ * @sb:		filesystem superblock
+ *
+ * Returns 0 on success, or a negative error code in case of failure, which may
+ * be -ENODATA if there are no more orphan files or -EAGAIN if a file could not
+ * be deleted in full.
+ */
+static int apfs_clean_any_orphan(struct super_block *sb)
+{
+	struct apfs_nxsb_info *nxi = APFS_NXI(sb);
+	struct inode *inode = NULL;
+	int err;
+	u64 ino;
+
+	down_read(&nxi->nx_big_sem);
+	err = apfs_any_orphan_ino(sb, &ino);
+	up_read(&nxi->nx_big_sem);
+	if (err) {
+		if (err == -ENODATA)
+			return -ENODATA;
+		apfs_err(sb, "failed to find orphan inode numbers");
+		return err;
+	}
+
+	inode = apfs_iget(sb, ino);
+	if (IS_ERR(inode)) {
+		err = PTR_ERR(inode);
+		if (err != -ENODATA) {
+			apfs_err(sb, "iget failed for orphan 0x%llx", ino);
+			return err;
+		}
+		/*
+		 * This happens rarely for files with no extents, if we hit a
+		 * race with ->evict_inode(). Not a problem: the file is gone.
+		 */
+		apfs_notice(sb, "orphan 0x%llx not found", ino);
+		return 0;
+	}
+
+	if (atomic_read(&inode->i_count) > 1)
+		goto out;
+	err = apfs_clean_single_orphan(inode);
+	if (err && err != -EAGAIN) {
+		apfs_err(sb, "failed to clean orphan 0x%llx", ino);
+		goto out;
+	}
+out:
+	iput(inode);
+	return err;
+}
+
+/**
+ * apfs_clean_orphans - Delete as many orphan files as is reasonable
+ * @sb: filesystem superblock
+ *
+ * Returns 0 on success or a negative error code in case of failure.
+ */
+static int apfs_clean_orphans(struct super_block *sb)
+{
+	int ret, i;
+
+	for (i = 0; i < 100; ++i) {
+		ret = apfs_clean_any_orphan(sb);
+		if (ret) {
+			if (ret == -ENODATA)
+				return 0;
+			if (ret == -EAGAIN)
+				break;
+			apfs_err(sb, "failed to delete an orphan file");
+			return ret;
+		}
+	}
+
+	/*
+	 * If a file is too big, or if there are too many files, take a break
+	 * and continue later.
+	 */
+	if (atomic_read(&sb->s_active) != 0)
+		schedule_work(&APFS_SB(sb)->s_orphan_cleanup_work);
+	return 0;
+}
+
 void apfs_evict_inode(struct inode *inode)
 {
 	struct super_block *sb = inode->i_sb;
-	struct apfs_max_ops maxops;
+	struct apfs_inode_info *ai = APFS_I(inode);
+	int err;
 
-	if (is_bad_inode(inode) || inode->i_nlink)
-		goto out_clear;
+	if (is_bad_inode(inode) || inode->i_nlink || ai->i_cleaned)
+		goto out;
 
-	maxops.cat = APFS_DELETE_INODE_MAXOPS + APFS_DELETE_ORPHAN_LINK_MAXOPS();
-	maxops.blks = 0;
+	if (!ai->i_has_dstream || ai->i_dstream.ds_size == 0) {
+		/* For files with no extents, scheduled cleanup wastes time */
+		err = apfs_clean_single_orphan(inode);
+		if (err)
+			apfs_err(sb, "failed to clean orphan 0x%llx (err:%d)", apfs_ino(inode), err);
+		goto out;
+	}
 
-	if (apfs_transaction_start(sb, maxops))
-		goto out_report;
-	if (apfs_delete_inode(inode))
-		goto out_abort;
-	if (apfs_delete_orphan_link(inode))
-		goto out_abort;
-	if (apfs_transaction_commit(sb))
-		goto out_abort;
-	goto out_clear;
-
-out_abort:
-	apfs_transaction_abort(sb);
-out_report:
-	apfs_err(sb, "failed to delete orphan inode 0x%llx", apfs_ino(inode));
-out_clear:
+	/*
+	 * If the inode still has extents then schedule cleanup for the rest
+	 * of it. Not during unmount though: completing all cleanup could take
+	 * a while so just leave future mounts to handle the orphans.
+	 */
+	if (atomic_read(&sb->s_active))
+		schedule_work(&APFS_SB(sb)->s_orphan_cleanup_work);
+out:
 	truncate_inode_pages_final(&inode->i_data);
 	clear_inode(inode);
+}
+
+void apfs_orphan_cleanup_work(struct work_struct *work)
+{
+	struct super_block *sb = NULL;
+	struct apfs_sb_info *sbi = NULL;
+	struct inode *priv = NULL;
+	int err;
+
+	sbi = container_of(work, struct apfs_sb_info, s_orphan_cleanup_work);
+	priv = sbi->s_private_dir;
+	sb = priv->i_sb;
+
+	if (sb->s_flags & SB_RDONLY) {
+		apfs_alert(sb, "attempt to flush orphans in read-only mount");
+		return;
+	}
+
+	err = apfs_clean_orphans(sb);
+	if (err)
+		apfs_err(sb, "orphan cleanup failed (err:%d)", err);
 }
 
 /**
@@ -1657,7 +1872,14 @@ struct inode *apfs_new_inode(struct inode *dir, umode_t mode, dev_t rdev)
 	dstream->ds_shared = false;
 
 	now = current_time(inode);
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 6, 0)
 	inode->i_atime = inode->i_mtime = inode->i_ctime = ai->i_crtime = now;
+#elif LINUX_VERSION_CODE < KERNEL_VERSION(6, 7, 0)
+	inode_set_ctime_to_ts(inode, now);
+	inode->i_atime = inode->i_mtime = ai->i_crtime = now;
+#else
+	ai->i_crtime = simple_inode_init_ts(inode);
+#endif
 	vsb_raw->apfs_last_mod_time = cpu_to_le64(timespec64_to_ns(&now));
 
 	if (S_ISREG(mode))
@@ -1694,18 +1916,16 @@ int apfs_create_inode_rec(struct super_block *sb, struct inode *inode,
 			  struct dentry *dentry)
 {
 	struct apfs_sb_info *sbi = APFS_SB(sb);
-	struct apfs_key key;
 	struct apfs_query *query;
 	struct apfs_inode_key raw_key;
 	struct apfs_inode_val *raw_val;
 	int val_len;
 	int ret;
 
-	apfs_init_inode_key(apfs_ino(inode), &key);
 	query = apfs_alloc_query(sbi->s_cat_root, NULL /* parent */);
 	if (!query)
 		return -ENOMEM;
-	query->key = &key;
+	apfs_init_inode_key(apfs_ino(inode), &query->key);
 	query->flags |= APFS_QUERY_CAT;
 
 	ret = apfs_btree_query(sb, &query);
@@ -1751,7 +1971,13 @@ static int apfs_setsize(struct inode *inode, loff_t new_size)
 
 	if (new_size == inode->i_size)
 		return 0;
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 6, 0)
 	inode->i_mtime = inode->i_ctime = current_time(inode);
+#elif LINUX_VERSION_CODE < KERNEL_VERSION(6, 7, 0)
+	inode->i_mtime = inode_set_ctime_current(inode);
+#else
+	inode_set_mtime_to_ts(inode, inode_set_ctime_current(inode));
+#endif
 
 	err = apfs_inode_create_dstream_rec(inode);
 	if (err) {
@@ -1837,7 +2063,11 @@ fail:
 }
 
 /* TODO: this only seems to be necessary because ->write_inode() isn't firing */
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 6, 0)
 int apfs_update_time(struct inode *inode, struct timespec64 *time, int flags)
+#else
+int apfs_update_time(struct inode *inode, int flags)
+#endif
 {
 	struct super_block *sb = inode->i_sb;
 	struct apfs_max_ops maxops;
@@ -1851,9 +2081,11 @@ int apfs_update_time(struct inode *inode, struct timespec64 *time, int flags)
 		return err;
 	apfs_inode_join_transaction(sb, inode);
 
-	err = generic_update_time(inode, time, flags);
-	if (err)
-		goto fail;
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 6, 0)
+	generic_update_time(inode, time, flags);
+#else
+	generic_update_time(inode, flags);
+#endif
 
 	err = apfs_transaction_commit(sb);
 	if (err)
@@ -1873,7 +2105,7 @@ static int apfs_ioc_set_dflt_pfk(struct file *file, void __user *user_pfk)
 	struct apfs_nxsb_info *nxi = APFS_NXI(sb);
 	struct apfs_wrapped_crypto_state pfk_hdr;
 	struct apfs_crypto_state_val *pfk;
-	unsigned key_len;
+	unsigned int key_len;
 
 	if (__copy_from_user(&pfk_hdr, user_pfk, sizeof(pfk_hdr)))
 		return -EFAULT;
@@ -1940,7 +2172,7 @@ static int apfs_ioc_set_pfk(struct file *file, void __user *user_pfk)
 	struct apfs_inode_info *ai = APFS_I(inode);
 	struct apfs_dstream_info *dstream = &ai->i_dstream;
 	struct apfs_max_ops maxops;
-	unsigned key_len, key_class;
+	unsigned int key_len, key_class;
 	int err;
 
 	if (__copy_from_user(&pfk_hdr, user_pfk, sizeof(pfk_hdr)))
@@ -2007,7 +2239,7 @@ static int apfs_ioc_get_pfk(struct file *file, void __user *user_pfk)
 	struct apfs_nxsb_info *nxi = APFS_NXI(sb);
 	struct apfs_wrapped_crypto_state pfk_hdr;
 	struct apfs_crypto_state_val *pfk;
-	unsigned max_len, key_len;
+	unsigned int max_len, key_len;
 	struct apfs_dstream_info *dstream = &APFS_I(inode)->i_dstream;
 	int err;
 
@@ -2274,7 +2506,11 @@ int apfs_fileattr_set(struct mnt_idmap *idmap, struct dentry *dentry, struct fil
 
 	apfs_inode_join_transaction(sb, inode);
 	apfs_setflags(inode, fa->flags);
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 6, 0)
 	inode->i_ctime = current_time(inode);
+#else
+	inode_set_ctime_current(inode);
+#endif
 
 	err = apfs_transaction_commit(sb);
 	if (err)

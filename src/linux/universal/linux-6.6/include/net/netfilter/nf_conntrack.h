@@ -53,6 +53,8 @@ struct nf_conntrack_net {
 	/* only used when new connection is allocated: */
 	atomic_t count;
 	unsigned int expect_count;
+	u8 sysctl_auto_assign_helper;
+	bool auto_assign_helper_warned;
 
 	/* only used from work queues, configuration plane, and so on: */
 	unsigned int users4;
@@ -68,6 +70,12 @@ struct nf_conntrack_net {
 
 #include <linux/types.h>
 #include <linux/skbuff.h>
+
+#ifdef CONFIG_NETFILTER_DEBUG
+#define NF_CT_ASSERT(x)		WARN_ON(!(x))
+#else
+#define NF_CT_ASSERT(x)
+#endif
 
 #include <net/netfilter/ipv4/nf_conntrack_ipv4.h>
 #include <net/netfilter/ipv6/nf_conntrack_ipv6.h>
@@ -121,6 +129,23 @@ struct nf_conn {
 	/* Extensions */
 	struct nf_ct_ext *ext;
 
+#if defined(CONFIG_NETFILTER_XT_MATCH_LAYER7) || \
+    defined(CONFIG_NETFILTER_XT_MATCH_LAYER7_MODULE)
+	struct {
+		/*
+		 * e.g. "http". NULL before decision. "unknown" after decision
+		 * if no match.
+		 */
+		char *app_proto;
+		/*
+		 * application layer data so far. NULL after match decision.
+		 */
+		char *app_data;
+		unsigned int app_data_len;
+	} layer7;
+#endif
+
+
 	/* Storage reserved for other modules, must be the last member */
 	union nf_conntrack_proto proto;
 };
@@ -163,6 +188,8 @@ static inline struct net *nf_ct_net(const struct nf_conn *ct)
 /* Alter reply tuple (maybe alter helper). */
 void nf_conntrack_alter_reply(struct nf_conn *ct,
 			      const struct nf_conntrack_tuple *newreply);
+
+void nf_conntrack_flush(void);
 
 /* Is this tuple taken? (ignoring any belonging to the given
    conntrack). */
@@ -369,6 +396,12 @@ static inline struct nf_conntrack_net *nf_ct_pernet(const struct net *net)
 int nf_ct_skb_network_trim(struct sk_buff *skb, int family);
 int nf_ct_handle_fragments(struct net *net, struct sk_buff *skb,
 			   u16 zone, u8 family, u8 *proto, u16 *mru);
+
+#ifdef CONFIG_NDPI_HOOK
+void register_ndpi_hook(void (*hook)(struct nf_conn *));
+void unregister_ndpi_hook(void);
+
+#endif
 
 #define NF_CT_STAT_INC(net, count)	  __this_cpu_inc((net)->ct.stat->count)
 #define NF_CT_STAT_INC_ATOMIC(net, count) this_cpu_inc((net)->ct.stat->count)

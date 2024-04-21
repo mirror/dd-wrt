@@ -5,6 +5,7 @@
 
 #include <linux/buffer_head.h>
 #include <linux/slab.h>
+#include <linux/blk_types.h>
 #include "apfs.h"
 
 #define MAX(X, Y)	((X) <= (Y) ? (Y) : (X))
@@ -46,7 +47,7 @@ int apfs_extent_from_query(struct apfs_query *query,
 	char *raw = query->node->object.data;
 	u64 ext_len;
 
-	if(!apfs_is_sealed(sb)) {
+	if (!apfs_is_sealed(sb)) {
 		struct apfs_file_extent_val *ext = NULL;
 		struct apfs_file_extent_key *ext_key = NULL;
 
@@ -138,7 +139,7 @@ static int apfs_extent_read(struct apfs_dstream_info *dstream, sector_t dsblock,
 		ret = -ENOMEM;
 		goto done;
 	}
-	query->key = &key;
+	query->key = key;
 	query->flags = apfs_is_sealed(sb) ? APFS_QUERY_FEXT : APFS_QUERY_CAT;
 
 	ret = apfs_btree_query(sb, &query);
@@ -386,7 +387,7 @@ static int apfs_shrink_extent_tail(struct apfs_query *query, struct apfs_dstream
 }
 
 /**
- * apfs_query_found_extent - Is this query pointing to an extent record?
+ * apfs_query_found_extent - Did this query find an extent with the right id?
  * @query: the (successful) query that found the record
  */
 static inline bool apfs_query_found_extent(struct apfs_query *query)
@@ -397,7 +398,12 @@ static inline bool apfs_query_found_extent(struct apfs_query *query)
 	if (query->key_len < sizeof(*hdr))
 		return false;
 	hdr = raw + query->key_off;
-	return apfs_cat_type(hdr) == APFS_TYPE_FILE_EXTENT;
+
+	if (apfs_cat_type(hdr) != APFS_TYPE_FILE_EXTENT)
+		return false;
+	if (apfs_cat_cnid(hdr) != query->key.id)
+		return false;
+	return true;
 }
 
 /**
@@ -412,7 +418,6 @@ static int apfs_update_tail_extent(struct apfs_dstream_info *dstream, const stru
 {
 	struct super_block *sb = dstream->ds_sb;
 	struct apfs_sb_info *sbi = APFS_SB(sb);
-	struct apfs_key key;
 	struct apfs_query *query;
 	struct apfs_file_extent_key raw_key;
 	struct apfs_file_extent_val raw_val;
@@ -430,13 +435,11 @@ static int apfs_update_tail_extent(struct apfs_dstream_info *dstream, const stru
 		new_crypto = 0;
 	raw_val.crypto_id = cpu_to_le64(new_crypto);
 
-	/* We want the last extent record */
-	apfs_init_file_extent_key(extent_id, -1, &key);
-
 	query = apfs_alloc_query(sbi->s_cat_root, NULL /* parent */);
 	if (!query)
 		return -ENOMEM;
-	query->key = &key;
+	/* We want the last extent record */
+	apfs_init_file_extent_key(extent_id, -1, &query->key);
 	query->flags = APFS_QUERY_CAT;
 
 	ret = apfs_btree_query(sb, &query);
@@ -601,7 +604,7 @@ static int apfs_update_mid_extent(struct apfs_dstream_info *dstream, const struc
 	raw_key.logical_addr = cpu_to_le64(extent->logical_addr);
 	raw_val.len_and_flags = cpu_to_le64(extent->len);
 	raw_val.phys_block_num = cpu_to_le64(extent->phys_block_num);
-	if(apfs_vol_is_encrypted(sb))
+	if (apfs_vol_is_encrypted(sb))
 		new_crypto = extent_id;
 	else
 		new_crypto = 0;
@@ -613,7 +616,7 @@ search_and_insert:
 	query = apfs_alloc_query(sbi->s_cat_root, NULL /* parent */);
 	if (!query)
 		return -ENOMEM;
-	query->key = &key;
+	query->key = key;
 	query->flags = APFS_QUERY_CAT;
 
 	ret = apfs_btree_query(sb, &query);
@@ -800,7 +803,6 @@ static int apfs_insert_phys_extent(struct apfs_dstream_info *dstream, const stru
 	struct super_block *sb = dstream->ds_sb;
 	struct apfs_superblock *vsb_raw = APFS_SB(sb)->s_vsb_raw;
 	struct apfs_node *extref_root;
-	struct apfs_key key;
 	struct apfs_query *query = NULL;
 	struct apfs_phys_extent pext;
 	u64 blkcnt = extent->len >> sb->s_blocksize_bits;
@@ -829,8 +831,7 @@ static int apfs_insert_phys_extent(struct apfs_dstream_info *dstream, const stru
 	 * one.
 	 */
 	last_bno = extent->phys_block_num + blkcnt - 1;
-	apfs_init_extent_key(last_bno, &key);
-	query->key = &key;
+	apfs_init_extent_key(last_bno, &query->key);
 	query->flags = APFS_QUERY_EXTENTREF;
 
 	ret = apfs_btree_query(sb, &query);
@@ -1152,7 +1153,6 @@ static int apfs_create_hole(struct apfs_dstream_info *dstream, u64 start, u64 en
 {
 	struct super_block *sb = dstream->ds_sb;
 	struct apfs_sb_info *sbi = APFS_SB(sb);
-	struct apfs_key key;
 	struct apfs_query *query;
 	struct apfs_file_extent_key raw_key;
 	struct apfs_file_extent_val raw_val;
@@ -1172,11 +1172,10 @@ static int apfs_create_hole(struct apfs_dstream_info *dstream, u64 start, u64 en
 	raw_val.phys_block_num = cpu_to_le64(0); /* It's a hole... */
 	raw_val.crypto_id = cpu_to_le64(apfs_vol_is_encrypted(sb) ? extent_id : 0);
 
-	apfs_init_file_extent_key(extent_id, start, &key);
 	query = apfs_alloc_query(sbi->s_cat_root, NULL /* parent */);
 	if (!query)
 		return -ENOMEM;
-	query->key = &key;
+	apfs_init_file_extent_key(extent_id, start, &query->key);
 	query->flags = APFS_QUERY_CAT;
 
 	ret = apfs_btree_query(sb, &query);
@@ -1259,7 +1258,6 @@ static int apfs_range_in_snap(struct super_block *sb, u64 bno, u64 blkcnt, bool 
 {
 	struct apfs_superblock *vsb_raw = APFS_SB(sb)->s_vsb_raw;
 	struct apfs_node *extref_root = NULL;
-	struct apfs_key key;
 	struct apfs_query *query = NULL;
 	struct apfs_phys_extent pext = {0};
 	int ret;
@@ -1286,8 +1284,7 @@ static int apfs_range_in_snap(struct super_block *sb, u64 bno, u64 blkcnt, bool 
 		goto out;
 	}
 
-	apfs_init_extent_key(bno, &key);
-	query->key = &key;
+	apfs_init_extent_key(bno, &query->key);
 	query->flags = APFS_QUERY_EXTENTREF;
 
 	ret = apfs_btree_query(sb, &query);
@@ -1499,18 +1496,15 @@ static int apfs_shrink_dstream_last_extent(struct apfs_dstream_info *dstream, lo
 {
 	struct super_block *sb = dstream->ds_sb;
 	struct apfs_sb_info *sbi = APFS_SB(sb);
-	struct apfs_key key;
 	struct apfs_query *query;
 	struct apfs_file_extent tail;
 	u64 extent_id = dstream->ds_id;
 	int ret = 0;
 
-	apfs_init_file_extent_key(extent_id, -1, &key);
-
 	query = apfs_alloc_query(sbi->s_cat_root, NULL /* parent */);
 	if (!query)
 		return -ENOMEM;
-	query->key = &key;
+	apfs_init_file_extent_key(extent_id, -1, &query->key);
 	query->flags = APFS_QUERY_CAT;
 
 	ret = apfs_btree_query(sb, &query);
@@ -1636,6 +1630,125 @@ int apfs_truncate(struct apfs_dstream_info *dstream, loff_t new_size)
 	return apfs_create_hole(dstream, old_blks, new_blks);
 }
 
+/**
+ * apfs_dstream_delete_front - Deletes as many leading extents as possible
+ * @sb:		filesystem superblock
+ * @ds_id:	id for the dstream to delete
+ *
+ * Returns 0 on success, or a negative error code in case of failure, which may
+ * be -ENODATA if there are no more extents, or -EAGAIN if the free queue is
+ * getting too full.
+ */
+static int apfs_dstream_delete_front(struct super_block *sb, u64 ds_id)
+{
+	struct apfs_sb_info *sbi = APFS_SB(sb);
+	struct apfs_spaceman *sm = APFS_SM(sb);
+	struct apfs_spaceman_phys *sm_raw = sm->sm_raw;
+	struct apfs_spaceman_free_queue *fq = NULL;
+	struct apfs_query *query = NULL;
+	struct apfs_file_extent head;
+	bool first_match = true;
+	int ret;
+
+	fq = &sm_raw->sm_fq[APFS_SFQ_MAIN];
+	if (le64_to_cpu(fq->sfq_count) > TRANSACTION_MAIN_QUEUE_MAX)
+		return -EAGAIN;
+
+	query = apfs_alloc_query(sbi->s_cat_root, NULL /* parent */);
+	if (!query)
+		return -ENOMEM;
+	apfs_init_file_extent_key(ds_id, 0, &query->key);
+	query->flags = APFS_QUERY_CAT;
+
+next_extent:
+	ret = apfs_btree_query(sb, &query);
+	if (ret && ret != -ENODATA) {
+		apfs_err(sb, "query failed for first extent of id 0x%llx", ds_id);
+		goto out;
+	}
+	apfs_query_direct_forward(query);
+	if (!apfs_query_found_extent(query)) {
+		/*
+		 * After the original lookup, the query may not be set to the
+		 * first extent, but instead to the record that comes right
+		 * before.
+		 */
+		if (first_match) {
+			first_match = false;
+			goto next_extent;
+		}
+		ret = -ENODATA;
+		goto out;
+	}
+	first_match = false;
+
+	ret = apfs_extent_from_query(query, &head);
+	if (ret) {
+		apfs_err(sb, "bad head extent record on dstream 0x%llx", ds_id);
+		goto out;
+	}
+	ret = apfs_btree_remove(query);
+	if (ret) {
+		apfs_err(sb, "removal failed for id 0x%llx, addr 0x%llx", ds_id, head.logical_addr);
+		goto out;
+	}
+
+	/*
+	 * The official fsck doesn't complain about wrong sparse byte counts
+	 * for orphans, so I guess we don't need to update them here
+	 */
+	if (!apfs_ext_is_hole(&head)) {
+		ret = apfs_range_put_reference(sb, head.phys_block_num, head.len);
+		if (ret) {
+			apfs_err(sb, "failed to put range 0x%llx-0x%llx", head.phys_block_num, head.len);
+			goto out;
+		}
+		ret = apfs_crypto_adj_refcnt(sb, head.crypto_id, -1);
+		if (ret) {
+			apfs_err(sb, "failed to take crypto id 0x%llx", head.crypto_id);
+			goto out;
+		}
+	}
+
+	if (le64_to_cpu(fq->sfq_count) <= TRANSACTION_MAIN_QUEUE_MAX)
+		goto next_extent;
+	ret = -EAGAIN;
+out:
+	apfs_free_query(query);
+	return ret;
+}
+
+/**
+ * apfs_inode_delete_front - Deletes as many leading extents as possible
+ * @inode:	inode to delete
+ *
+ * Tries to delete all extents for @inode, in which case it returns 0. If the
+ * free queue is getting too full, deletes as much as is reasonable and returns
+ * -EAGAIN. May return other negative error codes as well.
+ */
+int apfs_inode_delete_front(struct inode *inode)
+{
+	struct super_block *sb = inode->i_sb;
+	struct apfs_dstream_info *dstream = NULL;
+	struct apfs_inode_info *ai = APFS_I(inode);
+	int ret;
+
+	if (!ai->i_has_dstream)
+		return 0;
+
+	dstream = &ai->i_dstream;
+	ret = apfs_flush_extent_cache(dstream);
+	if (ret) {
+		apfs_err(sb, "extent cache flush failed for dstream 0x%llx", dstream->ds_id);
+		return ret;
+	}
+
+	ret = apfs_dstream_delete_front(sb, dstream->ds_id);
+	if (ret == -ENODATA)
+		return 0;
+	return ret;
+}
+
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 20, 0)
 loff_t apfs_remap_file_range(struct file *src_file, loff_t off, struct file *dst_file, loff_t destoff, loff_t len, unsigned int remap_flags)
 #else
@@ -1703,7 +1816,13 @@ int apfs_clone_file_range(struct file *src_file, loff_t off, struct file *dst_fi
 	}
 	src_ds->ds_shared = true;
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 6, 0)
 	dst_inode->i_mtime = dst_inode->i_ctime = current_time(dst_inode);
+#elif LINUX_VERSION_CODE < KERNEL_VERSION(6, 7, 0)
+	dst_inode->i_mtime = inode_set_ctime_current(dst_inode);
+#else
+	inode_set_mtime_to_ts(dst_inode, inode_set_ctime_current(dst_inode));
+#endif
 	dst_inode->i_size = src_inode->i_size;
 	dst_ai->i_key_class = src_ai->i_key_class;
 	dst_ai->i_int_flags = src_ai->i_int_flags;
@@ -1755,18 +1874,15 @@ fail:
 static int apfs_extent_create_record(struct super_block *sb, u64 dstream_id, struct apfs_file_extent *extent)
 {
 	struct apfs_sb_info *sbi = APFS_SB(sb);
-	struct apfs_key key;
 	struct apfs_query *query = NULL;
 	struct apfs_file_extent_val raw_val;
 	struct apfs_file_extent_key raw_key;
 	int ret = 0;
 
-	apfs_init_file_extent_key(dstream_id, extent->logical_addr, &key);
-
 	query = apfs_alloc_query(sbi->s_cat_root, NULL /* parent */);
 	if (!query)
 		return -ENOMEM;
-	query->key = &key;
+	apfs_init_file_extent_key(dstream_id, extent->logical_addr, &query->key);
 	query->flags = APFS_QUERY_CAT | APFS_QUERY_EXACT;
 
 	ret = apfs_btree_query(sb, &query);
@@ -1830,7 +1946,7 @@ restart:
 		ret = -ENOMEM;
 		goto out;
 	}
-	query->key = &key;
+	query->key = key;
 	query->flags = APFS_QUERY_EXTENTREF;
 
 	ret = apfs_btree_query(sb, &query);
@@ -1970,7 +2086,7 @@ restart:
 		ret = -ENOMEM;
 		goto out;
 	}
-	query->key = &key;
+	query->key = key;
 	query->flags = APFS_QUERY_EXTENTREF;
 
 	ret = apfs_btree_query(sb, &query);
@@ -2129,4 +2245,148 @@ int apfs_clone_extents(struct apfs_dstream_info *dstream, u64 new_id)
 			return err;
 	}
 	return 0;
+}
+
+/**
+ * apfs_nonsparse_dstream_read - Read from a dstream without holes
+ * @dstream:	dstream to read
+ * @buf:	destination buffer
+ * @count:	exact number of bytes to read
+ * @offset:	dstream offset to read from
+ *
+ * Returns 0 on success or a negative error code in case of failure.
+ */
+int apfs_nonsparse_dstream_read(struct apfs_dstream_info *dstream, void *buf, size_t count, u64 offset)
+{
+	struct super_block *sb = dstream->ds_sb;
+	u64 logical_start_block, logical_end_block, log_bno, blkcnt, idx;
+	struct buffer_head **bhs = NULL;
+	int ret = 0;
+
+	/* Save myself from thinking about overflow here */
+	if (count >= APFS_MAX_FILE_SIZE || offset >= APFS_MAX_FILE_SIZE) {
+		apfs_err(sb, "dstream read overflow (0x%llx-0x%llx)", offset, (unsigned long long)count);
+		return -EFBIG;
+	}
+
+	if (offset + count > dstream->ds_size) {
+		apfs_err(sb, "reading past the end (0x%llx-0x%llx)", offset, (unsigned long long)count);
+		/* No caller is expected to legitimately read out-of-bounds */
+		return -EFSCORRUPTED;
+	}
+
+	logical_start_block = offset >> sb->s_blocksize_bits;
+	logical_end_block = (offset + count + sb->s_blocksize - 1) >> sb->s_blocksize_bits;
+	blkcnt = logical_end_block - logical_start_block;
+	bhs = kcalloc(blkcnt, sizeof(*bhs), GFP_KERNEL);
+	if (!bhs)
+		return -ENOMEM;
+
+	for (log_bno = logical_start_block; log_bno < logical_end_block; log_bno++) {
+		struct buffer_head *bh = NULL;
+		u64 bno = 0;
+
+		idx = log_bno - logical_start_block;
+
+		ret = apfs_logic_to_phys_bno(dstream, log_bno, &bno);
+		if (ret)
+			goto out;
+		if (bno == 0) {
+			apfs_err(sb, "nonsparse dstream has a hole");
+			ret = -EFSCORRUPTED;
+			goto out;
+		}
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 7, 0)
+		bhs[idx] = __getblk_gfp(APFS_NXI(sb)->nx_bdev, bno, sb->s_blocksize, __GFP_MOVABLE);
+#else
+		bhs[idx] = bdev_getblk(APFS_NXI(sb)->nx_bdev, bno, sb->s_blocksize, __GFP_MOVABLE);
+#endif
+		if (!bhs[idx]) {
+			apfs_err(sb, "failed to map block 0x%llx", bno);
+			ret = -EIO;
+			goto out;
+		}
+
+		bh = bhs[idx];
+		if (!buffer_uptodate(bh)) {
+			get_bh(bh);
+			lock_buffer(bh);
+			bh->b_end_io = end_buffer_read_sync;
+			apfs_submit_bh(REQ_OP_READ, 0, bh);
+		}
+	}
+
+	for (log_bno = logical_start_block; log_bno < logical_end_block; log_bno++) {
+		int off_in_block, left_in_block;
+
+		idx = log_bno - logical_start_block;
+		wait_on_buffer(bhs[idx]);
+		if (!buffer_uptodate(bhs[idx])) {
+			apfs_err(sb, "failed to read a block");
+			ret = -EIO;
+			goto out;
+		}
+
+		if (log_bno == logical_start_block)
+			off_in_block = offset & (sb->s_blocksize - 1);
+		else
+			off_in_block = 0;
+
+		if (log_bno == logical_end_block - 1)
+			left_in_block = count + offset - (log_bno << sb->s_blocksize_bits) - off_in_block;
+		else
+			left_in_block = sb->s_blocksize - off_in_block;
+
+		memcpy(buf, bhs[idx]->b_data + off_in_block, left_in_block);
+		buf += left_in_block;
+	}
+
+out:
+	if (bhs) {
+		for (idx = 0; idx < blkcnt; idx++)
+			brelse(bhs[idx]);
+		kfree(bhs);
+	}
+	return ret;
+}
+
+/**
+ * apfs_nonsparse_dstream_preread - Attempt to preread a dstream without holes
+ * @dstream:	dstream to preread
+ *
+ * Requests reads for all blocks of a dstream, but doesn't wait for the result.
+ */
+void apfs_nonsparse_dstream_preread(struct apfs_dstream_info *dstream)
+{
+	struct super_block *sb = dstream->ds_sb;
+	u64 logical_end_block, log_bno;
+
+	logical_end_block = (dstream->ds_size + sb->s_blocksize - 1) >> sb->s_blocksize_bits;
+
+	for (log_bno = 0; log_bno < logical_end_block; log_bno++) {
+		struct buffer_head *bh = NULL;
+		u64 bno = 0;
+		int ret;
+
+		ret = apfs_logic_to_phys_bno(dstream, log_bno, &bno);
+		if (ret || bno == 0)
+			return;
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 7, 0)
+		bh = __getblk_gfp(APFS_NXI(sb)->nx_bdev, bno, sb->s_blocksize, __GFP_MOVABLE);
+#else
+		bh = bdev_getblk(APFS_NXI(sb)->nx_bdev, bno, sb->s_blocksize, __GFP_MOVABLE);
+#endif
+		if (!bh)
+			return;
+		if (!buffer_uptodate(bh)) {
+			get_bh(bh);
+			lock_buffer(bh);
+			bh->b_end_io = end_buffer_read_sync;
+			apfs_submit_bh(REQ_OP_READ, 0, bh);
+		}
+		brelse(bh);
+		bh = NULL;
+	}
 }

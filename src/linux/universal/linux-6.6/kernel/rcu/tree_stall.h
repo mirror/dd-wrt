@@ -14,8 +14,8 @@
 // Controlling CPU stall warnings, including delay calculation.
 
 /* panic() on RCU Stall sysctl. */
-int sysctl_panic_on_rcu_stall __read_mostly;
-int sysctl_max_rcu_stall_to_panic __read_mostly;
+int sysctl_panic_on_rcu_stall __read_mostly = 1;
+int sysctl_max_rcu_stall_to_panic __read_mostly = 2;
 
 #ifdef CONFIG_PROVE_RCU
 #define RCU_STALL_DELAY_DELTA		(5 * HZ)

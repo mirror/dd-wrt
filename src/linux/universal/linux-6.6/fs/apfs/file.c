@@ -5,6 +5,9 @@
 
 #include "apfs.h"
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 8, 0)
+#include <linux/splice.h>
+#endif
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 17, 0)
 typedef int vm_fault_t;
 #endif
@@ -18,6 +21,9 @@ static vm_fault_t apfs_page_mkwrite(struct vm_fault *vmf)
 	struct vm_area_struct *vma = vmf->vma;
 #endif
 	struct page *page = vmf->page;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 7, 0)
+	struct folio *folio;
+#endif
 	struct inode *inode = file_inode(vma->vm_file);
 	struct super_block *sb = inode->i_sb;
 	struct buffer_head *bh, *head;
@@ -54,8 +60,16 @@ static vm_fault_t apfs_page_mkwrite(struct vm_fault *vmf)
 		goto out_unlock;
 	}
 
-	if (!page_has_buffers(page))
+	if (!page_has_buffers(page)) {
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 7, 0)
 		create_empty_buffers(page, sb->s_blocksize, 0);
+#else
+		folio = page_folio(page);
+		bh = folio_buffers(folio);
+		if (!bh)
+			bh = create_empty_buffers(folio, sb->s_blocksize, 0);
+#endif
+	}
 
 	size = i_size_read(inode);
 	if (page->index == size >> PAGE_SHIFT)
@@ -99,7 +113,11 @@ out_abort:
 	apfs_transaction_abort(sb);
 out:
 	if (err)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 6, 0)
 		ret = block_page_mkwrite_return(err);
+#else
+		ret = vmf_fs_error(err);
+#endif
 	sb_end_pagefault(inode->i_sb);
 	return ret;
 }
@@ -110,7 +128,7 @@ static const struct vm_operations_struct apfs_file_vm_ops = {
 	.page_mkwrite	= apfs_page_mkwrite,
 };
 
-static int apfs_file_mmap(struct file * file, struct vm_area_struct * vma)
+int apfs_file_mmap(struct file *file, struct vm_area_struct *vma)
 {
 	struct address_space *mapping = file->f_mapping;
 
@@ -137,6 +155,16 @@ int apfs_fsync(struct file *file, loff_t start, loff_t end, int datasync)
 	return apfs_sync_fs(sb, true /* wait */);
 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 8, 0)
+static ssize_t apfs_copy_file_range(struct file *src_file, loff_t src_off,
+				    struct file *dst_file, loff_t dst_off,
+				    size_t len, unsigned int flags)
+{
+	return (splice_copy_file_range(src_file, src_off,
+		dst_file, dst_off, len));
+}
+#endif
+
 const struct file_operations apfs_file_operations = {
 	.llseek			= generic_file_llseek,
 	.read_iter		= generic_file_read_iter,
@@ -146,7 +174,9 @@ const struct file_operations apfs_file_operations = {
 	.fsync			= apfs_fsync,
 	.unlocked_ioctl		= apfs_file_ioctl,
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 3, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 8, 0)
+	.copy_file_range	= apfs_copy_file_range,
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(5, 3, 0)
 	.copy_file_range	= generic_copy_file_range,
 #endif
 
@@ -155,6 +185,13 @@ const struct file_operations apfs_file_operations = {
 #else
 	.clone_file_range	= apfs_clone_file_range,
 #endif
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 5, 0)
+	.splice_read		= generic_file_splice_read,
+#else
+	.splice_read		= filemap_splice_read,
+#endif
+	.splice_write		= iter_file_splice_write,
 };
 
 #if LINUX_VERSION_CODE == KERNEL_VERSION(5, 3, 0)

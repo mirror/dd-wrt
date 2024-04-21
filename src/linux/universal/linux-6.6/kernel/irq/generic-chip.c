@@ -495,10 +495,12 @@ void irq_setup_generic_chip(struct irq_chip_generic *gc, u32 msk,
 		if (!(flags & IRQ_GC_NO_MASK)) {
 			struct irq_data *d = irq_get_irq_data(i);
 
-			if (chip->irq_calc_mask)
+			if (chip->irq_calc_mask) {
 				chip->irq_calc_mask(d);
-			else
-				d->mask = 1 << (i - gc->irq_base);
+			} else {
+				if (d)
+				    d->mask = 1 << (i - gc->irq_base);
+			}
 		}
 		irq_set_chip_and_handler(i, chip, ct->handler);
 		irq_set_chip_data(i, gc);

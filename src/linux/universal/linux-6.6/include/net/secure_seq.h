@@ -3,6 +3,7 @@
 #define _NET_SECURE_SEQ
 
 #include <linux/types.h>
+#include <linux/in6.h>
 
 struct net;
 

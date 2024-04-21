@@ -13,8 +13,6 @@
 #include <linux/version.h>
 #include "apfs_raw.h"
 
-#define APFS_MODULE_ID_STRING	"linux-apfs by EA Fernández"
-
 #define EFSBADCRC	EBADMSG		/* Bad CRC detected */
 #define EFSCORRUPTED	EUCLEAN		/* Filesystem is corrupted */
 
@@ -66,6 +64,7 @@ struct apfs_object {
 	 */
 	struct buffer_head *o_bh;
 	char *data; /* The raw object */
+	bool ephemeral; /* Is this an ephemeral object? */
 };
 
 /* Constants used in managing the size of a node's table of contents */
@@ -123,8 +122,8 @@ static inline bool apfs_node_has_fixed_kv_size(struct apfs_node *node)
  */
 struct apfs_spaceman {
 	struct apfs_spaceman_phys *sm_raw; /* On-disk spaceman structure */
-	struct buffer_head	  *sm_bh;  /* Buffer head for @sm_raw */
-	struct buffer_head	  *sm_ip;  /* Current internal pool */
+	struct apfs_nxsb_info	  *sm_nxi; /* Container superblock */
+	u32			  sm_size; /* Size of @sm_raw in bytes */
 
 	u32 sm_blocks_per_chunk;	/* Blocks covered by a bitmap block */
 	u32 sm_chunks_per_cib;		/* Chunk count in a chunk-info block */
@@ -140,6 +139,15 @@ struct apfs_spaceman {
 	 */
 	u64 sm_free_cache_base;
 	u64 sm_free_cache_blkcnt;
+
+	/* Shift to match an ip block with its bitmap in the array */
+	int sm_ip_bmaps_shift;
+	/* Mask to find an ip block's offset inside its ip bitmap */
+	u32 sm_ip_bmaps_mask;
+	/* Number of ip bitmaps */
+	u32 sm_ip_bmaps_count;
+	/* List of ip bitmaps, in order */
+	struct buffer_head *sm_ip_bmaps[];
 };
 
 #define TRANSACTION_MAIN_QUEUE_MAX	4096
@@ -156,7 +164,6 @@ struct apfs_spaceman {
  * Structure that keeps track of a container transaction.
  */
 struct apfs_nx_transaction {
-	struct buffer_head *t_old_msb;  /* Main superblock being replaced */
 	unsigned int t_state;
 
 	struct list_head t_inodes;	/* List of inodes in the transaction */
@@ -197,6 +204,23 @@ struct apfs_max_ops {
 	int blks;	/* Maximum extent blocks that may need changing */
 };
 
+/*
+ * List entry for an in-memory ephemeral object
+ */
+struct apfs_ephemeral_object_info {
+	u64	oid;		/* Ephemeral object id */
+	u32	size;		/* Size of the object in bytes */
+	void	*object;	/* In-memory address of the object */
+};
+
+/*
+ * We allocate a fixed space for the list of ephemeral objects. I don't
+ * actually know how big this should be allowed to get, but all the objects
+ * must be written down with each transaction commit, so probably not too big.
+ */
+#define APFS_EPHEMERAL_LIST_SIZE	32768
+#define APFS_EPHEMERAL_LIST_LIMIT	(APFS_EPHEMERAL_LIST_SIZE / sizeof(struct apfs_ephemeral_object_info))
+
 /* Mount option flags for a container */
 #define APFS_CHECK_NODES	1
 #define APFS_READWRITE		2
@@ -206,9 +230,18 @@ struct apfs_max_ops {
  */
 struct apfs_nxsb_info {
 	struct block_device *nx_bdev; /* Device for the container */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 9, 0)
+	struct file *nx_bdev_file;
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(6, 8, 0)
+	struct bdev_handle *nx_bdev_handle;
+#endif
 	struct apfs_nx_superblock *nx_raw; /* On-disk main sb */
-	struct apfs_object nx_object; /* Main superblock object */
+	u64 nx_bno; /* Current block number for the checkpoint superblock */
 	u64 nx_xid; /* Latest transaction id */
+
+	/* List of ephemeral objects in memory (except the superblock) */
+	struct apfs_ephemeral_object_info *nx_eph_list;
+	int nx_eph_count;
 
 	struct list_head vol_list;	/* List of mounted volumes in container */
 
@@ -219,7 +252,7 @@ struct apfs_nxsb_info {
 	unsigned long nx_blocksize;
 	unsigned char nx_blocksize_bits;
 
-	struct apfs_spaceman nx_spaceman;
+	struct apfs_spaceman *nx_spaceman;
 	struct apfs_nx_transaction nx_transaction;
 
 	/* For now, a single semaphore for every operation */
@@ -283,6 +316,8 @@ struct apfs_sb_info {
 	struct list_head list;		/* List of mounted volumes in container */
 	struct apfs_superblock *s_vsb_raw; /* On-disk volume sb */
 
+	dev_t s_anon_dev; /* Anonymous device for this volume-snapshot */
+
 	char *s_snap_name; /* Label for the mounted snapshot */
 	u64 s_snap_xid; /* Transaction id for mounted snapshot */
 
@@ -299,8 +334,10 @@ struct apfs_sb_info {
 	struct apfs_crypto_state_val *s_dflt_pfk; /* default per-file key */
 
 	struct apfs_vol_transaction s_transaction;
+	int s_trans_buffers_max;
 
 	struct inode *s_private_dir;	/* Inode for the private directory */
+	struct work_struct s_orphan_cleanup_work;
 };
 
 static inline struct apfs_sb_info *APFS_SB(struct super_block *sb)
@@ -319,8 +356,10 @@ static inline bool apfs_is_sealed(struct super_block *sb)
  * apfs_vol_is_encrypted - Check if a volume is encrypting files
  * @sb: superblock
  */
-static inline bool apfs_vol_is_encrypted(struct super_block *sb) {
+static inline bool apfs_vol_is_encrypted(struct super_block *sb)
+{
 	struct apfs_superblock *vsb_raw = APFS_SB(sb)->s_vsb_raw;
+
 	return (vsb_raw->apfs_fs_flags & cpu_to_le64(APFS_FS_UNENCRYPTED)) == 0;
 }
 
@@ -339,7 +378,7 @@ static inline struct apfs_nxsb_info *APFS_NXI(struct super_block *sb)
  */
 static inline struct apfs_spaceman *APFS_SM(struct super_block *sb)
 {
-	return &APFS_NXI(sb)->nx_spaceman;
+	return APFS_NXI(sb)->nx_spaceman;
 }
 
 static inline bool apfs_is_case_insensitive(struct super_block *sb)
@@ -590,20 +629,21 @@ static inline u64 apfs_cat_cnid(struct apfs_key_header *key)
 }
 
 /* Flags for the query structure */
-#define APFS_QUERY_TREE_MASK	00177	/* Which b-tree we query */
-#define APFS_QUERY_OMAP		00001	/* This is a b-tree object map query */
-#define APFS_QUERY_CAT		00002	/* This is a catalog tree query */
-#define APFS_QUERY_FREE_QUEUE	00004	/* This is a free queue query */
-#define APFS_QUERY_EXTENTREF	00010	/* This is an extent reference query */
-#define APFS_QUERY_FEXT		00020	/* This is a fext tree query */
-#define APFS_QUERY_SNAP_META	00040	/* This is a snapshot meta query */
-#define APFS_QUERY_OMAP_SNAP	00100	/* This is an omap snapshots query */
-#define APFS_QUERY_NEXT		00200	/* Find next of multiple matches */
-#define APFS_QUERY_EXACT	00400	/* Search for an exact match */
-#define APFS_QUERY_DONE		01000	/* The search at this level is over */
-#define APFS_QUERY_ANY_NAME	02000	/* Multiple search for any name */
-#define APFS_QUERY_ANY_NUMBER	04000	/* Multiple search for any number */
+#define APFS_QUERY_TREE_MASK	000177	/* Which b-tree we query */
+#define APFS_QUERY_OMAP		000001	/* This is a b-tree object map query */
+#define APFS_QUERY_CAT		000002	/* This is a catalog tree query */
+#define APFS_QUERY_FREE_QUEUE	000004	/* This is a free queue query */
+#define APFS_QUERY_EXTENTREF	000010	/* This is an extent reference query */
+#define APFS_QUERY_FEXT		000020	/* This is a fext tree query */
+#define APFS_QUERY_SNAP_META	000040	/* This is a snapshot meta query */
+#define APFS_QUERY_OMAP_SNAP	000100	/* This is an omap snapshots query */
+#define APFS_QUERY_NEXT		000200	/* Find next of multiple matches */
+#define APFS_QUERY_EXACT	000400	/* Search for an exact match */
+#define APFS_QUERY_DONE		001000	/* The search at this level is over */
+#define APFS_QUERY_ANY_NAME	002000	/* Multiple search for any name */
+#define APFS_QUERY_ANY_NUMBER	004000	/* Multiple search for any number */
 #define APFS_QUERY_MULTIPLE	(APFS_QUERY_ANY_NAME | APFS_QUERY_ANY_NUMBER)
+#define APFS_QUERY_PREV		010000	/* Find previous record */
 
 /*
  * Structure used to retrieve data from an APFS B-Tree. For now only used
@@ -611,7 +651,7 @@ static inline u64 apfs_cat_cnid(struct apfs_key_header *key)
  */
 struct apfs_query {
 	struct apfs_node *node;		/* Node being searched */
-	struct apfs_key *key;		/* What the query is looking for */
+	struct apfs_key key;		/* What the query is looking for */
 
 	struct apfs_query *parent;	/* Query for parent node */
 	unsigned int flags;
@@ -646,7 +686,9 @@ static inline u32 apfs_query_storage(struct apfs_query *query)
 		return APFS_OBJ_PHYSICAL;
 	if (query->flags & APFS_QUERY_OMAP_SNAP)
 		return APFS_OBJ_PHYSICAL;
-	BUG();
+
+	/* Absurd, but don't panic: let the callers fail and report it */
+	return -1;
 }
 
 /*
@@ -717,6 +759,8 @@ struct apfs_inode_info {
 	bool			 i_has_dstream;	 /* Is there a dstream record? */
 	struct apfs_dstream_info i_dstream;	 /* Dstream data, if any */
 
+	bool			i_cleaned;	 /* Orphan data already deleted */
+
 	struct inode vfs_inode;
 };
 
@@ -774,6 +818,15 @@ struct apfs_xattr {
 	bool has_dstream;
 };
 
+struct apfs_compressed_data {
+	bool has_dstream;
+	u64 size;
+	union {
+		struct apfs_dstream_info *dstream;
+		void *data;
+	};
+};
+
 /*
  * Report function name and line number for the message types that are likely
  * to signal a bug, to make things easier for reporters. Don't do this for the
@@ -788,7 +841,7 @@ struct apfs_xattr {
 #define apfs_info(sb, fmt, ...) apfs_msg(sb, KERN_INFO, NULL, 0, fmt, ##__VA_ARGS__)
 
 #ifdef CONFIG_APFS_DEBUG
-#define ASSERT(expr)	BUG_ON(!(expr))
+#define ASSERT(expr)	WARN_ON(!(expr))
 #define apfs_debug(sb, fmt, ...) apfs_msg(sb, KERN_DEBUG, __func__, __LINE__, fmt, ##__VA_ARGS__)
 #else
 #define ASSERT(expr)	((void)0)
@@ -808,21 +861,24 @@ do {									\
 } while (0)
 
 /* btree.c */
+extern struct apfs_node *apfs_query_root(const struct apfs_query *query);
 extern struct apfs_query *apfs_alloc_query(struct apfs_node *node,
 					   struct apfs_query *parent);
 extern void apfs_free_query(struct apfs_query *query);
 extern int apfs_btree_query(struct super_block *sb, struct apfs_query **query);
-extern int apfs_omap_lookup_block(struct super_block *sb, struct apfs_omap *omap,
-				  u64 id, u64 *block, bool write);
+extern int apfs_omap_lookup_block(struct super_block *sb, struct apfs_omap *omap, u64 id, u64 *block, bool write);
+extern int apfs_omap_lookup_newest_block(struct super_block *sb, struct apfs_omap *omap, u64 id, u64 *block, bool write);
 extern int apfs_create_omap_rec(struct super_block *sb, u64 oid, u64 bno);
 extern int apfs_delete_omap_rec(struct super_block *sb, u64 oid);
 extern int apfs_query_join_transaction(struct apfs_query *query);
+extern int __apfs_btree_insert(struct apfs_query *query, void *key, int key_len, void *val, int val_len);
 extern int apfs_btree_insert(struct apfs_query *query, void *key, int key_len,
 			     void *val, int val_len);
 extern int apfs_btree_remove(struct apfs_query *query);
 extern void apfs_btree_change_node_count(struct apfs_query *query, int change);
 extern int apfs_btree_replace(struct apfs_query *query, void *key, int key_len,
 			      void *val, int val_len);
+extern void apfs_query_direct_forward(struct apfs_query *query);
 
 /* compress.c */
 extern int apfs_compress_get_size(struct inode *inode, loff_t *size);
@@ -870,6 +926,7 @@ extern int apfs_unlink(struct inode *dir, struct dentry *dentry);
 extern int apfs_rmdir(struct inode *dir, struct dentry *dentry);
 extern int apfs_delete_orphan_link(struct inode *inode);
 extern int APFS_DELETE_ORPHAN_LINK_MAXOPS(void);
+extern u64 apfs_any_orphan_ino(struct super_block *sb, u64 *ino_p);
 
 /* extents.c */
 extern int apfs_extent_from_query(struct apfs_query *query,
@@ -885,20 +942,25 @@ extern int apfs_get_new_block(struct inode *inode, sector_t iblock,
 			      struct buffer_head *bh_result, int create);
 extern int APFS_GET_NEW_BLOCK_MAXOPS(void);
 extern int apfs_truncate(struct apfs_dstream_info *dstream, loff_t new_size);
+extern int apfs_inode_delete_front(struct inode *inode);
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 20, 0)
 extern loff_t apfs_remap_file_range(struct file *src_file, loff_t off, struct file *dst_file, loff_t destoff, loff_t len, unsigned int remap_flags);
 #else
 extern int apfs_clone_file_range(struct file *src_file, loff_t off, struct file *dst_file, loff_t destoff, u64 len);
 #endif
 extern int apfs_clone_extents(struct apfs_dstream_info *dstream, u64 new_id);
+extern int apfs_nonsparse_dstream_read(struct apfs_dstream_info *dstream, void *buf, size_t count, u64 offset);
+extern void apfs_nonsparse_dstream_preread(struct apfs_dstream_info *dstream);
 
 /* file.c */
+extern int apfs_file_mmap(struct file *file, struct vm_area_struct *vma);
 extern int apfs_fsync(struct file *file, loff_t start, loff_t end, int datasync);
 
 /* inode.c */
 extern struct inode *apfs_iget(struct super_block *sb, u64 cnid);
 extern int apfs_update_inode(struct inode *inode, char *new_name);
 extern int APFS_UPDATE_INODE_MAXOPS(void);
+extern void apfs_orphan_cleanup_work(struct work_struct *work);
 extern void apfs_evict_inode(struct inode *inode);
 extern struct inode *apfs_new_inode(struct inode *dir, umode_t mode,
 				    dev_t rdev);
@@ -920,7 +982,11 @@ extern int apfs_setattr(struct mnt_idmap *idmap,
 			struct dentry *dentry, struct iattr *iattr);
 #endif
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 6, 0)
 extern int apfs_update_time(struct inode *inode, struct timespec64 *time, int flags);
+#else
+extern int apfs_update_time(struct inode *inode, int flags);
+#endif
 long apfs_dir_ioctl(struct file *file, unsigned int cmd, unsigned long arg);
 long apfs_file_ioctl(struct file *file, unsigned int cmd, unsigned long arg);
 
@@ -969,7 +1035,7 @@ extern __printf(5, 6) void apfs_msg(struct super_block *sb, const char *prefix, 
 extern struct apfs_node *apfs_read_node(struct super_block *sb, u64 oid,
 					u32 storage, bool write);
 extern void apfs_update_node(struct apfs_node *node);
-extern int apfs_delete_node(struct apfs_query *query);
+extern int apfs_delete_node(struct apfs_node *node, int type);
 extern int apfs_node_query(struct super_block *sb, struct apfs_query *query);
 extern void apfs_node_query_first(struct apfs_query *query);
 extern int apfs_omap_map_from_query(struct apfs_query *query, struct apfs_omap_map *map);
@@ -977,6 +1043,7 @@ extern int apfs_node_split(struct apfs_query *query);
 extern int apfs_node_locate_key(struct apfs_node *node, int index, int *off);
 extern void apfs_node_free(struct apfs_node *node);
 extern void apfs_node_free_range(struct apfs_node *node, u16 off, u16 len);
+extern bool apfs_node_has_room(struct apfs_node *node, int length, bool replace);
 extern int apfs_node_replace(struct apfs_query *query, void *key, int key_len, void *val, int val_len);
 extern int apfs_node_insert(struct apfs_query *query, void *key, int key_len, void *val, int val_len);
 extern int apfs_create_single_rec_node(struct apfs_query *query, void *key, int key_len, void *val, int val_len);
@@ -984,12 +1051,12 @@ extern int apfs_make_empty_btree_root(struct super_block *sb, u32 subtype, u64 *
 
 /* object.c */
 extern int apfs_obj_verify_csum(struct super_block *sb, struct buffer_head *bh);
-extern void apfs_obj_set_csum(struct super_block *sb,
-			      struct apfs_obj_phys *obj);
-extern int apfs_create_cpoint_map(struct super_block *sb, u64 oid, u64 bno);
-extern int apfs_remove_cpoint_map(struct super_block *sb, u64 bno);
-extern struct buffer_head *apfs_read_ephemeral_object(struct super_block *sb,
-						      u64 oid);
+extern void apfs_obj_set_csum(struct super_block *sb, struct apfs_obj_phys *obj);
+extern int apfs_multiblock_verify_csum(char *object, u32 size);
+extern void apfs_multiblock_set_csum(char *object, u32 size);
+extern int apfs_create_cpm_block(struct super_block *sb, u64 bno, struct buffer_head **bh_p);
+extern int apfs_create_cpoint_map(struct super_block *sb, struct apfs_checkpoint_map_phys *cpm, struct apfs_obj_phys *obj, u64 bno, u32 size);
+extern struct apfs_ephemeral_object_info *apfs_ephemeral_object_lookup(struct super_block *sb, u64 oid);
 extern struct buffer_head *apfs_read_object_block(struct super_block *sb, u64 bno, bool write, bool preserve);
 extern u32 apfs_index_in_data_area(struct super_block *sb, u64 bno);
 extern u64 apfs_data_index_to_bno(struct super_block *sb, u32 index);
@@ -1013,7 +1080,6 @@ extern int apfs_read_catalog(struct super_block *sb, bool write);
 extern int apfs_sync_fs(struct super_block *sb, int wait);
 
 /* transaction.c */
-extern void apfs_cpoint_data_allocate(struct super_block *sb, u64 *bno);
 extern int apfs_cpoint_data_free(struct super_block *sb, u64 bno);
 extern int apfs_transaction_start(struct super_block *sb, struct apfs_max_ops maxops);
 extern int apfs_transaction_commit(struct super_block *sb);
@@ -1033,6 +1099,9 @@ extern int apfs_xattr_set(struct inode *inode, const char *name, const void *val
 			  size_t size, int flags);
 extern int APFS_XATTR_SET_MAXOPS(void);
 extern ssize_t apfs_listxattr(struct dentry *dentry, char *buffer, size_t size);
+extern int apfs_xattr_get_compressed_data(struct inode *inode, const char *name, struct apfs_compressed_data *cdata);
+extern void apfs_release_compressed_data(struct apfs_compressed_data *cdata);
+extern int apfs_compressed_data_read(struct apfs_compressed_data *cdata, void *buf, size_t count, u64 offset);
 
 /* xfield.c */
 extern int apfs_find_xfield(u8 *xfields, int len, u8 xtype, char **xval);
@@ -1046,6 +1115,7 @@ extern int apfs_insert_xfield(u8 *buffer, int buflen,
  */
 
 /* compress.c */
+extern const struct address_space_operations apfs_compress_aops;
 extern const struct file_operations apfs_compress_file_operations;
 
 /* dir.c */
@@ -1065,6 +1135,18 @@ extern const struct inode_operations apfs_symlink_inode_operations;
 
 /* xattr.c */
 extern const struct xattr_handler *apfs_xattr_handlers[];
+
+/**
+ * apfs_assert_query_is_valid - Assert that all of a query's ancestors are set
+ * @query: the query to check
+ *
+ * A query may lose some of its ancestors during a node split, but nothing
+ * should be done to such a query until it gets refreshed.
+ */
+static inline void apfs_assert_query_is_valid(const struct apfs_query *query)
+{
+	ASSERT(apfs_node_is_root(apfs_query_root(query)));
+}
 
 /*
  * TODO: the following are modified variants of buffer head functions that will
@@ -1093,7 +1175,11 @@ apfs_getblk(struct super_block *sb, sector_t block)
 {
 	struct buffer_head *bh;
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 7, 0)
 	bh = __getblk_gfp(APFS_NXI(sb)->nx_bdev, block, sb->s_blocksize, __GFP_MOVABLE);
+#else
+	bh = bdev_getblk(APFS_NXI(sb)->nx_bdev, block, sb->s_blocksize, __GFP_MOVABLE);
+#endif
 	if (bh)
 		set_buffer_uptodate(bh);
 	return bh;

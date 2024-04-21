@@ -99,24 +99,25 @@ static struct apfs_query *apfs_dentry_lookup(struct inode *dir,
 {
 	struct super_block *sb = dir->i_sb;
 	struct apfs_sb_info *sbi = APFS_SB(sb);
-	struct apfs_key key;
 	struct apfs_query *query;
 	u64 cnid = apfs_ino(dir);
 	bool hashed = apfs_is_normalization_insensitive(sb);
 	int err;
 
-	apfs_init_drec_key(sb, cnid, child->name, child->len, &key);
-
 	query = apfs_alloc_query(sbi->s_cat_root, NULL /* parent */);
 	if (!query)
 		return ERR_PTR(-ENOMEM);
-	query->key = &key;
+	apfs_init_drec_key(sb, cnid, child->name, child->len, &query->key);
 
 	/*
 	 * Distinct filenames in the same directory may (rarely) share the same
-	 * hash.  The query code cannot handle that because their order in the
-	 * b-tree would	depend on their unnormalized original names.  Just get
+	 * hash. The query code cannot handle that because their order in the
+	 * b-tree would	depend on their unnormalized original names. Just get
 	 * all the candidates and check them one by one.
+	 *
+	 * This is very wasteful for normalization-sensitive filesystems: there
+	 * are no hashes so we just check every single file in the directory for
+	 * no reason. This would be easy to avoid but does it matter? (TODO)
 	 */
 	query->flags |= APFS_QUERY_CAT | APFS_QUERY_ANY_NAME | APFS_QUERY_EXACT;
 	do {
@@ -128,6 +129,14 @@ static struct apfs_query *apfs_dentry_lookup(struct inode *dir,
 			goto fail;
 	} while (unlikely(apfs_filename_cmp(sb, child->name, child->len, drec->name, drec->name_len)));
 
+	/*
+	 * We may need to refresh the query later, but the refresh code doesn't
+	 * know how to deal with hash collisions. Instead set the key to the
+	 * unnormalized name and pretend that this was never a multiple query
+	 * in the first place.
+	 */
+	query->key.name = drec->name;
+	query->flags &= ~(APFS_QUERY_MULTIPLE | APFS_QUERY_DONE | APFS_QUERY_NEXT);
 	return query;
 
 fail:
@@ -173,7 +182,6 @@ static int apfs_readdir(struct file *file, struct dir_context *ctx)
 	struct super_block *sb = inode->i_sb;
 	struct apfs_sb_info *sbi = APFS_SB(sb);
 	struct apfs_nxsb_info *nxi = APFS_NXI(sb);
-	struct apfs_key key;
 	struct apfs_query *query;
 	u64 cnid = apfs_ino(inode);
 	loff_t pos;
@@ -193,8 +201,7 @@ static int apfs_readdir(struct file *file, struct dir_context *ctx)
 	}
 
 	/* We want all the children for the cnid, regardless of the name */
-	apfs_init_drec_key(sb, cnid, NULL /* name */, 0 /* name_len */, &key);
-	query->key = &key;
+	apfs_init_drec_key(sb, cnid, NULL /* name */, 0 /* name_len */, &query->key);
 	query->flags = APFS_QUERY_CAT | APFS_QUERY_MULTIPLE | APFS_QUERY_EXACT;
 
 	pos = ctx->pos - 2;
@@ -268,7 +275,7 @@ static int apfs_build_dentry_unhashed_key(struct qstr *qname, u64 parent_id,
 
 	apfs_key_set_hdr(APFS_TYPE_DIR_REC, parent_id, key);
 	key->name_len = cpu_to_le16(namelen);
-	strcpy(key->name, qname->name);
+	strscpy(key->name, qname->name, namelen);
 
 	*key_p = key;
 	return key_len;
@@ -297,7 +304,7 @@ static int apfs_build_dentry_hashed_key(struct qstr *qname, u64 hash, u64 parent
 
 	apfs_key_set_hdr(APFS_TYPE_DIR_REC, parent_id, key);
 	key->name_len_and_hash = cpu_to_le32(namelen | hash);
-	strcpy(key->name, qname->name);
+	strscpy(key->name, qname->name, namelen);
 
 	*key_p = key;
 	return key_len;
@@ -361,7 +368,6 @@ static int apfs_create_dentry_rec(struct inode *inode, struct qstr *qname,
 {
 	struct super_block *sb = inode->i_sb;
 	struct apfs_sb_info *sbi = APFS_SB(sb);
-	struct apfs_key key;
 	struct apfs_query *query;
 	void *raw_key = NULL;
 	struct apfs_drec_val *raw_val = NULL;
@@ -369,21 +375,20 @@ static int apfs_create_dentry_rec(struct inode *inode, struct qstr *qname,
 	bool hashed = apfs_is_normalization_insensitive(sb);
 	int ret;
 
-	apfs_init_drec_key(sb, parent_id, qname->name, qname->len, &key);
 	query = apfs_alloc_query(sbi->s_cat_root, NULL /* parent */);
 	if (!query)
 		return -ENOMEM;
-	query->key = &key;
+	apfs_init_drec_key(sb, parent_id, qname->name, qname->len, &query->key);
 	query->flags |= APFS_QUERY_CAT;
 
 	ret = apfs_btree_query(sb, &query);
 	if (ret && ret != -ENODATA) {
-		apfs_err(sb, "query failed in dir 0x%llx (hash 0x%llx)", parent_id, key.number);
+		apfs_err(sb, "query failed in dir 0x%llx (hash 0x%llx)", parent_id, query->key.number);
 		goto fail;
 	}
 
 	if (hashed)
-		key_len = apfs_build_dentry_hashed_key(qname, key.number, parent_id,
+		key_len = apfs_build_dentry_hashed_key(qname, query->key.number, parent_id,
 						       (struct apfs_drec_hashed_key **)&raw_key);
 	else
 		key_len = apfs_build_dentry_unhashed_key(qname, parent_id,
@@ -401,7 +406,7 @@ static int apfs_create_dentry_rec(struct inode *inode, struct qstr *qname,
 	/* TODO: deal with hash collisions */
 	ret = apfs_btree_insert(query, raw_key, key_len, raw_val, val_len);
 	if (ret)
-		apfs_err(sb, "insertion failed in dir 0x%llx (hash 0x%llx)", parent_id, key.number);
+		apfs_err(sb, "insertion failed in dir 0x%llx (hash 0x%llx)", parent_id, query->key.number);
 
 fail:
 	kfree(raw_val);
@@ -434,7 +439,7 @@ static int apfs_build_sibling_val(struct dentry *dentry,
 
 	val->parent_id = cpu_to_le64(apfs_ino(parent));
 	val->name_len = cpu_to_le16(namelen);
-	strcpy(val->name, qname->name);
+	strscpy(val->name, qname->name, namelen);
 
 	*val_p = val;
 	return val_len;
@@ -453,18 +458,16 @@ static int apfs_create_sibling_link_rec(struct dentry *dentry,
 {
 	struct super_block *sb = dentry->d_sb;
 	struct apfs_sb_info *sbi = APFS_SB(sb);
-	struct apfs_key key;
 	struct apfs_query *query = NULL;
 	struct apfs_sibling_link_key raw_key;
 	struct apfs_sibling_val *raw_val;
 	int val_len;
 	int ret;
 
-	apfs_init_sibling_link_key(apfs_ino(inode), sibling_id, &key);
 	query = apfs_alloc_query(sbi->s_cat_root, NULL /* parent */);
 	if (!query)
 		return -ENOMEM;
-	query->key = &key;
+	apfs_init_sibling_link_key(apfs_ino(inode), sibling_id, &query->key);
 	query->flags |= APFS_QUERY_CAT;
 
 	ret = apfs_btree_query(sb, &query);
@@ -503,17 +506,15 @@ static int apfs_create_sibling_map_rec(struct dentry *dentry,
 {
 	struct super_block *sb = dentry->d_sb;
 	struct apfs_sb_info *sbi = APFS_SB(sb);
-	struct apfs_key key;
 	struct apfs_query *query = NULL;
 	struct apfs_sibling_map_key raw_key;
 	struct apfs_sibling_map_val raw_val;
 	int ret;
 
-	apfs_init_sibling_map_key(sibling_id, &key);
 	query = apfs_alloc_query(sbi->s_cat_root, NULL /* parent */);
 	if (!query)
 		return -ENOMEM;
-	query->key = &key;
+	apfs_init_sibling_map_key(sibling_id, &query->key);
 	query->flags |= APFS_QUERY_CAT;
 
 	ret = apfs_btree_query(sb, &query);
@@ -601,7 +602,13 @@ static int apfs_create_dentry(struct dentry *dentry, struct inode *inode)
 	}
 
 	/* Now update the parent inode */
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 6, 0)
 	parent->i_mtime = parent->i_ctime = current_time(inode);
+#elif LINUX_VERSION_CODE < KERNEL_VERSION(6, 7, 0)
+	parent->i_mtime = inode_set_ctime_current(parent);
+#else
+	inode_set_mtime_to_ts(parent, inode_set_ctime_current(parent));
+#endif
 	++APFS_I(parent)->i_nchildren;
 	apfs_inode_join_transaction(parent->i_sb, parent);
 	return 0;
@@ -841,7 +848,11 @@ static int __apfs_link(struct dentry *old_dentry, struct dentry *dentry)
 
 	/* First update the inode's link count */
 	inc_nlink(inode);
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 6, 0)
 	inode->i_ctime = current_time(inode);
+#else
+	inode_set_ctime_current(inode);
+#endif
 	apfs_inode_join_transaction(inode->i_sb, inode);
 
 	if (inode->i_nlink == 2) {
@@ -915,17 +926,15 @@ static int apfs_delete_sibling_link_rec(struct dentry *dentry, u64 sibling_id)
 	struct super_block *sb = dentry->d_sb;
 	struct apfs_sb_info *sbi = APFS_SB(sb);
 	struct inode *inode = d_inode(dentry);
-	struct apfs_key key;
 	struct apfs_query *query = NULL;
 	int ret;
 
 	ASSERT(sibling_id);
 
-	apfs_init_sibling_link_key(apfs_ino(inode), sibling_id, &key);
 	query = apfs_alloc_query(sbi->s_cat_root, NULL /* parent */);
 	if (!query)
 		return -ENOMEM;
-	query->key = &key;
+	apfs_init_sibling_link_key(apfs_ino(inode), sibling_id, &query->key);
 	query->flags |= APFS_QUERY_CAT | APFS_QUERY_EXACT;
 
 	ret = apfs_btree_query(sb, &query);
@@ -958,17 +967,15 @@ static int apfs_delete_sibling_map_rec(struct dentry *dentry, u64 sibling_id)
 {
 	struct super_block *sb = dentry->d_sb;
 	struct apfs_sb_info *sbi = APFS_SB(sb);
-	struct apfs_key key;
 	struct apfs_query *query = NULL;
 	int ret;
 
 	ASSERT(sibling_id);
 
-	apfs_init_sibling_map_key(sibling_id, &key);
 	query = apfs_alloc_query(sbi->s_cat_root, NULL /* parent */);
 	if (!query)
 		return -ENOMEM;
-	query->key = &key;
+	apfs_init_sibling_map_key(sibling_id, &query->key);
 	query->flags |= APFS_QUERY_CAT | APFS_QUERY_EXACT;
 
 	ret = apfs_btree_query(sb, &query);
@@ -1030,7 +1037,13 @@ static int apfs_delete_dentry(struct dentry *dentry)
 	}
 
 	/* Now update the parent inode */
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 6, 0)
 	parent->i_mtime = parent->i_ctime = current_time(parent);
+#elif LINUX_VERSION_CODE < KERNEL_VERSION(6, 7, 0)
+	parent->i_mtime = inode_set_ctime_current(parent);
+#else
+	inode_set_mtime_to_ts(parent, inode_set_ctime_current(parent));
+#endif
 	--APFS_I(parent)->i_nchildren;
 	apfs_inode_join_transaction(sb, parent);
 	return err;
@@ -1089,7 +1102,7 @@ static int apfs_sibling_link_from_query(struct apfs_query *query,
 	*name = kmalloc(namelen, GFP_KERNEL);
 	if (!*name)
 		return -ENOMEM;
-	strcpy(*name, siblink->name);
+	strscpy(*name, siblink->name, namelen);
 	*parent = le64_to_cpu(siblink->parent_id);
 	return 0;
 }
@@ -1107,18 +1120,14 @@ static int apfs_find_primary_link(struct inode *inode, char **name, u64 *parent)
 {
 	struct super_block *sb = inode->i_sb;
 	struct apfs_sb_info *sbi = APFS_SB(sb);
-	struct apfs_key key;
 	struct apfs_query *query;
 	int err;
 
 	query = apfs_alloc_query(sbi->s_cat_root, NULL /* parent */);
 	if (!query)
 		return -ENOMEM;
-
-	apfs_init_sibling_link_key(apfs_ino(inode), 0 /* sibling_id */, &key);
-	query->key = &key;
-	query->flags |= APFS_QUERY_CAT | APFS_QUERY_ANY_NUMBER |
-			APFS_QUERY_EXACT;
+	apfs_init_sibling_link_key(apfs_ino(inode), 0 /* sibling_id */, &query->key);
+	query->flags |= APFS_QUERY_CAT | APFS_QUERY_ANY_NUMBER | APFS_QUERY_EXACT;
 
 	/* The primary link is the one with the lowest sibling id */
 	*name = NULL;
@@ -1149,13 +1158,13 @@ fail:
 
 /**
  * apfs_orphan_name - Get the name for an orphan inode's invisible link
- * @inode: the vfs inode
- * @qname: on return, the name assigned to the link
+ * @ino:	the inode number
+ * @qname:	on return, the name assigned to the link
  *
  * Returns 0 on success; the caller must remember to free @qname->name after
  * use.  Returns a negative error code in case of failure.
  */
-static int apfs_orphan_name(struct inode *inode, struct qstr *qname)
+static int apfs_orphan_name(u64 ino, struct qstr *qname)
 {
 	int max_len;
 	char *name;
@@ -1165,7 +1174,7 @@ static int apfs_orphan_name(struct inode *inode, struct qstr *qname)
 	name = kmalloc(max_len, GFP_KERNEL);
 	if (!name)
 		return -ENOMEM;
-	qname->len = snprintf(name, max_len, "0x%llx-dead", apfs_ino(inode));
+	qname->len = snprintf(name, max_len, "0x%llx-dead", ino);
 	qname->name = name;
 	return 0;
 }
@@ -1184,7 +1193,7 @@ static int apfs_create_orphan_link(struct inode *inode)
 	struct qstr qname;
 	int err = 0;
 
-	err = apfs_orphan_name(inode, &qname);
+	err = apfs_orphan_name(apfs_ino(inode), &qname);
 	if (err)
 		return err;
 	err = apfs_create_dentry_rec(inode, &qname, apfs_ino(priv_dir), 0 /* sibling_id */);
@@ -1194,7 +1203,13 @@ static int apfs_create_orphan_link(struct inode *inode)
 	}
 
 	/* Now update the child count for private-dir */
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 6, 0)
 	priv_dir->i_mtime = priv_dir->i_ctime = current_time(priv_dir);
+#elif LINUX_VERSION_CODE < KERNEL_VERSION(6, 7, 0)
+	priv_dir->i_mtime = inode_set_ctime_current(priv_dir);
+#else
+	inode_set_mtime_to_ts(priv_dir, inode_set_ctime_current(priv_dir));
+#endif
 	++APFS_I(priv_dir)->i_nchildren;
 	apfs_inode_join_transaction(sb, priv_dir);
 
@@ -1221,7 +1236,7 @@ int apfs_delete_orphan_link(struct inode *inode)
 	struct apfs_drec drec;
 	int err;
 
-	err = apfs_orphan_name(inode, &qname);
+	err = apfs_orphan_name(apfs_ino(inode), &qname);
 	if (err)
 		return err;
 
@@ -1239,7 +1254,13 @@ int apfs_delete_orphan_link(struct inode *inode)
 	}
 
 	/* Now update the child count for private-dir */
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 6, 0)
 	priv_dir->i_mtime = priv_dir->i_ctime = current_time(priv_dir);
+#elif LINUX_VERSION_CODE < KERNEL_VERSION(6, 7, 0)
+	priv_dir->i_mtime = inode_set_ctime_current(priv_dir);
+#else
+	inode_set_mtime_to_ts(priv_dir, inode_set_ctime_current(priv_dir));
+#endif
 	--APFS_I(priv_dir)->i_nchildren;
 	apfs_inode_join_transaction(sb, priv_dir);
 
@@ -1330,7 +1351,11 @@ static int __apfs_unlink(struct inode *dir, struct dentry *dentry)
 	if (err)
 		goto fail;
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 6, 0)
 	inode->i_ctime = dir->i_ctime;
+#else
+	inode_set_ctime_to_ts(inode, inode_get_ctime(dir));
+#endif
 	/* TODO: defer write of the primary name? */
 	err = apfs_update_inode(inode, primary_name);
 	if (err)
@@ -1454,5 +1479,66 @@ out_undo_unlink_new:
 		__apfs_undo_unlink(new_dentry);
 out_abort:
 	apfs_transaction_abort(sb);
+	return err;
+}
+
+/**
+ * apfs_any_orphan_ino - Find the inode number for any orphaned regular file
+ * @sb:		filesytem superblock
+ * @ino_p:	on return, the inode number found
+ *
+ * Returns 0 on success, or a negative error code in case of failure, which may
+ * be -ENODATA if there are no orphan files.
+ */
+u64 apfs_any_orphan_ino(struct super_block *sb, u64 *ino_p)
+{
+	struct apfs_sb_info *sbi = APFS_SB(sb);
+	struct apfs_query *query = NULL;
+	struct apfs_drec drec = {0};
+	struct qstr qname = {0};
+	bool hashed = apfs_is_normalization_insensitive(sb);
+	bool found = false;
+	int err;
+
+	query = apfs_alloc_query(sbi->s_cat_root, NULL /* parent */);
+	if (!query)
+		return -ENOMEM;
+	apfs_init_drec_key(sb, APFS_PRIV_DIR_INO_NUM, NULL /* name */, 0 /* name_len */, &query->key);
+	query->flags = APFS_QUERY_CAT | APFS_QUERY_MULTIPLE | APFS_QUERY_EXACT;
+
+	while (!found) {
+		err = apfs_btree_query(sb, &query);
+		if (err) {
+			if (err == -ENODATA)
+				goto out;
+			apfs_err(sb, "drec query failed for private dir");
+			goto out;
+		}
+		err = apfs_drec_from_query(query, &drec, hashed);
+		if (err) {
+			apfs_alert(sb, "bad dentry record in private dir");
+			goto out;
+		}
+
+		/* These files are deleted immediately by ->evict_inode() */
+		if (drec.type != DT_REG)
+			continue;
+
+		/*
+		 * Confirm that this is an orphan file, because the official
+		 * reference allows other uses for the private directory.
+		 */
+		err = apfs_orphan_name(drec.ino, &qname);
+		if (err)
+			goto out;
+		found = strcmp(drec.name, qname.name) == 0;
+		kfree(qname.name);
+		qname.name = NULL;
+	}
+	*ino_p = drec.ino;
+
+out:
+	apfs_free_query(query);
+	query = NULL;
 	return err;
 }

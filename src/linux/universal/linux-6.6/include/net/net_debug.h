@@ -7,6 +7,26 @@
 
 struct net_device;
 
+#ifdef CONFIG_NOPRINTK
+__printf(3, 4) __cold
+static inline void netdev_printk(const char *level, const struct net_device *dev,
+		   const char *format, ...) {}
+__printf(2, 3) __cold
+static inline void netdev_emerg(const struct net_device *dev, const char *format, ...) {}
+__printf(2, 3) __cold
+static inline void netdev_alert(const struct net_device *dev, const char *format, ...) {}
+__printf(2, 3) __cold
+static inline void netdev_crit(const struct net_device *dev, const char *format, ...) {}
+__printf(2, 3) __cold
+static inline void netdev_err(const struct net_device *dev, const char *format, ...) {}
+__printf(2, 3) __cold
+static inline void netdev_warn(const struct net_device *dev, const char *format, ...) {}
+__printf(2, 3) __cold
+static inline void netdev_notice(const struct net_device *dev, const char *format, ...) {}
+__printf(2, 3) __cold
+static inline void netdev_info(const struct net_device *dev, const char *format, ...) {}
+
+#else
 __printf(3, 4) __cold
 void netdev_printk(const char *level, const struct net_device *dev,
 		   const char *format, ...);
@@ -24,6 +44,7 @@ __printf(2, 3) __cold
 void netdev_notice(const struct net_device *dev, const char *format, ...);
 __printf(2, 3) __cold
 void netdev_info(const struct net_device *dev, const char *format, ...);
+#endif
 
 #define netdev_level_once(level, dev, fmt, ...)			\
 do {								\

@@ -58,5 +58,7 @@ typedef __u32 __bitwise __wsum;
 
 typedef unsigned __bitwise __poll_t;
 
+#define MIPS_ENABLED(a)
+
 #endif /*  __ASSEMBLY__ */
 #endif /* _UAPI_LINUX_TYPES_H */
