@@ -29,7 +29,7 @@ struct dev_printk_info {
 	char device[PRINTK_INFO_DEVICE_LEN];
 };
 
-#ifdef CONFIG_PRINTK
+#if defined(CONFIG_PRINTK) && !defined(CONFIG_NOPRINTK)
 
 __printf(3, 0) __cold
 int dev_vprintk_emit(int level, const struct device *dev,

@@ -244,5 +244,19 @@ typedef void (*swap_func_t)(void *a, void *b, int size);
 typedef int (*cmp_r_func_t)(const void *a, const void *b, const void *priv);
 typedef int (*cmp_func_t)(const void *a, const void *b);
 
+#undef net_hdr_word
+#undef MIPS_ENABLED
+#ifdef CONFIG_MIPS
+struct net_hdr_word {
+       u32 words[1];
+} __attribute__((packed, aligned(2)));
+
+#define net_hdr_word(_p) (((struct net_hdr_word *) (_p))->words[0])
+#define MIPS_ENABLED(a) a
+#else
+#define MIPS_ENABLED(a)
+#define net_hdr_word(_p) (*((u32 *)_p))
+#endif
+
 #endif /*  __ASSEMBLY__ */
 #endif /* _LINUX_TYPES_H */

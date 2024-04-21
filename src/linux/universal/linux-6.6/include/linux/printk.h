@@ -140,7 +140,7 @@ void early_printk(const char *s, ...) { }
 
 struct dev_printk_info;
 
-#ifdef CONFIG_PRINTK
+#if defined(CONFIG_PRINTK) && !defined(CONFIG_NOPRINTK)
 asmlinkage __printf(4, 0)
 int vprintk_emit(int facility, int level,
 		 const struct dev_printk_info *dev_info,

@@ -35,6 +35,9 @@
 #if IS_ENABLED(CONFIG_NF_CONNTRACK)
 #include <linux/netfilter/nf_conntrack_common.h>
 #endif
+#if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
+#include <linux/imq.h>
+#endif
 #include <net/net_debug.h>
 #include <net/dropreason-core.h>
 
@@ -871,6 +874,9 @@ struct sk_buff {
 	 * first. This is owned by whoever has the skb queued ATM.
 	 */
 	char			cb[48] __aligned(8);
+#if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
+	void			*cb_next;
+#endif
 
 	union {
 		struct {
@@ -885,6 +891,9 @@ struct sk_buff {
 
 #if defined(CONFIG_NF_CONNTRACK) || defined(CONFIG_NF_CONNTRACK_MODULE)
 	unsigned long		 _nfct;
+#endif
+#if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
+	struct nf_queue_entry *nf_queue_entry;
 #endif
 	unsigned int		len,
 				data_len;
@@ -978,6 +987,9 @@ struct sk_buff {
 #ifdef CONFIG_NETFILTER_SKIP_EGRESS
 	__u8			nf_skip_egress:1;
 #endif
+#if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
+	__u8			imq_flags:IMQ_F_BITS;
+#endif
 #ifdef CONFIG_TLS_DEVICE
 	__u8			decrypted:1;
 #endif
@@ -985,6 +997,7 @@ struct sk_buff {
 #if IS_ENABLED(CONFIG_IP_SCTP)
 	__u8			csum_not_inet:1;
 #endif
+	__u8			fast_forwarded:1;
 
 #if defined(CONFIG_NET_SCHED) || defined(CONFIG_NET_XGRESS)
 	__u16			tc_index;	/* traffic control index */
@@ -1248,6 +1261,11 @@ static inline void consume_skb(struct sk_buff *skb)
 {
 	return kfree_skb(skb);
 }
+#endif
+
+#if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
+int skb_save_cb(struct sk_buff *skb);
+int skb_restore_cb(struct sk_buff *skb);
 #endif
 
 void __consume_stateless_skb(struct sk_buff *skb);
@@ -4646,6 +4664,9 @@ enum skb_ext_id {
 #if IS_ENABLED(CONFIG_NET_DSA_TAG_OOB)
 	SKB_EXT_DSA_OOB,
 #endif
+#if IS_ENABLED(CONFIG_NET_DSA_TAG_OOB)
+	SKB_EXT_DSA_OOB,
+#endif
 	SKB_EXT_NUM, /* must be last */
 };
 
@@ -4775,6 +4796,10 @@ static inline void __nf_copy(struct sk_buff *dst, const struct sk_buff *src,
 #if defined(CONFIG_NF_CONNTRACK) || defined(CONFIG_NF_CONNTRACK_MODULE)
 	dst->_nfct = src->_nfct;
 	nf_conntrack_get(skb_nfct(src));
+#endif
+#if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
+	dst->imq_flags = src->imq_flags;
+	dst->nf_queue_entry = src->nf_queue_entry;
 #endif
 #if IS_ENABLED(CONFIG_NETFILTER_XT_TARGET_TRACE) || IS_ENABLED(CONFIG_NF_TABLES)
 	if (copy)

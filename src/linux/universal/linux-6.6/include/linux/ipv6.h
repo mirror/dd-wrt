@@ -6,6 +6,7 @@
 
 #define ipv6_optlen(p)  (((p)->hdrlen+1) << 3)
 #define ipv6_authlen(p) (((p)->hdrlen+2) << 2)
+
 /*
  * This structure contains configuration options per IPv6 link.
  */
@@ -324,7 +325,7 @@ struct tcp6_timewait_sock {
 };
 
 #if IS_ENABLED(CONFIG_IPV6)
-bool ipv6_mod_enabled(void);
+bool __weak ipv6_mod_enabled(void);
 
 static inline struct ipv6_pinfo *inet6_sk(const struct sock *__sk)
 {

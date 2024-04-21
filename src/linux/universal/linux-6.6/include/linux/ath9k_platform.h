@@ -19,7 +19,7 @@
 #ifndef _LINUX_ATH9K_PLATFORM_H
 #define _LINUX_ATH9K_PLATFORM_H
 
-#define ATH9K_PLAT_EEP_MAX_WORDS	2048
+#define ATH9K_PLAT_EEP_MAX_WORDS	2048+0x1000
 
 struct ath9k_platform_data {
 	const char *eeprom_name;
@@ -49,10 +49,12 @@ struct ath9k_platform_data {
 
 	int num_leds;
 	const struct gpio_led *leds;
+	const char *led_name;
 
 	unsigned num_btns;
 	const struct gpio_keys_button *btns;
 	unsigned btn_poll_interval;
+	bool ubnt_hsr;
 };
 
 #endif /* _LINUX_ATH9K_PLATFORM_H */
