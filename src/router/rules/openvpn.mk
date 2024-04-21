@@ -23,6 +23,11 @@ DCO=--enable-dco
 OVPN_LIBNL_CFLAGS=-I$(TOP)/libnl/include/linux-private -I$(TOP)/libnl/include
 OVPN_LIBNL_LIBS=-L$(TOP)/libnl/lib/.libs -lnl-3 -lnl-genl-3
 endif
+ifeq ($(KERNELVERSION),6.9)
+DCO=--enable-dco
+OVPN_LIBNL_CFLAGS=-I$(TOP)/libnl/include/linux-private -I$(TOP)/libnl/include
+OVPN_LIBNL_LIBS=-L$(TOP)/libnl/lib/.libs -lnl-3 -lnl-genl-3
+endif
 ifeq ($(KERNELVERSION),4.9)
 DCO=--enable-dco
 OVPN_LIBNL_CFLAGS=-I$(TOP)/libnl/include/linux-private -I$(TOP)/libnl/include
@@ -177,6 +182,9 @@ endif
 ifeq ($(KERNELVERSION),6.1)
 	make -C ovpn-dco
 endif
+ifeq ($(KERNELVERSION),6.9)
+	make -C ovpn-dco
+endif
 ifeq ($(KERNELVERSION),4.9)
 	make -C ovpn-dco
 endif
@@ -211,6 +219,9 @@ endif
 ifeq ($(KERNELVERSION),6.1)
 	make -C ovpn-dco install
 endif
+ifeq ($(KERNELVERSION),6.9)
+	make -C ovpn-dco install
+endif
 ifeq ($(KERNELVERSION),4.9)
 	make -C ovpn-dco install
 endif
@@ -225,6 +236,9 @@ openvpn-clean:
 	-make -C $(OVPN)/wolfssl clean
 	-make -C $(OVPN)/openssl clean
 ifeq ($(KERNELVERSION),6.1)
+	make -C ovpn-dco clean
+endif
+ifeq ($(KERNELVERSION),6.9)
 	make -C ovpn-dco clean
 endif
 ifeq ($(KERNELVERSION),4.9)

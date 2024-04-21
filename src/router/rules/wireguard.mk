@@ -1,13 +1,17 @@
 wireguard: libmnl
 ifneq ($(KERNELVERSION),6.1)
+ifneq ($(KERNELVERSION),6.9)
 	cd wireguard/src ; $(MAKE) -C $(LINUXDIR) M="$(TOP)/wireguard/src" KERNELDIR=$(LINUX_DIR)
+endif
 endif
 	cd wireguard/src ; $(MAKE) LIBMNL_CFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections -I$(TOP)/libmnl/include" LIBMNL_LDLIBS="$(LDLTO) $(COPTS) $(MIPS16_OPT) -L$(TOP)/libmnl/src/.libs -lmnl" RUNSTATEDIR=/var/run tools 
 	cd wireguard/obfuscation/kernel ; $(MAKE)
 
 wireguard-install:
 ifneq ($(KERNELVERSION),6.1)
+ifneq ($(KERNELVERSION),6.9)
 	install -D wireguard/src/wireguard.ko $(INSTALLDIR)/wireguard/lib/modules/$(KERNELRELEASE)/wireguard.ko
+endif
 endif
 	install -D wireguard/src/tools/wg $(INSTALLDIR)/wireguard/usr/bin/wg
 	#install -d wireguard/$(INSTALLDIR)/usr/bin
@@ -24,7 +28,9 @@ wireguard-configure:
 
 wireguard-clean:
 ifneq ($(KERNELVERSION),6.1)
+ifneq ($(KERNELVERSION),6.9)
 	cd wireguard/src ; $(MAKE) -C $(LINUXDIR) M="$(TOP)/wireguard/src" KERNELDIR=$(LINUX_DIR) clean
+endif
 endif
 	cd wireguard/src/tools ; $(MAKE) M="$(TOP)/wireguard/src" clean
 	cd wireguard/obfuscation/kernel ; $(MAKE) clean
