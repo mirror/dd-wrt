@@ -2584,12 +2584,14 @@ static int __init ebtables_init(void)
 		xt_unregister_target(&ebt_standard_target);
 		return ret;
 	}
+	brnf_call_ebtables=1;
 
 	return 0;
 }
 
 static void ebtables_fini(void)
 {
+	brnf_call_ebtables=0;
 	nf_unregister_sockopt(&ebt_sockopts);
 	xt_unregister_target(&ebt_standard_target);
 	unregister_pernet_subsys(&ebt_net_ops);

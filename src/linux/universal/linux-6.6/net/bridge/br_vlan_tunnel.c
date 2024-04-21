@@ -15,6 +15,7 @@
 
 #include "br_private.h"
 #include "br_private_tunnel.h"
+#include "br_private_offload.h"
 
 static inline int br_vlan_tunid_cmp(struct rhashtable_compare_arg *arg,
 				    const void *ptr)
@@ -180,6 +181,7 @@ void br_handle_ingress_vlan_tunnel(struct sk_buff *skb,
 	skb_dst_drop(skb);
 
 	__vlan_hwaccel_put_tag(skb, p->br->vlan_proto, vlan->vid);
+	br_offload_skb_disable(skb);
 }
 
 int br_handle_egress_vlan_tunnel(struct sk_buff *skb,
@@ -216,6 +218,7 @@ int br_handle_egress_vlan_tunnel(struct sk_buff *skb,
 		return 0;
 	}
 
+	br_offload_skb_disable(skb);
 	tunnel_dst = rcu_dereference(vlan->tinfo.tunnel_dst);
 	if (tunnel_dst && dst_hold_safe(&tunnel_dst->dst))
 		skb_dst_set(skb, &tunnel_dst->dst);

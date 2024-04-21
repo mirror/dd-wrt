@@ -1805,7 +1805,7 @@ again_under_lmqt:
 		skb->dev = pmctx->port->dev;
 		br_multicast_count(brmctx->br, pmctx->port, skb, igmp_type,
 				   BR_MCAST_DIR_TX);
-		NF_HOOK(NFPROTO_BRIDGE, NF_BR_LOCAL_OUT,
+		BR_HOOK(NFPROTO_BRIDGE, NF_BR_LOCAL_OUT,
 			dev_net(pmctx->port->dev), NULL, skb, NULL, skb->dev,
 			br_dev_queue_push_xmit);
 

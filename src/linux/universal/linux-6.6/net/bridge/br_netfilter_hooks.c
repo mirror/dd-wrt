@@ -47,25 +47,13 @@
 #include <net/netfilter/nf_conntrack_core.h>
 #endif
 
-static unsigned int brnf_net_id __read_mostly;
+unsigned int brnf_net_id __read_mostly;
+EXPORT_SYMBOL(brnf_net_id);
+int brnf_call_ebtables __read_mostly = 0;
+int brnf_call_emf __read_mostly = 0;
+EXPORT_SYMBOL(brnf_call_ebtables);
+EXPORT_SYMBOL(brnf_call_emf);
 
-struct brnf_net {
-	bool enabled;
-
-#ifdef CONFIG_SYSCTL
-	struct ctl_table_header *ctl_hdr;
-#endif
-
-	/* default value is 1 */
-	int call_iptables;
-	int call_ip6tables;
-	int call_arptables;
-
-	/* default value is 0 */
-	int filter_vlan_tagged;
-	int filter_pppoe_tagged;
-	int pass_vlan_indev;
-};
 
 #define IS_IP(skb) \
 	(!skb_vlan_tag_present(skb) && skb->protocol == htons(ETH_P_IP))
@@ -518,7 +506,7 @@ static unsigned int br_nf_pre_routing(void *priv,
 		if (!brnet->call_ip6tables &&
 		    !br_opt_get(br, BROPT_NF_CALL_IP6TABLES))
 			return NF_ACCEPT;
-		if (!ipv6_mod_enabled()) {
+		if (!ipv6_mod_enabled || !ipv6_mod_enabled()) {
 			pr_warn_once("Module ipv6 is disabled, so call_ip6tables is not supported.");
 			return NF_DROP;
 		}

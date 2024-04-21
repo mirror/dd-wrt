@@ -22,6 +22,7 @@
 #include <linux/rculist.h>
 #include "br_private.h"
 #include "br_private_tunnel.h"
+#include "br_private_offload.h"
 
 static int
 br_netif_receive_skb(struct net *net, struct sock *sk, struct sk_buff *skb)
@@ -65,7 +66,7 @@ static int br_pass_frame_up(struct sk_buff *skb)
 	br_multicast_count(br, NULL, skb, br_multicast_igmp_type(skb),
 			   BR_MCAST_DIR_TX);
 
-	return NF_HOOK(NFPROTO_BRIDGE, NF_BR_LOCAL_IN,
+	return BR_HOOK(NFPROTO_BRIDGE, NF_BR_LOCAL_IN,
 		       dev_net(indev), NULL, skb, indev, NULL,
 		       br_netif_receive_skb);
 }
@@ -150,10 +151,14 @@ int br_handle_frame_finish(struct net *net, struct sock *sk, struct sk_buff *skb
 		}
 	}
 
+	BR_INPUT_SKB_CB(skb)->brdev = br->dev;
+
+	if (skb->protocol == htons(ETH_P_PAE))
+		return br_pass_frame_up(skb);
+
 	if (state == BR_STATE_LEARNING)
 		goto drop;
 
-	BR_INPUT_SKB_CB(skb)->brdev = br->dev;
 	BR_INPUT_SKB_CB(skb)->src_port_isolated = !!(p->flags & BR_ISOLATED);
 
 	if (IS_ENABLED(CONFIG_INET) &&
@@ -206,6 +211,7 @@ int br_handle_frame_finish(struct net *net, struct sock *sk, struct sk_buff *skb
 			dst->used = now;
 		br_forward(dst->dst, skb, local_rcv, false);
 	} else {
+		br_offload_skb_disable(skb);
 		if (!mcast_hit)
 			br_flood(br, skb, pkt_type, local_rcv, false, vid);
 		else
@@ -340,6 +346,9 @@ static rx_handler_result_t br_handle_frame(struct sk_buff **pskb)
 	br_tc_skb_miss_set(skb, false);
 
 	p = br_port_get_rcu(skb->dev);
+	if (br_offload_input(p, skb))
+		return RX_HANDLER_CONSUMED;
+
 	if (p->flags & BR_VLAN_TUNNEL)
 		br_handle_ingress_vlan_tunnel(skb, p, nbp_vlan_group_rcu(p));
 
@@ -396,7 +405,7 @@ static rx_handler_result_t br_handle_frame(struct sk_buff **pskb)
 		 *   - returns = 0 (stolen/nf_queue)
 		 * Thus return 1 from the okfn() to signal the skb is ok to pass
 		 */
-		if (NF_HOOK(NFPROTO_BRIDGE, NF_BR_LOCAL_IN,
+		if (BR_HOOK(NFPROTO_BRIDGE, NF_BR_LOCAL_IN,
 			    dev_net(skb->dev), NULL, skb, skb->dev, NULL,
 			    br_handle_local_finish) == 1) {
 			return RX_HANDLER_PASS;
@@ -414,15 +423,17 @@ forward:
 
 	switch (p->state) {
 	case BR_STATE_DISABLED:
-		if (ether_addr_equal(p->br->dev->dev_addr, dest))
-			skb->pkt_type = PACKET_HOST;
+		if (skb->protocol == htons(ETH_P_PAE)) {
+			if (ether_addr_equal(p->br->dev->dev_addr, dest))
+				skb->pkt_type = PACKET_HOST;
 
-		if (NF_HOOK(NFPROTO_BRIDGE, NF_BR_PRE_ROUTING,
-			dev_net(skb->dev), NULL, skb, skb->dev, NULL,
-			br_handle_local_finish) == 1) {
-			return RX_HANDLER_PASS;
+			if (BR_HOOK(NFPROTO_BRIDGE, NF_BR_PRE_ROUTING,
+				dev_net(skb->dev), NULL, skb, skb->dev, NULL,
+				br_handle_local_finish) == 1) {
+				return RX_HANDLER_PASS;
+			}
 		}
-		break;
+		goto drop;
 
 	case BR_STATE_FORWARDING:
 	case BR_STATE_LEARNING:

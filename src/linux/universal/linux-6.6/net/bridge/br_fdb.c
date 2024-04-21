@@ -23,6 +23,7 @@
 #include <net/switchdev.h>
 #include <trace/events/bridge.h>
 #include "br_private.h"
+#include "br_private_offload.h"
 
 static const struct rhashtable_params br_fdb_rht_params = {
 	.head_offset = offsetof(struct net_bridge_fdb_entry, rhnode),
@@ -191,6 +192,8 @@ static void fdb_notify(struct net_bridge *br,
 	struct net *net = dev_net(br->dev);
 	struct sk_buff *skb;
 	int err = -ENOBUFS;
+
+	br_offload_fdb_update(fdb);
 
 	if (swdev_notify)
 		br_switchdev_fdb_notify(br, fdb, type);
@@ -408,6 +411,8 @@ static struct net_bridge_fdb_entry *fdb_create(struct net_bridge *br,
 	}
 
 	hlist_add_head_rcu(&fdb->fdb_node, &br->fdb_list);
+	INIT_HLIST_HEAD(&fdb->offload_in);
+	INIT_HLIST_HEAD(&fdb->offload_out);
 
 	return fdb;
 }
