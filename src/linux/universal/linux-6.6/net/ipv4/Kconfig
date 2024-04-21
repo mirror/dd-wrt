@@ -213,6 +213,27 @@ config NET_IPGRE_BROADCAST
 	  Network), but can be distributed all over the Internet. If you want
 	  to do that, say Y here and to "IP multicast routing" below.
 
+config NET_ETHERIP
+	tristate "IP: ethernet-in-IP tunneling"
+	depends on INET
+	help
+	  Tunneling means encapsulating data of one protocol type within
+	  another protocol and sending it over a channel that understands the
+	  encapsulating protocol. This particular tunneling driver implements
+	  the etherip Ethernet-in-IP protocol as described in RFC 3378.
+
+config NET_EOIP
+	tristate "IP: EOIP ethernet tunnels over IP"
+	depends on (IPV6 || IPV6=n) && NET_IPGRE_DEMUX
+	help
+	  Tunneling means encapsulating data of one protocol type within
+	  another protocol and sending it over a channel that understands the
+	  encapsulating protocol. This particular tunneling driver implements
+	  MikroTik RouterOS compatible encapsulation of ethernet frames over
+	  existing IPv4 infrastructure. It is useful if the other endpoint
+	  is a MikroTik router.
+
+
 config IP_MROUTE_COMMON
 	bool
 	depends on IP_MROUTE || IPV6_MROUTE

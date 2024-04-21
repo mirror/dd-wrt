@@ -221,7 +221,7 @@ struct sk_buff *tcp_gro_receive(struct list_head *head, struct sk_buff *skb)
 
 		th2 = tcp_hdr(p);
 
-		if (*(u32 *)&th->source ^ *(u32 *)&th2->source) {
+		if (net_hdr_word(&th->source) ^ net_hdr_word(&th2->source)) {
 			NAPI_GRO_CB(p)->same_flow = 0;
 			continue;
 		}
@@ -239,8 +239,8 @@ found:
 		  ~(TCP_FLAG_CWR | TCP_FLAG_FIN | TCP_FLAG_PSH));
 	flush |= (__force int)(th->ack_seq ^ th2->ack_seq);
 	for (i = sizeof(*th); i < thlen; i += 4)
-		flush |= *(u32 *)((u8 *)th + i) ^
-			 *(u32 *)((u8 *)th2 + i);
+		flush |= net_hdr_word((u8 *)th + i) ^
+			 net_hdr_word((u8 *)th2 + i);
 
 	/* When we receive our second frame we can made a decision on if we
 	 * continue this flow as an atomic flow with a fixed ID or if we use

@@ -4188,14 +4188,16 @@ static bool tcp_parse_aligned_timestamp(struct tcp_sock *tp, const struct tcphdr
 {
 	const __be32 *ptr = (const __be32 *)(th + 1);
 
-	if (*ptr == htonl((TCPOPT_NOP << 24) | (TCPOPT_NOP << 16)
-			  | (TCPOPT_TIMESTAMP << 8) | TCPOLEN_TIMESTAMP)) {
+	if (net_hdr_word(ptr) ==
+	    htonl((TCPOPT_NOP << 24) | (TCPOPT_NOP << 16) |
+		  (TCPOPT_TIMESTAMP << 8) | TCPOLEN_TIMESTAMP)) {
 		tp->rx_opt.saw_tstamp = 1;
 		++ptr;
-		tp->rx_opt.rcv_tsval = ntohl(*ptr);
+		tp->rx_opt.rcv_tsval = get_unaligned_be32(ptr);
 		++ptr;
-		if (*ptr)
-			tp->rx_opt.rcv_tsecr = ntohl(*ptr) - tp->tsoffset;
+		if (net_hdr_word(ptr))
+			tp->rx_opt.rcv_tsecr = get_unaligned_be32(ptr) -
+					       tp->tsoffset;
 		else
 			tp->rx_opt.rcv_tsecr = 0;
 		return true;
