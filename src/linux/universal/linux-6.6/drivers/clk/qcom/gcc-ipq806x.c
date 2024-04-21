@@ -24,6 +24,7 @@
 #include "clk-branch.h"
 #include "clk-hfpll.h"
 #include "reset.h"
+#include "nss-volt-ipq806x.h"
 
 static const struct clk_parent_data gcc_pxo[] = {
 	{ .fw_name = "pxo", .name = "pxo" },

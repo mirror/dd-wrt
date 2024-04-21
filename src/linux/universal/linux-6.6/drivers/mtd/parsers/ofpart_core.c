@@ -15,9 +15,36 @@
 #include <linux/mtd/mtd.h>
 #include <linux/slab.h>
 #include <linux/mtd/partitions.h>
+#include <linux/magic.h>
+#include <asm/setup.h>
 
 #include "ofpart_bcm4908.h"
 #include "ofpart_linksys_ns.h"
+
+
+struct squashfs_super_block {
+	__le32			s_magic;
+	__le32			inodes;
+	__le32			mkfs_time;
+	__le32			block_size;
+	__le32			fragments;
+	__le16			compression;
+	__le16			block_log;
+	__le16			flags;
+	__le16			no_ids;
+	__le16			s_major;
+	__le16			s_minor;
+	__le64			root_inode;
+	__le64			bytes_used;
+	__le64			id_table_start;
+	__le64			xattr_id_table_start;
+	__le64			inode_table_start;
+	__le64			directory_table_start;
+	__le64			fragment_table_start;
+	__le64			lookup_table_start;
+};
+
+
 
 struct fixed_partitions_quirks {
 	int (*post_parse)(struct mtd_info *mtd, struct mtd_partition *parts, int nr_parts);
@@ -40,6 +67,8 @@ static bool node_has_compatible(struct device_node *pp)
 
 static int mangled_rootblock;
 
+static int mangled_rootblock;
+
 static int parse_fixed_partitions(struct mtd_info *master,
 				  const struct mtd_partition **pparts,
 				  struct mtd_part_parser_data *data)
@@ -54,11 +83,21 @@ static int parse_fixed_partitions(struct mtd_info *master,
 	struct device_node *pp;
 	int nr_parts, i, ret = 0;
 	bool dedicated = true;
+	struct squashfs_super_block sb;
 
 	/* Pull of_node from the master device node */
 	mtd_node = mtd_get_of_node(master);
 	if (!mtd_node)
 		return 0;
+
+#ifdef CONFIG_ARCH_MVEBU
+	for (i = 0;i < COMMAND_LINE_SIZE - sizeof("/dev/mtdblockxx"); i++) {
+	    if (!memcmp(&boot_command_line[i],"/dev/mtdblock",13)) {
+		    mangled_rootblock = boot_command_line[i + 13] - '0';
+		    break;
+	    }
+	}
+#endif
 
 	if (!master->parent) { /* Master */
 		ofpart_node = of_get_child_by_name(mtd_node, "partitions");
@@ -93,6 +132,10 @@ static int parse_fixed_partitions(struct mtd_info *master,
 
 		nr_parts++;
 	}
+
+	#ifdef CONFIG_SOC_IMX6
+		nr_parts+=2; // for nvram
+	#endif
 
 	if (nr_parts == 0)
 		return 0;
@@ -172,6 +215,54 @@ static int parse_fixed_partitions(struct mtd_info *master,
 
 		if (of_property_read_bool(pp, "slc-mode"))
 			parts[i].add_flags |= MTD_SLC_ON_MLC_EMULATION;
+
+#ifdef CONFIG_ARCH_QCOM
+		if (!strcmp(partname, "linux") || !strcmp(partname, "linux2")) {
+			int offset = parts[i].offset;
+			while ((offset + master->erasesize) < master->size) {
+				mtd_read(master, offset, sizeof(sb), &len, (void *)&sb);
+				if (le32_to_cpu(sb.s_magic) == 0x23494255) {
+					printk(KERN_EMERG "found ubi at %X, skipping scan\n", offset);
+					break; // skip if ubifs has been found
+				}
+				if (le32_to_cpu(sb.s_magic) == SQUASHFS_MAGIC) {
+					len = le64_to_cpu(sb.bytes_used);
+					len += (offset & 0x000fffff);
+					len += (master->erasesize - 1);
+					len &= ~(master->erasesize - 1);
+					len -= (offset & 0x000fffff);
+					printk(KERN_EMERG "found squashfs at %X with len of %d bytes\n", offset, len);
+					i++;
+					parts[i].offset = offset;
+					if (!strcmp(partname, "linux2"))
+						parts[i].name = "rootfs2";
+					else
+						parts[i].name = "rootfs";
+					parts[i].size = len;
+					parts[i].mask_flags = 0;
+					nr_parts++;
+					break;
+				}
+				offset += 4096;
+			}
+		}
+#endif
+#ifdef CONFIG_SOC_IMX6
+		// for ventana, we hack a nvram partition into the layout
+		if (!strcmp(partname,"env")) {
+			parts[i].size -= 0x80000;
+			i++;
+			parts[i].offset = parts[i-1].offset + parts[i-1].size;
+			parts[i].size = 0x40000;	
+			parts[i].mask_flags = 0;	
+			parts[i].name = "nvram";
+			i++;
+			parts[i].offset = parts[i-1].offset + parts[i-1].size;
+			parts[i].size = 0x40000;	
+			parts[i].mask_flags = 0;	
+			parts[i].name = "mampf";
+		}    
+#endif
 
 		i++;
 	}
@@ -277,6 +368,18 @@ static int __init ofpart_parser_init(void)
 	register_mtd_parser(&ofoldpart_parser);
 	return 0;
 }
+
+static int __init active_root(char *str)
+{
+	get_option(&str, &mangled_rootblock);
+
+	if (!mangled_rootblock)
+		return 1;
+
+	return 1;
+}
+
+__setup("mangled_rootblock=", active_root);
 
 static int __init active_root(char *str)
 {

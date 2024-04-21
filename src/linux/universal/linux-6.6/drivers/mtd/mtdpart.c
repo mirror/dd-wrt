@@ -57,12 +57,8 @@ static struct mtd_info *allocate_partition(struct mtd_info *parent,
 
 	/* allocate the partition structure */
 	child = kzalloc(sizeof(*child), GFP_KERNEL);
-	/* "rootfs" conflicts with OpenWrt auto mounting */
-	if (mtd_type_is_nand(parent) && !strcmp(part->name, "rootfs"))
-		name = "ubi";
-	else
-		name = kstrdup(part->name, GFP_KERNEL);
-	if (!name || !child) {
+	name = kstrdup(part->name, GFP_KERNEL);
+	if (!child) {
 		printk(KERN_ERR"memory allocation error while creating partitions for \"%s\"\n",
 		       parent->name);
 		kfree(name);

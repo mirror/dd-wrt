@@ -290,6 +290,8 @@ static const struct nla_policy port_policy[SWITCH_PORT_ATTR_MAX+1] = {
 static struct nla_policy link_policy[SWITCH_LINK_ATTR_MAX] = {
 	[SWITCH_LINK_FLAG_DUPLEX] = { .type = NLA_FLAG },
 	[SWITCH_LINK_FLAG_ANEG] = { .type = NLA_FLAG },
+	[SWITCH_LINK_FLAG_RX_FLOW] = { .type = NLA_FLAG },
+	[SWITCH_LINK_FLAG_TX_FLOW] = { .type = NLA_FLAG },
 	[SWITCH_LINK_SPEED] = { .type = NLA_U32 },
 };
 
@@ -618,6 +620,8 @@ swconfig_parse_link(struct sk_buff *msg, struct nlattr *nla,
 
 	link->duplex = !!tb[SWITCH_LINK_FLAG_DUPLEX];
 	link->aneg = !!tb[SWITCH_LINK_FLAG_ANEG];
+	link->rx_flow = !!tb[SWITCH_LINK_FLAG_RX_FLOW];
+	link->tx_flow = !!tb[SWITCH_LINK_FLAG_TX_FLOW];
 	link->speed = nla_get_u32(tb[SWITCH_LINK_SPEED]);
 
 	return 0;

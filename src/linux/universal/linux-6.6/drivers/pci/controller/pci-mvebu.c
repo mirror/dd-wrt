@@ -1090,15 +1090,12 @@ static int mvebu_pcie_init_irq_domain(struct mvebu_pcie_port *port)
 	return 0;
 }
 
-static void mvebu_pcie_irq_handler(struct irq_desc *desc)
+static irqreturn_t mvebu_pcie_irq_handler(int irq, void *arg)
 {
-	struct mvebu_pcie_port *port = irq_desc_get_handler_data(desc);
-	struct irq_chip *chip = irq_desc_get_chip(desc);
+	struct mvebu_pcie_port *port = arg;
 	struct device *dev = &port->pcie->pdev->dev;
 	u32 cause, unmask, status;
 	int i;
-
-	chained_irq_enter(chip, desc);
 
 	cause = mvebu_readl(port, PCIE_INT_CAUSE_OFF);
 	unmask = mvebu_readl(port, PCIE_INT_UNMASK_OFF);
@@ -1113,7 +1110,7 @@ static void mvebu_pcie_irq_handler(struct irq_desc *desc)
 			dev_err_ratelimited(dev, "unexpected INT%c IRQ\n", (char)i+'A');
 	}
 
-	chained_irq_exit(chip, desc);
+	return status ? IRQ_HANDLED : IRQ_NONE;
 }
 
 static int mvebu_pcie_map_irq(const struct pci_dev *dev, u8 slot, u8 pin)
@@ -1562,9 +1559,20 @@ static int mvebu_pcie_probe(struct platform_device *pdev)
 				mvebu_pcie_powerdown(port);
 				continue;
 			}
-			irq_set_chained_handler_and_data(irq,
-							 mvebu_pcie_irq_handler,
-							 port);
+
+			ret = devm_request_irq(dev, irq, mvebu_pcie_irq_handler,
+					       IRQF_SHARED | IRQF_NO_THREAD,
+					       port->name, port);
+			if (ret) {
+				dev_err(dev, "%s: cannot register interrupt handler: %d\n",
+					port->name, ret);
+				irq_domain_remove(port->intx_irq_domain);
+				pci_bridge_emul_cleanup(&port->bridge);
+				devm_iounmap(dev, port->base);
+				port->base = NULL;
+				mvebu_pcie_powerdown(port);
+				continue;
+			}
 		}
 
 		/*
@@ -1671,7 +1679,6 @@ static void mvebu_pcie_remove(struct platform_device *pdev)
 
 	for (i = 0; i < pcie->nports; i++) {
 		struct mvebu_pcie_port *port = &pcie->ports[i];
-		int irq = port->intx_irq;
 
 		if (!port->base)
 			continue;
@@ -1686,9 +1693,6 @@ static void mvebu_pcie_remove(struct platform_device *pdev)
 
 		/* Clear all interrupt causes. */
 		mvebu_writel(port, ~PCIE_INT_ALL_MASK, PCIE_INT_CAUSE_OFF);
-
-		if (irq > 0)
-			irq_set_chained_handler_and_data(irq, NULL, NULL);
 
 		/* Remove IRQ domains. */
 		if (port->intx_irq_domain)

@@ -504,6 +504,10 @@ struct ar8xxx_priv {
 
 	struct list_head list;
 	unsigned int use_count;
+	u32 state[8];
+	u32 disabled[8];
+	u32 ledstate;
+	u32 ledregs[4];
 
 	/* all fields below are cleared on reset */
 	struct_group(ar8xxx_priv_volatile,

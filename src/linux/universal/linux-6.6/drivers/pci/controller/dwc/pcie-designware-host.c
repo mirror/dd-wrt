@@ -85,18 +85,9 @@ irqreturn_t dw_handle_msi_irq(struct dw_pcie_rp *pp)
 	return ret;
 }
 
-/* Chained MSI interrupt service routine */
-static void dw_chained_msi_isr(struct irq_desc *desc)
+static irqreturn_t dw_pcie_msi_isr(int irq, void *dev_id)
 {
-	struct irq_chip *chip = irq_desc_get_chip(desc);
-	struct dw_pcie_rp *pp;
-
-	chained_irq_enter(chip, desc);
-
-	pp = irq_desc_get_handler_data(desc);
-	dw_handle_msi_irq(pp);
-
-	chained_irq_exit(chip, desc);
+	return dw_handle_msi_irq(dev_id);
 }
 
 static void dw_pci_setup_msi_msg(struct irq_data *d, struct msi_msg *msg)
@@ -256,19 +247,20 @@ int dw_pcie_allocate_domains(struct dw_pcie_rp *pp)
 	return 0;
 }
 
-static void dw_pcie_free_msi(struct dw_pcie_rp *pp)
+static void __dw_pcie_free_msi(struct dw_pcie_rp *pp, u32 num_ctrls)
 {
 	u32 ctrl;
 
-	for (ctrl = 0; ctrl < MAX_MSI_CTRLS; ctrl++) {
+	for (ctrl = 0; ctrl < num_ctrls; ctrl++) {
 		if (pp->msi_irq[ctrl] > 0)
-			irq_set_chained_handler_and_data(pp->msi_irq[ctrl],
-							 NULL, NULL);
+			free_irq(pp->msi_irq[ctrl], pp);
 	}
 
 	irq_domain_remove(pp->msi_domain);
 	irq_domain_remove(pp->irq_domain);
 }
+
+#define dw_pcie_free_msi(pp) __dw_pcie_free_msi(pp, MAX_MSI_CTRLS)
 
 static void dw_pcie_msi_init(struct dw_pcie_rp *pp)
 {
@@ -363,9 +355,16 @@ static int dw_pcie_msi_host_init(struct dw_pcie_rp *pp)
 		return ret;
 
 	for (ctrl = 0; ctrl < num_ctrls; ctrl++) {
-		if (pp->msi_irq[ctrl] > 0)
-			irq_set_chained_handler_and_data(pp->msi_irq[ctrl],
-						    dw_chained_msi_isr, pp);
+		if (pp->msi_irq[ctrl] > 0) {
+			ret = request_irq(pp->msi_irq[ctrl], dw_pcie_msi_isr, 0,
+					  dev_name(dev), pp);
+			if (ret) {
+				dev_err(dev, "Failed to request irq %d: %d\n",
+					pp->msi_irq[ctrl], ret);
+				__dw_pcie_free_msi(pp, ctrl);
+				return ret;
+			}
+		}
 	}
 
 	/*

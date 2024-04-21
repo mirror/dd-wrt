@@ -4,6 +4,7 @@
  * Copyright (c) 2014, The Linux Foundation. All rights reserved.
  */
 
+#include <linux/clk.h>
 #include <linux/clk-provider.h>
 #include <linux/err.h>
 #include <linux/export.h>
@@ -536,6 +537,7 @@ static int rpm_clk_probe(struct platform_device *pdev)
 	struct qcom_rpm *rpm;
 	struct clk_rpm **rpm_clks;
 	const struct rpm_clk_desc *desc;
+	struct clk *clk;
 
 	rpm = dev_get_drvdata(pdev->dev.parent);
 	if (!rpm) {
@@ -574,9 +576,14 @@ static int rpm_clk_probe(struct platform_device *pdev)
 		if (!rpm_clks[i])
 			continue;
 
-		ret = devm_clk_hw_register(&pdev->dev, &rpm_clks[i]->hw);
-		if (ret)
+		clk = devm_clk_register(&pdev->dev, &rpm_clks[i]->hw);
+		if (IS_ERR(clk)) {
+			ret = PTR_ERR(clk);
 			goto err;
+		}
+
+		clk_set_rate(clk, INT_MAX);
+		clk_prepare_enable(clk);
 	}
 
 	ret = devm_of_clk_add_hw_provider(&pdev->dev, qcom_rpm_clk_hw_get,

@@ -160,9 +160,19 @@ static inline void usb_phy_write_readback(struct usb_phy *phy_dwc3,
 
 static int wait_for_latch(void __iomem *addr)
 {
-	u32 val;
+	u32 retry = 10;
 
-	return readl_poll_timeout(addr, val, !val, LATCH_SLEEP, LATCH_TIMEOUT);
+	while (true) {
+		if (!readl(addr))
+			break;
+
+		if (--retry == 0)
+			return -ETIMEDOUT;
+
+		usleep_range(10, 20);
+	}
+
+	return 0;
 }
 
 /**
@@ -401,10 +411,10 @@ static int qcom_ipq806x_usb_ss_phy_init(struct phy *phy)
 	if (ret)
 		goto err_phy_trans;
 
-	data = 0;
-	data &= ~SSPHY_MPLL_MASK;
-	data |= SSPHY_MPLL(phy_dwc3->mpll);
-	usb_ss_write_phycreg(phy_dwc3, 0x30, data);
+//	data = 0;
+//	data &= ~SSPHY_MPLL_MASK;
+//	data |= SSPHY_MPLL(phy_dwc3->mpll);
+	usb_ss_write_phycreg(phy_dwc3, 0x30, phy_dwc3->mpll);
 
 	/*
 	 * Set the QSCRATCH PHY_PARAM_CTRL1 parameters as follows

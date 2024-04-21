@@ -12013,9 +12013,9 @@ static int i40e_vsi_alloc_q_vector(struct i40e_vsi *vsi, int v_idx)
 	q_vector->v_idx = v_idx;
 	cpumask_copy(&q_vector->affinity_mask, cpu_possible_mask);
 
-	if (vsi->netdev)
+	if (vsi->netdev) {
 		netif_napi_add(vsi->netdev, &q_vector->napi, i40e_napi_poll);
-
+	}
 	/* tie q_vector and vsi together */
 	vsi->q_vectors[v_idx] = q_vector;
 
@@ -14581,6 +14581,7 @@ struct i40e_vsi *i40e_vsi_setup(struct i40e_pf *pf, u8 type,
 		ret = register_netdev(vsi->netdev);
 		if (ret)
 			goto err_netdev;
+		dev_set_threaded(vsi->netdev, true);
 		vsi->netdev_registered = true;
 		netif_carrier_off(vsi->netdev);
 #ifdef CONFIG_I40E_DCB
@@ -15630,6 +15631,7 @@ static int i40e_init_recovery_mode(struct i40e_pf *pf, struct i40e_hw *hw)
 	err = register_netdev(vsi->netdev);
 	if (err)
 		goto err_switch_setup;
+	dev_set_threaded(vsi->netdev, true);
 	vsi->netdev_registered = true;
 	i40e_dbg_pf_init(pf);
 

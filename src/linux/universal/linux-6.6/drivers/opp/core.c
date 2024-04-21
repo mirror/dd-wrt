@@ -126,6 +126,27 @@ unsigned long dev_pm_opp_get_voltage(struct dev_pm_opp *opp)
 }
 EXPORT_SYMBOL_GPL(dev_pm_opp_get_voltage);
 
+struct regulator *dev_pm_opp_get_regulator(struct device *dev)
+{
+	struct opp_table *opp_table;
+	struct regulator *reg;
+
+	rcu_read_lock();
+
+	opp_table = _find_opp_table(dev);
+	if (IS_ERR(opp_table)) {
+		rcu_read_unlock();
+		return ERR_CAST(opp_table);
+	}
+
+	reg = opp_table->regulators[0];
+
+	rcu_read_unlock();
+
+	return reg;
+}
+EXPORT_SYMBOL_GPL(dev_pm_opp_get_regulator);
+
 /**
  * dev_pm_opp_get_supplies() - Gets the supply information corresponding to an opp
  * @opp:	opp for which voltage has to be returned for
@@ -2025,8 +2046,8 @@ int _opp_add_v1(struct opp_table *opp_table, struct device *dev,
 		unsigned long freq, long u_volt, bool dynamic)
 {
 	struct dev_pm_opp *new_opp;
-	unsigned long tol;
 	int ret;
+	unsigned long tol;
 
 	if (!assert_single_clk(opp_table))
 		return -EINVAL;
@@ -2957,6 +2978,7 @@ int dev_pm_opp_adjust_voltage(struct device *dev, unsigned long freq,
 	struct opp_table *opp_table;
 	struct dev_pm_opp *tmp_opp, *opp = ERR_PTR(-ENODEV);
 	int r = 0;
+	unsigned long tol;
 
 	/* Find the opp_table */
 	opp_table = _find_opp_table(dev);
@@ -2991,8 +3013,17 @@ int dev_pm_opp_adjust_voltage(struct device *dev, unsigned long freq,
 		goto adjust_unlock;
 
 	opp->supplies->u_volt = u_volt;
-	opp->supplies->u_volt_min = u_volt_min;
-	opp->supplies->u_volt_max = u_volt_max;
+
+	tol = u_volt * opp_table->voltage_tolerance_v1 / 100;
+	if ( u_volt_min == u_volt )
+		opp->supplies->u_volt_min = u_volt - tol;
+	else
+		opp->supplies->u_volt_min = u_volt_min;
+
+	if ( u_volt_max == u_volt )
+		opp->supplies->u_volt_max = u_volt + tol;
+	else
+		opp->supplies->u_volt_max = u_volt_max;
 
 	dev_pm_opp_get(opp);
 	mutex_unlock(&opp_table->lock);

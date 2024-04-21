@@ -134,6 +134,8 @@ static const struct {
 	[RTL_GIGA_MAC_VER_44] = {"RTL8411b",		FIRMWARE_8411_2 },
 	[RTL_GIGA_MAC_VER_46] = {"RTL8168h/8111h",	FIRMWARE_8168H_2},
 	[RTL_GIGA_MAC_VER_48] = {"RTL8107e",		FIRMWARE_8107E_2},
+	[RTL_GIGA_MAC_VER_49] = {"RTL8168ep/8111ep"			},
+	[RTL_GIGA_MAC_VER_50] = {"RTL8168ep/8111ep"			},
 	[RTL_GIGA_MAC_VER_51] = {"RTL8168ep/8111ep"			},
 	[RTL_GIGA_MAC_VER_52] = {"RTL8168fp/RTL8117",  FIRMWARE_8168FP_3},
 	[RTL_GIGA_MAC_VER_53] = {"RTL8168fp/RTL8117",			},
@@ -949,6 +951,7 @@ static void rtl8168g_phy_suspend_quirk(struct rtl8169_private *tp, int value)
 {
 	switch (tp->mac_version) {
 	case RTL_GIGA_MAC_VER_40:
+	case RTL_GIGA_MAC_VER_49:
 		if (value & BMCR_RESET || !(value & BMCR_PDOWN))
 			rtl_eri_set_bits(tp, 0x1a8, 0xfc000000);
 		else
@@ -1297,7 +1300,7 @@ static enum rtl_dash_type rtl_get_dash_type(struct rtl8169_private *tp)
 	case RTL_GIGA_MAC_VER_28:
 	case RTL_GIGA_MAC_VER_31:
 		return RTL_DASH_DP;
-	case RTL_GIGA_MAC_VER_51 ... RTL_GIGA_MAC_VER_53:
+	case RTL_GIGA_MAC_VER_49 ... RTL_GIGA_MAC_VER_53:
 		return RTL_DASH_EP;
 	default:
 		return RTL_DASH_NONE;
@@ -2080,11 +2083,8 @@ static enum mac_version rtl8169_get_mac_version(u16 xid, bool gmii)
 
 		/* 8168EP family. */
 		{ 0x7cf, 0x502,	RTL_GIGA_MAC_VER_51 },
-		/* It seems this chip version never made it to
-		 * the wild. Let's disable detection.
-		 * { 0x7cf, 0x501,      RTL_GIGA_MAC_VER_50 },
-		 * { 0x7cf, 0x500,      RTL_GIGA_MAC_VER_49 },
-		 */
+		{ 0x7cf, 0x501, RTL_GIGA_MAC_VER_50 },
+		{ 0x7cf, 0x500, RTL_GIGA_MAC_VER_49 },
 
 		/* 8168H family. */
 		{ 0x7cf, 0x541,	RTL_GIGA_MAC_VER_46 },
@@ -3373,6 +3373,43 @@ static void rtl_hw_start_8168ep(struct rtl8169_private *tp)
 	rtl_pcie_state_l2l3_disable(tp);
 }
 
+static void rtl_hw_start_8168ep_1(struct rtl8169_private *tp)
+{
+	static const struct ephy_info e_info_8168ep_1[] = {
+		{ 0x00, 0xffff,	0x10ab },
+		{ 0x06, 0xffff,	0xf030 },
+		{ 0x08, 0xffff,	0x2006 },
+		{ 0x0d, 0xffff,	0x1666 },
+		{ 0x0c, 0x3ff0,	0x0000 }
+	};
+
+	/* disable aspm and clock request before access ephy */
+	rtl_hw_aspm_clkreq_enable(tp, false);
+	rtl_ephy_init(tp, e_info_8168ep_1);
+
+	rtl_hw_start_8168ep(tp);
+	rtl_hw_aspm_clkreq_enable(tp, true);
+}
+
+static void rtl_hw_start_8168ep_2(struct rtl8169_private *tp)
+{
+	static const struct ephy_info e_info_8168ep_2[] = {
+		{ 0x00, 0xffff,	0x10a3 },
+		{ 0x19, 0xffff,	0xfc00 },
+		{ 0x1e, 0xffff,	0x20ea }
+	};
+
+	/* disable aspm and clock request before access ephy */
+	rtl_hw_aspm_clkreq_enable(tp, false);
+	rtl_ephy_init(tp, e_info_8168ep_2);
+
+	rtl_hw_start_8168ep(tp);
+
+	RTL_W8(tp, DLLPR, RTL_R8(tp, DLLPR) & ~PFM_EN);
+	RTL_W8(tp, MISC_1, RTL_R8(tp, MISC_1) & ~PFM_D3COLD_EN);
+	rtl_hw_aspm_clkreq_enable(tp, true);
+}
+
 static void rtl_hw_start_8168ep_3(struct rtl8169_private *tp)
 {
 	static const struct ephy_info e_info_8168ep_3[] = {
@@ -3734,6 +3771,8 @@ static void rtl_hw_config(struct rtl8169_private *tp)
 		[RTL_GIGA_MAC_VER_44] = rtl_hw_start_8411_2,
 		[RTL_GIGA_MAC_VER_46] = rtl_hw_start_8168h_1,
 		[RTL_GIGA_MAC_VER_48] = rtl_hw_start_8168h_1,
+		[RTL_GIGA_MAC_VER_49] = rtl_hw_start_8168ep_1,
+		[RTL_GIGA_MAC_VER_50] = rtl_hw_start_8168ep_2,
 		[RTL_GIGA_MAC_VER_51] = rtl_hw_start_8168ep_3,
 		[RTL_GIGA_MAC_VER_52] = rtl_hw_start_8117,
 		[RTL_GIGA_MAC_VER_53] = rtl_hw_start_8117,
@@ -5162,7 +5201,7 @@ static void rtl_hw_init_8125(struct rtl8169_private *tp)
 static void rtl_hw_initialize(struct rtl8169_private *tp)
 {
 	switch (tp->mac_version) {
-	case RTL_GIGA_MAC_VER_51 ... RTL_GIGA_MAC_VER_53:
+	case RTL_GIGA_MAC_VER_49 ... RTL_GIGA_MAC_VER_53:
 		rtl8168ep_stop_cmac(tp);
 		fallthrough;
 	case RTL_GIGA_MAC_VER_40 ... RTL_GIGA_MAC_VER_48:
@@ -5406,7 +5445,7 @@ static int rtl_init_one(struct pci_dev *pdev, const struct pci_device_id *ent)
 		return -ENOMEM;
 
 	pci_set_drvdata(pdev, tp);
-
+	netdev_info(dev, "mac_version %X\n", tp->mac_version);
 	rc = r8169_mdio_register(tp);
 	if (rc)
 		return rc;
@@ -5418,6 +5457,7 @@ static int rtl_init_one(struct pci_dev *pdev, const struct pci_device_id *ent)
 	netdev_info(dev, "%s, %pM, XID %03x, IRQ %d\n",
 		    rtl_chip_infos[chipset].name, dev->dev_addr, xid, tp->irq);
 
+	dev_set_threaded(dev, true);
 	if (jumbo_max)
 		netdev_info(dev, "jumbo features [frames: %d bytes, tx checksumming: %s]\n",
 			    jumbo_max, tp->mac_version <= RTL_GIGA_MAC_VER_06 ?

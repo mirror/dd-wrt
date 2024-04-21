@@ -1265,6 +1265,117 @@ static struct mtd_notifier ubi_mtd_notifier = {
 };
 
 
+#define ALT_PART_NAME_LENGTH 16
+struct per_part_info {
+	char name[ALT_PART_NAME_LENGTH];
+	uint32_t primaryboot;
+	uint32_t upgraded;
+};
+
+#define NUM_ALT_PARTITION 3
+typedef struct {
+#define _SMEM_DUAL_BOOTINFO_MAGIC       0xA5A3A1A0
+	/* Magic number for identification when reading from flash */
+	uint32_t magic;
+	/* upgradeinprogress indicates to attempting the upgrade */
+	uint32_t upgradeinprogress;
+	/* numaltpart indicate number of alt partitions */
+	uint32_t numaltpart;
+
+	struct per_part_info per_part_entry[NUM_ALT_PARTITION];
+} ipq_smem_bootconfig_info_t;
+
+/* version 2 */
+#define SMEM_DUAL_BOOTINFO_MAGIC_START 0xA3A2A1A0
+#define SMEM_DUAL_BOOTINFO_MAGIC_END 0xB3B2B1B0
+
+typedef struct {
+	uint32_t magic_start;
+	uint32_t upgradeinprogress;
+	uint32_t age;
+	uint32_t numaltpart;
+	struct per_part_info per_part_entry[NUM_ALT_PARTITION];
+	uint32_t magic_end;
+} ipq_smem_bootconfig_v2_info_t;
+
+
+
+
+static __init int getbootdevice(void)
+{
+	struct mtd_info *mtd;
+	size_t len;
+	int i;
+	int ret = -1;
+	ipq_smem_bootconfig_info_t *ipq_smem_bootconfig_info = NULL;
+	ipq_smem_bootconfig_v2_info_t *ipq_smem_bootconfig_v2_info = NULL;
+	unsigned int *smem, *p;
+	mtd = open_mtd_device("BOOTCONFIG");
+	if (IS_ERR(mtd))
+	    return -1;
+
+	smem = (unsigned int *)vmalloc(0x60000);
+	memset(smem, 0, 0x60000);
+	mtd_read(mtd, 0, 0x60000, &len, (void *)smem);
+	put_mtd_device(mtd);
+	if (len != 0x60000)
+	    return -1;
+	p = smem;
+	for (i = 0; i < 0x60000 - sizeof(ipq_smem_bootconfig_v2_info); i += 4) {
+		if (*p == SMEM_DUAL_BOOTINFO_MAGIC_START) {
+			ipq_smem_bootconfig_v2_info = (ipq_smem_bootconfig_v2_info_t *)p;
+			break;
+		}
+		if (*p == _SMEM_DUAL_BOOTINFO_MAGIC) {
+			ipq_smem_bootconfig_info = (ipq_smem_bootconfig_info_t *)p;
+			break;
+		}
+		p++;
+	}
+	
+	if (ipq_smem_bootconfig_v2_info) {
+		int upgrade = ipq_smem_bootconfig_v2_info->upgradeinprogress;
+		for (i = 0; i < ipq_smem_bootconfig_v2_info->numaltpart; i++) {
+			if (!strncmp(ipq_smem_bootconfig_v2_info->per_part_entry[i].name, "rootfs", 6)) {
+				if (ipq_smem_bootconfig_v2_info->per_part_entry[i].primaryboot)
+					ret = 1;
+				else
+					ret = 0;
+				if (upgrade && ipq_smem_bootconfig_v2_info->per_part_entry[i].upgraded)
+					ret = 1 - ret;
+			}
+		}
+	}
+	if (ipq_smem_bootconfig_info) {
+		int upgrade = ipq_smem_bootconfig_info->upgradeinprogress;
+		printk(KERN_INFO "bootconfig upgrade %d\n", upgrade);
+		for (i = 0; i < ipq_smem_bootconfig_info->numaltpart; i++) {
+		printk(KERN_INFO "bootconfig name %s\n", ipq_smem_bootconfig_info->per_part_entry[i].name);
+		printk(KERN_INFO "bootconfig primaryboot %d\n", ipq_smem_bootconfig_info->per_part_entry[i].primaryboot);
+		printk(KERN_INFO "bootconfig upgraded %d\n", ipq_smem_bootconfig_info->per_part_entry[i].upgraded);
+
+			if (!strncmp(ipq_smem_bootconfig_info->per_part_entry[i].name, "rootfs", 6)) {
+				if (ipq_smem_bootconfig_info->per_part_entry[i].primaryboot)
+					ret = 1;
+				else
+					ret = 0;
+				printk(KERN_INFO "primary boot device is %d\n",ret);
+				if (upgrade && ipq_smem_bootconfig_info->per_part_entry[i].upgraded) {
+					ret = 1 - ret;
+					printk(KERN_INFO "primary boot device is %d (invert since upgrade)\n",ret);
+				}
+			}
+		}
+	}
+	vfree(smem);
+	if (ret == -1)
+	    printk(KERN_INFO "no valid bootconfig found, use default\n");
+	else
+	    printk(KERN_INFO "boot from partition %d\n",ret);
+
+	return ret;
+}
+
 /*
  * This function tries attaching mtd partitions named either "ubi" or "data"
  * during boot.
@@ -1278,9 +1389,22 @@ static void __init ubi_auto_attach(void)
 	char magic[4];
 
 	/* try attaching mtd device named "ubi" or "data" */
-	mtd = open_mtd_device("ubi");
-	if (IS_ERR(mtd))
+	int bootdevice = getbootdevice();
+	if (bootdevice == 1)
+	    mtd = open_mtd_device("linux2");
+	else if (bootdevice == 0)
+	    mtd = open_mtd_device("linux");
+	else {
+	    mtd = open_mtd_device("ubi");
+	    if (IS_ERR(mtd))
 		mtd = open_mtd_device("data");
+	    if (IS_ERR(mtd))
+		mtd = open_mtd_device("linux");
+
+	}
+	/* Hack for the Asus RT-AC58U */
+	if (IS_ERR(mtd))
+		mtd = open_mtd_device("UBI_DEV");
 
 	if (IS_ERR(mtd))
 		return;

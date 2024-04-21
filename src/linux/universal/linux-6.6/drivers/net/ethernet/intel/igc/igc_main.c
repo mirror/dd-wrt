@@ -6924,6 +6924,7 @@ static int igc_probe(struct pci_dev *pdev,
 	err = register_netdev(netdev);
 	if (err)
 		goto err_register;
+	dev_set_threaded(netdev, true);
 
 	 /* carrier off reporting is important to ethtool even BEFORE open */
 	netif_carrier_off(netdev);

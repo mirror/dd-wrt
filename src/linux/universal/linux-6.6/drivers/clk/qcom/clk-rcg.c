@@ -643,6 +643,7 @@ static int clk_rcg_pixel_set_rate(struct clk_hw *hw, unsigned long rate,
 		return ret;
 
 	src = ns_to_src(&rcg->s, ns);
+	f.pre_div = ns_to_pre_div(&rcg->p, ns) + 1;
 
 	for (i = 0; i < num_parents; i++) {
 		if (src == rcg->s.parent_map[i].cfg) {
@@ -650,9 +651,6 @@ static int clk_rcg_pixel_set_rate(struct clk_hw *hw, unsigned long rate,
 			break;
 		}
 	}
-
-	/* bypass the pre divider */
-	f.pre_div = 1;
 
 	/* let us find appropriate m/n values for this */
 	for (; frac->num; frac++) {
@@ -816,6 +814,11 @@ static int clk_dyn_rcg_set_rate_and_parent(struct clk_hw *hw,
 		unsigned long rate, unsigned long parent_rate, u8 index)
 {
 	return __clk_dyn_rcg_set_rate(hw, rate);
+}
+
+void clk_dyn_configure_bank(struct clk_dyn_rcg *rcg, const struct freq_tbl *f)
+{
+	configure_bank(rcg, f);
 }
 
 const struct clk_ops clk_rcg_ops = {

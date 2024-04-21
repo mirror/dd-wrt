@@ -63,6 +63,7 @@ enum {
 };
 #define MV_PORT_STATUS_SPEED_SHIFT	8
 #define MV_PORT_STATUS_SPEED_MASK	(3 << 8)
+#define MV_PORT_STATUS_PHYDETECT	(1 << 12)
 
 enum {
 	MV_PORTCTRL_DISABLED		= (0 << 0),
@@ -194,7 +195,25 @@ enum {
 enum {
 	MV_CONTROL_RESET		= (1 << 15),
 	MV_CONTROL_PPU_ENABLE		= (1 << 14),
+	MV_CONTROL_ANEG			= (1 << 12),
+	MV_CONTROL_ANEG_RESTART		= (1 << 9),
 };
+
+enum {
+	MV_1000CONTROL_ADV1000FULL	= (1 << 9),
+	MV_1000CONTROL_ADV1000HALF	= (1 << 8),
+};
+
+enum {
+	MV_ANEG_ADV10HALF		= (1 << 5),
+	MV_ANEG_ADV10FULL		= (1 << 6),
+	MV_ANEG_ADV100HALF		= (1 << 7),
+	MV_ANEG_ADV100FULL		= (1 << 8),
+	MV_ANEG_ADV100T4		= (1 << 9),
+	MV_ANEG_ADVPAUSE		= (1 << 10),
+	MV_ANEG_ADVASYMPAUSE		= (1 << 11),
+};
+
 
 enum {
 	MV_VTUCTL_EGRESS_UNMODIFIED	= (0 << 0),
@@ -265,6 +284,21 @@ enum {
 
 #define MV_REG_FIBER_SERDES		0xf
 #define MV_PAGE_FIBER_SERDES		0x1
+
+#define PHY_ADDR(_n, _type) _n, _type
+#define PHY_CONTROL_REG 0
+#define PHY_ANEG_REG 4
+#define PHY_1000CONTROL_REG 9
+#define PHY_SPECCONTROL_REG 16
+#define PHY_PAGE_REG 22
+
+#define PHY_PAGE_MASK 0xFF
+#define PHY_CONTROL_PWR (1<<11)
+#define PHY_SPECCONTROL_PWR (1<<2)
+
+#define MV_SWITCH_GLOBAL2_SMI_COMMAND 0x18
+#define MV_SWITCH_GLOBAL2_SMI_DATA 0x19
+#define MV6176_MAX_PHY 4
 
 struct mvsw61xx_state {
 	struct switch_dev dev;

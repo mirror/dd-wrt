@@ -8,6 +8,7 @@
 #include <linux/mbus.h>
 #include <linux/of.h>
 #include <linux/platform_device.h>
+#include <linux/gpio.h>
 
 #include <linux/usb.h>
 #include <linux/usb/hcd.h>
@@ -18,6 +19,8 @@
 #define USB3_MAX_WINDOWS	4
 #define USB3_WIN_CTRL(w)	(0x0 + ((w) * 8))
 #define USB3_WIN_BASE(w)	(0x4 + ((w) * 8))
+
+#define BLKN_GPIO         50
 
 static void xhci_mvebu_mbus_config(void __iomem *base,
 			const struct mbus_dram_target_info *dram)
@@ -80,6 +83,16 @@ int xhci_mvebu_a3700_init_quirk(struct usb_hcd *hcd)
 
 	/* Without reset on resume, the HC won't work at all */
 	xhci->quirks |= XHCI_RESET_ON_RESUME;
-
 	return 0;
 }
+
+int xhci_mvebu_vbus_init_quirk(void)
+{
+        int gpio = BLKN_GPIO;
+
+        gpio_set_value(gpio, GPIOF_OUT_INIT_LOW);
+        mdelay(3000);
+        gpio_set_value(gpio, GPIOF_OUT_INIT_HIGH);
+        return 0;
+}
+

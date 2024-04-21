@@ -127,7 +127,7 @@ static int pin_request(struct pinctrl_dev *pctldev,
 	dev_dbg(pctldev->dev, "request pin %d (%s) for %s\n",
 		pin, desc->name, owner);
 
-	if ((!gpio_range || ops->strict) &&
+/*	if ((!gpio_range || ops->strict) &&
 	    desc->mux_usecount && strcmp(desc->mux_owner, owner)) {
 		dev_err(pctldev->dev,
 			"pin %s already requested by %s; cannot claim for %s\n",
@@ -140,7 +140,7 @@ static int pin_request(struct pinctrl_dev *pctldev,
 			"pin %s already requested by %s; cannot claim for %s\n",
 			desc->name, desc->gpio_owner, owner);
 		goto out;
-	}
+	}*/
 
 	if (gpio_range) {
 		desc->gpio_owner = owner;

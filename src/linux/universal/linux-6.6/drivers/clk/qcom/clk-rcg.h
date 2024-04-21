@@ -22,7 +22,7 @@ struct freq_conf {
 struct freq_tbl {
 	unsigned long freq;
 	u8 src;
-	u8 pre_div;
+	u16 pre_div;
 	u16 m;
 	u16 n;
 	int confs_num;
@@ -59,6 +59,18 @@ struct mn {
 struct pre_div {
 	u8		pre_div_shift;
 	u8		pre_div_width;
+};
+
+/**
+ * struct c_div - custom-divider used with Different Offsets
+ * @c_div_offset: offset of the CDIV in the ADDRESS Space
+ * @c_div_shift: lowest bit of pre divider field
+ * @c_div_width: number of bits in pre divider
+ */
+struct c_div {
+	u32	offset;
+	u8	shift;
+	u32	mask;
 };
 
 /**
@@ -157,9 +169,13 @@ extern const struct clk_ops clk_dyn_rcg_ops;
  */
 struct clk_rcg2 {
 	u32			cmd_rcgr;
+	u8			cfg_offset;
 	u8			mnd_width;
 	u8			hid_width;
 	u8			safe_src_index;
+
+#define CLK_RCG2_HW_CONTROLLED		BIT(0)
+	u8			flags;
 	const struct parent_map	*parent_map;
 	const struct freq_tbl	*freq_tbl;
 	struct clk_regmap	clkr;
@@ -179,6 +195,57 @@ struct clk_rcg2_gfx3d {
 #define to_clk_rcg2_gfx3d(_hw) \
 	container_of(to_clk_rcg2(_hw), struct clk_rcg2_gfx3d, rcg)
 
+/**
+ * struct clk_cdiv_rcg2 - cdiv with root clock generator
+ *
+ * @cmd_rcgr: corresponds to *_CMD_RCGR
+ * @cfg_offset: offset of *_CFG_RCGR from *_CMD_RCGR minus 4
+ * @mnd_width: number of bits in m/n/d values
+ * @hid_width: number of bits in half integer divider
+ * @parent_map: map from software's parent index to hardware's src_sel field
+ * @freq_tbl: frequency table
+ * @clkr: regmap clock handle
+ * @lock: register lock
+ *
+ */
+struct clk_cdiv_rcg2 {
+	u32		cmd_rcgr;
+	u8		cfg_offset;
+	u8		mnd_width;
+	u8		hid_width;
+	struct c_div	cdiv;
+	const struct parent_map	*parent_map;
+	const struct freq_tbl	*freq_tbl;
+	struct clk_regmap	clkr;
+};
+
+#define to_clk_cdiv_rcg2(_hw) container_of(to_clk_regmap(_hw), \
+						struct clk_cdiv_rcg2, clkr)
+
+
+/**
+ * struct clk_muxr_misc - mux and misc register
+ *
+ * @cmd_rcgr: corresponds to *_CMD_RCGR
+ * @mnd_width: number of bits in m/n/d values
+ * @hid_width: number of bits in half integer divider
+ * @parent_map: map from software's parent index to hardware's src_sel field
+ * @freq_tbl: frequency table
+ * @clkr: regmap clock handle
+ * @lock: register lock
+ *
+ */
+struct clk_muxr_misc {
+	struct c_div			muxr;
+	struct c_div			misc;
+	const struct parent_map		*parent_map;
+	const struct freq_tbl	*freq_tbl;
+	struct clk_regmap		clkr;
+};
+
+#define to_clk_muxr_misc(_hw) container_of(to_clk_regmap(_hw), \
+						struct clk_muxr_misc, clkr)
+
 extern const struct clk_ops clk_rcg2_ops;
 extern const struct clk_ops clk_rcg2_floor_ops;
 extern const struct clk_ops clk_rcg2_mux_closest_ops;
@@ -189,6 +256,12 @@ extern const struct clk_ops clk_pixel_ops;
 extern const struct clk_ops clk_gfx3d_ops;
 extern const struct clk_ops clk_rcg2_shared_ops;
 extern const struct clk_ops clk_dp_ops;
+
+extern const struct clk_ops clk_cdiv_rcg2_ops;
+extern const struct clk_ops clk_muxr_misc_ops;
+ 
+extern void clk_dyn_configure_bank(struct clk_dyn_rcg *rcg,
+					const struct freq_tbl *f);
 
 struct clk_rcg_dfs_data {
 	struct clk_rcg2 *rcg;

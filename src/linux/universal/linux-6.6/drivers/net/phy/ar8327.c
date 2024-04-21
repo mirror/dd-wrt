@@ -22,6 +22,7 @@
 #include <linux/phy.h>
 #include <linux/lockdep.h>
 #include <linux/ar8216_platform.h>
+#include <linux/gpio/consumer.h>
 #include <linux/workqueue.h>
 #include <linux/of_device.h>
 #include <linux/leds.h>
@@ -609,6 +610,7 @@ ar8327_hw_config_pdata(struct ar8xxx_priv *priv,
 }
 
 #ifdef CONFIG_OF
+
 static int
 ar8327_hw_config_of(struct ar8xxx_priv *priv, struct device_node *np)
 {
@@ -713,6 +715,57 @@ ar8327_init_globals(struct ar8xxx_priv *priv)
 	/* Disable EEE on all phy's due to stability issues */
 	for (i = 0; i < AR8XXX_NUM_PHYS; i++)
 		data->eee[i] = false;
+}
+
+static int ar8327_sw_set_port_link(struct switch_dev *dev, int port,
+			     struct switch_port_link *link)
+{
+	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
+	u32 t;
+	if (port == AR8216_PORT_CPU || port == 6) {
+		return -EINVAL;
+	}
+	t = ar8xxx_read(priv, AR8327_REG_PORT_STATUS(port));
+	t &= ~(t & AR8216_PORT_STATUS_SPEED) <<
+		 AR8216_PORT_STATUS_SPEED_S;
+	t &= ~AR8216_PORT_STATUS_LINK_AUTO;
+	t &= ~AR8216_PORT_STATUS_DUPLEX;
+	t &= ~AR8216_PORT_STATUS_FLOW_CONTROL;
+
+	if (link->duplex)
+		t |= AR8216_PORT_STATUS_DUPLEX;
+	if (link->aneg) {
+		t |= AR8216_PORT_STATUS_FLOW_CONTROL;
+		t |= AR8216_PORT_STATUS_LINK_AUTO;
+	} else {
+		t &= ~AR8216_PORT_STATUS_TXFLOW;
+		t &= ~AR8216_PORT_STATUS_RXFLOW;
+		if (link->rx_flow)
+		    t |= AR8216_PORT_STATUS_RXFLOW;
+		if (link->tx_flow)
+		    t |= AR8216_PORT_STATUS_TXFLOW;
+		switch (link->speed) {
+		case SWITCH_PORT_SPEED_10:
+			t |= AR8216_PORT_SPEED_10M <<
+			 AR8216_PORT_STATUS_SPEED_S;
+			break;
+		case SWITCH_PORT_SPEED_100:
+			t |= AR8216_PORT_SPEED_100M <<
+			 AR8216_PORT_STATUS_SPEED_S;
+			break;
+		case SWITCH_PORT_SPEED_1000:
+			t |= AR8216_PORT_SPEED_1000M <<
+			 AR8216_PORT_STATUS_SPEED_S;
+			break;
+		default:
+			t |= AR8216_PORT_STATUS_LINK_AUTO;
+			break;
+		}
+	}
+	ar8xxx_write(priv, AR8327_REG_PORT_STATUS(port), 0);
+	msleep(100);
+	ar8xxx_write(priv, AR8327_REG_PORT_STATUS(port), t);
+	return 0;
 }
 
 static void
@@ -1036,6 +1089,46 @@ ar8327_set_mirror_regs(struct ar8xxx_priv *priv)
 			   AR8327_PORT_HOL_CTRL1_EG_MIRROR_EN);
 }
 
+int
+ar8327_sw_set_leds(struct switch_dev *dev, const struct switch_attr *attr,
+		   struct switch_val *val)
+{
+	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
+	if (priv->ledstate == 0) {
+	    priv->ledregs[0] = ar8xxx_read(priv, AR8327_REG_LED_CTRL0);
+	    priv->ledregs[1] = ar8xxx_read(priv, AR8327_REG_LED_CTRL1);
+	    priv->ledregs[2] = ar8xxx_read(priv, AR8327_REG_LED_CTRL2);
+	    priv->ledregs[3] = ar8xxx_read(priv, AR8327_REG_LED_CTRL3);
+	    priv->ledstate = 1;
+	}
+	if (!!val->value.i) {
+		ar8xxx_write(priv, AR8327_REG_LED_CTRL0, priv->ledregs[0]);
+		ar8xxx_write(priv, AR8327_REG_LED_CTRL1, priv->ledregs[1]);
+		ar8xxx_write(priv, AR8327_REG_LED_CTRL2, priv->ledregs[2]);
+		ar8xxx_write(priv, AR8327_REG_LED_CTRL3, priv->ledregs[3]);
+		priv->ledstate = 1;
+	} else {
+		ar8xxx_write(priv, AR8327_REG_LED_CTRL0, 0);
+		ar8xxx_write(priv, AR8327_REG_LED_CTRL1, 0);
+		ar8xxx_write(priv, AR8327_REG_LED_CTRL2, 0);
+		ar8xxx_write(priv, AR8327_REG_LED_CTRL3, 0);
+		priv->ledstate = 2;
+	}
+	return 0;
+}
+
+int
+ar8327_sw_get_leds(struct switch_dev *dev, const struct switch_attr *attr,
+		   struct switch_val *val)
+{
+	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
+	if (!priv->ledstate || priv->ledstate == 1)
+		val->value.i = 1;
+	else
+		val->value.i = 0;
+	return 0;
+}
+
 static int
 ar8327_sw_set_eee(struct switch_dev *dev,
 		  const struct switch_attr *attr,
@@ -1077,6 +1170,57 @@ ar8327_sw_get_eee(struct switch_dev *dev,
 
 	val->value.i = data->eee[phy];
 
+	return 0;
+}
+
+
+static int
+ar8327_sw_set_disable(struct switch_dev *dev,
+		  const struct switch_attr *attr,
+		  struct switch_val *val)
+{
+	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
+	int port = val->port_vlan;
+
+	if (port >= dev->ports)
+		return -EINVAL;
+	if (port == 0 || port == 6)
+		return -EOPNOTSUPP;
+
+	
+	if (!!(val->value.i))  {
+		priv->disabled[port] = 1;
+		priv->state[port] = ar8xxx_read(priv, AR8327_REG_PORT_STATUS(port));
+		ar8xxx_write(priv, AR8327_REG_PORT_STATUS(port), 0);
+	} else {
+		priv->disabled[port] = 0;
+		if (priv->state[port])
+			ar8xxx_write(priv, AR8327_REG_PORT_STATUS(port), priv->state[port]);
+	}
+
+	return 0;
+}
+
+static int
+ar8327_sw_get_disable(struct switch_dev *dev,
+		  const struct switch_attr *attr,
+		  struct switch_val *val)
+{
+	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
+	int port = val->port_vlan;
+	u32 t;
+
+	if (port >= dev->ports)
+		return -EINVAL;
+	if (port == 0 || port == 6)
+		return -EOPNOTSUPP;
+
+	t = ar8xxx_read(priv, AR8327_REG_PORT_STATUS(port));
+
+	if (!(t & AR8216_PORT_STATUS_LINK_AUTO) && !(t & (AR8216_PORT_SPEED_10M << AR8216_PORT_STATUS_SPEED_S)) && !(t & (AR8216_PORT_SPEED_100M << AR8216_PORT_STATUS_SPEED_S)) && !(t & (AR8216_PORT_SPEED_1000M << AR8216_PORT_STATUS_SPEED_S)))
+		val->value.i = 1;
+	else
+		val->value.i = 0;
 	return 0;
 }
 
@@ -1316,6 +1460,14 @@ static const struct switch_attr ar8327_sw_attr_globals[] = {
 		.max = 1
 	},
 	{
+		.type = SWITCH_TYPE_INT,
+		.name = "leds",
+		.description = "turn leds on or off",
+		.set = ar8327_sw_set_leds,
+		.get = ar8327_sw_get_leds,
+		.max = 1,
+	},
+	{
 		.type = SWITCH_TYPE_NOVAL,
 		.name = "reset_mibs",
 		.description = "Reset all MIB counters",
@@ -1428,6 +1580,14 @@ static const struct switch_attr ar8327_sw_attr_port[] = {
 		.max = 1,
 	},
 	{
+		.type = SWITCH_TYPE_INT,
+		.name = "disable",
+		.description = "Disable Port",
+		.set = ar8327_sw_set_disable,
+		.get = ar8327_sw_get_disable,
+		.max = 1,
+	},
+	{
 		.type = SWITCH_TYPE_NOVAL,
 		.name = "flush_arl_table",
 		.description = "Flush port's ARL table entries",
@@ -1471,11 +1631,12 @@ static const struct switch_dev_ops ar8327_sw_ops = {
 	.apply_config = ar8327_sw_hw_apply,
 	.reset_switch = ar8xxx_sw_reset_switch,
 	.get_port_link = ar8xxx_sw_get_port_link,
-	.get_port_stats = ar8xxx_sw_get_port_stats,
+	.set_port_link = ar8327_sw_set_port_link,
+//	.get_port_stats = ar8xxx_sw_get_port_stats,
 };
 
 const struct ar8xxx_chip ar8327_chip = {
-	.caps = AR8XXX_CAP_GIGE | AR8XXX_CAP_MIB_COUNTERS,
+	.caps = AR8XXX_CAP_GIGE,
 	.config_at_probe = true,
 	.mii_lo_first = true,
 
@@ -1512,7 +1673,7 @@ const struct ar8xxx_chip ar8327_chip = {
 };
 
 const struct ar8xxx_chip ar8337_chip = {
-	.caps = AR8XXX_CAP_GIGE | AR8XXX_CAP_MIB_COUNTERS,
+	.caps = AR8XXX_CAP_GIGE,
 	.config_at_probe = true,
 	.mii_lo_first = true,
 

@@ -399,6 +399,27 @@ config NCN26000_PHY
 
 source "drivers/net/phy/qcom/Kconfig"
 
+config QCA807X_PHY
+	tristate "Qualcomm QCA807x PHYs"
+	depends on OF_MDIO && ARCH_QCOM
+	help
+	  Currently supports the Qualcomm QCA8072, QCA8075 and the PSGMII
+	  control PHY.
+
+config QCA807X_PHY
+	tristate "Qualcomm QCA807x PHYs"
+	depends on OF_MDIO && ARCH_QCOM
+	help
+	  Currently supports the Qualcomm QCA8072, QCA8075 and the PSGMII
+	  control PHY.
+
+config QCA807X_PHY
+	tristate "Qualcomm QCA807x PHYs"
+	depends on OF_MDIO && ARCH_QCOM
+	help
+	  Currently supports the Qualcomm QCA8072, QCA8075 and the PSGMII
+	  control PHY.
+
 config QSEMI_PHY
 	tristate "Quality Semiconductor PHYs"
 	help
@@ -479,6 +500,21 @@ config XILINX_GMII2RGMII
 	  This driver support xilinx GMII to RGMII IP core it provides
 	  the Reduced Gigabit Media Independent Interface(RGMII) between
 	  Ethernet physical media devices and the Gigabit Ethernet controller.
+
+config MVSW61XX_PHY
+	tristate "Driver for Marvell 88E6171/6172 switches"
+	select SWCONFIG 
+	depends on ARCH_MVEBU
+
+config MVSW61XX_PHY
+	tristate "Driver for Marvell 88E6171/6172 switches"
+	select SWCONFIG 
+	depends on ARCH_MVEBU
+
+config MVSW61XX_PHY
+	tristate "Driver for Marvell 88E6171/6172 switches"
+	select SWCONFIG 
+	depends on ARCH_MVEBU
 
 endif # PHYLIB
 

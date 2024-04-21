@@ -11196,6 +11196,7 @@ skip_sriov:
 	if (err)
 		goto err_register;
 
+	dev_set_threaded(netdev, true);
 
 	/* power down the optics for 82599 SFP+ fiber */
 	if (hw->mac.ops.disable_tx_laser)

@@ -2867,6 +2867,7 @@ static int igbvf_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 	err = register_netdev(netdev);
 	if (err)
 		goto err_hw_init;
+	dev_set_threaded(netdev, true);
 
 	/* tell the stack to leave us alone until igbvf_open() is called */
 	netif_carrier_off(netdev);

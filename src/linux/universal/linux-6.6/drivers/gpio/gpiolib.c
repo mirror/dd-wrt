@@ -2100,13 +2100,15 @@ static int gpiod_request_commit(struct gpio_desc *desc, const char *label)
 	/* NOTE:  gpio_request() can be called in early boot,
 	 * before IRQs are enabled, for non-sleeping (SOC) GPIOs.
 	 */
-
 	if (test_and_set_bit(FLAG_REQUESTED, &desc->flags) == 0) {
 		desc_set_label(desc, label ? : "?");
 	} else {
-		ret = -EBUSY;
-		goto out_free_unlock;
+		if (label && strcmp(label, "sysfs")) { 
+			ret = -EBUSY;
+			goto out_free_unlock;
+		}
 	}
+	
 
 	if (gc->request) {
 		/* gc->request may sleep */
