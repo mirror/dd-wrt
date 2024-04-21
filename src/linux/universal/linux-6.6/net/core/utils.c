@@ -459,10 +459,16 @@ void inet_proto_csum_replace16(__sum16 *sum, struct sk_buff *skb,
 			       const __be32 *from, const __be32 *to,
 			       bool pseudohdr)
 {
-	__be32 diff[] = {
-		~from[0], ~from[1], ~from[2], ~from[3],
-		to[0], to[1], to[2], to[3],
-	};
+ 	__be32 diff[] = {
+	~net_hdr_word(&from[0]),
+		~net_hdr_word(&from[1]),
+		~net_hdr_word(&from[2]),
+		~net_hdr_word(&from[3]),
+		net_hdr_word(&to[0]),
+		net_hdr_word(&to[1]),
+		net_hdr_word(&to[2]),
+		net_hdr_word(&to[3]),
+ 	};
 	if (skb->ip_summed != CHECKSUM_PARTIAL) {
 		*sum = csum_fold(csum_partial(diff, sizeof(diff),
 				 ~csum_unfold(*sum)));

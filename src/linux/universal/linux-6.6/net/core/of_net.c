@@ -13,6 +13,7 @@
 #include <linux/export.h>
 #include <linux/device.h>
 #include <linux/nvmem-consumer.h>
+#include <linux/mtd/mtd.h>
 
 /**
  * of_get_phy_mode - Get phy mode for given device_node
@@ -118,6 +119,72 @@ free:
 	return -ENOMEM;
 }
 
+static int of_get_mac_address_mtd(struct device_node *np, u8 *addr)
+{
+#ifdef CONFIG_MTD
+	struct device_node *mtd_np = NULL;
+	struct property *prop;
+	size_t retlen;
+	int size, ret;
+	struct mtd_info *mtd;
+	const char *part;
+	const __be32 *list;
+	phandle phandle;
+	u32 mac_inc = 0;
+	u8 mac[ETH_ALEN];
+
+	list = of_get_property(np, "mtd-mac-address", &size);
+	if (!list || (size != (2 * sizeof(*list))))
+		return -ENOMEM;
+
+	phandle = be32_to_cpup(list++);
+	if (phandle)
+		mtd_np = of_find_node_by_phandle(phandle);
+
+	if (!mtd_np)
+		return -ENOMEM;
+
+	part = of_get_property(mtd_np, "label", NULL);
+	if (!part)
+		part = mtd_np->name;
+
+	mtd = get_mtd_device_nm(part);
+	if (IS_ERR(mtd))
+		return -ENOMEM;
+
+	ret = mtd_read(mtd, be32_to_cpup(list), 6, &retlen, mac);
+	put_mtd_device(mtd);
+
+	if (!of_property_read_u32(np, "mtd-mac-address-increment", &mac_inc))
+		mac[5] += mac_inc;
+
+	if (!is_valid_ether_addr(mac))
+		return -ENOMEM;
+
+	ret = of_get_mac_addr(np, "mac-address", addr);
+	if (!ret) {
+		memcpy(addr, mac, ETH_ALEN);
+		return addr;
+	}
+
+	prop = kzalloc(sizeof(*prop), GFP_KERNEL);
+	if (!prop)
+		return -ENOMEM;
+
+	prop->name = "mac-address";
+	prop->length = ETH_ALEN;
+	prop->value = kmemdup(mac, ETH_ALEN, GFP_KERNEL);
+	if (!prop->value || of_add_property(np, prop))
+		goto free;
+
+	return prop->value;
+free:
+	kfree(prop->value);
+	kfree(prop);
+#endif
+	return -ENOMEM;
+}
+
 /**
  * of_get_mac_address()
  * @np:		Caller's Device Node
@@ -148,8 +215,13 @@ int of_get_mac_address(struct device_node *np, u8 *addr)
 {
 	int ret;
 
+
 	if (!np)
 		return -ENODEV;
+
+	ret = of_get_mac_address_mtd(np, addr);
+	if (!ret)
+		goto found;
 
 	ret = of_get_mac_addr(np, "mac-address", addr);
 	if (!ret)

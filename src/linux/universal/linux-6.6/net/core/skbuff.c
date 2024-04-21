@@ -137,6 +137,56 @@ drop_reasons_by_subsys[SKB_DROP_REASON_SUBSYS_NUM] = {
 };
 EXPORT_SYMBOL(drop_reasons_by_subsys);
 
+#if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
+static struct kmem_cache *skbuff_cb_store_cache __read_mostly;
+
+/* Control buffer save/restore for IMQ devices */
+struct skb_cb_table {
+	char			cb[48] __aligned(8);
+	void			*cb_next;
+};
+
+int skb_save_cb(struct sk_buff *skb)
+{
+	struct skb_cb_table *next;
+
+	next = kmem_cache_alloc(skbuff_cb_store_cache, GFP_ATOMIC);
+	if (!next)
+		return -ENOMEM;
+
+	BUILD_BUG_ON(sizeof(skb->cb) != sizeof(next->cb));
+
+	memcpy(next->cb, skb->cb, sizeof(skb->cb));
+	next->cb_next = skb->cb_next;
+	skb->cb_next = next;
+	smp_wmb();
+
+	return 0;
+}
+EXPORT_SYMBOL(skb_save_cb);
+
+int skb_restore_cb(struct sk_buff *skb)
+{
+	struct skb_cb_table *next;
+
+	if (!skb->cb_next)
+		return 0;
+
+	next = skb->cb_next;
+
+	BUILD_BUG_ON(sizeof(skb->cb) != sizeof(next->cb));
+
+	memcpy(skb->cb, next->cb, sizeof(skb->cb));
+	skb->cb_next = next->cb_next;
+	smp_wmb();
+
+	kmem_cache_free(skbuff_cb_store_cache, next);
+
+	return 0;
+}
+EXPORT_SYMBOL(skb_restore_cb);
+#endif
+
 /**
  * drop_reasons_register_subsys - register another drop reason subsystem
  * @subsys: the subsystem to register, must not be the core
@@ -636,6 +686,9 @@ struct sk_buff *__alloc_skb(unsigned int size, gfp_t gfp_mask,
 
 	if (sk_memalloc_socks() && (flags & SKB_ALLOC_RX))
 		gfp_mask |= __GFP_MEMALLOC;
+#ifdef CONFIG_ARCH_IXP4XX 
+	gfp_mask |= GFP_DMA;
+#endif
 
 	/* Get the HEAD */
 	if ((flags & (SKB_ALLOC_FCLONE | SKB_ALLOC_NAPI)) == SKB_ALLOC_NAPI &&
@@ -726,6 +779,10 @@ struct sk_buff *__netdev_alloc_skb(struct net_device *dev, unsigned int len,
 
 	if (sk_memalloc_socks())
 		gfp_mask |= __GFP_MEMALLOC;
+
+#ifdef CONFIG_ARCH_IXP4XX 
+	gfp_mask |= GFP_DMA;
+#endif
 
 	if (in_hardirq() || irqs_disabled()) {
 		nc = this_cpu_ptr(&netdev_alloc_cache);
@@ -1059,6 +1116,28 @@ void skb_release_head_state(struct sk_buff *skb)
 		DEBUG_NET_WARN_ON_ONCE(in_hardirq());
 		skb->destructor(skb);
 	}
+#if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
+	/*
+	 * This should not happen. When it does, avoid memleak by restoring
+	 * the chain of cb-backups.
+	 */
+	while (skb->cb_next != NULL) {
+		if (net_ratelimit())
+			pr_warn("IMQ: kfree_skb: skb->cb_next: %08x\n",
+				(unsigned int)(uintptr_t)skb->cb_next);
+
+		skb_restore_cb(skb);
+	}
+	/*
+	 * This should not happen either, nf_queue_entry is nullified in
+	 * imq_dev_xmit(). If we have non-NULL nf_queue_entry then we are
+	 * leaking entry pointers, maybe memory. We don't know if this is
+	 * pointer to already freed memory, or should this be freed.
+	 * If this happens we need to add refcounting, etc for nf_queue_entry.
+	 */
+	if (skb->nf_queue_entry && net_ratelimit())
+		pr_warn("%s\n", "IMQ: kfree_skb: skb->nf_queue_entry != NULL");
+#endif
 #if IS_ENABLED(CONFIG_NF_CONNTRACK)
 	nf_conntrack_put(skb_nfct(skb));
 #endif
@@ -1398,6 +1477,9 @@ static void __copy_skb_header(struct sk_buff *new, const struct sk_buff *old)
 	skb_dst_copy(new, old);
 	__skb_ext_copy(new, old);
 	__nf_copy(new, old, false);
+#if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
+	new->cb_next = NULL;
+#endif
 
 	/* Note : this field could be in the headers group.
 	 * It is not yet because we do not want to have a 16 bit hole
@@ -2110,6 +2192,9 @@ int pskb_expand_head(struct sk_buff *skb, int nhead, int ntail,
 
 	if (skb_pfmemalloc(skb))
 		gfp_mask |= __GFP_MEMALLOC;
+#ifdef CONFIG_ARCH_IXP4XX 
+	gfp_mask |= GFP_DMA;
+#endif
 
 	data = kmalloc_reserve(&size, gfp_mask, NUMA_NO_NODE, NULL);
 	if (!data)
@@ -4819,6 +4904,9 @@ static const u8 skb_ext_type_len[] = {
 #if IS_ENABLED(CONFIG_NET_DSA_TAG_OOB)
 	[SKB_EXT_DSA_OOB] = SKB_EXT_CHUNKSIZEOF(struct dsa_oob_tag_info),
 #endif
+#if IS_ENABLED(CONFIG_NET_DSA_TAG_OOB)
+	[SKB_EXT_DSA_OOB] = SKB_EXT_CHUNKSIZEOF(struct dsa_oob_tag_info),
+#endif
 };
 
 static __always_inline unsigned int skb_ext_total_length(void)
@@ -4885,6 +4973,13 @@ void __init skb_init(void)
 						0,
 						SKB_SMALL_HEAD_HEADROOM,
 						NULL);
+#if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
+	skbuff_cb_store_cache = kmem_cache_create("skbuff_cb_store_cache",
+						sizeof(struct skb_cb_table),
+						0,
+						SLAB_HWCACHE_ALIGN|SLAB_PANIC,
+						NULL);
+#endif
 	skb_extensions_init();
 }
 
