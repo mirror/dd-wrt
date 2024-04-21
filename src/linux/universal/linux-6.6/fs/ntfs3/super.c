@@ -253,6 +253,7 @@ enum Opt {
 	Opt_showmeta,
 	Opt_acl,
 	Opt_iocharset,
+	Opt_nls,
 	Opt_prealloc,
 	Opt_nocase,
 	Opt_err,
@@ -275,6 +276,7 @@ static const struct fs_parameter_spec ntfs_fs_parameters[] = {
 	fsparam_flag_no("showmeta",		Opt_showmeta),
 	fsparam_flag_no("acl",			Opt_acl),
 	fsparam_string("iocharset",		Opt_iocharset),
+	fsparam_string("nls",		Opt_iocharset),
 	fsparam_flag_no("prealloc",		Opt_prealloc),
 	fsparam_flag_no("nocase",		Opt_nocase),
 	{}

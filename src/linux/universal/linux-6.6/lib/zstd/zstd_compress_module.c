@@ -159,6 +159,8 @@ size_t zstd_end_stream(zstd_cstream *cstream, zstd_out_buffer *output)
 	return ZSTD_endStream(cstream, output);
 }
 EXPORT_SYMBOL(zstd_end_stream);
+EXPORT_SYMBOL(ZSTD_freeCCtx);
+EXPORT_SYMBOL(ZSTD_getParams);
 
 MODULE_LICENSE("Dual BSD/GPL");
 MODULE_DESCRIPTION("Zstd Compressor");

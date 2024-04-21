@@ -100,6 +100,7 @@ size_t zstd_get_frame_header(zstd_frame_header *header, const void *src,
 	return ZSTD_getFrameHeader(header, src, src_size);
 }
 EXPORT_SYMBOL(zstd_get_frame_header);
+EXPORT_SYMBOL(ZSTD_freeDCtx);
 
 MODULE_LICENSE("Dual BSD/GPL");
 MODULE_DESCRIPTION("Zstd Decompressor");

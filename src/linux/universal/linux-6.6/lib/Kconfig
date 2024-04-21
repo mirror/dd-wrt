@@ -714,8 +714,10 @@ config ARCH_STACKWALK
        bool
 
 config STACKDEPOT
-	bool
+	bool "enable stackdepot"
 	select STACKTRACE
+	help
+	    STACKDEPOT
 
 config STACKDEPOT_ALWAYS_INIT
 	bool
