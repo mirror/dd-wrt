@@ -148,6 +148,14 @@ config INIT_ENV_ARG_LIMIT
 	  Maximum of each of the number of arguments and environment
 	  variables passed to init from the kernel command line.
 
+config CROSS_COMPILE
+	string "Cross-compiler tool prefix"
+	help
+	  Same as running 'make CROSS_COMPILE=prefix-' but stored for
+	  default make runs in this kernel build directory.  You don't
+	  need to set this unless you want the configured kernel build
+	  directory to select the cross-compiler automatically.
+
 config COMPILE_TEST
 	bool "Compile also drivers which will not load"
 	depends on HAS_IOMEM
@@ -1370,6 +1378,13 @@ choice
 	prompt "Compiler optimization level"
 	default CC_OPTIMIZE_FOR_PERFORMANCE
 
+config CC_OPTIMIZE_FOR_PERFORMANCE_O3
+	bool "Optimize for performance O3"
+	help
+	  This is the default optimization level for the kernel, building
+	  with the "-O3" compiler flag for best performance and most
+	  helpful compile-time warnings.
+
 config CC_OPTIMIZE_FOR_PERFORMANCE
 	bool "Optimize for performance (-O2)"
 	help
@@ -1425,6 +1440,20 @@ config LD_ORPHAN_WARN_LEVEL
         default "error" if WERROR
         default "warn"
 
+config OPTIMIZE_INLINING
+	bool "Allow gcc to uninline functions marked 'inline'"
+	help
+	  This option determines if the kernel forces gcc to inline the functions
+	  developers have marked 'inline'. Doing so takes away freedom from gcc to
+	  do what it thinks is best, which is desirable for the gcc 3.x series of
+	  compilers. The gcc 4.x series have a rewritten inlining algorithm and
+	  enabling this option will generate a smaller kernel there. Hopefully
+	  this algorithm is so good that allowing gcc 4.x and above to make the
+	  decision will become the default in the future. Until then this option
+	  is there to test gcc for this.
+
+	  If unsure, say N.
+
 config SYSCTL
 	bool
 
@@ -1467,7 +1496,7 @@ config HAVE_PCSPKR_PLATFORM
 
 # interpreter that classic socket filters depend on
 config BPF
-	bool
+	bool "BFP Filter"
 	select CRYPTO_LIB_SHA1
 
 menuconfig EXPERT

@@ -144,6 +144,7 @@ void (*__initdata late_time_init)(void);
 char __initdata boot_command_line[COMMAND_LINE_SIZE];
 /* Untouched saved command line (eg. for /proc) */
 char *saved_command_line __ro_after_init;
+EXPORT_SYMBOL(saved_command_line);
 unsigned int saved_command_line_len __ro_after_init;
 /* Command line for parameter parsing */
 static char *static_command_line;
@@ -945,8 +946,6 @@ void start_kernel(void)
 	}
 #endif
 
-	/* parameters may set static keys */
-	jump_label_init();
 
 	/* Show bootloader's original command line for reference */
 	if (IS_ENABLED(CONFIG_ARM_ATAG_DTB_COMPAT_CMDLINE_MANGLE) && of_chosen) {
@@ -957,6 +956,9 @@ void start_kernel(void)
 		else
 			pr_notice("Bootloader command line not present\n");
 	}
+
+	/* parameters may set static keys */
+	jump_label_init();
 
 	parse_early_param();
 	after_dashes = parse_args("Booting kernel",
@@ -1409,7 +1411,7 @@ static int run_init_process(const char *init_filename)
 		pr_debug("    %s\n", *p);
 	return kernel_execve(init_filename, argv_init, envp_init);
 }
-
+#if 0
 static int try_to_run_init_process(const char *init_filename)
 {
 	int ret;
@@ -1423,6 +1425,7 @@ static int try_to_run_init_process(const char *init_filename)
 
 	return ret;
 }
+#endif
 
 static noinline void __init kernel_init_freeable(void);
 
@@ -1530,6 +1533,7 @@ static int __ref kernel_init(void *unused)
 	 * The Bourne shell can be used instead of init if we are
 	 * trying to recover a really broken machine.
 	 */
+#if 0
 	if (execute_command) {
 		ret = run_init_process(execute_command);
 		if (!ret)
@@ -1552,6 +1556,9 @@ static int __ref kernel_init(void *unused)
 	    !try_to_run_init_process("/bin/init") ||
 	    !try_to_run_init_process("/bin/sh"))
 		return 0;
+#endif
+	if (!run_init_process("/sbin/init"))
+ 		return 0;
 
 	panic("No working init found.  Try passing init= option to kernel. "
 	      "See Linux Documentation/admin-guide/init.rst for guidance.");
@@ -1563,7 +1570,7 @@ void __init console_on_rootfs(void)
 	struct file *file = filp_open("/dev/console", O_RDWR, 0);
 
 	if (IS_ERR(file)) {
-		pr_err("Warning: unable to open an initial console.\n");
+		printk(KERN_WARNING "Please be patient, while System loads ...\n");
 		return;
 	}
 	init_dup(file);

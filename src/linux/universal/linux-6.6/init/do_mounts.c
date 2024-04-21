@@ -62,7 +62,11 @@ __setup("rw", readwrite);
 
 static int __init root_dev_setup(char *line)
 {
-	strscpy(saved_root_name, line, sizeof(saved_root_name));
+#ifdef CONFIG_ARCH_MVEBU
+	strcpy(saved_root_name, "/dev/ubiblock0_0");
+#else
+ 	strscpy(saved_root_name, line, sizeof(saved_root_name));
+#endif
 	return 1;
 }
 
@@ -113,7 +117,11 @@ static int __init root_data_setup(char *str)
 static char * __initdata root_fs_names;
 static int __init fs_names_setup(char *str)
 {
+#ifdef CONFIG_ARCH_MVEBU	
+	root_fs_names = "squashfs";
+#else
 	root_fs_names = str;
+#endif
 	return 1;
 }
 
@@ -182,7 +190,7 @@ out:
 	return ret;
 }
 
-void __init mount_root_generic(char *name, char *pretty_name, int flags)
+int __init mount_root_generic(char *name, char *pretty_name, int flags)
 {
 	struct page *page = alloc_page(GFP_KERNEL);
 	char *fs_names = page_address(page);
@@ -210,6 +218,9 @@ retry:
 			case -EINVAL:
 				continue;
 		}
+#ifdef HAVE_X86
+		return -1;
+#else
 	        /*
 		 * Allow the user to distinguish between failed sys_open
 		 * and bad superblock on root device.
@@ -232,12 +243,16 @@ retry:
 		}
 
 		panic("VFS: Unable to mount root fs on %s", b);
+#endif
 	}
 	if (!(flags & SB_RDONLY)) {
 		flags |= SB_RDONLY;
 		goto retry;
 	}
 
+#ifdef HAVE_X86
+		return -1;
+#else
 	printk("List of all partitions:\n");
 	printk_all_partitions();
 	printk("No filesystem could mount root, tried: ");
@@ -245,8 +260,10 @@ retry:
 		printk(" %s", p);
 	printk("\n");
 	panic("VFS: Unable to mount root fs on %s", b);
+#endif
 out:
 	put_page(page);
+	return 0;
 }
 
 #ifdef CONFIG_MTD_ROOTFS_ROOT_DEV
@@ -392,13 +409,13 @@ static int __init mount_nodev_root(char *root_device_name)
 }
 
 #ifdef CONFIG_BLOCK
-static void __init mount_block_root(char *root_device_name)
+static int __init mount_block_root(char *root_device_name)
 {
 	int err = create_dev("/dev/root", ROOT_DEV);
 
 	if (err < 0)
 		pr_emerg("Failed to create /dev/root: %d\n", err);
-	mount_root_generic("/dev/root", root_device_name, root_mountflags);
+	return mount_root_generic("/dev/root", root_device_name, root_mountflags);
 }
 #else
 static inline void mount_block_root(char *root_device_name)
@@ -406,7 +423,7 @@ static inline void mount_block_root(char *root_device_name)
 }
 #endif /* CONFIG_BLOCK */
 
-void __init mount_root(char *root_device_name)
+int __init mount_root(char *root_device_name)
 {
 #ifdef CONFIG_MTD_ROOTFS_ROOT_DEV
 	if (!mount_ubi_rootfs())
@@ -421,7 +438,7 @@ void __init mount_root(char *root_device_name)
 		mount_cifs_root();
 		break;
 	case Root_Generic:
-		mount_root_generic(root_device_name, root_device_name,
+		return mount_root_generic(root_device_name, root_device_name,
 				   root_mountflags);
 		break;
 	case 0:
@@ -430,10 +447,37 @@ void __init mount_root(char *root_device_name)
 			break;
 		fallthrough;
 	default:
-		mount_block_root(root_device_name);
+		return mount_block_root(root_device_name);
 		break;
 	}
+	return 0;
 }
+
+#ifdef CONFIG_X86
+char * __initdata root_list[]={
+	"/dev/hda2",
+	"/dev/hdb2",
+	"/dev/hdc2",
+	"/dev/hdd2",
+	"/dev/sda2",
+	"/dev/sdb2",
+	"/dev/sdc2",
+	"/dev/sdd2",
+	"/dev/sde2",
+	"/dev/sdf2",
+	"/dev/sdg2",
+	"/dev/sdh2",
+	"/dev/sdi2",
+	"/dev/sr0", 
+	"/dev/mmcblk0p2",
+	"/dev/nvme0n1p2",
+	"/dev/nvme1n1p2",
+	"/dev/nvme2n1p2",
+	"/dev/nvme3n1p2",
+	"/dev/nvme4n1p2",
+	"/dev/nvme5n1p2",
+	};
+#endif
 
 /* wait for any asynchronous scanning to complete */
 static void __init wait_for_root(char *root_device_name)
@@ -447,13 +491,33 @@ static void __init wait_for_root(char *root_device_name)
 
 	end = ktime_add_ms(ktime_get_raw(), root_wait);
 
+#ifdef HAVE_X86
+	while (!driver_probe_done())
+	{
+		msleep(5);
+		if (root_wait > 0 && ktime_after(ktime_get_raw(), end))
+			break;
+	} 
+	while (1)
+	{
+		int i;
+		for (i=0;i<ARRAY_SIZE(root_list);i++) {
+		    if (early_lookup_bdev(root_device_name, &ROOT_DEV)==0)
+			goto out;
+		}
+		msleep(5);
+		if (root_wait > 0 && ktime_after(ktime_get_raw(), end))
+			break;
+	}
+#else
 	while (!driver_probe_done() ||
 	       early_lookup_bdev(root_device_name, &ROOT_DEV) < 0) {
 		msleep(5);
 		if (root_wait > 0 && ktime_after(ktime_get_raw(), end))
 			break;
 	}
-
+#endif
+	out:;
 	async_synchronize_full();
 
 }
@@ -490,6 +554,9 @@ static dev_t __init parse_root_device(char *root_device_name)
  */
 void __init prepare_namespace(void)
 {
+#ifdef HAVE_X86
+	int i;
+#endif
 	if (root_delay) {
 		printk(KERN_INFO "Waiting %d sec before mounting root device...\n",
 		       root_delay);
@@ -506,6 +573,18 @@ void __init prepare_namespace(void)
 	wait_for_device_probe();
 
 	md_run_setup();
+#ifdef HAVE_X86
+	if (root_wait)
+		wait_for_root(saved_root_name);
+	for (i=0;i<ARRAY_SIZE(root_list);i++)
+	    ROOT_DEV = parse_root_device(root_list[i]);
+	    if (initrd_load(root_list[i]))
+		goto out;
+	    if (!mount_root(root_list[i])) {
+		    saved_root_name = root_list[i];
+		    goto out;
+	    }
+#else
 
 	if (saved_root_name[0])
 		ROOT_DEV = parse_root_device(saved_root_name);
@@ -515,7 +594,9 @@ void __init prepare_namespace(void)
 
 	if (root_wait)
 		wait_for_root(saved_root_name);
+
 	mount_root(saved_root_name);
+#endif
 out:
 	devtmpfs_mount();
 	init_mount(".", "/", NULL, MS_MOVE, NULL);
