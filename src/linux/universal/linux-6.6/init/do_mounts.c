@@ -218,7 +218,7 @@ retry:
 			case -EINVAL:
 				continue;
 		}
-#ifdef HAVE_X86
+#ifdef CONFIG_X86
 		return -1;
 #else
 	        /*
@@ -250,7 +250,7 @@ retry:
 		goto retry;
 	}
 
-#ifdef HAVE_X86
+#ifdef CONFIG_X86
 		return -1;
 #else
 	printk("List of all partitions:\n");
@@ -491,7 +491,7 @@ static void __init wait_for_root(char *root_device_name)
 
 	end = ktime_add_ms(ktime_get_raw(), root_wait);
 
-#ifdef HAVE_X86
+#ifdef CONFIG_X86
 	while (!driver_probe_done())
 	{
 		msleep(5);
@@ -554,7 +554,7 @@ static dev_t __init parse_root_device(char *root_device_name)
  */
 void __init prepare_namespace(void)
 {
-#ifdef HAVE_X86
+#ifdef CONFIG_X86
 	int i;
 #endif
 	if (root_delay) {
@@ -573,17 +573,18 @@ void __init prepare_namespace(void)
 	wait_for_device_probe();
 
 	md_run_setup();
-#ifdef HAVE_X86
+#ifdef CONFIG_X86
 	if (root_wait)
 		wait_for_root(saved_root_name);
-	for (i=0;i<ARRAY_SIZE(root_list);i++)
+	for (i=0;i<ARRAY_SIZE(root_list);i++) {
 	    ROOT_DEV = parse_root_device(root_list[i]);
 	    if (initrd_load(root_list[i]))
 		goto out;
 	    if (!mount_root(root_list[i])) {
-		    saved_root_name = root_list[i];
+		    strcpy(saved_root_name, root_list[i]);
 		    goto out;
 	    }
+	}
 #else
 
 	if (saved_root_name[0])
