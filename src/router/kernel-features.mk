@@ -493,6 +493,7 @@ define kernelfeatures
 		echo "# CONFIG_CRYPTO_DRBG_HASH is not set" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_F2FS_FS_COMPRESSION is not set" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_F2FS_FS_IOSTAT=y" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_F2FS_IOSTAT=y" >> $(LINUXDIR)/.config; \
 	fi
 	if [ "$(CONFIG_F2FS)" != "y" ]; then \
 		sed -i 's/CONFIG_F2FS_FS=m/\# CONFIG_F2FS_FS is not set/g' $(LINUXDIR)/.config; \
