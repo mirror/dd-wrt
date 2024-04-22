@@ -232,7 +232,7 @@ static void setbootdevice(int dev)
 {
 	char mtdpath[64];
 	int mtd = getMTD("BOOTCONFIG");
-	sprintf(mtdpath, "/dev/mtdblock/%d", mtd);
+	sprintf(mtdpath, "/dev/mtd%d", mtd);
 
 	ipq_smem_bootconfig_info_t *ipq_smem_bootconfig_info = NULL;
 	ipq_smem_bootconfig_v2_info_t *ipq_smem_bootconfig_v2_info = NULL;
