@@ -160,13 +160,13 @@ endif
 	$(kernelfeatures)
 	make -C $(LINUXDIR) oldconfig
 	if ! grep -q "CONFIG_EMBEDDED_RAMDISK=y" $(LINUXDIR)/.config ; then \
-	    $(MAKE) -C $(LINUXDIR) bzImage CROSS_COMPILE="ccache i486-linux-uclibc-" ; \
+	    $(MAKE) -C $(LINUXDIR) MAKE=make bzImage MAKE=make CROSS_COMPILE="ccache i486-linux-uclibc-" ; \
 	fi
 	if grep -q "CONFIG_MODULES=y" $(LINUXDIR)/.config ; then \
-	    $(MAKE) -C $(LINUXDIR) modules CROSS_COMPILE="ccache i486-linux-uclibc-" ; \
+	    $(MAKE) -C $(LINUXDIR) MAKE=make modules MAKE=make CROSS_COMPILE="ccache i486-linux-uclibc-" ; \
 	fi
 	rm -rf $(TARGETDIR)/lib/modules
-	$(MAKE) -C $(LINUXDIR) modules_install DEPMOD=/bin/true INSTALL_MOD_PATH=$(TARGETDIR)
+	$(MAKE) -C $(LINUXDIR) modules_install MAKE=make DEPMOD=/bin/true INSTALL_MOD_PATH=$(TARGETDIR)
 	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/build
 	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/source
 
@@ -214,8 +214,9 @@ endif
 		xargs $(ARCH)-linux-nm | \
 		awk '$$1 == "U" { print $$2 } ' | \
 		sort -u > $(LINUXDIR)/mod_symtab.txt
-	$(ARCH)-linux-nm -n $(LINUXDIR)/vmlinux.o | grep ' r __ksymtab' | sed -e 's,........ r __ksymtab_,,' > $(LINUXDIR)/kernel_symtab.txt
-	$(ARCH)-linux-nm -n $(LINUXDIR)/vmlinux.o | grep ' R __ksymtab' | sed -e 's,........ R __ksymtab_,,' >> $(LINUXDIR)/kernel_symtab.txt
+	$(ARCH)-linux-nm -n $(LINUXDIR)/vmlinux.o | grep ' r __export_symbol' | sed -e 's,................ r __export_symbol_,,' > $(LINUXDIR)/kernel_symtab.txt
+	$(ARCH)-linux-nm -n $(LINUXDIR)/vmlinux.o | grep ' r __ksymtab' | sed -e 's,................ r __ksymtab_,,' >> $(LINUXDIR)/kernel_symtab.txt
+	$(ARCH)-linux-nm -n $(LINUXDIR)/vmlinux.o | grep ' R __ksymtab' | sed -e 's,................ R __ksymtab_,,' >> $(LINUXDIR)/kernel_symtab.txt
 	grep -f $(LINUXDIR)/mod_symtab.txt $(LINUXDIR)/kernel_symtab.txt -F > $(LINUXDIR)/sym_include.txt
 	grep -vf $(LINUXDIR)/mod_symtab.txt $(LINUXDIR)/kernel_symtab.txt -F > $(LINUXDIR)/sym_exclude.txt
 	( \
@@ -236,10 +237,20 @@ endif
 			awk '{print "*(___ksymtab_gpl+" $$$$1 ") \\" }'; \
 		echo; \
 	) > $(LINUXDIR)/symtab.h
+	( \
+		echo '#define SYMTAB_KEEP \'; \
+		cat $(LINUXDIR)/sym_include.txt | \
+			awk '{print "KEEP(*(___export_symbol+" $$$$1 ")) \\" }'; \
+		echo; \
+		echo '#define SYMTAB_DISCARD \'; \
+		cat $(LINUXDIR)/sym_exclude.txt | \
+			awk '{print "*(___export_symbol+" $$$$1 ") \\" }'; \
+		echo; \
+	) >> $(LINUXDIR)/symtab.h
 	rm -f $(LINUXDIR)/vmlinux
 	if ! grep -q "CONFIG_EMBEDDED_RAMDISK=y" $(LINUXDIR)/.config ; then \
-	    #$(MAKE) -j 4 -C $(LINUXDIR) bzImage EXTRA_LDSFLAGS="-I$(LINUXDIR) -include symtab.h" CROSS_COMPILE="ccache i486-linux-uclibc-" ; \
-	    $(MAKE) -C $(LINUXDIR) bzImage EXTRA_LDSFLAGS="-I$(LINUXDIR)" CROSS_COMPILE="ccache i486-linux-uclibc-" ; \
+	    #$(MAKE) -j 4 -C $(LINUXDIR) bzImage MAKE=make EXTRA_LDSFLAGS="-I$(LINUXDIR) -include symtab.h" CROSS_COMPILE="ccache i486-linux-uclibc-" ; \
+	    $(MAKE) -C $(LINUXDIR) bzImage MAKE=make EXTRA_LDSFLAGS="-I$(LINUXDIR)" CROSS_COMPILE="ccache i486-linux-uclibc-" ; \
 	fi
 	
 #	cat $(LINUXDIR)/vmlinus | lzma e -si -so -eos -lc1 -lp2 -pb2 > lzma-loader/rb500/vmlinux.lzma
@@ -289,7 +300,7 @@ install package: clean_target $(filter-out lib.i386-install,$(obj-install)) $(LI
 	$(MAKE) -f Makefile.x86 optimize-lib
 	# Install modules into filesystem
 	if grep -q "CONFIG_MODULES=y" $(LINUXDIR)/.config ; then \
-	    $(MAKE) -C $(LINUXDIR) modules_install DEPMOD=/bin/true INSTALL_MOD_PATH=$(TARGETDIR) ; \
+	    $(MAKE) -C $(LINUXDIR) modules_install MAKE=make DEPMOD=/bin/true INSTALL_MOD_PATH=$(TARGETDIR) ; \
 	fi
 ifeq ($(CONFIG_MADWIFI),y)
 	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/drivers/net/wl
