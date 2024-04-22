@@ -106,7 +106,7 @@
 		nand-ecc-step-size = <512>;
 
 		nand-is-boot-medium;
-		qcom,boot-partitions = <0x0 0x1180000>;
+		qcom,boot-partitions = <0x0 0x1200000 0x5340000 0x560000>;
 
 		partitions {
 			compatible = "fixed-partitions";
@@ -124,7 +124,7 @@
 				read-only;
 			};
 
-			APPSBL_1@c80000 {
+			APPSBL_1@53a0000 {
 				label = "APPSBL_1";
 				reg = <0x53a0000 0x0500000>;
 				read-only;
@@ -135,7 +135,7 @@
 				reg = <0x1180000 0x0080000>;
 			};
 
-			BOOTCONFIG@c80000 {
+			BOOTCONFIG@5340000 {
 				label = "BOOTCONFIG";
 				reg = <0x5340000 0x0060000>;
 			};
