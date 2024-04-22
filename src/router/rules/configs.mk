@@ -57,7 +57,7 @@ obj-$(CONFIG_PPPOE) += pppoe
 obj-$(CONFIG_UDHCPC) += udhcpd
 obj-$(CONFIG_UPNP) += upnp
 ifneq ($(KERNELVERSION),6.1)
-ifneq ($(KERNELVERSION),6.9)
+ifneq ($(KERNELVERSION),6.6)
 ifneq ($(ARCHITECTURE),broadcom)
 ifneq ($(CONFIG_ATH5K_AHB),y)
 obj-$(CONFIG_MADWIFI) += madwifi relayd
@@ -161,7 +161,7 @@ obj-$(CONFIG_NTFS3G) += ntfs-3g
 else
 ifeq ($(CONFIG_NTFS3),y)
 ifneq ($(KERNELVERSION),6.1)
-ifneq ($(KERNELVERSION),6.9)
+ifneq ($(KERNELVERSION),6.6)
 obj-$(CONFIG_NTFS3G) += ntfs3 ntfs-3g
 else
 obj-$(CONFIG_NTFS3G) += ntfs-3g
@@ -193,7 +193,7 @@ obj-$(CONFIG_SKYTRON) += skytron
 ifeq ($(KERNELVERSION),6.1)
 obj-$(CONFIG_OPENVPN) += libnl
 endif
-ifeq ($(KERNELVERSION),6.9)
+ifeq ($(KERNELVERSION),6.6)
 obj-$(CONFIG_OPENVPN) += libnl
 endif
 ifeq ($(KERNELVERSION),4.9)
@@ -214,7 +214,7 @@ obj-$(CONFIG_OLSRD) += olsrd
 ifeq ($(KERNELVERSION),6.1)
 obj-$(CONFIG_BATMANADV) += batman-adv
 endif
-ifeq ($(KERNELVERSION),6.9)
+ifeq ($(KERNELVERSION),6.6)
 obj-$(CONFIG_BATMANADV) += batman-adv
 endif
 ifeq ($(KERNELVERSION),4.14)
@@ -311,7 +311,7 @@ obj-$(CONFIG_HOSTAPD2) += hostapd2
 ifeq ($(KERNELVERSION),6.1)
 obj-$(CONFIG_HOSTAPD2) += json-c libubox ubus libnltiny usteer
 endif
-ifeq ($(KERNELVERSION),6.9)
+ifeq ($(KERNELVERSION),6.6)
 obj-$(CONFIG_HOSTAPD2) += json-c libubox ubus libnltiny usteer
 endif
 
@@ -416,7 +416,7 @@ obj-$(CONFIG_DOSFSTOOLS) += dosfstools
 obj-$(CONFIG_FLASHROM) += flashrom
 obj-$(CONFIG_SMARTMONTOOLS) += smartmontools
 ifneq ($(KERNELVERSION),6.1)
-ifneq ($(KERNELVERSION),6.9)
+ifneq ($(KERNELVERSION),6.6)
 obj-$(CONFIG_RTL8125) += rtl8125
 endif
 endif
@@ -443,14 +443,14 @@ obj-$(CONFIG_I2C_GPIO_CUSTOM) += i2c-gpio-custom
 obj-$(CONFIG_NEWPORT) += cpt8x
 obj-$(CONFIG_RSYNC) += libucontext openssl zstd rsync
 ifneq ($(KERNELVERSION),6.1)
-ifneq ($(KERNELVERSION),6.9)
+ifneq ($(KERNELVERSION),6.6)
 obj-$(CONFIG_CAKE) += cake
 obj-$(CONFIG_CAKE) += fq_codel_fast
 endif
 endif
 obj-$(CONFIG_SISPMCTL) += comgt sispmctl
 ifneq ($(KERNELVERSION),6.1)
-ifneq ($(KERNELVERSION),6.9)
+ifneq ($(KERNELVERSION),6.6)
 obj-$(CONFIG_APFS) += apfs
 endif
 endif
@@ -458,7 +458,7 @@ obj-$(CONFIG_APFS) += apfsprogs
 obj-$(CONFIG_SMARTDNS) += smartdns
 obj-$(CONFIG_NGINX) += pcre libucontext openssl zlib nginx
 ifneq ($(KERNELVERSION),6.1)
-ifneq ($(KERNELVERSION),6.9)
+ifneq ($(KERNELVERSION),6.6)
 obj-$(CONFIG_X86) += yukon
 endif
 endif

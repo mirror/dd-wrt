@@ -1,6 +1,6 @@
 wireguard: libmnl
 ifneq ($(KERNELVERSION),6.1)
-ifneq ($(KERNELVERSION),6.9)
+ifneq ($(KERNELVERSION),6.6)
 	cd wireguard/src ; $(MAKE) -C $(LINUXDIR) M="$(TOP)/wireguard/src" KERNELDIR=$(LINUX_DIR)
 endif
 endif
@@ -9,7 +9,7 @@ endif
 
 wireguard-install:
 ifneq ($(KERNELVERSION),6.1)
-ifneq ($(KERNELVERSION),6.9)
+ifneq ($(KERNELVERSION),6.6)
 	install -D wireguard/src/wireguard.ko $(INSTALLDIR)/wireguard/lib/modules/$(KERNELRELEASE)/wireguard.ko
 endif
 endif
@@ -28,7 +28,7 @@ wireguard-configure:
 
 wireguard-clean:
 ifneq ($(KERNELVERSION),6.1)
-ifneq ($(KERNELVERSION),6.9)
+ifneq ($(KERNELVERSION),6.6)
 	cd wireguard/src ; $(MAKE) -C $(LINUXDIR) M="$(TOP)/wireguard/src" KERNELDIR=$(LINUX_DIR) clean
 endif
 endif

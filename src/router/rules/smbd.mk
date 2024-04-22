@@ -30,7 +30,7 @@ smbd: libnl
 	install -D smbd/config/samba_ksmbd.webnas httpd/ej_temp/02samba_ksmbd.webnas
 	install -D filesharing/config/zfilesharing.webnas httpd/ej_temp/03zfilesharing.webnas
 ifneq ($(KERNELVERSION),6.1)
-ifneq ($(KERNELVERSION),6.9)
+ifneq ($(KERNELVERSION),6.6)
 	$(MAKE) -C smbd/smbd all
 	$(MAKE) -C smbd/tools all
 else
@@ -44,7 +44,7 @@ endif
 
 smbd-install:
 ifneq ($(KERNELVERSION),6.1)
-ifneq ($(KERNELVERSION),6.9)
+ifneq ($(KERNELVERSION),6.6)
 	$(MAKE) -C smbd/smbd install
 	$(MAKE) -C smbd/tools-glib install DESTDIR=$(INSTALLDIR)/smbd
 	rm -rf $(INSTALLDIR)/smbd/usr/lib
@@ -69,7 +69,7 @@ endif
 
 smbd-clean:
 ifneq ($(KERNELVERSION),6.1)
-ifneq ($(KERNELVERSION),6.9)
+ifneq ($(KERNELVERSION),6.6)
 	$(MAKE) -C smbd/smbd clean
 	$(MAKE) -C smbd/tools clean
 	$(MAKE) -C smbd/tools-glib clean
