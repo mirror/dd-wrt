@@ -30,8 +30,8 @@ define kernelfeatures
 		echo "CONFIG_IP_SET_LIST_NET=y" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_IP_SET_LIST_SET=y" >> $(LINUXDIR)/.config; \
 	else \
-		sed -i 's/\CONFIG_IP_SET=y/# CONFIG_IP_SET is not set/g' $(LINUXDIR)/.config; \
-		sed -i 's/\CONFIG_IP_SET=m/# CONFIG_IP_SET is not set/g' $(LINUXDIR)/.config; \
+		sed -i 's/CONFIG_IP_SET=y/\# CONFIG_IP_SET is not set/g' $(LINUXDIR)/.config; \
+		sed -i 's/CONFIG_IP_SET=m/\# CONFIG_IP_SET is not set/g' $(LINUXDIR)/.config; \
 	fi
 	if [ "$(CONFIG_NOEXTIRQ)" = "y" ]; then \
 		sed -i 's/noinitrd/noextirq noinitrd/g' $(LINUXDIR)/.config; \
@@ -82,7 +82,7 @@ define kernelfeatures
 		fi \
 	fi
 	if [ "$(CONFIG_SAMBA)" != "y" ]; then \
-		sed -i 's/\CONFIG_CIFS=m/# CONFIG_CIFS is not set/g' $(LINUXDIR)/.config; \
+		sed -i 's/CONFIG_CIFS=m/\# CONFIG_CIFS is not set/g' $(LINUXDIR)/.config; \
 	else \
 		sed -i 's/\# CONFIG_CIFS_SMB2 is not set/CONFIG_CIFS_SMB2=y/g' $(LINUXDIR)/.config; \
 		echo "CONFIG_DNS_RESOLVER=m" >> $(LINUXDIR)/.config; \
@@ -110,9 +110,9 @@ define kernelfeatures
 		sed -i 's/\# CONFIG_CRYPTO_CCM is not set/CONFIG_CRYPTO_CCM=y/g' $(LINUXDIR)/.config; \
 		sed -i 's/\# CONFIG_CRYPTO_CTR is not set/CONFIG_CRYPTO_CTR=y/g' $(LINUXDIR)/.config; \
 		sed -i 's/\# CONFIG_CRYPTO_CMAC is not set/CONFIG_CRYPTO_CMAC=y/g' $(LINUXDIR)/.config; \
-		sed -i 's/\CONFIG_CRYPTO_CCM=m/CONFIG_CRYPTO_CCM=y/g' $(LINUXDIR)/.config; \
-		sed -i 's/\CONFIG_CRYPTO_CTR=m/CONFIG_CRYPTO_CTR=y/g' $(LINUXDIR)/.config; \
-		sed -i 's/\CONFIG_CRYPTO_CMAC=m/CONFIG_CRYPTO_CMAC=y/g' $(LINUXDIR)/.config; \
+		sed -i 's/CONFIG_CRYPTO_CCM=m/CONFIG_CRYPTO_CCM=y/g' $(LINUXDIR)/.config; \
+		sed -i 's/CONFIG_CRYPTO_CTR=m/CONFIG_CRYPTO_CTR=y/g' $(LINUXDIR)/.config; \
+		sed -i 's/CONFIG_CRYPTO_CMAC=m/CONFIG_CRYPTO_CMAC=y/g' $(LINUXDIR)/.config; \
 		echo "CONFIG_CRYPTO_DRBG_CTR=y" >> $(LINUXDIR)/.config; \
 	fi
 	if [ "$(CONFIG_WPA3)" = "y" ]; then \
@@ -123,7 +123,7 @@ define kernelfeatures
 	if [ "$(CONFIG_MPTCP)" = "y" ]; then \
 		sed -i 's/\# CONFIG_MPTCP is not set/CONFIG_MPTCP=y/g' $(LINUXDIR)/.config; \
 		sed -i 's/\# CONFIG_IPV6 is not set/CONFIG_IPV6=y/g' $(LINUXDIR)/.config; \
-		sed -i 's/\CONFIG_IPV6=m/CONFIG_IPV6=y/g' $(LINUXDIR)/.config; \
+		sed -i 's/CONFIG_IPV6=m/CONFIG_IPV6=y/g' $(LINUXDIR)/.config; \
 		echo "CONFIG_MPTCP=y" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_TCP_CONG_LIA=y" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_TCP_CONG_OLIA=y" >> $(LINUXDIR)/.config; \
@@ -159,8 +159,8 @@ define kernelfeatures
 	else \
 		echo "# CONFIG_NET_ETHERIP is not set" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_NET_EOIP is not set" >> $(LINUXDIR)/.config; \
-		sed -i 's/\CONFIG_NET_EOIP=m/# CONFIG_NET_EOIP is not set/g' $(LINUXDIR)/.config; \
-		sed -i 's/\CONFIG_NET_ETHERIP=m/# CONFIG_NET_ETHERIP is not set/g' $(LINUXDIR)/.config; \
+		sed -i 's/CONFIG_NET_EOIP=m/\# CONFIG_NET_EOIP is not set/g' $(LINUXDIR)/.config; \
+		sed -i 's/CONFIG_NET_ETHERIP=m/\# CONFIG_NET_ETHERIP is not set/g' $(LINUXDIR)/.config; \
 	fi
 	if [ "$(CONFIG_WIREGUARD)" = "y" ]; then \
 		echo CONFIG_NET_ETHERIP=m >> $(LINUXDIR)/.config; \
@@ -173,22 +173,22 @@ define kernelfeatures
 	else \
 		echo "# CONFIG_NET_ETHERIP is not set" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_NET_EOIP is not set" >> $(LINUXDIR)/.config; \
-		sed -i 's/\CONFIG_NET_EOIP=m/# CONFIG_NET_EOIP is not set/g' $(LINUXDIR)/.config; \
-		sed -i 's/\CONFIG_NET_ETHERIP=m/# CONFIG_NET_ETHERIP is not set/g' $(LINUXDIR)/.config; \
+		sed -i 's/CONFIG_NET_EOIP=m/\# CONFIG_NET_EOIP is not set/g' $(LINUXDIR)/.config; \
+		sed -i 's/CONFIG_NET_ETHERIP=m/\# CONFIG_NET_ETHERIP is not set/g' $(LINUXDIR)/.config; \
 	fi
 	if [ "$(CONFIG_HIGH_RES_TIMERS)" = "y" ]; then \
 		sed -i 's/\# CONFIG_HIGH_RES_TIMERS is not set/CONFIG_HIGH_RES_TIMERS=y/g' $(LINUXDIR)/.config; \
 	fi
 	if [ "$(CONFIG_OPTIMIZE_O3)" = "y" ]; then \
-		sed -i 's/\CONFIG_CC_OPTIMIZE_FOR_SIZE=y/# CONFIG_CC_OPTIMIZE_FOR_SIZE is not set/g' $(LINUXDIR)/.config; \
-		sed -i 's/\CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE=y/# CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE is not set/g' $(LINUXDIR)/.config; \
+		sed -i 's/CONFIG_CC_OPTIMIZE_FOR_SIZE=y/\# CONFIG_CC_OPTIMIZE_FOR_SIZE is not set/g' $(LINUXDIR)/.config; \
+		sed -i 's/CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE=y/\# CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE is not set/g' $(LINUXDIR)/.config; \
 		sed -i 's/\# CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE_O3 is not set/CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE_O3=y/g' $(LINUXDIR)/.config; \
 	fi
 	if [ "$(CONFIG_OPTIMIZE_OS)" = "y" ]; then \
 		sed -i 's/\# CONFIG_CC_OPTIMIZE_FOR_SIZE is not set/CONFIG_CC_OPTIMIZE_FOR_SIZE=y/g' $(LINUXDIR)/.config; \
-		sed -i 's/\CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE=y/# CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE is not set/g' $(LINUXDIR)/.config; \
-		sed -i 's/\CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE_O3=y/# CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE_O3 is not set/g' $(LINUXDIR)/.config; \
-		sed -i 's/\CONFIG_KALLSYMS=y/# CONFIG_KALLSYMS is not set/g' $(LINUXDIR)/.config; \
+		sed -i 's/CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE=y/\# CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE is not set/g' $(LINUXDIR)/.config; \
+		sed -i 's/CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE_O3=y/\# CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE_O3 is not set/g' $(LINUXDIR)/.config; \
+		sed -i 's/CONFIG_KALLSYMS=y/\# CONFIG_KALLSYMS is not set/g' $(LINUXDIR)/.config; \
 	fi
 	if [ "$(CONFIG_KERNELLTO)" = "y" ]; then \
 		echo "CONFIG_LTO_MENU=y" >> $(LINUXDIR)/.config; \
@@ -197,7 +197,7 @@ define kernelfeatures
 		echo "CONFIG_LTO=y" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_LTO_DEBUG is not set" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_LTO_CP_CLONE is not set" >> $(LINUXDIR)/.config; \
-		sed -i 's/\CONFIG_KALLSYMS=y/# CONFIG_KALLSYMS is not set/g' $(LINUXDIR)/.config; \
+		sed -i 's/CONFIG_KALLSYMS=y/\# CONFIG_KALLSYMS is not set/g' $(LINUXDIR)/.config; \
 	else \
 		echo "# CONFIG_LTO_MENU is not set" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_LTO_GCC is not set" >> $(LINUXDIR)/.config; \
@@ -362,7 +362,7 @@ define kernelfeatures
 		echo "CONFIG_EXTRA_FIRMWARE=\"\"" >> $(LINUXDIR)/.config; \
 	fi
 	if [ "$(CONFIG_IPV6)" != "y" ]; then \
-		sed -i 's/\CONFIG_IPV6=m/# CONFIG_IPV6 is not set/g' $(LINUXDIR)/.config; \
+		sed -i 's/CONFIG_IPV6=m/\# CONFIG_IPV6 is not set/g' $(LINUXDIR)/.config; \
 	else \
 		sed -i 's/\# CONFIG_NF_DEFRAG_IPV6 is not set/CONFIG_NF_DEFRAG_IPV6=m/g' $(LINUXDIR)/.config; \
 		sed -i 's/\# CONFIG_NF_CONNTRACK_IPV6 is not set/CONFIG_NF_CONNTRACK_IPV6=m/g' $(LINUXDIR)/.config; \
@@ -417,45 +417,45 @@ define kernelfeatures
 		sed -i 's/\# CONFIG_VXLAN is not set/CONFIG_VXLAN=m/g' $(LINUXDIR)/.config; \
 	fi
 	if [ "$(CONFIG_JFFS2)" != "y" ]; then \
-		sed -i 's/\CONFIG_JFFS2=m/# CONFIG_JFFS2 is not set/g' $(LINUXDIR)/.config; \
-		sed -i 's/\CONFIG_JFFS2_FS=m/# CONFIG_JFFS2_FS is not set/g' $(LINUXDIR)/.config; \
-		sed -i 's/\CONFIG_JFFS2_FS=y/# CONFIG_JFFS2_FS is not set/g' $(LINUXDIR)/.config; \
+		sed -i 's/CONFIG_JFFS2=m/\# CONFIG_JFFS2 is not set/g' $(LINUXDIR)/.config; \
+		sed -i 's/CONFIG_JFFS2_FS=m/\# CONFIG_JFFS2_FS is not set/g' $(LINUXDIR)/.config; \
+		sed -i 's/CONFIG_JFFS2_FS=y/\# CONFIG_JFFS2_FS is not set/g' $(LINUXDIR)/.config; \
 	fi	
 	if [ "$(CONFIG_SAMBA)" != "y" ]; then \
-		sed -i 's/\CONFIG_CIFS=m/# CONFIG_CIFS is not set/g' $(LINUXDIR)/.config; \
-		sed -i 's/\CONFIG_NETWORK_FILESYSTEMS=y/# CONFIG_NETWORK_FILESYSTEMS is not set/g' $(LINUXDIR)/.config; \
-		sed -i 's/\CONFIG_NLS=y/# CONFIG_NLS is not set/g' $(LINUXDIR)/.config; \
+		sed -i 's/CONFIG_CIFS=m/\# CONFIG_CIFS is not set/g' $(LINUXDIR)/.config; \
+		sed -i 's/CONFIG_NETWORK_FILESYSTEMS=y/\# CONFIG_NETWORK_FILESYSTEMS is not set/g' $(LINUXDIR)/.config; \
+		sed -i 's/CONFIG_NLS=y/\# CONFIG_NLS is not set/g' $(LINUXDIR)/.config; \
 	fi	
 	if [ "$(CONFIG_USB)" != "y" ]; then \
-		sed -i 's/\CONFIG_USB=m/# CONFIG_USB is not set/g' $(LINUXDIR)/.config; \
-		sed -i 's/\CONFIG_USB=y/# CONFIG_USB is not set/g' $(LINUXDIR)/.config; \
+		sed -i 's/CONFIG_USB=m/\# CONFIG_USB is not set/g' $(LINUXDIR)/.config; \
+		sed -i 's/CONFIG_USB=y/\# CONFIG_USB is not set/g' $(LINUXDIR)/.config; \
 	fi	
 
 	if [ "$(CONFIG_USB_ADVANCED)" != "y" ]; then \
-		sed -i 's/\CONFIG_JBD=m/# CONFIG_JBD is not set/g' $(LINUXDIR)/.config; \
-		sed -i 's/\CONFIG_JBD=y/# CONFIG_JBD is not set/g' $(LINUXDIR)/.config; \
-		sed -i 's/\CONFIG_JBD2=m/# CONFIG_JBD2 is not set/g' $(LINUXDIR)/.config; \
-		sed -i 's/\CONFIG_JBD2=y/# CONFIG_JBD2 is not set/g' $(LINUXDIR)/.config; \
-		sed -i 's/\CONFIG_EXT4_FS=m/# CONFIG_EXT4_FS is not set/g' $(LINUXDIR)/.config; \
-		sed -i 's/\CONFIG_EXT4_FS=y/# CONFIG_EXT4_FS is not set/g' $(LINUXDIR)/.config; \
-		sed -i 's/\CONFIG_EXT3_FS=m/# CONFIG_EXT3_FS is not set/g' $(LINUXDIR)/.config; \
-		sed -i 's/\CONFIG_EXT3_FS=y/# CONFIG_EXT3_FS is not set/g' $(LINUXDIR)/.config; \
-		sed -i 's/\CONFIG_XFS_FS=m/# CONFIG_XFS_FS is not set/g' $(LINUXDIR)/.config; \
-		sed -i 's/\CONFIG_XFS_FS=y/# CONFIG_XFS_FS is not set/g' $(LINUXDIR)/.config; \
-		sed -i 's/\CONFIG_BTRFS_FS=m/# CONFIG_BTRFS_FS is not set/g' $(LINUXDIR)/.config; \
-		sed -i 's/\CONFIG_BTRFS_FS=y/# CONFIG_BTRFS_FS is not set/g' $(LINUXDIR)/.config; \
+		sed -i 's/CONFIG_JBD=m/\# CONFIG_JBD is not set/g' $(LINUXDIR)/.config; \
+		sed -i 's/CONFIG_JBD=y/\# CONFIG_JBD is not set/g' $(LINUXDIR)/.config; \
+		sed -i 's/CONFIG_JBD2=m/\# CONFIG_JBD2 is not set/g' $(LINUXDIR)/.config; \
+		sed -i 's/CONFIG_JBD2=y/\# CONFIG_JBD2 is not set/g' $(LINUXDIR)/.config; \
+		sed -i 's/CONFIG_EXT4_FS=m/\# CONFIG_EXT4_FS is not set/g' $(LINUXDIR)/.config; \
+		sed -i 's/CONFIG_EXT4_FS=y/\# CONFIG_EXT4_FS is not set/g' $(LINUXDIR)/.config; \
+		sed -i 's/CONFIG_EXT3_FS=m/\# CONFIG_EXT3_FS is not set/g' $(LINUXDIR)/.config; \
+		sed -i 's/CONFIG_EXT3_FS=y/\# CONFIG_EXT3_FS is not set/g' $(LINUXDIR)/.config; \
+		sed -i 's/CONFIG_XFS_FS=m/\# CONFIG_XFS_FS is not set/g' $(LINUXDIR)/.config; \
+		sed -i 's/CONFIG_XFS_FS=y/\# CONFIG_XFS_FS is not set/g' $(LINUXDIR)/.config; \
+		sed -i 's/CONFIG_BTRFS_FS=m/\# CONFIG_BTRFS_FS is not set/g' $(LINUXDIR)/.config; \
+		sed -i 's/CONFIG_BTRFS_FS=y/\# CONFIG_BTRFS_FS is not set/g' $(LINUXDIR)/.config; \
 		echo "# CONFIG_USER_NS is not set" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_UIDGID_STRICT_TYPE_CHECKS is not set" >> $(LINUXDIR)/.config; \
 	fi	
 	if [ "$(CONFIG_USB)" != "y" ]; then \
-		sed -i 's/\CONFIG_ISO9660_FS=m/# CONFIG_ISO9660_FS is not set/g' $(LINUXDIR)/.config; \
-		sed -i 's/\CONFIG_UDF_FS=m/# CONFIG_UDF_FS is not set/g' $(LINUXDIR)/.config; \
-		sed -i 's/\CONFIG_FAT_FS=m/# CONFIG_FAT_FS is not set/g' $(LINUXDIR)/.config; \
-		sed -i 's/\CONFIG_MSDOS_FS=m/# CONFIG_MSDOS_FS is not set/g' $(LINUXDIR)/.config; \
-		sed -i 's/\CONFIG_VFAT_FS=m/# CONFIG_VFAT_FS is not set/g' $(LINUXDIR)/.config; \
+		sed -i 's/CONFIG_ISO9660_FS=m/\# CONFIG_ISO9660_FS is not set/g' $(LINUXDIR)/.config; \
+		sed -i 's/CONFIG_UDF_FS=m/\# CONFIG_UDF_FS is not set/g' $(LINUXDIR)/.config; \
+		sed -i 's/CONFIG_FAT_FS=m/\# CONFIG_FAT_FS is not set/g' $(LINUXDIR)/.config; \
+		sed -i 's/CONFIG_MSDOS_FS=m/\# CONFIG_MSDOS_FS is not set/g' $(LINUXDIR)/.config; \
+		sed -i 's/CONFIG_VFAT_FS=m/\# CONFIG_VFAT_FS is not set/g' $(LINUXDIR)/.config; \
 	fi	
 	if [ "$(CONFIG_EXFAT)" != "y" ]; then \
-		sed -i 's/\CONFIG_EXFAT_FS=m/# CONFIG_EXFAT_FS is not set/g' $(LINUXDIR)/.config; \
+		sed -i 's/CONFIG_EXFAT_FS=m/\# CONFIG_EXFAT_FS is not set/g' $(LINUXDIR)/.config; \
 		echo "# CONFIG_EXFAT_FS is not set" >> $(LINUXDIR)/.config; \
 	fi
 	if [ "$(CONFIG_PROFILING)" = "y" ]; then \
@@ -495,16 +495,16 @@ define kernelfeatures
 		echo "CONFIG_F2FS_FS_IOSTAT=y" >> $(LINUXDIR)/.config; \
 	fi
 	if [ "$(CONFIG_F2FS)" != "y" ]; then \
-		sed -i 's/\CONFIG_F2FS_FS=m/# CONFIG_F2FS_FS is not set/g' $(LINUXDIR)/.config; \
+		sed -i 's/CONFIG_F2FS_FS=m/\# CONFIG_F2FS_FS is not set/g' $(LINUXDIR)/.config; \
 	fi
 	if [ "$(CONFIG_BONDING)" != "y" ]; then \
-		sed -i 's/\CONFIG_BONDING=m/# CONFIG_BONDING is not set/g' $(LINUXDIR)/.config; \
+		sed -i 's/CONFIG_BONDING=m/\# CONFIG_BONDING is not set/g' $(LINUXDIR)/.config; \
 	fi	
 	if [ "$(CONFIG_BONDING)" = "y" ]; then \
 		sed -i 's/\# CONFIG_BONDING is not set/CONFIG_BONDING=m/g' $(LINUXDIR)/.config; \
 	fi	
 	if [ "$(CONFIG_SWAP)" != "y" ]; then \
-		sed -i 's/\CONFIG_SWAP=y/# CONFIG_SWAP is not set/g' $(LINUXDIR)/.config; \
+		sed -i 's/CONFIG_SWAP=y/\# CONFIG_SWAP is not set/g' $(LINUXDIR)/.config; \
 	else \
 		sed -i 's/\# CONFIG_SWAP is not set/CONFIG_SWAP=y/g' $(LINUXDIR)/.config; \
 		echo "# CONFIG_MTD_SWAP is not set" >> $(LINUXDIR)/.config; \
@@ -520,8 +520,8 @@ define kernelfeatures
 		echo "CONFIG_USBIP_VHCI_NR_HCS=1" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_USBIP_VUDC is not set" >> $(LINUXDIR)/.config; \
 	else \
-		sed -i 's/\CONFIG_USBIP_CORE=m/# CONFIG_USBIP_CORE is not set/g' $(LINUXDIR)/.config; \
-		sed -i 's/\CONFIG_USBIP_CORE=y/# CONFIG_USBIP_CORE is not set/g' $(LINUXDIR)/.config; \
+		sed -i 's/CONFIG_USBIP_CORE=m/\# CONFIG_USBIP_CORE is not set/g' $(LINUXDIR)/.config; \
+		sed -i 's/CONFIG_USBIP_CORE=y/\# CONFIG_USBIP_CORE is not set/g' $(LINUXDIR)/.config; \
 	fi	
 	if [ "$(CONFIG_IPVS)" = "y" ]; then \
 	sed -i 's/\# CONFIG_IP_VS is not set/CONFIG_IP_VS=m/g' $(LINUXDIR)/.config; \
@@ -648,7 +648,7 @@ define kernelfeatures
 		echo "# CONFIG_BTRFS_ASSERT is not set" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_BTRFS_FSREF_VERIFY is not set" >> $(LINUXDIR)/.config; \
 	else \
-		sed -i 's/\CONFIG_BTRFS_FS=m/# CONFIG_BTRFS_FS is not set/g' $(LINUXDIR)/.config; \
+		sed -i 's/CONFIG_BTRFS_FS=m/\# CONFIG_BTRFS_FS is not set/g' $(LINUXDIR)/.config; \
 	fi
 	if [ "$(CONFIG_XFSPROGS)" = "y" ]; then \
 		sed -i 's/\# CONFIG_XFS_FS is not set/CONFIG_XFS_FS=m/g' $(LINUXDIR)/.config; \
@@ -658,7 +658,7 @@ define kernelfeatures
 		echo "# CONFIG_XFS_WARN is not set" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_XFS_DEBUG is not set" >> $(LINUXDIR)/.config; \
 	else \
-		sed -i 's/\CONFIG_XFS_FS=m/# CONFIG_XFS_FS is not set/g' $(LINUXDIR)/.config; \
+		sed -i 's/CONFIG_XFS_FS=m/\# CONFIG_XFS_FS is not set/g' $(LINUXDIR)/.config; \
 		echo "# CONFIG_USER_NS is not set" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_UIDGID_STRICT_TYPE_CHECKS is not set" >> $(LINUXDIR)/.config; \
 	fi
@@ -828,9 +828,9 @@ define kernelfeatures
 		echo "# CONFIG_ASYNC_RAID6_TEST is not set" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_BCACHE_EDEBUG is not set" >> $(LINUXDIR)/.config; \
 	else \
-		sed -i 's/\CONFIG_MD=y/# CONFIG_MD is not set/g' $(LINUXDIR)/.config; \
-		sed -i 's/\CONFIG_RAID6_PQ=m/# CONFIG_RAID6_PQ is not set/g' $(LINUXDIR)/.config; \
-		sed -i 's/\CONFIG_RAID6_PQ=y/# CONFIG_RAID6_PQ is not set/g' $(LINUXDIR)/.config; \
+		sed -i 's/CONFIG_MD=y/\# CONFIG_MD is not set/g' $(LINUXDIR)/.config; \
+		sed -i 's/CONFIG_RAID6_PQ=m/\# CONFIG_RAID6_PQ is not set/g' $(LINUXDIR)/.config; \
+		sed -i 's/CONFIG_RAID6_PQ=y/\# CONFIG_RAID6_PQ is not set/g' $(LINUXDIR)/.config; \
 	fi
 	if [ "$(CONFIG_WIREGUARD)" = "y" ] && [ "$(KERNELVERSION)" = "6.1" ]; then \
 		sed -i 's/\# CONFIG_WIREGUARD is not set/CONFIG_WIREGUARD=m/g' $(LINUXDIR)/.config; \
