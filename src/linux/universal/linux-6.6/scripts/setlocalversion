@@ -59,7 +59,7 @@ scm_version()
 
 	# mainline kernel:  6.2.0-rc5  ->  v6.2-rc5
 	# stable kernel:    6.1.7      ->  v6.1.7
-	version_tag=v$(echo "${KERNELVERSION}" | sed -E 's/^([0-9]+\.[0-9]+)\.0(.*)$/\1\2/')
+	version_tag=v$(echo "${KERNELVERSION}" | sed -r 's/^([0-9]+\.[0-9]+)\.0(.*)$/\1\2/')
 
 	# If a localversion* file exists, and the corresponding
 	# annotated tag exists and is an ancestor of HEAD, use
