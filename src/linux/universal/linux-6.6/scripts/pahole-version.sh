@@ -10,4 +10,4 @@ if [ ! -x "$(command -v "$@")" ]; then
 	exit 1
 fi
 
-"$@" --version | sed -E 's/v([0-9]+)\.([0-9]+)/\1\2/'
+"$@" --version | sed -r 's/v([0-9]+)\.([0-9]+)/\1\2/'
