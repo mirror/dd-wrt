@@ -92,6 +92,7 @@
 #include <linux/unistd.h>
 #include <linux/platform_device.h>
 #include <linux/workqueue.h>
+#include <linux/spinlock.h>
 
 #ifdef CONFIG_XFRM
 #include <net/xfrm.h>
@@ -4203,7 +4204,7 @@ static int dev_eth_probe(struct device *dev)
     {
 	goto error;
     }
-    priv->lock = __SPIN_LOCK_UNLOCKED(priv->lock);
+    priv->lock = (spinlock_t)__SPIN_LOCK_UNLOCKED(priv->lock);
     sema_init(priv->maintenanceCheckThreadComplete,1);
     priv->maintenanceCheckStopped = TRUE;
 
