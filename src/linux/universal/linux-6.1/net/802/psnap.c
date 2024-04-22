@@ -108,7 +108,7 @@ static int __init snap_init(void)
 
 module_init(snap_init);
 
-static void __exit snap_exit(void)
+static void snap_exit(void)
 {
 	llc_sap_put(snap_sap);
 }
