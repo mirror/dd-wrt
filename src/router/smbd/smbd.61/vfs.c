@@ -50,7 +50,6 @@ extern int vfs_path_lookup(struct dentry *, struct vfsmount *,
 			   const char *, unsigned int, struct path *);
 #endif
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 4, 0)
 static char *extract_last_component(char *path)
 {
 	char *p = strrchr(path, '/');
@@ -63,7 +62,6 @@ static char *extract_last_component(char *path)
 	}
 	return p;
 }
-#endif
 
 static void ksmbd_vfs_inherit_owner(struct ksmbd_work *work,
 				    struct inode *parent_inode,
@@ -1492,7 +1490,7 @@ revert_fsids:
 	return err;
 }
 
-#else
+#endif
 static int ksmbd_validate_entry_in_use(struct dentry *src_dent)
 {
 	struct dentry *dst_dent;
@@ -1707,7 +1705,7 @@ out:
 	dput(src_dent_parent);
 	return err;
 }
-#endif
+
 
 /**
  * ksmbd_vfs_truncate() - vfs helper for smb file truncate
@@ -2879,6 +2877,78 @@ void ksmbd_vfs_kern_path_unlock(struct path *parent_path, struct path *path)
 	mnt_drop_write(parent_path->mnt);
 	path_put(path);
 	path_put(parent_path);
+}
+
+int ksmbd_vfs_kern_path(struct ksmbd_work *work, char *name,
+			unsigned int flags, struct path *path, bool caseless)
+{
+	struct ksmbd_share_config *share_conf = work->tcon->share_conf;
+	int err;
+
+	flags |= LOOKUP_BENEATH;
+	err = vfs_path_lookup(share_conf->vfs_path.dentry,
+			      share_conf->vfs_path.mnt,
+			      name,
+			      flags,
+			      path);
+	if (!err)
+		return 0;
+
+	if (caseless) {
+		char *filepath;
+		struct path parent;
+		size_t path_len, remain_len;
+
+		filepath = kstrdup(name, GFP_KERNEL);
+		if (!filepath)
+			return -ENOMEM;
+
+		path_len = strlen(filepath);
+		remain_len = path_len;
+
+		parent = share_conf->vfs_path;
+		path_get(&parent);
+
+		while (d_can_lookup(parent.dentry)) {
+			char *filename = filepath + path_len - remain_len;
+			char *next = strchrnul(filename, '/');
+			size_t filename_len = next - filename;
+			bool is_last = !next[0];
+
+			if (filename_len == 0)
+				break;
+
+			err = ksmbd_vfs_lookup_in_dir(&parent, filename,
+						      filename_len,
+						      work->conn->um);
+			path_put(&parent);
+			if (err)
+				goto out;
+
+			next[0] = '\0';
+
+			err = vfs_path_lookup(share_conf->vfs_path.dentry,
+					      share_conf->vfs_path.mnt,
+					      filepath,
+					      flags,
+					      &parent);
+			if (err)
+				goto out;
+			else if (is_last) {
+				*path = parent;
+				goto out;
+			}
+
+			next[0] = '/';
+			remain_len -= filename_len + 1;
+		}
+
+		path_put(&parent);
+		err = -EINVAL;
+out:
+		kfree(filepath);
+	}
+	return err;
 }
 
 #else

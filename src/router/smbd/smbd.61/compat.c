@@ -30,6 +30,11 @@ ssize_t compat_ksmbd_vfs_getxattr(struct path *path, struct dentry *dentry,
 	return ksmbd_vfs_getxattr(mnt_idmap(path->mnt), dentry,
 				  xattr_name, xattr_buf);
 }
+int compat_inode_permission(struct path *path, struct inode *inode, int mask)
+{
+	return inode_permission(mnt_idmap(path->mnt), inode, mask);
+
+}
 #else
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
 int compat_inode_permission(struct path *path, struct inode *inode, int mask)
