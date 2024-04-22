@@ -51,6 +51,7 @@
 #include <linux/kthread.h>
 #include <linux/tick.h>
 #include <linux/rcupdate_wait.h>
+#include <linux/rcuwait.h>
 
 #define CREATE_TRACE_POINTS
 
@@ -66,8 +67,10 @@ extern int rcu_expedited; /* from sysctl */
 module_param(rcu_expedited, int, 0);
 extern int rcu_normal; /* from sysctl */
 module_param(rcu_normal, int, 0);
-static int rcu_normal_after_boot;
+static int rcu_normal_after_boot = IS_ENABLED(CONFIG_PREEMPT_RT_FULL);
+#ifndef CONFIG_PREEMPT_RT_FULL
 module_param(rcu_normal_after_boot, int, 0);
+#endif
 #endif /* #ifndef CONFIG_TINY_RCU */
 
 #ifdef CONFIG_DEBUG_LOCK_ALLOC
@@ -333,6 +336,7 @@ int rcu_read_lock_held(void)
 }
 EXPORT_SYMBOL_GPL(rcu_read_lock_held);
 
+#ifndef CONFIG_PREEMPT_RT_FULL
 /**
  * rcu_read_lock_bh_held() - might we be in RCU-bh read-side critical section?
  *
@@ -359,6 +363,7 @@ int rcu_read_lock_bh_held(void)
 	return in_softirq() || irqs_disabled();
 }
 EXPORT_SYMBOL_GPL(rcu_read_lock_bh_held);
+#endif
 
 #endif /* #ifdef CONFIG_DEBUG_LOCK_ALLOC */
 
@@ -415,6 +420,13 @@ void __wait_rcu_gp(bool checktiny, int n, call_rcu_func_t *crcu_array,
 	}
 }
 EXPORT_SYMBOL_GPL(__wait_rcu_gp);
+
+void finish_rcuwait(struct rcuwait *w)
+{
+	rcu_assign_pointer(w->task, NULL);
+	__set_current_state(TASK_RUNNING);
+}
+EXPORT_SYMBOL_GPL(finish_rcuwait);
 
 #ifdef CONFIG_DEBUG_OBJECTS_RCU_HEAD
 void init_rcu_head(struct rcu_head *head)

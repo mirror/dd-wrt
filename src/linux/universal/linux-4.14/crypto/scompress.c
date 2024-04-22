@@ -24,6 +24,7 @@
 #include <linux/cryptouser.h>
 #include <net/netlink.h>
 #include <linux/scatterlist.h>
+#include <linux/locallock.h>
 #include <crypto/scatterwalk.h>
 #include <crypto/internal/acompress.h>
 #include <crypto/internal/scompress.h>
@@ -42,6 +43,7 @@ static DEFINE_PER_CPU(struct scomp_scratch, scomp_scratch) = {
 static const struct crypto_type crypto_scomp_type;
 static int scomp_scratch_users;
 static DEFINE_MUTEX(scomp_lock);
+static DEFINE_LOCAL_IRQ_LOCK(scomp_scratches_lock);
 
 #ifdef CONFIG_NET
 static int crypto_scomp_report(struct sk_buff *skb, struct crypto_alg *alg)

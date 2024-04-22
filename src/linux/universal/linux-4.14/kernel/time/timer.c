@@ -198,11 +198,13 @@ EXPORT_SYMBOL(jiffies_64);
 struct timer_base {
 	raw_spinlock_t		lock;
 	struct timer_list	*running_timer;
+#ifdef CONFIG_PREEMPT_RT
+	spinlock_t		expiry_lock;
+	atomic_t		timer_waiters;
+#endif
 	unsigned long		clk;
 	unsigned long		next_expiry;
 	unsigned int		cpu;
-	bool			migration_enabled;
-	bool			nohz_active;
 	bool			is_idle;
 	bool			must_forward_clk;
 	DECLARE_BITMAP(pending_map, WHEEL_SIZE);
@@ -211,45 +213,73 @@ struct timer_base {
 
 static DEFINE_PER_CPU(struct timer_base, timer_bases[NR_BASES]);
 
-#if defined(CONFIG_SMP) && defined(CONFIG_NO_HZ_COMMON)
+#ifdef CONFIG_NO_HZ_COMMON
+
+static DEFINE_STATIC_KEY_FALSE(timers_nohz_active);
+static DEFINE_MUTEX(timer_keys_mutex);
+
+static struct swork_event timer_update_swork;
+
+#ifdef CONFIG_SMP
 unsigned int sysctl_timer_migration = 1;
 
-void timers_update_migration(bool update_nohz)
+DEFINE_STATIC_KEY_FALSE(timers_migration_enabled);
+
+static void timers_update_migration(void)
 {
 	bool on = sysctl_timer_migration && tick_nohz_active;
-	unsigned int cpu;
 
-	/* Avoid the loop, if nothing to update */
-	if (this_cpu_read(timer_bases[BASE_STD].migration_enabled) == on)
-		return;
-
-	for_each_possible_cpu(cpu) {
-		per_cpu(timer_bases[BASE_STD].migration_enabled, cpu) = on;
-		per_cpu(timer_bases[BASE_DEF].migration_enabled, cpu) = on;
-		per_cpu(hrtimer_bases.migration_enabled, cpu) = on;
-		if (!update_nohz)
-			continue;
-		per_cpu(timer_bases[BASE_STD].nohz_active, cpu) = true;
-		per_cpu(timer_bases[BASE_DEF].nohz_active, cpu) = true;
-		per_cpu(hrtimer_bases.nohz_active, cpu) = true;
-	}
+	if (on)
+		static_branch_enable(&timers_migration_enabled);
+	else
+		static_branch_disable(&timers_migration_enabled);
 }
+#else
+static inline void timers_update_migration(void) { }
+#endif /* !CONFIG_SMP */
+
+static void timer_update_keys(struct swork_event *event)
+{
+	mutex_lock(&timer_keys_mutex);
+	timers_update_migration();
+	static_branch_enable(&timers_nohz_active);
+	mutex_unlock(&timer_keys_mutex);
+}
+
+void timers_update_nohz(void)
+{
+	swork_queue(&timer_update_swork);
+}
+
+static __init int hrtimer_init_thread(void)
+{
+	WARN_ON(swork_get());
+	INIT_SWORK(&timer_update_swork, timer_update_keys);
+	return 0;
+}
+early_initcall(hrtimer_init_thread);
 
 int timer_migration_handler(struct ctl_table *table, int write,
 			    void __user *buffer, size_t *lenp,
 			    loff_t *ppos)
 {
-	static DEFINE_MUTEX(mutex);
 	int ret;
 
-	mutex_lock(&mutex);
+	mutex_lock(&timer_keys_mutex);
 	ret = proc_dointvec_minmax(table, write, buffer, lenp, ppos);
 	if (!ret && write)
-		timers_update_migration(false);
-	mutex_unlock(&mutex);
+		timers_update_migration();
+	mutex_unlock(&timer_keys_mutex);
 	return ret;
 }
-#endif
+
+static inline bool is_timers_nohz_active(void)
+{
+	return static_branch_unlikely(&timers_nohz_active);
+}
+#else
+static inline bool is_timers_nohz_active(void) { return false; }
+#endif /* NO_HZ_COMMON */
 
 static unsigned long round_jiffies_common(unsigned long j, int cpu,
 		bool force_up)
@@ -535,7 +565,7 @@ __internal_add_timer(struct timer_base *base, struct timer_list *timer)
 static void
 trigger_dyntick_cpu(struct timer_base *base, struct timer_list *timer)
 {
-	if (!IS_ENABLED(CONFIG_NO_HZ_COMMON) || !base->nohz_active)
+	if (!is_timers_nohz_active())
 		return;
 
 	/*
@@ -841,21 +871,20 @@ static inline struct timer_base *get_timer_base(u32 tflags)
 	return get_timer_cpu_base(tflags, tflags & TIMER_CPUMASK);
 }
 
-#ifdef CONFIG_NO_HZ_COMMON
 static inline struct timer_base *
 get_target_base(struct timer_base *base, unsigned tflags)
 {
-#ifdef CONFIG_SMP
-	if ((tflags & TIMER_PINNED) || !base->migration_enabled)
-		return get_timer_this_cpu_base(tflags);
-	return get_timer_cpu_base(tflags, get_nohz_timer_target());
-#else
-	return get_timer_this_cpu_base(tflags);
+#if defined(CONFIG_SMP) && defined(CONFIG_NO_HZ_COMMON)
+	if (static_branch_unlikely(&timers_migration_enabled) &&
+	    !(tflags & TIMER_PINNED))
+		return get_timer_cpu_base(tflags, get_nohz_timer_target());
 #endif
+	return get_timer_this_cpu_base(tflags);
 }
 
 static inline void forward_timer_base(struct timer_base *base)
 {
+#ifdef CONFIG_NO_HZ_COMMON
 	unsigned long jnow;
 
 	/*
@@ -879,16 +908,8 @@ static inline void forward_timer_base(struct timer_base *base)
 		base->clk = jnow;
 	else
 		base->clk = base->next_expiry;
-}
-#else
-static inline struct timer_base *
-get_target_base(struct timer_base *base, unsigned tflags)
-{
-	return get_timer_this_cpu_base(tflags);
-}
-
-static inline void forward_timer_base(struct timer_base *base) { }
 #endif
+}
 
 
 /*
@@ -1186,7 +1207,80 @@ int try_to_del_timer_sync(struct timer_list *timer)
 }
 EXPORT_SYMBOL(try_to_del_timer_sync);
 
-#ifdef CONFIG_SMP
+#ifdef CONFIG_PREEMPT_RT
+static __init void timer_base_init_expiry_lock(struct timer_base *base)
+{
+	spin_lock_init(&base->expiry_lock);
+}
+
+static inline void timer_base_lock_expiry(struct timer_base *base)
+{
+	spin_lock(&base->expiry_lock);
+}
+
+static inline void timer_base_unlock_expiry(struct timer_base *base)
+{
+	spin_unlock(&base->expiry_lock);
+}
+
+/*
+ * The counterpart to del_timer_wait_running().
+ *
+ * If there is a waiter for base->expiry_lock, then it was waiting for the
+ * timer callback to finish. Drop expiry_lock and reaquire it. That allows
+ * the waiter to acquire the lock and make progress.
+ */
+static void timer_sync_wait_running(struct timer_base *base)
+{
+	if (atomic_read(&base->timer_waiters)) {
+		raw_spin_unlock_irq(&base->lock);
+		spin_unlock(&base->expiry_lock);
+		spin_lock(&base->expiry_lock);
+		raw_spin_lock_irq(&base->lock);
+	}
+}
+
+/*
+ * This function is called on PREEMPT_RT kernels when the fast path
+ * deletion of a timer failed because the timer callback function was
+ * running.
+ *
+ * This prevents priority inversion, if the softirq thread on a remote CPU
+ * got preempted, and it prevents a life lock when the task which tries to
+ * delete a timer preempted the softirq thread running the timer callback
+ * function.
+ */
+static void del_timer_wait_running(struct timer_list *timer)
+{
+	u32 tf;
+
+	tf = READ_ONCE(timer->flags);
+	if (!(tf & (TIMER_MIGRATING | TIMER_IRQSAFE))) {
+		struct timer_base *base = get_timer_base(tf);
+
+		/*
+		 * Mark the base as contended and grab the expiry lock,
+		 * which is held by the softirq across the timer
+		 * callback. Drop the lock immediately so the softirq can
+		 * expire the next timer. In theory the timer could already
+		 * be running again, but that's more than unlikely and just
+		 * causes another wait loop.
+		 */
+		atomic_inc(&base->timer_waiters);
+		spin_lock_bh(&base->expiry_lock);
+		atomic_dec(&base->timer_waiters);
+		spin_unlock_bh(&base->expiry_lock);
+	}
+}
+#else
+static inline void timer_base_init_expiry_lock(struct timer_base *base) { }
+static inline void timer_base_lock_expiry(struct timer_base *base) { }
+static inline void timer_base_unlock_expiry(struct timer_base *base) { }
+static inline void timer_sync_wait_running(struct timer_base *base) { }
+static inline void del_timer_wait_running(struct timer_list *timer) { }
+#endif
+
+#if defined(CONFIG_SMP) || defined(CONFIG_PREEMPT_RT_FULL)
 /**
  * del_timer_sync - deactivate a timer and wait for the handler to finish.
  * @timer: the timer to be deactivated
@@ -1225,6 +1319,8 @@ EXPORT_SYMBOL(try_to_del_timer_sync);
  */
 int del_timer_sync(struct timer_list *timer)
 {
+	int ret;
+
 #ifdef CONFIG_LOCKDEP
 	unsigned long flags;
 
@@ -1242,12 +1338,26 @@ int del_timer_sync(struct timer_list *timer)
 	 * could lead to deadlock.
 	 */
 	WARN_ON(in_irq() && !(timer->flags & TIMER_IRQSAFE));
-	for (;;) {
-		int ret = try_to_del_timer_sync(timer);
-		if (ret >= 0)
-			return ret;
-		cpu_relax();
-	}
+
+	/*
+	 * Must be able to sleep on PREEMPT_RT because of the slowpath in
+	 * del_timer_wait_running().
+	 */
+#if 0
+	if (IS_ENABLED(CONFIG_PREEMPT_RT) && !(timer->flags & TIMER_IRQSAFE))
+		lockdep_assert_preemption_enabled();
+#endif
+
+	do {
+		ret = try_to_del_timer_sync(timer);
+
+		if (unlikely(ret < 0)) {
+			del_timer_wait_running(timer);
+			cpu_relax();
+		}
+	} while (ret < 0);
+
+	return ret;
 }
 EXPORT_SYMBOL(del_timer_sync);
 #endif
@@ -1310,14 +1420,18 @@ static void expire_timers(struct timer_base *base, struct hlist_head *head)
 		fn = timer->function;
 		data = timer->data;
 
-		if (timer->flags & TIMER_IRQSAFE) {
+		if (!IS_ENABLED(CONFIG_PREEMPT_RT_FULL) &&
+		    timer->flags & TIMER_IRQSAFE) {
 			raw_spin_unlock(&base->lock);
 			call_timer_fn(timer, fn, data);
 			raw_spin_lock(&base->lock);
+			base->running_timer = NULL;
 		} else {
 			raw_spin_unlock_irq(&base->lock);
 			call_timer_fn(timer, fn, data);
 			raw_spin_lock_irq(&base->lock);
+			base->running_timer = NULL;
+			timer_sync_wait_running(base);
 		}
 	}
 }
@@ -1589,7 +1703,7 @@ void update_process_times(int user_tick)
 	account_process_tick(p, user_tick);
 	run_local_timers();
 	rcu_check_callbacks(user_tick);
-#ifdef CONFIG_IRQ_WORK
+#if defined(CONFIG_IRQ_WORK)
 	if (in_irq())
 		irq_work_tick();
 #endif
@@ -1610,6 +1724,7 @@ static inline void __run_timers(struct timer_base *base)
 	if (!time_after_eq(jiffies, base->clk))
 		return;
 
+	timer_base_lock_expiry(base);
 	raw_spin_lock_irq(&base->lock);
 
 	/*
@@ -1636,8 +1751,8 @@ static inline void __run_timers(struct timer_base *base)
 		while (levels--)
 			expire_timers(base, heads + levels);
 	}
-	base->running_timer = NULL;
 	raw_spin_unlock_irq(&base->lock);
+	timer_base_unlock_expiry(base);
 }
 
 /*
@@ -1647,6 +1762,7 @@ static __latent_entropy void run_timer_softirq(struct softirq_action *h)
 {
 	struct timer_base *base = this_cpu_ptr(&timer_bases[BASE_STD]);
 
+	irq_work_tick_soft();
 	__run_timers(base);
 	if (IS_ENABLED(CONFIG_NO_HZ_COMMON))
 		__run_timers(this_cpu_ptr(&timer_bases[BASE_DEF]));
@@ -1870,6 +1986,7 @@ static void __init init_timer_cpu(int cpu)
 		base->cpu = cpu;
 		raw_spin_lock_init(&base->lock);
 		base->clk = jiffies;
+		timer_base_init_expiry_lock(base);
 	}
 }
 

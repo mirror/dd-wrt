@@ -3269,9 +3269,6 @@ static int __transport_check_aborted_status(struct se_cmd *cmd, int send_status)
 {
 	int ret;
 
-	assert_spin_locked(&cmd->t_state_lock);
-	WARN_ON_ONCE(!irqs_disabled());
-
 	if (!(cmd->transport_state & CMD_T_ABORTED))
 		return 0;
 	/*

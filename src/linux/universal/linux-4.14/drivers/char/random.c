@@ -53,6 +53,7 @@
 #include <linux/uaccess.h>
 #include <linux/siphash.h>
 #include <linux/uio.h>
+#include <linux/locallock.h>
 #include <crypto/chacha20.h>
 #include <crypto/blake2s.h>
 #include <asm/processor.h>
@@ -229,10 +230,12 @@ static struct {
 struct crng {
 	u8 key[CHACHA20_KEY_SIZE];
 	unsigned long generation;
+	struct local_irq_lock lock;
 };
 
 static DEFINE_PER_CPU(struct crng, crngs) = {
-	.generation = ULONG_MAX
+	.generation = ULONG_MAX,
+	.lock = INIT_LOCAL_LOCK(crngs.lock),
 };
 
 /* Used by crng_reseed() and crng_make_state() to extract a new seed from the input pool. */
@@ -362,7 +365,7 @@ static void crng_make_state(u32 chacha_state[CHACHA20_BLOCK_SIZE / sizeof(u32)],
 	if (unlikely(crng_has_old_seed()))
 		crng_reseed();
 
-	local_irq_save(flags);
+	local_lock_irqsave(crngs.lock, flags);
 	crng = raw_cpu_ptr(&crngs);
 
 	/*
@@ -387,7 +390,7 @@ static void crng_make_state(u32 chacha_state[CHACHA20_BLOCK_SIZE / sizeof(u32)],
 	 * should wind up here immediately.
 	 */
 	crng_fast_key_erasure(crng->key, chacha_state, random_data, random_data_len);
-	local_irq_restore(flags);
+	local_unlock_irqrestore(crngs.lock, flags);
 }
 
 static void _get_random_bytes(void *buf, size_t len)
@@ -505,11 +508,13 @@ struct batch_ ##type {								\
 	 * formula of (integer_blocks + 0.5) * CHACHA20_BLOCK_SIZE.		\
 	 */									\
 	type entropy[CHACHA20_BLOCK_SIZE * 3 / (2 * sizeof(type))];		\
+	struct local_irq_lock lock;						\
 	unsigned long generation;						\
 	unsigned int position;							\
 };										\
 										\
 static DEFINE_PER_CPU(struct batch_ ##type, batched_entropy_ ##type) = {	\
+	.lock = INIT_LOCAL_LOCK(batched_entropy_ ##type.lock),			\
 	.position = UINT_MAX							\
 };										\
 										\
@@ -527,7 +532,7 @@ type get_random_ ##type(void)							\
 		return ret;							\
 	}									\
 										\
-	local_irq_save(flags);		\
+	local_lock_irqsave(batched_entropy_ ##type.lock, flags);		\
 	batch = raw_cpu_ptr(&batched_entropy_##type);				\
 										\
 	next_gen = READ_ONCE(base_crng.generation);				\
@@ -541,7 +546,7 @@ type get_random_ ##type(void)							\
 	ret = batch->entropy[batch->position];					\
 	batch->entropy[batch->position] = 0;					\
 	++batch->position;							\
-	local_irq_restore(flags);		\
+	local_unlock_irqrestore(batched_entropy_ ##type.lock, flags);		\
 	return ret;								\
 }										\
 EXPORT_SYMBOL(get_random_ ##type);

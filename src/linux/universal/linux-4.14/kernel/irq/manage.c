@@ -24,6 +24,7 @@
 #include "internals.h"
 
 #ifdef CONFIG_IRQ_FORCED_THREADING
+# ifndef CONFIG_PREEMPT_RT_BASE
 __read_mostly bool force_irqthreads;
 
 static int __init setup_forced_irqthreads(char *arg)
@@ -32,6 +33,7 @@ static int __init setup_forced_irqthreads(char *arg)
 	return 0;
 }
 early_param("threadirqs", setup_forced_irqthreads);
+# endif
 #endif
 
 static void __synchronize_hardirq(struct irq_desc *desc)
@@ -261,7 +263,11 @@ int irq_set_affinity_locked(struct irq_data *data, const struct cpumask *mask,
 
 	if (desc->affinity_notify) {
 		kref_get(&desc->affinity_notify->kref);
+#ifdef CONFIG_PREEMPT_RT_BASE
+		if (!kthread_schedule_work(&desc->affinity_notify->work)) {
+#else
 		if (!schedule_work(&desc->affinity_notify->work)) {
+#endif
 			/* Work was already scheduled, drop our extra ref */
 			kref_put(&desc->affinity_notify->kref,
 				 desc->affinity_notify->release);
@@ -303,10 +309,8 @@ int irq_set_affinity_hint(unsigned int irq, const struct cpumask *m)
 }
 EXPORT_SYMBOL_GPL(irq_set_affinity_hint);
 
-static void irq_affinity_notify(struct work_struct *work)
+static void _irq_affinity_notify(struct irq_affinity_notify *notify)
 {
-	struct irq_affinity_notify *notify =
-		container_of(work, struct irq_affinity_notify, work);
 	struct irq_desc *desc = irq_to_desc(notify->irq);
 	cpumask_var_t cpumask;
 	unsigned long flags;
@@ -327,6 +331,25 @@ static void irq_affinity_notify(struct work_struct *work)
 out:
 	kref_put(&notify->kref, notify->release);
 }
+
+#ifdef CONFIG_PREEMPT_RT_BASE
+
+static void irq_affinity_notify(struct kthread_work *work)
+{
+	struct irq_affinity_notify *notify =
+		container_of(work, struct irq_affinity_notify, work);
+	_irq_affinity_notify(notify);
+}
+
+#else
+
+static void irq_affinity_notify(struct work_struct *work)
+{
+	struct irq_affinity_notify *notify =
+		container_of(work, struct irq_affinity_notify, work);
+	_irq_affinity_notify(notify);
+}
+#endif
 
 /**
  *	irq_set_affinity_notifier - control notification of IRQ affinity changes
@@ -356,7 +379,11 @@ irq_set_affinity_notifier(unsigned int irq, struct irq_affinity_notify *notify)
 	if (notify) {
 		notify->irq = irq;
 		kref_init(&notify->kref);
+#ifdef CONFIG_PREEMPT_RT_BASE
+		kthread_init_work(&notify->work, irq_affinity_notify);
+#else
 		INIT_WORK(&notify->work, irq_affinity_notify);
+#endif
 	}
 
 	raw_spin_lock_irqsave(&desc->lock, flags);
@@ -365,7 +392,11 @@ irq_set_affinity_notifier(unsigned int irq, struct irq_affinity_notify *notify)
 	raw_spin_unlock_irqrestore(&desc->lock, flags);
 
 	if (old_notify) {
+#ifdef CONFIG_PREEMPT_RT_BASE
+		if (kthread_cancel_work_sync(&old_notify->work)) {
+#else
 		if (cancel_work_sync(&old_notify->work)) {
+#endif
 			/* Pending work had a ref, put that one too */
 			kref_put(&old_notify->kref, old_notify->release);
 		}
@@ -925,7 +956,15 @@ irq_forced_thread_fn(struct irq_desc *desc, struct irqaction *action)
 	irq_finalize_oneshot(desc, action);
 	if (!IS_ENABLED(CONFIG_PREEMPT_RT_BASE))
 		local_irq_enable();
-	local_bh_enable();
+	/*
+	 * Interrupts which have real time requirements can be set up
+	 * to avoid softirq processing in the thread handler. This is
+	 * safe as these interrupts do not raise soft interrupts.
+	 */
+	if (irq_settings_no_softirq_call(desc))
+		_local_bh_enable();
+	else
+		local_bh_enable();
 	return ret;
 }
 
@@ -1420,6 +1459,9 @@ __setup_irq(unsigned int irq, struct irq_desc *desc, struct irqaction *new)
 			irq_settings_set_no_balancing(desc);
 			irqd_set(&desc->irq_data, IRQD_NO_BALANCING);
 		}
+
+		if (new->flags & IRQF_NO_SOFTIRQ_CALL)
+			irq_settings_set_no_softirq_call(desc);
 
 		if (irq_settings_can_autoenable(desc)) {
 			irq_startup(desc, IRQ_RESEND, IRQ_START_COND);
@@ -2202,7 +2244,7 @@ EXPORT_SYMBOL_GPL(irq_get_irqchip_state);
  *	This call sets the internal irqchip state of an interrupt,
  *	depending on the value of @which.
  *
- *	This function should be called with preemption disabled if the
+ *	This function should be called with migration disabled if the
  *	interrupt controller has per-cpu registers.
  */
 int irq_set_irqchip_state(unsigned int irq, enum irqchip_irq_state which,
