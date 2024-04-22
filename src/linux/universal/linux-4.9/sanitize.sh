@@ -8,6 +8,7 @@ do
     echo "# CONFIG_EXFAT_FS is not set" >> .config
     echo "# CONFIG_LTO_MENU is not set" >> .config
     echo "# CONFIG_ASN1 is not set" >> .config
+    echo "# CONFIG_CRYPTO_DEV_QCOM_ICE is not set" >> .config
     sed -i 's/\CONFIG_IP_VS=m/# CONFIG_IP_VS is not set/g' .config	    
     sed -i 's/\CONFIG_USBIP_CORE=m/# CONFIG_USBIP_CORE is not set/g' .config	    
 
