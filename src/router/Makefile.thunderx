@@ -86,7 +86,7 @@ export TOOLCHAIN := $(shell cd $(dir $(shell which $(CROSS_COMPILE)gcc))/.. && p
 #export CFLAGS += -DBCMWPA2 
 #endif
 
-export BASEOPT:=-Os -fno-unwind-tables -fno-asynchronous-unwind-tables
+export BASEOPT:=-O2 -fno-unwind-tables -fno-asynchronous-unwind-tables
 #export ARCH:= mipsel
 
 ifeq ($(ARCH),mipsel)
@@ -168,14 +168,14 @@ kernel:
 	$(MAKE) -C $(LINUXDIR) ARCH=arm64 oldconfig	
 
 	if ! grep -q "CONFIG_EMBEDDED_RAMDISK=y" $(LINUXDIR)/.config ; then \
-	    $(MAKE) -j 4 -C $(LINUXDIR) Image ARCH=arm64 dtbs CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-" ; \
+	    $(MAKE) -j 4 -C $(LINUXDIR) MAKE=make Image ARCH=arm64 dtbs CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-" ; \
 	fi
 	if grep -q "CONFIG_MODULES=y" $(LINUXDIR)/.config ; then \
-	    $(MAKE) -j 4 -C $(LINUXDIR) modules ARCH=arm64 CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-" ; \
+	    $(MAKE) -j 4 -C $(LINUXDIR) MAKE=make modules ARCH=arm64 CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-" ; \
 	fi
 
 	rm -rf $(TARGETDIR)/lib/modules
-	$(MAKE) -C $(LINUXDIR) modules_install DEPMOD=/bin/true INSTALL_MOD_PATH=$(TARGETDIR)
+	$(MAKE) -C $(LINUXDIR) MAKE=make modules_install DEPMOD=/bin/true INSTALL_MOD_PATH=$(TARGETDIR)
 	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/build
 	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/source
 
@@ -244,7 +244,7 @@ endif
 		echo; \
 	) > $(LINUXDIR)/symtab.h
 	rm -f $(LINUXDIR)/vmlinux
-	$(MAKE) -j 4 -C $(LINUXDIR) Image dtbs  ARCH=arm64 EXTRA_LDSFLAGS="-I$(LINUXDIR) -include symtab.h" CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-"
+	$(MAKE) -j 4 -C $(LINUXDIR) MAKE=make Image dtbs  ARCH=arm64 EXTRA_LDSFLAGS="-I$(LINUXDIR) -include symtab.h" CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-"
 	
 testimage:
 	cp tools/newport/base3.img $(ARCH)-uclibc/newport.img
@@ -292,7 +292,7 @@ install package: clean_target $(filter-out lib.$(ARCH)-install,$(obj-install)) $
 	$(MAKE) -f Makefile.thunderx optimize-lib
 	# Install modules into filesystem
 	if grep -q "CONFIG_MODULES=y" $(LINUXDIR)/.config ; then \
-	    $(MAKE) -C $(LINUXDIR) modules_install DEPMOD=/bin/true INSTALL_MOD_PATH=$(TARGETDIR) ; \
+	    $(MAKE) -C $(LINUXDIR) MAKE=make modules_install DEPMOD=/bin/true INSTALL_MOD_PATH=$(TARGETDIR) ; \
 	fi
 ifeq ($(CONFIG_MADWIFI),y)
 	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/drivers/net/wl
