@@ -2,10 +2,8 @@
 #include <linux/libfdt_env.h>
 #include <asm/setup.h>
 #include <libfdt.h>
-#include "misc.h"
-
-#if defined(CONFIG_ARM_ATAG_DTB_COMPAT_CMDLINE_EXTEND) || \
-	defined(CONFIG_ARM_ATAG_DTB_COMPAT_CMDLINE_MANGLE)
+#ifdef CONFIG_ARCH_MVEBU
+#if defined(CONFIG_ARM_ATAG_DTB_COMPAT_CMDLINE_EXTEND)
 #define do_extend_cmdline 1
 #elif defined(CONFIG_ARM_ATAG_DTB_COMPAT_CMDLINE_MANGLE)
 #define do_extend_cmdline 1
@@ -76,92 +74,6 @@ static uint32_t get_cell_size(const void *fdt)
 	if (size_len)
 		cell_size = fdt32_to_cpu(*size_len);
 	return cell_size;
-}
-
-/**
- * taken from arch/x86/boot/string.c
- * local_strstr - Find the first substring in a %NUL terminated string
- * @s1: The string to be searched
- * @s2: The string to search for
- */
-static char *local_strstr(const char *s1, const char *s2)
-{
-	size_t l1, l2;
-
-	l2 = strlen(s2);
-	if (!l2)
-		return (char *)s1;
-	l1 = strlen(s1);
-	while (l1 >= l2) {
-		l1--;
-		if (!memcmp(s1, s2, l2))
-			return (char *)s1;
-		s1++;
-	}
-	return NULL;
-}
-
-static char *append_rootblock(char *dest, const char *str, int len, void *fdt)
-{
-	char *ptr, *end, *tmp;
-	const char *root="root=";
-	const char *find_rootblock;
-	int i, l;
-	const char *rootblock;
-
-	find_rootblock = getprop(fdt, "/chosen", "find-rootblock", &l);
-	if (!find_rootblock)
-		find_rootblock = root;
-
-	/* ARM doesn't have __HAVE_ARCH_STRSTR, so it was copied from x86 */
-	ptr = local_strstr(str, find_rootblock);
-	if (!ptr)
-		return dest;
-
-	end = strchr(ptr, ' ');
-	end = end ? (end - 1) : (strchr(ptr, 0) - 1);
-
-	/* Some boards ubi.mtd=XX,ZZZZ, so let's check for '," too. */
-	tmp = strchr(ptr, ',');
-	if (tmp)
-		end = end < tmp ? end : tmp - 1;
-
-	/*
-	 * find partition number
-	 * (assumes format root=/dev/mtdXX | /dev/mtdblockXX | yy:XX | ubi.mtd=XX,ZZZZ )
-	 */
-	for (i = 0; end >= ptr && *end >= '0' && *end <= '9'; end--, i++);
-
-	ptr = end + 1;
-
-	/* if append-rootblock property is set use it to append to command line */
-	rootblock = getprop(fdt, "/chosen", "append-rootblock", &l);
-	if (rootblock != NULL) {
-		if (*dest != ' ') {
-			*dest = ' ';
-			dest++;
-			len++;
-		}
-
-		if (len + l + i <= COMMAND_LINE_SIZE) {
-			memcpy(dest, rootblock, l);
-			dest += l - 1;
-
-			memcpy(dest, ptr, i);
-			dest += i;
-		}
-	}
-#ifdef CONFIG_ARCH_MVEBU
-	else {
-		len = strlen(str);
-		if (len + 1 < COMMAND_LINE_SIZE) {
-			memcpy(dest, str, len);
-			dest += len;
-		}
-	}
-#endif
-
-	return dest;
 }
 
 #endif
@@ -249,17 +161,9 @@ static void merge_fdt_bootargs(void *fdt, const char *fdt_cmdline)
 			ptr += len - 1;
 		}
 
+	/* and append the ATAG_CMDLINE */
 	if (fdt_cmdline) {
-		if (IS_ENABLED(CONFIG_ARM_ATAG_DTB_COMPAT_CMDLINE_MANGLE)) {
-			/*
-			* save original bootloader args
-			* and append ubi.mtd with root partition number
-			* to current cmdline
-			*/
-			setprop_string(fdt, "/chosen", "bootloader-args", fdt_cmdline);
-			ptr = append_rootblock(ptr, fdt_cmdline, len, fdt);
-		} else {
-			/* and append the ATAG_CMDLINE */
+
 #if defined(CONFIG_ARM_ATAG_DTB_COMPAT_CMDLINE_MANGLE)
 		//save original bootloader args
 		//and append ubi.mtd with root partition number to current cmdline
@@ -267,14 +171,13 @@ static void merge_fdt_bootargs(void *fdt, const char *fdt_cmdline)
 		ptr = append_rootblock(ptr, fdt_cmdline, len, fdt);
 
 #else
-			len = strlen(fdt_cmdline);
-			if (ptr - cmdline + len + 2 < COMMAND_LINE_SIZE) {
-				*ptr++ = ' ';
-				memcpy(ptr, fdt_cmdline, len);
-				ptr += len;
-			}
-#endif
+		len = strlen(fdt_cmdline);
+		if (ptr - cmdline + len + 2 < COMMAND_LINE_SIZE) {
+			*ptr++ = ' ';
+			memcpy(ptr, fdt_cmdline, len);
+			ptr += len;
 		}
+#endif
 	}
 	*ptr = '\0';
 
@@ -353,13 +256,9 @@ int atags_to_fdt(void *atag_list, void *fdt, int total_space)
 			else
 				setprop_string(fdt, "/chosen", "bootargs",
 					       atag->u.cmdline.cmdline);
-		} 
+		}
 #ifndef CONFIG_ARM_ATAG_DTB_COMPAT_CMDLINE_MANGLE
 		else if (atag->hdr.tag == ATAG_MEM) {
-			/* Bootloader MEM ATAG are broken and should be ignored */
-			if (IS_ENABLED(CONFIG_ARM_ATAG_DTB_COMPAT_IGNORE_MEM))
-				continue;
-
 			if (memcount >= sizeof(mem_reg_property)/4)
 				continue;
 			if (!atag->u.mem.size)
@@ -410,3 +309,4 @@ int atags_to_fdt(void *atag_list, void *fdt, int total_space)
 
 	return fdt_pack(fdt);
 }
+#endif

@@ -126,7 +126,7 @@ static void die_kernel_fault(const char *msg, struct mm_struct *mm,
 			     struct pt_regs *regs)
 {
 	bust_spinlocks(1);
-	pr_alert("8<--- cut here ---\n");
+	pr_alert("<--- cut here ---\n");
 	pr_alert("Unable to handle kernel %s at virtual address %08lx when %s\n",
 		 msg, addr, fsr & FSR_LNX_PF ? "execute" :
 		 fsr & FSR_WRITE ? "write" : "read");
@@ -183,7 +183,7 @@ __do_user_fault(unsigned long addr, unsigned int fsr, unsigned int sig,
 #ifdef CONFIG_DEBUG_USER
 	if (((user_debug & UDBG_SEGV) && (sig == SIGSEGV)) ||
 	    ((user_debug & UDBG_BUS)  && (sig == SIGBUS))) {
-		pr_err("8<--- cut here ---\n");
+		pr_err("<--- cut here ---\n");
 		pr_err("%s: unhandled page fault (%d) at 0x%08lx, code 0x%03x\n",
 		       tsk->comm, sig, addr, fsr);
 		show_pte(KERN_ERR, tsk->mm, addr);
@@ -526,7 +526,7 @@ do_DataAbort(unsigned long addr, unsigned int fsr, struct pt_regs *regs)
 	if (!inf->fn(addr, fsr & ~FSR_LNX_PF, regs))
 		return;
 
-	pr_alert("8<--- cut here ---\n");
+	pr_alert("<--- cut here ---\n");
 	pr_alert("Unhandled fault: %s (0x%03x) at 0x%08lx\n",
 		inf->name, fsr, addr);
 	show_pte(KERN_ALERT, current->mm, addr);

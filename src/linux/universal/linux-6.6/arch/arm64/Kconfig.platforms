@@ -333,6 +333,30 @@ config ARCH_THUNDER
 	help
 	  This enables support for Cavium's Thunder Family of SoCs.
 
+config ARCH_GW6300
+	bool "Gateworks Newport 6300"
+	depends on ARCH_THUNDER
+	help
+	  This enables support for Cavium's Thunder Family of SoCs.
+
+config ARCH_GW6304
+	bool "Gateworks Newport 6304"
+	depends on ARCH_THUNDER
+	help
+	  This enables support for Cavium's Thunder Family of SoCs.
+
+config ARCH_GW6400
+	bool "Gateworks Newport 6400"
+	depends on ARCH_THUNDER
+	help
+	  This enables support for Cavium's Thunder Family of SoCs.
+
+config ARCH_GW6404
+	bool "Gateworks Newport 6404"
+	depends on ARCH_THUNDER
+	help
+	  This enables support for Cavium's Thunder Family of SoCs.
+
 config ARCH_THUNDER2
 	bool "Cavium ThunderX2 Server Processors"
 	select GPIOLIB

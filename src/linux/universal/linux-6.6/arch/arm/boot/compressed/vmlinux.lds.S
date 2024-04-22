@@ -110,6 +110,14 @@ SECTIONS
 
   _edata_dtb = .;
 
+#ifdef CONFIG_ARCH_IPQ40XX
+  .appended_dtb : {
+    /* leave space for appended DTB */
+    . += 0x100000;
+  }
+  _edata_dtb = .;
+#endif
+
   /*
    * The image_end section appears after any additional loadable sections
    * that the linker may decide to insert in the binary image.  Having

@@ -57,11 +57,40 @@ endif
 # char struct members incorrectly. So disable it.
 # (https://gcc.gnu.org/bugzilla/show_bug.cgi?id=65932)
 #
-KBUILD_CFLAGS	+= $(call cc-option,-fno-ipa-sra)
+#KBUILD_CFLAGS	+= $(call cc-option,-fno-ipa-sra)
+ifeq ($(CONFIG_AEABI),y)
+CFLAGS_ABI	:=-mabi=aapcs-linux -mfpu=vfp
+else
+CFLAGS_ABI	:=$(call cc-option,-mapcs-32,-mabi=apcs-gnu) $(call cc-option,-mno-thumb-interwork,)
+endif
 
 # This selects which instruction set is used.
 arch-$(CONFIG_CPU_32v7M)	:=-march=armv7-m
+
+ifeq ($(CONFIG_ARCH_ALPINE),y)
+arch-$(CONFIG_CPU_32v7)		=-D__LINUX_ARM_ARCH__=7 -mcpu=cortex-a15 -mtune=cortex-a15
+CFLAGS_ABI	:=-mabi=aapcs-linux  -mfpu=neon-vfpv4
+else
+ifeq ($(CONFIG_ARCH_QCOM),y)
+arch-$(CONFIG_CPU_32v7)		=-D__LINUX_ARM_ARCH__=7 -mcpu=cortex-a15 -mtune=cortex-a15
+CFLAGS_ABI	:=-mabi=aapcs-linux  -mfpu=neon-vfpv4
+else
+ifeq ($(CONFIG_ARCH_MVEBU),y)
+arch-$(CONFIG_CPU_32v7)		=-D__LINUX_ARM_ARCH__=7  -mcpu=cortex-a9 -mtune=cortex-a9
+ifeq ($(CONFIG_ARMADAXP),y)
+CFLAGS_ABI	:=-mabi=aapcs-linux -mfpu=vfpv3-d16
+else
+CFLAGS_ABI	:=-mabi=aapcs-linux -mfpu=neon
+endif
+else
+ifeq ($(CONFIG_ARM_VIRT_EXT),y)
+arch-$(CONFIG_CPU_32v7)		=-D__LINUX_ARM_ARCH__=7 -march=armv7ve
+else
 arch-$(CONFIG_CPU_32v7)		:=-march=armv7-a
+endif
+endif
+endif
+endif
 arch-$(CONFIG_CPU_32v6)		:=-march=armv6
 # Only override the compiler option if ARMv6. The ARMv6K extensions are
 # always available in ARMv7
@@ -109,11 +138,6 @@ tune-$(CONFIG_CPU_FEROCEON)	:=-mtune=xscale
 tune-$(CONFIG_CPU_V6)		:=-mtune=arm1136j-s
 tune-$(CONFIG_CPU_V6K)		:=-mtune=arm1136j-s
 
-ifeq ($(CONFIG_AEABI),y)
-CFLAGS_ABI	:=-mabi=aapcs-linux -mfpu=vfp
-else
-CFLAGS_ABI	:=$(call cc-option,-mapcs-32,-mabi=apcs-gnu) $(call cc-option,-mno-thumb-interwork,)
-endif
 
 ifeq ($(CONFIG_ARM_UNWIND),y)
 CFLAGS_ABI	+=-funwind-tables
