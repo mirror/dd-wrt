@@ -23,8 +23,8 @@
 #include <sys/stat.h>
 #include <stdlib.h>
 
-#define CONF_SERVER	"http://www.speedtest.net/speedtest-config.php"
-#define STATIC_SERVER	"https://www.speedtest.net/api/js/servers"
+#define CONF_SERVER "http://www.speedtest.net/speedtest-config.php"
+#define STATIC_SERVER "https://www.speedtest.net/api/js/servers"
 
 #define DL_FILE_NUM 5
 #define DL_FILE_TIMES 10
@@ -38,13 +38,15 @@ static int maxsearch = 10;
 #define CLOSEST_SERVERS_NUM maxsearch
 
 /* Debug Print */
-#define DEBUG_NONE	0x000000
-#define DEBUG_INFO	0x000001
+#define DEBUG_NONE 0x000000
+#define DEBUG_INFO 0x000001
 static int debug_msg = DEBUG_NONE;
 
-#define SPEEDTEST_INFO(fmt, arg...) \
-		do { if (debug_msg & DEBUG_INFO) \
-			printf("speedtest_cli >>%s: "fmt, __FUNCTION__, ##arg); } while (0)
+#define SPEEDTEST_INFO(fmt, arg...)                                              \
+	do {                                                                     \
+		if (debug_msg & DEBUG_INFO)                                      \
+			printf("speedtest_cli >>%s: " fmt, __FUNCTION__, ##arg); \
+	} while (0)
 
 #include <curl/curl.h>
 
@@ -84,7 +86,7 @@ size_t download(char *url, char *filename, int connecttimeout, int maxtimeout)
 	curl_easy_cleanup(hnd);
 	if (out)
 		fclose(out);
-//	SPEEDTEST_INFO("downloaded %ld bytes from %s\n", cnt, url);
+	//	SPEEDTEST_INFO("downloaded %ld bytes from %s\n", cnt, url);
 
 	return cnt;
 }
@@ -105,7 +107,7 @@ size_t upload(char *url, char *filedata, int size, int connecttimeout, int maxti
 	curl_easy_setopt(hnd, CURLOPT_NOPROGRESS, 1L);
 	curl_easy_setopt(hnd, CURLOPT_USERAGENT, "dd-wrt speedtest");
 	curl_easy_setopt(hnd, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0);
-//	SPEEDTEST_INFO("upload %ld bytes to %s\n", len, url);
+	//	SPEEDTEST_INFO("upload %ld bytes to %s\n", len, url);
 
 	if (maxtimeout)
 		curl_easy_setopt(hnd, CURLOPT_TIMEOUT_MS, (long)(maxtimeout * 1000));
@@ -150,7 +152,7 @@ typedef struct server_config {
 	char *https_functional;
 	char *host;
 	char *force_ping_select;
-	double dist;		/* distance */
+	double dist; /* distance */
 	double latency;
 	double ping;
 } server_config_t;
@@ -190,7 +192,7 @@ static int get_uptime(double *uptime)
 	return 0;
 }
 
-static void client_free(client_config_t * client)
+static void client_free(client_config_t *client)
 {
 	if (client->ip)
 		free(client->ip);
@@ -281,7 +283,7 @@ static char *get_str_json(char *search, char **p)
 	return orig;
 }
 
-static int get_speedtest_config(client_config_t * client)
+static int get_speedtest_config(client_config_t *client)
 {
 	FILE *fp1;
 	char line[256];
@@ -343,7 +345,7 @@ static int get_speedtest_config(client_config_t * client)
 	return 0;
 }
 
-static void server_free(server_config_t * server)
+static void server_free(server_config_t *server)
 {
 	if (server->url)
 		free(server->url);
@@ -371,17 +373,17 @@ static void server_free(server_config_t * server)
 		free(server->force_ping_select);
 }
 
-static void init_server(server_config_t * server)
+static void init_server(server_config_t *server)
 {
 	memset(server, 0, sizeof(server_config_t));
 }
 
 /* calculate distance between client and server */
-static double get_distance(client_config_t * client, server_config_t * server)
+static double get_distance(client_config_t *client, server_config_t *server)
 {
 	double lat_c, lat_s, lon_c, lon_s, d, a;
 	double dlat, dlon;
-	int radius = 6371;	/* earth radius */
+	int radius = 6371; /* earth radius */
 
 	lat_c = atof(client->lat);
 	lon_c = atof(client->lon);
@@ -397,7 +399,7 @@ static double get_distance(client_config_t * client, server_config_t * server)
 }
 
 /* Determine the 5 nearest speedtest.net servers based on geographic distance */
-static int get_nearest_servers(client_config_t * client, server_config_t * servers)
+static int get_nearest_servers(client_config_t *client, server_config_t *servers)
 {
 	FILE *fp1;
 	char line[256];
@@ -545,7 +547,7 @@ static int get_nearest_servers(client_config_t * client, server_config_t * serve
 }
 double ping(char *addr);
 
-static int get_lowest_latency_server(server_config_t * servers, server_config_t * best_server)
+static int get_lowest_latency_server(server_config_t *servers, server_config_t *best_server)
 {
 	int i, j, len, best;
 	char *url = NULL;
@@ -576,7 +578,8 @@ static int get_lowest_latency_server(server_config_t * servers, server_config_t 
 			}
 			fgets(line, sizeof(line), fp1);
 			if (!strncmp(line, "test=test", strlen("test=test"))) {
-				latency[j] = (double)((tv2.tv_sec - tv1.tv_sec)) * (double)(1000000.0f) + (double)(tv2.tv_usec - tv1.tv_usec);
+				latency[j] = (double)((tv2.tv_sec - tv1.tv_sec)) * (double)(1000000.0f) +
+					     (double)(tv2.tv_usec - tv1.tv_usec);
 			} else {
 				latency[j] = 3600000000;
 			}
@@ -632,7 +635,7 @@ static void *download_thread(void *ptr)
 		return NULL;
 	}
 
-	in = (dl_thread_arg_t *) ptr;
+	in = (dl_thread_arg_t *)ptr;
 	size_t cnt = download(in->url, NULL, 0, 0);
 	pthread_mutex_lock(&finished_mutex);
 	finished += (double)cnt;
@@ -646,7 +649,7 @@ typedef struct THREAD {
 	int joined;
 } THREAD_T;
 
-static int test_download_speed(server_config_t * best_server)
+static int test_download_speed(server_config_t *best_server)
 {
 	int i, j, k = 0, ret, url_len, queue_count = 0;
 	dl_thread_arg_t download_url[DL_FILE_NUM * DL_FILE_TIMES];
@@ -702,7 +705,7 @@ static int test_download_speed(server_config_t * best_server)
 				return -1;
 			}
 			duration = time_dl_end - time_dl_start;
-			if (duration > 10.0) {	// limit upload  
+			if (duration > 10.0) { // limit upload
 				for (j = 0; j < dl_thread_num; j++) {
 					if (!q[dl_thread_num - 1 - j].joined)
 						pthread_join(q[dl_thread_num - 1 - j].q, NULL);
@@ -711,7 +714,7 @@ static int test_download_speed(server_config_t * best_server)
 			}
 		}
 	}
-      done:;
+done:;
 	if (get_uptime(&time_dl_end)) {
 		fprintf(stderr, "Error on getting /proc/uptime\n");
 		return -1;
@@ -720,7 +723,8 @@ static int test_download_speed(server_config_t * best_server)
 	for (i = 0; i < DL_FILE_NUM * DL_FILE_TIMES; i++) {
 		free(download_url[i].url);
 	}
-	printf("speedtest_cli: Duration = %.2f Download = %.2f Mbit/s (%.2f Kbyte/s)\n", duration, ((finished / 1024 / 1024 / duration) * 8), (finished / 1024 / duration));
+	printf("speedtest_cli: Duration = %.2f Download = %.2f Mbit/s (%.2f Kbyte/s)\n", duration,
+	       ((finished / 1024 / 1024 / duration) * 8), (finished / 1024 / duration));
 
 	if (!(fp_result = fopen("/tmp/speedtest_download_result", "w"))) {
 		perror("fopen /tmp/speedtest_download_result");
@@ -747,8 +751,8 @@ static void *upload_thread(void *ptr)
 	if (time_diff > 10)
 		return NULL;
 
-	in = (ul_thread_arg_t *) ptr;
-	size_t size =  upload(in->url, in->ul_file, in->size, 0, 0);
+	in = (ul_thread_arg_t *)ptr;
+	size_t size = upload(in->url, in->ul_file, in->size, 0, 0);
 
 	pthread_mutex_lock(&finished_mutex);
 	finished += (double)in->size;
@@ -757,7 +761,7 @@ static void *upload_thread(void *ptr)
 	return NULL;
 }
 
-static int test_upload_speed(server_config_t * best_server)
+static int test_upload_speed(server_config_t *best_server)
 {
 	const char *data = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 	const char *head = "content1=";
@@ -798,7 +802,7 @@ static int test_upload_speed(server_config_t * best_server)
 				pthread_create(&q[0].q, NULL, upload_thread, (void *)&upload_arg[i]);
 				queue_count++;
 			}
-        fprintf(stderr, "%d\n",__LINE__);
+			fprintf(stderr, "%d\n", __LINE__);
 			if (queue_count == ul_thread_num) {
 				if (i == ((UL_FILE_NUM * UL_FILE_TIMES) - 1)) {
 					/* all task have been put in queue, consume all threads in queue */
@@ -821,7 +825,7 @@ static int test_upload_speed(server_config_t * best_server)
 				return -1;
 			}
 			duration = time_ul_end - time_ul_start;
-			if (duration > 10.0) {	// limit upload  
+			if (duration > 10.0) { // limit upload
 				for (j = 0; j < ul_thread_num; j++) {
 					if (!q[ul_thread_num - 1 - j].joined) {
 						pthread_join(q[ul_thread_num - 1 - j].q, NULL);
@@ -829,17 +833,17 @@ static int test_upload_speed(server_config_t * best_server)
 				}
 				goto done;
 			}
-
 		}
 	}
-      done:;
+done:;
 	free(mem);
 	if (get_uptime(&time_ul_end)) {
 		fprintf(stderr, "Error on getting /proc/uptime\n");
 		return -1;
 	}
 	duration = time_ul_end - time_ul_start;
-	printf("speedtest_cli: Duration %.2f Upload = %.2f Mbit/s (%.2f Kbyte/s)\n", duration, ((finished / 1024 / 1024 / duration) * 8), (finished / 1024 / duration));
+	printf("speedtest_cli: Duration %.2f Upload = %.2f Mbit/s (%.2f Kbyte/s)\n", duration,
+	       ((finished / 1024 / 1024 / duration) * 8), (finished / 1024 / duration));
 
 	if (!(fp_result = fopen("/tmp/speedtest_upload_result", "w"))) {
 		perror("fopen /tmp/speedtest_upload_result");
@@ -851,7 +855,7 @@ static int test_upload_speed(server_config_t * best_server)
 	return 0;
 }
 
-static void init_client(client_config_t * client)
+static void init_client(client_config_t *client)
 {
 	memset(client, 0, sizeof(client_config_t));
 }
@@ -945,13 +949,12 @@ int main(int argc, char **argv)
 		return 0;
 	} else {
 		if (!strcmp(argv[i], "-d")) {
-				i++;
-				debug_msg = DEBUG_INFO;
+			i++;
+			debug_msg = DEBUG_INFO;
 		} else {
 			debug_msg = DEBUG_NONE;
-		
 		}
-		
+
 		if (!strcmp(argv[i], "1")) {
 			dl_enable = 1;
 		} else if (!strcmp(argv[i], "0")) {
@@ -994,7 +997,6 @@ int main(int argc, char **argv)
 		i++;
 		if (i < argc)
 			maxsearch = atoi(argv[i]);
-
 	}
 
 	if ((dl_enable == 0) && (ul_enable == 0)) {
