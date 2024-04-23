@@ -85,18 +85,6 @@ if(BTOP_WERROR)
   target_compile_options(btop PRIVATE -Werror)
 endif()
 
-if(NOT APPLE)
- target_compile_options(btop PRIVATE -fstack-clash-protection)
-endif()
-check_cxx_compiler_flag(-fstack-protector HAS_FSTACK_PROTECTOR)
-if(HAS_FSTACK_PROTECTOR)
-  target_compile_options(btop PRIVATE -fstack-protector)
-endif()
-check_cxx_compiler_flag(-fcf-protection HAS_FCF_PROTECTION)
-if(HAS_FCF_PROTECTION)
-  target_compile_options(btop PRIVATE -fcf-protection)
-endif()
-
 target_compile_definitions(btop PRIVATE
   _FILE_OFFSET_BITS=64
   $<$<CONFIG:Debug>:_GLIBCXX_ASSERTIONS _LIBCPP_ENABLE_ASSERTIONS=1>
