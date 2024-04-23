@@ -166,7 +166,9 @@ CONFIG_HZ=100
 CONFIG_SCHED_HRTICK=y
 CONFIG_PREEMPT_NONE=y
 # CONFIG_PREEMPT_VOLUNTARY is not set
-# CONFIG_PREEMPT is not set
+# CONFIG_PREEMPT__LL is not set
+# CONFIG_PREEMPT_RTB is not set
+# CONFIG_PREEMPT_RT_FULL is not set
 # CONFIG_KEXEC is not set
 # CONFIG_CRASH_DUMP is not set
 # CONFIG_SECCOMP is not set
@@ -1616,7 +1618,6 @@ CONFIG_BCMA_POSSIBLE=y
 # CONFIG_MFD_SM501 is not set
 # CONFIG_ABX500_CORE is not set
 # CONFIG_MFD_SYSCON is not set
-# CONFIG_MFD_TI_AM335X_TSCADC is not set
 # CONFIG_MFD_TMIO is not set
 # CONFIG_MFD_VX855 is not set
 # CONFIG_REGULATOR is not set
@@ -2387,6 +2388,14 @@ CONFIG_GENERIC_NET_UTILS=y
 CONFIG_NO_GENERIC_PCI_IOPORT_MAP=y
 CONFIG_GENERIC_PCI_IOMAP=y
 CONFIG_GENERIC_IO=y
+
+#
+# Crypto library routines
+#
+CONFIG_CRYPTO_LIB_POLY1305_RSIZE=2
+CONFIG_CRYPTO_ARCH_HAVE_LIB_POLY1305=y
+CONFIG_CRYPTO_LIB_POLY1305_GENERIC=y
+CONFIG_CRYPTO_LIB_POLY1305=y
 CONFIG_CRC_CCITT=y
 CONFIG_CRC16=m
 # CONFIG_CRC_T10DIF is not set
@@ -2437,14 +2446,49 @@ CONFIG_ARCH_HAS_ATOMIC64_DEC_IF_POSITIVE=y
 CONFIG_ARCH_HAS_SG_CHAIN=y
 CONFIG_HAVE_KVM=y
 # CONFIG_VIRTUALIZATION is not set
-# CONFIG_XFRM_SUB_POLICY is not set
-# CONFIG_XFRM_USER is not set
-# CONFIG_XFRM_SUB_POLICY is not set
-# CONFIG_XFRM_MIGRATE is not set
-# CONFIG_XFRM_STATISTICS is not set
-# CONFIG_NETFILTER_XT_MATCH_POLICY is not set
-# CONFIG_CRYPTO_DRBG_HASH is not set
-# CONFIG_CRYPTO_DRBG_CTR is not set
-CONFIG_CRYPTO_LIB_POLY1305=y
+
+#
+# Crypto core or helper
+#
+
+#
+# Authenticated Encryption with Associated Data
+#
+
+#
+# Block modes
+#
+
+#
+# Hash modes
+#
+
+#
+# Digest
+#
+
+#
+# Ciphers
+#
+
+#
+# Compression
+#
+
+#
+# Random Number Generation
+#
+
+#
+# Certificates for signature checking
+#
+
+#
+# OCF Configuration
+#
+
+#
+# Accelerated Cryptographic Algorithms for CPU (mips)
+#
 CONFIG_CRYPTO_POLY1305_MIPS=y
 CONFIG_CRYPTO_CHACHA20_MIPS=y
