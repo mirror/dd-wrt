@@ -88,6 +88,7 @@ inline static int tsl(fl_lock_t* lock)
 	
 #elif defined (__CPU_arm)
 	asm volatile(
+			".arm \n\t"
 			"# here \n\t"
 			"swpb %0, %1, [%2] \n\t"
 //			: "=r" (val)
@@ -97,6 +98,7 @@ inline static int tsl(fl_lock_t* lock)
 
 #elif defined(__CPU_armeb)
 	asm volatile(
+			".arm \n\t"
 			"# here \n\t"
 			"swpb %0, %1, [%2] \n\t"
 			: "=r" (val)
