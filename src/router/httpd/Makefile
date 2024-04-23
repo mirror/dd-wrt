@@ -66,7 +66,7 @@ ifneq ($(wildcard $(SRCBASE)/cy_conf.mak),)
   include $(SRCBASE)/cy_conf.mak
 endif
 
-COPTS += $(MIPS16_OPT) -D_GNU_SOURCE -fvisibility=hidden $(LTO) -Wno-unused-function -Wno-unused-variable
+COPTS += $(MIPS16_OPT) -D_GNU_SOURCE -fvisibility=hidden $(LTO) -Wno-unused-function -Wno-unused-variable $(THUMB)
 
 cc-option = $(shell if $(CC) $(1) -S -o /dev/null -xc /dev/null \
              > /dev/null 2>&1; then echo "$(1)"; else echo "$(2)"; fi ;)
@@ -75,7 +75,7 @@ COPTS +=$(call cc-option,-Werror=return-local-addr,) -g
 
 # -Werror=maybe-uninitialized -Werror=int-conversion -Werror=array-bounds
 
-BCFLAGS	= $(COPTS)  -DMEMLEAK_OVERRIDE -DSTATIC_BUILD
+BCFLAGS	= $(COPTS)  -DMEMLEAK_OVERRIDE -DSTATIC_BUILD $(THUMB)
 
 
 
