@@ -802,7 +802,6 @@ static int test_upload_speed(server_config_t *best_server)
 				pthread_create(&q[0].q, NULL, upload_thread, (void *)&upload_arg[i]);
 				queue_count++;
 			}
-			fprintf(stderr, "%d\n", __LINE__);
 			if (queue_count == ul_thread_num) {
 				if (i == ((UL_FILE_NUM * UL_FILE_TIMES) - 1)) {
 					/* all task have been put in queue, consume all threads in queue */
