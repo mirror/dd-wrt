@@ -882,10 +882,12 @@ static void put_pi_state(struct futex_pi_state *pi_state)
 	 * and has cleaned up the pi_state already
 	 */
 	if (pi_state->owner) {
-		raw_spin_lock_irq(&pi_state->pi_mutex.wait_lock);
+		unsigned long flags;
+
+		raw_spin_lock_irqsave(&pi_state->pi_mutex.wait_lock, flags);
 		pi_state_update_owner(pi_state, NULL);
-		raw_spin_unlock_irq(&pi_state->pi_mutex.wait_lock);
 		rt_mutex_proxy_unlock(&pi_state->pi_mutex);
+		raw_spin_unlock_irqrestore(&pi_state->pi_mutex.wait_lock, flags);
 	}
 
 	if (current->pi_state_cache)
@@ -956,7 +958,9 @@ static void exit_pi_state_list(struct task_struct *curr)
 		 * task still owns the PI-state:
 		 */
 		if (head->next != next) {
+			raw_spin_unlock_irq(&curr->pi_lock);
 			spin_unlock(&hb->lock);
+			raw_spin_lock_irq(&curr->pi_lock);
 			continue;
 		}
 
@@ -1553,6 +1557,7 @@ static int wake_futex_pi(u32 __user *uaddr, u32 uval, struct futex_pi_state *pi_
 	struct task_struct *new_owner;
 	bool deboost = false;
 	WAKE_Q(wake_q);
+	WAKE_Q(wake_sleeper_q);
 	int ret = 0;
 
 	new_owner = rt_mutex_next_owner(&pi_state->pi_mutex);
@@ -1602,7 +1607,8 @@ static int wake_futex_pi(u32 __user *uaddr, u32 uval, struct futex_pi_state *pi_
 		 * not fail.
 		 */
 		pi_state_update_owner(pi_state, new_owner);
-		deboost = __rt_mutex_futex_unlock(&pi_state->pi_mutex, &wake_q);
+		deboost = __rt_mutex_futex_unlock(&pi_state->pi_mutex, &wake_q,
+						  &wake_sleeper_q);
 	}
 
 out_unlock:
@@ -1610,6 +1616,7 @@ out_unlock:
 
 	if (deboost) {
 		wake_up_q(&wake_q);
+		wake_up_q_sleeper(&wake_sleeper_q);
 		rt_mutex_adjust_prio(current);
 	}
 
@@ -2212,6 +2219,16 @@ retry_private:
 				/* We got the lock. */
 				requeue_pi_wake_futex(this, &key2, hb2);
 				drop_count++;
+				continue;
+			} else if (ret == -EAGAIN) {
+				/*
+				 * Waiter was woken by timeout or
+				 * signal and has set pi_blocked_on to
+				 * PI_WAKEUP_INPROGRESS before we
+				 * tried to enqueue it on the rtmutex.
+				 */
+				this->pi_state = NULL;
+				put_pi_state(pi_state);
 				continue;
 			} else if (ret) {
 				/* -EDEADLK */
@@ -2910,7 +2927,7 @@ retry_private:
 	 * We must add ourselves to the rt_mutex waitlist while holding hb->lock
 	 * such that the hb and rt_mutex wait lists match.
 	 */
-	rt_mutex_init_waiter(&rt_waiter);
+	rt_mutex_init_waiter(&rt_waiter, false);
 	ret = rt_mutex_start_proxy_lock(&q.pi_state->pi_mutex, &rt_waiter, current);
 	if (ret) {
 		if (ret == 1)
@@ -3031,19 +3048,30 @@ retry:
 
 		get_pi_state(pi_state);
 		/*
-		 * Since modifying the wait_list is done while holding both
-		 * hb->lock and wait_lock, holding either is sufficient to
-		 * observe it.
-		 *
 		 * By taking wait_lock while still holding hb->lock, we ensure
 		 * there is no point where we hold neither; and therefore
 		 * wake_futex_pi() must observe a state consistent with what we
 		 * observed.
+		 *
+		 * In particular; this forces __rt_mutex_start_proxy() to
+		 * complete such that we're guaranteed to observe the
+		 * rt_waiter. Also see the WARN in wake_futex_pi().
 		 */
 		raw_spin_lock_irq(&pi_state->pi_mutex.wait_lock);
+		/*
+		 * Magic trickery for now to make the RT migrate disable
+		 * logic happy. The following spin_unlock() happens with
+		 * interrupts disabled so the internal migrate_enable()
+		 * won't undo the migrate_disable() which was issued when
+		 * locking hb->lock.
+		 */
+		migrate_disable();
 		spin_unlock(&hb->lock);
 
+		/* drops pi_state->pi_mutex.wait_lock */
 		ret = wake_futex_pi(uaddr, uval, pi_state);
+
+		migrate_enable();
 
 		put_pi_state(pi_state);
 
@@ -3062,10 +3090,8 @@ retry:
 		 * A unconditional UNLOCK_PI op raced against a waiter
 		 * setting the FUTEX_WAITERS bit. Try again.
 		 */
-		if (ret == -EAGAIN) {
-			put_futex_key(&key);
-			goto retry;
-		}
+		if (ret == -EAGAIN)
+			goto pi_retry;
 		/*
 		 * wake_futex_pi has detected invalid state. Tell user
 		 * space.
@@ -3095,6 +3121,11 @@ out_unlock:
 out_putkey:
 	put_futex_key(&key);
 	return ret;
+
+pi_retry:
+	put_futex_key(&key);
+	cond_resched();
+	goto retry;
 
 pi_faulted:
 	put_futex_key(&key);
@@ -3201,7 +3232,7 @@ static int futex_wait_requeue_pi(u32 __user *uaddr, unsigned int flags,
 {
 	struct hrtimer_sleeper timeout, *to = NULL;
 	struct rt_mutex_waiter rt_waiter;
-	struct futex_hash_bucket *hb;
+	struct futex_hash_bucket *hb, *hb2;
 	union futex_key key2 = FUTEX_KEY_INIT;
 	struct futex_q q = futex_q_init;
 	int res, ret;
@@ -3226,7 +3257,7 @@ static int futex_wait_requeue_pi(u32 __user *uaddr, unsigned int flags,
 	 * The waiter is allocated on our stack, manipulated by the requeue
 	 * code while we sleep on uaddr.
 	 */
-	rt_mutex_init_waiter(&rt_waiter);
+	rt_mutex_init_waiter(&rt_waiter, false);
 
 	ret = get_futex_key(uaddr2, flags & FLAGS_SHARED, &key2, VERIFY_WRITE);
 	if (unlikely(ret != 0))
@@ -3257,20 +3288,55 @@ static int futex_wait_requeue_pi(u32 __user *uaddr, unsigned int flags,
 	/* Queue the futex_q, drop the hb lock, wait for wakeup. */
 	futex_wait_queue_me(hb, &q, to);
 
-	spin_lock(&hb->lock);
-	ret = handle_early_requeue_pi_wakeup(hb, &q, &key2, to);
-	spin_unlock(&hb->lock);
-	if (ret)
-		goto out_put_keys;
+	/*
+	 * On RT we must avoid races with requeue and trying to block
+	 * on two mutexes (hb->lock and uaddr2's rtmutex) by
+	 * serializing access to pi_blocked_on with pi_lock.
+	 */
+	raw_spin_lock_irq(&current->pi_lock);
+	if (current->pi_blocked_on) {
+		/*
+		 * We have been requeued or are in the process of
+		 * being requeued.
+		 */
+		raw_spin_unlock_irq(&current->pi_lock);
+	} else {
+		/*
+		 * Setting pi_blocked_on to PI_WAKEUP_INPROGRESS
+		 * prevents a concurrent requeue from moving us to the
+		 * uaddr2 rtmutex. After that we can safely acquire
+		 * (and possibly block on) hb->lock.
+		 */
+		current->pi_blocked_on = PI_WAKEUP_INPROGRESS;
+		raw_spin_unlock_irq(&current->pi_lock);
+
+		spin_lock(&hb->lock);
+
+		/*
+		 * Clean up pi_blocked_on. We might leak it otherwise
+		 * when we succeeded with the hb->lock in the fast
+		 * path.
+		 */
+		raw_spin_lock_irq(&current->pi_lock);
+		current->pi_blocked_on = NULL;
+		raw_spin_unlock_irq(&current->pi_lock);
+
+		ret = handle_early_requeue_pi_wakeup(hb, &q, &key2, to);
+		spin_unlock(&hb->lock);
+		if (ret)
+			goto out_put_keys;
+	}
 
 	/*
-	 * In order for us to be here, we know our q.key == key2, and since
-	 * we took the hb->lock above, we also know that futex_requeue() has
-	 * completed and we no longer have to concern ourselves with a wakeup
-	 * race with the atomic proxy lock acquisition by the requeue code. The
-	 * futex_requeue dropped our key1 reference and incremented our key2
-	 * reference count.
+	 * In order to be here, we have either been requeued, are in
+	 * the process of being requeued, or requeue successfully
+	 * acquired uaddr2 on our behalf.  If pi_blocked_on was
+	 * non-null above, we may be racing with a requeue.  Do not
+	 * rely on q->lock_ptr to be hb2->lock until after blocking on
+	 * hb->lock or hb2->lock. The futex_requeue dropped our key1
+	 * reference and incremented our key2 reference count.
 	 */
+	hb2 = hash_futex(&key2);
 
 	/* Check if the requeue code acquired the second futex for us. */
 	if (!q.rt_waiter) {
@@ -3279,14 +3345,15 @@ static int futex_wait_requeue_pi(u32 __user *uaddr, unsigned int flags,
 		 * did a lock-steal - fix up the PI-state in that case.
 		 */
 		if (q.pi_state && (q.pi_state->owner != current)) {
-			spin_lock(q.lock_ptr);
+			spin_lock(&hb2->lock);
+			BUG_ON(&hb2->lock != q.lock_ptr);
 			ret = fixup_pi_state_owner(uaddr2, &q, current);
 			/*
 			 * Drop the reference to the pi state which
 			 * the requeue_pi() code acquired for us.
 			 */
 			put_pi_state(q.pi_state);
-			spin_unlock(q.lock_ptr);
+			spin_unlock(&hb2->lock);
 			/*
 			 * Adjust the return value. It's either -EFAULT or
 			 * success (1) but the caller expects 0 for success.
@@ -3305,7 +3372,8 @@ static int futex_wait_requeue_pi(u32 __user *uaddr, unsigned int flags,
 		pi_mutex = &q.pi_state->pi_mutex;
 		ret = rt_mutex_wait_proxy_lock(pi_mutex, to, &rt_waiter);
 
-		spin_lock(q.lock_ptr);
+		spin_lock(&hb2->lock);
+		BUG_ON(&hb2->lock != q.lock_ptr);
 		if (ret && !rt_mutex_cleanup_proxy_lock(pi_mutex, &rt_waiter))
 			ret = 0;
 
