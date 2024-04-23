@@ -1238,7 +1238,7 @@ static int eth_init_one(struct platform_device *pdev)
 	}
 	platform_set_drvdata(pdev, napi_dev);
 
-	netif_threaded_napi_add(napi_dev, &sw->napi, eth_poll, NAPI_WEIGHT);
+	netif_napi_add(napi_dev, &sw->napi, eth_poll, NAPI_WEIGHT);
 	for (i = 0; i < 3; i++) {
 		if (!(plat->ports & (1 << i))) {
 			continue;
