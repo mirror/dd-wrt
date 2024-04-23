@@ -702,6 +702,7 @@ typedef
    OrigFn;
 
 #define __SPECIAL_INSTRUCTION_PREAMBLE                            \
+	    ".arm\n\t" \
             "mov r12, r12, ror #3  ; mov r12, r12, ror #13 \n\t"  \
             "mov r12, r12, ror #29 ; mov r12, r12, ror #19 \n\t"
 
@@ -718,7 +719,8 @@ typedef
     _zzq_args[3] = (unsigned int)(_zzq_arg3);                     \
     _zzq_args[4] = (unsigned int)(_zzq_arg4);                     \
     _zzq_args[5] = (unsigned int)(_zzq_arg5);                     \
-    __asm__ volatile("mov r3, %1\n\t" /*default*/                 \
+    __asm__ volatile(".arm \n\t"				\
+		    "mov r3, %1\n\t" /*default*/                 \
                      "mov r4, %2\n\t" /*ptr*/                     \
                      __SPECIAL_INSTRUCTION_PREAMBLE               \
                      /* R3 = client_request ( R4 ) */             \
