@@ -17,7 +17,7 @@ CFLAGS += $(COPTS) $(MIPS16_OPT) -DNEED_PRINTF -I$(TOP)/curl/include $(LTO)
 
 LDFLAGS	+= $(LDLTO)
 LDFLAGS += $(EXTRA_LDFLAGS)
-LDFLAGS	+= -lpthread -lm -L$(TOP)/curl/build_static/lib/.libs -lcurl -L$(TOP)/bearssl/build -lbearssl -mthumb
+LDFLAGS	+= -lpthread -lm -L$(TOP)/curl/build_static/lib/.libs -lcurl -L$(TOP)/bearssl/build -lbearssl
 
 all: speedtest_cli
 

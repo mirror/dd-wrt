@@ -1,4 +1,4 @@
-/*OB
+/*
  * Speedtest-cli
  *
  * Copyright (C) 2015, Broadcom Corporation
