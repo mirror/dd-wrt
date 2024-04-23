@@ -191,7 +191,7 @@ static int nv_file_in(char *url, webs_t wp, size_t len, char *boundary)
 		xorFileMove("/tmp/restore.bin", 'K');
 #endif /*HAVE_ANTAIRA */
 	char lanip[64];
-	strncpy(lanip, 64, nvram_safe_get("lan_ipaddr"));
+	strncpy(lanip, nvram_safe_get("lan_ipaddr"), sizeof(lanip));
 	int ret = nvram_restore("/tmp/restore.bin", force);
 	if (ret < 0)
 		wp->restore_ret = 99;
