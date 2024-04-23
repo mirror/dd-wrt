@@ -152,6 +152,7 @@ typedef struct server_config {
 	char *force_ping_select;
 	double dist;		/* distance */
 	double latency;
+	double ping;
 } server_config_t;
 
 typedef struct dl_thread_arg {
@@ -542,6 +543,7 @@ static int get_nearest_servers(client_config_t * client, server_config_t * serve
 	unlink("/tmp/speedtest-servers.php");
 	return 0;
 }
+double ping(char *addr);
 
 static int get_lowest_latency_server(server_config_t * servers, server_config_t * best_server)
 {
@@ -574,7 +576,7 @@ static int get_lowest_latency_server(server_config_t * servers, server_config_t 
 			}
 			fgets(line, sizeof(line), fp1);
 			if (!strncmp(line, "test=test", strlen("test=test"))) {
-				latency[j] = (tv2.tv_sec - tv1.tv_sec) * 1000000 + tv2.tv_usec - tv1.tv_usec;
+				latency[j] = (double)((tv2.tv_sec - tv1.tv_sec)) * (double)(1000000.0f) + (double)(tv2.tv_usec - tv1.tv_usec);
 			} else {
 				latency[j] = 3600000000;
 			}
@@ -611,7 +613,7 @@ static int get_lowest_latency_server(server_config_t * servers, server_config_t 
 	best_server->id = servers[best].id;
 	best_server->dist = servers[best].dist;
 	best_server->latency = servers[best].latency;
-
+	best_server->ping = ping(best_server->url);
 	return 0;
 }
 
@@ -796,6 +798,7 @@ static int test_upload_speed(server_config_t * best_server)
 				pthread_create(&q[0].q, NULL, upload_thread, (void *)&upload_arg[i]);
 				queue_count++;
 			}
+        fprintf(stderr, "%d\n",__LINE__);
 			if (queue_count == ul_thread_num) {
 				if (i == ((UL_FILE_NUM * UL_FILE_TIMES) - 1)) {
 					/* all task have been put in queue, consume all threads in queue */
@@ -819,9 +822,10 @@ static int test_upload_speed(server_config_t * best_server)
 			}
 			duration = time_ul_end - time_ul_start;
 			if (duration > 10.0) {	// limit upload  
-				for (j = 0; j < dl_thread_num; j++) {
-					if (!q[ul_thread_num - 1 - j].joined)
+				for (j = 0; j < ul_thread_num; j++) {
+					if (!q[ul_thread_num - 1 - j].joined) {
 						pthread_join(q[ul_thread_num - 1 - j].q, NULL);
+					}
 				}
 				goto done;
 			}
@@ -892,6 +896,9 @@ static int speedtest(int dl_enable, int ul_enable)
 	fp = fopen("/tmp/speedtest_sponsor", "wb");
 	fprintf(fp, "%s", best_server.sponsor);
 	fclose(fp);
+	fp = fopen("/tmp/speedtest_latency", "wb");
+	fprintf(fp, "%lf", best_server.ping);
+	fclose(fp);
 
 	if (dl_enable == 1) {
 		if (test_download_speed(&best_server)) {
@@ -907,7 +914,6 @@ static int speedtest(int dl_enable, int ul_enable)
 			return -1;
 		}
 	}
-
 	for (i = 0; i < CLOSEST_SERVERS_NUM; i++) {
 		server_free(&servers[i]);
 	}

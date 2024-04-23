@@ -29,5 +29,5 @@ install: all
 	install speedtest_cli $(INSTALLDIR)/usr/sbin
 	$(STRIP) $(INSTALLDIR)/usr/sbin/speedtest_cli
 
-speedtest_cli: speedtest_cli.o
-	$(CC) -o speedtest_cli speedtest_cli.o $(LDFLAGS)
+speedtest_cli: speedtest_cli.o ping.o
+	$(CC) -o speedtest_cli speedtest_cli.o ping.o $(LDFLAGS)
