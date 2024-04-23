@@ -208,7 +208,7 @@ endif
 ifneq ($(CONFIG_MUSL),y)
 obj-$(CONFIG_OPENVPN) += lzo openvpn
 else
-obj-$(CONFIG_OPENVPN) += lzo openvpn speedtest-cli
+obj-$(CONFIG_OPENVPN) += lzo openvpn bearssl speedtest-cli
 endif
 obj-$(CONFIG_OLSRD) += olsrd
 ifeq ($(KERNELVERSION),6.1)
