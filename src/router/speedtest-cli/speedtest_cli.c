@@ -897,7 +897,7 @@ static int speedtest(int dl_enable, int ul_enable)
 	fprintf(fp, "%s", best_server.sponsor);
 	fclose(fp);
 	fp = fopen("/tmp/speedtest_latency", "wb");
-	fprintf(fp, "%lf", best_server.ping);
+	fprintf(fp, "%.2f", best_server.ping);
 	fclose(fp);
 
 	if (dl_enable == 1) {
