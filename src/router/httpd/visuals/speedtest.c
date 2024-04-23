@@ -35,9 +35,9 @@ static void print_file(webs_t wp, char *filename, int string)
 	FILE *in = fopen(filename, "rb");
 	if (!in) {
 		if (string)
-		websWrite(wp, "&nbsp;");
+			websWrite(wp, "&nbsp;");
 		else
-		websWrite(wp, "0");
+			websWrite(wp, "0");
 		return;
 	}
 	char name[128];
@@ -45,36 +45,35 @@ static void print_file(webs_t wp, char *filename, int string)
 	fread(name, sizeof(name), 1, in);
 	fclose(in);
 	websWrite(wp, "%s", name);
-
 }
 EJ_VISIBLE void ej_speed_up(webs_t wp, int argc, char_t **argv)
 {
-	print_file(wp,"/tmp/speedtest_upload_result",0);
+	print_file(wp, "/tmp/speedtest_upload_result", 0);
 }
 
 EJ_VISIBLE void ej_speed_down(webs_t wp, int argc, char_t **argv)
 {
-	print_file(wp,"/tmp/speedtest_download_result",0);
+	print_file(wp, "/tmp/speedtest_download_result", 0);
 }
 
 EJ_VISIBLE void ej_speed_name(webs_t wp, int argc, char_t **argv)
 {
-	print_file(wp,"/tmp/speedtest_name",1);
+	print_file(wp, "/tmp/speedtest_name", 1);
 }
 
 EJ_VISIBLE void ej_speed_country(webs_t wp, int argc, char_t **argv)
 {
-	print_file(wp,"/tmp/speedtest_country",1);
+	print_file(wp, "/tmp/speedtest_country", 1);
 }
 
 EJ_VISIBLE void ej_speed_sponsor(webs_t wp, int argc, char_t **argv)
 {
-	print_file(wp,"/tmp/speedtest_sponsor",1);
+	print_file(wp, "/tmp/speedtest_sponsor", 1);
 }
 
 EJ_VISIBLE void ej_speed_latency(webs_t wp, int argc, char_t **argv)
 {
-	print_file(wp,"/tmp/speedtest_latency",0);
+	print_file(wp, "/tmp/speedtest_latency", 0);
 }
 
 #endif
