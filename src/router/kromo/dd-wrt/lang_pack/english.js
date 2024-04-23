@@ -2442,6 +2442,7 @@ status_inet.server="Server";
 status_inet.sponsor="Sponsor";
 status_inet.town="Town";
 status_inet.country="Country";
+status_inet.latency="Latency";
 status_inet.test="Run Test";
 
 //help container

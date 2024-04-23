@@ -208,6 +208,10 @@ addEvent(window, "unload", function() {
 											<span id="speed_country"><% speed_country(); %></span>
 										</div>
 										<div class="setting">
+											<div class="label"><% tran("status_inet.latency"); %></div>
+											<span id="speed_latency"><% speed_latency(); %></span>&nbsp;ms
+										</div>
+										<div class="setting">
 											<div class="label"><% tran("status_inet.down"); %></div>
 											<span id="speed_down"><% speed_down(); %></span>&nbsp;Mbit/s
 										</div>

@@ -2159,6 +2159,7 @@ status_inet.server="Server";
 status_inet.sponsor="Sponsor";
 status_inet.town="Stadt";
 status_inet.country="Land";
+status_inet.latency="Latenz";
 status_inet.test="Starte Test";
 
 

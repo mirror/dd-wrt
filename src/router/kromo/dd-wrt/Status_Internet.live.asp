@@ -17,4 +17,5 @@
 {speed_town::<% speed_name(); %>}
 {speed_sponsor::<% speed_sponsor(); %>}
 {speed_country::<% speed_country(); %>}
+{speed_latency::<% speed_latency(); %>}
 <% show_status("adsl"); %>
