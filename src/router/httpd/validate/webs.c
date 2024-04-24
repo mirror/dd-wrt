@@ -4096,11 +4096,14 @@ static void movevap(char *prefix, int source, int target, int bonly)
 			GETENTRYBYIDX(tag, word, 0);
 			GETENTRYBYIDX(port, word, 1);
 			GETENTRYBYIDX(prio, word, 2);
+			GETENTRYBYIDX(type, word, 2);
 			if (!tag || !port) {
 				break;
 			}
 			if (!prio)
 				prio = "0";
+			if (!type)
+				type = "0";
 
 			if (!strcmp(tag, tname)) {
 				continue;
@@ -4115,6 +4118,8 @@ static void movevap(char *prefix, int source, int target, int bonly)
 			strcat(copy, port);
 			strcat(copy, ">");
 			strcat(copy, prio);
+			strcat(copy, ">");
+			strcat(copy, type);
 		}
 		nvram_set("vlan_tags", copy);
 		debug_free(copy);
