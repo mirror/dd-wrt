@@ -654,6 +654,10 @@ static void vlan_parse_opt(char **argv, struct nlmsghdr *n, unsigned int size)
 				bb_error_msg_and_die("unknown VLAN encapsulation protocol '%s'",
 								     *argv);
 			addattr_l(n, size, IFLA_VLAN_PROTOCOL, &proto, sizeof(proto));
+		} else if (arg == ARG_ingress_qos_map) {
+			vlan_parse_qos_map(&argv, n, IFLA_VLAN_INGRESS_QOS);
+		} else if (arg == ARG_egress_qos_map) {
+			vlan_parse_qos_map(&argv, n, IFLA_VLAN_EGRESS_QOS);
 		} else {
 			int param = index_in_strings(str_on_off, *argv);
 			if (param < 0)
@@ -679,11 +683,6 @@ static void vlan_parse_opt(char **argv, struct nlmsghdr *n, unsigned int size)
 				flags.flags &= ~VLAN_FLAG_LOOSE_BINDING;
 				if (param == PARM_on)
 					flags.flags |= VLAN_FLAG_LOOSE_BINDING;
-			} else if (arg == ARG_ingress_qos_map) {
-				vlan_parse_qos_map(&argv, n, IFLA_VLAN_INGRESS_QOS);
-			} else if (arg == ARG_egress_qos_map) {
-				vlan_parse_qos_map(&argv, n, IFLA_VLAN_EGRESS_QOS);
-			}
 		}
 		argv++;
 	}
