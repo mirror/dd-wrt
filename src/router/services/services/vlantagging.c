@@ -89,16 +89,17 @@ void start_vlantagging(void)
 			// 802.1ad
 			char vlan_name[32];
 			sprintf(vlan_name, "%s.%s", tag, port);
-			eval("ip", "link", "add", tag, vlan_name, "type", "vlan", "proto", "802.1ad", "id", port);
-			char map[32];
-			eval("ip", "link", "set", vlan_name, "type", "vlan", "egress-qos-map", EGRESS(map, 0, prio));
-			eval("ip", "link", "set", vlan_name, "type", "vlan", "egress-qos-map", EGRESS(map, 1, prio));
-			eval("ip", "link", "set", vlan_name, "type", "vlan", "egress-qos-map", EGRESS(map, 2, prio));
-			eval("ip", "link", "set", vlan_name, "type", "vlan", "egress-qos-map", EGRESS(map, 3, prio));
-			eval("ip", "link", "set", vlan_name, "type", "vlan", "egress-qos-map", EGRESS(map, 4, prio));
-			eval("ip", "link", "set", vlan_name, "type", "vlan", "egress-qos-map", EGRESS(map, 5, prio));
-			eval("ip", "link", "set", vlan_name, "type", "vlan", "egress-qos-map", EGRESS(map, 6, prio));
-			eval("ip", "link", "set", vlan_name, "type", "vlan", "egress-qos-map", EGRESS(map, 7, prio));
+			char map0[32];
+			char map1[32];
+			char map2[32];
+			char map3[32];
+			char map4[32];
+			char map5[32];
+			char map6[32];
+			char map7[32];
+			eval("ip", "link", "add", tag, vlan_name, "type", "vlan", "proto", "802.1ad", "id", port, "egress-qos-map",
+			     EGRESS(map0, 0, prio), EGRESS(map1, 1, prio), EGRESS(map2, 2, prio), EGRESS(map3, 3, prio),
+			     EGRESS(map4, 4, prio), EGRESS(map5, 5, prio), EGRESS(map6, 6, prio), EGRESS(map7, 7, prio));
 			char var[64];
 
 			sprintf(var, "%s_bridged", vlan_name);
