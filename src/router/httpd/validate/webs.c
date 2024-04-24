@@ -4659,7 +4659,7 @@ void save_networking(webs_t wp)
 
 	bzero(buffer, 1024);
 	for (i = 0; i < vlancount; i++) {
-		char *ifname, *tag, *prio;
+		char *ifname, *tag, *prio, *type;
 		char var[32];
 
 		sprintf(var, "vlanifname%d", i);
@@ -4668,11 +4668,15 @@ void save_networking(webs_t wp)
 		tag = websGetSaneVar(wp, var, "1");
 		sprintf(var, "vlanprio%d", i);
 		prio = websGetSaneVar(wp, var, "0");
+		sprintf(var, "vlantype%d", i);
+		type = websGetSaneVar(wp, var, "0");
 		strcat(buffer, ifname);
 		strcat(buffer, ">");
 		strcat(buffer, tag);
 		strcat(buffer, ">");
 		strcat(buffer, prio);
+		strcat(buffer, ">");
+		strcat(buffer, type);
 		if (i < vlancount - 1)
 			strcat(buffer, " ");
 	}
@@ -5037,6 +5041,7 @@ void del_vlan(webs_t wp)
 			sprintf(names, "%s.%s", tag, port);
 			eval("ifconfig", names, "down");
 			eval("vconfig", "rem", names);
+			eval("ip", "link", "delete", names);
 		}
 		count++;
 	}
