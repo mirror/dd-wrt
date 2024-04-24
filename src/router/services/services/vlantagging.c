@@ -80,22 +80,11 @@ void start_vlantagging(void)
 			prio = "0";
 		if (!type)
 			type = "0"; // 802.1q
-		eval("vconfig", "set_name_type", "DEV_PLUS_VID_NO_PAD");
-		char vlan_name[32];
-		sprintf(vlan_name, "%s.%s", tag, port);
 
-		if (!strcmp(type, "0")) {
-			eval("vconfig", "add", tag, port);
-			eval("vconfig", "set_egress_map", vlan_name, "0", prio);
-			eval("vconfig", "set_egress_map", vlan_name, "1", prio);
-			eval("vconfig", "set_egress_map", vlan_name, "2", prio);
-			eval("vconfig", "set_egress_map", vlan_name, "3", prio);
-			eval("vconfig", "set_egress_map", vlan_name, "4", prio);
-			eval("vconfig", "set_egress_map", vlan_name, "5", prio);
-			eval("vconfig", "set_egress_map", vlan_name, "6", prio);
-			eval("vconfig", "set_egress_map", vlan_name, "7", prio);
-		} else {
+		if (!strcmp(type, "1")) {
 			// 802.1ad
+			char vlan_name[32];
+			sprintf(vlan_name, "%s.%s", tag, port);
 			eval("ip", "link", "add", tag, vlan_name, "type", "vlan", "proto", "802.1ad", "id", port);
 			eval("ip", "link", "set", vlan_name, "type", "vlan", "egress", "0", prio);
 			eval("ip", "link", "set", vlan_name, "type", "vlan", "egress", "1", prio);
@@ -105,15 +94,54 @@ void start_vlantagging(void)
 			eval("ip", "link", "set", vlan_name, "type", "vlan", "egress", "5", prio);
 			eval("ip", "link", "set", vlan_name, "type", "vlan", "egress", "6", prio);
 			eval("ip", "link", "set", vlan_name, "type", "vlan", "egress", "7", prio);
-		}
-		char var[64];
+			char var[64];
 
-		sprintf(var, "%s_bridged", vlan_name);
-		if (nvram_default_matchi(var, 1, 1)) {
-			eval("ifconfig", vlan_name, "0.0.0.0", "up");
-		} else {
-			eval("ifconfig", vlan_name, nvram_nget("%s_ipaddr", vlan_name), "netmask",
-			     nvram_nget("%s_netmask", vlan_name), "up");
+			sprintf(var, "%s_bridged", vlan_name);
+			if (nvram_default_matchi(var, 1, 1)) {
+				eval("ifconfig", vlan_name, "0.0.0.0", "up");
+			} else {
+				eval("ifconfig", vlan_name, nvram_nget("%s_ipaddr", vlan_name), "netmask",
+				     nvram_nget("%s_netmask", vlan_name), "up");
+			}
+		}
+	}
+
+	foreach(word, wordlist, next)
+	{
+		GETENTRYBYIDX(tag, word, 0);
+		GETENTRYBYIDX(port, word, 1);
+		GETENTRYBYIDX(prio, word, 2);
+		GETENTRYBYIDX(type, word, 3);
+		if (!tag || !port) {
+			break;
+		}
+		if (!prio)
+			prio = "0";
+		if (!type)
+			type = "0"; // 802.1q
+
+		if (!strcmp(type, "0")) {
+			char vlan_name[32];
+			sprintf(vlan_name, "%s.%s", tag, port);
+			eval("vconfig", "set_name_type", "DEV_PLUS_VID_NO_PAD");
+			eval("vconfig", "add", tag, port);
+			eval("vconfig", "set_egress_map", vlan_name, "0", prio);
+			eval("vconfig", "set_egress_map", vlan_name, "1", prio);
+			eval("vconfig", "set_egress_map", vlan_name, "2", prio);
+			eval("vconfig", "set_egress_map", vlan_name, "3", prio);
+			eval("vconfig", "set_egress_map", vlan_name, "4", prio);
+			eval("vconfig", "set_egress_map", vlan_name, "5", prio);
+			eval("vconfig", "set_egress_map", vlan_name, "6", prio);
+			eval("vconfig", "set_egress_map", vlan_name, "7", prio);
+			char var[64];
+
+			sprintf(var, "%s_bridged", vlan_name);
+			if (nvram_default_matchi(var, 1, 1)) {
+				eval("ifconfig", vlan_name, "0.0.0.0", "up");
+			} else {
+				eval("ifconfig", vlan_name, nvram_nget("%s_ipaddr", vlan_name), "netmask",
+				     nvram_nget("%s_netmask", vlan_name), "up");
+			}
 		}
 	}
 
@@ -136,11 +164,28 @@ void stop_vlantagging(void)
 
 		if (!tag || !port)
 			break;
+		if (!type)
+			type = "0";
 		char vlan_name[32];
 
-		sprintf(vlan_name, "%s.%s", tag, port);
-		if (ifexists(vlan_name)) {
+		if (!strcmp(type, "0") && ifexists(vlan_name)) {
+			sprintf(vlan_name, "%s.%s", tag, port);
 			eval("vconfig", "rem", vlan_name);
+		}
+	}
+	foreach(word, wordlist, next)
+	{
+		GETENTRYBYIDX(tag, word, 0);
+		GETENTRYBYIDX(port, word, 1);
+		GETENTRYBYIDX(prio, word, 2);
+		GETENTRYBYIDX(type, word, 3);
+
+		if (!tag || !port)
+			break;
+		char vlan_name[32];
+
+		if (!strcmp(type, "1") && ifexists(vlan_name)) {
+			sprintf(vlan_name, "%s.%s", tag, port);
 			eval("ip", "link", "delete", vlan_name);
 		}
 	}
