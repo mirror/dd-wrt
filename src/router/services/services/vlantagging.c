@@ -61,6 +61,10 @@
 #ifdef HAVE_VLANTAGGING
 #define IFUP (IFF_UP | IFF_RUNNING | IFF_BROADCAST | IFF_MULTICAST)
 
+static char *EGRESS(char *map, int class, char *prio)
+{
+	sprintf(map, "%d:%s", class, prio);
+}
 void start_vlantagging(void)
 {
 	char word[256];
@@ -86,14 +90,15 @@ void start_vlantagging(void)
 			char vlan_name[32];
 			sprintf(vlan_name, "%s.%s", tag, port);
 			eval("ip", "link", "add", tag, vlan_name, "type", "vlan", "proto", "802.1ad", "id", port);
-			eval("ip", "link", "set", vlan_name, "type", "vlan", "egress", "0", prio);
-			eval("ip", "link", "set", vlan_name, "type", "vlan", "egress", "1", prio);
-			eval("ip", "link", "set", vlan_name, "type", "vlan", "egress", "2", prio);
-			eval("ip", "link", "set", vlan_name, "type", "vlan", "egress", "3", prio);
-			eval("ip", "link", "set", vlan_name, "type", "vlan", "egress", "4", prio);
-			eval("ip", "link", "set", vlan_name, "type", "vlan", "egress", "5", prio);
-			eval("ip", "link", "set", vlan_name, "type", "vlan", "egress", "6", prio);
-			eval("ip", "link", "set", vlan_name, "type", "vlan", "egress", "7", prio);
+			char map[32];
+			eval("ip", "link", "set", vlan_name, "type", "vlan", "egress-qos-map", EGRESS(map, 0, prio));
+			eval("ip", "link", "set", vlan_name, "type", "vlan", "egress-qos-map", EGRESS(map, 1, prio));
+			eval("ip", "link", "set", vlan_name, "type", "vlan", "egress-qos-map", EGRESS(map, 2, prio));
+			eval("ip", "link", "set", vlan_name, "type", "vlan", "egress-qos-map", EGRESS(map, 3, prio));
+			eval("ip", "link", "set", vlan_name, "type", "vlan", "egress-qos-map", EGRESS(map, 4, prio));
+			eval("ip", "link", "set", vlan_name, "type", "vlan", "egress-qos-map", EGRESS(map, 5, prio));
+			eval("ip", "link", "set", vlan_name, "type", "vlan", "egress-qos-map", EGRESS(map, 6, prio));
+			eval("ip", "link", "set", vlan_name, "type", "vlan", "egress-qos-map", EGRESS(map, 7, prio));
 			char var[64];
 
 			sprintf(var, "%s_bridged", vlan_name);
@@ -167,9 +172,9 @@ void stop_vlantagging(void)
 		if (!type)
 			type = "0";
 
+		char vlan_name[32];
+		sprintf(vlan_name, "%s.%s", tag, port);
 		if (!strcmp(type, "0") && ifexists(vlan_name)) {
-			char vlan_name[32];
-			sprintf(vlan_name, "%s.%s", tag, port);
 			eval("vconfig", "rem", vlan_name);
 		}
 	}
@@ -185,9 +190,9 @@ void stop_vlantagging(void)
 		if (!type)
 			type = "0";
 
+		char vlan_name[32];
+		sprintf(vlan_name, "%s.%s", tag, port);
 		if (!strcmp(type, "1") && ifexists(vlan_name)) {
-			char vlan_name[32];
-			sprintf(vlan_name, "%s.%s", tag, port);
 			eval("ip", "link", "delete", vlan_name);
 		}
 	}
