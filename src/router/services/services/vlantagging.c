@@ -166,9 +166,9 @@ void stop_vlantagging(void)
 			break;
 		if (!type)
 			type = "0";
-		char vlan_name[32];
 
 		if (!strcmp(type, "0") && ifexists(vlan_name)) {
+			char vlan_name[32];
 			sprintf(vlan_name, "%s.%s", tag, port);
 			eval("vconfig", "rem", vlan_name);
 		}
@@ -182,9 +182,11 @@ void stop_vlantagging(void)
 
 		if (!tag || !port)
 			break;
-		char vlan_name[32];
+		if (!type)
+			type = "0";
 
 		if (!strcmp(type, "1") && ifexists(vlan_name)) {
+			char vlan_name[32];
 			sprintf(vlan_name, "%s.%s", tag, port);
 			eval("ip", "link", "delete", vlan_name);
 		}
