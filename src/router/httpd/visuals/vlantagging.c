@@ -34,6 +34,7 @@ EJ_VISIBLE void ej_show_vlantagging(webs_t wp, int argc, char_t **argv)
 	show_caption_pp(wp, NULL, "networking.iface", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "networking.tg_number", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "networking.prio", "<th>", "</th>\n");
+	show_caption_pp(wp, NULL, "networking.vlantype", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "share.actiontbl", "<th class=\"center\" width=\"10%%\">", "</th></thead><tbody>\n");
 
 	wordlist = nvram_safe_get("vlan_tags");
@@ -42,10 +43,13 @@ EJ_VISIBLE void ej_show_vlantagging(webs_t wp, int argc, char_t **argv)
 		GETENTRYBYIDX(tag, word, 0);
 		GETENTRYBYIDX(port, word, 1);
 		GETENTRYBYIDX(prio, word, 2);
+		GETENTRYBYIDX(type, word, 2);
 		if (!tag || !port)
 			break;
 		if (!prio)
 			prio = "0";
+		if (!type)
+			type = "0";
 		char vlan_name[32];
 		websWrite(wp, "<tr>\n");
 		websWrite(wp, "<td>");
@@ -61,6 +65,11 @@ EJ_VISIBLE void ej_show_vlantagging(webs_t wp, int argc, char_t **argv)
 		sprintf(vlan_name, "vlanprio%d", count);
 		websWrite(wp, "<td>");
 		showOptions(wp, vlan_name, "0 1 2 3 4 5 6 7", prio);
+		websWrite(wp, "</td>\n");
+		//type
+		sprintf(vlan_name, "vlantype%d", count);
+		websWrite(wp, "<td>");
+		showOptions_trans(wp, vlan_name, "0 1", (char *[]){ "networking.vlan8021q", "networking.vlan8021ad" }, type);
 		websWrite(wp, "</td>\n");
 
 		websWrite(
@@ -94,6 +103,12 @@ EJ_VISIBLE void ej_show_vlantagging(webs_t wp, int argc, char_t **argv)
 		websWrite(wp, "<td>");
 		showOptions(wp, vlan_name, "0 1 2 3 4 5 6 7", "0");
 		websWrite(wp, "</td>\n");
+		//type
+		sprintf(vlan_name, "vlantype%d", count);
+		websWrite(wp, "<td>");
+		showOptions_trans(wp, vlan_name, "0 1", (char *[]){ "networking.vlan8021q", "networking.vlan8021ad" }, "0");
+		websWrite(wp, "</td>\n");
+
 		websWrite(
 			wp,
 			"<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<td class=\\\"center\\\" title=\\\"\" + sbutton.del + \"\\\"><input class=\\\"remove\\\" aria-label=\\\"\" + sbutton.del + \"\\\" type=\\\"button\\\" onclick=\\\"vlan_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n",
