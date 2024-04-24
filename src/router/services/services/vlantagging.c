@@ -72,25 +72,40 @@ void start_vlantagging(void)
 		GETENTRYBYIDX(tag, word, 0);
 		GETENTRYBYIDX(port, word, 1);
 		GETENTRYBYIDX(prio, word, 2);
+		GETENTRYBYIDX(type, word, 3);
 		if (!tag || !port) {
 			break;
 		}
 		if (!prio)
 			prio = "0";
+		if (!type)
+			type = "0"; // 802.1q
 		eval("vconfig", "set_name_type", "DEV_PLUS_VID_NO_PAD");
-		eval("vconfig", "add", tag, port);
 		char vlan_name[32];
-
 		sprintf(vlan_name, "%s.%s", tag, port);
-		eval("vconfig", "set_egress_map", vlan_name, "0", prio);
-		eval("vconfig", "set_egress_map", vlan_name, "1", prio);
-		eval("vconfig", "set_egress_map", vlan_name, "2", prio);
-		eval("vconfig", "set_egress_map", vlan_name, "3", prio);
-		eval("vconfig", "set_egress_map", vlan_name, "4", prio);
-		eval("vconfig", "set_egress_map", vlan_name, "5", prio);
-		eval("vconfig", "set_egress_map", vlan_name, "6", prio);
-		eval("vconfig", "set_egress_map", vlan_name, "7", prio);
 
+		if (!strcmp(type, "0")) {
+			eval("vconfig", "add", tag, port);
+			eval("vconfig", "set_egress_map", vlan_name, "0", prio);
+			eval("vconfig", "set_egress_map", vlan_name, "1", prio);
+			eval("vconfig", "set_egress_map", vlan_name, "2", prio);
+			eval("vconfig", "set_egress_map", vlan_name, "3", prio);
+			eval("vconfig", "set_egress_map", vlan_name, "4", prio);
+			eval("vconfig", "set_egress_map", vlan_name, "5", prio);
+			eval("vconfig", "set_egress_map", vlan_name, "6", prio);
+			eval("vconfig", "set_egress_map", vlan_name, "7", prio);
+		} else {
+			// 802.1ad
+			eval("ip", "link", "add", tag, vlan_name, "type", "vlan", "proto", "802.1ad", "id", port);
+			eval("ip", "link", "set", vlan_name, "type", "vlan", "egress", "0", prio);
+			eval("ip", "link", "set", vlan_name, "type", "vlan", "egress", "1", prio);
+			eval("ip", "link", "set", vlan_name, "type", "vlan", "egress", "2", prio);
+			eval("ip", "link", "set", vlan_name, "type", "vlan", "egress", "3", prio);
+			eval("ip", "link", "set", vlan_name, "type", "vlan", "egress", "4", prio);
+			eval("ip", "link", "set", vlan_name, "type", "vlan", "egress", "5", prio);
+			eval("ip", "link", "set", vlan_name, "type", "vlan", "egress", "6", prio);
+			eval("ip", "link", "set", vlan_name, "type", "vlan", "egress", "7", prio);
+		}
 		char var[64];
 
 		sprintf(var, "%s_bridged", vlan_name);
@@ -116,6 +131,8 @@ void stop_vlantagging(void)
 	{
 		GETENTRYBYIDX(tag, word, 0);
 		GETENTRYBYIDX(port, word, 1);
+		GETENTRYBYIDX(prio, word, 2);
+		GETENTRYBYIDX(type, word, 3);
 
 		if (!tag || !port)
 			break;
@@ -124,6 +141,7 @@ void stop_vlantagging(void)
 		sprintf(vlan_name, "%s.%s", tag, port);
 		if (ifexists(vlan_name)) {
 			eval("vconfig", "rem", vlan_name);
+			eval("ip", "link", "delete", vlan_name);
 		}
 	}
 }
