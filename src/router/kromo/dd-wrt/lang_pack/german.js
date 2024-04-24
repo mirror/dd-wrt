@@ -1417,6 +1417,7 @@ networking.iface="Schnittstelle";
 networking.h5="DHCPD";
 networking.legend5="Mehrere DHCP Server";
 networking.vlan="VLAN";
+networking.vlantype="Typ";
 networking.iface="Schnittstelle";
 networking.tg_number="Tag Nummer";
 networking.prio="Prio";
