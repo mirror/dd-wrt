@@ -683,6 +683,7 @@ static void vlan_parse_opt(char **argv, struct nlmsghdr *n, unsigned int size)
 				flags.flags &= ~VLAN_FLAG_LOOSE_BINDING;
 				if (param == PARM_on)
 					flags.flags |= VLAN_FLAG_LOOSE_BINDING;
+			}
 		}
 		argv++;
 	}
