@@ -34,7 +34,9 @@ EJ_VISIBLE void ej_show_vlantagging(webs_t wp, int argc, char_t **argv)
 	show_caption_pp(wp, NULL, "networking.iface", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "networking.tg_number", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "networking.prio", "<th>", "</th>\n");
+#ifdef HAVE_8021AD
 	show_caption_pp(wp, NULL, "networking.vlantype", "<th>", "</th>\n");
+#endif
 	show_caption_pp(wp, NULL, "share.actiontbl", "<th class=\"center\" width=\"10%%\">", "</th></thead><tbody>\n");
 
 	wordlist = nvram_safe_get("vlan_tags");
@@ -66,12 +68,13 @@ EJ_VISIBLE void ej_show_vlantagging(webs_t wp, int argc, char_t **argv)
 		websWrite(wp, "<td>");
 		showOptions(wp, vlan_name, "0 1 2 3 4 5 6 7", prio);
 		websWrite(wp, "</td>\n");
+#ifdef HAVE_8021AD
 		//type
 		sprintf(vlan_name, "vlantype%d", count);
 		websWrite(wp, "<td>");
 		showOptions_trans(wp, vlan_name, "0 1", (char *[]){ "networking.vlan8021q", "networking.vlan8021ad" }, type);
 		websWrite(wp, "</td>\n");
-
+#endif
 		websWrite(
 			wp,
 			"<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<td class=\\\"center\\\" title=\\\"\" + sbutton.del + \"\\\"><input class=\\\"remove\\\" aria-label=\\\"\" + sbutton.del + \"\\\" type=\\\"button\\\" onclick=\\\"vlan_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n",
@@ -103,12 +106,13 @@ EJ_VISIBLE void ej_show_vlantagging(webs_t wp, int argc, char_t **argv)
 		websWrite(wp, "<td>");
 		showOptions(wp, vlan_name, "0 1 2 3 4 5 6 7", "0");
 		websWrite(wp, "</td>\n");
+#ifdef HAVE_8021AD
 		//type
 		sprintf(vlan_name, "vlantype%d", count);
 		websWrite(wp, "<td>");
 		showOptions_trans(wp, vlan_name, "0 1", (char *[]){ "networking.vlan8021q", "networking.vlan8021ad" }, "0");
 		websWrite(wp, "</td>\n");
-
+#endif
 		websWrite(
 			wp,
 			"<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<td class=\\\"center\\\" title=\\\"\" + sbutton.del + \"\\\"><input class=\\\"remove\\\" aria-label=\\\"\" + sbutton.del + \"\\\" type=\\\"button\\\" onclick=\\\"vlan_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n",
