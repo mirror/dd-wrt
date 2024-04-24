@@ -43,7 +43,7 @@ EJ_VISIBLE void ej_show_vlantagging(webs_t wp, int argc, char_t **argv)
 		GETENTRYBYIDX(tag, word, 0);
 		GETENTRYBYIDX(port, word, 1);
 		GETENTRYBYIDX(prio, word, 2);
-		GETENTRYBYIDX(type, word, 2);
+		GETENTRYBYIDX(type, word, 3);
 		if (!tag || !port)
 			break;
 		if (!prio)
