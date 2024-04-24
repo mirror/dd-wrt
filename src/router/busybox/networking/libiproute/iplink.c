@@ -656,8 +656,10 @@ static void vlan_parse_opt(char **argv, struct nlmsghdr *n, unsigned int size)
 			addattr_l(n, size, IFLA_VLAN_PROTOCOL, &proto, sizeof(proto));
 		} else if (arg == ARG_ingress_qos_map) {
 			vlan_parse_qos_map(&argv, n, IFLA_VLAN_INGRESS_QOS);
+			continue;
 		} else if (arg == ARG_egress_qos_map) {
 			vlan_parse_qos_map(&argv, n, IFLA_VLAN_EGRESS_QOS);
+			continue;
 		} else {
 			int param = index_in_strings(str_on_off, *argv);
 			if (param < 0)
