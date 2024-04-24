@@ -505,6 +505,98 @@ static int ipaddr_list_link(char **argv)
 	return ipaddr_list_or_flush(argv, 0);
 }
 
+#ifndef IFLA_VLAN_QOS_MAX
+struct ifla_vlan_qos_mapping {
+	__u32 from;
+	__u32 to;
+};
+
+enum {
+	IFLA_VLAN_QOS_UNSPEC,
+	IFLA_VLAN_QOS_MAPPING,
+	__IFLA_VLAN_QOS_MAX
+};
+#endif
+static __u32 parse_mapping_num(char *key)
+{
+	return get_u32(key, "vlan number");
+}
+
+static void parse_mapping_gen(char ***argvp,
+		      __u32 (*key_cb)(char *key),
+		      void (*mapping_cb)(__u32 key, char *value, void *data),
+		      void *mapping_cb_data)
+{
+	char **argv = *argvp;
+
+	while (*argv) {
+		char *colon = strchr(*argv, ':');
+		__u32 key;
+
+		if (!colon)
+			break;
+		*colon = '\0';
+
+		key = key_cb(*argv);	
+		mapping_cb(key, colon + 1, mapping_cb_data);
+
+		argv++;
+	}
+
+	*argvp = argv;
+}
+
+static void parse_mapping(char ***argvp,
+		  void  (*mapping_cb)(__u32 key, char *value, void *data),
+		  void *mapping_cb_data)
+{
+	parse_mapping_gen(argvp, parse_mapping_num,
+					 mapping_cb, mapping_cb_data);
+}
+
+static void parse_qos_mapping(__u32 key, char *value, void *data)
+{
+	struct nlmsghdr *n = data;
+	struct ifla_vlan_qos_mapping m = {
+		.from = key,
+	};
+
+	m.to = get_u32(value, "to");
+
+	addattr_l(n, 1024, IFLA_VLAN_QOS_MAPPING, &m, sizeof(m));
+}
+
+#ifndef NLMSG_TAIL
+#define NLMSG_TAIL(nmsg) \
+	((struct rtattr *) (((void *) (nmsg)) + NLMSG_ALIGN((nmsg)->nlmsg_len)))
+#endif
+
+static struct rtattr *addattr_nest(struct nlmsghdr *n, int maxlen, int type)
+{
+	struct rtattr *nest = NLMSG_TAIL(n);
+
+	addattr_l(n, maxlen, type, NULL, 0);
+	return nest;
+}
+
+static int addattr_nest_end(struct nlmsghdr *n, struct rtattr *nest)
+{
+	nest->rta_len = (void *)NLMSG_TAIL(n) - (void *)nest;
+	return n->nlmsg_len;
+}
+
+static void vlan_parse_qos_map(char ***argvp, struct nlmsghdr *n,
+			      int attrtype)
+{
+	struct rtattr *tail;
+
+	tail = addattr_nest(n, 1024, attrtype);
+
+	parse_mapping(argvp, &parse_qos_mapping, n);
+
+	addattr_nest_end(n, tail);
+}
+
 static void vlan_parse_opt(char **argv, struct nlmsghdr *n, unsigned int size)
 {
 	static const char keywords[] ALIGN1 =
@@ -514,6 +606,8 @@ static void vlan_parse_opt(char **argv, struct nlmsghdr *n, unsigned int size)
 		"gvrp\0"
 		"mvrp\0"
 		"loose_binding\0"
+		"ingress-qos-map\0"
+		"egress-qos-map\0"
 	;
 	static const char protocols[] ALIGN1 =
 		"802.1q\0"
@@ -526,6 +620,8 @@ static void vlan_parse_opt(char **argv, struct nlmsghdr *n, unsigned int size)
 		ARG_gvrp,
 		ARG_mvrp,
 		ARG_loose_binding,
+		ARG_ingress_qos_map,
+		ARG_egress_qos_map,
 	};
 	enum {
 		PROTO_8021Q = 0,
@@ -578,11 +674,15 @@ static void vlan_parse_opt(char **argv, struct nlmsghdr *n, unsigned int size)
 				flags.flags &= ~VLAN_FLAG_MVRP;
 				if (param == PARM_on)
 					flags.flags |= VLAN_FLAG_MVRP;
-			} else { /*if (arg == ARG_loose_binding) */
+			} else if (arg == ARG_loose_binding) {
 				flags.mask |= VLAN_FLAG_LOOSE_BINDING;
 				flags.flags &= ~VLAN_FLAG_LOOSE_BINDING;
 				if (param == PARM_on)
 					flags.flags |= VLAN_FLAG_LOOSE_BINDING;
+			} else if (arg == ARG_ingress_qos_map) {
+				vlan_parse_qos_map(&argv, n, IFLA_VLAN_INGRESS_QOS);
+			} else if (arg == ARG_egress_qos_map) {
+				vlan_parse_qos_map(&argv, n, IFLA_VLAN_EGRESS_QOS);
 			}
 		}
 		argv++;
@@ -1195,10 +1295,6 @@ static int vxlan_parse_opt(char **argv, struct nlmsghdr *n, unsigned int size)
 
 
 
-#ifndef NLMSG_TAIL
-#define NLMSG_TAIL(nmsg) \
-	((struct rtattr *) (((void *) (nmsg)) + NLMSG_ALIGN((nmsg)->nlmsg_len)))
-#endif
 /* Return value becomes exitcode. It's okay to not return at all */
 static int do_add_or_delete(char **argv, const unsigned rtm)
 {
