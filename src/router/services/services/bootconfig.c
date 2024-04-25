@@ -111,14 +111,14 @@ void start_bootconfig_legacy(void)
 		fprintf(out, "title   DD-WRT\n");
 		fprintf(out, "root    (hd0,0)\n");
 		fprintf(out,
-			"kernel  /boot/vmlinuz root=/dev/hda2 rootfstype=squashfs noinitrd%s initcall_blacklist=acpi_cpufreq_init reboot=bios rootdelay=5%s\n",
+			"kernel  /boot/vmlinuz root=/dev/hda2 nohz_full=all rootfstype=squashfs noinitrd%s initcall_blacklist=acpi_cpufreq_init reboot=bios rootdelay=5%s\n",
 			vga, args);
 		fprintf(out, "boot\n\n");
 	}
 	fprintf(out, "title   default\n");
 	fprintf(out, "root    (hd0,0)\n");
 	fprintf(out,
-		"kernel  /boot/vmlinuz root=/dev/hda2 rootfstype=squashfs noinitrd%s initcall_blacklist=acpi_cpufreq_init reboot=bios rootdelay=5\n",
+		"kernel  /boot/vmlinuz root=/dev/hda2 nohz_full=all rootfstype=squashfs noinitrd%s initcall_blacklist=acpi_cpufreq_init reboot=bios rootdelay=5\n",
 		vga);
 	fprintf(out, "boot\n");
 	fprintf(out, "\n");
@@ -172,7 +172,7 @@ void start_bootconfig_efi(void)
 		fprintf(out, " menuentry \"DD-WRT\" {\n");
 		fprintf(out, " 	set gfxpayload=keep\n");
 		fprintf(out,
-			" 	linux /boot/vmlinuz root=/dev/hda2 rootfstype=squashfs noinitrd%s initcall_blacklist=acpi_cpufreq_init reboot=bios rootdelay=5%s\n",
+			" 	linux /boot/vmlinuz root=/dev/hda2 nohz_full=all rootfstype=squashfs noinitrd%s initcall_blacklist=acpi_cpufreq_init reboot=bios rootdelay=5%s\n",
 			vga, args);
 		fprintf(out, " }\n");
 	}
@@ -180,7 +180,7 @@ void start_bootconfig_efi(void)
 	fprintf(out, " menuentry \"default\" {\n");
 	fprintf(out, " 	set gfxpayload=keep\n");
 	fprintf(out,
-		" 	linux /boot/vmlinuz root=/dev/hda2 rootfstype=squashfs noinitrd%s initcall_blacklist=acpi_cpufreq_init reboot=bios rootdelay=5\n",
+		" 	linux /boot/vmlinuz root=/dev/hda2 nohz_full=all rootfstype=squashfs noinitrd%s initcall_blacklist=acpi_cpufreq_init reboot=bios rootdelay=5\n",
 		vga);
 	fprintf(out, " }\n");
 
