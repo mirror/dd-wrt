@@ -3,6 +3,6 @@ timeout 0
 
 title   DD-WRT
 root    (hd0,0)
-kernel  /boot/vmlinuz root=/dev/hda2 rootfstype=squashfs noinitrd fbcon=nodefer vga=0x305 initcall_blacklist=acpi_cpufreq_init reboot=bios rootdelay=5
+kernel  /boot/vmlinuz root=/dev/hda2 nohz_full=all rootfstype=squashfs noinitrd fbcon=nodefer vga=0x305 initcall_blacklist=acpi_cpufreq_init reboot=bios rootdelay=5
 boot
 

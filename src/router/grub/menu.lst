@@ -6,6 +6,6 @@ timeout 5
 
 title   DD-WRT
 root    (hd0,0)
-kernel  /boot/vmlinuz root=/dev/hda2 rootfstype=squashfs noinitrd console=ttyS0,115200n8 console=tty0,115200n8 reboot=bios
+kernel  /boot/vmlinuz root=/dev/hda2 nohz_full=all rootfstype=squashfs noinitrd console=ttyS0,115200n8 console=tty0,115200n8 reboot=bios
 boot
 
