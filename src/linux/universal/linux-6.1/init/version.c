@@ -32,11 +32,18 @@ static int __init early_hostname(char *arg)
 	return 0;
 }
 early_param("hostname", early_hostname);
-
+#ifdef CONFIG_LTO
+const char linux_proc_banner[] =
+	"%s (LTO) version %s"
+	" (" LINUX_COMPILE_BY "@" LINUX_COMPILE_HOST ")"
+	" (" LINUX_COMPILER ") %s\n";
+#else
 const char linux_proc_banner[] =
 	"%s version %s"
 	" (" LINUX_COMPILE_BY "@" LINUX_COMPILE_HOST ")"
 	" (" LINUX_COMPILER ") %s\n";
+#endif
+
 
 BUILD_SALT;
 BUILD_LTO_INFO;

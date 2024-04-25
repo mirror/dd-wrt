@@ -26,6 +26,12 @@ struct uts_namespace init_uts_ns = {
 };
 
 /* FIXED STRINGS! Don't touch! */
+#ifdef CONFIG_LTO
+const char linux_banner[] =
+	"Linux (LTO) version " UTS_RELEASE " (" LINUX_COMPILE_BY "@"
+	LINUX_COMPILE_HOST ") (" LINUX_COMPILER ") " UTS_VERSION "\n";
+#else
 const char linux_banner[] =
 	"Linux version " UTS_RELEASE " (" LINUX_COMPILE_BY "@"
 	LINUX_COMPILE_HOST ") (" LINUX_COMPILER ") " UTS_VERSION "\n";
+#endif
