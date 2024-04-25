@@ -2091,35 +2091,15 @@ static bool qcom_nandc_is_boot_partition(struct qcom_nand_host *host, int page)
 	u32 start, end;
 	int i;
 
-	/*
-	 * Since the frequent access will be to the non-boot partitions like rootfs,
-	 * optimize the page check by:
-	 *
-	 * 1. Checking if the page lies after the last boot partition.
-	 * 2. Checking from the boot partition end.
-	 */
-
-	/* First check the last boot partition */
-	boot_partition = &host->boot_partitions[host->nr_boot_partitions - 1];
-	start = boot_partition->page_offset;
-	end = start + boot_partition->page_size;
-
-	/* Page is after the last boot partition end. This is NOT a boot partition */
-	if (page > end)
-		return false;
-
-	/* Actually check if it's a boot partition */
-	if (page < end && page >= start)
-		return true;
-
 	/* Check the other boot partitions starting from the second-last partition */
-	for (i = host->nr_boot_partitions - 2; i >= 0; i--) {
+	for (i = 0; i < host->nr_boot_partitions; i++) {
 		boot_partition = &host->boot_partitions[i];
 		start = boot_partition->page_offset;
 		end = start + boot_partition->page_size;
 
-		if (page < end && page >= start)
+		if (page < end && page >= start) {
 			return true;
+		}
 	}
 
 	return false;
@@ -3073,7 +3053,6 @@ static int qcom_nand_host_parse_boot_partitions(struct qcom_nand_controller *nan
 
 	for (i = 0, j = 0; i < host->nr_boot_partitions; i++, j += 2) {
 		boot_partition = &host->boot_partitions[i];
-
 		ret = of_property_read_u32_index(dn, "qcom,boot-partitions", j,
 						 &boot_partition->page_offset);
 		if (ret) {
@@ -3081,7 +3060,7 @@ static int qcom_nand_host_parse_boot_partitions(struct qcom_nand_controller *nan
 			host->nr_boot_partitions = 0;
 			return ret;
 		}
-
+		
 		if (boot_partition->page_offset % mtd->writesize) {
 			dev_err(dev, "Boot partition offset not multiple of writesize at index %i\n",
 				i);
@@ -3107,6 +3086,7 @@ static int qcom_nand_host_parse_boot_partitions(struct qcom_nand_controller *nan
 		}
 		/* Convert size to nand pages */
 		boot_partition->page_size /= mtd->writesize;
+		printk(KERN_INFO "qcom,boot-partition = %X:%X\n", boot_partition->page_offset, boot_partition->page_size);
 	}
 
 	return 0;
