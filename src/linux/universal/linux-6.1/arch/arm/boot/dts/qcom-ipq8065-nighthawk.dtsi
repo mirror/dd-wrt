@@ -25,7 +25,7 @@
 	};
 
 	chosen {
-		bootargs = "console=ttyMSM0,115200n8 rootfstype=squashfs noinitrd root=/dev/mtdblock6";
+		bootargs = "console=ttyMSM0,115200n8 rootfstype=squashfs noinitrd root=/dev/mtdblock6 nohz_full=all";
 	};
 
 	aliases {

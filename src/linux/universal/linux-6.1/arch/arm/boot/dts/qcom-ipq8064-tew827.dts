@@ -29,7 +29,7 @@
 	};
 
 	chosen {
-		bootargs-override = "console=ttyMSM0,115200n8 rootfstype=squashfs noinitrd earlyprintk";
+		bootargs-override = "console=ttyMSM0,115200n8 nohz_full=all rootfstype=squashfs noinitrd earlyprintk";
 		stdout-path = "serial0:115200n8";
 	};
 };
@@ -106,7 +106,7 @@
 		nand-ecc-step-size = <512>;
 
 		nand-is-boot-medium;
-		qcom,boot-partitions = <0x0 0x1200000 0x5340000 0x560000>;
+		qcom,boot-partitions = <0x0 0x1180000>;
 
 		partitions {
 			compatible = "fixed-partitions";

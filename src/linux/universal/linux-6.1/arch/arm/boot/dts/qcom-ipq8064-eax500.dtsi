@@ -6,7 +6,7 @@
 
 / {
 	chosen {
-		bootargs = "console=ttyMSM0,115200n8 rootfstype=squashfs noinitrd"; 
+		bootargs = "console=ttyMSM0,115200n8 nohz_full=all rootfstype=squashfs noinitrd"; 
 		/* append to bootargs adding the root deviceblock nbr from bootloader */
 		append-rootblock = "ubi.mtd=";
 	};
