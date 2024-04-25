@@ -16,7 +16,7 @@ cp grub.cfg tmp/boot/grub
 #sed -i 's/\01182520-ef7b-24db-37da-d10ea5c4d702/$IMG_PART_DISKGUID/g' tmp/boot/grub/grub.cfg
 
 echo "menuentry \"DD-WRT\" {" >> tmp/boot/grub/grub.cfg
-echo "	linux /boot/vmlinuz root=/dev/hda2 rootfstype=squashfs noinitrd video=vga16fb:off nofb console=ttyS0,115200n8 initcall_blacklist=acpi_cpufreq_init reboot=bios rootdelay=5" >> tmp/boot/grub/grub.cfg
+echo "	linux /boot/vmlinuz root=/dev/hda2 nohz_full=all rootfstype=squashfs noinitrd video=vga16fb:off nofb console=ttyS0,115200n8 initcall_blacklist=acpi_cpufreq_init reboot=bios rootdelay=5" >> tmp/boot/grub/grub.cfg
 echo "}" >> tmp/boot/grub/grub.cfg
 
 echo "menuentry \"MEMTEST86\" {" >> tmp/boot/grub/grub.cfg
@@ -62,7 +62,7 @@ cp ../x86_64-uclibc/root.grub/boot/vmlinuz tmp/boot
 cp grub-vga.cfg tmp/boot/grub/grub.cfg
 echo "menuentry \"DD-WRT\" {" >> tmp/boot/grub/grub.cfg
 echo "	set gfxpayload=keep" >> tmp/boot/grub/grub.cfg
-echo "	linux /boot/vmlinuz root=/dev/hda2 rootfstype=squashfs noinitrd fbcon=nodefer vga=0x305 video=efifb:1024x768x32 initcall_blacklist=acpi_cpufreq_init reboot=bios rootdelay=5" >> tmp/boot/grub/grub.cfg
+echo "	linux /boot/vmlinuz root=/dev/hda2 nohz_full=all rootfstype=squashfs noinitrd fbcon=nodefer vga=0x305 video=efifb:1024x768x32 initcall_blacklist=acpi_cpufreq_init reboot=bios rootdelay=5" >> tmp/boot/grub/grub.cfg
 echo "}" >> tmp/boot/grub/grub.cfg
 
 echo "menuentry \"MEMTEST86\" {" >> tmp/boot/grub/grub.cfg
