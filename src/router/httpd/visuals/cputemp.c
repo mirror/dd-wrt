@@ -523,36 +523,6 @@ static int get_cputemp(webs_t wp, int argc, char_t **argv)
 			cpufound |= showsensor(wp, tempp, NULL, "CPU", 1000, CELSIUS);
 			TEMP_MUL = 1000;
 		}
-		if (TEMP_MUL == 100) {
-			path = "/sys/class/hwmon/hwmon0/temp1_max";
-			if (!fp)
-				fp = fopen(path, "rb");
-			if (!fp) {
-				path = "/sys/class/hwmon/hwmon0/device/temp1_max";
-				fp = fopen(path, "rb");
-			}
-			if (!fp) {
-				path = "/sys/class/hwmon/hwmon0/temp2_max";
-				fp = fopen(path, "rb");
-			}
-			if (!fp) {
-				path = "/sys/class/hwmon/hwmon1/temp1_max";
-				fp = fopen(path, "rb");
-			}
-			if (fp) { // some heuristic to detect unit
-				char temp[32];
-				fscanf(fp, "%s", &temp[0]);
-				fclose(fp);
-				int l = strlen(temp);
-				if (l > 2) {
-					TEMP_MUL = 1;
-					for (i = 0; i < (l - 2); i++)
-						TEMP_MUL *= 10;
-				} else
-					TEMP_MUL = 1;
-				cpufound |= showsensor(wp, path, NULL, "CPU", TEMP_MUL, CELSIUS);
-			}
-		}
 		fp = NULL;
 		if (!hascore) {
 			if (!fp) {
