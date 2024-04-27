@@ -2536,6 +2536,8 @@ void ndpi_set_risk(struct ndpi_flow_struct *flow, ndpi_risk_enum r,
     /* Will be handled by ndpi_reconcile_protocols() */
     // ndpi_handle_risk_exceptions(ndpi_str, flow);
 
+// FIXME
+// #ifndef __KERNEL__
     if(flow->risk != 0 /* check if it has been masked */) {
       if(risk_message != NULL) {
 	if(flow->num_risk_infos < MAX_NUM_RISK_INFOS) {
@@ -2569,6 +2571,7 @@ void ndpi_set_risk(struct ndpi_flow_struct *flow, ndpi_risk_enum r,
         flow->num_risk_infos++;
       }
     }
+// #endif
   }
 }
 
@@ -2580,7 +2583,7 @@ void ndpi_unset_risk(struct ndpi_flow_struct *flow, ndpi_risk_enum r) {
     ndpi_risk v = 1ull << r;
 
     flow->risk &= ~v;
-
+// #ifndef __KERNEL__
     for(i = 0; i < flow->num_risk_infos; i++) {
       if(flow->risk_infos[i].id == r) {
         flow->risk_infos[i].id = 0;
@@ -2595,6 +2598,7 @@ void ndpi_unset_risk(struct ndpi_flow_struct *flow, ndpi_risk_enum r) {
         flow->num_risk_infos--;
       }
     }
+// #endif
   }
 }
 
