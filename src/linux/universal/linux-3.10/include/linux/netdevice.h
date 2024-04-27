@@ -2266,6 +2266,7 @@ extern int		dev_forward_skb(struct net_device *dev,
 					struct sk_buff *skb);
 
 extern int		netdev_budget;
+extern unsigned int	netdev_budget_usecs;
 
 /* Called by rtnetlink.c:rtnl_unlock() */
 extern void netdev_run_todo(void);
