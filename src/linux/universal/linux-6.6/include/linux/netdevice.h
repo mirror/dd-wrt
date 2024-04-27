@@ -2218,8 +2218,6 @@ struct net_device {
 	struct netdev_hw_addr_list	mc;
 	struct netdev_hw_addr_list	dev_addrs;
 
-	unsigned char		local_addr_mask[MAX_ADDR_LEN];
-
 #ifdef CONFIG_SYSFS
 	struct kset		*queues_kset;
 #endif
