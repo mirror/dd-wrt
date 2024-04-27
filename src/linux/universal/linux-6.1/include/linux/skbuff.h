@@ -976,7 +976,6 @@ struct sk_buff {
 #ifdef CONFIG_IPV6_NDISC_NODETYPE
 	__u8			ndisc_nodetype:2;
 #endif
-	__u8			gro_skip:1;
 
 	__u8			ipvs_property:1;
 	__u8			inner_protocol_type:1;
