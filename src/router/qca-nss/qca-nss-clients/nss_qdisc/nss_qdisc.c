@@ -2317,7 +2317,7 @@ static void nss_qdisc_basic_stats_callback(void *app_data,
 {
 	struct nss_qdisc *nq = (struct nss_qdisc *)app_data;
 	struct Qdisc *qdisc = nq->qdisc;
-	struct gnet_stats_basic_packed *bstats;
+	struct gnet_stats_basic_sync *bstats;
 	struct gnet_stats_queue *qstats;
 	struct nss_shaper_node_stats_response *response;
 	atomic_t *refcnt;
@@ -2354,8 +2354,8 @@ static void nss_qdisc_basic_stats_callback(void *app_data,
 	 * Update qdisc->bstats
 	 */
 	spin_lock_bh(&nq->lock);
-	bstats->bytes += (__u64)response->sn_stats.delta.dequeued_bytes;
-	bstats->packets += response->sn_stats.delta.dequeued_packets;
+	u64_stats_add(&bstats->bytes, (__u64)response->sn_stats.delta.dequeued_bytes);
+	u64_stats_add(&bstats->packets, response->sn_stats.delta.dequeued_packets);
 
 	/*
 	 * Update qdisc->qstats
@@ -2505,12 +2505,12 @@ void nss_qdisc_stop_basic_stats_polling(struct nss_qdisc *nq)
  *  Wrapper around gnet_stats_copy_basic()
  */
 int nss_qdisc_gnet_stats_copy_basic(struct gnet_dump *d,
-				struct gnet_stats_basic_packed *b)
+				struct gnet_stats_basic_sync *b)
 {
 #if (LINUX_VERSION_CODE <= KERNEL_VERSION(3, 18, 0))
 	return gnet_stats_copy_basic(d, b);
 #else
-	return gnet_stats_copy_basic(NULL, d, NULL, b);
+	return gnet_stats_copy_basic(d, NULL, b, false);
 #endif
 }
 

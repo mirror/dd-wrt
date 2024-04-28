@@ -500,7 +500,7 @@ static void nss_htb_destroy_class(struct Qdisc *sch, struct nss_htb_class_data *
  * nss_htb_delete_class()
  *	Detaches a class from operation, but does not destroy it.
  */
-static int nss_htb_delete_class(struct Qdisc *sch, unsigned long arg)
+static int nss_htb_delete_class(struct Qdisc *sch, unsigned long arg, struct netlink_ext_ack *extack)
 {
 	struct nss_htb_sched_data *q = qdisc_priv(sch);
 	struct nss_htb_class_data *cl = (struct nss_htb_class_data *)arg;

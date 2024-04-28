@@ -183,7 +183,7 @@ struct nss_qdisc {
 						/* Shaper configure callback for reading shaper specific
 						 * responses (e.g. memory size).
 						 */
-	struct gnet_stats_basic_packed bstats;	/* Basic class statistics */
+	struct gnet_stats_basic_sync bstats;	/* Basic class statistics */
 	struct gnet_stats_queue qstats;		/* Qstats for use by classes */
 	atomic_t refcnt;			/* Reference count for class use */
 	struct timer_list stats_get_timer;	/* Timer used to poll for stats */
@@ -355,7 +355,7 @@ extern void nss_qdisc_stop_basic_stats_polling(struct nss_qdisc *nq);
  *  Wrapper around gnet_stats_copy_basic()
  */
 extern int nss_qdisc_gnet_stats_copy_basic(struct gnet_dump *d,
-				struct gnet_stats_basic_packed *b);
+				struct gnet_stats_basic_sync *b);
 
 /*
  * nss_qdisc_gnet_stats_copy_queue()

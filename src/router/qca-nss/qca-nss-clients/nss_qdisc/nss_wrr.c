@@ -384,7 +384,7 @@ failure:
 	return -EINVAL;
 }
 
-static int nss_wrr_delete_class(struct Qdisc *sch, unsigned long arg)
+static int nss_wrr_delete_class(struct Qdisc *sch, unsigned long arg, struct netlink_ext_ack *extack)
 {
 	struct nss_wrr_sched_data *q = qdisc_priv(sch);
 	struct nss_wrr_class_data *cl = (struct nss_wrr_class_data *)arg;

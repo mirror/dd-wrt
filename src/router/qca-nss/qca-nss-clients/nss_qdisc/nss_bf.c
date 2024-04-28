@@ -282,7 +282,7 @@ static void nss_bf_destroy_class(struct Qdisc *sch, struct nss_bf_class_data *cl
  * nss_bf_delete_class()
  *	Detaches a class from operation, but does not destroy it.
  */
-static int nss_bf_delete_class(struct Qdisc *sch, unsigned long arg)
+static int nss_bf_delete_class(struct Qdisc *sch, unsigned long arg, struct netlink_ext_ack *extack)
 {
 	struct nss_bf_sched_data *q = qdisc_priv(sch);
 	struct nss_bf_class_data *cl = (struct nss_bf_class_data *)arg;
