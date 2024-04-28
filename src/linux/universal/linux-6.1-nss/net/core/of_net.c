@@ -40,7 +40,7 @@ int of_get_phy_mode(struct device_node *np, phy_interface_t *interface)
 	for (i = 0; i < PHY_INTERFACE_MODE_MAX; i++)
 		if (!strcasecmp(pm, phy_modes(i))) {
 			*interface = i;
-			return 1;
+			return i;
 		}
 
 	return -ENODEV;
