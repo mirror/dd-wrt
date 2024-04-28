@@ -1,0 +1,37 @@
+Index: clk-rpm.c
+===================================================================
+--- clk-rpm.c	(revision 34056)
++++ clk-rpm.c	(revision 34057)
+@@ -12,6 +12,7 @@
+  * GNU General Public License for more details.
+  */
+ 
++#include <linux/clk.h>
+ #include <linux/clk-provider.h>
+ #include <linux/err.h>
+ #include <linux/export.h>
+@@ -448,6 +449,7 @@
+ 	struct qcom_rpm *rpm;
+ 	struct clk_rpm **rpm_clks;
+ 	const struct rpm_clk_desc *desc;
++	struct clk *clk;
+ 
+ 	rpm = dev_get_drvdata(pdev->dev.parent);
+ 	if (!rpm) {
+@@ -484,9 +486,14 @@
+ 		if (!rpm_clks[i])
+ 			continue;
+ 
+-		ret = devm_clk_hw_register(&pdev->dev, &rpm_clks[i]->hw);
+-		if (ret)
++		clk = devm_clk_register(&pdev->dev, &rpm_clks[i]->hw);
++		if (IS_ERR(clk)) {
++			ret = PTR_ERR(clk);
+ 			goto err;
++		}
++
++		clk_set_rate(clk, INT_MAX);
++		clk_prepare_enable(clk);
+ 	}
+ 
+ 	ret = of_clk_add_hw_provider(pdev->dev.of_node, qcom_rpm_clk_hw_get,

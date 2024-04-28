@@ -1,0 +1,210 @@
+--- a/include/dt-bindings/clock/qcom,gcc-ipq806x.h
++++ b/include/dt-bindings/clock/qcom,gcc-ipq806x.h
+@@ -283,8 +283,9 @@
+ #define EBI2_AON_CLK				281
+ #define NSSTCM_CLK_SRC				282
+ #define NSSTCM_CLK				283
++#define NSS_CORE_CLK				284 /* Virtual */
+ #define CE5_A_CLK_SRC				285
+ #define CE5_H_CLK_SRC				286
+ #define CE5_CORE_CLK_SRC			287
+ 
+ #endif
+--- a/drivers/clk/qcom/gcc-ipq806x.c
++++ b/drivers/clk/qcom/gcc-ipq806x.c
+@@ -24,6 +24,10 @@
+ #include "clk-branch.h"
+ #include "clk-hfpll.h"
+ #include "reset.h"
++#include <linux/regulator/nss-volt-ipq806x.h>
++
++/* NSS safe parent index which will be used during NSS PLL rate change */
++static int gcc_ipq806x_nss_safe_parent;
+ 
+ static struct clk_pll pll0 = {
+ 	.l_reg = 0x30c4,
+@@ -2997,6 +3001,139 @@ 
+	},
+ };
+
++static int nss_core_clk_set_rate(struct clk_hw *hw, unsigned long rate,
++				 unsigned long parent_rate)
++{
++	int ret;
++
++	/*
++	 * When ramping up voltage, it needs to be done first. This ensures that
++	 * the volt required will be available when you step up the frequency.
++	 */
++	ret = nss_ramp_voltage(rate, true);
++	if (ret)
++		return ret;
++
++	ret = clk_dyn_rcg_ops.set_rate(&ubi32_core1_src_clk.clkr.hw, rate,
++				    parent_rate);
++	if (ret)
++		return ret;
++
++	ret = clk_dyn_rcg_ops.set_rate(&ubi32_core2_src_clk.clkr.hw, rate,
++				    parent_rate);
++
++	if (ret)
++		return ret;
++
++	/*
++	 * When ramping down voltage, it needs to be set first. This ensures
++	 * that the volt required will be available until you step down the
++	 * frequency.
++	 */
++	ret = nss_ramp_voltage(rate, false);
++
++	return ret;
++}
++
++static int
++nss_core_clk_set_rate_and_parent(struct clk_hw *hw, unsigned long rate,
++				 unsigned long parent_rate, u8 index)
++{
++	int ret;
++
++	/*
++	 * When ramping up voltage needs to be done first. This ensures that
++	 * the voltage required will be available when you step up the
++	 * frequency.
++	 */
++	ret = nss_ramp_voltage(rate, true);
++	if (ret)
++		return ret;
++
++	ret = clk_dyn_rcg_ops.set_rate_and_parent(
++			&ubi32_core1_src_clk.clkr.hw, rate, parent_rate, index);
++	if (ret)
++		return ret;
++
++	ret = clk_dyn_rcg_ops.set_rate_and_parent(
++			&ubi32_core2_src_clk.clkr.hw, rate, parent_rate, index);
++
++	if (ret)
++		return ret;
++
++	/*
++	 * When ramping down voltage needs to be done last. This ensures that
++	 * the voltage required will be available when you step down the
++	 * frequency.
++	 */
++	ret = nss_ramp_voltage(rate, false);
++
++	return ret;
++}
++
++static int nss_core_clk_determine_rate(struct clk_hw *hw,
++					struct clk_rate_request *req)
++{
++	return clk_dyn_rcg_ops.determine_rate(&ubi32_core1_src_clk.clkr.hw,
++						req);
++}
++
++static unsigned long
++nss_core_clk_recalc_rate(struct clk_hw *hw, unsigned long parent_rate)
++{
++	return clk_dyn_rcg_ops.recalc_rate(&ubi32_core1_src_clk.clkr.hw,
++						 parent_rate);
++}
++
++static u8 nss_core_clk_get_parent(struct clk_hw *hw)
++{
++	return clk_dyn_rcg_ops.get_parent(&ubi32_core1_src_clk.clkr.hw);
++}
++
++static int nss_core_clk_set_parent(struct clk_hw *hw, u8 i)
++{
++	int ret;
++	struct clk_dyn_rcg *rcg;
++	struct freq_tbl f = {  200000000, P_PLL0, 2,  1, 2 };
++
++	/* P_PLL0 is 800 Mhz which needs to be divided for 200 Mhz */
++	if (i == gcc_ipq806x_nss_safe_parent) {
++		rcg = to_clk_dyn_rcg(&ubi32_core1_src_clk.clkr.hw);
++		clk_dyn_configure_bank(rcg, &f);
++
++		rcg = to_clk_dyn_rcg(&ubi32_core2_src_clk.clkr.hw);
++		clk_dyn_configure_bank(rcg, &f);
++
++		return 0;
++	}
++
++	ret = clk_dyn_rcg_ops.set_parent(&ubi32_core1_src_clk.clkr.hw, i);
++	if (ret)
++		return ret;
++
++	return clk_dyn_rcg_ops.set_parent(&ubi32_core2_src_clk.clkr.hw, i);
++}
++
++static const struct clk_ops clk_ops_nss_core = {
++	.set_rate = nss_core_clk_set_rate,
++	.set_rate_and_parent = nss_core_clk_set_rate_and_parent,
++	.determine_rate = nss_core_clk_determine_rate,
++	.recalc_rate = nss_core_clk_recalc_rate,
++	.get_parent = nss_core_clk_get_parent,
++	.set_parent = nss_core_clk_set_parent,
++};
++
++/* Virtual clock for nss core clocks */
++static struct clk_regmap nss_core_clk = {
++	.hw.init = &(struct clk_init_data){
++		.name = "nss_core_clk",
++		.ops = &clk_ops_nss_core,
++		.parent_names = gcc_pxo_pll8_pll14_pll18_pll0,
++		.num_parents = 5,
++		.flags = CLK_SET_RATE_PARENT,
++	},
++};
++
+ static struct clk_regmap *gcc_ipq806x_clks[] = {
+ 	[PLL0] = &pll0.clkr,
+ 	[PLL0_VOTE] = &pll0_vote,
+@@ -3116,6 +3259,7 @@
+ 	[UBI32_CORE2_CLK_SRC] = &ubi32_core2_src_clk.clkr,
+ 	[NSSTCM_CLK_SRC] = &nss_tcm_src.clkr,
+ 	[NSSTCM_CLK] = &nss_tcm_clk.clkr,
++	[NSS_CORE_CLK] = &nss_core_clk,
+ 	[PLL9] = &hfpll0.clkr,
+ 	[PLL10] = &hfpll1.clkr,
+ 	[PLL12] = &hfpll_l2.clkr,
+@@ -3336,6 +3479,12 @@ static int gcc_ipq806x_probe(struct plat
+ 	if (!regmap)
+ 		return -ENODEV;
+ 
++	gcc_ipq806x_nss_safe_parent = qcom_find_src_index(&nss_core_clk.hw,
++					gcc_pxo_pll8_pll14_pll18_pll0_map,
++					P_PLL0);
++	if (gcc_ipq806x_nss_safe_parent < 0)
++		return gcc_ipq806x_nss_safe_parent;
++
+ 	/* Setup PLL18 static bits */
+ 	regmap_update_bits(regmap, 0x31a4, 0xffffffc0, 0x40000400);
+ 	regmap_write(regmap, 0x31b0, 0x3080);
+--- a/drivers/clk/qcom/clk-rcg.c
++++ b/drivers/clk/qcom/clk-rcg.c
+@@ -805,6 +805,11 @@ static int clk_dyn_rcg_set_rate_and_pare
+ 	return __clk_dyn_rcg_set_rate(hw, rate);
+ }
+ 
++void clk_dyn_configure_bank(struct clk_dyn_rcg *rcg, const struct freq_tbl *f)
++{
++	configure_bank(rcg, f);
++}
++
+ const struct clk_ops clk_rcg_ops = {
+ 	.enable = clk_enable_regmap,
+ 	.disable = clk_disable_regmap,
+--- a/drivers/clk/qcom/clk-rcg.h
++++ b/drivers/clk/qcom/clk-rcg.h
+@@ -174,4 +174,7 @@ struct clk_rcg_dfs_data {
+ extern int qcom_cc_register_rcg_dfs(struct regmap *regmap,
+ 				    const struct clk_rcg_dfs_data *rcgs,
+ 				    size_t len);
++ 
++extern void clk_dyn_configure_bank(struct clk_dyn_rcg *rcg,
++					const struct freq_tbl *f);
+ #endif

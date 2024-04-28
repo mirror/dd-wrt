@@ -1,0 +1,337 @@
+#include "qcom-ipq8064-v1.0.dtsi"
+
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/soc/qcom,tcsr.h>
+
+/ {
+	model = "Netgear R7500 Nighthawk X4";
+	compatible = "netgear,r7500", "qcom,ipq8064";
+
+	memory@0 {
+		reg = <0x42000000 0xe000000>;
+		device_type = "memory";
+	};
+
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+		rsvd@41200000 {
+			reg = <0x41200000 0x300000>;
+			no-map;
+		};
+	};
+
+	aliases {
+		mdio-gpio0 = &mdio0;
+	};
+
+	chosen {
+		bootargs = "console=ttyMSM0,115200n8 nohz_full=all rootfstype=squashfs noinitrd root=/dev/mtdblock5";
+	};
+
+	keys {
+		compatible = "gpio-keys";
+		pinctrl-0 = <&button_pins>;
+		pinctrl-names = "default";
+
+		wifi {
+			label = "wifi";
+			gpios = <&qcom_pinmux 6 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RFKILL>;
+			debounce-interval = <60>;
+			wakeup-source;
+		};
+
+		reset {
+			label = "reset";
+			gpios = <&qcom_pinmux 54 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+			debounce-interval = <60>;
+			wakeup-source;
+		};
+
+		wps {
+			label = "wps";
+			gpios = <&qcom_pinmux 65 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_WPS_BUTTON>;
+			debounce-interval = <60>;
+			wakeup-source;
+		};
+	};
+
+	gpio-leds {
+		compatible = "gpio-leds";
+		pinctrl-0 = <&led_pins>;
+		pinctrl-names = "default";
+
+		usb1 {
+			label = "r7X00:amber:usb1";
+			gpios = <&qcom_pinmux 7 0>;
+		};
+
+		usb3 {
+			label = "r7X00:amber:usb3";
+			gpios = <&qcom_pinmux 8 0>;
+		};
+
+		status {
+			label = "r7X00:amber:status";
+			gpios = <&qcom_pinmux 9 0>;
+		};
+
+		internet {
+			label = "r7X00:white:internet";
+			gpios = <&qcom_pinmux 22 0>;
+		};
+
+		wan {
+			label = "r7X00:white:wan";
+			gpios = <&qcom_pinmux 23 0>;
+		};
+
+		wps {
+			label = "r7X00:white:wps";
+			gpios = <&qcom_pinmux 24 0>;
+		};
+
+		esata {
+			label = "r7X00:white:esata";
+			gpios = <&qcom_pinmux 26 0>;
+		};
+
+		power {
+			label = "r7X00:white:power";
+			gpios = <&qcom_pinmux 53 0>;
+			default-state = "on";
+		};
+
+		rfkill {
+			label = "r7X00:white:rfkill";
+			gpios = <&qcom_pinmux 64 0>;
+		};
+
+		wifi5g {
+			label = "r7X00:white:wifi5g";
+			gpios = <&qcom_pinmux 67 0>;
+		};
+	};
+};
+
+&qcom_pinmux {
+	button_pins: button_pins {
+		mux {
+			pins = "gpio6", "gpio54", "gpio65";
+			function = "gpio";
+			drive-strength = <2>;
+			bias-pull-up;
+		};
+	};
+
+	led_pins: led_pins {
+		mux {
+			pins = "gpio7", "gpio8", "gpio9", "gpio22", "gpio23",
+				"gpio24","gpio26", "gpio53", "gpio64";
+			function = "gpio";
+			drive-strength = <2>;
+			bias-pull-up;
+		};
+	};
+};
+
+&gsbi5 {
+	status = "disabled";
+
+	spi@1a280000 {
+		status = "disabled";
+	};
+};
+
+&hs_phy_0 {
+	status = "okay";
+};
+
+&ss_phy_0 {
+	status = "okay";
+};
+
+&usb3_0 {
+	status = "okay";
+};
+
+&hs_phy_1 {
+	status = "okay";
+};
+
+&ss_phy_1 {
+	status = "okay";
+};
+
+&usb3_1 {
+	status = "okay";
+};
+
+&pcie0 {
+	status = "okay";
+};
+
+&pcie1 {
+	status = "okay";
+	max-link-speed = <1>;
+};
+
+&nand {
+	status = "okay";
+
+	nand@0 {
+		reg = <0>;
+		compatible = "qcom,nandcs";
+
+		nand-ecc-strength = <4>;
+		nand-bus-width = <8>;
+		nand-ecc-step-size = <512>;
+
+				partitions {
+					compatible = "fixed-partitions";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+			qcadata@0 {
+				label = "qcadata";
+				reg = <0x0000000 0x0c80000>;
+				read-only;
+			};
+
+			APPSBL@c80000 {
+				label = "APPSBL";
+				reg = <0x0c80000 0x0500000>;
+				read-only;
+			};
+
+			APPSBLENV@1180000 {
+				label = "APPSBLENV";
+				reg = <0x1180000 0x0080000>;
+				read-only;
+			};
+
+			art: art@1200000 {
+				label = "art";
+				reg = <0x1200000 0x0140000>;
+			};
+
+			linux@1340000 {
+				label = "linux";
+				reg = <0x1340000 0x1800000>;
+			};
+			
+			nvram@2B40000 {
+				label = "nvram";
+				reg = <0x2B40000 0x0200000>;
+			};
+
+			netgear@2d40000 {
+				label = "netgear";
+				reg = <0x2d40000 0x0c00000>;
+				read-only;
+			};
+
+			reserve@3940000 {
+				label = "reserve";
+				reg = <0x3940000 0x46c0000>;
+				read-only;
+			};
+
+			firmware@1340000 {
+				label = "firmware";
+				reg = <0x1340000 0x1a00000>;
+			};
+				};
+	};
+};
+
+&mdio0 {
+	status = "okay";
+
+	pinctrl-0 = <&mdio0_pins>;
+	pinctrl-names = "default";
+
+			phy0: ethernet-phy@0 {
+				device_type = "ethernet-phy";
+				reg = <0>;
+				qca,ar8327-initvals = <
+					0x00004 0x7600000   /* PAD0_MODE */
+					0x00008 0x1000000   /* PAD5_MODE */
+					0x0000c 0x80        /* PAD6_MODE */
+					0x000e4 0x6a545     /* MAC_POWER_SEL */
+					0x000e0 0xc74164de  /* SGMII_CTRL */
+					0x0007c 0x4e        /* PORT0_STATUS */
+					0x00094 0x4e        /* PORT6_STATUS */
+					>;
+			};
+
+			phy4: ethernet-phy@4 {
+				device_type = "ethernet-phy";
+				reg = <4>;
+			};
+
+};
+
+&gmac1 {
+	status = "okay";
+	qcom,phy-mdio-addr = <4>;
+	qcom,poll-required = <0>;
+	qcom,rgmii-delay = <1>;
+	phy-mode = "rgmii";
+	qcom,id = <1>;
+
+	pinctrl-0 = <&rgmii2_pins>;
+	pinctrl-names = "default";
+
+
+			mtd-mac-address = <&art 6>;
+
+	fixed-link {
+		speed = <1000>;
+		full-duplex;
+	};
+};
+
+&gmac2 {
+	status = "okay";
+	qcom,phy-mdio-addr = <0>;
+	qcom,poll-required = <0>;	
+	qcom,rgmii-delay = <0>;
+	phy-mode = "sgmii";
+	qcom,id = <2>;
+
+
+			mtd-mac-address = <&art 0>;
+
+	fixed-link {
+		speed = <1000>;
+		full-duplex;
+	};
+};
+
+&tcsr {
+	qcom,usb-ctrl-select = <TCSR_USB_SELECT_USB3_DUAL>;
+	compatible = "qcom,tcsr";
+};
+
+&adm_dma {
+	status = "okay";
+};
+
+&art {
+	compatible = "nvmem-cells";
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	macaddr_art_0: macaddr@0 {
+		reg = <0x0 0x6>;
+	};
+
+	macaddr_art_6: macaddr@6 {
+		reg = <0x6 0x6>;
+	};
+};

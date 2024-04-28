@@ -1,0 +1,2237 @@
+Index: Kconfig
+===================================================================
+--- Kconfig	(revision 53562)
++++ Kconfig	(working copy)
+@@ -362,6 +362,13 @@
+ 	  Currently supports the AR8030, AR8031, AR8033, AR8035 and internal
+ 	  QCA8337(Internal qca8k PHY) model
+ 
++config QCA807X_PHY
++	tristate "Qualcomm QCA807x PHYs"
++	depends on OF_MDIO
++	help
++	  Currently supports the Qualcomm QCA8072, QCA8075 and the PSGMII
++	  control PHY.
++
+ config QSEMI_PHY
+ 	tristate "Quality Semiconductor PHYs"
+ 	help
+Index: Makefile
+===================================================================
+--- Makefile	(revision 53562)
++++ Makefile	(working copy)
+@@ -94,6 +94,7 @@
+ obj-$(CONFIG_NATIONAL_PHY)	+= national.o
+ obj-$(CONFIG_NXP_C45_TJA11XX_PHY)	+= nxp-c45-tja11xx.o
+ obj-$(CONFIG_NXP_TJA11XX_PHY)	+= nxp-tja11xx.o
++obj-$(CONFIG_QCA807X_PHY)		+= qca807x.o
+ obj-$(CONFIG_QSEMI_PHY)		+= qsemi.o
+ obj-$(CONFIG_REALTEK_PHY)	+= realtek.o
+ obj-$(CONFIG_RENESAS_PHY)	+= uPD60620.o
+Index: ar8216.c
+===================================================================
+--- ar8216.c	(revision 53562)
++++ ar8216.c	(working copy)
+@@ -23,14 +23,12 @@
+ #include <linux/skbuff.h>
+ #include <linux/netdevice.h>
+ #include <linux/netlink.h>
+-#include <linux/of_device.h>
+-#include <linux/of_mdio.h>
+-#include <linux/of_net.h>
+ #include <linux/bitops.h>
+ #include <net/genetlink.h>
+ #include <linux/switch.h>
+ #include <linux/delay.h>
+ #include <linux/phy.h>
++#include <linux/netdevice.h>
+ #include <linux/etherdevice.h>
+ #include <linux/lockdep.h>
+ #include <linux/ar8216_platform.h>
+@@ -42,112 +40,106 @@
+ extern const struct ar8xxx_chip ar8327_chip;
+ extern const struct ar8xxx_chip ar8337_chip;
+ 
+-#define MIB_DESC_BASIC(_s , _o, _n)		\
+-	{					\
+-		.size = (_s),			\
+-		.offset = (_o),			\
+-		.name = (_n),			\
+-		.type = AR8XXX_MIB_BASIC,	\
+-	}
++#define AR8XXX_MIB_WORK_DELAY	2000 /* msecs */
+ 
+-#define MIB_DESC_EXT(_s , _o, _n)		\
+-	{					\
+-		.size = (_s),			\
+-		.offset = (_o),			\
+-		.name = (_n),			\
+-		.type = AR8XXX_MIB_EXTENDED,	\
++#define MIB_DESC(_s , _o, _n)	\
++	{			\
++		.size = (_s),	\
++		.offset = (_o),	\
++		.name = (_n),	\
+ 	}
+ 
++#define AR8216_MIB_RXB_ID	14	/* RxGoodByte */
++#define AR8216_MIB_TXB_ID	29	/* TxByte */
++
++#define AR8236_MIB_RXB_ID	15	/* RxGoodByte */
++#define AR8236_MIB_TXB_ID	31	/* TxByte */
++
+ static const struct ar8xxx_mib_desc ar8216_mibs[] = {
+-	MIB_DESC_EXT(1, AR8216_STATS_RXBROAD, "RxBroad"),
+-	MIB_DESC_EXT(1, AR8216_STATS_RXPAUSE, "RxPause"),
+-	MIB_DESC_EXT(1, AR8216_STATS_RXMULTI, "RxMulti"),
+-	MIB_DESC_EXT(1, AR8216_STATS_RXFCSERR, "RxFcsErr"),
+-	MIB_DESC_EXT(1, AR8216_STATS_RXALIGNERR, "RxAlignErr"),
+-	MIB_DESC_EXT(1, AR8216_STATS_RXRUNT, "RxRunt"),
+-	MIB_DESC_EXT(1, AR8216_STATS_RXFRAGMENT, "RxFragment"),
+-	MIB_DESC_EXT(1, AR8216_STATS_RX64BYTE, "Rx64Byte"),
+-	MIB_DESC_EXT(1, AR8216_STATS_RX128BYTE, "Rx128Byte"),
+-	MIB_DESC_EXT(1, AR8216_STATS_RX256BYTE, "Rx256Byte"),
+-	MIB_DESC_EXT(1, AR8216_STATS_RX512BYTE, "Rx512Byte"),
+-	MIB_DESC_EXT(1, AR8216_STATS_RX1024BYTE, "Rx1024Byte"),
+-	MIB_DESC_EXT(1, AR8216_STATS_RXMAXBYTE, "RxMaxByte"),
+-	MIB_DESC_EXT(1, AR8216_STATS_RXTOOLONG, "RxTooLong"),
+-	MIB_DESC_BASIC(2, AR8216_STATS_RXGOODBYTE, "RxGoodByte"),
+-	MIB_DESC_EXT(2, AR8216_STATS_RXBADBYTE, "RxBadByte"),
+-	MIB_DESC_EXT(1, AR8216_STATS_RXOVERFLOW, "RxOverFlow"),
+-	MIB_DESC_EXT(1, AR8216_STATS_FILTERED, "Filtered"),
+-	MIB_DESC_EXT(1, AR8216_STATS_TXBROAD, "TxBroad"),
+-	MIB_DESC_EXT(1, AR8216_STATS_TXPAUSE, "TxPause"),
+-	MIB_DESC_EXT(1, AR8216_STATS_TXMULTI, "TxMulti"),
+-	MIB_DESC_EXT(1, AR8216_STATS_TXUNDERRUN, "TxUnderRun"),
+-	MIB_DESC_EXT(1, AR8216_STATS_TX64BYTE, "Tx64Byte"),
+-	MIB_DESC_EXT(1, AR8216_STATS_TX128BYTE, "Tx128Byte"),
+-	MIB_DESC_EXT(1, AR8216_STATS_TX256BYTE, "Tx256Byte"),
+-	MIB_DESC_EXT(1, AR8216_STATS_TX512BYTE, "Tx512Byte"),
+-	MIB_DESC_EXT(1, AR8216_STATS_TX1024BYTE, "Tx1024Byte"),
+-	MIB_DESC_EXT(1, AR8216_STATS_TXMAXBYTE, "TxMaxByte"),
+-	MIB_DESC_EXT(1, AR8216_STATS_TXOVERSIZE, "TxOverSize"),
+-	MIB_DESC_BASIC(2, AR8216_STATS_TXBYTE, "TxByte"),
+-	MIB_DESC_EXT(1, AR8216_STATS_TXCOLLISION, "TxCollision"),
+-	MIB_DESC_EXT(1, AR8216_STATS_TXABORTCOL, "TxAbortCol"),
+-	MIB_DESC_EXT(1, AR8216_STATS_TXMULTICOL, "TxMultiCol"),
+-	MIB_DESC_EXT(1, AR8216_STATS_TXSINGLECOL, "TxSingleCol"),
+-	MIB_DESC_EXT(1, AR8216_STATS_TXEXCDEFER, "TxExcDefer"),
+-	MIB_DESC_EXT(1, AR8216_STATS_TXDEFER, "TxDefer"),
+-	MIB_DESC_EXT(1, AR8216_STATS_TXLATECOL, "TxLateCol"),
++	MIB_DESC(1, AR8216_STATS_RXBROAD, "RxBroad"),
++	MIB_DESC(1, AR8216_STATS_RXPAUSE, "RxPause"),
++	MIB_DESC(1, AR8216_STATS_RXMULTI, "RxMulti"),
++	MIB_DESC(1, AR8216_STATS_RXFCSERR, "RxFcsErr"),
++	MIB_DESC(1, AR8216_STATS_RXALIGNERR, "RxAlignErr"),
++	MIB_DESC(1, AR8216_STATS_RXRUNT, "RxRunt"),
++	MIB_DESC(1, AR8216_STATS_RXFRAGMENT, "RxFragment"),
++	MIB_DESC(1, AR8216_STATS_RX64BYTE, "Rx64Byte"),
++	MIB_DESC(1, AR8216_STATS_RX128BYTE, "Rx128Byte"),
++	MIB_DESC(1, AR8216_STATS_RX256BYTE, "Rx256Byte"),
++	MIB_DESC(1, AR8216_STATS_RX512BYTE, "Rx512Byte"),
++	MIB_DESC(1, AR8216_STATS_RX1024BYTE, "Rx1024Byte"),
++	MIB_DESC(1, AR8216_STATS_RXMAXBYTE, "RxMaxByte"),
++	MIB_DESC(1, AR8216_STATS_RXTOOLONG, "RxTooLong"),
++	MIB_DESC(2, AR8216_STATS_RXGOODBYTE, "RxGoodByte"),
++	MIB_DESC(2, AR8216_STATS_RXBADBYTE, "RxBadByte"),
++	MIB_DESC(1, AR8216_STATS_RXOVERFLOW, "RxOverFlow"),
++	MIB_DESC(1, AR8216_STATS_FILTERED, "Filtered"),
++	MIB_DESC(1, AR8216_STATS_TXBROAD, "TxBroad"),
++	MIB_DESC(1, AR8216_STATS_TXPAUSE, "TxPause"),
++	MIB_DESC(1, AR8216_STATS_TXMULTI, "TxMulti"),
++	MIB_DESC(1, AR8216_STATS_TXUNDERRUN, "TxUnderRun"),
++	MIB_DESC(1, AR8216_STATS_TX64BYTE, "Tx64Byte"),
++	MIB_DESC(1, AR8216_STATS_TX128BYTE, "Tx128Byte"),
++	MIB_DESC(1, AR8216_STATS_TX256BYTE, "Tx256Byte"),
++	MIB_DESC(1, AR8216_STATS_TX512BYTE, "Tx512Byte"),
++	MIB_DESC(1, AR8216_STATS_TX1024BYTE, "Tx1024Byte"),
++	MIB_DESC(1, AR8216_STATS_TXMAXBYTE, "TxMaxByte"),
++	MIB_DESC(1, AR8216_STATS_TXOVERSIZE, "TxOverSize"),
++	MIB_DESC(2, AR8216_STATS_TXBYTE, "TxByte"),
++	MIB_DESC(1, AR8216_STATS_TXCOLLISION, "TxCollision"),
++	MIB_DESC(1, AR8216_STATS_TXABORTCOL, "TxAbortCol"),
++	MIB_DESC(1, AR8216_STATS_TXMULTICOL, "TxMultiCol"),
++	MIB_DESC(1, AR8216_STATS_TXSINGLECOL, "TxSingleCol"),
++	MIB_DESC(1, AR8216_STATS_TXEXCDEFER, "TxExcDefer"),
++	MIB_DESC(1, AR8216_STATS_TXDEFER, "TxDefer"),
++	MIB_DESC(1, AR8216_STATS_TXLATECOL, "TxLateCol"),
+ };
+ 
+ const struct ar8xxx_mib_desc ar8236_mibs[39] = {
+-	MIB_DESC_EXT(1, AR8236_STATS_RXBROAD, "RxBroad"),
+-	MIB_DESC_EXT(1, AR8236_STATS_RXPAUSE, "RxPause"),
+-	MIB_DESC_EXT(1, AR8236_STATS_RXMULTI, "RxMulti"),
+-	MIB_DESC_EXT(1, AR8236_STATS_RXFCSERR, "RxFcsErr"),
+-	MIB_DESC_EXT(1, AR8236_STATS_RXALIGNERR, "RxAlignErr"),
+-	MIB_DESC_EXT(1, AR8236_STATS_RXRUNT, "RxRunt"),
+-	MIB_DESC_EXT(1, AR8236_STATS_RXFRAGMENT, "RxFragment"),
+-	MIB_DESC_EXT(1, AR8236_STATS_RX64BYTE, "Rx64Byte"),
+-	MIB_DESC_EXT(1, AR8236_STATS_RX128BYTE, "Rx128Byte"),
+-	MIB_DESC_EXT(1, AR8236_STATS_RX256BYTE, "Rx256Byte"),
+-	MIB_DESC_EXT(1, AR8236_STATS_RX512BYTE, "Rx512Byte"),
+-	MIB_DESC_EXT(1, AR8236_STATS_RX1024BYTE, "Rx1024Byte"),
+-	MIB_DESC_EXT(1, AR8236_STATS_RX1518BYTE, "Rx1518Byte"),
+-	MIB_DESC_EXT(1, AR8236_STATS_RXMAXBYTE, "RxMaxByte"),
+-	MIB_DESC_EXT(1, AR8236_STATS_RXTOOLONG, "RxTooLong"),
+-	MIB_DESC_BASIC(2, AR8236_STATS_RXGOODBYTE, "RxGoodByte"),
+-	MIB_DESC_EXT(2, AR8236_STATS_RXBADBYTE, "RxBadByte"),
+-	MIB_DESC_EXT(1, AR8236_STATS_RXOVERFLOW, "RxOverFlow"),
+-	MIB_DESC_EXT(1, AR8236_STATS_FILTERED, "Filtered"),
+-	MIB_DESC_EXT(1, AR8236_STATS_TXBROAD, "TxBroad"),
+-	MIB_DESC_EXT(1, AR8236_STATS_TXPAUSE, "TxPause"),
+-	MIB_DESC_EXT(1, AR8236_STATS_TXMULTI, "TxMulti"),
+-	MIB_DESC_EXT(1, AR8236_STATS_TXUNDERRUN, "TxUnderRun"),
+-	MIB_DESC_EXT(1, AR8236_STATS_TX64BYTE, "Tx64Byte"),
+-	MIB_DESC_EXT(1, AR8236_STATS_TX128BYTE, "Tx128Byte"),
+-	MIB_DESC_EXT(1, AR8236_STATS_TX256BYTE, "Tx256Byte"),
+-	MIB_DESC_EXT(1, AR8236_STATS_TX512BYTE, "Tx512Byte"),
+-	MIB_DESC_EXT(1, AR8236_STATS_TX1024BYTE, "Tx1024Byte"),
+-	MIB_DESC_EXT(1, AR8236_STATS_TX1518BYTE, "Tx1518Byte"),
+-	MIB_DESC_EXT(1, AR8236_STATS_TXMAXBYTE, "TxMaxByte"),
+-	MIB_DESC_EXT(1, AR8236_STATS_TXOVERSIZE, "TxOverSize"),
+-	MIB_DESC_BASIC(2, AR8236_STATS_TXBYTE, "TxByte"),
+-	MIB_DESC_EXT(1, AR8236_STATS_TXCOLLISION, "TxCollision"),
+-	MIB_DESC_EXT(1, AR8236_STATS_TXABORTCOL, "TxAbortCol"),
+-	MIB_DESC_EXT(1, AR8236_STATS_TXMULTICOL, "TxMultiCol"),
+-	MIB_DESC_EXT(1, AR8236_STATS_TXSINGLECOL, "TxSingleCol"),
+-	MIB_DESC_EXT(1, AR8236_STATS_TXEXCDEFER, "TxExcDefer"),
+-	MIB_DESC_EXT(1, AR8236_STATS_TXDEFER, "TxDefer"),
+-	MIB_DESC_EXT(1, AR8236_STATS_TXLATECOL, "TxLateCol"),
++	MIB_DESC(1, AR8236_STATS_RXBROAD, "RxBroad"),
++	MIB_DESC(1, AR8236_STATS_RXPAUSE, "RxPause"),
++	MIB_DESC(1, AR8236_STATS_RXMULTI, "RxMulti"),
++	MIB_DESC(1, AR8236_STATS_RXFCSERR, "RxFcsErr"),
++	MIB_DESC(1, AR8236_STATS_RXALIGNERR, "RxAlignErr"),
++	MIB_DESC(1, AR8236_STATS_RXRUNT, "RxRunt"),
++	MIB_DESC(1, AR8236_STATS_RXFRAGMENT, "RxFragment"),
++	MIB_DESC(1, AR8236_STATS_RX64BYTE, "Rx64Byte"),
++	MIB_DESC(1, AR8236_STATS_RX128BYTE, "Rx128Byte"),
++	MIB_DESC(1, AR8236_STATS_RX256BYTE, "Rx256Byte"),
++	MIB_DESC(1, AR8236_STATS_RX512BYTE, "Rx512Byte"),
++	MIB_DESC(1, AR8236_STATS_RX1024BYTE, "Rx1024Byte"),
++	MIB_DESC(1, AR8236_STATS_RX1518BYTE, "Rx1518Byte"),
++	MIB_DESC(1, AR8236_STATS_RXMAXBYTE, "RxMaxByte"),
++	MIB_DESC(1, AR8236_STATS_RXTOOLONG, "RxTooLong"),
++	MIB_DESC(2, AR8236_STATS_RXGOODBYTE, "RxGoodByte"),
++	MIB_DESC(2, AR8236_STATS_RXBADBYTE, "RxBadByte"),
++	MIB_DESC(1, AR8236_STATS_RXOVERFLOW, "RxOverFlow"),
++	MIB_DESC(1, AR8236_STATS_FILTERED, "Filtered"),
++	MIB_DESC(1, AR8236_STATS_TXBROAD, "TxBroad"),
++	MIB_DESC(1, AR8236_STATS_TXPAUSE, "TxPause"),
++	MIB_DESC(1, AR8236_STATS_TXMULTI, "TxMulti"),
++	MIB_DESC(1, AR8236_STATS_TXUNDERRUN, "TxUnderRun"),
++	MIB_DESC(1, AR8236_STATS_TX64BYTE, "Tx64Byte"),
++	MIB_DESC(1, AR8236_STATS_TX128BYTE, "Tx128Byte"),
++	MIB_DESC(1, AR8236_STATS_TX256BYTE, "Tx256Byte"),
++	MIB_DESC(1, AR8236_STATS_TX512BYTE, "Tx512Byte"),
++	MIB_DESC(1, AR8236_STATS_TX1024BYTE, "Tx1024Byte"),
++	MIB_DESC(1, AR8236_STATS_TX1518BYTE, "Tx1518Byte"),
++	MIB_DESC(1, AR8236_STATS_TXMAXBYTE, "TxMaxByte"),
++	MIB_DESC(1, AR8236_STATS_TXOVERSIZE, "TxOverSize"),
++	MIB_DESC(2, AR8236_STATS_TXBYTE, "TxByte"),
++	MIB_DESC(1, AR8236_STATS_TXCOLLISION, "TxCollision"),
++	MIB_DESC(1, AR8236_STATS_TXABORTCOL, "TxAbortCol"),
++	MIB_DESC(1, AR8236_STATS_TXMULTICOL, "TxMultiCol"),
++	MIB_DESC(1, AR8236_STATS_TXSINGLECOL, "TxSingleCol"),
++	MIB_DESC(1, AR8236_STATS_TXEXCDEFER, "TxExcDefer"),
++	MIB_DESC(1, AR8236_STATS_TXDEFER, "TxDefer"),
++	MIB_DESC(1, AR8236_STATS_TXLATECOL, "TxLateCol"),
+ };
+ 
+ static DEFINE_MUTEX(ar8xxx_dev_list_lock);
+ static LIST_HEAD(ar8xxx_dev_list);
+ 
+-static void
+-ar8xxx_mib_start(struct ar8xxx_priv *priv);
+-static void
+-ar8xxx_mib_stop(struct ar8xxx_priv *priv);
+-
+ /* inspired by phy_poll_reset in drivers/net/phy/phy_device.c */
+ static int
+ ar8xxx_phy_poll_reset(struct mii_bus *bus)
+@@ -202,7 +194,7 @@
+ 	int i;
+ 	struct mii_bus *bus;
+ 
+-	bus = priv->sw_mii_bus ?: priv->mii_bus;
++	bus = priv->mii_bus;
+ 	for (i = 0; i < AR8XXX_NUM_PHYS; i++) {
+ 		if (priv->chip->phy_fixup)
+ 			priv->chip->phy_fixup(priv, i);
+@@ -309,18 +301,7 @@
+ 
+ 	return ret;
+ }
+-void
+-ar8xxx_phy_dbg_read(struct ar8xxx_priv *priv, int phy_addr,
+-           u16 dbg_addr, u16 *dbg_data)
+-{
+-       struct mii_bus *bus = priv->mii_bus;
+ 
+-       mutex_lock(&bus->mdio_lock);
+-       bus->write(bus, phy_addr, MII_ATH_DBG_ADDR, dbg_addr);
+-       *dbg_data = bus->read(bus, phy_addr, MII_ATH_DBG_DATA);
+-       mutex_unlock(&bus->mdio_lock);
+-}
+-
+ void
+ ar8xxx_phy_dbg_write(struct ar8xxx_priv *priv, int phy_addr,
+ 		     u16 dbg_addr, u16 dbg_data)
+@@ -440,8 +421,6 @@
+ 		u64 t;
+ 
+ 		mib = &priv->chip->mib_decs[i];
+-		if (mib->type > priv->mib_type)
+-			continue;
+ 		t = ar8xxx_read(priv, base + mib->offset);
+ 		if (mib->size == 2) {
+ 			u64 hi;
+@@ -468,6 +447,8 @@
+ 	memset(link, '\0', sizeof(*link));
+ 
+ 	status = priv->chip->read_port_status(priv, port);
++	if (priv->disabled[port])
++		return;
+ 
+ 	link->aneg = !!(status & AR8216_PORT_STATUS_LINK_AUTO);
+ 	if (link->aneg) {
+@@ -513,8 +494,6 @@
+ 	}
+ }
+ 
+-#ifdef CONFIG_ETHERNET_PACKET_MANGLE
+-
+ static struct sk_buff *
+ ar8216_mangle_tx(struct net_device *dev, struct sk_buff *skb)
+ {
+@@ -581,8 +560,6 @@
+ 	buf[15 + 2] = vlan & 0xff;
+ }
+ 
+-#endif
+-
+ int
+ ar8216_wait_bit(struct ar8xxx_priv *priv, int reg, u32 mask, u32 val)
+ {
+@@ -670,9 +647,62 @@
+ 	return ar8xxx_read(priv, AR8216_REG_PORT_STATUS(port));
+ }
+ 
++static int ar8216_sw_set_port_link(struct switch_dev *dev, int port,
++			     struct switch_port_link *link)
++{
++	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
++	u32 t;
++	if (port == AR8216_PORT_CPU) {
++		return -EINVAL;
++	}
++	if (link->speed == SWITCH_PORT_SPEED_1000 && !ar8xxx_has_gige(priv))
++		return -EINVAL;
++	t = ar8xxx_read(priv, AR8216_REG_PORT_STATUS(port));
++	t &= ~(t & AR8216_PORT_STATUS_SPEED) <<
++		 AR8216_PORT_STATUS_SPEED_S;
++	t &= ~AR8216_PORT_STATUS_LINK_AUTO;
++	t &= ~AR8216_PORT_STATUS_DUPLEX;
++	t &= ~AR8216_PORT_STATUS_FLOW_CONTROL;
++
++	if (link->duplex)
++		t |= AR8216_PORT_STATUS_DUPLEX;
++	if (link->aneg) {
++		t |= AR8216_PORT_STATUS_LINK_AUTO;
++		t |= AR8216_PORT_STATUS_FLOW_CONTROL;
++	} else {
++		t &= ~AR8216_PORT_STATUS_TXFLOW;
++		t &= ~AR8216_PORT_STATUS_RXFLOW;
++		if (link->rx_flow)
++		    t |= AR8216_PORT_STATUS_RXFLOW;
++		if (link->tx_flow)
++		    t |= AR8216_PORT_STATUS_TXFLOW;
++
++		switch (link->speed) {
++		case SWITCH_PORT_SPEED_10:
++			t |= AR8216_PORT_SPEED_10M <<
++			 AR8216_PORT_STATUS_SPEED_S;
++			break;
++		case SWITCH_PORT_SPEED_100:
++			t |= AR8216_PORT_SPEED_100M <<
++			 AR8216_PORT_STATUS_SPEED_S;
++			break;
++		case SWITCH_PORT_SPEED_1000:
++			if (!ar8xxx_has_gige(priv))
++				return  -EINVAL;
++			t |= AR8216_PORT_SPEED_1000M <<
++			 AR8216_PORT_STATUS_SPEED_S;
++			break;
++		default:
++			t |= AR8216_PORT_STATUS_LINK_AUTO;
++			break;
++		}
++	}
++	ar8xxx_write(priv, AR8216_REG_PORT_STATUS(port), t);
++	return 0;
++}
++
+ static void
+-__ar8216_setup_port(struct ar8xxx_priv *priv, int port, u32 members,
+-		    bool ath_hdr_en)
++ar8216_setup_port(struct ar8xxx_priv *priv, int port, u32 members)
+ {
+ 	u32 header;
+ 	u32 egress, ingress;
+@@ -691,7 +721,10 @@
+ 		ingress = AR8216_IN_PORT_ONLY;
+ 	}
+ 
+-	header = ath_hdr_en ? AR8216_PORT_CTRL_HEADER : 0;
++	if (chip_is_ar8216(priv) && priv->vlan && port == AR8216_PORT_CPU)
++		header = AR8216_PORT_CTRL_HEADER;
++	else
++		header = 0;
+ 
+ 	ar8xxx_rmw(priv, AR8216_REG_PORT_CTRL(port),
+ 		   AR8216_PORT_CTRL_LEARN | AR8216_PORT_CTRL_VLAN_MODE |
+@@ -709,14 +742,6 @@
+ 		   (pvid << AR8216_PORT_VLAN_DEFAULT_ID_S));
+ }
+ 
+-static void
+-ar8216_setup_port(struct ar8xxx_priv *priv, int port, u32 members)
+-{
+-	return __ar8216_setup_port(priv, port, members,
+-				   chip_is_ar8216(priv) && priv->vlan &&
+-				   port == AR8216_PORT_CPU);
+-}
+-
+ static int
+ ar8216_hw_init(struct ar8xxx_priv *priv)
+ {
+@@ -723,9 +748,6 @@
+ 	if (priv->initialized)
+ 		return 0;
+ 
+-	ar8xxx_write(priv, AR8216_REG_CTRL, AR8216_CTRL_RESET);
+-	ar8xxx_reg_wait(priv, AR8216_REG_CTRL, AR8216_CTRL_RESET, 0, 1000);
+-
+ 	ar8xxx_phy_init(priv);
+ 
+ 	priv->initialized = true;
+@@ -743,8 +765,7 @@
+ }
+ 
+ static void
+-__ar8216_init_port(struct ar8xxx_priv *priv, int port,
+-		   bool cpu_ge, bool flow_en)
++ar8216_init_port(struct ar8xxx_priv *priv, int port)
+ {
+ 	/* Enable port learning and tx */
+ 	ar8xxx_write(priv, AR8216_REG_PORT_CTRL(port),
+@@ -756,11 +777,12 @@
+ 	if (port == AR8216_PORT_CPU) {
+ 		ar8xxx_write(priv, AR8216_REG_PORT_STATUS(port),
+ 			AR8216_PORT_STATUS_LINK_UP |
+-			(cpu_ge ? AR8216_PORT_SPEED_1000M : AR8216_PORT_SPEED_100M) |
++			(ar8xxx_has_gige(priv) ?
++                                AR8216_PORT_SPEED_1000M : AR8216_PORT_SPEED_100M) |
+ 			AR8216_PORT_STATUS_TXMAC |
+ 			AR8216_PORT_STATUS_RXMAC |
+-			(flow_en ? AR8216_PORT_STATUS_RXFLOW : 0) |
+-			(flow_en ? AR8216_PORT_STATUS_TXFLOW : 0) |
++			(chip_is_ar8316(priv) ? AR8216_PORT_STATUS_RXFLOW : 0) |
++			(chip_is_ar8316(priv) ? AR8216_PORT_STATUS_TXFLOW : 0) |
+ 			AR8216_PORT_STATUS_DUPLEX);
+ 	} else {
+ 		ar8xxx_write(priv, AR8216_REG_PORT_STATUS(port),
+@@ -769,13 +791,6 @@
+ }
+ 
+ static void
+-ar8216_init_port(struct ar8xxx_priv *priv, int port)
+-{
+-	__ar8216_init_port(priv, port, ar8xxx_has_gige(priv),
+-			   chip_is_ar8316(priv));
+-}
+-
+-static void
+ ar8216_wait_atu_ready(struct ar8xxx_priv *priv, u16 r2, u16 r1)
+ {
+ 	int timeout = 20;
+@@ -842,198 +857,7 @@
+ 	}
+ }
+ 
+-static int
+-ar8216_phy_read(struct ar8xxx_priv *priv, int addr, int regnum)
+-{
+-	u32 t, val = 0xffff;
+-	int err;
+-
+-	if (addr >= AR8216_NUM_PORTS)
+-		return 0xffff;
+-	t = (regnum << AR8216_MDIO_CTRL_REG_ADDR_S) |
+-	    (addr << AR8216_MDIO_CTRL_PHY_ADDR_S) |
+-	    AR8216_MDIO_CTRL_MASTER_EN |
+-	    AR8216_MDIO_CTRL_BUSY |
+-	    AR8216_MDIO_CTRL_CMD_READ;
+-
+-	ar8xxx_write(priv, AR8216_REG_MDIO_CTRL, t);
+-	err = ar8xxx_reg_wait(priv, AR8216_REG_MDIO_CTRL,
+-			      AR8216_MDIO_CTRL_BUSY, 0, 5);
+-	if (!err)
+-		val = ar8xxx_read(priv, AR8216_REG_MDIO_CTRL);
+-
+-	return val & AR8216_MDIO_CTRL_DATA_M;
+-}
+-
+-static int
+-ar8216_phy_write(struct ar8xxx_priv *priv, int addr, int regnum, u16 val)
+-{
+-	u32 t;
+-	int ret;
+-
+-	if (addr >= AR8216_NUM_PORTS)
+-		return -EINVAL;
+-
+-	t = (addr << AR8216_MDIO_CTRL_PHY_ADDR_S) |
+-	    (regnum << AR8216_MDIO_CTRL_REG_ADDR_S) |
+-	    AR8216_MDIO_CTRL_MASTER_EN |
+-	    AR8216_MDIO_CTRL_BUSY |
+-	    AR8216_MDIO_CTRL_CMD_WRITE |
+-	    val;
+-
+-	ar8xxx_write(priv, AR8216_REG_MDIO_CTRL, t);
+-	ret = ar8xxx_reg_wait(priv, AR8216_REG_MDIO_CTRL,
+-			      AR8216_MDIO_CTRL_BUSY, 0, 5);
+-
+-	return ret;
+-}
+-
+-static int
+-ar8229_hw_init(struct ar8xxx_priv *priv)
+-{
+-	phy_interface_t phy_if_mode;
+-
+-	if (priv->initialized)
+-		return 0;
+-
+-	ar8xxx_write(priv, AR8216_REG_CTRL, AR8216_CTRL_RESET);
+-	ar8xxx_reg_wait(priv, AR8216_REG_CTRL, AR8216_CTRL_RESET, 0, 1000);
+-
+-	of_get_phy_mode(priv->pdev->of_node, &phy_if_mode);
+-
+-	if (phy_if_mode == PHY_INTERFACE_MODE_GMII) {
+-		ar8xxx_write(priv, AR8229_REG_OPER_MODE0,
+-				 AR8229_OPER_MODE0_MAC_GMII_EN);
+-	} else if (phy_if_mode == PHY_INTERFACE_MODE_MII) {
+-		ar8xxx_write(priv, AR8229_REG_OPER_MODE0,
+-				 AR8229_OPER_MODE0_PHY_MII_EN);
+-	} else {
+-		pr_err("ar8229: unsupported mii mode\n");
+-		return -EINVAL;
+-	}
+-
+-	if (priv->port4_phy) {
+-		ar8xxx_write(priv, AR8229_REG_OPER_MODE1,
+-			     AR8229_REG_OPER_MODE1_PHY4_MII_EN);
+-		/* disable port5 to prevent mii conflict */
+-		ar8xxx_write(priv, AR8216_REG_PORT_STATUS(5), 0);
+-	}
+-
+-	ar8xxx_phy_init(priv);
+-
+-	priv->initialized = true;
+-	return 0;
+-}
+-
+ static void
+-ar8229_init_globals(struct ar8xxx_priv *priv)
+-{
+-
+-	/* Enable CPU port, and disable mirror port */
+-	ar8xxx_write(priv, AR8216_REG_GLOBAL_CPUPORT,
+-		     AR8216_GLOBAL_CPUPORT_EN |
+-		     (15 << AR8216_GLOBAL_CPUPORT_MIRROR_PORT_S));
+-
+-	/* Setup TAG priority mapping */
+-	ar8xxx_write(priv, AR8216_REG_TAG_PRIORITY, 0xfa50);
+-
+-	/* Enable aging, MAC replacing */
+-	ar8xxx_write(priv, AR8216_REG_ATU_CTRL,
+-		     0x2b /* 5 min age time */ |
+-		     AR8216_ATU_CTRL_AGE_EN |
+-		     AR8216_ATU_CTRL_LEARN_CHANGE);
+-
+-	/* Enable ARP frame acknowledge */
+-	ar8xxx_reg_set(priv, AR8229_REG_QM_CTRL,
+-		       AR8229_QM_CTRL_ARP_EN);
+-
+-	/*
+-	 * Enable Broadcast/unknown multicast and unicast frames
+-	 * transmitted to the CPU port.
+-	 */
+-	ar8xxx_reg_set(priv, AR8216_REG_FLOOD_MASK,
+-		       AR8229_FLOOD_MASK_BC_DP(0) |
+-		       AR8229_FLOOD_MASK_MC_DP(0) |
+-		       AR8229_FLOOD_MASK_UC_DP(0));
+-
+-	/* setup MTU */
+-	ar8xxx_rmw(priv, AR8216_REG_GLOBAL_CTRL,
+-		   AR8236_GCTRL_MTU, AR8236_GCTRL_MTU);
+-
+-	/* Enable MIB counters */
+-	ar8xxx_reg_set(priv, AR8216_REG_MIB_FUNC,
+-		       AR8236_MIB_EN);
+-
+-	/* setup Service TAG */
+-	ar8xxx_rmw(priv, AR8216_REG_SERVICE_TAG, AR8216_SERVICE_TAG_M, 0);
+-}
+-
+-static void
+-ar8229_init_port(struct ar8xxx_priv *priv, int port)
+-{
+-	__ar8216_init_port(priv, port, true, true);
+-}
+-
+-
+-static int
+-ar7240sw_hw_init(struct ar8xxx_priv *priv)
+-{
+-	if (priv->initialized)
+-		return 0;
+-
+-	ar8xxx_write(priv, AR8216_REG_CTRL, AR8216_CTRL_RESET);
+-	ar8xxx_reg_wait(priv, AR8216_REG_CTRL, AR8216_CTRL_RESET, 0, 1000);
+-
+-	priv->port4_phy = 1;
+-	/* disable port5 to prevent mii conflict */
+-	ar8xxx_write(priv, AR8216_REG_PORT_STATUS(5), 0);
+-
+-	ar8xxx_phy_init(priv);
+-
+-	priv->initialized = true;
+-	return 0;
+-}
+-
+-static void
+-ar7240sw_init_globals(struct ar8xxx_priv *priv)
+-{
+-
+-	/* Enable CPU port, and disable mirror port */
+-	ar8xxx_write(priv, AR8216_REG_GLOBAL_CPUPORT,
+-		     AR8216_GLOBAL_CPUPORT_EN |
+-		     (15 << AR8216_GLOBAL_CPUPORT_MIRROR_PORT_S));
+-
+-	/* Setup TAG priority mapping */
+-	ar8xxx_write(priv, AR8216_REG_TAG_PRIORITY, 0xfa50);
+-
+-	/* Enable ARP frame acknowledge, aging, MAC replacing */
+-	ar8xxx_write(priv, AR8216_REG_ATU_CTRL,
+-		AR8216_ATU_CTRL_RESERVED |
+-		0x2b /* 5 min age time */ |
+-		AR8216_ATU_CTRL_AGE_EN |
+-		AR8216_ATU_CTRL_ARP_EN |
+-		AR8216_ATU_CTRL_LEARN_CHANGE);
+-
+-	/* Enable Broadcast frames transmitted to the CPU */
+-	ar8xxx_reg_set(priv, AR8216_REG_FLOOD_MASK,
+-		       AR8216_FM_CPU_BROADCAST_EN);
+-
+-	/* setup MTU */
+-	ar8xxx_rmw(priv, AR8216_REG_GLOBAL_CTRL,
+-		   AR8216_GCTRL_MTU,
+-		   AR8216_GCTRL_MTU);
+-
+-	/* setup Service TAG */
+-	ar8xxx_rmw(priv, AR8216_REG_SERVICE_TAG, AR8216_SERVICE_TAG_M, 0);
+-}
+-
+-static void
+-ar7240sw_setup_port(struct ar8xxx_priv *priv, int port, u32 members)
+-{
+-	return __ar8216_setup_port(priv, port, members, false);
+-}
+-
+-static void
+ ar8236_setup_port(struct ar8xxx_priv *priv, int port, u32 members)
+ {
+ 	u32 egress, ingress;
+@@ -1082,14 +906,9 @@
+ 	ar8xxx_reg_set(priv, AR8216_REG_ATU_CTRL,
+ 		   AR8236_ATU_CTRL_RES);
+ 
+-	/*
+-	 * Enable Broadcast/unknown multicast and unicast frames
+-	 * transmitted to the CPU port.
+-	 */
++	/* enable cpu port to receive multicast and broadcast frames */
+ 	ar8xxx_reg_set(priv, AR8216_REG_FLOOD_MASK,
+-		       AR8229_FLOOD_MASK_BC_DP(0) |
+-		       AR8229_FLOOD_MASK_MC_DP(0) |
+-		       AR8229_FLOOD_MASK_UC_DP(0));
++		   AR8236_FM_CPU_BROADCAST_EN | AR8236_FM_CPU_BCAST_FWD_EN);
+ 
+ 	/* Enable MIB counters */
+ 	ar8xxx_rmw(priv, AR8216_REG_MIB_FUNC, AR8216_MIB_FUNC | AR8236_MIB_EN,
+@@ -1419,7 +1238,8 @@
+ 	int i;
+ 
+ 	mutex_lock(&priv->reg_mutex);
+-	memset(&priv->ar8xxx_priv_volatile, 0, sizeof(priv->ar8xxx_priv_volatile));
++	memset(&priv->vlan, 0, sizeof(struct ar8xxx_priv) -
++		offsetof(struct ar8xxx_priv, vlan));
+ 
+ 	for (i = 0; i < dev->vlans; i++)
+ 		priv->vlan_id[i] = i;
+@@ -1471,62 +1291,6 @@
+ }
+ 
+ int
+-ar8xxx_sw_set_mib_poll_interval(struct switch_dev *dev,
+-			       const struct switch_attr *attr,
+-			       struct switch_val *val)
+-{
+-	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
+-
+-	if (!ar8xxx_has_mib_counters(priv))
+-		return -EOPNOTSUPP;
+-
+-	ar8xxx_mib_stop(priv);
+-	priv->mib_poll_interval = val->value.i;
+-	ar8xxx_mib_start(priv);
+-
+-	return 0;
+-}
+-
+-int
+-ar8xxx_sw_get_mib_poll_interval(struct switch_dev *dev,
+-			       const struct switch_attr *attr,
+-			       struct switch_val *val)
+-{
+-	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
+-
+-	if (!ar8xxx_has_mib_counters(priv))
+-		return -EOPNOTSUPP;
+-	val->value.i = priv->mib_poll_interval;
+-	return 0;
+-}
+-
+-int
+-ar8xxx_sw_set_mib_type(struct switch_dev *dev,
+-			       const struct switch_attr *attr,
+-			       struct switch_val *val)
+-{
+-	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
+-
+-	if (!ar8xxx_has_mib_counters(priv))
+-		return -EOPNOTSUPP;
+-	priv->mib_type = val->value.i;
+-	return 0;
+-}
+-
+-int
+-ar8xxx_sw_get_mib_type(struct switch_dev *dev,
+-			       const struct switch_attr *attr,
+-			       struct switch_val *val)
+-{
+-	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
+-
+-	if (!ar8xxx_has_mib_counters(priv))
+-		return -EOPNOTSUPP;
+-	val->value.i = priv->mib_type;
+-	return 0;
+-}
+-
+-int
+ ar8xxx_sw_set_mirror_rx_enable(struct switch_dev *dev,
+ 			       const struct switch_attr *attr,
+ 			       struct switch_val *val)
+@@ -1697,7 +1461,7 @@
+ 	int i, len = 0;
+ 	bool mib_stats_empty = true;
+ 
+-	if (!ar8xxx_has_mib_counters(priv) || !priv->mib_poll_interval)
++	if (!ar8xxx_has_mib_counters(priv))
+ 		return -EOPNOTSUPP;
+ 
+ 	port = val->port_vlan;
+@@ -1716,8 +1480,6 @@
+ 
+ 	mib_stats = &priv->mib_stats[port * chip->num_mibs];
+ 	for (i = 0; i < chip->num_mibs; i++) {
+-		if (chip->mib_decs[i].type > priv->mib_type)
+-			continue;
+ 		mib_name = chip->mib_decs[i].name;
+ 		mib_data = mib_stats[i];
+ 		len += snprintf(buf + len, sizeof(priv->buf) - len,
+@@ -1884,46 +1646,53 @@
+ 	return ret;
+ }
+ 
+-int
+-ar8xxx_sw_get_port_stats(struct switch_dev *dev, int port,
+-			struct switch_port_stats *stats)
++static int
++ar8xxx_sw_set_disable(struct switch_dev *dev,
++		  const struct switch_attr *attr,
++		  struct switch_val *val)
+ {
+ 	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
+-	u64 *mib_stats;
++	int port = val->port_vlan;
+ 
+-	if (!ar8xxx_has_mib_counters(priv) || !priv->mib_poll_interval)
+-		return -EOPNOTSUPP;
+-
+-	if (!(priv->chip->mib_rxb_id || priv->chip->mib_txb_id))
+-		return -EOPNOTSUPP;
+-
+ 	if (port >= dev->ports)
+ 		return -EINVAL;
++	if (port == 0 || port == 6)
++		return -EOPNOTSUPP;
+ 
+-	mutex_lock(&priv->mib_lock);
++	
++	if (!!(val->value.i))  {
++		priv->disabled[port] = 1;
++		priv->state[port] = ar8xxx_read(priv, AR8216_REG_PORT_STATUS(port));
++		ar8xxx_write(priv, AR8216_REG_PORT_STATUS(port), 0);
++	}else{
++		priv->disabled[port] = 0;
++		if (priv->state[port])
++			ar8xxx_write(priv, AR8216_REG_PORT_STATUS(port), priv->state[port]);
++	}
+ 
+-	mib_stats = &priv->mib_stats[port * priv->chip->num_mibs];
+-
+-	stats->tx_bytes = mib_stats[priv->chip->mib_txb_id];
+-	stats->rx_bytes = mib_stats[priv->chip->mib_rxb_id];
+-
+-	mutex_unlock(&priv->mib_lock);
+ 	return 0;
+ }
+ 
+ static int
+-ar8xxx_phy_read(struct mii_bus *bus, int phy_addr, int reg_addr)
++ar8xxx_sw_get_disable(struct switch_dev *dev,
++		  const struct switch_attr *attr,
++		  struct switch_val *val)
+ {
+-	struct ar8xxx_priv *priv = bus->priv;
+-	return priv->chip->phy_read(priv, phy_addr, reg_addr);
+-}
++	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
++	int port = val->port_vlan;
++	u32 t;
+ 
+-static int
+-ar8xxx_phy_write(struct mii_bus *bus, int phy_addr, int reg_addr,
+-		 u16 reg_val)
+-{
+-	struct ar8xxx_priv *priv = bus->priv;
+-	return priv->chip->phy_write(priv, phy_addr, reg_addr, reg_val);
++	if (port >= dev->ports)
++		return -EINVAL;
++	if (port == 0 || port == 6)
++		return -EOPNOTSUPP;
++
++	t = ar8xxx_read(priv, AR8216_REG_PORT_STATUS(port));
++	if (!(t & AR8216_PORT_STATUS_LINK_AUTO) && !(t & (AR8216_PORT_SPEED_10M << AR8216_PORT_STATUS_SPEED_S)) && !(t & (AR8216_PORT_SPEED_100M << AR8216_PORT_STATUS_SPEED_S)) && !(t & (AR8216_PORT_SPEED_1000M << AR8216_PORT_STATUS_SPEED_S)))
++		val->value.i = 1;
++	else
++		val->value.i = 0;
++	return 0;
+ }
+ 
+ static const struct switch_attr ar8xxx_sw_attr_globals[] = {
+@@ -1943,20 +1712,6 @@
+ 	},
+ 	{
+ 		.type = SWITCH_TYPE_INT,
+-		.name = "ar8xxx_mib_poll_interval",
+-		.description = "MIB polling interval in msecs (0 to disable)",
+-		.set = ar8xxx_sw_set_mib_poll_interval,
+-		.get = ar8xxx_sw_get_mib_poll_interval
+-	},
+-	{
+-		.type = SWITCH_TYPE_INT,
+-		.name = "ar8xxx_mib_type",
+-		.description = "MIB type (0=basic 1=extended)",
+-		.set = ar8xxx_sw_set_mib_type,
+-		.get = ar8xxx_sw_get_mib_type
+-	},
+-	{
+-		.type = SWITCH_TYPE_INT,
+ 		.name = "enable_mirror_rx",
+ 		.description = "Enable mirroring of RX packets",
+ 		.set = ar8xxx_sw_set_mirror_rx_enable,
+@@ -2022,6 +1777,14 @@
+ 		.description = "Flush port's ARL table entries",
+ 		.set = ar8xxx_sw_set_flush_port_arl_table,
+ 	},
++	{
++		.type = SWITCH_TYPE_INT,
++		.name = "disable",
++		.description = "Disable Port",
++		.set = ar8xxx_sw_set_disable,
++		.get = ar8xxx_sw_get_disable,
++		.max = 1,
++	},
+ };
+ 
+ const struct switch_attr ar8xxx_sw_attr_vlan[1] = {
+@@ -2055,45 +1818,21 @@
+ 	.apply_config = ar8xxx_sw_hw_apply,
+ 	.reset_switch = ar8xxx_sw_reset_switch,
+ 	.get_port_link = ar8xxx_sw_get_port_link,
++	.set_port_link = ar8216_sw_set_port_link,
++/* The following op is disabled as it hogs the CPU and degrades performance.
++   An implementation has been attempted in 4d8a66d but reading MIB data is slow
++   on ar8xxx switches.
++
++   The high CPU load has been traced down to the ar8xxx_reg_wait() call in
++   ar8xxx_mib_op(), which has to usleep_range() till the MIB busy flag set by
++   the request to update the MIB counter is cleared. */
++#if 0
+ 	.get_port_stats = ar8xxx_sw_get_port_stats,
++#endif
+ };
+ 
+-static const struct ar8xxx_chip ar7240sw_chip = {
+-	.caps = AR8XXX_CAP_MIB_COUNTERS,
+-
+-	.reg_port_stats_start = 0x20000,
+-	.reg_port_stats_length = 0x100,
+-	.reg_arl_ctrl = AR8216_REG_ATU_CTRL,
+-
+-	.name = "Atheros AR724X/AR933X built-in",
+-	.ports = AR7240SW_NUM_PORTS,
+-	.vlans = AR8216_NUM_VLANS,
+-	.swops = &ar8xxx_sw_ops,
+-
+-	.hw_init = ar7240sw_hw_init,
+-	.init_globals = ar7240sw_init_globals,
+-	.init_port = ar8229_init_port,
+-	.phy_read = ar8216_phy_read,
+-	.phy_write = ar8216_phy_write,
+-	.setup_port = ar7240sw_setup_port,
+-	.read_port_status = ar8216_read_port_status,
+-	.atu_flush = ar8216_atu_flush,
+-	.atu_flush_port = ar8216_atu_flush_port,
+-	.vtu_flush = ar8216_vtu_flush,
+-	.vtu_load_vlan = ar8216_vtu_load_vlan,
+-	.set_mirror_regs = ar8216_set_mirror_regs,
+-	.get_arl_entry = ar8216_get_arl_entry,
+-	.sw_hw_apply = ar8xxx_sw_hw_apply,
+-
+-	.num_mibs = ARRAY_SIZE(ar8236_mibs),
+-	.mib_decs = ar8236_mibs,
+-	.mib_func = AR8216_REG_MIB_FUNC,
+-	.mib_rxb_id = AR8236_MIB_RXB_ID,
+-	.mib_txb_id = AR8236_MIB_TXB_ID,
+-};
+-
+ static const struct ar8xxx_chip ar8216_chip = {
+-	.caps = AR8XXX_CAP_MIB_COUNTERS,
++//	.caps = AR8XXX_CAP_MIB_COUNTERS,
+ 
+ 	.reg_port_stats_start = 0x19000,
+ 	.reg_port_stats_length = 0xa0,
+@@ -2119,47 +1858,11 @@
+ 
+ 	.num_mibs = ARRAY_SIZE(ar8216_mibs),
+ 	.mib_decs = ar8216_mibs,
+-	.mib_func = AR8216_REG_MIB_FUNC,
+-	.mib_rxb_id = AR8216_MIB_RXB_ID,
+-	.mib_txb_id = AR8216_MIB_TXB_ID,
++	.mib_func = AR8216_REG_MIB_FUNC
+ };
+ 
+-static const struct ar8xxx_chip ar8229_chip = {
+-	.caps = AR8XXX_CAP_MIB_COUNTERS,
+-
+-	.reg_port_stats_start = 0x20000,
+-	.reg_port_stats_length = 0x100,
+-	.reg_arl_ctrl = AR8216_REG_ATU_CTRL,
+-
+-	.name = "Atheros AR8229",
+-	.ports = AR8216_NUM_PORTS,
+-	.vlans = AR8216_NUM_VLANS,
+-	.swops = &ar8xxx_sw_ops,
+-
+-	.hw_init = ar8229_hw_init,
+-	.init_globals = ar8229_init_globals,
+-	.init_port = ar8229_init_port,
+-	.phy_read = ar8216_phy_read,
+-	.phy_write = ar8216_phy_write,
+-	.setup_port = ar8236_setup_port,
+-	.read_port_status = ar8216_read_port_status,
+-	.atu_flush = ar8216_atu_flush,
+-	.atu_flush_port = ar8216_atu_flush_port,
+-	.vtu_flush = ar8216_vtu_flush,
+-	.vtu_load_vlan = ar8216_vtu_load_vlan,
+-	.set_mirror_regs = ar8216_set_mirror_regs,
+-	.get_arl_entry = ar8216_get_arl_entry,
+-	.sw_hw_apply = ar8xxx_sw_hw_apply,
+-
+-	.num_mibs = ARRAY_SIZE(ar8236_mibs),
+-	.mib_decs = ar8236_mibs,
+-	.mib_func = AR8216_REG_MIB_FUNC,
+-	.mib_rxb_id = AR8236_MIB_RXB_ID,
+-	.mib_txb_id = AR8236_MIB_TXB_ID,
+-};
+-
+ static const struct ar8xxx_chip ar8236_chip = {
+-	.caps = AR8XXX_CAP_MIB_COUNTERS,
++//	.caps = AR8XXX_CAP_MIB_COUNTERS,
+ 
+ 	.reg_port_stats_start = 0x20000,
+ 	.reg_port_stats_length = 0x100,
+@@ -2185,13 +1888,11 @@
+ 
+ 	.num_mibs = ARRAY_SIZE(ar8236_mibs),
+ 	.mib_decs = ar8236_mibs,
+-	.mib_func = AR8216_REG_MIB_FUNC,
+-	.mib_rxb_id = AR8236_MIB_RXB_ID,
+-	.mib_txb_id = AR8236_MIB_TXB_ID,
++	.mib_func = AR8216_REG_MIB_FUNC
+ };
+ 
+ static const struct ar8xxx_chip ar8316_chip = {
+-	.caps = AR8XXX_CAP_GIGE | AR8XXX_CAP_MIB_COUNTERS,
++	.caps = AR8XXX_CAP_GIGE, // | AR8XXX_CAP_MIB_COUNTERS,
+ 
+ 	.reg_port_stats_start = 0x20000,
+ 	.reg_port_stats_length = 0x100,
+@@ -2217,13 +1918,11 @@
+ 
+ 	.num_mibs = ARRAY_SIZE(ar8236_mibs),
+ 	.mib_decs = ar8236_mibs,
+-	.mib_func = AR8216_REG_MIB_FUNC,
+-	.mib_rxb_id = AR8236_MIB_RXB_ID,
+-	.mib_txb_id = AR8236_MIB_TXB_ID,
++	.mib_func = AR8216_REG_MIB_FUNC
+ };
+ 
+ static int
+-ar8xxx_read_id(struct ar8xxx_priv *priv)
++ar8xxx_id_chip(struct ar8xxx_priv *priv)
+ {
+ 	u32 val;
+ 	u16 id;
+@@ -2248,18 +1947,7 @@
+ 
+ 	priv->chip_ver = (id & AR8216_CTRL_VERSION) >> AR8216_CTRL_VERSION_S;
+ 	priv->chip_rev = (id & AR8216_CTRL_REVISION);
+-	return 0;
+-}
+ 
+-static int
+-ar8xxx_id_chip(struct ar8xxx_priv *priv)
+-{
+-	int ret;
+-
+-	ret = ar8xxx_read_id(priv);
+-	if(ret)
+-		return ret;
+-
+ 	switch (priv->chip_ver) {
+ 	case AR8XXX_VER_AR8216:
+ 		priv->chip = &ar8216_chip;
+@@ -2290,7 +1978,7 @@
+ ar8xxx_mib_work_func(struct work_struct *work)
+ {
+ 	struct ar8xxx_priv *priv;
+-	int err, i;
++	int err;
+ 
+ 	priv = container_of(work, struct ar8xxx_priv, mib_work.work);
+ 
+@@ -2298,15 +1986,18 @@
+ 
+ 	err = ar8xxx_mib_capture(priv);
+ 	if (err)
+-		goto next_attempt;
++		goto next_port;
+ 
+-	for (i = 0; i < priv->dev.ports; i++)
+-		ar8xxx_mib_fetch_port_stat(priv, i, false);
++	ar8xxx_mib_fetch_port_stat(priv, priv->mib_next_port, false);
+ 
+-next_attempt:
++next_port:
++	priv->mib_next_port++;
++	if (priv->mib_next_port >= priv->dev.ports)
++		priv->mib_next_port = 0;
++
+ 	mutex_unlock(&priv->mib_lock);
+ 	schedule_delayed_work(&priv->mib_work,
+-			      msecs_to_jiffies(priv->mib_poll_interval));
++			      msecs_to_jiffies(AR8XXX_MIB_WORK_DELAY));
+ }
+ 
+ static int
+@@ -2332,17 +2023,17 @@
+ static void
+ ar8xxx_mib_start(struct ar8xxx_priv *priv)
+ {
+-	if (!ar8xxx_has_mib_counters(priv) || !priv->mib_poll_interval)
++	if (!ar8xxx_has_mib_counters(priv))
+ 		return;
+ 
+ 	schedule_delayed_work(&priv->mib_work,
+-			      msecs_to_jiffies(priv->mib_poll_interval));
++			      msecs_to_jiffies(AR8XXX_MIB_WORK_DELAY));
+ }
+ 
+ static void
+ ar8xxx_mib_stop(struct ar8xxx_priv *priv)
+ {
+-	if (!ar8xxx_has_mib_counters(priv) || !priv->mib_poll_interval)
++	if (!ar8xxx_has_mib_counters(priv))
+ 		return;
+ 
+ 	cancel_delayed_work_sync(&priv->mib_work);
+@@ -2382,6 +2073,10 @@
+ 	struct switch_dev *swdev;
+ 	int ret;
+ 
++	ret = ar8xxx_id_chip(priv);
++	if (ret)
++		return ret;
++
+ 	chip = priv->chip;
+ 
+ 	swdev = &priv->dev;
+@@ -2424,9 +2119,7 @@
+ ar8xxx_phy_config_init(struct phy_device *phydev)
+ {
+ 	struct ar8xxx_priv *priv = phydev->priv;
+-#ifdef CONFIG_ETHERNET_PACKET_MANGLE
+ 	struct net_device *dev = phydev->attached_dev;
+-#endif
+ 	int ret;
+ 
+ 	if (WARN_ON(!priv))
+@@ -2454,23 +2147,19 @@
+ 	if (ret)
+ 		return ret;
+ 
+-#ifdef CONFIG_ETHERNET_PACKET_MANGLE
+ 	/* VID fixup only needed on ar8216 */
+ 	if (chip_is_ar8216(priv)) {
+ 		dev->phy_ptr = priv;
+-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6,1,0)
+ 		dev->priv_flags |= IFF_NO_IP_ALIGN;
+-#else
+-		dev->extra_priv_flags |= IFF_NO_IP_ALIGN;
+-#endif
+ 		dev->eth_mangle_rx = ar8216_mangle_rx;
+ 		dev->eth_mangle_tx = ar8216_mangle_tx;
+ 	}
+-#endif
+ 
+ 	return 0;
+ }
+ 
++void shift_register_set(u_int32_t index, u_int32_t val2);
++
+ static bool
+ ar8xxx_check_link_states(struct ar8xxx_priv *priv)
+ {
+@@ -2491,6 +2180,11 @@
+ 		/* flush ARL entries for this port if it went down*/
+ 		if (!link_new)
+ 			priv->chip->atu_flush_port(priv, i);
++		#ifdef CONFIG_ARCHERC7V4
++		    if (i > 1) {
++		    shift_register_set(1 + i, !link_new);
++		    }
++		#endif
+ 		dev_info(&priv->phy->mdio.dev, "Port %d is %s\n",
+ 			 i, link_new ? "up" : "down");
+ 	}
+@@ -2507,7 +2201,8 @@
+ 	struct switch_port_link link;
+ 
+ 	/* check for switch port link changes */
+-	ar8xxx_check_link_states(priv);
++	if (phydev->state == PHY_CHANGELINK)
++		ar8xxx_check_link_states(priv);
+ 
+ 	if (phydev->mdio.addr != 0)
+ 		return genphy_read_status(phydev);
+@@ -2549,18 +2244,6 @@
+ 	return genphy_config_aneg(phydev);
+ }
+ 
+-static int
+-ar8xxx_get_features(struct phy_device *phydev)
+-{
+-	struct ar8xxx_priv *priv = phydev->priv;
+-
+-	linkmode_copy(phydev->supported, PHY_BASIC_FEATURES);
+-	if (ar8xxx_has_gige(priv))
+-		linkmode_set_bit(ETHTOOL_LINK_MODE_1000baseT_Full_BIT, phydev->supported);
+-
+-	return 0;
+-}
+-
+ static const u32 ar8xxx_phy_ids[] = {
+ 	0x004dd033,
+ 	0x004dd034, /* AR8327 */
+@@ -2610,7 +2293,7 @@
+ 	int ret;
+ 
+ 	/* skip PHYs at unused adresses */
+-	if (phydev->mdio.addr != 0 && phydev->mdio.addr != 3 && phydev->mdio.addr != 4)
++	if (phydev->mdio.addr != 0 && phydev->mdio.addr != 4)
+ 		return -ENODEV;
+ 
+ 	if (!ar8xxx_is_possible(phydev->mdio.bus))
+@@ -2628,17 +2311,7 @@
+ 	}
+ 
+ 	priv->mii_bus = phydev->mdio.bus;
+-	priv->pdev = &phydev->mdio.dev;
+ 
+-	ret = of_property_read_u32(priv->pdev->of_node, "qca,mib-poll-interval",
+-				   &priv->mib_poll_interval);
+-	if (ret)
+-		priv->mib_poll_interval = 0;
+-
+-	ret = ar8xxx_id_chip(priv);
+-	if (ret)
+-		goto free_priv;
+-
+ 	ret = ar8xxx_probe_switch(priv);
+ 	if (ret)
+ 		goto free_priv;
+@@ -2658,14 +2331,27 @@
+ found:
+ 	priv->use_count++;
+ 
+-	if (phydev->mdio.addr == 0 && priv->chip->config_at_probe) {
+-		priv->phy = phydev;
++	if (phydev->mdio.addr == 0) {
++		if (ar8xxx_has_gige(priv)) {
++			phydev->supported = SUPPORTED_1000baseT_Full;
++			phydev->advertising = ADVERTISED_1000baseT_Full;
++		} else {
++			phydev->supported = SUPPORTED_100baseT_Full;
++			phydev->advertising = ADVERTISED_100baseT_Full;
++		}
+ 
+-		ret = ar8xxx_start(priv);
+-		if (ret)
+-			goto err_unregister_switch;
+-	} else if (priv->chip->phy_rgmii_set) {
+-		priv->chip->phy_rgmii_set(priv, phydev);
++		if (priv->chip->config_at_probe) {
++			priv->phy = phydev;
++
++			ret = ar8xxx_start(priv);
++			if (ret)
++				goto err_unregister_switch;
++		}
++	} else {
++		if (ar8xxx_has_gige(priv)) {
++			phydev->supported |= SUPPORTED_1000baseT_Full;
++			phydev->advertising |= ADVERTISED_1000baseT_Full;
++		}
+ 	}
+ 
+ 	phydev->priv = priv;
+@@ -2695,16 +2381,10 @@
+ 	if (!dev)
+ 		return;
+ 
+-#ifdef CONFIG_ETHERNET_PACKET_MANGLE
+ 	dev->phy_ptr = NULL;
+-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6,1,0)
+ 	dev->priv_flags &= ~IFF_NO_IP_ALIGN;
+-#else
+-	dev->extra_priv_flags &= ~IFF_NO_IP_ALIGN;
+-#endif
+ 	dev->eth_mangle_rx = NULL;
+ 	dev->eth_mangle_tx = NULL;
+-#endif
+ }
+ 
+ static void
+@@ -2732,11 +2412,19 @@
+ 	ar8xxx_free(priv);
+ }
+ 
++static int
++ar8xxx_phy_soft_reset(struct phy_device *phydev)
++{
++	/* we don't need an extra reset */
++	return 0;
++}
++
+ static struct phy_driver ar8xxx_phy_driver[] = {
+ 	{
+ 		.phy_id		= 0x004d0000,
+ 		.name		= "Atheros AR8216/AR8236/AR8316",
+ 		.phy_id_mask	= 0xffff0000,
++		.features	= PHY_BASIC_FEATURES,
+ 		.probe		= ar8xxx_phy_probe,
+ 		.remove		= ar8xxx_phy_remove,
+ 		.detach		= ar8xxx_phy_detach,
+@@ -2743,176 +2431,9 @@
+ 		.config_init	= ar8xxx_phy_config_init,
+ 		.config_aneg	= ar8xxx_phy_config_aneg,
+ 		.read_status	= ar8xxx_phy_read_status,
+-		.get_features	= ar8xxx_get_features,
++		.soft_reset	= ar8xxx_phy_soft_reset,
+ 	}
+ };
+ 
+-static const struct of_device_id ar8xxx_mdiodev_of_match[] = {
+-	{
+-		.compatible = "qca,ar7240sw",
+-		.data = &ar7240sw_chip,
+-	}, {
+-		.compatible = "qca,ar8229",
+-		.data = &ar8229_chip,
+-	}, {
+-		.compatible = "qca,ar8236",
+-		.data = &ar8236_chip,
+-	}, {
+-		.compatible = "qca,ar8327",
+-		.data = &ar8327_chip,
+-	},
+-	{ /* sentinel */ },
+-};
+-
+-static int
+-ar8xxx_mdiodev_probe(struct mdio_device *mdiodev)
+-{
+-	const struct of_device_id *match;
+-	struct ar8xxx_priv *priv;
+-	struct switch_dev *swdev;
+-	struct device_node *mdio_node;
+-	int ret;
+-
+-	match = of_match_device(ar8xxx_mdiodev_of_match, &mdiodev->dev);
+-	if (!match)
+-		return -EINVAL;
+-
+-	priv = ar8xxx_create();
+-	if (priv == NULL)
+-		return -ENOMEM;
+-
+-	priv->mii_bus = mdiodev->bus;
+-	priv->pdev = &mdiodev->dev;
+-	priv->chip = (const struct ar8xxx_chip *) match->data;
+-
+-	ret = of_property_read_u32(priv->pdev->of_node, "qca,mib-poll-interval",
+-				   &priv->mib_poll_interval);
+-	if (ret)
+-		priv->mib_poll_interval = 0;
+-
+-	ret = ar8xxx_read_id(priv);
+-	if (ret)
+-		goto free_priv;
+-
+-	ret = ar8xxx_probe_switch(priv);
+-	if (ret)
+-		goto free_priv;
+-
+-	if (priv->chip->phy_read && priv->chip->phy_write) {
+-		priv->sw_mii_bus = devm_mdiobus_alloc(&mdiodev->dev);
+-		priv->sw_mii_bus->name = "ar8xxx-mdio";
+-		priv->sw_mii_bus->read = ar8xxx_phy_read;
+-		priv->sw_mii_bus->write = ar8xxx_phy_write;
+-		priv->sw_mii_bus->priv = priv;
+-		priv->sw_mii_bus->parent = &mdiodev->dev;
+-		snprintf(priv->sw_mii_bus->id, MII_BUS_ID_SIZE, "%s",
+-			 dev_name(&mdiodev->dev));
+-		mdio_node = of_get_child_by_name(priv->pdev->of_node, "mdio-bus");
+-		ret = of_mdiobus_register(priv->sw_mii_bus, mdio_node);
+-		if (ret)
+-			goto free_priv;
+-	}
+-
+-	swdev = &priv->dev;
+-	swdev->alias = dev_name(&mdiodev->dev);
+-
+-	if (of_property_read_bool(priv->pdev->of_node, "qca,phy4-mii-enable")) {
+-		priv->port4_phy = true;
+-		swdev->ports--;
+-	}
+-
+-	ret = register_switch(swdev, NULL);
+-	if (ret)
+-		goto free_priv;
+-
+-	pr_info("%s: %s rev. %u switch registered on %s\n",
+-		swdev->devname, swdev->name, priv->chip_rev,
+-		dev_name(&priv->mii_bus->dev));
+-
+-	mutex_lock(&ar8xxx_dev_list_lock);
+-	list_add(&priv->list, &ar8xxx_dev_list);
+-	mutex_unlock(&ar8xxx_dev_list_lock);
+-
+-	priv->use_count++;
+-
+-	ret = ar8xxx_start(priv);
+-	if (ret)
+-		goto err_unregister_switch;
+-
+-	dev_set_drvdata(&mdiodev->dev, priv);
+-
+-	return 0;
+-
+-err_unregister_switch:
+-	if (--priv->use_count)
+-		return ret;
+-
+-	unregister_switch(&priv->dev);
+-
+-free_priv:
+-	ar8xxx_free(priv);
+-	return ret;
+-}
+-
+-static void
+-ar8xxx_mdiodev_remove(struct mdio_device *mdiodev)
+-{
+-	struct ar8xxx_priv *priv = dev_get_drvdata(&mdiodev->dev);
+-
+-	if (WARN_ON(!priv))
+-		return;
+-
+-	mutex_lock(&ar8xxx_dev_list_lock);
+-
+-	if (--priv->use_count > 0) {
+-		mutex_unlock(&ar8xxx_dev_list_lock);
+-		return;
+-	}
+-
+-	list_del(&priv->list);
+-	mutex_unlock(&ar8xxx_dev_list_lock);
+-
+-	unregister_switch(&priv->dev);
+-	ar8xxx_mib_stop(priv);
+-	if(priv->sw_mii_bus)
+-		mdiobus_unregister(priv->sw_mii_bus);
+-	ar8xxx_free(priv);
+-}
+-
+-static struct mdio_driver ar8xxx_mdio_driver = {
+-	.probe  = ar8xxx_mdiodev_probe,
+-	.remove = ar8xxx_mdiodev_remove,
+-	.mdiodrv.driver = {
+-		.name = "ar8xxx-switch",
+-		.of_match_table = ar8xxx_mdiodev_of_match,
+-	},
+-};
+-
+-static int __init ar8216_init(void)
+-{
+-	int ret;
+-
+-	ret = phy_drivers_register(ar8xxx_phy_driver,
+-				   ARRAY_SIZE(ar8xxx_phy_driver),
+-				   THIS_MODULE);
+-	if (ret)
+-		return ret;
+-
+-	ret = mdio_driver_register(&ar8xxx_mdio_driver);
+-	if (ret)
+-		phy_drivers_unregister(ar8xxx_phy_driver,
+-				       ARRAY_SIZE(ar8xxx_phy_driver));
+-
+-	return ret;
+-}
+-module_init(ar8216_init);
+-
+-static void __exit ar8216_exit(void)
+-{
+-	mdio_driver_unregister(&ar8xxx_mdio_driver);
+-	phy_drivers_unregister(ar8xxx_phy_driver,
+-			        ARRAY_SIZE(ar8xxx_phy_driver));
+-}
+-module_exit(ar8216_exit);
+-
++module_phy_driver(ar8xxx_phy_driver);
+ MODULE_LICENSE("GPL");
+Index: ar8216.h
+===================================================================
+--- ar8216.h	(revision 53562)
++++ ar8216.h	(working copy)
+@@ -26,7 +26,6 @@
+ #define AR8216_PORT_CPU	0
+ #define AR8216_NUM_PORTS	6
+ #define AR8216_NUM_VLANS	16
+-#define AR7240SW_NUM_PORTS	5
+ #define AR8316_NUM_VLANS	4096
+ 
+ /* size of the vlan table */
+@@ -56,10 +55,8 @@
+ #define AR8216_REG_FLOOD_MASK		0x002C
+ #define   AR8216_FM_UNI_DEST_PORTS	BITS(0, 6)
+ #define   AR8216_FM_MULTI_DEST_PORTS	BITS(16, 6)
+-#define   AR8216_FM_CPU_BROADCAST_EN	BIT(26)
+-#define   AR8229_FLOOD_MASK_UC_DP(_p)	BIT(_p)
+-#define   AR8229_FLOOD_MASK_MC_DP(_p)	BIT(16 + (_p))
+-#define   AR8229_FLOOD_MASK_BC_DP(_p)	BIT(25 + (_p))
++#define   AR8236_FM_CPU_BROADCAST_EN	BIT(26)
++#define   AR8236_FM_CPU_BCAST_FWD_EN	BIT(25)
+ 
+ #define AR8216_REG_GLOBAL_CTRL		0x0030
+ #define   AR8216_GCTRL_MTU		BITS(0, 11)
+@@ -133,15 +130,7 @@
+ #define   AR8216_ATU_CTRL_AGE_TIME	BITS(0, 16)
+ #define   AR8216_ATU_CTRL_AGE_TIME_S	0
+ #define   AR8236_ATU_CTRL_RES		BIT(20)
+-#define   AR8216_ATU_CTRL_LEARN_CHANGE	BIT(18)
+-#define   AR8216_ATU_CTRL_RESERVED	BIT(19)
+-#define   AR8216_ATU_CTRL_ARP_EN	BIT(20)
+ 
+-#define AR8216_REG_TAG_PRIORITY	0x0070
+-
+-#define AR8216_REG_SERVICE_TAG		0x0074
+-#define  AR8216_SERVICE_TAG_M		BITS(0, 16)
+-
+ #define AR8216_REG_MIB_FUNC		0x0080
+ #define   AR8216_MIB_TIMER		BITS(0, 16)
+ #define   AR8216_MIB_AT_HALF_EN		BIT(16)
+@@ -156,17 +145,7 @@
+ #define AR8216_REG_GLOBAL_CPUPORT		0x0078
+ #define   AR8216_GLOBAL_CPUPORT_MIRROR_PORT	BITS(4, 4)
+ #define   AR8216_GLOBAL_CPUPORT_MIRROR_PORT_S	4
+-#define   AR8216_GLOBAL_CPUPORT_EN		BIT(8)
+ 
+-#define AR8216_REG_MDIO_CTRL		0x98
+-#define   AR8216_MDIO_CTRL_DATA_M	BITS(0, 16)
+-#define   AR8216_MDIO_CTRL_REG_ADDR_S	16
+-#define   AR8216_MDIO_CTRL_PHY_ADDR_S	21
+-#define   AR8216_MDIO_CTRL_CMD_WRITE	0
+-#define   AR8216_MDIO_CTRL_CMD_READ	BIT(27)
+-#define   AR8216_MDIO_CTRL_MASTER_EN	BIT(30)
+-#define   AR8216_MDIO_CTRL_BUSY	BIT(31)
+-
+ #define AR8216_PORT_OFFSET(_i)		(0x0100 * (_i + 1))
+ #define AR8216_REG_PORT_STATUS(_i)	(AR8216_PORT_OFFSET(_i) + 0x0000)
+ #define   AR8216_PORT_STATUS_SPEED	BITS(0,2)
+@@ -261,19 +240,6 @@
+ #define AR8216_STATS_TXDEFER		0x98
+ #define AR8216_STATS_TXLATECOL		0x9c
+ 
+-#define AR8216_MIB_RXB_ID		14	/* RxGoodByte */
+-#define AR8216_MIB_TXB_ID		29	/* TxByte */
+-
+-#define AR8229_REG_OPER_MODE0		0x04
+-#define   AR8229_OPER_MODE0_MAC_GMII_EN	BIT(6)
+-#define   AR8229_OPER_MODE0_PHY_MII_EN	BIT(10)
+-
+-#define AR8229_REG_OPER_MODE1		0x08
+-#define   AR8229_REG_OPER_MODE1_PHY4_MII_EN	BIT(28)
+-
+-#define AR8229_REG_QM_CTRL		0x3c
+-#define   AR8229_QM_CTRL_ARP_EN		BIT(15)
+-
+ #define AR8236_REG_PORT_VLAN(_i)	(AR8216_PORT_OFFSET((_i)) + 0x0008)
+ #define   AR8236_PORT_VLAN_DEFAULT_ID	BITS(16, 12)
+ #define   AR8236_PORT_VLAN_DEFAULT_ID_S	16
+@@ -327,9 +293,6 @@
+ #define AR8236_STATS_TXDEFER		0xa0
+ #define AR8236_STATS_TXLATECOL		0xa4
+ 
+-#define AR8236_MIB_RXB_ID		15	/* RxGoodByte */
+-#define AR8236_MIB_TXB_ID		31	/* TxByte */
+-
+ #define AR8316_REG_POSTRIP			0x0008
+ #define   AR8316_POSTRIP_MAC0_GMII_EN		BIT(0)
+ #define   AR8316_POSTRIP_MAC0_RGMII_EN		BIT(1)
+@@ -392,13 +355,7 @@
+ 	AR8216_PORT_STATE_FORWARD = 4
+ };
+ 
+-/* mib counter type */
+ enum {
+-	AR8XXX_MIB_BASIC = 0,
+-	AR8XXX_MIB_EXTENDED = 1
+-};
+-
+-enum {
+ 	AR8XXX_VER_AR8216 = 0x01,
+ 	AR8XXX_VER_AR8236 = 0x03,
+ 	AR8XXX_VER_AR8316 = 0x10,
+@@ -424,7 +381,6 @@
+ 	unsigned int size;
+ 	unsigned int offset;
+ 	const char *name;
+-	u8 type;
+ };
+ 
+ struct ar8xxx_chip {
+@@ -461,22 +417,16 @@
+ 			      u32 *status, enum arl_op op);
+ 	int (*sw_hw_apply)(struct switch_dev *dev);
+ 	void (*phy_rgmii_set)(struct ar8xxx_priv *priv, struct phy_device *phydev);
+-	int (*phy_read)(struct ar8xxx_priv *priv, int addr, int regnum);
+-	int (*phy_write)(struct ar8xxx_priv *priv, int addr, int regnum, u16 val);
+ 
+ 	const struct ar8xxx_mib_desc *mib_decs;
+ 	unsigned num_mibs;
+ 	unsigned mib_func;
+-	int mib_rxb_id;
+-	int mib_txb_id;
+ };
+ 
+ struct ar8xxx_priv {
+ 	struct switch_dev dev;
+ 	struct mii_bus *mii_bus;
+-	struct mii_bus *sw_mii_bus;
+ 	struct phy_device *phy;
+-	struct device *pdev;
+ 
+ 	int (*get_port_link)(unsigned port);
+ 
+@@ -498,30 +448,29 @@
+ 
+ 	struct mutex mib_lock;
+ 	struct delayed_work mib_work;
++	int mib_next_port;
+ 	u64 *mib_stats;
+-	u32 mib_poll_interval;
+-	u8 mib_type;
+ 
+ 	struct list_head list;
+ 	unsigned int use_count;
+ 
+ 	/* all fields below are cleared on reset */
+-	struct_group(ar8xxx_priv_volatile,
+-		bool vlan;
++	bool vlan;
+ 
+-		u16 vlan_id[AR8XXX_MAX_VLANS];
+-		u8 vlan_table[AR8XXX_MAX_VLANS];
+-		u8 vlan_tagged;
+-		u16 pvid[AR8X16_MAX_PORTS];
+-		int arl_age_time;
++	u16 vlan_id[AR8XXX_MAX_VLANS];
++	u8 vlan_table[AR8XXX_MAX_VLANS];
++	u8 vlan_tagged;
++	u16 pvid[AR8X16_MAX_PORTS];
++	int arl_age_time;
+ 
+-		/* mirroring */
+-		bool mirror_rx;
+-		bool mirror_tx;
+-		int source_port;
+-		int monitor_port;
+-		u8 port_vlan_prio[AR8X16_MAX_PORTS];
+-	);
++	/* mirroring */
++	bool mirror_rx;
++	bool mirror_tx;
++	int source_port;
++	int monitor_port;
++	u8 port_vlan_prio[AR8X16_MAX_PORTS];
++	u32 state[8];
++	u32 disabled[8];
+ };
+ 
+ u32
+@@ -536,9 +485,6 @@
+ ar8xxx_rmw(struct ar8xxx_priv *priv, int reg, u32 mask, u32 val);
+ 
+ void
+-ar8xxx_phy_dbg_read(struct ar8xxx_priv *priv, int phy_addr,
+-		u16 dbg_addr, u16 *dbg_data);
+-void
+ ar8xxx_phy_dbg_write(struct ar8xxx_priv *priv, int phy_addr,
+ 		     u16 dbg_addr, u16 dbg_data);
+ void
+@@ -558,22 +504,6 @@
+ 			 const struct switch_attr *attr,
+ 			 struct switch_val *val);
+ int
+-ar8xxx_sw_set_mib_poll_interval(struct switch_dev *dev,
+-			       const struct switch_attr *attr,
+-			       struct switch_val *val);
+-int
+-ar8xxx_sw_get_mib_poll_interval(struct switch_dev *dev,
+-			       const struct switch_attr *attr,
+-			       struct switch_val *val);
+-int
+-ar8xxx_sw_set_mib_type(struct switch_dev *dev,
+-			       const struct switch_attr *attr,
+-			       struct switch_val *val);
+-int
+-ar8xxx_sw_get_mib_type(struct switch_dev *dev,
+-			       const struct switch_attr *attr,
+-			       struct switch_val *val);
+-int
+ ar8xxx_sw_set_mirror_rx_enable(struct switch_dev *dev,
+ 			       const struct switch_attr *attr,
+ 			       struct switch_val *val);
+@@ -645,9 +575,6 @@
+ 				   const struct switch_attr *attr,
+ 				   struct switch_val *val);
+ int
+-ar8xxx_sw_get_port_stats(struct switch_dev *dev, int port,
+-			struct switch_port_stats *stats);
+-int
+ ar8216_wait_bit(struct ar8xxx_priv *priv, int reg, u32 mask, u32 val);
+ 
+ static inline struct ar8xxx_priv *
+Index: ar8327.c
+===================================================================
+--- ar8327.c	(revision 53562)
++++ ar8327.c	(working copy)
+@@ -128,49 +128,6 @@
+ }
+ 
+ static void
+-ar8327_phy_rgmii_set(struct ar8xxx_priv *priv, struct phy_device *phydev)
+-{
+-	u16 phy_val = 0;
+-	int phyaddr = phydev->mdio.addr;
+-	struct device_node *np = phydev->mdio.dev.of_node;
+-
+-	if (!np)
+-		return;
+-
+-	if (!of_property_read_bool(np, "qca,phy-rgmii-en")) {
+-		pr_err("ar8327: qca,phy-rgmii-en is not specified\n");
+-		return;
+-	}
+-	ar8xxx_phy_dbg_read(priv, phyaddr,
+-				AR8327_PHY_MODE_SEL, &phy_val);
+-	phy_val |= AR8327_PHY_MODE_SEL_RGMII;
+-	ar8xxx_phy_dbg_write(priv, phyaddr,
+-				AR8327_PHY_MODE_SEL, phy_val);
+-
+-	/* set rgmii tx clock delay if needed */
+-	if (!of_property_read_bool(np, "qca,txclk-delay-en")) {
+-		pr_err("ar8327: qca,txclk-delay-en is not specified\n");
+-		return;
+-	}
+-	ar8xxx_phy_dbg_read(priv, phyaddr,
+-				AR8327_PHY_SYS_CTRL, &phy_val);
+-	phy_val |= AR8327_PHY_SYS_CTRL_RGMII_TX_DELAY;
+-	ar8xxx_phy_dbg_write(priv, phyaddr,
+-				AR8327_PHY_SYS_CTRL, phy_val);
+-
+-	/* set rgmii rx clock delay if needed */
+-	if (!of_property_read_bool(np, "qca,rxclk-delay-en")) {
+-		pr_err("ar8327: qca,rxclk-delay-en is not specified\n");
+-		return;
+-	}
+-	ar8xxx_phy_dbg_read(priv, phyaddr,
+-				AR8327_PHY_TEST_CTRL, &phy_val);
+-	phy_val |= AR8327_PHY_TEST_CTRL_RGMII_RX_DELAY;
+-	ar8xxx_phy_dbg_write(priv, phyaddr,
+-				AR8327_PHY_TEST_CTRL, phy_val);
+-}
+-
+-static void
+ ar8327_phy_fixup(struct ar8xxx_priv *priv, int phy)
+ {
+ 	switch (priv->chip_rev) {
+@@ -183,7 +140,7 @@
+ 
+ 	case 2:
+ 		ar8xxx_phy_mmd_write(priv, phy, 0x7, 0x3c, 0x0);
+-		fallthrough;
++		/* fallthrough */
+ 	case 4:
+ 		ar8xxx_phy_mmd_write(priv, phy, 0x3, 0x800d, 0x803f);
+ 		ar8xxx_phy_dbg_write(priv, phy, 0x3d, 0x6860);
+@@ -549,19 +506,29 @@
+ 	ar8xxx_write(priv, AR8327_REG_PAD0_MODE, t);
+ 
+ 	t = ar8327_get_pad_cfg(pdata->pad5_cfg);
++#if 0
++	if (chip_is_ar8337(priv)) {
++		/*
++		 * Workaround: RGMII RX delay setting needs to be
++		 * always specified for AR8337 to avoid port 5
++		 * RX hang on high traffic / flood conditions
++		 */
++		t |= AR8327_PAD_RGMII_RXCLK_DELAY_EN;
++	}
++#endif
+ 	ar8xxx_write(priv, AR8327_REG_PAD5_MODE, t);
+ 	t = ar8327_get_pad_cfg(pdata->pad6_cfg);
+ 	ar8xxx_write(priv, AR8327_REG_PAD6_MODE, t);
+ 
+-	pos = ar8xxx_read(priv, AR8327_REG_POWER_ON_STRAP);
++	pos = ar8xxx_read(priv, AR8327_REG_POWER_ON_STRIP);
+ 	new_pos = pos;
+ 
+ 	led_cfg = pdata->led_cfg;
+ 	if (led_cfg) {
+ 		if (led_cfg->open_drain)
+-			new_pos |= AR8327_POWER_ON_STRAP_LED_OPEN_EN;
++			new_pos |= AR8327_POWER_ON_STRIP_LED_OPEN_EN;
+ 		else
+-			new_pos &= ~AR8327_POWER_ON_STRAP_LED_OPEN_EN;
++			new_pos &= ~AR8327_POWER_ON_STRIP_LED_OPEN_EN;
+ 
+ 		ar8xxx_write(priv, AR8327_REG_LED_CTRL0, led_cfg->led_ctrl0);
+ 		ar8xxx_write(priv, AR8327_REG_LED_CTRL1, led_cfg->led_ctrl1);
+@@ -569,7 +536,7 @@
+ 		ar8xxx_write(priv, AR8327_REG_LED_CTRL3, led_cfg->led_ctrl3);
+ 
+ 		if (new_pos != pos)
+-			new_pos |= AR8327_POWER_ON_STRAP_POWER_ON_SEL;
++			new_pos |= AR8327_POWER_ON_STRIP_POWER_ON_SEL;
+ 	}
+ 
+ 	if (pdata->sgmii_cfg) {
+@@ -586,12 +553,12 @@
+ 		ar8xxx_write(priv, AR8327_REG_SGMII_CTRL, t);
+ 
+ 		if (pdata->sgmii_cfg->serdes_aen)
+-			new_pos &= ~AR8327_POWER_ON_STRAP_SERDES_AEN;
++			new_pos &= ~AR8327_POWER_ON_STRIP_SERDES_AEN;
+ 		else
+-			new_pos |= AR8327_POWER_ON_STRAP_SERDES_AEN;
++			new_pos |= AR8327_POWER_ON_STRIP_SERDES_AEN;
+ 	}
+ 
+-	ar8xxx_write(priv, AR8327_REG_POWER_ON_STRAP, new_pos);
++	ar8xxx_write(priv, AR8327_REG_POWER_ON_STRIP, new_pos);
+ 
+ 	if (pdata->leds && pdata->num_leds) {
+ 		int i;
+@@ -662,8 +629,8 @@
+ 	if (!priv->chip_data)
+ 		return -ENOMEM;
+ 
+-	if (priv->pdev->of_node)
+-		ret = ar8327_hw_config_of(priv, priv->pdev->of_node);
++	if (priv->phy->mdio.dev.of_node)
++		ret = ar8327_hw_config_of(priv, priv->phy->mdio.dev.of_node);
+ 	else
+ 		ret = ar8327_hw_config_pdata(priv,
+ 					     priv->phy->mdio.dev.platform_data);
+@@ -693,6 +660,7 @@
+ 
+ 	/* enable CPU port and disable mirror port */
+ 	t = AR8327_FWD_CTRL0_CPU_PORT_EN |
++            AR8327_FWD_CTRL0_IGMP_COPY_EN |
+ 	    AR8327_FWD_CTRL0_MIRROR_PORT;
+ 	ar8xxx_write(priv, AR8327_REG_FWD_CTRL0, t);
+ 
+@@ -713,8 +681,93 @@
+ 	/* Disable EEE on all phy's due to stability issues */
+ 	for (i = 0; i < AR8XXX_NUM_PHYS; i++)
+ 		data->eee[i] = false;
++#if 0
++	if (chip_is_ar8337(priv)) {
++		/* Update HOL registers with values suggested by QCA switch team */
++		for (i = 0; i < AR8327_NUM_PORTS; i++) {
++			if (i == AR8216_PORT_CPU || i == 5 || i == 6) {
++				t = 0x3 << AR8327_PORT_HOL_CTRL0_EG_PRI0_BUF_S;
++				t |= 0x4 << AR8327_PORT_HOL_CTRL0_EG_PRI1_BUF_S;
++				t |= 0x4 << AR8327_PORT_HOL_CTRL0_EG_PRI2_BUF_S;
++				t |= 0x4 << AR8327_PORT_HOL_CTRL0_EG_PRI3_BUF_S;
++				t |= 0x6 << AR8327_PORT_HOL_CTRL0_EG_PRI4_BUF_S;
++				t |= 0x8 << AR8327_PORT_HOL_CTRL0_EG_PRI5_BUF_S;
++				t |= 0x1e << AR8327_PORT_HOL_CTRL0_EG_PORT_BUF_S;
++			} else {
++				t = 0x3 << AR8327_PORT_HOL_CTRL0_EG_PRI0_BUF_S;
++				t |= 0x4 << AR8327_PORT_HOL_CTRL0_EG_PRI1_BUF_S;
++				t |= 0x6 << AR8327_PORT_HOL_CTRL0_EG_PRI2_BUF_S;
++				t |= 0x8 << AR8327_PORT_HOL_CTRL0_EG_PRI3_BUF_S;
++				t |= 0x19 << AR8327_PORT_HOL_CTRL0_EG_PORT_BUF_S;
++			}
++			ar8xxx_write(priv, AR8327_REG_PORT_HOL_CTRL0(i), t);
++
++			t = 0x6 << AR8327_PORT_HOL_CTRL1_ING_BUF_S;
++			t |= AR8327_PORT_HOL_CTRL1_EG_PRI_BUF_EN;
++			t |= AR8327_PORT_HOL_CTRL1_EG_PORT_BUF_EN;
++			t |= AR8327_PORT_HOL_CTRL1_WRED_EN;
++			ar8xxx_rmw(priv, AR8327_REG_PORT_HOL_CTRL1(i),
++				   AR8327_PORT_HOL_CTRL1_ING_BUF |
++				   AR8327_PORT_HOL_CTRL1_EG_PRI_BUF_EN |
++				   AR8327_PORT_HOL_CTRL1_EG_PORT_BUF_EN |
++				   AR8327_PORT_HOL_CTRL1_WRED_EN,
++				   t);
++		}
++	}
++#endif
+ }
+ 
++static int ar8327_sw_set_port_link(struct switch_dev *dev, int port,
++			     struct switch_port_link *link)
++{
++	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
++	u32 t;
++	if (port == AR8216_PORT_CPU || port == 6) {
++		return -EINVAL;
++	}
++	t = ar8xxx_read(priv, AR8327_REG_PORT_STATUS(port));
++	t &= ~(t & AR8216_PORT_STATUS_SPEED) <<
++		 AR8216_PORT_STATUS_SPEED_S;
++	t &= ~AR8216_PORT_STATUS_LINK_AUTO;
++	t &= ~AR8216_PORT_STATUS_DUPLEX;
++	t &= ~AR8216_PORT_STATUS_FLOW_CONTROL;
++
++	if (link->duplex)
++		t |= AR8216_PORT_STATUS_DUPLEX;
++	if (link->aneg) {
++		t |= AR8216_PORT_STATUS_FLOW_CONTROL;
++		t |= AR8216_PORT_STATUS_LINK_AUTO;
++	} else {
++		t &= ~AR8216_PORT_STATUS_TXFLOW;
++		t &= ~AR8216_PORT_STATUS_RXFLOW;
++		if (link->rx_flow)
++		    t |= AR8216_PORT_STATUS_RXFLOW;
++		if (link->tx_flow)
++		    t |= AR8216_PORT_STATUS_TXFLOW;
++		switch (link->speed) {
++		case SWITCH_PORT_SPEED_10:
++			t |= AR8216_PORT_SPEED_10M <<
++			 AR8216_PORT_STATUS_SPEED_S;
++			break;
++		case SWITCH_PORT_SPEED_100:
++			t |= AR8216_PORT_SPEED_100M <<
++			 AR8216_PORT_STATUS_SPEED_S;
++			break;
++		case SWITCH_PORT_SPEED_1000:
++			t |= AR8216_PORT_SPEED_1000M <<
++			 AR8216_PORT_STATUS_SPEED_S;
++			break;
++		default:
++			t |= AR8216_PORT_STATUS_LINK_AUTO;
++			break;
++		}
++	}
++	ar8xxx_write(priv, AR8327_REG_PORT_STATUS(port), 0);
++	msleep(100);
++	ar8xxx_write(priv, AR8327_REG_PORT_STATUS(port), t);
++	return 0;
++}
++
+ static void
+ ar8327_init_port(struct ar8xxx_priv *priv, int port)
+ {
+@@ -1080,6 +1133,57 @@
+ 	return 0;
+ }
+ 
++
++static int
++ar8327_sw_set_disable(struct switch_dev *dev,
++		  const struct switch_attr *attr,
++		  struct switch_val *val)
++{
++	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
++	int port = val->port_vlan;
++
++	if (port >= dev->ports)
++		return -EINVAL;
++	if (port == 0 || port == 6)
++		return -EOPNOTSUPP;
++
++	
++	if (!!(val->value.i))  {
++		priv->disabled[port] = 1;
++		priv->state[port] = ar8xxx_read(priv, AR8327_REG_PORT_STATUS(port));
++		ar8xxx_write(priv, AR8327_REG_PORT_STATUS(port), 0);
++	} else {
++		priv->disabled[port] = 0;
++		if (priv->state[port])
++			ar8xxx_write(priv, AR8327_REG_PORT_STATUS(port), priv->state[port]);
++	}
++
++	return 0;
++}
++
++static int
++ar8327_sw_get_disable(struct switch_dev *dev,
++		  const struct switch_attr *attr,
++		  struct switch_val *val)
++{
++	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
++	int port = val->port_vlan;
++	u32 t;
++
++	if (port >= dev->ports)
++		return -EINVAL;
++	if (port == 0 || port == 6)
++		return -EOPNOTSUPP;
++
++	t = ar8xxx_read(priv, AR8327_REG_PORT_STATUS(port));
++
++	if (!(t & AR8216_PORT_STATUS_LINK_AUTO) && !(t & (AR8216_PORT_SPEED_10M << AR8216_PORT_STATUS_SPEED_S)) && !(t & (AR8216_PORT_SPEED_100M << AR8216_PORT_STATUS_SPEED_S)) && !(t & (AR8216_PORT_SPEED_1000M << AR8216_PORT_STATUS_SPEED_S)))
++		val->value.i = 1;
++	else
++		val->value.i = 0;
++	return 0;
++}
++
+ static void
+ ar8327_wait_atu_ready(struct ar8xxx_priv *priv, u16 r2, u16 r1)
+ {
+@@ -1306,6 +1410,55 @@
+ 	return 0;
+ }
+ 
++static int
++ar8xxx_sw_set_disable_all_leds(struct switch_dev *dev,
++			       const struct switch_attr *attr,
++			       struct switch_val *val)
++{
++	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
++
++	if(val->value.i){
++		/* Set PATTERN_EN = 00 (LED always off) for
++		 * both LED_CTRL_RULE in single 32-bit register */
++		u32 mask = ~(u32)((BIT(31) | BIT(30) | BIT(14) | BIT(15)));
++
++		ar8xxx_write(priv, AR8327_REG_LED_CTRL0,
++					ar8xxx_read(priv, AR8327_REG_LED_CTRL0) & mask);
++
++		ar8xxx_write(priv, AR8327_REG_LED_CTRL1,
++					ar8xxx_read(priv, AR8327_REG_LED_CTRL1) & mask);
++
++		ar8xxx_write(priv, AR8327_REG_LED_CTRL2,
++					ar8xxx_read(priv, AR8327_REG_LED_CTRL2) & mask);
++
++		/* Set LED_PATTERN_EN_XY = 00 (pattern enable for portX LEDY) for
++		 * all ports (1~3) */
++		mask = ~(u32)((BITS(8, 25)));
++		ar8xxx_write(priv, AR8327_REG_LED_CTRL3,
++					ar8xxx_read(priv, AR8327_REG_LED_CTRL3) & mask);
++	} else {
++		/* Set PATTERN_EN = 11 (LED controlled by LED_RULE registers) */
++		u32 mask = (u32)(BIT(31) | BIT(30) | BIT(14) | BIT(15));
++
++		ar8xxx_write(priv, AR8327_REG_LED_CTRL0,
++					ar8xxx_read(priv, AR8327_REG_LED_CTRL0) | mask);
++
++		ar8xxx_write(priv, AR8327_REG_LED_CTRL1,
++					ar8xxx_read(priv, AR8327_REG_LED_CTRL1) | mask);
++
++		ar8xxx_write(priv, AR8327_REG_LED_CTRL2,
++					ar8xxx_read(priv, AR8327_REG_LED_CTRL2) | mask);
++
++		/* Set LED_PATTERN_EN_XY = 11 */
++		mask = (u32)(BITS(8, 25));
++
++		ar8xxx_write(priv, AR8327_REG_LED_CTRL3,
++				ar8xxx_read(priv, AR8327_REG_LED_CTRL3) | mask);
++	}
++
++	return 0;
++}
++
+ static const struct switch_attr ar8327_sw_attr_globals[] = {
+ 	{
+ 		.type = SWITCH_TYPE_INT,
+@@ -1323,20 +1476,6 @@
+ 	},
+ 	{
+ 		.type = SWITCH_TYPE_INT,
+-		.name = "ar8xxx_mib_poll_interval",
+-		.description = "MIB polling interval in msecs (0 to disable)",
+-		.set = ar8xxx_sw_set_mib_poll_interval,
+-		.get = ar8xxx_sw_get_mib_poll_interval
+-	},
+-	{
+-		.type = SWITCH_TYPE_INT,
+-		.name = "ar8xxx_mib_type",
+-		.description = "MIB type (0=basic 1=extended)",
+-		.set = ar8xxx_sw_set_mib_type,
+-		.get = ar8xxx_sw_get_mib_type
+-	},
+-	{
+-		.type = SWITCH_TYPE_INT,
+ 		.name = "enable_mirror_rx",
+ 		.description = "Enable mirroring of RX packets",
+ 		.set = ar8xxx_sw_set_mirror_rx_enable,
+@@ -1369,6 +1508,13 @@
+ 	},
+ 	{
+ 		.type = SWITCH_TYPE_INT,
++		.name = "disable_all_leds",
++		.description = "Disable all switch LEDs",
++		.set = ar8xxx_sw_set_disable_all_leds,
++		.max = 1
++ 	},
++	{
++		.type = SWITCH_TYPE_INT,
+ 		.name = "arl_age_time",
+ 		.description = "ARL age time (secs)",
+ 		.set = ar8xxx_sw_set_arl_age_time,
+@@ -1428,6 +1574,14 @@
+ 		.max = 1,
+ 	},
+ 	{
++		.type = SWITCH_TYPE_INT,
++		.name = "disable",
++		.description = "Disable Port",
++		.set = ar8327_sw_set_disable,
++		.get = ar8327_sw_get_disable,
++		.max = 1,
++	},
++	{
+ 		.type = SWITCH_TYPE_NOVAL,
+ 		.name = "flush_arl_table",
+ 		.description = "Flush port's ARL table entries",
+@@ -1471,11 +1625,21 @@
+ 	.apply_config = ar8327_sw_hw_apply,
+ 	.reset_switch = ar8xxx_sw_reset_switch,
+ 	.get_port_link = ar8xxx_sw_get_port_link,
++	.set_port_link = ar8327_sw_set_port_link,
++/* The following op is disabled as it hogs the CPU and degrades performance.
++   An implementation has been attempted in 4d8a66d but reading MIB data is slow
++   on ar8xxx switches.
++
++   The high CPU load has been traced down to the ar8xxx_reg_wait() call in
++   ar8xxx_mib_op(), which has to usleep_range() till the MIB busy flag set by
++   the request to update the MIB counter is cleared. */
++#if 0
+ 	.get_port_stats = ar8xxx_sw_get_port_stats,
++#endif
+ };
+ 
+ const struct ar8xxx_chip ar8327_chip = {
+-	.caps = AR8XXX_CAP_GIGE | AR8XXX_CAP_MIB_COUNTERS,
++	.caps = AR8XXX_CAP_GIGE, //| AR8XXX_CAP_MIB_COUNTERS,
+ 	.config_at_probe = true,
+ 	.mii_lo_first = true,
+ 
+@@ -1506,13 +1670,11 @@
+ 
+ 	.num_mibs = ARRAY_SIZE(ar8236_mibs),
+ 	.mib_decs = ar8236_mibs,
+-	.mib_func = AR8327_REG_MIB_FUNC,
+-	.mib_rxb_id = AR8236_MIB_RXB_ID,
+-	.mib_txb_id = AR8236_MIB_TXB_ID,
++	.mib_func = AR8327_REG_MIB_FUNC
+ };
+ 
+ const struct ar8xxx_chip ar8337_chip = {
+-	.caps = AR8XXX_CAP_GIGE | AR8XXX_CAP_MIB_COUNTERS,
++	.caps = AR8XXX_CAP_GIGE, //| AR8XXX_CAP_MIB_COUNTERS,
+ 	.config_at_probe = true,
+ 	.mii_lo_first = true,
+ 
+@@ -1540,11 +1702,8 @@
+ 	.set_mirror_regs = ar8327_set_mirror_regs,
+ 	.get_arl_entry = ar8327_get_arl_entry,
+ 	.sw_hw_apply = ar8327_sw_hw_apply,
+-	.phy_rgmii_set = ar8327_phy_rgmii_set,
+ 
+ 	.num_mibs = ARRAY_SIZE(ar8236_mibs),
+ 	.mib_decs = ar8236_mibs,
+-	.mib_func = AR8327_REG_MIB_FUNC,
+-	.mib_rxb_id = AR8236_MIB_RXB_ID,
+-	.mib_txb_id = AR8236_MIB_TXB_ID,
++	.mib_func = AR8327_REG_MIB_FUNC
+ };
+Index: ar8327.h
+===================================================================
+--- ar8327.h	(revision 53562)
++++ ar8327.h	(working copy)
+@@ -53,10 +53,10 @@
+ #define   AR8327_PAD_RGMII_TXCLK_DELAY_EN	BIT(25)
+ #define   AR8327_PAD_RGMII_EN			BIT(26)
+ 
+-#define AR8327_REG_POWER_ON_STRAP		0x010
+-#define   AR8327_POWER_ON_STRAP_POWER_ON_SEL	BIT(31)
+-#define   AR8327_POWER_ON_STRAP_LED_OPEN_EN	BIT(24)
+-#define   AR8327_POWER_ON_STRAP_SERDES_AEN	BIT(7)
++#define AR8327_REG_POWER_ON_STRIP		0x010
++#define   AR8327_POWER_ON_STRIP_POWER_ON_SEL	BIT(31)
++#define   AR8327_POWER_ON_STRIP_LED_OPEN_EN	BIT(24)
++#define   AR8327_POWER_ON_STRIP_SERDES_AEN	BIT(7)
+ 
+ #define AR8327_REG_INT_STATUS0			0x020
+ #define   AR8327_INT0_VT_DONE			BIT(20)
+@@ -254,6 +254,7 @@
+ #define AR8327_REG_ARL_CTRL			0x0618
+ 
+ #define AR8327_REG_FWD_CTRL0			0x620
++#define   AR8327_FWD_CTRL0_IGMP_COPY_EN		BIT(3)
+ #define   AR8327_FWD_CTRL0_CPU_PORT_EN		BIT(10)
+ #define   AR8327_FWD_CTRL0_MIRROR_PORT		BITS(4, 4)
+ #define   AR8327_FWD_CTRL0_MIRROR_PORT_S	4
+@@ -279,7 +280,28 @@
+ 
+ #define AR8327_REG_PORT_PRIO(_i)		(0x664 + (_i) * 0xc)
+ 
++#define AR8327_REG_PORT_HOL_CTRL0(_i)		(0x970 + (_i) * 0x8)
++#define   AR8327_PORT_HOL_CTRL0_EG_PRI0_BUF	BITS(0, 4)
++#define   AR8327_PORT_HOL_CTRL0_EG_PRI0_BUF_S	0
++#define   AR8327_PORT_HOL_CTRL0_EG_PRI1_BUF	BITS(4, 4)
++#define   AR8327_PORT_HOL_CTRL0_EG_PRI1_BUF_S	4
++#define   AR8327_PORT_HOL_CTRL0_EG_PRI2_BUF	BITS(8, 4)
++#define   AR8327_PORT_HOL_CTRL0_EG_PRI2_BUF_S	8
++#define   AR8327_PORT_HOL_CTRL0_EG_PRI3_BUF	BITS(12, 4)
++#define   AR8327_PORT_HOL_CTRL0_EG_PRI3_BUF_S	12
++#define   AR8327_PORT_HOL_CTRL0_EG_PRI4_BUF	BITS(16, 4)
++#define   AR8327_PORT_HOL_CTRL0_EG_PRI4_BUF_S	16
++#define   AR8327_PORT_HOL_CTRL0_EG_PRI5_BUF	BITS(20, 4)
++#define   AR8327_PORT_HOL_CTRL0_EG_PRI5_BUF_S	20
++#define   AR8327_PORT_HOL_CTRL0_EG_PORT_BUF	BITS(24, 6)
++#define   AR8327_PORT_HOL_CTRL0_EG_PORT_BUF_S	24
++
+ #define AR8327_REG_PORT_HOL_CTRL1(_i)		(0x974 + (_i) * 0x8)
++#define   AR8327_PORT_HOL_CTRL1_ING_BUF		BITS(0, 4)
++#define   AR8327_PORT_HOL_CTRL1_ING_BUF_S	0
++#define   AR8327_PORT_HOL_CTRL1_EG_PRI_BUF_EN	BIT(6)
++#define   AR8327_PORT_HOL_CTRL1_EG_PORT_BUF_EN	BIT(7)
++#define   AR8327_PORT_HOL_CTRL1_WRED_EN		BIT(8)
+ #define   AR8327_PORT_HOL_CTRL1_EG_MIRROR_EN	BIT(16)
+ 
+ #define AR8337_PAD_MAC06_EXCHANGE_EN		BIT(31)
+@@ -328,6 +350,7 @@
+ 
+ 	/* all fields below are cleared on reset */
+ 	bool eee[AR8XXX_NUM_PHYS];
++	u32 state[8];
+ };
+ 
+ #endif
+Index: phy-core.c
+===================================================================
+--- phy-core.c	(revision 53562)
++++ phy-core.c	(working copy)
+@@ -140,6 +140,8 @@
+ 	case PHY_INTERFACE_MODE_QSGMII:
+ 	case PHY_INTERFACE_MODE_QUSGMII:
+ 		return 4;
++	case PHY_INTERFACE_MODE_PSGMII:
++		return 5;
+ 	case PHY_INTERFACE_MODE_MAX:
+ 		WARN_ONCE(1, "PHY_INTERFACE_MODE_MAX isn't a valid interface mode");
+ 		return 0;
+Index: phylink.c
+===================================================================
+--- phylink.c	(revision 53562)
++++ phylink.c	(working copy)
+@@ -187,6 +187,7 @@
+ 	case PHY_INTERFACE_MODE_RGMII_RXID:
+ 	case PHY_INTERFACE_MODE_RGMII_ID:
+ 	case PHY_INTERFACE_MODE_RGMII:
++	case PHY_INTERFACE_MODE_PSGMII:
+ 	case PHY_INTERFACE_MODE_QSGMII:
+ 	case PHY_INTERFACE_MODE_QUSGMII:
+ 	case PHY_INTERFACE_MODE_SGMII:
+@@ -448,6 +449,7 @@
+ 	case PHY_INTERFACE_MODE_RGMII_RXID:
+ 	case PHY_INTERFACE_MODE_RGMII_ID:
+ 	case PHY_INTERFACE_MODE_RGMII:
++	case PHY_INTERFACE_MODE_PSGMII:
+ 	case PHY_INTERFACE_MODE_QSGMII:
+ 	case PHY_INTERFACE_MODE_QUSGMII:
+ 	case PHY_INTERFACE_MODE_SGMII:
+@@ -814,6 +816,7 @@
+ 
+ 		switch (pl->link_config.interface) {
+ 		case PHY_INTERFACE_MODE_SGMII:
++		case PHY_INTERFACE_MODE_PSGMII:
+ 		case PHY_INTERFACE_MODE_QSGMII:
+ 		case PHY_INTERFACE_MODE_QUSGMII:
+ 		case PHY_INTERFACE_MODE_RGMII:

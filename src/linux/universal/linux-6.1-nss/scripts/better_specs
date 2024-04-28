@@ -1,0 +1,154 @@
+*asm:
+%{mbig-endian:-EB} %{mlittle-endian:-EL} %(asm_cpu_spec) %{mapcs-*:-mapcs-%*} %(subtarget_asm_float_spec) %{mthumb-interwork:-mthumb-interwork} %{mfloat-abi=*} %{!mfpu=auto: %{mfpu=*}} %(subtarget_extra_asm_spec)
+
+*asm_debug:
+%{g*:%{%:debug-level-gt(0):%{%:dwarf-version-gt(4):--gdwarf-5;%:dwarf-version-gt(3):--gdwarf-4;%:dwarf-version-gt(2):--gdwarf-3;:--gdwarf2}}} %{ffile-prefix-map=*:--debug-prefix-map %*} %{fdebug-prefix-map=*:--debug-prefix-map %*}
+
+*asm_debug_option:
+
+
+*asm_final:
+%{gsplit-dwarf: 
+       objcopy --extract-dwo 	 %{c:%{o*:%*}%{!o*:%w%b%O}}%{!c:%U%O} 	 %b.dwo 
+       objcopy --strip-dwo 	 %{c:%{o*:%*}%{!o*:%w%b%O}}%{!c:%U%O}     }
+
+*asm_options:
+%{-target-help:%:print-asm-header()} %{v} %{w:-W} %{I*} %(asm_debug_option) %{gz|gz=zlib:--compress-debug-sections=zlib} %{gz=none:--compress-debug-sections=none} %{gz=zstd:--compress-debug-sections=zstd} %{gz=zlib-gnu:}%a %Y %{c:%W{o*}%{!o*:-o %w%b%O}}%{!c:-o %d%w%u%O}
+
+*invoke_as:
+%{!fwpa*:   %{fcompare-debug=*|fdump-final-insns=*:%:compare-debug-dump-opt()}   %{!S:-o %|.s |
+ as %(asm_options) %m.s %A }  }
+
+*cpp:
+%(subtarget_cpp_spec)
+
+*cpp_options:
+%(cpp_unique_options) %1 %{m*} %{std*&ansi&trigraphs} %{W*&pedantic*} %{w} %{f*} %{g*:%{%:debug-level-gt(0):%{g*} %{!fno-working-directory:-fworking-directory}}} %{O*} %{undef} %{save-temps*:-fpch-preprocess}
+
+*cpp_debug_options:
+%<dumpdir %<dumpbase %<dumpbase-ext %{d*} %:dumps()
+
+*cpp_unique_options:
+%{!Q:-quiet} %{nostdinc*} %{C} %{CC} %{v} %@{I*&F*} %{P} %I %{MD:-MD %{!o:%b.d}%{o*:%.d%*}} %{MMD:-MMD %{!o:%b.d}%{o*:%.d%*}} %{M} %{MM} %{MF*} %{MG} %{MP} %{MQ*} %{MT*} %{Mmodules} %{Mno-modules} %{!E:%{!M:%{!MM:%{!MT:%{!MQ:%{MD|MMD:%{o*:-MQ %*}}}}}}} %{remap} %{%:debug-level-gt(2):-dD} %{!iplugindir*:%{fplugin*:%:find-plugindir()}} %{H} %C %{D*&U*&A*} %{i*} %Z %i %{E|M|MM:%W{o*}}
+
+*trad_capable_cpp:
+cc1 -E %{traditional|traditional-cpp:-traditional-cpp}
+
+*cc1:
+%{!mandroid|tno-android-cc:%{profile:-p} %{%:sanitize(address):-funwind-tables} ;:%{profile:-p} %{%:sanitize(address):-funwind-tables} %{!mglibc:%{!muclibc:%{!mbionic: -mbionic}}} %{!fno-pic:%{!fno-PIC:%{!fpic:%{!fPIC: -fPIC}}}}}
+
+*cc1_options:
+%{pg:%{fomit-frame-pointer:%e-pg and -fomit-frame-pointer are incompatible}} %{!iplugindir*:%{fplugin*:%:find-plugindir()}} %1 %{!Q:-quiet} %(cpp_debug_options) %{m*} %{aux-info*} %{g*} %{O*} %{W*&pedantic*} %{w} %{std*&ansi&trigraphs} %{v:-version} %{pg:-p} %{p} %{f*} %{undef} %{Qn:-fno-ident} %{Qy:} %{-help:--help} %{-target-help:--target-help} %{-version:--version} %{-help=*:--help=%*} %{!fsyntax-only:%{S:%W{o*}%{!o*:-o %w%b.s}}} %{fsyntax-only:-o %j} %{-param*} %{coverage:-fprofile-arcs -ftest-coverage} %{fprofile-arcs|fprofile-generate*|coverage:   %{!fprofile-update=single:     %{pthread:-fprofile-update=prefer-atomic}}}
+
+*cc1plus:
+%{!mandroid|tno-android-cc:;:%{!fexceptions:%{!fno-exceptions: -fno-exceptions}} %{!frtti:%{!fno-rtti: -fno-rtti}}}
+
+*link_gcc_c_sequence:
+%{static|static-pie:--start-group} %G %{!nolibc:%L}    %{static|static-pie:--end-group}%{!static:%{!static-pie:%G}}
+
+*link_ssp:
+-lssp_nonshared
+
+*endfile:
+%{Ofast|ffast-math|funsafe-math-optimizations:%{!shared:crtfastmath.o%s}} %{!mandroid|tno-android-ld:%{!static:%{fvtable-verify=none:%s;      fvtable-verify=preinit:vtv_end_preinit.o%s;      fvtable-verify=std:vtv_end.o%s}}    %{static:crtend.o%s;      shared|static-pie|pie:crtendS.o%s;      :crtend.o%s} crtn.o%s ;:%{shared: crtend_so%O%s;: crtend_android%O%s}}
+
+*link:
+%{!static|static-pie:--eh-frame-hdr}  %{mcpu=arm8|mcpu=arm810|mcpu=strongarm*|march=armv4|mcpu=fa526|mcpu=fa626:--fix-v4bx}%{!r:%{!mbe32:%:be8_linkopt(%{mlittle-endian:little}			       %{mbig-endian:big}			       %{mbe8:be8}			       %{march=*:arch %*})}} %{mcpu=arm8|mcpu=arm810|mcpu=strongarm*|march=armv4|mcpu=fa526|mcpu=fa626:--fix-v4bx}%{!mandroid|tno-android-ld:%{h*}    %{static:-Bstatic}    %{shared:-shared}    %{symbolic:-Bsymbolic}    %{!static:      %{rdynamic:-export-dynamic}      %{!shared:-dynamic-linker %{mglibc:%{mfloat-abi=soft:/lib/ld-linux-armhf.so.3}     %{mfloat-abi=soft*:/lib/ld-linux.so.3}     %{!mfloat-abi=*:/lib/ld-linux.so.3};:%{muclibc:/lib/ld-uClibc.so.0;:%{mbionic:/system/bin/linker;:/lib/ld-musl-arm%{mbig-endian:eb}%{mfloat-abi=soft}%{mfdpic:-fdpic}.so.1}}}}}    -X    %{mbig-endian:-EB} %{mlittle-endian:-EL} -m armelf_linux_eabi;:%{h*}    %{static:-Bstatic}    %{shared:-shared}    %{symbolic:-Bsymbolic}    %{!static:      %{rdynamic:-export-dynamic}      %{!shared:-dynamic-linker %{mglibc:%{mfloat-abi=soft:/lib/ld-linux-armhf.so.3}     %{mfloat-abi=soft*:/lib/ld-linux.so.3}     %{!mfloat-abi=*:/lib/ld-linux.so.3};:%{muclibc:/lib/ld-uClibc.so.0;:%{mbionic:/system/bin/linker;:/lib/ld-musl-arm%{mbig-endian:eb}%{mfloat-abi=soft}%{mfdpic:-fdpic}.so.1}}}}}    -X    %{mbig-endian:-EB} %{mlittle-endian:-EL} -m armelf_linux_eabi %{shared: -Bsymbolic}}
+
+*lib:
+%{!mandroid|tno-android-ld:%{pthread:-lpthread} %{shared:-lc}    %{!shared:%{profile:-lc_p}%{!profile:-lc}};:%{shared:-lc}    %{!shared:%{profile:-lc_p}%{!profile:-lc}} %{!static: -ldl}}
+
+*link_gomp:
+
+
+*libgcc:
+%{static|static-libgcc:-lgcc}%{!static:%{!static-libgcc:-lgcc_s}}
+
+*startfile:
+%{!mandroid|tno-android-ld:%{shared:;      pg|p|profile:%{static-pie:grcrt1.o%s;:gcrt1.o%s};      static:crt1.o%s;      static-pie:rcrt1.o%s;      pie:Scrt1.o%s;      :crt1.o%s} crti.o%s    %{static:crtbeginT.o%s;      shared|static-pie|pie:crtbeginS.o%s;      :crtbegin.o%s}    %{fvtable-verify=none:%s;      fvtable-verify=preinit:vtv_start_preinit.o%s;      fvtable-verify=std:vtv_start.o%s} ;:%{shared: crtbegin_so%O%s;:  %{static: crtbegin_static%O%s;: crtbegin_dynamic%O%s}}}
+
+*cross_compile:
+1
+
+*version:
+13.1.0
+
+*multilib:
+. ;
+
+*multilib_defaults:
+
+
+*multilib_extra:
+
+
+*multilib_matches:
+
+
+*multilib_exclusions:
+
+
+*multilib_options:
+
+
+*multilib_reuse:
+
+
+*linker:
+collect2
+
+*linker_plugin_file:
+
+
+*lto_wrapper:
+
+
+*lto_gcc:
+
+
+*post_link:
+
+
+*link_libgcc:
+%D
+
+*md_exec_prefix:
+
+
+*md_startfile_prefix:
+
+
+*md_startfile_prefix_1:
+
+
+*startfile_prefix_spec:
+
+
+*sysroot_spec:
+--sysroot=%R
+
+*sysroot_suffix_spec:
+
+
+*sysroot_hdrs_suffix_spec:
+
+
+*self_spec:
+
+
+*subtarget_cpp_spec:
+%{posix:-D_POSIX_SOURCE} %{pthread:-D_REENTRANT}
+
+*asm_cpu_spec:
+ %{mfpu=auto:%<mfpu=auto %:asm_auto_mfpu(%{march=*: arch %*})} %{mcpu=generic-*:-march=%:rewrite_march(%{mcpu=generic-*:%*});   march=*:-march=%:rewrite_march(%{march=*:%*});   mcpu=*:-mcpu=%:rewrite_mcpu(%{mcpu=*:%*}) }
+
+*subtarget_extra_asm_spec:
+%{mabi=apcs-gnu|mabi=atpcs:-meabi=gnu;:-meabi=5} %{mcpu=arm8|mcpu=arm810|mcpu=strongarm*|march=armv4|mcpu=fa526|mcpu=fa626:--fix-v4bx}
+
+*subtarget_asm_float_spec:
+%{mapcs-float:-mfloat}
+
+*link_command:
+%{!fsyntax-only:%{!c:%{!M:%{!MM:%{!E:%{!S:    %(linker) %{!fno-use-linker-plugin:%{!fno-lto:     -plugin %(linker_plugin_file)     -plugin-opt=%(lto_wrapper)     -plugin-opt=-fresolution=%u.res         %{flinker-output=*:-plugin-opt=-linker-output-known}     %{!nostdlib:%{!nodefaultlibs:%:pass-through-libs(%(link_gcc_c_sequence))}}     }}%{flto|flto=*:%<fcompare-debug*}     %{flto} %{fno-lto} %{flto=*} %l %{static|shared|r:;pie:-pie} %{fuse-ld=*:-fuse-ld=%*}  %{gz|gz=zlib:--compress-debug-sections=zlib} %{gz=none:--compress-debug-sections=none} %{gz=zstd:--compress-debug-sections=zstd} %{gz=zlib-gnu:}%X %{o*} %{e*} %{N} %{n} %{r}    %{s} %{t} %{u*} %{z} %{Z} %{!nostdlib:%{!r:%{!nostartfiles:%S}}}     %{static|no-pie|static-pie:} %@{L*} %(mfwrap) %(link_libgcc) %{fvtable-verify=none:} %{fvtable-verify=std:   %e-fvtable-verify=std is not supported in this configuration} %{fvtable-verify=preinit:   %e-fvtable-verify=preinit is not supported in this configuration} %{!nostdlib:%{!r:%{!nodefaultlibs:%{%:sanitize(address):%{!shared:libasan_preinit%O%s} %{static-libasan:%{!shared:-Bstatic --whole-archive -lasan --no-whole-archive -Bdynamic}}%{!static-libasan:-lasan}}     %{%:sanitize(hwaddress):%{!shared:libhwasan_preinit%O%s} %{static-libhwasan:%{!shared:-Bstatic --whole-archive -lhwasan --no-whole-archive -Bdynamic}}%{!static-libhwasan:-lhwasan}}     %{%:sanitize(thread):%{!shared:libtsan_preinit%O%s} %{static-libtsan:%{!shared:-Bstatic --whole-archive -ltsan --no-whole-archive -Bdynamic}}%{!static-libtsan:-ltsan}}     %{%:sanitize(leak):%{!shared:liblsan_preinit%O%s} %{static-liblsan:%{!shared:-Bstatic --whole-archive -llsan --no-whole-archive -Bdynamic}}%{!static-liblsan:-llsan}}}}} %o      %{fopenacc|fopenmp|%:gt(%{ftree-parallelize-loops=*:%*} 1):	%:include(libgomp.spec)%(link_gomp)}    %{fgnu-tm:%:include(libitm.spec)%(link_itm)}    %(mflib)  %{fsplit-stack: --wrap=pthread_create}    %{fprofile-arcs|fprofile-generate*|coverage:-lgcov} %{!nostdlib:%{!r:%{!nodefaultlibs:%{%:sanitize(address): %{static-libasan|static:%:include(libsanitizer.spec)%(link_libasan)}    %{static:%ecannot specify -static with -fsanitize=address}}    %{%:sanitize(hwaddress): %{static-libhwasan|static:%:include(libsanitizer.spec)%(link_libhwasan)}	%{static:%ecannot specify -static with -fsanitize=hwaddress}}    %{%:sanitize(thread): %{static-libtsan|static:%:include(libsanitizer.spec)%(link_libtsan)}    %{static:%ecannot specify -static with -fsanitize=thread}}    %{%:sanitize(undefined):%{static-libubsan:-Bstatic} -lubsan %{static-libubsan:-Bdynamic} %{static-libubsan|static:%:include(libsanitizer.spec)%(link_libubsan)}}    %{%:sanitize(leak): %{static-liblsan|static:%:include(libsanitizer.spec)%(link_liblsan)}}}}}     %{!nostdlib:%{!r:%{!nodefaultlibs:%(link_ssp) %(link_gcc_c_sequence)}}}    %{!nostdlib:%{!r:%{!nostartfiles:%E}}} %{T*}  
+%(post_link) }}}}}}
+

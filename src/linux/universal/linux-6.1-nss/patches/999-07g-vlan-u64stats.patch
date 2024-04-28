@@ -1,0 +1,19 @@
+*** a/net/8021q/vlan_core.c	2022-09-24 11:12:43.170000000 +0900
+--- b/net/8021q/vlan_core.c	2022-09-24 11:16:04.630000000 +0900
+*************** void __vlan_dev_update_accel_stats(struc
+*** 560,566 ****
+  	if (!is_vlan_dev(dev))
+  		return;
+  
+! 	stats = per_cpu_ptr(vlan_dev_priv(dev)->vlan_pcpu_stats, 0);
+  
+  	u64_stats_update_begin(&stats->syncp);
+  	u64_stats_add(&stats->rx_packets, nlstats->rx_packets);
+--- 560,566 ----
+  	if (!is_vlan_dev(dev))
+  		return;
+  
+! 	stats = this_cpu_ptr(vlan_dev_priv(dev)->vlan_pcpu_stats);
+  
+  	u64_stats_update_begin(&stats->syncp);
+  	u64_stats_add(&stats->rx_packets, nlstats->rx_packets);

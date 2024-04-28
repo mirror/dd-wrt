@@ -1,0 +1,69 @@
+// SPDX-License-Identifier: GPL-2.0
+
+#include "qcom-ipq8064-v2.0.dtsi"
+
+
+&cpu0 {
+	cpu-supply = <&smb208_s2a>;
+};
+
+&cpu1 {
+	cpu-supply = <&smb208_s2b>;
+};
+
+&L2 {
+	l2-rates = <384000000 1000000000 1200000000>;
+	l2-cpufreq = <384000000 600000000 1200000000>;
+	l2-volt = <1100000 1100000 1150000>;
+	l2-supply = <&smb208_s1a>;
+};
+
+&rpm {
+	smb208_regulators: regulators {
+		compatible = "qcom,rpm-smb208-regulators";
+
+		smb208_s1a: s1a {
+			regulator-min-microvolt = <1050000>;
+			regulator-max-microvolt = <1150000>;
+
+			qcom,switch-mode-frequency = <1200000>;
+		};
+
+		smb208_s1b: s1b {
+			regulator-min-microvolt = <1050000>;
+			regulator-max-microvolt = <1150000>;
+
+			qcom,switch-mode-frequency = <1200000>;
+		};
+
+		smb208_s2a: s2a {
+			regulator-min-microvolt = < 800000>;
+			regulator-max-microvolt = <1250000>;
+
+			qcom,switch-mode-frequency = <1200000>;
+		};
+
+		smb208_s2b: s2b {
+			regulator-min-microvolt = < 800000>;
+			regulator-max-microvolt = <1250000>;
+
+			qcom,switch-mode-frequency = <1200000>;
+		};
+	};
+};
+
+&soc {
+		nss-common {
+			compatible = "qcom,nss-common";
+			reg = <0x03000000 0x00001000>;
+			reg-names = "nss_fpb_base";
+			clocks = <&gcc NSS_CORE_CLK>, <&gcc NSSTCM_CLK>,
+				<&rpmcc RPM_NSS_FABRIC_0_CLK>, <&rpmcc RPM_NSS_FABRIC_1_CLK>;
+			clock-names = "nss_core_clk", "nss_tcm_clk",
+				"nss-fab0-clk", "nss-fab1-clk";
+			nss_core-supply = <&smb208_s1b>;
+			nss_core_vdd_nominal = <1100000>;
+			nss_core_vdd_high = <1150000>;
+			nss_core_threshold_freq = <733000000>;
+		};
+};

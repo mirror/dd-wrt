@@ -1,0 +1,4 @@
+#!/bin/sh
+for i in $1/*; do
+  patch -p1<$i
+done

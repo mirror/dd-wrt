@@ -1,0 +1,449 @@
+/* SPDX-License-Identifier: GPL-2.0-or-later */
+/*
+ * Cryptographic API for algorithms (i.e., low-level API).
+ *
+ * Copyright (c) 2006 Herbert Xu <herbert@gondor.apana.org.au>
+ */
+#ifndef _CRYPTO_ALGAPI_H
+#define _CRYPTO_ALGAPI_H
+
+#include <linux/align.h>
+#include <linux/crypto.h>
+#include <linux/kconfig.h>
+#include <linux/list.h>
+#include <linux/types.h>
+#include <linux/workqueue.h>
+
+#include <asm/unaligned.h>
+
+/*
+ * Maximum values for blocksize and alignmask, used to allocate
+ * static buffers that are big enough for any combination of
+ * algs and architectures. Ciphers have a lower maximum size.
+ */
+#define MAX_ALGAPI_BLOCKSIZE		160
+#define MAX_ALGAPI_ALIGNMASK		63
+#define MAX_CIPHER_BLOCKSIZE		16
+#define MAX_CIPHER_ALIGNMASK		15
+
+struct crypto_aead;
+struct crypto_instance;
+struct module;
+struct notifier_block;
+struct rtattr;
+struct seq_file;
+struct sk_buff;
+
+struct crypto_type {
+	unsigned int (*ctxsize)(struct crypto_alg *alg, u32 type, u32 mask);
+	unsigned int (*extsize)(struct crypto_alg *alg);
+	int (*init)(struct crypto_tfm *tfm, u32 type, u32 mask);
+	int (*init_tfm)(struct crypto_tfm *tfm);
+	void (*show)(struct seq_file *m, struct crypto_alg *alg);
+	int (*report)(struct sk_buff *skb, struct crypto_alg *alg);
+	void (*free)(struct crypto_instance *inst);
+
+	unsigned int type;
+	unsigned int maskclear;
+	unsigned int maskset;
+	unsigned int tfmsize;
+};
+
+struct crypto_instance {
+	struct crypto_alg alg;
+
+	struct crypto_template *tmpl;
+
+	union {
+		/* Node in list of instances after registration. */
+		struct hlist_node list;
+		/* List of attached spawns before registration. */
+		struct crypto_spawn *spawns;
+	};
+
+	struct work_struct free_work;
+
+	void *__ctx[] CRYPTO_MINALIGN_ATTR;
+};
+
+struct crypto_template {
+	struct list_head list;
+	struct hlist_head instances;
+	struct module *module;
+
+	int (*create)(struct crypto_template *tmpl, struct rtattr **tb);
+
+	char name[CRYPTO_MAX_ALG_NAME];
+};
+
+struct crypto_spawn {
+	struct list_head list;
+	struct crypto_alg *alg;
+	union {
+		/* Back pointer to instance after registration.*/
+		struct crypto_instance *inst;
+		/* Spawn list pointer prior to registration. */
+		struct crypto_spawn *next;
+	};
+	const struct crypto_type *frontend;
+	u32 mask;
+	bool dead;
+	bool registered;
+};
+
+struct crypto_queue {
+	struct list_head list;
+	struct list_head *backlog;
+
+	unsigned int qlen;
+	unsigned int max_qlen;
+};
+
+struct scatter_walk {
+	struct scatterlist *sg;
+	unsigned int offset;
+};
+
+struct crypto_attr_alg {
+	char name[CRYPTO_MAX_ALG_NAME];
+};
+
+struct crypto_attr_type {
+	u32 type;
+	u32 mask;
+};
+
+struct ablkcipher_walk {
+        struct {
+                struct page *page;
+                unsigned int offset;
+        } src, dst;
+
+        struct scatter_walk     in;
+        unsigned int            nbytes;
+        struct scatter_walk     out;
+        unsigned int            total;
+        struct list_head        buffers;
+        u8                      *iv_buffer;
+        u8                      *iv;
+        int                     flags;
+        unsigned int            blocksize;
+};
+
+void crypto_mod_put(struct crypto_alg *alg);
+
+int crypto_register_template(struct crypto_template *tmpl);
+int crypto_register_templates(struct crypto_template *tmpls, int count);
+void crypto_unregister_template(struct crypto_template *tmpl);
+void crypto_unregister_templates(struct crypto_template *tmpls, int count);
+struct crypto_template *crypto_lookup_template(const char *name);
+
+int crypto_register_instance(struct crypto_template *tmpl,
+			     struct crypto_instance *inst);
+void crypto_unregister_instance(struct crypto_instance *inst);
+
+int crypto_grab_spawn(struct crypto_spawn *spawn, struct crypto_instance *inst,
+		      const char *name, u32 type, u32 mask);
+void crypto_drop_spawn(struct crypto_spawn *spawn);
+struct crypto_tfm *crypto_spawn_tfm(struct crypto_spawn *spawn, u32 type,
+				    u32 mask);
+void *crypto_spawn_tfm2(struct crypto_spawn *spawn);
+
+struct crypto_attr_type *crypto_get_attr_type(struct rtattr **tb);
+int crypto_check_attr_type(struct rtattr **tb, u32 type, u32 *mask_ret);
+const char *crypto_attr_alg_name(struct rtattr *rta);
+int crypto_inst_setname(struct crypto_instance *inst, const char *name,
+			struct crypto_alg *alg);
+
+void crypto_init_queue(struct crypto_queue *queue, unsigned int max_qlen);
+int crypto_enqueue_request(struct crypto_queue *queue,
+			   struct crypto_async_request *request);
+void crypto_enqueue_request_head(struct crypto_queue *queue,
+				 struct crypto_async_request *request);
+struct crypto_async_request *crypto_dequeue_request(struct crypto_queue *queue);
+static inline unsigned int crypto_queue_len(struct crypto_queue *queue)
+{
+	return queue->qlen;
+}
+
+static inline void crypto_inc_byte(u8 *a, unsigned int size)
+{
+	u8 *b = (a + size);
+	u8 c;
+
+	for (; size; size--) {
+		c = *--b + 1;
+		*b = c;
+		if (c)
+			break;
+	}
+}
+
+static inline void crypto_inc(u8 *a, unsigned int size)
+{
+	__be32 *b = (__be32 *)(a + size);
+	u32 c;
+
+	if (IS_ENABLED(CONFIG_HAVE_EFFICIENT_UNALIGNED_ACCESS) ||
+	    IS_ALIGNED((unsigned long)b, __alignof__(*b)))
+		for (; size >= 4; size -= 4) {
+			c = be32_to_cpu(*--b) + 1;
+			*b = cpu_to_be32(c);
+			if (likely(c))
+				return;
+		}
+
+	crypto_inc_byte(a, size);
+}
+/*
+ * XOR @len bytes from @src1 and @src2 together, writing the result to @dst
+ * (which may alias one of the sources).  Don't call this directly; call
+ * crypto_xor() or crypto_xor_cpy() instead.
+ */
+static inline void __crypto_xor(u8 *dst, const u8 *src1, const u8 *src2, unsigned int len)
+{
+	int relalign = 0;
+
+	if (!IS_ENABLED(CONFIG_HAVE_EFFICIENT_UNALIGNED_ACCESS)) {
+		int size = sizeof(unsigned long);
+		int d = (((unsigned long)dst ^ (unsigned long)src1) |
+			 ((unsigned long)dst ^ (unsigned long)src2)) &
+			(size - 1);
+
+		relalign = d ? 1 << __ffs(d) : size;
+
+		/*
+		 * If we care about alignment, process as many bytes as
+		 * needed to advance dst and src to values whose alignments
+		 * equal their relative alignment. This will allow us to
+		 * process the remainder of the input using optimal strides.
+		 */
+		while (((unsigned long)dst & (relalign - 1)) && len > 0) {
+			*dst++ = *src1++ ^ *src2++;
+			len--;
+		}
+	}
+
+	while (IS_ENABLED(CONFIG_64BIT) && len >= 8 && !(relalign & 7)) {
+		if (IS_ENABLED(CONFIG_HAVE_EFFICIENT_UNALIGNED_ACCESS)) {
+			u64 l = get_unaligned((u64 *)src1) ^
+				get_unaligned((u64 *)src2);
+			put_unaligned(l, (u64 *)dst);
+		} else {
+			*(u64 *)dst = *(u64 *)src1 ^ *(u64 *)src2;
+		}
+		dst += 8;
+		src1 += 8;
+		src2 += 8;
+		len -= 8;
+	}
+
+	while (len >= 4 && !(relalign & 3)) {
+		if (IS_ENABLED(CONFIG_HAVE_EFFICIENT_UNALIGNED_ACCESS)) {
+			u32 l = get_unaligned((u32 *)src1) ^
+				get_unaligned((u32 *)src2);
+			put_unaligned(l, (u32 *)dst);
+		} else {
+			*(u32 *)dst = *(u32 *)src1 ^ *(u32 *)src2;
+		}
+		dst += 4;
+		src1 += 4;
+		src2 += 4;
+		len -= 4;
+	}
+
+	while (len >= 2 && !(relalign & 1)) {
+		if (IS_ENABLED(CONFIG_HAVE_EFFICIENT_UNALIGNED_ACCESS)) {
+			u16 l = get_unaligned((u16 *)src1) ^
+				get_unaligned((u16 *)src2);
+			put_unaligned(l, (u16 *)dst);
+		} else {
+			*(u16 *)dst = *(u16 *)src1 ^ *(u16 *)src2;
+		}
+		dst += 2;
+		src1 += 2;
+		src2 += 2;
+		len -= 2;
+	}
+
+	while (len--)
+		*dst++ = *src1++ ^ *src2++;
+}
+
+static inline void crypto_xor(u8 *dst, const u8 *src, unsigned int size)
+{
+	if (IS_ENABLED(CONFIG_HAVE_EFFICIENT_UNALIGNED_ACCESS) &&
+	    __builtin_constant_p(size) &&
+	    (size % sizeof(unsigned long)) == 0) {
+		unsigned long *d = (unsigned long *)dst;
+		unsigned long *s = (unsigned long *)src;
+		unsigned long l;
+
+		while (size > 0) {
+			l = get_unaligned(d) ^ get_unaligned(s++);
+			put_unaligned(l, d++);
+			size -= sizeof(unsigned long);
+		}
+	} else {
+		__crypto_xor(dst, dst, src, size);
+	}
+}
+
+static inline void crypto_xor_cpy(u8 *dst, const u8 *src1, const u8 *src2,
+				  unsigned int size)
+{
+	if (IS_ENABLED(CONFIG_HAVE_EFFICIENT_UNALIGNED_ACCESS) &&
+	    __builtin_constant_p(size) &&
+	    (size % sizeof(unsigned long)) == 0) {
+		unsigned long *d = (unsigned long *)dst;
+		unsigned long *s1 = (unsigned long *)src1;
+		unsigned long *s2 = (unsigned long *)src2;
+		unsigned long l;
+
+		while (size > 0) {
+			l = get_unaligned(s1++) ^ get_unaligned(s2++);
+			put_unaligned(l, d++);
+			size -= sizeof(unsigned long);
+		}
+	} else {
+		__crypto_xor(dst, src1, src2, size);
+	}
+}
+
+int ablkcipher_walk_done(struct ablkcipher_request *req,
+                         struct ablkcipher_walk *walk, int err);
+int ablkcipher_walk_phys(struct ablkcipher_request *req,
+                         struct ablkcipher_walk *walk);
+void __ablkcipher_walk_complete(struct ablkcipher_walk *walk);
+
+static inline void *crypto_tfm_ctx_aligned(struct crypto_tfm *tfm)
+{
+	return PTR_ALIGN(crypto_tfm_ctx(tfm),
+			 crypto_tfm_alg_alignmask(tfm) + 1);
+}
+
+static inline struct crypto_instance *crypto_tfm_alg_instance(
+	struct crypto_tfm *tfm)
+{
+	return container_of(tfm->__crt_alg, struct crypto_instance, alg);
+}
+
+static inline void *crypto_instance_ctx(struct crypto_instance *inst)
+{
+	return inst->__ctx;
+}
+
+
+static inline struct ablkcipher_alg *crypto_ablkcipher_alg(
+        struct crypto_ablkcipher *tfm)
+{
+        return &crypto_ablkcipher_tfm(tfm)->__crt_alg->cra_ablkcipher;
+}
+
+static inline void *crypto_ablkcipher_ctx(struct crypto_ablkcipher *tfm)
+{
+        return crypto_tfm_ctx(&tfm->base);
+}
+
+static inline void *crypto_ablkcipher_ctx_aligned(struct crypto_ablkcipher *tfm)
+{
+        return crypto_tfm_ctx_aligned(&tfm->base);
+}
+
+
+static inline void ablkcipher_walk_init(struct ablkcipher_walk *walk,
+                                        struct scatterlist *dst,
+                                        struct scatterlist *src,
+                                        unsigned int nbytes)
+{
+        walk->in.sg = src;
+        walk->out.sg = dst;
+        walk->total = nbytes;
+        INIT_LIST_HEAD(&walk->buffers);
+}
+
+static inline void ablkcipher_walk_complete(struct ablkcipher_walk *walk)
+{
+        if (unlikely(!list_empty(&walk->buffers)))
+                __ablkcipher_walk_complete(walk);
+}
+
+static inline struct ablkcipher_request *ablkcipher_dequeue_request(
+        struct crypto_queue *queue)
+{
+        return ablkcipher_request_cast(crypto_dequeue_request(queue));
+}
+
+static inline void *ablkcipher_request_ctx(struct ablkcipher_request *req)
+{
+        return req->__ctx;
+}
+
+
+static inline struct crypto_async_request *crypto_get_backlog(
+	struct crypto_queue *queue)
+{
+	return queue->backlog == &queue->list ? NULL :
+	       container_of(queue->backlog, struct crypto_async_request, list);
+}
+
+static inline u32 crypto_requires_off(struct crypto_attr_type *algt, u32 off)
+{
+	return (algt->type ^ off) & algt->mask & off;
+}
+
+/*
+ * When an algorithm uses another algorithm (e.g., if it's an instance of a
+ * template), these are the flags that should always be set on the "outer"
+ * algorithm if any "inner" algorithm has them set.
+ */
+#define CRYPTO_ALG_INHERITED_FLAGS	\
+	(CRYPTO_ALG_ASYNC | CRYPTO_ALG_NEED_FALLBACK |	\
+	 CRYPTO_ALG_ALLOCATES_MEMORY)
+
+/*
+ * Given the type and mask that specify the flags restrictions on a template
+ * instance being created, return the mask that should be passed to
+ * crypto_grab_*() (along with type=0) to honor any request the user made to
+ * have any of the CRYPTO_ALG_INHERITED_FLAGS clear.
+ */
+static inline u32 crypto_algt_inherited_mask(struct crypto_attr_type *algt)
+{
+	return crypto_requires_off(algt, CRYPTO_ALG_INHERITED_FLAGS);
+}
+
+noinline unsigned long __crypto_memneq(const void *a, const void *b, size_t size);
+
+/**
+ * crypto_memneq - Compare two areas of memory without leaking
+ *		   timing information.
+ *
+ * @a: One area of memory
+ * @b: Another area of memory
+ * @size: The size of the area.
+ *
+ * Returns 0 when data is equal, 1 otherwise.
+ */
+static inline int crypto_memneq(const void *a, const void *b, size_t size)
+{
+	return __crypto_memneq(a, b, size) != 0UL ? 1 : 0;
+}
+
+int crypto_register_notifier(struct notifier_block *nb);
+int crypto_unregister_notifier(struct notifier_block *nb);
+
+/* Crypto notification events. */
+enum {
+	CRYPTO_MSG_ALG_REQUEST,
+	CRYPTO_MSG_ALG_REGISTER,
+	CRYPTO_MSG_ALG_LOADED,
+};
+
+static inline void crypto_request_complete(struct crypto_async_request *req,
+					   int err)
+{
+	crypto_completion_t complete = req->complete;
+	complete(req, err);
+}
+
+#endif	/* _CRYPTO_ALGAPI_H */

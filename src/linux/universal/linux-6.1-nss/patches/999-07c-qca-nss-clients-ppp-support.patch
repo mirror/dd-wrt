@@ -1,0 +1,45 @@
+--- a/include/linux/ppp_channel.h
++++ b/include/linux/ppp_channel.h
+@@ -84,6 +96,15 @@
+ /* Test if ppp xmit lock is locked */
+ extern bool ppp_is_xmit_locked(struct net_device *dev);
+ 
++/* Test if ppp xmit lock is locked */
++extern bool ppp_is_xmit_locked(struct net_device *dev);
++
++/* Call this get protocol version */
++extern int ppp_channel_get_proto_version(struct ppp_channel *);
++
++/* Get the device index  associated with a channel, or 0, if none */
++extern int ppp_dev_index(struct ppp_channel *);
++
+ /* Hold PPP channels for the PPP device */
+ extern int __ppp_hold_channels(struct net_device *dev,
+ 			       struct ppp_channel *channels[],
+--- a/drivers/net/ppp/ppp_generic.c
++++ b/drivers/net/ppp/ppp_generic.c
+*************** void ppp_release_channels(struct ppp_cha
+*** 3706,3711 ****
+--- 3706,3727 ----
+  }
+  EXPORT_SYMBOL(ppp_release_channels);
+  
++ /* Return the PPP net device index */
++ int ppp_dev_index(struct ppp_channel *chan)
++ {
++        struct channel *pch = chan->ppp;
++        int ifindex = 0;
++ 
++        if (pch) {
++ 	       read_lock_bh(&pch->upl);
++ 	       if (pch->ppp && pch->ppp->dev)
++ 		       ifindex = pch->ppp->dev->ifindex;
++ 	       read_unlock_bh(&pch->upl);
++        }
++        return ifindex;
++ }
++ EXPORT_SYMBOL(ppp_dev_index);
++ 
+  /* Module/initialization stuff */
+  
+  module_init(ppp_init);

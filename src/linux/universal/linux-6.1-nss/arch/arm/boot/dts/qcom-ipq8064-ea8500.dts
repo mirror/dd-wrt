@@ -1,0 +1,83 @@
+#include "qcom-ipq8064-eax500.dtsi"
+
+/ {
+	model = "Linksys EA8500 WiFi Router";
+	compatible = "linksys,ea8500", "qcom,ipq8064";
+
+	memory@0 {
+		reg = <0x42000000 0x1e000000>;
+		device_type = "memory";
+	};
+
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+		rsvd@41200000 {
+			reg = <0x41200000 0x300000>;
+			no-map;
+		};
+	};
+
+	aliases {
+		mdio-gpio0 = &mdio0;
+
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		pinctrl-0 = <&led_pins>;
+		pinctrl-names = "default";
+
+		wps {
+			label = "ea8500:green:wps";
+			gpios = <&qcom_pinmux 53 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_power: power {
+			label = "ea8500:white:power";
+			gpios = <&qcom_pinmux 6 GPIO_ACTIVE_LOW>;
+			default-state = "keep";
+		};
+
+		wifi {
+			label = "ea8500:green:wifi";
+			gpios = <&qcom_pinmux 54 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+};
+
+&qcom_pinmux {
+	button_pins: button_pins {
+		mux {
+			pins = "gpio65", "gpio67", "gpio68";
+			function = "gpio";
+			drive-strength = <2>;
+			bias-pull-up;
+		};
+	};
+
+	led_pins: led_pins {
+		mux {
+			pins = "gpio6", "gpio53", "gpio54";
+			function = "gpio";
+			drive-strength = <2>;
+			bias-pull-up;
+		};
+	};
+};
+
+&sata_phy {
+	status = "okay";
+};
+
+&sata {
+	status = "okay";
+};
+
+&mdio0 {
+	phy4: ethernet-phy@4 {
+		reg = <4>;
+	};
+};

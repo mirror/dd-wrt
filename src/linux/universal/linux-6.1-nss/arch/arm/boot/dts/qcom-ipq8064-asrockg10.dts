@@ -1,0 +1,296 @@
+// SPDX-License-Identifier: GPL-2.0
+#include "qcom-ipq8064-v2.0-smb208.dtsi"
+
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/soc/qcom,tcsr.h>
+
+/ {
+	compatible = "asrock,g10", "qcom,ipq8064";
+	model = "ASRock G10";
+
+	aliases {
+		ethernet0 = &gmac1;
+		ethernet1 = &gmac0;
+	};
+
+	memory@0 {
+		reg = <0x42000000 0x1e000000>;
+		device_type = "memory";
+	};
+
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+		rsvd@41200000 {
+			reg = <0x41200000 0x300000>;
+			no-map;
+		};
+	};
+
+	chosen {
+		bootargs-override = "console=ttyMSM0,115200n8 nohz_full=all rootfstype=squashfs noinitrd earlyprintk";
+		stdout-path = "serial0:115200n8";
+	};
+
+	i2c-gpio {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		compatible = "i2c-gpio";
+		gpios = <&qcom_pinmux 53 GPIO_ACTIVE_HIGH>, /* sda */
+			<&qcom_pinmux 54 GPIO_ACTIVE_HIGH>; /* scl */
+		i2c-gpio,delay-us = <5>;
+		i2c-gpio,scl-output-only;
+
+		mcu@50 {
+			reg = <0x50>;
+			compatible = "sonix,sn8f25e21";
+		};
+	};
+
+};
+
+&adm_dma {
+	status = "okay";
+};
+
+&gmac1 {
+	status = "okay";
+	qcom,phy-mdio-addr = <4>;
+	qcom,poll-required = <0>;
+	qcom,rgmii-delay = <1>;
+
+	pinctrl-0 = <&rgmii2_pins>;
+	pinctrl-names = "default";
+
+	phy-mode = "rgmii";
+	qcom,id = <1>;
+
+	mtd-mac-address = <&art 6>;
+
+	fixed-link {
+		speed = <1000>;
+		full-duplex;
+	};
+};
+
+&gmac2 {
+	status = "okay";
+	qcom,phy-mdio-addr = <0>;
+	qcom,poll-required = <0>;
+	qcom,rgmii-delay = <0>;
+
+	phy-mode = "sgmii";
+	qcom,id = <2>;
+
+	mtd-mac-address = <&art 0>;
+
+	fixed-link {
+		speed = <1000>;
+		full-duplex;
+	};
+};
+
+&gsbi4_serial {
+	pinctrl-0 = <&uart0_pins>;
+	pinctrl-names = "default";
+};
+
+&mdio0 {
+	status = "okay";
+
+	pinctrl-0 = <&mdio0_pins>;
+	pinctrl-names = "default";
+
+	phy0: ethernet-phy@0 {
+		reg = <0>;
+		qca,ar8327-initvals = <
+			0x00004 0x7600000   /* PAD0_MODE */
+			0x00008 0x1000000   /* PAD5_MODE */
+			0x0000c 0x80        /* PAD6_MODE */
+			0x000e4 0x6a545     /* MAC_POWER_SEL */
+			0x000e0 0xc74164de  /* SGMII_CTRL */
+			0x0007c 0x4e        /* PORT0_STATUS */
+			0x00094 0x4e        /* PORT6_STATUS */
+			>;
+	};
+
+	phy4: ethernet-phy@4 {
+		reg = <4>;
+	};
+};
+
+&nand {
+	status = "okay";
+
+	nand@0 {
+		reg = <0>;
+		compatible = "qcom,nandcs";
+
+		nand-ecc-strength = <4>;
+		nand-bus-width = <8>;
+		nand-ecc-step-size = <512>;
+		qcom,boot-partitions = <0x0 0x1200000 0x4340000 0x560000>;
+
+				partitions {
+					compatible = "fixed-partitions";
+					#address-cells = <1>;
+					#size-cells = <1>;
+			
+			qcadata@0 {
+				label = "qcadata";
+				reg = <0x0000000 0x0c80000>;
+				read-only;
+			};
+
+			APPSBL@c80000 {
+				label = "APPSBL";
+				reg = <0x0c80000 0x0500000>;
+				read-only;
+			};
+
+			APPSBL_1@43a0000 {
+				label = "APPSBL_1";
+				reg = <0x43a0000 0x0500000>;
+				read-only;
+			};
+
+			APPSBLENV@1180000 {
+				label = "APPSBLENV";
+				reg = <0x1180000 0x0080000>;
+			};
+
+			BOOTCONFIG@4340000 {
+				label = "BOOTCONFIG";
+				reg = <0x4340000 0x0060000>;
+			};
+
+			art: art@1200000 {
+				label = "art";
+				reg = <0x1200000 0x0140000>;
+			};
+
+			firmware@1340000 {
+				label = "linux";
+				reg = <0x1340000 0x3000000>;
+			};
+
+			firmware2@48a0000 {
+				label = "linux2";
+				reg = <0x48a0000 0x3000000>;
+			};
+
+			nvram@78e0000 {
+				label = "nvram";
+				reg = <0x78e0000 0x40000>;
+			};
+
+			hwconfig@78a0000 {
+				label = "hwconfig";
+				reg = <0x78a0000 0x40000>;
+			};
+
+
+		};
+	};
+};
+
+&pcie0 {
+	status = "okay";
+
+	bridge@0,0 {
+		reg = <0x00000000 0 0 0 0>;
+		#address-cells = <3>;
+		#size-cells = <2>;
+		ranges;
+
+		wifi5g: wifi@1,0 {
+			reg = <0x00010000 0 0 0 0>;
+			compatible = "qcom,ath10k";
+			qcom,ath10k-calibration-variant = "ASRock-G10";
+		};
+	};
+};
+
+&pcie1 {
+	status = "okay";
+
+	bridge@0,0 {
+		reg = <0x00000000 0 0 0 0>;
+		#address-cells = <3>;
+		#size-cells = <2>;
+		ranges;
+
+		wifi2g: wifi@1,0 {
+			reg = <0x00010000 0 0 0 0>;
+			compatible = "qcom,ath10k";
+			qcom,ath10k-calibration-variant = "ASRock-G10";
+		};
+	};
+};
+
+&qcom_pinmux {
+	led_pins: led_pins {
+		mux {
+			pins = "gpio7", "gpio8", "gpio9", "gpio26";
+			function = "gpio";
+			drive-strength = <2>;
+			bias-pull-up;
+		};
+	};
+
+	button_pins: button_pins {
+		mux {
+			pins = "gpio15", "gpio16", "gpio64", "gpio65";
+			function = "gpio";
+			drive-strength = <2>;
+			bias-pull-up;
+		};
+	};
+
+	uart0_pins: uart0_pins {
+		mux {
+			pins = "gpio10", "gpio11";
+			function = "gsbi4";
+			drive-strength = <10>;
+			bias-disable;
+		};
+	};
+};
+
+&rpm {
+	pinctrl-0 = <&i2c4_pins>;
+	pinctrl-names = "default";
+};
+
+&hs_phy_0 {
+	status = "okay";
+};
+
+&ss_phy_0 {
+	status = "okay";
+};
+
+&usb3_0 {
+	status = "okay";
+};
+
+&hs_phy_1 {
+	status = "okay";
+};
+
+&ss_phy_1 {
+	status = "okay";
+};
+
+&usb3_1 {
+	status = "okay";
+};
+
+&tcsr {
+	qcom,usb-ctrl-select = <TCSR_USB_SELECT_USB3_DUAL>;
+};
+
+/delete-node/ &pcie2_pins;
+/delete-node/ &pcie2;

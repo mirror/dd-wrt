@@ -1,0 +1,343 @@
+Index: swconfig.c
+===================================================================
+--- swconfig.c	(revision 51849)
++++ swconfig.c	(working copy)
+@@ -290,6 +290,8 @@ static const struct nla_policy port_policy[SWITCH_
+ static struct nla_policy link_policy[SWITCH_LINK_ATTR_MAX] = {
+ 	[SWITCH_LINK_FLAG_DUPLEX] = { .type = NLA_FLAG },
+ 	[SWITCH_LINK_FLAG_ANEG] = { .type = NLA_FLAG },
++	[SWITCH_LINK_FLAG_RX_FLOW] = { .type = NLA_FLAG },
++	[SWITCH_LINK_FLAG_TX_FLOW] = { .type = NLA_FLAG },
+ 	[SWITCH_LINK_SPEED] = { .type = NLA_U32 },
+ };
+ 
+@@ -618,6 +620,8 @@ swconfig_parse_link(struct sk_buff *msg, struct nl
+ 
+ 	link->duplex = !!tb[SWITCH_LINK_FLAG_DUPLEX];
+ 	link->aneg = !!tb[SWITCH_LINK_FLAG_ANEG];
++	link->rx_flow = !!tb[SWITCH_LINK_FLAG_RX_FLOW];
++	link->tx_flow = !!tb[SWITCH_LINK_FLAG_TX_FLOW];
+ 	link->speed = nla_get_u32(tb[SWITCH_LINK_SPEED]);
+ 
+ 	return 0;
+Index: ar8216.c
+===================================================================
+--- ar8216.c	(revision 51849)
++++ ar8216.c	(working copy)
+@@ -447,6 +447,8 @@ ar8216_read_port_link(struct ar8xxx_priv *priv, in
+ 	memset(link, '\0', sizeof(*link));
+ 
+ 	status = priv->chip->read_port_status(priv, port);
++	if (priv->disabled[port])
++		return;
+ 
+ 	link->aneg = !!(status & AR8216_PORT_STATUS_LINK_AUTO);
+ 	if (link->aneg) {
+@@ -645,6 +647,60 @@ ar8216_read_port_status(struct ar8xxx_priv *priv,
+ 	return ar8xxx_read(priv, AR8216_REG_PORT_STATUS(port));
+ }
+ 
++static int ar8216_sw_set_port_link(struct switch_dev *dev, int port,
++			     struct switch_port_link *link)
++{
++	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
++	u32 t;
++	if (port == AR8216_PORT_CPU) {
++		return -EINVAL;
++	}
++	if (link->speed == SWITCH_PORT_SPEED_1000 && !ar8xxx_has_gige(priv))
++		return -EINVAL;
++	t = ar8xxx_read(priv, AR8216_REG_PORT_STATUS(port));
++	t &= ~(t & AR8216_PORT_STATUS_SPEED) <<
++		 AR8216_PORT_STATUS_SPEED_S;
++	t &= ~AR8216_PORT_STATUS_LINK_AUTO;
++	t &= ~AR8216_PORT_STATUS_DUPLEX;
++	t &= ~AR8216_PORT_STATUS_FLOW_CONTROL;
++
++	if (link->duplex)
++		t |= AR8216_PORT_STATUS_DUPLEX;
++	if (link->aneg) {
++		t |= AR8216_PORT_STATUS_LINK_AUTO;
++		t |= AR8216_PORT_STATUS_FLOW_CONTROL;
++	} else {
++		t &= ~AR8216_PORT_STATUS_TXFLOW;
++		t &= ~AR8216_PORT_STATUS_RXFLOW;
++		if (link->rx_flow)
++		    t |= AR8216_PORT_STATUS_RXFLOW;
++		if (link->tx_flow)
++		    t |= AR8216_PORT_STATUS_TXFLOW;
++
++		switch (link->speed) {
++		case SWITCH_PORT_SPEED_10:
++			t |= AR8216_PORT_SPEED_10M <<
++			 AR8216_PORT_STATUS_SPEED_S;
++			break;
++		case SWITCH_PORT_SPEED_100:
++			t |= AR8216_PORT_SPEED_100M <<
++			 AR8216_PORT_STATUS_SPEED_S;
++			break;
++		case SWITCH_PORT_SPEED_1000:
++			if (!ar8xxx_has_gige(priv))
++				return  -EINVAL;
++			t |= AR8216_PORT_SPEED_1000M <<
++			 AR8216_PORT_STATUS_SPEED_S;
++			break;
++		default:
++			t |= AR8216_PORT_STATUS_LINK_AUTO;
++			break;
++		}
++	}
++	ar8xxx_write(priv, AR8216_REG_PORT_STATUS(port), t);
++	return 0;
++}
++
+ static void
+ ar8216_setup_port(struct ar8xxx_priv *priv, int port, u32 members)
+ {
+@@ -1590,6 +1646,55 @@ ar8xxx_sw_set_flush_port_arl_table(struct switch_d
+ 	return ret;
+ }
+ 
++static int
++ar8xxx_sw_set_disable(struct switch_dev *dev,
++		  const struct switch_attr *attr,
++		  struct switch_val *val)
++{
++	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
++	int port = val->port_vlan;
++
++	if (port >= dev->ports)
++		return -EINVAL;
++	if (port == 0 || port == 6)
++		return -EOPNOTSUPP;
++
++	
++	if (!!(val->value.i))  {
++		priv->disabled[port] = 1;
++		priv->state[port] = ar8xxx_read(priv, AR8216_REG_PORT_STATUS(port));
++		ar8xxx_write(priv, AR8216_REG_PORT_STATUS(port), 0);
++	}else{
++		priv->disabled[port] = 0;
++		if (priv->state[port])
++			ar8xxx_write(priv, AR8216_REG_PORT_STATUS(port), priv->state[port]);
++	}
++
++	return 0;
++}
++
++static int
++ar8xxx_sw_get_disable(struct switch_dev *dev,
++		  const struct switch_attr *attr,
++		  struct switch_val *val)
++{
++	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
++	int port = val->port_vlan;
++	u32 t;
++
++	if (port >= dev->ports)
++		return -EINVAL;
++	if (port == 0 || port == 6)
++		return -EOPNOTSUPP;
++
++	t = ar8xxx_read(priv, AR8216_REG_PORT_STATUS(port));
++	if (!(t & AR8216_PORT_STATUS_LINK_AUTO) && !(t & (AR8216_PORT_SPEED_10M << AR8216_PORT_STATUS_SPEED_S)) && !(t & (AR8216_PORT_SPEED_100M << AR8216_PORT_STATUS_SPEED_S)) && !(t & (AR8216_PORT_SPEED_1000M << AR8216_PORT_STATUS_SPEED_S)))
++		val->value.i = 1;
++	else
++		val->value.i = 0;
++	return 0;
++}
++
+ static const struct switch_attr ar8xxx_sw_attr_globals[] = {
+ 	{
+ 		.type = SWITCH_TYPE_INT,
+@@ -1672,6 +1777,14 @@ const struct switch_attr ar8xxx_sw_attr_port[] = {
+ 		.description = "Flush port's ARL table entries",
+ 		.set = ar8xxx_sw_set_flush_port_arl_table,
+ 	},
++	{
++		.type = SWITCH_TYPE_INT,
++		.name = "disable",
++		.description = "Disable Port",
++		.set = ar8xxx_sw_set_disable,
++		.get = ar8xxx_sw_get_disable,
++		.max = 1,
++	},
+ };
+ 
+ const struct switch_attr ar8xxx_sw_attr_vlan[1] = {
+@@ -1705,6 +1818,7 @@ static const struct switch_dev_ops ar8xxx_sw_ops =
+ 	.apply_config = ar8xxx_sw_hw_apply,
+ 	.reset_switch = ar8xxx_sw_reset_switch,
+ 	.get_port_link = ar8xxx_sw_get_port_link,
++	.set_port_link = ar8216_sw_set_port_link,
+ /* The following op is disabled as it hogs the CPU and degrades performance.
+    An implementation has been attempted in 4d8a66d but reading MIB data is slow
+    on ar8xxx switches.
+Index: ar8216.h
+===================================================================
+--- ar8216.h	(revision 51849)
++++ ar8216.h	(working copy)
+@@ -469,6 +469,8 @@ struct ar8xxx_priv {
+ 	int source_port;
+ 	int monitor_port;
+ 	u8 port_vlan_prio[AR8X16_MAX_PORTS];
++	u32 state[8];
++	u32 disabled[8];
+ };
+ 
+ u32
+Index: ar8327.c
+===================================================================
+--- ar8327.c	(revision 51849)
++++ ar8327.c	(working copy)
+@@ -717,6 +717,57 @@ ar8327_init_globals(struct ar8xxx_priv *priv)
+ #endif
+ }
+ 
++static int ar8327_sw_set_port_link(struct switch_dev *dev, int port,
++			     struct switch_port_link *link)
++{
++	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
++	u32 t;
++	if (port == AR8216_PORT_CPU || port == 6) {
++		return -EINVAL;
++	}
++	t = ar8xxx_read(priv, AR8327_REG_PORT_STATUS(port));
++	t &= ~(t & AR8216_PORT_STATUS_SPEED) <<
++		 AR8216_PORT_STATUS_SPEED_S;
++	t &= ~AR8216_PORT_STATUS_LINK_AUTO;
++	t &= ~AR8216_PORT_STATUS_DUPLEX;
++	t &= ~AR8216_PORT_STATUS_FLOW_CONTROL;
++
++	if (link->duplex)
++		t |= AR8216_PORT_STATUS_DUPLEX;
++	if (link->aneg) {
++		t |= AR8216_PORT_STATUS_FLOW_CONTROL;
++		t |= AR8216_PORT_STATUS_LINK_AUTO;
++	} else {
++		t &= ~AR8216_PORT_STATUS_TXFLOW;
++		t &= ~AR8216_PORT_STATUS_RXFLOW;
++		if (link->rx_flow)
++		    t |= AR8216_PORT_STATUS_RXFLOW;
++		if (link->tx_flow)
++		    t |= AR8216_PORT_STATUS_TXFLOW;
++		switch (link->speed) {
++		case SWITCH_PORT_SPEED_10:
++			t |= AR8216_PORT_SPEED_10M <<
++			 AR8216_PORT_STATUS_SPEED_S;
++			break;
++		case SWITCH_PORT_SPEED_100:
++			t |= AR8216_PORT_SPEED_100M <<
++			 AR8216_PORT_STATUS_SPEED_S;
++			break;
++		case SWITCH_PORT_SPEED_1000:
++			t |= AR8216_PORT_SPEED_1000M <<
++			 AR8216_PORT_STATUS_SPEED_S;
++			break;
++		default:
++			t |= AR8216_PORT_STATUS_LINK_AUTO;
++			break;
++		}
++	}
++	ar8xxx_write(priv, AR8327_REG_PORT_STATUS(port), 0);
++	msleep(100);
++	ar8xxx_write(priv, AR8327_REG_PORT_STATUS(port), t);
++	return 0;
++}
++
+ static void
+ ar8327_init_port(struct ar8xxx_priv *priv, int port)
+ {
+@@ -1082,6 +1133,57 @@ ar8327_sw_get_eee(struct switch_dev *dev,
+ 	return 0;
+ }
+ 
++
++static int
++ar8327_sw_set_disable(struct switch_dev *dev,
++		  const struct switch_attr *attr,
++		  struct switch_val *val)
++{
++	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
++	int port = val->port_vlan;
++
++	if (port >= dev->ports)
++		return -EINVAL;
++	if (port == 0 || port == 6)
++		return -EOPNOTSUPP;
++
++	
++	if (!!(val->value.i))  {
++		priv->disabled[port] = 1;
++		priv->state[port] = ar8xxx_read(priv, AR8327_REG_PORT_STATUS(port));
++		ar8xxx_write(priv, AR8327_REG_PORT_STATUS(port), 0);
++	} else {
++		priv->disabled[port] = 0;
++		if (priv->state[port])
++			ar8xxx_write(priv, AR8327_REG_PORT_STATUS(port), priv->state[port]);
++	}
++
++	return 0;
++}
++
++static int
++ar8327_sw_get_disable(struct switch_dev *dev,
++		  const struct switch_attr *attr,
++		  struct switch_val *val)
++{
++	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
++	int port = val->port_vlan;
++	u32 t;
++
++	if (port >= dev->ports)
++		return -EINVAL;
++	if (port == 0 || port == 6)
++		return -EOPNOTSUPP;
++
++	t = ar8xxx_read(priv, AR8327_REG_PORT_STATUS(port));
++
++	if (!(t & AR8216_PORT_STATUS_LINK_AUTO) && !(t & (AR8216_PORT_SPEED_10M << AR8216_PORT_STATUS_SPEED_S)) && !(t & (AR8216_PORT_SPEED_100M << AR8216_PORT_STATUS_SPEED_S)) && !(t & (AR8216_PORT_SPEED_1000M << AR8216_PORT_STATUS_SPEED_S)))
++		val->value.i = 1;
++	else
++		val->value.i = 0;
++	return 0;
++}
++
+ static void
+ ar8327_wait_atu_ready(struct ar8xxx_priv *priv, u16 r2, u16 r1)
+ {
+@@ -1472,6 +1574,14 @@ static const struct switch_attr ar8327_sw_attr_por
+ 		.max = 1,
+ 	},
+ 	{
++		.type = SWITCH_TYPE_INT,
++		.name = "disable",
++		.description = "Disable Port",
++		.set = ar8327_sw_set_disable,
++		.get = ar8327_sw_get_disable,
++		.max = 1,
++	},
++	{
+ 		.type = SWITCH_TYPE_NOVAL,
+ 		.name = "flush_arl_table",
+ 		.description = "Flush port's ARL table entries",
+@@ -1515,6 +1625,7 @@ static const struct switch_dev_ops ar8327_sw_ops =
+ 	.apply_config = ar8327_sw_hw_apply,
+ 	.reset_switch = ar8xxx_sw_reset_switch,
+ 	.get_port_link = ar8xxx_sw_get_port_link,
++	.set_port_link = ar8327_sw_set_port_link,
+ /* The following op is disabled as it hogs the CPU and degrades performance.
+    An implementation has been attempted in 4d8a66d but reading MIB data is slow
+    on ar8xxx switches.
+Index: ar8327.h
+===================================================================
+--- ar8327.h	(revision 51849)
++++ ar8327.h	(working copy)
+@@ -350,6 +350,7 @@ struct ar8327_data {
+ 
+ 	/* all fields below are cleared on reset */
+ 	bool eee[AR8XXX_NUM_PHYS];
++	u32 state[8];
+ };
+ 
+ #endif

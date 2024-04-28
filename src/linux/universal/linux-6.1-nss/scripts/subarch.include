@@ -1,0 +1,21 @@
+# SUBARCH tells the usermode build what the underlying arch is.  That is set
+# first, and if a usermode build is happening, the "ARCH=um" on the command
+# line overrides the setting of ARCH below.  If a native build is happening,
+# then ARCH is assigned, getting whatever value it gets normally, and
+# SUBARCH is subsequently ignored.
+
+ifeq ($(ARCH),armeb)
+ARCH := arm
+endif
+ifeq ($(ARCH),aarch64)
+ARCH := arm64
+endif
+ifeq ($(ARCH),mips64)
+ARCH := mips
+endif
+ifeq ($(ARCH),mipsel)
+ARCH=mips
+endif
+
+
+SUBARCH := $(ARCH)

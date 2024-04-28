@@ -1,0 +1,11 @@
+--- a/drivers/of/of_net.c
++++ b/drivers/of/of_net.c
+@@ -39,7 +39,7 @@ int of_get_phy_mode(struct device_node *
+ 	for (i = 0; i < PHY_INTERFACE_MODE_MAX; i++)
+ 		if (!strcasecmp(pm, phy_modes(i))) {
+ 			*interface = i;
+-			return 0;
++			return i;
+ 		}
+ 
+ 	return -ENODEV;

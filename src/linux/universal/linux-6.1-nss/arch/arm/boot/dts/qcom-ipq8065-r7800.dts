@@ -1,0 +1,164 @@
+#include "qcom-ipq8065-nighthawk.dtsi"
+
+/ {
+	model = "Netgear R7800 Nighthawk X4S";
+	compatible = "netgear,r7800", "qcom,ipq8065", "qcom,ipq8064";
+
+	keys {
+		compatible = "gpio-keys";
+		pinctrl-0 = <&button_pins>;
+		pinctrl-names = "default";
+
+		wifi {
+			label = "wifi";
+			gpios = <&qcom_pinmux 6 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RFKILL>;
+			debounce-interval = <60>;
+			wakeup-source;
+		};
+
+		reset {
+			label = "reset";
+			gpios = <&qcom_pinmux 54 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+			debounce-interval = <60>;
+			wakeup-source;
+		};
+
+		wps {
+			label = "wps";
+			gpios = <&qcom_pinmux 65 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_WPS_BUTTON>;
+			debounce-interval = <60>;
+			wakeup-source;
+		};
+	};
+
+	gpio-leds {
+		compatible = "gpio-leds";
+		pinctrl-0 = <&led_pins>;
+		pinctrl-names = "default";
+
+		usb1 {
+			label = "r7X00:amber:usb1";
+			gpios = <&qcom_pinmux 7 0>;
+		};
+
+		usb3 {
+			label = "r7X00:amber:usb3";
+			gpios = <&qcom_pinmux 8 0>;
+		};
+
+		status {
+			label = "r7X00:amber:status";
+			gpios = <&qcom_pinmux 9 0>;
+		};
+
+		internet {
+			label = "r7X00:white:internet";
+			gpios = <&qcom_pinmux 22 0>;
+		};
+
+		wan {
+			label = "r7X00:white:wan";
+			gpios = <&qcom_pinmux 23 0>;
+		};
+
+		wps {
+			label = "r7X00:white:wps";
+			gpios = <&qcom_pinmux 24 0>;
+		};
+
+		esata {
+			label = "r7X00:white:esata";
+			gpios = <&qcom_pinmux 26 0>;
+		};
+
+		power {
+			label = "r7X00:white:power";
+			gpios = <&qcom_pinmux 53 0>;
+			default-state = "on";
+		};
+
+		rfkill {
+			label = "r7X00:white:rfkill";
+			gpios = <&qcom_pinmux 64 0>;
+		};
+
+//		wifi {
+//			label = "r7X00:white:wifi";
+//			gpios = <&qcom_pinmux 67 0>;
+//		};
+	};
+
+};
+
+&nand {
+	status = "okay";
+
+	nand@0 {
+		reg = <0>;
+		compatible = "qcom,nandcs";
+
+		nand-ecc-strength = <4>;
+		nand-bus-width = <8>;
+		nand-ecc-step-size = <512>;
+		qcom,boot-partitions = <0x0 0x1180000>;
+
+				partitions {
+					compatible = "fixed-partitions";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+			qcadata@0 {
+				label = "qcadata";
+				reg = <0x0000000 0x0c80000>;
+				read-only;
+			};
+
+			APPSBL@c80000 {
+				label = "APPSBL";
+				reg = <0x0c80000 0x0500000>;
+				read-only;
+			};
+
+			APPSBLENV@1180000 {
+				label = "APPSBLENV";
+				reg = <0x1180000 0x0080000>;
+				read-only;
+			};
+
+			art: art@1200000 {
+				label = "art";
+				reg = <0x1200000 0x0140000>;
+			};
+			
+			artbak@1340000 {
+				label = "artbak";
+				reg = <0x1340000 0x0140000>;
+				read-only;
+			};
+
+			linux@1480000 {
+				label = "linux";
+				reg = <0x1480000 0x1E00000>;
+			};
+			
+			nvram@3280000 {
+				label = "nvram";
+				reg = <0x3280000 0x0200000>;
+			};
+
+			ddwrt@4000000 {
+				label = "ddwrt";
+				reg = <0x4000000 0x3900000>;
+			};
+
+			reserved@7900000 {
+				label = "reserved";
+				reg = <0x7900000 0x640000>;
+				read-only;
+			};
+			};
+	};
+};

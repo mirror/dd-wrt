@@ -1,0 +1,499 @@
+--- b/arch/arm/boot/dts/qcom-ipq8064.dtsi
++++ a/arch/arm/boot/dts/qcom-ipq8064.dtsi
+@@ -1278,6 +1278,12 @@
+ 			snps,blen = <16 0 0 0 0 0 0>;
+ 		};
+ 
++		nss-gmac-common {
++			compatible = "qcom,nss-gmac-common";
++			reg = <0x03000000 0x0000FFFF 0x1bb00000 0x0000FFFF 0x00900000 0x00004000>;
++			reg-names = "nss_reg_base", "qsgmii_reg_base", "clk_ctl_base";
++		};
++
+ 		gmac0: ethernet@37000000 {
+ 			device_type = "network";
+ 			compatible = "qcom,ipq806x-gmac", "snps,dwmac";
+@@ -1430,6 +1436,132 @@
+ 			regulator-max-microvolt = <3300000>;
+ 			regulator-always-on;
+ 		};
++
++		nss0: nss@40000000 {
++			compatible = "qcom,nss";
++			qcom,low-frequency = <733000000>; /* orig value 110000000 */
++			qcom,mid-frequency = <733000000>; /* orig value 550000000 */
++			qcom,max-frequency = <733000000>;
++
++			interrupts = <GIC_SPI 213 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 232 IRQ_TYPE_LEVEL_HIGH>;
++			reg = <0x36000000 0x1000 0x39000000 0x10000>;
++			reg-names = "nphys", "vphys";
++			clocks = <&gcc NSS_CORE_CLK>, <&gcc NSSTCM_CLK_SRC>,
++				 <&gcc NSSTCM_CLK>, <&rpmcc RPM_NSS_FABRIC_0_CLK>,
++				 <&rpmcc RPM_NSS_FABRIC_1_CLK>;
++			clock-names = "nss-core-clk", "nss-tcm-src",
++				      "nss-tcm-clk", "nss-fab0-clk",
++				      "nss-fab1-clk";
++			resets = <&gcc UBI32_CORE1_CLKRST_CLAMP_RESET>,
++				 <&gcc UBI32_CORE1_CLAMP_RESET>,
++				 <&gcc UBI32_CORE1_AHB_RESET>,
++				 <&gcc UBI32_CORE1_AXI_RESET>;
++			reset-names = "clkrst-clamp", "clamp", "ahb", "axi";
++
++			qcom,id = <0>;
++			qcom,num-irq = <2>;
++			qcom,num-queue = <2>;
++			qcom,load-addr = <0x40000000>;
++			qcom,turbo-frequency;
++
++			qcom,bridge-enabled;
++			qcom,gre-enabled;
++			qcom,gre-redir-enabled;
++			qcom,gre_tunnel_enabled;
++			qcom,ipv4-enabled;
++			qcom,ipv4-reasm-enabled;
++			qcom,ipv6-enabled;
++			qcom,ipv6-reasm-enabled;
++			qcom,l2tpv2-enabled;
++			qcom,map-t-enabled;
++			qcom,pppoe-enabled;
++			qcom,pptp-enabled;
++			qcom,portid-enabled;
++			qcom,shaping-enabled;
++			qcom,tun6rd-enabled;
++			qcom,tunipip6-enabled;
++			qcom,vlan-enabled;
++			qcom,wlan-dataplane-offload-enabled;
++			qcom,wlanredirect-enabled;
++			qcom,pxvlan-enabled;
++			qcom,vxlan-enabled;
++			qcom,match-enabled;
++			qcom,mirror-enabled;
++			qcom,rmnet-enabled;
++			qcom,clmap-enabled;
++		};
++
++		nss1: nss@40800000 {
++			compatible = "qcom,nss";
++			qcom,low-frequency = <733000000>; /* orig value 110000000 */
++			qcom,mid-frequency = <733000000>; /* orig value 550000000 */
++			qcom,max-frequency = <733000000>;
++
++			interrupts = <GIC_SPI 214 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 233 IRQ_TYPE_LEVEL_HIGH>;
++			reg = <0x36400000 0x1000 0x39010000 0x10000>;
++			reg-names = "nphys", "vphys";
++			resets = <&gcc UBI32_CORE2_CLKRST_CLAMP_RESET>,
++				 <&gcc UBI32_CORE2_CLAMP_RESET>,
++				 <&gcc UBI32_CORE2_AHB_RESET>,
++				 <&gcc UBI32_CORE2_AXI_RESET>;
++			reset-names = "clkrst-clamp", "clamp", "ahb", "axi";
++
++			qcom,id = <1>;
++			qcom,num-irq = <2>;
++			qcom,load-addr = <0x40800000>;
++			qcom,num-queue = <2>;
++			qcom,turbo-frequency;
++
++			qcom,capwap-enabled;
++			qcom,crypto-enabled;
++			qcom,dtls-enabled;
++			qcom,ipsec-enabled;
++		};
++
++		crypto1: crypto@38000000 {
++			compatible = "qcom,nss-crypto";
++			reg = <0x38000000 0x20000>, <0x38004000 0x22000>;
++			reg-names = "crypto_pbase", "bam_base";
++			clocks = <&gcc CE5_CORE_CLK>, <&gcc CE5_A_CLK>, <&gcc CE5_H_CLK>;
++			clock-names = "ce5_core", "ce5_aclk", "ce5_hclk";
++			resets = <&gcc CRYPTO_ENG1_RESET>, <&gcc CRYPTO_AHB_RESET>;
++			reset-names = "rst_eng", "rst_ahb";
++			qcom,id = <0>;
++			qcom,ee = <0>;
++		};
++
++		crypto2: crypto@38400000 {
++			compatible = "qcom,nss-crypto";
++			reg = <0x38400000 0x20000>, <0x38404000 0x22000>;
++			reg-names = "crypto_pbase", "bam_base";
++			resets = <&gcc CRYPTO_ENG2_RESET>;
++			reset-names = "rst_eng";
++			qcom,id = <1>;
++			qcom,ee = <0>;
++		};
++
++		crypto3: crypto@38800000 {
++			compatible = "qcom,nss-crypto";
++			reg = <0x38800000 0x20000>, <0x38804000 0x22000>;
++			reg-names = "crypto_pbase", "bam_base";
++			resets = <&gcc CRYPTO_ENG3_RESET>;
++			reset-names = "rst_eng";
++			qcom,id = <2>;
++			qcom,ee = <0>;
++		};
++
++		crypto4: crypto@38c00000 {
++			compatible = "qcom,nss-crypto";
++			reg = <0x38c00000 0x20000>, <0x38c04000 0x22000>;
++			reg-names = "crypto_pbase", "bam_base";
++			resets = <&gcc CRYPTO_ENG4_RESET>;
++			reset-names = "rst_eng";
++			qcom,id = <3>;
++			qcom,ee = <0>;
++		};
++
+
+		sdcc1bam: dma@12402000 {
+ 			compatible = "qcom,bam-v1.3.0";
+@@ -1497,6 +1635,20 @@
+ 				dma-names = "tx", "rx";
+ 			};
+ 		};
++
++		nss-common {
++			compatible = "qcom,nss-common";
++			reg = <0x03000000 0x00001000>;
++			reg-names = "nss_fpb_base";
++			clocks = <&gcc NSS_CORE_CLK>, <&gcc NSSTCM_CLK>,
++				<&rpmcc RPM_NSS_FABRIC_0_CLK>, <&rpmcc RPM_NSS_FABRIC_1_CLK>;
++			clock-names = "nss_core_clk", "nss_tcm_clk",
++				"nss-fab0-clk", "nss-fab1-clk";
++			nss_core-supply = <&smb208_s1b>;
++			nss_core_vdd_nominal = <1100000>;
++			nss_core_vdd_high = <1150000>;
++			nss_core_threshold_freq = <733000000>;
++		};
+ 	};
+ 
+ 	sfpb_mutex: sfpb-mutex {
+@@ -1573,3 +1725,27 @@
+		hwlocks = <&sfpb_mutex 3>;
+	};
+ };
++
++ &gmac1 {
++	compatible = "qcom,nss-gmac";
++	qcom,id = <0>;
++	qcom,pcs-chanid = <0>;
++	qcom,phy_mii_type = <0>;
++	qcom,emulation = <0>;
++	qcom,forced-speed = <1000>;
++	qcom,forced-duplex = <1>;
++	qcom,socver = <0>;
++	mdiobus = <&mdio0>;
++ };
++
++ &gmac2 {
++	compatible = "qcom,nss-gmac";
++	qcom,id = <1>;
++	qcom,pcs-chanid = <1>;
++	qcom,phy_mii_type = <1>;
++	qcom,emulation = <0>;
++	qcom,forced-speed = <1000>;
++	qcom,forced-duplex = <1>;
++	qcom,socver = <0>;
++	mdiobus = <&mdio0>;
++ };	
+--- b/arch/arm/boot/dts/qcom-ipq8064-v2.0.dtsi
++++ a/arch/arm/boot/dts/qcom-ipq8064-v2.0.dtsi
+@@ -18,6 +18,15 @@
+ 			reg = <0x41200000 0x300000>;
+			no-map;
+		};
++		
++		ramoops@42100000 {
++			compatible = "ramoops";
++			reg = <0x42100000 0x40000>;
++			record-size = <0x4000>;
++			console-size = <0x4000>;
++			ftrace-size = <0x4000>;
++			pmsg-size = <0x4000>;
++		};
+	};
+ };
+
+--- b/arch/arm/boot/dts/qcom-ipq8064-eax500.dtsi
++++ a/arch/arm/boot/dts/qcom-ipq8064-eax500.dtsi
+@@ -173,10 +173,17 @@	
+		0x00094 0x4e        /* PORT6_STATUS */
+			>;
+	};
++
++	phy4: ethernet-phy@4 {
++		reg = <4>;
++	};
+ };
+
+ &gmac1 {
+	status = "okay";
++	qcom,phy-mdio-addr = <0>;
++	qcom,poll-required = <0>;
++	qcom,rgmii-delay = <1>;
+
+	phy-mode = "rgmii";
+	qcom,id = <1>;	
+@@ -192,6 +199,9 @@
+
+ &gmac2 {
+	status = "okay";
++	qcom,phy-mdio-addr = <4>;
++	qcom,poll-required = <0>;
++	qcom,rgmii-delay = <0>;	
+
+	phy-mode = "sgmii";
+	qcom,id = <2>;
+--- b/arch/arm/boot/dts/qcom-ipq8064-ea8500.dts
++++ a/arch/arm/boot/dts/qcom-ipq8064-ea8500.dts
+@@ -109,20 +109,5 @@	
+ &mdio0 {
+	phy4: ethernet-phy@4 {
+		reg = <4>;
+	};
+ };
+-
+-&gmac1 {
+-	qcom,phy_mdio_addr = <4>;
+-	qcom,poll_required = <1>;
+-	qcom,rgmii_delay = <0>;
+-	qcom,emulation = <0>;
+-};
+-
+-/* LAN */
+-&gmac2 {
+-	qcom,phy_mdio_addr = <0>;	/* none */
+-	qcom,poll_required = <0>;	/* no polling */
+-	qcom,rgmii_delay = <0>;
+-	qcom,emulation = <0>;
+-};
+--- b/arch/arm/boot/dts/qcom-ipq8064-ad7200-c2600.dtsi
++++ a/arch/arm/boot/dts/qcom-ipq8064-ad7200-c2600.dtsi
+@@ -330,6 +330,9 @@	
+
+ &gmac1 {
+	status = "okay";
++	qcom,phy-mdio-addr = <4>;
++	qcom,poll-required = <0>;
++	qcom,rgmii-delay = <1>;
+	phy-mode = "rgmii";
+	qcom,id = <1>;
+	
+@@ -348,6 +351,9 @@	
+
+ &gmac2 {
+	status = "okay";
++	qcom,phy-mdio-addr = <0>;
++	qcom,poll-required = <0>;	
++	qcom,rgmii-delay = <0>;
+ 	phy-mode = "sgmii";
+	qcom,id = <2>;
+	
+--- b/arch/arm/boot/dts/qcom-ipq8064-r7500.dts
++++ a/arch/arm/boot/dts/qcom-ipq8064-r7500.dts
+@@ -263,6 +263,9 @@	
+
+ &gmac1 {
+	status = "okay";
++	qcom,phy-mdio-addr = <4>;
++	qcom,poll-required = <0>;
++	qcom,rgmii-delay = <1>;
+	phy-mode = "rgmii";
+	qcom,id = <1>;
+	
+@@ -280,6 +283,9 @@	
+
+ &gmac2 {
+	status = "okay";
++	qcom,phy-mdio-addr = <0>;
++	qcom,poll-required = <0>;	
++	qcom,rgmii-delay = <0>;
+ 	phy-mode = "sgmii";
+	qcom,id = <2>;
+	
+--- b/arch/arm/boot/dts/qcom-ipq8064-r7500v2.dts
++++ a/arch/arm/boot/dts/qcom-ipq8064-r7500v2.dts
+@@ -344,6 +344,9 @@	
+
+ &gmac1 {
+	status = "okay";
++	qcom,phy-mdio-addr = <4>;
++	qcom,poll-required = <0>;
++	qcom,rgmii-delay = <1>;
+	phy-mode = "rgmii";
+	qcom,id = <1>;
+	
+@@ -361,6 +364,9 @@	
+
+ &gmac2 {
+	status = "okay";
++	qcom,phy-mdio-addr = <0>;
++	qcom,poll-required = <0>;	
++	qcom,rgmii-delay = <0>;
+ 	phy-mode = "sgmii";
+	qcom,id = <2>;
+	
+--- b/arch/arm/boot/dts/qcom-ipq8064-d7800.dts
++++ a/arch/arm/boot/dts/qcom-ipq8064-d7800.dts
+@@ -356,6 +356,9 @@	
+
+ &gmac1 {
+	status = "okay";
++	qcom,phy-mdio-addr = <4>;
++	qcom,poll-required = <0>;
++	qcom,rgmii-delay = <1>;
+	phy-mode = "rgmii";
+	qcom,id = <1>;
+	
+@@ -373,6 +376,9 @@	
+
+ &gmac2 {
+	status = "okay";
++	qcom,phy-mdio-addr = <0>;
++	qcom,poll-required = <0>;	
++	qcom,rgmii-delay = <0>;
+ 	phy-mode = "sgmii";
+	qcom,id = <2>;
+	
+--- b/arch/arm/boot/dts/qcom-ipq8064-g10.dts
++++ a/arch/arm/boot/dts/qcom-ipq8064-g10.dts
+@@ -122,6 +122,9 @@	
+
+ &gmac1 {
+ 	status = "okay";
++	qcom,phy-mdio-addr = <4>;
++	qcom,poll-required = <0>;
++	qcom,rgmii-delay = <1>;
+
+	pinctrl-0 = <&rgmii2_pins>;
+	pinctrl-names = "default";
+@@ -137,6 +140,9 @@	
+ 
+ &gmac2 {
+	status = "okay";
++	qcom,phy-mdio-addr = <0>;
++	qcom,poll-required = <0>;
++	qcom,rgmii-delay = <0>;
+
+	phy-mode = "sgmii";
+	qcom,id = <2>;
+@@ -170,6 +176,10 @@	
+		0x00094 0x4e        /* PORT6_STATUS */
+			>;
+	};
++
++	phy4: ethernet-phy@4 {
++		reg = <4>;
++	};
+ };
+
+ &nand_controller {
+--- b/arch/arm/boot/dts/qcom-ipq8065.dtsi
++++ a/arch/arm/boot/dts/qcom-ipq8065.dtsi
+@@ -165,3 +165,15 @@
+	 	opp-level = <2>;
+ 	};
+ };
++
++ &nss0 {
++	qcom,low-frequency = <800000000>;
++	qcom,mid-frequency = <800000000>;
++	qcom,max-frequency = <800000000>;
++ };
++
++ &nss1 {
++	qcom,low-frequency = <800000000>;
++	qcom,mid-frequency = <800000000>;
++	qcom,max-frequency = <800000000>;
++ };
+--- b/arch/arm/boot/dts/qcom-ipq8065-nighthawk.dtsi
++++ a/arch/arm/boot/dts/qcom-ipq8065-nighthawk.dtsi
+@@ -353,6 +353,9 @@
+	qcom,phy_mdio_addr = <4>;
+	qcom,poll_required = <0>;
+	qcom,rgmii_delay = <1>;
++	qcom,phy-mdio-addr = <4>;
++	qcom,poll-required = <0>;
++	qcom,rgmii-delay = <1>;
+	qcom,phy_mii_type = <0>;
+	qcom,emulation = <0>;
+	qcom,irq = <255>;
+@@ -378,6 +381,9 @@
+	qcom,phy_mdio_addr = <0>;	/* none */
+	qcom,poll_required = <0>;	/* no polling */
+	qcom,rgmii_delay = <0>;
++	qcom,phy-mdio-addr = <0>;
++	qcom,poll-required = <0>;	
++	qcom,rgmii-delay = <0>;
+	qcom,phy_mii_type = <1>;
+	qcom,emulation = <0>;
+	qcom,irq = <258>;
+--- b/arch/arm/boot/dts/qcom-ipq8065-nbg6817.dts
++++ a/arch/arm/boot/dts/qcom-ipq8065-nbg6817.dts
+@@ -273,6 +273,9 @@
+	qcom,phy_mdio_addr = <4>;
+	qcom,poll_required = <0>;
+	qcom,rgmii_delay = <1>;
++	qcom,phy-mdio-addr = <4>;
++	qcom,poll-required = <0>;
++	qcom,rgmii-delay = <1>;
+	qcom,phy_mii_type = <0>;
+	qcom,emulation = <0>;
+	qcom,irq = <255>;
+@@ -294,6 +297,9 @@
+	qcom,phy_mdio_addr = <0>;	/* none */
+	qcom,poll_required = <0>;	/* no polling */
+	qcom,rgmii_delay = <0>;
++	qcom,phy-mdio-addr = <0>;
++	qcom,poll-required = <0>;	
++	qcom,rgmii-delay = <0>;
+	qcom,phy_mii_type = <1>;
+	qcom,emulation = <0>;
+	qcom,irq = <258>;
+--- b/arch/arm/boot/dts/qcom-ipq8065-rt4230w-rev6.dts
++++ a/arch/arm/boot/dts/qcom-ipq8065-rt4230w-rev6.dts
+@@ -244,10 +244,28 @@	
+		0x00054 0xc832c832  /* LED_CTRL_1 */
+		>;
+	};
++
++	phy4: ethernet-phy@4 {
++		reg = <4>;
++		qca,ar8327-initvals = <
++			0x000e4 0x6a545     /* MAC_POWER_SEL */
++			0x0000c 0x80        /* PAD6_MODE */
++			>;
++	};
+ };
+ 
+ &gmac0 {
+	status = "okay";
++	compatible = "qcom,nss-gmac";
++	qcom,id = <0>;
++	qcom,pcs-chanid = <0>;
++	qcom,phy-mdio-addr = <4>;
++	qcom,poll-required = <0>;
++	qcom,rgmii-delay = <1>;
++	qcom,forced-speed = <1000>;
++	qcom,forced-duplex = <1>;
++	mdiobus = <&mdio0>;
++	qcom,socver = <0>;
+	phy-mode = "rgmii";
+	qcom,id = <0>;
+	
+@@ -265,6 +276,16 @@	
+
+ &gmac1 {
+	status = "okay";
++	compatible = "qcom,nss-gmac";
++	qcom,id = <1>;
++	qcom,pcs-chanid = <1>;
++	qcom,phy-mdio-addr = <0>;
++	qcom,poll-required = <0>;	
++	qcom,rgmii-delay = <0>;
++	qcom,forced-speed = <1000>;
++	qcom,forced-duplex = <1>;
++	mdiobus = <&mdio0>;
++	qcom,socver = <0>;
+ 	phy-mode = "sgmii";
+	qcom,id = <1>;
+	

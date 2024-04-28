@@ -1,0 +1,7398 @@
+Index: boot/dts/Makefile
+===================================================================
+--- boot/dts/Makefile	(revision 53158)
++++ boot/dts/Makefile	(working copy)
+@@ -125,12 +125,10 @@ dtb-$(CONFIG_ARCH_BCM_5301X) += \
+ 	bcm4709-buffalo-wxr-1900dhp.dtb \
+ 	bcm4709-linksys-ea9200.dtb \
+ 	bcm4709-netgear-r7000.dtb \
+-	bcm4709-netgear-r7900.dtb \
+ 	bcm4709-netgear-r8000.dtb \
+ 	bcm4709-tplink-archer-c9-v1.dtb \
+ 	bcm47094-asus-rt-ac88u.dtb \
+ 	bcm47094-dlink-dir-885l.dtb \
+-	bcm47094-dlink-dir-890l.dtb \
+ 	bcm47094-linksys-panamera.dtb \
+ 	bcm47094-luxul-abr-4500.dtb \
+ 	bcm47094-luxul-xap-1610.dtb \
+@@ -141,7 +139,6 @@ dtb-$(CONFIG_ARCH_BCM_5301X) += \
+ 	bcm47094-netgear-r8500.dtb \
+ 	bcm47094-phicomm-k3.dtb \
+ 	bcm53015-meraki-mr26.dtb \
+-	bcm53016-dlink-dwl-8610ap.dtb \
+ 	bcm53016-meraki-mr32.dtb \
+ 	bcm94708.dtb \
+ 	bcm94709.dtb \
+@@ -334,6 +331,7 @@ dtb-$(CONFIG_MACH_KIRKWOOD) += \
+ 	kirkwood-iconnect.dtb \
+ 	kirkwood-iomega_ix2_200.dtb \
+ 	kirkwood-is2.dtb \
++	kirkwood-km_fixedeth.dtb \
+ 	kirkwood-km_kirkwood.dtb \
+ 	kirkwood-l-50.dtb \
+ 	kirkwood-laplug.dtb \
+@@ -864,7 +862,10 @@ dtb-$(CONFIG_ARCH_OMAP3) += \
+ 	am3517-craneboard.dtb \
+ 	am3517-evm.dtb \
+ 	am3517_mt_ventoux.dtb \
++	logicpd-torpedo-35xx-devkit.dtb \
+ 	logicpd-torpedo-37xx-devkit.dtb \
++	logicpd-torpedo-37xx-devkit-28.dtb \
++	logicpd-som-lv-35xx-devkit.dtb \
+ 	logicpd-som-lv-37xx-devkit.dtb \
+ 	omap3430-sdp.dtb \
+ 	omap3-beagle.dtb \
+@@ -1051,6 +1052,14 @@ dtb-$(CONFIG_ARCH_QCOM) += \
+ 	qcom-ipq4019-ap.dk07.1-c2.dtb \
+ 	qcom-ipq8064-ap148.dtb \
+ 	qcom-ipq8064-rb3011.dtb \
++	qcom-ipq8064-tew827.dtb \
++	qcom-ipq8064-r7500.dtb \
++	qcom-ipq8064-ea8500.dtb \
++	qcom-ipq8064-asrockg10.dtb \
++	qcom-ipq8064-r7500v2.dtb \
++	qcom-ipq8065-r7800.dtb \
++	qcom-ipq8065-xr500.dtb \
++	qcom-ipq8065-xr450.dtb \
+ 	qcom-msm8226-samsung-s3ve3g.dtb \
+ 	qcom-msm8660-surf.dtb \
+ 	qcom-msm8916-samsung-e5.dtb \
+@@ -1530,6 +1539,8 @@ dtb-$(CONFIG_MACH_ARMADA_38X) += \
+ 	armada-388-helios4.dtb \
+ 	armada-388-rd.dtb
+ dtb-$(CONFIG_MACH_ARMADA_39X) += \
++	armada-390-db.dtb \
++	armada-395-gp.dtb \
+ 	armada-398-db.dtb
+ dtb-$(CONFIG_MACH_ARMADA_XP) += \
+ 	armada-xp-axpwifiap.dtb \
+@@ -1559,6 +1570,7 @@ dtb-$(CONFIG_MACH_DOVE) += \
+ dtb-$(CONFIG_ARCH_MEDIATEK) += \
+ 	mt2701-evb.dtb \
+ 	mt6580-evbp1.dtb \
++	mt6582-prestigio-pmt5008-3g.dtb \
+ 	mt6589-aquaris5.dtb \
+ 	mt6589-fairphone-fp1.dtb \
+ 	mt6592-evb.dtb \
+@@ -1611,6 +1623,7 @@ dtb-$(CONFIG_ARCH_ASPEED) += \
+ 	aspeed-bmc-intel-s2600wf.dtb \
+ 	aspeed-bmc-inspur-fp5280g2.dtb \
+ 	aspeed-bmc-inspur-nf5280m6.dtb \
++	aspeed-bmc-inspur-on5263m5.dtb \
+ 	aspeed-bmc-lenovo-hr630.dtb \
+ 	aspeed-bmc-lenovo-hr855xg2.dtb \
+ 	aspeed-bmc-microsoft-olympus.dtb \
+Index: boot/dts/bcm4708-asus-rt-ac56u.dts
+===================================================================
+--- boot/dts/bcm4708-asus-rt-ac56u.dts	(revision 53158)
++++ boot/dts/bcm4708-asus-rt-ac56u.dts	(working copy)
+@@ -93,40 +93,3 @@
+ &usb3_phy {
+ 	status = "okay";
+ };
+-
+-&srab {
+-	status = "okay";
+-
+-	ports {
+-		port@0 {
+-			reg = <0>;
+-			label = "lan1";
+-		};
+-
+-		port@1 {
+-			reg = <1>;
+-			label = "lan2";
+-		};
+-
+-		port@2 {
+-			reg = <2>;
+-			label = "lan3";
+-		};
+-
+-		port@3 {
+-			reg = <3>;
+-			label = "lan4";
+-		};
+-
+-		port@4 {
+-			reg = <4>;
+-			label = "wan";
+-		};
+-
+-		port@5 {
+-			reg = <5>;
+-			label = "cpu";
+-			ethernet = <&gmac0>;
+-		};
+-	};
+-};
+Index: boot/dts/bcm4708-asus-rt-ac68u.dts
+===================================================================
+--- boot/dts/bcm4708-asus-rt-ac68u.dts	(revision 53158)
++++ boot/dts/bcm4708-asus-rt-ac68u.dts	(working copy)
+@@ -83,40 +83,3 @@
+ &usb3_phy {
+ 	status = "okay";
+ };
+-
+-&srab {
+-	status = "okay";
+-
+-	ports {
+-		port@0 {
+-			reg = <0>;
+-			label = "wan";
+-		};
+-
+-		port@1 {
+-			reg = <1>;
+-			label = "lan1";
+-		};
+-
+-		port@2 {
+-			reg = <2>;
+-			label = "lan2";
+-		};
+-
+-		port@3 {
+-			reg = <3>;
+-			label = "lan3";
+-		};
+-
+-		port@4 {
+-			reg = <4>;
+-			label = "lan4";
+-		};
+-
+-		port@5 {
+-			reg = <5>;
+-			label = "cpu";
+-			ethernet = <&gmac0>;
+-		};
+-	};
+-};
+Index: boot/dts/bcm4708-buffalo-wzr-1750dhp.dts
+===================================================================
+--- boot/dts/bcm4708-buffalo-wzr-1750dhp.dts	(revision 53158)
++++ boot/dts/bcm4708-buffalo-wzr-1750dhp.dts	(working copy)
+@@ -149,40 +149,3 @@
+ &usb3_phy {
+ 	status = "okay";
+ };
+-
+-&srab {
+-	status = "okay";
+-
+-	ports {
+-		port@0 {
+-			reg = <0>;
+-			label = "lan1";
+-		};
+-
+-		port@1 {
+-			reg = <1>;
+-			label = "lan2";
+-		};
+-
+-		port@2 {
+-			reg = <2>;
+-			label = "lan3";
+-		};
+-
+-		port@3 {
+-			reg = <3>;
+-			label = "lan4";
+-		};
+-
+-		port@4 {
+-			reg = <4>;
+-			label = "wan";
+-		};
+-
+-		port@5 {
+-			reg = <5>;
+-			label = "cpu";
+-			ethernet = <&gmac0>;
+-		};
+-	};
+-};
+Index: boot/dts/bcm4708-linksys-ea6300-v1.dts
+===================================================================
+--- boot/dts/bcm4708-linksys-ea6300-v1.dts	(revision 53158)
++++ boot/dts/bcm4708-linksys-ea6300-v1.dts	(working copy)
+@@ -46,40 +46,3 @@
+ &usb3_phy {
+ 	status = "okay";
+ };
+-
+-&srab {
+-	status = "okay";
+-
+-	ports {
+-		port@0 {
+-			reg = <0>;
+-			label = "lan1";
+-		};
+-
+-		port@1 {
+-			reg = <1>;
+-			label = "lan2";
+-		};
+-
+-		port@2 {
+-			reg = <2>;
+-			label = "lan3";
+-		};
+-
+-		port@3 {
+-			reg = <3>;
+-			label = "lan4";
+-		};
+-
+-		port@4 {
+-			reg = <4>;
+-			label = "wan";
+-		};
+-
+-		port@5 {
+-			reg = <5>;
+-			label = "cpu";
+-			ethernet = <&gmac0>;
+-		};
+-	};
+-};
+Index: boot/dts/bcm4708-linksys-ea6500-v2.dts
+===================================================================
+--- boot/dts/bcm4708-linksys-ea6500-v2.dts	(revision 53158)
++++ boot/dts/bcm4708-linksys-ea6500-v2.dts	(working copy)
+@@ -19,8 +19,7 @@
+ 
+ 	memory@0 {
+ 		device_type = "memory";
+-		reg = <0x00000000 0x08000000>,
+-		      <0x88000000 0x08000000>;
++		reg = <0x00000000 0x08000000>;
+ 	};
+ 
+ 	gpio-keys {
+@@ -43,40 +42,3 @@
+ &usb3_phy {
+ 	status = "okay";
+ };
+-
+-&srab {
+-	status = "okay";
+-
+-	ports {
+-		port@0 {
+-			reg = <0>;
+-			label = "lan1";
+-		};
+-
+-		port@1 {
+-			reg = <1>;
+-			label = "lan2";
+-		};
+-
+-		port@2 {
+-			reg = <2>;
+-			label = "lan3";
+-		};
+-
+-		port@3 {
+-			reg = <3>;
+-			label = "lan4";
+-		};
+-
+-		port@4 {
+-			reg = <4>;
+-			label = "wan";
+-		};
+-
+-		port@5 {
+-			reg = <5>;
+-			label = "cpu";
+-			ethernet = <&gmac0>;
+-		};
+-	};
+-};
+Index: boot/dts/bcm4708-netgear-r6300-v2.dts
+===================================================================
+--- boot/dts/bcm4708-netgear-r6300-v2.dts	(revision 53158)
++++ boot/dts/bcm4708-netgear-r6300-v2.dts	(working copy)
+@@ -86,40 +86,3 @@
+ &usb3_phy {
+ 	status = "okay";
+ };
+-
+-&srab {
+-	status = "okay";
+-
+-	ports {
+-		port@0 {
+-			reg = <0>;
+-			label = "lan1";
+-		};
+-
+-		port@1 {
+-			reg = <1>;
+-			label = "lan2";
+-		};
+-
+-		port@2 {
+-			reg = <2>;
+-			label = "lan3";
+-		};
+-
+-		port@3 {
+-			reg = <3>;
+-			label = "lan4";
+-		};
+-
+-		port@4 {
+-			reg = <4>;
+-			label = "wan";
+-		};
+-
+-		port@5 {
+-			reg = <5>;
+-			label = "cpu";
+-			ethernet = <&gmac0>;
+-		};
+-	};
+-};
+Index: boot/dts/bcm47081-asus-rt-n18u.dts
+===================================================================
+--- boot/dts/bcm47081-asus-rt-n18u.dts	(revision 53158)
++++ boot/dts/bcm47081-asus-rt-n18u.dts	(working copy)
+@@ -77,40 +77,3 @@
+ &usb3_phy {
+ 	status = "okay";
+ };
+-
+-&srab {
+-	status = "okay";
+-
+-	ports {
+-		port@0 {
+-			reg = <0>;
+-			label = "wan";
+-		};
+-
+-		port@1 {
+-			reg = <1>;
+-			label = "lan1";
+-		};
+-
+-		port@2 {
+-			reg = <2>;
+-			label = "lan2";
+-		};
+-
+-		port@3 {
+-			reg = <3>;
+-			label = "lan3";
+-		};
+-
+-		port@4 {
+-			reg = <4>;
+-			label = "lan4";
+-		};
+-
+-		port@5 {
+-			reg = <5>;
+-			label = "cpu";
+-			ethernet = <&gmac0>;
+-		};
+-	};
+-};
+Index: boot/dts/bcm47081-buffalo-wzr-900dhp.dts
+===================================================================
+--- boot/dts/bcm47081-buffalo-wzr-900dhp.dts	(revision 53158)
++++ boot/dts/bcm47081-buffalo-wzr-900dhp.dts	(working copy)
+@@ -107,41 +107,3 @@
+ &usb3_phy {
+ 	status = "okay";
+ };
+-
+-&srab {
+-	status = "okay";
+-
+-	ports {
+-		port@0 {
+-			reg = <0>;
+-			label = "lan1";
+-		};
+-
+-		port@1 {
+-			reg = <1>;
+-			label = "lan2";
+-		};
+-
+-		port@2 {
+-			reg = <2>;
+-			label = "lan3";
+-		};
+-
+-		port@3 {
+-			reg = <3>;
+-			label = "lan4";
+-		};
+-
+-		port@4 {
+-			reg = <4>;
+-			label = "wan";
+-		};
+-
+-		port@5 {
+-			reg = <5>;
+-			label = "cpu";
+-			ethernet = <&gmac0>;
+-		};
+-	};
+-};
+-
+Index: boot/dts/bcm47081-tplink-archer-c5-v2.dts
+===================================================================
+--- boot/dts/bcm47081-tplink-archer-c5-v2.dts	(revision 53158)
++++ boot/dts/bcm47081-tplink-archer-c5-v2.dts	(working copy)
+@@ -91,60 +91,38 @@
+ 	};
+ };
+ 
+-&srab {
++&spi_nor {
+ 	status = "okay";
+ 
+-	ports {
+-		port@0 {
+-			reg = <0>;
+-			label = "wan";
+-		};
++	partitions {
++		compatible = "fixed-partitions";
++		#address-cells = <1>;
++		#size-cells = <1>;
+ 
+-		port@1 {
+-			reg = <1>;
+-			label = "lan1";
++		boot@0 {
++			label = "boot";
++			reg = <0x000000 0x040000>;
++			read-only;
+ 		};
+ 
+-		port@2 {
+-			reg = <2>;
+-			label = "lan2";
++		os-image@100000 {
++			label = "os-image";
++			reg = <0x040000 0x200000>;
++			compatible = "brcm,trx";
+ 		};
+ 
+-		port@3 {
+-			reg = <3>;
+-			label = "lan3";
++		rootfs@240000 {
++			label = "rootfs";
++			reg = <0x240000 0xc00000>;
+ 		};
+ 
+-		port@4 {
+-			reg = <4>;
+-			label = "lan4";
++		nvram@ff0000 {
++			label = "nvram";
++			reg = <0xff0000 0x010000>;
+ 		};
+-
+-		port@5 {
+-			reg = <5>;
+-			label = "cpu";
+-			ethernet = <&gmac0>;
+-		};
+ 	};
+ };
+ 
+-&spi_nor {
+-	status = "okay";
+-
+-	partitions {
+-		compatible = "tplink,safeloader-partitions";
+-		partitions-table-offset = <0xe50000>;
+-
+-		partition-os-image {
+-			compatible = "brcm,trx";
+-		};
+-
+-		partition-file-system {
+-			linux,rootfs;
+-		};
+-	};
+-};
+-
+ &usb2 {
+ 	vcc-gpio = <&chipcommon 9 GPIO_ACTIVE_HIGH>;
+ };
+Index: boot/dts/bcm4709-asus-rt-ac87u.dts
+===================================================================
+--- boot/dts/bcm4709-asus-rt-ac87u.dts	(revision 53158)
++++ boot/dts/bcm4709-asus-rt-ac87u.dts	(working copy)
+@@ -66,38 +66,6 @@
+ 	status = "okay";
+ };
+ 
+-&srab {
+-	status = "okay";
+-
+-	ports {
+-		port@0 {
+-			reg = <0>;
+-			label = "wan";
+-		};
+-
+-		port@1 {
+-			reg = <1>;
+-			label = "lan1";
+-		};
+-
+-		port@2 {
+-			reg = <2>;
+-			label = "lan2";
+-		};
+-
+-		port@3 {
+-			reg = <3>;
+-			label = "lan3";
+-		};
+-
+-		port@7 {
+-			reg = <7>;
+-			label = "cpu";
+-			ethernet = <&gmac1>;
+-		};
+-	};
+-};
+-
+ &nandcs {
+ 	partitions {
+ 		compatible = "fixed-partitions";
+Index: boot/dts/bcm4709-buffalo-wxr-1900dhp.dts
+===================================================================
+--- boot/dts/bcm4709-buffalo-wxr-1900dhp.dts	(revision 53158)
++++ boot/dts/bcm4709-buffalo-wxr-1900dhp.dts	(working copy)
+@@ -130,40 +130,3 @@
+ &usb3_phy {
+ 	status = "okay";
+ };
+-
+-&srab {
+-	status = "okay";
+-
+-	ports {
+-		port@0 {
+-			reg = <0>;
+-			label = "lan1";
+-		};
+-
+-		port@1 {
+-			reg = <1>;
+-			label = "lan2";
+-		};
+-
+-		port@2 {
+-			reg = <2>;
+-			label = "lan3";
+-		};
+-
+-		port@3 {
+-			reg = <3>;
+-			label = "lan4";
+-		};
+-
+-		port@4 {
+-			reg = <4>;
+-			label = "wan";
+-		};
+-
+-		port@5 {
+-			reg = <5>;
+-			label = "cpu";
+-			ethernet = <&gmac0>;
+-		};
+-	};
+-};
+Index: boot/dts/bcm4709-linksys-ea9200.dts
+===================================================================
+--- boot/dts/bcm4709-linksys-ea9200.dts	(revision 53158)
++++ boot/dts/bcm4709-linksys-ea9200.dts	(working copy)
+@@ -47,45 +47,3 @@
+ &usb3_phy {
+ 	status = "okay";
+ };
+-
+-&srab {
+-	status = "okay";
+-
+-	ports {
+-		port@0 {
+-			reg = <0>;
+-			label = "lan1";
+-		};
+-
+-		port@1 {
+-			reg = <1>;
+-			label = "lan2";
+-		};
+-
+-		port@2 {
+-			reg = <2>;
+-			label = "lan3";
+-		};
+-
+-		port@3 {
+-			reg = <3>;
+-			label = "lan4";
+-		};
+-
+-		port@4 {
+-			reg = <4>;
+-			label = "wan";
+-		};
+-
+-		port@8 {
+-			reg = <8>;
+-			label = "cpu";
+-			ethernet = <&gmac2>;
+-
+-			fixed-link {
+-				speed = <1000>;
+-				full-duplex;
+-			};
+-		};
+-	};
+-};
+Index: boot/dts/bcm4709-netgear-r7000.dts
+===================================================================
+--- boot/dts/bcm4709-netgear-r7000.dts	(revision 53158)
++++ boot/dts/bcm4709-netgear-r7000.dts	(working copy)
+@@ -104,40 +104,3 @@
+ &usb3_phy {
+ 	status = "okay";
+ };
+-
+-&srab {
+-	status = "okay";
+-
+-	ports {
+-		port@0 {
+-			reg = <0>;
+-			label = "wan";
+-		};
+-
+-		port@1 {
+-			reg = <1>;
+-			label = "lan1";
+-		};
+-
+-		port@2 {
+-			reg = <2>;
+-			label = "lan2";
+-		};
+-
+-		port@3 {
+-			reg = <3>;
+-			label = "lan3";
+-		};
+-
+-		port@4 {
+-			reg = <4>;
+-			label = "lan4";
+-		};
+-
+-		port@5 {
+-			reg = <5>;
+-			label = "cpu";
+-			ethernet = <&gmac0>;
+-		};
+-	};
+-};
+Index: boot/dts/bcm4709-tplink-archer-c9-v1.dts
+===================================================================
+--- boot/dts/bcm4709-tplink-archer-c9-v1.dts	(revision 53158)
++++ boot/dts/bcm4709-tplink-archer-c9-v1.dts	(working copy)
+@@ -100,60 +100,38 @@
+ 	vcc-gpio = <&chipcommon 12 GPIO_ACTIVE_HIGH>;
+ };
+ 
+-&srab {
++&spi_nor {
+ 	status = "okay";
+ 
+-	ports {
+-		port@0 {
+-			reg = <0>;
+-			label = "wan";
+-		};
++	partitions {
++		compatible = "fixed-partitions";
++		#address-cells = <1>;
++		#size-cells = <1>;
+ 
+-		port@1 {
+-			reg = <1>;
+-			label = "lan1";
++		boot@0 {
++			label = "boot";
++			reg = <0x000000 0x040000>;
++			read-only;
+ 		};
+ 
+-		port@2 {
+-			reg = <2>;
+-			label = "lan2";
++		os-image@100000 {
++			label = "os-image";
++			reg = <0x040000 0x200000>;
++			compatible = "brcm,trx";
+ 		};
+ 
+-		port@3 {
+-			reg = <3>;
+-			label = "lan3";
++		rootfs@240000 {
++			label = "rootfs";
++			reg = <0x240000 0xc00000>;
+ 		};
+ 
+-		port@4 {
+-			reg = <4>;
+-			label = "lan4";
++		nvram@ff0000 {
++			label = "nvram";
++			reg = <0xff0000 0x010000>;
+ 		};
+-
+-		port@5 {
+-			reg = <5>;
+-			label = "cpu";
+-			ethernet = <&gmac0>;
+-		};
+ 	};
+ };
+ 
+-&spi_nor {
+-	status = "okay";
+-
+-	partitions {
+-		compatible = "tplink,safeloader-partitions";
+-		partitions-table-offset = <0xe50000>;
+-
+-		partition-os-image {
+-			compatible = "brcm,trx";
+-		};
+-
+-		partition-file-system {
+-			linux,rootfs;
+-		};
+-	};
+-};
+-
+ &usb3_phy {
+ 	status = "okay";
+ };
+Index: boot/dts/bcm47094-dlink-dir-885l.dts
+===================================================================
+--- boot/dts/bcm47094-dlink-dir-885l.dts	(revision 53158)
++++ boot/dts/bcm47094-dlink-dir-885l.dts	(working copy)
+@@ -35,7 +35,6 @@
+ 				partition@0 {
+ 					label = "firmware";
+ 					reg = <0x00000000 0x08000000>;
+-					compatible = "seama";
+ 				};
+ 			};
+ 		};
+Index: boot/dts/bcm47094-netgear-r8500.dts
+===================================================================
+--- boot/dts/bcm47094-netgear-r8500.dts	(revision 53158)
++++ boot/dts/bcm47094-netgear-r8500.dts	(working copy)
+@@ -94,45 +94,3 @@
+ &usb3_phy {
+ 	status = "okay";
+ };
+-
+-&srab {
+-	status = "okay";
+-
+-	ports {
+-		port@0 {
+-			reg = <0>;
+-			label = "wan";
+-		};
+-
+-		port@1 {
+-			reg = <1>;
+-			label = "lan1";
+-		};
+-
+-		port@2 {
+-			reg = <2>;
+-			label = "lan2";
+-		};
+-
+-		port@3 {
+-			reg = <3>;
+-			label = "lan3";
+-		};
+-
+-		port@4 {
+-			reg = <4>;
+-			label = "lan4";
+-		};
+-
+-		port@8 {
+-			reg = <8>;
+-			label = "cpu";
+-			ethernet = <&gmac2>;
+-
+-			fixed-link {
+-				speed = <1000>;
+-				full-duplex;
+-			};
+-		};
+-	};
+-};
+Index: boot/dts/bcm47094-phicomm-k3.dts
+===================================================================
+--- boot/dts/bcm47094-phicomm-k3.dts	(revision 53158)
++++ boot/dts/bcm47094-phicomm-k3.dts	(working copy)
+@@ -38,38 +38,6 @@
+ 	status = "okay";
+ };
+ 
+-&srab {
+-	status = "okay";
+-
+-	ports {
+-		port@0 {
+-			reg = <0>;
+-			label = "lan1";
+-		};
+-
+-		port@1 {
+-			reg = <1>;
+-			label = "lan2";
+-		};
+-
+-		port@2 {
+-			reg = <2>;
+-			label = "lan3";
+-		};
+-
+-		port@3 {
+-			reg = <3>;
+-			label = "wan";
+-		};
+-
+-		port@5 {
+-			reg = <5>;
+-			label = "cpu";
+-			ethernet = <&gmac0>;
+-		};
+-	};
+-};
+-
+ &nandcs {
+ 	partitions {
+ 		compatible = "fixed-partitions";
+Index: boot/dts/bcm53573.dtsi
+===================================================================
+--- boot/dts/bcm53573.dtsi	(revision 53158)
++++ boot/dts/bcm53573.dtsi	(working copy)
+@@ -54,7 +54,6 @@
+ 			     <GIC_PPI 14 IRQ_TYPE_LEVEL_LOW>,
+ 			     <GIC_PPI 11 IRQ_TYPE_LEVEL_LOW>,
+ 			     <GIC_PPI 10 IRQ_TYPE_LEVEL_LOW>;
+-		clocks = <&ilp>;
+ 	};
+ 
+ 	clocks {
+@@ -128,6 +127,9 @@
+ 
+ 		pcie0: pcie@2000 {
+ 			reg = <0x00002000 0x1000>;
++
++			#address-cells = <3>;
++			#size-cells = <2>;
+ 		};
+ 
+ 		usb2: usb2@4000 {
+@@ -157,8 +159,6 @@
+ 			};
+ 
+ 			ohci: usb@d000 {
+-				#usb-cells = <0>;
+-
+ 				compatible = "generic-ohci";
+ 				reg = <0xd000 0x1000>;
+ 				interrupt-parent = <&gic>;
+Index: boot/dts/qcom-ipq4018-ap120c-ac.dts
+===================================================================
+--- boot/dts/qcom-ipq4018-ap120c-ac.dts	(revision 53158)
++++ boot/dts/qcom-ipq4018-ap120c-ac.dts	(working copy)
+@@ -1,353 +1,34 @@
+ // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+ 
+-#include "qcom-ipq4019.dtsi"
+-#include <dt-bindings/gpio/gpio.h>
+-#include <dt-bindings/input/input.h>
+-#include <dt-bindings/soc/qcom,tcsr.h>
++#include <dt-bindings/leds/common.h>
++#include "qcom-ipq4018-ap120c-ac.dtsi"
+ 
+ / {
+-	model = "ALFA Network AP120C-AC";
+-	compatible = "alfa-network,ap120c-ac";
+-
+-	aliases {
+-		led-boot = &status;
+-		led-failsafe = &status;
+-		led-running = &status;
+-		led-upgrade = &status;
+-		ethernet1 = &swport5;
+-	};
+-
+-	keys {
+-		compatible = "gpio-keys";
+-
+-		reset {
+-			label = "reset";
+-			gpios = <&tlmm 63 GPIO_ACTIVE_LOW>;
+-			linux,code = <KEY_RESTART>;
+-		};
+-	};
+-
+ 	leds {
+ 		compatible = "gpio-leds";
+ 
+ 		status: status {
+-			label = "blue:status";
++			label = "ap120c-ac:blue:status";
++			function = LED_FUNCTION_STATUS;
++			color = <LED_COLOR_ID_BLUE>;
+ 			gpios = <&tlmm 5 GPIO_ACTIVE_LOW>;
+ 			default-state = "keep";
+ 		};
+ 
+-		wan {
+-			label = "amber:wan";
+-			gpios = <&ethphy4 1 GPIO_ACTIVE_HIGH>;
+-		};
+-
+ 		wlan2g {
+-			label = "green:wlan2g";
++			label = "ap120c-ac:green:wlan2g";
++			function = LED_FUNCTION_WLAN;
++			color = <LED_COLOR_ID_GREEN>;
+ 			gpios = <&tlmm 3 GPIO_ACTIVE_HIGH>;
+ 			linux,default-trigger = "phy0tpt";
+ 		};
+ 
+ 		wlan5g {
+-			label = "red:wlan5g";
++			label = "ap120c-ac:red:wlan5g";
++			function = LED_FUNCTION_WLAN;
++			color = <LED_COLOR_ID_RED>;
+ 			gpios = <&tlmm 2 GPIO_ACTIVE_HIGH>;
+ 			linux,default-trigger = "phy1tpt";
+ 		};
+ 	};
+-
+-	soc {
+-		rng@22000 {
+-			status = "okay";
+-		};
+-
+-		mdio@90000 {
+-			status = "okay";
+-
+-			pinctrl-0 = <&mdio_pins>;
+-			pinctrl-names = "default";
+-		};
+-
+-		counter@4a1000 {
+-			compatible = "qcom,qca-gcnt";
+-			reg = <0x4a1000 0x4>;
+-		};
+-
+-		tcsr@1949000 {
+-			compatible = "qcom,tcsr";
+-			reg = <0x1949000 0x100>;
+-			qcom,wifi_glb_cfg = <TCSR_WIFI_GLB_CFG>;
+-		};
+-
+-		tcsr@194b000 {
+-			compatible = "qcom,tcsr";
+-			reg = <0x194b000 0x100>;
+-			qcom,usb-hsphy-mode-select = <TCSR_USB_HSPHY_HOST_MODE>;
+-		};
+-
+-		ess_tcsr@1953000 {
+-			compatible = "qcom,tcsr";
+-			reg = <0x1953000 0x1000>;
+-			qcom,ess-interface-select = <TCSR_ESS_PSGMII>;
+-		};
+-
+-		tcsr@1957000 {
+-			compatible = "qcom,tcsr";
+-			reg = <0x1957000 0x100>;
+-			qcom,wifi_noc_memtype_m0_m2 = <TCSR_WIFI_NOC_MEMTYPE_M0_M2>;
+-		};
+-
+-		usb2@60f8800 {
+-			status = "okay";
+-		};
+-
+-		usb3@8af8800 {
+-			status = "okay";
+-
+-			dwc3@8a00000 {
+-				phys = <&usb3_hs_phy>;
+-				phy-names = "usb2-phy";
+-			};
+-		};
+-
+-		crypto@8e3a000 {
+-			status = "okay";
+-		};
+-
+-		watchdog@b017000 {
+-			status = "okay";
+-		};
+-	};
+ };
+-
+-&blsp_dma {
+-	status = "okay";
+-};
+-
+-&blsp1_i2c3 {
+-	status = "okay";
+-
+-	pinctrl-0 = <&i2c0_pins>;
+-	pinctrl-names = "default";
+-
+-	tpm@29 {
+-		compatible = "atmel,at97sc3204t";
+-		reg = <0x29>;
+-	};
+-};
+-
+-&blsp1_spi1 {
+-	status = "okay";
+-
+-	pinctrl-0 = <&spi0_pins>;
+-	pinctrl-names = "default";
+-	cs-gpios = <&tlmm 54 GPIO_ACTIVE_HIGH>,
+-		   <&tlmm  4 GPIO_ACTIVE_HIGH>;
+-
+-	flash@0 {
+-		compatible = "jedec,spi-nor";
+-		reg = <0>;
+-		spi-max-frequency = <24000000>;
+-
+-		partitions {
+-			compatible = "fixed-partitions";
+-			#address-cells = <1>;
+-			#size-cells = <1>;
+-
+-			partition@0 {
+-				label = "SBL1";
+-				reg = <0x00000000 0x00040000>;
+-				read-only;
+-			};
+-
+-			partition@40000 {
+-				label = "MIBIB";
+-				reg = <0x00040000 0x00020000>;
+-				read-only;
+-			};
+-
+-			partition@60000 {
+-				label = "QSEE";
+-				reg = <0x00060000 0x00060000>;
+-				read-only;
+-			};
+-
+-			partition@c0000 {
+-				label = "CDT";
+-				reg = <0x000c0000 0x00010000>;
+-				read-only;
+-			};
+-
+-			partition@d0000 {
+-				label = "DDRPARAMS";
+-				reg = <0x000d0000 0x00010000>;
+-				read-only;
+-			};
+-
+-			partition@e0000 {
+-				label = "APPSBLENV";
+-				reg = <0x000e0000 0x00010000>;
+-			};
+-
+-			partition@f0000 {
+-				label = "APPSBL";
+-				reg = <0x000f0000 0x00080000>;
+-				read-only;
+-			};
+-
+-			partition@170000 {
+-				label = "ART";
+-				reg = <0x00170000 0x00010000>;
+-				read-only;
+-				compatible = "nvmem-cells";
+-				#address-cells = <1>;
+-				#size-cells = <1>;
+-
+-				precal_art_1000: precal@1000 {
+-					reg = <0x1000 0x2f20>;
+-				};
+-
+-				precal_art_5000: precal@5000 {
+-					reg = <0x5000 0x2f20>;
+-				};
+-			};
+-
+-			partition@180000 {
+-				label = "priv_data1";
+-				reg = <0x00180000 0x00010000>;
+-				read-only;
+-			};
+-
+-			partition@190000 {
+-				label = "priv_data2";
+-				reg = <0x00190000 0x00010000>;
+-				read-only;
+-			};
+-		};
+-	};
+-
+-	nand@1 {
+-		compatible = "spi-nand";
+-		reg = <1>;
+-		spi-max-frequency = <24000000>;
+-
+-		partitions {
+-			compatible = "fixed-partitions";
+-			#address-cells = <1>;
+-			#size-cells = <1>;
+-
+-			partition@0 {
+-				label = "rootfs1";
+-				reg = <0x00000000 0x04000000>;
+-			};
+-
+-			partition@4000000 {
+-				label = "rootfs2";
+-				reg = <0x04000000 0x04000000>;
+-			};
+-		};
+-	};
+-};
+-
+-&blsp1_uart1 {
+-	status = "okay";
+-
+-	pinctrl-0 = <&serial0_pins>;
+-	pinctrl-names = "default";
+-};
+-
+-&cryptobam {
+-	status = "okay";
+-};
+-
+-&ethphy4 {
+-	gpio-controller;
+-	#gpio-cells = <2>;
+-};
+-
+-&tlmm {
+-	i2c0_pins: i2c0_pinmux {
+-		mux_i2c {
+-			function = "blsp_i2c0";
+-			pins = "gpio58", "gpio59";
+-			drive-strength = <16>;
+-			bias-disable;
+-		};
+-	};
+-
+-	mdio_pins: mdio_pinmux {
+-		mux_mdio {
+-			pins = "gpio53";
+-			function = "mdio";
+-			bias-pull-up;
+-		};
+-
+-		mux_mdc {
+-			pins = "gpio52";
+-			function = "mdc";
+-			bias-pull-up;
+-		};
+-	};
+-
+-	serial0_pins: serial0_pinmux {
+-		mux_uart {
+-			pins = "gpio60", "gpio61";
+-			function = "blsp_uart0";
+-			bias-disable;
+-		};
+-	};
+-
+-	spi0_pins: spi0_pinmux {
+-		mux_spi {
+-			function = "blsp_spi0";
+-			pins = "gpio55", "gpio56", "gpio57";
+-			drive-strength = <12>;
+-			bias-disable;
+-		};
+-
+-		mux_cs {
+-			function = "gpio";
+-			pins = "gpio54", "gpio4";
+-			drive-strength = <2>;
+-			bias-disable;
+-			output-high;
+-		};
+-	};
+-};
+-
+-&usb2_hs_phy {
+-	status = "okay";
+-};
+-
+-&usb3_hs_phy {
+-	status = "okay";
+-};
+-
+-&gmac {
+-	status = "okay";
+-};
+-
+-&switch {
+-	status = "okay";
+-};
+-
+-&swport4 {
+-	status = "okay";
+-
+-	label = "lan";
+-};
+-
+-&swport5 {
+-	status = "okay";
+-};
+-
+-&wifi0 {
+-	status = "okay";
+-	nvmem-cell-names = "pre-calibration";
+-	nvmem-cells = <&precal_art_1000>;
+-};
+-
+-&wifi1 {
+-	status = "okay";
+-	qcom,ath10k-calibration-variant = "ALFA-Network-AP120C-AC";
+-	nvmem-cell-names = "pre-calibration";
+-	nvmem-cells = <&precal_art_5000>;
+-};
+Index: boot/dts/qcom-ipq4018-jalapeno.dts
+===================================================================
+--- boot/dts/qcom-ipq4018-jalapeno.dts	(revision 53158)
++++ boot/dts/qcom-ipq4018-jalapeno.dts	(working copy)
+@@ -1,9 +1,214 @@
+ // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+ // Copyright (c) 2018, Robert Marko <robimarko@gmail.com>
+ 
+-#include "qcom-ipq4018-jalapeno.dtsi"
++#include "qcom-ipq4019.dtsi"
++#include <dt-bindings/gpio/gpio.h>
++#include <dt-bindings/input/input.h>
+ 
+ / {
+ 	model = "8devices Jalapeno";
+ 	compatible = "8dev,jalapeno";
+ };
++
++&tlmm {
++	mdio_pins: mdio_pinmux {
++		pinmux_1 {
++			pins = "gpio53";
++			function = "mdio";
++		};
++
++		pinmux_2 {
++			pins = "gpio52";
++			function = "mdc";
++		};
++
++		pinconf {
++			pins = "gpio52", "gpio53";
++			bias-pull-up;
++		};
++	};
++
++	serial_pins: serial_pinmux {
++		mux {
++			pins = "gpio60", "gpio61";
++			function = "blsp_uart0";
++			bias-disable;
++		};
++	};
++
++	spi_0_pins: spi_0_pinmux {
++		pin {
++			function = "blsp_spi0";
++			pins = "gpio55", "gpio56", "gpio57";
++			drive-strength = <2>;
++			bias-disable;
++		};
++
++		pin_cs {
++			function = "gpio";
++			pins = "gpio54", "gpio59";
++			drive-strength = <2>;
++			bias-disable;
++			output-high;
++		};
++	};
++};
++
++&watchdog {
++	status = "okay";
++};
++
++&prng {
++	status = "okay";
++};
++
++&blsp_dma {
++	status = "okay";
++};
++
++&blsp1_spi1 {
++	status = "okay";
++
++	pinctrl-0 = <&spi_0_pins>;
++	pinctrl-names = "default";
++	cs-gpios = <&tlmm 54 GPIO_ACTIVE_HIGH>, <&tlmm 59 GPIO_ACTIVE_HIGH>;
++
++	flash@0 {
++		status = "okay";
++
++		compatible = "jedec,spi-nor";
++		reg = <0>;
++		spi-max-frequency = <24000000>;
++
++		partitions {
++			compatible = "fixed-partitions";
++			#address-cells = <1>;
++			#size-cells = <1>;
++
++			partition@0 {
++				label = "SBL1";
++				reg = <0x00000000 0x00040000>;
++				read-only;
++			};
++
++			partition@40000 {
++				label = "MIBIB";
++				reg = <0x00040000 0x00020000>;
++				read-only;
++			};
++
++			partition@60000 {
++				label = "QSEE";
++				reg = <0x00060000 0x00060000>;
++				read-only;
++			};
++
++			partition@c0000 {
++				label = "CDT";
++				reg = <0x000c0000 0x00010000>;
++				read-only;
++			};
++
++			partition@d0000 {
++				label = "DDRPARAMS";
++				reg = <0x000d0000 0x00010000>;
++				read-only;
++			};
++
++			partition@e0000 {
++				label = "u-boot-env";
++				reg = <0x000e0000 0x00010000>;
++			};
++
++			partition@f0000 {
++				label = "u-boot";
++				reg = <0x000f0000 0x00080000>;
++				read-only;
++			};
++
++			partition@170000 {
++				label = "ART";
++				reg = <0x00170000 0x00010000>;
++				read-only;
++			};
++		};
++	};
++
++	spi-nand@1 {
++		status = "okay";
++
++		compatible = "spi-nand";
++		reg = <1>;
++		spi-max-frequency = <24000000>;
++
++		partitions {
++			compatible = "fixed-partitions";
++			#address-cells = <1>;
++			#size-cells = <1>;
++
++			partition@0 {
++				label = "ubi1";
++				reg = <0x00000000 0x04000000>;
++			};
++
++			partition@4000000 {
++				label = "ubi2";
++				reg = <0x04000000 0x04000000>;
++			};
++		};
++	};
++};
++
++&blsp1_uart1 {
++	status = "okay";
++
++	pinctrl-0 = <&serial_pins>;
++	pinctrl-names = "default";
++};
++
++&cryptobam {
++	status = "okay";
++};
++
++&crypto {
++	status = "okay";
++};
++
++&mdio {
++	status = "okay";
++
++	pinctrl-0 = <&mdio_pins>;
++	pinctrl-names = "default";
++};
++
++&wifi0 {
++	status = "okay";
++
++	qcom,ath10k-calibration-variant = "8devices-Jalapeno";
++};
++
++&wifi1 {
++	status = "okay";
++
++	qcom,ath10k-calibration-variant = "8devices-Jalapeno";
++};
++
++&usb3_ss_phy {
++	status = "okay";
++};
++
++&usb3_hs_phy {
++	status = "okay";
++};
++
++&usb3 {
++	status = "okay";
++};
++
++&usb2_hs_phy {
++	status = "okay";
++};
++
++&usb2 {
++	status = "okay";
++};
+Index: boot/dts/qcom-ipq8062-wg2600hp3.dts
+===================================================================
+--- boot/dts/qcom-ipq8062-wg2600hp3.dts	(revision 53158)
++++ boot/dts/qcom-ipq8062-wg2600hp3.dts	(working copy)
+@@ -2,6 +2,7 @@
+ 
+ #include "qcom-ipq8062-smb208.dtsi"
+ #include <dt-bindings/input/input.h>
++#include <dt-bindings/leds/common.h>
+ 
+ / {
+ 	model = "NEC Platforms Aterm WG2600HP3";
+@@ -413,21 +414,198 @@
+ 	pinctrl-0 = <&mdio0_pins>;
+ 	pinctrl-names = "default";
+ 
+-	phy0: ethernet-phy@0 {
+-		reg = <0>;
+-		qca,ar8327-initvals = <
+-			0x04 0x80080080  /* PAD0_MODE */
+-			0x0c 0x06000000  /* PAD6_MODE */
+-			0x10 0x002613a0  /* PWS_REG */
+-			0x50 0xcc36cc36  /* LED_CTRL0 */
+-			0x54 0xca36ca36  /* LED_CTRL1 */
+-			0x58 0xc936c936  /* LED_CTRL2 */
+-			0x5c 0x03ffff00  /* LED_CTRL3 */
+-			0x7c 0x0000004e  /* PORT0_STATUS */
+-			0x94 0x0000004e  /* PORT6_STATUS */
+-			0xe0 0xc74164de  /* SGMII_CTRL */
+-			0xe4 0x0006a545  /* MAC_PWR_SEL */
+-			>;
++	switch@10 {
++		compatible = "qca,qca8337";
++		#address-cells = <1>;
++		#size-cells = <0>;
++		reg = <0x10>;
++
++		ports {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			port@0 {
++				reg = <0>;
++				label = "cpu";
++				ethernet = <&gmac1>;
++				phy-mode = "rgmii";
++				tx-internal-delay-ps = <1000>;
++
++				fixed-link {
++					speed = <1000>;
++					full-duplex;
++				};
++			};
++
++			port@1 {
++				reg = <1>;
++				label = "wan";
++				phy-mode = "internal";
++				phy-handle = <&phy_port1>;
++
++				leds {
++					#address-cells = <1>;
++					#size-cells = <0>;
++
++					led@0 {
++						reg = <0>;
++						color = <LED_COLOR_ID_GREEN>;
++						function = LED_FUNCTION_WAN;
++						default-state = "keep";
++					};
++
++					led@1 {
++						reg = <1>;
++						color = <LED_COLOR_ID_AMBER>;
++						function = LED_FUNCTION_WAN;
++						default-state = "keep";
++					};
++				};
++			};
++
++			port@2 {
++				reg = <2>;
++				label = "lan1";
++				phy-mode = "internal";
++				phy-handle = <&phy_port2>;
++
++				leds {
++					#address-cells = <1>;
++					#size-cells = <0>;
++
++					led@0 {
++						reg = <0>;
++						color = <LED_COLOR_ID_GREEN>;
++						function = LED_FUNCTION_LAN;
++						default-state = "keep";
++					};
++
++					led@1 {
++						reg = <1>;
++						color = <LED_COLOR_ID_AMBER>;
++						function = LED_FUNCTION_LAN;
++						default-state = "keep";
++					};
++				};
++			};
++
++			port@3 {
++				reg = <3>;
++				label = "lan2";
++				phy-mode = "internal";
++				phy-handle = <&phy_port3>;
++
++				leds {
++					#address-cells = <1>;
++					#size-cells = <0>;
++
++					led@0 {
++						reg = <0>;
++						color = <LED_COLOR_ID_GREEN>;
++						function = LED_FUNCTION_LAN;
++						default-state = "keep";
++					};
++
++					led@1 {
++						reg = <1>;
++						color = <LED_COLOR_ID_AMBER>;
++						function = LED_FUNCTION_LAN;
++						default-state = "keep";
++					};
++				};
++			};
++
++			port@4 {
++				reg = <4>;
++				label = "lan3";
++				phy-mode = "internal";
++				phy-handle = <&phy_port4>;
++
++				leds {
++					#address-cells = <1>;
++					#size-cells = <0>;
++
++					led@0 {
++						reg = <0>;
++						color = <LED_COLOR_ID_GREEN>;
++						function = LED_FUNCTION_LAN;
++						default-state = "keep";
++					};
++
++					led@1 {
++						reg = <1>;
++						color = <LED_COLOR_ID_AMBER>;
++						function = LED_FUNCTION_LAN;
++						default-state = "keep";
++					};
++				};
++			};
++
++			port@5 {
++				reg = <5>;
++				label = "lan4";
++				phy-mode = "internal";
++				phy-handle = <&phy_port5>;
++
++				leds {
++					#address-cells = <1>;
++					#size-cells = <0>;
++
++					led@0 {
++						reg = <0>;
++						color = <LED_COLOR_ID_GREEN>;
++						function = LED_FUNCTION_LAN;
++						default-state = "keep";
++					};
++
++					led@1 {
++						reg = <1>;
++						color = <LED_COLOR_ID_AMBER>;
++						function = LED_FUNCTION_LAN;
++						default-state = "keep";
++					};
++				};
++			};
++
++			port@6 {
++				reg = <6>;
++				label = "cpu";
++				ethernet = <&gmac2>;
++				phy-mode = "sgmii";
++				qca,sgmii-enable-pll;
++				qca,sgmii-rxclk-falling-edge;
++
++				fixed-link {
++					speed = <1000>;
++					full-duplex;
++				};
++			};
++		};
++
++		mdio {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			phy_port1: phy@0 {
++				reg = <0>;
++			};
++
++			phy_port2: phy@1 {
++				reg = <1>;
++			};
++
++			phy_port3: phy@2 {
++				reg = <2>;
++			};
++
++			phy_port4: phy@3 {
++				reg = <3>;
++			};
++
++			phy_port5: phy@4 {
++				reg = <4>;
++			};
++		};
+ 	};
+ };
+ 
+Index: boot/dts/qcom-ipq8064-ad7200-c2600.dtsi
+===================================================================
+--- boot/dts/qcom-ipq8064-ad7200-c2600.dtsi	(revision 53158)
++++ boot/dts/qcom-ipq8064-ad7200-c2600.dtsi	(working copy)
+@@ -337,21 +337,103 @@
+ 	pinctrl-0 = <&mdio0_pins>;
+ 	pinctrl-names = "default";
+ 
+-	phy0: ethernet-phy@0 {
+-		reg = <0>;
+-		qca,ar8327-initvals = <
+-			0x00004 0x7600000   /* PAD0_MODE */
+-			0x00008 0x1000000   /* PAD5_MODE */
+-			0x0000c 0x80        /* PAD6_MODE */
+-			0x000e4 0x6a545     /* MAC_POWER_SEL */
+-			0x000e0 0xc74164de  /* SGMII_CTRL */
+-			0x0007c 0x4e        /* PORT0_STATUS */
+-			0x00094 0x4e        /* PORT6_STATUS */
+-			>;
+-	};
++	switch@10 {
++		compatible = "qca,qca8337";
++		#address-cells = <1>;
++		#size-cells = <0>;
++		reg = <0x10>;
+ 
+-	phy4: ethernet-phy@4 {
+-		reg = <4>;
++		ports {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			port@0 {
++				reg = <0>;
++				label = "cpu";
++				ethernet = <&gmac1>;
++				phy-mode = "rgmii";
++				tx-internal-delay-ps = <1000>;
++				rx-internal-delay-ps = <1000>;
++
++				fixed-link {
++					speed = <1000>;
++					full-duplex;
++				};
++			};
++
++			port@1 {
++				reg = <1>;
++				label = "lan4";
++				phy-mode = "internal";
++				phy-handle = <&phy_port1>;
++			};
++
++			port@2 {
++				reg = <2>;
++				label = "lan3";
++				phy-mode = "internal";
++				phy-handle = <&phy_port2>;
++			};
++
++			port@3 {
++				reg = <3>;
++				label = "lan2";
++				phy-mode = "internal";
++				phy-handle = <&phy_port3>;
++			};
++
++			port@4 {
++				reg = <4>;
++				label = "lan1";
++				phy-mode = "internal";
++				phy-handle = <&phy_port4>;
++			};
++
++			port@5 {
++				reg = <5>;
++				label = "wan";
++				phy-mode = "internal";
++				phy-handle = <&phy_port5>;
++			};
++
++			port@6 {
++				reg = <6>;
++				label = "cpu";
++				ethernet = <&gmac2>;
++				phy-mode = "sgmii";
++				qca,sgmii-enable-pll;
++
++				fixed-link {
++					speed = <1000>;
++					full-duplex;
++				};
++			};
++		};
++
++		mdio {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			phy_port1: phy@0 {
++				reg = <0>;
++			};
++
++			phy_port2: phy@1 {
++				reg = <1>;
++			};
++
++			phy_port3: phy@2 {
++				reg = <2>;
++			};
++
++			phy_port4: phy@3 {
++				reg = <3>;
++			};
++
++			phy_port5: phy@4 {
++				reg = <4>;
++			};
++		};
+ 	};
+ };
+ 
+Index: boot/dts/qcom-ipq8064-ad7200.dts
+===================================================================
+--- boot/dts/qcom-ipq8064-ad7200.dts	(revision 53158)
++++ boot/dts/qcom-ipq8064-ad7200.dts	(working copy)
+@@ -129,6 +129,32 @@
+ 	};
+ };
+ 
++&mdio0 {
++	switch@10 {
++		ports {
++			port@1 {
++				label = "wan";
++			};
++
++			port@2 {
++				label = "lan1";
++			};
++
++			port@3 {
++				label = "lan2";
++			};
++
++			port@4 {
++				label = "lan3";
++			};
++
++			port@5 {
++				label = "lan4";
++			};
++		};
++	};
++};
++
+ &pcie2 {
+ 	status = "okay";
+ 	max-link-speed = <1>;
+Index: boot/dts/qcom-ipq8064-ap148.dts
+===================================================================
+--- boot/dts/qcom-ipq8064-ap148.dts	(revision 53158)
++++ boot/dts/qcom-ipq8064-ap148.dts	(working copy)
+@@ -90,21 +90,106 @@
+ 	pinctrl-0 = <&mdio0_pins>;
+ 	pinctrl-names = "default";
+ 
+-	phy0: ethernet-phy@0 {
+-		reg = <0>;
+-		qca,ar8327-initvals = <
+-			0x00004 0x7600000   /* PAD0_MODE */
+-			0x00008 0x1000000   /* PAD5_MODE */
+-			0x0000c 0x80        /* PAD6_MODE */
+-			0x000e4 0x6a545     /* MAC_POWER_SEL */
+-			0x000e0 0xc74164de  /* SGMII_CTRL */
+-			0x0007c 0x4e        /* PORT0_STATUS */
+-			0x00094 0x4e        /* PORT6_STATUS */
+-			>;
+-	};
++	switch@10 {
++		compatible = "qca,qca8337";
++		#address-cells = <1>;
++		#size-cells = <0>;
++		reg = <0x10>;
+ 
+-	phy4: ethernet-phy@4 {
+-		reg = <4>;
++		ports {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			port@0 {
++				reg = <0>;
++				label = "cpu";
++				ethernet = <&gmac1>;
++				phy-mode = "rgmii";
++				tx-internal-delay-ps = <1000>;
++				rx-internal-delay-ps = <1000>;
++
++				fixed-link {
++					speed = <1000>;
++					full-duplex;
++				};
++			};
++
++			port@1 {
++				reg = <1>;
++				label = "lan1";
++				phy-mode = "internal";
++				phy-handle = <&phy_port1>;
++			};
++
++			port@2 {
++				reg = <2>;
++				label = "lan2";
++				phy-mode = "internal";
++				phy-handle = <&phy_port2>;
++			};
++
++			port@3 {
++				reg = <3>;
++				label = "lan3";
++				phy-mode = "internal";
++				phy-handle = <&phy_port3>;
++			};
++
++			port@4 {
++				reg = <4>;
++				label = "lan4";
++				phy-mode = "internal";
++				phy-handle = <&phy_port4>;
++			};
++
++			port@5 {
++				reg = <5>;
++				label = "wan";
++				phy-mode = "internal";
++				phy-handle = <&phy_port5>;
++			};
++
++			/*
++			port@6 {
++				reg = <0>;
++				label = "cpu";
++				ethernet = <&gmac2>;
++				phy-mode = "rgmii";
++
++				fixed-link {
++					speed = <1000>;
++					full-duplex;
++					pause;
++					asym-pause;
++				};
++			};
++			*/
++		};
++
++		mdio {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			phy_port1: phy@0 {
++				reg = <0>;
++			};
++
++			phy_port2: phy@1 {
++				reg = <1>;
++			};
++
++			phy_port3: phy@2 {
++				reg = <2>;
++			};
++
++			phy_port4: phy@3 {
++				reg = <3>;
++			};
++
++			phy_port5: phy@4 {
++				reg = <4>;
++			};
++		};
+ 	};
+ };
+ 
+Index: boot/dts/qcom-ipq8064-ap161.dts
+===================================================================
+--- boot/dts/qcom-ipq8064-ap161.dts	(revision 53158)
++++ boot/dts/qcom-ipq8064-ap161.dts	(working copy)
+@@ -102,24 +102,106 @@
+ 	pinctrl-0 = <&mdio0_pins>;
+ 	pinctrl-names = "default";
+ 
+-	phy0: ethernet-phy@0 {
+-		reg = <0>;
+-		qca,ar8327-initvals = <
+-			0x00004 0x7600000   /* PAD0_MODE */
+-			0x00008 0x1000000   /* PAD5_MODE */
+-			0x0000c 0x20080     /* PAD6_MODE */
+-			0x000e4 0x6a545     /* MAC_POWER_SEL */
+-			0x000e0 0xc74164de  /* SGMII_CTRL */
+-			0x0007c 0x4e        /* PORT0_STATUS */
+-			0x00094 0x4e        /* PORT6_STATUS */
+-			>;
+-	};
++	switch@10 {
++		compatible = "qca,qca8337";
++		#address-cells = <1>;
++		#size-cells = <0>;
++		reg = <0x10>;
+ 
+-	phy4: ethernet-phy@4 {
+-		reg = <4>;
+-		qca,phy-rgmii-en;
+-		qca,txclk-delay-en;
+-		qca,rxclk-delay-en;
++		ports {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			port@0 {
++				reg = <0>;
++				label = "cpu";
++				ethernet = <&gmac0>;
++				phy-mode = "rgmii";
++				tx-internal-delay-ps = <1000>;
++				rx-internal-delay-ps = <1000>;
++
++				fixed-link {
++					speed = <1000>;
++					full-duplex;
++				};
++			};
++
++			port@1 {
++				reg = <1>;
++				label = "lan4";
++				phy-mode = "internal";
++				phy-handle = <&phy_port1>;
++			};
++
++			port@2 {
++				reg = <2>;
++				label = "lan3";
++				phy-mode = "internal";
++				phy-handle = <&phy_port2>;
++			};
++
++			port@3 {
++				reg = <3>;
++				label = "lan2";
++				phy-mode = "internal";
++				phy-handle = <&phy_port3>;
++			};
++
++			port@4 {
++				reg = <4>;
++				label = "lan1";
++				phy-mode = "internal";
++				phy-handle = <&phy_port4>;
++			};
++
++			port@5 {
++				reg = <5>;
++				label = "wan";
++				phy-mode = "internal";
++				phy-handle = <&phy_port5>;
++			};
++
++			/*
++			port@6 {
++				reg = <0>;
++				label = "cpu";
++				ethernet = <&gmac2>;
++				phy-mode = "rgmii";
++
++				fixed-link {
++					speed = <1000>;
++					full-duplex;
++					pause;
++					asym-pause;
++				};
++			};
++			*/
++		};
++
++		mdio {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			phy_port1: phy@0 {
++				reg = <0>;
++			};
++
++			phy_port2: phy@1 {
++				reg = <1>;
++			};
++
++			phy_port3: phy@2 {
++				reg = <2>;
++			};
++
++			phy_port4: phy@3 {
++				reg = <3>;
++			};
++
++			phy_port5: phy@4 {
++				reg = <4>;
++			};
++		};
+ 	};
+ 
+ 	phy3: ethernet-phy@3 {
+Index: boot/dts/qcom-ipq8064-d7800.dts
+===================================================================
+--- boot/dts/qcom-ipq8064-d7800.dts	(revision 53158)
++++ boot/dts/qcom-ipq8064-d7800.dts	(working copy)
+@@ -340,21 +340,103 @@
+ 	pinctrl-0 = <&mdio0_pins>;
+ 	pinctrl-names = "default";
+ 
+-	phy0: ethernet-phy@0 {
+-		reg = <0>;
+-		qca,ar8327-initvals = <
+-			0x00004 0x7600000   /* PAD0_MODE */
+-			0x00008 0x1000000   /* PAD5_MODE */
+-			0x0000c 0x80        /* PAD6_MODE */
+-			0x000e4 0x6a545     /* MAC_POWER_SEL */
+-			0x000e0 0xc74164de  /* SGMII_CTRL */
+-			0x0007c 0x4e        /* PORT0_STATUS */
+-			0x00094 0x4e        /* PORT6_STATUS */
+-			>;
+-	};
++	switch@10 {
++		compatible = "qca,qca8337";
++		#address-cells = <1>;
++		#size-cells = <0>;
++		reg = <0x10>;
+ 
+-	phy4: ethernet-phy@4 {
+-		reg = <4>;
++		ports {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			port@0 {
++				reg = <0>;
++				label = "cpu";
++				ethernet = <&gmac1>;
++				phy-mode = "rgmii";
++				tx-internal-delay-ps = <1000>;
++				rx-internal-delay-ps = <1000>;
++
++				fixed-link {
++					speed = <1000>;
++					full-duplex;
++				};
++			};
++
++			port@1 {
++				reg = <1>;
++				label = "lan1";
++				phy-mode = "internal";
++				phy-handle = <&phy_port1>;
++			};
++
++			port@2 {
++				reg = <2>;
++				label = "lan2";
++				phy-mode = "internal";
++				phy-handle = <&phy_port2>;
++			};
++
++			port@3 {
++				reg = <3>;
++				label = "lan3";
++				phy-mode = "internal";
++				phy-handle = <&phy_port3>;
++			};
++
++			port@4 {
++				reg = <4>;
++				label = "lan4";
++				phy-mode = "internal";
++				phy-handle = <&phy_port4>;
++			};
++
++			port@5 {
++				reg = <5>;
++				label = "wan";
++				phy-mode = "internal";
++				phy-handle = <&phy_port5>;
++			};
++
++			port@6 {
++				reg = <6>;
++				label = "cpu";
++				ethernet = <&gmac2>;
++				phy-mode = "sgmii";
++				qca,sgmii-enable-pll;
++
++				fixed-link {
++					speed = <1000>;
++					full-duplex;
++				};
++			};
++		};
++
++		mdio {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			phy_port1: phy@0 {
++				reg = <0>;
++			};
++
++			phy_port2: phy@1 {
++				reg = <1>;
++			};
++
++			phy_port3: phy@2 {
++				reg = <2>;
++			};
++
++			phy_port4: phy@3 {
++				reg = <3>;
++			};
++
++			phy_port5: phy@4 {
++				reg = <4>;
++			};
++		};
+ 	};
+ };
+ 
+Index: boot/dts/qcom-ipq8064-db149.dts
+===================================================================
+--- boot/dts/qcom-ipq8064-db149.dts	(revision 53158)
++++ boot/dts/qcom-ipq8064-db149.dts	(working copy)
+@@ -117,21 +117,106 @@
+ 	pinctrl-0 = <&mdio0_pins>;
+ 	pinctrl-names = "default";
+ 
+-	phy0: ethernet-phy@0 {
+-		reg = <0>;
+-		qca,ar8327-initvals = <
+-			0x00004 0x7600000   /* PAD0_MODE */
+-			0x00008 0x1000000   /* PAD5_MODE */
+-			0x0000c 0x80        /* PAD6_MODE */
+-			0x000e4 0x6a545     /* MAC_POWER_SEL */
+-			0x000e0 0xc74164de  /* SGMII_CTRL */
+-			0x0007c 0x4e        /* PORT0_STATUS */
+-			0x00094 0x4e        /* PORT6_STATUS */
+-		>;
+-	};
++	switch@10 {
++		compatible = "qca,qca8337";
++		#address-cells = <1>;
++		#size-cells = <0>;
++		reg = <0x10>;
+ 
+-	phy4: ethernet-phy@4 {
+-		reg = <4>;
++		ports {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			port@0 {
++				reg = <0>;
++				label = "cpu";
++				ethernet = <&gmac0>;
++				phy-mode = "rgmii";
++				tx-internal-delay-ps = <1000>;
++				rx-internal-delay-ps = <1000>;
++
++				fixed-link {
++					speed = <1000>;
++					full-duplex;
++				};
++			};
++
++			port@1 {
++				reg = <1>;
++				label = "lan4";
++				phy-mode = "internal";
++				phy-handle = <&phy_port1>;
++			};
++
++			port@2 {
++				reg = <2>;
++				label = "lan3";
++				phy-mode = "internal";
++				phy-handle = <&phy_port2>;
++			};
++
++			port@3 {
++				reg = <3>;
++				label = "lan2";
++				phy-mode = "internal";
++				phy-handle = <&phy_port3>;
++			};
++
++			port@4 {
++				reg = <4>;
++				label = "lan1";
++				phy-mode = "internal";
++				phy-handle = <&phy_port4>;
++			};
++
++			port@5 {
++				reg = <5>;
++				label = "wan";
++				phy-mode = "internal";
++				phy-handle = <&phy_port5>;
++			};
++
++			/*
++			port@6 {
++				reg = <0>;
++				label = "cpu";
++				ethernet = <&gmac2>;
++				phy-mode = "rgmii";
++
++				fixed-link {
++					speed = <1000>;
++					full-duplex;
++					pause;
++					asym-pause;
++				};
++			};
++			*/
++		};
++
++		mdio {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			phy_port1: phy@0 {
++				reg = <0>;
++			};
++
++			phy_port2: phy@1 {
++				reg = <1>;
++			};
++
++			phy_port3: phy@2 {
++				reg = <2>;
++			};
++
++			phy_port4: phy@3 {
++				reg = <3>;
++			};
++
++			phy_port5: phy@4 {
++				reg = <4>;
++			};
++		};
+ 	};
+ 
+ 	phy6: ethernet-phy@6 {
+@@ -147,7 +232,6 @@
+ 	status = "okay";
+ 	phy-mode = "rgmii";
+ 	qcom,id = <0>;
+-	phy-handle = <&phy4>;
+ 
+ 	pinctrl-0 = <&rgmii0_pins>;
+ 	pinctrl-names = "default";
+Index: boot/dts/qcom-ipq8064-ea7500-v1.dts
+===================================================================
+--- boot/dts/qcom-ipq8064-ea7500-v1.dts	(revision 53158)
++++ boot/dts/qcom-ipq8064-ea7500-v1.dts	(working copy)
+@@ -89,3 +89,29 @@
+ 		reg = <0x6080000 0x1f80000>;
+ 	};
+ };
++
++&mdio0 {
++	switch@10 {
++		ports {
++			port@1 {
++				label = "wan";
++			};
++
++			port@2 {
++				label = "lan1";
++			};
++
++			port@3 {
++				label = "lan2";
++			};
++
++			port@4 {
++				label = "lan3";
++			};
++
++			port@5 {
++				label = "lan4";
++			};
++		};
++	};
++};
+Index: boot/dts/qcom-ipq8064-ea8500.dts
+===================================================================
+--- boot/dts/qcom-ipq8064-ea8500.dts	(revision 53158)
++++ boot/dts/qcom-ipq8064-ea8500.dts	(working copy)
+@@ -106,12 +106,6 @@
+ 	};
+ };
+ 
+-&mdio0 {
+-	phy4: ethernet-phy@4 {
+-		reg = <4>;
+-	};
+-};
+-
+ &gmac1 {
+ 	qcom,phy_mdio_addr = <4>;
+ 	qcom,poll_required = <1>;
+Index: boot/dts/qcom-ipq8064-eax500.dtsi
+===================================================================
+--- boot/dts/qcom-ipq8064-eax500.dtsi	(revision 53158)
++++ boot/dts/qcom-ipq8064-eax500.dtsi	(working copy)
+@@ -185,18 +185,103 @@
+ 	reset-gpios = <&qcom_pinmux 63 GPIO_ACTIVE_HIGH>;
+ 	reset-post-delay-us = <12000>;
+ 
+-	phy0: ethernet-phy@0 {
+-		reg = <0>;
+-		qca,ar8327-initvals = <
+-			0x00004 0x7600000   /* PAD0_MODE */
+-			0x00008 0x1000000   /* PAD5_MODE */
+-			0x0000c 0x80        /* PAD6_MODE */
+-			0x00010 0x2613a0    /* PWS_REG */
+-			0x000e4 0x6a545     /* MAC_POWER_SEL */
+-			0x000e0 0xc74164de  /* SGMII_CTRL */
+-			0x0007c 0x4e        /* PORT0_STATUS */
+-			0x00094 0x4e        /* PORT6_STATUS */
+-			>;
++	switch@10 {
++		compatible = "qca,qca8337";
++		#address-cells = <1>;
++		#size-cells = <0>;
++		reg = <0x10>;
++
++		ports {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			port@0 {
++				reg = <0>;
++				label = "cpu";
++				ethernet = <&gmac1>;
++				phy-mode = "rgmii";
++				tx-internal-delay-ps = <1000>;
++				rx-internal-delay-ps = <1000>;
++
++				fixed-link {
++					speed = <1000>;
++					full-duplex;
++				};
++			};
++
++			port@1 {
++				reg = <1>;
++				label = "lan1";
++				phy-mode = "internal";
++				phy-handle = <&phy_port1>;
++			};
++
++			port@2 {
++				reg = <2>;
++				label = "lan2";
++				phy-mode = "internal";
++				phy-handle = <&phy_port2>;
++			};
++
++			port@3 {
++				reg = <3>;
++				label = "lan3";
++				phy-mode = "internal";
++				phy-handle = <&phy_port3>;
++			};
++
++			port@4 {
++				reg = <4>;
++				label = "lan4";
++				phy-mode = "internal";
++				phy-handle = <&phy_port4>;
++			};
++
++			port@5 {
++				reg = <5>;
++				label = "wan";
++				phy-mode = "internal";
++				phy-handle = <&phy_port5>;
++			};
++
++			port@6 {
++				reg = <6>;
++				label = "cpu";
++				ethernet = <&gmac2>;
++				phy-mode = "sgmii";
++				qca,sgmii-enable-pll;
++
++				fixed-link {
++					speed = <1000>;
++					full-duplex;
++				};
++			};
++		};
++
++		mdio {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			phy_port1: phy@0 {
++				reg = <0>;
++			};
++
++			phy_port2: phy@1 {
++				reg = <1>;
++			};
++
++			phy_port3: phy@2 {
++				reg = <2>;
++			};
++
++			phy_port4: phy@3 {
++				reg = <3>;
++			};
++
++			phy_port5: phy@4 {
++				reg = <4>;
++			};
++		};
+ 	};
+ };
+ 
+Index: boot/dts/qcom-ipq8064-g10.dts
+===================================================================
+--- boot/dts/qcom-ipq8064-g10.dts	(revision 53158)
++++ boot/dts/qcom-ipq8064-g10.dts	(working copy)
+@@ -158,17 +158,103 @@
+ 	pinctrl-0 = <&mdio0_pins>;
+ 	pinctrl-names = "default";
+ 
+-	ethernet-phy@0 {
+-		reg = <0>;
+-		qca,ar8327-initvals = <
+-			0x00004 0x7600000   /* PAD0_MODE */
+-			0x00008 0x1000000   /* PAD5_MODE */
+-			0x0000c 0x80        /* PAD6_MODE */
+-			0x000e4 0x6a545     /* MAC_POWER_SEL */
+-			0x000e0 0xc74164de  /* SGMII_CTRL */
+-			0x0007c 0x4e        /* PORT0_STATUS */
+-			0x00094 0x4e        /* PORT6_STATUS */
+-			>;
++	switch@10 {
++		compatible = "qca,qca8337";
++		#address-cells = <1>;
++		#size-cells = <0>;
++		reg = <0x10>;
++
++		ports {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			port@0 {
++				reg = <0>;
++				label = "cpu";
++				ethernet = <&gmac1>;
++				phy-mode = "rgmii";
++				tx-internal-delay-ps = <1000>;
++				rx-internal-delay-ps = <1000>;
++
++				fixed-link {
++					speed = <1000>;
++					full-duplex;
++				};
++			};
++
++			port@1 {
++				reg = <1>;
++				label = "wan";
++				phy-mode = "internal";
++				phy-handle = <&phy_port1>;
++			};
++
++			port@2 {
++				reg = <2>;
++				label = "lan1";
++				phy-mode = "internal";
++				phy-handle = <&phy_port2>;
++			};
++
++			port@3 {
++				reg = <3>;
++				label = "lan2";
++				phy-mode = "internal";
++				phy-handle = <&phy_port3>;
++			};
++
++			port@4 {
++				reg = <4>;
++				label = "lan3";
++				phy-mode = "internal";
++				phy-handle = <&phy_port4>;
++			};
++
++			port@5 {
++				reg = <5>;
++				label = "lan4";
++				phy-mode = "internal";
++				phy-handle = <&phy_port5>;
++			};
++
++			port@6 {
++				reg = <6>;
++				label = "cpu";
++				ethernet = <&gmac2>;
++				phy-mode = "sgmii";
++				qca,sgmii-enable-pll;
++
++				fixed-link {
++					speed = <1000>;
++					full-duplex;
++				};
++			};
++		};
++
++		mdio {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			phy_port1: phy@0 {
++				reg = <0>;
++			};
++
++			phy_port2: phy@1 {
++				reg = <1>;
++			};
++
++			phy_port3: phy@2 {
++				reg = <2>;
++			};
++
++			phy_port4: phy@3 {
++				reg = <3>;
++			};
++
++			phy_port5: phy@4 {
++				reg = <4>;
++			};
++		};
+ 	};
+ };
+ 
+Index: boot/dts/qcom-ipq8064-onhub.dtsi
+===================================================================
+--- boot/dts/qcom-ipq8064-onhub.dtsi	(revision 53158)
++++ boot/dts/qcom-ipq8064-onhub.dtsi	(working copy)
+@@ -62,21 +62,70 @@
+ 		pinctrl-0 = <&mdio_pins>;
+ 		pinctrl-names = "default";
+ 
+-		phy0: ethernet-phy@0 {
+-			reg = <0>;
+-			qca,ar8327-initvals = <
+-				0x00004 0x7600000   /* PAD0_MODE */
+-				0x00008 0x1000000   /* PAD5_MODE */
+-				0x0000c 0x80        /* PAD6_MODE */
+-				0x000e4 0xaa545     /* MAC_POWER_SEL */
+-				0x000e0 0xc74164de  /* SGMII_CTRL */
+-				0x0007c 0x4e        /* PORT0_STATUS */
+-				0x00094 0x4e        /* PORT6_STATUS */
+-				>;
+-		};
++		switch@10 {
++			compatible = "qca,qca8337";
++			#address-cells = <1>;
++			#size-cells = <0>;
++			reg = <0x10>;
+ 
+-		phy1: ethernet-phy@1 {
+-			reg = <1>;
++			ports {
++				#address-cells = <1>;
++				#size-cells = <0>;
++
++				port@0 {
++					reg = <0>;
++					label = "cpu";
++					ethernet = <&gmac0>;
++					phy-mode = "rgmii";
++					tx-internal-delay-ps = <1000>;
++					rx-internal-delay-ps = <1000>;
++
++					fixed-link {
++						speed = <1000>;
++						full-duplex;
++					};
++				};
++
++				port@1 {
++					reg = <1>;
++					label = "lan1";
++					phy-mode = "internal";
++					phy-handle = <&phy_port1>;
++				};
++
++				port@2 {
++					reg = <2>;
++					label = "wan";
++					phy-mode = "internal";
++					phy-handle = <&phy_port2>;
++				};
++
++				port@6 {
++					reg = <6>;
++					label = "cpu";
++					ethernet = <&gmac2>;
++					phy-mode = "sgmii";
++					qca,sgmii-enable-pll;
++
++					fixed-link {
++						speed = <1000>;
++						full-duplex;
++					};
++				};
++			};
++
++			mdio {
++				#address-cells = <1>;
++				#size-cells = <0>;
++
++				phy_port1: phy@0 {
++					reg = <0>;
++				};
++
++				phy_port2: phy@1 {
++					reg = <1>;
++				};
++			};
+ 		};
+ 	};
+ 
+@@ -288,6 +337,10 @@
+ 	};
+ };
+ 
++&adm_dma {
++	status = "okay";
++};
++
+ &gmac0 {
+ 	status = "okay";
+ 	phy-mode = "rgmii";
+Index: boot/dts/qcom-ipq8064-r7500.dts
+===================================================================
+--- boot/dts/qcom-ipq8064-r7500.dts	(revision 53158)
++++ boot/dts/qcom-ipq8064-r7500.dts	(working copy)
+@@ -254,21 +254,103 @@
+ 	pinctrl-0 = <&mdio0_pins>;
+ 	pinctrl-names = "default";
+ 
+-	phy0: ethernet-phy@0 {
+-		reg = <0>;
+-		qca,ar8327-initvals = <
+-			0x00004 0x7600000   /* PAD0_MODE */
+-			0x00008 0x1000000   /* PAD5_MODE */
+-			0x0000c 0x80        /* PAD6_MODE */
+-			0x000e4 0x6a545     /* MAC_POWER_SEL */
+-			0x000e0 0xc74164de  /* SGMII_CTRL */
+-			0x0007c 0x4e        /* PORT0_STATUS */
+-			0x00094 0x4e        /* PORT6_STATUS */
+-			>;
+-	};
++	switch@10 {
++		compatible = "qca,qca8337";
++		#address-cells = <1>;
++		#size-cells = <0>;
++		reg = <0x10>;
+ 
+-	phy4: ethernet-phy@4 {
+-		reg = <4>;
++		ports {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			port@0 {
++				reg = <0>;
++				label = "cpu";
++				ethernet = <&gmac1>;
++				phy-mode = "rgmii";
++				tx-internal-delay-ps = <1000>;
++				rx-internal-delay-ps = <1000>;
++
++				fixed-link {
++					speed = <1000>;
++					full-duplex;
++				};
++			};
++
++			port@1 {
++				reg = <1>;
++				label = "lan1";
++				phy-mode = "internal";
++				phy-handle = <&phy_port1>;
++			};
++
++			port@2 {
++				reg = <2>;
++				label = "lan2";
++				phy-mode = "internal";
++				phy-handle = <&phy_port2>;
++			};
++
++			port@3 {
++				reg = <3>;
++				label = "lan3";
++				phy-mode = "internal";
++				phy-handle = <&phy_port3>;
++			};
++
++			port@4 {
++				reg = <4>;
++				label = "lan4";
++				phy-mode = "internal";
++				phy-handle = <&phy_port4>;
++			};
++
++			port@5 {
++				reg = <5>;
++				label = "wan";
++				phy-mode = "internal";
++				phy-handle = <&phy_port5>;
++			};
++
++			port@6 {
++				reg = <6>;
++				label = "cpu";
++				ethernet = <&gmac2>;
++				phy-mode = "sgmii";
++				qca,sgmii-enable-pll;
++
++				fixed-link {
++					speed = <1000>;
++					full-duplex;
++				};
++			};
++		};
++
++		mdio {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			phy_port1: phy@0 {
++				reg = <0>;
++			};
++
++			phy_port2: phy@1 {
++				reg = <1>;
++			};
++
++			phy_port3: phy@2 {
++				reg = <2>;
++			};
++
++			phy_port4: phy@3 {
++				reg = <3>;
++			};
++
++			phy_port5: phy@4 {
++				reg = <4>;
++			};
++		};
+ 	};
+ };
+ 
+Index: boot/dts/qcom-ipq8064-r7500v2.dts
+===================================================================
+--- boot/dts/qcom-ipq8064-r7500v2.dts	(revision 53158)
++++ boot/dts/qcom-ipq8064-r7500v2.dts	(working copy)
+@@ -337,21 +337,103 @@
+ 	pinctrl-0 = <&mdio0_pins>;
+ 	pinctrl-names = "default";
+ 
+-	phy0: ethernet-phy@0 {
+-		reg = <0>;
+-		qca,ar8327-initvals = <
+-			0x00004 0x7600000   /* PAD0_MODE */
+-			0x00008 0x1000000   /* PAD5_MODE */
+-			0x0000c 0x80        /* PAD6_MODE */
+-			0x000e4 0xaa545     /* MAC_POWER_SEL */
+-			0x000e0 0xc74164de  /* SGMII_CTRL */
+-			0x0007c 0x4e        /* PORT0_STATUS */
+-			0x00094 0x4e        /* PORT6_STATUS */
+-			>;
+-	};
++	switch@10 {
++		compatible = "qca,qca8337";
++		#address-cells = <1>;
++		#size-cells = <0>;
++		reg = <0x10>;
+ 
+-	phy4: ethernet-phy@4 {
+-		reg = <4>;
++		ports {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			port@0 {
++				reg = <0>;
++				label = "cpu";
++				ethernet = <&gmac1>;
++				phy-mode = "rgmii";
++				tx-internal-delay-ps = <1000>;
++				rx-internal-delay-ps = <1000>;
++
++				fixed-link {
++					speed = <1000>;
++					full-duplex;
++				};
++			};
++
++			port@1 {
++				reg = <1>;
++				label = "lan1";
++				phy-mode = "internal";
++				phy-handle = <&phy_port1>;
++			};
++
++			port@2 {
++				reg = <2>;
++				label = "lan2";
++				phy-mode = "internal";
++				phy-handle = <&phy_port2>;
++			};
++
++			port@3 {
++				reg = <3>;
++				label = "lan3";
++				phy-mode = "internal";
++				phy-handle = <&phy_port3>;
++			};
++
++			port@4 {
++				reg = <4>;
++				label = "lan4";
++				phy-mode = "internal";
++				phy-handle = <&phy_port4>;
++			};
++
++			port@5 {
++				reg = <5>;
++				label = "wan";
++				phy-mode = "internal";
++				phy-handle = <&phy_port5>;
++			};
++
++			port@6 {
++				reg = <6>;
++				label = "cpu";
++				ethernet = <&gmac2>;
++				phy-mode = "sgmii";
++				qca,sgmii-enable-pll;
++
++				fixed-link {
++					speed = <1000>;
++					full-duplex;
++				};
++			};
++		};
++
++		mdio {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			phy_port1: phy@0 {
++				reg = <0>;
++			};
++
++			phy_port2: phy@1 {
++				reg = <1>;
++			};
++
++			phy_port3: phy@2 {
++				reg = <2>;
++			};
++
++			phy_port4: phy@3 {
++				reg = <3>;
++			};
++
++			phy_port5: phy@4 {
++				reg = <4>;
++			};
++		};
+ 	};
+ };
+ 
+Index: boot/dts/qcom-ipq8064-vr2600v.dts
+===================================================================
+--- boot/dts/qcom-ipq8064-vr2600v.dts	(revision 53158)
++++ boot/dts/qcom-ipq8064-vr2600v.dts	(working copy)
+@@ -369,21 +369,103 @@
+ 	pinctrl-0 = <&mdio0_pins>;
+ 	pinctrl-names = "default";
+ 
+-	phy0: ethernet-phy@0 {
+-		reg = <0>;
+-		qca,ar8327-initvals = <
+-			0x00004 0x7600000   /* PAD0_MODE */
+-			0x00008 0x1000000   /* PAD5_MODE */
+-			0x0000c 0x80        /* PAD6_MODE */
+-			0x000e4 0x6a545     /* MAC_POWER_SEL */
+-			0x000e0 0xc74164de  /* SGMII_CTRL */
+-			0x0007c 0x4e        /* PORT0_STATUS */
+-			0x00094 0x4e        /* PORT6_STATUS */
+-			>;
+-	};
++	switch@10 {
++		compatible = "qca,qca8337";
++		#address-cells = <1>;
++		#size-cells = <0>;
++		reg = <0x10>;
+ 
+-	phy4: ethernet-phy@4 {
+-		reg = <4>;
++		ports {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			port@0 {
++				reg = <0>;
++				label = "cpu";
++				ethernet = <&gmac1>;
++				phy-mode = "rgmii";
++				tx-internal-delay-ps = <1000>;
++				rx-internal-delay-ps = <1000>;
++
++				fixed-link {
++					speed = <1000>;
++					full-duplex;
++				};
++			};
++
++			port@1 {
++				reg = <1>;
++				label = "lan4";
++				phy-mode = "internal";
++				phy-handle = <&phy_port1>;
++			};
++
++			port@2 {
++				reg = <2>;
++				label = "lan3";
++				phy-mode = "internal";
++				phy-handle = <&phy_port2>;
++			};
++
++			port@3 {
++				reg = <3>;
++				label = "lan2";
++				phy-mode = "internal";
++				phy-handle = <&phy_port3>;
++			};
++
++			port@4 {
++				reg = <4>;
++				label = "lan1";
++				phy-mode = "internal";
++				phy-handle = <&phy_port4>;
++			};
++
++			port@5 {
++				reg = <5>;
++				label = "wan";
++				phy-mode = "internal";
++				phy-handle = <&phy_port5>;
++			};
++
++			port@6 {
++				reg = <6>;
++				label = "cpu";
++				ethernet = <&gmac2>;
++				phy-mode = "sgmii";
++				qca,sgmii-enable-pll;
++
++				fixed-link {
++					speed = <1000>;
++					full-duplex;
++				};
++			};
++		};
++
++		mdio {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			phy_port1: phy@0 {
++				reg = <0>;
++			};
++
++			phy_port2: phy@1 {
++				reg = <1>;
++			};
++
++			phy_port3: phy@2 {
++				reg = <2>;
++			};
++
++			phy_port4: phy@3 {
++				reg = <3>;
++			};
++
++			phy_port5: phy@4 {
++				reg = <4>;
++			};
++		};
+ 	};
+ };
+ 
+Index: boot/dts/qcom-ipq8064-wg2600hp.dts
+===================================================================
+--- boot/dts/qcom-ipq8064-wg2600hp.dts	(revision 53158)
++++ boot/dts/qcom-ipq8064-wg2600hp.dts	(working copy)
+@@ -141,20 +141,103 @@
+ 	pinctrl-0 = <&mdio0_pins>;
+ 	pinctrl-names = "default";
+ 
+-	ethernet-phy@0 {
+-		reg = <0>;
+-		qca,ar8327-initvals = <
+-			0x00004 0x06000000  /* PAD0_MODE */
+-			0x0000c 0x00080080  /* PAD6_MODE */
+-			0x000e4 0x0006a545  /* MAC_POWER_SEL */
+-			0x000e0 0xc74164de  /* SGMII_CTRL */
+-			0x0007c 0x0000004e  /* PORT0_STATUS */
+-			0x00094 0x0000004e  /* PORT6_STATUS */
+-			>;
+-	};
++switch@10 {
++		compatible = "qca,qca8337";
++		#address-cells = <1>;
++		#size-cells = <0>;
++		reg = <0x10>;
+ 
+-	ethernet-phy@4 {
+-		reg = <4>;
++		ports {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			port@0 {
++				reg = <0>;
++				label = "cpu";
++				ethernet = <&gmac1>;
++				phy-mode = "rgmii";
++				tx-internal-delay-ps = <1000>;
++
++				fixed-link {
++					speed = <1000>;
++					full-duplex;
++				};
++			};
++
++			port@1 {
++				reg = <1>;
++				label = "wan";
++				phy-mode = "internal";
++				phy-handle = <&phy_port1>;
++			};
++
++			port@2 {
++				reg = <2>;
++				label = "lan1";
++				phy-mode = "internal";
++				phy-handle = <&phy_port2>;
++			};
++
++			port@3 {
++				reg = <3>;
++				label = "lan2";
++				phy-mode = "internal";
++				phy-handle = <&phy_port3>;
++			};
++
++			port@4 {
++				reg = <4>;
++				label = "lan3";
++				phy-mode = "internal";
++				phy-handle = <&phy_port4>;
++			};
++
++			port@5 {
++				reg = <5>;
++				label = "lan4";
++				phy-mode = "internal";
++				phy-handle = <&phy_port5>;
++			};
++
++			port@6 {
++				reg = <6>;
++				label = "cpu";
++				ethernet = <&gmac2>;
++				phy-mode = "sgmii";
++				qca,sgmii-enable-pll;
++				qca,sgmii-rxclk-falling-edge;
++
++				fixed-link {
++					speed = <1000>;
++					full-duplex;
++				};
++			};
++		};
++
++		mdio {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			phy_port1: phy@0 {
++				reg = <0>;
++			};
++
++			phy_port2: phy@1 {
++				reg = <1>;
++			};
++
++			phy_port3: phy@2 {
++				reg = <2>;
++			};
++
++			phy_port4: phy@3 {
++				reg = <3>;
++			};
++
++			phy_port5: phy@4 {
++				reg = <4>;
++			};
++		};
+ 	};
+ };
+ 
+Index: boot/dts/qcom-ipq8064-wpq864.dts
+===================================================================
+--- boot/dts/qcom-ipq8064-wpq864.dts	(revision 53158)
++++ boot/dts/qcom-ipq8064-wpq864.dts	(working copy)
+@@ -270,21 +270,103 @@
+ 	pinctrl-0 = <&mdio0_pins>;
+ 	pinctrl-names = "default";
+ 
+-	ethernet-phy@0 {
+-		reg = <0>;
+-		qca,ar8327-initvals = <
+-			0x00004 0x7600000   /* PAD0_MODE */
+-			0x00008 0x1000000   /* PAD5_MODE */
+-			0x0000c 0x80        /* PAD6_MODE */
+-			0x000e4 0x6a545     /* MAC_POWER_SEL */
+-			0x000e0 0xc74164de  /* SGMII_CTRL */
+-			0x0007c 0x4e        /* PORT0_STATUS */
+-			0x00094 0x4e        /* PORT6_STATUS */
+-			>;
+-	};
++	switch@10 {
++		compatible = "qca,qca8337";
++		#address-cells = <1>;
++		#size-cells = <0>;
++		reg = <0x10>;
+ 
+-	ethernet-phy@4 {
+-		reg = <4>;
++		ports {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			port@0 {
++				reg = <0>;
++				label = "cpu";
++				ethernet = <&gmac1>;
++				phy-mode = "rgmii";
++				tx-internal-delay-ps = <1000>;
++				rx-internal-delay-ps = <1000>;
++
++				fixed-link {
++					speed = <1000>;
++					full-duplex;
++				};
++			};
++
++			port@1 {
++				reg = <1>;
++				label = "lan1";
++				phy-mode = "internal";
++				phy-handle = <&phy_port1>;
++			};
++
++			port@2 {
++				reg = <2>;
++				label = "lan2";
++				phy-mode = "internal";
++				phy-handle = <&phy_port2>;
++			};
++
++			port@3 {
++				reg = <3>;
++				label = "lan3";
++				phy-mode = "internal";
++				phy-handle = <&phy_port3>;
++			};
++
++			port@4 {
++				reg = <4>;
++				label = "lan4";
++				phy-mode = "internal";
++				phy-handle = <&phy_port4>;
++			};
++
++			port@5 {
++				reg = <5>;
++				label = "wan";
++				phy-mode = "internal";
++				phy-handle = <&phy_port5>;
++			};
++
++			port@6 {
++				reg = <6>;
++				label = "cpu";
++				ethernet = <&gmac2>;
++				phy-mode = "sgmii";
++				qca,sgmii-enable-pll;
++
++				fixed-link {
++					speed = <1000>;
++					full-duplex;
++				};
++			};
++		};
++
++		mdio {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			phy_port1: phy@0 {
++				reg = <0>;
++			};
++
++			phy_port2: phy@1 {
++				reg = <1>;
++			};
++
++			phy_port3: phy@2 {
++				reg = <2>;
++			};
++
++			phy_port4: phy@3 {
++				reg = <3>;
++			};
++
++			phy_port5: phy@4 {
++				reg = <4>;
++			};
++		};
+ 	};
+ };
+ 
+Index: boot/dts/qcom-ipq8064-wxr-2533dhp.dts
+===================================================================
+--- boot/dts/qcom-ipq8064-wxr-2533dhp.dts	(revision 53158)
++++ boot/dts/qcom-ipq8064-wxr-2533dhp.dts	(working copy)
+@@ -195,25 +195,103 @@
+ 	pinctrl-0 = <&mdio0_pins>;
+ 	pinctrl-names = "default";
+ 
+-	ethernet-phy@0 {
+-		reg = <0>;
+-		qca,ar8327-initvals = <
+-			0x00004 0x07600000  /* PAD0_MODE */
+-			0x00008 0x01000000  /* PAD5_MODE */
+-			0x0000c 0x00000080  /* PAD6_MODE */
+-			0x00050 0xcc35cc35  /* LED_CTRL0 */
+-			0x00054 0xca35ca35  /* LED_CTRL1 */
+-			0x00058 0xc935c935  /* LED_CTRL2 */
+-			0x0005c 0x03ffff00  /* LED_CTRL3 */
+-			0x000e4 0x0006a545  /* MAC_POWER_SEL */
+-			0x000e0 0xc74164de  /* SGMII_CTRL */
+-			0x0007c 0x0000007e  /* PORT0_STATUS */
+-			0x00094 0x0000007e  /* PORT6_STATUS */
+-			>;
+-	};
++	switch@10 {
++		compatible = "qca,qca8337";
++		#address-cells = <1>;
++		#size-cells = <0>;
++		reg = <0x10>;
+ 
+-	ethernet-phy@4 {
+-		reg = <4>;
++		ports {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			port@0 {
++				reg = <0>;
++				label = "cpu";
++				ethernet = <&gmac1>;
++				phy-mode = "rgmii";
++				tx-internal-delay-ps = <1000>;
++				rx-internal-delay-ps = <1000>;
++
++				fixed-link {
++					speed = <1000>;
++					full-duplex;
++				};
++			};
++
++			port@1 {
++				reg = <1>;
++				label = "lan1";
++				phy-mode = "internal";
++				phy-handle = <&phy_port1>;
++			};
++
++			port@2 {
++				reg = <2>;
++				label = "lan2";
++				phy-mode = "internal";
++				phy-handle = <&phy_port2>;
++			};
++
++			port@3 {
++				reg = <3>;
++				label = "lan3";
++				phy-mode = "internal";
++				phy-handle = <&phy_port3>;
++			};
++
++			port@4 {
++				reg = <4>;
++				label = "lan4";
++				phy-mode = "internal";
++				phy-handle = <&phy_port4>;
++			};
++
++			port@5 {
++				reg = <5>;
++				label = "wan";
++				phy-mode = "internal";
++				phy-handle = <&phy_port5>;
++			};
++
++			port@6 {
++				reg = <6>;
++				label = "cpu";
++				ethernet = <&gmac2>;
++				phy-mode = "sgmii";
++				qca,sgmii-enable-pll;
++
++				fixed-link {
++					speed = <1000>;
++					full-duplex;
++				};
++			};
++		};
++
++		mdio {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			phy_port1: phy@0 {
++				reg = <0>;
++			};
++
++			phy_port2: phy@1 {
++				reg = <1>;
++			};
++
++			phy_port3: phy@2 {
++				reg = <2>;
++			};
++
++			phy_port4: phy@3 {
++				reg = <3>;
++			};
++
++			phy_port5: phy@4 {
++				reg = <4>;
++			};
++		};
+ 	};
+ };
+ 
+Index: boot/dts/qcom-ipq8065-nbg6817.dts
+===================================================================
+--- boot/dts/qcom-ipq8065-nbg6817.dts	(revision 53158)
++++ boot/dts/qcom-ipq8065-nbg6817.dts	(working copy)
+@@ -245,40 +245,103 @@
+ 	pinctrl-0 = <&mdio0_pins>;
+ 	pinctrl-names = "default";
+ 
++	switch@10 {
++		compatible = "qca,qca8337";
++		#address-cells = <1>;
++		#size-cells = <0>;
++		reg = <0x10>;
+ 
+-	phy0: ethernet-phy@0 {
+-		reg = <0>;
+-		qca,ar8327-initvals = <
+-			0x00004 0x7600000   /* PAD0_MODE */
+-			0x00008 0x1000000   /* PAD5_MODE */
+-			0x0000c 0x80        /* PAD6_MODE */
+-			0x000e4 0xaa545     /* MAC_POWER_SEL */
+-			0x000e0 0xc74164de  /* SGMII_CTRL */
+-			0x0007c 0x4e        /* PORT0_STATUS */
+-			0x00094 0x4e        /* PORT6_STATUS */
+-			0x00970 0x1e864443  /* QM_PORT0_CTRL0 */
+-			0x00974 0x000001c6  /* QM_PORT0_CTRL1 */
+-			0x00978 0x19008643  /* QM_PORT1_CTRL0 */
+-			0x0097c 0x000001c6  /* QM_PORT1_CTRL1 */
+-			0x00980 0x19008643  /* QM_PORT2_CTRL0 */
+-			0x00984 0x000001c6  /* QM_PORT2_CTRL1 */
+-			0x00988 0x19008643  /* QM_PORT3_CTRL0 */
+-			0x0098c 0x000001c6  /* QM_PORT3_CTRL1 */
+-			0x00990 0x19008643  /* QM_PORT4_CTRL0 */
+-			0x00994 0x000001c6  /* QM_PORT4_CTRL1 */
+-			0x00998 0x1e864443  /* QM_PORT5_CTRL0 */
+-			0x0099c 0x000001c6  /* QM_PORT5_CTRL1 */
+-			0x009a0 0x1e864443  /* QM_PORT6_CTRL0 */
+-			0x009a4 0x000001c6  /* QM_PORT6_CTRL1 */
+-			>;
+-	};
++		ports {
++			#address-cells = <1>;
++			#size-cells = <0>;
+ 
+-	phy4: ethernet-phy@4 {
+-		reg = <4>;
+-		qca,ar8327-initvals = <
+-			0x000e4 0x6a545     /* MAC_POWER_SEL */
+-			0x0000c 0x80        /* PAD6_MODE */
+-			>;
++			port@0 {
++				reg = <0>;
++				label = "cpu";
++				ethernet = <&gmac1>;
++				phy-mode = "rgmii";
++				tx-internal-delay-ps = <1000>;
++				rx-internal-delay-ps = <1000>;
++
++				fixed-link {
++					speed = <1000>;
++					full-duplex;
++				};
++			};
++
++			port@1 {
++				reg = <1>;
++				label = "lan1";
++				phy-mode = "internal";
++				phy-handle = <&phy_port1>;
++			};
++
++			port@2 {
++				reg = <2>;
++				label = "lan2";
++				phy-mode = "internal";
++				phy-handle = <&phy_port2>;
++			};
++
++			port@3 {
++				reg = <3>;
++				label = "lan3";
++				phy-mode = "internal";
++				phy-handle = <&phy_port3>;
++			};
++
++			port@4 {
++				reg = <4>;
++				label = "lan4";
++				phy-mode = "internal";
++				phy-handle = <&phy_port4>;
++			};
++
++			port@5 {
++				reg = <5>;
++				label = "wan";
++				phy-mode = "internal";
++				phy-handle = <&phy_port5>;
++			};
++
++			port@6 {
++				reg = <6>;
++				label = "cpu";
++				ethernet = <&gmac2>;
++				phy-mode = "sgmii";
++				qca,sgmii-enable-pll;
++
++				fixed-link {
++					speed = <1000>;
++					full-duplex;
++				};
++			};
++		};
++
++		mdio {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			phy_port1: phy@0 {
++				reg = <0>;
++			};
++
++			phy_port2: phy@1 {
++				reg = <1>;
++			};
++
++			phy_port3: phy@2 {
++				reg = <2>;
++			};
++
++			phy_port4: phy@3 {
++				reg = <3>;
++			};
++
++			phy_port5: phy@4 {
++				reg = <4>;
++			};
++		};
+ 	};
+ };
+ 
+Index: boot/dts/qcom-ipq8065-nighthawk.dtsi
+===================================================================
+--- boot/dts/qcom-ipq8065-nighthawk.dtsi	(revision 53158)
++++ boot/dts/qcom-ipq8065-nighthawk.dtsi	(working copy)
+@@ -302,43 +302,103 @@
+ 	pinctrl-0 = <&mdio0_pins>;
+ 	pinctrl-names = "default";
+ 
+-	phy0: ethernet-phy@0 {
+-		reg = <0>;
+-		qca,ar8327-initvals = <
+-			0x00004 0x7600000   /* PAD0_MODE */
+-			0x00008 0x1000000   /* PAD5_MODE */
+-			0x0000c 0x80        /* PAD6_MODE */
+-			0x000e4 0xaa545     /* MAC_POWER_SEL */
+-			0x000e0 0xc74164de  /* SGMII_CTRL */
+-			0x0007c 0x4e        /* PORT0_STATUS */
+-			0x00094 0x4e        /* PORT6_STATUS */
+-			0x00970 0x1e864443  /* QM_PORT0_CTRL0 */
+-			0x00974 0x000001c6  /* QM_PORT0_CTRL1 */
+-			0x00978 0x19008643  /* QM_PORT1_CTRL0 */
+-			0x0097c 0x000001c6  /* QM_PORT1_CTRL1 */
+-			0x00980 0x19008643  /* QM_PORT2_CTRL0 */
+-			0x00984 0x000001c6  /* QM_PORT2_CTRL1 */
+-			0x00988 0x19008643  /* QM_PORT3_CTRL0 */
+-			0x0098c 0x000001c6  /* QM_PORT3_CTRL1 */
+-			0x00990 0x19008643  /* QM_PORT4_CTRL0 */
+-			0x00994 0x000001c6  /* QM_PORT4_CTRL1 */
+-			0x00998 0x1e864443  /* QM_PORT5_CTRL0 */
+-			0x0099c 0x000001c6  /* QM_PORT5_CTRL1 */
+-			0x009a0 0x1e864443  /* QM_PORT6_CTRL0 */
+-			0x009a4 0x000001c6  /* QM_PORT6_CTRL1 */
+-			>;
+-		qca,ar8327-vlans = <
+-			0x1	0x5e	    /* VLAN1 Ports 1/2/3/4/6 */
+-			0x2	0x21	    /* VLAN2 Ports 0/5 */
+-		>;
+-	};
++	switch@10 {
++		compatible = "qca,qca8337";
++		#address-cells = <1>;
++		#size-cells = <0>;
++		reg = <0x10>;
+ 
+-	phy4: ethernet-phy@4 {
+-		reg = <4>;
+-		qca,ar8327-initvals = <
+-			0x000e4 0x6a545     /* MAC_POWER_SEL */
+-			0x0000c 0x80        /* PAD6_MODE */
+-			>;
++		ports {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			port@0 {
++				reg = <0>;
++				label = "cpu";
++				ethernet = <&gmac1>;
++				phy-mode = "rgmii";
++				tx-internal-delay-ps = <1000>;
++				rx-internal-delay-ps = <1000>;
++
++				fixed-link {
++					speed = <1000>;
++					full-duplex;
++				};
++			};
++
++			port@1 {
++				reg = <1>;
++				label = "lan4";
++				phy-mode = "internal";
++				phy-handle = <&phy_port1>;
++			};
++
++			port@2 {
++				reg = <2>;
++				label = "lan3";
++				phy-mode = "internal";
++				phy-handle = <&phy_port2>;
++			};
++
++			port@3 {
++				reg = <3>;
++				label = "lan2";
++				phy-mode = "internal";
++				phy-handle = <&phy_port3>;
++			};
++
++			port@4 {
++				reg = <4>;
++				label = "lan1";
++				phy-mode = "internal";
++				phy-handle = <&phy_port4>;
++			};
++
++			port@5 {
++				reg = <5>;
++				label = "wan";
++				phy-mode = "internal";
++				phy-handle = <&phy_port5>;
++			};
++
++			port@6 {
++				reg = <6>;
++				label = "cpu";
++				ethernet = <&gmac2>;
++				phy-mode = "sgmii";
++				qca,sgmii-enable-pll;
++
++				fixed-link {
++					speed = <1000>;
++					full-duplex;
++				};
++			};
++		};
++
++		mdio {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			phy_port1: phy@0 {
++				reg = <0>;
++			};
++
++			phy_port2: phy@1 {
++				reg = <1>;
++			};
++
++			phy_port3: phy@2 {
++				reg = <2>;
++			};
++
++			phy_port4: phy@3 {
++				reg = <3>;
++			};
++
++			phy_port5: phy@4 {
++				reg = <4>;
++			};
++		};
+ 	};
+ };
+ 
+Index: boot/dts/qcom-ipq8065-rt4230w-rev6.dts
+===================================================================
+--- boot/dts/qcom-ipq8065-rt4230w-rev6.dts	(revision 53158)
++++ boot/dts/qcom-ipq8065-rt4230w-rev6.dts	(working copy)
+@@ -2,6 +2,7 @@
+ 
+ #include "qcom-ipq8065-smb208.dtsi"
+ #include <dt-bindings/input/input.h>
++#include <dt-bindings/leds/common.h>
+ 
+ / {
+ 	model = "Askey RT4230W REV6";
+@@ -297,19 +298,198 @@
+ 	pinctrl-0 = <&mdio0_pins>;
+ 	pinctrl-names = "default";
+ 
+-	phy0: ethernet-phy@0 {
+-		reg = <0x0>;
+-		qca,ar8327-initvals = <
+-			0x00004 0x7600000   /* PAD0_MODE */
+-			0x00008 0x1000000   /* PAD5_MODE */
+-			0x0000c 0x80        /* PAD6_MODE */
+-			0x000e4 0xaa545     /* MAC_POWER_SEL */
+-			0x000e0 0xc74164de  /* SGMII_CTRL */
+-			0x0007c 0x4e        /* PORT0_STATUS */
+-			0x00094 0x4e        /* PORT6_STATUS */
+-			0x00050 0xcf02cf02  /* LED_CTRL_0 */
+-			0x00054 0xc832c832  /* LED_CTRL_1 */
+-			>;
++	switch@10 {
++		compatible = "qca,qca8337";
++		#address-cells = <1>;
++		#size-cells = <0>;
++		reg = <0x10>;
++
++		ports {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			port@0 {
++				reg = <0>;
++				label = "cpu";
++				ethernet = <&gmac0>;
++				phy-mode = "rgmii";
++				tx-internal-delay-ps = <1000>;
++				rx-internal-delay-ps = <1000>;
++
++				fixed-link {
++					speed = <1000>;
++					full-duplex;
++				};
++			};
++
++			port@1 {
++				reg = <1>;
++				label = "wan";
++				phy-mode = "internal";
++				phy-handle = <&phy_port1>;
++
++				leds {
++					#address-cells = <1>;
++					#size-cells = <0>;
++
++					led@0 {
++						reg = <0>;
++						color = <LED_COLOR_ID_GREEN>;
++						function = LED_FUNCTION_WAN;
++						default-state = "keep";
++					};
++
++					led@1 {
++						reg = <1>;
++						color = <LED_COLOR_ID_AMBER>;
++						function = LED_FUNCTION_WAN;
++						default-state = "keep";
++					};
++				};
++			};
++
++			port@2 {
++				reg = <2>;
++				label = "lan1";
++				phy-mode = "internal";
++				phy-handle = <&phy_port2>;
++
++				leds {
++					#address-cells = <1>;
++					#size-cells = <0>;
++
++					led@0 {
++						reg = <0>;
++						color = <LED_COLOR_ID_GREEN>;
++						function = LED_FUNCTION_LAN;
++						default-state = "keep";
++					};
++
++					led@1 {
++						reg = <1>;
++						color = <LED_COLOR_ID_AMBER>;
++						function = LED_FUNCTION_LAN;
++						default-state = "keep";
++					};
++				};
++			};
++
++			port@3 {
++				reg = <3>;
++				label = "lan2";
++				phy-mode = "internal";
++				phy-handle = <&phy_port3>;
++
++				leds {
++					#address-cells = <1>;
++					#size-cells = <0>;
++
++					led@0 {
++						reg = <0>;
++						color = <LED_COLOR_ID_GREEN>;
++						function = LED_FUNCTION_LAN;
++						default-state = "keep";
++					};
++
++					led@1 {
++						reg = <1>;
++						color = <LED_COLOR_ID_AMBER>;
++						function = LED_FUNCTION_LAN;
++						default-state = "keep";
++					};
++				};
++			};
++
++			port@4 {
++				reg = <4>;
++				label = "lan3";
++				phy-mode = "internal";
++				phy-handle = <&phy_port4>;
++
++				leds {
++					#address-cells = <1>;
++					#size-cells = <0>;
++
++					led@0 {
++						reg = <0>;
++						color = <LED_COLOR_ID_GREEN>;
++						function = LED_FUNCTION_LAN;
++						default-state = "keep";
++					};
++
++					led@1 {
++						reg = <1>;
++						color = <LED_COLOR_ID_AMBER>;
++						function = LED_FUNCTION_LAN;
++						default-state = "keep";
++					};
++				};
++			};
++
++			port@5 {
++				reg = <5>;
++				label = "lan4";
++				phy-mode = "internal";
++				phy-handle = <&phy_port5>;
++
++				leds {
++					#address-cells = <1>;
++					#size-cells = <0>;
++
++					led@0 {
++						reg = <0>;
++						color = <LED_COLOR_ID_GREEN>;
++						function = LED_FUNCTION_LAN;
++						default-state = "keep";
++					};
++
++					led@1 {
++						reg = <1>;
++						color = <LED_COLOR_ID_AMBER>;
++						function = LED_FUNCTION_LAN;
++						default-state = "keep";
++					};
++				};
++			};
++
++			port@6 {
++				reg = <6>;
++				label = "cpu";
++				ethernet = <&gmac1>;
++				phy-mode = "sgmii";
++				qca,sgmii-enable-pll;
++
++				fixed-link {
++					speed = <1000>;
++					full-duplex;
++				};
++			};
++		};
++
++		mdio {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			phy_port1: phy@0 {
++				reg = <0>;
++			};
++
++			phy_port2: phy@1 {
++				reg = <1>;
++			};
++
++			phy_port3: phy@2 {
++				reg = <2>;
++			};
++
++			phy_port4: phy@3 {
++				reg = <3>;
++			};
++
++			phy_port5: phy@4 {
++				reg = <4>;
++			};
++		};
+ 	};
+ };
+ 
+Index: boot/dts/qcom-ipq8065-tr4400-v2.dts
+===================================================================
+--- boot/dts/qcom-ipq8065-tr4400-v2.dts	(revision 53158)
++++ boot/dts/qcom-ipq8065-tr4400-v2.dts	(working copy)
+@@ -311,17 +311,92 @@
+ 	pinctrl-0 = <&mdio0_pins>;
+ 	pinctrl-names = "default";
+ 
+-	ethernet-phy@0 {
+-		reg = <0x0>;
+-		qca,ar8327-initvals = <
+-			0x00004 0x7600000   /* PAD0_MODE */
+-			0x00008 0x1000000   /* PAD5_MODE */
+-			0x0000c 0x80        /* PAD6_MODE */
+-			0x000e4 0xaa545     /* MAC_POWER_SEL */
+-			0x000e0 0xc74164de  /* SGMII_CTRL */
+-			0x0007c 0x4e        /* PORT0_STATUS */
+-			0x00094 0x4e        /* PORT6_STATUS */
+-			>;
++	switch@10 {
++		compatible = "qca,qca8337";
++		#address-cells = <1>;
++		#size-cells = <0>;
++		reg = <0x10>;
++
++		ports {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			port@0 {
++				reg = <0>;
++				label = "cpu";
++				ethernet = <&gmac0>;
++				phy-mode = "rgmii";
++				tx-internal-delay-ps = <1000>;
++				rx-internal-delay-ps = <1000>;
++
++				fixed-link {
++					speed = <1000>;
++					full-duplex;
++				};
++			};
++
++			port@1 {
++				reg = <1>;
++				label = "lan1";
++				phy-mode = "internal";
++				phy-handle = <&phy_port1>;
++			};
++
++			port@2 {
++				reg = <2>;
++				label = "lan2";
++				phy-mode = "internal";
++				phy-handle = <&phy_port2>;
++			};
++
++			port@3 {
++				reg = <3>;
++				label = "lan3";
++				phy-mode = "internal";
++				phy-handle = <&phy_port3>;
++			};
++
++			port@4 {
++				reg = <4>;
++				label = "lan4";
++				phy-mode = "internal";
++				phy-handle = <&phy_port4>;
++			};
++
++			port@6 {
++				reg = <6>;
++				label = "cpu";
++				ethernet = <&gmac1>;
++				phy-mode = "sgmii";
++				qca,sgmii-enable-pll;
++
++				fixed-link {
++					speed = <1000>;
++					full-duplex;
++				};
++			};
++		};
++
++		mdio {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			phy_port1: phy@0 {
++				reg = <0>;
++			};
++
++			phy_port2: phy@1 {
++				reg = <1>;
++			};
++
++			phy_port3: phy@2 {
++				reg = <2>;
++			};
++
++			phy_port4: phy@3 {
++				reg = <3>;
++			};
++		};
+ 	};
+ 
+ 	phy7: ethernet-phy@7 {
+Index: boot/dts/bcm47189-luxul-xap-1440.dts
+===================================================================
+--- boot/dts/bcm47189-luxul-xap-1440.dts	(revision 53158)
++++ boot/dts/bcm47189-luxul-xap-1440.dts	(working copy)
+@@ -46,3 +46,16 @@
+ 		};
+ 	};
+ };
++
++&gmac0 {
++	phy-mode = "rgmii";
++	phy-handle = <&bcm54210e>;
++
++	mdio {
++		/delete-node/ switch@1e;
++
++		bcm54210e: ethernet-phy@0 {
++			reg = <0>;
++		};
++	};
++};
+Index: boot/dts/bcm47189-luxul-xap-810.dts
+===================================================================
+--- boot/dts/bcm47189-luxul-xap-810.dts	(revision 53158)
++++ boot/dts/bcm47189-luxul-xap-810.dts	(working copy)
+@@ -83,3 +83,16 @@
+ 		};
+ 	};
+ };
++
++&gmac0 {
++	phy-mode = "rgmii";
++	phy-handle = <&bcm54210e>;
++
++	mdio {
++		/delete-node/ switch@1e;
++
++		bcm54210e: ethernet-phy@0 {
++			reg = <0>;
++		};
++	};
++};
+Index: boot/dts/bcm47189-tenda-ac9.dts
+===================================================================
+--- boot/dts/bcm47189-tenda-ac9.dts	(revision 53158)
++++ boot/dts/bcm47189-tenda-ac9.dts	(working copy)
+@@ -135,8 +135,8 @@
+ 			label = "lan4";
+ 		};
+ 
+-		port@5 {
+-			reg = <5>;
++		port@8 {
++			reg = <8>;
+ 			label = "cpu";
+ 			ethernet = <&gmac0>;
+ 		};
+Index: boot/dts/bcm53015-meraki-mr26.dts
+===================================================================
+--- boot/dts/bcm53015-meraki-mr26.dts	(revision 53158)
++++ boot/dts/bcm53015-meraki-mr26.dts	(working copy)
+@@ -128,7 +128,7 @@
+ 
+ 			fixed-link {
+ 				speed = <1000>;
+-				duplex-full;
++				full-duplex;
+ 			};
+ 		};
+ 	};
+Index: boot/dts/bcm53016-meraki-mr32.dts
+===================================================================
+--- boot/dts/bcm53016-meraki-mr32.dts	(revision 53158)
++++ boot/dts/bcm53016-meraki-mr32.dts	(working copy)
+@@ -187,7 +187,7 @@
+ 
+ 			fixed-link {
+ 				speed = <1000>;
+-				duplex-full;
++				full-duplex;
+ 			};
+ 		};
+ 	};
+Index: boot/dts/bcm5301x.dtsi
+===================================================================
+--- boot/dts/bcm5301x.dtsi	(revision 53158)
++++ boot/dts/bcm5301x.dtsi	(working copy)
+@@ -542,7 +542,6 @@
+ 				  "spi_lr_session_done",
+ 				  "spi_lr_overread";
+ 		clocks = <&iprocmed>;
+-		clock-names = "iprocmed";
+ 		num-cs = <2>;
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+Index: boot/dts/bcm947189acdbmr.dts
+===================================================================
+--- boot/dts/bcm947189acdbmr.dts	(revision 53158)
++++ boot/dts/bcm947189acdbmr.dts	(working copy)
+@@ -60,9 +60,9 @@
+ 	spi {
+ 		compatible = "spi-gpio";
+ 		num-chipselects = <1>;
+-		gpio-sck = <&chipcommon 21 0>;
+-		gpio-miso = <&chipcommon 22 0>;
+-		gpio-mosi = <&chipcommon 23 0>;
++		sck-gpios = <&chipcommon 21 0>;
++		miso-gpios = <&chipcommon 22 0>;
++		mosi-gpios = <&chipcommon 23 0>;
+ 		cs-gpios = <&chipcommon 24 0>;
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+Index: boot/dts/imx50-kobo-aura.dts
+===================================================================
+--- boot/dts/imx50-kobo-aura.dts	(revision 53158)
++++ boot/dts/imx50-kobo-aura.dts	(working copy)
+@@ -26,7 +26,7 @@
+ 		pinctrl-names = "default";
+ 		pinctrl-0 = <&pinctrl_leds>;
+ 
+-		on {
++		led-on {
+ 			label = "kobo_aura:orange:on";
+ 			gpios = <&gpio6 24 GPIO_ACTIVE_LOW>;
+ 			panic-indicator;
+Index: boot/dts/imx53-cx9020.dts
+===================================================================
+--- boot/dts/imx53-cx9020.dts	(revision 53158)
++++ boot/dts/imx53-cx9020.dts	(working copy)
+@@ -86,27 +86,27 @@
+ 	leds {
+ 		compatible = "gpio-leds";
+ 
+-		pwr-r {
++		led-pwr-r {
+ 			gpios = <&gpio3 22 GPIO_ACTIVE_HIGH>;
+ 			default-state = "off";
+ 		};
+ 
+-		pwr-g {
++		led-pwr-g {
+ 			gpios = <&gpio3 24 GPIO_ACTIVE_HIGH>;
+ 			default-state = "on";
+ 		};
+ 
+-		pwr-b {
++		led-pwr-b {
+ 			gpios = <&gpio3 23 GPIO_ACTIVE_HIGH>;
+ 			default-state = "off";
+ 		};
+ 
+-		sd1-b {
++		led-sd1-b {
+ 			linux,default-trigger = "mmc0";
+ 			gpios = <&gpio3 20 GPIO_ACTIVE_HIGH>;
+ 		};
+ 
+-		sd2-b {
++		led-sd2-b {
+ 			linux,default-trigger = "mmc1";
+ 			gpios = <&gpio3 17 GPIO_ACTIVE_HIGH>;
+ 		};
+Index: boot/dts/imx53-m53evk.dts
+===================================================================
+--- boot/dts/imx53-m53evk.dts	(revision 53158)
++++ boot/dts/imx53-m53evk.dts	(working copy)
+@@ -52,13 +52,13 @@
+ 		pinctrl-names = "default";
+ 		pinctrl-0 = <&led_pin_gpio>;
+ 
+-		user1 {
++		led-user1 {
+ 			label = "user1";
+ 			gpios = <&gpio2 8 0>;
+ 			linux,default-trigger = "heartbeat";
+ 		};
+ 
+-		user2 {
++		led-user2 {
+ 			label = "user2";
+ 			gpios = <&gpio2 9 0>;
+ 			linux,default-trigger = "heartbeat";
+Index: boot/dts/imx53-m53menlo.dts
+===================================================================
+--- boot/dts/imx53-m53menlo.dts	(revision 53158)
++++ boot/dts/imx53-m53menlo.dts	(working copy)
+@@ -34,19 +34,19 @@
+ 		pinctrl-names = "default";
+ 		pinctrl-0 = <&pinctrl_led>;
+ 
+-		user1 {
++		led-user1 {
+ 			label = "TestLed601";
+ 			gpios = <&gpio6 1 GPIO_ACTIVE_HIGH>;
+ 			linux,default-trigger = "mmc0";
+ 		};
+ 
+-		user2 {
++		led-user2 {
+ 			label = "TestLed602";
+ 			gpios = <&gpio6 2 GPIO_ACTIVE_HIGH>;
+ 			linux,default-trigger = "heartbeat";
+ 		};
+ 
+-		eth {
++		led-eth {
+ 			label = "EthLedYe";
+ 			gpios = <&gpio2 11 GPIO_ACTIVE_LOW>;
+ 			linux,default-trigger = "netdev";
+Index: boot/dts/imx53-tx53.dtsi
+===================================================================
+--- boot/dts/imx53-tx53.dtsi	(revision 53158)
++++ boot/dts/imx53-tx53.dtsi	(working copy)
+@@ -94,7 +94,7 @@
+ 		pinctrl-names = "default";
+ 		pinctrl-0 = <&pinctrl_stk5led>;
+ 
+-		user {
++		led-user {
+ 			label = "Heartbeat";
+ 			gpios = <&gpio2 20 GPIO_ACTIVE_HIGH>;
+ 			linux,default-trigger = "heartbeat";
+Index: boot/dts/imx53-usbarmory.dts
+===================================================================
+--- boot/dts/imx53-usbarmory.dts	(revision 53158)
++++ boot/dts/imx53-usbarmory.dts	(working copy)
+@@ -67,7 +67,7 @@
+ 		pinctrl-names = "default";
+ 		pinctrl-0 = <&pinctrl_led>;
+ 
+-		user {
++		led-user {
+ 			label = "LED";
+ 			gpios = <&gpio4 27 GPIO_ACTIVE_LOW>;
+ 			linux,default-trigger = "heartbeat";
+Index: boot/dts/imx6dl-b1x5pv2.dtsi
+===================================================================
+--- boot/dts/imx6dl-b1x5pv2.dtsi	(revision 53158)
++++ boot/dts/imx6dl-b1x5pv2.dtsi	(working copy)
+@@ -211,17 +211,17 @@
+ 		pinctrl-names = "default";
+ 		pinctrl-0 = <&pinctrl_q7_gpio1 &pinctrl_q7_gpio3 &pinctrl_q7_gpio5>;
+ 
+-		alarm1 {
++		led-alarm1 {
+ 			label = "alarm:red";
+ 			gpios = <&gpio1 8 GPIO_ACTIVE_HIGH>;
+ 		};
+ 
+-		alarm2 {
++		led-alarm2 {
+ 			label = "alarm:yellow";
+ 			gpios = <&gpio4 27 GPIO_ACTIVE_HIGH>;
+ 		};
+ 
+-		alarm3 {
++		led-alarm3 {
+ 			label = "alarm:blue";
+ 			gpios = <&gpio4 15 GPIO_ACTIVE_HIGH>;
+ 		};
+Index: boot/dts/imx6dl-prtrvt.dts
+===================================================================
+--- boot/dts/imx6dl-prtrvt.dts	(revision 53158)
++++ boot/dts/imx6dl-prtrvt.dts	(working copy)
+@@ -124,6 +124,10 @@
+ 	status = "disabled";
+ };
+ 
++&usbotg {
++	disable-over-current;
++};
++
+ &vpu {
+ 	status = "disabled";
+ };
+Index: boot/dts/imx6dl-riotboard.dts
+===================================================================
+--- boot/dts/imx6dl-riotboard.dts	(revision 53158)
++++ boot/dts/imx6dl-riotboard.dts	(working copy)
+@@ -25,7 +25,7 @@
+ 		pinctrl-names = "default";
+ 		pinctrl-0 = <&pinctrl_led>;
+ 
+-		led0: user1 {
++		led0: led-user1 {
+ 			label = "user1";
+ 			gpios = <&gpio5 2 GPIO_ACTIVE_LOW>;
+ 			default-state = "on";
+@@ -32,7 +32,7 @@
+ 			linux,default-trigger = "heartbeat";
+ 		};
+ 
+-		led1: user2 {
++		led1: led-user2 {
+ 			label = "user2";
+ 			gpios = <&gpio3 28 GPIO_ACTIVE_LOW>;
+ 			default-state = "off";
+Index: boot/dts/imx6dl-yapp4-common.dtsi
+===================================================================
+--- boot/dts/imx6dl-yapp4-common.dtsi	(revision 53158)
++++ boot/dts/imx6dl-yapp4-common.dtsi	(working copy)
+@@ -274,7 +274,7 @@
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+ 
+-		chan@0 {
++		led@0 {
+ 			chan-name = "R";
+ 			led-cur = /bits/ 8 <0x20>;
+ 			max-cur = /bits/ 8 <0x60>;
+@@ -282,7 +282,7 @@
+ 			color = <LED_COLOR_ID_RED>;
+ 		};
+ 
+-		chan@1 {
++		led@1 {
+ 			chan-name = "G";
+ 			led-cur = /bits/ 8 <0x20>;
+ 			max-cur = /bits/ 8 <0x60>;
+@@ -290,7 +290,7 @@
+ 			color = <LED_COLOR_ID_GREEN>;
+ 		};
+ 
+-		chan@2 {
++		led@2 {
+ 			chan-name = "B";
+ 			led-cur = /bits/ 8 <0x20>;
+ 			max-cur = /bits/ 8 <0x60>;
+Index: boot/dts/imx6q-gw5400-a.dts
+===================================================================
+--- boot/dts/imx6q-gw5400-a.dts	(revision 53158)
++++ boot/dts/imx6q-gw5400-a.dts	(working copy)
+@@ -34,7 +34,7 @@
+ 		pinctrl-names = "default";
+ 		pinctrl-0 = <&pinctrl_gpio_leds>;
+ 
+-		led0: user1 {
++		led0: led-user1 {
+ 			label = "user1";
+ 			gpios = <&gpio4 6 GPIO_ACTIVE_HIGH>; /* 102 -> MX6_PANLEDG */
+ 			default-state = "on";
+@@ -41,13 +41,13 @@
+ 			linux,default-trigger = "heartbeat";
+ 		};
+ 
+-		led1: user2 {
++		led1: led-user2 {
+ 			label = "user2";
+ 			gpios = <&gpio4 10 GPIO_ACTIVE_HIGH>; /* 106 -> MX6_PANLEDR */
+ 			default-state = "off";
+ 		};
+ 
+-		led2: user3 {
++		led2: led-user3 {
+ 			label = "user3";
+ 			gpios = <&gpio4 15 GPIO_ACTIVE_LOW>; /* 111 -> MX6_LOCLED# */
+ 			default-state = "off";
+Index: boot/dts/imx6q-h100.dts
+===================================================================
+--- boot/dts/imx6q-h100.dts	(revision 53158)
++++ boot/dts/imx6q-h100.dts	(working copy)
+@@ -76,19 +76,19 @@
+ 		pinctrl-names = "default";
+ 		pinctrl-0 = <&pinctrl_h100_leds>;
+ 
+-		led0: power {
++		led0: led-power {
+ 			label = "power";
+ 			gpios = <&gpio3 0 GPIO_ACTIVE_LOW>;
+ 			default-state = "on";
+ 		};
+ 
+-		led1: stream {
++		led1: led-stream {
+ 			label = "stream";
+ 			gpios = <&gpio2 29 GPIO_ACTIVE_LOW>;
+ 			default-state = "off";
+ 		};
+ 
+-		led2: rec {
++		led2: led-rec {
+ 			label = "rec";
+ 			gpios = <&gpio2 28 GPIO_ACTIVE_LOW>;
+ 			default-state = "off";
+Index: boot/dts/imx6q-kp.dtsi
+===================================================================
+--- boot/dts/imx6q-kp.dtsi	(revision 53158)
++++ boot/dts/imx6q-kp.dtsi	(working copy)
+@@ -66,7 +66,7 @@
+ 	leds {
+ 		compatible = "gpio-leds";
+ 
+-		green {
++		led-green {
+ 			label = "led1";
+ 			gpios = <&gpio3 16 GPIO_ACTIVE_HIGH>;
+ 			linux,default-trigger = "gpio";
+@@ -73,7 +73,7 @@
+ 			default-state = "off";
+ 		};
+ 
+-		red {
++		led-red {
+ 			label = "led0";
+ 			gpios = <&gpio3 23 GPIO_ACTIVE_HIGH>;
+ 			linux,default-trigger = "gpio";
+Index: boot/dts/imx6q-marsboard.dts
+===================================================================
+--- boot/dts/imx6q-marsboard.dts	(revision 53158)
++++ boot/dts/imx6q-marsboard.dts	(working copy)
+@@ -73,7 +73,7 @@
+ 		pinctrl-names = "default";
+ 		pinctrl-0 = <&pinctrl_led>;
+ 
+-		user1 {
++		led-user1 {
+ 			label = "imx6:green:user1";
+ 			gpios = <&gpio5 2 GPIO_ACTIVE_LOW>;
+ 			default-state = "off";
+@@ -80,7 +80,7 @@
+ 			linux,default-trigger = "heartbeat";
+ 		};
+ 
+-		user2 {
++		led-user2 {
+ 			label = "imx6:green:user2";
+ 			gpios = <&gpio3 28 GPIO_ACTIVE_LOW>;
+ 			default-state = "off";
+Index: boot/dts/imx6q-tbs2910.dts
+===================================================================
+--- boot/dts/imx6q-tbs2910.dts	(revision 53158)
++++ boot/dts/imx6q-tbs2910.dts	(working copy)
+@@ -49,7 +49,7 @@
+ 		pinctrl-names = "default";
+ 		pinctrl-0 = <&pinctrl_gpio_leds>;
+ 
+-		blue {
++		led-blue {
+ 			label = "blue_status_led";
+ 			gpios = <&gpio1 2 GPIO_ACTIVE_HIGH>;
+ 			default-state = "keep";
+Index: boot/dts/imx6qdl-emcon.dtsi
+===================================================================
+--- boot/dts/imx6qdl-emcon.dtsi	(revision 53158)
++++ boot/dts/imx6qdl-emcon.dtsi	(working copy)
+@@ -46,7 +46,7 @@
+ 		pinctrl-names = "default";
+ 		pinctrl-0 = <&pinctrl_som_leds>;
+ 
+-		green {
++		led-green {
+ 			label = "som:green";
+ 			gpios = <&gpio3 0 GPIO_ACTIVE_HIGH>;
+ 			linux,default-trigger = "heartbeat";
+@@ -53,7 +53,7 @@
+ 			default-state = "on";
+ 		};
+ 
+-		red {
++		led-red {
+ 			label = "som:red";
+ 			gpios = <&gpio3 1 GPIO_ACTIVE_LOW>;
+ 			default-state = "keep";
+Index: boot/dts/imx6qdl-gw51xx.dtsi
+===================================================================
+--- boot/dts/imx6qdl-gw51xx.dtsi	(revision 53158)
++++ boot/dts/imx6qdl-gw51xx.dtsi	(working copy)
+@@ -71,7 +71,7 @@
+ 		pinctrl-names = "default";
+ 		pinctrl-0 = <&pinctrl_gpio_leds>;
+ 
+-		led0: user1 {
++		led0: led-user1 {
+ 			label = "user1";
+ 			gpios = <&gpio4 6 GPIO_ACTIVE_HIGH>; /* MX6_PANLEDG */
+ 			default-state = "on";
+@@ -78,7 +78,7 @@
+ 			linux,default-trigger = "heartbeat";
+ 		};
+ 
+-		led1: user2 {
++		led1: led-user2 {
+ 			label = "user2";
+ 			gpios = <&gpio4 7 GPIO_ACTIVE_HIGH>; /* MX6_PANLEDR */
+ 			default-state = "off";
+Index: boot/dts/imx6qdl-gw52xx.dtsi
+===================================================================
+--- boot/dts/imx6qdl-gw52xx.dtsi	(revision 53158)
++++ boot/dts/imx6qdl-gw52xx.dtsi	(working copy)
+@@ -80,7 +80,7 @@
+ 		pinctrl-names = "default";
+ 		pinctrl-0 = <&pinctrl_gpio_leds>;
+ 
+-		led0: user1 {
++		led0: led-user1 {
+ 			label = "user1";
+ 			gpios = <&gpio4 6 GPIO_ACTIVE_HIGH>; /* MX6_PANLEDG */
+ 			default-state = "on";
+@@ -87,13 +87,13 @@
+ 			linux,default-trigger = "heartbeat";
+ 		};
+ 
+-		led1: user2 {
++		led1: led-user2 {
+ 			label = "user2";
+ 			gpios = <&gpio4 7 GPIO_ACTIVE_HIGH>; /* MX6_PANLEDR */
+ 			default-state = "off";
+ 		};
+ 
+-		led2: user3 {
++		led2: led-user3 {
+ 			label = "user3";
+ 			gpios = <&gpio4 15 GPIO_ACTIVE_LOW>; /* MX6_LOCLED# */
+ 			default-state = "off";
+Index: boot/dts/imx6qdl-gw53xx.dtsi
+===================================================================
+--- boot/dts/imx6qdl-gw53xx.dtsi	(revision 53158)
++++ boot/dts/imx6qdl-gw53xx.dtsi	(working copy)
+@@ -80,7 +80,7 @@
+ 		pinctrl-names = "default";
+ 		pinctrl-0 = <&pinctrl_gpio_leds>;
+ 
+-		led0: user1 {
++		led0: led-user1 {
+ 			label = "user1";
+ 			gpios = <&gpio4 6 GPIO_ACTIVE_HIGH>; /* MX6_PANLEDG */
+ 			default-state = "on";
+@@ -87,13 +87,13 @@
+ 			linux,default-trigger = "heartbeat";
+ 		};
+ 
+-		led1: user2 {
++		led1: led-user2 {
+ 			label = "user2";
+ 			gpios = <&gpio4 7 GPIO_ACTIVE_HIGH>; /* MX6_PANLEDR */
+ 			default-state = "off";
+ 		};
+ 
+-		led2: user3 {
++		led2: led-user3 {
+ 			label = "user3";
+ 			gpios = <&gpio4 15 GPIO_ACTIVE_LOW>; /* MX6_LOCLED# */
+ 			default-state = "off";
+Index: boot/dts/imx6qdl-gw54xx.dtsi
+===================================================================
+--- boot/dts/imx6qdl-gw54xx.dtsi	(revision 53158)
++++ boot/dts/imx6qdl-gw54xx.dtsi	(working copy)
+@@ -81,7 +81,7 @@
+ 		pinctrl-names = "default";
+ 		pinctrl-0 = <&pinctrl_gpio_leds>;
+ 
+-		led0: user1 {
++		led0: led-user1 {
+ 			label = "user1";
+ 			gpios = <&gpio4 6 GPIO_ACTIVE_HIGH>; /* MX6_PANLEDG */
+ 			default-state = "on";
+@@ -88,13 +88,13 @@
+ 			linux,default-trigger = "heartbeat";
+ 		};
+ 
+-		led1: user2 {
++		led1: led-user2 {
+ 			label = "user2";
+ 			gpios = <&gpio4 7 GPIO_ACTIVE_HIGH>; /* MX6_PANLEDR */
+ 			default-state = "off";
+ 		};
+ 
+-		led2: user3 {
++		led2: led-user3 {
+ 			label = "user3";
+ 			gpios = <&gpio4 15 GPIO_ACTIVE_LOW>; /* MX6_LOCLED# */
+ 			default-state = "off";
+Index: boot/dts/imx6qdl-gw551x.dtsi
+===================================================================
+--- boot/dts/imx6qdl-gw551x.dtsi	(revision 53158)
++++ boot/dts/imx6qdl-gw551x.dtsi	(working copy)
+@@ -115,7 +115,7 @@
+ 		pinctrl-names = "default";
+ 		pinctrl-0 = <&pinctrl_gpio_leds>;
+ 
+-		led0: user1 {
++		led0: led-user1 {
+ 			label = "user1";
+ 			gpios = <&gpio4 7 GPIO_ACTIVE_LOW>;
+ 			default-state = "on";
+Index: boot/dts/imx6qdl-gw552x.dtsi
+===================================================================
+--- boot/dts/imx6qdl-gw552x.dtsi	(revision 53158)
++++ boot/dts/imx6qdl-gw552x.dtsi	(working copy)
+@@ -72,7 +72,7 @@
+ 		pinctrl-names = "default";
+ 		pinctrl-0 = <&pinctrl_gpio_leds>;
+ 
+-		led0: user1 {
++		led0: led-user1 {
+ 			label = "user1";
+ 			gpios = <&gpio4 6 GPIO_ACTIVE_HIGH>; /* MX6_PANLEDG */
+ 			default-state = "on";
+@@ -79,13 +79,13 @@
+ 			linux,default-trigger = "heartbeat";
+ 		};
+ 
+-		led1: user2 {
++		led1: led-user2 {
+ 			label = "user2";
+ 			gpios = <&gpio4 7 GPIO_ACTIVE_HIGH>; /* MX6_PANLEDR */
+ 			default-state = "off";
+ 		};
+ 
+-		led2: user3 {
++		led2: led-user3 {
+ 			label = "user3";
+ 			gpios = <&gpio4 15 GPIO_ACTIVE_LOW>; /* MX6_LOCLED# */
+ 			default-state = "off";
+Index: boot/dts/imx6qdl-gw553x.dtsi
+===================================================================
+--- boot/dts/imx6qdl-gw553x.dtsi	(revision 53158)
++++ boot/dts/imx6qdl-gw553x.dtsi	(working copy)
+@@ -113,7 +113,7 @@
+ 		pinctrl-names = "default";
+ 		pinctrl-0 = <&pinctrl_gpio_leds>;
+ 
+-		led0: user1 {
++		led0: led-user1 {
+ 			label = "user1";
+ 			gpios = <&gpio4 10 GPIO_ACTIVE_HIGH>; /* MX6_PANLEDG */
+ 			default-state = "on";
+@@ -120,7 +120,7 @@
+ 			linux,default-trigger = "heartbeat";
+ 		};
+ 
+-		led1: user2 {
++		led1: led-user2 {
+ 			label = "user2";
+ 			gpios = <&gpio4 11 GPIO_ACTIVE_HIGH>; /* MX6_PANLEDR */
+ 			default-state = "off";
+Index: boot/dts/imx6qdl-gw560x.dtsi
+===================================================================
+--- boot/dts/imx6qdl-gw560x.dtsi	(revision 53158)
++++ boot/dts/imx6qdl-gw560x.dtsi	(working copy)
+@@ -139,7 +139,7 @@
+ 		pinctrl-names = "default";
+ 		pinctrl-0 = <&pinctrl_gpio_leds>;
+ 
+-		led0: user1 {
++		led0: led-user1 {
+ 			label = "user1";
+ 			gpios = <&gpio4 6 GPIO_ACTIVE_HIGH>; /* MX6_PANLEDG */
+ 			default-state = "on";
+@@ -146,13 +146,13 @@
+ 			linux,default-trigger = "heartbeat";
+ 		};
+ 
+-		led1: user2 {
++		led1: led-user2 {
+ 			label = "user2";
+ 			gpios = <&gpio4 7 GPIO_ACTIVE_HIGH>; /* MX6_PANLEDR */
+ 			default-state = "off";
+ 		};
+ 
+-		led2: user3 {
++		led2: led-user3 {
+ 			label = "user3";
+ 			gpios = <&gpio4 15 GPIO_ACTIVE_LOW>; /* MX6_LOCLED# */
+ 			default-state = "off";
+Index: boot/dts/imx6qdl-gw5903.dtsi
+===================================================================
+--- boot/dts/imx6qdl-gw5903.dtsi	(revision 53158)
++++ boot/dts/imx6qdl-gw5903.dtsi	(working copy)
+@@ -123,7 +123,7 @@
+ 		pinctrl-names = "default";
+ 		pinctrl-0 = <&pinctrl_gpio_leds>;
+ 
+-		led0: user1 {
++		led0: led-user1 {
+ 			label = "user1";
+ 			gpios = <&gpio6 14 GPIO_ACTIVE_LOW>; /* MX6_LOCLED# */
+ 			default-state = "off";
+Index: boot/dts/imx6qdl-gw5904.dtsi
+===================================================================
+--- boot/dts/imx6qdl-gw5904.dtsi	(revision 53158)
++++ boot/dts/imx6qdl-gw5904.dtsi	(working copy)
+@@ -120,7 +120,7 @@
+ 		pinctrl-names = "default";
+ 		pinctrl-0 = <&pinctrl_gpio_leds>;
+ 
+-		led0: user1 {
++		led0: led-user1 {
+ 			label = "user1";
+ 			gpios = <&gpio4 6 GPIO_ACTIVE_HIGH>; /* MX6_PANLEDG */
+ 			default-state = "on";
+@@ -127,13 +127,13 @@
+ 			linux,default-trigger = "heartbeat";
+ 		};
+ 
+-		led1: user2 {
++		led1: led-user2 {
+ 			label = "user2";
+ 			gpios = <&gpio4 7 GPIO_ACTIVE_HIGH>; /* MX6_PANLEDR */
+ 			default-state = "off";
+ 		};
+ 
+-		led2: user3 {
++		led2: led-user3 {
+ 			label = "user3";
+ 			gpios = <&gpio4 15 GPIO_ACTIVE_LOW>; /* MX6_LOCLED# */
+ 			default-state = "off";
+Index: boot/dts/imx6qdl-gw5907.dtsi
+===================================================================
+--- boot/dts/imx6qdl-gw5907.dtsi	(revision 53158)
++++ boot/dts/imx6qdl-gw5907.dtsi	(working copy)
+@@ -71,7 +71,7 @@
+ 		pinctrl-names = "default";
+ 		pinctrl-0 = <&pinctrl_gpio_leds>;
+ 
+-		led0: user1 {
++		led0: led-user1 {
+ 			label = "user1";
+ 			gpios = <&gpio4 6 GPIO_ACTIVE_HIGH>; /* MX6_PANLEDG */
+ 			default-state = "on";
+@@ -78,7 +78,7 @@
+ 			linux,default-trigger = "heartbeat";
+ 		};
+ 
+-		led1: user2 {
++		led1: led-user2 {
+ 			label = "user2";
+ 			gpios = <&gpio4 7 GPIO_ACTIVE_HIGH>; /* MX6_PANLEDR */
+ 			default-state = "off";
+Index: boot/dts/imx6qdl-gw5910.dtsi
+===================================================================
+--- boot/dts/imx6qdl-gw5910.dtsi	(revision 53158)
++++ boot/dts/imx6qdl-gw5910.dtsi	(working copy)
+@@ -74,7 +74,7 @@
+ 		pinctrl-names = "default";
+ 		pinctrl-0 = <&pinctrl_gpio_leds>;
+ 
+-		led0: user1 {
++		led0: led-user1 {
+ 			label = "user1";
+ 			gpios = <&gpio4 6 GPIO_ACTIVE_HIGH>; /* MX6_PANLEDG */
+ 			default-state = "on";
+@@ -81,13 +81,13 @@
+ 			linux,default-trigger = "heartbeat";
+ 		};
+ 
+-		led1: user2 {
++		led1: led-user2 {
+ 			label = "user2";
+ 			gpios = <&gpio4 7 GPIO_ACTIVE_HIGH>; /* MX6_PANLEDR */
+ 			default-state = "off";
+ 		};
+ 
+-		led2: user3 {
++		led2: led-user3 {
+ 			label = "user3";
+ 			gpios = <&gpio4 15 GPIO_ACTIVE_LOW>; /* MX6_LOCLED# */
+ 			default-state = "off";
+Index: boot/dts/imx6qdl-gw5912.dtsi
+===================================================================
+--- boot/dts/imx6qdl-gw5912.dtsi	(revision 53158)
++++ boot/dts/imx6qdl-gw5912.dtsi	(working copy)
+@@ -72,7 +72,7 @@
+ 		pinctrl-names = "default";
+ 		pinctrl-0 = <&pinctrl_gpio_leds>;
+ 
+-		led0: user1 {
++		led0: led-user1 {
+ 			label = "user1";
+ 			gpios = <&gpio4 6 GPIO_ACTIVE_HIGH>; /* MX6_PANLEDG */
+ 			default-state = "on";
+@@ -79,13 +79,13 @@
+ 			linux,default-trigger = "heartbeat";
+ 		};
+ 
+-		led1: user2 {
++		led1: led-user2 {
+ 			label = "user2";
+ 			gpios = <&gpio4 7 GPIO_ACTIVE_HIGH>; /* MX6_PANLEDR */
+ 			default-state = "off";
+ 		};
+ 
+-		led2: user3 {
++		led2: led-user3 {
+ 			label = "user3";
+ 			gpios = <&gpio4 15 GPIO_ACTIVE_LOW>; /* MX6_LOCLED# */
+ 			default-state = "off";
+Index: boot/dts/imx6qdl-gw5913.dtsi
+===================================================================
+--- boot/dts/imx6qdl-gw5913.dtsi	(revision 53158)
++++ boot/dts/imx6qdl-gw5913.dtsi	(working copy)
+@@ -71,7 +71,7 @@
+ 		pinctrl-names = "default";
+ 		pinctrl-0 = <&pinctrl_gpio_leds>;
+ 
+-		led0: user1 {
++		led0: led-user1 {
+ 			label = "user1";
+ 			gpios = <&gpio4 6 GPIO_ACTIVE_HIGH>; /* MX6_PANLEDG */
+ 			default-state = "on";
+@@ -78,7 +78,7 @@
+ 			linux,default-trigger = "heartbeat";
+ 		};
+ 
+-		led1: user2 {
++		led1: led-user2 {
+ 			label = "user2";
+ 			gpios = <&gpio4 7 GPIO_ACTIVE_HIGH>; /* MX6_PANLEDR */
+ 			default-state = "off";
+Index: boot/dts/imx6qdl-nit6xlite.dtsi
+===================================================================
+--- boot/dts/imx6qdl-nit6xlite.dtsi	(revision 53158)
++++ boot/dts/imx6qdl-nit6xlite.dtsi	(working copy)
+@@ -85,31 +85,31 @@
+ 		pinctrl-names = "default";
+ 		pinctrl-0 = <&pinctrl_leds>;
+ 
+-		j14-pin1 {
++		led-j14-pin1 {
+ 			gpios = <&gpio1 2 GPIO_ACTIVE_LOW>;
+ 			retain-state-suspended;
+ 			default-state = "off";
+ 		};
+ 
+-		j14-pin3 {
++		led-j14-pin3 {
+ 			gpios = <&gpio1 3 GPIO_ACTIVE_LOW>;
+ 			retain-state-suspended;
+ 			default-state = "off";
+ 		};
+ 
+-		j14-pins8-9 {
++		led-j14-pins8-9 {
+ 			gpios = <&gpio3 29 GPIO_ACTIVE_LOW>;
+ 			retain-state-suspended;
+ 			default-state = "off";
+ 		};
+ 
+-		j46-pin2 {
++		led-j46-pin2 {
+ 			gpios = <&gpio1 7 GPIO_ACTIVE_LOW>;
+ 			retain-state-suspended;
+ 			default-state = "off";
+ 		};
+ 
+-		j46-pin3 {
++		led-j46-pin3 {
+ 			gpios = <&gpio1 8 GPIO_ACTIVE_LOW>;
+ 			retain-state-suspended;
+ 			default-state = "off";
+Index: boot/dts/imx6qdl-nitrogen6_max.dtsi
+===================================================================
+--- boot/dts/imx6qdl-nitrogen6_max.dtsi	(revision 53158)
++++ boot/dts/imx6qdl-nitrogen6_max.dtsi	(working copy)
+@@ -181,13 +181,13 @@
+ 	leds {
+ 		compatible = "gpio-leds";
+ 
+-		speaker-enable {
++		led-speaker-enable {
+ 			gpios = <&gpio1 29 GPIO_ACTIVE_HIGH>;
+ 			retain-state-suspended;
+ 			default-state = "off";
+ 		};
+ 
+-		ttymxc4-rs232 {
++		led-ttymxc4-rs232 {
+ 			gpios = <&gpio6 10 GPIO_ACTIVE_HIGH>;
+ 			retain-state-suspended;
+ 			default-state = "on";
+Index: boot/dts/imx6qdl-phytec-mira.dtsi
+===================================================================
+--- boot/dts/imx6qdl-phytec-mira.dtsi	(revision 53158)
++++ boot/dts/imx6qdl-phytec-mira.dtsi	(working copy)
+@@ -25,17 +25,17 @@
+ 		pinctrl-0 = <&pinctrl_gpioleds>;
+ 		status = "disabled";
+ 
+-		red {
++		led-red {
+ 			label = "phyboard-mira:red";
+ 			gpios = <&gpio5 22 GPIO_ACTIVE_HIGH>;
+ 		};
+ 
+-		green {
++		led-green {
+ 			label = "phyboard-mira:green";
+ 			gpios = <&gpio5 23 GPIO_ACTIVE_HIGH>;
+ 		};
+ 
+-		blue {
++		led-blue {
+ 			label = "phyboard-mira:blue";
+ 			gpios = <&gpio5 24 GPIO_ACTIVE_HIGH>;
+ 			linux,default-trigger = "mmc0";
+@@ -182,7 +182,7 @@
+ 		pinctrl-0 = <&pinctrl_rtc_int>;
+ 		reg = <0x68>;
+ 		interrupt-parent = <&gpio7>;
+-		interrupts = <8 IRQ_TYPE_LEVEL_HIGH>;
++		interrupts = <8 IRQ_TYPE_LEVEL_LOW>;
+ 		status = "disabled";
+ 	};
+ };
+Index: boot/dts/imx6qdl-phytec-pfla02.dtsi
+===================================================================
+--- boot/dts/imx6qdl-phytec-pfla02.dtsi	(revision 53158)
++++ boot/dts/imx6qdl-phytec-pfla02.dtsi	(working copy)
+@@ -47,12 +47,12 @@
+ 		pinctrl-0 = <&pinctrl_leds>;
+ 		compatible = "gpio-leds";
+ 
+-		led_green: green {
++		led_green: led-green {
+ 			label = "phyflex:green";
+ 			gpios = <&gpio1 30 0>;
+ 		};
+ 
+-		led_red: red {
++		led_red: led-red {
+ 			label = "phyflex:red";
+ 			gpios = <&gpio2 31 0>;
+ 		};
+Index: boot/dts/imx6qdl-prti6q.dtsi
+===================================================================
+--- boot/dts/imx6qdl-prti6q.dtsi	(revision 53158)
++++ boot/dts/imx6qdl-prti6q.dtsi	(working copy)
+@@ -69,6 +69,7 @@
+ 	vbus-supply = <&reg_usb_h1_vbus>;
+ 	phy_type = "utmi";
+ 	dr_mode = "host";
++	disable-over-current;
+ 	status = "okay";
+ };
+ 
+@@ -78,10 +79,18 @@
+ 	pinctrl-0 = <&pinctrl_usbotg>;
+ 	phy_type = "utmi";
+ 	dr_mode = "host";
+-	disable-over-current;
++	over-current-active-low;
+ 	status = "okay";
+ };
+ 
++&usbphynop1 {
++	status = "disabled";
++};
++
++&usbphynop2 {
++	status = "disabled";
++};
++
+ &usdhc1 {
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&pinctrl_usdhc1>;
+Index: boot/dts/imx6qdl-rex.dtsi
+===================================================================
+--- boot/dts/imx6qdl-rex.dtsi	(revision 53158)
++++ boot/dts/imx6qdl-rex.dtsi	(working copy)
+@@ -55,7 +55,7 @@
+ 		pinctrl-names = "default";
+ 		pinctrl-0 = <&pinctrl_led>;
+ 
+-		led0: usr {
++		led0: led-usr {
+ 			label = "usr";
+ 			gpios = <&gpio1 2 GPIO_ACTIVE_LOW>;
+ 			default-state = "off";
+Index: boot/dts/imx6qdl-sabreauto.dtsi
+===================================================================
+--- boot/dts/imx6qdl-sabreauto.dtsi	(revision 53158)
++++ boot/dts/imx6qdl-sabreauto.dtsi	(working copy)
+@@ -21,7 +21,7 @@
+ 		pinctrl-names = "default";
+ 		pinctrl-0 = <&pinctrl_gpio_leds>;
+ 
+-		user {
++		led-user {
+ 			label = "debug";
+ 			gpios = <&gpio5 15 GPIO_ACTIVE_HIGH>;
+ 		};
+Index: boot/dts/imx6qdl-sabresd.dtsi
+===================================================================
+--- boot/dts/imx6qdl-sabresd.dtsi	(revision 53158)
++++ boot/dts/imx6qdl-sabresd.dtsi	(working copy)
+@@ -130,7 +130,7 @@
+ 		pinctrl-names = "default";
+ 		pinctrl-0 = <&pinctrl_gpio_leds>;
+ 
+-		red {
++		led-red {
+ 			gpios = <&gpio1 2 0>;
+ 			default-state = "on";
+ 		};
+Index: boot/dts/imx6qdl-ts7970.dtsi
+===================================================================
+--- boot/dts/imx6qdl-ts7970.dtsi	(revision 53158)
++++ boot/dts/imx6qdl-ts7970.dtsi	(working copy)
+@@ -73,13 +73,13 @@
+ 			default-state = "off";
+ 		};
+ 
+-		en-usb-5v {
++		en-usb-5v-led {
+ 			label = "en-usb-5v";
+ 			gpios = <&gpio2 22 GPIO_ACTIVE_HIGH>;
+ 			default-state = "on";
+ 		};
+ 
+-		sel_dc_usb {
++		sel-dc-usb-led {
+ 			label = "sel_dc_usb";
+ 			gpios = <&gpio5 17 GPIO_ACTIVE_HIGH>;
+ 			default-state = "off";
+Index: boot/dts/imx6qdl-tx6.dtsi
+===================================================================
+--- boot/dts/imx6qdl-tx6.dtsi	(revision 53158)
++++ boot/dts/imx6qdl-tx6.dtsi	(working copy)
+@@ -92,7 +92,7 @@
+ 	leds {
+ 		compatible = "gpio-leds";
+ 
+-		user_led: user {
++		user_led: led-user {
+ 			label = "Heartbeat";
+ 			pinctrl-names = "default";
+ 			pinctrl-0 = <&pinctrl_user_led>;
+Index: boot/dts/imx6sl-evk.dts
+===================================================================
+--- boot/dts/imx6sl-evk.dts	(revision 53158)
++++ boot/dts/imx6sl-evk.dts	(working copy)
+@@ -33,7 +33,7 @@
+ 		pinctrl-names = "default";
+ 		pinctrl-0 = <&pinctrl_led>;
+ 
+-		user {
++		led-user {
+ 			label = "debug";
+ 			gpios = <&gpio3 20 GPIO_ACTIVE_HIGH>;
+ 			linux,default-trigger = "heartbeat";
+Index: boot/dts/imx6sll-evk.dts
+===================================================================
+--- boot/dts/imx6sll-evk.dts	(revision 53158)
++++ boot/dts/imx6sll-evk.dts	(working copy)
+@@ -37,7 +37,7 @@
+ 		pinctrl-names = "default";
+ 		pinctrl-0 = <&pinctrl_led>;
+ 
+-		user {
++		led-user {
+ 			label = "debug";
+ 			gpios = <&gpio2 4 GPIO_ACTIVE_HIGH>;
+ 			linux,default-trigger = "heartbeat";
+Index: boot/dts/imx6sll.dtsi
+===================================================================
+--- boot/dts/imx6sll.dtsi	(revision 53158)
++++ boot/dts/imx6sll.dtsi	(working copy)
+@@ -552,7 +552,7 @@
+ 				reg = <0x020ca000 0x1000>;
+ 				interrupts = <GIC_SPI 41 IRQ_TYPE_LEVEL_HIGH>;
+ 				clocks = <&clks IMX6SLL_CLK_USBPHY2>;
+-				phy-reg_3p0-supply = <&reg_3p0>;
++				phy-3p0-supply = <&reg_3p0>;
+ 				fsl,anatop = <&anatop>;
+ 			};
+ 
+Index: boot/dts/imx6sx-sabreauto.dts
+===================================================================
+--- boot/dts/imx6sx-sabreauto.dts	(revision 53158)
++++ boot/dts/imx6sx-sabreauto.dts	(working copy)
+@@ -20,7 +20,7 @@
+ 		pinctrl-names = "default";
+ 		pinctrl-0 = <&pinctrl_led>;
+ 
+-		user {
++		led-user {
+ 			label = "debug";
+ 			gpios = <&gpio1 24 GPIO_ACTIVE_HIGH>;
+ 			linux,default-trigger = "heartbeat";
+Index: boot/dts/imx6sx-udoo-neo.dtsi
+===================================================================
+--- boot/dts/imx6sx-udoo-neo.dtsi	(revision 53158)
++++ boot/dts/imx6sx-udoo-neo.dtsi	(working copy)
+@@ -15,7 +15,7 @@
+ 	leds {
+ 		compatible = "gpio-leds";
+ 
+-		red {
++		led-red {
+ 			label = "udoo-neo:red:mmc";
+ 			gpios = <&gpio6 0 GPIO_ACTIVE_HIGH>;
+ 			default-state = "off";
+@@ -22,7 +22,7 @@
+ 			linux,default-trigger = "mmc0";
+ 		};
+ 
+-		orange {
++		led-orange {
+ 			label = "udoo-neo:orange:user";
+ 			gpios = <&gpio4 6 GPIO_ACTIVE_HIGH>;
+ 			default-state = "keep";
+Index: boot/dts/imx6sx.dtsi
+===================================================================
+--- boot/dts/imx6sx.dtsi	(revision 53158)
++++ boot/dts/imx6sx.dtsi	(working copy)
+@@ -981,6 +981,8 @@
+ 					 <&clks IMX6SX_CLK_USDHC1>;
+ 				clock-names = "ipg", "ahb", "per";
+ 				bus-width = <4>;
++				fsl,tuning-start-tap = <20>;
++				fsl,tuning-step= <2>;
+ 				status = "disabled";
+ 			};
+ 
+@@ -993,6 +995,8 @@
+ 					 <&clks IMX6SX_CLK_USDHC2>;
+ 				clock-names = "ipg", "ahb", "per";
+ 				bus-width = <4>;
++				fsl,tuning-start-tap = <20>;
++				fsl,tuning-step= <2>;
+ 				status = "disabled";
+ 			};
+ 
+@@ -1005,6 +1009,8 @@
+ 					 <&clks IMX6SX_CLK_USDHC3>;
+ 				clock-names = "ipg", "ahb", "per";
+ 				bus-width = <4>;
++				fsl,tuning-start-tap = <20>;
++				fsl,tuning-step= <2>;
+ 				status = "disabled";
+ 			};
+ 
+Index: boot/dts/imx6ul-phytec-phycore-som.dtsi
+===================================================================
+--- boot/dts/imx6ul-phytec-phycore-som.dtsi	(revision 53158)
++++ boot/dts/imx6ul-phytec-phycore-som.dtsi	(working copy)
+@@ -30,7 +30,7 @@
+ 		pinctrl-0 = <&pinctrl_gpioleds_som>;
+ 		compatible = "gpio-leds";
+ 
+-		phycore-green {
++		led-phycore-green {
+ 			gpios = <&gpio5 4 GPIO_ACTIVE_HIGH>;
+ 			linux,default-trigger = "heartbeat";
+ 		};
+Index: boot/dts/imx6ul-tx6ul.dtsi
+===================================================================
+--- boot/dts/imx6ul-tx6ul.dtsi	(revision 53158)
++++ boot/dts/imx6ul-tx6ul.dtsi	(working copy)
+@@ -131,7 +131,7 @@
+ 	leds {
+ 		compatible = "gpio-leds";
+ 
+-		user_led: user {
++		user_led: led-user {
+ 			label = "Heartbeat";
+ 			pinctrl-names = "default";
+ 			pinctrl-0 = <&pinctrl_led>;
+Index: boot/dts/imx7s.dtsi
+===================================================================
+--- boot/dts/imx7s.dtsi	(revision 53158)
++++ boot/dts/imx7s.dtsi	(working copy)
+@@ -1184,6 +1184,8 @@
+ 					<&clks IMX7D_USDHC1_ROOT_CLK>;
+ 				clock-names = "ipg", "ahb", "per";
+ 				bus-width = <4>;
++				fsl,tuning-step = <2>;
++				fsl,tuning-start-tap = <20>;
+ 				status = "disabled";
+ 			};
+ 
+@@ -1196,6 +1198,8 @@
+ 					<&clks IMX7D_USDHC2_ROOT_CLK>;
+ 				clock-names = "ipg", "ahb", "per";
+ 				bus-width = <4>;
++				fsl,tuning-step = <2>;
++				fsl,tuning-start-tap = <20>;
+ 				status = "disabled";
+ 			};
+ 
+@@ -1208,6 +1212,8 @@
+ 					<&clks IMX7D_USDHC3_ROOT_CLK>;
+ 				clock-names = "ipg", "ahb", "per";
+ 				bus-width = <4>;
++				fsl,tuning-step = <2>;
++				fsl,tuning-start-tap = <20>;
+ 				status = "disabled";
+ 			};
+ 
+Index: boot/dts/iwg20d-q7-common.dtsi
+===================================================================
+--- boot/dts/iwg20d-q7-common.dtsi	(revision 53158)
++++ boot/dts/iwg20d-q7-common.dtsi	(working copy)
+@@ -49,7 +49,7 @@
+ 	lcd_backlight: backlight {
+ 		compatible = "pwm-backlight";
+ 
+-		pwms = <&pwm3 0 5000000 0>;
++		pwms = <&pwm3 0 5000000>;
+ 		brightness-levels = <0 4 8 16 32 64 128 255>;
+ 		default-brightness-level = <7>;
+ 		enable-gpios = <&gpio5 14 GPIO_ACTIVE_HIGH>;
+Index: boot/dts/lan966x-kontron-kswitch-d10-mmt.dtsi
+===================================================================
+--- boot/dts/lan966x-kontron-kswitch-d10-mmt.dtsi	(revision 53158)
++++ boot/dts/lan966x-kontron-kswitch-d10-mmt.dtsi	(working copy)
+@@ -18,6 +18,8 @@
+ 
+ 	gpio-restart {
+ 		compatible = "gpio-restart";
++		pinctrl-0 = <&reset_pins>;
++		pinctrl-names = "default";
+ 		gpios = <&gpio 56 GPIO_ACTIVE_LOW>;
+ 		priority = <200>;
+ 	};
+@@ -39,7 +41,7 @@
+ 	status = "okay";
+ 
+ 	spi3: spi@400 {
+-		pinctrl-0 = <&fc3_b_pins>;
++		pinctrl-0 = <&fc3_b_pins>, <&spi3_cs_pins>;
+ 		pinctrl-names = "default";
+ 		status = "okay";
+ 		cs-gpios = <&gpio 46 GPIO_ACTIVE_LOW>;
+@@ -59,6 +61,12 @@
+ 		function = "miim_c";
+ 	};
+ 
++	reset_pins: reset-pins {
++		/* SYS_RST# */
++		pins = "GPIO_56";
++		function = "gpio";
++	};
++
+ 	sgpio_a_pins: sgpio-a-pins {
+ 		/* SCK, D0, D1 */
+ 		pins = "GPIO_32", "GPIO_33", "GPIO_34";
+@@ -71,6 +79,12 @@
+ 		function = "sgpio_b";
+ 	};
+ 
++	spi3_cs_pins: spi3-cs-pins {
++		/* CS# */
++		pins = "GPIO_46";
++		function = "gpio";
++	};
++
+ 	usart0_pins: usart0-pins {
+ 		/* RXD, TXD */
+ 		pins = "GPIO_25", "GPIO_26";
+Index: boot/dts/meson8.dtsi
+===================================================================
+--- boot/dts/meson8.dtsi	(revision 53158)
++++ boot/dts/meson8.dtsi	(working copy)
+@@ -749,13 +749,13 @@
+ 
+ &uart_B {
+ 	compatible = "amlogic,meson8-uart";
+-	clocks = <&xtal>, <&clkc CLKID_UART0>, <&clkc CLKID_CLK81>;
++	clocks = <&xtal>, <&clkc CLKID_UART1>, <&clkc CLKID_CLK81>;
+ 	clock-names = "xtal", "pclk", "baud";
+ };
+ 
+ &uart_C {
+ 	compatible = "amlogic,meson8-uart";
+-	clocks = <&xtal>, <&clkc CLKID_UART0>, <&clkc CLKID_CLK81>;
++	clocks = <&xtal>, <&clkc CLKID_UART2>, <&clkc CLKID_CLK81>;
+ 	clock-names = "xtal", "pclk", "baud";
+ };
+ 
+Index: boot/dts/meson8b.dtsi
+===================================================================
+--- boot/dts/meson8b.dtsi	(revision 53158)
++++ boot/dts/meson8b.dtsi	(working copy)
+@@ -737,13 +737,13 @@
+ 
+ &uart_B {
+ 	compatible = "amlogic,meson8b-uart";
+-	clocks = <&xtal>, <&clkc CLKID_UART0>, <&clkc CLKID_CLK81>;
++	clocks = <&xtal>, <&clkc CLKID_UART1>, <&clkc CLKID_CLK81>;
+ 	clock-names = "xtal", "pclk", "baud";
+ };
+ 
+ &uart_C {
+ 	compatible = "amlogic,meson8b-uart";
+-	clocks = <&xtal>, <&clkc CLKID_UART0>, <&clkc CLKID_CLK81>;
++	clocks = <&xtal>, <&clkc CLKID_UART2>, <&clkc CLKID_CLK81>;
+ 	clock-names = "xtal", "pclk", "baud";
+ };
+ 
+Index: boot/dts/omap3-gta04a5one.dts
+===================================================================
+--- boot/dts/omap3-gta04a5one.dts	(revision 53158)
++++ boot/dts/omap3-gta04a5one.dts	(working copy)
+@@ -5,9 +5,11 @@
+ 
+ #include "omap3-gta04a5.dts"
+ 
+-&omap3_pmx_core {
++/ {
+ 	model = "Goldelico GTA04A5/Letux 2804 with OneNAND";
++};
+ 
++&omap3_pmx_core {
+ 	gpmc_pins: pinmux_gpmc_pins {
+ 		pinctrl-single,pins = <
+ 
+Index: boot/dts/qcom-apq8074-dragonboard.dts
+===================================================================
+--- boot/dts/qcom-apq8074-dragonboard.dts	(revision 53158)
++++ boot/dts/qcom-apq8074-dragonboard.dts	(working copy)
+@@ -23,6 +23,10 @@
+ 	status = "okay";
+ };
+ 
++&blsp2_dma {
++	qcom,controlled-remotely;
++};
++
+ &blsp2_i2c5 {
+ 	status = "okay";
+ 	clock-frequency = <200000>;
+Index: boot/dts/qcom-ipq4019-ap.dk04.1-c1.dts
+===================================================================
+--- boot/dts/qcom-ipq4019-ap.dk04.1-c1.dts	(revision 53158)
++++ boot/dts/qcom-ipq4019-ap.dk04.1-c1.dts	(working copy)
+@@ -11,9 +11,9 @@
+ 		dma-controller@7984000 {
+ 			status = "okay";
+ 		};
+-
+-		qpic-nand@79b0000 {
+-			status = "okay";
+-		};
+ 	};
+ };
++
++&nand {
++	status = "okay";
++};
+Index: boot/dts/qcom-ipq4019-ap.dk04.1.dtsi
+===================================================================
+--- boot/dts/qcom-ipq4019-ap.dk04.1.dtsi	(revision 53158)
++++ boot/dts/qcom-ipq4019-ap.dk04.1.dtsi	(working copy)
+@@ -102,10 +102,10 @@
+ 			status = "okay";
+ 			perst-gpios = <&tlmm 38 GPIO_ACTIVE_LOW>;
+ 		};
+-
+-		qpic-nand@79b0000 {
+-			pinctrl-0 = <&nand_pins>;
+-			pinctrl-names = "default";
+-		};
+ 	};
+ };
++
++&nand {
++	pinctrl-0 = <&nand_pins>;
++	pinctrl-names = "default";
++};
+Index: boot/dts/qcom-ipq4019-ap.dk07.1.dtsi
+===================================================================
+--- boot/dts/qcom-ipq4019-ap.dk07.1.dtsi	(revision 53158)
++++ boot/dts/qcom-ipq4019-ap.dk07.1.dtsi	(working copy)
+@@ -65,11 +65,11 @@
+ 		dma-controller@7984000 {
+ 			status = "okay";
+ 		};
+-
+-		qpic-nand@79b0000 {
+-			pinctrl-0 = <&nand_pins>;
+-			pinctrl-names = "default";
+-			status = "okay";
+-		};
+ 	};
+ };
++
++&nand {
++	pinctrl-0 = <&nand_pins>;
++	pinctrl-names = "default";
++	status = "okay";
++};
+Index: boot/dts/qcom-ipq4019.dtsi
+===================================================================
+--- boot/dts/qcom-ipq4019.dtsi	(revision 53158)
++++ boot/dts/qcom-ipq4019.dtsi	(working copy)
+@@ -228,9 +228,12 @@
+ 			interrupts = <GIC_SPI 123 IRQ_TYPE_LEVEL_HIGH>, <GIC_SPI 138 IRQ_TYPE_LEVEL_HIGH>;
+ 			interrupt-names = "hc_irq", "pwr_irq";
+ 			bus-width = <8>;
+-			clocks = <&gcc GCC_SDCC1_AHB_CLK>, <&gcc GCC_SDCC1_APPS_CLK>,
+-				 <&gcc GCC_DCD_XO_CLK>;
+-			clock-names = "iface", "core", "xo";
++			clocks = <&gcc GCC_SDCC1_AHB_CLK>,
++				 <&gcc GCC_SDCC1_APPS_CLK>,
++				 <&xo>;
++			clock-names = "iface",
++				      "core",
++				      "xo";
+ 			status = "disabled";
+ 		};
+ 
+Index: boot/dts/qcom-msm8974.dtsi
+===================================================================
+--- boot/dts/qcom-msm8974.dtsi	(revision 53158)
++++ boot/dts/qcom-msm8974.dtsi	(working copy)
+@@ -300,7 +300,7 @@
+ 			qcom,ipc = <&apcs 8 0>;
+ 			qcom,smd-edge = <15>;
+ 
+-			rpm_requests: rpm_requests {
++			rpm_requests: rpm-requests {
+ 				compatible = "qcom,rpm-msm8974";
+ 				qcom,smd-channels = "rpm_requests";
+ 
+Index: boot/dts/s3c6410-mini6410.dts
+===================================================================
+--- boot/dts/s3c6410-mini6410.dts	(revision 53158)
++++ boot/dts/s3c6410-mini6410.dts	(working copy)
+@@ -51,7 +51,7 @@
+ 
+ 		ethernet@18000000 {
+ 			compatible = "davicom,dm9000";
+-			reg = <0x18000000 0x2 0x18000004 0x2>;
++			reg = <0x18000000 0x2>, <0x18000004 0x2>;
+ 			interrupt-parent = <&gpn>;
+ 			interrupts = <7 IRQ_TYPE_LEVEL_HIGH>;
+ 			davicom,no-eeprom;
+Index: boot/dts/s5pv210-smdkv210.dts
+===================================================================
+--- boot/dts/s5pv210-smdkv210.dts	(revision 53158)
++++ boot/dts/s5pv210-smdkv210.dts	(working copy)
+@@ -41,7 +41,7 @@
+ 
+ 	ethernet@a8000000 {
+ 		compatible = "davicom,dm9000";
+-		reg = <0xA8000000 0x2 0xA8000002 0x2>;
++		reg = <0xa8000000 0x2>, <0xa8000002 0x2>;
+ 		interrupt-parent = <&gph1>;
+ 		interrupts = <1 IRQ_TYPE_LEVEL_HIGH>;
+ 		local-mac-address = [00 00 de ad be ef];
+@@ -55,7 +55,15 @@
+ 		default-brightness-level = <6>;
+ 		pinctrl-names = "default";
+ 		pinctrl-0 = <&pwm3_out>;
++		power-supply = <&dc5v_reg>;
+ 	};
++
++	dc5v_reg: regulator-0 {
++		compatible = "regulator-fixed";
++		regulator-name = "DC5V";
++		regulator-min-microvolt = <5000000>;
++		regulator-max-microvolt = <5000000>;
++	};
+ };
+ 
+ &xusbxti {
+Index: boot/dts/stm32mp157c-emstamp-argon.dtsi
+===================================================================
+--- boot/dts/stm32mp157c-emstamp-argon.dtsi	(revision 53158)
++++ boot/dts/stm32mp157c-emstamp-argon.dtsi	(working copy)
+@@ -68,11 +68,6 @@
+ 			reg = <0x38000000 0x10000>;
+ 			no-map;
+ 		};
+-
+-		gpu_reserved: gpu@dc000000 {
+-			reg = <0xdc000000 0x4000000>;
+-			no-map;
+-		};
+ 	};
+ 
+ 	led: gpio_leds {
+@@ -102,9 +97,11 @@
+ 	adc1: adc@0 {
+ 		pinctrl-names = "default";
+ 		pinctrl-0 = <&adc1_in6_pins_a>;
+-		st,min-sample-time-nsecs = <5000>;
+-		st,adc-channels = <6>;
+ 		status = "disabled";
++		channel@6 {
++			reg = <6>;
++			st,min-sample-time-ns = <5000>;
++		};
+ 	};
+ 
+ 	adc2: adc@100 {
+@@ -173,7 +170,7 @@
+ 	phy-handle = <&phy0>;
+ 	st,eth-ref-clk-sel;
+ 
+-	mdio0 {
++	mdio {
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+ 		compatible = "snps,dwmac-mdio";
+@@ -183,10 +180,6 @@
+ 	};
+ };
+ 
+-&gpu {
+-	contiguous-area = <&gpu_reserved>;
+-};
+-
+ &hash1 {
+ 	status = "okay";
+ };
+@@ -375,8 +368,8 @@
+ &m4_rproc {
+ 	memory-region = <&retram>, <&mcuram>, <&mcuram2>, <&vdev0vring0>,
+ 			<&vdev0vring1>, <&vdev0buffer>;
+-	mboxes = <&ipcc 0>, <&ipcc 1>, <&ipcc 2>;
+-	mbox-names = "vq0", "vq1", "shutdown";
++	mboxes = <&ipcc 0>, <&ipcc 1>, <&ipcc 2>, <&ipcc 3>;
++	mbox-names = "vq0", "vq1", "shutdown", "detach";
+ 	interrupt-parent = <&exti>;
+ 	interrupts = <68 1>;
+ 	interrupt-names = "wdg";
+Index: boot/dts/stm32mp157c-ev1.dts
+===================================================================
+--- boot/dts/stm32mp157c-ev1.dts	(revision 53158)
++++ boot/dts/stm32mp157c-ev1.dts	(working copy)
+@@ -144,7 +144,7 @@
+ 	max-speed = <1000>;
+ 	phy-handle = <&phy0>;
+ 
+-	mdio0 {
++	mdio {
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+ 		compatible = "snps,dwmac-mdio";
+Index: boot/dts/stm32mp157c-lxa-mc1.dts
+===================================================================
+--- boot/dts/stm32mp157c-lxa-mc1.dts	(revision 53158)
++++ boot/dts/stm32mp157c-lxa-mc1.dts	(working copy)
+@@ -112,7 +112,7 @@
+ 	phy-handle = <&ethphy>;
+ 	status = "okay";
+ 
+-	mdio0 {
++	mdio {
+ 		compatible = "snps,dwmac-mdio";
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+Index: boot/dts/stm32mp157c-odyssey-som.dtsi
+===================================================================
+--- boot/dts/stm32mp157c-odyssey-som.dtsi	(revision 53158)
++++ boot/dts/stm32mp157c-odyssey-som.dtsi	(working copy)
+@@ -62,11 +62,6 @@
+ 			reg = <0x38000000 0x10000>;
+ 			no-map;
+ 		};
+-
+-		gpu_reserved: gpu@d4000000 {
+-			reg = <0xd4000000 0x4000000>;
+-			no-map;
+-		};
+ 	};
+ 
+ 	led {
+@@ -80,11 +75,6 @@
+ 	};
+ };
+ 
+-&gpu {
+-	contiguous-area = <&gpu_reserved>;
+-	status = "okay";
+-};
+-
+ &i2c2 {
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&i2c2_pins_a>;
+@@ -240,8 +230,8 @@
+ &m4_rproc {
+ 	memory-region = <&retram>, <&mcuram>, <&mcuram2>, <&vdev0vring0>,
+ 			<&vdev0vring1>, <&vdev0buffer>;
+-	mboxes = <&ipcc 0>, <&ipcc 1>, <&ipcc 2>;
+-	mbox-names = "vq0", "vq1", "shutdown";
++	mboxes = <&ipcc 0>, <&ipcc 1>, <&ipcc 2>, <&ipcc 3>;
++	mbox-names = "vq0", "vq1", "shutdown", "detach";
+ 	interrupt-parent = <&exti>;
+ 	interrupts = <68 1>;
+ 	status = "okay";
+Index: boot/dts/stm32mp157c-odyssey.dts
+===================================================================
+--- boot/dts/stm32mp157c-odyssey.dts	(revision 53158)
++++ boot/dts/stm32mp157c-odyssey.dts	(working copy)
+@@ -41,7 +41,7 @@
+ 	assigned-clock-rates = <125000000>; /* Clock PLL4 to 750Mhz in ATF/U-Boot */
+ 	st,eth-clk-sel;
+ 
+-	mdio0 {
++	mdio {
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+ 		compatible = "snps,dwmac-mdio";
+Index: boot/dts/stm32mp15xx-dhcom-pdk2.dtsi
+===================================================================
+--- boot/dts/stm32mp15xx-dhcom-pdk2.dtsi	(revision 53158)
++++ boot/dts/stm32mp15xx-dhcom-pdk2.dtsi	(working copy)
+@@ -137,10 +137,13 @@
+ 
+ 	sound {
+ 		compatible = "audio-graph-card";
+-		routing =
+-			"MIC_IN", "Capture",
+-			"Capture", "Mic Bias",
+-			"Playback", "HP_OUT";
++		widgets = "Headphone", "Headphone Jack",
++			  "Line", "Line In Jack",
++			  "Microphone", "Microphone Jack";
++		routing = "Headphone Jack", "HP_OUT",
++			  "LINE_IN", "Line In Jack",
++			  "MIC_IN", "Microphone Jack",
++			  "Microphone Jack", "Mic Bias";
+ 		dais = <&sai2a_port &sai2b_port>;
+ 		status = "okay";
+ 	};
+Index: boot/dts/stm32mp15xx-dhcom-som.dtsi
+===================================================================
+--- boot/dts/stm32mp15xx-dhcom-som.dtsi	(revision 53158)
++++ boot/dts/stm32mp15xx-dhcom-som.dtsi	(working copy)
+@@ -80,17 +80,19 @@
+ 	vdda-supply = <&vdda>;
+ 	vref-supply = <&vdda>;
+ 	status = "okay";
++};
+ 
+-	adc1: adc@0 {
+-		st,min-sample-time-nsecs = <5000>;
+-		st,adc-channels = <0>;
+-		status = "okay";
++&adc1 {
++	channel@0 {
++		reg = <0>;
++		st,min-sample-time-ns = <5000>;
+ 	};
++};
+ 
+-	adc2: adc@100 {
+-		st,adc-channels = <1>;
+-		st,min-sample-time-nsecs = <5000>;
+-		status = "okay";
++&adc2 {
++	channel@1 {
++		reg = <1>;
++		st,min-sample-time-ns = <5000>;
+ 	};
+ };
+ 
+@@ -125,7 +127,7 @@
+ 	max-speed = <100>;
+ 	phy-handle = <&phy0>;
+ 
+-	mdio0 {
++	mdio {
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+ 		compatible = "snps,dwmac-mdio";
+@@ -414,8 +416,8 @@
+ &m4_rproc {
+ 	memory-region = <&retram>, <&mcuram>, <&mcuram2>, <&vdev0vring0>,
+ 			<&vdev0vring1>, <&vdev0buffer>;
+-	mboxes = <&ipcc 0>, <&ipcc 1>, <&ipcc 2>;
+-	mbox-names = "vq0", "vq1", "shutdown";
++	mboxes = <&ipcc 0>, <&ipcc 1>, <&ipcc 2>, <&ipcc 3>;
++	mbox-names = "vq0", "vq1", "shutdown", "detach";
+ 	interrupt-parent = <&exti>;
+ 	interrupts = <68 1>;
+ 	status = "okay";
+Index: boot/dts/stm32mp15xx-dhcor-avenger96.dtsi
+===================================================================
+--- boot/dts/stm32mp15xx-dhcor-avenger96.dtsi	(revision 53158)
++++ boot/dts/stm32mp15xx-dhcor-avenger96.dtsi	(working copy)
+@@ -88,7 +88,7 @@
+ 
+ 	sound {
+ 		compatible = "audio-graph-card";
+-		label = "STM32MP1-AV96-HDMI";
++		label = "STM32-AV96-HDMI";
+ 		dais = <&sai2a_port>;
+ 		status = "okay";
+ 	};
+@@ -112,20 +112,42 @@
+ 	vdda-supply = <&vdda>;
+ 	vref-supply = <&vdda>;
+ 	status = "okay";
++};
+ 
+-	adc1: adc@0 {
+-		st,adc-channels = <0 1 6>;
+-		st,min-sample-time-nsecs = <5000>;
+-		status = "okay";
++&adc1 {
++	channel@0 {
++		reg = <0>;
++		st,min-sample-time-ns = <5000>;
+ 	};
+ 
+-	adc2: adc@100 {
+-		st,adc-channels = <0 1 2>;
+-		st,min-sample-time-nsecs = <5000>;
+-		status = "okay";
++	channel@1 {
++		reg = <1>;
++		st,min-sample-time-ns = <5000>;
+ 	};
++
++	channel@6 {
++		reg = <6>;
++		st,min-sample-time-ns = <5000>;
++	};
+ };
+ 
++&adc2 {
++	channel@0 {
++		reg = <0>;
++		st,min-sample-time-ns = <5000>;
++	};
++
++	channel@1 {
++		reg = <1>;
++		st,min-sample-time-ns = <5000>;
++	};
++
++	channel@2 {
++		reg = <2>;
++		st,min-sample-time-ns = <5000>;
++	};
++};
++
+ &dcmi {
+ 	pinctrl-names = "default", "sleep";
+ 	pinctrl-0 = <&dcmi_pins_c>;
+@@ -151,7 +173,7 @@
+ 	max-speed = <1000>;
+ 	phy-handle = <&phy0>;
+ 
+-	mdio0 {
++	mdio {
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+ 		compatible = "snps,dwmac-mdio";
+@@ -322,6 +344,12 @@
+ 			};
+ 		};
+ 	};
++
++	dh_mac_eeprom: eeprom@53 {
++		compatible = "atmel,24c02";
++		reg = <0x53>;
++		pagesize = <16>;
++	};
+ };
+ 
+ &ltdc {
+Index: boot/dts/stm32mp15xx-dhcor-drc-compact.dtsi
+===================================================================
+--- boot/dts/stm32mp15xx-dhcor-drc-compact.dtsi	(revision 53158)
++++ boot/dts/stm32mp15xx-dhcor-drc-compact.dtsi	(working copy)
+@@ -78,7 +78,7 @@
+ 	max-speed = <1000>;
+ 	phy-handle = <&phy0>;
+ 
+-	mdio0 {
++	mdio {
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+ 		compatible = "snps,dwmac-mdio";
+@@ -192,6 +192,12 @@
+ 		reg = <0x50>;
+ 		pagesize = <16>;
+ 	};
++
++	dh_mac_eeprom: eeprom@53 {
++		compatible = "atmel,24c02";
++		reg = <0x53>;
++		pagesize = <16>;
++	};
+ };
+ 
+ &sdmmc1 {	/* MicroSD */
+Index: boot/dts/stm32mp15xx-dhcor-som.dtsi
+===================================================================
+--- boot/dts/stm32mp15xx-dhcor-som.dtsi	(revision 53158)
++++ boot/dts/stm32mp15xx-dhcor-som.dtsi	(working copy)
+@@ -213,12 +213,6 @@
+ 			status = "disabled";
+ 		};
+ 	};
+-
+-	eeprom@53 {
+-		compatible = "atmel,24c02";
+-		reg = <0x53>;
+-		pagesize = <16>;
+-	};
+ };
+ 
+ &ipcc {
+Index: boot/dts/stm32mp15xx-dkx.dtsi
+===================================================================
+--- boot/dts/stm32mp15xx-dkx.dtsi	(revision 53158)
++++ boot/dts/stm32mp15xx-dkx.dtsi	(working copy)
+@@ -141,7 +141,7 @@
+ 	max-speed = <1000>;
+ 	phy-handle = <&phy0>;
+ 
+-	mdio0 {
++	mdio {
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+ 		compatible = "snps,dwmac-mdio";
+@@ -438,7 +438,7 @@
+ 	i2s2_port: port {
+ 		i2s2_endpoint: endpoint {
+ 			remote-endpoint = <&sii9022_tx_endpoint>;
+-			format = "i2s";
++			dai-format = "i2s";
+ 			mclk-fs = <256>;
+ 		};
+ 	};
+Index: boot/dts/armada-38x-solidrun-microsom-emmc.dtsi
+===================================================================
+--- boot/dts/armada-38x-solidrun-microsom-emmc.dtsi	(nonexistent)
++++ boot/dts/armada-38x-solidrun-microsom-emmc.dtsi	(revision 53563)
+@@ -0,0 +1,62 @@
++/*
++ * Device Tree file for SolidRun Armada 38x Microsom add-on for eMMC
++ *
++ *  Copyright (C) 2015 Russell King
++ *
++ * This board is in development; the contents of this file work with
++ * the A1 rev 2.0 of the board, which does not represent final
++ * production board.  Things will change, don't expect this file to
++ * remain compatible info the future.
++ *
++ * This file is dual-licensed: you can use it either under the terms
++ * of the GPL or the X11 license, at your option. Note that this dual
++ * licensing only applies to this file, and not this project as a
++ * whole.
++ *
++ *  a) This file is free software; you can redistribute it and/or
++ *     modify it under the terms of the GNU General Public License
++ *     version 2 as published by the Free Software Foundation.
++ *
++ *     This file is distributed in the hope that it will be useful
++ *     but WITHOUT ANY WARRANTY; without even the implied warranty of
++ *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ *     GNU General Public License for more details.
++ *
++ * Or, alternatively
++ *
++ *  b) Permission is hereby granted, free of charge, to any person
++ *     obtaining a copy of this software and associated documentation
++ *     files (the "Software"), to deal in the Software without
++ *     restriction, including without limitation the rights to use
++ *     copy, modify, merge, publish, distribute, sublicense, and/or
++ *     sell copies of the Software, and to permit persons to whom the
++ *     Software is furnished to do so, subject to the following
++ *     conditions:
++ *
++ *     The above copyright notice and this permission notice shall be
++ *     included in all copies or substantial portions of the Software.
++ *
++ *     THE SOFTWARE IS PROVIDED , WITHOUT WARRANTY OF ANY KIND
++ *     EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
++ *     OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
++ *     NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
++ *     HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY
++ *     WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
++ *     FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
++ *     OTHER DEALINGS IN THE SOFTWARE.
++ */
++/ {
++	soc {
++		internal-regs {
++			sdhci@d8000 {
++				bus-width = <4>;
++				no-1-8-v;
++				non-removable;
++				pinctrl-0 = <&microsom_sdhci_pins>;
++				pinctrl-names = "default";
++				status = "okay";
++				wp-inverted;
++			};
++		};
++	};
++};
+Index: boot/dts/qcom-ipq8064-asrockg10.dts
+===================================================================
+--- boot/dts/qcom-ipq8064-asrockg10.dts	(nonexistent)
++++ boot/dts/qcom-ipq8064-asrockg10.dts	(working copy)
+@@ -0,0 +1,378 @@
++// SPDX-License-Identifier: GPL-2.0
++#include "qcom-ipq8064-v2.0-smb208.dtsi"
++
++#include <dt-bindings/input/input.h>
++#include <dt-bindings/soc/qcom,tcsr.h>
++
++/ {
++	compatible = "asrock,g10", "qcom,ipq8064";
++	model = "ASRock G10";
++
++	aliases {
++		ethernet0 = &gmac1;
++		ethernet1 = &gmac0;
++
++		led-boot = &led_status_blue;
++		led-failsafe = &led_status_amber;
++		led-running = &led_status_blue;
++		led-upgrade = &led_status_amber;
++	};
++
++	chosen {
++		bootargs-override = "console=ttyMSM0,115200n8";
++	};
++
++	leds {
++		compatible = "gpio-leds";
++
++		pinctrl-0 = <&led_pins>;
++		pinctrl-names = "default";
++
++		/*
++		 * this is a bit misleading. Because there are about seven
++		 * multicolor LEDs connected all wired together in parallel.
++		 */
++
++		status_yellow {
++			label = "yellow:status";
++			gpios = <&qcom_pinmux 8 GPIO_ACTIVE_HIGH>;
++		};
++
++		led_status_amber: status_amber {
++			label = "amber:status";
++			gpios = <&qcom_pinmux 7 GPIO_ACTIVE_HIGH>;
++		};
++
++		led_status_blue: status_blue {
++			label = "blue:status";
++			gpios = <&qcom_pinmux 9 GPIO_ACTIVE_HIGH>;
++		};
++
++		/*
++		 * LED is declared in vendors boardfile but it's not
++		 * working and the manual doesn't mention anything
++		 * about the LED being white.
++
++		status_white {
++			label = "white:status";
++			gpios = <&qcom_pinmux 26 GPIO_ACTIVE_HIGH>;
++		};
++		*/
++	};
++
++	i2c-gpio {
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		compatible = "i2c-gpio";
++		gpios = <&qcom_pinmux 53 GPIO_ACTIVE_HIGH>, /* sda */
++			<&qcom_pinmux 54 GPIO_ACTIVE_HIGH>; /* scl */
++		i2c-gpio,delay-us = <5>;
++		i2c-gpio,scl-output-only;
++
++		mcu@50 {
++			reg = <0x50>;
++			compatible = "sonix,sn8f25e21";
++		};
++	};
++
++	keys {
++		compatible = "gpio-keys";
++
++		pinctrl-0 = <&button_pins>;
++		pinctrl-names = "default";
++
++		ir-remote {
++			label = "ir-remote";
++			gpios = <&qcom_pinmux 15 GPIO_ACTIVE_LOW>;
++			linux,code = <BTN_0>;
++			debounce-interval = <60>;
++			wakeup-source;
++		};
++
++		reset {
++			label = "reset";
++			gpios = <&qcom_pinmux 16 GPIO_ACTIVE_LOW>;
++			linux,code = <KEY_RESTART>;
++			debounce-interval = <60>;
++			wakeup-source;
++		};
++
++		wps5g {
++			label = "wps5g";
++			gpios = <&qcom_pinmux 64 GPIO_ACTIVE_LOW>;
++			linux,code = <KEY_WPS_BUTTON>;
++			debounce-interval = <60>;
++			wakeup-source;
++		};
++
++		wps2g {
++			label = "wps2g";
++			gpios = <&qcom_pinmux 65 GPIO_ACTIVE_LOW>;
++			linux,code = <KEY_WPS_BUTTON>;
++			debounce-interval = <60>;
++			wakeup-source;
++		};
++	};
++};
++
++&adm_dma {
++	status = "okay";
++};
++
++&gmac1 {
++	status = "okay";
++
++	pinctrl-0 = <&rgmii2_pins>;
++	pinctrl-names = "default";
++
++	phy-mode = "rgmii";
++	qcom,id = <1>;
++
++	fixed-link {
++		speed = <1000>;
++		full-duplex;
++	};
++};
++
++&gmac2 {
++	status = "okay";
++
++	phy-mode = "sgmii";
++	qcom,id = <2>;
++
++	fixed-link {
++		speed = <1000>;
++		full-duplex;
++	};
++};
++
++&gsbi4_serial {
++	pinctrl-0 = <&uart0_pins>;
++	pinctrl-names = "default";
++};
++
++&mdio0 {
++	status = "okay";
++
++	pinctrl-0 = <&mdio0_pins>;
++	pinctrl-names = "default";
++
++	switch@10 {
++		compatible = "qca,qca8337";
++		#address-cells = <1>;
++		#size-cells = <0>;
++		reg = <0x10>;
++
++		ports {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			port@0 {
++				reg = <0>;
++				label = "cpu";
++				ethernet = <&gmac1>;
++				phy-mode = "rgmii";
++				tx-internal-delay-ps = <1000>;
++				rx-internal-delay-ps = <1000>;
++
++				fixed-link {
++					speed = <1000>;
++					full-duplex;
++				};
++			};
++
++			port@1 {
++				reg = <1>;
++				label = "wan";
++				phy-mode = "internal";
++				phy-handle = <&phy_port1>;
++			};
++
++			port@2 {
++				reg = <2>;
++				label = "lan1";
++				phy-mode = "internal";
++				phy-handle = <&phy_port2>;
++			};
++
++			port@3 {
++				reg = <3>;
++				label = "lan2";
++				phy-mode = "internal";
++				phy-handle = <&phy_port3>;
++			};
++
++			port@4 {
++				reg = <4>;
++				label = "lan3";
++				phy-mode = "internal";
++				phy-handle = <&phy_port4>;
++			};
++
++			port@5 {
++				reg = <5>;
++				label = "lan4";
++				phy-mode = "internal";
++				phy-handle = <&phy_port5>;
++			};
++
++			port@6 {
++				reg = <6>;
++				label = "cpu";
++				ethernet = <&gmac2>;
++				phy-mode = "sgmii";
++				qca,sgmii-enable-pll;
++
++				fixed-link {
++					speed = <1000>;
++					full-duplex;
++				};
++			};
++		};
++
++		mdio {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			phy_port1: phy@0 {
++				reg = <0>;
++			};
++
++			phy_port2: phy@1 {
++				reg = <1>;
++			};
++
++			phy_port3: phy@2 {
++				reg = <2>;
++			};
++
++			phy_port4: phy@3 {
++				reg = <3>;
++			};
++
++			phy_port5: phy@4 {
++				reg = <4>;
++			};
++		};
++	};
++};
++
++&nand {
++	status = "okay";
++
++	nand@0 {
++		reg = <0>;
++		compatible = "qcom,nandcs";
++
++		nand-ecc-strength = <4>;
++		nand-bus-width = <8>;
++		nand-ecc-step-size = <512>;
++
++		nand-is-boot-medium;
++		qcom,boot-partitions = <0x0 0x1200000>;
++
++		partitions {
++			compatible = "qcom,smem-part";
++		};
++	};
++};
++
++&pcie0 {
++	status = "okay";
++
++	bridge@0,0 {
++		reg = <0x00000000 0 0 0 0>;
++		#address-cells = <3>;
++		#size-cells = <2>;
++		ranges;
++
++		wifi5g: wifi@1,0 {
++			reg = <0x00010000 0 0 0 0>;
++			compatible = "qcom,ath10k";
++			qcom,ath10k-calibration-variant = "ASRock-G10";
++		};
++	};
++};
++
++&pcie1 {
++	status = "okay";
++
++	bridge@0,0 {
++		reg = <0x00000000 0 0 0 0>;
++		#address-cells = <3>;
++		#size-cells = <2>;
++		ranges;
++
++		wifi2g: wifi@1,0 {
++			reg = <0x00010000 0 0 0 0>;
++			compatible = "qcom,ath10k";
++			qcom,ath10k-calibration-variant = "ASRock-G10";
++		};
++	};
++};
++
++&qcom_pinmux {
++	led_pins: led_pins {
++		mux {
++			pins = "gpio7", "gpio8", "gpio9", "gpio26";
++			function = "gpio";
++			drive-strength = <2>;
++			bias-pull-up;
++		};
++	};
++
++	button_pins: button_pins {
++		mux {
++			pins = "gpio15", "gpio16", "gpio64", "gpio65";
++			function = "gpio";
++			drive-strength = <2>;
++			bias-pull-up;
++		};
++	};
++
++	uart0_pins: uart0_pins {
++		mux {
++			pins = "gpio10", "gpio11";
++			function = "gsbi4";
++			drive-strength = <10>;
++			bias-disable;
++		};
++	};
++};
++
++&rpm {
++	pinctrl-0 = <&i2c4_pins>;
++	pinctrl-names = "default";
++};
++
++&hs_phy_0 {
++	status = "okay";
++};
++
++&ss_phy_0 {
++	status = "okay";
++};
++
++&usb3_0 {
++	status = "okay";
++};
++
++&hs_phy_1 {
++	status = "okay";
++};
++
++&ss_phy_1 {
++	status = "okay";
++};
++
++&usb3_1 {
++	status = "okay";
++};
++
++&tcsr {
++	qcom,usb-ctrl-select = <TCSR_USB_SELECT_USB3_DUAL>;
++};
++
++/delete-node/ &pcie2_pins;
++/delete-node/ &pcie2;
+Index: boot/dts/qcom-ipq8064-tew827.dts
+===================================================================
+--- boot/dts/qcom-ipq8064-tew827.dts	(nonexistent)
++++ boot/dts/qcom-ipq8064-tew827.dts	(working copy)
+@@ -0,0 +1,395 @@
++// SPDX-License-Identifier: GPL-2.0
++#include "qcom-ipq8064-v2.0-smb208.dtsi"
++
++#include <dt-bindings/input/input.h>
++#include <dt-bindings/soc/qcom,tcsr.h>
++
++/ {
++	compatible = "trendnet,tew-827", "qcom,ipq8064";
++	model = "Trendnet TEW-827";
++
++	aliases {
++		ethernet0 = &gmac1;
++		ethernet1 = &gmac0;
++
++		led-boot = &led_status_blue;
++		led-failsafe = &led_status_amber;
++		led-running = &led_status_blue;
++		led-upgrade = &led_status_amber;
++	};
++
++	chosen {
++		bootargs-override = "console=ttyMSM0,115200n8 rootfstype=squashfs noinitrd earlyprintk";
++		stdout-path = "serial0:115200n8";
++	};
++
++	leds {
++		compatible = "gpio-leds";
++
++		pinctrl-0 = <&led_pins>;
++		pinctrl-names = "default";
++
++		/*
++		 * this is a bit misleading. Because there are about seven
++		 * multicolor LEDs connected all wired together in parallel.
++		 */
++
++		status_yellow {
++			label = "yellow:status";
++			gpios = <&qcom_pinmux 8 GPIO_ACTIVE_HIGH>;
++		};
++
++		led_status_amber: status_amber {
++			label = "amber:status";
++			gpios = <&qcom_pinmux 7 GPIO_ACTIVE_HIGH>;
++		};
++
++		led_status_blue: status_blue {
++			label = "blue:status";
++			gpios = <&qcom_pinmux 9 GPIO_ACTIVE_HIGH>;
++		};
++
++		/*
++		 * LED is declared in vendors boardfile but it's not
++		 * working and the manual doesn't mention anything
++		 * about the LED being white.
++
++		status_white {
++			label = "white:status";
++			gpios = <&qcom_pinmux 26 GPIO_ACTIVE_HIGH>;
++		};
++		*/
++	};
++
++	i2c-gpio {
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		compatible = "i2c-gpio";
++		gpios = <&qcom_pinmux 53 GPIO_ACTIVE_HIGH>, /* sda */
++			<&qcom_pinmux 54 GPIO_ACTIVE_HIGH>; /* scl */
++		i2c-gpio,delay-us = <5>;
++		i2c-gpio,scl-output-only;
++
++		mcu@50 {
++			reg = <0x50>;
++			compatible = "sonix,sn8f25e21";
++		};
++	};
++
++	keys {
++		compatible = "gpio-keys";
++
++		pinctrl-0 = <&button_pins>;
++		pinctrl-names = "default";
++
++		ir-remote {
++			label = "ir-remote";
++			gpios = <&qcom_pinmux 15 GPIO_ACTIVE_LOW>;
++			linux,code = <BTN_0>;
++			debounce-interval = <60>;
++			wakeup-source;
++		};
++
++		reset {
++			label = "reset";
++			gpios = <&qcom_pinmux 16 GPIO_ACTIVE_LOW>;
++			linux,code = <KEY_RESTART>;
++			debounce-interval = <60>;
++			wakeup-source;
++		};
++
++		wps5g {
++			label = "wps5g";
++			gpios = <&qcom_pinmux 64 GPIO_ACTIVE_LOW>;
++			linux,code = <KEY_WPS_BUTTON>;
++			debounce-interval = <60>;
++			wakeup-source;
++		};
++
++		wps2g {
++			label = "wps2g";
++			gpios = <&qcom_pinmux 65 GPIO_ACTIVE_LOW>;
++			linux,code = <KEY_WPS_BUTTON>;
++			debounce-interval = <60>;
++			wakeup-source;
++		};
++	};
++};
++
++&adm_dma {
++	status = "okay";
++};
++
++&gmac1 {
++	status = "okay";
++
++	pinctrl-0 = <&rgmii2_pins>;
++	pinctrl-names = "default";
++
++	phy-mode = "rgmii";
++	qcom,id = <1>;
++
++	fixed-link {
++		speed = <1000>;
++		full-duplex;
++	};
++};
++
++&gmac2 {
++	status = "okay";
++
++	phy-mode = "sgmii";
++	qcom,id = <2>;
++
++	fixed-link {
++		speed = <1000>;
++		full-duplex;
++	};
++};
++
++&gsbi4_serial {
++	pinctrl-0 = <&uart0_pins>;
++	pinctrl-names = "default";
++};
++
++&mdio0 {
++	status = "okay";
++
++	pinctrl-0 = <&mdio0_pins>;
++	pinctrl-names = "default";
++
++	switch@10 {
++		compatible = "qca,qca8337";
++		#address-cells = <1>;
++		#size-cells = <0>;
++		reg = <0x10>;
++
++		ports {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			port@0 {
++				reg = <0>;
++				label = "cpu";
++				ethernet = <&gmac1>;
++				phy-mode = "rgmii";
++				tx-internal-delay-ps = <1000>;
++				rx-internal-delay-ps = <1000>;
++
++				fixed-link {
++					speed = <1000>;
++					full-duplex;
++				};
++			};
++
++			port@1 {
++				reg = <1>;
++				label = "wan";
++				phy-mode = "internal";
++				phy-handle = <&phy_port1>;
++			};
++
++			port@2 {
++				reg = <2>;
++				label = "lan1";
++				phy-mode = "internal";
++				phy-handle = <&phy_port2>;
++			};
++
++			port@3 {
++				reg = <3>;
++				label = "lan2";
++				phy-mode = "internal";
++				phy-handle = <&phy_port3>;
++			};
++
++			port@4 {
++				reg = <4>;
++				label = "lan3";
++				phy-mode = "internal";
++				phy-handle = <&phy_port4>;
++			};
++
++			port@5 {
++				reg = <5>;
++				label = "lan4";
++				phy-mode = "internal";
++				phy-handle = <&phy_port5>;
++			};
++
++			port@6 {
++				reg = <6>;
++				label = "cpu";
++				ethernet = <&gmac2>;
++				phy-mode = "sgmii";
++				qca,sgmii-enable-pll;
++
++				fixed-link {
++					speed = <1000>;
++					full-duplex;
++				};
++			};
++		};
++
++		mdio {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			phy_port1: phy@0 {
++				reg = <0>;
++			};
++
++			phy_port2: phy@1 {
++				reg = <1>;
++			};
++
++			phy_port3: phy@2 {
++				reg = <2>;
++			};
++
++			phy_port4: phy@3 {
++				reg = <3>;
++			};
++
++			phy_port5: phy@4 {
++				reg = <4>;
++			};
++		};
++	};
++};
++
++&nand {
++	status = "okay";
++
++	nand@0 {
++		reg = <0>;
++		compatible = "qcom,nandcs";
++
++		nand-ecc-strength = <4>;
++		nand-bus-width = <8>;
++		nand-ecc-step-size = <512>;
++
++		nand-is-boot-medium;
++		qcom,boot-partitions = <0x0 0x1200000>;
++
++		partitions {
++			compatible = "fixed-partitions";
++			#address-cells = <1>;
++			#size-cells = <1>;
++			qcadata@0 {
++				label = "qcadata";
++				reg = <0x0000000 0x0c80000>;
++				read-only;
++			};
++
++			APPSBL@c80000 {
++				label = "APPSBL";
++				reg = <0x0c80000 0x0500000>;
++				read-only;
++			};
++
++			APPSBL_1@c80000 {
++				label = "APPSBL_1";
++				reg = <0x53a0000 0x0500000>;
++				read-only;
++			};
++
++			APPSBLENV@1180000 {
++				label = "APPSBLENV";
++				reg = <0x1180000 0x0080000>;
++			};
++
++			BOOTCONFIG@c80000 {
++				label = "BOOTCONFIG";
++				reg = <0x5340000 0x0060000>;
++			};
++
++			art: art@1200000 {
++				label = "art";
++				reg = <0x1200000 0x0140000>;
++			};
++
++			firmware@1340000 {
++				label = "linux";
++				reg = <0x1340000 0x4000000>;
++			};
++
++			firmware2@58a0000 {
++				label = "linux2";
++				reg = <0x58a0000 0x4000000>;
++			};
++
++			nvram@98a0000 {
++				label = "nvram";
++				reg = <0x98a0000 0x40000>;
++			};
++
++		};
++	};
++};
++
++&qcom_pinmux {
++	led_pins: led_pins {
++		mux {
++			pins = "gpio7", "gpio8", "gpio9", "gpio26";
++			function = "gpio";
++			drive-strength = <2>;
++			bias-pull-up;
++		};
++	};
++
++	button_pins: button_pins {
++		mux {
++			pins = "gpio15", "gpio16", "gpio64", "gpio65";
++			function = "gpio";
++			drive-strength = <2>;
++			bias-pull-up;
++		};
++	};
++
++	uart0_pins: uart0_pins {
++		mux {
++			pins = "gpio10", "gpio11";
++			function = "gsbi4";
++			drive-strength = <10>;
++			bias-disable;
++		};
++	};
++};
++
++&rpm {
++	pinctrl-0 = <&i2c4_pins>;
++	pinctrl-names = "default";
++};
++
++&hs_phy_0 {
++	status = "okay";
++};
++
++&ss_phy_0 {
++	status = "okay";
++};
++
++&usb3_0 {
++	status = "okay";
++};
++
++&hs_phy_1 {
++	status = "okay";
++};
++
++&ss_phy_1 {
++	status = "okay";
++};
++
++&usb3_1 {
++	status = "okay";
++};
++
++&tcsr {
++	qcom,usb-ctrl-select = <TCSR_USB_SELECT_USB3_DUAL>;
++};
++
++/delete-node/ &pcie2_pins;
++/delete-node/ &pcie2;
+Index: Kconfig
+===================================================================
+--- Kconfig	(revision 53158)
++++ Kconfig	(working copy)
+@@ -5,6 +5,7 @@ config ARM
+ 	select ARCH_32BIT_OFF_T
+ 	select ARCH_CORRECT_STACKTRACE_ON_KRETPROBE if HAVE_KRETPROBES && FRAME_POINTER && !ARM_UNWIND
+ 	select ARCH_HAS_BINFMT_FLAT
++	select ARCH_HAS_CPU_FINALIZE_INIT if MMU
+ 	select ARCH_HAS_CURRENT_STACK_POINTER
+ 	select ARCH_HAS_DEBUG_VIRTUAL if MMU
+ 	select ARCH_HAS_DMA_WRITE_COMBINE if !ARM_DMA_MEM_BUFFERABLE
+@@ -1598,6 +1599,17 @@ config ARM_ATAG_DTB_COMPAT_CMDLINE_MANGLE
+ 	  Only command line ATAG will be processed, the rest of the ATAGs
+ 	  sent by bootloader will be ignored.
+ 
++config ARM_ATAG_DTB_COMPAT_CMDLINE_MANGLE
++	bool "Append rootblock parsing bootloader's kernel arguments"
++	help
++	  The command-line arguments provided by the boot loader will be
++	  appended to a new device tree property: bootloader-args.
++	  If there is a property "append-rootblock" in DT under /chosen 
++	  and a root= option in bootloaders command line it will be parsed 
++	  and added to DT bootargs with the form: <append-rootblock>XX.
++	  Only command line ATAG will be processed, the rest of the ATAGs
++	  sent by bootloader will be ignored.
++
+ endchoice
+ 
+ config CMDLINE_OVERRIDE
+Index: include/asm/assembler.h
+===================================================================
+--- include/asm/assembler.h	(revision 53158)
++++ include/asm/assembler.h	(working copy)
+@@ -402,6 +402,23 @@ ALT_UP_B(.L0_\@)
+ #endif
+ 	.endm
+ 
++/*
++ * Raw SMP data memory barrier
++ */
++	.macro	__smp_dmb mode
++#if __LINUX_ARM_ARCH__ >= 7
++	.ifeqs "\mode","arm"
++	dmb	ish
++	.else
++	W(dmb)	ish
++	.endif
++#elif __LINUX_ARM_ARCH__ == 6
++	mcr	p15, 0, r0, c7, c10, 5	@ dmb
++#else
++	.error "Incompatible SMP platform"
++#endif
++	.endm
++
+ #if defined(CONFIG_CPU_V7M)
+ 	/*
+ 	 * setmode is used to assert to be in svc mode during boot. For v7-M
+Index: include/asm/bugs.h
+===================================================================
+--- include/asm/bugs.h	(revision 53158)
++++ include/asm/bugs.h	(working copy)
+@@ -1,7 +1,5 @@
+ /* SPDX-License-Identifier: GPL-2.0-only */
+ /*
+- *  arch/arm/include/asm/bugs.h
+- *
+  *  Copyright (C) 1995-2003 Russell King
+  */
+ #ifndef __ASM_BUGS_H
+@@ -10,10 +8,8 @@
+ extern void check_writebuffer_bugs(void);
+ 
+ #ifdef CONFIG_MMU
+-extern void check_bugs(void);
+ extern void check_other_bugs(void);
+ #else
+-#define check_bugs() do { } while (0)
+ #define check_other_bugs() do { } while (0)
+ #endif
+ 
+Index: include/asm/sync_bitops.h
+===================================================================
+--- include/asm/sync_bitops.h	(revision 53158)
++++ include/asm/sync_bitops.h	(working copy)
+@@ -14,14 +14,35 @@
+  * ops which are SMP safe even on a UP kernel.
+  */
+ 
++/*
++ * Unordered
++ */
++
+ #define sync_set_bit(nr, p)		_set_bit(nr, p)
+ #define sync_clear_bit(nr, p)		_clear_bit(nr, p)
+ #define sync_change_bit(nr, p)		_change_bit(nr, p)
+-#define sync_test_and_set_bit(nr, p)	_test_and_set_bit(nr, p)
+-#define sync_test_and_clear_bit(nr, p)	_test_and_clear_bit(nr, p)
+-#define sync_test_and_change_bit(nr, p)	_test_and_change_bit(nr, p)
+ #define sync_test_bit(nr, addr)		test_bit(nr, addr)
+-#define arch_sync_cmpxchg		arch_cmpxchg
+ 
++/*
++ * Fully ordered
++ */
+ 
++int _sync_test_and_set_bit(int nr, volatile unsigned long * p);
++#define sync_test_and_set_bit(nr, p)	_sync_test_and_set_bit(nr, p)
++
++int _sync_test_and_clear_bit(int nr, volatile unsigned long * p);
++#define sync_test_and_clear_bit(nr, p)	_sync_test_and_clear_bit(nr, p)
++
++int _sync_test_and_change_bit(int nr, volatile unsigned long * p);
++#define sync_test_and_change_bit(nr, p)	_sync_test_and_change_bit(nr, p)
++
++#define arch_sync_cmpxchg(ptr, old, new)				\
++({									\
++	__typeof__(*(ptr)) __ret;					\
++	__smp_mb__before_atomic();					\
++	__ret = arch_cmpxchg_relaxed((ptr), (old), (new));		\
++	__smp_mb__after_atomic();					\
++	__ret;								\
++})
++
+ #endif
+Index: include/asm/syscall.h
+===================================================================
+--- include/asm/syscall.h	(revision 53158)
++++ include/asm/syscall.h	(working copy)
+@@ -25,6 +25,9 @@ static inline int syscall_get_nr(struct task_struc
+ 	if (IS_ENABLED(CONFIG_AEABI) && !IS_ENABLED(CONFIG_OABI_COMPAT))
+ 		return task_thread_info(task)->abi_syscall;
+ 
++	if (task_thread_info(task)->abi_syscall == -1)
++		return -1;
++
+ 	return task_thread_info(task)->abi_syscall & __NR_SYSCALL_MASK;
+ }
+ 
+Index: kernel/bugs.c
+===================================================================
+--- kernel/bugs.c	(revision 53158)
++++ kernel/bugs.c	(working copy)
+@@ -1,5 +1,6 @@
+ // SPDX-License-Identifier: GPL-2.0
+ #include <linux/init.h>
++#include <linux/cpu.h>
+ #include <asm/bugs.h>
+ #include <asm/proc-fns.h>
+ 
+@@ -11,7 +12,7 @@ void check_other_bugs(void)
+ #endif
+ }
+ 
+-void __init check_bugs(void)
++void __init arch_cpu_finalize_init(void)
+ {
+ 	check_writebuffer_bugs();
+ 	check_other_bugs();
+Index: kernel/entry-common.S
+===================================================================
+--- kernel/entry-common.S	(revision 53158)
++++ kernel/entry-common.S	(working copy)
+@@ -103,6 +103,7 @@ slow_work_pending:
+ 	cmp	r0, #0
+ 	beq	no_work_pending
+ 	movlt	scno, #(__NR_restart_syscall - __NR_SYSCALL_BASE)
++	str	scno, [tsk, #TI_ABI_SYSCALL]	@ make sure tracers see update
+ 	ldmia	sp, {r0 - r6}			@ have to reload r0 - r6
+ 	b	local_restart			@ ... and off we go
+ ENDPROC(ret_fast_syscall)
+Index: kernel/hw_breakpoint.c
+===================================================================
+--- kernel/hw_breakpoint.c	(revision 53158)
++++ kernel/hw_breakpoint.c	(working copy)
+@@ -626,7 +626,7 @@ int hw_breakpoint_arch_parse(struct perf_event *bp
+ 	hw->address &= ~alignment_mask;
+ 	hw->ctrl.len <<= offset;
+ 
+-	if (is_default_overflow_handler(bp)) {
++	if (uses_default_overflow_handler(bp)) {
+ 		/*
+ 		 * Mismatch breakpoints are required for single-stepping
+ 		 * breakpoints.
+@@ -798,7 +798,7 @@ static void watchpoint_handler(unsigned long addr,
+ 		 * Otherwise, insert a temporary mismatch breakpoint so that
+ 		 * we can single-step over the watchpoint trigger.
+ 		 */
+-		if (!is_default_overflow_handler(wp))
++		if (!uses_default_overflow_handler(wp))
+ 			continue;
+ step:
+ 		enable_single_step(wp, instruction_pointer(regs));
+@@ -811,7 +811,7 @@ step:
+ 		info->trigger = addr;
+ 		pr_debug("watchpoint fired: address = 0x%x\n", info->trigger);
+ 		perf_bp_event(wp, regs);
+-		if (is_default_overflow_handler(wp))
++		if (uses_default_overflow_handler(wp))
+ 			enable_single_step(wp, instruction_pointer(regs));
+ 	}
+ 
+@@ -886,7 +886,7 @@ static void breakpoint_handler(unsigned long unkno
+ 			info->trigger = addr;
+ 			pr_debug("breakpoint fired: address = 0x%x\n", addr);
+ 			perf_bp_event(bp, regs);
+-			if (is_default_overflow_handler(bp))
++			if (uses_default_overflow_handler(bp))
+ 				enable_single_step(bp, addr);
+ 			goto unlock;
+ 		}
+Index: kernel/machine_kexec.c
+===================================================================
+--- kernel/machine_kexec.c	(revision 53158)
++++ kernel/machine_kexec.c	(working copy)
+@@ -92,16 +92,28 @@ void machine_crash_nonpanic_core(void *unused)
+ 	}
+ }
+ 
++static DEFINE_PER_CPU(call_single_data_t, cpu_stop_csd) =
++	CSD_INIT(machine_crash_nonpanic_core, NULL);
++
+ void crash_smp_send_stop(void)
+ {
+ 	static int cpus_stopped;
+ 	unsigned long msecs;
++	call_single_data_t *csd;
++	int cpu, this_cpu = raw_smp_processor_id();
+ 
+ 	if (cpus_stopped)
+ 		return;
+ 
+ 	atomic_set(&waiting_for_crash_ipi, num_online_cpus() - 1);
+-	smp_call_function(machine_crash_nonpanic_core, NULL, false);
++	for_each_online_cpu(cpu) {
++		if (cpu == this_cpu)
++			continue;
++
++		csd = &per_cpu(cpu_stop_csd, cpu);
++		smp_call_function_single_async(cpu, csd);
++	}
++
+ 	msecs = 1000; /* Wait at most a second for the other cpus to stop */
+ 	while ((atomic_read(&waiting_for_crash_ipi) > 0) && msecs) {
+ 		mdelay(1);
+Index: kernel/module-plts.c
+===================================================================
+--- kernel/module-plts.c	(revision 53158)
++++ kernel/module-plts.c	(working copy)
+@@ -256,7 +256,7 @@ int module_frob_arch_sections(Elf_Ehdr *ehdr, Elf_
+ 		/* sort by type and symbol index */
+ 		sort(rels, numrels, sizeof(Elf32_Rel), cmp_rel, NULL);
+ 
+-		if (strncmp(secstrings + dstsec->sh_name, ".init", 5) != 0)
++		if (!module_init_layout_section(secstrings + dstsec->sh_name))
+ 			core_plts += count_plts(syms, dstsec->sh_addr, rels,
+ 						numrels, s->sh_info);
+ 		else
+Index: kernel/ptrace.c
+===================================================================
+--- kernel/ptrace.c	(revision 53158)
++++ kernel/ptrace.c	(working copy)
+@@ -785,8 +785,9 @@ long arch_ptrace(struct task_struct *child, long r
+ 			break;
+ 
+ 		case PTRACE_SET_SYSCALL:
+-			task_thread_info(child)->abi_syscall = data &
+-							__NR_SYSCALL_MASK;
++			if (data != -1)
++				data &= __NR_SYSCALL_MASK;
++			task_thread_info(child)->abi_syscall = data;
+ 			ret = 0;
+ 			break;
+ 
+Index: mach-mvebu/Kconfig
+===================================================================
+--- mach-mvebu/Kconfig	(revision 53158)
++++ mach-mvebu/Kconfig	(working copy)
+@@ -66,6 +66,7 @@ config MACH_ARMADA_38X
+ 	select HAVE_ARM_TWD if SMP
+ 	select MACH_MVEBU_V7
+ 	select PINCTRL_ARMADA_38X
++	select ARCH_WANT_LIBATA_LEDS
+ 	help
+ 	  Say 'Y' here if you want your kernel to support boards based
+ 	  on the Marvell Armada 380/385 SoC with device tree.
+Index: lib/bitops.h
+===================================================================
+--- lib/bitops.h	(revision 53158)
++++ lib/bitops.h	(working copy)
+@@ -28,7 +28,7 @@ UNWIND(	.fnend		)
+ ENDPROC(\name		)
+ 	.endm
+ 
+-	.macro	testop, name, instr, store
++	.macro	__testop, name, instr, store, barrier
+ ENTRY(	\name		)
+ UNWIND(	.fnstart	)
+ 	ands	ip, r1, #3
+@@ -38,7 +38,7 @@ UNWIND(	.fnstart	)
+ 	mov	r0, r0, lsr #5
+ 	add	r1, r1, r0, lsl #2	@ Get word offset
+ 	mov	r3, r2, lsl r3		@ create mask
+-	smp_dmb
++	\barrier
+ #if __LINUX_ARM_ARCH__ >= 7 && defined(CONFIG_SMP)
+ 	.arch_extension	mp
+ 	ALT_SMP(W(pldw)	[r1])
+@@ -50,7 +50,7 @@ UNWIND(	.fnstart	)
+ 	strex	ip, r2, [r1]
+ 	cmp	ip, #0
+ 	bne	1b
+-	smp_dmb
++	\barrier
+ 	cmp	r0, #0
+ 	movne	r0, #1
+ 2:	bx	lr
+@@ -57,6 +57,14 @@ UNWIND(	.fnstart	)
+ UNWIND(	.fnend		)
+ ENDPROC(\name		)
+ 	.endm
++
++	.macro	testop, name, instr, store
++	__testop \name, \instr, \store, smp_dmb
++	.endm
++
++	.macro	sync_testop, name, instr, store
++	__testop \name, \instr, \store, __smp_dmb
++	.endm
+ #else
+ 	.macro	bitop, name, instr
+ ENTRY(	\name		)
+Index: lib/testchangebit.S
+===================================================================
+--- lib/testchangebit.S	(revision 53158)
++++ lib/testchangebit.S	(working copy)
+@@ -10,3 +10,7 @@
+                 .text
+ 
+ testop	_test_and_change_bit, eor, str
++
++#if __LINUX_ARM_ARCH__ >= 6
++sync_testop	_sync_test_and_change_bit, eor, str
++#endif
+Index: lib/testclearbit.S
+===================================================================
+--- lib/testclearbit.S	(revision 53158)
++++ lib/testclearbit.S	(working copy)
+@@ -10,3 +10,7 @@
+                 .text
+ 
+ testop	_test_and_clear_bit, bicne, strne
++
++#if __LINUX_ARM_ARCH__ >= 6
++sync_testop	_sync_test_and_clear_bit, bicne, strne
++#endif
+Index: lib/testsetbit.S
+===================================================================
+--- lib/testsetbit.S	(revision 53158)
++++ lib/testsetbit.S	(working copy)
+@@ -10,3 +10,7 @@
+                 .text
+ 
+ testop	_test_and_set_bit, orreq, streq
++
++#if __LINUX_ARM_ARCH__ >= 6
++sync_testop	_sync_test_and_set_bit, orreq, streq
++#endif
+Index: mach-ep93xx/timer-ep93xx.c
+===================================================================
+--- mach-ep93xx/timer-ep93xx.c	(revision 53158)
++++ mach-ep93xx/timer-ep93xx.c	(working copy)
+@@ -9,6 +9,7 @@
+ #include <linux/io.h>
+ #include <asm/mach/time.h>
+ #include "soc.h"
++#include "platform.h"
+ 
+ /*************************************************************************
+  * Timer handling for EP93xx
+@@ -60,7 +61,7 @@ static u64 notrace ep93xx_read_sched_clock(void)
+ 	return ret;
+ }
+ 
+-u64 ep93xx_clocksource_read(struct clocksource *c)
++static u64 ep93xx_clocksource_read(struct clocksource *c)
+ {
+ 	u64 ret;
+ 
+Index: mach-omap2/board-generic.c
+===================================================================
+--- mach-omap2/board-generic.c	(revision 53158)
++++ mach-omap2/board-generic.c	(working copy)
+@@ -13,6 +13,7 @@
+ #include <linux/of_platform.h>
+ #include <linux/irqdomain.h>
+ #include <linux/clocksource.h>
++#include <linux/clockchips.h>
+ 
+ #include <asm/setup.h>
+ #include <asm/mach/arch.h>
+Index: mach-omap2/powerdomain.c
+===================================================================
+--- mach-omap2/powerdomain.c	(revision 53158)
++++ mach-omap2/powerdomain.c	(working copy)
+@@ -174,7 +174,7 @@ static int _pwrdm_state_switch(struct powerdomain
+ 		break;
+ 	case PWRDM_STATE_PREV:
+ 		prev = pwrdm_read_prev_pwrst(pwrdm);
+-		if (pwrdm->state != prev)
++		if (prev >= 0 && pwrdm->state != prev)
+ 			pwrdm->state_counter[prev]++;
+ 		if (prev == PWRDM_POWER_RET)
+ 			_update_logic_membank_counters(pwrdm);
+Index: mach-orion5x/board-dt.c
+===================================================================
+--- mach-orion5x/board-dt.c	(revision 53158)
++++ mach-orion5x/board-dt.c	(working copy)
+@@ -60,6 +60,9 @@ static void __init orion5x_dt_init(void)
+ 	if (of_machine_is_compatible("maxtor,shared-storage-2"))
+ 		mss2_init();
+ 
++	if (of_machine_is_compatible("lacie,d2-network"))
++		d2net_init();
++
+ 	of_platform_default_populate(NULL, orion5x_auxdata_lookup, NULL);
+ }
+ 
+Index: mach-orion5x/common.h
+===================================================================
+--- mach-orion5x/common.h	(revision 53158)
++++ mach-orion5x/common.h	(working copy)
+@@ -75,6 +75,12 @@ extern void mss2_init(void);
+ static inline void mss2_init(void) {}
+ #endif
+ 
++#ifdef CONFIG_MACH_D2NET_DT
++void d2net_init(void);
++#else
++static inline void d2net_init(void) {}
++#endif
++
+ /*****************************************************************************
+  * Helpers to access Orion registers
+  ****************************************************************************/
+Index: mach-pxa/sharpsl_pm.c
+===================================================================
+--- mach-pxa/sharpsl_pm.c	(revision 53158)
++++ mach-pxa/sharpsl_pm.c	(working copy)
+@@ -220,9 +220,7 @@ void sharpsl_battery_kick(void)
+ {
+ 	schedule_delayed_work(&sharpsl_bat, msecs_to_jiffies(125));
+ }
+-EXPORT_SYMBOL(sharpsl_battery_kick);
+ 
+-
+ static void sharpsl_battery_thread(struct work_struct *private_)
+ {
+ 	int voltage, percent, apm_status, i;
+Index: mach-pxa/spitz.c
+===================================================================
+--- mach-pxa/spitz.c	(revision 53158)
++++ mach-pxa/spitz.c	(working copy)
+@@ -9,7 +9,6 @@
+  */
+ 
+ #include <linux/kernel.h>
+-#include <linux/module.h>	/* symbol_get ; symbol_put */
+ #include <linux/platform_device.h>
+ #include <linux/delay.h>
+ #include <linux/gpio_keys.h>
+@@ -510,17 +509,6 @@ static struct ads7846_platform_data spitz_ads7846_
+ 	.wait_for_sync		= spitz_ads7846_wait_for_hsync,
+ };
+ 
+-static void spitz_bl_kick_battery(void)
+-{
+-	void (*kick_batt)(void);
+-
+-	kick_batt = symbol_get(sharpsl_battery_kick);
+-	if (kick_batt) {
+-		kick_batt();
+-		symbol_put(sharpsl_battery_kick);
+-	}
+-}
+-
+ static struct gpiod_lookup_table spitz_lcdcon_gpio_table = {
+ 	.dev_id = "spi2.1",
+ 	.table = {
+@@ -548,7 +536,7 @@ static struct corgi_lcd_platform_data spitz_lcdcon
+ 	.max_intensity		= 0x2f,
+ 	.default_intensity	= 0x1f,
+ 	.limit_mask		= 0x0b,
+-	.kick_battery		= spitz_bl_kick_battery,
++	.kick_battery		= sharpsl_battery_kick,
+ };
+ 
+ static struct spi_board_info spitz_spi_devices[] = {
+Index: probes/kprobes/checkers-common.c
+===================================================================
+--- probes/kprobes/checkers-common.c	(revision 53158)
++++ probes/kprobes/checkers-common.c	(working copy)
+@@ -40,7 +40,7 @@ enum probes_insn checker_stack_use_imm_0xx(probes_
+  * Different from other insn uses imm8, the real addressing offset of
+  * STRD in T32 encoding should be imm8 * 4. See ARMARM description.
+  */
+-enum probes_insn checker_stack_use_t32strd(probes_opcode_t insn,
++static enum probes_insn checker_stack_use_t32strd(probes_opcode_t insn,
+ 		struct arch_probes_insn *asi,
+ 		const struct decode_header *h)
+ {
+Index: probes/kprobes/core.c
+===================================================================
+--- probes/kprobes/core.c	(revision 53158)
++++ probes/kprobes/core.c	(working copy)
+@@ -233,7 +233,7 @@ singlestep(struct kprobe *p, struct pt_regs *regs,
+  * kprobe, and that level is reserved for user kprobe handlers, so we can't
+  * risk encountering a new kprobe in an interrupt handler.
+  */
+-void __kprobes kprobe_handler(struct pt_regs *regs)
++static void __kprobes kprobe_handler(struct pt_regs *regs)
+ {
+ 	struct kprobe *p, *cur;
+ 	struct kprobe_ctlblk *kcb;
+Index: probes/kprobes/opt-arm.c
+===================================================================
+--- probes/kprobes/opt-arm.c	(revision 53158)
++++ probes/kprobes/opt-arm.c	(working copy)
+@@ -145,8 +145,6 @@ __arch_remove_optimized_kprobe(struct optimized_kp
+ 	}
+ }
+ 
+-extern void kprobe_handler(struct pt_regs *regs);
+-
+ static void
+ optimized_callback(struct optimized_kprobe *op, struct pt_regs *regs)
+ {
+Index: probes/kprobes/test-core.c
+===================================================================
+--- probes/kprobes/test-core.c	(revision 53158)
++++ probes/kprobes/test-core.c	(working copy)
+@@ -720,7 +720,7 @@ static const char coverage_register_lookup[16] = {
+ 	[REG_TYPE_NOSPPCX]	= COVERAGE_ANY_REG | COVERAGE_SP,
+ };
+ 
+-unsigned coverage_start_registers(const struct decode_header *h)
++static unsigned coverage_start_registers(const struct decode_header *h)
+ {
+ 	unsigned regs = 0;
+ 	int i;
+Index: probes/kprobes/test-core.h
+===================================================================
+--- probes/kprobes/test-core.h	(revision 53158)
++++ probes/kprobes/test-core.h	(working copy)
+@@ -454,3 +454,7 @@ void kprobe_thumb32_test_cases(void);
+ #else
+ void kprobe_arm_test_cases(void);
+ #endif
++
++void __kprobes_test_case_start(void);
++void __kprobes_test_case_end_16(void);
++void __kprobes_test_case_end_32(void);

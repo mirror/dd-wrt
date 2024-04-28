@@ -1,0 +1,166 @@
+From 0ed4cd182df090630bedd1cd3833c21956253c16 Mon Sep 17 00:00:00 2001
+From: Kishan Kunduru <kkunduru@chromium.org>
+Date: Fri, 02 Sep 2016 11:16:47 -0700
+Subject: [PATCH] CHROMIUM: drivers: sfe: Add flag to enable/disable acceleration
+
+sfe_stopped flag adds control to disable/enable SFE acceleration.
+The flag can be controlled using sysfs (/sys/sfe_cm/stop).
+
+BUG=chrome-os-partner:56410
+TEST=Ran throughput tests with wired clients on Gale and verified
+the flags.
+
+Change-Id: Ie8f4256daf3617b8c272c6db34a1c4b6fe6cf97e
+Signed-off-by: Kishan Kunduru <kkunduru@chromium.org>
+Reviewed-on: https://chromium-review.googlesource.com/380430
+Reviewed-by: Dmitry Torokhov <dtor@chromium.org>
+Reviewed-by: Kevin Hayes <kevinhayes@google.com>
+Reviewed-by: Grant Grundler <grundler@chromium.org>
+---
+
+diff --git a/drivers/net/ethernet/qualcomm/sfe/shortcut-fe/sfe_cm.c b/drivers/net/ethernet/qualcomm/sfe/shortcut-fe/sfe_cm.c
+index 99068f7..f22d385 100644
+--- a/drivers/net/ethernet/qualcomm/sfe/shortcut-fe/sfe_cm.c
++++ b/drivers/net/ethernet/qualcomm/sfe/shortcut-fe/sfe_cm.c
+@@ -101,6 +101,7 @@
+ 
+ static struct sfe_cm __sc;
+ 
++
+ /*
+  * sfe_cm_incr_exceptions()
+  *	increase an exception counter.
+@@ -913,10 +914,79 @@
+ }
+ 
+ /*
++ * sfe_cm_get_stop
++ * 	dump stop
++ */
++static ssize_t sfe_cm_get_stop(struct device *dev,
++                               struct device_attribute *attr,
++                               char *buf)
++{
++	int (*fast_recv)(struct sk_buff *skb);
++	rcu_read_lock();
++	fast_recv = rcu_dereference(fast_nat_recv);
++	rcu_read_unlock();
++	return snprintf(buf, (ssize_t)PAGE_SIZE, "%d\n", fast_recv ? 0 : 1);
++}
++
++static ssize_t sfe_cm_set_stop(struct device *dev,
++                               struct device_attribute *attr,
++                               const char *buf, size_t count)
++{
++	int ret;
++	u32 num;
++	int (*fast_recv)(struct sk_buff *skb);
++
++	ret = kstrtou32(buf, 0, &num);
++	if (ret)
++		return ret;
++
++	/*
++	 * Hook/Unhook the receive path in the network stack.
++	 */
++	if (num) {
++		RCU_INIT_POINTER(fast_nat_recv, NULL);
++	} else {
++		rcu_read_lock();
++		fast_recv = rcu_dereference(fast_nat_recv);
++		rcu_read_unlock();
++		if (!fast_recv) {
++			BUG_ON(fast_nat_recv);
++			RCU_INIT_POINTER(fast_nat_recv, sfe_cm_recv);
++		}
++	}
++
++	DEBUG_TRACE("sfe_cm_stop = %d\n", num);
++	return count;
++}
++
++/*
++ * sfe_cm_get_defunct_all
++ * 	dump state of SFE
++ */
++static ssize_t sfe_cm_get_defunct_all(struct device *dev,
++                                      struct device_attribute *attr,
++                                      char *buf)
++{
++	return snprintf(buf, (ssize_t)PAGE_SIZE, "%d\n", 0);
++}
++
++static ssize_t sfe_cm_set_defunct_all(struct device *dev,
++                                      struct device_attribute *attr,
++                                      const char *buf, size_t count)
++{
++	sfe_ipv4_destroy_all_rules_for_dev(NULL);
++	sfe_ipv6_destroy_all_rules_for_dev(NULL);
++	return count;
++}
++
++/*
+  * sysfs attributes.
+  */
+-static const struct device_attribute sfe_cm_exceptions_attr =
+-	__ATTR(exceptions, S_IRUGO, sfe_cm_get_exceptions, NULL);
++static const struct device_attribute sfe_attrs[] = {
++	__ATTR(exceptions, S_IRUGO, sfe_cm_get_exceptions, NULL),
++	__ATTR(stop, S_IWUSR | S_IRUGO, sfe_cm_get_stop, sfe_cm_set_stop),
++	__ATTR(defunct_all, S_IWUSR | S_IRUGO, sfe_cm_get_defunct_all, sfe_cm_set_defunct_all),
++};
+ 
+ /*
+  * sfe_cm_init()
+@@ -925,6 +995,7 @@
+ {
+ 	struct sfe_cm *sc = &__sc;
+ 	int result = -1;
++	size_t i, j;
+ 
+ 	DEBUG_INFO("SFE CM init\n");
+ 
+@@ -937,13 +1008,13 @@
+ 		goto exit1;
+ 	}
+ 
+-	/*
+-	 * Create sys/sfe_cm/exceptions
+-	 */
+-	result = sysfs_create_file(sc->sys_sfe_cm, &sfe_cm_exceptions_attr.attr);
+-	if (result) {
+-		DEBUG_ERROR("failed to register exceptions file: %d\n", result);
+-		goto exit2;
++	for (i = 0; i < ARRAY_SIZE(sfe_attrs); i++) {
++		result = sysfs_create_file(sc->sys_sfe_cm, &sfe_attrs[i].attr);
++		if (result) {
++			DEBUG_ERROR("failed to register %s : %d\n",
++				    sfe_attrs[i].attr.name, result);
++			goto exit2;
++		}
+ 	}
+ 
+ 	sc->dev_notifier.notifier_call = sfe_cm_device_event;
+@@ -980,12 +1051,6 @@
+ 	spin_lock_init(&sc->lock);
+ 
+ 	/*
+-	 * Hook the receive path in the network stack.
+-	 */
+-	BUG_ON(fast_nat_recv);
+-	RCU_INIT_POINTER(fast_nat_recv, sfe_cm_recv);
+-
+-	/*
+ 	 * Hook the shortcut sync callback.
+ 	 */
+ 	sfe_ipv4_register_sync_rule_callback(sfe_cm_sync_rule);
+@@ -1001,6 +1066,9 @@
+ 	unregister_inetaddr_notifier(&sc->inet_notifier);
+ 	unregister_netdevice_notifier(&sc->dev_notifier);
+ exit2:
++	for (j = 0; j < i; j++) {
++		sysfs_remove_file(sc->sys_sfe_cm, &sfe_attrs[j].attr);
++	}
+ 	kobject_put(sc->sys_sfe_cm);
+ 
+ exit1:

@@ -1,0 +1,1221 @@
+--- a/include/net/sch_generic.h
++++ b/include/net/sch_generic.h
+@@ -80,6 +80,7 @@ struct Qdisc {
+ #define TCQ_F_INVISIBLE		0x80 /* invisible by default in dump */
+ #define TCQ_F_NOLOCK		0x100 /* qdisc does not require locking */
+ #define TCQ_F_OFFLOADED		0x200 /* qdisc is offloaded to HW */
++#define TCQ_F_NSS		0x1000 /* NSS qdisc flag. */
+ 	u32			limit;
+ 	const struct Qdisc_ops	*ops;
+ 	struct qdisc_size_table	__rcu *stab;
+@@ -1332,4 +1333,9 @@ static inline int skb_tc_reinsert(struct
+ 	return res->ingress ? netif_receive_skb(skb) : dev_queue_xmit(skb);
+ }
+ 
++/* QCA NSS Qdisc Support - Start */
++void qdisc_destroy(struct Qdisc *qdisc);
++void tcf_destroy_chain(struct tcf_proto __rcu **fl);
++/* QCA NSS Qdisc Support - End */
++
+ #endif
+--- a/include/uapi/linux/pkt_sched.h
++++ b/include/uapi/linux/pkt_sched.h
+@@ -1264,4 +1264,248 @@ enum {
+ 
+ #define TCA_ETS_MAX (__TCA_ETS_MAX - 1)
+ 
++/* QCA NSS Clients Support - Start */
++enum {
++	TCA_NSS_ACCEL_MODE_NSS_FW,
++	TCA_NSS_ACCEL_MODE_PPE,
++	TCA_NSS_ACCEL_MODE_MAX
++};
++
++/* NSSFIFO section */
++
++enum {
++	TCA_NSSFIFO_UNSPEC,
++	TCA_NSSFIFO_PARMS,
++	__TCA_NSSFIFO_MAX
++};
++
++#define TCA_NSSFIFO_MAX	(__TCA_NSSFIFO_MAX - 1)
++
++struct tc_nssfifo_qopt {
++	__u32	limit;		/* Queue length: bytes for bfifo, packets for pfifo */
++	__u8	set_default;	/* Sets qdisc to be the default qdisc for enqueue */
++	__u8	accel_mode;	/* Dictates which data plane offloads the qdisc */
++};
++
++/* NSSWRED section */
++
++enum {
++	TCA_NSSWRED_UNSPEC,
++	TCA_NSSWRED_PARMS,
++	__TCA_NSSWRED_MAX
++};
++
++#define TCA_NSSWRED_MAX (__TCA_NSSWRED_MAX - 1)
++#define NSSWRED_CLASS_MAX 6
++struct tc_red_alg_parameter {
++	__u32	min;	/* qlen_avg < min: pkts are all enqueued */
++	__u32	max;	/* qlen_avg > max: pkts are all dropped */
++	__u32	probability;/* Drop probability at qlen_avg = max */
++	__u32	exp_weight_factor;/* exp_weight_factor for calculate qlen_avg */
++};
++
++struct tc_nsswred_traffic_class {
++	__u32 limit;			/* Queue length */
++	__u32 weight_mode_value;	/* Weight mode value */
++	struct tc_red_alg_parameter rap;/* Parameters for RED alg */
++};
++
++/*
++ * Weight modes for WRED
++ */
++enum tc_nsswred_weight_modes {
++	TC_NSSWRED_WEIGHT_MODE_DSCP = 0,/* Weight mode is DSCP */
++	TC_NSSWRED_WEIGHT_MODES,	/* Must be last */
++};
++
++struct tc_nsswred_qopt {
++	__u32	limit;			/* Queue length */
++	enum tc_nsswred_weight_modes weight_mode;
++					/* Weight mode */
++	__u32	traffic_classes;	/* How many traffic classes: DPs */
++	__u32	def_traffic_class;	/* Default traffic if no match: def_DP */
++	__u32	traffic_id;		/* The traffic id to be configured: DP */
++	__u32	weight_mode_value;	/* Weight mode value */
++	struct tc_red_alg_parameter rap;/* RED algorithm parameters */
++	struct tc_nsswred_traffic_class tntc[NSSWRED_CLASS_MAX];
++					/* Traffic settings for dumpping */
++	__u8	ecn;			/* Setting ECN bit or dropping */
++	__u8	set_default;		/* Sets qdisc to be the default for enqueue */
++	__u8	accel_mode;		/* Dictates which data plane offloads the qdisc */
++};
++
++/* NSSCODEL section */
++
++enum {
++	TCA_NSSCODEL_UNSPEC,
++	TCA_NSSCODEL_PARMS,
++	__TCA_NSSCODEL_MAX
++};
++
++#define TCA_NSSCODEL_MAX	(__TCA_NSSCODEL_MAX - 1)
++
++struct tc_nsscodel_qopt {
++	__u32	target;		/* Acceptable queueing delay */
++	__u32	limit;		/* Max number of packets that can be held in the queue */
++	__u32	interval;	/* Monitoring interval */
++	__u32	flows;		/* Number of flow buckets */
++	__u32	quantum;	/* Weight (in bytes) used for DRR of flow buckets */
++	__u8	ecn;		/* 0 - disable ECN, 1 - enable ECN */
++	__u8	set_default;	/* Sets qdisc to be the default qdisc for enqueue */
++	__u8	accel_mode;	/* Dictates which data plane offloads the qdisc */
++};
++
++struct tc_nsscodel_xstats {
++	__u32 peak_queue_delay;	/* Peak delay experienced by a dequeued packet */
++	__u32 peak_drop_delay;	/* Peak delay experienced by a dropped packet */
++};
++
++/* NSSFQ_CODEL section */
++
++struct tc_nssfq_codel_xstats {
++	__u32 new_flow_count;	/* Total number of new flows seen */
++	__u32 new_flows_len;	/* Current number of new flows */
++	__u32 old_flows_len;	/* Current number of old flows */
++	__u32 ecn_mark;		/* Number of packets marked with ECN */
++	__u32 drop_overlimit;	/* Number of packets dropped due to overlimit */
++	__u32 maxpacket;	/* The largest packet seen so far in the queue */
++};
++
++/* NSSTBL section */
++
++enum {
++	TCA_NSSTBL_UNSPEC,
++	TCA_NSSTBL_PARMS,
++	__TCA_NSSTBL_MAX
++};
++
++#define TCA_NSSTBL_MAX	(__TCA_NSSTBL_MAX - 1)
++
++struct tc_nsstbl_qopt {
++	__u32	burst;		/* Maximum burst size */
++	__u32	rate;		/* Limiting rate of TBF */
++	__u32	peakrate;	/* Maximum rate at which TBF is allowed to send */
++	__u32	mtu;		/* Max size of packet, or minumim burst size */
++	__u8	accel_mode;	/* Dictates which data plane offloads the qdisc */
++};
++
++/* NSSPRIO section */
++
++#define TCA_NSSPRIO_MAX_BANDS 256
++
++enum {
++	TCA_NSSPRIO_UNSPEC,
++	TCA_NSSPRIO_PARMS,
++	__TCA_NSSPRIO_MAX
++};
++
++#define TCA_NSSPRIO_MAX	(__TCA_NSSPRIO_MAX - 1)
++
++struct tc_nssprio_qopt {
++	__u32	bands;		/* Number of bands */
++	__u8	accel_mode;	/* Dictates which data plane offloads the qdisc */
++};
++
++/* NSSBF section */
++
++enum {
++	TCA_NSSBF_UNSPEC,
++	TCA_NSSBF_CLASS_PARMS,
++	TCA_NSSBF_QDISC_PARMS,
++	__TCA_NSSBF_MAX
++};
++
++#define TCA_NSSBF_MAX	(__TCA_NSSBF_MAX - 1)
++
++struct tc_nssbf_class_qopt {
++	__u32	burst;		/* Maximum burst size */
++	__u32	rate;		/* Allowed bandwidth for this class */
++	__u32	mtu;		/* MTU of the associated interface */
++	__u32	quantum;	/* Quantum allocation for DRR */
++};
++
++struct tc_nssbf_qopt {
++	__u16	defcls;		/* Default class value */
++	__u8	accel_mode;	/* Dictates which data plane offloads the qdisc */
++};
++
++/* NSSWRR section */
++
++enum {
++	TCA_NSSWRR_UNSPEC,
++	TCA_NSSWRR_CLASS_PARMS,
++	TCA_NSSWRR_QDISC_PARMS,
++	__TCA_NSSWRR_MAX
++};
++
++#define TCA_NSSWRR_MAX	(__TCA_NSSWRR_MAX - 1)
++
++struct tc_nsswrr_class_qopt {
++	__u32	quantum;	/* Weight associated to this class */
++};
++
++struct tc_nsswrr_qopt {
++	__u8	accel_mode;	/* Dictates which data plane offloads the qdisc */
++};
++
++/* NSSWFQ section */
++
++enum {
++	TCA_NSSWFQ_UNSPEC,
++	TCA_NSSWFQ_CLASS_PARMS,
++	TCA_NSSWFQ_QDISC_PARMS,
++	__TCA_NSSWFQ_MAX
++};
++
++#define TCA_NSSWFQ_MAX	(__TCA_NSSWFQ_MAX - 1)
++
++struct tc_nsswfq_class_qopt {
++	__u32	quantum;	/* Weight associated to this class */
++};
++
++struct tc_nsswfq_qopt {
++	__u8	accel_mode;	/* Dictates which data plane offloads the qdisc */
++};
++
++/* NSSHTB section */
++
++enum {
++	TCA_NSSHTB_UNSPEC,
++	TCA_NSSHTB_CLASS_PARMS,
++	TCA_NSSHTB_QDISC_PARMS,
++	__TCA_NSSHTB_MAX
++};
++
++#define TCA_NSSHTB_MAX	(__TCA_NSSHTB_MAX - 1)
++
++struct tc_nsshtb_class_qopt {
++	__u32	burst;		/* Allowed burst size */
++	__u32	rate;		/* Allowed bandwidth for this class */
++	__u32	cburst;		/* Maximum burst size */
++	__u32	crate;		/* Maximum bandwidth for this class */
++	__u32	quantum;	/* Quantum allocation for DRR */
++	__u32	priority;	/* Priority value associated with this class */
++	__u32	overhead;	/* Overhead in bytes per packet */
++};
++
++struct tc_nsshtb_qopt {
++	__u32	r2q;		/* Rate to quantum ratio */
++	__u8	accel_mode;	/* Dictates which data plane offloads the qdisc */
++};
++
++/* NSSBLACKHOLE section */
++
++enum {
++	TCA_NSSBLACKHOLE_UNSPEC,
++	TCA_NSSBLACKHOLE_PARMS,
++	__TCA_NSSBLACKHOLE_MAX
++};
++
++#define TCA_NSSBLACKHOLE_MAX	(__TCA_NSSBLACKHOLE_MAX - 1)
++
++struct tc_nssblackhole_qopt {
++	__u8	set_default;	/* Sets qdisc to be the default qdisc for enqueue */
++	__u8	accel_mode;	/* Dictates which data plane offloads the qdisc */
++};
++/* QCA NSS Clients Support - End */
+ #endif
+--- a/net/sched/sch_api.c
++++ b/net/sched/sch_api.c
+@@ -2307,4 +2307,26 @@ static int __init pktsched_init(void)
+ 	return 0;
+ }
+ 
++/* QCA NSS Qdisc Support - Start */
++bool tcf_destroy(struct tcf_proto *tp, bool force)
++{
++	tp->ops->destroy(tp, force, NULL);
++	module_put(tp->ops->owner);
++	kfree_rcu(tp, rcu);
++
++	return true;
++}
++
++void tcf_destroy_chain(struct tcf_proto __rcu **fl)
++{
++	struct tcf_proto *tp;
++
++	while ((tp = rtnl_dereference(*fl)) != NULL) {
++		RCU_INIT_POINTER(*fl, tp->next);
++		tcf_destroy(tp, true);
++	}
++}
++EXPORT_SYMBOL(tcf_destroy_chain);
++/* QCA NSS Qdisc Support - End */
++
+ subsys_initcall(pktsched_init);
+--- a/net/sched/sch_generic.c
++++ b/net/sched/sch_generic.c
+@@ -982,7 +982,7 @@ static void qdisc_free_cb(struct rcu_hea
+ 	qdisc_free(q);
+ }
+ 
+-static void qdisc_destroy(struct Qdisc *qdisc)
++void qdisc_destroy(struct Qdisc *qdisc)
+ {
+ 	const struct Qdisc_ops  *ops = qdisc->ops;
+ 
+@@ -1005,6 +1005,7 @@ static void qdisc_destroy(struct Qdisc *
+ 
+ 	call_rcu(&qdisc->rcu, qdisc_free_cb);
+ }
++EXPORT_SYMBOL(qdisc_destroy);
+ 
+ void qdisc_put(struct Qdisc *qdisc)
+ {
+--- a/net/l2tp/l2tp_core.c
++++ b/net/l2tp/l2tp_core.c
+@@ -400,6 +400,31 @@ err_tlock:
+ }
+ EXPORT_SYMBOL_GPL(l2tp_session_register);
+ 
++void l2tp_stats_update(struct l2tp_tunnel *tunnel,
++                       struct l2tp_session *session,
++                       struct l2tp_stats *stats)
++{
++        atomic_long_add(atomic_long_read(&stats->rx_packets),
++                        &tunnel->stats.rx_packets);
++        atomic_long_add(atomic_long_read(&stats->rx_bytes),
++                        &tunnel->stats.rx_bytes);
++        atomic_long_add(atomic_long_read(&stats->tx_packets),
++                        &tunnel->stats.tx_packets);
++        atomic_long_add(atomic_long_read(&stats->tx_bytes),
++                        &tunnel->stats.tx_bytes);
++
++        atomic_long_add(atomic_long_read(&stats->rx_packets),
++                        &session->stats.rx_packets);
++        atomic_long_add(atomic_long_read(&stats->rx_bytes),
++                        &session->stats.rx_bytes);
++        atomic_long_add(atomic_long_read(&stats->tx_packets),
++                        &session->stats.tx_packets);
++        atomic_long_add(atomic_long_read(&stats->tx_bytes),
++                        &session->stats.tx_bytes);
++}
++EXPORT_SYMBOL_GPL(l2tp_stats_update);
++
++
+ /*****************************************************************************
+  * Receive data handling
+  *****************************************************************************/
+--- a/net/l2tp/l2tp_core.h
++++ b/net/l2tp/l2tp_core.h
+@@ -232,6 +232,9 @@ struct l2tp_session *l2tp_session_get_nt
+ struct l2tp_session *l2tp_session_get_by_ifname(const struct net *net,
+ 						const char *ifname);
+ 
++void l2tp_stats_update(struct l2tp_tunnel *tunnel, struct l2tp_session *session,
++                       struct l2tp_stats *stats);
++
+ /* Tunnel and session lifetime management.
+  * Creation of a new instance is a two-step process: create, then register.
+  * Destruction is triggered using the *_delete functions, and completes asynchronously.
+--- a/include/linux/netdevice.h
++++ b/include/linux/netdevice.h
+@@ -982,6 +982,20 @@ struct dev_ifalias {
+ struct devlink;
+ struct tlsdev_ops;
+ 
++struct flow_offload;
++struct flow_offload_hw_path;
++
++enum flow_offload_type {
++        FLOW_OFFLOAD_ADD        = 0,
++        FLOW_OFFLOAD_DEL,
++};
++
++enum nss_flow_offload_type {
++        NF_FLOW_OFFLOAD_UNSPEC = 0,
++        NF_FLOW_OFFLOAD_ROUTE,
++};
++
++
+ struct netdev_name_node {
+ 	struct hlist_node hlist;
+ 	struct list_head list;
+@@ -1498,6 +1512,12 @@ struct net_device_ops {
+ 	int			(*ndo_bridge_dellink)(struct net_device *dev,
+ 						      struct nlmsghdr *nlh,
+ 						      u16 flags);
++	int                     (*ndo_flow_offload_check)(struct flow_offload_hw_path *path);
++        int                     (*ndo_flow_offload)(enum nss_flow_offload_type type,
++                                                    struct flow_offload *flow,
++                                                    struct flow_offload_hw_path *src,
++                                                    struct flow_offload_hw_path *dest);
++
+ 	int			(*ndo_change_carrier)(struct net_device *dev,
+ 						      bool new_carrier);
+ 	int			(*ndo_get_phys_port_id)(struct net_device *dev,
+--- a/include/linux/netfilter/nf_conntrack_proto_gre.h
++++ b/include/linux/netfilter/nf_conntrack_proto_gre.h
+@@ -31,4 +31,36 @@ void nf_ct_gre_keymap_destroy(struct nf_
+ 
+ bool gre_pkt_to_tuple(const struct sk_buff *skb, unsigned int dataoff,
+ 		      struct net *net, struct nf_conntrack_tuple *tuple);
++
++/* QCA NSS ECM Support - Start */
++/* GRE is a mess: Four different standards */
++struct gre_hdr {
++#if defined(__LITTLE_ENDIAN_BITFIELD)
++        __u16   rec:3,
++                srr:1,
++                seq:1,
++                key:1,
++                routing:1,
++                csum:1,
++                version:3,
++                reserved:4,
++                ack:1;
++#elif defined(__BIG_ENDIAN_BITFIELD)
++        __u16   csum:1,
++                routing:1,
++                key:1,
++                seq:1,
++                srr:1,
++                rec:3,
++                ack:1,
++                reserved:4,
++                version:3;
++#else
++#error "Adjust your <asm/byteorder.h> defines"
++#endif
++        __be16  protocol;
++};
++/* QCA NSS ECM Support - End */
++
++
+ #endif /* _CONNTRACK_PROTO_GRE_H */
+--- a/net/ipv4/ip_gre.c
++++ b/net/ipv4/ip_gre.c
+@@ -1325,6 +1325,7 @@ static void ipgre_tap_setup(struct net_d
+ 	dev->netdev_ops	= &gre_tap_netdev_ops;
+ 	dev->priv_flags &= ~IFF_TX_SKB_SHARING;
+ 	dev->priv_flags	|= IFF_LIVE_ADDR_CHANGE;
++	dev->priv_flags_qca_ecm |= IFF_QCA_ECM_GRE_V4_TAP; /* QCA NSS ECM Support */
+ 	ip_tunnel_setup(dev, gre_tap_net_id);
+ }
+ 
+--- a/net/ipv6/ip6_gre.c
++++ b/net/ipv6/ip6_gre.c
+@@ -1921,6 +1921,7 @@ static void ip6gre_tap_setup(struct net_
+ 
+ 	dev->priv_flags &= ~IFF_TX_SKB_SHARING;
+ 	dev->priv_flags |= IFF_LIVE_ADDR_CHANGE;
++	dev->priv_flags_qca_ecm |= IFF_QCA_ECM_GRE_V6_TAP; /* QCA NSS ECM Support */
+ 	netif_keep_dst(dev);
+ }
+ 
+--- a/include/net/netfilter/nf_flow_table.h
++++ b/include/net/netfilter/nf_flow_table.h
+@@ -157,10 +157,14 @@ enum nf_flow_flags {
+ 	NF_FLOW_HW_PENDING,
+ };
+ 
+-enum flow_offload_type {
+-	NF_FLOW_OFFLOAD_UNSPEC	= 0,
+-	NF_FLOW_OFFLOAD_ROUTE,
+-};
++
++#define FLOW_OFFLOAD_SNAT       0x1
++#define FLOW_OFFLOAD_DNAT       0x2
++#define FLOW_OFFLOAD_DYING      0x4
++#define FLOW_OFFLOAD_TEARDOWN   0x8
++#define FLOW_OFFLOAD_HW         0x10
++#define FLOW_OFFLOAD_KEEP       0x20
++
+ 
+ struct flow_offload {
+ 	struct flow_offload_tuple_rhash		tuplehash[FLOW_OFFLOAD_DIR_MAX];
+@@ -171,6 +175,25 @@ struct flow_offload {
+ 	struct rcu_head				rcu_head;
+ };
+ 
++
++#define FLOW_OFFLOAD_PATH_ETHERNET      BIT(0)
++#define FLOW_OFFLOAD_PATH_VLAN          BIT(1)
++#define FLOW_OFFLOAD_PATH_PPPOE         BIT(2)
++#define FLOW_OFFLOAD_PATH_DSA           BIT(3)
++
++struct flow_offload_hw_path {
++        struct net_device *dev;
++        u32 flags;
++
++        u8 eth_src[ETH_ALEN];
++        u8 eth_dest[ETH_ALEN];
++        u16 vlan_proto;
++        u16 vlan_id;
++        u16 pppoe_sid;
++        u16 dsa_port;
++};
++
++
+ #define NF_FLOW_TIMEOUT (30 * HZ)
+ #define nf_flowtable_time_stamp	(u32)jiffies
+ 
+--- a/drivers/net/ppp/pppoe.c
++++ b/drivers/net/ppp/pppoe.c
+@@ -73,6 +73,12 @@
+ #include <linux/proc_fs.h>
+ #include <linux/seq_file.h>
+ 
++#if IS_ENABLED(CONFIG_NF_FLOW_TABLE)
++#include <linux/netfilter.h>
++#include <net/netfilter/nf_flow_table.h>
++#endif
++
++
+ #include <linux/nsproxy.h>
+ #include <net/net_namespace.h>
+ #include <net/netns/generic.h>
+--- a/drivers/net/bonding/bond_main.c
++++ b/drivers/net/bonding/bond_main.c
+@@ -202,6 +202,7 @@ atomic_t netpoll_block_tx = ATOMIC_INIT(
+ #endif
+ 
+ unsigned int bond_net_id __read_mostly;
++static unsigned long bond_id_mask = 0xFFFFFFF0; /* QCA NSS ECM Support */
+ 
+ static const struct flow_dissector_key flow_keys_bonding_keys[] = {
+ 	{
+@@ -1120,6 +1121,23 @@ void bond_change_active_slave(struct bon
+ 			if (BOND_MODE(bond) == BOND_MODE_8023AD)
+ 				bond_3ad_handle_link_change(new_active, BOND_LINK_UP);
+ 
++			/* QCA NSS ECM support - Start */
++                        if (bond->params.mode == BOND_MODE_XOR) {
++                                struct bond_cb *lag_cb_main;
++
++                                rcu_read_lock();
++                                lag_cb_main = rcu_dereference(bond_cb);
++                                if (lag_cb_main &&
++                                    lag_cb_main->bond_cb_link_up) {
++                                        struct net_device *dev;
++
++                                        dev = new_active->dev;
++                                        lag_cb_main->bond_cb_link_up(dev);
++                                }
++                                rcu_read_unlock();
++                        }
++                        /* QCA NSS ECM support - End */
++
+ 			if (bond_is_lb(bond))
+ 				bond_alb_handle_link_change(bond, new_active, BOND_LINK_UP);
+ 		} else {
+@@ -1697,6 +1715,7 @@ int bond_enslave(struct net_device *bond
+ 	const struct net_device_ops *slave_ops = slave_dev->netdev_ops;
+ 	struct slave *new_slave = NULL, *prev_slave;
+ 	struct sockaddr_storage ss;
++	struct bond_cb *lag_cb_main; /* QCA NSS ECM support */
+ 	int link_reporting;
+ 	int res = 0, i;
+ 
+@@ -2099,6 +2118,13 @@ int bond_enslave(struct net_device *bond
+ 	if (bond_mode_can_use_xmit_hash(bond))
+ 		bond_update_slave_arr(bond, NULL);
+ 
++	/* QCA NSS ECM support - Start */
++        rcu_read_lock();
++        lag_cb_main = rcu_dereference(bond_cb);
++        if (lag_cb_main && lag_cb_main->bond_cb_enslave)
++                lag_cb_main->bond_cb_enslave(slave_dev);
++        rcu_read_unlock();
++        /* QCA NSS ECM support - End */
+ 
+ 	slave_info(bond_dev, slave_dev, "Enslaving as %s interface with %s link\n",
+ 		   bond_is_active_slave(new_slave) ? "an active" : "a backup",
+@@ -2171,6 +2197,14 @@ err_undo_flags:
+ 		}
+ 	}
+ 
++	/* QCA NSS ECM support - Start */
++        rcu_read_lock();
++        lag_cb_main = rcu_dereference(bond_cb);
++        if (lag_cb_main && lag_cb_main->bond_cb_enslave)
++                lag_cb_main->bond_cb_enslave(slave_dev);
++        rcu_read_unlock();
++        /* QCA NSS ECM support - End */
++
+ 	return res;
+ }
+ 
+@@ -2192,6 +2226,7 @@ static int __bond_release_one(struct net
+ 	struct bonding *bond = netdev_priv(bond_dev);
+ 	struct slave *slave, *oldcurrent;
+ 	struct sockaddr_storage ss;
++	struct bond_cb *lag_cb_main; /* QCA NSS ECM support */
+ 	int old_flags = bond_dev->flags;
+ 	netdev_features_t old_features = bond_dev->features;
+ 
+@@ -2214,6 +2249,14 @@ static int __bond_release_one(struct net
+ 
+ 	bond_set_slave_inactive_flags(slave, BOND_SLAVE_NOTIFY_NOW);
+ 
++	/* QCA NSS ECM support - Start */
++        rcu_read_lock();
++        lag_cb_main = rcu_dereference(bond_cb);
++        if (lag_cb_main && lag_cb_main->bond_cb_release)
++                lag_cb_main->bond_cb_release(slave_dev);
++        rcu_read_unlock();
++        /* QCA NSS ECM support - End */
++
+ 	bond_sysfs_slave_del(slave);
+ 
+ 	/* recompute stats just before removing the slave */
+@@ -2512,6 +2555,11 @@ static void bond_miimon_commit(struct bo
+ 	struct list_head *iter;
+ 	struct slave *slave, *primary;
+ 
++	/* QCA NSS ECM support - Start */
++        struct net_device *slave_dev = NULL;
++        struct bond_cb *lag_cb_main;
++        /* QCA NSS ECM support - End */
++
+ 	bond_for_each_slave(bond, slave, iter) {
+ 		switch (slave->link_new_state) {
+ 		case BOND_LINK_NOCHANGE:
+@@ -2554,6 +2602,12 @@ static void bond_miimon_commit(struct bo
+ 
+ 			bond_miimon_link_change(bond, slave, BOND_LINK_UP);
+ 
++			/* QCA NSS ECM support - Start */
++                        if ((bond->params.mode == BOND_MODE_XOR) &&
++                            (!slave_dev))
++                                slave_dev = slave->dev;
++                        /* QCA NSS ECM support - End */
++
+ 			if (!bond->curr_active_slave || slave == primary)
+ 				goto do_failover;
+ 
+@@ -2595,6 +2649,15 @@ do_failover:
+ 	}
+ 
+ 	bond_set_carrier(bond);
++
++	/* QCA NSS ECM support - Start */
++        rcu_read_lock();
++        lag_cb_main = rcu_dereference(bond_cb);
++
++        if (slave_dev && lag_cb_main && lag_cb_main->bond_cb_link_up)
++                lag_cb_main->bond_cb_link_up(slave_dev);
++        rcu_read_unlock();
++        /* QCA NSS ECM support - End */
+ }
+ 
+ /* bond_mii_monitor
+@@ -4822,6 +4885,11 @@ static void bond_destructor(struct net_d
+ 	struct bonding *bond = netdev_priv(bond_dev);
+ 	if (bond->wq)
+ 		destroy_workqueue(bond->wq);
++
++	/* QCA NSS ECM Support - Start */
++        if (bond->id != (~0U))
++                clear_bit(bond->id, &bond_id_mask);
++        /* QCA NSS ECM Support - End */
+ }
+ 
+ void bond_setup(struct net_device *bond_dev)
+@@ -5390,6 +5458,16 @@ int bond_create(struct net *net, const c
+ 	bond_work_init_all(bond);
+ 
+ 	rtnl_unlock();
++
++	/* QCA NSS ECM Support - Start */
++        bond = netdev_priv(bond_dev);
++        bond->id = ~0U;
++        if (bond_id_mask != (~0UL)) {
++                bond->id = (u32)ffz(bond_id_mask);
++                set_bit(bond->id, &bond_id_mask);
++        }
++        /* QCA NSS ECM Support - End */
++
+ 	return 0;
+ }
+ 
+@@ -5487,6 +5565,204 @@ static void __exit bonding_exit(void)
+ #endif
+ }
+ 
++/* QCA NSS ECM support - Start */
++static bool bond_flow_dissect_without_skb(struct bonding *bond,
++                                          u8 *src_mac, u8 *dst_mac,
++                                          void *psrc, void *pdst,
++                                          u16 protocol, __be16 *layer4hdr,
++                                          struct flow_keys *fk)
++{
++        u32 *src = NULL;
++        u32 *dst = NULL;
++
++        fk->ports.ports = 0;
++        src = (uint32_t *)psrc;
++        dst = (uint32_t *)pdst;
++
++        if (protocol == htons(ETH_P_IP)) {
++                /* V4 addresses and address type*/
++                fk->addrs.v4addrs.src = src[0];
++                fk->addrs.v4addrs.dst = dst[0];
++                fk->control.addr_type = FLOW_DISSECTOR_KEY_IPV4_ADDRS;
++        } else if (protocol == htons(ETH_P_IPV6)) {
++                /* V6 addresses and address type*/
++                memcpy(&fk->addrs.v6addrs.src, src, sizeof(struct in6_addr));
++                memcpy(&fk->addrs.v6addrs.dst, dst, sizeof(struct in6_addr));
++                fk->control.addr_type = FLOW_DISSECTOR_KEY_IPV6_ADDRS;
++        } else {
++                return false;
++        }
++        if ((bond->params.xmit_policy == BOND_XMIT_POLICY_LAYER34) &&
++            (layer4hdr))
++                fk->ports.ports = *layer4hdr;
++
++        return true;
++}
++
++/* Extract the appropriate headers based on bond's xmit policy */
++
++/* bond_xmit_hash_without_skb - Applies load balancing algorithm for a packet,
++ * to calculate hash for a given set of L2/L3 addresses. Does not
++ * calculate egress interface.
++ */
++uint32_t bond_xmit_hash_without_skb(u8 *src_mac, u8 *dst_mac,
++                                    void *psrc, void *pdst, u16 protocol,
++                                    struct net_device *bond_dev,
++                                    __be16 *layer4hdr)
++{
++        struct bonding *bond = netdev_priv(bond_dev);
++        struct flow_keys flow;
++        u32 hash = 0;
++
++        if (bond->params.xmit_policy == BOND_XMIT_POLICY_LAYER2 ||
++            !bond_flow_dissect_without_skb(bond, src_mac, dst_mac, psrc,
++                                           pdst, protocol, layer4hdr, &flow))
++                return (dst_mac[5] ^ src_mac[5]);
++
++        if (bond->params.xmit_policy == BOND_XMIT_POLICY_LAYER23)
++                hash = dst_mac[5] ^ src_mac[5];
++        else if (layer4hdr)
++                hash = (__force u32)flow.ports.ports;
++
++        hash ^= (__force u32)flow_get_u32_dst(&flow) ^
++                (__force u32)flow_get_u32_src(&flow);
++        hash ^= (hash >> 16);
++        hash ^= (hash >> 8);
++
++        return hash;
++}
++
++/* bond_xor_get_tx_dev - Calculate egress interface for a given packet for a LAG
++ * that is configured in balance-xor mode
++ * @skb: pointer to skb to be egressed
++ * @src_mac: pointer to source L2 address
++ * @dst_mac: pointer to destination L2 address
++ * @src: pointer to source L3 address in network order
++ * @dst: pointer to destination L3 address in network order
++ * @protocol: L3 protocol
++ * @bond_dev: pointer to bond master device
++ *
++ * If @skb is NULL, bond_xmit_hash_without_skb is used to calculate hash using
++ * L2/L3 addresses.
++ *
++ * Returns: Either valid slave device, or NULL otherwise
++ */
++static struct net_device *bond_xor_get_tx_dev(struct sk_buff *skb,
++                                              u8 *src_mac, u8 *dst_mac,
++                                              void *src, void *dst,
++                                              u16 protocol,
++                                              struct net_device *bond_dev,
++                                              __be16 *layer4hdr)
++{
++        struct bonding *bond = netdev_priv(bond_dev);
++        int slave_cnt = READ_ONCE(bond->slave_cnt);
++        int slave_id = 0, i = 0;
++        u32 hash;
++        struct list_head *iter;
++        struct slave *slave;
++
++        if (slave_cnt == 0) {
++                pr_debug("%s: Error: No slave is attached to the interface\n",
++                         bond_dev->name);
++                return NULL;
++        }
++
++        if (skb) {
++                hash = bond_xmit_hash(bond, skb);
++                slave_id = hash % slave_cnt;
++        } else {
++                if (bond->params.xmit_policy != BOND_XMIT_POLICY_LAYER23 &&
++                    bond->params.xmit_policy != BOND_XMIT_POLICY_LAYER2 &&
++                    bond->params.xmit_policy != BOND_XMIT_POLICY_LAYER34) {
++                        pr_debug("%s: Error: Unsupported hash policy for balance-XOR fast path\n",
++                                 bond_dev->name);
++                        return NULL;
++		}
++
++                hash = bond_xmit_hash_without_skb(src_mac, dst_mac, src,
++                                                  dst, protocol, bond_dev,
++                                                  layer4hdr);
++                slave_id = hash % slave_cnt;
++        }
++
++        i = slave_id;
++
++        /* Here we start from the slave with slave_id */
++        bond_for_each_slave_rcu(bond, slave, iter) {
++                if (--i < 0) {
++                        if (bond_slave_can_tx(slave))
++                                return slave->dev;
++                }
++        }
++
++        /* Here we start from the first slave up to slave_id */
++        i = slave_id;
++        bond_for_each_slave_rcu(bond, slave, iter) {
++                if (--i < 0)
++                        break;
++                if (bond_slave_can_tx(slave))
++                        return slave->dev;
++        }
++
++        return NULL;
++}
++
++/* bond_get_tx_dev - Calculate egress interface for a given packet.
++ *
++ * Supports 802.3AD and balance-xor modes
++ *
++ * @skb: pointer to skb to be egressed, if valid
++ * @src_mac: pointer to source L2 address
++ * @dst_mac: pointer to destination L2 address
++ * @src: pointer to source L3 address in network order
++ * @dst: pointer to destination L3 address in network order
++ * @protocol: L3 protocol id from L2 header
++ * @bond_dev: pointer to bond master device
++ *
++ * Returns: Either valid slave device, or NULL for un-supported LAG modes
++ */
++struct net_device *bond_get_tx_dev(struct sk_buff *skb, uint8_t *src_mac,
++                                   u8 *dst_mac, void *src,
++                                   void *dst, u16 protocol,
++                                   struct net_device *bond_dev,
++                                   __be16 *layer4hdr)
++{
++        struct bonding *bond = netdev_priv(bond_dev);
++
++        if (!bond)
++                return NULL;
++
++        switch (bond->params.mode) {
++        case BOND_MODE_XOR:
++                return bond_xor_get_tx_dev(skb, src_mac, dst_mac,
++                                           src, dst, protocol,
++                                           bond_dev, layer4hdr);
++        case BOND_MODE_8023AD:
++                return bond_3ad_get_tx_dev(skb, src_mac, dst_mac,
++                                           src, dst, protocol,
++                                           bond_dev, layer4hdr);
++        default:
++                return NULL;
++        }
++}
++EXPORT_SYMBOL(bond_get_tx_dev);
++
++int bond_get_id(struct net_device *bond_dev)
++{
++        struct bonding *bond;
++
++        if (!((bond_dev->priv_flags & IFF_BONDING) &&
++              (bond_dev->flags & IFF_MASTER)))
++                return -EINVAL;
++
++        bond = netdev_priv(bond_dev);
++
++        return bond->id;
++}
++EXPORT_SYMBOL(bond_get_id);
++/* QCA NSS ECM support - End */
++
++
+ module_init(bonding_init);
+ module_exit(bonding_exit);
+ MODULE_LICENSE("GPL");
+--- a/include/uapi/linux/if_bonding.h
++++ b/include/uapi/linux/if_bonding.h
+@@ -151,6 +151,24 @@ enum {
+ };
+ #define BOND_3AD_STAT_MAX (__BOND_3AD_STAT_MAX - 1)
+ 
++/* QCA NSS ECM support - Start */
++#ifdef __KERNEL__
++struct bond_cb {
++        void (*bond_cb_link_up)(struct net_device *slave);
++        void (*bond_cb_link_down)(struct net_device *slave);
++        void (*bond_cb_enslave)(struct net_device *slave);
++        void (*bond_cb_release)(struct net_device *slave);
++        void (*bond_cb_delete_by_slave)(struct net_device *slave);
++        void (*bond_cb_delete_by_mac)(uint8_t *mac_addr);
++};
++
++extern int bond_register_cb(struct bond_cb *cb);
++extern void bond_unregister_cb(void);
++extern int bond_get_id(struct net_device *bond_dev);
++#endif /* __KERNEL__ */
++/* QCA NSS ECM support - End */
++
++
+ #endif /* _LINUX_IF_BONDING_H */
+ 
+ /*
+--- a/include/net/bonding.h
++++ b/include/net/bonding.h
+@@ -256,6 +256,7 @@ struct bonding {
+ 	/* protecting ipsec_list */
+ 	spinlock_t ipsec_lock;
+ #endif /* CONFIG_XFRM_OFFLOAD */
++	u32      id; /* QCA NSS ECM support */
+ };
+ 
+ #define bond_slave_get_rcu(dev) \
+@@ -770,4 +771,13 @@ static inline netdev_tx_t bond_tx_drop(s
+ 	return NET_XMIT_DROP;
+ }
+ 
++/* QCA NSS ECM support - Start */
++extern struct bond_cb __rcu *bond_cb;
++
++uint32_t bond_xmit_hash_without_skb(uint8_t *src_mac, uint8_t *dst_mac,
++                                    void *psrc, void *pdst, uint16_t protocol,
++                                    struct net_device *bond_dev,
++                                    __be16 *layer4hdr);
++/* QCA NSS ECM support - End */
++
+ #endif /* _NET_BONDING_H */
+--- a/drivers/net/bonding/bond_3ad.c
++++ b/drivers/net/bonding/bond_3ad.c
+@@ -111,6 +111,40 @@ static void ad_marker_response_received(
+ 					struct port *port);
+ static void ad_update_actor_keys(struct port *port, bool reset);
+ 
++/* QCA NSS ECM support - Start */
++struct bond_cb __rcu *bond_cb;
++
++int bond_register_cb(struct bond_cb *cb)
++{
++        struct bond_cb *lag_cb;
++
++        rcu_read_lock();
++        lag_cb = kzalloc(sizeof(*lag_cb), GFP_ATOMIC | __GFP_NOWARN);
++        if (!lag_cb) {
++                rcu_read_unlock();
++                return -1;
++        }
++
++        memcpy((void *)lag_cb, (void *)cb, sizeof(*cb));
++        rcu_assign_pointer(bond_cb, lag_cb);
++        rcu_read_unlock();
++        return 0;
++}
++EXPORT_SYMBOL(bond_register_cb);
++
++void bond_unregister_cb(void)
++{
++        struct bond_cb *lag_cb_main;
++
++        rcu_read_lock();
++        lag_cb_main = rcu_dereference(bond_cb);
++        kfree(lag_cb_main);
++        rcu_assign_pointer(bond_cb, NULL);
++        rcu_read_unlock();
++}
++EXPORT_SYMBOL(bond_unregister_cb);
++/* QCA NSS ECM support - End */
++
+ 
+ /* ================= api to bonding and kernel code ================== */
+ 
+@@ -988,6 +1022,29 @@ static void ad_mux_machine(struct port *
+ 				port->actor_oper_port_state |=
+ 				    LACP_STATE_SYNCHRONIZATION;
+ 			}
++
++			/* QCA NSS ECM support - Start */
++                        /* Send a notificaton about change in state of this
++                         * port. We only want to handle case where port moves
++                         * from AD_MUX_COLLECTING_DISTRIBUTING ->
++                         * AD_MUX_ATTACHED.
++                         */
++                        if (bond_slave_is_up(port->slave) &&
++                            (last_state == AD_MUX_COLLECTING_DISTRIBUTING)) {
++                                struct bond_cb *lag_cb_main;
++
++                                rcu_read_lock();
++                                lag_cb_main = rcu_dereference(bond_cb);
++                                if (lag_cb_main &&
++                                    lag_cb_main->bond_cb_link_down) {
++                                        struct net_device *dev;
++
++                                        dev = port->slave->dev;
++                                        lag_cb_main->bond_cb_link_down(dev);
++                                }
++                                rcu_read_unlock();
++                        }
++                        /* QCA NSS ECM support - End */
+ 			break;
+ 		case AD_MUX_COLLECTING_DISTRIBUTING:
+ 			if (!(port->sm_vars & AD_PORT_SELECTED) ||
+@@ -1067,7 +1124,7 @@ static void ad_mux_machine(struct port *
+  * If lacpdu arrived, stop previous timer (if exists) and set the next state as
+  * CURRENT. If timer expired set the state machine in the proper state.
+  * In other cases, this function checks if we need to switch to other state.
+- */
++*/
+ static void ad_rx_machine(struct lacpdu *lacpdu, struct port *port)
+ {
+ 	rx_states_t last_state;
+@@ -1885,6 +1942,8 @@ static void ad_enable_collecting_distrib
+ 					      bool *update_slave_arr)
+ {
+ 	if (port->aggregator->is_active) {
++		struct bond_cb *lag_cb_main; /* QCA NSS ECM support */
++
+ 		slave_dbg(port->slave->bond->dev, port->slave->dev,
+ 			  "Enabling port %d (LAG %d)\n",
+ 			  port->actor_port_number,
+@@ -1892,6 +1951,16 @@ static void ad_enable_collecting_distrib
+ 		__enable_port(port);
+ 		/* Slave array needs update */
+ 		*update_slave_arr = true;
++
++		/* QCA NSS ECM support - Start */
++                rcu_read_lock();
++                lag_cb_main = rcu_dereference(bond_cb);
++
++                if (lag_cb_main && lag_cb_main->bond_cb_link_up)
++                        lag_cb_main->bond_cb_link_up(port->slave->dev);
++
++                rcu_read_unlock();
++                /* QCA NSS ECM support - End */
+ 	}
+ }
+ 
+@@ -2750,3 +2819,102 @@ int bond_3ad_stats_fill(struct sk_buff *
+ 
+ 	return 0;
+ }
++
++/* QCA NSS ECM support - Start */
++/* bond_3ad_get_tx_dev - Calculate egress interface for a given packet,
++ * for a LAG that is configured in 802.3AD mode
++ * @skb: pointer to skb to be egressed
++ * @src_mac: pointer to source L2 address
++ * @dst_mac: pointer to destination L2 address
++ * @src: pointer to source L3 address
++ * @dst: pointer to destination L3 address
++ * @protocol: L3 protocol id from L2 header
++ * @bond_dev: pointer to bond master device
++ *
++ * If @skb is NULL, bond_xmit_hash is used to calculate hash using L2/L3
++ * addresses.
++ *
++ * Returns: Either valid slave device, or NULL otherwise
++ */
++struct net_device *bond_3ad_get_tx_dev(struct sk_buff *skb, u8 *src_mac,
++                                       u8 *dst_mac, void *src,
++                                       void *dst, u16 protocol,
++                                       struct net_device *bond_dev,
++                                       __be16 *layer4hdr)
++{
++        struct bonding *bond = netdev_priv(bond_dev);
++        struct aggregator *agg;
++        struct ad_info ad_info;
++        struct list_head *iter;
++        struct slave *slave;
++        struct slave *first_ok_slave = NULL;
++        u32 hash = 0;
++        int slaves_in_agg;
++        int slave_agg_no = 0;
++        int agg_id;
++
++        if (__bond_3ad_get_active_agg_info(bond, &ad_info)) {
++                pr_debug("%s: Error: __bond_3ad_get_active_agg_info failed\n",
++                         bond_dev->name);
++                return NULL;
++        }
++
++        slaves_in_agg = ad_info.ports;
++        agg_id = ad_info.aggregator_id;
++
++        if (slaves_in_agg == 0) {
++                pr_debug("%s: Error: active aggregator is empty\n",
++                         bond_dev->name);
++                return NULL;
++	}
++
++	if (skb) {
++                hash = bond_xmit_hash(bond, skb);
++                slave_agg_no = hash % slaves_in_agg;
++        } else {
++                if (bond->params.xmit_policy != BOND_XMIT_POLICY_LAYER23 &&
++                    bond->params.xmit_policy != BOND_XMIT_POLICY_LAYER2 &&
++                    bond->params.xmit_policy != BOND_XMIT_POLICY_LAYER34) {
++                        pr_debug("%s: Error: Unsupported hash policy for 802.3AD fast path\n",
++                                 bond_dev->name);
++                        return NULL;
++                }
++
++                hash = bond_xmit_hash_without_skb(src_mac, dst_mac,
++                                                  src, dst, protocol,
++                                                  bond_dev, layer4hdr);
++                slave_agg_no = hash % slaves_in_agg;
++        }
++
++        bond_for_each_slave_rcu(bond, slave, iter) {
++                agg = SLAVE_AD_INFO(slave)->port.aggregator;
++                if (!agg || agg->aggregator_identifier != agg_id)
++                        continue;
++
++                if (slave_agg_no >= 0) {
++                        if (!first_ok_slave && bond_slave_can_tx(slave))
++                                first_ok_slave = slave;
++                        slave_agg_no--;
++                        continue;
++                }
++
++                if (bond_slave_can_tx(slave))
++                        return slave->dev;
++        }
++
++        if (slave_agg_no >= 0) {
++                pr_err("%s: Error: Couldn't find a slave to tx on for aggregator ID %d\n",
++                       bond_dev->name, agg_id);
++                return NULL;
++        }
++
++        /* we couldn't find any suitable slave after the agg_no, so use the
++         * first suitable found, if found.
++         */
++        if (first_ok_slave)
++                return first_ok_slave->dev;
++
++        return NULL;
++}
++/* QCA NSS ECM support - End */
++
+--- a/include/net/bond_3ad.h
++++ b/include/net/bond_3ad.h
+@@ -307,5 +307,13 @@ void bond_3ad_update_lacp_rate(struct bo
+ void bond_3ad_update_ad_actor_settings(struct bonding *bond);
+ int bond_3ad_stats_fill(struct sk_buff *skb, struct bond_3ad_stats *stats);
+ size_t bond_3ad_stats_size(void);
++
++/* QCA NSS ECM support - Start */
++struct net_device *bond_3ad_get_tx_dev(struct sk_buff *skb, uint8_t *src_mac,
++                                       uint8_t *dst_mac, void *src,
++                                       void *dst, uint16_t protocol,
++                                       struct net_device *bond_dev,
++                                       __be16 *layer4hdr);
++/* QCA NSS ECM support - End */
+ #endif /* _NET_BOND_3AD_H */
+ 
+--- a/include/net/addrconf.h
++++ b/include/net/addrconf.h
+@@ -100,6 +100,9 @@ int ipv6_chk_prefix(const struct in6_add
+ struct net_device *ipv6_dev_find(struct net *net, const struct in6_addr *addr,
+ 				 struct net_device *dev);
+ 
++struct net_device *qca_ipv6_dev_find(struct net *net, struct in6_addr *addr,
++                                 int strict);
++
+ struct inet6_ifaddr *ipv6_get_ifaddr(struct net *net,
+ 				     const struct in6_addr *addr,
+ 				     struct net_device *dev, int strict);
+--- a/net/ipv6/addrconf.c
++++ b/net/ipv6/addrconf.c
+@@ -2008,6 +2008,37 @@ struct net_device *ipv6_dev_find(struct
+ }
+ EXPORT_SYMBOL(ipv6_dev_find);
+ 
++/* QCA NSS ECM support - Start */
++/* ipv6_dev_find()
++ *      Find (and hold) net device that has the given address.
++ *      Or NULL on failure.
++ */
++struct net_device *qca_ipv6_dev_find(struct net *net, struct in6_addr *addr,
++                                 int strict)
++{
++        struct inet6_ifaddr *ifp;
++        struct net_device *dev;
++
++        ifp = ipv6_get_ifaddr(net, addr, NULL, strict);
++        if (!ifp)
++                return NULL;
++
++        if (!ifp->idev) {
++                in6_ifa_put(ifp);
++                return NULL;
++        }
++
++        dev = ifp->idev->dev;
++        if (dev)
++                dev_hold(dev);
++
++        in6_ifa_put(ifp);
++
++        return dev;
++}
++EXPORT_SYMBOL(qca_ipv6_dev_find);
++/* QCA NSS ECM support - End */
++
+ struct inet6_ifaddr *ipv6_get_ifaddr(struct net *net, const struct in6_addr *addr,
+ 				     struct net_device *dev, int strict)
+ {

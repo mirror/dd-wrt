@@ -1,0 +1,43 @@
+#
+# Support for gcc link time optimization
+#
+
+DISABLE_LTO_GCC :=
+export DISABLE_LTO_GCC
+
+ifdef CONFIG_LTO_GCC
+	CC_FLAGS_LTO_GCC := -flto=$(shell getconf _NPROCESSORS_ONLN)
+	DISABLE_LTO_GCC := -fno-lto
+
+	KBUILD_CFLAGS += ${CC_FLAGS_LTO_GCC}
+
+	CC_FLAGS_LTO := -flto
+	export CC_FLAGS_LTO
+
+	lto-flags-y := -flinker-output=nolto-rel -flto=jobserver
+	lto-flags-y += -fwhole-program
+
+	lto-flags-$(CONFIG_LTO_CP_CLONE) += -fipa-cp-clone
+
+	# allow extra flags from command line
+	lto-flags-y += ${LTO_EXTRA_CFLAGS}
+
+	# For LTO we need to use gcc to do the linking, not ld
+	# directly. Use a wrapper to convert the ld command line
+	# to gcc
+	LDFINAL := ${CONFIG_SHELL} ${srctree}/scripts/gcc-ld \
+                  ${lto-flags-y}
+
+	# LTO gcc creates a lot of files in TMPDIR, and with /tmp as tmpfs
+	# it's easy to drive the machine OOM. Use the object directory
+	# instead for temporaries.
+	# This has the drawback that there might be some junk more visible
+	# after interrupted compilations, but you would have that junk
+	# there anyways in /tmp.
+	TMPDIR ?= $(objtree)
+	export TMPDIR
+
+	# use plugin aware tools
+	AR = $(CROSS_COMPILE)gcc-ar
+	NM = $(CROSS_COMPILE)gcc-nm
+endif # CONFIG_LTO_GCC
