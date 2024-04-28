@@ -142,10 +142,10 @@ static void nss_tunipip6_update_dev_stats(struct net_device *dev,
 
 	u64_stats_init(&stats.syncp);
 	u64_stats_update_begin(&stats.syncp);
-	stats.rx_packets = sync_stats->node_stats.rx_packets;
-	stats.rx_bytes = sync_stats->node_stats.rx_bytes;
-	stats.tx_packets = sync_stats->node_stats.tx_packets;
-	stats.tx_bytes = sync_stats->node_stats.tx_bytes;
+	u64_stats_add(&stats.rx_packets, sync_stats->node_stats.rx_packets);
+	u64_stats_add(&stats.rx_bytes, sync_stats->node_stats.rx_bytes);
+	u64_stats_add(&stats.tx_packets, sync_stats->node_stats.tx_packets);
+	u64_stats_add(&stats.tx_bytes, sync_stats->node_stats.tx_bytes);
 	u64_stats_update_end(&stats.syncp);
 #else
 	struct nss_tunipip6_stats stats;
