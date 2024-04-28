@@ -484,6 +484,8 @@ obj-$(CONFIG_MUSL) += musl
 obj-$(CONFIG_X86) += cpupower
 obj-$(CONFIG_CPUPOWER) += cpupower
 obj-$(CONFIG_BTOP) += btop
+obj-$(CONFIG_QCA_NSS) += qca-nss
+
 ifneq ($(CONFIG_DIST),"micro")
 obj-y+=wrtbwmon
 endif
