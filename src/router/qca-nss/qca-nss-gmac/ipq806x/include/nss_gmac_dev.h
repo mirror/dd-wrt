@@ -1516,7 +1516,7 @@ int32_t nss_gmac_ath_phy_mmd_rd(struct phy_device *phydev,
 int32_t nss_gmac_ath_phy_disable_smart_802az(struct phy_device *phydev);
 int32_t nss_gmac_ath_phy_disable_802az(struct phy_device *phydev);
 void nss_gmac_set_mac_addr(struct nss_gmac_dev *gmacdev,
-			uint32_t mac_high, uint32_t mac_low, uint8_t *mac_addr);
+			uint32_t mac_high, uint32_t mac_low, const uint8_t *mac_addr);
 void nss_gmac_get_mac_addr(struct nss_gmac_dev *gmacdev,
 			uint32_t mac_high, uint32_t mac_low, uint8_t *mac_addr);
 int32_t nss_gmac_attach(struct nss_gmac_dev *gmacdev, uint32_t reg_base,

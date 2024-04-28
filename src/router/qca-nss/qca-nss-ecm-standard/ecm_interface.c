@@ -6502,7 +6502,6 @@ static int ecm_interface_wifi_event_rx(struct socket *sock, struct sockaddr_nl *
 {
 	struct msghdr msg;
 	struct iovec  iov;
-	mm_segment_t oldfs;
 	int size;
 
 	iov.iov_base = buf;
@@ -6519,10 +6518,7 @@ static int ecm_interface_wifi_event_rx(struct socket *sock, struct sockaddr_nl *
 #else
 	iov_iter_init(&msg.msg_iter, READ, &iov, 1, 1);
 #endif
-	oldfs = get_fs();
-	set_fs(KERNEL_DS);
 	size = sock_recvmsg(sock, &msg, msg.msg_flags);
-	set_fs(oldfs);
 
 	return size;
 }

@@ -24,6 +24,7 @@
 #include "nss_log.h"
 #include <linux/kernel.h>
 #include <linux/notifier.h>	/* for panic_notifier_list */
+#include <linux/panic_notifier.h>	/* for panic_notifier_list */
 #include <linux/jiffies.h>	/* for time */
 #include "nss_tx_rx_common.h"
 

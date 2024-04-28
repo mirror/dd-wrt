@@ -1522,7 +1522,7 @@ int32_t nss_gmac_ath_phy_disable_802az(struct phy_device *phydev)
  * @return void
  */
 void nss_gmac_set_mac_addr(struct nss_gmac_dev *gmacdev, uint32_t mac_high,
-			      uint32_t mac_low, uint8_t *mac_addr)
+			      uint32_t mac_low, const uint8_t *mac_addr)
 {
 	uint32_t data;
 

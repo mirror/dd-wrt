@@ -48,7 +48,7 @@
  * File local/Static variables/functions
  */
 static const struct net_device_ops nss_netdev_ops;
-static const struct ethtool_ops nss_ethtool_ops;
+//static const struct ethtool_ops nss_ethtool_ops;
 
 int nss_hal_firmware_load(struct nss_ctx_instance *nss_ctx, struct platform_device *nss_dev, struct nss_platform_data *npd)
 {

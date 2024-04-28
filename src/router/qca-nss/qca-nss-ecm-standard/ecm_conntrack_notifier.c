@@ -407,7 +407,7 @@ int ecm_conntrack_notifier_init(struct dentry *dentry)
 	/*
 	 * Eventing subsystem is available so we register a notifier hook to get fast notifications of expired connections
 	 */
-	result = nf_conntrack_register_chain_notifier(&init_net, &ecm_conntrack_notifier);
+	result = nf_conntrack_register_notifier(&init_net, &ecm_conntrack_notifier);
 	if (result < 0) {
 		DEBUG_ERROR("Can't register nf notifier hook.\n");
 		debugfs_remove_recursive(ecm_conntrack_notifier_dentry);
@@ -426,7 +426,7 @@ void ecm_conntrack_notifier_exit(void)
 {
 	DEBUG_INFO("ECM Conntrack Notifier exit\n");
 #ifdef CONFIG_NF_CONNTRACK_EVENTS
-	nf_conntrack_unregister_chain_notifier(&init_net, &ecm_conntrack_notifier);
+	nf_conntrack_unregister_notifier(&init_net, &ecm_conntrack_notifier);
 #endif
 	/*
 	 * Remove the debugfs files recursively.

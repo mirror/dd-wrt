@@ -321,6 +321,7 @@ static void ecm_sfe_ported_ipv4_connection_accelerate(struct ecm_front_end_conne
 									struct ecm_classifier_process_response *pr, bool is_l2_encap,
 									struct nf_conn *ct)
 {
+	const struct nf_tcp_net *tn = nf_tcp_pernet(nf_ct_net(ct));
 	struct ecm_sfe_ported_ipv4_connection_instance *npci = (struct ecm_sfe_ported_ipv4_connection_instance *)feci;
 	uint16_t regen_occurrances;
 	int protocol;
@@ -936,9 +937,9 @@ static void ecm_sfe_ported_ipv4_connection_accelerate(struct ecm_front_end_conne
 			nircm->tcp_rule.return_end = ct->proto.tcp.seen[return_dir].td_end;
 			nircm->tcp_rule.return_max_end = ct->proto.tcp.seen[return_dir].td_maxend;
 #ifdef ECM_OPENWRT_SUPPORT
-			if (nf_ct_tcp_be_liberal || nf_ct_tcp_no_window_check
+			if (tn->tcp_be_liberal || nf_ct_tcp_no_window_check
 #else
-			if (nf_ct_tcp_be_liberal
+			if (tn->tcp_be_liberal
 #endif
 					|| (ct->proto.tcp.seen[flow_dir].flags & IP_CT_TCP_FLAG_BE_LIBERAL)
 					|| (ct->proto.tcp.seen[return_dir].flags & IP_CT_TCP_FLAG_BE_LIBERAL)) {

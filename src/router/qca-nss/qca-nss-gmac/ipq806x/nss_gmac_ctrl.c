@@ -361,6 +361,7 @@ static int32_t nss_gmac_set_mac_address(struct net_device *netdev,
 {
 	struct nss_gmac_dev *gmacdev = (struct nss_gmac_dev *)netdev_priv(netdev);
 	struct sockaddr *addr = (struct sockaddr *)macaddr;
+	u8 tmpmac[6];
 
 	BUG_ON(gmacdev == NULL);
 	BUG_ON(gmacdev->netdev != netdev);
@@ -376,8 +377,8 @@ static int32_t nss_gmac_set_mac_address(struct net_device *netdev,
 	nss_gmac_set_mac_addr(gmacdev, gmac_addr0_high, gmac_addr0_low,
 			      addr->sa_data);
 	nss_gmac_get_mac_addr(gmacdev, gmac_addr0_high, gmac_addr0_low,
-			      netdev->dev_addr);
-
+			      tmpmac);
+	eth_hw_addr_set(netdev, tmpmac);
 	return 0;
 }
 
@@ -1309,9 +1310,9 @@ static int32_t nss_gmac_probe(struct platform_device *pdev)
 	 * This just fill in some default MAC address
 	 */
 	if (is_valid_ether_addr(gmaccfg->mac_addr)) {
-		memcpy(netdev->dev_addr, &gmaccfg->mac_addr, ETH_ALEN);
+		eth_hw_addr_set(netdev, gmaccfg->mac_addr);
 	} else {
-		random_ether_addr(netdev->dev_addr);
+		eth_hw_addr_random(netdev);
 		pr_info("GMAC%d(%p) Invalid MAC@ - using %02x:%02x:%02x:%02x:%02x:%02x\n",
 			gmacdev->macid, gmacdev,
 			*netdev->dev_addr, *netdev->dev_addr+1,
