@@ -644,6 +644,7 @@ void start_sysinit(void)
 	insmod("mii");
 	insmod("stmmac"); //for debugging purposes compiled as module
 	insmod("stmmac-platform"); //for debugging purposes compiled as module
+	insmod("stmmac-ipq806x"); //for debugging purposes compiled as module
 	insmod("qcom-wdt");
 
 	/*
