@@ -147,6 +147,10 @@ ifeq ($(KERNELVERSION),6.1)
 CFLAGS_EXTRA += -DHAVE_USTEER
 OBJS += usteer.o
 endif
+ifeq ($(KERNELVERSION),6.1-nss)
+CFLAGS_EXTRA += -DHAVE_USTEER
+OBJS += usteer.o
+endif
 ifeq ($(KERNELVERSION),6.6)
 CFLAGS_EXTRA += -DHAVE_USTEER
 OBJS += usteer.o

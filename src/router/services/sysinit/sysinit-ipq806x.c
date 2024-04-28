@@ -642,11 +642,22 @@ void start_sysinit(void)
 
 	insmod("tmp421");
 	insmod("mii");
+	insmod("phylink");
+	insmod("pcs_xpcs");
 	insmod("stmmac"); //for debugging purposes compiled as module
 	insmod("stmmac-platform"); //for debugging purposes compiled as module
 	insmod("stmmac-ipq806x"); //for debugging purposes compiled as module
 	insmod("qcom-wdt");
-
+	insmod("qca-nss-gmac");
+	insmod("qca-nss-drv");
+	insmod("qca-nss-crypto");
+	insmod("qca-nss-cfi-cryptoapi");
+	insmod("bonding");
+	insmod("qca-nss-pppoe");
+	insmod("l2tp_core");
+	insmod("qca-nss-l2tpv2");
+	insmod("qca-nss-qdisc");
+	eval("insmod","ecm","front_end_selection=1");
 	/*
 	 * network drivers 
 	 */
