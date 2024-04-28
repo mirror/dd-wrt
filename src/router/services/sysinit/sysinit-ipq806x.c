@@ -654,6 +654,8 @@ void start_sysinit(void)
 	insmod("qca-nss-cfi-cryptoapi");
 	insmod("bonding");
 	insmod("qca-nss-pppoe");
+	insmod("udp_tunnel");
+	insmod("ip6_udp_tunnel");
 	insmod("l2tp_core");
 	insmod("qca-nss-l2tpv2");
 	insmod("qca-nss-qdisc");
