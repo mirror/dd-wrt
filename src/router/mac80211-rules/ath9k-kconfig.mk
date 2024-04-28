@@ -155,7 +155,7 @@ KERNEL_ARCH=$(strip $(subst aarch64,arm64,$(subst i386,x86,$(subst armeb,arm,$(s
 MAKE_OPTS += \
 	CROSS_COMPILE="ccache $(ARCH)-linux-" \
 	ARCH="$(KERNEL_ARCH)" \
-	EXTRA_CFLAGS="$(BUILDFLAGS)" \
+	EXTRA_CFLAGS="$(BUILDFLAGS) -I$(TOP)/qca-nss/qca-nss-drv/exports" \
 	MADWIFI= \
 	OLD_IWL= \
 	KLIB_BUILD="$(LINUXDIR)" \
@@ -303,6 +303,11 @@ ifeq ($(CONFIG_ATH10KUSB),y)
 endif
 ifeq ($(CONFIG_IPQ806X),y)
 	echo "CPTCFG_ATH10K_AHB=y" >> $(MAC80211_PATH)/.config_temp
+ifeq ($(CONFIG_QCA_NSS),y)
+	echo "CPTCFG_MAC80211_NSS_SUPPORT=y" >> $(MAC80211_PATH)/.config_temp
+else
+	echo "# CPTCFG_MAC80211_NSS_SUPPORT is not set" >> $(MAC80211_PATH)/.config_temp
+endif
 endif
 ifeq ($(CONFIG_MAC80211_RTL8192CU),y)
 	cat $(TOP)/mac80211-rules/configs/rtl8192cu.config >> $(MAC80211_PATH)/.config_temp
