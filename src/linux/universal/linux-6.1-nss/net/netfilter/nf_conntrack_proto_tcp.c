@@ -513,6 +513,7 @@ tcp_in_window(struct nf_conn *ct, enum ip_conntrack_dir dir,
 	      unsigned int dataoff, const struct tcphdr *tcph,
 	      const struct nf_hook_state *hook_state)
 {
+	const struct nf_tcp_net *tn = nf_tcp_pernet(nf_ct_net(ct));
 	struct ip_ct_tcp *state = &ct->proto.tcp;
 	struct ip_ct_tcp_state *sender = &state->seen[dir];
 	struct ip_ct_tcp_state *receiver = &state->seen[!dir];
