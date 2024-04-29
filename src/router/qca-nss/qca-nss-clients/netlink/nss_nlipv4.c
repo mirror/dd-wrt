@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2015-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2015-2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -36,23 +36,26 @@
 #include <linux/semaphore.h>
 #include <linux/in.h>
 
-#include <net/genetlink.h>
-#include <net/route.h>
 #include <net/arp.h>
-#include <net/neighbour.h>
 #include <net/genetlink.h>
+#include <net/neighbour.h>
 #include <net/net_namespace.h>
+#include <net/route.h>
 #include <net/sock.h>
 
 #include <nss_api_if.h>
 #include <nss_cmn.h>
 #include <nss_nl_if.h>
+#include "nss_ipsec.h"
+#include "nss_ipsec_cmn.h"
+#include "nss_ipsecmgr.h"
 #include "nss_nl.h"
 #include "nss_nlcmn_if.h"
+#include "nss_nlgre_redir_cmd.h"
+#include "nss_nlipsec_if.h"
+#include "nss_nlipsec.h"
 #include "nss_nlipv4_if.h"
-#include "nss_ipsec.h"
-#include "nss_ipsecmgr.h"
-
+#include "nss_ipv4.h"
 /*
  * NSS NETLINK IPv4 context
  */
@@ -65,20 +68,7 @@ struct nss_nlipv4_ctx {
  */
 static int nss_nlipv4_ops_create_rule(struct sk_buff *skb, struct genl_info *info);
 static int nss_nlipv4_ops_destroy_rule(struct sk_buff *skb, struct genl_info *info);
-
-/*
- * IPv4 family definition
- */
-static struct genl_family nss_nlipv4_family = {
-	.id = GENL_ID_GENERATE,				/* Auto generate ID */
-	.name = NSS_NLIPV4_FAMILY,			/* family name string */
-	.hdrsize = sizeof(struct nss_nlipv4_rule),	/* NSS NETLINK IPv4 rule */
-	.version = NSS_NL_VER,				/* Set it to NSS_NLIPv4 version */
-	.maxattr = NSS_IPV4_MAX_MSG_TYPES,		/* maximum commands supported */
-	.netnsok = true,
-	.pre_doit = NULL,
-	.post_doit = NULL,
-};
+static int nss_nlipv4_process_notify(struct notifier_block *nb, unsigned long val, void *data);
 
 /*
  * multicast group for sending message status & events
@@ -93,6 +83,33 @@ static const struct genl_multicast_group nss_nlipv4_mcgrp[] = {
 static struct genl_ops nss_nlipv4_ops[] = {
 	{.cmd = NSS_IPV4_TX_CREATE_RULE_MSG, .doit = nss_nlipv4_ops_create_rule,},	/* rule create */
 	{.cmd = NSS_IPV4_TX_DESTROY_RULE_MSG, .doit = nss_nlipv4_ops_destroy_rule,},	/* rule destroy */
+};
+
+/*
+ * IPv4 family definition
+ */
+static struct genl_family nss_nlipv4_family = {
+#if (LINUX_VERSION_CODE <= KERNEL_VERSION(4, 9, 0))
+	.id = GENL_ID_GENERATE,				/* Auto generate ID */
+#endif
+	.name = NSS_NLIPV4_FAMILY,			/* family name string */
+	.hdrsize = sizeof(struct nss_nlipv4_rule),	/* NSS NETLINK IPv4 rule */
+	.version = NSS_NL_VER,				/* Set it to NSS_NLIPv4 version */
+	.maxattr = NSS_IPV4_MAX_MSG_TYPES,		/* maximum commands supported */
+	.netnsok = true,
+	.pre_doit = NULL,
+	.post_doit = NULL,
+	.ops = nss_nlipv4_ops,
+	.n_ops = ARRAY_SIZE(nss_nlipv4_ops),
+	.mcgrps = nss_nlipv4_mcgrp,
+	.n_mcgrps = ARRAY_SIZE(nss_nlipv4_mcgrp)
+};
+
+/*
+ * statistics call back handler for ipv4 from NSS
+ */
+static struct notifier_block nss_ipv4_stats_notifier_nb = {
+	.notifier_call = nss_nlipv4_process_notify,
 };
 
 #define NSS_NLIPV4_OPS_SZ ARRAY_SIZE(nss_nlipv4_ops)
@@ -208,7 +225,7 @@ static int nss_nlipv4_get_macaddr(uint32_t ip_addr, uint8_t mac_addr[])
 		goto fail;
 	}
 
-	memcpy(mac_addr, neigh->ha, (size_t)neigh->dev->addr_len);
+	ether_addr_copy(mac_addr, neigh->ha);
 	neigh_release(neigh);
 	return 0;
 fail:
@@ -233,14 +250,22 @@ static int nss_nlipv4_verify_5tuple(struct nss_ipv4_5tuple *tuple)
 		return -EINVAL;
 	}
 
-	/* Validate the port number */
+	/*
+	 * Validate the port number
+	 */
 	switch (tuple->protocol) {
 	case IPPROTO_UDP:
 	case IPPROTO_TCP:
 	case IPPROTO_SCTP:
 		ident_check = true;
 		break;
+
 	default:
+		if (tuple->flow_ident || tuple->return_ident) {
+			nss_nl_error("Flow ident and return ident must be zero. Flow ident:%d return ident:%d protocol:%d\n",
+					tuple->flow_ident, tuple->return_ident, tuple->protocol);
+			return -EINVAL;
+		}
 		ident_check = false;
 		break;
 	}
@@ -258,97 +283,139 @@ static int nss_nlipv4_verify_5tuple(struct nss_ipv4_5tuple *tuple)
  * 	verify and override connection rule entries
  */
 static int nss_nlipv4_verify_conn_rule(struct nss_ipv4_rule_create_msg *msg, struct net_device *flow_dev,
-					struct net_device *return_dev, uint16_t flow_dev_type, uint16_t return_dev_type)
+					struct net_device *return_dev, enum nss_nl_iftype flow_iftype,
+					enum nss_nl_iftype return_iftype)
 {
 	struct nss_ipv4_connection_rule *conn = &msg->conn_rule;
 	struct nss_ipv4_nexthop *nexthop = &msg->nexthop_rule;
+        struct nss_ipv4_5tuple *tuple = &msg->tuple;
 	const size_t rule_sz = sizeof(struct nss_ipv4_connection_rule);
-	bool override_mtu;
 	bool valid;
 
-	valid = msg->valid_flags & NSS_IPV4_RULE_CREATE_CONN_VALID;
-
 	/*
-	 * connection rule is not valid ignore rest of the checks
+	 * Connection rule is not valid ignore rest of the checks
 	 */
-	if (!valid){
+	valid = msg->valid_flags & NSS_IPV4_RULE_CREATE_CONN_VALID;
+	if (!valid) {
 		memset(conn, 0, rule_sz);
 		return -EINVAL;
 	}
 
+	if ((flow_iftype >= NSS_NL_IFTYPE_MAX) || (return_iftype >= NSS_NL_IFTYPE_MAX)) {
+		nss_nl_error("%px: Invalid interface type (flow:%d, return:%d)\n", msg, flow_iftype, return_iftype);
+		return -EINVAL;
+	}
+
 	/*
-	 * update the flow  & return MAC address
+	 * Update the flow  & return MAC address
 	 */
-	if (nss_nlipv4_get_macaddr(msg->tuple.flow_ip, (uint8_t *)conn->flow_mac)) {
+	if (nss_nlipv4_get_macaddr(tuple->flow_ip, (uint8_t *)conn->flow_mac)) {
 		nss_nl_info("Error in Updating the Flow MAC Address \n");
 		return -EINVAL;
 	}
 
-	if (nss_nlipv4_get_macaddr(msg->tuple.return_ip, (uint8_t *)conn->return_mac)) {
+	if (nss_nlipv4_get_macaddr(tuple->return_ip, (uint8_t *)conn->return_mac)) {
 		nss_nl_info("Error in Updating the Return MAC Address \n");
 		return -EINVAL;
 	}
 
 	/*
-	 * update flow and return interface numbers. Handle Ipsec interfaces seperately.
+	 * Update flow interface number and flow mtu
 	 */
-	if (flow_dev->type == NSS_IPSEC_ARPHRD_IPSEC)
-		conn->flow_interface_num = nss_ipsec_get_ifnum(nss_ipsec_get_data_interface());
-	else if (is_vlan_dev(flow_dev))
-		conn->flow_interface_num = nss_cmn_get_interface_number_by_dev(vlan_dev_real_dev(flow_dev));
-	else {
-		if (!flow_dev_type)
-			conn->flow_interface_num = nss_cmn_get_interface_number_by_dev(flow_dev);
-		else {
-			conn->flow_interface_num = nss_cmn_get_interface_number_by_dev_and_type(flow_dev, flow_dev_type);
+	switch (flow_iftype) {
+	case NSS_NL_IFTYPE_TUNNEL_IPSEC:
+		conn->flow_interface_num = nss_nlipsec_get_ifnum(flow_dev, tuple->protocol,
+								tuple->return_ident, tuple->flow_ident);
+		if (conn->flow_interface_num < 0 ) {
+			nss_nl_error("%px: Failed to get flow interface number (dev:%s, type:%d)\n",
+							flow_dev, flow_dev->name, flow_iftype);
+			return -EINVAL;
 		}
-                        nss_nl_info("flow_interface_num: %d flow_interface_type: %d\n", conn->flow_interface_num, flow_dev_type);
+
+		conn->flow_mtu = nss_nlipsec_get_mtu(flow_dev, 4, tuple->protocol,
+							tuple->return_ident, tuple->flow_ident);
+		break;
+
+	case NSS_NL_IFTYPE_VLAN:
+		conn->flow_interface_num = nss_cmn_get_interface_number_by_dev(vlan_dev_real_dev(flow_dev));
+		if (conn->flow_interface_num < 0 ) {
+			nss_nl_error("%px: Failed to get flow interface number (dev:%s, type:%d)\n",
+					flow_dev, flow_dev->name, flow_iftype);
+			return -EINVAL;
+		}
+
+		conn->flow_mtu = flow_dev->mtu;
+		break;
+
+	case NSS_NL_IFTYPE_PHYSICAL:
+		conn->flow_interface_num = nss_cmn_get_interface_number_by_dev(flow_dev);
+		if (conn->flow_interface_num < 0 ) {
+			nss_nl_error("%px: Failed to get flow interface number (dev:%s, type:%d)\n",
+					flow_dev, flow_dev->name, flow_iftype);
+			return -EINVAL;
+		}
+
+		conn->flow_mtu = flow_dev->mtu;
+		break;
+
+	default:
+		nss_nl_error("%px: Unsupported flow interface type (%d)\n", msg, flow_iftype);
+		return -EINVAL;
 	}
 
-	if (return_dev->type == NSS_IPSEC_ARPHRD_IPSEC)
-		conn->return_interface_num = nss_ipsec_get_ifnum(nss_ipsec_get_data_interface());
-	else if (is_vlan_dev(return_dev))
-		conn->return_interface_num = nss_cmn_get_interface_number_by_dev(vlan_dev_real_dev(return_dev));
-	else {
-		if (!return_dev_type)
-			conn->return_interface_num = nss_cmn_get_interface_number_by_dev(return_dev);
-		else {
-			conn->return_interface_num = nss_cmn_get_interface_number_by_dev_and_type(return_dev, return_dev_type);
+	nss_nl_info("%px: dev=%s flow_ifnum:0x%x flow_mtu=%d\n", msg, flow_dev->name,
+			conn->flow_interface_num, conn->flow_mtu);
+	/*
+	 * Update return interface number and return mtu
+	 */
+	switch (return_iftype) {
+	case NSS_NL_IFTYPE_TUNNEL_IPSEC:
+		conn->return_interface_num = nss_nlipsec_get_ifnum(return_dev, tuple->protocol,
+									tuple->return_ident, tuple->flow_ident);
+		if (conn->return_interface_num < 0 ) {
+			nss_nl_error("%px: Failed to get return interface number (dev:%s, type:%d)\n",
+					return_dev, return_dev->name, return_iftype);
+			return -EINVAL;
 		}
-                        nss_nl_info("return_interface_num: %d return_interface_type: %d\n", conn->return_interface_num, return_dev_type);
+
+		conn->return_mtu = nss_nlipsec_get_mtu(return_dev, 4, tuple->protocol,
+							tuple->return_ident, tuple->flow_ident);
+		break;
+
+	case NSS_NL_IFTYPE_VLAN:
+		conn->return_interface_num = nss_cmn_get_interface_number_by_dev(vlan_dev_real_dev(return_dev));
+		if (conn->return_interface_num < 0 ) {
+			nss_nl_error("%px: Failed to get return interface number (dev:%s, type:%d)\n",
+					return_dev, return_dev->name, return_iftype);
+			return -EINVAL;
+		}
+
+		conn->return_mtu = return_dev->mtu;
+		break;
+
+	case NSS_NL_IFTYPE_PHYSICAL:
+		conn->return_interface_num = nss_cmn_get_interface_number_by_dev(return_dev);
+		if (conn->return_interface_num < 0 ) {
+			nss_nl_error("%px: Failed to get return interface number (dev:%s, type:%d)\n",
+					return_dev, return_dev->name, return_iftype);
+			return -EINVAL;
+		}
+
+		conn->return_mtu = return_dev->mtu;
+		break;
+
+	default:
+		nss_nl_error("%px: Unsupported return interface type (%d)\n", msg, flow_iftype);
+		return -EINVAL;
 	}
+
+	nss_nl_info("%px: dev=%s return_ifnum:0x%x return_mtu=%d\n", msg, return_dev->name,
+			conn->return_interface_num, conn->return_mtu);
 
 	nexthop->flow_nexthop = conn->flow_interface_num;
 	nexthop->return_nexthop = conn->return_interface_num;
 
 	nss_nl_info("flow_nexthop:%d return_nexthop:%d\n", nexthop->flow_nexthop, nexthop->return_nexthop);
-
-	/*
-	 * update the flow & return MTU(s)
-	 */
-	conn->return_mtu = return_dev->mtu;
-
-	/*
-	 * If, flow device is IPsec tunnel and protocol is ESP or NAT-T (UDP@4500)
-	 * then the operation is Decapsulation. In this we would like to have the MTU
-	 * of the incoming physical/virtual device. This would avoid fragmenting the
-	 * packet in NSS before delivering it for IPsec decap
-	 */
-	switch (msg->tuple.protocol) {
-	case IPPROTO_UDP:
-		override_mtu = (flow_dev->type == NSS_IPSEC_ARPHRD_IPSEC) && (msg->tuple.flow_ident == NSS_IPSECMGR_NATT_PORT_DATA);
-		break;
-
-	case IPPROTO_ESP:
-		override_mtu = (flow_dev->type == NSS_IPSEC_ARPHRD_IPSEC);
-		break;
-
-	default:
-		override_mtu = false;
-		break;
-	}
-
-	conn->flow_mtu = override_mtu ? conn->return_mtu : flow_dev->mtu;
 
 	/*
 	 * update flow & return xlate info
@@ -357,12 +424,13 @@ static int nss_nlipv4_verify_conn_rule(struct nss_ipv4_rule_create_msg *msg, str
 	conn->flow_ident_xlate = msg->tuple.flow_ident;
 	conn->return_ip_xlate = msg->tuple.return_ip;
 	conn->return_ident_xlate = msg->tuple.return_ident;
+
 	return 0;
 }
 
 /*
  * nss_nlipv4_verify_tcp_rule()
- * 	verify and override TCP protocol rule entries
+ *	verify and override TCP protocol rule entries
  */
 static int nss_nlipv4_verify_tcp_rule(struct nss_ipv4_rule_create_msg *msg)
 {
@@ -440,6 +508,29 @@ static int nss_nlipv4_verify_qos_rule(struct nss_ipv4_rule_create_msg *msg)
 }
 
 /*
+ * nss_nlipv4_verify_igs_rule()
+ * 	Verify and override ingress shaping rule entries.
+ */
+static int nss_nlipv4_verify_igs_rule(struct nss_ipv4_rule_create_msg *msg)
+{
+	struct nss_ipv4_igs_rule *igs = &msg->igs_rule;
+	const size_t rule_sz = sizeof(struct nss_ipv4_igs_rule);
+	bool valid;
+
+	valid = msg->valid_flags & NSS_IPV4_RULE_CREATE_IGS_VALID;
+
+	/*
+	 * ingress shaping rule is not valid ignore rest of the checks
+	 */
+	if (!valid) {
+		memset(igs, 0, rule_sz);
+		return 0;
+	}
+
+	return 0;
+}
+
+/*
  * nss_nlipv4_verify_dscp_rule()
  * 	verify and override dscp rule entries
  */
@@ -510,39 +601,24 @@ static int nss_nlipv4_verify_vlan_rule(struct nss_ipv4_rule_create_msg *msg,
  * nss_nlipv4_process_notify()
  * 	process notification messages from NSS
  */
-static void nss_nlipv4_process_notify(void *app_data, struct nss_ipv4_msg *nim)
+static int nss_nlipv4_process_notify(struct notifier_block *nb, unsigned long val, void *data)
 {
 	struct nss_nlipv4_rule *nl_rule;
-	struct nss_ipv4_msg *nl_nim;
 	struct sk_buff *skb;
+	struct nss_ipv4_stats_notification *nss_stats;
 
-	skb = nss_nl_new_msg(&nss_nlipv4_family, nim->cm.type);
+	skb = nss_nl_new_msg(&nss_nlipv4_family, NSS_NLCMN_SUBSYS_IPV4);
 	if (!skb) {
 		nss_nl_error("unable to allocate NSS_NLIPV4 event\n");
-		return;
+		return NOTIFY_DONE;
 	}
 
 	nl_rule = nss_nl_get_data(skb);
-	nl_nim = &nl_rule->nim;
-
-	/*
-	 * initialize the NETLINK common header
-	 */
-	nss_nlipv4_rule_init(nl_rule, nim->cm.type);
-
-	/*
-	 * clear NSS common message items that are not useful to uspace
-	 */
-	nim->cm.interface = 0;
-	nim->cm.cb = (nss_ptr_t)NULL;
-	nim->cm.app_data = (nss_ptr_t)NULL;
-
-	/*
-	 * copy the contents of the sync message into the NETLINK message
-	 */
-	memcpy(nl_nim, nim, sizeof(struct nss_ipv4_msg));
-
+	nss_stats = (struct nss_ipv4_stats_notification *)data;
+	memcpy(&nl_rule->stats, nss_stats, sizeof(struct nss_ipv4_stats_notification));
 	nss_nl_mcast_event(&nss_nlipv4_family, skb);
+
+	return NOTIFY_DONE;
 }
 
 /*
@@ -613,14 +689,14 @@ static int nss_nlipv4_ops_create_rule(struct sk_buff *skb, struct genl_info *inf
 	 */
 	flow_dev = dev_get_by_name(&init_net, nl_rule->flow_ifname);
 	if (!flow_dev) {
-		nss_nl_error("%d:flow interface is not available\n", pid);
+		nss_nl_error("%d:flow interface(%s) is not available\n", pid, nl_rule->flow_ifname);
 		return -EINVAL;
 	}
 
 	return_dev = dev_get_by_name(&init_net, nl_rule->return_ifname);
 	if (!return_dev) {
 		dev_put(flow_dev);
-		nss_nl_error("%d:return interface is not available\n", pid);
+		nss_nl_error("%d:return interface(%s) is not available\n", pid, nl_rule->return_ifname);
 		return -EINVAL;
 	}
 
@@ -633,11 +709,14 @@ static int nss_nlipv4_ops_create_rule(struct sk_buff *skb, struct genl_info *inf
 		goto done;
 	}
 
+	nss_nl_info("Checking rule for srcif(%s) src_type(%d) destif(%s) dest_type(%d)\n", nl_rule->flow_ifname,
+			nl_rule->flow_iftype, nl_rule->return_ifname, nl_rule->return_iftype);
+
 	/*
 	 * check connection rule
 	 */
 	error = nss_nlipv4_verify_conn_rule(&nim->msg.rule_create, flow_dev, return_dev,
-					nl_rule->flow_iftype, nl_rule->return_iftype);
+						nl_rule->flow_iftype, nl_rule->return_iftype);
 	if (error < 0) {
 		nss_nl_error("%d:invalid conn rule information passed\n", pid);
 		goto done;
@@ -667,6 +746,15 @@ static int nss_nlipv4_ops_create_rule(struct sk_buff *skb, struct genl_info *inf
 	error = nss_nlipv4_verify_qos_rule(&nim->msg.rule_create);
 	if (error < 0) {
 		nss_nl_error("%d:invalid qos rule information passed\n", pid);
+		goto done;
+	}
+
+	/*
+	 * check ingress shaping rule
+	 */
+	error = nss_nlipv4_verify_igs_rule(&nim->msg.rule_create);
+	if (error < 0) {
+		nss_nl_error("%d:invalid ingress shaping rule information passed\n", pid);
 		goto done;
 	}
 
@@ -711,11 +799,10 @@ static int nss_nlipv4_ops_create_rule(struct sk_buff *skb, struct genl_info *inf
 	/*
 	 * Push Rule to NSS
 	 */
-	tx_status = nss_ipv4_tx(gbl_ctx.nss, nim);
+	tx_status = nss_ipv4_tx_sync(gbl_ctx.nss, nim);
 	if (tx_status != NSS_TX_SUCCESS) {
 		nss_nl_error("%d:unable to send IPv4 rule create, status(%d)\n", pid, tx_status);
 		error = -EBUSY;
-		goto done;
 	}
 
 done:
@@ -786,7 +873,7 @@ static int nss_nlipv4_ops_destroy_rule(struct sk_buff *skb, struct genl_info *in
 	/*
 	 * Push rule to NSS
 	 */
-	tx_status = nss_ipv4_tx(gbl_ctx.nss, nim);
+	tx_status = nss_ipv4_tx_sync(gbl_ctx.nss, nim);
 	if (tx_status != NSS_TX_SUCCESS) {
 		nss_nl_error("%d:unable to send IPv4 rule delete, status(%d)\n", pid, tx_status);
 		return -EBUSY;
@@ -802,24 +889,33 @@ done:
  */
 bool nss_nlipv4_init(void)
 {
-	int error;
+	int error,ret;
 
 	nss_nl_info_always("Init NSS netlink IPv4 handler\n");
 
 	/*
 	 * register NETLINK ops with the family
 	 */
-	error = genl_register_family_with_ops_groups(&nss_nlipv4_family, nss_nlipv4_ops, nss_nlipv4_mcgrp);
+	error = genl_register_family(&nss_nlipv4_family);
 	if (error != 0) {
 		nss_nl_info_always("Error: unable to register IPv4 family\n");
 		return false;
 	}
 
 	/*
+	 * To get NSS context
+	 */
+	gbl_ctx.nss = nss_ipv4_get_mgr();
+	if (!gbl_ctx.nss) {
+		nss_nl_info_always("Error: retreiving the NSS Context \n");
+		goto unreg_family;
+	}
+
+	/*
 	 * register device call back handler for ipv4 from NSS
 	 */
-	gbl_ctx.nss = nss_ipv4_notify_register(nss_nlipv4_process_notify, &gbl_ctx);
-	if (!gbl_ctx.nss) {
+	ret = nss_ipv4_stats_register_notifier(&nss_ipv4_stats_notifier_nb);
+	if (ret) {
 		nss_nl_info_always("Error: retreiving the NSS Context \n");
 		goto unreg_family;
 	}
@@ -857,7 +953,7 @@ bool nss_nlipv4_exit(void)
 	/*
 	 * Unregister the device callback handler for ipv4
 	 */
-	nss_ipv4_notify_unregister();
+	nss_ipv4_stats_unregister_notifier(&nss_ipv4_stats_notifier_nb);
 
 	gbl_ctx.nss = NULL;
 

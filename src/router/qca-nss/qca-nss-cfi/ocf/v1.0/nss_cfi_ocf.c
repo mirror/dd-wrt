@@ -1,4 +1,4 @@
-/* Copyright (c) 2014,2015-2018 The Linux Foundation. All rights reserved.
+/* Copyright (c) 2014,2015-2020 The Linux Foundation. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -105,6 +105,14 @@ static struct nss_cfi_ocf_algo cfi_algo[CRYPTO_ALGORITHM_MAX + 1] = {
 					NSS_CFI_OCF_ALGO_TYPE_IS_CIPHER
 				}
 };
+
+/*
+ * Dummy trap function for Offload
+ */
+static int32_t nss_cfi_ocf_offload_trap(struct sk_buff *skb, struct nss_cfi_crypto_info *crypto)
+{
+	return -1;
+}
 
 /*
  * Dummy trap function for Session
@@ -331,7 +339,6 @@ static void nss_cfi_ocf_process_done(struct nss_crypto_buf *buf)
 
 	nss_cfi_assert(buf);
 
-
 	crp = (struct cryptop *)buf->cb_ctx;
 	crd = crp->crp_desc;
 
@@ -521,7 +528,7 @@ static int nss_cfi_ocf_process(device_t dev, struct cryptop *crp, int hint)
 
 		params.cipher_skip = cip_crd->crd_skip;
 
-		nss_cfi_dbg("cipher len %d cipher skip %d iv_addr %p\n",
+		nss_cfi_dbg("cipher len %d cipher skip %d iv_addr %px\n",
 				cipher_len, params.cipher_skip, iv_addr);
 	}
 
@@ -625,16 +632,19 @@ static void nss_cfi_ocf_unregister(nss_crypto_user_ctx_t cfi)
  */
 void nss_cfi_ocf_register_ipsec(nss_cfi_data_trap_t encrypt_fn,
 				nss_cfi_data_trap_t decrypt_fn,
-				nss_cfi_session_trap_t session_fn)
+				nss_cfi_session_trap_t session_fn,
+				nss_cfi_data_trap_t offload_fn)
 {
 	struct nss_cfi_ocf *sc = &g_cfi_ocf;
 	nss_cfi_data_trap_t encrypt;
 	nss_cfi_data_trap_t decrypt;
+	nss_cfi_data_trap_t offload;
 	nss_cfi_session_trap_t session;
 
 	encrypt = xchg(&sc->encrypt_fn, encrypt_fn);
 	decrypt = xchg(&sc->decrypt_fn, decrypt_fn);
 	session = xchg(&sc->session_fn, session_fn);
+	offload = xchg(&sc->offload_fn, offload_fn);
 }
 
 /*
@@ -645,11 +655,12 @@ void nss_cfi_ocf_unregister_ipsec(void)
 	struct nss_cfi_ocf *sc = &g_cfi_ocf;
 	nss_cfi_data_trap_t encrypt;
 	nss_cfi_data_trap_t decrypt;
+	nss_cfi_data_trap_t offload;
 	nss_cfi_session_trap_t session;
-
 
 	nss_cfi_info("Unregistering IPsec trap handlers\n");
 
+	offload = xchg(&sc->offload_fn, nss_cfi_ocf_offload_trap);
 	session = xchg(&sc->session_fn, nss_cfi_ocf_session_trap);
 	encrypt = xchg(&sc->encrypt_fn, nss_cfi_ocf_encrypt_trap);
 	decrypt = xchg(&sc->decrypt_fn, nss_cfi_ocf_decrypt_trap);
@@ -665,6 +676,7 @@ int nss_cfi_ocf_init(void)
 	struct nss_cfi_ocf *sc = &g_cfi_ocf;
 	nss_cfi_data_trap_t encrypt;
 	nss_cfi_data_trap_t decrypt;
+	nss_cfi_data_trap_t offload;
 	nss_cfi_session_trap_t session;
 
 	softc_device_init(sc, NSS_CFI_DRV_NAME, 0, nss_cfi_ocf_methods);
@@ -678,6 +690,7 @@ int nss_cfi_ocf_init(void)
 	encrypt = xchg(&sc->encrypt_fn, nss_cfi_ocf_encrypt_trap);
 	decrypt = xchg(&sc->decrypt_fn, nss_cfi_ocf_decrypt_trap);
 	session = xchg(&sc->session_fn, nss_cfi_ocf_session_trap);
+	offload = xchg(&sc->offload_fn, nss_cfi_ocf_offload_trap);
 
 	nss_crypto_register_user(nss_cfi_ocf_register, nss_cfi_ocf_unregister, "nss_cfi_ocf");
 

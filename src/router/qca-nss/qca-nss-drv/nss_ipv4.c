@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2013-2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2013-2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -19,9 +19,9 @@
  *	NSS IPv4 APIs
  */
 #include <linux/sysctl.h>
-#include "nss_tx_rx_common.h"
 #include "nss_dscp_map.h"
 #include "nss_ipv4_stats.h"
+#include "nss_ipv4_strings.h"
 
 #define NSS_IPV4_TX_MSG_TIMEOUT 1000	/* 1 sec timeout for IPv4 messages */
 
@@ -84,12 +84,12 @@ static void nss_ipv4_rx_msg_handler(struct nss_ctx_instance *nss_ctx, struct nss
 	 * Sanity check the message type
 	 */
 	if (ncm->type >= NSS_IPV4_MAX_MSG_TYPES) {
-		nss_warning("%p: message type out of range: %d", nss_ctx, ncm->type);
+		nss_warning("%px: message type out of range: %d", nss_ctx, ncm->type);
 		return;
 	}
 
 	if (nss_cmn_get_msg_len(ncm) > sizeof(struct nss_ipv4_msg)) {
-		nss_warning("%p: message length is invalid: %d", nss_ctx, nss_cmn_get_msg_len(ncm));
+		nss_warning("%px: message length is invalid: %d", nss_ctx, nss_cmn_get_msg_len(ncm));
 		return;
 	}
 
@@ -101,9 +101,10 @@ static void nss_ipv4_rx_msg_handler(struct nss_ctx_instance *nss_ctx, struct nss
 	switch (nim->cm.type) {
 	case NSS_IPV4_RX_NODE_STATS_SYNC_MSG:
 		/*
-		* Update driver statistics on node sync.
-		*/
+		 * Update driver statistics on node sync and send statistics notifications to the registered modules.
+		 */
 		nss_ipv4_stats_node_sync(nss_ctx, &nim->msg.node_stats);
+		nss_ipv4_stats_notify(nss_ctx);
 		break;
 
 	case NSS_IPV4_RX_CONN_STATS_SYNC_MSG:
@@ -220,7 +221,7 @@ nss_tx_status_t nss_ipv4_conn_inquiry(struct nss_ipv4_5tuple *ipv4_5t_p,
 	nim.msg.inquiry.rr.tuple = *ipv4_5t_p;
 	nss_tx_status = nss_ipv4_tx(nss_ctx, &nim);
 	if (nss_tx_status != NSS_TX_SUCCESS) {
-		nss_warning("%p: Send inquiry message failed\n", ipv4_5t_p);
+		nss_warning("%px: Send inquiry message failed\n", ipv4_5t_p);
 	}
 
 	return nss_tx_status;
@@ -239,12 +240,12 @@ nss_tx_status_t nss_ipv4_tx_with_size(struct nss_ctx_instance *nss_ctx, struct n
 	 * Sanity check the message
 	 */
 	if (ncm->interface != NSS_IPV4_RX_INTERFACE) {
-		nss_warning("%p: tx request for another interface: %d", nss_ctx, ncm->interface);
+		nss_warning("%px: tx request for another interface: %d", nss_ctx, ncm->interface);
 		return NSS_TX_FAILURE;
 	}
 
 	if (ncm->type >= NSS_IPV4_MAX_MSG_TYPES) {
-		nss_warning("%p: message type out of range: %d", nss_ctx, ncm->type);
+		nss_warning("%px: message type out of range: %d", nss_ctx, ncm->type);
 		return NSS_TX_FAILURE;
 	}
 
@@ -285,14 +286,14 @@ nss_tx_status_t nss_ipv4_tx_sync(struct nss_ctx_instance *nss_ctx, struct nss_ip
 
 	status = nss_ipv4_tx(nss_ctx, nim);
 	if (status != NSS_TX_SUCCESS) {
-		nss_warning("%p: nss ipv4 msg tx failed\n", nss_ctx);
+		nss_warning("%px: nss ipv4 msg tx failed\n", nss_ctx);
 		up(&nss_ipv4_pvt.sem);
 		return status;
 	}
 
 	ret = wait_for_completion_timeout(&nss_ipv4_pvt.complete, msecs_to_jiffies(NSS_IPV4_TX_MSG_TIMEOUT));
 	if (!ret) {
-		nss_warning("%p: IPv4 tx sync failed due to timeout\n", nss_ctx);
+		nss_warning("%px: IPv4 tx sync failed due to timeout\n", nss_ctx);
 		nss_ipv4_pvt.response = NSS_TX_FAILURE;
 	}
 
@@ -382,6 +383,7 @@ void nss_ipv4_register_handler(void)
 	}
 
 	nss_ipv4_stats_dentry_create();
+	nss_ipv4_strings_dentry_create();
 }
 
 /*
@@ -394,14 +396,14 @@ static void nss_ipv4_conn_cfg_process_callback(void *app_data, struct nss_ipv4_m
 	struct nss_ctx_instance *nss_ctx __maybe_unused = nss_ipv4_get_mgr();
 
 	if (nim->cm.response != NSS_CMN_RESPONSE_ACK) {
-		nss_warning("%p: IPv4 connection configuration failed with error: %d\n", nss_ctx, nim->cm.error);
+		nss_warning("%px: IPv4 connection configuration failed with error: %d\n", nss_ctx, nim->cm.error);
 		nss_core_update_max_ipv4_conn(NSS_FW_DEFAULT_NUM_CONN);
 		nss_ipv4_free_conn_tables();
 		return;
 	}
 
 	nss_ipv4_conn_cfg = ntohl(nirccm->num_conn);
-	nss_warning("%p: IPv4 connection configuration success: %d\n", nss_ctx, nim->cm.error);
+	nss_info("%px: IPv4 connection configuration success: %d\n", nss_ctx, nim->cm.error);
 }
 
 /*
@@ -415,17 +417,17 @@ static int nss_ipv4_conn_cfg_process(struct nss_ctx_instance *nss_ctx, int conn)
 	nss_tx_status_t nss_tx_status;
 
 	if ((!nss_ipv4_ct_info.ce_table_size) || (!nss_ipv4_ct_info.cme_table_size)) {
-		nss_warning("%p: connection entry or connection match entry table size not available\n",
+		nss_warning("%px: connection entry or connection match entry table size not available\n",
 				nss_ctx);
 		return -EINVAL;
 	}
 
-	nss_info("%p: IPv4 supported connections: %d\n", nss_ctx, conn);
+	nss_info("%px: IPv4 supported connections: %d\n", nss_ctx, conn);
 
 	nss_ipv4_ct_info.ce_mem = __get_free_pages(GFP_KERNEL | __GFP_NOWARN | __GFP_ZERO,
 					get_order(nss_ipv4_ct_info.ce_table_size));
 	if (!nss_ipv4_ct_info.ce_mem) {
-		nss_warning("%p: Memory allocation failed for IPv4 Connections: %d\n",
+		nss_warning("%px: Memory allocation failed for IPv4 Connections: %d\n",
 							nss_ctx,
 							conn);
 		goto fail;
@@ -434,7 +436,7 @@ static int nss_ipv4_conn_cfg_process(struct nss_ctx_instance *nss_ctx, int conn)
 	nss_ipv4_ct_info.cme_mem = __get_free_pages(GFP_KERNEL | __GFP_NOWARN | __GFP_ZERO,
 					get_order(nss_ipv4_ct_info.cme_table_size));
 	if (!nss_ipv4_ct_info.ce_mem) {
-		nss_warning("%p: Memory allocation failed for IPv4 Connections: %d\n",
+		nss_warning("%px: Memory allocation failed for IPv4 Connections: %d\n",
 							nss_ctx,
 							conn);
 		goto fail;
@@ -448,19 +450,19 @@ static int nss_ipv4_conn_cfg_process(struct nss_ctx_instance *nss_ctx, int conn)
 	nirccm->num_conn = htonl(conn);
 	nirccm->ce_mem = dma_map_single(nss_ctx->dev, (void *)nss_ipv4_ct_info.ce_mem, nss_ipv4_ct_info.ce_table_size, DMA_TO_DEVICE);
 	if (unlikely(dma_mapping_error(nss_ctx->dev, nirccm->ce_mem))) {
-		nss_warning("%p: DMA mapping failed for virtual address = %p", nss_ctx, (void *)nss_ipv4_ct_info.ce_mem);
+		nss_warning("%px: DMA mapping failed for virtual address = %px", nss_ctx, (void *)nss_ipv4_ct_info.ce_mem);
 		goto fail;
 	}
 
 	nirccm->cme_mem = dma_map_single(nss_ctx->dev, (void *)nss_ipv4_ct_info.cme_mem, nss_ipv4_ct_info.cme_table_size, DMA_TO_DEVICE);
 	if (unlikely(dma_mapping_error(nss_ctx->dev, nirccm->cme_mem))) {
-		nss_warning("%p: DMA mapping failed for virtual address = %p", nss_ctx, (void *)nss_ipv4_ct_info.cme_mem);
+		nss_warning("%px: DMA mapping failed for virtual address = %px", nss_ctx, (void *)nss_ipv4_ct_info.cme_mem);
 		goto fail;
 	}
 
 	nss_tx_status = nss_ipv4_tx(nss_ctx, &nim);
 	if (nss_tx_status != NSS_TX_SUCCESS) {
-		nss_warning("%p: nss_tx error setting IPv4 Connections: %d\n",
+		nss_warning("%px: nss_tx error setting IPv4 Connections: %d\n",
 							nss_ctx,
 							conn);
 		goto fail;
@@ -483,7 +485,7 @@ static void nss_ipv4_update_conn_count_callback(void *app_data, struct nss_ipv4_
 	struct nss_ctx_instance *nss_ctx = nss_ipv4_get_mgr();
 
 	if (nim->cm.response != NSS_CMN_RESPONSE_ACK) {
-		nss_warning("%p: IPv4 fetch connection info failed with error: %d\n", nss_ctx, nim->cm.error);
+		nss_warning("%px: IPv4 fetch connection info failed with error: %d\n", nss_ctx, nim->cm.error);
 		nss_core_update_max_ipv4_conn(NSS_FW_DEFAULT_NUM_CONN);
 		return;
 	}
@@ -494,7 +496,7 @@ static void nss_ipv4_update_conn_count_callback(void *app_data, struct nss_ipv4_
 	nss_ipv4_ct_info.cme_table_size = ntohl(nircgts->cme_table_size);
 
 	if (nss_ipv4_conn_cfg_process(nss_ctx, ntohl(nircgts->num_conn)) != 0) {
-		nss_warning("%p: IPv4 connection entry or connection match entry table size\
+		nss_warning("%px: IPv4 connection entry or connection match entry table size\
 				not available\n", nss_ctx);
 	}
 
@@ -520,7 +522,7 @@ int nss_ipv4_update_conn_count(int ipv4_num_conn)
 	 * By default, NSS FW is configured with default number of connections.
 	 */
 	if (ipv4_num_conn == NSS_FW_DEFAULT_NUM_CONN) {
-		nss_info("%p: Default number of connections (%d) already configured\n", nss_ctx, ipv4_num_conn);
+		nss_info("%px: Default number of connections (%d) already configured\n", nss_ctx, ipv4_num_conn);
 		return 0;
 	}
 
@@ -534,9 +536,9 @@ int nss_ipv4_update_conn_count(int ipv4_num_conn)
 	if ((ipv4_num_conn & NSS_NUM_CONN_QUANTA_MASK) ||
 		(sum_of_conn > NSS_MAX_TOTAL_NUM_CONN_IPV4_IPV6) ||
 		(ipv4_num_conn < NSS_MIN_NUM_CONN)) {
-		nss_warning("%p: input supported connections (%d) does not adhere\
+		nss_warning("%px: input supported connections (%d) does not adhere\
 				specifications\n1) not multiple of 1024,\n2) is less than \
-				min val: %d, OR\n 	IPv4/6 total exceeds %d\n",
+				min val: %d, OR\n	IPv4/6 total exceeds %d\n",
 				nss_ctx,
 				ipv4_num_conn,
 				NSS_MIN_NUM_CONN,
@@ -553,7 +555,7 @@ int nss_ipv4_update_conn_count(int ipv4_num_conn)
 	nss_tx_status = nss_ipv4_tx(nss_ctx, &nim);
 
 	if (nss_tx_status != NSS_TX_SUCCESS) {
-		nss_warning("%p: Send fetch connection info message failed\n", nss_ctx);
+		nss_warning("%px: Send fetch connection info message failed\n", nss_ctx);
 		return -EINVAL;
 	}
 
@@ -614,7 +616,7 @@ static int nss_ipv4_accel_mode_cfg_handler(struct ctl_table *ctl, int write, voi
 
 	nss_tx_status = nss_ipv4_tx_sync(nss_ctx, &nim);
 	if (nss_tx_status != NSS_TX_SUCCESS) {
-		nss_warning("%p: Send acceleration mode message failed\n", nss_ctx);
+		nss_warning("%px: Send acceleration mode message failed\n", nss_ctx);
 		nss_ipv4_accel_mode_cfg = current_value;
 		return -EIO;
 	}
@@ -663,7 +665,7 @@ static int nss_ipv4_dscp_map_cfg_handler(struct ctl_table *ctl, int write, void 
 
 	status = nss_ipv4_tx_sync(nss_ctx, &nim);
 	if (status != NSS_TX_SUCCESS) {
-		nss_warning("%p: ipv4 dscp2pri config message failed\n", nss_ctx);
+		nss_warning("%px: ipv4 dscp2pri config message failed\n", nss_ctx);
 		return -EFAULT;
 	}
 

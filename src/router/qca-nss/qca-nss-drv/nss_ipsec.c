@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2013-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2013-2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -40,6 +40,11 @@
 #define NSS_IPSEC_DATA_INTERFACE_NUM NSS_IPSEC_CMN_INTERFACE
 
 #elif defined(NSS_HAL_IPQ60XX_SUPPORT)
+#define NSS_IPSEC_ENCAP_INTERFACE_NUM NSS_IPSEC_CMN_INTERFACE
+#define NSS_IPSEC_DECAP_INTERFACE_NUM NSS_IPSEC_CMN_INTERFACE
+#define NSS_IPSEC_DATA_INTERFACE_NUM NSS_IPSEC_CMN_INTERFACE
+
+#elif defined(NSS_HAL_IPQ50XX_SUPPORT)
 #define NSS_IPSEC_ENCAP_INTERFACE_NUM NSS_IPSEC_CMN_INTERFACE
 #define NSS_IPSEC_DECAP_INTERFACE_NUM NSS_IPSEC_CMN_INTERFACE
 #define NSS_IPSEC_DATA_INTERFACE_NUM NSS_IPSEC_CMN_INTERFACE
@@ -131,19 +136,19 @@ static void nss_ipsec_msg_handler(struct nss_ctx_instance *nss_ctx, struct nss_c
 	 * Sanity check the message type
 	 */
 	if (ncm->type > NSS_IPSEC_MSG_TYPE_MAX) {
-		nss_warning("%p: rx message type out of range: %d", nss_ctx, ncm->type);
+		nss_warning("%px: rx message type out of range: %d", nss_ctx, ncm->type);
 		return;
 	}
 
 	if (nss_cmn_get_msg_len(ncm) > sizeof(struct nss_ipsec_msg)) {
-		nss_warning("%p: rx message length is invalid: %d", nss_ctx, nss_cmn_get_msg_len(ncm));
+		nss_warning("%px: rx message length is invalid: %d", nss_ctx, nss_cmn_get_msg_len(ncm));
 		return;
 	}
 
 	BUG_ON((if_num != NSS_IPSEC_ENCAP_INTERFACE_NUM) && (if_num != NSS_IPSEC_DECAP_INTERFACE_NUM));
 
 	if (ncm->response == NSS_CMN_RESPONSE_LAST) {
-		nss_warning("%p: rx message response for if %d, type %d, is invalid: %d", nss_ctx, ncm->interface,
+		nss_warning("%px: rx message response for if %d, type %d, is invalid: %d", nss_ctx, ncm->interface,
 				ncm->type, ncm->response);
 		return;
 	}
@@ -164,7 +169,7 @@ static void nss_ipsec_msg_handler(struct nss_ctx_instance *nss_ctx, struct nss_c
 	 */
 	cb = (nss_ipsec_msg_callback_t)ncm->cb;
 	if (unlikely(!cb)) {
-		nss_trace("%p: rx handler has been unregistered for i/f: %d", nss_ctx, ncm->interface);
+		nss_trace("%px: rx handler has been unregistered for i/f: %d", nss_ctx, ncm->interface);
 		return;
 	}
 
@@ -210,7 +215,7 @@ nss_tx_status_t nss_ipsec_tx_msg(struct nss_ctx_instance *nss_ctx, struct nss_ip
 {
 	struct nss_cmn_msg *ncm = &msg->cm;
 
-	nss_info("%p: message %d for if %d\n", nss_ctx, ncm->type, ncm->interface);
+	nss_info("%px: message %d for if %d\n", nss_ctx, ncm->type, ncm->interface);
 
 	BUILD_BUG_ON(NSS_NBUF_PAYLOAD_SIZE < sizeof(struct nss_ipsec_msg));
 
@@ -220,16 +225,16 @@ nss_tx_status_t nss_ipsec_tx_msg(struct nss_ctx_instance *nss_ctx, struct nss_ip
 	nss_ipsec_log_tx_msg(msg);
 
 	if ((ncm->interface != NSS_IPSEC_ENCAP_INTERFACE_NUM) && (ncm->interface != NSS_IPSEC_DECAP_INTERFACE_NUM)) {
-		nss_warning("%p: tx message request for another interface: %d", nss_ctx, ncm->interface);
+		nss_warning("%px: tx message request for another interface: %d", nss_ctx, ncm->interface);
 		return NSS_TX_FAILURE;
 	}
 
 	if (ncm->type > NSS_IPSEC_MSG_TYPE_MAX) {
-		nss_warning("%p: tx message type out of range: %d", nss_ctx, ncm->type);
+		nss_warning("%px: tx message type out of range: %d", nss_ctx, ncm->type);
 		return NSS_TX_FAILURE;
 	}
 
-	nss_info("msg params version:%d, interface:%d, type:%d, cb:%p, app_data:%p, len:%d\n",
+	nss_info("msg params version:%d, interface:%d, type:%d, cb:%px, app_data:%px, len:%d\n",
 			ncm->version, ncm->interface, ncm->type, (void *)ncm->cb, (void *)ncm->app_data, ncm->len);
 
 	return nss_core_send_cmd(nss_ctx, msg, sizeof(*msg), NSS_NBUF_PAYLOAD_SIZE);
@@ -252,7 +257,7 @@ nss_tx_status_t nss_ipsec_tx_msg_sync(struct nss_ctx_instance *nss_ctx, uint32_t
 	 * Length of the message should be the based on type
 	 */
 	if (len > sizeof(nim_local.msg)) {
-		nss_warning("%p: (%u)Bad message length(%u) for type (%d)", nss_ctx, if_num, len, type);
+		nss_warning("%px: (%u)Bad message length(%u) for type (%d)", nss_ctx, if_num, len, type);
 		return NSS_TX_FAILURE_TOO_LARGE;
 	}
 
@@ -260,7 +265,7 @@ nss_tx_status_t nss_ipsec_tx_msg_sync(struct nss_ctx_instance *nss_ctx, uint32_t
 	 * Response buffer is a required for copying the response for message
 	 */
 	if (!resp) {
-		nss_warning("%p: (%u)Response buffer is empty, type(%d)", nss_ctx, if_num, type);
+		nss_warning("%px: (%u)Response buffer is empty, type(%d)", nss_ctx, if_num, type);
 		return NSS_TX_FAILURE_BAD_PARAM;
 	}
 
@@ -292,13 +297,13 @@ nss_tx_status_t nss_ipsec_tx_msg_sync(struct nss_ctx_instance *nss_ctx, uint32_t
 
 	status = nss_ipsec_tx_msg(nss_ctx, &nim_local);
 	if (status != NSS_TX_SUCCESS) {
-		nss_warning("%p: ipsec_tx_msg failed", nss_ctx);
+		nss_warning("%px: ipsec_tx_msg failed", nss_ctx);
 		goto done;
 	}
 
 	ret = wait_for_completion_timeout(&nss_ipsec.complete, NSS_IPSEC_TX_TIMEO_TICKS);
 	if (!ret) {
-		nss_warning("%p: IPsec msg tx failed due to timeout", nss_ctx);
+		nss_warning("%px: IPsec msg tx failed due to timeout", nss_ctx);
 		status = NSS_TX_FAILURE_NOT_ENABLED;
 		goto done;
 	}
@@ -334,9 +339,9 @@ nss_tx_status_t nss_ipsec_tx_buf(struct sk_buff *skb, uint32_t if_num)
 {
 	struct nss_ctx_instance *nss_ctx = &nss_top_main.nss[nss_top_main.ipsec_handler_id];
 
-	nss_trace("%p: IPsec If Tx packet, id:%d, data=%p", nss_ctx, if_num, skb->data);
+	nss_trace("%px: IPsec If Tx packet, id:%d, data=%px", nss_ctx, if_num, skb->data);
 
-	return nss_core_send_packet(nss_ctx, skb, if_num, 0);
+	return nss_core_send_packet(nss_ctx, skb, if_num, H2N_BIT_FLAG_BUFFER_REUSABLE);
 }
 EXPORT_SYMBOL(nss_ipsec_tx_buf);
 
@@ -357,7 +362,7 @@ struct nss_ctx_instance *nss_ipsec_notify_register(uint32_t if_num, nss_ipsec_ms
 	struct nss_ctx_instance *nss_ctx = &nss_top->nss[core_id];
 
 	if (if_num >= NSS_MAX_NET_INTERFACES) {
-		nss_warning("%p: notfiy register received for invalid interface %d", nss_ctx, if_num);
+		nss_warning("%px: notfiy register received for invalid interface %d", nss_ctx, if_num);
 		return NULL;
 	}
 
@@ -385,7 +390,7 @@ void nss_ipsec_notify_unregister(struct nss_ctx_instance *nss_ctx, uint32_t if_n
 	struct nss_top_instance *nss_top = nss_ctx->nss_top;
 
 	if (if_num >= NSS_MAX_NET_INTERFACES) {
-		nss_warning("%p: notify unregister received for invalid interface %d", nss_ctx, if_num);
+		nss_warning("%px: notify unregister received for invalid interface %d", nss_ctx, if_num);
 		return;
 	}
 
@@ -414,7 +419,7 @@ struct nss_ctx_instance *nss_ipsec_data_register(uint32_t if_num, nss_ipsec_buf_
 	nss_ctx = &nss_top_main.nss[nss_top_main.ipsec_handler_id];
 
 	if ((if_num >= NSS_MAX_NET_INTERFACES) && (if_num < NSS_MAX_PHYSICAL_INTERFACES)){
-		nss_warning("%p: data register received for invalid interface %d", nss_ctx, if_num);
+		nss_warning("%px: data register received for invalid interface %d", nss_ctx, if_num);
 		return NULL;
 	}
 
@@ -446,7 +451,7 @@ void nss_ipsec_data_unregister(struct nss_ctx_instance *nss_ctx, uint32_t if_num
 	struct nss_ctx_instance *nss_ctx0;
 
 	if ((if_num >= NSS_MAX_NET_INTERFACES) && (if_num < NSS_MAX_PHYSICAL_INTERFACES)){
-		nss_warning("%p: data unregister received for invalid interface %d", nss_ctx, if_num);
+		nss_warning("%px: data unregister received for invalid interface %d", nss_ctx, if_num);
 		return;
 	}
 
@@ -524,7 +529,7 @@ bool nss_ipsec_ppe_port_config(struct nss_ctx_instance *nss_ctx, struct net_devi
 	if_num = NSS_INTERFACE_NUM_APPEND_COREID(nss_ctx, if_num);
 
 	if (nss_ppe_tx_ipsec_config_msg(if_num, vsi_num, netdev->mtu, netdev->mtu) != NSS_TX_SUCCESS) {
-		nss_warning("%p: Failed to configure PPE IPsec port", nss_ctx);
+		nss_warning("%px: Failed to configure PPE IPsec port", nss_ctx);
 		return false;
 	}
 
@@ -545,7 +550,7 @@ bool nss_ipsec_ppe_mtu_update(struct nss_ctx_instance *nss_ctx, uint32_t if_num,
 	if_num = NSS_INTERFACE_NUM_APPEND_COREID(nss_ctx, if_num);
 
 	if (nss_ppe_tx_ipsec_mtu_msg(if_num, mtu, mru) != NSS_TX_SUCCESS) {
-		nss_warning("%p: Failed to update PPE MTU for IPsec port", nss_ctx);
+		nss_warning("%px: Failed to update PPE MTU for IPsec port", nss_ctx);
 		return false;
 	}
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017, 2020, The Linux Foundation. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -131,4 +131,15 @@ extern void nss_crypto_session_free(struct nss_crypto_user *user, uint32_t sessi
  */
 extern int nss_crypto_transform_payload(struct nss_crypto_user *user, struct nss_crypto_hdr *ch,
 				nss_crypto_req_callback_t cb, void *app_data);
+
+/**
+ * nss_crypto_algo_is_supp
+ *	check if the algo is supported by HW
+ *
+ * @param[in] algo index to be looked up for
+ *
+ * @return
+ * true if the algorithm is supported by HW, else returns false
+ */
+extern bool nss_crypto_algo_is_supp(uint32_t algo);
 #endif

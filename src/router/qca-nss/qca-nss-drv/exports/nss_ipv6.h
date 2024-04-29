@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2014-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2014-2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -26,6 +26,59 @@
  * @addtogroup nss_ipv6_subsystem
  * @{
  */
+
+/**
+ * nss_ipv6_stats_types
+ *	IPv6 node statistics.
+ */
+enum nss_ipv6_stats_types {
+	NSS_IPV6_STATS_ACCELERATED_RX_PKTS,
+					/**< Accelerated IPv6 Rx packets. */
+	NSS_IPV6_STATS_ACCELERATED_RX_BYTES,
+					/**< Accelerated IPv6 Rx bytes. */
+	NSS_IPV6_STATS_ACCELERATED_TX_PKTS,
+					/**< Accelerated IPv6 Tx packets. */
+	NSS_IPV6_STATS_ACCELERATED_TX_BYTES,
+					/**< Accelerated IPv6 Tx bytes. */
+	NSS_IPV6_STATS_CONNECTION_CREATE_REQUESTS,
+					/**< Number of IPv6 connection create requests. */
+	NSS_IPV6_STATS_CONNECTION_CREATE_COLLISIONS,
+					/**< Number of IPv6 connection create requests that collided with existing entries. */
+	NSS_IPV6_STATS_CONNECTION_CREATE_INVALID_INTERFACE,
+					/**< Number of IPv6 connection create requests that had invalid interface. */
+	NSS_IPV6_STATS_CONNECTION_DESTROY_REQUESTS,
+					/**< Number of IPv6 connection destroy requests. */
+	NSS_IPV6_STATS_CONNECTION_DESTROY_MISSES,
+					/**< Number of IPv6 connection destroy requests that missed the cache. */
+	NSS_IPV6_STATS_CONNECTION_HASH_HITS,
+					/**< Number of IPv6 connection hash hits. */
+	NSS_IPV6_STATS_CONNECTION_HASH_REORDERS,
+					/**< Number of IPv6 connection hash reorders. */
+	NSS_IPV6_STATS_CONNECTION_FLUSHES,
+					/**< Number of IPv6 connection flushes. */
+	NSS_IPV6_STATS_CONNECTION_EVICTIONS,
+					/**< Number of IPv6 connection evictions. */
+	NSS_IPV6_STATS_FRAGMENTATIONS,
+					/**< Number of successful IPv6 fragmentations performed. */
+	NSS_IPV6_STATS_FRAG_FAILS,
+					/**< Number of IPv6 fragmentation fails. */
+	NSS_IPV6_STATS_DROPPED_BY_RULE,
+					/**< Number of IPv6 packets dropped by a drop rule. */
+	NSS_IPV6_STATS_MC_CONNECTION_CREATE_REQUESTS,
+					/**< Number of successful IPv6 multicast create requests. */
+	NSS_IPV6_STATS_MC_CONNECTION_UPDATE_REQUESTS,
+					/**< Number of successful IPv6 multicast update requests. */
+	NSS_IPV6_STATS_MC_CONNECTION_CREATE_INVALID_INTERFACE,
+					/**< Number of IPv6 multicast connection create requests that had invalid interface. */
+	NSS_IPV6_STATS_MC_CONNECTION_DESTROY_REQUESTS,
+					/**< Number of IPv6 multicast connection destroy requests. */
+	NSS_IPV6_STATS_MC_CONNECTION_DESTROY_MISSES,
+					/**< Number of IPv6 multicast connection destroy requests that missed the cache. */
+	NSS_IPV6_STATS_MC_CONNECTION_FLUSHES,
+					/**< Number of IPv6 multicast connection flushes. */
+	NSS_IPV6_STATS_MAX,
+					/**< Maximum message type. */
+};
 
 /**
  * nss_ipv6_message_types
@@ -111,6 +164,7 @@ enum nss_ipv6_dscp_map_actions {
 #define NSS_IPV6_RULE_CREATE_RPS_VALID 0x200	/**< RPS for core selection is valid. */
 #define NSS_IPV6_RULE_CREATE_DEST_MAC_VALID 0x400
 		/**< Destination MAC address fields are valid. */
+#define NSS_IPV6_RULE_CREATE_IGS_VALID 0x800	/**< Ingress shaping fields are valid. */
 
 
 /*
@@ -129,6 +183,8 @@ enum nss_ipv6_dscp_map_actions {
 		/**< Ingress VLAN fields are valid. */
 #define NSS_IPV6_MC_RULE_CREATE_FLAG_INGRESS_PPPOE 0x08
 		/**< Ingress PPPoE fields are valid. */
+#define NSS_IPV6_MC_RULE_CREATE_FLAG_IGS_VALID 0x10
+		/**< Ingress shaping fields are valid. */
 
 /*
  * Per-interface rule flags for a multicast connection (to be used with the rule_flags
@@ -218,7 +274,16 @@ enum nss_ipv6_exception_events {
 	NSS_IPV6_EXCEPTION_EVENT_TUNIPIP6_NO_ICME,
 	NSS_IPV6_EXCEPTION_EVENT_TUNIPIP6_SMALL_HOP_LIMIT,
 	NSS_IPV6_EXCEPTION_EVENT_TUNIPIP6_NEEDS_FRAGMENTATION,
+	NSS_IPV6_EXCEPTION_EVENT_PPPOE_BRIDGE_NO_ICME,
 	NSS_IPV6_EXCEPTION_EVENT_DONT_FRAG_SET,
+#if (NSS_FW_VERSION_CODE > NSS_FW_VERSION(11,0))
+	NSS_IPV6_EXCEPTION_EVENT_REASSEMBLY_NOT_SUPPORTED,
+#endif
+	NSS_IPV6_EXCEPTION_EVENT_PPPOE_NO_SESSION,
+#if (NSS_FW_VERSION_CODE > NSS_FW_VERSION(11,0))
+	NSS_IPV6_EXCEPTION_EVENT_ICMP_IPV6_GRE_HEADER_INCOMPLETE,
+	NSS_IPV6_EXCEPTION_EVENT_ICMP_IPV6_ESP_HEADER_INCOMPLETE,
+#endif
 	NSS_IPV6_EXCEPTION_EVENT_MAX
 };
 
@@ -328,6 +393,17 @@ struct nss_ipv6_protocol_tcp_rule {
 };
 
 /**
+ * nss_ipv6_igs_rule
+ *	Information for ingress shaping connection rules.
+ */
+struct nss_ipv6_igs_rule {
+	uint16_t igs_flow_qos_tag;
+			/**< Ingress shaping QoS tag associated with this rule for the flow direction. */
+	uint16_t igs_return_qos_tag;
+			/**< Ingress shaping QoS tag associated with this rule for the return direction. */
+};
+
+/**
  * nss_ipv6_qos_rule
  *	Information for QoS connection rules.
  */
@@ -397,10 +473,24 @@ enum nss_ipv6_error_response_types {
 		/**< Invalid interface for updating multicast. */
 	NSS_IPV6_CR_ACCEL_MODE_CONFIG_INVALID,
 		/**< Invalid config value for acceleration mode. */
+#if (NSS_FW_VERSION_CODE > NSS_FW_VERSION(11,0))
+	NSS_IPV6_CR_INVALID_MSG_ERROR,
+		/**< Invalid message size error. */
+	NSS_IPV6_CR_DSCP2PRI_PRI_INVALID,
+		/**< Priority value out of range error. */
+	NSS_IPV6_CR_DSCP2PRI_CONFIG_INVALID,
+		/**< Invalid DSCP value. */
+#endif
 	NSS_IPV6_CR_INVALID_RPS,
 		/**< Invalid RPS Value. */
-	NSS_IPV6_CR_HASH_BITMAP_INVALID,
+	NSS_IPV6_HASH_BITMAP_INVALID,
 		/**< Invalid hash bitmap. */
+#if (NSS_FW_VERSION_CODE > NSS_FW_VERSION(11,0))
+	NSS_IPV6_DR_HW_DECEL_FAIL_ERROR,
+		/**< Hardware deceleration fail error. */
+	NSS_IPV6_CR_RETURN_EXIST_ERROR,
+		/**< Rule creation failed because a 5-tuple return already exists. */
+#endif
 	NSS_IPV6_LAST
 		/**< Maximum number of error responses. */
 };
@@ -439,6 +529,8 @@ struct nss_ipv6_rule_create_msg {
 			/**< Parameters related to the next hop. */
 	struct nss_ipv6_rps_rule rps_rule;
 			/**< RPS parameter. */
+	struct nss_ipv6_igs_rule igs_rule;
+			/**< Ingress shaping related accleration parameters. */
 };
 
 /**
@@ -491,7 +583,8 @@ struct nss_ipv6_mc_rule_create_msg {
 	uint16_t dest_mac[3];		/**< Destination multicast MAC address. */
 	uint16_t if_count;		/**< Number of destination interfaces. */
 	uint8_t egress_dscp;		/**< Egress DSCP value for the flow. */
-	uint8_t reserved[3];		/**< Reserved 3 bytes for alignment. */
+	uint8_t reserved[1];		/**< Reserved 1 byte for alignment. */
+	uint16_t igs_qos_tag;		/**< Ingress shaping QoS tag for the flow. */
 
 	struct nss_ipv6_mc_if_rule if_rule[NSS_MC_IF_MAX];
 			/**< Per-interface information. */
@@ -723,6 +816,17 @@ struct nss_ipv6_msg {
 		struct nss_ipv6_rps_hash_bitmap_cfg_msg rps_hash_bitmap;
 				/**< Configure rps_hash_bitmap. */
 	} msg;			/**< Message payload. */
+};
+
+/**
+ * nss_ipv6_stats_notification
+ *	Data for sending IPv6 statistics.
+ */
+struct nss_ipv6_stats_notification {
+	uint32_t core_id;					/**< Core ID. */
+	uint64_t cmn_node_stats[NSS_STATS_NODE_MAX];		/**< Common node statistics. */
+	uint64_t special_stats[NSS_IPV6_STATS_MAX];		/**< IPv6 special statistics. */
+	uint64_t exception_stats[NSS_IPV6_EXCEPTION_EVENT_MAX];	/**< IPv6 exception statistics. */
 };
 
 /**
@@ -981,6 +1085,33 @@ void nss_ipv6_log_tx_msg(struct nss_ipv6_msg *nim);
  */
 void nss_ipv6_log_rx_msg(struct nss_ipv6_msg *nim);
 
+/**
+ * nss_ipv6_stats_register_notifier
+ *	Registers a statistics notifier.
+ *
+ * @datatypes
+ * notifier_block
+ *
+ * @param[in] nb Notifier block.
+ *
+ * @return
+ * 0 on success or -2 on failure.
+ */
+extern int nss_ipv6_stats_register_notifier(struct notifier_block *nb);
+
+/**
+ * nss_ipv6_stats_unregister_notifier
+ *	Deregisters a statistics notifier.
+ *
+ * @datatypes
+ * notifier_block
+ *
+ * @param[in] nb Notifier block.
+ *
+ * @return
+ * 0 on success or -2 on failure.
+ */
+extern int nss_ipv6_stats_unregister_notifier(struct notifier_block *nb);
 #endif
 
 /**

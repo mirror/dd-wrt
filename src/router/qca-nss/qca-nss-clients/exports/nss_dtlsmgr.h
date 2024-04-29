@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2016-2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2016-2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -24,13 +24,41 @@
 /**
  * NSS DTLS manager flags
  */
-#define NSS_DTLSMGR_HDR_IPV6 0x0001			/**< L3 header is v6 or v4 */
-#define NSS_DTLSMGR_HDR_UDPLITE 0x0002			/**< L4 header is UDP-Lite or UDP */
-#define NSS_DTLSMGR_HDR_CAPWAP 0x0004			/**< CAPWAP-DTLS or DTLS header */
-#define NSS_DTLSMGR_CIPHER_MODE_GCM 0x0008		/**< Cipher mode is GCM */
-#define NSS_DTLSMGR_OUTER_UDPLITE_CSUM 0x00010000	/**< checksum UDP-Lite header */
-#define NSS_DTLSMGR_INNER_ACCEPT_ALL 0x00020000		/**< Send all error packets after DECAP */
+#define NSS_DTLSMGR_HDR_IPV6		0x00000001	/**< L3 header is v6 or v4 */
+#define NSS_DTLSMGR_HDR_UDPLITE		0x00000002	/**< L4 header is UDP-Lite or UDP */
+#define NSS_DTLSMGR_HDR_CAPWAP		0x00000004	/**< CAPWAP-DTLS or DTLS header */
+#define NSS_DTLSMGR_CIPHER_MODE_GCM	0x00000008	/**< Cipher mode is GCM */
+#define NSS_DTLSMGR_ENCAP_UDPLITE_CSUM	0x00010000	/**< Checksum UDP-Lite header */
+#define NSS_DTLSMGR_ENCAP_METADATA	0x00020000	/**< Packets will have metadata for encapsulation. */
+#define NSS_DTLSMGR_DECAP_ACCEPT_ALL	0x00040000	/**< Send all error packets after DECAP */
+
+/*
+ * DTLS header mask
+ */
+#define NSS_DTLSMGR_HDR_MASK (NSS_DTLSMGR_HDR_IPV6 | NSS_DTLSMGR_HDR_UDPLITE | NSS_DTLSMGR_HDR_CAPWAP)
+
+/*
+ * DTLS crypto feature mask
+ */
+#define NSS_DTLSMGR_CRYPTO_MASK NSS_DTLSMGR_CIPHER_MODE_GCM
+
+/*
+ * DTLS encapsulation specific flags mask
+ */
+#define NSS_DTLSMGR_ENCAP_MASK (NSS_DTLSMGR_ENCAP_UDPLITE_CSUM | NSS_DTLSMGR_ENCAP_METADATA)
+
+/*
+ * DTLS decapsulation specific flags mask
+ */
+#define NSS_DTLSMGR_DECAP_MASK NSS_DTLSMGR_DECAP_ACCEPT_ALL
+
+/**
+ * NSS DTLS manager TX metadata flags
+ */
 #define NSS_DTLSMGR_METADATA_MAGIC 0x8993		/**< Magic in DTLS metadata */
+#define NSS_DTLSMGR_METADATA_FLAG_ENC 0x0001		/**< Metadata valid for encapsulation. */
+#define NSS_DTLSMGR_METADATA_FLAG_SEQ 0x0002		/**< Metadata has a valid sequence no. */
+#define NSS_DTLSMGR_METADATA_FLAG_CTYPE 0x0004		/**< Metadata has a valid DTLS content type */
 
 /**
  * NSS DTLS manager status
@@ -100,7 +128,7 @@ enum nss_dtlsmgr_metadata_result {
  * NSS DTLS manager cryptographic structure to represent key and its length.
  */
 struct nss_dtlsmgr_crypto_data {
-	const uint8_t *data;		/**< Pointer to key or nonce. */
+	uint8_t *data;		/**< Pointer to key or nonce. */
 	uint16_t len;			/**< Length of the key. */
 };
 
@@ -191,15 +219,22 @@ struct nss_dtlsmgr_stats {
 	uint64_t fail_blk_len;		/**< Failure in decapsulation due to bad cipher block length. */
 	uint64_t fail_hash_len;		/**< Failure in decapsulation due to bad hash block length. */
 
-	struct nss_dtlsmgr_hw_stats fail_hw;		/**< Hardware failure statistics. */
+	struct nss_dtlsmgr_hw_stats fail_hw;
+					/**< Hardware failure statistics. */
 
-	uint64_t fail_cle[NSS_DTLS_CMN_CLE_MAX];	/**< Classification errors. */
+	uint64_t fail_cle[NSS_DTLS_CMN_CLE_MAX];
+					/**< Classification errors. */
+
+	uint64_t fail_host_tx;		/**< Failure at host TX. */
+	uint64_t fail_host_rx;		/**< Failure at host RX. */
 
 	uint32_t seq_low;		/**< Lower 32 bits of current Tx sequence number. */
 	uint32_t seq_high;		/**< Upper 16 bits of current Tx sequence number. */
 
 	uint16_t epoch;			/**< Current Epoch value. */
 };
+
+#ifdef __KERNEL__ /* only for kernel use. */
 
 /**
  * NSS DTLS manager session stats update callback
@@ -222,6 +257,7 @@ struct nss_dtlsmgr_config {
 	struct nss_dtlsmgr_decap_config decap;		/**< Decap data. */
 };
 
+#endif /* __KERNEL__ */
 /**
  * NSS DTLS manager session tx/rx cipher update parameters
  */
@@ -238,9 +274,68 @@ struct nss_dtlsmgr_metadata {
 	uint8_t ctype;		/**< Type of DTLS packet. */
 	uint8_t result;		/**< Error during DTLS decapsulation. */
 	uint16_t len;		/**< Length of DTLS payload. */
+	uint32_t seq;		/**< Sequence for encapsulation. */
+	uint16_t flags;		/**< Metadata flags. */
 	uint16_t magic;		/**< Magic. */
-	uint8_t res[2];		/**< Reserved. */
 };
+
+#ifdef __KERNEL__ /* only for kernel use. */
+
+/**
+ * nss_dtlsmgr_metadata_init
+ *	Initializes the metadata at SKB head
+ *
+ * @param skb[IN] Socket buffer
+ *
+ * @return
+ * Return NSS DTLSMGR metadata start address
+ */
+static inline struct nss_dtlsmgr_metadata *nss_dtlsmgr_metadata_init(struct sk_buff *skb)
+{
+	struct nss_dtlsmgr_metadata *ndm;
+
+	if (unlikely(skb_headroom(skb) < sizeof(*ndm)))
+		return NULL;
+
+	ndm = (struct nss_dtlsmgr_metadata *)skb_push(skb, sizeof(*ndm));
+	/*
+	 * Initialize the metadata with default values
+	 */
+	ndm->flags = NSS_DTLSMGR_METADATA_FLAG_ENC;
+	ndm->ctype = NSS_DTLSMGR_METADATA_CTYPE_APP;
+	ndm->magic = NSS_DTLSMGR_METADATA_MAGIC;
+	ndm->len = skb->len - sizeof(*ndm);
+	ndm->seq = U32_MAX;
+	ndm->result = 0;
+
+	return ndm;
+}
+
+/**
+ * nss_dtlsmgr_metadata_set_seq
+ *	Update the metadata with sequence number for the first encap packet
+ *
+ * @param ndtm[IN] NSS DTLSMGR metadata
+ * @param seq[IN]  Starting sequence number for the tunnel encapsulation
+ */
+static inline void nss_dtlsmgr_metadata_set_seq(struct nss_dtlsmgr_metadata *ndm, uint32_t seq)
+{
+	ndm->flags |= NSS_DTLSMGR_METADATA_FLAG_SEQ;
+	ndm->seq = seq;
+}
+
+/**
+ * nss_dtlsmgr_metadata_set_ctype
+ *	Update the metadata with DTLS content type
+ *
+ * @param ndtm[IN]  NSS DTLSMGR metadata
+ * @param ctype[IN] DTLS content type for encapsulation
+ */
+static inline void nss_dtlsmgr_metadata_set_ctype(struct nss_dtlsmgr_metadata *ndm, enum nss_dtlsmgr_metadata_ctype ctype)
+{
+	ndm->flags |= NSS_DTLSMGR_METADATA_FLAG_CTYPE;
+	ndm->ctype = ctype;
+}
 
 /**
  * nss_dtlsmgr_metadata_get_ctype
@@ -365,4 +460,5 @@ bool nss_dtlsmgr_session_switch_decap(struct net_device *dev);
  * @return interface number for success
  */
 int32_t nss_dtlsmgr_get_interface(struct net_device *dev, enum nss_dtlsmgr_interface_type type);
+#endif /* __KERNEL__ */
 #endif /* _NSS_DTLSMGR_H_ */

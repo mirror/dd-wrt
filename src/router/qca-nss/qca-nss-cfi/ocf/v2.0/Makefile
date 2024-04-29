@@ -12,7 +12,7 @@ ccflags-y += -I$(obj)/../../nss-crypto/include
 ccflags-y += -I$(obj)/../../include
 ccflags-y += -I$(obj)/
 ccflags-y += -DNSS_CFI_DEBUG_LEVEL=3
-ccflags-y += -Werror
+ccflags-y += -Wall -Werror
 
 ifneq (, $(findstring ipq807x, $(SoC)))
 ccflags-y += -DNSS_CFI_IPQ807X_SUPPORT
@@ -20,4 +20,8 @@ endif
 
 ifneq (, $(findstring ipq60xx, $(SoC)))
 ccflags-y += -DNSS_CFI_IPQ60XX_SUPPORT
+endif
+
+ifneq (, $(findstring ipq50xx, $(SoC)))
+ccflags-y += -DNSS_CFI_IPQ50XX_SUPPORT
 endif

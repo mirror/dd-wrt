@@ -1,4 +1,4 @@
-/* Copyright (c) 2015-2018 The Linux Foundation. All rights reserved.
+/* Copyright (c) 2015-2018, 2020 The Linux Foundation. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -36,8 +36,12 @@
 #include <crypto/ctr.h>
 #include <crypto/des.h>
 #include <crypto/aes.h>
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 11, 0)
+#include <crypto/sha.h>
+#else
 #include <crypto/sha1.h>
 #include <crypto/sha2.h>
+#endif
 #include <crypto/hash.h>
 #include <crypto/algapi.h>
 #include <crypto/aead.h>
@@ -66,8 +70,8 @@ struct nss_cryptoapi_ablk_info {
 int nss_cryptoapi_skcipher_ctx2session(struct crypto_skcipher *sk, uint32_t *sid)
 {
 	struct crypto_tfm *tfm = crypto_skcipher_tfm(sk);
-	struct crypto_ablkcipher **actx, *ablk;
-	struct ablkcipher_tfm *ablk_tfm;
+	struct crypto_skcipher **actx;
+	struct crypto_tfm *ablk_tfm;
 	struct nss_cryptoapi_ctx *ctx;
 
 	if (strncmp("nss-", crypto_tfm_alg_driver_name(tfm), 4))
@@ -83,16 +87,16 @@ int nss_cryptoapi_skcipher_ctx2session(struct crypto_skcipher *sk, uint32_t *sid
 	 * ablkcipher that is created when the skcipher is created.
 	 * Hence we derive the required ablkcipher through ablkcipher_tfm.
 	 */
-	ablk_tfm = crypto_ablkcipher_crt(*actx);
+	ablk_tfm = crypto_skcipher_tfm(*actx);
 	if (!ablk_tfm)
 		return -EINVAL;
 
-	ablk = ablk_tfm->base;
+	/* ablk = ablk_tfm->base;
 	if (!ablk)
-		return -EINVAL;
+		return -EINVAL; */
 
 	/* Get the nss_cryptoapi context stored in the ablkcipher */
-	ctx = crypto_ablkcipher_ctx(ablk);
+	ctx = crypto_skcipher_ctx(sk);
 
 	nss_cfi_assert(ctx);
 	nss_cryptoapi_verify_magic(ctx);
@@ -190,7 +194,7 @@ int nss_cryptoapi_ablk_aes_setkey(struct crypto_skcipher *cipher, const u8 *key,
 	struct nss_cryptoapi_ctx *ctx = crypto_tfm_ctx(tfm);
 	struct nss_cryptoapi *sc = &gbl_ctx;
 	struct nss_crypto_key cip;
-	uint32_t flag = CRYPTO_TFM_RES_BAD_KEY_LEN;
+// 	uint32_t flag = CRYPTO_TFM_RES_BAD_KEY_LEN;
 	nss_crypto_status_t status;
 	int ret;
 
@@ -279,7 +283,7 @@ int nss_cryptoapi_ablk_aes_setkey(struct crypto_skcipher *cipher, const u8 *key,
 	if (status != NSS_CRYPTO_STATUS_OK) {
 		nss_cfi_err("nss_crypto_session_alloc failed - status: %d\n", status);
 		ctx->sid = NSS_CRYPTO_MAX_IDXS;
-		flag = CRYPTO_TFM_RES_BAD_FLAGS;
+// 		flag = CRYPTO_TFM_RES_BAD_FLAGS;
 		goto fail;
 	}
 
@@ -290,7 +294,7 @@ int nss_cryptoapi_ablk_aes_setkey(struct crypto_skcipher *cipher, const u8 *key,
 	return 0;
 
 fail:
-	crypto_skcipher_set_flags(cipher, flag);
+// 	// crypto_skcipher_set_flags(cipher, flag);
 	return -EINVAL;
 }
 
@@ -382,7 +386,7 @@ struct nss_crypto_buf *nss_cryptoapi_ablk_transform(struct skcipher_request *req
 
 	nss_cfi_assert(ctx);
 
-	nss_cfi_dbg("src_vaddr: 0x%p, dst_vaddr: 0x%p, iv: 0x%p\n",
+	nss_cfi_dbg("src_vaddr: 0x%px, dst_vaddr: 0x%px, iv: 0x%px\n",
 			sg_virt(req->src), sg_virt(req->dst), req->iv);
 
 	info->params->cipher_skip = 0;
@@ -542,7 +546,7 @@ int nss_cryptoapi_ablk_aes_encrypt(struct skcipher_request *req)
 	 */
 	if (nss_cryptoapi_check_unalign(req->cryptlen, AES_BLOCK_SIZE) && (ctx->cip_alg != NSS_CRYPTO_CIPHER_AES_CTR)) {
 		nss_cfi_err("Invalid cipher len - Not aligned to algo blocksize\n");
-		crypto_skcipher_set_flags(cipher, CRYPTO_TFM_RES_BAD_BLOCK_LEN);
+		// crypto_skcipher_set_flags(cipher, CRYPTO_TFM_RES_BAD_BLOCK_LEN);
 		return -EINVAL;
 	}
 
@@ -609,7 +613,6 @@ int nss_cryptoapi_ablk_aes_decrypt(struct skcipher_request *req)
 	 */
 	if (nss_cryptoapi_check_unalign(req->cryptlen, AES_BLOCK_SIZE) && (ctx->cip_alg != NSS_CRYPTO_CIPHER_AES_CTR)) {
 		nss_cfi_err("Invalid cipher len - Not aligned to algo blocksize\n");
-		crypto_skcipher_set_flags(cipher, CRYPTO_TFM_RES_BAD_BLOCK_LEN);
 		return -EINVAL;
 	}
 
@@ -646,7 +649,7 @@ int nss_cryptoapi_3des_cbc_setkey(struct crypto_skcipher *cipher, const u8 *key,
 	struct nss_cryptoapi *sc = &gbl_ctx;
 	struct nss_crypto_key cip = { .algo = NSS_CRYPTO_CIPHER_DES };
 	struct nss_crypto_key *cip_ptr = &cip;
-	uint32_t flag = CRYPTO_TFM_RES_BAD_KEY_LEN;
+// 	uint32_t flag = CRYPTO_TFM_RES_BAD_KEY_LEN;
 	nss_crypto_status_t status;
 
 	/*
@@ -681,7 +684,7 @@ int nss_cryptoapi_3des_cbc_setkey(struct crypto_skcipher *cipher, const u8 *key,
 	if (status != NSS_CRYPTO_STATUS_OK) {
 		nss_cfi_err("nss_crypto_session_alloc failed - status: %d\n", status);
 		ctx->sid = NSS_CRYPTO_MAX_IDXS;
-		flag = CRYPTO_TFM_RES_BAD_FLAGS;
+// 		flag = CRYPTO_TFM_RES_BAD_FLAGS;
 		goto fail;
 	}
 
@@ -694,7 +697,7 @@ int nss_cryptoapi_3des_cbc_setkey(struct crypto_skcipher *cipher, const u8 *key,
 	return 0;
 
 fail:
-	crypto_skcipher_set_flags(cipher, flag);
+// 	crypto_skcipher_set_flags(cipher, flag);
 	return -EINVAL;
 }
 
@@ -730,7 +733,7 @@ int nss_cryptoapi_3des_cbc_encrypt(struct skcipher_request *req)
 
 	if (nss_cryptoapi_check_unalign(req->cryptlen, DES3_EDE_BLOCK_SIZE)) {
 		nss_cfi_err("Invalid cipher len - Not aligned to algo blocksize\n");
-		crypto_skcipher_set_flags(crypto_skcipher_reqtfm(req), CRYPTO_TFM_RES_BAD_BLOCK_LEN);
+		// crypto_skcipher_set_flags(crypto_skcipher_reqtfm(req), CRYPTO_TFM_RES_BAD_BLOCK_LEN);
 		return -EINVAL;
 	}
 
@@ -791,7 +794,7 @@ int nss_cryptoapi_3des_cbc_decrypt(struct skcipher_request *req)
 
 	if (nss_cryptoapi_check_unalign(req->cryptlen, DES3_EDE_BLOCK_SIZE)) {
 		nss_cfi_err("Invalid cipher len - Not aligned to algo blocksize\n");
-		crypto_skcipher_set_flags(crypto_skcipher_reqtfm(req), CRYPTO_TFM_RES_BAD_BLOCK_LEN);
+		// crypto_skcipher_set_flags(crypto_skcipher_reqtfm(req), CRYPTO_TFM_RES_BAD_BLOCK_LEN);
 		return -EINVAL;
 	}
 

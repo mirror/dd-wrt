@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2014-2015 The Linux Foundation.  All rights reserved.
+ * Copyright (c) 2014-2015, 2020, The Linux Foundation.  All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -241,7 +241,7 @@ static ecm_db_timer_group_t ecm_tracker_tcp_timer_group_from_state[] = {
 							ECM_DB_TIMER_GROUPS_CONNECTION_TCP_SHORT_TIMEOUT,	/* ECM_TRACKER_CONNECTION_STATE_ESTABLISHING */
 							ECM_DB_TIMER_GROUPS_CONNECTION_TCP_LONG_TIMEOUT,	/* ECM_TRACKER_CONNECTION_STATE_ESTABLISHED */
 							ECM_DB_TIMER_GROUPS_CONNECTION_TCP_SHORT_TIMEOUT,	/* ECM_TRACKER_CONNECTION_STATE_CLOSING */
-							ECM_DB_TIMER_GROUPS_CONNECTION_TCP_SHORT_TIMEOUT,	/* ECM_TRACKER_CONNECTION_STATE_CLOSED */
+							ECM_DB_TIMER_GROUPS_CONNECTION_TCP_CLOSED_TIMEOUT,	/* ECM_TRACKER_CONNECTION_STATE_CLOSED */
 							ECM_DB_TIMER_GROUPS_CONNECTION_TCP_RESET_TIMEOUT,	/* ECM_TRACKER_CONNECTION_STATE_FAULT */
 							};
 int ecm_tracker_tcp_count = 0;		/* Counts the number of TCP data trackers right now */
@@ -281,12 +281,12 @@ struct tcphdr *ecm_tracker_tcp_check_header_and_read(struct sk_buff *skb, struct
 	 */
 	header = &ip_hdr->headers[ECM_TRACKER_IP_PROTOCOL_TYPE_TCP];
 	if (header->size == 0) {
-		DEBUG_WARN("No TCP header %p\n", skb);
+		DEBUG_WARN("No TCP header %px\n", skb);
 		return NULL;
 	}
 	hdr = (struct tcphdr *)skb_header_pointer(skb, header->offset, sizeof(*port_buffer), port_buffer);
 	if (unlikely(!hdr)) {
-		DEBUG_WARN("Cant read TCP header %p\n", skb);
+		DEBUG_WARN("Cant read TCP header %px\n", skb);
 		return NULL;
 	}
 	word_hdr = (union tcp_word_hdr *)hdr;
@@ -297,12 +297,12 @@ struct tcphdr *ecm_tracker_tcp_check_header_and_read(struct sk_buff *skb, struct
 	tcp_hdr_len = (uint16_t)hdr->doff;
 	tcp_hdr_len <<= 2;
 	if (unlikely(tcp_hdr_len < 20)) {
-		DEBUG_WARN("Packet %p TCP header to short %u\n", skb, tcp_hdr_len);
+		DEBUG_WARN("Packet %px TCP header to short %u\n", skb, tcp_hdr_len);
 		return NULL;
 	}
 
 	if (unlikely(ip_hdr->total_length < (header->offset + header->size))) {
-		DEBUG_WARN("TCP packet %p too short (ip_total_len = %u, size needed=%u)\n", skb, ip_hdr->total_length, header->offset + header->size);
+		DEBUG_WARN("TCP packet %px too short (ip_total_len = %u, size needed=%u)\n", skb, ip_hdr->total_length, header->offset + header->size);
 		return NULL;
 	}
 
@@ -310,9 +310,9 @@ struct tcphdr *ecm_tracker_tcp_check_header_and_read(struct sk_buff *skb, struct
 	 * Validate flags
 	 */
 	tcp_flags = ECM_TRACKER_TCP_WORD_HDR_TO_FLAGS(word_hdr);
-	DEBUG_TRACE("%p: TCP flags = 0x%04x\n", skb, (unsigned)tcp_flags);
+	DEBUG_TRACE("%px: TCP flags = 0x%04x\n", skb, (unsigned)tcp_flags);
 	if (unlikely(!ecm_tracker_tcp_valid_flags[tcp_flags & 0x3f])) {
-		DEBUG_WARN("%p: Invalid flags 0x%x", skb, (unsigned)tcp_flags);
+		DEBUG_WARN("%px: Invalid flags 0x%x", skb, (unsigned)tcp_flags);
 		return NULL;
 	}
 
@@ -327,16 +327,16 @@ EXPORT_SYMBOL(ecm_tracker_tcp_check_header_and_read);
  */
 static void ecm_tracker_tcp_bytes_discard(struct ecm_tracker_tcp_internal_instance *ttii, struct ecm_tracker_tcp_host_data *data, uint32_t n)
 {
-	DEBUG_CHECK_MAGIC(ttii, ECM_TRACKER_TCP_INSTANCE_MAGIC, "%p: magic failed", ttii);
+	DEBUG_CHECK_MAGIC(ttii, ECM_TRACKER_TCP_INSTANCE_MAGIC, "%px: magic failed", ttii);
 
 	/*
 	 * Advance sequence space by 'n'.  This may allow throwing of datagrams.
 	 */
 	spin_lock_bh(&ttii->lock);
-	DEBUG_ASSERT(n <= data->num_seqs, "%p: discard invalid %u, available %u\n", ttii, n, data->num_seqs);
+	DEBUG_ASSERT(n <= data->num_seqs, "%px: discard invalid %u, available %u\n", ttii, n, data->num_seqs);
 	data->num_seqs -= n;
 	data->seq_no += n;
-	DEBUG_TRACE("%p: Discard %u, New seq space for %p, seq_no: %u, num_seqs: %u\n", ttii, n, data, data->seq_no, data->num_seqs);
+	DEBUG_TRACE("%px: Discard %u, New seq space for %px, seq_no: %u, num_seqs: %u\n", ttii, n, data, data->seq_no, data->num_seqs);
 	spin_unlock_bh(&ttii->lock);
 
 	while (n) {
@@ -348,10 +348,10 @@ static void ecm_tracker_tcp_bytes_discard(struct ecm_tracker_tcp_internal_instan
 		 */
 		spin_lock_bh(&ttii->lock);
 		skb = data->in_order;
-		DEBUG_ASSERT(skb, "%p: data list invalid\n", ttii);
+		DEBUG_ASSERT(skb, "%px: data list invalid\n", ttii);
 
 		skb_cb = (struct ecm_tracker_tcp_skb_cb_format *)skb->cb;
-		DEBUG_CHECK_MAGIC(skb_cb, ECM_TRACKER_TCP_SKB_CB_MAGIC, "%p: invalid cb magic %p\n", ttii, skb_cb);
+		DEBUG_CHECK_MAGIC(skb_cb, ECM_TRACKER_TCP_SKB_CB_MAGIC, "%px: invalid cb magic %px\n", ttii, skb_cb);
 
 		if (n < skb_cb->num_seqs) {
 			/*
@@ -360,7 +360,7 @@ static void ecm_tracker_tcp_bytes_discard(struct ecm_tracker_tcp_internal_instan
 			skb_cb->seq_no += n;
 			skb_cb->offset += n;
 			skb_cb->num_seqs -= n;
-			DEBUG_TRACE("%p: PARTIAL BUFFER DISCARD SEQ: %u, NUM SEQ: %u, OFFSET: %u\n", ttii, skb_cb->seq_no, skb_cb->num_seqs, skb_cb->offset);
+			DEBUG_TRACE("%px: PARTIAL BUFFER DISCARD SEQ: %u, NUM SEQ: %u, OFFSET: %u\n", ttii, skb_cb->seq_no, skb_cb->num_seqs, skb_cb->offset);
 			spin_unlock_bh(&ttii->lock);
 			return;
 		}
@@ -369,21 +369,21 @@ static void ecm_tracker_tcp_bytes_discard(struct ecm_tracker_tcp_internal_instan
 		 * Remove skb from the recvd_order list (it may be anywhere in this list)
 		 */
 		if (!skb_cb->next) {
-			DEBUG_ASSERT(data->recvd_order_last == skb, "%p: bad list\n", ttii);
+			DEBUG_ASSERT(data->recvd_order_last == skb, "%px: bad list\n", ttii);
 			data->recvd_order_last = skb_cb->prev;
 		} else {
 			struct ecm_tracker_tcp_skb_cb_format *next_cb;
 			next_cb = (struct ecm_tracker_tcp_skb_cb_format *)skb_cb->next->cb;
-			DEBUG_CHECK_MAGIC(next_cb, ECM_TRACKER_TCP_SKB_CB_MAGIC, "%p: invalid cb magic %p\n", ttii, next_cb);
+			DEBUG_CHECK_MAGIC(next_cb, ECM_TRACKER_TCP_SKB_CB_MAGIC, "%px: invalid cb magic %px\n", ttii, next_cb);
 			next_cb->prev = skb_cb->prev;
 		}
 		if (!skb_cb->prev) {
-			DEBUG_ASSERT(data->recvd_order == skb, "%p: bad list\n", ttii);
+			DEBUG_ASSERT(data->recvd_order == skb, "%px: bad list\n", ttii);
 			data->recvd_order = skb_cb->next;
 		} else {
 			struct ecm_tracker_tcp_skb_cb_format *prev_cb;
 			prev_cb = (struct ecm_tracker_tcp_skb_cb_format *)skb_cb->prev->cb;
-			DEBUG_CHECK_MAGIC(prev_cb, ECM_TRACKER_TCP_SKB_CB_MAGIC, "%p: invalid cb magic %p\n", ttii, prev_cb);
+			DEBUG_CHECK_MAGIC(prev_cb, ECM_TRACKER_TCP_SKB_CB_MAGIC, "%px: invalid cb magic %px\n", ttii, prev_cb);
 			prev_cb->next = skb_cb->next;
 		}
 
@@ -395,7 +395,7 @@ static void ecm_tracker_tcp_bytes_discard(struct ecm_tracker_tcp_internal_instan
 		if (data->in_order) {
 			data->in_order->prev = NULL;
 		} else {
-			DEBUG_ASSERT(data->in_order_last == skb, "%p: bad list\n", ttii);
+			DEBUG_ASSERT(data->in_order_last == skb, "%px: bad list\n", ttii);
 			data->in_order_last = NULL;
 		}
 
@@ -403,18 +403,18 @@ static void ecm_tracker_tcp_bytes_discard(struct ecm_tracker_tcp_internal_instan
 		 * Update our stats
 		 */
 		data->in_order_count--;
-		DEBUG_ASSERT(data->in_order_count >= 0, "%p: bad in order count\n", ttii);
+		DEBUG_ASSERT(data->in_order_count >= 0, "%px: bad in order count\n", ttii);
 		data->recvd_count--;
-		DEBUG_ASSERT(data->recvd_count >= 0, "%p: bad count\n", ttii);
+		DEBUG_ASSERT(data->recvd_count >= 0, "%px: bad count\n", ttii);
 		data->recvd_bytes_total -= skb->truesize;
-		DEBUG_ASSERT(data->recvd_bytes_total >= 0, "%p: bad bytes count\n", ttii);
+		DEBUG_ASSERT(data->recvd_bytes_total >= 0, "%px: bad bytes count\n", ttii);
 		ecm_tracker_data_total_decrease(skb->len, skb->truesize);
 
 		/*
 		 * Decrement n by the number of segments we are discarding in this segment
 		 */
 		n -= skb_cb->num_seqs;
-		DEBUG_TRACE("%p: BUFFER DISCARD %p, size: %u, new head: %p end: %p, discard remain: %u, in order count: %d\n", ttii, skb, skb_cb->num_seqs, data->in_order, data->in_order_last, n, data->in_order_count);
+		DEBUG_TRACE("%px: BUFFER DISCARD %px, size: %u, new head: %px end: %px, discard remain: %u, in order count: %d\n", ttii, skb, skb_cb->num_seqs, data->in_order, data->in_order_last, n, data->in_order_count);
 		spin_unlock_bh(&ttii->lock);
 
 		dev_kfree_skb_any(skb);
@@ -430,8 +430,8 @@ static void ecm_tracker_tcp_bytes_discard_callback(struct ecm_tracker_tcp_instan
 	struct ecm_tracker_tcp_internal_instance *ttii = (struct ecm_tracker_tcp_internal_instance *)tti;
 	struct ecm_tracker_tcp_host_data *data;
 
-	DEBUG_CHECK_MAGIC(ttii, ECM_TRACKER_TCP_INSTANCE_MAGIC, "%p: magic failed", ttii);
-	DEBUG_ASSERT((sender >= 0) && (sender <= 1), "%p: invalid sender %d\n", ttii, sender);
+	DEBUG_CHECK_MAGIC(ttii, ECM_TRACKER_TCP_INSTANCE_MAGIC, "%px: magic failed", ttii);
+	DEBUG_ASSERT((sender >= 0) && (sender <= 1), "%px: invalid sender %d\n", ttii, sender);
 
 	/*
 	 * Which list?
@@ -453,8 +453,8 @@ static void ecm_tracker_tcp_datagram_discard_callback(struct ecm_tracker_instanc
 	struct sk_buff *skb;
 	uint32_t seqs_discard;
 
-	DEBUG_CHECK_MAGIC(ttii, ECM_TRACKER_TCP_INSTANCE_MAGIC, "%p: magic failed", ttii);
-	DEBUG_ASSERT((sender >= 0) && (sender <= 1), "%p: invalid sender %d\n", ttii, sender);
+	DEBUG_CHECK_MAGIC(ttii, ECM_TRACKER_TCP_INSTANCE_MAGIC, "%px: magic failed", ttii);
+	DEBUG_ASSERT((sender >= 0) && (sender <= 1), "%px: invalid sender %d\n", ttii, sender);
 
 	/*
 	 * Which list?
@@ -471,7 +471,7 @@ static void ecm_tracker_tcp_datagram_discard_callback(struct ecm_tracker_instanc
 		struct ecm_tracker_tcp_skb_cb_format *skb_cb;
 
 		skb_cb = (struct ecm_tracker_tcp_skb_cb_format *)skb->cb;
-		DEBUG_CHECK_MAGIC(skb_cb, ECM_TRACKER_TCP_SKB_CB_MAGIC, "%p: invalid cb magic %p\n", ttii, skb);
+		DEBUG_CHECK_MAGIC(skb_cb, ECM_TRACKER_TCP_SKB_CB_MAGIC, "%px: invalid cb magic %px\n", ttii, skb);
 		seqs_discard += skb_cb->num_seqs;
 		skb = skb->next;
 		n--;
@@ -497,7 +497,7 @@ static void _ecm_tracker_tcp_discard_all(struct ecm_tracker_tcp_internal_instanc
 {
 	int s;
 
-	DEBUG_TRACE("%p: destroy all\n", ttii);
+	DEBUG_TRACE("%px: destroy all\n", ttii);
 	for (s = 0; s < ECM_TRACKER_SENDER_MAX; ++s) {
 		struct ecm_tracker_tcp_host_data *data;
 
@@ -518,7 +518,7 @@ static void _ecm_tracker_tcp_discard_all(struct ecm_tracker_tcp_internal_instanc
 			 */
 			skb = data->recvd_order;
 			skb_cb = (struct ecm_tracker_tcp_skb_cb_format *)skb->cb;
-			DEBUG_CHECK_MAGIC(skb_cb, ECM_TRACKER_TCP_SKB_CB_MAGIC, "%p: invalid cb magic %p\n", ttii, skb);
+			DEBUG_CHECK_MAGIC(skb_cb, ECM_TRACKER_TCP_SKB_CB_MAGIC, "%px: invalid cb magic %px\n", ttii, skb);
 
 			/*
 			 * Remove the skb from the recvd_order list
@@ -533,7 +533,7 @@ static void _ecm_tracker_tcp_discard_all(struct ecm_tracker_tcp_internal_instanc
 			ecm_tracker_data_total_decrease(skb->len, skb->truesize);
 			dev_kfree_skb_any(skb);
 		}
-		DEBUG_ASSERT(data->recvd_order == NULL, "%p: recvd_count not match recvd_order length: %p\n", ttii, data->recvd_order);
+		DEBUG_ASSERT(data->recvd_order == NULL, "%px: recvd_count not match recvd_order length: %px\n", ttii, data->recvd_order);
 		data->recvd_order_last = NULL;
 		data->recvd_bytes_total = 0;
 		data->in_order = NULL;
@@ -561,7 +561,7 @@ static void ecm_tracker_tcp_discard_all_callback(struct ecm_tracker_instance *ti
 {
 	struct ecm_tracker_tcp_internal_instance *ttii = (struct ecm_tracker_tcp_internal_instance *)ti;
 
-	DEBUG_CHECK_MAGIC(ttii, ECM_TRACKER_TCP_INSTANCE_MAGIC, "%p: magic failed", ttii);
+	DEBUG_CHECK_MAGIC(ttii, ECM_TRACKER_TCP_INSTANCE_MAGIC, "%px: magic failed", ttii);
 	spin_lock_bh(&ttii->lock);
 	_ecm_tracker_tcp_discard_all(ttii);
 	spin_unlock_bh(&ttii->lock);
@@ -574,13 +574,13 @@ static void ecm_tracker_tcp_discard_all_callback(struct ecm_tracker_instance *ti
 void ecm_tracker_tcp_ref_callback(struct ecm_tracker_instance *ti)
 {
 	struct ecm_tracker_tcp_internal_instance *ttii = (struct ecm_tracker_tcp_internal_instance *)ti;
-	DEBUG_CHECK_MAGIC(ttii, ECM_TRACKER_TCP_INSTANCE_MAGIC, "%p: magic failed", ttii);
+	DEBUG_CHECK_MAGIC(ttii, ECM_TRACKER_TCP_INSTANCE_MAGIC, "%px: magic failed", ttii);
 
 	spin_lock_bh(&ttii->lock);
 
 	ttii->refs++;
-	DEBUG_ASSERT(ttii->refs > 0, "%p: ref wrap", ttii);
-	DEBUG_TRACE("%p: ref %d\n", ttii, ttii->refs);
+	DEBUG_ASSERT(ttii->refs > 0, "%px: ref wrap", ttii);
+	DEBUG_TRACE("%px: ref %d\n", ttii, ttii->refs);
 
 	spin_unlock_bh(&ttii->lock);
 }
@@ -592,20 +592,20 @@ int ecm_tracker_tcp_deref_callback(struct ecm_tracker_instance *ti)
 {
 	struct ecm_tracker_tcp_internal_instance *ttii = (struct ecm_tracker_tcp_internal_instance *)ti;
 	int refs;
-	DEBUG_CHECK_MAGIC(ttii, ECM_TRACKER_TCP_INSTANCE_MAGIC, "%p: magic failed", ttii);
+	DEBUG_CHECK_MAGIC(ttii, ECM_TRACKER_TCP_INSTANCE_MAGIC, "%px: magic failed", ttii);
 
 	spin_lock_bh(&ttii->lock);
 	ttii->refs--;
 	refs = ttii->refs;
-	DEBUG_ASSERT(ttii->refs >= 0, "%p: ref wrap", ttii);
-	DEBUG_TRACE("%p: deref %d\n", ttii, ttii->refs);
+	DEBUG_ASSERT(ttii->refs >= 0, "%px: ref wrap", ttii);
+	DEBUG_TRACE("%px: deref %d\n", ttii, ttii->refs);
 
 	if (ttii->refs > 0) {
 		spin_unlock_bh(&ttii->lock);
 		return refs;
 	}
 
-	DEBUG_TRACE("%p: final\n", ttii);
+	DEBUG_TRACE("%px: final\n", ttii);
 #ifdef ECM_TRACKER_DPI_SUPPORT_ENABLE
 	_ecm_tracker_tcp_discard_all(ttii);
 #endif
@@ -613,10 +613,10 @@ int ecm_tracker_tcp_deref_callback(struct ecm_tracker_instance *ti)
 
 	spin_lock_bh(&ecm_tracker_tcp_lock);
 	ecm_tracker_tcp_count--;
-	DEBUG_ASSERT(ecm_tracker_tcp_count >= 0, "%p: tracker count wrap", ttii);
+	DEBUG_ASSERT(ecm_tracker_tcp_count >= 0, "%px: tracker count wrap", ttii);
 	spin_unlock_bh(&ecm_tracker_tcp_lock);
 
-	DEBUG_INFO("%p: TCP tracker final\n", ttii);
+	DEBUG_INFO("%px: TCP tracker final\n", ttii);
 	DEBUG_CLEAR_MAGIC(ttii);
 	kfree(ttii);
 
@@ -633,8 +633,8 @@ static int32_t ecm_tracker_tcp_datagram_count_get_callback(struct ecm_tracker_in
 	struct ecm_tracker_tcp_internal_instance *ttii = (struct ecm_tracker_tcp_internal_instance *)ti;
 	int32_t count;
 
-	DEBUG_CHECK_MAGIC(ttii, ECM_TRACKER_TCP_INSTANCE_MAGIC, "%p: magic failed", ttii);
-	DEBUG_ASSERT((sender >= 0) && (sender <= 1), "%p: invalid sender %d\n", ttii, sender);
+	DEBUG_CHECK_MAGIC(ttii, ECM_TRACKER_TCP_INSTANCE_MAGIC, "%px: magic failed", ttii);
+	DEBUG_ASSERT((sender >= 0) && (sender <= 1), "%px: invalid sender %d\n", ttii, sender);
 
 	/*
 	 * Which list?
@@ -642,7 +642,7 @@ static int32_t ecm_tracker_tcp_datagram_count_get_callback(struct ecm_tracker_in
 	spin_lock_bh(&ttii->lock);
 	count = ttii->sender_data[sender].in_order_count;
 	spin_unlock_bh(&ttii->lock);
-	DEBUG_TRACE("%p: datagram count get for %d is %d\n", ttii, sender, count);
+	DEBUG_TRACE("%px: datagram count get for %d is %d\n", ttii, sender, count);
 
 	return count;
 }
@@ -656,10 +656,10 @@ static int32_t ecm_tracker_tcp_datagram_size_get_callback(struct ecm_tracker_ins
 	struct ecm_tracker_tcp_internal_instance *ttii = (struct ecm_tracker_tcp_internal_instance *)ti;
 	int32_t size;
 	struct sk_buff *skb;
-	DEBUG_CHECK_MAGIC(ttii, ECM_TRACKER_TCP_INSTANCE_MAGIC, "%p: magic failed", ttii);
-	DEBUG_ASSERT((sender >= 0) && (sender <= 1), "%p: invalid sender %d\n", ttii, sender);
+	DEBUG_CHECK_MAGIC(ttii, ECM_TRACKER_TCP_INSTANCE_MAGIC, "%px: magic failed", ttii);
+	DEBUG_ASSERT((sender >= 0) && (sender <= 1), "%px: invalid sender %d\n", ttii, sender);
 
-	DEBUG_TRACE("%p: get datagram size at %u for %d\n", ttii, i, sender);
+	DEBUG_TRACE("%px: get datagram size at %u for %d\n", ttii, i, sender);
 
 	/*
 	 * Which list?
@@ -671,11 +671,11 @@ static int32_t ecm_tracker_tcp_datagram_size_get_callback(struct ecm_tracker_ins
 	 * Iterate to the i'th datagram
 	 */
 	while (i) {
-		DEBUG_ASSERT(skb, "%p: index bad\n", ttii);
+		DEBUG_ASSERT(skb, "%px: index bad\n", ttii);
 		skb = skb->next;
 		i--;
 	}
-	DEBUG_ASSERT(skb, "%p: index bad\n", ttii);
+	DEBUG_ASSERT(skb, "%px: index bad\n", ttii);
 
 	/*
 	 * Get size
@@ -683,7 +683,7 @@ static int32_t ecm_tracker_tcp_datagram_size_get_callback(struct ecm_tracker_ins
 	size = skb->len;
 	spin_unlock_bh(&ttii->lock);
 
-	DEBUG_TRACE("%p: datagram size is %d\n", ttii, size);
+	DEBUG_TRACE("%px: datagram size is %d\n", ttii, size);
 	return size;
 }
 
@@ -697,9 +697,9 @@ static int ecm_tracker_tcp_datagram_read_callback(struct ecm_tracker_instance *t
 	int res;
 	struct sk_buff *skb;
 
-	DEBUG_CHECK_MAGIC(ttii, ECM_TRACKER_TCP_INSTANCE_MAGIC, "%p: magic failed", ttii);
-	DEBUG_TRACE("%p: datagram %d read at offset %d for %d bytes for %d\n", ttii, i, offset, size, sender);
-	DEBUG_ASSERT((sender >= 0) && (sender <= 1), "%p: invalid sender %d\n", ttii, sender);
+	DEBUG_CHECK_MAGIC(ttii, ECM_TRACKER_TCP_INSTANCE_MAGIC, "%px: magic failed", ttii);
+	DEBUG_TRACE("%px: datagram %d read at offset %d for %d bytes for %d\n", ttii, i, offset, size, sender);
+	DEBUG_ASSERT((sender >= 0) && (sender <= 1), "%px: invalid sender %d\n", ttii, sender);
 
 	/*
 	 * Which list?
@@ -711,11 +711,11 @@ static int ecm_tracker_tcp_datagram_read_callback(struct ecm_tracker_instance *t
 	 * Iterate to the i'th datagram
 	 */
 	while (i) {
-		DEBUG_ASSERT(skb, "%p: index bad\n", ttii);
+		DEBUG_ASSERT(skb, "%px: index bad\n", ttii);
 		skb = skb->next;
 		i--;
 	}
-	DEBUG_ASSERT(skb, "%p: index bad\n", ttii);
+	DEBUG_ASSERT(skb, "%px: index bad\n", ttii);
 
 	/*
 	 * Perform read
@@ -754,7 +754,7 @@ static void _ecm_tracker_tcp_data_future_replay(struct ecm_tracker_tcp_internal_
 		 */
 		skb = data->future;
 		skb_cb = (struct ecm_tracker_tcp_skb_cb_format *)skb->cb;
-		DEBUG_CHECK_MAGIC(skb_cb, ECM_TRACKER_TCP_SKB_CB_MAGIC, "%p: invalid cb magic %p\n", ttii, skb_cb);
+		DEBUG_CHECK_MAGIC(skb_cb, ECM_TRACKER_TCP_SKB_CB_MAGIC, "%px: invalid cb magic %px\n", ttii, skb_cb);
 
 		/*
 		 * Identify the sequence space
@@ -762,7 +762,7 @@ static void _ecm_tracker_tcp_data_future_replay(struct ecm_tracker_tcp_internal_
 		in_sequence = (int32_t)(skb_cb->seq_no - (data->seq_no + data->num_seqs));
 		new_seqs = (int32_t)(skb_cb->num_seqs + in_sequence);
 		offset = -in_sequence;
-		DEBUG_TRACE("%p: FUTURE REPLAY %p: in_sequence: %d, new_seqs: %d, offset: %d\n", ttii, skb, in_sequence, new_seqs, offset);
+		DEBUG_TRACE("%px: FUTURE REPLAY %px: in_sequence: %d, new_seqs: %d, offset: %d\n", ttii, skb, in_sequence, new_seqs, offset);
 
 		/*
 		 * Is the segment still in the future?
@@ -772,7 +772,7 @@ static void _ecm_tracker_tcp_data_future_replay(struct ecm_tracker_tcp_internal_
 			 * Still awaiting sequences until this segment becomes valid.
 			 * We are done
 		 	 */
-			DEBUG_TRACE("%p: FUTURE REPLAY FUTURE SEQ: %u LEN:%u\n", ttii, skb_cb->seq_no, skb_cb->num_seqs);
+			DEBUG_TRACE("%px: FUTURE REPLAY FUTURE SEQ: %u LEN:%u\n", ttii, skb_cb->seq_no, skb_cb->num_seqs);
 			break;
 		}
 
@@ -791,27 +791,27 @@ static void _ecm_tracker_tcp_data_future_replay(struct ecm_tracker_tcp_internal_
 			/*
 			 * all old - skb needs to be discarded
 			 */
-			DEBUG_TRACE("%p: FUTURE REPLAY OLD SEQ: %u LEN:%u, new future head: %p\n", ttii, skb_cb->seq_no, skb_cb->num_seqs, data->future);
+			DEBUG_TRACE("%px: FUTURE REPLAY OLD SEQ: %u LEN:%u, new future head: %px\n", ttii, skb_cb->seq_no, skb_cb->num_seqs, data->future);
 
 			/*
 			 * Remove skb from the recvd_order list (it may be anywhere in this list)
 			 */
 			if (!skb_cb->next) {
-				DEBUG_ASSERT(data->recvd_order_last == skb, "%p: bad list\n", ttii);
+				DEBUG_ASSERT(data->recvd_order_last == skb, "%px: bad list\n", ttii);
 				data->recvd_order_last = skb_cb->prev;
 			} else {
 				struct ecm_tracker_tcp_skb_cb_format *next_cb;
 				next_cb = (struct ecm_tracker_tcp_skb_cb_format *)skb_cb->next->cb;
-				DEBUG_CHECK_MAGIC(next_cb, ECM_TRACKER_TCP_SKB_CB_MAGIC, "%p: invalid cb magic %p\n", ttii, next_cb);
+				DEBUG_CHECK_MAGIC(next_cb, ECM_TRACKER_TCP_SKB_CB_MAGIC, "%px: invalid cb magic %px\n", ttii, next_cb);
 				next_cb->prev = skb_cb->prev;
 			}
 			if (!skb_cb->prev) {
-				DEBUG_ASSERT(data->recvd_order == skb, "%p: bad list\n", ttii);
+				DEBUG_ASSERT(data->recvd_order == skb, "%px: bad list\n", ttii);
 				data->recvd_order = skb_cb->next;
 			} else {
 				struct ecm_tracker_tcp_skb_cb_format *prev_cb;
 				prev_cb = (struct ecm_tracker_tcp_skb_cb_format *)skb_cb->prev->cb;
-				DEBUG_CHECK_MAGIC(prev_cb, ECM_TRACKER_TCP_SKB_CB_MAGIC, "%p: invalid cb magic %p\n", ttii, prev_cb);
+				DEBUG_CHECK_MAGIC(prev_cb, ECM_TRACKER_TCP_SKB_CB_MAGIC, "%px: invalid cb magic %px\n", ttii, prev_cb);
 				prev_cb->next = skb_cb->next;
 			}
 
@@ -819,10 +819,10 @@ static void _ecm_tracker_tcp_data_future_replay(struct ecm_tracker_tcp_internal_
 			 * Update stats
 			 */
 			data->recvd_count--;
-			DEBUG_ASSERT(data->recvd_count >= 0, "%p: bad count\n", ttii);
+			DEBUG_ASSERT(data->recvd_count >= 0, "%px: bad count\n", ttii);
 			data->recvd_bytes_total -= skb->truesize;
 			ecm_tracker_data_total_decrease(skb->len, skb->truesize);
-			DEBUG_ASSERT(data->recvd_bytes_total >= 0, "%p: bad bytes count\n", ttii);
+			DEBUG_ASSERT(data->recvd_bytes_total >= 0, "%px: bad bytes count\n", ttii);
 
 			/*
 			 * Release skb containing obsoleted data
@@ -834,7 +834,7 @@ static void _ecm_tracker_tcp_data_future_replay(struct ecm_tracker_tcp_internal_
 		/*
 		 * We are dealing with new or some new/old data.
 		 */
-		DEBUG_ASSERT(offset >= 0, "%p: alg bad, offset negative at %d\n", ttii, offset);
+		DEBUG_ASSERT(offset >= 0, "%px: alg bad, offset negative at %d\n", ttii, offset);
 
 		/*
 		 * Initialise the private cb space
@@ -856,22 +856,22 @@ static void _ecm_tracker_tcp_data_future_replay(struct ecm_tracker_tcp_internal_
 			/*
 			 * If there is no data_end then skb is at the head of the list
 			 */
-			DEBUG_ASSERT(data->in_order == NULL, "%p: bad data_end, data points to %p\n", ttii, data->in_order);
+			DEBUG_ASSERT(data->in_order == NULL, "%px: bad data_end, data points to %px\n", ttii, data->in_order);
 			data->in_order = skb;
 		}
 		data->in_order_count++;
-		DEBUG_ASSERT(data->in_order_count > 0, "%p: invalid in_order count %d for data %p\n", ttii, data->in_order_count, data);
+		DEBUG_ASSERT(data->in_order_count > 0, "%px: invalid in_order count %d for data %px\n", ttii, data->in_order_count, data);
 
 		/*
 		 * Update our contiguous space pointer
 		 */
 		data->num_seqs += (uint32_t)new_seqs;
 
-		DEBUG_TRACE("%p: FUTURE REPLAY IN SEQ:%u LEN:%u.  Inserted between %p and %p.  SEQ SPACE: %u, len %u, in_order_count %d\n", ttii, skb_cb->seq_no, skb_cb->num_seqs, skb_cb->prev,
+		DEBUG_TRACE("%px: FUTURE REPLAY IN SEQ:%u LEN:%u.  Inserted between %px and %px.  SEQ SPACE: %u, len %u, in_order_count %d\n", ttii, skb_cb->seq_no, skb_cb->num_seqs, skb_cb->prev,
 				skb_cb->next, data->seq_no, data->num_seqs, data->in_order_count);
 	}
 
-	DEBUG_TRACE("%p: FUTURE REPLAY COMPLETE\n", ttii);
+	DEBUG_TRACE("%px: FUTURE REPLAY COMPLETE\n", ttii);
 }
 
 /*
@@ -898,23 +898,23 @@ static bool _ecm_tracker_tcp_stream_segment_add(struct ecm_tracker_tcp_internal_
 	/*
 	 * We should have been passed a valid cb area
 	 */
-	DEBUG_CHECK_MAGIC(skb_cb, ECM_TRACKER_TCP_SKB_CB_MAGIC, "%p: skb bad cb magic\n", ttii);
+	DEBUG_CHECK_MAGIC(skb_cb, ECM_TRACKER_TCP_SKB_CB_MAGIC, "%px: skb bad cb magic\n", ttii);
 
 	/*
 	 * Reset? ignore
 	 */
 	if (unlikely(tcp_hdr->rst)) {
-		DEBUG_TRACE("%p: reset seen - ignoring\n", ttii);
+		DEBUG_TRACE("%px: reset seen - ignoring\n", ttii);
 		return false;
 	}
 
 	/*
 	 * Figure out the data length in this TCP segment.
 	 */
-	DEBUG_ASSERT((ecm_tcp_header->offset + ecm_tcp_header->size) <= ip_hdr->total_length, "%p: invalid hdrs\n", ttii);
+	DEBUG_ASSERT((ecm_tcp_header->offset + ecm_tcp_header->size) <= ip_hdr->total_length, "%px: invalid hdrs\n", ttii);
 	data_offset = ecm_tcp_header->offset + ecm_tcp_header->header_size;
 	data_len = ecm_tcp_header->size - ecm_tcp_header->header_size;
-	DEBUG_TRACE("%p: data offset: %u, data_len = %u\n", ttii, data_offset, data_len);
+	DEBUG_TRACE("%px: data offset: %u, data_len = %u\n", ttii, data_offset, data_len);
 
 	/*
 	 * Set sequence number of first byte of data in the header.
@@ -937,9 +937,9 @@ static bool _ecm_tracker_tcp_stream_segment_add(struct ecm_tracker_tcp_internal_
 	 * to validate our sequence numbering
 	 */
 	if (unlikely(!data->seq_no_valid)) {
-		DEBUG_ASSERT(data->in_order == NULL, "%p: in_order not null %p\n", ttii, data->in_order);
-		DEBUG_ASSERT(data->in_order_last == NULL, "%p: in_order_last not null %p\n", ttii, data->in_order_last);
-		DEBUG_ASSERT(data->in_order_count == 0, "%p: in_order_count not 0: %d\n", ttii, data->in_order_count);
+		DEBUG_ASSERT(data->in_order == NULL, "%px: in_order not null %px\n", ttii, data->in_order);
+		DEBUG_ASSERT(data->in_order_last == NULL, "%px: in_order_last not null %px\n", ttii, data->in_order_last);
+		DEBUG_ASSERT(data->in_order_count == 0, "%px: in_order_count not 0: %d\n", ttii, data->in_order_count);
 
 		/*
 		 * Sequence numbers are not valid at the moment so this segment is where we start from
@@ -948,7 +948,7 @@ static bool _ecm_tracker_tcp_stream_segment_add(struct ecm_tracker_tcp_internal_
 		data->num_seqs = 0;
 		data->seq_no_valid = true;
 
-		DEBUG_TRACE("%p: FIRST SEQ:%u\n", ttii, seq);
+		DEBUG_TRACE("%px: FIRST SEQ:%u\n", ttii, seq);
 	}
 
 	/*
@@ -995,7 +995,7 @@ static bool _ecm_tracker_tcp_stream_segment_add(struct ecm_tracker_tcp_internal_
 	in_sequence = (int32_t)(seq - (data->seq_no + data->num_seqs));
 	new_seqs = (int32_t)(num_seqs + in_sequence);
 	offset = -in_sequence;
-	DEBUG_TRACE("%p: in_sequence: %d, new_seqs: %d, offset: %d\n", ttii, in_sequence, new_seqs, offset);
+	DEBUG_TRACE("%px: in_sequence: %d, new_seqs: %d, offset: %d\n", ttii, in_sequence, new_seqs, offset);
 
 	/*
 	 * Does the segment contain only old data?
@@ -1004,7 +1004,7 @@ static bool _ecm_tracker_tcp_stream_segment_add(struct ecm_tracker_tcp_internal_
 		/*
 		 * all old
 		 */
-		DEBUG_TRACE("%p: OLD SEQ: %u LEN:%u\n", ttii, seq, num_seqs);
+		DEBUG_TRACE("%px: OLD SEQ: %u LEN:%u\n", ttii, seq, num_seqs);
 		return false;
 	}
 
@@ -1025,7 +1025,7 @@ static bool _ecm_tracker_tcp_stream_segment_add(struct ecm_tracker_tcp_internal_
 		skb_cb->seq_no = seq;
 		skb_cb->num_seqs = num_seqs;
 		skb_cb->offset = data_offset;
-		DEBUG_INFO("%p: FUTURE SEQ: %u LEN:%u\n", ttii, seq, num_seqs);
+		DEBUG_INFO("%px: FUTURE SEQ: %u LEN:%u\n", ttii, seq, num_seqs);
 
 		/*
 		 * Insert the segment into the future list in order of sequence number
@@ -1035,15 +1035,15 @@ static bool _ecm_tracker_tcp_stream_segment_add(struct ecm_tracker_tcp_internal_
 		while (nskb) {
 			struct ecm_tracker_tcp_skb_cb_format *nskb_cb;
 			nskb_cb = (struct ecm_tracker_tcp_skb_cb_format *)nskb->cb;
-			DEBUG_CHECK_MAGIC(nskb_cb, ECM_TRACKER_TCP_SKB_CB_MAGIC, "%p: invalid cb magic %p\n", ttii, nskb_cb);
-			DEBUG_TRACE("%p: seq: %u, nskb_cb->seq: %u\n", ttii, seq, nskb_cb->seq_no);
+			DEBUG_CHECK_MAGIC(nskb_cb, ECM_TRACKER_TCP_SKB_CB_MAGIC, "%px: invalid cb magic %px\n", ttii, nskb_cb);
+			DEBUG_TRACE("%px: seq: %u, nskb_cb->seq: %u\n", ttii, seq, nskb_cb->seq_no);
 			if (seq <= nskb_cb->seq_no) {
 				break;
 			}
 			pskb = nskb;
 			nskb = nskb->next;
 		}
-		DEBUG_TRACE("%p: Insert after %p and before %p\n", ttii, pskb, nskb);
+		DEBUG_TRACE("%px: Insert after %px and before %px\n", ttii, pskb, nskb);
 
 		/*
 		 * Insert skb between pskb and nskb in the futures list
@@ -1059,18 +1059,18 @@ static bool _ecm_tracker_tcp_stream_segment_add(struct ecm_tracker_tcp_internal_
 			/*
 			 * Head of the list
 			 */
-			DEBUG_ASSERT(data->future == nskb, "%p: invalid future list %p != %p\n", ttii, data->future, nskb);
+			DEBUG_ASSERT(data->future == nskb, "%px: invalid future list %px != %px\n", ttii, data->future, nskb);
 			data->future = skb;
 		}
 
-		DEBUG_TRACE("%p: FUTURE SEQ:%u LEN:%u.  Inserted after %p and before %p\n", ttii, seq, num_seqs, pskb, nskb);
+		DEBUG_TRACE("%px: FUTURE SEQ:%u LEN:%u.  Inserted after %px and before %px\n", ttii, seq, num_seqs, pskb, nskb);
 		return true;
 	}
 
 	/*
 	 * We are dealing with new or some new/old data.
 	 */
-	DEBUG_ASSERT(offset >= 0, "%p: alg bad, offset negative at %d\n", ttii, offset);
+	DEBUG_ASSERT(offset >= 0, "%px: alg bad, offset negative at %d\n", ttii, offset);
 
 	/*
 	 * Initialise the private cb space
@@ -1092,18 +1092,18 @@ static bool _ecm_tracker_tcp_stream_segment_add(struct ecm_tracker_tcp_internal_
 		/*
 		 * If there is no data_end then skb is at the head of the list
 		 */
-		DEBUG_ASSERT(data->in_order == NULL, "%p: bad data_end, data points to %p\n", ttii, data->in_order);
+		DEBUG_ASSERT(data->in_order == NULL, "%px: bad data_end, data points to %px\n", ttii, data->in_order);
 		data->in_order = skb;
 	}
 	data->in_order_count++;
-	DEBUG_ASSERT(data->in_order_count > 0, "%p: invalid in_order count %d for data %p\n", ttii, data->in_order_count, data);
+	DEBUG_ASSERT(data->in_order_count > 0, "%px: invalid in_order count %d for data %px\n", ttii, data->in_order_count, data);
 
 	/*
 	 * Update our contiguous space pointers
 	 */
 	data->num_seqs += (uint32_t)new_seqs;
 
-	DEBUG_TRACE("%p: IN SEQ:%u LEN:%u.  Inserted between %p and %p.  SEQ SPACE starts at: %u, len %u, in_order_count %d\n",
+	DEBUG_TRACE("%px: IN SEQ:%u LEN:%u.  Inserted between %px and %px.  SEQ SPACE starts at: %u, len %u, in_order_count %d\n",
 			ttii, skb_cb->seq_no, skb_cb->num_seqs, skb_cb->prev, skb_cb->next, data->seq_no, data->num_seqs, data->in_order_count);
 
 	/*
@@ -1137,26 +1137,20 @@ static bool ecm_tracker_tcp_extract_mss(struct sk_buff *skb, uint16_t *mss, stru
 	 * Parse the TCP header options
 	 */
 	memset(&opt_rx, 0, sizeof(opt_rx));
-	{
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(3,6,0))
-		const u8 *hash_location;
-		tcp_parse_options(skb, &opt_rx, &hash_location, 0);
-#elif (LINUX_VERSION_CODE >= KERNEL_VERSION(3,10,0))
-		tcp_parse_options(&init_net, skb, &opt_rx, 0, NULL);
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 13, 0))
+	tcp_parse_options(skb, &opt_rx, 0, NULL);
 #else
-#error "Unsupported kernel version for tcp_parse_options()"
+	tcp_parse_options(dev_net(skb->dev), skb, &opt_rx, 0, NULL);
 #endif
-	}
-
 	/*
 	 * Was there an MSS?
 	 */
 	if (!opt_rx.mss_clamp) {
-		DEBUG_WARN("No mss clamp in skb %p\n", skb);
+		DEBUG_WARN("No mss clamp in skb %px\n", skb);
 		return false;
 	}
 
-	DEBUG_INFO("MSS clamp seen in %p as %u\n", skb, opt_rx.mss_clamp);
+	DEBUG_INFO("MSS clamp seen in %px as %u\n", skb, opt_rx.mss_clamp);
 	*mss = opt_rx.mss_clamp;
 
 	return true;
@@ -1175,21 +1169,21 @@ static bool ecm_tracker_tcp_segment_add_callback(struct ecm_tracker_tcp_instance
 	struct ecm_tracker_tcp_host_data *data;
 	struct ecm_tracker_tcp_skb_cb_format *skbc_cb;
 
-	DEBUG_CHECK_MAGIC(ttii, ECM_TRACKER_TCP_INSTANCE_MAGIC, "%p: magic failed", ttii);
-	DEBUG_ASSERT((sender >= 0) && (sender <= 1), "%p: invalid sender %d\n", ttii, sender);
-	DEBUG_ASSERT(ecm_tcp_header->protocol_number == IPPROTO_TCP, "%p: invalid sender %u\n", ttii, ecm_tcp_header->protocol_number);
-	DEBUG_TRACE("%p: segment %p add for %d\n", ttii, skb, sender);
+	DEBUG_CHECK_MAGIC(ttii, ECM_TRACKER_TCP_INSTANCE_MAGIC, "%px: magic failed", ttii);
+	DEBUG_ASSERT((sender >= 0) && (sender <= 1), "%px: invalid sender %d\n", ttii, sender);
+	DEBUG_ASSERT(ecm_tcp_header->protocol_number == IPPROTO_TCP, "%px: invalid sender %u\n", ttii, ecm_tcp_header->protocol_number);
+	DEBUG_TRACE("%px: segment %px add for %d\n", ttii, skb, sender);
 
 	/*
 	 * Clone the packet
 	 */
 	skbc = skb_clone(skb, GFP_ATOMIC | __GFP_NOWARN);
 	if (!skbc) {
-		DEBUG_WARN("%p: Failed to clone packet %p\n", ttii, skb);
+		DEBUG_WARN("%px: Failed to clone packet %px\n", ttii, skb);
 		return false;
 	}
 
-	DEBUG_TRACE("%p: cloned %p to %p\n", ttii, skb, skbc);
+	DEBUG_TRACE("%px: cloned %px to %px\n", ttii, skb, skbc);
 
 	/*
 	 * Get the private cb area and initialise it.
@@ -1203,9 +1197,9 @@ static bool ecm_tracker_tcp_segment_add_callback(struct ecm_tracker_tcp_instance
 	/*
 	 * Are we within instance limit?
 	 */
-	DEBUG_ASSERT((ttii->sender_data[ECM_TRACKER_SENDER_TYPE_SRC].recvd_bytes_total + ttii->sender_data[ECM_TRACKER_SENDER_TYPE_DEST].recvd_bytes_total + skbc->truesize) > 0, "%p: bad total\n", ttii);
+	DEBUG_ASSERT((ttii->sender_data[ECM_TRACKER_SENDER_TYPE_SRC].recvd_bytes_total + ttii->sender_data[ECM_TRACKER_SENDER_TYPE_DEST].recvd_bytes_total + skbc->truesize) > 0, "%px: bad total\n", ttii);
 	if ((ttii->sender_data[ECM_TRACKER_SENDER_TYPE_SRC].recvd_bytes_total + ttii->sender_data[ECM_TRACKER_SENDER_TYPE_DEST].recvd_bytes_total + skbc->truesize) > ttii->data_limit) {
-		DEBUG_TRACE("%p: over limit\n", ttii);
+		DEBUG_TRACE("%px: over limit\n", ttii);
 		spin_unlock_bh(&ttii->lock);
 		dev_kfree_skb_any(skbc);
 		return false;
@@ -1215,7 +1209,7 @@ static bool ecm_tracker_tcp_segment_add_callback(struct ecm_tracker_tcp_instance
 	 * Within global limit?
 	 */
 	if (!ecm_tracker_data_total_increase(skbc->len, skbc->truesize)) {
-		DEBUG_TRACE("%p: over global limit\n", ttii);
+		DEBUG_TRACE("%px: over global limit\n", ttii);
 		spin_unlock_bh(&ttii->lock);
 		dev_kfree_skb_any(skbc);
 		return false;
@@ -1234,7 +1228,7 @@ static bool ecm_tracker_tcp_segment_add_callback(struct ecm_tracker_tcp_instance
 		if (ecm_tracker_tcp_extract_mss(skbc, &mss, ecm_tcp_header)) {
 			data->mss = mss;
 			data->mss_seen = true;
-			DEBUG_TRACE("%p: Seen mss as %u for %p\n", ttii, mss, data);
+			DEBUG_TRACE("%px: Seen mss as %u for %px\n", ttii, mss, data);
 		}
 	}
 
@@ -1262,12 +1256,12 @@ static bool ecm_tracker_tcp_segment_add_callback(struct ecm_tracker_tcp_instance
 	skbc_cb->prev = data->recvd_order_last;
 	data->recvd_order_last = skbc;
 	if (!skbc_cb->prev) {
-		DEBUG_ASSERT(data->recvd_order == NULL, "%p: bad list\n", ttii);
+		DEBUG_ASSERT(data->recvd_order == NULL, "%px: bad list\n", ttii);
 		data->recvd_order = skbc;
 	} else {
 		struct ecm_tracker_tcp_skb_cb_format *prev_cb;
 		prev_cb = (struct ecm_tracker_tcp_skb_cb_format *)skbc_cb->prev->cb;
-		DEBUG_CHECK_MAGIC(prev_cb, ECM_TRACKER_TCP_SKB_CB_MAGIC, "%p: invalid cb magic %p\n", ttii, prev_cb);
+		DEBUG_CHECK_MAGIC(prev_cb, ECM_TRACKER_TCP_SKB_CB_MAGIC, "%px: invalid cb magic %px\n", ttii, prev_cb);
 		prev_cb->next = skbc;
 	}
 
@@ -1275,9 +1269,9 @@ static bool ecm_tracker_tcp_segment_add_callback(struct ecm_tracker_tcp_instance
 	 * Update stats
 	 */
 	data->recvd_count++;
-	DEBUG_ASSERT(data->recvd_count > 0, "%p: bad count\n", ttii);
+	DEBUG_ASSERT(data->recvd_count > 0, "%px: bad count\n", ttii);
 	data->recvd_bytes_total += skbc->truesize;
-	DEBUG_TRACE("%p: Segment %p added between %p and %p. recvd total %u, bytes total %u\n",
+	DEBUG_TRACE("%px: Segment %px added between %px and %px. recvd total %u, bytes total %u\n",
 			ttii, skbc, skbc->prev, skbc->next, data->recvd_count, data->recvd_bytes_total);
 	spin_unlock_bh(&ttii->lock);
 	return true;
@@ -1298,20 +1292,20 @@ static bool ecm_tracker_tcp_datagram_add_callback(struct ecm_tracker_instance *t
 	struct tcphdr *tcp_hdr;
 	struct ecm_tracker_tcp_host_data *data;
 
-	DEBUG_CHECK_MAGIC(ttii, ECM_TRACKER_TCP_INSTANCE_MAGIC, "%p: magic failed", ttii);
-	DEBUG_ASSERT((sender >= 0) && (sender <= 1), "%p: invalid sender %d\n", ttii, sender);
-	DEBUG_TRACE("%p: datagram %p add for sender: %d\n", ttii, skb, sender);
+	DEBUG_CHECK_MAGIC(ttii, ECM_TRACKER_TCP_INSTANCE_MAGIC, "%px: magic failed", ttii);
+	DEBUG_ASSERT((sender >= 0) && (sender <= 1), "%px: invalid sender %d\n", ttii, sender);
+	DEBUG_TRACE("%px: datagram %px add for sender: %d\n", ttii, skb, sender);
 
 	/*
 	 * Clone the packet
 	 */
 	skbc = skb_clone(skb, GFP_ATOMIC | __GFP_NOWARN);
 	if (!skbc) {
-		DEBUG_WARN("%p: Failed to clone packet %p\n", ttii, skb);
+		DEBUG_WARN("%px: Failed to clone packet %px\n", ttii, skb);
 		return false;
 	}
 
-	DEBUG_TRACE("%p: cloned %p to %p\n", ttii, skb, skbc);
+	DEBUG_TRACE("%px: cloned %px to %px\n", ttii, skb, skbc);
 
 	/*
 	 * Get the private cb area and initialise it.
@@ -1324,7 +1318,7 @@ static bool ecm_tracker_tcp_datagram_add_callback(struct ecm_tracker_instance *t
 	 * Obtain the IP header from the skb
 	 */
 	if (!ecm_tracker_ip_check_header_and_read(&ip_hdr, skb)) {
-		DEBUG_WARN("%p: no ip_hdr for %p\n", ttii, skbc);
+		DEBUG_WARN("%px: no ip_hdr for %px\n", ttii, skbc);
 		dev_kfree_skb_any(skbc);
 		return false;
 	}
@@ -1334,7 +1328,7 @@ static bool ecm_tracker_tcp_datagram_add_callback(struct ecm_tracker_instance *t
 	 */
 	tcp_hdr = ecm_tracker_tcp_check_header_and_read(skbc, &ip_hdr, &tcp_hdr_buff);
 	if (!tcp_hdr) {
-		DEBUG_WARN("%p: invalid tcp header %p\n", ttii, skbc);
+		DEBUG_WARN("%px: invalid tcp header %px\n", ttii, skbc);
 		dev_kfree_skb_any(skbc);
 		return false;
 	}
@@ -1345,9 +1339,9 @@ static bool ecm_tracker_tcp_datagram_add_callback(struct ecm_tracker_instance *t
 	/*
 	 * Are we within instance limit?
 	 */
-	DEBUG_ASSERT((ttii->sender_data[ECM_TRACKER_SENDER_TYPE_SRC].recvd_bytes_total + ttii->sender_data[ECM_TRACKER_SENDER_TYPE_DEST].recvd_bytes_total + skbc->truesize) > 0, "%p: bad total\n", ttii);
+	DEBUG_ASSERT((ttii->sender_data[ECM_TRACKER_SENDER_TYPE_SRC].recvd_bytes_total + ttii->sender_data[ECM_TRACKER_SENDER_TYPE_DEST].recvd_bytes_total + skbc->truesize) > 0, "%px: bad total\n", ttii);
 	if ((ttii->sender_data[ECM_TRACKER_SENDER_TYPE_SRC].recvd_bytes_total + ttii->sender_data[ECM_TRACKER_SENDER_TYPE_DEST].recvd_bytes_total + skbc->truesize) > ttii->data_limit) {
-		DEBUG_TRACE("%p: over limit: SRC recvd_bytes_total: %u, DEST recvd_bytes_total: %u, skb true_size: %u, limit: %u\n",
+		DEBUG_TRACE("%px: over limit: SRC recvd_bytes_total: %u, DEST recvd_bytes_total: %u, skb true_size: %u, limit: %u\n",
 				ttii,
 				ttii->sender_data[ECM_TRACKER_SENDER_TYPE_SRC].recvd_bytes_total,
 				ttii->sender_data[ECM_TRACKER_SENDER_TYPE_DEST].recvd_bytes_total,
@@ -1362,7 +1356,7 @@ static bool ecm_tracker_tcp_datagram_add_callback(struct ecm_tracker_instance *t
 	 * Within global limit?
 	 */
 	if (!ecm_tracker_data_total_increase(skbc->len, skbc->truesize)) {
-		DEBUG_TRACE("%p: over global limit\n", ttii);
+		DEBUG_TRACE("%px: over global limit\n", ttii);
 		spin_unlock_bh(&ttii->lock);
 		dev_kfree_skb_any(skbc);
 		return false;
@@ -1381,7 +1375,7 @@ static bool ecm_tracker_tcp_datagram_add_callback(struct ecm_tracker_instance *t
 		if (ecm_tracker_tcp_extract_mss(skbc, &mss, ecm_tcp_header)) {
 			data->mss = mss;
 			data->mss_seen = true;
-			DEBUG_TRACE("%p: Seen mss as %u for %p\n", ttii, mss, data);
+			DEBUG_TRACE("%px: Seen mss as %u for %px\n", ttii, mss, data);
 		}
 	}
 
@@ -1409,12 +1403,12 @@ static bool ecm_tracker_tcp_datagram_add_callback(struct ecm_tracker_instance *t
 	skbc_cb->prev = data->recvd_order_last;
 	data->recvd_order_last = skbc;
 	if (!skbc_cb->prev) {
-		DEBUG_ASSERT(data->recvd_order == NULL, "%p: bad list\n", ttii);
+		DEBUG_ASSERT(data->recvd_order == NULL, "%px: bad list\n", ttii);
 		data->recvd_order = skbc;
 	} else {
 		struct ecm_tracker_tcp_skb_cb_format *prev_cb;
 		prev_cb = (struct ecm_tracker_tcp_skb_cb_format *)skbc_cb->prev->cb;
-		DEBUG_CHECK_MAGIC(prev_cb, ECM_TRACKER_TCP_SKB_CB_MAGIC, "%p: invalid cb magic %p\n", ttii, prev_cb);
+		DEBUG_CHECK_MAGIC(prev_cb, ECM_TRACKER_TCP_SKB_CB_MAGIC, "%px: invalid cb magic %px\n", ttii, prev_cb);
 		prev_cb->next = skbc;
 	}
 
@@ -1422,9 +1416,9 @@ static bool ecm_tracker_tcp_datagram_add_callback(struct ecm_tracker_instance *t
 	 * Update stats
 	 */
 	data->recvd_count++;
-	DEBUG_ASSERT(data->recvd_count > 0, "%p: bad count\n", ttii);
+	DEBUG_ASSERT(data->recvd_count > 0, "%px: bad count\n", ttii);
 	data->recvd_bytes_total += skbc->truesize;
-	DEBUG_TRACE("%p: Segment %p added between %p and %p.  recvd total %u, bytes total %u\n",
+	DEBUG_TRACE("%px: Segment %px added between %px and %px.  recvd total %u, bytes total %u\n",
 			ttii, skbc, skbc->prev, skbc->next, data->recvd_count, data->recvd_bytes_total);
 	spin_unlock_bh(&ttii->lock);
 	return true;
@@ -1440,8 +1434,8 @@ static uint32_t ecm_tracker_tcp_bytes_avail_get_callback(struct ecm_tracker_tcp_
 	struct ecm_tracker_tcp_host_data *data;
 	uint32_t bytes_avail;
 
-	DEBUG_CHECK_MAGIC(ttii, ECM_TRACKER_TCP_INSTANCE_MAGIC, "%p: magic failed", ttii);
-	DEBUG_ASSERT((sender >= 0) && (sender <= 1), "%p: invalid sender %d\n", ttii, sender);
+	DEBUG_CHECK_MAGIC(ttii, ECM_TRACKER_TCP_INSTANCE_MAGIC, "%px: magic failed", ttii);
+	DEBUG_ASSERT((sender >= 0) && (sender <= 1), "%px: invalid sender %d\n", ttii, sender);
 
 	/*
 	 * Which list?
@@ -1455,7 +1449,7 @@ static uint32_t ecm_tracker_tcp_bytes_avail_get_callback(struct ecm_tracker_tcp_
 	bytes_avail = data->num_seqs;
 	spin_unlock_bh(&ttii->lock);
 
-	DEBUG_TRACE("%p: get bytes available for %d: %u\n", ttii, sender, bytes_avail);
+	DEBUG_TRACE("%px: get bytes available for %d: %u\n", ttii, sender, bytes_avail);
 	return bytes_avail;
 }
 
@@ -1475,8 +1469,8 @@ static int ecm_tracker_tcp_bytes_read_callback(struct ecm_tracker_tcp_instance *
 	uint8_t *p;
 	struct ecm_tracker_tcp_skb_cb_format *skb_cb;
 
-	DEBUG_CHECK_MAGIC(ttii, ECM_TRACKER_TCP_INSTANCE_MAGIC, "%p: magic failed", ttii);
-	DEBUG_ASSERT((sender >= 0) && (sender <= 1), "%p: invalid sender %d\n", ttii, sender);
+	DEBUG_CHECK_MAGIC(ttii, ECM_TRACKER_TCP_INSTANCE_MAGIC, "%px: magic failed", ttii);
+	DEBUG_ASSERT((sender >= 0) && (sender <= 1), "%px: invalid sender %d\n", ttii, sender);
 
 	/*
 	 * Which list?
@@ -1487,9 +1481,9 @@ static int ecm_tracker_tcp_bytes_read_callback(struct ecm_tracker_tcp_instance *
 	 * Compute the sequence to start reading at given the offset
 	 */
 	spin_lock_bh(&ttii->lock);
-	DEBUG_ASSERT((offset + size) <= data->num_seqs, "%p: attempt to read %u bytes from offset %u.  Available bytes is %u\n", ttii, size, offset, data->num_seqs);
+	DEBUG_ASSERT((offset + size) <= data->num_seqs, "%px: attempt to read %u bytes from offset %u.  Available bytes is %u\n", ttii, size, offset, data->num_seqs);
 	read_start_seq = data->seq_no + offset;
-	DEBUG_TRACE("%p: seq: %u, num_seqs: %u, offset: %u, size: %u, read_start_seq: %u\n", ttii, data->seq_no, data->num_seqs, offset, size, read_start_seq);
+	DEBUG_TRACE("%px: seq: %u, num_seqs: %u, offset: %u, size: %u, read_start_seq: %u\n", ttii, data->seq_no, data->num_seqs, offset, size, read_start_seq);
 
 	/*
 	 * Identify which skb in our sequence space seq_start begins at
@@ -1499,7 +1493,7 @@ static int ecm_tracker_tcp_bytes_read_callback(struct ecm_tracker_tcp_instance *
 		uint32_t next_seg_seq;
 
 		skb_cb = (struct ecm_tracker_tcp_skb_cb_format *)skb->cb;
-		DEBUG_CHECK_MAGIC(skb_cb, ECM_TRACKER_TCP_SKB_CB_MAGIC, "%p: invalid cb magic %p\n", ttii, skb_cb);
+		DEBUG_CHECK_MAGIC(skb_cb, ECM_TRACKER_TCP_SKB_CB_MAGIC, "%px: invalid cb magic %px\n", ttii, skb_cb);
 
 		/*
 		 * Get the sequence number of the start of the next segment
@@ -1511,7 +1505,7 @@ static int ecm_tracker_tcp_bytes_read_callback(struct ecm_tracker_tcp_instance *
 		 * i.e. skb does not contain the sequences we need
 		 */
 		if (read_start_seq >= next_seg_seq) {
-			DEBUG_TRACE("%p: skip skb %p, we start at %u and this segment ends at %u\n", ttii, skb, read_start_seq, next_seg_seq - 1);
+			DEBUG_TRACE("%px: skip skb %px, we start at %u and this segment ends at %u\n", ttii, skb, read_start_seq, next_seg_seq - 1);
 			skb = skb->next;
 			continue;
 		}
@@ -1519,11 +1513,11 @@ static int ecm_tracker_tcp_bytes_read_callback(struct ecm_tracker_tcp_instance *
 		/*
 		 * We start reading at this skb
 		 */
-		DEBUG_TRACE("%p: skb to start reading from is at %p, seq_no of this is %u\n", ttii, skb, skb_cb->seq_no);
+		DEBUG_TRACE("%px: skb to start reading from is at %px, seq_no of this is %u\n", ttii, skb, skb_cb->seq_no);
 		break;
 	}
 
-	DEBUG_ASSERT(skb, "%p: no read start could be found\n", ttii);
+	DEBUG_ASSERT(skb, "%px: no read start could be found\n", ttii);
 
 	/*
 	 * Finally perform read
@@ -1534,7 +1528,7 @@ static int ecm_tracker_tcp_bytes_read_callback(struct ecm_tracker_tcp_instance *
 	 */
 	seq_offset = read_start_seq - skb_cb->seq_no;
 	seg_seq_avail = skb_cb->num_seqs - seq_offset;
-	DEBUG_TRACE("%p: seq_offset: %u, avail: %u, want %u bytes\n", ttii, seq_offset, seg_seq_avail, size);
+	DEBUG_TRACE("%px: seq_offset: %u, avail: %u, want %u bytes\n", ttii, seq_offset, seg_seq_avail, size);
 	if (seg_seq_avail > size) {
 		seg_seq_avail = size;
 	}
@@ -1558,10 +1552,10 @@ static int ecm_tracker_tcp_bytes_read_callback(struct ecm_tracker_tcp_instance *
 		uint32_t read_seq;
 
 		skb = skb->next;
-		DEBUG_ASSERT(skb, "%p: size %u not zero but no skb\n", ttii, size);
+		DEBUG_ASSERT(skb, "%px: size %u not zero but no skb\n", ttii, size);
 
 		skb_cb = (struct ecm_tracker_tcp_skb_cb_format *)skb->cb;
-		DEBUG_CHECK_MAGIC(skb_cb, ECM_TRACKER_TCP_SKB_CB_MAGIC, "%p: invalid cb magic %p\n", ttii, skb_cb);
+		DEBUG_CHECK_MAGIC(skb_cb, ECM_TRACKER_TCP_SKB_CB_MAGIC, "%px: invalid cb magic %px\n", ttii, skb_cb);
 
 		/*
 		 * Read available bytes from this segment.
@@ -1572,7 +1566,7 @@ static int ecm_tracker_tcp_bytes_read_callback(struct ecm_tracker_tcp_instance *
 			read_seq = size;
 		}
 
-		DEBUG_TRACE("%p: Read %u sequences from seq_no %u\n", ttii, read_seq, skb_cb->seq_no);
+		DEBUG_TRACE("%px: Read %u sequences from seq_no %u\n", ttii, read_seq, skb_cb->seq_no);
 
 		res = skb_copy_bits(skb, skb_cb->offset, p, read_seq);
 		if (res < 0) {
@@ -1599,8 +1593,8 @@ static bool ecm_tracker_tcp_mss_get_callback(struct ecm_tracker_tcp_instance *tt
 	struct ecm_tracker_tcp_host_data *data;
 	bool res;
 
-	DEBUG_CHECK_MAGIC(ttii, ECM_TRACKER_TCP_INSTANCE_MAGIC, "%p: magic failed", ttii);
-	DEBUG_ASSERT((sender >= 0) && (sender <= 1), "%p: invalid sender %d\n", ttii, sender);
+	DEBUG_CHECK_MAGIC(ttii, ECM_TRACKER_TCP_INSTANCE_MAGIC, "%px: magic failed", ttii);
+	DEBUG_ASSERT((sender >= 0) && (sender <= 1), "%px: invalid sender %d\n", ttii, sender);
 
 	/*
 	 * Which list?
@@ -1612,7 +1606,7 @@ static bool ecm_tracker_tcp_mss_get_callback(struct ecm_tracker_tcp_instance *tt
 	res = data->mss_seen;
 	spin_unlock_bh(&ttii->lock);
 
-	DEBUG_TRACE("%p: get mss for %d: %u, seen? %u\n", ttii, sender, *mss, res);
+	DEBUG_TRACE("%px: get mss for %d: %u, seen? %u\n", ttii, sender, *mss, res);
 
 	return res;
 }
@@ -1626,7 +1620,7 @@ static int32_t ecm_tracker_tcp_data_total_get_callback(struct ecm_tracker_instan
 	struct ecm_tracker_tcp_internal_instance *ttii = (struct ecm_tracker_tcp_internal_instance *)ti;
 	int32_t data_total;
 
-	DEBUG_CHECK_MAGIC(ttii, ECM_TRACKER_TCP_INSTANCE_MAGIC, "%p: magic failed", ttii);
+	DEBUG_CHECK_MAGIC(ttii, ECM_TRACKER_TCP_INSTANCE_MAGIC, "%px: magic failed", ttii);
 
 	spin_lock_bh(&ttii->lock);
 	data_total = ttii->sender_data[ECM_TRACKER_SENDER_TYPE_SRC].recvd_bytes_total + ttii->sender_data[ECM_TRACKER_SENDER_TYPE_DEST].recvd_bytes_total;
@@ -1644,7 +1638,7 @@ static int32_t ecm_tracker_tcp_data_limit_get_callback(struct ecm_tracker_instan
 	struct ecm_tracker_tcp_internal_instance *ttii = (struct ecm_tracker_tcp_internal_instance *)ti;
 	int32_t data_limit;
 
-	DEBUG_CHECK_MAGIC(ttii, ECM_TRACKER_TCP_INSTANCE_MAGIC, "%p: magic failed", ttii);
+	DEBUG_CHECK_MAGIC(ttii, ECM_TRACKER_TCP_INSTANCE_MAGIC, "%px: magic failed", ttii);
 
 	spin_lock_bh(&ttii->lock);
 	data_limit = ttii->data_limit;
@@ -1661,7 +1655,7 @@ static void ecm_tracker_tcp_data_limit_set_callback(struct ecm_tracker_instance 
 {
 	struct ecm_tracker_tcp_internal_instance *ttii = (struct ecm_tracker_tcp_internal_instance *)ti;
 
-	DEBUG_CHECK_MAGIC(ttii, ECM_TRACKER_TCP_INSTANCE_MAGIC, "%p: magic failed", ttii);
+	DEBUG_CHECK_MAGIC(ttii, ECM_TRACKER_TCP_INSTANCE_MAGIC, "%px: magic failed", ttii);
 
 	spin_lock_bh(&ttii->lock);
 	ttii->data_limit = data_limit;
@@ -1681,12 +1675,12 @@ static void ecm_tracker_tcp_state_update_callback(struct ecm_tracker_instance *t
 	struct ecm_tracker_tcp_sender_state *sender_state;
 	struct ecm_tracker_tcp_sender_state *peer_state;
 
-	DEBUG_CHECK_MAGIC(ttii, ECM_TRACKER_TCP_INSTANCE_MAGIC, "%p: magic failed", ttii);
+	DEBUG_CHECK_MAGIC(ttii, ECM_TRACKER_TCP_INSTANCE_MAGIC, "%px: magic failed", ttii);
 
 	/*
 	 * Get refereces to states
 	 */
-	DEBUG_ASSERT((sender >= 0) && (sender <= 1), "%p: invalid sender %d\n", ttii, sender);
+	DEBUG_ASSERT((sender >= 0) && (sender <= 1), "%px: invalid sender %d\n", ttii, sender);
 	sender_state = &ttii->sender_states[sender];
 	peer_state = &ttii->sender_states[!sender];
 
@@ -1695,7 +1689,7 @@ static void ecm_tracker_tcp_state_update_callback(struct ecm_tracker_instance *t
 	 */
 	tcp_hdr = ecm_tracker_tcp_check_header_and_read(skb, ip_hdr, &tcp_hdr_buff);
 	if (unlikely(!tcp_hdr)) {
-		DEBUG_WARN("%p: no tcp_hdr for %p\n", ttii, skb);
+		DEBUG_WARN("%px: no tcp_hdr for %px\n", ttii, skb);
 		spin_lock_bh(&ttii->lock);
 		sender_state->state = ECM_TRACKER_SENDER_STATE_FAULT;
 		peer_state->state = ECM_TRACKER_SENDER_STATE_FAULT;
@@ -1707,7 +1701,7 @@ static void ecm_tracker_tcp_state_update_callback(struct ecm_tracker_instance *t
 	 * If either side reports a reset this is catastrophic for the connection
 	 */
 	if (unlikely(tcp_hdr->rst)) {
-		DEBUG_INFO("%p: RESET\n", ttii);
+		DEBUG_INFO("%px: RESET\n", ttii);
 		spin_lock_bh(&ttii->lock);
 		sender_state->state = ECM_TRACKER_SENDER_STATE_FAULT;
 		peer_state->state = ECM_TRACKER_SENDER_STATE_FAULT;
@@ -1733,7 +1727,7 @@ static void ecm_tracker_tcp_state_update_callback(struct ecm_tracker_instance *t
 			 */
 			peer_state->state = ECM_TRACKER_SENDER_STATE_ESTABLISHED;
 			peer_state->syn_seq = (ack_seq - 1);		/* -1 is because the ACK has ack'd our ficticious SYN */
-			DEBUG_INFO("%p: From unkown to established, ack_seq: %u, syn_seq: %u\n", ttii, ack_seq, peer_state->syn_seq);
+			DEBUG_INFO("%px: From unkown to established, ack_seq: %u, syn_seq: %u\n", ttii, ack_seq, peer_state->syn_seq);
 			break;
 		}
 		case ECM_TRACKER_SENDER_STATE_ESTABLISHING: {
@@ -1742,12 +1736,12 @@ static void ecm_tracker_tcp_state_update_callback(struct ecm_tracker_instance *t
 
 			syn_seq = peer_state->syn_seq;
 			ackd = (int32_t)(ack_seq - syn_seq);
-			DEBUG_TRACE("%p: ack %u for syn_seq %u? ackd = %d\n", ttii, ack_seq, syn_seq, ackd);
+			DEBUG_TRACE("%px: ack %u for syn_seq %u? ackd = %d\n", ttii, ack_seq, syn_seq, ackd);
 
 			if (ackd <= 0) {
-				DEBUG_TRACE("%p: No change\n", ttii);
+				DEBUG_TRACE("%px: No change\n", ttii);
 			} else {
-				DEBUG_INFO("%p: Established\n", ttii);
+				DEBUG_INFO("%px: Established\n", ttii);
 				peer_state->state = ECM_TRACKER_SENDER_STATE_ESTABLISHED;
 			}
 			break;
@@ -1758,12 +1752,12 @@ static void ecm_tracker_tcp_state_update_callback(struct ecm_tracker_instance *t
 
 			fin_seq = peer_state->fin_seq;
 			ackd = (int32_t)(ack_seq - fin_seq);
-			DEBUG_TRACE("%p: ack %u for fin_seq %u? ackd = %d\n", ttii, ack_seq, fin_seq, ackd);
+			DEBUG_TRACE("%px: ack %u for fin_seq %u? ackd = %d\n", ttii, ack_seq, fin_seq, ackd);
 
 			if (ackd <= 0) {
-				DEBUG_TRACE("%p: No change\n", ttii);
+				DEBUG_TRACE("%px: No change\n", ttii);
 			} else {
-				DEBUG_TRACE("%p: Closed\n", ttii);
+				DEBUG_TRACE("%px: Closed\n", ttii);
 				peer_state->state = ECM_TRACKER_SENDER_STATE_CLOSED;
 			}
 			break;
@@ -1776,7 +1770,7 @@ static void ecm_tracker_tcp_state_update_callback(struct ecm_tracker_instance *t
 			 */
 			break;
 		default:
-			DEBUG_ASSERT(false, "%p: unhandled state: %d\n", ttii, peer_state_current);
+			DEBUG_ASSERT(false, "%px: unhandled state: %d\n", ttii, peer_state_current);
 		}
 	}
 
@@ -1792,7 +1786,7 @@ static void ecm_tracker_tcp_state_update_callback(struct ecm_tracker_instance *t
 		case ECM_TRACKER_SENDER_STATE_UNKNOWN:
 			sender_state->state = ECM_TRACKER_SENDER_STATE_ESTABLISHING;
 			sender_state->syn_seq = seq;		/* Seq is the sequence number of the SYN */
-			DEBUG_INFO("%p: From unkown to establishing, syn_seq: %u\n", ttii, sender_state->syn_seq);
+			DEBUG_INFO("%px: From unkown to establishing, syn_seq: %u\n", ttii, sender_state->syn_seq);
 			break;
 		case ECM_TRACKER_SENDER_STATE_CLOSING:
 		case ECM_TRACKER_SENDER_STATE_CLOSED:
@@ -1800,7 +1794,7 @@ static void ecm_tracker_tcp_state_update_callback(struct ecm_tracker_instance *t
 			 * SYN after seeing a FIN?  FAULT!
 			 */
 			sender_state->state = ECM_TRACKER_SENDER_STATE_FAULT;
-			DEBUG_INFO("%p: SYN after FIN - fault\n", ttii);
+			DEBUG_INFO("%px: SYN after FIN - fault\n", ttii);
 			break;
 		case ECM_TRACKER_SENDER_STATE_ESTABLISHED:
 			/*
@@ -1813,7 +1807,7 @@ static void ecm_tracker_tcp_state_update_callback(struct ecm_tracker_instance *t
 			 */
 			break;
 		default:
-			DEBUG_ASSERT(false, "%p: unhandled state: %d\n", ttii, sender_state_current);
+			DEBUG_ASSERT(false, "%px: unhandled state: %d\n", ttii, sender_state_current);
 		}
 	}
 
@@ -1836,7 +1830,7 @@ static void ecm_tracker_tcp_state_update_callback(struct ecm_tracker_instance *t
 				sender_state->fin_seq = seq;		/* seq is the FIN sequence */
 				sender_state->syn_seq = seq - 1;	/* Make a guess at what the SYN was */
 			}
-			DEBUG_INFO("%p: From unkown to closing, syn_seq: %u, fin_seq: %u\n", ttii, sender_state->syn_seq, sender_state->fin_seq);
+			DEBUG_INFO("%px: From unkown to closing, syn_seq: %u, fin_seq: %u\n", ttii, sender_state->syn_seq, sender_state->fin_seq);
 			break;
 		case ECM_TRACKER_SENDER_STATE_ESTABLISHED:
 			/*
@@ -1844,7 +1838,7 @@ static void ecm_tracker_tcp_state_update_callback(struct ecm_tracker_instance *t
 			 */
 			sender_state->state = ECM_TRACKER_SENDER_STATE_CLOSING;
 			sender_state->fin_seq = seq;
-			DEBUG_INFO("%p: From established to closing, fin_seq: %u\n", ttii, sender_state->fin_seq);
+			DEBUG_INFO("%px: From established to closing, fin_seq: %u\n", ttii, sender_state->fin_seq);
 			break;
 		case ECM_TRACKER_SENDER_STATE_ESTABLISHING: {
 			int32_t newer;
@@ -1855,7 +1849,7 @@ static void ecm_tracker_tcp_state_update_callback(struct ecm_tracker_instance *t
 			 */
 			newer = (int32_t)(seq - sender_state->syn_seq);
 			if (!tcp_hdr->syn || (newer <= 0)) {
-				DEBUG_INFO("%p: From establishing to fault - odd FIN seen, syn: %u, syn_seq: %u, newer: %d\n",
+				DEBUG_INFO("%px: From establishing to fault - odd FIN seen, syn: %u, syn_seq: %u, newer: %d\n",
 						ttii, tcp_hdr->syn, sender_state->syn_seq, newer);
 				sender_state->state = ECM_TRACKER_SENDER_STATE_FAULT;
 			} else {
@@ -1864,7 +1858,7 @@ static void ecm_tracker_tcp_state_update_callback(struct ecm_tracker_instance *t
 					fin_seq++;
 				}
 				sender_state->state = ECM_TRACKER_SENDER_STATE_CLOSING;
-				DEBUG_INFO("%p: From establishing to closing, syn: %u, syn_seq: %u, fin_seq: %u\n",
+				DEBUG_INFO("%px: From establishing to closing, syn: %u, syn_seq: %u, fin_seq: %u\n",
 						ttii, tcp_hdr->syn, sender_state->syn_seq, sender_state->fin_seq);
 			}
 			break;
@@ -1877,7 +1871,7 @@ static void ecm_tracker_tcp_state_update_callback(struct ecm_tracker_instance *t
 			 */
 			break;
 		default:
-			DEBUG_ASSERT(false, "%p: unhandled state: %d\n", ttii, sender_state_current);
+			DEBUG_ASSERT(false, "%px: unhandled state: %d\n", ttii, sender_state_current);
 		}
 	}
 
@@ -1892,7 +1886,7 @@ static void ecm_tracker_tcp_state_get_callback(struct ecm_tracker_instance *ti, 
 					ecm_tracker_sender_state_t *dest_state, ecm_tracker_connection_state_t *state, ecm_db_timer_group_t *tg)
 {
 	struct ecm_tracker_tcp_internal_instance *ttii = (struct ecm_tracker_tcp_internal_instance *)ti;
-	DEBUG_CHECK_MAGIC(ttii, ECM_TRACKER_TCP_INSTANCE_MAGIC, "%p: magic failed", ttii);
+	DEBUG_CHECK_MAGIC(ttii, ECM_TRACKER_TCP_INSTANCE_MAGIC, "%px: magic failed", ttii);
 	spin_lock_bh(&ttii->lock);
 	*src_state = ttii->sender_states[ECM_TRACKER_SENDER_TYPE_SRC].state;
 	*dest_state = ttii->sender_states[ECM_TRACKER_SENDER_TYPE_DEST].state;
@@ -1963,7 +1957,7 @@ static int ecm_tracker_tcp_state_text_get_callback(struct ecm_tracker_instance *
 	int32_t data_limit;
 #endif
 	ecm_tracker_connection_state_t connection_state;
-	DEBUG_CHECK_MAGIC(ttii, ECM_TRACKER_TCP_INSTANCE_MAGIC, "%p: magic failed", ttii);
+	DEBUG_CHECK_MAGIC(ttii, ECM_TRACKER_TCP_INSTANCE_MAGIC, "%px: magic failed", ttii);
 
 	if ((result = ecm_state_prefix_add(sfi, "tracker_tcp"))) {
 		return result;
@@ -2047,8 +2041,8 @@ static int ecm_tracker_tcp_state_text_get_callback(struct ecm_tracker_instance *
 void ecm_tracker_tcp_init(struct ecm_tracker_tcp_instance *tti, int32_t data_limit, uint16_t mss_src_default, uint16_t mss_dest_default)
 {
 	struct ecm_tracker_tcp_internal_instance *ttii = (struct ecm_tracker_tcp_internal_instance *)tti;
-	DEBUG_CHECK_MAGIC(ttii, ECM_TRACKER_TCP_INSTANCE_MAGIC, "%p: magic failed", ttii);
-	DEBUG_TRACE("%p: init host addresses src mss: %d, dest mss: %d\n", ttii, mss_src_default, mss_dest_default);
+	DEBUG_CHECK_MAGIC(ttii, ECM_TRACKER_TCP_INSTANCE_MAGIC, "%px: magic failed", ttii);
+	DEBUG_TRACE("%px: init host addresses src mss: %d, dest mss: %d\n", ttii, mss_src_default, mss_dest_default);
 #ifdef ECM_TRACKER_DPI_SUPPORT_ENABLE
 	spin_lock_bh(&ttii->lock);
 	ttii->data_limit = data_limit;
@@ -2104,10 +2098,10 @@ struct ecm_tracker_tcp_instance *ecm_tracker_tcp_alloc(void)
 
 	spin_lock_bh(&ecm_tracker_tcp_lock);
 	ecm_tracker_tcp_count++;
-	DEBUG_ASSERT(ecm_tracker_tcp_count > 0, "%p: tcp tracker count wrap\n", ttii);
+	DEBUG_ASSERT(ecm_tracker_tcp_count > 0, "%px: tcp tracker count wrap\n", ttii);
 	spin_unlock_bh(&ecm_tracker_tcp_lock);
 
-	DEBUG_TRACE("TCP tracker created %p\n", ttii);
+	DEBUG_TRACE("TCP tracker created %px\n", ttii);
 	return (struct ecm_tracker_tcp_instance *)ttii;
 }
 EXPORT_SYMBOL(ecm_tracker_tcp_alloc);
@@ -2121,7 +2115,7 @@ uint8_t ecm_tracker_tcp_reader_fwd_read_u8(struct ecm_tracker_tcp_reader_instanc
 {
 	uint8_t b;
 
-	DEBUG_CHECK_MAGIC(tri, ECM_TRACKER_TCP_READER_INSTANCE_MAGIC, "%p: magic failed", tri);
+	DEBUG_CHECK_MAGIC(tri, ECM_TRACKER_TCP_READER_INSTANCE_MAGIC, "%px: magic failed", tri);
 
 	spin_lock_bh(&tri->lock);
 	spin_lock_bh(&tri->ttii->lock);
@@ -2138,17 +2132,17 @@ uint8_t ecm_tracker_tcp_reader_fwd_read_u8(struct ecm_tracker_tcp_reader_instanc
 			 */
 			tri->segment = tri->data->in_order;
 		}
-		DEBUG_ASSERT(tri->segment, "%p: attempt to read past end of stream\n", tri);
+		DEBUG_ASSERT(tri->segment, "%px: attempt to read past end of stream\n", tri);
 
 		tri->segment_dcb = (struct ecm_tracker_tcp_skb_cb_format *)tri->segment->cb;
-		DEBUG_CHECK_MAGIC(tri->segment_dcb, ECM_TRACKER_TCP_SKB_CB_MAGIC, "%p: invalid magic for cb %p\n", tri, tri->segment_dcb);
+		DEBUG_CHECK_MAGIC(tri->segment_dcb, ECM_TRACKER_TCP_SKB_CB_MAGIC, "%px: invalid magic for cb %px\n", tri, tri->segment_dcb);
 
 		tri->segment_remain = tri->segment_dcb->num_seqs;
 		tri->segment_offset = tri->segment_dcb->offset;
 
-		DEBUG_TRACE("%p: Advance to next segment %p, segment remain: %u, segment offset: %u\n",
+		DEBUG_TRACE("%px: Advance to next segment %px, segment remain: %u, segment offset: %u\n",
 				tri, tri->segment, tri->segment_remain, tri->segment_offset);
-		DEBUG_ASSERT(tri->segment_remain, "%p: Next segment has no data\n", tri);
+		DEBUG_ASSERT(tri->segment_remain, "%px: Next segment has no data\n", tri);
 	}
 
 	/*
@@ -2182,7 +2176,7 @@ static void _ecm_tracker_tcp_reader_retreat(struct ecm_tracker_tcp_reader_instan
 		 * This tells us how much data we can retreat over before having to move onto the prior segment
 		 */
 		seg_prior_data = tri->segment_offset - tri->segment_dcb->offset;
-		DEBUG_TRACE("%p: Retreat %u, data_offs %u\n", tri, retreatment, seg_prior_data);
+		DEBUG_TRACE("%px: Retreat %u, data_offs %u\n", tri, retreatment, seg_prior_data);
 
 		/*
 		 * Is there enough prior data in the current segment to satisfy the retreat?
@@ -2190,7 +2184,7 @@ static void _ecm_tracker_tcp_reader_retreat(struct ecm_tracker_tcp_reader_instan
 		if (retreatment <= seg_prior_data) {
 			tri->segment_remain += retreatment;
 			tri->segment_offset -= retreatment;
-			DEBUG_TRACE("%p: retreat completed seg_remain %u, seg offset %u\n", tri, tri->segment_remain, tri->segment_offset);
+			DEBUG_TRACE("%px: retreat completed seg_remain %u, seg offset %u\n", tri, tri->segment_remain, tri->segment_offset);
 			return;
 		}
 
@@ -2200,10 +2194,10 @@ static void _ecm_tracker_tcp_reader_retreat(struct ecm_tracker_tcp_reader_instan
 		 * Move onto previous actual segment
 		 */
 		tri->segment = tri->segment->prev;
-		DEBUG_ASSERT(tri->segment, "%p: attempt to read past start of stream\n", tri);
+		DEBUG_ASSERT(tri->segment, "%px: attempt to read past start of stream\n", tri);
 
 		tri->segment_dcb = (struct ecm_tracker_tcp_skb_cb_format *)tri->segment->cb;
-		DEBUG_CHECK_MAGIC(tri->segment_dcb, ECM_TRACKER_TCP_SKB_CB_MAGIC, "%p: invalid magic for cb %p\n", tri, tri->segment_dcb);
+		DEBUG_CHECK_MAGIC(tri->segment_dcb, ECM_TRACKER_TCP_SKB_CB_MAGIC, "%px: invalid magic for cb %px\n", tri, tri->segment_dcb);
 
 		/*
 		 * Position at the end of the previous segment
@@ -2211,7 +2205,7 @@ static void _ecm_tracker_tcp_reader_retreat(struct ecm_tracker_tcp_reader_instan
 		tri->segment_remain = 0;
 		tri->segment_offset = tri->segment_dcb->num_seqs + tri->segment_dcb->offset;
 
-		DEBUG_TRACE("%p: advanvcement now %u this seg_remain %u, this seg_offset %u\n",
+		DEBUG_TRACE("%px: advanvcement now %u this seg_remain %u, this seg_offset %u\n",
 				tri, retreatment, tri->segment_remain, tri->segment_offset);
 	}
 }
@@ -2222,12 +2216,12 @@ static void _ecm_tracker_tcp_reader_retreat(struct ecm_tracker_tcp_reader_instan
  */
 void ecm_tracker_tcp_reader_retreat(struct ecm_tracker_tcp_reader_instance *tri, uint32_t retreatment)
 {
-	DEBUG_CHECK_MAGIC(tri, ECM_TRACKER_TCP_READER_INSTANCE_MAGIC, "%p: magic failed", tri);
+	DEBUG_CHECK_MAGIC(tri, ECM_TRACKER_TCP_READER_INSTANCE_MAGIC, "%px: magic failed", tri);
 
 	spin_lock_bh(&tri->lock);
 	spin_lock_bh(&tri->ttii->lock);
 
-	DEBUG_ASSERT(tri->segment, "%p: segment pointer invalid\n", tri);
+	DEBUG_ASSERT(tri->segment, "%px: segment pointer invalid\n", tri);
 	_ecm_tracker_tcp_reader_retreat(tri, retreatment);
 	tri->offset -= retreatment;
 
@@ -2245,11 +2239,11 @@ EXPORT_SYMBOL(ecm_tracker_tcp_reader_retreat);
 static void _ecm_tracker_tcp_reader_advance(struct ecm_tracker_tcp_reader_instance *tri, uint32_t advancement)
 {
 	while (advancement) {
-		DEBUG_TRACE("%p: Advance %u\n", tri, advancement);
+		DEBUG_TRACE("%px: Advance %u\n", tri, advancement);
 		if (advancement <= tri->segment_remain) {
 			tri->segment_remain -= advancement;
 			tri->segment_offset += advancement;
-			DEBUG_TRACE("%p: advanvce completed seg_remain %u, seg offset %u\n", tri, tri->segment_remain, tri->segment_offset);
+			DEBUG_TRACE("%px: advanvce completed seg_remain %u, seg offset %u\n", tri, tri->segment_remain, tri->segment_offset);
 			return;
 		}
 
@@ -2266,15 +2260,15 @@ static void _ecm_tracker_tcp_reader_advance(struct ecm_tracker_tcp_reader_instan
 			 */
 			tri->segment = tri->data->in_order;
 		}
-		DEBUG_ASSERT(tri->segment, "%p: attempt to read past end of stream\n", tri);
+		DEBUG_ASSERT(tri->segment, "%px: attempt to read past end of stream\n", tri);
 
 		tri->segment_dcb = (struct ecm_tracker_tcp_skb_cb_format *)tri->segment->cb;
-		DEBUG_CHECK_MAGIC(tri->segment_dcb, ECM_TRACKER_TCP_SKB_CB_MAGIC, "%p: invalid magic for cb %p\n", tri, tri->segment_dcb);
+		DEBUG_CHECK_MAGIC(tri->segment_dcb, ECM_TRACKER_TCP_SKB_CB_MAGIC, "%px: invalid magic for cb %px\n", tri, tri->segment_dcb);
 
 		tri->segment_remain = tri->segment_dcb->num_seqs;
 		tri->segment_offset = tri->segment_dcb->offset;
 
-		DEBUG_TRACE("%p: advanvcement now %u this seg_remain %u, this seg_offset %u\n",
+		DEBUG_TRACE("%px: advanvcement now %u this seg_remain %u, this seg_offset %u\n",
 				tri, advancement, tri->segment_remain, tri->segment_offset);
 	}
 }
@@ -2285,7 +2279,7 @@ static void _ecm_tracker_tcp_reader_advance(struct ecm_tracker_tcp_reader_instan
  */
 void ecm_tracker_tcp_reader_advance(struct ecm_tracker_tcp_reader_instance *tri, uint32_t advancement)
 {
-	DEBUG_CHECK_MAGIC(tri, ECM_TRACKER_TCP_READER_INSTANCE_MAGIC, "%p: magic failed", tri);
+	DEBUG_CHECK_MAGIC(tri, ECM_TRACKER_TCP_READER_INSTANCE_MAGIC, "%px: magic failed", tri);
 
 	spin_lock_bh(&tri->lock);
 	spin_lock_bh(&tri->ttii->lock);
@@ -2315,7 +2309,7 @@ uint32_t ecm_tracker_tcp_reader_position_get(struct ecm_tracker_tcp_reader_insta
 {
 	uint32_t pos;
 
-	DEBUG_CHECK_MAGIC(tri, ECM_TRACKER_TCP_READER_INSTANCE_MAGIC, "%p: magic failed", tri);
+	DEBUG_CHECK_MAGIC(tri, ECM_TRACKER_TCP_READER_INSTANCE_MAGIC, "%px: magic failed", tri);
 
 	spin_lock_bh(&tri->lock);
 	pos = tri->offset;
@@ -2332,7 +2326,7 @@ uint32_t ecm_tracker_tcp_reader_remain_get(struct ecm_tracker_tcp_reader_instanc
 {
 	uint32_t remain;
 
-	DEBUG_CHECK_MAGIC(tri, ECM_TRACKER_TCP_READER_INSTANCE_MAGIC, "%p: magic failed", tri);
+	DEBUG_CHECK_MAGIC(tri, ECM_TRACKER_TCP_READER_INSTANCE_MAGIC, "%px: magic failed", tri);
 
 	spin_lock_bh(&tri->lock);
 	spin_lock_bh(&tri->ttii->lock);
@@ -2351,9 +2345,9 @@ void ecm_tracker_tcp_reader_position_set(struct ecm_tracker_tcp_reader_instance 
 {
 	int32_t delta;
 
-	DEBUG_CHECK_MAGIC(tri, ECM_TRACKER_TCP_READER_INSTANCE_MAGIC, "%p: magic failed", tri);
+	DEBUG_CHECK_MAGIC(tri, ECM_TRACKER_TCP_READER_INSTANCE_MAGIC, "%px: magic failed", tri);
 
-	DEBUG_TRACE("%p: Position set %u\n", tri, offset);
+	DEBUG_TRACE("%px: Position set %u\n", tri, offset);
 
 	spin_lock_bh(&tri->lock);
 	spin_lock_bh(&tri->ttii->lock);
@@ -2362,7 +2356,7 @@ void ecm_tracker_tcp_reader_position_set(struct ecm_tracker_tcp_reader_instance 
 	 * Is this a retreat or an advance?
 	 */
 	delta = (int32_t)(offset - tri->offset);
-	DEBUG_TRACE("%p: Position set delta %d\n", tri, delta);
+	DEBUG_TRACE("%px: Position set delta %d\n", tri, delta);
 	if (delta <= 0) {
 		_ecm_tracker_tcp_reader_retreat(tri, -delta);
 	} else {
@@ -2386,7 +2380,7 @@ void ecm_tracker_tcp_reader_discard_preceding(struct ecm_tracker_tcp_reader_inst
 {
 	uint32_t discard;
 
-	DEBUG_CHECK_MAGIC(tri, ECM_TRACKER_TCP_READER_INSTANCE_MAGIC, "%p: magic failed", tri);
+	DEBUG_CHECK_MAGIC(tri, ECM_TRACKER_TCP_READER_INSTANCE_MAGIC, "%px: magic failed", tri);
 
 	/*
 	 * Discard all bytes preceding our offset
@@ -2403,7 +2397,7 @@ void ecm_tracker_tcp_reader_discard_preceding(struct ecm_tracker_tcp_reader_inst
 		/*
 		 * By setting the segment to null we effectively cause a re-init of the tri->segment on the next operation
 		 */
-		DEBUG_TRACE("%p: Discarding when segment_remain is 0 - causing re-init of tri->segment on next oper\n", tri);
+		DEBUG_TRACE("%px: Discarding when segment_remain is 0 - causing re-init of tri->segment on next oper\n", tri);
 		tri->segment = NULL;
 	}
 
@@ -2412,7 +2406,7 @@ void ecm_tracker_tcp_reader_discard_preceding(struct ecm_tracker_tcp_reader_inst
 	/*
 	 * Discard the actual bytes in the tracker
 	 */
-	DEBUG_TRACE("%p: discard_preceding %u bytes\n", tri, discard);
+	DEBUG_TRACE("%px: discard_preceding %u bytes\n", tri, discard);
 	ecm_tracker_tcp_bytes_discard(tri->ttii, tri->data, discard);
 }
 EXPORT_SYMBOL(ecm_tracker_tcp_reader_discard_preceding);
@@ -2425,9 +2419,9 @@ void ecm_tracker_tcp_reader_init(struct ecm_tracker_tcp_reader_instance *tri, st
 	struct ecm_tracker_tcp_internal_instance *ttii = (struct ecm_tracker_tcp_internal_instance *)tti;
 	struct ecm_tracker_tcp_host_data *data;
 
-	DEBUG_CHECK_MAGIC(tri, ECM_TRACKER_TCP_READER_INSTANCE_MAGIC, "%p: magic failed", tri);
-	DEBUG_CHECK_MAGIC(ttii, ECM_TRACKER_TCP_INSTANCE_MAGIC, "%p: magic failed", ttii);
-	DEBUG_ASSERT((sender >= 0) && (sender <= 1), "%p: invalid sender %d\n", tri, sender);
+	DEBUG_CHECK_MAGIC(tri, ECM_TRACKER_TCP_READER_INSTANCE_MAGIC, "%px: magic failed", tri);
+	DEBUG_CHECK_MAGIC(ttii, ECM_TRACKER_TCP_INSTANCE_MAGIC, "%px: magic failed", ttii);
+	DEBUG_ASSERT((sender >= 0) && (sender <= 1), "%px: invalid sender %d\n", tri, sender);
 
 	/*
 	 * Take a reference to the tcp tracker
@@ -2445,7 +2439,7 @@ void ecm_tracker_tcp_reader_init(struct ecm_tracker_tcp_reader_instance *tri, st
 	tri->ttii = ttii;
 	tri->data = data;
 
-	DEBUG_TRACE("%p: Init reader for %p (%d): data %p.  \n", tri, ttii, sender, data);
+	DEBUG_TRACE("%px: Init reader for %px (%d): data %px.  \n", tri, ttii, sender, data);
 }
 EXPORT_SYMBOL(ecm_tracker_tcp_reader_init);
 
@@ -2454,13 +2448,13 @@ EXPORT_SYMBOL(ecm_tracker_tcp_reader_init);
  */
 void ecm_tracker_tcp_reader_ref(struct ecm_tracker_tcp_reader_instance *tri)
 {
-	DEBUG_CHECK_MAGIC(tri, ECM_TRACKER_TCP_READER_INSTANCE_MAGIC, "%p: magic failed", tri);
+	DEBUG_CHECK_MAGIC(tri, ECM_TRACKER_TCP_READER_INSTANCE_MAGIC, "%px: magic failed", tri);
 
 	spin_lock_bh(&tri->lock);
 
 	tri->refs++;
-	DEBUG_ASSERT(tri->refs > 0, "%p: ref wrap", tri);
-	DEBUG_TRACE("%p: ref %d\n", tri, tri->refs);
+	DEBUG_ASSERT(tri->refs > 0, "%px: ref wrap", tri);
+	DEBUG_TRACE("%px: ref %d\n", tri, tri->refs);
 
 	spin_unlock_bh(&tri->lock);
 }
@@ -2472,13 +2466,13 @@ EXPORT_SYMBOL(ecm_tracker_tcp_reader_ref);
 int ecm_tracker_tcp_reader_deref(struct ecm_tracker_tcp_reader_instance *tri)
 {
 	int refs;
-	DEBUG_CHECK_MAGIC(tri, ECM_TRACKER_TCP_READER_INSTANCE_MAGIC, "%p: magic failed", tri);
+	DEBUG_CHECK_MAGIC(tri, ECM_TRACKER_TCP_READER_INSTANCE_MAGIC, "%px: magic failed", tri);
 
 	spin_lock_bh(&tri->lock);
 	tri->refs--;
 	refs = tri->refs;
-	DEBUG_ASSERT(tri->refs >= 0, "%p: ref wrap", tri);
-	DEBUG_TRACE("%p: deref %d\n", tri, tri->refs);
+	DEBUG_ASSERT(tri->refs >= 0, "%px: ref wrap", tri);
+	DEBUG_TRACE("%px: deref %d\n", tri, tri->refs);
 
 	if (tri->refs > 0) {
 		spin_unlock_bh(&tri->lock);
@@ -2486,7 +2480,7 @@ int ecm_tracker_tcp_reader_deref(struct ecm_tracker_tcp_reader_instance *tri)
 	}
 	spin_unlock_bh(&tri->lock);
 
-	DEBUG_TRACE("%p: final\n", tri);
+	DEBUG_TRACE("%px: final\n", tri);
 
 	/*
 	 * Release the reference to the tcp tracker
@@ -2495,10 +2489,10 @@ int ecm_tracker_tcp_reader_deref(struct ecm_tracker_tcp_reader_instance *tri)
 
 	spin_lock_bh(&ecm_tracker_tcp_lock);
 	ecm_tracker_tcp_reader_count--;
-	DEBUG_ASSERT(ecm_tracker_tcp_reader_count >= 0, "%p: tracker count wrap", tri);
+	DEBUG_ASSERT(ecm_tracker_tcp_reader_count >= 0, "%px: tracker count wrap", tri);
 	spin_unlock_bh(&ecm_tracker_tcp_lock);
 
-	DEBUG_INFO("%p: TCP Reader final\n", tri);
+	DEBUG_INFO("%px: TCP Reader final\n", tri);
 	DEBUG_CLEAR_MAGIC(tri);
 	kfree(tri);
 
@@ -2525,10 +2519,10 @@ struct ecm_tracker_tcp_reader_instance *ecm_tracker_tcp_reader_alloc(void)
 
 	spin_lock_bh(&ecm_tracker_tcp_lock);
 	ecm_tracker_tcp_reader_count++;
-	DEBUG_ASSERT(ecm_tracker_tcp_reader_count > 0, "%p: tcp tracker reader count wrap\n", tri);
+	DEBUG_ASSERT(ecm_tracker_tcp_reader_count > 0, "%px: tcp tracker reader count wrap\n", tri);
 	spin_unlock_bh(&ecm_tracker_tcp_lock);
 
-	DEBUG_TRACE("TCP reader created %p\n", tri);
+	DEBUG_TRACE("TCP reader created %px\n", tri);
 	return tri;
 }
 EXPORT_SYMBOL(ecm_tracker_tcp_reader_alloc);

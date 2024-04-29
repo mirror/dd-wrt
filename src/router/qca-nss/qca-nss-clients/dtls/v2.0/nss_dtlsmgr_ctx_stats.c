@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2017, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017, 2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -122,6 +122,8 @@ static ssize_t nss_dtlsmgr_ctx_encap_stats_read(struct file *filep, char __user 
 	len += snprintf(buf + len, max_buf_len - len, "fail_cipher          = %lld\n", stats->fail_cipher);
 	len += snprintf(buf + len, max_buf_len - len, "fail_auth            = %lld\n", stats->fail_auth);
 	len += snprintf(buf + len, max_buf_len - len, "fail_seq_overflow    = %lld\n", stats->fail_seq_ovf);
+	len += snprintf(buf + len, max_buf_len - len, "fail_host_tx         = %lld\n", stats->fail_host_tx);
+	len += snprintf(buf + len, max_buf_len - len, "fail_host_rx         = %lld\n", stats->fail_host_rx);
 
 	/* Returns total number of bytes written to the buffer */
 	len = nss_dtlsmgr_ctx_fill_hw_error_stats(stats, buf, max_buf_len, len);
@@ -139,7 +141,8 @@ static ssize_t nss_dtlsmgr_ctx_decap_stats_read(struct file *filep, char __user 
 {
 	struct nss_dtlsmgr_ctx *ctx = filep->private_data;
 	struct nss_dtlsmgr_stats *stats;
-	ssize_t max_buf_len, len, ret;
+	ssize_t max_buf_len, ret;
+	ssize_t len = 0;
 	char *buf;
 
 	NSS_DTLSMGR_VERIFY_MAGIC(ctx);
@@ -190,6 +193,8 @@ static ssize_t nss_dtlsmgr_ctx_decap_stats_read(struct file *filep, char __user 
 	len += snprintf(buf + len, max_buf_len - len, "fail_seq_overflow    = %lld\n", stats->fail_seq_ovf);
 	len += snprintf(buf + len, max_buf_len - len, "fail_block_length    = %lld\n", stats->fail_blk_len);
 	len += snprintf(buf + len, max_buf_len - len, "fail_hash_length     = %lld\n", stats->fail_hash_len);
+	len += snprintf(buf + len, max_buf_len - len, "fail_host_tx         = %lld\n", stats->fail_host_tx);
+	len += snprintf(buf + len, max_buf_len - len, "fail_host_rx         = %lld\n", stats->fail_host_rx);
 
 	/* Returns total number of bytes written to the buffer */
 	len = nss_dtlsmgr_ctx_fill_hw_error_stats(stats, buf, max_buf_len, len);

@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2016-2017, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2016-2017, 2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -92,7 +92,7 @@ static void nss_ipsecmgr_flow_update(struct nss_ipsecmgr_priv *priv, struct nss_
 		 * XXX: Stop the TX queue and add this "entry"
 		 * to pending queue
 		 */
-		nss_ipsecmgr_info("%p:unable to send the flow_update message\n", ref);
+		nss_ipsecmgr_info("%px:unable to send the flow_update message\n", ref);
 		return;
 	}
 }
@@ -121,7 +121,7 @@ static void nss_ipsecmgr_flow_free(struct nss_ipsecmgr_priv *priv, struct nss_ip
 		/*
 		 * XXX: add this "entry" to pending queue
 		 */
-		nss_ipsecmgr_info("%p:unable to send flow_free message\n", ref);
+		nss_ipsecmgr_info("%px:unable to send flow_free message\n", ref);
 	}
 
 	list_del_init(&flow->node);
@@ -154,7 +154,7 @@ static size_t nss_ipsecmgr_flow_dump(struct net_device *dev, struct nss_ipsec_ms
 		break;
 
 	default:
-		nss_ipsecmgr_info("%p:Invalid interface type(%d)\n", nim, nim->type);
+		nss_ipsecmgr_info("%px:Invalid interface type(%d)\n", nim, nim->type);
 		return 0;
 
 	}
@@ -174,7 +174,7 @@ static size_t nss_ipsecmgr_flow_dump(struct net_device *dev, struct nss_ipsec_ms
 		break;
 
 	default:
-		nss_ipsecmgr_info("%p:Invalid IP_VERSION (%d)\n", tuple, tuple->ip_ver);
+		nss_ipsecmgr_info("%px:Invalid IP_VERSION (%d)\n", tuple, tuple->ip_ver);
 		return 0;
 	}
 
@@ -398,7 +398,6 @@ ssize_t nss_ipsecmgr_per_flow_stats_read(struct file *fp, char __user *ubuf, siz
 	len += snprintf(buf + len, max_len, "processed: %d\n\n", flow_stats->processed);
 done:
 	ret = simple_read_from_buffer(ubuf, sz, ppos, buf, len);
-
 
 	dev_put(dev);
 	vfree(buf);
@@ -682,7 +681,7 @@ void nss_ipsecmgr_encap_tuple2key(struct nss_ipsec_tuple *tuple, struct nss_ipse
 		break;
 
 	default:
-		nss_ipsecmgr_warn("%p:Invalid selector\n", tuple);
+		nss_ipsecmgr_warn("%px:Invalid selector\n", tuple);
 		return;
 	}
 }
@@ -723,7 +722,7 @@ void nss_ipsecmgr_decap_tuple2key(struct nss_ipsec_tuple *tuple, struct nss_ipse
 		break;
 
 	default:
-		nss_ipsecmgr_warn("%p:Invalid selector\n", tuple);
+		nss_ipsecmgr_warn("%px:Invalid selector\n", tuple);
 		return;
 	}
 }
@@ -1118,7 +1117,7 @@ bool nss_ipsecmgr_flow_offload(struct nss_ipsecmgr_priv *priv, struct sk_buff *s
 		break;
 
 	default:
-		nss_ipsecmgr_warn("%p:protocol(%d) offload not supported\n", priv->dev, ntohs(skb->protocol));
+		nss_ipsecmgr_warn("%px:protocol(%d) offload not supported\n", priv->dev, ntohs(skb->protocol));
 		return false;
 	}
 

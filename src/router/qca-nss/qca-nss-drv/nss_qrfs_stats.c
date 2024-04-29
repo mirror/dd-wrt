@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2018-2019, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -14,7 +14,6 @@
  **************************************************************************
  */
 
-#include "nss_stats.h"
 #include "nss_core.h"
 #include "nss_qrfs_stats.h"
 
@@ -27,35 +26,36 @@ DEFINE_SPINLOCK(nss_qrfs_stats_lock);
  * nss_qrfs_stats_str
  *	QRFS stats strings
  */
-static int8_t *nss_qrfs_stats_str[NSS_QRFS_STATS_MAX] = {
-	"rx_packets",
-	"rx_bytes",
-	"tx_packets",
-	"tx_bytes",
-	"rx_queue_0_dropped",
-	"rx_queue_1_dropped",
-	"rx_queue_2_dropped",
-	"rx_queue_3_dropped",
-	"invalid_offset",
-	"unknown_protocol",
-	"ipv4_flow_rule_hits",
-	"ipv6_flow_rule_hits",
+struct nss_stats_info nss_qrfs_stats_str[NSS_QRFS_STATS_MAX] = {
+	{"rx_pkts"		, NSS_STATS_TYPE_COMMON},
+	{"rx_byts"		, NSS_STATS_TYPE_COMMON},
+	{"tx_pkts"		, NSS_STATS_TYPE_COMMON},
+	{"tx_byts"		, NSS_STATS_TYPE_COMMON},
+	{"rx_queue[0]_drops"	, NSS_STATS_TYPE_DROP},
+	{"rx_queue[1]_drops"	, NSS_STATS_TYPE_DROP},
+	{"rx_queue[2]_drops"	, NSS_STATS_TYPE_DROP},
+	{"rx_queue[3]_drops"	, NSS_STATS_TYPE_DROP},
+	{"invalid_offset"	, NSS_STATS_TYPE_EXCEPTION},
+	{"unknown_protocol"	, NSS_STATS_TYPE_EXCEPTION},
+	{"ipv4_flow_rule_hits"	, NSS_STATS_TYPE_SPECIAL},
+	{"ipv6_flow_rule_hits"	, NSS_STATS_TYPE_SPECIAL}
 };
 
 uint64_t nss_qrfs_stats[NSS_MAX_CORES][NSS_QRFS_STATS_MAX];
 
 /*
  * nss_qrfs_stats_read()
- *	Read QRFS statistics
+ *	Read QRFS statistics.
  */
 static ssize_t nss_qrfs_stats_read(struct file *fp, char __user *ubuf, size_t sz, loff_t *ppos)
 {
 	int32_t i, core;
 
 	/*
-	 * Max output lines = #stats + start tag line + end tag line + three blank lines
+	 * Max output lines = #stats + few blank lines for banner printing +
+	 * Number of Extra outputlines for future reference to add new stats.
 	 */
-	uint32_t max_output_lines = (NSS_QRFS_STATS_MAX + 3) * 2 + 5;
+	uint32_t max_output_lines = (NSS_QRFS_STATS_MAX + 3) * NSS_MAX_CORES + NSS_STATS_EXTRA_OUTPUT_LINES;
 	size_t size_al = NSS_STATS_MAX_STR_LENGTH * max_output_lines;
 	size_t size_wr = 0;
 	ssize_t bytes_read = 0;
@@ -74,26 +74,24 @@ static ssize_t nss_qrfs_stats_read(struct file *fp, char __user *ubuf, size_t sz
 		return 0;
 	}
 
-	size_wr = scnprintf(lbuf, size_al, "qrfs stats start:\n\n");
-
+	size_wr += nss_stats_banner(lbuf, size_wr, size_al, "qrfs", NSS_STATS_SINGLE_CORE);
 	/*
 	 * QRFS statistics
 	 */
 	for (core = 0; core < nss_top_main.num_nss; core++) {
-		size_wr += scnprintf(lbuf + size_wr, size_al - size_wr, "\nqrfs core %d stats:\n\n", core);
 		spin_lock_bh(&nss_qrfs_stats_lock);
 		for (i = 0; i < NSS_QRFS_STATS_MAX; i++) {
 			stats_shadow[i] = nss_qrfs_stats[core][i];
 		}
 		spin_unlock_bh(&nss_qrfs_stats_lock);
 
-		for (i = 0; i < NSS_QRFS_STATS_MAX; i++) {
-			size_wr += scnprintf(lbuf + size_wr, size_al - size_wr,
-					"%s = %llu\n", nss_qrfs_stats_str[i], stats_shadow[i]);
-		}
+		size_wr += nss_stats_print("qrfs", NULL, NSS_STATS_SINGLE_INSTANCE
+						, nss_qrfs_stats_str
+						, stats_shadow
+						, NSS_QRFS_STATS_MAX
+						, lbuf, size_wr, size_al);
 	}
 
-	size_wr += scnprintf(lbuf + size_wr, size_al - size_wr, "\nqrfs stats end\n\n");
 	bytes_read = simple_read_from_buffer(ubuf, sz, ppos, lbuf, strlen(lbuf));
 	kfree(lbuf);
 	kfree(stats_shadow);

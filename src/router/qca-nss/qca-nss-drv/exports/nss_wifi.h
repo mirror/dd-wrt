@@ -90,6 +90,8 @@ enum nss_wifi_metadata_types {
 	NSS_WIFI_CMD_MSG,
 	NSS_WIFI_ENABLE_OL_STATSV2_MSG,
 	NSS_WIFI_OL_PEER_TIME_MSG,
+	NSS_WIFI_PEER_SET_VLAN_ID_MSG,
+	NSS_WIFI_PEER_ISOLATION_MSG,
 	NSS_WIFI_MAX_MSG
 };
 
@@ -711,6 +713,7 @@ struct nss_wifi_peer_ol_stats {
 	uint32_t tx_fail;	/**< Number of failed Tx packets. */
 	uint32_t thrup_bytes;	/**< Number of throughput bytes. */
 	uint32_t tx_bcast_pkts;	/**< Number of broadcast packets sent. */
+	uint32_t tx_bcast_bytes;/**< Number of broadcast bytes sent. */
 	uint32_t tx_mgmt;	/**< Number of Tx management frames. */
 	uint32_t tx_wme[NSS_WIFI_WME_NUM_AC];
 				/**< Data frames transmitted per AC. */
@@ -738,7 +741,16 @@ struct nss_wifi_ol_stats_msg {
  *	Station kickout message from NSS Firmware
  */
 struct nss_wifi_sta_kickout_msg {
-	uint32_t peer_id;	/**< ID of the peer. */
+	uint32_t peer_id;	/**< Peer ID. */
+};
+
+/**
+ * nss_wifi_peer_isolation_msg
+ *	Peer isolation message
+ */
+struct nss_wifi_peer_isolation_msg {
+	uint16_t peer_id;	/**< Peer ID. */
+	uint16_t isolation;	/**< Isolation enabled/disabled. */
 };
 
 /**
@@ -904,6 +916,8 @@ struct nss_wifi_msg {
 				/**< Enable version 2 tx/rx stats. */
 		struct nss_wifi_ol_peer_time_msg wopt_msg;
 				/**< Send per peer/TID timestamp statistics to host. */
+		struct nss_wifi_peer_isolation_msg isolation_msg;
+				/**< Enable or disable peer isolation. */
 	} msg; /**< Message Payload. */
 };
 

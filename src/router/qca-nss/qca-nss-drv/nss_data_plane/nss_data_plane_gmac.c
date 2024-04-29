@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2014-2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2014-2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -250,9 +250,9 @@ static void __nss_data_plane_register(struct nss_ctx_instance *nss_ctx)
 
 	for (i = 0; i < NSS_DATA_PLANE_GMAC_MAX_INTERFACES; i++) {
 		if (!nss_data_plane_register_to_nss_gmac(nss_ctx, i)) {
-			nss_warning("%p: Register data plane failed for gmac:%d\n", nss_ctx, i);
+			nss_warning("%px: Register data plane failed for gmac:%d\n", nss_ctx, i);
 		} else {
-			nss_info("%p: Register data plan to gmac:%d success\n", nss_ctx, i);
+			nss_info("%px: Register data plan to gmac:%d success\n", nss_ctx, i);
 		}
 	}
 }
@@ -287,10 +287,7 @@ static void __nss_data_plane_stats_sync(struct nss_phys_if_stats *stats, uint16_
 	gmac_stats->rx_packets += stats->if_stats.rx_packets;
 	gmac_stats->rx_errors += stats->estats.rx_errors;
 	gmac_stats->rx_receive_errors += stats->estats.rx_receive_errors;
-	gmac_stats->rx_overflow_errors += stats->estats.rx_overflow_errors;
 	gmac_stats->rx_descriptor_errors += stats->estats.rx_descriptor_errors;
-	gmac_stats->rx_watchdog_timeout_errors += stats->estats.rx_watchdog_timeout_errors;
-	gmac_stats->rx_crc_errors += stats->estats.rx_crc_errors;
 	gmac_stats->rx_late_collision_errors += stats->estats.rx_late_collision_errors;
 	gmac_stats->rx_dribble_bit_errors += stats->estats.rx_dribble_bit_errors;
 	gmac_stats->rx_length_errors += stats->estats.rx_length_errors;
@@ -334,24 +331,27 @@ static void __nss_data_plane_stats_sync(struct nss_phys_if_stats *stats, uint16_
 	gmac_stats->gmac_worst_case_ticks += stats->estats.gmac_worst_case_ticks;
 	gmac_stats->gmac_iterations += stats->estats.gmac_iterations;
 	gmac_stats->tx_pause_frames += stats->estats.tx_pause_frames;
-
-	gmac_stats->rx_octets_g += stats->estats.rx_octets_g;
-	gmac_stats->rx_ucast_frames += stats->estats.rx_ucast_frames;
-	gmac_stats->rx_bcast_frames += stats->estats.rx_bcast_frames;
-	gmac_stats->rx_mcast_frames += stats->estats.rx_mcast_frames;
-	gmac_stats->rx_undersize += stats->estats.rx_undersize;
-	gmac_stats->rx_oversize += stats->estats.rx_oversize;
-	gmac_stats->rx_jabber += stats->estats.rx_jabber;
-	gmac_stats->rx_octets_gb += stats->estats.rx_octets_gb;
-	gmac_stats->rx_frag_frames_g += stats->estats.rx_frag_frames_g;
-	gmac_stats->tx_octets_g += stats->estats.tx_octets_g;
-	gmac_stats->tx_ucast_frames += stats->estats.tx_ucast_frames;
-	gmac_stats->tx_bcast_frames += stats->estats.tx_bcast_frames;
-	gmac_stats->tx_mcast_frames += stats->estats.tx_mcast_frames;
-	gmac_stats->tx_deferred += stats->estats.tx_deferred;
-	gmac_stats->tx_single_col += stats->estats.tx_single_col;
-	gmac_stats->tx_multiple_col += stats->estats.tx_multiple_col;
-	gmac_stats->tx_octets_gb += stats->estats.tx_octets_gb;
+	gmac_stats->mmc_rx_overflow_errors += stats->estats.mmc_rx_overflow_errors;
+	gmac_stats->mmc_rx_watchdog_timeout_errors += stats->estats.mmc_rx_watchdog_timeout_errors;
+	gmac_stats->mmc_rx_crc_errors += stats->estats.mmc_rx_crc_errors;
+	gmac_stats->mmc_rx_ip_header_errors += stats->estats.mmc_rx_ip_header_errors;
+	gmac_stats->mmc_rx_octets_g += stats->estats.mmc_rx_octets_g;
+	gmac_stats->mmc_rx_ucast_frames += stats->estats.mmc_rx_ucast_frames;
+	gmac_stats->mmc_rx_bcast_frames += stats->estats.mmc_rx_bcast_frames;
+	gmac_stats->mmc_rx_mcast_frames += stats->estats.mmc_rx_mcast_frames;
+	gmac_stats->mmc_rx_undersize += stats->estats.mmc_rx_undersize;
+	gmac_stats->mmc_rx_oversize += stats->estats.mmc_rx_oversize;
+	gmac_stats->mmc_rx_jabber += stats->estats.mmc_rx_jabber;
+	gmac_stats->mmc_rx_octets_gb += stats->estats.mmc_rx_octets_gb;
+	gmac_stats->mmc_rx_frag_frames_g += stats->estats.mmc_rx_frag_frames_g;
+	gmac_stats->mmc_tx_octets_g += stats->estats.mmc_tx_octets_g;
+	gmac_stats->mmc_tx_ucast_frames += stats->estats.mmc_tx_ucast_frames;
+	gmac_stats->mmc_tx_bcast_frames += stats->estats.mmc_tx_bcast_frames;
+	gmac_stats->mmc_tx_mcast_frames += stats->estats.mmc_tx_mcast_frames;
+	gmac_stats->mmc_tx_deferred += stats->estats.mmc_tx_deferred;
+	gmac_stats->mmc_tx_single_col += stats->estats.mmc_tx_single_col;
+	gmac_stats->mmc_tx_multiple_col += stats->estats.mmc_tx_multiple_col;
+	gmac_stats->mmc_tx_octets_gb += stats->estats.mmc_tx_octets_gb;
 
 	spin_unlock_bh(&nss_data_plane_gmac_stats_lock);
 }

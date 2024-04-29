@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2016-2017, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2016-2017, 2019-2020 The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -14,96 +14,96 @@
  **************************************************************************
  */
 
-#include "nss_stats.h"
 #include "nss_core.h"
 #include "nss_wifi.h"
 #include "nss_wifi_stats.h"
 
 /*
  * nss_wifi_stats_str
- * 	Wifi statistics strings
+ * 	Wifi statistics strings.
  */
-static int8_t *nss_wifi_stats_str[NSS_WIFI_STATS_MAX] = {
-	"RX_PACKETS",
-	"RX_QUEUE_0_DROPPED",
-	"RX_QUEUE_1_DROPPED",
-	"RX_QUEUE_2_DROPPED",
-	"RX_QUEUE_3_DROPPED",
-	"TX_PACKETS",
-	"TX_DROPPED",
-	"TX_TRANSMIT_COMPLETED",
-	"TX_MGMT_RECEIVED",
-	"TX_MGMT_TRANSMITTED",
-	"TX_MGMT_DROPPED",
-	"TX_MGMT_COMPLETED",
-	"TX_INV_PEER_ENQ_CNT",
-	"RX_INV_PEER_RCV_CNT",
-	"RX_PN_CHECK_FAILED",
-	"RX_PKTS_DELIVERD",
-	"RX_BYTES_DELIVERED",
-	"TX_BYTES_COMPLETED",
-	"RX_DELIVER_UNALIGNED_DROP_CNT",
-	"TIDQ_ENQUEUE_CNT_0",
-	"TIDQ_ENQUEUE_CNT_1",
-	"TIDQ_ENQUEUE_CNT_2",
-	"TIDQ_ENQUEUE_CNT_3",
-	"TIDQ_ENQUEUE_CNT_4",
-	"TIDQ_ENQUEUE_CNT_5",
-	"TIDQ_ENQUEUE_CNT_6",
-	"TIDQ_ENQUEUE_CNT_7",
-	"TIDQ_DEQUEUE_CNT_0",
-	"TIDQ_DEQUEUE_CNT_1",
-	"TIDQ_DEQUEUE_CNT_2",
-	"TIDQ_DEQUEUE_CNT_3",
-	"TIDQ_DEQUEUE_CNT_4",
-	"TIDQ_DEQUEUE_CNT_5",
-	"TIDQ_DEQUEUE_CNT_6",
-	"TIDQ_DEQUEUE_CNT_7",
-	"TIDQ_ENQUEUE_FAIL_CNT_0",
-	"TIDQ_ENQUEUE_FAIL_CNT_1",
-	"TIDQ_ENQUEUE_FAIL_CNT_2",
-	"TIDQ_ENQUEUE_FAIL_CNT_3",
-	"TIDQ_ENQUEUE_FAIL_CNT_4",
-	"TIDQ_ENQUEUE_FAIL_CNT_5",
-	"TIDQ_ENQUEUE_FAIL_CNT_6",
-	"TIDQ_ENQUEUE_FAIL_CNT_7",
-	"TIDQ_TTL_EXPIRE_CNT_0",
-	"TIDQ_TTL_EXPIRE_CNT_1",
-	"TIDQ_TTL_EXPIRE_CNT_2",
-	"TIDQ_TTL_EXPIRE_CNT_3",
-	"TIDQ_TTL_EXPIRE_CNT_4",
-	"TIDQ_TTL_EXPIRE_CNT_5",
-	"TIDQ_TTL_EXPIRE_CNT_6",
-	"TIDQ_TTL_EXPIRE_CNT_7",
-	"TIDQ_DEQUEUE_REQ_CNT_0",
-	"TIDQ_DEQUEUE_REQ_CNT_1",
-	"TIDQ_DEQUEUE_REQ_CNT_2",
-	"TIDQ_DEQUEUE_REQ_CNT_3",
-	"TIDQ_DEQUEUE_REQ_CNT_4",
-	"TIDQ_DEQUEUE_REQ_CNT_5",
-	"TIDQ_DEQUEUE_REQ_CNT_6",
-	"TIDQ_DEQUEUE_REQ_CNT_7",
-	"TOTAL_TIDQ_DEPTH",
-	"RX_HTT_FETCH_CNT",
-	"TOTAL_TIDQ_BYPASS_CNT",
-	"GLOBAL_Q_FULL_CNT",
-	"TIDQ_FULL_CNT",
+struct nss_stats_info nss_wifi_stats_str[NSS_WIFI_STATS_MAX] = {
+	{"rx_pkts"				, NSS_STATS_TYPE_COMMON},
+	{"rx_queue[0]_drops"			, NSS_STATS_TYPE_DROP},
+	{"rx_queue[1]_drops"			, NSS_STATS_TYPE_DROP},
+	{"rx_queue[2]_drops"			, NSS_STATS_TYPE_DROP},
+	{"rx_queue[3]_drops"			, NSS_STATS_TYPE_DROP},
+	{"tx_pkts"				, NSS_STATS_TYPE_COMMON},
+	{"tx_drops"				, NSS_STATS_TYPE_DROP},
+	{"tx_transmit_completed"		, NSS_STATS_TYPE_SPECIAL},
+	{"tx_mgmt_received"			, NSS_STATS_TYPE_SPECIAL},
+	{"tx_mgmt_transmitted"			, NSS_STATS_TYPE_SPECIAL},
+	{"tx_mgmt_drops"			, NSS_STATS_TYPE_DROP},
+	{"tx_mgmt_completed"			, NSS_STATS_TYPE_SPECIAL},
+	{"tx_inv_peer_enq_cnt"			, NSS_STATS_TYPE_SPECIAL},
+	{"rx_inv_peer_rcv_cnt"			, NSS_STATS_TYPE_SPECIAL},
+	{"rx_pn_check_failed"			, NSS_STATS_TYPE_DROP},
+	{"rx_pkts_deliverd"			, NSS_STATS_TYPE_SPECIAL},
+	{"rx_bytes_delivered"			, NSS_STATS_TYPE_SPECIAL},
+	{"tx_bytes_completed"			, NSS_STATS_TYPE_SPECIAL},
+	{"rx_deliver_unaligned_drop_cnt"	, NSS_STATS_TYPE_DROP},
+	{"tidq_enqueue_cnt_0"			, NSS_STATS_TYPE_SPECIAL},
+	{"tidq_enqueue_cnt_1"			, NSS_STATS_TYPE_SPECIAL},
+	{"tidq_enqueue_cnt_2"			, NSS_STATS_TYPE_SPECIAL},
+	{"tidq_enqueue_cnt_3"			, NSS_STATS_TYPE_SPECIAL},
+	{"tidq_enqueue_cnt_4"			, NSS_STATS_TYPE_SPECIAL},
+	{"tidq_enqueue_cnt_5"			, NSS_STATS_TYPE_SPECIAL},
+	{"tidq_enqueue_cnt_6"			, NSS_STATS_TYPE_SPECIAL},
+	{"tidq_enqueue_cnt_7"			, NSS_STATS_TYPE_SPECIAL},
+	{"tidq_dequeue_cnt_0"			, NSS_STATS_TYPE_SPECIAL},
+	{"tidq_dequeue_cnt_1"			, NSS_STATS_TYPE_SPECIAL},
+	{"tidq_dequeue_cnt_2"			, NSS_STATS_TYPE_SPECIAL},
+	{"tidq_dequeue_cnt_3"			, NSS_STATS_TYPE_SPECIAL},
+	{"tidq_dequeue_cnt_4"			, NSS_STATS_TYPE_SPECIAL},
+	{"tidq_dequeue_cnt_5"			, NSS_STATS_TYPE_SPECIAL},
+	{"tidq_dequeue_cnt_6"			, NSS_STATS_TYPE_SPECIAL},
+	{"tidq_dequeue_cnt_7"			, NSS_STATS_TYPE_SPECIAL},
+	{"tidq_enqueue_fail_cnt_0"		, NSS_STATS_TYPE_DROP},
+	{"tidq_enqueue_fail_cnt_1"		, NSS_STATS_TYPE_DROP},
+	{"tidq_enqueue_fail_cnt_2"		, NSS_STATS_TYPE_DROP},
+	{"tidq_enqueue_fail_cnt_3"		, NSS_STATS_TYPE_DROP},
+	{"tidq_enqueue_fail_cnt_4"		, NSS_STATS_TYPE_DROP},
+	{"tidq_enqueue_fail_cnt_5"		, NSS_STATS_TYPE_DROP},
+	{"tidq_enqueue_fail_cnt_6"		, NSS_STATS_TYPE_DROP},
+	{"tidq_enqueue_fail_cnt_7"		, NSS_STATS_TYPE_DROP},
+	{"tidq_ttl_expire_cnt_0"		, NSS_STATS_TYPE_DROP},
+	{"tidq_ttl_expire_cnt_1"		, NSS_STATS_TYPE_DROP},
+	{"tidq_ttl_expire_cnt_2"		, NSS_STATS_TYPE_DROP},
+	{"tidq_ttl_expire_cnt_3"		, NSS_STATS_TYPE_DROP},
+	{"tidq_ttl_expire_cnt_4"		, NSS_STATS_TYPE_DROP},
+	{"tidq_ttl_expire_cnt_5"		, NSS_STATS_TYPE_DROP},
+	{"tidq_ttl_expire_cnt_6"		, NSS_STATS_TYPE_DROP},
+	{"tidq_ttl_expire_cnt_7"		, NSS_STATS_TYPE_DROP},
+	{"tidq_dequeue_req_cnt_0"		, NSS_STATS_TYPE_SPECIAL},
+	{"tidq_dequeue_req_cnt_1"		, NSS_STATS_TYPE_SPECIAL},
+	{"tidq_dequeue_req_cnt_2"		, NSS_STATS_TYPE_SPECIAL},
+	{"tidq_dequeue_req_cnt_3"		, NSS_STATS_TYPE_SPECIAL},
+	{"tidq_dequeue_req_cnt_4"		, NSS_STATS_TYPE_SPECIAL},
+	{"tidq_dequeue_req_cnt_5"		, NSS_STATS_TYPE_SPECIAL},
+	{"tidq_dequeue_req_cnt_6"		, NSS_STATS_TYPE_SPECIAL},
+	{"tidq_dequeue_req_cnt_7"		, NSS_STATS_TYPE_SPECIAL},
+	{"total_tidq_depth"			, NSS_STATS_TYPE_SPECIAL},
+	{"rx_htt_fetch_cnt"			, NSS_STATS_TYPE_SPECIAL},
+	{"total_tidq_bypass_cnt"		, NSS_STATS_TYPE_SPECIAL},
+	{"global_q_full_cnt"			, NSS_STATS_TYPE_SPECIAL},
+	{"tidq_full_cnt"			, NSS_STATS_TYPE_SPECIAL}
 };
 
 uint64_t nss_wifi_stats[NSS_MAX_WIFI_RADIO_INTERFACES][NSS_WIFI_STATS_MAX]; /* WIFI statistics */
 
 /*
  * nss_wifi_stats_read()
- *	Read wifi statistics
+ *	Read wifi statistics.
  */
 static ssize_t nss_wifi_stats_read(struct file *fp, char __user *ubuf, size_t sz, loff_t *ppos)
 {
 	uint32_t i, id;
 
 	/*
-	 * max output lines = ((#stats + start tag + one blank) * #WIFI RADIOs) + start/end tag + 3 blank
+	 * Max output lines = #stats * NSS_MAX_CORES  +
+	 * Few output lines for banner printing + Number of Extra outputlines for future reference to add new stats.
 	 */
-	uint32_t max_output_lines = ((NSS_WIFI_STATS_MAX + 2) * NSS_MAX_WIFI_RADIO_INTERFACES) + 5;
+	uint32_t max_output_lines = NSS_WIFI_STATS_MAX * NSS_MAX_WIFI_RADIO_INTERFACES + NSS_STATS_EXTRA_OUTPUT_LINES;
 	size_t size_al = NSS_STATS_MAX_STR_LENGTH * max_output_lines;
 	size_t size_wr = 0;
 	ssize_t bytes_read = 0;
@@ -122,7 +122,7 @@ static ssize_t nss_wifi_stats_read(struct file *fp, char __user *ubuf, size_t sz
 		return 0;
 	}
 
-	size_wr = scnprintf(lbuf, size_al, "wifi stats start:\n\n");
+	size_wr += nss_stats_banner(lbuf, size_wr, size_al, "wifi", NSS_STATS_SINGLE_CORE);
 
 	for (id = 0; id < NSS_MAX_WIFI_RADIO_INTERFACES; id++) {
 		spin_lock_bh(&nss_top_main.stats_lock);
@@ -131,20 +131,13 @@ static ssize_t nss_wifi_stats_read(struct file *fp, char __user *ubuf, size_t sz
 		}
 
 		spin_unlock_bh(&nss_top_main.stats_lock);
-
-		size_wr += scnprintf(lbuf + size_wr, size_al - size_wr, "WIFI ID: %d\n", id);
-		for (i = 0; (i < NSS_WIFI_STATS_MAX); i++) {
-			size_wr += scnprintf(lbuf + size_wr, size_al - size_wr,
-					"%s = %llu\n", nss_wifi_stats_str[i], stats_shadow[i]);
-		}
+		size_wr += nss_stats_print("wifi", NULL, id, nss_wifi_stats_str, stats_shadow, NSS_WIFI_STATS_MAX, lbuf, size_wr, size_al);
 		size_wr += scnprintf(lbuf + size_wr, size_al - size_wr, "\n");
 	}
 
-	size_wr += scnprintf(lbuf + size_wr, size_al - size_wr, "\nwifi stats end\n\n");
 	bytes_read = simple_read_from_buffer(ubuf, sz, ppos, lbuf, strlen(lbuf));
 	kfree(lbuf);
 	kfree(stats_shadow);
-
 	return bytes_read;
 }
 
@@ -174,7 +167,7 @@ void nss_wifi_stats_sync(struct nss_ctx_instance *nss_ctx,
 	uint8_t i = 0;
 
 	if (radio_id >= NSS_MAX_WIFI_RADIO_INTERFACES) {
-		nss_warning("%p: invalid interface: %d", nss_ctx, interface);
+		nss_warning("%px: invalid interface: %d", nss_ctx, interface);
 		return;
 	}
 

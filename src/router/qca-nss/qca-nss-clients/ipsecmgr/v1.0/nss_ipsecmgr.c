@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2014-2017, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2014-2017, 2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -65,7 +65,7 @@ MODULE_PARM_DESC(gen_pmtu_error, "Support generation of PMTU error packet");
  */
 static void nss_ipsecmgr_ref_no_update(struct nss_ipsecmgr_priv *priv, struct nss_ipsecmgr_ref *child, struct nss_ipsec_msg *nim)
 {
-	nss_ipsecmgr_trace("ref_no_update triggered for child (%p)\n", child);
+	nss_ipsecmgr_trace("ref_no_update triggered for child (%px)\n", child);
 	return;
 }
 
@@ -75,7 +75,7 @@ static void nss_ipsecmgr_ref_no_update(struct nss_ipsecmgr_priv *priv, struct ns
  */
 static void nss_ipsecmgr_ref_no_free(struct nss_ipsecmgr_priv *priv, struct nss_ipsecmgr_ref *ref)
 {
-	nss_ipsecmgr_trace("%p:ref_no_free triggered\n", ref);
+	nss_ipsecmgr_trace("%px:ref_no_free triggered\n", ref);
 	return;
 }
 
@@ -85,7 +85,7 @@ static void nss_ipsecmgr_ref_no_free(struct nss_ipsecmgr_priv *priv, struct nss_
  */
 static uint32_t nss_ipsecmgr_ref_no_overhead(struct nss_ipsecmgr_ref *ref)
 {
-	nss_ipsecmgr_trace("%p:ref_get_no_overhead triggered\n", ref);
+	nss_ipsecmgr_trace("%px:ref_get_no_overhead triggered\n", ref);
 	return 0;
 }
 
@@ -284,7 +284,7 @@ static netdev_tx_t nss_ipsecmgr_tunnel_tx(struct sk_buff *skb, struct net_device
 	 * Check if skb is non-linear
 	 */
 	if (skb_is_nonlinear(skb)) {
-		nss_ipsecmgr_trace("%s: NSS IPSEC does not support fragments %p\n", dev->name, skb);
+		nss_ipsecmgr_trace("%s: NSS IPSEC does not support fragments %px\n", dev->name, skb);
 		goto free;
 	}
 
@@ -292,7 +292,7 @@ static netdev_tx_t nss_ipsecmgr_tunnel_tx(struct sk_buff *skb, struct net_device
 	 * Check if skb is shared
 	 */
 	if (unlikely(skb_shared(skb))) {
-		nss_ipsecmgr_trace("%s: Shared skb is not supported: %p\n", dev->name, skb);
+		nss_ipsecmgr_trace("%s: Shared skb is not supported: %px\n", dev->name, skb);
 		goto free;
 	}
 
@@ -334,7 +334,7 @@ static netdev_tx_t nss_ipsecmgr_tunnel_tx(struct sk_buff *skb, struct net_device
 	 * 		is dropped
 	 */
 	if (!nss_ipsecmgr_flow_offload(priv, skb, &flow_data)) {
-		nss_ipsecmgr_warn("%p:failed to accelerate flow\n", dev);
+		nss_ipsecmgr_warn("%px:failed to accelerate flow\n", dev);
 		goto free;
 	}
 
@@ -571,7 +571,7 @@ static struct net_device *nss_ipsecmgr_tunnel_get_dev(struct sk_buff *skb)
 		break;
 	}
 	default:
-		nss_ipsecmgr_warn("%p:could not get dev for the flow\n", skb);
+		nss_ipsecmgr_warn("%px:could not get dev for the flow\n", skb);
 		return NULL;
 	}
 
@@ -583,7 +583,7 @@ static struct net_device *nss_ipsecmgr_tunnel_get_dev(struct sk_buff *skb)
 
 	ref = nss_ipsecmgr_sa_lookup(&key);
 	if (!ref) {
-		nss_ipsecmgr_trace("unable to find SA (%p)\n", skb);
+		nss_ipsecmgr_trace("unable to find SA (%px)\n", skb);
 		return NULL;
 	}
 
@@ -612,7 +612,7 @@ static void nss_ipsecmgr_tunnel_rx(struct net_device *dummy, struct sk_buff *skb
 
 	dev = nss_ipsecmgr_tunnel_get_dev(skb);
 	if (unlikely(!dev)) {
-		nss_ipsecmgr_trace("cannot find a dev(%p)\n", skb);
+		nss_ipsecmgr_trace("cannot find a dev(%px)\n", skb);
 		dev_kfree_skb_any(skb);
 		return;
 	}
@@ -904,7 +904,6 @@ struct net_device *nss_ipsecmgr_tunnel_add(struct nss_ipsecmgr_callback *cb)
 	priv->cb.data = cb->data_fn;
 	priv->cb.event = cb->event_fn;
 
-
 	status = rtnl_is_locked() ? register_netdevice(dev) : register_netdev(dev);
 	if (status < 0) {
 		nss_ipsecmgr_error("register net dev failed :%s\n", dev->name);
@@ -927,7 +926,6 @@ fail:
 	return NULL;
 }
 EXPORT_SYMBOL(nss_ipsecmgr_tunnel_add);
-
 
 /*
  * nss_ipsecmgr_del_tunnel()
@@ -1133,7 +1131,7 @@ static void nss_ipsecmgr_tunnel_error_esp4(struct sk_buff *skb, uint32_t mtu)
 	ref = nss_ipsecmgr_sa_lookup(&key);
 	if (!ref) {
 		read_unlock(&ipsecmgr_ctx->lock);
-		nss_ipsecmgr_trace("unable to find SA (%p)\n", skb);
+		nss_ipsecmgr_trace("unable to find SA (%px)\n", skb);
 		return;
 	}
 
@@ -1219,7 +1217,7 @@ static void nss_ipsecmgr_tunnel_error_esp6(struct sk_buff *skb, struct inet6_skb
 	ref = nss_ipsecmgr_sa_lookup(&key);
 	if (!ref) {
 		read_unlock(&ipsecmgr_ctx->lock);
-		nss_ipsecmgr_info("%p: unable to find SA\n", skb);
+		nss_ipsecmgr_info("%px: unable to find SA\n", skb);
 		return;
 	}
 
@@ -1301,7 +1299,6 @@ static int __init nss_ipsecmgr_init(void)
 	nss_ipsecmgr_init_flow_db(&ipsecmgr_ctx->flow_db);
 	nss_ipsecmgr_init_callback_db(&ipsecmgr_ctx->cb_db);
 
-
 	nss_ipsec_data_register(ipsecmgr_ctx->data_ifnum, nss_ipsecmgr_tunnel_rx, ipsecmgr_ctx->ndev, 0);
 	nss_ipsec_notify_register(ipsecmgr_ctx->encap_ifnum, nss_ipsecmgr_tunnel_notify, NULL);
 	nss_ipsec_notify_register(ipsecmgr_ctx->decap_ifnum, nss_ipsecmgr_tunnel_notify, NULL);
@@ -1341,13 +1338,13 @@ static int __init nss_ipsecmgr_init(void)
 	 */
 	status = inet_add_protocol(&nss_ipsecmgr_proto_esp4, IPPROTO_ESP);
 	if (status < 0) {
-		nss_ipsecmgr_warn("%p:%d in Registering ESP4 Handler\n",
+		nss_ipsecmgr_warn("%px:%d in Registering ESP4 Handler\n",
 				ipsecmgr_ctx->nss_ctx, status);
 	}
 
 	status = inet6_add_protocol(&nss_ipsecmgr_proto_esp6, IPPROTO_ESP);
 	if (status < 0) {
-		nss_ipsecmgr_warn("%p:%d in Registering ESP6 Handler\n",
+		nss_ipsecmgr_warn("%px:%d in Registering ESP6 Handler\n",
 				ipsecmgr_ctx->nss_ctx, status);
 	}
 #endif

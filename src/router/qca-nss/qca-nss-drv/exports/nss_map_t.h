@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2016-2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2016-2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -21,6 +21,10 @@
 
 #ifndef _NSS_MAP_T_H_
 #define _NSS_MAP_T_H_
+
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
+#include "nss_dynamic_interface.h"
+#endif
 
 /**
  * @addtogroup nss_map_t_subsystem
@@ -44,12 +48,45 @@ enum nss_map_t_msg_types {
 };
 
 /**
+ * nss_map_t_stats_instance
+ *	MAP-T debug error types.
+ */
+enum nss_map_t_stats_instance {
+	NSS_MAP_T_STATS_V4_TO_V6_PBUF_EXCEPTION,
+	NSS_MAP_T_STATS_V4_TO_V6_PBUF_NO_MATCHING_RULE,
+	NSS_MAP_T_STATS_V4_TO_V6_PBUF_NOT_TCP_OR_UDP,
+	NSS_MAP_T_STATS_V4_TO_V6_RULE_ERR_LOCAL_PSID,
+	NSS_MAP_T_STATS_V4_TO_V6_RULE_ERR_LOCAL_IPV6,
+	NSS_MAP_T_STATS_V4_TO_V6_RULE_ERR_REMOTE_PSID,
+	NSS_MAP_T_STATS_V4_TO_V6_RULE_ERR_REMOTE_EA_BITS,
+	NSS_MAP_T_STATS_V4_TO_V6_RULE_ERR_REMOTE_IPV6,
+	NSS_MAP_T_STATS_V6_TO_V4_PBUF_EXCEPTION,
+	NSS_MAP_T_STATS_V6_TO_V4_PBUF_NO_MATCHING_RULE,
+	NSS_MAP_T_STATS_V6_TO_V4_PBUF_NOT_TCP_OR_UDP,
+	NSS_MAP_T_STATS_V6_TO_V4_RULE_ERR_LOCAL_IPV4,
+	NSS_MAP_T_STATS_V6_TO_V4_RULE_ERR_REMOTE_IPV4,
+	NSS_MAP_T_STATS_MAX
+};
+
+/**
+ * nss_map_t_stats_notification
+ *	MAP-T statistics structure.
+ */
+struct nss_map_t_stats_notification {
+	uint32_t core_id;				/**< Core ID. */
+	uint32_t if_num;				/**< Interface number. */
+	enum nss_dynamic_interface_type if_type;	/**< Dynamic interface type. */
+	uint64_t stats[NSS_MAP_T_STATS_MAX];		/**< MAP-T statistics. */
+};
+
+#ifdef __KERNEL__ /* only kernel will use. */
+/**
  * nss_map_t_instance_rule_config_msg
  *	Message information for configuring a MAP-T instance.
  */
 struct nss_map_t_instance_rule_config_msg {
 	uint32_t rule_num;			/**< Rule sequence number */
-	uint32_t total_rules;			/**< Total number of nat46 rules configured. */
+	uint32_t total_rules;			/**< Total number of NAT64 rules configured. */
 	uint32_t local_ipv6_prefix_len;		/**< Local IPv6 prefix length. */
 	uint32_t local_ipv4_prefix;		/**< Local IPv4 prefix. */
 	uint32_t local_ipv4_prefix_len;		/**< Local IPv4 prefix length. */
@@ -298,6 +335,35 @@ extern void nss_map_t_register_handler(void);
  * None.
  */
 extern void nss_map_t_instance_debug_stats_get(void *stats_mem);
+
+/**
+ * nss_map_t_stats_register_notifier
+ *	Registers a statistics notifier.
+ *
+ * @datatypes
+ * notifier_block
+ *
+ * @param[in] nb Notifier block.
+ *
+ * @return
+ * 0 on success or -2 on failure.
+ */
+extern int nss_map_t_stats_register_notifier(struct notifier_block *nb);
+
+/**
+ * nss_map_t_stats_unregister_notifier
+ *	Deregisters a statistics notifier.
+ *
+ * @datatypes
+ * notifier_block
+ *
+ * @param[in] nb Notifier block.
+ *
+ * @return
+ * 0 on success or -2 on failure.
+ */
+extern int nss_map_t_stats_unregister_notifier(struct notifier_block *nb);
+#endif /*__KERNEL__ */
 
 /**
  * @}

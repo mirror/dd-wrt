@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2016-2017, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2016-2017, 2019 The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -14,7 +14,6 @@
  **************************************************************************
  */
 
-#include "nss_stats.h"
 #include "nss_core.h"
 #include "nss_sjack_stats.h"
 
@@ -45,12 +44,8 @@ static ssize_t nss_sjack_stats_read(struct file *fp, char __user *ubuf, size_t s
 		kfree(lbuf);
 		return 0;
 	}
-
-	size_wr = scnprintf(lbuf, size_al, "sjack stats start:\n\n");
-
-	size_wr = nss_stats_fill_common_stats(NSS_SJACK_INTERFACE, lbuf, size_wr, size_al);
-
-	size_wr += scnprintf(lbuf + size_wr, size_al - size_wr, "\nsjack stats end\n\n");
+	size_wr += nss_stats_banner(lbuf, size_wr, size_al, "sjack", NSS_STATS_SINGLE_CORE);
+	size_wr += nss_stats_fill_common_stats(NSS_SJACK_INTERFACE, NSS_STATS_SINGLE_INSTANCE, lbuf, size_wr, size_al, "sjack");
 
 	bytes_read = simple_read_from_buffer(ubuf, sz, ppos, lbuf, strlen(lbuf));
 	kfree(lbuf);

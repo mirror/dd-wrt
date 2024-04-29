@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2013-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2013-2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -19,9 +19,10 @@
  *	NSS N2H node APIs
  */
 
-#include <linux/kmemleak.h>
 #include "nss_tx_rx_common.h"
 #include "nss_n2h_stats.h"
+#include "nss_n2h_strings.h"
+#include "nss_drv_strings.h"
 
 #define NSS_N2H_MAX_BUF_POOL_SIZE (1024 * 1024 * 20) /* 20MB */
 #define NSS_N2H_MIN_EMPTY_POOL_BUF_SZ		32
@@ -73,7 +74,7 @@ static void nss_n2h_interface_handler(struct nss_ctx_instance *nss_ctx,
 	 * Is this a valid request/response packet?
 	 */
 	if (nnm->cm.type >= NSS_METADATA_TYPE_N2H_MAX) {
-		nss_warning("%p: received invalid message %d for Offload stats interface", nss_ctx, nnm->cm.type);
+		nss_warning("%px: received invalid message %d for Offload stats interface", nss_ctx, nnm->cm.type);
 		return;
 	}
 
@@ -87,15 +88,19 @@ static void nss_n2h_interface_handler(struct nss_ctx_instance *nss_ctx,
 		break;
 
 	case NSS_TX_METADATA_TYPE_N2H_EMPTY_POOL_BUF_CFG:
-		nss_info("%p: empty pool buf cfg response from FW", nss_ctx);
+		nss_info("%px: empty pool buf cfg response from FW", nss_ctx);
 		break;
 
 	case NSS_TX_METADATA_TYPE_N2H_FLUSH_PAYLOADS:
-		nss_info("%p: flush payloads cmd response from FW", nss_ctx);
+		nss_info("%px: flush payloads cmd response from FW", nss_ctx);
 		break;
 
 	case NSS_RX_METADATA_TYPE_N2H_STATS_SYNC:
+		/*
+		 * Update driver statistics and send statistics notifications to the registered modules.
+		 */
 		nss_n2h_stats_sync(nss_ctx, &nnm->msg.stats_sync);
+		nss_n2h_stats_notify(nss_ctx);
 		break;
 
 	default:
@@ -103,7 +108,7 @@ static void nss_n2h_interface_handler(struct nss_ctx_instance *nss_ctx,
 			/*
 			 * Check response
 			 */
-			nss_info("%p: Received response %d for type %d, interface %d",
+			nss_info("%px: Received response %d for type %d, interface %d",
 						nss_ctx, ncm->response, ncm->type, ncm->interface);
 		}
 	}
@@ -247,14 +252,15 @@ static void nss_n2h_set_wifi_payloads_callback(void *app_data,
 
 		nss_n2h_wp.response = NSS_FAILURE;
 		complete(&nss_n2h_wp.complete);
-		nss_warning("%p: wifi pool configuration failed : %d\n", nss_ctx,
+		nss_warning("%px: wifi pool configuration failed : %d\n", nss_ctx,
 				nnm->cm.error);
 		return;
 	}
 
-	nss_info("%p: wifi payload configuration succeeded: %d\n", nss_ctx,
+	nss_info("%px: wifi payload configuration succeeded: %d\n", nss_ctx,
 			nnm->cm.error);
 	nss_n2h_wp.response = NSS_SUCCESS;
+	nss_n2h_wp.wifi_pool = ntohl(nnm->msg.wp.payloads);
 	complete(&nss_n2h_wp.complete);
 }
 
@@ -276,7 +282,7 @@ static int nss_n2h_get_payload_info(nss_ptr_t core_num, struct nss_n2h_msg *nnm,
 	nss_tx_status = nss_n2h_tx_msg(nss_ctx, nnm);
 
 	if (nss_tx_status != NSS_TX_SUCCESS) {
-		nss_warning("%p: core %d nss_tx error errorn", nss_ctx, (int)core_num);
+		nss_warning("%px: core %d nss_tx error errorn", nss_ctx, (int)core_num);
 		return NSS_FAILURE;
 	}
 
@@ -286,12 +292,12 @@ static int nss_n2h_get_payload_info(nss_ptr_t core_num, struct nss_n2h_msg *nnm,
 	ret = wait_for_completion_timeout(&nss_n2h_nepbcfgp[core_num].complete,
 			msecs_to_jiffies(NSS_CONN_CFG_TIMEOUT));
 	if (ret == 0) {
-		nss_warning("%p: core %d waiting for ack timed out\n", nss_ctx, (int)core_num);
+		nss_warning("%px: core %d waiting for ack timed out\n", nss_ctx, (int)core_num);
 		return NSS_FAILURE;
 	}
 
 	if (NSS_FAILURE == nss_n2h_nepbcfgp[core_num].response) {
-		nss_warning("%p: core %d response returned failure\n", nss_ctx, (int)core_num);
+		nss_warning("%px: core %d response returned failure\n", nss_ctx, (int)core_num);
 		return NSS_FAILURE;
 	}
 
@@ -381,12 +387,12 @@ static int nss_n2h_set_empty_buf_pool(struct ctl_table *ctl, int write,
 	}
 
 	if ((*new_val < NSS_N2H_MIN_EMPTY_POOL_BUF_SZ)) {
-		nss_warning("%p: core %d setting %d < min number of buffer",
+		nss_warning("%px: core %d setting %d < min number of buffer",
 				nss_ctx, (int)core_num, *new_val);
 		goto failure;
 	}
 
-	nss_info("%p: core %d number of empty pool buffer is : %d\n",
+	nss_info("%px: core %d number of empty pool buffer is : %d\n",
 		nss_ctx, (int)core_num, *new_val);
 
 	nss_n2h_msg_init(&nnm, NSS_N2H_INTERFACE,
@@ -400,7 +406,7 @@ static int nss_n2h_set_empty_buf_pool(struct ctl_table *ctl, int write,
 	nss_tx_status = nss_n2h_tx_msg(nss_ctx, &nnm);
 
 	if (nss_tx_status != NSS_TX_SUCCESS) {
-		nss_warning("%p: core %d nss_tx error empty pool buffer: %d\n",
+		nss_warning("%px: core %d nss_tx error empty pool buffer: %d\n",
 				nss_ctx, (int)core_num, *new_val);
 		goto failure;
 	}
@@ -411,7 +417,7 @@ static int nss_n2h_set_empty_buf_pool(struct ctl_table *ctl, int write,
 	ret = wait_for_completion_timeout(&nss_n2h_nepbcfgp[core_num].complete,
 			msecs_to_jiffies(NSS_CONN_CFG_TIMEOUT));
 	if (ret == 0) {
-		nss_warning("%p: core %d Waiting for ack timed out\n", nss_ctx, (int)core_num);
+		nss_warning("%px: core %d Waiting for ack timed out\n", nss_ctx, (int)core_num);
 		goto failure;
 	}
 
@@ -483,12 +489,12 @@ static int nss_n2h_set_empty_paged_pool_buf(struct ctl_table *ctl, int write,
 	}
 
 	if ((*new_val < NSS_N2H_MIN_EMPTY_POOL_BUF_SZ)) {
-		nss_warning("%p: core %d setting %d < min number of buffer",
+		nss_warning("%px: core %d setting %d < min number of buffer",
 				nss_ctx, (int)core_num, *new_val);
 		goto failure;
 	}
 
-	nss_info("%p: core %d number of empty paged pool buffer is : %d\n",
+	nss_info("%px: core %d number of empty paged pool buffer is : %d\n",
 		nss_ctx, (int)core_num, *new_val);
 
 	nss_n2h_msg_init(&nnm, NSS_N2H_INTERFACE,
@@ -502,7 +508,7 @@ static int nss_n2h_set_empty_paged_pool_buf(struct ctl_table *ctl, int write,
 	nss_tx_status = nss_n2h_tx_msg(nss_ctx, &nnm);
 
 	if (nss_tx_status != NSS_TX_SUCCESS) {
-		nss_warning("%p: core %d nss_tx error empty paged pool buffer: %d\n",
+		nss_warning("%px: core %d nss_tx error empty paged pool buffer: %d\n",
 				nss_ctx, (int)core_num, *new_val);
 		goto failure;
 	}
@@ -513,7 +519,7 @@ static int nss_n2h_set_empty_paged_pool_buf(struct ctl_table *ctl, int write,
 	ret = wait_for_completion_timeout(&nss_n2h_nepbcfgp[core_num].complete,
 			msecs_to_jiffies(NSS_CONN_CFG_TIMEOUT));
 	if (ret == 0) {
-		nss_warning("%p: core %d Waiting for ack timed out\n", nss_ctx, (int)core_num);
+		nss_warning("%px: core %d Waiting for ack timed out\n", nss_ctx, (int)core_num);
 		goto failure;
 	}
 
@@ -584,25 +590,25 @@ static int nss_n2h_set_water_mark(struct ctl_table *ctl, int write,
 
 	if ((*low < NSS_N2H_MIN_EMPTY_POOL_BUF_SZ) ||
 		(*high < NSS_N2H_MIN_EMPTY_POOL_BUF_SZ)) {
-		nss_warning("%p: core %d setting %d, %d < min number of buffer",
+		nss_warning("%px: core %d setting %d, %d < min number of buffer",
 				nss_ctx, core_num, *low, *high);
 		goto failure;
 	}
 
 	if ((*low > NSS_N2H_MAX_EMPTY_POOL_BUF_SZ) ||
 		(*high > NSS_N2H_MAX_EMPTY_POOL_BUF_SZ)) {
-		nss_warning("%p: core %d setting %d, %d is > upper limit",
+		nss_warning("%px: core %d setting %d, %d is > upper limit",
 				nss_ctx, core_num, *low, *high);
 		goto failure;
 	}
 
 	if (*low > *high) {
-		nss_warning("%p: core %d setting low %d is more than high %d",
+		nss_warning("%px: core %d setting low %d is more than high %d",
 				nss_ctx, core_num, *low, *high);
 		goto failure;
 	}
 
-	nss_info("%p: core %d number of low : %d and high : %d\n",
+	nss_info("%px: core %d number of low : %d and high : %d\n",
 		nss_ctx, core_num, *low, *high);
 
 	nss_n2h_msg_init(&nnm, NSS_N2H_INTERFACE,
@@ -617,7 +623,7 @@ static int nss_n2h_set_water_mark(struct ctl_table *ctl, int write,
 	nss_tx_status = nss_n2h_tx_msg(nss_ctx, &nnm);
 
 	if (nss_tx_status != NSS_TX_SUCCESS) {
-		nss_warning("%p: core %d nss_tx error setting : %d, %d\n",
+		nss_warning("%px: core %d nss_tx error setting : %d, %d\n",
 				nss_ctx, core_num, *low, *high);
 		goto failure;
 	}
@@ -628,7 +634,7 @@ static int nss_n2h_set_water_mark(struct ctl_table *ctl, int write,
 	ret = wait_for_completion_timeout(&nss_n2h_nepbcfgp[core_num].complete,
 			msecs_to_jiffies(NSS_CONN_CFG_TIMEOUT));
 	if (ret == 0) {
-		nss_warning("%p: core %d Waiting for ack timed out\n", nss_ctx,
+		nss_warning("%px: core %d Waiting for ack timed out\n", nss_ctx,
 			core_num);
 		goto failure;
 	}
@@ -698,25 +704,25 @@ static int nss_n2h_set_paged_water_mark(struct ctl_table *ctl, int write,
 
 	if ((*low < NSS_N2H_MIN_EMPTY_POOL_BUF_SZ) ||
 		(*high < NSS_N2H_MIN_EMPTY_POOL_BUF_SZ)) {
-		nss_warning("%p: core %d setting %d, %d < min number of buffer",
+		nss_warning("%px: core %d setting %d, %d < min number of buffer",
 				nss_ctx, core_num, *low, *high);
 		goto failure;
 	}
 
 	if ((*low > NSS_N2H_MAX_EMPTY_POOL_BUF_SZ) ||
 		(*high > NSS_N2H_MAX_EMPTY_POOL_BUF_SZ)) {
-		nss_warning("%p: core %d setting %d, %d is > upper limit",
+		nss_warning("%px: core %d setting %d, %d is > upper limit",
 				nss_ctx, core_num, *low, *high);
 		goto failure;
 	}
 
 	if (*low > *high) {
-		nss_warning("%p: core %d setting low %d is more than high %d",
+		nss_warning("%px: core %d setting low %d is more than high %d",
 				nss_ctx, core_num, *low, *high);
 		goto failure;
 	}
 
-	nss_info("%p: core %d number of low : %d and high : %d\n",
+	nss_info("%px: core %d number of low : %d and high : %d\n",
 		nss_ctx, core_num, *low, *high);
 
 	nss_n2h_msg_init(&nnm, NSS_N2H_INTERFACE,
@@ -731,7 +737,7 @@ static int nss_n2h_set_paged_water_mark(struct ctl_table *ctl, int write,
 	nss_tx_status = nss_n2h_tx_msg(nss_ctx, &nnm);
 
 	if (nss_tx_status != NSS_TX_SUCCESS) {
-		nss_warning("%p: core %d nss_tx error setting : %d, %d\n",
+		nss_warning("%px: core %d nss_tx error setting : %d, %d\n",
 				nss_ctx, core_num, *low, *high);
 		goto failure;
 	}
@@ -742,7 +748,7 @@ static int nss_n2h_set_paged_water_mark(struct ctl_table *ctl, int write,
 	ret = wait_for_completion_timeout(&nss_n2h_nepbcfgp[core_num].complete,
 			msecs_to_jiffies(NSS_CONN_CFG_TIMEOUT));
 	if (ret == 0) {
-		nss_warning("%p: core %d Waiting for ack timed out\n", nss_ctx,
+		nss_warning("%px: core %d Waiting for ack timed out\n", nss_ctx,
 			core_num);
 		goto failure;
 	}
@@ -809,18 +815,18 @@ static int nss_n2h_cfg_wifi_pool(struct ctl_table *ctl, int write,
 		goto failure;
 
 	if ((*payloads < NSS_N2H_MIN_EMPTY_POOL_BUF_SZ)) {
-		nss_warning("%p: wifi setting %d < min number of buffer",
+		nss_warning("%px: wifi setting %d < min number of buffer",
 				nss_ctx, *payloads);
 		goto failure;
 	}
 
 	if ((*payloads > NSS_N2H_MAX_EMPTY_POOL_BUF_SZ)) {
-		nss_warning("%p: wifi setting %d > max number of buffer",
+		nss_warning("%px: wifi setting %d > max number of buffer",
 				nss_ctx, *payloads);
 		goto failure;
 	}
 
-	nss_info("%p: wifi payloads : %d\n",
+	nss_info("%px: wifi payloads : %d\n",
 		nss_ctx, *payloads);
 
 	nss_n2h_msg_init(&nnm, NSS_N2H_INTERFACE,
@@ -834,7 +840,7 @@ static int nss_n2h_cfg_wifi_pool(struct ctl_table *ctl, int write,
 	nss_tx_status = nss_n2h_tx_msg(nss_ctx, &nnm);
 
 	if (nss_tx_status != NSS_TX_SUCCESS) {
-		nss_warning("%p: wifi setting %d nss_tx error",
+		nss_warning("%px: wifi setting %d nss_tx error",
 				nss_ctx, *payloads);
 		goto failure;
 	}
@@ -845,7 +851,7 @@ static int nss_n2h_cfg_wifi_pool(struct ctl_table *ctl, int write,
 	ret = wait_for_completion_timeout(&nss_n2h_wp.complete,
 			msecs_to_jiffies(NSS_CONN_CFG_TIMEOUT));
 	if (ret == 0) {
-		nss_warning("%p: Waiting for ack timed out\n", nss_ctx);
+		nss_warning("%px: Waiting for ack timed out\n", nss_ctx);
 		goto failure;
 	}
 
@@ -1033,7 +1039,7 @@ nss_tx_status_t nss_n2h_update_queue_config_async(struct nss_ctx_instance *nss_c
 
 	status = nss_n2h_tx_msg(nss_ctx, &nnm);
 	if (status != NSS_TX_SUCCESS) {
-		nss_warning("%p: nss_tx error to send pnode queue config\n", nss_ctx);
+		nss_warning("%px: nss_tx error to send pnode queue config\n", nss_ctx);
 		return status;
 	}
 
@@ -1086,14 +1092,14 @@ nss_tx_status_t nss_n2h_update_queue_config_sync(struct nss_ctx_instance *nss_ct
 	status = nss_n2h_tx_msg(nss_ctx, &nnm);
 
 	if (status != NSS_TX_SUCCESS) {
-		nss_warning("%p: n2h_tx_msg failed\n", nss_ctx);
+		nss_warning("%px: n2h_tx_msg failed\n", nss_ctx);
 		up(&nss_n2h_q_cfg_pvt.sem);
 		return status;
 	}
 	ret = wait_for_completion_timeout(&nss_n2h_q_cfg_pvt.complete, msecs_to_jiffies(NSS_N2H_TX_TIMEOUT));
 
 	if (!ret) {
-		nss_warning("%p: Timeout expired for pnode queue config sync message\n", nss_ctx);
+		nss_warning("%px: Timeout expired for pnode queue config sync message\n", nss_ctx);
 		nss_n2h_q_cfg_pvt.response = NSS_TX_FAILURE;
 	}
 
@@ -1128,7 +1134,7 @@ static nss_tx_status_t nss_n2h_mitigation_cfg(struct nss_ctx_instance *nss_ctx, 
 	nss_tx_status = nss_n2h_tx_msg(nss_ctx, &nnm);
 
 	if (nss_tx_status != NSS_TX_SUCCESS) {
-		nss_warning("%p: nss_tx error setting mitigation\n", nss_ctx);
+		nss_warning("%px: nss_tx error setting mitigation\n", nss_ctx);
 		goto failure;
 	}
 
@@ -1137,7 +1143,7 @@ static nss_tx_status_t nss_n2h_mitigation_cfg(struct nss_ctx_instance *nss_ctx, 
 	 */
 	ret = wait_for_completion_timeout(&nss_n2h_mitigationcp[core_num].complete, msecs_to_jiffies(NSS_CONN_CFG_TIMEOUT));
 	if (ret == 0) {
-		nss_warning("%p: Waiting for ack timed out\n", nss_ctx);
+		nss_warning("%px: Waiting for ack timed out\n", nss_ctx);
 		goto failure;
 	}
 
@@ -1209,7 +1215,7 @@ static nss_tx_status_t nss_n2h_buf_pool_cfg(struct nss_ctx_instance *nss_ctx,
 		if (nss_tx_status != NSS_TX_SUCCESS) {
 
 			nss_n2h_buf_pool_free(buf_pool);
-			nss_warning("%p: nss_tx error setting pbuf\n", nss_ctx);
+			nss_warning("%px: nss_tx error setting pbuf\n", nss_ctx);
 			goto failure;
 		}
 
@@ -1218,7 +1224,7 @@ static nss_tx_status_t nss_n2h_buf_pool_cfg(struct nss_ctx_instance *nss_ctx,
 		 */
 		ret = wait_for_completion_timeout(&nss_n2h_bufcp[core_num].complete, msecs_to_jiffies(NSS_CONN_CFG_TIMEOUT));
 		if (ret == 0) {
-			nss_warning("%p: Waiting for ack timed out\n", nss_ctx);
+			nss_warning("%px: Waiting for ack timed out\n", nss_ctx);
 			goto failure;
 		}
 
@@ -1239,7 +1245,6 @@ failure:
 	up(&nss_n2h_bufcp[core_num].sem);
 	return NSS_FAILURE;
 }
-
 
 /*
  * nss_mitigation_handler()
@@ -1426,7 +1431,7 @@ static int nss_n2h_set_queue_limit_sync(struct ctl_table *ctl, int write, void _
 	 * We dont allow shortening of the queue size at run-time
 	 */
 	if (nss_n2h_queue_limit[core_id] < current_val) {
-		nss_warning("%p: New queue limit %d less than previous value %d. Cant allow shortening\n",
+		nss_warning("%px: New queue limit %d less than previous value %d. Cant allow shortening\n",
 				nss_ctx, nss_n2h_queue_limit[core_id], current_val);
 		nss_n2h_queue_limit[core_id] = current_val;
 		return NSS_TX_FAILURE;
@@ -1447,7 +1452,7 @@ static int nss_n2h_set_queue_limit_sync(struct ctl_table *ctl, int write, void _
 
 	nss_tx_status = nss_n2h_tx_msg(nss_ctx, &nim);
 	if (nss_tx_status != NSS_TX_SUCCESS) {
-		nss_warning("%p: n2h queue limit message send failed\n", nss_ctx);
+		nss_warning("%px: n2h queue limit message send failed\n", nss_ctx);
 		nss_n2h_queue_limit[core_id] = current_val;
 		up(&nss_n2h_q_lim_pvt.sem);
 		return nss_tx_status;
@@ -1455,7 +1460,7 @@ static int nss_n2h_set_queue_limit_sync(struct ctl_table *ctl, int write, void _
 
 	ret = wait_for_completion_timeout(&nss_n2h_q_lim_pvt.complete, msecs_to_jiffies(NSS_N2H_TX_TIMEOUT));
 	if (!ret) {
-		nss_warning("%p: Timeout expired for queue limit sync message\n", nss_ctx);
+		nss_warning("%px: Timeout expired for queue limit sync message\n", nss_ctx);
 		nss_n2h_queue_limit[core_id] = current_val;
 		up(&nss_n2h_q_lim_pvt.sem);
 		return NSS_TX_FAILURE;
@@ -1506,11 +1511,11 @@ static void nss_n2h_host_bp_cfg_callback(void *app_data, struct nss_n2h_msg *nnm
 	if (nnm->cm.response != NSS_CMN_RESPONSE_ACK) {
 		nss_n2h_host_bp_cfg_pvt.response = NSS_FAILURE;
 		complete(&nss_n2h_host_bp_cfg_pvt.complete);
-		nss_warning("%p: n2h back pressure configuration failed : %d\n", nss_ctx, nnm->cm.error);
+		nss_warning("%px: n2h back pressure configuration failed : %d\n", nss_ctx, nnm->cm.error);
 		return;
 	}
 
-	nss_info("%p: n2h back pressure configuration succeeded: %d\n", nss_ctx, nnm->cm.error);
+	nss_info("%px: n2h back pressure configuration succeeded: %d\n", nss_ctx, nnm->cm.error);
 	nss_n2h_host_bp_cfg_pvt.response = NSS_SUCCESS;
 	complete(&nss_n2h_host_bp_cfg_pvt.complete);
 }
@@ -1535,7 +1540,7 @@ static nss_tx_status_t nss_n2h_host_bp_cfg_sync(struct nss_ctx_instance *nss_ctx
 
 	nss_tx_status = nss_n2h_tx_msg(nss_ctx, &nnm);
 	if (nss_tx_status != NSS_TX_SUCCESS) {
-		nss_warning("%p: nss_tx error setting back pressure\n", nss_ctx);
+		nss_warning("%px: nss_tx error setting back pressure\n", nss_ctx);
 		up(&nss_n2h_host_bp_cfg_pvt.sem);
 		return NSS_FAILURE;
 	}
@@ -1545,7 +1550,7 @@ static nss_tx_status_t nss_n2h_host_bp_cfg_sync(struct nss_ctx_instance *nss_ctx
 	 */
 	ret = wait_for_completion_timeout(&nss_n2h_host_bp_cfg_pvt.complete, msecs_to_jiffies(NSS_CONN_CFG_TIMEOUT));
 	if (ret == 0) {
-		nss_warning("%p: Waiting for ack timed out\n", nss_ctx);
+		nss_warning("%px: Waiting for ack timed out\n", nss_ctx);
 		up(&nss_n2h_host_bp_cfg_pvt.sem);
 		return NSS_FAILURE;
 	}
@@ -1593,7 +1598,7 @@ static int nss_n2h_host_bp_cfg_handler(struct ctl_table *ctl, int write,
 	ret_bp = nss_n2h_host_bp_cfg_sync(nss_ctx, nss_n2h_host_bp_config[core_id]);
 
 	if (ret_bp != NSS_SUCCESS) {
-		nss_warning("%p: n2h back pressure config failed\n", nss_ctx);
+		nss_warning("%px: n2h back pressure config failed\n", nss_ctx);
 		nss_n2h_host_bp_config[core_id] = current_state;
 	}
 
@@ -1897,18 +1902,18 @@ nss_tx_status_t nss_n2h_cfg_empty_pool_size(struct nss_ctx_instance *nss_ctx, ui
 	nss_tx_status_t nss_tx_status;
 
 	if (pool_sz < NSS_N2H_MIN_EMPTY_POOL_BUF_SZ) {
-		nss_warning("%p: setting pool size %d < min number of buffer",
+		nss_warning("%px: setting pool size %d < min number of buffer",
 				nss_ctx, pool_sz);
 		return NSS_TX_FAILURE;
 	}
 
 	if (pool_sz > NSS_N2H_MAX_EMPTY_POOL_BUF_SZ) {
-		nss_warning("%p: setting pool size %d > max number of buffer",
+		nss_warning("%px: setting pool size %d > max number of buffer",
 				nss_ctx, pool_sz);
 		return NSS_TX_FAILURE;
 	}
 
-	nss_info("%p: update number of empty buffer pool size: %d\n",
+	nss_info("%px: update number of empty buffer pool size: %d\n",
 		nss_ctx, pool_sz);
 
 	nss_n2h_msg_init(&nnm, NSS_N2H_INTERFACE,
@@ -1920,7 +1925,7 @@ nss_tx_status_t nss_n2h_cfg_empty_pool_size(struct nss_ctx_instance *nss_ctx, ui
 	nss_tx_status = nss_n2h_tx_msg(nss_ctx, &nnm);
 
 	if (nss_tx_status != NSS_TX_SUCCESS) {
-		nss_warning("%p: nss_tx error empty buffer pool: %d\n", nss_ctx, pool_sz);
+		nss_warning("%px: nss_tx error empty buffer pool: %d\n", nss_ctx, pool_sz);
 		return nss_tx_status;
 	}
 
@@ -1947,7 +1952,7 @@ nss_tx_status_t nss_n2h_paged_buf_pool_init(struct nss_ctx_instance *nss_ctx)
 
 	nss_tx_status = nss_n2h_tx_msg(nss_ctx, &nnm);
 	if (nss_tx_status != NSS_TX_SUCCESS) {
-		nss_warning("%p: failed to send paged buf configuration init command to NSS\n",
+		nss_warning("%px: failed to send paged buf configuration init command to NSS\n",
 				nss_ctx);
 		return NSS_TX_FAILURE;
 	}
@@ -1980,7 +1985,7 @@ nss_tx_status_t nss_n2h_flush_payloads(struct nss_ctx_instance *nss_ctx)
 
 	nss_tx_status = nss_n2h_tx_msg(nss_ctx, &nnm);
 	if (nss_tx_status != NSS_TX_SUCCESS) {
-		nss_warning("%p: failed to send flush payloads command to NSS\n",
+		nss_warning("%px: failed to send flush payloads command to NSS\n",
 				nss_ctx);
 
 		return NSS_TX_FAILURE;
@@ -2011,12 +2016,12 @@ nss_tx_status_t nss_n2h_tx_msg(struct nss_ctx_instance *nss_ctx, struct nss_n2h_
 	 * Sanity check the message
 	 */
 	if (ncm->interface != NSS_N2H_INTERFACE) {
-		nss_warning("%p: tx request for another interface: %d", nss_ctx, ncm->interface);
+		nss_warning("%px: tx request for another interface: %d", nss_ctx, ncm->interface);
 		return NSS_TX_FAILURE;
 	}
 
 	if (ncm->type >= NSS_METADATA_TYPE_N2H_MAX) {
-		nss_warning("%p: message type out of range: %d", nss_ctx, ncm->type);
+		nss_warning("%px: message type out of range: %d", nss_ctx, ncm->type);
 		return NSS_TX_FAILURE;
 	}
 
@@ -2054,7 +2059,12 @@ void nss_n2h_register_handler(struct nss_ctx_instance *nss_ctx)
 
 	nss_core_register_handler(nss_ctx, NSS_N2H_INTERFACE, nss_n2h_interface_handler, NULL);
 
-	nss_n2h_stats_dentry_create();
+	if (nss_ctx->id == NSS_CORE_0) {
+		nss_n2h_stats_dentry_create();
+	}
+	nss_n2h_strings_dentry_create();
+
+	nss_drv_strings_dentry_create();
 }
 
 /*

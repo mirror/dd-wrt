@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2018, 2020, The Linux Foundation. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -30,7 +30,8 @@
  * If, a user runs out buffer then it will only impact this particular user
  */
 struct nss_crypto_hdr *nss_crypto_hdr_alloc(struct nss_crypto_user *user, uint32_t session,
-						uint8_t num_frags, uint8_t iv_len, uint8_t hmac_len, bool ahash)
+						uint8_t src_frags, uint8_t dst_frags, uint8_t iv_len,
+						uint8_t hmac_len, bool ahash)
 {
 	struct nss_crypto_ctrl *ctrl = &g_control;
 	struct nss_crypto_hdr *ch;
@@ -39,8 +40,8 @@ struct nss_crypto_hdr *nss_crypto_hdr_alloc(struct nss_crypto_user *user, uint32
 	size_t in_frag_len, out_frag_len;
 	size_t size;
 
-	in_frag_len = (num_frags + ahash) * sizeof(struct nss_crypto_frag);
-	out_frag_len = (num_frags + ahash) * sizeof(struct nss_crypto_frag);
+	in_frag_len = (src_frags + ahash) * sizeof(struct nss_crypto_frag);
+	out_frag_len = (dst_frags + ahash) * sizeof(struct nss_crypto_frag);
 
 	/*
 	 * we are now going to consume a resource from the user
@@ -79,6 +80,10 @@ struct nss_crypto_hdr *nss_crypto_hdr_alloc(struct nss_crypto_user *user, uint32
 	}
 
 	skb = __skb_dequeue(&user->sk_head);
+	/*
+	 * Set skb->queue_mapping to the core on which this transformation is scheduled.
+	 */
+	skb_set_queue_mapping(skb, smp_processor_id());
 	spin_unlock_bh(&user->lock);
 
 	ch = (struct nss_crypto_hdr *)skb_put(skb, size);
@@ -93,8 +98,8 @@ struct nss_crypto_hdr *nss_crypto_hdr_alloc(struct nss_crypto_user *user, uint32
 	ch->hmac_len = hmac_len;
 	ch->buf_len = sizeof(struct nss_crypto_buf);
 
-	ch->in_frags = num_frags + ahash;
-	ch->out_frags = num_frags + ahash;
+	ch->in_frags = src_frags + ahash;
+	ch->out_frags = dst_frags + ahash;
 
 	ch->in_frag_start = sizeof(struct nss_crypto_hdr);
 	ch->out_frag_start = ch->in_frag_start + in_frag_len;
@@ -102,6 +107,7 @@ struct nss_crypto_hdr *nss_crypto_hdr_alloc(struct nss_crypto_user *user, uint32
 	ch->buf_start = ch->iv_start + iv_len;
 	ch->hmac_start = ch->buf_start + sizeof(struct nss_crypto_buf);
 	ch->priv_start = ch->hmac_start + hmac_len;
+	ch->auth_end = 0;
 
 	/*
 	 * we need to store SKB in buf->skb
@@ -190,6 +196,16 @@ int nss_crypto_transform_payload(struct nss_crypto_user *user, struct nss_crypto
 EXPORT_SYMBOL(nss_crypto_transform_payload);
 
 /*
+ * nss_crypto_hdr_unmap_frag()
+ *	Unmaps the fragments
+ */
+static inline void nss_crypto_unmap_frag(struct nss_crypto_node *node, struct nss_crypto_frag *frag, uint16_t frag_cnt)
+{
+	for (; frag_cnt--; frag++)
+		dma_unmap_single(node->dev, frag->addr, frag->len, DMA_BIDIRECTIONAL);
+}
+
+/*
  * nss_crypto_transform_done()
  * 	completion callback for NSS HLOS driver when it receives a crypto buffer
  */
@@ -197,26 +213,97 @@ void nss_crypto_transform_done(struct net_device *net, struct sk_buff *skb,
 			struct napi_struct *napi __attribute__((unused)))
 {
 	struct nss_crypto_hdr *ch = (struct nss_crypto_hdr *)skb->data;
-	struct nss_crypto_frag *out = nss_crypto_hdr_get_out_frag(ch);
 	struct nss_crypto_buf *buf = nss_crypto_hdr_get_buf(ch);
 	struct nss_crypto_ctrl *ctrl = &g_control;
 	struct nss_crypto_node *node;
 	struct nss_crypto_ctx *ctx;
-	uint8_t count;
 
 	ctx = &ctrl->ctx_tbl[ch->index];
 	node = ctx->node;
 
 	/*
-	 * Here, we will run through frags out and unmap the address
+	 * Here, we will run through frags out and unmap the address.
+	 * In case of out-of-place transformation, we will also run through
+	 * frags in and unmap the address.
 	 */
-	for (count = ch->out_frags; count--; out++)
-		dma_unmap_single(node->dev, out->addr, out->len, DMA_BIDIRECTIONAL);
+	nss_crypto_unmap_frag(node, nss_crypto_hdr_get_out_frag(ch), ch->out_frags);
+	if (unlikely(!buf->in_place))
+		nss_crypto_unmap_frag(node, nss_crypto_hdr_get_in_frag(ch), ch->in_frags);
 
 	buf->mapped = false;
-
 	buf->comp(buf->app_data, ch, ch->error);
 	kref_put(&ctx->ref, nss_crypto_ctx_free);
+}
+
+/*
+ * nss_crypto_hdr_map_src_sglist()
+ *	Maps the linux SGLIST into the input crypto fragments
+ */
+static void nss_crypto_hdr_map_src_sglist(struct nss_crypto_hdr *ch, struct scatterlist *sg, int nsegs, uint16_t tot_len)
+{
+	struct scatterlist *sglist = sg;
+	struct nss_crypto_frag *frag;
+	uint32_t addr;
+	uint16_t len;
+	int i;
+
+	frag = nss_crypto_hdr_get_in_frag(ch);
+	for_each_sg(sg, sglist, nsegs, i) {
+		/*
+		 * get length for each segment
+		 */
+		len = sg_dma_len(sglist);
+		addr = sg_dma_address(sglist);
+
+		if (unlikely(tot_len < len))
+			len = tot_len;
+
+		tot_len -= len;
+
+		/*
+		 * load the physical address of the segment
+		 */
+		frag[i].addr = addr;
+		frag[i].len = len;
+	}
+
+	/*
+	 * Mark first descriptor and last descriptor
+	 * with FIRST and LAST flags.
+	 */
+	frag[0].flags = NSS_CRYPTO_FRAG_FLAGS_FIRST;
+	frag[nsegs - 1].flags |= NSS_CRYPTO_FRAG_FLAGS_LAST;
+}
+
+/*
+ * nss_crypto_hdr_map_dst_sglist()
+ *	Maps the Linux SGLIST into the output crypto fragments
+ */
+static void nss_crypto_hdr_map_dst_sglist(struct nss_crypto_hdr *ch, struct scatterlist *sg, int nsegs)
+{
+	struct scatterlist *sglist = sg;
+	struct nss_crypto_frag *frag;
+	uint32_t addr;
+	uint16_t len;
+	int i;
+
+	frag = nss_crypto_hdr_get_out_frag(ch);
+	for_each_sg(sg, sglist, nsegs, i) {
+		/*
+		 * get length for each segment
+		 */
+		len = sg_dma_len(sglist);
+		addr = sg_dma_address(sglist);
+
+		/*
+		 * load the physical address of the segment
+		 */
+		frag[i].addr = addr;
+		frag[i].len = len;
+	}
+
+	frag[0].flags = NSS_CRYPTO_FRAG_FLAGS_FIRST;
+	frag[nsegs - 1].flags |= NSS_CRYPTO_FRAG_FLAGS_LAST;
 }
 
 /*
@@ -237,17 +324,14 @@ void nss_crypto_transform_done(struct net_device *net, struct sk_buff *skb,
  * API expects that generated HMAC is at the end of the packet.
  *
  */
-void nss_crypto_hdr_map_sglist(struct nss_crypto_hdr *ch, struct scatterlist *sg, uint16_t auth_len)
+void nss_crypto_hdr_map_sglist(struct nss_crypto_hdr *ch, struct scatterlist *src, struct scatterlist *dst,
+				uint16_t src_len, uint16_t dst_len, bool in_place)
 {
 	struct nss_crypto_ctrl *ctrl = &g_control;
-	struct nss_crypto_frag *in, *out;
-	struct scatterlist *cur = sg;
 	struct nss_crypto_node *node;
 	struct nss_crypto_buf *buf;
 	struct nss_crypto_ctx *ctx;
-	uint32_t addr;
-	uint16_t len;
-	int nsegs, i;
+	int src_nsegs, dst_nsegs;
 
 	ctx = &ctrl->ctx_tbl[ch->index];
 	if (!kref_get_unless_zero(&ctx->ref))
@@ -256,62 +340,23 @@ void nss_crypto_hdr_map_sglist(struct nss_crypto_hdr *ch, struct scatterlist *sg
 	node = ctx->node;
 	kref_put(&ctx->ref, nss_crypto_ctx_free);
 
-	/*
-	 * use linux to map the SGLIST
-	 */
-	nsegs = dma_map_sg(node->dev, sg, sg_nents(sg), DMA_TO_DEVICE);
 	buf = nss_crypto_hdr_get_buf(ch);
+	buf->in_place = in_place;
 	buf->mapped = true;
 
 	/*
-	 * find the start of the fragment structure in crypto header
+	 * use linux to map the SGLIST
 	 */
-	in = nss_crypto_hdr_get_in_frag(ch);
-	out = nss_crypto_hdr_get_out_frag(ch);
-
-	ch->data_len = 0;
-
-	for_each_sg(sg, cur, nsegs, i) {
-		/*
-		 * get length for each segment
-		 */
-		len = sg_dma_len(cur);
-		addr = sg_dma_address(cur);
-
-		/*
-		 * total length is the sum total of
-		 * all segment data length
-		 */
-		ch->data_len += len;
-
-		/*
-		 * load the physical address of the segment
-		 */
-		in[i].addr = addr;
-		in[i].len = len;
-
-		out[i].addr = addr;
-		out[i].len = len;
-	}
+	src_nsegs = dma_map_sg(node->dev, src, sg_nents(src), DMA_TO_DEVICE);
+	dst_nsegs = in_place ? src_nsegs : dma_map_sg(node->dev, dst, sg_nents(dst), DMA_TO_DEVICE);
 
 	/*
-	 * We need to reduce the auth_len from the payload if the HW
-	 * is generates it. Otherwise, the user passes zero when
-	 * it is already available
+	 * Data length is same as source length
 	 */
-	ch->data_len -= auth_len;
+	ch->data_len = src_len;
 
-	/*
-	 * Mark first descriptor and last descriptor
-	 * with FIRST and LAST flags. Also, we need to
-	 * adjust the hmac length in the last descriptor
-	 */
-	in[0].flags = NSS_CRYPTO_FRAG_FLAGS_FIRST;
-	in[nsegs - 1].flags |= NSS_CRYPTO_FRAG_FLAGS_LAST;
-	in[nsegs - 1].len -= auth_len;
-
-	out[0].flags = NSS_CRYPTO_FRAG_FLAGS_FIRST;
-	out[nsegs - 1].flags |= NSS_CRYPTO_FRAG_FLAGS_LAST;
+	nss_crypto_hdr_map_src_sglist(ch, src, src_nsegs, src_len);
+	nss_crypto_hdr_map_dst_sglist(ch, dst, dst_nsegs);
 }
 EXPORT_SYMBOL(nss_crypto_hdr_map_sglist);
 
@@ -352,6 +397,7 @@ void nss_crypto_hdr_map_sglist_ahash(struct nss_crypto_hdr *ch, struct scatterli
 	 */
 	nsegs = dma_map_sg(node->dev, sg, sg_nents(sg), DMA_TO_DEVICE);
 	buf = nss_crypto_hdr_get_buf(ch);
+	buf->in_place = true;
 	buf->mapped = true;
 
 	/*

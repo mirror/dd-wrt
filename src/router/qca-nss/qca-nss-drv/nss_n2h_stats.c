@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2017-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -14,47 +14,15 @@
  **************************************************************************
  */
 
-#include "nss_stats.h"
 #include "nss_core.h"
 #include "nss_n2h_stats.h"
+#include "nss_n2h.h"
+#include "nss_n2h_strings.h"
 
 /*
- * nss_n2h_stats_str
- *	N2H stats strings
+ * Declare atomic notifier data structure for statistics.
  */
-static int8_t *nss_n2h_stats_str[NSS_N2H_STATS_MAX] = {
-	"rx_packets",
-	"rx_bytes",
-	"tx_packets",
-	"tx_bytes",
-	"rx_queue_0_dropped",
-	"rx_queue_1_dropped",
-	"rx_queue_2_dropped",
-	"rx_queue_3_dropped",
-	"queue_dropped",
-	"ticks",
-	"worst_ticks",
-	"iterations",
-	"pbuf_ocm_alloc_fails",
-	"pbuf_ocm_free_count",
-	"pbuf_ocm_total_count",
-	"pbuf_default_alloc_fails",
-	"pbuf_default_free_count",
-	"pbuf_default_total_count",
-	"payload_fails",
-	"payload_free_count",
-	"h2n_control_packets",
-	"h2n_control_bytes",
-	"n2h_control_packets",
-	"n2h_control_bytes",
-	"h2n_data_packets",
-	"h2n_data_bytes",
-	"n2h_data_packets",
-	"n2h_data_bytes",
-	"n2h_tot_payloads",
-	"n2h_data_interface_invalid",
-	"enqueue_retries",
-};
+ATOMIC_NOTIFIER_HEAD(nss_n2h_stats_notifier);
 
 uint64_t nss_n2h_stats[NSS_MAX_CORES][NSS_N2H_STATS_MAX];
 
@@ -67,7 +35,8 @@ static ssize_t nss_n2h_stats_read(struct file *fp, char __user *ubuf, size_t sz,
 	int32_t i, core;
 
 	/*
-	 * max output lines = #stats + start tag line + end tag line + three blank lines
+	 * Max output lines = #stats + few blank lines for banner printing +
+	 * Number of Extra outputlines for future reference to add new stats
 	 */
 	uint32_t max_output_lines = (NSS_N2H_STATS_MAX + 3) * 2 + 5;
 	size_t size_al = NSS_STATS_MAX_STR_LENGTH * max_output_lines;
@@ -88,26 +57,23 @@ static ssize_t nss_n2h_stats_read(struct file *fp, char __user *ubuf, size_t sz,
 		return 0;
 	}
 
-	size_wr = scnprintf(lbuf, size_al, "n2h stats start:\n\n");
-
 	/*
 	 * N2H node stats
 	 */
 	for (core = 0; core < nss_top_main.num_nss; core++) {
-		size_wr += scnprintf(lbuf + size_wr, size_al - size_wr, "\nn2h core %d stats:\n\n", core);
 		spin_lock_bh(&nss_top_main.stats_lock);
 		for (i = 0; i < NSS_N2H_STATS_MAX; i++) {
 			stats_shadow[i] = nss_n2h_stats[core][i];
 		}
 		spin_unlock_bh(&nss_top_main.stats_lock);
-
-		for (i = 0; i < NSS_N2H_STATS_MAX; i++) {
-			size_wr += scnprintf(lbuf + size_wr, size_al - size_wr,
-					"%s = %llu\n", nss_n2h_stats_str[i], stats_shadow[i]);
-		}
+		size_wr += nss_stats_banner(lbuf, size_wr, size_al, "n2h", core);
+		size_wr += nss_stats_print("n2h", NULL, NSS_STATS_SINGLE_INSTANCE
+						, nss_n2h_strings_stats
+						, stats_shadow
+						, NSS_N2H_STATS_MAX
+						, lbuf, size_wr, size_al);
 	}
 
-	size_wr += scnprintf(lbuf + size_wr, size_al - size_wr, "\nn2h stats end\n\n");
 	bytes_read = simple_read_from_buffer(ubuf, sz, ppos, lbuf, strlen(lbuf));
 	kfree(lbuf);
 	kfree(stats_shadow);
@@ -118,7 +84,7 @@ static ssize_t nss_n2h_stats_read(struct file *fp, char __user *ubuf, size_t sz,
 /*
  * nss_n2h_stats_ops
  */
-NSS_STATS_DECLARE_FILE_OPERATIONS(n2h)
+NSS_STATS_DECLARE_FILE_OPERATIONS(n2h);
 
 /*
  * nss_n2h_stats_dentry_create()
@@ -164,13 +130,15 @@ void nss_n2h_stats_sync(struct nss_ctx_instance *nss_ctx, struct nss_n2h_stats_s
 	/*
 	 * pbuf manager ocm and default pool stats
 	 */
-	nss_n2h_stats[id][NSS_N2H_STATS_PBUF_OCM_ALLOC_FAILS] += nnss->pbuf_ocm_stats.pbuf_alloc_fails;
+	nss_n2h_stats[id][NSS_N2H_STATS_PBUF_OCM_ALLOC_FAILS_WITH_PAYLOAD] += nnss->pbuf_ocm_stats.pbuf_alloc_fails_with_payload;
 	nss_n2h_stats[id][NSS_N2H_STATS_PBUF_OCM_FREE_COUNT] = nnss->pbuf_ocm_stats.pbuf_free_count;
 	nss_n2h_stats[id][NSS_N2H_STATS_PBUF_OCM_TOTAL_COUNT] = nnss->pbuf_ocm_stats.pbuf_total_count;
+	nss_n2h_stats[id][NSS_N2H_STATS_PBUF_OCM_ALLOC_FAILS_NO_PAYLOAD] += nnss->pbuf_ocm_stats.pbuf_alloc_fails_no_payload;
 
-	nss_n2h_stats[id][NSS_N2H_STATS_PBUF_DEFAULT_ALLOC_FAILS] += nnss->pbuf_default_stats.pbuf_alloc_fails;
+	nss_n2h_stats[id][NSS_N2H_STATS_PBUF_DEFAULT_ALLOC_FAILS_WITH_PAYLOAD] += nnss->pbuf_default_stats.pbuf_alloc_fails_with_payload;
 	nss_n2h_stats[id][NSS_N2H_STATS_PBUF_DEFAULT_FREE_COUNT] = nnss->pbuf_default_stats.pbuf_free_count;
 	nss_n2h_stats[id][NSS_N2H_STATS_PBUF_DEFAULT_TOTAL_COUNT] = nnss->pbuf_default_stats.pbuf_total_count;
+	nss_n2h_stats[id][NSS_N2H_STATS_PBUF_DEFAULT_ALLOC_FAILS_NO_PAYLOAD] += nnss->pbuf_default_stats.pbuf_alloc_fails_no_payload;
 
 	/*
 	 * payload mgr stats
@@ -205,3 +173,42 @@ void nss_n2h_stats_sync(struct nss_ctx_instance *nss_ctx, struct nss_n2h_stats_s
 	spin_unlock_bh(&nss_top->stats_lock);
 }
 
+/*
+ * nss_n2h_stats_notify()
+ *	Sends notifications to all the registered modules.
+ *
+ * Leverage NSS-FW statistics timing to update Netlink.
+ */
+void nss_n2h_stats_notify(struct nss_ctx_instance *nss_ctx)
+{
+	int i;
+	struct nss_n2h_stats_notification stats;
+
+	for (i = 0; (i < NSS_STATS_DRV_MAX); i++) {
+		stats.drv_stats[i] = NSS_PKT_STATS_READ(&nss_top_main.stats_drv[i]);
+	}
+
+	stats.core_id = nss_ctx->id;
+	memcpy(stats.n2h_stats, nss_n2h_stats[stats.core_id], sizeof(stats.n2h_stats));
+	atomic_notifier_call_chain(&nss_n2h_stats_notifier, NSS_STATS_EVENT_NOTIFY, (void *)&stats);
+}
+
+/*
+ * nss_n2h_stats_register_notifier()
+ *	Registers statistics notifier.
+ */
+int nss_n2h_stats_register_notifier(struct notifier_block *nb)
+{
+	return atomic_notifier_chain_register(&nss_n2h_stats_notifier, nb);
+}
+EXPORT_SYMBOL(nss_n2h_stats_register_notifier);
+
+/*
+ * nss_n2h_stats_unregister_notifier()
+ *	Deregisters statistics notifier.
+ */
+int nss_n2h_stats_unregister_notifier(struct notifier_block *nb)
+{
+	return atomic_notifier_chain_unregister(&nss_n2h_stats_notifier, nb);
+}
+EXPORT_SYMBOL(nss_n2h_stats_unregister_notifier);

@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2019-2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -43,7 +43,7 @@ static void nss_unaligned_log_verbose(struct nss_unaligned_msg *um)
 		break;
 
 	default:
-		nss_trace("%p: Invalid message type\n", um);
+		nss_trace("%px: Invalid message type\n", um);
 		break;
 	}
 }
@@ -55,18 +55,18 @@ static void nss_unaligned_log_verbose(struct nss_unaligned_msg *um)
 void nss_unaligned_log_rx_msg(struct nss_unaligned_msg *um)
 {
 	if (um->cm.response >= NSS_CMN_RESPONSE_LAST) {
-		nss_warning("%p: Invalid response\n", um);
+		nss_warning("%px: Invalid response\n", um);
 		return;
 	}
 
 	if (um->cm.response == NSS_CMN_RESPONSE_NOTIFY || (um->cm.response == NSS_CMN_RESPONSE_ACK)) {
-		nss_info("%p: type[%d]:%s, response[%d]:%s\n", um, um->cm.type,
+		nss_info("%px: type[%d]:%s, response[%d]:%s\n", um, um->cm.type,
 			nss_unaligned_log_message_types_str[um->cm.type],
 			um->cm.response, nss_cmn_response_str[um->cm.response]);
 		goto verbose;
 	}
 
-	nss_info("%p: msg nack - type[%d]:%s, response[%d]:%s\n",
+	nss_info("%px: msg nack - type[%d]:%s, response[%d]:%s\n",
 		um, um->cm.type, nss_unaligned_log_message_types_str[um->cm.type],
 		um->cm.response, nss_cmn_response_str[um->cm.response]);
 

@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2014-2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2014-2018, 2020-2021, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -81,9 +81,9 @@ static struct ecm_db_listener_instance *ecm_db_listeners = NULL;
  */
 static void _ecm_db_listener_ref(struct ecm_db_listener_instance *li)
 {
-	DEBUG_CHECK_MAGIC(li, ECM_DB_LISTENER_INSTANCE_MAGIC, "%p: magic failed", li);
+	DEBUG_CHECK_MAGIC(li, ECM_DB_LISTENER_INSTANCE_MAGIC, "%px: magic failed", li);
 	li->refs++;
-	DEBUG_ASSERT(li->refs > 0, "%p: ref wrap\n", li);
+	DEBUG_ASSERT(li->refs > 0, "%px: ref wrap\n", li);
 }
 
 /*
@@ -120,7 +120,7 @@ struct ecm_db_listener_instance *ecm_db_listeners_get_and_ref_first(void)
 struct ecm_db_listener_instance *ecm_db_listener_get_and_ref_next(struct ecm_db_listener_instance *li)
 {
 	struct ecm_db_listener_instance *lin;
-	DEBUG_CHECK_MAGIC(li, ECM_DB_LISTENER_INSTANCE_MAGIC, "%p: magic failed", li);
+	DEBUG_CHECK_MAGIC(li, ECM_DB_LISTENER_INSTANCE_MAGIC, "%px: magic failed", li);
 	spin_lock_bh(&ecm_db_lock);
 	lin = li->next;
 	if (lin) {
@@ -141,11 +141,11 @@ int ecm_db_listener_deref(struct ecm_db_listener_instance *li)
 	struct ecm_db_listener_instance *cli;
 	struct ecm_db_listener_instance **cli_prev;
 
-	DEBUG_CHECK_MAGIC(li, ECM_DB_LISTENER_INSTANCE_MAGIC, "%p: magic failed", li);
+	DEBUG_CHECK_MAGIC(li, ECM_DB_LISTENER_INSTANCE_MAGIC, "%px: magic failed", li);
 
 	spin_lock_bh(&ecm_db_lock);
 	li->refs--;
-	DEBUG_ASSERT(li->refs >= 0, "%p: ref wrap\n", li);
+	DEBUG_ASSERT(li->refs >= 0, "%px: ref wrap\n", li);
 	if (li->refs > 0) {
 		int refs;
 		refs = li->refs;
@@ -167,7 +167,7 @@ int ecm_db_listener_deref(struct ecm_db_listener_instance *li)
 		cli_prev = &cli->next;
 		cli = cli->next;
 	}
-	DEBUG_ASSERT(cli, "%p: not found\n", li);
+	DEBUG_ASSERT(cli, "%px: not found\n", li);
 	spin_unlock_bh(&ecm_db_lock);
 
 	/*
@@ -184,7 +184,7 @@ int ecm_db_listener_deref(struct ecm_db_listener_instance *li)
 	 */
 	spin_lock_bh(&ecm_db_lock);
 	ecm_db_listeners_count--;
-	DEBUG_ASSERT(ecm_db_listeners_count >= 0, "%p: listener count wrap\n", li);
+	DEBUG_ASSERT(ecm_db_listeners_count >= 0, "%px: listener count wrap\n", li);
 	spin_unlock_bh(&ecm_db_lock);
 
 	return 0;
@@ -210,8 +210,8 @@ void ecm_db_listener_add(struct ecm_db_listener_instance *li,
 							void *arg)
 {
 	spin_lock_bh(&ecm_db_lock);
-	DEBUG_CHECK_MAGIC(li, ECM_DB_LISTENER_INSTANCE_MAGIC, "%p: magic failed\n", li);
-	DEBUG_ASSERT(!(li->flags & ECM_DB_LISTENER_FLAGS_INSERTED), "%p: inserted\n", li);
+	DEBUG_CHECK_MAGIC(li, ECM_DB_LISTENER_INSTANCE_MAGIC, "%px: magic failed\n", li);
+	DEBUG_ASSERT(!(li->flags & ECM_DB_LISTENER_FLAGS_INSERTED), "%px: inserted\n", li);
 	spin_unlock_bh(&ecm_db_lock);
 
 	li->arg = arg;
@@ -271,10 +271,10 @@ struct ecm_db_listener_instance *ecm_db_listener_alloc(void)
 	}
 
 	ecm_db_listeners_count++;
-	DEBUG_ASSERT(ecm_db_listeners_count > 0, "%p: listener count wrap\n", li);
+	DEBUG_ASSERT(ecm_db_listeners_count > 0, "%px: listener count wrap\n", li);
 	spin_unlock_bh(&ecm_db_lock);
 
-	DEBUG_TRACE("Listener created %p\n", li);
+	DEBUG_TRACE("Listener created %px\n", li);
 	return li;
 }
 EXPORT_SYMBOL(ecm_db_listener_alloc);

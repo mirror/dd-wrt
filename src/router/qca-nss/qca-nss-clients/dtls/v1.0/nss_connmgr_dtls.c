@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2016-2017, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2016-2017, 2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -148,7 +148,7 @@ static void nss_dtlsmgr_session_cleanup(struct nss_dtlsmgr_session *ds)
 {
 	nss_crypto_status_t crypto_status;
 
-	nss_dtlsmgr_info("%p: DTLS session I/F %u cleanup\n",
+	nss_dtlsmgr_info("%px: DTLS session I/F %u cleanup\n",
 			 &g_ctx, ds->nss_dtls_if);
 
 	nss_dtls_unregister_if(ds->nss_dtls_if);
@@ -161,14 +161,14 @@ static void nss_dtlsmgr_session_cleanup(struct nss_dtlsmgr_session *ds)
 	crypto_status = nss_crypto_session_free(g_ctx.crypto_hdl,
 						ds->crypto_idx_encap);
 	if (crypto_status != NSS_CRYPTO_STATUS_OK) {
-		nss_dtlsmgr_info("%p: dtls I/F:%u, unable to free crypto session id:%d\n",
+		nss_dtlsmgr_info("%px: dtls I/F:%u, unable to free crypto session id:%d\n",
 				 &g_ctx, ds->nss_dtls_if, ds->crypto_idx_encap);
 	}
 
 	crypto_status = nss_crypto_session_free(g_ctx.crypto_hdl,
 						ds->crypto_idx_decap);
 	if (crypto_status != NSS_CRYPTO_STATUS_OK) {
-		nss_dtlsmgr_info("%p: dtls I/F:%u, unable to free crypto session id:%d\n",
+		nss_dtlsmgr_info("%px: dtls I/F:%u, unable to free crypto session id:%d\n",
 				 &g_ctx, ds->nss_dtls_if, ds->crypto_idx_decap);
 	}
 
@@ -176,7 +176,7 @@ static void nss_dtlsmgr_session_cleanup(struct nss_dtlsmgr_session *ds)
 		crypto_status = nss_crypto_session_free(g_ctx.crypto_hdl,
 							ds->cidx_decap_pending);
 		if (crypto_status != NSS_CRYPTO_STATUS_OK) {
-			nss_dtlsmgr_info("%p: dtls I/F:%u, unable to free crypto session id:%d\n", &g_ctx, ds->nss_dtls_if, ds->cidx_decap_pending);
+			nss_dtlsmgr_info("%px: dtls I/F:%u, unable to free crypto session id:%d\n", &g_ctx, ds->nss_dtls_if, ds->cidx_decap_pending);
 		}
 	}
 
@@ -184,7 +184,7 @@ static void nss_dtlsmgr_session_cleanup(struct nss_dtlsmgr_session *ds)
 		crypto_status = nss_crypto_session_free(g_ctx.crypto_hdl,
 							ds->cidx_encap_pending);
 		if (crypto_status != NSS_CRYPTO_STATUS_OK) {
-			nss_dtlsmgr_info("%p: dtls I/F:%u, unable to free crypto session id:%d\n", &g_ctx, ds->nss_dtls_if, ds->cidx_encap_pending);
+			nss_dtlsmgr_info("%px: dtls I/F:%u, unable to free crypto session id:%d\n", &g_ctx, ds->nss_dtls_if, ds->cidx_encap_pending);
 		}
 	}
 
@@ -247,14 +247,14 @@ static void nss_connmgr_dtls_data_receive(struct net_device *dev,
 	meta = *(__be32 *)skb->data;
 	meta = ntohl(meta);
 	if (NSS_DTLSMGR_METADATA_CTYPE(meta) != NSS_DTLSMGR_CTYPE_APP) {
-		nss_dtlsmgr_info("%p: Dropping non app dtls pkt\n", skb);
+		nss_dtlsmgr_info("%px: Dropping non app dtls pkt\n", skb);
 		dev_kfree_skb_any(skb);
 		dev_put(dev);
 		return;
 	}
 
 	if (NSS_DTLSMGR_METADATA_ERROR(meta) != NSS_DTLSMGR_METADATA_ERROR_OK) {
-		nss_dtlsmgr_info("%p: Dropping error pkt\n", skb);
+		nss_dtlsmgr_info("%px: Dropping error pkt\n", skb);
 		dev_kfree_skb_any(skb);
 		dev_put(dev);
 		return;
@@ -342,7 +342,7 @@ static void nss_connmgr_dtls_event_receive(void *if_ctx,
 		break;
 
 	default:
-		nss_dtlsmgr_info("%p: Unknown Event from NSS\n", &g_ctx);
+		nss_dtlsmgr_info("%px: Unknown Event from NSS\n", &g_ctx);
 		break;
 	}
 
@@ -364,7 +364,7 @@ nss_dtlsmgr_status_t nss_dtlsmgr_alloc_crypto(struct nss_dtlsmgr_crypto *crypto,
 	memset(&auth, 0, sizeof(struct nss_crypto_key));
 
 	if (crypto->algo >= NSS_DTLSMGR_ALGO_MAX) {
-		nss_dtlsmgr_info("%p: invalid algorithm type %d", &g_ctx, crypto->algo);
+		nss_dtlsmgr_info("%px: invalid algorithm type %d", &g_ctx, crypto->algo);
 		return NSS_DTLSMGR_FAIL_NOCRYPTO;
 	}
 
@@ -379,7 +379,7 @@ nss_dtlsmgr_status_t nss_dtlsmgr_alloc_crypto(struct nss_dtlsmgr_crypto *crypto,
 	auth.key_len = crypto->auth_key.len;
 
 	if (nss_crypto_session_alloc(g_ctx.crypto_hdl, &cipher, &auth, crypto_idx) != NSS_CRYPTO_STATUS_OK) {
-		nss_dtlsmgr_info("%p: DTLS crypto alloc failed\n", &g_ctx);
+		nss_dtlsmgr_info("%px: DTLS crypto alloc failed\n", &g_ctx);
 		return NSS_DTLSMGR_FAIL_NOCRYPTO;
 	}
 
@@ -393,12 +393,12 @@ nss_dtlsmgr_status_t nss_dtlsmgr_alloc_crypto(struct nss_dtlsmgr_crypto *crypto,
 	params.req_type |= NSS_CRYPTO_REQ_TYPE_AUTH;
 
 	if (nss_crypto_session_update(g_ctx.crypto_hdl, *crypto_idx, &params) != NSS_CRYPTO_STATUS_OK) {
-		nss_dtlsmgr_info("%p: failed to update crypto session %d", &g_ctx, *crypto_idx);
+		nss_dtlsmgr_info("%px: failed to update crypto session %d", &g_ctx, *crypto_idx);
 		nss_crypto_session_free(g_ctx.crypto_hdl, *crypto_idx);
 		return NSS_DTLSMGR_FAIL_NOCRYPTO;
 	}
 
-	nss_dtlsmgr_info("%p: auth_skip:%d cipher_skip:%d\n", &g_ctx, params.auth_skip, params.cipher_skip);
+	nss_dtlsmgr_info("%px: auth_skip:%d cipher_skip:%d\n", &g_ctx, params.auth_skip, params.cipher_skip);
 	return NSS_DTLSMGR_OK;
 }
 
@@ -420,7 +420,7 @@ struct net_device *nss_dtlsmgr_session_create(struct nss_dtlsmgr_config *cfg)
 	uint32_t mtu_adjust;
 
 	if ((cfg->encap.ver != NSS_DTLSMGR_VERSION_1_0) && (cfg->encap.ver != NSS_DTLSMGR_VERSION_1_2)) {
-		nss_dtlsmgr_warn("%p: Invalid DTLS version\n", &g_ctx);
+		nss_dtlsmgr_warn("%px: Invalid DTLS version\n", &g_ctx);
 		return NULL;
 	}
 
@@ -429,7 +429,7 @@ struct net_device *nss_dtlsmgr_session_create(struct nss_dtlsmgr_config *cfg)
 	 */
 	ds = kzalloc(sizeof(struct nss_dtlsmgr_session), GFP_KERNEL);
 	if (!ds) {
-		nss_dtlsmgr_info("%p: DTLS client allocation failed\n", &g_ctx);
+		nss_dtlsmgr_info("%px: DTLS client allocation failed\n", &g_ctx);
 		return NULL;
 	}
 
@@ -456,7 +456,7 @@ struct net_device *nss_dtlsmgr_session_create(struct nss_dtlsmgr_config *cfg)
 	 */
 	ds->nss_dtls_if = nss_dynamic_interface_alloc_node(NSS_DYNAMIC_INTERFACE_TYPE_DTLS);
 	if (ds->nss_dtls_if == -1) {
-		nss_dtlsmgr_info("%p: DTLS dynamic I/F alloc failed\n", &g_ctx);
+		nss_dtlsmgr_info("%px: DTLS dynamic I/F alloc failed\n", &g_ctx);
 		goto dtls_dynamic_if_alloc_fail;
 	}
 
@@ -464,7 +464,7 @@ struct net_device *nss_dtlsmgr_session_create(struct nss_dtlsmgr_config *cfg)
 	 * Create netdevice
 	 */
 	if (nss_dtlsmgr_netdev_create(ds) != NSS_DTLSMGR_OK) {
-		nss_dtlsmgr_info("%p: DTLS netdev creation failed\n", &g_ctx);
+		nss_dtlsmgr_info("%px: DTLS netdev creation failed\n", &g_ctx);
 		goto dtls_netdev_create_fail;
 	}
 
@@ -477,7 +477,7 @@ struct net_device *nss_dtlsmgr_session_create(struct nss_dtlsmgr_config *cfg)
 					   ds->netdev, features,
 					   (void *)ds);
 	if (ds->nss_ctx == NULL) {
-		nss_dtlsmgr_info("%p: DTLS dynamic I/F register failed\n", &g_ctx);
+		nss_dtlsmgr_info("%px: DTLS dynamic I/F register failed\n", &g_ctx);
 		goto dtls_dynamic_if_register_fail;
 	}
 
@@ -562,7 +562,7 @@ struct net_device *nss_dtlsmgr_session_create(struct nss_dtlsmgr_config *cfg)
 
 	status = nss_dtls_tx_msg_sync(ds->nss_ctx, &dtlsmsg);
 	if (status != NSS_TX_SUCCESS) {
-		nss_dtlsmgr_info("%p: DTLS cfg msg tx failed\n", &g_ctx);
+		nss_dtlsmgr_info("%px: DTLS cfg msg tx failed\n", &g_ctx);
 		goto dtls_msg_tx_fail;
 	}
 
@@ -584,7 +584,7 @@ struct net_device *nss_dtlsmgr_session_create(struct nss_dtlsmgr_config *cfg)
 
 	ds->netdev->mtu -= mtu_adjust;
 
-	nss_dtlsmgr_info("%p: NSS DTLS session I/F:%d(%s) created\n",
+	nss_dtlsmgr_info("%px: NSS DTLS session I/F:%d(%s) created\n",
 			 &g_ctx, ds->nss_dtls_if, ds->netdev->name);
 
 	return ds->netdev;
@@ -608,14 +608,14 @@ dtls_dynamic_if_alloc_fail:
 	crypto_status = nss_crypto_session_free(g_ctx.crypto_hdl,
 						ds->crypto_idx_decap);
 	if (crypto_status != NSS_CRYPTO_STATUS_OK) {
-		nss_dtlsmgr_info("%p: dtls I/F:%u, unable to free crypto session id:%d\n", &g_ctx, ds->nss_dtls_if, ds->crypto_idx_decap);
+		nss_dtlsmgr_info("%px: dtls I/F:%u, unable to free crypto session id:%d\n", &g_ctx, ds->nss_dtls_if, ds->crypto_idx_decap);
 	}
 
 dtls_crypto_decap_alloc_fail:
 	crypto_status = nss_crypto_session_free(g_ctx.crypto_hdl,
 						ds->crypto_idx_encap);
 	if (crypto_status != NSS_CRYPTO_STATUS_OK) {
-		nss_dtlsmgr_info("%p: dtls I/F:%u, unable to free crypto session id:%d\n", &g_ctx, ds->nss_dtls_if, ds->crypto_idx_encap);
+		nss_dtlsmgr_info("%px: dtls I/F:%u, unable to free crypto session id:%d\n", &g_ctx, ds->nss_dtls_if, ds->crypto_idx_encap);
 	}
 
 dtls_crypto_encap_alloc_fail:
@@ -652,7 +652,7 @@ nss_dtlsmgr_status_t nss_dtlsmgr_session_destroy(struct net_device *dev)
 
 	nss_status = nss_dtls_tx_msg_sync(ds->nss_ctx, &dtlsmsg);
 	if (nss_status != NSS_TX_SUCCESS) {
-		nss_dtlsmgr_warn("%p: Failed to send DTLS session destroy for I/F %u", &g_ctx, ds->nss_dtls_if);
+		nss_dtlsmgr_warn("%px: Failed to send DTLS session destroy for I/F %u", &g_ctx, ds->nss_dtls_if);
 
 		return NSS_DTLSMGR_FAIL;
 	}
@@ -670,7 +670,7 @@ nss_dtlsmgr_status_t nss_dtlsmgr_session_destroy(struct net_device *dev)
 	 */
 	nss_dtlsmgr_session_ref_dec(ds);
 
-	nss_dtlsmgr_info("%p: DTLS session I/F %u disabled\n", &g_ctx, ds->nss_dtls_if);
+	nss_dtlsmgr_info("%px: DTLS session I/F %u disabled\n", &g_ctx, ds->nss_dtls_if);
 
 	return NSS_DTLSMGR_OK;
 }
@@ -705,7 +705,7 @@ nss_dtlsmgr_status_t nss_dtlsmgr_session_update_decap(struct net_device *dev, st
 	if (ds->cidx_decap_pending != NSS_CRYPTO_MAX_IDXS) {
 		crypto_status = nss_crypto_session_free(g_ctx.crypto_hdl, ds->cidx_decap_pending);
 		if (crypto_status != NSS_CRYPTO_STATUS_OK) {
-			nss_dtlsmgr_info("%p: dtls I/F:%u, unable to free crypto session id:%d\n",
+			nss_dtlsmgr_info("%px: dtls I/F:%u, unable to free crypto session id:%d\n",
 					 &g_ctx, ds->nss_dtls_if, ds->cidx_decap_pending);
 		}
 
@@ -788,7 +788,7 @@ nss_dtlsmgr_status_t nss_dtlsmgr_session_update_encap(struct net_device *dev, st
 		crypto_status = nss_crypto_session_free(g_ctx.crypto_hdl,
 							ds->cidx_encap_pending);
 		if (crypto_status != NSS_CRYPTO_STATUS_OK) {
-			nss_dtlsmgr_info("%p: dtls I/F:%u, unable to free crypto session id:%d\n", &g_ctx, ds->nss_dtls_if, ds->cidx_encap_pending);
+			nss_dtlsmgr_info("%px: dtls I/F:%u, unable to free crypto session id:%d\n", &g_ctx, ds->nss_dtls_if, ds->cidx_encap_pending);
 		}
 
 		ds->cidx_encap_pending = NSS_CRYPTO_MAX_IDXS;
@@ -927,13 +927,13 @@ int32_t nss_dtlsmgr_get_interface(struct net_device *dev, enum nss_dtlsmgr_inter
 	int32_t ifnum;
 
 	if (type > NSS_DTLSMGR_INTERFACE_TYPE_MAX) {
-		nss_dtlsmgr_warn("%p: invalid interface type %d", dev, type);
+		nss_dtlsmgr_warn("%px: invalid interface type %d", dev, type);
 		return -EINVAL;
 	}
 
 	ifnum = nss_cmn_get_interface_number_by_dev_and_type(dev, NSS_DYNAMIC_INTERFACE_TYPE_DTLS);
 	if (ifnum < 0) {
-		nss_dtlsmgr_warn("%p: couldn't find DTLS interface number (%d)", dev, ifnum);
+		nss_dtlsmgr_warn("%px: couldn't find DTLS interface number (%d)", dev, ifnum);
 		return ifnum;
 	}
 
@@ -951,7 +951,7 @@ static nss_crypto_user_ctx_t nss_dtls_crypto_attach(nss_crypto_handle_t crypto)
 	struct nss_dtlsmgr_ctx *sc = &g_ctx;
 
 	sc->crypto_hdl = crypto;
-	nss_dtlsmgr_info("%p: DTLS client crypto attach\n", &g_ctx);
+	nss_dtlsmgr_info("%px: DTLS client crypto attach\n", &g_ctx);
 	return (nss_crypto_user_ctx_t)sc;
 }
 
@@ -966,7 +966,7 @@ static void nss_dtls_crypto_detach(nss_crypto_user_ctx_t uctx)
 	nss_dtlsmgr_assert(sc == &g_ctx);
 
 	sc->crypto_hdl = NULL;
-	nss_dtlsmgr_info("%p: DTLS client crypto detach\n", &g_ctx);
+	nss_dtlsmgr_info("%px: DTLS client crypto detach\n", &g_ctx);
 }
 
 /*
@@ -976,7 +976,7 @@ int __init nss_dtls_init_module(void)
 {
 	int32_t i;
 
-	nss_dtlsmgr_info("%p: NSS DTLS Manager\n", &g_ctx);
+	nss_dtlsmgr_info("%px: NSS DTLS Manager\n", &g_ctx);
 
 	for (i = 0; i < NSS_MAX_DTLS_SESSIONS; i++) {
 		g_ctx.session[i] = NULL;
@@ -1025,7 +1025,7 @@ static void nss_dtls_destroy_all_sessions(void)
 
 		nss_status = nss_dtls_tx_msg_sync(ds->nss_ctx, &dtlsmsg);
 		if (nss_status != NSS_TX_SUCCESS)
-			nss_dtlsmgr_warn("%p: Failed to send DTLS session destroy for I/F %u\n", &g_ctx, ds->nss_dtls_if);
+			nss_dtlsmgr_warn("%px: Failed to send DTLS session destroy for I/F %u\n", &g_ctx, ds->nss_dtls_if);
 
 		nss_dtlsmgr_session_ref_dec(ds);
 	}

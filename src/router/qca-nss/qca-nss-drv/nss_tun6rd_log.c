@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2018-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2018-2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -38,7 +38,7 @@ static int8_t *nss_tun6rd_log_message_types_str[NSS_TUN6RD_MAX] __maybe_unused =
 static void nss_tun6rd_log_attach_pnode_msg(struct nss_tun6rd_msg *ntm)
 {
 	struct nss_tun6rd_attach_tunnel_msg *ntam __maybe_unused = &ntm->msg.tunnel;
-	nss_trace("%p: NSS TUN6RD Attach Tunnel message \n"
+	nss_trace("%px: NSS TUN6RD Attach Tunnel message \n"
 		"TUN6RD Source Address: %pI4\n"
 		"TUN6RD Destination Address: %pI4\n"
 		"TUN6RD Type of Service: %d\n"
@@ -56,7 +56,7 @@ static void nss_tun6rd_log_attach_pnode_msg(struct nss_tun6rd_msg *ntm)
 static void nss_tun6rd_log_set_peer_msg(struct nss_tun6rd_msg *ntm)
 {
 	struct nss_tun6rd_set_peer_msg *ntspm __maybe_unused = &ntm->msg.peer;
-	nss_trace("%p: NSS TUN6RD Set Peer message \n"
+	nss_trace("%px: NSS TUN6RD Set Peer message \n"
 		"TUN6RD IPv6 Address: %pI6\n"
 		"TUN6RD Destination: %pI4\n",
 		ntspm, ntspm->ipv6_address,
@@ -85,7 +85,7 @@ static void nss_tun6rd_log_verbose(struct nss_tun6rd_msg *ntm)
 		break;
 
 	default:
-		nss_trace("%p: Invalid message type\n", ntm);
+		nss_trace("%px: Invalid message type\n", ntm);
 		break;
 	}
 }
@@ -97,11 +97,11 @@ static void nss_tun6rd_log_verbose(struct nss_tun6rd_msg *ntm)
 void nss_tun6rd_log_tx_msg(struct nss_tun6rd_msg *ntm)
 {
 	if (ntm->cm.type >= NSS_TUN6RD_MAX) {
-		nss_warning("%p: Invalid message type\n", ntm);
+		nss_warning("%px: Invalid message type\n", ntm);
 		return;
 	}
 
-	nss_info("%p: type[%d]:%s\n", ntm, ntm->cm.type, nss_tun6rd_log_message_types_str[ntm->cm.type]);
+	nss_info("%px: type[%d]:%s\n", ntm, ntm->cm.type, nss_tun6rd_log_message_types_str[ntm->cm.type]);
 	nss_tun6rd_log_verbose(ntm);
 }
 
@@ -112,18 +112,18 @@ void nss_tun6rd_log_tx_msg(struct nss_tun6rd_msg *ntm)
 void nss_tun6rd_log_rx_msg(struct nss_tun6rd_msg *ntm)
 {
 	if (ntm->cm.response >= NSS_CMN_RESPONSE_LAST) {
-		nss_warning("%p: Invalid response\n", ntm);
+		nss_warning("%px: Invalid response\n", ntm);
 		return;
 	}
 
 	if (ntm->cm.response == NSS_CMN_RESPONSE_NOTIFY || (ntm->cm.response == NSS_CMN_RESPONSE_ACK)) {
-		nss_info("%p: type[%d]:%s, response[%d]:%s\n", ntm, ntm->cm.type,
+		nss_info("%px: type[%d]:%s, response[%d]:%s\n", ntm, ntm->cm.type,
 			nss_tun6rd_log_message_types_str[ntm->cm.type],
 			ntm->cm.response, nss_cmn_response_str[ntm->cm.response]);
 		goto verbose;
 	}
 
-	nss_info("%p: msg nack - type[%d]:%s, response[%d]:%s\n",
+	nss_info("%px: msg nack - type[%d]:%s, response[%d]:%s\n",
 		ntm, ntm->cm.type, nss_tun6rd_log_message_types_str[ntm->cm.type],
 		ntm->cm.response, nss_cmn_response_str[ntm->cm.response]);
 

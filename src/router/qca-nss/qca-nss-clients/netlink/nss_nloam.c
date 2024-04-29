@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2016,2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2016,2018, 2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -82,20 +82,6 @@ struct nss_nloam_msg_map global_nloam_msg_map[] = {
 	},
 };
 
-/*
- * OAM family definition
- */
-static struct genl_family nss_nloam_family = {
-	.id = GENL_ID_GENERATE,				/* Auto generate ID */
-	.name = NSS_NLOAM_FAMILY,			/* family name string */
-	.hdrsize = sizeof(struct nss_nloam_rule),	/* NLOAM msg size */
-	.version = NSS_NL_VER,				/* nss netlink version */
-	.maxattr = NSS_NLOAM_CMD_MAX,			/* maximum commands supported */
-	.netnsok = false,
-	.pre_doit = NULL,
-	.post_doit = NULL,
-};
-
 static struct genl_multicast_group nss_nloam_mcgrp[] = {
 	{.name = NSS_NLOAM_MCAST_GRP},
 };
@@ -106,6 +92,26 @@ static struct genl_multicast_group nss_nloam_mcgrp[] = {
 static struct genl_ops nss_nloam_ops[] = {
 	{.cmd = NSS_NLOAM_CMD_NONE, .doit = nss_nloam_op_none,},
 	{.cmd = NSS_NLOAM_CMD_GET_REQ, .doit = nss_nloam_op_get_req,},
+};
+
+/*
+ * OAM family definition
+ */
+static struct genl_family nss_nloam_family = {
+#if (LINUX_VERSION_CODE <= KERNEL_VERSION(4, 9, 0))
+	.id = GENL_ID_GENERATE,				/* Auto generate ID */
+#endif
+	.name = NSS_NLOAM_FAMILY,			/* family name string */
+	.hdrsize = sizeof(struct nss_nloam_rule),	/* NLOAM msg size */
+	.version = NSS_NL_VER,				/* nss netlink version */
+	.maxattr = NSS_NLOAM_CMD_MAX,			/* maximum commands supported */
+	.netnsok = false,
+	.pre_doit = NULL,
+	.post_doit = NULL,
+	.ops = nss_nloam_ops,
+	.n_ops = ARRAY_SIZE(nss_nloam_ops),
+	.mcgrps = nss_nloam_mcgrp,
+	.n_mcgrps = ARRAY_SIZE(nss_nloam_mcgrp)
 };
 
 #define NSS_NLOAM_OPS_SZ ARRAY_SIZE(nss_nloam_ops)
@@ -340,7 +346,7 @@ bool nss_nloam_init(void)
 	/*
 	 * register with the family
 	 */
-	error = genl_register_family_with_ops_groups(&nss_nloam_family, nss_nloam_ops, nss_nloam_mcgrp);
+	error = genl_register_family(&nss_nloam_family);
 	if (error != 0) {
 		nss_nl_info_always("unable to register OAM family\n");
 		return false;

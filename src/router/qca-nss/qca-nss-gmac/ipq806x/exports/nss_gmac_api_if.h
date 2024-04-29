@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2014-2017, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2014-2017, 2019, The Linux Foundation. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -49,16 +49,12 @@ struct nss_gmac_stats {
 	uint64_t rx_packets;		/**< Number of RX packets */
 	uint64_t rx_errors;		/**< Number of RX errors */
 	uint64_t rx_receive_errors;	/**< Number of RX receive errors */
-	uint64_t rx_overflow_errors;	/**< Number of RX overflow errors */
 	uint64_t rx_descriptor_errors;	/**< Number of RX descriptor errors */
-	uint64_t rx_watchdog_timeout_errors;
-					/**< Number of RX watchdog timeout errors */
-	uint64_t rx_crc_errors;		/**< Number of RX CRC errors */
 	uint64_t rx_late_collision_errors;
 					/**< Number of RX late collision errors */
 	uint64_t rx_dribble_bit_errors;	/**< Number of RX dribble bit errors */
 	uint64_t rx_length_errors;	/**< Number of RX length errors */
-	uint64_t rx_ip_header_errors;	/**< Number of RX IP header errors */
+	uint64_t rx_ip_header_errors;	/**< Number of RX IP header errors read from rxdec */
 	uint64_t rx_ip_payload_errors;	/**< Number of RX IP payload errors */
 	uint64_t rx_no_buffer_errors;	/**< Number of RX no-buffer errors */
 	uint64_t rx_transport_csum_bypassed;
@@ -93,23 +89,34 @@ struct nss_gmac_stats {
 	uint64_t gmac_worst_case_ticks;	/**< Worst case iteration of the GMAC in ticks */
 	uint64_t gmac_iterations;	/**< Number of iterations around the GMAC */
 	uint64_t tx_pause_frames;	/**< Number of pause frames sent by the GMAC */
-	uint64_t rx_octets_g;		/* Number of good octets received */
-	uint64_t rx_ucast_frames;	/* Number of Unicast frames received */
-	uint64_t rx_bcast_frames;	/* Number of Bcast frames received */
-	uint64_t rx_mcast_frames;	/* Number of Mcast frames received */
-	uint64_t rx_undersize;		/* Number of RX undersize frames */
-	uint64_t rx_oversize;		/* Number of RX oversize frames */
-	uint64_t rx_jabber;		/* Number of jabber frames */
-	uint64_t rx_octets_gb;		/* Number of good/bad octets */
-	uint64_t rx_frag_frames_g;	/* Number of good ipv4 frag frames */
-	uint64_t tx_octets_g;		/* Number of good octets sent */
-	uint64_t tx_ucast_frames;	/* Number of Unicast frames sent*/
-	uint64_t tx_bcast_frames;	/* Number of Broadcast frames sent */
-	uint64_t tx_mcast_frames;	/* Number of Multicast frames sent */
-	uint64_t tx_deferred;		/* Number of Deferred frames sent */
-	uint64_t tx_single_col;		/* Number of single collisions */
-	uint64_t tx_multiple_col;	/* Number of multiple collisions */
-	uint64_t tx_octets_gb;		/* Number of good/bad octets sent*/
+	uint64_t mmc_rx_overflow_errors;
+					/**< Number of RX overflow errors */
+	uint64_t mmc_rx_watchdog_timeout_errors;
+					/**< Number of RX watchdog timeout errors */
+	uint64_t mmc_rx_crc_errors;	/**< Number of RX CRC errors */
+	uint64_t mmc_rx_ip_header_errors;
+					/**< Number of RX IP header errors read from MMC counter*/
+	uint64_t mmc_rx_octets_g;
+					/* Number of good octets received */
+	uint64_t mmc_rx_ucast_frames;	/* Number of Unicast frames received */
+	uint64_t mmc_rx_bcast_frames;	/* Number of Bcast frames received */
+	uint64_t mmc_rx_mcast_frames;	/* Number of Mcast frames received */
+	uint64_t mmc_rx_undersize;
+					/* Number of RX undersize frames */
+	uint64_t mmc_rx_oversize;
+					/* Number of RX oversize frames */
+	uint64_t mmc_rx_jabber;		/* Number of jabber frames */
+	uint64_t mmc_rx_octets_gb;
+					/* Number of good/bad octets */
+	uint64_t mmc_rx_frag_frames_g;	/* Number of good ipv4 frag frames */
+	uint64_t mmc_tx_octets_g;	/* Number of good octets sent */
+	uint64_t mmc_tx_ucast_frames;	/* Number of Unicast frames sent*/
+	uint64_t mmc_tx_bcast_frames;	/* Number of Broadcast frames sent */
+	uint64_t mmc_tx_mcast_frames;	/* Number of Multicast frames sent */
+	uint64_t mmc_tx_deferred;	/* Number of Deferred frames sent */
+	uint64_t mmc_tx_single_col;	/* Number of single collisions */
+	uint64_t mmc_tx_multiple_col;	/* Number of multiple collisions */
+	uint64_t mmc_tx_octets_gb;	/* Number of good/bad octets sent*/
 };
 
 /*

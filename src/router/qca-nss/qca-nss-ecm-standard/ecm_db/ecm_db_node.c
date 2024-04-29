@@ -1,9 +1,12 @@
 /*
  **************************************************************************
- * Copyright (c) 2014-2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2014-2018, 2020-2021 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
+ *
  * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
  * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
  * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
@@ -114,10 +117,10 @@ int _ecm_db_node_count_get(void)
  */
 void _ecm_db_node_ref(struct ecm_db_node_instance *ni)
 {
-	DEBUG_CHECK_MAGIC(ni, ECM_DB_NODE_INSTANCE_MAGIC, "%p: magic failed\n", ni);
+	DEBUG_CHECK_MAGIC(ni, ECM_DB_NODE_INSTANCE_MAGIC, "%px: magic failed\n", ni);
 	ni->refs++;
-	DEBUG_TRACE("%p: node ref %d\n", ni, ni->refs);
-	DEBUG_ASSERT(ni->refs > 0, "%p: ref wrap\n", ni);
+	DEBUG_TRACE("%px: node ref %d\n", ni, ni->refs);
+	DEBUG_ASSERT(ni->refs > 0, "%px: ref wrap\n", ni);
 }
 
 /*
@@ -141,7 +144,7 @@ void ecm_db_node_data_stats_get(struct ecm_db_node_instance *ni, uint64_t *from_
 						uint64_t *from_data_total_dropped, uint64_t *to_data_total_dropped,
 						uint64_t *from_packet_total_dropped, uint64_t *to_packet_total_dropped)
 {
-	DEBUG_CHECK_MAGIC(ni, ECM_DB_NODE_INSTANCE_MAGIC, "%p: magic failed", ni);
+	DEBUG_CHECK_MAGIC(ni, ECM_DB_NODE_INSTANCE_MAGIC, "%px: magic failed", ni);
 	spin_lock_bh(&ecm_db_lock);
 	if (from_data_total) {
 		*from_data_total = ni->from_data_total;
@@ -178,7 +181,7 @@ EXPORT_SYMBOL(ecm_db_node_data_stats_get);
  */
 void ecm_db_node_adress_get(struct ecm_db_node_instance *ni, uint8_t *address_buffer)
 {
-	DEBUG_CHECK_MAGIC(ni, ECM_DB_NODE_INSTANCE_MAGIC, "%p: magic failed", ni);
+	DEBUG_CHECK_MAGIC(ni, ECM_DB_NODE_INSTANCE_MAGIC, "%px: magic failed", ni);
 	memcpy(address_buffer, ni->address, ETH_ALEN);
 }
 EXPORT_SYMBOL(ecm_db_node_adress_get);
@@ -207,7 +210,7 @@ EXPORT_SYMBOL(ecm_db_nodes_get_and_ref_first);
 struct ecm_db_node_instance *ecm_db_node_get_and_ref_next(struct ecm_db_node_instance *ni)
 {
 	struct ecm_db_node_instance *nin;
-	DEBUG_CHECK_MAGIC(ni, ECM_DB_NODE_INSTANCE_MAGIC, "%p: magic failed", ni);
+	DEBUG_CHECK_MAGIC(ni, ECM_DB_NODE_INSTANCE_MAGIC, "%px: magic failed", ni);
 	spin_lock_bh(&ecm_db_lock);
 	nin = ni->next;
 	if (nin) {
@@ -224,15 +227,17 @@ EXPORT_SYMBOL(ecm_db_node_get_and_ref_next);
  */
 int ecm_db_node_deref(struct ecm_db_node_instance *ni)
 {
+#ifdef ECM_DB_XREF_ENABLE
 #if (DEBUG_LEVEL >= 1)
 	int dir;
 #endif
-	DEBUG_CHECK_MAGIC(ni, ECM_DB_NODE_INSTANCE_MAGIC, "%p: magic failed\n", ni);
+#endif
+	DEBUG_CHECK_MAGIC(ni, ECM_DB_NODE_INSTANCE_MAGIC, "%px: magic failed\n", ni);
 
 	spin_lock_bh(&ecm_db_lock);
 	ni->refs--;
-	DEBUG_TRACE("%p: node deref %d\n", ni, ni->refs);
-	DEBUG_ASSERT(ni->refs >= 0, "%p: ref wrap\n", ni);
+	DEBUG_TRACE("%px: node deref %d\n", ni, ni->refs);
+	DEBUG_ASSERT(ni->refs >= 0, "%px: ref wrap\n", ni);
 
 	if (ni->refs > 0) {
 		int refs = ni->refs;
@@ -243,7 +248,7 @@ int ecm_db_node_deref(struct ecm_db_node_instance *ni)
 #ifdef ECM_DB_XREF_ENABLE
 #if (DEBUG_LEVEL >= 1)
 	for (dir = 0; dir < ECM_DB_OBJ_DIR_MAX; dir++) {
-		DEBUG_ASSERT((ni->connections[dir] == NULL) && (ni->connections_count[dir] == 0), "%p: %s connections not null\n", ni, ecm_db_obj_dir_strings[dir]);
+		DEBUG_ASSERT((ni->connections[dir] == NULL) && (ni->connections_count[dir] == 0), "%px: %s connections not null\n", ni, ecm_db_obj_dir_strings[dir]);
 	}
 #endif
 #endif
@@ -260,7 +265,7 @@ int ecm_db_node_deref(struct ecm_db_node_instance *ni)
 		 * Remove from the global list
 		 */
 		if (!ni->prev) {
-			DEBUG_ASSERT(ecm_db_nodes == ni, "%p: node table bad\n", ni);
+			DEBUG_ASSERT(ecm_db_nodes == ni, "%px: node table bad\n", ni);
 			ecm_db_nodes = ni->next;
 		} else {
 			ni->prev->next = ni->next;
@@ -275,7 +280,7 @@ int ecm_db_node_deref(struct ecm_db_node_instance *ni)
 		 * Link out of hash table
 		 */
 		if (!ni->hash_prev) {
-			DEBUG_ASSERT(ecm_db_node_table[ni->hash_index] == ni, "%p: hash table bad\n", ni);
+			DEBUG_ASSERT(ecm_db_node_table[ni->hash_index] == ni, "%px: hash table bad\n", ni);
 			ecm_db_node_table[ni->hash_index] = ni->hash_next;
 		} else {
 			ni->hash_prev->hash_next = ni->hash_next;
@@ -286,14 +291,14 @@ int ecm_db_node_deref(struct ecm_db_node_instance *ni)
 		ni->hash_next = NULL;
 		ni->hash_prev = NULL;
 		ecm_db_node_table_lengths[ni->hash_index]--;
-		DEBUG_ASSERT(ecm_db_node_table_lengths[ni->hash_index] >= 0, "%p: invalid table len %d\n", ni, ecm_db_node_table_lengths[ni->hash_index]);
+		DEBUG_ASSERT(ecm_db_node_table_lengths[ni->hash_index] >= 0, "%px: invalid table len %d\n", ni, ecm_db_node_table_lengths[ni->hash_index]);
 
 #ifdef ECM_DB_XREF_ENABLE
 		/*
 		 * Unlink it from the iface node list
 		 */
 		if (!ni->node_prev) {
-			DEBUG_ASSERT(ni->iface->nodes == ni, "%p: nodes table bad\n", ni);
+			DEBUG_ASSERT(ni->iface->nodes == ni, "%px: nodes table bad\n", ni);
 			ni->iface->nodes = ni->node_next;
 		} else {
 			ni->node_prev->node_next = ni->node_next;
@@ -311,7 +316,7 @@ int ecm_db_node_deref(struct ecm_db_node_instance *ni)
 		/*
 		 * Throw removed event to listeners
 		 */
-		DEBUG_TRACE("%p: Throw node removed event\n", ni);
+		DEBUG_TRACE("%px: Throw node removed event\n", ni);
 		li = ecm_db_listeners_get_and_ref_first();
 		while (li) {
 			struct ecm_db_listener_instance *lin;
@@ -353,7 +358,7 @@ int ecm_db_node_deref(struct ecm_db_node_instance *ni)
 	 */
 	spin_lock_bh(&ecm_db_lock);
 	ecm_db_node_count--;
-	DEBUG_ASSERT(ecm_db_node_count >= 0, "%p: node count wrap\n", ni);
+	DEBUG_ASSERT(ecm_db_node_count >= 0, "%px: node count wrap\n", ni);
 	spin_unlock_bh(&ecm_db_lock);
 
 	return 0;
@@ -366,7 +371,7 @@ EXPORT_SYMBOL(ecm_db_node_deref);
  */
 bool ecm_db_node_is_mac_addr_equal(struct ecm_db_node_instance *ni, uint8_t *address)
 {
-	DEBUG_CHECK_MAGIC(ni, ECM_DB_NODE_INSTANCE_MAGIC, "%p: magic failed", ni);
+	DEBUG_CHECK_MAGIC(ni, ECM_DB_NODE_INSTANCE_MAGIC, "%px: magic failed", ni);
 
 	if (ecm_mac_addr_equal(ni->address, address)) {
 		return false;
@@ -385,7 +390,7 @@ struct ecm_db_node_instance *ecm_db_node_find_and_ref(uint8_t *address, struct e
 	ecm_db_node_hash_t hash_index;
 	struct ecm_db_node_instance *ni;
 
-	DEBUG_TRACE("Lookup node with addr %pMi and iface %p\n", address, ii);
+	DEBUG_TRACE("Lookup node with addr %pMi and iface %px\n", address, ii);
 
 	/*
 	 * Compute the hash chain index and prepare to walk the chain
@@ -410,7 +415,7 @@ struct ecm_db_node_instance *ecm_db_node_find_and_ref(uint8_t *address, struct e
 
 		_ecm_db_node_ref(ni);
 		spin_unlock_bh(&ecm_db_lock);
-		DEBUG_TRACE("node found %p\n", ni);
+		DEBUG_TRACE("node found %px\n", ni);
 		return ni;
 	}
 	spin_unlock_bh(&ecm_db_lock);
@@ -453,7 +458,7 @@ EXPORT_SYMBOL(ecm_db_node_chain_get_and_ref_first);
 struct ecm_db_node_instance *ecm_db_node_chain_get_and_ref_next(struct ecm_db_node_instance *ni)
 {
 	struct ecm_db_node_instance *nin;
-	DEBUG_CHECK_MAGIC(ni, ECM_DB_NODE_INSTANCE_MAGIC, "%p: magic failed", ni);
+	DEBUG_CHECK_MAGIC(ni, ECM_DB_NODE_INSTANCE_MAGIC, "%px: magic failed", ni);
 
 	spin_lock_bh(&ecm_db_lock);
 	nin = ni->hash_next;
@@ -470,7 +475,7 @@ EXPORT_SYMBOL(ecm_db_node_chain_get_and_ref_next);
  */
 struct ecm_db_iface_instance *ecm_db_node_iface_get_and_ref(struct ecm_db_node_instance *ni)
 {
-	DEBUG_CHECK_MAGIC(ni, ECM_DB_NODE_INSTANCE_MAGIC, "%p: magic failed\n", ni);
+	DEBUG_CHECK_MAGIC(ni, ECM_DB_NODE_INSTANCE_MAGIC, "%px: magic failed\n", ni);
 
 	spin_lock_bh(&ecm_db_lock);
 	_ecm_db_iface_ref(ni->iface);
@@ -486,22 +491,24 @@ EXPORT_SYMBOL(ecm_db_node_iface_get_and_ref);
 void ecm_db_node_add(struct ecm_db_node_instance *ni, struct ecm_db_iface_instance *ii, uint8_t *address,
 					ecm_db_node_final_callback_t final, void *arg)
 {
+#ifdef ECM_DB_XREF_ENABLE
 #if (DEBUG_LEVEL >= 1)
 	int dir;
+#endif
 #endif
 	ecm_db_node_hash_t hash_index;
 	struct ecm_db_listener_instance *li;
 
 	spin_lock_bh(&ecm_db_lock);
-	DEBUG_CHECK_MAGIC(ni, ECM_DB_NODE_INSTANCE_MAGIC, "%p: magic failed\n", ni);
-	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%p: magic failed\n", ii);
-	DEBUG_ASSERT(address, "%p: address null\n", ni);
-	DEBUG_ASSERT((ni->iface == NULL), "%p: iface not null\n", ni);
-	DEBUG_ASSERT(!(ni->flags & ECM_DB_NODE_FLAGS_INSERTED), "%p: inserted\n", ni);
+	DEBUG_CHECK_MAGIC(ni, ECM_DB_NODE_INSTANCE_MAGIC, "%px: magic failed\n", ni);
+	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%px: magic failed\n", ii);
+	DEBUG_ASSERT(address, "%px: address null\n", ni);
+	DEBUG_ASSERT((ni->iface == NULL), "%px: iface not null\n", ni);
+	DEBUG_ASSERT(!(ni->flags & ECM_DB_NODE_FLAGS_INSERTED), "%px: inserted\n", ni);
 #ifdef ECM_DB_XREF_ENABLE
 #if (DEBUG_LEVEL >= 1)
 	for (dir = 0; dir < ECM_DB_OBJ_DIR_MAX; dir++) {
-		DEBUG_ASSERT((ni->connections[dir] == NULL) && (ni->connections_count[dir] == 0), "%p: %s connections not null\n", ni, ecm_db_obj_dir_strings[dir]);
+		DEBUG_ASSERT((ni->connections[dir] == NULL) && (ni->connections_count[dir] == 0), "%px: %s connections not null\n", ni, ecm_db_obj_dir_strings[dir]);
 	}
 #endif
 #endif
@@ -538,13 +545,14 @@ void ecm_db_node_add(struct ecm_db_node_instance *ni, struct ecm_db_iface_instan
 	/*
 	 * Insert into the hash chain
 	 */
+	ni->hash_prev = NULL;
 	ni->hash_next = ecm_db_node_table[hash_index];
 	if (ecm_db_node_table[hash_index]) {
 		ecm_db_node_table[hash_index]->hash_prev = ni;
 	}
 	ecm_db_node_table[hash_index] = ni;
 	ecm_db_node_table_lengths[hash_index]++;
-	DEBUG_ASSERT(ecm_db_node_table_lengths[hash_index] > 0, "%p: invalid table len %d\n", ni, ecm_db_node_table_lengths[hash_index]);
+	DEBUG_ASSERT(ecm_db_node_table_lengths[hash_index] > 0, "%px: invalid table len %d\n", ni, ecm_db_node_table_lengths[hash_index]);
 
 	/*
 	 * Set time of add
@@ -568,7 +576,7 @@ void ecm_db_node_add(struct ecm_db_node_instance *ni, struct ecm_db_iface_instan
 	/*
 	 * Throw add event to the listeners
 	 */
-	DEBUG_TRACE("%p: Throw node added event\n", ni);
+	DEBUG_TRACE("%px: Throw node added event\n", ni);
 	li = ecm_db_listeners_get_and_ref_first();
 	while (li) {
 		struct ecm_db_listener_instance *lin;
@@ -610,7 +618,7 @@ int ecm_db_node_state_get(struct ecm_state_file_instance *sfi, struct ecm_db_nod
 	uint64_t to_packet_total_dropped;
 #endif
 
-	DEBUG_TRACE("Prep node msg for %p\n", ni);
+	DEBUG_TRACE("Prep node msg for %px\n", ni);
 
 	/*
 	 * Create a small xml stats block for our managed node, like:
@@ -711,6 +719,17 @@ int ecm_db_node_hash_index_get_first(void)
 EXPORT_SYMBOL(ecm_db_node_hash_index_get_first);
 
 /*
+ * ecm_db_node_get_connections_count()
+ *	Returns the connections count on the node in the given direction.
+ */
+int ecm_db_node_get_connections_count(struct ecm_db_node_instance *ni, ecm_db_obj_dir_t dir)
+{
+	DEBUG_CHECK_MAGIC(ni, ECM_DB_NODE_INSTANCE_MAGIC, "%px: magic failed\n", ni);
+
+	return ni->connections_count[dir];
+}
+
+/*
  * ecm_db_node_alloc()
  *	Allocate a node instance
  */
@@ -745,7 +764,7 @@ struct ecm_db_node_instance *ecm_db_node_alloc(void)
 	ecm_db_node_count++;
 	spin_unlock_bh(&ecm_db_lock);
 
-	DEBUG_TRACE("Node created %p\n", ni);
+	DEBUG_TRACE("Node created %px\n", ni);
 	return ni;
 }
 EXPORT_SYMBOL(ecm_db_node_alloc);
@@ -760,7 +779,7 @@ ecm_db_node_connections_get_and_ref_first(struct ecm_db_node_instance *node,
 					  ecm_db_obj_dir_t dir)
 {
 	struct ecm_db_connection_instance *ci;
-	DEBUG_CHECK_MAGIC(node, ECM_DB_NODE_INSTANCE_MAGIC, "%p: magic failed", node);
+	DEBUG_CHECK_MAGIC(node, ECM_DB_NODE_INSTANCE_MAGIC, "%px: magic failed", node);
 	spin_lock_bh(&ecm_db_lock);
 	ci = node->connections[dir];
 	if (ci) {
@@ -779,7 +798,7 @@ ecm_db_node_connection_get_and_ref_next(struct ecm_db_connection_instance *ci,
 					ecm_db_obj_dir_t dir)
 {
 	struct ecm_db_connection_instance *cin;
-	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%p: magic failed", ci);
+	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%px: magic failed", ci);
 	spin_lock_bh(&ecm_db_lock);
 	cin = ci->node_next[dir];
 	if (cin) {
@@ -795,38 +814,48 @@ ecm_db_node_connection_get_and_ref_next(struct ecm_db_connection_instance *ci,
  *	be kept
  */
 static bool ecm_db_should_keep_connection(
-	struct ecm_db_connection_instance *ci, uint8_t *mac)
+	struct ecm_db_connection_instance *ci, struct ecm_db_connection_defunct_info *info)
 {
-	bool should_keep_connection = false;
 	int assignment_count;
 	int aci_index;
 	struct ecm_classifier_instance *assignments[ECM_CLASSIFIER_TYPES];
+
+	/*
+	 * In case of STA join event, we need to keep all connections apart from
+	 * the connections with SAWF classifier. So we will make should_keep_connection
+	 * flag true by default, and let the relevent classifier take the decision.
+	 */
+	info->should_keep_connection = (info->type == ECM_DB_CONNECTION_DEFUNCT_TYPE_STA_JOIN) ? true : false;
 
 	assignment_count =
 		ecm_db_connection_classifier_assignments_get_and_ref(ci, assignments);
 	for (aci_index = 0; aci_index < assignment_count; ++aci_index) {
 		struct ecm_classifier_instance *aci;
 		aci = assignments[aci_index];
-		if (aci->should_keep_connection &&
-			aci->should_keep_connection(aci, mac)) {
-			should_keep_connection = true;
-			break;
+		if (aci->should_keep_connection) {
+			aci->should_keep_connection(aci, info);
 		}
 	}
 	ecm_db_connection_assignments_release(assignment_count, assignments);
 
-	return should_keep_connection;
+	return info->should_keep_connection;
 }
 
 /*
  * ecm_db_traverse_node_connection_list_and_defunct()
- *	traverse a node in the specified direction  and calls ecm_db_connection_make_defunct()
- *	for each entry
+ *	traverse a node in the specified direction and calls ecm_db_connection_make_defunct()
+ *	for each entry.  If ip_version is valid (non-zero), then defunct the
+ *	connections matching version.
  */
 void ecm_db_traverse_node_connection_list_and_defunct(
-	struct ecm_db_node_instance *node, ecm_db_obj_dir_t dir)
+	struct ecm_db_node_instance *node, ecm_db_obj_dir_t dir, int ip_version,
+	ecm_db_connection_defunct_type_t type)
 {
 	struct ecm_db_connection_instance *ci = NULL;
+	struct ecm_db_connection_defunct_info info;
+
+	memcpy(info.mac, node->address, ETH_ALEN);
+	info.type = type;
 
 	/*
 	 * Iterate all from connections
@@ -835,20 +864,346 @@ void ecm_db_traverse_node_connection_list_and_defunct(
 	while (ci) {
 		struct ecm_db_connection_instance *cin;
 
-		if (!ecm_db_should_keep_connection(ci, node->address)) {
-			DEBUG_TRACE("%p: defunct %d\n", ci, ci->serial);
+		if (!ecm_db_should_keep_connection(ci, &info)) {
+			if (ip_version != ECM_DB_IP_VERSION_IGNORE && (ecm_db_connection_ip_version_get(ci) != ip_version)) {
+				DEBUG_TRACE("%px: keeping connection, ip_version mismatch %d\n", ci, ci->serial);
+				goto keep_node_conn;
+			}
+
+			DEBUG_TRACE("%px: defunct %d\n", ci, ci->serial);
 			ecm_db_connection_make_defunct(ci);
 		} else {
-			DEBUG_TRACE("%p: keeping connection %d\n", ci, ci->serial);
+			DEBUG_TRACE("%px: keeping connection %d\n", ci, ci->serial);
+		}
+keep_node_conn:
+		cin = ecm_db_node_connection_get_and_ref_next(ci, dir);
+		ecm_db_connection_deref(ci);
+		ci = cin;
+	}
+	DEBUG_INFO("%px: Defuncting from node connection list complete\n", node);
+}
+
+#ifdef ECM_INTERFACE_OVS_BRIDGE_ENABLE
+
+/*
+ * ecm_db_node_ovs_connections_masked_defunct()
+ *	Destroy connections created on the node
+ */
+void ecm_db_node_ovs_connections_masked_defunct(int ip_ver, uint8_t *src_mac, bool src_mac_check, ip_addr_t src_addr_mask,
+							uint16_t src_port_mask, uint8_t *dest_mac, bool dest_mac_check,
+							ip_addr_t dest_addr_mask, uint16_t dest_port_mask,
+							int proto_mask, ecm_db_obj_dir_t dir, bool is_routed)
+{
+	struct ecm_db_node_instance *ni;
+	uint8_t smac[ETH_ALEN], dmac[ETH_ALEN];
+	uint8_t *mac;
+	ip_addr_t sip, dip;
+	uint16_t sport, dport;
+	int proto;
+	int cnt = 0;
+	char *direction = NULL;
+
+	mac = (dir == ECM_DB_OBJ_DIR_FROM) ? src_mac : dest_mac;
+
+	ni = ecm_db_node_chain_get_and_ref_first(mac);
+	if (!ni) {
+		DEBUG_WARN("Unable to find first instance node\n");
+		return;
+	}
+
+	/*
+	 * Iterate through all node instances
+	 */
+	while (ni) {
+		struct ecm_db_connection_instance *ci;
+		struct ecm_db_node_instance *nni;
+
+		DEBUG_CHECK_MAGIC(ni, ECM_DB_NODE_INSTANCE_MAGIC, "%px: magic failed", ni);
+
+		if (!ecm_db_node_is_mac_addr_equal(ni, mac)) {
+			nni = ecm_db_node_chain_get_and_ref_next(ni);
+			ecm_db_node_deref(ni);
+			ni = nni;
+			continue;
+		}
+
+		ci = ecm_db_node_connections_get_and_ref_first(ni, dir);
+		while (ci) {
+			struct ecm_db_connection_instance *cin;
+
+			DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%px: magic failed", ci);
+
+			/*
+			 * Skip routed CI for brided flows
+			 * Skip bridged CI for routed flows
+			 */
+			if (is_routed != ecm_db_connection_is_routed_get(ci)) {
+				goto next_ci;
+			}
+
+			/*
+			 * Check IP version
+			 */
+			if (ip_ver != ECM_DB_IP_VERSION_IGNORE && (ecm_db_connection_ip_version_get(ci) != ip_ver)) {
+				goto next_ci;
+			}
+
+			/*
+			 * Check protocol if specified
+			 */
+			proto = ecm_db_connection_protocol_get(ci);
+			if (!ECM_PROTO_MASK_MATCH(proto, proto_mask)) {
+				goto next_ci;
+			}
+
+			/*
+			 * A : PCI < ------- br-home ----------bridging----------------br-wan ---->PC2
+			 *
+			 * B : PCI < ------- br-home ----------Routing----------------br-wan ---->PC2
+			 *
+			 *							DNAT
+			 * C : PCI < ------- br-home ----------Routing----------------br-wan ----> PC2
+			 *							SNAT
+			 * D : PCI < ------- br-home ----------Routing----------------br-wan ----> PC2
+			 *
+			 */
+			ecm_db_connection_node_address_get(ci, ECM_DB_OBJ_DIR_FROM, smac);
+			ecm_db_connection_node_address_get(ci,  ECM_DB_OBJ_DIR_TO, dmac);
+			ecm_db_connection_address_get(ci, ECM_DB_OBJ_DIR_FROM, sip);
+			ecm_db_connection_address_get(ci, ECM_DB_OBJ_DIR_TO, dip);
+			sport = ecm_db_connection_port_get(ci, ECM_DB_OBJ_DIR_FROM);
+			dport = ecm_db_connection_port_get(ci, ECM_DB_OBJ_DIR_TO);
+
+			/*
+			 * 1. For topology A, B, C, D  if drop rule is added in br-home or br-wan
+			 * 2. For topoloy  A, B  if drop rule is added in br-wan
+			 * Match in flow direction
+			 */
+
+			if ((!src_mac_check || ECM_MAC_ADDR_MATCH(smac, src_mac)) &&
+			    (!dest_mac_check || ECM_MAC_ADDR_MATCH(dmac, dest_mac)) &&
+			    ECM_IP_ADDR_MASK_MATCH(sip, src_addr_mask) &&
+			    ECM_IP_ADDR_MASK_MATCH(dip, dest_addr_mask) &&
+			    ECM_PORT_MASK_MATCH(sport, src_port_mask) &&
+			    ECM_PORT_MASK_MATCH(dport, dest_port_mask)) {
+				direction = "flow";
+				goto defunct_conn;
+			}
+			/*
+			 * 1. For topology A, B, C, D  if drop rule is added in br-home or br-wan
+			 * 2. For topoloy  A, B  if drop rule is added in br-wan
+			 * Match in reverse direction
+			 */
+			if ((!src_mac_check || ECM_MAC_ADDR_MATCH(dmac, src_mac)) &&
+			    (!dest_mac_check || ECM_MAC_ADDR_MATCH(smac, dest_mac)) &&
+			    ECM_IP_ADDR_MASK_MATCH(dip, src_addr_mask) &&
+			    ECM_IP_ADDR_MASK_MATCH(sip, dest_addr_mask) &&
+			    ECM_PORT_MASK_MATCH(dport, src_port_mask) &&
+			    ECM_PORT_MASK_MATCH(sport, dest_port_mask)) {
+				direction = "reverse";
+				goto defunct_conn;
+			}
+
+			/*
+			 * There is no NATing in case of bridging
+			 */
+			if (!is_routed) {
+				goto next_ci;
+			}
+
+			ecm_db_connection_node_address_get(ci, ECM_DB_OBJ_DIR_FROM_NAT, smac);
+			ecm_db_connection_node_address_get(ci,  ECM_DB_OBJ_DIR_TO_NAT, dmac);
+			ecm_db_connection_address_get(ci, ECM_DB_OBJ_DIR_FROM_NAT, sip);
+			ecm_db_connection_address_get(ci, ECM_DB_OBJ_DIR_TO_NAT, dip);
+			sport = ecm_db_connection_port_get(ci, ECM_DB_OBJ_DIR_FROM_NAT);
+			dport = ecm_db_connection_port_get(ci, ECM_DB_OBJ_DIR_TO_NAT);
+
+			/*
+			 * 1. For topoloy  C, D  if drop rule is added in br-wan
+			 * Match in flow direction
+			 */
+			if ((!src_mac_check || ECM_MAC_ADDR_MATCH(smac, src_mac)) &&
+			    (!dest_mac_check || ECM_MAC_ADDR_MATCH(dmac, dest_mac)) &&
+			    ECM_IP_ADDR_MASK_MATCH(sip, src_addr_mask) &&
+			    ECM_IP_ADDR_MASK_MATCH(dip, dest_addr_mask) &&
+			    ECM_PORT_MASK_MATCH(sport, src_port_mask) &&
+			    ECM_PORT_MASK_MATCH(dport, dest_port_mask)) {
+				direction = "flow (nat)";
+				goto defunct_conn;
+			}
+
+			/*
+			 * 1. For topoloy  C, D  if drop rule is added in br-wan
+			 * Match in reverse direction
+			 */
+			if ((!src_mac_check || ECM_MAC_ADDR_MATCH(dmac, src_mac)) &&
+			    (!dest_mac_check || ECM_MAC_ADDR_MATCH(smac, dest_mac)) &&
+			    ECM_IP_ADDR_MASK_MATCH(dip, src_addr_mask) &&
+			    ECM_IP_ADDR_MASK_MATCH(sip, dest_addr_mask) &&
+			    ECM_PORT_MASK_MATCH(dport, src_port_mask) &&
+			    ECM_PORT_MASK_MATCH(sport, dest_port_mask)) {
+				direction = "reverse (nat)";
+				goto defunct_conn;
+			}
+
+			goto next_ci;
+
+defunct_conn:
+			cnt++;
+
+			DEBUG_TRACE("%px: Defuncting 7 tuple %s connection\n", ci, is_routed ? "routed" : "bridged");
+			if (ECM_IP_ADDR_IS_V4(src_addr_mask)) {
+				DEBUG_TRACE("%px: Defunct CI masked 7 tuple match(%s) smac=%pM(%d) src=" ECM_IP_ADDR_DOT_FMT " sport=%d "
+					    "dmac=%pM(%d) dest=" ECM_IP_ADDR_DOT_FMT ", dport=%d, proto=%d cnt=%d\n", ci, direction, smac,
+					    src_mac_check, ECM_IP_ADDR_TO_DOT(sip), sport, dmac, dest_mac_check,
+					    ECM_IP_ADDR_TO_DOT(dip), dport, proto, cnt);
+			} else {
+				DEBUG_TRACE("%px: Defunct CI masked 7 tuple match(%s) src=%pM(%d)" ECM_IP_ADDR_OCTAL_FMT " sport=%d "
+					    "dmac=%pM(%d) dest=" ECM_IP_ADDR_OCTAL_FMT ", dport=%d, proto=%d, cnt=%d\n", ci, direction,
+					    smac, src_mac_check, ECM_IP_ADDR_TO_OCTAL(sip), sport, dmac, dest_mac_check,
+					    ECM_IP_ADDR_TO_OCTAL(dip), dport, proto, cnt);
+			}
+
+			ecm_db_connection_make_defunct(ci);
+next_ci:
+			cin = ecm_db_node_connection_get_and_ref_next(ci, dir);
+
+			ecm_db_connection_deref(ci);
+			ci = cin;
+		}
+
+		ecm_db_node_deref(ni);
+		break;
+	}
+
+	DEBUG_TRACE("Completed OVS 7 tuple %s connections (cnt=%d) masked defunct\n",  is_routed ? "routed" : "bridged", cnt);
+
+	if (ECM_IP_ADDR_IS_V4(src_addr_mask)) {
+		DEBUG_TRACE("Defunct request by masked 7 tuple smac_mask=%pM(%d) src_mask=" ECM_IP_ADDR_DOT_FMT " sport_mask=%d, "
+			    "dmac_mask=%pM(%d) dest_mask=" ECM_IP_ADDR_DOT_FMT " dport_mask=%d, proto_mask=%d\n",  src_mac,
+			    src_mac_check, ECM_IP_ADDR_TO_DOT(src_addr_mask), src_port_mask, dest_mac, dest_mac_check,
+			    ECM_IP_ADDR_TO_DOT(dest_addr_mask), dest_port_mask, proto_mask);
+	} else {
+		DEBUG_TRACE("Defunct request by masked 7 tuple smac_mask=%pM(%d) src_mask=" ECM_IP_ADDR_OCTAL_FMT " sport_mask=%d "
+			    "dmac_mask=%pM(%d) dest_mask=" ECM_IP_ADDR_OCTAL_FMT " dport_mask=%d, proto_mask=%d cnt=%d\n",
+			    src_mac, src_mac_check, ECM_IP_ADDR_TO_OCTAL(src_addr_mask), src_port_mask, dest_mac, dest_mac_check,
+			    ECM_IP_ADDR_TO_OCTAL(dest_addr_mask), dest_port_mask, proto_mask, cnt);
+	}
+
+}
+
+/*
+ * ecm_db_node_ovs_routed_connections_defunct()
+ *	Destroy the routed connections created on the node in the given
+ *	direction which is related to the ovs_br interface.
+ */
+void ecm_db_node_ovs_routed_connections_defunct(uint8_t *node_mac, struct net_device *ovs_br, int ip_version, ecm_db_obj_dir_t dir)
+{
+	struct ecm_db_iface_instance *ii;
+	struct ecm_db_node_instance *ni;
+	struct ecm_db_connection_instance *ci;
+
+	ii =  ecm_db_iface_find_and_ref_by_interface_identifier(ovs_br->ifindex);
+	if (!ii) {
+		DEBUG_WARN("%px: Unable to find OVS bridge iface instance\n", ovs_br);
+		return;
+	}
+
+	/*
+	 * Find the node instance which has the node_mac and related to the ovs_br.
+	 * Nodes are stored in the database with their related interface instances.
+	 */
+	ni = ecm_db_node_find_and_ref(node_mac, ii);
+	if(!ni) {
+		DEBUG_WARN("%px: Unable to find node instance related to %pM and %s\n", ovs_br, node_mac, ovs_br->name);
+		ecm_db_iface_deref(ii);
+		return;
+	}
+
+	/*
+	 * Iterate all routed connections on this node in the dir direction.
+	 */
+	ci = ecm_db_node_connections_get_and_ref_first(ni, dir);
+	while (ci) {
+		struct ecm_db_connection_instance *cin;
+
+		if (ecm_db_connection_is_routed_get(ci) && (ecm_db_connection_ip_version_get(ci) == ip_version)) {
+			DEBUG_TRACE("%px: Defuncting connection %p\n", ovs_br, ci);
+			ecm_db_connection_make_defunct(ci);
 		}
 
 		cin = ecm_db_node_connection_get_and_ref_next(ci, dir);
 		ecm_db_connection_deref(ci);
 		ci = cin;
 	}
-	DEBUG_INFO("%p: Defuncting from node connection list complete\n", node);
+
+	ecm_db_node_deref(ni);
+	ecm_db_iface_deref(ii);
+
+	DEBUG_TRACE("%px: Completed OVS routed connection defunct\n", ovs_br);
 }
 
+/*
+ * ecm_db_traverse_snode_dnode_connection_list_and_defunct()
+ *	Defunct connections between node1 (sni) and node2 (which has dmac address)
+ */
+void ecm_db_traverse_snode_dnode_connection_list_and_defunct(
+	struct ecm_db_node_instance *sni, uint8_t *dmac, int ip_version, ecm_db_obj_dir_t dir)
+{
+	struct ecm_db_connection_instance *ci = NULL;
+
+	if (dir != ECM_DB_OBJ_DIR_FROM && dir != ECM_DB_OBJ_DIR_TO) {
+		DEBUG_WARN("Direction is incorrect: %d\n", dir);
+		return;
+	}
+
+	/*
+	 * Iterate all connection instances which are sent or received from
+	 * given node instannce (sni).
+	 */
+	ci = ecm_db_node_connections_get_and_ref_first(sni, dir);
+	while (ci) {
+		struct ecm_db_connection_instance *cin;
+		struct ecm_db_node_instance *dni;
+
+		/*
+		 * Find the connection instance which match given MAC address (dmac)
+		 */
+		if (dir == ECM_DB_OBJ_DIR_FROM) {
+			/*
+			 * Direction is FROM, then sni is source node.
+			 * find the node in TO direction.
+			 */
+			dni = ci->node[ECM_DB_OBJ_DIR_TO];
+		} else {
+			/*
+			 * Direction is TO, then sni is destination node.
+			 * find the node in FROM direction.
+			 */
+			dni = ci->node[ECM_DB_OBJ_DIR_FROM];
+		}
+
+		/*
+		 * if the MAC address of node (dni) match MAC address (dmac)
+		 * then delete the connection instance.
+		 */
+		if (ecm_db_node_is_mac_addr_equal(dni, dmac)) {
+			if (ip_version != ECM_DB_IP_VERSION_IGNORE && (ecm_db_connection_ip_version_get(ci) != ip_version)) {
+				DEBUG_TRACE("%px: keeping connection, ip_version mismatch %d\n", ci, ci->serial);
+				goto keep_sni_conn;
+			}
+
+			DEBUG_TRACE("%px: defunct %d\n", ci, ci->serial);
+			ecm_db_connection_make_defunct(ci);
+		}
+keep_sni_conn:
+		cin = ecm_db_node_connection_get_and_ref_next(ci, dir);
+		ecm_db_connection_deref(ci);
+		ci = cin;
+	}
+	DEBUG_INFO("%px: Defuncting from node connection list complete\n", sni);
+}
+#endif
 #endif
 
 /*

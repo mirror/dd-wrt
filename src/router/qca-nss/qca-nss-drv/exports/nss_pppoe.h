@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2014-2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2014-2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -40,28 +40,123 @@ enum nss_pppoe_metadata_types {
 	NSS_PPPOE_MSG_SESSION_CREATE,
 	NSS_PPPOE_MSG_SESSION_DESTROY,
 	NSS_PPPOE_MSG_SYNC_STATS,
+	NSS_PPPOE_MSG_BR_ACCEL_CFG,
 	NSS_PPPOE_MSG_MAX
 };
 
 /**
- * nss_pppoe_exception_events
- *	Exception events from the PPPoE handler.
+ * nss_pppoe_session_exception_events
+ *	Session exception events from the PPPoE handler.
  */
-enum nss_pppoe_exception_events {
-	NSS_PPPOE_EXCEPTION_EVENT_WRONG_VERSION_OR_TYPE,
-	NSS_PPPOE_EXCEPTION_EVENT_WRONG_CODE,
-	NSS_PPPOE_EXCEPTION_EVENT_UNSUPPORTED_PPP_PROTOCOL,
-	NSS_PPPOE_EXCEPTION_EVENT_MAX
+enum nss_pppoe_session_exception_events {
+	NSS_PPPOE_SESSION_EXCEPTION_EVENT_WRONG_VERSION_OR_TYPE,
+	NSS_PPPOE_SESSION_EXCEPTION_EVENT_WRONG_CODE,
+	NSS_PPPOE_SESSION_EXCEPTION_EVENT_UNSUPPORTED_PPP_PROTOCOL,
+	NSS_PPPOE_SESSION_EXCEPTION_EVENT_MAX
 };
 
 /**
+ * pppoe_base_exception_events
+ * 	Base node exception events from the PPPoE handler.
+ */
+enum nss_pppoe_base_exception_events {
+	NSS_PPPOE_BASE_EXCEPTION_EVENT_SHORT_PPPOE_HDR_LENGTH,
+	NSS_PPPOE_BASE_EXCEPTION_EVENT_SHORT_PACKET_LENGTH,
+	NSS_PPPOE_BASE_EXCEPTION_EVENT_WRONG_VERSION_OR_TYPE,
+	NSS_PPPOE_BASE_EXCEPTION_EVENT_WRONG_CODE,
+	NSS_PPPOE_BASE_EXCEPTION_EVENT_UNSUPPORTED_PPP_PROTOCOL,
+	NSS_PPPOE_BASE_EXCEPTION_EVENT_DISABLED_BRIDGE_PACKET,
+	NSS_PPPOE_BASE_EXCEPTION_EVENT_MAX
+};
+
+/**
+ * nss_pppoe_br_accel_mode
+ *	PPPoE bridge acceleration modes.
+ */
+enum nss_pppoe_br_accel_modes {
+	NSS_PPPOE_BR_ACCEL_MODE_DIS,
+	NSS_PPPOE_BR_ACCEL_MODE_EN_5T,
+	NSS_PPPOE_BR_ACCEL_MODE_EN_3T,
+	NSS_PPPOE_BR_ACCEL_MODE_MAX
+};
+
+/**
+ * nss_pppoe_base_stats
+ * 	PPPoE base node synchronization statistics.
+ */
+struct nss_pppoe_base_stats {
+	struct nss_cmn_node_stats node;	/**< Common node statistics. */
+	uint32_t exception[NSS_PPPOE_BASE_EXCEPTION_EVENT_MAX];
+						/**< PPPoE base node exception events. */
+};
+
+/**
+ * nss_pppoe_session_stats
+ * 	PPPoE synchronization statistics per session.
+ */
+struct nss_pppoe_session_stats {
+	struct nss_cmn_node_stats node;	/**< Common node statistics. */
+	uint32_t exception[NSS_PPPOE_SESSION_EXCEPTION_EVENT_MAX];
+						/**< PPPoE session exception events. */
+};
+
+/**
+ * nss_pppoe_stats_session
+ *	PPPoE session statistics.
+ */
+enum nss_pppoe_stats_session {
+	NSS_PPPOE_STATS_SESSION_RX_PACKETS,
+	NSS_PPPOE_STATS_SESSION_RX_BYTES,
+	NSS_PPPOE_STATS_SESSION_TX_PACKETS,
+	NSS_PPPOE_STATS_SESSION_TX_BYTES,
+	NSS_PPPOE_STATS_SESSION_WRONG_VERSION_OR_TYPE,
+	NSS_PPPOE_STATS_SESSION_WRONG_CODE,
+	NSS_PPPOE_STATS_SESSION_UNSUPPORTED_PPP_PROTOCOL,
+	NSS_PPPOE_STATS_SESSION_MAX
+};
+
+/**
+ * nss_pppoe_stats_base
+ *	PPPoE base node statistics.
+ */
+enum nss_pppoe_stats_base {
+	NSS_PPPOE_STATS_BASE_RX_PACKETS,
+	NSS_PPPOE_STATS_BASE_RX_BYTES,
+	NSS_PPPOE_STATS_BASE_TX_PACKETS,
+	NSS_PPPOE_STATS_BASE_TX_BYTES,
+	NSS_PPPOE_STATS_BASE_RX_QUEUE_0_DROPPED,
+	NSS_PPPOE_STATS_BASE_RX_QUEUE_1_DROPPED,
+	NSS_PPPOE_STATS_BASE_RX_QUEUE_2_DROPPED,
+	NSS_PPPOE_STATS_BASE_RX_QUEUE_3_DROPPED,
+	NSS_PPPOE_STATS_BASE_SHORT_PPPOE_HDR_LENGTH,
+	NSS_PPPOE_STATS_BASE_SHORT_PACKET_LENGTH,
+	NSS_PPPOE_STATS_BASE_WRONG_VERSION_OR_TYPE,
+	NSS_PPPOE_STATS_BASE_WRONG_CODE,
+	NSS_PPPOE_STATS_BASE_UNSUPPORTED_PPP_PROTOCOL,
+	NSS_PPPOE_STATS_BASE_DISABLED_BRIDGE_PACKET,
+	NSS_PPPOE_STATS_BASE_MAX
+};
+
+/**
+ * nss_pppoe_stats_notification
+ *	PPPoE statistics structure.
+ */
+struct nss_pppoe_stats_notification {
+	uint32_t core_id;					/**< Core ID. */
+	uint32_t if_num;					/**< Interface number. */
+	uint64_t session_stats[NSS_PPPOE_STATS_SESSION_MAX];	/**< PPPoE statistics. */
+	uint64_t base_stats[NSS_PPPOE_STATS_BASE_MAX];		/**< PPPoE base node statistics. */
+};
+
+#ifdef __KERNEL__ /* only kernel will use. */
+
+/**
  * nss_pppoe_sync_stats_msg
- *	PPPoE node synchronization statistics.
+ *	PPPoE synchronization statistics.
  */
 struct nss_pppoe_sync_stats_msg {
-	struct nss_cmn_node_stats stats;	/**< Common node statistics. */
-	uint32_t exception_events[NSS_PPPOE_EXCEPTION_EVENT_MAX];
-			/**< PPPoE exception events. */
+	struct nss_pppoe_session_stats session_stats;	/**< Session statistics. */
+	struct nss_pppoe_base_stats base_stats;		/**< Base node statistics. */
 };
 
 /**
@@ -87,6 +182,14 @@ struct nss_pppoe_create_msg {
 };
 
 /**
+ * nss_pppoe_br_accel_cfg_msg
+ *	PPPoE bridge acceleration configuration message.
+ */
+struct nss_pppoe_br_accel_cfg_msg {
+	uint32_t br_accel_cfg;		/**< PPPoE bridge acceleration configuration. */
+};
+
+/**
  * nss_pppoe_msg
  *	Data for sending and receiving PPPoE messages.
  */
@@ -103,6 +206,8 @@ struct nss_pppoe_msg {
 					/**< Session destroy message. */
 		struct nss_pppoe_sync_stats_msg sync_stats;
 					/**< Session statistics message. */
+		struct nss_pppoe_br_accel_cfg_msg br_accel;
+					/**< PPPoE bridge acceleration configuration message. */
 	} msg;				/**< Message payload. */
 };
 
@@ -192,6 +297,36 @@ extern struct nss_ctx_instance *nss_pppoe_get_context(void);
 extern void nss_pppoe_debug_stats_get(void *stats_mem);
 
 /**
+ * nss_pppoe_get_bridge_accel_mode
+ *	Gets the PPPoE bridge acceleration mode.
+ *
+ * @return
+ * Current PPPoE bridge acceleration mode.
+ */
+extern enum nss_pppoe_br_accel_modes nss_pppoe_get_br_accel_mode(void);
+
+/**
+ * nss_pppoe_register_sysctl
+ *	Registers the PPPoE system control table.
+ *
+ * @return
+ * None.
+ */
+void nss_pppoe_register_sysctl(void);
+
+/**
+ * nss_pppoe_unregister_sysctl
+ *	Deregisters the PPPoE system control table.
+ *
+ * @return
+ * None.
+ *
+ * @dependencies
+ * The system control table must have been previously registered.
+ */
+void nss_pppoe_unregister_sysctl(void);
+
+/**
  * nss_pppoe_msg_init
  *	Initializes a PPPoE message.
  *
@@ -211,6 +346,37 @@ extern void nss_pppoe_debug_stats_get(void *stats_mem);
 extern void nss_pppoe_msg_init(struct nss_pppoe_msg *ncm,
 				uint16_t if_num, uint32_t type, uint32_t len,
 				void *cb, void *app_data);
+
+/**
+ * nss_pppoe_stats_register_notifier
+ *	Registers a statistics notifier.
+ *
+ * @datatypes
+ * notifier_block
+ *
+ * @param[in] nb Notifier block.
+ *
+ * @return
+ * 0 on success or -2 on failure.
+ */
+extern int nss_pppoe_stats_register_notifier(struct notifier_block *nb);
+
+/**
+ * nss_pppoe_stats_unregister_notifier
+ *	Deregisters a statistics notifier.
+ *
+ * @datatypes
+ * notifier_block
+ *
+ * @param[in] nb Notifier block.
+ *
+ * @return
+ * 0 on success or -2 on failure.
+ */
+extern int nss_pppoe_stats_unregister_notifier(struct notifier_block *nb);
+
+#endif /*__KERNEL__ */
+
 /**
  * @}
  */

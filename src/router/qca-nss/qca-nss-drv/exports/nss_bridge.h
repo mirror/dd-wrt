@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2016-2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2016-2018,2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -273,7 +273,7 @@ nss_tx_status_t nss_bridge_tx_set_mtu_msg(uint32_t bridge_if_num, uint32_t mtu);
  * @return
  * Status of the Tx operation.
  */
-nss_tx_status_t nss_bridge_tx_set_mac_addr_msg(uint32_t bridge_if_num, uint8_t *addr);
+nss_tx_status_t nss_bridge_tx_set_mac_addr_msg(uint32_t bridge_if_num, const uint8_t *addr);
 
 /**
  * nss_bridge_tx_join_msg
@@ -338,8 +338,8 @@ nss_tx_status_t nss_bridge_tx_vsi_unassign_msg(uint32_t if_num, uint32_t vsi);
  * @datatypes
  * nss_bridge_fdb_learn_mode
  *
- * @param[in] if_num     Interface number of the bridge.
- * @param[in] fdb_learn  FDB learning disable/enable.
+ * @param[in] bridge_if_num  Interface number of the bridge.
+ * @param[in] fdb_learn      FDB learning disable/enable.
  *
  * @return
  * Status of the Tx operation.

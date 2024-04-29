@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2018-2020, The Linux Foundation. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -49,6 +49,8 @@
 #define NSS_CE_APB_CLK "nss-ce-apb-clk"
 #define NSS_NSSNOC_CE_AXI_CLK "nss-nssnoc-ce-axi-clk"
 #define NSS_NSSNOC_CE_APB_CLK "nss-nssnoc-ce-apb-clk"
+#define NSS_MEM_NOC_UBI32_CLK "nss-mem-noc-ubi32-clk"
+#define NSS_SNOC_NSSNOC_CLK "nss-snoc-nssnoc-clk"
 
 /*
  * Per-core CLKS
@@ -58,6 +60,7 @@
 #define NSS_AHB_CLK "nss-ahb-clk"
 #define NSS_AXI_CLK "nss-axi-clk"
 #define NSS_NC_AXI_CLK "nss-nc-axi-clk"
+#define NSS_UTCM_CLK "nss-utcm-clk"
 
 /*
  * Voltage values
@@ -99,7 +102,8 @@ enum nss_hal_n2h_intr_purpose {
 	NSS_HAL_N2H_INTR_PURPOSE_DATA_QUEUE_3 = 6,
 	NSS_HAL_N2H_INTR_PURPOSE_COREDUMP_COMPLETE = 7,
 	NSS_HAL_N2H_INTR_PURPOSE_PAGED_EMPTY_BUFFER_SOS = 8,
-	NSS_HAL_N2H_INTR_PURPOSE_MAX = 9,
+	NSS_HAL_N2H_INTR_PURPOSE_PROFILE_DMA = 9,
+	NSS_HAL_N2H_INTR_PURPOSE_MAX
 };
 
 /*
@@ -120,6 +124,16 @@ static uint32_t intr_cause[NSS_MAX_CORES][NSS_H2N_INTR_TYPE_MAX] = {
  */
 void nss_hal_wq_function(struct work_struct *work)
 {
+	nss_work_t *my_work = (nss_work_t *)work;
+
+	mutex_lock(&nss_top_main.wq_lock);
+
+	nss_freq_change(&nss_top_main.nss[NSS_CORE_0], my_work->frequency, my_work->stats_enable, 0);
+	clk_set_rate(nss_core0_clk, my_work->frequency);
+
+	nss_freq_change(&nss_top_main.nss[NSS_CORE_0], my_work->frequency, my_work->stats_enable, 1);
+
+	mutex_unlock(&nss_top_main.wq_lock);
 	kfree((void *)work);
 }
 
@@ -178,12 +192,12 @@ static struct nss_platform_data *__nss_hal_of_get_pdata(struct platform_device *
 	nss_ctx->id = npd->id;
 
 	if (of_address_to_resource(np, 0, &res_nphys) != 0) {
-		nss_info_always("%p: nss%d: of_address_to_resource() fail for nphys\n", nss_ctx, nss_ctx->id);
+		nss_info_always("%px: nss%d: of_address_to_resource() fail for nphys\n", nss_ctx, nss_ctx->id);
 		goto out;
 	}
 
 	if (of_address_to_resource(np, 1, &res_qgic_phys) != 0) {
-		nss_info_always("%p: nss%d: of_address_to_resource() fail for qgic_phys\n", nss_ctx, nss_ctx->id);
+		nss_info_always("%px: nss%d: of_address_to_resource() fail for qgic_phys\n", nss_ctx, nss_ctx->id);
 		goto out;
 	}
 
@@ -195,13 +209,13 @@ static struct nss_platform_data *__nss_hal_of_get_pdata(struct platform_device *
 
 	npd->nmap = ioremap(npd->nphys, resource_size(&res_nphys));
 	if (!npd->nmap) {
-		nss_info_always("%p: nss%d: ioremap() fail for nphys\n", nss_ctx, nss_ctx->id);
+		nss_info_always("%px: nss%d: ioremap() fail for nphys\n", nss_ctx, nss_ctx->id);
 		goto out;
 	}
 
 	npd->qgic_map = ioremap(npd->qgic_phys, resource_size(&res_qgic_phys));
 	if (!npd->qgic_map) {
-		nss_info_always("%p: nss%d: ioremap() fail for qgic map\n", nss_ctx, nss_ctx->id);
+		nss_info_always("%px: nss%d: ioremap() fail for qgic map\n", nss_ctx, nss_ctx->id);
 		goto out;
 	}
 
@@ -213,7 +227,7 @@ static struct nss_platform_data *__nss_hal_of_get_pdata(struct platform_device *
 	for (i = 0 ; i < npd->num_irq; i++) {
 		npd->irq[i] = irq_of_parse_and_map(np, i);
 		if (!npd->irq[i]) {
-			nss_info_always("%p: nss%d: irq_of_parse_and_map() fail for irq %d\n", nss_ctx, nss_ctx->id, i);
+			nss_info_always("%px: nss%d: irq_of_parse_and_map() fail for irq %d\n", nss_ctx, nss_ctx->id, i);
 			goto out;
 		}
 	}
@@ -238,14 +252,54 @@ out:
 }
 
 /*
+ * nss_hal_clock_set_and_enable()
+ */
+static int nss_hal_clock_set_and_enable(struct device *dev, const char *id, unsigned long rate)
+{
+	struct clk *nss_clk = NULL;
+	int err;
+
+	nss_clk = devm_clk_get(dev, id);
+	if (IS_ERR(nss_clk)) {
+		pr_err("%px: cannot get clock: %s\n", dev, id);
+		return -EFAULT;
+	}
+
+	if (rate) {
+		err = clk_set_rate(nss_clk, rate);
+		if (err) {
+			pr_err("%px: cannot set %s freq\n", dev, id);
+			return -EFAULT;
+		}
+	}
+
+	err = clk_prepare_enable(nss_clk);
+	if (err) {
+		pr_err("%px: cannot enable clock: %s\n", dev, id);
+		return -EFAULT;
+	}
+
+	return 0;
+}
+
+/*
  * __nss_hal_core_reset()
  */
 static int __nss_hal_core_reset(struct platform_device *nss_dev, void __iomem *map, uint32_t addr, uint32_t clk_src)
 {
+	uint32_t value;
+
+	/*
+	 * Apply ubi32 core reset
+	 */
+	nss_write_32(map, NSS_REGS_RESET_CTRL_OFFSET, 0x1);
+
 	/*
 	 * De-assert reset for first set
 	 */
-	nss_write_32(nss_misc_reset, 0x0, 0x0);
+	value = nss_read_32(nss_misc_reset, 0x0);
+	value &= ~NSS_CORE_GCC_RESET_1;
+	nss_write_32(nss_misc_reset, 0x0, value);
 
 	/*
 	 * Minimum 10 - 20 cycles delay is required after
@@ -254,9 +308,10 @@ static int __nss_hal_core_reset(struct platform_device *nss_dev, void __iomem *m
 	usleep_range(10, 20);
 
 	/*
-	 * Apply ubi32 core reset
+	 * De-assert reset for second set
 	 */
-	nss_write_32(map, NSS_REGS_RESET_CTRL_OFFSET, 0x1);
+	value &= ~NSS_CORE_GCC_RESET_2;
+	nss_write_32(nss_misc_reset, 0x0, value);
 
 	/*
 	 * Program address configuration
@@ -276,9 +331,13 @@ static int __nss_hal_core_reset(struct platform_device *nss_dev, void __iomem *m
 	nss_write_32(map, NSS_REGS_RESET_CTRL_OFFSET, 0x0);
 
 	/*
-	 * Clear flag between A53 and NSS for print
+	 * Set values only once for core0. Grab the proper clock.
 	 */
-	nss_write_32(nss_misc_reset_flag, 0, 0x0);
+	nss_core0_clk = clk_get(&nss_dev->dev, NSS_CORE_CLK);
+
+	if (nss_hal_clock_set_and_enable(&nss_dev->dev, NSS_CORE_CLK, nss_runtime_samples.freq_scale[NSS_FREQ_MID_SCALE].frequency)) {
+		return -EFAULT;
+	}
 
 	return 0;
 }
@@ -293,37 +352,6 @@ static void __nss_hal_debug_enable(void)
 }
 
 /*
- * nss_hal_clock_set_and_enable()
- */
-static int nss_hal_clock_set_and_enable(struct device *dev, const char *id, unsigned long rate)
-{
-	struct clk *nss_clk = NULL;
-	int err;
-
-	nss_clk = devm_clk_get(dev, id);
-	if (IS_ERR(nss_clk)) {
-		pr_err("%p: cannot get clock: %s\n", dev, id);
-		return -EFAULT;
-	}
-
-	if (rate) {
-		err = clk_set_rate(nss_clk, rate);
-		if (err) {
-			pr_err("%p: cannot set %s freq\n", dev, id);
-			return -EFAULT;
-		}
-	}
-
-	err = clk_prepare_enable(nss_clk);
-	if (err) {
-		pr_err("%p: cannot enable clock: %s\n", dev, id);
-		return -EFAULT;
-	}
-
-	return 0;
-}
-
-/*
  * __nss_hal_common_reset
  *	Do reset/clock configuration common to all cores
  */
@@ -334,7 +362,7 @@ static int __nss_hal_common_reset(struct platform_device *nss_dev)
 	struct resource res_nss_misc_reset;
 	struct resource res_nss_misc_reset_flag;
 
-	if (nss_hal_clock_set_and_enable(&nss_dev->dev, NSS_NOC_CLK, 461500000)) {
+	if (nss_hal_clock_set_and_enable(&nss_dev->dev, NSS_NOC_CLK, 266670000)) {
 		return -EFAULT;
 	}
 
@@ -350,7 +378,7 @@ static int __nss_hal_common_reset(struct platform_device *nss_dev)
 		return -EFAULT;
 	}
 
-	if (nss_hal_clock_set_and_enable(&nss_dev->dev, NSS_NSSNOC_QOSGEN_REF_CLK, 19200000)) {
+	if (nss_hal_clock_set_and_enable(&nss_dev->dev, NSS_NSSNOC_QOSGEN_REF_CLK, 24000000)) {
 		return -EFAULT;
 	}
 
@@ -358,7 +386,11 @@ static int __nss_hal_common_reset(struct platform_device *nss_dev)
 		return -EFAULT;
 	}
 
-	if (nss_hal_clock_set_and_enable(&nss_dev->dev, NSS_NSSNOC_TIMEOUT_REF_CLK, 4800000)) {
+	if (nss_hal_clock_set_and_enable(&nss_dev->dev, NSS_SNOC_NSSNOC_CLK, 266670000)) {
+		return -EFAULT;
+	}
+
+	if (nss_hal_clock_set_and_enable(&nss_dev->dev, NSS_NSSNOC_TIMEOUT_REF_CLK, 6000000)) {
 		return -EFAULT;
 	}
 
@@ -383,18 +415,18 @@ static int __nss_hal_common_reset(struct platform_device *nss_dev)
 	 */
 	cmn = of_find_node_by_name(NULL, "nss-common");
 	if (!cmn) {
-		pr_err("%p: Unable to find nss-common node\n", nss_dev);
+		pr_err("%px: Unable to find nss-common node\n", nss_dev);
 		return -EFAULT;
 	}
 
 	if (of_address_to_resource(cmn, 0, &res_nss_misc_reset) != 0) {
-		pr_err("%p: of_address_to_resource() return error for nss_misc_reset\n", nss_dev);
+		pr_err("%px: of_address_to_resource() return error for nss_misc_reset\n", nss_dev);
 		of_node_put(cmn);
 		return -EFAULT;
 	}
 
 	if (of_address_to_resource(cmn, 1, &res_nss_misc_reset_flag) != 0) {
-		pr_err("%p: of_address_to_resource() return error for nss_misc_reset_flag\n", nss_dev);
+		pr_err("%px: of_address_to_resource() return error for nss_misc_reset_flag\n", nss_dev);
 		of_node_put(cmn);
 		return -EFAULT;
 	}
@@ -403,13 +435,13 @@ static int __nss_hal_common_reset(struct platform_device *nss_dev)
 
 	nss_misc_reset = ioremap(res_nss_misc_reset.start, resource_size(&res_nss_misc_reset));
 	if (!nss_misc_reset) {
-		pr_err("%p: ioremap fail for nss_misc_reset\n", nss_dev);
+		pr_err("%px: ioremap fail for nss_misc_reset\n", nss_dev);
 		return -EFAULT;
 	}
 
 	nss_misc_reset_flag = ioremap(res_nss_misc_reset_flag.start, resource_size(&res_nss_misc_reset_flag));
 	if (!nss_misc_reset_flag) {
-		pr_err("%p: ioremap fail for nss_misc_reset_flag\n", nss_dev);
+		pr_err("%px: ioremap fail for nss_misc_reset_flag\n", nss_dev);
 		return -EFAULT;
 	}
 
@@ -424,7 +456,7 @@ static int __nss_hal_common_reset(struct platform_device *nss_dev)
  */
 static int __nss_hal_clock_configure(struct nss_ctx_instance *nss_ctx, struct platform_device *nss_dev, struct nss_platform_data *npd)
 {
-	int i;
+	uint32_t i;
 
 	if (nss_hal_clock_set_and_enable(&nss_dev->dev, NSS_NSSNOC_AHB_CLK, 200000000)) {
 		return -EFAULT;
@@ -434,11 +466,19 @@ static int __nss_hal_clock_configure(struct nss_ctx_instance *nss_ctx, struct pl
 		return -EFAULT;
 	}
 
-	if (nss_hal_clock_set_and_enable(&nss_dev->dev, NSS_AXI_CLK, 461500000)) {
+	if (nss_hal_clock_set_and_enable(&nss_dev->dev, NSS_AXI_CLK, 533330000)) {
 		return -EFAULT;
 	}
 
-	if (nss_hal_clock_set_and_enable(&nss_dev->dev, NSS_NC_AXI_CLK, 461500000)) {
+	if (nss_hal_clock_set_and_enable(&nss_dev->dev, NSS_NC_AXI_CLK, 266670000)) {
+		return -EFAULT;
+	}
+
+	if (nss_hal_clock_set_and_enable(&nss_dev->dev, NSS_UTCM_CLK, 266670000)) {
+		return -EFAULT;
+	}
+
+	if (nss_hal_clock_set_and_enable(&nss_dev->dev, NSS_MEM_NOC_UBI32_CLK, 533330000)) {
 		return -EFAULT;
 	}
 
@@ -571,6 +611,8 @@ static int __nss_hal_request_irq(struct nss_ctx_instance *nss_ctx, struct nss_pl
 	struct int_ctx_instance *int_ctx = &nss_ctx->int_ctx[irq_num];
 	int err = -1, irq = npd->irq[irq_num];
 
+	irq_set_status_flags(irq, IRQ_DISABLE_UNLAZY);
+
 	if (irq_num == NSS_HAL_N2H_INTR_PURPOSE_EMPTY_BUFFER_SOS) {
 		netif_napi_add(&nss_ctx->napi_ndev, &int_ctx->napi, nss_core_handle_napi_non_queue, NSS_EMPTY_BUFFER_SOS_PROCESSING_WEIGHT);
 		int_ctx->cause = NSS_N2H_INTR_EMPTY_BUFFERS_SOS;
@@ -625,6 +667,12 @@ static int __nss_hal_request_irq(struct nss_ctx_instance *nss_ctx, struct nss_pl
 		err = request_irq(irq, nss_hal_handle_irq, 0, "nss_paged_empty_buf_sos", int_ctx);
 	}
 
+	if (irq_num == NSS_HAL_N2H_INTR_PURPOSE_PROFILE_DMA) {
+		int_ctx->cause = NSS_N2H_INTR_PROFILE_DMA;
+		netif_napi_add(&nss_ctx->napi_ndev, &int_ctx->napi, nss_core_handle_napi_sdma, NSS_DATA_COMMAND_BUFFER_PROCESSING_WEIGHT);
+		err = request_irq(irq, nss_hal_handle_irq, 0, "nss_profile_dma", int_ctx);
+	}
+
 	if (err) {
 		return err;
 	}
@@ -657,7 +705,7 @@ bool __nss_hal_init_utcm_shared(struct nss_ctx_instance *nss_ctx, uint32_t *memi
 	 * Check meminfo utcm_shared map magic
 	 */
 	if ((uint16_t)utcm_shared_map_magic != NSS_MEMINFO_RESERVE_AREA_UTCM_SHARED_MAP_MAGIC) {
-		nss_info_always("%p: failed to verify UTCM_SHARED map magic\n", nss_ctx);
+		nss_info_always("%px: failed to verify UTCM_SHARED map magic\n", nss_ctx);
 		return false;
 	}
 
@@ -665,7 +713,7 @@ bool __nss_hal_init_utcm_shared(struct nss_ctx_instance *nss_ctx, uint32_t *memi
 	mem_ctx->utcm_shared_end = mem_ctx->utcm_shared_head + utcm_shared_size;
 	mem_ctx->utcm_shared_tail = mem_ctx->utcm_shared_head;
 
-	nss_info("%p: UTCM_SHARED init: head: 0x%x end: 0x%x tail: 0x%x\n", nss_ctx,
+	nss_info("%px: UTCM_SHARED init: head: 0x%x end: 0x%x tail: 0x%x\n", nss_ctx,
 			mem_ctx->utcm_shared_head, mem_ctx->utcm_shared_end, mem_ctx->utcm_shared_tail);
 	return true;
 }

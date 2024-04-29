@@ -13,8 +13,6 @@ qca-nss-ipsecmgr-objs += nss_ipsecmgr_sa.o
 qca-nss-ipsecmgr-objs += nss_ipsecmgr_flow.o
 ccflags-y += -DNSS_IPSECMGR_DEBUG_LEVEL=3
 
-obj-y+= plugins/klips/
-
 ifeq ($(SoC),$(filter $(SoC),ipq807x ipq807x_64 ipq60xx ipq60xx_64))
 ccflags-y += -DNSS_IPSECMGR_PPE_SUPPORT
 ccflags-y += -DNSS_IPSECMGR_DMA_SUPPORT

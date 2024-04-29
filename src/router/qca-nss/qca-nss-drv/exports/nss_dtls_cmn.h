@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2017-2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -31,8 +31,10 @@
 #define NSS_DTLS_CMN_CTX_HDR_UDPLITE 0x0002		/**< DTLS with UDPLite. */
 #define NSS_DTLS_CMN_CTX_HDR_CAPWAP 0x0004		/**< DTLS with CAPWAP. */
 #define NSS_DTLS_CMN_CTX_CIPHER_MODE_GCM 0x0008		/**< DTLS with GCM cipher mode. */
-#define NSS_DTLS_CMN_CTX_OUTER_UDPLITE_CSUM 0x10000	/**< Checksum only UDPLite header. */
-#define NSS_DTLS_CMN_CTX_INNER_ACCEPT_ALL 0x20000
+#define NSS_DTLS_CMN_CTX_ENCAP_UDPLITE_CSUM 0x10000	/**< Checksum only UDPLite header. */
+#define NSS_DTLS_CMN_CTX_ENCAP_METADATA 0x20000		/**< Valid metadata in encapsulation direction. */
+#define NSS_DTLS_CMN_CTX_DECAP_ACCEPT_ALL 0x40000	/**< Exception all error packets to host. */
+
 #define NSS_DTLS_CMN_CLE_MAX 32				/**< Max classification error. */
 
 /**
@@ -199,6 +201,7 @@ struct nss_dtls_cmn_msg {
 	} msg;			/**< Message payload for DTLS session messages exchanged with NSS core. */
 };
 
+#ifdef __KERNEL__ /* only for kernel use. */
 /**
  * Callback function for receiving DTLS messages.
  *
@@ -388,4 +391,5 @@ extern int32_t nss_dtls_cmn_get_ifnum(int32_t if_num);
  * @}
  */
 
+#endif /* __KERNEL__ */
 #endif /* _NSS_DTLS_CMN_H_. */

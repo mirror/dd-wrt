@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2018, 2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -38,7 +38,7 @@ static int8_t *nss_l2tpv2_log_message_types_str[NSS_L2TPV2_MSG_MAX] __maybe_unus
 static void nss_l2tpv2_log_session_create_msg(struct nss_l2tpv2_msg *nlm)
 {
 	struct nss_l2tpv2_session_create_msg *nlcm __maybe_unused = &nlm->msg.session_create_msg;
-	nss_trace("%p: NSS L2TPV2 Session Create message \n"
+	nss_trace("%px: NSS L2TPV2 Session Create message \n"
 		"L2TPV2 Local Tunnel ID: %x\n"
 		"L2TPV2 Local Session ID: %x\n"
 		"L2TPV2 Peer Tunnel ID: %x\n"
@@ -67,7 +67,7 @@ static void nss_l2tpv2_log_session_create_msg(struct nss_l2tpv2_msg *nlm)
 static void nss_l2tpv2_log_session_destroy_msg(struct nss_l2tpv2_msg *nlm)
 {
 	struct nss_l2tpv2_session_destroy_msg *nldm __maybe_unused = &nlm->msg.session_destroy_msg;
-	nss_trace("%p: NSS L2TPV2 Session Destroy message \n"
+	nss_trace("%px: NSS L2TPV2 Session Destroy message \n"
 		"L2TPV2 Local Tunnel ID: %x\n"
 		"L2TPV2 Local Session ID: %x\n",
 		nldm, nldm->local_tunnel_id,
@@ -96,7 +96,7 @@ static void nss_l2tpv2_log_verbose(struct nss_l2tpv2_msg *nlm)
 		break;
 
 	default:
-		nss_trace("%p: Invalid message type\n", nlm);
+		nss_trace("%px: Invalid message type\n", nlm);
 		break;
 	}
 }
@@ -108,11 +108,11 @@ static void nss_l2tpv2_log_verbose(struct nss_l2tpv2_msg *nlm)
 void nss_l2tpv2_log_tx_msg(struct nss_l2tpv2_msg *nlm)
 {
 	if (nlm->cm.type >= NSS_L2TPV2_MSG_MAX) {
-		nss_warning("%p: Invalid message type\n", nlm);
+		nss_warning("%px: Invalid message type\n", nlm);
 		return;
 	}
 
-	nss_info("%p: type[%d]:%s\n", nlm, nlm->cm.type, nss_l2tpv2_log_message_types_str[nlm->cm.type]);
+	nss_info("%px: type[%d]:%s\n", nlm, nlm->cm.type, nss_l2tpv2_log_message_types_str[nlm->cm.type]);
 	nss_l2tpv2_log_verbose(nlm);
 }
 
@@ -123,18 +123,18 @@ void nss_l2tpv2_log_tx_msg(struct nss_l2tpv2_msg *nlm)
 void nss_l2tpv2_log_rx_msg(struct nss_l2tpv2_msg *nlm)
 {
 	if (nlm->cm.response >= NSS_CMN_RESPONSE_LAST) {
-		nss_warning("%p: Invalid response\n", nlm);
+		nss_warning("%px: Invalid response\n", nlm);
 		return;
 	}
 
 	if (nlm->cm.response == NSS_CMN_RESPONSE_NOTIFY || (nlm->cm.response == NSS_CMN_RESPONSE_ACK)) {
-		nss_info("%p: type[%d]:%s, response[%d]:%s\n", nlm, nlm->cm.type,
+		nss_info("%px: type[%d]:%s, response[%d]:%s\n", nlm, nlm->cm.type,
 			nss_l2tpv2_log_message_types_str[nlm->cm.type],
 			nlm->cm.response, nss_cmn_response_str[nlm->cm.response]);
 		goto verbose;
 	}
 
-	nss_info("%p: msg nack - type[%d]:%s, response[%d]:%s\n",
+	nss_info("%px: msg nack - type[%d]:%s, response[%d]:%s\n",
 		nlm, nlm->cm.type, nss_l2tpv2_log_message_types_str[nlm->cm.type],
 		nlm->cm.response, nss_cmn_response_str[nlm->cm.response]);
 

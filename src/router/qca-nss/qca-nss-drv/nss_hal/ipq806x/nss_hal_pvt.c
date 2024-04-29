@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2013, 2015-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2013, 2015-2021, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -443,12 +443,12 @@ static struct nss_platform_data *__nss_hal_of_get_pdata(struct platform_device *
 	nss_ctx->id = npd->id;
 
 	if (of_address_to_resource(np, 0, &res_nphys) != 0) {
-		nss_info_always("%p: nss%d: of_address_to_resource() fail for nphys\n", nss_ctx, nss_ctx->id);
+		nss_info_always("%px: nss%d: of_address_to_resource() fail for nphys\n", nss_ctx, nss_ctx->id);
 		goto out;
 	}
 
 	if (of_address_to_resource(np, 1, &res_vphys) != 0) {
-		nss_info_always("%p: nss%d: of_address_to_resource() fail for vphys\n", nss_ctx, nss_ctx->id);
+		nss_info_always("%px: nss%d: of_address_to_resource() fail for vphys\n", nss_ctx, nss_ctx->id);
 		goto out;
 	}
 
@@ -460,13 +460,14 @@ static struct nss_platform_data *__nss_hal_of_get_pdata(struct platform_device *
 
 	npd->nmap = ioremap(npd->nphys, resource_size(&res_nphys));
 	if (!npd->nmap) {
-		nss_info_always("%p: nss%d: ioremap() fail for nphys\n", nss_ctx, nss_ctx->id);
+		nss_info_always("%px: nss%d: ioremap() fail for nphys\n", nss_ctx, nss_ctx->id);
 		goto out;
 	}
 
+	nss_assert(npd->vphys);
 	npd->vmap = ioremap_cache(npd->vphys, resource_size(&res_vphys));
 	if (!npd->vmap) {
-		nss_info_always("%p: nss%d: ioremap() fail for vphys\n", nss_ctx, nss_ctx->id);
+		nss_info_always("%px: nss%d: ioremap() fail for vphys\n", nss_ctx, nss_ctx->id);
 		goto out;
 	}
 
@@ -485,7 +486,7 @@ static struct nss_platform_data *__nss_hal_of_get_pdata(struct platform_device *
 	for (i = 0 ; i < npd->num_irq; i++) {
 		npd->irq[i] = irq_of_parse_and_map(np, i);
 		if (!npd->irq[i]) {
-			nss_info_always("%p: nss%d: irq_of_parse_and_map() fail for irq %d\n", nss_ctx, nss_ctx->id, i);
+			nss_info_always("%px: nss%d: irq_of_parse_and_map() fail for irq %d\n", nss_ctx, nss_ctx->id, i);
 			goto out;
 		}
 	}
@@ -523,7 +524,7 @@ static int __nss_hal_core_reset(struct platform_device *nss_dev, void __iomem *m
 	 */
 	rstctl = devm_reset_control_get(&nss_dev->dev, "clkrst-clamp");
 	if (IS_ERR(rstctl)) {
-		nss_info_always("%p: Deassert UBI32 core%d reset clamp failed", nss_dev, nss_dev->id);
+		nss_info_always("%px: Deassert UBI32 core%d reset clamp failed", nss_dev, nss_dev->id);
 		return -EFAULT;
 	}
 	reset_control_deassert(rstctl);
@@ -533,7 +534,7 @@ static int __nss_hal_core_reset(struct platform_device *nss_dev, void __iomem *m
 	 */
 	rstctl = devm_reset_control_get(&nss_dev->dev, "clamp");
 	if (IS_ERR(rstctl)) {
-		nss_info_always("%p: Deassert UBI32 core%d clamp failed", nss_dev, nss_dev->id);
+		nss_info_always("%px: Deassert UBI32 core%d clamp failed", nss_dev, nss_dev->id);
 		return -EFAULT;
 	}
 	reset_control_deassert(rstctl);
@@ -543,7 +544,7 @@ static int __nss_hal_core_reset(struct platform_device *nss_dev, void __iomem *m
 	 */
 	rstctl = devm_reset_control_get(&nss_dev->dev, "ahb");
 	if (IS_ERR(rstctl)) {
-		nss_info_always("%p: Deassert AHB core%d reset failed", nss_dev, nss_dev->id);
+		nss_info_always("%px: Deassert AHB core%d reset failed", nss_dev, nss_dev->id);
 		return -EFAULT;
 	}
 	reset_control_deassert(rstctl);
@@ -553,7 +554,7 @@ static int __nss_hal_core_reset(struct platform_device *nss_dev, void __iomem *m
 	 */
 	rstctl = devm_reset_control_get(&nss_dev->dev, "axi");
 	if (IS_ERR(rstctl)) {
-		nss_info_always("%p: Deassert core%d AXI reset failed", nss_dev, nss_dev->id);
+		nss_info_always("%px: Deassert core%d AXI reset failed", nss_dev, nss_dev->id);
 		return -EFAULT;
 	}
 	reset_control_deassert(rstctl);
@@ -699,12 +700,12 @@ static int __nss_hal_common_reset(struct platform_device *nss_dev)
 	 */
 	cmn = of_find_node_by_name(NULL, "nss-common");
 	if (!cmn) {
-		pr_err("%p: Unable to find nss-common node\n", nss_dev);
+		pr_err("%px: Unable to find nss-common node\n", nss_dev);
 		return -EFAULT;
 	}
 
 	if (of_address_to_resource(cmn, 0, &res_nss_fpb_base) != 0) {
-		pr_err("%p: of_address_to_resource() return error for nss_fpb_base\n", nss_dev);
+		pr_err("%px: of_address_to_resource() return error for nss_fpb_base\n", nss_dev);
 		of_node_put(cmn);
 		return -EFAULT;
 	}
@@ -712,7 +713,7 @@ static int __nss_hal_common_reset(struct platform_device *nss_dev)
 
 	fpb_base = ioremap(res_nss_fpb_base.start, resource_size(&res_nss_fpb_base));
 	if (!fpb_base) {
-		pr_err("%p: ioremap fail for nss_fpb_base\n", nss_dev);
+		pr_err("%px: ioremap fail for nss_fpb_base\n", nss_dev);
 		return -EFAULT;
 	}
 
@@ -726,31 +727,31 @@ static int __nss_hal_common_reset(struct platform_device *nss_dev)
 	 */
 	nss_tcm_src = clk_get(&nss_dev->dev, NSS_TCM_SRC_CLK);
 	if (IS_ERR(nss_tcm_src)) {
-		pr_err("%p: cannot get clock: %s\n", nss_dev, NSS_TCM_SRC_CLK);
+		pr_err("%px: cannot get clock: %s\n", nss_dev, NSS_TCM_SRC_CLK);
 		return -EFAULT;
 	}
 
 	err = clk_set_rate(nss_tcm_src, NSSTCM_FREQ);
 	if (err) {
-		pr_err("%p: cannot set NSSTCM freq\n", nss_dev);
+		pr_err("%px: cannot set NSSTCM freq\n", nss_dev);
 		return -EFAULT;
 	}
 
 	err = clk_prepare_enable(nss_tcm_src);
 	if (err) {
-		pr_err("%p: cannot enable NSSTCM clock source\n", nss_dev);
+		pr_err("%px: cannot enable NSSTCM clock source\n", nss_dev);
 		return -EFAULT;
 	}
 
 	nss_tcm_clk = clk_get(&nss_dev->dev, NSS_TCM_CLK);
 	if (IS_ERR(nss_tcm_clk)) {
-		pr_err("%p: cannot get clock: %s\n", nss_dev, NSS_TCM_CLK);
+		pr_err("%px: cannot get clock: %s\n", nss_dev, NSS_TCM_CLK);
 		return -EFAULT;
 	}
 
 	err = clk_prepare_enable(nss_tcm_clk);
 	if (err) {
-		pr_err("%p: cannot enable NSSTCM clock\n", nss_dev);
+		pr_err("%px: cannot enable NSSTCM clock\n", nss_dev);
 		return -EFAULT;
 	}
 
@@ -759,24 +760,24 @@ static int __nss_hal_common_reset(struct platform_device *nss_dev)
 	 */
 	nss_fab0_clk = clk_get(&nss_dev->dev, NSS_FABRIC0_CLK);
 	if (IS_ERR(nss_fab0_clk)) {
-		pr_err("%p: cannot get clock: %s\n", nss_dev, NSS_FABRIC0_CLK);
+		pr_err("%px: cannot get clock: %s\n", nss_dev, NSS_FABRIC0_CLK);
 		nss_fab0_clk = NULL;
 	} else {
 		err = clk_prepare_enable(nss_fab0_clk);
 		if (err) {
-			pr_err("%p: cannot enable clock: %s\n", nss_dev, NSS_FABRIC0_CLK);
+			pr_err("%px: cannot enable clock: %s\n", nss_dev, NSS_FABRIC0_CLK);
 			return -EFAULT;
 		}
 	}
 
 	nss_fab1_clk = clk_get(&nss_dev->dev, NSS_FABRIC1_CLK);
 	if (IS_ERR(nss_fab1_clk)) {
-		pr_err("%p: cannot get clock: %s\n", nss_dev, NSS_FABRIC1_CLK);
+		pr_err("%px: cannot get clock: %s\n", nss_dev, NSS_FABRIC1_CLK);
 		nss_fab1_clk = NULL;
 	} else {
 		err = clk_prepare_enable(nss_fab1_clk);
 		if (err) {
-			pr_err("%p: cannot enable clock: %s\n", nss_dev, NSS_FABRIC1_CLK);
+			pr_err("%px: cannot enable clock: %s\n", nss_dev, NSS_FABRIC1_CLK);
 			return -EFAULT;
 		}
 	}
@@ -969,7 +970,7 @@ static int __nss_hal_clock_configure(struct nss_ctx_instance *nss_ctx, struct pl
 	nss_core0_clk = clk_get(&nss_dev->dev, NSS_CORE_CLK);
 	if (IS_ERR(nss_core0_clk)) {
 		err = PTR_ERR(nss_core0_clk);
-		nss_info_always("%p: Regulator %s get failed, err=%d\n", nss_ctx, dev_name(&nss_dev->dev), err);
+		nss_info_always("%px: Regulator %s get failed, err=%d\n", nss_ctx, dev_name(&nss_dev->dev), err);
 		return err;
 	}
 
@@ -1107,13 +1108,13 @@ clk_complete:
 	 */
 	err = clk_set_rate(nss_core0_clk, nss_runtime_samples.freq_scale[NSS_FREQ_MID_SCALE].frequency);
 	if (err) {
-		nss_info_always("%p: cannot set nss core0 clock\n", nss_ctx);
+		nss_info_always("%px: cannot set nss core0 clock\n", nss_ctx);
 		return -EFAULT;
 	}
 
 	err = clk_prepare_enable(nss_core0_clk);
 	if (err) {
-		nss_info_always("%p: cannot enable nss core0 clock\n", nss_ctx);
+		nss_info_always("%px: cannot enable nss core0 clock\n", nss_ctx);
 		return -EFAULT;
 	}
 
@@ -1177,7 +1178,7 @@ static int __nss_hal_request_irq(struct nss_ctx_instance *nss_ctx, struct nss_pl
 		err = request_irq(npd->irq[irq_num], nss_hal_handle_irq, 0, "nss", int_ctx);
 	}
 	if (err) {
-		nss_info_always("%p: IRQ%d request failed", nss_ctx, npd->irq[irq_num]);
+		nss_info_always("%px: IRQ%d request failed", nss_ctx, npd->irq[irq_num]);
 		return err;
 	}
 
@@ -1198,7 +1199,7 @@ void __nss_hal_init_imem(struct nss_ctx_instance *nss_ctx)
 	mem_ctx->imem_end = mem_ctx->imem_head + NSS_IMEM_SIZE;
 	mem_ctx->imem_tail = mem_ctx->imem_head;
 
-	nss_info("%p: IMEM init: head: 0x%x end: 0x%x tail: 0x%x\n", nss_ctx,
+	nss_info("%px: IMEM init: head: 0x%x end: 0x%x tail: 0x%x\n", nss_ctx,
 			mem_ctx->imem_head, mem_ctx->imem_end, mem_ctx->imem_tail);
 }
 

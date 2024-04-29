@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2015-2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2015-2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -73,6 +73,7 @@ enum nss_wifi_vdev_msg_types {
 	NSS_WIFI_VDEV_CONFIG_VLAN_MODE_MSG,
 	NSS_WIFI_VDEV_INTERFACE_RECOVERY_RESET_MSG,
 	NSS_WIFI_VDEV_INTERFACE_RECOVERY_RECONF_MSG,
+	NSS_WIFI_VDEV_SET_GROUP_KEY,
 	NSS_WIFI_VDEV_MAX_MSG
 };
 
@@ -178,6 +179,7 @@ enum nss_wifi_vdev_cmd {
 	NSS_WIFI_VDEV_SECURITY_TYPE_CMD,	/**< Configuration to set security type per VAP. */
 	NSS_WIFI_VDEV_CFG_AST_OVERRIDE_CMD,	/**< Configuration to set AST (Address Search Table) override on VAP. */
 	NSS_WIFI_VDEV_CFG_SON_CAP_CMD,		/**< Configuration to set software defined network capability on VAP. */
+	NSS_WIFI_VDEV_CFG_MULTIPASS_CMD,	/**< Configuration to enable multipass phrase capability on VAP. */
 	NSS_WIFI_VDEV_MAX_CMD
 };
 
@@ -198,14 +200,14 @@ enum nss_wifi_vdev_dp_type {
 enum nss_wifi_vdev_vlan_tagging_mode {
 	NSS_WIFI_VDEV_VLAN_NONE,	/**< VLAN support disabled. */
 
-	/*
+	/**
 	 * Default VLAN mode to add VLAN tag in Rx path and
 	 * remove VLAN tag only when matching with configured
 	 * VLAN tag in Tx path.
 	 */
 	NSS_WIFI_VDEV_VLAN_INGRESS_ADD_EGRESS_STRIP_ON_ID_MATCH,
 
-	/*
+	/**
 	 * Port-based VLAN mode to add VLAN tag in Rx path
 	 * and remove any VLAN tag in Tx path.
 	 */
@@ -338,6 +340,17 @@ struct nss_wifi_vdev_me_snptbl_grp_delete_msg {
 };
 
 /**
+ * struct nss_wifi_vdev_me_mbr_ra_info
+ *	Address details of receiver members.
+ */
+struct nss_wifi_vdev_me_mbr_ra_info {
+	bool dup;
+					/**< Duplicate bit to identify if next hop address is present. */
+	uint8_t ramac[ETH_ALEN];
+					/**< MAC address of receiver. */
+};
+
+/**
  * nss_wifi_vdev_me_snptbl_grp_mbr_add_msg
  *	Information for adding a snooplist group member.
  */
@@ -363,6 +376,8 @@ struct nss_wifi_vdev_me_snptbl_grp_mbr_add_msg {
 	uint8_t nsrcs;		/**< Number of source IP addresses for selective source multicast. */
 	uint8_t src_ip_addr[NSS_WIFI_VDEV_IPV6_ADDR_LENGTH * NSS_WIFI_MAX_SRCS];
 				/**< Source IP address. */
+	struct nss_wifi_vdev_me_mbr_ra_info ra_entry;
+				/**< Receiver address entry corresponding to the member. */
 };
 
 /**
@@ -541,6 +556,15 @@ struct nss_wifi_vdev_vlan_enable_msg {
 };
 
 /**
+ * nss_wifi_vdev_set_vlan_group_key
+ *	Set VLAN ID for special peer.
+ */
+struct nss_wifi_vdev_set_vlan_group_key {
+	uint16_t vlan_id;		/**< VLAN ID. */
+	uint16_t group_key;		/**< Group key. */
+};
+
+/**
  * nss_wifi_vdev_txinfo_per_packet_metadata
  *	Per-packet metadata for Tx completion information packets.
  */
@@ -673,6 +697,9 @@ struct nss_wifi_vdev_wds_per_packet_metadata {
 	enum wifi_vdev_ext_wds_info_type wds_type;
 				/**< WDS message type. */
 	uint8_t addr4_valid;	/**< 802.11 4th address valid flag. */
+	uint8_t rsvd;		/**< Reserve bytes for alignment. */
+	uint16_t sa_idx;	/**< Source address index. */
+	uint16_t sa_sw_peer_id;	/**< Software/Address-Search-Table peer ID. */
 };
 
 /**
@@ -735,6 +762,9 @@ struct nss_wifi_vdev_per_packet_metadata {
  */
 struct nss_wifi_vdev_meshmode_rx_metadata {
 	uint16_t rs_ratephy;	/**< PHY rate. */
+	uint16_t rs_ratephy_lo;	/**< PHY rate lower bytes. */
+	uint16_t rs_ratephy_hi;	/**< PHY rate higher bytes. */
+	uint16_t cntr_chan_freq;	/** Center channel frequency. */
 	uint16_t vdev_id;	/**< Virtual device ID. */
 	uint16_t peer_id;	/**< Peer ID. */
 	uint16_t rs_rssi;	/**< Received signal strength indication (noise floor adjusted). */
@@ -962,6 +992,8 @@ struct nss_wifi_vdev_msg {
 				/**< Message to set VLAN configured on a particular virtual device. */
 		struct nss_wifi_vdev_vlan_enable_msg vdev_vlan_enable;
 				/**< Message to enable VLAN tagging support on a particular virtual device. */
+		struct nss_wifi_vdev_set_vlan_group_key vlan_group_key;
+				/**< Message to set group key for peer. */
 	} msg;		/**< Virtual device message payload. */
 };
 

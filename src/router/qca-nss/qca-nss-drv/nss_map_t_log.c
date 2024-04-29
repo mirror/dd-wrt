@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2018, 2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -38,7 +38,7 @@ static int8_t *nss_map_t_log_message_types_str[NSS_MAP_T_MSG_MAX] __maybe_unused
 static void nss_map_t_log_rule_configure_msg(struct nss_map_t_msg *ntm)
 {
 	struct nss_map_t_instance_rule_config_msg *ntcm __maybe_unused = &ntm->msg.create_msg;
-	nss_trace("%p: NSS MAP_T Rule Configure message \n"
+	nss_trace("%px: NSS MAP_T Rule Configure message \n"
 		"MAP_T Rule Seq Number: %d\n"
 		"MAP_T Total Number of Rules: %d\n"
 		"MAP_T Local IPv6 Prefix Length: %d\n"
@@ -54,9 +54,9 @@ static void nss_map_t_log_rule_configure_msg(struct nss_map_t_msg *ntm)
 		"MAP_T Remote PSID Offset: %d\n"
 		"MAP_T Local MAP Style: %d\n"
 		"MAP_T Remote Map Style: %d\n"
-		"MAP_T Local IPv6 Prefix: %p\n"
-		"MAP_T Reserved B: %p\n"
-		"MAP_T Remote IPv6 Prefix: %p\n"
+		"MAP_T Local IPv6 Prefix: %px\n"
+		"MAP_T Reserved B: %px\n"
+		"MAP_T Remote IPv6 Prefix: %px\n"
 		"MAP_T Valid Rule: %d\n",
 		ntcm, ntcm->rule_num, ntcm->total_rules,
 		ntcm->local_ipv6_prefix_len, ntcm->local_ipv4_prefix,
@@ -77,7 +77,7 @@ static void nss_map_t_log_rule_configure_msg(struct nss_map_t_msg *ntm)
 static void nss_map_t_log_rule_deconfig_msg(struct nss_map_t_msg *ntm)
 {
 	struct nss_map_t_instance_rule_deconfig_msg *ntdm __maybe_unused = &ntm->msg.destroy_msg;
-	nss_trace("%p: NSS MAP_T Rule Deconfigure message \n"
+	nss_trace("%px: NSS MAP_T Rule Deconfigure message \n"
 		"MAP_T Interface Number: %d\n",
 		ntdm, ntdm->if_number);
 }
@@ -104,7 +104,7 @@ static void nss_map_t_log_verbose(struct nss_map_t_msg *ntm)
 		break;
 
 	default:
-		nss_trace("%p: Invalid message type\n", ntm);
+		nss_trace("%px: Invalid message type\n", ntm);
 		break;
 	}
 }
@@ -116,11 +116,11 @@ static void nss_map_t_log_verbose(struct nss_map_t_msg *ntm)
 void nss_map_t_log_tx_msg(struct nss_map_t_msg *ntm)
 {
 	if (ntm->cm.type >= NSS_MAP_T_MSG_MAX) {
-		nss_warning("%p: Invalid message type\n", ntm);
+		nss_warning("%px: Invalid message type\n", ntm);
 		return;
 	}
 
-	nss_info("%p: type[%d]:%s\n", ntm, ntm->cm.type, nss_map_t_log_message_types_str[ntm->cm.type]);
+	nss_info("%px: type[%d]:%s\n", ntm, ntm->cm.type, nss_map_t_log_message_types_str[ntm->cm.type]);
 	nss_map_t_log_verbose(ntm);
 }
 
@@ -131,18 +131,18 @@ void nss_map_t_log_tx_msg(struct nss_map_t_msg *ntm)
 void nss_map_t_log_rx_msg(struct nss_map_t_msg *ntm)
 {
 	if (ntm->cm.response >= NSS_CMN_RESPONSE_LAST) {
-		nss_warning("%p: Invalid response\n", ntm);
+		nss_warning("%px: Invalid response\n", ntm);
 		return;
 	}
 
 	if (ntm->cm.response == NSS_CMN_RESPONSE_NOTIFY || (ntm->cm.response == NSS_CMN_RESPONSE_ACK)) {
-		nss_info("%p: type[%d]:%s, response[%d]:%s\n", ntm, ntm->cm.type,
+		nss_info("%px: type[%d]:%s, response[%d]:%s\n", ntm, ntm->cm.type,
 			nss_map_t_log_message_types_str[ntm->cm.type],
 			ntm->cm.response, nss_cmn_response_str[ntm->cm.response]);
 		goto verbose;
 	}
 
-	nss_info("%p: msg nack - type[%d]:%s, response[%d]:%s\n",
+	nss_info("%px: msg nack - type[%d]:%s, response[%d]:%s\n",
 		ntm, ntm->cm.type, nss_map_t_log_message_types_str[ntm->cm.type],
 		ntm->cm.response, nss_cmn_response_str[ntm->cm.response]);
 

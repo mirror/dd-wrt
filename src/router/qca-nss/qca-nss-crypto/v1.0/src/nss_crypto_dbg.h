@@ -1,4 +1,4 @@
-/* Copyright (c) 2013, 2016, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2013, 2016, 2020, The Linux Foundation. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -31,11 +31,10 @@ static inline void nss_crypto_dump_desc(struct nss_crypto_bam_desc *head, uint32
 	struct nss_crypto_bam_desc *desc;
 	int i;
 
-
 	nss_crypto_dbg("========== %s  ===========\n", str);
 
 	for (i = 0, desc = head; i < num; i++, desc++) {
-		nss_crypto_dbg("desc%d = %p, data_start = 0x%x, data_len = %d, flags = 0x%x\n",
+		nss_crypto_dbg("desc%d = %px, data_start = 0x%x, data_len = %d, flags = 0x%x\n",
 				i, desc, desc->data_start, desc->data_len, desc->flags);
 	}
 	nss_crypto_dbg("================================\n");
@@ -51,7 +50,7 @@ static inline void nss_crypto_dump_cblk(struct nss_crypto_bam_cmd *cmd, uint32_t
 
 	nss_crypto_dbg("========== %s:CMD Block[%d] ===========\n", str, len);
 	for (i = 0; i < len; i++, cmd++) {
-		nss_crypto_dbg("cmd = %p, reg_addr = 0x%x, reg_val = 0x%x, reg_mask = 0x%x\n",
+		nss_crypto_dbg("cmd = %px, reg_addr = 0x%x, reg_val = 0x%x, reg_mask = 0x%x\n",
 				cmd, cmd->addr, cmd->value, cmd->mask);
 	}
 	nss_crypto_dbg("================================\n");

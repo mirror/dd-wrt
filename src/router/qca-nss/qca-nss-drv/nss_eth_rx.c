@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2013-2017, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2013-2017, 2019-2020 The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -19,8 +19,9 @@
  *	NSS ETH_RX APIs
  */
 
-#include "nss_tx_rx_common.h"
+#include <nss_core.h>
 #include "nss_eth_rx_stats.h"
+#include "nss_eth_rx_strings.h"
 
 /*
  **********************************
@@ -40,13 +41,17 @@ static void nss_eth_rx_interface_handler(struct nss_ctx_instance *nss_ctx, struc
 	 * Is this a valid request/response packet?
 	 */
 	if (nem->cm.type >= NSS_METADATA_TYPE_ETH_RX_MAX) {
-		nss_warning("%p: received invalid message %d for eth_rx interface", nss_ctx, nem->cm.type);
+		nss_warning("%px: received invalid message %d for eth_rx interface", nss_ctx, nem->cm.type);
 		return;
 	}
 
 	switch (nem->cm.type) {
 	case NSS_RX_METADATA_TYPE_ETH_RX_STATS_SYNC:
+		/*
+		 * Update driver statistics and send stats notifications to the registered modules.
+		 */
 		nss_eth_rx_metadata_stats_sync(nss_ctx, &nem->msg.node_sync);
+		nss_eth_rx_stats_notify(nss_ctx);
 		break;
 
 	default:
@@ -54,7 +59,7 @@ static void nss_eth_rx_interface_handler(struct nss_ctx_instance *nss_ctx, struc
 			/*
 			 * Check response
 			 */
-			nss_info("%p: Received response %d for type %d, interface %d",
+			nss_info("%px: Received response %d for type %d, interface %d",
 						nss_ctx, ncm->response, ncm->type, ncm->interface);
 		}
 	}
@@ -68,4 +73,5 @@ void nss_eth_rx_register_handler(struct nss_ctx_instance *nss_ctx)
 	nss_core_register_handler(nss_ctx, NSS_ETH_RX_INTERFACE, nss_eth_rx_interface_handler, NULL);
 
 	nss_eth_rx_stats_dentry_create();
+	nss_eth_rx_strings_dentry_create();
 }

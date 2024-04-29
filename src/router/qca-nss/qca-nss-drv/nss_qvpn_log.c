@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2019-2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -69,10 +69,10 @@ static int8_t *nss_qvpn_log_error_response_types_str[NSS_QVPN_ERROR_TYPE_MAX] __
 static void nss_qvpn_log_tun_config_msg(struct nss_qvpn_msg *ncm)
 {
 	struct nss_qvpn_tunnel_config_msg *nqtcm __maybe_unused = &ncm->msg.tunnel_config;
-	nss_trace("%p: NSS QVPN tunnel config message \n"
+	nss_trace("%px: NSS QVPN tunnel config message \n"
 		"Sibling interface: %d"
 		"Total number of commands: %d"
-		"Commands: %p"
+		"Commands: %px"
 		"Source IP: %x:%x:%x:%x\n"
 		"Source Port: %d\n"
 		"Destination IP:  %x:%x:%x:%x\n"
@@ -86,8 +86,8 @@ static void nss_qvpn_log_tun_config_msg(struct nss_qvpn_msg *ncm)
 		"VPN header head size: %d\n"
 		"VPN header head offset: %d\n"
 		"VPN header tail size: %d\n"
-		"VPN header head: %p\n"
-		"VPN header tail: %p\n",
+		"VPN header head: %px\n"
+		"VPN header tail: %px\n",
 		nqtcm,
 		nqtcm->sibling_if,
 		nqtcm->total_cmds,
@@ -115,7 +115,7 @@ static void nss_qvpn_log_tun_config_msg(struct nss_qvpn_msg *ncm)
  */
 static void nss_qvpn_log_tun_deconfig_msg(struct nss_qvpn_msg *ncm)
 {
-	nss_trace("%p: NSS QVPN deconfigure message \n", ncm);
+	nss_trace("%px: NSS QVPN deconfigure message \n", ncm);
 }
 
 /*
@@ -125,9 +125,9 @@ static void nss_qvpn_log_tun_deconfig_msg(struct nss_qvpn_msg *ncm)
 static void nss_qvpn_log_crypto_key_add_msg(struct nss_qvpn_msg *ncm)
 {
 	struct nss_qvpn_crypto_key_add_msg *nqckam __maybe_unused = &ncm->msg.key_add;
-	nss_trace("%p: NSS QVPN crypto key add message \n"
+	nss_trace("%px: NSS QVPN crypto key add message \n"
 		"Crypto index: %d\n"
-		"Crypto session ID: %p",
+		"Crypto session ID: %px",
 		nqckam,
 		nqckam->crypto_idx,
 		nqckam->session_id);
@@ -140,9 +140,9 @@ static void nss_qvpn_log_crypto_key_add_msg(struct nss_qvpn_msg *ncm)
 static void nss_qvpn_log_crypto_key_activate_msg(struct nss_qvpn_msg *ncm)
 {
 	struct nss_qvpn_crypto_key_activate_msg *nqckam __maybe_unused = &ncm->msg.key_activate;
-	nss_trace("%p: NSS QVPN crypto key activate message \n"
+	nss_trace("%px: NSS QVPN crypto key activate message \n"
 		"Crypto index: %d\n"
-		"Crypto VPN header head: %p",
+		"Crypto VPN header head: %px",
 		nqckam,
 		nqckam->crypto_idx,
 		nqckam->vpn_hdr_head);
@@ -155,7 +155,7 @@ static void nss_qvpn_log_crypto_key_activate_msg(struct nss_qvpn_msg *ncm)
 static void nss_qvpn_log_crypto_key_del_msg(struct nss_qvpn_msg *ncm)
 {
 	struct nss_qvpn_crypto_key_del_msg *nqckdm __maybe_unused = &ncm->msg.key_del;
-	nss_trace("%p: NSS QVPN crypto key delete message \n"
+	nss_trace("%px: NSS QVPN crypto key delete message \n"
 		"Crypto index: %d\n",
 		nqckdm,
 		nqckdm->crypto_idx);
@@ -168,7 +168,7 @@ static void nss_qvpn_log_crypto_key_del_msg(struct nss_qvpn_msg *ncm)
 static void nss_qvpn_log_crypto_key_deactivate_msg(struct nss_qvpn_msg *ncm)
 {
 	struct nss_qvpn_crypto_key_del_msg *nqckdm __maybe_unused = &ncm->msg.key_del;
-	nss_trace("%p: NSS QVPN crypto key deactivate message \n"
+	nss_trace("%px: NSS QVPN crypto key deactivate message \n"
 		"Crypto index: %d\n",
 		nqckdm,
 		nqckdm->crypto_idx);
@@ -206,7 +206,7 @@ static void nss_qvpn_log_verbose(struct nss_qvpn_msg *ncm)
 		break;
 
 	default:
-		nss_trace("%p: Invalid message type\n", ncm);
+		nss_trace("%px: Invalid message type\n", ncm);
 		break;
 	}
 }
@@ -218,11 +218,11 @@ static void nss_qvpn_log_verbose(struct nss_qvpn_msg *ncm)
 void nss_qvpn_log_tx_msg(struct nss_qvpn_msg *ncm)
 {
 	if (ncm->cm.type >= NSS_QVPN_MSG_TYPE_MAX) {
-		nss_warning("%p: Invalid message type\n", ncm);
+		nss_warning("%px: Invalid message type\n", ncm);
 		return;
 	}
 
-	nss_info("%p: type[%d]:%s\n", ncm, ncm->cm.type, nss_qvpn_log_message_types_str[ncm->cm.type]);
+	nss_info("%px: type[%d]:%s\n", ncm, ncm->cm.type, nss_qvpn_log_message_types_str[ncm->cm.type]);
 	nss_qvpn_log_verbose(ncm);
 }
 
@@ -233,26 +233,26 @@ void nss_qvpn_log_tx_msg(struct nss_qvpn_msg *ncm)
 void nss_qvpn_log_rx_msg(struct nss_qvpn_msg *ncm)
 {
 	if (ncm->cm.response >= NSS_CMN_RESPONSE_LAST) {
-		nss_warning("%p: Invalid response\n", ncm);
+		nss_warning("%px: Invalid response\n", ncm);
 		return;
 	}
 
 	if (ncm->cm.response == NSS_CMN_RESPONSE_NOTIFY || (ncm->cm.response == NSS_CMN_RESPONSE_ACK)) {
-		nss_info("%p: type[%d]:%s, response[%d]:%s\n", ncm, ncm->cm.type,
+		nss_info("%px: type[%d]:%s, response[%d]:%s\n", ncm, ncm->cm.type,
 			nss_qvpn_log_message_types_str[ncm->cm.type],
 			ncm->cm.response, nss_cmn_response_str[ncm->cm.response]);
 		goto verbose;
 	}
 
 	if (ncm->cm.error >= NSS_QVPN_ERROR_TYPE_MAX) {
-		nss_warning("%p: msg failure - type[%d]:%s, response[%d]:%s, error[%d]:Invalid error\n",
+		nss_warning("%px: msg failure - type[%d]:%s, response[%d]:%s, error[%d]:Invalid error\n",
 			ncm, ncm->cm.type, nss_qvpn_log_message_types_str[ncm->cm.type],
 			ncm->cm.response, nss_cmn_response_str[ncm->cm.response],
 			ncm->cm.error);
 		goto verbose;
 	}
 
-	nss_info("%p: msg nack - type[%d]:%s, response[%d]:%s, error[%d]:%s\n",
+	nss_info("%px: msg nack - type[%d]:%s, response[%d]:%s, error[%d]:%s\n",
 		ncm, ncm->cm.type, nss_qvpn_log_message_types_str[ncm->cm.type],
 		ncm->cm.response, nss_cmn_response_str[ncm->cm.response],
 		ncm->cm.error, nss_qvpn_log_error_response_types_str[ncm->cm.error]);

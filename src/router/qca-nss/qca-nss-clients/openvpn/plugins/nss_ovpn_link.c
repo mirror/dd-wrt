@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2019-2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -83,7 +83,7 @@ static int nss_ovpn_link_get_ifnum(struct net_device *dev, struct sk_buff *skb, 
 	 * skb start with L3 header
 	 */
 	if ((skb->protocol != htons(ETH_P_IP)) && (skb->protocol != htons(ETH_P_IPV6))) {
-		nss_ovpn_link_warn("%p: Protocol=%x is not supported\n", dev, skb->protocol);
+		nss_ovpn_link_warn("%px: Protocol=%x is not supported\n", dev, skb->protocol);
 		return -1;
 	}
 
@@ -103,7 +103,7 @@ static int nss_ovpn_link_get_ifnum(struct net_device *dev, struct sk_buff *skb, 
 			return (int)ifnum;
 		}
 
-		nss_ovpn_link_warn("%p: Failed to find tunnel device.\n", dev);
+		nss_ovpn_link_warn("%px: Failed to find tunnel device.\n", dev);
 		return -ENOENT;
 	}
 
@@ -125,7 +125,7 @@ static int nss_ovpn_link_get_ifnum(struct net_device *dev, struct sk_buff *skb, 
 		return (int)ifnum;
 	}
 
-	nss_ovpn_link_warn("%p: Failed to find tunnel device.\n", dev);
+	nss_ovpn_link_warn("%px: Failed to find tunnel device.\n", dev);
 	return -ENOENT;
 }
 

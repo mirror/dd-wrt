@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2017, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017, 2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -242,6 +242,12 @@ extern int nss_ppe_set_parent(struct Qdisc *sch, struct nss_qdisc *nq, uint32_t 
 extern int nss_ppe_get_max_prio_bands(struct nss_qdisc *nq);
 
 /*
+ * nss_ppe_all_queue_enable_hybrid()
+ *	Enables PPE queues when NSS queuing Qdiscs are attached in the hieracrchy.
+ */
+extern void nss_ppe_all_queue_enable_hybrid(struct nss_qdisc *nq);
+
+/*
  * nss_ppe_node_detach()
  *	Configuration function that helps detach a child shaper node from a parent.
  */
@@ -263,7 +269,11 @@ extern int nss_ppe_configure(struct nss_qdisc *nq, struct nss_ppe_qdisc *prev_np
  * nss_ppe_fallback_to_nss()
  *	Calls the initialization of NSS Qdisc when PPE initialization fails.
  */
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 16, 0))
 extern int nss_ppe_fallback_to_nss(struct nss_qdisc *nq, struct nlattr *opt);
+#else
+extern int nss_ppe_fallback_to_nss(struct nss_qdisc *nq, struct nlattr *opt, struct netlink_ext_ack *extack);
+#endif
 
 /*
  * nss_ppe_destroy()

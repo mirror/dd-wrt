@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2019-2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -71,7 +71,7 @@ static void nss_ovpnmgr_tun_ipv4_forward(struct nss_ovpnmgr_tun *tun, struct sk_
 
 	rt = ip_route_output(dev_net(app->dev), iph->daddr, iph->saddr, 0, 0);
 	if (unlikely(IS_ERR(rt))) {
-		nss_ovpnmgr_warn("%p: Failed to find IPv4 route.\n", skb);
+		nss_ovpnmgr_warn("%px: Failed to find IPv4 route.\n", skb);
 		tun->outer.stats.host_pkt_drop++;
 		dev_kfree_skb_any(skb);
 		return;
@@ -92,7 +92,7 @@ static void nss_ovpnmgr_tun_ipv4_forward(struct nss_ovpnmgr_tun *tun, struct sk_
 	 * Check IPv4 header length.
 	 */
 	if (ip_hdrlen(skb) != sizeof(*iph)) {
-		nss_ovpnmgr_warn("%p: IPv4 header length is incorrect.\n", skb);
+		nss_ovpnmgr_warn("%px: IPv4 header length is incorrect.\n", skb);
 		tun->outer.stats.host_pkt_drop++;
 		dev_kfree_skb_any(skb);
 		return;
@@ -105,7 +105,7 @@ static void nss_ovpnmgr_tun_ipv4_forward(struct nss_ovpnmgr_tun *tun, struct sk_
 	skb->skb_iif = app->dev->ifindex;
 
 	if (iph->protocol != IPPROTO_UDP) {
-		nss_ovpnmgr_warn("%p: Encapuslation protocol is not UDP.\n", skb);
+		nss_ovpnmgr_warn("%px: Encapuslation protocol is not UDP.\n", skb);
 		tun->outer.stats.host_pkt_drop++;
 		dev_kfree_skb_any(skb);
 		return;
@@ -132,7 +132,7 @@ static void nss_ovpnmgr_tun_ipv6_forward(struct nss_ovpnmgr_tun *tun, struct sk_
 
 	rt6 = rt6_lookup(dev_net(app->dev), &ip6h->daddr, &ip6h->saddr, 0, 0);
 	if (!rt6) {
-		nss_ovpnmgr_warn("%p: Failed to find IPv6 route.\n", skb);
+		nss_ovpnmgr_warn("%px: Failed to find IPv6 route.\n", skb);
 		tun->outer.stats.host_pkt_drop++;
 		dev_kfree_skb_any(skb);
 		return;
@@ -157,7 +157,7 @@ static void nss_ovpnmgr_tun_ipv6_forward(struct nss_ovpnmgr_tun *tun, struct sk_
 	skb->skb_iif = app->dev->ifindex;
 
 	if (ip6h->nexthdr != IPPROTO_UDP) {
-		nss_ovpnmgr_warn("%p: Encapuslation protocol is not UDP.\n", skb);
+		nss_ovpnmgr_warn("%px: Encapuslation protocol is not UDP.\n", skb);
 		tun->outer.stats.host_pkt_drop++;
 		dev_kfree_skb_any(skb);
 		return;
@@ -317,7 +317,7 @@ static void nss_ovpnmgr_tun_event_inner(void *app_data, struct nss_cmn_msg *ncm)
 	int i;
 
 	if (nom->cm.type != NSS_QVPN_MSG_TYPE_SYNC_STATS) {
-		nss_ovpnmgr_warn("%p: Unsupported event received from NSS: %d\n", tun, nom->cm.type);
+		nss_ovpnmgr_warn("%px: Unsupported event received from NSS: %d\n", tun, nom->cm.type);
 		return;
 	}
 
@@ -368,7 +368,7 @@ static void nss_ovpnmgr_tun_event_outer(void *app_data, struct nss_cmn_msg *ncm)
 	int i;
 
 	if (nom->cm.type != NSS_QVPN_MSG_TYPE_SYNC_STATS) {
-		nss_ovpnmgr_warn("%p: Unsupported event received from NSS: %d\n", tun, nom->cm.type);
+		nss_ovpnmgr_warn("%px: Unsupported event received from NSS: %d\n", tun, nom->cm.type);
 		return;
 	}
 
@@ -413,7 +413,7 @@ static int nss_ovpnmgr_tun_ctx_deinit(struct nss_ovpnmgr_tun_ctx *ctx)
 	nss_qvpn_unregister_if(ctx->ifnum);
 
 	if (nss_dynamic_interface_dealloc_node(ctx->ifnum, ctx->di_type) != NSS_TX_SUCCESS) {
-		nss_ovpnmgr_warn("%p: failed to dealloc OVPN inner DI\n", ctx);
+		nss_ovpnmgr_warn("%px: failed to dealloc OVPN inner DI\n", ctx);
 	}
 
 	/* Unregister Encryption */
@@ -440,7 +440,7 @@ static int nss_ovpnmgr_tun_deconfig(struct nss_ovpnmgr_tun_ctx *ctx, struct nss_
 	status = nss_qvpn_tx_msg_sync(tun->nss_ctx, &nom, ctx->ifnum, NSS_QVPN_MSG_TYPE_TUNNEL_DECONFIGURE,
 			sizeof(*msg), &resp);
 	if (status != NSS_TX_SUCCESS) {
-		nss_ovpnmgr_warn("%p: failed to configure outer interface, resp=%d, status = %d\n", tun, resp, status);
+		nss_ovpnmgr_warn("%px: failed to configure outer interface, resp=%d, status = %d\n", tun, resp, status);
 		return status == NSS_TX_FAILURE_QUEUE ? -EBUSY : -EINVAL;
 	}
 
@@ -510,7 +510,7 @@ static struct nss_ovpnmgr_tun *nss_ovpnmgr_tun_alloc(void)
 
 	tun->nss_ctx = nss_qvpn_get_context();
 	if (unlikely(!tun->nss_ctx)) {
-		nss_ovpnmgr_warn("%p: Failed to get NSS OVPN context.\n", tun);
+		nss_ovpnmgr_warn("%px: Failed to get NSS OVPN context.\n", tun);
 		return NULL;
 	}
 
@@ -537,6 +537,7 @@ static void nss_ovpnmgr_tun_init_qvpn_config(struct nss_ovpnmgr_tun *tun, struct
 
 	qvpn_cfg->hdr_cfg.src_port = ntohs(tun->tun_hdr.src_port);
 	qvpn_cfg->hdr_cfg.dst_port = ntohs(tun->tun_hdr.dst_port);
+	qvpn_cfg->hdr_cfg.hop_limit = tun->tun_hdr.hop_limit;
 	qvpn_cfg->hdr_cfg.hdr_flags |= NSS_QVPN_HDR_FLAG_L4_UDP;
 	qvpn_cfg->hdr_cfg.seqnum_size = 4;
 	qvpn_cfg->hdr_cfg.anti_replay_alg = NSS_QVPN_ANTI_REPLAY_ALG_REPLAY_WINDOW;
@@ -591,8 +592,8 @@ static int nss_ovpnmgr_tun_inner_config(struct nss_ovpnmgr_tun *tun)
 	if (tun->tun_cfg.flags & NSS_OVPNMGR_HDR_FLAG_DATA_V2) {
 		uint32_t *session_id = (uint32_t *)qvpn_cfg->hdr_cfg.vpn_hdr_head;
 
-		*session_id = htonl(((NSS_OVPNMGR_TUN_DATA_V2 << NSS_OVPNMGR_TUN_OPCODE_SHIFT) |
-					tun->inner.active.key_id) << NSS_OVPNMGR_TUN_PEER_ID_SHIFT |
+		*session_id = htonl((NSS_OVPNMGR_TUN_DATA_V2 << NSS_OVPNMGR_TUN_OPCODE_SHIFT) |
+					(tun->inner.active.key_id << NSS_OVPNMGR_TUN_KEY_ID_SHIFT) |
 					(tun->tun_cfg.peer_id & 0xFFFFFF));
 		/*
 		 * [op+kid|peer-id|HMAC Len|IV|SNO|Inner Packet]
@@ -601,9 +602,10 @@ static int nss_ovpnmgr_tun_inner_config(struct nss_ovpnmgr_tun *tun)
 		qvpn_cfg->crypto_cfg.hmac_offset = 4;
 		qvpn_cfg->hdr_cfg.vpn_hdr_head_size = 4;
 	} else {
-		uint8_t *session_id = (uint8_t *)qvpn_cfg->hdr_cfg.vpn_hdr_head;
+		uint32_t *session_id = (uint32_t *)qvpn_cfg->hdr_cfg.vpn_hdr_head;
 
-		*session_id = (NSS_OVPNMGR_TUN_DATA_V1 << NSS_OVPNMGR_TUN_OPCODE_SHIFT) | tun->inner.active.key_id;
+		*session_id = htonl((NSS_OVPNMGR_TUN_DATA_V1 << NSS_OVPNMGR_TUN_OPCODE_SHIFT) |
+					(tun->inner.active.key_id << NSS_OVPNMGR_TUN_KEY_ID_SHIFT));
 		/*
 		 * [op+kid|HMAC Len|IV|SNO|Inner Packet]
 		 * [1|20-32|16-24-32]
@@ -615,7 +617,6 @@ static int nss_ovpnmgr_tun_inner_config(struct nss_ovpnmgr_tun *tun)
 	memcpy(qvpn_cfg->crypto_key.session_id, qvpn_cfg->hdr_cfg.vpn_hdr_head, 1);
 	qvpn_cfg->crypto_cfg.hmac_len = tun->inner.active.hash_len;
 	qvpn_cfg->crypto_cfg.iv_len = tun->inner.active.iv_len;
-
 
 	qvpn_cfg->hdr_cfg.vpn_hdr_head_size += qvpn_cfg->crypto_cfg.hmac_len + qvpn_cfg->crypto_cfg.iv_len +
 						qvpn_cfg->hdr_cfg.seqnum_size;
@@ -651,7 +652,7 @@ static int nss_ovpnmgr_tun_inner_config(struct nss_ovpnmgr_tun *tun)
 	status = nss_qvpn_tx_msg_sync(tun->nss_ctx,  &nom, tun->inner.ifnum, NSS_QVPN_MSG_TYPE_TUNNEL_CONFIGURE,
 					sizeof(*qvpn_cfg), &resp);
 	if (status != NSS_TX_SUCCESS) {
-		nss_ovpnmgr_warn("%p: failed to configure inner interface, resp = %d, status = %d\n", tun, resp, status);
+		nss_ovpnmgr_warn("%px: failed to configure inner interface, resp = %d, status = %d\n", tun, resp, status);
 		return status == NSS_TX_FAILURE_QUEUE ? -EBUSY : -EINVAL;
 	}
 
@@ -680,7 +681,7 @@ static int nss_ovpnmgr_tun_outer_config(struct nss_ovpnmgr_tun *tun)
 	 *	NSS_QVPN_CMDS_TYPE_REMOVE_L3_L4_HDR, NSS_QVPN_CMDS_TYPE_REMOVE_VPN_HDR
 	 */
 
-	if (tun->inner.active.crypto_idx != U16_MAX) {
+	if (tun->outer.active.crypto_idx != U16_MAX) {
 		qvpn_cfg->cmd[total_cmds++] = NSS_QVPN_CMDS_TYPE_DECRYPT;
 		qvpn_cfg->cmd_profile = NSS_QVPN_PROFILE_CRYPTO_DECAP;
 	} else {
@@ -705,8 +706,8 @@ static int nss_ovpnmgr_tun_outer_config(struct nss_ovpnmgr_tun *tun)
 
 		nss_ovpnmgr_info("Peer transmits V2 data packets\n");
 
-		*session_id = htonl(((NSS_OVPNMGR_TUN_DATA_V2 << NSS_OVPNMGR_TUN_OPCODE_SHIFT) |
-					tun->outer.active.key_id) << NSS_OVPNMGR_TUN_PEER_ID_SHIFT |
+		*session_id = htonl((NSS_OVPNMGR_TUN_DATA_V2 << NSS_OVPNMGR_TUN_OPCODE_SHIFT) |
+					(tun->inner.active.key_id << NSS_OVPNMGR_TUN_KEY_ID_SHIFT) |
 					(tun->tun_cfg.peer_id & 0xFFFFFF));
 		/*
 		 * [op+kid|peer-id|HMAC Len|IV|SNO|Inner Packet]
@@ -715,9 +716,10 @@ static int nss_ovpnmgr_tun_outer_config(struct nss_ovpnmgr_tun *tun)
 		qvpn_cfg->crypto_cfg.hmac_offset = 4;
 		qvpn_cfg->hdr_cfg.vpn_hdr_head_size = 4;
 	} else {
-		uint8_t *session_id = (uint8_t *)qvpn_cfg->hdr_cfg.vpn_hdr_head;
+		uint32_t *session_id = (uint32_t *)qvpn_cfg->hdr_cfg.vpn_hdr_head;
 
-		*session_id = (NSS_OVPNMGR_TUN_DATA_V1 << NSS_OVPNMGR_TUN_OPCODE_SHIFT) | tun->outer.active.key_id;
+		*session_id = htonl((NSS_OVPNMGR_TUN_DATA_V1 << NSS_OVPNMGR_TUN_OPCODE_SHIFT) |
+					(tun->inner.active.key_id << NSS_OVPNMGR_TUN_KEY_ID_SHIFT));
 		/*
 		 * [op+kid|HMAC Len|IV|SNO|Inner Packet]
 		 * [1|20-32|16-24-32]
@@ -763,7 +765,7 @@ static int nss_ovpnmgr_tun_outer_config(struct nss_ovpnmgr_tun *tun)
 	status = nss_qvpn_tx_msg_sync(tun->nss_ctx, &nom, tun->outer.ifnum, NSS_QVPN_MSG_TYPE_TUNNEL_CONFIGURE,
 					sizeof(*qvpn_cfg), &resp);
 	if (status != NSS_TX_SUCCESS) {
-		nss_ovpnmgr_warn("%p: failed to configure outer interface, resp = %d, status = %d\n", tun, resp, status);
+		nss_ovpnmgr_warn("%px: failed to configure outer interface, resp = %d, status = %d\n", tun, resp, status);
 		return status == NSS_TX_FAILURE_QUEUE ? -EBUSY : -EINVAL;
 	}
 
@@ -783,7 +785,7 @@ static int nss_ovpnmgr_tun_ctx_inner_init(struct nss_ovpnmgr_tun *tun,
 	 * Register Encryption.
 	 */
 	if (nss_ovpnmgr_crypto_ctx_alloc(&tun->inner.active, crypto_cfg, &crypto_cfg->encrypt)) {
-		nss_ovpnmgr_error("%p: Failed to register Encryption session\n", tun);
+		nss_ovpnmgr_error("%px: Failed to register Encryption session\n", tun);
 		return -EINVAL;
 	}
 
@@ -791,14 +793,14 @@ static int nss_ovpnmgr_tun_ctx_inner_init(struct nss_ovpnmgr_tun *tun,
 	tun->inner.di_type = NSS_DYNAMIC_INTERFACE_TYPE_QVPN_INNER;
 	tun->inner.ifnum = nss_dynamic_interface_alloc_node(tun->inner.di_type);
 	if (tun->inner.ifnum < 0) {
-		nss_ovpnmgr_error("%p: Failed to alloc OVPN inner dynamic interface\n", tun);
+		nss_ovpnmgr_error("%px: Failed to alloc OVPN inner dynamic interface\n", tun);
 		ret = -ENXIO;
 		goto free_crypto;
 	}
 
 	if (!nss_qvpn_register_if(tun->inner.ifnum, nss_ovpnmgr_tun_rx_inner,
 				nss_ovpnmgr_tun_event_inner, tun->dev, 0, tun)) {
-		nss_ovpnmgr_warn("%p: Failed to register OVPN inner interface %d\n", tun, tun->inner.ifnum);
+		nss_ovpnmgr_warn("%px: Failed to register OVPN inner interface %d\n", tun, tun->inner.ifnum);
 		ret = -EIO;
 		goto free_ifnum;
 	}
@@ -807,7 +809,7 @@ static int nss_ovpnmgr_tun_ctx_inner_init(struct nss_ovpnmgr_tun *tun,
 
 free_ifnum:
 	if (nss_dynamic_interface_dealloc_node(tun->inner.ifnum, tun->inner.di_type)) {
-		nss_ovpnmgr_warn("%p: Failed to dealloc inner DI.\n", tun);
+		nss_ovpnmgr_warn("%px: Failed to dealloc inner DI.\n", tun);
 	}
 
 free_crypto:
@@ -828,7 +830,7 @@ static int nss_ovpnmgr_tun_ctx_outer_init(struct nss_ovpnmgr_tun *tun, struct ns
 	 * Register Encryption.
 	 */
 	if (nss_ovpnmgr_crypto_ctx_alloc(&tun->outer.active, crypto_cfg, &crypto_cfg->decrypt)) {
-		nss_ovpnmgr_error("%p: Failed to register Encryption session\n", tun);
+		nss_ovpnmgr_error("%px: Failed to register Encryption session\n", tun);
 		return -EINVAL;
 	}
 
@@ -836,14 +838,14 @@ static int nss_ovpnmgr_tun_ctx_outer_init(struct nss_ovpnmgr_tun *tun, struct ns
 	tun->outer.di_type = NSS_DYNAMIC_INTERFACE_TYPE_QVPN_OUTER;
 	tun->outer.ifnum = nss_dynamic_interface_alloc_node(tun->outer.di_type);
 	if (tun->outer.ifnum < 0) {
-		nss_ovpnmgr_error("%p: Failed to alloc OVPN outer dynamic interface\n", tun);
+		nss_ovpnmgr_error("%px: Failed to alloc OVPN outer dynamic interface\n", tun);
 		ret = -ENXIO;
 		goto free_crypto;
 	}
 
 	if (!nss_qvpn_register_if(tun->outer.ifnum, nss_ovpnmgr_tun_rx_outer, nss_ovpnmgr_tun_event_outer,
 				tun->dev, 0, tun)) {
-		nss_ovpnmgr_warn("%p: Failed to register OVPN outer interface %d\n", tun, tun->outer.ifnum);
+		nss_ovpnmgr_warn("%px: Failed to register OVPN outer interface %d\n", tun, tun->outer.ifnum);
 		ret = -EIO;
 		goto free_ifnum;
 	}
@@ -852,7 +854,7 @@ static int nss_ovpnmgr_tun_ctx_outer_init(struct nss_ovpnmgr_tun *tun, struct ns
 
 free_ifnum:
 	if (nss_dynamic_interface_dealloc_node(tun->outer.ifnum, tun->outer.di_type)) {
-		nss_ovpnmgr_warn("%p: Failed to dealloc outer dynamic node.\n", tun);
+		nss_ovpnmgr_warn("%px: Failed to dealloc outer dynamic node.\n", tun);
 	}
 
 free_crypto:
@@ -868,32 +870,37 @@ free_crypto:
 static int nss_ovpnmgr_tun_config_verify(struct nss_ovpnmgr_tun_tuple *tun_hdr, struct nss_ovpnmgr_tun_config *tun_cfg)
 {
 	if (tun_cfg->flags & NSS_OVPNMGR_HDR_FLAG_L4_PROTO_TCP) {
-		nss_ovpnmgr_warn("%p: OVPN data channel offload over TCP is not supported\n", tun_hdr);
+		nss_ovpnmgr_warn("%px: OVPN data channel offload over TCP is not supported\n", tun_hdr);
 		return -EINVAL;
 	}
 
 	if (tun_cfg->flags & NSS_OVPNMGR_HDR_FLAG_FRAG) {
-		nss_ovpnmgr_warn("%p: Fragmentation specified by OVPN protocol is not supported\n", tun_hdr);
+		nss_ovpnmgr_warn("%px: Fragmentation specified by OVPN protocol is not supported\n", tun_hdr);
 		return -EINVAL;
 	}
 
 	if (tun_cfg->flags & NSS_OVPNMGR_HDR_FLAG_PID_LONG_FMT) {
-		nss_ovpnmgr_warn("%p: PID Long format is not supported\n", tun_hdr);
+		nss_ovpnmgr_warn("%px: PID Long format is not supported\n", tun_hdr);
 		return -EINVAL;
 	}
 
 	if (tun_cfg->flags & NSS_OVPNMGR_HDR_FLAG_SHARED_KEY) {
-		nss_ovpnmgr_warn("%p: Crypto shared key is not supported\n", tun_hdr);
+		nss_ovpnmgr_warn("%px: Crypto shared key is not supported\n", tun_hdr);
 		return -EINVAL;
 	}
 
 	if (tun_cfg->flags & NSS_OVPNMGR_HDR_FLAG_COPY_TOS) {
-		nss_ovpnmgr_warn("%p: Copy TOS is not supported\n", tun_hdr);
+		nss_ovpnmgr_warn("%px: Copy TOS is not supported\n", tun_hdr);
 		return -EINVAL;
 	}
 
 	if (!tun_hdr->dst_ip[0] || !tun_hdr->src_ip[0] || !tun_hdr->src_port || !tun_hdr->dst_port) {
-		nss_ovpnmgr_warn("%p: IP/UDP Tunnel parameters are invalid.\n", tun_hdr);
+		nss_ovpnmgr_warn("%px: IP/UDP Tunnel parameters are invalid.\n", tun_hdr);
+		return -EINVAL;
+	}
+
+	if (!tun_hdr->hop_limit) {
+		nss_ovpnmgr_warn("%px: Invalid hop_limit.\n", tun_hdr);
 		return -EINVAL;
 	}
 	return 0;
@@ -906,7 +913,7 @@ static int nss_ovpnmgr_tun_config_verify(struct nss_ovpnmgr_tun_tuple *tun_hdr, 
 static void nss_ovpnmgr_tun_config_dump(struct net_device *app_dev, struct nss_ovpnmgr_tun_tuple *tun_hdr,
 			struct nss_ovpnmgr_tun_config *tun_cfg, struct nss_ovpnmgr_crypto_config *crypto_cfg)
 {
-	nss_ovpnmgr_info("%p: app_dev = %s\n", app_dev, app_dev->name);
+	nss_ovpnmgr_info("%px: app_dev = %s\n", app_dev, app_dev->name);
 	nss_ovpnmgr_info("flags = %x, peer_id = %u\n", tun_cfg->flags, tun_cfg->peer_id);
 
 	if (tun_cfg->flags & NSS_OVPNMGR_HDR_FLAG_IPV6) {
@@ -920,6 +927,7 @@ static void nss_ovpnmgr_tun_config_dump(struct net_device *app_dev, struct nss_o
 		nss_ovpnmgr_info("local tunnel Port = %d\n", tun_hdr->src_port);
 		nss_ovpnmgr_info("remote tunnel Port = %d\n", tun_hdr->dst_port);
 	}
+	nss_ovpnmgr_info("hop_limit = %d\n", tun_hdr->hop_limit);
 	nss_ovpnmgr_info("Crypto: algo = %d, cipher_keylen = %d, hmac_keylen = %d\n",
 			crypto_cfg->algo, crypto_cfg->encrypt.cipher_keylen,
 			crypto_cfg->encrypt.hmac_keylen);
@@ -1047,12 +1055,12 @@ int nss_ovpnmgr_tun_tx(uint32_t tunnel_id, struct nss_ovpnmgr_metadata *mdata, s
 
 	tun_dev = dev_get_by_index(&init_net, tunnel_id);
 	if (!tun_dev) {
-		nss_ovpnmgr_warn("%p: Couldn't find tunnel with tunnel_id = %d\n", skb, mdata->tunnel_id);
+		nss_ovpnmgr_warn("%px: Couldn't find tunnel with tunnel_id = %d\n", skb, mdata->tunnel_id);
 		return -EINVAL;
 	}
 
 	tun = netdev_priv(tun_dev);
-	nss_ovpnmgr_info("%p: metadata flags (0x%x)\n", tun, mdata->flags);
+	nss_ovpnmgr_info("%px: metadata flags (0x%x)\n", tun, mdata->flags);
 
 	nhead = tun_dev->needed_headroom;
 	ntail = tun_dev->needed_tailroom;
@@ -1073,7 +1081,7 @@ int nss_ovpnmgr_tun_tx(uint32_t tunnel_id, struct nss_ovpnmgr_metadata *mdata, s
 	if (unlikely(skb_shared(skb))) {
 		skb = skb_unshare(skb, in_atomic() ? GFP_ATOMIC : GFP_KERNEL);
 		if (!skb) {
-			nss_ovpnmgr_trace("%p: unable to expand skb, dev = %s\n", tun, tun_dev->name);
+			nss_ovpnmgr_trace("%px: unable to expand skb, dev = %s\n", tun, tun_dev->name);
 			err = -ENOSPC;
 			goto free;
 		}
@@ -1084,7 +1092,7 @@ int nss_ovpnmgr_tun_tx(uint32_t tunnel_id, struct nss_ovpnmgr_metadata *mdata, s
 	}
 
 	if (expand_skb && pskb_expand_head(skb, nhead, ntail, in_atomic() ? GFP_ATOMIC : GFP_KERNEL)) {
-		nss_ovpnmgr_trace("%p: unable to expand skb, dev = %s\n", tun, tun_dev->name);
+		nss_ovpnmgr_trace("%px: unable to expand skb, dev = %s\n", tun, tun_dev->name);
 		err = -ENOMEM;
 		goto free;
 	}
@@ -1096,7 +1104,7 @@ int nss_ovpnmgr_tun_tx(uint32_t tunnel_id, struct nss_ovpnmgr_metadata *mdata, s
 
 	status = nss_qvpn_tx_buf(tun->nss_ctx, ifnum, skb);
 	if (status != NSS_TX_SUCCESS) {
-		nss_ovpnmgr_trace("%p: Packet offload failed, status = %d\n", tun, status);
+		nss_ovpnmgr_trace("%px: Packet offload failed, status = %d\n", tun, status);
 		err = (status == NSS_TX_FAILURE_QUEUE) ? -EBUSY : -EINVAL;
 		goto free;
 	}
@@ -1131,7 +1139,7 @@ int nss_ovpnmgr_tun_del(uint32_t tunnel_id)
 
 	tun = netdev_priv(tun_dev);
 
-	nss_ovpnmgr_info("%p: Deleting Tunnel, tunnel_id = %d\n", tun, tun->tunnel_id);
+	nss_ovpnmgr_info("%px: Deleting Tunnel, tunnel_id = %d\n", tun, tun->tunnel_id);
 
 	write_lock_bh(&ovpnmgr_ctx.lock);
 	/*
@@ -1181,7 +1189,7 @@ uint32_t nss_ovpnmgr_tun_add(struct net_device *app_dev,
 	 */
 	status = nss_ovpnmgr_tun_config_verify(tun_hdr, tun_cfg);
 	if (status < 0) {
-		nss_ovpnmgr_warn("%p: Tunnel configuration parameters are invalid, status=%d.\n", app_dev, status);
+		nss_ovpnmgr_warn("%px: Tunnel configuration parameters are invalid, status=%d.\n", app_dev, status);
 		return 0;
 	}
 
@@ -1189,7 +1197,7 @@ uint32_t nss_ovpnmgr_tun_add(struct net_device *app_dev,
 	app = nss_ovpnmgr_app_find(app_dev);
 	if (!app) {
 		read_unlock_bh(&ovpnmgr_ctx.lock);
-		nss_ovpnmgr_warn("%p: Couldn't find app for app_dev=%s\n", app_dev, app_dev->name);
+		nss_ovpnmgr_warn("%px: Couldn't find app for app_dev=%s\n", app_dev, app_dev->name);
 		return 0;
 	}
 
@@ -1201,7 +1209,7 @@ uint32_t nss_ovpnmgr_tun_add(struct net_device *app_dev,
 
 	tun = nss_ovpnmgr_tun_alloc();
 	if (!tun) {
-		nss_ovpnmgr_warn("%p: Tunnel allocation failed.\n", app);
+		nss_ovpnmgr_warn("%px: Tunnel allocation failed.\n", app);
 		dev_put(app_dev);
 		return 0;
 	}
@@ -1218,7 +1226,7 @@ uint32_t nss_ovpnmgr_tun_add(struct net_device *app_dev,
 	 * Initialize tunnel inner context.
 	 */
 	if (nss_ovpnmgr_tun_ctx_inner_init(tun, crypto_cfg)) {
-		nss_ovpnmgr_error("%p: Failed to initialize inner context.\n", app);
+		nss_ovpnmgr_error("%px: Failed to initialize inner context.\n", app);
 		goto free_tun;
 	}
 
@@ -1226,7 +1234,7 @@ uint32_t nss_ovpnmgr_tun_add(struct net_device *app_dev,
 	 * Initialize tunnel outer context.
 	 */
 	if (nss_ovpnmgr_tun_ctx_outer_init(tun, crypto_cfg)) {
-		nss_ovpnmgr_error("%p: Failed to initialize outer context.\n", app);
+		nss_ovpnmgr_error("%px: Failed to initialize outer context.\n", app);
 		goto free_inner;
 	}
 
@@ -1234,7 +1242,7 @@ uint32_t nss_ovpnmgr_tun_add(struct net_device *app_dev,
 	 * Configure inner node.
 	 */
 	if (nss_ovpnmgr_tun_inner_config(tun)) {
-		nss_ovpnmgr_warn("%p: inner node tunnel configuration failed\n", tun);
+		nss_ovpnmgr_warn("%px: inner node tunnel configuration failed\n", tun);
 		goto free_outer;
 	}
 
@@ -1242,7 +1250,7 @@ uint32_t nss_ovpnmgr_tun_add(struct net_device *app_dev,
 	 * Configure outer node.
 	 */
 	if (nss_ovpnmgr_tun_outer_config(tun)) {
-		nss_ovpnmgr_warn("%p: Outer node tunnel configuration failed\n", tun);
+		nss_ovpnmgr_warn("%px: Outer node tunnel configuration failed\n", tun);
 		goto free_inner_config;
 	}
 

@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2018-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2018-2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -145,7 +145,7 @@ static void nss_ipsec_cmn_log_node_msg(struct nss_ipsec_cmn_msg *nim)
 {
 	struct nss_ipsec_cmn_node *node_msg __maybe_unused = &nim->msg.node;
 
-	nss_trace("%p: NSS IPSEC Node Message:\n"
+	nss_trace("%px: NSS IPSEC Node Message:\n"
 		  "%s: %d\n"
 		  "%s: %d\n"
 		  "%s: %d\n", nim,
@@ -162,7 +162,7 @@ static void nss_ipsec_cmn_log_ctx_msg(struct nss_ipsec_cmn_msg *nim)
 {
 	struct nss_ipsec_cmn_ctx *ctx_msg __maybe_unused = &nim->msg.ctx;
 
-	nss_trace("%p: NSS IPSEC CTX Message:\n"
+	nss_trace("%px: NSS IPSEC CTX Message:\n"
 		  "%s: %s\n"
 		  "%s: %d\n", nim,
 		  nss_ipsec_cmn_log_ctx_str[0], nss_ipsec_cmn_ctx_types_str[ctx_msg->type],
@@ -179,7 +179,7 @@ static void nss_ipsec_cmn_log_sa_msg(struct nss_ipsec_cmn_msg *nim)
 	struct nss_ipsec_cmn_sa_tuple *tuple = &sa_msg->sa_tuple;
 	struct nss_ipsec_cmn_sa_data *data __maybe_unused = &sa_msg->sa_data;
 
-	nss_trace("%p: NSS IPSEC SA Message:\n", nim);
+	nss_trace("%px: NSS IPSEC SA Message:\n", nim);
 
 	if (tuple->ip_ver == 4) {
 		nss_trace("%s: %pI4\n%s: %pI4\n",
@@ -224,7 +224,7 @@ static void nss_ipsec_cmn_log_flow_msg(struct nss_ipsec_cmn_msg *nim)
 	struct nss_ipsec_cmn_flow_tuple *flow = &flow_msg->flow_tuple;
 	struct nss_ipsec_cmn_sa_tuple *sa = &flow_msg->sa_tuple;
 
-	nss_trace("%p: NSS IPSEC Flow Message:\n", nim);
+	nss_trace("%px: NSS IPSEC Flow Message:\n", nim);
 
 	if (sa->ip_ver == 4) {
 		nss_trace("%s: %pI4\n%s: %pI4\n",
@@ -298,7 +298,7 @@ static void nss_ipsec_cmn_log_verbose(struct nss_ipsec_cmn_msg *nim)
 		break;
 
 	default:
-		nss_warning("%p: Invalid message type\n", nim);
+		nss_warning("%px: Invalid message type\n", nim);
 		break;
 	}
 }
@@ -310,11 +310,11 @@ static void nss_ipsec_cmn_log_verbose(struct nss_ipsec_cmn_msg *nim)
 void nss_ipsec_cmn_log_tx_msg(struct nss_ipsec_cmn_msg *nim)
 {
 	if (nim->cm.type >= NSS_IPSEC_CMN_MSG_TYPE_MAX) {
-		nss_warning("%p: Invalid message type\n", nim);
+		nss_warning("%px: Invalid message type\n", nim);
 		return;
 	}
 
-	nss_info("%p: type[%d]:%s\n", nim, nim->cm.type, nss_ipsec_cmn_log_msg_types_str[nim->cm.type]);
+	nss_info("%px: type[%d]:%s\n", nim, nim->cm.type, nss_ipsec_cmn_log_msg_types_str[nim->cm.type]);
 	nss_ipsec_cmn_log_verbose(nim);
 }
 
@@ -325,26 +325,26 @@ void nss_ipsec_cmn_log_tx_msg(struct nss_ipsec_cmn_msg *nim)
 void nss_ipsec_cmn_log_rx_msg(struct nss_ipsec_cmn_msg *nim)
 {
 	if (nim->cm.response >= NSS_CMN_RESPONSE_LAST) {
-		nss_warning("%p: Invalid response\n", nim);
+		nss_warning("%px: Invalid response\n", nim);
 		return;
 	}
 
 	if (nim->cm.response == NSS_CMN_RESPONSE_NOTIFY || (nim->cm.response == NSS_CMN_RESPONSE_ACK)) {
-		nss_info("%p: type[%d]:%s, response[%d]:%s\n", nim, nim->cm.type,
+		nss_info("%px: type[%d]:%s, response[%d]:%s\n", nim, nim->cm.type,
 			nss_ipsec_cmn_log_msg_types_str[nim->cm.type],
 			nim->cm.response, nss_cmn_response_str[nim->cm.response]);
 		goto verbose;
 	}
 
 	if (nim->cm.error >= NSS_IPSEC_CMN_MSG_ERROR_MAX) {
-		nss_warning("%p: msg failure - type[%d]:%s, response[%d]:%s, error[%d]:Invalid error\n",
+		nss_warning("%px: msg failure - type[%d]:%s, response[%d]:%s, error[%d]:Invalid error\n",
 			nim, nim->cm.type, nss_ipsec_cmn_log_msg_types_str[nim->cm.type],
 			nim->cm.response, nss_cmn_response_str[nim->cm.response],
 			nim->cm.error);
 		goto verbose;
 	}
 
-	nss_info("%p: msg nack - type[%d]:%s, response[%d]:%s, error[%d]:%s\n",
+	nss_info("%px: msg nack - type[%d]:%s, response[%d]:%s, error[%d]:%s\n",
 		nim, nim->cm.type, nss_ipsec_cmn_log_msg_types_str[nim->cm.type],
 		nim->cm.response, nss_cmn_response_str[nim->cm.response],
 		nim->cm.error, nss_ipsec_cmn_log_error_str[nim->cm.error]);

@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2018, 2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -38,7 +38,7 @@ static int8_t *nss_pppoe_log_message_types_str[NSS_PPPOE_MSG_MAX] __maybe_unused
 static void nss_pppoe_log_session_create_msg(struct nss_pppoe_msg *npm)
 {
 	struct nss_pppoe_create_msg *npcm __maybe_unused = &npm->msg.create;
-	nss_trace("%p: NSS PPPOE Session Create message \n"
+	nss_trace("%px: NSS PPPOE Session Create message \n"
 		"PPPOE Base Interface Number: %d\n"
 		"PPPOE MTU: %d\n"
 		"PPPOE Server MAC: %pM\n"
@@ -56,7 +56,7 @@ static void nss_pppoe_log_session_create_msg(struct nss_pppoe_msg *npm)
 static void nss_pppoe_log_session_destroy_msg(struct nss_pppoe_msg *npm)
 {
 	struct nss_pppoe_destroy_msg *npdm __maybe_unused = &npm->msg.destroy;
-	nss_trace("%p: NSS PPPOE Session Destroy message \n"
+	nss_trace("%px: NSS PPPOE Session Destroy message \n"
 		"PPPOE Session ID: %d\n"
 		"PPPOE Server MAC: %pM\n"
 		"PPPOE Local MAC: %pM\n",
@@ -86,7 +86,7 @@ static void nss_pppoe_log_verbose(struct nss_pppoe_msg *npm)
 		break;
 
 	default:
-		nss_trace("%p: Invalid message type\n", npm);
+		nss_trace("%px: Invalid message type\n", npm);
 		break;
 	}
 }
@@ -98,11 +98,11 @@ static void nss_pppoe_log_verbose(struct nss_pppoe_msg *npm)
 void nss_pppoe_log_tx_msg(struct nss_pppoe_msg *npm)
 {
 	if (npm->cm.type >= NSS_PPPOE_MSG_MAX) {
-		nss_warning("%p: Invalid message type\n", npm);
+		nss_warning("%px: Invalid message type\n", npm);
 		return;
 	}
 
-	nss_info("%p: type[%d]:%s\n", npm, npm->cm.type, nss_pppoe_log_message_types_str[npm->cm.type]);
+	nss_info("%px: type[%d]:%s\n", npm, npm->cm.type, nss_pppoe_log_message_types_str[npm->cm.type]);
 	nss_pppoe_log_verbose(npm);
 }
 
@@ -113,18 +113,18 @@ void nss_pppoe_log_tx_msg(struct nss_pppoe_msg *npm)
 void nss_pppoe_log_rx_msg(struct nss_pppoe_msg *npm)
 {
 	if (npm->cm.response >= NSS_CMN_RESPONSE_LAST) {
-		nss_warning("%p: Invalid response\n", npm);
+		nss_warning("%px: Invalid response\n", npm);
 		return;
 	}
 
 	if (npm->cm.response == NSS_CMN_RESPONSE_NOTIFY || (npm->cm.response == NSS_CMN_RESPONSE_ACK)) {
-		nss_info("%p: type[%d]:%s, response[%d]:%s\n", npm, npm->cm.type,
+		nss_info("%px: type[%d]:%s, response[%d]:%s\n", npm, npm->cm.type,
 			nss_pppoe_log_message_types_str[npm->cm.type],
 			npm->cm.response, nss_cmn_response_str[npm->cm.response]);
 		goto verbose;
 	}
 
-	nss_info("%p: msg nack - type[%d]:%s, response[%d]:%s\n",
+	nss_info("%px: msg nack - type[%d]:%s, response[%d]:%s\n",
 		npm, npm->cm.type, nss_pppoe_log_message_types_str[npm->cm.type],
 		npm->cm.response, nss_cmn_response_str[npm->cm.response]);
 

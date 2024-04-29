@@ -8,7 +8,7 @@ NSS_CRYPTO_MOD_NAME=qca-nss-crypto
 ccflags-y += -DCONFIG_NSS_CRYPTO_FORCE_UNCACHE=1
 ccflags-y += -DNSS_CRYPTO_DEBUG_LEVEL=2
 ccflags-y += -Werror
-ccflags-y += -DNSS_CRYPTO_BUILD_ID=\"'Build_ID - $(shell date +'%m/%d/%y)'\"
+ccflags-y += -DNSS_CRYPTO_BUILD_ID=\"'Build_ID - $(shell date +'%m/%d/%y')'\"
 
 obj-m += $(NSS_CRYPTO_MOD_NAME).o
 $(NSS_CRYPTO_MOD_NAME)-objs = nss_crypto_if.o

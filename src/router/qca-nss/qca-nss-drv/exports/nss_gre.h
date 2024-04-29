@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2017-2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2019, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -48,23 +48,42 @@
 #define NSS_GRE_CONFIG_SET_DF		0x00000100	/**< Enable DF bit on tunnel IP header. */
 #define NSS_GRE_CONFIG_SET_MAC		0x00000200	/**< Add MAC header to GRE+IP tunnel header. */
 #define NSS_GRE_CONFIG_SET_PADDING	0x00000400	/**< Add PADDING to align tunnel IP/GRE header. */
-#define NSS_GRE_CONFIG_NEXT_NODE_AVAILABLE  0x00000800	/**< Use provided next_node instead of existing next node. */
+#define NSS_GRE_CONFIG_NEXT_NODE_AVAILABLE  0x00000800	/**< Use provided next node instead of existing next node. */
 #define NSS_GRE_CONFIG_COPY_METADATA 	0x00001000	/**< Enable metadata copy in NSS during alignment. */
 #define NSS_GRE_CONFIG_USE_UNALIGNED 	0x00002000	/**< Use unaligned infrastructure in NSS. */
+#define NSS_GRE_CONFIG_DSCP_VALID	0x00004000	/**< Add DSCP per packet. */
+
+/**
+ * nss_gre_error_types.
+ *	Error types for GRE configuration messages.
+ */
+enum nss_gre_error_types {
+	NSS_GRE_ERR_UNKNOWN_MSG = 1,		/**< Unknown message. */
+	NSS_GRE_ERR_IF_INVALID = 2,		/**< Invalid interface. */
+	NSS_GRE_ERR_MODE_INVALID = 3,		/**< Invalid mode type. */
+	NSS_GRE_ERR_IP_INVALID = 4,		/**< Invalid IP type. */
+	NSS_GRE_ERR_GRE_SESSION_PARAMS_INVALID = 5,	/**< Invalid GRE session parameters provided. */
+	NSS_GRE_ERR_DSCP_CFG_INVALID = 6,	/**< Both TOS and DSCP flags are enabled. */
+	NSS_GRE_ERR_MAX,			/**< Maximum GRE error. */
+};
 
 /**
  * nss_gre_info
  *	GRE private information.
  */
 struct nss_gre_info {
+	/**
+	 * Union of IPv4/IPv6 tunnel.
+	 */
 	union {
-		struct ip_tunnel t4;	/**< IPv4 tunnel */
-		struct ip6_tnl t6;	/**< IPv6 tunnel */
-	} t;
-	int nss_if_number;		/**< NSS interface number */
-	struct net_device *next_dev;	/**< Next net device */
-	uint8_t gre_hlen;		/**< GRE header length */
-	uint8_t pad_len;		/**< Pad length */
+		struct ip_tunnel t4;		/**< IPv4 tunnel. */
+		struct ip6_tnl t6;		/**< IPv6 tunnel. */
+	} t;		/**< IPv4 and IPv6 tunnel. */
+	int nss_if_number_inner;		/**< NSS interface number for GRE inner. */
+	struct net_device *next_dev_inner;	/**< Next network device for inner flow. */
+	struct net_device *next_dev_outer;	/**< Next network device for outer flow. */
+	uint8_t gre_hlen;			/**< GRE header length. */
+	uint8_t pad_len;			/**< Pad length. */
 };
 
 /**
@@ -286,6 +305,18 @@ extern nss_tx_status_t nss_gre_tx_buf(struct nss_ctx_instance *nss_ctx, uint32_t
  * Pointer to the NSS core context.
  */
 extern struct nss_ctx_instance *nss_gre_get_context(void);
+
+/**
+ *
+ * nss_gre_ifnum_with_core_id
+ * 	Append core ID on GRE interface.
+ *
+ * @param[in] if_num   NSS interface number.
+ *
+ * @return
+ * GRE interface number with core ID.
+ */
+extern int nss_gre_ifnum_with_core_id(int if_num);
 
 /**
  * Callback function for receiving GRE session data.

@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2013-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2013-2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -24,6 +24,8 @@
 #ifndef __NSS_API_IF_H
 #define __NSS_API_IF_H
 
+#ifdef __KERNEL__ /* only kernel will use. */
+
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 #include <linux/if_ether.h>
 #include <linux/skbuff.h>
@@ -37,16 +39,22 @@
 #include "nss_map_t.h"
 #include "nss_tunipip6.h"
 #include "nss_lag.h"
+#include "nss_stats_public.h"
 #include "nss_ipv4.h"
 #include "nss_ipv6.h"
 #include "nss_shaper.h"
 #include "nss_if.h"
+#include "nss_phy_if.h"
 #include "nss_virt_if.h"
 #include "nss_pppoe.h"
 #include "nss_crypto.h"
 #include "nss_crypto_cmn.h"
+#include "nss_dma.h"
+
 #include "nss_profiler.h"
 #include "nss_dynamic_interface.h"
+#include "nss_ipsec.h"
+#include "nss_ipsec_cmn.h"
 #include "nss_gre.h"
 #include "nss_gre_redir.h"
 #include "nss_gre_redir_lag.h"
@@ -62,11 +70,14 @@
 #include "nss_oam.h"
 #include "nss_dtls.h"
 #include "nss_dtls_cmn.h"
+#include "nss_tls.h"
 #include "nss_edma.h"
 #include "nss_bridge.h"
 #include "nss_ppe.h"
 #include "nss_trustsec_tx.h"
 #include "nss_vlan.h"
+#include "nss_igs.h"
+#include "nss_mirror.h"
 #include "nss_wifili_if.h"
 #include "nss_project.h"
 #include "nss_qrfs.h"
@@ -74,7 +85,23 @@
 #include "nss_qvpn.h"
 #include "nss_unaligned.h"
 #include "nss_pvxlan.h"
+#include "nss_vxlan.h"
+#include "nss_pm.h"
+#include "nss_freq.h"
+#include "nss_tstamp.h"
+#include "nss_gre_redir_mark.h"
+#include "nss_clmap.h"
+#include "nss_rmnet_rx.h"
+#include "nss_match.h"
+#include "nss_eth_rx.h"
+#include "nss_c2c_rx.h"
+#include "nss_ipv6_reasm.h"
+#include "nss_ipv4_reasm.h"
+#include "nss_lso_rx.h"
+#include "nss_wifi_mac_db_if.h"
 #endif
+
+#endif /*__KERNEL__ */
 
 /**
  * @addtogroup nss_driver_subsystem
@@ -92,7 +119,11 @@
 #define NSS_MAX_PHYSICAL_INTERFACES 8	/**< Maximum number of physical interfaces. */
 #define NSS_MAX_VIRTUAL_INTERFACES 16	/**< Maximum number of virtual interfaces. */
 #define NSS_MAX_TUNNEL_INTERFACES 4	/**< Maximum number of tunnel interfaces. */
-#define NSS_MAX_SPECIAL_INTERFACES 54	/**< Maximum number of special interfaces. */
+#if (NSS_FW_VERSION_CODE < NSS_FW_VERSION(11,1))
+#define NSS_MAX_SPECIAL_INTERFACES 55	/**< Maximum number of special interfaces. */
+#else
+#define NSS_MAX_SPECIAL_INTERFACES 67	/**< Maximum number of special interfaces. */
+#endif
 #define NSS_MAX_WIFI_RADIO_INTERFACES 3	/**< Maximum number of radio interfaces. */
 
 /*
@@ -144,8 +175,8 @@
 		/**< Special interface number for crypto CE5. */
 #define NSS_DTLS_INTERFACE (NSS_SPECIAL_IF_START + 10)
 		/**< Special interface number for DTLS. */
-#define NSS_CRYPTO_EIP197_INTERFACE (NSS_SPECIAL_IF_START + 11)
-		/**< Special interface number for crypto EIP197. */
+#define NSS_CRYPTO_CMN_INTERFACE (NSS_SPECIAL_IF_START + 11)
+		/**< Special interface number for crypto common. */
 #define NSS_C2C_TX_INTERFACE (NSS_SPECIAL_IF_START + 12)
 		/**< Virtual interface number for core-to-core transmissions. */
 #define NSS_C2C_RX_INTERFACE (NSS_SPECIAL_IF_START + 13)
@@ -184,8 +215,6 @@
 		/**< Special interface number for LAG3. */
 #define NSS_L2TPV2_INTERFACE (NSS_SPECIAL_IF_START + 34)
 		/**< Special interface number for L2TPv2 UDP encapsulation. */
-#define NSS_TSTAMP_INTERFACE (NSS_SPECIAL_IF_START + 35)
-		/**< Special interface number for timestamp. */
 #define NSS_PPTP_INTERFACE (NSS_SPECIAL_IF_START + 36)
 		/**< Special interface number for PPTP-to-decapsulation. */
 #define NSS_PORTID_INTERFACE (NSS_SPECIAL_IF_START + 37)
@@ -208,8 +237,8 @@
 		/**< Special interface number for VLAN. */
 #define NSS_GRE_INTERFACE (NSS_SPECIAL_IF_START + 46)
 		/**< Special interface number for GRE. */
-#define NSS_WIFILI_INTERFACE (NSS_SPECIAL_IF_START + 47)
-		/**< Special interface number for wifili. */
+#define NSS_WIFILI_INTERNAL_INTERFACE (NSS_SPECIAL_IF_START + 47)
+		/**< Special interface number for wifili internal instance. */
 #define NSS_PROJECT_INTERFACE (NSS_SPECIAL_IF_START + 48)
 		/**< Special interface number for project node. */
 #define NSS_PBUF_MGR_FREE_INTERFACE (NSS_SPECIAL_IF_START + 49)
@@ -217,11 +246,40 @@
 #define NSS_REDIR_RX_INTERFACE (NSS_SPECIAL_IF_START + 50)
 		/**< Special interface number for 802.3 redirect node. */
 #define NSS_QRFS_INTERFACE (NSS_SPECIAL_IF_START + 51)
-		/**<Special interface number for QRFS. */
+		/**< Special interface number for QRFS. */
 #define NSS_GRE_REDIR_LAG_INTERFACE (NSS_SPECIAL_IF_START + 52)
-		/**< Special interface number for GRE redirect Link Aggregation interface. */
+		/**< Special interface number for GRE redirect link aggregation interface. */
 #define NSS_UNALIGNED_INTERFACE (NSS_SPECIAL_IF_START + 53)
 		/**< Special interface number for unaligned handler. */
+#define NSS_TSTAMP_TX_INTERFACE (NSS_SPECIAL_IF_START + 54)
+		/**< Special interface number for timestamp transmit. */
+#define NSS_TSTAMP_RX_INTERFACE (NSS_SPECIAL_IF_START + 55)
+		/**< Special interface number for timestamp receive. */
+#define NSS_GRE_REDIR_MARK_INTERFACE (NSS_SPECIAL_IF_START + 56)
+		/**< Special interface number for GRE redirect mark. */
+#if (NSS_FW_VERSION_CODE < NSS_FW_VERSION(11,1))
+#define NSS_RMNET_RX_INTERFACE (NSS_SPECIAL_IF_START + 57)
+		/**< Special interface number for RMNET receive handler. */
+#else
+#define NSS_VXLAN_INTERFACE (NSS_SPECIAL_IF_START + 57)
+		/**< Special interface number for VxLAN handler. */
+#define NSS_RMNET_RX_INTERFACE (NSS_SPECIAL_IF_START + 58)
+		/**< Special interface number for remote wireless wide area network receive handler. */
+#define NSS_WIFILI_EXTERNAL_INTERFACE0 (NSS_SPECIAL_IF_START + 59)
+		/**< Special interface number for first external radio instance. */
+#define NSS_WIFILI_EXTERNAL_INTERFACE1 (NSS_SPECIAL_IF_START + 60)
+		/**< Special interface number for second external radio instance. */
+#define NSS_TLS_INTERFACE (NSS_SPECIAL_IF_START + 61)
+		/**< Special interface number for TLS. */
+#define NSS_PPE_VP_INTERFACE (NSS_SPECIAL_IF_START + 62)
+		/**< Special interface number for the virtual port (62, 63, 64) interface. */
+#define NSS_WIFI_MAC_DB_INTERFACE (NSS_SPECIAL_IF_START + 65)
+		/**< Special interface number for the Wi-Fi MAC database. */
+#define NSS_DMA_INTERFACE (NSS_SPECIAL_IF_START + 66)
+		/**< Special interface number for the DMA interface. */
+#endif
+
+#ifdef __KERNEL__ /* only kernel will use. */
 
 /**
  * Wireless Multimedia Extention Access Category to TID. @hideinitializer
@@ -272,34 +330,6 @@
  * Prints an IPv6 address (16 * 8 bits).
  */
 #define IPV6_ADDR_TO_OCTAL(ipv6) ((uint16_t *)ipv6)[0], ((uint16_t *)ipv6)[1], ((uint16_t *)ipv6)[2], ((uint16_t *)ipv6)[3], ((uint16_t *)ipv6)[4], ((uint16_t *)ipv6)[5], ((uint16_t *)ipv6)[6], ((uint16_t *)ipv6)[7]
-
-/**
- * nss_pm_client
- *	Power management (PM) clients.
- *
- * These clients can query for bus or clock performance levels.
- */
-typedef enum nss_pm_client {
-	NSS_PM_CLIENT_GMAC,
-	NSS_PM_CLIENT_CRYPTO,
-	NSS_PM_CLIENT_NETAP,
-	NSS_PM_MAX_CLIENTS,
-} nss_pm_client_t;
-
-/**
- * nss_pm_perf_level
- *	Performance levels.
- *
- * This enumeration is passed as a parameter to NSS PM performance-level
- * requests.
- */
-typedef enum nss_pm_perf_level {
-	NSS_PM_PERF_LEVEL_SUSPEND = 0,
-	NSS_PM_PERF_LEVEL_IDLE,
-	NSS_PM_PERF_LEVEL_NOMINAL,
-	NSS_PM_PERF_LEVEL_TURBO,
-	NSS_PM_PERF_MAX_LEVELS,
-} nss_pm_perf_level_t;
 
 /*
  * IPv4 rule sync reasons.
@@ -751,15 +781,6 @@ struct nss_ipv6_cb_params {
 	} params;		/**< Callback parameters. */
 };
 
-/**
- * nss_pm_interface_status_t
- *	Status of the PM client interface.
- */
-typedef enum {
-	NSS_PM_API_SUCCESS = 0,
-	NSS_PM_API_FAILED,
-} nss_pm_interface_status_t;
-
 /*
  * General utilities
  */
@@ -786,66 +807,6 @@ typedef void (*nss_if_rx_msg_callback_t)(void *app_data, struct nss_cmn_msg *msg
 typedef void (*nss_ipv4_callback_t)(struct nss_ipv4_cb_params *nicb);
 
 /**
- * nss_freq_change
- *	Changes the frequency of the NSS cores.
- *
- * @datatypes
- * nss_ctx_instance
- *
- * @param[in] nss_ctx       Pointer to the NSS context.
- * @param[in] eng           Frequency value in Hz.
- * @param[in] stats_enable  Enable NSS to send scaling statistics.
- * @param[in] start_or_end  Start or end of the frequency change.
- *
- * @return
- * Status of the Tx operation.
- */
-nss_tx_status_t nss_freq_change(struct nss_ctx_instance *nss_ctx, uint32_t eng, uint32_t stats_enable, uint32_t start_or_end);
-
-/**
- * nss_pm_client_register
- *	Registers a power management driver client.
- *
- * @datatypes
- * nss_pm_client_t
- *
- * @param[in] client_id  ID of the client driver.
- *
- * @return
- * None.
- */
-extern void *nss_pm_client_register(nss_pm_client_t client_id);
-
-/**
- * nss_pm_client_unregister
- *	Deregisters a power management driver client.
- *
- * @datatypes
- * nss_pm_client_t
- *
- * @param[in] client_id  ID of the client driver.
- *
- * @return
- * None.
- */
-int nss_pm_client_unregister(nss_pm_client_t client_id);
-
-/**
- * nss_pm_set_perf_level
- *	Updates the bus bandwidth level for a client.
- *
- * @datatypes
- * nss_pm_perf_level_t
- *
- * @param[in,out] handle  Handle of the client.
- * @param[in,out] lvl     Performance level.
- *
- * @return
- * None.
- */
-extern nss_pm_interface_status_t nss_pm_set_perf_level(void *handle, nss_pm_perf_level_t lvl);
-
-/**
  * nss_get_state
  *	Gets the NSS state.
  *
@@ -855,6 +816,8 @@ extern nss_pm_interface_status_t nss_pm_set_perf_level(void *handle, nss_pm_perf
  * NSS state.
  */
 extern nss_state_t nss_get_state(void *nss_ctx);
+
+#endif /*__KERNEL__ */
 
 /*
  * Once Everything is arranged correctly, will be placed at top

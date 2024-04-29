@@ -1,9 +1,12 @@
 /*
  **************************************************************************
- * Copyright (c) 2014-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2014-2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
+ *
  * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
  * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
  * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
@@ -112,7 +115,10 @@ static char *ecm_db_interface_type_names[ECM_DB_IFACE_TYPE_COUNT] = {
 	"GRE_TUN",
 	"GRE_TAP",
 	"RAWIP",
-	"OVPN"
+	"OVPN",
+	"VxLAN",
+	"OVS_BRIDGE",
+	"MACVLAN"
 };
 
 /*
@@ -141,7 +147,7 @@ EXPORT_SYMBOL(ecm_db_interface_type_to_string);
  */
 ecm_db_iface_type_t ecm_db_iface_type_get(struct ecm_db_iface_instance *ii)
 {
-	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%p: magic failed", ii);
+	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%px: magic failed", ii);
 	return ii->type;
 }
 EXPORT_SYMBOL(ecm_db_iface_type_get);
@@ -168,7 +174,7 @@ static void ecm_db_iface_data_stats_get(struct ecm_db_iface_instance *ii, uint64
 						uint64_t *from_data_total_dropped, uint64_t *to_data_total_dropped,
 						uint64_t *from_packet_total_dropped, uint64_t *to_packet_total_dropped)
 {
-	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%p: magic failed", ii);
+	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%px: magic failed", ii);
 	spin_lock_bh(&ecm_db_lock);
 	if (from_data_total) {
 		*from_data_total = ii->from_data_total;
@@ -226,8 +232,8 @@ static int ecm_db_iface_state_get_base(struct ecm_db_iface_instance *ii, struct 
 	uint64_t to_packet_total_dropped;
 #endif
 
-	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%p: magic failed\n", ii);
-	DEBUG_TRACE("%p: Open iface msg\n", ii);
+	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%px: magic failed\n", ii);
+	DEBUG_TRACE("%px: Open iface msg\n", ii);
 
 	if ((result = ecm_state_prefix_add(sfi, "iface"))) {
 		return result;
@@ -301,7 +307,7 @@ static int ecm_db_iface_ethernet_state_get(struct ecm_db_iface_instance *ii, str
 	int result;
 	uint8_t address[ETH_ALEN];
 
-	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%p: magic failed\n", ii);
+	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%px: magic failed\n", ii);
 	spin_lock_bh(&ecm_db_lock);
 	memcpy(address, ii->type_info.ethernet.address, ETH_ALEN);
 	spin_unlock_bh(&ecm_db_lock);
@@ -331,7 +337,7 @@ static int ecm_db_iface_lag_state_get(struct ecm_db_iface_instance *ii, struct e
 	int result;
 	uint8_t address[ETH_ALEN];
 
-	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%p: magic failed\n", ii);
+	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%px: magic failed\n", ii);
 	spin_lock_bh(&ecm_db_lock);
 	memcpy(address, ii->type_info.lag.address, ETH_ALEN);
 	spin_unlock_bh(&ecm_db_lock);
@@ -360,7 +366,7 @@ static int ecm_db_iface_bridge_state_get(struct ecm_db_iface_instance *ii, struc
 	int result;
 	uint8_t address[ETH_ALEN];
 
-	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%p: magic failed\n", ii);
+	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%px: magic failed\n", ii);
 	spin_lock_bh(&ecm_db_lock);
 	memcpy(address, ii->type_info.bridge.address, ETH_ALEN);
 	spin_unlock_bh(&ecm_db_lock);
@@ -379,6 +385,69 @@ static int ecm_db_iface_bridge_state_get(struct ecm_db_iface_instance *ii, struc
 	return ecm_state_prefix_remove(sfi);
 }
 
+#ifdef ECM_INTERFACE_MACVLAN_ENABLE
+/*
+ * ecm_db_iface_macvlan_state_get()
+ * 	Return interface type specific state
+ */
+static int ecm_db_iface_macvlan_state_get(struct ecm_db_iface_instance *ii, struct ecm_state_file_instance *sfi)
+{
+	int result;
+	uint8_t address[ETH_ALEN];
+
+	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%px: magic failed\n", ii);
+	spin_lock_bh(&ecm_db_lock);
+	memcpy(address, ii->type_info.macvlan.address, ETH_ALEN);
+	spin_unlock_bh(&ecm_db_lock);
+
+	if ((result = ecm_state_prefix_add(sfi, "macvlan"))) {
+		return result;
+	}
+
+	if ((result = ecm_db_iface_state_get_base(ii, sfi))) {
+		goto done;
+	}
+
+	if ((result = ecm_state_write(sfi, "address", "%pM", address))) {
+		goto done;
+	}
+
+done:
+	ecm_state_prefix_remove(sfi);
+	return result;
+}
+#endif
+
+#ifdef ECM_INTERFACE_OVS_BRIDGE_ENABLE
+/*
+ * ecm_db_iface_ovs_bridge_state_get()
+ * 	Return interface type specific state
+ */
+static int ecm_db_iface_ovs_bridge_state_get(struct ecm_db_iface_instance *ii, struct ecm_state_file_instance *sfi)
+{
+	int result;
+	uint8_t address[ETH_ALEN];
+
+	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%px: magic failed\n", ii);
+	spin_lock_bh(&ecm_db_lock);
+	memcpy(address, ii->type_info.ovsb.address, ETH_ALEN);
+	spin_unlock_bh(&ecm_db_lock);
+
+	if ((result = ecm_state_prefix_add(sfi, "ovs_bridge"))) {
+		return result;
+	}
+	if ((result = ecm_db_iface_state_get_base(ii, sfi))) {
+		return result;
+	}
+
+	if ((result = ecm_state_write(sfi, "address", "%pM", address))) {
+		return result;
+	}
+
+	return ecm_state_prefix_remove(sfi);
+}
+#endif
+
 #ifdef ECM_INTERFACE_VLAN_ENABLE
 /*
  * ecm_db_iface_vlan_state_get()
@@ -391,7 +460,7 @@ static int ecm_db_iface_vlan_state_get(struct ecm_db_iface_instance *ii, struct 
 	uint16_t vlan_tag;
 	uint16_t vlan_tpid;
 
-	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%p: magic failed\n", ii);
+	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%px: magic failed\n", ii);
 	spin_lock_bh(&ecm_db_lock);
 	memcpy(address, ii->type_info.vlan.address, ETH_ALEN);
 	vlan_tag = ii->type_info.vlan.vlan_tag;
@@ -430,7 +499,7 @@ static int ecm_db_iface_pppoe_state_get(struct ecm_db_iface_instance *ii, struct
 	uint16_t pppoe_session_id;
 	uint8_t remote_mac[ETH_ALEN];
 
-	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%p: magic failed\n", ii);
+	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%px: magic failed\n", ii);
 	spin_lock_bh(&ecm_db_lock);
 	pppoe_session_id = ii->type_info.pppoe.pppoe_session_id;
 	memcpy(remote_mac, ii->type_info.pppoe.remote_mac, ETH_ALEN);
@@ -443,7 +512,7 @@ static int ecm_db_iface_pppoe_state_get(struct ecm_db_iface_instance *ii, struct
 		return result;
 	}
 
-	if ((result = ecm_state_write(sfi, "remote_max", "%pM", remote_mac))) {
+	if ((result = ecm_state_write(sfi, "remote_mac", "%pM", remote_mac))) {
 		return result;
 	}
 	if ((result = ecm_state_write(sfi, "session_id", "%u", pppoe_session_id))) {
@@ -464,7 +533,7 @@ static int ecm_db_iface_map_t_state_get(struct ecm_db_iface_instance *ii, struct
 	int result;
 	int32_t if_index;
 
-	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%p: magic failed\n", ii);
+	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%px: magic failed\n", ii);
 	spin_lock_bh(&ecm_db_lock);
 	if_index = ii->type_info.map_t.if_index;
 	spin_unlock_bh(&ecm_db_lock);
@@ -497,7 +566,7 @@ static int ecm_db_iface_gre_tun_state_get(struct ecm_db_iface_instance *ii, stru
 	char local_ipaddress[ECM_IP_ADDR_STR_BUFF_SIZE];
 	char remote_ipaddress[ECM_IP_ADDR_STR_BUFF_SIZE];
 
-	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%p: magic failed\n", ii);
+	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%px: magic failed\n", ii);
 	spin_lock_bh(&ecm_db_lock);
 	if_index = ii->type_info.gre_tun.if_index;
 	memcpy(local_ip, ii->type_info.gre_tun.local_ip, sizeof(ip_addr_t));
@@ -541,7 +610,7 @@ static int ecm_db_iface_pppol2tpv2_state_get(struct ecm_db_iface_instance *ii, s
 	int result;
 	struct ecm_db_interface_info_pppol2tpv2 type_info;
 
-	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%p: magic failed\n", ii);
+	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%px: magic failed\n", ii);
 	spin_lock_bh(&ecm_db_lock);
 	memcpy(&type_info, &ii->type_info, sizeof(struct ecm_db_interface_info_pppol2tpv2));
 	spin_unlock_bh(&ecm_db_lock);
@@ -585,7 +654,7 @@ static int ecm_db_iface_pptp_state_get(struct ecm_db_iface_instance *ii, struct 
 	int result;
 	struct ecm_db_interface_info_pptp type_info;
 
-	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%p: magic failed\n", ii);
+	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%px: magic failed\n", ii);
 	spin_lock_bh(&ecm_db_lock);
 	memcpy(&type_info, &ii->type_info, sizeof(struct ecm_db_interface_info_pptp));
 	spin_unlock_bh(&ecm_db_lock);
@@ -623,7 +692,7 @@ static int ecm_db_iface_unknown_state_get(struct ecm_db_iface_instance *ii, stru
 	int result;
 	uint32_t os_specific_ident;
 
-	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%p: magic failed\n", ii);
+	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%px: magic failed\n", ii);
 	spin_lock_bh(&ecm_db_lock);
 	os_specific_ident = ii->type_info.unknown.os_specific_ident;
 	spin_unlock_bh(&ecm_db_lock);
@@ -651,7 +720,7 @@ static int ecm_db_iface_loopback_state_get(struct ecm_db_iface_instance *ii, str
 	int result;
 	uint32_t os_specific_ident;
 
-	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%p: magic failed\n", ii);
+	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%px: magic failed\n", ii);
 	spin_lock_bh(&ecm_db_lock);
 	os_specific_ident = ii->type_info.loopback.os_specific_ident;
 	spin_unlock_bh(&ecm_db_lock);
@@ -682,7 +751,7 @@ static int ecm_db_iface_ipsec_tunnel_state_get(struct ecm_db_iface_instance *ii,
 	int result;
 	uint32_t os_specific_ident;
 
-	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%p: magic failed\n", ii);
+	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%px: magic failed\n", ii);
 	spin_lock_bh(&ecm_db_lock);
 	os_specific_ident = ii->type_info.ipsec_tunnel.os_specific_ident;
 	spin_unlock_bh(&ecm_db_lock);
@@ -712,7 +781,7 @@ static int ecm_db_iface_tunipip6_state_get(struct ecm_db_iface_instance *ii, str
 {
 	int result;
 
-	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%p: magic failed\n", ii);
+	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%px: magic failed\n", ii);
 
 	/*
 	 * TODO: tunipip6 specific information needs to be added.
@@ -738,7 +807,7 @@ static int ecm_db_iface_sit_state_get(struct ecm_db_iface_instance *ii, struct e
 {
 	int result;
 
-	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%p: magic failed\n", ii);
+	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%px: magic failed\n", ii);
 
 	/*
 	 * TODO: SIT (6rd) specific information needs to be added.
@@ -764,7 +833,7 @@ static int ecm_db_iface_rawip_state_get(struct ecm_db_iface_instance *ii, struct
 	int result;
 	uint8_t address[ETH_ALEN];
 
-	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%p: magic failed\n", ii);
+	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%px: magic failed\n", ii);
 	spin_lock_bh(&ecm_db_lock);
 	memcpy(address, ii->type_info.rawip.address, ETH_ALEN);
 	spin_unlock_bh(&ecm_db_lock);
@@ -795,7 +864,7 @@ static int ecm_db_iface_ovpn_state_get(struct ecm_db_iface_instance *ii, struct 
 	int result;
 	struct ecm_db_interface_info_ovpn type_info;
 
-	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%p: magic failed\n", ii);
+	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%px: magic failed\n", ii);
 	spin_lock_bh(&ecm_db_lock);
 	memcpy(&type_info, &ii->type_info, sizeof(struct ecm_db_interface_info_ovpn));
 	spin_unlock_bh(&ecm_db_lock);
@@ -818,6 +887,37 @@ static int ecm_db_iface_ovpn_state_get(struct ecm_db_iface_instance *ii, struct 
 }
 #endif
 
+#ifdef ECM_INTERFACE_VXLAN_ENABLE
+/*
+ * ecm_db_iface_vxlan_state_get()
+ *	Return interface type specific state
+ */
+static int ecm_db_iface_vxlan_state_get(struct ecm_db_iface_instance *ii, struct ecm_state_file_instance *sfi)
+{
+	int result;
+	uint32_t vni;
+
+	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%px: magic failed\n", ii);
+	spin_lock_bh(&ecm_db_lock);
+	vni = ii->type_info.vxlan.vni;
+	spin_unlock_bh(&ecm_db_lock);
+
+	if ((result = ecm_state_prefix_add(sfi, "vxlan"))) {
+		return result;
+	}
+
+	if ((result = ecm_db_iface_state_get_base(ii, sfi))) {
+		return result;
+	}
+
+	if ((result = ecm_state_write(sfi, "vni", "%d", vni))) {
+		return result;
+	}
+
+	return ecm_state_prefix_remove(sfi);
+}
+#endif
+
 /*
  * ecm_db_iface_state_get()
  *	Obtain state for the interface.
@@ -828,7 +928,7 @@ int ecm_db_iface_state_get(struct ecm_state_file_instance *sfi, struct ecm_db_if
 {
 	int result;
 
-	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%p: magic failed\n", ii);
+	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%px: magic failed\n", ii);
 
 	if ((result = ecm_state_prefix_add(sfi, "iface"))) {
 		return result;
@@ -889,10 +989,10 @@ EXPORT_SYMBOL(ecm_db_iface_hash_index_get_first);
  */
 void _ecm_db_iface_ref(struct ecm_db_iface_instance *ii)
 {
-	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%p: magic failed\n", ii);
+	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%px: magic failed\n", ii);
 	ii->refs++;
-	DEBUG_TRACE("%p: iface ref %d\n", ii, ii->refs);
-	DEBUG_ASSERT(ii->refs > 0, "%p: ref wrap\n", ii);
+	DEBUG_TRACE("%px: iface ref %d\n", ii, ii->refs);
+	DEBUG_ASSERT(ii->refs > 0, "%px: ref wrap\n", ii);
 }
 
 /*
@@ -912,15 +1012,15 @@ EXPORT_SYMBOL(ecm_db_iface_ref);
  */
 int ecm_db_iface_deref(struct ecm_db_iface_instance *ii)
 {
-	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%p: magic failed\n", ii);
+	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%px: magic failed\n", ii);
 
 	/*
 	 * Decrement reference count
 	 */
 	spin_lock_bh(&ecm_db_lock);
 	ii->refs--;
-	DEBUG_TRACE("%p: iface deref %d\n", ii, ii->refs);
-	DEBUG_ASSERT(ii->refs >= 0, "%p: ref wrap\n", ii);
+	DEBUG_TRACE("%px: iface deref %d\n", ii, ii->refs);
+	DEBUG_ASSERT(ii->refs >= 0, "%px: ref wrap\n", ii);
 
 	if (ii->refs > 0) {
 		int refs = ii->refs;
@@ -929,7 +1029,7 @@ int ecm_db_iface_deref(struct ecm_db_iface_instance *ii)
 	}
 
 #ifdef ECM_DB_XREF_ENABLE
-	DEBUG_ASSERT((ii->nodes == NULL) && (ii->node_count == 0), "%p: nodes not null\n", ii);
+	DEBUG_ASSERT((ii->nodes == NULL) && (ii->node_count == 0), "%px: nodes not null\n", ii);
 #endif
 
 	/*
@@ -944,7 +1044,7 @@ int ecm_db_iface_deref(struct ecm_db_iface_instance *ii)
 		 * Remove from the global list
 		 */
 		if (!ii->prev) {
-			DEBUG_ASSERT(ecm_db_interfaces == ii, "%p: interface table bad\n", ii);
+			DEBUG_ASSERT(ecm_db_interfaces == ii, "%px: interface table bad\n", ii);
 			ecm_db_interfaces = ii->next;
 		} else {
 			ii->prev->next = ii->next;
@@ -959,7 +1059,7 @@ int ecm_db_iface_deref(struct ecm_db_iface_instance *ii)
 		 * Link out of hash table
 		 */
 		if (!ii->hash_prev) {
-			DEBUG_ASSERT(ecm_db_iface_table[ii->hash_index] == ii, "%p: hash table bad got %p for hash index %u\n", ii, ecm_db_iface_table[ii->hash_index], ii->hash_index);
+			DEBUG_ASSERT(ecm_db_iface_table[ii->hash_index] == ii, "%px: hash table bad got %px for hash index %u\n", ii, ecm_db_iface_table[ii->hash_index], ii->hash_index);
 			ecm_db_iface_table[ii->hash_index] = ii->hash_next;
 		} else {
 			ii->hash_prev->hash_next = ii->hash_next;
@@ -970,13 +1070,13 @@ int ecm_db_iface_deref(struct ecm_db_iface_instance *ii)
 		ii->hash_next = NULL;
 		ii->hash_prev = NULL;
 		ecm_db_iface_table_lengths[ii->hash_index]--;
-		DEBUG_ASSERT(ecm_db_iface_table_lengths[ii->hash_index] >= 0, "%p: invalid table len %d\n", ii, ecm_db_iface_table_lengths[ii->hash_index]);
+		DEBUG_ASSERT(ecm_db_iface_table_lengths[ii->hash_index] >= 0, "%px: invalid table len %d\n", ii, ecm_db_iface_table_lengths[ii->hash_index]);
 
 		/*
 		 * Link out of interface identifier hash table
 		 */
 		if (!ii->iface_id_hash_prev) {
-			DEBUG_ASSERT(ecm_db_iface_id_table[ii->iface_id_hash_index] == ii, "%p: hash table bad got %p for hash index %u\n", ii, ecm_db_iface_id_table[ii->iface_id_hash_index], ii->iface_id_hash_index);
+			DEBUG_ASSERT(ecm_db_iface_id_table[ii->iface_id_hash_index] == ii, "%px: hash table bad got %px for hash index %u\n", ii, ecm_db_iface_id_table[ii->iface_id_hash_index], ii->iface_id_hash_index);
 			ecm_db_iface_id_table[ii->iface_id_hash_index] = ii->iface_id_hash_next;
 		} else {
 			ii->iface_id_hash_prev->iface_id_hash_next = ii->iface_id_hash_next;
@@ -987,13 +1087,13 @@ int ecm_db_iface_deref(struct ecm_db_iface_instance *ii)
 		ii->iface_id_hash_next = NULL;
 		ii->iface_id_hash_prev = NULL;
 		ecm_db_iface_id_table_lengths[ii->iface_id_hash_index]--;
-		DEBUG_ASSERT(ecm_db_iface_id_table_lengths[ii->iface_id_hash_index] >= 0, "%p: invalid table len %d\n", ii, ecm_db_iface_id_table_lengths[ii->iface_id_hash_index]);
+		DEBUG_ASSERT(ecm_db_iface_id_table_lengths[ii->iface_id_hash_index] >= 0, "%px: invalid table len %d\n", ii, ecm_db_iface_id_table_lengths[ii->iface_id_hash_index]);
 		spin_unlock_bh(&ecm_db_lock);
 
 		/*
 		 * Throw removed event to listeners
 		 */
-		DEBUG_TRACE("%p: Throw iface removed event\n", ii);
+		DEBUG_TRACE("%px: Throw iface removed event\n", ii);
 		li = ecm_db_listeners_get_and_ref_first();
 		while (li) {
 			struct ecm_db_listener_instance *lin;
@@ -1028,7 +1128,7 @@ int ecm_db_iface_deref(struct ecm_db_iface_instance *ii)
 	 */
 	spin_lock_bh(&ecm_db_lock);
 	ecm_db_iface_count--;
-	DEBUG_ASSERT(ecm_db_iface_count >= 0, "%p: iface count wrap\n", ii);
+	DEBUG_ASSERT(ecm_db_iface_count >= 0, "%px: iface count wrap\n", ii);
 	spin_unlock_bh(&ecm_db_lock);
 
 	return 0;
@@ -1041,7 +1141,7 @@ EXPORT_SYMBOL(ecm_db_iface_deref);
  */
 int32_t ecm_db_iface_ae_interface_identifier_get(struct ecm_db_iface_instance *ii)
 {
-	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%p: magic failed", ii);
+	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%px: magic failed", ii);
 	return ii->ae_interface_identifier;
 }
 EXPORT_SYMBOL(ecm_db_iface_ae_interface_identifier_get);
@@ -1052,7 +1152,7 @@ EXPORT_SYMBOL(ecm_db_iface_ae_interface_identifier_get);
  */
 void ecm_db_iface_ae_interface_identifier_set(struct ecm_db_iface_instance *ii, uint32_t num)
 {
-	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%p: magic failed", ii);
+	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%px: magic failed", ii);
 	ii->ae_interface_identifier = num;
 }
 EXPORT_SYMBOL(ecm_db_iface_ae_interface_identifier_set);
@@ -1063,7 +1163,7 @@ EXPORT_SYMBOL(ecm_db_iface_ae_interface_identifier_set);
  */
 int32_t ecm_db_iface_interface_identifier_get(struct ecm_db_iface_instance *ii)
 {
-	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%p: magic failed", ii);
+	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%px: magic failed", ii);
 	return ii->interface_identifier;
 }
 EXPORT_SYMBOL(ecm_db_iface_interface_identifier_get);
@@ -1077,7 +1177,7 @@ EXPORT_SYMBOL(ecm_db_iface_interface_identifier_get);
 void ecm_db_iface_interface_name_get(struct ecm_db_iface_instance *ii, char *name_buffer)
 {
 	DEBUG_CHECK_MAGIC(ii,
-		ECM_DB_IFACE_INSTANCE_MAGIC, "%p: magic failed", ii);
+		ECM_DB_IFACE_INSTANCE_MAGIC, "%px: magic failed", ii);
 	strlcpy(name_buffer, ii->name, IFNAMSIZ);
 }
 EXPORT_SYMBOL(ecm_db_iface_interface_name_get);
@@ -1089,12 +1189,12 @@ EXPORT_SYMBOL(ecm_db_iface_interface_name_get);
 int32_t ecm_db_iface_mtu_reset(struct ecm_db_iface_instance *ii, int32_t mtu)
 {
 	int32_t mtu_old;
-	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%p: magic failed", ii);
+	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%px: magic failed", ii);
 	spin_lock_bh(&ecm_db_lock);
 	mtu_old = ii->mtu;
 	ii->mtu = mtu;
 	spin_unlock_bh(&ecm_db_lock);
-	DEBUG_INFO("%p: Mtu change from %d to %d\n", ii, mtu_old, mtu);
+	DEBUG_INFO("%px: Mtu change from %d to %d\n", ii, mtu_old, mtu);
 
 	return mtu_old;
 }
@@ -1124,7 +1224,7 @@ EXPORT_SYMBOL(ecm_db_interfaces_get_and_ref_first);
 struct ecm_db_iface_instance *ecm_db_interface_get_and_ref_next(struct ecm_db_iface_instance *ii)
 {
 	struct ecm_db_iface_instance *iin;
-	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%p: magic failed", ii);
+	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%px: magic failed", ii);
 	spin_lock_bh(&ecm_db_lock);
 	iin = ii->next;
 	if (iin) {
@@ -1300,16 +1400,29 @@ static inline ecm_db_iface_hash_t ecm_db_iface_generate_hash_index_ipsec_tunnel(
 }
 #endif
 
+#ifdef ECM_INTERFACE_VXLAN_ENABLE
+/*
+ * ecm_db_iface_generate_hash_index_vxlan()
+ *	Calculate the hash index based on VxLAN network identifier and interface type.
+ */
+static inline ecm_db_iface_hash_t ecm_db_iface_generate_hash_index_vxlan(uint32_t vni, uint32_t if_type)
+{
+	uint32_t hash_val;
+	hash_val = (uint32_t)jhash_2words(vni, if_type, ecm_db_jhash_rnd);
+	return (ecm_db_iface_hash_t)(hash_val & (ECM_DB_IFACE_HASH_SLOTS - 1));
+}
+#endif
+
 /*
  * ecm_db_iface_ethernet_address_get()
  *	Obtain the ethernet address for an ethernet interface
  */
 void ecm_db_iface_ethernet_address_get(struct ecm_db_iface_instance *ii, uint8_t *address)
 {
-	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%p: magic failed", ii);
-	DEBUG_ASSERT(ii->type == ECM_DB_IFACE_TYPE_ETHERNET, "%p: Bad type, expected ethernet, actual: %d\n", ii, ii->type);
+	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%px: magic failed", ii);
+	DEBUG_ASSERT(ii->type == ECM_DB_IFACE_TYPE_ETHERNET, "%px: Bad type, expected ethernet, actual: %d\n", ii, ii->type);
 	spin_lock_bh(&ecm_db_lock);
-	memcpy(address, ii->type_info.ethernet.address, sizeof(ii->type_info.ethernet.address));
+	ether_addr_copy(address, ii->type_info.ethernet.address);
 	spin_unlock_bh(&ecm_db_lock);
 }
 EXPORT_SYMBOL(ecm_db_iface_ethernet_address_get);
@@ -1320,13 +1433,44 @@ EXPORT_SYMBOL(ecm_db_iface_ethernet_address_get);
  */
 void ecm_db_iface_bridge_address_get(struct ecm_db_iface_instance *ii, uint8_t *address)
 {
-	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%p: magic failed", ii);
-	DEBUG_ASSERT(ii->type == ECM_DB_IFACE_TYPE_BRIDGE, "%p: Bad type, expected bridge, actual: %d\n", ii, ii->type);
+	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%px: magic failed", ii);
+	DEBUG_ASSERT(ii->type == ECM_DB_IFACE_TYPE_BRIDGE, "%px: Bad type, expected bridge, actual: %d\n", ii, ii->type);
 	spin_lock_bh(&ecm_db_lock);
-	memcpy(address, ii->type_info.bridge.address, sizeof(ii->type_info.bridge.address));
+	ether_addr_copy(address, ii->type_info.bridge.address);
 	spin_unlock_bh(&ecm_db_lock);
 }
 EXPORT_SYMBOL(ecm_db_iface_bridge_address_get);
+
+#ifdef ECM_INTERFACE_OVS_BRIDGE_ENABLE
+/*
+ * ecm_db_iface_ovs_bridge_address_get()
+ *	Obtain the ethernet address for a ovs bridge interface
+ */
+void ecm_db_iface_ovs_bridge_address_get(struct ecm_db_iface_instance *ii, uint8_t *address)
+{
+	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%px: magic failed", ii);
+	DEBUG_ASSERT(ii->type == ECM_DB_IFACE_TYPE_OVS_BRIDGE, "%px: Bad type, expected ovs bridge, actual: %d\n", ii, ii->type);
+	spin_lock_bh(&ecm_db_lock);
+	ether_addr_copy(address, ii->type_info.ovsb.address);
+	spin_unlock_bh(&ecm_db_lock);
+}
+#endif
+
+#ifdef ECM_INTERFACE_BOND_ENABLE
+/*
+ * ecm_db_iface_lag_address_get()
+ *	Obtain the ethernet address for a LAG interface
+ */
+void ecm_db_iface_lag_address_get(struct ecm_db_iface_instance *ii, uint8_t *address)
+{
+	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%px: magic failed", ii);
+	DEBUG_ASSERT(ii->type == ECM_DB_IFACE_TYPE_LAG, "%px: Bad type, expected LAG, actual: %d\n", ii, ii->type);
+	spin_lock_bh(&ecm_db_lock);
+	ether_addr_copy(address, ii->type_info.lag.address);
+	spin_unlock_bh(&ecm_db_lock);
+}
+EXPORT_SYMBOL(ecm_db_iface_lag_address_get);
+#endif
 
 /*
  * _ecm_db_iface_identifier_hash_table_insert_entry()
@@ -1355,7 +1499,7 @@ static void _ecm_db_iface_identifier_hash_table_insert_entry(struct ecm_db_iface
 
 	ecm_db_iface_id_table[iface_id_hash_index] = ii;
 	ecm_db_iface_id_table_lengths[iface_id_hash_index]++;
-	DEBUG_ASSERT(ecm_db_iface_id_table_lengths[iface_id_hash_index] > 0, "%p: invalid iface id table len %d\n", ii, ecm_db_iface_id_table_lengths[iface_id_hash_index]);
+	DEBUG_ASSERT(ecm_db_iface_id_table_lengths[iface_id_hash_index] > 0, "%px: invalid iface id table len %d\n", ii, ecm_db_iface_id_table_lengths[iface_id_hash_index]);
 }
 
 /*
@@ -1377,7 +1521,7 @@ static void _ecm_db_iface_identifier_hash_table_remove_entry(struct ecm_db_iface
 	 * Link out of interface identifier hash table
 	 */
 	if (!ii->iface_id_hash_prev) {
-		DEBUG_ASSERT(ecm_db_iface_id_table[ii->iface_id_hash_index] == ii, "%p: hash table bad got %p for hash index %u\n", ii, ecm_db_iface_id_table[ii->iface_id_hash_index], ii->iface_id_hash_index);
+		DEBUG_ASSERT(ecm_db_iface_id_table[ii->iface_id_hash_index] == ii, "%px: hash table bad got %px for hash index %u\n", ii, ecm_db_iface_id_table[ii->iface_id_hash_index], ii->iface_id_hash_index);
 		ecm_db_iface_id_table[ii->iface_id_hash_index] = ii->iface_id_hash_next;
 	} else {
 		ii->iface_id_hash_prev->iface_id_hash_next = ii->iface_id_hash_next;
@@ -1390,7 +1534,7 @@ static void _ecm_db_iface_identifier_hash_table_remove_entry(struct ecm_db_iface
 	ii->iface_id_hash_next = NULL;
 	ii->iface_id_hash_prev = NULL;
 	ecm_db_iface_id_table_lengths[ii->iface_id_hash_index]--;
-	DEBUG_ASSERT(ecm_db_iface_id_table_lengths[ii->iface_id_hash_index] >= 0, "%p: invalid table len %d\n", ii, ecm_db_iface_id_table_lengths[ii->iface_id_hash_index]);
+	DEBUG_ASSERT(ecm_db_iface_id_table_lengths[ii->iface_id_hash_index] >= 0, "%px: invalid table len %d\n", ii, ecm_db_iface_id_table_lengths[ii->iface_id_hash_index]);
 }
 
 /*
@@ -1401,14 +1545,14 @@ static void _ecm_db_iface_identifier_hash_table_remove_entry(struct ecm_db_iface
  */
 void ecm_db_iface_identifier_hash_table_entry_check_and_update(struct ecm_db_iface_instance *ii, int32_t new_interface_identifier)
 {
-	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%p: magic failed", ii);
+	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%px: magic failed", ii);
 	spin_lock_bh(&ecm_db_lock);
 	if (ii->interface_identifier == new_interface_identifier) {
 		spin_unlock_bh(&ecm_db_lock);
 		return;
 	}
 
-	DEBUG_TRACE("%p: interface ifindex has changed Old %d, New %d \n", ii, ii->interface_identifier, new_interface_identifier);
+	DEBUG_TRACE("%px: interface ifindex has changed Old %d, New %d \n", ii, ii->interface_identifier, new_interface_identifier);
 	_ecm_db_iface_identifier_hash_table_remove_entry(ii);
 	ii->interface_identifier = new_interface_identifier;
 	_ecm_db_iface_identifier_hash_table_insert_entry(ii, new_interface_identifier);
@@ -1441,7 +1585,7 @@ struct ecm_db_iface_instance *ecm_db_iface_find_and_ref_by_interface_identifier(
 		if (ii->interface_identifier == interface_id) {
 			_ecm_db_iface_ref(ii);
 			spin_unlock_bh(&ecm_db_lock);
-			DEBUG_TRACE("iface found %p\n", ii);
+			DEBUG_TRACE("iface found %px\n", ii);
 			return ii;
 		}
 
@@ -1460,7 +1604,7 @@ EXPORT_SYMBOL(ecm_db_iface_find_and_ref_by_interface_identifier);
  * ecm_db_iface_ifidx_find_and_ref_ethernet()
  *	Return an interface based on a MAC address and interface hlos interface identifier
  */
-struct ecm_db_iface_instance *ecm_db_iface_ifidx_find_and_ref_ethernet(uint8_t *address, int32_t ifidx)
+struct ecm_db_iface_instance *ecm_db_iface_ifidx_find_and_ref_ethernet(uint8_t *address, int32_t ifidx, int32_t ae_interface_num)
 {
 	ecm_db_iface_hash_t hash_index;
 	struct ecm_db_iface_instance *ii;
@@ -1480,14 +1624,15 @@ struct ecm_db_iface_instance *ecm_db_iface_ifidx_find_and_ref_ethernet(uint8_t *
 	while (ii) {
 		if ((ii->type != ECM_DB_IFACE_TYPE_ETHERNET)
 		    || memcmp(ii->type_info.ethernet.address, address, ETH_ALEN)
-		    || ii->interface_identifier != ifidx) {
+		    || (ii->interface_identifier != ifidx)
+		    || (ii->ae_interface_identifier != ae_interface_num)) {
 			ii = ii->hash_next;
 			continue;
 		}
 
 		_ecm_db_iface_ref(ii);
 		spin_unlock_bh(&ecm_db_lock);
-		DEBUG_TRACE("iface found %p\n", ii);
+		DEBUG_TRACE("iface found %px\n", ii);
 		return ii;
 	}
 	spin_unlock_bh(&ecm_db_lock);
@@ -1503,10 +1648,10 @@ EXPORT_SYMBOL(ecm_db_iface_ifidx_find_and_ref_ethernet);
  */
 void ecm_db_iface_vlan_info_get(struct ecm_db_iface_instance *ii, struct ecm_db_interface_info_vlan *vlan_info)
 {
-	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%p: magic failed", ii);
-	DEBUG_ASSERT(ii->type == ECM_DB_IFACE_TYPE_VLAN, "%p: Bad type, expected vlan, actual: %d\n", ii, ii->type);
+	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%px: magic failed", ii);
+	DEBUG_ASSERT(ii->type == ECM_DB_IFACE_TYPE_VLAN, "%px: Bad type, expected vlan, actual: %d\n", ii, ii->type);
 	spin_lock_bh(&ecm_db_lock);
-	memcpy(vlan_info->address, ii->type_info.vlan.address, sizeof(ii->type_info.vlan.address));
+	ether_addr_copy(vlan_info->address, ii->type_info.vlan.address);
 	vlan_info->vlan_tag = ii->type_info.vlan.vlan_tag;
 	vlan_info->vlan_tpid = ii->type_info.vlan.vlan_tpid;
 	spin_unlock_bh(&ecm_db_lock);
@@ -1544,7 +1689,7 @@ struct ecm_db_iface_instance *ecm_db_iface_find_and_ref_vlan(uint8_t *address, u
 
 		_ecm_db_iface_ref(ii);
 		spin_unlock_bh(&ecm_db_lock);
-		DEBUG_TRACE("iface found %p\n", ii);
+		DEBUG_TRACE("iface found %px\n", ii);
 		return ii;
 	}
 	spin_unlock_bh(&ecm_db_lock);
@@ -1554,11 +1699,118 @@ struct ecm_db_iface_instance *ecm_db_iface_find_and_ref_vlan(uint8_t *address, u
 EXPORT_SYMBOL(ecm_db_iface_find_and_ref_vlan);
 #endif
 
+#ifdef ECM_INTERFACE_MACVLAN_ENABLE
+/*
+ * ecm_db_iface_find_and_ref_macvlan()
+ *	Lookup and return a iface reference if any
+ */
+struct ecm_db_iface_instance *ecm_db_iface_find_and_ref_macvlan(uint8_t *address)
+{
+	ecm_db_iface_hash_t hash_index;
+	struct ecm_db_iface_instance *ii;
+
+	DEBUG_TRACE("Lookup macvlan iface with addr %pM\n", address);
+
+	/*
+	 * Compute the hash chain index and prepare to walk the chain
+	 */
+	hash_index = ecm_db_iface_generate_hash_index_ethernet(address);
+
+	/*
+	 * Iterate the chain looking for a host with matching details
+	 */
+	spin_lock_bh(&ecm_db_lock);
+	ii = ecm_db_iface_table[hash_index];
+	while (ii) {
+		if ((ii->type != ECM_DB_IFACE_TYPE_MACVLAN) || !ether_addr_equal(ii->type_info.macvlan.address, address)) {
+			ii = ii->hash_next;
+			continue;
+		}
+
+		_ecm_db_iface_ref(ii);
+		spin_unlock_bh(&ecm_db_lock);
+		DEBUG_TRACE("iface found %px\n", ii);
+		return ii;
+	}
+	spin_unlock_bh(&ecm_db_lock);
+	DEBUG_TRACE("Iface not found\n");
+	return NULL;
+}
+
+/*
+ * ecm_db_iface_macvlan_address_get()
+ *	Obtain the ethernet address for a macvlan interface
+ */
+void ecm_db_iface_macvlan_address_get(struct ecm_db_iface_instance *ii, uint8_t *address)
+{
+	spin_lock_bh(&ecm_db_lock);
+	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%px: magic failed", ii);
+	DEBUG_ASSERT(ii->type == ECM_DB_IFACE_TYPE_MACVLAN, "%px: Bad type, expected macvlan, actual: %d\n", ii, ii->type);
+	ether_addr_copy(address, ii->type_info.macvlan.address);
+	spin_unlock_bh(&ecm_db_lock);
+}
+#endif
+
+#ifdef ECM_INTERFACE_VXLAN_ENABLE
+/*
+ * ecm_db_iface_vxlan_info_get()
+ *     Get vxlan interface specific information
+ */
+void ecm_db_iface_vxlan_info_get(struct ecm_db_iface_instance *ii, struct ecm_db_interface_info_vxlan *vxlan_info)
+{
+	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%p: magic failed", ii);
+	DEBUG_ASSERT(ii->type == ECM_DB_IFACE_TYPE_VXLAN, "%p: Bad type, expected vxlan, actual: %d\n", ii, ii->type);
+	spin_lock_bh(&ecm_db_lock);
+	vxlan_info->vni = ii->type_info.vxlan.vni;
+	vxlan_info->if_type = ii->type_info.vxlan.if_type;
+	spin_unlock_bh(&ecm_db_lock);
+}
+
+/*
+ * ecm_db_iface_find_and_ref_vxlan()
+ *	Lookup and return a iface reference if any
+ */
+struct ecm_db_iface_instance *ecm_db_iface_find_and_ref_vxlan(uint32_t vni, uint32_t type)
+{
+	ecm_db_iface_hash_t hash_index;
+	struct ecm_db_iface_instance *ii;
+
+	DEBUG_TRACE("Lookup vxlan iface with vxlan id: %d & if_type: %d\n", vni, type);
+
+	/*
+	 * Compute the hash chain index and prepare to walk the chain
+	 */
+	hash_index = ecm_db_iface_generate_hash_index_vxlan(vni, type);
+
+	/*
+	 * Iterate the chain looking for a host with matching details
+	 */
+	spin_lock_bh(&ecm_db_lock);
+	ii = ecm_db_iface_table[hash_index];
+	while (ii) {
+		if ((ii->type != ECM_DB_IFACE_TYPE_VXLAN)
+			|| (ii->type_info.vxlan.vni != vni)
+			|| (ii->type_info.vxlan.if_type != type)) {
+			ii = ii->hash_next;
+			continue;
+		}
+
+		_ecm_db_iface_ref(ii);
+		spin_unlock_bh(&ecm_db_lock);
+		DEBUG_TRACE("iface found %px\n", ii);
+		return ii;
+	}
+	spin_unlock_bh(&ecm_db_lock);
+	DEBUG_TRACE("Iface not found\n");
+	return NULL;
+}
+#endif
+
 /*
  * ecm_db_iface_find_and_ref_bridge()
  *	Lookup and return a iface reference if any
  */
-struct ecm_db_iface_instance *ecm_db_iface_find_and_ref_bridge(uint8_t *address)
+struct ecm_db_iface_instance *ecm_db_iface_find_and_ref_bridge(uint8_t *address, int32_t if_num)
 {
 	ecm_db_iface_hash_t hash_index;
 	struct ecm_db_iface_instance *ii;
@@ -1576,14 +1828,17 @@ struct ecm_db_iface_instance *ecm_db_iface_find_and_ref_bridge(uint8_t *address)
 	spin_lock_bh(&ecm_db_lock);
 	ii = ecm_db_iface_table[hash_index];
 	while (ii) {
-		if ((ii->type != ECM_DB_IFACE_TYPE_BRIDGE) || memcmp(ii->type_info.bridge.address, address, ETH_ALEN)) {
+		if ((ii->type != ECM_DB_IFACE_TYPE_BRIDGE)
+			|| memcmp(ii->type_info.bridge.address, address, ETH_ALEN)
+			|| ii->interface_identifier != if_num) {
+
 			ii = ii->hash_next;
 			continue;
 		}
 
 		_ecm_db_iface_ref(ii);
 		spin_unlock_bh(&ecm_db_lock);
-		DEBUG_TRACE("iface found %p\n", ii);
+		DEBUG_TRACE("iface found %px\n", ii);
 		return ii;
 	}
 	spin_unlock_bh(&ecm_db_lock);
@@ -1591,6 +1846,47 @@ struct ecm_db_iface_instance *ecm_db_iface_find_and_ref_bridge(uint8_t *address)
 	return NULL;
 }
 EXPORT_SYMBOL(ecm_db_iface_find_and_ref_bridge);
+
+#ifdef ECM_INTERFACE_OVS_BRIDGE_ENABLE
+/*
+ * ecm_db_iface_find_and_ref_ovs_bridge()
+ *	Lookup and return a iface reference if any
+ */
+struct ecm_db_iface_instance *ecm_db_iface_find_and_ref_ovs_bridge(uint8_t *address, int32_t if_num)
+{
+	ecm_db_iface_hash_t hash_index;
+	struct ecm_db_iface_instance *ii;
+
+	DEBUG_TRACE("Lookup OVS bridge iface with addr %pM\n", address);
+
+	/*
+	 * Compute the hash chain index and prepare to walk the chain
+	 */
+	hash_index = ecm_db_iface_generate_hash_index_ethernet(address);
+
+	/*
+	 * Iterate the chain looking for a host with matching details
+	 */
+	spin_lock_bh(&ecm_db_lock);
+	ii = ecm_db_iface_table[hash_index];
+	while (ii) {
+		if ((ii->type != ECM_DB_IFACE_TYPE_OVS_BRIDGE)
+			|| memcmp(ii->type_info.ovsb.address, address, ETH_ALEN)
+			|| (ii->interface_identifier != if_num)) {
+			ii = ii->hash_next;
+			continue;
+		}
+
+		_ecm_db_iface_ref(ii);
+		spin_unlock_bh(&ecm_db_lock);
+		DEBUG_TRACE("iface found %px\n", ii);
+		return ii;
+	}
+	spin_unlock_bh(&ecm_db_lock);
+	DEBUG_TRACE("Iface not found\n");
+	return NULL;
+}
+#endif
 
 #ifdef ECM_INTERFACE_BOND_ENABLE
 /*
@@ -1622,7 +1918,7 @@ struct ecm_db_iface_instance *ecm_db_iface_find_and_ref_lag(uint8_t *address)
 
 		_ecm_db_iface_ref(ii);
 		spin_unlock_bh(&ecm_db_lock);
-		DEBUG_TRACE("iface found %p\n", ii);
+		DEBUG_TRACE("iface found %px\n", ii);
 		return ii;
 	}
 	spin_unlock_bh(&ecm_db_lock);
@@ -1639,10 +1935,10 @@ EXPORT_SYMBOL(ecm_db_iface_find_and_ref_lag);
  */
 void ecm_db_iface_pppoe_session_info_get(struct ecm_db_iface_instance *ii, struct ecm_db_interface_info_pppoe *pppoe_info)
 {
-	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%p: magic failed", ii);
-	DEBUG_ASSERT(ii->type == ECM_DB_IFACE_TYPE_PPPOE, "%p: Bad type, expected pppoe, actual: %d\n", ii, ii->type);
+	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%px: magic failed", ii);
+	DEBUG_ASSERT(ii->type == ECM_DB_IFACE_TYPE_PPPOE, "%px: Bad type, expected pppoe, actual: %d\n", ii, ii->type);
 	spin_lock_bh(&ecm_db_lock);
-	memcpy(pppoe_info->remote_mac, ii->type_info.pppoe.remote_mac, sizeof(ii->type_info.pppoe.remote_mac));
+	ether_addr_copy(pppoe_info->remote_mac, ii->type_info.pppoe.remote_mac);
 	pppoe_info->pppoe_session_id = ii->type_info.pppoe.pppoe_session_id;
 	spin_unlock_bh(&ecm_db_lock);
 }
@@ -1680,7 +1976,7 @@ struct ecm_db_iface_instance *ecm_db_iface_find_and_ref_pppoe(uint16_t pppoe_ses
 
 		_ecm_db_iface_ref(ii);
 		spin_unlock_bh(&ecm_db_lock);
-		DEBUG_TRACE("iface found %p\n", ii);
+		DEBUG_TRACE("iface found %px\n", ii);
 		return ii;
 	}
 	spin_unlock_bh(&ecm_db_lock);
@@ -1696,7 +1992,7 @@ EXPORT_SYMBOL(ecm_db_iface_find_and_ref_pppoe);
  */
 void ecm_db_iface_update_ae_interface_identifier(struct ecm_db_iface_instance *ii, int32_t ae_interface_identifier)
 {
-	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%p: magic failed", ii);
+	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%px: magic failed", ii);
 
 	spin_lock_bh(&ecm_db_lock);
 	if (ii->ae_interface_identifier == ae_interface_identifier) {
@@ -1715,8 +2011,8 @@ EXPORT_SYMBOL(ecm_db_iface_update_ae_interface_identifier);
  */
 void ecm_db_iface_pppol2tpv2_session_info_get(struct ecm_db_iface_instance *ii, struct ecm_db_interface_info_pppol2tpv2 *pppol2tpv2_info)
 {
-	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%p: magic failed", ii);
-	DEBUG_ASSERT(ii->type == ECM_DB_IFACE_TYPE_PPPOL2TPV2, "%p: Bad type, expected pppol2tpv2, actual: %d\n", ii, ii->type);
+	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%px: magic failed", ii);
+	DEBUG_ASSERT(ii->type == ECM_DB_IFACE_TYPE_PPPOL2TPV2, "%px: Bad type, expected pppol2tpv2, actual: %d\n", ii, ii->type);
 	spin_lock_bh(&ecm_db_lock);
 	memcpy(pppol2tpv2_info, &ii->type_info.pppol2tpv2, sizeof(struct ecm_db_interface_info_pppol2tpv2));
 	spin_unlock_bh(&ecm_db_lock);
@@ -1756,7 +2052,7 @@ struct ecm_db_iface_instance *ecm_db_iface_find_and_ref_pppol2tpv2(uint32_t pppo
 
 		_ecm_db_iface_ref(ii);
 		spin_unlock_bh(&ecm_db_lock);
-		DEBUG_TRACE("iface found %p\n", ii);
+		DEBUG_TRACE("iface found %px\n", ii);
 		return ii;
 	}
 	spin_unlock_bh(&ecm_db_lock);
@@ -1775,8 +2071,8 @@ EXPORT_SYMBOL(ecm_db_iface_find_and_ref_pppol2tpv2);
  */
 void ecm_db_iface_pptp_session_info_get(struct ecm_db_iface_instance *ii, struct ecm_db_interface_info_pptp *pptp_info)
 {
-	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%p: magic failed", ii);
-	DEBUG_ASSERT(ii->type == ECM_DB_IFACE_TYPE_PPTP, "%p: Bad type, expected pptp, actual: %d\n", ii, ii->type);
+	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%px: magic failed", ii);
+	DEBUG_ASSERT(ii->type == ECM_DB_IFACE_TYPE_PPTP, "%px: Bad type, expected pptp, actual: %d\n", ii, ii->type);
 	spin_lock_bh(&ecm_db_lock);
 	memcpy(pptp_info, &ii->type_info.pptp, sizeof(struct ecm_db_interface_info_pptp));
 	spin_unlock_bh(&ecm_db_lock);
@@ -1817,7 +2113,7 @@ struct ecm_db_iface_instance *ecm_db_iface_find_and_ref_pptp(uint32_t pptp_src_c
 
 		_ecm_db_iface_ref(ii);
 		spin_unlock_bh(&ecm_db_lock);
-		DEBUG_TRACE("iface found %p\n", ii);
+		DEBUG_TRACE("iface found %px\n", ii);
 		return ii;
 	}
 	spin_unlock_bh(&ecm_db_lock);
@@ -1835,8 +2131,8 @@ EXPORT_SYMBOL(ecm_db_iface_find_and_ref_pptp);
  */
 void ecm_db_iface_map_t_info_get(struct ecm_db_iface_instance *ii, struct ecm_db_interface_info_map_t *map_t_info)
 {
-	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%p: magic failed", ii);
-	DEBUG_ASSERT(ii->type == ECM_DB_IFACE_TYPE_MAP_T, "%p: Bad type, expected map_t, actual: %d\n", ii, ii->type);
+	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%px: magic failed", ii);
+	DEBUG_ASSERT(ii->type == ECM_DB_IFACE_TYPE_MAP_T, "%px: Bad type, expected map_t, actual: %d\n", ii, ii->type);
 	spin_lock_bh(&ecm_db_lock);
 	memcpy(map_t_info, &ii->type_info.map_t, sizeof(struct ecm_db_interface_info_map_t));
 	spin_unlock_bh(&ecm_db_lock);
@@ -1875,7 +2171,7 @@ struct ecm_db_iface_instance *ecm_db_iface_find_and_ref_map_t(int if_index, int3
 
 		_ecm_db_iface_ref(ii);
 		spin_unlock_bh(&ecm_db_lock);
-		DEBUG_TRACE("%p: iface found\n", ii);
+		DEBUG_TRACE("%px: iface found\n", ii);
 		return ii;
 	}
 	spin_unlock_bh(&ecm_db_lock);
@@ -1894,8 +2190,8 @@ EXPORT_SYMBOL(ecm_db_iface_find_and_ref_map_t);
  */
 void ecm_db_iface_gre_tun_info_get(struct ecm_db_iface_instance *ii, struct ecm_db_interface_info_gre_tun *gre_tun_info)
 {
-	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%p: magic failed", ii);
-	DEBUG_ASSERT(ii->type == ECM_DB_IFACE_TYPE_GRE_TUN, "%p: Bad type, expected gre, actual: %d\
+	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%px: magic failed", ii);
+	DEBUG_ASSERT(ii->type == ECM_DB_IFACE_TYPE_GRE_TUN, "%px: Bad type, expected gre, actual: %d\
 			n", ii, ii->type);
 	spin_lock_bh(&ecm_db_lock);
 	memcpy(gre_tun_info, &ii->type_info.gre_tun, sizeof(struct ecm_db_interface_info_gre_tun));
@@ -1935,7 +2231,7 @@ struct ecm_db_iface_instance *ecm_db_iface_find_and_ref_gre_tun(int if_index, in
 
 		_ecm_db_iface_ref(ii);
 		spin_unlock_bh(&ecm_db_lock);
-		DEBUG_TRACE("%p: iface found\n", ii);
+		DEBUG_TRACE("%px: iface found\n", ii);
 		return ii;
 	}
 	spin_unlock_bh(&ecm_db_lock);
@@ -1975,7 +2271,7 @@ struct ecm_db_iface_instance *ecm_db_iface_find_and_ref_unknown(uint32_t os_spec
 
 		_ecm_db_iface_ref(ii);
 		spin_unlock_bh(&ecm_db_lock);
-		DEBUG_TRACE("iface found %p\n", ii);
+		DEBUG_TRACE("iface found %px\n", ii);
 		return ii;
 	}
 	spin_unlock_bh(&ecm_db_lock);
@@ -2013,7 +2309,7 @@ struct ecm_db_iface_instance *ecm_db_iface_find_and_ref_loopback(uint32_t os_spe
 
 		_ecm_db_iface_ref(ii);
 		spin_unlock_bh(&ecm_db_lock);
-		DEBUG_TRACE("iface found %p\n", ii);
+		DEBUG_TRACE("iface found %px\n", ii);
 		return ii;
 	}
 	spin_unlock_bh(&ecm_db_lock);
@@ -2055,7 +2351,7 @@ struct ecm_db_iface_instance *ecm_db_iface_find_and_ref_ipsec_tunnel(uint32_t os
 
 		_ecm_db_iface_ref(ii);
 		spin_unlock_bh(&ecm_db_lock);
-		DEBUG_TRACE("iface found %p\n", ii);
+		DEBUG_TRACE("iface found %px\n", ii);
 		return ii;
 	}
 	spin_unlock_bh(&ecm_db_lock);
@@ -2099,7 +2395,7 @@ struct ecm_db_iface_instance *ecm_db_iface_find_and_ref_sit(ip_addr_t saddr, ip_
 
 		_ecm_db_iface_ref(ii);
 		spin_unlock_bh(&ecm_db_lock);
-		DEBUG_TRACE("iface found %p\n", ii);
+		DEBUG_TRACE("iface found %px\n", ii);
 		return ii;
 	}
 	spin_unlock_bh(&ecm_db_lock);
@@ -2144,7 +2440,7 @@ struct ecm_db_iface_instance *ecm_db_iface_find_and_ref_tunipip6(ip_addr_t saddr
 
 		_ecm_db_iface_ref(ii);
 		spin_unlock_bh(&ecm_db_lock);
-		DEBUG_TRACE("iface found %p\n", ii);
+		DEBUG_TRACE("iface found %px\n", ii);
 		return ii;
 	}
 	spin_unlock_bh(&ecm_db_lock);
@@ -2187,7 +2483,7 @@ struct ecm_db_iface_instance *ecm_db_iface_find_and_ref_rawip(uint8_t *address)
 
 		_ecm_db_iface_ref(ii);
 		spin_unlock_bh(&ecm_db_lock);
-		DEBUG_TRACE("%p: RAWIP iface found\n", ii);
+		DEBUG_TRACE("%px: RAWIP iface found\n", ii);
 		return ii;
 	}
 	spin_unlock_bh(&ecm_db_lock);
@@ -2228,7 +2524,7 @@ struct ecm_db_iface_instance *ecm_db_iface_find_and_ref_ovpn(int32_t tun_ifnum)
 
 		_ecm_db_iface_ref(ii);
 		spin_unlock_bh(&ecm_db_lock);
-		DEBUG_TRACE("iface found %p\n", ii);
+		DEBUG_TRACE("iface found %px\n", ii);
 		return ii;
 	}
 	spin_unlock_bh(&ecm_db_lock);
@@ -2249,7 +2545,7 @@ ecm_db_iface_connections_get_and_ref_first(struct ecm_db_iface_instance *ii,
 {
 	struct ecm_db_connection_instance *ci;
 
-	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%p: magic failed", ii);
+	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%px: magic failed", ii);
 
 	spin_lock_bh(&ecm_db_lock);
 	ci = ii->connections[dir];
@@ -2270,7 +2566,7 @@ struct ecm_db_node_instance *ecm_db_iface_nodes_get_and_ref_first(struct ecm_db_
 {
 	struct ecm_db_node_instance *ni;
 
-	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%p: magic failed", ii);
+	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%px: magic failed", ii);
 
 	spin_lock_bh(&ecm_db_lock);
 	ni = ii->nodes;
@@ -2291,7 +2587,7 @@ int ecm_db_iface_node_count_get(struct ecm_db_iface_instance *ii)
 {
 	int count;
 
-	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%p: magic failed\n", ii);
+	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%px: magic failed\n", ii);
 
 	spin_lock_bh(&ecm_db_lock);
 	count = ii->node_count;
@@ -2330,26 +2626,28 @@ static inline void ecm_db_iface_add_to_db(struct ecm_db_iface_instance *ii,  ecm
 	/*
 	 * Insert into chain
 	 */
+	ii->hash_prev = NULL;
 	ii->hash_next = ecm_db_iface_table[hash_index];
 	if (ecm_db_iface_table[hash_index]) {
 		ecm_db_iface_table[hash_index]->hash_prev = ii;
 	}
 	ecm_db_iface_table[hash_index] = ii;
 	ecm_db_iface_table_lengths[hash_index]++;
-	DEBUG_ASSERT(ecm_db_iface_table_lengths[hash_index] > 0, "%p: invalid table len %d\n", ii, ecm_db_iface_table_lengths[hash_index]);
+	DEBUG_ASSERT(ecm_db_iface_table_lengths[hash_index] > 0, "%px: invalid table len %d\n", ii, ecm_db_iface_table_lengths[hash_index]);
 
-	DEBUG_INFO("%p: interface inserted at hash index %u, hash prev is %p, type: %d\n", ii, ii->hash_index, ii->hash_prev, ii->type);
+	DEBUG_INFO("%px: interface inserted at hash index %u, hash prev is %px, type: %d\n", ii, ii->hash_index, ii->hash_prev, ii->type);
 
 	/*
 	 * Insert into interface identifier chain
 	 */
+	ii->iface_id_hash_prev = NULL;
 	ii->iface_id_hash_next = ecm_db_iface_id_table[iface_id_hash_index];
 	if (ecm_db_iface_id_table[iface_id_hash_index]) {
 		ecm_db_iface_id_table[iface_id_hash_index]->iface_id_hash_prev = ii;
 	}
 	ecm_db_iface_id_table[iface_id_hash_index] = ii;
 	ecm_db_iface_id_table_lengths[iface_id_hash_index]++;
-	DEBUG_ASSERT(ecm_db_iface_id_table_lengths[iface_id_hash_index] > 0, "%p: invalid iface id table len %d\n", ii, ecm_db_iface_id_table_lengths[iface_id_hash_index]);
+	DEBUG_ASSERT(ecm_db_iface_id_table_lengths[iface_id_hash_index] > 0, "%px: invalid iface id table len %d\n", ii, ecm_db_iface_id_table_lengths[iface_id_hash_index]);
 
 	/*
 	 * Set time of addition
@@ -2360,7 +2658,7 @@ static inline void ecm_db_iface_add_to_db(struct ecm_db_iface_instance *ii,  ecm
 	/*
 	 * Throw add event to the listeners
 	 */
-	DEBUG_TRACE("%p: Throw iface added event\n", ii);
+	DEBUG_TRACE("%px: Throw iface added event\n", ii);
 	li = ecm_db_listeners_get_and_ref_first();
 	while (li) {
 		struct ecm_db_listener_instance *lin;
@@ -2389,13 +2687,13 @@ void ecm_db_iface_add_ethernet(struct ecm_db_iface_instance *ii, uint8_t *addres
 	struct ecm_db_interface_info_ethernet *type_info;
 
 	spin_lock_bh(&ecm_db_lock);
-	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%p: magic failed\n", ii);
-	DEBUG_ASSERT(address, "%p: address null\n", ii);
+	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%px: magic failed\n", ii);
+	DEBUG_ASSERT(address, "%px: address null\n", ii);
 #ifdef ECM_DB_XREF_ENABLE
-	DEBUG_ASSERT((ii->nodes == NULL) && (ii->node_count == 0), "%p: nodes not null\n", ii);
+	DEBUG_ASSERT((ii->nodes == NULL) && (ii->node_count == 0), "%px: nodes not null\n", ii);
 #endif
-	DEBUG_ASSERT(!(ii->flags & ECM_DB_IFACE_FLAGS_INSERTED), "%p: inserted\n", ii);
-	DEBUG_ASSERT(name, "%p: no name given\n", ii);
+	DEBUG_ASSERT(!(ii->flags & ECM_DB_IFACE_FLAGS_INSERTED), "%px: inserted\n", ii);
+	DEBUG_ASSERT(name, "%px: no name given\n", ii);
 	spin_unlock_bh(&ecm_db_lock);
 
 	/*
@@ -2441,13 +2739,13 @@ void ecm_db_iface_add_lag(struct ecm_db_iface_instance *ii, uint8_t *address, ch
 	struct ecm_db_interface_info_lag *type_info;
 
 	spin_lock_bh(&ecm_db_lock);
-	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%p: magic failed\n", ii);
-	DEBUG_ASSERT(address, "%p: address null\n", ii);
+	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%px: magic failed\n", ii);
+	DEBUG_ASSERT(address, "%px: address null\n", ii);
 #ifdef ECM_DB_XREF_ENABLE
-	DEBUG_ASSERT((ii->nodes == NULL) && (ii->node_count == 0), "%p: nodes not null\n", ii);
+	DEBUG_ASSERT((ii->nodes == NULL) && (ii->node_count == 0), "%px: nodes not null\n", ii);
 #endif
-	DEBUG_ASSERT(!(ii->flags & ECM_DB_IFACE_FLAGS_INSERTED), "%p: inserted\n", ii);
-	DEBUG_ASSERT(name, "%p: no name given\n", ii);
+	DEBUG_ASSERT(!(ii->flags & ECM_DB_IFACE_FLAGS_INSERTED), "%px: inserted\n", ii);
+	DEBUG_ASSERT(name, "%px: no name given\n", ii);
 	spin_unlock_bh(&ecm_db_lock);
 
 	/*
@@ -2492,13 +2790,13 @@ void ecm_db_iface_add_bridge(struct ecm_db_iface_instance *ii, uint8_t *address,
 	struct ecm_db_interface_info_bridge *type_info;
 
 	spin_lock_bh(&ecm_db_lock);
-	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%p: magic failed\n", ii);
-	DEBUG_ASSERT(address, "%p: address null\n", ii);
+	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%px: magic failed\n", ii);
+	DEBUG_ASSERT(address, "%px: address null\n", ii);
 #ifdef ECM_DB_XREF_ENABLE
-	DEBUG_ASSERT((ii->nodes == NULL) && (ii->node_count == 0), "%p: nodes not null\n", ii);
+	DEBUG_ASSERT((ii->nodes == NULL) && (ii->node_count == 0), "%px: nodes not null\n", ii);
 #endif
-	DEBUG_ASSERT(!(ii->flags & ECM_DB_IFACE_FLAGS_INSERTED), "%p: inserted\n", ii);
-	DEBUG_ASSERT(name, "%p: no name given\n", ii);
+	DEBUG_ASSERT(!(ii->flags & ECM_DB_IFACE_FLAGS_INSERTED), "%px: inserted\n", ii);
+	DEBUG_ASSERT(name, "%px: no name given\n", ii);
 	spin_unlock_bh(&ecm_db_lock);
 
 	/*
@@ -2530,6 +2828,108 @@ void ecm_db_iface_add_bridge(struct ecm_db_iface_instance *ii, uint8_t *address,
 }
 EXPORT_SYMBOL(ecm_db_iface_add_bridge);
 
+#ifdef ECM_INTERFACE_OVS_BRIDGE_ENABLE
+/*
+ * ecm_db_iface_add_ovs_bridge()
+ *	Add a iface instance into the database
+ */
+void ecm_db_iface_add_ovs_bridge(struct ecm_db_iface_instance *ii, uint8_t *address, char *name, int32_t mtu,
+					int32_t interface_identifier, int32_t ae_interface_identifier,
+					ecm_db_iface_final_callback_t final, void *arg)
+{
+	ecm_db_iface_hash_t hash_index;
+	struct ecm_db_interface_info_ovs_bridge *type_info;
+
+	spin_lock_bh(&ecm_db_lock);
+	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%px: magic failed\n", ii);
+	DEBUG_ASSERT(address, "%px: address null\n", ii);
+#ifdef ECM_DB_XREF_ENABLE
+	DEBUG_ASSERT((ii->nodes == NULL) && (ii->node_count == 0), "%px: nodes not null\n", ii);
+#endif
+	DEBUG_ASSERT(!(ii->flags & ECM_DB_IFACE_FLAGS_INSERTED), "%px: inserted\n", ii);
+	DEBUG_ASSERT(name, "%px: no name given\n", ii);
+	spin_unlock_bh(&ecm_db_lock);
+
+	/*
+	 * Record general info
+	 */
+	ii->type = ECM_DB_IFACE_TYPE_OVS_BRIDGE;
+#ifdef ECM_STATE_OUTPUT_ENABLE
+	ii->state_get = ecm_db_iface_ovs_bridge_state_get;
+#endif
+	ii->arg = arg;
+	ii->final = final;
+	strlcpy(ii->name, name, IFNAMSIZ);
+	ii->mtu = mtu;
+	ii->interface_identifier = interface_identifier;
+	ii->ae_interface_identifier = ae_interface_identifier;
+
+	/*
+	 * Type specific info
+	 */
+	type_info = &ii->type_info.ovsb;
+	memcpy(type_info->address, address, ETH_ALEN);
+
+	/*
+	 * Compute hash chain for insertion
+	 */
+	hash_index = ecm_db_iface_generate_hash_index_ethernet(address);
+
+	ecm_db_iface_add_to_db(ii, hash_index);
+}
+#endif
+
+#ifdef ECM_INTERFACE_MACVLAN_ENABLE
+/*
+ * ecm_db_iface_add_macvlan()
+ *	Add a iface instance into the database
+ */
+void ecm_db_iface_add_macvlan(struct ecm_db_iface_instance *ii, uint8_t *address, char *name, int32_t mtu,
+					int32_t interface_identifier, int32_t ae_interface_identifier,
+					ecm_db_iface_final_callback_t final, void *arg)
+{
+	ecm_db_iface_hash_t hash_index;
+	struct ecm_db_interface_info_macvlan *type_info;
+
+	spin_lock_bh(&ecm_db_lock);
+	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%px: magic failed\n", ii);
+	DEBUG_ASSERT(address, "%px: address null\n", ii);
+#ifdef ECM_DB_XREF_ENABLE
+	DEBUG_ASSERT((ii->nodes == NULL) && (ii->node_count == 0), "%px: nodes not null\n", ii);
+#endif
+	DEBUG_ASSERT(!(ii->flags & ECM_DB_IFACE_FLAGS_INSERTED), "%px: inserted\n", ii);
+	DEBUG_ASSERT(name, "%px: no name given\n", ii);
+	spin_unlock_bh(&ecm_db_lock);
+
+	/*
+	 * Record general info
+	 */
+	ii->type = ECM_DB_IFACE_TYPE_MACVLAN;
+#ifdef ECM_STATE_OUTPUT_ENABLE
+	ii->state_get = ecm_db_iface_macvlan_state_get;
+#endif
+	ii->arg = arg;
+	ii->final = final;
+	strlcpy(ii->name, name, IFNAMSIZ);
+	ii->mtu = mtu;
+	ii->interface_identifier = interface_identifier;
+	ii->ae_interface_identifier = ae_interface_identifier;
+
+	/*
+	 * Type specific info
+	 */
+	type_info = &ii->type_info.macvlan;
+	ether_addr_copy(type_info->address, address);
+
+	/*
+	 * Compute hash chain for insertion
+	 */
+	hash_index = ecm_db_iface_generate_hash_index_ethernet(address);
+
+	ecm_db_iface_add_to_db(ii, hash_index);
+}
+#endif
+
 #ifdef ECM_INTERFACE_VLAN_ENABLE
 /*
  * ecm_db_iface_add_vlan()
@@ -2543,13 +2943,13 @@ void ecm_db_iface_add_vlan(struct ecm_db_iface_instance *ii, uint8_t *address, u
 	struct ecm_db_interface_info_vlan *type_info;
 
 	spin_lock_bh(&ecm_db_lock);
-	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%p: magic failed\n", ii);
-	DEBUG_ASSERT(address, "%p: address null\n", ii);
+	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%px: magic failed\n", ii);
+	DEBUG_ASSERT(address, "%px: address null\n", ii);
 #ifdef ECM_DB_XREF_ENABLE
-	DEBUG_ASSERT((ii->nodes == NULL) && (ii->node_count == 0), "%p: nodes not null\n", ii);
+	DEBUG_ASSERT((ii->nodes == NULL) && (ii->node_count == 0), "%px: nodes not null\n", ii);
 #endif
-	DEBUG_ASSERT(!(ii->flags & ECM_DB_IFACE_FLAGS_INSERTED), "%p: inserted\n", ii);
-	DEBUG_ASSERT(name, "%p: no name given\n", ii);
+	DEBUG_ASSERT(!(ii->flags & ECM_DB_IFACE_FLAGS_INSERTED), "%px: inserted\n", ii);
+	DEBUG_ASSERT(name, "%px: no name given\n", ii);
 	spin_unlock_bh(&ecm_db_lock);
 
 	/*
@@ -2598,12 +2998,12 @@ void ecm_db_iface_add_map_t(struct ecm_db_iface_instance *ii, struct ecm_db_inte
 	struct ecm_db_interface_info_map_t *type_info;
 
 	spin_lock_bh(&ecm_db_lock);
-	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%p: magic failed\n", ii);
+	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%px: magic failed\n", ii);
 #ifdef ECM_DB_XREF_ENABLE
-	DEBUG_ASSERT((ii->nodes == NULL) && (ii->node_count == 0), "%p: nodes not null\n", ii);
+	DEBUG_ASSERT((ii->nodes == NULL) && (ii->node_count == 0), "%px: nodes not null\n", ii);
 #endif
-	DEBUG_ASSERT(!(ii->flags & ECM_DB_IFACE_FLAGS_INSERTED), "%p: inserted\n", ii);
-	DEBUG_ASSERT(name, "%p: no name given\n", ii);
+	DEBUG_ASSERT(!(ii->flags & ECM_DB_IFACE_FLAGS_INSERTED), "%px: inserted\n", ii);
+	DEBUG_ASSERT(name, "%px: no name given\n", ii);
 	spin_unlock_bh(&ecm_db_lock);
 
 	/*
@@ -2650,12 +3050,12 @@ void ecm_db_iface_add_gre_tun(struct ecm_db_iface_instance *ii, struct ecm_db_in
 	struct ecm_db_interface_info_gre_tun *type_info;
 
 	spin_lock_bh(&ecm_db_lock);
-	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%p: magic failed\n", ii);
+	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%px: magic failed\n", ii);
 #ifdef ECM_DB_XREF_ENABLE
-	DEBUG_ASSERT((ii->nodes == NULL) && (ii->node_count == 0), "%p: nodes not null\n", ii);
+	DEBUG_ASSERT((ii->nodes == NULL) && (ii->node_count == 0), "%px: nodes not null\n", ii);
 #endif
-	DEBUG_ASSERT(!(ii->flags & ECM_DB_IFACE_FLAGS_INSERTED), "%p: inserted\n", ii);
-	DEBUG_ASSERT(name, "%p: no name given\n", ii);
+	DEBUG_ASSERT(!(ii->flags & ECM_DB_IFACE_FLAGS_INSERTED), "%px: inserted\n", ii);
+	DEBUG_ASSERT(name, "%px: no name given\n", ii);
 	spin_unlock_bh(&ecm_db_lock);
 
 	/*
@@ -2702,12 +3102,12 @@ void ecm_db_iface_add_pppoe(struct ecm_db_iface_instance *ii, uint16_t pppoe_ses
 	struct ecm_db_interface_info_pppoe *type_info;
 
 	spin_lock_bh(&ecm_db_lock);
-	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%p: magic failed\n", ii);
+	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%px: magic failed\n", ii);
 #ifdef ECM_DB_XREF_ENABLE
-	DEBUG_ASSERT((ii->nodes == NULL) && (ii->node_count == 0), "%p: nodes not null\n", ii);
+	DEBUG_ASSERT((ii->nodes == NULL) && (ii->node_count == 0), "%px: nodes not null\n", ii);
 #endif
-	DEBUG_ASSERT(!(ii->flags & ECM_DB_IFACE_FLAGS_INSERTED), "%p: inserted\n", ii);
-	DEBUG_ASSERT(name, "%p: no name given\n", ii);
+	DEBUG_ASSERT(!(ii->flags & ECM_DB_IFACE_FLAGS_INSERTED), "%px: inserted\n", ii);
+	DEBUG_ASSERT(name, "%px: no name given\n", ii);
 	spin_unlock_bh(&ecm_db_lock);
 
 	/*
@@ -2755,12 +3155,12 @@ void ecm_db_iface_add_pppol2tpv2(struct ecm_db_iface_instance *ii, struct ecm_db
 	struct ecm_db_interface_info_pppol2tpv2 *type_info;
 
 	spin_lock_bh(&ecm_db_lock);
-	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%p: magic failed\n", ii);
+	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%px: magic failed\n", ii);
 #ifdef ECM_DB_XREF_ENABLE
-	DEBUG_ASSERT((ii->nodes == NULL) && (ii->node_count == 0), "%p: nodes not null\n", ii);
+	DEBUG_ASSERT((ii->nodes == NULL) && (ii->node_count == 0), "%px: nodes not null\n", ii);
 #endif
-	DEBUG_ASSERT(!(ii->flags & ECM_DB_IFACE_FLAGS_INSERTED), "%p: inserted\n", ii);
-	DEBUG_ASSERT(name, "%p: no name given\n", ii);
+	DEBUG_ASSERT(!(ii->flags & ECM_DB_IFACE_FLAGS_INSERTED), "%px: inserted\n", ii);
+	DEBUG_ASSERT(name, "%px: no name given\n", ii);
 	spin_unlock_bh(&ecm_db_lock);
 
 	/*
@@ -2807,13 +3207,13 @@ void ecm_db_iface_add_pptp(struct ecm_db_iface_instance *ii, struct ecm_db_inter
 	ecm_db_iface_hash_t hash_index;
 	struct ecm_db_interface_info_pptp *type_info;
 
-	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%p: magic failed\n", ii);
+	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%px: magic failed\n", ii);
 	spin_lock_bh(&ecm_db_lock);
 #ifdef ECM_DB_XREF_ENABLE
-	DEBUG_ASSERT((ii->nodes == NULL) && (ii->node_count == 0), "%p: nodes not null\n", ii);
+	DEBUG_ASSERT((ii->nodes == NULL) && (ii->node_count == 0), "%px: nodes not null\n", ii);
 #endif
-	DEBUG_ASSERT(!(ii->flags & ECM_DB_IFACE_FLAGS_INSERTED), "%p: inserted\n", ii);
-	DEBUG_ASSERT(name, "%p: no name given\n", ii);
+	DEBUG_ASSERT(!(ii->flags & ECM_DB_IFACE_FLAGS_INSERTED), "%px: inserted\n", ii);
+	DEBUG_ASSERT(name, "%px: no name given\n", ii);
 	spin_unlock_bh(&ecm_db_lock);
 
 	/*
@@ -2858,12 +3258,12 @@ void ecm_db_iface_add_unknown(struct ecm_db_iface_instance *ii, uint32_t os_spec
 	struct ecm_db_interface_info_unknown *type_info;
 
 	spin_lock_bh(&ecm_db_lock);
-	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%p: magic failed\n", ii);
+	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%px: magic failed\n", ii);
 #ifdef ECM_DB_XREF_ENABLE
-	DEBUG_ASSERT((ii->nodes == NULL) && (ii->node_count == 0), "%p: nodes not null\n", ii);
+	DEBUG_ASSERT((ii->nodes == NULL) && (ii->node_count == 0), "%px: nodes not null\n", ii);
 #endif
-	DEBUG_ASSERT(!(ii->flags & ECM_DB_IFACE_FLAGS_INSERTED), "%p: inserted\n", ii);
-	DEBUG_ASSERT(name, "%p: no name given\n", ii);
+	DEBUG_ASSERT(!(ii->flags & ECM_DB_IFACE_FLAGS_INSERTED), "%px: inserted\n", ii);
+	DEBUG_ASSERT(name, "%px: no name given\n", ii);
 	spin_unlock_bh(&ecm_db_lock);
 
 	/*
@@ -2907,12 +3307,12 @@ void ecm_db_iface_add_loopback(struct ecm_db_iface_instance *ii, uint32_t os_spe
 	struct ecm_db_interface_info_loopback *type_info;
 
 	spin_lock_bh(&ecm_db_lock);
-	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%p: magic failed\n", ii);
+	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%px: magic failed\n", ii);
 #ifdef ECM_DB_XREF_ENABLE
-	DEBUG_ASSERT((ii->nodes == NULL) && (ii->node_count == 0), "%p: nodes not null\n", ii);
+	DEBUG_ASSERT((ii->nodes == NULL) && (ii->node_count == 0), "%px: nodes not null\n", ii);
 #endif
-	DEBUG_ASSERT(!(ii->flags & ECM_DB_IFACE_FLAGS_INSERTED), "%p: inserted\n", ii);
-	DEBUG_ASSERT(name, "%p: no name given\n", ii);
+	DEBUG_ASSERT(!(ii->flags & ECM_DB_IFACE_FLAGS_INSERTED), "%px: inserted\n", ii);
+	DEBUG_ASSERT(name, "%px: no name given\n", ii);
 	spin_unlock_bh(&ecm_db_lock);
 
 	/*
@@ -2966,12 +3366,12 @@ void ecm_db_iface_add_sit(struct ecm_db_iface_instance *ii, struct ecm_db_interf
 	ecm_db_iface_hash_t hash_index;
 
 	spin_lock_bh(&ecm_db_lock);
-	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%p: magic failed\n", ii);
+	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%px: magic failed\n", ii);
 #ifdef ECM_DB_XREF_ENABLE
-	DEBUG_ASSERT((ii->nodes == NULL) && (ii->node_count == 0), "%p: nodes not null\n", ii);
+	DEBUG_ASSERT((ii->nodes == NULL) && (ii->node_count == 0), "%px: nodes not null\n", ii);
 #endif
-	DEBUG_ASSERT(!(ii->flags & ECM_DB_IFACE_FLAGS_INSERTED), "%p: inserted\n", ii);
-	DEBUG_ASSERT(name, "%p: no name given\n", ii);
+	DEBUG_ASSERT(!(ii->flags & ECM_DB_IFACE_FLAGS_INSERTED), "%px: inserted\n", ii);
+	DEBUG_ASSERT(name, "%px: no name given\n", ii);
 	spin_unlock_bh(&ecm_db_lock);
 
 	/*
@@ -3016,12 +3416,12 @@ void ecm_db_iface_add_tunipip6(struct ecm_db_iface_instance *ii, struct ecm_db_i
 	ecm_db_iface_hash_t hash_index;
 
 	spin_lock_bh(&ecm_db_lock);
-	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%p: magic failed\n", ii);
+	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%px: magic failed\n", ii);
 #ifdef ECM_DB_XREF_ENABLE
-	DEBUG_ASSERT((ii->nodes == NULL) && (ii->node_count == 0), "%p: nodes not null\n", ii);
+	DEBUG_ASSERT((ii->nodes == NULL) && (ii->node_count == 0), "%px: nodes not null\n", ii);
 #endif
-	DEBUG_ASSERT(!(ii->flags & ECM_DB_IFACE_FLAGS_INSERTED), "%p: inserted\n", ii);
-	DEBUG_ASSERT(name, "%p: no name given\n", ii);
+	DEBUG_ASSERT(!(ii->flags & ECM_DB_IFACE_FLAGS_INSERTED), "%px: inserted\n", ii);
+	DEBUG_ASSERT(name, "%px: no name given\n", ii);
 	spin_unlock_bh(&ecm_db_lock);
 
 	/*
@@ -3069,12 +3469,12 @@ void ecm_db_iface_add_ipsec_tunnel(struct ecm_db_iface_instance *ii, uint32_t os
 	struct ecm_db_interface_info_ipsec_tunnel *type_info;
 
 	spin_lock_bh(&ecm_db_lock);
-	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%p: magic failed\n", ii);
+	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%px: magic failed\n", ii);
 #ifdef ECM_DB_XREF_ENABLE
-	DEBUG_ASSERT((ii->nodes == NULL) && (ii->node_count == 0), "%p: nodes not null\n", ii);
+	DEBUG_ASSERT((ii->nodes == NULL) && (ii->node_count == 0), "%px: nodes not null\n", ii);
 #endif
-	DEBUG_ASSERT(!(ii->flags & ECM_DB_IFACE_FLAGS_INSERTED), "%p: inserted\n", ii);
-	DEBUG_ASSERT(name, "%p: no name given\n", ii);
+	DEBUG_ASSERT(!(ii->flags & ECM_DB_IFACE_FLAGS_INSERTED), "%px: inserted\n", ii);
+	DEBUG_ASSERT(name, "%px: no name given\n", ii);
 	spin_unlock_bh(&ecm_db_lock);
 
 	/*
@@ -3120,13 +3520,13 @@ void ecm_db_iface_add_rawip(struct ecm_db_iface_instance *ii, uint8_t *address, 
 	struct ecm_db_interface_info_rawip *type_info;
 
 	spin_lock_bh(&ecm_db_lock);
-	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%p: magic failed\n", ii);
-	DEBUG_ASSERT(address, "%p: address null\n", ii);
+	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%px: magic failed\n", ii);
+	DEBUG_ASSERT(address, "%px: address null\n", ii);
 #ifdef ECM_DB_XREF_ENABLE
-	DEBUG_ASSERT((ii->nodes == NULL) && (ii->node_count == 0), "%p: nodes not null\n", ii);
+	DEBUG_ASSERT((ii->nodes == NULL) && (ii->node_count == 0), "%px: nodes not null\n", ii);
 #endif
-	DEBUG_ASSERT(!(ii->flags & ECM_DB_IFACE_FLAGS_INSERTED), "%p: inserted\n", ii);
-	DEBUG_ASSERT(name, "%p: no name given\n", ii);
+	DEBUG_ASSERT(!(ii->flags & ECM_DB_IFACE_FLAGS_INSERTED), "%px: inserted\n", ii);
+	DEBUG_ASSERT(name, "%px: no name given\n", ii);
 	spin_unlock_bh(&ecm_db_lock);
 
 	/*
@@ -3172,12 +3572,12 @@ void ecm_db_iface_add_ovpn(struct ecm_db_iface_instance *ii,
 	ecm_db_iface_hash_t hash_index;
 
 	spin_lock_bh(&ecm_db_lock);
-	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%p: magic failed\n", ii);
+	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%px: magic failed\n", ii);
 #ifdef ECM_DB_XREF_ENABLE
-	DEBUG_ASSERT((ii->nodes == NULL) && (ii->node_count == 0), "%p: nodes not null\n", ii);
+	DEBUG_ASSERT((ii->nodes == NULL) && (ii->node_count == 0), "%px: nodes not null\n", ii);
 #endif
-	DEBUG_ASSERT(!(ii->flags & ECM_DB_IFACE_FLAGS_INSERTED), "%p: inserted\n", ii);
-	DEBUG_ASSERT(name, "%p: no name given\n", ii);
+	DEBUG_ASSERT(!(ii->flags & ECM_DB_IFACE_FLAGS_INSERTED), "%px: inserted\n", ii);
+	DEBUG_ASSERT(name, "%px: no name given\n", ii);
 	spin_unlock_bh(&ecm_db_lock);
 
 	/*
@@ -3207,6 +3607,58 @@ void ecm_db_iface_add_ovpn(struct ecm_db_iface_instance *ii,
 	ecm_db_iface_add_to_db(ii, hash_index);
 }
 EXPORT_SYMBOL(ecm_db_iface_add_ovpn);
+#endif
+
+#ifdef ECM_INTERFACE_VXLAN_ENABLE
+/*
+ * ecm_db_iface_add_vxlan()
+ *	Add a iface instance into the database
+ */
+void ecm_db_iface_add_vxlan(struct ecm_db_iface_instance *ii, uint32_t vni, uint32_t if_type,
+					char *name, int32_t mtu, int32_t interface_identifier,
+					int32_t ae_interface_identifier,
+					ecm_db_iface_final_callback_t final, void *arg)
+{
+	ecm_db_iface_hash_t hash_index;
+	struct ecm_db_interface_info_vxlan *type_info;
+
+	spin_lock_bh(&ecm_db_lock);
+	DEBUG_CHECK_MAGIC(ii, ECM_DB_IFACE_INSTANCE_MAGIC, "%px: magic failed\n", ii);
+#ifdef ECM_DB_XREF_ENABLE
+	DEBUG_ASSERT((ii->nodes == NULL) && (ii->node_count == 0), "%px: nodes not null\n", ii);
+#endif
+	DEBUG_ASSERT(!(ii->flags & ECM_DB_IFACE_FLAGS_INSERTED), "%px: inserted\n", ii);
+	DEBUG_ASSERT(name, "%px: no name given\n", ii);
+	spin_unlock_bh(&ecm_db_lock);
+
+	/*
+	 * Record general info
+	 */
+	ii->type = ECM_DB_IFACE_TYPE_VXLAN;
+#ifdef ECM_STATE_OUTPUT_ENABLE
+	ii->state_get = ecm_db_iface_vxlan_state_get;
+#endif
+	ii->arg = arg;
+	ii->final = final;
+	strlcpy(ii->name, name, IFNAMSIZ);
+	ii->mtu = mtu;
+	ii->interface_identifier = interface_identifier;
+	ii->ae_interface_identifier = ae_interface_identifier;
+
+	/*
+	 * Type specific info
+	 */
+	type_info = &ii->type_info.vxlan;
+	type_info->vni = vni;
+	type_info->if_type = if_type;
+
+	/*
+	 * Compute hash chain for insertion
+	 */
+	hash_index = ecm_db_iface_generate_hash_index_vxlan(vni, if_type);
+
+	ecm_db_iface_add_to_db(ii, hash_index);
+}
 #endif
 
 /*
@@ -3244,7 +3696,7 @@ struct ecm_db_iface_instance *ecm_db_iface_alloc(void)
 	ecm_db_iface_count++;
 	spin_unlock_bh(&ecm_db_lock);
 
-	DEBUG_TRACE("iface created %p\n", ii);
+	DEBUG_TRACE("iface created %px\n", ii);
 	return ii;
 }
 EXPORT_SYMBOL(ecm_db_iface_alloc);

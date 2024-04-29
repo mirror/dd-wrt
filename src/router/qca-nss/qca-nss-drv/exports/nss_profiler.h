@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2014-2015, 2017, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2014-2015, 2017, 2019-2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -78,6 +78,8 @@ enum nss_profile_errors {
 	PROFILE_ERROR_EMEM,
 	PROFILE_ERROR_BAD_PKT,
 	PROFILE_ERROR_UNKNOWN_CMD,
+	PROFILE_ERROR_NO_DMA,
+	PROFILE_ERROR_MAX
 };
 
 /**
@@ -134,6 +136,81 @@ struct nss_profiler_msg {
 		struct nss_profiler_debug_msg pdm;	/**< Debug packet. */
 		struct nss_profiler_data_msg msg;	/**< Sampling data. */
 	} payload;	/**< Message payload. The data length is set in common message header. */
+};
+
+/**
+ * nss_profile_sdma_producer
+ *	DMA descriptor of producer.
+ */
+struct nss_profile_sdma_producer {
+	uint32_t intr_num;	/**< Interrupt number. */
+	uint32_t pkg_id;	/**< Package ID that registered this entry. */
+	uint32_t buf_size;	/**< DMA buffer size. */
+	uint32_t num_bufs;	/**< Number of ring buffers. */
+	uint32_t desc_ring;	/**< Ring address (physical 32-bit). */
+	uint32_t pad3w[3];	/**< Pad 32-byte alignment. */
+};
+
+/**
+ * nss_u64_32_data
+ *	64-bit union for both 32/64 bits data aligned at 64-bit boundary.
+ */
+union nss_u64_32_data {
+	uint64_t d64;	/**< 64-bit space holder: may not be used. */
+	uint32_t d32;	/**< 32-bit direct data. */
+	void *kp;	/**< Kernel data pointer either 32 or 64 bits. */
+};
+
+/**
+ * nss_u64_32_func
+ *	64-bit union for both 32/64 bits function aligned at 64-bit boundary.
+ */
+union nss_u64_32_func {
+	uint64_t f64;		/**< 64-bit space holder: do not use. */
+	void (*fp)(void*);	/**< Function pointer: either 32 or 64 bits. */
+};
+
+/**
+ * nss_profile_sdma_consumer
+ *	DMA descriptor of consumer.
+ */
+struct nss_profile_sdma_consumer {
+	union nss_u64_32_data arg;	/**< Dispatch function argument. */
+	union nss_u64_32_func dispatch;	/**< Dispatch function pointer. */
+	union nss_u64_32_data ring;	/**< DMA descriptor ring kernel address. */
+	int64_t unused_lw;		/**< Extra room in a Ubi32 cache line. */
+};
+
+#define	ARM_CACHE_LINE_SIZE	128	/**< ARM CPU cache line size in bytes. */
+#define	NSS_CACHE_LINE_WORDS	8	/**< Ubi32 CPU cache line size in words. */
+
+/**
+ * Number of DMA per control block.
+ */
+#define	NSS_PROFILE_MAX_DMA_DESCRIPTORS	(ARM_CACHE_LINE_SIZE / sizeof(struct nss_profile_sdma_producer) - 1)
+
+/**
+ * nss_profile_sdma_ctrl
+ *	Soft DMA control block.
+ */
+struct nss_profile_sdma_ctrl {
+	int32_t num_rings;	/**< Number of descriptor rings allocated, maximum is 3. */
+	int32_t cur_ring;	/**< Which ring is in use: Default 0. */
+	int32_t pidx[NSS_PROFILE_MAX_DMA_DESCRIPTORS];	/**< Producer index. */
+
+	/**
+	 * Pad for the first Ubi32 cache line in the first ARM cache line: Unused.
+	 */
+	int32_t pad_for_1st_cl_in_1st_arm_cl[NSS_CACHE_LINE_WORDS - 2 - NSS_PROFILE_MAX_DMA_DESCRIPTORS];
+	struct nss_profile_sdma_producer producer[NSS_PROFILE_MAX_DMA_DESCRIPTORS]; /**< DMA producer structure. */
+
+	int32_t cidx[NSS_PROFILE_MAX_DMA_DESCRIPTORS];	/**< Consumer index. */
+
+	/**
+	 * Pad for the first Ubi32 cache line in the second ARM cache line: Unused.
+	 */
+	int32_t pad_for_1st_cl_in_2nd_arm_cl[NSS_CACHE_LINE_WORDS - NSS_PROFILE_MAX_DMA_DESCRIPTORS];
+	struct nss_profile_sdma_consumer consumer[NSS_PROFILE_MAX_DMA_DESCRIPTORS]; /**< DMA consumer structure. */
 };
 
 /**
@@ -208,6 +285,83 @@ extern void nss_profiler_notify_unregister(nss_core_id_t core_id);
  */
 extern nss_tx_status_t nss_profiler_if_tx_buf(void *nss_ctx,
 		void *buf, uint32_t len, void *cb, void *app_data);
+
+/**
+ * nss_profiler_alloc_dma
+ *	Allocate profiler DMA for transmitting samples.
+ *
+ * @datatypes
+ * nss_ctx_instance \n
+ * nss_profile_sdma_producer
+ *
+ * @param[in] nss_ctx   Pointer to the NSS context.
+ * @param[in] dma_p     Pointer to return DMA control.
+ *
+ * @return
+ * Buffer adddress.
+ */
+extern void *nss_profiler_alloc_dma(struct nss_ctx_instance *nss_ctx, struct nss_profile_sdma_producer **dma_p);
+
+/**
+ * nss_profiler_release_dma()
+ *      Free profiler DMA.
+ *
+ * @datatypes
+ * nss_ctx_instance
+ *
+ * @param[in] nss_ctx  Pointer to the NSS context.
+ *
+ * @return
+ * None.
+ */
+extern void nss_profiler_release_dma(struct nss_ctx_instance *nss_ctx);
+
+/*
+ * nss_profile_dma_register_cb
+ *      Register a handler for profile DMA.
+ *
+ * @datatypes
+ * nss_ctx_instance
+ *
+ * @param[in] nss_ctx  Pointer to the NSS context.
+ * @param[in] id       DMA ID; typical value is 0.
+ * @param[in] cb       Callback function pointer.
+ * @param[in] arg      Callback function argument pointer.
+ *
+ * @return
+ * True on success; or false on failure.
+ */
+extern bool nss_profile_dma_register_cb(struct nss_ctx_instance *nss_ctx, int id,
+				void (*cb)(void*), void *arg);
+
+/**
+ * nss_profile_dma_deregister_cb()
+ *      Deregister callback for profile DMA.
+ *
+ * @datatypes
+ * nss_ctx_instance
+ *
+ * @param[in] nss_ctx  Pointer to the NSS context.
+ * @param[in] id       DMA ID; typical value is 0.
+ *
+ * @return
+ * True on success; or false on failure.
+ */
+extern bool nss_profile_dma_deregister_cb(struct nss_ctx_instance *nss_ctx, int id);
+
+/**
+ * nss_profile_dma_get_ctrl()
+ *      API to get profile DMA control.
+ *
+ * @datatypes
+ * nss_ctx_instance
+ *
+ * @param[in] nss_ctx  Pointer to the NSS context.
+ *
+ * @return
+ * DMA controller.
+ */
+extern struct nss_profile_sdma_ctrl *nss_profile_dma_get_ctrl(struct nss_ctx_instance *nss_ctx);
 
 /**
  * profile_register_performance_counter

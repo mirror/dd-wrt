@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2015-2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2015-2018, 2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -37,7 +37,7 @@ static void nss_wifi_handler(struct nss_ctx_instance *nss_ctx, struct nss_cmn_ms
 	void *ctx;
 	nss_wifi_msg_callback_t cb;
 
-	nss_info("%p: NSS ->HLOS message for wifi\n", nss_ctx);
+	nss_info("%px: NSS ->HLOS message for wifi\n", nss_ctx);
 
 	BUG_ON(((ncm->interface < NSS_WIFI_INTERFACE0) || (ncm->interface > NSS_WIFI_INTERFACE2)));
 
@@ -50,12 +50,12 @@ static void nss_wifi_handler(struct nss_ctx_instance *nss_ctx, struct nss_cmn_ms
 	 * Is this a valid request/response packet?
 	 */
 	if (ncm->type >= NSS_WIFI_MAX_MSG) {
-		nss_warning("%p: received invalid message %d for wifi interface", nss_ctx, ncm->type);
+		nss_warning("%px: received invalid message %d for wifi interface", nss_ctx, ncm->type);
 		return;
 	}
 
 	if (nss_cmn_get_msg_len(ncm) > sizeof(struct nss_wifi_msg)) {
-		nss_warning("%p: Length of message is greater than required: %d", nss_ctx, nss_cmn_get_msg_len(ncm));
+		nss_warning("%px: Length of message is greater than required: %d", nss_ctx, nss_cmn_get_msg_len(ncm));
 		return;
 	}
 
@@ -88,7 +88,7 @@ static void nss_wifi_handler(struct nss_ctx_instance *nss_ctx, struct nss_cmn_ms
 	 * Do we have a call back
 	 */
 	if (!ncm->cb) {
-		nss_info("%p: cb null for wifi interface %d", nss_ctx, ncm->interface);
+		nss_info("%px: cb null for wifi interface %d", nss_ctx, ncm->interface);
 		return;
 	}
 
@@ -102,7 +102,7 @@ static void nss_wifi_handler(struct nss_ctx_instance *nss_ctx, struct nss_cmn_ms
 	 * call wifi msg callback
 	 */
 	if (!ctx) {
-		nss_warning("%p: Event received for wifi interface %d before registration", nss_ctx, ncm->interface);
+		nss_warning("%px: Event received for wifi interface %d before registration", nss_ctx, ncm->interface);
 		return;
 	}
 
@@ -123,7 +123,7 @@ nss_tx_status_t nss_wifi_tx_msg(struct nss_ctx_instance *nss_ctx, struct nss_wif
 	nss_wifi_log_tx_msg(msg);
 
 	if (ncm->type > NSS_WIFI_MAX_MSG) {
-		nss_warning("%p: wifi message type out of range: %d", nss_ctx, ncm->type);
+		nss_warning("%px: wifi message type out of range: %d", nss_ctx, ncm->type);
 		return NSS_TX_FAILURE;
 	}
 
@@ -149,7 +149,7 @@ struct nss_ctx_instance *nss_register_wifi_if(uint32_t if_num, nss_wifi_callback
 	nss_assert(nss_ctx);
 	nss_assert((if_num >= NSS_MAX_VIRTUAL_INTERFACES) && (if_num < NSS_MAX_NET_INTERFACES));
 
-	nss_info("%p: nss_register_wifi_if if_num %d wifictx %p", nss_ctx, if_num, netdev);
+	nss_info("%px: nss_register_wifi_if if_num %d wifictx %px", nss_ctx, if_num, netdev);
 
 	nss_core_register_subsys_dp(nss_ctx, if_num, wifi_callback, wifi_ext_callback, NULL, netdev, features);
 

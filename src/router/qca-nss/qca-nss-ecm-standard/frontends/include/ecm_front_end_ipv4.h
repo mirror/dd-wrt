@@ -1,6 +1,8 @@
 /*
  **************************************************************************
- * Copyright (c) 2015, 2016, The Linux Foundation.  All rights reserved.
+ * Copyright (c) 2015, 2016, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -56,6 +58,28 @@ static inline void ecm_sfe_ipv4_exit(void)
 	/*
 	 * Just return if sfe front end is not enabled
 	 */
+	return;
+}
+#endif
+
+#ifdef ECM_FRONT_END_PPE_ENABLE
+#include "ecm_ppe_ipv4.h"
+#else
+static inline int ecm_ppe_ipv4_init(struct dentry *dentry)
+{
+	/*
+	 * Just return if ppe front end is not enabled
+	 */
+	DEBUG_WARN("ecm_ppe_ipv4_init() - PPE is NOT SUPPORTED\n");
+	return 0;
+}
+
+static inline void ecm_ppe_ipv4_exit(void)
+{
+	/*
+	 * Just return if ppe front end is not enabled
+	 */
+	DEBUG_WARN("ecm_ppe_ipv4_exit() - PPE is NOT SUPPORTED\n");
 	return;
 }
 #endif

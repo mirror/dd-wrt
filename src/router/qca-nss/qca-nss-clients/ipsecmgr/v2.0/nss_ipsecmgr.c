@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2017-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -86,7 +86,7 @@ static void nss_ipsecmgr_dummy_setup(struct net_device *dev)
 static void nss_ipsecmgr_rx_notify(void *app_data, struct nss_cmn_msg *ncm)
 {
 	struct net_device *dev = app_data;
-	nss_ipsecmgr_warn("%p: Notification received on base node", netdev_priv(dev));
+	nss_ipsecmgr_warn("%px: Notification received on base node", netdev_priv(dev));
 }
 
 /*
@@ -126,7 +126,7 @@ static void nss_ipsecmgr_configure(struct work_struct *work)
 	 */
 	status = nss_ipsec_cmn_tx_msg_sync(ipsecmgr_drv->nss_ctx, ifnum, type, sizeof(nicm.msg.node), &nicm);
 	if (status != NSS_TX_SUCCESS) {
-		nss_ipsecmgr_trace("%p: failed to configure IPsec in NSS(%u)", ipsecmgr_drv, status);
+		nss_ipsecmgr_trace("%px: failed to configure IPsec in NSS(%u)", ipsecmgr_drv, status);
 		/*
 		 * TODO: We need unwind in case of failure
 		 */
@@ -146,7 +146,7 @@ static void nss_ipsecmgr_configure(struct work_struct *work)
 						nss_ipsecmgr_ctx_rx_stats,
 						0);
 		if (!redir) {
-			nss_ipsecmgr_warn("%p: failed to allocate redirect context; disabling inline", tun);
+			nss_ipsecmgr_warn("%px: failed to allocate redirect context; disabling inline", tun);
 			ipsecmgr_drv->ipsec_inline = false;
 			return;
 		}
@@ -154,7 +154,7 @@ static void nss_ipsecmgr_configure(struct work_struct *work)
 		nss_ipsecmgr_ctx_set_except(redir, redir->ifnum);
 
 		if (!nss_ipsecmgr_ctx_config(redir)) {
-			nss_ipsecmgr_warn("%p: failed to configure redirect context; disabling inline", tun);
+			nss_ipsecmgr_warn("%px: failed to configure redirect context; disabling inline", tun);
 			ipsecmgr_drv->ipsec_inline = false;
 			nss_ipsecmgr_ctx_free(redir);
 			return;
@@ -164,7 +164,7 @@ static void nss_ipsecmgr_configure(struct work_struct *work)
 		 * Get port's default VSI.
 		 */
 		if (ppe_port_vsi_get(0, NSS_PPE_PORT_IPSEC, &vsi_num)) {
-			nss_ipsecmgr_warn("%p: Failed to get port VSI", ipsecmgr_drv);
+			nss_ipsecmgr_warn("%px: Failed to get port VSI", ipsecmgr_drv);
 			nss_ipsecmgr_ctx_free(redir);
 			ipsecmgr_drv->ipsec_inline = false;
 			return;
@@ -175,7 +175,7 @@ static void nss_ipsecmgr_configure(struct work_struct *work)
 		 * exception packets from inline path
 		 */
 		if (!nss_ipsec_cmn_ppe_port_config(ipsecmgr_drv->nss_ctx, ipsecmgr_drv->dev, redir->ifnum, vsi_num)) {
-			nss_ipsecmgr_warn("%p: Failed to configure PPE inline mode", ipsecmgr_drv);
+			nss_ipsecmgr_warn("%px: Failed to configure PPE inline mode", ipsecmgr_drv);
 			nss_ipsecmgr_ctx_free(redir);
 			ipsecmgr_drv->ipsec_inline = false;
 			return;
@@ -187,7 +187,7 @@ static void nss_ipsecmgr_configure(struct work_struct *work)
 #endif
 	}
 
-	nss_ipsecmgr_trace("%p: Configure node msg successful", ipsecmgr_drv);
+	nss_ipsecmgr_trace("%px: Configure node msg successful", ipsecmgr_drv);
 	return;
 }
 
@@ -209,7 +209,7 @@ static int __init nss_ipsecmgr_init(void)
 
 	ipsecmgr_drv->nss_ctx = nss_ipsec_cmn_get_context();
 	if (!ipsecmgr_drv->nss_ctx) {
-		nss_ipsecmgr_warn("%p: Failed to retrieve NSS context", ipsecmgr_drv);
+		nss_ipsecmgr_warn("%px: Failed to retrieve NSS context", ipsecmgr_drv);
 		goto free;
 	}
 
@@ -219,22 +219,23 @@ static int __init nss_ipsecmgr_init(void)
 
 	dev = alloc_netdev(sizeof(*tun), NSS_IPSECMGR_DEFAULT_TUN_NAME, NET_NAME_UNKNOWN, nss_ipsecmgr_dummy_setup);
 	if (!dev) {
-		nss_ipsecmgr_warn("%p: Failed to allocate dummy netdevice", ipsecmgr_drv);
+		nss_ipsecmgr_warn("%px: Failed to allocate dummy netdevice", ipsecmgr_drv);
 		goto free;
 	}
 
 	tun = netdev_priv(dev);
 	tun->dev = dev;
 
-	nss_ipsecmgr_ref_init(&tun->ref, NULL);
+	nss_ipsecmgr_ref_init(&tun->ref, NULL, NULL);
 	INIT_LIST_HEAD(&tun->list);
+	INIT_LIST_HEAD(&tun->free_refs);
 
 	dev->netdev_ops = &nss_ipsecmgr_dummy_ndev_ops;
 	nss_ipsecmgr_db_init(&tun->ctx_db);
 
 	status = register_netdev(dev);
 	if (status) {
-		nss_ipsecmgr_info("%p: Failed to register dummy netdevice(%p)", ipsecmgr_drv, dev);
+		nss_ipsecmgr_info("%px: Failed to register dummy netdevice(%px)", ipsecmgr_drv, dev);
 		goto netdev_free;
 	}
 
@@ -254,7 +255,7 @@ static int __init nss_ipsecmgr_init(void)
 	 */
 	ipsecmgr_drv->dentry = debugfs_create_dir("qca-nss-ipsecmgr", NULL);
 	if (!ipsecmgr_drv->dentry) {
-		nss_ipsecmgr_warn("%p: Failed to create root debugfs entry", ipsecmgr_drv);
+		nss_ipsecmgr_warn("%px: Failed to create root debugfs entry", ipsecmgr_drv);
 		nss_ipsec_cmn_notify_unregister(ipsecmgr_drv->nss_ctx, ipsecmgr_drv->ifnum);
 		goto unregister_dev;
 	}
@@ -305,7 +306,7 @@ static void __exit nss_ipsecmgr_exit(void)
 	}
 
 	if (!ipsecmgr_drv->nss_ctx) {
-		nss_ipsecmgr_warn("%p: NSS Context empty", ipsecmgr_drv);
+		nss_ipsecmgr_warn("%px: NSS Context empty", ipsecmgr_drv);
 		goto free;
 	}
 
@@ -314,7 +315,6 @@ static void __exit nss_ipsecmgr_exit(void)
 	write_lock(&ipsecmgr_drv->lock);
 	list_del(&tun->list);
 
-	nss_ipsecmgr_ref_free(&tun->ref);
 	ipsecmgr_drv->max_mtu = U16_MAX;
 	write_unlock(&ipsecmgr_drv->lock);
 

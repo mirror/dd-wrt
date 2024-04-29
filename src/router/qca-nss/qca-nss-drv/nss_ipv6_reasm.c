@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2015, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2015,2019-2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -18,8 +18,9 @@
  * nss_ipv6_reasm.c
  *	NSS IPv6 Reassembly APIs
  */
-#include "nss_tx_rx_common.h"
+#include <nss_core.h>
 #include "nss_ipv6_reasm_stats.h"
+#include "nss_ipv6_reasm_strings.h"
 
 /*
  * nss_ipv6_reasm_msg_handler()
@@ -34,9 +35,10 @@ static void nss_ipv6_reasm_msg_handler(struct nss_ctx_instance *nss_ctx, struct 
 	switch (nim->cm.type) {
 	case NSS_IPV6_REASM_STATS_SYNC_MSG:
 		/*
-		* Update driver statistics on node sync.
-		*/
+		 * Update driver statistics on node sync and send statistics notifications to the registered modules.
+		 */
 		nss_ipv6_reasm_stats_sync(nss_ctx, &nim->msg.stats_sync);
+		nss_ipv6_reasm_stats_notify(nss_ctx);
 		break;
 	default:
 		nss_warning("IPv6 reasm received an unknown message type");
@@ -66,4 +68,5 @@ void nss_ipv6_reasm_register_handler(void)
 	}
 
 	nss_ipv6_reasm_stats_dentry_create();
+	nss_ipv6_reasm_strings_dentry_create();
 }

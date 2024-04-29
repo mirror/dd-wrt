@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2014-2015, 2018, The Linux Foundation.  All rights reserved.
+ * Copyright (c) 2014-2015, 2018, 2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -424,7 +424,7 @@ bool ecm_tracker_ip_check_header_and_read(struct ecm_tracker_ip_header *ip_hdr, 
 	 */
 	v4_hdr = skb_header_pointer(skb, 0, sizeof(struct iphdr), &ip_hdr->h.v4_hdr);
 	if (v4_hdr && (v4_hdr->version == 4)) {
-		DEBUG_TRACE("%p: skb: %p is ipv4\n", ip_hdr, skb);
+		DEBUG_TRACE("%px: skb: %px is ipv4\n", ip_hdr, skb);
 		ip_hdr->is_v4 = true;
 		goto version_check_done;
 	}
@@ -433,16 +433,16 @@ bool ecm_tracker_ip_check_header_and_read(struct ecm_tracker_ip_header *ip_hdr, 
 	/*
 	 * Try V6
 	 */
-	DEBUG_TRACE("skb: %p contains no v4 header\n", skb);
+	DEBUG_TRACE("skb: %px contains no v4 header\n", skb);
 	v6_hdr = skb_header_pointer(skb, 0, sizeof(struct ipv6hdr), &ip_hdr->h.v6_hdr);
 	if (!v6_hdr || (v6_hdr->version != 6)) {
-		DEBUG_TRACE("skb: %p contains no v6 header\n", skb);
+		DEBUG_TRACE("skb: %px contains no v6 header\n", skb);
 		return false;
 	}
-	DEBUG_TRACE("%p: skb: %p is ipv6\n", ip_hdr, skb);
+	DEBUG_TRACE("%px: skb: %px is ipv6\n", ip_hdr, skb);
 	ip_hdr->is_v4 = false;
 #else
-	DEBUG_TRACE("skb: %p Other IP header versions unsupported\n", skb);
+	DEBUG_TRACE("skb: %px Other IP header versions unsupported\n", skb);
 	return false;
 #endif
 
@@ -454,7 +454,7 @@ version_check_done:
 		struct ecm_tracker_ip_protocols *etip;
 		struct ecm_tracker_ip_protocol_header *etiph;
 
-		DEBUG_TRACE("%p: skb: %p ipv4\n", ip_hdr, skb);
+		DEBUG_TRACE("%px: skb: %px ipv4\n", ip_hdr, skb);
 
 		/*
 		 * Process IPv4
@@ -464,12 +464,12 @@ version_check_done:
 		ip_hdr->ip_header_length = v4_hdr->ihl;
 		ip_hdr->ip_header_length <<= 2;
 		if (ip_hdr->ip_header_length < 20) {
-			DEBUG_WARN("%p: v4 invalid ip hdr len %d\n", skb, ip_hdr->ip_header_length);
+			DEBUG_WARN("%px: v4 invalid ip hdr len %d\n", skb, ip_hdr->ip_header_length);
 			return false;
 		}
 		ip_hdr->total_length = ntohs(v4_hdr->tot_len);
 		if (skb->len < ip_hdr->total_length) {
-			DEBUG_WARN("%p: v4 invalid total len: %u skb len: %u\n", skb, ip_hdr->total_length, skb->len);
+			DEBUG_WARN("%px: v4 invalid total len: %u skb len: %u\n", skb, ip_hdr->total_length, skb->len);
 			return false;
 		}
 		remain = ip_hdr->total_length - ip_hdr->ip_header_length;
@@ -504,7 +504,7 @@ version_check_done:
 		ecm_ip_protocol = etip->ecm_ip_protocol;
 		etiph = &ip_hdr->headers[ecm_ip_protocol];		/* Get where the header detail is stored in ip_hdr->headers[] */
 
-		DEBUG_TRACE("%p: v4 skb: %p, len: %d, ip_header_length: %u, total_length: %u, remain: %u, fragmented: %04x, protocol: %u, ecm_ip_protocol: %d src_addr: "
+		DEBUG_TRACE("%px: v4 skb: %px, len: %d, ip_header_length: %u, total_length: %u, remain: %u, fragmented: %04x, protocol: %u, ecm_ip_protocol: %d src_addr: "
 				ECM_IP_ADDR_DOT_FMT ", dest addr: " ECM_IP_ADDR_DOT_FMT "\n",
 				ip_hdr,
 				skb,
@@ -532,7 +532,7 @@ version_check_done:
 				ip_hdr->ip_header_length,
 				remain,
 				&next_unused)) {
-			DEBUG_WARN("%p: v4 header helper failed for: %u\n", skb, protocol);
+			DEBUG_WARN("%px: v4 header helper failed for: %u\n", skb, protocol);
 			return false;
 		}
 
@@ -551,7 +551,7 @@ version_check_done:
 	remain = ntohs(v6_hdr->payload_len);
 	ip_hdr->total_length = remain + 40;
 	if (skb->len < ip_hdr->total_length) {
-		DEBUG_WARN("%p: v6 invalid total len: %u skb len: %u\n", skb, ip_hdr->total_length, skb->len);
+		DEBUG_WARN("%px: v6 invalid total len: %u skb len: %u\n", skb, ip_hdr->total_length, skb->len);
 		return false;
 	}
 
@@ -605,7 +605,7 @@ version_check_done:
 		 * If this IP header has already been seen then we abort
 		 */
 		if (etiph->size) {
-			DEBUG_WARN("v6 skb: %p, protocol: %d already seen at offset: %u, size: %u\n",
+			DEBUG_WARN("v6 skb: %px, protocol: %d already seen at offset: %u, size: %u\n",
 					skb, this_header, etiph->offset, etiph->size);
 			return false;
 		}
@@ -619,7 +619,7 @@ version_check_done:
 				offset,
 				remain,
 				&next_header)) {
-			DEBUG_WARN("%p: v6 header helper failed for: %d\n", skb, this_header);
+			DEBUG_WARN("%px: v6 header helper failed for: %d\n", skb, this_header);
 			return false;
 		}
 
@@ -671,11 +671,11 @@ static bool ecm_tracker_ip_header_helper_ipv6_generic(struct ecm_tracker_ip_prot
 	hdr_size <<= 3;
 	hdr_size += 8;
 	if (remain < hdr_size) {
-		DEBUG_WARN("IPv6 extension: %p packet remain: %u too small for tcp header: %u\n", skb, remain, hdr_size);
+		DEBUG_WARN("IPv6 extension: %px packet remain: %u too small for tcp header: %u\n", skb, remain, hdr_size);
 		return false;
 	}
 	if (unlikely(ip_hdr->total_length < (offset + hdr_size))) {
-		DEBUG_WARN("TCP packet %p too short (total_length: %u, require: %u)\n", skb, ip_hdr->total_length, offset + hdr_size);
+		DEBUG_WARN("TCP packet %px too short (total_length: %u, require: %u)\n", skb, ip_hdr->total_length, offset + hdr_size);
 		return false;
 	}
 
@@ -716,7 +716,7 @@ static bool ecm_tracker_ip_header_helper_ipv6_fragment(struct ecm_tracker_ip_pro
 		return false;
 	}
 	if (unlikely(ip_hdr->total_length < (offset + 8))) {
-		DEBUG_WARN("TCP packet %p too short (total_length: %u, require: %u)\n", skb, ip_hdr->total_length, offset + 8);
+		DEBUG_WARN("TCP packet %px too short (total_length: %u, require: %u)\n", skb, ip_hdr->total_length, offset + 8);
 		return false;
 	}
 
@@ -783,17 +783,17 @@ static bool ecm_tracker_ip_header_helper_ah(struct ecm_tracker_ip_protocols *eti
 		 * hdr_size needs to be a multiple of 8 in a v6 frame
 		 */
 		if (hdr_size % 8) {
-			DEBUG_WARN("AH packet %p not multiple of 8 for v6 frame: %u\n", skb, hdr_size);
+			DEBUG_WARN("AH packet %px not multiple of 8 for v6 frame: %u\n", skb, hdr_size);
 			return false;
 		}
 	}
 
 	if (remain < hdr_size) {
-		DEBUG_WARN("AH packet %p too short (total_length: %u, require: %u)\n", skb, ip_hdr->total_length, offset + hdr_size);
+		DEBUG_WARN("AH packet %px too short (total_length: %u, require: %u)\n", skb, ip_hdr->total_length, offset + hdr_size);
 		return false;
 	}
 	if (unlikely(ip_hdr->total_length < (offset + hdr_size))) {
-		DEBUG_WARN("AH packet %p too short (total_length: %u, require: %u)\n", skb, ip_hdr->total_length, offset + hdr_size);
+		DEBUG_WARN("AH packet %px too short (total_length: %u, require: %u)\n", skb, ip_hdr->total_length, offset + hdr_size);
 		return false;
 	}
 
@@ -817,7 +817,7 @@ static bool ecm_tracker_ip_header_helper_ipv6_icmp(struct ecm_tracker_ip_protoco
 						struct sk_buff *skb, uint8_t protocol, ecm_tracker_ip_protocol_type_t ecm_ip_protocol, uint32_t offset, uint32_t remain, int16_t *next_hdr)
 {
 	if (remain < 4) {
-		DEBUG_WARN("v6 icmp: %p too small: %u\n", skb, remain);
+		DEBUG_WARN("v6 icmp: %px too small: %u\n", skb, remain);
 		return false;
 	}
 
@@ -862,11 +862,11 @@ static bool ecm_tracker_ip_header_helper_tcp(struct ecm_tracker_ip_protocols *et
 		return false;
 	}
 	if (remain < hdr_size) {
-		DEBUG_WARN("TCP packet: %p packet remain: %u too small for tcp header: %u\n", skb, remain, hdr_size);
+		DEBUG_WARN("TCP packet: %px packet remain: %u too small for tcp header: %u\n", skb, remain, hdr_size);
 		return false;
 	}
 	if (unlikely(ip_hdr->total_length < (offset + hdr_size))) {
-		DEBUG_WARN("TCP packet %p too short (total_length: %u, require: %u)\n", skb, ip_hdr->total_length, offset + hdr_size);
+		DEBUG_WARN("TCP packet %px too short (total_length: %u, require: %u)\n", skb, ip_hdr->total_length, offset + hdr_size);
 		return false;
 	}
 
@@ -925,11 +925,11 @@ static bool ecm_tracker_ip_header_helper_gre(struct ecm_tracker_ip_protocols *et
 		hdr_size += 4;
 	}
 	if (remain < hdr_size) {
-		DEBUG_WARN("GRE packet: %p packet remain: %u too small for tcp header: %u\n", skb, remain, hdr_size);
+		DEBUG_WARN("GRE packet: %px packet remain: %u too small for tcp header: %u\n", skb, remain, hdr_size);
 		return false;
 	}
 	if (unlikely(ip_hdr->total_length < (offset + hdr_size))) {
-		DEBUG_WARN("GRE packet %p too short (total_length: %u, require: %u)\n", skb, ip_hdr->total_length, offset + hdr_size);
+		DEBUG_WARN("GRE packet %px too short (total_length: %u, require: %u)\n", skb, ip_hdr->total_length, offset + hdr_size);
 		return false;
 	}
 
@@ -954,7 +954,7 @@ static bool ecm_tracker_ip_header_helper_udp(struct ecm_tracker_ip_protocols *et
 {
 	DEBUG_ASSERT((protocol == IPPROTO_UDP) && (ecm_ip_protocol == ECM_TRACKER_IP_PROTOCOL_TYPE_UDP), "Bad protocol: %u or ecm_ip_protocol: %d", protocol, ecm_ip_protocol);
 
-	DEBUG_TRACE("udp helper skb: %p, protocol: %u, ecm_ip_proto: %d, offset: %u, remain: %u\n", skb, protocol, ecm_ip_protocol, offset, remain);
+	DEBUG_TRACE("udp helper skb: %px, protocol: %u, ecm_ip_proto: %d, offset: %u, remain: %u\n", skb, protocol, ecm_ip_protocol, offset, remain);
 	if (remain < 8) {
 		DEBUG_TRACE("not enough UDP header: %u\n", remain);
 		return false;
@@ -1020,7 +1020,7 @@ static bool ecm_tracker_ip_header_helper_icmp(struct ecm_tracker_ip_protocols *e
 		 * NOTE: We are not looking at options that extend this header!
 		 */
 		if (remain < 28) {
-			DEBUG_WARN("icmp skb: %p type: %u too small: %u\n", skb, icmp_header->type, remain);
+			DEBUG_WARN("icmp skb: %px type: %u too small: %u\n", skb, icmp_header->type, remain);
 			return false;
 		}
 		etiph->header_size = 8;
@@ -1031,7 +1031,7 @@ static bool ecm_tracker_ip_header_helper_icmp(struct ecm_tracker_ip_protocols *e
 	case ICMP_ADDRESSREPLY:
 	case ICMP_TIMESTAMP:
 		if (remain < 12) {
-			DEBUG_WARN("icmp skb: %p type: %u too small: %u\n", skb, icmp_header->type, remain);
+			DEBUG_WARN("icmp skb: %px type: %u too small: %u\n", skb, icmp_header->type, remain);
 			return false;
 		}
 		etiph->header_size = 12;
@@ -1039,7 +1039,7 @@ static bool ecm_tracker_ip_header_helper_icmp(struct ecm_tracker_ip_protocols *e
 		break;
 	case ICMP_TIMESTAMPREPLY:
 		if (remain < 20) {
-			DEBUG_WARN("icmp skb: %p type: %u too small: %u\n", skb, icmp_header->type, remain);
+			DEBUG_WARN("icmp skb: %px type: %u too small: %u\n", skb, icmp_header->type, remain);
 			return false;
 		}
 		etiph->header_size = 20;

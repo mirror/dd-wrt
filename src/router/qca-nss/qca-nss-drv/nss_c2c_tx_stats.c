@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2018-2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -14,32 +14,19 @@
  **************************************************************************
  */
 
-#include "nss_stats.h"
 #include "nss_core.h"
 #include "nss_c2c_tx_stats.h"
+#include "nss_c2c_tx_strings.h"
+
+/*
+ * Declare atomic notifier data structure for statistics.
+ */
+ATOMIC_NOTIFIER_HEAD(nss_c2c_tx_stats_notifier);
 
 /*
  * Spinlock to protect C2C_TX statistics update/read
  */
 DEFINE_SPINLOCK(nss_c2c_tx_stats_lock);
-
-/*
- * nss_c2c_tx_stats_str
- *	C2C_TX stats strings
- */
-static int8_t *nss_c2c_tx_stats_str[NSS_C2C_TX_STATS_MAX] = {
-	"rx_packets",
-	"rx_bytes",
-	"tx_packets",
-	"tx_bytes",
-	"rx_queue_0_dropped",
-	"rx_queue_1_dropped",
-	"rx_queue_2_dropped",
-	"rx_queue_3_dropped",
-	"pbuf_simple",
-	"pbuf_sg",
-	"pbuf_returning",
-};
 
 /*
  * nss_c2c_tx_stats
@@ -56,10 +43,10 @@ static ssize_t nss_c2c_tx_stats_read(struct file *fp, char __user *ubuf, size_t 
 	int32_t i, core;
 
 	/*
-	 * Max output lines = (#stats + core tag + two blank lines) * NSS_MAX_CORES  +
-	 * start tag line + end tag line + three blank lines
+	 * Max output lines = #stats * NSS_MAX_CORES  +
+	 * few blank lines for banner printing + Number of Extra outputlines for future reference to add new stats
 	 */
-	uint32_t max_output_lines = (NSS_C2C_TX_STATS_MAX + 3) * NSS_MAX_CORES + 5;
+	uint32_t max_output_lines = NSS_C2C_TX_STATS_MAX * NSS_MAX_CORES + NSS_STATS_EXTRA_OUTPUT_LINES;
 	size_t size_al = NSS_STATS_MAX_STR_LENGTH * max_output_lines;
 	size_t size_wr = 0;
 	ssize_t bytes_read = 0;
@@ -78,26 +65,19 @@ static ssize_t nss_c2c_tx_stats_read(struct file *fp, char __user *ubuf, size_t 
 		return -ENOMEM;
 	}
 
-	size_wr = scnprintf(lbuf, size_al, "c2c_tx stats start:\n\n");
-
 	/*
 	 * C2C_TX statistics
 	 */
 	for (core = 0; core < NSS_MAX_CORES; core++) {
-		size_wr += scnprintf(lbuf + size_wr, size_al - size_wr, "\nc2c_tx core %d stats:\n\n", core);
 		spin_lock_bh(&nss_c2c_tx_stats_lock);
 		for (i = 0; i < NSS_C2C_TX_STATS_MAX; i++) {
 			stats_shadow[i] = nss_c2c_tx_stats[core][i];
 		}
 		spin_unlock_bh(&nss_c2c_tx_stats_lock);
-
-		for (i = 0; i < NSS_C2C_TX_STATS_MAX; i++) {
-			size_wr += scnprintf(lbuf + size_wr, size_al - size_wr,
-					"%s = %llu\n", nss_c2c_tx_stats_str[i], stats_shadow[i]);
-		}
+		size_wr += nss_stats_banner(lbuf, size_wr, size_al, "c2c_tx", core);
+		size_wr += nss_stats_print("c2c_tx", NULL, NSS_STATS_SINGLE_INSTANCE, nss_c2c_tx_strings_stats, stats_shadow, NSS_C2C_TX_STATS_MAX, lbuf, size_wr, size_al);
 	}
 
-	size_wr += scnprintf(lbuf + size_wr, size_al - size_wr, "\nc2c_tx stats end\n\n");
 	bytes_read = simple_read_from_buffer(ubuf, sz, ppos, lbuf, strlen(lbuf));
 	kfree(lbuf);
 	kfree(stats_shadow);
@@ -108,7 +88,7 @@ static ssize_t nss_c2c_tx_stats_read(struct file *fp, char __user *ubuf, size_t 
 /*
  * nss_c2c_tx_stats_ops
  */
-NSS_STATS_DECLARE_FILE_OPERATIONS(c2c_tx)
+NSS_STATS_DECLARE_FILE_OPERATIONS(c2c_tx);
 
 /*
  * nss_c2c_tx_stats_dentry_create()
@@ -151,3 +131,38 @@ void nss_c2c_tx_stats_sync(struct nss_ctx_instance *nss_ctx, struct nss_c2c_tx_s
 
 	spin_unlock_bh(&nss_c2c_tx_stats_lock);
 }
+
+/*
+ * nss_c2c_tx_stats_notify()
+ *	Sends notifications to all the registered modules.
+ *
+ * Leverage NSS-FW statistics timing to update Netlink.
+ */
+void nss_c2c_tx_stats_notify(struct nss_ctx_instance *nss_ctx)
+{
+	struct nss_c2c_tx_stats_notification c2c_tx_stats;
+
+	c2c_tx_stats.core_id = nss_ctx->id;
+	memcpy(c2c_tx_stats.stats, nss_c2c_tx_stats[c2c_tx_stats.core_id], sizeof(c2c_tx_stats.stats));
+	atomic_notifier_call_chain(&nss_c2c_tx_stats_notifier, NSS_STATS_EVENT_NOTIFY, (void *)&c2c_tx_stats);
+}
+
+/*
+ * nss_c2c_tx_stats_register_notifier()
+ *	Registers statistics notifier.
+ */
+int nss_c2c_tx_stats_register_notifier(struct notifier_block *nb)
+{
+	return atomic_notifier_chain_register(&nss_c2c_tx_stats_notifier, nb);
+}
+EXPORT_SYMBOL(nss_c2c_tx_stats_register_notifier);
+
+/*
+ * nss_c2c_tx_stats_unregister_notifier()
+ *	Deregisters statistics notifier.
+ */
+int nss_c2c_tx_stats_unregister_notifier(struct notifier_block *nb)
+{
+	return atomic_notifier_chain_unregister(&nss_c2c_tx_stats_notifier, nb);
+}
+EXPORT_SYMBOL(nss_c2c_tx_stats_unregister_notifier);

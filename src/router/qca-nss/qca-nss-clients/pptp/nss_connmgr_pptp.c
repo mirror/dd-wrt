@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2015-2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2015-2018, 2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -99,13 +99,13 @@ static int nss_connmgr_pptp_client_xmit(struct sk_buff *skb, struct net_device *
 	 */
 	host_inner_if = nss_cmn_get_interface_number_by_dev_and_type(dev, NSS_DYNAMIC_INTERFACE_TYPE_PPTP_HOST_INNER);
 	if (host_inner_if < 0) {
-		nss_connmgr_pptp_warning("%p: Net device is not registered\n", dev);
+		nss_connmgr_pptp_warning("%px: Net device is not registered\n", dev);
 		return -1;
 	}
 
 	nss_pptp_ctx = nss_pptp_get_context();
 	if (!nss_pptp_ctx) {
-		nss_connmgr_pptp_warning("%p: NSS PPTP context not found for if_number %d\n", dev, host_inner_if);
+		nss_connmgr_pptp_warning("%px: NSS PPTP context not found for if_number %d\n", dev, host_inner_if);
 		return -1;
 	}
 
@@ -121,11 +121,11 @@ static int nss_connmgr_pptp_client_xmit(struct sk_buff *skb, struct net_device *
 			 * Found a match for a session and successfully posted
 			 * packet to firmware. Retrun success.
 			 */
-			nss_connmgr_pptp_info("%p: NSS FW tx success if_number %d\n", dev, host_inner_if);
+			nss_connmgr_pptp_info("%px: NSS FW tx success if_number %d\n", dev, host_inner_if);
 			return 0;
 		}
 
-		nss_connmgr_pptp_info("%p: NSS FW tx failed if_number %d\n", dev, host_inner_if);
+		nss_connmgr_pptp_info("%px: NSS FW tx failed if_number %d\n", dev, host_inner_if);
 		return -1;
 	}
 
@@ -146,31 +146,31 @@ static int nss_connmgr_pptp_get_session(struct net_device *dev, struct pptp_opt 
 	/*
 	 * check whether the interface is of type PPP
 	 */
-	if (dev->type != ARPHRD_PPP || !(dev->priv_flags & IFF_PPP_PPTP)) {
-		nss_connmgr_pptp_info("%p: netdevice is not a PPP tunnel type\n", dev);
+	if (dev->type != ARPHRD_PPP || !(dev->priv_flags_ext & IFF_EXT_PPP_PPTP)) {
+		nss_connmgr_pptp_info("%px: netdevice is not a PPP tunnel type\n", dev);
 		return -1;
 	}
 
 	if (ppp_is_multilink(dev)) {
-		nss_connmgr_pptp_warning("%p: channel is multilink PPP\n", dev);
+		nss_connmgr_pptp_warning("%px: channel is multilink PPP\n", dev);
 		return -1;
 	}
 
 	ppp_ch_count = ppp_hold_channels(dev, channel, 1);
-	nss_connmgr_pptp_info("%p: PPP hold channel ret %d\n", dev, ppp_ch_count);
+	nss_connmgr_pptp_info("%px: PPP hold channel ret %d\n", dev, ppp_ch_count);
 	if (ppp_ch_count != 1) {
-		nss_connmgr_pptp_warning("%p: hold channel for netdevice failed\n", dev);
+		nss_connmgr_pptp_warning("%px: hold channel for netdevice failed\n", dev);
 		return -1;
 	}
 
 	if (!channel[0]) {
-		nss_connmgr_pptp_warning("%p: channel don't have a ppp_channel\n", dev);
+		nss_connmgr_pptp_warning("%px: channel don't have a ppp_channel\n", dev);
 		return -1;
 	}
 
 	px_proto = ppp_channel_get_protocol(channel[0]);
 	if (px_proto != PX_PROTO_PPTP) {
-		nss_connmgr_pptp_warning("%p: session socket is not of type PX_PROTO_PPTP\n", dev);
+		nss_connmgr_pptp_warning("%px: session socket is not of type PX_PROTO_PPTP\n", dev);
 		ppp_release_channels(channel, 1);
 		return -1;
 	}
@@ -195,7 +195,7 @@ static struct nss_connmgr_pptp_session_entry *nss_connmgr_add_pptp_session(struc
 	pptp_session_data = kmalloc(sizeof(struct nss_connmgr_pptp_session_entry),
 				      GFP_KERNEL);
 	if (!pptp_session_data) {
-		nss_connmgr_pptp_warning("%p: failed to allocate pptp_session_data\n", dev);
+		nss_connmgr_pptp_warning("%px: failed to allocate pptp_session_data\n", dev);
 		return NULL;
 	}
 
@@ -209,7 +209,7 @@ static struct nss_connmgr_pptp_session_entry *nss_connmgr_add_pptp_session(struc
 	data->src_ip = session->src_addr.sin_addr.s_addr;
 	data->dst_ip = session->dst_addr.sin_addr.s_addr;
 
-	nss_connmgr_pptp_info("%p: src_call_id=%u peer_call_id=%u\n", dev, data->src_call, data->dst_call);
+	nss_connmgr_pptp_info("%px: src_call_id=%u peer_call_id=%u\n", dev, data->src_call, data->dst_call);
 
 	/*
 	 * This netdev hold will be released when netdev
@@ -224,7 +224,7 @@ static struct nss_connmgr_pptp_session_entry *nss_connmgr_add_pptp_session(struc
 	 */
 	physical_dev = ip_dev_find(&init_net, data->src_ip);
 	if (!physical_dev) {
-		nss_connmgr_pptp_warning("%p: couldn't find a phycal dev %s\n", dev, dev->name);
+		nss_connmgr_pptp_warning("%px: couldn't find a phycal dev %s\n", dev, dev->name);
 		dev_put(dev);
 		kfree(pptp_session_data);
 		return NULL;
@@ -261,7 +261,7 @@ static void nss_connmgr_pptp_event_receive(void *if_ctx, struct nss_pptp_msg *tn
 			return;
 		}
 
-		nss_connmgr_pptp_info("%p: Update PPP stats for PPTP netdev %p\n", session_info, netdev);
+		nss_connmgr_pptp_info("%px: Update PPP stats for PPTP netdev %px\n", session_info, netdev);
 		sync_stats = (struct nss_pptp_sync_session_stats_msg *)&tnlmsg->msg.stats;
 		dev_hold(netdev);
 
@@ -284,7 +284,7 @@ static void nss_connmgr_pptp_event_receive(void *if_ctx, struct nss_pptp_msg *tn
 		break;
 
 	default:
-		nss_connmgr_pptp_warning("%p: Unknown Event from NSS\n", session_info);
+		nss_connmgr_pptp_warning("%px: Unknown Event from NSS\n", session_info);
 		break;
 	}
 }
@@ -332,7 +332,7 @@ static void nss_connmgr_pptp_decap_exception(struct net_device *dev,
 			gre_hdr = (struct nss_pptp_gre_hdr *)skb->data;
 			if ((ntohs(gre_hdr->protocol) != NSS_PPTP_GRE_PROTO) &&
 				(gre_hdr->flags_ver == NSS_PPTP_GRE_VER)) {
-				nss_connmgr_pptp_warning("%p, Not PPTP_GRE_PROTO, so freeing\n", dev);
+				nss_connmgr_pptp_warning("%px, Not PPTP_GRE_PROTO, so freeing\n", dev);
 				dev_kfree_skb_any(skb);
 				return;
 			}
@@ -346,16 +346,16 @@ static void nss_connmgr_pptp_decap_exception(struct net_device *dev,
 			rt = ip_route_output_ports(&init_net, &fl4, NULL, tunnel_peer_ip,
 					tunnel_local_ip, 0, 0, IPPROTO_GRE, RT_TOS(0), 0);
 			if (unlikely(IS_ERR(rt))) {
-				nss_connmgr_pptp_warning("%p: Martian packets, drop\n", dev);
-				nss_connmgr_pptp_warning("%p: No route or out dev, drop packet...\n", dev);
+				nss_connmgr_pptp_warning("%px: Martian packets, drop\n", dev);
+				nss_connmgr_pptp_warning("%px: No route or out dev, drop packet...\n", dev);
 				dev_kfree_skb_any(skb);
 				return;
 			}
 
 			if (likely(rt->dst.dev)) {
-				nss_connmgr_pptp_info("%p: dst route dev is %s\n", session_info, rt->dst.dev->name);
+				nss_connmgr_pptp_info("%px: dst route dev is %s\n", session_info, rt->dst.dev->name);
 			} else {
-				nss_connmgr_pptp_warning("%p: No out dev, drop packet...\n", dev);
+				nss_connmgr_pptp_warning("%px: No out dev, drop packet...\n", dev);
 				dev_kfree_skb_any(skb);
 			}
 
@@ -381,7 +381,7 @@ static void nss_connmgr_pptp_decap_exception(struct net_device *dev,
 		}
 	}
 	rcu_read_unlock();
-	nss_connmgr_pptp_warning("%p: unable to find session for PPTP exception packet from %s, so freeing\n", dev, dev->name);
+	nss_connmgr_pptp_warning("%px: unable to find session for PPTP exception packet from %s, so freeing\n", dev, dev->name);
 	dev_kfree_skb_any(skb);
 }
 
@@ -421,7 +421,7 @@ static void nss_connmgr_pptp_encap_exception(struct net_device *dev,
 		} else if (iph_outer->version == 6) {
 			skb->protocol = htons(ETH_P_IPV6);
 		} else {
-			nss_connmgr_pptp_info("%p: pkt may be a control packet\n", dev);
+			nss_connmgr_pptp_info("%px: pkt may be a control packet\n", dev);
 		}
 
 		skb_reset_network_header(skb);
@@ -429,12 +429,12 @@ static void nss_connmgr_pptp_encap_exception(struct net_device *dev,
 		skb->skb_iif = dev->ifindex;
 		skb->ip_summed = CHECKSUM_NONE;
 		skb->dev = dev;
-		nss_connmgr_pptp_info("%p: send decapsulated packet through network stack", dev);
+		nss_connmgr_pptp_info("%px: send decapsulated packet through network stack", dev);
 		netif_receive_skb(skb);
 		return;
 	}
 	rcu_read_unlock();
-	nss_connmgr_pptp_warning("%p: unable to find session for PPTP exception packet from %s, so freeing\n", dev, dev->name);
+	nss_connmgr_pptp_warning("%px: unable to find session for PPTP exception packet from %s, so freeing\n", dev, dev->name);
 	dev_kfree_skb_any(skb);
 }
 
@@ -465,40 +465,40 @@ static int nss_connmgr_pptp_dev_up(struct net_device *dev)
 	 */
 	inner_if = nss_dynamic_interface_alloc_node(NSS_DYNAMIC_INTERFACE_TYPE_PPTP_INNER);
 	if (inner_if < 0) {
-		nss_connmgr_pptp_warning("%p: Request inner interface number failed\n", dev);
+		nss_connmgr_pptp_warning("%px: Request inner interface number failed\n", dev);
 		return NOTIFY_DONE;
 	}
 
 	if (!nss_is_dynamic_interface(inner_if)) {
-		nss_connmgr_pptp_warning("%p: Invalid NSS dynamic I/F number %d\n", dev, inner_if);
+		nss_connmgr_pptp_warning("%px: Invalid NSS dynamic I/F number %d\n", dev, inner_if);
 		goto inner_fail;
 	}
 
 	outer_if = nss_dynamic_interface_alloc_node(NSS_DYNAMIC_INTERFACE_TYPE_PPTP_OUTER);
 	if (outer_if < 0) {
-		nss_connmgr_pptp_warning("%p: Request outer interface number failed\n", dev);
+		nss_connmgr_pptp_warning("%px: Request outer interface number failed\n", dev);
 		goto inner_fail;
 	}
 
 	if (!nss_is_dynamic_interface(outer_if)) {
-		nss_connmgr_pptp_warning("%p: Invalid NSS dynamic I/F number %d\n", dev, outer_if);
+		nss_connmgr_pptp_warning("%px: Invalid NSS dynamic I/F number %d\n", dev, outer_if);
 		goto outer_fail;
 	}
 
 	host_inner_if = nss_dynamic_interface_alloc_node(NSS_DYNAMIC_INTERFACE_TYPE_PPTP_HOST_INNER);
 	if (host_inner_if < 0) {
-		nss_connmgr_pptp_warning("%p: Request host inner interface number failed\n", dev);
+		nss_connmgr_pptp_warning("%px: Request host inner interface number failed\n", dev);
 		goto outer_fail;
 	}
 
 	if (!nss_is_dynamic_interface(host_inner_if)) {
-		nss_connmgr_pptp_warning("%p: Invalid NSS dynamic I/F number %d\n", dev, host_inner_if);
+		nss_connmgr_pptp_warning("%px: Invalid NSS dynamic I/F number %d\n", dev, host_inner_if);
 		goto host_inner_fail;
 	}
 
 	session_info = nss_connmgr_add_pptp_session(dev, &opt);
 	if (!session_info) {
-		nss_connmgr_pptp_warning("%p: PPTP session add failed\n", dev);
+		nss_connmgr_pptp_warning("%px: PPTP session add failed\n", dev);
 		goto host_inner_fail;
 	}
 
@@ -514,11 +514,11 @@ static int nss_connmgr_pptp_dev_up(struct net_device *dev)
 				session_info);
 
 	if (!nss_ctx) {
-		nss_connmgr_pptp_warning("%p: nss_register_pptp_if failed for inner\n", dev);
+		nss_connmgr_pptp_warning("%px: nss_register_pptp_if failed for inner\n", dev);
 		goto register_inner_if_fail;
 	}
 
-	nss_connmgr_pptp_info("%p: inner interface registration successful\n", nss_ctx);
+	nss_connmgr_pptp_info("%px: inner interface registration successful\n", nss_ctx);
 
 	/*
 	 * Register pptp tunnel outer interface with NSS
@@ -532,11 +532,11 @@ static int nss_connmgr_pptp_dev_up(struct net_device *dev)
 				session_info);
 
 	if (!nss_ctx) {
-		nss_connmgr_pptp_warning("%p: nss_register_pptp_if failed for outer\n", dev);
+		nss_connmgr_pptp_warning("%px: nss_register_pptp_if failed for outer\n", dev);
 		goto register_outer_if_fail;
 	}
 
-	nss_connmgr_pptp_info("%p: outer interface registration successful\n", nss_ctx);
+	nss_connmgr_pptp_info("%px: outer interface registration successful\n", nss_ctx);
 
 	/*
 	 * Register pptp tunnel inner interface with NSS
@@ -550,11 +550,11 @@ static int nss_connmgr_pptp_dev_up(struct net_device *dev)
 				session_info);
 
 	if (!nss_ctx) {
-		nss_connmgr_pptp_warning("%p: nss_register_pptp_if failed for host inner\n", dev);
+		nss_connmgr_pptp_warning("%px: nss_register_pptp_if failed for host inner\n", dev);
 		goto register_host_inner_if_fail;
 	}
 
-	nss_connmgr_pptp_info("%p: host inner interface registration successful\n", nss_ctx);
+	nss_connmgr_pptp_info("%px: host inner interface registration successful\n", nss_ctx);
 
 	/*
 	 * Initialize and configure inner I/F.
@@ -584,20 +584,20 @@ static int nss_connmgr_pptp_dev_up(struct net_device *dev)
 	pptpcfg->sibling_ifnum_pri = outer_if;
 	pptpcfg->sibling_ifnum_aux = host_inner_if;
 
-	nss_connmgr_pptp_info("%p: pptp info\n", dev);
-	nss_connmgr_pptp_info("%p: local_call_id %d peer_call_id %d\n", dev,
+	nss_connmgr_pptp_info("%px: pptp info\n", dev);
+	nss_connmgr_pptp_info("%px: local_call_id %d peer_call_id %d\n", dev,
 									pptpcfg->src_call_id,
 									pptpcfg->dst_call_id);
-	nss_connmgr_pptp_info("%p: saddr 0x%x daddr 0x%x \n", dev, pptpcfg->sip, pptpcfg->dip);
+	nss_connmgr_pptp_info("%px: saddr 0x%x daddr 0x%x \n", dev, pptpcfg->sip, pptpcfg->dip);
 
 	nss_pptp_msg_init(&pptpmsg, inner_if, NSS_PPTP_MSG_SESSION_CONFIGURE, sizeof(struct nss_pptp_session_configure_msg), NULL, NULL);
 
 	status = nss_pptp_tx_msg_sync(nss_ctx, &pptpmsg);
 	if (status != NSS_TX_SUCCESS) {
-		nss_connmgr_pptp_warning("%p: nss pptp session creation command error %d\n", dev, status);
+		nss_connmgr_pptp_warning("%px: nss pptp session creation command error %d\n", dev, status);
 		goto tx_msg_fail;
 	}
-	nss_connmgr_pptp_info("%p: nss_pptp_tx() successful for inner\n", dev);
+	nss_connmgr_pptp_info("%px: nss_pptp_tx() successful for inner\n", dev);
 
 	/*
 	 * Initialize and configure outer I/F.
@@ -609,10 +609,10 @@ static int nss_connmgr_pptp_dev_up(struct net_device *dev)
 
 	status = nss_pptp_tx_msg_sync(nss_ctx, &pptpmsg);
 	if (status != NSS_TX_SUCCESS) {
-		nss_connmgr_pptp_warning("%p: nss pptp session creation command error %d\n", dev, status);
+		nss_connmgr_pptp_warning("%px: nss pptp session creation command error %d\n", dev, status);
 		goto tx_msg_fail;
 	}
-	nss_connmgr_pptp_info("%p: nss_pptp_tx() successful for outer\n", dev);
+	nss_connmgr_pptp_info("%px: nss_pptp_tx() successful for outer\n", dev);
 
 	/*
 	 * Initialize and configure host inner I/F.
@@ -624,10 +624,10 @@ static int nss_connmgr_pptp_dev_up(struct net_device *dev)
 
 	status = nss_pptp_tx_msg_sync(nss_ctx, &pptpmsg);
 	if (status != NSS_TX_SUCCESS) {
-		nss_connmgr_pptp_warning("%p: nss pptp session creation command error %d\n", dev, status);
+		nss_connmgr_pptp_warning("%px: nss pptp session creation command error %d\n", dev, status);
 		goto tx_msg_fail;
 	}
-	nss_connmgr_pptp_info("%p: nss_pptp_tx() successful for host inner\n", dev);
+	nss_connmgr_pptp_info("%px: nss_pptp_tx() successful for host inner\n", dev);
 
 	/*
 	 * Enable the offload mode for Linux PPTP kernel driver. After this
@@ -652,17 +652,17 @@ register_inner_if_fail:
 host_inner_fail:
 	status = nss_dynamic_interface_dealloc_node(host_inner_if, NSS_DYNAMIC_INTERFACE_TYPE_PPTP_HOST_INNER);
 	if (status != NSS_TX_SUCCESS) {
-		nss_connmgr_pptp_warning("%p: Unable to dealloc the node[%d] in the NSS fw!\n", dev, host_inner_if);
+		nss_connmgr_pptp_warning("%px: Unable to dealloc the node[%d] in the NSS fw!\n", dev, host_inner_if);
 	}
 outer_fail:
 	status = nss_dynamic_interface_dealloc_node(inner_if, NSS_DYNAMIC_INTERFACE_TYPE_PPTP_OUTER);
 	if (status != NSS_TX_SUCCESS) {
-		nss_connmgr_pptp_warning("%p: Unable to dealloc the node[%d] in the NSS fw!\n", dev, outer_if);
+		nss_connmgr_pptp_warning("%px: Unable to dealloc the node[%d] in the NSS fw!\n", dev, outer_if);
 	}
 inner_fail:
 	status = nss_dynamic_interface_dealloc_node(inner_if, NSS_DYNAMIC_INTERFACE_TYPE_PPTP_INNER);
 	if (status != NSS_TX_SUCCESS) {
-		nss_connmgr_pptp_warning("%p: Unable to dealloc the node[%d] in the NSS fw!\n", dev, inner_if);
+		nss_connmgr_pptp_warning("%px: Unable to dealloc the node[%d] in the NSS fw!\n", dev, inner_if);
 	}
 
 	return NOTIFY_DONE;
@@ -686,8 +686,8 @@ static int nss_connmgr_pptp_dev_down(struct net_device *dev)
 	/*
 	 * check whether the interface is of type PPP
 	 */
-	if (dev->type != ARPHRD_PPP || !(dev->priv_flags & IFF_PPP_PPTP)) {
-		nss_connmgr_pptp_info("%p: netdevice is not a pptp tunnel type\n", dev);
+	if (dev->type != ARPHRD_PPP || !(dev->priv_flags_ext & IFF_EXT_PPP_PPTP)) {
+		nss_connmgr_pptp_info("%px: netdevice is not a pptp tunnel type\n", dev);
 		return NOTIFY_DONE;
 	}
 
@@ -696,7 +696,7 @@ static int nss_connmgr_pptp_dev_down(struct net_device *dev)
 	 */
 	inner_if = nss_cmn_get_interface_number_by_dev_and_type(dev, NSS_DYNAMIC_INTERFACE_TYPE_PPTP_INNER);
 	if (inner_if < 0) {
-		nss_connmgr_pptp_warning("%p: outer I/F is not registered\n", dev);
+		nss_connmgr_pptp_warning("%px: outer I/F is not registered\n", dev);
 		return NOTIFY_DONE;
 	}
 
@@ -705,7 +705,7 @@ static int nss_connmgr_pptp_dev_down(struct net_device *dev)
 	 */
 	outer_if = nss_cmn_get_interface_number_by_dev_and_type(dev, NSS_DYNAMIC_INTERFACE_TYPE_PPTP_OUTER);
 	if (outer_if < 0) {
-		nss_connmgr_pptp_warning("%p: inner I/F is not registered\n", dev);
+		nss_connmgr_pptp_warning("%px: inner I/F is not registered\n", dev);
 		return NOTIFY_DONE;
 	}
 
@@ -714,7 +714,7 @@ static int nss_connmgr_pptp_dev_down(struct net_device *dev)
 	 */
 	host_inner_if = nss_cmn_get_interface_number_by_dev_and_type(dev, NSS_DYNAMIC_INTERFACE_TYPE_PPTP_HOST_INNER);
 	if (host_inner_if < 0) {
-		nss_connmgr_pptp_warning("%p: Net device is not registered\n", dev);
+		nss_connmgr_pptp_warning("%px: Net device is not registered\n", dev);
 		return NOTIFY_DONE;
 	}
 
@@ -729,7 +729,7 @@ static int nss_connmgr_pptp_dev_down(struct net_device *dev)
 	}
 
 	if (!session_found) {
-		nss_connmgr_pptp_warning("%p: pptp session is not found for this device", dev);
+		nss_connmgr_pptp_warning("%px: pptp session is not found for this device", dev);
 		return NOTIFY_DONE;
 	}
 
@@ -753,21 +753,21 @@ static int nss_connmgr_pptp_dev_down(struct net_device *dev)
 	nss_pptp_msg_init(&pptpmsg, inner_if, NSS_PPTP_MSG_SESSION_DECONFIGURE, sizeof(struct nss_pptp_session_deconfigure_msg), NULL, NULL);
 	status = nss_pptp_tx_msg_sync(nss_pptp_get_context(), &pptpmsg);
 	if (status != NSS_TX_SUCCESS) {
-		nss_connmgr_pptp_warning("%p: pptp session destroy command failed, if_number = %d\n", dev, inner_if);
+		nss_connmgr_pptp_warning("%px: pptp session destroy command failed, if_number = %d\n", dev, inner_if);
 		goto fail;
 	}
 
 	nss_pptp_msg_init(&pptpmsg, outer_if, NSS_PPTP_MSG_SESSION_DECONFIGURE, sizeof(struct nss_pptp_session_deconfigure_msg), NULL, NULL);
 	status = nss_pptp_tx_msg_sync(nss_pptp_get_context(), &pptpmsg);
 	if (status != NSS_TX_SUCCESS) {
-		nss_connmgr_pptp_warning("%p: pptp session destroy command failed, if_number = %d\n", dev, outer_if);
+		nss_connmgr_pptp_warning("%px: pptp session destroy command failed, if_number = %d\n", dev, outer_if);
 		goto fail;
 	}
 
 	nss_pptp_msg_init(&pptpmsg, host_inner_if, NSS_PPTP_MSG_SESSION_DECONFIGURE, sizeof(struct nss_pptp_session_deconfigure_msg), NULL, NULL);
 	status = nss_pptp_tx_msg_sync(nss_pptp_get_context(), &pptpmsg);
 	if (status != NSS_TX_SUCCESS) {
-		nss_connmgr_pptp_warning("%p: pptp session destroy command failed, if_number = %d\n", dev, host_inner_if);
+		nss_connmgr_pptp_warning("%px: pptp session destroy command failed, if_number = %d\n", dev, host_inner_if);
 		goto fail;
 	}
 
@@ -783,23 +783,23 @@ static int nss_connmgr_pptp_dev_down(struct net_device *dev)
 	 */
 	status = nss_dynamic_interface_dealloc_node(inner_if, NSS_DYNAMIC_INTERFACE_TYPE_PPTP_INNER);
 	if (status != NSS_TX_SUCCESS) {
-		nss_connmgr_pptp_warning("%p: pptp dealloc node failure for inner if_number=%d\n", dev, inner_if);
+		nss_connmgr_pptp_warning("%px: pptp dealloc node failure for inner if_number=%d\n", dev, inner_if);
 		goto fail;
 	}
 
 	status = nss_dynamic_interface_dealloc_node(outer_if, NSS_DYNAMIC_INTERFACE_TYPE_PPTP_OUTER);
 	if (status != NSS_TX_SUCCESS) {
-		nss_connmgr_pptp_warning("%p: pptp dealloc node failure for outer if_number=%d\n", dev, outer_if);
+		nss_connmgr_pptp_warning("%px: pptp dealloc node failure for outer if_number=%d\n", dev, outer_if);
 		goto fail;
 	}
 
 	status = nss_dynamic_interface_dealloc_node(host_inner_if, NSS_DYNAMIC_INTERFACE_TYPE_PPTP_HOST_INNER);
 	if (status != NSS_TX_SUCCESS) {
-		nss_connmgr_pptp_warning("%p: pptp dealloc node failure for host inner if_number=%d\n", dev, host_inner_if);
+		nss_connmgr_pptp_warning("%px: pptp dealloc node failure for host inner if_number=%d\n", dev, host_inner_if);
 		goto fail;
 	}
 
-	nss_connmgr_pptp_info("%p: deleting pptpsession, if_number %d, local_call_id %d, peer_call_id %d\n", dev,
+	nss_connmgr_pptp_info("%px: deleting pptpsession, if_number %d, local_call_id %d, peer_call_id %d\n", dev,
 					dev->ifindex, session_info->data.src_call,  session_info->data.dst_call);
 
 fail:
@@ -819,11 +819,11 @@ static int nss_connmgr_pptp_dev_event(struct notifier_block  *nb,
 
 	switch (event) {
 	case NETDEV_UP:
-		nss_connmgr_pptp_info("%p: netdevice '%s' UP event\n", netdev, netdev->name);
+		nss_connmgr_pptp_info("%px: netdevice '%s' UP event\n", netdev, netdev->name);
 		return nss_connmgr_pptp_dev_up(netdev);
 
 	case NETDEV_DOWN:
-		nss_connmgr_pptp_info("%p: netdevice '%s' Down event\n", netdev, netdev->name);
+		nss_connmgr_pptp_info("%px: netdevice '%s' Down event\n", netdev, netdev->name);
 		return nss_connmgr_pptp_dev_down(netdev);
 
 	default:

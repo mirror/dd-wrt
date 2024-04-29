@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2013, 2015-2017, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2013, 2015-2017, 2019-2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -55,9 +55,6 @@
 
 /*
  * Defines for N2H interrupts
- *
- * It is required to have 2 COREDUMP_COMPLETE interrupts because
- * both NSS cores may generate interrupt simultaneously
  */
 #define NSS_N2H_INTR_EMPTY_BUFFER_QUEUE		(1 << 0)
 #define NSS_N2H_INTR_DATA_QUEUE_0		(1 << 1)
@@ -67,6 +64,7 @@
 #define NSS_N2H_INTR_EMPTY_BUFFERS_SOS		(1 << 10)
 #define NSS_N2H_INTR_TX_UNBLOCKED		(1 << 11)
 #define NSS_N2H_INTR_PAGED_EMPTY_BUFFERS_SOS	(1 << 12)
+#define NSS_N2H_INTR_PROFILE_DMA		(1 << 13)
 #define NSS_N2H_INTR_COREDUMP_COMPLETE		(1 << 14)
 
 /*

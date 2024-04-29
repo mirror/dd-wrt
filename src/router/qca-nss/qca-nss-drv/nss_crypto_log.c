@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2018, 2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -53,12 +53,12 @@ static int8_t *nss_crypto_log_error_response_types_str[NSS_CRYPTO_MSG_ERROR_MAX]
 static void nss_crypto_config_eng_msg(struct nss_crypto_msg *ncm)
 {
 	struct nss_crypto_config_eng *nccem __maybe_unused = &ncm->msg.eng;
-	nss_trace("%p: NSS Crypto Config Engine Message:\n"
+	nss_trace("%px: NSS Crypto Config Engine Message:\n"
 		"Crypto Engine Number: %d\n"
 		"Crypto BAM Physical Base Address: %x\n"
 		"Crypto Physical Base Address: %x\n"
-		"Crypto Pipe Description Address: %p\n"
-		"Crypto Session Indices: %p\n",
+		"Crypto Pipe Description Address: %px\n"
+		"Crypto Session Indices: %px\n",
 		nccem, nccem->eng_id,
 		nccem->bam_pbase, nccem->crypto_pbase,
 		&nccem->desc_paddr, &nccem->idx);
@@ -71,7 +71,7 @@ static void nss_crypto_config_eng_msg(struct nss_crypto_msg *ncm)
 static void nss_crypto_config_session_msg(struct nss_crypto_msg *ncm)
 {
 	struct nss_crypto_config_session *nccsm __maybe_unused = &ncm->msg.session;
-	nss_trace("%p: NSS Crypto Config Session message \n"
+	nss_trace("%px: NSS Crypto Config Session message \n"
 		"Crypto Session Index: %d\n"
 		"Crypto Session State: %d\n"
 		"Crypto Session Initialization Vector Length: %d\n",
@@ -95,7 +95,7 @@ static void nss_crypto_log_verbose(struct nss_crypto_msg *ncm)
 		break;
 
 	default:
-		nss_warning("%p: Invalid message type\n", ncm);
+		nss_warning("%px: Invalid message type\n", ncm);
 		break;
 	}
 }
@@ -107,11 +107,11 @@ static void nss_crypto_log_verbose(struct nss_crypto_msg *ncm)
 void nss_crypto_log_tx_msg(struct nss_crypto_msg *ncm)
 {
 	if (ncm->cm.type >= NSS_CRYPTO_MSG_TYPE_MAX) {
-		nss_warning("%p: Invalid message type\n", ncm);
+		nss_warning("%px: Invalid message type\n", ncm);
 		return;
 	}
 
-	nss_info("%p: type[%d]:%s\n", ncm, ncm->cm.type, nss_crypto_log_message_types_str[ncm->cm.type]);
+	nss_info("%px: type[%d]:%s\n", ncm, ncm->cm.type, nss_crypto_log_message_types_str[ncm->cm.type]);
 	nss_crypto_log_verbose(ncm);
 }
 
@@ -122,26 +122,26 @@ void nss_crypto_log_tx_msg(struct nss_crypto_msg *ncm)
 void nss_crypto_log_rx_msg(struct nss_crypto_msg *ncm)
 {
 	if (ncm->cm.response >= NSS_CMN_RESPONSE_LAST) {
-		nss_warning("%p: Invalid response\n", ncm);
+		nss_warning("%px: Invalid response\n", ncm);
 		return;
 	}
 
 	if (ncm->cm.response == NSS_CMN_RESPONSE_NOTIFY || (ncm->cm.response == NSS_CMN_RESPONSE_ACK)) {
-		nss_info("%p: type[%d]:%s, response[%d]:%s\n", ncm, ncm->cm.type,
+		nss_info("%px: type[%d]:%s, response[%d]:%s\n", ncm, ncm->cm.type,
 			nss_crypto_log_message_types_str[ncm->cm.type],
 			ncm->cm.response, nss_cmn_response_str[ncm->cm.response]);
 		goto verbose;
 	}
 
 	if (ncm->cm.error >= NSS_CRYPTO_MSG_ERROR_MAX) {
-		nss_warning("%p: msg failure - type[%d]:%s, response[%d]:%s, error[%d]:Invalid error\n",
+		nss_warning("%px: msg failure - type[%d]:%s, response[%d]:%s, error[%d]:Invalid error\n",
 			ncm, ncm->cm.type, nss_crypto_log_message_types_str[ncm->cm.type],
 			ncm->cm.response, nss_cmn_response_str[ncm->cm.response],
 			ncm->cm.error);
 		goto verbose;
 	}
 
-	nss_info("%p: msg nack - type[%d]:%s, response[%d]:%s, error[%d]:%s\n",
+	nss_info("%px: msg nack - type[%d]:%s, response[%d]:%s, error[%d]:%s\n",
 		ncm, ncm->cm.type, nss_crypto_log_message_types_str[ncm->cm.type],
 		ncm->cm.response, nss_cmn_response_str[ncm->cm.response],
 		ncm->cm.error, nss_crypto_log_error_response_types_str[ncm->cm.error]);

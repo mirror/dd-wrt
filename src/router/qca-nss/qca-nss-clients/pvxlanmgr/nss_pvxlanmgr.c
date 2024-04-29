@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2019-2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -99,7 +99,7 @@ static netdev_tx_t nss_pvxlanmgr_start_xmit(struct sk_buff *skb, struct net_devi
 	priv = netdev_priv(dev);
 
 	if (unlikely(extra_head < 0)) {
-		nss_pvxlanmgr_warn("%p: skb ( %p ) does not have enough headroom\n", dev, skb);
+		nss_pvxlanmgr_warn("%px: skb ( %px ) does not have enough headroom\n", dev, skb);
 		kfree_skb(skb);
 		stats->tx_dropped++;
 		return NETDEV_TX_OK;
@@ -107,7 +107,7 @@ static netdev_tx_t nss_pvxlanmgr_start_xmit(struct sk_buff *skb, struct net_devi
 
 	if_num_host_inner = priv->if_num_host_inner;
 	if (unlikely(if_num_host_inner == 0)) {
-		nss_pvxlanmgr_warn("%p: (PVXLAN packet) if_num in the tunnel not set pre->if_num_host_inner %d\n", dev,
+		nss_pvxlanmgr_warn("%px: (PVXLAN packet) if_num in the tunnel not set pre->if_num_host_inner %d\n", dev,
 				priv->if_num_host_inner);
 		kfree_skb(skb);
 		stats->tx_dropped++;
@@ -117,15 +117,15 @@ static netdev_tx_t nss_pvxlanmgr_start_xmit(struct sk_buff *skb, struct net_devi
 	status = nss_pvxlan_tx_buf(priv->pvxlan_ctx, skb, if_num_host_inner);
 	if (unlikely(status != NSS_TX_SUCCESS)) {
 		if (status == NSS_TX_FAILURE_QUEUE) {
-			nss_pvxlanmgr_warn("%p: netdev :%p queue is full", dev, dev);
+			nss_pvxlanmgr_warn("%px: netdev :%px queue is full", dev, dev);
 			if (!netif_queue_stopped(dev)) {
 				netif_stop_queue(dev);
 			}
-			nss_pvxlanmgr_warn("%p: (PVxLAN packet) Failed to xmit the packet because of the tx failure : %d\n", dev, status);
+			nss_pvxlanmgr_warn("%px: (PVxLAN packet) Failed to xmit the packet because of the tx failure : %d\n", dev, status);
 			return NETDEV_TX_BUSY;
 		}
 
-		nss_pvxlanmgr_warn("%p: (PVxLAN packet) Failed to xmit the packet because of non-tx failure reason : %d\n", dev, status);
+		nss_pvxlanmgr_warn("%px: (PVxLAN packet) Failed to xmit the packet because of non-tx failure reason : %d\n", dev, status);
 		kfree_skb(skb);
 		stats->tx_dropped++;
 	}
@@ -167,7 +167,7 @@ static struct rtnl_link_stats64 *nss_pvxlanmgr_get_tunnel_stats(struct net_devic
 	struct nss_pvxlanmgr_priv *priv;
 
 	if (!stats) {
-		nss_pvxlanmgr_warn("%p: invalid rtnl structure\n", dev);
+		nss_pvxlanmgr_warn("%px: invalid rtnl structure\n", dev);
 		return stats;
 	}
 
@@ -185,6 +185,26 @@ static struct rtnl_link_stats64 *nss_pvxlanmgr_get_tunnel_stats(struct net_devic
 
 	return stats;
 }
+
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 6, 0))
+/*
+ * nss_pvxlanmgr_dev_tunnel_stats()
+ *	Netdev ops function to retrieve stats for kernel version < 4.6
+ */
+static struct rtnl_link_stats64 *nss_pvxlanmgr_dev_tunnel_stats(struct net_device *dev, struct rtnl_link_stats64 *stats)
+{
+	return nss_pvxlanmgr_get_tunnel_stats(dev, stats);
+}
+#else
+/*
+ * nss_pvxlanmgr_dev_tunnel_stats()
+ *	Netdev ops function to retrieve stats for kernel version > 4.6
+ */
+static void nss_pvxlanmgr_dev_tunnel_stats(struct net_device *dev, struct rtnl_link_stats64 *stats)
+{
+	nss_pvxlanmgr_get_tunnel_stats(dev, stats);
+}
+#endif
 
 /*
  * nss_pvxlanmgr_unregister_with_nss()
@@ -211,7 +231,7 @@ static nss_pvxlanmgr_status_t nss_pvxlanmgr_register_with_nss(uint32_t if_num, s
 
 	ctx = nss_pvxlan_register(if_num, nss_pvxlanmgr_receive_pkt, nss_pvxlanmgr_stats_update, dev, features);
 	if (!ctx) {
-		nss_pvxlanmgr_warn("%p: %d: nss_pvxlanmgr_data_register failed\n", dev, if_num);
+		nss_pvxlanmgr_warn("%px: %d: nss_pvxlanmgr_data_register failed\n", dev, if_num);
 		return NSS_PVXLANMGR_FAILURE;
 	}
 	return NSS_PVXLANMGR_SUCCESS;
@@ -262,7 +282,7 @@ static const struct net_device_ops nss_pvxlanmgr_netdev_ops = {
 	.ndo_stop		= nss_pvxlanmgr_close,
 	.ndo_start_xmit		= nss_pvxlanmgr_start_xmit,
 	.ndo_set_mac_address	= eth_mac_addr,
-	.ndo_get_stats64	= nss_pvxlanmgr_get_tunnel_stats,
+	.ndo_get_stats64	= nss_pvxlanmgr_dev_tunnel_stats,
 };
 
 /*
@@ -278,7 +298,13 @@ static void nss_pvxlanmgr_dummy_netdev_setup(struct net_device *dev)
 	dev->ethtool_ops = NULL;
 	dev->header_ops = NULL;
 	dev->netdev_ops = &nss_pvxlanmgr_netdev_ops;
+
+#if (LINUX_VERSION_CODE <= KERNEL_VERSION(4, 11, 8))
 	dev->destructor = NULL;
+#else
+	dev->priv_destructor = NULL;
+#endif
+
 	memcpy(dev->dev_addr, "\x00\x00\x00\x00\x00\x00", dev->addr_len);
 	memset(dev->broadcast, 0xff, dev->addr_len);
 	memcpy(dev->perm_addr, dev->dev_addr, dev->addr_len);
@@ -318,15 +344,15 @@ static int nss_pvxlanmgr_netdev_event(struct notifier_block  *nb, unsigned long 
 
 	switch (event) {
 	case NETDEV_UP:
-		nss_pvxlanmgr_trace("%p: NETDEV_UP: event %lu name %s\n", netdev, event, netdev->name);
+		nss_pvxlanmgr_trace("%px: NETDEV_UP: event %lu name %s\n", netdev, event, netdev->name);
 		return nss_pvxlanmgr_netdev_up(netdev);
 
 	case NETDEV_DOWN:
-		nss_pvxlanmgr_trace("%p: NETDEV_DOWN: event %lu name %s\n", netdev, event, netdev->name);
+		nss_pvxlanmgr_trace("%px: NETDEV_DOWN: event %lu name %s\n", netdev, event, netdev->name);
 		return nss_pvxlanmgr_netdev_down(netdev);
 
 	default:
-		nss_pvxlanmgr_trace("%p: Unhandled notifier event %lu name %s\n", netdev, event, netdev->name);
+		nss_pvxlanmgr_trace("%px: Unhandled notifier event %lu name %s\n", netdev, event, netdev->name);
 		break;
 	}
 
@@ -377,17 +403,17 @@ nss_pvxlanmgr_status_t nss_pvxlanmgr_netdev_disable(struct net_device *dev)
 
 	dev_hold(dev);
 	priv = netdev_priv(dev);
-	nss_pvxlanmgr_info("%p: tunnel disable is being called\n", dev);
+	nss_pvxlanmgr_info("%px: tunnel disable is being called\n", dev);
 	ret = nss_pvxlanmgr_tunnel_tx_msg_disable(priv->pvxlan_ctx, priv->if_num_host_inner);
 	if (ret != NSS_TX_SUCCESS) {
-		nss_pvxlanmgr_warn("%p: Tunnel disable failed: %d\n", dev, ret);
+		nss_pvxlanmgr_warn("%px: Tunnel disable failed: %d\n", dev, ret);
 		dev_put(dev);
 		return ret;
 	}
 
 	ret = nss_pvxlanmgr_tunnel_tx_msg_disable(priv->pvxlan_ctx, priv->if_num_outer);
 	if (ret != NSS_TX_SUCCESS) {
-		nss_pvxlanmgr_warn("%p: Tunnel disable failed: %d\n", dev, ret);
+		nss_pvxlanmgr_warn("%px: Tunnel disable failed: %d\n", dev, ret);
 		nss_pvxlanmgr_tunnel_tx_msg_enable(priv->pvxlan_ctx, priv->if_num_host_inner, priv->if_num_outer);
 		dev_put(dev);
 		return ret;
@@ -409,17 +435,17 @@ nss_pvxlanmgr_status_t nss_pvxlanmgr_netdev_enable(struct net_device *dev)
 
 	dev_hold(dev);
 	priv = netdev_priv(dev);
-	nss_pvxlanmgr_info("%p: tunnel enable is being called\n", dev);
+	nss_pvxlanmgr_info("%px: tunnel enable is being called\n", dev);
 	ret = nss_pvxlanmgr_tunnel_tx_msg_enable(priv->pvxlan_ctx, priv->if_num_host_inner, priv->if_num_outer);
 	if (ret != NSS_TX_SUCCESS) {
-		nss_pvxlanmgr_warn("%p: Tunnel enable failed: %d\n", dev, ret);
+		nss_pvxlanmgr_warn("%px: Tunnel enable failed: %d\n", dev, ret);
 		dev_put(dev);
 		return ret;
 	}
 
 	ret = nss_pvxlanmgr_tunnel_tx_msg_enable(priv->pvxlan_ctx, priv->if_num_outer, priv->if_num_host_inner);
 	if (ret != NSS_TX_SUCCESS) {
-		nss_pvxlanmgr_warn("%p: Tunnel enable failed: %d\n", dev, ret);
+		nss_pvxlanmgr_warn("%px: Tunnel enable failed: %d\n", dev, ret);
 		nss_pvxlanmgr_tunnel_tx_msg_disable(priv->pvxlan_ctx, priv->if_num_host_inner);
 		dev_put(dev);
 		return ret;
@@ -451,7 +477,7 @@ nss_pvxlanmgr_status_t nss_pvxlanmgr_netdev_destroy(struct net_device *dev)
 	if_num_outer = priv->if_num_outer;
 
 	if (nss_cmn_unregister_queue_decongestion(priv->pvxlan_ctx, nss_pvxlanmgr_decongestion_callback) != NSS_CB_UNREGISTER_SUCCESS) {
-		nss_pvxlanmgr_warn("%p: failed to unregister decongestion callback\n", dev);
+		nss_pvxlanmgr_warn("%px: failed to unregister decongestion callback\n", dev);
 	}
 
 	/*
@@ -460,7 +486,7 @@ nss_pvxlanmgr_status_t nss_pvxlanmgr_netdev_destroy(struct net_device *dev)
 	for (i = 0; i < NSS_PVXLANMGR_MAX_TUNNELS; i++) {
 		t = nss_pvxlanmgr_tunnel_get(dev, i);
 		if (t) {
-			nss_pvxlanmgr_warn("%p: tunnel %d: exist during the destruction\n", dev, i);
+			nss_pvxlanmgr_warn("%px: tunnel %d: exist during the destruction\n", dev, i);
 			nss_pvxlanmgr_tunnel_destroy(dev, i);
 		}
 	}
@@ -471,7 +497,7 @@ nss_pvxlanmgr_status_t nss_pvxlanmgr_netdev_destroy(struct net_device *dev)
 	nss_pvxlanmgr_unregister_with_nss(if_num_host_inner);
 	nss_status = nss_dynamic_interface_dealloc_node(if_num_host_inner, NSS_DYNAMIC_INTERFACE_TYPE_PVXLAN_HOST_INNER);
 	if (nss_status != NSS_TX_SUCCESS) {
-		nss_pvxlanmgr_warn("%p: Dealloc of dynamic interface failed: %d\n",
+		nss_pvxlanmgr_warn("%px: Dealloc of dynamic interface failed: %d\n",
 			dev, if_num_host_inner);
 	}
 
@@ -481,7 +507,7 @@ nss_pvxlanmgr_status_t nss_pvxlanmgr_netdev_destroy(struct net_device *dev)
 	nss_pvxlanmgr_unregister_with_nss(if_num_outer);
 	nss_status = nss_dynamic_interface_dealloc_node(if_num_outer, NSS_DYNAMIC_INTERFACE_TYPE_PVXLAN_OUTER);
 	if (nss_status != NSS_TX_SUCCESS) {
-		nss_pvxlanmgr_warn("%p: Dealloc of dynamic interface failed for tunnel: %d\n",
+		nss_pvxlanmgr_warn("%px: Dealloc of dynamic interface failed for tunnel: %d\n",
 			dev, if_num_outer);
 	}
 
@@ -515,36 +541,36 @@ struct net_device *nss_pvxlanmgr_netdev_create()
 	priv = netdev_priv(dev);
 	priv->pvxlan_ctx = nss_pvxlan_get_ctx();
 	if (!priv->pvxlan_ctx) {
-		nss_pvxlanmgr_warn("%p: failed to find pvxlan context\n", dev);
+		nss_pvxlanmgr_warn("%px: failed to find pvxlan context\n", dev);
 		goto fail1;
 	}
 
 	priv->ipv4_ctx = nss_ipv4_get_mgr();
 	if (!priv->ipv4_ctx) {
-		nss_pvxlanmgr_warn("%p: failed to find IPv4 context\n", dev);
+		nss_pvxlanmgr_warn("%px: failed to find IPv4 context\n", dev);
 		goto fail1;
 	}
 
 	priv->ipv6_ctx = nss_ipv6_get_mgr();
 	if (!priv->ipv6_ctx) {
-		nss_pvxlanmgr_warn("%p: failed to find IPv6 context\n", dev);
+		nss_pvxlanmgr_warn("%px: failed to find IPv6 context\n", dev);
 		goto fail1;
 	}
 
 	priv->tunnel = kzalloc(sizeof(struct nss_pvxlanmgr_tunnel) * NSS_PVXLANMGR_MAX_TUNNELS, GFP_ATOMIC);
 	if (!priv->tunnel) {
-		nss_pvxlanmgr_warn("%p: failed to allocate tunnel memory\n", dev);
+		nss_pvxlanmgr_warn("%px: failed to allocate tunnel memory\n", dev);
 		goto fail1;
 	}
 
 	if (nss_cmn_register_queue_decongestion(priv->pvxlan_ctx, nss_pvxlanmgr_decongestion_callback, dev) != NSS_CB_REGISTER_SUCCESS) {
-		nss_pvxlanmgr_warn("%p: failed to register decongestion callback\n", dev);
+		nss_pvxlanmgr_warn("%px: failed to register decongestion callback\n", dev);
 		goto fail2;
 	}
 
 	pvxlan_if_num_host_inner = nss_dynamic_interface_alloc_node(NSS_DYNAMIC_INTERFACE_TYPE_PVXLAN_HOST_INNER);
 	if (pvxlan_if_num_host_inner < 0) {
-		nss_pvxlanmgr_warn("%p: di returned error : %d\n", dev, pvxlan_if_num_host_inner);
+		nss_pvxlanmgr_warn("%px: di returned error : %d\n", dev, pvxlan_if_num_host_inner);
 		goto fail3;
 	}
 
@@ -555,7 +581,7 @@ struct net_device *nss_pvxlanmgr_netdev_create()
 
 	pvxlan_if_num_outer = nss_dynamic_interface_alloc_node(NSS_DYNAMIC_INTERFACE_TYPE_PVXLAN_OUTER);
 	if (pvxlan_if_num_outer < 0) {
-		nss_pvxlanmgr_warn("%p: di returned error : %d\n", dev, pvxlan_if_num_outer);
+		nss_pvxlanmgr_warn("%px: di returned error : %d\n", dev, pvxlan_if_num_outer);
 		goto fail5;
 	}
 
@@ -600,13 +626,14 @@ EXPORT_SYMBOL(nss_pvxlanmgr_netdev_create);
 void __exit nss_pvxlanmgr_exit_module(void)
 {
 	int ret;
-
+#ifdef CONFIG_OF
 	/*
 	 * If the node is not compatible, don't do anything.
 	 */
 	if (!of_find_node_by_name(NULL, "nss-common")) {
 		return;
 	}
+#endif
 
 	ret = unregister_netdevice_notifier(&nss_pvxlanmgr_netdev_notifier);
 	if (!ret) {
@@ -623,12 +650,14 @@ void __exit nss_pvxlanmgr_exit_module(void)
 int __init nss_pvxlanmgr_init_module(void)
 {
 	int ret;
+#ifdef CONFIG_OF
 	/*
 	 * If the node is not compatible, don't do anything.
 	 */
 	if (!of_find_node_by_name(NULL, "nss-common")) {
 		return 0;
 	}
+#endif
 
 	nss_pvxlanmgr_info("module %s loaded\n",
 			   NSS_CLIENT_BUILD_ID);

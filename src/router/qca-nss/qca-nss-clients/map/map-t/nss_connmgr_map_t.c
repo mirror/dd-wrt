@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2016-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2016-2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -136,7 +136,7 @@ static void __maybe_unused nss_connmgr_map_t_dump_rules(struct net_device *dev _
 	}
 
 	for (i = 0; i < count; i++) {
-		nss_connmgr_map_t_info("%p: local.v4 %pI4/%d local.v6 %pI6c/%d local.style %s local.ea-len %d local.psid-offset %d remote.v4 %pI4/%d remote.v6 %pI6c/%d remote.style %s remote.ea-len %d remote.psid-offset %d\n", dev,
+		nss_connmgr_map_t_info("%px: local.v4 %pI4/%d local.v6 %pI6c/%d local.style %s local.ea-len %d local.psid-offset %d remote.v4 %pI4/%d remote.v6 %pI6c/%d remote.style %s remote.ea-len %d remote.psid-offset %d\n", dev,
 			 &apair->local.v4_pref,
 			 apair->local.v4_pref_len,
 			 &apair->local.v6_pref,
@@ -172,7 +172,7 @@ static void __maybe_unused nss_connmgr_map_t_dump_list(struct net_device *dev __
 	struct list_lookup_entry_t *entry;
 	list_for_each_entry(entry, head, list) {
 		struct nat46_xlate_rulepair *apair __maybe_unused = entry->ptr_rule_set;
-		nss_connmgr_map_t_info("%p: local.v4 %pI4/%d local.v6 %pI6c/%d local.style %s local.ea-len %d local.psid-offset %d remote.v4 %pI4/%d remote.v6 %pI6c/%d remote.style %s remote.ea-len %d remote.psid-offset %d\n", dev,
+		nss_connmgr_map_t_info("%px: local.v4 %pI4/%d local.v6 %pI6c/%d local.style %s local.ea-len %d local.psid-offset %d remote.v4 %pI4/%d remote.v6 %pI6c/%d remote.style %s remote.ea-len %d remote.psid-offset %d\n", dev,
 			&apair->local.v4_pref,
 			apair->local.v4_pref_len,
 			&apair->local.v6_pref,
@@ -245,7 +245,7 @@ static void nss_connmgr_map_t_allocate_all(struct net_device *dev, struct nat46_
 	entry = (struct list_dev_to_map_t_rules_entry_t *)
 					kmalloc(sizeof(struct list_dev_to_map_t_rules_entry_t), GFP_KERNEL);
 	if (!entry) {
-		nss_connmgr_map_t_warning("%p: Allocation for dev_to_map_t_rules_list_entry failed for netdev = %s\n", dev, dev->name);
+		nss_connmgr_map_t_warning("%px: Allocation for dev_to_map_t_rules_list_entry failed for netdev = %s\n", dev, dev->name);
 		nss_connmgr_map_t_free_all(dev);
 		return;
 	}
@@ -286,7 +286,7 @@ static bool nss_connmgr_mapt_validate_rule_style_mapt(struct net_device *dev, st
 	 * Validate rule parameters
 	 */
 	if (rule->ea_len < 0 || rule->ea_len > 48) {
-		nss_connmgr_map_t_warning("%p: mapt rule %d is invalid as ea_len < 0 or ea_len > 48\n", dev, rule_num);
+		nss_connmgr_map_t_warning("%px: mapt rule %d is invalid as ea_len < 0 or ea_len > 48\n", dev, rule_num);
 		*stats |= 1 << (is_local_rule ? MAP_T_LOCAL_EA_BITS_LEN_IS_INVALID : MAP_T_REMOTE_EA_BITS_LEN_IS_INVALID);
 		return false;
 	}
@@ -298,7 +298,7 @@ static bool nss_connmgr_mapt_validate_rule_style_mapt(struct net_device *dev, st
 	}
 
 	if (psid_len + rule->psid_offset > 16) {
-		nss_connmgr_map_t_warning("%p: mapt rule %d is invalid as psid offset + psid len > 16\n", dev, rule_num);
+		nss_connmgr_map_t_warning("%px: mapt rule %d is invalid as psid offset + psid len > 16\n", dev, rule_num);
 		*stats |= 1 << (is_local_rule ? MAP_T_LOCAL_PSID_LEN_PLUS_PSID_OFFSET_IS_GREATER_THAN_16 : MAP_T_REMOTE_PSID_LEN_PLUS_REMOTE_PSID_OFFSET_IS_GREATER_THAN_16);
 		return false;
 	}
@@ -315,7 +315,7 @@ static bool nss_connmgr_mapt_validate_rule_style_rfc6052(struct net_device *dev,
 	if (!(rule->v6_pref_len == 32 || rule->v6_pref_len == 40 ||
 	      rule->v6_pref_len == 48 || rule->v6_pref_len == 56 ||
 	      rule->v6_pref_len == 64 || rule->v6_pref_len == 96)) {
-		nss_connmgr_map_t_warning("%p: mapt rule %d is invalid as rfc6052 end user prefix is invalid\n", dev, rule_num);
+		nss_connmgr_map_t_warning("%px: mapt rule %d is invalid as rfc6052 end user prefix is invalid\n", dev, rule_num);
 		*stats |= 1 << (is_local_rule ? MAP_T_LOCAL_IPV6_PREFIX_LEN_IS_NOT_32_40_48_56_64_OR_96 : MAP_T_REMOTE_IPV6_PREFIX_LEN_IS_NOT_32_40_48_56_64_OR_96);
 		return false;
 	}
@@ -447,7 +447,7 @@ static void nss_connmgr_map_t_decap_exception(struct net_device *dev,
 	memcpy(&ip6_hdr_r.daddr, &ip6_hdr->saddr, sizeof(struct in6_addr));
 
 	if (unlikely(!xlate_6_to_4(dev, &ip6_hdr_r, ip6_hdr->nexthdr, &v4saddr, &v4daddr))) {  /* packet needs to be xlated v6 to v4 */
-		nss_connmgr_map_t_warning("%p: Martian ipv6 packet !!..free it. (saddr=%pI6c daddr=%pI6c)\n", dev,\
+		nss_connmgr_map_t_warning("%px: Martian ipv6 packet !!..free it. (saddr=%pI6c daddr=%pI6c)\n", dev,\
 					  &ip6_hdr->saddr, &ip6_hdr->daddr);
 		dev_kfree_skb_any(skb);
 		return;
@@ -466,7 +466,7 @@ static void nss_connmgr_map_t_decap_exception(struct net_device *dev,
 		const __be32 *fh_addr = skb_header_pointer(skb, sizeof(struct ipv6hdr), sizeof(struct frag_hdr), &tmp_fh);
 		skip_sz = sizeof(struct frag_hdr);
 		if (!fh_addr) {
-			nss_connmgr_map_t_warning("%p: Not able to offset to frag header while v6 -->v4 xlate\n", dev);
+			nss_connmgr_map_t_warning("%px: Not able to offset to frag header while v6 -->v4 xlate\n", dev);
 			dev_kfree_skb_any(skb);
 			return;
 		}
@@ -505,8 +505,8 @@ static void nss_connmgr_map_t_decap_exception(struct net_device *dev,
 	skb->ip_summed = CHECKSUM_NONE;
 	skb->dev = dev;
 
-	nss_connmgr_map_t_trace("%p: ipv6 packet exceptioned after v4 ---> v6 xlate, created original ipv4 packet\n", dev);
-	nss_connmgr_map_t_trace("%p: Calculated ipv4 params: src_addr=0x%x dest_addr=0x%x totallen=%d\n", dev, ip4_hdr->saddr, ip4_hdr->daddr, total_len);
+	nss_connmgr_map_t_trace("%px: ipv6 packet exceptioned after v4 ---> v6 xlate, created original ipv4 packet\n", dev);
+	nss_connmgr_map_t_trace("%px: Calculated ipv4 params: src_addr=0x%x dest_addr=0x%x totallen=%d\n", dev, ip4_hdr->saddr, ip4_hdr->daddr, total_len);
 
 	dev_queue_xmit(skb);
 	return;
@@ -515,6 +515,7 @@ static void nss_connmgr_map_t_decap_exception(struct net_device *dev,
 /*
  * nss_connmgr_map_t_encap_exception()
  *	Exception handler registered to NSS for handling map_t ipv4 pkts
+ *	Translates ipv4 packet back to ipv6 and send to nat46 device directly.
  */
 static void nss_connmgr_map_t_encap_exception(struct net_device *dev,
 			struct sk_buff *skb,
@@ -524,8 +525,8 @@ static void nss_connmgr_map_t_encap_exception(struct net_device *dev,
 	struct iphdr *ip4_hdr;
 	struct ipv6hdr *ip6_hdr;
 	uint8_t v6saddr[16], v6daddr[16];
-	struct tcphdr *v4_tcp_hdr = NULL;
-	struct udphdr *v4_udp_hdr = NULL;
+	struct tcphdr *tcph = NULL;
+	struct udphdr *udph = NULL;
 	struct iphdr ip4_hdr_r;
 	__be16 sport, dport;
 	uint8_t nexthdr, hop_limit, tos;
@@ -533,7 +534,8 @@ static void nss_connmgr_map_t_encap_exception(struct net_device *dev,
 	bool df_bit = false;
 	uint16_t append_hdr_sz = 0;
 	uint16_t identifier;
-
+	uint32_t l4_csum;
+	uint16_t csum;
 
 	/* discard L2 header */
 	skb_pull(skb, sizeof(struct ethhdr));
@@ -545,18 +547,26 @@ static void nss_connmgr_map_t_encap_exception(struct net_device *dev,
 	skb_set_transport_header(skb, ip4_hdr->ihl*4);
 
 	if (ip4_hdr->protocol == IPPROTO_TCP) {
-		v4_tcp_hdr = tcp_hdr(skb);
-		sport = v4_tcp_hdr->source;
-		dport = v4_tcp_hdr->dest;
+		tcph = tcp_hdr(skb);
+		l4_csum = tcph->check;
+		sport = tcph->source;
+		dport = tcph->dest;
 	} else if (ip4_hdr->protocol == IPPROTO_UDP) {
-		v4_udp_hdr = udp_hdr(skb);
-		sport = v4_udp_hdr->source;
-		dport = v4_udp_hdr->dest;
+		udph = udp_hdr(skb);
+		l4_csum = udph->check;
+		sport = udph->source;
+		dport = udph->dest;
 	} else {
-		nss_connmgr_map_t_warning("%p: Unsupported protocol, free it up\n", dev);
+		nss_connmgr_map_t_warning("%px: Unsupported protocol, free it up\n", dev);
 		dev_kfree_skb_any(skb);
 		return;
 	}
+
+	/*
+	 * Undo the checksum of the IPv4 source and destinationIPv4 address.
+	 */
+	csum = ip_compute_csum(&ip4_hdr->saddr, 2 * sizeof(ip4_hdr->saddr));
+	l4_csum += ((~csum) & 0xFFFF);
 
 	/*
 	 * IPv6 packet is xlated to ipv4 packet by acceleration engine. But there is no ipv4 rule.
@@ -568,7 +578,7 @@ static void nss_connmgr_map_t_encap_exception(struct net_device *dev,
 	ip4_hdr_r.saddr = ip4_hdr->daddr;
 
 	if (unlikely(!xlate_4_to_6(dev, &ip4_hdr_r, dport, sport, v6saddr, v6daddr))) { /* exception happened after packet got xlated */
-		nss_connmgr_map_t_warning("%p: Martian ipv4 packet !!..free it. (saddr = 0x%x daddr = 0x%x sport = %d dport = %d)\n", dev,\
+		nss_connmgr_map_t_warning("%px: Martian ipv4 packet !!..free it. (saddr = 0x%x daddr = 0x%x sport = %d dport = %d)\n", dev,\
 					  ip4_hdr->saddr, ip4_hdr->daddr, sport, dport);
 		dev_kfree_skb_any(skb);
 		return;
@@ -587,7 +597,7 @@ static void nss_connmgr_map_t_encap_exception(struct net_device *dev,
 	}
 
 	if (!pskb_may_pull(skb, sizeof(struct ipv6hdr) + append_hdr_sz - sizeof(struct iphdr))) {
-		nss_connmgr_map_t_warning("%p: Not enough headroom for ipv6 packet...Freeing the packet\n", dev);
+		nss_connmgr_map_t_warning("%px: Not enough headroom for ipv6 packet...Freeing the packet\n", dev);
 		dev_kfree_skb_any(skb);
 		return;
 	}
@@ -615,7 +625,7 @@ static void nss_connmgr_map_t_encap_exception(struct net_device *dev,
 		struct frag_hdr tmp_fh, *fh;
 		const __be32 *fh_addr = skb_header_pointer(skb, sizeof(struct ipv6hdr), sizeof(struct frag_hdr), &tmp_fh);
 		if (!fh_addr) {
-			nss_connmgr_map_t_warning("%p: Not able to offset to frag header\n", dev);
+			nss_connmgr_map_t_warning("%px: Not able to offset to frag header\n", dev);
 			dev_kfree_skb_any(skb);
 			return;
 		}
@@ -628,14 +638,30 @@ static void nss_connmgr_map_t_encap_exception(struct net_device *dev,
 
 	skb_set_transport_header(skb, sizeof(struct ipv6hdr) + append_hdr_sz);
 
+	/*
+	 * Add the checksum of the IPv6 source and destination address.
+	 */
+	l4_csum += ip_compute_csum(ip6_hdr->saddr.s6_addr16, 2 * sizeof(ip6_hdr->saddr));
+
+	/*
+	 * Fold the 32 bits checksum to 16 bits
+	 */
+	l4_csum = (l4_csum & 0x0000FFFF) + (l4_csum >> 16);
+	l4_csum = (l4_csum & 0x0000FFFF) + (l4_csum >> 16);
+
+	if (nexthdr == IPPROTO_TCP) {
+		tcph->check = (uint16_t)l4_csum;
+	} else {
+		udph->check = (uint16_t)l4_csum;
+	}
 
 	skb->pkt_type = PACKET_HOST;
 	skb->skb_iif = dev->ifindex;
 	skb->ip_summed = CHECKSUM_NONE;
 	skb->dev = dev;
 
-	nss_connmgr_map_t_trace("%p: ipv4 packet exceptioned after v6 ---> v4 xlate, created original ipv6 packet\n", dev);
-	nss_connmgr_map_t_trace("%p: Calculted ipv6 params: src_addr=%pI6, dest_addr=%pI6, payload_len=%d\n", dev, v6saddr, v6daddr, payload_len);
+	nss_connmgr_map_t_trace("%px: ipv4 packet exceptioned after v6 ---> v4 xlate, created original ipv6 packet\n", dev);
+	nss_connmgr_map_t_trace("%p: Calculted ipv6 params: src_addr=%pI6, dest_addr=%pI6, payload_len=%d, checksum=%x\n", dev, v6saddr, v6daddr, payload_len, l4_csum);
 
 	dev_queue_xmit(skb);
 	return;
@@ -678,7 +704,7 @@ static void nss_connmgr_map_t_event_receive(void *if_ctx, struct nss_map_t_msg *
 		break;
 
 	default:
-		nss_connmgr_map_t_info("%p: Unknown Event from NSS\n", netdev);
+		nss_connmgr_map_t_info("%px: Unknown Event from NSS\n", netdev);
 		break;
 	}
 }
@@ -703,7 +729,7 @@ static int nss_connmgr_map_t_dev_up(struct net_device *dev)
 	 * Get MAP-T interface's information.
 	 */
 	if (!nat46_get_info(dev, &rule_pairs, &rule_pair_count, &map_t_flags)) {
-		nss_connmgr_map_t_warning("%p: Failed to get ruleset on map-t netdevice (%s)\n", dev, dev->name);
+		nss_connmgr_map_t_warning("%px: Failed to get ruleset on map-t netdevice (%s)\n", dev, dev->name);
 		return NOTIFY_DONE;
 	}
 
@@ -713,12 +739,12 @@ static int nss_connmgr_map_t_dev_up(struct net_device *dev)
 	 */
 
 	if (rule_pair_count < MAP_T_MIN_NUM_RULES_PER_MAP_T_INSTANCE || rule_pair_count > MAP_T_MAX_NUM_RULES_PER_MAP_T_INSTANCE) {
-		nss_connmgr_map_t_warning("%p: No accleration supported if number of rules configured is %d\n", dev, rule_pair_count);
+		nss_connmgr_map_t_warning("%px: No accleration supported if number of rules configured is %d\n", dev, rule_pair_count);
 		return NOTIFY_DONE;
 	}
 
 	if (mapt_interfaces_count == NSS_MAX_MAP_T_DYNAMIC_INTERFACES) {
-		nss_connmgr_map_t_warning("%p: Max number of mapt interfaces supported is %d\n", dev, NSS_MAX_MAP_T_DYNAMIC_INTERFACES);
+		nss_connmgr_map_t_warning("%px: Max number of mapt interfaces supported is %d\n", dev, NSS_MAX_MAP_T_DYNAMIC_INTERFACES);
 		return NOTIFY_DONE;
 	}
 
@@ -727,20 +753,20 @@ static int nss_connmgr_map_t_dev_up(struct net_device *dev)
 	 */
 	if_inner = nss_dynamic_interface_alloc_node(NSS_DYNAMIC_INTERFACE_TYPE_MAP_T_INNER);
 	if (if_inner < 0) {
-		nss_connmgr_map_t_warning("%p: Request interface number failed\n", dev);
+		nss_connmgr_map_t_warning("%px: Request interface number failed\n", dev);
 		return NOTIFY_DONE;
 	}
-	nss_connmgr_map_t_info("%p: encap nss_dynamic_interface_alloc_node() successful. if_number = %d\n", dev, if_inner);
+	nss_connmgr_map_t_info("%px: encap nss_dynamic_interface_alloc_node() successful. if_number = %d\n", dev, if_inner);
 
 	/*
 	 * Create MAP-T outer dynamic interface
 	 */
 	if_outer = nss_dynamic_interface_alloc_node(NSS_DYNAMIC_INTERFACE_TYPE_MAP_T_OUTER);
 	if (if_outer < 0) {
-		nss_connmgr_map_t_warning("%p: Request interface number failed\n", dev);
+		nss_connmgr_map_t_warning("%px: Request interface number failed\n", dev);
 		goto outer_alloc_fail;
 	}
-	nss_connmgr_map_t_info("%p: decap nss_dynamic_interface_alloc_node() successful. if_number = %d\n", dev, if_outer);
+	nss_connmgr_map_t_info("%px: decap nss_dynamic_interface_alloc_node() successful. if_number = %d\n", dev, if_outer);
 
 	/*
 	 * Register MAP-T encap interface with NSS
@@ -753,10 +779,10 @@ static int nss_connmgr_map_t_dev_up(struct net_device *dev)
 			features);
 
 	if (!nss_ctx) {
-		nss_connmgr_map_t_warning("%p: encap nss_register_map_t_if failed\n", dev);
+		nss_connmgr_map_t_warning("%px: encap nss_register_map_t_if failed\n", dev);
 		goto inner_register_fail;
 	}
-	nss_connmgr_map_t_info("%p: encap nss_register_map_t_if() successful. nss_ctx = %p\n", dev, nss_ctx);
+	nss_connmgr_map_t_info("%px: encap nss_register_map_t_if() successful. nss_ctx = %px\n", dev, nss_ctx);
 
 	/*
 	 * Register MAP-T decap interface with NSS
@@ -769,7 +795,7 @@ static int nss_connmgr_map_t_dev_up(struct net_device *dev)
 			features);
 
 	if (!nss_ctx) {
-		nss_connmgr_map_t_warning("%p: decap nss_register_map_t_if failed\n", dev);
+		nss_connmgr_map_t_warning("%px: decap nss_register_map_t_if failed\n", dev);
 		goto outer_register_fail;
 	}
 
@@ -855,7 +881,7 @@ static int nss_connmgr_map_t_dev_up(struct net_device *dev)
 		nss_map_t_msg_init(&maptmsg, if_inner, NSS_MAP_T_MSG_INSTANCE_RULE_CONFIGURE, sizeof(struct nss_map_t_instance_rule_config_msg), NULL, NULL);
 		status = nss_map_t_tx_sync(nss_ctx, &maptmsg);
 		if (status != NSS_TX_SUCCESS) {
-			nss_connmgr_map_t_warning("%p: nss encap MAP-T instance configure command error %d\n", dev, status);
+			nss_connmgr_map_t_warning("%px: nss encap MAP-T instance configure command error %d\n", dev, status);
 
 			map_t_rule_validation_stats |= ((uint64_t)(1)) << (64 - MAPT_AE_ERR_CONFIGURE);
 			nss_connmgr_map_t_debugfs_set_rule_status(dev, i + 1, map_t_rule_validation_stats);
@@ -864,7 +890,7 @@ static int nss_connmgr_map_t_dev_up(struct net_device *dev)
 		}
 
 		nss_connmgr_map_t_debugfs_set_rule_status(dev, i + 1, map_t_rule_validation_stats);
-		nss_connmgr_map_t_info("%p: encap nss_map_t_tx() rule #%d configuration successful\n", dev, i + 1);
+		nss_connmgr_map_t_info("%px: encap nss_map_t_tx() rule #%d configuration successful\n", dev, i + 1);
 
 		/*
 		 * set the sibling interface number
@@ -877,7 +903,7 @@ static int nss_connmgr_map_t_dev_up(struct net_device *dev)
 		nss_map_t_msg_init(&maptmsg, if_outer, NSS_MAP_T_MSG_INSTANCE_RULE_CONFIGURE, sizeof(struct nss_map_t_instance_rule_config_msg), NULL, NULL);
 		status = nss_map_t_tx_sync(nss_ctx, &maptmsg);
 		if (status != NSS_TX_SUCCESS) {
-			nss_connmgr_map_t_warning("%p: nss decap MAP-T instance configure command error %d\n", dev, status);
+			nss_connmgr_map_t_warning("%px: nss decap MAP-T instance configure command error %d\n", dev, status);
 
 			map_t_rule_validation_stats |= ((uint64_t)(1)) << (64 - MAPT_AE_ERR_CONFIGURE);
 			nss_connmgr_map_t_debugfs_set_rule_status(dev, i + 1, map_t_rule_validation_stats);
@@ -886,14 +912,14 @@ static int nss_connmgr_map_t_dev_up(struct net_device *dev)
 		}
 
 		nss_connmgr_map_t_debugfs_set_rule_status(dev, i + 1, map_t_rule_validation_stats);
-		nss_connmgr_map_t_info("%p: decap nss_map_t_tx() rule #%d configuration successful\n", dev, i + 1);
+		nss_connmgr_map_t_info("%px: decap nss_map_t_tx() rule #%d configuration successful\n", dev, i + 1);
 	}
 
 	/*
 	 * Increment map-t interface count
 	 */
 	mapt_interfaces_count++;
-	nss_connmgr_map_t_info("%p: MAP-T interface count is #%d\n", dev, mapt_interfaces_count);
+	nss_connmgr_map_t_info("%px: MAP-T interface count is #%d\n", dev, mapt_interfaces_count);
 
 	return NOTIFY_DONE;
 
@@ -905,12 +931,12 @@ outer_register_fail:
 inner_register_fail:
 	status = nss_dynamic_interface_dealloc_node(if_outer, NSS_DYNAMIC_INTERFACE_TYPE_MAP_T_OUTER);
 	if (status != NSS_TX_SUCCESS) {
-		nss_connmgr_map_t_warning("%p: Unable to dealloc the decap node[%d] in the NSS FW!\n", dev, if_outer);
+		nss_connmgr_map_t_warning("%px: Unable to dealloc the decap node[%d] in the NSS FW!\n", dev, if_outer);
 	}
 outer_alloc_fail:
 	status = nss_dynamic_interface_dealloc_node(if_inner, NSS_DYNAMIC_INTERFACE_TYPE_MAP_T_INNER);
 	if (status != NSS_TX_SUCCESS) {
-		nss_connmgr_map_t_warning("%p: Unable to dealloc the encap node[%d] in the NSS FW!\n", dev, if_inner);
+		nss_connmgr_map_t_warning("%px: Unable to dealloc the encap node[%d] in the NSS FW!\n", dev, if_inner);
 	}
 	return NOTIFY_DONE;
 }
@@ -930,7 +956,7 @@ static int nss_connmgr_map_t_dev_down(struct net_device *dev)
 	 */
 	if_inner = nss_cmn_get_interface_number_by_dev_and_type(dev, NSS_DYNAMIC_INTERFACE_TYPE_MAP_T_INNER);
 	if (if_inner < 0) {
-		nss_connmgr_map_t_warning("%p: MAP-T encap net device is not registered with nss\n", dev);
+		nss_connmgr_map_t_warning("%px: MAP-T encap net device is not registered with nss\n", dev);
 		return NOTIFY_DONE;
 	}
 
@@ -939,7 +965,7 @@ static int nss_connmgr_map_t_dev_down(struct net_device *dev)
 	 */
 	if_outer = nss_cmn_get_interface_number_by_dev_and_type(dev, NSS_DYNAMIC_INTERFACE_TYPE_MAP_T_OUTER);
 	if (if_outer < 0) {
-		nss_connmgr_map_t_warning("%p: MAP-T decap net device is not registered with nss\n", dev);
+		nss_connmgr_map_t_warning("%px: MAP-T decap net device is not registered with nss\n", dev);
 		return NOTIFY_DONE;
 	}
 
@@ -958,7 +984,7 @@ static int nss_connmgr_map_t_dev_down(struct net_device *dev)
 	nss_map_t_msg_init(&maptmsg, if_inner, NSS_MAP_T_MSG_INSTANCE_RULE_DECONFIGURE, sizeof(struct nss_map_t_instance_rule_deconfig_msg), NULL, NULL);
 	status = nss_map_t_tx_sync(nss_map_t_get_context(), &maptmsg);
 	if (status != NSS_TX_SUCCESS) {
-		nss_connmgr_map_t_warning("%p: map_t encap instance deconfigure command failed, if_number = %d\n", dev, if_inner);
+		nss_connmgr_map_t_warning("%px: map_t encap instance deconfigure command failed, if_number = %d\n", dev, if_inner);
 		return NOTIFY_DONE;
 	}
 
@@ -972,7 +998,7 @@ static int nss_connmgr_map_t_dev_down(struct net_device *dev)
 	nss_map_t_msg_init(&maptmsg, if_outer, NSS_MAP_T_MSG_INSTANCE_RULE_DECONFIGURE, sizeof(struct nss_map_t_instance_rule_deconfig_msg), NULL, NULL);
 	status = nss_map_t_tx_sync(nss_map_t_get_context(), &maptmsg);
 	if (status != NSS_TX_SUCCESS) {
-		nss_connmgr_map_t_warning("%p: map_t decap instance deconfigure command failed, if_number = %d\n", dev, if_outer);
+		nss_connmgr_map_t_warning("%px: map_t decap instance deconfigure command failed, if_number = %d\n", dev, if_outer);
 		return NOTIFY_DONE;
 	}
 
@@ -981,23 +1007,23 @@ static int nss_connmgr_map_t_dev_down(struct net_device *dev)
 
 	status = nss_dynamic_interface_dealloc_node(if_inner, NSS_DYNAMIC_INTERFACE_TYPE_MAP_T_INNER);
 	if (status != NSS_TX_SUCCESS) {
-		nss_connmgr_map_t_warning("%p: map_t encap dealloc node failure for if_number = %d\n", dev, if_inner);
+		nss_connmgr_map_t_warning("%px: map_t encap dealloc node failure for if_number = %d\n", dev, if_inner);
 		return NOTIFY_DONE;
 	}
-	nss_connmgr_map_t_info("%p: deleted map_t encap instance, if_number = %d\n", dev, if_inner);
+	nss_connmgr_map_t_info("%px: deleted map_t encap instance, if_number = %d\n", dev, if_inner);
 
 	status = nss_dynamic_interface_dealloc_node(if_outer, NSS_DYNAMIC_INTERFACE_TYPE_MAP_T_OUTER);
 	if (status != NSS_TX_SUCCESS) {
-		nss_connmgr_map_t_warning("%p: map_t decap dealloc node failure for if_number = %d\n", dev, if_outer);
+		nss_connmgr_map_t_warning("%px: map_t decap dealloc node failure for if_number = %d\n", dev, if_outer);
 		return NOTIFY_DONE;
 	}
-	nss_connmgr_map_t_info("%p: deleted map_t decap instance, if_number = %d\n", dev, if_outer);
+	nss_connmgr_map_t_info("%px: deleted map_t decap instance, if_number = %d\n", dev, if_outer);
 
 	/*
 	 * Decrement interface count
 	 */
 	mapt_interfaces_count--;
-	nss_connmgr_map_t_info("%p: MAP-T interface count is #%d\n", dev, mapt_interfaces_count);
+	nss_connmgr_map_t_info("%px: MAP-T interface count is #%d\n", dev, mapt_interfaces_count);
 
 	return NOTIFY_DONE;
 }

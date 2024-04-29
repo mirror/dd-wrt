@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2018, 2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -157,7 +157,7 @@ static void nss_wifili_log_init_msg(struct nss_wifili_msg *nwm)
 {
 	struct nss_wifili_init_msg *nwim __maybe_unused = &nwm->msg.init;
 	int32_t i;
-	nss_trace("%p: NSS WIFILI Init Message:\n"
+	nss_trace("%px: NSS WIFILI Init Message:\n"
 		"WIFILI HAL Source Ring Base Address: %x\n"
 		"WIFILI HAL Source Ring Shadow Read Pointer Address: %x\n"
 		"WIFILI HAL Source Ring Shadow Write Pointer Address: %x\n"
@@ -210,7 +210,7 @@ static void nss_wifili_log_init_msg(struct nss_wifili_msg *nwm)
 static void nss_wifili_log_pdev_init_msg(struct nss_wifili_msg *nwm)
 {
 	struct nss_wifili_pdev_init_msg *nwim __maybe_unused = &nwm->msg.pdevmsg;
-	nss_trace("%p: NSS WIFILI PDEV Init Message:\n"
+	nss_trace("%px: NSS WIFILI PDEV Init Message:\n"
 		"WIFILI Radio ID: %x\n"
 		"WIFILI MAC Hardware Mode: %d\n"
 		"WIFILI Lower MAC ID: %x\n",
@@ -230,7 +230,7 @@ static void nss_wifili_log_pdev_init_msg(struct nss_wifili_msg *nwm)
 static void nss_wifili_log_pdev_deinit_msg(struct nss_wifili_msg *nwm)
 {
 	struct nss_wifili_pdev_deinit_msg *nwim __maybe_unused = &nwm->msg.pdevdeinit;
-	nss_trace("%p: NSS WIFILI PDEV Deinit Message:\n"
+	nss_trace("%px: NSS WIFILI PDEV Deinit Message:\n"
 		"WIFILI Interface Number: %d\n",
 		nwim, nwim->ifnum);
 }
@@ -242,7 +242,7 @@ static void nss_wifili_log_pdev_deinit_msg(struct nss_wifili_msg *nwm)
 static void nss_wifili_log_peer_msg(struct nss_wifili_msg *nwm)
 {
 	struct nss_wifili_peer_msg *nwim __maybe_unused = &nwm->msg.peermsg;
-	nss_trace("%p: NSS WIFILI Peer Message:\n"
+	nss_trace("%px: NSS WIFILI Peer Message:\n"
 		"WIFILI Peer MAC Address: %pM\n"
 		"WIFILI VAP ID: %d\n"
 		"WIFILI Peed ID: %d\n"
@@ -262,7 +262,7 @@ static void nss_wifili_log_peer_msg(struct nss_wifili_msg *nwm)
 static void nss_wifili_log_peer_freelist_append_msg(struct nss_wifili_msg *nwm)
 {
 	struct nss_wifili_peer_freelist_append_msg *nwim __maybe_unused = &nwm->msg.peer_freelist_append;
-	nss_trace("%p: NSS WIFILI Peer Memory Request Message:\n"
+	nss_trace("%px: NSS WIFILI Peer Memory Request Message:\n"
 		"WIFILI Starting Address of Freelist: %x\n"
 		"WIFILI Length: %d\n"
 		"WIFILI Maximum number of peer entries supported in pool: %d\n",
@@ -277,7 +277,7 @@ static void nss_wifili_log_peer_freelist_append_msg(struct nss_wifili_msg *nwm)
 static void nss_wifili_log_wds_peer_msg(struct nss_wifili_msg *nwm)
 {
 	struct nss_wifili_wds_peer_msg *nwim __maybe_unused = &nwm->msg.wdspeermsg;
-	nss_trace("%p: NSS WIFILI WDS Peer Message:\n"
+	nss_trace("%px: NSS WIFILI WDS Peer Message:\n"
 		"WIFILI Destination MAC: %pM\n"
 		"WIFILI Peer MAC: %pM\n",
 		nwim, nwim->dest_mac, nwim->peer_mac);
@@ -290,7 +290,7 @@ static void nss_wifili_log_wds_peer_msg(struct nss_wifili_msg *nwm)
 static void nss_wifili_log_wds_active_info_msg(struct nss_wifili_msg *nwm)
 {
 	struct nss_wifili_wds_active_info_msg *nwim __maybe_unused = &nwm->msg.wdsinfomsg;
-	nss_trace("%p: NSS WIFILI WDS Active Info Message:\n"
+	nss_trace("%px: NSS WIFILI WDS Active Info Message:\n"
 		"WIFILI Number OF Entries: %d\n"
 		"WIFILI Hardware AST Index: %d\n",
 		nwim, nwim->nentries, nwim->info[0].ast_idx);
@@ -303,7 +303,7 @@ static void nss_wifili_log_wds_active_info_msg(struct nss_wifili_msg *nwm)
 static void nss_wifili_log_stats_cfg_msg(struct nss_wifili_msg *nwm)
 {
 	struct nss_wifili_stats_cfg_msg *nwim __maybe_unused = &nwm->msg.scm;
-	nss_trace("%p: NSS WIFILI Stats Config Message:\n"
+	nss_trace("%px: NSS WIFILI Stats Config Message:\n"
 		"WIFILI Enable/Disable Config: %d\n",
 		nwim, nwim->cfg);
 }
@@ -315,7 +315,7 @@ static void nss_wifili_log_stats_cfg_msg(struct nss_wifili_msg *nwm)
 static void nss_wifili_log_reo_tidq_msg(struct nss_wifili_msg *nwm)
 {
 	struct nss_wifili_reo_tidq_msg *nwim __maybe_unused = &nwm->msg.reotidqmsg;
-	nss_trace("%p: NSS WIFILI reo tidq setup Message:\n"
+	nss_trace("%px: NSS WIFILI reo tidq setup Message:\n"
 		"WIFILI Traffic Identification Value: %d\n"
 		"WIFILI Peer ID: %d\n",
 		nwim, nwim->tid, nwim->peer_id);
@@ -328,7 +328,7 @@ static void nss_wifili_log_reo_tidq_msg(struct nss_wifili_msg *nwm)
 static void nss_wifili_log_radio_cfg_msg(struct nss_wifili_msg *nwm)
 {
 	struct nss_wifili_radio_cfg_msg *nwim __maybe_unused = &nwm->msg.radiocfgmsg;
-	nss_trace("%p: NSS WIFILI Radio Command Message:\n"
+	nss_trace("%px: NSS WIFILI Radio Command Message:\n"
 		"WIFILI Radio Interface Number %d\n",
 		nwim, nwim->radio_if_num);
 }
@@ -340,7 +340,7 @@ static void nss_wifili_log_radio_cfg_msg(struct nss_wifili_msg *nwm)
 static void nss_wifili_log_wds_extn_peer_cfg_msg(struct nss_wifili_msg *nwm)
 {
 	struct nss_wifili_wds_extn_peer_cfg_msg *nwim __maybe_unused = &nwm->msg.wpeercfg;
-	nss_trace("%p: NSS WIFILI WDS vendor extension configuration message:\n"
+	nss_trace("%px: NSS WIFILI WDS vendor extension configuration message:\n"
 		"WIFILI Peer MAC Addr: %pM\n"
 		"WIFILI WDS Flags: %d\n"
 		"WIFILI Peer ID: %d\n",
@@ -355,7 +355,7 @@ static void nss_wifili_log_wds_extn_peer_cfg_msg(struct nss_wifili_msg *nwm)
 static void nss_wifili_log_soc_linkdesc_buf_info_msg(struct nss_wifili_msg *nwm)
 {
 	struct nss_wifili_soc_linkdesc_buf_info_msg *nwim __maybe_unused = &nwm->msg.linkdescinfomsg;
-	nss_trace("%p: NSS WIFILI Link descriptor buffer address information:\n"
+	nss_trace("%px: NSS WIFILI Link descriptor buffer address information:\n"
 		"WIFILI Link Descriptor Low Address: %x\n"
 		"WIFILI Link Descriptor High Address: %x\n",
 		nwim, nwim->buffer_addr_low,
@@ -370,7 +370,7 @@ static void nss_wifili_log_peer_security_msg(struct nss_wifili_msg *nwm)
 {
 	struct nss_wifili_peer_security_type_msg *nwim __maybe_unused = &nwm->msg.securitymsg;
 	int32_t i;
-	nss_trace("%p: NSS WIFILI Peer Security Message:\n"
+	nss_trace("%px: NSS WIFILI Peer Security Message:\n"
 		"WIFILI Peer ID: %d\n"
 		"WIFILI Packet Type: %d\n"
 		"WIFILI Security Type: %d\n",
@@ -392,7 +392,7 @@ static void nss_wifili_log_peer_security_msg(struct nss_wifili_msg *nwm)
 static void nss_wifili_log_peer_nawds_enable_msg(struct nss_wifili_msg *nwm)
 {
 	struct nss_wifili_peer_nawds_enable_msg *nwim __maybe_unused = &nwm->msg.nawdsmsg;
-	nss_trace("%p: NSS WIFILI NAWDS enable for peer:\n"
+	nss_trace("%px: NSS WIFILI NAWDS enable for peer:\n"
 		"WIFILI Peer ID: %d\n"
 		"WIFILI Enable NAWDS: %d\n",
 		nwim, nwim->peer_id, nwim->is_nawds);
@@ -405,7 +405,7 @@ static void nss_wifili_log_peer_nawds_enable_msg(struct nss_wifili_msg *nwm)
 static void nss_wifili_log_dbdc_repeater_set_msg(struct nss_wifili_msg *nwm)
 {
 	struct nss_wifili_dbdc_repeater_set_msg *nwim __maybe_unused = &nwm->msg.dbdcrptrmsg;
-	nss_trace("%p: NSS WIFILI DBDC Repeater Enable Message:\n"
+	nss_trace("%px: NSS WIFILI DBDC Repeater Enable Message:\n"
 		"WIFILI DBDC Enable Flag: %d\n",
 		nwim, nwim->is_dbdc_en);
 }
@@ -497,7 +497,7 @@ static void nss_wifili_log_verbose(struct nss_wifili_msg *nwm)
 		break;
 
 	default:
-		nss_warning("%p: Invalid message type\n", nwm);
+		nss_warning("%px: Invalid message type\n", nwm);
 		break;
 	}
 }
@@ -509,11 +509,11 @@ static void nss_wifili_log_verbose(struct nss_wifili_msg *nwm)
 void nss_wifili_log_tx_msg(struct nss_wifili_msg *nwm)
 {
 	if (nwm->cm.type >= NSS_WIFILI_MAX_MSG) {
-		nss_warning("%p: Invalid message type\n", nwm);
+		nss_warning("%px: Invalid message type\n", nwm);
 		return;
 	}
 
-	nss_info("%p: type[%d]:%s\n", nwm, nwm->cm.type, nss_wifili_log_message_types_str[nwm->cm.type]);
+	nss_info("%px: type[%d]:%s\n", nwm, nwm->cm.type, nss_wifili_log_message_types_str[nwm->cm.type]);
 	nss_wifili_log_verbose(nwm);
 }
 
@@ -524,26 +524,26 @@ void nss_wifili_log_tx_msg(struct nss_wifili_msg *nwm)
 void nss_wifili_log_rx_msg(struct nss_wifili_msg *nwm)
 {
 	if (nwm->cm.response >= NSS_CMN_RESPONSE_LAST) {
-		nss_warning("%p: Invalid response\n", nwm);
+		nss_warning("%px: Invalid response\n", nwm);
 		return;
 	}
 
 	if (nwm->cm.response == NSS_CMN_RESPONSE_NOTIFY || (nwm->cm.response == NSS_CMN_RESPONSE_ACK)) {
-		nss_info("%p: type[%d]:%s, response[%d]:%s\n", nwm, nwm->cm.type,
+		nss_info("%px: type[%d]:%s, response[%d]:%s\n", nwm, nwm->cm.type,
 			nss_wifili_log_message_types_str[nwm->cm.type],
 			nwm->cm.response, nss_cmn_response_str[nwm->cm.response]);
 		goto verbose;
 	}
 
 	if (nwm->cm.error >= NSS_WIFILI_EMSG_UNKNOWN) {
-		nss_warning("%p: msg failure - type[%d]:%s, response[%d]:%s, error[%d]:Invalid error\n",
+		nss_warning("%px: msg failure - type[%d]:%s, response[%d]:%s, error[%d]:Invalid error\n",
 			nwm, nwm->cm.type, nss_wifili_log_message_types_str[nwm->cm.type],
 			nwm->cm.response, nss_cmn_response_str[nwm->cm.response],
 			nwm->cm.error);
 		goto verbose;
 	}
 
-	nss_info("%p: msg nack - type[%d]:%s, response[%d]:%s, error[%d]:%s\n",
+	nss_info("%px: msg nack - type[%d]:%s, response[%d]:%s, error[%d]:%s\n",
 		nwm, nwm->cm.type, nss_wifili_log_message_types_str[nwm->cm.type],
 		nwm->cm.response, nss_cmn_response_str[nwm->cm.response],
 		nwm->cm.error, nss_wifili_log_error_response_types_str[nwm->cm.error]);

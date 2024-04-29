@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2018-2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -66,6 +66,28 @@ enum nss_c2c_tx_test_type {
 			/**< Maximum message type. */
 };
 
+/**
+ * nss_c2c_tx_stats_types
+ *	Core-to-core transmission node statistics.
+ */
+enum nss_c2c_tx_stats_types {
+	NSS_C2C_TX_STATS_PBUF_SIMPLE = NSS_STATS_NODE_MAX,
+						/**< Number of received simple pbuf. */
+	NSS_C2C_TX_STATS_PBUF_SG,		/**< Number of scatter-gather pbuf received. */
+	NSS_C2C_TX_STATS_PBUF_RETURNING,	/**< Number of returning scatter-gather pbuf. */
+	NSS_C2C_TX_STATS_MAX,			/**< Maximum message type. */
+};
+
+/**
+ * nss_c2c_tx_stats_notification
+ *	Core-to-core transmission statistics structure.
+ */
+struct nss_c2c_tx_stats_notification {
+	uint32_t core_id;			/**< Core ID. */
+	uint64_t stats[NSS_C2C_TX_STATS_MAX];	/**< Core-to-core transmission statistics. */
+};
+
+#ifdef __KERNEL__ /* only kernel will use. */
 /**
  * nss_c2c_tx_map
  *	Core-to-core transmission queue address and interrupt address.
@@ -249,6 +271,35 @@ extern void nss_c2c_tx_unregister_sysctl(void);
  * None.
  */
 void nss_c2c_tx_init(void);
+
+/**
+ * nss_c2c_tx_stats_register_notifier
+ *	Registers a statistics notifier.
+ *
+ * @datatypes
+ * notifier_block
+ *
+ * @param[in] nb Notifier block.
+ *
+ * @return
+ * 0 on success or -2 on failure.
+ */
+extern int nss_c2c_tx_stats_register_notifier(struct notifier_block *nb);
+
+/**
+ * nss_c2c_tx_stats_unregister_notifier
+ *	Deregisters a statistics notifier.
+ *
+ * @datatypes
+ * notifier_block
+ *
+ * @param[in] nb Notifier block.
+ *
+ * @return
+ * 0 on success or -2 on failure.
+ */
+extern int nss_c2c_tx_stats_unregister_notifier(struct notifier_block *nb);
+#endif /*__KERNEL__ */
 
 /**
  * @}

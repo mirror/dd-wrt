@@ -1,9 +1,12 @@
 /*
  **************************************************************************
- * Copyright (c) 2014-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2014-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
+ *
  * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
  * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
  * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
@@ -87,7 +90,17 @@ void ecm_db_node_ref(struct ecm_db_node_instance *ni);
 int ecm_db_node_deref(struct ecm_db_node_instance *ni);
 
 #ifdef ECM_DB_XREF_ENABLE
-void ecm_db_traverse_node_connection_list_and_defunct(struct ecm_db_node_instance *node, ecm_db_obj_dir_t dir);
+void ecm_db_traverse_node_connection_list_and_defunct(struct ecm_db_node_instance *node, ecm_db_obj_dir_t dir,
+							int ip_version, ecm_db_connection_defunct_type_t event);
+
+#ifdef ECM_INTERFACE_OVS_BRIDGE_ENABLE
+void ecm_db_node_ovs_routed_connections_defunct(uint8_t *node_mac,
+						struct net_device *ovs_br,
+						int ip_version,
+						ecm_db_obj_dir_t dir);
+void ecm_db_traverse_snode_dnode_connection_list_and_defunct(
+	struct ecm_db_node_instance *sni, uint8_t *dmac, int ip_version, ecm_db_obj_dir_t dir);
+#endif
 #endif
 
 void ecm_db_node_adress_get(struct ecm_db_node_instance *ni, uint8_t *address_buffer);
@@ -115,6 +128,13 @@ int ecm_db_node_hash_table_lengths_get(int index);
 int ecm_db_node_hash_index_get_next(int index);
 int ecm_db_node_hash_index_get_first(void);
 #endif
+
+int ecm_db_node_get_connections_count(struct ecm_db_node_instance *ni, ecm_db_obj_dir_t dir);
+
+void ecm_db_node_ovs_connections_masked_defunct(int ip_ver, uint8_t *src_mac, bool src_mac_check, ip_addr_t src_addr_mask,
+							uint16_t src_port_mask, uint8_t *dest_mac, bool dest_mac_check,
+							ip_addr_t dest_addr_mask, uint16_t dest_port_mask,
+							int proto_mask, ecm_db_obj_dir_t dir, bool is_routed);
 
 bool ecm_db_node_init(struct dentry *dentry);
 void ecm_db_node_exit(void);

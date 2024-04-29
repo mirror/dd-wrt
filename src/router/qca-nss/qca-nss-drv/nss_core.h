@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2013-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2013-2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -39,17 +39,9 @@
 #include "nss_hlos_if.h"
 #include "nss_oam.h"
 #include "nss_data_plane.h"
-#include "nss_stats.h"
+#include "nss_gmac_stats.h"
 #include "nss_meminfo.h"
-
-/*
- * XXX:can't add this to api_if.h till the deprecated
- * API(s) are present. Once, thats removed we will move it
- * to this file
- */
-#include "nss_ipsec.h"
-#include "nss_ipsec_cmn.h"
-#include "nss_crypto.h"
+#include "nss_stats.h"
 
 /*
  * NSS debug macros
@@ -94,13 +86,17 @@
 #endif
 
 #if (NSS_PKT_STATS_ENABLED == 1)
-#define NSS_PKT_STATS_INCREMENT(nss_ctx, x) nss_pkt_stats_increment((nss_ctx), (x))
-#define NSS_PKT_STATS_DECREMENT(nss_ctx, x) nss_pkt_stats_decrement((nss_ctx), (x))
+#define NSS_PKT_STATS_INC(x) nss_pkt_stats_inc((x))
+#define NSS_PKT_STATS_DEC(x) nss_pkt_stats_dec((x))
+#define NSS_PKT_STATS_ADD(x, i) nss_pkt_stats_add((x), (i))
+#define NSS_PKT_STATS_SUB(x, i) nss_pkt_stats_sub((x), (i))
 #define NSS_PKT_STATS_READ(x) nss_pkt_stats_read(x)
 #else
-#define NSS_PKT_STATS_INCREMENT(nss_ctx, x)
-#define NSS_PKT_STATS_DECREMENT(nss_ctx, x)
-#define NSS_PKT_STATS_READ(x) (0)
+#define NSS_PKT_STATS_INC(x)
+#define NSS_PKT_STATS_DEC(x)
+#define NSS_PKT_STATS_ADD(x, i)
+#define NSS_PKT_STATS_SUB(x, i)
+#define NSS_PKT_STATS_READ(x)
 #endif
 
 /*
@@ -129,13 +125,6 @@ static inline void nss_core_dma_cache_maint(void *start, uint32_t size, int dire
 		BUG();
 	}
 }
-
-/*
- * NSS max values supported
- */
-#define NSS_MAX_CORES 2
-#define NSS_MAX_DEVICE_INTERFACES (NSS_MAX_PHYSICAL_INTERFACES + NSS_MAX_VIRTUAL_INTERFACES + NSS_MAX_TUNNEL_INTERFACES + NSS_MAX_DYNAMIC_INTERFACES)
-#define NSS_MAX_NET_INTERFACES (NSS_MAX_DEVICE_INTERFACES + NSS_MAX_SPECIAL_INTERFACES)
 
 #define NSS_DEVICE_IF_START NSS_PHYSICAL_IF_START
 
@@ -169,6 +158,7 @@ static inline void nss_core_dma_cache_maint(void *start, uint32_t size, int dire
 #define NSS_INTR_CAUSE_QUEUE 1
 #define NSS_INTR_CAUSE_NON_QUEUE 2
 #define NSS_INTR_CAUSE_EMERGENCY 3
+#define NSS_INTR_CAUSE_SDMA 4
 
 /*
  * NSS Core Status
@@ -198,7 +188,9 @@ static inline void nss_core_dma_cache_maint(void *start, uint32_t size, int dire
  */
 #if defined(NSS_HAL_IPQ807x_SUPPORT) || defined(NSS_HAL_IPQ60XX_SUPPORT)
 #define NSS_MAX_IRQ_PER_INSTANCE 6
-#define NSS_MAX_IRQ_PER_CORE 9
+#define NSS_MAX_IRQ_PER_CORE 10	/* must match with NSS_HAL_N2H_INTR_PURPOSE_MAX */
+#elif defined(NSS_HAL_IPQ50XX_SUPPORT)
+#define NSS_MAX_IRQ_PER_CORE 8
 #else
 #define NSS_MAX_IRQ_PER_INSTANCE 1
 #define NSS_MAX_IRQ_PER_CORE 2
@@ -240,13 +232,20 @@ static inline void nss_core_dma_cache_maint(void *start, uint32_t size, int dire
  * INFO: The LOW and MAX value together describe the "performance" band that we should operate the frequency at.
  *
  */
+#define NSS_FREQ_SCALE_NA	0xFAADFAAD	/* Frequency scale not supported */
+
 #define NSS_FREQ_110		110000000	/* Frequency in hz */
 #define NSS_FREQ_110_MIN	0x03000		/* Instructions Per ms Min */
 #define NSS_FREQ_110_MAX	0x07000		/* Instructions Per ms Max */
 
 #define NSS_FREQ_187		187200000	/* Frequency in hz */
+#if defined(NSS_HAL_IPQ60XX_SUPPORT)
+#define NSS_FREQ_187_MIN	0x03000		/* Instructions Per ms Min */
+#define NSS_FREQ_187_MAX	0x10000		/* Instructions Per ms Max */
+#else
 #define NSS_FREQ_187_MIN	0x03000		/* Instructions Per ms Min */
 #define NSS_FREQ_187_MAX	0x07000		/* Instructions Per ms Max */
+#endif
 
 #define NSS_FREQ_275		275000000	/* Frequency in hz */
 #define NSS_FREQ_275_MIN	0x03000		/* Instructions Per ms Min */
@@ -265,16 +264,26 @@ static inline void nss_core_dma_cache_maint(void *start, uint32_t size, int dire
 #define NSS_FREQ_733_MAX	0x25000		/* Instructions Per ms Max */
 
 #define NSS_FREQ_748		748800000	/* Frequency in hz */
+#if defined(NSS_HAL_IPQ60XX_SUPPORT)
+#define NSS_FREQ_748_MIN	0x10000		/* Instructions Per ms Min */
+#define NSS_FREQ_748_MAX	0x18000		/* Instructions Per ms Max */
+#else
 #define NSS_FREQ_748_MIN	0x07000		/* Instructions Per ms Min */
 #define NSS_FREQ_748_MAX	0x14000		/* Instructions Per ms Max */
+#endif
 
 #define NSS_FREQ_800		800000000	/* Frequency in hz */
 #define NSS_FREQ_800_MIN	0x07000		/* Instructions Per ms Min */
 #define NSS_FREQ_800_MAX	0x25000		/* Instructions Per ms Max */
 
 #define NSS_FREQ_1497		1497600000	/* Frequency in hz */
+#if defined(NSS_HAL_IPQ60XX_SUPPORT)
+#define NSS_FREQ_1497_MIN	0x18000		/* Instructions Per ms Min */
+#define NSS_FREQ_1497_MAX	0x25000		/* Instructions Per ms Max */
+#else
 #define NSS_FREQ_1497_MIN	0x14000		/* Instructions Per ms Min */
 #define NSS_FREQ_1497_MAX	0x25000		/* Instructions Per ms Max */
+#endif
 
 #define NSS_FREQ_1689		1689600000	/* Frequency in hz */
 #define NSS_FREQ_1689_MIN	0x14000		/* Instructions Per ms Min */
@@ -310,68 +319,6 @@ static inline void nss_core_dma_cache_maint(void *start, uint32_t size, int dire
  * Gives us important data from NSS platform data
  */
 extern struct nss_top_instance nss_top_main;
-
-/*
- * HLOS driver statistics
- *
- * WARNING: There is a 1:1 mapping between values below and corresponding
- *	stats string array in nss_stats.c
- */
-enum nss_stats_drv {
-	NSS_STATS_DRV_NBUF_ALLOC_FAILS = 0,	/* NBUF allocation errors */
-	NSS_STATS_DRV_PAGED_BUF_ALLOC_FAILS,	/* Paged buf allocation errors */
-	NSS_STATS_DRV_TX_QUEUE_FULL_0,		/* Tx queue full for Core 0*/
-	NSS_STATS_DRV_TX_QUEUE_FULL_1,		/* Tx queue full for Core 1*/
-	NSS_STATS_DRV_TX_EMPTY,			/* H2N Empty buffers */
-	NSS_STATS_DRV_PAGED_TX_EMPTY,		/* H2N Paged Empty buffers */
-	NSS_STATS_DRV_TX_PACKET,		/* H2N Data packets */
-	NSS_STATS_DRV_TX_CMD_REQ,		/* H2N Control packets */
-	NSS_STATS_DRV_TX_CRYPTO_REQ,		/* H2N Crypto requests */
-	NSS_STATS_DRV_TX_BUFFER_REUSE,		/* H2N Reuse buffer count */
-	NSS_STATS_DRV_RX_EMPTY,			/* N2H Empty buffers */
-	NSS_STATS_DRV_RX_PACKET,		/* N2H Data packets */
-	NSS_STATS_DRV_RX_CMD_RESP,		/* N2H Command responses */
-	NSS_STATS_DRV_RX_STATUS,		/* N2H Status packets */
-	NSS_STATS_DRV_RX_CRYPTO_RESP,		/* N2H Crypto responses */
-	NSS_STATS_DRV_RX_VIRTUAL,		/* N2H Virtual packets */
-	NSS_STATS_DRV_TX_SIMPLE,		/* H2N Simple SKB Packets */
-	NSS_STATS_DRV_TX_NR_FRAGS,		/* H2N NR Frags SKB Packets */
-	NSS_STATS_DRV_TX_FRAGLIST,		/* H2N Fraglist SKB Packets */
-	NSS_STATS_DRV_RX_SIMPLE,		/* N2H Simple SKB Packets */
-	NSS_STATS_DRV_RX_NR_FRAGS,		/* N2H NR Frags SKB Packets */
-	NSS_STATS_DRV_RX_SKB_FRAGLIST,		/* N2H Fraglist SKB Packets */
-	NSS_STATS_DRV_RX_BAD_DESCRIPTOR,	/* N2H Bad descriptor reads */
-	NSS_STATS_DRV_NSS_SKB_COUNT,		/* NSS SKB Pool Count */
-	NSS_STATS_DRV_CHAIN_SEG_PROCESSED,	/* N2H SKB Chain Processed Count */
-	NSS_STATS_DRV_FRAG_SEG_PROCESSED,	/* N2H Frag Processed Count */
-	NSS_STATS_DRV_TX_CMD_QUEUE_FULL,	/* Tx H2N Control packets fail due to queue full */
-#ifdef NSS_MULTI_H2N_DATA_RING_SUPPORT
-	NSS_STATS_DRV_TX_PACKET_QUEUE_0,	/* H2N Data packets on queue0 */
-	NSS_STATS_DRV_TX_PACKET_QUEUE_1,        /* H2N Data packets on queue1 */
-	NSS_STATS_DRV_TX_PACKET_QUEUE_2,        /* H2N Data packets on queue2 */
-	NSS_STATS_DRV_TX_PACKET_QUEUE_3,        /* H2N Data packets on queue3 */
-	NSS_STATS_DRV_TX_PACKET_QUEUE_4,        /* H2N Data packets on queue4 */
-	NSS_STATS_DRV_TX_PACKET_QUEUE_5,        /* H2N Data packets on queue5 */
-	NSS_STATS_DRV_TX_PACKET_QUEUE_6,        /* H2N Data packets on queue6 */
-	NSS_STATS_DRV_TX_PACKET_QUEUE_7,        /* H2N Data packets on queue7 */
-#endif
-	NSS_STATS_DRV_MAX,
-};
-
-/*
- * GMAC node statistics
- *
- * WARNING: There is a 1:1 mapping between values below and corresponding
- *	stats string array in nss_stats.c
- */
-enum nss_stats_gmac {
-	NSS_STATS_GMAC_TOTAL_TICKS = 0,
-					/* Total clock ticks spend inside the GMAC */
-	NSS_STATS_GMAC_WORST_CASE_TICKS,
-					/* Worst case iteration of the GMAC in ticks */
-	NSS_STATS_GMAC_ITERATIONS,	/* Number of iterations around the GMAC */
-	NSS_STATS_GMAC_MAX,
-};
 
 /*
  * NSS core state
@@ -461,6 +408,7 @@ typedef void (*nss_core_rx_callback_t)(struct nss_ctx_instance *, struct nss_cmn
  * NSS Rx per interface callback structure
  */
 struct nss_rx_cb_list {
+	nss_if_rx_msg_callback_t msg_cb;
 	nss_core_rx_callback_t cb;
 	void *app_data;
 };
@@ -558,6 +506,7 @@ struct nss_top_instance {
 	struct mutex wq_lock;			/* Mutex for NSS Work queue function */
 	struct dentry *top_dentry;		/* Top dentry for nss */
 	struct dentry *stats_dentry;		/* Top dentry for nss stats */
+	struct dentry *strings_dentry;		/* Top dentry for nss stats strings */
 	struct dentry *project_dentry;		/* per-project stats dentry */
 	struct nss_ctx_instance nss[NSS_MAX_CORES];
 						/* NSS contexts */
@@ -600,12 +549,20 @@ struct nss_top_instance {
 	uint8_t vlan_handler_id;
 	uint8_t qvpn_handler_id;
 	uint8_t pvxlan_handler_id;
+	uint8_t igs_handler_id;
+	uint8_t gre_redir_mark_handler_id;
+	uint8_t clmap_handler_id;
+	uint8_t vxlan_handler_id;
+	uint8_t rmnet_rx_handler_id;
+	uint8_t match_handler_id;
+	uint8_t tls_handler_id;
+	uint8_t mirror_handler_id;
+	uint8_t wmdb_handler_id;
+	uint8_t dma_handler_id;
 
 	/*
 	 * Data/Message callbacks for various interfaces
 	 */
-	nss_if_rx_msg_callback_t if_rx_msg_callback[NSS_MAX_NET_INTERFACES];
-					/* All interfaces message callback functions */
 	nss_phys_if_msg_callback_t phys_if_msg_callback[NSS_MAX_PHYSICAL_INTERFACES];
 					/* Physical interface event callback functions */
 	nss_virt_if_msg_callback_t virt_if_msg_callback[NSS_MAX_VIRTUAL_INTERFACES];
@@ -668,6 +625,11 @@ struct nss_top_instance {
 					/*  IPSEC common interface event callback function */
 	nss_qvpn_msg_callback_t qvpn_msg_callback;
 					/* QVPN interface event callback function */
+	nss_rmnet_rx_msg_callback_t rmnet_rx_msg_callback[NSS_MAX_VIRTUAL_INTERFACES];
+					/* Virtual interface messsage callback functions */
+	nss_wifi_mac_db_msg_callback_t wifi_mac_db_msg_callback;
+					/* wifi mac database event callback function */
+
 	uint32_t dynamic_interface_table[NSS_DYNAMIC_INTERFACE_TYPE_MAX];
 
 	/*
@@ -679,7 +641,6 @@ struct nss_top_instance {
 	void *crypto_pm_ctx;		/* Crypto PM context */
 	void *profiler_ctx[NSS_MAX_CORES];
 					/* Profiler interface context */
-
 	void *ipsec_encap_ctx;		/* IPsec encap context */
 	void *ipsec_decap_ctx;		/* IPsec decap context */
 	void *oam_ctx;			/* oam context */
@@ -690,9 +651,9 @@ struct nss_top_instance {
 	/*
 	 * Statistics for various interfaces
 	 */
-	atomic64_t stats_drv[NSS_STATS_DRV_MAX];
+	atomic64_t stats_drv[NSS_DRV_STATS_MAX];
 					/* Hlos driver statistics */
-	uint64_t stats_gmac[NSS_MAX_PHYSICAL_INTERFACES][NSS_STATS_GMAC_MAX];
+	uint64_t stats_gmac[NSS_MAX_PHYSICAL_INTERFACES][NSS_GMAC_STATS_MAX];
 					/* GMAC statistics */
 	uint64_t stats_node[NSS_MAX_NET_INTERFACES][NSS_STATS_NODE_MAX];
 					/* IPv4 statistics per interface */
@@ -712,19 +673,35 @@ struct nss_top_instance {
 
 #if (NSS_PKT_STATS_ENABLED == 1)
 /*
- * nss_pkt_stats_increment()
+ * nss_pkt_stats_inc()
  */
-static inline void nss_pkt_stats_increment(struct nss_ctx_instance *nss_ctx, atomic64_t *stat)
+static inline void nss_pkt_stats_inc(atomic64_t *stat)
 {
 	atomic64_inc(stat);
 }
 
 /*
- * nss_pkt_stats_increment()
+ * nss_pkt_stats_dec()
  */
-static inline void nss_pkt_stats_decrement(struct nss_ctx_instance *nss_ctx, atomic64_t *stat)
+static inline void nss_pkt_stats_dec(atomic64_t *stat)
 {
 	atomic64_dec(stat);
+}
+
+/*
+ * nss_pkt_stats_add()
+ */
+static inline void nss_pkt_stats_add(atomic64_t *stat, uint32_t pkt)
+{
+	atomic64_add(pkt, stat);
+}
+
+/*
+ * nss_pkt_stats_sub()
+ */
+static inline void nss_pkt_stats_sub(atomic64_t *stat, uint32_t pkt)
+{
+	atomic64_sub(pkt, stat);
 }
 
 /*
@@ -790,7 +767,7 @@ struct nss_scale_info {
  */
 struct nss_runtime_sampling {
 	struct nss_scale_info freq_scale[NSS_FREQ_MAX_SCALE];	/* NSS Max Scale Per Freq */
-	nss_freq_scales_t freq_scale_index;				/* Current Freq Index */
+	nss_freq_scales_t freq_scale_index;			/* Current Freq Index */
 	uint32_t freq_scale_ready;				/* Allow Freq Scaling */
 	uint32_t freq_scale_rate_limit_up;			/* Scaling Change Rate Limit */
 	uint32_t freq_scale_rate_limit_down;			/* Scaling Change Rate Limit */
@@ -801,6 +778,20 @@ struct nss_runtime_sampling {
 	uint32_t average;					/* Average of INST_CNT */
 	uint32_t message_rate_limit;				/* Debug Message Rate Limit */
 	uint32_t initialized;					/* Flag to check for adequate initial samples */
+};
+
+/*
+ * cpu_utilization
+ */
+struct nss_freq_cpu_usage {
+	uint32_t used;					/* CPU utilization at a certain frequency percentage */
+	uint32_t max_ins;				/* Maximum instructions that can be executed in 1ms at the current frequency
+								This value is calculated by diving frequency by 1000.	*/
+	uint32_t total;					/* Total usage added over a time of NSS_FREQ_USG_AVG_FREQUENCY milliseconds*/
+	uint32_t max;					/* Maximum CPU usage since the boot (%) */
+	uint32_t min;					/* Minimum CPU usage since the boot (%) */
+	uint32_t avg_up;				/* Actual upper bound of the CPU USAGE (%)*/
+	uint16_t avg_ctr;				/* Averaging counter */
 };
 
 #if (NSS_DT_SUPPORT == 1)
@@ -887,6 +878,22 @@ struct nss_platform_data {
 				/* Does this core handle QVPN Tunnel ? */
 	enum nss_feature_enabled pvxlan_enabled;
 				/* Does this core handle pvxlan? */
+	enum nss_feature_enabled igs_enabled;
+				/* Does this core handle igs? */
+	enum nss_feature_enabled gre_redir_mark_enabled;
+				/* Does this core handle GRE redir mark? */
+	enum nss_feature_enabled clmap_enabled;
+				/* Does this core handle clmap? */
+	enum nss_feature_enabled vxlan_enabled;
+				/* Does this core handle vxlan tunnel? */
+	enum nss_feature_enabled rmnet_rx_enabled;
+				/* Does this core handle rmnet rx? */
+	enum nss_feature_enabled match_enabled;
+				/* Does this core handle match node? */
+	enum nss_feature_enabled tls_enabled;
+				/* Does this core handle TLS Tunnel ? */
+	enum nss_feature_enabled mirror_enabled;
+				/* Does this core handle mirror? */
 };
 #endif
 
@@ -903,7 +910,7 @@ static inline void nss_core_log_msg_failures(struct nss_ctx_instance *nss_ctx, s
 	/*
 	 * TODO: Is it worth doing value to name on these values?
 	 */
-	nss_warning("%p: msg failure - interface: %d, type: %d, response: %d, error: %d",
+	nss_warning("%px: msg failure - interface: %d, type: %d, response: %d, error: %d",
 		nss_ctx, ncm->interface, ncm->type, ncm->response, ncm->error);
 }
 
@@ -923,13 +930,18 @@ extern int nss_core_handle_napi(struct napi_struct *napi, int budget);
 extern int nss_core_handle_napi_queue(struct napi_struct *napi, int budget);
 extern int nss_core_handle_napi_non_queue(struct napi_struct *napi, int budget);
 extern int nss_core_handle_napi_emergency(struct napi_struct *napi, int budget);
+extern int nss_core_handle_napi_sdma(struct napi_struct *napi, int budget);
 extern int32_t nss_core_send_buffer(struct nss_ctx_instance *nss_ctx, uint32_t if_num,
 					struct sk_buff *nbuf, uint16_t qid,
 					uint8_t buffer_type, uint16_t flags);
 extern int32_t nss_core_send_cmd(struct nss_ctx_instance *nss_ctx, void *msg, int size, int buf_size);
 extern int32_t nss_core_send_packet(struct nss_ctx_instance *nss_ctx, struct sk_buff *nbuf, uint32_t if_num, uint32_t flag);
+extern uint32_t nss_core_ddr_info(struct nss_mmu_ddr_info *coreinfo);
+extern uint32_t nss_core_register_msg_handler(struct nss_ctx_instance *nss_ctx, uint32_t interface, nss_if_rx_msg_callback_t msg_cb);
+extern uint32_t nss_core_unregister_msg_handler(struct nss_ctx_instance *nss_ctx, uint32_t interface);
 extern uint32_t nss_core_register_handler(struct nss_ctx_instance *nss_ctx, uint32_t interface, nss_core_rx_callback_t cb, void *app_data);
 extern uint32_t nss_core_unregister_handler(struct nss_ctx_instance *nss_ctx, uint32_t interface);
+extern void nss_core_init_handlers(struct nss_ctx_instance *nss_ctx);
 void nss_core_update_max_ipv4_conn(int conn);
 void nss_core_update_max_ipv6_conn(int conn);
 extern void nss_core_register_subsys_dp(struct nss_ctx_instance *nss_ctx, uint32_t if_num,
@@ -939,6 +951,11 @@ extern void nss_core_register_subsys_dp(struct nss_ctx_instance *nss_ctx, uint32
 					uint32_t features);
 extern void nss_core_unregister_subsys_dp(struct nss_ctx_instance *nss_ctx, uint32_t if_num);
 void nss_core_set_subsys_dp_type(struct nss_ctx_instance *nss_ctx, struct net_device *ndev, uint32_t if_num, uint32_t type);
+
+static inline nss_if_rx_msg_callback_t nss_core_get_msg_handler(struct nss_ctx_instance *nss_ctx, uint32_t interface)
+{
+	return nss_ctx->nss_rx_interface_handlers[nss_ctx->id][interface].msg_cb;
+}
 
 static inline uint32_t nss_core_get_max_buf_size(struct nss_ctx_instance *nss_ctx)
 {
@@ -987,6 +1004,12 @@ extern int nss_coredump_init_delay_work(void);
  * APIs provided by nss_freq.c
  */
 extern bool nss_freq_sched_change(nss_freq_scales_t index, bool auto_scale);
+
+/*
+ * nss_freq_init_cpu_usage
+ *	Initializes the cpu usage computation.
+ */
+extern void nss_freq_init_cpu_usage(void);
 
 /*
  * APIs for PPE

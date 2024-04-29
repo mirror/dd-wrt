@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2015-2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2015-2018, 2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -60,12 +60,12 @@ static void nss_portid_handler(struct nss_ctx_instance *nss_ctx, struct nss_cmn_
 	 * Is this a valid request/response packet?
 	 */
 	if (ncm->type >= NSS_PORTID_MAX_MSG_TYPE) {
-		nss_warning("%p: received invalid message %d for portid interface", nss_ctx, ncm->type);
+		nss_warning("%px: received invalid message %d for portid interface", nss_ctx, ncm->type);
 		return;
 	}
 
 	if (nss_cmn_get_msg_len(ncm) > sizeof(struct nss_portid_msg)) {
-		nss_warning("%p: message size incorrect: %d", nss_ctx, nss_cmn_get_msg_len(ncm));
+		nss_warning("%px: message size incorrect: %d", nss_ctx, nss_cmn_get_msg_len(ncm));
 		return;
 	}
 
@@ -88,7 +88,7 @@ static void nss_portid_handler(struct nss_ctx_instance *nss_ctx, struct nss_cmn_
 	 * to the same callback/app_data.
 	 */
 	if (ncm->response == NSS_CMN_RESPONSE_NOTIFY) {
-		ncm->cb = (nss_ptr_t)nss_ctx->nss_top->if_rx_msg_callback[ncm->interface];
+		ncm->cb = (nss_ptr_t)nss_core_get_msg_handler(nss_ctx, ncm->interface);
 		ncm->app_data = (nss_ptr_t)nss_ctx->subsys_dp_register[ncm->interface].ndev;
 	}
 
@@ -184,12 +184,12 @@ nss_tx_status_t nss_portid_tx_msg(struct nss_ctx_instance *nss_ctx, struct nss_p
 	 * Sanity check the message
 	 */
 	if (ncm->interface != NSS_PORTID_INTERFACE) {
-		nss_warning("%p: tx request for another interface: %d", nss_ctx, ncm->interface);
+		nss_warning("%px: tx request for another interface: %d", nss_ctx, ncm->interface);
 		return NSS_TX_FAILURE;
 	}
 
 	if (ncm->type > NSS_PORTID_MAX_MSG_TYPE) {
-		nss_warning("%p: message type out of range: %d", nss_ctx, ncm->type);
+		nss_warning("%px: message type out of range: %d", nss_ctx, ncm->type);
 		return NSS_TX_FAILURE;
 	}
 
@@ -228,7 +228,7 @@ nss_tx_status_t nss_portid_tx_msg_sync(struct nss_ctx_instance *nss_ctx, struct 
 	status = nss_portid_tx_msg(nss_ctx, msg);
 	if(status != NSS_TX_SUCCESS)
 	{
-		nss_warning("%p: nss_phys_if_msg failed\n", nss_ctx);
+		nss_warning("%px: nss_phys_if_msg failed\n", nss_ctx);
 		up(&pid.sem);
 		return status;
 	}
@@ -237,7 +237,7 @@ nss_tx_status_t nss_portid_tx_msg_sync(struct nss_ctx_instance *nss_ctx, struct 
 
 	if(!ret)
 	{
-		nss_warning("%p: portid tx failed due to timeout\n", nss_ctx);
+		nss_warning("%px: portid tx failed due to timeout\n", nss_ctx);
 		pid.response = NSS_TX_FAILURE;
 	}
 
@@ -377,7 +377,7 @@ bool nss_portid_unregister_port_if(uint32_t if_num)
 
 	nss_ctx = nss_portid_get_ctx();
 	if (nss_portid_verify_if_num(if_num) == false) {
-		nss_warning("%p: unregister received for invalid interface %d", nss_ctx, if_num);
+		nss_warning("%px: unregister received for invalid interface %d", nss_ctx, if_num);
 		return false;
 	}
 

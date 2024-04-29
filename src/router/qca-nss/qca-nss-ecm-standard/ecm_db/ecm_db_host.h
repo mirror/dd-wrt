@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2014-2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2014-2018, 2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -83,6 +83,8 @@ struct ecm_db_host_instance *ecm_db_host_get_and_ref_next(struct ecm_db_host_ins
 
 #ifdef ECM_DB_XREF_ENABLE
 int ecm_db_host_mapping_count_get(struct ecm_db_host_instance *hi);
+void ecm_db_host_connections_defunct_by_dir(ip_addr_t addr, ecm_db_obj_dir_t dir);
+void ecm_db_host_connections_defunct_by_src_and_dest(ip_addr_t src_addr, ip_addr_t dest_addr);
 #endif
 
 struct ecm_db_host_instance *ecm_db_host_alloc(void);

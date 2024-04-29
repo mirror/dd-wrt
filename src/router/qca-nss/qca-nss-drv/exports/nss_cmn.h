@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2014, 2016-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2014, 2016-2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -26,6 +26,11 @@
  * @addtogroup nss_common_subsystem
  * @{
  */
+
+/*
+ * Interface Number 1 Valid 7 Core 8 Type 16 Index
+ */
+typedef int32_t nss_if_num_t;
 
 /**
  * @struct nss_ctx_instance
@@ -293,19 +298,19 @@ extern int32_t nss_cmn_get_interface_number_by_dev_and_type(struct net_device *d
 extern bool nss_cmn_interface_is_redirect(struct nss_ctx_instance *nss_ctx, int32_t interface_num);
 
 /**
- * nss_cmn_interface_is_reuse_not_supported
- *	Determines if the interface supports SKB no-reuse.
+ * nss_cmn_append_core_id
+ * 	Append core ID on NSS interface number.
  *
  * @datatypes
  * nss_ctx_instance
  *
- * @param[in] nss_ctx        Pointer to the NSS context.
- * @param[in] interface_num  NSS interface number.
+ * @param[in] nss_ctx   Pointer to the NSS context.
+ * @param[in] if_num    NSS interface number.
  *
  * @return
- * TRUE if the interface number supports SKB reuse. Otherwise FALSE.
+ * Interface number with core ID.
  */
-extern bool nss_cmn_interface_is_reuse_not_supported(struct nss_ctx_instance *nss_ctx, int32_t interface_num);
+extern int nss_cmn_append_core_id(struct nss_ctx_instance *nss_ctx, int if_num);
 
 /**
  * nss_cmn_get_interface_dev

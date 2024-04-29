@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2017-2018 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2020 The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -36,6 +36,19 @@
 #include "nss_connmgr_gre.h"
 
 /*
+ * nss_connmgr_gre_v6_route_lookup()
+ *	Find IPv6 route for the IP address
+ */
+static inline struct rt6_info *nss_connmgr_gre_v6_route_lookup(struct net *net, struct in6_addr *addr)
+{
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 6, 0))
+        return rt6_lookup(net, addr, NULL, 0, 0);
+#else
+	return rt6_lookup(net, addr, NULL, 0, 0, 0);
+#endif
+}
+
+/*
  * nss_connmgr_gre_v6_get_tx_dev()
  *	Find tx interface for the IP address.
  */
@@ -46,7 +59,8 @@ static struct net_device *nss_connmgr_gre_v6_get_tx_dev(uint8_t *dest_ip)
 	struct net_device *dev;
 
 	memcpy(ipv6_addr.s6_addr, dest_ip, 16);
-	rt = rt6_lookup(&init_net, &ipv6_addr, NULL, 0, NULL, 0);
+
+	rt = nss_connmgr_gre_v6_route_lookup(&init_net, &ipv6_addr);
 	if (!rt) {
 		return NULL;
 	}
@@ -72,15 +86,17 @@ static int nss_connmgr_gre_v6_get_mac_address(uint8_t *src_ip, uint8_t *dest_ip,
 {
 	struct neighbour *neigh;
 	struct rt6_info *rt;
-	struct dst_entry *dst;
-	struct in6_addr ipv6_addr;
+	struct in6_addr src_addr, dst_addr, mc_dst_addr;
 	struct net_device *local_dev;
+
+	memcpy(src_addr.s6_addr, src_ip, 16);
+	memcpy(dst_addr.s6_addr, dest_ip, 16);
 
 	/*
 	 * Find src MAC address
 	 */
-	memcpy(ipv6_addr.s6_addr, src_ip, 16);
-	local_dev = (struct net_device *)ipv6_dev_find(&init_net, &ipv6_addr, 1);
+	local_dev = NULL;
+	local_dev = (struct net_device *)ipv6_dev_find(&init_net, &src_addr, local_dev);
 	if (!local_dev) {
 		nss_connmgr_gre_warning("Unable to find local dev for %pI6", src_ip);
 		return GRE_ERR_NO_LOCAL_NETDEV;
@@ -91,27 +107,55 @@ static int nss_connmgr_gre_v6_get_mac_address(uint8_t *src_ip, uint8_t *dest_ip,
 	/*
 	 * Find dest MAC address
 	 */
-	memcpy(ipv6_addr.s6_addr, dest_ip, 16);
-	rt = rt6_lookup(&init_net, &ipv6_addr, NULL, 0, NULL, 0);
+	rt = nss_connmgr_gre_v6_route_lookup(&init_net, &dst_addr);
 	if (!rt) {
+		nss_connmgr_gre_warning("Unable to find route lookup for %pI6", dest_ip);
 		return GRE_ERR_NEIGH_LOOKUP;
 	}
-	dst = (struct dst_entry *)rt;
-	neigh = dst_neigh_lookup(dst, &ipv6_addr);
 
-	if (!neigh) {
-		neigh = neigh_lookup(&nd_tbl, (const void *)&ipv6_addr,  rt->dst.dev);
-	}
-
+#if (LINUX_VERSION_CODE <= KERNEL_VERSION(3,6,0))
+	neigh = rt->dst.ops->neigh_lookup(&rt->dst, &dst_addr);
+#else
+	neigh = rt->dst.ops->neigh_lookup(&rt->dst, NULL, &dst_addr);
+#endif
 	if (neigh && !is_valid_ether_addr(neigh->ha)) {
 		neigh_release(neigh);
 		neigh = NULL;
 	}
 
 	if (!neigh) {
+
+		/*
+		 * Issue a Neighbour soliciation request
+	 	*/
+		nss_connmgr_gre_info("Issue Neighbour solicitation request\n");
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 10, 0))
+		ndisc_send_ns(local_dev, &dst_addr, &mc_dst_addr, &src_addr);
+#else
+		ndisc_send_ns(local_dev, &dst_addr, &mc_dst_addr, &src_addr, 0);
+#endif
+		msleep(2000);
+
+		/*
+		 * Release hold on existing route entry, and find the route entry again
+		 */
 		ip6_rt_put(rt);
-		nss_connmgr_gre_warning("Err in MAC address, neighbour look up failed\n");
-		return GRE_ERR_NEIGH_LOOKUP;
+		rt = rt6_lookup(&init_net, &dst_addr, NULL, 0, NULL, 0);
+		if (!rt) {
+			nss_connmgr_gre_warning("Unable to find route lookup for %pI6\n", dest_ip);
+			return GRE_ERR_NEIGH_LOOKUP;
+		}
+
+#if (LINUX_VERSION_CODE <= KERNEL_VERSION(3,6,0))
+		neigh = rt->dst.ops->neigh_lookup(&rt->dst, &dst_addr);
+#else
+		neigh = rt->dst.ops->neigh_lookup(&rt->dst, NULL, &dst_addr);
+#endif
+		if (!neigh || !is_valid_ether_addr(neigh->ha)) {
+			ip6_rt_put(rt);
+			nss_connmgr_gre_warning("Err in MAC address, neighbour look up failed\n");
+			return GRE_ERR_NEIGH_LOOKUP;
+		}
 	}
 
 	ether_addr_copy(dest_mac, neigh->ha);
@@ -135,7 +179,7 @@ void nss_connmgr_gre_tap_v6_outer_exception(struct net_device *dev, struct sk_bu
 	 */
 	if (unlikely(!pskb_may_pull(skb, (sizeof(struct ethhdr) + sizeof(struct ipv6hdr)
 				+ sizeof(struct gre_base_hdr))))) {
-		nss_connmgr_gre_warning("%p: pskb_may_pull failed for skb:%p\n", dev, skb);
+		nss_connmgr_gre_warning("%px: pskb_may_pull failed for skb:%px\n", dev, skb);
 		dev_kfree_skb_any(skb);
 		return;
 	}
@@ -147,7 +191,7 @@ void nss_connmgr_gre_tap_v6_outer_exception(struct net_device *dev, struct sk_bu
 				+ sizeof(struct gre_base_hdr)));
 
 	if (unlikely(!pskb_may_pull(skb, sizeof(struct ethhdr)))) {
-		nss_connmgr_gre_warning("%p: pskb_may_pull failed for skb:%p\n", dev, skb);
+		nss_connmgr_gre_warning("%px: pskb_may_pull failed for skb:%px\n", dev, skb);
 		dev_kfree_skb_any(skb);
 		return;
 	}
@@ -177,7 +221,7 @@ void nss_connmgr_gre_tun_v6_outer_exception(struct net_device *dev, struct sk_bu
 	 * and transmit on GRE interface.
 	 */
 	if (unlikely(!pskb_may_pull(skb, sizeof(struct ipv6hdr) + sizeof(struct gre_base_hdr)))) {
-		nss_connmgr_gre_warning("%p: pskb_may_pull failed for skb:%p\n", dev, skb);
+		nss_connmgr_gre_warning("%px: pskb_may_pull failed for skb:%px\n", dev, skb);
 		dev_kfree_skb_any(skb);
 		return;
 	}
@@ -198,7 +242,7 @@ void nss_connmgr_gre_tun_v6_outer_exception(struct net_device *dev, struct sk_bu
 		skb->protocol = htons(ETH_P_IPV6);
 		break;
 	default:
-		nss_connmgr_gre_info("%p: wrong IP version in GRE encapped packet. skb: %p\n", dev, skb);
+		nss_connmgr_gre_info("%px: wrong IP version in GRE encapped packet. skb: %px\n", dev, skb);
 		dev_kfree_skb_any(skb);
 		return;
 	}
@@ -222,8 +266,8 @@ int nss_connmgr_gre_v6_set_config(struct net_device *dev, struct nss_connmgr_gre
 	/*
 	 * IP address validate
 	 */
-	if (!ipv6_addr_any(((const struct in6_addr *)&cfg->src_ip)) ||
-	    !ipv6_addr_any(((const struct in6_addr *)&cfg->dest_ip))) {
+	if (ipv6_addr_any(((const struct in6_addr *)&cfg->src_ip)) ||
+	    ipv6_addr_any(((const struct in6_addr *)&cfg->dest_ip))) {
 		nss_connmgr_gre_warning("Source ip/Destination IP is invalid");
 		return  GRE_ERR_INVALID_IP;
 	}
@@ -247,7 +291,10 @@ int nss_connmgr_gre_v6_set_config(struct net_device *dev, struct nss_connmgr_gre
 	memcpy(t->parms.laddr.s6_addr, &cfg->src_ip, 16);
 	memcpy(t->parms.raddr.s6_addr, &cfg->dest_ip, 16);
 
-	t->parms.flowinfo = 0;
+	t->parms.flowinfo = cfg->tos << 2;
+	if (cfg->tos_inherit) {
+		t->parms.flowinfo |= 0x1;
+	}
 
 	t->parms.hop_limit = cfg->ttl;
 	if (cfg->ttl_inherit) {
@@ -280,22 +327,34 @@ int nss_connmgr_gre_v6_get_config(struct net_device *dev, struct nss_gre_msg *re
 	struct net_device *out_dev;
 	struct nss_gre_config_msg *cmsg = &req->msg.cmsg;
 	int ret;
+	struct in6_addr *src_ip = &t->parms.laddr;
+	struct in6_addr *dest_ip = &t->parms.raddr;
 
-	memcpy(cmsg->src_ip, t->parms.laddr.s6_addr, 16);
-	memcpy(cmsg->dest_ip, t->parms.raddr.s6_addr, 16);
+	/*
+	 * Store IPv6 addresses in host endian in the message.
+	 */
+	cmsg->src_ip[0] = ntohl(src_ip->in6_u.u6_addr32[0]);
+	cmsg->src_ip[1] = ntohl(src_ip->in6_u.u6_addr32[1]);
+	cmsg->src_ip[2] = ntohl(src_ip->in6_u.u6_addr32[2]);
+	cmsg->src_ip[3] = ntohl(src_ip->in6_u.u6_addr32[3]);
+
+	cmsg->dest_ip[0] = ntohl(dest_ip->in6_u.u6_addr32[0]);
+	cmsg->dest_ip[1] = ntohl(dest_ip->in6_u.u6_addr32[1]);
+	cmsg->dest_ip[2] = ntohl(dest_ip->in6_u.u6_addr32[2]);
+	cmsg->dest_ip[3] = ntohl(dest_ip->in6_u.u6_addr32[3]);
 
 	/*
 	 * IPv6 outer tos field is always inherited from inner IP header.
 	 */
 	cmsg->flags |= nss_connmgr_gre_get_nss_config_flags(t->parms.o_flags,
 								     t->parms.i_flags,
-								     0x1,
+								     t->parms.flowinfo,
 								     t->parms.hop_limit, 0);
 
 	cmsg->ikey = t->parms.i_key;
 	cmsg->okey = t->parms.o_key;
 	cmsg->ttl = t->parms.hop_limit;
-	cmsg->tos = t->parms.flowinfo;
+	cmsg->tos = t->parms.flowinfo >> 2;
 
 	/*
 	 * fill in MAC addresses

@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2013,2015-2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2013,2015-2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -62,7 +62,7 @@ static void nss_crypto_cmn_msg_handler(struct nss_ctx_instance *nss_ctx, struct 
 	 * Sanity check the message type
 	 */
 	if (ncm->type > NSS_CRYPTO_CMN_MSG_TYPE_MAX) {
-		nss_warning("%p: rx message type out of range: %d", nss_ctx, ncm->type);
+		nss_warning("%px: rx message type out of range: %d", nss_ctx, ncm->type);
 		return;
 	}
 
@@ -72,12 +72,12 @@ static void nss_crypto_cmn_msg_handler(struct nss_ctx_instance *nss_ctx, struct 
 	 * the intended interface.
 	 */
 	if (nss_cmn_get_msg_len(ncm) > sizeof(*nim)) {
-		nss_warning("%p: rx message length is invalid: %d", nss_ctx, nss_cmn_get_msg_len(ncm));
+		nss_warning("%px: rx message length is invalid: %d", nss_ctx, nss_cmn_get_msg_len(ncm));
 		return;
 	}
 
 	if (ncm->response == NSS_CMN_RESPONSE_LAST) {
-		nss_warning("%p: rx message response for if %d, type %d, is invalid: %d", nss_ctx,
+		nss_warning("%px: rx message response for if %d, type %d, is invalid: %d", nss_ctx,
 				ncm->interface, ncm->type, ncm->response);
 		return;
 	}
@@ -99,7 +99,7 @@ static void nss_crypto_cmn_msg_handler(struct nss_ctx_instance *nss_ctx, struct 
 	 */
 	cb = (nss_crypto_cmn_msg_callback_t)ncm->cb;
 	if (unlikely(!cb)) {
-		nss_warning("%p: rx handler has been unregistered for i/f: %d", nss_ctx, ncm->interface);
+		nss_warning("%px: rx handler has been unregistered for i/f: %d", nss_ctx, ncm->interface);
 		return;
 	}
 
@@ -115,12 +115,12 @@ nss_tx_status_t nss_crypto_cmn_tx_msg(struct nss_ctx_instance *nss_ctx, struct n
 	struct nss_cmn_msg *ncm = &msg->cm;
 	uint16_t msg_len = nss_cmn_get_msg_len(ncm);
 
-	nss_info("%p: tx message %d for if %d", nss_ctx, ncm->type, ncm->interface);
+	nss_info("%px: tx message %d for if %d", nss_ctx, ncm->type, ncm->interface);
 
 	BUILD_BUG_ON(NSS_NBUF_PAYLOAD_SIZE < sizeof(*msg));
 
 	if (ncm->type > NSS_CRYPTO_CMN_MSG_TYPE_MAX) {
-		nss_warning("%p: message type out of range: %d", nss_ctx, ncm->type);
+		nss_warning("%px: message type out of range: %d", nss_ctx, ncm->type);
 		return NSS_TX_FAILURE;
 	}
 
@@ -129,11 +129,11 @@ nss_tx_status_t nss_crypto_cmn_tx_msg(struct nss_ctx_instance *nss_ctx, struct n
 	 * the sender accidentally programmed a incorrect length into the message.
 	 */
 	if (msg_len != sizeof(*msg)) {
-		nss_warning("%p: message request len bad: %d", nss_ctx, msg_len);
+		nss_warning("%px: message request len bad: %d", nss_ctx, msg_len);
 		return NSS_TX_FAILURE_BAD_PARAM;
 	}
 
-	nss_trace("%p: msg params version:%d, interface:%d, type:%d, cb:%p, app_data:%p, len:%d",
+	nss_trace("%px: msg params version:%d, interface:%d, type:%d, cb:%px, app_data:%px, len:%d",
 			nss_ctx, ncm->version, ncm->interface, ncm->type,
 			(void *)ncm->cb, (void *)ncm->app_data, ncm->len);
 
@@ -189,7 +189,7 @@ nss_tx_status_t nss_crypto_cmn_tx_msg_sync(struct nss_ctx_instance *nss_ctx, str
 
 	status = nss_crypto_cmn_tx_msg(nss_ctx, msg);
 	if (status != NSS_TX_SUCCESS) {
-		nss_warning("%p: tx_msg failed", nss_ctx);
+		nss_warning("%px: tx_msg failed", nss_ctx);
 		up(&pvt->sem);
 		return status;
 	}
@@ -200,7 +200,7 @@ nss_tx_status_t nss_crypto_cmn_tx_msg_sync(struct nss_ctx_instance *nss_ctx, str
 	ret = wait_for_completion_timeout(&pvt->complete, NSS_CRYPTO_CMN_TX_TIMEO_TICKS);
 	if (!ret) {
 		atomic_inc(&pvt->seq_no);
-		nss_warning("%p: tx_msg_sync timed out", nss_ctx);
+		nss_warning("%px: tx_msg_sync timed out", nss_ctx);
 		up(&pvt->sem);
 		return NSS_TX_FAILURE;
 	}
@@ -229,21 +229,21 @@ nss_tx_status_t nss_crypto_cmn_tx_buf(struct nss_ctx_instance *nss_ctx, uint32_t
 
 	NSS_VERIFY_CTX_MAGIC(nss_ctx);
 	if (unlikely(nss_ctx->state != NSS_CORE_STATE_INITIALIZED)) {
-		nss_warning("%p: tx_data packet dropped as core not ready", nss_ctx);
+		nss_warning("%px: tx_data packet dropped as core not ready", nss_ctx);
 		return NSS_TX_FAILURE_NOT_READY;
 	}
 
-	status = nss_core_send_buffer(nss_ctx, if_num, skb, NSS_IF_H2N_DATA_QUEUE, H2N_BUFFER_PACKET, 0);
+	status = nss_core_send_packet(nss_ctx, skb, if_num, H2N_BIT_FLAG_BUFFER_REUSABLE);
 	switch (status) {
 	case NSS_CORE_STATUS_SUCCESS:
 		break;
 
 	case NSS_CORE_STATUS_FAILURE_QUEUE: /* queue full condition */
-		nss_warning("%p: H2N queue full for tx_buf", nss_ctx);
+		nss_warning("%px: H2N queue full for tx_buf", nss_ctx);
 		return NSS_TX_FAILURE_QUEUE;
 
 	default:
-		nss_warning("%p: general failure for tx_buf", nss_ctx);
+		nss_warning("%px: general failure for tx_buf", nss_ctx);
 		return NSS_TX_FAILURE;
 	}
 
@@ -251,7 +251,7 @@ nss_tx_status_t nss_crypto_cmn_tx_buf(struct nss_ctx_instance *nss_ctx, uint32_t
 	 * Kick the NSS awake so it can process our new entry.
 	 */
 	nss_hal_send_interrupt(nss_ctx, NSS_H2N_INTR_DATA_COMMAND_QUEUE);
-	NSS_PKT_STATS_INCREMENT(nss_ctx, &nss_ctx->nss_top->stats_drv[NSS_STATS_DRV_TX_CRYPTO_REQ]);
+	NSS_PKT_STATS_INC(&nss_ctx->nss_top->stats_drv[NSS_DRV_STATS_TX_CRYPTO_REQ]);
 
 	return NSS_TX_SUCCESS;
 }
@@ -298,7 +298,7 @@ struct nss_ctx_instance *nss_crypto_cmn_data_register(uint32_t if_num, nss_crypt
 	nss_ctx = &nss_top_main.nss[nss_top_main.crypto_handler_id];
 
 	if (if_num < NSS_SPECIAL_IF_START) {
-		nss_warning("%p: interface number is not special interface %d", nss_ctx, if_num);
+		nss_warning("%px: interface number is not special interface %d", nss_ctx, if_num);
 		return NULL;
 	}
 
@@ -325,7 +325,7 @@ EXPORT_SYMBOL(nss_crypto_cmn_data_register);
 void nss_crypto_cmn_data_unregister(struct nss_ctx_instance *nss_ctx, uint32_t if_num)
 {
 	if (if_num < NSS_SPECIAL_IF_START) {
-		nss_warning("%p: interface number is not special interface %d", nss_ctx, if_num);
+		nss_warning("%px: interface number is not special interface %d", nss_ctx, if_num);
 		return;
 	}
 
@@ -356,7 +356,7 @@ void nss_crypto_cmn_register_handler(void)
 
 	sema_init(&g_nss_crypto_cmn.sem, 1);
 	init_completion(&g_nss_crypto_cmn.complete);
-	nss_core_register_handler(nss_ctx, NSS_CRYPTO_EIP197_INTERFACE, nss_crypto_cmn_msg_handler, NULL);
+	nss_core_register_handler(nss_ctx, NSS_CRYPTO_CMN_INTERFACE, nss_crypto_cmn_msg_handler, NULL);
 }
 
 /*

@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2018, The Linux Foundation.  All rights reserved.
+ * Copyright (c) 2018, 2020-2021, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -132,8 +132,8 @@ ecm_classifier_mark_sync_to_ipv6_callback_t sync_to_ipv6_cb[ECM_CLASSIFIER_MARK_
 static void _ecm_classifier_mark_ref(struct ecm_classifier_mark_instance *ecmi)
 {
 	ecmi->refs++;
-	DEBUG_TRACE("%p: ecmi ref %d\n", ecmi, ecmi->refs);
-	DEBUG_ASSERT(ecmi->refs > 0, "%p: ref wrap\n", ecmi);
+	DEBUG_TRACE("%px: ecmi ref %d\n", ecmi, ecmi->refs);
+	DEBUG_ASSERT(ecmi->refs > 0, "%px: ref wrap\n", ecmi);
 }
 
 /*
@@ -145,7 +145,7 @@ static void ecm_classifier_mark_ref(struct ecm_classifier_instance *ci)
 	struct ecm_classifier_mark_instance *ecmi;
 	ecmi = (struct ecm_classifier_mark_instance *)ci;
 
-	DEBUG_CHECK_MAGIC(ecmi, ECM_CLASSIFIER_MARK_INSTANCE_MAGIC, "%p: magic failed", ecmi);
+	DEBUG_CHECK_MAGIC(ecmi, ECM_CLASSIFIER_MARK_INSTANCE_MAGIC, "%px: magic failed", ecmi);
 	spin_lock_bh(&ecm_classifier_mark_lock);
 	_ecm_classifier_mark_ref(ecmi);
 	spin_unlock_bh(&ecm_classifier_mark_lock);
@@ -160,11 +160,11 @@ static int ecm_classifier_mark_deref(struct ecm_classifier_instance *ci)
 	struct ecm_classifier_mark_instance *ecmi;
 	ecmi = (struct ecm_classifier_mark_instance *)ci;
 
-	DEBUG_CHECK_MAGIC(ecmi, ECM_CLASSIFIER_MARK_INSTANCE_MAGIC, "%p: magic failed", ecmi);
+	DEBUG_CHECK_MAGIC(ecmi, ECM_CLASSIFIER_MARK_INSTANCE_MAGIC, "%px: magic failed", ecmi);
 	spin_lock_bh(&ecm_classifier_mark_lock);
 	ecmi->refs--;
-	DEBUG_ASSERT(ecmi->refs >= 0, "%p: refs wrapped\n", ecmi);
-	DEBUG_TRACE("%p: Mark classifier deref %d\n", ecmi, ecmi->refs);
+	DEBUG_ASSERT(ecmi->refs >= 0, "%px: refs wrapped\n", ecmi);
+	DEBUG_TRACE("%px: Mark classifier deref %d\n", ecmi, ecmi->refs);
 	if (ecmi->refs) {
 		int refs = ecmi->refs;
 		spin_unlock_bh(&ecm_classifier_mark_lock);
@@ -175,7 +175,7 @@ static int ecm_classifier_mark_deref(struct ecm_classifier_instance *ci)
 	 * Object to be destroyed
 	 */
 	ecm_classifier_mark_count--;
-	DEBUG_ASSERT(ecm_classifier_mark_count >= 0, "%p: ecm_classifier_mark_count wrap\n", ecmi);
+	DEBUG_ASSERT(ecm_classifier_mark_count >= 0, "%px: ecm_classifier_mark_count wrap\n", ecmi);
 
 	/*
 	 * UnLink the instance from our list
@@ -186,7 +186,7 @@ static int ecm_classifier_mark_deref(struct ecm_classifier_instance *ci)
 	if (ecmi->prev) {
 		ecmi->prev->next = ecmi->next;
 	} else {
-		DEBUG_ASSERT(ecm_classifier_mark_instances == ecmi, "%p: list bad %p\n", ecmi, ecm_classifier_mark_instances);
+		DEBUG_ASSERT(ecm_classifier_mark_instances == ecmi, "%px: list bad %px\n", ecmi, ecm_classifier_mark_instances);
 		ecm_classifier_mark_instances = ecmi->next;
 	}
 	ecmi->next = NULL;
@@ -196,7 +196,7 @@ static int ecm_classifier_mark_deref(struct ecm_classifier_instance *ci)
 	/*
 	 * Final
 	 */
-	DEBUG_INFO("%p: Final mark classifier instance\n", ecmi);
+	DEBUG_INFO("%px: Final mark classifier instance\n", ecmi);
 	kfree(ecmi);
 
 	return 0;
@@ -224,7 +224,7 @@ static void ecm_classifier_mark_process(struct ecm_classifier_instance *aci, ecm
 	ecm_classifier_mark_type_t type = ECM_CLASSIFIER_MARK_TYPE_L2_ENCAP;
 			/* TODO: By default we use this type. In the future the type will be gotten from the connection instance*/
 
-	DEBUG_CHECK_MAGIC(ecmi, ECM_CLASSIFIER_MARK_INSTANCE_MAGIC, "%p: invalid state magic\n", ecmi);
+	DEBUG_CHECK_MAGIC(ecmi, ECM_CLASSIFIER_MARK_INSTANCE_MAGIC, "%px: invalid state magic\n", ecmi);
 
 	/*
 	 * Not relevant to the connection if not enabled.
@@ -233,7 +233,7 @@ static void ecm_classifier_mark_process(struct ecm_classifier_instance *aci, ecm
 		/*
 		 * Not relevant.
 		 */
-		DEBUG_WARN("%p: Mark classifier is not enabled.\n", aci);
+		DEBUG_WARN("%px: Mark classifier is not enabled.\n", aci);
 		goto not_relevant;
 	}
 
@@ -245,7 +245,7 @@ static void ecm_classifier_mark_process(struct ecm_classifier_instance *aci, ecm
 		/*
 		 * Connection has gone from under us
 		 */
-		DEBUG_WARN("%p: connection instance gone while processing classifier.\n", aci);
+		DEBUG_WARN("%px: connection instance gone while processing classifier.\n", aci);
 		goto not_relevant;
 	}
 
@@ -257,7 +257,7 @@ static void ecm_classifier_mark_process(struct ecm_classifier_instance *aci, ecm
 		/*
 		 * The caller is not interested in the inspection. Not relevant.
 		 */
-		DEBUG_WARN("%p: L2 encap protocol is zero.\n", aci);
+		DEBUG_WARN("%px: L2 encap protocol is zero.\n", aci);
 		ecm_db_connection_deref(ci);
 		goto not_relevant;
 	}
@@ -272,7 +272,7 @@ static void ecm_classifier_mark_process(struct ecm_classifier_instance *aci, ecm
 		 * Not relevant.
 		 */
 		rcu_read_unlock();
-		DEBUG_WARN("%p: No inspection callback set with type: %d.\n", aci, type);
+		DEBUG_WARN("%px: No inspection callback set with type: %d.\n", aci, type);
 		ecm_db_connection_deref(ci);
 		goto not_relevant;
 	}
@@ -284,7 +284,7 @@ static void ecm_classifier_mark_process(struct ecm_classifier_instance *aci, ecm
 	 * this means the skb's L2 header is pulled off. So, let's push it back.
 	 */
 	if (l2_encap_proto != ntohs(skb->protocol)) {
-		DEBUG_TRACE("%p: Connections L2 encap protocol: %x is different than skb's protocol: %x, need header adjustment.\n",
+		DEBUG_TRACE("%px: Connections L2 encap protocol: %x is different than skb's protocol: %x, need header adjustment.\n",
 			    aci, l2_encap_proto, ntohs(skb->protocol));
 		l2_encap_len = ecm_front_end_l2_encap_header_len(l2_encap_proto);
 		skb_header_adjusted = true;
@@ -303,7 +303,7 @@ static void ecm_classifier_mark_process(struct ecm_classifier_instance *aci, ecm
 	 * Pull the skb's L2 header, if it is adjusted in this classifier.
 	 */
 	if (skb_header_adjusted) {
-		DEBUG_TRACE("%p: Adjust the L2 header back.\n", aci);
+		DEBUG_TRACE("%px: Adjust the L2 header back.\n", aci);
 		ecm_front_end_pull_l2_encap_header(skb, l2_encap_len);
 		skb->protocol = skb_proto;
 	}
@@ -316,13 +316,13 @@ static void ecm_classifier_mark_process(struct ecm_classifier_instance *aci, ecm
 		/*
 		 * Deny accel but don't change the permit state - we try again later
 		 */
-		DEBUG_WARN("%p: External callback has not decided yet.\n", aci);
+		DEBUG_WARN("%px: External callback has not decided yet.\n", aci);
 		goto deny_accel;
 	case ECM_CLASSIFIER_MARK_RESULT_NOT_RELEVANT:
 		/*
 		 * The callback told us that the classifier is not relevant to this connection.
 		 */
-		DEBUG_WARN("%p: External callback decided not relevant.\n", aci);
+		DEBUG_WARN("%px: External callback decided not relevant.\n", aci);
 		ecm_db_connection_deref(ci);
 		goto not_relevant;
 	case ECM_CLASSIFIER_MARK_RESULT_SUCCESS:
@@ -332,7 +332,7 @@ static void ecm_classifier_mark_process(struct ecm_classifier_instance *aci, ecm
 		 * We copy the mark value to the classifier instance as well here for quick access
 		 * in the sync functions.
 		 */
-		DEBUG_WARN("%p: External callback returned the mark value: %x\n", aci, mark);
+		DEBUG_WARN("%px: External callback returned the mark value: %x\n", aci, mark);
 		ecm_db_connection_mark_set(ci, mark);
 		ecmi->mark = mark;
 		break;
@@ -385,7 +385,7 @@ static ecm_classifier_type_t ecm_classifier_mark_type_get(struct ecm_classifier_
 	struct ecm_classifier_mark_instance *ecmi;
 	ecmi = (struct ecm_classifier_mark_instance *)aci;
 
-	DEBUG_CHECK_MAGIC(ecmi, ECM_CLASSIFIER_MARK_INSTANCE_MAGIC, "%p: magic failed", ecmi);
+	DEBUG_CHECK_MAGIC(ecmi, ECM_CLASSIFIER_MARK_INSTANCE_MAGIC, "%px: magic failed", ecmi);
 	return ECM_CLASSIFIER_TYPE_MARK;
 }
 
@@ -398,7 +398,7 @@ static bool ecm_classifier_mark_reclassify_allowed(struct ecm_classifier_instanc
 	struct ecm_classifier_mark_instance *ecmi;
 	ecmi = (struct ecm_classifier_mark_instance *)aci;
 
-	DEBUG_CHECK_MAGIC(ecmi, ECM_CLASSIFIER_MARK_INSTANCE_MAGIC, "%p: magic failed", ecmi);
+	DEBUG_CHECK_MAGIC(ecmi, ECM_CLASSIFIER_MARK_INSTANCE_MAGIC, "%px: magic failed", ecmi);
 	return true;
 }
 
@@ -410,7 +410,7 @@ static void ecm_classifier_mark_reclassify(struct ecm_classifier_instance *aci)
 {
 	struct ecm_classifier_mark_instance *ecmi;
 	ecmi = (struct ecm_classifier_mark_instance *)aci;
-	DEBUG_CHECK_MAGIC(ecmi, ECM_CLASSIFIER_MARK_INSTANCE_MAGIC, "%p: magic failed", ecmi);
+	DEBUG_CHECK_MAGIC(ecmi, ECM_CLASSIFIER_MARK_INSTANCE_MAGIC, "%px: magic failed", ecmi);
 
 	/*
 	 * Revert back to MAYBE relevant - we will evaluate when we get the next process() call.
@@ -429,7 +429,7 @@ static void ecm_classifier_mark_last_process_response_get(struct ecm_classifier_
 {
 	struct ecm_classifier_mark_instance *ecmi;
 	ecmi = (struct ecm_classifier_mark_instance *)aci;
-	DEBUG_CHECK_MAGIC(ecmi, ECM_CLASSIFIER_MARK_INSTANCE_MAGIC, "%p: magic failed", ecmi);
+	DEBUG_CHECK_MAGIC(ecmi, ECM_CLASSIFIER_MARK_INSTANCE_MAGIC, "%px: magic failed", ecmi);
 
 	spin_lock_bh(&ecm_classifier_mark_lock);
 	*process_response = ecmi->process_response;
@@ -454,13 +454,13 @@ static void ecm_classifier_mark_sync_to_v4(struct ecm_classifier_instance *aci, 
 	ecm_classifier_mark_type_t type = ECM_CLASSIFIER_MARK_TYPE_L2_ENCAP;
 			/* TODO: By default we use this type. In the future the type will be gotten from the connection instance */
 	struct ecm_classifier_mark_instance *ecmi = (struct ecm_classifier_mark_instance *)aci;
-	DEBUG_CHECK_MAGIC(ecmi, ECM_CLASSIFIER_MARK_INSTANCE_MAGIC, "%p: magic failed", ecmi);
+	DEBUG_CHECK_MAGIC(ecmi, ECM_CLASSIFIER_MARK_INSTANCE_MAGIC, "%px: magic failed", ecmi);
 
 	/*
 	 * Nothing to update.
 	 * We only care about flows that are actively being accelerated.
 	 */
-	if (!(sync->flow_tx_packet_count || sync->return_tx_packet_count)) {
+	if (!(sync->tx_packet_count[ECM_CONN_DIR_FLOW] || sync->tx_packet_count[ECM_CONN_DIR_RETURN])) {
 		return;
 	}
 
@@ -473,7 +473,7 @@ static void ecm_classifier_mark_sync_to_v4(struct ecm_classifier_instance *aci, 
 
 	ci = ecm_db_connection_serial_find_and_ref(ecmi->ci_serial);
 	if (!ci) {
-		DEBUG_TRACE("%p: No ci found for %u\n", ecmi, ecmi->ci_serial);
+		DEBUG_TRACE("%px: No ci found for %u\n", ecmi, ecmi->ci_serial);
 		return;
 	}
 
@@ -492,7 +492,7 @@ static void ecm_classifier_mark_sync_to_v4(struct ecm_classifier_instance *aci, 
 	cb = rcu_dereference(sync_to_ipv4_cb[type]);
 	if (!cb) {
 		rcu_read_unlock();
-		DEBUG_WARN("%p: IPv4 mark sync callback is not set\n", ecmi);
+		DEBUG_WARN("%px: IPv4 mark sync callback is not set\n", ecmi);
 		return;
 	}
 
@@ -509,7 +509,7 @@ static void ecm_classifier_mark_sync_from_v4(struct ecm_classifier_instance *aci
 	struct ecm_classifier_mark_instance *ecmi __attribute__((unused));
 
 	ecmi = (struct ecm_classifier_mark_instance *)aci;
-	DEBUG_CHECK_MAGIC(ecmi, ECM_CLASSIFIER_MARK_INSTANCE_MAGIC, "%p: magic failed", ecmi);
+	DEBUG_CHECK_MAGIC(ecmi, ECM_CLASSIFIER_MARK_INSTANCE_MAGIC, "%px: magic failed", ecmi);
 }
 
 /*
@@ -530,13 +530,13 @@ static void ecm_classifier_mark_sync_to_v6(struct ecm_classifier_instance *aci, 
 	ecm_classifier_mark_type_t type = ECM_CLASSIFIER_MARK_TYPE_L2_ENCAP;
 			/* TODO: By default we use this type. In the future the type will be gotten from the connection instance */
 	struct ecm_classifier_mark_instance *ecmi = (struct ecm_classifier_mark_instance *)aci;
-	DEBUG_CHECK_MAGIC(ecmi, ECM_CLASSIFIER_MARK_INSTANCE_MAGIC, "%p: magic failed", ecmi);
+	DEBUG_CHECK_MAGIC(ecmi, ECM_CLASSIFIER_MARK_INSTANCE_MAGIC, "%px: magic failed", ecmi);
 
 	/*
 	 * Nothing to update.
 	 * We only care about flows that are actively being accelerated.
 	 */
-	if (!(sync->flow_tx_packet_count || sync->return_tx_packet_count)) {
+	if (!(sync->tx_packet_count[ECM_CONN_DIR_FLOW] || sync->tx_packet_count[ECM_CONN_DIR_RETURN])) {
 		return;
 	}
 
@@ -549,7 +549,7 @@ static void ecm_classifier_mark_sync_to_v6(struct ecm_classifier_instance *aci, 
 
 	ci = ecm_db_connection_serial_find_and_ref(ecmi->ci_serial);
 	if (!ci) {
-		DEBUG_TRACE("%p: No ci found for %u\n", ecmi, ecmi->ci_serial);
+		DEBUG_TRACE("%px: No ci found for %u\n", ecmi, ecmi->ci_serial);
 		return;
 	}
 
@@ -568,7 +568,7 @@ static void ecm_classifier_mark_sync_to_v6(struct ecm_classifier_instance *aci, 
 	cb = rcu_dereference(sync_to_ipv6_cb[type]);
 	if (!cb) {
 		rcu_read_unlock();
-		DEBUG_WARN("%p: IPv6 mark sync callback is not set\n", ecmi);
+		DEBUG_WARN("%px: IPv6 mark sync callback is not set\n", ecmi);
 		return;
 	}
 	cb(ecmi->mark, &src_ip6, src_port, &dest_ip6, dst_port, protocol);
@@ -584,7 +584,7 @@ static void ecm_classifier_mark_sync_from_v6(struct ecm_classifier_instance *aci
 	struct ecm_classifier_mark_instance *ecmi __attribute__((unused));
 
 	ecmi = (struct ecm_classifier_mark_instance *)aci;
-	DEBUG_CHECK_MAGIC(ecmi, ECM_CLASSIFIER_MARK_INSTANCE_MAGIC, "%p: magic failed", ecmi);
+	DEBUG_CHECK_MAGIC(ecmi, ECM_CLASSIFIER_MARK_INSTANCE_MAGIC, "%px: magic failed", ecmi);
 }
 
 #ifdef ECM_STATE_OUTPUT_ENABLE
@@ -600,7 +600,7 @@ static int ecm_classifier_mark_state_get(struct ecm_classifier_instance *ci, str
 	uint32_t mark;
 
 	ecmi = (struct ecm_classifier_mark_instance *)ci;
-	DEBUG_CHECK_MAGIC(ecmi, ECM_CLASSIFIER_MARK_INSTANCE_MAGIC, "%p: magic failed", ecmi);
+	DEBUG_CHECK_MAGIC(ecmi, ECM_CLASSIFIER_MARK_INSTANCE_MAGIC, "%px: magic failed", ecmi);
 
 	if ((result = ecm_state_prefix_add(sfi, "mark"))) {
 		return result;
@@ -639,7 +639,7 @@ struct ecm_classifier_mark_instance *ecm_classifier_mark_instance_alloc(struct e
 	 */
 	ecmi = (struct ecm_classifier_mark_instance *)kzalloc(sizeof(struct ecm_classifier_mark_instance), GFP_ATOMIC | __GFP_NOWARN);
 	if (!ecmi) {
-		DEBUG_WARN("i%p: Failed to allocate Mark Classifier instance\n", ci);
+		DEBUG_WARN("i%px: Failed to allocate Mark Classifier instance\n", ci);
 		return NULL;
 	}
 
@@ -674,7 +674,7 @@ struct ecm_classifier_mark_instance *ecm_classifier_mark_instance_alloc(struct e
 	spin_lock_bh(&ecm_classifier_mark_lock);
 	if (ecm_classifier_mark_terminate_pending) {
 		spin_unlock_bh(&ecm_classifier_mark_lock);
-		DEBUG_WARN("%p: Terminating\n", ci);
+		DEBUG_WARN("%px: Terminating\n", ci);
 		kfree(ecmi);
 		return NULL;
 	}
@@ -692,10 +692,10 @@ struct ecm_classifier_mark_instance *ecm_classifier_mark_instance_alloc(struct e
 	 * Increment stats
 	 */
 	ecm_classifier_mark_count++;
-	DEBUG_ASSERT(ecm_classifier_mark_count > 0, "%p: ecm_classifier_mark_count wrap for instance: %p\n", ci, ecmi);
+	DEBUG_ASSERT(ecm_classifier_mark_count > 0, "%px: ecm_classifier_mark_count wrap for instance: %px\n", ci, ecmi);
 	spin_unlock_bh(&ecm_classifier_mark_lock);
 
-	DEBUG_INFO("%p: Mark classifier instance alloc: %p\n", ci, ecmi);
+	DEBUG_INFO("%px: Mark classifier instance alloc: %px\n", ci, ecmi);
 	return ecmi;
 }
 EXPORT_SYMBOL(ecm_classifier_mark_instance_alloc);

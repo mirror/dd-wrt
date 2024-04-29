@@ -1,6 +1,6 @@
 /*
  * ********************************************************************************
- * Copyright (c) 2016-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2016-2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
  * copyright notice and this permission notice appear in all copies.
@@ -32,7 +32,10 @@
  */
 struct nss_ipsecmgr_tunnel {
 	struct list_head list;			/* List node */
-	struct nss_ipsecmgr_ref ref;		/* SA objects under the tunnel */
+	struct nss_ipsecmgr_ref ref;		/* Ref objects under the tunnel */
+	struct list_head free_refs;		/* Refs objects needs to freed */
+	struct work_struct free_work;		/* Free work for pending refs */
+
 	struct net_device *dev;			/* back pointer to tunnel device */
 
 	size_t stats_buf_sz;			/* Size of statistics buffer */
@@ -45,7 +48,7 @@ struct nss_ipsecmgr_tunnel {
 /*
  * Initialize the metadata in the header of SKB, and return the pointer to the start of metadata payload
  */
-static inline void *nss_ipsecmgr_tunnel_get_mdata(struct sk_buff *skb)
+static inline void *nss_ipsecmgr_tunnel_push_mdata(struct sk_buff *skb)
 {
 	struct nss_ipsec_cmn_mdata *mo;
 	uint8_t *data = skb->data;
@@ -67,4 +70,14 @@ static inline void *nss_ipsecmgr_tunnel_get_mdata(struct sk_buff *skb)
 	return (void *)&mo->data;
 }
 
+/*
+ * Pull metdata from SKB
+ */
+static inline void *nss_ipsecmgr_tunnel_pull_mdata(struct sk_buff *skb)
+{
+	struct nss_ipsec_cmn_mdata *mo = (struct nss_ipsec_cmn_mdata *)skb->data;
+	BUG_ON(mo->cm.magic != NSS_IPSEC_CMN_MDATA_MAGIC);
+
+	return skb_pull(skb, mo->cm.len);
+}
 #endif

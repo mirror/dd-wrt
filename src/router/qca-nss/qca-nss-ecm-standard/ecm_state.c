@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2015, The Linux Foundation.  All rights reserved.
+ * Copyright (c) 2015, 2020-2021, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -138,7 +138,7 @@ int ecm_state_write_reset(struct ecm_state_file_instance *sfi, char *prefix)
 {
 	int result;
 
-	DEBUG_CHECK_MAGIC(sfi, ECM_STATE_FILE_INSTANCE_MAGIC, "%p: magic failed", sfi);
+	DEBUG_CHECK_MAGIC(sfi, ECM_STATE_FILE_INSTANCE_MAGIC, "%px: magic failed", sfi);
 	sfi->msgp = sfi->msg;
 	sfi->msg_len = 0;
 
@@ -150,7 +150,6 @@ int ecm_state_write_reset(struct ecm_state_file_instance *sfi, char *prefix)
 	sfi->prefix_levels[sfi->prefix_level] = result;
 	return 0;
 }
-EXPORT_SYMBOL(ecm_state_write_reset);
 
 /*
  * ecm_state_prefix_add()
@@ -164,7 +163,7 @@ int ecm_state_prefix_add(struct ecm_state_file_instance *sfi, char *prefix)
 	int pxremain;
 	int result;
 
-	DEBUG_CHECK_MAGIC(sfi, ECM_STATE_FILE_INSTANCE_MAGIC, "%p: magic failed", sfi);
+	DEBUG_CHECK_MAGIC(sfi, ECM_STATE_FILE_INSTANCE_MAGIC, "%px: magic failed", sfi);
 
 	pxsz = sfi->prefix_levels[sfi->prefix_level];
 	pxremain = ECM_STATE_FILE_PREFIX_SIZE - pxsz;
@@ -178,7 +177,6 @@ int ecm_state_prefix_add(struct ecm_state_file_instance *sfi, char *prefix)
 	sfi->prefix_levels[sfi->prefix_level] = pxsz + result;
 	return 0;
 }
-EXPORT_SYMBOL(ecm_state_prefix_add);
 
 /*
  * ecm_state_prefix_index_add()
@@ -186,17 +184,17 @@ EXPORT_SYMBOL(ecm_state_prefix_add);
  *
  * Returns 0 on success
  */
-int ecm_state_prefix_index_add(struct ecm_state_file_instance *sfi, int index)
+int ecm_state_prefix_index_add(struct ecm_state_file_instance *sfi, uint32_t index)
 {
 	int pxsz;
 	int pxremain;
 	int result;
 
-	DEBUG_CHECK_MAGIC(sfi, ECM_STATE_FILE_INSTANCE_MAGIC, "%p: magic failed", sfi);
+	DEBUG_CHECK_MAGIC(sfi, ECM_STATE_FILE_INSTANCE_MAGIC, "%px: magic failed", sfi);
 
 	pxsz = sfi->prefix_levels[sfi->prefix_level];
 	pxremain = ECM_STATE_FILE_PREFIX_SIZE - pxsz;
-	result = snprintf(sfi->prefix + pxsz, pxremain, ".%d", index);
+	result = snprintf(sfi->prefix + pxsz, pxremain, ".%u", index);
 	if ((result < 0) || (result >= pxremain)) {
 		return -1;
 	}
@@ -206,7 +204,6 @@ int ecm_state_prefix_index_add(struct ecm_state_file_instance *sfi, int index)
 	sfi->prefix_levels[sfi->prefix_level] = pxsz + result;
 	return 0;
 }
-EXPORT_SYMBOL(ecm_state_prefix_index_add);
 
 /*
  * ecm_state_prefix_remove()
@@ -218,7 +215,7 @@ int ecm_state_prefix_remove(struct ecm_state_file_instance *sfi)
 {
 	int pxsz;
 
-	DEBUG_CHECK_MAGIC(sfi, ECM_STATE_FILE_INSTANCE_MAGIC, "%p: magic failed", sfi);
+	DEBUG_CHECK_MAGIC(sfi, ECM_STATE_FILE_INSTANCE_MAGIC, "%px: magic failed", sfi);
 
 	sfi->prefix_level--;
 	DEBUG_ASSERT(sfi->prefix_level >= 0, "Bad prefix handling\n");
@@ -226,7 +223,6 @@ int ecm_state_prefix_remove(struct ecm_state_file_instance *sfi)
 	sfi->prefix[pxsz] = 0;
 	return 0;
 }
-EXPORT_SYMBOL(ecm_state_prefix_remove);
 
 /*
  * ecm_state_write()
@@ -241,7 +237,7 @@ int ecm_state_write(struct ecm_state_file_instance *sfi, char *name, char *fmt, 
 	int result;
 	va_list args;
 
-	DEBUG_CHECK_MAGIC(sfi, ECM_STATE_FILE_INSTANCE_MAGIC, "%p: magic failed", sfi);
+	DEBUG_CHECK_MAGIC(sfi, ECM_STATE_FILE_INSTANCE_MAGIC, "%px: magic failed", sfi);
 
 	remain = ECM_STATE_FILE_BUFFER_SIZE - sfi->msg_len;
 	ptr = sfi->msg + sfi->msg_len;
@@ -273,7 +269,6 @@ int ecm_state_write(struct ecm_state_file_instance *sfi, char *name, char *fmt, 
 	sfi->msg_len += result;
 	return 0;
 }
-EXPORT_SYMBOL(ecm_state_write);
 
 /*
  * ecm_state_char_dev_conn_msg_prep()
@@ -283,7 +278,7 @@ static bool ecm_state_char_dev_conn_msg_prep(struct ecm_state_file_instance *sfi
 {
 	int result;
 
-	DEBUG_TRACE("%p: Prep conn msg for %p\n", sfi, sfi->ci);
+	DEBUG_TRACE("%px: Prep conn msg for %px\n", sfi, sfi->ci);
 
 	if ((result = ecm_state_write_reset(sfi, "conns"))) {
 		return result;
@@ -299,7 +294,7 @@ static bool ecm_state_char_dev_mapping_msg_prep(struct ecm_state_file_instance *
 {
 	int result;
 
-	DEBUG_TRACE("%p: Prep mapping msg for %p\n", sfi, sfi->mi);
+	DEBUG_TRACE("%px: Prep mapping msg for %px\n", sfi, sfi->mi);
 
 	if ((result = ecm_state_write_reset(sfi, "mappings"))) {
 		return result;
@@ -315,7 +310,7 @@ static bool ecm_state_char_dev_host_msg_prep(struct ecm_state_file_instance *sfi
 {
 	int result;
 
-	DEBUG_TRACE("%p: Prep host msg for %p\n", sfi, sfi->hi);
+	DEBUG_TRACE("%px: Prep host msg for %px\n", sfi, sfi->hi);
 
 	if ((result = ecm_state_write_reset(sfi, "hosts"))) {
 		return result;
@@ -332,7 +327,7 @@ static bool ecm_state_char_dev_node_msg_prep(struct ecm_state_file_instance *sfi
 {
 	int result;
 
-	DEBUG_TRACE("%p: Prep node msg for %p\n", sfi, sfi->ni);
+	DEBUG_TRACE("%px: Prep node msg for %px\n", sfi, sfi->ni);
 
 	if ((result = ecm_state_write_reset(sfi, "nodes"))) {
 		return result;
@@ -349,7 +344,7 @@ static int ecm_state_char_dev_iface_msg_prep(struct ecm_state_file_instance *sfi
 {
 	int result;
 
-	DEBUG_TRACE("%p: Prep iface msg for %p\n", sfi, sfi->ii);
+	DEBUG_TRACE("%px: Prep iface msg for %px\n", sfi, sfi->ii);
 
 	if ((result = ecm_state_write_reset(sfi, "ifaces"))) {
 		return result;
@@ -365,7 +360,7 @@ static bool ecm_state_char_dev_conn_chain_msg_prep(struct ecm_state_file_instanc
 {
 	int result;
 	int chain_len;
-	DEBUG_TRACE("%p: Prep conn chain msg\n", sfi);
+	DEBUG_TRACE("%px: Prep conn chain msg\n", sfi);
 
 	/*
 	 * Get hash table chain length
@@ -389,7 +384,7 @@ static bool ecm_state_char_dev_mapping_chain_msg_prep(struct ecm_state_file_inst
 {
 	int result;
 	int chain_len;
-	DEBUG_TRACE("%p: Prep mapping chain msg\n", sfi);
+	DEBUG_TRACE("%px: Prep mapping chain msg\n", sfi);
 
 	/*
 	 * Get hash table chain length
@@ -413,7 +408,7 @@ static bool ecm_state_char_dev_host_chain_msg_prep(struct ecm_state_file_instanc
 {
 	int result;
 	int chain_len;
-	DEBUG_TRACE("%p: Prep host chain msg\n", sfi);
+	DEBUG_TRACE("%px: Prep host chain msg\n", sfi);
 
 	/*
 	 * Get hash table chain length
@@ -437,7 +432,7 @@ static bool ecm_state_char_dev_node_chain_msg_prep(struct ecm_state_file_instanc
 {
 	int result;
 	int chain_len;
-	DEBUG_TRACE("%p: Prep node chain msg\n", sfi);
+	DEBUG_TRACE("%px: Prep node chain msg\n", sfi);
 
 	/*
 	 * Get hash table chain length
@@ -461,7 +456,7 @@ static bool ecm_state_char_dev_iface_chain_msg_prep(struct ecm_state_file_instan
 {
 	int result;
 	int chain_len;
-	DEBUG_TRACE("%p: Prep iface chain msg\n", sfi);
+	DEBUG_TRACE("%px: Prep iface chain msg\n", sfi);
 
 	/*
 	 * Get hash table chain length
@@ -485,7 +480,7 @@ static bool ecm_state_char_dev_protocol_count_msg_prep(struct ecm_state_file_ins
 {
 	int result;
 	int count;
-	DEBUG_TRACE("%p: Prep protocol msg\n", sfi);
+	DEBUG_TRACE("%px: Prep protocol msg\n", sfi);
 
 	/*
 	 * Get protocol connection total count
@@ -511,7 +506,7 @@ static int ecm_state_char_dev_cta_msg_prep(struct ecm_state_file_instance *sfi, 
 	struct ecm_db_connection_instance *ci;
 	int result;
 
-	DEBUG_TRACE("%p: Prep classifier type assignment msg: %d\n", sfi, ca_type);
+	DEBUG_TRACE("%px: Prep classifier type assignment msg: %d\n", sfi, ca_type);
 
 	ci = sfi->classifier_type_assignments[ca_type];
 	if (!ci) {
@@ -570,7 +565,7 @@ static int ecm_state_char_device_open(struct inode *inode, struct file *file)
 	/*
 	 * Allocate state information for the reading
 	 */
-	DEBUG_ASSERT(file->private_data == NULL, "unexpected double open: %p?\n", file->private_data);
+	DEBUG_ASSERT(file->private_data == NULL, "unexpected double open: %px?\n", file->private_data);
 
 	sfi = (struct ecm_state_file_instance *)kzalloc(sizeof(struct ecm_state_file_instance), GFP_ATOMIC | __GFP_NOWARN);
 	if (!sfi) {
@@ -629,7 +624,7 @@ static int ecm_state_char_device_open(struct inode *inode, struct file *file)
 	}
 #endif
 
-	DEBUG_INFO("State opened %p\n", sfi);
+	DEBUG_INFO("State opened %px\n", sfi);
 
 	return 0;
 }
@@ -643,8 +638,8 @@ static int ecm_state_char_device_release(struct inode *inode, struct file *file)
 	struct ecm_state_file_instance *sfi;
 
 	sfi = (struct ecm_state_file_instance *)file->private_data;
-	DEBUG_CHECK_MAGIC(sfi, ECM_STATE_FILE_INSTANCE_MAGIC, "%p: magic failed", sfi);
-	DEBUG_INFO("%p: State close\n", sfi);
+	DEBUG_CHECK_MAGIC(sfi, ECM_STATE_FILE_INSTANCE_MAGIC, "%px: magic failed", sfi);
+	DEBUG_INFO("%px: State close\n", sfi);
 
 	/*
 	 * Release any references held
@@ -690,8 +685,8 @@ static ssize_t ecm_state_char_device_read(struct file *file,	/* see include/linu
 #endif
 
 	sfi = (struct ecm_state_file_instance *)file->private_data;
-	DEBUG_CHECK_MAGIC(sfi, ECM_STATE_FILE_INSTANCE_MAGIC, "%p: magic failed", sfi);
-	DEBUG_TRACE("%p: State read up to length %d bytes\n", sfi, (int)length);
+	DEBUG_CHECK_MAGIC(sfi, ECM_STATE_FILE_INSTANCE_MAGIC, "%px: magic failed", sfi);
+	DEBUG_TRACE("%px: State read up to length %d bytes\n", sfi, (int)length);
 
 	/*
 	 * If there is still some message remaining to be output then complete that first
@@ -923,7 +918,6 @@ init_cleanup:
 	debugfs_remove_recursive(ecm_state_dentry);
 	return result;
 }
-EXPORT_SYMBOL(ecm_state_init);
 
 /*
  * ecm_state_exit()
@@ -941,5 +935,3 @@ void ecm_state_exit(void)
 		debugfs_remove_recursive(ecm_state_dentry);
 	}
 }
-EXPORT_SYMBOL(ecm_state_exit);
-

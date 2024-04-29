@@ -1,9 +1,12 @@
 /*
  **************************************************************************
- * Copyright (c) 2015-2016, 2019 The Linux Foundation.  All rights reserved.
+ * Copyright (c) 2015-2016, 2019-2021, The Linux Foundation.  All rights reserved.
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
+ *
  * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
  * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
  * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
@@ -14,36 +17,34 @@
  **************************************************************************
  */
 
+#ifndef __ECM_FRONT_END_COMMON_H
+#define __ECM_FRONT_END_COMMON_H
+
 #include <linux/if_pppox.h>
 #include <net/netfilter/nf_conntrack.h>
 #include <net/netfilter/nf_conntrack_acct.h>
-
+#include "ecm_bond_notifier.h"
 #ifdef ECM_FRONT_END_NSS_ENABLE
-#include "ecm_nss_bond_notifier.h"
-#else
-static inline void ecm_nss_bond_notifier_stop(int num)
-{
-	/*
-	 * Just return if nss front end is not enabled
-	 */
-	return;
-}
+#include <nss_api_if.h>
+#endif
+#ifdef ECM_FRONT_END_SFE_ENABLE
+#include <sfe_api.h>
+#endif
 
-static inline int ecm_nss_bond_notifier_init(struct dentry *dentry)
-{
-	/*
-	 * Just return if nss front end is not enabled
-	 */
-	return 0;
-}
+#define ECM_FRONT_END_SYSCTL_PATH "/net/ecm"
 
-static inline void ecm_nss_bond_notifier_exit(void)
-{
-	/*
-	 * Just return if nss front end is not enabled
-	 */
-	return;
-}
+/*
+ * Flag to limit the number of DB connections at any point to the maximum number
+ * that can be accelerated by NSS. This may need to be enabled for low memory
+ * platforms to control memory allocated by ECM databases.
+ */
+extern unsigned int ecm_front_end_conn_limit;
+
+/*
+ * Flag to enable/disable Wi-FI FSE block programming through PPE driver
+ */
+#ifdef ECM_FRONT_END_PPE_ENABLE
+extern unsigned int ecm_front_end_ppe_fse_enable;
 #endif
 
 /*
@@ -97,12 +98,18 @@ static inline bool ecm_front_end_acceleration_rejected(struct sk_buff *skb)
 		 */
 		return false;
 	}
-
-#if (LINUX_VERSION_CODE <= KERNEL_VERSION(3, 6, 0))
-	acct = nf_conn_acct_find(ct);
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 12, 0))
+	if (unlikely(nf_ct_is_untracked(ct))) {
 #else
-	acct = nf_conn_acct_find(ct)->counter;
+	if (unlikely(ctinfo == IP_CT_UNTRACKED)) {
 #endif
+		/*
+		 * Untracked traffic certainly can't be accelerated.
+		 */
+		return true;
+	}
+
+	acct = nf_conn_acct_find(ct)->counter;
 	if (acct) {
 		long long packets = atomic64_read(&acct[CTINFO2DIR(ctinfo)].packets);
 		if ((packets > 0xff) && (packets & 0xff)) {
@@ -168,7 +175,14 @@ static inline void ecm_front_end_flow_and_return_directions_get(struct nf_conn *
  */
 static inline bool ecm_front_end_common_connection_defunct_check(struct ecm_front_end_connection_instance *feci)
 {
-	DEBUG_ASSERT(spin_is_locked(&feci->lock), "%p: feci lock is not held\n", feci);
+	DEBUG_ASSERT(spin_is_locked(&feci->lock), "%px: feci lock is not held\n", feci);
+
+	/*
+	 * If we have not completed the destroy failure handling, do nothing.
+	 */
+	if (feci->destroy_fail_handle_pending) {
+		return false;
+	}
 
 	/*
 	 * If connection has already become defunct, do nothing.
@@ -210,7 +224,7 @@ static inline bool ecm_front_end_common_connection_defunct_check(struct ecm_fron
  */
 static inline bool ecm_front_end_common_connection_decelerate_accel_mode_check(struct ecm_front_end_connection_instance *feci)
 {
-	DEBUG_ASSERT(spin_is_locked(&feci->lock), "%p: feci lock is not held\n", feci);
+	DEBUG_ASSERT(spin_is_locked(&feci->lock), "%px: feci lock is not held\n", feci);
 
 	/*
 	 * If decelerate is in error or already pending then ignore
@@ -256,7 +270,7 @@ static inline bool ecm_front_end_destroy_failure_handle(struct ecm_front_end_con
 		 */
 		feci->accel_mode = ECM_FRONT_END_ACCELERATION_MODE_FAIL_DRIVER;
 		spin_unlock_bh(&feci->lock);
-		DEBUG_WARN("%p: Decel failed - driver fail limit\n", feci);
+		DEBUG_WARN("%px: Decel failed - driver fail limit\n", feci);
 		return true;
 	}
 
@@ -267,6 +281,7 @@ static inline bool ecm_front_end_destroy_failure_handle(struct ecm_front_end_con
 	 */
 	feci->accel_mode = ECM_FRONT_END_ACCELERATION_MODE_ACCEL;
 	feci->is_defunct = false;
+	feci->destroy_fail_handle_pending = true;
 	spin_unlock_bh(&feci->lock);
 
 	/*
@@ -275,9 +290,110 @@ static inline bool ecm_front_end_destroy_failure_handle(struct ecm_front_end_con
 	 */
 	ecm_db_connection_defunct_timer_remove_and_set(feci->ci, ECM_DB_TIMER_GROUPS_CONNECTION_DEFUNCT_RETRY_TIMEOUT);
 
+	spin_lock_bh(&feci->lock);
+	feci->destroy_fail_handle_pending = false;
+	spin_unlock_bh(&feci->lock);
+
 	return false;
+}
+
+/*
+ * ecm_front_end_ppppoe_br_accel_disabled()
+ *      Check if acceleration of PPPoE bridged flow is disabled or not.
+ */
+static inline bool ecm_front_end_ppppoe_br_accel_disabled(void)
+{
+	enum ecm_front_end_type fe_type;
+	bool ret = true;
+
+	fe_type = ecm_front_end_type_get();
+	switch (fe_type) {
+#ifdef ECM_FRONT_END_NSS_ENABLE
+	case ECM_FRONT_END_TYPE_NSS:
+		ret = (nss_pppoe_get_br_accel_mode() == NSS_PPPOE_BR_ACCEL_MODE_DIS);
+		break;
+#endif
+#ifdef ECM_FRONT_END_SFE_ENABLE
+	case ECM_FRONT_END_TYPE_SFE:
+		ret = (sfe_pppoe_get_br_accel_mode() == SFE_PPPOE_BR_ACCEL_MODE_DISABLED);
+		break;
+#endif
+	default:
+		DEBUG_WARN("front end type: %d is not supported\n", fe_type);
+		break;
+	}
+
+	return ret;
+}
+
+/*
+ * ecm_front_end_ppppoe_br_accel_3tuple()
+ *      Check if acceleration of PPPoE bridged flow is based on 3-tuple.
+ *      (default is 5-tuple acceleration)
+ */
+static inline bool ecm_front_end_ppppoe_br_accel_3tuple(void)
+{
+	enum ecm_front_end_type fe_type;
+	bool ret = false;
+
+	fe_type = ecm_front_end_type_get();
+	switch (fe_type) {
+#ifdef ECM_FRONT_END_NSS_ENABLE
+	case ECM_FRONT_END_TYPE_NSS:
+		ret = (nss_pppoe_get_br_accel_mode() == NSS_PPPOE_BR_ACCEL_MODE_EN_3T);
+		break;
+#endif
+#ifdef ECM_FRONT_END_SFE_ENABLE
+	case ECM_FRONT_END_TYPE_SFE:
+		ret = (sfe_pppoe_get_br_accel_mode() == SFE_PPPOE_BR_ACCEL_MODE_EN_3T);
+		break;
+#endif
+	default:
+		DEBUG_WARN("front end type: %d is not supported\n", fe_type);
+		break;
+	}
+
+	return ret;
 }
 
 extern void ecm_front_end_bond_notifier_stop(int num);
 extern int ecm_front_end_bond_notifier_init(struct dentry *dentry);
 extern void ecm_front_end_bond_notifier_exit(void);
+
+#ifdef ECM_STATE_OUTPUT_ENABLE
+extern int ecm_front_end_common_connection_state_get(struct ecm_front_end_connection_instance *feci,
+						    struct ecm_state_file_instance *sfi,
+						    char *conn_type);
+#endif
+extern bool ecm_front_end_gre_proto_is_accel_allowed(struct net_device *indev,
+						      struct net_device *outdev,
+						      struct sk_buff *skb,
+						      struct nf_conntrack_tuple *tuple,
+						      int ip_version, uint16_t offset);
+extern uint64_t ecm_front_end_get_slow_packet_count(struct ecm_front_end_connection_instance *feci);
+#ifdef ECM_CLASSIFIER_DSCP_ENABLE
+void ecm_front_end_tcp_set_dscp_ext(struct nf_conn *ct,
+					      struct ecm_tracker_ip_header *iph,
+					      struct sk_buff *skb,
+					      ecm_tracker_sender_type_t sender);
+#endif
+void ecm_front_end_fill_ovs_params(struct ecm_front_end_ovs_params ovs_params[],
+					ip_addr_t ip_src_addr, ip_addr_t ip_src_addr_nat,
+					ip_addr_t ip_dest_addr, ip_addr_t ip_dest_addr_nat,
+					int src_port, int src_port_nat,
+					int dest_port, int dest_port_nat, ecm_db_direction_t ecm_dir);
+void ecm_front_end_common_sysctl_register(void);
+void ecm_front_end_common_sysctl_unregister(void);
+int ecm_sfe_sysctl_tbl_init(void);
+void ecm_sfe_sysctl_tbl_exit(void);
+bool ecm_front_end_feature_check(struct sk_buff *skb, struct ecm_tracker_ip_header *ip_hdr);
+
+ecm_front_end_acceleration_mode_t ecm_front_end_connection_accel_state_get(struct ecm_front_end_connection_instance *feci);
+void ecm_front_end_connection_action_seen(struct ecm_front_end_connection_instance *feci);
+void ecm_front_end_connection_ref(struct ecm_front_end_connection_instance *feci);
+int ecm_front_end_connection_deref(struct ecm_front_end_connection_instance *feci);
+
+bool ecm_front_end_connection_check_and_switch_to_next_ae(struct ecm_front_end_connection_instance *feci);
+void ecm_front_end_common_set_stats_bitmap(struct ecm_front_end_connection_instance *feci, ecm_db_obj_dir_t dir, uint8_t bit);
+uint32_t ecm_front_end_common_get_stats_bitmap(struct ecm_front_end_connection_instance *feci, ecm_db_obj_dir_t dir);
+#endif  /* __ECM_FRONT_END_COMMON_H */

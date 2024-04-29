@@ -1,4 +1,4 @@
-/* Copyright (c) 2013-2018, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2013-2018, 2020, The Linux Foundation. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -29,6 +29,7 @@
 #include <linux/delay.h>
 #include <linux/atomic.h>
 #include <linux/scatterlist.h>
+#include <linux/timekeeping.h>
 
 #include <nss_api_if.h>
 #include <nss_crypto_api.h>
@@ -76,8 +77,8 @@ static DECLARE_WAIT_QUEUE_HEAD(tx_comp);
 static DECLARE_WAIT_QUEUE_HEAD(tx_start);
 static struct task_struct *tx_thread;
 
-static struct timeval init_time;
-static struct timeval comp_time;
+static struct timespec64 init_time;
+static struct timespec64 comp_time;
 static spinlock_t op_lock;
 static struct nss_crypto_user *crypto_hdl;
 static struct nss_crypto_user_ctx *ctx;
@@ -687,7 +688,7 @@ static int32_t crypto_bench_prep_buf(struct crypto_op *op)
 	sg_init_one(&src, op->data_vaddr, op->data_len + icv_len);
 	num_frag = sg_nents(&src);
 
-	ch = nss_crypto_hdr_alloc(crypto_hdl, crypto_sid[curr_sid], num_frag, iv_len, icv_len, ahash);
+	ch = nss_crypto_hdr_alloc(crypto_hdl, crypto_sid[curr_sid], num_frag, num_frag, iv_len, icv_len, ahash);
 	if (ch == NULL) {
 		crypto_bench_error("UNABLE TO ALLOCATE CRYPTO BUFFER\n");
 		return CRYPTO_BENCH_NOT_OK;
@@ -696,7 +697,7 @@ static int32_t crypto_bench_prep_buf(struct crypto_op *op)
 	nss_crypto_hdr_set_skip(ch, op->cipher_skip);
 	nss_crypto_hdr_set_op(ch, op->op_dir);
 
-	nss_crypto_hdr_map_sglist(ch, &src, icv_len);
+	nss_crypto_hdr_map_sglist(ch, &src, &src, (uint16_t)op->data_len, (uint16_t)op->data_len + icv_len, true);
 
 	fixed_size = 2 * ch->in_frags * sizeof(struct nss_crypto_frag) + sizeof(struct nss_crypto_hdr);
 	tot_len = ch->iv_len + ch->hmac_len + ch->buf_len + ch->priv_len + fixed_size;
@@ -775,7 +776,7 @@ static int crypto_bench_tx(void *arg)
 		crypto_bench_debug("#");
 
 		/* get start time */
-		do_gettimeofday(&init_time);
+		ktime_get_real_ts64(&init_time);
 
 		/**
 		 * Request submission
@@ -804,9 +805,8 @@ static int crypto_bench_tx(void *arg)
 		/**
 		 * Calculate time and output the Mbps
 		 */
-
-		init_usecs  = (init_time.tv_sec * 1000 * 1000) + init_time.tv_usec;
-		comp_usecs  = (comp_time.tv_sec * 1000 * 1000) + comp_time.tv_usec;
+		init_usecs  = (init_time.tv_sec * 1000 * 1000) + (init_time.tv_nsec / 1000);
+		comp_usecs  = (comp_time.tv_sec * 1000 * 1000) + (comp_time.tv_nsec / 1000);
 		delta_usecs = comp_usecs - init_usecs;
 
 		reqs_completed = param.num_reqs - atomic_read(&tx_reqs);
@@ -858,7 +858,7 @@ void crypto_bench_done(void *app_data, struct nss_crypto_hdr *ch, uint8_t error)
 	nss_crypto_hdr_free(crypto_hdl, ch);
 
 	if (atomic_dec_and_test(&tx_reqs)) {
-		do_gettimeofday(&comp_time);
+		ktime_get_real_ts64(&comp_time);
 
 		wake_up_interruptible(&tx_comp);
 		param.num_loops--;

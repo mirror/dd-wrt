@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2018-2020, The Linux Foundation. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -41,7 +41,8 @@
 enum nss_meminfo_memtype {
 	NSS_MEMINFO_MEMTYPE_IMEM,	/* NSS-IMEM also called TCM */
 	NSS_MEMINFO_MEMTYPE_SDRAM,	/* SDRAM also called DDR */
-	NSS_MEMINFO_MEMTYPE_UTCM_SHARED,	/* UTCM memory allocated for DMA objects */
+	NSS_MEMINFO_MEMTYPE_UTCM_SHARED, /* UTCM memory allocated for DMA objects */
+	NSS_MEMINFO_MEMTYPE_INFO,	/* Exchange information during boot up */
 	NSS_MEMINFO_MEMTYPE_MAX
 };
 
@@ -79,7 +80,7 @@ struct nss_meminfo_block {
 	uint32_t index;			/* Index to request array */
 	uint32_t size;			/* Size of memory block */
 	uint32_t dma_addr;		/* DMA address */
-	unsigned long kern_addr;	/* Kernel address */
+	void *kern_addr;		/* Kernel address */
 };
 
 /*
@@ -100,7 +101,7 @@ struct nss_meminfo_n2h_h2n_info {
 	enum nss_meminfo_memtype memtype;	/* Memory type */
 	uint32_t total_size;			/* Total size */
 	uint32_t dma_addr;			/* DMA address */
-	unsigned long kern_addr;		/* Kernel address */
+	void *kern_addr;			/* Kernel address */
 };
 
 /*
@@ -112,9 +113,9 @@ struct nss_meminfo_ctx {
 	uint32_t imem_head;				/* IMEM start address */
 	uint32_t imem_end;				/* IMEM end address */
 	uint32_t imem_tail;				/* IMEM data end */
-	uint32_t utcm_shared_head;				/* UTCM_SHARED start address */
-	uint32_t utcm_shared_end;				/* UTCM_SHARED end address */
-	uint32_t utcm_shared_tail;				/* UTCM_SHARED data end */
+	uint32_t utcm_shared_head;			/* UTCM_SHARED start address */
+	uint32_t utcm_shared_end;			/* UTCM_SHARED end address */
+	uint32_t utcm_shared_tail;			/* UTCM_SHARED data end */
 	struct nss_if_mem_map *if_map;			/* nss_if_mem_map_inst virtual address */
 	uint32_t if_map_dma;				/* nss_if_mem_map_inst physical address */
 	enum nss_meminfo_memtype if_map_memtype;	/* Memory type for nss_if_mem_map */
@@ -123,6 +124,8 @@ struct nss_meminfo_ctx {
 	enum nss_meminfo_memtype logbuffer_memtype;	/* Memory type for logbuffer */
 	uint32_t c2c_start_dma;				/* nss_c2c start physical address */
 	enum nss_meminfo_memtype c2c_start_memtype;	/* Memory type for c2c_start */
+	void *sdma_ctrl;				/* Soft DMA controller */
+
 	struct nss_meminfo_map meminfo_map;		/* Meminfo map */
 	struct nss_meminfo_block_list block_lists[NSS_MEMINFO_MEMTYPE_MAX];
 							/* Block lists for each memory type */

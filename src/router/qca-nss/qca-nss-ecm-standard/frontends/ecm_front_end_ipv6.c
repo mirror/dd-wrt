@@ -1,9 +1,12 @@
 /*
  **************************************************************************
- * Copyright (c) 2014-2017, The Linux Foundation.  All rights reserved.
+ * Copyright (c) 2014-2017, 2020-2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
+ *
  * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
  * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
  * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
@@ -47,6 +50,8 @@
 #include "ecm_tracker_tcp.h"
 #include "ecm_db.h"
 #include "ecm_front_end_ipv6.h"
+#include "ecm_interface.h"
+#include "ecm_ipv6.h"
 
 /*
  * General operational control
@@ -126,8 +131,10 @@ bool ecm_front_end_ipv6_interface_construct_set_and_hold(struct sk_buff *skb, ec
 	struct net_device *from_other = NULL;
 	struct net_device *to = NULL;
 	struct net_device *to_other = NULL;
+	struct net_device *dst_dev = NULL;
 	ip_addr_t from_mac_lookup;
 	ip_addr_t to_mac_lookup;
+	bool dst_dev_override = false;
 
 	/*
 	 * Set the rt_dst_addr with the destination IP address by default.
@@ -164,15 +171,40 @@ bool ecm_front_end_ipv6_interface_construct_set_and_hold(struct sk_buff *skb, ec
 			return false;
 		}
 
+		dst_dev = dst->dev;
+
+#ifdef ECM_XFRM_ENABLE
+		/*
+		 * If the dst is an xfrm dst, then override the dst_dev.
+		*/
+		if (dst_xfrm(dst)) {
+			int32_t if_type;
+			struct net_device *xfrm_dst_dev = ecm_interface_get_and_hold_ipsec_tun_netdev(NULL, skb, &if_type);
+			/*
+			 * If we reach here and are unable to find the tunnel netdevice,
+			 * then return failure.
+			 */
+			if (!xfrm_dst_dev) {
+				if (rt_iif_dev) {
+					dev_put(rt_iif_dev);
+				}
+				return false;
+			}
+
+			dst_dev = xfrm_dst_dev;
+			dst_dev_override = true;
+		}
+
+#endif
 		DEBUG_TRACE("in_dev: %s\n", in_dev->name);
 		DEBUG_TRACE("out_dev: %s\n", out_dev->name);
-		DEBUG_TRACE("dst->dev: %s\n", dst->dev->name);
+		DEBUG_TRACE("dst->dev: %s dst_dev: %s\n", dst_dev->name, dst_dev->name);
 		DEBUG_TRACE("rt_iif_dev: %s\n", rt_iif_dev->name);
-		DEBUG_TRACE("%p: rt6i_dst.addr: %pi6\n", rt, &rt->rt6i_dst.addr);
-		DEBUG_TRACE("%p: rt6i_src.addr: %pi6\n", rt, &rt->rt6i_src.addr);
-		DEBUG_TRACE("%p: rt6i_gateway: %pi6\n", rt, &rt->rt6i_gateway);
-		DEBUG_TRACE("%p: rt6i_idev: %s\n", rt, rt->rt6i_idev->dev->name);
-		DEBUG_TRACE("%p: skb->dev: %s\n", rt, skb->dev->name);
+		DEBUG_TRACE("%px: rt6i_dst.addr: %pi6\n", rt, &rt->rt6i_dst.addr);
+		DEBUG_TRACE("%px: rt6i_src.addr: %pi6\n", rt, &rt->rt6i_src.addr);
+		DEBUG_TRACE("%px: rt6i_gateway: %pi6\n", rt, &rt->rt6i_gateway);
+		DEBUG_TRACE("%px: rt6i_idev: %s\n", rt, rt->rt6i_idev->dev->name);
+		DEBUG_TRACE("%px: skb->dev: %s\n", rt, skb->dev->name);
 
 		DEBUG_INFO("ip_src_addr: " ECM_IP_ADDR_OCTAL_FMT "\n", ECM_IP_ADDR_TO_OCTAL(ip_src_addr));
 		DEBUG_INFO("ip_dest_addr: " ECM_IP_ADDR_OCTAL_FMT "\n", ECM_IP_ADDR_TO_OCTAL(ip_dest_addr));
@@ -188,8 +220,8 @@ bool ecm_front_end_ipv6_interface_construct_set_and_hold(struct sk_buff *skb, ec
 		}
 
 		from = rt_iif_dev;
-		from_other = dst->dev;
-		to = dst->dev;
+		from_other = dst_dev;
+		to = dst_dev;
 		to_other = rt_iif_dev;
 
 		ECM_IP_ADDR_COPY(from_mac_lookup, ip_src_addr);
@@ -202,6 +234,10 @@ bool ecm_front_end_ipv6_interface_construct_set_and_hold(struct sk_buff *skb, ec
 	ecm_front_end_ipv6_interface_construct_netdev_hold(efeici);
 
 	ecm_front_end_ipv6_interface_construct_ip_addr_set(efeici, from_mac_lookup, to_mac_lookup);
+
+	if (dst_dev_override) {
+		dev_put(dst_dev);
+	}
 
 	/*
 	 * Release the iff_dev which was hold by the dev_get_by_index() call.
@@ -227,17 +263,9 @@ void ecm_front_end_ipv6_stop(int num)
 int ecm_front_end_ipv6_init(struct dentry *dentry)
 {
 	debugfs_create_u32("front_end_ipv6_stop", S_IRUGO | S_IWUSR, dentry,
-					(u32 *)&ecm_front_end_ipv6_stopped);
+			   (u32 *)&ecm_front_end_ipv6_stopped);
 
-	switch (ecm_front_end_type_get()) {
-	case ECM_FRONT_END_TYPE_NSS:
-		return ecm_nss_ipv6_init(dentry);
-	case ECM_FRONT_END_TYPE_SFE:
-		return ecm_sfe_ipv6_init(dentry);
-	default:
-		DEBUG_ERROR("Failed to init ipv6 front end\n");
-		return -1;
-	}
+	return ecm_ipv6_init(dentry);
 }
 
 /*
@@ -245,16 +273,5 @@ int ecm_front_end_ipv6_init(struct dentry *dentry)
  */
 void ecm_front_end_ipv6_exit(void)
 {
-	switch (ecm_front_end_type_get()) {
-	case ECM_FRONT_END_TYPE_NSS:
-		ecm_nss_ipv6_exit();
-		break;
-	case ECM_FRONT_END_TYPE_SFE:
-		ecm_sfe_ipv6_exit();
-		break;
-	default:
-		DEBUG_ERROR("Failed to exit from front end\n");
-		break;
-	}
+	ecm_ipv6_exit();
 }
-

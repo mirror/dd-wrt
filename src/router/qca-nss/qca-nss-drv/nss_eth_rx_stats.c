@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2017, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017, 2019-2020 The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -14,46 +14,31 @@
  **************************************************************************
  */
 
-#include "nss_stats.h"
 #include "nss_core.h"
 #include "nss_eth_rx_stats.h"
+#include "nss_eth_rx_strings.h"
 
 /*
- * nss_eth_rx_stats_str
- *	eth_rx stats strings
+ * Declare atomic notifier data structure for statistics.
  */
-static int8_t *nss_eth_rx_stats_str[NSS_ETH_RX_STATS_MAX] = {
-	"ticks",
-	"worst_ticks",
-	"iterations"
-};
-
-/*
- * nss_eth_rx_exception_stats_str
- *	Interface stats strings for unknown exceptions
- */
-static int8_t *nss_eth_rx_exception_stats_str[NSS_ETH_RX_EXCEPTION_EVENT_MAX] = {
-	"UNKNOWN_L3_PROTOCOL",
-	"ETH_HDR_MISSING",
-	"VLAN_MISSING",
-	"TRUSTSEC_HDR_MISSING"
-};
+ATOMIC_NOTIFIER_HEAD(nss_eth_rx_stats_notifier);
 
 uint64_t nss_eth_rx_stats[NSS_ETH_RX_STATS_MAX];			/* ETH_RX statistics */
 uint64_t nss_eth_rx_exception_stats[NSS_ETH_RX_EXCEPTION_EVENT_MAX];	/* Unknown protocol exception events per interface */
 
 /*
  * nss_eth_rx_stats_read()
- *	Read ETH_RX stats
+ *	Read ETH_RX stats.
  */
 static ssize_t nss_eth_rx_stats_read(struct file *fp, char __user *ubuf, size_t sz, loff_t *ppos)
 {
 	int32_t i;
 
 	/*
-	 * max output lines = #stats + start tag line + end tag line + three blank lines
+	 * Max output lines = #stats * NSS_MAX_CORES  +
+	 * few blank lines for banner printing + Number of Extra outputlines for future reference to add new stats
 	 */
-	uint32_t max_output_lines = (NSS_STATS_NODE_MAX + 2) + (NSS_ETH_RX_STATS_MAX + 3) + (NSS_ETH_RX_EXCEPTION_EVENT_MAX + 3) + 5;
+	uint32_t max_output_lines = NSS_STATS_NODE_MAX + NSS_ETH_RX_STATS_MAX + NSS_ETH_RX_EXCEPTION_EVENT_MAX + NSS_STATS_EXTRA_OUTPUT_LINES;
 	size_t size_al = NSS_STATS_MAX_STR_LENGTH * max_output_lines;
 	size_t size_wr = 0;
 	ssize_t bytes_read = 0;
@@ -66,7 +51,7 @@ static ssize_t nss_eth_rx_stats_read(struct file *fp, char __user *ubuf, size_t 
 	}
 
 	/*
-	 * Note: The assumption here is that we do not have more than 64 stats
+	 * Note: The assumption here is that we do not have more than 64 stats.
 	 */
 	stats_shadow = kzalloc(64 * 8, GFP_KERNEL);
 	if (unlikely(stats_shadow == NULL)) {
@@ -75,14 +60,13 @@ static ssize_t nss_eth_rx_stats_read(struct file *fp, char __user *ubuf, size_t 
 		return 0;
 	}
 
-	size_wr = scnprintf(lbuf, size_al, "eth_rx stats start:\n\n");
+	size_wr += nss_stats_banner(lbuf, size_wr, size_al, "eth_rx", NSS_STATS_SINGLE_CORE);
 
-	size_wr = nss_stats_fill_common_stats(NSS_ETH_RX_INTERFACE, lbuf, size_wr, size_al);
+	size_wr += nss_stats_fill_common_stats(NSS_ETH_RX_INTERFACE, NSS_STATS_SINGLE_INSTANCE, lbuf, size_wr, size_al, "eth_rx");
 
 	/*
-	 * eth_rx node stats
+	 * eth_rx node stats.
 	 */
-	size_wr += scnprintf(lbuf + size_wr, size_al - size_wr, "\neth_rx node stats:\n\n");
 	spin_lock_bh(&nss_top_main.stats_lock);
 	for (i = 0; (i < NSS_ETH_RX_STATS_MAX); i++) {
 		stats_shadow[i] = nss_eth_rx_stats[i];
@@ -90,16 +74,16 @@ static ssize_t nss_eth_rx_stats_read(struct file *fp, char __user *ubuf, size_t 
 
 	spin_unlock_bh(&nss_top_main.stats_lock);
 
-	for (i = 0; (i < NSS_ETH_RX_STATS_MAX); i++) {
-		size_wr += scnprintf(lbuf + size_wr, size_al - size_wr,
-					"%s = %llu\n", nss_eth_rx_stats_str[i], stats_shadow[i]);
-	}
+	size_wr += nss_stats_print("eth_rx", "eth_rx node stats"
+					, NSS_STATS_SINGLE_INSTANCE
+					, nss_eth_rx_strings_stats
+					, stats_shadow
+					, NSS_ETH_RX_STATS_MAX
+					, lbuf, size_wr, size_al);
 
 	/*
-	 * Exception stats
+	 * Exception stats.
 	 */
-	size_wr += scnprintf(lbuf + size_wr, size_al - size_wr, "\neth_rx exception stats:\n\n");
-
 	spin_lock_bh(&nss_top_main.stats_lock);
 	for (i = 0; (i < NSS_ETH_RX_EXCEPTION_EVENT_MAX); i++) {
 		stats_shadow[i] = nss_eth_rx_exception_stats[i];
@@ -107,12 +91,12 @@ static ssize_t nss_eth_rx_stats_read(struct file *fp, char __user *ubuf, size_t 
 
 	spin_unlock_bh(&nss_top_main.stats_lock);
 
-	for (i = 0; (i < NSS_ETH_RX_EXCEPTION_EVENT_MAX); i++) {
-		size_wr += scnprintf(lbuf + size_wr, size_al - size_wr,
-					"%s = %llu\n", nss_eth_rx_exception_stats_str[i], stats_shadow[i]);
-	}
-
-	size_wr += scnprintf(lbuf + size_wr, size_al - size_wr, "\neth_rx stats end\n\n");
+	size_wr += nss_stats_print("eth_rx", "eth_rx exception stats"
+					, NSS_STATS_SINGLE_INSTANCE
+					, nss_eth_rx_strings_exception_stats
+					, stats_shadow
+					, NSS_ETH_RX_EXCEPTION_EVENT_MAX
+					, lbuf, size_wr, size_al);
 	bytes_read = simple_read_from_buffer(ubuf, sz, ppos, lbuf, strlen(lbuf));
 	kfree(lbuf);
 	kfree(stats_shadow);
@@ -121,9 +105,9 @@ static ssize_t nss_eth_rx_stats_read(struct file *fp, char __user *ubuf, size_t 
 }
 
 /*
- * nss_eth_rx_stats_ops
+ * nss_eth_rx_stats_ops.
  */
-NSS_STATS_DECLARE_FILE_OPERATIONS(eth_rx)
+NSS_STATS_DECLARE_FILE_OPERATIONS(eth_rx);
 
 /*
  * nss_eth_rx_stats_dentry_create()
@@ -164,3 +148,40 @@ void nss_eth_rx_metadata_stats_sync(struct nss_ctx_instance *nss_ctx, struct nss
 
 	spin_unlock_bh(&nss_top->stats_lock);
 }
+
+/*
+ * nss_eth_rx_stats_notify()
+ *	Sends notifications to the registered modules.
+ *
+ * Leverage NSS-FW statistics timing to update Netlink.
+ */
+void nss_eth_rx_stats_notify(struct nss_ctx_instance *nss_ctx)
+{
+	struct nss_eth_rx_stats_notification eth_rx_stats;
+
+	eth_rx_stats.core_id = nss_ctx->id;
+	memcpy(eth_rx_stats.cmn_node_stats, nss_top_main.stats_node[NSS_ETH_RX_INTERFACE], sizeof(eth_rx_stats.cmn_node_stats));
+	memcpy(eth_rx_stats.special_stats, nss_eth_rx_stats, sizeof(eth_rx_stats.special_stats));
+	memcpy(eth_rx_stats.exception_stats, nss_eth_rx_exception_stats, sizeof(eth_rx_stats.exception_stats));
+	atomic_notifier_call_chain(&nss_eth_rx_stats_notifier, NSS_STATS_EVENT_NOTIFY, (void *)&eth_rx_stats);
+}
+
+/*
+ * nss_eth_rx_stats_register_notifier()
+ *      Registers statistics notifier.
+ */
+int nss_eth_rx_stats_register_notifier(struct notifier_block *nb)
+{
+        return atomic_notifier_chain_register(&nss_eth_rx_stats_notifier, nb);
+}
+EXPORT_SYMBOL(nss_eth_rx_stats_register_notifier);
+
+/*
+ * nss_eth_rx_stats_unregister_notifier()
+ *      Deregisters statistics notifier.
+ */
+int nss_eth_rx_stats_unregister_notifier(struct notifier_block *nb)
+{
+        return atomic_notifier_chain_unregister(&nss_eth_rx_stats_notifier, nb);
+}
+EXPORT_SYMBOL(nss_eth_rx_stats_unregister_notifier);

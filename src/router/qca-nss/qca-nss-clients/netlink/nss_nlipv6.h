@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2016, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2016, 2019, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -20,11 +20,6 @@
  */
 #ifndef __NSS_NLIPV6_H
 #define __NSS_NLIPV6_H
-
-/*IP protocol type */
-#define NSS_NLIPV6_UDP 17
-#define NSS_NLIPV6_TCP 6
-#define NSS_NLIPV6_SCTP 132
 
 #define NSS_NLIPV6_VLAN_ID_NOT_CONFIGURED 0xFFF    /* Invalid vlan 4095 */
 

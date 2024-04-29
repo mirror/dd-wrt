@@ -1,9 +1,12 @@
 /*
  **************************************************************************
- * Copyright (c) 2016-2017 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2016-2017, 2019-2021 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022, Qualcomm Innovation Center, Inc. All rights reserved.
+ *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
+ *
  * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
  * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
  * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
@@ -86,6 +89,7 @@
  * Locking of the classifier - concurrency control
  */
 static DEFINE_SPINLOCK(ecm_conntrack_notifier_lock __attribute__((unused)));	/* Protect against SMP access between netfilter, events and private threaded function. */
+static DEFINE_MUTEX(ecm_conntrack_notifier_mtx);    /* Protect against race conditions during nf_conntrack notifier registration/unregistration events */
 
 /*
  * Debugfs dentry object.
@@ -97,6 +101,7 @@ static struct dentry *ecm_conntrack_notifier_dentry;
  */
 static int ecm_conntrack_notifier_stopped = 0;	/* When non-zero further traffic will not be processed */
 
+#ifdef ECM_IPV6_ENABLE
 /*
  * ecm_conntrack_ipv6_event_destroy()
  *	Handles conntrack destroy events
@@ -105,14 +110,15 @@ static void ecm_conntrack_ipv6_event_destroy(struct nf_conn *ct)
 {
 	struct ecm_db_connection_instance *ci;
 
-	DEBUG_INFO("Destroy event for ct: %p\n", ct);
+	DEBUG_INFO("Destroy event for ct: %px\n", ct);
 
 	ci = ecm_db_connection_ipv6_from_ct_get_and_ref(ct);
 	if (!ci) {
-		DEBUG_TRACE("%p: not found\n", ct);
+		DEBUG_TRACE("%px: not found\n", ct);
 		return;
 	}
-	DEBUG_INFO("%p: Connection defunct %p\n", ct, ci);
+	ecm_db_connection_flag_set(ci, ECM_DB_CONNECTION_FLAGS_DEFUNCT_CT_DESTROYED);
+	DEBUG_INFO("%px: Connection defunct %px\n", ct, ci);
 
 	/*
 	 * Force destruction of the connection by making it defunct
@@ -131,7 +137,7 @@ static void ecm_conntrack_ipv6_event_mark(struct nf_conn *ct)
 	struct ecm_db_connection_instance *ci;
 	struct ecm_classifier_instance *__attribute__((unused))cls;
 
-	DEBUG_INFO("Mark event for ct: %p\n", ct);
+	DEBUG_INFO("%px: IPv6 mark event ct->mark: %d\n", ct, ct->mark);
 
 	/*
 	 * Ignore transitions to zero
@@ -142,7 +148,7 @@ static void ecm_conntrack_ipv6_event_mark(struct nf_conn *ct)
 
 	ci = ecm_db_connection_ipv6_from_ct_get_and_ref(ct);
 	if (!ci) {
-		DEBUG_TRACE("%p: not found\n", ct);
+		DEBUG_TRACE("%px: not found\n", ct);
 		return;
 	}
 
@@ -157,6 +163,10 @@ static void ecm_conntrack_ipv6_event_mark(struct nf_conn *ct)
 		cls->deref(cls);
 	}
 #endif
+	if (ci->feci->update_rule) {
+		ci->feci->update_rule(ci->feci, ECM_RULE_UPDATE_TYPE_CONNMARK, ct);
+	}
+
 	/*
 	 * All done
 	 */
@@ -187,7 +197,7 @@ int ecm_conntrack_ipv6_event(unsigned long events, struct nf_conn *ct)
 	 * handle destroy events
 	 */
 	if (events & (1 << IPCT_DESTROY)) {
-		DEBUG_TRACE("%p: Event is destroy\n", ct);
+		DEBUG_TRACE("%px: Event is destroy\n", ct);
 		ecm_conntrack_ipv6_event_destroy(ct);
 	}
 
@@ -196,13 +206,14 @@ int ecm_conntrack_ipv6_event(unsigned long events, struct nf_conn *ct)
 	 * handle mark change events
 	 */
 	if (events & (1 << IPCT_MARK)) {
-		DEBUG_TRACE("%p: Event is mark\n", ct);
+		DEBUG_TRACE("%px: Event is mark\n", ct);
 		ecm_conntrack_ipv6_event_mark(ct);
 	}
 #endif
 	return NOTIFY_DONE;
 }
 EXPORT_SYMBOL(ecm_conntrack_ipv6_event);
+#endif
 
 /*
  * ecm_conntrack_ipv4_event_destroy()
@@ -212,14 +223,16 @@ static void ecm_conntrack_ipv4_event_destroy(struct nf_conn *ct)
 {
 	struct ecm_db_connection_instance *ci;
 
-	DEBUG_INFO("Destroy event for ct: %p\n", ct);
+	DEBUG_INFO("Destroy event for ct: %px\n", ct);
 
 	ci = ecm_db_connection_ipv4_from_ct_get_and_ref(ct);
 	if (!ci) {
-		DEBUG_TRACE("%p: not found\n", ct);
+		DEBUG_TRACE("%px: not found\n", ct);
 		return;
 	}
-	DEBUG_INFO("%p: Connection defunct %p\n", ct, ci);
+	ecm_db_connection_flag_set(ci, ECM_DB_CONNECTION_FLAGS_DEFUNCT_CT_DESTROYED);
+
+	DEBUG_INFO("%px: Connection defunct %px\n", ct, ci);
 
 	/*
 	 * Force destruction of the connection by making it defunct
@@ -238,7 +251,7 @@ static void ecm_conntrack_ipv4_event_mark(struct nf_conn *ct)
 	struct ecm_db_connection_instance *ci;
 	struct ecm_classifier_instance *__attribute__((unused))cls;
 
-	DEBUG_INFO("Mark event for ct: %p\n", ct);
+	DEBUG_INFO("%px: IPv4 mark event ct->mark: %d\n", ct, ct->mark);
 
 	/*
 	 * Ignore transitions to zero
@@ -249,7 +262,7 @@ static void ecm_conntrack_ipv4_event_mark(struct nf_conn *ct)
 
 	ci = ecm_db_connection_ipv4_from_ct_get_and_ref(ct);
 	if (!ci) {
-		DEBUG_TRACE("%p: not found\n", ct);
+		DEBUG_TRACE("%px: not found\n", ct);
 		return;
 	}
 
@@ -264,6 +277,9 @@ static void ecm_conntrack_ipv4_event_mark(struct nf_conn *ct)
 		cls->deref(cls);
 	}
 #endif
+	if (ci->feci->update_rule) {
+		ci->feci->update_rule(ci->feci, ECM_RULE_UPDATE_TYPE_CONNMARK, ct);
+	}
 
 	/*
 	 * All done
@@ -295,7 +311,7 @@ int ecm_conntrack_ipv4_event(unsigned long events, struct nf_conn *ct)
 	 * handle destroy events
 	 */
 	if (events & (1 << IPCT_DESTROY)) {
-		DEBUG_TRACE("%p: Event is destroy\n", ct);
+		DEBUG_TRACE("%px: Event is destroy\n", ct);
 		ecm_conntrack_ipv4_event_destroy(ct);
 	}
 
@@ -304,7 +320,7 @@ int ecm_conntrack_ipv4_event(unsigned long events, struct nf_conn *ct)
 	 * handle mark change events
 	 */
 	if (events & (1 << IPCT_MARK)) {
-		DEBUG_TRACE("%p: Event is mark\n", ct);
+		DEBUG_TRACE("%px: Event is mark\n", ct);
 		ecm_conntrack_ipv4_event_mark(ct);
 	}
 #endif
@@ -320,7 +336,7 @@ EXPORT_SYMBOL(ecm_conntrack_ipv4_event);
 #ifdef CONFIG_NF_CONNTRACK_CHAIN_EVENTS
 static int ecm_conntrack_event(struct notifier_block *this, unsigned long events, void *ptr)
 #else
-static int ecm_conntrack_event(unsigned int events, struct nf_ct_event *item)
+static int ecm_conntrack_event(unsigned int events, const struct nf_ct_event *item)
 #endif
 {
 #ifdef CONFIG_NF_CONNTRACK_CHAIN_EVENTS
@@ -343,6 +359,20 @@ static int ecm_conntrack_event(unsigned int events, struct nf_ct_event *item)
 		DEBUG_WARN("Error: no ct\n");
 		return NOTIFY_DONE;
 	}
+
+	/*
+	 * Fake untracked conntrack objects were removed on 4.12 kernel version
+	 * and onwards.
+	 */
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 12, 0))
+	if (unlikely(ct == nf_ct_untracked_get())) {
+		/*
+		 * Special untracked connection is not monitored
+		 */
+		DEBUG_TRACE("Fake connection event - ignoring\n");
+		return NOTIFY_DONE;
+	}
+#endif
 
 	/*
 	 * Only interested if this is IPv4 or IPv6.
@@ -372,7 +402,11 @@ static struct notifier_block ecm_conntrack_notifier = {
  *	Netfilter conntrack event system to monitor connection tracking changes
  */
 static struct nf_ct_event_notifier ecm_conntrack_notifier = {
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 15, 0))
 	.fcn	= ecm_conntrack_event,
+#else
+	.ct_event	= ecm_conntrack_event,
+#endif
 };
 #endif
 #endif
@@ -394,7 +428,9 @@ int ecm_conntrack_notifier_init(struct dentry *dentry)
 	int result __attribute__((unused));
 	DEBUG_INFO("ECM Conntrack Notifier init\n");
 
-	ecm_conntrack_notifier_dentry = debugfs_create_dir("ecm_conntrack_notifier", dentry);
+   mutex_lock(&ecm_conntrack_notifier_mtx);
+
+   ecm_conntrack_notifier_dentry = debugfs_create_dir("ecm_conntrack_notifier", dentry);
 	if (!ecm_conntrack_notifier_dentry) {
 		DEBUG_ERROR("Failed to create ecm conntrack notifier directory in debugfs\n");
 		return -1;
@@ -407,13 +443,26 @@ int ecm_conntrack_notifier_init(struct dentry *dentry)
 	/*
 	 * Eventing subsystem is available so we register a notifier hook to get fast notifications of expired connections
 	 */
+#ifdef CONFIG_NF_CONNTRACK_CHAIN_EVENTS
 	result = nf_conntrack_register_notifier(&init_net, &ecm_conntrack_notifier);
+#else
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 15, 0))
+	result = nf_conntrack_register_notifier(&init_net, &ecm_conntrack_notifier);
+#else
+	nf_conntrack_register_notifier(&init_net, &ecm_conntrack_notifier);
+#endif
+#endif
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 15, 0))
 	if (result < 0) {
 		DEBUG_ERROR("Can't register nf notifier hook.\n");
 		debugfs_remove_recursive(ecm_conntrack_notifier_dentry);
-		return result;
+		mutex_unlock(&ecm_conntrack_notifier_mtx);
+       return result;
 	}
 #endif
+#endif
+
+   mutex_unlock(&ecm_conntrack_notifier_mtx);
 
 	return 0;
 }
@@ -425,8 +474,17 @@ EXPORT_SYMBOL(ecm_conntrack_notifier_init);
 void ecm_conntrack_notifier_exit(void)
 {
 	DEBUG_INFO("ECM Conntrack Notifier exit\n");
-#ifdef CONFIG_NF_CONNTRACK_EVENTS
+
+   mutex_lock(&ecm_conntrack_notifier_mtx);
+
+#ifdef CONFIG_NF_CONNTRACK_CHAIN_EVENTS
 	nf_conntrack_unregister_notifier(&init_net, &ecm_conntrack_notifier);
+#else
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 15, 0))
+	nf_conntrack_unregister_notifier(&init_net, &ecm_conntrack_notifier);
+#else
+	nf_conntrack_unregister_notifier(&init_net);
+#endif
 #endif
 	/*
 	 * Remove the debugfs files recursively.
@@ -434,5 +492,7 @@ void ecm_conntrack_notifier_exit(void)
 	if (ecm_conntrack_notifier_dentry) {
 		debugfs_remove_recursive(ecm_conntrack_notifier_dentry);
 	}
+
+   mutex_unlock(&ecm_conntrack_notifier_mtx);
 }
 EXPORT_SYMBOL(ecm_conntrack_notifier_exit);

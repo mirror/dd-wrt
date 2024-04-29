@@ -1,9 +1,12 @@
 /*
  **************************************************************************
- * Copyright (c) 2016, 2018-2019 The Linux Foundation.  All rights reserved.
+ * Copyright (c) 2016, 2018-2021 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
+ *
  * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
  * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
  * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
@@ -53,6 +56,23 @@
 #ifdef ECM_CLASSIFIER_MARK_ENABLE
 #include "ecm_classifier_mark.h"
 #endif
+#ifdef ECM_CLASSIFIER_OVS_ENABLE
+#include "ecm_classifier_ovs.h"
+#endif
+#ifdef ECM_CLASSIFIER_EMESH_ENABLE
+#include "ecm_classifier_emesh.h"
+#endif
+#ifdef ECM_CLASSIFIER_MSCS_ENABLE
+#include "ecm_classifier_mscs.h"
+#endif
+
+/*
+ * Default slow path packets allowed before the acceleration
+ *  0 - The feature is disabled. Acceleration starts immediately.
+ *  1 - Acceleration will not start until both direction traffic is seen.
+ *  N - Acceleration will not start until N packets are seen in the slow path.
+ */
+int ecm_classifier_accel_delay_pkts = 0;
 
 /*
  * ecm_classifier_assign_classifier()
@@ -60,45 +80,76 @@
  */
 struct ecm_classifier_instance *ecm_classifier_assign_classifier(struct ecm_db_connection_instance *ci, ecm_classifier_type_t type)
 {
-	DEBUG_TRACE("%p: Assign classifier of type: %d\n", ci, type);
+	DEBUG_TRACE("%px: Assign classifier of type: %d\n", ci, type);
 	DEBUG_ASSERT(type != ECM_CLASSIFIER_TYPE_DEFAULT, "Must never need to instantiate default type in this way");
 
 	switch (type) {
 #ifdef ECM_CLASSIFIER_PCC_ENABLE
 	case ECM_CLASSIFIER_TYPE_PCC: {
 		struct ecm_classifier_pcc_instance *pcci;
+
 		pcci = ecm_classifier_pcc_instance_alloc(ci);
 		if (!pcci) {
-			DEBUG_TRACE("%p: Failed to create Parental Controls classifier\n", ci);
+			DEBUG_TRACE("%px: Failed to create Parental Controls classifier\n", ci);
 			return NULL;
 		}
-		DEBUG_TRACE("%p: Created Parental Controls classifier: %p\n", ci, pcci);
+		DEBUG_TRACE("%px: Created Parental Controls classifier: %px\n", ci, pcci);
 		ecm_db_connection_classifier_assign(ci, (struct ecm_classifier_instance *)pcci);
 		return (struct ecm_classifier_instance *)pcci;
+	}
+#endif
+#ifdef ECM_CLASSIFIER_OVS_ENABLE
+	case ECM_CLASSIFIER_TYPE_OVS: {
+		struct ecm_classifier_ovs_instance *ecvi;
+
+		ecvi = ecm_classifier_ovs_instance_alloc(ci);
+		if (!ecvi) {
+			DEBUG_TRACE("%px: Failed to create ovs classifier\n", ci);
+			return NULL;
+		}
+		DEBUG_TRACE("%px: Created ovs classifier: %px\n", ci, ecvi);
+		ecm_db_connection_classifier_assign(ci, (struct ecm_classifier_instance *)ecvi);
+		return (struct ecm_classifier_instance *)ecvi;
 	}
 #endif
 #ifdef ECM_CLASSIFIER_NL_ENABLE
 	case ECM_CLASSIFIER_TYPE_NL: {
 		struct ecm_classifier_nl_instance *cnli;
+
 		cnli = ecm_classifier_nl_instance_alloc(ci);
 		if (!cnli) {
-			DEBUG_TRACE("%p: Failed to create Netlink classifier\n", ci);
+			DEBUG_TRACE("%px: Failed to create Netlink classifier\n", ci);
 			return NULL;
 		}
-		DEBUG_TRACE("%p: Created Netlink classifier: %p\n", ci, cnli);
+		DEBUG_TRACE("%px: Created Netlink classifier: %px\n", ci, cnli);
 		ecm_db_connection_classifier_assign(ci, (struct ecm_classifier_instance *)cnli);
 		return (struct ecm_classifier_instance *)cnli;
+	}
+#endif
+#ifdef ECM_CLASSIFIER_EMESH_ENABLE
+	case ECM_CLASSIFIER_TYPE_EMESH: {
+		struct ecm_classifier_emesh_sawf_instance *cemi;
+
+		cemi = ecm_classifier_emesh_sawf_instance_alloc(ci);
+		if (!cemi) {
+			DEBUG_TRACE("%px: Failed to create emesh classifier\n", ci);
+			return NULL;
+		}
+		DEBUG_TRACE("%px: Created emesh classifier: %px\n", ci, cemi);
+		ecm_db_connection_classifier_assign(ci, (struct ecm_classifier_instance *)cemi);
+		return (struct ecm_classifier_instance *)cemi;
 	}
 #endif
 #ifdef ECM_CLASSIFIER_DSCP_ENABLE
 	case ECM_CLASSIFIER_TYPE_DSCP: {
 		struct ecm_classifier_dscp_instance *cdscpi;
+
 		cdscpi = ecm_classifier_dscp_instance_alloc(ci);
 		if (!cdscpi) {
-			DEBUG_TRACE("%p: Failed to create DSCP classifier\n", ci);
+			DEBUG_TRACE("%px: Failed to create DSCP classifier\n", ci);
 			return NULL;
 		}
-		DEBUG_TRACE("%p: Created DSCP classifier: %p\n", ci, cdscpi);
+		DEBUG_TRACE("%px: Created DSCP classifier: %px\n", ci, cdscpi);
 		ecm_db_connection_classifier_assign(ci, (struct ecm_classifier_instance *)cdscpi);
 		return (struct ecm_classifier_instance *)cdscpi;
 	}
@@ -106,12 +157,13 @@ struct ecm_classifier_instance *ecm_classifier_assign_classifier(struct ecm_db_c
 #ifdef ECM_CLASSIFIER_HYFI_ENABLE
 	case ECM_CLASSIFIER_TYPE_HYFI: {
 		struct ecm_classifier_hyfi_instance *chfi;
+
 		chfi = ecm_classifier_hyfi_instance_alloc(ci);
 		if (!chfi) {
-			DEBUG_TRACE("%p: Failed to create HyFi classifier\n", ci);
+			DEBUG_TRACE("%px: Failed to create HyFi classifier\n", ci);
 			return NULL;
 		}
-		DEBUG_TRACE("%p: Created HyFi classifier: %p\n", ci, chfi);
+		DEBUG_TRACE("%px: Created HyFi classifier: %px\n", ci, chfi);
 		ecm_db_connection_classifier_assign(ci, (struct ecm_classifier_instance *)chfi);
 		return (struct ecm_classifier_instance *)chfi;
 	}
@@ -119,18 +171,33 @@ struct ecm_classifier_instance *ecm_classifier_assign_classifier(struct ecm_db_c
 #ifdef ECM_CLASSIFIER_MARK_ENABLE
 	case ECM_CLASSIFIER_TYPE_MARK: {
 		struct ecm_classifier_mark_instance *ecmi;
+
 		ecmi = ecm_classifier_mark_instance_alloc(ci);
 		if (!ecmi) {
-			DEBUG_TRACE("%p: Failed to create mark classifier\n", ci);
+			DEBUG_TRACE("%px: Failed to create mark classifier\n", ci);
 			return NULL;
 		}
-		DEBUG_TRACE("%p: Created mark classifier: %p\n", ci, ecmi);
+		DEBUG_TRACE("%px: Created mark classifier: %px\n", ci, ecmi);
+		ecm_db_connection_classifier_assign(ci, (struct ecm_classifier_instance *)ecmi);
+		return (struct ecm_classifier_instance *)ecmi;
+	}
+#endif
+#ifdef ECM_CLASSIFIER_MSCS_ENABLE
+	case ECM_CLASSIFIER_TYPE_MSCS: {
+		struct ecm_classifier_mscs_instance *ecmi;
+
+		ecmi = ecm_classifier_mscs_instance_alloc(ci);
+		if (!ecmi) {
+			DEBUG_TRACE("%px: Failed to create mscs classifier\n", ci);
+			return NULL;
+		}
+		DEBUG_TRACE("%px: Created mscs classifier: %px\n", ci, ecmi);
 		ecm_db_connection_classifier_assign(ci, (struct ecm_classifier_instance *)ecmi);
 		return (struct ecm_classifier_instance *)ecmi;
 	}
 #endif
 	default:
-		DEBUG_ASSERT(NULL, "%p: Unsupported type: %d\n", ci, type);
+		DEBUG_ASSERT(NULL, "%px: Unsupported type: %d\n", ci, type);
 		return NULL;
 	}
 }
@@ -158,7 +225,7 @@ bool ecm_classifier_reclassify(struct ecm_db_connection_instance *ci, int assign
 
 		aci = assignments[i];
 		aci_type = aci->type_get(aci);
-		DEBUG_TRACE("%p: Reclassify: %d\n", ci, aci_type);
+		DEBUG_TRACE("%px: Reclassify: %d\n", ci, aci_type);
 		aci->reclassify(aci);
 
 		/*
@@ -174,7 +241,7 @@ bool ecm_classifier_reclassify(struct ecm_db_connection_instance *ci, int assign
 		 */
 		while (classifier_type != aci_type) {
 			struct ecm_classifier_instance *naci;
-			DEBUG_TRACE("%p: Instantiate missing type: %d\n", ci, classifier_type);
+			DEBUG_TRACE("%px: Instantiate missing type: %d\n", ci, classifier_type);
 			DEBUG_ASSERT(classifier_type < ECM_CLASSIFIER_TYPES, "Algorithm bad");
 
 			naci = ecm_classifier_assign_classifier(ci, classifier_type);
@@ -193,7 +260,7 @@ bool ecm_classifier_reclassify(struct ecm_db_connection_instance *ci, int assign
 	 */
 	for (; classifier_type < ECM_CLASSIFIER_TYPES; ++classifier_type) {
 		struct ecm_classifier_instance *naci;
-		DEBUG_TRACE("%p: Instantiate missing type: %d\n", ci, classifier_type);
+		DEBUG_TRACE("%px: Instantiate missing type: %d\n", ci, classifier_type);
 
 		naci = ecm_classifier_assign_classifier(ci, classifier_type);
 		if (!naci) {
@@ -203,7 +270,6 @@ bool ecm_classifier_reclassify(struct ecm_db_connection_instance *ci, int assign
 		}
 	}
 
-	DEBUG_TRACE("%p: reclassify done: %u\n", ci, full_reclassification);
+	DEBUG_TRACE("%px: reclassify done: %u\n", ci, full_reclassification);
 	return full_reclassification;
 }
-

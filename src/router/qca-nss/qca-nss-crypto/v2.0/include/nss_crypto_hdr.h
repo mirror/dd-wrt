@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2018, 2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -84,8 +84,8 @@ struct nss_crypto_frag {
 struct nss_crypto_hdr {
 	uint8_t version;			/**< Version number */
 	uint8_t skip;				/**< skip bytes from start */
-	uint8_t auth;				/**< authenticate only len */
-	uint8_t res1;				/**< reserved */
+	uint8_t auth;				/**< authenticate only len from the start*/
+	uint8_t auth_end;			/**< authenticate only len from the end */
 
 	uint16_t index;				/**< crypto index */
 	uint8_t res2[2];				/**< reserved */
@@ -129,6 +129,7 @@ struct nss_crypto_buf {
 	nss_crypto_req_callback_t comp;	/**< request complete callback */
 	void *app_data;			/**< app data */
 	bool mapped;			/**< buffer is mapped */
+	bool in_place;			/**< in-place transformation */
 };
 
 /**
@@ -139,7 +140,8 @@ struct nss_crypto_buf {
  * nss_crypto_user
  *
  * @param[in] user user handler
- * @param[in] num_frags no. of scatter/gather fragments
+ * @param[in] src_frags number of source fragments
+ * @param[in] dst_frags number of destination fragments
  * @param[in] iv_len length of the IV
  * @param[in] hmac_len length of HMAC
  * @param[in] ahash AHASH mode or not
@@ -148,7 +150,7 @@ struct nss_crypto_buf {
  * Pointer to the start of the header.
  */
 struct nss_crypto_hdr *nss_crypto_hdr_alloc(struct nss_crypto_user *user, uint32_t session,
-				uint8_t num_frags, uint8_t iv_len, uint8_t hmac_len, bool ahash);
+				uint8_t src_frags, uint8_t dst_frags, uint8_t iv_len, uint8_t hmac_len, bool ahash);
 
 /**
  * nss_crypto_hdr_free
@@ -174,13 +176,17 @@ void nss_crypto_hdr_free(struct nss_crypto_user *user, struct nss_crypto_hdr *ch
  * scatterlist
  *
  * @param[in] ch crypto header
- * @param[in] src SGLIST list
- * @param[in] auth_len authentication length for the packet
+ * @param[in] src source SGLIST list
+ * @param[in] dst destination SGLIST list
+ * @param[in] src_len total input length for the transformation
+ * @param[in] dst_len total output length of the transformation
+ * @param[in] in_place denotes whether same/different buffers are used
 
  * @return
  * None.
  */
-void nss_crypto_hdr_map_sglist(struct nss_crypto_hdr *ch, struct scatterlist *src, uint16_t auth_len);
+void nss_crypto_hdr_map_sglist(struct nss_crypto_hdr *ch, struct scatterlist *src, struct scatterlist *dst,
+				uint16_t src_len, uint16_t dst_len, bool in_place);
 
 /*
  * nss_crypto_hdr_map_sglist_ahash
@@ -254,6 +260,24 @@ static inline void nss_crypto_hdr_set_skip(struct nss_crypto_hdr *ch, uint8_t sk
 static inline void nss_crypto_hdr_set_auth(struct nss_crypto_hdr *ch, uint8_t auth)
 {
 	ch->auth = auth;
+}
+
+/**
+ * nss_crypto_hdr_set_auth_end
+ *	set auth only len from the end
+ *
+ * @datatype
+ * nss_crypto_hdr
+ *
+ * @param[in] ch crypto header
+ * @param[in] auth_end auth len
+ *
+ * @return
+ * None.
+ */
+static inline void nss_crypto_hdr_set_auth_end(struct nss_crypto_hdr *ch, uint8_t auth_end)
+{
+	ch->auth_end = auth_end;
 }
 
 /**

@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2013-2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2013-2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -14,309 +14,120 @@
  **************************************************************************
  */
 
-/*
- * nss_stats.c
- *	NSS stats APIs
- *
- */
-
-#include "nss_tx_rx_common.h"
 #include "nss_core.h"
-#include "nss_stats.h"
+#include "nss_strings.h"
+#include "nss_drv_stats.h"
 
 /*
- * nss_stats_str_drv
- *	Host driver stats strings
+ * Maximum banner length:
  */
-static int8_t *nss_stats_str_drv[NSS_STATS_DRV_MAX] = {
-	"nbuf_alloc_errors",
-	"paged_buf_alloc_errors",
-	"tx_queue_full[0]",
-	"tx_queue_full[1]",
-	"tx_buffers_empty",
-	"tx_paged_buffers_empty",
-	"tx_buffers_pkt",
-	"tx_buffers_cmd",
-	"tx_buffers_crypto",
-	"tx_buffers_reuse",
-	"rx_buffers_empty",
-	"rx_buffers_pkt",
-	"rx_buffers_cmd_resp",
-	"rx_buffers_status_sync",
-	"rx_buffers_crypto",
-	"rx_buffers_virtual",
-	"tx_skb_simple",
-	"tx_skb_nr_frags",
-	"tx_skb_fraglist",
-	"rx_skb_simple",
-	"rx_skb_nr_frags",
-	"rx_skb_fraglist",
-	"rx_bad_desciptor",
-	"nss_skb_count",
-	"rx_chain_seg_processed",
-	"rx_frag_seg_processed",
-	"tx_buffers_cmd_queue_full",
-#ifdef NSS_MULTI_H2N_DATA_RING_SUPPORT
-	"tx_buffers_data_queue_0",
-	"tx_buffers_data_queue_1",
-	"tx_buffers_data_queue_2",
-	"tx_buffers_data_queue_3",
-	"tx_buffers_data_queue_4",
-	"tx_buffers_data_queue_5",
-	"tx_buffers_data_queue_6",
-	"tx_buffers_data_queue_7",
-#endif
-};
+#define NSS_STATS_BANNER_MAX_LENGTH 80
 
 /*
- * nss_stats_str_gmac
- *	GMAC stats strings
+ * Maximum number of digits a stats value can have:
  */
-static int8_t *nss_stats_str_gmac[NSS_STATS_GMAC_MAX] = {
-	"ticks",
-	"worst_ticks",
-	"iterations"
-};
+#define NSS_STATS_DIGITS_MAX 16
 
 /*
- * nss_stats_str_node
- *	Interface stats strings per node
+ * Spaces to print core details inside banner
  */
-static int8_t *nss_stats_str_node[NSS_STATS_NODE_MAX] = {
-	"rx_packets",
-	"rx_bytes",
-	"tx_packets",
-	"tx_bytes",
-	"rx_queue_0_dropped",
-	"rx_queue_1_dropped",
-	"rx_queue_2_dropped",
-	"rx_queue_3_dropped",
-};
+#define NSS_STATS_BANNER_SPACES 12
 
 /*
- * nss_stats_create_dentry()
- *	Create statistics debug entry for subsystem.
+ * Max characters for a node name.
  */
-void nss_stats_create_dentry(char *name, const struct file_operations *ops)
+#define NSS_STATS_NODE_NAME_MAX 24
+
+int nonzero_stats_print = 0;
+
+/*
+ * nss_stats_spacing()
+ *	Framework to maintain consistent spacing between stats value and stats type.
+ */
+static size_t nss_stats_spacing(uint64_t stats_val, char *lbuf, size_t size_wr, size_t size_al)
 {
-	if (!debugfs_create_file(name, 0400, nss_top_main.stats_dentry, &nss_top_main, ops)) {
-		nss_warning("Faied to create debug entry for subsystem %s\n", name);
-	}
-}
-
-/*
- * nss_stats_fill_common_stats()
- *	Fill common node statistics.
- */
-size_t nss_stats_fill_common_stats(uint32_t if_num, char *lbuf, size_t size_wr, size_t size_al)
-{
-	uint64_t stats_shadow[NSS_STATS_NODE_MAX];
 	int i;
-
-	size_wr += scnprintf(lbuf + size_wr, size_al - size_wr, "common node stats:\n\n");
-	spin_lock_bh(&nss_top_main.stats_lock);
-	for (i = 0; (i < NSS_STATS_NODE_MAX); i++) {
-		stats_shadow[i] = nss_top_main.stats_node[if_num][i];
+	int digit_counter = (stats_val == 0 ? 1 : 0);
+	while (stats_val != 0) {
+		/*
+		 * TODO: need to check for (nss_ptr_t)
+		 */
+		stats_val = (nss_ptr_t)stats_val / 10;
+		digit_counter++;
 	}
-	spin_unlock_bh(&nss_top_main.stats_lock);
 
-	for (i = 0; (i < NSS_STATS_NODE_MAX); i++) {
-		size_wr += scnprintf(lbuf + size_wr, size_al - size_wr,
-					"%s = %llu\n", nss_stats_str_node[i], stats_shadow[i]);
+	for (i = 0; i < NSS_STATS_DIGITS_MAX - digit_counter; i++) {
+		size_wr += scnprintf(lbuf + size_wr, size_al - size_wr, " ");
 	}
 
 	return size_wr;
 }
 
 /*
- * nss_drv_stats_read()
- *	Read HLOS driver stats
+ * nss_stats_nonzero_handler()
+ *	Handler to take nonzero stats print configuration.
  */
-static ssize_t nss_drv_stats_read(struct file *fp, char __user *ubuf, size_t sz, loff_t *ppos)
+static int nss_stats_nonzero_handler(struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
 {
-	int32_t i;
-
-	/*
-	 * max output lines = #stats + start tag line + end tag line + three blank lines
-	 */
-	uint32_t max_output_lines = NSS_STATS_DRV_MAX + 5;
-	size_t size_al = NSS_STATS_MAX_STR_LENGTH * max_output_lines;
-	size_t size_wr = 0;
-	ssize_t bytes_read = 0;
-	uint64_t *stats_shadow;
-
-	char *lbuf = kzalloc(size_al, GFP_KERNEL);
-	if (unlikely(lbuf == NULL)) {
-		nss_warning("Could not allocate memory for local statistics buffer");
-		return 0;
-	}
-
-	stats_shadow = kzalloc(NSS_STATS_DRV_MAX * 8, GFP_KERNEL);
-	if (unlikely(stats_shadow == NULL)) {
-		nss_warning("Could not allocate memory for local shadow buffer");
-		kfree(lbuf);
-		return 0;
-	}
-
-	size_wr = scnprintf(lbuf, size_al, "drv stats start:\n\n");
-	for (i = 0; (i < NSS_STATS_DRV_MAX); i++) {
-		stats_shadow[i] = NSS_PKT_STATS_READ(&nss_top_main.stats_drv[i]);
-	}
-
-	for (i = 0; (i < NSS_STATS_DRV_MAX); i++) {
-		size_wr += scnprintf(lbuf + size_wr, size_al - size_wr,
-					"%s = %llu\n", nss_stats_str_drv[i], stats_shadow[i]);
-	}
-
-	size_wr += scnprintf(lbuf + size_wr, size_al - size_wr, "\ndrv stats end\n\n");
-	bytes_read = simple_read_from_buffer(ubuf, sz, ppos, lbuf, strlen(lbuf));
-	kfree(lbuf);
-	kfree(stats_shadow);
-
-	return bytes_read;
+	int ret;
+	ret = proc_dointvec(ctl, write, buffer, lenp, ppos);
+	return ret;
 }
 
-/*
- * nss_gmac_stats_read()
- *	Read GMAC stats
- */
-static ssize_t nss_gmac_stats_read(struct file *fp, char __user *ubuf, size_t sz, loff_t *ppos)
-{
-	uint32_t i, id;
+static struct ctl_table nss_stats_table[] = {
+	{
+		.procname		= "non_zero_stats",
+		.data			= &nonzero_stats_print,
+		.maxlen			= sizeof(int),
+		.mode			= 0644,
+		.proc_handler		= &nss_stats_nonzero_handler,
+	},
+	{ }
+};
 
-	/*
-	 * max output lines = ((#stats + start tag + one blank) * #GMACs) + start/end tag + 3 blank
-	 */
-	uint32_t max_output_lines = ((NSS_STATS_GMAC_MAX + 2) * NSS_MAX_PHYSICAL_INTERFACES) + 5;
-	size_t size_al = NSS_STATS_MAX_STR_LENGTH * max_output_lines;
-	size_t size_wr = 0;
-	ssize_t bytes_read = 0;
-	uint64_t *stats_shadow;
+static struct ctl_table nss_stats_dir[] = {
+	{
+		.procname		= "stats",
+		.mode			= 0555,
+		.child			= nss_stats_table,
+	},
+	{ }
+};
 
-	char *lbuf = kzalloc(size_al, GFP_KERNEL);
-	if (unlikely(lbuf == NULL)) {
-		nss_warning("Could not allocate memory for local statistics buffer");
-		return 0;
-	}
+static struct ctl_table nss_stats_root_dir[] = {
+	{
+		.procname		= "nss",
+		.mode			= 0555,
+		.child			= nss_stats_dir,
+	},
+	{ }
+};
 
-	stats_shadow = kzalloc(NSS_STATS_GMAC_MAX * 8, GFP_KERNEL);
-	if (unlikely(stats_shadow == NULL)) {
-		nss_warning("Could not allocate memory for local shadow buffer");
-		kfree(lbuf);
-		return 0;
-	}
-
-	size_wr = scnprintf(lbuf, size_al, "gmac stats start:\n\n");
-
-	for (id = 0; id < NSS_MAX_PHYSICAL_INTERFACES; id++) {
-		spin_lock_bh(&nss_top_main.stats_lock);
-		for (i = 0; (i < NSS_STATS_GMAC_MAX); i++) {
-			stats_shadow[i] = nss_top_main.stats_gmac[id][i];
-		}
-
-		spin_unlock_bh(&nss_top_main.stats_lock);
-
-		size_wr += scnprintf(lbuf + size_wr, size_al - size_wr, "GMAC ID: %d\n", id);
-		for (i = 0; (i < NSS_STATS_GMAC_MAX); i++) {
-			size_wr += scnprintf(lbuf + size_wr, size_al - size_wr,
-					"%s = %llu\n", nss_stats_str_gmac[i], stats_shadow[i]);
-		}
-		size_wr += scnprintf(lbuf + size_wr, size_al - size_wr, "\n");
-	}
-
-	size_wr += scnprintf(lbuf + size_wr, size_al - size_wr, "\ngmac stats end\n\n");
-	bytes_read = simple_read_from_buffer(ubuf, sz, ppos, lbuf, strlen(lbuf));
-	kfree(lbuf);
-	kfree(stats_shadow);
-
-	return bytes_read;
-}
+static struct ctl_table nss_stats_root[] = {
+	{
+		.procname		= "dev",
+		.mode			= 0555,
+		.child			= nss_stats_root_dir,
+	},
+	{ }
+};
+static struct ctl_table_header *nss_stats_header;
 
 /*
- * nss_wt_stats_read()
- *	Reads and formats worker thread statistics and outputs them to ubuf
+ * nss_stats_register_sysctl()
+ *	Register a sysctl table for stats.
  */
-static ssize_t nss_wt_stats_read(struct file *fp, char __user *ubuf, size_t sz, loff_t *ppos)
+void nss_stats_register_sysctl(void)
 {
-	struct nss_stats_data *data = fp->private_data;
-	struct nss_ctx_instance *nss_ctx = data->nss_ctx;
-	struct nss_project_irq_stats *shadow;
-	uint32_t thread_count = nss_ctx->worker_thread_count;
-	uint32_t irq_count = nss_ctx->irq_count;
-
 	/*
-	 * Three lines for each IRQ
+	 * Register sysctl table.
 	 */
-	uint32_t max_output_lines = thread_count * 3 * irq_count;
-	size_t size_al = max_output_lines * NSS_STATS_MAX_STR_LENGTH;
-	size_t size_wr = 0;
-	ssize_t bytes_read = 0;
-	char *lbuf;
-	int i;
-	int j;
-
-	lbuf = kzalloc(size_al, GFP_KERNEL);
-	if (unlikely(!lbuf)) {
-		nss_warning("Could not allocate memory for local statistics buffer\n");
-		return 0;
-	}
-
-	shadow = kzalloc(thread_count * irq_count * sizeof(struct nss_project_irq_stats), GFP_KERNEL);
-	if (unlikely(!shadow)) {
-		nss_warning("Could not allocate memory for stats shadow\n");
-		kfree(lbuf);
-		return 0;
-	}
-
-	spin_lock_bh(&nss_top_main.stats_lock);
-	if (unlikely(!nss_ctx->wt_stats)) {
-		spin_unlock_bh(&nss_top_main.stats_lock);
-		nss_warning("Worker thread statistics not allocated\n");
-		kfree(lbuf);
-		kfree(shadow);
-		return 0;
-	}
-	for (i = 0; i < thread_count; ++i) {
-
-		/*
-		 * The statistics shadow is an array with thread_count * irq_count
-		 * items in it. Each item is located at the index:
-		 *      (thread number) * (irq_count) + (irq number)
-		 * thus simulating a two-dimensional array.
-		 */
-		for (j = 0; j < irq_count; ++j) {
-			shadow[i * irq_count + j] = nss_ctx->wt_stats[i].irq_stats[j];
-		}
-	}
-	spin_unlock_bh(&nss_top_main.stats_lock);
-
-	for (i = 0; i < thread_count; ++i) {
-		for (j = 0; j < irq_count; ++j) {
-			struct nss_project_irq_stats *is = &(shadow[i * irq_count + j]);
-			if (!(is->count)) {
-				continue;
-			}
-
-			size_wr += scnprintf(lbuf + size_wr, size_al - size_wr,
-				"t-%d:irq-%d callback: 0x%x, count: %llu\n",
-				i, j, is->callback, is->count);
-			size_wr += scnprintf(lbuf + size_wr, size_al - size_wr,
-				"t-%d:irq-%d tick min: %10u  avg: %10u  max:%10u\n",
-				i, j, is->ticks_min, is->ticks_avg, is->ticks_max);
-			size_wr += scnprintf(lbuf + size_wr, size_al - size_wr,
-				"t-%d:irq-%d insn min: %10u  avg: %10u  max:%10u\n\n",
-				i, j, is->insn_min, is->insn_avg, is->insn_max);
-		}
-	}
-	bytes_read = simple_read_from_buffer(ubuf, sz, ppos, lbuf, strlen(lbuf));
-	kfree(lbuf);
-	kfree(shadow);
-
-	return bytes_read;
+	nss_stats_header = register_sysctl_table(nss_stats_root);
 }
 
 /*
  * nss_stats_open()
+ *	Opens stats file.
  */
 int nss_stats_open(struct inode *inode, struct file *filp)
 {
@@ -326,6 +137,7 @@ int nss_stats_open(struct inode *inode, struct file *filp)
 	if (!data) {
 		return -ENOMEM;
 	}
+
 	memset(data, 0, sizeof (struct nss_stats_data));
 	data->if_num = NSS_DYNAMIC_IF_START;
 	data->index = 0;
@@ -338,6 +150,7 @@ int nss_stats_open(struct inode *inode, struct file *filp)
 
 /*
  * nss_stats_release()
+ *	Releases stats file.
  */
 int nss_stats_release(struct inode *inode, struct file *filp)
 {
@@ -351,23 +164,8 @@ int nss_stats_release(struct inode *inode, struct file *filp)
 }
 
 /*
- * drv_stats_ops
- */
-NSS_STATS_DECLARE_FILE_OPERATIONS(drv)
-
-/*
- * gmac_stats_ops
- */
-NSS_STATS_DECLARE_FILE_OPERATIONS(gmac)
-
-/*
- * wt_stats_ops
- */
-NSS_STATS_DECLARE_FILE_OPERATIONS(wt)
-
-/*
  * nss_stats_clean()
- * 	Cleanup NSS statistics files
+ *	Cleanup NSS statistics files.
  */
 void nss_stats_clean(void)
 {
@@ -381,8 +179,226 @@ void nss_stats_clean(void)
 }
 
 /*
+ * nss_stats_reset_common_stats()
+ *	Reset common node statistics.
+ */
+void nss_stats_reset_common_stats(uint32_t if_num)
+{
+	if (unlikely(if_num >= NSS_MAX_NET_INTERFACES)) {
+		return;
+	}
+
+	spin_lock_bh(&nss_top_main.stats_lock);
+	memset(nss_top_main.stats_node[if_num], 0, NSS_STATS_NODE_MAX * sizeof(uint64_t));
+	spin_unlock_bh(&nss_top_main.stats_lock);
+}
+
+/*
+ * nss_stats_fill_common_stats()
+ *	Fill common node statistics.
+ */
+size_t nss_stats_fill_common_stats(uint32_t if_num, int instance, char *lbuf, size_t size_wr, size_t size_al, char *node)
+{
+	uint64_t stats_val[NSS_STATS_NODE_MAX];
+	int i;
+	size_t orig_size_wr = size_wr;
+
+	spin_lock_bh(&nss_top_main.stats_lock);
+	for (i = 0; i < NSS_STATS_NODE_MAX; i++) {
+		stats_val[i] = nss_top_main.stats_node[if_num][i];
+	}
+
+	spin_unlock_bh(&nss_top_main.stats_lock);
+	size_wr += nss_stats_print(node, NULL, instance, nss_strings_stats_node, stats_val, NSS_STATS_NODE_MAX, lbuf, size_wr, size_al);
+	return size_wr - orig_size_wr;
+}
+
+/*
+ * nss_stats_banner()
+ *	Printing banner for node.
+ */
+size_t nss_stats_banner(char *lbuf, size_t size_wr, size_t size_al, char *node, int core)
+{
+	uint16_t banner_char_length, i;
+	size_t orig_size_wr = size_wr;
+	char node_upr[NSS_STATS_NODE_NAME_MAX + 1];
+
+	if (strlen(node) > NSS_STATS_NODE_NAME_MAX) {
+		nss_warning("Node name %s larger than %d characters\n", node, NSS_STATS_NODE_NAME_MAX);
+		return 0;
+	}
+
+	size_wr += scnprintf(lbuf + size_wr, size_al - size_wr, "\n");
+	for (i = 0; i < NSS_STATS_BANNER_MAX_LENGTH ; i++) {
+		size_wr += scnprintf(lbuf + size_wr, size_al - size_wr, "_");
+	}
+	if (core > NSS_STATS_SINGLE_CORE) {
+		banner_char_length = (uint16_t)((NSS_STATS_BANNER_MAX_LENGTH - (strlen(node) + NSS_STATS_BANNER_SPACES)) / 2);
+	} else {
+		banner_char_length = (uint16_t)((NSS_STATS_BANNER_MAX_LENGTH - (strlen(node) + 2)) / 2);
+	}
+
+	size_wr += scnprintf(lbuf + size_wr, size_al - size_wr, "\n\n");
+	for (i = 0; i < banner_char_length; i++) {
+		size_wr += scnprintf(lbuf + size_wr, size_al - size_wr, "<");
+	}
+
+	strlcpy(node_upr, node, NSS_STATS_NODE_NAME_MAX);
+	for (i = 0; node_upr[i] != '\0' && i < NSS_STATS_NODE_NAME_MAX; i++) {
+		node_upr[i] = toupper(node_upr[i]);
+	}
+
+	/*
+	 * TODO: Enhance so that both core0 and core1 print the same way for a
+	 * node that has presence in both cores. i.e. Core0 should have [CORE 0]
+	 * and not just Core1.
+	 */
+	if (core > 1) {
+		size_wr += scnprintf(lbuf + size_wr, size_al - size_wr, " %s [CORE %d] ", node_upr, core);
+	} else {
+		size_wr += scnprintf(lbuf + size_wr, size_al - size_wr, " %s ", node_upr);
+	}
+	for (i = 0; i < banner_char_length; i++) {
+		size_wr += scnprintf(lbuf + size_wr, size_al - size_wr, ">");
+	}
+
+	size_wr += scnprintf(lbuf + size_wr, size_al - size_wr, "\n");
+	for (i = 0; i < NSS_STATS_BANNER_MAX_LENGTH; i++) {
+		size_wr += scnprintf(lbuf + size_wr, size_al - size_wr, "_");
+	}
+
+	size_wr += scnprintf(lbuf + size_wr, size_al - size_wr, "\n\n");
+	return size_wr - orig_size_wr;
+}
+
+/*
+ * nss_stats_print()
+ *	Helper API to print stats.
+ */
+size_t nss_stats_print(char *node, char *stat_details, int instance, struct nss_stats_info *stats_info,
+				uint64_t *stats_val, uint16_t max, char *lbuf, size_t size_wr, size_t size_al)
+{
+	uint16_t i, j;
+	uint16_t maxlen = 0;
+	char stats_string[NSS_STATS_MAX_STR_LENGTH];
+	size_t orig_size_wr = size_wr;
+	char node_lwr[NSS_STATS_NODE_NAME_MAX + 1];
+
+	if (strlen(node) > NSS_STATS_NODE_NAME_MAX) {
+		nss_warning("Node name %s (%u chars) is longer than max chars of %d\n",
+				node, (uint32_t)strlen(node), NSS_STATS_NODE_NAME_MAX);
+		return 0;
+	}
+
+	/*
+	 * Calculating the maximum of the array for indentation purposes.
+	 */
+	for (i = 0; i < max; i++){
+		if (strlen(stats_info[i].stats_name) > maxlen) {
+			maxlen = strlen(stats_info[i].stats_name);
+		}
+	}
+
+	if (stat_details != NULL) {
+		size_wr += scnprintf(lbuf + size_wr, size_al - size_wr, "\n#%s\n\n", stat_details);
+	}
+
+	for (i = 0; i < max; i++){
+		if (nonzero_stats_print == 1 && stats_val[i] == 0) {
+			continue;
+		}
+
+		strlcpy(stats_string, stats_info[i].stats_name, NSS_STATS_MAX_STR_LENGTH);
+
+		/*
+		 * Converting  uppercase to lower case.
+		 */
+		for (j = 0; stats_string[j] != '\0' && j < NSS_STATS_MAX_STR_LENGTH; j++) {
+			stats_string[j] = tolower(stats_string[j]);
+		}
+
+		strlcpy(node_lwr, node, NSS_STATS_NODE_NAME_MAX);
+		for (j = 0; node_lwr[j] != '\0' && j < NSS_STATS_NODE_NAME_MAX; j++) {
+			node_lwr[j] = tolower(node_lwr[j]);
+		}
+
+		/*
+		 * Space before %s is needed to avoid printing stat name from start of the line.
+		 */
+		if (instance < 0) {
+			size_wr += scnprintf(lbuf + size_wr, size_al - size_wr, "\t%s_%s", node_lwr, stats_string);
+		} else {
+			size_wr += scnprintf(lbuf + size_wr, size_al - size_wr, "\t%s[%d]_%s", node_lwr, instance, stats_string);
+		}
+
+		for (j = 0; j < (1 + maxlen - strlen(stats_string)); j++){
+			size_wr += scnprintf(lbuf + size_wr, size_al - size_wr, " ");
+		}
+
+		size_wr += scnprintf(lbuf + size_wr, size_al - size_wr, "= %llu", stats_val[i]);
+		size_wr = nss_stats_spacing(stats_val[i], lbuf, size_wr, size_al);
+
+		/*
+		 * Switch case will take care of the indentation and spacing details.
+		 */
+		switch (stats_info[i].stats_type) {
+		case NSS_STATS_TYPE_COMMON:
+			size_wr += scnprintf(lbuf + size_wr, size_al - size_wr, "common\n");
+			break;
+
+		case NSS_STATS_TYPE_SPECIAL:
+			size_wr += scnprintf(lbuf + size_wr, size_al - size_wr, "special\n");
+			break;
+
+		case NSS_STATS_TYPE_DROP:
+			size_wr += scnprintf(lbuf + size_wr, size_al - size_wr, "drop\n");
+			break;
+
+		case NSS_STATS_TYPE_ERROR:
+			size_wr += scnprintf(lbuf + size_wr, size_al - size_wr, "error\n");
+			break;
+
+		case NSS_STATS_TYPE_EXCEPTION:
+			size_wr += scnprintf(lbuf + size_wr, size_al - size_wr, "exception\n");
+			break;
+
+		default:
+			nss_warning("unknown statistics type");
+			break;
+		}
+	}
+
+	return size_wr - orig_size_wr;
+}
+
+/*
+ * nss_stats_create_dentry()
+ *	Create statistics debug entry for subsystem.
+ */
+void nss_stats_create_dentry(char *name, const struct file_operations *ops)
+{
+	if (!debugfs_create_file(name, 0400, nss_top_main.stats_dentry, &nss_top_main, ops)) {
+		nss_warning("Failed to create debug entry for subsystem %s\n", name);
+	}
+}
+
+/*
+ * TODO: Move the rest of the code to (nss_wt_stats.c, nss_gmac_stats.c) accordingly.
+ */
+
+/*
+ * gmac_stats_ops
+ */
+NSS_STATS_DECLARE_FILE_OPERATIONS(gmac);
+
+/*
+ * wt_stats_ops
+ */
+NSS_STATS_DECLARE_FILE_OPERATIONS(wt);
+
+/*
  * nss_stats_init()
- * 	Enable NSS statistics
+ *	Enable NSS statistics.
  */
 void nss_stats_init(void)
 {
@@ -399,8 +415,8 @@ void nss_stats_init(void)
 		nss_warning("Failed to create qca-nss-drv directory in debugfs");
 
 		/*
-		 * Non availability of debugfs directory is not a catastrophy
-		 * We can still go ahead with other initialization
+		 * Non availability of debugfs directory is not a catastrophy.
+		 * We can still go ahead with other initialization.
 		 */
 		return;
 	}
@@ -410,20 +426,20 @@ void nss_stats_init(void)
 		nss_warning("Failed to create qca-nss-drv directory in debugfs");
 
 		/*
-		 * Non availability of debugfs directory is not a catastrophy
-		 * We can still go ahead with rest of initialization
+		 * Non availability of debugfs directory is not a catastrophy.
+		 * We can still go ahead with rest of initialization.
 		 */
 		return;
 	}
 
 	/*
-	 * Create files to obtain statistics
+	 * Create files to obtain statistics.
 	 */
 
 	/*
 	 * drv_stats
 	 */
-	nss_stats_create_dentry("drv", &nss_drv_stats_ops);
+	nss_drv_stats_dentry_create();
 
 	/*
 	 * gmac_stats

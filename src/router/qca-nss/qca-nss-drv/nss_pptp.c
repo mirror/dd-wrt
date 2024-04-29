@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2015-2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2015-2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -18,6 +18,7 @@
 #include "nss_tx_rx_common.h"
 #include "nss_pptp_stats.h"
 #include "nss_pptp_log.h"
+#include "nss_pptp_strings.h"
 
 #define NSS_PPTP_TX_TIMEOUT 3000 /* 3 Seconds */
 
@@ -183,12 +184,12 @@ static void nss_pptp_handler(struct nss_ctx_instance *nss_ctx, struct nss_cmn_ms
 	 * Is this a valid request/response packet?
 	 */
 	if (ncm->type >= NSS_PPTP_MSG_MAX) {
-		nss_warning("%p: received invalid message %d for PPTP interface", nss_ctx, ncm->type);
+		nss_warning("%px: received invalid message %d for PPTP interface", nss_ctx, ncm->type);
 		return;
 	}
 
 	if (nss_cmn_get_msg_len(ncm) > sizeof(struct nss_pptp_msg)) {
-		nss_warning("%p: Length of message is greater than required: %d", nss_ctx, nss_cmn_get_msg_len(ncm));
+		nss_warning("%px: Length of message is greater than required: %d", nss_ctx, nss_cmn_get_msg_len(ncm));
 		return;
 	}
 
@@ -196,9 +197,10 @@ static void nss_pptp_handler(struct nss_ctx_instance *nss_ctx, struct nss_cmn_ms
 
 	case NSS_PPTP_MSG_SYNC_STATS:
 		/*
-		 * session debug stats embeded in session stats msg
+		 * Update session debug stats in stats msg and send statistics notifications to the registered modules.
 		 */
 		nss_pptp_session_debug_stats_sync(nss_ctx, &ntm->msg.stats, ncm->interface);
+		nss_pptp_stats_notify(nss_ctx, ncm->interface);
 		break;
 	}
 
@@ -233,7 +235,7 @@ static void nss_pptp_handler(struct nss_ctx_instance *nss_ctx, struct nss_cmn_ms
 	 * call pptp tunnel callback
 	 */
 	if (!cb) {
-		nss_warning("%p: Event received for pptp tunnel interface %d before registration", nss_ctx, ncm->interface);
+		nss_warning("%px: Event received for pptp tunnel interface %d before registration", nss_ctx, ncm->interface);
 		return;
 	}
 
@@ -257,12 +259,12 @@ static nss_tx_status_t nss_pptp_tx_msg(struct nss_ctx_instance *nss_ctx, struct 
 	 * Sanity check the message
 	 */
 	if (!nss_is_dynamic_interface(ncm->interface)) {
-		nss_warning("%p: tx request for non dynamic interface: %d", nss_ctx, ncm->interface);
+		nss_warning("%px: tx request for non dynamic interface: %d", nss_ctx, ncm->interface);
 		return NSS_TX_FAILURE;
 	}
 
 	if (ncm->type > NSS_PPTP_MSG_MAX) {
-		nss_warning("%p: message type out of range: %d", nss_ctx, ncm->type);
+		nss_warning("%px: message type out of range: %d", nss_ctx, ncm->type);
 		return NSS_TX_FAILURE;
 	}
 
@@ -320,7 +322,7 @@ nss_tx_status_t nss_pptp_tx_msg_sync(struct nss_ctx_instance *nss_ctx, struct ns
 
 	status = nss_pptp_tx_msg(nss_ctx, msg);
 	if (status != NSS_TX_SUCCESS) {
-		nss_warning("%p: pptp_tx_msg failed\n", nss_ctx);
+		nss_warning("%px: pptp_tx_msg failed\n", nss_ctx);
 		up(&pptp_pvt.sem);
 		return status;
 	}
@@ -328,7 +330,7 @@ nss_tx_status_t nss_pptp_tx_msg_sync(struct nss_ctx_instance *nss_ctx, struct ns
 	ret = wait_for_completion_timeout(&pptp_pvt.complete, msecs_to_jiffies(NSS_PPTP_TX_TIMEOUT));
 
 	if (!ret) {
-		nss_warning("%p: PPTP msg tx failed due to timeout\n", nss_ctx);
+		nss_warning("%px: PPTP msg tx failed due to timeout\n", nss_ctx);
 		pptp_pvt.response = NSS_TX_FAILURE;
 	}
 
@@ -343,9 +345,9 @@ nss_tx_status_t nss_pptp_tx_msg_sync(struct nss_ctx_instance *nss_ctx, struct ns
  */
 nss_tx_status_t nss_pptp_tx_buf(struct nss_ctx_instance *nss_ctx, uint32_t if_num, struct sk_buff *skb)
 {
-	nss_trace("%p: pptp If Tx packet, id:%d, data=%p", nss_ctx, if_num, skb->data);
+	nss_trace("%px: pptp If Tx packet, id:%d, data=%px", nss_ctx, if_num, skb->data);
 
-	return nss_core_send_packet(nss_ctx, skb, if_num, 0);
+	return nss_core_send_packet(nss_ctx, skb, if_num, H2N_BIT_FLAG_BUFFER_REUSABLE);
 }
 
 /*
@@ -459,6 +461,7 @@ void nss_pptp_register_handler(void)
 	init_completion(&pptp_pvt.complete);
 
 	nss_pptp_stats_dentry_create();
+	nss_pptp_strings_dentry_create();
 }
 
 EXPORT_SYMBOL(nss_pptp_get_context);

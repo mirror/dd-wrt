@@ -15,7 +15,6 @@
  */
 
 #include "nss_core.h"
-#include "nss_stats.h"
 #include "nss_gre_redir.h"
 #include "nss_gre_redir_stats.h"
 

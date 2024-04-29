@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2014-2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2014-2018, 2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -90,7 +90,7 @@ nss_tx_status_t nss_lag_tx(struct nss_ctx_instance *nss_ctx, struct nss_lag_msg 
 	nss_lag_verify_ifnum(ncm->interface);
 
 	if (ncm->type > NSS_TX_METADATA_LAG_MAX) {
-		nss_warning("%p: message type out of range: %d", nss_ctx, ncm->type);
+		nss_warning("%px: message type out of range: %d", nss_ctx, ncm->type);
 		return NSS_TX_FAILURE;
 	}
 
@@ -123,7 +123,6 @@ void *nss_register_lag_if(uint32_t if_num,
 }
 EXPORT_SYMBOL(nss_register_lag_if);
 
-
 /**
  * nss_unregister_lag_if()
  */
@@ -139,7 +138,6 @@ void nss_unregister_lag_if(uint32_t if_num)
 	nss_top_main.lag_event_callback = NULL;
 }
 EXPORT_SYMBOL(nss_unregister_lag_if);
-
 
 /**
  * nss_lag_handler()
@@ -163,12 +161,12 @@ void nss_lag_handler(struct nss_ctx_instance *nss_ctx,
 	nss_lag_log_rx_msg(lm);
 
 	if (ncm->type >= NSS_TX_METADATA_LAG_MAX) {
-		nss_warning("%p: received invalid message %d for LAG interface", nss_ctx, ncm->type);
+		nss_warning("%px: received invalid message %d for LAG interface", nss_ctx, ncm->type);
 		return;
 	}
 
 	if (nss_cmn_get_msg_len(ncm) > sizeof(struct nss_lag_msg)) {
-		nss_warning("%p: invalid length for LAG message: %d", nss_ctx, nss_cmn_get_msg_len(ncm));
+		nss_warning("%px: invalid length for LAG message: %d", nss_ctx, nss_cmn_get_msg_len(ncm));
 		return;
 	}
 
@@ -200,7 +198,6 @@ void nss_lag_handler(struct nss_ctx_instance *nss_ctx,
 
 	cb(ctx, lm);
 }
-
 
 /**
  * nss_lag_register_handler()
@@ -256,7 +253,7 @@ nss_tx_status_t nss_lag_tx_slave_state(uint16_t lagid, int32_t slave_ifnum,
 
 	status = nss_lag_tx(nss_ctx, &nm);
 	if (status != NSS_TX_SUCCESS) {
-		nss_warning("%p: Send LAG update failed, status: %d\n", nss_ctx,
+		nss_warning("%px: Send LAG update failed, status: %d\n", nss_ctx,
 				status);
 		return NSS_TX_FAILURE;
 	}
@@ -267,7 +264,7 @@ nss_tx_status_t nss_lag_tx_slave_state(uint16_t lagid, int32_t slave_ifnum,
 	ret = wait_for_completion_timeout(&lag_msg_state.complete,
 			msecs_to_jiffies(NSS_LAG_RESP_TIMEOUT));
 	if (!ret) {
-		nss_warning("%p: Waiting for ack timed out\n", nss_ctx);
+		nss_warning("%px: Waiting for ack timed out\n", nss_ctx);
 		return NSS_TX_FAILURE;
 	}
 

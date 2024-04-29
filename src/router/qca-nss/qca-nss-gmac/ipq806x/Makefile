@@ -17,7 +17,7 @@ qca-nss-gmac-objs +=	nss_gmac_dev.o \
 GMAC_INCLUDE = -I$(obj)/include -I$(obj)/exports
 
 ccflags-y += $(GMAC_INCLUDE)
-ccflags-y += -Werror
+ccflags-y += -Wall -Werror
 
 # Un-comment this line to build with emulation platform support
 #ccflags-y += -DRUMI_EMULATION_SUPPORT

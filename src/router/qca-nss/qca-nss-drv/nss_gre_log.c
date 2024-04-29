@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2018, 2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -41,7 +41,7 @@ static int8_t *nss_gre_log_message_types_str[NSS_GRE_MSG_MAX] __maybe_unused = {
 static void nss_gre_log_config_msg(struct nss_gre_msg *ngm)
 {
 	struct nss_gre_config_msg *ngcm __maybe_unused = &ngm->msg.cmsg;
-	nss_trace("%p: NSS GRE Config message\n"
+	nss_trace("%px: NSS GRE Config message\n"
 		"GRE flags: %d\n"
 		"GRE ikey: %d\n"
 		"GRE okey: %d\n"
@@ -78,7 +78,7 @@ static void nss_gre_log_config_msg(struct nss_gre_msg *ngm)
 static void nss_gre_log_deconfig_msg(struct nss_gre_msg *ngm)
 {
 	struct nss_gre_deconfig_msg *ngdm __maybe_unused = &ngm->msg.dmsg;
-	nss_trace("%p: NSS GRE deconfig message\n"
+	nss_trace("%px: NSS GRE deconfig message\n"
 		"GRE interface number: %d\n",
 		ngdm, ngdm->if_number);
 }
@@ -90,7 +90,7 @@ static void nss_gre_log_deconfig_msg(struct nss_gre_msg *ngm)
 static void nss_gre_log_linkup_msg(struct nss_gre_msg *ngm)
 {
 	struct nss_gre_linkup_msg *nglm __maybe_unused = &ngm->msg.linkup;
-	nss_trace("%p: NSS GRE linkup message\n"
+	nss_trace("%px: NSS GRE linkup message\n"
 		"GRE interface number: %d\n",
 		nglm, nglm->if_number);
 }
@@ -102,7 +102,7 @@ static void nss_gre_log_linkup_msg(struct nss_gre_msg *ngm)
 static void nss_gre_log_linkdown_msg(struct nss_gre_msg *ngm)
 {
 	struct nss_gre_linkdown_msg *ngdm __maybe_unused = &ngm->msg.linkdown;
-	nss_trace("%p: NSS GRE linkdown message\n"
+	nss_trace("%px: NSS GRE linkdown message\n"
 		"GRE interface number: %d\n",
 		ngdm, ngdm->if_number);
 }
@@ -140,7 +140,7 @@ static void nss_gre_log_verbose(struct nss_gre_msg *ngm)
 		break;
 
 	default:
-		nss_trace("%p: Invalid message type\n", ngm);
+		nss_trace("%px: Invalid message type\n", ngm);
 		break;
 	}
 }
@@ -152,11 +152,11 @@ static void nss_gre_log_verbose(struct nss_gre_msg *ngm)
 void nss_gre_log_tx_msg(struct nss_gre_msg *ngm)
 {
 	if (ngm->cm.type >= NSS_GRE_MSG_MAX) {
-		nss_warning("%p: Invalid message type\n", ngm);
+		nss_warning("%px: Invalid message type\n", ngm);
 		return;
 	}
 
-	nss_info("%p: type[%d]:%s\n", ngm, ngm->cm.type, nss_gre_log_message_types_str[NSS_GRE_LOG_MESSAGE_TYPE_INDEX(ngm->cm.type)]);
+	nss_info("%px: type[%d]:%s\n", ngm, ngm->cm.type, nss_gre_log_message_types_str[NSS_GRE_LOG_MESSAGE_TYPE_INDEX(ngm->cm.type)]);
 	nss_gre_log_verbose(ngm);
 }
 
@@ -167,18 +167,18 @@ void nss_gre_log_tx_msg(struct nss_gre_msg *ngm)
 void nss_gre_log_rx_msg(struct nss_gre_msg *ngm)
 {
 	if (ngm->cm.response >= NSS_CMN_RESPONSE_LAST) {
-		nss_warning("%p: Invalid response\n", ngm);
+		nss_warning("%px: Invalid response\n", ngm);
 		return;
 	}
 
 	if (ngm->cm.response == NSS_CMN_RESPONSE_NOTIFY || (ngm->cm.response == NSS_CMN_RESPONSE_ACK)) {
-		nss_info("%p: type[%d]:%s, response[%d]:%s\n", ngm, ngm->cm.type,
+		nss_info("%px: type[%d]:%s, response[%d]:%s\n", ngm, ngm->cm.type,
 			nss_gre_log_message_types_str[NSS_GRE_LOG_MESSAGE_TYPE_INDEX(ngm->cm.type)],
 			ngm->cm.response, nss_cmn_response_str[ngm->cm.response]);
 		goto verbose;
 	}
 
-	nss_info("%p: msg nack - type[%d]:%s, response[%d]:%s\n",
+	nss_info("%px: msg nack - type[%d]:%s, response[%d]:%s\n",
 		ngm, ngm->cm.type, nss_gre_log_message_types_str[NSS_GRE_LOG_MESSAGE_TYPE_INDEX(ngm->cm.type)],
 		ngm->cm.response, nss_cmn_response_str[ngm->cm.response]);
 

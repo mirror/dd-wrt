@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2019-2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -84,13 +84,13 @@ static bool nss_pvxlan_hdl_instance_free(struct nss_ctx_instance *nss_ctx, uint3
 	h = nss_pvxlan_hdl[if_num - NSS_DYNAMIC_IF_START];
 	if (!h) {
 		spin_unlock(&nss_pvxlan_spinlock);
-		nss_warning("%p: Instance does not exist: %d", nss_ctx, if_num);
+		nss_warning("%px: Instance does not exist: %d", nss_ctx, if_num);
 		return false;
 	}
 
 	if (h->if_num != if_num) {
 		spin_unlock(&nss_pvxlan_spinlock);
-		nss_warning("%p: Not correct if_num: %d", nss_ctx, if_num);
+		nss_warning("%px: Not correct if_num: %d", nss_ctx, if_num);
 		return false;
 	}
 
@@ -114,7 +114,7 @@ static bool nss_pvxlan_hdl_instance_alloc(struct nss_ctx_instance *nss_ctx, uint
 	 */
 	h = kzalloc(sizeof(struct nss_pvxlan_handle), GFP_ATOMIC);
 	if (!h) {
-		nss_warning("%p: no memory for allocating PVxLAN handle instance for interface : %d", nss_ctx, if_num);
+		nss_warning("%px: no memory for allocating PVxLAN handle instance for interface : %d", nss_ctx, if_num);
 		return false;
 	}
 	h->if_num = if_num;
@@ -123,7 +123,7 @@ static bool nss_pvxlan_hdl_instance_alloc(struct nss_ctx_instance *nss_ctx, uint
 	if (nss_pvxlan_hdl[if_num - NSS_DYNAMIC_IF_START] != NULL) {
 		spin_unlock(&nss_pvxlan_spinlock);
 		kfree(h);
-		nss_warning("%p: The handle has been taken by another thread :%d", nss_ctx, if_num);
+		nss_warning("%px: The handle has been taken by another thread :%d", nss_ctx, if_num);
 		return false;
 	}
 
@@ -175,12 +175,12 @@ static void nss_pvxlan_msg_handler(struct nss_ctx_instance *nss_ctx, struct nss_
 	 * Is this a valid request/response packet?
 	 */
 	if (ncm->type >= NSS_PVXLAN_MSG_TYPE_MAX) {
-		nss_warning("%p: received invalid message %d for PVXLAN interface", nss_ctx, ncm->type);
+		nss_warning("%px: received invalid message %d for PVXLAN interface", nss_ctx, ncm->type);
 		return;
 	}
 
 	if (nss_cmn_get_msg_len(ncm) > sizeof(struct nss_pvxlan_msg)) {
-		nss_warning("%p: Length of message is greater than required: %d", nss_ctx, nss_cmn_get_msg_len(ncm));
+		nss_warning("%px: Length of message is greater than required: %d", nss_ctx, nss_cmn_get_msg_len(ncm));
 		return;
 	}
 
@@ -195,7 +195,6 @@ static void nss_pvxlan_msg_handler(struct nss_ctx_instance *nss_ctx, struct nss_
 		nss_pvxlan_stats_sync(nss_ctx, &nvxm->msg.stats, ncm->interface);
 		break;
 	}
-
 
 	/*
 	 * Update the callback and app_data for NOTIFY messages.
@@ -218,7 +217,7 @@ static void nss_pvxlan_msg_handler(struct nss_ctx_instance *nss_ctx, struct nss_
 	 * Do we have a callback
 	 */
 	if (!cb) {
-		nss_trace("%p: cb is null for interface %d", nss_ctx, ncm->interface);
+		nss_trace("%px: cb is null for interface %d", nss_ctx, ncm->interface);
 		return;
 	}
 
@@ -265,14 +264,14 @@ nss_tx_status_t nss_pvxlan_tx_msg_sync(struct nss_ctx_instance *nss_ctx, struct 
 
 	status = nss_pvxlan_tx_msg(nss_ctx, nvxm);
 	if (status != NSS_TX_SUCCESS) {
-		nss_warning("%p: pvxlan_tx_msg failed\n", nss_ctx);
+		nss_warning("%px: pvxlan_tx_msg failed\n", nss_ctx);
 		up(&pvxlan_pvt.sem);
 		return status;
 	}
 
 	ret = wait_for_completion_timeout(&pvxlan_pvt.complete, msecs_to_jiffies(NSS_PVXLAN_TX_TIMEOUT));
 	if (!ret) {
-		nss_warning("%p: pvxlan tx sync failed due to timeout\n", nss_ctx);
+		nss_warning("%px: pvxlan tx sync failed due to timeout\n", nss_ctx);
 		pvxlan_pvt.response = NSS_TX_FAILURE;
 	}
 
@@ -290,7 +289,7 @@ nss_tx_status_t nss_pvxlan_tx_buf(struct nss_ctx_instance *nss_ctx, struct sk_bu
 {
 	BUG_ON(!nss_pvxlan_verify_if_num(if_num));
 
-	return nss_core_send_packet(nss_ctx, buf, if_num, H2N_BIT_FLAG_VIRTUAL_BUFFER);
+	return nss_core_send_packet(nss_ctx, buf, if_num, H2N_BIT_FLAG_VIRTUAL_BUFFER | H2N_BIT_FLAG_BUFFER_REUSABLE);
 }
 EXPORT_SYMBOL(nss_pvxlan_tx_buf);
 
@@ -311,7 +310,7 @@ bool nss_pvxlan_unregister(uint32_t if_num)
 
 	nss_ctx = nss_pvxlan_get_ctx();
 	if (!nss_pvxlan_verify_if_num(if_num)) {
-		nss_warning("%p: data unregister received for invalid interface %d", nss_ctx, if_num);
+		nss_warning("%px: data unregister received for invalid interface %d", nss_ctx, if_num);
 		return false;
 	}
 
@@ -350,19 +349,19 @@ struct nss_ctx_instance *nss_pvxlan_register(uint32_t if_num,
 
 	nss_ctx = nss_pvxlan_get_ctx();
 	if (!nss_pvxlan_verify_if_num(if_num)) {
-		nss_warning("%p: data register received for invalid interface %d", nss_ctx, if_num);
+		nss_warning("%px: data register received for invalid interface %d", nss_ctx, if_num);
 		return NULL;
 	}
 
 	core_status = nss_core_register_handler(nss_ctx, if_num, nss_pvxlan_msg_handler, NULL);
 	if (core_status != NSS_CORE_STATUS_SUCCESS) {
-		nss_warning("%p: nss core register handler failed for if_num:%d with error :%d", nss_ctx, if_num, core_status);
+		nss_warning("%px: nss core register handler failed for if_num:%d with error :%d", nss_ctx, if_num, core_status);
 		return NULL;
 	}
 
 	if (!nss_pvxlan_hdl_instance_alloc(nss_ctx, if_num, notify_cb, (void *)netdev)) {
 		nss_core_unregister_handler(nss_ctx, if_num);
-		nss_warning("%p: couldn't allocate handle instance for if_num:%d", nss_ctx, if_num);
+		nss_warning("%px: couldn't allocate handle instance for if_num:%d", nss_ctx, if_num);
 		return NULL;
 	}
 
@@ -380,7 +379,7 @@ struct nss_ctx_instance *nss_pvxlan_register(uint32_t if_num,
 	spin_unlock_bh(&nss_pvxlan_tunnel_stats_debug_lock);
 
 	if (i == NSS_PVXLAN_MAX_INTERFACES) {
-		nss_warning("%p: No available debug stats instance :%d", nss_ctx, if_num);
+		nss_warning("%px: No available debug stats instance :%d", nss_ctx, if_num);
 		nss_pvxlan_hdl_instance_free(nss_ctx, if_num);
 		nss_core_unregister_handler(nss_ctx, if_num);
 		return NULL;
@@ -402,7 +401,7 @@ int nss_pvxlan_ifnum_with_core_id(int if_num)
 	NSS_VERIFY_CTX_MAGIC(nss_ctx);
 
 	if (!nss_is_dynamic_interface(if_num)) {
-		nss_warning("%p: Invalid if_num: %d, must be a dynamic interface\n", nss_ctx, if_num);
+		nss_warning("%px: Invalid if_num: %d, must be a dynamic interface\n", nss_ctx, if_num);
 		return 0;
 	}
 	return NSS_INTERFACE_NUM_APPEND_COREID(nss_ctx, if_num);

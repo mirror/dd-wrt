@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2016-2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2016-2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -74,12 +74,12 @@ static void nss_gre_tunnel_handler(struct nss_ctx_instance *nss_ctx, struct nss_
 	 * Is this a valid request/response packet?
 	 */
 	if (ncm->type >= NSS_GRE_TUNNEL_MSG_MAX) {
-		nss_warning("%p: received invalid message %d for GRE_TUNNEL interface %d", nss_ctx, ncm->type, ncm->interface);
+		nss_warning("%px: received invalid message %d for GRE_TUNNEL interface %d", nss_ctx, ncm->type, ncm->interface);
 		return;
 	}
 
 	if (nss_cmn_get_msg_len(ncm) > sizeof(struct nss_gre_tunnel_msg)) {
-		nss_warning("%p: gre_tunnel message length is invalid: %d", nss_ctx, ncm->len);
+		nss_warning("%px: gre_tunnel message length is invalid: %d", nss_ctx, ncm->len);
 		return;
 	}
 
@@ -153,7 +153,7 @@ nss_tx_status_t nss_gre_tunnel_inquiry(
 	nim.msg.configure = *inquiry_info;
 	nss_tx_status = nss_gre_tunnel_tx_msg(nss_ctx, &nim);
 	if (nss_tx_status != NSS_TX_SUCCESS) {
-		nss_warning("%p: Send GT inquiry message failed\n", inquiry_info);
+		nss_warning("%px: Send GT inquiry message failed\n", inquiry_info);
 	}
 
 	return nss_tx_status;
@@ -181,7 +181,7 @@ int nss_gre_tunnel_ifnum_with_core_id(int if_num)
 	NSS_VERIFY_CTX_MAGIC(nss_ctx);
 
 	if (nss_is_dynamic_interface(if_num) == false) {
-		nss_info("%p: Invalid if_num: %d, must be a dynamic interface\n", nss_ctx, if_num);
+		nss_info("%px: Invalid if_num: %d, must be a dynamic interface\n", nss_ctx, if_num);
 		return 0;
 	}
 
@@ -198,7 +198,7 @@ nss_tx_status_t nss_gre_tunnel_tx_buf(struct sk_buff *skb, uint32_t if_num,
 {
 	BUG_ON(!nss_gre_tunnel_verify_if_num(if_num));
 
-	return nss_core_send_packet(nss_ctx, skb, if_num, H2N_BIT_FLAG_VIRTUAL_BUFFER);
+	return nss_core_send_packet(nss_ctx, skb, if_num, H2N_BIT_FLAG_VIRTUAL_BUFFER | H2N_BIT_FLAG_BUFFER_REUSABLE);
 }
 EXPORT_SYMBOL(nss_gre_tunnel_tx_buf);
 
@@ -219,7 +219,7 @@ nss_tx_status_t nss_gre_tunnel_tx_msg(struct nss_ctx_instance *nss_ctx, struct n
 	 * Sanity check message
 	 */
 	if (ncm->type >= NSS_GRE_TUNNEL_MSG_MAX) {
-		nss_warning("%p: gre_tunnel message type out of range: %d",
+		nss_warning("%px: gre_tunnel message type out of range: %d",
 			nss_ctx, ncm->type);
 		return NSS_TX_FAILURE;
 	}
@@ -272,7 +272,7 @@ nss_tx_status_t nss_gre_tunnel_tx_msg_sync(struct nss_ctx_instance *nss_ctx, str
 
 	status = nss_gre_tunnel_tx_msg(nss_ctx, ngtm);
 	if (status != NSS_TX_SUCCESS) {
-		nss_warning("%p: gre_tunnel_tx_msg failed\n", nss_ctx);
+		nss_warning("%px: gre_tunnel_tx_msg failed\n", nss_ctx);
 		up(&gre_tunnel_pvt.sem);
 		return status;
 	}
@@ -280,7 +280,7 @@ nss_tx_status_t nss_gre_tunnel_tx_msg_sync(struct nss_ctx_instance *nss_ctx, str
 	ret = wait_for_completion_timeout(&gre_tunnel_pvt.complete, msecs_to_jiffies(NSS_GRE_TUNNEL_TX_TIMEOUT));
 
 	if (!ret) {
-		nss_warning("%p: GRE Tunnel msg tx failed due to timeout\n", nss_ctx);
+		nss_warning("%px: GRE Tunnel msg tx failed due to timeout\n", nss_ctx);
 		gre_tunnel_pvt.response = NSS_TX_FAILURE;
 	}
 
@@ -330,12 +330,12 @@ struct nss_ctx_instance *nss_gre_tunnel_register_if(uint32_t if_num,
 	spin_unlock_bh(&nss_gre_tunnel_stats_session_debug_lock);
 
 	if (i == NSS_MAX_GRE_TUNNEL_SESSIONS) {
-		nss_warning("%p: Cannot find free slot for GRE Tunnel session stats, I/F:%u\n", nss_ctx, if_num);
+		nss_warning("%px: Cannot find free slot for GRE Tunnel session stats, I/F:%u\n", nss_ctx, if_num);
 		return NULL;
 	}
 
 	if (nss_ctx->subsys_dp_register[if_num].ndev) {
-		nss_warning("%p: Cannot find free slot for GRE Tunnel NSS I/F:%u\n", nss_ctx, if_num);
+		nss_warning("%px: Cannot find free slot for GRE Tunnel NSS I/F:%u\n", nss_ctx, if_num);
 		nss_gre_tunnel_session_debug_stats[i].valid = false;
 		nss_gre_tunnel_session_debug_stats[i].if_num = 0;
 		nss_gre_tunnel_session_debug_stats[i].if_index = 0;
@@ -374,12 +374,12 @@ void nss_gre_tunnel_unregister_if(uint32_t if_num)
 	spin_unlock_bh(&nss_gre_tunnel_stats_session_debug_lock);
 
 	if (i == NSS_MAX_GRE_TUNNEL_SESSIONS) {
-		nss_warning("%p: Cannot find debug stats for GRE Tunnel session: %d\n", nss_ctx, if_num);
+		nss_warning("%px: Cannot find debug stats for GRE Tunnel session: %d\n", nss_ctx, if_num);
 		return;
 	}
 
 	if (!nss_ctx->subsys_dp_register[if_num].ndev) {
-		nss_warning("%p: Cannot find registered netdev for GRE Tunnel NSS I/F: %d\n", nss_ctx, if_num);
+		nss_warning("%px: Cannot find registered netdev for GRE Tunnel NSS I/F: %d\n", nss_ctx, if_num);
 
 		return;
 	}

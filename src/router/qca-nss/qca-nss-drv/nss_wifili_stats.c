@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2017-2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -21,148 +21,20 @@
 
 #include "nss_tx_rx_common.h"
 #include "nss_core.h"
-#include "nss_stats.h"
 #include "nss_wifili_if.h"
 #include "nss_wifili_stats.h"
+#include "nss_wifili_strings.h"
 
 /*
- * Maximum string length:
- * This should be equal to maximum string size of any stats
- * inclusive of stats value
+ * Declare atomic notifier data structure for statistics.
  */
-#define NSS_WIFILI_STATS_MAX	(NSS_WIFILI_STATS_TXRX_MAX + NSS_WIFILI_STATS_TCL_MAX + \
-				NSS_WIFILI_STATS_TX_DESC_FREE_MAX + NSS_WIFILI_STATS_REO_MAX + \
-				NSS_WIFILI_STATS_TX_DESC_MAX + NSS_WIFILI_STATS_EXT_TX_DESC_MAX + \
-				NSS_WIFILI_STATS_RX_DESC_MAX + NSS_WIFILI_STATS_RXDMA_DESC_MAX)
+ATOMIC_NOTIFIER_HEAD(nss_wifili_stats_notifier);
 
 /*
  * Statistics structures
+ * The structure will hold the statistics for 3 SOCs.
  */
-struct nss_wifili_stats stats_wifili;
-
-/*
- * nss_wifili_stats_str_txrx
- *	wifili txrx statistics
- */
-static int8_t *nss_wifili_stats_str_txrx[NSS_WIFILI_STATS_TXRX_MAX] = {
-	"WIFILI_RX_MSDU_ERROR",
-	"WIFILI_RX_INV_PEER_RCV",
-	"WIFILI_RX_WDS_SRCPORT_EXCEPTION",
-	"WIFILI_RX_WDS_SRCPORT_EXCEPTION_FAIL",
-	"WIFILI_RX_DELIVERD",
-	"WIFILI_RX_DELIVER_DROPPED",
-	"WIFILI_RX_INTRA_BSS_UCAST",
-	"WIFILI_RX_INTRA_BSS_UCAST_FAIL",
-	"WIFILI_RX_INTRA_BSS_MCAST",
-	"WIFILI_RX_INTRA_BSS_MCAST_FAIL",
-	"WIFILI_RX_SG_RCV_SEND",
-	"WIFILI_RX_SG_RCV_FAIL",
-	"WIFILI_RX_MCAST_ECHO",
-	"WIFILI_RX_INV_TID",
-	"WIFILI_STATS_RX_FRAG_INV_SC",
-	"WIFILI_STATS_RX_FRAG_INV_FC",
-	"WIFILI_STATS_RX_FRAG_NON_FRAG",
-	"WIFILI_STATS_RX_FRAG_RETRY",
-	"WIFILI_STATS_RX_FRAG_OOO",
-	"WIFILI_STATS_RX_FRAG_OOO_SEQ",
-	"WIFILI_STATS_RX_FRAG_ALL_FRAG_RCV",
-	"WIFILI_STATS_RX_FRAG_DELIVER",
-	"WIFILI_TX_ENQUEUE",
-	"WIFILI_TX_ENQUEUE_DROP",
-	"WIFILI_TX_DEQUEUE",
-	"WIFILI_TX_HW_ENQUEUE_FAIL",
-	"WIFILI_TX_SENT_COUNT",
-};
-
-/*
- * nss_wifili_stats_str_tcl
- *	wifili tcl stats
- */
-static int8_t *nss_wifili_stats_str_tcl[NSS_WIFILI_STATS_TCL_MAX] = {
-	"WIFILI_TCL_NO_HW_DESC",
-	"WIFILI_TCL_RING_FULL",
-	"WIFILI_TCL_RING_SENT",
-};
-
-/*
- * nss_wifili_stats_str_tx_comp
- *	wifili tx comp stats
- */
-static int8_t *nss_wifili_stats_str_tx_comp[NSS_WIFILI_STATS_TX_DESC_FREE_MAX] = {
-	"WIFILI_TX_DESC_FREE_INV_BUFSRC",
-	"WIFILI_TX_DESC_FREE_INV_COOKIE",
-	"WIFILI_TX_DESC_FREE_HW_RING_EMPTY",
-	"WIFILI_TX_DESC_FREE_REAPED",
-};
-
-/*
- * nss_wifili_stats_str_reo
- *	wifili tx reo stats
- */
-static int8_t *nss_wifili_stats_str_reo[NSS_WIFILI_STATS_REO_MAX] = {
-	"WIFILI_REO_ERROR",
-	"WIFILI_REO_REAPED",
-	"WIFILI_REO_INV_COOKIE",
-	"WIFILI_STATS_REO_FRAG_RCV"
-};
-
-/*
- * nss_wifili_stats_str_txsw_pool
- *	wifili tx desc stats
- */
-static int8_t *nss_wifili_stats_str_txsw_pool[NSS_WIFILI_STATS_TX_DESC_MAX] = {
-	"WIFILI_TX_DESC_IN_USE",
-	"WIFILI_TX_DESC_ALLOC_FAIL",
-	"WIFILI_TX_DESC_ALREADY_ALLOCATED",
-	"WIFILI_TX_DESC_INVALID_FREE",
-	"WIFILI_TX_DESC_FREE_SRC_FW",
-	"WIFILI_TX_DESC_FREE_COMPLETION",
-	"WIFILI_TX_DESC_NO_PB",
-	"WIFILI_TX_DESC_QUEUELIMIT_DROP",
-};
-
-/*
- * nss_wifili_stats_str_ext_txsw_pool
- *	wifili tx ext desc stats
- */
-static uint8_t *nss_wifili_stats_str_ext_txsw_pool[NSS_WIFILI_STATS_EXT_TX_DESC_MAX] = {
-	"WIFILI_EXT_TX_DESC_IN_USE",
-	"WIFILI_EXT_TX_DESC_ALLOC_FAIL",
-	"WIFILI_EXT_TX_DESC_ALREADY_ALLOCATED",
-	"WIFILI_EXT_TX_DESC_INVALID_FREE",
-};
-
-/*
- * nss_wifili_stats_str_rxdma_pool
- *	wifili rx desc stats
- */
-static int8_t *nss_wifili_stats_str_rxdma_pool[NSS_WIFILI_STATS_RX_DESC_MAX] = {
-	"WIFILI_RX_DESC_NO_PB",
-	"WIFILI_RX_DESC_ALLOC_FAIL",
-	"WIFILI_RX_DESC_IN_USE",
-};
-
-/*
- * nss_wifili_stats_str_rxdma_ring
- *	wifili rx dma ring stats
- */
-static int8_t *nss_wifili_stats_str_rxdma_ring[NSS_WIFILI_STATS_RXDMA_DESC_MAX] = {
-	"WIFILI_RXDMA_HW_DESC_UNAVAILABLE",
-	"WIFILI_RXDMA_BUF_REPLENISHED",
-};
-
-/*
- * nss_wifili_stats_str_wbm
- *	wifili wbm ring stats
- */
-static int8_t *nss_wifili_stats_str_wbm[NSS_WIFILI_STATS_WBM_MAX] = {
-	"WIFILI_WBM_SRC_DMA",
-	"WIFILI_WBM_SRC_DMA_CODE_INV",
-	"WIFILI_WBM_SRC_REO",
-	"WIFILI_WBM_SRC_REO_CODE_NULLQ",
-	"WIFILI_WBM_SRC_REO_CODE_INV",
-	"WIFILI_WBM_SRC_INV",
-};
+struct nss_wifili_soc_stats soc_stats[NSS_WIFILI_MAX_SOC_NUM];
 
 /*
  * nss_wifili_stats_read()
@@ -170,161 +42,172 @@ static int8_t *nss_wifili_stats_str_wbm[NSS_WIFILI_STATS_WBM_MAX] = {
  */
 static ssize_t nss_wifili_stats_read(struct file *fp, char __user *ubuf, size_t sz, loff_t *ppos)
 {
-	uint32_t i, j;
+	uint32_t i;
 
 	/*
 	 * max output lines = ((#stats + eight blank lines) * #WIFILI #STATS) + start/end tag + 3 blank
+	 * + Number of Extra outputlines for future reference to add new stats
 	 */
-	uint32_t max_output_lines = (((NSS_WIFILI_STATS_MAX + 9) * NSS_WIFILI_MAX_PDEV_NUM_MSG)+
-									NSS_WIFILI_STATS_WBM_MAX + 5);
-	size_t size_al = NSS_STATS_MAX_STR_LENGTH * max_output_lines;
+	uint32_t max_pdev = 0;
+	uint32_t max_output_lines;
+	size_t size_al = 0;
 	size_t size_wr = 0;
 	ssize_t bytes_read = 0;
-	uint64_t *stats_shadow;
+	char *lbuf = NULL;
+	uint32_t soc_idx;
+	struct nss_wifili_stats *stats_wifili = NULL;
 
-	char *lbuf = kzalloc(size_al, GFP_KERNEL);
+	/*
+	 * Max number of pdev depends on type of soc (Internal/Attached).
+	 */
+	for (soc_idx = 0; soc_idx < NSS_WIFILI_MAX_SOC_NUM; soc_idx++) {
+		max_pdev += soc_stats[soc_idx].soc_maxpdev;
+	}
+
+	/*
+	 * Max pdev cannot be null.
+	 */
+	if (unlikely(max_pdev == 0)) {
+		nss_warning("Cannot have max pdev zero ");
+		return 0;
+	}
+
+	max_output_lines = (((NSS_WIFILI_STATS_MAX + 9) * max_pdev) +
+				NSS_WIFILI_STATS_WBM_MAX + NSS_STATS_EXTRA_OUTPUT_LINES);
+
+	size_al = NSS_STATS_MAX_STR_LENGTH * max_output_lines;
+
+	lbuf = kzalloc(size_al, GFP_KERNEL);
 	if (unlikely(lbuf == NULL)) {
 		nss_warning("Could not allocate memory for local statistics buffer");
 		return 0;
 	}
 
-	/*
-	 * Take max of all wifili stats
-	 *
-	 * NOTE: txrx stats is bigger of all stats
-	 */
-	stats_shadow = kzalloc(NSS_WIFILI_STATS_TXRX_MAX * 8, GFP_KERNEL);
-	if (unlikely(stats_shadow == NULL)) {
-		nss_warning("Could not allocate memory for local shadow buffer");
-		kfree(lbuf);
-		return 0;
+	size_wr += nss_stats_banner(lbuf, size_wr, size_al, "wifili", NSS_STATS_SINGLE_CORE);
+
+	for (soc_idx = 0; soc_idx < NSS_WIFILI_MAX_SOC_NUM; soc_idx++) {
+		stats_wifili = &(soc_stats[soc_idx].stats_wifili);
+		for (i = 0; i < soc_stats[soc_idx].soc_maxpdev; i++) {
+
+			spin_lock_bh(&nss_top_main.stats_lock);
+			size_wr += nss_stats_print("wifili", "txrx", i
+					, nss_wifili_strings_stats_txrx
+					, stats_wifili->stats_txrx[i]
+					, NSS_WIFILI_STATS_TXRX_MAX
+					, lbuf, size_wr, size_al);
+			spin_unlock_bh(&nss_top_main.stats_lock);
+			size_wr += scnprintf(lbuf + size_wr
+					, size_al - size_wr, "\n");
+
+			/*
+			 * Filling TCL ring stats
+			 */
+			spin_lock_bh(&nss_top_main.stats_lock);
+			size_wr += nss_stats_print("wifili", "tcl ring", i
+					, nss_wifili_strings_stats_tcl
+					, stats_wifili->stats_tcl_ring[i]
+					, NSS_WIFILI_STATS_TCL_MAX
+					, lbuf, size_wr, size_al);
+			spin_unlock_bh(&nss_top_main.stats_lock);
+			size_wr += scnprintf(lbuf + size_wr
+					, size_al - size_wr, "\n");
+
+			/*
+			 * Filling TCL comp stats
+			 */
+			spin_lock_bh(&nss_top_main.stats_lock);
+			size_wr += nss_stats_print("wifili", "tcl comp", i
+					, nss_wifili_strings_stats_tx_comp
+					, stats_wifili->stats_tx_comp[i]
+					, NSS_WIFILI_STATS_TX_DESC_FREE_MAX
+					, lbuf, size_wr, size_al);
+			spin_unlock_bh(&nss_top_main.stats_lock);
+			size_wr += scnprintf(lbuf + size_wr
+					, size_al - size_wr, "\n");
+
+			/*
+			 * Filling reo ring stats
+			 */
+			spin_lock_bh(&nss_top_main.stats_lock);
+			size_wr += nss_stats_print("wifili", "reo ring", i
+					, nss_wifili_strings_stats_reo
+					, stats_wifili->stats_reo[i]
+					, NSS_WIFILI_STATS_REO_MAX
+					, lbuf, size_wr, size_al);
+
+			spin_unlock_bh(&nss_top_main.stats_lock);
+			size_wr += scnprintf(lbuf + size_wr
+					, size_al - size_wr, "\n");
+
+			/*
+			 * Filling TX SW Pool
+			 */
+			spin_lock_bh(&nss_top_main.stats_lock);
+			size_wr += nss_stats_print("wifili", "tx sw pool", i
+					, nss_wifili_strings_stats_txsw_pool
+					, stats_wifili->stats_tx_desc[i]
+					, NSS_WIFILI_STATS_TX_DESC_MAX
+					, lbuf, size_wr, size_al);
+			spin_unlock_bh(&nss_top_main.stats_lock);
+			size_wr += scnprintf(lbuf + size_wr
+					, size_al - size_wr, "\n");
+
+			/*
+			 * Filling TX EXt SW Pool
+			 */
+			spin_lock_bh(&nss_top_main.stats_lock);
+			size_wr += nss_stats_print("wifili", "tx ext sw pool", i
+					, nss_wifili_strings_stats_ext_txsw_pool
+					, stats_wifili->stats_ext_tx_desc[i]
+					, NSS_WIFILI_STATS_EXT_TX_DESC_MAX
+					, lbuf, size_wr, size_al);
+			spin_unlock_bh(&nss_top_main.stats_lock);
+			size_wr += scnprintf(lbuf + size_wr
+					, size_al - size_wr, "\n");
+
+			/*
+			 * Filling rxdma pool stats
+			 */
+			spin_lock_bh(&nss_top_main.stats_lock);
+			size_wr += nss_stats_print("wifili", "rxdma pool", i
+					, nss_wifili_strings_stats_rxdma_pool
+					, stats_wifili->stats_rx_desc[i]
+					, NSS_WIFILI_STATS_RX_DESC_MAX
+					, lbuf, size_wr, size_al);
+			spin_unlock_bh(&nss_top_main.stats_lock);
+			size_wr += scnprintf(lbuf + size_wr
+					, size_al - size_wr, "\n");
+
+			/*
+			 * Filling rxdma ring stats
+			 */
+			spin_lock_bh(&nss_top_main.stats_lock);
+			size_wr += nss_stats_print("wifili", "rxdma ring", i
+					, nss_wifili_strings_stats_rxdma_ring
+					, stats_wifili->stats_rxdma[i]
+					, NSS_WIFILI_STATS_RXDMA_DESC_MAX
+					, lbuf, size_wr, size_al);
+			spin_unlock_bh(&nss_top_main.stats_lock);
+			size_wr += scnprintf(lbuf + size_wr
+					, size_al - size_wr, "\n");
+		}
+
+		/*
+		 * Filling wbm ring stats
+		 */
+		spin_lock_bh(&nss_top_main.stats_lock);
+		size_wr += nss_stats_print("wifili", "wbm ring"
+				, NSS_STATS_SINGLE_INSTANCE
+				, nss_wifili_strings_stats_wbm
+				, stats_wifili->stats_wbm
+				, NSS_WIFILI_STATS_WBM_MAX
+				, lbuf, size_wr, size_al);
+		spin_unlock_bh(&nss_top_main.stats_lock);
+		size_wr += scnprintf(lbuf + size_wr, size_al - size_wr, "\n");
 	}
-
-	size_wr = scnprintf(lbuf, size_al, "wifili stats start:\n\n");
-
-	for (i = 0; i < NSS_WIFILI_MAX_PDEV_NUM_MSG; i++) {
-
-		size_wr += scnprintf(lbuf + size_wr, size_al - size_wr, "WIFILI ID: %d\n", i);
-
-		spin_lock_bh(&nss_top_main.stats_lock);
-		for (j = 0; (j < NSS_WIFILI_STATS_TXRX_MAX); j++) {
-			stats_shadow[j] = stats_wifili.stats_txrx[i][j];
-			size_wr += scnprintf(lbuf + size_wr, size_al - size_wr,
-					"%s = %llu\n", nss_wifili_stats_str_txrx[j], stats_shadow[j]);
-		}
-
-		spin_unlock_bh(&nss_top_main.stats_lock);
-		size_wr += scnprintf(lbuf + size_wr, size_al - size_wr, "\n");
-
-		/*
-		 * Fillinng TCL ring stats
-		 */
-		spin_lock_bh(&nss_top_main.stats_lock);
-		for (j = 0; (j < NSS_WIFILI_STATS_TCL_MAX); j++) {
-			stats_shadow[j] = stats_wifili.stats_tcl_ring[i][j];
-			size_wr += scnprintf(lbuf + size_wr, size_al - size_wr,
-					"%s = %llu\n", nss_wifili_stats_str_tcl[j], stats_shadow[j]);
-		}
-
-		spin_unlock_bh(&nss_top_main.stats_lock);
-		size_wr += scnprintf(lbuf + size_wr, size_al - size_wr, "\n");
-
-		/*
-		 * Fillinng TCL comp stats
-		 */
-		spin_lock_bh(&nss_top_main.stats_lock);
-		for (j = 0; (j < NSS_WIFILI_STATS_TX_DESC_FREE_MAX); j++) {
-			stats_shadow[j] = stats_wifili.stats_tx_comp[i][j];
-			size_wr += scnprintf(lbuf + size_wr, size_al - size_wr,
-					"%s = %llu\n", nss_wifili_stats_str_tx_comp[j], stats_shadow[j]);
-		}
-
-		spin_unlock_bh(&nss_top_main.stats_lock);
-		size_wr += scnprintf(lbuf + size_wr, size_al - size_wr, "\n");
-
-		/*
-		 * Fillinng reo ring stats
-		 */
-		spin_lock_bh(&nss_top_main.stats_lock);
-		for (j = 0; (j < NSS_WIFILI_STATS_REO_MAX); j++) {
-			stats_shadow[j] = stats_wifili.stats_reo[i][j];
-			size_wr += scnprintf(lbuf + size_wr, size_al - size_wr,
-					"%s = %llu\n", nss_wifili_stats_str_reo[j], stats_shadow[j]);
-		}
-
-		spin_unlock_bh(&nss_top_main.stats_lock);
-		size_wr += scnprintf(lbuf + size_wr, size_al - size_wr, "\n");
-
-		/*
-		 * Fillinng TX SW Pool
-		 */
-		spin_lock_bh(&nss_top_main.stats_lock);
-		for (j = 0; (j < NSS_WIFILI_STATS_TX_DESC_MAX); j++) {
-			stats_shadow[j] = stats_wifili.stats_tx_desc[i][j];
-			size_wr += scnprintf(lbuf + size_wr, size_al - size_wr,
-					"%s = %llu\n", nss_wifili_stats_str_txsw_pool[j], stats_shadow[j]);
-		}
-
-		spin_unlock_bh(&nss_top_main.stats_lock);
-		size_wr += scnprintf(lbuf + size_wr, size_al - size_wr, "\n");
-
-		/*
-		 * Fillinng TX  EXt SW Pool
-		 */
-		spin_lock_bh(&nss_top_main.stats_lock);
-		for (j = 0; (j < NSS_WIFILI_STATS_EXT_TX_DESC_MAX); j++) {
-			stats_shadow[j] = stats_wifili.stats_ext_tx_desc[i][j];
-			size_wr += scnprintf(lbuf + size_wr, size_al - size_wr,
-					"%s = %llu\n", nss_wifili_stats_str_ext_txsw_pool[j], stats_shadow[j]);
-		}
-
-		spin_unlock_bh(&nss_top_main.stats_lock);
-		size_wr += scnprintf(lbuf + size_wr, size_al - size_wr, "\n");
-
-		/*
-		 * Fillinng rxdma pool stats
-		 */
-		spin_lock_bh(&nss_top_main.stats_lock);
-		for (j = 0; (j < NSS_WIFILI_STATS_RX_DESC_MAX); j++) {
-			stats_shadow[j] = stats_wifili.stats_rx_desc[i][j];
-			size_wr += scnprintf(lbuf + size_wr, size_al - size_wr,
-					"%s = %llu\n", nss_wifili_stats_str_rxdma_pool[j], stats_shadow[j]);
-		}
-
-		spin_unlock_bh(&nss_top_main.stats_lock);
-		size_wr += scnprintf(lbuf + size_wr, size_al - size_wr, "\n");
-
-		/*
-		 * Fillinng rxdma ring stats
-		 */
-		spin_lock_bh(&nss_top_main.stats_lock);
-		for (j = 0; (j < NSS_WIFILI_STATS_RXDMA_DESC_MAX); j++) {
-			stats_shadow[j] = stats_wifili.stats_rxdma[i][j];
-			size_wr += scnprintf(lbuf + size_wr, size_al - size_wr,
-					"%s = %llu\n", nss_wifili_stats_str_rxdma_ring[j], stats_shadow[j]);
-		}
-
-		spin_unlock_bh(&nss_top_main.stats_lock);
-		size_wr += scnprintf(lbuf + size_wr, size_al - size_wr, "\n");
-
-	}
-
-	/*
-	 * Fillinng wbm ring stats
-	 */
-	spin_lock_bh(&nss_top_main.stats_lock);
-	for (j = 0; (j < NSS_WIFILI_STATS_WBM_MAX); j++) {
-		stats_shadow[j] = stats_wifili.stats_wbm[j];
-		size_wr += scnprintf(lbuf + size_wr, size_al - size_wr,
-				"%s = %llu\n", nss_wifili_stats_str_wbm[j], stats_shadow[j]);
-	}
-
-	spin_unlock_bh(&nss_top_main.stats_lock);
-	size_wr += scnprintf(lbuf + size_wr, size_al - size_wr, "\nwifili stats end\n\n");
 
 	bytes_read = simple_read_from_buffer(ubuf, sz, ppos, lbuf, strlen(lbuf));
 	kfree(lbuf);
-	kfree(stats_shadow);
 
 	return bytes_read;
 }
@@ -332,7 +215,7 @@ static ssize_t nss_wifili_stats_read(struct file *fp, char __user *ubuf, size_t 
 /*
  * wifili_stats_ops
  */
-NSS_STATS_DECLARE_FILE_OPERATIONS(wifili)
+NSS_STATS_DECLARE_FILE_OPERATIONS(wifili);
 
 /*
  * nss_wifili_stats_dentry_create()
@@ -351,13 +234,45 @@ void nss_wifili_stats_sync(struct nss_ctx_instance *nss_ctx,
 		struct nss_wifili_stats_sync_msg *wlsoc_stats, uint16_t interface)
 {
 	struct nss_top_instance *nss_top = nss_ctx->nss_top;
-	struct nss_wifili_stats *stats = &stats_wifili;
+	struct nss_wifili_soc_stats *nwss = NULL;
+	struct nss_wifili_stats *stats = NULL;
 	struct nss_wifili_device_stats *devstats = &wlsoc_stats->stats;
 	uint32_t index;
 
+	/*
+	 * Max number of pdev depends on type of soc (Internal/Attached).
+	 */
+	switch (interface) {
+	case NSS_WIFILI_INTERNAL_INTERFACE:
+		nwss = &soc_stats[0];
+		nwss->soc_maxpdev = NSS_WIFILI_MAX_PDEV_NUM_MSG;
+		break;
+
+#if (NSS_FW_VERSION_CODE > NSS_FW_VERSION(11,0))
+	case NSS_WIFILI_EXTERNAL_INTERFACE0:
+		nwss = &soc_stats[1];
+		nwss->soc_maxpdev = NSS_WIFILI_SOC_ATTACHED_MAX_PDEV_NUM;
+		break;
+
+	case NSS_WIFILI_EXTERNAL_INTERFACE1:
+		nwss = &soc_stats[2];
+		nwss->soc_maxpdev = NSS_WIFILI_SOC_ATTACHED_MAX_PDEV_NUM;
+		break;
+#endif
+
+	default:
+		nss_warning("%px: Invalid wifili interface\n", nss_ctx);
+		return;
+	}
+
+	/*
+	 * Wifili statistics structure.
+	 */
+	stats = &(nwss->stats_wifili);
+
 	spin_lock_bh(&nss_top->stats_lock);
 
-	for (index = 0; index < NSS_WIFILI_MAX_PDEV_NUM_MSG; index++) {
+	for (index = 0; index < nwss->soc_maxpdev; index++) {
 		/*
 		 * Rx stats
 		 */
@@ -501,7 +416,7 @@ void nss_wifili_stats_sync(struct nss_ctx_instance *nss_ctx,
 	/*
 	 * update rx desc pool stats
 	 */
-	for (index = 0; index < NSS_WIFILI_MAX_PDEV_NUM_MSG; index++) {
+	for (index = 0; index < nwss->soc_maxpdev; index++) {
 		stats->stats_rx_desc[index][NSS_WIFILI_STATS_RX_DESC_NO_PB] +=
 								devstats->rx_sw_pool_stats[index].rx_no_pb;
 		stats->stats_rx_desc[index][NSS_WIFILI_STATS_RX_DESC_ALLOC_FAIL] +=
@@ -513,14 +428,17 @@ void nss_wifili_stats_sync(struct nss_ctx_instance *nss_ctx,
 	/*
 	 * update rx dma ring stats
 	 */
-	for (index = 0; index < NSS_WIFILI_MAX_PDEV_NUM_MSG; index++) {
+	for (index = 0; index < nwss->soc_maxpdev; index++) {
 		stats->stats_rxdma[index][NSS_WIFILI_STATS_RXDMA_DESC_UNAVAILABLE] +=
 								devstats->rxdma_stats[index].rx_hw_desc_unavailable;
+		stats->stats_rxdma[index][NSS_WIFILI_STATS_RXDMA_BUF_REPLENISHED] +=
+								devstats->rxdma_stats[index].rx_buf_replenished;
 	}
 
 	/*
 	 * update wbm ring stats
 	 */
+	stats->stats_wbm[NSS_WIFILI_STATS_WBM_IE_LOCAL_ALLOC_FAIL] += devstats->rxwbm_stats.invalid_buf_mgr;
 	stats->stats_wbm[NSS_WIFILI_STATS_WBM_SRC_DMA] += devstats->rxwbm_stats.err_src_rxdma;
 	stats->stats_wbm[NSS_WIFILI_STATS_WBM_SRC_DMA_CODE_INV] += devstats->rxwbm_stats.err_src_rxdma_code_inv;
 	stats->stats_wbm[NSS_WIFILI_STATS_WBM_SRC_REO] += devstats->rxwbm_stats.err_src_reo;
@@ -531,3 +449,68 @@ void nss_wifili_stats_sync(struct nss_ctx_instance *nss_ctx,
 	return;
 }
 
+/*
+ * nss_wifili_stats_notify()
+ *	Sends notifications to the registered modules.
+ *
+ * Leverage NSS-FW statistics timing to update Netlink.
+ */
+void nss_wifili_stats_notify(struct nss_ctx_instance *nss_ctx, uint32_t if_num)
+{
+	struct nss_wifili_stats_notification *wifili_stats;
+	uint32_t index = 0;
+
+	wifili_stats = kzalloc(sizeof(struct nss_wifili_stats_notification), GFP_KERNEL);
+	if (!wifili_stats) {
+		nss_warning("%px: Failed to allocate memory for wifili stats\n", nss_ctx);
+		return;
+	}
+
+	wifili_stats->core_id = nss_ctx->id;
+	switch (if_num) {
+	case NSS_WIFILI_INTERNAL_INTERFACE:
+		index = 0;
+		break;
+
+#if (NSS_FW_VERSION_CODE > NSS_FW_VERSION(11,0))
+	case NSS_WIFILI_EXTERNAL_INTERFACE0:
+		index = 1;
+		break;
+
+	case NSS_WIFILI_EXTERNAL_INTERFACE1:
+		index = 2;
+		break;
+#endif
+
+	default:
+		nss_warning("%px: Invalid wifili interface\n", nss_ctx);
+		goto done;
+	}
+	wifili_stats->if_num = if_num;
+	memcpy(&wifili_stats->stats, &soc_stats[index].stats_wifili, sizeof(wifili_stats->stats));
+	atomic_notifier_call_chain(&nss_wifili_stats_notifier, NSS_STATS_EVENT_NOTIFY, (void *)wifili_stats);
+
+done:
+	kfree(wifili_stats);
+	return;
+}
+
+/*
+ * nss_wifili_stats_register_notifier()
+ *	Registers statistics notifier.
+ */
+int nss_wifili_stats_register_notifier(struct notifier_block *nb)
+{
+	return atomic_notifier_chain_register(&nss_wifili_stats_notifier, nb);
+}
+EXPORT_SYMBOL(nss_wifili_stats_register_notifier);
+
+/*
+ * nss_wifili_stats_unregister_notifier()
+ *	Deregisters statistics notifier.
+ */
+int nss_wifili_stats_unregister_notifier(struct notifier_block *nb)
+{
+	return atomic_notifier_chain_unregister(&nss_wifili_stats_notifier, nb);
+}
+EXPORT_SYMBOL(nss_wifili_stats_unregister_notifier);

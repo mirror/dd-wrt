@@ -45,7 +45,6 @@ struct nss_ipsecmgr_flow {
 	struct nss_ipsecmgr_sa *sa;		/* Parent SA object */
 
 	uint32_t ifnum;				/* NSS interface attached to flow */
-	struct delayed_work free_work;		/* Retry work */
 	struct nss_ctx_instance *nss_ctx;	/* NSS context */
 	struct nss_ipsecmgr_flow_state state;
 
@@ -118,6 +117,7 @@ static inline uint32_t nss_ipsecmgr_flow_tuple2hash(struct nss_ipsec_cmn_flow_tu
 	val ^= tuple->spi_index;
 	val ^= tuple->protocol;
 	val ^= tuple->ip_ver;
+	val ^= tuple->user_pattern;
 
 	return val & (max - 1);
 }

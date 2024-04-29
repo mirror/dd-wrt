@@ -1,6 +1,6 @@
 /*
  * ********************************************************************************
- * Copyright (c) 2018-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2018-2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
  * copyright notice and this permission notice appear in all copies.
@@ -72,8 +72,11 @@ struct nss_ipsecmgr_ctx_stats_priv {
 	uint64_t redirected;		/* Redirected from inline */
 	uint64_t fail_sa;		/* Failed to find SA */
 	uint64_t fail_flow;		/* Failed to find flow */
-	uint64_t fail_exception;	/* Failed to exception */
 	uint64_t fail_stats;		/* Failed to send statistics */
+	uint64_t fail_exception;	/* Failed to exception */
+	uint64_t fail_transform;	/* Failed to transform */
+	uint64_t fail_linearized;	/* Failed to linearized */
+	uint64_t fail_mdata_ver;	/* Invalid meta data version */
 };
 
 /*
@@ -96,7 +99,6 @@ struct nss_ipsecmgr_ctx {
 	struct nss_ipsecmgr_tunnel *tun;		/* IPsec tunnel */
 
 	uint32_t ifnum;					/* Interface number */
-	struct delayed_work free_work;			/* Free work */
 	struct nss_ctx_instance *nss_ctx;		/* NSS context instance */
 
 	struct nss_ipsecmgr_ctx_state state;		/* Per context state */

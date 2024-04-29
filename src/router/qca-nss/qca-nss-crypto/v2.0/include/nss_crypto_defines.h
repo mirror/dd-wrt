@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2018, 2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -16,7 +16,7 @@
 #define __NSS_CRYPTO_DEFINES_H
 
 #define NSS_CRYPTO_NAME_MAX 128 /* bytes */
-#define NSS_CRYPTO_SESSION_MAX U32_MAX
+#define NSS_CRYPTO_SESSION_MAX U16_MAX
 
 /**
  * nss_crypto_op_dir

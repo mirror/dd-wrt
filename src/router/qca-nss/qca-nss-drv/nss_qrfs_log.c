@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2018, 2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -54,7 +54,7 @@ static int8_t *nss_qrfs_log_error_response_types_str[NSS_QRFS_ERROR_MAX] __maybe
  */
 static void nss_qrfs_log_flow_rule_msg(struct nss_qrfs_flow_rule_msg *nqfm)
 {
-	nss_trace("%p: NSS QRFS Flow Rule Message:\n"
+	nss_trace("%px: NSS QRFS Flow Rule Message:\n"
 		"QRFS Source Port: %d\n"
 		"QRFS Destination Port: %d\n"
 		"QRFS IP Version: %d\n"
@@ -86,7 +86,7 @@ static void nss_qrfs_log_flow_rule_msg(struct nss_qrfs_flow_rule_msg *nqfm)
  */
 static void nss_qrfs_log_mac_rule_msg(struct nss_qrfs_mac_rule_msg *nqmm)
 {
-	nss_trace("%p: NSS QRFS MAC Rule Message:\n"
+	nss_trace("%px: NSS QRFS MAC Rule Message:\n"
 		"QRFS MAC: %pM\n"
 		"QRFS CPU ID: %d\n"
 		"QRFS Physical Interface Number: %d\n",
@@ -118,7 +118,7 @@ static void nss_qrfs_log_verbose(struct nss_qrfs_msg *nqm)
 		break;
 
 	default:
-		nss_warning("%p: Invalid message type\n", nqm);
+		nss_warning("%px: Invalid message type\n", nqm);
 		break;
 	}
 }
@@ -130,11 +130,11 @@ static void nss_qrfs_log_verbose(struct nss_qrfs_msg *nqm)
 void nss_qrfs_log_tx_msg(struct nss_qrfs_msg *nqm)
 {
 	if (nqm->cm.type >= NSS_QRFS_MSG_MAX) {
-		nss_warning("%p: Invalid message type\n", nqm);
+		nss_warning("%px: Invalid message type\n", nqm);
 		return;
 	}
 
-	nss_info("%p: type[%d]:%s\n", nqm, nqm->cm.type, nss_qrfs_log_message_types_str[nqm->cm.type]);
+	nss_info("%px: type[%d]:%s\n", nqm, nqm->cm.type, nss_qrfs_log_message_types_str[nqm->cm.type]);
 	nss_qrfs_log_verbose(nqm);
 }
 
@@ -145,26 +145,26 @@ void nss_qrfs_log_tx_msg(struct nss_qrfs_msg *nqm)
 void nss_qrfs_log_rx_msg(struct nss_qrfs_msg *nqm)
 {
 	if (nqm->cm.response >= NSS_CMN_RESPONSE_LAST) {
-		nss_warning("%p: Invalid response\n", nqm);
+		nss_warning("%px: Invalid response\n", nqm);
 		return;
 	}
 
 	if (nqm->cm.response == NSS_CMN_RESPONSE_NOTIFY || (nqm->cm.response == NSS_CMN_RESPONSE_ACK)) {
-		nss_info("%p: type[%d]:%s, response[%d]:%s\n", nqm, nqm->cm.type,
+		nss_info("%px: type[%d]:%s, response[%d]:%s\n", nqm, nqm->cm.type,
 			nss_qrfs_log_message_types_str[nqm->cm.type],
 			nqm->cm.response, nss_cmn_response_str[nqm->cm.response]);
 		goto verbose;
 	}
 
 	if (nqm->cm.error >= NSS_QRFS_ERROR_MAX) {
-		nss_warning("%p: msg failure - type[%d]:%s, response[%d]:%s, error[%d]:Invalid error\n",
+		nss_warning("%px: msg failure - type[%d]:%s, response[%d]:%s, error[%d]:Invalid error\n",
 			nqm, nqm->cm.type, nss_qrfs_log_message_types_str[nqm->cm.type],
 			nqm->cm.response, nss_cmn_response_str[nqm->cm.response],
 			nqm->cm.error);
 		goto verbose;
 	}
 
-	nss_info("%p: msg nack - type[%d]:%s, response[%d]:%s, error[%d]:%s\n",
+	nss_info("%px: msg nack - type[%d]:%s, response[%d]:%s, error[%d]:%s\n",
 		nqm, nqm->cm.type, nss_qrfs_log_message_types_str[nqm->cm.type],
 		nqm->cm.response, nss_cmn_response_str[nqm->cm.response],
 		nqm->cm.error, nss_qrfs_log_error_response_types_str[nqm->cm.error]);

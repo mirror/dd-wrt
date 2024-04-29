@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2018, 2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -54,7 +54,7 @@ static int8_t *nss_dtls_log_error_response_types_str[NSS_DTLS_ERR_MAX] __maybe_u
 static void nss_dtls_session_config_msg(struct nss_dtls_msg *ndm)
 {
 	struct nss_dtls_session_configure *ndscm __maybe_unused = &ndm->msg.cfg;
-	nss_trace("%p: NSS DTLS Session Configure Message:\n"
+	nss_trace("%px: NSS DTLS Session Configure Message:\n"
 		"DTLS Version: %d\n"
 		"DTLS Flags: %x\n"
 		"DTLS crypto index encap: %d\n"
@@ -70,8 +70,8 @@ static void nss_dtls_session_config_msg(struct nss_dtls_msg *ndm)
 		"DTLS NSS interface: %x\n"
 		"DTLS source port: %d\n"
 		"DTLS destination port: %d\n"
-		"DTLS source ip: %p\n"
-		"DTLS destination ip: %p\n"
+		"DTLS source ip: %px\n"
+		"DTLS destination ip: %px\n"
 		"DTLS window size: %d\n"
 		"DTLS epoch: %d\n"
 		"DTLS outer IP TTL: %d\n"
@@ -98,7 +98,7 @@ static void nss_dtls_session_config_msg(struct nss_dtls_msg *ndm)
 static void nss_dtls_session_cipher_update_msg(struct nss_dtls_msg *ndm)
 {
 	struct nss_dtls_session_cipher_update *ndscum __maybe_unused = &ndm->msg.cipher_update;
-	nss_trace("%p: NSS DTLS Session Cipher Update message\n"
+	nss_trace("%px: NSS DTLS Session Cipher Update message\n"
 		"DTLS crypto index: %d\n"
 		"DTLS hash length: %d\n"
 		"DTLS crypto IV length for encapsulation: %d\n"
@@ -129,7 +129,7 @@ static void nss_dtls_log_verbose(struct nss_dtls_msg *ndm)
 		break;
 
 	default:
-		nss_warning("%p: Invalid message type\n", ndm);
+		nss_warning("%px: Invalid message type\n", ndm);
 		break;
 	}
 }
@@ -141,11 +141,11 @@ static void nss_dtls_log_verbose(struct nss_dtls_msg *ndm)
 void nss_dtls_log_tx_msg(struct nss_dtls_msg *ndm)
 {
 	if (ndm->cm.type >= NSS_DTLS_MSG_MAX) {
-		nss_warning("%p: Invalid message type\n", ndm);
+		nss_warning("%px: Invalid message type\n", ndm);
 		return;
 	}
 
-	nss_info("%p: type[%d]:%s\n", ndm, ndm->cm.type, nss_dtls_log_message_types_str[ndm->cm.type]);
+	nss_info("%px: type[%d]:%s\n", ndm, ndm->cm.type, nss_dtls_log_message_types_str[ndm->cm.type]);
 	nss_dtls_log_verbose(ndm);
 }
 
@@ -156,26 +156,26 @@ void nss_dtls_log_tx_msg(struct nss_dtls_msg *ndm)
 void nss_dtls_log_rx_msg(struct nss_dtls_msg *ndm)
 {
 	if (ndm->cm.response >= NSS_CMN_RESPONSE_LAST) {
-		nss_warning("%p: Invalid response\n", ndm);
+		nss_warning("%px: Invalid response\n", ndm);
 		return;
 	}
 
 	if (ndm->cm.response == NSS_CMN_RESPONSE_NOTIFY || (ndm->cm.response == NSS_CMN_RESPONSE_ACK)) {
-		nss_info("%p: type[%d]:%s, response[%d]:%s\n", ndm, ndm->cm.type,
+		nss_info("%px: type[%d]:%s, response[%d]:%s\n", ndm, ndm->cm.type,
 			nss_dtls_log_message_types_str[ndm->cm.type],
 			ndm->cm.response, nss_cmn_response_str[ndm->cm.response]);
 		goto verbose;
 	}
 
 	if (ndm->cm.error >= NSS_DTLS_ERR_MAX) {
-		nss_warning("%p: msg failure - type[%d]:%s, response[%d]:%s, error[%d]:Invalid error\n",
+		nss_warning("%px: msg failure - type[%d]:%s, response[%d]:%s, error[%d]:Invalid error\n",
 			ndm, ndm->cm.type, nss_dtls_log_message_types_str[ndm->cm.type],
 			ndm->cm.response, nss_cmn_response_str[ndm->cm.response],
 			ndm->cm.error);
 		goto verbose;
 	}
 
-	nss_info("%p: msg nack - type[%d]:%s, response[%d]:%s, error[%d]:%s\n",
+	nss_info("%px: msg nack - type[%d]:%s, response[%d]:%s, error[%d]:%s\n",
 		ndm, ndm->cm.type, nss_dtls_log_message_types_str[ndm->cm.type],
 		ndm->cm.response, nss_cmn_response_str[ndm->cm.response],
 		ndm->cm.error, nss_dtls_log_error_response_types_str[ndm->cm.error]);

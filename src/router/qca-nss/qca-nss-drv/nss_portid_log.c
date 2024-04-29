@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2018, 2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -38,7 +38,7 @@ static int8_t *nss_portid_log_message_types_str[NSS_PORTID_MAX_MSG_TYPE] __maybe
 static void nss_portid_log_configure_msg(struct nss_portid_msg *npm)
 {
 	struct nss_portid_configure_msg *npcm __maybe_unused = &npm->msg.configure;
-	nss_trace("%p: NSS PORTID Configure message \n"
+	nss_trace("%px: NSS PORTID Configure message \n"
 		"PORTID Interface Number: %d\n"
 		"PORTID Interface ID: %d\n"
 		"PORTID GMAC ID: %d\n",
@@ -53,7 +53,7 @@ static void nss_portid_log_configure_msg(struct nss_portid_msg *npm)
 static void nss_portid_log_unconfigure_msg(struct nss_portid_msg *npm)
 {
 	struct nss_portid_unconfigure_msg *npum __maybe_unused = &npm->msg.unconfigure;
-	nss_trace("%p: NSS PORTID Configure message \n"
+	nss_trace("%px: NSS PORTID Configure message \n"
 		"PORTID Interface Number: %d\n"
 		"PORTID Interface ID: %d\n",
 		npum, npum->port_if_num,
@@ -82,7 +82,7 @@ static void nss_portid_log_verbose(struct nss_portid_msg *npm)
 		break;
 
 	default:
-		nss_trace("%p: Invalid message type\n", npm);
+		nss_trace("%px: Invalid message type\n", npm);
 		break;
 	}
 }
@@ -94,11 +94,11 @@ static void nss_portid_log_verbose(struct nss_portid_msg *npm)
 void nss_portid_log_tx_msg(struct nss_portid_msg *npm)
 {
 	if (npm->cm.type >= NSS_PORTID_MAX_MSG_TYPE) {
-		nss_warning("%p: Invalid message type\n", npm);
+		nss_warning("%px: Invalid message type\n", npm);
 		return;
 	}
 
-	nss_info("%p: type[%d]:%s\n", npm, npm->cm.type, nss_portid_log_message_types_str[npm->cm.type]);
+	nss_info("%px: type[%d]:%s\n", npm, npm->cm.type, nss_portid_log_message_types_str[npm->cm.type]);
 	nss_portid_log_verbose(npm);
 }
 
@@ -109,18 +109,18 @@ void nss_portid_log_tx_msg(struct nss_portid_msg *npm)
 void nss_portid_log_rx_msg(struct nss_portid_msg *npm)
 {
 	if (npm->cm.response >= NSS_CMN_RESPONSE_LAST) {
-		nss_warning("%p: Invalid response\n", npm);
+		nss_warning("%px: Invalid response\n", npm);
 		return;
 	}
 
 	if (npm->cm.response == NSS_CMN_RESPONSE_NOTIFY || (npm->cm.response == NSS_CMN_RESPONSE_ACK)) {
-		nss_info("%p: type[%d]:%s, response[%d]:%s\n", npm, npm->cm.type,
+		nss_info("%px: type[%d]:%s, response[%d]:%s\n", npm, npm->cm.type,
 			nss_portid_log_message_types_str[npm->cm.type],
 			npm->cm.response, nss_cmn_response_str[npm->cm.response]);
 		goto verbose;
 	}
 
-	nss_info("%p: msg nack - type[%d]:%s, response[%d]:%s\n",
+	nss_info("%px: msg nack - type[%d]:%s, response[%d]:%s\n",
 		npm, npm->cm.type, nss_portid_log_message_types_str[npm->cm.type],
 		npm->cm.response, nss_cmn_response_str[npm->cm.response]);
 

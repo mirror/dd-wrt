@@ -71,4 +71,24 @@ int nss_vlan_mgr_delete_bond_slave(struct net_device *slave_dev);
  * @return real_dev
  */
 struct net_device *nss_vlan_mgr_get_real_dev(struct net_device *dev);
+
+/*
+ * nss_vlan_mgr_add_vlan_rule()
+ *	Add VLAN translation rule in PPE
+ *
+ * @param dev[IN] physical device
+ * @param bridge_vsi[IN] bridge VSI
+ * @param vid[IN] VLAN ID
+ */
+void nss_vlan_mgr_add_vlan_rule(struct net_device *dev, int bridge_vsi, int vid);
+
+/*
+ * nss_vlan_mgr_del_vlan_rule()
+ *	Delete VLAN translation rule in PPE
+ *
+ * @param dev[IN] physical device
+ * @param bridge_vsi[IN] bridge VSI
+ * @param vid[IN] VLAN ID
+ */
+void nss_vlan_mgr_del_vlan_rule(struct net_device *dev, int bridge_vsi, int vid);
 #endif /* _NSS_VLAN_MGR_H_ */

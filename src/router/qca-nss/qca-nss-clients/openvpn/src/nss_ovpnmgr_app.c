@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2019-2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -92,7 +92,18 @@ struct net_device *nss_ovpnmgr_app_find_tun(struct net_device *app_dev, struct n
 	app = nss_ovpnmgr_app_find(app_dev);
 	if (!app) {
 		read_unlock_bh(&ovpnmgr_ctx.lock);
-		nss_ovpnmgr_warn("%p: Application is not registered, app_dev=%s\n", app_dev, app_dev->name);
+		nss_ovpnmgr_warn("%px: Application is not registered, app_dev=%s\n", app_dev, app_dev->name);
+		return NULL;
+	}
+
+	/*
+	 * Check if application device is in UP state. If it is UP then only
+	 * allow ECM to push flow rules. This logic will make sure that openvpn
+	 * flows are not accelerated when tunnel device is down
+	 */
+	if (!(app->dev->flags & IFF_UP)) {
+		read_unlock_bh(&ovpnmgr_ctx.lock);
+		nss_ovpnmgr_warn("%px: Application device not up, app_dev=%s\n", app->dev, app->dev->name);
 		return NULL;
 	}
 
@@ -108,7 +119,7 @@ struct net_device *nss_ovpnmgr_app_find_tun(struct net_device *app_dev, struct n
 			 * If routed interface is tun/tap return inner interface.
 			 */
 			if (dev == app->dev) {
-				nss_ovpnmgr_info("%p: Found dev = %s\n", app, dev->name);
+				nss_ovpnmgr_info("%px: Found dev = %s\n", app, dev->name);
 				tun_ifnum = tun->inner.ifnum;
 				dev = tun->dev;
 				goto done;
@@ -118,7 +129,7 @@ struct net_device *nss_ovpnmgr_app_find_tun(struct net_device *app_dev, struct n
 			 * Check if rt->ip_addr matches tunnel IP.
 			 */
 			if (!memcmp(rt->ip_addr, &tun->tun_hdr.src_ip, addr_size)) {
-				nss_ovpnmgr_info("%p: Encapsulated packet.\n", app);
+				nss_ovpnmgr_info("%px: Encapsulated packet.\n", app);
 				tun_ifnum = tun->outer.ifnum;
 				dev = tun->dev;
 				goto done;
@@ -168,7 +179,7 @@ void nss_ovpnmgr_app_forward(struct nss_ovpnmgr_app *app, struct nss_ovpnmgr_tun
 	metadata->tunnel_id = tun->tunnel_id;
 
 	if (nss_ovpn_sk_send(skb, app->app_data)) {
-		nss_ovpnmgr_warn("%p: failed to send packet to OVPN application.\n", tun);
+		nss_ovpnmgr_warn("%px: failed to send packet to OVPN application.\n", tun);
 		tun->inner.stats.host_pkt_drop++;
 		dev_kfree_skb_any(skb);
 	}
@@ -205,14 +216,14 @@ int nss_ovpnmgr_app_del(struct net_device *app_dev)
 	app = nss_ovpnmgr_app_find(app_dev);
 	if (!app) {
 		write_unlock_bh(&ovpnmgr_ctx.lock);
-		nss_ovpnmgr_warn("%p: Application is not registered: app_dev = %s\n", app_dev, app_dev->name);
+		nss_ovpnmgr_warn("%px: Application is not registered: app_dev = %s\n", app_dev, app_dev->name);
 		return -ENODEV;
 	}
 
 	list_del(&app->list);
 	write_unlock_bh(&ovpnmgr_ctx.lock);
 
-	nss_ovpnmgr_info("%p: Uninitializing application instance\n", app);
+	nss_ovpnmgr_info("%px: Uninitializing application instance\n", app);
 
 	/*
 	 * Application is removed from list.
@@ -270,7 +281,7 @@ int nss_ovpnmgr_app_add(struct net_device *app_dev, enum nss_ovpnmgr_app_mode mo
 	 */
 	if (nss_ovpnmgr_app_find(app_dev)) {
 		write_unlock_bh(&ovpnmgr_ctx.lock);
-		nss_ovpnmgr_info("%p: Application is already registered: app_dev=%s\n", app_dev, app_dev->name);
+		nss_ovpnmgr_info("%px: Application is already registered: app_dev=%s\n", app_dev, app_dev->name);
 		dev_put(app_dev);
 		nss_ovpnmgr_debugfs_remove(app->dentry);
 		kfree(app);
@@ -280,7 +291,7 @@ int nss_ovpnmgr_app_add(struct net_device *app_dev, enum nss_ovpnmgr_app_mode mo
 	list_add(&app->list, &ovpnmgr_ctx.app_list);
 	write_unlock_bh(&ovpnmgr_ctx.lock);
 
-	nss_ovpnmgr_info("%p: Application is registered successfully\n", app);
+	nss_ovpnmgr_info("%px: Application is registered successfully\n", app);
 	return 0;
 }
 EXPORT_SYMBOL(nss_ovpnmgr_app_add);

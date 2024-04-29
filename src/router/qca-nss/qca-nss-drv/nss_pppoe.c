@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2013-2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2013-2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -22,14 +22,11 @@
 #include "nss_tx_rx_common.h"
 #include "nss_pppoe_stats.h"
 #include "nss_pppoe_log.h"
+#include "nss_pppoe_strings.h"
 
 #define NSS_PPPOE_TX_TIMEOUT 3000 /* 3 Seconds */
 
-/*
- * Data structures to store pppoe nss debug stats
- */
-static DEFINE_SPINLOCK(nss_pppoe_lock);
-static struct nss_pppoe_stats_session_debug nss_pppoe_debug_stats[NSS_MAX_PPPOE_DYNAMIC_INTERFACES];
+int nss_pppoe_br_accel_mode __read_mostly = NSS_PPPOE_BR_ACCEL_MODE_EN_5T;
 
 /*
  * Private data structure
@@ -43,27 +40,18 @@ static struct nss_pppoe_pvt {
 } pppoe_pvt;
 
 /*
- * nss_pppoe_debug_stats_sync
- *	Per session debug stats for pppoe
+ * nss_pppoe_br_help()
+ *	Usage information for pppoe bride accel mode
  */
-static void nss_pppoe_debug_stats_sync(struct nss_ctx_instance *nss_ctx, struct nss_pppoe_sync_stats_msg *stats_msg, uint16_t if_num)
+static inline void nss_pppoe_br_help(int mode)
 {
-	int i;
-	spin_lock_bh(&nss_pppoe_lock);
-	for (i = 0; i < NSS_MAX_PPPOE_DYNAMIC_INTERFACES; i++) {
-		if (nss_pppoe_debug_stats[i].if_num == if_num) {
-			nss_pppoe_debug_stats[i].stats[NSS_PPPOE_STATS_RX_PACKETS] += stats_msg->stats.rx_packets;
-			nss_pppoe_debug_stats[i].stats[NSS_PPPOE_STATS_RX_BYTES] += stats_msg->stats.rx_bytes;
-			nss_pppoe_debug_stats[i].stats[NSS_PPPOE_STATS_TX_PACKETS] += stats_msg->stats.tx_packets;
-			nss_pppoe_debug_stats[i].stats[NSS_PPPOE_STATS_TX_BYTES] += stats_msg->stats.tx_bytes;
-			nss_pppoe_debug_stats[i].stats[NSS_PPPOE_STATS_SESSION_WRONG_VERSION_OR_TYPE] += stats_msg->exception_events[NSS_PPPOE_EXCEPTION_EVENT_WRONG_VERSION_OR_TYPE];
-			nss_pppoe_debug_stats[i].stats[NSS_PPPOE_STATS_SESSION_WRONG_CODE] += stats_msg->exception_events[NSS_PPPOE_EXCEPTION_EVENT_WRONG_CODE];
-			nss_pppoe_debug_stats[i].stats[NSS_PPPOE_STATS_SESSION_UNSUPPORTED_PPP_PROTOCOL] += stats_msg->exception_events[NSS_PPPOE_EXCEPTION_EVENT_UNSUPPORTED_PPP_PROTOCOL];
-			break;
-		}
-	}
-	spin_unlock_bh(&nss_pppoe_lock);
+	printk("Incorrect pppoe bridge accel mode: %d\n", mode);
+	printk("Supported modes\n");
+	printk("%d: pppoe bridge acceleration disable\n", NSS_PPPOE_BR_ACCEL_MODE_DIS);
+	printk("%d: pppoe bridge acceleration enable with 5-tuple\n", NSS_PPPOE_BR_ACCEL_MODE_EN_5T);
+	printk("%d: pppoe bridge acceleration enable with 3-tuple\n", NSS_PPPOE_BR_ACCEL_MODE_EN_3T);
 }
+
 /*
  * nss_pppoe_get_context()
  */
@@ -80,6 +68,7 @@ EXPORT_SYMBOL(nss_pppoe_get_context);
 static nss_tx_status_t nss_pppoe_tx_msg(struct nss_ctx_instance *nss_ctx, struct nss_pppoe_msg *msg)
 {
 	struct nss_cmn_msg *ncm = &msg->cm;
+	enum nss_dynamic_interface_type type;
 
 	/*
 	 * Trace Messages
@@ -89,18 +78,15 @@ static nss_tx_status_t nss_pppoe_tx_msg(struct nss_ctx_instance *nss_ctx, struct
 	/*
 	 * Sanity check the message
 	 */
-	if (!nss_is_dynamic_interface(ncm->interface)) {
-		nss_warning("%p: tx request for non dynamic interface: %d\n", nss_ctx, ncm->interface);
-		return NSS_TX_FAILURE;
-	}
-
-	if (nss_dynamic_interface_get_type(nss_pppoe_get_context(), ncm->interface) != NSS_DYNAMIC_INTERFACE_TYPE_PPPOE) {
-		nss_warning("%p: tx request for not PPPoE interface: %d\n", nss_ctx, ncm->interface);
+	type = nss_dynamic_interface_get_type(nss_pppoe_get_context(), ncm->interface);
+	if ((ncm->interface != NSS_PPPOE_INTERFACE) && (type != NSS_DYNAMIC_INTERFACE_TYPE_PPPOE)) {
+		nss_warning("%px: tx request for not PPPoE interface: %d type: %d\n",
+				nss_ctx, ncm->interface, type);
 		return NSS_TX_FAILURE;
 	}
 
 	if (ncm->type >= NSS_PPPOE_MSG_MAX) {
-		nss_warning("%p: message type out of range: %d\n", nss_ctx, ncm->type);
+		nss_warning("%px: message type out of range: %d\n", nss_ctx, ncm->type);
 		return NSS_TX_FAILURE;
 	}
 
@@ -138,7 +124,7 @@ static void nss_pppoe_sync_msg_callback(void *app_data, struct nss_pppoe_msg *np
  */
 static void nss_pppoe_handler(struct nss_ctx_instance *nss_ctx, struct nss_cmn_msg *ncm, __attribute__((unused))void *app_data)
 {
-	struct nss_pppoe_msg *nim = (struct nss_pppoe_msg *)ncm;
+	struct nss_pppoe_msg *npm = (struct nss_pppoe_msg *)ncm;
 	void *ctx;
 	nss_pppoe_msg_callback_t cb;
 
@@ -147,18 +133,18 @@ static void nss_pppoe_handler(struct nss_ctx_instance *nss_ctx, struct nss_cmn_m
 	/*
 	 * Trace Messages
 	 */
-	nss_pppoe_log_rx_msg(nim);
+	nss_pppoe_log_rx_msg(npm);
 
 	/*
 	 * Sanity check the message type
 	 */
 	if (ncm->type >= NSS_PPPOE_MSG_MAX) {
-		nss_warning("%p: message type out of range: %d\n", nss_ctx, ncm->type);
+		nss_warning("%px: message type out of range: %d\n", nss_ctx, ncm->type);
 		return;
 	}
 
 	if (nss_cmn_get_msg_len(ncm) > sizeof(struct nss_pppoe_msg)) {
-		nss_warning("%p: message length is invalid: %d\n", nss_ctx, nss_cmn_get_msg_len(ncm));
+		nss_warning("%px: message length is invalid: %d\n", nss_ctx, nss_cmn_get_msg_len(ncm));
 		return;
 	}
 
@@ -170,12 +156,16 @@ static void nss_pppoe_handler(struct nss_ctx_instance *nss_ctx, struct nss_cmn_m
 	/*
 	 * Handling PPPoE messages coming from NSS fw.
 	 */
-	switch (nim->cm.type) {
+	switch (npm->cm.type) {
 	case NSS_PPPOE_MSG_SYNC_STATS:
-		nss_pppoe_debug_stats_sync(nss_ctx, &nim->msg.sync_stats, ncm->interface);
+		/*
+		 * Update PPPoE debug statistics and send statistics notifications to the registered modules
+		 */
+		nss_pppoe_stats_sync(nss_ctx, &npm->msg.sync_stats, ncm->interface);
+		nss_pppoe_stats_notify(nss_ctx, ncm->interface);
 		break;
 	default:
-		nss_warning("%p: Received response %d for type %d, interface %d\n",
+		nss_warning("%px: Received response %d for type %d, interface %d\n",
 				nss_ctx, ncm->response, ncm->type, ncm->interface);
 	}
 
@@ -206,32 +196,69 @@ static void nss_pppoe_handler(struct nss_ctx_instance *nss_ctx, struct nss_cmn_m
 	cb = (nss_pppoe_msg_callback_t)ncm->cb;
 	ctx = (void *)ncm->app_data;
 
-	cb(ctx, nim);
+	cb(ctx, npm);
 }
 
 /*
- * nss_pppoe_debug_stats_get()
- *	Get session pppoe statistics.
+ * nss_pppoe_br_accel_mode_handler()
+ *	Enable/disable pppoe bridge acceleration in NSS
  */
-void nss_pppoe_debug_stats_get(void *stats_mem)
+int nss_pppoe_br_accel_mode_handler(struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
 {
-	struct nss_pppoe_stats_session_debug *stats = (struct nss_pppoe_stats_session_debug *)stats_mem;
-	int i;
+	struct nss_ctx_instance *nss_ctx = nss_pppoe_get_context();
+	struct nss_pppoe_msg npm;
+	struct nss_pppoe_br_accel_cfg_msg *npbacm;
+	nss_tx_status_t status;
+	int ret;
+	enum nss_pppoe_br_accel_modes current_value, new_val;
 
-	if (!stats) {
-		nss_warning("No memory to copy pppoe session stats\n");
-		return;
+	/*
+	 * Take snap shot of current value
+	 */
+	current_value = nss_pppoe_br_accel_mode;
+
+	/*
+	 * Write the variable with user input
+	 */
+	ret = proc_dointvec(ctl, write, buffer, lenp, ppos);
+	if (ret || (!write)) {
+		return ret;
 	}
 
-	spin_lock_bh(&nss_pppoe_lock);
-	for (i = 0; i < NSS_MAX_PPPOE_DYNAMIC_INTERFACES; i++) {
-		if (nss_pppoe_debug_stats[i].valid) {
-			memcpy(stats, &nss_pppoe_debug_stats[i], sizeof(struct nss_pppoe_stats_session_debug));
-			stats++;
-		}
+	new_val = nss_pppoe_br_accel_mode;
+	if ((new_val < NSS_PPPOE_BR_ACCEL_MODE_DIS) || (new_val >= NSS_PPPOE_BR_ACCEL_MODE_MAX)) {
+		nss_warning("%px: value out of range: %d\n", nss_ctx, new_val);
+		nss_pppoe_br_accel_mode = current_value;
+		nss_pppoe_br_help(new_val);
+		return -EINVAL;
 	}
-	spin_unlock_bh(&nss_pppoe_lock);
+
+	memset(&npm, 0, sizeof(struct nss_pppoe_msg));
+	nss_pppoe_msg_init(&npm, NSS_PPPOE_INTERFACE, NSS_PPPOE_MSG_BR_ACCEL_CFG,
+		sizeof(struct nss_pppoe_br_accel_cfg_msg), NULL, NULL);
+
+	npbacm = &npm.msg.br_accel;
+	npbacm->br_accel_cfg = new_val;
+
+	status = nss_pppoe_tx_msg_sync(nss_ctx, &npm);
+	if (status != NSS_TX_SUCCESS) {
+		nss_warning("%px: Send acceleration mode message failed\n", nss_ctx);
+		nss_pppoe_br_accel_mode = current_value;
+		return -EIO;
+	}
+
+	return 0;
 }
+
+/*
+ * nss_pppoe_get_br_accel_mode()
+ *	Gets PPPoE bridge acceleration mode
+ */
+enum nss_pppoe_br_accel_modes nss_pppoe_get_br_accel_mode(void)
+{
+	return nss_pppoe_br_accel_mode;
+}
+EXPORT_SYMBOL(nss_pppoe_get_br_accel_mode);
 
 /*
  * nss_pppoe_tx_msg_sync()
@@ -251,14 +278,14 @@ nss_tx_status_t nss_pppoe_tx_msg_sync(struct nss_ctx_instance *nss_ctx,
 
 	status = nss_pppoe_tx_msg(nss_ctx, msg);
 	if (status != NSS_TX_SUCCESS) {
-		nss_warning("%p: nss_pppoe_tx_msg failed\n", nss_ctx);
+		nss_warning("%px: nss_pppoe_tx_msg failed\n", nss_ctx);
 		up(&pppoe_pvt.sem);
 		return status;
 	}
 
 	ret = wait_for_completion_timeout(&pppoe_pvt.complete, msecs_to_jiffies(NSS_PPPOE_TX_TIMEOUT));
 	if (!ret) {
-		nss_warning("%p: PPPoE msg tx failed due to timeout\n", nss_ctx);
+		nss_warning("%px: PPPoE msg tx failed due to timeout\n", nss_ctx);
 		pppoe_pvt.response = NSS_TX_FAILURE;
 	}
 
@@ -276,23 +303,11 @@ struct nss_ctx_instance *nss_register_pppoe_session_if(uint32_t if_num,
 						       struct net_device *netdev, uint32_t features, void *app_ctx)
 {
 	struct nss_ctx_instance *nss_ctx = nss_pppoe_get_context();
-	int i = 0;
 
 	nss_assert(nss_ctx);
 	nss_assert(nss_is_dynamic_interface(if_num));
 
-	spin_lock_bh(&nss_pppoe_lock);
-	for (i = 0; i < NSS_MAX_PPPOE_DYNAMIC_INTERFACES; i++) {
-		if (!nss_pppoe_debug_stats[i].valid) {
-			nss_pppoe_debug_stats[i].valid = true;
-			nss_pppoe_debug_stats[i].if_num = if_num;
-			nss_pppoe_debug_stats[i].if_index = netdev->ifindex;
-			break;
-		}
-	}
-	spin_unlock_bh(&nss_pppoe_lock);
-
-	if (i == NSS_MAX_PPPOE_DYNAMIC_INTERFACES) {
+	if (!nss_pppoe_stats_pppoe_session_init(if_num, netdev)) {
 		return NULL;
 	}
 
@@ -312,20 +327,11 @@ EXPORT_SYMBOL(nss_register_pppoe_session_if);
 void nss_unregister_pppoe_session_if(uint32_t if_num)
 {
 	struct nss_ctx_instance *nss_ctx = nss_pppoe_get_context();
-	int i;
 
 	nss_assert(nss_ctx);
 	nss_assert(nss_is_dynamic_interface(if_num));
 
-	spin_lock_bh(&nss_pppoe_lock);
-	for (i = 0; i < NSS_MAX_PPPOE_DYNAMIC_INTERFACES; i++) {
-		if (nss_pppoe_debug_stats[i].if_num == if_num) {
-			nss_pppoe_debug_stats[i].valid = false;
-			nss_pppoe_debug_stats[i].if_num = 0;
-			nss_pppoe_debug_stats[i].if_index = 0;
-		}
-	}
-	spin_unlock_bh(&nss_pppoe_lock);
+	nss_pppoe_stats_pppoe_session_deinit(if_num);
 
 	nss_core_unregister_subsys_dp(nss_ctx, if_num);
 
@@ -336,28 +342,85 @@ void nss_unregister_pppoe_session_if(uint32_t if_num)
 }
 EXPORT_SYMBOL(nss_unregister_pppoe_session_if);
 
+static struct ctl_table nss_pppoe_table[] = {
+	{
+		.procname               = "br_accel_mode",
+		.data                   = &nss_pppoe_br_accel_mode,
+		.maxlen                 = sizeof(int),
+		.mode                   = 0644,
+		.proc_handler           = &nss_pppoe_br_accel_mode_handler,
+	},
+	{ }
+};
+
+static struct ctl_table nss_pppoe_dir[] = {
+	{
+		.procname		= "pppoe",
+		.mode			= 0555,
+		.child			= nss_pppoe_table,
+	},
+	{ }
+};
+
+static struct ctl_table nss_pppoe_root_dir[] = {
+	{
+		.procname		= "nss",
+		.mode			= 0555,
+		.child			= nss_pppoe_dir,
+	},
+	{ }
+};
+
+static struct ctl_table nss_pppoe_root[] = {
+	{
+		.procname		= "dev",
+		.mode			= 0555,
+		.child			= nss_pppoe_root_dir,
+	},
+	{ }
+};
+
+static struct ctl_table_header *nss_pppoe_header;
+
+/*
+ * nss_pppoe_register_sysctl()
+ *	Register sysctl specific to pppoe
+ */
+void nss_pppoe_register_sysctl(void)
+{
+	/*
+	 * Register sysctl table.
+	 */
+	nss_pppoe_header = register_sysctl_table(nss_pppoe_root);
+}
+
+/*
+ * nss_pppoe_unregister_sysctl()
+ *	Unregister sysctl specific to pppoe
+ */
+void nss_pppoe_unregister_sysctl(void)
+{
+	/*
+	 * Unregister sysctl table.
+	 */
+	if (nss_pppoe_header) {
+		unregister_sysctl_table(nss_pppoe_header);
+	}
+}
+
 /*
  * nss_pppoe_register_handler()
  */
 void nss_pppoe_register_handler(void)
 {
-	int i;
-
 	nss_info("nss_pppoe_register_handler\n");
 	nss_core_register_handler(nss_pppoe_get_context(), NSS_PPPOE_INTERFACE, nss_pppoe_handler, NULL);
-
-	spin_lock_bh(&nss_pppoe_lock);
-	for (i = 0; i < NSS_MAX_PPPOE_DYNAMIC_INTERFACES; i++) {
-		nss_pppoe_debug_stats[i].valid = false;
-		nss_pppoe_debug_stats[i].if_num = 0;
-		nss_pppoe_debug_stats[i].if_index = 0;
-	}
-	spin_unlock_bh(&nss_pppoe_lock);
 
 	sema_init(&pppoe_pvt.sem, 1);
 	init_completion(&pppoe_pvt.complete);
 
 	nss_pppoe_stats_dentry_create();
+	nss_pppoe_strings_dentry_create();
 }
 
 /*

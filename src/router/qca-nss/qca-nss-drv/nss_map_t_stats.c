@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2017, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017,2019-2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -14,29 +14,14 @@
  **************************************************************************
  */
 
-#include "nss_stats.h"
 #include "nss_core.h"
 #include "nss_map_t_stats.h"
+#include "nss_map_t_strings.h"
 
 /*
- * nss_map_t_stats_instance_str
- *	map_t statistics strings for nss session stats
+ * Declare atomic notifier data structure for statistics.
  */
-static int8_t *nss_map_t_stats_instance_str[NSS_MAP_T_STATS_MAX] = {
-	"MAP_T_V4_TO_V6_PBUF_EXCEPTION_PKTS",
-	"MAP_T_V4_TO_V6_PBUF_NO_MATCHING_RULE",
-	"MAP_T_V4_TO_V6_PBUF_NOT_TCP_OR_UDP",
-	"MAP_T_V4_TO_V6_RULE_ERR_LOCAL_PSID",
-	"MAP_T_V4_TO_V6_RULE_ERR_LOCAL_IPV6",
-	"MAP_T_V4_TO_V6_RULE_ERR_REMOTE_PSID",
-	"MAP_T_V4_TO_V6_RULE_ERR_REMOTE_EA_BITS",
-	"MAP_T_V4_TO_V6_RULE_ERR_REMOTE_IPV6",
-	"MAP_T_V6_TO_V4_PBUF_EXCEPTION_PKTS",
-	"MAP_T_V6_TO_V4_PBUF_NO_MATCHING_RULE",
-	"MAP_T_V6_TO_V4_PBUF_NOT_TCP_OR_UDP",
-	"MAP_T_V6_TO_V4_RULE_ERR_LOCAL_IPV4",
-	"MAP_T_V6_TO_V4_RULE_ERR_REMOTE_IPV4"
-};
+ATOMIC_NOTIFIER_HEAD(nss_map_t_stats_notifier);
 
 /*
  * nss_map_t_stats_read()
@@ -91,7 +76,7 @@ static ssize_t nss_map_t_stats_read(struct file *fp, char __user *ubuf, size_t s
 
 			for (i = 0; i < NSS_MAP_T_STATS_MAX; i++) {
 				size_wr += scnprintf(lbuf + size_wr, size_al - size_wr,
-						     "\t%s = %llu\n", nss_map_t_stats_instance_str[i],
+						     "\t%s = %llu\n", nss_map_t_strings_instance_stats[i].stats_name,
 						      map_t_instance_stats[id].stats[i]);
 			}
 			size_wr += scnprintf(lbuf + size_wr, size_al - size_wr, "\n");
@@ -107,7 +92,7 @@ static ssize_t nss_map_t_stats_read(struct file *fp, char __user *ubuf, size_t s
 /*
  * nss_map_t_stats_ops
  */
-NSS_STATS_DECLARE_FILE_OPERATIONS(map_t)
+NSS_STATS_DECLARE_FILE_OPERATIONS(map_t);
 
 /*
  * nss_map_t_stats_dentry_create()
@@ -117,3 +102,53 @@ void nss_map_t_stats_dentry_create(void)
 {
 	nss_stats_create_dentry("map_t", &nss_map_t_stats_ops);
 }
+
+/*
+ * nss_map_t_stats_notify()
+ *	Sends notifications to the registered modules.
+ *
+ * Leverage NSS-FW statistics timing to update Netlink.
+ */
+void nss_map_t_stats_notify(struct nss_ctx_instance *nss_ctx, uint32_t if_num)
+{
+	struct nss_map_t_stats_notification map_t_stats;
+	struct nss_map_t_stats_instance_debug map_t_instance_stats[NSS_MAX_MAP_T_DYNAMIC_INTERFACES];
+	int id;
+
+	memset(&map_t_instance_stats, 0, sizeof(map_t_instance_stats));
+
+	/*
+	 * Get all stats
+	 */
+	nss_map_t_instance_debug_stats_get((void *)&map_t_instance_stats);
+
+	for (id = 0; id < NSS_MAX_MAP_T_DYNAMIC_INTERFACES; id++) {
+		if (map_t_instance_stats[id].if_num == if_num) {
+			memcpy(&map_t_stats.stats, &map_t_instance_stats[id].stats, sizeof(map_t_stats.stats));
+		}
+	}
+	map_t_stats.if_type = nss_dynamic_interface_get_type(nss_ctx, if_num);
+	map_t_stats.core_id = nss_ctx->id;
+	map_t_stats.if_num = if_num;
+	atomic_notifier_call_chain(&nss_map_t_stats_notifier, NSS_STATS_EVENT_NOTIFY, (void *)&map_t_stats);
+}
+
+/*
+ * nss_map_t_stats_register_notifier()
+ *	Registers statistics notifier.
+ */
+int nss_map_t_stats_register_notifier(struct notifier_block *nb)
+{
+	return atomic_notifier_chain_register(&nss_map_t_stats_notifier, nb);
+}
+EXPORT_SYMBOL(nss_map_t_stats_register_notifier);
+
+/*
+ * nss_map_t_stats_unregister_notifier()
+ *	Deregisters statistics notifier.
+ */
+int nss_map_t_stats_unregister_notifier(struct notifier_block *nb)
+{
+	return atomic_notifier_chain_unregister(&nss_map_t_stats_notifier, nb);
+}
+EXPORT_SYMBOL(nss_map_t_stats_unregister_notifier);

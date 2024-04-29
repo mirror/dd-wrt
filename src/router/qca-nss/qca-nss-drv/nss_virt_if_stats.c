@@ -14,7 +14,6 @@
  **************************************************************************
  */
 
-#include "nss_stats.h"
 #include "nss_core.h"
 #include "nss_virt_if_stats.h"
 

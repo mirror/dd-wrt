@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2017-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -93,6 +93,7 @@ static netdev_tx_t nss_ipsecmgr_tunnel_tx(struct sk_buff *skb, struct net_device
 	struct nss_ipsecmgr_ctx *ctx;
 	struct nss_ipsecmgr_sa *sa;
 	bool expand_skb = false;
+	uint16_t data_len;
 	int nhead, ntail;
 	uint32_t ifnum;
 
@@ -122,7 +123,7 @@ static netdev_tx_t nss_ipsecmgr_tunnel_tx(struct sk_buff *skb, struct net_device
 		break;
 
 	default:
-		nss_ipsecmgr_warn("%p: Non-IP packet for encapsulation", dev);
+		nss_ipsecmgr_warn("%px: Non-IP packet for encapsulation", dev);
 		goto free;
 	}
 
@@ -143,16 +144,18 @@ static netdev_tx_t nss_ipsecmgr_tunnel_tx(struct sk_buff *skb, struct net_device
 
 	/*
 	 * This packet is ready for NSS transformation. We will now insert the
-	 * metadata on top of the IP header
+	 * metadata on top of the IP header and expand data area to cover tailroom for NSS.
 	 */
-	mdata = nss_ipsecmgr_tunnel_get_mdata(skb);
+	data_len = skb->len;
+	skb_put(skb, ntail);
+	mdata = nss_ipsecmgr_tunnel_push_mdata(skb);
 
 	read_lock_bh(&ipsecmgr_drv->lock);
 
 	ctx = nss_ipsecmgr_ctx_find(tun, NSS_IPSEC_CMN_CTX_TYPE_MDATA_INNER);
 	if (!ctx) {
 		read_unlock_bh(&ipsecmgr_drv->lock);
-		nss_ipsecmgr_warn("%p: failed to find inner metdata context for TX\n", tun);
+		nss_ipsecmgr_warn("%px: failed to find inner metdata context for TX\n", tun);
 		goto free;
 	}
 
@@ -173,7 +176,7 @@ static netdev_tx_t nss_ipsecmgr_tunnel_tx(struct sk_buff *skb, struct net_device
 	flow = nss_ipsecmgr_flow_find(ipsecmgr_drv->flow_db, &f_tuple);
 	if (!flow) {
 		read_unlock_bh(&ipsecmgr_drv->lock);
-		nss_ipsecmgr_trace("%p, failed to find flow for TX", tun);
+		nss_ipsecmgr_trace("%px, failed to find flow for TX", tun);
 		goto free;
 	}
 
@@ -183,6 +186,7 @@ fill_mdata:
 	mdata->flags = 0;
 	mdata->seq_num = 0;
 	mdata->sa = *sa_tuple;
+	mdata->data_len = data_len;
 
 	ifnum = ctx->ifnum;
 	nss_ctx = ctx->nss_ctx;
@@ -314,6 +318,59 @@ static void nss_ipsecmgr_tunnel_free(struct net_device *dev)
 }
 
 /*
+ * nss_ipsecmgr_tunnel_free_work()
+ *	Drain all pending refs for free
+ */
+static void nss_ipsecmgr_tunnel_free_work(struct work_struct *work)
+{
+	struct nss_ipsecmgr_tunnel *tun = container_of(work, struct nss_ipsecmgr_tunnel, free_work);
+	struct nss_ipsecmgr_ref *ref, *tmp;
+	struct list_head tmp_head;
+	bool is_locked;
+
+	INIT_LIST_HEAD(&tmp_head);
+
+	write_lock_bh(&ipsecmgr_drv->lock);
+	list_splice_tail_init(&tun->free_refs, &tmp_head);
+	write_unlock_bh(&ipsecmgr_drv->lock);
+
+	is_locked = rtnl_trylock();
+	list_for_each_entry_safe(ref, tmp, &tmp_head, node) {
+		ref->free(ref);
+	}
+
+	if (is_locked)
+		rtnl_unlock();
+}
+
+/*
+ * nss_ipsecmgr_tunnel_free_ref()
+ *	Unregister IPsec tunnel interface
+ */
+static void nss_ipsecmgr_tunnel_free_ref(struct nss_ipsecmgr_ref *ref)
+{
+	struct nss_ipsecmgr_tunnel *tun = container_of(ref, struct nss_ipsecmgr_tunnel, ref);
+
+	nss_ipsecmgr_tunnel_mtu_update(&ipsecmgr_drv->tun_db);
+
+	/*
+	 * The unregister should start here but the expectation is that the free would
+	 * happen when the reference count goes down to '0'
+	 */
+	rtnl_is_locked() ? unregister_netdevice(tun->dev) : unregister_netdev(tun->dev);
+}
+
+/*
+ * nss_ipsecmgr_tunnel_del_ref()
+ *	Delete IPsec tunnel reference
+ */
+static void nss_ipsecmgr_tunnel_del_ref(struct nss_ipsecmgr_ref *ref)
+{
+	struct nss_ipsecmgr_tunnel *tun = container_of(ref, struct nss_ipsecmgr_tunnel, ref);
+	list_del(&tun->list);
+}
+
+/*
  * nss_ipsecmr_dev_setup()
  *	setup the IPsec tunnel
  */
@@ -357,18 +414,11 @@ void nss_ipsecmgr_tunnel_del(struct net_device *dev)
 	 * Flush all associated SA(s) and flow(s) with the tunnel
 	 */
 	write_lock_bh(&ipsecmgr_drv->lock);
-	nss_ipsecmgr_ref_free(&tun->ref);
-
-	list_del(&tun->list);
+	nss_ipsecmgr_ref_del(&tun->ref, &tun->free_refs);
 	write_unlock_bh(&ipsecmgr_drv->lock);
 
-	nss_ipsecmgr_tunnel_mtu_update(&ipsecmgr_drv->tun_db);
-
-	/*
-	 * The unregister should start here but the expectation is that the free would
-	 * happen when the reference count goes down to '0'
-	 */
-	rtnl_is_locked() ? unregister_netdevice(dev) : unregister_netdev(dev);
+	schedule_work(&tun->free_work);
+	flush_work(&tun->free_work);
 }
 EXPORT_SYMBOL(nss_ipsecmgr_tunnel_del);
 
@@ -395,9 +445,12 @@ struct net_device *nss_ipsecmgr_tunnel_add(struct nss_ipsecmgr_callback *cb)
 	tun = netdev_priv(dev);
 
 	tun->dev = dev;
-	nss_ipsecmgr_ref_init(&tun->ref, NULL);
+	nss_ipsecmgr_ref_init(&tun->ref, nss_ipsecmgr_tunnel_del_ref, nss_ipsecmgr_tunnel_free_ref);
 
 	INIT_LIST_HEAD(&tun->list);
+	INIT_LIST_HEAD(&tun->free_refs);
+	INIT_WORK(&tun->free_work, nss_ipsecmgr_tunnel_free_work);
+
 	nss_ipsecmgr_db_init(&tun->ctx_db);
 
 	memcpy(&tun->cb, cb, sizeof(tun->cb));
@@ -419,7 +472,7 @@ struct net_device *nss_ipsecmgr_tunnel_add(struct nss_ipsecmgr_callback *cb)
 					nss_ipsecmgr_ctx_rx_stats,
 					NSS_IPSEC_CMN_FEATURE_INLINE_ACCEL);
 	if (!inner) {
-		nss_ipsecmgr_warn("%p: failed to allocate context inner\n", tun);
+		nss_ipsecmgr_warn("%px: failed to allocate context inner\n", tun);
 		goto free_dev;
 	}
 
@@ -433,7 +486,7 @@ struct net_device *nss_ipsecmgr_tunnel_add(struct nss_ipsecmgr_callback *cb)
 					nss_ipsecmgr_ctx_rx_stats,
 					0);
 	if (!mdata_inner) {
-		nss_ipsecmgr_warn("%p: failed to allocate context metadata inner\n", tun);
+		nss_ipsecmgr_warn("%px: failed to allocate context metadata inner\n", tun);
 		goto free_inner;
 	}
 
@@ -447,7 +500,7 @@ struct net_device *nss_ipsecmgr_tunnel_add(struct nss_ipsecmgr_callback *cb)
 					nss_ipsecmgr_ctx_rx_stats,
 					NSS_IPSEC_CMN_FEATURE_INLINE_ACCEL);
 	if (!outer) {
-		nss_ipsecmgr_warn("%p: failed to allocate context outer\n", tun);
+		nss_ipsecmgr_warn("%px: failed to allocate context outer\n", tun);
 		goto free_mdata_inner;
 	}
 
@@ -461,7 +514,7 @@ struct net_device *nss_ipsecmgr_tunnel_add(struct nss_ipsecmgr_callback *cb)
 					nss_ipsecmgr_ctx_rx_stats,
 					0);
 	if (!mdata_outer) {
-		nss_ipsecmgr_warn("%p: failed to allocate context metadata outer\n", tun);
+		nss_ipsecmgr_warn("%px: failed to allocate context metadata outer\n", tun);
 		goto free_outer;
 	}
 
@@ -484,28 +537,28 @@ struct net_device *nss_ipsecmgr_tunnel_add(struct nss_ipsecmgr_callback *cb)
 	nss_ipsecmgr_ctx_set_except(mdata_outer, inner->ifnum);
 
 	if (!nss_ipsecmgr_ctx_config(inner)) {
-		nss_ipsecmgr_warn("%p: failed to configure inner context\n", tun);
+		nss_ipsecmgr_warn("%px: failed to configure inner context\n", tun);
 		goto free_mdata_outer;
 	}
 
 	if (!nss_ipsecmgr_ctx_config(mdata_inner)) {
-		nss_ipsecmgr_warn("%p: failed to configure metadata inner context\n", tun);
+		nss_ipsecmgr_warn("%px: failed to configure metadata inner context\n", tun);
 		goto free_mdata_outer;
 	}
 
 	if (!nss_ipsecmgr_ctx_config(outer)) {
-		nss_ipsecmgr_warn("%p: failed to configure outer context\n", tun);
+		nss_ipsecmgr_warn("%px: failed to configure outer context\n", tun);
 		goto free_mdata_outer;
 	}
 
 	if (!nss_ipsecmgr_ctx_config(mdata_outer)) {
-		nss_ipsecmgr_warn("%p: failed to configure metadata outer context\n", tun);
+		nss_ipsecmgr_warn("%px: failed to configure metadata outer context\n", tun);
 		goto free_mdata_outer;
 	}
 
 	status = rtnl_is_locked() ? register_netdevice(dev) : register_netdev(dev);
 	if (status < 0) {
-		nss_ipsecmgr_warn("%p: register net dev failed :%s\n", tun, dev->name);
+		nss_ipsecmgr_warn("%px: register net dev failed :%s\n", tun, dev->name);
 		goto free_mdata_outer;
 	}
 

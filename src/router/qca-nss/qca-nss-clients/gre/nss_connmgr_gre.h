@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2017-2018 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2019 The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -22,6 +22,8 @@
 
 #ifndef _NSS_CONNMGR_GRE_H_
 #define _NSS_CONNMGR_GRE_H_
+
+#include "nss_connmgr_gre_public.h"
 
 /*
  * GRE debug macros
@@ -67,6 +69,13 @@
 #define nss_connmgr_gre_error(s, ...) pr_err("%s[%d]:" s, __func__, __LINE__, ##__VA_ARGS__)
 
 #define GRE_HDR_PAD_LEN 2
+
+enum nss_connmgr_gre_iftype {
+	NSS_CONNMGR_GRE_IFTYPE_NONE,
+	NSS_CONNMGR_GRE_IFTYPE_CUSTOM_GRE,
+	NSS_CONNMGR_GRE_IFTYPE_STD_GRE,
+	NSS_CONNMGR_GRE_IFTYPE_MAX
+};
 
 typedef struct nss_gre_info nss_connmgr_gre_priv_t;
 

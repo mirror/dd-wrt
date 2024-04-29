@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2017-2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -52,7 +52,7 @@ static void nss_qrfs_msg_handler(struct nss_ctx_instance *nss_ctx, struct nss_cm
 	nss_qrfs_log_rx_msg(nqm);
 
 	if (!nss_qrfs_verify_if_num(ncm->interface)) {
-		nss_warning("%p: invalid interface %d for QRFS\n", nss_ctx, ncm->interface);
+		nss_warning("%px: invalid interface %d for QRFS\n", nss_ctx, ncm->interface);
 		return;
 	}
 
@@ -60,12 +60,12 @@ static void nss_qrfs_msg_handler(struct nss_ctx_instance *nss_ctx, struct nss_cm
 	 * Is this a valid request/response?
 	 */
 	if (ncm->type >= NSS_QRFS_MSG_MAX) {
-		nss_warning("%p: invalid message %d for QRFS\n", nss_ctx, ncm->type);
+		nss_warning("%px: invalid message %d for QRFS\n", nss_ctx, ncm->type);
 		return;
 	}
 
 	if (nss_cmn_get_msg_len(ncm) > sizeof(struct nss_qrfs_msg)) {
-		nss_warning("%p: message length is greater than required: %d\n", nss_ctx, nss_cmn_get_msg_len(ncm));
+		nss_warning("%px: message length is greater than required: %d\n", nss_ctx, nss_cmn_get_msg_len(ncm));
 		return;
 	}
 
@@ -128,7 +128,7 @@ static bool nss_qrfs_get_flow_keys(struct nss_ctx_instance *nss_ctx, struct sk_b
 
 	res = skb_flow_dissect(skb, &keys);
 	if (!res) {
-		nss_warning("%p: failed to get flow keys\n", nss_ctx);
+		nss_warning("%px: failed to get flow keys\n", nss_ctx);
 		return res;
 	}
 
@@ -146,7 +146,7 @@ static bool nss_qrfs_get_flow_keys(struct nss_ctx_instance *nss_ctx, struct sk_b
 	nqfrm->ip_version = 6;
 	ip6hdr = (struct ipv6hdr *)skb_network_header(skb);
 	if (!ip6hdr) {
-		nss_warning("%p: failed to get IPv6 address\n", nss_ctx);
+		nss_warning("%px: failed to get IPv6 address\n", nss_ctx);
 		return false;
 	}
 
@@ -164,7 +164,7 @@ static bool nss_qrfs_get_flow_keys(struct nss_ctx_instance *nss_ctx, struct sk_b
 
 	res = skb_flow_dissect_flow_keys(skb, &keys, 0);
 	if (!res) {
-		nss_warning("%p: failed to get flow keys\n", nss_ctx);
+		nss_warning("%px: failed to get flow keys\n", nss_ctx);
 		return res;
 	}
 
@@ -197,19 +197,19 @@ static void nss_qrfs_flow_add_msg_callback(void *app_data, struct nss_qrfs_msg *
 	struct nss_qrfs_flow_rule_msg *nqfrm;
 
 	if (nqm->cm.type != NSS_QRFS_MSG_FLOW_ADD) {
-		nss_warning("%p: invalid flow response message %d\n", nss_ctx, nqm->cm.type);
+		nss_warning("%px: invalid flow response message %d\n", nss_ctx, nqm->cm.type);
 		return;
 	}
 
 	nqfrm = &nqm->msg.flow_add;
 
 	if ((nqfrm->ip_version != 4) && (nqfrm->ip_version != 6)) {
-		nss_warning("%p: invalid IP version %d\n", nss_ctx, nqfrm->ip_version);
+		nss_warning("%px: invalid IP version %d\n", nss_ctx, nqfrm->ip_version);
 		return;
 	}
 
 	if (nqm->cm.response != NSS_CMN_RESPONSE_ACK) {
-		nss_warning("%p: flow add configuration error: %d for NSS core %d\n",
+		nss_warning("%px: flow add configuration error: %d for NSS core %d\n",
 				nss_ctx, nqm->cm.error, nss_ctx->id);
 	}
 }
@@ -224,19 +224,19 @@ static void nss_qrfs_flow_delete_msg_callback(void *app_data, struct nss_qrfs_ms
 	struct nss_qrfs_flow_rule_msg *nqfrm;
 
 	if (nqm->cm.type != NSS_QRFS_MSG_FLOW_DELETE) {
-		nss_warning("%p: invalid flow response message %d\n", nss_ctx, nqm->cm.type);
+		nss_warning("%px: invalid flow response message %d\n", nss_ctx, nqm->cm.type);
 		return;
 	}
 
 	nqfrm = &nqm->msg.flow_delete;
 
 	if ((nqfrm->ip_version != 4) && (nqfrm->ip_version != 6)) {
-		nss_warning("%p: invalid IP version %d\n", nss_ctx, nqfrm->ip_version);
+		nss_warning("%px: invalid IP version %d\n", nss_ctx, nqfrm->ip_version);
 		return;
 	}
 
 	if (nqm->cm.response != NSS_CMN_RESPONSE_ACK) {
-		nss_warning("%p: flow delete configuration error: %d for NSS core %d\n",
+		nss_warning("%px: flow delete configuration error: %d for NSS core %d\n",
 				nss_ctx, nqm->cm.error, nss_ctx->id);
 	}
 }
@@ -267,12 +267,12 @@ static nss_tx_status_t nss_qrfs_tx_msg(struct nss_ctx_instance *nss_ctx, struct 
 	 * Sanity check the message
 	 */
 	if (!nss_qrfs_verify_if_num(ncm->interface)) {
-		nss_warning("%p: interface is not QRFS interface: %d\n", nss_ctx, ncm->interface);
+		nss_warning("%px: interface is not QRFS interface: %d\n", nss_ctx, ncm->interface);
 		return NSS_TX_FAILURE;
 	}
 
 	if (ncm->type >= NSS_QRFS_MSG_MAX) {
-		nss_warning("%p: message type is out of range: %d\n", nss_ctx, ncm->type);
+		nss_warning("%px: message type is out of range: %d\n", nss_ctx, ncm->type);
 		return NSS_TX_FAILURE;
 	}
 
@@ -405,7 +405,7 @@ nss_tx_status_t nss_qrfs_set_flow_rule(struct sk_buff *skb, uint32_t cpu, uint32
 		}
 
 		if (status != NSS_TX_SUCCESS) {
-			nss_warning("%p: failed to send flow rule to NSS core %d\n", nss_ctx, i);
+			nss_warning("%px: failed to send flow rule to NSS core %d\n", nss_ctx, i);
 			return NSS_TX_FAILURE;
 		}
 	}
@@ -420,7 +420,10 @@ EXPORT_SYMBOL(nss_qrfs_set_flow_rule);
 void nss_qrfs_register_handler(struct nss_ctx_instance *nss_ctx)
 {
 	nss_core_register_handler(nss_ctx, NSS_QRFS_INTERFACE, nss_qrfs_msg_handler, NULL);
-	nss_qrfs_stats_dentry_create();
+
+	if (nss_ctx->id == NSS_CORE_0) {
+		nss_qrfs_stats_dentry_create();
+	}
 }
 EXPORT_SYMBOL(nss_qrfs_register_handler);
 

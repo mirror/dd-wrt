@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2014-2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2014-2018, 2020-2021, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -108,10 +108,10 @@ int _ecm_db_host_count_get(void)
  */
 void _ecm_db_host_ref(struct ecm_db_host_instance *hi)
 {
-	DEBUG_CHECK_MAGIC(hi, ECM_DB_HOST_INSTANCE_MAGIC, "%p: magic failed\n", hi);
+	DEBUG_CHECK_MAGIC(hi, ECM_DB_HOST_INSTANCE_MAGIC, "%px: magic failed\n", hi);
 	hi->refs++;
-	DEBUG_TRACE("%p: host ref %d\n", hi, hi->refs);
-	DEBUG_ASSERT(hi->refs > 0, "%p: ref wrap\n", hi);
+	DEBUG_TRACE("%px: host ref %d\n", hi, hi->refs);
+	DEBUG_ASSERT(hi->refs > 0, "%px: ref wrap\n", hi);
 }
 
 /*
@@ -149,7 +149,7 @@ EXPORT_SYMBOL(ecm_db_hosts_get_and_ref_first);
 struct ecm_db_host_instance *ecm_db_host_get_and_ref_next(struct ecm_db_host_instance *hi)
 {
 	struct ecm_db_host_instance *hin;
-	DEBUG_CHECK_MAGIC(hi, ECM_DB_HOST_INSTANCE_MAGIC, "%p: magic failed", hi);
+	DEBUG_CHECK_MAGIC(hi, ECM_DB_HOST_INSTANCE_MAGIC, "%px: magic failed", hi);
 	spin_lock_bh(&ecm_db_lock);
 	hin = hi->next;
 	if (hin) {
@@ -170,7 +170,7 @@ void ecm_db_host_data_stats_get(struct ecm_db_host_instance *hi, uint64_t *from_
 						uint64_t *from_data_total_dropped, uint64_t *to_data_total_dropped,
 						uint64_t *from_packet_total_dropped, uint64_t *to_packet_total_dropped)
 {
-	DEBUG_CHECK_MAGIC(hi, ECM_DB_HOST_INSTANCE_MAGIC, "%p: magic failed", hi);
+	DEBUG_CHECK_MAGIC(hi, ECM_DB_HOST_INSTANCE_MAGIC, "%px: magic failed", hi);
 	spin_lock_bh(&ecm_db_lock);
 	if (from_data_total) {
 		*from_data_total = hi->from_data_total;
@@ -207,7 +207,7 @@ EXPORT_SYMBOL(ecm_db_host_data_stats_get);
  */
 void ecm_db_host_address_get(struct ecm_db_host_instance *hi, ip_addr_t addr)
 {
-	DEBUG_CHECK_MAGIC(hi, ECM_DB_HOST_INSTANCE_MAGIC, "%p: magic failed", hi);
+	DEBUG_CHECK_MAGIC(hi, ECM_DB_HOST_INSTANCE_MAGIC, "%px: magic failed", hi);
 	ECM_IP_ADDR_COPY(addr, hi->address);
 }
 EXPORT_SYMBOL(ecm_db_host_address_get);
@@ -218,7 +218,7 @@ EXPORT_SYMBOL(ecm_db_host_address_get);
  */
 bool ecm_db_host_on_link_get(struct ecm_db_host_instance *hi)
 {
-	DEBUG_CHECK_MAGIC(hi, ECM_DB_HOST_INSTANCE_MAGIC, "%p: magic failed", hi);
+	DEBUG_CHECK_MAGIC(hi, ECM_DB_HOST_INSTANCE_MAGIC, "%px: magic failed", hi);
 	return hi->on_link;
 }
 EXPORT_SYMBOL(ecm_db_host_on_link_get);
@@ -229,12 +229,12 @@ EXPORT_SYMBOL(ecm_db_host_on_link_get);
  */
 int ecm_db_host_deref(struct ecm_db_host_instance *hi)
 {
-	DEBUG_CHECK_MAGIC(hi, ECM_DB_HOST_INSTANCE_MAGIC, "%p: magic failed\n", hi);
+	DEBUG_CHECK_MAGIC(hi, ECM_DB_HOST_INSTANCE_MAGIC, "%px: magic failed\n", hi);
 
 	spin_lock_bh(&ecm_db_lock);
 	hi->refs--;
-	DEBUG_TRACE("%p: host deref %d\n", hi, hi->refs);
-	DEBUG_ASSERT(hi->refs >= 0, "%p: ref wrap\n", hi);
+	DEBUG_TRACE("%px: host deref %d\n", hi, hi->refs);
+	DEBUG_ASSERT(hi->refs >= 0, "%px: ref wrap\n", hi);
 
 	if (hi->refs > 0) {
 		int refs = hi->refs;
@@ -243,7 +243,7 @@ int ecm_db_host_deref(struct ecm_db_host_instance *hi)
 	}
 
 #ifdef ECM_DB_XREF_ENABLE
-	DEBUG_ASSERT((hi->mappings == NULL) && (hi->mapping_count == 0), "%p: mappings not null\n", hi);
+	DEBUG_ASSERT((hi->mappings == NULL) && (hi->mapping_count == 0), "%px: mappings not null\n", hi);
 #endif
 
 	/*
@@ -258,7 +258,7 @@ int ecm_db_host_deref(struct ecm_db_host_instance *hi)
 		 * Remove from the global list
 		 */
 		if (!hi->prev) {
-			DEBUG_ASSERT(ecm_db_hosts == hi, "%p: host table bad\n", hi);
+			DEBUG_ASSERT(ecm_db_hosts == hi, "%px: host table bad\n", hi);
 			ecm_db_hosts = hi->next;
 		} else {
 			hi->prev->next = hi->next;
@@ -273,7 +273,7 @@ int ecm_db_host_deref(struct ecm_db_host_instance *hi)
 		 * Unlink it from the host hash table
 		 */
 		if (!hi->hash_prev) {
-			DEBUG_ASSERT(ecm_db_host_table[hi->hash_index] == hi, "%p: hash table bad\n", hi);
+			DEBUG_ASSERT(ecm_db_host_table[hi->hash_index] == hi, "%px: hash table bad\n", hi);
 			ecm_db_host_table[hi->hash_index] = hi->hash_next;
 		} else {
 			hi->hash_prev->hash_next = hi->hash_next;
@@ -284,14 +284,14 @@ int ecm_db_host_deref(struct ecm_db_host_instance *hi)
 		hi->hash_next = NULL;
 		hi->hash_prev = NULL;
 		ecm_db_host_table_lengths[hi->hash_index]--;
-		DEBUG_ASSERT(ecm_db_host_table_lengths[hi->hash_index] >= 0, "%p: invalid table len %d\n", hi, ecm_db_host_table_lengths[hi->hash_index]);
+		DEBUG_ASSERT(ecm_db_host_table_lengths[hi->hash_index] >= 0, "%px: invalid table len %d\n", hi, ecm_db_host_table_lengths[hi->hash_index]);
 
 		spin_unlock_bh(&ecm_db_lock);
 
 		/*
 		 * Throw removed event to listeners
 		 */
-		DEBUG_TRACE("%p: Throw host removed event\n", hi);
+		DEBUG_TRACE("%px: Throw host removed event\n", hi);
 		li = ecm_db_listeners_get_and_ref_first();
 		while (li) {
 			struct ecm_db_listener_instance *lin;
@@ -326,7 +326,7 @@ int ecm_db_host_deref(struct ecm_db_host_instance *hi)
 	 */
 	spin_lock_bh(&ecm_db_lock);
 	ecm_db_host_count--;
-	DEBUG_ASSERT(ecm_db_host_count >= 0, "%p: host count wrap\n", hi);
+	DEBUG_ASSERT(ecm_db_host_count >= 0, "%px: host count wrap\n", hi);
 	spin_unlock_bh(&ecm_db_lock);
 
 	return 0;
@@ -362,7 +362,7 @@ struct ecm_db_host_instance *ecm_db_host_find_and_ref(ip_addr_t address)
 
 		_ecm_db_host_ref(hi);
 		spin_unlock_bh(&ecm_db_lock);
-		DEBUG_TRACE("host found %p\n", hi);
+		DEBUG_TRACE("host found %px\n", hi);
 		return hi;
 	}
 	spin_unlock_bh(&ecm_db_lock);
@@ -373,6 +373,146 @@ EXPORT_SYMBOL(ecm_db_host_find_and_ref);
 
 #ifdef ECM_DB_XREF_ENABLE
 /*
+ * ecm_db_host_mappings_get_and_ref_first()
+ *	Return a reference to the first mapping of this host
+ */
+static struct ecm_db_mapping_instance *ecm_db_host_mappings_get_and_ref_first(struct ecm_db_host_instance *hi)
+{
+	struct ecm_db_mapping_instance *mi = NULL;
+
+	DEBUG_CHECK_MAGIC(hi, ECM_DB_HOST_INSTANCE_MAGIC, "%p: magic failed", hi);
+
+	spin_lock_bh(&ecm_db_lock);
+	mi = hi->mappings;
+	if (mi) {
+		_ecm_db_mapping_ref(mi);
+	}
+	spin_unlock_bh(&ecm_db_lock);
+
+	return mi;
+}
+
+/*
+ * ecm_db_host_mapping_get_and_ref_next()
+ *	Return the next host mapping in the list given a mapping
+ */
+static struct ecm_db_mapping_instance *ecm_db_host_mapping_get_and_ref_next(struct ecm_db_mapping_instance *mi)
+{
+	struct ecm_db_mapping_instance *nmi = NULL;
+
+	DEBUG_CHECK_MAGIC(mi, ECM_DB_MAPPING_INSTANCE_MAGIC, "%p: magic failed", mi);
+
+	spin_lock_bh(&ecm_db_lock);
+	nmi = mi->mapping_next;
+	if (nmi) {
+		_ecm_db_mapping_ref(nmi);
+	}
+	spin_unlock_bh(&ecm_db_lock);
+
+	return nmi;
+}
+
+/*
+ * ecm_db_host_connections_defunct_by_dir()
+ *	Defunct the connections associated with the IP address in the given direction.
+ */
+void ecm_db_host_connections_defunct_by_dir(ip_addr_t addr, ecm_db_obj_dir_t dir)
+{
+	struct ecm_db_host_instance *hi;
+	struct ecm_db_mapping_instance *mi;
+
+	hi = ecm_db_host_find_and_ref(addr);
+	if (!hi) {
+		DEBUG_WARN("Unable to find host instance\n");
+		return;
+	}
+
+	DEBUG_CHECK_MAGIC(hi, ECM_DB_HOST_INSTANCE_MAGIC, "%px: magic failed\n", hi);
+
+	mi = ecm_db_host_mappings_get_and_ref_first(hi);
+	while (mi) {
+		struct ecm_db_connection_instance *ci;
+		struct ecm_db_mapping_instance *min;
+
+		ci = ecm_db_mapping_connections_get_and_ref_first(mi, dir);
+		while (ci) {
+			struct ecm_db_connection_instance *cin;
+			DEBUG_TRACE("%px: defunct %d\n", ci, ci->serial);
+			ecm_db_connection_make_defunct(ci);
+
+			cin = ecm_db_connection_mapping_get_and_ref_next(ci, dir);
+			ecm_db_connection_deref(ci);
+			ci = cin;
+		}
+
+		min = ecm_db_host_mapping_get_and_ref_next(mi);
+		ecm_db_mapping_deref(mi);
+		mi = min;
+	}
+
+	if (ECM_IP_ADDR_IS_V4(addr)) {
+		DEBUG_INFO("%px: Defuncting connections %s " ECM_IP_ADDR_DOT_FMT "\n",
+			   hi, ecm_db_obj_dir_strings[dir], ECM_IP_ADDR_TO_DOT(addr));
+	} else {
+		DEBUG_INFO("%px: Defuncting connections %s " ECM_IP_ADDR_OCTAL_FMT "\n",
+			   hi, ecm_db_obj_dir_strings[dir], ECM_IP_ADDR_TO_OCTAL(addr));
+	}
+}
+
+/*
+ * ecm_db_host_connections_defunct_by_src_and_dest()
+ *	Defunct the connections with the given source and destination IP addresses.
+ */
+void ecm_db_host_connections_defunct_by_src_and_dest(ip_addr_t src_addr, ip_addr_t dest_addr)
+{
+	struct ecm_db_host_instance *src_hi;
+	struct ecm_db_mapping_instance *src_mi;
+
+	src_hi = ecm_db_host_find_and_ref(src_addr);
+	if (!src_hi) {
+		DEBUG_WARN("Unable to find host instance\n");
+		return;
+	}
+
+	DEBUG_CHECK_MAGIC(src_hi, ECM_DB_HOST_INSTANCE_MAGIC, "%px: magic failed\n", src_hi);
+
+	src_mi = ecm_db_host_mappings_get_and_ref_first(src_hi);
+	while (src_mi) {
+		struct ecm_db_connection_instance *ci;
+		struct ecm_db_mapping_instance *src_min;
+
+		ci = ecm_db_mapping_connections_get_and_ref_first(src_mi, ECM_DB_OBJ_DIR_FROM);
+		while (ci) {
+			struct ecm_db_connection_instance *cin;
+			ip_addr_t dst_ip;
+
+			ecm_db_connection_address_get(ci, ECM_DB_OBJ_DIR_TO, dst_ip);
+
+			if (ECM_IP_ADDR_MATCH(dest_addr, dst_ip)) {
+				DEBUG_TRACE("%px: defunct %d\n", ci, ci->serial);
+				ecm_db_connection_make_defunct(ci);
+			}
+
+			cin = ecm_db_connection_mapping_get_and_ref_next(ci, ECM_DB_OBJ_DIR_FROM);
+			ecm_db_connection_deref(ci);
+			ci = cin;
+		}
+
+		src_min = ecm_db_host_mapping_get_and_ref_next(src_mi);
+		ecm_db_mapping_deref(src_mi);
+		src_mi = src_min;
+	}
+
+	if (ECM_IP_ADDR_IS_V4(src_addr)) {
+		DEBUG_INFO("%px: Defuncting connections from " ECM_IP_ADDR_DOT_FMT "to " ECM_IP_ADDR_DOT_FMT "\n",
+			   src_hi, ECM_IP_ADDR_TO_DOT(src_addr), ECM_IP_ADDR_TO_DOT(dest_addr));
+	} else {
+		DEBUG_INFO("%px: Defuncting connections from " ECM_IP_ADDR_OCTAL_FMT "to " ECM_IP_ADDR_OCTAL_FMT "\n",
+			   src_hi, ECM_IP_ADDR_TO_OCTAL(src_addr), ECM_IP_ADDR_TO_OCTAL(dest_addr));
+	}
+}
+
+/*
  * ecm_db_host_mapping_count_get()
  *	Return the number of mappings to this host
  */
@@ -380,7 +520,7 @@ int ecm_db_host_mapping_count_get(struct ecm_db_host_instance *hi)
 {
 	int count;
 
-	DEBUG_CHECK_MAGIC(hi, ECM_DB_HOST_INSTANCE_MAGIC, "%p: magic failed\n", hi);
+	DEBUG_CHECK_MAGIC(hi, ECM_DB_HOST_INSTANCE_MAGIC, "%px: magic failed\n", hi);
 
 	spin_lock_bh(&ecm_db_lock);
 	count = hi->mapping_count;
@@ -400,10 +540,10 @@ void ecm_db_host_add(struct ecm_db_host_instance *hi, ip_addr_t address, bool on
 	struct ecm_db_listener_instance *li;
 
 	spin_lock_bh(&ecm_db_lock);
-	DEBUG_CHECK_MAGIC(hi, ECM_DB_HOST_INSTANCE_MAGIC, "%p: magic failed\n", hi);
-	DEBUG_ASSERT(!(hi->flags & ECM_DB_HOST_FLAGS_INSERTED), "%p: inserted\n", hi);
+	DEBUG_CHECK_MAGIC(hi, ECM_DB_HOST_INSTANCE_MAGIC, "%px: magic failed\n", hi);
+	DEBUG_ASSERT(!(hi->flags & ECM_DB_HOST_FLAGS_INSERTED), "%px: inserted\n", hi);
 #ifdef ECM_DB_XREF_ENABLE
-	DEBUG_ASSERT((hi->mappings == NULL) && (hi->mapping_count == 0), "%p: mappings not null\n", hi);
+	DEBUG_ASSERT((hi->mappings == NULL) && (hi->mapping_count == 0), "%px: mappings not null\n", hi);
 #endif
 	spin_unlock_bh(&ecm_db_lock);
 
@@ -433,13 +573,14 @@ void ecm_db_host_add(struct ecm_db_host_instance *hi, ip_addr_t address, bool on
 	/*
 	 * Add host into the hash table
 	 */
+	hi->hash_prev = NULL;
 	hi->hash_next = ecm_db_host_table[hash_index];
 	if (ecm_db_host_table[hash_index]) {
 		ecm_db_host_table[hash_index]->hash_prev = hi;
 	}
 	ecm_db_host_table[hash_index] = hi;
 	ecm_db_host_table_lengths[hash_index]++;
-	DEBUG_ASSERT(ecm_db_host_table_lengths[hash_index] > 0, "%p: invalid table len %d\n", hi, ecm_db_host_table_lengths[hash_index]);
+	DEBUG_ASSERT(ecm_db_host_table_lengths[hash_index] > 0, "%px: invalid table len %d\n", hi, ecm_db_host_table_lengths[hash_index]);
 
 	/*
 	 * Set time of add
@@ -450,7 +591,7 @@ void ecm_db_host_add(struct ecm_db_host_instance *hi, ip_addr_t address, bool on
 	/*
 	 * Throw add event to the listeners
 	 */
-	DEBUG_TRACE("%p: Throw host added event\n", hi);
+	DEBUG_TRACE("%px: Throw host added event\n", hi);
 	li = ecm_db_listeners_get_and_ref_first();
 	while (li) {
 		struct ecm_db_listener_instance *lin;
@@ -492,7 +633,7 @@ int ecm_db_host_state_get(struct ecm_state_file_instance *sfi, struct ecm_db_hos
 	uint64_t to_packet_total_dropped;
 #endif
 
-	DEBUG_TRACE("Prep host msg for %p\n", hi);
+	DEBUG_TRACE("Prep host msg for %px\n", hi);
 
 	/*
 	 * Create a small xml stats element for our host.
@@ -619,7 +760,7 @@ struct ecm_db_host_instance *ecm_db_host_alloc(void)
 	ecm_db_host_count++;
 	spin_unlock_bh(&ecm_db_lock);
 
-	DEBUG_TRACE("Host created %p\n", hi);
+	DEBUG_TRACE("Host created %px\n", hi);
 	return hi;
 }
 EXPORT_SYMBOL(ecm_db_host_alloc);

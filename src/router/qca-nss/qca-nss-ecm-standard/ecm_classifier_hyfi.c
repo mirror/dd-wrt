@@ -1,9 +1,12 @@
 /*
  **************************************************************************
- * Copyright (c) 2014-2016, The Linux Foundation.  All rights reserved.
+ * Copyright (c) 2014-2016, 2020-2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
+ *
  * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
  * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
  * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
@@ -70,6 +73,8 @@
 #include "ecm_classifier_hyfi.h"
 #include "ecm_front_end_ipv4.h"
 #include "ecm_interface.h"
+#include "ecm_front_end_common.h"
+
 /*
  * Magic numbers
  */
@@ -147,11 +152,11 @@ static void ecm_classifier_hyfi_ref(struct ecm_classifier_instance *ci)
 	struct ecm_classifier_hyfi_instance *chfi;
 	chfi = (struct ecm_classifier_hyfi_instance *)ci;
 
-	DEBUG_CHECK_MAGIC(chfi, ECM_CLASSIFIER_HYFI_INSTANCE_MAGIC, "%p: magic failed\n", chfi);
+	DEBUG_CHECK_MAGIC(chfi, ECM_CLASSIFIER_HYFI_INSTANCE_MAGIC, "%px: magic failed\n", chfi);
 	spin_lock_bh(&ecm_classifier_hyfi_lock);
 	chfi->refs++;
-	DEBUG_TRACE("%p: chfi ref %d\n", chfi, chfi->refs);
-	DEBUG_ASSERT(chfi->refs > 0, "%p: ref wrap\n", chfi);
+	DEBUG_TRACE("%px: chfi ref %d\n", chfi, chfi->refs);
+	DEBUG_ASSERT(chfi->refs > 0, "%px: ref wrap\n", chfi);
 	spin_unlock_bh(&ecm_classifier_hyfi_lock);
 }
 
@@ -164,11 +169,11 @@ static int ecm_classifier_hyfi_deref(struct ecm_classifier_instance *ci)
 	struct ecm_classifier_hyfi_instance *chfi;
 	chfi = (struct ecm_classifier_hyfi_instance *)ci;
 
-	DEBUG_CHECK_MAGIC(chfi, ECM_CLASSIFIER_HYFI_INSTANCE_MAGIC, "%p: magic failed\n", chfi);
+	DEBUG_CHECK_MAGIC(chfi, ECM_CLASSIFIER_HYFI_INSTANCE_MAGIC, "%px: magic failed\n", chfi);
 	spin_lock_bh(&ecm_classifier_hyfi_lock);
 	chfi->refs--;
-	DEBUG_ASSERT(chfi->refs >= 0, "%p: refs wrapped\n", chfi);
-	DEBUG_TRACE("%p: HyFi classifier deref %d\n", chfi, chfi->refs);
+	DEBUG_ASSERT(chfi->refs >= 0, "%px: refs wrapped\n", chfi);
+	DEBUG_TRACE("%px: HyFi classifier deref %d\n", chfi, chfi->refs);
 	if (chfi->refs) {
 		int refs = chfi->refs;
 		spin_unlock_bh(&ecm_classifier_hyfi_lock);
@@ -179,7 +184,7 @@ static int ecm_classifier_hyfi_deref(struct ecm_classifier_instance *ci)
 	 * Object to be destroyed
 	 */
 	ecm_classifier_hyfi_count--;
-	DEBUG_ASSERT(ecm_classifier_hyfi_count >= 0, "%p: ecm_classifier_hyfi_count wrap\n", chfi);
+	DEBUG_ASSERT(ecm_classifier_hyfi_count >= 0, "%px: ecm_classifier_hyfi_count wrap\n", chfi);
 
 	/*
 	 * UnLink the instance from our list
@@ -190,7 +195,7 @@ static int ecm_classifier_hyfi_deref(struct ecm_classifier_instance *ci)
 	if (chfi->prev) {
 		chfi->prev->next = chfi->next;
 	} else {
-		DEBUG_ASSERT(ecm_classifier_hyfi_instances == chfi, "%p: list bad %p\n", chfi, ecm_classifier_hyfi_instances);
+		DEBUG_ASSERT(ecm_classifier_hyfi_instances == chfi, "%px: list bad %px\n", chfi, ecm_classifier_hyfi_instances);
 		ecm_classifier_hyfi_instances = chfi->next;
 	}
 	chfi->next = NULL;
@@ -201,7 +206,7 @@ static int ecm_classifier_hyfi_deref(struct ecm_classifier_instance *ci)
 	/*
 	 * Final
 	 */
-	DEBUG_INFO("%p: Final HyFi classifier instance\n", chfi);
+	DEBUG_INFO("%px: Final HyFi classifier instance\n", chfi);
 	kfree(chfi);
 
 	return 0;
@@ -225,7 +230,7 @@ static void ecm_classifier_hyfi_process(struct ecm_classifier_instance *aci, ecm
 	uint32_t flag = 0;
 
 	chfi = (struct ecm_classifier_hyfi_instance *)aci;
-	DEBUG_CHECK_MAGIC(chfi, ECM_CLASSIFIER_HYFI_INSTANCE_MAGIC, "%p: magic failed\n", chfi);
+	DEBUG_CHECK_MAGIC(chfi, ECM_CLASSIFIER_HYFI_INSTANCE_MAGIC, "%px: magic failed\n", chfi);
 
 	/*
 	 * Are we yet to decide if this instance is relevant to the connection?
@@ -251,12 +256,12 @@ static void ecm_classifier_hyfi_process(struct ecm_classifier_instance *aci, ecm
 	relevance = ECM_CLASSIFIER_RELEVANCE_NO;
 	ci = ecm_db_connection_serial_find_and_ref(chfi->ci_serial);
 	if (!ci) {
-		DEBUG_TRACE("%p: No ci found for %u\n", chfi, chfi->ci_serial);
+		DEBUG_TRACE("%px: No ci found for %u\n", chfi, chfi->ci_serial);
 		accel_mode = ECM_FRONT_END_ACCELERATION_MODE_FAIL_DENIED;
 	} else {
 		feci = ecm_db_connection_front_end_get_and_ref(ci);
-		accel_mode = feci->accel_state_get(feci);
-		feci->deref(feci);
+		accel_mode = ecm_front_end_connection_accel_state_get(feci);
+		ecm_front_end_connection_deref(feci);
 		ecm_db_connection_deref(ci);
 	}
 
@@ -286,7 +291,7 @@ hyfi_classifier_out:
 	 */
 	if (chfi->hyfi_state & (ECM_CLASSIFIER_HYFI_STATE_REGISTERED | ECM_CLASSIFIER_HYFI_STATE_IGNORE)) {
 		if (chfi->hyfi_state & ECM_CLASSIFIER_HYFI_STATE_REGISTERED) {
-			DEBUG_INFO("%p: Regen of Flow serial: %d Flow hash: 0x%02x (@%lu)\n",
+			DEBUG_INFO("%px: Regen of Flow serial: %d Flow hash: 0x%02x (@%lu)\n",
 				aci, chfi->flow.ecm_serial, chfi->flow.hash, jiffies);
 		}
 		goto hyfi_classifier_done;
@@ -311,7 +316,7 @@ hyfi_classifier_out:
 	memcpy(&chfi->flow.sa, eth_hdr(skb)->h_source, ETH_ALEN);
 	memcpy(&chfi->flow.da, eth_hdr(skb)->h_dest, ETH_ALEN);
 
-	DEBUG_INFO("%p: Flow serial: %d\nFlow hash: 0x%02x, priority 0x%08x, "
+	DEBUG_INFO("%px: Flow serial: %d\nFlow hash: 0x%02x, priority 0x%08x, "
 			"flag: %d\nSA: %pM\nDA: %pM (@%lu)\n\n",
 			aci, chfi->flow.ecm_serial, chfi->flow.hash,
 			chfi->flow.priority, chfi->flow.flag,
@@ -350,7 +355,7 @@ static int32_t ecm_classifier_hyfi_get_intf_id(struct ecm_db_connection_instance
 	intf_first = ecm_db_connection_interfaces_get_and_ref(ci, interfaces, dir);
 
 	if (intf_first == ECM_DB_IFACE_HEIRARCHY_MAX) {
-		DEBUG_WARN("%p: Error fetching interfaces\n", ci);
+		DEBUG_WARN("%px: Error fetching interfaces\n", ci);
 		return -1;
 	}
 
@@ -364,7 +369,7 @@ static int32_t ecm_classifier_hyfi_get_intf_id(struct ecm_db_connection_instance
 			 * Found the bridge - next interface should be the one we want
 			 */
 			if (i <= intf_first) {
-				DEBUG_WARN("%p: Found bridge at position %d, but first interface "
+				DEBUG_WARN("%px: Found bridge at position %d, but first interface "
 					"is %d, can't fetch HyFi relevant interface\n", ci,
 					i, intf_first);
 				break;
@@ -373,12 +378,12 @@ static int32_t ecm_classifier_hyfi_get_intf_id(struct ecm_db_connection_instance
 			index = ecm_db_iface_interface_identifier_get(interfaces[i-1]);
 
 			if (!hyfi_ecm_is_port_on_hyfi_bridge(index)) {
-				DEBUG_TRACE("%p: Found non-Hy-Fi bridge, ignoring\n", ci);
+				DEBUG_TRACE("%px: Found non-Hy-Fi bridge, ignoring\n", ci);
 				break;
 			}
 
 			ecm_db_iface_interface_name_get(interfaces[i-1], &name[0]);
-			DEBUG_TRACE("%p: Found bridge: '%s' interface is %d (%s)\n", ci,
+			DEBUG_TRACE("%px: Found bridge: '%s' interface is %d (%s)\n", ci,
 				ecm_db_obj_dir_strings[dir], index, name);
 			system_index = index;
 			break;
@@ -390,7 +395,7 @@ static int32_t ecm_classifier_hyfi_get_intf_id(struct ecm_db_connection_instance
 		index = ecm_db_iface_interface_identifier_get(interfaces[i]);
 		if (hyfi_ecm_is_port_on_hyfi_bridge(index)) {
 			ecm_db_iface_interface_name_get(interfaces[i], &name[0]);
-			DEBUG_TRACE("%p: Found bridge port: '%s' interface is %d (%s)\n", ci,
+			DEBUG_TRACE("%px: Found bridge port: '%s' interface is %d (%s)\n", ci,
 				ecm_db_obj_dir_strings[dir], index,
 				name);
 			system_index = index;
@@ -407,7 +412,6 @@ static int32_t ecm_classifier_hyfi_get_intf_id(struct ecm_db_connection_instance
 	return system_index;
 }
 
-
 /* ecm_classifier_hyfi_get_bridge_name()
  *	Get the bridge name from the connection hierarchy
  */
@@ -421,7 +425,7 @@ static void ecm_classifier_hyfi_get_bridge_name(struct ecm_db_connection_instanc
 	intf_first = ecm_db_connection_interfaces_get_and_ref(ci, interfaces, dir);
 
 	if (intf_first == ECM_DB_IFACE_HEIRARCHY_MAX) {
-		DEBUG_WARN("%p: Error fetching bridge name\n", ci);
+		DEBUG_WARN("%px: Error fetching bridge name\n", ci);
 		return;
 	}
 
@@ -474,13 +478,13 @@ static void ecm_classifier_hyfi_sync_to_v4(struct ecm_classifier_instance *aci, 
 	int32_t from_system_index;
 
 	if (sync->reason != ECM_FRONT_END_IPV4_RULE_SYNC_REASON_STATS) {
-		DEBUG_TRACE("%p: Update not due to stats: %d\n",
+		DEBUG_TRACE("%px: Update not due to stats: %d\n",
 			aci, sync->reason);
 		return;
 	}
 
 	chfi = (struct ecm_classifier_hyfi_instance *)aci;
-	DEBUG_CHECK_MAGIC(chfi, ECM_CLASSIFIER_HYFI_INSTANCE_MAGIC, "%p: magic failed", chfi);
+	DEBUG_CHECK_MAGIC(chfi, ECM_CLASSIFIER_HYFI_INSTANCE_MAGIC, "%px: magic failed", chfi);
 
 	if (chfi->hyfi_state &
 			(ECM_CLASSIFIER_HYFI_STATE_IGNORE)) {
@@ -489,7 +493,7 @@ static void ecm_classifier_hyfi_sync_to_v4(struct ecm_classifier_instance *aci, 
 
 	ci = ecm_db_connection_serial_find_and_ref(chfi->ci_serial);
 	if (!ci) {
-		DEBUG_TRACE("%p: No ci found for %u\n", chfi, chfi->ci_serial);
+		DEBUG_TRACE("%px: No ci found for %u\n", chfi, chfi->ci_serial);
 		return;
 	}
 
@@ -595,7 +599,7 @@ static void ecm_classifier_hyfi_sync_to_v4(struct ecm_classifier_instance *aci, 
 			 * previously requested operation)
 			 */
 			feci->regenerate(feci, ci);
-			DEBUG_INFO("%p: Mismatch for %u egress port between HyFi and "
+			DEBUG_INFO("%px: Mismatch for %u egress port between HyFi and "
 				"ECM,\nregenerate start %lu, end %lu, "
 				"previous start %lu, end %lu (@%u)\n",
 				ci, chfi->flow.ecm_serial, start_time, end_time,
@@ -604,18 +608,18 @@ static void ecm_classifier_hyfi_sync_to_v4(struct ecm_classifier_instance *aci, 
 			chfi->flow.cmd_time_begun = start_time;
 			chfi->flow.cmd_time_completed = end_time;
 		} else {
-			DEBUG_INFO("%p: Mismatch for %u egress port between HyFi and "
+			DEBUG_INFO("%px: Mismatch for %u egress port between HyFi and "
 				"ECM,\nbut previous regeneration in progress start "
 				" %lu, end %lu (@%u)\n",
 				ci, chfi->flow.ecm_serial, start_time, end_time, time_now);
 		}
-		feci->deref(feci);
+		ecm_front_end_connection_deref(feci);
 	}
 
 	ecm_db_connection_deref(ci);
 
 	if (ret_fwd < 0 || ret_rev < 0) {
-		DEBUG_ERROR("%p: Error updating stats", aci);
+		DEBUG_ERROR_RATELIMITED("%px: Error updating stats", aci);
 		return;
 	}
 
@@ -646,7 +650,7 @@ static void ecm_classifier_hyfi_sync_from_v4(struct ecm_classifier_instance *aci
 	struct ecm_classifier_hyfi_instance *chfi;
 
 	chfi = (struct ecm_classifier_hyfi_instance *)aci;
-	DEBUG_CHECK_MAGIC(chfi, ECM_CLASSIFIER_HYFI_INSTANCE_MAGIC, "%p: magic failed", chfi);
+	DEBUG_CHECK_MAGIC(chfi, ECM_CLASSIFIER_HYFI_INSTANCE_MAGIC, "%px: magic failed", chfi);
 }
 
 /*
@@ -668,7 +672,7 @@ static void ecm_classifier_hyfi_sync_from_v6(struct ecm_classifier_instance *aci
 	struct ecm_classifier_hyfi_instance *chfi;
 
 	chfi = (struct ecm_classifier_hyfi_instance *)aci;
-	DEBUG_CHECK_MAGIC(chfi, ECM_CLASSIFIER_HYFI_INSTANCE_MAGIC, "%p: magic failed", chfi);
+	DEBUG_CHECK_MAGIC(chfi, ECM_CLASSIFIER_HYFI_INSTANCE_MAGIC, "%px: magic failed", chfi);
 
 }
 
@@ -681,7 +685,7 @@ static ecm_classifier_type_t ecm_classifier_hyfi_type_get(struct ecm_classifier_
 	struct ecm_classifier_hyfi_instance *chfi;
 	chfi = (struct ecm_classifier_hyfi_instance *)ci;
 
-	DEBUG_CHECK_MAGIC(chfi, ECM_CLASSIFIER_HYFI_INSTANCE_MAGIC, "%p: magic failed\n", chfi);
+	DEBUG_CHECK_MAGIC(chfi, ECM_CLASSIFIER_HYFI_INSTANCE_MAGIC, "%px: magic failed\n", chfi);
 	return ECM_CLASSIFIER_TYPE_HYFI;
 }
 
@@ -695,7 +699,7 @@ static void ecm_classifier_hyfi_last_process_response_get(struct ecm_classifier_
 	struct ecm_classifier_hyfi_instance *chfi;
 
 	chfi = (struct ecm_classifier_hyfi_instance *)ci;
-	DEBUG_CHECK_MAGIC(chfi, ECM_CLASSIFIER_HYFI_INSTANCE_MAGIC, "%p: magic failed\n", chfi);
+	DEBUG_CHECK_MAGIC(chfi, ECM_CLASSIFIER_HYFI_INSTANCE_MAGIC, "%px: magic failed\n", chfi);
 
 	spin_lock_bh(&ecm_classifier_hyfi_lock);
 	*process_response = chfi->process_response;
@@ -710,7 +714,7 @@ static bool ecm_classifier_hyfi_reclassify_allowed(struct ecm_classifier_instanc
 {
 	struct ecm_classifier_hyfi_instance *chfi;
 	chfi = (struct ecm_classifier_hyfi_instance *)ci;
-	DEBUG_CHECK_MAGIC(chfi, ECM_CLASSIFIER_HYFI_INSTANCE_MAGIC, "%p: magic failed\n", chfi);
+	DEBUG_CHECK_MAGIC(chfi, ECM_CLASSIFIER_HYFI_INSTANCE_MAGIC, "%px: magic failed\n", chfi);
 
 	return true;
 }
@@ -723,7 +727,7 @@ static void ecm_classifier_hyfi_reclassify(struct ecm_classifier_instance *ci)
 {
 	struct ecm_classifier_hyfi_instance *chfi;
 	chfi = (struct ecm_classifier_hyfi_instance *)ci;
-	DEBUG_CHECK_MAGIC(chfi, ECM_CLASSIFIER_HYFI_INSTANCE_MAGIC, "%p: magic failed\n", chfi);
+	DEBUG_CHECK_MAGIC(chfi, ECM_CLASSIFIER_HYFI_INSTANCE_MAGIC, "%px: magic failed\n", chfi);
 }
 
 #ifdef ECM_STATE_OUTPUT_ENABLE
@@ -738,7 +742,7 @@ static int ecm_classifier_hyfi_state_get(struct ecm_classifier_instance *ci, str
 	struct ecm_classifier_process_response process_response;
 
 	chfi = (struct ecm_classifier_hyfi_instance *)ci;
-	DEBUG_CHECK_MAGIC(chfi, ECM_CLASSIFIER_HYFI_INSTANCE_MAGIC, "%p: magic failed", chfi);
+	DEBUG_CHECK_MAGIC(chfi, ECM_CLASSIFIER_HYFI_INSTANCE_MAGIC, "%px: magic failed", chfi);
 
 	if ((result = ecm_state_prefix_add(sfi, "hyfi"))) {
 		return result;
@@ -759,22 +763,29 @@ static int ecm_classifier_hyfi_state_get(struct ecm_classifier_instance *ci, str
 }
 #endif
 
-static bool ecm_classifier_hyfi_should_keep_connection(
-	struct ecm_classifier_instance *aci, uint8_t *mac)
+static void ecm_classifier_hyfi_should_keep_connection(
+	struct ecm_classifier_instance *aci, struct ecm_db_connection_defunct_info *info)
 {
 	struct ecm_classifier_hyfi_instance *chfi;
+	/*
+	 * If the event is STA join, classifer does not care about the
+	 * the connection defunct, so we return.
+	 */
+	if (info->type == ECM_DB_CONNECTION_DEFUNCT_TYPE_STA_JOIN) {
+		return;
+	}
 
 	chfi = (struct ecm_classifier_hyfi_instance *)aci;
 	DEBUG_CHECK_MAGIC(chfi, ECM_CLASSIFIER_HYFI_INSTANCE_MAGIC,
-		"%p: magic failed", chfi);
+		"%px: magic failed", chfi);
 
 	if (chfi->hyfi_state &
 			(ECM_CLASSIFIER_HYFI_STATE_IGNORE)) {
 		/* HyFi doesn't care if connection deleted */
-		return false;
+		return;
 	}
 
-	return hyfi_ecm_should_keep(&chfi->flow, mac, chfi->bridge_name);
+	info->should_keep_connection = hyfi_ecm_should_keep(&chfi->flow, info->mac, chfi->bridge_name);
 }
 
 /*
@@ -858,7 +869,7 @@ struct ecm_classifier_hyfi_instance *ecm_classifier_hyfi_instance_alloc(struct e
 	 */
 	if (ecm_classifier_hyfi_terminate_pending) {
 		spin_unlock_bh(&ecm_classifier_hyfi_lock);
-		DEBUG_INFO("%p: Terminating\n", ci);
+		DEBUG_INFO("%px: Terminating\n", ci);
 		kfree(chfi);
 		return NULL;
 	}
@@ -876,10 +887,10 @@ struct ecm_classifier_hyfi_instance *ecm_classifier_hyfi_instance_alloc(struct e
 	 * Increment stats
 	 */
 	ecm_classifier_hyfi_count++;
-	DEBUG_ASSERT(ecm_classifier_hyfi_count > 0, "%p: ecm_classifier_hyfi_count wrap\n", chfi);
+	DEBUG_ASSERT(ecm_classifier_hyfi_count > 0, "%px: ecm_classifier_hyfi_count wrap\n", chfi);
 	spin_unlock_bh(&ecm_classifier_hyfi_lock);
 
-	DEBUG_INFO("HyFi instance alloc: %p\n", chfi);
+	DEBUG_INFO("HyFi instance alloc: %px\n", chfi);
 	return chfi;
 }
 EXPORT_SYMBOL(ecm_classifier_hyfi_instance_alloc);
@@ -892,7 +903,7 @@ static void ecm_classifier_hyfi_connection_added(void *arg, struct ecm_db_connec
 {
 #if (DEBUG_LEVEL > 2)
 	uint32_t serial = ecm_db_connection_serial_get(ci);
-	DEBUG_INFO("%p: HYFI LISTENER: added conn with serial: %u\n", ci, serial);
+	DEBUG_INFO("%px: HYFI LISTENER: added conn with serial: %u\n", ci, serial);
 #endif
 }
 
@@ -906,20 +917,20 @@ static void ecm_classifier_hyfi_connection_removed(void *arg, struct ecm_db_conn
 	struct ecm_classifier_hyfi_instance *chfi;
 	uint32_t serial = ecm_db_connection_serial_get(ci);
 
-	DEBUG_INFO("%p: HYFI LISTENER: removed conn with serial: %u\n", ci, serial);
+	DEBUG_INFO("%px: HYFI LISTENER: removed conn with serial: %u\n", ci, serial);
 
 	/*
 	 * Only handle events if there is an HyFi classifier attached
 	 */
 	aci = ecm_db_connection_assigned_classifier_find_and_ref(ci, ECM_CLASSIFIER_TYPE_HYFI);
 	if (!aci) {
-		DEBUG_TRACE("%p: Connection removed ignored"
+		DEBUG_TRACE("%px: Connection removed ignored"
 			" - no HyFi classifier\n", ci);
 		return;
 	}
 
 	chfi = (struct ecm_classifier_hyfi_instance *)aci;
-	DEBUG_INFO("%p: removed conn with serial: %u, "
+	DEBUG_INFO("%px: removed conn with serial: %u, "
 		"hash 0x%x, rev hash 0x%x\n",
 		aci, serial, chfi->flow.hash, chfi->flow.reverse_hash);
 
@@ -1027,7 +1038,7 @@ static ssize_t ecm_classifier_hyfi_set_command(struct file *file,
 		DEBUG_WARN("database connection not found\n");
 		return -ENOMEM;
 	}
-	DEBUG_TRACE("Connection found: %p\n", ci);
+	DEBUG_TRACE("Connection found: %px\n", ci);
 
 	/*
 	 * Get the Hy-Fi classifier instance
@@ -1036,7 +1047,7 @@ static ssize_t ecm_classifier_hyfi_set_command(struct file *file,
 		ci, ECM_CLASSIFIER_TYPE_HYFI);
 
 	if (!classi) {
-		DEBUG_WARN("%p: No Hy-Fi classifier instance\n", ci);
+		DEBUG_WARN("%px: No Hy-Fi classifier instance\n", ci);
 		ecm_db_connection_deref(ci);
 		return -ENOMEM;
 	}
@@ -1064,9 +1075,9 @@ static ssize_t ecm_classifier_hyfi_set_command(struct file *file,
 		chfi->flow.cmd_time_begun = feci->stats.cmd_time_begun;
 		chfi->flow.cmd_time_completed = feci->stats.cmd_time_completed;
 		feci->regenerate(feci, ci);
-		feci->deref(feci);
+		ecm_front_end_connection_deref(feci);
 
-		DEBUG_TRACE("%p: Force regeneration %u start_time %lu end_time"
+		DEBUG_TRACE("%px: Force regeneration %u start_time %lu end_time"
 			" %lu (@%lu)\n", ci, serial,
 			chfi->flow.cmd_time_begun,
 			chfi->flow.cmd_time_completed, jiffies);

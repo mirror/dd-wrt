@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2015-2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2015-2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -21,6 +21,8 @@
 
 #ifndef _NSS_PPTP_H_
 #define _NSS_PPTP_H_
+
+#include "nss_dynamic_interface.h"
 
 /**
  * @addtogroup nss_pptp_subsystem
@@ -62,6 +64,52 @@ enum nss_pptp_exception_events {
 	PPTP_EXCEPTION_EVENT_DECAP_UNSUPPORTED_PPP_PROTO,
 	PPTP_EXCEPTION_EVENT_DECAP_PNODE_ENQUEUE_FAIL,
 	PPTP_EXCEPTION_EVENT_MAX,
+};
+
+/**
+ * nss_pptp_stats_session
+ * 	PPTP debug statistics.
+ */
+enum nss_pptp_stats_session {
+	NSS_PPTP_STATS_ENCAP_RX_PACKETS,
+	NSS_PPTP_STATS_ENCAP_RX_BYTES,
+	NSS_PPTP_STATS_ENCAP_TX_PACKETS,
+	NSS_PPTP_STATS_ENCAP_TX_BYTES,
+	NSS_PPTP_STATS_ENCAP_RX_QUEUE_0_DROP,
+	NSS_PPTP_STATS_ENCAP_RX_QUEUE_1_DROP,
+	NSS_PPTP_STATS_ENCAP_RX_QUEUE_2_DROP,
+	NSS_PPTP_STATS_ENCAP_RX_QUEUE_3_DROP,
+	NSS_PPTP_STATS_DECAP_RX_PACKETS,
+	NSS_PPTP_STATS_DECAP_RX_BYTES,
+	NSS_PPTP_STATS_DECAP_TX_PACKETS,
+	NSS_PPTP_STATS_DECAP_TX_BYTES,
+	NSS_PPTP_STATS_DECAP_RX_QUEUE_0_DROP,
+	NSS_PPTP_STATS_DECAP_RX_QUEUE_1_DROP,
+	NSS_PPTP_STATS_DECAP_RX_QUEUE_2_DROP,
+	NSS_PPTP_STATS_DECAP_RX_QUEUE_3_DROP,
+	NSS_PPTP_STATS_SESSION_ENCAP_HEADROOM_ERR,
+	NSS_PPTP_STATS_SESSION_ENCAP_SMALL_SIZE,
+	NSS_PPTP_STATS_SESSION_ENCAP_PNODE_ENQUEUE_FAIL,
+	NSS_PPTP_STATS_SESSION_DECAP_NO_SEQ_NOR_ACK,
+	NSS_PPTP_STATS_SESSION_DECAP_INVAL_GRE_FLAGS,
+	NSS_PPTP_STATS_SESSION_DECAP_INVAL_GRE_PROTO,
+	NSS_PPTP_STATS_SESSION_DECAP_WRONG_SEQ,
+	NSS_PPTP_STATS_SESSION_DECAP_INVAL_PPP_HDR,
+	NSS_PPTP_STATS_SESSION_DECAP_PPP_LCP,
+	NSS_PPTP_STATS_SESSION_DECAP_UNSUPPORTED_PPP_PROTO,
+	NSS_PPTP_STATS_SESSION_DECAP_PNODE_ENQUEUE_FAIL,
+	NSS_PPTP_STATS_SESSION_MAX
+};
+
+/**
+ * nss_pptp_stats_notification
+ *	PPTP statistics structure.
+ */
+struct nss_pptp_stats_notification {
+	uint32_t core_id;				/**< Core ID. */
+	uint32_t if_num;				/**< Interface number. */
+	enum nss_dynamic_interface_type if_type;	/**< Dynamic interface type. */
+	uint64_t stats[NSS_PPTP_STATS_SESSION_MAX];	/**< PPTP statistics. */
 };
 
 /**
@@ -261,6 +309,34 @@ extern void nss_pptp_register_handler(void);
  * None.
  */
 extern void nss_pptp_session_debug_stats_get(void *stats_mem);
+
+/**
+ * nss_pptp_stats_register_notifier
+ *	Registers a statistics notifier.
+ *
+ * @datatypes
+ * notifier_block
+ *
+ * @param[in] nb Notifier block.
+ *
+ * @return
+ * 0 on success or -2 on failure.
+ */
+extern int nss_pptp_stats_register_notifier(struct notifier_block *nb);
+
+/**
+ * nss_pptp_stats_unregister_notifier
+ *	Deregisters a statistics notifier.
+ *
+ * @datatypes
+ * notifier_block
+ *
+ * @param[in] nb Notifier block.
+ *
+ * @return
+ * 0 on success or -2 on failure.
+ */
+extern int nss_pptp_stats_unregister_notifier(struct notifier_block *nb);
 
 /**
  * @}

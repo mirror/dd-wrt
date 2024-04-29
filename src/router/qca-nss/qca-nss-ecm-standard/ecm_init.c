@@ -1,16 +1,19 @@
 /*
  **************************************************************************
- * Copyright (c) 2014-2016, 2018, The Linux Foundation.  All rights reserved.
- * Permission to use, copy, modify, and/or distribute this software for
- * any purpose with or without fee is hereby granted, provided that the
- * above copyright notice and this permission notice appear in all copies.
+ * Copyright (c) 2014-2016, 2018, 2020-2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022, Qualcomm Innovation Center, Inc. All rights reserved.
+ *
+ * Permission to use, copy, modify, and/or distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies.
+ *
  * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
  * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
  * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
  * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
  * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
- * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT
- * OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+ * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+ * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  **************************************************************************
  */
 #include <linux/version.h>
@@ -22,6 +25,10 @@
 #include <net/netfilter/nf_conntrack.h>
 #include <net/ip.h>
 #include <net/ipv6.h>
+#ifdef ECM_FRONT_END_PPE_ENABLE
+#include <ppe_drv.h>
+#endif
+
 /*
  * Debug output levels
  * 0 = OFF
@@ -46,6 +53,8 @@
 #include "ecm_front_end_common.h"
 #include "ecm_conntrack_notifier.h"
 
+enum ecm_front_end_type selected_front_end;
+
 int front_end_selection;
 module_param(front_end_selection, int, 0);
 MODULE_PARM_DESC(front_end_selection, "Select front end for ECM");
@@ -58,6 +67,11 @@ extern void ecm_db_exit(void);
 
 extern int ecm_classifier_default_init(struct dentry *dentry);
 extern void ecm_classifier_default_exit(void);
+
+#ifdef ECM_CLASSIFIER_OVS_ENABLE
+extern int ecm_classifier_ovs_init(struct dentry *dentry);
+extern void ecm_classifier_ovs_exit(void);
+#endif
 
 #ifdef ECM_CLASSIFIER_MARK_ENABLE
 extern int ecm_classifier_mark_init(struct dentry *dentry);
@@ -92,6 +106,15 @@ extern int ecm_classifier_pcc_init(struct dentry *dentry);
 extern void ecm_classifier_pcc_exit(void);
 #endif
 
+#ifdef ECM_CLASSIFIER_EMESH_ENABLE
+extern int ecm_classifier_emesh_sawf_init(struct dentry *dentry);
+extern void ecm_classifier_emesh_sawf_exit(void);
+#endif
+#ifdef ECM_CLASSIFIER_MSCS_ENABLE
+extern int ecm_classifier_mscs_init(struct dentry *dentry);
+extern void ecm_classifier_mscs_exit(void);
+#endif
+
 /*
  * ecm_init()
  */
@@ -99,7 +122,18 @@ static int __init ecm_init(void)
 {
 	int ret;
 
-	printk(KERN_INFO "ECM init\n");
+	printk(KERN_INFO "ECM init ( QSDK 12.1.r5_CS1 2022-11-25 1c401a1 )\n");
+
+	selected_front_end = ecm_front_end_type_select();
+	if (selected_front_end == ECM_FRONT_END_TYPE_MAX) {
+		DEBUG_ERROR("Front-end couldn't be selected\n");
+		return -1;
+	}
+
+	if (!ecm_front_end_set_ae_precendence_array(selected_front_end)) {
+		DEBUG_ERROR("Acceleration engine precedence array couldn't be set\n");
+		return -1;
+	}
 
 	ecm_dentry = debugfs_create_dir("ecm", NULL);
 	if (!ecm_dentry) {
@@ -151,6 +185,27 @@ static int __init ecm_init(void)
 	}
 #endif
 
+#ifdef ECM_CLASSIFIER_OVS_ENABLE
+	ret = ecm_classifier_ovs_init(ecm_dentry);
+	if (0 != ret) {
+		goto err_cls_ovs;
+	}
+#endif
+
+#ifdef ECM_CLASSIFIER_EMESH_ENABLE
+	ret = ecm_classifier_emesh_sawf_init(ecm_dentry);
+	if (0 != ret) {
+		goto err_cls_emesh;
+	}
+#endif
+
+#ifdef ECM_CLASSIFIER_MSCS_ENABLE
+	ret = ecm_classifier_mscs_init(ecm_dentry);
+	if (0 != ret) {
+		goto err_cls_mscs;
+	}
+#endif
+
 	ret = ecm_interface_init();
 	if (0 != ret) {
 		goto err_iface;
@@ -187,6 +242,13 @@ static int __init ecm_init(void)
 	}
 #endif
 
+#ifdef ECM_FRONT_END_PPE_ENABLE
+	if (ecm_front_end_ppe_fse_enable) {
+		ppe_drv_fse_feature_enable();
+	}
+#endif
+	ecm_front_end_common_sysctl_register();
+
 	printk(KERN_INFO "ECM init complete\n");
 	return 0;
 
@@ -207,6 +269,14 @@ err_bond:
 #endif
 	ecm_interface_exit();
 err_iface:
+#ifdef ECM_CLASSIFIER_EMESH_ENABLE
+	ecm_classifier_emesh_sawf_exit();
+err_cls_emesh:
+#endif
+#ifdef ECM_CLASSIFIER_OVS_ENABLE
+	ecm_classifier_ovs_exit();
+err_cls_ovs:
+#endif
 #ifdef ECM_CLASSIFIER_MARK_ENABLE
 	ecm_classifier_mark_exit();
 err_cls_mark:
@@ -226,6 +296,10 @@ err_cls_hyfi:
 #ifdef ECM_CLASSIFIER_NL_ENABLE
 	ecm_classifier_nl_rules_exit();
 err_cls_nl:
+#endif
+#ifdef ECM_CLASSIFIER_MSCS_ENABLE
+	ecm_classifier_mscs_exit();
+err_cls_mscs:
 #endif
 	ecm_classifier_default_exit();
 err_cls_default:
@@ -300,6 +374,18 @@ static void __exit ecm_exit(void)
 	DEBUG_INFO("exit mark classifier\n");
 	ecm_classifier_mark_exit();
 #endif
+#ifdef ECM_CLASSIFIER_OVS_ENABLE
+	DEBUG_INFO("exit ovs classifier\n");
+	ecm_classifier_ovs_exit();
+#endif
+#ifdef ECM_CLASSIFIER_EMESH_ENABLE
+	DEBUG_INFO("exit emesh classifier\n");
+	ecm_classifier_emesh_sawf_exit();
+#endif
+#ifdef ECM_CLASSIFIER_MSCS_ENABLE
+	DEBUG_INFO("exit mscs classifier\n");
+	ecm_classifier_mscs_exit();
+#endif
 	DEBUG_INFO("exit default classifier\n");
 	ecm_classifier_default_exit();
 	DEBUG_INFO("exit db\n");
@@ -309,6 +395,13 @@ static void __exit ecm_exit(void)
 		DEBUG_INFO("remove ecm debugfs\n");
 		debugfs_remove_recursive(ecm_dentry);
 	}
+
+	ecm_front_end_common_sysctl_unregister();
+#ifdef ECM_FRONT_END_PPE_ENABLE
+	if (ecm_front_end_ppe_fse_enable) {
+		ppe_drv_fse_feature_disable();
+	}
+#endif
 
 	printk(KERN_INFO "ECM exit complete\n");
 }

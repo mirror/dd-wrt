@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2019-2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -45,9 +45,8 @@
  */
 #define NSS_OVPNMGR_TUN_DATA_V1       6		/* Data version 1 packet. */
 #define NSS_OVPNMGR_TUN_DATA_V2       9		/* Data version 2 packet. */
-#define NSS_OVPNMGR_TUN_KEY_ID_MASK   0x07	/* Key ID mask, lower 3 bits. */
-#define NSS_OVPNMGR_TUN_OPCODE_SHIFT  3		/* Opcode shift, upper 5 bits. */
-#define NSS_OVPNMGR_TUN_PEER_ID_SHIFT 24	/* Peer ID shift, lower 24 bits. */
+#define NSS_OVPNMGR_TUN_KEY_ID_SHIFT  24	/* Key ID shift, lower 3 bits - 26-24. */
+#define NSS_OVPNMGR_TUN_OPCODE_SHIFT  27	/* Opcode shift, upper 5 bits - 31-27. */
 #define NSS_OVPNMGR_TUN_PEER_ID_MASK  0xFFFFFF	/* Peer ID mask. */
 
 
@@ -166,6 +165,8 @@ struct nss_ovpnmgr_tun_tuple {
 	uint32_t dst_ip[4];	/* IPv4/v6 destination ip address. */
 	uint16_t src_port;	/* UDP source port. */
 	uint16_t dst_port;	/* UDP destination port. */
+	uint8_t hop_limit;	/* TTL or next hop limit. */
+	uint8_t res[3];		/* Reserved for Alignment. */
 };
 
 int nss_ovpnmgr_app_add(struct net_device *app_dev, enum nss_ovpnmgr_app_mode mode, void *app_data);

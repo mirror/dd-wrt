@@ -1,9 +1,12 @@
 /*
  **************************************************************************
- * Copyright (c) 2014-2016, The Linux Foundation.  All rights reserved.
+ * Copyright (c) 2014-2016, 2020-2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
+ *
  * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
  * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
  * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
@@ -41,11 +44,7 @@
 #include <net/netfilter/nf_conntrack.h>
 #include <net/netfilter/nf_conntrack_helper.h>
 #include <net/netfilter/nf_conntrack_l4proto.h>
-#if (LINUX_VERSION_CODE <= KERNEL_VERSION(4, 2, 0))
-#include <net/netfilter/nf_conntrack_zones.h>
-#else
 #include <linux/netfilter/nf_conntrack_zones_common.h>
-#endif
 #include <net/netfilter/nf_conntrack_core.h>
 #include <net/netfilter/ipv4/nf_conntrack_ipv4.h>
 #include <net/netfilter/ipv4/nf_defrag_ipv4.h>
@@ -71,6 +70,7 @@
 #include "ecm_tracker_tcp.h"
 #include "ecm_classifier_nl.h"
 #include "ecm_db.h"
+#include "ecm_front_end_common.h"
 #include "ecm_front_end_ipv4.h"
 #ifdef ECM_IPV6_ENABLE
 #include "ecm_front_end_ipv6.h"
@@ -145,6 +145,16 @@ static struct genl_multicast_group ecm_cl_nl_genl_mcgrp[] = {
 	},
 };
 
+/*
+ * Generic Netlink attr checking policies
+ */
+static struct nla_policy
+ecm_cl_nl_genl_policy[ECM_CL_NL_GENL_ATTR_COUNT] = {
+	[ECM_CL_NL_GENL_ATTR_TUPLE] = {
+		.type = NLA_UNSPEC,
+		.len = sizeof(struct ecm_cl_nl_genl_attr_tuple), },
+};
+
 static int ecm_classifier_nl_genl_msg_ACCEL(struct sk_buff *skb, struct genl_info *info);
 static int ecm_classifier_nl_genl_msg_DUMP(struct sk_buff *skb, struct netlink_callback *cb);
 
@@ -155,18 +165,21 @@ static struct genl_ops ecm_cl_nl_genl_ops[] = {
 	{
 		.cmd = ECM_CL_NL_GENL_CMD_ACCEL,
 		.flags = 0,
+		.policy = ecm_cl_nl_genl_policy,
 		.doit = ecm_classifier_nl_genl_msg_ACCEL,
 		.dumpit = NULL,
 	},
 	{
 		.cmd = ECM_CL_NL_GENL_CMD_ACCEL_OK,
 		.flags = 0,
+		.policy = ecm_cl_nl_genl_policy,
 		.doit = NULL,
 		.dumpit = ecm_classifier_nl_genl_msg_DUMP,
 	},
 	{
 		.cmd = ECM_CL_NL_GENL_CMD_CONNECTION_CLOSED,
 		.flags = 0,
+		.policy = ecm_cl_nl_genl_policy,
 		.doit = NULL,
 		.dumpit = ecm_classifier_nl_genl_msg_DUMP,
 	},
@@ -220,7 +233,7 @@ ecm_classifier_nl_send_genl_msg(enum ECM_CL_NL_GENL_CMD cmd,
 	 */
 	total_len = nlmsg_total_size(buf_len);
 	skb = genlmsg_new(total_len, GFP_ATOMIC);
-	if (skb == NULL) {
+	if (!skb) {
 		DEBUG_WARN("failed to alloc nlmsg\n");
 		return -ENOMEM;
 	}
@@ -231,7 +244,7 @@ ecm_classifier_nl_send_genl_msg(enum ECM_CL_NL_GENL_CMD cmd,
 			       &ecm_cl_nl_genl_family,
 			       0, /* flags */
 			       cmd);
-	if (msg_head == NULL) {
+	if (!msg_head) {
 		DEBUG_WARN("failed to add genl headers\n");
 		nlmsg_free(skb);
 		return -ENOMEM;
@@ -247,15 +260,11 @@ ecm_classifier_nl_send_genl_msg(enum ECM_CL_NL_GENL_CMD cmd,
 	genlmsg_end(skb, msg_head);
 
 	/* genlmsg_multicast frees the skb in both success and error cases */
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 13, 0)
 	ret = genlmsg_multicast(&ecm_cl_nl_genl_family,
 				skb,
 				0,
 				0,
 				GFP_ATOMIC);
-#else
-	ret = genlmsg_multicast(skb, 0, ecm_cl_nl_genl_mcgrp[0].id, GFP_ATOMIC);
-#endif
 	if (ret != 0) {
 		DEBUG_WARN("genl multicast failed: %d\n", ret);
 		return ret;
@@ -347,7 +356,7 @@ static void ecm_classifier_nl_genl_msg_ACCEL_OK(struct ecm_classifier_nl_instanc
 	 */
 	ci = ecm_db_connection_serial_find_and_ref(cnli->ci_serial);
 	if (!ci) {
-		DEBUG_TRACE("%p: No ci found for %u\n", cnli, cnli->ci_serial);
+		DEBUG_TRACE("%px: No ci found for %u\n", cnli, cnli->ci_serial);
 		return;
 	}
 
@@ -387,7 +396,7 @@ static void ecm_classifier_nl_genl_msg_ACCEL_OK(struct ecm_classifier_nl_instanc
 	ret = ecm_classifier_nl_send_genl_msg(ECM_CL_NL_GENL_CMD_ACCEL_OK,
 					      &tuple);
 	if (ret != 0) {
-		DEBUG_WARN("failed to send ACCEL_OK: %p, serial %u\n",
+		DEBUG_WARN("failed to send ACCEL_OK: %px, serial %u\n",
 			   cnli, cnli->ci_serial);
 		return;
 	}
@@ -506,7 +515,7 @@ static int ecm_classifier_nl_genl_msg_ACCEL(struct sk_buff *skb,
 		DEBUG_WARN("database connection not found\n");
 		return -ENOENT;
 	}
-	DEBUG_TRACE("Connection found: %p\n", ci);
+	DEBUG_TRACE("Connection found: %px\n", ci);
 
 	/*
 	 * Get the NL classifier for this connection
@@ -523,7 +532,7 @@ static int ecm_classifier_nl_genl_msg_ACCEL(struct sk_buff *skb,
 	 * Allow acceleration of the connection.  This will be done as
 	 * packets are processed in the usual way.
 	 */
-	DEBUG_TRACE("Permit accel: %p\n", ci);
+	DEBUG_TRACE("Permit accel: %px\n", ci);
 	spin_lock_bh(&ecm_classifier_nl_lock);
 	cnli->process_response.accel_mode =
 		ECM_CLASSIFIER_ACCELERATION_MODE_ACCEL;
@@ -536,7 +545,6 @@ static int ecm_classifier_nl_genl_msg_ACCEL(struct sk_buff *skb,
 	return 0;
 }
 
-
 /*
  * ecm_classifier_nl_ref()
  *	Ref
@@ -546,11 +554,11 @@ static void ecm_classifier_nl_ref(struct ecm_classifier_instance *ci)
 	struct ecm_classifier_nl_instance *cnli;
 	cnli = (struct ecm_classifier_nl_instance *)ci;
 
-	DEBUG_CHECK_MAGIC(cnli, ECM_CLASSIFIER_NL_INSTANCE_MAGIC, "%p: magic failed\n", cnli);
+	DEBUG_CHECK_MAGIC(cnli, ECM_CLASSIFIER_NL_INSTANCE_MAGIC, "%px: magic failed\n", cnli);
 	spin_lock_bh(&ecm_classifier_nl_lock);
 	cnli->refs++;
-	DEBUG_TRACE("%p: cnli ref %d\n", cnli, cnli->refs);
-	DEBUG_ASSERT(cnli->refs > 0, "%p: ref wrap\n", cnli);
+	DEBUG_TRACE("%px: cnli ref %d\n", cnli, cnli->refs);
+	DEBUG_ASSERT(cnli->refs > 0, "%px: ref wrap\n", cnli);
 	spin_unlock_bh(&ecm_classifier_nl_lock);
 }
 
@@ -563,12 +571,12 @@ static int ecm_classifier_nl_deref(struct ecm_classifier_instance *ci)
 	struct ecm_classifier_nl_instance *cnli;
 	cnli = (struct ecm_classifier_nl_instance *)ci;
 
-	DEBUG_CHECK_MAGIC(cnli, ECM_CLASSIFIER_NL_INSTANCE_MAGIC, "%p: magic failed\n", cnli);
+	DEBUG_CHECK_MAGIC(cnli, ECM_CLASSIFIER_NL_INSTANCE_MAGIC, "%px: magic failed\n", cnli);
 
 	spin_lock_bh(&ecm_classifier_nl_lock);
 	cnli->refs--;
-	DEBUG_ASSERT(cnli->refs >= 0, "%p: refs wrapped\n", cnli);
-	DEBUG_TRACE("%p: Netlink classifier deref %d\n", cnli, cnli->refs);
+	DEBUG_ASSERT(cnli->refs >= 0, "%px: refs wrapped\n", cnli);
+	DEBUG_TRACE("%px: Netlink classifier deref %d\n", cnli, cnli->refs);
 	if (cnli->refs) {
 		int refs = cnli->refs;
 		spin_unlock_bh(&ecm_classifier_nl_lock);
@@ -579,7 +587,7 @@ static int ecm_classifier_nl_deref(struct ecm_classifier_instance *ci)
 	 * Object to be destroyed
 	 */
 	ecm_classifier_nl_count--;
-	DEBUG_ASSERT(ecm_classifier_nl_count >= 0, "%p: ecm_classifier_nl_count wrap\n", cnli);
+	DEBUG_ASSERT(ecm_classifier_nl_count >= 0, "%px: ecm_classifier_nl_count wrap\n", cnli);
 
 	/*
 	 * UnLink the instance from our list
@@ -590,7 +598,7 @@ static int ecm_classifier_nl_deref(struct ecm_classifier_instance *ci)
 	if (cnli->prev) {
 		cnli->prev->next = cnli->next;
 	} else {
-		DEBUG_ASSERT(ecm_classifier_nl_instances == cnli, "%p: list bad %p\n", cnli, ecm_classifier_nl_instances);
+		DEBUG_ASSERT(ecm_classifier_nl_instances == cnli, "%px: list bad %px\n", cnli, ecm_classifier_nl_instances);
 		ecm_classifier_nl_instances = cnli->next;
 	}
 	cnli->next = NULL;
@@ -600,7 +608,7 @@ static int ecm_classifier_nl_deref(struct ecm_classifier_instance *ci)
 	/*
 	 * Final
 	 */
-	DEBUG_INFO("%p: Final Netlink classifier instance\n", cnli);
+	DEBUG_INFO("%px: Final Netlink classifier instance\n", cnli);
 	kfree(cnli);
 
 	return 0;
@@ -651,21 +659,21 @@ ecm_classifier_nl_process_mark(struct ecm_classifier_nl_instance *cnli,
 	 */
 	ci = ecm_db_connection_serial_find_and_ref(cnli->ci_serial);
 	if (!ci) {
-		DEBUG_TRACE("%p: No ci found for %u\n", cnli, cnli->ci_serial);
+		DEBUG_TRACE("%px: No ci found for %u\n", cnli, cnli->ci_serial);
 		return;
 	}
 	feci = ecm_db_connection_front_end_get_and_ref(ci);
-	accel_mode = feci->accel_state_get(feci);
+	accel_mode = ecm_front_end_connection_accel_state_get(feci);
 	if ((accel_mode == ECM_FRONT_END_ACCELERATION_MODE_ACCEL)
 			|| (accel_mode == ECM_FRONT_END_ACCELERATION_MODE_ACCEL_PENDING)) {
-		DEBUG_TRACE("%p: mark changed on offloaded connection, decelerate. new mark: 0x%08x\n",
+		DEBUG_TRACE("%px: mark changed on offloaded connection, decelerate. new mark: 0x%08x\n",
 			    cnli, mark);
 		feci->decelerate(feci);
 	} else {
-		DEBUG_TRACE("%p: mark changed on non-offloaded connection. new mark: 0x%08x\n",
+		DEBUG_TRACE("%px: mark changed on non-offloaded connection. new mark: 0x%08x\n",
 			    cnli, mark);
 	}
-	feci->deref(feci);
+	ecm_front_end_connection_deref(feci);
 	ecm_db_connection_deref(ci);
 }
 EXPORT_SYMBOL(ecm_classifier_nl_process_mark);
@@ -687,7 +695,7 @@ static void ecm_classifier_nl_process(struct ecm_classifier_instance *aci, ecm_t
 	uint32_t became_relevant = 0;
 
 	cnli = (struct ecm_classifier_nl_instance *)aci;
-	DEBUG_CHECK_MAGIC(cnli, ECM_CLASSIFIER_NL_INSTANCE_MAGIC, "%p: magic failed\n", cnli);
+	DEBUG_CHECK_MAGIC(cnli, ECM_CLASSIFIER_NL_INSTANCE_MAGIC, "%px: magic failed\n", cnli);
 
 	/*
 	 * Have we decided our relevance?  If so return our state.
@@ -715,8 +723,8 @@ static void ecm_classifier_nl_process(struct ecm_classifier_instance *aci, ecm_t
 	if (ci) {
 		struct ecm_front_end_connection_instance *feci;
 		feci = ecm_db_connection_front_end_get_and_ref(ci);
-		accel_mode = feci->accel_state_get(feci);
-		feci->deref(feci);
+		accel_mode = ecm_front_end_connection_accel_state_get(feci);
+		ecm_front_end_connection_deref(feci);
 		if (enabled && ECM_FRONT_END_ACCELERATION_POSSIBLE(accel_mode) && ecm_db_connection_is_routed_get(ci)) {
 			relevance = ECM_CLASSIFIER_RELEVANCE_YES;
 			became_relevant = ecm_db_time_get();
@@ -742,7 +750,7 @@ static void ecm_classifier_nl_sync_to_v4(struct ecm_classifier_instance *aci, st
 {
 	struct ecm_classifier_nl_instance *cnli;
 
-	if (!(sync->flow_tx_packet_count || sync->return_tx_packet_count)) {
+	if (!(sync->tx_packet_count[ECM_CONN_DIR_FLOW] || sync->tx_packet_count[ECM_CONN_DIR_RETURN])) {
 		/*
 		 * Nothing to update.
 		 * We only care about flows that are actively being accelerated.
@@ -751,26 +759,26 @@ static void ecm_classifier_nl_sync_to_v4(struct ecm_classifier_instance *aci, st
 	}
 
 	cnli = (struct ecm_classifier_nl_instance *)aci;
-	DEBUG_CHECK_MAGIC(cnli, ECM_CLASSIFIER_NL_INSTANCE_MAGIC, "%p: magic failed", cnli);
+	DEBUG_CHECK_MAGIC(cnli, ECM_CLASSIFIER_NL_INSTANCE_MAGIC, "%px: magic failed", cnli);
 
 	switch(sync->reason) {
 	case ECM_FRONT_END_IPV4_RULE_SYNC_REASON_FLUSH:
 		/* do nothing */
-		DEBUG_TRACE("%p: nl_sync_to_v4: SYNC_FLUSH\n", cnli);
+		DEBUG_TRACE("%px: nl_sync_to_v4: SYNC_FLUSH\n", cnli);
 		break;
 	case ECM_FRONT_END_IPV4_RULE_SYNC_REASON_EVICT:
 		/* do nothing */
-		DEBUG_TRACE("%p: nl_sync_to_v4: SYNC_EVICT\n", cnli);
+		DEBUG_TRACE("%px: nl_sync_to_v4: SYNC_EVICT\n", cnli);
 		break;
 	case ECM_FRONT_END_IPV4_RULE_SYNC_REASON_DESTROY:
-		DEBUG_TRACE("%p: nl_sync_to_v4: SYNC_DESTROY\n", cnli);
+		DEBUG_TRACE("%px: nl_sync_to_v4: SYNC_DESTROY\n", cnli);
 		break;
 	case ECM_FRONT_END_IPV4_RULE_SYNC_REASON_STATS:
-		DEBUG_TRACE("%p: nl_sync_to_v4: SYNC_STATS\n", cnli);
+		DEBUG_TRACE("%px: nl_sync_to_v4: SYNC_STATS\n", cnli);
 		ecm_classifier_nl_genl_msg_ACCEL_OK(cnli);
 		break;
 	default:
-		DEBUG_TRACE("%p: nl_sync_to_v4: unsupported reason\n", cnli);
+		DEBUG_TRACE("%px: nl_sync_to_v4: unsupported reason\n", cnli);
 		break;
 	}
 }
@@ -784,7 +792,7 @@ static void ecm_classifier_nl_sync_from_v4(struct ecm_classifier_instance *aci, 
 	struct ecm_classifier_nl_instance *cnli;
 
 	cnli = (struct ecm_classifier_nl_instance *)aci;
-	DEBUG_CHECK_MAGIC(cnli, ECM_CLASSIFIER_NL_INSTANCE_MAGIC, "%p: magic failed", cnli);
+	DEBUG_CHECK_MAGIC(cnli, ECM_CLASSIFIER_NL_INSTANCE_MAGIC, "%px: magic failed", cnli);
 }
 
 /*
@@ -796,14 +804,14 @@ static void ecm_classifier_nl_sync_to_v6(struct ecm_classifier_instance *aci, st
 	struct ecm_classifier_nl_instance *cnli;
 
 	cnli = (struct ecm_classifier_nl_instance *)aci;
-	DEBUG_CHECK_MAGIC(cnli, ECM_CLASSIFIER_NL_INSTANCE_MAGIC, "%p: magic failed", cnli);
+	DEBUG_CHECK_MAGIC(cnli, ECM_CLASSIFIER_NL_INSTANCE_MAGIC, "%px: magic failed", cnli);
 
-	if (!(sync->flow_tx_packet_count || sync->return_tx_packet_count)) {
+	if (!(sync->tx_packet_count[ECM_CONN_DIR_FLOW] || sync->tx_packet_count[ECM_CONN_DIR_RETURN])) {
 		/*
 		 * No traffic has been accelerated.
 		 * Nothing to update. We only care about flows that are actively being accelerated.
 		 */
-		DEBUG_TRACE("%p: No traffic\n", cnli);
+		DEBUG_TRACE("%px: No traffic\n", cnli);
 		return;
 	}
 
@@ -814,22 +822,22 @@ static void ecm_classifier_nl_sync_to_v6(struct ecm_classifier_instance *aci, st
 	switch(sync->reason) {
 	case ECM_FRONT_END_IPV6_RULE_SYNC_REASON_FLUSH:
 		/* do nothing */
-		DEBUG_TRACE("%p: nl_sync_to_v6: SYNC_FLUSH\n", cnli);
+		DEBUG_TRACE("%px: nl_sync_to_v6: SYNC_FLUSH\n", cnli);
 		break;
 	case ECM_FRONT_END_IPV6_RULE_SYNC_REASON_EVICT:
 		/* do nothing */
-		DEBUG_TRACE("%p: nl_sync_to_v6: SYNC_EVICT\n", cnli);
+		DEBUG_TRACE("%px: nl_sync_to_v6: SYNC_EVICT\n", cnli);
 		break;
 	case ECM_FRONT_END_IPV6_RULE_SYNC_REASON_DESTROY:
 		/* do nothing */
-		DEBUG_TRACE("%p: nl_sync_to_v6: SYNC_DESTROY\n", cnli);
+		DEBUG_TRACE("%px: nl_sync_to_v6: SYNC_DESTROY\n", cnli);
 		break;
 	case ECM_FRONT_END_IPV6_RULE_SYNC_REASON_STATS:
-		DEBUG_TRACE("%p: nl_sync_to_v6: SYNC_STATS\n", cnli);
+		DEBUG_TRACE("%px: nl_sync_to_v6: SYNC_STATS\n", cnli);
 		ecm_classifier_nl_genl_msg_ACCEL_OK(cnli);
 		break;
 	default:
-		DEBUG_TRACE("%p: nl_sync_to_v6: unsupported reason\n", cnli);
+		DEBUG_TRACE("%px: nl_sync_to_v6: unsupported reason\n", cnli);
 		break;
 	}
 }
@@ -843,7 +851,7 @@ static void ecm_classifier_nl_sync_from_v6(struct ecm_classifier_instance *aci, 
 	struct ecm_classifier_nl_instance *cnli;
 
 	cnli = (struct ecm_classifier_nl_instance *)aci;
-	DEBUG_CHECK_MAGIC(cnli, ECM_CLASSIFIER_NL_INSTANCE_MAGIC, "%p: magic failed", cnli);
+	DEBUG_CHECK_MAGIC(cnli, ECM_CLASSIFIER_NL_INSTANCE_MAGIC, "%px: magic failed", cnli);
 
 }
 
@@ -856,7 +864,7 @@ static ecm_classifier_type_t ecm_classifier_nl_type_get(struct ecm_classifier_in
 	struct ecm_classifier_nl_instance *cnli;
 	cnli = (struct ecm_classifier_nl_instance *)ci;
 
-	DEBUG_CHECK_MAGIC(cnli, ECM_CLASSIFIER_NL_INSTANCE_MAGIC, "%p: magic failed\n", cnli);
+	DEBUG_CHECK_MAGIC(cnli, ECM_CLASSIFIER_NL_INSTANCE_MAGIC, "%px: magic failed\n", cnli);
 	return ECM_CLASSIFIER_TYPE_NL;
 }
 
@@ -870,7 +878,7 @@ static void ecm_classifier_nl_last_process_response_get(struct ecm_classifier_in
 	struct ecm_classifier_nl_instance *cnli;
 
 	cnli = (struct ecm_classifier_nl_instance *)ci;
-	DEBUG_CHECK_MAGIC(cnli, ECM_CLASSIFIER_NL_INSTANCE_MAGIC, "%p: magic failed\n", cnli);
+	DEBUG_CHECK_MAGIC(cnli, ECM_CLASSIFIER_NL_INSTANCE_MAGIC, "%px: magic failed\n", cnli);
 
 	spin_lock_bh(&ecm_classifier_nl_lock);
 	*process_response = cnli->process_response;
@@ -885,7 +893,7 @@ static bool ecm_classifier_nl_reclassify_allowed(struct ecm_classifier_instance 
 {
 	struct ecm_classifier_nl_instance *cnli;
 	cnli = (struct ecm_classifier_nl_instance *)ci;
-	DEBUG_CHECK_MAGIC(cnli, ECM_CLASSIFIER_NL_INSTANCE_MAGIC, "%p: magic failed\n", cnli);
+	DEBUG_CHECK_MAGIC(cnli, ECM_CLASSIFIER_NL_INSTANCE_MAGIC, "%px: magic failed\n", cnli);
 
 	return true;
 }
@@ -898,7 +906,7 @@ static void ecm_classifier_nl_reclassify(struct ecm_classifier_instance *ci)
 {
 	struct ecm_classifier_nl_instance *cnli;
 	cnli = (struct ecm_classifier_nl_instance *)ci;
-	DEBUG_CHECK_MAGIC(cnli, ECM_CLASSIFIER_NL_INSTANCE_MAGIC, "%p: magic failed\n", cnli);
+	DEBUG_CHECK_MAGIC(cnli, ECM_CLASSIFIER_NL_INSTANCE_MAGIC, "%px: magic failed\n", cnli);
 
 	/*
 	 * Revert back to MAYBE relevant - we will evaluate when we get the next process() call.
@@ -920,7 +928,7 @@ static int ecm_classifier_nl_state_get(struct ecm_classifier_instance *ci, struc
 	struct ecm_classifier_process_response process_response;
 
 	cnli = (struct ecm_classifier_nl_instance *)ci;
-	DEBUG_CHECK_MAGIC(cnli, ECM_CLASSIFIER_NL_INSTANCE_MAGIC, "%p: magic failed", cnli);
+	DEBUG_CHECK_MAGIC(cnli, ECM_CLASSIFIER_NL_INSTANCE_MAGIC, "%px: magic failed", cnli);
 
 	if ((result = ecm_state_prefix_add(sfi, "nl"))) {
 		return result;
@@ -993,12 +1001,8 @@ ip_check_done:
 	tuple.src.u.all = htons(src_port);
 	tuple.dst.u.all = htons(dst_port);
 
-#if (LINUX_VERSION_CODE <= KERNEL_VERSION(4, 2, 0))
-	h = nf_conntrack_find_get(&init_net, NF_CT_DEFAULT_ZONE, &tuple);
-#else
 	h = nf_conntrack_find_get(&init_net, &nf_ct_zone_dflt, &tuple);
-#endif
-	if (NULL == h) {
+	if (!h) {
 		return NULL;
 	}
 
@@ -1015,26 +1019,26 @@ static void ecm_classifier_nl_connection_added(void *arg, struct ecm_db_connecti
 	struct ecm_classifier_instance *classi;
 	struct ecm_classifier_nl_instance *cnli;
 	uint32_t serial __attribute__((unused)) = ecm_db_connection_serial_get(ci);
-	DEBUG_INFO("%p: NL Listener: conn added with serial: %u\n", ci, serial);
+	DEBUG_INFO("%px: NL Listener: conn added with serial: %u\n", ci, serial);
 
 	/*
 	 * Only handle events if there is an NL classifier attached
 	 */
 	classi = ecm_db_connection_assigned_classifier_find_and_ref(ci, ECM_CLASSIFIER_TYPE_NL);
-	if (NULL == classi) {
-		DEBUG_TRACE("%p: Connection added ignored - no NL classifier\n", ci);
+	if (!classi) {
+		DEBUG_TRACE("%px: Connection added ignored - no NL classifier\n", ci);
 		return;
 	}
 	cnli = (struct ecm_classifier_nl_instance *)classi;
-	DEBUG_TRACE("%p: added conn, serial: %u, NL classifier: %p\n", ci,
+	DEBUG_TRACE("%px: added conn, serial: %u, NL classifier: %px\n", ci,
 		    serial, classi);
 
 	ct = ecm_classifier_nl_ct_get_and_ref(ci);
-	if (NULL == ct) {
-		DEBUG_TRACE("%p: Connection add skipped - no associated CT entry.\n", ci);
+	if (!ct) {
+		DEBUG_TRACE("%px: Connection add skipped - no associated CT entry.\n", ci);
 		goto classi;
 	}
-	DEBUG_TRACE("%p: added conn, serial: %u, NL classifier: %p, CT: %p\n",
+	DEBUG_TRACE("%px: added conn, serial: %u, NL classifier: %px, CT: %px\n",
 		    ci, serial, classi, ct);
 
 #if defined(CONFIG_NF_CONNTRACK_MARK)
@@ -1067,19 +1071,19 @@ static void ecm_classifier_nl_connection_removed(void *arg, struct ecm_db_connec
 	ip_addr_t src_ip;
 	ip_addr_t dst_ip;
 
-	DEBUG_INFO("%p: NL Listener: conn removed with serial: %u\n", ci, serial);
+	DEBUG_INFO("%px: NL Listener: conn removed with serial: %u\n", ci, serial);
 
 	/*
 	 * Only handle events if there is an NL classifier attached
 	 */
 	classi = ecm_db_connection_assigned_classifier_find_and_ref(ci, ECM_CLASSIFIER_TYPE_NL);
 	if (!classi) {
-		DEBUG_TRACE("%p: Connection removed ignored - no NL classifier\n", ci);
+		DEBUG_TRACE("%px: Connection removed ignored - no NL classifier\n", ci);
 		return;
 	}
 
 	cnli = (struct ecm_classifier_nl_instance *)classi;
-	DEBUG_INFO("%p: removed conn with serial: %u, NL classifier: %p\n", ci, serial, cnli);
+	DEBUG_INFO("%px: removed conn with serial: %u, NL classifier: %px\n", ci, serial, cnli);
 
 	/*
 	 * If the connection was accelerated OK then issue a close
@@ -1088,7 +1092,7 @@ static void ecm_classifier_nl_connection_removed(void *arg, struct ecm_db_connec
 	accel_ok = (cnli->flags & ECM_CLASSIFIER_NL_F_ACCEL_OK)? true : false;
 	spin_unlock_bh(&ecm_classifier_nl_lock);
 	if (!accel_ok) {
-		DEBUG_INFO("%p: cnli: %p, accel not ok\n", ci, cnli);
+		DEBUG_INFO("%px: cnli: %px, accel not ok\n", ci, cnli);
 		classi->deref(classi);
 		return;
 	}
@@ -1099,7 +1103,7 @@ static void ecm_classifier_nl_connection_removed(void *arg, struct ecm_db_connec
 	ecm_db_connection_address_get(ci, ECM_DB_OBJ_DIR_TO, dst_ip);
 	dst_port = ecm_db_connection_port_get(ci, ECM_DB_OBJ_DIR_TO);
 
-	DEBUG_INFO("%p: NL classifier: %p, issue Close\n", ci, cnli);
+	DEBUG_INFO("%px: NL classifier: %px, issue Close\n", ci, cnli);
 	ecm_classifier_nl_genl_msg_closed(ci, cnli, proto, src_ip, dst_ip, src_port, dst_port);
 
 	classi->deref(classi);
@@ -1157,7 +1161,7 @@ struct ecm_classifier_nl_instance *ecm_classifier_nl_instance_alloc(struct ecm_d
 	 */
 	if (ecm_classifier_nl_terminate_pending) {
 		spin_unlock_bh(&ecm_classifier_nl_lock);
-		DEBUG_INFO("%p: Terminating\n", ci);
+		DEBUG_INFO("%px: Terminating\n", ci);
 		kfree(cnli);
 		return NULL;
 	}
@@ -1175,10 +1179,10 @@ struct ecm_classifier_nl_instance *ecm_classifier_nl_instance_alloc(struct ecm_d
 	 * Increment stats
 	 */
 	ecm_classifier_nl_count++;
-	DEBUG_ASSERT(ecm_classifier_nl_count > 0, "%p: ecm_classifier_nl_count wrap\n", cnli);
+	DEBUG_ASSERT(ecm_classifier_nl_count > 0, "%px: ecm_classifier_nl_count wrap\n", cnli);
 	spin_unlock_bh(&ecm_classifier_nl_lock);
 
-	DEBUG_INFO("Netlink instance alloc: %p\n", cnli);
+	DEBUG_INFO("Netlink instance alloc: %px\n", cnli);
 	return cnli;
 }
 EXPORT_SYMBOL(ecm_classifier_nl_instance_alloc);
@@ -1290,7 +1294,7 @@ static ssize_t ecm_classifier_nl_set_command(struct file *file,
 		DEBUG_WARN("database connection not found\n");
 		return -ENOMEM;
 	}
-	DEBUG_TRACE("Connection found: %p\n", ci);
+	DEBUG_TRACE("Connection found: %px\n", ci);
 
 	/*
 	 * Get the NL classifier
@@ -1310,20 +1314,20 @@ static ssize_t ecm_classifier_nl_set_command(struct file *file,
 		/*
 		 * Decelerate the connection, NL is denying further accel until it says so.
 		 */
-		DEBUG_TRACE("Force decel: %p\n", ci);
+		DEBUG_TRACE("Force decel: %px\n", ci);
 		spin_lock_bh(&ecm_classifier_nl_lock);
 		cnli->process_response.accel_mode = ECM_CLASSIFIER_ACCELERATION_MODE_NO;
 		spin_unlock_bh(&ecm_classifier_nl_lock);
 		feci = ecm_db_connection_front_end_get_and_ref(ci);
 		feci->decelerate(feci);
-		feci->deref(feci);
+		ecm_front_end_connection_deref(feci);
 		break;
 	case 'S':
 	case 'F':
 		/*
 		 * Allow acceleration of the connection.  This will be done as packets are processed in the usual way.
 		 */
-		DEBUG_TRACE("Permit accel: %p\n", ci);
+		DEBUG_TRACE("Permit accel: %px\n", ci);
 		spin_lock_bh(&ecm_classifier_nl_lock);
 		cnli->process_response.accel_mode = ECM_CLASSIFIER_ACCELERATION_MODE_ACCEL;
 		cnli->flags |= ECM_CLASSIFIER_NL_F_ACCEL;
@@ -1404,19 +1408,15 @@ static struct file_operations ecm_classifier_nl_cmd_fops = {
 static int ecm_classifier_nl_register_genl(void)
 {
 	int result;
-
-	result = genl_register_family(&ecm_cl_nl_genl_family);
-	if (result != 0) 
+   result = genl_register_family(&ecm_cl_nl_genl_family);
+	if(result!=0){
 		DEBUG_ERROR("failed to register genl family: %d\n", result);
-
+	}
 	return result;
 }
 
 static void ecm_classifier_nl_unregister_genl(void)
 {
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 13, 0)
-	genl_unregister_ops(&ecm_cl_nl_genl_family, ecm_cl_nl_genl_ops);
-#endif
 	genl_unregister_family(&ecm_cl_nl_genl_family);
 }
 

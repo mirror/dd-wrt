@@ -15,7 +15,6 @@
  */
 
 #include "nss_tx_rx_common.h"
-#include "nss_stats.h"
 #include "nss_unaligned_stats.h"
 
 /*

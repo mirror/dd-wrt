@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2018, 2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -69,10 +69,10 @@ static int8_t *nss_capwap_log_error_response_types_str[NSS_CAPWAP_ERROR_MSG_MAX]
 static void nss_capwap_rule_msg(struct nss_capwap_msg *ncm)
 {
 	struct nss_capwap_rule_msg *ncrm __maybe_unused = &ncm->msg.rule;
-	nss_trace("%p: NSS CAPWAP Rule message \n"
-		"Encap Rule Src IP: %p\n"
+	nss_trace("%px: NSS CAPWAP Rule message \n"
+		"Encap Rule Src IP: %px\n"
 		"Encap Rule Src Port: %d\n"
-		"Encap Rule Dst Ip: %p\n"
+		"Encap Rule Dst Ip: %px\n"
 		"Encap Rule Dst Port: %d\n"
 		"Encap Rule Path MTU: %d\n"
 		"Decap Rule Reassembly Timeout: %d\n"
@@ -87,7 +87,7 @@ static void nss_capwap_rule_msg(struct nss_capwap_msg *ncm)
 		"GMAC Interface Number: %d\n"
 		"Enabled Features: %x\n"
 		"DTLS Interface Number: %d\n"
-		"BSSID: %p\n"
+		"BSSID: %px\n"
 		"Outer Segment Value: %x\n",
 		ncrm,
 		&ncrm->encap.src_ip.ip,
@@ -114,7 +114,7 @@ static void nss_capwap_rule_msg(struct nss_capwap_msg *ncm)
 static void nss_capwap_path_mtu_msg(struct nss_capwap_msg *ncm)
 {
 	struct nss_capwap_path_mtu_msg *ncpmm __maybe_unused = &ncm->msg.mtu;
-	nss_trace("%p: NSS CAPWAP Path MTU message \n"
+	nss_trace("%px: NSS CAPWAP Path MTU message \n"
 		"CAPWAP Path MTU: %d\n",
 		ncpmm,
 		ncpmm->path_mtu);
@@ -127,7 +127,7 @@ static void nss_capwap_path_mtu_msg(struct nss_capwap_msg *ncm)
 static void nss_capwap_version_msg(struct nss_capwap_msg *ncm)
 {
 	struct nss_capwap_version_msg *ncvm __maybe_unused = &ncm->msg.version;
-	nss_trace("%p: NSS CAPWAP Version message \n"
+	nss_trace("%px: NSS CAPWAP Version message \n"
 		"CAPWAP Version: %d\n",
 		ncvm,
 		ncvm->version);
@@ -140,7 +140,7 @@ static void nss_capwap_version_msg(struct nss_capwap_msg *ncm)
 static void nss_capwap_dtls_msg(struct nss_capwap_msg *ncm)
 {
 	struct nss_capwap_dtls_msg *ncdm __maybe_unused = &ncm->msg.dtls;
-	nss_trace("%p: NSS CAPWAP dtls message \n"
+	nss_trace("%px: NSS CAPWAP dtls message \n"
 		"CAPWAP DTLS Enable: %d\n"
 		"CAPWAP DTLS Inner Interface Number: %d\n"
 		"CAPWAP MTU Adjust: %d\n"
@@ -156,7 +156,7 @@ static void nss_capwap_dtls_msg(struct nss_capwap_msg *ncm)
  */
 static void nss_capwap_flow_rule_msg(struct nss_capwap_flow_rule_msg *ncfrm)
 {
-	nss_trace("%p: NSS CAPWAP Flow Rule message \n"
+	nss_trace("%px: NSS CAPWAP Flow Rule message \n"
 		"CAPWAP IP Version: %d\n"
 		"CAPWAP Layer 4 Protocol: %d\n"
 		"CAPWAP Source Port: %d\n"
@@ -226,7 +226,7 @@ static void nss_capwap_log_verbose(struct nss_capwap_msg *ncm)
 		break;
 
 	default:
-		nss_trace("%p: Invalid message type\n", ncm);
+		nss_trace("%px: Invalid message type\n", ncm);
 		break;
 	}
 }
@@ -238,11 +238,11 @@ static void nss_capwap_log_verbose(struct nss_capwap_msg *ncm)
 void nss_capwap_log_tx_msg(struct nss_capwap_msg *ncm)
 {
 	if (ncm->cm.type >= NSS_CAPWAP_MSG_TYPE_MAX) {
-		nss_warning("%p: Invalid message type\n", ncm);
+		nss_warning("%px: Invalid message type\n", ncm);
 		return;
 	}
 
-	nss_info("%p: type[%d]:%s\n", ncm, ncm->cm.type, nss_capwap_log_message_types_str[ncm->cm.type]);
+	nss_info("%px: type[%d]:%s\n", ncm, ncm->cm.type, nss_capwap_log_message_types_str[ncm->cm.type]);
 	nss_capwap_log_verbose(ncm);
 }
 
@@ -253,26 +253,26 @@ void nss_capwap_log_tx_msg(struct nss_capwap_msg *ncm)
 void nss_capwap_log_rx_msg(struct nss_capwap_msg *ncm)
 {
 	if (ncm->cm.response >= NSS_CMN_RESPONSE_LAST) {
-		nss_warning("%p: Invalid response\n", ncm);
+		nss_warning("%px: Invalid response\n", ncm);
 		return;
 	}
 
 	if (ncm->cm.response == NSS_CMN_RESPONSE_NOTIFY || (ncm->cm.response == NSS_CMN_RESPONSE_ACK)) {
-		nss_info("%p: type[%d]:%s, response[%d]:%s\n", ncm, ncm->cm.type,
+		nss_info("%px: type[%d]:%s, response[%d]:%s\n", ncm, ncm->cm.type,
 			nss_capwap_log_message_types_str[ncm->cm.type],
 			ncm->cm.response, nss_cmn_response_str[ncm->cm.response]);
 		goto verbose;
 	}
 
 	if (ncm->cm.error >= NSS_CAPWAP_ERROR_MSG_MAX) {
-		nss_warning("%p: msg failure - type[%d]:%s, response[%d]:%s, error[%d]:Invalid error\n",
+		nss_warning("%px: msg failure - type[%d]:%s, response[%d]:%s, error[%d]:Invalid error\n",
 			ncm, ncm->cm.type, nss_capwap_log_message_types_str[ncm->cm.type],
 			ncm->cm.response, nss_cmn_response_str[ncm->cm.response],
 			ncm->cm.error);
 		goto verbose;
 	}
 
-	nss_info("%p: msg nack - type[%d]:%s, response[%d]:%s, error[%d]:%s\n",
+	nss_info("%px: msg nack - type[%d]:%s, response[%d]:%s, error[%d]:%s\n",
 		ncm, ncm->cm.type, nss_capwap_log_message_types_str[ncm->cm.type],
 		ncm->cm.response, nss_cmn_response_str[ncm->cm.response],
 		ncm->cm.error, nss_capwap_log_error_response_types_str[ncm->cm.error]);

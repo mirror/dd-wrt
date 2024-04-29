@@ -1,9 +1,12 @@
 /*
  **************************************************************************
- * Copyright (c) 2014-2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2014-2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
+ *
  * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
  * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
  * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
@@ -63,6 +66,7 @@
 #include "ecm_front_end_types.h"
 #include "ecm_classifier_default.h"
 #include "ecm_db.h"
+#include "ecm_front_end_common.h"
 
 /*
  * Magic number
@@ -184,7 +188,7 @@ EXPORT_SYMBOL(ecm_db_connection_count_by_protocol_get);
  */
 void ecm_db_connection_l2_encap_proto_set(struct ecm_db_connection_instance *ci, uint16_t l2_encap_proto)
 {
-	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%p: magic failed", ci);
+	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%px: magic failed", ci);
 
 	spin_lock_bh(&ecm_db_lock);
 	ci->l2_encap_proto = l2_encap_proto;
@@ -198,7 +202,7 @@ void ecm_db_connection_l2_encap_proto_set(struct ecm_db_connection_instance *ci,
 uint16_t ecm_db_connection_l2_encap_proto_get(struct ecm_db_connection_instance *ci)
 {
 	uint16_t proto;
-	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%p: magic failed", ci);
+	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%px: magic failed", ci);
 
 	spin_lock_bh(&ecm_db_lock);
 	proto = ci->l2_encap_proto;
@@ -213,12 +217,25 @@ uint16_t ecm_db_connection_l2_encap_proto_get(struct ecm_db_connection_instance 
  */
 void ecm_db_connection_mark_set(struct ecm_db_connection_instance *ci, uint32_t mark)
 {
-	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%p: magic failed", ci);
+	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%px: magic failed", ci);
 
 	spin_lock_bh(&ecm_db_lock);
 	ci->mark = mark;
 	spin_unlock_bh(&ecm_db_lock);
 
+}
+
+/*
+ * ecm_db_connection_flag_set()
+ *	Sets the flag in connection instance.
+ */
+void ecm_db_connection_flag_set(struct ecm_db_connection_instance *ci, uint32_t flag)
+{
+	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%px: magic failed", ci);
+
+	spin_lock_bh(&ecm_db_lock);
+	ci->flags |= flag;
+	spin_unlock_bh(&ecm_db_lock);
 }
 
 /*
@@ -228,7 +245,7 @@ void ecm_db_connection_mark_set(struct ecm_db_connection_instance *ci, uint32_t 
 uint32_t ecm_db_connection_mark_get(struct ecm_db_connection_instance *ci)
 {
 	uint16_t mark;
-	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%p: magic failed", ci);
+	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%px: magic failed", ci);
 
 	spin_lock_bh(&ecm_db_lock);
 	mark = ci->mark;
@@ -243,8 +260,8 @@ uint32_t ecm_db_connection_mark_get(struct ecm_db_connection_instance *ci)
  */
 struct ecm_front_end_connection_instance *ecm_db_connection_front_end_get_and_ref(struct ecm_db_connection_instance *ci)
 {
-	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%p: magic failed", ci);
-	ci->feci->ref(ci->feci);
+	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%px: magic failed", ci);
+	ecm_front_end_connection_ref(ci->feci);
 	return ci->feci;
 }
 EXPORT_SYMBOL(ecm_db_connection_front_end_get_and_ref);
@@ -256,29 +273,22 @@ EXPORT_SYMBOL(ecm_db_connection_front_end_get_and_ref);
 static void ecm_db_connection_defunct_callback(void *arg)
 {
 	int accel_mode;
-	bool ret;
 
 	struct ecm_db_connection_instance *ci = (struct ecm_db_connection_instance *)arg;
-	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%p: magic failed", ci);
+	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%px: magic failed", ci);
 
-	DEBUG_INFO("%p: defunct timer expired\n", ci);
-
-	/*
-	 * If defunct fails, return. Do not remove the last ref count. This failure means
-	 * it will be re-tried later with the ecm_db_connection_make_defunct function
-	 * until the total failure count reaches to the max limit which is 250.
-	 * When the limit is reached, defunct process will return true and let
-	 * the connection goes off.
-	 */
-	ret = ci->defunct(ci->feci, &accel_mode);
+	DEBUG_INFO("%px: defunct timer expired\n", ci);
 
 	/*
-	 * Release the last reference of this connection. This reference is the one
-	 * which was held when the connection was allocated.
+	 * call the front end defunct to destroy the rule.
 	 */
-	if (ret || ECM_FRONT_END_ACCELERATION_FAILED(accel_mode)) {
-		ecm_db_connection_deref(ci);
-	}
+	(void)ci->feci->defunct(ci->feci, &accel_mode);
+
+	/*
+	 * when it was expired, it has been removed from  the timer list,
+	 * we need release the ref when it was added to the timer list.
+	 */
+	ecm_db_connection_deref(ci);
 }
 
 /*
@@ -292,7 +302,7 @@ int ecm_db_connection_elapsed_defunct_timer(struct ecm_db_connection_instance *c
 	long int expires_in;
 	int elapsed;
 
-	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%p: magic failed", ci);
+	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%px: magic failed", ci);
 
 	/*
 	 * Do some sanity checks.
@@ -327,7 +337,7 @@ EXPORT_SYMBOL(ecm_db_connection_elapsed_defunct_timer);
  */
 bool ecm_db_connection_defunct_timer_reset(struct ecm_db_connection_instance *ci, ecm_db_timer_group_t tg)
 {
-	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%p: magic failed", ci);
+	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%px: magic failed", ci);
 	return ecm_db_timer_group_entry_reset(&ci->defunct_timer, tg);
 }
 EXPORT_SYMBOL(ecm_db_connection_defunct_timer_reset);
@@ -338,10 +348,30 @@ EXPORT_SYMBOL(ecm_db_connection_defunct_timer_reset);
  */
 bool ecm_db_connection_defunct_timer_touch(struct ecm_db_connection_instance *ci)
 {
-	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%p: magic failed", ci);
+	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%px: magic failed", ci);
 	return ecm_db_timer_group_entry_touch(&ci->defunct_timer);
 }
 EXPORT_SYMBOL(ecm_db_connection_defunct_timer_touch);
+
+/*
+ * ecm_db_connection_defunct_timer_no_touch_set()
+ *	Set no touch flag in CI
+ */
+void ecm_db_connection_defunct_timer_no_touch_set(struct ecm_db_connection_instance *ci)
+{
+	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%p: magic failed", ci);
+	ci->timer_no_touch = true;
+}
+
+/*
+ * ecm_db_connection_defunct_timer_no_touch_get()
+ *	Get no touch flag in CI
+ */
+bool ecm_db_connection_defunct_timer_no_touch_get(struct ecm_db_connection_instance *ci)
+{
+	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%p: magic failed", ci);
+	return ci->timer_no_touch;
+}
 
 /*
  * ecm_db_connection_timer_group_get()
@@ -350,7 +380,7 @@ EXPORT_SYMBOL(ecm_db_connection_defunct_timer_touch);
 ecm_db_timer_group_t ecm_db_connection_timer_group_get(struct ecm_db_connection_instance *ci)
 {
 	ecm_db_timer_group_t tg;
-	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%p: magic failed", ci);
+	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%px: magic failed", ci);
 
 	spin_lock_bh(&ecm_db_lock);
 	tg = ci->defunct_timer.group;
@@ -368,26 +398,40 @@ void ecm_db_connection_make_defunct(struct ecm_db_connection_instance *ci)
 	int accel_mode;
 	bool ret;
 
-	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%p: magic failed", ci);
+	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%px: magic failed", ci);
 
 	/*
-	 * If defunct fails, return. Do not remove the timer. This failure means
-	 * it will be re-tried later until the total failure count reaches to the
-	 * max limit which is 250. When the limit is reached, defunct process will return
-	 * true and let the connection goes off.
+	 * Call the frontend's defunct callback function and handle the return values.
 	 */
-	ret = ci->defunct(ci->feci, &accel_mode);
+	ret = ci->feci->defunct(ci->feci, &accel_mode);
 
 	/*
-	 * Remove the connection from the timer group and release the last reference
-	 * of this connection. This reference is the one which was held when the
-	 * connection was allocated.
+	 * If connection's defunct timer is already removed from the groups,
+	 * this means that the connection is timed out and already in defunct process.
+	 * So, we needn't destroy the connection any more.
+	 */
+	spin_lock_bh(&ecm_db_lock);
+	if (ci->defunct_timer.group == ECM_DB_TIMER_GROUPS_MAX) {
+		spin_unlock_bh(&ecm_db_lock);
+		return;
+	}
+
+	/*
+	 * If the defunct is success, first we should remove the timer and then release
+	 * the last reference.
+	 * If defunct fails and the connection state is in one of the fail states, we should remove the timer
+	 * and release the last reference.
+	 * the removal of timer will always be successful here, we needn't check the
+	 * return value.
 	 */
 	if (ret || ECM_FRONT_END_ACCELERATION_FAILED(accel_mode)) {
-		if (ecm_db_timer_group_entry_remove(&ci->defunct_timer)) {
-			ecm_db_connection_deref(ci);
-		}
+		_ecm_db_timer_group_entry_remove(&ci->defunct_timer);
+		spin_unlock_bh(&ecm_db_lock);
+		ecm_db_connection_deref(ci);
+		return;
 	}
+
+	spin_unlock_bh(&ecm_db_lock);
 }
 EXPORT_SYMBOL(ecm_db_connection_make_defunct);
 
@@ -397,9 +441,11 @@ EXPORT_SYMBOL(ecm_db_connection_make_defunct);
  */
 void ecm_db_connection_data_totals_update(struct ecm_db_connection_instance *ci, bool is_from, uint64_t size, uint64_t packets)
 {
+#ifdef ECM_DB_ADVANCED_STATS_ENABLE
 	int32_t i;
+#endif
 
-	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%p: magic failed\n", ci);
+	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%px: magic failed\n", ci);
 
 	spin_lock_bh(&ecm_db_lock);
 
@@ -496,9 +542,11 @@ EXPORT_SYMBOL(ecm_db_connection_data_totals_update);
  */
 void ecm_db_connection_data_totals_update_dropped(struct ecm_db_connection_instance *ci, bool is_from, uint64_t size, uint64_t packets)
 {
+#ifdef ECM_DB_ADVANCED_STATS_ENABLE
 	int32_t i;
+#endif
 
-	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%p: magic failed\n", ci);
+	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%px: magic failed\n", ci);
 
 	if (is_from) {
 		/*
@@ -562,7 +610,7 @@ void ecm_db_connection_data_stats_get(struct ecm_db_connection_instance *ci, uin
 						uint64_t *from_data_total_dropped, uint64_t *to_data_total_dropped,
 						uint64_t *from_packet_total_dropped, uint64_t *to_packet_total_dropped)
 {
-	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%p: magic failed", ci);
+	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%px: magic failed", ci);
 
 	spin_lock_bh(&ecm_db_lock);
 	if (from_data_total) {
@@ -599,7 +647,7 @@ EXPORT_SYMBOL(ecm_db_connection_data_stats_get);
  */
 uint32_t ecm_db_connection_serial_get(struct ecm_db_connection_instance *ci)
 {
-	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%p: magic failed", ci);
+	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%px: magic failed", ci);
 	return ci->serial;
 }
 EXPORT_SYMBOL(ecm_db_connection_serial_get);
@@ -610,9 +658,9 @@ EXPORT_SYMBOL(ecm_db_connection_serial_get);
  */
 void ecm_db_connection_address_get(struct ecm_db_connection_instance *ci, ecm_db_obj_dir_t dir, ip_addr_t addr)
 {
-	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%p: magic failed", ci);
-	DEBUG_CHECK_MAGIC(ci->mapping[dir], ECM_DB_MAPPING_INSTANCE_MAGIC, "%p: magic failed", ci->mapping[dir]);
-	DEBUG_CHECK_MAGIC(ci->mapping[dir]->host, ECM_DB_HOST_INSTANCE_MAGIC, "%p: magic failed", ci->mapping[dir]->host);
+	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%px: magic failed", ci);
+	DEBUG_CHECK_MAGIC(ci->mapping[dir], ECM_DB_MAPPING_INSTANCE_MAGIC, "%px: magic failed", ci->mapping[dir]);
+	DEBUG_CHECK_MAGIC(ci->mapping[dir]->host, ECM_DB_HOST_INSTANCE_MAGIC, "%px: magic failed", ci->mapping[dir]->host);
 	ECM_IP_ADDR_COPY(addr, ci->mapping[dir]->host->address);
 }
 EXPORT_SYMBOL(ecm_db_connection_address_get);
@@ -623,8 +671,8 @@ EXPORT_SYMBOL(ecm_db_connection_address_get);
  */
 int ecm_db_connection_port_get(struct ecm_db_connection_instance *ci, ecm_db_obj_dir_t dir)
 {
-	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%p: magic failed", ci);
-	DEBUG_CHECK_MAGIC(ci->mapping[dir], ECM_DB_MAPPING_INSTANCE_MAGIC, "%p: magic failed", ci->mapping[dir]);
+	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%px: magic failed", ci);
+	DEBUG_CHECK_MAGIC(ci->mapping[dir], ECM_DB_MAPPING_INSTANCE_MAGIC, "%px: magic failed", ci->mapping[dir]);
 	return ci->mapping[dir]->port;
 }
 EXPORT_SYMBOL(ecm_db_connection_port_get);
@@ -635,7 +683,7 @@ EXPORT_SYMBOL(ecm_db_connection_port_get);
  */
 void ecm_db_connection_node_address_get(struct ecm_db_connection_instance *ci, ecm_db_obj_dir_t dir, uint8_t *address_buffer)
 {
-	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%p: magic failed", ci);
+	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%px: magic failed", ci);
 	memcpy(address_buffer, ci->node[dir]->address, ETH_ALEN);
 }
 EXPORT_SYMBOL(ecm_db_connection_node_address_get);
@@ -646,7 +694,7 @@ EXPORT_SYMBOL(ecm_db_connection_node_address_get);
  */
 void ecm_db_connection_iface_name_get(struct ecm_db_connection_instance *ci, ecm_db_obj_dir_t dir, char *name_buffer)
 {
-	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%p: magic failed", ci);
+	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%px: magic failed", ci);
 	strlcpy(name_buffer, ci->node[dir]->iface->name, IFNAMSIZ);
 }
 EXPORT_SYMBOL(ecm_db_connection_iface_name_get);
@@ -658,7 +706,7 @@ EXPORT_SYMBOL(ecm_db_connection_iface_name_get);
 int ecm_db_connection_iface_mtu_get(struct ecm_db_connection_instance *ci, ecm_db_obj_dir_t dir)
 {
 	int mtu;
-	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%p: magic failed", ci);
+	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%px: magic failed", ci);
 	spin_lock_bh(&ecm_db_lock);
 	mtu = ci->node[dir]->iface->mtu;
 	spin_unlock_bh(&ecm_db_lock);
@@ -674,7 +722,7 @@ ecm_db_iface_type_t ecm_db_connection_iface_type_get(struct ecm_db_connection_in
 {
 	ecm_db_iface_type_t type;
 
-	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%p: magic failed", ci);
+	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%px: magic failed", ci);
 	spin_lock_bh(&ecm_db_lock);
 	type = ci->node[dir]->iface->type;
 	spin_unlock_bh(&ecm_db_lock);
@@ -689,7 +737,7 @@ EXPORT_SYMBOL(ecm_db_connection_iface_type_get);
 uint16_t ecm_db_connection_regeneration_occurrances_get(struct ecm_db_connection_instance *ci)
 {
 	uint16_t occurances;
-	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%p: magic failed", ci);
+	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%px: magic failed", ci);
 
 	spin_lock_bh(&ecm_db_lock);
 	occurances = ci->regen_occurances;
@@ -704,12 +752,12 @@ EXPORT_SYMBOL(ecm_db_connection_regeneration_occurrances_get);
  */
 void ecm_db_connection_regeneration_completed(struct ecm_db_connection_instance *ci)
 {
-	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%p: magic failed", ci);
+	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%px: magic failed", ci);
 
 	spin_lock_bh(&ecm_db_lock);
 
-	DEBUG_ASSERT(ci->regen_in_progress, "%p: Bad call", ci);
-	DEBUG_ASSERT(ci->regen_required > 0, "%p: Bad call", ci);
+	DEBUG_ASSERT(ci->regen_in_progress, "%px: Bad call", ci);
+	DEBUG_ASSERT(ci->regen_required > 0, "%px: Bad call", ci);
 
 	/*
 	 * Decrement the required counter by 1.
@@ -728,12 +776,12 @@ EXPORT_SYMBOL(ecm_db_connection_regeneration_completed);
  */
 void ecm_db_connection_regeneration_failed(struct ecm_db_connection_instance *ci)
 {
-	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%p: magic failed", ci);
+	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%px: magic failed", ci);
 
 	spin_lock_bh(&ecm_db_lock);
 
-	DEBUG_ASSERT(ci->regen_in_progress, "%p: Bad call", ci);
-	DEBUG_ASSERT(ci->regen_required > 0, "%p: Bad call", ci);
+	DEBUG_ASSERT(ci->regen_in_progress, "%px: Bad call", ci);
+	DEBUG_ASSERT(ci->regen_required > 0, "%px: Bad call", ci);
 
 	/*
 	 * Re-generation is no longer in progress BUT we leave the regen
@@ -755,7 +803,7 @@ EXPORT_SYMBOL(ecm_db_connection_regeneration_failed);
  */
 bool ecm_db_connection_regeneration_required_check(struct ecm_db_connection_instance *ci)
 {
-	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%p: magic failed", ci);
+	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%px: magic failed", ci);
 
 	/*
 	 * Check the global generation counter for changes
@@ -809,7 +857,7 @@ EXPORT_SYMBOL(ecm_db_connection_regeneration_required_check);
  */
 bool ecm_db_connection_regeneration_required_peek(struct ecm_db_connection_instance *ci)
 {
-	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%p: magic failed", ci);
+	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%px: magic failed", ci);
 
 	spin_lock_bh(&ecm_db_lock);
 
@@ -846,7 +894,7 @@ EXPORT_SYMBOL(ecm_db_connection_regeneration_required_peek);
  */
 void ecm_db_connection_regeneration_needed(struct ecm_db_connection_instance *ci)
 {
-	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%p: magic failed", ci);
+	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%px: magic failed", ci);
 
 	spin_lock_bh(&ecm_db_lock);
 	ci->regen_occurances++;
@@ -875,16 +923,16 @@ void ecm_db_connection_regenerate(struct ecm_db_connection_instance *ci)
 {
 	struct ecm_front_end_connection_instance *feci;
 
-	DEBUG_TRACE("Regenerate connection: %p\n", ci);
+	DEBUG_TRACE("Regenerate connection: %px\n", ci);
 
-	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%p: magic failed", ci);
+	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%px: magic failed", ci);
 
 	/*
 	 * Notify front end to regenerate a connection.
 	 */
 	feci = ecm_db_connection_front_end_get_and_ref(ci);
 	feci->regenerate(feci, ci);
-	feci->deref(feci);
+	ecm_front_end_connection_deref(feci);
 }
 EXPORT_SYMBOL(ecm_db_connection_regenerate);
 
@@ -897,7 +945,7 @@ EXPORT_SYMBOL(ecm_db_connection_regenerate);
  */
 ecm_db_direction_t ecm_db_connection_direction_get(struct ecm_db_connection_instance *ci)
 {
-	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%p: magic failed", ci);
+	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%px: magic failed", ci);
 	return ci->direction;
 }
 EXPORT_SYMBOL(ecm_db_connection_direction_get);
@@ -908,7 +956,7 @@ EXPORT_SYMBOL(ecm_db_connection_direction_get);
  */
 bool ecm_db_connection_is_routed_get(struct ecm_db_connection_instance *ci)
 {
-	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%p: magic failed", ci);
+	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%px: magic failed", ci);
 	return ci->is_routed;
 }
 EXPORT_SYMBOL(ecm_db_connection_is_routed_get);
@@ -919,7 +967,7 @@ EXPORT_SYMBOL(ecm_db_connection_is_routed_get);
  */
 int ecm_db_connection_protocol_get(struct ecm_db_connection_instance *ci)
 {
-	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%p: magic failed", ci);
+	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%px: magic failed", ci);
 	return ci->protocol;
 }
 EXPORT_SYMBOL(ecm_db_connection_protocol_get);
@@ -930,10 +978,20 @@ EXPORT_SYMBOL(ecm_db_connection_protocol_get);
  */
 int ecm_db_connection_ip_version_get(struct ecm_db_connection_instance *ci)
 {
-	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%p: magic failed", ci);
+	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%px: magic failed", ci);
 	return ci->ip_version;
 }
 EXPORT_SYMBOL(ecm_db_connection_ip_version_get);
+
+/*
+ * ecm_db_connection_is_pppoe_bridged_get()
+ *	Return whether connection is pppoe bridged or not
+ */
+bool ecm_db_connection_is_pppoe_bridged_get(struct ecm_db_connection_instance *ci)
+{
+	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%px: magic failed", ci);
+	return ci->flags & ECM_DB_CONNECTION_FLAGS_PPPOE_BRIDGE;
+}
 
 /*
  * ecm_db_connection_defunct_timer_remove_and_set()
@@ -947,19 +1005,26 @@ void ecm_db_connection_defunct_timer_remove_and_set(struct ecm_db_connection_ins
 {
 	struct ecm_db_timer_group_entry *tge;
 
-	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%p: magic failed", ci);
-	DEBUG_TRACE("%p: ecm_db_connection_defunct_timer_remove_and_set\n", ci);
+	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%px: magic failed", ci);
+	DEBUG_TRACE("%px: ecm_db_connection_defunct_timer_remove_and_set\n", ci);
 
 	spin_lock_bh(&ecm_db_lock);
 	tge = &ci->defunct_timer;
 	if (tge->group == tg) {
 		spin_unlock_bh(&ecm_db_lock);
-		DEBUG_TRACE("%p: timer group is aslready equal to %d\n", ci, tg);
+		DEBUG_TRACE("%px: timer group is aslready equal to %d\n", ci, tg);
 		return;
 	}
 
 	if (tge->group != ECM_DB_TIMER_GROUPS_MAX) {
 		_ecm_db_timer_group_entry_remove(tge);
+	} else {
+		/*
+		 * if group is ECM_DB_TIMER_GROUPS_MAX, its ref to ci was decreased
+		 * need ref it again, otherwise, the ci could be free before the
+		 * timer was expired
+		 */
+		_ecm_db_connection_ref(ci);
 	}
 
 	/*
@@ -967,7 +1032,7 @@ void ecm_db_connection_defunct_timer_remove_and_set(struct ecm_db_connection_ins
 	 */
 	_ecm_db_timer_group_entry_set(tge, tg);
 	spin_unlock_bh(&ecm_db_lock);
-	DEBUG_TRACE("%p: New timer group is: %d\n", ci, tge->group);
+	DEBUG_TRACE("%px: New timer group is: %d\n", ci, tge->group);
 }
 EXPORT_SYMBOL(ecm_db_connection_defunct_timer_remove_and_set);
 
@@ -976,10 +1041,10 @@ EXPORT_SYMBOL(ecm_db_connection_defunct_timer_remove_and_set);
  */
 void _ecm_db_connection_ref(struct ecm_db_connection_instance *ci)
 {
-	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%p: magic failed", ci);
+	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%px: magic failed", ci);
 	ci->refs++;
-	DEBUG_TRACE("%p: connection ref %d\n", ci, ci->refs);
-	DEBUG_ASSERT(ci->refs > 0, "%p: ref wrap\n", ci);
+	DEBUG_TRACE("%px: connection ref %d\n", ci, ci->refs);
+	DEBUG_ASSERT(ci->refs > 0, "%px: ref wrap\n", ci);
 }
 
 /*
@@ -1017,7 +1082,7 @@ EXPORT_SYMBOL(ecm_db_connections_get_and_ref_first);
 struct ecm_db_connection_instance *ecm_db_connection_get_and_ref_next(struct ecm_db_connection_instance *ci)
 {
 	struct ecm_db_connection_instance *cin;
-	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%p: magic failed", ci);
+	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%px: magic failed", ci);
 	spin_lock_bh(&ecm_db_lock);
 	cin = ci->next;
 	if (cin) {
@@ -1038,29 +1103,29 @@ static void _ecm_db_classifier_type_assignment_remove(struct ecm_db_connection_i
 	struct ecm_db_connection_classifier_type_assignment *ta;
 	struct ecm_db_connection_classifier_type_assignment_list *tal;
 
-	DEBUG_ASSERT(spin_is_locked(&ecm_db_lock), "%p: lock is not held\n", ci);
+	DEBUG_ASSERT(spin_is_locked(&ecm_db_lock), "%px: lock is not held\n", ci);
 
-	DEBUG_TRACE("%p: Classifier type assignment remove: %d\n", ci, ca_type);
+	DEBUG_TRACE("%px: Classifier type assignment remove: %d\n", ci, ca_type);
 	ta = &ci->type_assignment[ca_type];
-	DEBUG_CHECK_MAGIC(ta, ECM_DB_CLASSIFIER_TYPE_ASSIGNMENT_MAGIC, "%p: magic failed, ci: %p\n", ta, ci);
-	DEBUG_ASSERT(ta->iteration_count == 0, "%p: iteration count: %d, type: %d\n", ci, ta->iteration_count, ca_type);
+	DEBUG_CHECK_MAGIC(ta, ECM_DB_CLASSIFIER_TYPE_ASSIGNMENT_MAGIC, "%px: magic failed, ci: %px\n", ta, ci);
+	DEBUG_ASSERT(ta->iteration_count == 0, "%px: iteration count: %d, type: %d\n", ci, ta->iteration_count, ca_type);
 
 	if (ta->next) {
 		struct ecm_db_connection_classifier_type_assignment *tan = &ta->next->type_assignment[ca_type];
-		DEBUG_ASSERT(tan->prev == ci, "Bad list, expecting: %p, got: %p\n", ci, tan->prev);
+		DEBUG_ASSERT(tan->prev == ci, "Bad list, expecting: %px, got: %px\n", ci, tan->prev);
 		tan->prev = ta->prev;
 	}
 
 	tal = &ecm_db_connection_classifier_type_assignments[ca_type];
 	if (ta->prev) {
 		struct ecm_db_connection_classifier_type_assignment *tap = &ta->prev->type_assignment[ca_type];
-		DEBUG_ASSERT(tap->next == ci, "Bad list, expecting: %p, got: %p\n", ci, tap->next);
+		DEBUG_ASSERT(tap->next == ci, "Bad list, expecting: %px, got: %px\n", ci, tap->next);
 		tap->next = ta->next;
 	} else {
 		/*
 		 * Set new head of list
 		 */
-		DEBUG_ASSERT(tal->type_assignments_list == ci, "Bad head, expecting %p, got %p, type: %d\n", ci, tal->type_assignments_list, ca_type);
+		DEBUG_ASSERT(tal->type_assignments_list == ci, "Bad head, expecting %px, got %px, type: %d\n", ci, tal->type_assignments_list, ca_type);
 		tal->type_assignments_list = ta->next;
 	}
 	ta->next = NULL;
@@ -1088,7 +1153,7 @@ static inline void _ecm_db_connection_classifier_unassign(struct ecm_db_connecti
 #ifdef ECM_DB_CTA_TRACK_ENABLE
 	struct ecm_db_connection_classifier_type_assignment *ta;
 #endif
-	DEBUG_ASSERT(spin_is_locked(&ecm_db_lock), "%p: lock is not held\n", ci);
+	DEBUG_ASSERT(spin_is_locked(&ecm_db_lock), "%px: lock is not held\n", ci);
 
 	/*
 	 * Clear the assignment.
@@ -1101,7 +1166,7 @@ static inline void _ecm_db_connection_classifier_unassign(struct ecm_db_connecti
 	if (cci->ca_prev) {
 		cci->ca_prev->ca_next = cci->ca_next;
 	} else {
-		DEBUG_ASSERT(ci->assignments == cci, "%p: Bad assigmnment list, expecting: %p, got: %p", ci, cci, ci->assignments);
+		DEBUG_ASSERT(ci->assignments == cci, "%px: Bad assigmnment list, expecting: %px, got: %px", ci, cci, ci->assignments);
 		ci->assignments = cci->ca_next;
 	}
 	if (cci->ca_next) {
@@ -1115,7 +1180,7 @@ static inline void _ecm_db_connection_classifier_unassign(struct ecm_db_connecti
 	 * Remove from the classifier type assignment list
 	 */
 	ta = &ci->type_assignment[ca_type];
-	DEBUG_CHECK_MAGIC(ta, ECM_DB_CLASSIFIER_TYPE_ASSIGNMENT_MAGIC, "%p: magic failed, ci: %p", ta, ci);
+	DEBUG_CHECK_MAGIC(ta, ECM_DB_CLASSIFIER_TYPE_ASSIGNMENT_MAGIC, "%px: magic failed, ci: %px", ta, ci);
 	if (ta->iteration_count > 0) {
 		/*
 		 * The list entry is being iterated outside of db lock being held.
@@ -1129,7 +1194,7 @@ static inline void _ecm_db_connection_classifier_unassign(struct ecm_db_connecti
 	/*
 	 * Remove the list entry
 	 */
-	DEBUG_INFO("%p: Remove type assignment: %d\n", ci, ca_type);
+	DEBUG_INFO("%px: Remove type assignment: %d\n", ci, ca_type);
 	_ecm_db_classifier_type_assignment_remove(ci, ca_type);
 #endif
 	cci->deref(cci);
@@ -1147,12 +1212,12 @@ int ecm_db_connection_deref(struct ecm_db_connection_instance *ci)
 	int32_t i;
 	int32_t dir;
 
-	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%p: magic failed", ci);
+	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%px: magic failed", ci);
 
 	spin_lock_bh(&ecm_db_lock);
 	ci->refs--;
-	DEBUG_TRACE("%p: connection deref %d\n", ci, ci->refs);
-	DEBUG_ASSERT(ci->refs >= 0, "%p: ref wrap\n", ci);
+	DEBUG_TRACE("%px: connection deref %d\n", ci, ci->refs);
+	DEBUG_ASSERT(ci->refs >= 0, "%px: ref wrap\n", ci);
 
 	if (ci->refs > 0) {
 		int refs = ci->refs;
@@ -1184,7 +1249,7 @@ int ecm_db_connection_deref(struct ecm_db_connection_instance *ci)
 		 * Remove it from the connection hash table
 		 */
 		if (!ci->hash_prev) {
-			DEBUG_ASSERT(ecm_db_connection_table[ci->hash_index] == ci, "%p: hash table bad\n", ci);
+			DEBUG_ASSERT(ecm_db_connection_table[ci->hash_index] == ci, "%px: hash table bad\n", ci);
 			ecm_db_connection_table[ci->hash_index] = ci->hash_next;
 		} else {
 			ci->hash_prev->hash_next = ci->hash_next;
@@ -1195,13 +1260,13 @@ int ecm_db_connection_deref(struct ecm_db_connection_instance *ci)
 		ci->hash_prev = NULL;
 		ci->hash_next = NULL;
 		ecm_db_connection_table_lengths[ci->hash_index]--;
-		DEBUG_ASSERT(ecm_db_connection_table_lengths[ci->hash_index] >= 0, "%p: invalid table len %d\n", ci, ecm_db_connection_table_lengths[ci->hash_index]);
+		DEBUG_ASSERT(ecm_db_connection_table_lengths[ci->hash_index] >= 0, "%px: invalid table len %d\n", ci, ecm_db_connection_table_lengths[ci->hash_index]);
 
 		/*
 		 * Remove it from the connection serial hash table
 		 */
 		if (!ci->serial_hash_prev) {
-			DEBUG_ASSERT(ecm_db_connection_serial_table[ci->serial_hash_index] == ci, "%p: hash table bad\n", ci);
+			DEBUG_ASSERT(ecm_db_connection_serial_table[ci->serial_hash_index] == ci, "%px: hash table bad\n", ci);
 			ecm_db_connection_serial_table[ci->serial_hash_index] = ci->serial_hash_next;
 		} else {
 			ci->serial_hash_prev->serial_hash_next = ci->serial_hash_next;
@@ -1212,13 +1277,13 @@ int ecm_db_connection_deref(struct ecm_db_connection_instance *ci)
 		ci->serial_hash_prev = NULL;
 		ci->serial_hash_next = NULL;
 		ecm_db_connection_serial_table_lengths[ci->serial_hash_index]--;
-		DEBUG_ASSERT(ecm_db_connection_serial_table_lengths[ci->serial_hash_index] >= 0, "%p: invalid table len %d\n", ci, ecm_db_connection_serial_table_lengths[ci->serial_hash_index]);
+		DEBUG_ASSERT(ecm_db_connection_serial_table_lengths[ci->serial_hash_index] >= 0, "%px: invalid table len %d\n", ci, ecm_db_connection_serial_table_lengths[ci->serial_hash_index]);
 
 		/*
 		 * Remove from the global list
 		 */
 		if (!ci->prev) {
-			DEBUG_ASSERT(ecm_db_connections == ci, "%p: conn table bad\n", ci);
+			DEBUG_ASSERT(ecm_db_connections == ci, "%px: conn table bad\n", ci);
 			ecm_db_connections = ci->next;
 		} else {
 			ci->prev->next = ci->next;
@@ -1235,7 +1300,7 @@ int ecm_db_connection_deref(struct ecm_db_connection_instance *ci)
 		 */
 		for (dir = 0; dir < ECM_DB_OBJ_DIR_MAX; dir++) {
 			if (!ci->mapping_prev[dir]) {
-				DEBUG_ASSERT(ci->mapping[dir]->connections[dir] == ci, "%p: %s conn table bad\n", ci, ecm_db_obj_dir_strings[dir]);
+				DEBUG_ASSERT(ci->mapping[dir]->connections[dir] == ci, "%px: %s conn table bad\n", ci, ecm_db_obj_dir_strings[dir]);
 				ci->mapping[dir]->connections[dir] = ci->mapping_next[dir];
 			} else {
 				ci->mapping_prev[dir]->mapping_next[dir] = ci->mapping_next[dir];
@@ -1255,7 +1320,7 @@ int ecm_db_connection_deref(struct ecm_db_connection_instance *ci)
 			iface[dir] = ci->node[dir]->iface;
 			if (!ci->iface_prev[dir]) {
 				DEBUG_ASSERT(iface[dir]->connections[dir] == ci,
-					     "%p: iface %s conn table bad\n",
+					     "%px: iface %s conn table bad\n",
 					     ci, ecm_db_obj_dir_strings[dir]);
 				iface[dir]->connections[dir] = ci->iface_next[dir];
 			} else {
@@ -1274,7 +1339,7 @@ int ecm_db_connection_deref(struct ecm_db_connection_instance *ci)
 		for (dir = 0; dir < ECM_DB_OBJ_DIR_MAX; dir++) {
 			if (!ci->node_prev[dir]) {
 				DEBUG_ASSERT(ci->node[dir]->connections[dir] == ci,
-					     "%p: %s node conn table bad, got: %p\n",
+					     "%px: %s node conn table bad, got: %px\n",
 					     ci, ecm_db_obj_dir_strings[dir], ci->node[dir]->connections[dir]);
 				ci->node[dir]->connections[dir] = ci->node_next[dir];
 			} else {
@@ -1286,7 +1351,7 @@ int ecm_db_connection_deref(struct ecm_db_connection_instance *ci)
 			ci->node_prev[dir] = NULL;
 			ci->node_next[dir] = NULL;
 			ci->node[dir]->connections_count[dir]--;
-			DEBUG_ASSERT(ci->node[dir]->connections_count[dir] >= 0, "%p: %s node bad count\n", ci, ecm_db_obj_dir_strings[dir]);
+			DEBUG_ASSERT(ci->node[dir]->connections_count[dir] >= 0, "%px: %s node bad count\n", ci, ecm_db_obj_dir_strings[dir]);
 		}
 #endif
 
@@ -1310,20 +1375,20 @@ int ecm_db_connection_deref(struct ecm_db_connection_instance *ci)
 		/*
 		 * Assert that the defunt timer has been detached
 		 */
-		DEBUG_ASSERT(ci->defunct_timer.group == ECM_DB_TIMER_GROUPS_MAX, "%p: unexpected timer group %d\n", ci, ci->defunct_timer.group);
+		DEBUG_ASSERT(ci->defunct_timer.group == ECM_DB_TIMER_GROUPS_MAX, "%px: unexpected timer group %d\n", ci, ci->defunct_timer.group);
 
 		/*
 		 * Decrement protocol counter stats
 		 */
 		ecm_db_connection_count_by_protocol[ci->protocol]--;
-		DEBUG_ASSERT(ecm_db_connection_count_by_protocol[ci->protocol] >= 0, "%p: Invalid protocol count %d\n", ci, ecm_db_connection_count_by_protocol[ci->protocol]);
+		DEBUG_ASSERT(ecm_db_connection_count_by_protocol[ci->protocol] >= 0, "%px: Invalid protocol count %d\n", ci, ecm_db_connection_count_by_protocol[ci->protocol]);
 
 		spin_unlock_bh(&ecm_db_lock);
 
 		/*
 		 * Throw removed event to listeners
 		 */
-		DEBUG_TRACE("%p: Throw connection removed event\n", ci);
+		DEBUG_TRACE("%px: Throw connection removed event\n", ci);
 		li = ecm_db_listeners_get_and_ref_first();
 		while (li) {
 			struct ecm_db_listener_instance *lin;
@@ -1391,7 +1456,7 @@ int ecm_db_connection_deref(struct ecm_db_connection_instance *ci)
 	}
 
 	if (ci->feci) {
-		ci->feci->deref(ci->feci);
+		ecm_front_end_connection_deref(ci->feci);
 	}
 
 	for (dir = 0; dir < ECM_DB_OBJ_DIR_MAX; dir++) {
@@ -1405,7 +1470,7 @@ int ecm_db_connection_deref(struct ecm_db_connection_instance *ci)
 	 */
 	for (dir = 0; dir < ECM_DB_OBJ_DIR_MAX; dir++) {
 		for (i = ci->interface_first[dir]; i < ECM_DB_IFACE_HEIRARCHY_MAX; ++i) {
-			DEBUG_TRACE("%p: %s interface %d remove: %p\n", ci, ecm_db_obj_dir_strings[dir], i, ci->interfaces[dir][i]);
+			DEBUG_TRACE("%px: %s interface %d remove: %px\n", ci, ecm_db_obj_dir_strings[dir], i, ci->interfaces[dir][i]);
 			ecm_db_iface_deref(ci->interfaces[dir][i]);
 		}
 	}
@@ -1427,7 +1492,7 @@ int ecm_db_connection_deref(struct ecm_db_connection_instance *ci)
 	 */
 	spin_lock_bh(&ecm_db_lock);
 	ecm_db_connection_count--;
-	DEBUG_ASSERT(ecm_db_connection_count >= 0, "%p: connection count wrap\n", ci);
+	DEBUG_ASSERT(ecm_db_connection_count >= 0, "%px: connection count wrap\n", ci);
 	spin_unlock_bh(&ecm_db_lock);
 
 	return 0;
@@ -1454,7 +1519,7 @@ void ecm_db_connection_defunct_all(void)
 	while (ci) {
 		struct ecm_db_connection_instance *cin;
 
-		DEBUG_TRACE("%p: defunct\n", ci);
+		DEBUG_TRACE("%px: defunct\n", ci);
 		ecm_db_connection_make_defunct(ci);
 
 		cin = ecm_db_connection_get_and_ref_next(ci);
@@ -1464,6 +1529,274 @@ void ecm_db_connection_defunct_all(void)
 	DEBUG_INFO("Defuncting complete\n");
 }
 EXPORT_SYMBOL(ecm_db_connection_defunct_all);
+
+#ifdef ECM_INTERFACE_OVS_BRIDGE_ENABLE
+/*
+ * ecm_db_connection_defunct_by_classifier()
+ *	Make defunct based on masked fields
+ */
+void ecm_db_connection_defunct_by_classifier(int ip_ver, ip_addr_t src_addr_mask, uint16_t src_port_mask,
+					     ip_addr_t dest_addr_mask, uint16_t dest_port_mask,
+					     int proto_mask, bool is_routed, ecm_classifier_type_t ca_type)
+{
+	struct ecm_db_connection_instance *ci;
+	int cnt = 0;
+	char *direction = NULL;
+
+	/*
+	 * Iterate all connections
+	 */
+	ci = ecm_db_connections_get_and_ref_first();
+	while (ci) {
+		struct ecm_db_connection_instance *cin;
+		struct ecm_classifier_instance *eci;
+		ip_addr_t sip;
+		ip_addr_t dip;
+		uint16_t sport, dport;
+		int proto;
+
+		DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%px: magic failed", ci);
+
+		eci = ecm_db_connection_assigned_classifier_find_and_ref(ci, ca_type);
+		if (!eci) {
+			goto next_ci;
+		}
+		eci->deref(eci);
+
+		/*
+		 *  Ignore connection with wrong version
+		 */
+		if (ip_ver != ECM_DB_IP_VERSION_IGNORE && (ecm_db_connection_ip_version_get(ci) != ip_ver)) {
+			goto next_ci;
+		}
+
+		/*
+		 * Skip routed connection for bridge flow
+		 * Skip bridge connection for routed flow
+		 */
+		if (is_routed != ecm_db_connection_is_routed_get(ci)) {
+			goto next_ci;
+		}
+
+		/*
+		 * Check protocol if specified
+		 */
+		proto = ecm_db_connection_protocol_get(ci);
+		if (!ECM_PROTO_MASK_MATCH(proto, proto_mask)) {
+			goto next_ci;
+		}
+
+		/*
+		 * A : PCI < ------- br-home ----------bridging----------------br-wan ---->PC2
+		 *
+		 * B : PCI < ------- br-home ----------Routing----------------br-wan ---->PC2
+		 *
+		 *							DNAT
+		 * C : PCI < ------- br-home ----------Routing----------------br-wan ----> PC2
+		 *							SNAT
+		 * D : PCI < ------- br-home ----------Routing----------------br-wan ----> PC2
+		 */
+		ecm_db_connection_address_get(ci, ECM_DB_OBJ_DIR_FROM, sip);
+		ecm_db_connection_address_get(ci, ECM_DB_OBJ_DIR_TO, dip);
+		sport = ecm_db_connection_port_get(ci, ECM_DB_OBJ_DIR_FROM);
+		dport = ecm_db_connection_port_get(ci, ECM_DB_OBJ_DIR_TO);
+
+		/*
+		 * 1. For topology A, B, C, D  if drop rule is added in br-home or br-wan
+		 * 2. For topoloy  A, B  if drop rule is added in br-wan
+		 * Match in flow direction
+		 */
+		if (ECM_IP_ADDR_MASK_MATCH(sip, src_addr_mask) &&
+		    ECM_IP_ADDR_MASK_MATCH(dip, dest_addr_mask) &&
+		    ECM_PORT_MASK_MATCH(sport, src_port_mask) &&
+		    ECM_PORT_MASK_MATCH(dport, dest_port_mask)) {
+			direction = "flow";
+			goto defunct_conn;
+		}
+
+		/*
+		 * 1. For topology A, B, C, D  if drop rule is added in br-home or br-wan
+		 * 2. For topoloy  A, B  if drop rule is added in br-wan
+		 * Match in reverse direction
+		 */
+		if (ECM_IP_ADDR_MASK_MATCH(dip, src_addr_mask) &&
+		    ECM_IP_ADDR_MASK_MATCH(sip, dest_addr_mask) &&
+		    ECM_PORT_MASK_MATCH(dport, src_port_mask) &&
+		    ECM_PORT_MASK_MATCH(sport, dest_port_mask)) {
+			direction = "reverse";
+			goto defunct_conn;
+		}
+
+		/*
+		 * There is no NATing in case of bridging
+		 */
+		if (!is_routed) {
+			goto next_ci;
+		}
+
+		ecm_db_connection_address_get(ci, ECM_DB_OBJ_DIR_FROM_NAT, sip);
+		ecm_db_connection_address_get(ci, ECM_DB_OBJ_DIR_TO_NAT, dip);
+		sport = ecm_db_connection_port_get(ci, ECM_DB_OBJ_DIR_FROM_NAT);
+		dport = ecm_db_connection_port_get(ci, ECM_DB_OBJ_DIR_TO_NAT);
+
+		/*
+		 * 1. For topoloy  C, D  if drop rule is added in br-wan
+		 * Match in flow direction
+		 */
+		if (ECM_IP_ADDR_MASK_MATCH(sip, src_addr_mask) &&
+		    ECM_IP_ADDR_MASK_MATCH(dip, dest_addr_mask) &&
+		    ECM_PORT_MASK_MATCH(sport, src_port_mask) &&
+		    ECM_PORT_MASK_MATCH(dport, dest_port_mask)) {
+			direction = "flow (nat)";
+			goto defunct_conn;
+		}
+
+		/*
+		 * 1. For topoloy  C, D  if drop rule is added in br-wan
+		 * Match in reverse direction
+		 */
+		if (ECM_IP_ADDR_MASK_MATCH(dip, src_addr_mask) &&
+		    ECM_IP_ADDR_MASK_MATCH(sip, dest_addr_mask) &&
+		    ECM_PORT_MASK_MATCH(dport, src_port_mask) &&
+		    ECM_PORT_MASK_MATCH(sport, dest_port_mask)) {
+			direction = "reverse (nat)";
+			goto defunct_conn;
+		}
+
+		goto next_ci;
+
+defunct_conn:
+		cnt++;
+		if (ECM_IP_ADDR_IS_V4(src_addr_mask)) {
+			DEBUG_TRACE("%px: Defunct CI masked 5 tuple match(%s) src=" ECM_IP_ADDR_DOT_FMT " sport=%d dest="
+					ECM_IP_ADDR_DOT_FMT ", dport=%d, proto=%d cnt=%d\n", ci, direction,
+					ECM_IP_ADDR_TO_DOT(sip), sport, ECM_IP_ADDR_TO_DOT(dip), dport, proto, cnt);
+		} else {
+			DEBUG_TRACE("%px: Defunct CI masked 5 tuple match(%s) src=" ECM_IP_ADDR_OCTAL_FMT " sport=%d dest="
+					ECM_IP_ADDR_OCTAL_FMT ", dport=%d, proto=%d, cnt=%d\n", ci, direction,
+					ECM_IP_ADDR_TO_OCTAL(sip), sport, ECM_IP_ADDR_TO_OCTAL(dip), dport, proto, cnt);
+		}
+
+		ecm_db_connection_make_defunct(ci);
+
+next_ci:
+		cin = ecm_db_connection_get_and_ref_next(ci);
+		ecm_db_connection_deref(ci);
+		ci = cin;
+	}
+
+	if (ECM_IP_ADDR_IS_V4(src_addr_mask)) {
+		DEBUG_TRACE("%px: Defunct request by masked 5 tuple src_mask=" ECM_IP_ADDR_DOT_FMT " sport_mask=%d, dest_mask="
+				ECM_IP_ADDR_DOT_FMT " dport_mask=%d, proto_mask=%d, cnt=%d\n", ci,
+				ECM_IP_ADDR_TO_DOT(src_addr_mask), src_port_mask, ECM_IP_ADDR_TO_DOT(dest_addr_mask),
+				dest_port_mask, proto_mask, cnt);
+	} else {
+		DEBUG_TRACE("%px: Defunct request by masked 5 tuple src_mask=" ECM_IP_ADDR_OCTAL_FMT " sport_mask=%d dest_mask="
+				ECM_IP_ADDR_OCTAL_FMT " dport_mask=%d, proto_mask=%d cnt=%d\n", ci,
+				ECM_IP_ADDR_TO_OCTAL(src_addr_mask), src_port_mask,
+				ECM_IP_ADDR_TO_OCTAL(dest_addr_mask), dest_port_mask, proto_mask, cnt);
+	}
+}
+#endif
+
+/*
+ * ecm_db_connection_defunct_by_port()
+ *	 Make defunct based on source or destination port.
+ */
+void ecm_db_connection_defunct_by_port(int port, ecm_db_obj_dir_t dir)
+{
+	struct ecm_db_connection_instance *ci;
+
+	DEBUG_INFO("Defuncting all matching connections by port %d\n", port);
+
+	/*
+	 * Iterate all connections
+	 */
+	ci = ecm_db_connections_get_and_ref_first();
+	while (ci) {
+		struct ecm_db_connection_instance *cin;
+		DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%px: magic failed\n", ci);
+
+		/*
+		 * Flush the connection matching with given port address and flow direction
+		 */
+		if (port == htons(ecm_db_connection_port_get(ci, dir))) {
+			DEBUG_TRACE("%px: defunct\n", ci);
+			ecm_db_connection_make_defunct(ci);
+		}
+
+		cin = ecm_db_connection_get_and_ref_next(ci);
+		ecm_db_connection_deref(ci);
+		ci = cin;
+	}
+	DEBUG_INFO("Port based Defuncting complete\n");
+}
+EXPORT_SYMBOL(ecm_db_connection_defunct_by_port);
+
+/*
+ * ecm_db_connection_defunct_by_protocol()
+ * 	Make defunct based on protocol.
+ */
+void ecm_db_connection_defunct_by_protocol(int protocol)
+{
+	struct ecm_db_connection_instance *ci;
+
+	DEBUG_INFO("Defuncting all matching connections by protocol %d\n", protocol);
+
+	/*
+	 * Iterate all connections
+	 */
+	ci = ecm_db_connections_get_and_ref_first();
+	while (ci) {
+		struct ecm_db_connection_instance *cin;
+		DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%px: magic failed\n", ci);
+
+		/*
+		 * Flush the connection matching with given protocol
+		 */
+		if (protocol == ecm_db_connection_protocol_get(ci)) {
+			DEBUG_TRACE("%px: defunct\n", ci);
+			ecm_db_connection_make_defunct(ci);
+		}
+
+		cin = ecm_db_connection_get_and_ref_next(ci);
+		ecm_db_connection_deref(ci);
+		ci = cin;
+	}
+	DEBUG_INFO("Protocol based defuncting complete\n");
+}
+EXPORT_SYMBOL(ecm_db_connection_defunct_by_protocol);
+
+/*
+ * ecm_db_connection_defunct_ip_version()
+ *	Make defunct based on the IP version (IPv4 or IPv6).
+ */
+void ecm_db_connection_defunct_ip_version(int ip_version)
+{
+	struct ecm_db_connection_instance *ci;
+
+	DEBUG_ASSERT(ip_version == 4 || ip_version == 6, "Wrong ip_version: %d\n", ip_version);
+
+	DEBUG_INFO("Defuncting IPv%d connections\n", ip_version);
+
+	/*
+	 * Iterate all connections
+	 */
+	ci = ecm_db_connections_get_and_ref_first();
+	while (ci) {
+		struct ecm_db_connection_instance *cin;
+
+		if (ci->ip_version == ip_version) {
+			DEBUG_TRACE("%px: defunct\n", ci);
+			ecm_db_connection_make_defunct(ci);
+		}
+
+		cin = ecm_db_connection_get_and_ref_next(ci);
+		ecm_db_connection_deref(ci);
+		ci = cin;
+	}
+	DEBUG_INFO("Defuncting complete for IPv%d connections\n", ip_version);
+}
 
 /*
  * ecm_db_connection_generate_hash_index()
@@ -1572,7 +1905,7 @@ try_next:
 connection_found:
 	_ecm_db_connection_ref(ci);
 	spin_unlock_bh(&ecm_db_lock);
-	DEBUG_TRACE("Connection found %p\n", ci);
+	DEBUG_TRACE("Connection found %px\n", ci);
 	return ci;
 }
 
@@ -1624,7 +1957,7 @@ struct ecm_db_connection_instance *ecm_db_connection_serial_find_and_ref(uint32_
 		if (likely(ci->serial == serial)) {
 			_ecm_db_connection_ref(ci);
 			spin_unlock_bh(&ecm_db_lock);
-			DEBUG_TRACE("Connection found %p\n", ci);
+			DEBUG_TRACE("Connection found %px\n", ci);
 			return ci;
 		}
 
@@ -1644,7 +1977,7 @@ struct ecm_db_node_instance *ecm_db_connection_node_get_and_ref(struct ecm_db_co
 {
 	struct ecm_db_node_instance *ni;
 
-	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%p: magic failed\n", ci);
+	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%px: magic failed\n", ci);
 
 	spin_lock_bh(&ecm_db_lock);
 	ni = ci->node[dir];
@@ -1654,6 +1987,7 @@ struct ecm_db_node_instance *ecm_db_connection_node_get_and_ref(struct ecm_db_co
 }
 EXPORT_SYMBOL(ecm_db_connection_node_get_and_ref);
 
+#ifdef ECM_DB_XREF_ENABLE
 /*
  * ecm_db_connection_mapping_get_and_ref_next()
  *	Return reference to next connection in the mapping chain in the specified direction.
@@ -1662,7 +1996,7 @@ struct ecm_db_connection_instance *ecm_db_connection_mapping_get_and_ref_next(st
 {
 	struct ecm_db_connection_instance *nci;
 
-	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%p: magic failed\n", ci);
+	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%px: magic failed\n", ci);
 
 	spin_lock_bh(&ecm_db_lock);
 	nci = ci->mapping_next[dir];
@@ -1683,7 +2017,7 @@ struct ecm_db_connection_instance *ecm_db_connection_iface_get_and_ref_next(stru
 {
 	struct ecm_db_connection_instance *nci;
 
-	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%p: magic failed\n", ci);
+	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%px: magic failed\n", ci);
 
 	spin_lock_bh(&ecm_db_lock);
 	nci = ci->iface_next[dir];
@@ -1695,6 +2029,7 @@ struct ecm_db_connection_instance *ecm_db_connection_iface_get_and_ref_next(stru
 	return nci;
 }
 EXPORT_SYMBOL(ecm_db_connection_iface_get_and_ref_next);
+#endif
 
 /*
  * ecm_db_connection_mapping_get_and_ref()
@@ -1704,7 +2039,7 @@ struct ecm_db_mapping_instance *ecm_db_connection_mapping_get_and_ref(struct ecm
 {
 	struct ecm_db_mapping_instance *mi;
 
-	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%p: magic failed\n", ci);
+	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%px: magic failed\n", ci);
 
 	spin_lock_bh(&ecm_db_lock);
 	mi = ci->mapping[dir];
@@ -1734,7 +2069,7 @@ void ecm_db_connection_classifier_assign(struct ecm_db_connection_instance *ci, 
 	struct ecm_db_connection_classifier_type_assignment_list *tal;
 #endif
 
-	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%p: magic failed\n", ci);
+	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%px: magic failed\n", ci);
 
 	/*
 	 * Get the type (which is also used as the priority)
@@ -1773,7 +2108,7 @@ void ecm_db_connection_classifier_assign(struct ecm_db_connection_instance *ci, 
 	if (ca_prev) {
 		ca_prev->ca_next = new_ca;
 	} else {
-		DEBUG_ASSERT(ci->assignments == ca, "%p: Bad assigmnment list, expecting: %p, got: %p\n", ci, ca, ci->assignments);
+		DEBUG_ASSERT(ci->assignments == ca, "%px: Bad assigmnment list, expecting: %px, got: %px\n", ci, ca, ci->assignments);
 		ci->assignments = new_ca;
 	}
 
@@ -1785,7 +2120,7 @@ void ecm_db_connection_classifier_assign(struct ecm_db_connection_instance *ci, 
 	/*
 	 * Insert based on type too
 	 */
-	DEBUG_ASSERT(ci->assignments_by_type[new_ca_type] == NULL, "%p: Only one of each type: %d may be registered, new: %p, existing, %p\n",
+	DEBUG_ASSERT(ci->assignments_by_type[new_ca_type] == NULL, "%px: Only one of each type: %d may be registered, new: %px, existing, %px\n",
 			ci, new_ca_type, new_ca, ci->assignments_by_type[new_ca_type]);
 	ci->assignments_by_type[new_ca_type] = new_ca;
 
@@ -1809,8 +2144,8 @@ void ecm_db_connection_classifier_assign(struct ecm_db_connection_instance *ci, 
 		 * re-assigned to the same type of classifier we can just clear the flag and avoid the removal.
 		 * NOTE: pending_unassign is only ever true if the iteration count is non-zero i.e. iteration is in progress.
 		 */
-		DEBUG_CHECK_MAGIC(ta, ECM_DB_CLASSIFIER_TYPE_ASSIGNMENT_MAGIC, "%p: magic failed, ci: %p", ta, ci);
-		DEBUG_ASSERT(ta->iteration_count != 0, "%p: Bad pending_unassign: type: %d, Iteration count zero\n", ci, new_ca_type);
+		DEBUG_CHECK_MAGIC(ta, ECM_DB_CLASSIFIER_TYPE_ASSIGNMENT_MAGIC, "%px: magic failed, ci: %px", ta, ci);
+		DEBUG_ASSERT(ta->iteration_count != 0, "%px: Bad pending_unassign: type: %d, Iteration count zero\n", ci, new_ca_type);
 		ta->pending_unassign = false;
 		spin_unlock_bh(&ecm_db_lock);
 		return;
@@ -1820,7 +2155,7 @@ void ecm_db_connection_classifier_assign(struct ecm_db_connection_instance *ci, 
 	 * iteration_count should be zero as there should not be a duplicate assignment of the same type.
 	 * This is because if iteration_count was non-zero then pending_unassign should have been true.
 	 */
-	DEBUG_ASSERT(ta->iteration_count == 0, "%p: Type: %d, Iteration count not zero: %d\n", ci, new_ca_type, ta->iteration_count);
+	DEBUG_ASSERT(ta->iteration_count == 0, "%px: Type: %d, Iteration count not zero: %d\n", ci, new_ca_type, ta->iteration_count);
 
 	/*
 	 * Insert the connection into the classifier type assignment list, at the head
@@ -1874,7 +2209,7 @@ int ecm_db_connection_classifier_assignments_get_and_ref(struct ecm_db_connectio
 {
 	int aci_count;
 	struct ecm_classifier_instance *aci;
-	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%p: magic failed\n", ci);
+	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%px: magic failed\n", ci);
 
 	aci_count = 0;
 	spin_lock_bh(&ecm_db_lock);
@@ -1885,7 +2220,7 @@ int ecm_db_connection_classifier_assignments_get_and_ref(struct ecm_db_connectio
 		aci = aci->ca_next;
 	}
 	spin_unlock_bh(&ecm_db_lock);
-	DEBUG_ASSERT(aci_count >= 1, "%p: Must have at least default classifier!\n", ci);
+	DEBUG_ASSERT(aci_count >= 1, "%px: Must have at least default classifier!\n", ci);
 	return aci_count;
 }
 EXPORT_SYMBOL(ecm_db_connection_classifier_assignments_get_and_ref);
@@ -1913,7 +2248,7 @@ EXPORT_SYMBOL(ecm_db_connection_assignments_release);
 struct ecm_classifier_instance *ecm_db_connection_assigned_classifier_find_and_ref(struct ecm_db_connection_instance *ci, ecm_classifier_type_t type)
 {
 	struct ecm_classifier_instance *ca;
-	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%p: magic failed\n", ci);
+	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%px: magic failed\n", ci);
 	spin_lock_bh(&ecm_db_lock);
 	ca = ci->assignments_by_type[type];
 	if (ca) {
@@ -1934,20 +2269,20 @@ void ecm_db_connection_classifier_unassign(struct ecm_db_connection_instance *ci
 {
 	ecm_classifier_type_t ca_type;
 
-	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%p: magic failed\n", ci);
+	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%px: magic failed\n", ci);
 
 	/*
 	 * Get the type
 	 */
 	ca_type = cci->type_get(cci);
-	DEBUG_ASSERT(ca_type != ECM_CLASSIFIER_TYPE_DEFAULT, "%p: Cannot unassign default", ci);
+	DEBUG_ASSERT(ca_type != ECM_CLASSIFIER_TYPE_DEFAULT, "%px: Cannot unassign default", ci);
 
 	if (ca_type >= ECM_CLASSIFIER_TYPES) {
-		DEBUG_WARN("%p: ca_type: %d is higher than the max classifier type number: %d\n", ci, ca_type, (ECM_CLASSIFIER_TYPES - 1));
+		DEBUG_WARN("%px: ca_type: %d is higher than the max classifier type number: %d\n", ci, ca_type, (ECM_CLASSIFIER_TYPES - 1));
 		return;
 	}
 
-	DEBUG_TRACE("%p: Unassign type: %d, classifier: %p\n", ci, ca_type, cci);
+	DEBUG_TRACE("%px: Unassign type: %d, classifier: %px\n", ci, ca_type, cci);
 
 	/*
 	 * NOTE: It is possible that in SMP this classifier has already been unassigned.
@@ -1955,7 +2290,7 @@ void ecm_db_connection_classifier_unassign(struct ecm_db_connection_instance *ci
 	spin_lock_bh(&ecm_db_lock);
 	if (ci->assignments_by_type[ca_type] == NULL) {
 		spin_unlock_bh(&ecm_db_lock);
-		DEBUG_TRACE("%p: Classifier type: %d already unassigned\n", ci, ca_type);
+		DEBUG_TRACE("%px: Classifier type: %d already unassigned\n", ci, ca_type);
 		return;
 	}
 	_ecm_db_connection_classifier_unassign(ci, cci, ca_type);
@@ -1986,10 +2321,10 @@ struct ecm_db_connection_instance *ecm_db_connection_by_classifier_type_assignme
 	while (ci) {
 		struct ecm_db_connection_classifier_type_assignment *ta;
 		ta = &ci->type_assignment[ca_type];
-		DEBUG_CHECK_MAGIC(ta, ECM_DB_CLASSIFIER_TYPE_ASSIGNMENT_MAGIC, "%p: magic failed, ci: %p", ta, ci);
+		DEBUG_CHECK_MAGIC(ta, ECM_DB_CLASSIFIER_TYPE_ASSIGNMENT_MAGIC, "%px: magic failed, ci: %px", ta, ci);
 
 		if (ta->pending_unassign) {
-			DEBUG_TRACE("Skip %p, pending unassign for type: %d\n", ci, ca_type);
+			DEBUG_TRACE("Skip %px, pending unassign for type: %d\n", ci, ca_type);
 			ci = ta->next;
 			continue;
 		}
@@ -2001,7 +2336,7 @@ struct ecm_db_connection_instance *ecm_db_connection_by_classifier_type_assignme
 		 */
 		_ecm_db_connection_ref(ci);
 		ta->iteration_count++;
-		DEBUG_ASSERT(ta->iteration_count > 0, "Bad Iteration count: %d for type: %d, connection: %p\n", ta->iteration_count, ca_type, ci);
+		DEBUG_ASSERT(ta->iteration_count > 0, "Bad Iteration count: %d for type: %d, connection: %px\n", ta->iteration_count, ca_type, ci);
 		spin_unlock_bh(&ecm_db_lock);
 		return ci;
 	}
@@ -2023,9 +2358,9 @@ struct ecm_db_connection_instance *ecm_db_connection_by_classifier_type_assignme
 	struct ecm_db_connection_instance *cin;
 
 	DEBUG_ASSERT(ca_type < ECM_CLASSIFIER_TYPES, "Bad type: %d\n", ca_type);
-	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%p: magic failed\n", ci);
+	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%px: magic failed\n", ci);
 
-	DEBUG_TRACE("Get and ref next connection assigned with classifier type: %d and ci: %p\n", ca_type, ci);
+	DEBUG_TRACE("Get and ref next connection assigned with classifier type: %d and ci: %px\n", ca_type, ci);
 
 	spin_lock_bh(&ecm_db_lock);
 	ta = &ci->type_assignment[ca_type];
@@ -2034,10 +2369,10 @@ struct ecm_db_connection_instance *ecm_db_connection_by_classifier_type_assignme
 		struct ecm_db_connection_classifier_type_assignment *tan;
 
 		tan = &cin->type_assignment[ca_type];
-		DEBUG_CHECK_MAGIC(tan, ECM_DB_CLASSIFIER_TYPE_ASSIGNMENT_MAGIC, "%p: magic failed, ci: %p", tan, cin);
+		DEBUG_CHECK_MAGIC(tan, ECM_DB_CLASSIFIER_TYPE_ASSIGNMENT_MAGIC, "%px: magic failed, ci: %px", tan, cin);
 
 		if (tan->pending_unassign) {
-			DEBUG_TRACE("Skip %p, pending unassign for type: %d\n", cin, ca_type);
+			DEBUG_TRACE("Skip %px, pending unassign for type: %d\n", cin, ca_type);
 			cin = tan->next;
 			continue;
 		}
@@ -2049,7 +2384,7 @@ struct ecm_db_connection_instance *ecm_db_connection_by_classifier_type_assignme
 		 */
 		_ecm_db_connection_ref(cin);
 		tan->iteration_count++;
-		DEBUG_ASSERT(tan->iteration_count > 0, "Bad Iteration count: %d for type: %d, connection: %p\n", tan->iteration_count, ca_type, cin);
+		DEBUG_ASSERT(tan->iteration_count > 0, "Bad Iteration count: %d for type: %d, connection: %px\n", tan->iteration_count, ca_type, cin);
 		spin_unlock_bh(&ecm_db_lock);
 		return cin;
 	}
@@ -2068,7 +2403,7 @@ void ecm_db_connection_by_classifier_type_assignment_deref(struct ecm_db_connect
 	struct ecm_db_connection_classifier_type_assignment *ta;
 
 	DEBUG_ASSERT(ca_type < ECM_CLASSIFIER_TYPES, "Bad type: %d\n", ca_type);
-	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%p: magic failed\n", ci);
+	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%px: magic failed\n", ci);
 
 	tal = &ecm_db_connection_classifier_type_assignments[ca_type];
 
@@ -2077,15 +2412,15 @@ void ecm_db_connection_by_classifier_type_assignment_deref(struct ecm_db_connect
 	 */
 	spin_lock_bh(&ecm_db_lock);
 	ta = &ci->type_assignment[ca_type];
-	DEBUG_CHECK_MAGIC(ta, ECM_DB_CLASSIFIER_TYPE_ASSIGNMENT_MAGIC, "%p: magic failed, ci: %p", ta, ci);
+	DEBUG_CHECK_MAGIC(ta, ECM_DB_CLASSIFIER_TYPE_ASSIGNMENT_MAGIC, "%px: magic failed, ci: %px", ta, ci);
 	ta->iteration_count--;
-	DEBUG_ASSERT(ta->iteration_count >= 0, "Bad Iteration count: %d for type: %d, connection: %p\n", ta->iteration_count, ca_type, ci);
+	DEBUG_ASSERT(ta->iteration_count >= 0, "Bad Iteration count: %d for type: %d, connection: %px\n", ta->iteration_count, ca_type, ci);
 
 	/*
 	 * If there are no more iterations on-going and this is pending unassign then we can remove it from the assignments list
 	 */
 	if (ta->pending_unassign && (ta->iteration_count == 0)) {
-		DEBUG_INFO("%p: Remove type assignment: %d\n", ci, ca_type);
+		DEBUG_INFO("%px: Remove type assignment: %d\n", ci, ca_type);
 		_ecm_db_classifier_type_assignment_remove(ci, ca_type);
 	}
 	spin_unlock_bh(&ecm_db_lock);
@@ -2107,7 +2442,7 @@ void ecm_db_connection_make_defunct_by_assignment_type(ecm_classifier_type_t ca_
 	while (ci) {
 		struct ecm_db_connection_instance *cin;
 
-		DEBUG_TRACE("%p: Make defunct: %d\n", ci, ca_type);
+		DEBUG_TRACE("%px: Make defunct: %d\n", ci, ca_type);
 		ecm_db_connection_make_defunct(ci);
 
 		cin = ecm_db_connection_by_classifier_type_assignment_get_and_ref_next(ci, ca_type);
@@ -2131,7 +2466,7 @@ void ecm_db_connection_regenerate_by_assignment_type(ecm_classifier_type_t ca_ty
 	while (ci) {
 		struct ecm_db_connection_instance *cin;
 
-		DEBUG_TRACE("%p: Re-generate: %d\n", ci, ca_type);
+		DEBUG_TRACE("%px: Re-generate: %d\n", ci, ca_type);
 		ecm_db_connection_regenerate(ci);
 
 		cin = ecm_db_connection_by_classifier_type_assignment_get_and_ref_next(ci, ca_type);
@@ -2158,7 +2493,7 @@ int32_t ecm_db_connection_interfaces_get_and_ref(struct ecm_db_connection_instan
 {
 	int32_t n;
 	int32_t i;
-	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%p: magic failed\n", ci);
+	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%px: magic failed\n", ci);
 
 	spin_lock_bh(&ecm_db_lock);
 	n = ci->interface_first[dir];
@@ -2203,7 +2538,7 @@ void ecm_db_connection_interfaces_reset(struct ecm_db_connection_instance *ci,
 	struct ecm_db_iface_instance *old[ECM_DB_IFACE_HEIRARCHY_MAX];
 	int32_t old_first;
 	int32_t i;
-	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%p: magic failed\n", ci);
+	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%px: magic failed\n", ci);
 
 	/*
 	 * Iterate the from interface list, removing the old and adding in the new
@@ -2244,7 +2579,7 @@ EXPORT_SYMBOL(ecm_db_connection_interfaces_reset);
 int32_t ecm_db_connection_interfaces_get_count(struct ecm_db_connection_instance *ci, ecm_db_obj_dir_t dir)
 {
 	int32_t first;
-	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%p: magic failed\n", ci);
+	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%px: magic failed\n", ci);
 	spin_lock_bh(&ecm_db_lock);
 	first = ci->interface_first[dir];
 	spin_unlock_bh(&ecm_db_lock);
@@ -2260,7 +2595,7 @@ bool ecm_db_connection_interfaces_set_check(struct ecm_db_connection_instance *c
 {
 	bool set;
 
-	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%p: magic failed\n", ci);
+	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%px: magic failed\n", ci);
 	spin_lock_bh(&ecm_db_lock);
 	set = ci->interface_set[dir];
 	spin_unlock_bh(&ecm_db_lock);
@@ -2278,7 +2613,7 @@ void ecm_db_connection_interfaces_clear(struct ecm_db_connection_instance *ci, e
 	int32_t discard_first;
 	int32_t i;
 
-	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%p: magic failed\n", ci);
+	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%px: magic failed\n", ci);
 
 	spin_lock_bh(&ecm_db_lock);
 	for (i = ci->interface_first[dir]; i < ECM_DB_IFACE_HEIRARCHY_MAX; ++i) {
@@ -2312,7 +2647,6 @@ void ecm_db_connection_add(struct ecm_db_connection_instance *ci,
 							int ip_version,
 							int protocol, ecm_db_direction_t ecm_dir,
 							ecm_db_connection_final_callback_t final,
-							ecm_db_connection_defunct_callback_t defunct,
 							ecm_db_timer_group_t tg, bool is_routed,
 							void *arg)
 {
@@ -2324,22 +2658,21 @@ void ecm_db_connection_add(struct ecm_db_connection_instance *ci,
 	struct ecm_db_iface_instance *iface[ECM_DB_OBJ_DIR_MAX];
 #endif
 
-	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%p: magic failed\n", ci);
+	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%px: magic failed\n", ci);
 	for (dir = 0; dir < ECM_DB_OBJ_DIR_MAX; dir++) {
-		DEBUG_CHECK_MAGIC(mapping[dir], ECM_DB_MAPPING_INSTANCE_MAGIC, "%p: %s mapping magic failed \n", mapping[dir], ecm_db_obj_dir_strings[dir]);
-		DEBUG_CHECK_MAGIC(node[dir], ECM_DB_NODE_INSTANCE_MAGIC, "%p: %s node magic failed\n", node[dir], ecm_db_obj_dir_strings[dir]);
+		DEBUG_CHECK_MAGIC(mapping[dir], ECM_DB_MAPPING_INSTANCE_MAGIC, "%px: %s mapping magic failed \n", mapping[dir], ecm_db_obj_dir_strings[dir]);
+		DEBUG_CHECK_MAGIC(node[dir], ECM_DB_NODE_INSTANCE_MAGIC, "%px: %s node magic failed\n", node[dir], ecm_db_obj_dir_strings[dir]);
 	}
-	DEBUG_ASSERT((protocol >= 0) && (protocol <= 255), "%p: invalid protocol number %d\n", ci, protocol);
+	DEBUG_ASSERT((protocol >= 0) && (protocol <= 255), "%px: invalid protocol number %d\n", ci, protocol);
 
 	spin_lock_bh(&ecm_db_lock);
-	DEBUG_ASSERT(!(ci->flags & ECM_DB_CONNECTION_FLAGS_INSERTED), "%p: inserted\n", ci);
+	DEBUG_ASSERT(!(ci->flags & ECM_DB_CONNECTION_FLAGS_INSERTED), "%px: inserted\n", ci);
 	spin_unlock_bh(&ecm_db_lock);
 
 	/*
 	 * Record owner arg and callbacks
 	 */
 	ci->final = final;
-	ci->defunct = defunct;
 	ci->arg = arg;
 
 #ifdef ECM_MULTICAST_ENABLE
@@ -2349,7 +2682,7 @@ void ecm_db_connection_add(struct ecm_db_connection_instance *ci,
 	/*
 	 * Ensure default classifier has been assigned this is a must to ensure minimum level of classification
 	 */
-	DEBUG_ASSERT(ci->assignments_by_type[ECM_CLASSIFIER_TYPE_DEFAULT], "%p: No default classifier assigned\n", ci);
+	DEBUG_ASSERT(ci->assignments_by_type[ECM_CLASSIFIER_TYPE_DEFAULT], "%px: No default classifier assigned\n", ci);
 
 	/*
 	 * Connection takes references to the mappings and nodes
@@ -2398,7 +2731,7 @@ void ecm_db_connection_add(struct ecm_db_connection_instance *ci,
 	 * Increment protocol counter stats
 	 */
 	ecm_db_connection_count_by_protocol[protocol]++;
-	DEBUG_ASSERT(ecm_db_connection_count_by_protocol[protocol] > 0, "%p: Invalid protocol count %d\n", ci, ecm_db_connection_count_by_protocol[protocol]);
+	DEBUG_ASSERT(ecm_db_connection_count_by_protocol[protocol] > 0, "%px: Invalid protocol count %d\n", ci, ecm_db_connection_count_by_protocol[protocol]);
 
 	/*
 	 * Set time
@@ -2423,24 +2756,26 @@ void ecm_db_connection_add(struct ecm_db_connection_instance *ci,
 	/*
 	 * Insert connection into the connections hash table
 	 */
+	ci->hash_prev = NULL;
 	ci->hash_next = ecm_db_connection_table[hash_index];
 	if (ecm_db_connection_table[hash_index]) {
 		ecm_db_connection_table[hash_index]->hash_prev = ci;
 	}
 	ecm_db_connection_table[hash_index] = ci;
 	ecm_db_connection_table_lengths[hash_index]++;
-	DEBUG_ASSERT(ecm_db_connection_table_lengths[hash_index] > 0, "%p: invalid table len %d\n", ci, ecm_db_connection_table_lengths[hash_index]);
+	DEBUG_ASSERT(ecm_db_connection_table_lengths[hash_index] > 0, "%px: invalid table len %d\n", ci, ecm_db_connection_table_lengths[hash_index]);
 
 	/*
 	 * Insert connection into the connections serial hash table
 	 */
+	ci->serial_hash_prev = NULL;
 	ci->serial_hash_next = ecm_db_connection_serial_table[serial_hash_index];
 	if (ecm_db_connection_serial_table[serial_hash_index]) {
 		ecm_db_connection_serial_table[serial_hash_index]->serial_hash_prev = ci;
 	}
 	ecm_db_connection_serial_table[serial_hash_index] = ci;
 	ecm_db_connection_serial_table_lengths[serial_hash_index]++;
-	DEBUG_ASSERT(ecm_db_connection_serial_table_lengths[serial_hash_index] > 0, "%p: invalid table len %d\n", ci, ecm_db_connection_serial_table_lengths[serial_hash_index]);
+	DEBUG_ASSERT(ecm_db_connection_serial_table_lengths[serial_hash_index] > 0, "%px: invalid table len %d\n", ci, ecm_db_connection_serial_table_lengths[serial_hash_index]);
 
 #ifdef ECM_DB_XREF_ENABLE
 	/*
@@ -2454,7 +2789,7 @@ void ecm_db_connection_add(struct ecm_db_connection_instance *ci,
 		}
 		node[dir]->connections[dir] = ci;
 		node[dir]->connections_count[dir]++;
-		DEBUG_ASSERT(node[dir]->connections_count[dir] > 0, "%p: invalid count for %s node connections\n", ci, ecm_db_obj_dir_strings[dir]);
+		DEBUG_ASSERT(node[dir]->connections_count[dir] > 0, "%px: invalid count for %s node connections\n", ci, ecm_db_obj_dir_strings[dir]);
 	}
 
 	/*
@@ -2517,7 +2852,7 @@ void ecm_db_connection_add(struct ecm_db_connection_instance *ci,
 	/*
 	 * Throw add event to the listeners
 	 */
-	DEBUG_TRACE("%p: Throw connection added event\n", ci);
+	DEBUG_TRACE("%px: Throw connection added event\n", ci);
 	li = ecm_db_listeners_get_and_ref_first();
 	while (li) {
 		struct ecm_db_listener_instance *lin;
@@ -2562,7 +2897,7 @@ int ecm_db_connection_heirarchy_state_get(struct ecm_state_file_instance *sfi, s
 	 */
 	for (i = first_interface, j = 0; i < ECM_DB_IFACE_HEIRARCHY_MAX; ++i, ++j) {
 		struct ecm_db_iface_instance *ii = interfaces[i];
-		DEBUG_TRACE("Output interface @ %d: %p\n", i, ii);
+		DEBUG_TRACE("Output interface @ %d: %px\n", i, ii);
 
 		if ((result = ecm_state_prefix_index_add(sfi, j))) {
 			return result;
@@ -2630,7 +2965,7 @@ int ecm_db_connection_state_get(struct ecm_state_file_instance *sfi, struct ecm_
 	int32_t first_interface;
 	struct ecm_db_iface_instance *interfaces[ECM_DB_IFACE_HEIRARCHY_MAX];
 
-	DEBUG_TRACE("Prep conn msg for %p\n", ci);
+	DEBUG_TRACE("Prep conn msg for %px\n", ci);
 
 	/*
 	 * Identify expiration
@@ -2759,6 +3094,15 @@ int ecm_db_connection_state_get(struct ecm_state_file_instance *sfi, struct ecm_
 
 	if ((result = ecm_state_write(sfi, "protocol", "%d", protocol))) {
 		return result;
+	}
+
+	if (ecm_db_connection_is_pppoe_bridged_get(ci)) {
+		/*
+		 * PPPoE session ID is set in sport and dport.
+		 */
+		if ((result = ecm_state_write(sfi, "pppoe_session_id", "%u", sport))) {
+			return result;
+		}
 	}
 
 	if ((result = ecm_state_write(sfi, "is_routed", "%d", is_routed))) {
@@ -2897,7 +3241,7 @@ int ecm_db_connection_state_get(struct ecm_state_file_instance *sfi, struct ecm_
 	 */
 	feci = ecm_db_connection_front_end_get_and_ref(ci);
 	result = feci->state_get(feci, sfi);
-	feci->deref(feci);
+	ecm_front_end_connection_deref(feci);
 	if (result) {
 		return result;
 	}
@@ -3075,10 +3419,10 @@ struct ecm_db_connection_instance *ecm_db_connection_alloc(void)
 	ci->serial = ecm_db_connection_serial++;
 
 	ecm_db_connection_count++;
-	DEBUG_ASSERT(ecm_db_connection_count > 0, "%p: connection count wrap\n", ci);
+	DEBUG_ASSERT(ecm_db_connection_count > 0, "%px: connection count wrap\n", ci);
 	spin_unlock_bh(&ecm_db_lock);
 
-	DEBUG_TRACE("Connection created %p\n", ci);
+	DEBUG_TRACE("Connection created %px\n", ci);
 	return ci;
 }
 EXPORT_SYMBOL(ecm_db_connection_alloc);
@@ -3124,7 +3468,7 @@ struct ecm_db_connection_instance *ecm_db_connection_ipv6_from_ct_get_and_ref(st
 		host2_port = -protocol;
 	}
 
-	DEBUG_TRACE("%p: lookup src: " ECM_IP_ADDR_OCTAL_FMT ":%d, "
+	DEBUG_TRACE("%px: lookup src: " ECM_IP_ADDR_OCTAL_FMT ":%d, "
 		    "dest: " ECM_IP_ADDR_OCTAL_FMT ":%d, "
 		    "protocol %d\n",
 		    ct,
@@ -3183,7 +3527,7 @@ struct ecm_db_connection_instance *ecm_db_connection_ipv4_from_ct_get_and_ref(st
 		host2_port = -protocol;
 	}
 
-	DEBUG_TRACE("%p: lookup src: " ECM_IP_ADDR_DOT_FMT ":%d, "
+	DEBUG_TRACE("%px: lookup src: " ECM_IP_ADDR_DOT_FMT ":%d, "
 		    "dest: " ECM_IP_ADDR_DOT_FMT ":%d, "
 		    "protocol %d\n",
 		    ct,
@@ -3200,15 +3544,181 @@ struct ecm_db_connection_instance *ecm_db_connection_ipv4_from_ct_get_and_ref(st
 					      host2_port);
 }
 
+#ifdef ECM_INTERFACE_OVS_BRIDGE_ENABLE
+/*
+ * ecm_db_connection_from_ovs_flow_get_and_ref()
+ *	Look-up a connection based on OVS flow 5-tuple information.
+ */
+struct ecm_db_connection_instance *ecm_db_connection_from_ovs_flow_get_and_ref(struct ovsmgr_dp_flow *flow)
+{
+	ip_addr_t src_addr;
+	ip_addr_t dst_addr;
+	int src_port;
+	int dst_port;
+	int protocol;
+
+	/*
+	 * Look up the associated connection for this OVS flow
+	 */
+	protocol = flow->tuple.protocol;
+	src_port = ntohs(flow->tuple.src_port);
+	dst_port = ntohs(flow->tuple.dst_port);
+
+	if (flow->tuple.ip_version == 4) {
+		ECM_NIN4_ADDR_TO_IP_ADDR(src_addr, flow->tuple.ipv4.src);
+		ECM_NIN4_ADDR_TO_IP_ADDR(dst_addr, flow->tuple.ipv4.dst);
+		DEBUG_TRACE("%px: OVS IPv4 flow lookup src: " ECM_IP_ADDR_DOT_FMT ":%d, "
+			    "dest: " ECM_IP_ADDR_DOT_FMT ":%d, "
+			    "protocol %d\n",
+			    flow,
+			    ECM_IP_ADDR_TO_DOT(src_addr),
+			    src_port,
+			    ECM_IP_ADDR_TO_DOT(dst_addr),
+			    dst_port,
+			    protocol);
+	} else if (flow->tuple.ip_version == 6) {
+		ECM_NIN6_ADDR_TO_IP_ADDR(src_addr, flow->tuple.ipv6.src);
+		ECM_NIN6_ADDR_TO_IP_ADDR(dst_addr, flow->tuple.ipv6.dst);
+		DEBUG_TRACE("%px: OVS IPv6 flow lookup src: " ECM_IP_ADDR_OCTAL_FMT ":%d, "
+			    "dest: " ECM_IP_ADDR_OCTAL_FMT ":%d, "
+			    "protocol %d\n",
+			    flow,
+			    ECM_IP_ADDR_TO_OCTAL(src_addr),
+			    src_port,
+			    ECM_IP_ADDR_TO_OCTAL(dst_addr),
+			    dst_port,
+			    protocol);
+	} else {
+		DEBUG_WARN("%px: Invalid IP version: %d\n", flow, flow->tuple.ip_version);
+		return NULL;
+	}
+
+	return ecm_db_connection_find_and_ref(src_addr,
+					      dst_addr,
+					      protocol,
+					      src_port,
+					      dst_port);
+}
+#endif
+
+/*
+ * ecm_db_connection_decel_v4()
+ *	Decelerate IPv4 connection.
+ *
+ * Big endian parameters apart from protocol
+ */
+bool ecm_db_connection_decel_v4(__be32 src_ip, int src_port,
+				__be32 dest_ip, int dest_port, int protocol)
+{
+	ip_addr_t ecm_src_ip;
+	ip_addr_t ecm_dest_ip;
+	struct ecm_db_connection_instance *ci;
+
+	/*
+	 * Look up ECM connection from the given tuple
+	 */
+	src_port = ntohs(src_port);
+	dest_port = ntohs(dest_port);
+	ECM_NIN4_ADDR_TO_IP_ADDR(ecm_src_ip, src_ip);
+	ECM_NIN4_ADDR_TO_IP_ADDR(ecm_dest_ip, dest_ip);
+
+	ci = ecm_db_connection_find_and_ref(ecm_src_ip, ecm_dest_ip, protocol, src_port, dest_port);
+	if (!ci) {
+		DEBUG_WARN("Decel v4 Connection lookup failed."
+				" Received connection tuple information: \n"
+				"Protocol: %d\n"
+				"src: " ECM_IP_ADDR_DOT_FMT ":%d\n"
+				"dest: " ECM_IP_ADDR_DOT_FMT ":%d\n",
+				protocol,
+				ECM_IP_ADDR_TO_DOT(ecm_src_ip), src_port,
+				ECM_IP_ADDR_TO_DOT(ecm_dest_ip), dest_port);
+		return false;
+	}
+
+	DEBUG_TRACE("Decel v4, connection tuple information: \n"
+			"Protocol: %d\n"
+			"src: " ECM_IP_ADDR_DOT_FMT ":%d\n"
+			"dest: " ECM_IP_ADDR_DOT_FMT ":%d\n",
+			protocol,
+			ECM_IP_ADDR_TO_DOT(ecm_src_ip), src_port,
+			ECM_IP_ADDR_TO_DOT(ecm_dest_ip), dest_port);
+
+	/*
+	 * Defunct the connection.
+	 */
+	ecm_db_connection_make_defunct(ci);
+	ecm_db_connection_deref(ci);
+	return true;
+}
+
+/*
+ * ecm_db_connection_decel_v6()
+ *	Decelerate IPv6 connection.
+ *
+ * Big endian parameters apart from protocol
+ *
+ * NOTE: If IPv6 is not supported in ECM this function must still exist as a stub to avoid compilation problems for registrants.
+ */
+bool ecm_db_connection_decel_v6(struct in6_addr *src_ip, int src_port,
+				struct in6_addr *dest_ip, int dest_port, int protocol)
+{
+#ifdef ECM_IPV6_ENABLE
+	struct in6_addr in6;
+	ip_addr_t ecm_src_ip;
+	ip_addr_t ecm_dest_ip;
+	struct ecm_db_connection_instance *ci;
+
+	/*
+	 * Look up ECM connection from the given tuple
+	 */
+	src_port = ntohs(src_port);
+	dest_port = ntohs(dest_port);
+	in6 = *src_ip;
+	ECM_NIN6_ADDR_TO_IP_ADDR(ecm_src_ip, in6);
+	in6 = *dest_ip;
+	ECM_NIN6_ADDR_TO_IP_ADDR(ecm_dest_ip, in6);
+
+	ci = ecm_db_connection_find_and_ref(ecm_src_ip, ecm_dest_ip, protocol, src_port, dest_port);
+	if (!ci) {
+		DEBUG_WARN("Decel v6, Connection lookup failed."
+				" Received connection tuple information: \n"
+				"Protocol: %d\n"
+				"src: " ECM_IP_ADDR_OCTAL_FMT ":%d\n"
+				"dest: " ECM_IP_ADDR_OCTAL_FMT ":%d\n",
+				protocol,
+				ECM_IP_ADDR_TO_OCTAL(ecm_src_ip), src_port,
+				ECM_IP_ADDR_TO_OCTAL(ecm_dest_ip), dest_port);
+		return false;
+	}
+
+
+	DEBUG_TRACE("Decel v6, connection tuple information: \n"
+			"Protocol: %d\n"
+			"src: " ECM_IP_ADDR_OCTAL_FMT ":%d\n"
+			"dest: " ECM_IP_ADDR_OCTAL_FMT ":%d\n",
+			protocol,
+			ECM_IP_ADDR_TO_OCTAL(ecm_src_ip), src_port,
+			ECM_IP_ADDR_TO_OCTAL(ecm_dest_ip), dest_port);
+
+	/*
+	 * Defunct the connection.
+	 */
+	ecm_db_connection_make_defunct(ci);
+	ecm_db_connection_deref(ci);
+	return true;
+#endif
+	return false;
+}
+
 /*
  * ecm_db_front_end_instance_ref_and_set()
  *	Refs and sets the front end instance of connection.
  */
 void ecm_db_front_end_instance_ref_and_set(struct ecm_db_connection_instance *ci, struct ecm_front_end_connection_instance *feci)
 {
-	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%p: magic failed\n", ci);
+	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%px: magic failed\n", ci);
 
-	feci->ref(feci);
+	ecm_front_end_connection_ref(feci);
 	ci->feci = feci;
 }
 EXPORT_SYMBOL(ecm_db_front_end_instance_ref_and_set);

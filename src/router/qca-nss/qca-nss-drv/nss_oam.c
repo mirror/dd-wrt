@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2016-2018 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2016-2018, 2020 The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -45,12 +45,12 @@ static void nss_oam_rx_msg_handler(struct nss_ctx_instance *nss_ctx, struct nss_
 	 * Sanity check the message type
 	 */
 	if (nss_cmn_get_msg_len(ncm) > sizeof(struct nss_oam_msg)) {
-		nss_warning("%p: recevied with invalid msg size: %d", nss_ctx, nss_cmn_get_msg_len(ncm));
+		nss_warning("%px: recevied with invalid msg size: %d", nss_ctx, nss_cmn_get_msg_len(ncm));
 		return;
 	}
 
 	if (ncm->type > NSS_OAM_MSG_TYPE_MAX) {
-		nss_warning("%p: received with invalid resp type: %d", nss_ctx, ncm->type);
+		nss_warning("%px: received with invalid resp type: %d", nss_ctx, ncm->type);
 		return;
 	}
 
@@ -66,7 +66,7 @@ static void nss_oam_rx_msg_handler(struct nss_ctx_instance *nss_ctx, struct nss_
 
 	cb = (nss_oam_msg_callback_t)ncm->cb;
 	if (unlikely(!cb)) {
-		nss_trace("%p: rx handler has been unregistered for i/f: %d", nss_ctx, ncm->interface);
+		nss_trace("%px: rx handler has been unregistered for i/f: %d", nss_ctx, ncm->interface);
 		return;
 	}
 	cb((void *)ncm->app_data, nom);
@@ -86,12 +86,12 @@ nss_tx_status_t nss_oam_tx_msg(struct nss_ctx_instance *nss_ctx, struct nss_oam_
 	nss_oam_log_tx_msg(nom);
 
 	if (ncm->type > NSS_OAM_MSG_TYPE_MAX) {
-		nss_warning("%p: CMD type for oam module is invalid - %d", nss_ctx, ncm->type);
+		nss_warning("%px: CMD type for oam module is invalid - %d", nss_ctx, ncm->type);
 		return NSS_TX_FAILURE_BAD_PARAM;
 	}
 
 	if (ncm->interface != NSS_OAM_INTERFACE) {
-		nss_warning("%p: tx message request for another interface: %d", nss_ctx, ncm->interface);
+		nss_warning("%px: tx message request for another interface: %d", nss_ctx, ncm->interface);
 		return NSS_TX_FAILURE;
 	}
 

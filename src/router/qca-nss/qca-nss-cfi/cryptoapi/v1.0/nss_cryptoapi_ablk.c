@@ -1,4 +1,4 @@
-/* Copyright (c) 2015-2018 The Linux Foundation. All rights reserved.
+/* Copyright (c) 2015-2018, 2020 The Linux Foundation. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -37,7 +37,12 @@
 #include <crypto/ctr.h>
 #include <crypto/des.h>
 #include <crypto/aes.h>
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 11, 0)
 #include <crypto/sha.h>
+#else
+#include <crypto/sha1.h>
+#include <crypto/sha2.h>
+#endif
 #include <crypto/hash.h>
 #include <crypto/algapi.h>
 #include <crypto/aead.h>
@@ -175,7 +180,7 @@ int nss_cryptoapi_ablk_aes_setkey(struct crypto_ablkcipher *cipher, const u8 *ke
 	struct nss_cryptoapi_ctx *ctx = crypto_tfm_ctx(tfm);
 	struct nss_cryptoapi *sc = &gbl_ctx;
 	struct nss_crypto_key cip;
-	uint32_t flag = CRYPTO_TFM_RES_BAD_KEY_LEN;
+// 	uint32_t flag = CRYPTO_TFM_RES_BAD_KEY_LEN;
 	nss_crypto_status_t status;
 	bool ctr_mode = false;
 	bool cbc_mode = false;
@@ -277,7 +282,7 @@ int nss_cryptoapi_ablk_aes_setkey(struct crypto_ablkcipher *cipher, const u8 *ke
 	if (status != NSS_CRYPTO_STATUS_OK) {
 		nss_cfi_err("nss_crypto_session_alloc failed - status: %d\n", status);
 		ctx->sid = NSS_CRYPTO_MAX_IDXS;
-		flag = CRYPTO_TFM_RES_BAD_FLAGS;
+// 		flag = CRYPTO_TFM_RES_BAD_FLAGS;
 		goto fail;
 	}
 
@@ -290,7 +295,7 @@ int nss_cryptoapi_ablk_aes_setkey(struct crypto_ablkcipher *cipher, const u8 *ke
 	return 0;
 
 fail:
-	crypto_ablkcipher_set_flags(cipher, flag);
+// 	crypto_ablkcipher_set_flags(cipher, flag);
 	return -EINVAL;
 }
 
@@ -382,7 +387,7 @@ struct nss_crypto_buf *nss_cryptoapi_ablk_transform(struct ablkcipher_request *r
 
 	nss_cfi_assert(ctx);
 
-	nss_cfi_dbg("src_vaddr: 0x%p, dst_vaddr: 0x%p, iv: 0x%p\n",
+	nss_cfi_dbg("src_vaddr: 0x%px, dst_vaddr: 0x%px, iv: 0x%px\n",
 			sg_virt(req->src), sg_virt(req->dst), req->info);
 
 	info->params->cipher_skip = 0;
@@ -645,7 +650,7 @@ int nss_cryptoapi_3des_cbc_setkey(struct crypto_ablkcipher *cipher, const u8 *ke
 	struct nss_cryptoapi *sc = &gbl_ctx;
 	struct nss_crypto_key cip = { .algo = NSS_CRYPTO_CIPHER_DES };
 	struct nss_crypto_key *cip_ptr = &cip;
-	uint32_t flag = CRYPTO_TFM_RES_BAD_KEY_LEN;
+// 	uint32_t flag = CRYPTO_TFM_RES_BAD_KEY_LEN;
 	nss_crypto_status_t status;
 
 	/*
@@ -680,7 +685,7 @@ int nss_cryptoapi_3des_cbc_setkey(struct crypto_ablkcipher *cipher, const u8 *ke
 	if (status != NSS_CRYPTO_STATUS_OK) {
 		nss_cfi_err("nss_crypto_session_alloc failed - status: %d\n", status);
 		ctx->sid = NSS_CRYPTO_MAX_IDXS;
-		flag = CRYPTO_TFM_RES_BAD_FLAGS;
+// 		flag = CRYPTO_TFM_RES_BAD_FLAGS;
 		goto fail;
 	}
 
@@ -693,7 +698,7 @@ int nss_cryptoapi_3des_cbc_setkey(struct crypto_ablkcipher *cipher, const u8 *ke
 	return 0;
 
 fail:
-	crypto_ablkcipher_set_flags(cipher, flag);
+// 	crypto_ablkcipher_set_flags(cipher, flag);
 	return -EINVAL;
 }
 

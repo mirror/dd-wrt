@@ -1,18 +1,23 @@
 /*
  **************************************************************************
- * Copyright (c) 2014-2015, 2018, The Linux Foundation.  All rights reserved.
- * Permission to use, copy, modify, and/or distribute this software for
- * any purpose with or without fee is hereby granted, provided that the
- * above copyright notice and this permission notice appear in all copies.
+ * Copyright (c) 2014-2015, 2018-2021 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022, Qualcomm Innovation Center, Inc. All rights reserved.
+ *
+ * Permission to use, copy, modify, and/or distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies.
+ *
  * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
  * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
  * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
  * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
  * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
- * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT
- * OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+ * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+ * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  **************************************************************************
  */
+
+extern int ecm_classifier_accel_delay_pkts;	/* Default slow path packets allowed before the acceleration */
 
 struct ecm_classifier_instance;
 
@@ -31,8 +36,17 @@ enum ecm_classifier_types {
 #ifdef ECM_CLASSIFIER_DSCP_ENABLE
 	ECM_CLASSIFIER_TYPE_DSCP,		/* Provides DSCP and DSCP remarking support */
 #endif
+#ifdef ECM_CLASSIFIER_MSCS_ENABLE
+	ECM_CLASSIFIER_TYPE_MSCS,		/* Mirrored Stream Classification Signalling(MSCS) classifier */
+#endif
+#ifdef ECM_CLASSIFIER_EMESH_ENABLE
+	ECM_CLASSIFIER_TYPE_EMESH,		/* E-Mesh classifier */
+#endif
 #ifdef ECM_CLASSIFIER_NL_ENABLE
 	ECM_CLASSIFIER_TYPE_NL,			/* Provides netlink interface */
+#endif
+#ifdef ECM_CLASSIFIER_OVS_ENABLE
+	ECM_CLASSIFIER_TYPE_OVS,		/* OVS classifier */
 #endif
 #ifdef ECM_CLASSIFIER_PCC_ENABLE
 	ECM_CLASSIFIER_TYPE_PCC,		/* Parental control subsystem support classifier */
@@ -79,7 +93,29 @@ typedef enum ecm_classifier_acceleration_modes ecm_classifier_acceleration_mode_
 #ifdef ECM_CLASSIFIER_DSCP_ENABLE
 #define ECM_CLASSIFIER_PROCESS_ACTION_DSCP 0x00000010		/* Contains DSCP marking information */
 #define ECM_CLASSIFIER_PROCESS_ACTION_DSCP_DENY 0x00000020	/* Denies any DSCP changes */
+
+#define ECM_CLASSIFIER_PROCESS_ACTION_IGS_QOS_TAG 0x00000040	/* Contains flow & return ingress qos tags */
 #endif
+
+#ifdef ECM_CLASSIFIER_OVS_ENABLE
+#define ECM_CLASSIFIER_PROCESS_ACTION_OVS_VLAN_TAG 0x00000080	/* Contains OVS VLAN tags */
+#define ECM_CLASSIFIER_PROCESS_ACTION_OVS_VLAN_QINQ_TAG 0x00000100	/* Contains OVS QinQ VLAN tags */
+#define ECM_CLASSIFIER_PROCESS_ACTION_OVS_MCAST_DENY_ACCEL 0x00000200		/* Multicast OVS flow */
+#endif
+
+#ifdef ECM_CLASSIFIER_EMESH_ENABLE
+#define ECM_CLASSIFIER_PROCESS_ACTION_EMESH_SP_FLOW 0x00000400	/* Mark the E-MESH Service Prioritization flow */
+#define ECM_CLASSIFIER_PROCESS_ACTION_EMESH_SAWF_TAG 0x00000800		/* Mark the E-MESH SAWF tag */
+#define ECM_CLASSIFIER_PROCESS_ACTION_EMESH_SAWF_VLAN_PCP_REMARK 0x00001000	/* Contains E-MESH SAWF VLAN pcp remark */
+#endif
+
+#define ECM_CLASSIFIER_PROCESS_ACTION_TIMER_GROUP_NO_TOUCH 0x00002000	/* Do not update CI time */
+
+#ifdef ECM_CLASSIFIER_PCC_ENABLE
+#define ECM_CLASSIFIER_PROCESS_ACTION_MIRROR_ENABLED 0x00004000	/* Contains mirror dynamic interface number */
+#endif
+
+#define ECM_CLASSIFIER_PROCESS_ACTION_MARK 0x00008000	/* Contains flow & return skb mark */
 
 /*
  * struct ecm_classifier_process_response
@@ -97,9 +133,33 @@ struct ecm_classifier_process_response {
 	bool drop;					/* Drop packet at hand */
 	uint32_t flow_qos_tag;				/* QoS tag to use for the packet */
 	uint32_t return_qos_tag;			/* QoS tag to use for the packet */
-#ifdef ECM_CLASSIFIER_DSCP_ENABLE
+#if defined ECM_CLASSIFIER_DSCP_ENABLE || defined ECM_CLASSIFIER_EMESH_ENABLE
+#ifdef ECM_CLASSIFIER_DSCP_IGS
+	uint16_t igs_flow_qos_tag;			/* Ingress QoS tag to use for the packet */
+	uint16_t igs_return_qos_tag;			/* Ingress QoS tag to use for the return packet */
+#endif
 	uint8_t flow_dscp;				/* DSCP mark for flow */
 	uint8_t return_dscp;				/* DSCP mark for return */
+	uint32_t flow_mark;				/* Mark to use for the packet*/
+	uint32_t return_mark;				/* Mark to use for the return packet*/
+#endif
+#ifdef ECM_CLASSIFIER_OVS_ENABLE
+	uint32_t ingress_vlan_tag[2];			/* Ingress VLAN tags */
+	uint32_t egress_vlan_tag[2];			/* Egress VLAN tags */
+#ifdef ECM_MULTICAST_ENABLE
+	int32_t egress_netdev_index[ECM_DB_MULTICAST_IF_MAX];	 /* Multicast egress net device interface index */
+	uint32_t egress_mc_vlan_tag[ECM_DB_MULTICAST_IF_MAX][2]; /* Multicast egress VLAN tags */
+#endif
+#endif
+#ifdef ECM_CLASSIFIER_PCC_ENABLE
+	int flow_mirror_ifindex;			/* Flow mirror device index value */
+	int return_mirror_ifindex;			/* Return mirror device index value */
+#endif
+#ifdef ECM_CLASSIFIER_EMESH_ENABLE
+	uint32_t flow_sawf_metadata;			/* Flow SAWF metadata value */
+	uint32_t return_sawf_metadata;			/* Return SAWF metadata value */
+	uint8_t flow_vlan_pcp;				/* Flow VLAN pcp remark value */
+	uint8_t return_vlan_pcp;			/* Return VLAN pcp remark value */
 #endif
 	ecm_classifier_acceleration_mode_t accel_mode;	/* Acceleration needed for this connection */
 	ecm_db_timer_group_t timer_group;		/* Timer group the connection should be in */
@@ -111,8 +171,10 @@ struct ecm_classifier_process_response {
  * in this data structure to update the classifiers.
  */
 struct ecm_classifier_rule_sync {
-	uint32_t flow_tx_packet_count;
-	uint32_t return_tx_packet_count;
+	uint32_t tx_packet_count[ECM_CONN_DIR_MAX];
+	uint32_t tx_byte_count[ECM_CONN_DIR_MAX];
+	uint32_t rx_packet_count[ECM_CONN_DIR_MAX];
+	uint32_t rx_byte_count[ECM_CONN_DIR_MAX];
 	uint32_t reason;
 };
 
@@ -123,7 +185,9 @@ struct ecm_classifier_rule_sync {
  * the underlying accelaration engine.
  */
 struct ecm_classifier_rule_create {
-
+#ifdef ECM_CLASSIFIER_EMESH_ENABLE
+	struct sk_buff *skb;
+#endif
 };
 
 /*
@@ -154,11 +218,13 @@ typedef int (*ecm_classifier_state_get_callback_t)(struct ecm_classifier_instanc
 											/* Get state output.  Returns 0 upon success. */
 #endif
 
+typedef void (*ecm_classifier_update_t)(struct ecm_classifier_instance *ci, enum ecm_rule_update_type type, void *arg);
+
 /*
  * Determines if a connection should be kept.
  */
-typedef bool (*ecm_classifier_should_keep_connection_t)
-	(struct ecm_classifier_instance *ci, uint8_t *mac);
+typedef void (*ecm_classifier_should_keep_connection_t)
+	(struct ecm_classifier_instance *ci, struct ecm_db_connection_defunct_info *info);
 
 /*
  * Base class for all types of classifiers
@@ -187,6 +253,8 @@ struct ecm_classifier_instance {
 	ecm_classifier_state_get_callback_t state_get;
 							/* Return its state */
 #endif
+	ecm_classifier_update_t update;			/* Updates the classifier instance */
+
 	ecm_classifier_ref_method_t ref;
 	ecm_classifier_deref_callback_t deref;
 };
@@ -257,6 +325,16 @@ static inline int ecm_classifier_process_response_state_get(struct ecm_state_fil
 		}
 	}
 #ifdef ECM_CLASSIFIER_DSCP_ENABLE
+#ifdef ECM_CLASSIFIER_DSCP_IGS
+	if (pr->process_actions & ECM_CLASSIFIER_PROCESS_ACTION_IGS_QOS_TAG) {
+		if ((result = ecm_state_write(sfi, "igs_flow_qos_tag", "%u", pr->igs_flow_qos_tag))) {
+			return result;
+		}
+		if ((result = ecm_state_write(sfi, "igs_return_qos_tag", "%u", pr->igs_return_qos_tag))) {
+			return result;
+		}
+	}
+#endif
 	if (pr->process_actions & ECM_CLASSIFIER_PROCESS_ACTION_DSCP) {
 		if ((result = ecm_state_write(sfi, "flow_dscp", "%u", pr->flow_dscp))) {
 			return result;
@@ -265,7 +343,17 @@ static inline int ecm_classifier_process_response_state_get(struct ecm_state_fil
 			return result;
 		}
 	}
+
+	if (pr->process_actions & ECM_CLASSIFIER_PROCESS_ACTION_MARK) {
+		if ((result = ecm_state_write(sfi, "flow_mark", "%u", pr->flow_mark))) {
+			return result;
+		}
+		if ((result = ecm_state_write(sfi, "return_mark", "%u", pr->return_mark))) {
+			return result;
+		}
+	}
 #endif
+
 	if (pr->process_actions & ECM_CLASSIFIER_PROCESS_ACTION_TIMER_GROUP) {
 		if ((result = ecm_state_write(sfi, "timer_group", "%d", pr->timer_group))) {
 			return result;
@@ -278,4 +366,3 @@ static inline int ecm_classifier_process_response_state_get(struct ecm_state_fil
 
 extern struct ecm_classifier_instance *ecm_classifier_assign_classifier(struct ecm_db_connection_instance *ci, ecm_classifier_type_t type);
 extern bool ecm_classifier_reclassify(struct ecm_db_connection_instance *ci, int assignment_count, struct ecm_classifier_instance *assignments[]);
-

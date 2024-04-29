@@ -36,6 +36,7 @@ qca-nss-drv-objs := \
 			nss_gre_tunnel_log.o \
 			nss_gre_tunnel_stats.o \
 			nss_if.o \
+                        nss_if_log.o \
 			nss_init.o \
 			nss_ipsec.o \
 			nss_ipsec_log.o \
@@ -86,6 +87,7 @@ qca-nss-drv-objs := \
 			nss_sjack_stats.o \
 			nss_stats.o \
 			nss_tstamp.o \
+			nss_tstamp_stats.o \
 			nss_tun6rd.o \
 			nss_tun6rd_log.o \
 			nss_trustsec_tx.o \
@@ -109,7 +111,7 @@ qca-nss-drv-objs := \
 
 qca-nss-drv-objs += nss_hal/nss_hal.o
 qca-nss-drv-objs += nss_hal/fsm9010/nss_hal_pvt.o
-qca-nss-drv-objs += nss_data_plane/nss_data_plane.o
+qca-nss-drv-objs += nss_data_plane/nss_data_plane_common.o
 qca-nss-drv-objs += nss_data_plane/nss_data_plane_gmac.o
 
 ccflags-y += -I$(obj)/nss_hal/include

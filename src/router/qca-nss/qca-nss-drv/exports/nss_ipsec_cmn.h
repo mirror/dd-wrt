@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2018-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2018-2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -23,7 +23,7 @@
 #define __NSS_IPSEC_CMN_H_
 
 /**
- * @addtogroup nss_nss_ipsec_subsystem
+ * @addtogroup nss_ipsec_subsystem
  * @{
  */
 
@@ -42,6 +42,7 @@
 #define NSS_IPSEC_CMN_FLAG_CIPHER_GCM (0x1 << 7)	/**< Galios counter mode. */
 #define NSS_IPSEC_CMN_FLAG_COPY_DSCP (0x1 << 8)		/**< Copy DSCP from inner to outer header. */
 #define NSS_IPSEC_CMN_FLAG_COPY_DF (0x1 << 9)		/**< Copy DF from inner node to outer node. */
+#define NSS_IPSEC_CMN_FLAG_MODE_TRANS (0x1 << 10)	/**< Encapsulate or decapsulate in transport mode (default is tunnel mode). */
 
 #define NSS_IPSEC_CMN_FLAG_HDR_MASK \
 	(NSS_IPSEC_CMN_FLAG_IPV6 | NSS_IPSEC_CMN_FLAG_IPV4_NATT | NSS_IPSEC_CMN_FLAG_IPV4_UDP)
@@ -273,6 +274,7 @@ struct nss_ipsec_cmn_ctx_stats {
 	uint32_t fail_exception;	/**< Failed to exception. */
 	uint32_t fail_transform;	/**< Failed to produce output. */
 	uint32_t fail_linearized;	/**< Failed to linearize. */
+	uint32_t fail_mdata_ver;	/**< Invalid metadata version. */
 };
 
 /**
@@ -303,7 +305,8 @@ struct nss_ipsec_cmn_mdata_cmn {
 struct nss_ipsec_cmn_mdata_encap {
 	struct nss_ipsec_cmn_sa_tuple sa;	/**< SA tuple. */
 	uint32_t seq_num;			/**< Sequence number for encapsulation (zero disables it). */
-	uint32_t flags;				/**< Encapsulation metadata flags. */
+	uint16_t data_len;			/**< Length of data to encapsulate. */
+	uint16_t flags;				/**< Encapsulation metadata flags. */
 };
 
 /**

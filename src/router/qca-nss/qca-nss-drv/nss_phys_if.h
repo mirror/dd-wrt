@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2014-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2014-2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -32,11 +32,7 @@
 struct nss_phys_if_estats {
 	uint32_t rx_errors;		/**< Number of RX errors */
 	uint32_t rx_receive_errors;	/**< Number of RX receive errors */
-	uint32_t rx_overflow_errors;	/**< Number of RX overflow errors */
 	uint32_t rx_descriptor_errors;	/**< Number of RX descriptor errors */
-	uint32_t rx_watchdog_timeout_errors;
-					/**< Number of RX watchdog timeout errors */
-	uint32_t rx_crc_errors;		/**< Number of RX CRC errors */
 	uint32_t rx_late_collision_errors;
 					/**< Number of RX late collision errors */
 	uint32_t rx_dribble_bit_errors;	/**< Number of RX dribble bit errors */
@@ -74,23 +70,30 @@ struct nss_phys_if_estats {
 	uint32_t gmac_worst_case_ticks;	/**< Worst case iteration of the GMAC in ticks */
 	uint32_t gmac_iterations;	/**< Number of iterations around the GMAC */
 	uint32_t tx_pause_frames;	/**< Number of pause frames sent by the GMAC */
-	uint32_t rx_octets_g;		/* Number of good octets received */
-	uint32_t rx_ucast_frames;	/* Number of Unicast frames received */
-	uint32_t rx_bcast_frames;	/* Number of Bcast frames received */
-	uint32_t rx_mcast_frames;	/* Number of Mcast frames received */
-	uint32_t rx_undersize;		/* Number of RX undersize frames */
-	uint32_t rx_oversize;		/* Number of RX oversize frames */
-	uint32_t rx_jabber;		/* Number of jabber frames */
-	uint32_t rx_octets_gb;		/* Number of good/bad octets */
-	uint32_t rx_frag_frames_g;	/* Number of good ipv4 frag frames */
-	uint32_t tx_octets_g;		/* Number of good octets sent */
-	uint32_t tx_ucast_frames;	/* Number of Unicast frames sent*/
-	uint32_t tx_bcast_frames;	/* Number of Broadcast frames sent */
-	uint32_t tx_mcast_frames;	/* Number of Multicast frames sent */
-	uint32_t tx_deferred;		/* Number of Deferred frames sent */
-	uint32_t tx_single_col;		/* Number of single collisions */
-	uint32_t tx_multiple_col;	/* Number of multiple collisions */
-	uint32_t tx_octets_gb;		/* Number of good/bad octets sent*/
+	uint32_t mmc_rx_overflow_errors;
+					/**< Number of RX overflow errors */
+	uint32_t mmc_rx_watchdog_timeout_errors;
+					/**< Number of RX watchdog timeout errors */
+	uint32_t mmc_rx_crc_errors;	/**< Number of RX CRC errors */
+	uint32_t mmc_rx_ip_header_errors;
+					/**< Number of RX IP header errors */
+	uint32_t mmc_rx_octets_g;		/* Number of good octets received */
+	uint32_t mmc_rx_ucast_frames;	/* Number of Unicast frames received */
+	uint32_t mmc_rx_bcast_frames;	/* Number of Bcast frames received */
+	uint32_t mmc_rx_mcast_frames;	/* Number of Mcast frames received */
+	uint32_t mmc_rx_undersize;	/* Number of RX undersize frames */
+	uint32_t mmc_rx_oversize;	/* Number of RX oversize frames */
+	uint32_t mmc_rx_jabber;		/* Number of jabber frames */
+	uint32_t mmc_rx_octets_gb;	/* Number of good/bad octets */
+	uint32_t mmc_rx_frag_frames_g;	/* Number of good ipv4 frag frames */
+	uint32_t mmc_tx_octets_g;	/* Number of good octets sent */
+	uint32_t mmc_tx_ucast_frames;	/* Number of Unicast frames sent*/
+	uint32_t mmc_tx_bcast_frames;	/* Number of Broadcast frames sent */
+	uint32_t mmc_tx_mcast_frames;	/* Number of Multicast frames sent */
+	uint32_t mmc_tx_deferred;	/* Number of Deferred frames sent */
+	uint32_t mmc_tx_single_col;	/* Number of single collisions */
+	uint32_t mmc_tx_multiple_col;	/* Number of multiple collisions */
+	uint32_t mmc_tx_octets_gb;	/* Number of good/bad octets sent*/
 };
 
 /**
@@ -121,6 +124,7 @@ enum nss_phys_if_msg_types {
 	NSS_PHYS_IF_VSI_ASSIGN = NSS_IF_VSI_ASSIGN,
 	NSS_PHYS_IF_VSI_UNASSIGN = NSS_IF_VSI_UNASSIGN,
 	NSS_PHYS_IF_SET_NEXTHOP = NSS_IF_SET_NEXTHOP,
+	NSS_PHYS_IF_RESET_NEXTHOP = NSS_IF_RESET_NEXTHOP,
 	NSS_PHYS_IF_EXTENDED_STATS_SYNC = NSS_IF_MAX_MSG_TYPES + 1,
 	NSS_PHYS_IF_MAX_MSG_TYPES
 };

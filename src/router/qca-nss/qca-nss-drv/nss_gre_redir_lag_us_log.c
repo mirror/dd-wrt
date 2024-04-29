@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2018, 2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -53,10 +53,10 @@ static int8_t *nss_gre_redir_lag_us_log_error_response_types_str[NSS_GRE_REDIR_L
 static void nss_gre_redir_lag_us_log_config_msg(struct nss_gre_redir_lag_us_msg *ngm)
 {
 	struct nss_gre_redir_lag_us_config_msg *ngcm __maybe_unused = &ngm->msg.config_us;
-	nss_trace("%p: NSS GRE REDIR LAG Config Message:\n"
+	nss_trace("%px: NSS GRE REDIR LAG Config Message:\n"
 		"GRE REDIR LAG US Hash Mode: %d\n"
 		"GRE REDIR LAG US Number of Slaves: %d\n"
-		"GRE REDIR LAG US Interface Number: %p\n",
+		"GRE REDIR LAG US Interface Number: %px\n",
 		ngcm, ngcm->hash_mode, ngcm->num_slaves,
 		ngcm->if_num);
 }
@@ -68,10 +68,10 @@ static void nss_gre_redir_lag_us_log_config_msg(struct nss_gre_redir_lag_us_msg 
 static void nss_gre_redir_lag_us_log_add_hash_node_msg(struct nss_gre_redir_lag_us_msg *ngm)
 {
 	struct nss_gre_redir_lag_us_add_hash_node_msg *ngam __maybe_unused = &ngm->msg.add_hash;
-	nss_trace("%p: NSS GRE REDIR LAG Add Hash Node Message:\n"
+	nss_trace("%px: NSS GRE REDIR LAG Add Hash Node Message:\n"
 		"GRE REDIR LAG US Interface Number: %d\n"
-		"GRE REDIR LAG US Source MAC: %p\n"
-		"GRE REDIR LAG US Destination MAC: %p\n",
+		"GRE REDIR LAG US Source MAC: %px\n"
+		"GRE REDIR LAG US Destination MAC: %px\n",
 		ngam, ngam->if_num, ngam->src_mac,
 		ngam->dest_mac);
 }
@@ -83,9 +83,9 @@ static void nss_gre_redir_lag_us_log_add_hash_node_msg(struct nss_gre_redir_lag_
 static void nss_gre_redir_lag_us_log_del_hash_node_msg(struct nss_gre_redir_lag_us_msg *ngm)
 {
 	struct nss_gre_redir_lag_us_del_hash_node_msg *ngdm __maybe_unused = &ngm->msg.del_hash;
-	nss_trace("%p: NSS GRE REDIR LAG Del Hash Node Message:\n"
-		"GRE REDIR LAG US Source MAC: %p\n"
-		"GRE REDIR LAG US Destination MAC: %p\n",
+	nss_trace("%px: NSS GRE REDIR LAG Del Hash Node Message:\n"
+		"GRE REDIR LAG US Source MAC: %px\n"
+		"GRE REDIR LAG US Destination MAC: %px\n",
 		ngdm, ngdm->src_mac,ngdm->dest_mac);
 }
 
@@ -96,9 +96,9 @@ static void nss_gre_redir_lag_us_log_del_hash_node_msg(struct nss_gre_redir_lag_
 static void nss_gre_redir_lag_us_log_query_hash_node_msg(struct nss_gre_redir_lag_us_msg *ngm)
 {
 	struct nss_gre_redir_lag_us_query_hash_node_msg *ngqm __maybe_unused = &ngm->msg.query_hash;
-	nss_trace("%p: NSS GRE REDIR LAG Query Hash Node Message:\n"
-		"GRE REDIR LAG US Source MAC: %p\n"
-		"GRE REDIR LAG US Destination MAC: %p\n"
+	nss_trace("%px: NSS GRE REDIR LAG Query Hash Node Message:\n"
+		"GRE REDIR LAG US Source MAC: %px\n"
+		"GRE REDIR LAG US Destination MAC: %px\n"
 		"GRE REDIR LAG US Interface Number: %d\n",
 		ngqm, ngqm->src_mac, ngqm->dest_mac,
 		ngqm->ifnum);
@@ -135,7 +135,7 @@ static void nss_gre_redir_lag_us_log_verbose(struct nss_gre_redir_lag_us_msg *ng
 		break;
 
 	default:
-		nss_warning("%p: Invalid message type\n", ngm);
+		nss_warning("%px: Invalid message type\n", ngm);
 		break;
 	}
 }
@@ -147,11 +147,11 @@ static void nss_gre_redir_lag_us_log_verbose(struct nss_gre_redir_lag_us_msg *ng
 void nss_gre_redir_lag_us_log_tx_msg(struct nss_gre_redir_lag_us_msg *ngm)
 {
 	if (ngm->cm.type >= NSS_GRE_REDIR_LAG_US_MAX_MSG_TYPES) {
-		nss_warning("%p: Invalid message type\n", ngm);
+		nss_warning("%px: Invalid message type\n", ngm);
 		return;
 	}
 
-	nss_info("%p: type[%d]:%s\n", ngm, ngm->cm.type, nss_gre_redir_lag_us_log_message_types_str[ngm->cm.type]);
+	nss_info("%px: type[%d]:%s\n", ngm, ngm->cm.type, nss_gre_redir_lag_us_log_message_types_str[ngm->cm.type]);
 	nss_gre_redir_lag_us_log_verbose(ngm);
 }
 
@@ -162,26 +162,26 @@ void nss_gre_redir_lag_us_log_tx_msg(struct nss_gre_redir_lag_us_msg *ngm)
 void nss_gre_redir_lag_us_log_rx_msg(struct nss_gre_redir_lag_us_msg *ngm)
 {
 	if (ngm->cm.response >= NSS_CMN_RESPONSE_LAST) {
-		nss_warning("%p: Invalid response\n", ngm);
+		nss_warning("%px: Invalid response\n", ngm);
 		return;
 	}
 
 	if (ngm->cm.response == NSS_CMN_RESPONSE_NOTIFY || (ngm->cm.response == NSS_CMN_RESPONSE_ACK)) {
-		nss_info("%p: type[%d]:%s, response[%d]:%s\n", ngm, ngm->cm.type,
+		nss_info("%px: type[%d]:%s, response[%d]:%s\n", ngm, ngm->cm.type,
 			nss_gre_redir_lag_us_log_message_types_str[ngm->cm.type],
 			ngm->cm.response, nss_cmn_response_str[ngm->cm.response]);
 		goto verbose;
 	}
 
 	if (ngm->cm.error >= NSS_GRE_REDIR_LAG_ERR_MAX) {
-		nss_warning("%p: msg failure - type[%d]:%s, response[%d]:%s, error[%d]:Invalid error\n",
+		nss_warning("%px: msg failure - type[%d]:%s, response[%d]:%s, error[%d]:Invalid error\n",
 			ngm, ngm->cm.type, nss_gre_redir_lag_us_log_message_types_str[ngm->cm.type],
 			ngm->cm.response, nss_cmn_response_str[ngm->cm.response],
 			ngm->cm.error);
 		goto verbose;
 	}
 
-	nss_info("%p: msg nack - type[%d]:%s, response[%d]:%s, error[%d]:%s\n",
+	nss_info("%px: msg nack - type[%d]:%s, response[%d]:%s, error[%d]:%s\n",
 		ngm, ngm->cm.type, nss_gre_redir_lag_us_log_message_types_str[ngm->cm.type],
 		ngm->cm.response, nss_cmn_response_str[ngm->cm.response],
 		ngm->cm.error, nss_gre_redir_lag_us_log_error_response_types_str[ngm->cm.error]);

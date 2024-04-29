@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2016,2018-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2016,2018-2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -28,6 +28,8 @@
 #define NSS_NLIPV6_MCAST_GRP "nss_nlipv6_mc"
 #define NSS_NLIPV6_ARPHRD_IPSEC_TUNNEL_TYPE 0x31
 #define NSS_NLIPV6_VLAN_ID_NOT_CONFIGURED 0xFFF
+#define NSS_NLIPV6_MIN_MTU 1280
+#define NSS_NLIPV6_MAX_MTU 65535
 
 #define NSS_NLIPV6_ADDR_BITS (sizeof(uint32_t) * 4 * BITS_PER_BYTE)	/* 128 bits */
 #define NSS_NLIPV6_SUBNET_BITS (sizeof(uint32_t) * 4 * BITS_PER_BYTE)	/* 128 bits */
@@ -36,15 +38,16 @@
  * @brief IPv6 rule
  */
 struct nss_nlipv6_rule {
-	struct nss_nlcmn cm;		/**< common message header */
+	struct nss_nlcmn cm;				/**< common message header */
 
-	char flow_ifname[IFNAMSIZ];	/**< ingress interface name */
-	char return_ifname[IFNAMSIZ];	/**< egress interface name */
+	char flow_ifname[IFNAMSIZ];			/**< ingress interface name */
+	char return_ifname[IFNAMSIZ];			/**< egress interface name */
 
-	uint16_t flow_iftype;            /**< ingress interface type */
-	uint16_t return_iftype;            /**< egress interface type */
+	enum nss_nl_iftype flow_iftype;			/**< ingress interface type */
+	enum nss_nl_iftype return_iftype;		/**< egress interface type */
 
-	struct nss_ipv6_msg nim;	/**< rule message */
+	struct nss_ipv6_msg nim;			/**< rule message */
+	struct nss_ipv6_stats_notification stats;	/**< NSS statistics */
 };
 
 /**
@@ -79,4 +82,5 @@ static inline void nss_nlipv6_swap_addr(uint32_t *src, uint32_t *dst)
 	dst[3] = src[0];
 
 }
+
 #endif /* __NSS_NLIPV6_IF_H */

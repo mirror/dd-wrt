@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2016-2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2016-2018, 2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -72,12 +72,12 @@ nss_tx_status_t nss_ppe_tx_msg(struct nss_ctx_instance *nss_ctx, struct nss_ppe_
 	 * Sanity check the message
 	 */
 	if (ncm->type >= NSS_PPE_MSG_MAX) {
-		nss_warning("%p: message type out of range: %d\n", nss_ctx, ncm->type);
+		nss_warning("%px: message type out of range: %d\n", nss_ctx, ncm->type);
 		return NSS_TX_FAILURE;
 	}
 
 	if (!nss_ppe_verify_ifnum(ncm->interface)) {
-		nss_warning("%p: invalid interface %d\n", nss_ctx, ncm->interface);
+		nss_warning("%px: invalid interface %d\n", nss_ctx, ncm->interface);
 		return NSS_TX_FAILURE;
 	}
 
@@ -102,14 +102,14 @@ nss_tx_status_t nss_ppe_tx_msg_sync(struct nss_ctx_instance *nss_ctx, struct nss
 
 	status = nss_ppe_tx_msg(nss_ctx, npm);
 	if (status != NSS_TX_SUCCESS) {
-		nss_warning("%p: ppe_tx_msg failed\n", nss_ctx);
+		nss_warning("%px: ppe_tx_msg failed\n", nss_ctx);
 		up(&ppe_pvt.sem);
 		return status;
 	}
 
 	ret = wait_for_completion_timeout(&ppe_pvt.complete, msecs_to_jiffies(NSS_PPE_TX_TIMEOUT));
 	if (!ret) {
-		nss_warning("%p: ppe msg tx failed due to timeout\n", nss_ctx);
+		nss_warning("%px: ppe msg tx failed due to timeout\n", nss_ctx);
 		ppe_pvt.response = NSS_TX_FAILURE;
 	}
 
@@ -244,7 +244,7 @@ static void nss_ppe_handler(struct nss_ctx_instance *nss_ctx, struct nss_cmn_msg
 
 	nss_ppe_msg_callback_t cb;
 
-	nss_trace("nss_ctx: %p ppe msg: %p\n", nss_ctx, msg);
+	nss_trace("nss_ctx: %px ppe msg: %px\n", nss_ctx, msg);
 	BUG_ON(!nss_ppe_verify_ifnum(ncm->interface));
 
 	/*
@@ -256,12 +256,12 @@ static void nss_ppe_handler(struct nss_ctx_instance *nss_ctx, struct nss_cmn_msg
 	 * Is this a valid request/response packet?
 	 */
 	if (ncm->type >= NSS_PPE_MSG_MAX) {
-		nss_warning("%p: received invalid message %d for PPE interface\n", nss_ctx, ncm->type);
+		nss_warning("%px: received invalid message %d for PPE interface\n", nss_ctx, ncm->type);
 		return;
 	}
 
 	if (nss_cmn_get_msg_len(ncm) > sizeof(struct nss_ppe_msg)) {
-		nss_warning("%p: Length of message is greater than required: %d\n", nss_ctx, nss_cmn_get_msg_len(ncm));
+		nss_warning("%px: Length of message is greater than required: %d\n", nss_ctx, nss_cmn_get_msg_len(ncm));
 		return;
 	}
 

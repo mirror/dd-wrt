@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2014, 2017, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2014,2017,2019-2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -19,8 +19,9 @@
  *	NSS LSO_RX APIs
  */
 
-#include "nss_tx_rx_common.h"
-#include "nss_lso_rx.h"
+#include <nss_core.h>
+#include "nss_lso_rx_stats.h"
+#include "nss_lso_rx_strings.h"
 
 /*
  * nss_rx_lso_rx_interface_handler()
@@ -32,7 +33,11 @@ static void nss_rx_lso_rx_interface_handler(struct nss_ctx_instance *nss_ctx, st
 
 	switch (nlrm->cm.type) {
 	case NSS_LSO_RX_STATS_SYNC_MSG:
+		/*
+		 * Update LSO_RX driver statistics and send statistics notifications to the registered modules
+		 */
 		nss_lso_rx_stats_sync(nss_ctx, &nlrm->msg.stats_sync);
+		nss_lso_rx_stats_notify(nss_ctx);
 		break;
 
 	default:
@@ -40,7 +45,7 @@ static void nss_rx_lso_rx_interface_handler(struct nss_ctx_instance *nss_ctx, st
 			/*
 			 * Check response
 			 */
-			nss_info("%p: Received response %d for type %d, interface %d", nss_ctx, ncm->response, ncm->type, ncm->interface);
+			nss_info("%px: Received response %d for type %d, interface %d", nss_ctx, ncm->response, ncm->type, ncm->interface);
 		}
 	}
 }
@@ -53,4 +58,5 @@ void nss_lso_rx_register_handler(struct nss_ctx_instance *nss_ctx)
 {
 	nss_core_register_handler(nss_ctx, NSS_LSO_RX_INTERFACE, nss_rx_lso_rx_interface_handler, NULL);
 	nss_lso_rx_stats_dentry_create();
+	nss_lso_rx_strings_dentry_create();
 }

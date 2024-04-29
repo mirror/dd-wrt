@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2014-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2014-2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -77,7 +77,7 @@ static void nss_virt_if_msg_handler(struct nss_ctx_instance *nss_ctx,
 	 * Sanity check the message type
 	 */
 	if (ncm->type > NSS_VIRT_IF_MAX_MSG_TYPES) {
-		nss_warning("%p: message type out of range: %d", nss_ctx, ncm->type);
+		nss_warning("%px: message type out of range: %d", nss_ctx, ncm->type);
 		return;
 	}
 
@@ -89,7 +89,7 @@ static void nss_virt_if_msg_handler(struct nss_ctx_instance *nss_ctx,
 	}
 
 	if (!nss_virt_if_verify_if_num(ncm->interface)) {
-		nss_warning("%p: response for another interface: %d", nss_ctx, ncm->interface);
+		nss_warning("%px: response for another interface: %d", nss_ctx, ncm->interface);
 		return;
 	}
 
@@ -98,7 +98,7 @@ static void nss_virt_if_msg_handler(struct nss_ctx_instance *nss_ctx,
 	spin_lock_bh(&nss_virt_if_lock);
 	if (!nss_virt_if_handle_t[if_num]) {
 		spin_unlock_bh(&nss_virt_if_lock);
-		nss_warning("%p: virt_if handle is NULL\n", nss_ctx);
+		nss_warning("%px: virt_if handle is NULL\n", nss_ctx);
 		return;
 	}
 
@@ -121,7 +121,7 @@ static void nss_virt_if_msg_handler(struct nss_ctx_instance *nss_ctx,
 	 * to the same callback/app_data.
 	 */
 	if (ncm->response == NSS_CMN_RESPONSE_NOTIFY) {
-		ncm->cb = (nss_ptr_t)nss_ctx->nss_top->if_rx_msg_callback[ncm->interface];
+		ncm->cb = (nss_ptr_t)nss_core_get_msg_handler(nss_ctx, ncm->interface);
 		ncm->app_data = (nss_ptr_t)nss_ctx->subsys_dp_register[ncm->interface].ndev;
 	}
 
@@ -149,7 +149,7 @@ static void nss_virt_if_callback(void *app_data, struct nss_cmn_msg *ncm)
 	struct nss_virt_if_pvt *nvip = handle->pvt;
 
 	if (ncm->response != NSS_CMN_RESPONSE_ACK) {
-		nss_warning("%p: virt_if Error response %d\n", handle->nss_ctx, ncm->response);
+		nss_warning("%px: virt_if Error response %d\n", handle->nss_ctx, ncm->response);
 		nvip->response = NSS_TX_FAILURE;
 		complete(&nvip->complete);
 		return;
@@ -175,7 +175,7 @@ static nss_tx_status_t nss_virt_if_tx_msg_sync(struct nss_virt_if_handle *handle
 
 	status = nss_virt_if_tx_msg(nss_ctx, nvim);
 	if (status != NSS_TX_SUCCESS) {
-		nss_warning("%p: nss_virt_if_msg failed\n", nss_ctx);
+		nss_warning("%px: nss_virt_if_msg failed\n", nss_ctx);
 		up(&nwip->sem);
 		return status;
 	}
@@ -183,7 +183,7 @@ static nss_tx_status_t nss_virt_if_tx_msg_sync(struct nss_virt_if_handle *handle
 	ret = wait_for_completion_timeout(&nwip->complete,
 						msecs_to_jiffies(NSS_VIRT_IF_TX_TIMEOUT));
 	if (!ret) {
-		nss_warning("%p: virt_if tx failed due to timeout\n", nss_ctx);
+		nss_warning("%px: virt_if tx failed due to timeout\n", nss_ctx);
 		nwip->response = NSS_TX_FAILURE;
 	}
 
@@ -220,7 +220,7 @@ static int nss_virt_if_handle_destroy_sync(struct nss_virt_if_handle *handle)
 	int32_t index_h2n;
 
 	if (!nss_virt_if_verify_if_num(if_num_n2h) || !nss_virt_if_verify_if_num(if_num_h2n)) {
-		nss_warning("%p: bad interface numbers %d %d\n", handle->nss_ctx, if_num_n2h, if_num_h2n);
+		nss_warning("%px: bad interface numbers %d %d\n", handle->nss_ctx, if_num_n2h, if_num_h2n);
 		return NSS_TX_FAILURE_BAD_PARAM;
 	}
 
@@ -229,13 +229,13 @@ static int nss_virt_if_handle_destroy_sync(struct nss_virt_if_handle *handle)
 
 	status = nss_dynamic_interface_dealloc_node(if_num_n2h, NSS_DYNAMIC_INTERFACE_TYPE_GENERIC_REDIR_N2H);
 	if (status != NSS_TX_SUCCESS) {
-		nss_warning("%p: Dynamic interface destroy failed status %d\n", handle->nss_ctx, status);
+		nss_warning("%px: Dynamic interface destroy failed status %d\n", handle->nss_ctx, status);
 		return status;
 	}
 
 	status = nss_dynamic_interface_dealloc_node(if_num_h2n, NSS_DYNAMIC_INTERFACE_TYPE_GENERIC_REDIR_H2N);
 	if (status != NSS_TX_SUCCESS) {
-		nss_warning("%p: Dynamic interface destroy failed status %d\n", handle->nss_ctx, status);
+		nss_warning("%px: Dynamic interface destroy failed status %d\n", handle->nss_ctx, status);
 		return status;
 	}
 
@@ -261,7 +261,7 @@ static struct nss_virt_if_handle *nss_virt_if_handle_create_sync(struct nss_ctx_
 	struct nss_virt_if_handle *handle;
 
 	if (!nss_virt_if_verify_if_num(if_num_n2h) || !nss_virt_if_verify_if_num(if_num_h2n)) {
-		nss_warning("%p: bad interface numbers %d %d\n", nss_ctx, if_num_n2h, if_num_h2n);
+		nss_warning("%px: bad interface numbers %d %d\n", nss_ctx, if_num_n2h, if_num_h2n);
 		return NULL;
 	}
 
@@ -271,7 +271,7 @@ static struct nss_virt_if_handle *nss_virt_if_handle_create_sync(struct nss_ctx_
 	handle = (struct nss_virt_if_handle *)kzalloc(sizeof(struct nss_virt_if_handle),
 									GFP_KERNEL);
 	if (!handle) {
-		nss_warning("%p: handle memory alloc failed\n", nss_ctx);
+		nss_warning("%px: handle memory alloc failed\n", nss_ctx);
 		*cmd_rsp = NSS_VIRT_IF_ALLOC_FAILURE;
 		goto error1;
 	}
@@ -282,7 +282,7 @@ static struct nss_virt_if_handle *nss_virt_if_handle_create_sync(struct nss_ctx_
 	handle->pvt = (struct nss_virt_if_pvt *)kzalloc(sizeof(struct nss_virt_if_pvt),
 								GFP_KERNEL);
 	if (!handle->pvt) {
-		nss_warning("%p: failure allocating memory for nss_virt_if_pvt\n", nss_ctx);
+		nss_warning("%px: failure allocating memory for nss_virt_if_pvt\n", nss_ctx);
 		*cmd_rsp = NSS_VIRT_IF_ALLOC_FAILURE;
 		goto error2;
 	}
@@ -318,14 +318,14 @@ static uint32_t nss_virt_if_register_handler_sync(struct nss_ctx_instance *nss_c
 
 	ret = nss_core_register_handler(nss_ctx, if_num_n2h, nss_virt_if_msg_handler, NULL);
 	if (ret != NSS_CORE_STATUS_SUCCESS) {
-		nss_warning("%p: Failed to register message handler for redir_n2h interface %d\n", nss_ctx, if_num_n2h);
+		nss_warning("%px: Failed to register message handler for redir_n2h interface %d\n", nss_ctx, if_num_n2h);
 		return NSS_VIRT_IF_CORE_FAILURE;
 	}
 
 	ret = nss_core_register_handler(nss_ctx, if_num_h2n, nss_virt_if_msg_handler, NULL);
 	if (ret != NSS_CORE_STATUS_SUCCESS) {
 		nss_core_unregister_handler(nss_ctx, if_num_n2h);
-		nss_warning("%p: Failed to register message handler for redir_h2n interface %d\n", nss_ctx, if_num_h2n);
+		nss_warning("%px: Failed to register message handler for redir_h2n interface %d\n", nss_ctx, if_num_h2n);
 		return NSS_VIRT_IF_CORE_FAILURE;
 	}
 
@@ -354,26 +354,26 @@ struct nss_virt_if_handle *nss_virt_if_create_sync_nexthop(struct net_device *ne
 	int32_t if_num_n2h, if_num_h2n;
 
 	if (unlikely(nss_ctx->state != NSS_CORE_STATE_INITIALIZED)) {
-		nss_warning("%p: Interface could not be created as core not ready\n", nss_ctx);
+		nss_warning("%px: Interface could not be created as core not ready\n", nss_ctx);
 		return NULL;
 	}
 
 	if_num_n2h = nss_dynamic_interface_alloc_node(NSS_DYNAMIC_INTERFACE_TYPE_GENERIC_REDIR_N2H);
 	if (if_num_n2h < 0) {
-		nss_warning("%p: failure allocating redir_n2h\n", nss_ctx);
+		nss_warning("%px: failure allocating redir_n2h\n", nss_ctx);
 		return NULL;
 	}
 
 	if_num_h2n = nss_dynamic_interface_alloc_node(NSS_DYNAMIC_INTERFACE_TYPE_GENERIC_REDIR_H2N);
 	if (if_num_h2n < 0) {
-		nss_warning("%p: failure allocating redir_h2n\n", nss_ctx);
+		nss_warning("%px: failure allocating redir_h2n\n", nss_ctx);
 		nss_dynamic_interface_dealloc_node(if_num_n2h, NSS_DYNAMIC_INTERFACE_TYPE_GENERIC_REDIR_N2H);
 		return NULL;
 	}
 
 	handle = nss_virt_if_handle_create_sync(nss_ctx, if_num_n2h, if_num_h2n, &ret);
 	if (!handle) {
-		nss_warning("%p: virt_if handle creation failed ret %d\n", nss_ctx, ret);
+		nss_warning("%px: virt_if handle creation failed ret %d\n", nss_ctx, ret);
 		nss_dynamic_interface_dealloc_node(if_num_n2h, NSS_DYNAMIC_INTERFACE_TYPE_GENERIC_REDIR_N2H);
 		nss_dynamic_interface_dealloc_node(if_num_h2n, NSS_DYNAMIC_INTERFACE_TYPE_GENERIC_REDIR_H2N);
 		return NULL;
@@ -384,7 +384,7 @@ struct nss_virt_if_handle *nss_virt_if_create_sync_nexthop(struct net_device *ne
 	 */
 	ret = nss_virt_if_register_handler_sync(nss_ctx, handle);
 	if (ret != NSS_VIRT_IF_SUCCESS) {
-		nss_warning("%p: Registration handler failed reason: %d\n", nss_ctx, ret);
+		nss_warning("%px: Registration handler failed reason: %d\n", nss_ctx, ret);
 		goto error1;
 	}
 
@@ -399,7 +399,7 @@ struct nss_virt_if_handle *nss_virt_if_create_sync_nexthop(struct net_device *ne
 
 	ret = nss_virt_if_tx_msg_sync(handle, &nvim);
 	if (ret != NSS_TX_SUCCESS) {
-		nss_warning("%p: nss_virt_if_tx_msg_sync failed %u\n", nss_ctx, ret);
+		nss_warning("%px: nss_virt_if_tx_msg_sync failed %u\n", nss_ctx, ret);
 		goto error2;
 	}
 
@@ -409,7 +409,7 @@ struct nss_virt_if_handle *nss_virt_if_create_sync_nexthop(struct net_device *ne
 
 	ret = nss_virt_if_tx_msg_sync(handle, &nvim);
 	if (ret != NSS_TX_SUCCESS) {
-		nss_warning("%p: nss_virt_if_tx_msg_sync failed %u\n", nss_ctx, ret);
+		nss_warning("%px: nss_virt_if_tx_msg_sync failed %u\n", nss_ctx, ret);
 		goto error2;
 	}
 
@@ -483,14 +483,14 @@ nss_tx_status_t nss_virt_if_destroy_sync(struct nss_virt_if_handle *handle)
 	nss_ctx = handle->nss_ctx;
 
 	if (unlikely(nss_ctx->state != NSS_CORE_STATE_INITIALIZED)) {
-		nss_warning("%p: Interface could not be destroyed as core not ready\n", nss_ctx);
+		nss_warning("%px: Interface could not be destroyed as core not ready\n", nss_ctx);
 		return NSS_TX_FAILURE_NOT_READY;
 	}
 
 	spin_lock_bh(&nss_top_main.lock);
 	if (!nss_ctx->subsys_dp_register[if_num_n2h].ndev || !nss_ctx->subsys_dp_register[if_num_h2n].ndev) {
 		spin_unlock_bh(&nss_top_main.lock);
-		nss_warning("%p: Unregister virt interface %d %d: no context\n", nss_ctx, if_num_n2h, if_num_h2n);
+		nss_warning("%px: Unregister virt interface %d %d: no context\n", nss_ctx, if_num_n2h, if_num_h2n);
 		return NSS_TX_FAILURE_BAD_PARAM;
 	}
 
@@ -503,19 +503,19 @@ nss_tx_status_t nss_virt_if_destroy_sync(struct nss_virt_if_handle *handle)
 
 	status = nss_virt_if_handle_destroy_sync(handle);
 	if (status != NSS_TX_SUCCESS) {
-		nss_warning("%p: handle destroy failed for if_num_n2h %d and if_num_h2n %d\n", nss_ctx, if_num_n2h, if_num_h2n);
+		nss_warning("%px: handle destroy failed for if_num_n2h %d and if_num_h2n %d\n", nss_ctx, if_num_n2h, if_num_h2n);
 		return NSS_TX_FAILURE;
 	}
 
 	ret = nss_core_unregister_handler(nss_ctx, if_num_n2h);
 	if (ret != NSS_CORE_STATUS_SUCCESS) {
-		nss_warning("%p: Not able to unregister handler for redir_n2h interface %d with NSS core\n", nss_ctx, if_num_n2h);
+		nss_warning("%px: Not able to unregister handler for redir_n2h interface %d with NSS core\n", nss_ctx, if_num_n2h);
 		return NSS_TX_FAILURE_BAD_PARAM;
 	}
 
 	ret = nss_core_unregister_handler(nss_ctx, if_num_h2n);
 	if (ret != NSS_CORE_STATUS_SUCCESS) {
-		nss_warning("%p: Not able to unregister handler for redir_h2n interface %d with NSS core\n", nss_ctx, if_num_h2n);
+		nss_warning("%px: Not able to unregister handler for redir_h2n interface %d with NSS core\n", nss_ctx, if_num_h2n);
 		return NSS_TX_FAILURE_BAD_PARAM;
 	}
 
@@ -543,27 +543,18 @@ nss_tx_status_t nss_virt_if_tx_buf(struct nss_virt_if_handle *handle,
 	}
 
 	if (!nss_virt_if_verify_if_num(if_num)) {
-		nss_warning("%p: bad interface number %d\n", nss_ctx, if_num);
+		nss_warning("%px: bad interface number %d\n", nss_ctx, if_num);
 		return NSS_TX_FAILURE_BAD_PARAM;
 	}
 
-	nss_trace("%p: Virtual Rx packet, if_num:%d, skb:%p", nss_ctx, if_num, skb);
+	nss_trace("%px: Virtual Rx packet, if_num:%d, skb:%px", nss_ctx, if_num, skb);
 
 	/*
 	 * Sanity check the SKB to ensure that it's suitable for us
 	 */
 	if (unlikely(skb->len <= ETH_HLEN)) {
-		nss_warning("%p: Virtual Rx packet: %p too short", nss_ctx, skb);
+		nss_warning("%px: Virtual Rx packet: %px too short", nss_ctx, skb);
 		return NSS_TX_FAILURE_TOO_SHORT;
-	}
-
-	if (unlikely(skb_shinfo(skb)->nr_frags != 0)) {
-		/*
-		 * TODO: If we have a connection matching rule for this skbuff,
-		 * do we need to flush it??
-		 */
-		nss_warning("%p: Delivering the packet to Linux because of fragmented skb: %p\n", nss_ctx, skb);
-		return NSS_TX_FAILURE_NOT_SUPPORTED;
 	}
 
 	/*
@@ -573,7 +564,8 @@ nss_tx_status_t nss_virt_if_tx_buf(struct nss_virt_if_handle *handle,
 	put_cpu();
 	skb_set_queue_mapping(skb, cpu);
 
-	return nss_core_send_packet(nss_ctx, skb, if_num, H2N_BIT_FLAG_VIRTUAL_BUFFER);
+	return nss_core_send_packet(nss_ctx, skb, if_num, H2N_BIT_FLAG_VIRTUAL_BUFFER |
+                                                        H2N_BIT_FLAG_BUFFER_REUSABLE);
 }
 EXPORT_SYMBOL(nss_virt_if_tx_buf);
 
@@ -588,12 +580,12 @@ nss_tx_status_t nss_virt_if_tx_msg(struct nss_ctx_instance *nss_ctx, struct nss_
 	 * Sanity check the message
 	 */
 	if (!nss_virt_if_verify_if_num(ncm->interface)) {
-		nss_warning("%p: tx request for another interface: %d", nss_ctx, ncm->interface);
+		nss_warning("%px: tx request for another interface: %d", nss_ctx, ncm->interface);
 		return NSS_TX_FAILURE;
 	}
 
 	if (ncm->type > NSS_VIRT_IF_MAX_MSG_TYPES) {
-		nss_warning("%p: message type out of range: %d", nss_ctx, ncm->type);
+		nss_warning("%px: message type out of range: %d", nss_ctx, ncm->type);
 		return NSS_TX_FAILURE;
 	}
 
@@ -665,6 +657,7 @@ void nss_virt_if_register(struct nss_virt_if_handle *handle,
 {
 	struct nss_ctx_instance *nss_ctx;
 	int32_t if_num;
+	uint32_t status;
 
 	if (!handle) {
 		nss_warning("handle is NULL\n");
@@ -682,7 +675,11 @@ void nss_virt_if_register(struct nss_virt_if_handle *handle,
 	if_num = handle->if_num_n2h;
 
 	nss_core_register_subsys_dp(nss_ctx, if_num, data_callback, NULL, NULL, netdev, (uint32_t)netdev->features);
-	nss_top_main.if_rx_msg_callback[if_num] = NULL;
+	status = nss_core_unregister_msg_handler(nss_ctx, if_num);
+	if (status != NSS_CORE_STATUS_SUCCESS) {
+		nss_warning("%px: unable to unregister event handler for interface(%u)", nss_ctx, if_num);
+		return;
+	}
 }
 EXPORT_SYMBOL(nss_virt_if_register);
 
@@ -693,6 +690,7 @@ void nss_virt_if_unregister(struct nss_virt_if_handle *handle)
 {
 	struct nss_ctx_instance *nss_ctx;
 	int32_t if_num;
+	uint32_t status;
 
 	if (!handle) {
 		nss_warning("handle is NULL\n");
@@ -711,7 +709,11 @@ void nss_virt_if_unregister(struct nss_virt_if_handle *handle)
 
 	nss_core_unregister_subsys_dp(nss_ctx, if_num);
 
-	nss_top_main.if_rx_msg_callback[if_num] = NULL;
+	status = nss_core_unregister_msg_handler(nss_ctx, if_num);
+	if (status != NSS_CORE_STATUS_SUCCESS) {
+		nss_warning("%px: unable to unregister event handler for interface(%u)", nss_ctx, if_num);
+		return;
+	}
 }
 EXPORT_SYMBOL(nss_virt_if_unregister);
 

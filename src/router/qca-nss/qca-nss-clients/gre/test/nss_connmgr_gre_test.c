@@ -229,10 +229,12 @@ static int nss_connmgr_gre_test_open_proc(struct inode *inode, struct file *filp
 /*
  * Proc ops
  */
-static const struct file_operations nss_connmgr_gre_test_proc_ops =  {
-	.open =  nss_connmgr_gre_test_open_proc,
-	.write = nss_connmgr_gre_test_write_proc,
-	.read = seq_read,
+static const struct proc_ops nss_connmgr_gre_test_proc_ops =  {
+	.proc_open	= nss_connmgr_gre_test_open_proc,
+	.proc_read	= seq_read,
+	.proc_lseek	= seq_lseek,
+	.proc_release	= single_release,
+	.proc_write	= nss_connmgr_gre_test_write_proc,
 };
 
 /*

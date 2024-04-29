@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2014-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2014-2021, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -65,7 +65,6 @@
 #include "ecm_classifier_default.h"
 #include "ecm_db.h"
 
-
 #ifdef ECM_MULTICAST_ENABLE
 #define ECM_DB_MULTICAST_INSTANCE_MAGIC 0xc34a
 
@@ -83,6 +82,9 @@ struct ecm_db_multicast_tuple_instance {
 	struct ecm_db_multicast_tuple_instance *next;	/* Next instance in global list */
 	struct ecm_db_multicast_tuple_instance *prev;	/* Previous instance in global list */
 	struct ecm_db_connection_instance *ci;	/* Pointer to the DB Connection Instance */
+#ifdef ECM_INTERFACE_OVS_BRIDGE_ENABLE
+	struct vlan_hdr ovs_ingress_vlan;	/* Ingress vlan tag for ovs bridge. */
+#endif
 	uint16_t src_port;	/* RO: IPv4/v6 Source Port */
 	uint16_t dst_port;	/* RO: IPv4/v6 Destination Port */
 	ip_addr_t src_ip;	/* RO: IPv4/v6 Source Address */
@@ -90,6 +92,8 @@ struct ecm_db_multicast_tuple_instance {
 	uint32_t flags;		/* Flags for this instance node */
 	uint32_t hash_index;	/* Hash index of this node */
 	int proto;		/* RO: Protocol */
+	struct net_device *l2_br_dev;		/* Bridge device for L2-only flows */
+	struct net_device *l3_br_dev;		/* Bridge device for L3-only flows */
 	int refs;		/* Integer to trap we never go negative */
 #if (DEBUG_LEVEL > 0)
 	uint16_t magic;		/* Magic value for debug */
@@ -113,7 +117,7 @@ void ecm_db_multicast_connection_data_totals_update(struct ecm_db_connection_ins
 {
 	int32_t i;
 
-	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%p: magic failed\n", ci);
+	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%px: magic failed\n", ci);
 
 	spin_lock_bh(&ecm_db_lock);
 
@@ -204,7 +208,7 @@ void ecm_db_multicast_connection_interface_heirarchy_stats_update(struct ecm_db_
 
 	ret = ecm_db_multicast_connection_to_interfaces_get_and_ref_all(ci, &to_mc_ifaces, &to_mc_ifaces_first);
 	if (ret == 0) {
-		DEBUG_WARN("%p: no interfaces in to_multicast_interfaces list!\n", ci);
+		DEBUG_WARN("%px: no interfaces in to_multicast_interfaces list!\n", ci);
 		return;
 	}
 
@@ -233,10 +237,10 @@ EXPORT_SYMBOL(ecm_db_multicast_connection_interface_heirarchy_stats_update);
  */
 int _ecm_db_multicast_tuple_instance_deref(struct ecm_db_multicast_tuple_instance *ti)
 {
-	DEBUG_CHECK_MAGIC(ti, ECM_DB_MULTICAST_INSTANCE_MAGIC, "%p: magic failed", ti);
+	DEBUG_CHECK_MAGIC(ti, ECM_DB_MULTICAST_INSTANCE_MAGIC, "%px: magic failed", ti);
 	ti->refs--;
-	DEBUG_TRACE("%p: ti deref %d\n", ti, ti->refs);
-	DEBUG_ASSERT(ti->refs >= 0, "%p: ref wrap\n", ti);
+	DEBUG_TRACE("%px: ti deref %d\n", ti, ti->refs);
+	DEBUG_ASSERT(ti->refs >= 0, "%px: ref wrap\n", ti);
 
 	if (ti->refs > 0) {
 		return ti->refs;
@@ -244,7 +248,7 @@ int _ecm_db_multicast_tuple_instance_deref(struct ecm_db_multicast_tuple_instanc
 
 	if (ti->flags & ECM_DB_MULTICAST_TUPLE_INSTANCE_FLAGS_INSERTED) {
 		if (!ti->prev) {
-			DEBUG_ASSERT(ecm_db_multicast_tuple_instance_table[ti->hash_index] == ti, "%p: hash table bad\n", ti);
+			DEBUG_ASSERT(ecm_db_multicast_tuple_instance_table[ti->hash_index] == ti, "%px: hash table bad\n", ti);
 			ecm_db_multicast_tuple_instance_table[ti->hash_index] = ti->next;
 		} else {
 			ti->prev->next = ti->next;
@@ -253,6 +257,14 @@ int _ecm_db_multicast_tuple_instance_deref(struct ecm_db_multicast_tuple_instanc
 		if (ti->next) {
 			ti->next->prev = ti->prev;
 		}
+	}
+
+	if (ti->l2_br_dev) {
+		dev_put(ti->l2_br_dev);
+	}
+
+	if (ti->l3_br_dev) {
+		dev_put(ti->l3_br_dev);
 	}
 
 	DEBUG_CLEAR_MAGIC(ti);
@@ -297,7 +309,7 @@ int ecm_db_multicast_connection_to_interfaces_reset(struct ecm_db_connection_ins
 	int32_t *nf_p;
 	int32_t heirarchy_index;
 	int32_t i;
-	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%p: magic failed\n", ci);
+	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%px: magic failed\n", ci);
 
 	/*
 	 * First remove all old interface hierarchies if any hierarchy
@@ -307,7 +319,7 @@ int ecm_db_multicast_connection_to_interfaces_reset(struct ecm_db_connection_ins
 
 	ci->to_mcast_interfaces = (struct ecm_db_iface_instance *)kzalloc(ECM_DB_TO_MCAST_INTERFACES_SIZE, GFP_ATOMIC | __GFP_NOWARN);
 	if (!ci->to_mcast_interfaces) {
-		DEBUG_WARN("%p: Memory is not available for to_mcast_interfaces\n", ci);
+		DEBUG_WARN("%px: Memory is not available for to_mcast_interfaces\n", ci);
 		return -1;
 	}
 
@@ -377,7 +389,7 @@ void ecm_db_multicast_connection_to_interfaces_update(struct ecm_db_connection_i
 	int32_t if_index;
 	int32_t i;
 
-	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%p: magic failed\n", ci);
+	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%px: magic failed\n", ci);
 
 	/*
 	 * Iterate the to interface list, adding in the new
@@ -431,10 +443,10 @@ EXPORT_SYMBOL(ecm_db_multicast_connection_to_interfaces_update);
  */
 static void _ecm_db_multicast_tuple_instance_ref(struct ecm_db_multicast_tuple_instance *ti)
 {
-	DEBUG_CHECK_MAGIC(ti, ECM_DB_MULTICAST_INSTANCE_MAGIC, "%p: magic failed", ti);
+	DEBUG_CHECK_MAGIC(ti, ECM_DB_MULTICAST_INSTANCE_MAGIC, "%px: magic failed", ti);
 	ti->refs++;
-	DEBUG_TRACE("%p: ti ref %d\n", ti, ti->refs);
-	DEBUG_ASSERT(ti->refs > 0, "%p: ref wrap\n", ti)
+	DEBUG_TRACE("%px: ti ref %d\n", ti, ti->refs);
+	DEBUG_ASSERT(ti->refs > 0, "%px: ref wrap\n", ti)
 }
 
 /*
@@ -459,6 +471,12 @@ struct ecm_db_multicast_tuple_instance *ecm_db_multicast_tuple_instance_alloc(ip
 	ti->refs = 1;
 	ti->next = NULL;
 	ti->prev = NULL;
+	ti->l2_br_dev = NULL;
+	ti->l3_br_dev = NULL;
+#ifdef ECM_INTERFACE_OVS_BRIDGE_ENABLE
+	ti->ovs_ingress_vlan.h_vlan_TCI = 0;
+	ti->ovs_ingress_vlan.h_vlan_encapsulated_proto = 0;
+#endif
 	DEBUG_SET_MAGIC(ti, ECM_DB_MULTICAST_INSTANCE_MAGIC);
 
 	return ti;
@@ -497,7 +515,7 @@ struct ecm_db_multicast_tuple_instance *ecm_db_multicast_connection_find_and_ref
 		_ecm_db_multicast_tuple_instance_ref(ti);
 		_ecm_db_connection_ref(ti->ci);
 		spin_unlock_bh(&ecm_db_lock);
-		DEBUG_TRACE("multicast tuple instance found %p\n", ti);
+		DEBUG_TRACE("multicast tuple instance found %px\n", ti);
 		return ti;
 	}
 
@@ -530,7 +548,7 @@ EXPORT_SYMBOL(ecm_db_multicast_tuple_instance_deref);
 void ecm_db_multicast_connection_deref(struct ecm_db_multicast_tuple_instance *ti)
 {
 	struct ecm_db_connection_instance *ci;
-	DEBUG_CHECK_MAGIC(ti, ECM_DB_MULTICAST_INSTANCE_MAGIC, "%p: magic failed", ti);
+	DEBUG_CHECK_MAGIC(ti, ECM_DB_MULTICAST_INSTANCE_MAGIC, "%px: magic failed", ti);
 
 	ci = ti->ci;
 	ecm_db_multicast_tuple_instance_deref(ti);
@@ -549,10 +567,10 @@ EXPORT_SYMBOL(ecm_db_multicast_connection_deref);
  */
 void ecm_db_multicast_tuple_instance_add(struct ecm_db_multicast_tuple_instance *ti, struct ecm_db_connection_instance *ci)
 {
-	DEBUG_CHECK_MAGIC(ti, ECM_DB_MULTICAST_INSTANCE_MAGIC, "%p: magic failed", ti);
+	DEBUG_CHECK_MAGIC(ti, ECM_DB_MULTICAST_INSTANCE_MAGIC, "%px: magic failed", ti);
 
 	spin_lock_bh(&ecm_db_lock);
-	DEBUG_ASSERT(!(ti->flags & ECM_DB_MULTICAST_TUPLE_INSTANCE_FLAGS_INSERTED), "%p: inserted\n", ti);
+	DEBUG_ASSERT(!(ti->flags & ECM_DB_MULTICAST_TUPLE_INSTANCE_FLAGS_INSERTED), "%px: inserted\n", ti);
 
 	/*
 	 * Attach the multicast tuple instance with the connection instance
@@ -611,7 +629,7 @@ EXPORT_SYMBOL(ecm_db_multicast_connection_get_and_ref_first);
 struct ecm_db_multicast_tuple_instance *ecm_db_multicast_connection_get_and_ref_next(struct ecm_db_multicast_tuple_instance *ti)
 {
 	struct ecm_db_multicast_tuple_instance *tin;
-	DEBUG_CHECK_MAGIC(ti, ECM_DB_MULTICAST_INSTANCE_MAGIC, "%p: magic failed", ti);
+	DEBUG_CHECK_MAGIC(ti, ECM_DB_MULTICAST_INSTANCE_MAGIC, "%px: magic failed", ti);
 	spin_lock_bh(&ecm_db_lock);
 	tin = ti->next;
 	if (tin) {
@@ -629,7 +647,7 @@ EXPORT_SYMBOL(ecm_db_multicast_connection_get_and_ref_next);
  */
 void ecm_db_multicast_tuple_instance_source_ip_get(struct ecm_db_multicast_tuple_instance *ti, ip_addr_t origin)
 {
-	DEBUG_CHECK_MAGIC(ti, ECM_DB_MULTICAST_INSTANCE_MAGIC, "%p: magic failed", ti);
+	DEBUG_CHECK_MAGIC(ti, ECM_DB_MULTICAST_INSTANCE_MAGIC, "%px: magic failed", ti);
 	ECM_IP_ADDR_COPY(origin, ti->src_ip);
 }
 EXPORT_SYMBOL(ecm_db_multicast_tuple_instance_source_ip_get);
@@ -640,7 +658,7 @@ EXPORT_SYMBOL(ecm_db_multicast_tuple_instance_source_ip_get);
  */
 void ecm_db_multicast_tuple_instance_group_ip_get(struct ecm_db_multicast_tuple_instance *ti, ip_addr_t group)
 {
-	DEBUG_CHECK_MAGIC(ti, ECM_DB_MULTICAST_INSTANCE_MAGIC, "%p: magic failed", ti);
+	DEBUG_CHECK_MAGIC(ti, ECM_DB_MULTICAST_INSTANCE_MAGIC, "%px: magic failed", ti);
 	ECM_IP_ADDR_COPY(group, ti->grp_ip);
 }
 EXPORT_SYMBOL(ecm_db_multicast_tuple_instance_group_ip_get);
@@ -653,7 +671,7 @@ uint32_t ecm_db_multicast_tuple_instance_flags_get(struct ecm_db_multicast_tuple
 {
 	uint32_t flags;
 
-	DEBUG_CHECK_MAGIC(ti, ECM_DB_MULTICAST_INSTANCE_MAGIC, "%p: magic failed\n", ti);
+	DEBUG_CHECK_MAGIC(ti, ECM_DB_MULTICAST_INSTANCE_MAGIC, "%px: magic failed\n", ti);
 	spin_lock_bh(&ecm_db_lock);
 	flags = ti->flags;
 	spin_unlock_bh(&ecm_db_lock);
@@ -667,7 +685,7 @@ EXPORT_SYMBOL(ecm_db_multicast_tuple_instance_flags_get);
  */
 void ecm_db_multicast_tuple_instance_flags_set(struct ecm_db_multicast_tuple_instance *ti, uint32_t flags)
 {
-	DEBUG_CHECK_MAGIC(ti, ECM_DB_MULTICAST_INSTANCE_MAGIC, "%p: magic failed\n", ti);
+	DEBUG_CHECK_MAGIC(ti, ECM_DB_MULTICAST_INSTANCE_MAGIC, "%px: magic failed\n", ti);
 
 	spin_lock_bh(&ecm_db_lock);
 	ti->flags |= flags;
@@ -681,13 +699,69 @@ EXPORT_SYMBOL(ecm_db_multicast_tuple_instance_flags_set);
  */
 void ecm_db_multicast_tuple_instance_flags_clear(struct ecm_db_multicast_tuple_instance *ti, uint32_t flags)
 {
-	DEBUG_CHECK_MAGIC(ti, ECM_DB_MULTICAST_INSTANCE_MAGIC, "%p: magic failed\n", ti);
+	DEBUG_CHECK_MAGIC(ti, ECM_DB_MULTICAST_INSTANCE_MAGIC, "%px: magic failed\n", ti);
 
 	spin_lock_bh(&ecm_db_lock);
 	ti->flags &= ~flags;
 	spin_unlock_bh(&ecm_db_lock);
 }
 EXPORT_SYMBOL(ecm_db_multicast_tuple_instance_flags_clear);
+
+/*
+ * ecm_db_multicast_tuple_instance_set_and_hold_l2_br_dev()
+ * 	Save bridge device for L2 multicast flow
+ */
+void ecm_db_multicast_tuple_instance_set_and_hold_l2_br_dev(struct ecm_db_multicast_tuple_instance *ti, struct net_device *l2_br_dev)
+{
+	DEBUG_CHECK_MAGIC(ti, ECM_DB_MULTICAST_INSTANCE_MAGIC, "%px: magic failed\n", ti);
+
+	DEBUG_ASSERT(l2_br_dev, "Invalid argument received. Expected a l2_br_dev");
+
+	spin_lock_bh(&ecm_db_lock);
+	ti->l2_br_dev = l2_br_dev;
+	dev_hold(ti->l2_br_dev);
+	spin_unlock_bh(&ecm_db_lock);
+}
+EXPORT_SYMBOL(ecm_db_multicast_tuple_instance_set_and_hold_l2_br_dev);
+
+/*
+ * ecm_db_multicast_tuple_instance_set_and_hold_l3_br_dev()
+ * 	Save bridge device for L3 multicast flow
+ */
+void ecm_db_multicast_tuple_instance_set_and_hold_l3_br_dev(struct ecm_db_multicast_tuple_instance *ti, struct net_device *l3_br_dev)
+{
+	DEBUG_CHECK_MAGIC(ti, ECM_DB_MULTICAST_INSTANCE_MAGIC, "%px: magic failed\n", ti);
+
+	DEBUG_ASSERT(l3_br_dev, "Invalid argument received. Expected a l3_br_dev");
+
+	spin_lock_bh(&ecm_db_lock);
+	ti->l3_br_dev = l3_br_dev;
+	dev_hold(ti->l3_br_dev);
+	spin_unlock_bh(&ecm_db_lock);
+}
+EXPORT_SYMBOL(ecm_db_multicast_tuple_instance_set_and_hold_l3_br_dev);
+
+/*
+ * ecm_db_multicast_tuple_instance_get_l2_br_dev()
+ * 	Return bridge device for L2 multicast flow
+ */
+struct net_device *ecm_db_multicast_tuple_instance_get_l2_br_dev(struct ecm_db_multicast_tuple_instance *ti)
+{
+	DEBUG_CHECK_MAGIC(ti, ECM_DB_MULTICAST_INSTANCE_MAGIC, "%px: magic failed\n", ti);
+	return ti->l2_br_dev;
+}
+EXPORT_SYMBOL(ecm_db_multicast_tuple_instance_get_l2_br_dev);
+
+/*
+ * ecm_db_multicast_tuple_instance_get_l3_br_dev()
+ * 	Return bridge device for L3 multicast flow
+ */
+struct net_device *ecm_db_multicast_tuple_instance_get_l3_br_dev(struct ecm_db_multicast_tuple_instance *ti)
+{
+	DEBUG_CHECK_MAGIC(ti, ECM_DB_MULTICAST_INSTANCE_MAGIC, "%px: magic failed\n", ti);
+	return ti->l3_br_dev;
+}
+EXPORT_SYMBOL(ecm_db_multicast_tuple_instance_get_l3_br_dev);
 
 /*
  * ecm_db_multicast_connection_to_interfaces_get_and_ref_all()
@@ -720,17 +794,17 @@ int32_t ecm_db_multicast_connection_to_interfaces_get_and_ref_all(struct ecm_db_
 	int32_t ii_index;
 	int32_t if_count = 0;
 
-	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%p: magic failed\n", ci);
+	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%px: magic failed\n", ci);
 
 	heirarchy_base = (struct ecm_db_iface_instance *)kzalloc(ECM_DB_TO_MCAST_INTERFACES_SIZE, GFP_ATOMIC | __GFP_NOWARN);
 	if (!heirarchy_base) {
-		DEBUG_WARN("%p: No memory for interface hierarchies \n", ci);
+		DEBUG_WARN("%px: No memory for interface hierarchies \n", ci);
 		return if_count;
 	}
 
 	ii_first_base = (int32_t *)kzalloc(sizeof(int32_t *) * ECM_DB_MULTICAST_IF_MAX, GFP_ATOMIC | __GFP_NOWARN);
 	if (!ii_first_base) {
-		DEBUG_WARN("%p: No memory for first interface \n", ci);
+		DEBUG_WARN("%px: No memory for first interface \n", ci);
 		kfree(heirarchy_base);
 		return if_count;
 	}
@@ -786,7 +860,7 @@ bool ecm_db_multicast_connection_to_interfaces_set_check(struct ecm_db_connectio
 {
 	bool set;
 
-	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%p: magic failed\n", ci);
+	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%px: magic failed\n", ci);
 	spin_lock_bh(&ecm_db_lock);
 	set = ci->to_mcast_interfaces_set;
 	spin_unlock_bh(&ecm_db_lock);
@@ -800,7 +874,7 @@ EXPORT_SYMBOL(ecm_db_multicast_connection_to_interfaces_set_check);
  */
 static void  _ecm_db_multicast_connection_to_interfaces_set_clear(struct ecm_db_connection_instance *ci)
 {
-	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%p: magic failed\n", ci);
+	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%px: magic failed\n", ci);
 	ci->to_mcast_interfaces_set = false;
 }
 
@@ -810,8 +884,8 @@ static void  _ecm_db_multicast_connection_to_interfaces_set_clear(struct ecm_db_
  */
 struct ecm_db_connection_instance *ecm_db_multicast_connection_get_from_tuple(struct ecm_db_multicast_tuple_instance *ti)
 {
-	DEBUG_CHECK_MAGIC(ti, ECM_DB_MULTICAST_INSTANCE_MAGIC, "%p: magic failed", ti);
-	DEBUG_ASSERT(ti->ci, "%p: Bad multicast connection instance \n", ti);
+	DEBUG_CHECK_MAGIC(ti, ECM_DB_MULTICAST_INSTANCE_MAGIC, "%px: magic failed", ti);
+	DEBUG_ASSERT(ti->ci, "%px: Bad multicast connection instance \n", ti);
 
 	return ti->ci;
 }
@@ -876,12 +950,12 @@ void ecm_db_multicast_connection_to_interfaces_clear_at_index(struct ecm_db_conn
 	struct ecm_db_iface_instance *ifaces_db_single;
 	int32_t discard_first;
 
-	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%p: magic failed\n", ci);
+	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%px: magic failed\n", ci);
 
 	/*
 	 * Invalid Index Value
 	 */
-	DEBUG_ASSERT((index < ECM_DB_MULTICAST_IF_MAX), "%p: Invalid index for multicast interface heirarchies list %u\n", ci, index);
+	DEBUG_ASSERT((index < ECM_DB_MULTICAST_IF_MAX), "%px: Invalid index for multicast interface heirarchies list %u\n", ci, index);
 
 	spin_lock_bh(&ecm_db_lock);
 	if (ci->to_mcast_interface_first[index] == ECM_DB_IFACE_HEIRARCHY_MAX) {
@@ -918,7 +992,7 @@ int ecm_db_multicast_connection_to_interfaces_get_count(struct ecm_db_connection
 {
 	int heirarchy_index, count = 0;
 
-	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%p: magic failed\n", ci);
+	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%px: magic failed\n", ci);
 
 	spin_lock_bh(&ecm_db_lock);
 	for (heirarchy_index = 0; heirarchy_index < ECM_DB_MULTICAST_IF_MAX; heirarchy_index++) {
@@ -939,7 +1013,7 @@ EXPORT_SYMBOL(ecm_db_multicast_connection_to_interfaces_get_count);
 void ecm_db_multicast_connection_to_interfaces_clear(struct ecm_db_connection_instance *ci)
 {
 	int heirarchy_index;
-	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%p: magic failed\n", ci);
+	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%px: magic failed\n", ci);
 
 	spin_lock_bh(&ecm_db_lock);
 	if (!ci->to_mcast_interfaces) {
@@ -998,5 +1072,90 @@ int ecm_db_multicast_to_interfaces_xml_state_get(struct ecm_db_connection_instan
 	ecm_db_multicast_connection_to_interfaces_deref_all(mc_ifaces, mc_ifaces_first);
 
 	return ret;
+}
+
+#ifdef ECM_INTERFACE_OVS_BRIDGE_ENABLE
+#ifdef ECM_CLASSIFIER_OVS_ENABLE
+/*
+ * ecm_db_multicast_ovs_verify_to_list()
+ * 	Verify the 'to' interface list with OVS classifier.
+ */
+bool ecm_db_multicast_ovs_verify_to_list(struct ecm_db_connection_instance *ci, struct ecm_classifier_process_response *aci_pr)
+{
+	struct ecm_classifier_instance *aci;
+	bool is_defunct = false;
+
+	/*
+	 * Get the OVS classifier instance from the connection.
+	 */
+	aci = ecm_db_connection_assigned_classifier_find_and_ref(ci, ECM_CLASSIFIER_TYPE_OVS);
+	if (!aci) {
+		DEBUG_WARN("%px: no OVS classifier\n", ci);
+		return is_defunct;
+	}
+
+	aci->process(aci, ECM_TRACKER_SENDER_MAX, NULL, NULL, aci_pr);
+	if (aci_pr->process_actions & ECM_CLASSIFIER_PROCESS_ACTION_OVS_MCAST_DENY_ACCEL) {
+		is_defunct = true;
+	}
+
+	aci->deref(aci);
+	return is_defunct;
+}
+
+/*
+ * ecm_db_multicast_tuple_set_ovs_ingress_vlan()
+ * 	Set ingress VLAN tag for OVS ports.
+ */
+void ecm_db_multicast_tuple_set_ovs_ingress_vlan(struct ecm_db_multicast_tuple_instance *ti, uint32_t *ingress_vlan_tag)
+{
+	DEBUG_CHECK_MAGIC(ti, ECM_DB_MULTICAST_INSTANCE_MAGIC, "%px: magic failed", ti);
+
+	ti->ovs_ingress_vlan.h_vlan_TCI = ingress_vlan_tag[0] & 0xffff;
+	ti->ovs_ingress_vlan.h_vlan_encapsulated_proto = (ingress_vlan_tag[0] >> 16) & 0xffff;
+}
+
+/*
+ * ecm_db_multicast_tuple_get_ovs_ingress_vlan()
+ * 	Get ingress VLAN tag for OVS ports.
+ */
+struct vlan_hdr ecm_db_multicast_tuple_get_ovs_ingress_vlan(struct ecm_db_multicast_tuple_instance *ti)
+{
+	DEBUG_CHECK_MAGIC(ti, ECM_DB_MULTICAST_INSTANCE_MAGIC, "%px: magic failed", ti);
+
+	return ti->ovs_ingress_vlan;
+}
+#endif
+#endif
+
+/*
+ * ecm_db_multicast_connection_to_interfaces_leave()
+ * 	Remove 'to' interfaces from the connection if it has left the group.
+ */
+void ecm_db_multicast_connection_to_interfaces_leave(struct ecm_db_connection_instance *ci, struct ecm_multicast_if_update *mc_update)
+{
+	int i;
+
+	if (!mc_update->if_leave_cnt) {
+		return;
+	}
+
+	for (i = 0; i < ECM_DB_MULTICAST_IF_MAX && mc_update->if_leave_cnt; i++) {
+		/*
+		 * Is this entry marked? If yes, then the corresponding entry
+		 * in the 'to_mcast_interfaces' array in the ci has left the
+		 * connection.
+		 */
+		if (!mc_update->if_leave_idx[i]) {
+			continue;
+		}
+
+		/*
+		 * Release the interface heirarchy for this
+		 * interface since it has left the group
+		 */
+		ecm_db_multicast_connection_to_interfaces_clear_at_index(ci, i);
+		mc_update->if_leave_cnt--;
+	}
 }
 #endif

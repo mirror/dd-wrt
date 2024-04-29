@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2017-2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2018, 2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -81,7 +81,7 @@ static void nss_project_wt_stats_enable_callback(void *app_data, struct nss_proj
 		return;
 	}
 
-	nss_info("%p: Received response ACK for worker thread stats enable msg.\n", nss_ctx);
+	nss_info("%px: Received response ACK for worker thread stats enable msg.\n", nss_ctx);
 
 	/*
 	 * If statistics have already been allocated, nothing else to do.
@@ -93,7 +93,7 @@ static void nss_project_wt_stats_enable_callback(void *app_data, struct nss_proj
 	stats_temp = nss_project_alloc_wt_stats(stats_enable->worker_thread_count,
 						stats_enable->irq_count);
 	if (unlikely(!stats_temp)) {
-		nss_warning("%p: Unable to allocate worker thread statistics.\n", nss_ctx);
+		nss_warning("%px: Unable to allocate worker thread statistics.\n", nss_ctx);
 		return;
 	}
 
@@ -116,7 +116,7 @@ static nss_tx_status_t nss_project_wt_stats_send_enable(struct nss_ctx_instance 
 
 	npm = kzalloc(sizeof(*npm), GFP_KERNEL);
 	if (!npm) {
-		nss_warning("%p: Failed to allocate buffer for message\n", nss_ctx);
+		nss_warning("%px: Failed to allocate buffer for message\n", nss_ctx);
 		return NSS_TX_FAILURE;
 	}
 
@@ -147,17 +147,17 @@ static void nss_project_wt_stats_update(struct nss_ctx_instance *nss_ctx,
 	int i;
 
 	if (unlikely(!nss_ctx->wt_stats)) {
-		nss_warning("%p: Worker thread statistics not yet allocated.\n", nss_ctx);
+		nss_warning("%px: Worker thread statistics not yet allocated.\n", nss_ctx);
 		return;
 	}
 
 	if (unlikely(stats_notify->threadno >= nss_ctx->worker_thread_count)) {
-		nss_warning("%p: Invalid WT number %d\n", nss_ctx, stats_notify->threadno);
+		nss_warning("%px: Invalid WT number %d\n", nss_ctx, stats_notify->threadno);
 		return;
 	}
 
 	if (unlikely(stats_notify->stats_written > NSS_PROJECT_IRQS_PER_MESSAGE)) {
-		nss_warning("%p: Invalid worker thread stats written count %d\n",
+		nss_warning("%px: Invalid worker thread stats written count %d\n",
 				nss_ctx, stats_notify->stats_written);
 		return;
 	}
@@ -165,7 +165,7 @@ static void nss_project_wt_stats_update(struct nss_ctx_instance *nss_ctx,
 	wt_stats = &(nss_ctx->wt_stats[stats_notify->threadno]);
 
 	if (unlikely(!wt_stats->irq_stats)) {
-		nss_warning("%p: Worker thread statistics not allocated for thread %d\n",
+		nss_warning("%px: Worker thread statistics not allocated for thread %d\n",
 				nss_ctx, stats_notify->threadno);
 		return;
 	}
@@ -174,7 +174,7 @@ static void nss_project_wt_stats_update(struct nss_ctx_instance *nss_ctx,
 	for (i = 0; i < stats_notify->stats_written; ++i) {
 		int irq = stats_notify->stats[i].irq;
 		if (unlikely(irq >= nss_ctx->irq_count)) {
-			nss_warning("%p: Invalid IRQ number %d\n", nss_ctx, irq);
+			nss_warning("%px: Invalid IRQ number %d\n", nss_ctx, irq);
 			continue;
 		}
 
@@ -197,12 +197,12 @@ static void nss_project_msg_handler(struct nss_ctx_instance *nss_ctx,
 	 * Sanity checks on message
 	 */
 	if (npm->cm.type >= NSS_PROJECT_MSG_MAX) {
-		nss_warning("%p: message type out of range: %d\n", nss_ctx, npm->cm.type);
+		nss_warning("%px: message type out of range: %d\n", nss_ctx, npm->cm.type);
 		return;
 	}
 
 	if (nss_cmn_get_msg_len(&(npm->cm)) > sizeof(struct nss_project_msg)) {
-		nss_warning("%p: message length is invalid: %d\n", nss_ctx, nss_cmn_get_msg_len(&(npm->cm)));
+		nss_warning("%px: message length is invalid: %d\n", nss_ctx, nss_cmn_get_msg_len(&(npm->cm)));
 		return;
 	}
 

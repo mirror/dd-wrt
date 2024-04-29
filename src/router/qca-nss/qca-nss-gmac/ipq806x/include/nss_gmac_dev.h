@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2013-2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2013-2018, 2021 The Linux Foundation. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -268,7 +268,6 @@ struct nss_gmac_dev {
 #endif
 };
 
-
 /**
  * @brief Events from the NSS GMAC
  */
@@ -333,9 +332,12 @@ enum nss_gmac_state {
  * {get/set}_priv_flags ethtool operations.
  */
 enum nss_gmac_priv_flags {
-	__NSS_GMAC_PRIV_FLAG_LINKPOLL,
-	__NSS_GMAC_PRIV_FLAG_TSTAMP,
+	__NSS_GMAC_PRIV_FLAG_LINKPOLL,		/* Link poll enable/disable. */
+	__NSS_GMAC_PRIV_FLAG_TSTAMP,		/* HW Timestamp support. */
+	__NSS_GMAC_PRIV_FLAG_IGNORE_RX_CSUM_ERR,
+						/* Rx checksum error drop enable/disable. */
 	__NSS_GMAC_PRIV_FLAG_IRQ_REQUESTED,
+						/* IRQ is already requested. */
 	__NSS_GMAC_PRIV_FLAG_MAX,
 };
 #define NSS_GMAC_PRIV_FLAG(x)	(1 << __NSS_GMAC_PRIV_FLAG_ ## x)
@@ -349,7 +351,6 @@ enum mii_loop_back {
 	NOLOOPBACK = 0,
 	LOOPBACK = 1,
 };
-
 
 /*
  * PHY Registers
@@ -1341,6 +1342,9 @@ void nss_gmac_disable_rx_chksum_offload(struct nss_gmac_dev *gmacdev);
 void nss_gmac_rx_tcpip_chksum_drop_enable(struct nss_gmac_dev *gmacdev);
 void nss_gmac_rx_tcpip_chksum_drop_disable(struct nss_gmac_dev *gmacdev);
 
+void nss_gmac_tstamp_sysfs_create(struct net_device *dev);
+void nss_gmac_tstamp_sysfs_remove(struct net_device *dev);
+
 /**
  * The check summ offload engine is enabled to do complete checksum computation.
  * Hardware computes the tcp ip checksum including the pseudo header checksum.
@@ -1379,7 +1383,6 @@ static inline uint32_t nss_gmac_read_reg(uint32_t *regbase,
 	return data;
 }
 
-
 /**
  * @brief Low level function to write to a register in Hardware.
  * @param[in] pointer containing address of register base
@@ -1396,7 +1399,6 @@ static inline void nss_gmac_write_reg(uint32_t *regbase,
 	addr = (uint32_t)regbase + regoffset;
 	writel_relaxed(regdata, (unsigned char *)addr);
 }
-
 
 /**
  * @brief Low level function to set bits of a register in Hardware.
@@ -1415,7 +1417,6 @@ static inline void nss_gmac_set_reg_bits(uint32_t *regbase,
 	nss_gmac_write_reg(regbase, regoffset, data);
 }
 
-
 /**
  * @brief Low level function to clear bits of a register in Hardware.
  * @param[in] pointer containing address of register base
@@ -1432,7 +1433,6 @@ static inline void nss_gmac_clear_reg_bits(uint32_t *regbase,
 	data = ~bitpos & nss_gmac_read_reg(regbase, regoffset);
 	nss_gmac_write_reg(regbase, regoffset, data);
 }
-
 
 /**
  * @brief Low level function to Check the setting of the bits.
@@ -1620,7 +1620,6 @@ static inline bool nss_gmac_is_desc_owned_by_dma(struct dma_desc *desc)
 	return (desc->status & desc_own_by_dma) == desc_own_by_dma;
 }
 
-
 /**
  * returns the byte length of received frame including CRC.
  * This returns the no of bytes received in the received ethernet frame
@@ -1632,7 +1631,6 @@ static inline uint32_t nss_gmac_get_rx_desc_frame_length(uint32_t status)
 {
 	return (status & desc_frame_length_mask) >> desc_frame_length_shift;
 }
-
 
 /**
  * Checks whether the descriptor is valid
@@ -1647,7 +1645,6 @@ static inline bool nss_gmac_is_desc_valid(uint32_t status)
 	return (status & desc_error) == 0;
 }
 
-
 /**
  * Checks whether the descriptor is empty.
  * If the buffer1 and buffer2 lengths are zero in ring mode descriptor is empty.
@@ -1661,7 +1658,6 @@ static inline bool nss_gmac_is_desc_empty(struct dma_desc *desc)
 	/* if length of both buffer1 & buffer2 are zero then desc is empty */
 	return (desc->length & desc_size1_mask) == 0;
 }
-
 
 /**
  * Checks whether the rx descriptor is valid.
@@ -1681,7 +1677,6 @@ bool nss_gmac_is_tx_aborted(uint32_t status);
 bool nss_gmac_is_tx_carrier_error(uint32_t status);
 bool nss_gmac_is_tx_underflow_error(uint32_t status);
 bool nss_gmac_is_tx_lc_error(uint32_t status);
-
 
 /**
  * Gives the transmission collision count.
@@ -1708,7 +1703,6 @@ bool nss_gmac_is_rx_crc(uint32_t status);
 bool nss_gmac_is_frame_dribbling_errors(uint32_t status);
 bool nss_gmac_is_rx_frame_length_errors(uint32_t status);
 
-
 /**
  * Checks whether this rx descriptor is last rx descriptor.
  * This returns true if it is last descriptor either in ring mode or chain mode.
@@ -1722,7 +1716,6 @@ static inline bool nss_gmac_is_last_rx_desc(struct nss_gmac_dev *gmacdev,
 	return unlikely((desc->length & rx_desc_end_of_ring) != 0);
 }
 
-
 /**
  * Checks whether this tx descriptor is last tx descriptor.
  * This returns true if it is last descriptor either in ring mode or chain mode.
@@ -1735,7 +1728,6 @@ static inline bool nss_gmac_is_last_tx_desc(struct nss_gmac_dev *gmacdev,
 {
 	return unlikely((desc->status & tx_desc_end_of_ring) != 0);
 }
-
 
 /**
  * Checks whether this rx descriptor is in chain mode.
@@ -1751,7 +1743,6 @@ static inline bool nss_gmac_is_rx_desc_chained(struct dma_desc *desc)
 	 */
 	return 0;
 }
-
 
 /**
  * Checks whether this tx descriptor is in chain mode.
@@ -1797,7 +1788,6 @@ static inline struct dma_desc *nss_gmac_get_tx_qptr(struct nss_gmac_dev *gmacdev
 	return txdesc;
 }
 
-
 /**
  * Reset the descriptor after Tx is over.
  * Update descriptor pointers.
@@ -1825,7 +1815,6 @@ static inline void nss_gmac_reset_tx_qptr(struct nss_gmac_dev *gmacdev)
 	 */
 	(gmacdev->busy_tx_desc)--;
 }
-
 
 /**
  * Populate the tx desc structure with the buffer address.
@@ -1896,7 +1885,6 @@ static inline struct dma_desc *nss_gmac_set_tx_qptr(struct nss_gmac_dev *gmacdev
 	return txdesc;
 }
 
-
 /**
  * Prepares the descriptor to receive packets.
  * The descriptor is allocated with the valid buffer addresses (sk_buff address)
@@ -1964,7 +1952,6 @@ static inline int32_t nss_gmac_set_rx_qptr(struct nss_gmac_dev *gmacdev,
 	return rxnext;
 }
 
-
 /**
  * Get back the descriptor from DMA after data has been received.
  * When the DMA indicates that the data is received (interrupt is generated),
@@ -1989,7 +1976,6 @@ static inline struct dma_desc *nss_gmac_get_rx_qptr(struct nss_gmac_dev *gmacdev
 
 	return rxdesc;
 }
-
 
 /**
  * Reset the descriptor after Rx is over.
@@ -2036,7 +2022,6 @@ static inline void nss_gmac_clear_interrupt(struct nss_gmac_dev *gmacdev)
 	writel_relaxed(data, gmacdev->dma_base + dma_status);
 }
 
-
 /**
  * Returns the all unmasked interrupt status after reading the dma_status
  * register.
@@ -2057,7 +2042,6 @@ static inline uint32_t nss_gmac_get_interrupt_type(struct nss_gmac_dev *gmacdev)
 	return interrupts;
 }
 
-
 /**
  * Returns the interrupt mask.
  * @param[in] pointer to nss_gmac_dev.
@@ -2067,7 +2051,6 @@ static inline uint32_t nss_gmac_get_interrupt_mask(struct nss_gmac_dev *gmacdev)
 {
 	return nss_gmac_read_reg(gmacdev->dma_base, dma_interrupt);
 }
-
 
 /**
  * @brief Enables the DMA interrupt as specified by the bit mask.
@@ -2081,7 +2064,6 @@ static inline void nss_gmac_enable_interrupt(struct nss_gmac_dev *gmacdev,
 	nss_gmac_write_reg(gmacdev->dma_base, dma_interrupt, interrupts);
 }
 
-
 /**
  * @brief Disable all the interrupts.
  * @param[in] pointer to nss_gmac_dev.
@@ -2092,7 +2074,6 @@ static inline void nss_gmac_disable_mac_interrupt(struct nss_gmac_dev *gmacdev)
 	nss_gmac_write_reg(gmacdev->mac_base, gmac_interrupt_mask,
 			   0xffffffff);
 }
-
 
 /**
  * Disable all the interrupts.
@@ -2107,7 +2088,6 @@ static inline void nss_gmac_disable_interrupt_all(struct nss_gmac_dev *gmacdev)
 	nss_gmac_write_reg(gmacdev->dma_base, dma_interrupt, dma_int_disable);
 	nss_gmac_disable_mac_interrupt(gmacdev);
 }
-
 
 /**
  * Disable interrupt according to the bitfield supplied.
@@ -2125,10 +2105,8 @@ static inline void nss_gmac_disable_interrupt(struct nss_gmac_dev *gmacdev,
 	writel_relaxed(data, gmacdev->dma_base + dma_interrupt);
 }
 
-
 void nss_gmac_enable_dma_rx(struct nss_gmac_dev *gmacdev);
 void nss_gmac_enable_dma_tx(struct nss_gmac_dev *gmacdev);
-
 
 /**
  * Resumes the DMA Transmission.
@@ -2141,7 +2119,6 @@ static inline void nss_gmac_resume_dma_tx(struct nss_gmac_dev *gmacdev)
 {
 	nss_gmac_write_reg(gmacdev->dma_base, dma_tx_poll_demand, 0);
 }
-
 
 /**
  * Resumes the DMA Reception.

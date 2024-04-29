@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2016, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2016, 2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -66,20 +66,20 @@ static netdev_tx_t nss_dtlsmgr_session_xmit(struct sk_buff *skb,
 	switch (skb->protocol) {
 	case htons(ETH_P_IP):
 		if (s->flags & NSS_DTLSMGR_HDR_IPV6) {
-			nss_dtlsmgr_info("%p: NSS DTLS I/F %d: skb(%p) invalid L3 protocol 0x%x\n", dev, s->nss_dtls_if, skb, ETH_P_IP);
+			nss_dtlsmgr_info("%px: NSS DTLS I/F %d: skb(%px) invalid L3 protocol 0x%x\n", dev, s->nss_dtls_if, skb, ETH_P_IP);
 			return NETDEV_TX_BUSY;
 		}
 		break;
 
 	case htons(ETH_P_IPV6):
 		if (!(s->flags & NSS_DTLSMGR_HDR_IPV6)) {
-			nss_dtlsmgr_info("%p: NSS DTLS I/F %d: skb(%p) invalid L3 protocol 0x%x\n", dev, s->nss_dtls_if, skb, ETH_P_IPV6);
+			nss_dtlsmgr_info("%px: NSS DTLS I/F %d: skb(%px) invalid L3 protocol 0x%x\n", dev, s->nss_dtls_if, skb, ETH_P_IPV6);
 			return NETDEV_TX_BUSY;
 		}
 		break;
 
 	default:
-		nss_dtlsmgr_info("%p: NSS DTLS I/F %d: skb(%p) unsupported IP protocol 0x%x\n", dev, s->nss_dtls_if, skb, ntohs(skb->protocol));
+		nss_dtlsmgr_info("%px: NSS DTLS I/F %d: skb(%px) unsupported IP protocol 0x%x\n", dev, s->nss_dtls_if, skb, ntohs(skb->protocol));
 		return NETDEV_TX_BUSY;
 	}
 
@@ -87,12 +87,12 @@ static netdev_tx_t nss_dtlsmgr_session_xmit(struct sk_buff *skb,
 	ntail = dev->needed_tailroom;
 
 	if (skb_is_nonlinear(skb)) {
-		nss_dtlsmgr_info("%p: NSS DTLS does not support non-linear skb %p\n", dev, skb);
+		nss_dtlsmgr_info("%px: NSS DTLS does not support non-linear skb %px\n", dev, skb);
 		return NETDEV_TX_BUSY;
 	}
 
 	if (unlikely(skb_shared(skb))) {
-		nss_dtlsmgr_info("%p: Shared skb:%p is not supported\n",
+		nss_dtlsmgr_info("%px: Shared skb:%px is not supported\n",
 				 dev, skb);
 		return NETDEV_TX_BUSY;
 	}
@@ -100,7 +100,7 @@ static netdev_tx_t nss_dtlsmgr_session_xmit(struct sk_buff *skb,
 	if (skb_cloned(skb) || (skb_headroom(skb) < nhead)
 	    || (skb_tailroom(skb) < ntail)) {
 		if (pskb_expand_head(skb, nhead, ntail, GFP_KERNEL)) {
-			nss_dtlsmgr_info("%p: skb:%p unable to expand buffer\n",
+			nss_dtlsmgr_info("%px: skb:%px unable to expand buffer\n",
 					 dev, skb);
 			return NETDEV_TX_BUSY;
 		}

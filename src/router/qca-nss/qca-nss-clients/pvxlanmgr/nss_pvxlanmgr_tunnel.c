@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2019-2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -45,7 +45,7 @@ static inline nss_pvxlanmgr_status_t nss_pvxlanmgr_tunnel_tx_msg_mac_del(struct 
 
 	t = nss_pvxlanmgr_tunnel_get(dev, tunnel_id);
 	if (!t) {
-		nss_pvxlanmgr_warn("%p: can't find tunnel: %d\n", dev, tunnel_id);
+		nss_pvxlanmgr_warn("%px: can't find tunnel: %d\n", dev, tunnel_id);
 		return NSS_PVXLANMGR_FAILURE_BAD_PARAM;
 	}
 
@@ -63,7 +63,7 @@ static inline nss_pvxlanmgr_status_t nss_pvxlanmgr_tunnel_tx_msg_mac_del(struct 
 
 	status = nss_pvxlanmgr_tunnel_tx_msg(priv->pvxlan_ctx, &pvxlanmsg, priv->if_num_host_inner, NSS_PVXLAN_MSG_TYPE_MAC_DEL, sizeof(struct nss_pvxlan_mac_msg));
 	if (status != NSS_TX_SUCCESS) {
-		nss_pvxlanmgr_warn("%p: ctx: MAC delete failed %d\n", dev, status);
+		nss_pvxlanmgr_warn("%px: ctx: MAC delete failed %d\n", dev, status);
 	}
 
 	dev_put(dev);
@@ -85,7 +85,7 @@ static inline nss_pvxlanmgr_status_t nss_pvxlanmgr_tunnel_tx_msg_mac_add(struct 
 
 	t = nss_pvxlanmgr_tunnel_get(dev, tunnel_id);
 	if (!t) {
-		nss_pvxlanmgr_warn("%p: can't find tunnel: %d\n", dev, tunnel_id);
+		nss_pvxlanmgr_warn("%px: can't find tunnel: %d\n", dev, tunnel_id);
 		return NSS_PVXLANMGR_FAILURE_BAD_PARAM;
 	}
 
@@ -106,7 +106,7 @@ static inline nss_pvxlanmgr_status_t nss_pvxlanmgr_tunnel_tx_msg_mac_add(struct 
 
 	status = nss_pvxlanmgr_tunnel_tx_msg(priv->pvxlan_ctx, &pvxlanmsg, priv->if_num_host_inner, NSS_PVXLAN_MSG_TYPE_MAC_ADD, sizeof(struct nss_pvxlan_mac_msg));
 	if (status != NSS_TX_SUCCESS) {
-		nss_pvxlanmgr_warn("%p: ctx: MAC addition failed %d\n", dev, status);
+		nss_pvxlanmgr_warn("%px: ctx: MAC addition failed %d\n", dev, status);
 	}
 
 	dev_put(dev);
@@ -123,7 +123,7 @@ static nss_pvxlanmgr_status_t nss_pvxlanmgr_tunnel_pvxlan_rule_destroy(struct ns
 	struct nss_pvxlan_msg pvxlanmsg;
 	nss_tx_status_t status;
 
-	nss_pvxlanmgr_info("%p: ctx: PVxLAN Rule src_port: 0x%d dest_port:0x%d\n", ctx,
+	nss_pvxlanmgr_info("%px: ctx: PVxLAN Rule src_port: 0x%d dest_port:0x%d\n", ctx,
 	    msg->encap.src_port, msg->encap.dest_port);
 
 	/*
@@ -137,7 +137,7 @@ static nss_pvxlanmgr_status_t nss_pvxlanmgr_tunnel_pvxlan_rule_destroy(struct ns
 	 */
 	status = nss_pvxlanmgr_tunnel_tx_msg(ctx, &pvxlanmsg, if_num, NSS_PVXLAN_MSG_TYPE_TUNNEL_DESTROY_RULE, sizeof(struct nss_pvxlan_rule_msg));
 	if (status != NSS_TX_SUCCESS) {
-		nss_pvxlanmgr_warn("%p: ctx: create encap data tunnel error %d\n", ctx, status);
+		nss_pvxlanmgr_warn("%px: ctx: create encap data tunnel error %d\n", ctx, status);
 		return status;
 	}
 
@@ -154,7 +154,7 @@ static nss_pvxlanmgr_status_t nss_pvxlanmgr_tunnel_pvxlan_rule_create(struct nss
 	struct nss_pvxlan_msg pvxlanmsg;
 	nss_tx_status_t status;
 
-	nss_pvxlanmgr_info("%p: ctx: PVxLAN Rule src_port: 0x%d dest_port:0x%d\n", ctx,
+	nss_pvxlanmgr_info("%px: ctx: PVxLAN Rule src_port: 0x%d dest_port:0x%d\n", ctx,
 	    msg->encap.src_port, msg->encap.dest_port);
 
 	/*
@@ -168,7 +168,7 @@ static nss_pvxlanmgr_status_t nss_pvxlanmgr_tunnel_pvxlan_rule_create(struct nss
 	 */
 	status = nss_pvxlanmgr_tunnel_tx_msg(ctx, &pvxlanmsg, if_num, NSS_PVXLAN_MSG_TYPE_TUNNEL_CREATE_RULE, sizeof(struct nss_pvxlan_rule_msg));
 	if (status != NSS_TX_SUCCESS) {
-		nss_pvxlanmgr_warn("%p: ctx: create encap data tunnel error %d\n", ctx, status);
+		nss_pvxlanmgr_warn("%px: ctx: create encap data tunnel error %d\n", ctx, status);
 		return status;
 	}
 
@@ -184,7 +184,7 @@ static nss_tx_status_t nss_pvxlanmgr_tunnel_destroy_ipv4_rule(struct nss_ctx_ins
 	struct nss_ipv4_msg nim;
 	nss_tx_status_t status;
 
-	nss_pvxlanmgr_info("%p: ctx: Destroy IPv4: %pI4h :%u, %pI4h :%u, p: %d\n", nss_ctx,
+	nss_pvxlanmgr_info("%px: ctx: Destroy IPv4: %pI4h :%u, %pI4h :%u, p: %d\n", nss_ctx,
 		&ni5t->flow_ip, ni5t->flow_ident, &ni5t->return_ip, ni5t->return_ident, ni5t->protocol);
 
 	nss_ipv4_msg_init(&nim, NSS_IPV4_RX_INTERFACE, NSS_IPV4_TX_DESTROY_RULE_MSG,
@@ -193,7 +193,7 @@ static nss_tx_status_t nss_pvxlanmgr_tunnel_destroy_ipv4_rule(struct nss_ctx_ins
 	nim.msg.rule_destroy.tuple = *ni5t;
 	status = nss_ipv4_tx_sync(nss_ctx, &nim);
 	if (status != NSS_TX_SUCCESS) {
-		nss_pvxlanmgr_warn("%p: Destroy IPv4 message failed %d\n", nss_ctx, status);
+		nss_pvxlanmgr_warn("%px: Destroy IPv4 message failed %d\n", nss_ctx, status);
 	}
 
 	return status;
@@ -208,7 +208,7 @@ static nss_tx_status_t nss_pvxlanmgr_tunnel_destroy_ipv6_rule(struct nss_ctx_ins
 	struct nss_ipv6_msg nim;
 	nss_tx_status_t status;
 
-	nss_pvxlanmgr_info("%p: ctx: Destroy IPv6: %pI6:%u, %pI6:%u, p: %d\n", nss_ctx,
+	nss_pvxlanmgr_info("%px: ctx: Destroy IPv6: %pI6:%u, %pI6:%u, p: %d\n", nss_ctx,
 		ni5t->flow_ip, ni5t->flow_ident, ni5t->return_ip, ni5t->return_ident, ni5t->protocol);
 
 	nss_ipv6_msg_init(&nim, NSS_IPV6_RX_INTERFACE, NSS_IPV6_TX_DESTROY_RULE_MSG,
@@ -217,7 +217,7 @@ static nss_tx_status_t nss_pvxlanmgr_tunnel_destroy_ipv6_rule(struct nss_ctx_ins
 	nim.msg.rule_destroy.tuple = *ni5t;
 	status = nss_ipv6_tx_sync(nss_ctx, &nim);
 	if (status != NSS_TX_SUCCESS) {
-		nss_pvxlanmgr_warn("%p: Destroy IPv6 message failed %d\n", nss_ctx, status);
+		nss_pvxlanmgr_warn("%px: Destroy IPv6 message failed %d\n", nss_ctx, status);
 	}
 	return status;
 }
@@ -237,7 +237,7 @@ static nss_tx_status_t nss_pvxlanmgr_tunnel_create_ipv4_rule(struct nss_ctx_inst
 	nim.msg.rule_create = *nircm;
 	status = nss_ipv4_tx_sync(nss_ctx, &nim);
 	if (status != NSS_TX_SUCCESS) {
-		nss_pvxlanmgr_warn("%p: Create IPv4 message failed %d\n", nss_ctx, status);
+		nss_pvxlanmgr_warn("%px: Create IPv4 message failed %d\n", nss_ctx, status);
 	}
 
 	return status;
@@ -259,7 +259,7 @@ static nss_tx_status_t nss_pvxlanmgr_tunnel_create_ipv6_rule(struct nss_ctx_inst
 	nim.msg.rule_create = *nircm;
 	status = nss_ipv6_tx_sync(nss_ctx, &nim);
 	if (status != NSS_TX_SUCCESS) {
-		nss_pvxlanmgr_warn("%p: Create IPv6 message failed %d\n", nss_ctx, status);
+		nss_pvxlanmgr_warn("%px: Create IPv6 message failed %d\n", nss_ctx, status);
 	}
 
 	return status;
@@ -280,7 +280,7 @@ struct nss_pvxlanmgr_tunnel *nss_pvxlanmgr_tunnel_get(struct net_device *dev, ui
 	}
 
 	if (tunnel_id >= NSS_PVXLANMGR_MAX_TUNNELS) {
-		nss_pvxlanmgr_warn("%p: tunnel_id: %d out of range (%d)\n", dev, tunnel_id, NSS_PVXLANMGR_MAX_TUNNELS);
+		nss_pvxlanmgr_warn("%px: tunnel_id: %d out of range (%d)\n", dev, tunnel_id, NSS_PVXLANMGR_MAX_TUNNELS);
 		return NULL;
 	}
 
@@ -332,7 +332,7 @@ nss_tx_status_t nss_pvxlanmgr_tunnel_tx_msg_disable(struct nss_ctx_instance *ctx
 
 	status = nss_pvxlanmgr_tunnel_tx_msg(ctx, &pvxlanmsg, if_num, NSS_PVXLAN_MSG_TYPE_TUNNEL_DISABLE, 0);
 	if (status != NSS_TX_SUCCESS) {
-		nss_pvxlanmgr_warn("%p: ctx: Tunnel disable error : %d\n", ctx, status);
+		nss_pvxlanmgr_warn("%px: ctx: Tunnel disable error : %d\n", ctx, status);
 	}
 
 	return status;
@@ -357,7 +357,7 @@ nss_tx_status_t nss_pvxlanmgr_tunnel_tx_msg_enable(struct nss_ctx_instance *ctx,
 	status = nss_pvxlanmgr_tunnel_tx_msg(ctx, &pvxlanmsg, if_num, NSS_PVXLAN_MSG_TYPE_TUNNEL_ENABLE, sizeof(struct nss_pvxlan_tunnel_state_msg));
 
 	if (status != NSS_TX_SUCCESS) {
-		nss_pvxlanmgr_warn("%p: ctx: Tunnel enable error : %d\n", ctx, status);
+		nss_pvxlanmgr_warn("%px: ctx: Tunnel enable error : %d\n", ctx, status);
 	}
 
 	return status;
@@ -379,12 +379,12 @@ nss_pvxlanmgr_status_t nss_pvxlanmgr_tunnel_destroy(struct net_device *dev, uint
 
 	t = nss_pvxlanmgr_tunnel_get(dev, tunnel_id);
 	if (!t) {
-		nss_pvxlanmgr_warn("%p: tunnel %d: wrong argument for tunnel destroy\n", dev, tunnel_id);
+		nss_pvxlanmgr_warn("%px: tunnel %d: wrong argument for tunnel destroy\n", dev, tunnel_id);
 		return NSS_PVXLANMGR_FAILURE_BAD_PARAM;
 	}
 
 	if (!(t->tunnel_state & NSS_PVXLANMGR_TUNNEL_STATE_CONFIGURED)) {
-		nss_pvxlanmgr_warn("%p: tunnel %d is not configured yet\n", dev, tunnel_id);
+		nss_pvxlanmgr_warn("%px: tunnel %d is not configured yet\n", dev, tunnel_id);
 		return NSS_PVXLANMGR_FAILURE_TUNNEL_NOT_CREATED;
 	}
 
@@ -392,12 +392,12 @@ nss_pvxlanmgr_status_t nss_pvxlanmgr_tunnel_destroy(struct net_device *dev, uint
 	priv = netdev_priv(dev);
 	if_num_host_inner = priv->if_num_host_inner;
 	if_num_outer = priv->if_num_outer;
-	nss_pvxlanmgr_info("%p: tunnel destroy is being called for tunnel %d and tunnel %d\n", dev, if_num_host_inner, if_num_outer);
+	nss_pvxlanmgr_info("%px: tunnel destroy is being called for tunnel %d and tunnel %d\n", dev, if_num_host_inner, if_num_outer);
 
 	pvxlan_rule = &t->pvxlan_rule;
 	status = nss_pvxlanmgr_tunnel_pvxlan_rule_destroy(priv->pvxlan_ctx, if_num_host_inner, pvxlan_rule);
 	if (status != NSS_PVXLANMGR_SUCCESS) {
-		nss_pvxlanmgr_warn("%p: %d: PVXLAN rule destroy failed with status: %d\n", dev, if_num_host_inner, status);
+		nss_pvxlanmgr_warn("%px: %d: PVXLAN rule destroy failed with status: %d\n", dev, if_num_host_inner, status);
 		dev_put(dev);
 		return NSS_PVXLANMGR_FAILURE_PVXLAN_RULE;
 	}
@@ -412,7 +412,7 @@ nss_pvxlanmgr_status_t nss_pvxlanmgr_tunnel_destroy(struct net_device *dev, uint
 
 	if (nss_status != NSS_TX_SUCCESS) {
 		nss_pvxlanmgr_tunnel_pvxlan_rule_create(priv->pvxlan_ctx, if_num_host_inner, pvxlan_rule);
-		nss_pvxlanmgr_warn("%p: Unconfigure IP rule failed for tunnel: %d\n",
+		nss_pvxlanmgr_warn("%px: Unconfigure IP rule failed for tunnel: %d\n",
 			dev, tunnel_id);
 		dev_put(dev);
 		return NSS_PVXLANMGR_FAILURE_IP_DESTROY_RULE;
@@ -420,7 +420,7 @@ nss_pvxlanmgr_status_t nss_pvxlanmgr_tunnel_destroy(struct net_device *dev, uint
 
 	t->tunnel_state &= ~NSS_PVXLANMGR_TUNNEL_STATE_CONFIGURED;
 
-	nss_pvxlanmgr_info("%p: Tunnel %d is completely destroyed\n", dev, tunnel_id);
+	nss_pvxlanmgr_info("%px: Tunnel %d is completely destroyed\n", dev, tunnel_id);
 	dev_put(dev);
 	return NSS_PVXLANMGR_SUCCESS;
 }
@@ -443,18 +443,18 @@ nss_pvxlanmgr_status_t nss_pvxlanmgr_tunnel_ipv4_create(struct net_device *dev, 
 	nss_tx_status_t nss_status = NSS_TX_SUCCESS;
 
 	if (tunnel_id >= NSS_PVXLANMGR_MAX_TUNNELS) {
-		nss_pvxlanmgr_warn("%p: invalid tunnel_id: %d max: NSS_PVXLANMGR_MAX_TUNNELS\n", dev, tunnel_id);
+		nss_pvxlanmgr_warn("%px: invalid tunnel_id: %d max: NSS_PVXLANMGR_MAX_TUNNELS\n", dev, tunnel_id);
 		return NSS_PVXLANMGR_FAILURE_BAD_PARAM;
 	}
 
 	if (!(nircm->tuple.protocol == IPPROTO_UDP)) {
-		nss_pvxlanmgr_warn("%p: tunnel %d: wrong argument for protocol: %u\n", dev, tunnel_id, nircm->tuple.protocol);
+		nss_pvxlanmgr_warn("%px: tunnel %d: wrong argument for protocol: %u\n", dev, tunnel_id, nircm->tuple.protocol);
 		return NSS_PVXLANMGR_FAILURE_BAD_PARAM;
 	}
 
 	t = nss_pvxlanmgr_tunnel_get(dev, tunnel_id);
 	if (t) {
-		nss_pvxlanmgr_warn("%p: tunnel: %d already created\n", dev, tunnel_id);
+		nss_pvxlanmgr_warn("%px: tunnel: %d already created\n", dev, tunnel_id);
 		return NSS_PVXLANMGR_FAILURE_TUNNEL_EXISTS;
 	}
 
@@ -482,9 +482,9 @@ nss_pvxlanmgr_status_t nss_pvxlanmgr_tunnel_ipv4_create(struct net_device *dev, 
 	if_num_outer = priv->if_num_outer;
 
 	status = nss_pvxlanmgr_tunnel_pvxlan_rule_create(priv->pvxlan_ctx, if_num_host_inner, &pvxlan_rule);
-	nss_pvxlanmgr_info("%p: dynamic interface if_num is :%d and pvxlan tunnel status:%d\n", dev, if_num_host_inner, status);
+	nss_pvxlanmgr_info("%px: dynamic interface if_num is :%d and pvxlan tunnel status:%d\n", dev, if_num_host_inner, status);
 	if (status != NSS_PVXLANMGR_SUCCESS) {
-		nss_pvxlanmgr_warn("%p: %d: PVXLAN rule create failed with status: %d\n", dev, if_num_host_inner, status);
+		nss_pvxlanmgr_warn("%px: %d: PVXLAN rule create failed with status: %d\n", dev, if_num_host_inner, status);
 		dev_put(dev);
 		return NSS_PVXLANMGR_FAILURE_PVXLAN_RULE;
 	}
@@ -493,17 +493,16 @@ nss_pvxlanmgr_status_t nss_pvxlanmgr_tunnel_ipv4_create(struct net_device *dev, 
 	nss_status = nss_pvxlanmgr_tunnel_create_ipv4_rule(nss_ctx, nircm);
 	if (nss_status != NSS_TX_SUCCESS) {
 		nss_pvxlanmgr_tunnel_pvxlan_rule_destroy(priv->pvxlan_ctx, if_num_host_inner, &pvxlan_rule);
-		nss_pvxlanmgr_warn("%p: %d: IPv4 rule create failed with status: %d\n", dev, if_num_host_inner, nss_status);
+		nss_pvxlanmgr_warn("%px: %d: IPv4 rule create failed with status: %d\n", dev, if_num_host_inner, nss_status);
 		dev_put(dev);
 		return NSS_PVXLANMGR_FAILURE_IP_RULE;
 	}
 
 	t = &priv->tunnel[tunnel_id];
 
-	nss_pvxlanmgr_info("%p: Pvxlan Tunnel create done tunnel_id:%d (%p) IPv4: %pI4h :%u, %pI4h :%u, p: %d\n", dev,
+	nss_pvxlanmgr_info("%px: Pvxlan Tunnel create done tunnel_id:%d (%px) IPv4: %pI4h :%u, %pI4h :%u, p: %d\n", dev,
 			tunnel_id, t, &nircm->tuple.flow_ip, nircm->tuple.flow_ident, &nircm->tuple.return_ip,
 			nircm->tuple.return_ident, nircm->tuple.protocol);
-
 
 	memcpy(&t->ip_rule.v4, nircm, sizeof(struct nss_ipv4_rule_create_msg));
 	memcpy(&t->pvxlan_rule, &pvxlan_rule, sizeof(struct nss_pvxlan_rule_msg));
@@ -535,19 +534,19 @@ nss_pvxlanmgr_status_t nss_pvxlanmgr_tunnel_ipv6_create(struct net_device *dev, 
 	nss_tx_status_t nss_status = NSS_TX_SUCCESS;
 
 	if (tunnel_id >= NSS_PVXLANMGR_MAX_TUNNELS) {
-		nss_pvxlanmgr_warn("%p: invalid tunnel_id: %d max: NSS_PVXLANMGR_MAX_TUNNELS\n", dev, tunnel_id);
+		nss_pvxlanmgr_warn("%px: invalid tunnel_id: %d max: NSS_PVXLANMGR_MAX_TUNNELS\n", dev, tunnel_id);
 		return NSS_PVXLANMGR_FAILURE_BAD_PARAM;
 	}
 
 	if (!(nircm->tuple.protocol == IPPROTO_UDP ||
 		nircm->tuple.protocol == IPPROTO_UDPLITE)) {
-		nss_pvxlanmgr_warn("%p: tunnel %d: wrong argument for protocol %u\n", dev, tunnel_id, nircm->tuple.protocol);
+		nss_pvxlanmgr_warn("%px: tunnel %d: wrong argument for protocol %u\n", dev, tunnel_id, nircm->tuple.protocol);
 		return NSS_PVXLANMGR_FAILURE_BAD_PARAM;
 	}
 
 	t = nss_pvxlanmgr_tunnel_get(dev, tunnel_id);
 	if (t) {
-		nss_pvxlanmgr_warn("%p: tunnel: %d already created\n", dev, tunnel_id);
+		nss_pvxlanmgr_warn("%px: tunnel: %d already created\n", dev, tunnel_id);
 		return NSS_PVXLANMGR_FAILURE_TUNNEL_EXISTS;
 	}
 
@@ -587,9 +586,9 @@ nss_pvxlanmgr_status_t nss_pvxlanmgr_tunnel_ipv6_create(struct net_device *dev, 
 	if_num_outer = priv->if_num_outer;
 
 	status = nss_pvxlanmgr_tunnel_pvxlan_rule_create(priv->pvxlan_ctx, if_num_host_inner, &pvxlan_rule);
-	nss_pvxlanmgr_info("%p: dynamic interface if_num is :%d and pvxlan tunnel status:%d\n", dev, if_num_host_inner, status);
+	nss_pvxlanmgr_info("%px: dynamic interface if_num is :%d and pvxlan tunnel status:%d\n", dev, if_num_host_inner, status);
 	if (status != NSS_PVXLANMGR_SUCCESS) {
-		nss_pvxlanmgr_warn("%p: %d: PVXLAN rule create failed with status: %d\n", dev, if_num_host_inner, status);
+		nss_pvxlanmgr_warn("%px: %d: PVXLAN rule create failed with status: %d\n", dev, if_num_host_inner, status);
 		dev_put(dev);
 		return NSS_PVXLANMGR_FAILURE_PVXLAN_RULE;
 	}
@@ -598,14 +597,14 @@ nss_pvxlanmgr_status_t nss_pvxlanmgr_tunnel_ipv6_create(struct net_device *dev, 
 	nss_status = nss_pvxlanmgr_tunnel_create_ipv6_rule(nss_ctx, nircm);
 	if (nss_status != NSS_TX_SUCCESS) {
 		nss_pvxlanmgr_tunnel_pvxlan_rule_destroy(priv->pvxlan_ctx, if_num_host_inner, &pvxlan_rule);
-		nss_pvxlanmgr_warn("%p: %d: IPv6 rule create failed with status: %d\n", dev, if_num_host_inner, nss_status);
+		nss_pvxlanmgr_warn("%px: %d: IPv6 rule create failed with status: %d\n", dev, if_num_host_inner, nss_status);
 		dev_put(dev);
 		return NSS_PVXLANMGR_FAILURE_IP_RULE;
 	}
 
 	t = &priv->tunnel[tunnel_id];
 
-	nss_pvxlanmgr_info("%p: Pvxlan Tunnel create done tunnel_id:%d (%p)\n", dev, tunnel_id, t);
+	nss_pvxlanmgr_info("%px: Pvxlan Tunnel create done tunnel_id:%d (%px)\n", dev, tunnel_id, t);
 
 	memcpy(&t->ip_rule.v6, nircm, sizeof(struct nss_ipv6_rule_create_msg));
 	memcpy(&t->pvxlan_rule, &pvxlan_rule, sizeof(struct nss_pvxlan_rule_msg));

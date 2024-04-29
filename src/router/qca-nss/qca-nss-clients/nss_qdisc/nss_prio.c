@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2014-2017 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2014-2017, 2019-2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -37,9 +37,18 @@ static struct nla_policy nss_prio_policy[TCA_NSSPRIO_MAX + 1] = {
  * nss_prio_enqueue()
  *	Enqueues a skb to nssprio qdisc.
  */
-static int nss_prio_enqueue(struct sk_buff *skb, struct Qdisc *sch, struct sk_buff **to_free)
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 8, 0))
+static int nss_prio_enqueue(struct sk_buff *skb, struct Qdisc *sch)
+#else
+static int nss_prio_enqueue(struct sk_buff *skb, struct Qdisc *sch,
+				struct sk_buff **to_free)
+#endif
 {
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 8, 0))
 	return nss_qdisc_enqueue(skb, sch);
+#else
+	return nss_qdisc_enqueue(skb, sch, to_free);
+#endif
 }
 
 /*
@@ -50,6 +59,19 @@ static struct sk_buff *nss_prio_dequeue(struct Qdisc *sch)
 {
 	return nss_qdisc_dequeue(sch);
 }
+
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 8, 0))
+/*
+ * nss_prio_drop()
+ *	Drops a single skb from linux queue, if not empty.
+ *
+ * Does not drop packets that are queued in the NSS.
+ */
+static unsigned int nss_prio_drop(struct Qdisc *sch)
+{
+	return nss_qdisc_drop(sch);
+}
+#endif
 
 /*
  * nss_prio_peek()
@@ -106,7 +128,11 @@ static void nss_prio_destroy(struct Qdisc *sch)
 		/*
 		 * We can now destroy it
 		 */
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 20, 0))
+		qdisc_destroy(q->queues[i]);
+#else
 		qdisc_put(q->queues[i]);
+#endif
 	}
 
 	/*
@@ -146,8 +172,14 @@ static int nss_prio_get_max_bands(struct Qdisc *sch)
  * nss_prio_change()
  *	Function call to configure the nssprio parameters
  */
-static int nss_prio_change(struct Qdisc *sch, struct nlattr *opt, struct netlink_ext_ack *extack)
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 16, 0))
+static int nss_prio_change(struct Qdisc *sch, struct nlattr *opt)
+#else
+static int nss_prio_change(struct Qdisc *sch, struct nlattr *opt,
+				struct netlink_ext_ack *extack)
+#endif
 {
+	struct nlattr *tb[TCA_NSSPRIO_MAX + 1];
 	struct nss_prio_sched_data *q;
 	struct tc_nssprio_qopt *qopt;
 
@@ -169,7 +201,11 @@ static int nss_prio_change(struct Qdisc *sch, struct nlattr *opt, struct netlink
 		return 0;
 	}
 
-	qopt = nss_qdisc_qopt_get(opt, nss_prio_policy, TCA_NSSPRIO_MAX, TCA_NSSPRIO_PARMS);
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 16, 0))
+	qopt = nss_qdisc_qopt_get(opt, nss_prio_policy, tb, TCA_NSSPRIO_MAX, TCA_NSSPRIO_PARMS);
+#else
+	qopt = nss_qdisc_qopt_get(opt, nss_prio_policy, tb, TCA_NSSPRIO_MAX, TCA_NSSPRIO_PARMS, extack);
+#endif
 	if (!qopt) {
 		return -EINVAL;
 	}
@@ -198,9 +234,17 @@ static int nss_prio_change(struct Qdisc *sch, struct nlattr *opt, struct netlink
  * nss_prio_init()
  *	Initializes the nssprio qdisc
  */
-static int nss_prio_init(struct Qdisc *sch, struct nlattr *opt, struct netlink_ext_ack *extack)
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 16, 0))
+static int nss_prio_init(struct Qdisc *sch, struct nlattr *opt)
 {
+	struct netlink_ext_ack *extack = NULL;
+#else
+static int nss_prio_init(struct Qdisc *sch, struct nlattr *opt,
+				struct netlink_ext_ack *extack)
+{
+#endif
 	struct nss_prio_sched_data *q = qdisc_priv(sch);
+	struct nlattr *tb[TCA_NSSPRIO_MAX + 1];
 	struct tc_nssprio_qopt *qopt;
 	int i;
 	unsigned int accel_mode;
@@ -212,21 +256,30 @@ static int nss_prio_init(struct Qdisc *sch, struct nlattr *opt, struct netlink_e
 	if (!opt) {
 		accel_mode = TCA_NSS_ACCEL_MODE_PPE;
 	} else {
-		qopt = nss_qdisc_qopt_get(opt, nss_prio_policy, TCA_NSSPRIO_MAX, TCA_NSSPRIO_PARMS);
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 16, 0))
+		qopt = nss_qdisc_qopt_get(opt, nss_prio_policy, tb, TCA_NSSPRIO_MAX, TCA_NSSPRIO_PARMS);
+#else
+		qopt = nss_qdisc_qopt_get(opt, nss_prio_policy, tb, TCA_NSSPRIO_MAX, TCA_NSSPRIO_PARMS, extack);
+#endif
 		if (!qopt) {
 			return -EINVAL;
 		}
 		accel_mode = qopt->accel_mode;
 	}
 
-	if (nss_qdisc_init(sch, extack, &q->nq, NSS_SHAPER_NODE_TYPE_PRIO, 0, accel_mode) < 0) {
+	if (nss_qdisc_init(sch, &q->nq, NSS_SHAPER_NODE_TYPE_PRIO, 0, accel_mode, extack) < 0)
+	{
 		return -EINVAL;
 	}
 
 	nss_qdisc_info("Nssprio initialized - handle %x parent %x\n",
 			sch->handle, sch->parent);
 
-	if (nss_prio_change(sch, opt, NULL) < 0) {
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 16, 0))
+	if (nss_prio_change(sch, opt) < 0) {
+#else
+	if (nss_prio_change(sch, opt, extack) < 0) {
+#endif
 		nss_qdisc_destroy(&q->nq);
 		return -EINVAL;
 	}
@@ -252,7 +305,7 @@ static int nss_prio_dump(struct Qdisc *sch, struct sk_buff *skb)
 	qopt.bands = q->bands;
 	qopt.accel_mode = nss_qdisc_accel_mode_get(&q->nq);
 
-	opts = nla_nest_start(skb, TCA_OPTIONS);
+	opts = nss_qdisc_nla_nest_start(skb, TCA_OPTIONS);
 	if (opts == NULL || nla_put(skb, TCA_NSSPRIO_PARMS, sizeof(qopt), &qopt)) {
 		goto nla_put_failure;
 	}
@@ -268,8 +321,14 @@ nla_put_failure:
  * nss_prio_graft()
  *	Replaces existing child qdisc with the new qdisc that is passed.
  */
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 16, 0))
 static int nss_prio_graft(struct Qdisc *sch, unsigned long arg,
-				struct Qdisc *new, struct Qdisc **old, struct netlink_ext_ack *extack)
+				struct Qdisc *new, struct Qdisc **old)
+#else
+static int nss_prio_graft(struct Qdisc *sch, unsigned long arg,
+				struct Qdisc *new, struct Qdisc **old,
+				struct netlink_ext_ack *extack)
+#endif
 {
 	struct nss_prio_sched_data *q = qdisc_priv(sch);
 	struct nss_qdisc *nq_new = qdisc_priv(new);
@@ -289,10 +348,10 @@ static int nss_prio_graft(struct Qdisc *sch, unsigned long arg,
 	*old = q->queues[band];
 	sch_tree_unlock(sch);
 
-	nss_qdisc_info("Grafting old: %p with new: %p\n", *old, new);
+	nss_qdisc_info("Grafting old: %px with new: %px\n", *old, new);
 	if (*old != &noop_qdisc) {
 		struct nss_qdisc *nq_old = qdisc_priv(*old);
-		nss_qdisc_info("Detaching old: %p\n", *old);
+		nss_qdisc_info("Detaching old: %px\n", *old);
 		nim_detach.msg.shaper_configure.config.msg.shaper_node_config.qos_tag = q->nq.qos_tag;
 
 		if (q->nq.mode == NSS_QDISC_MODE_NSS) {
@@ -354,6 +413,7 @@ static struct Qdisc *nss_prio_leaf(struct Qdisc *sch, unsigned long arg)
 	return q->queues[band];
 }
 
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 14, 0))
 /*
  * nss_prio_get()
  *	Returns the band if provided the classid.
@@ -370,6 +430,33 @@ static unsigned long nss_prio_get(struct Qdisc *sch, u32 classid)
 
 	return band;
 }
+
+/*
+ * nss_prio_put()
+ *	Unused API.
+ */
+static void nss_prio_put(struct Qdisc *sch, unsigned long arg)
+{
+	nss_qdisc_info("Inside prio put\n");
+}
+#else
+/*
+ * nss_prio_search()
+ *	Returns the band if provided the classid.
+ */
+static unsigned long nss_prio_search(struct Qdisc *sch, u32 classid)
+{
+	struct nss_prio_sched_data *q = qdisc_priv(sch);
+	unsigned long band = TC_H_MIN(classid);
+
+	nss_qdisc_info("Inside get. Handle - %x Classid - %x Band %lu Available band %u\n", sch->handle, classid, band, q->bands);
+
+	if (band > q->bands)
+		return 0;
+
+	return band;
+}
+#endif
 
 /*
  * nss_prio_walk()
@@ -426,7 +513,7 @@ static int nss_prio_dump_class_stats(struct Qdisc *sch, unsigned long cl,
 	cl_q = q->queues[cl - 1];
 	cl_q->qstats.qlen = cl_q->q.qlen;
 
-	if (nss_qdisc_gnet_stats_copy_basic(d, &cl_q->bstats) < 0 ||
+	if (nss_qdisc_gnet_stats_copy_basic(sch, d, &cl_q->bstats) < 0 ||
 			nss_qdisc_gnet_stats_copy_queue(d, &cl_q->qstats) < 0)
 		return -1;
 
@@ -440,7 +527,19 @@ static int nss_prio_dump_class_stats(struct Qdisc *sch, unsigned long cl,
 const struct Qdisc_class_ops nss_prio_class_ops = {
 	.graft		=	nss_prio_graft,
 	.leaf		=	nss_prio_leaf,
-	.find		=	nss_prio_get,
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 14, 0))
+	.get		=	nss_prio_get,
+	.put		=	nss_prio_put,
+#else
+	.find       =   nss_prio_search,
+#endif
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 4, 0))
+	.tcf_chain	=	nss_qdisc_tcf_chain,
+#else
+	.tcf_block	=	nss_qdisc_tcf_block,
+#endif
+	.bind_tcf	=	nss_qdisc_tcf_bind,
+	.unbind_tcf	=	nss_qdisc_tcf_unbind,
 	.walk		=	nss_prio_walk,
 	.dump		=	nss_prio_dump_class,
 	.dump_stats	=	nss_prio_dump_class_stats,
@@ -457,6 +556,9 @@ struct Qdisc_ops nss_prio_qdisc_ops __read_mostly = {
 	.enqueue	=	nss_prio_enqueue,
 	.dequeue	=	nss_prio_dequeue,
 	.peek		=	nss_prio_peek,
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 8, 0))
+	.drop		=	nss_prio_drop,
+#endif
 	.init		=	nss_prio_init,
 	.reset		=	nss_prio_reset,
 	.destroy	=	nss_prio_destroy,

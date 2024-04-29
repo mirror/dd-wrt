@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2019-2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -58,10 +58,10 @@ static int8_t *nss_pvxlan_log_error_response_types_str[NSS_PVXLAN_ERROR_MAX] __m
  */
 static void nss_pvxlan_log_rule_msg(struct nss_pvxlan_rule_msg *npvrm)
 {
-	nss_trace("%p: NSS PVXLAN Rule message \n"
-		"Encap Rule Src IP: %p\n"
+	nss_trace("%px: NSS PVXLAN Rule message \n"
+		"Encap Rule Src IP: %px\n"
 		"Encap Rule Src Port: %d\n"
-		"Encap Rule Dst Ip: %p\n"
+		"Encap Rule Dst Ip: %px\n"
 		"Encap Rule Dst Port: %d\n"
 		"RPS: %d\n"
 		"Flags: %x\n"
@@ -81,7 +81,7 @@ static void nss_pvxlan_log_rule_msg(struct nss_pvxlan_rule_msg *npvrm)
  */
 static void nss_pvxlan_log_mac_msg(struct nss_pvxlan_mac_msg *npvcm)
 {
-	nss_trace("%p: NSS PVXLAN MAC message \n"
+	nss_trace("%px: NSS PVXLAN MAC message \n"
 		"PVxLAN Mac Addr: %x : %x : %x"
 		"PVxLAN Flags: %u\n"
 		"PVxLAN VNet ID: %u\n"
@@ -121,7 +121,7 @@ static void nss_pvxlan_log_rule_uncfg_msg(struct nss_pvxlan_msg *npvm)
 static void nss_pvxlan_log_enable_msg(struct nss_pvxlan_msg *npvm)
 {
 	struct nss_pvxlan_tunnel_state_msg *npvrm __maybe_unused = &npvm->msg.enable;
-	nss_trace("%p: NSS PVXLAN Tunnel state message: Enable \n", npvrm);
+	nss_trace("%px: NSS PVXLAN Tunnel state message: Enable \n", npvrm);
 }
 
 /*
@@ -130,7 +130,7 @@ static void nss_pvxlan_log_enable_msg(struct nss_pvxlan_msg *npvm)
  */
 static void nss_pvxlan_log_disable_msg(struct nss_pvxlan_msg *npvm)
 {
-	nss_trace("%p: NSS PVXLAN Tunnel state message: Disable \n", npvm);
+	nss_trace("%px: NSS PVXLAN Tunnel state message: Disable \n", npvm);
 }
 
 /*
@@ -188,7 +188,7 @@ static void nss_pvxlan_log_verbose(struct nss_pvxlan_msg *npvm)
 		break;
 
 	default:
-		nss_trace("%p: Invalid message type\n", npvm);
+		nss_trace("%px: Invalid message type\n", npvm);
 		break;
 	}
 }
@@ -200,11 +200,11 @@ static void nss_pvxlan_log_verbose(struct nss_pvxlan_msg *npvm)
 void nss_pvxlan_log_tx_msg(struct nss_pvxlan_msg *npvm)
 {
 	if (npvm->cm.type >= NSS_PVXLAN_MSG_TYPE_MAX) {
-		nss_warning("%p: Invalid message type\n", npvm);
+		nss_warning("%px: Invalid message type\n", npvm);
 		return;
 	}
 
-	nss_info("%p: type[%d]:%s\n", npvm, npvm->cm.type, nss_pvxlan_log_message_types_str[npvm->cm.type]);
+	nss_info("%px: type[%d]:%s\n", npvm, npvm->cm.type, nss_pvxlan_log_message_types_str[npvm->cm.type]);
 	nss_pvxlan_log_verbose(npvm);
 }
 
@@ -215,26 +215,26 @@ void nss_pvxlan_log_tx_msg(struct nss_pvxlan_msg *npvm)
 void nss_pvxlan_log_rx_msg(struct nss_pvxlan_msg *npvm)
 {
 	if (npvm->cm.response >= NSS_CMN_RESPONSE_LAST) {
-		nss_warning("%p: Invalid response\n", npvm);
+		nss_warning("%px: Invalid response\n", npvm);
 		return;
 	}
 
 	if (npvm->cm.response == NSS_CMN_RESPONSE_NOTIFY || (npvm->cm.response == NSS_CMN_RESPONSE_ACK)) {
-		nss_info("%p: type[%d]:%s, response[%d]:%s\n", npvm, npvm->cm.type,
+		nss_info("%px: type[%d]:%s, response[%d]:%s\n", npvm, npvm->cm.type,
 			nss_pvxlan_log_message_types_str[npvm->cm.type],
 			npvm->cm.response, nss_cmn_response_str[npvm->cm.response]);
 		goto verbose;
 	}
 
 	if (npvm->cm.error >= NSS_PVXLAN_ERROR_MAX) {
-		nss_warning("%p: msg failure - type[%d]:%s, response[%d]:%s, error[%d]:Invalid error\n",
+		nss_warning("%px: msg failure - type[%d]:%s, response[%d]:%s, error[%d]:Invalid error\n",
 			npvm, npvm->cm.type, nss_pvxlan_log_message_types_str[npvm->cm.type],
 			npvm->cm.response, nss_cmn_response_str[npvm->cm.response],
 			npvm->cm.error);
 		goto verbose;
 	}
 
-	nss_info("%p: msg nack - type[%d]:%s, response[%d]:%s, error[%d]:%s\n",
+	nss_info("%px: msg nack - type[%d]:%s, response[%d]:%s, error[%d]:%s\n",
 		npvm, npvm->cm.type, nss_pvxlan_log_message_types_str[npvm->cm.type],
 		npvm->cm.response, nss_cmn_response_str[npvm->cm.response],
 		npvm->cm.error, nss_pvxlan_log_error_response_types_str[npvm->cm.error]);

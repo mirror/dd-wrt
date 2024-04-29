@@ -1,6 +1,8 @@
 /*
  **************************************************************************
- * Copyright (c) 2015-2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2015-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -23,8 +25,11 @@
 #include "nss_hal.h"
 #include "nss_log.h"
 #include <linux/kernel.h>
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 14, 0))
 #include <linux/notifier.h>	/* for panic_notifier_list */
-#include <linux/panic_notifier.h>	/* for panic_notifier_list */
+#else
+#include <linux/panic_notifier.h>
+#endif
 #include <linux/jiffies.h>	/* for time */
 #include "nss_tx_rx_common.h"
 
@@ -44,7 +49,8 @@ static struct workqueue_struct *coredump_workqueue;
  */
 static void nss_coredump_wait(struct work_struct *work)
 {
-	panic("did not get all coredump finished signals\n");
+	if (!(nss_cmd_buf.coredump & 0xFFFFFFFE))
+		panic("did not get all coredump finished signals\n");
 }
 
 /*
@@ -80,7 +86,7 @@ static int nss_panic_handler(struct notifier_block *nb,
 			continue;
 		nss_ctx->state |= NSS_CORE_STATE_PANIC;
 		nss_hal_send_interrupt(nss_ctx, NSS_H2N_INTR_TRIGGER_COREDUMP);
-		nss_warning("panic call NSS FW %p to dump %x\n",
+		nss_warning("panic call NSS FW %px to dump %x\n",
 			nss_ctx->nmap, nss_ctx->state);
 	}
 
@@ -133,13 +139,13 @@ void nss_coredump_notify_register(void)
 void nss_fw_coredump_notify(struct nss_ctx_instance *nss_own,
 				int intr __attribute__ ((unused)))
 {
-	int i, j, curr_index, useful_entries;
+	int i, j, curr_index, useful_entries, num_cores_wait;
 	struct nss_log_descriptor *nld;
 	struct nss_log_entry *nle_init, *nle_print;
 	dma_addr_t dma_addr;
 	uint32_t offset, index;
 
-	nss_warning("\n%p: COREDUMP %x Baddr %p stat %x\n",
+	nss_warning("%px: COREDUMP %x Baddr %px stat %x",
 			nss_own, intr, nss_own->nmap, nss_own->state);
 	nss_own->state |= NSS_CORE_STATE_FW_DEAD;
 	queue_delayed_work(coredump_workqueue, &coredump_queuewait,
@@ -162,7 +168,7 @@ void nss_fw_coredump_notify(struct nss_ctx_instance *nss_own,
 	 * only print whatever is in the buffer. Otherwise, dump last NSS_LOG_COREDUMP_LINE_NUM
 	 * to the dmessage.
 	 */
-	nss_info_always("\n%p: Starting NSS-FW logbuffer dump for core %u\n",
+	nss_info_always("%px: Starting NSS-FW logbuffer dump for core %u\n",
 			nss_own, nss_own->id);
 	nle_init = nld->log_ring_buffer;
 	if (nld->current_entry <= NSS_LOG_COREDUMP_LINE_NUM) {
@@ -184,43 +190,75 @@ void nss_fw_coredump_notify(struct nss_ctx_instance *nss_own,
 			+ offsetof(struct nss_log_descriptor, log_ring_buffer);
 		dma_sync_single_for_cpu(nss_own->dev, dma_addr + offset,
 				sizeof(struct nss_log_entry), DMA_FROM_DEVICE);
-		nss_info_always("%p: %s\n", nss_own, nle_print->message);
+		nss_info_always("%px: %s\n", nss_own, nle_print->message);
 		nle_print++;
 	}
 
 	if (nss_own->state & NSS_CORE_STATE_PANIC)
 		return;
 
+	/*
+	 * We need to wait until all other cores finish their dump.
+	 */
+	num_cores_wait = (nss_top_main.num_nss - 1);
+	if (!num_cores_wait) {
+		/*
+		 * nss_cmd_buf.coredump values:
+		 *	0 ==	normal coredump and panic
+		 * non-zero value is for debug purpose:
+		 *	1 ==	force coredump and panic
+		 * otherwise	coredump but do not panic.
+		 */
+		if (!(nss_cmd_buf.coredump & 0xFFFFFFFE)) {
+			panic("NSS FW coredump: bringing system down\n");
+		}
+		nss_info_always("NSS core dump completed & use mdump to collect dump to debug\n");
+		return;
+	}
+
 	for (i = 0; i < nss_top_main.num_nss; i++) {
+		struct nss_ctx_instance *nss_ctx = &nss_top_main.nss[i];
 
 		/*
-		 * only for two core now; if more cores, a counter is required
-		 * to remember how many core has dumped.
-		 * Do not call panic() till all core dumped.
+		 * Skip waiting for ourselves to coredump, we already have.
 		 */
-		struct nss_ctx_instance *nss_ctx = &nss_top_main.nss[i];
-		if (nss_ctx != nss_own) {
-			if (nss_ctx->state & NSS_CORE_STATE_FW_DEAD ||
-					!nss_ctx->nmap) {
-				if (nss_cmd_buf.coredump & 0xFFFFFFFE) {
-					/*
-					 * bit 1 is used for testing coredump. Any other
-					 * bit(s) (value other than 0/1) disable panic
-					 * in order to use mdump utility: see mdump/src/README
-					 * for more info.
-					 */
-					nss_info_always("NSS core dump completed and please use mdump to collect dump data\n");
-				} else {
-					/*
-					 * cannot call atomic_notifier_chain_unregister?
-					 * (&panic_notifier_list, &nss_panic_nb);
-					 */
-					panic("NSS FW coredump: bringing system down\n");
-				}
-			}
-			nss_warning("notify NSS FW %p for coredump\n",
-				nss_ctx->nmap);
-			nss_hal_send_interrupt(nss_ctx, NSS_H2N_INTR_TRIGGER_COREDUMP);
+		if (nss_ctx == nss_own) {
+			continue;
 		}
+
+		/*
+		 * Notify any live core to dump.
+		 */
+		if (!(nss_ctx->state & NSS_CORE_STATE_FW_DEAD) && nss_ctx->nmap) {
+			nss_warning("notify NSS FW %px for coredump\n", nss_ctx->nmap);
+			nss_hal_send_interrupt(nss_ctx, NSS_H2N_INTR_TRIGGER_COREDUMP);
+			continue;
+		}
+
+		/*
+		 * bit 1 is used for testing coredump. Any other
+		 * bit(s) (value other than 0/1) disable panic
+		 * in order to use mdump utility: see mdump/src/README
+		 * for more info.
+		 */
+		if (nss_cmd_buf.coredump & 0xFFFFFFFE) {
+			nss_info_always("NSS core dump completed and please use mdump to collect dump data\n");
+			continue;
+		}
+
+		/*
+		 * Ideally we need to unregister ourselves from the panic
+		 * notifier list before calling the panic to prevent infinite calling.
+		 * However, When we tried, we couldn't make it work. Therefore, We just leave the corresponding call here
+		 * if it will be needed in the future.
+		 *
+		 * atomic_notifier_chain_unregister(&panic_notifier_list, &nss_panic_nb);
+		 */
+		num_cores_wait--;
+		if (!num_cores_wait) {
+			panic("NSS FW coredump: bringing system down\n");
+			return;
+		}
+
 	}
 }

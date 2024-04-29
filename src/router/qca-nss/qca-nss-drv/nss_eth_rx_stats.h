@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2017, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017, 2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -23,27 +23,6 @@
  * nss_eth_rx_stats.h
  *	NSS driver ETH_RX statistics header file.
  */
-
-/*
- * ETH_RX node statistics
- */
-enum nss_eth_rx_stats {
-	NSS_ETH_RX_STATS_TOTAL_TICKS = 0,	/* Total clock ticks spend inside the eth_rx package */
-	NSS_ETH_RX_STATS_WORST_CASE_TICKS,	/* Worst case iteration of the eth_rx in ticks */
-	NSS_ETH_RX_STATS_ITERATIONS,		/* Number of iterations around the eth_rx */
-	NSS_ETH_RX_STATS_MAX,
-};
-
-/*
- * Exception events from bridge/route handler
- */
-enum nss_eth_rx_exception_events {
-	NSS_ETH_RX_EXCEPTION_EVENT_UNKNOWN_L3_PROTOCOL,
-	NSS_ETH_RX_EXCEPTION_EVENT_ETH_HDR_MISSING,
-	NSS_ETH_RX_EXCEPTION_EVENT_VLAN_MISSING,
-	NSS_ETH_RX_EXCEPTION_EVENT_TRUSTSEC_HDR_MISSING,
-	NSS_ETH_RX_EXCEPTION_EVENT_MAX,
-};
 
 /*
  * Request/Response types
@@ -76,6 +55,10 @@ struct nss_eth_rx_msg {
 	} msg;
 };
 
+/*
+ * eth_rx statistics APIs
+ */
+extern void nss_eth_rx_stats_notify(struct nss_ctx_instance *nss_ctx);
 extern void nss_eth_rx_metadata_stats_sync(struct nss_ctx_instance *nss_ctx, struct nss_eth_rx_node_sync *nens);
 extern void nss_eth_rx_stats_dentry_create(void);
 

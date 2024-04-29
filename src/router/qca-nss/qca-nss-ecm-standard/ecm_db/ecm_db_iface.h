@@ -1,9 +1,12 @@
 /*
  **************************************************************************
- * Copyright (c) 2014-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2014-2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
+ *
  * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
  * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
  * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
@@ -94,6 +97,9 @@ struct ecm_db_iface_instance {
 #ifdef ECM_INTERFACE_VLAN_ENABLE
 		struct ecm_db_interface_info_vlan vlan;			/* type == ECM_DB_IFACE_TYPE_VLAN */
 #endif
+#ifdef ECM_INTERFACE_MACVLAN_ENABLE
+		struct ecm_db_interface_info_macvlan macvlan;		/* type == ECM_DB_IFACE_TYPE_MACVLAN */
+#endif
 #ifdef ECM_INTERFACE_BOND_ENABLE
 		struct ecm_db_interface_info_lag lag;			/* type == ECM_DB_IFACE_TYPE_LAG */
 #endif
@@ -132,6 +138,12 @@ struct ecm_db_iface_instance {
 #ifdef ECM_INTERFACE_OVPN_ENABLE
 		struct ecm_db_interface_info_ovpn ovpn;			/* type == ECM_DB_IFACE_TYPE_OVPN (OpenVPN tunnel - data channel offload interface) */
 #endif
+#ifdef ECM_INTERFACE_VXLAN_ENABLE
+		struct ecm_db_interface_info_vxlan vxlan;			/* type == ECM_DB_IFACE_TYPE_VXLAN */
+#endif
+#ifdef ECM_INTERFACE_OVS_BRIDGE_ENABLE
+		struct ecm_db_interface_info_ovs_bridge ovsb;			/* type == ECM_DB_IFACE_TYPE_OVS_BRIDGE */
+#endif
 	} type_info;
 
 #ifdef ECM_STATE_OUTPUT_ENABLE
@@ -169,6 +181,10 @@ void ecm_db_iface_interface_name_get(struct ecm_db_iface_instance *ii, char *nam
 void ecm_db_iface_ethernet_address_get(struct ecm_db_iface_instance *ii, uint8_t *address);
 void ecm_db_iface_bridge_address_get(struct ecm_db_iface_instance *ii, uint8_t *address);
 
+#ifdef ECM_INTERFACE_OVS_BRIDGE_ENABLE
+void ecm_db_iface_ovs_bridge_address_get(struct ecm_db_iface_instance *ii, uint8_t *address);
+#endif
+
 #ifdef ECM_INTERFACE_PPPOE_ENABLE
 void ecm_db_iface_pppoe_session_info_get(struct ecm_db_iface_instance *ii,
 					 struct ecm_db_interface_info_pppoe *pppoe_info);
@@ -179,7 +195,7 @@ void ecm_db_iface_vlan_info_get(struct ecm_db_iface_instance *ii,
 #endif
 
 struct ecm_db_iface_instance *ecm_db_iface_find_and_ref_by_interface_identifier(int32_t interface_id);
-struct ecm_db_iface_instance *ecm_db_iface_ifidx_find_and_ref_ethernet(uint8_t *address, int32_t idx);
+struct ecm_db_iface_instance *ecm_db_iface_ifidx_find_and_ref_ethernet(uint8_t *address, int32_t idx, int32_t ae_interface_num);
 
 #ifdef ECM_INTERFACE_RAWIP_ENABLE
 struct ecm_db_iface_instance *ecm_db_iface_find_and_ref_rawip(uint8_t *address);
@@ -191,6 +207,7 @@ void ecm_db_iface_add_lag(struct ecm_db_iface_instance *ii,
 			  uint8_t *address, char *name, int32_t mtu,
 			  int32_t interface_identifier, int32_t ae_interface_identifier,
 			  ecm_db_iface_final_callback_t final, void *arg);
+void ecm_db_iface_lag_address_get(struct ecm_db_iface_instance *ii, uint8_t *address);
 #endif
 
 #ifdef ECM_INTERFACE_VLAN_ENABLE
@@ -204,7 +221,14 @@ void ecm_db_iface_add_vlan(struct ecm_db_iface_instance *ii,
 			   ecm_db_iface_final_callback_t final, void *arg);
 #endif
 
-struct ecm_db_iface_instance *ecm_db_iface_find_and_ref_bridge(uint8_t *address);
+struct ecm_db_iface_instance *ecm_db_iface_find_and_ref_bridge(uint8_t *address, int32_t if_num);
+#ifdef ECM_INTERFACE_MACVLAN_ENABLE
+struct ecm_db_iface_instance *ecm_db_iface_find_and_ref_macvlan(uint8_t *address);
+void ecm_db_iface_macvlan_address_get(struct ecm_db_iface_instance *ii, uint8_t *address);
+#endif
+#ifdef ECM_INTERFACE_OVS_BRIDGE_ENABLE
+struct ecm_db_iface_instance *ecm_db_iface_find_and_ref_ovs_bridge(uint8_t *address, int32_t if_num);
+#endif
 struct ecm_db_iface_instance *ecm_db_iface_find_and_ref_unknown(uint32_t os_specific_ident);
 
 #ifdef ECM_INTERFACE_PPPOE_ENABLE
@@ -295,6 +319,16 @@ void ecm_db_iface_add_ovpn(struct ecm_db_iface_instance *ii,
 				ecm_db_iface_final_callback_t final, void *arg);
 #endif
 
+#ifdef ECM_INTERFACE_VXLAN_ENABLE
+void ecm_db_iface_vxlan_info_get(struct ecm_db_iface_instance *ii, struct ecm_db_interface_info_vxlan *vxlan_info);
+struct ecm_db_iface_instance *ecm_db_iface_find_and_ref_vxlan(uint32_t vni, uint32_t if_type);
+void ecm_db_iface_add_vxlan(struct ecm_db_iface_instance *ii,
+			   uint32_t vni, uint32_t if_type, char *name,
+			   int32_t mtu, int32_t interface_identifier,
+			   int32_t ae_interface_identifier,
+			   ecm_db_iface_final_callback_t final, void *arg);
+#endif
+
 struct ecm_db_iface_instance *ecm_db_interfaces_get_and_ref_first(void);
 struct ecm_db_iface_instance *ecm_db_interface_get_and_ref_next(struct ecm_db_iface_instance *ii);
 
@@ -315,6 +349,17 @@ void ecm_db_iface_add_ethernet(struct ecm_db_iface_instance *ii,
 void ecm_db_iface_add_bridge(struct ecm_db_iface_instance *ii,
 				uint8_t *address, char *name, int32_t mtu, int32_t interface_identifier,
 				int32_t ae_interface_identifier, ecm_db_iface_final_callback_t final, void *arg);
+
+#ifdef ECM_INTERFACE_MACVLAN_ENABLE
+void ecm_db_iface_add_macvlan(struct ecm_db_iface_instance *ii,
+				uint8_t *address, char *name, int32_t mtu, int32_t interface_identifier,
+				int32_t ae_interface_identifier, ecm_db_iface_final_callback_t final, void *arg);
+#endif
+#ifdef ECM_INTERFACE_OVS_BRIDGE_ENABLE
+void ecm_db_iface_add_ovs_bridge(struct ecm_db_iface_instance *ii,
+				uint8_t *address, char *name, int32_t mtu, int32_t interface_identifier,
+				int32_t ae_interface_identifier, ecm_db_iface_final_callback_t final, void *arg);
+#endif
 
 void ecm_db_iface_add_unknown(struct ecm_db_iface_instance *ii,
 				uint32_t os_specific_ident, char *name, int32_t mtu, int32_t interface_identifier,

@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2018, 2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -38,7 +38,7 @@ static int8_t *nss_sjack_log_message_types_str[NSS_SJACK_MAX_MSG_TYPE] __maybe_u
 static void nss_sjack_log_configure_msg(struct nss_sjack_msg *nsm)
 {
 	struct nss_sjack_configure_msg *nscm __maybe_unused = &nsm->msg.configure;
-	nss_trace("%p: NSS SJACK Configure message \n"
+	nss_trace("%px: NSS SJACK Configure message \n"
 		"SJACK Ingress Interface Number: %d\n"
 		"SJACK Engress Interface Number: %d\n"
 		"SJACK Tunnel ID: %d\n"
@@ -59,7 +59,7 @@ static void nss_sjack_log_configure_msg(struct nss_sjack_msg *nsm)
 static void nss_sjack_log_unconfigure_msg(struct nss_sjack_msg *nsm)
 {
 	struct nss_sjack_unconfigure_msg *nsum __maybe_unused = &nsm->msg.unconfigure;
-	nss_trace("%p: NSS SJACK UnConfigure message \n"
+	nss_trace("%px: NSS SJACK UnConfigure message \n"
 		"SJACK Ingress Interface Number: %d\n",
 		nsum, nsum->ingress_if_num);
 }
@@ -86,7 +86,7 @@ static void nss_sjack_log_verbose(struct nss_sjack_msg *nsm)
 		break;
 
 	default:
-		nss_trace("%p: Invalid message type\n", nsm);
+		nss_trace("%px: Invalid message type\n", nsm);
 		break;
 	}
 }
@@ -98,11 +98,11 @@ static void nss_sjack_log_verbose(struct nss_sjack_msg *nsm)
 void nss_sjack_log_tx_msg(struct nss_sjack_msg *nsm)
 {
 	if (nsm->cm.type >= NSS_SJACK_MAX_MSG_TYPE) {
-		nss_warning("%p: Invalid message type\n", nsm);
+		nss_warning("%px: Invalid message type\n", nsm);
 		return;
 	}
 
-	nss_info("%p: type[%d]:%s\n", nsm, nsm->cm.type, nss_sjack_log_message_types_str[nsm->cm.type]);
+	nss_info("%px: type[%d]:%s\n", nsm, nsm->cm.type, nss_sjack_log_message_types_str[nsm->cm.type]);
 	nss_sjack_log_verbose(nsm);
 }
 
@@ -113,18 +113,18 @@ void nss_sjack_log_tx_msg(struct nss_sjack_msg *nsm)
 void nss_sjack_log_rx_msg(struct nss_sjack_msg *nsm)
 {
 	if (nsm->cm.response >= NSS_CMN_RESPONSE_LAST) {
-		nss_warning("%p: Invalid response\n", nsm);
+		nss_warning("%px: Invalid response\n", nsm);
 		return;
 	}
 
 	if (nsm->cm.response == NSS_CMN_RESPONSE_NOTIFY || (nsm->cm.response == NSS_CMN_RESPONSE_ACK)) {
-		nss_info("%p: type[%d]:%s, response[%d]:%s\n", nsm, nsm->cm.type,
+		nss_info("%px: type[%d]:%s, response[%d]:%s\n", nsm, nsm->cm.type,
 			nss_sjack_log_message_types_str[nsm->cm.type],
 			nsm->cm.response, nss_cmn_response_str[nsm->cm.response]);
 		goto verbose;
 	}
 
-	nss_info("%p: msg nack - type[%d]:%s, response[%d]:%s\n",
+	nss_info("%px: msg nack - type[%d]:%s, response[%d]:%s\n",
 		nsm, nsm->cm.type, nss_sjack_log_message_types_str[nsm->cm.type],
 		nsm->cm.response, nss_cmn_response_str[nsm->cm.response]);
 

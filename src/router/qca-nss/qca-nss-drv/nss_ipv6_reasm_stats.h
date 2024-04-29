@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2017, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017,2019-2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -18,21 +18,9 @@
 #define __NSS_IPV6_REASM_STATS_H
 
 /*
- * IPv6 reasm node statistics
- */
-enum nss_ipv6_reasm_stats {
-	NSS_IPV6_REASM_STATS_ALLOC_FAILS = 0,
-					/* Number of fragment queue allocation failures */
-	NSS_IPV6_REASM_STATS_TIMEOUTS,
-					/* Number of expired fragment queues */
-	NSS_IPV6_REASM_STATS_DISCARDS,
-					/* Number of fragment queues discarded due to malformed fragments*/
-	NSS_IPV6_REASM_STATS_MAX,
-};
-
-/*
  * NSS IPv6 reasm statistics APIs
  */
+extern void nss_ipv6_reasm_stats_notify(struct nss_ctx_instance *nss_ctx);
 extern void nss_ipv6_reasm_stats_sync(struct nss_ctx_instance *nss_ctx, struct nss_ipv6_reasm_stats_sync *nirs);
 extern void nss_ipv6_reasm_stats_dentry_create(void);
 

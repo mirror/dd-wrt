@@ -1,4 +1,4 @@
-/* Copyright (c) 2015-2018 The Linux Foundation. All rights reserved.
+/* Copyright (c) 2015-2018, 2020 The Linux Foundation. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -38,7 +38,12 @@
 #include <crypto/ctr.h>
 #include <crypto/des.h>
 #include <crypto/aes.h>
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 11, 0)
 #include <crypto/sha.h>
+#else
+#include <crypto/sha1.h>
+#include <crypto/sha2.h>
+#endif
 #include <crypto/hash.h>
 #include <crypto/algapi.h>
 #include <crypto/aead.h>
@@ -225,7 +230,7 @@ int nss_cryptoapi_aead_aes_setkey(struct crypto_aead *aead, const u8 *key, unsig
 	struct nss_cryptoapi *sc = &gbl_ctx;
 	struct nss_crypto_key cip;
 	struct nss_crypto_key auth;
-	uint32_t flag = CRYPTO_TFM_RES_BAD_KEY_LEN;
+// 	uint32_t flag = CRYPTO_TFM_RES_BAD_KEY_LEN;
 	nss_crypto_status_t status;
 	bool ctr_mode = false;
 	bool cbc_mode = false;
@@ -301,7 +306,6 @@ int nss_cryptoapi_aead_aes_setkey(struct crypto_aead *aead, const u8 *key, unsig
 		goto fail;
 	}
 
-
 	/*
 	 * When the specified length request can't be handled by hardware,
 	 * fallback to other crypto
@@ -347,7 +351,7 @@ int nss_cryptoapi_aead_aes_setkey(struct crypto_aead *aead, const u8 *key, unsig
 	if (status != NSS_CRYPTO_STATUS_OK) {
 		nss_cfi_err("nss_crypto_session_alloc failed - status: %d\n", status);
 		ctx->sid = NSS_CRYPTO_MAX_IDXS;
-		flag = CRYPTO_TFM_RES_BAD_FLAGS;
+// 		flag = CRYPTO_TFM_RES_BAD_FLAGS;
 		goto fail;
 	}
 
@@ -364,7 +368,7 @@ int nss_cryptoapi_aead_aes_setkey(struct crypto_aead *aead, const u8 *key, unsig
 	return 0;
 
 fail:
-	crypto_aead_set_flags(aead, flag);
+// 	crypto_aead_set_flags(aead, flag);
 	return -EINVAL;
 }
 
@@ -379,7 +383,7 @@ int nss_cryptoapi_sha1_3des_setkey(struct crypto_aead *aead, const u8 *key, unsi
 	struct nss_cryptoapi *sc = &gbl_ctx;
 	struct nss_crypto_key cip = { .algo = NSS_CRYPTO_CIPHER_DES };
 	struct nss_crypto_key auth = { .algo = NSS_CRYPTO_AUTH_SHA1_HMAC };
-	uint32_t flag = CRYPTO_TFM_RES_BAD_KEY_LEN;
+// 	uint32_t flag = CRYPTO_TFM_RES_BAD_KEY_LEN;
 	nss_crypto_status_t status;
 
 	/*
@@ -428,7 +432,7 @@ int nss_cryptoapi_sha1_3des_setkey(struct crypto_aead *aead, const u8 *key, unsi
 	if (status != NSS_CRYPTO_STATUS_OK) {
 		nss_cfi_err("nss_crypto_session_alloc failed - status: %d\n", status);
 		ctx->sid = NSS_CRYPTO_MAX_IDXS;
-		flag = CRYPTO_TFM_RES_BAD_FLAGS;
+// 		flag = CRYPTO_TFM_RES_BAD_FLAGS;
 		goto fail;
 	}
 
@@ -447,7 +451,7 @@ int nss_cryptoapi_sha1_3des_setkey(struct crypto_aead *aead, const u8 *key, unsi
 	return 0;
 
 fail:
-	crypto_aead_set_flags(aead, flag);
+// 	crypto_aead_set_flags(aead, flag);
 	return -EINVAL;
 }
 
@@ -462,7 +466,7 @@ int nss_cryptoapi_sha256_3des_setkey(struct crypto_aead *aead, const u8 *key, un
 	struct nss_cryptoapi *sc = &gbl_ctx;
 	struct nss_crypto_key cip = { .algo = NSS_CRYPTO_CIPHER_DES };
 	struct nss_crypto_key auth = { .algo = NSS_CRYPTO_AUTH_SHA256_HMAC };
-	uint32_t flag = CRYPTO_TFM_RES_BAD_KEY_LEN;
+// 	uint32_t flag = CRYPTO_TFM_RES_BAD_KEY_LEN;
 	nss_crypto_status_t status;
 
 	/*
@@ -511,7 +515,7 @@ int nss_cryptoapi_sha256_3des_setkey(struct crypto_aead *aead, const u8 *key, un
 	if (status != NSS_CRYPTO_STATUS_OK) {
 		nss_cfi_err("nss_crypto_session_alloc failed - status: %d\n", status);
 		ctx->sid = NSS_CRYPTO_MAX_IDXS;
-		flag = CRYPTO_TFM_RES_BAD_FLAGS;
+// 		flag = CRYPTO_TFM_RES_BAD_FLAGS;
 		goto fail;
 	}
 
@@ -530,7 +534,7 @@ int nss_cryptoapi_sha256_3des_setkey(struct crypto_aead *aead, const u8 *key, un
 	return 0;
 
 fail:
-	crypto_aead_set_flags(aead, flag);
+// 	crypto_aead_set_flags(aead, flag);
 	return -EINVAL;
 }
 
@@ -656,7 +660,7 @@ int nss_cryptoapi_validate_addr(struct nss_cryptoapi_addr *sg_addr)
 	 * Currently only in-place transformation is supported.
 	 */
 	if (sg_addr->src != sg_addr->dst) {
-		nss_cfi_err("src!=dst src: 0x%p, dst: 0x%p\n", sg_addr->src, sg_addr->dst);
+		nss_cfi_err("src!=dst src: 0x%px, dst: 0x%px\n", sg_addr->src, sg_addr->dst);
 		return -EINVAL;
 	}
 
@@ -664,7 +668,7 @@ int nss_cryptoapi_validate_addr(struct nss_cryptoapi_addr *sg_addr)
 	 * Assoc should include IV, should be before cipher.
 	 */
 	if (sg_addr->src < sg_addr->start) {
-		nss_cfi_err("Invalid src: 0x%p, iv: 0x%p, assoc: 0x%p\n", sg_addr->src, sg_addr->iv, sg_addr->assoc);
+		nss_cfi_err("Invalid src: 0x%px, iv: 0x%px, assoc: 0x%px\n", sg_addr->src, sg_addr->iv, sg_addr->assoc);
 		return -EINVAL;
 	}
 
@@ -771,7 +775,7 @@ struct nss_crypto_buf *nss_cryptoapi_aead_transform(struct aead_request *req, st
 		return NULL;
 	}
 
-	nss_cfi_dbg("src_vaddr: 0x%p, dst_vaddr: 0x%p, assoc_vaddr: 0x%p, iv: 0x%p\n",
+	nss_cfi_dbg("src_vaddr: 0x%px, dst_vaddr: 0x%px, assoc_vaddr: 0x%px, iv: 0x%px\n",
 			sg_addr.src, sg_addr.dst, sg_addr.assoc, req->iv);
 
 	info->params->cipher_skip = nss_cryptoapi_get_skip(sg_addr.src, sg_addr.start);
@@ -859,7 +863,6 @@ struct nss_crypto_buf *nss_cryptoapi_aead_transform(struct aead_request *req, st
 
 	return buf;
 }
-
 
 /*
  * nss_cryptoapi_aead_fallback()

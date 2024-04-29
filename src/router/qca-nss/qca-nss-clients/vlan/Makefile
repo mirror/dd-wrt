@@ -8,5 +8,9 @@ ifeq ($(SoC),$(filter $(SoC),ipq807x ipq807x_64 ipq60xx ipq60xx_64))
 ccflags-y += -DNSS_VLAN_MGR_PPE_SUPPORT
 endif
 
-ccflags-y += -DNSS_VLAN_MGR_DEBUG_LEVEL=0
+ccflags-y += -DNSS_VLAN_MGR_DEBUG_LEVEL=4
 ccflags-y += -Werror
+
+ifneq (,$(filter $(CONFIG_BONDING),y m))
+ccflags-y += -DBONDING_SUPPORT
+endif

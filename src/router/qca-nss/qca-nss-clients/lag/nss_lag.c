@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2016-2017, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2016-2017, 2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -22,7 +22,7 @@
 #include <linux/version.h>
 #include <linux/types.h>
 #include <linux/module.h>
-#include <linux/if_bonding.h>
+#include <net/bonding.h>
 #if defined(NSS_LAG_PPE_SUPPORT)
 #include <nss_vlan_mgr.h>
 #include <fal/fal_trunk.h>
@@ -128,8 +128,6 @@ static int nss_lag_update_ppe(int32_t bondid, int32_t slave_ifnum,
 }
 #endif
 
-
-
 /*
  * nss_lag_send_lag_state()
  *	Send the currnet LAG state of a physical interface that has changed
@@ -143,7 +141,7 @@ static nss_tx_status_t nss_lag_send_lag_state(struct nss_ctx_instance *nss_ctx,
 	int32_t slave_ifnum;
 	nss_tx_status_t nss_tx_status;
 
-	nss_lag_info("Send LAG update for: %p (%s)\n", slave, slave->name);
+	nss_lag_info("Send LAG update for: %px (%s)\n", slave, slave->name);
 
 	lagid = bondid + NSS_LAG0_INTERFACE_NUM;
 
@@ -156,16 +154,16 @@ static nss_tx_status_t nss_lag_send_lag_state(struct nss_ctx_instance *nss_ctx,
 
 	nss_tx_status = nss_lag_tx_slave_state(lagid, slave_ifnum, slave_state);
 	if (nss_tx_status != NSS_TX_SUCCESS) {
-		nss_lag_warn("%p: Send LAG update failed, status: %d\n", slave,
+		nss_lag_warn("%px: Send LAG update failed, status: %d\n", slave,
 				nss_tx_status);
 		return NSS_TX_FAILURE;
 	}
-	nss_lag_info("%p: Send LAG update success\n", slave);
+	nss_lag_info("%px: Send LAG update success\n", slave);
 
 #if defined(NSS_LAG_PPE_SUPPORT)
 	ret = nss_lag_update_ppe(bondid, slave_ifnum, slave_state);
 	if (ret)
-		nss_lag_warn("%p: Couldn't update PPE: ret =  %d\n",
+		nss_lag_warn("%px: Couldn't update PPE: ret =  %d\n",
 				slave, ret);
 #endif
 	return NSS_TX_SUCCESS;
@@ -256,7 +254,7 @@ static int nss_lag_update_slave(struct netdev_notifier_info *info)
 
 #if defined(NSS_LAG_PPE_SUPPORT)
 		if (nss_vlan_mgr_add_bond_slave(bond_dev, slave_dev))
-			nss_lag_warn("%p: Adding vlan for %s dev failed\n", slave_dev, slave_dev->name);
+			nss_lag_warn("%px: Adding vlan for %s dev failed\n", slave_dev, slave_dev->name);
 #endif
 		return NOTIFY_DONE;
 	}
@@ -292,7 +290,7 @@ static int nss_lag_update_slave(struct netdev_notifier_info *info)
 
 #if defined(NSS_LAG_PPE_SUPPORT)
 	if (nss_vlan_mgr_delete_bond_slave(slave_dev))
-		nss_lag_warn("%p: Delete vlan for %s dev failed\n", slave_dev, slave_dev->name);
+		nss_lag_warn("%px: Delete vlan for %s dev failed\n", slave_dev, slave_dev->name);
 #endif
 	return NOTIFY_DONE;
 }

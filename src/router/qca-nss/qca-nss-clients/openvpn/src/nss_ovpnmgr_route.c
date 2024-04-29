@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2019-2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -87,7 +87,7 @@ int nss_ovpnmgr_route_set_active(struct list_head *rt_list, struct nss_ovpnmgr_r
 	 */
 	route = nss_ovpnmgr_route_find(rt_list, rt);
 	if (!route) {
-		nss_ovpnmgr_warn("%p: Route %x:%x:%x:%x not found\n", rt_list, rt->ip_addr[0],
+		nss_ovpnmgr_warn("%px: Route %x:%x:%x:%x not found\n", rt_list, rt->ip_addr[0],
 				rt->ip_addr[1], rt->ip_addr[2], rt->ip_addr[3]);
 		return -EINVAL;
 	}
@@ -132,7 +132,7 @@ bool nss_ovpnmgr_route_is_active(uint32_t tunnel_id, struct nss_ovpnmgr_route_tu
 	if (route->in_use) {
 		route->in_use = 0;
 		read_unlock_bh(&ovpnmgr_ctx.lock);
-		nss_ovpnmgr_info("%p: Route is active, don't delete\n", tun);
+		nss_ovpnmgr_info("%px: Route is active, don't delete\n", tun);
 		dev_put(tun_dev);
 		return true;
 	}
@@ -173,7 +173,7 @@ int nss_ovpnmgr_route_del(uint32_t tunnel_id, struct nss_ovpnmgr_route_tuple *rt
 		return -EINVAL;
 	}
 
-	nss_ovpnmgr_info("%p: Deleting route on tunnel id:%d\n", route, tunnel_id);
+	nss_ovpnmgr_info("%px: Deleting route on tunnel id:%d\n", route, tunnel_id);
 
 	list_del(&route->list);
 	write_unlock_bh(&ovpnmgr_ctx.lock);
@@ -207,20 +207,20 @@ int nss_ovpnmgr_route_add(uint32_t tunnel_id, struct nss_ovpnmgr_route_tuple *rt
 	 */
 	route = nss_ovpnmgr_route_find(&tun->route_list, rt);
 	if (route) {
-		nss_ovpnmgr_warn("%p: Route is available\n", tun);
+		nss_ovpnmgr_warn("%px: Route is available\n", tun);
 		dev_put(tun_dev);
 		return -EEXIST;
 	}
 
 	route = kzalloc(sizeof(*route), GFP_KERNEL);
 	if (!route) {
-		nss_ovpnmgr_warn("%p: Couldn't allocate memory for new route\n", tun);
+		nss_ovpnmgr_warn("%px: Couldn't allocate memory for new route\n", tun);
 		dev_put(tun_dev);
 		return -ENOMEM;
 	}
 
 	memcpy(&route->rt, rt, sizeof(*rt));
-	nss_ovpnmgr_info("%p: version = %d, IP = %x:%x:%x:%x\n", tun,
+	nss_ovpnmgr_info("%px: version = %d, IP = %x:%x:%x:%x\n", tun,
 			route->rt.ip_version, route->rt.ip_addr[0],
 			route->rt.ip_addr[1], route->rt.ip_addr[2],
 			route->rt.ip_addr[3]);

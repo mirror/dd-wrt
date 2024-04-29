@@ -14,7 +14,6 @@
  **************************************************************************
  */
 
-#include "nss_stats.h"
 #include "nss_core.h"
 #include <nss_qvpn.h>
 
@@ -44,6 +43,7 @@ static ssize_t nss_qvpn_stats_read(struct file *fp, char __user *ubuf, size_t sz
 	/*
 	 * Common node stats for each QVPN dynamic interface.
 	 */
+	len += nss_stats_banner(buf, len, size, "qvpn", NSS_STATS_SINGLE_CORE);
 	for_each_set_bit(if_num, ifmap, NSS_MAX_NET_INTERFACES) {
 		type = nss_dynamic_interface_get_type(nss_ctx, if_num);
 
@@ -62,7 +62,7 @@ static ssize_t nss_qvpn_stats_read(struct file *fp, char __user *ubuf, size_t sz
 		}
 
 		len += scnprintf(buf + len, size - len, "\n-------------------\n");
-		len = nss_stats_fill_common_stats(if_num, buf, len, size - len);
+		len += nss_stats_fill_common_stats(if_num, NSS_STATS_SINGLE_INSTANCE, buf, len, size - len, "qvpn");
 	}
 
 	bytes_read = simple_read_from_buffer(ubuf, sz, ppos, buf, len);

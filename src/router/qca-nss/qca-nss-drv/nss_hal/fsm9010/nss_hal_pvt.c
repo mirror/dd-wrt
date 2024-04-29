@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2015-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2015-2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -130,12 +130,12 @@ static struct nss_platform_data *__nss_hal_of_get_pdata(struct platform_device *
 	nss_ctx->id = npd->id;
 
 	if (of_address_to_resource(np, 0, &res_nphys) != 0) {
-		nss_info_always("%p: nss%d: of_address_to_resource() fail for nphys\n", nss_ctx, nss_ctx->id);
+		nss_info_always("%px: nss%d: of_address_to_resource() fail for nphys\n", nss_ctx, nss_ctx->id);
 		goto out;
 	}
 
 	if (of_address_to_resource(np, 1, &res_vphys) != 0) {
-		nss_info_always("%p: nss%d: of_address_to_resource() fail for vphys\n", nss_ctx, nss_ctx->id);
+		nss_info_always("%px: nss%d: of_address_to_resource() fail for vphys\n", nss_ctx, nss_ctx->id);
 		goto out;
 	}
 
@@ -147,13 +147,13 @@ static struct nss_platform_data *__nss_hal_of_get_pdata(struct platform_device *
 
 	npd->nmap = ioremap(npd->nphys, resource_size(&res_nphys));
 	if (!npd->nmap) {
-		nss_info_always("%p: nss%d: ioremap() fail for nphys\n", nss_ctx, nss_ctx->id);
+		nss_info_always("%px: nss%d: ioremap() fail for nphys\n", nss_ctx, nss_ctx->id);
 		goto out;
 	}
 
 	npd->vmap = ioremap_cache(npd->vphys, resource_size(&res_vphys));
 	if (!npd->vmap) {
-		nss_info_always("%p: nss%d: ioremap() fail for vphys\n", nss_ctx, nss_ctx->id);
+		nss_info_always("%px: nss%d: ioremap() fail for vphys\n", nss_ctx, nss_ctx->id);
 		goto out;
 	}
 
@@ -163,7 +163,7 @@ static struct nss_platform_data *__nss_hal_of_get_pdata(struct platform_device *
 	for (i = 0 ; i < npd->num_irq; i++) {
 		npd->irq[i] = irq_of_parse_and_map(np, i);
 		if (!npd->irq[i]) {
-			nss_info_always("%p: nss%d: irq_of_parse_and_map() fail for irq %d\n", nss_ctx, nss_ctx->id, i);
+			nss_info_always("%px: nss%d: irq_of_parse_and_map() fail for irq %d\n", nss_ctx, nss_ctx->id, i);
 			goto out;
 		}
 	}
@@ -285,7 +285,7 @@ static int __nss_hal_request_irq(struct nss_ctx_instance *nss_ctx, struct nss_pl
 		err = request_irq(npd->irq[irq_num], nss_hal_handle_irq, 0, "nss", int_ctx);
 	}
 	if (err) {
-		nss_warning("%p: IRQ%d request failed", nss_ctx, npd->irq[irq_num]);
+		nss_warning("%px: IRQ%d request failed", nss_ctx, npd->irq[irq_num]);
 		return err;
 	}
 
@@ -305,7 +305,7 @@ void __nss_hal_init_imem(struct nss_ctx_instance *nss_ctx)
 	mem_ctx->imem_end = mem_ctx->imem_head + NSS_IMEM_SIZE;
 	mem_ctx->imem_tail = mem_ctx->imem_head;
 
-	nss_info("%p: IMEM init: head: 0x%x end: 0x%x tail: 0x%x\n", nss_ctx,
+	nss_info("%px: IMEM init: head: 0x%x end: 0x%x tail: 0x%x\n", nss_ctx,
 			mem_ctx->imem_head, mem_ctx->imem_end, mem_ctx->imem_tail);
 }
 

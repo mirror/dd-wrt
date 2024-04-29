@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2017, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017, 2019-2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -18,57 +18,9 @@
 #define __NSS_IPV4_STATS_H
 
 /*
- * IPV4 node statistics
- */
-enum nss_ipv4_stats_types {
-	NSS_IPV4_STATS_ACCELERATED_RX_PKTS = 0,
-					/* Accelerated IPv4 RX packets */
-	NSS_IPV4_STATS_ACCELERATED_RX_BYTES,
-					/* Accelerated IPv4 RX bytes */
-	NSS_IPV4_STATS_ACCELERATED_TX_PKTS,
-					/* Accelerated IPv4 TX packets */
-	NSS_IPV4_STATS_ACCELERATED_TX_BYTES,
-					/* Accelerated IPv4 TX bytes */
-	NSS_IPV4_STATS_CONNECTION_CREATE_REQUESTS,
-					/* Number of IPv4 connection create requests */
-	NSS_IPV4_STATS_CONNECTION_CREATE_COLLISIONS,
-					/* Number of IPv4 connection create requests that collided with existing entries */
-	NSS_IPV4_STATS_CONNECTION_CREATE_INVALID_INTERFACE,
-					/* Number of IPv4 connection create requests that had invalid interface */
-	NSS_IPV4_STATS_CONNECTION_DESTROY_REQUESTS,
-					/* Number of IPv4 connection destroy requests */
-	NSS_IPV4_STATS_CONNECTION_DESTROY_MISSES,
-					/* Number of IPv4 connection destroy requests that missed the cache */
-	NSS_IPV4_STATS_CONNECTION_HASH_HITS,
-					/* Number of IPv4 connection hash hits */
-	NSS_IPV4_STATS_CONNECTION_HASH_REORDERS,
-					/* Number of IPv4 connection hash reorders */
-	NSS_IPV4_STATS_CONNECTION_FLUSHES,
-					/* Number of IPv4 connection flushes */
-	NSS_IPV4_STATS_CONNECTION_EVICTIONS,
-					/* Number of IPv4 connection evictions */
-	NSS_IPV4_STATS_FRAGMENTATIONS,
-					/* Number of successful IPv4 fragmentations performed */
-	NSS_IPV4_STATS_DROPPED_BY_RULE,
-					/* Number of IPv4 packets dropped because of a drop rule.*/
-	NSS_IPV4_STATS_MC_CONNECTION_CREATE_REQUESTS,
-					/* Number of successful IPv4 Multicast create requests */
-	NSS_IPV4_STATS_MC_CONNECTION_UPDATE_REQUESTS,
-					/* Number of successful IPv4 Multicast update requests */
-	NSS_IPV4_STATS_MC_CONNECTION_CREATE_INVALID_INTERFACE,
-					/* Number of IPv4 Multicast connection create requests that had invalid interface */
-	NSS_IPV4_STATS_MC_CONNECTION_DESTROY_REQUESTS,
-					/* Number of IPv4 Multicast connection destroy requests */
-	NSS_IPV4_STATS_MC_CONNECTION_DESTROY_MISSES,
-					/* Number of IPv4 Multicast connection destroy requests that missed the cache */
-	NSS_IPV4_STATS_MC_CONNECTION_FLUSHES,
-					/* Number of IPv4 Multicast connection flushes */
-	NSS_IPV4_STATS_MAX,
-};
-
-/*
  * NSS IPV4 statistics APIs
  */
+extern void nss_ipv4_stats_notify(struct nss_ctx_instance *nss_ctx);
 extern void nss_ipv4_stats_node_sync(struct nss_ctx_instance *nss_ctx, struct nss_ipv4_node_sync *nins);
 extern void nss_ipv4_stats_conn_sync(struct nss_ctx_instance *nss_ctx, struct nss_ipv4_conn_sync *nirs);
 extern void nss_ipv4_stats_conn_sync_many(struct nss_ctx_instance *nss_ctx, struct nss_ipv4_conn_sync_many_msg *nicsm);

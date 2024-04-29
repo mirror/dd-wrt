@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2016, 2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2016, 2018, 2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -80,7 +80,7 @@ static void nss_ipv6_log_rule_create_msg(struct nss_ipv6_msg *nim)
 	NSS_IPV6_ADDR_TO_NW(nircm->tuple.flow_ip, src_ip);
 	NSS_IPV6_ADDR_TO_NW(nircm->tuple.return_ip, dest_ip);
 
-	nss_trace("%p: IPv6 create rule message \n"
+	nss_trace("%px: IPv6 create rule message \n"
 		"Protocol: %d\n"
 		"from_mtu: %u\n"
 		"to_mtu: %u\n"
@@ -143,7 +143,7 @@ static void nss_ipv6_log_destroy_rule_msg(struct nss_ipv6_msg *nim)
 	NSS_IPV6_ADDR_TO_NW(nirdm->tuple.flow_ip, src_ip);
 	NSS_IPV6_ADDR_TO_NW(nirdm->tuple.return_ip, dest_ip);
 
-	nss_trace("%p: IPv6 destroy rule message: \n"
+	nss_trace("%px: IPv6 destroy rule message: \n"
 		"flow_ip: %pI6:%d\n"
 		"return_ip: %pI6:%d\n"
 		"protocol: %d\n",
@@ -167,7 +167,7 @@ static void nss_ipv6_log_conn_sync(struct nss_ipv6_msg *nim)
 		NSS_IPV6_ADDR_TO_NW(sync->flow_ip, src_ip);
 		NSS_IPV6_ADDR_TO_NW(sync->return_ip, dest_ip);
 
-		nss_trace("%p: IPv6 connection stats sync message: \n"
+		nss_trace("%px: IPv6 connection stats sync message: \n"
 			"Protocol: %d\n"
 			"src_addr: %pI6:%d\n"
 			"dest_addr: %pI6:%d\n"
@@ -201,7 +201,7 @@ static void nss_ipv6_log_conn_sync(struct nss_ipv6_msg *nim)
 static void nss_ipv6_log_conn_cfg_msg(struct nss_ipv6_msg *nim)
 {
 	struct nss_ipv6_rule_conn_cfg_msg *nirccm __maybe_unused = &nim->msg.rule_conn_cfg;
-	nss_trace("%p: IPv6 number of connections supported rule message: \n"
+	nss_trace("%px: IPv6 number of connections supported rule message: \n"
 		"num_conn: %d\n",
 		nim,
 		nirccm->num_conn);
@@ -222,7 +222,7 @@ static void nss_ipv6_log_mc_rule_create_msg(struct nss_ipv6_msg *nim)
 	NSS_IPV6_ADDR_TO_NW(nimrcm->tuple.return_ip, dest_ip);
 
 	for (vif = 0; vif < nimrcm->if_count ; vif++) {
-		nss_trace("%p: IPv6 multicast create rule message \n"
+		nss_trace("%px: IPv6 multicast create rule message \n"
 			"Rule flag: %x\n"
 			"Vif: %d\n"
 			"Protocol: %d\n"
@@ -264,7 +264,7 @@ static void nss_ipv6_log_conn_sync_many_msg(struct nss_ipv6_msg *nim)
 			NSS_IPV6_ADDR_TO_NW(sync->flow_ip, src_ip);
 			NSS_IPV6_ADDR_TO_NW(sync->return_ip, dest_ip);
 
-			nss_trace("%p: IPv6 many conn sync message \n"
+			nss_trace("%px: IPv6 many conn sync message \n"
 				"count: %d\n"
 				"i: %d\n"
 				"Protocol: %d\n"
@@ -332,7 +332,7 @@ static void nss_ipv6_log_verbose(struct nss_ipv6_msg *nim)
 		break;
 
 	default:
-		nss_trace("%p: Invalid message type\n", nim);
+		nss_trace("%px: Invalid message type\n", nim);
 		break;
 	}
 }
@@ -343,7 +343,7 @@ static void nss_ipv6_log_verbose(struct nss_ipv6_msg *nim)
  */
 void nss_ipv6_log_tx_msg(struct nss_ipv6_msg *nim)
 {
-	nss_info("%p: type[%d]: %s\n", nim, nim->cm.type, nss_ipv6_log_message_types_str[nim->cm.type]);
+	nss_info("%px: type[%d]: %s\n", nim, nim->cm.type, nss_ipv6_log_message_types_str[nim->cm.type]);
 	nss_ipv6_log_verbose(nim);
 }
 
@@ -354,26 +354,26 @@ void nss_ipv6_log_tx_msg(struct nss_ipv6_msg *nim)
 void nss_ipv6_log_rx_msg(struct nss_ipv6_msg *nim)
 {
 	if (nim->cm.response >= NSS_CMN_RESPONSE_LAST) {
-		nss_info("%p: Invalid response\n", nim);
+		nss_info("%px: Invalid response\n", nim);
 		return;
 	}
 
 	if (nim->cm.response == NSS_CMN_RESPONSE_NOTIFY || (nim->cm.response == NSS_CMN_RESPONSE_ACK)) {
-		nss_info("%p: type[%d]: %s, response[%d]: %s\n", nim, nim->cm.type,
+		nss_info("%px: type[%d]: %s, response[%d]: %s\n", nim, nim->cm.type,
 			nss_ipv6_log_message_types_str[nim->cm.type],
 			nim->cm.response, nss_cmn_response_str[nim->cm.response]);
 		goto verbose;
 	}
 
 	if (nim->cm.error > NSS_IPV6_CR_MULTICAST_UPDATE_INVALID_IF) {
-		nss_info("%p: msg failure - type[%d]:%s, response[%d]:%s, error[%d]:Invalid error\n",
+		nss_info("%px: msg failure - type[%d]:%s, response[%d]:%s, error[%d]:Invalid error\n",
 			nim, nim->cm.type, nss_ipv6_log_message_types_str[nim->cm.type],
 			nim->cm.response, nss_cmn_response_str[nim->cm.response],
 			nim->cm.error);
 		goto verbose;
 	}
 
-	nss_info("%p: msg failure - type[%d]:%s, response[%d]:%s, error[%d]:%s\n",
+	nss_info("%px: msg failure - type[%d]:%s, response[%d]:%s, error[%d]:%s\n",
 		nim, nim->cm.type, nss_ipv6_log_message_types_str[nim->cm.type],
 		nim->cm.response, nss_cmn_response_str[nim->cm.response],
 		nim->cm.error, nss_ipv6_log_error_response_types_str[nim->cm.error]);

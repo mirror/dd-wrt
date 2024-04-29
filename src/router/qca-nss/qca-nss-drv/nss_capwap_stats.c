@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2017-2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -14,50 +14,16 @@
  **************************************************************************
  */
 
-#include "nss_stats.h"
+#include "nss_drv_stats.h"
 #include "nss_core.h"
 #include "nss_capwap.h"
 #include "nss_capwap_stats.h"
+#include "nss_capwap_strings.h"
 
 /*
- * nss_capwap_stats_encap_str
- *	CAPWAP encap statistics string
+ * Declare atomic notifier data structure for statistics.
  */
-static int8_t *nss_capwap_stats_encap_str[NSS_CAPWAP_STATS_ENCAP_MAX] = {
-	"packets",
-	"bytes",
-	"fragments",
-	"drop_ref",
-	"drop_ver",
-	"drop_unalign",
-	"drop_hroom",
-	"drop_dtls",
-	"drop_nwireless",
-	"drop_qfull",
-	"drop_memfail",
-	"fast_mem"
-};
-
-/*
- * nss_capwap_stats_decap_str
- *	CAPWAP decap statistics string
- */
-static int8_t *nss_capwap_stats_decap_str[NSS_CAPWAP_STATS_DECAP_MAX] = {
-	"packets",
-	"bytes",
-	"DTLS_pkts",
-	"fragments",
-	"rx_dropped",
-	"drop_oversize",
-	"drop_frag_timeout",
-	"drop_frag_dup",
-	"drop_frag_gap",
-	"drop_qfull",
-	"drop_memfail",
-	"drop_csum",
-	"drop_malformed",
-	"fast_mem"
-};
+ATOMIC_NOTIFIER_HEAD(nss_capwap_stats_notifier);
 
 /*
  * nss_capwap_stats_encap()
@@ -84,7 +50,7 @@ static ssize_t nss_capwap_stats_encap(char *line, int len, int i, struct nss_cap
 		tcnt = s->tx_dropped_ver_mis;
 		break;
 	case 5:
-		tcnt = s->tx_dropped_unalign;
+		tcnt = 0;
 		break;
 	case 6:
 		tcnt = s->tx_dropped_hroom;
@@ -108,7 +74,7 @@ static ssize_t nss_capwap_stats_encap(char *line, int len, int i, struct nss_cap
 		return 0;
 	}
 
-	return snprintf(line, len, "%s = %llu\n", nss_capwap_stats_encap_str[i], tcnt);
+	return snprintf(line, len, "%s = %llu\n", nss_capwap_strings_encap_stats[i].stats_name, tcnt);
 }
 
 /*
@@ -149,24 +115,27 @@ static ssize_t nss_capwap_stats_decap(char *line, int len, int i, struct nss_cap
 		break;
 	case 9:
 		tcnt = s->rx_queue_full_drops;
-		return snprintf(line, len, "%s = %llu (n2h = %llu)\n", nss_capwap_stats_decap_str[i], tcnt, s->rx_n2h_queue_full_drops);
+		return snprintf(line, len, "%s = %llu (n2h = %llu)\n", nss_capwap_strings_decap_stats[i].stats_name, tcnt, s->rx_n2h_queue_full_drops);
 	case 10:
-		tcnt = s->rx_mem_failure_drops;
+		tcnt = s->rx_n2h_queue_full_drops;
 		break;
 	case 11:
-		tcnt = s->rx_csum_drops;
+		tcnt = s->rx_mem_failure_drops;
 		break;
 	case 12:
-		tcnt = s->rx_malformed;
+		tcnt = s->rx_csum_drops;
 		break;
 	case 13:
+		tcnt = s->rx_malformed;
+		break;
+	case 14:
 		tcnt = s->fast_mem;
 		break;
 	default:
 		return 0;
 	}
 
-	return snprintf(line, len, "%s = %llu\n", nss_capwap_stats_decap_str[i], tcnt);
+	return snprintf(line, len, "%s = %llu\n", nss_capwap_strings_decap_stats[i].stats_name, tcnt);
 }
 
 /*
@@ -284,8 +253,8 @@ static ssize_t nss_capwap_encap_stats_read(struct file *fp, char __user *ubuf, s
 /*
  * nss_capwap_stats_ops
  */
-NSS_STATS_DECLARE_FILE_OPERATIONS(capwap_encap)
-NSS_STATS_DECLARE_FILE_OPERATIONS(capwap_decap)
+NSS_STATS_DECLARE_FILE_OPERATIONS(capwap_encap);
+NSS_STATS_DECLARE_FILE_OPERATIONS(capwap_decap);
 
 /*
  * nss_capwap_stats_dentry_create()
@@ -296,3 +265,39 @@ void nss_capwap_stats_dentry_create(void)
 	nss_stats_create_dentry("capwap_encap", &nss_capwap_encap_stats_ops);
 	nss_stats_create_dentry("capwap_decap", &nss_capwap_decap_stats_ops);
 }
+
+/*
+ * nss_capwap_stats_notify()
+ *	Sends notifications to the registered modules.
+ *
+ * Leverage NSS-FW statistics timing to update Netlink.
+ */
+void nss_capwap_stats_notify(uint32_t if_num, uint32_t core_id)
+{
+	struct nss_capwap_stats_notification capwap_stats;
+
+	capwap_stats.core_id = core_id;
+	capwap_stats.if_num = if_num;
+	nss_capwap_get_stats(if_num, &capwap_stats.stats);
+	atomic_notifier_call_chain(&nss_capwap_stats_notifier, NSS_STATS_EVENT_NOTIFY, (void *)&capwap_stats);
+}
+
+/*
+ * nss_capwap_stats_register_notifier()
+ *	Registers statistics notifier.
+ */
+int nss_capwap_stats_register_notifier(struct notifier_block *nb)
+{
+	return atomic_notifier_chain_register(&nss_capwap_stats_notifier, nb);
+}
+EXPORT_SYMBOL(nss_capwap_stats_register_notifier);
+
+/*
+ * nss_capwap_stats_unregister_notifier()
+ *	Deregisters statistics notifier.
+ */
+int nss_capwap_stats_unregister_notifier(struct notifier_block *nb)
+{
+	return atomic_notifier_chain_unregister(&nss_capwap_stats_notifier, nb);
+}
+EXPORT_SYMBOL(nss_capwap_stats_unregister_notifier);

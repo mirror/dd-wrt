@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2018, 2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -39,7 +39,7 @@ static int8_t *nss_freq_log_message_types_str[COREFREQ_METADATA_TYPE_MAX] __mayb
 static void nss_freq_log_msg(struct nss_corefreq_msg *ncm)
 {
 	struct nss_freq_msg *nfm __maybe_unused = &ncm->msg.nfc;
-	nss_trace("%p: NSS Freq Message:\n"
+	nss_trace("%px: NSS Freq Message:\n"
 		"Frequency request: %d\n"
 		"Frequency start/end: %d\n"
 		"Frequency stats enable: %d\n"
@@ -69,7 +69,7 @@ static void nss_freq_log_verbose(struct nss_corefreq_msg *ncm)
 		break;
 
 	default:
-		nss_warning("%p: Invalid message type\n", ncm);
+		nss_warning("%px: Invalid message type\n", ncm);
 		break;
 	}
 }
@@ -81,17 +81,17 @@ static void nss_freq_log_verbose(struct nss_corefreq_msg *ncm)
 void nss_freq_log_rx_msg(struct nss_corefreq_msg *ncm)
 {
 	if (ncm->cm.response >= NSS_CMN_RESPONSE_LAST) {
-		nss_warning("%p: Invalid response\n", ncm);
+		nss_warning("%px: Invalid response\n", ncm);
 		return;
 	}
 
 	if (ncm->cm.response == NSS_CMN_RESPONSE_NOTIFY || (ncm->cm.response == NSS_CMN_RESPONSE_ACK)) {
-		nss_info("%p: type[%d], response[%d]:%s\n", ncm, ncm->cm.type,
+		nss_info("%px: type[%d], response[%d]:%s\n", ncm, ncm->cm.type,
 			ncm->cm.response, nss_cmn_response_str[ncm->cm.response]);
 		goto verbose;
 	}
 
-	nss_info("%p: msg nack - type[%d]:%s, response[%d]:%s\n",
+	nss_info("%px: msg nack - type[%d]:%s, response[%d]:%s\n",
 		ncm, ncm->cm.type, nss_freq_log_message_types_str[ncm->cm.type],
 		ncm->cm.response, nss_cmn_response_str[ncm->cm.response]);
 

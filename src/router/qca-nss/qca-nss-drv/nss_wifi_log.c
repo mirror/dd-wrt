@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2018, 2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -110,7 +110,7 @@ static void nss_wifi_log_init_msg(struct nss_wifi_msg *ncm)
 {
 	struct nss_wifi_init_msg *nwim __maybe_unused = &ncm->msg.initmsg;
 
-	nss_trace("%p: NSS WIFI Init Message:\n"
+	nss_trace("%px: NSS WIFI Init Message:\n"
 		"WIFI Radio ID: %d\n"
 		"WIFI PCI Memory Address: %x\n"
 		"WIFI Target Type: %d\n"
@@ -177,7 +177,7 @@ static void nss_wifi_log_init_msg(struct nss_wifi_msg *ncm)
 static void nss_wifi_log_stop_msg(struct nss_wifi_msg *ncm)
 {
 	struct nss_wifi_stop_msg *nwsm __maybe_unused = &ncm->msg.stopmsg;
-	nss_trace("%p: NSS WIFI Init Message:\n"
+	nss_trace("%px: NSS WIFI Init Message:\n"
 		"WIFI Radio ID: %d\n",
 		nwsm, nwsm->radio_id);
 }
@@ -189,7 +189,7 @@ static void nss_wifi_log_stop_msg(struct nss_wifi_msg *ncm)
 static void nss_wifi_log_reset_msg(struct nss_wifi_msg *ncm)
 {
 	struct nss_wifi_reset_msg *nwrm __maybe_unused = &ncm->msg.resetmsg;
-	nss_trace("%p: NSS WIFI Init Message:\n"
+	nss_trace("%px: NSS WIFI Init Message:\n"
 		"WIFI Radio ID: %d\n",
 		nwrm, nwrm->radio_id);
 }
@@ -201,7 +201,7 @@ static void nss_wifi_log_reset_msg(struct nss_wifi_msg *ncm)
 static void nss_wifi_log_htt_init_msg(struct nss_wifi_msg *ncm)
 {
 	struct nss_wifi_htt_init_msg *nwim __maybe_unused = &ncm->msg.httinitmsg;
-	nss_trace("%p: NSS WIFI HTT Init Message:\n"
+	nss_trace("%px: NSS WIFI HTT Init Message:\n"
 		"WIFI Radio ID: %d\n"
 		"WIFI Ring Size: %d\n"
 		"WIFI Fill Level: %d\n"
@@ -222,7 +222,7 @@ static void nss_wifi_log_htt_init_msg(struct nss_wifi_msg *ncm)
 static void nss_wifi_log_tx_init_msg(struct nss_wifi_msg *ncm)
 {
 	struct nss_wifi_tx_init_msg *nwim __maybe_unused = &ncm->msg.pdevtxinitmsg;
-	nss_trace("%p: NSS WIFI HTT Init Message:\n"
+	nss_trace("%px: NSS WIFI HTT Init Message:\n"
 		"WIFI Radio ID: %d\n"
 		"WIFI Number of Descriptor Pools Allocated: %d\n"
 		"WIFI TX Descriptor Array: %x\n"
@@ -246,10 +246,10 @@ static void nss_wifi_log_tx_init_msg(struct nss_wifi_msg *ncm)
 static void nss_wifi_log_rawsend_msg(struct nss_wifi_msg *ncm)
 {
 	struct nss_wifi_rawsend_msg *nwrm __maybe_unused = &ncm->msg.rawmsg;
-	nss_trace("%p: NSS WIFI RAW Send Message:\n"
+	nss_trace("%px: NSS WIFI RAW Send Message:\n"
 		"WIFI Radio ID: %d\n"
 		"WIFI Size of Raw Data: %d\n"
-		"WIFI Raw Data: %p",
+		"WIFI Raw Data: %px",
 		nwrm, nwrm->radio_id,
 		nwrm->len, nwrm->array);
 }
@@ -261,10 +261,10 @@ static void nss_wifi_log_rawsend_msg(struct nss_wifi_msg *ncm)
 static void nss_wifi_log_mgmtsend_msg(struct nss_wifi_msg *ncm)
 {
 	struct nss_wifi_mgmtsend_msg *nwmm __maybe_unused = &ncm->msg.mgmtmsg;
-	nss_trace("%p: NSS WIFI Management Send Message:\n"
+	nss_trace("%px: NSS WIFI Management Send Message:\n"
 		"WIFI Descriptor ID: %d\n"
 		"WIFI Size of Management Data: %d\n"
-		"WIFI Management Data: %p",
+		"WIFI Management Data: %px",
 		nwmm, nwmm->desc_id,
 		nwmm->len, nwmm->array);
 }
@@ -276,7 +276,7 @@ static void nss_wifi_log_mgmtsend_msg(struct nss_wifi_msg *ncm)
 static void nss_wifi_log_wds_peer_msg(struct nss_wifi_msg *ncm)
 {
 	struct nss_wifi_wds_peer_msg *nwmm __maybe_unused = &ncm->msg.pdevwdspeermsg;
-	nss_trace("%p: NSS WIFI WDS Peer Message:\n"
+	nss_trace("%px: NSS WIFI WDS Peer Message:\n"
 		"WIFI Dest MAC: %pM\n"
 		"WIFI Peer MAC: %pM\n",
 		nwmm, nwmm->dest_mac,
@@ -290,7 +290,7 @@ static void nss_wifi_log_wds_peer_msg(struct nss_wifi_msg *ncm)
 static void nss_wifi_log_peer_freelist_append_msg(struct nss_wifi_msg *ncm)
 {
 	struct nss_wifi_peer_freelist_append_msg *nwpm __maybe_unused = &ncm->msg.peer_freelist_append;
-	nss_trace("%p: NSS WIFI Create/Append Freelist Message:\n"
+	nss_trace("%px: NSS WIFI Create/Append Freelist Message:\n"
 		"WIFI Starting Address of Peer Freelist Pool: %x\n"
 		"WIFI Length of freelist pool: %d\n"
 		"WIFI Number of Peers supported in freelist pool: %d\n",
@@ -305,7 +305,7 @@ static void nss_wifi_log_peer_freelist_append_msg(struct nss_wifi_msg *ncm)
 static void nss_wifi_log_rx_reorder_array_freelist_append_msg(struct nss_wifi_msg *ncm)
 {
 	struct nss_wifi_rx_reorder_array_freelist_append_msg *nwpm __maybe_unused = &ncm->msg.rx_reorder_array_freelist_append;
-	nss_trace("%p: NSS WIFI RX Reorder Array Freelist Message:\n"
+	nss_trace("%px: NSS WIFI RX Reorder Array Freelist Message:\n"
 		"WIFI Starting Address of TIDQ Freelist Pool: %x\n"
 		"WIFI Length of TIDQ freelist pool: %d\n"
 		"WIFI Number of Rx reorder array entries supported in freelist pool: %d\n",
@@ -320,7 +320,7 @@ static void nss_wifi_log_rx_reorder_array_freelist_append_msg(struct nss_wifi_ms
 static void nss_wifi_log_set_filter_msg(struct nss_wifi_msg *ncm)
 {
 	struct nss_wifi_monitor_set_filter_msg *nwfm __maybe_unused = &ncm->msg.monitor_filter_msg;
-	nss_trace("%p: NSS WIFI Set Filter Message:\n"
+	nss_trace("%px: NSS WIFI Set Filter Message:\n"
 		"WIFI Filter Type: %dn",
 		nwfm, nwfm->filter_type);
 }
@@ -332,7 +332,7 @@ static void nss_wifi_log_set_filter_msg(struct nss_wifi_msg *ncm)
 static void nss_wifi_log_peer_activity_msg(struct nss_wifi_msg *ncm)
 {
 	struct nss_wifi_bs_peer_activity *nwpm __maybe_unused = &ncm->msg.peer_activity;
-	nss_trace("%p: NSS WIFI Get Active Peer Message:\n"
+	nss_trace("%px: NSS WIFI Get Active Peer Message:\n"
 		"WIFI Number of Entries in Peer ID Array: %d\n"
 		"WIFI PEER ID: %d\n",
 		nwpm, nwpm->nentries,
@@ -346,7 +346,7 @@ static void nss_wifi_log_peer_activity_msg(struct nss_wifi_msg *ncm)
 static void nss_wifi_log_rx_vow_extstats_set_msg(struct nss_wifi_msg *ncm)
 {
 	struct nss_wifi_rx_vow_extstats_set_msg *nwpm __maybe_unused = &ncm->msg.vow_extstats_msg;
-	nss_trace("%p: NSS WIFI VoW Extended Statistics Set Message:\n"
+	nss_trace("%px: NSS WIFI VoW Extended Statistics Set Message:\n"
 		"WIFI VoW Extended Statistics Enable:: %d\n",
 		nwpm, nwpm->vow_extstats_en);
 }
@@ -358,7 +358,7 @@ static void nss_wifi_log_rx_vow_extstats_set_msg(struct nss_wifi_msg *ncm)
 static void nss_wifi_log_pktlog_cfg_msg(struct nss_wifi_msg *ncm)
 {
 	struct nss_wifi_pktlog_cfg_msg *nwpm __maybe_unused = &ncm->msg.pcm_msg;
-	nss_trace("%p: NSS WIFI Packet Log Configuration Message:\n"
+	nss_trace("%px: NSS WIFI Packet Log Configuration Message:\n"
 		"WIFI Packet Log Enable: %d\n"
 		"WIFI PAcket Log buffer Size: %d\n"
 		"WIFI Size of packet log header: %d\n"
@@ -375,7 +375,7 @@ static void nss_wifi_log_pktlog_cfg_msg(struct nss_wifi_msg *ncm)
 static void nss_wifi_log_enable_perpkt_txstats_msg(struct nss_wifi_msg *ncm)
 {
 	struct nss_wifi_enable_perpkt_txstats_msg *nwpm __maybe_unused = &ncm->msg.ept_msg;
-	nss_trace("%p: NSS WIFI Enable TX Stats Message:\n"
+	nss_trace("%px: NSS WIFI Enable TX Stats Message:\n"
 		"WIFI TX Stats Enable Flag: %d\n",
 		nwpm, nwpm->perpkt_txstats_flag);
 }
@@ -387,7 +387,7 @@ static void nss_wifi_log_enable_perpkt_txstats_msg(struct nss_wifi_msg *ncm)
 static void nss_wifi_log_override_tos_msg(struct nss_wifi_msg *ncm)
 {
 	struct nss_wifi_igmp_mld_override_tos_msg *nwpm __maybe_unused = &ncm->msg.wigmpmldtm_msg;
-	nss_trace("%p: NSS WIFI Override TOS Message:\n"
+	nss_trace("%px: NSS WIFI Override TOS Message:\n"
 		"WIFI enable TID override Flag: %d\n"
 		"WIFI Value of TID to be overriden: %d\n",
 		nwpm, nwpm->igmp_mld_ovride_tid_en,
@@ -401,7 +401,7 @@ static void nss_wifi_log_override_tos_msg(struct nss_wifi_msg *ncm)
 static void nss_wifi_log_ol_stats_cfg_msg(struct nss_wifi_msg *ncm)
 {
 	struct nss_wifi_ol_stats_cfg_msg *nwpm __maybe_unused = &ncm->msg.scm_msg;
-	nss_trace("%p: NSS WIFI Enable/Disable Offload Stats Message:\n"
+	nss_trace("%px: NSS WIFI Enable/Disable Offload Stats Message:\n"
 		"WIFI enable/disable offload stats config: %d\n",
 		nwpm, nwpm->stats_cfg);
 }
@@ -413,7 +413,7 @@ static void nss_wifi_log_ol_stats_cfg_msg(struct nss_wifi_msg *ncm)
 static void nss_wifi_log_tx_queue_cfg_msg(struct nss_wifi_msg *ncm)
 {
 	struct nss_wifi_tx_queue_cfg_msg *nwpm __maybe_unused = &ncm->msg.wtxqcm;
-	nss_trace("%p: NSS WIFI TX Queue Config Message:\n"
+	nss_trace("%px: NSS WIFI TX Queue Config Message:\n"
 		"WIFI TX Queue Size: %d\n"
 		"WIFI TX Queue Range: %d\n",
 		nwpm, nwpm->size, nwpm->range);
@@ -426,7 +426,7 @@ static void nss_wifi_log_tx_queue_cfg_msg(struct nss_wifi_msg *ncm)
 static void nss_wifi_log_tx_min_threshold_cfg(struct nss_wifi_msg *ncm)
 {
 	struct nss_wifi_tx_min_threshold_cfg_msg *nwpm __maybe_unused = &ncm->msg.wtx_min_threshold_cm;
-	nss_trace("%p: NSS WIFI TX Queue Min Threshold Config Message:\n"
+	nss_trace("%px: NSS WIFI TX Queue Min Threshold Config Message:\n"
 		"WIFI TX Queue Min Threshold Value: %d\n",
 		nwpm, nwpm->min_threshold);
 }
@@ -438,7 +438,7 @@ static void nss_wifi_log_tx_min_threshold_cfg(struct nss_wifi_msg *ncm)
 static void nss_wifi_log_dbdc_process_enable_msg(struct nss_wifi_msg *ncm)
 {
 	struct nss_wifi_dbdc_process_enable_msg *nwpm __maybe_unused = &ncm->msg.dbdcpe_msg;
-	nss_trace("%p: NSS WIFI DBDC repeater process configuration:\n"
+	nss_trace("%px: NSS WIFI DBDC repeater process configuration:\n"
 		"WIFI DBDC Process Enable Flag: %d\n",
 		nwpm, nwpm->dbdc_process_enable);
 }
@@ -450,7 +450,7 @@ static void nss_wifi_log_dbdc_process_enable_msg(struct nss_wifi_msg *ncm)
 static void nss_wifi_log_primary_radio_set_msg(struct nss_wifi_msg *ncm)
 {
 	struct nss_wifi_primary_radio_set_msg *nwpm __maybe_unused = &ncm->msg.wprs_msg;
-	nss_trace("%p: NSS WIFI Primary Radio Set Message:\n"
+	nss_trace("%px: NSS WIFI Primary Radio Set Message:\n"
 		"WIFI Current Radio as Primary Radio Enable/Disable Flag: %d\n",
 		nwpm, nwpm->flag);
 }
@@ -462,7 +462,7 @@ static void nss_wifi_log_primary_radio_set_msg(struct nss_wifi_msg *ncm)
 static void nss_wifi_log_force_client_mcast_traffic_set_msg(struct nss_wifi_msg *ncm)
 {
 	struct nss_wifi_force_client_mcast_traffic_set_msg *nwpm __maybe_unused = &ncm->msg.wfcmts_msg;
-	nss_trace("%p: NSS WIFI Force Multicat Traffic for Radio Message:\n"
+	nss_trace("%px: NSS WIFI Force Multicat Traffic for Radio Message:\n"
 		"WIFI Radio Multicast Traffic Flag: %d\n",
 		nwpm, nwpm->flag);
 }
@@ -474,7 +474,7 @@ static void nss_wifi_log_force_client_mcast_traffic_set_msg(struct nss_wifi_msg 
 static void nss_wifi_log_store_other_pdev_stavap_msg(struct nss_wifi_msg *ncm)
 {
 	struct nss_wifi_store_other_pdev_stavap_msg *nwpm __maybe_unused = &ncm->msg.wsops_msg;
-	nss_trace("%p: NSS WIFI Store Other Radio Station VAP Message:\n"
+	nss_trace("%px: NSS WIFI Store Other Radio Station VAP Message:\n"
 		"WIFI Station VAP Interface Number: %d\n",
 		nwpm, nwpm->stavap_ifnum);
 }
@@ -486,7 +486,7 @@ static void nss_wifi_log_store_other_pdev_stavap_msg(struct nss_wifi_msg *ncm)
 static void nss_wifi_log_sta_kickout_msg(struct nss_wifi_msg *ncm)
 {
 	struct nss_wifi_sta_kickout_msg *nwpm __maybe_unused = &ncm->msg.sta_kickout_msg;
-	nss_trace("%p: NSS WIFI Station Kickout Message:\n"
+	nss_trace("%px: NSS WIFI Station Kickout Message:\n"
 		"WIFI PEER ID: %d\n",
 		nwpm, nwpm->peer_id);
 }
@@ -498,8 +498,8 @@ static void nss_wifi_log_sta_kickout_msg(struct nss_wifi_msg *ncm)
 static void nss_wifi_log_wnm_peer_rx_activity(struct nss_wifi_msg *ncm)
 {
 	struct nss_wifi_wnm_peer_rx_activity_msg *nwpm __maybe_unused = &ncm->msg.wprm;
-	nss_trace("%p: NSS WIFI RX Active State Information of Peer:\n"
-		"WIFI Peer ID: %p\n"
+	nss_trace("%px: NSS WIFI RX Active State Information of Peer:\n"
+		"WIFI Peer ID: %px\n"
 		"WIFI Number of Entries: %d\n",
 		nwpm, nwpm->peer_id, nwpm->nentries);
 }
@@ -511,7 +511,7 @@ static void nss_wifi_log_wnm_peer_rx_activity(struct nss_wifi_msg *ncm)
 static void nss_wifi_log_wds_extn_peer_cfg_msg(struct nss_wifi_msg *ncm)
 {
 	struct nss_wifi_wds_extn_peer_cfg_msg *nwpm __maybe_unused = &ncm->msg.wpeercfg;
-	nss_trace("%p: NSS WIFI Extension Enabled Configuraion Message:\n"
+	nss_trace("%px: NSS WIFI Extension Enabled Configuraion Message:\n"
 		"WIFI Peer MAC Address: %pM\n"
 		"WIFI WDS Flags: %d\n"
 		"WIFI Peer ID: %d\n",
@@ -526,7 +526,7 @@ static void nss_wifi_log_wds_extn_peer_cfg_msg(struct nss_wifi_msg *ncm)
 static void nss_wifi_log_tx_capture_msg(struct nss_wifi_msg *ncm)
 {
 	struct nss_wifi_tx_capture_msg *nwpm __maybe_unused = &ncm->msg.tx_capture_msg;
-	nss_trace("%p: NSS WIFI Enable TX Capture Message:\n"
+	nss_trace("%px: NSS WIFI Enable TX Capture Message:\n"
 		"WIFI TX Capture Enable Flag: %d\n",
 		nwpm, nwpm->tx_capture_enable);
 }
@@ -538,7 +538,7 @@ static void nss_wifi_log_tx_capture_msg(struct nss_wifi_msg *ncm)
 static void nss_wifi_log_always_primary_set_msg(struct nss_wifi_msg *ncm)
 {
 	struct nss_wifi_always_primary_set_msg *nwpm __maybe_unused = &ncm->msg.waps_msg;
-	nss_trace("%p: NSS WIFI Always Set Current Radio Primary Message:\n"
+	nss_trace("%px: NSS WIFI Always Set Current Radio Primary Message:\n"
 		"WIFI Always Set Flag: %d\n",
 		nwpm, nwpm->flag);
 }
@@ -550,7 +550,7 @@ static void nss_wifi_log_always_primary_set_msg(struct nss_wifi_msg *ncm)
 static void nss_wifi_log_cmd_msg(struct nss_wifi_msg *ncm)
 {
 	struct nss_wifi_cmd_msg *nwpm __maybe_unused = &ncm->msg.wcmdm;
-	nss_trace("%p: NSS WIFI PDEV Command Message:\n"
+	nss_trace("%px: NSS WIFI PDEV Command Message:\n"
 		"WIFI Type of Command: %d\n"
 		"WIFI Value of Command: %d\n",
 		nwpm, nwpm->cmd, nwpm->value);
@@ -563,7 +563,7 @@ static void nss_wifi_log_cmd_msg(struct nss_wifi_msg *ncm)
 static void nss_wifi_log_enable_ol_statsv2_msg(struct nss_wifi_msg *ncm)
 {
 	struct nss_wifi_enable_ol_statsv2 *nwpm __maybe_unused = &ncm->msg.wesh_msg;
-	nss_trace("%p: NSS WIFI Enable Version 2 of TX/RX Stats:\n"
+	nss_trace("%px: NSS WIFI Enable Version 2 of TX/RX Stats:\n"
 		"WIFI Enable Version 2 Stats: %d\n",
 		nwpm, nwpm->enable_ol_statsv2);
 }
@@ -577,7 +577,7 @@ static void nss_wifi_log_enable_ol_peer_time_msg(struct nss_wifi_msg *ncm)
 	struct nss_wifi_ol_peer_time_msg *nwpm __maybe_unused = &ncm->msg.wopt_msg;
 	int32_t i;
 
-	nss_trace("%p: NSS WIFI Enable Per PEer Stats to Host:\n"
+	nss_trace("%px: NSS WIFI Enable Per PEer Stats to Host:\n"
 		"WIFI Number of Peers: %d\n"
 		"WIFI Peed ID: %d\n",
 		nwpm, nwpm->npeers,
@@ -750,7 +750,7 @@ static void nss_wifi_log_verbose(struct nss_wifi_msg *ncm)
 		break;
 
 	default:
-		nss_warning("%p: Invalid message type\n", ncm);
+		nss_warning("%px: Invalid message type\n", ncm);
 		break;
 	}
 }
@@ -762,11 +762,11 @@ static void nss_wifi_log_verbose(struct nss_wifi_msg *ncm)
 void nss_wifi_log_tx_msg(struct nss_wifi_msg *ncm)
 {
 	if (ncm->cm.type >= NSS_WIFI_MAX_MSG) {
-		nss_warning("%p: Invalid message type\n", ncm);
+		nss_warning("%px: Invalid message type\n", ncm);
 		return;
 	}
 
-	nss_info("%p: type[%d]:%s\n", ncm, ncm->cm.type, nss_wifi_log_message_types_str[ncm->cm.type]);
+	nss_info("%px: type[%d]:%s\n", ncm, ncm->cm.type, nss_wifi_log_message_types_str[ncm->cm.type]);
 	nss_wifi_log_verbose(ncm);
 }
 
@@ -777,26 +777,26 @@ void nss_wifi_log_tx_msg(struct nss_wifi_msg *ncm)
 void nss_wifi_log_rx_msg(struct nss_wifi_msg *ncm)
 {
 	if (ncm->cm.response >= NSS_CMN_RESPONSE_LAST) {
-		nss_warning("%p: Invalid response\n", ncm);
+		nss_warning("%px: Invalid response\n", ncm);
 		return;
 	}
 
 	if (ncm->cm.response == NSS_CMN_RESPONSE_NOTIFY || (ncm->cm.response == NSS_CMN_RESPONSE_ACK)) {
-		nss_info("%p: type[%d]:%s, response[%d]:%s\n", ncm, ncm->cm.type,
+		nss_info("%px: type[%d]:%s, response[%d]:%s\n", ncm, ncm->cm.type,
 			nss_wifi_log_message_types_str[ncm->cm.type],
 			ncm->cm.response, nss_cmn_response_str[ncm->cm.response]);
 		goto verbose;
 	}
 
 	if (ncm->cm.error >= NSS_WIFI_EMSG_MAX) {
-		nss_warning("%p: msg failure - type[%d]:%s, response[%d]:%s, error[%d]:Invalid error\n",
+		nss_warning("%px: msg failure - type[%d]:%s, response[%d]:%s, error[%d]:Invalid error\n",
 			ncm, ncm->cm.type, nss_wifi_log_message_types_str[ncm->cm.type],
 			ncm->cm.response, nss_cmn_response_str[ncm->cm.response],
 			ncm->cm.error);
 		goto verbose;
 	}
 
-	nss_info("%p: msg nack - type[%d]:%s, response[%d]:%s, error[%d]:%s\n",
+	nss_info("%px: msg nack - type[%d]:%s, response[%d]:%s, error[%d]:%s\n",
 		ncm, ncm->cm.type, nss_wifi_log_message_types_str[ncm->cm.type],
 		ncm->cm.response, nss_cmn_response_str[ncm->cm.response],
 		ncm->cm.error, nss_wifi_log_error_response_types_str[ncm->cm.error]);

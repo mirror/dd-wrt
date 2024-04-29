@@ -1,4 +1,4 @@
-/* Copyright (c) 2017-2018 The Linux Foundation. All rights reserved.
+/* Copyright (c) 2017-2018, 2020 The Linux Foundation. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -35,7 +35,12 @@
 #include <linux/debugfs.h>
 
 #include <crypto/aes.h>
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 11, 0)
 #include <crypto/sha.h>
+#else
+#include <crypto/sha1.h>
+#include <crypto/sha2.h>
+#endif
 #include <crypto/hash.h>
 #include <crypto/algapi.h>
 #include <crypto/scatterwalk.h>
@@ -151,7 +156,7 @@ int nss_cryptoapi_ahash_setkey(struct crypto_ahash *ahash, const u8 *key, unsign
 	struct nss_cryptoapi *sc = &gbl_ctx;
 	struct nss_crypto_key auth;
 	struct nss_crypto_key cipher = { .algo = NSS_CRYPTO_CIPHER_AES_CBC };
-	uint32_t flag = CRYPTO_TFM_RES_BAD_KEY_LEN;
+// 	uint32_t flag = CRYPTO_TFM_RES_BAD_KEY_LEN;
 	nss_crypto_status_t status;
 	uint32_t algo_keylen;
 
@@ -203,7 +208,7 @@ int nss_cryptoapi_ahash_setkey(struct crypto_ahash *ahash, const u8 *key, unsign
 	if (status != NSS_CRYPTO_STATUS_OK) {
 		nss_cfi_err("nss_crypto_session_alloc failed - status: %d\n", status);
 		ctx->sid = NSS_CRYPTO_MAX_IDXS;
-		flag = CRYPTO_TFM_RES_BAD_FLAGS;
+// 		flag = CRYPTO_TFM_RES_BAD_FLAGS;
 		goto fail;
 	}
 
@@ -222,7 +227,7 @@ fail:
 	 * fails for a context, a new setkey should occur in a different
 	 * context while the old one gets freed.
 	 */
-	crypto_ahash_set_flags(ahash, flag);
+// 	crypto_ahash_set_flags(ahash, flag);
 	return -EINVAL;
 }
 
@@ -316,7 +321,7 @@ struct nss_crypto_buf *nss_cryptoapi_sha_hmac_transform(struct ahash_request *re
 
 	nss_cfi_assert(ctx);
 
-	nss_cfi_dbg("src_vaddr: 0x%p, dst_vaddr: 0x%p\n",
+	nss_cfi_dbg("src_vaddr: 0x%px, dst_vaddr: 0x%px\n",
 			sg_virt(req->src), req->result);
 
 	/*

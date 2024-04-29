@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2014-2018 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2014-2018, 2020 The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -20,6 +20,7 @@
 #include <linux/kernel.h>
 #include <linux/skbuff.h>
 #include <net/pkt_sched.h>
+#include <net/pkt_cls.h>
 #include <net/inet_ecn.h>
 #include <net/netfilter/nf_conntrack.h>
 #include <linux/if_bridge.h>
@@ -27,6 +28,9 @@
 #include <linux/version.h>
 #include <br_private.h>
 #include <nss_api_if.h>
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0))
+#include <linux/netlink.h>
+#endif
 
 #if defined(NSS_QDISC_PPE_SUPPORT)
 #include "nss_ppe.h"
@@ -145,6 +149,7 @@ struct nss_qdisc {
 						 * the NSS e.g. perhaps operating on a wifi interface
 						 * or bridge.
 						 */
+	bool needs_ppe_loopback;		/* True when qdisc is on bridge or igs */
 	bool destroy_virtual_interface;		/* Set if the interface is first registered in NSS by
 						 * us. This means it needs to be un-regisreted when the
 						 * module goes down.
@@ -185,7 +190,11 @@ struct nss_qdisc {
 						 */
 	struct gnet_stats_basic_sync bstats;	/* Basic class statistics */
 	struct gnet_stats_queue qstats;		/* Qstats for use by classes */
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 13, 0))
 	atomic_t refcnt;			/* Reference count for class use */
+#else
+	refcount_t refcnt;			/* Reference count for class use */
+#endif
 	struct timer_list stats_get_timer;	/* Timer used to poll for stats */
 	atomic_t pending_stat_requests;		/* Number of pending stats responses */
 	wait_queue_head_t wait_queue;		/* Wait queue used to wait on responses from the NSS */
@@ -198,6 +207,10 @@ struct nss_qdisc {
 	bool hybrid_configured;			/* Flag is set only in root qdisc when first NSS Qdisc
 						 * is attached to PPE qdisc in the tree.
 						 */
+#endif
+	struct tcf_proto __rcu *filter_list;	/* Filter list */
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0))
+	struct tcf_block *block;
 #endif
 };
 
@@ -236,11 +249,81 @@ enum nss_qdisc_hybrid_mode {
 };
 
 /*
+ * nss_qdisc_nla_nest_start()
+ *	Returns the container attribute
+ */
+static inline struct nlattr * nss_qdisc_nla_nest_start(struct sk_buff *skb, int attrtype)
+{
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 4, 0))
+	return nla_nest_start(skb, TCA_OPTIONS);
+#else
+	return nla_nest_start_noflag(skb, TCA_OPTIONS);
+#endif
+}
+
+/*
+ * nss_qdisc_atomic_sub()
+ *	Atomically decrements the ref count by 1
+ */
+static inline void nss_qdisc_atomic_sub(struct nss_qdisc *nq)
+{
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 13, 0))
+	atomic_sub(1, &nq->refcnt);
+#else
+	atomic_sub(1, &nq->refcnt.refs);
+#endif
+}
+
+/*
+ * nss_qdisc_atomic_sub_return()
+ *	Atomically decrements the ref count by 1 and return ref count
+ */
+static inline int nss_qdisc_atomic_sub_return(struct nss_qdisc *nq)
+{
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 13, 0))
+	return atomic_sub_return(1, &nq->refcnt);
+#else
+	return atomic_sub_return(1, &nq->refcnt.refs);
+#endif
+}
+
+/*
+ * nss_qdisc_atomic_set()
+ *	Atomically sets the ref count by 1
+ */
+static inline void nss_qdisc_atomic_set(struct nss_qdisc *nq)
+{
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 13, 0))
+	atomic_set(&nq->refcnt, 1);
+#else
+	refcount_set(&nq->refcnt, 1);
+#endif
+}
+
+/*
+ * nss_qdisc_put()
+ *	Destroy the qdisc
+ */
+static inline void nss_qdisc_put(struct Qdisc *sch)
+{
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 20, 0))
+	qdisc_destroy(sch);
+#else
+	qdisc_put(sch);
+#endif
+}
+
+/*
  * nss_qdisc_qopt_get()
  *	Extracts qopt from opt.
  */
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 16, 0))
 extern void *nss_qdisc_qopt_get(struct nlattr *opt, struct nla_policy *policy,
-				uint32_t tca_max, uint32_t tca_params);
+				struct nlattr *tb[], uint32_t tca_max, uint32_t tca_params);
+#else
+extern void *nss_qdisc_qopt_get(struct nlattr *opt, struct nla_policy *policy,
+				struct nlattr *tb[], uint32_t tca_max, uint32_t tca_params, struct netlink_ext_ack *extack);
+#endif
 
 /*
  * nss_qdisc_mode_get()
@@ -254,11 +337,13 @@ extern uint8_t nss_qdisc_accel_mode_get(struct nss_qdisc *nq);
  */
 extern struct sk_buff *nss_qdisc_peek(struct Qdisc *sch);
 
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 8, 0))
 /*
  * nss_qdisc_drop()
  *	Called to drop the packet at the head of queue
  */
 extern unsigned int nss_qdisc_drop(struct Qdisc *sch);
+#endif
 
 /*
  * nss_qdisc_reset()
@@ -270,7 +355,11 @@ extern void nss_qdisc_reset(struct Qdisc *sch);
  * nss_qdisc_enqueue()
  *	Generic enqueue call for enqueuing packets into NSS for shaping
  */
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 8, 0))
 extern int nss_qdisc_enqueue(struct sk_buff *skb, struct Qdisc *sch);
+#else
+extern int nss_qdisc_enqueue(struct sk_buff *skb, struct Qdisc *sch, struct sk_buff **to_free);
+#endif
 
 /*
  * nss_qdisc_dequeue()
@@ -336,7 +425,8 @@ extern void nss_qdisc_destroy(struct nss_qdisc *nq);
  *	Initializes a shaper in NSS, based on the position of this qdisc (child or root)
  *	and if its a normal interface or a bridge interface.
  */
-extern int nss_qdisc_init(struct Qdisc *sch, struct netlink_ext_ack *extack, struct nss_qdisc *nq, nss_shaper_node_type_t type, uint32_t classid, uint32_t accel_mode);
+extern int nss_qdisc_init(struct Qdisc *sch, struct nss_qdisc *nq, nss_shaper_node_type_t type, uint32_t classid, uint32_t accel_mode,
+		void *extack);
 
 /*
  * nss_qdisc_start_basic_stats_polling()
@@ -354,8 +444,8 @@ extern void nss_qdisc_stop_basic_stats_polling(struct nss_qdisc *nq);
  * nss_qdisc_gnet_stats_copy_basic()
  *  Wrapper around gnet_stats_copy_basic()
  */
-extern int nss_qdisc_gnet_stats_copy_basic(struct gnet_dump *d,
-				struct gnet_stats_basic_sync *b);
+extern int nss_qdisc_gnet_stats_copy_basic(struct Qdisc *sch,
+				struct gnet_dump *d, struct gnet_stats_basic_sync *b);
 
 /*
  * nss_qdisc_gnet_stats_copy_queue()
@@ -370,3 +460,29 @@ extern int nss_qdisc_gnet_stats_copy_queue(struct gnet_dump *d,
  */
 extern struct Qdisc *nss_qdisc_replace(struct Qdisc *sch, struct Qdisc *new,
 					struct Qdisc **pold);
+
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 4, 0))
+/*
+ * nss_qdisc_tcf_chain()
+ *	Return the filter list of qdisc.
+ */
+extern struct tcf_proto __rcu **nss_qdisc_tcf_chain(struct Qdisc *sch, unsigned long arg);
+#else
+/*
+ * nss_qdisc_tcf_block()
+ *	Return the block containing chain of qdisc.
+ */
+extern struct tcf_block *nss_qdisc_tcf_block(struct Qdisc *sch, unsigned long cl, struct netlink_ext_ack *extack);
+#endif
+
+/*
+ * nss_qdisc_tcf_bind()
+ *	Bind the filter to the qdisc.
+ */
+extern unsigned long nss_qdisc_tcf_bind(struct Qdisc *sch, unsigned long parent, u32 classid);
+
+/*
+ * nss_qdisc_tcf_unbind()
+ *	Unbind the filter from the qdisc.
+ */
+extern void nss_qdisc_tcf_unbind(struct Qdisc *sch, unsigned long arg);

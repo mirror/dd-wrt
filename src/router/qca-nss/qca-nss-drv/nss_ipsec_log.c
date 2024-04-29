@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2018, 2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -63,7 +63,7 @@ static void nss_ipsec_log_rule_msg(struct nss_ipsec_msg *nim)
 {
 	struct nss_ipsec_rule *nir __maybe_unused = &nim->msg.rule;
 
-	nss_trace("%p: NSS IPSEC Rule Message:\n"
+	nss_trace("%px: NSS IPSEC Rule Message:\n"
 		"IPSEC ESP SPI Index: %dn"
 		"IPSEC TTL Hop Limit: %dn"
 		"IPSEC IP Version: %x\n"
@@ -115,7 +115,7 @@ static void nss_ipsec_log_rule_msg(struct nss_ipsec_msg *nim)
 static void nss_ipsec_log_configure_node_msg(struct nss_ipsec_msg *nim)
 {
 	struct nss_ipsec_configure_node *nicn __maybe_unused = &nim->msg.node;
-	nss_trace("%p: NSS IPSEC Configure Node\n"
+	nss_trace("%px: NSS IPSEC Configure Node\n"
 		"IPSEC DMA Redirect: %d\n"
 		"IPSEC DMA Lookaside: %d\n",
 		nicn, nicn->dma_redirect,
@@ -149,7 +149,7 @@ static void nss_ipsec_log_verbose(struct nss_ipsec_msg *nim)
 		break;
 
 	default:
-		nss_warning("%p: Invalid message type\n", nim);
+		nss_warning("%px: Invalid message type\n", nim);
 		break;
 	}
 }
@@ -161,11 +161,11 @@ static void nss_ipsec_log_verbose(struct nss_ipsec_msg *nim)
 void nss_ipsec_log_tx_msg(struct nss_ipsec_msg *nim)
 {
 	if (nim->cm.type >= NSS_IPSEC_MSG_TYPE_MAX) {
-		nss_warning("%p: Invalid message type\n", nim);
+		nss_warning("%px: Invalid message type\n", nim);
 		return;
 	}
 
-	nss_info("%p: type[%d]:%s\n", nim, nim->cm.type, nss_ipsec_log_message_types_str[nim->cm.type]);
+	nss_info("%px: type[%d]:%s\n", nim, nim->cm.type, nss_ipsec_log_message_types_str[nim->cm.type]);
 	nss_ipsec_log_verbose(nim);
 }
 
@@ -176,26 +176,26 @@ void nss_ipsec_log_tx_msg(struct nss_ipsec_msg *nim)
 void nss_ipsec_log_rx_msg(struct nss_ipsec_msg *nim)
 {
 	if (nim->cm.response >= NSS_CMN_RESPONSE_LAST) {
-		nss_warning("%p: Invalid response\n", nim);
+		nss_warning("%px: Invalid response\n", nim);
 		return;
 	}
 
 	if (nim->cm.response == NSS_CMN_RESPONSE_NOTIFY || (nim->cm.response == NSS_CMN_RESPONSE_ACK)) {
-		nss_info("%p: type[%d]:%s, response[%d]:%s\n", nim, nim->cm.type,
+		nss_info("%px: type[%d]:%s, response[%d]:%s\n", nim, nim->cm.type,
 			nss_ipsec_log_message_types_str[nim->cm.type],
 			nim->cm.response, nss_cmn_response_str[nim->cm.response]);
 		goto verbose;
 	}
 
 	if (nim->cm.error >= NSS_IPSEC_ERROR_TYPE_MAX) {
-		nss_warning("%p: msg failure - type[%d]:%s, response[%d]:%s, error[%d]:Invalid error\n",
+		nss_warning("%px: msg failure - type[%d]:%s, response[%d]:%s, error[%d]:Invalid error\n",
 			nim, nim->cm.type, nss_ipsec_log_message_types_str[nim->cm.type],
 			nim->cm.response, nss_cmn_response_str[nim->cm.response],
 			nim->cm.error);
 		goto verbose;
 	}
 
-	nss_info("%p: msg nack - type[%d]:%s, response[%d]:%s, error[%d]:%s\n",
+	nss_info("%px: msg nack - type[%d]:%s, response[%d]:%s, error[%d]:%s\n",
 		nim, nim->cm.type, nss_ipsec_log_message_types_str[nim->cm.type],
 		nim->cm.response, nss_cmn_response_str[nim->cm.response],
 		nim->cm.error, nss_ipsec_log_error_response_types_str[nim->cm.error]);

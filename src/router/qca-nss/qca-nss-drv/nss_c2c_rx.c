@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2018-2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -19,8 +19,9 @@
  *	NSS C2C_RX APIs
  */
 
-#include "nss_tx_rx_common.h"
-#include "nss_c2c_rx.h"
+#include <nss_hal.h>
+#include "nss_c2c_rx_stats.h"
+#include "nss_c2c_rx_strings.h"
 
 /*
  * nss_c2c_rx_verify_if_num()
@@ -42,7 +43,7 @@ static void nss_c2c_rx_interface_handler(struct nss_ctx_instance *nss_ctx,
 	nss_c2c_rx_msg_callback_t cb;
 
 	if (!nss_c2c_rx_verify_if_num(ncm->interface)) {
-		nss_warning("%p: invalid interface %d for c2c_tx\n", nss_ctx, ncm->interface);
+		nss_warning("%px: invalid interface %d for c2c_tx\n", nss_ctx, ncm->interface);
 		return;
 	}
 
@@ -50,12 +51,12 @@ static void nss_c2c_rx_interface_handler(struct nss_ctx_instance *nss_ctx,
 	 * Is this a valid request/response packet?
 	 */
 	if (ncm->type >= NSS_C2C_RX_MSG_TYPE_MAX) {
-		nss_warning("%p: received invalid message %d for c2c_rx", nss_ctx, ncm->type);
+		nss_warning("%px: received invalid message %d for c2c_rx", nss_ctx, ncm->type);
 		return;
 	}
 
 	if (nss_cmn_get_msg_len(ncm) > sizeof(struct nss_c2c_rx_msg)) {
-		nss_warning("%p: Length of message is greater than required: %d", nss_ctx, nss_cmn_get_msg_len(ncm));
+		nss_warning("%px: Length of message is greater than required: %d", nss_ctx, nss_cmn_get_msg_len(ncm));
 		return;
 	}
 
@@ -66,7 +67,11 @@ static void nss_c2c_rx_interface_handler(struct nss_ctx_instance *nss_ctx,
 
 	switch (ncrm->cm.type) {
 	case NSS_C2C_RX_MSG_TYPE_STATS:
+		/*
+		 * Update driver statistics and send statistics notifications to the registered modules.
+		 */
 		nss_c2c_rx_stats_sync(nss_ctx, &ncrm->msg.stats);
+		nss_c2c_rx_stats_notify(nss_ctx);
 		break;
 	}
 
@@ -99,6 +104,10 @@ static void nss_c2c_rx_interface_handler(struct nss_ctx_instance *nss_ctx,
 void nss_c2c_rx_register_handler(struct nss_ctx_instance *nss_ctx)
 {
 	nss_core_register_handler(nss_ctx, NSS_C2C_RX_INTERFACE, nss_c2c_rx_interface_handler, NULL);
-	nss_c2c_rx_stats_dentry_create();
+
+	if (nss_ctx->id == NSS_CORE_0) {
+		nss_c2c_rx_stats_dentry_create();
+	}
+	nss_c2c_rx_strings_dentry_create();
 }
 EXPORT_SYMBOL(nss_c2c_rx_register_handler);

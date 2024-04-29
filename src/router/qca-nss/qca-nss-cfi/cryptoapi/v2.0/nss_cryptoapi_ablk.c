@@ -1,4 +1,5 @@
-/* Copyright (c) 2015-2019 The Linux Foundation. All rights reserved.
+/* Copyright (c) 2015-2020 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -36,7 +37,12 @@
 
 #include <crypto/aes.h>
 #include <crypto/des.h>
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 11, 0)
 #include <crypto/sha.h>
+#else
+#include <crypto/sha1.h>
+#include <crypto/sha2.h>
+#endif
 #include <crypto/hash.h>
 #include <crypto/algapi.h>
 #include <crypto/aead.h>
@@ -105,8 +111,6 @@ EXPORT_SYMBOL(nss_cryptoapi_skcipher_ctx2session);
 int nss_cryptoapi_ablkcipher_init(struct crypto_tfm *tfm)
 {
 	struct nss_cryptoapi_ctx *ctx = crypto_tfm_ctx(tfm);
-	struct crypto_ablkcipher *sw_tfm;
-	bool need_fallback;
 
 	BUG_ON(!ctx);
 	NSS_CRYPTOAPI_SET_MAGIC(ctx);
@@ -115,26 +119,8 @@ int nss_cryptoapi_ablkcipher_init(struct crypto_tfm *tfm)
 
 	ctx->user = g_cryptoapi.user;
 	ctx->stats.init++;
+	ctx->sid = NSS_CRYPTO_SESSION_MAX;
 	init_completion(&ctx->complete);
-
-	need_fallback = crypto_tfm_alg_flags(tfm) & CRYPTO_ALG_NEED_FALLBACK;
-	if (!need_fallback)
-		return 0;
-
-	/*
-	 * Alloc fallback transform for future use
-	 */
-	sw_tfm = crypto_alloc_ablkcipher(crypto_tfm_alg_name(tfm), 0, CRYPTO_ALG_ASYNC | CRYPTO_ALG_NEED_FALLBACK);
-	if (IS_ERR(sw_tfm)) {
-		nss_cfi_err("%p: unable to allocate SW_TFM(%s)\n", ctx, crypto_tfm_alg_name(tfm));
-		return -ENOMEM;
-	}
-
-	/*
-	 * set this tfm reqsize same to fallback tfm
-	 */
-	tfm->crt_ablkcipher.reqsize = crypto_ablkcipher_reqsize(sw_tfm);
-	ctx->sw_tfm = crypto_ablkcipher_tfm(sw_tfm);
 
 	return 0;
 }
@@ -150,11 +136,6 @@ void nss_cryptoapi_ablkcipher_exit(struct crypto_tfm *tfm)
 
 	BUG_ON(!ctx);
 	NSS_CRYPTOAPI_VERIFY_MAGIC(ctx);
-
-	if (ctx->sw_tfm) {
-		crypto_free_ablkcipher(__crypto_ablkcipher_cast(ctx->sw_tfm));
-		ctx->sw_tfm = NULL;
-	}
 
 	ctx->stats.exit++;
 
@@ -177,8 +158,6 @@ void nss_cryptoapi_ablkcipher_exit(struct crypto_tfm *tfm)
 	 */
 	atomic_set(&ctx->active, 0);
 
-	nss_crypto_session_free(ctx->user, ctx->sid);
-
 	if (!atomic_sub_and_test(1, &ctx->refcnt)) {
 		/*
 		 * We need to wait for any outstanding packet using this ctx.
@@ -189,9 +168,12 @@ void nss_cryptoapi_ablkcipher_exit(struct crypto_tfm *tfm)
 		WARN_ON(!ret);
 	}
 
-	ctx->sid = NSS_CRYPTO_SESSION_MAX;
+	if (ctx->sid != NSS_CRYPTO_SESSION_MAX) {
+		nss_crypto_session_free(ctx->user, ctx->sid);
+		debugfs_remove_recursive(ctx->dentry);
+		ctx->sid = NSS_CRYPTO_SESSION_MAX;
+	}
 
-	debugfs_remove_recursive(ctx->dentry);
 	NSS_CRYPTOAPI_CLEAR_MAGIC(ctx);
 }
 
@@ -213,7 +195,7 @@ int nss_cryptoapi_ablk_setkey(struct crypto_ablkcipher *cipher, const u8 *key, u
 
 	ctx->info = nss_cryptoapi_cra_name2info(crypto_tfm_alg_name(tfm), keylen, 0);
 	if (!ctx->info) {
-		crypto_ablkcipher_set_flags(cipher, CRYPTO_TFM_RES_BAD_KEY_LEN);
+// 		crypto_ablkcipher_set_flags(cipher, CRYPTO_TFM_RES_BAD_KEY_LEN);
 		return -EINVAL;
 	}
 
@@ -227,30 +209,6 @@ int nss_cryptoapi_ablk_setkey(struct crypto_ablkcipher *cipher, const u8 *key, u
 	}
 
 	/*
-	 * Fallback to software if an algorithm in not enabled in hardware.
-	 */
-	if (ctx->sw_tfm) {
-		ctx->fallback_req = true;
-
-		/*
-		 * set flag to fallback tfm
-		 */
-		crypto_tfm_clear_flags(ctx->sw_tfm, CRYPTO_TFM_REQ_MASK);
-		crypto_tfm_set_flags(ctx->sw_tfm, crypto_ablkcipher_get_flags(cipher) & CRYPTO_TFM_REQ_MASK);
-
-		/*
-		 * Set the key for fallback tfm
-		 */
-		status = crypto_ablkcipher_setkey(__crypto_ablkcipher_cast(ctx->sw_tfm), key, keylen);
-		if (status) {
-			nss_cfi_err("Failed to set key to the sw crypto");
-			crypto_ablkcipher_set_flags(cipher, crypto_tfm_get_flags(ctx->sw_tfm));
-		}
-
-		return status;
-	}
-
-	/*
 	 * Fill NSS crypto session data
 	 */
 	data.algo = ctx->info->algo;
@@ -259,10 +217,16 @@ int nss_cryptoapi_ablk_setkey(struct crypto_ablkcipher *cipher, const u8 *key, u
 	if (data.algo >= NSS_CRYPTO_CMN_ALGO_MAX)
 		return -ERANGE;
 
+	if (ctx->sid != NSS_CRYPTO_SESSION_MAX) {
+		nss_crypto_session_free(ctx->user, ctx->sid);
+		debugfs_remove_recursive(ctx->dentry);
+		ctx->sid = NSS_CRYPTO_SESSION_MAX;
+	}
+
 	status = nss_crypto_session_alloc(ctx->user, &data, &ctx->sid);
 	if (status < 0) {
-		nss_cfi_err("%p: Unable to allocate crypto session(%d)\n", ctx, status);
-		crypto_ablkcipher_set_flags(cipher, CRYPTO_TFM_RES_BAD_FLAGS);
+		nss_cfi_err("%px: Unable to allocate crypto session(%d)\n", ctx, status);
+// 		crypto_ablkcipher_set_flags(cipher, CRYPTO_TFM_RES_BAD_FLAGS);
 		return status;
 	}
 
@@ -288,6 +252,14 @@ void nss_cryptoapi_ablkcipher_done(void *app_data, struct nss_crypto_hdr *ch, ui
 	 * Check cryptoapi context magic number.
 	 */
 	NSS_CRYPTOAPI_VERIFY_MAGIC(ctx);
+
+	/*
+	 * For skcipher decryption case, the last block of encrypted data is used as
+	 * an IV for the next data
+	 */
+	if (ch->op == NSS_CRYPTO_OP_DIR_ENC) {
+		nss_cryptoapi_copy_iv(ctx, req->dst, req->info, ch->iv_len);
+	}
 
 	/*
 	 * Free crypto hdr
@@ -322,7 +294,6 @@ int nss_cryptoapi_ablk_encrypt(struct ablkcipher_request *req)
 	struct crypto_tfm *tfm = req->base.tfm;
 	struct scatterlist *cur;
 	int tot_len = 0;
-	int error;
 	int i;
 
 	/*
@@ -330,34 +301,13 @@ int nss_cryptoapi_ablk_encrypt(struct ablkcipher_request *req)
 	 */
 	NSS_CRYPTOAPI_VERIFY_MAGIC(ctx);
 
-	if (ctx->fallback_req) {
-		struct crypto_ablkcipher *orig_tfm = crypto_ablkcipher_reqtfm(req);
-
-		/*
-		 * Set new fallback tfm to the request
-		 */
-		BUG_ON(!ctx->sw_tfm);
-		ablkcipher_request_set_tfm(req, __crypto_ablkcipher_cast(ctx->sw_tfm));
-		ctx->stats.queued++;
-
-		error = crypto_ablkcipher_encrypt(req);
-		if (!error)
-			ctx->stats.completed++;
-
-		/*
-		 * Set original tfm to the request
-		 */
-		ablkcipher_request_set_tfm(req, orig_tfm);
-		return error;
-	}
-
 	/*
 	 * Check if cryptoapi context is active or not
 	 */
 	if (!atomic_read(&ctx->active))
 		return -EINVAL;
 
-	if (req->src != req->dst) {
+	if (sg_nents(req->src) != sg_nents(req->dst)) {
 		ctx->stats.failed_req++;
 		return -EINVAL;
 	}
@@ -366,8 +316,7 @@ int nss_cryptoapi_ablk_encrypt(struct ablkcipher_request *req)
 	 * Block size not aligned.
 	 * AES-CTR requires only a one-byte block size alignment.
 	 */
-	if (!IS_ALIGNED(req->nbytes, crypto_tfm_alg_blocksize(tfm)) &&
-			ctx->info->cipher_mode != NSS_CRYPTOAPI_CIPHER_MODE_CTR_RFC3686) {
+	if (!IS_ALIGNED(req->nbytes, crypto_tfm_alg_blocksize(tfm)) && ctx->info->blk_align) {
 		ctx->stats.failed_align++;
 		crypto_ablkcipher_set_flags(cipher, CRYPTO_TFM_RES_BAD_BLOCK_LEN);
 		return -EFAULT;
@@ -377,11 +326,18 @@ int nss_cryptoapi_ablk_encrypt(struct ablkcipher_request *req)
 	 * Fill the request information structure
 	 */
 	info.iv = req->info;
-	info.nsegs = sg_nents(req->src);
+	info.src.nsegs = sg_nents(req->src);
+	info.dst.nsegs = sg_nents(req->dst);
 	info.op_dir = NSS_CRYPTO_OP_DIR_ENC;
 	info.cb = nss_cryptoapi_ablkcipher_done;
 	info.iv_size = ctx->iv_size;
-	info.first_sg = req->src;
+	info.src.first_sg = req->src;
+	info.dst.first_sg = req->dst;
+	info.dst.last_sg = sg_last(req->dst, info.dst.nsegs);
+
+	/* out and in length will be same as ablk does only encrypt/decryt operation */
+	info.total_in_len = info.total_out_len = req->nbytes;
+	info.in_place = (req->src == req->dst) ? true : false;
 
 	/*
 	 * The exact length of data that needs to be ciphered for an ABLK
@@ -389,7 +345,7 @@ int nss_cryptoapi_ablk_encrypt(struct ablkcipher_request *req)
 	 * the DMA length to what is specified in req->nbytes and later
 	 * restore the length of scatterlist back to its original value.
 	 */
-	for_each_sg(req->src, cur, info.nsegs, i) {
+	for_each_sg(req->src, cur, info.src.nsegs, i) {
 		if (!cur)
 			break;
 
@@ -398,7 +354,15 @@ int nss_cryptoapi_ablk_encrypt(struct ablkcipher_request *req)
 			break;
 	}
 
-	info.last_sg = cur;
+	/*
+	 * We only support (2^16 - 1) length.
+	 */
+	if (tot_len > U16_MAX) {
+		ctx->stats.failed_len++;
+		return -EFBIG;
+	}
+
+	info.src.last_sg = cur;
 	info.ahash_skip = tot_len - req->nbytes;
 
 	if (!atomic_inc_not_zero(&ctx->refcnt))
@@ -419,7 +383,6 @@ int nss_cryptoapi_ablk_decrypt(struct ablkcipher_request *req)
 	struct crypto_tfm *tfm = req->base.tfm;
 	struct scatterlist *cur;
 	int tot_len = 0;
-	int error;
 	int i;
 
 	/*
@@ -427,35 +390,13 @@ int nss_cryptoapi_ablk_decrypt(struct ablkcipher_request *req)
 	 */
 	NSS_CRYPTOAPI_VERIFY_MAGIC(ctx);
 
-	if (ctx->fallback_req) {
-		struct crypto_ablkcipher *orig_tfm = crypto_ablkcipher_reqtfm(req);
-
-
-		/*
-		 * Set new fallback tfm to the request
-		 */
-		BUG_ON(!ctx->sw_tfm);
-		ablkcipher_request_set_tfm(req, __crypto_ablkcipher_cast(ctx->sw_tfm));
-		ctx->stats.queued++;
-
-		error = crypto_ablkcipher_decrypt(req);
-		if (!error)
-			ctx->stats.completed++;
-
-		/*
-		 * Set original tfm to the request
-		 */
-		ablkcipher_request_set_tfm(req, orig_tfm);
-		return error;
-	}
-
 	/*
 	 * Check if cryptoapi context is active or not
 	 */
 	if (!atomic_read(&ctx->active))
 		return -EINVAL;
 
-	if (req->src != req->dst) {
+	if (sg_nents(req->src) != sg_nents(req->dst)) {
 		ctx->stats.failed_req++;
 		return -EINVAL;
 	}
@@ -463,7 +404,7 @@ int nss_cryptoapi_ablk_decrypt(struct ablkcipher_request *req)
 	/*
 	 * Block size not aligned
 	 */
-	if (!IS_ALIGNED(req->nbytes, crypto_tfm_alg_blocksize(tfm))) {
+	if (!IS_ALIGNED(req->nbytes, crypto_tfm_alg_blocksize(tfm)) && ctx->info->blk_align) {
 		ctx->stats.failed_align++;
 		crypto_ablkcipher_set_flags(cipher, CRYPTO_TFM_RES_BAD_BLOCK_LEN);
 		return -EFAULT;
@@ -479,11 +420,18 @@ int nss_cryptoapi_ablk_decrypt(struct ablkcipher_request *req)
 	 * - 4 bytes of initial counter
 	 */
 	info.iv = req->info;
-	info.nsegs = sg_nents(req->src);
+	info.src.nsegs = sg_nents(req->src);
+	info.dst.nsegs = sg_nents(req->dst);
 	info.iv_size = ctx->iv_size;
 	info.op_dir = NSS_CRYPTO_OP_DIR_DEC;
 	info.cb = nss_cryptoapi_ablkcipher_done;
-	info.first_sg = req->src;
+	info.src.first_sg = req->src;
+	info.dst.first_sg = req->dst;
+	info.dst.last_sg = sg_last(req->dst, info.dst.nsegs);
+
+	/* out and in length will be same as ablk does only encrypt/decryt operation */
+	info.total_in_len = info.total_out_len = req->nbytes;
+	info.in_place = (req->src == req->dst) ? true : false;
 
 	/*
 	 * The exact length of data that needs to be ciphered for an ABLK
@@ -491,14 +439,22 @@ int nss_cryptoapi_ablk_decrypt(struct ablkcipher_request *req)
 	 * the DMA length to what is specified in req->nbytes and later
 	 * restore the length of scatterlist back to its original value.
 	 */
-	for_each_sg(req->src, cur, info.nsegs, i) {
+	for_each_sg(req->src, cur, info.src.nsegs, i) {
 		tot_len += cur->length;
 		if (!sg_next(cur))
 			break;
 	}
 
+	/*
+	 * We only support (2^16 - 1) length.
+	 */
+	if (tot_len > U16_MAX) {
+		ctx->stats.failed_len++;
+		return -EFBIG;
+	}
+
 	info.ahash_skip = tot_len - req->nbytes;
-	info.last_sg = cur;
+	info.src.last_sg = cur;
 
 	if (!atomic_inc_not_zero(&ctx->refcnt))
 		return -ENOENT;

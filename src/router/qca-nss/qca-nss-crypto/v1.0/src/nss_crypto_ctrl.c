@@ -1,4 +1,4 @@
-/* Copyright (c) 2013, 2015-2017, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2013, 2015-2017, 2020, The Linux Foundation. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -319,7 +319,7 @@ static void *nss_crypto_desc_alloc(struct device *dev, uint32_t *paddr, uint32_t
 
 	phy_addr = dma_map_single(dev, ret_addr, size, DMA_TO_DEVICE);
 	if (!phy_addr) {
-		nss_crypto_err("%p:unable to map Vaddr(%p)\n", dev, ret_addr);
+		nss_crypto_err("%px:unable to map Vaddr(%px)\n", dev, ret_addr);
 		goto fail;
 	}
 
@@ -366,7 +366,7 @@ void nss_crypto_pipe_init(struct nss_crypto_ctrl_eng *eng, uint32_t idx, uint32_
 	 */
 	desc = nss_crypto_desc_alloc(eng->dev, &paddr, NSS_CRYPTO_DESC_SZ);
 	if (!desc) {
-		nss_crypto_err("%p:unable to allocate BAM pipe descriptors\n", eng);
+		nss_crypto_err("%px:unable to allocate BAM pipe descriptors\n", eng);
 		return;
 	}
 
@@ -1303,7 +1303,6 @@ nss_crypto_status_t nss_crypto_idx_init(struct nss_crypto_ctrl_eng *eng, struct 
 			nss_crypto_err("unable to allocate session table: idx no failed = %d\n", i);
 			return NSS_CRYPTO_STATUS_ENOMEM;
 		}
-
 
 		idx->pp_num = (i % NSS_CRYPTO_BAM_PP);
 		idx->cmd_len = NSS_CRYPTO_CACHE_CMD_SZ;

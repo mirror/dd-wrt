@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2014-2015, The Linux Foundation.  All rights reserved.
+ * Copyright (c) 2014-2015, 2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -126,9 +126,9 @@ static ecm_tracker_connection_state_t ecm_tracker_datagram_connection_state_matr
  */
 static void ecm_tracker_datagram_datagram_discard(struct ecm_tracker_datagram_internal_instance *dtii, ecm_tracker_sender_type_t sender, int32_t n)
 {
-	DEBUG_CHECK_MAGIC(dtii, ECM_TRACKER_DATAGRAM_INSTANCE_MAGIC, "%p: magic failed", dtii);
+	DEBUG_CHECK_MAGIC(dtii, ECM_TRACKER_DATAGRAM_INSTANCE_MAGIC, "%px: magic failed", dtii);
 
-	DEBUG_TRACE("%p: discard %u datagrams for %d\n", dtii, n, sender);
+	DEBUG_TRACE("%px: discard %u datagrams for %d\n", dtii, n, sender);
 
 	/*
 	 * Which list?
@@ -143,21 +143,21 @@ static void ecm_tracker_datagram_datagram_discard(struct ecm_tracker_datagram_in
 			spin_lock_bh(&dtii->lock);
 
 			skb = dtii->src_recvd_order;
-			DEBUG_ASSERT(skb, "%p: bad list\n", dtii);
+			DEBUG_ASSERT(skb, "%px: bad list\n", dtii);
 
 			dtii->src_recvd_order = skb->next;
 			if (!dtii->src_recvd_order) {
-				DEBUG_ASSERT(dtii->src_recvd_order_last == skb, "%p: bad list\n", dtii);
+				DEBUG_ASSERT(dtii->src_recvd_order_last == skb, "%px: bad list\n", dtii);
 				dtii->src_recvd_order_last = NULL;
 			} else {
 				dtii->src_recvd_order->prev = NULL;
 			}
 
 			dtii->src_count--;
-			DEBUG_ASSERT(dtii->src_count >= 0, "%p: bad total\n", dtii);
+			DEBUG_ASSERT(dtii->src_count >= 0, "%px: bad total\n", dtii);
 			dtii->src_bytes_total -= skb->truesize;
 			ecm_tracker_data_total_decrease(skb->len, skb->truesize);
-			DEBUG_ASSERT(dtii->src_bytes_total >= 0, "%p: bad bytes total\n", dtii);
+			DEBUG_ASSERT(dtii->src_bytes_total >= 0, "%px: bad bytes total\n", dtii);
 
 			spin_unlock_bh(&dtii->lock);
 			kfree_skb(skb);
@@ -176,21 +176,21 @@ static void ecm_tracker_datagram_datagram_discard(struct ecm_tracker_datagram_in
 		spin_lock_bh(&dtii->lock);
 
 		skb = dtii->dest_recvd_order;
-		DEBUG_ASSERT(skb, "%p: bad list\n", dtii);
+		DEBUG_ASSERT(skb, "%px: bad list\n", dtii);
 
 		dtii->dest_recvd_order = skb->next;
 		if (!dtii->dest_recvd_order) {
-			DEBUG_ASSERT(dtii->dest_recvd_order_last == skb, "%p: bad list\n", dtii);
+			DEBUG_ASSERT(dtii->dest_recvd_order_last == skb, "%px: bad list\n", dtii);
 			dtii->dest_recvd_order_last = NULL;
 		} else {
 			dtii->dest_recvd_order->prev = NULL;
 		}
 
 		dtii->dest_count--;
-		DEBUG_ASSERT(dtii->dest_count >= 0, "%p: bad total\n", dtii);
+		DEBUG_ASSERT(dtii->dest_count >= 0, "%px: bad total\n", dtii);
 		dtii->dest_bytes_total -= skb->truesize;
 		ecm_tracker_data_total_decrease(skb->len, skb->truesize);
-		DEBUG_ASSERT(dtii->dest_bytes_total >= 0, "%p: bad bytes total\n", dtii);
+		DEBUG_ASSERT(dtii->dest_bytes_total >= 0, "%px: bad bytes total\n", dtii);
 
 		spin_unlock_bh(&dtii->lock);
 		kfree_skb(skb);
@@ -203,11 +203,11 @@ static void ecm_tracker_datagram_datagram_discard(struct ecm_tracker_datagram_in
  * ecm_tracker_datagram_discard_all()
  *	Discard all tracked data
  */
-static void ecm_tracker_datagram_discard_all(struct ecm_tracker_datagram_internal_instance *dtii)
+void ecm_tracker_datagram_discard_all(struct ecm_tracker_datagram_internal_instance *dtii)
 {
 	int32_t src_count;
 	int32_t dest_count;
-	DEBUG_CHECK_MAGIC(dtii, ECM_TRACKER_DATAGRAM_INSTANCE_MAGIC, "%p: magic failed", dtii);
+	DEBUG_CHECK_MAGIC(dtii, ECM_TRACKER_DATAGRAM_INSTANCE_MAGIC, "%px: magic failed", dtii);
 
 	spin_lock_bh(&dtii->lock);
 	src_count = dtii->src_count;
@@ -217,7 +217,7 @@ static void ecm_tracker_datagram_discard_all(struct ecm_tracker_datagram_interna
 	/*
 	 * Destroy all datagrams
 	 */
-	DEBUG_TRACE("%p: destroy all (src count: %d, dest_count: %d)\n", dtii, src_count, dest_count);
+	DEBUG_TRACE("%px: destroy all (src count: %d, dest_count: %d)\n", dtii, src_count, dest_count);
 	ecm_tracker_datagram_datagram_discard(dtii, ECM_TRACKER_SENDER_TYPE_SRC, src_count);
 	ecm_tracker_datagram_datagram_discard(dtii, ECM_TRACKER_SENDER_TYPE_DEST, dest_count);
 }
@@ -240,13 +240,13 @@ static void ecm_tracker_datagram_discard_all_callback(struct ecm_tracker_instanc
 static void ecm_tracker_datagram_ref(struct ecm_tracker_datagram_internal_instance *dtii)
 {
 
-	DEBUG_CHECK_MAGIC(dtii, ECM_TRACKER_DATAGRAM_INSTANCE_MAGIC, "%p: magic failed", dtii);
+	DEBUG_CHECK_MAGIC(dtii, ECM_TRACKER_DATAGRAM_INSTANCE_MAGIC, "%px: magic failed", dtii);
 
 	spin_lock_bh(&dtii->lock);
 
 	dtii->refs++;
-	DEBUG_ASSERT(dtii->refs > 0, "%p: ref wrap", dtii);
-	DEBUG_TRACE("%p: ref %d\n", dtii, dtii->refs);
+	DEBUG_ASSERT(dtii->refs > 0, "%px: ref wrap", dtii);
+	DEBUG_TRACE("%px: ref %d\n", dtii, dtii->refs);
 
 	spin_unlock_bh(&dtii->lock);
 }
@@ -267,13 +267,13 @@ static int ecm_tracker_datagram_deref(struct ecm_tracker_datagram_internal_insta
 {
 
 	int refs;
-	DEBUG_CHECK_MAGIC(dtii, ECM_TRACKER_DATAGRAM_INSTANCE_MAGIC, "%p: magic failed", dtii);
+	DEBUG_CHECK_MAGIC(dtii, ECM_TRACKER_DATAGRAM_INSTANCE_MAGIC, "%px: magic failed", dtii);
 
 	spin_lock_bh(&dtii->lock);
 	dtii->refs--;
 	refs = dtii->refs;
-	DEBUG_ASSERT(dtii->refs >= 0, "%p: ref wrap", dtii);
-	DEBUG_TRACE("%p: deref %d\n", dtii, dtii->refs);
+	DEBUG_ASSERT(dtii->refs >= 0, "%px: ref wrap", dtii);
+	DEBUG_TRACE("%px: deref %d\n", dtii, dtii->refs);
 
 	if (dtii->refs > 0) {
 		spin_unlock_bh(&dtii->lock);
@@ -281,7 +281,7 @@ static int ecm_tracker_datagram_deref(struct ecm_tracker_datagram_internal_insta
 	}
 	spin_unlock_bh(&dtii->lock);
 
-	DEBUG_TRACE("%p: final\n", dtii);
+	DEBUG_TRACE("%px: final\n", dtii);
 
 #ifdef ECM_TRACKER_DPI_SUPPORT_ENABLE
 	/*
@@ -293,10 +293,10 @@ static int ecm_tracker_datagram_deref(struct ecm_tracker_datagram_internal_insta
 
 	spin_lock_bh(&ecm_tracker_datagram_lock);
 	ecm_tracker_datagram_count--;
-	DEBUG_ASSERT(ecm_tracker_datagram_count >= 0, "%p: tracker count wrap", dtii);
+	DEBUG_ASSERT(ecm_tracker_datagram_count >= 0, "%px: tracker count wrap", dtii);
 	spin_unlock_bh(&ecm_tracker_datagram_lock);
 
-	DEBUG_INFO("%p: Udp tracker final\n", dtii);
+	DEBUG_INFO("%px: Udp tracker final\n", dtii);
 	DEBUG_CLEAR_MAGIC(dtii);
 	kfree(dtii);
 
@@ -321,7 +321,7 @@ static int32_t ecm_tracker_datagram_datagram_count_get(struct ecm_tracker_datagr
 {
 	int32_t count;
 
-	DEBUG_CHECK_MAGIC(dtii, ECM_TRACKER_DATAGRAM_INSTANCE_MAGIC, "%p: magic failed", dtii);
+	DEBUG_CHECK_MAGIC(dtii, ECM_TRACKER_DATAGRAM_INSTANCE_MAGIC, "%px: magic failed", dtii);
 
 	/*
 	 * Which list?
@@ -334,7 +334,7 @@ static int32_t ecm_tracker_datagram_datagram_count_get(struct ecm_tracker_datagr
 	}
 	spin_unlock_bh(&dtii->lock);
 
-	DEBUG_TRACE("%p: datagram count get for %d is %d\n", dtii, sender, count);
+	DEBUG_TRACE("%px: datagram count get for %d is %d\n", dtii, sender, count);
 
 	return count;
 }
@@ -364,13 +364,13 @@ static void ecm_tracker_datagram_datagram_discard_callback(struct ecm_tracker_in
  * ecm_tracker_datagram_datagram_size_get()
  *	Return size in bytes of datagram at index i that was sent to the target
  */
-static int32_t ecm_tracker_datagram_datagram_size_get(struct ecm_tracker_datagram_instance *uti, ecm_tracker_sender_type_t sender, int32_t i)
+int32_t ecm_tracker_datagram_datagram_size_get(struct ecm_tracker_datagram_instance *uti, ecm_tracker_sender_type_t sender, int32_t i)
 {
 	struct ecm_tracker_datagram_internal_instance *dtii = (struct ecm_tracker_datagram_internal_instance *)uti;
 
 	int32_t size;
 	struct sk_buff *skb;
-	DEBUG_CHECK_MAGIC(dtii, ECM_TRACKER_DATAGRAM_INSTANCE_MAGIC, "%p: magic failed", dtii);
+	DEBUG_CHECK_MAGIC(dtii, ECM_TRACKER_DATAGRAM_INSTANCE_MAGIC, "%px: magic failed", dtii);
 
 	/*
 	 * Which list?
@@ -386,11 +386,11 @@ static int32_t ecm_tracker_datagram_datagram_size_get(struct ecm_tracker_datagra
 	 * Iterate to the i'th datagram
 	 */
 	while (i) {
-		DEBUG_ASSERT(skb, "%p: index bad\n", dtii);
+		DEBUG_ASSERT(skb, "%px: index bad\n", dtii);
 		skb = skb->next;
 		i--;
 	}
-	DEBUG_ASSERT(skb, "%p: index bad\n", dtii);
+	DEBUG_ASSERT(skb, "%px: index bad\n", dtii);
 	size = skb->len;
 	spin_unlock_bh(&dtii->lock);
 	return size;
@@ -412,13 +412,13 @@ static int32_t ecm_tracker_datagram_datagram_size_get_callback(struct ecm_tracke
  * ecm_tracker_datagram_datagram_read()
  *	Read size bytes from datagram at index i into the buffer
  */
-static int ecm_tracker_datagram_datagram_read(struct ecm_tracker_datagram_instance *uti, ecm_tracker_sender_type_t sender, int32_t i, int32_t offset, int32_t size, void *buffer)
+int ecm_tracker_datagram_datagram_read(struct ecm_tracker_datagram_instance *uti, ecm_tracker_sender_type_t sender, int32_t i, int32_t offset, int32_t size, void *buffer)
 {
 	struct ecm_tracker_datagram_internal_instance *dtii = (struct ecm_tracker_datagram_internal_instance *)uti;
 	int res;
 	struct sk_buff *skb;
-	DEBUG_CHECK_MAGIC(dtii, ECM_TRACKER_DATAGRAM_INSTANCE_MAGIC, "%p: magic failed", dtii);
-	DEBUG_TRACE("%p: datagram %d read at offset %d for %d bytes for %d\n", dtii, i, offset, size, sender);
+	DEBUG_CHECK_MAGIC(dtii, ECM_TRACKER_DATAGRAM_INSTANCE_MAGIC, "%px: magic failed", dtii);
+	DEBUG_TRACE("%px: datagram %d read at offset %d for %d bytes for %d\n", dtii, i, offset, size, sender);
 
 	/*
 	 * Which list?
@@ -434,11 +434,11 @@ static int ecm_tracker_datagram_datagram_read(struct ecm_tracker_datagram_instan
 	 * Iterate to the i'th datagram
 	 */
 	while (i) {
-		DEBUG_ASSERT(skb, "%p: index bad\n", dtii);
+		DEBUG_ASSERT(skb, "%px: index bad\n", dtii);
 		skb = skb->next;
 		i--;
 	}
-	DEBUG_ASSERT(skb, "%p: index bad\n", dtii);
+	DEBUG_ASSERT(skb, "%px: index bad\n", dtii);
 
 	/*
 	 * Perform read
@@ -466,30 +466,30 @@ static int ecm_tracker_datagram_datagram_read_callback(struct ecm_tracker_instan
  * ecm_tracker_datagram_datagram_add()
  *	Append the datagram onto the tracker queue for the given target
  */
-static bool ecm_tracker_datagram_datagram_add(struct ecm_tracker_datagram_instance *uti, ecm_tracker_sender_type_t sender, struct sk_buff *skb)
+bool ecm_tracker_datagram_datagram_add(struct ecm_tracker_datagram_instance *uti, ecm_tracker_sender_type_t sender, struct sk_buff *skb)
 {
 	struct ecm_tracker_datagram_internal_instance *dtii = (struct ecm_tracker_datagram_internal_instance *)uti;
 	struct sk_buff *skbc;
-	DEBUG_CHECK_MAGIC(dtii, ECM_TRACKER_DATAGRAM_INSTANCE_MAGIC, "%p: magic failed", dtii);
-	DEBUG_TRACE("%p: datagram %p add for %d\n", dtii, skb, sender);
+	DEBUG_CHECK_MAGIC(dtii, ECM_TRACKER_DATAGRAM_INSTANCE_MAGIC, "%px: magic failed", dtii);
+	DEBUG_TRACE("%px: datagram %px add for %d\n", dtii, skb, sender);
 
 	/*
 	 * Clone the packet
 	 */
 	skbc = skb_clone(skb, GFP_ATOMIC | __GFP_NOWARN);
 	if (!skbc) {
-		DEBUG_WARN("%p: Failed to clone packet %p\n", dtii, skb);
+		DEBUG_WARN("%px: Failed to clone packet %px\n", dtii, skb);
 		return false;
 	}
-	DEBUG_TRACE("%p: cloned %p to %p\n", dtii, skb, skbc);
+	DEBUG_TRACE("%px: cloned %px to %px\n", dtii, skb, skbc);
 
 	/*
 	 * Are we within instance limit?
 	 */
 	spin_lock_bh(&dtii->lock);
-	DEBUG_ASSERT((dtii->src_bytes_total + dtii->dest_bytes_total + skbc->truesize) > 0, "%p: bad total\n", dtii);
+	DEBUG_ASSERT((dtii->src_bytes_total + dtii->dest_bytes_total + skbc->truesize) > 0, "%px: bad total\n", dtii);
 	if ((dtii->src_bytes_total + dtii->dest_bytes_total + skbc->truesize) > dtii->data_limit) {
-		DEBUG_TRACE("%p: over limit\n", dtii);
+		DEBUG_TRACE("%px: over limit\n", dtii);
 		spin_unlock_bh(&dtii->lock);
 		kfree_skb(skbc);
 		return false;
@@ -499,7 +499,7 @@ static bool ecm_tracker_datagram_datagram_add(struct ecm_tracker_datagram_instan
 	 * Within global limit?
 	 */
 	if (!ecm_tracker_data_total_increase(skbc->len, skbc->truesize)) {
-		DEBUG_TRACE("%p: over global limit\n", dtii);
+		DEBUG_TRACE("%px: over global limit\n", dtii);
 		spin_unlock_bh(&dtii->lock);
 		kfree_skb(skbc);
 		return false;
@@ -515,12 +515,12 @@ static bool ecm_tracker_datagram_datagram_add(struct ecm_tracker_datagram_instan
 		if (skbc->prev) {
 			skbc->prev->next = skbc;
 		} else {
-			DEBUG_ASSERT(dtii->src_recvd_order == NULL, "%p: bad list\n", dtii);
+			DEBUG_ASSERT(dtii->src_recvd_order == NULL, "%px: bad list\n", dtii);
 			dtii->src_recvd_order = skbc;
 		}
 
 		dtii->src_count++;
-		DEBUG_ASSERT(dtii->src_count > 0, "%p: bad total\n", dtii);
+		DEBUG_ASSERT(dtii->src_count > 0, "%px: bad total\n", dtii);
 		dtii->src_bytes_total += skbc->truesize;
 		spin_unlock_bh(&dtii->lock);
 		return true;
@@ -532,12 +532,12 @@ static bool ecm_tracker_datagram_datagram_add(struct ecm_tracker_datagram_instan
 	if (skbc->prev) {
 		skbc->prev->next = skbc;
 	} else {
-		DEBUG_ASSERT(dtii->dest_recvd_order == NULL, "%p: bad list\n", dtii);
+		DEBUG_ASSERT(dtii->dest_recvd_order == NULL, "%px: bad list\n", dtii);
 		dtii->dest_recvd_order = skbc;
 	}
 
 	dtii->dest_count++;
-	DEBUG_ASSERT(dtii->dest_count > 0, "%p: bad total\n", dtii);
+	DEBUG_ASSERT(dtii->dest_count > 0, "%px: bad total\n", dtii);
 	dtii->dest_bytes_total += skbc->truesize;
 	spin_unlock_bh(&dtii->lock);
 	return true;
@@ -563,7 +563,7 @@ static int32_t ecm_tracker_datagram_data_total_get_callback(struct ecm_tracker_i
 	struct ecm_tracker_datagram_internal_instance *dtii = (struct ecm_tracker_datagram_internal_instance *)ti;
 	int32_t data_total;
 
-	DEBUG_CHECK_MAGIC(dtii, ECM_TRACKER_DATAGRAM_INSTANCE_MAGIC, "%p: magic failed", dtii);
+	DEBUG_CHECK_MAGIC(dtii, ECM_TRACKER_DATAGRAM_INSTANCE_MAGIC, "%px: magic failed", dtii);
 
 	spin_lock_bh(&dtii->lock);
 	data_total = dtii->src_bytes_total + dtii->dest_bytes_total;
@@ -581,7 +581,7 @@ static int32_t ecm_tracker_datagram_data_limit_get_callback(struct ecm_tracker_i
 	struct ecm_tracker_datagram_internal_instance *dtii = (struct ecm_tracker_datagram_internal_instance *)ti;
 	int32_t data_limit;
 
-	DEBUG_CHECK_MAGIC(dtii, ECM_TRACKER_DATAGRAM_INSTANCE_MAGIC, "%p: magic failed", dtii);
+	DEBUG_CHECK_MAGIC(dtii, ECM_TRACKER_DATAGRAM_INSTANCE_MAGIC, "%px: magic failed", dtii);
 
 	spin_lock_bh(&dtii->lock);
 	data_limit = dtii->data_limit;
@@ -597,7 +597,7 @@ static int32_t ecm_tracker_datagram_data_limit_get_callback(struct ecm_tracker_i
 static void ecm_tracker_datagram_data_limit_set_callback(struct ecm_tracker_instance *ti, int32_t data_limit)
 {
 	struct ecm_tracker_datagram_internal_instance *dtii = (struct ecm_tracker_datagram_internal_instance *)ti;
-	DEBUG_CHECK_MAGIC(dtii, ECM_TRACKER_DATAGRAM_INSTANCE_MAGIC, "%p: magic failed", dtii);
+	DEBUG_CHECK_MAGIC(dtii, ECM_TRACKER_DATAGRAM_INSTANCE_MAGIC, "%px: magic failed", dtii);
 
 	spin_lock_bh(&dtii->lock);
 	dtii->data_limit = data_limit;
@@ -612,7 +612,7 @@ static void ecm_tracker_datagram_data_limit_set_callback(struct ecm_tracker_inst
 static void ecm_tracker_datagram_state_update_callback(struct ecm_tracker_instance *ti, ecm_tracker_sender_type_t sender, struct ecm_tracker_ip_header *ip_hdr, struct sk_buff *skb)
 {
 	struct ecm_tracker_datagram_internal_instance *dtii = (struct ecm_tracker_datagram_internal_instance *)ti;
-	DEBUG_CHECK_MAGIC(dtii, ECM_TRACKER_DATAGRAM_INSTANCE_MAGIC, "%p: magic failed", dtii);
+	DEBUG_CHECK_MAGIC(dtii, ECM_TRACKER_DATAGRAM_INSTANCE_MAGIC, "%px: magic failed", dtii);
 
 	/*
 	 * As long as a sender has seen data then we consider the sender established
@@ -630,7 +630,7 @@ static void ecm_tracker_datagram_state_get_callback(struct ecm_tracker_instance 
 					ecm_tracker_sender_state_t *dest_state, ecm_tracker_connection_state_t *state, ecm_db_timer_group_t *tg)
 {
 	struct ecm_tracker_datagram_internal_instance *dtii = (struct ecm_tracker_datagram_internal_instance *)ti;
-	DEBUG_CHECK_MAGIC(dtii, ECM_TRACKER_DATAGRAM_INSTANCE_MAGIC, "%p: magic failed", dtii);
+	DEBUG_CHECK_MAGIC(dtii, ECM_TRACKER_DATAGRAM_INSTANCE_MAGIC, "%px: magic failed", dtii);
 	spin_lock_bh(&dtii->lock);
 	*src_state = dtii->sender_state[ECM_TRACKER_SENDER_TYPE_SRC];
 	*dest_state = dtii->sender_state[ECM_TRACKER_SENDER_TYPE_DEST];
@@ -658,7 +658,7 @@ static int ecm_tracker_datagram_state_text_get_callback(struct ecm_tracker_insta
 	ecm_tracker_sender_state_t sender_state[ECM_TRACKER_SENDER_MAX];
 	ecm_tracker_connection_state_t connection_state;
 
-	DEBUG_CHECK_MAGIC(dtii, ECM_TRACKER_DATAGRAM_INSTANCE_MAGIC, "%p: magic failed", dtii);
+	DEBUG_CHECK_MAGIC(dtii, ECM_TRACKER_DATAGRAM_INSTANCE_MAGIC, "%px: magic failed", dtii);
 
 	if ((result = ecm_state_prefix_add(sfi, "tracker_datagram"))) {
 		return result;
@@ -723,8 +723,8 @@ static int ecm_tracker_datagram_state_text_get_callback(struct ecm_tracker_insta
 void ecm_tracker_datagram_init(struct ecm_tracker_datagram_instance *uti, int32_t data_limit)
 {
 	struct ecm_tracker_datagram_internal_instance *dtii = (struct ecm_tracker_datagram_internal_instance *)uti;
-	DEBUG_CHECK_MAGIC(dtii, ECM_TRACKER_DATAGRAM_INSTANCE_MAGIC, "%p: magic failed", dtii);
-	DEBUG_TRACE("%p: init tracker\n", uti);
+	DEBUG_CHECK_MAGIC(dtii, ECM_TRACKER_DATAGRAM_INSTANCE_MAGIC, "%px: magic failed", dtii);
+	DEBUG_TRACE("%px: init tracker\n", uti);
 
 #ifdef ECM_TRACKER_DPI_SUPPORT_ENABLE
 	spin_lock_bh(&dtii->lock);
@@ -775,10 +775,10 @@ struct ecm_tracker_datagram_instance *ecm_tracker_datagram_alloc(void)
 
 	spin_lock_bh(&ecm_tracker_datagram_lock);
 	ecm_tracker_datagram_count++;
-	DEBUG_ASSERT(ecm_tracker_datagram_count > 0, "%p: datagram tracker count wrap\n", dtii);
+	DEBUG_ASSERT(ecm_tracker_datagram_count > 0, "%px: datagram tracker count wrap\n", dtii);
 	spin_unlock_bh(&ecm_tracker_datagram_lock);
 
-	DEBUG_TRACE("DATAGRAM tracker created %p\n", dtii);
+	DEBUG_TRACE("DATAGRAM tracker created %px\n", dtii);
 	return (struct ecm_tracker_datagram_instance *)dtii;
 }
 EXPORT_SYMBOL(ecm_tracker_datagram_alloc);

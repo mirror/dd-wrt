@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2018-2020, The Linux Foundation. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -20,7 +20,6 @@
  */
 
 #include "nss_tx_rx_common.h"
-#include "nss_tx_msg_sync.h"
 
 /*
  * nss_tx_msg_sync_callback()
@@ -75,6 +74,8 @@ static void nss_tx_msg_sync_callback(void *app_data, struct nss_cmn_msg *ncm)
  */
 static nss_tx_status_t nss_tx_msg_sync_internal(struct nss_ctx_instance *nss_ctx,
 						nss_tx_msg_sync_subsys_async_t tx_msg_async,
+						nss_tx_msg_sync_subsys_async_with_size_t tx_msg_async_with_size,
+						uint32_t msg_buf_size,
 						struct nss_tx_msg_sync_cmn_data *sync_data,
 						struct nss_cmn_msg *ncm,
 						uint32_t timeout)
@@ -89,12 +90,18 @@ static nss_tx_status_t nss_tx_msg_sync_internal(struct nss_ctx_instance *nss_ctx
 	ncm->cb = (nss_ptr_t)nss_tx_msg_sync_callback;
 	ncm->app_data = (nss_ptr_t)sync_data;
 
+	BUG_ON(!tx_msg_async && !tx_msg_async_with_size);
+
 	/*
 	 * Per-subsystem asynchronous call to send down the message.
 	 */
-	status = tx_msg_async(nss_ctx, ncm);
+	if (tx_msg_async)
+		status = tx_msg_async(nss_ctx, ncm);
+	else
+		status = tx_msg_async_with_size(nss_ctx, ncm, msg_buf_size);
+
 	if (status != NSS_TX_SUCCESS) {
-		nss_warning("%p: Tx msg async failed\n", nss_ctx);
+		nss_warning("%px: Tx msg async failed\n", nss_ctx);
 		return status;
 	}
 
@@ -103,7 +110,7 @@ static nss_tx_status_t nss_tx_msg_sync_internal(struct nss_ctx_instance *nss_ctx
 	 */
 	ret = wait_for_completion_timeout(&sync_data->complete, msecs_to_jiffies(timeout));
 	if (!ret) {
-		nss_warning("%p: Tx msg sync timeout\n", nss_ctx);
+		nss_warning("%px: Tx msg sync timeout\n", nss_ctx);
 		return NSS_TX_FAILURE_SYNC_TIMEOUT;
 	}
 
@@ -115,7 +122,7 @@ static nss_tx_status_t nss_tx_msg_sync_internal(struct nss_ctx_instance *nss_ctx
 
 /*
  * nss_tx_msg_sync()
- *	Core function to send messages to FW synchronously.
+ *	Send messages to FW synchronously with default message buffer size.
  *
  * tx_msg_async specifies the per-subsystem asynchronous call.
  * timeout specifies the maximum sleep time for the completion.
@@ -137,7 +144,7 @@ nss_tx_status_t nss_tx_msg_sync(struct nss_ctx_instance *nss_ctx,
 	 * Check Tx msg async API
 	 */
 	if (!unlikely(tx_msg_async)) {
-		nss_warning("%p: missing Tx msg async API\n", nss_ctx);
+		nss_warning("%px: missing Tx msg async API\n", nss_ctx);
 		return NSS_TX_FAILURE_SYNC_BAD_PARAM;
 	}
 
@@ -150,6 +157,41 @@ nss_tx_status_t nss_tx_msg_sync(struct nss_ctx_instance *nss_ctx,
 	sync_data.resp_offset = resp_offset;
 	sync_data.copy_len = copy_len;
 
-	return nss_tx_msg_sync_internal(nss_ctx, tx_msg_async, &sync_data, ncm, timeout);
+	return nss_tx_msg_sync_internal(nss_ctx, tx_msg_async, NULL, 0, &sync_data, ncm, timeout);
 }
 EXPORT_SYMBOL(nss_tx_msg_sync);
+
+/*
+ * nss_tx_msg_sync_with_size()
+ *	Send messages to FW synchronously with specified message buffer size.
+ */
+nss_tx_status_t nss_tx_msg_sync_with_size(struct nss_ctx_instance *nss_ctx,
+				nss_tx_msg_sync_subsys_async_with_size_t tx_msg_async_with_size,
+				uint32_t msg_buf_size, uint32_t timeout,
+				struct nss_cmn_msg *ncm, uint32_t resp_offset, uint32_t copy_len)
+{
+	struct nss_tx_msg_sync_cmn_data sync_data;
+
+	NSS_VERIFY_CTX_MAGIC(nss_ctx);
+
+	/*
+	 * Check Tx msg async API
+	 */
+	if (!unlikely(tx_msg_async_with_size)) {
+		nss_warning("%px: missing Tx msg async API\n", nss_ctx);
+		return NSS_TX_FAILURE_SYNC_BAD_PARAM;
+	}
+
+	/*
+	 * Initialize the per-message sync data.
+	 */
+	init_completion(&sync_data.complete);
+	sync_data.status = NSS_TX_FAILURE;
+	sync_data.original_msg = (void *)ncm;
+	sync_data.resp_offset = resp_offset;
+	sync_data.copy_len = copy_len;
+
+	return nss_tx_msg_sync_internal(nss_ctx, NULL, tx_msg_async_with_size,
+					msg_buf_size, &sync_data, ncm, timeout);
+}
+EXPORT_SYMBOL(nss_tx_msg_sync_with_size);

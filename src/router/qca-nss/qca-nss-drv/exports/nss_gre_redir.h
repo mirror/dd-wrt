@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2014-2015, 2017-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2014-2015, 2017-2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -443,6 +443,27 @@ extern nss_tx_status_t nss_gre_redir_tx_msg(struct nss_ctx_instance *nss_ctx, st
  */
 extern nss_tx_status_t nss_gre_redir_tx_buf(struct nss_ctx_instance *nss_ctx, struct sk_buff *os_buf,
 		uint32_t if_num);
+
+/**
+ * nss_gre_redir_tx_buf_noreuse
+ *	Sends GRE redirect tunnel packets.
+ *
+ * Note: The buffers will be not be reused or
+ * kept in the accelerator.
+ *
+ * @datatypes
+ * nss_ctx_instance \n
+ * sk_buff
+ *
+ * @param[in] nss_ctx  Pointer to the NSS context.
+ * @param[in] os_buf   Pointer to the OS buffer (e.g., skbuff).
+ * @param[in] if_num   Tunnel interface number.
+ *
+ * @return
+ * Status of the Tx operation.
+ */
+extern nss_tx_status_t nss_gre_redir_tx_buf_noreuse(struct nss_ctx_instance *nss_ctx, struct sk_buff *os_buf,
+			uint32_t if_num);
 
 /**
  * nss_gre_redir_get_stats

@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2014-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2014-2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -28,10 +28,12 @@
  */
 #define NSS_CAPWAPMGR_MAX_TUNNELS		32
 
-#define NSS_CAPWAPMGR_TUNNEL_STATE_CONFIGURED	0x1
+#define NSS_CAPWAPMGR_TUNNEL_STATE_CONFIGURED		0x1
 					/**< Bit is set if tunnel has been configured */
-#define NSS_CAPWAPMGR_TUNNEL_STATE_ENABLED	0x2
+#define NSS_CAPWAPMGR_TUNNEL_STATE_ENABLED		0x2
 					/**< Bit is set if tunnel has been enabled */
+#define NSS_CAPWAPMGR_TUNNEL_STATE_IPRULE_CONFIGURED	0x4
+					/**< Bit is set if tunnel IP rule exist */
 
 /*
  * Tunnel feature flags
@@ -210,6 +212,17 @@ extern nss_capwapmgr_status_t nss_capwapmgr_update_path_mtu(struct net_device *d
  * @return nss_capwapmgr_status_t
  */
 nss_capwapmgr_status_t nss_capwapmgr_update_dest_mac_addr(struct net_device *dev, uint8_t tunnel_id, uint8_t *mac_addr);
+
+/**
+ * @brief Updates Source Interface number
+ *
+ * @param netdevice
+ * @param tunnel_id
+ * @param source interface number
+ *
+ * @return nss_capwapmgr_status_t
+ */
+extern nss_capwapmgr_status_t nss_capwapmgr_update_src_interface(struct net_device *dev, uint8_t tunnel_id, int32_t src_interface_num);
 
 /**
  * @brief Delete a DSCP prioritization rule that was created.

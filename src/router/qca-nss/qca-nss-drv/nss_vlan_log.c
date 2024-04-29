@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2018, 2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -44,7 +44,7 @@ static int8_t *nss_vlan_log_error_response_types_str[NSS_VLAN_ERROR_TYPE_MAX] __
 static void nss_vlan_log_add_tag_msg(struct nss_vlan_msg *nvm)
 {
 	struct nss_vlan_msg_add_tag *nvtm __maybe_unused = &nvm->msg.add_tag;
-	nss_trace("%p: NSS VLAN Add Tag Message:\n"
+	nss_trace("%px: NSS VLAN Add Tag Message:\n"
 		"VLAN Tag: %d\n"
 		"VLAN Next Hop: %d\n"
 		"VLAN Interface Number: %d\n",
@@ -64,7 +64,7 @@ static void nss_vlan_log_verbose(struct nss_vlan_msg *nvm)
 		break;
 
 	default:
-		nss_warning("%p: Invalid message type\n", nvm);
+		nss_warning("%px: Invalid message type\n", nvm);
 		break;
 	}
 }
@@ -76,11 +76,11 @@ static void nss_vlan_log_verbose(struct nss_vlan_msg *nvm)
 void nss_vlan_log_tx_msg(struct nss_vlan_msg *nvm)
 {
 	if (nvm->cm.type >= NSS_VLAN_MSG_TYPE_MAX) {
-		nss_warning("%p: Invalid message type\n", nvm);
+		nss_warning("%px: Invalid message type\n", nvm);
 		return;
 	}
 
-	nss_info("%p: type[%d]:%s\n", nvm, nvm->cm.type, nss_vlan_log_message_types_str[nvm->cm.type]);
+	nss_info("%px: type[%d]:%s\n", nvm, nvm->cm.type, nss_vlan_log_message_types_str[nvm->cm.type]);
 	nss_vlan_log_verbose(nvm);
 }
 
@@ -91,26 +91,26 @@ void nss_vlan_log_tx_msg(struct nss_vlan_msg *nvm)
 void nss_vlan_log_rx_msg(struct nss_vlan_msg *nvm)
 {
 	if (nvm->cm.response >= NSS_CMN_RESPONSE_LAST) {
-		nss_warning("%p: Invalid response\n", nvm);
+		nss_warning("%px: Invalid response\n", nvm);
 		return;
 	}
 
 	if (nvm->cm.response == NSS_CMN_RESPONSE_NOTIFY || (nvm->cm.response == NSS_CMN_RESPONSE_ACK)) {
-		nss_info("%p: type[%d]:%s, response[%d]:%s\n", nvm, nvm->cm.type,
+		nss_info("%px: type[%d]:%s, response[%d]:%s\n", nvm, nvm->cm.type,
 			nss_vlan_log_message_types_str[nvm->cm.type],
 			nvm->cm.response, nss_cmn_response_str[nvm->cm.response]);
 		goto verbose;
 	}
 
 	if (nvm->cm.error >= NSS_VLAN_ERROR_TYPE_MAX) {
-		nss_warning("%p: msg failure - type[%d]:%s, response[%d]:%s, error[%d]:Invalid error\n",
+		nss_warning("%px: msg failure - type[%d]:%s, response[%d]:%s, error[%d]:Invalid error\n",
 			nvm, nvm->cm.type, nss_vlan_log_message_types_str[nvm->cm.type],
 			nvm->cm.response, nss_cmn_response_str[nvm->cm.response],
 			nvm->cm.error);
 		goto verbose;
 	}
 
-	nss_info("%p: msg nack - type[%d]:%s, response[%d]:%s, error[%d]:%s\n",
+	nss_info("%px: msg nack - type[%d]:%s, response[%d]:%s, error[%d]:%s\n",
 		nvm, nvm->cm.type, nss_vlan_log_message_types_str[nvm->cm.type],
 		nvm->cm.response, nss_cmn_response_str[nvm->cm.response],
 		nvm->cm.error, nss_vlan_log_error_response_types_str[nvm->cm.error]);

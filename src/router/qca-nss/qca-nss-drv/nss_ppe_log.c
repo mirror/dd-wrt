@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2018, 2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -57,7 +57,7 @@ static int8_t *nss_ppe_log_error_response_types_str[PPE_ERROR_MAX] __maybe_unuse
 static void nss_ppe_log_port_config_msg(struct nss_ppe_msg *npm)
 {
 	struct nss_ppe_ipsec_port_config_msg *npcm __maybe_unused = &npm->msg.ipsec_config;
-	nss_trace("%p: NSS PPE Port Configure Message:\n"
+	nss_trace("%px: NSS PPE Port Configure Message:\n"
 		"PPE NSS Interface Number: %d\n"
 		"PPE MTU: %d\n"
 		"PPE VSI Number: %d\n",
@@ -72,7 +72,7 @@ static void nss_ppe_log_port_config_msg(struct nss_ppe_msg *npm)
 static void nss_ppe_log_port_mtu_msg(struct nss_ppe_msg *npm)
 {
 	struct nss_ppe_ipsec_port_mtu_msg *npmm __maybe_unused = &npm->msg.ipsec_mtu;
-	nss_trace("%p: NSS PPE Port Configure Message:\n"
+	nss_trace("%px: NSS PPE Port Configure Message:\n"
 		"PPE NSS Interface Number: %d\n"
 		"PPE MTU: %d\n",
 		npmm, npmm->nss_ifnum,
@@ -86,7 +86,7 @@ static void nss_ppe_log_port_mtu_msg(struct nss_ppe_msg *npm)
 static void nss_ppe_log_add_intf_msg(struct nss_ppe_msg *npm)
 {
 	struct nss_ppe_ipsec_add_intf_msg *npam __maybe_unused = &npm->msg.ipsec_addif;
-	nss_trace("%p: NSS PPE IPSEC add Interface Message:\n"
+	nss_trace("%px: NSS PPE IPSEC add Interface Message:\n"
 		"PPE NSS Interface Number: %d\n",
 		npam, npam->nss_ifnum);
 }
@@ -98,7 +98,7 @@ static void nss_ppe_log_add_intf_msg(struct nss_ppe_msg *npm)
 static void nss_ppe_log_del_intf_msg(struct nss_ppe_msg *npm)
 {
 	struct nss_ppe_ipsec_del_intf_msg *npdm __maybe_unused = &npm->msg.ipsec_delif;
-	nss_trace("%p: NSS PPE IPSEC Delete Interface Message:\n"
+	nss_trace("%px: NSS PPE IPSEC Delete Interface Message:\n"
 		"PPE NSS Interface Number: %d\n",
 		npdm, npdm->nss_ifnum);
 }
@@ -133,7 +133,7 @@ static void nss_ppe_log_verbose(struct nss_ppe_msg *npm)
 		break;
 
 	default:
-		nss_warning("%p: Invalid message type\n", npm);
+		nss_warning("%px: Invalid message type\n", npm);
 		break;
 	}
 }
@@ -145,11 +145,11 @@ static void nss_ppe_log_verbose(struct nss_ppe_msg *npm)
 void nss_ppe_log_tx_msg(struct nss_ppe_msg *npm)
 {
 	if (npm->cm.type >= NSS_PPE_MSG_MAX) {
-		nss_warning("%p: Invalid message type\n", npm);
+		nss_warning("%px: Invalid message type\n", npm);
 		return;
 	}
 
-	nss_info("%p: type[%d]:%s\n", npm, npm->cm.type, nss_ppe_log_message_types_str[npm->cm.type]);
+	nss_info("%px: type[%d]:%s\n", npm, npm->cm.type, nss_ppe_log_message_types_str[npm->cm.type]);
 	nss_ppe_log_verbose(npm);
 }
 
@@ -160,26 +160,26 @@ void nss_ppe_log_tx_msg(struct nss_ppe_msg *npm)
 void nss_ppe_log_rx_msg(struct nss_ppe_msg *npm)
 {
 	if (npm->cm.response >= NSS_CMN_RESPONSE_LAST) {
-		nss_warning("%p: Invalid response\n", npm);
+		nss_warning("%px: Invalid response\n", npm);
 		return;
 	}
 
 	if (npm->cm.response == NSS_CMN_RESPONSE_NOTIFY || (npm->cm.response == NSS_CMN_RESPONSE_ACK)) {
-		nss_info("%p: type[%d]:%s, response[%d]:%s\n", npm, npm->cm.type,
+		nss_info("%px: type[%d]:%s, response[%d]:%s\n", npm, npm->cm.type,
 			nss_ppe_log_message_types_str[npm->cm.type],
 			npm->cm.response, nss_cmn_response_str[npm->cm.response]);
 		goto verbose;
 	}
 
 	if (npm->cm.error >= PPE_ERROR_MAX) {
-		nss_warning("%p: msg failure - type[%d]:%s, response[%d]:%s, error[%d]:Invalid error\n",
+		nss_warning("%px: msg failure - type[%d]:%s, response[%d]:%s, error[%d]:Invalid error\n",
 			npm, npm->cm.type, nss_ppe_log_message_types_str[npm->cm.type],
 			npm->cm.response, nss_cmn_response_str[npm->cm.response],
 			npm->cm.error);
 		goto verbose;
 	}
 
-	nss_info("%p: msg nack - type[%d]:%s, response[%d]:%s, error[%d]:%s\n",
+	nss_info("%px: msg nack - type[%d]:%s, response[%d]:%s, error[%d]:%s\n",
 		npm, npm->cm.type, nss_ppe_log_message_types_str[npm->cm.type],
 		npm->cm.response, nss_cmn_response_str[npm->cm.response],
 		npm->cm.error, nss_ppe_log_error_response_types_str[npm->cm.error]);

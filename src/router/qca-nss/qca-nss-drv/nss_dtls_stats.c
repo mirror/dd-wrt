@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2017, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017, 2019, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -14,56 +14,55 @@
  **************************************************************************
  */
 
-#include "nss_stats.h"
 #include "nss_core.h"
 #include "nss_dtls_stats.h"
 
 /*
  * nss_dtls_stats_session_str
- *	DTLS statistics strings for nss session stats
+ *	DTLS statistics strings for nss session stats.
  */
-static int8_t *nss_dtls_stats_session_str[NSS_DTLS_STATS_SESSION_MAX] = {
-	"RX_PKTS",
-	"TX_PKTS",
-	"RX_DROPPED_0",
-	"RX_DROPPED_1",
-	"RX_DROPPED_2",
-	"RX_DROPPED_3",
-	"RX_AUTH_DONE",
-	"TX_AUTH_DONE",
-	"RX_CIPHER_DONE",
-	"TX_CIPHER_DONE",
-	"RX_CBUF_ALLOC_FAIL",
-	"TX_CBUF_ALLOC_FAIL",
-	"TX_CENQUEUE_FAIL",
-	"RX_CENQUEUE_FAIL",
-	"TX_DROPPED_HROOM",
-	"TX_DROPPED_TROOM",
-	"TX_FORWARD_ENQUEUE_FAIL",
-	"RX_FORWARD_ENQUEUE_FAIL",
-	"RX_INVALID_VERSION",
-	"RX_INVALID_EPOCH",
-	"RX_MALFORMED",
-	"RX_CIPHER_FAIL",
-	"RX_AUTH_FAIL",
-	"RX_CAPWAP_CLASSIFY_FAIL",
-	"RX_SINGLE_REC_DGRAM",
-	"RX_MULTI_REC_DGRAM",
-	"RX_REPLAY_FAIL",
-	"RX_REPLAY_DUPLICATE",
-	"RX_REPLAY_OUT_OF_WINDOW",
-	"OUTFLOW_QUEUE_FULL",
-	"DECAP_QUEUE_FULL",
-	"PBUF_ALLOC_FAIL",
-	"PBUF_COPY_FAIL",
-	"EPOCH",
-	"TX_SEQ_HIGH",
-	"TX_SEQ_LOW",
+struct nss_stats_info nss_dtls_stats_session_str[NSS_DTLS_STATS_SESSION_MAX] = {
+	{"rx_pkts"			, NSS_STATS_TYPE_COMMON},
+	{"tx_pkts"			, NSS_STATS_TYPE_COMMON},
+	{"rx_drops[0]"			, NSS_STATS_TYPE_DROP},
+	{"rx_drops[1]"			, NSS_STATS_TYPE_DROP},
+	{"rx_drops[2]"			, NSS_STATS_TYPE_DROP},
+	{"rx_drops[3]"			, NSS_STATS_TYPE_DROP},
+	{"rx_auth_done"			, NSS_STATS_TYPE_SPECIAL},
+	{"tx_auth_done"			, NSS_STATS_TYPE_SPECIAL},
+	{"rx_cipher_done"		, NSS_STATS_TYPE_SPECIAL},
+	{"tx_cipher_done"		, NSS_STATS_TYPE_SPECIAL},
+	{"rx_cbuf_alloc_fail"		, NSS_STATS_TYPE_DROP},
+	{"tx_cbuf_alloc_fail"		, NSS_STATS_TYPE_DROP},
+	{"tx_cenqueue_fail"		, NSS_STATS_TYPE_DROP},
+	{"rx_cenqueue_fail"		, NSS_STATS_TYPE_DROP},
+	{"tx_drops_hroom"		, NSS_STATS_TYPE_DROP},
+	{"tx_drops_troom"		, NSS_STATS_TYPE_DROP},
+	{"tx_forward_enqueue_fail"	, NSS_STATS_TYPE_DROP},
+	{"rx_forward_enqueue_fail"	, NSS_STATS_TYPE_DROP},
+	{"rx_invalid_version"		, NSS_STATS_TYPE_DROP},
+	{"rx_invalid_epoch"		, NSS_STATS_TYPE_DROP},
+	{"rx_malformed"			, NSS_STATS_TYPE_DROP},
+	{"rx_cipher_fail"		, NSS_STATS_TYPE_EXCEPTION},
+	{"rx_auth_fail"			, NSS_STATS_TYPE_EXCEPTION},
+	{"rx_capwap_classify_fail"	, NSS_STATS_TYPE_DROP},
+	{"rx_single_rec_dgram"		, NSS_STATS_TYPE_SPECIAL},
+	{"rx_multi_rec_dgram"		, NSS_STATS_TYPE_SPECIAL},
+	{"rx_replay_fail"		, NSS_STATS_TYPE_DROP},
+	{"rx_replay_duplicate"		, NSS_STATS_TYPE_SPECIAL},
+	{"rx_replay_out_of_window"	, NSS_STATS_TYPE_SPECIAL},
+	{"outflow_queue_full"		, NSS_STATS_TYPE_DROP},
+	{"decap_queue_full"		, NSS_STATS_TYPE_DROP},
+	{"pbuf_alloc_fail"		, NSS_STATS_TYPE_DROP},
+	{"pbuf_copy_fail"		, NSS_STATS_TYPE_DROP},
+	{"epoch"			, NSS_STATS_TYPE_DROP},
+	{"tx_seq_high"			, NSS_STATS_TYPE_SPECIAL},
+	{"tx_seq_low"			, NSS_STATS_TYPE_SPECIAL}
 };
 
 /*
  * nss_dtls_stats_read()
- * 	Read DTLS session statistics
+ *	Read DTLS session statistics.
  */
 static ssize_t nss_dtls_stats_read(struct file *fp, char __user *ubuf,
 				   size_t sz, loff_t *ppos)
@@ -74,7 +73,7 @@ static ssize_t nss_dtls_stats_read(struct file *fp, char __user *ubuf,
 	size_t size_wr = 0;
 	ssize_t bytes_read = 0;
 	struct net_device *dev;
-	int id, i;
+	int id;
 	struct nss_dtls_stats_session *dtls_session_stats = NULL;
 
 	char *lbuf = kzalloc(size_al, GFP_KERNEL);
@@ -92,15 +91,14 @@ static ssize_t nss_dtls_stats_read(struct file *fp, char __user *ubuf,
 	}
 
 	/*
-	 * Get all stats
+	 * Get all stats.
 	 */
 	nss_dtls_session_stats_get(dtls_session_stats);
 
 	/*
-	 * Session stats
+	 * Session stats.
 	 */
-	size_wr += scnprintf(lbuf + size_wr, size_al - size_wr,
-			     "\nDTLS session stats start:\n\n");
+	size_wr += nss_stats_banner(lbuf, size_wr, size_al, "dtls", NSS_STATS_SINGLE_CORE);
 
 	for (id = 0; id < NSS_MAX_DTLS_SESSIONS; id++) {
 		if (!dtls_session_stats[id].valid)
@@ -119,18 +117,10 @@ static ssize_t nss_dtls_stats_read(struct file *fp, char __user *ubuf,
 					     dtls_session_stats[id].if_num);
 		}
 
-		for (i = 0; i < NSS_DTLS_STATS_SESSION_MAX; i++) {
-			size_wr += scnprintf(lbuf + size_wr, size_al - size_wr,
-					     "\t%s = %llu\n",
-					     nss_dtls_stats_session_str[i],
-					     dtls_session_stats[id].stats[i]);
-		}
-
+		size_wr += nss_stats_print("dtls_cmn", NULL, id, nss_dtls_stats_session_str, dtls_session_stats[id].stats, NSS_DTLS_STATS_SESSION_MAX, lbuf, size_wr, size_al);
 		size_wr += scnprintf(lbuf + size_wr, size_al - size_wr, "\n");
 	}
 
-	size_wr += scnprintf(lbuf + size_wr, size_al - size_wr,
-			     "\nDTLS session stats end\n");
 	bytes_read = simple_read_from_buffer(ubuf, sz, ppos, lbuf, size_wr);
 
 	kfree(dtls_session_stats);
@@ -139,7 +129,7 @@ static ssize_t nss_dtls_stats_read(struct file *fp, char __user *ubuf,
 }
 
 /*
- * nss_dtls_stats_ops
+ * nss_dtls_stats_ops.
  */
 NSS_STATS_DECLARE_FILE_OPERATIONS(dtls)
 

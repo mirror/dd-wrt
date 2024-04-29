@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2014-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2014-2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -50,6 +50,8 @@ struct nss_n2h_payload_info {
 	uint32_t high_water;
 };
 
+#ifdef __KERNEL__ /* only kernel will use. */
+
 /**
  * nss_n2h_cfg_pvt
  *	N2H private data configuration.
@@ -61,6 +63,53 @@ struct nss_n2h_cfg_pvt {
 	struct nss_n2h_payload_info empty_paged_buf_pool_info;	/**< Paged buffer pool information. */
 	int wifi_pool;						/**< Size of the empty Wi-Fi buffer pool. */
 	int response;						/**< Response from the firmware. */
+};
+
+#endif /*__KERNEL__ */
+
+/**
+ * nss_n2h_stats_types
+ *	N2H node statistics.
+ */
+enum nss_n2h_stats_types {
+	NSS_N2H_STATS_QUEUE_DROPPED = NSS_STATS_NODE_MAX,
+					/* Number of packets dropped because the exception queue is too full */
+	NSS_N2H_STATS_TOTAL_TICKS,	/* Total clock ticks spend inside the N2H */
+	NSS_N2H_STATS_WORST_CASE_TICKS,	/* Worst case iteration of the exception path in ticks */
+	NSS_N2H_STATS_ITERATIONS,	/* Number of iterations around the N2H */
+
+	NSS_N2H_STATS_PBUF_OCM_ALLOC_FAILS_WITH_PAYLOAD,
+						/* Number of pbuf ocm allocations that have failed with payload */
+	NSS_N2H_STATS_PBUF_OCM_FREE_COUNT,	/* Number of pbuf ocm free count */
+	NSS_N2H_STATS_PBUF_OCM_TOTAL_COUNT,	/* Number of pbuf ocm total count */
+	NSS_N2H_STATS_PBUF_OCM_ALLOC_FAILS_NO_PAYLOAD,
+						/* Number of pbuf ocm allocations that have failed without payload */
+
+	NSS_N2H_STATS_PBUF_DEFAULT_ALLOC_FAILS_WITH_PAYLOAD,
+						/* Number of pbuf default allocations that have failed with payload */
+
+	NSS_N2H_STATS_PBUF_DEFAULT_FREE_COUNT,	/* Number of pbuf default free count */
+	NSS_N2H_STATS_PBUF_DEFAULT_TOTAL_COUNT,	/* Number of pbuf default total count */
+	NSS_N2H_STATS_PBUF_DEFAULT_ALLOC_FAILS_NO_PAYLOAD,
+						/* Number of pbuf default allocations that have failed without payload */
+
+	NSS_N2H_STATS_PAYLOAD_ALLOC_FAILS,	/* Number of pbuf allocations that have failed because there were no free payloads */
+	NSS_N2H_STATS_PAYLOAD_FREE_COUNT,	/* Number of free payloads that exist */
+
+	NSS_N2H_STATS_H2N_CONTROL_PACKETS,	/* Control packets received from HLOS */
+	NSS_N2H_STATS_H2N_CONTROL_BYTES,	/* Control bytes received from HLOS */
+	NSS_N2H_STATS_N2H_CONTROL_PACKETS,	/* Control packets sent to HLOS */
+	NSS_N2H_STATS_N2H_CONTROL_BYTES,	/* Control bytes sent to HLOS */
+
+	NSS_N2H_STATS_H2N_DATA_PACKETS,		/* Data packets received from HLOS */
+	NSS_N2H_STATS_H2N_DATA_BYTES,		/* Data bytes received from HLOS */
+	NSS_N2H_STATS_N2H_DATA_PACKETS,		/* Data packets sent to HLOS */
+	NSS_N2H_STATS_N2H_DATA_BYTES,		/* Data bytes sent to HLOS */
+	NSS_N2H_STATS_N2H_TOT_PAYLOADS,		/* No. of payloads in NSS */
+	NSS_N2H_STATS_N2H_INTERFACE_INVALID,	/* No. of bad interface access */
+	NSS_N2H_STATS_ENQUEUE_RETRIES,		/* No. of enqueue retries by N2H */
+
+	NSS_N2H_STATS_MAX,
 };
 
 /**
@@ -107,6 +156,16 @@ enum nss_n2h_error_types {
 	N2H_PN_QUEUE_SET_FAILED,
 	N2H_PAGES_PER_MSG_EXCEEDED,
 	N2H_RPS_PRI_MAP_TOO_HIGH,
+};
+
+/**
+ * nss_n2h_stats_notification
+ *	N2H statistics structure.
+ */
+struct nss_n2h_stats_notification {
+	uint32_t core_id;			/**< Core ID. */
+	uint64_t n2h_stats[NSS_N2H_STATS_MAX];	/**< N2H statistics. */
+	uint64_t drv_stats[NSS_STATS_DRV_MAX];	/**< Driver statistics. */
 };
 
 /**
@@ -221,9 +280,12 @@ struct nss_n2h_wifi_payloads {
  *	Payload buffer manager statistics.
  */
 struct nss_n2h_pbuf_mgr_stats {
-	uint32_t pbuf_alloc_fails;	/**< Number of buffer allocation failures. */
-	uint32_t pbuf_free_count;	/**< Number of currently free buffers. */
 	uint32_t pbuf_total_count;	/**< Total number of buffers, free or in use. */
+	uint32_t pbuf_free_count;	/**< Number of currently free buffers. */
+	uint32_t pbuf_alloc_fails_with_payload;
+					/**< Number of buffer allocation failures. */
+	uint32_t pbuf_alloc_fails_no_payload;
+					/**< Number of buffer allocation failures without payload. */
 };
 
 /**
@@ -281,6 +343,7 @@ struct nss_mmu_ddr_info {
 	uint32_t start_address;	/**< System start address. */
 	uint32_t num_active_cores;
 				/**< Number of active cores. */
+	uint32_t nss_ddr_size;	/**< Total memory for NSS SoC. */
 };
 
 /**
@@ -472,6 +535,38 @@ extern nss_tx_status_t nss_n2h_update_queue_config_sync(struct nss_ctx_instance 
  * Status of the configuration update operation.
  */
 extern nss_tx_status_t nss_n2h_update_queue_config_async(struct nss_ctx_instance *nss_ctx, bool mq_en, uint16_t *qlimits);
+
+#ifdef __KERNEL__ /* only kernel will use. */
+
+/**
+ * nss_n2h_stats_register_notifier
+ *	Registers a statistics notifier.
+ *
+ * @datatypes
+ * notifier_block
+ *
+ * @param[in] nb Notifier block.
+ *
+ * @return
+ * 0 on success or -2 on failure.
+ */
+extern int nss_n2h_stats_register_notifier(struct notifier_block *nb);
+
+/**
+ * nss_n2h_stats_unregister_notifier
+ *	Deregisters a statistics notifier.
+ *
+ * @datatypes
+ * notifier_block
+ *
+ * @param[in] nb Notifier block.
+ *
+ * @return
+ * 0 on success or -2 on failure.
+ */
+extern int nss_n2h_stats_unregister_notifier(struct notifier_block *nb);
+
+#endif /*__KERNEL__ */
 
 /**
  * @}

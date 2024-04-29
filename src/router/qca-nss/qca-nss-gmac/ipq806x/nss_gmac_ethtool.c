@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2013-2019, 2021 The Linux Foundation. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -54,10 +54,7 @@ static const struct nss_gmac_ethtool_stats gmac_gstrings_stats[] = {
 	{"rx_packets", NSS_GMAC_STAT(rx_packets)},
 	{"rx_errors", NSS_GMAC_STAT(rx_errors)},
 	{"rx_receive_errors", NSS_GMAC_STAT(rx_receive_errors)},
-	{"rx_overflow_errors", NSS_GMAC_STAT(rx_overflow_errors)},
 	{"rx_descriptor_errors", NSS_GMAC_STAT(rx_descriptor_errors)},
-	{"rx_watchdog_timeout_errors", NSS_GMAC_STAT(rx_watchdog_timeout_errors)},
-	{"rx_crc_errors", NSS_GMAC_STAT(rx_crc_errors)},
 	{"rx_late_collision_errors", NSS_GMAC_STAT(rx_late_collision_errors)},
 	{"rx_dribble_bit_errors", NSS_GMAC_STAT(rx_dribble_bit_errors)},
 	{"rx_length_errors", NSS_GMAC_STAT(rx_length_errors)},
@@ -98,23 +95,27 @@ static const struct nss_gmac_ethtool_stats gmac_gstrings_stats[] = {
 	{"gmac_worst_case_ticks", NSS_GMAC_STAT(gmac_worst_case_ticks)},
 	{"gmac_iterations", NSS_GMAC_STAT(gmac_iterations)},
 	{"tx_pause_frames", NSS_GMAC_STAT(tx_pause_frames)},
-	{"rx_octets_g", NSS_GMAC_STAT(rx_octets_g)},
-	{"rx_ucast_frames", NSS_GMAC_STAT(rx_ucast_frames)},
-	{"rx_bcast_frames", NSS_GMAC_STAT(rx_bcast_frames)},
-	{"rx_mcast_frames", NSS_GMAC_STAT(rx_mcast_frames)},
-	{"rx_undersize", NSS_GMAC_STAT(rx_undersize)},
-	{"rx_oversize", NSS_GMAC_STAT(rx_oversize)},
-	{"rx_jabber", NSS_GMAC_STAT(rx_jabber)},
-	{"rx_octets_gb", NSS_GMAC_STAT(rx_octets_gb)},
-	{"rx_frag_frames_g", NSS_GMAC_STAT(rx_frag_frames_g)},
-	{"tx_octets_g", NSS_GMAC_STAT(tx_octets_g)},
-	{"tx_ucast_frames", NSS_GMAC_STAT(tx_ucast_frames)},
-	{"tx_bcast_frames", NSS_GMAC_STAT(tx_bcast_frames)},
-	{"tx_mcast_frames", NSS_GMAC_STAT(tx_mcast_frames)},
-	{"tx_deferred", NSS_GMAC_STAT(tx_deferred)},
-	{"tx_single_col", NSS_GMAC_STAT(tx_single_col)},
-	{"tx_multiple_col", NSS_GMAC_STAT(tx_multiple_col)},
-	{"tx_octets_gb", NSS_GMAC_STAT(tx_octets_gb)},
+	{"mmc_rx_overflow_errors", NSS_GMAC_STAT(mmc_rx_overflow_errors)},
+	{"mmc_rx_watchdog_timeout_errors", NSS_GMAC_STAT(mmc_rx_watchdog_timeout_errors)},
+	{"mmc_rx_crc_errors", NSS_GMAC_STAT(mmc_rx_crc_errors)},
+	{"mmc_rx_ip_header_errors", NSS_GMAC_STAT(mmc_rx_ip_header_errors)},
+	{"mmc_rx_octets_g", NSS_GMAC_STAT(mmc_rx_octets_g)},
+	{"mmc_rx_ucast_frames", NSS_GMAC_STAT(mmc_rx_ucast_frames)},
+	{"mmc_rx_bcast_frames", NSS_GMAC_STAT(mmc_rx_bcast_frames)},
+	{"mmc_rx_mcast_frames", NSS_GMAC_STAT(mmc_rx_mcast_frames)},
+	{"mmc_rx_undersize", NSS_GMAC_STAT(mmc_rx_undersize)},
+	{"mmc_rx_oversize", NSS_GMAC_STAT(mmc_rx_oversize)},
+	{"mmc_rx_jabber", NSS_GMAC_STAT(mmc_rx_jabber)},
+	{"mmc_rx_octets_gb", NSS_GMAC_STAT(mmc_rx_octets_gb)},
+	{"mmc_rx_frag_frames_g", NSS_GMAC_STAT(mmc_rx_frag_frames_g)},
+	{"mmc_tx_octets_g", NSS_GMAC_STAT(mmc_tx_octets_g)},
+	{"mmc_tx_ucast_frames", NSS_GMAC_STAT(mmc_tx_ucast_frames)},
+	{"mmc_tx_bcast_frames", NSS_GMAC_STAT(mmc_tx_bcast_frames)},
+	{"mmc_tx_mcast_frames", NSS_GMAC_STAT(mmc_tx_mcast_frames)},
+	{"mmc_tx_deferred", NSS_GMAC_STAT(mmc_tx_deferred)},
+	{"mmc_tx_single_col", NSS_GMAC_STAT(mmc_tx_single_col)},
+	{"mmc_tx_multiple_col", NSS_GMAC_STAT(mmc_tx_multiple_col)},
+	{"mmc_tx_octets_gb", NSS_GMAC_STAT(mmc_tx_octets_gb)},
 };
 
 /**
@@ -142,9 +143,11 @@ static const struct nss_gmac_ethtool_stats gmac_gstrings_host_stats[] = {
 /**
  * @brief Array of strings describing private flag names
  */
-static const char *gmac_strings_priv_flags[][ETH_GSTRING_LEN] = {
-	{"linkpoll"},
-	{"tstamp"},
+
+static const char gmac_strings_priv_flags[][ETH_GSTRING_LEN] = {
+	"linkpoll",
+	"tstamp",
+	"ignore_rx_csum_err",
 };
 
 #define NSS_GMAC_STATS_LEN	ARRAY_SIZE(gmac_gstrings_stats)
@@ -168,11 +171,10 @@ static int32_t nss_gmac_get_strset_count(struct net_device *netdev,
 		break;
 
 	default:
-		netdev_dbg(netdev, "%s: Invalid string set\n", __func__);
+		netdev_info(netdev, "%s: Invalid string set\n", __func__);
 		return -EOPNOTSUPP;
 	}
 }
-
 
 /**
  * @brief Get strings that describe requested objects
@@ -246,7 +248,6 @@ static void nss_gmac_get_ethtool_stats(struct net_device *netdev,
 	spin_unlock_bh(&gmacdev->stats_lock);
 }
 
-
 /**
  * @brief Return driver information.
  *	  Note: Fields are 32 bytes in length.
@@ -261,7 +262,6 @@ static void nss_gmac_get_drvinfo(struct net_device *dev,
 	strlcpy(info->bus_info, "NSS", ETHTOOL_BUSINFO_LEN);
 	info->n_priv_flags = __NSS_GMAC_PRIV_FLAG_MAX;
 }
-
 
 /**
  * @brief Return pause parameters.
@@ -368,8 +368,6 @@ static int nss_gmac_nway_reset(struct net_device *netdev)
 
 	return 0;
 }
-
-
 
 /**
  * @brief Get Wake On Lan settings
@@ -560,6 +558,63 @@ static int32_t nss_gmac_set_priv_flags(struct net_device *netdev, u32 flags)
 		}
 	}
 
+	/*
+	 * Set timestamp
+	 */
+	if (changed & NSS_GMAC_PRIV_FLAG(TSTAMP)) {
+
+		if (flags & NSS_GMAC_PRIV_FLAG(TSTAMP)) {
+		  if (!test_bit(__NSS_GMAC_TSTAMP, &gmacdev->flags)) {
+			/*
+			 * Increase headroom for PTP/NTP timestamps
+			 */
+			netdev->needed_headroom += 32;
+
+			/*
+			 * Create sysfs entries for timestamp registers
+			 */
+			nss_gmac_tstamp_sysfs_create(netdev);
+
+			if (nss_gmac_ts_enable(gmacdev)) {
+				netdev_info(netdev, "%s: Reg write error. Cannot enable Timestamping \n", __func__);
+				return -EINVAL;
+			}
+			gmacdev->drv_flags |= NSS_GMAC_PRIV_FLAG(TSTAMP);
+			netdev_info(netdev, "%s: Enabled 'Timestamp' flag (needed_headroom: %dx)", __func__, netdev->needed_headroom);
+		  } else
+			netdev_warn(netdev, "%s: Already enabled 'Timestamp' flag", __func__);
+		} else {
+		  /*
+		   * Disable Timestamping if not already disabled
+		   */
+		  if (!test_bit(__NSS_GMAC_TSTAMP, &gmacdev->flags)) {
+			  netdev_warn(netdev, "%s: Timestamp is already disabled \n", __func__);
+			  return -EINVAL;
+		  }
+		  nss_gmac_ts_disable(gmacdev);
+		  gmacdev->drv_flags &= ~NSS_GMAC_PRIV_FLAG(TSTAMP);
+		  nss_gmac_tstamp_sysfs_remove(gmacdev->netdev);
+		  // netdev->needed_headroom -= 32;
+		  netdev_info(netdev, "%s: Disabled 'Timestamp' flag (needed_headroom: %dx)", __func__, netdev->needed_headroom);
+		}
+	}
+
+	/*
+	 * Set ignore rx csum flag
+	 */
+	if (changed & NSS_GMAC_PRIV_FLAG(IGNORE_RX_CSUM_ERR)) {
+
+		if (flags & NSS_GMAC_PRIV_FLAG(IGNORE_RX_CSUM_ERR)) {
+			nss_gmac_rx_tcpip_chksum_drop_disable(gmacdev);
+			gmacdev->drv_flags |= NSS_GMAC_PRIV_FLAG(IGNORE_RX_CSUM_ERR);
+			netdev_info(netdev, "%s: Enabled 'ignore Rx csum error' flag", __func__);
+		} else {
+			nss_gmac_rx_tcpip_chksum_drop_enable(gmacdev);
+			gmacdev->drv_flags &= ~NSS_GMAC_PRIV_FLAG(IGNORE_RX_CSUM_ERR);
+			netdev_info(netdev, "%s: Disabled 'ignore Rx csum error' flag", __func__);
+		}
+	}
+
 	return 0;
 }
 
@@ -602,4 +657,3 @@ void nss_gmac_ethtool_register(struct net_device *netdev)
 {
 	netdev->ethtool_ops = &nss_gmac_ethtool_ops;
 }
-

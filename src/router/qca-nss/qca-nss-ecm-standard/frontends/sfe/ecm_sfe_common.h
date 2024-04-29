@@ -1,18 +1,26 @@
 /*
- **************************************************************************
- * Copyright (c) 2015, 2018, The Linux Foundation.  All rights reserved.
- * Permission to use, copy, modify, and/or distribute this software for
- * any purpose with or without fee is hereby granted, provided that the
- * above copyright notice and this permission notice appear in all copies.
+ * Copyright (c) 2015, 2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2021-2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ *
+ * Permission to use, copy, modify, and/or distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies.
+ *
  * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
  * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
  * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
  * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
  * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
- * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT
- * OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
- **************************************************************************
+ * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+ * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
+
+#include "ecm_sfe_common_public.h"
+
+/*
+ * Export the callback object for frontend usage.
+ */
+extern struct ecm_sfe_common_callbacks ecm_sfe_cb;
 
 #ifdef CONFIG_XFRM
 /*
@@ -57,13 +65,6 @@ enum ecm_sfe_ipsec_state {
  */
 static inline int32_t ecm_sfe_common_get_interface_number_by_dev(struct net_device *dev)
 {
-	/*
-	 * sfe_interface_num for all IPsec tunnels will always be the one specific to acceleration engine.
-	 */
-	if (dev->type == ECM_ARPHRD_IPSEC_TUNNEL_TYPE) {
-		return SFE_SPECIAL_INTERFACE_IPSEC;
-	}
-
 	return dev->ifindex;
 }
 
@@ -116,3 +117,33 @@ static inline int32_t ecm_sfe_common_get_interface_type(struct ecm_front_end_con
 	 */
 	return 0;
 }
+
+void ecm_sfe_common_fast_xmit_set(uint16_t *rule_flags, uint16_t *valid_flags, struct sfe_qdisc_rule *qdisc_rule, struct ecm_db_iface_instance *from_ifaces[ECM_DB_IFACE_HEIRARCHY_MAX], struct ecm_db_iface_instance *to_ifaces[ECM_DB_IFACE_HEIRARCHY_MAX], int32_t from_interfaces_first, int32_t to_interfaces_first);
+
+/*
+ * ecm_sfe_common_dummy_get_stats_bitmap()
+ */
+static inline uint32_t ecm_sfe_common_dummy_get_stats_bitmap(struct ecm_front_end_connection_instance *feci, ecm_db_obj_dir_t dir)
+{
+	return 0;
+}
+
+/*
+ * ecm_sfe_common_dummy_set_stats_bitmap()
+ */
+static inline void ecm_sfe_common_dummy_set_stats_bitmap(struct ecm_front_end_connection_instance *feci, ecm_db_obj_dir_t dir, uint8_t bit)
+{
+
+}
+
+bool ecm_sfe_ipv4_is_conn_limit_reached(void);
+bool ecm_sfe_ipv6_is_conn_limit_reached(void);
+bool ecm_sfe_common_is_l2_iface_supported(ecm_db_iface_type_t ii_type, int cur_heirarchy_index, int first_heirarchy_index);
+
+void ecm_sfe_common_init_fe_info(struct ecm_front_end_common_fe_info *info);
+void ecm_sfe_common_update_rule(struct ecm_front_end_connection_instance *feci, enum ecm_rule_update_type type, void *arg);
+void ecm_sfe_common_tuple_set(struct ecm_front_end_connection_instance *feci,
+			      int32_t from_iface_id, int32_t to_iface_id,
+			      struct ecm_sfe_common_tuple *tuple);
+bool ecm_sfe_feature_check(struct sk_buff *skb, struct ecm_tracker_ip_header *ip_hdr, bool is_routed);
+

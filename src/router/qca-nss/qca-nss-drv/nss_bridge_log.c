@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2018, 2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -38,7 +38,7 @@ static int8_t *nss_bridge_log_message_types_str[NSS_BRIDGE_MSG_TYPE_MAX] __maybe
 static void nss_bridge_join_msg(struct nss_bridge_msg *nbm)
 {
 	struct nss_bridge_join_msg *nbjm __maybe_unused = &nbm->msg.br_join;
-	nss_trace("%p: NSS Bridge Join message \n"
+	nss_trace("%px: NSS Bridge Join message \n"
 		"Interface Number: %d\n",
 		nbm, nbjm->if_num);
 }
@@ -50,7 +50,7 @@ static void nss_bridge_join_msg(struct nss_bridge_msg *nbm)
 static void nss_bridge_leave_msg(struct nss_bridge_msg *nbm)
 {
 	struct nss_bridge_leave_msg *nblm __maybe_unused = &nbm->msg.br_leave;
-	nss_trace("%p: NSS Bridge Leave message: \n"
+	nss_trace("%px: NSS Bridge Leave message: \n"
 		"Interface Number: %d\n",
 		nbm, nblm->if_num);
 }
@@ -63,7 +63,7 @@ static void nss_bridge_fdb_learn_msg(struct nss_bridge_msg *nbm)
 {
 	struct nss_bridge_set_fdb_learn_msg *nbflm __maybe_unused =
 		&nbm->msg.fdb_learn;
-	nss_trace("%p: NSS Bridge Set FDB Learn message: \n"
+	nss_trace("%px: NSS Bridge Set FDB Learn message: \n"
 		"Mode: %d\n",
 		nbm, nbflm->mode);
 }
@@ -88,7 +88,7 @@ static void nss_bridge_log_verbose(struct nss_bridge_msg *nbm)
 		break;
 
 	default:
-		nss_trace("%p: Invalid message type\n", nbm);
+		nss_trace("%px: Invalid message type\n", nbm);
 		break;
 	}
 }
@@ -100,11 +100,11 @@ static void nss_bridge_log_verbose(struct nss_bridge_msg *nbm)
 void nss_bridge_log_tx_msg(struct nss_bridge_msg *nbm)
 {
 	if (nbm->cm.type >= NSS_BRIDGE_MSG_TYPE_MAX) {
-		nss_warning("%p: Invalid message type\n", nbm);
+		nss_warning("%px: Invalid message type\n", nbm);
 		return;
 	}
 
-	nss_info("%p: type[%d]:%s\n", nbm, nbm->cm.type, nss_bridge_log_message_types_str[nbm->cm.type - NSS_IF_MAX_MSG_TYPES - 1]);
+	nss_info("%px: type[%d]:%s\n", nbm, nbm->cm.type, nss_bridge_log_message_types_str[nbm->cm.type - NSS_IF_MAX_MSG_TYPES - 1]);
 	nss_bridge_log_verbose(nbm);
 }
 
@@ -115,18 +115,18 @@ void nss_bridge_log_tx_msg(struct nss_bridge_msg *nbm)
 void nss_bridge_log_rx_msg(struct nss_bridge_msg *nbm)
 {
 	if (nbm->cm.response >= NSS_CMN_RESPONSE_LAST) {
-		nss_warning("%p: Invalid response\n", nbm);
+		nss_warning("%px: Invalid response\n", nbm);
 		return;
 	}
 
 	if (nbm->cm.response == NSS_CMN_RESPONSE_NOTIFY || (nbm->cm.response == NSS_CMN_RESPONSE_ACK)) {
-		nss_info("%p: type[%d]:%s, response[%d]:%s\n", nbm, nbm->cm.type,
+		nss_info("%px: type[%d]:%s, response[%d]:%s\n", nbm, nbm->cm.type,
 			nss_bridge_log_message_types_str[nbm->cm.type - NSS_IF_MAX_MSG_TYPES - 1],
 			nbm->cm.response, nss_cmn_response_str[nbm->cm.response]);
 		goto verbose;
 	}
 
-	nss_info("%p: msg nack - type[%d]:%s, response[%d]:%s\n",
+	nss_info("%px: msg nack - type[%d]:%s, response[%d]:%s\n",
 		nbm, nbm->cm.type, nss_bridge_log_message_types_str[nbm->cm.type - NSS_IF_MAX_MSG_TYPES - 1],
 		nbm->cm.response, nss_cmn_response_str[nbm->cm.response]);
 

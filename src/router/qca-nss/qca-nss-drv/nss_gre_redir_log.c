@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2018-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2018-2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -43,10 +43,10 @@ static int8_t *nss_gre_redir_log_message_types_str[NSS_GRE_REDIR_MAX_MSG_TYPES] 
 static void nss_gre_redir_log_inner_configure_msg(struct nss_gre_redir_msg *ngm)
 {
 	struct nss_gre_redir_inner_configure_msg *ngicm __maybe_unused = &ngm->msg.inner_configure;
-	nss_trace("%p: NSS GRE Redir Inner Configure message"
+	nss_trace("%px: NSS GRE Redir Inner Configure message"
 		"GRE REDIR IP Header Type: %d\n"
-		"GRE REDIR Source IP: %p\n"
-		"GRE REDIR Destination IP: %p\n"
+		"GRE REDIR Source IP: %px\n"
+		"GRE REDIR Destination IP: %px\n"
 		"GRE REDIR Outer Interface: %d\n"
 		"GRE REDIR Do not Fragment: %d\n"
 		"GRE REDIR IP TTL: %d\n"
@@ -64,7 +64,7 @@ static void nss_gre_redir_log_inner_configure_msg(struct nss_gre_redir_msg *ngm)
 static void nss_gre_redir_log_interface_map_msg(struct nss_gre_redir_msg *ngm)
 {
 	struct nss_gre_redir_interface_map_msg *ngicm __maybe_unused = &ngm->msg.interface_map;
-	nss_trace("%p: NSS GRE Redir Interface Map message"
+	nss_trace("%px: NSS GRE Redir Interface Map message"
 		"GRE REDIR NSS VAP Interface: %d\n"
 		"GRE REDIR Next Hop NSS Interface: %d\n"
 		"GRE REDIR Radio ID: %d\n"
@@ -85,7 +85,7 @@ static void nss_gre_redir_log_interface_map_msg(struct nss_gre_redir_msg *ngm)
 static void nss_gre_redir_log_interface_unmap_msg(struct nss_gre_redir_msg *ngm)
 {
 	struct nss_gre_redir_interface_unmap_msg *ngicm __maybe_unused = &ngm->msg.interface_unmap;
-	nss_trace("%p: NSS GRE Redir Interface Map message"
+	nss_trace("%px: NSS GRE Redir Interface Map message"
 		"GRE REDIR NSS VAP Interface: %d\n"
 		"GRE REDIR Radio ID: %d\n"
 		"GRE REDIR VAP ID: %d\n",
@@ -100,7 +100,7 @@ static void nss_gre_redir_log_interface_unmap_msg(struct nss_gre_redir_msg *ngm)
 static void nss_gre_redir_log_sjack_map_msg(struct nss_gre_redir_msg *ngm)
 {
 	struct nss_gre_redir_sjack_map_msg *ngscm __maybe_unused = &ngm->msg.sjack_map;
-	nss_trace("%p: NSS GRE Redir SJACK Map message"
+	nss_trace("%px: NSS GRE Redir SJACK Map message"
 		"GRE REDIR Eth NSS Interface: %d\n"
 		"GRE REDIR Eth Interface ID: %d\n"
 		"GRE REDIR IPSec pattern: %x\n",
@@ -115,7 +115,7 @@ static void nss_gre_redir_log_sjack_map_msg(struct nss_gre_redir_msg *ngm)
 static void nss_gre_redir_log_sjack_unmap_msg(struct nss_gre_redir_msg *ngm)
 {
 	struct nss_gre_redir_sjack_unmap_msg *ngscm __maybe_unused = &ngm->msg.sjack_unmap;
-	nss_trace("%p: NSS GRE Redir SJACK Map message"
+	nss_trace("%px: NSS GRE Redir SJACK Map message"
 		"GRE REDIR Eth NSS Interface: %d\n"
 		"GRE REDIR Eth Interface ID: %d\n",
 		ngscm, ngscm->eth_nssif,
@@ -129,7 +129,7 @@ static void nss_gre_redir_log_sjack_unmap_msg(struct nss_gre_redir_msg *ngm)
 static void nss_gre_redir_log_outer_configure_msg(struct nss_gre_redir_msg *ngm)
 {
 	struct nss_gre_redir_outer_configure_msg *ngocm __maybe_unused = &ngm->msg.outer_configure;
-	nss_trace("%p: NSS GRE Redir Outer Configure message"
+	nss_trace("%px: NSS GRE Redir Outer Configure message"
 		"GRE REDIR IP Header Type: %d\n"
 		"GRE REDIR Host Inner Interface: %d\n"
 		"GRE REDIR NSS Inner Interface: %d\n"
@@ -149,7 +149,7 @@ static void nss_gre_redir_log_outer_configure_msg(struct nss_gre_redir_msg *ngm)
 static void nss_gre_redir_log_exception_ds_reg_cb_msg(struct nss_gre_redir_msg *ngm)
 {
 	struct nss_gre_redir_exception_ds_reg_cb_msg *exception_ds_configure __maybe_unused = &ngm->msg.exception_ds_configure;
-	nss_trace("%p: NSS GRE redir exception completion callback registration message\n"
+	nss_trace("%px: NSS GRE redir exception completion callback registration message\n"
 			"vap_if_num: %d\n", ngm, exception_ds_configure->dst_vap_nssif);
 }
 
@@ -195,7 +195,7 @@ static void nss_gre_redir_log_verbose(struct nss_gre_redir_msg *ngm)
 		break;
 
 	default:
-		nss_warning("%p: Invalid message type\n", ngm);
+		nss_warning("%px: Invalid message type\n", ngm);
 		break;
 	}
 }
@@ -207,11 +207,11 @@ static void nss_gre_redir_log_verbose(struct nss_gre_redir_msg *ngm)
 void nss_gre_redir_log_tx_msg(struct nss_gre_redir_msg *ngm)
 {
 	if (ngm->cm.type >= NSS_GRE_REDIR_MAX_MSG_TYPES) {
-		nss_warning("%p: Invalid message type\n", ngm);
+		nss_warning("%px: Invalid message type\n", ngm);
 		return;
 	}
 
-	nss_info("%p: type[%d]:%s\n", ngm, ngm->cm.type, nss_gre_redir_log_message_types_str[ngm->cm.type]);
+	nss_info("%px: type[%d]:%s\n", ngm, ngm->cm.type, nss_gre_redir_log_message_types_str[ngm->cm.type]);
 	nss_gre_redir_log_verbose(ngm);
 }
 
@@ -222,18 +222,18 @@ void nss_gre_redir_log_tx_msg(struct nss_gre_redir_msg *ngm)
 void nss_gre_redir_log_rx_msg(struct nss_gre_redir_msg *ngm)
 {
 	if (ngm->cm.response >= NSS_CMN_RESPONSE_LAST) {
-		nss_warning("%p: Invalid response\n", ngm);
+		nss_warning("%px: Invalid response\n", ngm);
 		return;
 	}
 
 	if (ngm->cm.response == NSS_CMN_RESPONSE_NOTIFY || (ngm->cm.response == NSS_CMN_RESPONSE_ACK)) {
-		nss_info("%p: type[%d]:%s, response[%d]:%s\n", ngm, ngm->cm.type,
+		nss_info("%px: type[%d]:%s, response[%d]:%s\n", ngm, ngm->cm.type,
 			nss_gre_redir_log_message_types_str[ngm->cm.type],
 			ngm->cm.response, nss_cmn_response_str[ngm->cm.response]);
 		goto verbose;
 	}
 
-	nss_info("%p: msg nack - type[%d]:%s, response[%d]:%s\n",
+	nss_info("%px: msg nack - type[%d]:%s, response[%d]:%s\n",
 		ngm, ngm->cm.type, nss_gre_redir_log_message_types_str[ngm->cm.type],
 		ngm->cm.response, nss_cmn_response_str[ngm->cm.response]);
 

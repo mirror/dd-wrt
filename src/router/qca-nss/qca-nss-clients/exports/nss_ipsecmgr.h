@@ -98,12 +98,14 @@ enum nss_ipsecmgr_algo {
 	NSS_IPSECMGR_ALGO_AES_GCM_GMAC_RFC4106,		/**< AES GCM/GMAC based on RFC4106 */
 	NSS_IPSECMGR_ALGO_AES_CBC_MD5_HMAC,		/**< AES_CBC_MD5_HMAC. */
 	NSS_IPSECMGR_ALGO_3DES_CBC_MD5_HMAC,		/**< 3DES_CBC_MD5_HMAC. */
+	NSS_IPSECMGR_ALGO_AES_CBC_SHA384_HMAC,		/**< AES CBC SHA384 HMAC. */
+	NSS_IPSECMGR_ALGO_AES_CBC_SHA512_HMAC,		/**< AES CBC SHA512 HMAC. */
 	NSS_IPSECMGR_ALGO_MAX
 };
 
 /**
  * nss_ipsecmgr_sa_type
- * 	Types of security associations in IPsec manager.
+ *	Types of security associations in IPsec manager.
  */
 enum nss_ipsecmgr_sa_type {
 	NSS_IPSECMGR_SA_TYPE_NONE = 0,
@@ -141,15 +143,17 @@ struct nss_ipsecmgr_crypto_index {
  * 	Common information necessary to configure an SA.
  */
 struct nss_ipsecmgr_sa_cmn {
-	enum nss_ipsecmgr_algo algo;	/**< Supported crypto algorithms */
+	enum nss_ipsecmgr_algo algo;		/**< Supported crypto algorithms */
 	struct nss_ipsecmgr_crypto_keys keys;	/**< Crypto keys */
 	struct nss_ipsecmgr_crypto_index index;	/**< Crypto index or offset */
 
-	uint8_t icv_len;	/**< Hash length. */
-	bool skip_trailer;	/**< Skip the ESP trailer for encapsulation. */
-	bool enable_esn;	/**< Enable the extended sequence number. */
-	bool enable_natt;	/**< NAT-T is required. */
-	bool crypto_has_keys;	/**< Crypto configured with keys. */
+	uint8_t icv_len;			/**< Hash length. */
+
+	bool skip_trailer;			/**< Skip the ESP trailer for encapsulation. */
+	bool enable_esn;			/**< Enable the extended sequence number. */
+	bool enable_natt;			/**< NAT-T is required. */
+	bool crypto_has_keys;			/**< Crypto configured with keys. */
+	bool transport_mode;			/**< True, if IPSec is in transport mode. */
 };
 
 /**
@@ -190,6 +194,8 @@ struct nss_ipsecmgr_sa_decap {
 /**
  * nss_ipsecmgr_sa_data
  *	Security association information for the IPsec manager.
+ *
+ * Note: Zero out structure before filling the fields.
  */
 struct nss_ipsecmgr_sa_data {
 	struct nss_ipsecmgr_sa_cmn cmn;		/**< Common configuration information for SA. */
@@ -204,6 +210,7 @@ struct nss_ipsecmgr_sa_data {
  *	SA information for the IPsec manager.
  *
  * Note: Protocol/Next Header defaults to ESP for outer.
+ *	 Zero out structure before filling the fields.
  */
 struct nss_ipsecmgr_sa_tuple {
 	uint32_t src_ip[4];	/**< IPv6 source IP. */
@@ -219,6 +226,8 @@ struct nss_ipsecmgr_sa_tuple {
 /**
  * nss_ipsecmgr_flow_tuple
  *	Flow information for the IPsec manager.
+ *
+ * Note: Zero out structure before filling the fields.
  */
 struct nss_ipsecmgr_flow_tuple {
 	uint32_t src_ip[4];		/**< Source IP. */
@@ -317,6 +326,7 @@ static inline bool nss_ipsecmgr_sa_cmn_init_keys(struct nss_ipsecmgr_sa_cmn *cmn
 	cmn->enable_natt = natt;
 
 	cmn->crypto_has_keys = true;
+	cmn->transport_mode = false;
 
 	return true;
 }
@@ -343,7 +353,7 @@ static inline bool nss_ipsecmgr_sa_cmn_init_keys(struct nss_ipsecmgr_sa_cmn *cmn
  */
 static inline bool nss_ipsecmgr_sa_cmn_init_idx(struct nss_ipsecmgr_sa_cmn *cmn, enum nss_ipsecmgr_algo algo,
 						uint16_t crypto_idx,  uint8_t blk_len, uint8_t iv_len,
-						uint8_t hash_len, bool secure_key, bool no_trailer, bool esn,
+						uint8_t hash_len, bool transport_mode, bool no_trailer, bool esn,
 						bool natt)
 {
 	if (algo >= NSS_IPSECMGR_ALGO_MAX)
@@ -360,6 +370,7 @@ static inline bool nss_ipsecmgr_sa_cmn_init_idx(struct nss_ipsecmgr_sa_cmn *cmn,
 	cmn->skip_trailer = no_trailer;
 
 	cmn->crypto_has_keys = false;
+	cmn->transport_mode = transport_mode;
 
 	return true;
 }
@@ -537,5 +548,79 @@ nss_ipsecmgr_status_t nss_ipsecmgr_flow_add_sync(struct net_device *tun, struct 
  */
 void nss_ipsecmgr_flow_del(struct net_device *tun, struct nss_ipsecmgr_flow_tuple *flow,
 			struct nss_ipsecmgr_sa_tuple *sa);
+
+/**
+ * nss_ipsecmgr_flow_get_sa
+ *	Finds SA associated with given Flow.
+ *
+ * @datatypes
+ * net_device \n
+ * nss_ipsecmgr_flow_tuple \n
+ * nss_ipsecmgr_sa_tuple
+ *
+ * @param[in] tun   Pointer to the network device associated with the tunnel.
+ * @param[in] flow  Pointer to the inner flow to look.
+ * @param[out] sa   Pointer to SA tuple to fill.
+ *
+ * @return
+ * nss_ipsecmgr_status.
+ */
+nss_ipsecmgr_status_t nss_ipsecmgr_flow_get_sa(struct net_device *tun, struct nss_ipsecmgr_flow_tuple *flow,
+					struct nss_ipsecmgr_sa_tuple *sa);
+
+/*
+ * nss_ipsecmgr_sa_verify()
+ * 	Check if SA is present.
+ *
+ * @datatypes
+ * net_device \n
+ * nss_ipsecmgr_sa_tuple
+ *
+ * @param[in] tun  Pointer to the network device associated with the tunnel.
+ * @param[in] sa   Pointer to SA tuple to use for tx.
+ *
+ * @return
+ * Returns true if the SA is present.
+ */
+bool nss_ipsecmgr_sa_verify(struct net_device *tun, struct nss_ipsecmgr_sa_tuple *sa);
+
+/*
+ * nss_ipsecmgr_sa_tx_inner()
+ * 	Offload given SKB to NSS for inner processing.
+ *
+ * @datatypes
+ * net_device \n
+ * nss_ipsecmgr_sa_tuple \n
+ * sk_buff
+ *
+ * @param[in] tun  Pointer to the network device associated with the tunnel.
+ * @param[in] sa   Pointer to SA tuple to use for tx.
+ * @param[in] skb  Pointer to SKB to be offload.
+ *
+ * @return
+ * Status of the transmit operation.
+ */
+nss_ipsecmgr_status_t nss_ipsecmgr_sa_tx_inner(struct net_device *tun, struct nss_ipsecmgr_sa_tuple *sa,
+                                        struct sk_buff *skb);
+
+/*
+ * nss_ipsecmgr_sa_tx_outer()
+ * 	Offload given SKB to NSS for outer processing.
+ *
+ * @datatypes
+ * net_device \n
+ * nss_ipsecmgr_sa_tuple \n
+ * sk_buff
+ *
+ * @param[in] tun  Pointer to the network device associated with the tunnel.
+ * @param[in] sa   Pointer to SA tuple to use for tx.
+ * @param[in] skb  Pointer to SKB to be offload.
+ *
+ * @return
+ * Status of the transmit operation.
+ */
+nss_ipsecmgr_status_t nss_ipsecmgr_sa_tx_outer(struct net_device *tun, struct nss_ipsecmgr_sa_tuple *sa,
+                                        struct sk_buff *skb);
+
 #endif /* __KERNEL__ */
 #endif /* __NSS_IPSECMGR_H */

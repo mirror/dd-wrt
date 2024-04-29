@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2018, 2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -63,12 +63,12 @@ static int8_t *nss_dtls_cmn_log_error_response_types_str[NSS_DTLS_CMN_ERROR_MAX]
 static void nss_dtls_cmn_hdr_config_msg(struct nss_dtls_cmn_msg *ndm)
 {
 	struct nss_dtls_cmn_ctx_config_hdr *ndchm __maybe_unused = &ndm->msg.hdr_cfg;
-	nss_trace("%p: NSS DTLS_CMN Header Configure Message:\n"
+	nss_trace("%px: NSS DTLS_CMN Header Configure Message:\n"
 		"DTLS_CMN flags: %x\n"
 		"DTLS_CMN destination interface number: %d\n"
 		"DTLS_CMN source interface number: %d\n"
-		"DTLS_CMN source ip: %p\n"
-		"DTLS_CMN destination ip: %p\n"
+		"DTLS_CMN source ip: %px\n"
+		"DTLS_CMN destination ip: %px\n"
 		"DTLS_CMN source port: %d\n"
 		"DTLS_CMN destination port: %d\n"
 		"DTLS_CMN time to live: %d\n"
@@ -90,7 +90,7 @@ static void nss_dtls_cmn_hdr_config_msg(struct nss_dtls_cmn_msg *ndm)
 static void nss_dtls_cmn_dtls_config_msg(struct nss_dtls_cmn_msg *ndm)
 {
 	struct nss_dtls_cmn_ctx_config_dtls *ndcdm __maybe_unused = &ndm->msg.dtls_cfg;
-	nss_trace("%p: NSS DTLS_CMN DTLS Configure Message:\n"
+	nss_trace("%px: NSS DTLS_CMN DTLS Configure Message:\n"
 		"DTLS_CMN version: %d\n"
 		"DTLS_CMN crypto Index: %d\n"
 		"DTLS_CMN window size: %d\n"
@@ -122,7 +122,7 @@ static void nss_dtls_cmn_log_verbose(struct nss_dtls_cmn_msg *ndm)
 		break;
 
 	default:
-		nss_warning("%p: Invalid message type\n", ndm);
+		nss_warning("%px: Invalid message type\n", ndm);
 		break;
 	}
 }
@@ -134,11 +134,11 @@ static void nss_dtls_cmn_log_verbose(struct nss_dtls_cmn_msg *ndm)
 void nss_dtls_cmn_log_tx_msg(struct nss_dtls_cmn_msg *ndm)
 {
 	if (ndm->cm.type >= NSS_DTLS_CMN_MSG_MAX) {
-		nss_warning("%p: Invalid message type\n", ndm);
+		nss_warning("%px: Invalid message type\n", ndm);
 		return;
 	}
 
-	nss_info("%p: type[%d]:%s\n", ndm, ndm->cm.type, nss_dtls_cmn_log_message_types_str[ndm->cm.type]);
+	nss_info("%px: type[%d]:%s\n", ndm, ndm->cm.type, nss_dtls_cmn_log_message_types_str[ndm->cm.type]);
 	nss_dtls_cmn_log_verbose(ndm);
 }
 
@@ -149,26 +149,26 @@ void nss_dtls_cmn_log_tx_msg(struct nss_dtls_cmn_msg *ndm)
 void nss_dtls_cmn_log_rx_msg(struct nss_dtls_cmn_msg *ndm)
 {
 	if (ndm->cm.response >= NSS_CMN_RESPONSE_LAST) {
-		nss_warning("%p: Invalid response\n", ndm);
+		nss_warning("%px: Invalid response\n", ndm);
 		return;
 	}
 
 	if (ndm->cm.response == NSS_CMN_RESPONSE_NOTIFY || (ndm->cm.response == NSS_CMN_RESPONSE_ACK)) {
-		nss_info("%p: type[%d]:%s, response[%d]:%s\n", ndm, ndm->cm.type,
+		nss_info("%px: type[%d]:%s, response[%d]:%s\n", ndm, ndm->cm.type,
 			nss_dtls_cmn_log_message_types_str[ndm->cm.type],
 			ndm->cm.response, nss_cmn_response_str[ndm->cm.response]);
 		goto verbose;
 	}
 
 	if (ndm->cm.error >= NSS_DTLS_CMN_ERROR_MAX) {
-		nss_warning("%p: msg failure - type[%d]:%s, response[%d]:%s, error[%d]:Invalid error\n",
+		nss_warning("%px: msg failure - type[%d]:%s, response[%d]:%s, error[%d]:Invalid error\n",
 			ndm, ndm->cm.type, nss_dtls_cmn_log_message_types_str[ndm->cm.type],
 			ndm->cm.response, nss_cmn_response_str[ndm->cm.response],
 			ndm->cm.error);
 		goto verbose;
 	}
 
-	nss_info("%p: msg nack - type[%d]:%s, response[%d]:%s, error[%d]:%s\n",
+	nss_info("%px: msg nack - type[%d]:%s, response[%d]:%s, error[%d]:%s\n",
 		ndm, ndm->cm.type, nss_dtls_cmn_log_message_types_str[ndm->cm.type],
 		ndm->cm.response, nss_cmn_response_str[ndm->cm.response],
 		ndm->cm.error, nss_dtls_cmn_log_error_response_types_str[ndm->cm.error]);

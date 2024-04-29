@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2014-2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2014-2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -21,6 +21,12 @@
 
 #ifndef __NSS_IPV4_H
 #define __NSS_IPV4_H
+
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
+#include "nss_stats_public.h"
+#endif
+
+#include "nss_fw_version.h"
 
 /**
  * @addtogroup nss_ipv4_subsystem
@@ -58,6 +64,57 @@ enum nss_ipv4_dscp_map_actions {
 	NSS_IPV4_DSCP_MAP_ACTION_ACCEL,
 	NSS_IPV4_DSCP_MAP_ACTION_DONT_ACCEL,
 	NSS_IPV4_DSCP_MAP_ACTION_MAX,
+};
+
+/**
+ * nss_ipv4_stats_types
+ *	IPv4 node statistics.
+ */
+enum nss_ipv4_stats_types {
+	NSS_IPV4_STATS_ACCELERATED_RX_PKTS = 0,
+		/**< Accelerated IPv4 Rx packets. */
+	NSS_IPV4_STATS_ACCELERATED_RX_BYTES,
+		/**< Accelerated IPv4 Rx bytes. */
+	NSS_IPV4_STATS_ACCELERATED_TX_PKTS,
+		/**< Accelerated IPv4 Tx packets. */
+	NSS_IPV4_STATS_ACCELERATED_TX_BYTES,
+		/**< Accelerated IPv4 Tx bytes. */
+	NSS_IPV4_STATS_CONNECTION_CREATE_REQUESTS,
+		/**< Number of IPv4 connection create requests. */
+	NSS_IPV4_STATS_CONNECTION_CREATE_COLLISIONS,
+		/**< Number of IPv4 connection create requests that collided with existing entries. */
+	NSS_IPV4_STATS_CONNECTION_CREATE_INVALID_INTERFACE,
+		/**< Number of IPv4 connection create requests that had invalid interface. */
+	NSS_IPV4_STATS_CONNECTION_DESTROY_REQUESTS,
+		/**< Number of IPv4 connection destroy requests. */
+	NSS_IPV4_STATS_CONNECTION_DESTROY_MISSES,
+		/**< Number of IPv4 connection destroy requests that missed the cache. */
+	NSS_IPV4_STATS_CONNECTION_HASH_HITS,
+		/**< Number of IPv4 connection hash hits. */
+	NSS_IPV4_STATS_CONNECTION_HASH_REORDERS,
+		/**< Number of IPv4 connection hash reorders. */
+	NSS_IPV4_STATS_CONNECTION_FLUSHES,
+		/**< Number of IPv4 connection flushes. */
+	NSS_IPV4_STATS_CONNECTION_EVICTIONS,
+		/**< Number of IPv4 connection evictions. */
+	NSS_IPV4_STATS_FRAGMENTATIONS,
+		/**< Number of successful IPv4 fragmentations performed. */
+	NSS_IPV4_STATS_DROPPED_BY_RULE,
+		/**< Number of IPv4 packets dropped because of a drop rule.*/
+	NSS_IPV4_STATS_MC_CONNECTION_CREATE_REQUESTS,
+		/**< Number of successful IPv4 multicast create requests. */
+	NSS_IPV4_STATS_MC_CONNECTION_UPDATE_REQUESTS,
+		/**< Number of successful IPv4 multicast update requests. */
+	NSS_IPV4_STATS_MC_CONNECTION_CREATE_INVALID_INTERFACE,
+		/**< Number of IPv4 multicast connection create requests that had invalid interface. */
+	NSS_IPV4_STATS_MC_CONNECTION_DESTROY_REQUESTS,
+		/**< Number of IPv4 multicast connection destroy requests. */
+	NSS_IPV4_STATS_MC_CONNECTION_DESTROY_MISSES,
+		/**< Number of IPv4 multicast connection destroy requests that missed the cache. */
+	NSS_IPV4_STATS_MC_CONNECTION_FLUSHES,
+		/**< Number of IPv4 multicast connection flushes. */
+	NSS_IPV4_STATS_MAX,
+		/**< Maximum message type. */
 };
 
 /*
@@ -115,6 +172,8 @@ enum nss_ipv4_dscp_map_actions {
 		/**< RPS for core selection is valid. */
 #define NSS_IPV4_RULE_CREATE_DEST_MAC_VALID 0x400
 		/**< Destination MAC address fields are valid. */
+#define NSS_IPV4_RULE_CREATE_IGS_VALID 0x800
+		/**< Ingress shaping fields are valid. */
 
 /*
  * Multicast command rule flags
@@ -132,6 +191,8 @@ enum nss_ipv4_dscp_map_actions {
 		/**< Ingress VLAN fields are valid. */
 #define NSS_IPV4_MC_RULE_CREATE_FLAG_INGRESS_PPPOE 0x08
 		/**< Ingress PPPoE fields are valid. */
+#define NSS_IPV4_MC_RULE_CREATE_FLAG_IGS_VALID 0x10
+		/**< Ingress shaping fields are valid. */
 
 /*
  * Per-interface rule flags for a multicast connection (to be used with the rule_flags
@@ -281,6 +342,17 @@ struct nss_ipv4_protocol_tcp_rule {
 };
 
 /**
+ * nss_ipv4_igs_rule
+ *	Information for ingress shaping connection rules.
+ */
+struct nss_ipv4_igs_rule {
+	uint16_t igs_flow_qos_tag;
+			/**< Ingress shaping QoS tag associated with this rule for the flow direction. */
+	uint16_t igs_return_qos_tag;
+			/**< Ingress shaping QoS tag associated with this rule for the return direction. */
+};
+
+/**
  * nss_ipv4_qos_rule
  *	Information for QoS connection rules.
  */
@@ -332,8 +404,13 @@ enum nss_ipv4_error_response_types {
 	NSS_IPV4_CR_MULTICAST_UPDATE_INVALID_FLAGS,
 	NSS_IPV4_CR_MULTICAST_UPDATE_INVALID_IF,
 	NSS_IPV4_CR_ACCEL_MODE_CONFIG_INVALID,
+	NSS_IPV4_CR_INVALID_MSG_ERROR,
+	NSS_IPV4_CR_DSCP2PRI_PRI_INVALID,
+	NSS_IPV4_CR_DSCP2PRI_CONFIG_INVALID,
 	NSS_IPV4_CR_INVALID_RPS,
 	NSS_IPV4_CR_HASH_BITMAP_INVALID,
+	NSS_IPV4_DR_HW_DECEL_FAIL_ERROR,
+	NSS_IPV4_CR_RETURN_EXIST_ERROR,
 	NSS_IPV4_LAST
 };
 
@@ -371,6 +448,8 @@ struct nss_ipv4_rule_create_msg {
 			/**< Parameters related to the next hop. */
 	struct nss_ipv4_rps_rule rps_rule;
 			/**< RPS parameter. */
+	struct nss_ipv4_igs_rule igs_rule;
+			/**< Ingress shaping related accleration parameters. */
 };
 
 /**
@@ -420,7 +499,8 @@ struct nss_ipv4_mc_rule_create_msg {
 	uint16_t dest_mac[3];			/**< Destination multicast MAC address. */
 	uint16_t if_count;			/**< Number of destination interfaces. */
 	uint8_t egress_dscp;			/**< Egress DSCP value for the flow. */
-	uint8_t reserved[3];			/**< Reserved 3 bytes for alignment. */
+	uint8_t reserved[1];			/**< Reserved 1 byte for alignment. */
+	uint16_t igs_qos_tag;			/**< Ingress shaping QoS tag for the rule. */
 
 	struct nss_ipv4_mc_if_rule if_rule[NSS_MC_IF_MAX];
 						/**< Per-interface information. */
@@ -654,6 +734,12 @@ enum nss_ipv4_exception_events {
 	NSS_IPV4_EXCEPTION_EVENT_MC_MEM_ALLOC_FAILURE,
 	NSS_IPV4_EXCEPTION_EVENT_MC_UPDATE_FAILURE,
 	NSS_IPV4_EXCEPTION_EVENT_MC_PBUF_ALLOC_FAILURE,
+	NSS_IPV4_EXCEPTION_EVENT_PPPOE_BRIDGE_NO_ICME,
+	NSS_IPV4_EXCEPTION_EVENT_PPPOE_NO_SESSION,
+#if (NSS_FW_VERSION_CODE > NSS_FW_VERSION(11,0))
+	NSS_IPV4_EXCEPTION_EVENT_ICMP_IPV4_GRE_HEADER_INCOMPLETE,
+	NSS_IPV4_EXCEPTION_EVENT_ICMP_IPV4_ESP_HEADER_INCOMPLETE,
+#endif
 	NSS_IPV4_EXCEPTION_EVENT_MAX
 };
 
@@ -748,6 +834,17 @@ struct nss_ipv4_msg {
 		struct nss_ipv4_rps_hash_bitmap_cfg_msg rps_hash_bitmap;
 				/**< Configure rps_hash_bitmap. */
 	} msg;			/**< Message payload. */
+};
+
+/**
+ * nss_ipv4_stats_notification
+ *	Data for sending IPv4 statistics.
+ */
+struct nss_ipv4_stats_notification {
+	uint32_t core_id;					/**< Core ID. */
+	uint64_t cmn_node_stats[NSS_STATS_NODE_MAX];		/**< Node statistics. */
+	uint64_t special_stats[NSS_IPV4_STATS_MAX];		/**< IPv4 special statistics. */
+	uint64_t exception_stats[NSS_IPV4_EXCEPTION_EVENT_MAX];	/**< IPv4 exception statistics. */
 };
 
 /**
@@ -1005,6 +1102,34 @@ void nss_ipv4_log_tx_msg(struct nss_ipv4_msg *nim);
  * None.
  */
 void nss_ipv4_log_rx_msg(struct nss_ipv4_msg *nim);
+
+/**
+ * nss_ipv4_stats_register_notifier
+ *	Registers a statistics notifier.
+ *
+ * @datatypes
+ * notifier_block
+ *
+ * @param[in] nb Notifier block.
+ *
+ * @return
+ * 0 on success or -2 on failure.
+ */
+extern int nss_ipv4_stats_register_notifier(struct notifier_block *nb);
+
+/**
+ * nss_ipv4_stats_unregister_notifier
+ *	Deregisters a statistics notifier.
+ *
+ * @datatypes
+ * notifier_block
+ *
+ * @param[in] nb Notifier block.
+ *
+ * @return
+ * 0 on success or -2 on failure.
+ */
+extern int nss_ipv4_stats_unregister_notifier(struct notifier_block *nb);
 
 #endif /*__KERNEL__ */
 

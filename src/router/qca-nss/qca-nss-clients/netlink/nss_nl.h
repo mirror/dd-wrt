@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2015,2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2015,2018, 2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -25,6 +25,7 @@
 #define NSS_NL_DEBUG_LVL_WARN 2
 #define NSS_NL_DEBUG_LVL_INFO 3
 #define NSS_NL_DEBUG_LVL_TRACE 4
+#define GENL_ID_GENERATE 0
 
 
 #if defined(CONFIG_DYNAMIC_DEBUG)
@@ -35,7 +36,8 @@
 #define nss_nl_warn(s, ...) pr_debug("%s[%d]:" s, __func__, __LINE__, ##__VA_ARGS__)
 #define nss_nl_info(s, ...) pr_debug("%s[%d]:" s, __func__, __LINE__, ##__VA_ARGS__)
 #define nss_nl_trace(s, ...) pr_debug("%s[%d]:" s, __func__, __LINE__, ##__VA_ARGS__)
-
+#define nss_nl_hex_dump_bytes(prefix_str, prefix_type, buf, len)	\
+	dynamic_hex_dump(prefix_str, prefix_type, 16, 1, buf, len, true)
 #else
 /*
  * Statically compile messages at different levels
@@ -53,6 +55,11 @@
 #define nss_nl_info(s, ...) {	\
 	if (NSS_NL_DEBUG_LEVEL > NSS_NL_DEBUG_LVL_INFO) {	\
 		pr_notice("%s[%d]:" s, __func__, __LINE__, ##__VA_ARGS__);	\
+	}	\
+}
+#define nss_nl_hex_dump_bytes(prefix_str, prefix_type, buf, len) {	\
+	if (NSS_NL_DEBUG_LEVEL > NSS_NL_DEBUG_LVL_INFO) {	\
+		print_hex_dump_bytes(prefix_str, prefix_type, buf, len);	\
 	}	\
 }
 #define nss_nl_trace(s, ...) {	\

@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2016-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2016-2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -102,7 +102,8 @@ enum nss_hal_n2h_intr_purpose {
 	NSS_HAL_N2H_INTR_PURPOSE_DATA_QUEUE_3 = 6,
 	NSS_HAL_N2H_INTR_PURPOSE_COREDUMP_COMPLETE = 7,
 	NSS_HAL_N2H_INTR_PURPOSE_PAGED_EMPTY_BUFFER_SOS = 8,
-	NSS_HAL_N2H_INTR_PURPOSE_MAX = 9,
+	NSS_HAL_N2H_INTR_PURPOSE_PROFILE_DMA = 9,
+	NSS_HAL_N2H_INTR_PURPOSE_MAX
 };
 
 /*
@@ -212,17 +213,17 @@ static struct nss_platform_data *__nss_hal_of_get_pdata(struct platform_device *
 	nss_ctx->id = npd->id;
 
 	if (of_address_to_resource(np, 0, &res_nphys) != 0) {
-		nss_info_always("%p: nss%d: of_address_to_resource() fail for nphys\n", nss_ctx, nss_ctx->id);
+		nss_info_always("%px: nss%d: of_address_to_resource() fail for nphys\n", nss_ctx, nss_ctx->id);
 		goto out;
 	}
 
 	if (of_address_to_resource(np, 1, &res_vphys) != 0) {
-		nss_info_always("%p: nss%d: of_address_to_resource() fail for vphys\n", nss_ctx, nss_ctx->id);
+		nss_info_always("%px: nss%d: of_address_to_resource() fail for vphys\n", nss_ctx, nss_ctx->id);
 		goto out;
 	}
 
 	if (of_address_to_resource(np, 2, &res_qgic_phys) != 0) {
-		nss_info_always("%p: nss%d: of_address_to_resource() fail for qgic_phys\n", nss_ctx, nss_ctx->id);
+		nss_info_always("%px: nss%d: of_address_to_resource() fail for qgic_phys\n", nss_ctx, nss_ctx->id);
 		goto out;
 	}
 
@@ -235,19 +236,19 @@ static struct nss_platform_data *__nss_hal_of_get_pdata(struct platform_device *
 
 	npd->nmap = ioremap(npd->nphys, resource_size(&res_nphys));
 	if (!npd->nmap) {
-		nss_info_always("%p: nss%d: ioremap() fail for nphys\n", nss_ctx, nss_ctx->id);
+		nss_info_always("%px: nss%d: ioremap() fail for nphys\n", nss_ctx, nss_ctx->id);
 		goto out;
 	}
 
 	npd->vmap = ioremap_cache(npd->vphys, resource_size(&res_vphys));
 	if (!npd->vmap) {
-		nss_info_always("%p: nss%d: ioremap() fail for vphys\n", nss_ctx, nss_ctx->id);
+		nss_info_always("%px: nss%d: ioremap() fail for vphys\n", nss_ctx, nss_ctx->id);
 		goto out;
 	}
 
 	npd->qgic_map = ioremap(npd->qgic_phys, resource_size(&res_qgic_phys));
 	if (!npd->qgic_map) {
-		nss_info_always("%p: nss%d: ioremap() fail for qgic map\n", nss_ctx, nss_ctx->id);
+		nss_info_always("%px: nss%d: ioremap() fail for qgic map\n", nss_ctx, nss_ctx->id);
 		goto out;
 	}
 
@@ -266,7 +267,7 @@ static struct nss_platform_data *__nss_hal_of_get_pdata(struct platform_device *
 	for (i = 0 ; i < npd->num_irq; i++) {
 		npd->irq[i] = irq_of_parse_and_map(np, i);
 		if (!npd->irq[i]) {
-			nss_info_always("%p: nss%d: irq_of_parse_and_map() fail for irq %d\n", nss_ctx, nss_ctx->id, i);
+			nss_info_always("%px: nss%d: irq_of_parse_and_map() fail for irq %d\n", nss_ctx, nss_ctx->id, i);
 			goto out;
 		}
 	}
@@ -330,8 +331,10 @@ static int __nss_hal_core_reset(struct platform_device *nss_dev, void __iomem *m
 
 	/*
 	 * C2C interrupts are level sensitive
+	 * Copy engine interrupts are level sensitive
 	 */
 	nss_write_32(map, NSS_REGS_CORE_INT_STAT2_TYPE_OFFSET, 0xFFFF);
+	nss_write_32(map, NSS_REGS_CORE_INT_STAT3_TYPE_OFFSET, 0xFF);
 
 	/*
 	 * Enable Instruction Fetch range checking between 0x4000 0000 to 0xBFFF FFFF.
@@ -365,21 +368,21 @@ static int nss_hal_clock_set_and_enable(struct device *dev, const char *id, unsi
 
 	nss_clk = devm_clk_get(dev, id);
 	if (IS_ERR(nss_clk)) {
-		pr_err("%p: cannot get clock: %s\n", dev, id);
+		pr_err("%px: cannot get clock: %s\n", dev, id);
 		return -EFAULT;
 	}
 
 	if (rate) {
 		err = clk_set_rate(nss_clk, rate);
 		if (err) {
-			pr_err("%p: cannot set %s freq\n", dev, id);
+			pr_err("%px: cannot set %s freq\n", dev, id);
 			return -EFAULT;
 		}
 	}
 
 	err = clk_prepare_enable(nss_clk);
 	if (err) {
-		pr_err("%p: cannot enable clock: %s\n", dev, id);
+		pr_err("%px: cannot enable clock: %s\n", dev, id);
 		return -EFAULT;
 	}
 
@@ -452,12 +455,12 @@ static int __nss_hal_common_reset(struct platform_device *nss_dev)
 	 */
 	cmn = of_find_node_by_name(NULL, "nss-common");
 	if (!cmn) {
-		pr_err("%p: Unable to find nss-common node\n", nss_dev);
+		pr_err("%px: Unable to find nss-common node\n", nss_dev);
 		return -EFAULT;
 	}
 
 	if (of_address_to_resource(cmn, 0, &res_nss_misc_reset) != 0) {
-		pr_err("%p: of_address_to_resource() return error for nss_misc_reset\n", nss_dev);
+		pr_err("%px: of_address_to_resource() return error for nss_misc_reset\n", nss_dev);
 		of_node_put(cmn);
 		return -EFAULT;
 	}
@@ -465,7 +468,7 @@ static int __nss_hal_common_reset(struct platform_device *nss_dev)
 
 	nss_misc_reset = ioremap(res_nss_misc_reset.start, resource_size(&res_nss_misc_reset));
 	if (!nss_misc_reset) {
-		pr_err("%p: ioremap fail for nss_misc_reset\n", nss_dev);
+		pr_err("%px: ioremap fail for nss_misc_reset\n", nss_dev);
 		return -EFAULT;
 	}
 
@@ -500,7 +503,6 @@ static int __nss_hal_clock_configure(struct nss_ctx_instance *nss_ctx, struct pl
 	if (nss_hal_clock_set_and_enable(&nss_dev->dev, NSS_NC_AXI_CLK, 461500000)) {
 		return -EFAULT;
 	}
-
 
 	/*
 	 * For IPQ807x, any rate above 1497 is Turbo Voltage
@@ -654,57 +656,63 @@ static int __nss_hal_request_irq(struct nss_ctx_instance *nss_ctx, struct nss_pl
 	irq_set_status_flags(irq, IRQ_DISABLE_UNLAZY);
 
 	if (irq_num == NSS_HAL_N2H_INTR_PURPOSE_EMPTY_BUFFER_SOS) {
-		netif_napi_add_weight(&nss_ctx->napi_ndev, &int_ctx->napi, nss_core_handle_napi_non_queue, NSS_EMPTY_BUFFER_SOS_PROCESSING_WEIGHT);
+		netif_napi_add(&nss_ctx->napi_ndev, &int_ctx->napi, nss_core_handle_napi_non_queue, NSS_EMPTY_BUFFER_SOS_PROCESSING_WEIGHT);
 		int_ctx->cause = NSS_N2H_INTR_EMPTY_BUFFERS_SOS;
 		err = request_irq(irq, nss_hal_handle_irq, 0, "nss_empty_buf_sos", int_ctx);
 	}
 
 	if (irq_num == NSS_HAL_N2H_INTR_PURPOSE_EMPTY_BUFFER_QUEUE) {
-		netif_napi_add_weight(&nss_ctx->napi_ndev, &int_ctx->napi, nss_core_handle_napi_queue, NSS_EMPTY_BUFFER_RETURN_PROCESSING_WEIGHT);
+		netif_napi_add(&nss_ctx->napi_ndev, &int_ctx->napi, nss_core_handle_napi_queue, NSS_EMPTY_BUFFER_RETURN_PROCESSING_WEIGHT);
 		int_ctx->cause = NSS_N2H_INTR_EMPTY_BUFFER_QUEUE;
 		err = request_irq(irq, nss_hal_handle_irq, 0, "nss_empty_buf_queue", int_ctx);
 	}
 
 	if (irq_num == NSS_HAL_N2H_INTR_PURPOSE_TX_UNBLOCKED) {
-		netif_napi_add_weight(&nss_ctx->napi_ndev, &int_ctx->napi, nss_core_handle_napi_non_queue, NSS_TX_UNBLOCKED_PROCESSING_WEIGHT);
+		netif_napi_add(&nss_ctx->napi_ndev, &int_ctx->napi, nss_core_handle_napi_non_queue, NSS_TX_UNBLOCKED_PROCESSING_WEIGHT);
 		int_ctx->cause = NSS_N2H_INTR_TX_UNBLOCKED;
 		err = request_irq(irq, nss_hal_handle_irq, 0, "nss-tx-unblock", int_ctx);
 	}
 
 	if (irq_num == NSS_HAL_N2H_INTR_PURPOSE_DATA_QUEUE_0) {
-		netif_napi_add_weight(&nss_ctx->napi_ndev, &int_ctx->napi, nss_core_handle_napi_queue, NSS_DATA_COMMAND_BUFFER_PROCESSING_WEIGHT);
+		netif_napi_add(&nss_ctx->napi_ndev, &int_ctx->napi, nss_core_handle_napi_queue, NSS_DATA_COMMAND_BUFFER_PROCESSING_WEIGHT);
 		int_ctx->cause = NSS_N2H_INTR_DATA_QUEUE_0;
 		err = request_irq(irq, nss_hal_handle_irq, 0, "nss_queue0", int_ctx);
 	}
 
 	if (irq_num == NSS_HAL_N2H_INTR_PURPOSE_DATA_QUEUE_1) {
 		int_ctx->cause = NSS_N2H_INTR_DATA_QUEUE_1;
-		netif_napi_add_weight(&nss_ctx->napi_ndev, &int_ctx->napi, nss_core_handle_napi_queue, NSS_DATA_COMMAND_BUFFER_PROCESSING_WEIGHT);
+		netif_napi_add(&nss_ctx->napi_ndev, &int_ctx->napi, nss_core_handle_napi_queue, NSS_DATA_COMMAND_BUFFER_PROCESSING_WEIGHT);
 		err = request_irq(irq, nss_hal_handle_irq, 0, "nss_queue1", int_ctx);
 	}
 
 	if (irq_num == NSS_HAL_N2H_INTR_PURPOSE_DATA_QUEUE_2) {
 		int_ctx->cause = NSS_N2H_INTR_DATA_QUEUE_2;
-		netif_napi_add_weight(&nss_ctx->napi_ndev, &int_ctx->napi, nss_core_handle_napi_queue, NSS_DATA_COMMAND_BUFFER_PROCESSING_WEIGHT);
+		netif_napi_add(&nss_ctx->napi_ndev, &int_ctx->napi, nss_core_handle_napi_queue, NSS_DATA_COMMAND_BUFFER_PROCESSING_WEIGHT);
 		err = request_irq(irq, nss_hal_handle_irq, 0, "nss_queue2", int_ctx);
 	}
 
 	if (irq_num == NSS_HAL_N2H_INTR_PURPOSE_DATA_QUEUE_3) {
 		int_ctx->cause = NSS_N2H_INTR_DATA_QUEUE_3;
-		netif_napi_add_weight(&nss_ctx->napi_ndev, &int_ctx->napi, nss_core_handle_napi_queue, NSS_DATA_COMMAND_BUFFER_PROCESSING_WEIGHT);
+		netif_napi_add(&nss_ctx->napi_ndev, &int_ctx->napi, nss_core_handle_napi_queue, NSS_DATA_COMMAND_BUFFER_PROCESSING_WEIGHT);
 		err = request_irq(irq, nss_hal_handle_irq, 0, "nss_queue3", int_ctx);
 	}
 
 	if (irq_num == NSS_HAL_N2H_INTR_PURPOSE_COREDUMP_COMPLETE) {
 		int_ctx->cause = NSS_N2H_INTR_COREDUMP_COMPLETE;
-		netif_napi_add_weight(&nss_ctx->napi_ndev, &int_ctx->napi, nss_core_handle_napi_emergency, NSS_DATA_COMMAND_BUFFER_PROCESSING_WEIGHT);
+		netif_napi_add(&nss_ctx->napi_ndev, &int_ctx->napi, nss_core_handle_napi_emergency, NSS_DATA_COMMAND_BUFFER_PROCESSING_WEIGHT);
 		err = request_irq(irq, nss_hal_handle_irq, 0, "nss_coredump_complete", int_ctx);
 	}
 
 	if (irq_num == NSS_HAL_N2H_INTR_PURPOSE_PAGED_EMPTY_BUFFER_SOS) {
-		netif_napi_add_weight(&nss_ctx->napi_ndev, &int_ctx->napi, nss_core_handle_napi_non_queue, NSS_EMPTY_BUFFER_SOS_PROCESSING_WEIGHT);
+		netif_napi_add(&nss_ctx->napi_ndev, &int_ctx->napi, nss_core_handle_napi_non_queue, NSS_EMPTY_BUFFER_SOS_PROCESSING_WEIGHT);
 		int_ctx->cause = NSS_N2H_INTR_PAGED_EMPTY_BUFFERS_SOS;
 		err = request_irq(irq, nss_hal_handle_irq, 0, "nss_paged_empty_buf_sos", int_ctx);
+	}
+
+	if (irq_num == NSS_HAL_N2H_INTR_PURPOSE_PROFILE_DMA) {
+		int_ctx->cause = NSS_N2H_INTR_PROFILE_DMA;
+		netif_napi_add(&nss_ctx->napi_ndev, &int_ctx->napi, nss_core_handle_napi_sdma, NSS_DATA_COMMAND_BUFFER_PROCESSING_WEIGHT);
+		err = request_irq(irq, nss_hal_handle_irq, 0, "nss_profile_dma", int_ctx);
 	}
 
 	if (err) {
@@ -726,7 +734,7 @@ void __nss_hal_init_imem(struct nss_ctx_instance *nss_ctx)
 	mem_ctx->imem_end = mem_ctx->imem_head + NSS_IMEM_SIZE;
 	mem_ctx->imem_tail = mem_ctx->imem_head;
 
-	nss_info("%p: IMEM init: head: 0x%x end: 0x%x tail: 0x%x\n", nss_ctx,
+	nss_info("%px: IMEM init: head: 0x%x end: 0x%x tail: 0x%x\n", nss_ctx,
 			mem_ctx->imem_head, mem_ctx->imem_end, mem_ctx->imem_tail);
 }
 

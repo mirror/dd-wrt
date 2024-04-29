@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2014-2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2014-2021, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -68,6 +68,8 @@
 #ifdef ECM_IPV6_ENABLE
 #include "ecm_front_end_ipv6.h"
 #endif
+#include "ecm_notifier_pvt.h"
+#include "ecm_interface.h"
 
 /*
  * Locking of the database - concurrency control
@@ -99,6 +101,11 @@ char *ecm_db_obj_dir_strings[ECM_DB_OBJ_DIR_MAX] = {
         "FROM_NAT",
         "TO_NAT"
 };
+
+/*
+ * Global listener instance for DB events.
+ */
+static struct ecm_db_listener_instance *ecm_db_li;
 
 /*
  * ecm_db_adv_stats_state_write()
@@ -198,41 +205,219 @@ static struct file_operations ecm_db_defunct_all_fops = {
 };
 
 /*
- * ecm_db_route_table_update_event()
- *	This is a call back for "routing table update event for IPv4 and IPv6".
+ * ecm_db_ipv4_route_table_update_event()
+ *	This is a call back for "routing table update event for IPv4".
  */
-static int ecm_db_route_table_update_event(struct notifier_block *nb,
+static int ecm_db_ipv4_route_table_update_event(struct notifier_block *nb,
 					       unsigned long event,
 					       void *ptr)
 {
-	DEBUG_TRACE("route table update event\n");
+	DEBUG_TRACE("route table update event v4\n");
 
 	/*
-	 * Disable frontend processing until defunct function call is completed.
+	 * Disable IPv4 frontend processing until defunct function call is completed.
 	 */
 	ecm_front_end_ipv4_stop(1);
-#ifdef ECM_IPV6_ENABLE
-	ecm_front_end_ipv6_stop(1);
-#endif
-	ecm_db_connection_defunct_all();
+
+	ecm_db_connection_defunct_ip_version(4);
 
 	/*
-	 * Re-enable frontend processing.
+	 * Re-enable IPv4 frontend processing.
 	 */
 	ecm_front_end_ipv4_stop(0);
+
+	return NOTIFY_DONE;
+}
+
+static struct notifier_block ecm_db_iproute_table_update_nb = {
+	.notifier_call = ecm_db_ipv4_route_table_update_event,
+};
+
 #ifdef ECM_IPV6_ENABLE
+/*
+ * ecm_db_ipv6_route_table_update_event()
+ *	This is a call back for "routing table update event for IPv6".
+ */
+static int ecm_db_ipv6_route_table_update_event(struct notifier_block *nb,
+					       unsigned long event,
+					       void *ptr)
+{
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 16, 0))
+	struct fib6_config *cfg = (struct fib6_config *)ptr;
+	struct ecm_db_connection_instance *ci;
+#endif
+	DEBUG_TRACE("route table update event v6\n");
+
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 16, 0))
+	if ((event != RTM_DELROUTE) && (event != RTM_NEWROUTE)) {
+		DEBUG_WARN("%px: Unhandled route table event: %lu\n", cfg, event);
+		return NOTIFY_DONE;
+	}
+
+	/*
+	 * If a default route is changed, fc_dst address is set to all zeros.
+	 * In this case, we should defunct all the IPv6 flows.
+	 */
+	if (ipv6_addr_any(&cfg->fc_dst)) {
+		DEBUG_TRACE("%px fc_dst (%pI6), default route is changed, defunct all IPv6 connections\n",
+			    cfg, &cfg->fc_dst);
+		ecm_db_connection_defunct_ip_version(6);
+		return NOTIFY_DONE;
+	}
+#endif
+	/*
+	 * Disable IPv6 frontend processing until defunct function call is completed.
+	 */
+	ecm_front_end_ipv6_stop(1);
+
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 16, 0))
+	/*
+	 * Iterate all connections
+	 */
+	ci = ecm_db_connections_get_and_ref_first();
+	while (ci) {
+		struct ecm_db_connection_instance *cin;
+		struct in6_addr prefix_addr;
+		struct in6_addr ecm_in6;
+		ip_addr_t ecm_addr;
+		struct ecm_db_iface_instance *interfaces[ECM_DB_IFACE_HEIRARCHY_MAX];
+		int32_t if_first;
+		struct net_device *ecm_dev;
+		struct net_device *fc_dev;
+		bool is_dest_ip_match = true;
+		ecm_db_obj_dir_t obj_dir = ECM_DB_OBJ_DIR_TO;
+
+		if (ci->ip_version != 6) {
+			goto next;
+		}
+
+		/*
+		 * Get the ECM connection's destination IPv6 address.
+		 */
+		ecm_db_connection_address_get(ci, ECM_DB_OBJ_DIR_TO, ecm_addr);
+		ECM_IP_ADDR_TO_NIN6_ADDR(ecm_in6, ecm_addr);
+
+		/*
+		 * Compute ECM connection's prefix destination address by masking it with the
+		 * route config's destination address prefix length.
+		 */
+		ipv6_addr_prefix(&prefix_addr, &ecm_in6, min(128, cfg->fc_dst_len));
+
+		DEBUG_TRACE("dest addr prefix: %pI6 prefix_len: %d ecm_in6: %pI6\n", &prefix_addr, cfg->fc_dst_len, &ecm_in6);
+
+		/*
+		 * Compare the ECM connection's destination address prefix with the route config's
+		 * destination address. If they are not equal, try with the ECM's source address prefix.
+		 * Because ECM can create the connection in the reply direction, and in this case, ECM
+		 * connection's source prefix IP address will match with the route config's dst IP address.
+		 *
+		 * If none of them match with the route config's destination address, this means that
+		 * this connection is not related to this route change event.
+		 * We should check with the next connection.
+		 */
+		if (ipv6_addr_cmp(&prefix_addr, &cfg->fc_dst)) {
+			DEBUG_TRACE("dest addr prefix: %pI6 not equal to cfg->fc_dst: %pI6, go to next connection\n", &prefix_addr, &cfg->fc_dst);
+
+			/*
+			 * ECM's destination address didn't match.
+			 * Get the ECM connection's source IPv6 address.
+			 */
+			ecm_db_connection_address_get(ci, ECM_DB_OBJ_DIR_FROM, ecm_addr);
+			ECM_IP_ADDR_TO_NIN6_ADDR(ecm_in6, ecm_addr);
+
+			/*
+			 * Compute ECM connection's prefix source address by masking it with the
+			 * route config's destination address prefix length.
+			 */
+			ipv6_addr_prefix(&prefix_addr, &ecm_in6, min(128, cfg->fc_dst_len));
+
+			DEBUG_TRACE("src addr prefix: %pI6 prefix_len: %d ecm_in6: %pI6\n", &prefix_addr, cfg->fc_dst_len, &ecm_in6);
+
+			if (ipv6_addr_cmp(&prefix_addr, &cfg->fc_dst)) {
+				DEBUG_TRACE("src addr prefix: %pI6 not equal to cfg->fc_dst: %pI6, go to next connection\n", &prefix_addr, &cfg->fc_dst);
+				goto next;
+			}
+
+			is_dest_ip_match = false;
+			obj_dir = ECM_DB_OBJ_DIR_FROM;
+		}
+
+		DEBUG_TRACE("%px: ECM connection's %s address prefix: %pI6 equals to cfg->fc_dst: %pI6\n",
+			    ci, is_dest_ip_match?"dest":"src", &prefix_addr, &cfg->fc_dst);
+
+		/*
+		 * If the event is a route delete event, comparing only the IP address is enough
+		 * to defunct the connection.
+		 */
+		if (event == RTM_DELROUTE) {
+			DEBUG_TRACE("%px: Route DELETE event, defunct the connection\n", ci);
+			ecm_db_connection_make_defunct(ci);
+			goto next;
+		}
+
+		DEBUG_TRACE("%px: Route ADD event\n", ci);
+
+		/*
+		 * If there is a route for this connection's source or destination IP address, we should
+		 * compare the devices as well, because the IP address could remain the same, but
+		 * the output device could be changed. So, the flows should take the new out device
+		 * for their route.
+		 */
+		if_first = ecm_db_connection_interfaces_get_and_ref(ci, interfaces, obj_dir);
+		if (if_first == ECM_DB_IFACE_HEIRARCHY_MAX) {
+			DEBUG_WARN("%px: Failed to get %s interfaces list\n",
+					ci, ecm_db_obj_dir_strings[obj_dir]);
+			goto next;
+		}
+
+		/*
+		 * Inner most interface has the IP address, so we should get that interface.
+		 */
+		ecm_dev = dev_get_by_index(&init_net,
+				  ecm_db_iface_interface_identifier_get(interfaces[ECM_DB_IFACE_HEIRARCHY_MAX - 1]));
+		if (!ecm_dev) {
+			DEBUG_WARN("%px: unable to find ecm netdevice\n", ci);
+			ecm_db_connection_interfaces_deref(interfaces, if_first);
+			goto next;
+		}
+		ecm_db_connection_interfaces_deref(interfaces, if_first);
+
+		fc_dev = dev_get_by_index(&init_net, cfg->fc_ifindex);
+		if (!fc_dev) {
+			DEBUG_WARN("%px: unable to find fib6_config netdevice\n", ci);
+			dev_put(ecm_dev);
+			goto next;
+		}
+
+		/*
+		 * Compare the ECM connection's netdevice with the route change config's netdevice.
+		 * If they are different, this means the new route effected the connection. So, defunct it.
+		 */
+		if (ecm_dev != fc_dev) {
+			DEBUG_TRACE("%px: fib6_config dev: %s is different from ecm dev: %s, defunct the connection\n",
+				    ci, fc_dev->name, ecm_dev->name);
+			ecm_db_connection_make_defunct(ci);
+		}
+		dev_put(fc_dev);
+		dev_put(ecm_dev);
+next:
+		cin = ecm_db_connection_get_and_ref_next(ci);
+		ecm_db_connection_deref(ci);
+		ci = cin;
+	}
+#else
+	/*
+	 * Re-enable IPv6 frontend processing.
+	 */
 	ecm_front_end_ipv6_stop(0);
 #endif
 	return NOTIFY_DONE;
 }
 
-static struct notifier_block ecm_db_iproute_table_update_nb = {
-	.notifier_call = ecm_db_route_table_update_event,
-};
-
 static struct notifier_block ecm_db_ip6route_table_update_nb = {
-	.notifier_call = ecm_db_route_table_update_event,
+	.notifier_call = ecm_db_ipv6_route_table_update_event,
 };
+#endif
 
 /*
  * ecm_db_init()
@@ -279,6 +464,25 @@ int ecm_db_init(struct dentry *dentry)
 		goto init_cleanup_4;
 	}
 
+	ecm_db_li = ecm_db_listener_alloc();
+	if (!ecm_db_li) {
+		DEBUG_ERROR("%px: Failed to allocate a listener instance\n", dentry);
+		goto init_cleanup_4;
+	}
+	ecm_db_listener_add(ecm_db_li,
+			NULL, /* ecm_notifier_iface_added */
+			NULL, /* ecm_notifier_iface_removed */
+			NULL, /* ecm_notifier_node_added */
+			NULL, /* ecm_notifier_node_removed */
+			NULL, /* ecm_notifier_host_added */
+			NULL, /* ecm_notifier_host_removed */
+			NULL, /* ecm_notifier_mapping_added */
+			NULL, /* ecm_notifier_mapping_removed */
+			ecm_notifier_connection_added,
+			ecm_notifier_connection_removed,
+			NULL, /* ecm_notifier_connection_final */
+			NULL);
+
 	/*
 	 * Initialize the timer resources.
 	 */
@@ -288,8 +492,9 @@ int ecm_db_init(struct dentry *dentry)
 	 * register for route table modification events
 	 */
 	ip_rt_register_notifier(&ecm_db_iproute_table_update_nb);
+#ifdef ECM_IPV6_ENABLE
 	rt6_register_notifier(&ecm_db_ip6route_table_update_nb);
-
+#endif
 	return 0;
 
 init_cleanup_4:
@@ -321,14 +526,20 @@ void ecm_db_exit(void)
 	 * unregister for route table update events
 	 */
 	ip_rt_unregister_notifier(&ecm_db_iproute_table_update_nb);
+#ifdef ECM_IPV6_ENABLE
 	rt6_unregister_notifier(&ecm_db_ip6route_table_update_nb);
-
+#endif
 	ecm_db_connection_defunct_all();
 
 	/*
 	 * Clean-up the timer resources.
 	 */
 	ecm_db_timer_exit();
+
+	if (ecm_db_li) {
+		ecm_db_listener_deref(ecm_db_li);
+		ecm_db_li = NULL;
+	}
 
 	/*
 	 * Free the database.

@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2018-2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -65,7 +65,7 @@ static int8_t *nss_crypto_cmn_log_error_response_types_str[NSS_CRYPTO_CMN_MSG_ER
 static void nss_crypto_cmn_node_msg(struct nss_crypto_cmn_msg *ncm)
 {
 	struct nss_crypto_cmn_node *ncnm __maybe_unused = &ncm->msg.node;
-	nss_trace("%p: NSS crypto common node message:\n"
+	nss_trace("%px: NSS crypto common node message:\n"
 		"Crypto Common Max DMA Rings: %d\n"
 		"Crypto Common Max Contex: %d\n"
 		"Crypto Common Max Context Size: %d\n",
@@ -80,8 +80,8 @@ static void nss_crypto_cmn_node_msg(struct nss_crypto_cmn_msg *ncm)
 static void nss_crypto_cmn_engine_msg(struct nss_crypto_cmn_msg *ncm)
 {
 	struct nss_crypto_cmn_engine *ncem __maybe_unused = &ncm->msg.eng;
-	nss_trace("%p: NSS crypto common engine message \n"
-		"Crypto Common Firmware Version: %p\n"
+	nss_trace("%px: NSS crypto common engine message \n"
+		"Crypto Common Firmware Version: %px\n"
 		"Crypto Common DMA Mask: %x\n"
 		"Crypto Common Token Count: %d\n",
 		ncem, &ncem->fw_ver,
@@ -95,7 +95,7 @@ static void nss_crypto_cmn_engine_msg(struct nss_crypto_cmn_msg *ncm)
 static void nss_crypto_cmn_dma_msg(struct nss_crypto_cmn_msg *ncm)
 {
 	struct nss_crypto_cmn_dma *ncdm __maybe_unused = &ncm->msg.dma;
-	nss_trace("%p: NSS crypto common dma message \n"
+	nss_trace("%px: NSS crypto common dma message \n"
 		"Crypto Common DMA Pair ID: %d\n",
 		ncdm, ncdm->pair_id);
 }
@@ -107,13 +107,13 @@ static void nss_crypto_cmn_dma_msg(struct nss_crypto_cmn_msg *ncm)
 static void nss_crypto_cmn_ctx_msg(struct nss_crypto_cmn_msg *ncm)
 {
 	struct nss_crypto_cmn_ctx *nccm __maybe_unused = &ncm->msg.ctx;
-	nss_trace("%p: NSS crypto common context message \n"
-		"Crypto Common Context Spare Words: %p\n"
+	nss_trace("%px: NSS crypto common context message \n"
+		"Crypto Common Context Spare Words: %px\n"
 		"Crypto Common Index: %d\n"
 		"Crypto Common Secure Offset: %d\n"
-		"Crypto Common Cipher Key: %p\n"
-		"Crypto Common Authorization Key: %p\n"
-		"Crypto Common Nonce Value: %p\n"
+		"Crypto Common Cipher Key: %px\n"
+		"Crypto Common Authorization Key: %px\n"
+		"Crypto Common Nonce Value: %px\n"
 		"Crypto Common Algorithm: %x\n"
 		"Crypto Common Context Specific Flags: %x\n",
 		nccm, &nccm->spare,
@@ -142,11 +142,19 @@ static void nss_crypto_cmn_log_verbose(struct nss_crypto_cmn_msg *ncm)
 		break;
 
 	case NSS_CRYPTO_CMN_MSG_TYPE_SETUP_CTX:
+	case NSS_CRYPTO_CMN_MSG_TYPE_CLEAR_CTX:
+	case NSS_CRYPTO_CMN_MSG_TYPE_VERIFY_CTX:
 		nss_crypto_cmn_ctx_msg(ncm);
 		break;
 
+	case NSS_CRYPTO_CMN_MSG_TYPE_SYNC_NODE_STATS:
+	case NSS_CRYPTO_CMN_MSG_TYPE_SYNC_ENG_STATS:
+	case NSS_CRYPTO_CMN_MSG_TYPE_SYNC_CTX_STATS:
+		/* Getting logged in stats */
+		break;
+
 	default:
-		nss_warning("%p: Invalid message type\n", ncm);
+		nss_warning("%px: Invalid message type\n", ncm);
 		break;
 	}
 }
@@ -158,11 +166,11 @@ static void nss_crypto_cmn_log_verbose(struct nss_crypto_cmn_msg *ncm)
 void nss_crypto_cmn_log_tx_msg(struct nss_crypto_cmn_msg *ncm)
 {
 	if (ncm->cm.type >= NSS_CRYPTO_CMN_MSG_TYPE_MAX) {
-		nss_warning("%p: Invalid message type\n", ncm);
+		nss_warning("%px: Invalid message type\n", ncm);
 		return;
 	}
 
-	nss_info("%p: type[%d]:%s\n", ncm, ncm->cm.type, nss_crypto_cmn_log_message_types_str[ncm->cm.type]);
+	nss_info("%px: type[%d]:%s\n", ncm, ncm->cm.type, nss_crypto_cmn_log_message_types_str[ncm->cm.type]);
 	nss_crypto_cmn_log_verbose(ncm);
 }
 
@@ -173,26 +181,26 @@ void nss_crypto_cmn_log_tx_msg(struct nss_crypto_cmn_msg *ncm)
 void nss_crypto_cmn_log_rx_msg(struct nss_crypto_cmn_msg *ncm)
 {
 	if (ncm->cm.response >= NSS_CMN_RESPONSE_LAST) {
-		nss_warning("%p: Invalid response\n", ncm);
+		nss_warning("%px: Invalid response\n", ncm);
 		return;
 	}
 
 	if (ncm->cm.response == NSS_CMN_RESPONSE_NOTIFY || (ncm->cm.response == NSS_CMN_RESPONSE_ACK)) {
-		nss_info("%p: type[%d]:%s, response[%d]:%s\n", ncm, ncm->cm.type,
+		nss_info("%px: type[%d]:%s, response[%d]:%s\n", ncm, ncm->cm.type,
 			nss_crypto_cmn_log_message_types_str[ncm->cm.type],
 			ncm->cm.response, nss_cmn_response_str[ncm->cm.response]);
 		goto verbose;
 	}
 
 	if (ncm->cm.error >= NSS_CRYPTO_CMN_MSG_ERROR_MAX) {
-		nss_warning("%p: msg failure - type[%d]:%s, response[%d]:%s, error[%d]:Invalid error\n",
+		nss_warning("%px: msg failure - type[%d]:%s, response[%d]:%s, error[%d]:Invalid error\n",
 			ncm, ncm->cm.type, nss_crypto_cmn_log_message_types_str[ncm->cm.type],
 			ncm->cm.response, nss_cmn_response_str[ncm->cm.response],
 			ncm->cm.error);
 		goto verbose;
 	}
 
-	nss_info("%p: msg nack - type[%d]:%s, response[%d]:%s, error[%d]:%s\n",
+	nss_info("%px: msg nack - type[%d]:%s, response[%d]:%s, error[%d]:%s\n",
 		ncm, ncm->cm.type, nss_crypto_cmn_log_message_types_str[ncm->cm.type],
 		ncm->cm.response, nss_cmn_response_str[ncm->cm.response],
 		ncm->cm.error, nss_crypto_cmn_log_error_response_types_str[ncm->cm.error]);

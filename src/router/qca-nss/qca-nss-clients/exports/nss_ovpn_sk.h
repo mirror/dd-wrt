@@ -107,6 +107,8 @@ struct nss_ovpn_sk_tunnel_hdr {
 	uint32_t dst_ip[4];	/* IPv4/v6 destination ip address. */
 	uint16_t src_port;	/* UDP source port. */
 	uint16_t dst_port;	/* UDP destination port. */
+	uint8_t hop_limit;	/* TTL or next hop limit. */
+	uint8_t res[3];		/* Reserved for Alignment. */
 };
 
 /*

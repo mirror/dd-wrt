@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2019-2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -19,8 +19,10 @@
  *	Pvxlan manager private defines
  */
 #include <linux/types.h>
+#include <linux/of.h>
 #include <linux/module.h>
 #include <linux/skbuff.h>
+#include <linux/version.h>
 #include <nss_api_if.h>
 #include <linux/in.h>
 #include <linux/etherdevice.h>

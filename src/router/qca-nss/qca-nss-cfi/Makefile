@@ -4,7 +4,10 @@
 
 export BUILD_ID = \"Build Id: $(shell date +'%m/%d/%y, %H:%M:%S')\"
 
+# ifneq (,$(filter $(ocf), y))
 # obj-m += $(CFI_OCF_DIR)/
+# endif
+
 obj-m += $(CFI_CRYPTOAPI_DIR)/
 
 # ifeq ($(SoC),$(filter $(SoC),ipq806x))

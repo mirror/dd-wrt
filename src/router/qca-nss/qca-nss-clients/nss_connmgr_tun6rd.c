@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2014, 2016-2019 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2014, 2016-2020 The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -215,12 +215,12 @@ static int nss_tun6rd_dev_up(struct net_device *netdev)
 			|| (ip6rd->prefixlen
 				+ (32 - ip6rd->relay_prefixlen) > 64)) {
 
-		nss_tun6rd_warning("%p: Invalid 6rd argument prefix len %d relayprefix len %d\n",
+		nss_tun6rd_warning("%px: Invalid 6rd argument prefix len %d relayprefix len %d\n",
 				netdev, ip6rd->prefixlen, ip6rd->relay_prefixlen);
 		return NOTIFY_DONE;
 	}
 
-	nss_tun6rd_info("%p: Valid 6rd Tunnel Prefix %x %x %x %x\n Prefix len %d relay_prefix %d relay_prefixlen %d\n",
+	nss_tun6rd_info("%px: Valid 6rd Tunnel Prefix %x %x %x %x\n Prefix len %d relay_prefix %d relay_prefixlen %d\n",
 			netdev,
 			ip6rd->prefix.s6_addr32[0],ip6rd->prefix.s6_addr32[1],
 			ip6rd->prefix.s6_addr32[2],ip6rd->prefix.s6_addr32[3],
@@ -231,34 +231,34 @@ static int nss_tun6rd_dev_up(struct net_device *netdev)
 	 * Find the Tunnel device IP header info
 	 */
 	tiph = &tunnel->parms.iph ;
-	nss_tun6rd_trace("%p: Tunnel Param srcaddr %x daddr %x ttl %d tos %x\n",
+	nss_tun6rd_trace("%px: Tunnel Param srcaddr %x daddr %x ttl %d tos %x\n",
 			netdev, tiph->saddr, tiph->daddr, tiph->ttl, tiph->tos);
 
 	if (tiph->saddr == 0) {
-		nss_tun6rd_warning("%p: Tunnel src address not configured %x\n",
+		nss_tun6rd_warning("%px: Tunnel src address not configured %x\n",
 				netdev, tiph->saddr);
 		return NOTIFY_DONE;
 	}
 
 	outer_if = nss_dynamic_interface_alloc_node(NSS_DYNAMIC_INTERFACE_TYPE_TUN6RD_OUTER);
 	if (-1 == outer_if) {
-		nss_tun6rd_warning("%p: Request outer interface number failed\n", netdev);
+		nss_tun6rd_warning("%px: Request outer interface number failed\n", netdev);
 		goto outer_fail;
 	}
 
 	if (!nss_is_dynamic_interface(outer_if)) {
-		nss_tun6rd_warning("%p: Invalid NSS dynamic I/F number %d\n", netdev, outer_if);
+		nss_tun6rd_warning("%px: Invalid NSS dynamic I/F number %d\n", netdev, outer_if);
 		goto outer_fail;
 	}
 
 	inner_if = nss_dynamic_interface_alloc_node(NSS_DYNAMIC_INTERFACE_TYPE_TUN6RD_INNER);
 	if (-1 == inner_if) {
-		nss_tun6rd_warning("%p: Request inner interface number failed\n", netdev);
+		nss_tun6rd_warning("%px: Request inner interface number failed\n", netdev);
 		goto inner_fail;
 	}
 
 	if (!nss_is_dynamic_interface(inner_if)) {
-		nss_tun6rd_warning("%p: Invalid NSS dynamic I/F number %d\n", netdev, inner_if);
+		nss_tun6rd_warning("%px: Invalid NSS dynamic I/F number %d\n", netdev, inner_if);
 		goto inner_fail;
 	}
 
@@ -272,7 +272,7 @@ static int nss_tun6rd_dev_up(struct net_device *netdev)
 				netdev,
 				features);
 	if (!nss_ctx) {
-		nss_tun6rd_trace("%p: nss_register_tun6rd_if failed for inner interface\n", netdev);
+		nss_tun6rd_trace("%px: nss_register_tun6rd_if failed for inner interface\n", netdev);
 		goto register_inner_if_fail;
 	}
 
@@ -286,7 +286,7 @@ static int nss_tun6rd_dev_up(struct net_device *netdev)
 				netdev,
 				features);
 	if (!nss_ctx) {
-		nss_tun6rd_trace("%p: nss_register_tun6rd_if failed for outer interface\n", netdev);
+		nss_tun6rd_trace("%px: nss_register_tun6rd_if failed for outer interface\n", netdev);
 		goto register_outer_if_fail;
 	}
 
@@ -301,7 +301,7 @@ static int nss_tun6rd_dev_up(struct net_device *netdev)
 	cfg_tunnel->tos = tiph->tos;
 	cfg_tunnel->sibling_if_num = outer_if;
 
-	nss_tun6rd_trace("%p: Sending 6rd tunnel i/f up command to NSS %p\n",
+	nss_tun6rd_trace("%px: Sending 6rd tunnel i/f up command to NSS %px\n",
 			netdev, nss_ctx);
 
 	/*
@@ -312,7 +312,7 @@ static int nss_tun6rd_dev_up(struct net_device *netdev)
 
 	status = nss_tun6rd_tx(nss_ctx, &msg_tunnel);
 	if (status != NSS_TX_SUCCESS) {
-		nss_tun6rd_warning("%p: Tunnel up command error %d\n", netdev, status);
+		nss_tun6rd_warning("%px: Tunnel up command error %d\n", netdev, status);
 		goto tunnel_up_fail;
 	}
 
@@ -327,13 +327,13 @@ register_outer_if_fail:
 register_inner_if_fail:
 	status = nss_dynamic_interface_dealloc_node(inner_if, NSS_DYNAMIC_INTERFACE_TYPE_TUN6RD_INNER);
 	if (status != NSS_TX_SUCCESS) {
-		nss_tun6rd_warning("%p: Unable to dealloc the node[%d] in the NSS fw!\n", netdev, inner_if);
+		nss_tun6rd_warning("%px: Unable to dealloc the node[%d] in the NSS fw!\n", netdev, inner_if);
 	}
 
 inner_fail:
 	status = nss_dynamic_interface_dealloc_node(outer_if, NSS_DYNAMIC_INTERFACE_TYPE_TUN6RD_OUTER);
 	if (status != NSS_TX_SUCCESS) {
-		nss_tun6rd_warning("%p: Unable to dealloc the node[%d] in the NSS fw!\n", netdev, outer_if);
+		nss_tun6rd_warning("%px: Unable to dealloc the node[%d] in the NSS fw!\n", netdev, outer_if);
 	}
 
 outer_fail:
@@ -370,7 +370,7 @@ static int nss_tun6rd_dev_down(struct net_device *netdev)
 			|| (ip6rd->prefixlen
 				+ (32 - ip6rd->relay_prefixlen) > 64)) {
 
-		nss_tun6rd_warning("%p: Invalid 6rd argument prefix len %d relayprefix len %d\n",
+		nss_tun6rd_warning("%px: Invalid 6rd argument prefix len %d relayprefix len %d\n",
 				netdev, ip6rd->prefixlen, ip6rd->relay_prefixlen);
 		return NOTIFY_DONE;
 	}
@@ -380,7 +380,7 @@ static int nss_tun6rd_dev_down(struct net_device *netdev)
 	 */
 	outer_if = nss_cmn_get_interface_number_by_dev_and_type(netdev, NSS_DYNAMIC_INTERFACE_TYPE_TUN6RD_OUTER);
 	if (outer_if < 0) {
-		nss_tun6rd_warning("%p: Net device is not registered\n", netdev);
+		nss_tun6rd_warning("%px: Net device is not registered\n", netdev);
 		return NOTIFY_DONE;
 	}
 
@@ -390,7 +390,7 @@ static int nss_tun6rd_dev_down(struct net_device *netdev)
 	nss_unregister_tun6rd_if(outer_if);
 	status = nss_dynamic_interface_dealloc_node(outer_if, NSS_DYNAMIC_INTERFACE_TYPE_TUN6RD_OUTER);
 	if (status != NSS_TX_SUCCESS) {
-		nss_tun6rd_warning("%p: Dealloc outer interface failed\n", netdev);
+		nss_tun6rd_warning("%px: Dealloc outer interface failed\n", netdev);
 		return NOTIFY_DONE;
 	}
 
@@ -399,7 +399,7 @@ static int nss_tun6rd_dev_down(struct net_device *netdev)
 	 */
 	inner_if = nss_cmn_get_interface_number_by_dev_and_type(netdev, NSS_DYNAMIC_INTERFACE_TYPE_TUN6RD_INNER);
 	if (inner_if < 0) {
-		nss_tun6rd_warning("%p: Net device is not registered\n", netdev);
+		nss_tun6rd_warning("%px: Net device is not registered\n", netdev);
 		return NOTIFY_DONE;
 	}
 
@@ -409,7 +409,7 @@ static int nss_tun6rd_dev_down(struct net_device *netdev)
 	nss_unregister_tun6rd_if(inner_if);
 	status = nss_dynamic_interface_dealloc_node(inner_if, NSS_DYNAMIC_INTERFACE_TYPE_TUN6RD_INNER);
 	if (status != NSS_TX_SUCCESS) {
-		nss_tun6rd_warning("%p: Dealloc inner interface failed\n", netdev);
+		nss_tun6rd_warning("%px: Dealloc inner interface failed\n", netdev);
 		return NOTIFY_DONE;
 	}
 

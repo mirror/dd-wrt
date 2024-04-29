@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2014-2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2014-2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -31,6 +31,49 @@
  * Size of the headroom required for CAPWAP packets.
  */
 #define NSS_CAPWAP_HEADROOM 256
+
+/**
+ * nss_capwap_stats_encap_types
+ *	CAPWAP encapsulation statistics.
+ */
+enum nss_capwap_stats_encap_types {
+	NSS_CAPWAP_STATS_ENCAP_TX_PKTS,
+	NSS_CAPWAP_STATS_ENCAP_TX_BYTES,
+	NSS_CAPWAP_STATS_ENCAP_TX_SEGMENTS,
+	NSS_CAPWAP_STATS_ENCAP_TX_DROP_SG_REF,
+	NSS_CAPWAP_STATS_ENCAP_TX_DROP_VER_MISMATCH,
+	NSS_CAPWAP_STATS_ENCAP_TX_DROP_UNALIGN,
+	NSS_CAPWAP_STATS_ENCAP_TX_DROP_HEADER_ROOM,
+	NSS_CAPWAP_STATS_ENCAP_TX_DROP_DTLS,
+	NSS_CAPWAP_STATS_ENCAP_TX_DROP_NWIRELESS,
+	NSS_CAPWAP_STATS_ENCAP_TX_DROP_QUEUE_FULL,
+	NSS_CAPWAP_STATS_ENCAP_TX_DROP_MEM_FAIL,
+	NSS_CAPWAP_STATS_ENCAP_FAST_MEM,
+	NSS_CAPWAP_STATS_ENCAP_MAX
+};
+
+/**
+ * nss_capwap_stats_decap_types
+ *	CAPWAP decapsulation statistics.
+ */
+enum nss_capwap_stats_decap_types {
+	NSS_CAPWAP_STATS_DECAP_RX_PKTS,
+	NSS_CAPWAP_STATS_DECAP_RX_BYTES,
+	NSS_CAPWAP_STATS_DECAP_RX_DTLS_PKTS,
+	NSS_CAPWAP_STATS_DECAP_RX_SEGMENTS,
+	NSS_CAPWAP_STATS_DECAP_RX_DROP,
+	NSS_CAPWAP_STATS_DECAP_RX_DROP_OVERSIZE,
+	NSS_CAPWAP_STATS_DECAP_RX_DROP_FRAG_TIMEOUT,
+	NSS_CAPWAP_STATS_DECAP_RX_DROP_DUP_FRAG,
+	NSS_CAPWAP_STATS_DECAP_RX_DROP_FRAG_GAP,
+	NSS_CAPWAP_STATS_DECAP_RX_DROP_QUEUE_FULL,
+	NSS_CAPWAP_STATS_DECAP_RX_DROP_N2H_QUEUE_FULL,
+	NSS_CAPWAP_STATS_DECAP_RX_DROP_MEM_FAIL,
+	NSS_CAPWAP_STATS_DECAP_RX_DROP_CHECKSUM,
+	NSS_CAPWAP_STATS_DECAP_RX_MALFORMED,
+	NSS_CAPWAP_STATS_DECAP_FAST_MEM,
+	NSS_CAPWAP_STATS_DECAP_MAX
+};
 
 /**
  * nss_capwap_msg_type
@@ -120,8 +163,8 @@ struct nss_capwap_stats_msg {
 			/**< Packets dropped because of a scatter-gather reference. */
 	uint32_t tx_dropped_ver_mis;
 			/**< Packets dropped because of a version mismatch. */
-	uint32_t tx_dropped_unalign;
-			/**< Packets dropped because of an unaligned active buffer. */
+	uint32_t Reserved;
+			/**< Reserved. */
 	uint32_t tx_dropped_hroom;
 			/**< Packets dropped because of insufficent headroom. */
 	uint32_t tx_dropped_dtls;
@@ -341,8 +384,8 @@ struct nss_capwap_tunnel_stats {
 			/**< Packets dropped because of a scatter-gather reference. */
 	uint64_t tx_dropped_ver_mis;
 			/**< Packets dropped because of a version mismatch. */
-	uint64_t tx_dropped_unalign;
-			/**< Packets dropped because of an unaligned active buffer. */
+	uint64_t Reserved;
+			/**< Reserved. */
 	uint64_t tx_dropped_hroom;
 			/**< Packets dropped because of insufficent headroom. */
 	uint64_t tx_dropped_dtls;
@@ -353,6 +396,18 @@ struct nss_capwap_tunnel_stats {
 	uint32_t fast_mem;
 			/**< Set to 1 when tunnel is operating in fast memory. */
 };
+
+/**
+ * nss_capwap_stats_notification
+ *	CAPWAP statistics structure.
+ */
+struct nss_capwap_stats_notification {
+	uint32_t core_id;			/**< Core ID. */
+	uint32_t if_num;			/**< Interface number. */
+	struct nss_capwap_tunnel_stats stats;	/**< Per-tunnel statistics. */
+};
+
+#ifdef __KERNEL__ /* only kernel will use. */
 
 /**
  * Callback function for receiving CAPWAP tunnel data.
@@ -557,9 +612,37 @@ extern void nss_capwap_init(void);
  */
 extern void nss_capwap_msg_init(struct nss_capwap_msg *ncm, uint16_t if_num, uint32_t type, uint32_t len,
 								nss_capwap_msg_callback_t cb, void *app_data);
+/**
+ * nss_capwap_stats_register_notifier
+ *	Registers a statistics notifier.
+ *
+ * @datatypes
+ * notifier_block
+ *
+ * @param[in] nb Notifier block.
+ *
+ * @return
+ * 0 on success or -2 on failure.
+ */
+extern int nss_capwap_stats_register_notifier(struct notifier_block *nb);
+
+/**
+ * nss_capwap_stats_unregister_notifier
+ *	Deregisters a statistics notifier.
+ *
+ * @datatypes
+ * notifier_block
+ *
+ * @param[in] nb Notifier block.
+ *
+ * @return
+ * 0 on success or -2 on failure.
+ */
+extern int nss_capwap_stats_unregister_notifier(struct notifier_block *nb);
 
 /**
  * @}
  */
 
+#endif /* __KERNEL__ */
 #endif /* __NSS_CAPWAP_H */

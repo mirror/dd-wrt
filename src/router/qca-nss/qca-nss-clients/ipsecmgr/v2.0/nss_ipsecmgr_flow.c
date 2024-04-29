@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2017-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -153,7 +153,7 @@ static bool nss_ipsecmgr_flow_update_db(struct nss_ipsecmgr_flow *flow)
 	sa = nss_ipsecmgr_sa_find(ipsecmgr_drv->sa_db, sa_tuple);
 	if (!sa) {
 		write_unlock(&ipsecmgr_drv->lock);
-		nss_ipsecmgr_trace("%p: failed to find SA during flow update", flow);
+		nss_ipsecmgr_trace("%px: failed to find SA during flow update", flow);
 		return false;
 	}
 
@@ -180,18 +180,18 @@ static void nss_ipsecmgr_flow_create_resp(void *app_data, struct nss_cmn_msg *nc
 	 * add it to our list
 	 */
 	if (ncm->response != NSS_CMN_RESPONSE_ACK) {
-		nss_ipsecmgr_trace("%p: NSS response error (%u)", flow, ncm->error);
+		nss_ipsecmgr_trace("%px: NSS response error (%u)", flow, ncm->error);
 		kfree(flow);
 		return;
 	}
 
 	if (!nss_ipsecmgr_flow_update_db(flow)) {
-		nss_ipsecmgr_trace("%p: failed to update flow in DB (%u)", flow, ncm->error);
+		nss_ipsecmgr_trace("%px: failed to update flow in DB (%u)", flow, ncm->error);
 		kfree(flow);
 		return;
 	}
 
-	nss_ipsecmgr_trace("%p: Sucessfully updated flow in DB", flow);
+	nss_ipsecmgr_trace("%px: Sucessfully updated flow in DB", flow);
 }
 
 /*
@@ -204,12 +204,28 @@ static void nss_ipsecmgr_flow_free(struct nss_ipsecmgr_flow *flow)
 }
 
 /*
- * nss_ipsecmgr_flow_free_work()
- *	Flow free in synchronously
+ * nss_ipsecmgr_flow_del_ref()
+ *	Unlink the flow entry
  */
-static void nss_ipsecmgr_flow_free_work(struct work_struct *work)
+static void nss_ipsecmgr_flow_del_ref(struct nss_ipsecmgr_ref *ref)
 {
-	struct nss_ipsecmgr_flow *flow = container_of(work, struct nss_ipsecmgr_flow, free_work.work);
+	struct nss_ipsecmgr_flow *flow = container_of(ref, struct nss_ipsecmgr_flow, ref);
+
+	/*
+	 * Write lock needs to be held by the caller since flow db is
+	 * getting modified.
+	 */
+	BUG_ON(write_can_lock(&ipsecmgr_drv->lock));
+	list_del_init(&flow->list);
+}
+
+/*
+ * nss_ipsecmgr_flow_free_ref()
+ *	Free the flow entry
+ */
+static void nss_ipsecmgr_flow_free_ref(struct nss_ipsecmgr_ref *ref)
+{
+	struct nss_ipsecmgr_flow *flow = container_of(ref, struct nss_ipsecmgr_flow, ref);
 	enum nss_ipsec_cmn_msg_type type = NSS_IPSEC_CMN_MSG_TYPE_FLOW_DESTROY;
 	struct nss_ipsec_cmn_msg nicm;
 	nss_tx_status_t status;
@@ -221,32 +237,14 @@ static void nss_ipsecmgr_flow_free_work(struct work_struct *work)
 
 	status = nss_ipsec_cmn_tx_msg_sync(flow->nss_ctx, flow->ifnum, type, sizeof(nicm.msg.flow), &nicm);
 	if (status != NSS_TX_SUCCESS) {
-		nss_ipsecmgr_info("%p: failed to send the flow message(%u)", flow, type);
+		nss_ipsecmgr_info("%px: failed to send the flow message(%u)", flow, type);
 	}
 
 	if (nicm.cm.error != NSS_IPSEC_CMN_MSG_ERROR_NONE) {
-		nss_ipsecmgr_warn("%p: failed to free flow from NSS (%u)", flow, nicm.cm.error);
+		nss_ipsecmgr_warn("%px: failed to free flow from NSS (%u)", flow, nicm.cm.error);
 	}
 
 	nss_ipsecmgr_flow_free(flow);
-}
-
-/*
- * nss_ipsecmgr_flow_free_ref()
- *	Free the flow entry
- */
-static void nss_ipsecmgr_flow_free_ref(struct nss_ipsecmgr_ref *ref)
-{
-	struct nss_ipsecmgr_flow *flow = container_of(ref, struct nss_ipsecmgr_flow, ref);
-
-	/*
-	 * Write lock needs to be held by the caller since flow db is
-	 * getting modified.
-	 */
-	BUG_ON(write_can_lock(&ipsecmgr_drv->lock));
-
-	list_del_init(&flow->list);
-	schedule_delayed_work(&flow->free_work, NSS_IPSECMGR_FLOW_FREE_TIMEOUT);
 }
 
 /*
@@ -262,21 +260,19 @@ static struct nss_ipsecmgr_flow *nss_ipsecmgr_flow_alloc(struct nss_ipsecmgr_sa 
 	flow = kzalloc(sizeof(*flow), GFP_ATOMIC);
 	if (!flow) {
 		write_unlock_bh(&ipsecmgr_drv->lock);
-		nss_ipsecmgr_info("%p: failed to allocate flow", sa);
+		nss_ipsecmgr_info("%px: failed to allocate flow", sa);
 		return NULL;
 	}
 
 	/*
 	 * Initialize the flow entry
 	 */
-	INIT_LIST_HEAD(&flow->list);
-	INIT_DELAYED_WORK(&flow->free_work, nss_ipsecmgr_flow_free_work);
-
 	flow->ifnum = sa->ifnum;
 	flow->nss_ctx = sa->nss_ctx;
 	flow->tunnel_id = sa->tunnel_id;
 
-	nss_ipsecmgr_ref_init(&flow->ref, nss_ipsecmgr_flow_free_ref);
+	INIT_LIST_HEAD(&flow->list);
+	nss_ipsecmgr_ref_init(&flow->ref, nss_ipsecmgr_flow_del_ref, nss_ipsecmgr_flow_free_ref);
 	nss_ipsecmgr_ref_init_print(&flow->ref, nss_ipsecmgr_flow_print_len, nss_ipsecmgr_flow_print);
 
 	/*
@@ -313,6 +309,41 @@ struct nss_ipsecmgr_flow *nss_ipsecmgr_flow_find(struct list_head *db, struct ns
 }
 
 /*
+ * nss_ipsecmgr_flow_get_sa()
+ *	Lookup flow_tuple in flow database and return sa_tuple.
+ */
+nss_ipsecmgr_status_t nss_ipsecmgr_flow_get_sa(struct net_device *tun, struct nss_ipsecmgr_flow_tuple *flow_tuple,
+					struct nss_ipsecmgr_sa_tuple *sa_tuple)
+{
+	struct nss_ipsec_cmn_flow_tuple tuple;
+	struct nss_ipsecmgr_flow *flow;
+	struct nss_ipsecmgr_sa *sa;
+
+	nss_ipsecmgr_flow2tuple(flow_tuple, &tuple);
+	write_lock_bh(&ipsecmgr_drv->lock);
+
+	flow = nss_ipsecmgr_flow_find(ipsecmgr_drv->flow_db, &tuple);
+	if (!flow) {
+		write_unlock_bh(&ipsecmgr_drv->lock);
+		nss_ipsecmgr_trace("%px: Failed to find flow", tun);
+		return NSS_IPSECMGR_FAIL_FLOW;
+	}
+
+	sa = flow->sa;
+	if (!sa) {
+		write_unlock_bh(&ipsecmgr_drv->lock);
+		nss_ipsecmgr_error("%px: SA is not associated with flow", tun);
+		return NSS_IPSECMGR_INVALID_SA;
+	}
+
+	nss_ipsecmgr_sa_tuple2sa(&sa->state.tuple, sa_tuple);
+	write_unlock_bh(&ipsecmgr_drv->lock);
+
+	return NSS_IPSECMGR_OK;
+}
+EXPORT_SYMBOL(nss_ipsecmgr_flow_get_sa);
+
+/*
  * nss_ipsecmgr_flow_del()
  *	Delete a existing flow from the database
  *
@@ -343,14 +374,14 @@ void nss_ipsecmgr_flow_del(struct net_device *dev, struct nss_ipsecmgr_flow_tupl
 	sa = nss_ipsecmgr_sa_find(sa_db, &sa_tuple);
 	if (!sa) {
 		write_unlock_bh(&ipsecmgr_drv->lock);
-		nss_ipsecmgr_warn("%p: failed to find SA during flow_del", tun);
+		nss_ipsecmgr_warn("%px: failed to find SA during flow_del", tun);
 		return;
 	}
 
 	flow = nss_ipsecmgr_flow_find(flow_db, &flow_tuple);
 	if (!flow) {
 		write_unlock_bh(&ipsecmgr_drv->lock);
-		nss_ipsecmgr_warn("%p: failed to find flow for flow_del", tun);
+		nss_ipsecmgr_warn("%px: failed to find flow for flow_del", tun);
 		return;
 	}
 
@@ -360,15 +391,17 @@ void nss_ipsecmgr_flow_del(struct net_device *dev, struct nss_ipsecmgr_flow_tupl
 	 */
 	if (flow->sa != sa) {
 		write_unlock_bh(&ipsecmgr_drv->lock);
-		nss_ipsecmgr_warn("%p: failed to match the SA in flow(%p) delete", tun, flow);
+		nss_ipsecmgr_warn("%px: failed to match the SA in flow(%px) delete", tun, flow);
 		return;
 	}
 
 	/*
 	 * Free the flow entry and reference.
 	 */
-	nss_ipsecmgr_ref_free(&flow->ref);
+	nss_ipsecmgr_ref_del(&flow->ref, &tun->free_refs);
 	write_unlock_bh(&ipsecmgr_drv->lock);
+
+	schedule_work(&tun->free_work);
 }
 EXPORT_SYMBOL(nss_ipsecmgr_flow_del);
 
@@ -409,7 +442,7 @@ nss_ipsecmgr_status_t nss_ipsecmgr_flow_add(struct net_device *dev, struct nss_i
 	sa = nss_ipsecmgr_sa_find(ipsecmgr_drv->sa_db, sa_tuple);
 	if (!sa) {
 		write_unlock_bh(&ipsecmgr_drv->lock);
-		nss_ipsecmgr_warn("%p: failed to find SA during flow_add", tun);
+		nss_ipsecmgr_warn("%px: failed to find SA during flow_add", tun);
 		dev_put(dev);
 		return NSS_IPSECMGR_INVALID_SA;
 	}
@@ -420,7 +453,7 @@ nss_ipsecmgr_status_t nss_ipsecmgr_flow_add(struct net_device *dev, struct nss_i
 	ctx = nss_ipsecmgr_ctx_find(tun, sa->type);
 	if (!ctx) {
 		write_unlock_bh(&ipsecmgr_drv->lock);
-		nss_ipsecmgr_warn("%p: Failed to find context (%u)", tun, sa->type);
+		nss_ipsecmgr_warn("%px: Failed to find context (%u)", tun, sa->type);
 		dev_put(dev);
 		return NSS_IPSECMGR_INVALID_CTX;
 	}
@@ -445,7 +478,7 @@ nss_ipsecmgr_status_t nss_ipsecmgr_flow_add(struct net_device *dev, struct nss_i
 		 */
 		if (flow->sa == sa) {
 			write_unlock_bh(&ipsecmgr_drv->lock);
-			nss_ipsecmgr_trace("%p: Duplicate flow in flow_add", ipsecmgr_drv);
+			nss_ipsecmgr_trace("%px: Duplicate flow in flow_add", ipsecmgr_drv);
 			dev_put(dev);
 			return NSS_IPSECMGR_DUPLICATE_FLOW;
 		}
@@ -455,15 +488,14 @@ nss_ipsecmgr_status_t nss_ipsecmgr_flow_add(struct net_device *dev, struct nss_i
 		 * Here we don't want to inform the NSS as it is not a real flow free.
 		 * We are just moving an existing flow to a new SA
 		 */
-		list_del_init(&flow->list);
-		nss_ipsecmgr_ref_del(&flow->ref);
+		nss_ipsecmgr_ref_del(&flow->ref, NULL);
 		nss_ipsecmgr_flow_free(flow);
 	}
 
 	flow = nss_ipsecmgr_flow_alloc(sa, flow_tuple, sa_tuple);
 	if (!flow) {
 		write_unlock_bh(&ipsecmgr_drv->lock);
-		nss_ipsecmgr_info("%p: failed to allocate flow", tun);
+		nss_ipsecmgr_info("%px: failed to allocate flow", tun);
 		dev_put(dev);
 		return NSS_IPSECMGR_FAIL_FLOW_ALLOC;
 	}
@@ -483,7 +515,7 @@ nss_ipsecmgr_status_t nss_ipsecmgr_flow_add(struct net_device *dev, struct nss_i
 	 */
 	status = nss_ipsec_cmn_tx_msg(flow->nss_ctx, &nicm);
 	if (status != NSS_TX_SUCCESS) {
-		nss_ipsecmgr_info("%p: failed to send the flow create message", dev);
+		nss_ipsecmgr_info("%px: failed to send the flow create message", dev);
 		nss_ipsecmgr_flow_free(flow);
 		dev_put(dev);
 		return NSS_IPSECMGR_FAIL;
@@ -536,7 +568,7 @@ nss_ipsecmgr_status_t nss_ipsecmgr_flow_add_sync(struct net_device *dev, struct 
 	sa = nss_ipsecmgr_sa_find(ipsecmgr_drv->sa_db, sa_tuple);
 	if (!sa) {
 		write_unlock_bh(&ipsecmgr_drv->lock);
-		nss_ipsecmgr_warn("%p: failed to find SA during flow_add", tun);
+		nss_ipsecmgr_warn("%px: failed to find SA during flow_add", tun);
 		dev_put(dev);
 		return NSS_IPSECMGR_INVALID_SA;
 	}
@@ -547,7 +579,7 @@ nss_ipsecmgr_status_t nss_ipsecmgr_flow_add_sync(struct net_device *dev, struct 
 	ctx = nss_ipsecmgr_ctx_find(tun, sa->type);
 	if (!ctx) {
 		write_unlock_bh(&ipsecmgr_drv->lock);
-		nss_ipsecmgr_warn("%p: Failed to find context (%u)", tun, sa->type);
+		nss_ipsecmgr_warn("%px: Failed to find context (%u)", tun, sa->type);
 		dev_put(dev);
 		return NSS_IPSECMGR_INVALID_CTX;
 	}
@@ -572,7 +604,7 @@ nss_ipsecmgr_status_t nss_ipsecmgr_flow_add_sync(struct net_device *dev, struct 
 		 */
 		if (flow->sa == sa) {
 			write_unlock_bh(&ipsecmgr_drv->lock);
-			nss_ipsecmgr_trace("%p: Duplicate flow in flow_add", ipsecmgr_drv);
+			nss_ipsecmgr_trace("%px: Duplicate flow in flow_add", ipsecmgr_drv);
 			dev_put(dev);
 			return NSS_IPSECMGR_DUPLICATE_FLOW;
 		}
@@ -582,15 +614,14 @@ nss_ipsecmgr_status_t nss_ipsecmgr_flow_add_sync(struct net_device *dev, struct 
 		 * Here we don't want to inform the NSS as it is not a real flow free.
 		 * We are just moving an existing flow to a new SA
 		 */
-		list_del_init(&flow->list);
-		nss_ipsecmgr_ref_del(&flow->ref);
+		nss_ipsecmgr_ref_del(&flow->ref, NULL);
 		nss_ipsecmgr_flow_free(flow);
 	}
 
 	flow = nss_ipsecmgr_flow_alloc(sa, flow_tuple, sa_tuple);
 	if (!flow) {
 		write_unlock_bh(&ipsecmgr_drv->lock);
-		nss_ipsecmgr_info("%p: failed to allocate flow", tun);
+		nss_ipsecmgr_info("%px: failed to allocate flow", tun);
 		dev_put(dev);
 		return NSS_IPSECMGR_FAIL_FLOW_ALLOC;
 	}
@@ -610,7 +641,7 @@ nss_ipsecmgr_status_t nss_ipsecmgr_flow_add_sync(struct net_device *dev, struct 
 	 */
 	status = nss_ipsec_cmn_tx_msg_sync(flow->nss_ctx, flow->ifnum, type, sizeof(nicm.msg.flow), &nicm);
 	if (status != NSS_TX_SUCCESS) {
-		nss_ipsecmgr_info("%p: failed to send the flow create message", dev);
+		nss_ipsecmgr_info("%px: failed to send the flow create message", dev);
 		nss_ipsecmgr_flow_free(flow);
 		dev_put(dev);
 		return NSS_IPSECMGR_FAIL;
@@ -620,7 +651,7 @@ nss_ipsecmgr_status_t nss_ipsecmgr_flow_add_sync(struct net_device *dev, struct 
 	 * Since, this is a synchronous call add it to the database directly
 	 */
 	if (!nss_ipsecmgr_flow_update_db(flow)) {
-		nss_ipsecmgr_info("%p: failed to add flow to DB", dev);
+		nss_ipsecmgr_info("%px: failed to add flow to DB", dev);
 		nss_ipsecmgr_flow_free(flow);
 		dev_put(dev);
 		return NSS_IPSECMGR_FAIL_ADD_DB;

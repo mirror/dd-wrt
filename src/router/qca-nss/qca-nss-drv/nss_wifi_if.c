@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2015-2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2015-2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -56,18 +56,18 @@ static void nss_wifi_if_msg_handler(struct nss_ctx_instance *nss_ctx,
 	 * Sanity check the message type
 	 */
 	if (ncm->type >= NSS_WIFI_IF_MAX_MSG_TYPES) {
-		nss_warning("%p: message type out of range: %d",
+		nss_warning("%px: message type out of range: %d",
 						nss_ctx, ncm->type);
 		return;
 	}
 
 	if (nss_cmn_get_msg_len(ncm) > sizeof(struct nss_wifi_if_msg)) {
-		nss_warning("%p: Length of message is greater than required: %d", nss_ctx, nss_cmn_get_msg_len(ncm));
+		nss_warning("%px: Length of message is greater than required: %d", nss_ctx, nss_cmn_get_msg_len(ncm));
 		return;
 	}
 
 	if (!NSS_IS_IF_TYPE(DYNAMIC, ncm->interface)) {
-		nss_warning("%p: response for another interface: %d", nss_ctx, ncm->interface);
+		nss_warning("%px: response for another interface: %d", nss_ctx, ncm->interface);
 		return;
 	}
 
@@ -81,7 +81,7 @@ static void nss_wifi_if_msg_handler(struct nss_ctx_instance *nss_ctx,
 	spin_lock_bh(&wifi_if_lock);
 	if (!wifi_handle[if_num]) {
 		spin_unlock_bh(&wifi_if_lock);
-		nss_warning("%p: wifi_if handle is NULL\n", nss_ctx);
+		nss_warning("%px: wifi_if handle is NULL\n", nss_ctx);
 		return;
 	}
 
@@ -156,7 +156,7 @@ static void nss_wifi_if_callback(void *app_data, struct nss_cmn_msg *ncm)
 	struct nss_wifi_if_pvt *nwip = handle->pvt;
 
 	if (ncm->response != NSS_CMN_RESPONSE_ACK) {
-		nss_warning("%p: wifi_if Error response %d\n",
+		nss_warning("%px: wifi_if Error response %d\n",
 						handle->nss_ctx, ncm->response);
 		nwip->response = NSS_TX_FAILURE;
 		complete(&nwip->complete);
@@ -176,7 +176,7 @@ nss_tx_status_t nss_wifi_if_tx_msg(struct nss_ctx_instance *nss_ctx, struct nss_
 	struct nss_cmn_msg *ncm = &nwim->cm;
 
 	if (ncm->type > NSS_WIFI_IF_MAX_MSG_TYPES) {
-		nss_warning("%p: message type out of range: %d\n", nss_ctx, ncm->type);
+		nss_warning("%px: message type out of range: %d\n", nss_ctx, ncm->type);
 		return NSS_TX_FAILURE;
 	}
 
@@ -199,7 +199,7 @@ static nss_tx_status_t nss_wifi_if_tx_msg_sync(struct nss_wifi_if_handle *handle
 
 	status = nss_wifi_if_tx_msg(nss_ctx, nwim);
 	if (status != NSS_TX_SUCCESS) {
-		nss_warning("%p: nss_wifi_if_msg failed\n", nss_ctx);
+		nss_warning("%px: nss_wifi_if_msg failed\n", nss_ctx);
 		up(&nwip->sem);
 		return status;
 	}
@@ -207,7 +207,7 @@ static nss_tx_status_t nss_wifi_if_tx_msg_sync(struct nss_wifi_if_handle *handle
 	ret = wait_for_completion_timeout(&nwip->complete,
 						msecs_to_jiffies(NSS_WIFI_IF_TX_TIMEOUT));
 	if (!ret) {
-		nss_warning("%p: wifi_if tx failed due to timeout\n", nss_ctx);
+		nss_warning("%px: wifi_if tx failed due to timeout\n", nss_ctx);
 		nwip->response = NSS_TX_FAILURE;
 	}
 
@@ -243,7 +243,7 @@ static int nss_wifi_if_handle_destroy(struct nss_wifi_if_handle *handle)
 
 	status = nss_dynamic_interface_dealloc_node(if_num, NSS_DYNAMIC_INTERFACE_TYPE_WIFI);
 	if (status != NSS_TX_SUCCESS) {
-		nss_warning("%p: Dynamic interface destroy failed status %d\n", nss_ctx, status);
+		nss_warning("%px: Dynamic interface destroy failed status %d\n", nss_ctx, status);
 		return status;
 	}
 
@@ -266,7 +266,7 @@ static struct nss_wifi_if_handle *nss_wifi_if_handle_create(struct nss_ctx_insta
 
 	if_num = nss_dynamic_interface_alloc_node(NSS_DYNAMIC_INTERFACE_TYPE_WIFI);
 	if (if_num < 0) {
-		nss_warning("%p:failure allocating wifi if\n", nss_ctx);
+		nss_warning("%px:failure allocating wifi if\n", nss_ctx);
 		*cmd_rsp = NSS_WIFI_IF_DYNAMIC_IF_FAILURE;
 		return NULL;
 	}
@@ -276,7 +276,7 @@ static struct nss_wifi_if_handle *nss_wifi_if_handle_create(struct nss_ctx_insta
 	handle = (struct nss_wifi_if_handle *)kzalloc(sizeof(struct nss_wifi_if_handle),
 									GFP_KERNEL);
 	if (!handle) {
-		nss_warning("%p: handle memory alloc failed\n", nss_ctx);
+		nss_warning("%px: handle memory alloc failed\n", nss_ctx);
 		*cmd_rsp = NSS_WIFI_IF_ALLOC_FAILURE;
 		goto error1;
 	}
@@ -286,7 +286,7 @@ static struct nss_wifi_if_handle *nss_wifi_if_handle_create(struct nss_ctx_insta
 	handle->pvt = (struct nss_wifi_if_pvt *)kzalloc(sizeof(struct nss_wifi_if_pvt),
 								GFP_KERNEL);
 	if (!handle->pvt) {
-		nss_warning("%p: failure allocating memory for nss_wifi_if_pvt\n", nss_ctx);
+		nss_warning("%px: failure allocating memory for nss_wifi_if_pvt\n", nss_ctx);
 		*cmd_rsp = NSS_WIFI_IF_ALLOC_FAILURE;
 		goto error2;
 	}
@@ -335,20 +335,20 @@ struct nss_wifi_if_handle *nss_wifi_if_create_sync(struct net_device *netdev)
 	struct nss_wifi_if_handle *handle = NULL;
 
 	if (unlikely(nss_ctx->state != NSS_CORE_STATE_INITIALIZED)) {
-		nss_warning("%p: Interface could not be created as core not ready\n", nss_ctx);
+		nss_warning("%px: Interface could not be created as core not ready\n", nss_ctx);
 		return NULL;
 	}
 
 	handle = nss_wifi_if_handle_create(nss_ctx, &ret);
 	if (!handle) {
-		nss_warning("%p:wifi_if handle creation failed ret %d\n", nss_ctx, ret);
+		nss_warning("%px:wifi_if handle creation failed ret %d\n", nss_ctx, ret);
 		return NULL;
 	}
 
 	/* Initializes the semaphore and also sets the msg handler for if_num */
 	ret = nss_wifi_if_register_handler(handle);
 	if (ret != NSS_WIFI_IF_SUCCESS) {
-		nss_warning("%p: Registration handler failed reason: %d\n", nss_ctx, ret);
+		nss_warning("%px: Registration handler failed reason: %d\n", nss_ctx, ret);
 		goto error;
 	}
 
@@ -361,7 +361,7 @@ struct nss_wifi_if_handle *nss_wifi_if_create_sync(struct net_device *netdev)
 
 	ret = nss_wifi_if_tx_msg_sync(handle, &nwim);
 	if (ret != NSS_TX_SUCCESS) {
-		nss_warning("%p: nss_wifi_if_tx_msg_sync failed %u\n", nss_ctx, ret);
+		nss_warning("%px: nss_wifi_if_tx_msg_sync failed %u\n", nss_ctx, ret);
 		goto error;
 	}
 
@@ -397,14 +397,14 @@ nss_tx_status_t nss_wifi_if_destroy_sync(struct nss_wifi_if_handle *handle)
 	struct nss_ctx_instance *nss_ctx = handle->nss_ctx;
 
 	if (unlikely(nss_ctx->state != NSS_CORE_STATE_INITIALIZED)) {
-		nss_warning("%p: Interface could not be destroyed as core not ready\n", nss_ctx);
+		nss_warning("%px: Interface could not be destroyed as core not ready\n", nss_ctx);
 		return NSS_TX_FAILURE_NOT_READY;
 	}
 
 	spin_lock_bh(&nss_top_main.lock);
 	if (!nss_ctx->subsys_dp_register[if_num].ndev) {
 		spin_unlock_bh(&nss_top_main.lock);
-		nss_warning("%p: Unregister wifi interface %d: no context\n", nss_ctx, if_num);
+		nss_warning("%px: Unregister wifi interface %d: no context\n", nss_ctx, if_num);
 		return NSS_TX_FAILURE_BAD_PARAM;
 	}
 
@@ -500,7 +500,7 @@ nss_tx_status_t nss_wifi_if_tx_buf(struct nss_wifi_if_handle *handle,
 	 * Sanity check the SKB to ensure that it's suitable for us
 	 */
 	if (unlikely(skb->len <= ETH_HLEN)) {
-		nss_warning("%p: Rx packet: %p too short", nss_ctx, skb);
+		nss_warning("%px: Rx packet: %px too short", nss_ctx, skb);
 		return NSS_TX_FAILURE_TOO_SHORT;
 	}
 
@@ -514,4 +514,3 @@ nss_tx_status_t nss_wifi_if_tx_buf(struct nss_wifi_if_handle *handle,
 	return nss_core_send_packet(nss_ctx, skb, if_num, H2N_BIT_FLAG_VIRTUAL_BUFFER);
 }
 EXPORT_SYMBOL(nss_wifi_if_tx_buf);
-

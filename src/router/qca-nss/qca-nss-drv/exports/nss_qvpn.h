@@ -217,8 +217,11 @@ struct nss_qvpn_hdr_configure_msg {
 	uint16_t vpn_hdr_head_size;				/**< VPN header size. */
 	uint16_t vpn_hdr_head_offset;				/**< VPN header offset. */
 	uint16_t vpn_hdr_tail_size;				/**< Size of tail. */
+	uint16_t res;						/**< Reserved for alignment. */
 	uint8_t vpn_hdr_head[NSS_QVPN_VPN_HDR_HEAD_SIZE_MAX];	/**< Content of VPN header. */
 	uint8_t vpn_hdr_tail[NSS_QVPN_VPN_HDR_TAIL_SIZE_MAX];	/**< VPN header tail content. */
+	uint8_t hop_limit;					/**< TTL or hop limit. */
+	uint8_t res1[3];					/**< Reserved for alignment. */
 };
 
 /**

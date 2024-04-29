@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2017-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -64,7 +64,7 @@ static void nss_dtlsmgr_node_configure_done(void *app_data, struct nss_cmn_msg *
 {
 	struct nss_dtlsmgr *drv = app_data;
 
-	nss_dtlsmgr_info("%p: configure node(%u) response(%d) error(%d)\n", drv,
+	nss_dtlsmgr_info("%px: configure node(%u) response(%d) error(%d)\n", drv,
 			 ncm->interface, ncm->response, ncm->error);
 	atomic_cmpxchg(&drv->is_configured, false, (ncm->response == NSS_CMN_RESPONSE_ACK) ||
 			(ncm->error == NSS_DTLS_CMN_ERROR_ALREADY_CONFIGURED));
@@ -87,7 +87,7 @@ static void nss_dtlsmgr_node_configure(struct nss_dtlsmgr *drv, uint32_t if_num)
 
 	nss_status = nss_dtls_cmn_tx_msg(drv->nss_ctx, &ndcm);
 	if (nss_status != NSS_TX_SUCCESS) {
-		nss_dtlsmgr_warn("%p: unable to send node configure (%u)\n", drv, if_num);
+		nss_dtlsmgr_warn("%px: unable to send node configure (%u)\n", drv, if_num);
 		return;
 	}
 }
@@ -100,7 +100,7 @@ static void nss_dtlsmgr_rx_event(void *app_data, struct nss_cmn_msg *ncm)
 {
 	struct nss_dtlsmgr *drv = app_data;
 
-	nss_dtlsmgr_trace("%p: received Node stats sync:%u\n", drv, ncm->interface);
+	nss_dtlsmgr_trace("%px: received Node stats sync:%u\n", drv, ncm->interface);
 
 	/*
 	 * The firmware DTLS should not configure its DMA rings till it
@@ -141,7 +141,7 @@ int __init nss_dtlsmgr_init_module(void)
 	nss_dtlsmgr_trace("registering for base interface(%u)", NSS_DTLS_INTERFACE);
 	drv->nss_ctx = nss_dtls_cmn_notify_register(NSS_DTLS_INTERFACE, nss_dtlsmgr_rx_event, drv);
 	if (!drv->nss_ctx) {
-		nss_dtlsmgr_warn("%p: DTLS NSS context instance is NULL", drv);
+		nss_dtlsmgr_warn("%px: DTLS NSS context instance is NULL", drv);
 		return -ENODEV;
 	}
 

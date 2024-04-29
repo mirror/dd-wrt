@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2017-2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -31,6 +31,9 @@ static struct {
 	void *app_data;
 } nss_gre_pvt;
 
+/*
+ * TODO: Register separate callbacks for inner and outer GRE nodes.
+ */
 static atomic64_t pkt_cb_addr = ATOMIC64_INIT(0);
 
 /*
@@ -45,8 +48,8 @@ static void nss_gre_inner_rx_handler(struct net_device *dev, struct sk_buff *skb
 	nss_gre_pkt_callback_t scb = (nss_gre_pkt_callback_t)(unsigned long)atomic64_read(&pkt_cb_addr);
 	if (unlikely(scb)) {
 		struct nss_gre_info *info = (struct nss_gre_info *)netdev_priv(dev);
-		if (likely(info->next_dev)) {
-			scb(info->next_dev, skb);
+		if (likely(info->next_dev_inner)) {
+			scb(info->next_dev_inner, skb);
 		}
 	}
 
@@ -66,8 +69,8 @@ static void nss_gre_outer_rx_handler(struct net_device *dev, struct sk_buff *skb
 	nss_gre_pkt_callback_t scb = (nss_gre_pkt_callback_t)(unsigned long)atomic64_read(&pkt_cb_addr);
 	if (unlikely(scb)) {
 		struct nss_gre_info *info = (struct nss_gre_info *)netdev_priv(dev);
-		if (likely(info->next_dev)) {
-			scb(info->next_dev, skb);
+		if (likely(info->next_dev_outer)) {
+			scb(info->next_dev_outer, skb);
 		}
 	}
 
@@ -98,12 +101,12 @@ static void nss_gre_msg_handler(struct nss_ctx_instance *nss_ctx, struct nss_cmn
 	 * Is this a valid request/response packet?
 	 */
 	if (ncm->type >= NSS_GRE_MSG_MAX) {
-		nss_warning("%p: received invalid message %d for GRE STD interface", nss_ctx, ncm->type);
+		nss_warning("%px: received invalid message %d for GRE STD interface", nss_ctx, ncm->type);
 		return;
 	}
 
 	if (nss_cmn_get_msg_len(ncm) > sizeof(struct nss_gre_msg)) {
-		nss_warning("%p: tx request for another interface: %d", nss_ctx, ncm->interface);
+		nss_warning("%px: tx request for another interface: %d", nss_ctx, ncm->interface);
 		return;
 	}
 
@@ -148,7 +151,7 @@ static void nss_gre_msg_handler(struct nss_ctx_instance *nss_ctx, struct nss_cmn
 	 * call gre-std callback
 	 */
 	if (!cb) {
-		nss_warning("%p: No callback for gre-std interface %d",
+		nss_warning("%px: No callback for gre-std interface %d",
 			    nss_ctx, ncm->interface);
 		return;
 	}
@@ -214,12 +217,12 @@ nss_tx_status_t nss_gre_tx_msg(struct nss_ctx_instance *nss_ctx, struct nss_gre_
 	 * Sanity check the message
 	 */
 	if (!nss_is_dynamic_interface(ncm->interface)) {
-		nss_warning("%p: tx request for non dynamic interface: %d", nss_ctx, ncm->interface);
+		nss_warning("%px: tx request for non dynamic interface: %d", nss_ctx, ncm->interface);
 		return NSS_TX_FAILURE;
 	}
 
 	if (ncm->type > NSS_GRE_MSG_MAX) {
-		nss_warning("%p: message type out of range: %d", nss_ctx, ncm->type);
+		nss_warning("%px: message type out of range: %d", nss_ctx, ncm->type);
 		return NSS_TX_FAILURE;
 	}
 
@@ -250,14 +253,14 @@ nss_tx_status_t nss_gre_tx_msg_sync(struct nss_ctx_instance *nss_ctx, struct nss
 
 	status = nss_gre_tx_msg(nss_ctx, msg);
 	if (status != NSS_TX_SUCCESS) {
-		nss_warning("%p: gre_tx_msg failed\n", nss_ctx);
+		nss_warning("%px: gre_tx_msg failed\n", nss_ctx);
 		up(&nss_gre_pvt.sem);
 		return status;
 	}
 	ret = wait_for_completion_timeout(&nss_gre_pvt.complete, msecs_to_jiffies(NSS_GRE_TX_TIMEOUT));
 
 	if (!ret) {
-		nss_warning("%p: GRE STD tx sync failed due to timeout\n", nss_ctx);
+		nss_warning("%px: GRE STD tx sync failed due to timeout\n", nss_ctx);
 		nss_gre_pvt.response = NSS_TX_FAILURE;
 	}
 
@@ -273,7 +276,7 @@ EXPORT_SYMBOL(nss_gre_tx_msg_sync);
  */
 nss_tx_status_t nss_gre_tx_buf(struct nss_ctx_instance *nss_ctx, uint32_t if_num, struct sk_buff *skb)
 {
-	return nss_core_send_packet(nss_ctx, skb, if_num, H2N_BIT_FLAG_VIRTUAL_BUFFER);
+	return nss_core_send_packet(nss_ctx, skb, if_num, H2N_BIT_FLAG_VIRTUAL_BUFFER | H2N_BIT_FLAG_BUFFER_REUSABLE);
 }
 EXPORT_SYMBOL(nss_gre_tx_buf);
 
@@ -307,7 +310,7 @@ struct nss_ctx_instance *nss_gre_register_if(uint32_t if_num, uint32_t type, nss
 		break;
 
 	default:
-		nss_warning("%p: Unable to register. Wrong interface type %d\n", nss_ctx, type);
+		nss_warning("%px: Unable to register. Wrong interface type %d\n", nss_ctx, type);
 		return NULL;
 	}
 
@@ -337,7 +340,7 @@ void nss_gre_unregister_if(uint32_t if_num)
 
 	dev = nss_cmn_get_interface_dev(nss_ctx, if_num);
 	if (!dev) {
-		nss_warning("%p: Unable to find net device for the interface %d\n", nss_ctx, if_num);
+		nss_warning("%px: Unable to find net device for the interface %d\n", nss_ctx, if_num);
 		return;
 	}
 
@@ -359,6 +362,24 @@ struct nss_ctx_instance *nss_gre_get_context(void)
 	return (struct nss_ctx_instance *)&nss_top_main.nss[nss_top_main.gre_handler_id];
 }
 EXPORT_SYMBOL(nss_gre_get_context);
+
+/*
+ * nss_gre_ifnum_with_core_id()
+ *	Append core id to GRE interface num.
+ */
+int nss_gre_ifnum_with_core_id(int if_num)
+{
+	struct nss_ctx_instance *nss_ctx = nss_gre_get_context();
+
+	NSS_VERIFY_CTX_MAGIC(nss_ctx);
+	if (!nss_is_dynamic_interface(if_num)) {
+		nss_warning("%px: Invalid if_num: %d, must be a dynamic interface\n", nss_ctx, if_num);
+		return 0;
+	}
+
+	return NSS_INTERFACE_NUM_APPEND_COREID(nss_ctx, if_num);
+}
+EXPORT_SYMBOL(nss_gre_ifnum_with_core_id);
 
 /*
  * nss_gre_msg_init()

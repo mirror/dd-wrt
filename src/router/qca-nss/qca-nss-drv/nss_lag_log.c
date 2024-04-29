@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2018, 2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -36,7 +36,7 @@ static int8_t *nss_lag_log_message_types_str[NSS_TX_METADATA_LAG_MAX] __maybe_un
 static void nss_lag_log_state_change_msg(struct nss_lag_msg *nlm)
 {
 	struct nss_lag_state_change *nlcm __maybe_unused = &nlm->msg.state;
-	nss_trace("%p: NSS LAG State Change message \n"
+	nss_trace("%px: NSS LAG State Change message \n"
 		"LAG ID: %x\n"
 		"LAG Interface: %x\n"
 		"LAG Event: %d\n",
@@ -54,9 +54,9 @@ static void nss_lag_log_verbose(struct nss_lag_msg *nlm)
 	case NSS_TX_METADATA_LAG_STATE_CHANGE:
 		nss_lag_log_state_change_msg(nlm);
 		break;
-	
+
 	default:
-		nss_trace("%p: Invalid message type\n", nlm);
+		nss_trace("%px: Invalid message type\n", nlm);
 		break;
 	}
 }
@@ -68,11 +68,11 @@ static void nss_lag_log_verbose(struct nss_lag_msg *nlm)
 void nss_lag_log_tx_msg(struct nss_lag_msg *nlm)
 {
 	if (nlm->cm.type >= NSS_TX_METADATA_LAG_MAX) {
-		nss_warning("%p: Invalid message type\n", nlm);
+		nss_warning("%px: Invalid message type\n", nlm);
 		return;
 	}
 
-	nss_info("%p: type[%d]:%s\n", nlm, nlm->cm.type, nss_lag_log_message_types_str[nlm->cm.type]);
+	nss_info("%px: type[%d]:%s\n", nlm, nlm->cm.type, nss_lag_log_message_types_str[nlm->cm.type]);
 	nss_lag_log_verbose(nlm);
 }
 
@@ -83,18 +83,18 @@ void nss_lag_log_tx_msg(struct nss_lag_msg *nlm)
 void nss_lag_log_rx_msg(struct nss_lag_msg *nlm)
 {
 	if (nlm->cm.response >= NSS_CMN_RESPONSE_LAST) {
-		nss_warning("%p: Invalid response\n", nlm);
+		nss_warning("%px: Invalid response\n", nlm);
 		return;
 	}
 
 	if (nlm->cm.response == NSS_CMN_RESPONSE_NOTIFY || (nlm->cm.response == NSS_CMN_RESPONSE_ACK)) {
-		nss_info("%p: type[%d]:%s, response[%d]:%s\n", nlm, nlm->cm.type,
+		nss_info("%px: type[%d]:%s, response[%d]:%s\n", nlm, nlm->cm.type,
 			nss_lag_log_message_types_str[nlm->cm.type],
 			nlm->cm.response, nss_cmn_response_str[nlm->cm.response]);
 		goto verbose;
 	}
 
-	nss_info("%p: msg nack - type[%d]:%s, response[%d]:%s\n",
+	nss_info("%px: msg nack - type[%d]:%s, response[%d]:%s\n",
 		nlm, nlm->cm.type, nss_lag_log_message_types_str[nlm->cm.type],
 		nlm->cm.response, nss_cmn_response_str[nlm->cm.response]);
 

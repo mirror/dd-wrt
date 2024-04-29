@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2016-2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2016-2018, 2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -51,6 +51,7 @@ enum nss_ppe_sc_type {
 	NSS_PPE_SC_IPSEC_EIP2PPE,	/**< Inline IPsec redirection from EIP-to-PPE. */
 	NSS_PPE_SC_PTP,			/**< Service code for PTP packets. */
 	NSS_PPE_SC_VLAN_FILTER_BYPASS,	/**< VLAN filter bypass for bridge flows between 2 different VSIs. */
+	NSS_PPE_SC_L3_EXCEPT,		/**< Indicate exception post tunnel/TAP operation. */
 	NSS_PPE_SC_MAX,			/**< Maximum service code. */
 };
 

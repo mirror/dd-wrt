@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2017, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017, 2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -76,7 +76,7 @@ void nss_gre_tunnel_stats_session_sync(struct nss_ctx_instance *nss_ctx, struct 
 
 	if (!s) {
 		spin_unlock_bh(&nss_gre_tunnel_stats_session_debug_lock);
-		nss_warning("%p: Session not found: %u", nss_ctx, if_num);
+		nss_warning("%px: Session not found: %u", nss_ctx, if_num);
 		return;
 	}
 
@@ -247,4 +247,3 @@ void nss_gre_tunnel_stats_dentry_create(void)
 {
 	nss_stats_create_dentry("gre_tunnel", &nss_gre_tunnel_stats_ops);
 }
-

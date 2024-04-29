@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2014-2017 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2014-2017, 2019-2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -42,7 +42,7 @@ static inline struct nss_wrr_class_data *nss_wrr_find_class(u32 classid,
 	struct Qdisc_class_common *clc;
 	clc = qdisc_class_find(&q->clhash, classid);
 	if (clc == NULL) {
-		nss_qdisc_info("Cannot find class with classid %u in qdisc %p hash table %p\n", classid, sch, &q->clhash);
+		nss_qdisc_info("Cannot find class with classid %u in qdisc %px hash table %px\n", classid, sch, &q->clhash);
 		return NULL;
 	}
 	return container_of(clc, struct nss_wrr_class_data, cl_common);
@@ -53,7 +53,7 @@ static void nss_wrr_destroy_class(struct Qdisc *sch, struct nss_wrr_class_data *
 	struct nss_wrr_sched_data *q = qdisc_priv(sch);
 	struct nss_if_msg nim;
 
-	nss_qdisc_info("Destroying nss_wrr class %p from qdisc %p\n", cl, sch);
+	nss_qdisc_info("Destroying nss_wrr class %px from qdisc %px\n", cl, sch);
 
 	/*
 	 * Note, this function gets called even for NSSWRR and not just for NSSWRR_GROUP.
@@ -62,8 +62,8 @@ static void nss_wrr_destroy_class(struct Qdisc *sch, struct nss_wrr_class_data *
 	 * only for the root qdisc.
 	 */
 	if (cl == &q->root) {
-		nss_qdisc_info("We do not destroy nss_wrr class %p here since this is "
-				"the qdisc %p\n", cl, sch);
+		nss_qdisc_info("We do not destroy nss_wrr class %px here since this is "
+				"the qdisc %px\n", cl, sch);
 		return;
 	}
 
@@ -84,7 +84,7 @@ static void nss_wrr_destroy_class(struct Qdisc *sch, struct nss_wrr_class_data *
 	/*
 	 * And now we destroy the child.
 	 */
-	qdisc_put(cl->qdisc);
+	 nss_qdisc_put(cl->qdisc);
 
 	/*
 	 * Stop the stats polling timer and free class
@@ -106,9 +106,15 @@ static void nss_wrr_destroy_class(struct Qdisc *sch, struct nss_wrr_class_data *
  * nss_wrr_class_params_validate_and_save()
  *	Validates and saves the class configuration parameters.
  */
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 16, 0))
 static int nss_wrr_class_params_validate_and_save(struct Qdisc *sch, struct nlattr **tca,
 					uint32_t *quantum)
+#else
+static int nss_wrr_class_params_validate_and_save(struct Qdisc *sch, struct nlattr **tca,
+					uint32_t *quantum, struct netlink_ext_ack *extack)
+#endif
 {
+	struct nlattr *tb[TCA_NSSWRR_MAX + 1];
 	struct nlattr *opt = tca[TCA_OPTIONS];
 	struct tc_nsswrr_class_qopt *qopt;
 	struct net_device *dev = qdisc_dev(sch);
@@ -123,7 +129,11 @@ static int nss_wrr_class_params_validate_and_save(struct Qdisc *sch, struct nlat
 		return -EINVAL;
 	}
 
-	qopt = nss_qdisc_qopt_get(opt, nss_wrr_policy, TCA_NSSWRR_MAX, TCA_NSSWRR_CLASS_PARMS);
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 16, 0))
+	qopt = nss_qdisc_qopt_get(opt, nss_wrr_policy, tb, TCA_NSSWRR_MAX, TCA_NSSWRR_CLASS_PARMS);
+#else
+	qopt = nss_qdisc_qopt_get(opt, nss_wrr_policy, tb, TCA_NSSWRR_MAX, TCA_NSSWRR_CLASS_PARMS, extack);
+#endif
 	if (!qopt) {
 		return -EINVAL;
 	}
@@ -218,9 +228,16 @@ static int nss_wrr_ppe_change_class(struct Qdisc *sch, struct nss_wrr_class_data
 }
 #endif
 
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 16, 0))
+static int nss_wrr_change_class(struct Qdisc *sch, u32 classid, u32 parentid,
+		  struct nlattr **tca, unsigned long *arg)
+{
+	struct netlink_ext_ack *extack = NULL;
+#else
 static int nss_wrr_change_class(struct Qdisc *sch, u32 classid, u32 parentid,
 		  struct nlattr **tca, unsigned long *arg, struct netlink_ext_ack *extack)
 {
+#endif
 	struct nss_wrr_sched_data *q = qdisc_priv(sch);
 	struct nss_wrr_class_data *cl = (struct nss_wrr_class_data *)*arg;
 	struct nss_if_msg nim_config;
@@ -230,7 +247,11 @@ static int nss_wrr_change_class(struct Qdisc *sch, u32 classid, u32 parentid,
 
 	nss_qdisc_info("Changing nss_wrr class %u\n", classid);
 
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 16, 0))
 	if (nss_wrr_class_params_validate_and_save(sch, tca, &quantum) < 0) {
+#else
+	if (nss_wrr_class_params_validate_and_save(sch, tca, &quantum, extack) < 0) {
+#endif
 		nss_qdisc_warning("validation of configuration parameters for wrr class %x failed\n",
 					sch->handle);
 		return -EINVAL;
@@ -266,7 +287,7 @@ static int nss_wrr_change_class(struct Qdisc *sch, u32 classid, u32 parentid,
 			return -EINVAL;
 		}
 
-		nss_qdisc_info("NSS_wrr class %u allocated %p\n", classid, cl);
+		nss_qdisc_info("NSS_wrr class %u allocated %px\n", classid, cl);
 		cl->cl_common.classid = classid;
 
 		/*
@@ -275,10 +296,10 @@ static int nss_wrr_change_class(struct Qdisc *sch, u32 classid, u32 parentid,
 		 * reference count should not be 0.
 		 */
 		cl->qdisc = &noop_qdisc;
-		atomic_set(&cl->nq.refcnt, 1);
+		nss_qdisc_atomic_set(&cl->nq);
 		*arg = (unsigned long)cl;
 
-		nss_qdisc_info("Adding classid %u to qdisc %p hash queue %p\n", classid, sch, &q->clhash);
+		nss_qdisc_info("Adding classid %u to qdisc %px hash queue %px\n", classid, sch, &q->clhash);
 
 		/*
 		 * This is where a class gets initialized. Classes do not have a init function
@@ -286,7 +307,8 @@ static int nss_wrr_change_class(struct Qdisc *sch, u32 classid, u32 parentid,
 		 * here.
 		 */
 		cl->nq.parent = &q->nq;
-		if (nss_qdisc_init(sch, extack, &cl->nq, NSS_SHAPER_NODE_TYPE_WRR_GROUP, classid, accel_mode) < 0) {
+		if (nss_qdisc_init(sch, &cl->nq, NSS_SHAPER_NODE_TYPE_WRR_GROUP, classid, accel_mode, extack) < 0)
+		{
 			nss_qdisc_error("Nss init for class %u failed\n", classid);
 			return -EINVAL;
 		}
@@ -384,7 +406,11 @@ failure:
 	return -EINVAL;
 }
 
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0))
 static int nss_wrr_delete_class(struct Qdisc *sch, unsigned long arg, struct netlink_ext_ack *extack)
+#else
+static int nss_wrr_delete_class(struct Qdisc *sch, unsigned long arg)
+#endif
 {
 	struct nss_wrr_sched_data *q = qdisc_priv(sch);
 	struct nss_wrr_class_data *cl = (struct nss_wrr_class_data *)arg;
@@ -401,7 +427,7 @@ static int nss_wrr_delete_class(struct Qdisc *sch, unsigned long arg, struct net
 	/*
 	 * The message to NSS should be sent to the parent of this class
 	 */
-	nss_qdisc_info("Detaching nss_wrr class: %p\n", cl);
+	nss_qdisc_info("Detaching nss_wrr class: %px\n", cl);
 	nim.msg.shaper_configure.config.msg.shaper_node_config.qos_tag = q->nq.qos_tag;
 	nim.msg.shaper_configure.config.msg.shaper_node_config.snc.wrr_detach.child_qos_tag = cl->nq.qos_tag;
 	if (nss_qdisc_node_detach(&q->nq, &cl->nq, &nim,
@@ -412,17 +438,24 @@ static int nss_wrr_delete_class(struct Qdisc *sch, unsigned long arg, struct net
 	sch_tree_lock(sch);
 	qdisc_reset(cl->qdisc);
 	qdisc_class_hash_remove(&q->clhash, &cl->cl_common);
-	refcnt = atomic_sub_return(1, &cl->nq.refcnt);
+
+	refcnt = nss_qdisc_atomic_sub_return(&cl->nq);
+
 	sch_tree_unlock(sch);
 	if (!refcnt) {
-		nss_qdisc_error("Reference count should not be zero for class %p\n", cl);
+		nss_qdisc_error("Reference count should not be zero for class %px\n", cl);
 	}
 
 	return 0;
 }
 
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 16, 0))
 static int nss_wrr_graft_class(struct Qdisc *sch, unsigned long arg, struct Qdisc *new,
-				struct Qdisc **old, struct netlink_ext_ack *extack)
+								 struct Qdisc **old)
+#else
+static int nss_wrr_graft_class(struct Qdisc *sch, unsigned long arg, struct Qdisc *new,
+								 struct Qdisc **old, struct netlink_ext_ack *extack)
+#endif
 {
 	struct nss_wrr_sched_data *q = qdisc_priv(sch);
 	struct nss_wrr_class_data *cl = (struct nss_wrr_class_data *)arg;
@@ -430,10 +463,10 @@ static int nss_wrr_graft_class(struct Qdisc *sch, unsigned long arg, struct Qdis
 	struct nss_if_msg nim_attach;
 	struct nss_qdisc *nq_new = qdisc_priv(new);
 
-	nss_qdisc_info("Grafting class %p\n", sch);
+	nss_qdisc_info("Grafting class %px\n", sch);
 
 	if (cl == &q->root) {
-		nss_qdisc_error("Can't graft root class %p\n", cl);
+		nss_qdisc_error("Can't graft root class %px\n", cl);
 		return -EINVAL;
 	}
 
@@ -448,10 +481,10 @@ static int nss_wrr_graft_class(struct Qdisc *sch, unsigned long arg, struct Qdis
 	 * Since we initially attached a noop qdisc as child (in Linux),
 	 * we do not perform a detach in the NSS if its a noop qdisc.
 	 */
-	nss_qdisc_info("Grafting old: %p with new: %p\n", *old, new);
+	nss_qdisc_info("Grafting old: %px with new: %px\n", *old, new);
 	if (*old != &noop_qdisc) {
 		struct nss_qdisc *nq_child = qdisc_priv(*old);
-		nss_qdisc_info("Detaching old: %p\n", *old);
+		nss_qdisc_info("Detaching old: %px\n", *old);
 		nim_detach.msg.shaper_configure.config.msg.shaper_node_config.qos_tag = cl->nq.qos_tag;
 		if (nss_qdisc_node_detach(&cl->nq, nq_child, &nim_detach,
 				NSS_SHAPER_CONFIG_TYPE_SHAPER_NODE_DETACH) < 0) {
@@ -464,7 +497,7 @@ static int nss_wrr_graft_class(struct Qdisc *sch, unsigned long arg, struct Qdis
 	 * to the NSS.
 	 */
 	if (new != &noop_qdisc) {
-		nss_qdisc_info("Attaching new: %p\n", new);
+		nss_qdisc_info("Attaching new: %px\n", new);
 		nim_attach.msg.shaper_configure.config.msg.shaper_node_config.qos_tag = cl->nq.qos_tag;
 		nim_attach.msg.shaper_configure.config.msg.shaper_node_config.snc.wrr_group_attach.child_qos_tag = nq_new->qos_tag;
 		if (nss_qdisc_node_attach(&cl->nq, nq_new, &nim_attach,
@@ -486,7 +519,7 @@ static int nss_wrr_graft_class(struct Qdisc *sch, unsigned long arg, struct Qdis
 static struct Qdisc *nss_wrr_leaf_class(struct Qdisc *sch, unsigned long arg)
 {
 	struct nss_wrr_class_data *cl = (struct nss_wrr_class_data *)arg;
-	nss_qdisc_info("nss_wrr class leaf %p\n", cl);
+	nss_qdisc_info("nss_wrr class leaf %px\n", cl);
 
 	/*
 	 * Since all nss_wrr groups are leaf nodes, we can always
@@ -497,18 +530,19 @@ static struct Qdisc *nss_wrr_leaf_class(struct Qdisc *sch, unsigned long arg)
 
 static void nss_wrr_qlen_notify(struct Qdisc *sch, unsigned long arg)
 {
-	nss_qdisc_info("nss_wrr qlen notify %p\n", sch);
+	nss_qdisc_info("nss_wrr qlen notify %px\n", sch);
 	/*
 	 * Gets called when qlen of child changes (Useful for deactivating)
 	 * Not useful for us here.
 	 */
 }
 
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 14, 0))
 static unsigned long nss_wrr_get_class(struct Qdisc *sch, u32 classid)
 {
 	struct nss_wrr_class_data *cl = nss_wrr_find_class(classid, sch);
 
-	nss_qdisc_info("Get nss_wrr class %p - class match = %p\n", sch, cl);
+	nss_qdisc_info("Get nss_wrr class %px - class match = %px\n", sch, cl);
 
 	if (cl != NULL) {
 		atomic_add(1, &cl->nq.refcnt);
@@ -517,6 +551,34 @@ static unsigned long nss_wrr_get_class(struct Qdisc *sch, u32 classid)
 	return (unsigned long)cl;
 }
 
+static void nss_wrr_put_class(struct Qdisc *sch, unsigned long arg)
+{
+	struct nss_wrr_class_data *cl = (struct nss_wrr_class_data *)arg;
+	nss_qdisc_info("nss_wrr put class for %px\n", cl);
+
+	/*
+	 * We are safe to destroy the qdisc if the reference count
+	 * goes down to 0.
+	 */
+	if (nss_qdisc_atomic_sub_return(&cl->nq) == 0) {
+		nss_wrr_destroy_class(sch, cl);
+	}
+}
+#else
+static unsigned long nss_wrr_search_class(struct Qdisc *sch, u32 classid)
+{
+	struct nss_wrr_class_data *cl = nss_wrr_find_class(classid, sch);
+
+	nss_qdisc_info("Get nss_wrr class %px - class match = %px\n", sch, cl);
+
+	if (cl != NULL) {
+		atomic_add(1, &cl->nq.refcnt.refs);
+	}
+
+	return (unsigned long)cl;
+}
+#endif
+
 static int nss_wrr_dump_class(struct Qdisc *sch, unsigned long arg, struct sk_buff *skb,
 		struct tcmsg *tcm)
 {
@@ -524,7 +586,7 @@ static int nss_wrr_dump_class(struct Qdisc *sch, unsigned long arg, struct sk_bu
 	struct nlattr *opts;
 	struct tc_nsswrr_class_qopt qopt;
 
-	nss_qdisc_info("Dumping class %p of Qdisc %x\n", cl, sch->handle);
+	nss_qdisc_info("Dumping class %px of Qdisc %x\n", cl, sch->handle);
 
 	qopt.quantum = cl->quantum;
 
@@ -536,7 +598,7 @@ static int nss_wrr_dump_class(struct Qdisc *sch, unsigned long arg, struct sk_bu
 	tcm->tcm_handle = cl->cl_common.classid;
 	tcm->tcm_info = cl->qdisc->handle;
 
-	opts = nla_nest_start(skb, TCA_OPTIONS);
+	opts = nss_qdisc_nla_nest_start(skb, TCA_OPTIONS);
 	if (opts == NULL || nla_put(skb, TCA_NSSWRR_CLASS_PARMS, sizeof(qopt), &qopt)) {
 		goto nla_put_failure;
 	}
@@ -551,7 +613,7 @@ static int nss_wrr_dump_class_stats(struct Qdisc *sch, unsigned long arg, struct
 {
 	struct nss_qdisc *nq = (struct nss_qdisc *)arg;
 
-	if (nss_qdisc_gnet_stats_copy_basic(d, &nq->bstats) < 0 ||
+	if (nss_qdisc_gnet_stats_copy_basic(sch, d, &nq->bstats) < 0 ||
 			nss_qdisc_gnet_stats_copy_queue(d, &nq->qstats) < 0) {
 		return -1;
 	}
@@ -566,7 +628,7 @@ static void nss_wrr_walk(struct Qdisc *sch, struct qdisc_walker *arg)
 	struct nss_wrr_class_data *cl;
 	unsigned int i;
 
-	nss_qdisc_info("In nss_wrr walk %p\n", sch);
+	nss_qdisc_info("In nss_wrr walk %px\n", sch);
 	if (arg->stop)
 		return;
 
@@ -586,14 +648,22 @@ static void nss_wrr_walk(struct Qdisc *sch, struct qdisc_walker *arg)
 	}
 }
 
-static int nss_wrr_init_qdisc(struct Qdisc *sch, struct nlattr *opt, struct netlink_ext_ack *extack)
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 16, 0))
+static int nss_wrr_init_qdisc(struct Qdisc *sch, struct nlattr *opt)
 {
+	struct netlink_ext_ack *extack = NULL;
+#else
+static int nss_wrr_init_qdisc(struct Qdisc *sch, struct nlattr *opt,
+				struct netlink_ext_ack *extack)
+{
+#endif
 	struct nss_wrr_sched_data *q = qdisc_priv(sch);
+	struct nlattr *tb[TCA_NSSWRR_MAX + 1];
 	int err;
 	struct nss_if_msg nim;
 	struct tc_nsswrr_qopt *qopt;
 
-	nss_qdisc_info("Init nss_wrr qdisc %p\n", sch);
+	nss_qdisc_info("Init nss_wrr qdisc %px\n", sch);
 
 	err = qdisc_class_hash_init(&q->clhash);
 	if (err < 0) {
@@ -606,7 +676,11 @@ static int nss_wrr_init_qdisc(struct Qdisc *sch, struct nlattr *opt, struct netl
 	qdisc_class_hash_insert(&q->clhash, &q->root.cl_common);
 	qdisc_class_hash_grow(sch, &q->clhash);
 
-	qopt = nss_qdisc_qopt_get(opt, nss_wrr_policy, TCA_NSSWRR_MAX, TCA_NSSWRR_QDISC_PARMS);
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 16, 0))
+	qopt = nss_qdisc_qopt_get(opt, nss_wrr_policy, tb, TCA_NSSWRR_MAX, TCA_NSSWRR_QDISC_PARMS);
+#else
+	qopt = nss_qdisc_qopt_get(opt, nss_wrr_policy, tb, TCA_NSSWRR_MAX, TCA_NSSWRR_QDISC_PARMS, extack);
+#endif
 	if (!qopt) {
 		nss_qdisc_warning("Failed to parse input");
 		return -EINVAL;
@@ -615,7 +689,7 @@ static int nss_wrr_init_qdisc(struct Qdisc *sch, struct nlattr *opt, struct netl
 	/*
 	 * Initialize the NSSWRR shaper in NSS
 	 */
-	if (nss_qdisc_init(sch, extack, &q->nq, NSS_SHAPER_NODE_TYPE_WRR, 0, qopt->accel_mode) < 0) {
+	if (nss_qdisc_init(sch, &q->nq, NSS_SHAPER_NODE_TYPE_WRR, 0, qopt->accel_mode, extack) < 0) {
 		nss_qdisc_warning("Failed init nss_wrr qdisc");
 		return -EINVAL;
 	}
@@ -655,8 +729,14 @@ static int nss_wrr_init_qdisc(struct Qdisc *sch, struct nlattr *opt, struct netl
 	return 0;
 }
 
-static int nss_wrr_change_qdisc(struct Qdisc *sch, struct nlattr *opt, struct netlink_ext_ack *extack)
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 16, 0))
+static int nss_wrr_change_qdisc(struct Qdisc *sch, struct nlattr *opt)
+#else
+static int nss_wrr_change_qdisc(struct Qdisc *sch, struct nlattr *opt,
+				struct netlink_ext_ack *extack)
+#endif
 {
+	struct nlattr *tb[TCA_NSSWRR_MAX + 1];
 	struct nss_wrr_sched_data *q;
 	struct tc_nsswrr_qopt *qopt;
 
@@ -666,7 +746,11 @@ static int nss_wrr_change_qdisc(struct Qdisc *sch, struct nlattr *opt, struct ne
 		return -EINVAL;
 	}
 
-	qopt = nss_qdisc_qopt_get(opt, nss_wrr_policy, TCA_NSSWRR_MAX, TCA_NSSWRR_QDISC_PARMS);
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 16, 0))
+	qopt = nss_qdisc_qopt_get(opt, nss_wrr_policy, tb, TCA_NSSWRR_MAX, TCA_NSSWRR_QDISC_PARMS);
+#else
+	qopt = nss_qdisc_qopt_get(opt, nss_wrr_policy, tb, TCA_NSSWRR_MAX, TCA_NSSWRR_QDISC_PARMS, extack);
+#endif
 	if (!qopt) {
 		return -EINVAL;
 	}
@@ -681,7 +765,7 @@ static int nss_wrr_change_qdisc(struct Qdisc *sch, struct nlattr *opt, struct ne
 static void nss_wrr_reset_class(struct nss_wrr_class_data *cl)
 {
 	nss_qdisc_reset(cl->qdisc);
-	nss_qdisc_info("Nsswrr class resetted %p\n", cl->qdisc);
+	nss_qdisc_info("Nsswrr class resetted %px\n", cl->qdisc);
 }
 
 static void nss_wrr_reset_qdisc(struct Qdisc *sch)
@@ -697,7 +781,7 @@ static void nss_wrr_reset_qdisc(struct Qdisc *sch)
 	}
 
 	nss_qdisc_reset(sch);
-	nss_qdisc_info("Nsswrr qdisc resetted %p\n", sch);
+	nss_qdisc_info("Nsswrr qdisc resetted %px\n", sch);
 }
 
 static void nss_wrr_destroy_qdisc(struct Qdisc *sch)
@@ -720,8 +804,8 @@ static void nss_wrr_destroy_qdisc(struct Qdisc *sch)
 			 * care of by the nss_wrr_destroy() function.
 			 */
 			if (cl == &q->root) {
-				nss_qdisc_info("We do not detach or destroy nss_wrr class %p here since this is "
-						"the qdisc %p\n", cl, sch);
+				nss_qdisc_info("We do not detach or destroy nss_wrr class %px here since this is "
+						"the qdisc %px\n", cl, sch);
 				continue;
 			}
 
@@ -729,7 +813,7 @@ static void nss_wrr_destroy_qdisc(struct Qdisc *sch)
 			 * Reduce refcnt by 1 before destroying. This is to
 			 * ensure that polling of stat stops properly.
 			 */
-			atomic_sub(1, &cl->nq.refcnt);
+			 nss_qdisc_atomic_sub(&cl->nq);
 
 			/*
 			 * Detach class before destroying it. We dont check for noop qdisc here
@@ -762,7 +846,7 @@ static void nss_wrr_destroy_qdisc(struct Qdisc *sch)
 	 *	 will be taken care of by the graft call.
 	 */
 	nss_qdisc_destroy(&q->nq);
-	nss_qdisc_info("Nsswrr destroyed %p\n", sch);
+	nss_qdisc_info("Nsswrr destroyed %px\n", sch);
 }
 
 static int nss_wrr_dump_qdisc(struct Qdisc *sch, struct sk_buff *skb)
@@ -780,7 +864,7 @@ static int nss_wrr_dump_qdisc(struct Qdisc *sch, struct sk_buff *skb)
 
 	opt.accel_mode = nss_qdisc_accel_mode_get(&q->nq);
 
-	opts = nla_nest_start(skb, TCA_OPTIONS);
+	opts = nss_qdisc_nla_nest_start(skb, TCA_OPTIONS);
 	if (opts == NULL) {
 		goto nla_put_failure;
 	}
@@ -795,9 +879,18 @@ nla_put_failure:
 	return -EMSGSIZE;
 }
 
-static int nss_wrr_enqueue(struct sk_buff *skb, struct Qdisc *sch, struct sk_buff **to_free)
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 8, 0))
+static int nss_wrr_enqueue(struct sk_buff *skb, struct Qdisc *sch)
+#else
+static int nss_wrr_enqueue(struct sk_buff *skb, struct Qdisc *sch,
+				struct sk_buff **to_free)
+#endif
 {
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 8, 0))
 	return nss_qdisc_enqueue(skb, sch);
+#else
+	return nss_qdisc_enqueue(skb, sch, to_free);
+#endif
 }
 
 static struct sk_buff *nss_wrr_dequeue(struct Qdisc *sch)
@@ -805,13 +898,33 @@ static struct sk_buff *nss_wrr_dequeue(struct Qdisc *sch)
 	return nss_qdisc_dequeue(sch);
 }
 
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 8, 0))
+static unsigned int nss_wrr_drop(struct Qdisc *sch)
+{
+	nss_qdisc_info("Nsswrr drop\n");
+	return nss_qdisc_drop(sch);
+}
+#endif
+
 const struct Qdisc_class_ops nss_wrr_class_ops = {
 	.change		= nss_wrr_change_class,
 	.delete		= nss_wrr_delete_class,
 	.graft		= nss_wrr_graft_class,
 	.leaf		= nss_wrr_leaf_class,
 	.qlen_notify	= nss_wrr_qlen_notify,
-	.find		= nss_wrr_get_class,
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 14, 0))
+	.get		= nss_wrr_get_class,
+	.put		= nss_wrr_put_class,
+#else
+	.find       = nss_wrr_search_class,
+#endif
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 4, 0))
+	.tcf_chain	= nss_qdisc_tcf_chain,
+#else
+	.tcf_block	= nss_qdisc_tcf_block,
+#endif
+	.bind_tcf	= nss_qdisc_tcf_bind,
+	.unbind_tcf	= nss_qdisc_tcf_unbind,
 	.dump		= nss_wrr_dump_class,
 	.dump_stats	= nss_wrr_dump_class_stats,
 	.walk		= nss_wrr_walk
@@ -827,6 +940,9 @@ struct Qdisc_ops nss_wrr_qdisc_ops __read_mostly = {
 	.enqueue	= nss_wrr_enqueue,
 	.dequeue	= nss_wrr_dequeue,
 	.peek		= qdisc_peek_dequeued,
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 8, 0))
+	.drop		= nss_wrr_drop,
+#endif
 	.cl_ops		= &nss_wrr_class_ops,
 	.priv_size	= sizeof(struct nss_wrr_sched_data),
 	.owner		= THIS_MODULE
@@ -838,7 +954,19 @@ const struct Qdisc_class_ops nss_wfq_class_ops = {
 	.graft		= nss_wrr_graft_class,
 	.leaf		= nss_wrr_leaf_class,
 	.qlen_notify	= nss_wrr_qlen_notify,
-	.find		= nss_wrr_get_class,
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 14, 0))
+	.get		= nss_wrr_get_class,
+	.put		= nss_wrr_put_class,
+#else
+	.find       = nss_wrr_search_class,
+#endif
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 4, 0))
+	.tcf_chain	= nss_qdisc_tcf_chain,
+#else
+	.tcf_block	= nss_qdisc_tcf_block,
+#endif
+	.bind_tcf	= nss_qdisc_tcf_bind,
+	.unbind_tcf	= nss_qdisc_tcf_unbind,
 	.dump		= nss_wrr_dump_class,
 	.dump_stats	= nss_wrr_dump_class_stats,
 	.walk		= nss_wrr_walk
@@ -854,8 +982,10 @@ struct Qdisc_ops nss_wfq_qdisc_ops __read_mostly = {
 	.enqueue	= nss_wrr_enqueue,
 	.dequeue	= nss_wrr_dequeue,
 	.peek		= qdisc_peek_dequeued,
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 8, 0))
+	.drop		= nss_wrr_drop,
+#endif
 	.cl_ops		= &nss_wrr_class_ops,
 	.priv_size	= sizeof(struct nss_wrr_sched_data),
 	.owner		= THIS_MODULE
 };
-

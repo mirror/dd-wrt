@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2018-2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -19,9 +19,10 @@
  *	NSS C2C_TX APIs
  */
 
-#include "nss_tx_rx_common.h"
+#include <nss_hal.h>
 #include "nss_c2c_tx_stats.h"
 #include "nss_c2c_tx_log.h"
+#include "nss_c2c_tx_strings.h"
 
 int nss_c2c_tx_test_id = -1;
 
@@ -67,7 +68,7 @@ static void nss_c2c_tx_msg_handler(struct nss_ctx_instance *nss_ctx,
 	nss_c2c_tx_msg_callback_t cb;
 
 	if (!nss_c2c_tx_verify_if_num(ncm->interface)) {
-		nss_warning("%p: invalid interface %d for c2c_tx\n", nss_ctx, ncm->interface);
+		nss_warning("%px: invalid interface %d for c2c_tx\n", nss_ctx, ncm->interface);
 		return;
 	}
 
@@ -75,12 +76,12 @@ static void nss_c2c_tx_msg_handler(struct nss_ctx_instance *nss_ctx,
 	 * Is this a valid request/response packet?
 	 */
 	if (ncm->type >= NSS_C2C_TX_MSG_TYPE_MAX) {
-		nss_warning("%p: received invalid message %d for c2c_tx", nss_ctx, ncm->type);
+		nss_warning("%px: received invalid message %d for c2c_tx", nss_ctx, ncm->type);
 		return;
 	}
 
 	if (nss_cmn_get_msg_len(ncm) > sizeof(struct nss_c2c_tx_msg)) {
-		nss_warning("%p: Length of message is greater than required: %d", nss_ctx, nss_cmn_get_msg_len(ncm));
+		nss_warning("%px: Length of message is greater than required: %d", nss_ctx, nss_cmn_get_msg_len(ncm));
 		return;
 	}
 
@@ -100,7 +101,11 @@ static void nss_c2c_tx_msg_handler(struct nss_ctx_instance *nss_ctx,
 		break;
 
 	case NSS_C2C_TX_MSG_TYPE_STATS:
+		/*
+		 * Update driver statistics and send statistics notifications to the registered modules.
+		 */
 		nss_c2c_tx_stats_sync(nss_ctx, &nctm->msg.stats);
+		nss_c2c_tx_stats_notify(nss_ctx);
 		break;
 	}
 
@@ -132,9 +137,13 @@ static void nss_c2c_tx_msg_handler(struct nss_ctx_instance *nss_ctx,
  */
 void nss_c2c_tx_register_handler(struct nss_ctx_instance *nss_ctx)
 {
-	nss_info("%p: nss_c2c_tx_register_handler", nss_ctx);
+	nss_info("%px: nss_c2c_tx_register_handler", nss_ctx);
 	nss_core_register_handler(nss_ctx, NSS_C2C_TX_INTERFACE, nss_c2c_tx_msg_handler, NULL);
-	nss_c2c_tx_stats_dentry_create();
+
+	if (nss_ctx->id == NSS_CORE_0) {
+		nss_c2c_tx_stats_dentry_create();
+	}
+	nss_c2c_tx_strings_dentry_create();
 }
 EXPORT_SYMBOL(nss_c2c_tx_register_handler);
 
@@ -150,12 +159,12 @@ nss_tx_status_t nss_c2c_tx_tx_msg(struct nss_ctx_instance *nss_ctx, struct nss_c
 	 * Sanity check the message
 	 */
 	if (!nss_c2c_tx_verify_if_num(ncm->interface)) {
-		nss_warning("%p: tx request for another interface: %d", nss_ctx, ncm->interface);
+		nss_warning("%px: tx request for another interface: %d", nss_ctx, ncm->interface);
 		return NSS_TX_FAILURE;
 	}
 
 	if (ncm->type >= NSS_C2C_TX_MSG_TYPE_MAX) {
-		nss_warning("%p: message type out of range: %d", nss_ctx, ncm->type);
+		nss_warning("%px: message type out of range: %d", nss_ctx, ncm->type);
 		return NSS_TX_FAILURE;
 	}
 
@@ -176,11 +185,11 @@ static void nss_c2c_tx_msg_cfg_map_callback(void *app_data, struct nss_c2c_tx_ms
 {
 	struct nss_ctx_instance *nss_ctx __attribute__((unused)) = (struct nss_ctx_instance *)app_data;
 	if (nctm->cm.response != NSS_CMN_RESPONSE_ACK) {
-		nss_warning("%p: nss c2c_tx_map configuration failed: %d for NSS core %d\n",
+		nss_warning("%px: nss c2c_tx_map configuration failed: %d for NSS core %d\n",
 			nss_ctx, nctm->cm.error, nss_ctx->id);
 	}
 
-	nss_info("%p: nss c2c_tx_map configuration succeeded for NSS core %d\n",
+	nss_info("%px: nss c2c_tx_map configuration succeeded for NSS core %d\n",
 		nss_ctx, nss_ctx->id);
 }
 
@@ -196,13 +205,13 @@ static void nss_c2c_tx_msg_performance_test_callback(void *app_data, struct nss_
 	 * Test start has been failed. Restore the value to initial state.
 	 */
 	if (nctm->cm.response != NSS_CMN_RESPONSE_ACK) {
-		nss_warning("%p: nss c2c_tx test start failed: %d for NSS core %d\n",
+		nss_warning("%px: nss c2c_tx test start failed: %d for NSS core %d\n",
 			nss_ctx, nctm->cm.error, nss_ctx->id);
 		nss_c2c_tx_test_id = -1;
 		return;
 	}
 
-	nss_info("%p: nss c2c_tx test successfully initialized for NSS core %d\n",
+	nss_info("%px: nss c2c_tx test successfully initialized for NSS core %d\n",
 		nss_ctx, nss_ctx->id);
 }
 
@@ -216,7 +225,7 @@ nss_tx_status_t nss_c2c_tx_msg_cfg_map(struct nss_ctx_instance *nss_ctx, uint32_
 	struct nss_c2c_tx_msg nctm;
 	struct nss_c2c_tx_map *cfg_map;
 
-	nss_info("%p: C2C map:%x\n", nss_ctx, tx_map);
+	nss_info("%px: C2C map:%x\n", nss_ctx, tx_map);
 	nss_c2c_tx_msg_init(&nctm, NSS_C2C_TX_INTERFACE, NSS_C2C_TX_MSG_TYPE_TX_MAP,
 		sizeof(struct nss_c2c_tx_map), nss_c2c_tx_msg_cfg_map_callback, (void *)nss_ctx);
 
@@ -242,7 +251,7 @@ nss_tx_status_t nss_c2c_tx_msg_performance_test(struct nss_ctx_instance *nss_ctx
 	struct nss_c2c_tx_msg nctm;
 	struct nss_c2c_tx_test *test;
 
-	nss_info("%p: C2C test message:%x\n", nss_ctx, test_id);
+	nss_info("%px: C2C test message:%x\n", nss_ctx, test_id);
 	nss_c2c_tx_msg_init(&nctm, NSS_C2C_TX_INTERFACE, NSS_C2C_TX_MSG_TYPE_PERFORMANCE_TEST,
 		sizeof(struct nss_c2c_tx_test), nss_c2c_tx_msg_performance_test_callback, (void *)nss_ctx);
 
@@ -290,12 +299,12 @@ static int nss_c2c_tx_performance_test_handler(struct ctl_table *ctl, int write,
 	}
 
 	if (current_state != -1) {
-		nss_warning("%p: Another test is running.\n", nss_ctx);
+		nss_warning("%px: Another test is running.\n", nss_ctx);
 		return -EINVAL;
 	}
 
 	if (nss_c2c_tx_test_id >= NSS_C2C_TX_TEST_TYPE_MAX || nss_c2c_tx_test_id <= 0) {
-		nss_warning("%p: Invalid test ID.\n", nss_ctx);
+		nss_warning("%px: Invalid test ID.\n", nss_ctx);
 		nss_c2c_tx_test_id = current_state;
 		return -EINVAL;
 	}
@@ -304,7 +313,7 @@ static int nss_c2c_tx_performance_test_handler(struct ctl_table *ctl, int write,
 	ret_c2c_tx = nss_c2c_tx_msg_performance_test(nss_ctx, nss_c2c_tx_test_id);
 
 	if (ret_c2c_tx != NSS_SUCCESS) {
-		nss_warning("%p: Starting the test has failed.\n", nss_ctx);
+		nss_warning("%px: Starting the test has failed.\n", nss_ctx);
 		nss_c2c_tx_test_id = -1;
 	}
 

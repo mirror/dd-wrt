@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2016-2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2016-2018, 2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -234,8 +234,8 @@ static bool nss_ipsecmgr_sa_del(struct nss_ipsecmgr_priv *priv, struct nss_ipsec
 		 */
 		write_unlock_bh(&ipsecmgr_ctx->lock);
 
-		nss_ipsecmgr_warn("%p:failed to lookup child_entry\n", priv->dev);
-		nss_ipsecmgr_trace("%p:child_lookup(%p)\n", priv, info->child_lookup);
+		nss_ipsecmgr_warn("%px:failed to lookup child_entry\n", priv->dev);
+		nss_ipsecmgr_trace("%px:child_lookup(%px)\n", priv, info->child_lookup);
 		return false;
 	}
 
@@ -246,7 +246,7 @@ static bool nss_ipsecmgr_sa_del(struct nss_ipsecmgr_priv *priv, struct nss_ipsec
 	if (!sa_ref) {
 		write_unlock_bh(&ipsecmgr_ctx->lock);
 
-		nss_ipsecmgr_warn("%p:failed to lookup sa_entry\n", priv->dev);
+		nss_ipsecmgr_warn("%px:failed to lookup sa_entry\n", priv->dev);
 		return false;
 	}
 
@@ -294,8 +294,8 @@ static bool nss_ipsecmgr_sa_add(struct nss_ipsecmgr_priv *priv, struct nss_ipsec
 		 */
 		write_unlock_bh(&ipsecmgr_ctx->lock);
 
-		nss_ipsecmgr_warn("%p:failed to alloc child_entry\n", priv->dev);
-		nss_ipsecmgr_trace("%p:child_alloc(%p)\n", priv, info->child_alloc);
+		nss_ipsecmgr_warn("%px:failed to alloc child_entry\n", priv->dev);
+		nss_ipsecmgr_trace("%px:child_alloc(%px)\n", priv, info->child_alloc);
 		return false;
 	}
 
@@ -311,7 +311,7 @@ static bool nss_ipsecmgr_sa_add(struct nss_ipsecmgr_priv *priv, struct nss_ipsec
 		nss_ipsecmgr_ref_free(priv, child_ref);
 		write_unlock_bh(&ipsecmgr_ctx->lock);
 
-		nss_ipsecmgr_warn("%p:failed to alloc sa_entry\n", priv->dev);
+		nss_ipsecmgr_warn("%px:failed to alloc sa_entry\n", priv->dev);
 		return false;
 	}
 
@@ -671,7 +671,7 @@ bool nss_ipsecmgr_encap_add(struct net_device *tun, struct nss_ipsecmgr_encap_fl
 	struct dst_entry *dst;
 	struct flowi6 fl6;
 
-	nss_ipsecmgr_info("%p:encap_add initiated\n", tun);
+	nss_ipsecmgr_info("%px:encap_add initiated\n", tun);
 
 	info.sa_overhead = sizeof(struct ip_esp_hdr);
 	info.sa_overhead += NSS_IPSECMGR_ESP_PAD_SZ;
@@ -691,7 +691,7 @@ bool nss_ipsecmgr_encap_add(struct net_device *tun, struct nss_ipsecmgr_encap_fl
 
 	case NSS_IPSECMGR_FLOW_TYPE_V4_SUBNET:
 		if (nss_ipsecmgr_verify_v4_subnet(&flow->data.v4_subnet)) {
-			nss_ipsecmgr_warn("%p:invalid subnet and mask\n", tun);
+			nss_ipsecmgr_warn("%px:invalid subnet and mask\n", tun);
 			return false;
 		}
 
@@ -711,7 +711,7 @@ bool nss_ipsecmgr_encap_add(struct net_device *tun, struct nss_ipsecmgr_encap_fl
 
 	case NSS_IPSECMGR_FLOW_TYPE_V6_SUBNET:
 		if (nss_ipsecmgr_verify_v6_subnet(&flow->data.v6_subnet)) {
-			nss_ipsecmgr_warn("%p:invalid subnet and mask\n", tun);
+			nss_ipsecmgr_warn("%px:invalid subnet and mask\n", tun);
 			return false;
 		}
 
@@ -722,7 +722,7 @@ bool nss_ipsecmgr_encap_add(struct net_device *tun, struct nss_ipsecmgr_encap_fl
 		break;
 
 	default:
-		nss_ipsecmgr_warn("%p:unknown flow type(%d)\n", tun, flow->type);
+		nss_ipsecmgr_warn("%px:unknown flow type(%d)\n", tun, flow->type);
 		return false;
 	}
 
@@ -775,7 +775,7 @@ bool nss_ipsecmgr_encap_add(struct net_device *tun, struct nss_ipsecmgr_encap_fl
 		break;
 
 	default:
-		nss_ipsecmgr_warn("%p:unknown sa type(%d)\n", tun, sa->type);
+		nss_ipsecmgr_warn("%px:unknown sa type(%d)\n", tun, sa->type);
 		return false;
 	}
 
@@ -801,7 +801,7 @@ bool nss_ipsecmgr_encap_del(struct net_device *tun, struct nss_ipsecmgr_encap_fl
 	struct nss_ipsecmgr_priv *priv = netdev_priv(tun);
 	struct nss_ipsecmgr_sa_info info;
 
-	nss_ipsecmgr_info("%p:encap_del initiated\n", tun);
+	nss_ipsecmgr_info("%px:encap_del initiated\n", tun);
 
 	memset(&info, 0, sizeof(struct nss_ipsecmgr_sa_info));
 	nss_ipsecmgr_encap_flow_init(&info.nim, NSS_IPSEC_MSG_TYPE_DEL_RULE, priv);
@@ -822,7 +822,7 @@ bool nss_ipsecmgr_encap_del(struct net_device *tun, struct nss_ipsecmgr_encap_fl
 	case NSS_IPSECMGR_FLOW_TYPE_V4_SUBNET:
 
 		if (nss_ipsecmgr_verify_v4_subnet(&flow->data.v4_subnet)) {
-			nss_ipsecmgr_warn("%p:invalid subnet and mask\n", tun);
+			nss_ipsecmgr_warn("%px:invalid subnet and mask\n", tun);
 			return false;
 		}
 
@@ -850,7 +850,7 @@ bool nss_ipsecmgr_encap_del(struct net_device *tun, struct nss_ipsecmgr_encap_fl
 	case NSS_IPSECMGR_FLOW_TYPE_V6_SUBNET:
 
 		if (nss_ipsecmgr_verify_v6_subnet(&flow->data.v6_subnet)) {
-			nss_ipsecmgr_warn("%p:invalid subnet and mask\n", tun);
+			nss_ipsecmgr_warn("%px:invalid subnet and mask\n", tun);
 			return false;
 		}
 
@@ -864,10 +864,9 @@ bool nss_ipsecmgr_encap_del(struct net_device *tun, struct nss_ipsecmgr_encap_fl
 		break;
 
 	default:
-		nss_ipsecmgr_warn("%p:unknown flow type(%d)\n", tun, flow->type);
+		nss_ipsecmgr_warn("%px:unknown flow type(%d)\n", tun, flow->type);
 		return false;
 	}
-
 
 	return nss_ipsecmgr_sa_del(priv, &info);
 }
@@ -885,7 +884,7 @@ bool nss_ipsecmgr_decap_add(struct net_device *tun, struct nss_ipsecmgr_sa *sa, 
 	struct nss_ipsec_rule *ipsec_rule;
 	struct nss_ipsecmgr_sa_info info;
 
-	nss_ipsecmgr_info("%p:decap_add initiated\n", tun);
+	nss_ipsecmgr_info("%px:decap_add initiated\n", tun);
 
 	memset(&info, 0, sizeof(struct nss_ipsecmgr_sa_info));
 	nss_ipsecmgr_decap_flow_init(&info.nim, NSS_IPSEC_MSG_TYPE_ADD_RULE, priv);
@@ -920,7 +919,7 @@ bool nss_ipsecmgr_decap_add(struct net_device *tun, struct nss_ipsecmgr_sa *sa, 
 		break;
 
 	default:
-		nss_ipsecmgr_warn("%p:unknown flow type(%d)\n", tun, sa->type);
+		nss_ipsecmgr_warn("%px:unknown flow type(%d)\n", tun, sa->type);
 		return false;
 	}
 
@@ -957,7 +956,7 @@ bool nss_ipsecmgr_sa_flush(struct net_device *tun, struct nss_ipsecmgr_sa *sa)
 		break;
 
 	default:
-		nss_ipsecmgr_warn("%p:Unsupported sa type (type - %d)\n", tun, sa->type);
+		nss_ipsecmgr_warn("%px:Unsupported sa type (type - %d)\n", tun, sa->type);
 		return false;
 	}
 
@@ -972,7 +971,7 @@ bool nss_ipsecmgr_sa_flush(struct net_device *tun, struct nss_ipsecmgr_sa *sa)
 	sa_ref = nss_ipsecmgr_sa_lookup(&sa_key);
 	if (!sa_ref) {
 		write_unlock_bh(&ipsecmgr_ctx->lock);
-		nss_ipsecmgr_warn("%p:failed to lookup SA\n", priv);
+		nss_ipsecmgr_warn("%px:failed to lookup SA\n", priv);
 		return false;
 	}
 

@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2014-2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2014-2018, 2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -44,7 +44,8 @@ struct nss_log_data {
 	uint32_t last_entry;	/* Last known sampled entry (or index) */
 	uint32_t nentries;	/* Caches the total number of entries of log buffer */
 	int nss_id;		/* NSS Core id being used */
-	struct device *nss_dev;
+	struct nss_ctx_instance *nss_ctx;
+				/* NSS ctx instance */
 };
 
 struct nss_log_ring_buffer_addr nss_rbe[NSS_MAX_CORES];
@@ -107,7 +108,7 @@ static int nss_log_open(struct inode *inode, struct file *filp)
 
 	data = kzalloc(sizeof(struct nss_log_data), GFP_KERNEL);
 	if (!data) {
-		nss_warning("%p: Failed to allocate memory for log_data", nss_ctx);
+		nss_warning("%px: Failed to allocate memory for log_data", nss_ctx);
 		return -ENOMEM;
 	}
 
@@ -115,7 +116,7 @@ static int nss_log_open(struct inode *inode, struct file *filp)
 	if (!nss_rbe[nss_id].addr) {
 		mutex_unlock(&nss_log_mutex);
 		kfree(data);
-		nss_warning("%p: Ring buffer not configured yet for nss_id:%d", nss_ctx, nss_id);
+		nss_warning("%px: Ring buffer not configured yet for nss_id:%d", nss_ctx, nss_id);
 		return -EIO;
 	}
 
@@ -126,7 +127,7 @@ static int nss_log_open(struct inode *inode, struct file *filp)
 	data->last_entry = 0;
 	data->nentries = nss_rbe[nss_id].nentries;
 	data->dma_addr = nss_rbe[nss_id].dma_addr;
-	data->nss_dev = nss_ctx->dev;
+	data->nss_ctx = nss_ctx;
 
 	/*
 	 * Increment the reference count so that we don't free
@@ -195,7 +196,7 @@ static ssize_t nss_log_read(struct file *filp, char __user *buf, size_t size, lo
 
 	desc = data->load_mem;
 	if (!desc) {
-		nss_warning("%p: load_mem is NULL", data);
+		nss_warning("%px: load_mem is NULL", data);
 		return -EINVAL;
 	}
 
@@ -209,7 +210,8 @@ static ssize_t nss_log_read(struct file *filp, char __user *buf, size_t size, lo
 	/*
 	 * Get the current index
 	 */
-	dma_sync_single_for_cpu(data->nss_dev, data->dma_addr, sizeof(struct nss_log_descriptor), DMA_FROM_DEVICE);
+	dma_sync_single_for_cpu(data->nss_ctx->dev, data->dma_addr, sizeof(struct nss_log_descriptor), DMA_FROM_DEVICE);
+
 	entry = nss_log_current_entry(desc);
 
 	/*
@@ -253,11 +255,11 @@ static ssize_t nss_log_read(struct file *filp, char __user *buf, size_t size, lo
 		offset = (offset * sizeof(struct nss_log_entry))
 			 + offsetof(struct nss_log_descriptor, log_ring_buffer);
 
-		dma_sync_single_for_cpu(data->nss_dev, data->dma_addr + offset,
+		dma_sync_single_for_cpu(data->nss_ctx->dev, data->dma_addr + offset,
 			sizeof(struct nss_log_entry), DMA_FROM_DEVICE);
 		rb = &desc->log_ring_buffer[index];
 
-		b = snprintf(msg, sizeof(msg), NSS_LOG_LINE_FORMAT,
+		b = scnprintf(msg, sizeof(msg), NSS_LOG_LINE_FORMAT,
 			rb->thread_num, rb->timestamp, rb->message);
 
 		data->last_entry++;
@@ -331,12 +333,12 @@ static void nss_debug_interface_handler(struct nss_ctx_instance *nss_ctx, struct
 	 * Is this a valid request/response packet?
 	 */
 	if (ncm->type > NSS_DEBUG_INTERFACE_TYPE_MAX) {
-		nss_warning("%p: received invalid message %d for CAPWAP interface", nss_ctx, ncm->type);
+		nss_warning("%px: received invalid message %d for CAPWAP interface", nss_ctx, ncm->type);
 		return;
 	}
 
 	if (nss_cmn_get_msg_len(ncm) > sizeof(struct nss_log_debug_interface_msg)) {
-		nss_warning("%p: Length of message is greater than required: %d", nss_ctx, nss_cmn_get_msg_len(ncm));
+		nss_warning("%px: Length of message is greater than required: %d", nss_ctx, nss_cmn_get_msg_len(ncm));
 		return;
 	}
 
@@ -354,7 +356,7 @@ static void nss_debug_interface_handler(struct nss_ctx_instance *nss_ctx, struct
 	 * Do we have a callback
 	 */
 	if (!ncm->cb) {
-		nss_trace("%p: cb is null for interface %d", nss_ctx, ncm->interface);
+		nss_trace("%px: cb is null for interface %d", nss_ctx, ncm->interface);
 		return;
 	}
 
@@ -374,12 +376,12 @@ static nss_tx_status_t nss_debug_interface_tx(struct nss_ctx_instance *nss_ctx, 
 	 * Sanity check the message
 	 */
 	if (ncm->interface != NSS_DEBUG_INTERFACE) {
-		nss_warning("%p: tx request for another interface: %d", nss_ctx, ncm->interface);
+		nss_warning("%px: tx request for another interface: %d", nss_ctx, ncm->interface);
 		return NSS_TX_FAILURE;
 	}
 
 	if (ncm->type > NSS_DEBUG_INTERFACE_TYPE_MAX) {
-		nss_warning("%p: message type out of range: %d", nss_ctx, ncm->type);
+		nss_warning("%px: message type out of range: %d", nss_ctx, ncm->type);
 		return NSS_TX_FAILURE;
 	}
 
@@ -409,21 +411,21 @@ bool nss_debug_log_buffer_alloc(uint8_t nss_id, uint32_t nentry)
 	nss_ctx = &nss_top->nss[nss_id];
 
 	if (nss_ctx->state != NSS_CORE_STATE_INITIALIZED) {
-		nss_warning("%p: NSS Core:%d is not initialized yet\n", nss_ctx, nss_id);
+		nss_warning("%px: NSS Core:%d is not initialized yet\n", nss_ctx, nss_id);
 		return false;
 	}
 
 	size = sizeof(struct nss_log_descriptor) + (sizeof(struct nss_log_entry) * nentry);
 	addr = kmalloc(size, GFP_ATOMIC);
 	if (!addr) {
-		nss_warning("%p: Failed to allocate memory for logging (size:%d)\n", nss_ctx, size);
+		nss_warning("%px: Failed to allocate memory for logging (size:%d)\n", nss_ctx, size);
 		return false;
 	}
 
 	memset(addr, 0, size);
 	dma_addr = (uint32_t)dma_map_single(nss_ctx->dev, addr, size, DMA_FROM_DEVICE);
 	if (unlikely(dma_mapping_error(nss_ctx->dev, dma_addr))) {
-		nss_warning("%p: Failed to map address in DMA", nss_ctx);
+		nss_warning("%px: Failed to map address in DMA", nss_ctx);
 		kfree(addr);
 		return false;
 	}
@@ -442,7 +444,7 @@ bool nss_debug_log_buffer_alloc(uint8_t nss_id, uint32_t nentry)
 		 * release the reference.
 		 */
 		if (!wait_event_timeout(nss_log_wq, !nss_rbe[nss_id].ref_cnt, 5 * HZ)) {
-			nss_warning("%p: Timeout waiting for refcnt to become 0\n", nss_ctx);
+			nss_warning("%px: Timeout waiting for refcnt to become 0\n", nss_ctx);
 			goto fail;
 		}
 
@@ -453,7 +455,7 @@ bool nss_debug_log_buffer_alloc(uint8_t nss_id, uint32_t nentry)
 		}
 		if (nss_rbe[nss_id].ref_cnt > 0) {
 			mutex_unlock(&nss_log_mutex);
-			nss_warning("%p: Some other thread is contending..opting out\n", nss_ctx);
+			nss_warning("%px: Some other thread is contending..opting out\n", nss_ctx);
 			goto fail;
 		}
 	}
@@ -471,7 +473,7 @@ bool nss_debug_log_buffer_alloc(uint8_t nss_id, uint32_t nentry)
 	status = nss_debug_interface_tx(nss_ctx, &msg);
 	if (status != NSS_TX_SUCCESS) {
 		mutex_unlock(&nss_log_mutex);
-		nss_warning("%p: Failed to send message to debug interface:%d\n", nss_ctx, status);
+		nss_warning("%px: Failed to send message to debug interface:%d\n", nss_ctx, status);
 		goto fail;
 	}
 
@@ -482,13 +484,13 @@ bool nss_debug_log_buffer_alloc(uint8_t nss_id, uint32_t nentry)
 	 */
 	if (!wait_event_timeout(msg_wq, msg_event, 5 * HZ)) {
 		mutex_unlock(&nss_log_mutex);
-		nss_warning("%p: Timeout send message to debug interface\n", nss_ctx);
+		nss_warning("%px: Timeout send message to debug interface\n", nss_ctx);
 		goto fail;
 	}
 
 	if (msg_response != NSS_CMN_RESPONSE_ACK) {
 		mutex_unlock(&nss_log_mutex);
-		nss_warning("%p: Response error for send message to debug interface:%d\n", nss_ctx, msg_response);
+		nss_warning("%px: Response error for send message to debug interface:%d\n", nss_ctx, msg_response);
 		goto fail;
 	}
 

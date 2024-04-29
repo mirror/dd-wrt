@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2016-2017, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2016-2017, 2020 The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -32,10 +32,11 @@
  *	Message types for TrustSec Tx requests and responses.
  */
 enum nss_trustsec_tx_msg_types {
-	NSS_TRUSTSEC_TX_CONFIGURE_MSG,
-	NSS_TRUSTSEC_TX_UNCONFIGURE_MSG,
-	NSS_TRUSTSEC_TX_STATS_SYNC_MSG,
-	NSS_TRUSTSEC_TX_MAX_MSG_TYPE
+	NSS_TRUSTSEC_TX_MSG_CONFIGURE,		/** Configure the TrustSec node. */
+	NSS_TRUSTSEC_TX_MSG_UNCONFIGURE,	/** Unconfigure the TrustSec node. */
+	NSS_TRUSTSEC_TX_MSG_STATS_SYNC,		/** Statistics sychronization. */
+	NSS_TRUSTSEC_TX_MSG_UPDATE_NEXTHOP,	/** Update next hop. */
+	NSS_TRUSTSEC_TX_MSG_MAX			/** Maximum message type. */
 };
 
 /**
@@ -43,11 +44,14 @@ enum nss_trustsec_tx_msg_types {
  *	Error types for the TrustSec Tx interface.
  */
 enum nss_trustsec_tx_error_types {
-	NSS_TRUSTSEC_TX_ERR_INVAL_SRC_IF,
-	NSS_TRUSTSEC_TX_ERR_RECONFIGURE_SRC_IF,
-	NSS_TRUSTSEC_TX_ERR_DEST_IF_NOT_FOUND,
-	NSS_TRUSTSEC_TX_ERR_NOT_CONFIGURED,
-	NSS_TRUSTSEC_TX_ERR_UNKNOWN,
+	NSS_TRUSTSEC_TX_ERR_NONE,		/** No error */
+	NSS_TRUSTSEC_TX_ERR_INVAL_SRC_IF,	/** Source interface is invalid. */
+	NSS_TRUSTSEC_TX_ERR_RECONFIGURE_SRC_IF,	/** Source interface is already configured. */
+	NSS_TRUSTSEC_TX_ERR_DEST_IF_NOT_FOUND,	/** Destination interface is not found. */
+	NSS_TRUSTSEC_TX_ERR_NOT_CONFIGURED,	/** Source interface is not configured. */
+	NSS_TRUSTSEC_TX_ERR_SGT_MISMATCH,	/** SGT mismatches. */
+	NSS_TRUSTSEC_TX_ERR_UNKNOWN,		/** Error is unknown. */
+	NSS_TRUSTSEC_TX_ERR_MAX,		/** Maximum error message. */
 };
 
 /**
@@ -83,6 +87,17 @@ struct nss_trustsec_tx_stats_sync_msg {
 };
 
 /**
+ * nss_trustsec_tx_update_nexthop_msg
+ *	Message information for updating the next hop for a TrustSec Tx interface.
+ */
+struct nss_trustsec_tx_update_nexthop_msg {
+	uint32_t src;	/**< Interface number of the source tunnel. */
+	uint32_t dest;	/**< Outgoing interface number. */
+	uint16_t sgt;	/**< Security Group Tag value to embed in the TrustSec header. */
+	uint8_t reserved[2];	/**< Reserved for word alignment. */
+};
+
+/**
  * nss_trustsec_tx_msg
  *	Data for sending and receiving TrustSec Tx messages.
  */
@@ -99,6 +114,8 @@ struct nss_trustsec_tx_msg {
 				/**< De-configure TrustSec Tx. */
 		struct nss_trustsec_tx_stats_sync_msg stats_sync;
 				/**< Synchronize TrustSec Tx statistics. */
+		struct nss_trustsec_tx_update_nexthop_msg upd_nexthop;
+				/**< Update next hop of TrustSec Tx. */
 	} msg;			/**< Message payload. */
 };
 
@@ -166,6 +183,19 @@ extern nss_tx_status_t nss_trustsec_tx_msg(struct nss_ctx_instance *nss_ctx, str
 extern nss_tx_status_t nss_trustsec_tx_msg_sync(struct nss_ctx_instance *nss_ctx, struct nss_trustsec_tx_msg *msg);
 
 /**
+ * nss_trustsec_tx_update_nexthop
+ *	Updates the next hop of the TrustSec.
+ *
+ * @param[in] src   Source interface number.
+ * @param[in] dest  Destination interface number.
+ * @param[in] sgt   Security Group Tag value.
+ *
+ * @return
+ * Pointer to the NSS core context.
+ */
+extern nss_tx_status_t nss_trustsec_tx_update_nexthop(uint32_t src, uint32_t dest, uint16_t sgt);
+
+/**
  * nss_trustsec_tx_get_ctx
  *	Gets the NSS context.
  *
@@ -180,7 +210,7 @@ extern struct nss_ctx_instance *nss_trustsec_tx_get_ctx(void);
  *
  * @param[in] src   Source interface number.
  * @param[in] dest  Destination interface number.
- * @param[in] sgt   Security Group Tag value
+ * @param[in] sgt   Security Group Tag value.
  *
  * @return
  * Pointer to the NSS core context.

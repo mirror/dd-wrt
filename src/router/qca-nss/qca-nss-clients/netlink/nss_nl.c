@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2015-2016,2018 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2015-2016,2018-2020 The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -13,37 +13,62 @@
  * OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  **************************************************************************
  */
+
+#include <linux/if.h>
 #include <linux/kernel.h>
 #include <linux/module.h>
-#include <linux/kernel.h>
+#include <linux/netlink.h>
 #include <linux/of.h>
 #include <linux/types.h>
 #include <linux/version.h>
-#include <linux/if.h>
-#include <linux/netlink.h>
 #include <net/genetlink.h>
 
 #include <nss_api_if.h>
-#include <nss_nl_if.h>
+#include <nss_capwap.h>
+#include <nss_capwapmgr.h>
+#include <nss_cmn.h>
 #include <nss_ipsecmgr.h>
-#include "nss_nlcmn_if.h"
-#include "nss_crypto_defines.h"
-#include "nss_nlipv4_if.h"
-#include "nss_nlipv6_if.h"
-#include "nss_nlipsec_if.h"
-#include "nss_nloam_if.h"
-#if defined (CONFIG_NSS_NLCRYPTO)
-#include "nss_nlcrypto_if.h"
-#else
-#include "nss_nlcryptov2_if.h"
-#endif
+#include <nss_nl_if.h>
 #include "nss_nl.h"
-#include "nss_nlipv4.h"
-#include "nss_nlipv6.h"
-#include "nss_nlcrypto.h"
-#include "nss_nlcryptov2.h"
+#include "nss_nlcapwap.h"
+#include "nss_nlcapwap_if.h"
+#include "nss_nlcmn_if.h"
+#include "nss_nldtls.h"
+#include "nss_nldtls_if.h"
 #include "nss_nlipsec.h"
+#include "nss_nlipsec_if.h"
+#include "nss_nlipv4.h"
+#include "nss_nlipv4_if.h"
+#include "nss_nlipv6.h"
+#include "nss_nlipv6_if.h"
 #include "nss_nloam.h"
+#include "nss_nloam_if.h"
+#include "nss_nlethrx.h"
+#include "nss_nlethrx_if.h"
+#include "nss_nledma.h"
+#include "nss_nledma_if.h"
+#include "nss_nlcapwap.h"
+#include "nss_nlcapwap_if.h"
+#include "nss_nldynamic_interface.h"
+#include "nss_nldynamic_interface_if.h"
+#include "nss_nln2h.h"
+#include "nss_nln2h_if.h"
+#include "nss_nlc2c_tx.h"
+#include "nss_nlc2c_tx_if.h"
+#include "nss_nlc2c_rx.h"
+#include "nss_nlc2c_rx_if.h"
+#include "nss_nlwifili.h"
+#include "nss_nlwifili_if.h"
+#include "nss_nllso_rx.h"
+#include "nss_nllso_rx_if.h"
+#include "nss_nlmap_t.h"
+#include "nss_nlmap_t_if.h"
+#include "nss_nlpppoe.h"
+#include "nss_nlpppoe_if.h"
+#include "nss_nll2tpv2.h"
+#include "nss_nll2tpv2_if.h"
+#include "nss_nlpptp.h"
+#include "nss_nlpptp_if.h"
 
 /*
  * nss_nl.c
@@ -64,27 +89,6 @@ struct nss_nl_family {
  * Family handler table
  */
 static struct nss_nl_family family_handlers[] = {
-	/* crypto v1 is not generic */
-#if defined (CONFIG_NSS_NLCRYPTO)
-	{
-		/*
-		 * NSS_NLCRYPTO
-		 */
-		.name = NSS_NLCRYPTO_FAMILY,		/* crypto */
-		.entry = NSS_NLCRYPTO_INIT,		/* init */
-		.exit = NSS_NLCRYPTO_EXIT,		/* exit */
-		.valid = CONFIG_NSS_NLCRYPTO		/* 1 or 0 */
-	},
-#endif
-	{
-		/*
-		 * NSS_NLCRYPTOV2
-		 */
-		.name = NSS_NLCRYPTOV2_FAMILY,		/* crypto */
-		.entry = NSS_NLCRYPTOV2_INIT,		/* init */
-		.exit = NSS_NLCRYPTOV2_EXIT,		/* exit */
-		.valid = CONFIG_NSS_NLCRYPTOV2		/* 1 or 0 */
-	},
 	{
 		/*
 		 * NSS_NLIPV4
@@ -96,24 +100,6 @@ static struct nss_nl_family family_handlers[] = {
 	},
 	{
 		/*
-		 * NSS_NLIPSEC
-		 */
-		.name = NSS_NLIPSEC_FAMILY,		/* ipsec */
-		.entry = NSS_NLIPSEC_INIT,		/* init */
-		.exit = NSS_NLIPSEC_EXIT,		/* exit */
-		.valid = CONFIG_NSS_NLIPSEC		/* 1 or 0 */
-	},
-	{
-		/*
-		 * NSS_NLOAM
-		 */
-		.name = NSS_NLOAM_FAMILY,		/* oam */
-		.entry = NSS_NLOAM_INIT,		/* init */
-		.exit = NSS_NLOAM_EXIT,			/* exit */
-		.valid = CONFIG_NSS_NLOAM		/* 1 or 0 */
-	},
-	{
-		/*
 		 * NSS_NLIPV6
 		 */
 		.name = NSS_NLIPV6_FAMILY,		/* ipv6 */
@@ -121,14 +107,67 @@ static struct nss_nl_family family_handlers[] = {
 		.exit = NSS_NLIPV6_EXIT,		/* exit */
 		.valid = CONFIG_NSS_NLIPV6		/* 1 or 0 */
 	},
-
+	{
+		/*
+		 * NSS_NLDTLS
+		 */
+		.name = NSS_NLDTLS_FAMILY,		/* dtls */
+		.entry = NSS_NLDTLS_INIT,		/* init */
+		.exit = NSS_NLDTLS_EXIT,		/* exit */
+		.valid = CONFIG_NSS_NLDTLS		/* 1 or 0 */
+	},
+	{
+		/*
+		 * NSS_NLETHRX
+		 */
+		.name = NSS_NLETHRX_FAMILY,		/* ethrx */
+		.entry = NSS_NLETHRX_INIT,		/* init */
+		.exit = NSS_NLETHRX_EXIT,		/* exit */
+		.valid = CONFIG_NSS_NLETHRX		/* 1 or 0 */
+	},
+	{
+		/*
+		 * NSS_NLDYNAMIC_INTERFACE
+		 */
+		.name = NSS_NLDYNAMIC_INTERFACE_FAMILY,	/* dynamic interface */
+		.entry = NSS_NLDYNAMIC_INTERFACE_INIT,	/* init */
+		.exit = NSS_NLDYNAMIC_INTERFACE_EXIT,	/* exit */
+		.valid = CONFIG_NSS_NLDYNAMIC_INTERFACE	/* 1 or 0 */
+	},
+	{
+		/*
+		 * NSS_NLN2H
+		 */
+		.name = NSS_NLN2H_FAMILY,		/* n2h */
+		.entry = NSS_NLN2H_INIT,		/* init */
+		.exit = NSS_NLN2H_EXIT,			/* exit */
+		.valid = CONFIG_NSS_NLN2H		/* 1 or 0 */
+	},
+	{
+		/*
+		 * NSS_NLWIFILI
+		 */
+		.name = NSS_NLWIFILI_FAMILY,		/* wifili */
+		.entry = NSS_NLWIFILI_INIT,		/* init */
+		.exit = NSS_NLWIFILI_EXIT,		/* exit */
+		.valid = CONFIG_NSS_NLWIFILI		/* 1 or 0 */
+	},
+	{
+		/*
+		 * NSS_NLLSO_RX
+		 */
+		.name = NSS_NLLSO_RX_FAMILY,		/* lso_rx */
+		.entry = NSS_NLLSO_RX_INIT,		/* init */
+		.exit = NSS_NLLSO_RX_EXIT,		/* exit */
+		.valid = CONFIG_NSS_NLLSO_RX		/* 1 or 0 */
+	},
 };
 
 #define NSS_NL_FAMILY_HANDLER_SZ ARRAY_SIZE(family_handlers)
 
 /*
  * nss_nl_alloc_msg()
- * 	allocate NETLINK message
+ *	allocate NETLINK message
  *
  * NOTE: this returns the SKB/message
  */
@@ -172,7 +211,7 @@ struct sk_buff *nss_nl_new_msg(struct genl_family *family, uint8_t cmd)
 
 /*
  * nss_nl_copy_msg()
- * 	copy a existing NETLINK message into a new one
+ *	copy a existing NETLINK message into a new one
  *
  * NOTE: this returns the new SKB/message
  */
@@ -194,7 +233,7 @@ struct sk_buff *nss_nl_copy_msg(struct sk_buff *orig)
 
 /*
  * nss_nl_get_data()
- * 	Returns start of payload data
+ *	Returns start of payload data
  */
 void  *nss_nl_get_data(struct sk_buff *skb)
 {
@@ -203,7 +242,7 @@ void  *nss_nl_get_data(struct sk_buff *skb)
 
 /*
  * nss_nl_mcast_event()
- * 	mcast the event to the user listening on the MCAST group ID
+ *	mcast the event to the user listening on the MCAST group ID
  *
  * Note: It will free the message buffer if there is no space left to end
  */
@@ -241,7 +280,7 @@ int nss_nl_mcast_event(struct genl_multicast_group *grp, struct sk_buff *skb)
 
 /*
  * nss_nl_ucast_resp()
- * 	send the response to the user (PID)
+ *	send the response to the user (PID)
  *
  * NOTE: this assumes the socket to be available for reception
  */
@@ -274,7 +313,7 @@ int nss_nl_ucast_resp(struct sk_buff *skb)
 
 /*
  * nss_nl_get_msg()
- * 	verifies and returns the message pointer
+ *	verifies and returns the message pointer
  */
 struct nss_nlcmn *nss_nl_get_msg(struct genl_family *family, struct genl_info *info, uint16_t cmd)
 {
@@ -311,7 +350,7 @@ struct nss_nlcmn *nss_nl_get_msg(struct genl_family *family, struct genl_info *i
 
 /*
  * nss_nl_init()
- * 	init module
+ *	init module
  */
 static int __init nss_nl_init(void)
 {
@@ -354,7 +393,7 @@ static int __init nss_nl_init(void)
 
 /*
  * nss_nl_exit()
- * 	deinit module
+ *	deinit module
  */
 static void __exit nss_nl_exit(void)
 {

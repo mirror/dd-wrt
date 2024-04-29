@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2017, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017 - 2018, 2020 The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -123,7 +123,7 @@ void nss_dtlsmgr_ctx_dev_event_inner(void *app_data, struct nss_cmn_msg *ncm)
 	struct nss_dtlsmgr_ctx *ctx;
 
 	if (ncm->type != NSS_DTLS_CMN_MSG_TYPE_SYNC_STATS) {
-		nss_dtlsmgr_warn("%p: unsupported message type(%d)", data, ncm->type);
+		nss_dtlsmgr_warn("%px: unsupported message type(%d)", data, ncm->type);
 		return;
 	}
 
@@ -145,7 +145,7 @@ void nss_dtlsmgr_ctx_dev_event_outer(void *app_data, struct nss_cmn_msg *ncm)
 	struct nss_dtlsmgr_ctx *ctx;
 
 	if (ncm->type != NSS_DTLS_CMN_MSG_TYPE_SYNC_STATS) {
-		nss_dtlsmgr_warn("%p: unsupported message type(%d)", data, ncm->type);
+		nss_dtlsmgr_warn("%px: unsupported message type(%d)", data, ncm->type);
 		return;
 	}
 
@@ -171,9 +171,9 @@ void nss_dtlsmgr_ctx_dev_data_callback(void *app_data, struct sk_buff *skb)
 	stats = &ctx->decap.stats;
 	ndm = (struct nss_dtlsmgr_metadata *)skb->data;
 	if (ndm->result != NSS_DTLSMGR_METADATA_RESULT_OK) {
-		nss_dtlsmgr_warn("%p: DTLS packets has error(s): %d", skb->dev, ndm->result);
-		dev_kfree_skb(skb);
-		stats->rx_dropped++;
+		nss_dtlsmgr_warn("%px: DTLS packets has error(s): %d", skb->dev, ndm->result);
+		dev_kfree_skb_any(skb);
+		stats->fail_host_rx++;
 		return;
 	}
 
@@ -199,7 +199,7 @@ void nss_dtlsmgr_ctx_dev_data_callback(void *app_data, struct sk_buff *skb)
 		break;
 
 	default:
-		nss_dtlsmgr_trace("%p: non-IP packet received (ifnum:%d)", ctx, ctx->decap.ifnum);
+		nss_dtlsmgr_trace("%px: non-IP packet received (ifnum:%d)", ctx, ctx->decap.ifnum);
 	}
 
 	netif_receive_skb(skb);
@@ -224,7 +224,7 @@ void nss_dtlsmgr_ctx_dev_rx_inner(struct net_device *dev, struct sk_buff *skb, s
 
 	stats = &ctx->decap.stats;
 
-	nss_dtlsmgr_trace("%p: RX DTLS decapsulated packet, ifnum(%d)", dev, ctx->decap.ifnum);
+	nss_dtlsmgr_trace("%px: RX DTLS decapsulated packet, ifnum(%d)", dev, ctx->decap.ifnum);
 
 	skb->pkt_type = PACKET_HOST;
 	skb->skb_iif = dev->ifindex;
@@ -253,7 +253,7 @@ void nss_dtlsmgr_ctx_dev_rx_outer(struct net_device *dev, struct sk_buff *skb, s
 
 	stats = &ctx->encap.stats;
 
-	nss_dtlsmgr_trace("%p: RX DTLS encapsulated packet, ifnum(%d)", dev, ctx->encap.ifnum);
+	nss_dtlsmgr_trace("%px: RX DTLS encapsulated packet, ifnum(%d)", dev, ctx->encap.ifnum);
 
 	skb->pkt_type = PACKET_HOST;
 	skb->skb_iif = dev->ifindex;
@@ -276,8 +276,9 @@ void nss_dtlsmgr_ctx_dev_rx_outer(struct net_device *dev, struct sk_buff *skb, s
 		iph = ip_hdr(skb);
 		rt = ip_route_output(&init_net, iph->daddr, iph->saddr, 0, 0);
 		if (IS_ERR(rt)) {
-			nss_dtlsmgr_warn("%p: No IPv4 route or out dev", dev);
+			nss_dtlsmgr_warn("%px: No IPv4 route or out dev", dev);
 			dev_kfree_skb_any(skb);
+			stats->fail_host_rx++;
 			break;
 		}
 
@@ -302,8 +303,9 @@ void nss_dtlsmgr_ctx_dev_rx_outer(struct net_device *dev, struct sk_buff *skb, s
 
 		dst = ip6_route_output(&init_net, NULL, &fl6);
 		if (IS_ERR(dst)) {
-			nss_dtlsmgr_warn("%p: No IPv6 route or out dev", dev);
+			nss_dtlsmgr_warn("%px: No IPv6 route or out dev", dev);
 			dev_kfree_skb_any(skb);
+			stats->fail_host_rx++;
 			break;
 		}
 
@@ -318,9 +320,9 @@ void nss_dtlsmgr_ctx_dev_rx_outer(struct net_device *dev, struct sk_buff *skb, s
 		 * For a non-IP packet, if there is no registered
 		 * callback then it has to be dropped.
 		 */
-		nss_dtlsmgr_trace("%p: received non-IP packet", ctx);
+		nss_dtlsmgr_trace("%px: received non-IP packet", ctx);
 		dev_kfree_skb_any(skb);
-		stats->rx_dropped++;
+		stats->fail_host_rx++;
 	}
 
 	dev_put(dev);
@@ -334,8 +336,11 @@ void nss_dtlsmgr_ctx_dev_rx_outer(struct net_device *dev, struct sk_buff *skb, s
 static netdev_tx_t nss_dtlsmgr_ctx_dev_tx(struct sk_buff *skb, struct net_device *dev)
 {
 	struct nss_dtlsmgr_ctx *ctx = netdev_priv(dev);
+	struct nss_dtlsmgr_metadata *ndm = NULL;
 	struct nss_dtlsmgr_ctx_data *encap;
 	struct nss_dtlsmgr_stats *stats;
+	struct sk_buff *skb2;
+	bool mdata_init;
 	bool expand_skb;
 	int nhead, ntail;
 
@@ -352,34 +357,55 @@ static netdev_tx_t nss_dtlsmgr_ctx_dev_tx(struct sk_buff *skb, struct net_device
 	if (skb_shared(skb))
 		skb = skb_unshare(skb, in_atomic() ? GFP_ATOMIC : GFP_KERNEL);
 
-	nss_dtlsmgr_trace("%p: TX packet for DTLS encapsulation, ifnum(%d)", dev, encap->ifnum);
+	nss_dtlsmgr_trace("%px: TX packet for DTLS encapsulation, ifnum(%d)", dev, encap->ifnum);
+
+	if (encap->flags & NSS_DTLSMGR_ENCAP_METADATA) {
+		ndm = (struct nss_dtlsmgr_metadata *)skb->data;
+
+		/*
+		 * Check if metadata is initialized
+		 */
+		mdata_init = ndm->flags & NSS_DTLSMGR_METADATA_FLAG_ENC;
+		if (unlikely(!mdata_init))
+			goto free;
+
+	}
 
 	/*
 	 * For all these cases
 	 * - create a writable copy of buffer
 	 * - increase the head room
 	 * - increase the tail room
+	 * - skb->data is not 4-byte aligned
 	 */
-	expand_skb = skb_cloned(skb) || (skb_headroom(skb) < nhead) || (skb_tailroom(skb) < ntail);
+	expand_skb = skb_cloned(skb) || (skb_headroom(skb) < nhead) || (skb_tailroom(skb) < ntail)
+			|| !IS_ALIGNED((unsigned long)skb->data, sizeof(uint32_t));
 
-	if (expand_skb && pskb_expand_head(skb, nhead, ntail, GFP_ATOMIC)) {
-		nss_dtlsmgr_trace("%p: unable to expand buffer for (%s)", ctx, dev->name);
-		/*
-		 * Update stats based on whether headroom or tailroom or both failed
-		 */
-		stats->fail_headroom = stats->fail_headroom + (skb_headroom(skb) < nhead);
-		stats->fail_tailroom = stats->fail_tailroom + (skb_tailroom(skb) < ntail);
-		goto free;
+	if (expand_skb) {
+		skb2 = skb_copy_expand(skb, nhead, ntail, GFP_ATOMIC);
+		if (!skb2) {
+			nss_dtlsmgr_trace("%px: unable to expand buffer for (%s)", ctx, dev->name);
+			/*
+			 * Update stats based on whether headroom or tailroom or both failed
+			 */
+			stats->fail_headroom = stats->fail_headroom + (skb_headroom(skb) < nhead);
+			stats->fail_tailroom = stats->fail_tailroom + (skb_tailroom(skb) < ntail);
+			goto free;
+		}
+
+		dev_kfree_skb_any(skb);
+		skb = skb2;
 	}
 
 	if (nss_dtls_cmn_tx_buf(skb, encap->ifnum, encap->nss_ctx) != NSS_TX_SUCCESS) {
-		nss_dtlsmgr_trace("%p: unable to tx buffer for (%u)", ctx, encap->ifnum);
+		nss_dtlsmgr_trace("%px: unable to tx buffer for (%u)", ctx, encap->ifnum);
 		return NETDEV_TX_BUSY;
 	}
 
 	return NETDEV_TX_OK;
 free:
 	dev_kfree_skb_any(skb);
+	stats->fail_host_tx++;
 	return NETDEV_TX_OK;
 }
 
@@ -411,7 +437,7 @@ static void nss_dtlsmgr_ctx_dev_free(struct net_device *dev)
 {
 	struct nss_dtlsmgr_ctx *ctx = netdev_priv(dev);
 
-	nss_dtlsmgr_trace("%p: free dtls context device(%s)", dev, dev->name);
+	nss_dtlsmgr_trace("%px: free dtls context device(%s)", dev, dev->name);
 
 	if (ctx->dentry)
 		debugfs_remove_recursive(ctx->dentry);
@@ -420,10 +446,10 @@ static void nss_dtlsmgr_ctx_dev_free(struct net_device *dev)
 }
 
 /*
- * nss_dtlsmgr_ctx_dev_stats64()
- *	Report packet statistics to Linux.
+ * nss_dtlsmgr_ctx_get_dev_stats64()
+ *	To get the netdev stats
  */
-static struct rtnl_link_stats64 *nss_dtlsmgr_ctx_dev_stats64(struct net_device *dev, struct rtnl_link_stats64 *stats)
+static struct rtnl_link_stats64 *nss_dtlsmgr_ctx_get_dev_stats64(struct net_device *dev, struct rtnl_link_stats64 *stats)
 {
 	struct nss_dtlsmgr_ctx *ctx = netdev_priv(dev);
 	struct nss_dtlsmgr_stats *encap_stats, *decap_stats;
@@ -441,6 +467,22 @@ static struct rtnl_link_stats64 *nss_dtlsmgr_ctx_dev_stats64(struct net_device *
 
 	return stats;
 }
+
+/*
+ * nss_dtlsmgr_ctx_dev_stats64()
+ *	Report packet statistics to Linux.
+ */
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 11, 0))
+static struct rtnl_link_stats64 *nss_dtlsmgr_ctx_dev_stats64(struct net_device *dev, struct rtnl_link_stats64 *stats)
+{
+	return nss_dtlsmgr_ctx_get_dev_stats64(dev, stats);
+}
+#else
+static void nss_dtlsmgr_ctx_dev_stats64(struct net_device *dev, struct rtnl_link_stats64 *stats)
+{
+	nss_dtlsmgr_ctx_get_dev_stats64(dev, stats);
+}
+#endif
 
 /*
  * nss_dtlsmgr_ctx_dev_change_mtu()
@@ -479,8 +521,11 @@ void nss_dtlsmgr_ctx_dev_setup(struct net_device *dev)
 	dev->ethtool_ops = NULL;
 	dev->header_ops = NULL;
 	dev->netdev_ops = &nss_dtlsmgr_ctx_dev_ops;
+#if (LINUX_VERSION_CODE <= KERNEL_VERSION(4, 11, 8))
 	dev->destructor = nss_dtlsmgr_ctx_dev_free;
-
+#else
+	dev->priv_destructor = nss_dtlsmgr_ctx_dev_free;
+#endif
 	memcpy(dev->dev_addr, "\xaa\xbb\xcc\xdd\xee\xff", dev->addr_len);
 	memset(dev->broadcast, 0xff, dev->addr_len);
 	memcpy(dev->perm_addr, dev->dev_addr, dev->addr_len);

@@ -1,4 +1,5 @@
-/* Copyright (c) 2015-2019, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2015-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -26,7 +27,7 @@
 
 #define NSS_CRYPTOAPI_DEBUGFS_MAX_NAME 64
 #define NSS_CRYPTOAPI_DEBUGFS_MAX_CTX_ENTRY 5
-#define NSS_CRYPTOAPI_DEBUGFS_MAX_STATS_ENTRY 6
+#define NSS_CRYPTOAPI_DEBUGFS_MAX_STATS_ENTRY 11
 #define NSS_CRYPTOAPI_MAGIC 0x7FED
 #define NSS_CRYPTOAPI_AHASH_MAGIC 0x7FEF
 #define NSS_CRYPTOAPI_HDR_POOL_SZ 1024
@@ -101,6 +102,7 @@ struct nss_cryptoapi_stats {
 	uint64_t failed_nomem;				/* Packets failing due to no memory */
 	uint64_t failed_req;				/* Packets failing due incorrect request */
 	uint64_t failed_align;				/* Packets failing alignment checks */
+	uint64_t failed_len;				/* Packets failing Supported length checks */
 	uint64_t error[NSS_CRYPTO_CMN_RESP_ERROR_MAX];	/* Other packet response errors */
 };
 
@@ -129,13 +131,25 @@ struct nss_cryptoapi_ctx {
 };
 
 /*
+ * nss_cryptoapi_seg_info
+ *	Structure to store the information specific to the scatterlist
+ */
+struct nss_cryptoapi_seg_info {
+	struct scatterlist *first_sg;	/* First SG in the list */
+	struct scatterlist *last_sg;	/* Last SG in the list */
+	size_t nsegs;			/* Number of segments in the list */
+};
+
+/*
  * Request specific structure
  */
 struct nss_cryptoapi_info {
 	nss_crypto_req_callback_t cb;		/* Callback function */
-	struct scatterlist *first_sg;		/* First SG in the list */
-	struct scatterlist *last_sg;		/* Last SG in the list */
-	size_t nsegs;				/* No. of segments in the list */
+	struct nss_cryptoapi_seg_info src;	/* Segment information for src SG list */
+	struct nss_cryptoapi_seg_info dst;	/* Segment information for dst SG list */
+	bool in_place;				/* Set to TRUE if src and dst are same */
+	unsigned int total_in_len;		/* Total input length for the transformation */
+	unsigned int total_out_len;		/* Total output length of the transformation */
 	void *iv;				/* IV to use for transform */
 	uint8_t skip;				/* Cipher skip */
 	uint8_t auth;				/* auth len */
@@ -161,6 +175,7 @@ struct nss_cryptoapi_algo_info {
 	enum nss_cryptoapi_cipher_mode cipher_mode;	/* Cipher mode */
 	enum nss_cryptoapi_auth_mode auth_mode;		/* Authentication mode */
 	nss_cryptoapi_aead_tx_proc_method_t aead_tx_proc; /* Tx processing function */
+	bool blk_align;					/* Allow buffer length unaligned to block */
 };
 
 #if defined NSS_CFI_DEBUG
@@ -240,6 +255,7 @@ extern void nss_cryptoapi_ablkcipher_exit(struct crypto_tfm *tfm);
 extern int nss_cryptoapi_ablk_setkey(struct crypto_ablkcipher *cipher, const u8 *key, unsigned int len);
 extern int nss_cryptoapi_ablk_encrypt(struct ablkcipher_request *req);
 extern int nss_cryptoapi_ablk_decrypt(struct ablkcipher_request *req);
+extern void nss_cryptoapi_copy_iv(struct nss_cryptoapi_ctx *ctx, struct scatterlist *sg, uint8_t *iv, uint8_t iv_len);
 
 /*
  * AHASH

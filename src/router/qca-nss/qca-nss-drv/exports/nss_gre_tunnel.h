@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2016-2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2016-2018,2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -104,7 +104,7 @@ enum nss_gre_tunnel_error_types {
 struct nss_gre_tunnel_di_to_wlan_id {
 	uint32_t dynamic_interface_num;		/**< Dynamic interface number. */
 	uint16_t wlan_id;			/**< WLAN ID number. */
-	uint16_t reserved0;			/**< Reserved padding. */
+	uint16_t fwd_policy;                    /**< Forward policy bits. */
 };
 
 /**

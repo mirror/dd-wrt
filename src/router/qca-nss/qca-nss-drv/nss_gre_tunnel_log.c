@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2018, 2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -40,7 +40,7 @@ static int8_t *nss_gre_tunnel_log_message_types_str[NSS_GRE_TUNNEL_MSG_MAX] __ma
 static void nss_gre_tunnel_log_configure_msg(struct nss_gre_tunnel_msg *ngm)
 {
 	struct nss_gre_tunnel_configure *ngcm __maybe_unused = &ngm->msg.configure;
-	nss_trace("%p: NSS GRE Tunnel configure message \n"
+	nss_trace("%px: NSS GRE Tunnel configure message \n"
 		"Meta Header Version: %d\n"
 		"GRE Mode: %x\n"
 		"IP Type: %x\n"
@@ -51,7 +51,7 @@ static void nss_gre_tunnel_log_configure_msg(struct nss_gre_tunnel_msg *ngm)
 		"Encryption Crypto Index: %d\n"
 		"Decryption Crypto Index: %d\n"
 		"Word0 header: %d\n"
-		"Initialization Vector: %p\n"
+		"Initialization Vector: %px\n"
 		"Sibling Interface Number: %d\n"
 		"TTL: %d\n"
 		"RPS: %d\n"
@@ -90,7 +90,7 @@ static void nss_gre_tunnel_log_configure_msg(struct nss_gre_tunnel_msg *ngm)
 static void nss_gre_tunnel_log_di_to_wlan_id_msg(struct nss_gre_tunnel_msg *ngm)
 {
 	struct nss_gre_tunnel_di_to_wlan_id *ngdm __maybe_unused = &ngm->msg.dtwi;
-	nss_trace("%p: NSS GRE Dynamic Interface to WLAN ID message: \n"
+	nss_trace("%px: NSS GRE Dynamic Interface to WLAN ID message: \n"
 		"Dynamic Interface Number: %d\n"
 		"WLAN ID: %x\n",
 		ngdm, ngdm->dynamic_interface_num,
@@ -121,7 +121,7 @@ static void nss_gre_tunnel_log_verbose(struct nss_gre_tunnel_msg *ngm)
 		break;
 
 	default:
-		nss_trace("%p: Invalid message type\n", ngm);
+		nss_trace("%px: Invalid message type\n", ngm);
 		break;
 	}
 }
@@ -133,11 +133,11 @@ static void nss_gre_tunnel_log_verbose(struct nss_gre_tunnel_msg *ngm)
 void nss_gre_tunnel_log_tx_msg(struct nss_gre_tunnel_msg *ngm)
 {
 	if (ngm->cm.type >= NSS_GRE_TUNNEL_MSG_MAX) {
-		nss_warning("%p: Invalid message type\n", ngm);
+		nss_warning("%px: Invalid message type\n", ngm);
 		return;
 	}
 
-	nss_info("%p: type[%d]:%s\n", ngm, ngm->cm.type, nss_gre_tunnel_log_message_types_str[ngm->cm.type]);
+	nss_info("%px: type[%d]:%s\n", ngm, ngm->cm.type, nss_gre_tunnel_log_message_types_str[ngm->cm.type]);
 	nss_gre_tunnel_log_verbose(ngm);
 }
 
@@ -148,18 +148,18 @@ void nss_gre_tunnel_log_tx_msg(struct nss_gre_tunnel_msg *ngm)
 void nss_gre_tunnel_log_rx_msg(struct nss_gre_tunnel_msg *ngm)
 {
 	if (ngm->cm.response >= NSS_CMN_RESPONSE_LAST) {
-		nss_warning("%p: Invalid response\n", ngm);
+		nss_warning("%px: Invalid response\n", ngm);
 		return;
 	}
 
 	if (ngm->cm.response == NSS_CMN_RESPONSE_NOTIFY || (ngm->cm.response == NSS_CMN_RESPONSE_ACK)) {
-		nss_info("%p: type[%d]:%s, response[%d]:%s\n", ngm, ngm->cm.type,
+		nss_info("%px: type[%d]:%s, response[%d]:%s\n", ngm, ngm->cm.type,
 			nss_gre_tunnel_log_message_types_str[ngm->cm.type],
 			ngm->cm.response, nss_cmn_response_str[ngm->cm.response]);
 		goto verbose;
 	}
 
-	nss_info("%p: msg nack - type[%d]:%s, response[%d]:%s\n",
+	nss_info("%px: msg nack - type[%d]:%s, response[%d]:%s\n",
 		ngm, ngm->cm.type, nss_gre_tunnel_log_message_types_str[ngm->cm.type],
 		ngm->cm.response, nss_cmn_response_str[ngm->cm.response]);
 

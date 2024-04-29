@@ -85,13 +85,13 @@ static int32_t nss_gmac_setup_tx_desc_queue(struct nss_gmac_dev *gmacdev,
 	BUG_ON(desc_mode != RINGMODE);
 	BUG_ON((no_of_desc & (no_of_desc - 1)) != 0);
 
-	netdev_dbg(gmacdev->netdev, "Total size of memory required for Tx Descriptors in Ring Mode = 0x%08x\n"
+	netdev_info(gmacdev->netdev, "Total size of memory required for Tx Descriptors in Ring Mode = 0x%08x\n"
 			, (uint32_t) ((sizeof(struct dma_desc) * no_of_desc)));
 
 	first_desc = dma_alloc_coherent(dev, sizeof(struct dma_desc) * no_of_desc
 					, &dma_addr, GFP_KERNEL);
 	if (first_desc == NULL) {
-		netdev_dbg(gmacdev->netdev,
+		netdev_info(gmacdev->netdev,
 				"Error in Tx Descriptors memory allocation\n");
 		return -ENOMEM;
 	}
@@ -99,7 +99,7 @@ static int32_t nss_gmac_setup_tx_desc_queue(struct nss_gmac_dev *gmacdev,
 	gmacdev->tx_desc_count = no_of_desc;
 	gmacdev->tx_desc = first_desc;
 	gmacdev->tx_desc_dma = dma_addr;
-	netdev_dbg(gmacdev->netdev, "Tx Descriptors in Ring Mode: No. of descriptors = %d base = 0x%08x dma = 0x%08x\n"
+	netdev_info(gmacdev->netdev, "Tx Descriptors in Ring Mode: No. of descriptors = %d base = 0x%08x dma = 0x%08x\n"
 			, no_of_desc, (uint32_t)first_desc, dma_addr);
 
 	nss_gmac_tx_desc_init_ring(gmacdev->tx_desc, gmacdev->tx_desc_count);
@@ -292,20 +292,20 @@ static int32_t nss_gmac_setup_rx_desc_queue(struct nss_gmac_dev *gmacdev,
 	BUG_ON(desc_mode != RINGMODE);
 	BUG_ON((no_of_desc & (no_of_desc - 1)) != 0);
 
-	netdev_dbg(gmacdev->netdev, "total size of memory required for Rx Descriptors in Ring Mode = 0x%08x\n"
+	netdev_info(gmacdev->netdev, "total size of memory required for Rx Descriptors in Ring Mode = 0x%08x\n"
 			, (uint32_t) ((sizeof(struct dma_desc) * no_of_desc)));
 
 	first_desc = dma_alloc_coherent(dev, sizeof(struct dma_desc) * no_of_desc
 					, &dma_addr, GFP_KERNEL);
 	if (first_desc == NULL) {
-		netdev_dbg(gmacdev->netdev, "Error in Rx Descriptor Memory allocation in Ring mode\n");
+		netdev_info(gmacdev->netdev, "Error in Rx Descriptor Memory allocation in Ring mode\n");
 		return -ENOMEM;
 	}
 
 	gmacdev->rx_desc_count = no_of_desc;
 	gmacdev->rx_desc = first_desc;
 	gmacdev->rx_desc_dma = dma_addr;
-	netdev_dbg(gmacdev->netdev, "Rx Descriptors in Ring Mode: No. of descriptors = %d base = 0x%08x dma = 0x%08x\n",
+	netdev_info(gmacdev->netdev, "Rx Descriptors in Ring Mode: No. of descriptors = %d base = 0x%08x dma = 0x%08x\n",
 			no_of_desc, (uint32_t)first_desc, dma_addr);
 
 	nss_gmac_rx_desc_init_ring(gmacdev->rx_desc, no_of_desc);
@@ -334,7 +334,7 @@ static inline void nss_gmac_rx_refill(struct nss_gmac_dev *gmacdev)
 		skb = __netdev_alloc_skb(gmacdev->netdev,
 				NSS_GMAC_MINI_JUMBO_FRAME_MTU, GFP_ATOMIC);
 		if (unlikely(skb == NULL)) {
-			netdev_dbg(gmacdev->netdev, "Unable to allocate skb, will try next time\n");
+			netdev_info(gmacdev->netdev, "Unable to allocate skb, will try next time\n");
 			break;
 		}
 		skb_reserve(skb, NET_IP_ALIGN);
@@ -524,7 +524,7 @@ static int nss_gmac_slowpath_if_open(void *app_data, uint32_t tx_desc_ring,
 
 	err = request_irq(netdev->irq, nss_gmac_handle_irq, 0, "nss-gmac", gmacdev);
 	if (err) {
-		netdev_dbg(netdev, "Mac %d IRQ %d request failed\n", gmacdev->macid, netdev->irq);
+		netdev_info(netdev, "Mac %d IRQ %d request failed\n", gmacdev->macid, netdev->irq);
 		return NSS_GMAC_FAILURE;
 	}
 	gmacdev->drv_flags |= NSS_GMAC_PRIV_FLAG(IRQ_REQUESTED);
@@ -542,7 +542,7 @@ static int nss_gmac_slowpath_if_close(void *app_data)
 	struct nss_gmac_dev *gmacdev = (struct nss_gmac_dev *)netdev_priv(netdev);
 
 	if (gmacdev->drv_flags & NSS_GMAC_PRIV_FLAG(IRQ_REQUESTED)) {
-		netdev_dbg(netdev, "Freeing IRQ %d for Mac %d\n", netdev->irq, gmacdev->macid);
+		netdev_info(netdev, "Freeing IRQ %d for Mac %d\n", netdev->irq, gmacdev->macid);
 		free_irq(netdev->irq, gmacdev);
 		gmacdev->drv_flags &= ~NSS_GMAC_PRIV_FLAG(IRQ_REQUESTED);
 	}
@@ -777,12 +777,12 @@ void nss_gmac_linkup(struct nss_gmac_dev *gmacdev)
 
 	if (gmacdev->data_plane_ops->open(gmacdev->data_plane_ctx, gmac_tx_desc,
 				gmac_rx_desc, mode) != NSS_GMAC_SUCCESS) {
-		netdev_dbg(netdev, "%s: data plane open command un-successful\n",
+		netdev_info(netdev, "%s: data plane open command un-successful\n",
 								__func__);
 		gmacdev->link_state = LINKDOWN;
 		return;
 	}
-	netdev_dbg(netdev, "%s: data plane open command successfully issued\n",
+	netdev_info(netdev, "%s: data plane open command successfully issued\n",
 								__func__);
 
 	nss_notify_linkup(gmacdev);
@@ -847,17 +847,17 @@ void nss_gmac_start_up(struct nss_gmac_dev *gmacdev)
 {
 	if (test_bit(__NSS_GMAC_LINKPOLL, &gmacdev->flags)) {
 		if (!IS_ERR(gmacdev->phydev)) {
-			netdev_dbg(gmacdev->netdev, "%s: start phy 0x%x\n",
+			netdev_info(gmacdev->netdev, "%s: start phy 0x%x\n",
 					__func__, gmacdev->phydev->phy_id);
 			phy_start(gmacdev->phydev);
 			phy_start_aneg(gmacdev->phydev);
 		} else {
-			netdev_dbg(gmacdev->netdev, "%s: Invalid PHY device for a link polled interface\n",
+			netdev_info(gmacdev->netdev, "%s: Invalid PHY device for a link polled interface\n",
 								__func__);
 		}
 		return;
 	}
-	netdev_dbg(gmacdev->netdev, "%s: Force link up\n", __func__);
+	netdev_info(gmacdev->netdev, "%s: Force link up\n", __func__);
 	/*
 	 * Force link up if link polling is disabled
 	 */
@@ -903,7 +903,7 @@ int32_t nss_gmac_xmit_frames(struct sk_buff *skb, struct net_device *netdev)
 		return NETDEV_TX_OK;
 
 drop:
-	netdev_dbg(netdev, "%s: dropping skb\n", __func__);
+	netdev_info(netdev, "%s: dropping skb\n", __func__);
 	dev_kfree_skb_any(skb);
 	netdev->stats.tx_dropped++;
 
@@ -942,7 +942,7 @@ int nss_gmac_open(struct net_device *netdev)
 	nss_gmac_disable_interrupt_all(gmacdev);
 
 	if (!gmacdev->data_plane_ops) {
-		netdev_dbg(netdev, "%s: offload is not enabled, bring up gmac with slowpath\n",
+		netdev_info(netdev, "%s: offload is not enabled, bring up gmac with slowpath\n",
 								__func__);
 
 		netif_napi_add_weight(netdev, &gmacdev->napi, nss_gmac_poll,
@@ -1069,25 +1069,44 @@ void nss_gmac_tx_timeout(struct net_device *netdev, unsigned int txqueue)
 int32_t nss_gmac_change_mtu(struct net_device *netdev, int32_t newmtu)
 {
 	struct nss_gmac_dev *gmacdev = (struct nss_gmac_dev *)netdev_priv(netdev);
-	if (!gmacdev)
+	if (!gmacdev) {
+		netdev_info(netdev, "%s: Not a GMAC netdevice (%s)\n", __func__, netdev_name(netdev));
 		return -EINVAL;
+    }
 
-	if (newmtu > NSS_GMAC_JUMBO_MTU)
+	if (newmtu > NSS_GMAC_JUMBO_MTU) {
+		netdev_info(netdev, "%s: New MTU of %d, for device %s is larger than %d (NSS_GMAC_JUMBO_MTU)\n",
+              __func__, newmtu, netdev_name(netdev), NSS_GMAC_JUMBO_MTU);
 		return -EINVAL;
+    }
 
 	if (gmacdev->data_plane_ops->change_mtu(gmacdev->data_plane_ctx, newmtu)
-							 != NSS_GMAC_SUCCESS)
+							 != NSS_GMAC_SUCCESS) {
+		netdev_info(netdev, "%s: Unable to change MTU for (%s)\n", __func__, netdev_name(netdev));
 		return -EAGAIN;
+    }
 
-	if (newmtu <= NSS_GMAC_NORMAL_FRAME_MTU) {
-		nss_gmac_jumbo_frame_disable(gmacdev);
-		nss_gmac_twokpe_frame_disable(gmacdev);
-	} else if (newmtu <= NSS_GMAC_MINI_JUMBO_FRAME_MTU) {
-		nss_gmac_jumbo_frame_disable(gmacdev);
-		nss_gmac_twokpe_frame_enable(gmacdev);
-	} else if (newmtu <= NSS_GMAC_FULL_JUMBO_FRAME_MTU) {
-		nss_gmac_jumbo_frame_enable(gmacdev);
-	}
+  if (newmtu <= NSS_GMAC_NORMAL_FRAME_MTU) {
+    netdev_info(netdev, "%s: Enabling Normal Frame MTU (Requested MTU [%d])\n",
+                __func__, newmtu);
+    if (strcmp(netdev_name(netdev), "eth1") == 0) {
+      netdev_info(netdev, "%s: Enabling Jumbo Frame MTU for eth1 (Requested MTU [%d])\n",
+                  __func__, newmtu);
+      nss_gmac_jumbo_frame_enable(gmacdev);
+    } else {
+      nss_gmac_jumbo_frame_disable(gmacdev);
+      nss_gmac_twokpe_frame_disable(gmacdev);
+    }
+  } else if (newmtu <= NSS_GMAC_MINI_JUMBO_FRAME_MTU) {
+    netdev_info(netdev,
+                "%s: Enabling Mini Jumbo Frame MTU (Requested MTU [%d])\n",
+                __func__, newmtu);
+    nss_gmac_jumbo_frame_disable(gmacdev);
+    nss_gmac_twokpe_frame_enable(gmacdev);
+  } else if (newmtu <= NSS_GMAC_FULL_JUMBO_FRAME_MTU) {
+    netdev_info(netdev, "%s: Enabling Jumbo Frame MTU (Requested MTU [%d])\n", __func__, newmtu);
+    nss_gmac_jumbo_frame_enable(gmacdev);
+  }
 
 	netdev->mtu = newmtu;
 	return 0;
@@ -1138,7 +1157,7 @@ int nss_gmac_override_data_plane(struct net_device *netdev,
 	if (!dp_ops->open || !dp_ops->close || !dp_ops->link_state
 		|| !dp_ops->mac_addr || !dp_ops->change_mtu || !dp_ops->xmit
 		|| !dp_ops->set_features || !dp_ops->pause_on_off) {
-		netdev_dbg(netdev, "%s: All the op functions must be present, reject this registeration\n",
+		netdev_info(netdev, "%s: All the op functions must be present, reject this registeration\n",
 								__func__);
 		return NSS_GMAC_FAILURE;
 	}
@@ -1178,11 +1197,11 @@ void nss_gmac_start_data_plane(struct net_device *netdev, void *ctx)
 	struct nss_gmac_global_ctx *global_ctx = gmacdev->ctx;
 
 	if (test_bit(__NSS_GMAC_UP, &gmacdev->flags)) {
-		netdev_dbg(netdev, "This netdev already up, something is wrong\n");
+		netdev_info(netdev, "This netdev already up, something is wrong\n");
 		return;
 	}
 	if (gmacdev->data_plane_ctx == ctx) {
-		netdev_dbg(netdev, "Data plane cookie matches, let's start the netdev again\n");
+		netdev_info(netdev, "Data plane cookie matches, let's start the netdev again\n");
 		queue_delayed_work(global_ctx->gmac_workqueue,
 				&gmacdev->gmacwork, NSS_GMAC_LINK_CHECK_TIME);
 	}
@@ -1233,7 +1252,7 @@ void nss_gmac_open_work(struct work_struct *work)
 	struct nss_gmac_dev *gmacdev = container_of(to_delayed_work(work),
 						struct nss_gmac_dev, gmacwork);
 
-	netdev_dbg(gmacdev->netdev, "Do the network up in delayed queue %s\n",
+	netdev_info(gmacdev->netdev, "Do the network up in delayed queue %s\n",
 							gmacdev->netdev->name);
 	nss_gmac_open(gmacdev->netdev);
 }

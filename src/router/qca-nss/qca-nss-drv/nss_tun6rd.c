@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2014-2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2014-2018, 2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -39,12 +39,12 @@ static void nss_tun6rd_handler(struct nss_ctx_instance *nss_ctx, struct nss_cmn_
 	 * Is this a valid request/response packet?
 	 */
 	if (ncm->type >= NSS_TUN6RD_MAX) {
-		nss_warning("%p: received invalid message %d for Tun6RD interface", nss_ctx, ncm->type);
+		nss_warning("%px: received invalid message %d for Tun6RD interface", nss_ctx, ncm->type);
 		return;
 	}
 
 	if (nss_cmn_get_msg_len(ncm) > sizeof(struct nss_tun6rd_msg)) {
-		nss_warning("%p: Length of message is greater than required: %d", nss_ctx, nss_cmn_get_msg_len(ncm));
+		nss_warning("%px: Length of message is greater than required: %d", nss_ctx, nss_cmn_get_msg_len(ncm));
 		return;
 	}
 
@@ -78,7 +78,7 @@ static void nss_tun6rd_handler(struct nss_ctx_instance *nss_ctx, struct nss_cmn_
 	 * call 6rd tunnel callback
 	 */
 	if (!ctx) {
-		nss_warning("%p: Event received for 6rd tunnel interface %d before registration", nss_ctx, ncm->interface);
+		nss_warning("%px: Event received for 6rd tunnel interface %d before registration", nss_ctx, ncm->interface);
 		return;
 	}
 
@@ -102,12 +102,12 @@ nss_tx_status_t nss_tun6rd_tx(struct nss_ctx_instance *nss_ctx, struct nss_tun6r
 	 * Sanity check the message
 	 */
 	if (!nss_is_dynamic_interface(ncm->interface)) {
-		nss_warning("%p: tx request for another interface: %d", nss_ctx, ncm->interface);
+		nss_warning("%px: tx request for another interface: %d", nss_ctx, ncm->interface);
 		return NSS_TX_FAILURE;
 	}
 
 	if (ncm->type > NSS_TUN6RD_MAX) {
-		nss_warning("%p: message type out of range: %d", nss_ctx, ncm->type);
+		nss_warning("%px: message type out of range: %d", nss_ctx, ncm->type);
 		return NSS_TX_FAILURE;
 	}
 

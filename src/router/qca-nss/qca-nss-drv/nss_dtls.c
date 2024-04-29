@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2016-2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2016-2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -163,14 +163,14 @@ static void nss_dtls_handler(struct nss_ctx_instance *nss_ctx,
 	 * Is this a valid request/response packet?
 	 */
 	if (ncm->type >= NSS_DTLS_MSG_MAX) {
-		nss_warning("%p: received invalid message %d "
+		nss_warning("%px: received invalid message %d "
 			    "for DTLS interface %d",
 			    nss_ctx, ncm->type, ncm->interface);
 		return;
 	}
 
 	if (nss_cmn_get_msg_len(ncm) > sizeof(struct nss_dtls_msg)) {
-		nss_warning("%p: dtls message length is invalid: %d",
+		nss_warning("%px: dtls message length is invalid: %d",
 			    nss_ctx, ncm->len);
 		return;
 	}
@@ -211,7 +211,7 @@ static void nss_dtls_handler(struct nss_ctx_instance *nss_ctx,
 	 * call dtls session callback
 	 */
 	if (!cb) {
-		nss_warning("%p: No callback for dtls session interface %d",
+		nss_warning("%px: No callback for dtls session interface %d",
 			    nss_ctx, ncm->interface);
 		return;
 	}
@@ -260,7 +260,7 @@ nss_tx_status_t nss_dtls_tx_buf(struct sk_buff *skb, uint32_t if_num,
 {
 	BUG_ON(!nss_dtls_verify_if_num(if_num));
 
-	return nss_core_send_packet(nss_ctx, skb, if_num, H2N_BIT_FLAG_VIRTUAL_BUFFER);
+	return nss_core_send_packet(nss_ctx, skb, if_num, H2N_BIT_FLAG_VIRTUAL_BUFFER | H2N_BIT_FLAG_BUFFER_REUSABLE);
 }
 EXPORT_SYMBOL(nss_dtls_tx_buf);
 
@@ -279,7 +279,7 @@ nss_tx_status_t nss_dtls_tx_msg(struct nss_ctx_instance *nss_ctx,
 	BUG_ON(!nss_dtls_verify_if_num(ncm->interface));
 
 	if (ncm->type > NSS_DTLS_MSG_MAX) {
-		nss_warning("%p: dtls message type out of range: %d",
+		nss_warning("%px: dtls message type out of range: %d",
 			    nss_ctx, ncm->type);
 		return NSS_TX_FAILURE;
 	}
@@ -312,7 +312,7 @@ nss_tx_status_t nss_dtls_tx_msg_sync(struct nss_ctx_instance *nss_ctx, struct ns
 
 	status = nss_dtls_tx_msg(nss_ctx, msg);
 	if (status != NSS_TX_SUCCESS) {
-		nss_warning("%p: dtls_tx_msg failed\n", nss_ctx);
+		nss_warning("%px: dtls_tx_msg failed\n", nss_ctx);
 		up(&dtls_pvt.sem);
 		return status;
 	}
@@ -320,7 +320,7 @@ nss_tx_status_t nss_dtls_tx_msg_sync(struct nss_ctx_instance *nss_ctx, struct ns
 	ret = wait_for_completion_timeout(&dtls_pvt.complete, msecs_to_jiffies(NSS_DTLS_TX_TIMEOUT));
 
 	if (!ret) {
-		nss_warning("%p: DTLS msg tx failed due to timeout\n", nss_ctx);
+		nss_warning("%px: DTLS msg tx failed due to timeout\n", nss_ctx);
 		dtls_pvt.response = NSS_TX_FAILURE;
 	}
 
@@ -364,13 +364,13 @@ struct nss_ctx_instance *nss_dtls_register_if(uint32_t if_num,
 	spin_unlock_bh(&nss_dtls_session_stats_lock);
 
 	if (i == NSS_MAX_DTLS_SESSIONS) {
-		nss_warning("%p: Cannot find free slot for "
+		nss_warning("%px: Cannot find free slot for "
 			    "DTLS session stats, I/F:%u\n", nss_ctx, if_num);
 		return NULL;
 	}
 
 	if (nss_ctx->subsys_dp_register[if_num].ndev) {
-		nss_warning("%p: Cannot find free slot for "
+		nss_warning("%px: Cannot find free slot for "
 			    "DTLS NSS I/F:%u\n", nss_ctx, if_num);
 
 		return NULL;
@@ -407,12 +407,12 @@ void nss_dtls_unregister_if(uint32_t if_num)
 	spin_unlock_bh(&nss_dtls_session_stats_lock);
 
 	if (i == NSS_MAX_DTLS_SESSIONS) {
-		nss_warning("%p: Cannot find debug stats for DTLS session %d\n", nss_ctx, if_num);
+		nss_warning("%px: Cannot find debug stats for DTLS session %d\n", nss_ctx, if_num);
 		return;
 	}
 
 	if (!nss_ctx->subsys_dp_register[if_num].ndev) {
-		nss_warning("%p: Cannot find registered netdev for DTLS NSS I/F:%u\n", nss_ctx, if_num);
+		nss_warning("%px: Cannot find registered netdev for DTLS NSS I/F:%u\n", nss_ctx, if_num);
 
 		return;
 	}

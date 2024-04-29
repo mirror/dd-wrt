@@ -1,6 +1,8 @@
 /*
  **************************************************************************
- * Copyright (c) 2015, 2018-2019, The Linux Foundation.  All rights reserved.
+ * Copyright (c) 2015, 2018-2021, The Linux Foundation.  All rights reserved.
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -26,12 +28,11 @@
 #endif
 #endif
 
-/*
- * Some constants used with constructing NSS acceleration rules.
- * GGG TODO These should be provided by the NSS driver itself!
- */
-#define ECM_NSS_CONNMGR_VLAN_ID_NOT_CONFIGURED 0xFFF
-#define ECM_NSS_CONNMGR_VLAN_MARKING_NOT_CONFIGURED 0xFFFF
+#ifdef ECM_INTERFACE_VXLAN_ENABLE
+#include <net/vxlan.h>
+#endif
+
+#include <net/xfrm.h>
 
 /*
  * This macro converts ECM ip_addr_t to NSS IPv6 address
@@ -72,6 +73,12 @@ static inline int32_t ecm_nss_common_get_interface_number_by_dev(struct net_devi
 		return NSS_IPSEC_CMN_INTERFACE;
 	}
 
+#ifdef ECM_INTERFACE_RAWIP_ENABLE
+	if (dev->type == ARPHRD_RAWIP) {
+		return nss_rmnet_rx_get_ifnum(dev);
+	}
+#endif
+
 	return nss_cmn_get_interface_number_by_dev(dev);
 }
 
@@ -87,6 +94,18 @@ static inline int32_t ecm_nss_common_get_interface_number_by_dev_type(struct net
 	if ((dev->type == ECM_ARPHRD_IPSEC_TUNNEL_TYPE) && !type) {
 		return NSS_IPSEC_CMN_INTERFACE;
 	}
+
+#ifdef ECM_INTERFACE_VXLAN_ENABLE
+	/*
+	 * VxLAN outer packets are send to VxLAN base node.
+	 */
+	if (netif_is_vxlan(dev)) {
+		if (!type) {
+			return NSS_VXLAN_INTERFACE;
+		}
+		type = NSS_DYNAMIC_INTERFACE_TYPE_VXLAN_INNER;
+	}
+#endif
 
 	return nss_cmn_get_interface_number_by_dev_and_type(dev, type);
 }
@@ -147,6 +166,9 @@ static inline int32_t ecm_nss_common_get_interface_type(struct ecm_front_end_con
 		if (!(dev->priv_flags_ext & (IFF_EXT_GRE_V4_TAP | IFF_EXT_GRE_V6_TAP))) {
 			break;
 		}
+#if __has_attribute(__fallthrough__)
+		__attribute__((__fallthrough__));
+#endif
 #endif
 #ifdef ECM_INTERFACE_GRE_TUN_ENABLE
 	case ARPHRD_IPGRE:
@@ -174,7 +196,7 @@ static inline int32_t ecm_nss_common_get_interface_type(struct ecm_front_end_con
 		break;
 	case ARPHRD_PPP:
 #ifdef ECM_INTERFACE_PPTP_ENABLE
-		if (dev->priv_flags & IFF_PPP_PPTP) {
+		if (dev->priv_flags_ext & IFF_EXT_PPP_PPTP) {
 			if (feci->protocol == IPPROTO_GRE) {
 				return NSS_DYNAMIC_INTERFACE_TYPE_PPTP_OUTER;
 			}
@@ -207,3 +229,159 @@ static inline int32_t ecm_nss_common_ipsec_get_ifnum(int32_t ifnum)
 #endif
 }
 #endif
+
+#if 0 //defined(CONFIG_NET_CLS_ACT) && defined(ECM_CLASSIFIER_DSCP_IGS)
+/*
+ * ecm_nss_common_igs_acceleration_is_allowed()
+ *	Return true, if flow acceleration is allowed for an IGS interface.
+ */
+static inline bool ecm_nss_common_igs_acceleration_is_allowed(struct ecm_front_end_connection_instance *feci,
+		struct sk_buff *skb)
+{
+	struct net_device *to_dev;
+	struct ecm_db_iface_instance *to_ifaces[ECM_DB_IFACE_HEIRARCHY_MAX];
+	enum ip_conntrack_info ctinfo;
+	int to_ifaces_first;
+	uint32_t list_index;
+	bool do_accel = true;
+
+	/*
+	 * Get the interface lists of the connection and check if any interface in the list
+	 * has ingress qdisc attached to it.
+	 */
+	to_ifaces_first = ecm_db_connection_interfaces_get_and_ref(feci->ci, to_ifaces, ECM_DB_OBJ_DIR_TO);
+	if (to_ifaces_first == ECM_DB_IFACE_HEIRARCHY_MAX) {
+		DEBUG_WARN("%px: Accel attempt failed - no interfaces in to_interfaces list!\n", feci);
+		return false;
+	}
+
+	/*
+	 * Reject the flow acceleration if the egress device has ingress qdisc
+	 * attached to it. At these interfaces, the acceleration is only allowed
+	 * when any packet is recieved over them (so that we can able to get the
+	 * correct ingress qostag values from it and fill them in the acceleration rules).
+	 */
+	for (list_index = to_ifaces_first; list_index < ECM_DB_IFACE_HEIRARCHY_MAX; list_index++) {
+		struct ecm_db_iface_instance *ii;
+
+		ii = to_ifaces[list_index];
+		to_dev = dev_get_by_index(&init_net, ecm_db_iface_interface_identifier_get(ii));
+		if (unlikely(!to_dev)) {
+			DEBUG_TRACE("%px: No valid device found for %d index.\n",
+					feci, ecm_db_iface_interface_identifier_get(ii));
+			continue;
+		}
+
+		/*
+		 * Check whether ingress qdisc is attached to the egress device or not.
+		 */
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 15, 0))
+		if (likely(!(to_dev->ingress_cl_list))) {
+#else
+		if (likely(!(to_dev->miniq_ingress))) {
+#endif
+			dev_put(to_dev);
+			continue;
+		}
+
+		/*
+		 * Reject the connection if both side packets are not yet seen.
+		 */
+		nf_ct_get(skb, &ctinfo);
+		if ((ctinfo != IP_CT_ESTABLISHED) &&
+				(ctinfo != IP_CT_ESTABLISHED_REPLY)) {
+			DEBUG_INFO("%px: New flow at ingress device, "
+					"rejecting the acceleration.\n", feci);
+
+			/*
+			 * Deny the acceleration as both side packets are not yet seen.
+			 */
+			do_accel = false;
+		}
+		dev_put(to_dev);
+		break;
+	}
+
+	/*
+	 * Release the resources.
+	 */
+	ecm_db_connection_interfaces_deref(to_ifaces, to_ifaces_first);
+	return do_accel;
+}
+#endif
+
+#if (NSS_FW_VERSION_CODE > NSS_FW_VERSION(11,1))
+#ifdef ECM_CLASSIFIER_PCC_ENABLE
+/*
+ * ecm_nss_common_fill_mirror_info()
+ *	Fill Mirror information.
+ */
+static inline bool ecm_nss_common_fill_mirror_info(struct ecm_classifier_process_response *pr,
+		nss_if_num_t *flow_mirror_ifnum, nss_if_num_t *return_mirror_ifnum)
+{
+	struct net_device *mirror_dev;
+
+	/*
+	 * Initialize both mirror interfaces to invalid.
+	 */
+	*flow_mirror_ifnum = -1;
+	*return_mirror_ifnum = -1;
+
+	if (pr->flow_mirror_ifindex > 0) {
+		mirror_dev = dev_get_by_index(&init_net, pr->flow_mirror_ifindex);
+		if (!mirror_dev) {
+			DEBUG_ERROR("Invalid mirror flow index number: %d\n", pr->flow_mirror_ifindex);
+			return false;
+		}
+
+		*flow_mirror_ifnum = ecm_nss_common_get_interface_number_by_dev_type(mirror_dev,
+				NSS_DYNAMIC_INTERFACE_TYPE_MIRROR);
+		if (*flow_mirror_ifnum < 0) {
+			DEBUG_ERROR("Invalid mirror interface: %s\n", mirror_dev->name);
+			dev_put(mirror_dev);
+			return false;
+		}
+		dev_put(mirror_dev);
+	}
+
+	if (pr->return_mirror_ifindex > 0) {
+		mirror_dev = dev_get_by_index(&init_net, pr->return_mirror_ifindex);
+		if (!mirror_dev) {
+			DEBUG_ERROR("Invalid mirror return index number: %d\n", pr->return_mirror_ifindex);
+			return false;
+		}
+
+		*return_mirror_ifnum = ecm_nss_common_get_interface_number_by_dev_type(mirror_dev,
+				NSS_DYNAMIC_INTERFACE_TYPE_MIRROR);
+		if (*return_mirror_ifnum < 0) {
+			DEBUG_ERROR("Invalid mirror interface: %s\n", mirror_dev->name);
+			dev_put(mirror_dev);
+			return false;
+		}
+		dev_put(mirror_dev);
+	}
+
+	return true;
+}
+#endif
+#endif
+
+bool ecm_nss_ipv6_is_conn_limit_reached(void);
+bool ecm_nss_ipv4_is_conn_limit_reached(void);
+bool ecm_nss_feature_check(struct sk_buff *skb, struct ecm_tracker_ip_header *ip_hdr);
+
+/*
+ * ecm_nss_common_dummy_get_stats_bitmap()
+ */
+static inline uint32_t ecm_nss_common_dummy_get_stats_bitmap(struct ecm_front_end_connection_instance *feci, ecm_db_obj_dir_t dir)
+{
+	return 0;
+}
+
+/*
+ * ecm_nss_common_dummy_set_stats_bitmap()
+ */
+static inline void ecm_nss_common_dummy_set_stats_bitmap(struct ecm_front_end_connection_instance *feci, ecm_db_obj_dir_t dir, uint8_t bit)
+{
+
+}

@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2014-2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2014-2021, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -33,6 +33,10 @@ void ecm_db_multicast_tuple_instance_group_ip_get(struct ecm_db_multicast_tuple_
 uint32_t ecm_db_multicast_tuple_instance_flags_get(struct ecm_db_multicast_tuple_instance *ti);
 void ecm_db_multicast_tuple_instance_flags_set(struct ecm_db_multicast_tuple_instance *ti, uint32_t flags);
 void ecm_db_multicast_tuple_instance_flags_clear(struct ecm_db_multicast_tuple_instance *ti, uint32_t flags);
+void ecm_db_multicast_tuple_instance_set_and_hold_l2_br_dev(struct ecm_db_multicast_tuple_instance *ti, struct net_device *l2_br_dev);
+void ecm_db_multicast_tuple_instance_set_and_hold_l3_br_dev(struct ecm_db_multicast_tuple_instance *ti, struct net_device *l3_br_dev);
+struct net_device *ecm_db_multicast_tuple_instance_get_l2_br_dev(struct ecm_db_multicast_tuple_instance *ti);
+struct net_device *ecm_db_multicast_tuple_instance_get_l3_br_dev(struct ecm_db_multicast_tuple_instance *ti);
 
 struct ecm_db_connection_instance *ecm_db_multicast_connection_get_from_tuple(struct ecm_db_multicast_tuple_instance *ti);
 void ecm_db_multicast_connection_to_interfaces_deref_all(struct ecm_db_iface_instance *interfaces, int32_t *ifaces_first);
@@ -58,4 +62,12 @@ bool ecm_db_multicast_connection_to_interfaces_set_check(struct ecm_db_connectio
 int _ecm_db_multicast_tuple_instance_deref(struct ecm_db_multicast_tuple_instance *ti);
 int ecm_db_multicast_to_interfaces_xml_state_get(struct ecm_db_connection_instance *ci, struct ecm_state_file_instance *sfi);
 int ecm_db_multicast_connection_to_interfaces_get_count(struct ecm_db_connection_instance *ci);
+#ifdef ECM_INTERFACE_OVS_BRIDGE_ENABLE
+#ifdef ECM_CLASSIFIER_OVS_ENABLE
+bool ecm_db_multicast_ovs_verify_to_list(struct ecm_db_connection_instance *ci, struct ecm_classifier_process_response *aci_pr);
+void ecm_db_multicast_tuple_set_ovs_ingress_vlan(struct ecm_db_multicast_tuple_instance *ti, uint32_t *ingress_vlan_tag);
+struct vlan_hdr ecm_db_multicast_tuple_get_ovs_ingress_vlan(struct ecm_db_multicast_tuple_instance *ti);
+#endif
+#endif
+void ecm_db_multicast_connection_to_interfaces_leave(struct ecm_db_connection_instance *ci, struct ecm_multicast_if_update *mc_update);
 #endif

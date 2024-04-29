@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2017-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -239,7 +239,10 @@ int nss_ppe_port_res_alloc(void)
 	ppe_qdisc_port[i].max[NSS_PPE_L0_EDRR] = NSS_PPE_LOOPBACK_L0_EDRR_MAX;
 	ppe_qdisc_port[i].base[NSS_PPE_L0_EDRR] = NSS_PPE_LOOPBACK_L0_EDRR_BASE;
 
-	for (type = 0; type < NSS_PPE_L0_SP; type++) {
+	ppe_qdisc_port[i].max[NSS_PPE_L0_SP] = NSS_PPE_LOOPBACK_L0_SP_MAX;
+	ppe_qdisc_port[i].base[NSS_PPE_L0_SP] = NSS_PPE_LOOPBACK_L0_SP_BASE;
+
+	for (type = 0; type <= NSS_PPE_L0_SP; type++) {
 		ppe_qdisc_port[i].res_free[type] = nss_ppe_res_entries_alloc(i, type);
 		if (!ppe_qdisc_port[i].res_free[type]) {
 			nss_qdisc_error("Resource list allocation failed for port:%u type:%u\n", i, type);
@@ -383,16 +386,24 @@ static int nss_ppe_l1_res_free(struct nss_qdisc *nq)
 	uint32_t port_num = nss_ppe_port_num_get(nq);
 	struct nss_ppe_qdisc *npq = &nq->npq;
 
-	/*
-	 * Bridge interface will have one level less than the max shaper levels.
-	 * L1 scheduler was configured at init time, so resources were allocated.
-	 */
-	if (nq->is_bridge) {
-		npq->l0spid = 0;
+	if (!npq->l1_valid) {
 		return 0;
 	}
 
-	if (!npq->l1_valid) {
+	/*
+	 * Loopback will have one level less than the max shaper levels.
+	 * L1 scheduler was configured at init time, so resources were allocated.
+	 */
+	if (nq->needs_ppe_loopback) {
+		offset = npq->l0spid - nss_ppe_base_get(port_num, NSS_PPE_L0_SP);
+		if (nss_ppe_res_free(port_num, offset, NSS_PPE_L0_SP) != 0) {
+			nss_qdisc_error("Used res:%d not found for port:%d, type:%d\n", npq->l0spid, port_num, NSS_PPE_L0_SP);
+			return -EINVAL;
+		}
+
+		npq->l0spid = 0;
+		npq->l1_valid = false;
+		nss_qdisc_trace("loopback resource freed\n");
 		return 0;
 	}
 
@@ -445,6 +456,26 @@ static int nss_ppe_l1_res_alloc(struct nss_qdisc *nq)
 	struct nss_ppe_qdisc *npq = &nq->npq;
 
 	/*
+	 * Get Level 0 SP resource
+	 */
+	l0sp = nss_ppe_res_alloc(port_num, NSS_PPE_L0_SP);
+	if (!l0sp) {
+		nss_qdisc_warning("Free res not found for port:%d, type:%d \n", port_num, NSS_PPE_L0_SP);
+		goto fail;
+	}
+
+	/*
+	 * Loopback has no dedicated L1 schedulers. L0 SP is the only resource we
+	 * need to allocate.
+	 */
+	if (nq->needs_ppe_loopback) {
+		npq->l0spid = nss_ppe_base_get(port_num, NSS_PPE_L0_SP) + l0sp->offset;
+		npq->l1_valid = true;
+		nss_qdisc_info("Level1 scheduler resource allocation successful\n");
+		return 0;
+	}
+
+	/*
 	 * Get Level 1 DRR resource
 	 */
 	l1c_drr = nss_ppe_res_alloc(port_num, NSS_PPE_L1_CDRR);
@@ -456,15 +487,6 @@ static int nss_ppe_l1_res_alloc(struct nss_qdisc *nq)
 	l1e_drr = nss_ppe_res_alloc(port_num, NSS_PPE_L1_EDRR);
 	if (!l1e_drr) {
 		nss_qdisc_warning("Free res not found for port:%d, type:%d \n", port_num, NSS_PPE_L1_EDRR);
-		goto fail;
-	}
-
-	/*
-	 * Get Level 0 SP resource
-	 */
-	l0sp = nss_ppe_res_alloc(port_num, NSS_PPE_L0_SP);
-	if (!l0sp) {
-		nss_qdisc_warning("Free res not found for port:%d, type:%d \n", port_num, NSS_PPE_L0_SP);
 		goto fail;
 	}
 
@@ -611,27 +633,37 @@ static int nss_ppe_l1_queue_scheduler_set(struct nss_qdisc *nq)
 	struct nss_ppe_qdisc *npq = &nq->npq;
 
 	/*
-	 * Bridge interface will have one level less than the max shaper levels.
+	 * Loopback will have one level less than the max shaper levels.
 	 * L1 scheduler was configured at init time, so no need to allocate resources.
 	 */
-	if (nq->is_bridge) {
+	if (nq->needs_ppe_loopback) {
 		/*
-		 * Set Res id values in qdisc
+		 * Allocate resource if we have not already done so.
 		 */
-		npq->l0spid = NSS_PPE_LOOPBACK_L0_SP_BASE;
+		if (!npq->l1_valid && nss_ppe_l1_res_alloc(nq) != 0) {
+			nss_qdisc_warning("SSDK level1 queue scheduler configuration failed\n");
+			return -EINVAL;
+		}
 
+		nss_qdisc_info("Allocated spid:%d expected:%d\n", npq->l0spid, NSS_PPE_LOOPBACK_L0_SP_BASE);
+
+		/*
+		 * L0 SP is the only resource we allocate in loopback, and that
+		 * does not require additional configuration. The next level of
+		 * C/E DRR will attach to the right priority slot.
+		 *
+		 * We simply return.
+		 */
 		nss_qdisc_info("SSDK level1 queue scheduler configuration successful\n");
 		return 0;
 	}
 
 	/*
-	 * Allocate new resources only if scheduler is not valid.
+	 * Allocate resources if we have not already done so.
 	 */
-	if (!npq->l1_valid) {
-		if (nss_ppe_l1_res_alloc(nq) != 0) {
-			nss_qdisc_warning("SSDK level1 queue scheduler configuration failed\n");
-			return -EINVAL;
-		}
+	if (!npq->l1_valid && nss_ppe_l1_res_alloc(nq) != 0) {
+		nss_qdisc_warning("SSDK level1 queue scheduler configuration failed\n");
+		return -EINVAL;
 	}
 
 	/*
@@ -684,7 +716,6 @@ static int nss_ppe_l0_res_free(struct nss_qdisc *nq)
 		nss_qdisc_error("Used res:%d not found for port:%d, type:%d \n", npq->q.ucast_qid, port_num, NSS_PPE_UCAST_QUEUE);
 		return -EINVAL;
 	}
-
 
 	/*
 	 * Reset Res id values in qdisc
@@ -1197,9 +1228,9 @@ static int nss_ppe_max_level_get(struct nss_qdisc *nq)
 	int level = NSS_PPE_MAX_LEVEL;
 
 	/*
-	 * For bridge ports, one level is being used by loopback.
+	 * Loopback uses one level.
 	 */
-	if (nq->is_bridge) {
+	if (nq->needs_ppe_loopback) {
 		level = level - 1;
 	}
 
@@ -1220,7 +1251,7 @@ static void nss_ppe_attach_free(uint32_t port, struct nss_ppe_res *res)
 	ppe_port->res_free[res->type] = res;
 	spin_unlock_bh(&ppe_port->lock);
 
-	nss_qdisc_info("port:%d, type:%d, res:%p\n", port, res->type, res);
+	nss_qdisc_info("port:%d, type:%d, res:%px\n", port, res->type, res);
 	return;
 }
 
@@ -1287,7 +1318,7 @@ int nss_ppe_res_free(uint32_t port, uint32_t offset, nss_ppe_res_type_t type)
 
 success:
 	nss_ppe_attach_free(port, res);
-	nss_qdisc_info("port:%d, type:%d, res:%p\n", port, type, res);
+	nss_qdisc_info("port:%d, type:%d, res:%px\n", port, type, res);
 	return 0;
 }
 
@@ -1313,7 +1344,7 @@ struct nss_ppe_res *nss_ppe_res_alloc(uint32_t port, nss_ppe_res_type_t type)
 	}
 	spin_unlock_bh(&ppe_port->lock);
 
-	nss_qdisc_info("port:%d, type:%d, res:%p\n", port, type, res);
+	nss_qdisc_info("port:%d, type:%d, res:%px\n", port, type, res);
 	return res;
 }
 
@@ -1338,7 +1369,7 @@ static int nss_ppe_default_conf_set(uint32_t port_num)
 	nss_ppe_all_queue_disable(port_num);
 
 	/*
-	 * No resources were allocated for Port 0 (bridge interface).
+	 * No resources were allocated for Port 0 (Loopback port).
 	 * L1 scheduler was configured at init time.
 	 */
 	if (port_num == 0) {
@@ -1637,7 +1668,6 @@ static int nss_ppe_scheduler_set(struct nss_qdisc *nq)
 			nss_ppe_queue_disable(nq);
 		}
 	} else {
-
 		/*
 		 * When a classful qdisc say HTB is configured with max levels of hierarchy,
 		 * and then if a qdisc say FIFO is attached at the last level, we will have all
@@ -1743,7 +1773,7 @@ int nss_ppe_set_parent(struct Qdisc *sch, struct nss_qdisc *nq, uint32_t parent)
 	struct net_device *dev = qdisc_dev(sch);
 	struct nss_qdisc *parent_nq = NULL;
 	struct Qdisc *parent_qdisc = NULL;
-	unsigned long parent_class;
+	unsigned long parent_class = 0;
 
 	/*
 	 * PPE Qdisc cannot be attached to NSS Qdisc.
@@ -1756,7 +1786,7 @@ int nss_ppe_set_parent(struct Qdisc *sch, struct nss_qdisc *nq, uint32_t parent)
 	}
 
 	if ((parent_nq) && (parent_nq->mode == NSS_QDISC_MODE_NSS)) {
-		nss_qdisc_info("HW qdisc/class %p cannot be attached to nss qdisc/class\n", nq->qdisc);
+		nss_qdisc_info("HW qdisc/class %px cannot be attached to nss qdisc/class\n", nq->qdisc);
 		return NSS_PPE_QDISC_PARENT_NOT_PPE;
 	}
 
@@ -1778,21 +1808,26 @@ int nss_ppe_set_parent(struct Qdisc *sch, struct nss_qdisc *nq, uint32_t parent)
 		 */
 		if ((parent_nq) && (parent_nq->npq.sub_type != NSS_SHAPER_CONFIG_PPE_SN_TYPE_PRIO) && (TC_H_MIN(parent))) {
 			if (!parent_qdisc) {
-				nss_qdisc_info("HW qdisc/class %p cannot be attached to non-existing class %x\n", nq->qdisc, parent);
+				nss_qdisc_info("HW qdisc/class %px cannot be attached to non-existing class %x\n", nq->qdisc, parent);
 				return NSS_PPE_QDISC_PARENT_NOT_EXISTING;
 			}
 
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 14, 0))
 			parent_class = parent_qdisc->ops->cl_ops->get(parent_qdisc, parent);
-
+#else
+			parent_class = parent_qdisc->ops->cl_ops->find(parent_qdisc, parent);
+#endif
 			if (!parent_class) {
 				nq->parent = NULL;
-				nss_qdisc_info("HW qdisc/class %p cannot be attached to non-existing class %x\n", nq->qdisc, parent);
+				nss_qdisc_info("HW qdisc/class %px cannot be attached to non-existing class %x\n", nq->qdisc, parent);
 				return NSS_PPE_QDISC_PARENT_NOT_EXISTING;
 
 			}
 
 			nq->parent = (struct nss_qdisc *)parent_class;
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 14, 0))
 			parent_qdisc->ops->cl_ops->put(parent_qdisc, parent_class);
+#endif
 		}
 	}
 
@@ -1897,12 +1932,38 @@ int nss_ppe_port_num_get(struct nss_qdisc *nq)
 	 * Fetch port number based on interface type.
 	 * TODO: Change this when API from DP is available
 	 */
-	if (!(nq->is_bridge)) {
+	if (!nq->needs_ppe_loopback) {
 		port_num = nq->nss_interface_number;
 	}
 
 	nss_qdisc_info("port:%d\n", port_num);
 	return port_num;
+}
+
+/*
+ * nss_ppe_all_queue_enable_hybrid()
+ *	Enables PPE queues when NSS queuing Qdiscs are attached in the hieracrchy.
+ */
+void nss_ppe_all_queue_enable_hybrid(struct nss_qdisc *nq)
+{
+	struct nss_qdisc *nq_root = qdisc_priv(qdisc_root(nq->qdisc));
+
+	if (!nq_root->hybrid_configured) {
+		return;
+	}
+
+	/*
+	 * In case of hybrid mode, we disable the PPE queues until
+	 * queueing Qdisc is attached in the hierarchy.
+	 */
+	if((nq->type == NSS_SHAPER_NODE_TYPE_CODEL)
+		|| (nq->type == NSS_SHAPER_NODE_TYPE_FIFO)
+		|| (nq->type == NSS_SHAPER_NODE_TYPE_BF)
+		|| (nq->type == NSS_SHAPER_NODE_TYPE_WRED)) {
+		uint32_t port_num = nss_ppe_port_num_get(nq);
+		nss_ppe_all_queue_enable(port_num);
+		nss_qdisc_info("Queues in hybrid mode enabled successfully for Qdisc %px (type %d)\n", nq, nq->type);
+	}
 }
 
 /*
@@ -1919,7 +1980,7 @@ int nss_ppe_node_detach(struct nss_qdisc *nq, struct nss_qdisc *nq_child)
 	 */
 	if (nq_child->mode != NSS_QDISC_MODE_PPE) {
 		if (nss_qdisc_set_hybrid_mode(nq_child, NSS_QDISC_HYBRID_MODE_DISABLE, 0) < 0) {
-			nss_qdisc_warning("detach of old qdisc %p failed\n", nq_child->qdisc);
+			nss_qdisc_warning("detach of old qdisc %px failed\n", nq_child->qdisc);
 			return -EINVAL;
 		}
 
@@ -1928,7 +1989,7 @@ int nss_ppe_node_detach(struct nss_qdisc *nq, struct nss_qdisc *nq_child)
 
 	nss_ppe_destroy(nq_child);
 
-	nss_qdisc_info("Qdisc:%p, node:%p\n", nq, nq_child);
+	nss_qdisc_info("Qdisc:%px, node:%px\n", nq, nq_child);
 	return 0;
 }
 
@@ -1967,10 +2028,10 @@ int nss_ppe_node_attach(struct nss_qdisc *nq, struct nss_qdisc *nq_child)
 	}
 
 	/*
-	 * Return error in case NSS Qdisc is attached to PPE qdisc on bridge interface.
+	 * Return error in case NSS Qdisc is attached to loopback.
 	 */
-	if (nq->is_bridge) {
-		nss_qdisc_warning("NSS Qdisc cannot be attached to PPE Qdisc on bridge interface.\n");
+	if (nq->needs_ppe_loopback) {
+		nss_qdisc_warning("NSS Qdisc cannot be attached to PPE Qdisc on loopback interface.\n");
 		return -EINVAL;
 	}
 
@@ -2020,7 +2081,7 @@ int nss_ppe_node_attach(struct nss_qdisc *nq, struct nss_qdisc *nq_child)
 
 	nq_root->hybrid_configured = true;
 
-	nss_qdisc_info("Qdisc:%p, node:%p\n", nq, nq_child);
+	nss_qdisc_info("Qdisc:%px, node:%px\n", nq, nq_child);
 	return 0;
 }
 
@@ -2144,14 +2205,22 @@ fail:
  * nss_ppe_fallback_to_nss()
  *	Calls the initialization of NSS Qdisc when PPE initialization fails.
  */
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 16, 0))
 int nss_ppe_fallback_to_nss(struct nss_qdisc *nq, struct nlattr *opt)
+#else
+int nss_ppe_fallback_to_nss(struct nss_qdisc *nq, struct nlattr *opt, struct netlink_ext_ack *extack)
+#endif
 {
 	nss_qdisc_destroy(nq);
 
 	memset(&nq->npq, 0, sizeof(struct nss_ppe_qdisc));
 	nq->ppe_init_failed = true;
 
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 16, 0))
 	if (nq->qdisc->ops->init(nq->qdisc, opt) < 0) {
+#else
+	if (nq->qdisc->ops->init(nq->qdisc, opt, extack) < 0) {
+#endif
 			nss_qdisc_warning("Fallback to NSS Qdisc failed.\n");
 			return -EINVAL;
 	}
@@ -2186,7 +2255,7 @@ int nss_ppe_init(struct Qdisc *sch, struct nss_qdisc *nq, nss_shaper_node_type_t
 	uint32_t port_num = nss_ppe_port_num_get(nq);
 
 	/*
-	 * HW qdisc is supported only on physical and bridge interfaces.
+	 * HW qdisc is supported only on physical and loopbaack ports.
 	 */
 	if (port_num >= NSS_PPE_PORT_MAX) {
 		nss_qdisc_info("HW qdisc not supported on port %d\n", port_num);
@@ -2268,7 +2337,7 @@ int nss_ppe_init(struct Qdisc *sch, struct nss_qdisc *nq, nss_shaper_node_type_t
 		 * in qdisc that needs resource allocation in PPE. HTB qdisc on the other hand does
 		 * nothing useful and thus we don't allocate any resource".
 		 */
-		nss_qdisc_trace("Qdisc parent = %p, handle=%x\n", nq->parent,  nq->parent->qos_tag);
+		nss_qdisc_trace("Qdisc parent = %px, handle=%x\n", nq->parent,  nq->parent->qos_tag);
 		if ((nq->parent->npq.sub_type == NSS_SHAPER_CONFIG_PPE_SN_TYPE_HTB)) {
 			nq->npq.level = nq->parent->npq.level;
 		} else {
@@ -2285,7 +2354,7 @@ int nss_ppe_init(struct Qdisc *sch, struct nss_qdisc *nq, nss_shaper_node_type_t
 	nq->mode = NSS_QDISC_MODE_PPE;
 	if (alloc_scheduler) {
 		if (nss_ppe_scheduler_set(nq) < 0) {
-			nss_qdisc_warning("%p SSDK scheduler configuration failed\n", sch);
+			nss_qdisc_warning("%px SSDK scheduler configuration failed\n", sch);
 			memset(&nq->npq, 0, sizeof(struct nss_ppe_qdisc));
 			nq->mode = NSS_QDISC_MODE_NSS;
 			return -1;

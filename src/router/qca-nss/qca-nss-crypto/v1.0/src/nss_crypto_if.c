@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2017, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2013-2017, 2020-2021, The Linux Foundation. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -148,13 +148,13 @@ void nss_crypto_register_user(nss_crypto_attach_t attach, nss_crypto_detach_t de
 	int i;
 
 	if (nss_crypto_check_state(ctrl, NSS_CRYPTO_STATE_NOT_READY)) {
-		nss_crypto_warn("%p: Crypto Device is not ready\n", ctrl);
+		nss_crypto_warn("%px: Crypto Device is not ready\n", ctrl);
 		return;
 	}
 
 	user = vzalloc(sizeof(struct nss_crypto_user));
 	if (!user) {
-		nss_crypto_warn("%p:memory allocation fails for user(%s)\n", ctrl, user_name);
+		nss_crypto_warn("%px:memory allocation fails for user(%s)\n", ctrl, user_name);
 		return;
 	}
 
@@ -177,7 +177,7 @@ void nss_crypto_register_user(nss_crypto_attach_t attach, nss_crypto_detach_t de
 	strlcat(user->zone_name, user_name, NSS_CRYPTO_ZONE_NAME_LEN);
 	user->zone = kmem_cache_create(user->zone_name, sizeof(struct nss_crypto_buf_node), 0, SLAB_HWCACHE_ALIGN, NULL);
 	if (!user->zone) {
-		nss_crypto_info_always("%p:(%s)failed to create crypto_buf for user\n", user, user_name);
+		nss_crypto_info_always("%px:(%s)failed to create crypto_buf for user\n", user, user_name);
 		goto fail;
 	}
 
@@ -190,7 +190,7 @@ void nss_crypto_register_user(nss_crypto_attach_t attach, nss_crypto_detach_t de
 	for (i = 0; i < nss_crypto_pool_seed; i++) {
 		entry = kmem_cache_alloc(user->zone, GFP_KERNEL);
 		if (!entry) {
-			nss_crypto_info_always("%p:failed to allocate memory\n", user);
+			nss_crypto_info_always("%px:failed to allocate memory\n", user);
 			break;
 		}
 
@@ -321,13 +321,13 @@ struct nss_crypto_buf *nss_crypto_buf_alloc(nss_crypto_handle_t hdl)
 	 */
 	entry = kmem_cache_alloc(user->zone, GFP_KERNEL);
 	if (!entry) {
-		nss_crypto_info("%p:(%s)Unable to allocate crypto buffer from cache\n", user, user->zone_name);
+		nss_crypto_info("%px:(%s)Unable to allocate crypto buffer from cache\n", user, user->zone_name);
 		return NULL;
 	}
 
 	entry->skb = dev_alloc_skb(sizeof(struct nss_crypto_buf) + L1_CACHE_BYTES);
 	if (!entry->skb) {
-		nss_crypto_info("%p:Unable to allocate skb\n", entry);
+		nss_crypto_info("%px:Unable to allocate skb\n", entry);
 		kmem_cache_free(user->zone, entry);
 		return NULL;
 	}
@@ -419,6 +419,10 @@ void nss_crypto_process_event(void *app_data, struct nss_crypto_msg *nim)
 		stats = &nim->msg.stats;
 
 		for (i = 0; i < ctrl->num_eng; i++) {
+			if (!ctrl->eng) {
+				return;
+			}
+
 			e_ctrl = &ctrl->eng[i];
 			nss_crypto_copy_stats(&e_ctrl->stats, &stats->eng_stats[i]);
 		}
@@ -535,7 +539,7 @@ nss_crypto_status_t nss_crypto_transform_payload(nss_crypto_handle_t crypto, str
 	struct device *cdev = gbl_crypto_ctrl.eng[0].dev;
 
 	if (!buf->cb_fn) {
-		nss_crypto_warn("%p:no buffer(%p) callback present\n", crypto, buf);
+		nss_crypto_warn("%px:no buffer(%px) callback present\n", crypto, buf);
 		return NSS_CRYPTO_STATUS_FAIL;
 	}
 
@@ -732,4 +736,3 @@ uint8_t *nss_crypto_get_hash_addr(struct nss_crypto_buf *buf)
 	return (uint8_t *)buf->hash_addr;
 }
 EXPORT_SYMBOL(nss_crypto_get_hash_addr);
-

@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2014-2015, 2018 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2014-2015, 2018, 2020 The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -45,7 +45,7 @@ enum nss_debug_interface_msg_type {
  * This number should be lower than the minimum size of the logbuf
  * which 32 right now.
  */
-#define NSS_LOG_COREDUMP_LINE_NUM	10
+#define NSS_LOG_COREDUMP_LINE_NUM	25
 
 /*
  * Saves the ring buffer address for logging per NSS core

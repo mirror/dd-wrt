@@ -1,4 +1,4 @@
-/* Copyright (c) 2014 - 2019 The Linux Foundation. All rights reserved.
+/* Copyright (c) 2014 - 2020 The Linux Foundation. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -41,7 +41,13 @@
 #include <linux/delay.h>
 #include <crypto/aes.h>
 #include <crypto/des.h>
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 11, 0)
 #include <crypto/sha.h>
+#else
+#include <crypto/sha1.h>
+#include <crypto/sha2.h>
+#endif
+#include <crypto/md5.h>
 #include <cryptodev.h>
 
 #include <nss_api_if.h>
@@ -70,6 +76,14 @@ static struct nss_cfi_ocf_algo_map cfi_algo[NSS_CRYPTO_CMN_ALGO_MAX] = {
 								SHA1_DIGEST_SIZE,
 								1,
 			   				},
+	[NSS_CRYPTO_CMN_ALGO_AES192_CBC_SHA160_HMAC] =	{
+								{CRYPTO_AES_CBC, CRYPTO_SHA1_HMAC},
+								AES_KEYSIZE_192,
+								AES_BLOCK_SIZE,
+								AES_BLOCK_SIZE,
+								SHA1_DIGEST_SIZE,
+								1,
+			   				},
 	[NSS_CRYPTO_CMN_ALGO_AES256_CBC_SHA160_HMAC] =	{
 								{CRYPTO_AES_CBC, CRYPTO_SHA1_HMAC},
 								AES_KEYSIZE_256,
@@ -86,6 +100,38 @@ static struct nss_cfi_ocf_algo_map cfi_algo[NSS_CRYPTO_CMN_ALGO_MAX] = {
 								SHA1_DIGEST_SIZE,
 								1,
 							},
+	[NSS_CRYPTO_CMN_ALGO_AES128_CBC_MD5_HMAC] =	{
+								{CRYPTO_AES_CBC, CRYPTO_MD5_HMAC},
+								AES_KEYSIZE_128,
+								AES_BLOCK_SIZE,
+								AES_BLOCK_SIZE,
+								MD5_DIGEST_SIZE,
+								1,
+			   				},
+	[NSS_CRYPTO_CMN_ALGO_AES192_CBC_MD5_HMAC] =	{
+								{CRYPTO_AES_CBC, CRYPTO_MD5_HMAC},
+								AES_KEYSIZE_192,
+								AES_BLOCK_SIZE,
+								AES_BLOCK_SIZE,
+								MD5_DIGEST_SIZE,
+								1,
+			   				},
+	[NSS_CRYPTO_CMN_ALGO_AES256_CBC_MD5_HMAC] =	{
+								{CRYPTO_AES_CBC, CRYPTO_MD5_HMAC},
+								AES_KEYSIZE_256,
+								AES_BLOCK_SIZE,
+								AES_BLOCK_SIZE,
+								MD5_DIGEST_SIZE,
+								1,
+							},
+	[NSS_CRYPTO_CMN_ALGO_3DES_CBC_MD5_HMAC] =	{
+								{CRYPTO_3DES_CBC, CRYPTO_MD5_HMAC},
+								DES3_EDE_KEY_SIZE,
+								DES_BLOCK_SIZE,
+								DES3_EDE_BLOCK_SIZE,
+								MD5_DIGEST_SIZE,
+								1,
+							},
 	[NSS_CRYPTO_CMN_ALGO_3DES_CBC] =		{
 								{CRYPTO_3DES_CBC, 0},
 								DES3_EDE_KEY_SIZE,
@@ -97,6 +143,14 @@ static struct nss_cfi_ocf_algo_map cfi_algo[NSS_CRYPTO_CMN_ALGO_MAX] = {
 	[NSS_CRYPTO_CMN_ALGO_AES128_CBC] =		{
 								{CRYPTO_AES_CBC, 0},
 								AES_KEYSIZE_128,
+								AES_BLOCK_SIZE,
+								AES_BLOCK_SIZE,
+								0,
+								1,
+			   				},
+	[NSS_CRYPTO_CMN_ALGO_AES192_CBC] =		{
+								{CRYPTO_AES_CBC, 0},
+								AES_KEYSIZE_192,
 								AES_BLOCK_SIZE,
 								AES_BLOCK_SIZE,
 								0,
@@ -118,7 +172,23 @@ static struct nss_cfi_ocf_algo_map cfi_algo[NSS_CRYPTO_CMN_ALGO_MAX] = {
 								SHA1_DIGEST_SIZE,
 								1,
 							},
+	[NSS_CRYPTO_CMN_ALGO_MD5_HMAC] =		{
+								{CRYPTO_MD5_HMAC, 0},
+								0,
+								0,
+							 	0,
+								MD5_DIGEST_SIZE,
+								1,
+							},
 };
+
+/*
+ * Dummy trap function for Offload
+ */
+static int32_t nss_cfi_ocf_offload_trap(struct sk_buff *skb, struct nss_cfi_crypto_info *crypto)
+{
+	return -1;
+}
 
 /*
  * Dummy trap function for Session
@@ -159,75 +229,76 @@ static struct sk_buff *nss_cfi_ocf_get_skb(struct cryptop *crp)
 }
 
 /*
+ * nss_cfi_ocf_cri2algo_aead()
+ *	Gets an algorith number based on algos filled in cri for aead
+ */
+enum nss_crypto_cmn_algo nss_cfi_ocf_cri2algo_aead(struct cryptoini *cri)
+{
+	struct nss_cfi_ocf_algo_map *map = &cfi_algo[0];
+	enum nss_crypto_cmn_algo algo;
+	int cri_alg, cri_next_alg;
+	int cipher_alg, auth_alg;
+	int ckey_len, akey_len;
+
+	BUG_ON(!cri->cri_next);
+
+	cri_alg = cri->cri_alg;
+	cri_next_alg = cri->cri_next->cri_alg;
+
+	for (algo = 0; algo < NSS_CRYPTO_CMN_ALGO_MAX; algo++, map++) {
+		cipher_alg = map->algo[0];
+		auth_alg = map->algo[1];
+
+		/*
+		 * Skip non-AEAD algorithms
+		 */
+		if (!cipher_alg || !auth_alg) {
+			continue;
+		}
+
+		/*
+		 * Test whether AEAD is
+		 * a) encrytion followed by authentication or
+		 * b) authentication followed by decryption
+		 */
+		if ((cipher_alg == cri_alg) && (auth_alg == cri_next_alg)) {
+			ckey_len = NSS_CFI_OCF_BITS2BYTES(cri->cri_klen);
+			akey_len = NSS_CFI_OCF_BITS2BYTES(cri->cri_next->cri_klen);
+		} else if ((auth_alg == cri_alg) && (cipher_alg == cri_next_alg)) {
+			akey_len = NSS_CFI_OCF_BITS2BYTES(cri->cri_klen);
+			ckey_len = NSS_CFI_OCF_BITS2BYTES(cri->cri_next->cri_klen);
+		} else {
+			continue;
+		}
+
+		if ((map->max_keylen == ckey_len) && (map->max_hashlen == akey_len)) {
+			return algo;
+		}
+	}
+
+	return NSS_CRYPTO_CMN_ALGO_MAX;
+}
+
+/*
  * nss_cfi_ocf_cri2algo()
  *	Gets an algorith number based on algos filled in cri
  */
 enum nss_crypto_cmn_algo nss_cfi_ocf_cri2algo(struct cryptoini *cri)
 {
-	int cri_algo_first = cri->cri_alg;
-	int cfi_algo_first, cfi_algo_next;
+	struct nss_cfi_ocf_algo_map *map = &cfi_algo[0];
 	enum nss_crypto_cmn_algo algo;
-	int cri_algo_next;
+
+	if (cri->cri_next) {
+		return nss_cfi_ocf_cri2algo_aead(cri);
+	}
 
 	/*
-	 * Here the idea is to take the algo information passed
-	 * by openswann and match it with the prepopulated
-	 * structure 'nss_cfi_ocf_algo_map'. If the first and the
-	 * next from cri matches first and next in cfi structure
-	 * then we return the algorithm
+	 * Only for non-AEAD algorithms
 	 */
-	for (algo = 0; algo < NSS_CRYPTO_CMN_ALGO_MAX; algo++) {
-		cfi_algo_first = cfi_algo[algo].algo[0];
-		cfi_algo_next = cfi_algo[algo].algo[1];
-
-		switch (algo) {
-		case NSS_CRYPTO_CMN_ALGO_AES128_CBC_SHA160_HMAC:
-		case NSS_CRYPTO_CMN_ALGO_AES256_CBC_SHA160_HMAC:
-			cri_algo_next = cri->cri_next->cri_alg;
-
-			if ((cri_algo_first != cfi_algo_first) && (cri_algo_first != cfi_algo_next))
-				break;
-
-			if ((cri_algo_next != cfi_algo_next) && (cri_algo_next != cfi_algo_first))
-				break;
-
-			if (NSS_CFI_OCF_BITS2BYTES(cri->cri_klen) == AES_KEYSIZE_128)
-				return NSS_CRYPTO_CMN_ALGO_AES128_CBC_SHA160_HMAC;
-			else if (NSS_CFI_OCF_BITS2BYTES(cri->cri_klen) == AES_KEYSIZE_256)
-				return NSS_CRYPTO_CMN_ALGO_AES256_CBC_SHA160_HMAC;
-
-		case NSS_CRYPTO_CMN_ALGO_3DES_CBC_SHA160_HMAC:
-			cri_algo_next = cri->cri_next->cri_alg;
-
-			if ((cri_algo_first != cfi_algo_first) && (cri_algo_first != cfi_algo_next))
-				break;
-
-			if ((cri_algo_next != cfi_algo_next) && (cri_algo_next != cfi_algo_first))
-				break;
-
+	for (algo = 0; algo < NSS_CRYPTO_CMN_ALGO_MAX; algo++, map++) {
+		if (!map->algo[1] && (map->algo[0] == cri->cri_alg)) {
 			return algo;
-
-		case NSS_CRYPTO_CMN_ALGO_AES128_CBC:
-		case NSS_CRYPTO_CMN_ALGO_AES256_CBC:
-		case NSS_CRYPTO_CMN_ALGO_3DES_CBC:
-		case NSS_CRYPTO_CMN_ALGO_SHA160_HMAC:
-			if (cri_algo_first != cfi_algo_first)
-				break;
-
-			if (cri->cri_next)
-				break;
-
-			return algo;
-
-		default:
-			break;
 		}
-
-		if (algo == NSS_CRYPTO_CMN_ALGO_MAX) {
-			nss_cfi_err("%p: algorithm not supported(%d)\n", cri, algo);
-			return NSS_CRYPTO_CMN_ALGO_MAX;
-		}
-		continue;
 	}
 
 	return NSS_CRYPTO_CMN_ALGO_MAX;
@@ -259,6 +330,7 @@ static int nss_cfi_ocf_newsession(device_t dev, uint32_t *sidp, struct cryptoini
 	memset(&session_data, 0, sizeof(struct nss_crypto_session_data));
 
 	switch (cri->cri_alg) {
+	case CRYPTO_MD5_HMAC:
 	case CRYPTO_SHA1_HMAC:
 		auth_ini = cri;
 		auth_ini->cri_klen = NSS_CFI_OCF_BITS2BYTES(auth_ini->cri_klen); /* Convert len in bits to bytes */
@@ -285,7 +357,7 @@ static int nss_cfi_ocf_newsession(device_t dev, uint32_t *sidp, struct cryptoini
 		break;
 
 	default:
-		nss_cfi_err("%p: wrong algo %d\n", sc, alg);
+		nss_cfi_err("%px: wrong algo %d\n", sc, alg);
 		return EINVAL;
 	}
 
@@ -305,7 +377,7 @@ static int nss_cfi_ocf_newsession(device_t dev, uint32_t *sidp, struct cryptoini
 
 	status = nss_crypto_session_alloc(sc->crypto, &session_data, &session);
 	if (status < 0) {
-		nss_cfi_err("%p: unable to allocate session: status %d\n", sc, cfi_crypto.sid);
+		nss_cfi_err("%px: unable to allocate session: status %d\n", sc, cfi_crypto.sid);
 		return EINVAL;
 	}
 
@@ -372,6 +444,7 @@ static void nss_cfi_ocf_process_done(void *app_data, struct nss_crypto_hdr *ch, 
 
 	switch (crd->crd_alg) {
 	case CRYPTO_SHA1_HMAC:
+	case CRYPTO_MD5_HMAC:
 		auth_crd = crd;
 		cip_crd  = crd->crd_next;
 
@@ -395,7 +468,7 @@ static void nss_cfi_ocf_process_done(void *app_data, struct nss_crypto_hdr *ch, 
 		break;
 
 	default:
-		nss_cfi_err("%p: wrong cipher or auth algo %d\n", crp, crd->crd_alg);
+		nss_cfi_err("%px: wrong cipher or auth algo %d\n", crp, crd->crd_alg);
 		goto crypto_done;
 	}
 
@@ -454,7 +527,7 @@ static int nss_cfi_ocf_process(device_t dev, struct cryptop *crp, int hint)
 
 	sid = NSS_CFI_OCF_SESSION(crp->crp_sid);
 	if (sid >= NSS_CRYPTO_MAX_IDXS) {
-		nss_cfi_err("%p: session id %d not valid\n", crp, sid);
+		nss_cfi_err("%px: session id %d not valid\n", crp, sid);
 		goto crypto_done;
 	}
 
@@ -467,6 +540,7 @@ static int nss_cfi_ocf_process(device_t dev, struct cryptop *crp, int hint)
 	nss_cfi_assert(crd);
 
 	switch (crd->crd_alg) {
+	case CRYPTO_MD5_HMAC:
 	case CRYPTO_SHA1_HMAC:
 		auth_crd = crd;
 		cip_crd  = crd->crd_next;
@@ -487,7 +561,7 @@ static int nss_cfi_ocf_process(device_t dev, struct cryptop *crp, int hint)
 		break;
 
 	default:
-		nss_cfi_err("%p: wrong cipher or auth algo %d\n", crp, crd->crd_alg);
+		nss_cfi_err("%px: wrong cipher or auth algo %d\n", crp, crd->crd_alg);
 		goto crypto_done;
 	}
 
@@ -500,9 +574,9 @@ static int nss_cfi_ocf_process(device_t dev, struct cryptop *crp, int hint)
 	/*
 	 *  Allocate nss_crypto_buffer
 	 */
-	ch = nss_crypto_hdr_alloc(sc->crypto, sid, 1, ivsize, hash_len, false);
+	ch = nss_crypto_hdr_alloc(sc->crypto, sid, 1, 1, ivsize, hash_len, false);
 	if (!ch) {
-		nss_cfi_dbg("%p: not able to allocate crypto buffer\n");
+		nss_cfi_dbg("%px: not able to allocate crypto buffer\n");
 		goto crypto_done;
 	}
 
@@ -525,7 +599,7 @@ static int nss_cfi_ocf_process(device_t dev, struct cryptop *crp, int hint)
 		iv_addr = nss_crypto_hdr_get_iv(ch);
 		memcpy(iv_addr, skb->data + cip_crd->crd_inject, ivsize);
 
-		nss_cfi_dbg("enc=(%d), dec=(%d), ciph_len(%d), ciph_skip(%d), inject(%d), iv_addr(%p)\n",
+		nss_cfi_dbg("enc=(%d), dec=(%d), ciph_len(%d), ciph_skip(%d), inject(%d), iv_addr(%px)\n",
 				encrypt, decrypt, cipher_len, cip_crd->crd_skip, cip_crd->crd_inject, iv_addr);
 	}
 
@@ -549,7 +623,7 @@ static int nss_cfi_ocf_process(device_t dev, struct cryptop *crp, int hint)
 		nss_crypto_hdr_set_skip(ch, cip_crd->crd_skip);
 		nss_crypto_hdr_set_op(ch, NSS_CRYPTO_OP_DIR_AUTH_DEC);
 	} else {
-		nss_cfi_err("%p: invalid operation\n", ch);
+		nss_cfi_err("%px: invalid operation\n", ch);
 	}
 
 	/*
@@ -579,9 +653,25 @@ static int nss_cfi_ocf_process(device_t dev, struct cryptop *crp, int hint)
 	 * If packet is for encryption call the registered trap function
 	 */
 	if ((cip_crd->crd_flags & CRD_F_ENCRYPT) && (crp->crp_flags & CRYPTO_F_SKBUF)) {
-		sc->encrypt_fn((struct sk_buff *)crp->crp_buf, &gbl_crypto_info[ch->index]);
+		if (sc->encrypt_fn((struct sk_buff *)crp->crp_buf, &gbl_crypto_info[ch->index])) {
+			goto no_offload;
+		}
+
+		/*
+		 * Call offload function, if offload is disabled (non zero return value) continue normal transformation.
+		 * else set EINPROGRESS in crp to indicate packet has been consumed by crypto.
+		 */
+		if (sc->offload_fn((struct sk_buff *)crp->crp_buf, &gbl_crypto_info[ch->index])) {
+			goto no_offload;
+		}
+
+		crp->crp_etype = EINPROGRESS;
+		nss_crypto_hdr_free(sc->crypto, ch);
+		crypto_done(crp);
+		return 0;
 	}
 
+no_offload:
 	/*
 	 *  Send the buffer to CORE layer for processing
 	 */
@@ -616,9 +706,25 @@ void nss_cfi_ocf_register(void *app_data, struct nss_crypto_user *user)
 	struct nss_cfi_ocf *sc = &g_cfi_ocf;
 
 	/* register algorithms with the framework */
-	crypto_register(sc->cid, CRYPTO_AES_CBC, 0, 0);
-	crypto_register(sc->cid, CRYPTO_3DES_CBC, 0, 0);
-	crypto_register(sc->cid, CRYPTO_SHA1_HMAC, 0, 0);
+	if (nss_crypto_algo_is_supp(NSS_CRYPTO_CMN_ALGO_AES128_CBC)) {
+		crypto_register(sc->cid, CRYPTO_AES_CBC, 0, 0);
+		nss_cfi_info("%px: crypto_register for AES_CBC algo\n", sc);
+	}
+
+	if (nss_crypto_algo_is_supp(NSS_CRYPTO_CMN_ALGO_3DES_CBC)) {
+		crypto_register(sc->cid, CRYPTO_3DES_CBC, 0, 0);
+		nss_cfi_info("%px: crypto_register for 3DES_CBC algo\n", sc);
+	}
+
+	if (nss_crypto_algo_is_supp(NSS_CRYPTO_CMN_ALGO_SHA160_HMAC)) {
+		crypto_register(sc->cid, CRYPTO_SHA1_HMAC, 0, 0);
+		nss_cfi_info("%px: crypto_register for SHA1_HMAC algo\n", sc);
+	}
+
+	if (nss_crypto_algo_is_supp(NSS_CRYPTO_CMN_ALGO_MD5_HMAC)) {
+		crypto_register(sc->cid, CRYPTO_MD5_HMAC, 0, 0);
+		nss_cfi_info("%px: crypto_register for MD5_HMAC algo\n", sc);
+	}
 }
 
 /*
@@ -634,16 +740,19 @@ void nss_cfi_ocf_unregister(void *app_data, struct nss_crypto_user *user)
  */
 void nss_cfi_ocf_register_ipsec(nss_cfi_data_trap_t encrypt_fn,
 				nss_cfi_data_trap_t decrypt_fn,
-				nss_cfi_session_trap_t session_fn)
+				nss_cfi_session_trap_t session_fn,
+				nss_cfi_data_trap_t offload_fn)
 {
 	struct nss_cfi_ocf *sc = &g_cfi_ocf;
 	nss_cfi_data_trap_t encrypt;
 	nss_cfi_data_trap_t decrypt;
+	nss_cfi_data_trap_t offload;
 	nss_cfi_session_trap_t session;
 
 	encrypt = xchg(&sc->encrypt_fn, encrypt_fn);
 	decrypt = xchg(&sc->decrypt_fn, decrypt_fn);
 	session = xchg(&sc->session_fn, session_fn);
+	offload = xchg(&sc->offload_fn, offload_fn);
 }
 
 /*
@@ -654,10 +763,12 @@ void nss_cfi_ocf_unregister_ipsec(void)
 	struct nss_cfi_ocf *sc = &g_cfi_ocf;
 	nss_cfi_data_trap_t encrypt;
 	nss_cfi_data_trap_t decrypt;
+	nss_cfi_data_trap_t offload;
 	nss_cfi_session_trap_t session;
 
 	nss_cfi_info("Unregistering IPsec trap handlers\n");
 
+	offload = xchg(&sc->offload_fn, nss_cfi_ocf_offload_trap);
 	session = xchg(&sc->session_fn, nss_cfi_ocf_session_trap);
 	encrypt = xchg(&sc->encrypt_fn, nss_cfi_ocf_encrypt_trap);
 	decrypt = xchg(&sc->decrypt_fn, nss_cfi_ocf_decrypt_trap);
@@ -674,13 +785,14 @@ int nss_cfi_ocf_init(void)
 	struct nss_crypto_user_ctx *user_ctx;
 	nss_cfi_data_trap_t encrypt;
 	nss_cfi_data_trap_t decrypt;
+	nss_cfi_data_trap_t offload;
 	nss_cfi_session_trap_t session;
 
 	softc_device_init(sc, NSS_CFI_DRV_NAME, 0, nss_cfi_ocf_methods);
 
 	sc->cid = crypto_get_driverid(softc_get_device(sc), CRYPTOCAP_F_HARDWARE);
 	if (sc->cid < 0) {
-		nss_cfi_err("%p: could not get crypto driver id\n", sc);
+		nss_cfi_err("%px: could not get crypto driver id\n", sc);
 		return -1;
 	}
 
@@ -701,6 +813,7 @@ int nss_cfi_ocf_init(void)
 	encrypt = xchg(&sc->encrypt_fn, nss_cfi_ocf_encrypt_trap);
 	decrypt = xchg(&sc->decrypt_fn, nss_cfi_ocf_decrypt_trap);
 	session = xchg(&sc->session_fn, nss_cfi_ocf_session_trap);
+	offload = xchg(&sc->offload_fn, nss_cfi_ocf_offload_trap);
 
 	sc->crypto = nss_crypto_register_user(user_ctx, "nss_cfi_ocf");
 	if (!sc->crypto) {

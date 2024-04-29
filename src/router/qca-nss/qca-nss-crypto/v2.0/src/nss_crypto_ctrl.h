@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2019 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2020 The Linux Foundation. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -46,7 +46,25 @@ struct nss_crypto_algo_info {
 	uint16_t nonce_sz;			/* nonce size */
 	bool cipher_valid;			/* algorithm supports cipher mode */
 	bool auth_valid;			/* algorithm supports auth mode */
+	bool is_supp;				/* algorithm is supported by HW */
 };
+
+/*
+ * nss_crypto_stats_pvt
+ *	Statistics message applicable for node/engine/context.
+ */
+struct nss_crypto_stats_pvt {
+	uint64_t rx_packets;                    /* Number of packets received. */
+	uint64_t rx_bytes;                      /* Number of bytes received. */
+	uint64_t tx_packets;                    /* Number of packets transmitted. */
+	uint64_t tx_bytes;                      /* Number of bytes transmitted. */
+	uint64_t rx_dropped[NSS_MAX_NUM_PRI];   /* Packets dropped on receive due to queue full. */
+
+	uint64_t fail_version;			/* Version mismatch failures. */
+	uint64_t fail_ctx;			/* Context related failures. */
+	uint64_t fail_dma;			/* DMA descriptor full. */
+};
+
 
 /*
  * nss_crypto_ctx
@@ -60,7 +78,7 @@ struct nss_crypto_ctx {
 	void *hw_info;				/* HW specific info */
 
 	struct dentry *dentry;			/* debugfs entry for context stats */
-	struct nss_crypto_cmn_stats stats;	/* Context stats */
+	struct nss_crypto_stats_pvt stats;	/* Context stats */
 
 	struct nss_crypto_cmn_msg nim;		/* crypto context message */
 	struct delayed_work free_work;		/* crypto context free worker */
@@ -138,7 +156,7 @@ struct nss_crypto_node {
 	struct dentry *dentry;			/* entry for node stats */
 	struct net_device *ndev;		/* netdevice associated with node */
 	struct device *dev;			/* platform device associated with node */
-	struct nss_crypto_cmn_stats stats;	/* Node stats */
+	struct nss_crypto_stats_pvt stats;	/* Node stats */
 
 	bool tx_enabled;			/* transform is enabled from host */
 	bool algo[NSS_CRYPTO_CMN_ALGO_MAX];	/* Algorithm support table */
@@ -162,6 +180,10 @@ struct nss_crypto_engine {
 
 	phys_addr_t crypto_paddr;		/* starting physical address of Crypto regs */
 	void __iomem *crypto_vaddr;		/* starting virtual address of Crypto regs */
+
+	phys_addr_t dma_paddr;			/* starting physical address of BAM */
+	void __iomem *dma_vaddr;		/* starting virtual address of BAM */
+
 	struct dentry *dentry;                  /* entry for engine stats */
 	struct nss_crypto_debugfs_entry *debugfs_entries;	/* debugfs entries */
 	size_t debugfs_num_entries;		/* debugfs entries count */

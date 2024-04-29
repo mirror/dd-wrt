@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2017-2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2018, 2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -76,12 +76,12 @@ static void nss_vlan_handler(struct nss_ctx_instance *nss_ctx, struct nss_cmn_ms
 	 * Is this a valid request/response packet?
 	 */
 	if (ncm->type >= NSS_VLAN_MSG_TYPE_MAX) {
-		nss_warning("%p: received invalid message %d for vlan interface", nss_ctx, ncm->type);
+		nss_warning("%px: received invalid message %d for vlan interface", nss_ctx, ncm->type);
 		return;
 	}
 
 	if (nss_cmn_get_msg_len(ncm) > sizeof(struct nss_vlan_msg)) {
-		nss_warning("%p: length of message is greater than required: %d", nss_ctx, nss_cmn_get_msg_len(ncm));
+		nss_warning("%px: length of message is greater than required: %d", nss_ctx, nss_cmn_get_msg_len(ncm));
 		return;
 	}
 
@@ -154,12 +154,12 @@ nss_tx_status_t nss_vlan_tx_msg(struct nss_ctx_instance *nss_ctx, struct nss_vla
 	 * Sanity check the message
 	 */
 	if (!nss_vlan_verify_if_num(ncm->interface)) {
-		nss_warning("%p: tx request for interface that is not a vlan: %d", nss_ctx, ncm->interface);
+		nss_warning("%px: tx request for interface that is not a vlan: %d", nss_ctx, ncm->interface);
 		return NSS_TX_FAILURE;
 	}
 
 	if (ncm->type >= NSS_VLAN_MSG_TYPE_MAX) {
-		nss_warning("%p: message type out of range: %d", nss_ctx, ncm->type);
+		nss_warning("%px: message type out of range: %d", nss_ctx, ncm->type);
 		return NSS_TX_FAILURE;
 	}
 
@@ -185,14 +185,14 @@ nss_tx_status_t nss_vlan_tx_msg_sync(struct nss_ctx_instance *nss_ctx, struct ns
 
 	status = nss_vlan_tx_msg(nss_ctx, nvm);
 	if (status != NSS_TX_SUCCESS) {
-		nss_warning("%p: vlan_tx_msg failed\n", nss_ctx);
+		nss_warning("%px: vlan_tx_msg failed\n", nss_ctx);
 		up(&vlan_pvt.sem);
 		return status;
 	}
 
 	ret = wait_for_completion_timeout(&vlan_pvt.complete, msecs_to_jiffies(NSS_VLAN_TX_TIMEOUT));
 	if (!ret) {
-		nss_warning("%p: vlan msg tx failed due to timeout\n", nss_ctx);
+		nss_warning("%px: vlan msg tx failed due to timeout\n", nss_ctx);
 		vlan_pvt.response = NSS_TX_FAILURE;
 	}
 
@@ -228,7 +228,7 @@ nss_tx_status_t nss_vlan_tx_set_mtu_msg(uint32_t vlan_if_num, uint32_t mtu)
 	}
 
 	if (nss_vlan_verify_if_num(vlan_if_num) == false) {
-		nss_warning("%p: received invalid interface %d", nss_ctx, vlan_if_num);
+		nss_warning("%px: received invalid interface %d", nss_ctx, vlan_if_num);
 		return NSS_TX_FAILURE;
 	}
 
@@ -246,7 +246,7 @@ EXPORT_SYMBOL(nss_vlan_tx_set_mtu_msg);
  * nss_vlan_tx_set_mac_addr_msg
  *	API to send change mac addr message to NSS FW
  */
-nss_tx_status_t nss_vlan_tx_set_mac_addr_msg(uint32_t vlan_if_num, uint8_t *addr)
+nss_tx_status_t nss_vlan_tx_set_mac_addr_msg(uint32_t vlan_if_num, const uint8_t *addr)
 {
 	struct nss_ctx_instance *nss_ctx = nss_vlan_get_context();
 	struct nss_vlan_msg nvm;
@@ -258,7 +258,7 @@ nss_tx_status_t nss_vlan_tx_set_mac_addr_msg(uint32_t vlan_if_num, uint8_t *addr
 	}
 
 	if (nss_vlan_verify_if_num(vlan_if_num) == false) {
-		nss_warning("%p: received invalid interface %d", nss_ctx, vlan_if_num);
+		nss_warning("%px: received invalid interface %d", nss_ctx, vlan_if_num);
 		return NSS_TX_FAILURE;
 	}
 
@@ -286,7 +286,7 @@ nss_tx_status_t nss_vlan_tx_vsi_attach_msg(uint32_t vlan_if_num, uint32_t vsi)
 	}
 
 	if (nss_vlan_verify_if_num(vlan_if_num) == false) {
-		nss_warning("%p: received invalid interface %d\n", nss_ctx, vlan_if_num);
+		nss_warning("%px: received invalid interface %d\n", nss_ctx, vlan_if_num);
 		return NSS_TX_FAILURE;
 	}
 
@@ -313,7 +313,7 @@ nss_tx_status_t nss_vlan_tx_vsi_detach_msg(uint32_t vlan_if_num, uint32_t vsi)
 	}
 
 	if (nss_vlan_verify_if_num(vlan_if_num) == false) {
-		nss_warning("%p: received invalid interface %d\n", nss_ctx, vlan_if_num);
+		nss_warning("%px: received invalid interface %d\n", nss_ctx, vlan_if_num);
 		return NSS_TX_FAILURE;
 	}
 
@@ -340,7 +340,7 @@ nss_tx_status_t nss_vlan_tx_add_tag_msg(uint32_t vlan_if_num, uint32_t vlan_tag,
 	}
 
 	if (nss_vlan_verify_if_num(vlan_if_num) == false) {
-		nss_warning("%p: received invalid interface %d\n", nss_ctx, vlan_if_num);
+		nss_warning("%px: received invalid interface %d\n", nss_ctx, vlan_if_num);
 		return NSS_TX_FAILURE;
 	}
 

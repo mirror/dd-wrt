@@ -1,6 +1,6 @@
 /*
  ******************************************************************************
- * Copyright (c) 2017, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017,2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -18,26 +18,6 @@
 #define __NSS_MAP_T_STATS_H
 
 /*
- * MAP-T debug error types
- */
-enum nss_map_t_stats_instance {
-	NSS_MAP_T_STATS_V4_TO_V6_PBUF_EXCEPTION,
-	NSS_MAP_T_STATS_V4_TO_V6_PBUF_NO_MATCHING_RULE,
-	NSS_MAP_T_STATS_V4_TO_V6_PBUF_NOT_TCP_OR_UDP,
-	NSS_MAP_T_STATS_V4_TO_V6_RULE_ERR_LOCAL_PSID,
-	NSS_MAP_T_STATS_V4_TO_V6_RULE_ERR_LOCAL_IPV6,
-	NSS_MAP_T_STATS_V4_TO_V6_RULE_ERR_REMOTE_PSID,
-	NSS_MAP_T_STATS_V4_TO_V6_RULE_ERR_REMOTE_EA_BITS,
-	NSS_MAP_T_STATS_V4_TO_V6_RULE_ERR_REMOTE_IPV6,
-	NSS_MAP_T_STATS_V6_TO_V4_PBUF_EXCEPTION,
-	NSS_MAP_T_STATS_V6_TO_V4_PBUF_NO_MATCHING_RULE,
-	NSS_MAP_T_STATS_V6_TO_V4_PBUF_NOT_TCP_OR_UDP,
-	NSS_MAP_T_STATS_V6_TO_V4_RULE_ERR_LOCAL_IPV4,
-	NSS_MAP_T_STATS_V6_TO_V4_RULE_ERR_REMOTE_IPV4,
-	NSS_MAP_T_STATS_MAX
-};
-
-/*
  * NSS core stats -- for H2N/N2H map_t debug stats
  */
 struct nss_map_t_stats_instance_debug {
@@ -50,6 +30,7 @@ struct nss_map_t_stats_instance_debug {
 /*
  * MAP-T statistics APIs
  */
+extern void nss_map_t_stats_notify(struct nss_ctx_instance *nss_ctx, uint32_t if_num);
 extern void nss_map_t_stats_dentry_create(void);
 
 #endif /* __NSS_MAP_T_STATS_H */

@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2016-2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2016-2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -14,45 +14,16 @@
  **************************************************************************
  */
 
-#include "nss_stats.h"
 #include "nss_core.h"
 #include "nss_pptp_stats.h"
-
-struct nss_pptp_stats_session_debug pptp_session_stats[NSS_MAX_PPTP_DYNAMIC_INTERFACES];
+#include "nss_pptp_strings.h"
 
 /*
- * nss_pptp_stats_session_debug_str
- *	PPTP statistics strings for nss session stats
+ * Declare atomic notifier data structure for statistics.
  */
-static int8_t *nss_pptp_stats_session_debug_str[NSS_PPTP_STATS_SESSION_MAX] = {
-	"ENCAP_RX_PACKETS",
-	"ENCAP_RX_BYTES",
-	"ENCAP_TX_PACKETS",
-	"ENCAP_TX_BYTES",
-	"ENCAP_RX_QUEUE_0_DROP",
-	"ENCAP_RX_QUEUE_1_DROP",
-	"ENCAP_RX_QUEUE_2_DROP",
-	"ENCAP_RX_QUEUE_3_DROP",
-	"DECAP_RX_PACKETS",
-	"DECAP_RX_BYTES",
-	"DECAP_TX_PACKETS",
-	"DECAP_TX_BYTES",
-	"DECAP_RX_QUEUE_0_DROP",
-	"DECAP_RX_QUEUE_1_DROP",
-	"DECAP_RX_QUEUE_2_DROP",
-	"DECAP_RX_QUEUE_3_DROP",
-	"ENCAP_HEADROOM_ERR",
-	"ENCAP_SMALL_SIZE",
-	"ENCAP_PNODE_ENQUEUE_FAIL",
-	"DECAP_NO_SEQ_NOR_ACK",
-	"DECAP_INVAL_GRE_FLAGS",
-	"DECAP_INVAL_GRE_PROTO",
-	"DECAP_WRONG_SEQ",
-	"DECAP_INVAL_PPP_HDR",
-	"DECAP_PPP_LCP",
-	"DECAP_UNSUPPORTED_PPP_PROTO",
-	"DECAP_PNODE_ENQUEUE_FAIL",
-};
+ATOMIC_NOTIFIER_HEAD(nss_pptp_stats_notifier);
+
+struct nss_pptp_stats_session_debug pptp_session_stats[NSS_MAX_PPTP_DYNAMIC_INTERFACES];
 
 /*
  * nss_pptp_stats_read()
@@ -106,7 +77,7 @@ static ssize_t nss_pptp_stats_read(struct file *fp, char __user *ubuf, size_t sz
 
 			for (i = 0; i < NSS_PPTP_STATS_SESSION_MAX; i++) {
 				size_wr += scnprintf(lbuf + size_wr, size_al - size_wr,
-						     "\t%s = %llu\n", nss_pptp_stats_session_debug_str[i],
+						     "\t%s = %llu\n", nss_pptp_strings_session_debug_stats[i].stats_name,
 						      pptp_session_stats[id].stats[i]);
 			}
 			size_wr += scnprintf(lbuf + size_wr, size_al - size_wr, "\n");
@@ -122,7 +93,7 @@ static ssize_t nss_pptp_stats_read(struct file *fp, char __user *ubuf, size_t sz
 /*
  * nss_pptp_stats_ops
  */
-NSS_STATS_DECLARE_FILE_OPERATIONS(pptp)
+NSS_STATS_DECLARE_FILE_OPERATIONS(pptp);
 
 /*
  * nss_pptp_stats_dentry_create()
@@ -132,3 +103,52 @@ void nss_pptp_stats_dentry_create(void)
 {
 	nss_stats_create_dentry("pptp", &nss_pptp_stats_ops);
 }
+
+/*
+ * nss_pptp_stats_notify()
+ *	Sends notifications to the registered modules.
+ *
+ * Leverage NSS-FW statistics timing to update Netlink.
+ */
+void nss_pptp_stats_notify(struct nss_ctx_instance *nss_ctx, uint32_t if_num)
+{
+	struct nss_pptp_stats_notification pptp_stats;
+	int id;
+
+	memset(&pptp_session_stats, 0, sizeof(pptp_session_stats));
+
+	/*
+	 * Get all stats
+	 */
+	nss_pptp_session_debug_stats_get((void *)&pptp_session_stats);
+
+	for (id = 0; id < NSS_MAX_PPTP_DYNAMIC_INTERFACES; id++) {
+		if (pptp_session_stats[id].if_num == if_num) {
+			memcpy(&pptp_stats.stats, &pptp_session_stats[id].stats, sizeof(pptp_stats.stats));
+		}
+	}
+	pptp_stats.if_type = nss_dynamic_interface_get_type(nss_ctx, if_num);
+	pptp_stats.core_id = nss_ctx->id;
+	pptp_stats.if_num = if_num;
+	atomic_notifier_call_chain(&nss_pptp_stats_notifier, NSS_STATS_EVENT_NOTIFY, (void *)&pptp_stats);
+}
+
+/*
+ * nss_pptp_stats_register_notifier()
+ *	Registers statistics notifier.
+ */
+int nss_pptp_stats_register_notifier(struct notifier_block *nb)
+{
+	return atomic_notifier_chain_register(&nss_pptp_stats_notifier, nb);
+}
+EXPORT_SYMBOL(nss_pptp_stats_register_notifier);
+
+/*
+ * nss_pptp_stats_unregister_notifier()
+ *	Deregisters statistics notifier.
+ */
+int nss_pptp_stats_unregister_notifier(struct notifier_block *nb)
+{
+	return atomic_notifier_chain_unregister(&nss_pptp_stats_notifier, nb);
+}
+EXPORT_SYMBOL(nss_pptp_stats_unregister_notifier);

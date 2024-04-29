@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2017-2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2019, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -62,6 +62,7 @@ enum nss_crypto_cmn_algo {
 	NSS_CRYPTO_CMN_ALGO_SHA512_HASH,		/**< Asynchronous digest. */
 	NSS_CRYPTO_CMN_ALGO_MD5_HMAC,			/**< Asynchronous digest. */
 	NSS_CRYPTO_CMN_ALGO_SHA160_HMAC,		/**< Asynchronous digest. */
+	NSS_CRYPTO_CMN_ALGO_SHA224_HMAC,		/**< Asynchronous digest. */
 	NSS_CRYPTO_CMN_ALGO_SHA256_HMAC,		/**< Asynchronous digest. */
 	NSS_CRYPTO_CMN_ALGO_SHA384_HMAC,		/**< Asynchronous digest. */
 	NSS_CRYPTO_CMN_ALGO_SHA512_HMAC,		/**< Asynchronous digest. */

@@ -1,4 +1,5 @@
-/* Copyright (c) 2015-2019 The Linux Foundation. All rights reserved.
+/* Copyright (c) 2015-2020 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -38,7 +39,12 @@
 
 #include <crypto/aes.h>
 #include <crypto/des.h>
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 11, 0)
 #include <crypto/sha.h>
+#else
+#include <crypto/sha1.h>
+#include <crypto/sha2.h>
+#endif
 #include <crypto/hash.h>
 #include <crypto/algapi.h>
 #include <crypto/aead.h>
@@ -92,6 +98,7 @@ int nss_cryptoapi_aead_init(struct crypto_aead *aead)
 
 	ctx->user = g_cryptoapi.user;
 	ctx->stats.init++;
+	ctx->sid = NSS_CRYPTO_SESSION_MAX;
 	init_completion(&ctx->complete);
 
 	need_fallback = crypto_tfm_alg_flags(tfm) & CRYPTO_ALG_NEED_FALLBACK;
@@ -155,8 +162,6 @@ void nss_cryptoapi_aead_exit(struct crypto_aead *aead)
 	 */
 	atomic_set(&ctx->active, 0);
 
-	nss_crypto_session_free(ctx->user, ctx->sid);
-
 	if (!atomic_sub_and_test(1, &ctx->refcnt)) {
 		/*
 		 * We need to wait for any outstanding packet using this ctx.
@@ -167,9 +172,12 @@ void nss_cryptoapi_aead_exit(struct crypto_aead *aead)
 		WARN_ON(!ret);
 	}
 
-	ctx->sid = NSS_CRYPTO_SESSION_MAX;
+	if (ctx->sid != NSS_CRYPTO_SESSION_MAX) {
+		nss_crypto_session_free(ctx->user, ctx->sid);
+		debugfs_remove_recursive(ctx->dentry);
+		ctx->sid = NSS_CRYPTO_SESSION_MAX;
+	}
 
-	debugfs_remove_recursive(ctx->dentry);
 	NSS_CRYPTOAPI_CLEAR_MAGIC(ctx);
 }
 
@@ -193,13 +201,19 @@ int nss_cryptoapi_aead_setkey_noauth(struct crypto_aead *aead, const u8 *key, un
 
 	ctx->info = nss_cryptoapi_cra_name2info(crypto_tfm_alg_name(tfm), keylen, 0);
 	if (!ctx->info) {
-		nss_cfi_err("%p: Unable to find algorithm with keylen\n", ctx);
-		crypto_aead_set_flags(aead, CRYPTO_TFM_RES_BAD_KEY_LEN);
+		nss_cfi_err("%px: Unable to find algorithm with keylen\n", ctx);
+// 		crypto_aead_set_flags(aead, CRYPTO_TFM_RES_BAD_KEY_LEN);
 		return -ENOENT;
 	}
 
 	if (ctx->info->algo >= NSS_CRYPTO_CMN_ALGO_MAX)
 		return -ERANGE;
+
+	if (ctx->sid != NSS_CRYPTO_SESSION_MAX) {
+		nss_crypto_session_free(ctx->user, ctx->sid);
+		ctx->sid = NSS_CRYPTO_SESSION_MAX;
+		debugfs_remove_recursive(ctx->dentry);
+	}
 
 	nonce_sz = ctx->info->nonce;
 	ctx->iv_size = crypto_aead_ivsize(aead) + nonce_sz + sizeof(uint32_t);
@@ -219,8 +233,8 @@ int nss_cryptoapi_aead_setkey_noauth(struct crypto_aead *aead, const u8 *key, un
 
 	status = nss_crypto_session_alloc(ctx->user, &data, &ctx->sid);
 	if (status < 0) {
-		nss_cfi_err("%p: Unable to allocate crypto session(%d)\n", ctx, status);
-		crypto_aead_set_flags(aead, CRYPTO_TFM_RES_BAD_FLAGS);
+		nss_cfi_err("%px: Unable to allocate crypto session(%d)\n", ctx, status);
+// 		crypto_aead_set_flags(aead, CRYPTO_TFM_RES_BAD_FLAGS);
 		return status;
 	}
 
@@ -251,15 +265,15 @@ int nss_cryptoapi_aead_setkey(struct crypto_aead *aead, const u8 *key, unsigned 
 	 * Extract and cipher and auth keys
 	 */
 	if (crypto_authenc_extractkeys(&keys, key, keylen) != 0) {
-		nss_cfi_err("%p: Unable to extract keys\n", ctx);
-		crypto_aead_set_flags(aead, CRYPTO_TFM_RES_BAD_KEY_LEN);
+		nss_cfi_err("%px: Unable to extract keys\n", ctx);
+// 		crypto_aead_set_flags(aead, CRYPTO_TFM_RES_BAD_KEY_LEN);
 		return -EIO;
 	}
 
 	ctx->info = nss_cryptoapi_cra_name2info(crypto_tfm_alg_name(tfm), keys.enckeylen, crypto_aead_maxauthsize(aead));
 	if (!ctx->info) {
-		nss_cfi_err("%p: Unable to find algorithm with keylen\n", ctx);
-		crypto_aead_set_flags(aead, CRYPTO_TFM_RES_BAD_KEY_LEN);
+		nss_cfi_err("%px: Unable to find algorithm with keylen\n", ctx);
+// 		crypto_aead_set_flags(aead, CRYPTO_TFM_RES_BAD_KEY_LEN);
 		return -ENOENT;
 	}
 
@@ -279,8 +293,8 @@ int nss_cryptoapi_aead_setkey(struct crypto_aead *aead, const u8 *key, unsigned 
 	 * Validate if auth key length exceeds what we support
 	 */
 	if (keys.authkeylen > ctx->info->auth_blocksize) {
-		nss_cfi_err("%p: Auth keylen(%d) exceeds supported\n", ctx, keys.authkeylen);
-		crypto_aead_set_flags(aead, CRYPTO_TFM_RES_BAD_KEY_LEN);
+		nss_cfi_err("%px: Auth keylen(%d) exceeds supported\n", ctx, keys.authkeylen);
+// 		crypto_aead_set_flags(aead, CRYPTO_TFM_RES_BAD_KEY_LEN);
 		return -EINVAL;
 	}
 
@@ -314,10 +328,16 @@ int nss_cryptoapi_aead_setkey(struct crypto_aead *aead, const u8 *key, unsigned 
 	data.auth_keylen = keys.authkeylen;
 	data.sec_key = false;
 
+	if (ctx->sid != NSS_CRYPTO_SESSION_MAX) {
+		nss_crypto_session_free(ctx->user, ctx->sid);
+		debugfs_remove_recursive(ctx->dentry);
+		ctx->sid = NSS_CRYPTO_SESSION_MAX;
+	}
+
 	status = nss_crypto_session_alloc(ctx->user, &data, &ctx->sid);
 	if (status < 0) {
-		nss_cfi_err("%p: Unable to allocate crypto session(%d)\n", ctx, status);
-		crypto_aead_set_flags(aead, CRYPTO_TFM_RES_BAD_FLAGS);
+		nss_cfi_err("%px: Unable to allocate crypto session(%d)\n", ctx, status);
+// 		crypto_aead_set_flags(aead, CRYPTO_TFM_RES_BAD_FLAGS);
 		return status;
 	}
 
@@ -391,14 +411,20 @@ void nss_cryptoapi_aead_echainiv_tx_proc(struct nss_cryptoapi_ctx *ctx, struct a
 	memcpy(req->iv, sg_virt(req->src) + req->assoclen, crypto_aead_ivsize(aead));
 
 	info->iv = req->iv;
-	info->nsegs = sg_nents(req->src);
+	info->src.nsegs = sg_nents(req->src);
+	info->dst.nsegs = sg_nents(req->dst);
 	info->cb = nss_cryptoapi_aead_done;
 	info->iv_size = ctx->iv_size;
 	info->hmac_len = crypto_aead_authsize(aead);
 	info->ahash_skip = encrypt ? crypto_aead_authsize(aead) : 0;
-	info->first_sg = req->src;
-	info->last_sg = sg_last(req->src, info->nsegs);
+	info->src.first_sg = req->src;
+	info->src.last_sg = sg_last(req->src, info->src.nsegs);
+	info->dst.first_sg = req->dst;
+	info->dst.last_sg = sg_last(req->dst, info->dst.nsegs);
 	info->skip = req->assoclen + crypto_aead_ivsize(aead);
+	info->total_in_len = req->cryptlen + req->assoclen;
+	info->total_out_len = info->total_in_len + info->ahash_skip;
+	info->in_place = (req->src == req->dst) ? true : false;
 }
 
 /*
@@ -422,14 +448,20 @@ void nss_cryptoapi_aead_seqiv_tx_proc(struct nss_cryptoapi_ctx *ctx, struct aead
 	 * - 4 bytes of initial counter
 	 */
 	info->iv = req->iv;
-	info->nsegs = sg_nents(req->src);
+	info->src.nsegs = sg_nents(req->src);
+	info->dst.nsegs = sg_nents(req->dst);
 	info->cb = nss_cryptoapi_aead_done;
 	info->iv_size = ctx->iv_size;
 	info->hmac_len = crypto_aead_authsize(aead);
 	info->ahash_skip = encrypt ? crypto_aead_authsize(aead) : 0;
-	info->first_sg = req->src;
-	info->last_sg = sg_last(req->src, info->nsegs);
+	info->src.first_sg = req->src;
+	info->src.last_sg = sg_last(req->src, info->src.nsegs);
+	info->dst.first_sg = req->dst;
+	info->dst.last_sg = sg_last(req->dst, info->dst.nsegs);
 	info->skip = req->assoclen + crypto_aead_ivsize(aead);
+	info->total_in_len = req->cryptlen + req->assoclen;
+	info->total_out_len = info->total_in_len + info->ahash_skip;
+	info->in_place = (req->src == req->dst) ? true : false;
 
 	/*
 	 * For gcm RFC4106, IV is not part of authentication
@@ -448,14 +480,20 @@ void nss_cryptoapi_aead_tx_proc(struct nss_cryptoapi_ctx *ctx, struct aead_reque
 	struct crypto_aead *aead = crypto_aead_reqtfm(req);
 
 	info->iv = req->iv;
-	info->nsegs = sg_nents(req->src);
+	info->src.nsegs = sg_nents(req->src);
+	info->dst.nsegs = sg_nents(req->dst);
 	info->cb = nss_cryptoapi_aead_done;
 	info->iv_size = ctx->iv_size;
 	info->hmac_len = crypto_aead_authsize(aead);
 	info->ahash_skip = encrypt ? crypto_aead_authsize(aead) : 0;
-	info->first_sg = req->src;
-	info->last_sg = sg_last(req->src, info->nsegs);
+	info->src.first_sg = req->src;
+	info->src.last_sg = sg_last(req->src, info->src.nsegs);
+	info->dst.first_sg = req->dst;
+	info->dst.last_sg = sg_last(req->dst, info->dst.nsegs);
 	info->skip = req->assoclen;
+	info->total_in_len = req->cryptlen + req->assoclen;
+	info->total_out_len = info->total_in_len + info->ahash_skip;
+	info->in_place = (req->src == req->dst) ? true : false;
 
 	/*
 	 * This api is called from tcrypt, for GCM case assoclen include
@@ -504,13 +542,21 @@ int nss_cryptoapi_aead_encrypt(struct aead_request *req)
 	if (!atomic_read(&ctx->active))
 		return -EINVAL;
 
-	if (req->src != req->dst) {
+	if (sg_nents(req->src) != sg_nents(req->dst)) {
 		ctx->stats.failed_req++;
 		return -EINVAL;
 	}
 
 	BUG_ON(!ctx->info->aead_tx_proc);
 	ctx->info->aead_tx_proc(ctx, req, &info, true);
+
+	/*
+	 * We only support (2^16 - 1) length.
+	 */
+	if ((info.total_in_len > U16_MAX) || (info.total_out_len > U16_MAX)) {
+		ctx->stats.failed_len++;
+		return -EFBIG;
+	}
 
 	if (!atomic_inc_not_zero(&ctx->refcnt))
 		return -ENOENT;
@@ -555,13 +601,21 @@ int nss_cryptoapi_aead_decrypt(struct aead_request *req)
 	if (!atomic_read(&ctx->active))
 		return -EINVAL;
 
-	if (req->src != req->dst) {
+	if (sg_nents(req->src) != sg_nents(req->dst)) {
 		ctx->stats.failed_req++;
 		return -EINVAL;
 	}
 
 	BUG_ON(!ctx->info->aead_tx_proc);
 	ctx->info->aead_tx_proc(ctx, req, &info, false);
+
+	/*
+	 * We only support (2^16 - 1) length.
+	 */
+	if ((info.total_in_len > U16_MAX) || (info.total_out_len > U16_MAX)) {
+		ctx->stats.failed_len++;
+		return -EFBIG;
+	}
 
 	if (!atomic_inc_not_zero(&ctx->refcnt))
 		return -ENOENT;

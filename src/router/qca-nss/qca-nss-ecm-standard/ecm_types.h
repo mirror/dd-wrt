@@ -1,9 +1,12 @@
 /*
  **************************************************************************
- * Copyright (c) 2014-2015 The Linux Foundation.  All rights reserved.
+ * Copyright (c) 2014-2015, 2019-2021 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022, Qualcomm Innovation Center, Inc. All rights reserved.
+ *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
+ *
  * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
  * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
  * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
@@ -17,6 +20,38 @@
 #define ECM_TYPES_H_
 
 #include <linux/printk.h>
+
+/*
+ * Common ECM macro to handle the kernel macro name change from kernel version 4.9 and above.
+ * GRE_VERSION_1701 and GRE_VERSION_PPTP macros in kernel version <  4.9 needs to be converted
+ * to big endian since GRE_VERSION with which it compares is in big endian
+ */
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 9, 0))
+#define ECM_GRE_VERSION_0   __cpu_to_be16(GRE_VERSION_1701)
+#define ECM_GRE_VERSION_1   __cpu_to_be16(GRE_VERSION_PPTP)
+typedef struct gre_hdr_pptp ecm_gre_hdr_pptp;
+#else
+#define ECM_GRE_VERSION_0   GRE_VERSION_0
+#define ECM_GRE_VERSION_1   GRE_VERSION_1
+typedef struct pptp_gre_header ecm_gre_hdr_pptp;
+#endif
+
+/*
+ * Flow/Return direction types.
+ */
+enum ecm_conn_dir {
+	ECM_CONN_DIR_FLOW,
+	ECM_CONN_DIR_RETURN,
+	ECM_CONN_DIR_MAX
+};
+
+/*
+ * Rule update types.
+ */
+enum ecm_rule_update_type {
+	ECM_RULE_UPDATE_TYPE_CONNMARK,
+	ECM_RULE_UPDATE_TYPE_MAX
+};
 
 /*
  * The ECM IP address is an array of 4 32 bit numbers.
@@ -45,6 +80,18 @@ typedef uint32_t ecm_ptr_t;
 #define ECM_IP_ADDR_MATCH(a, b) \
 	((a[0] == b[0]) && (a[1] == b[1]) && (a[2] == b[2]) && (a[3] == b[3]))
 
+#define ECM_IP_ADDR_MASK_MATCH(addr, mask) \
+	(((addr[0] & mask[0]) == mask[0]) && ((addr[1] & mask[1]) == mask[1]) && \
+	((addr[2] & mask[2]) == mask[2]) && ((addr[3] & mask[3]) == mask[3]))
+
+#define ECM_PORT_MASK_MATCH(port, mask)  ((port & mask) == mask)
+#define ECM_PROTO_MASK_MATCH(proto, mask)  ((proto & mask) == mask)
+
+#define ECM_MAC_ADDR_MATCH(a, b) \
+	((((uint16_t *)a)[0] == (((uint16_t *)b)[0])) && \
+	(((uint16_t *)a)[1] == (((uint16_t *)b)[1])) && \
+	(((uint16_t *)a)[2] == (((uint16_t *)b)[2])))
+
 #define ECM_IP_ADDR_IS_V4(a) \
 	((a[1] == 0x0000ffff) && !a[2] && !a[3])
 
@@ -65,10 +112,8 @@ typedef uint32_t ecm_ptr_t;
 static inline void ecm_type_check_ecm_ip_addr(ip_addr_t ipaddr){}
 static inline void ecm_type_check_linux_ipv4(__be32 ipaddr){}
 static inline void ecm_type_check_ae_ipv4(uint32_t addr){}
-#ifdef ECM_IPV6_ENABLE
 static inline void ecm_type_check_linux_ipv6(struct in6_addr in6){}
 static inline void ecm_type_check_ae_ipv6(uint32_t ip6[4]){}
-#endif
 
 /*
  * This macro copies ip_addr_t's
@@ -144,17 +189,16 @@ static inline void ecm_type_check_ae_ipv6(uint32_t ip6[4]){}
 		hin4 = ipaddrt[0]; \
 	}
 
-#ifdef ECM_IPV6_ENABLE
 #define ECM_LINUX6_TO_IP_ADDR(d,s) \
 	{ \
 		ecm_type_check_ecm_ip_addr(d); \
-		ecm_type_check_ae_ipv6(&s); \
+		ecm_type_check_ae_ipv6(s); \
 		__ECM_IP_ADDR_COPY_NO_CHECK(d,s); \
 	}
 
 #define ECM_IP_ADDR_TO_LINUX6(d,s) \
 	{ \
-		ecm_type_check_ae_ipv6(&d); \
+		ecm_type_check_ae_ipv6(d); \
 		ecm_type_check_ecm_ip_addr(s); \
 		__ECM_IP_ADDR_COPY_NO_CHECK(d,s); \
 	}
@@ -192,10 +236,10 @@ static inline void ecm_type_check_ae_ipv6(uint32_t ip6[4]){}
 	{ \
 		ecm_type_check_ecm_ip_addr(ipaddrt); \
 		ecm_type_check_linux_ipv6(hin6); \
-		ipaddrt[0] = in6.in6_u.u6_addr32[0]; \
-		ipaddrt[1] = in6.in6_u.u6_addr32[1]; \
-		ipaddrt[2] = in6.in6_u.u6_addr32[2]; \
-		ipaddrt[3] = in6.in6_u.u6_addr32[3]; \
+		ipaddrt[0] = hin6.in6_u.u6_addr32[3]; \
+		ipaddrt[1] = hin6.in6_u.u6_addr32[2]; \
+		ipaddrt[2] = hin6.in6_u.u6_addr32[1]; \
+		ipaddrt[3] = hin6.in6_u.u6_addr32[0]; \
 	}
 
 /*
@@ -205,28 +249,20 @@ static inline void ecm_type_check_ae_ipv6(uint32_t ip6[4]){}
 	{ \
 		ecm_type_check_linux_ipv6(hin6); \
 		ecm_type_check_ecm_ip_addr(ipaddrt); \
-		in6.in6_u.u6_addr32[3] = ipaddrt[3]; \
-		in6.in6_u.u6_addr32[2] = ipaddrt[2]; \
-		in6.in6_u.u6_addr32[1] = ipaddrt[1]; \
-		in6.in6_u.u6_addr32[0] = ipaddrt[0]; \
+		hin6.in6_u.u6_addr32[0] = ipaddrt[3]; \
+		hin6.in6_u.u6_addr32[1] = ipaddrt[2]; \
+		hin6.in6_u.u6_addr32[2] = ipaddrt[1]; \
+		hin6.in6_u.u6_addr32[3] = ipaddrt[0]; \
 	}
-#endif
 
 /*
  * ecm_mac_addr_equal()
  *	Compares two MAC addresses.
  */
-#if (LINUX_VERSION_CODE <= KERNEL_VERSION(3,6,0))
-static inline unsigned ecm_mac_addr_equal(const u8 *addr1, const u8 *addr2)
-{
-	return compare_ether_addr(addr1, addr2);
-}
-#else
 static inline bool ecm_mac_addr_equal(const u8 *addr1, const u8 *addr2)
 {
 	return !ether_addr_equal(addr1, addr2);
 }
-#endif
 
 /*
  * ecm_ip_addr_is_non_unicast()
@@ -408,6 +444,7 @@ static inline bool ecm_string_to_ip_addr(ip_addr_t addr, char *ip_str)
 #if (DEBUG_LEVEL < 1)
 #define DEBUG_ASSERT(s, ...)
 #define DEBUG_ERROR(s, ...)
+#define DEBUG_ERROR_RATELIMITED(s, ...)
 #define DEBUG_CHECK_MAGIC(i, m, s, ...)
 #define DEBUG_SET_MAGIC(i, m)
 #define DEBUG_CLEAR_MAGIC(i)
@@ -415,6 +452,7 @@ static inline bool ecm_string_to_ip_addr(ip_addr_t addr, char *ip_str)
 #else
 #define DEBUG_ASSERT(c, s, ...) if (!(c)) { pr_emerg("ASSERT: %s:%d:" s, __FUNCTION__, __LINE__, ##__VA_ARGS__); BUG(); }
 #define DEBUG_ERROR(s, ...) pr_err("%s:%d:" s, __FUNCTION__, __LINE__, ##__VA_ARGS__)
+#define DEBUG_ERROR_RATELIMITED(s, ...) pr_err_ratelimited("%s:%d:" s, __FUNCTION__, __LINE__, ##__VA_ARGS__)
 #define DEBUG_CHECK_MAGIC(i, m, s, ...) if (i->magic != m) { DEBUG_ASSERT(false, s, ##__VA_ARGS__); }
 #define DEBUG_SET_MAGIC(i, m) i->magic = m
 #define DEBUG_CLEAR_MAGIC(i) i->magic = 0

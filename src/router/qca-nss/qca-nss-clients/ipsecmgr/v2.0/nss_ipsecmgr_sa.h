@@ -62,6 +62,7 @@ struct nss_ipsecmgr_sa_stats_priv {
 	uint64_t fail_hash_len;			/**< Failure in decap due to bad hash block len. */
 	uint64_t fail_transform;		/**< Failure in transformation; general error. */
 	uint64_t fail_crypto;			/**< Failure in crypto transformation. */
+	uint64_t fail_cle;			/* Failure in classification; general failure */
 };
 
 /*
@@ -85,7 +86,6 @@ struct nss_ipsecmgr_sa {
 	struct crypto_ahash *ahash;			/* Linux crypto AHASH context */
 
 	uint32_t ifnum;					/* Interface number */
-	struct delayed_work free_work;			/* Delayed free work */
 	enum nss_ipsec_cmn_ctx_type type;		/* Type */
 	struct nss_ctx_instance *nss_ctx;		/* NSS context */
 
@@ -245,5 +245,5 @@ static inline void nss_ipsecmgr_sa_ipv6_outer2tuple(struct ipv6hdr *ip6h, struct
 /* functions to operate on SA object */
 struct nss_ipsecmgr_sa *nss_ipsecmgr_sa_find(struct list_head *db, struct nss_ipsec_cmn_sa_tuple *tuple);
 void nss_ipsecmgr_sa_sync_state(struct nss_ipsecmgr_sa *sa, struct nss_ipsec_cmn_sa_sync *sync);
-void nss_ipsecmgr_sa_sync2stats(struct nss_ipsec_cmn_sa_sync *sync, struct nss_ipsecmgr_sa_stats *stats);
+void nss_ipsecmgr_sa_sync2stats(struct nss_ipsecmgr_sa *sa, struct nss_ipsec_cmn_sa_sync *sync, struct nss_ipsecmgr_sa_stats *stats);
 #endif

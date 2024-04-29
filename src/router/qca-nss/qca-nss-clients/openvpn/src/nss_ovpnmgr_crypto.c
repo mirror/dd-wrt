@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2019-2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -73,7 +73,7 @@ static int nss_ovpnmgr_config_crypto_key_add(struct nss_ovpnmgr_tun_ctx *tun_ctx
 
 	if (tun->tun_cfg.flags & NSS_OVPNMGR_HDR_FLAG_DATA_V2) {
 		session_id = NSS_OVPNMGR_TUN_DATA_V2 << NSS_OVPNMGR_TUN_OPCODE_SHIFT;
-		session_id |= tun_ctx->active.key_id << NSS_OVPNMGR_TUN_PEER_ID_SHIFT;
+		session_id |= tun_ctx->active.key_id << NSS_OVPNMGR_TUN_KEY_ID_SHIFT;
 		session_id |= tun->tun_cfg.peer_id & NSS_OVPNMGR_TUN_PEER_ID_MASK;
 		session_id = htonl(session_id);
 	} else {
@@ -83,14 +83,14 @@ static int nss_ovpnmgr_config_crypto_key_add(struct nss_ovpnmgr_tun_ctx *tun_ctx
 
 	memcpy(key->session_id, &session_id, sizeof(session_id));
 
-	nss_ovpnmgr_info("%p: Active key: session=%d, key_id=%d, crypto_blk_size = %d, hmac_len = %d, iv_len = %d\n",
+	nss_ovpnmgr_info("%px: Active key: session=%d, key_id=%d, crypto_blk_size = %d, hmac_len = %d, iv_len = %d\n",
 			tun_ctx, tun_ctx->active.crypto_idx, tun_ctx->active.key_id,
 			tun_ctx->active.blk_len, tun_ctx->active.hash_len, tun_ctx->active.iv_len);
 
 	status = nss_qvpn_tx_msg_sync(tun_ctx->nss_ctx,  &nqm, tun_ctx->ifnum, NSS_QVPN_MSG_TYPE_CRYPTO_KEY_ADD,
 					sizeof(*key), &resp);
 	if (status != NSS_TX_SUCCESS) {
-		nss_ovpnmgr_warn("%p: failed to add crypto key, resp = %d, status = %d\n", tun_ctx, resp, status);
+		nss_ovpnmgr_warn("%px: failed to add crypto key, resp = %d, status = %d\n", tun_ctx, resp, status);
 		return status == NSS_TX_FAILURE_QUEUE ? -EBUSY : -EINVAL;
 	}
 
@@ -102,7 +102,7 @@ static int nss_ovpnmgr_config_crypto_key_add(struct nss_ovpnmgr_tun_ctx *tun_ctx
 	status = nss_qvpn_tx_msg_sync(tun_ctx->nss_ctx,  &nqm, tun_ctx->ifnum, NSS_QVPN_MSG_TYPE_CRYPTO_KEY_ACTIVATE,
 					sizeof(*key_activate), &resp);
 	if (status != NSS_TX_SUCCESS) {
-		nss_ovpnmgr_warn("%p: failed to activate crypto key, resp = %d, status = %d\n", tun_ctx, resp, status);
+		nss_ovpnmgr_warn("%px: failed to activate crypto key, resp = %d, status = %d\n", tun_ctx, resp, status);
 		return status == NSS_TX_FAILURE_QUEUE ? -EBUSY : -EINVAL;
 	}
 
@@ -122,21 +122,21 @@ static int nss_ovpnmgr_config_crypto_key_del(struct nss_ovpnmgr_tun_ctx *tun_ctx
 	/* Send key deactivate message. */
 	nqm.msg.key_del.crypto_idx = tun_ctx->expiring.crypto_idx;
 
-	nss_ovpnmgr_info("%p: Expiring key: session=%d, key_id=%d, crypto_blk_size = %d, hmac_len = %d, iv_len = %d\n",
+	nss_ovpnmgr_info("%px: Expiring key: session=%d, key_id=%d, crypto_blk_size = %d, hmac_len = %d, iv_len = %d\n",
 			tun_ctx, tun_ctx->expiring.crypto_idx, tun_ctx->expiring.key_id,
 			tun_ctx->expiring.blk_len, tun_ctx->expiring.hash_len, tun_ctx->expiring.iv_len);
 
 	status = nss_qvpn_tx_msg_sync(tun_ctx->nss_ctx,  &nqm, tun_ctx->ifnum, NSS_QVPN_MSG_TYPE_CRYPTO_KEY_DEACTIVATE,
 			sizeof(nqm.msg.key_del), &resp);
 	if (status != NSS_TX_SUCCESS) {
-		nss_ovpnmgr_warn("%p: failed to deactivate crypto key, resp = %d, status = %d\n", tun_ctx, resp, status);
+		nss_ovpnmgr_warn("%px: failed to deactivate crypto key, resp = %d, status = %d\n", tun_ctx, resp, status);
 		return status == NSS_TX_FAILURE_QUEUE ? -EBUSY : -EINVAL;
 	}
 
 	status = nss_qvpn_tx_msg_sync(tun_ctx->nss_ctx,  &nqm, tun_ctx->ifnum, NSS_QVPN_MSG_TYPE_CRYPTO_KEY_DEL,
 			sizeof(nqm.msg.key_del), &resp);
 	if (status != NSS_TX_SUCCESS) {
-		nss_ovpnmgr_warn("%p: failed to delete crypto key, resp = %d, status = %d\n", tun_ctx, resp, status);
+		nss_ovpnmgr_warn("%px: failed to delete crypto key, resp = %d, status = %d\n", tun_ctx, resp, status);
 		return status == NSS_TX_FAILURE_QUEUE ? -EBUSY : -EINVAL;
 	}
 	return 0;
@@ -157,12 +157,12 @@ static int nss_ovpnmgr_crypto_ctx_alloc_aead(struct nss_ovpnmgr_crypto_ctx *ctx,
 	char *keys, *p;
 	int res;
 
-	nss_ovpnmgr_info("%p: Registering AEAD alg %s\n", ctx, nss_ovpnmgr_crypto_algo_name[algo]);
+	nss_ovpnmgr_info("%px: Registering AEAD alg %s\n", ctx, nss_ovpnmgr_crypto_algo_name[algo]);
 
 	ctx->tfm.aead = crypto_alloc_aead(nss_ovpnmgr_crypto_algo_name[algo], 0, 0);
 	if (IS_ERR(ctx->tfm.aead)) {
 		res = PTR_ERR(ctx->tfm.aead);
-		nss_ovpnmgr_warn("%p: failed to allocate crypto aead context, res=%d\n", ctx, res);
+		nss_ovpnmgr_warn("%px: failed to allocate crypto aead context, res=%d\n", ctx, res);
 		return -ENOENT;
 	}
 
@@ -175,7 +175,7 @@ static int nss_ovpnmgr_crypto_ctx_alloc_aead(struct nss_ovpnmgr_crypto_ctx *ctx,
 
 	keys = vzalloc(keylen);
 	if (!keys) {
-		nss_ovpnmgr_warn("%p: failed to allocate key memory", ctx);
+		nss_ovpnmgr_warn("%px: failed to allocate key memory", ctx);
 		crypto_free_aead(ctx->tfm.aead);
 		return -ENOMEM;
 	}
@@ -201,7 +201,7 @@ static int nss_ovpnmgr_crypto_ctx_alloc_aead(struct nss_ovpnmgr_crypto_ctx *ctx,
 
 	res = crypto_aead_setkey(ctx->tfm.aead, keys, keylen);
 	if (res) {
-		nss_ovpnmgr_warn("%p: failed to configure keys, res=%d\n", ctx, res);
+		nss_ovpnmgr_warn("%px: failed to configure keys, res=%d\n", ctx, res);
 		vfree(keys);
 		crypto_free_aead(ctx->tfm.aead);
 		return -EKEYREJECTED;
@@ -215,7 +215,7 @@ static int nss_ovpnmgr_crypto_ctx_alloc_aead(struct nss_ovpnmgr_crypto_ctx *ctx,
 	ctx->iv_len = (uint8_t)crypto_aead_ivsize(ctx->tfm.aead);
 	ctx->crypto_idx = (uint16_t)session;
 
-	nss_ovpnmgr_info("%p: blk_len=%u, hash_len=%u, iv_len=%u, session=%d\n",
+	nss_ovpnmgr_info("%px: blk_len=%u, hash_len=%u, iv_len=%u, session=%d\n",
 			ctx, ctx->blk_len, ctx->hash_len, ctx->iv_len, session);
 
 	vfree(keys);
@@ -235,18 +235,18 @@ static int nss_ovpnmgr_crypto_ctx_alloc_ablk(struct nss_ovpnmgr_crypto_ctx *ctx,
 	uint32_t session;
 	int res;
 
-	nss_ovpnmgr_info("%p: Registering ABLK alg %s\n", ctx, nss_ovpnmgr_crypto_algo_name[algo]);
+	nss_ovpnmgr_info("%px: Registering ABLK alg %s\n", ctx, nss_ovpnmgr_crypto_algo_name[algo]);
 
 	skcipher = crypto_alloc_skcipher(nss_ovpnmgr_crypto_algo_name[algo], 0, 0);
 	if (IS_ERR(skcipher)) {
 		res = PTR_ERR(skcipher);
-		nss_ovpnmgr_warn("%p: failed to allocate crypto aead context, res = %d\n", ctx, res);
+		nss_ovpnmgr_warn("%px: failed to allocate crypto aead context, res = %d\n", ctx, res);
 		return -ENOENT;
 	}
 
 	res = crypto_skcipher_setkey(skcipher, key->cipher_key, key->cipher_keylen);
 	if (res) {
-		nss_ovpnmgr_warn("%p: failed to set skcipher key, res=%d", ctx, res);
+		nss_ovpnmgr_warn("%px: failed to set skcipher key, res=%d", ctx, res);
 		crypto_free_skcipher(skcipher);
 		return -EKEYREJECTED;
 	}
@@ -259,7 +259,7 @@ static int nss_ovpnmgr_crypto_ctx_alloc_ablk(struct nss_ovpnmgr_crypto_ctx *ctx,
 	ctx->tfm.skcipher = skcipher;
 	ctx->crypto_idx = (uint16_t)session;
 
-	nss_ovpnmgr_info("%p: skcipher Registered: blk_len=%u, iv_len=%u, session=%u\n",
+	nss_ovpnmgr_info("%px: skcipher Registered: blk_len=%u, iv_len=%u, session=%u\n",
 			ctx, ctx->blk_len, ctx->iv_len, session);
 	return 0;
 }
@@ -277,18 +277,18 @@ static int nss_ovpnmgr_crypto_ctx_alloc_ahash(struct nss_ovpnmgr_crypto_ctx *ctx
 	uint32_t session;
 	int res;
 
-	nss_ovpnmgr_info("%p: Registering AHASH alg %s\n", ctx, nss_ovpnmgr_crypto_algo_name[algo]);
+	nss_ovpnmgr_info("%px: Registering AHASH alg %s\n", ctx, nss_ovpnmgr_crypto_algo_name[algo]);
 
 	ahash = crypto_alloc_ahash(nss_ovpnmgr_crypto_algo_name[algo], 0, 0);
 	if (IS_ERR(ahash)) {
 		res = PTR_ERR(ahash);
-		nss_ovpnmgr_warn("%p: failed to allocate ahash context, res = %d", ctx, res);
+		nss_ovpnmgr_warn("%px: failed to allocate ahash context, res = %d", ctx, res);
 		return -ENOENT;
 	}
 
 	res = crypto_ahash_setkey(ahash, key->hmac_key, key->hmac_keylen);
 	if (res) {
-		nss_ovpnmgr_warn("%p: failed to set ahash key, res=%d", ctx, res);
+		nss_ovpnmgr_warn("%px: failed to set ahash key, res=%d", ctx, res);
 		crypto_free_ahash(ahash);
 		return -EKEYREJECTED;
 	}
@@ -300,7 +300,7 @@ static int nss_ovpnmgr_crypto_ctx_alloc_ahash(struct nss_ovpnmgr_crypto_ctx *ctx
 	ctx->hash_len = crypto_ahash_digestsize(ahash);
 	ctx->crypto_idx = (uint16_t)session;
 
-	nss_ovpnmgr_info("%p: AHASH Registered: hash_len=%u, session=%u\n", ctx, ctx->hash_len, session);
+	nss_ovpnmgr_info("%px: AHASH Registered: hash_len=%u, session=%u\n", ctx, ctx->hash_len, session);
 	return 0;
 }
 
@@ -350,12 +350,12 @@ int nss_ovpnmgr_crypto_ctx_alloc(struct nss_ovpnmgr_crypto_ctx *ctx,
 	case NSS_OVPNMGR_ALGO_3DES_CBC_NULL_AUTH:
 		return nss_ovpnmgr_crypto_ctx_alloc_ablk(ctx, params, key);
 	case NSS_OVPNMGR_ALGO_NULL_CIPHER_NULL_AUTH:
-		nss_ovpnmgr_info("%p: Cipher is none. Auth is none\n", ctx);
+		nss_ovpnmgr_info("%px: Cipher is none. Auth is none\n", ctx);
 		ctx->tfm.aead = NULL;
 		ctx->crypto_idx = U16_MAX;
 		break;
 	default:
-		nss_ovpnmgr_info("%p: Crypto algorithm is invalid. algo=%d\n", ctx, params->algo);
+		nss_ovpnmgr_info("%px: Crypto algorithm is invalid. algo=%d\n", ctx, params->algo);
 		return -EINVAL;
 	}
 
@@ -417,7 +417,7 @@ int nss_ovpnmgr_crypto_key_del(uint32_t tunnel_id)
 
 	/* Send Crypto Key delete message to NSS firmware. */
 	if (nss_ovpnmgr_config_crypto_key_del(&tun->inner)) {
-		nss_ovpnmgr_warn("%p: Failed to update crypto key\n", ctx_inner);
+		nss_ovpnmgr_warn("%px: Failed to update crypto key\n", ctx_inner);
 	}
 
 	/* Deregister Decryption */
@@ -425,7 +425,7 @@ int nss_ovpnmgr_crypto_key_del(uint32_t tunnel_id)
 
 	/* Send Crypto Key delete message to NSS firmware. */
 	if (nss_ovpnmgr_config_crypto_key_del(&tun->outer)) {
-		nss_ovpnmgr_warn("%p: Failed to update crypto key\n", ctx_outer);
+		nss_ovpnmgr_warn("%px: Failed to update crypto key\n", ctx_outer);
 	}
 
 	dev_put(tun_dev);
@@ -453,40 +453,59 @@ int nss_ovpnmgr_crypto_key_add(uint32_t tunnel_id, uint8_t key_id, struct nss_ov
 
 	tun = netdev_priv(tun_dev);
 
-	/* Register Encryption */
-	ret = nss_ovpnmgr_crypto_ctx_alloc(&encrypt, cfg, &cfg->encrypt);
-	if (ret) {
-		nss_ovpnmgr_warn("%p: Failed to register Encryption session\n", tun);
-		dev_put(tun_dev);
-		return ret;
+	/*
+	 * Check if crypto keys are negotiated during rekey.
+	 * Otherwise crypto context is allocated when tunnel is added
+	 */
+	if (key_id) {
+		/* Register Encryption */
+		ret = nss_ovpnmgr_crypto_ctx_alloc(&encrypt, cfg, &cfg->encrypt);
+		if (ret) {
+			nss_ovpnmgr_warn("%px: Failed to register Encryption session\n", tun);
+			dev_put(tun_dev);
+			return ret;
+		}
+
+		/* Register Decryption */
+		ret = nss_ovpnmgr_crypto_ctx_alloc(&decrypt, cfg, &cfg->decrypt);
+		if (ret) {
+			/* Deregister Encryption here */
+			nss_ovpnmgr_warn("%px: Failed to register Decryption session\n", tun);
+			goto free_encrypt;
+		}
+
+		encrypt.key_id = key_id;
+		decrypt.key_id = key_id;
+
+		read_lock_bh(&ovpnmgr_ctx.lock);
+		/* copy old active key into expiring key */
+		memcpy(&tun->inner.expiring, &tun->inner.active, sizeof(tun->inner.active));
+		memcpy(&tun->outer.expiring, &tun->outer.active, sizeof(tun->outer.active));
+
+		/* copy the new key as active key */
+		memcpy(&tun->inner.active, &encrypt, sizeof(encrypt));
+		memcpy(&tun->outer.active, &decrypt, sizeof(decrypt));
+		read_unlock_bh(&ovpnmgr_ctx.lock);
+	} else {
+		/*
+		 * Initial crypto context is created during tunnel configuration.
+		 * copy crypto context for processing.
+		 * We will explicitly reset expiring key to 0.
+		 */
+		read_lock_bh(&ovpnmgr_ctx.lock);
+		memset(&tun->inner.expiring, 0, sizeof(tun->inner.expiring));
+		memset(&tun->outer.expiring, 0, sizeof(tun->outer.expiring));
+
+		memcpy(&encrypt, &tun->inner.active, sizeof(encrypt));
+		memcpy(&decrypt, &tun->outer.active, sizeof(decrypt));
+		read_unlock_bh(&ovpnmgr_ctx.lock);
 	}
-
-	/* Register Decryption */
-	ret = nss_ovpnmgr_crypto_ctx_alloc(&decrypt, cfg, &cfg->decrypt);
-	if (ret) {
-		/* Deregister Encryption here */
-		nss_ovpnmgr_warn("%p: Failed to register Decryption session\n", tun);
-		goto free_encrypt;
-	}
-
-	encrypt.key_id = key_id;
-	decrypt.key_id = key_id;
-
-	read_lock_bh(&ovpnmgr_ctx.lock);
-	/* copy old active key into expiring key */
-	memcpy(&tun->inner.expiring, &tun->inner.active, sizeof(tun->inner.active));
-	memcpy(&tun->outer.expiring, &tun->outer.active, sizeof(tun->outer.active));
-
-	/* copy the new key as active key */
-	memcpy(&tun->inner.active, &encrypt, sizeof(encrypt));
-	memcpy(&tun->outer.active, &decrypt, sizeof(decrypt));
-	read_unlock_bh(&ovpnmgr_ctx.lock);
 
 	/*
 	 * Send crypto key addition command to inner node.
 	 */
 	if (nss_ovpnmgr_config_crypto_key_add(&tun->inner, tun)) {
-		nss_ovpnmgr_warn("%p: Failed to update inner crypto key\n", tun);
+		nss_ovpnmgr_warn("%px: Failed to update inner crypto key\n", tun);
 		ret = -EIO;
 		goto free_decrypt;
 	}
@@ -495,7 +514,7 @@ int nss_ovpnmgr_crypto_key_add(uint32_t tunnel_id, uint8_t key_id, struct nss_ov
 	 * Send crypto key addition command to outer node.
 	 */
 	if (nss_ovpnmgr_config_crypto_key_add(&tun->outer, tun)) {
-		nss_ovpnmgr_warn("%p: Failed to update outer crypto key\n", tun);
+		nss_ovpnmgr_warn("%px: Failed to update outer crypto key\n", tun);
 		ret = -EIO;
 		goto free_decrypt;
 	}

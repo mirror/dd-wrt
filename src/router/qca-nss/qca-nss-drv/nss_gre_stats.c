@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2017-2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2019, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -21,7 +21,6 @@
  */
 
 #include "nss_tx_rx_common.h"
-#include "nss_stats.h"
 #include "nss_gre_stats.h"
 
 /*
@@ -35,44 +34,44 @@ static struct nss_gre_stats_base_debug base_debug_stats;
  * nss_gre_stats_base_debug_str
  *	GRE debug statistics strings for base types
  */
-static int8_t *nss_gre_stats_base_debug_str[NSS_GRE_STATS_BASE_DEBUG_MAX] = {
-	"GRE_BASE_RX_PACKETS",
-	"GRE_BASE_RX_DROPPED",
-	"GRE_BASE_EXP_ETH_HDR_MISSING",
-	"GRE_BASE_EXP_ETH_TYPE_NON_IP",
-	"GRE_BASE_EXP_IP_UNKNOWN_PROTOCOL",
-	"GRE_BASE_EXP_IP_HEADER_INCOMPLETE",
-	"GRE_BASE_EXP_IP_BAD_TOTAL_LENGTH",
-	"GRE_BASE_EXP_IP_BAD_CHECKSUM",
-	"GRE_BASE_EXP_IP_DATAGRAM_INCOMPLETE",
-	"GRE_BASE_EXP_IP_FRAGMENT",
-	"GRE_BASE_EXP_IP_OPTIONS_INCOMPLETE",
-	"GRE_BASE_EXP_IP_WITH_OPTIONS",
-	"GRE_BASE_EXP_IPV6_UNKNOWN_PROTOCOL",
-	"GRE_BASE_EXP_IPV6_HEADER_INCOMPLETE",
-	"GRE_BASE_EXP_GRE_UNKNOWN_SESSION",
-	"GRE_BASE_EXP_GRE_NODE_INACTIVE",
+struct nss_stats_info nss_gre_stats_base_debug_str[NSS_GRE_STATS_BASE_DEBUG_MAX] = {
+	{"base_rx_pkts"				,NSS_STATS_TYPE_COMMON},
+	{"base_rx_drops"			,NSS_STATS_TYPE_DROP},
+	{"base_exp_eth_hdr_missing"		,NSS_STATS_TYPE_EXCEPTION},
+	{"base_exp_eth_type_non_ip"		,NSS_STATS_TYPE_EXCEPTION},
+	{"base_exp_ip_unknown_protocol"		,NSS_STATS_TYPE_EXCEPTION},
+	{"base_exp_ip_header_incomplete"	,NSS_STATS_TYPE_EXCEPTION},
+	{"base_exp_ip_bad_total_length"		,NSS_STATS_TYPE_EXCEPTION},
+	{"base_exp_ip_bad_checksum"		,NSS_STATS_TYPE_EXCEPTION},
+	{"base_exp_ip_datagram_incomplete"	,NSS_STATS_TYPE_EXCEPTION},
+	{"base_exp_ip_fragment"			,NSS_STATS_TYPE_EXCEPTION},
+	{"base_exp_ip_options_incomplete"	,NSS_STATS_TYPE_EXCEPTION},
+	{"base_exp_ip_with_options"		,NSS_STATS_TYPE_EXCEPTION},
+	{"base_exp_ipv6_unknown_protocol"	,NSS_STATS_TYPE_EXCEPTION},
+	{"base_exp_ipv6_header_incomplete"	,NSS_STATS_TYPE_EXCEPTION},
+	{"base_exp_unknown_session"		,NSS_STATS_TYPE_EXCEPTION},
+	{"base_exp_node_inactive"		,NSS_STATS_TYPE_EXCEPTION}
 };
 
 /*
  * nss_gre_stats_session_debug_str
  *	GRE debug statistics strings for sessions
  */
-static int8_t *nss_gre_stats_session_debug_str[NSS_GRE_STATS_SESSION_DEBUG_MAX] = {
-	"GRE_SESSION_PBUF_ALLOC_FAIL",
-	"GRE_SESSION_DECAP_FORWARD_ENQUEUE_FAIL",
-	"GRE_SESSION_ENCAP_FORWARD_ENQUEUE_FAIL",
-	"GRE_SESSION_DECAP_TX_FORWARDED",
-	"GRE_SESSION_ENCAP_RX_RECEIVED",
-	"GRE_SESSION_ENCAP_RX_DROPPED",
-	"GRE_SESSION_ENCAP_RX_LINEAR_FAIL",
-	"GRE_SESSION_EXP_RX_KEY_ERROR",
-	"GRE_SESSION_EXP_RX_SEQ_ERROR",
-	"GRE_SESSION_EXP_RX_CS_ERROR",
-	"GRE_SESSION_EXP_RX_FLAG_MISMATCH",
-	"GRE_SESSION_EXP_RX_MALFORMED",
-	"GRE_SESSION_EXP_RX_INVALID_PROTOCOL",
-	"GRE_SESSION_EXP_RX_NO_HEADROOM",
+struct nss_stats_info nss_gre_stats_session_debug_str[NSS_GRE_STATS_SESSION_DEBUG_MAX] = {
+	{"session_pbuf_alloc_fail"		, NSS_STATS_TYPE_ERROR},
+	{"session_decap_forward_enqueue_fail"	, NSS_STATS_TYPE_DROP},
+	{"session_encap_forward_enqueue_fail"	, NSS_STATS_TYPE_DROP},
+	{"session_decap_tx_forwarded"		, NSS_STATS_TYPE_SPECIAL},
+	{"session_encap_rx_received"		, NSS_STATS_TYPE_SPECIAL},
+	{"session_encap_rx_drops"		, NSS_STATS_TYPE_DROP},
+	{"session_encap_rx_linear_fail"		, NSS_STATS_TYPE_DROP},
+	{"session_exp_rx_key_error"		, NSS_STATS_TYPE_EXCEPTION},
+	{"session_exp_rx_seq_error"		, NSS_STATS_TYPE_EXCEPTION},
+	{"session_exp_rx_cs_error"		, NSS_STATS_TYPE_EXCEPTION},
+	{"session_exp_rx_flag_mismatch"		, NSS_STATS_TYPE_EXCEPTION},
+	{"session_exp_rx_malformed"		, NSS_STATS_TYPE_EXCEPTION},
+	{"session_exp_rx_invalid_protocol"	, NSS_STATS_TYPE_EXCEPTION},
+	{"session_exp_rx_no_headroom"		, NSS_STATS_TYPE_EXCEPTION}
 };
 
 /*
@@ -223,7 +222,7 @@ static ssize_t nss_gre_stats_read(struct file *fp, char __user *ubuf, size_t sz,
 	struct net_device *dev;
 	struct nss_gre_stats_session_debug *sstats;
 	struct nss_gre_stats_base_debug *bstats;
-	int id, i;
+	int id;
 
 	char *lbuf = kzalloc(size_al, GFP_KERNEL);
 	if (unlikely(!lbuf)) {
@@ -246,24 +245,23 @@ static ssize_t nss_gre_stats_read(struct file *fp, char __user *ubuf, size_t sz,
 		return 0;
 	}
 
+	size_wr += nss_stats_banner(lbuf, size_wr, size_al, "gre", NSS_STATS_SINGLE_CORE);
+
 	/*
 	 * Get all base stats
 	 */
 	nss_gre_stats_base_debug_get((void *)bstats, sizeof(struct nss_gre_stats_base_debug));
-	size_wr += scnprintf(lbuf + size_wr, size_al - size_wr, "\ngre Base stats start:\n\n");
-	for (i = 0; i < NSS_GRE_STATS_BASE_DEBUG_MAX; i++) {
-		size_wr += scnprintf(lbuf + size_wr, size_al - size_wr,
-				     "\t%s = %llu\n", nss_gre_stats_base_debug_str[i],
-				     bstats->stats[i]);
-	}
 
-	size_wr += scnprintf(lbuf + size_wr, size_al - size_wr, "\ngre Base stats End\n\n");
+	size_wr += nss_stats_print("gre", NULL, NSS_STATS_SINGLE_INSTANCE
+					, nss_gre_stats_base_debug_str
+					, bstats->stats
+					, NSS_GRE_STATS_BASE_DEBUG_MAX
+					, lbuf, size_wr, size_al);
 
 	/*
 	 * Get all session stats
 	 */
 	nss_gre_stats_session_debug_get(sstats, sizeof(struct nss_gre_stats_session_debug) * NSS_GRE_MAX_DEBUG_SESSION_STATS);
-	size_wr += scnprintf(lbuf + size_wr, size_al - size_wr, "\ngre Session stats start:\n\n");
 
 	for (id = 0; id < NSS_GRE_MAX_DEBUG_SESSION_STATS; id++) {
 
@@ -281,16 +279,14 @@ static ssize_t nss_gre_stats_read(struct file *fp, char __user *ubuf, size_t sz,
 			size_wr += scnprintf(lbuf + size_wr, size_al - size_wr, "%d. nss interface id=%d\n", id,
 					     (sstats + id)->if_num);
 		}
-
-		for (i = 0; i < NSS_GRE_STATS_SESSION_DEBUG_MAX; i++) {
-			size_wr += scnprintf(lbuf + size_wr, size_al - size_wr,
-					     "\t%s = %llu\n", nss_gre_stats_session_debug_str[i],
-					     (sstats + id)->stats[i]);
-		}
+		size_wr += nss_stats_print("gre_session", NULL, id
+						, nss_gre_stats_session_debug_str
+						, (sstats + id)->stats
+						, NSS_GRE_STATS_SESSION_DEBUG_MAX
+						, lbuf, size_wr, size_al);
 		size_wr += scnprintf(lbuf + size_wr, size_al - size_wr, "\n");
 	}
 
-	size_wr += scnprintf(lbuf + size_wr, size_al - size_wr, "\ngre Session stats end\n");
 	bytes_read = simple_read_from_buffer(ubuf, sz, ppos, lbuf, size_wr);
 
 	kfree(sstats);

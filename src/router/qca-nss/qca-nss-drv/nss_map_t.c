@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2016-2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2016-2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -17,6 +17,7 @@
 #include "nss_tx_rx_common.h"
 #include "nss_map_t_stats.h"
 #include "nss_map_t_log.h"
+#include "nss_map_t_strings.h"
 
 #define NSS_MAP_T_TX_TIMEOUT 3000 /* 3 Seconds */
 
@@ -164,21 +165,22 @@ static void nss_map_t_handler(struct nss_ctx_instance *nss_ctx, struct nss_cmn_m
 	 * Is this a valid request/response packet?
 	 */
 	if (ncm->type >= NSS_MAP_T_MSG_MAX) {
-		nss_warning("%p: received invalid message %d for MAP-T interface", nss_ctx, ncm->type);
+		nss_warning("%px: received invalid message %d for MAP-T interface", nss_ctx, ncm->type);
 		return;
 	}
 
 	if (nss_cmn_get_msg_len(ncm) > sizeof(struct nss_map_t_msg)) {
-		nss_warning("%p: tx request for another interface: %d", nss_ctx, ncm->interface);
+		nss_warning("%px: tx request for another interface: %d", nss_ctx, ncm->interface);
 		return;
 	}
 
 	switch (ntm->cm.type) {
 	case NSS_MAP_T_MSG_SYNC_STATS:
 		/*
-		 * debug stats embedded in stats msg
+		 * Update debug stats in stats msg and send statistics notifications to the registered modules
 		 */
 		nss_map_t_instance_debug_stats_sync(nss_ctx, &ntm->msg.stats, ncm->interface);
+		nss_map_t_stats_notify(nss_ctx, ncm->interface);
 		break;
 	}
 
@@ -206,7 +208,7 @@ static void nss_map_t_handler(struct nss_ctx_instance *nss_ctx, struct nss_cmn_m
 	 * call map-t callback
 	 */
 	if (!cb) {
-		nss_warning("%p: No callback for map-t interface %d",
+		nss_warning("%px: No callback for map-t interface %d",
 			    nss_ctx, ncm->interface);
 		return;
 	}
@@ -257,12 +259,12 @@ nss_tx_status_t nss_map_t_tx(struct nss_ctx_instance *nss_ctx, struct nss_map_t_
 	 * Sanity check the message
 	 */
 	if (!nss_map_t_verify_if_num(ncm->interface)) {
-		nss_warning("%p: tx request is not for a MAP-T dynamic interface: %d", nss_ctx, ncm->interface);
+		nss_warning("%px: tx request is not for a MAP-T dynamic interface: %d", nss_ctx, ncm->interface);
 		return NSS_TX_FAILURE;
 	}
 
 	if (ncm->type > NSS_MAP_T_MSG_MAX) {
-		nss_warning("%p: message type out of range: %d", nss_ctx, ncm->type);
+		nss_warning("%px: message type out of range: %d", nss_ctx, ncm->type);
 		return NSS_TX_FAILURE;
 	}
 
@@ -288,14 +290,14 @@ nss_tx_status_t nss_map_t_tx_sync(struct nss_ctx_instance *nss_ctx, struct nss_m
 
 	status = nss_map_t_tx(nss_ctx, msg);
 	if (status != NSS_TX_SUCCESS) {
-		nss_warning("%p: map_t_tx_msg failed\n", nss_ctx);
+		nss_warning("%px: map_t_tx_msg failed\n", nss_ctx);
 		up(&nss_map_t_pvt.sem);
 		return status;
 	}
 	ret = wait_for_completion_timeout(&nss_map_t_pvt.complete, msecs_to_jiffies(NSS_MAP_T_TX_TIMEOUT));
 
 	if (!ret) {
-		nss_warning("%p: MAP-T tx sync failed due to timeout\n", nss_ctx);
+		nss_warning("%px: MAP-T tx sync failed due to timeout\n", nss_ctx);
 		nss_map_t_pvt.response = NSS_TX_FAILURE;
 	}
 
@@ -406,4 +408,5 @@ void nss_map_t_register_handler(void)
 	nss_core_register_handler(nss_ctx, NSS_MAP_T_INTERFACE, nss_map_t_handler, NULL);
 
 	nss_map_t_stats_dentry_create();
+	nss_map_t_strings_dentry_create();
 }

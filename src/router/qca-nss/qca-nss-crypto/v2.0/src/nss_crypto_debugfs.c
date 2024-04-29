@@ -1,4 +1,4 @@
-/* Copyright (c) 2014-2015, 2017-2019, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2014-2015, 2017-2020, The Linux Foundation. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -37,11 +37,11 @@
  * crypto will use only queue0, hence we capture dropped
  * statistics only for queue0.
  */
-static void nss_crypto_debugfs_add_node_stats(struct dentry *parent, struct nss_crypto_cmn_stats *stats)
+static void nss_crypto_debugfs_add_node_stats(struct dentry *parent, struct nss_crypto_stats_pvt *stats)
 {
-	debugfs_create_u32("completed", S_IRUGO, parent, &stats->nstats.rx_packets);
-	debugfs_create_u32("processed", S_IRUGO, parent, &stats->nstats.tx_packets);
-	debugfs_create_u32("dropped", S_IRUGO, parent, &stats->nstats.rx_dropped[0]);
+	debugfs_create_u64("completed", S_IRUGO, parent, &stats->rx_packets);
+	debugfs_create_u64("processed", S_IRUGO, parent, &stats->tx_packets);
+	debugfs_create_u64("dropped", S_IRUGO, parent, &stats->rx_dropped[0]);
 }
 
 /*
@@ -51,16 +51,16 @@ static void nss_crypto_debugfs_add_node_stats(struct dentry *parent, struct nss_
  * crypto will use only queue0, hence we capture dropped
  * statistics only for queue0.
  */
-static void nss_crypto_debugfs_add_ctx_stats(struct dentry *parent, struct nss_crypto_cmn_stats *stats)
+static void nss_crypto_debugfs_add_ctx_stats(struct dentry *parent, struct nss_crypto_stats_pvt *stats)
 {
-	debugfs_create_u32("rx_packets", S_IRUGO, parent, &stats->nstats.rx_packets);
-	debugfs_create_u32("rx_bytes", S_IRUGO, parent, &stats->nstats.rx_bytes);
-	debugfs_create_u32("rx_dropped", S_IRUGO, parent, &stats->nstats.rx_dropped[0]);
-	debugfs_create_u32("tx_packets", S_IRUGO, parent, &stats->nstats.tx_packets);
-	debugfs_create_u32("tx_bytes", S_IRUGO, parent, &stats->nstats.tx_bytes);
-	debugfs_create_u32("fail_version", S_IRUGO, parent, &stats->fail_version);
-	debugfs_create_u32("fail_index", S_IRUGO, parent, &stats->fail_ctx);
-	debugfs_create_u32("fail_dma", S_IRUGO, parent, &stats->fail_dma);
+	debugfs_create_u64("rx_packets", S_IRUGO, parent, &stats->rx_packets);
+	debugfs_create_u64("rx_bytes", S_IRUGO, parent, &stats->rx_bytes);
+	debugfs_create_u64("rx_dropped", S_IRUGO, parent, &stats->rx_dropped[0]);
+	debugfs_create_u64("tx_packets", S_IRUGO, parent, &stats->tx_packets);
+	debugfs_create_u64("tx_bytes", S_IRUGO, parent, &stats->tx_bytes);
+	debugfs_create_u64("fail_version", S_IRUGO, parent, &stats->fail_version);
+	debugfs_create_u64("fail_index", S_IRUGO, parent, &stats->fail_ctx);
+	debugfs_create_u64("fail_dma", S_IRUGO, parent, &stats->fail_dma);
 }
 
 /*
@@ -139,7 +139,7 @@ void nss_crypto_debugfs_add_engine(struct nss_crypto_engine *eng, struct dentry 
 	int i = 0;
 
 	if (!root) {
-		nss_crypto_warn("%p: no root debugfs entry found\n", eng);
+		nss_crypto_warn("%px: no root debugfs entry found\n", eng);
 		return;
 	}
 
@@ -147,7 +147,7 @@ void nss_crypto_debugfs_add_engine(struct nss_crypto_engine *eng, struct dentry 
 
 	eng->dentry = debugfs_create_dir(buf, root);
 	if (!eng->dentry) {
-		nss_crypto_warn("%p: failed to create engine debugfs dentry\n", eng);
+		nss_crypto_warn("%px: failed to create engine debugfs dentry\n", eng);
 		return;
 	}
 

@@ -1,9 +1,12 @@
 /*
  **************************************************************************
- * Copyright (c) 2014, The Linux Foundation.  All rights reserved.
+ * Copyright (c) 2014, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022, Qualcomm Innovation Center, Inc. All rights reserved.
+ *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
+ *
  * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
  * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
  * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
@@ -16,3 +19,4 @@
 
 struct ecm_classifier_dscp_instance;
 struct ecm_classifier_dscp_instance *ecm_classifier_dscp_instance_alloc(struct ecm_db_connection_instance *ci);
+void ecm_classifier_dscp_update(struct ecm_classifier_instance *aci, enum ecm_rule_update_type type, void *arg);

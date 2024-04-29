@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2015, The Linux Foundation.  All rights reserved.
+ * Copyright (c) 2015, 2021, The Linux Foundation.  All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -19,7 +19,7 @@ struct ecm_state_file_instance;
 int ecm_state_write_reset(struct ecm_state_file_instance *sfi, char *prefix);
 
 int ecm_state_prefix_add(struct ecm_state_file_instance *sfi, char *prefix);
-int ecm_state_prefix_index_add(struct ecm_state_file_instance *sfi, int index);
+int ecm_state_prefix_index_add(struct ecm_state_file_instance *sfi, uint32_t index);
 int ecm_state_prefix_remove(struct ecm_state_file_instance *sfi);
 
 int ecm_state_write(struct ecm_state_file_instance *sfi, char *name, char *fmt, ...);

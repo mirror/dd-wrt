@@ -39,15 +39,16 @@ struct nss_ipsecmgr_ref {
 	nss_ipsecmgr_ref_print_method_t print;		/* dumps the statistics in buffer */
 
 	nss_ipsecmgr_ref_method_t free;		/* free function */
+	nss_ipsecmgr_ref_method_t del;		/* unlink function */
 };
 
 /* functions to operate on reference object */
 extern ssize_t nss_ipsecmgr_ref_print_len(struct nss_ipsecmgr_ref *ref);
 extern ssize_t nss_ipsecmgr_ref_print(struct nss_ipsecmgr_ref *ref, char *buf);
-extern void nss_ipsecmgr_ref_del(struct nss_ipsecmgr_ref *child);
+extern void nss_ipsecmgr_ref_del(struct nss_ipsecmgr_ref *ref, struct list_head *free_q);
 extern void nss_ipsecmgr_ref_add(struct nss_ipsecmgr_ref *child, struct nss_ipsecmgr_ref *parent);
-extern void nss_ipsecmgr_ref_free(struct nss_ipsecmgr_ref *ref);
-extern void nss_ipsecmgr_ref_init(struct nss_ipsecmgr_ref *ref, nss_ipsecmgr_ref_method_t free);
+extern void nss_ipsecmgr_ref_init(struct nss_ipsecmgr_ref *ref, nss_ipsecmgr_ref_method_t del,
+				nss_ipsecmgr_ref_method_t free);
 extern void nss_ipsecmgr_ref_init_print(struct nss_ipsecmgr_ref *ref, nss_ipsecmgr_ref_get_method_t print_len,
 					nss_ipsecmgr_ref_print_method_t print);
 

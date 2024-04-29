@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2017, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017,2019-2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -16,18 +16,13 @@
 
 #include "nss_stats.h"
 #include "nss_core.h"
-#include "nss_lso_rx.h"
+#include "nss_lso_rx_stats.h"
+#include "nss_lso_rx_strings.h"
 
 /*
- * nss_lso_rx_stats_str
- *	LSO_RX stats strings
+ * Declare atomic notifier data structure for statistics.
  */
-static int8_t *nss_lso_rx_stats_str[NSS_LSO_RX_STATS_MAX] = {
-	"tx_dropped",
-	"dropped",
-	"pbuf_alloc_fail",
-	"pbuf_reference_fail"
-};
+ATOMIC_NOTIFIER_HEAD(nss_lso_rx_stats_notifier);
 
 uint64_t nss_lso_rx_stats[NSS_LSO_RX_STATS_MAX];	/* LSO_RX statistics */
 
@@ -40,9 +35,10 @@ static ssize_t nss_lso_rx_stats_read(struct file *fp, char __user *ubuf, size_t 
 	int32_t i;
 
 	/*
-	 * max output lines = #stats + start tag line + end tag line + three blank lines
+	 * Max output lines = #stats + few blank lines for banner printing +
+	 * Number of Extra outputlines for future reference to add new stats
 	 */
-	uint32_t max_output_lines = (NSS_STATS_NODE_MAX + 2) + (NSS_LSO_RX_STATS_MAX + 3) + 5;
+	uint32_t max_output_lines = NSS_STATS_NODE_MAX + NSS_LSO_RX_STATS_MAX + NSS_STATS_EXTRA_OUTPUT_LINES;
 	size_t size_al = NSS_STATS_MAX_STR_LENGTH * max_output_lines;
 	size_t size_wr = 0;
 	ssize_t bytes_read = 0;
@@ -60,28 +56,26 @@ static ssize_t nss_lso_rx_stats_read(struct file *fp, char __user *ubuf, size_t 
 		kfree(lbuf);
 		return 0;
 	}
-
-	size_wr = scnprintf(lbuf, size_al, "lso_rx stats start:\n\n");
-
-	size_wr = nss_stats_fill_common_stats(NSS_LSO_RX_INTERFACE, lbuf, size_wr, size_al);
+	size_wr += nss_stats_banner(lbuf, size_wr, size_al, "lso_rx", NSS_STATS_SINGLE_CORE);
+	size_wr += nss_stats_fill_common_stats(NSS_LSO_RX_INTERFACE, NSS_STATS_SINGLE_INSTANCE, lbuf, size_wr, size_al, "lso_rx");
 
 	/*
 	 * lso_rx node stats
 	 */
-	size_wr += scnprintf(lbuf + size_wr, size_al - size_wr, "\nlso_rx node stats:\n\n");
+
 	spin_lock_bh(&nss_top_main.stats_lock);
 	for (i = 0; (i < NSS_LSO_RX_STATS_MAX); i++) {
 		stats_shadow[i] = nss_lso_rx_stats[i];
 	}
 
 	spin_unlock_bh(&nss_top_main.stats_lock);
+	size_wr += nss_stats_print("lso_rx", "lso_rx node stats"
+					, NSS_STATS_SINGLE_INSTANCE
+					, nss_lso_rx_strings_stats
+					, stats_shadow
+					, NSS_LSO_RX_STATS_MAX
+					, lbuf, size_wr, size_al);
 
-	for (i = 0; i < NSS_LSO_RX_STATS_MAX; i++) {
-		size_wr += scnprintf(lbuf + size_wr, size_al - size_wr,
-					"%s = %llu\n", nss_lso_rx_stats_str[i], stats_shadow[i]);
-	}
-
-	size_wr += scnprintf(lbuf + size_wr, size_al - size_wr, "\nlso_rx stats end\n\n");
 	bytes_read = simple_read_from_buffer(ubuf, sz, ppos, lbuf, strlen(lbuf));
 	kfree(lbuf);
 	kfree(stats_shadow);
@@ -92,7 +86,7 @@ static ssize_t nss_lso_rx_stats_read(struct file *fp, char __user *ubuf, size_t 
 /*
  * nss_lso_rx_stats_ops
  */
-NSS_STATS_DECLARE_FILE_OPERATIONS(lso_rx)
+NSS_STATS_DECLARE_FILE_OPERATIONS(lso_rx);
 
 /*
  * nss_lso_rx_stats_dentry_create()
@@ -140,3 +134,39 @@ void nss_lso_rx_stats_sync(struct nss_ctx_instance *nss_ctx, struct nss_lso_rx_s
 
 	spin_unlock_bh(&nss_top->stats_lock);
 }
+
+/*
+ * nss_lso_rx_stats_notify()
+ *	Sends notifications to all the registered modules.
+ *
+ * Leverage NSS-FW statistics timing to update Netlink.
+ */
+void nss_lso_rx_stats_notify(struct nss_ctx_instance *nss_ctx)
+{
+	struct nss_lso_rx_stats_notification lso_rx_stats;
+
+	lso_rx_stats.core_id = nss_ctx->id;
+	memcpy(lso_rx_stats.cmn_node_stats, nss_top_main.stats_node[NSS_LSO_RX_INTERFACE], sizeof(lso_rx_stats.cmn_node_stats));
+	memcpy(lso_rx_stats.node_stats, nss_lso_rx_stats, sizeof(lso_rx_stats.node_stats));
+	atomic_notifier_call_chain(&nss_lso_rx_stats_notifier, NSS_STATS_EVENT_NOTIFY, (void *)&lso_rx_stats);
+}
+
+/*
+ * nss_lso_rx_stats_register_notifier()
+ *	Registers statistics notifier.
+ */
+int nss_lso_rx_stats_register_notifier(struct notifier_block *nb)
+{
+	return atomic_notifier_chain_register(&nss_lso_rx_stats_notifier, nb);
+}
+EXPORT_SYMBOL(nss_lso_rx_stats_register_notifier);
+
+/*
+ * nss_lso_rx_stats_unregister_notifier()
+ *	Deregisters statistics notifier.
+ */
+int nss_lso_rx_stats_unregister_notifier(struct notifier_block *nb)
+{
+	return atomic_notifier_chain_unregister(&nss_lso_rx_stats_notifier, nb);
+}
+EXPORT_SYMBOL(nss_lso_rx_stats_unregister_notifier);
