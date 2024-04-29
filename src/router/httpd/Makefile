@@ -188,6 +188,9 @@ endif
 ifeq ($(CONFIG_RADLOCAL),y)
 CFLAGS += -DHAVE_RADLOCAL
 endif
+ifeq ($(CONFIG_QCA_NSS),y)
+CFLAGS += -DHAVE_QCA_NSS
+endif
 ifeq ($(KERNELVERSION),6.1)
 CFLAGS += -DHAVE_8021AD
 endif
