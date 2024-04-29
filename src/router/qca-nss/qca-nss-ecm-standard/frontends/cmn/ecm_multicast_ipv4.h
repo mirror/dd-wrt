@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2015, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2015, 2021 The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -14,6 +14,11 @@
  **************************************************************************
  */
 
-extern void ecm_nss_bond_notifier_stop(int num);
-extern int ecm_nss_bond_notifier_init(struct dentry *dentry);
-extern void ecm_nss_bond_notifier_exit(void);
+extern unsigned int ecm_multicast_ipv4_connection_process(struct net_device *out_dev,
+							struct net_device *in_dev,
+							uint8_t *src_node_addr,
+							uint8_t *dest_node_addr,
+							bool can_accel, bool is_routed, struct sk_buff *skb,
+							struct ecm_tracker_ip_header *iph,
+							struct nf_conn *ct, ecm_tracker_sender_type_t sender,
+							struct nf_conntrack_tuple *orig_tuple, struct nf_conntrack_tuple *reply_tuple);
