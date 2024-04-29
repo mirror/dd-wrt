@@ -36,18 +36,40 @@ void start_sfe(void)
 		insmod("shortcut-fe");
 		insmod("shortcut-fe-ipv6");
 		insmod("fast-classifier");
+		writeproc("/proc/ctf", "0");
+		sysprintf("echo 1 > /sys/kernel/debug/ecm/front_end_ipv4_stop");
+		sysprintf("echo 1 > /sys/kernel/debug/ecm/front_end_ipv6_stop");
+	        sysprintf("echo 1 > /sys/kernel/debug/ecm/ecm_db/defunct_all");
+		rmmod("ecm");
 		sysprintf("echo 1 > /sys/fast_classifier/skip_to_bridge_ingress");
 		dd_loginfo("sfe", "shortcut forwarding engine successfully started\n");
 	} else if (nvram_match("sfe", "2")) {
 		rmmod("fast-classifier");
 		rmmod("shortcut-fe-ipv6");
 		rmmod("shortcut-fe");
+		sysprintf("echo 1 > /sys/kernel/debug/ecm/front_end_ipv4_stop");
+		sysprintf("echo 1 > /sys/kernel/debug/ecm/front_end_ipv6_stop");
+	        sysprintf("echo 1 > /sys/kernel/debug/ecm/ecm_db/defunct_all");
+		rmmod("ecm");
 		writeproc("/proc/ctf", "1");
 		dd_loginfo("ctf", "fast path forwarding successfully started\n");
+	} else if (nvram_match("sfe", "3")) {
+		rmmod("fast-classifier");
+		rmmod("shortcut-fe-ipv6");
+		rmmod("shortcut-fe");
+		writeproc("/proc/ctf", "0");
+		eval("insmod","ecm","front_end_selection=1");
+		sysprintf("echo 1 > /proc/sys/dev/nss/general/redirect");
+		dd_loginfo("ecm-nss", "ecm-nss forwarding successfully started\n");
 	} else {
 		rmmod("fast-classifier");
 		rmmod("shortcut-fe-ipv6");
 		rmmod("shortcut-fe");
+
+		sysprintf("echo 1 > /sys/kernel/debug/ecm/front_end_ipv4_stop");
+		sysprintf("echo 1 > /sys/kernel/debug/ecm/front_end_ipv6_stop");
+	        sysprintf("echo 1 > /sys/kernel/debug/ecm/ecm_db/defunct_all");
+		rmmod("ecm");
 		writeproc("/proc/ctf", "0");
 	}
 
