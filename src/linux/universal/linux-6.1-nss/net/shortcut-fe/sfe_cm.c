@@ -539,7 +539,8 @@ static unsigned int sfe_cm_post_routing(struct sk_buff *skb, int is_v4)
 		sic.dest_td_end = ct->proto.tcp.seen[1].td_end;
 		sic.dest_td_max_end = ct->proto.tcp.seen[1].td_maxend;
 
-		if ((ct->proto.tcp.seen[0].flags & IP_CT_TCP_FLAG_BE_LIBERAL) ||
+		if (nf_ct_tcp_no_window_check ||
+		    (ct->proto.tcp.seen[0].flags & IP_CT_TCP_FLAG_BE_LIBERAL) ||
 		    (ct->proto.tcp.seen[1].flags & IP_CT_TCP_FLAG_BE_LIBERAL)) {
 			sic.flags |= SFE_CREATE_FLAG_NO_SEQ_CHECK;
 		}
