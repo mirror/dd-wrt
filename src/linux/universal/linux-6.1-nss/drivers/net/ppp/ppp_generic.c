@@ -3913,22 +3913,6 @@ void ppp_release_channels(struct ppp_channel *channels[], unsigned int chan_sz)
 }
 EXPORT_SYMBOL(ppp_release_channels);
 
-/* Return the PPP net device index */
-int ppp_dev_index(struct ppp_channel *chan)
-{
-       struct channel *pch = chan->ppp;
-       int ifindex = 0;
-
-       if (pch) {
-	       read_lock_bh(&pch->upl);
-	       if (pch->ppp && pch->ppp->dev)
-		       ifindex = pch->ppp->dev->ifindex;
-	       read_unlock_bh(&pch->upl);
-       }
-       return ifindex;
-}
-EXPORT_SYMBOL(ppp_dev_index);
-
 /* Module/initialization stuff */
 
 module_init(ppp_init);
