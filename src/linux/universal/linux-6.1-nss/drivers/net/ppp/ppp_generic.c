@@ -255,6 +255,20 @@ struct ppp_net {
 #define seq_before(a, b)	((s32)((a) - (b)) < 0)
 #define seq_after(a, b)		((s32)((a) - (b)) > 0)
 
+/* Return the PPP net device index */
+int ppp_dev_index(struct ppp_channel *chan)
+{
+	struct channel *pch = chan->ppp;
+	int ifindex = 0;
+
+	if (pch) {
+		read_lock_bh(&pch->upl);
+		if (pch->ppp && pch->ppp->dev)
+			ifindex = pch->ppp->dev->ifindex;
+		read_unlock_bh(&pch->upl);
+	}
+	return ifindex;
+}
 
 /*
  * Registration/Unregistration methods
@@ -3697,6 +3711,28 @@ void ppp_update_stats(struct net_device *dev, unsigned long rx_packets,
 	ppp_recv_unlock(ppp);
 }
 
+/* Returns true if Compression is enabled on PPP device
+ */
+bool ppp_is_cp_enabled(struct net_device *dev)
+{
+	struct ppp *ppp;
+	bool flag = false;
+
+	if (!dev)
+		return false;
+
+	if (dev->type != ARPHRD_PPP)
+		return false;
+
+	ppp = netdev_priv(dev);
+	ppp_lock(ppp);
+	flag = !!(ppp->xstate & SC_COMP_RUN) || !!(ppp->rstate & SC_DECOMP_RUN);
+	ppp_unlock(ppp);
+
+	return flag;
+}
+EXPORT_SYMBOL(ppp_is_cp_enabled);
+
 /* Returns >0 if the device is a multilink PPP netdevice, 0 if not or < 0 if
  * the device is not PPP.
  */
@@ -3904,6 +3940,7 @@ EXPORT_SYMBOL(ppp_unregister_channel);
 EXPORT_SYMBOL(ppp_channel_index);
 EXPORT_SYMBOL(ppp_unit_number);
 EXPORT_SYMBOL(ppp_dev_name);
+EXPORT_SYMBOL(ppp_dev_index);
 EXPORT_SYMBOL(ppp_device);
 EXPORT_SYMBOL(ppp_input);
 EXPORT_SYMBOL(ppp_input_error);

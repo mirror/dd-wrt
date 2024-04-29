@@ -1555,6 +1555,24 @@ void br_refresh_fdb_entry(struct net_device *dev, const char *addr)
 }
 EXPORT_SYMBOL_GPL(br_refresh_fdb_entry);
 
+/* Update timestamp of FDB entries for bridge packets being forwarded by offload engines */
+void br_fdb_entry_refresh(struct net_device *dev, const char *addr, __u16 vid)
+{
+	struct net_bridge_fdb_entry *fdb;
+	struct net_bridge_port *p = br_port_get_rcu(dev);
+
+	if (!p || p->state == BR_STATE_DISABLED)
+		return;
+
+	rcu_read_lock();
+	fdb = fdb_find_rcu(&p->br->fdb_hash_tbl, addr, vid);
+	if (likely(fdb)) {
+		fdb->updated = jiffies;
+	}
+	rcu_read_unlock();
+}
+EXPORT_SYMBOL_GPL(br_fdb_entry_refresh);
+
 /* Look up the MAC address in the device's bridge fdb table */
 struct net_bridge_fdb_entry *br_fdb_has_entry(struct net_device *dev,
 					      const char *addr, __u16 vid)

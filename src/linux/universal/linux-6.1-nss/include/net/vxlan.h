@@ -344,6 +344,19 @@ struct vxlan_dev {
 					 VXLAN_F_COLLECT_METADATA  |	\
 					 VXLAN_F_VNIFILTER)
 
+/*
+ * Application data for fdb notifier event
+ */
+struct vxlan_fdb_event {
+	struct net_device *dev;
+	struct vxlan_rdst *rdst;
+	u8 eth_addr[ETH_ALEN];
+};
+
+extern void vxlan_fdb_register_notify(struct notifier_block *nb);
+extern void vxlan_fdb_unregister_notify(struct notifier_block *nb);
+extern void vxlan_fdb_update_mac(struct vxlan_dev *vxlan, const u8 *mac, uint32_t vni);
+
 struct net_device *vxlan_dev_create(struct net *net, const char *name,
 				    u8 name_assign_type, struct vxlan_config *conf);
 
@@ -430,6 +443,15 @@ static inline __be32 vxlan_compute_rco(unsigned int start, unsigned int offset)
 	if (offset == offsetof(struct udphdr, check))
 		vni_field |= VXLAN_RCO_UDP;
 	return vni_field;
+}
+
+/*
+ * vxlan_get_vni()
+ *	Returns the vni corresponding to tunnel
+ */
+static inline u32 vxlan_get_vni(struct vxlan_dev *vxlan_tun)
+{
+	return be32_to_cpu(vxlan_tun->cfg.vni);
 }
 
 static inline unsigned short vxlan_get_sk_family(struct vxlan_sock *vs)

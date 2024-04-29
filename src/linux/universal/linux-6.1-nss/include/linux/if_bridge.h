@@ -220,6 +220,7 @@ extern struct net_device *br_port_dev_get(struct net_device *dev,
 					  struct sk_buff *skb,
 					  unsigned int cookie);
 extern void br_refresh_fdb_entry(struct net_device *dev, const char *addr);
+extern void br_fdb_entry_refresh(struct net_device *dev, const char *addr, __u16 vid);
 extern struct net_bridge_fdb_entry *br_fdb_has_entry(struct net_device *dev,
 						     const char *addr,
 						     __u16 vid);

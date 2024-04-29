@@ -65,6 +65,20 @@ static void vxlan_vs_del_dev(struct vxlan_dev *vxlan);
 /* salt for hash table */
 static u32 vxlan_salt __read_mostly;
 
+ATOMIC_NOTIFIER_HEAD(vxlan_fdb_notifier_list);
+
+void vxlan_fdb_register_notify(struct notifier_block *nb)
+{
+	atomic_notifier_chain_register(&vxlan_fdb_notifier_list, nb);
+}
+EXPORT_SYMBOL(vxlan_fdb_register_notify);
+
+void vxlan_fdb_unregister_notify(struct notifier_block *nb)
+{
+	atomic_notifier_chain_unregister(&vxlan_fdb_notifier_list, nb);
+}
+EXPORT_SYMBOL(vxlan_fdb_unregister_notify);
+
 static inline bool vxlan_collect_metadata(struct vxlan_sock *vs)
 {
 	return vs->flags & VXLAN_F_COLLECT_METADATA ||
@@ -307,6 +321,7 @@ static void __vxlan_fdb_notify(struct vxlan_dev *vxlan, struct vxlan_fdb *fdb,
 {
 	struct net *net = dev_net(vxlan->dev);
 	struct sk_buff *skb;
+	struct vxlan_fdb_event vfe;
 	int err = -ENOBUFS;
 
 	skb = nlmsg_new(vxlan_nlmsg_size(), GFP_ATOMIC);
@@ -322,6 +337,10 @@ static void __vxlan_fdb_notify(struct vxlan_dev *vxlan, struct vxlan_fdb *fdb,
 	}
 
 	rtnl_notify(skb, net, 0, RTNLGRP_NEIGH, NULL, GFP_ATOMIC);
+	vfe.dev = vxlan->dev;
+	vfe.rdst = rd;
+	ether_addr_copy(vfe.eth_addr, fdb->eth_addr);
+	atomic_notifier_call_chain(&vxlan_fdb_notifier_list, type, (void *)&vfe);
 	return;
 errout:
 	if (err < 0)
@@ -487,6 +506,18 @@ static struct vxlan_fdb *vxlan_find_mac(struct vxlan_dev *vxlan,
 
 	return f;
 }
+
+/* Find and update age of fdb entry corresponding to MAC. */
+void vxlan_fdb_update_mac(struct vxlan_dev *vxlan, const u8 *mac, uint32_t vni)
+{
+	u32 hash_index;
+
+	hash_index = fdb_head_index(vxlan, mac, vni);
+	spin_lock_bh(&vxlan->hash_lock[hash_index]);
+	vxlan_find_mac(vxlan, mac, vni);
+	spin_unlock_bh(&vxlan->hash_lock[hash_index]);
+}
+EXPORT_SYMBOL(vxlan_fdb_update_mac);
 
 /* caller should hold vxlan->hash_lock */
 static struct vxlan_rdst *vxlan_fdb_find_rdst(struct vxlan_fdb *f,
@@ -2658,6 +2689,9 @@ static void vxlan_xmit_one(struct sk_buff *skb, struct net_device *dev,
 			goto out_unlock;
 		}
 
+		/* Reset the skb_iif to Tunnels interface index */
+		skb->skb_iif = dev->ifindex;
+
 		tos = ip_tunnel_ecn_encap(tos, old_iph, skb);
 		ttl = ttl ? : ip4_dst_hoplimit(&rt->dst);
 		err = vxlan_build_skb(skb, ndst, sizeof(struct iphdr),
@@ -2728,6 +2762,9 @@ static void vxlan_xmit_one(struct sk_buff *skb, struct net_device *dev,
 				      vni, md, flags, udp_sum);
 		if (err < 0)
 			goto tx_error;
+
+		/* Reset the skb_iif to Tunnels interface index */
+		skb->skb_iif = dev->ifindex;
 
 		udp_tunnel6_xmit_skb(ndst, sock6->sock->sk, skb, dev,
 				     &local_ip.sin6.sin6_addr,
