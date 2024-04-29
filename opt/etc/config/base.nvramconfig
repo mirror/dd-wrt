@@ -6,7 +6,7 @@
  "boot_fail_open" "Boot Failure Management" "CHOICE" "2" "0" "1" "FALSE" "0"
  "boot_fail_keepip" "Boot Failure Management" "CHOICE" "2" "0" "1" "FALSE" "0"
  "ubnt_power" "POE Power Switch" "CHOICE" "2" "0" "1" "FALSE" "0"
- "sfe" "Shortcut Forwarding Engine" "CHOICE" "3" "0" "1" "2" "FALSE" "0"
+ "sfe" "Shortcut Forwarding Engine" "CHOICE" "4" "0" "1" "2" "3" "FALSE" "0"
  "ctf_fa_mode" "Flow Accelleration" "CHOICE" "3" "0" "1" "2" "FALSE" "0"
  "router_name"  "Router Name"  "NAME"  "255"  "TRUE" "0"
  "wan_hostname" "WAN Host Name"  "NAME"  "255"  "TRUE" "3"
