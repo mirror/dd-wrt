@@ -30,5 +30,13 @@
 #define MIPS_ISA_ARCH_LEVEL_RAW MIPS_ISA_LEVEL_RAW
 #endif /* CONFIG_CPU_MIPSR6 */
 
+#ifndef CONFIG_CPU_MICROMIPS
+#define GCC_OFF12_ASM() "R"
+#elif __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 9)
+#define GCC_OFF12_ASM() "ZC"
+#else
+#error "microMIPS compilation unsupported with GCC older than 4.9"
+#endif
+
 #endif /* _ASM_COMPILER_H */
 
