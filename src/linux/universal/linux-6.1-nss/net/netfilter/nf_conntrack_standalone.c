@@ -655,6 +655,7 @@ enum nf_ct_sysctl_index {
 #endif
 	NF_SYSCTL_CT_PROTO_TCP_LOOSE,
 	NF_SYSCTL_CT_PROTO_TCP_LIBERAL,
+	NF_SYSCTL_CT_PROTO_TCP_NO_WINDOW_CHECK,
 	NF_SYSCTL_CT_PROTO_TCP_IGNORE_INVALID_RST,
 	NF_SYSCTL_CT_PROTO_TCP_MAX_RETRANS,
 	NF_SYSCTL_CT_PROTO_TIMEOUT_UDP,
@@ -879,6 +880,14 @@ static struct ctl_table nf_ct_sysctl_table[] = {
 		.extra1 	= SYSCTL_ZERO,
 		.extra2 	= SYSCTL_ONE,
 	},
+	[NF_SYSCTL_CT_PROTO_TCP_NO_WINDOW_CHECK] = {
+		.procname       = "nf_conntrack_tcp_no_window_check",
+		.maxlen         = sizeof(u8),
+		.mode           = 0644,
+		.proc_handler	= proc_dou8vec_minmax,
+		.extra1 	= SYSCTL_ZERO,
+		.extra2 	= SYSCTL_ONE,
+	},
 	[NF_SYSCTL_CT_PROTO_TCP_IGNORE_INVALID_RST] = {
 		.procname	= "nf_conntrack_tcp_ignore_invalid_rst",
 		.maxlen		= sizeof(u8),
@@ -1089,6 +1098,7 @@ static void nf_conntrack_standalone_init_tcp_sysctl(struct net *net,
 
 	XASSIGN(LOOSE, &tn->tcp_loose);
 	XASSIGN(LIBERAL, &tn->tcp_be_liberal);
+	XASSIGN(NO_WINDOW_CHECK, &tn->tcp_no_window_check);
 	XASSIGN(MAX_RETRANS, &tn->tcp_max_retrans);
 	XASSIGN(IGNORE_INVALID_RST, &tn->tcp_ignore_invalid_rst);
 #undef XASSIGN
