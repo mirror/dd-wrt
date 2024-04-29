@@ -500,6 +500,7 @@ static u32 fc_conn_hash_v6(sfe_ip_addr_t *saddr, sfe_ip_addr_t *daddr,
 static int fast_classifier_update_protocol(struct sfe_connection_create *p_sic,
 					   struct nf_conn *ct)
 {
+	const struct nf_tcp_net *tn = nf_tcp_pernet(nf_ct_net(ct));
 	int locked;
 	switch (p_sic->protocol) {
 	case IPPROTO_TCP:
@@ -512,7 +513,7 @@ static int fast_classifier_update_protocol(struct sfe_connection_create *p_sic,
 		p_sic->dest_td_end = ct->proto.tcp.seen[1].td_end;
 		p_sic->dest_td_max_end = ct->proto.tcp.seen[1].td_maxend;
 
-		if (nf_ct_tcp_no_window_check ||
+		if (tn->tcp_no_window_check ||
 		    (ct->proto.tcp.seen[0].flags & IP_CT_TCP_FLAG_BE_LIBERAL) ||
 		    (ct->proto.tcp.seen[1].flags & IP_CT_TCP_FLAG_BE_LIBERAL)) {
 			p_sic->flags |= SFE_CREATE_FLAG_NO_SEQ_CHECK;
