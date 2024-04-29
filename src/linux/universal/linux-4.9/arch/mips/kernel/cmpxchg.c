@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 2017 Imagination Technologies
- * Author: Paul Burton <paul.burton@imgtec.com>
+ * Author: Paul Burton <paul.burton@mips.com>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -50,14 +50,14 @@ unsigned long __xchg_small(volatile void *ptr, unsigned long val, unsigned int s
 
 	return (load32 & mask) >> shift;
 }
+EXPORT_SYMBOL(__xchg_small);
 
 unsigned long __cmpxchg_small(volatile void *ptr, unsigned long old,
 			      unsigned long new, unsigned int size)
 {
-	u32 mask, old32, new32, load32;
+	u32 mask, old32, new32, load32, load;
 	volatile u32 *ptr32;
 	unsigned int shift;
-	u8 load;
 
 	/* Check that ptr is naturally aligned */
 	WARN_ON((unsigned long)ptr & (size - 1));
@@ -107,3 +107,4 @@ unsigned long __cmpxchg_small(volatile void *ptr, unsigned long old,
 			return old;
 	}
 }
+EXPORT_SYMBOL(__cmpxchg_small);
