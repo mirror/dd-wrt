@@ -334,7 +334,7 @@ ccflags-$(ECM_CLASSIFIER_DSCP_IGS) += -DECM_CLASSIFIER_DSCP_IGS
 # the Parental Controls subsystem classifier in ECM. Currently disabled until
 # customers require it / if they need to integrate their Parental Controls with it.
 # #############################################################################
-ECM_CLASSIFIER_PCC_ENABLE=y
+ECM_CLASSIFIER_PCC_ENABLE=n
 ecm-$(ECM_CLASSIFIER_PCC_ENABLE) += ecm_classifier_pcc.o
 ccflags-$(ECM_CLASSIFIER_PCC_ENABLE) += -DECM_CLASSIFIER_PCC_ENABLE
 
