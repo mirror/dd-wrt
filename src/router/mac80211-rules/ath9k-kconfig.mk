@@ -309,6 +309,8 @@ ifeq ($(CONFIG_QCA_NSS),y)
 else
 	echo "# CPTCFG_MAC80211_NSS_SUPPORT is not set" >> $(MAC80211_PATH)/.config_temp
 endif
+else
+	echo "# CPTCFG_MAC80211_NSS_SUPPORT is not set" >> $(MAC80211_PATH)/.config_temp
 endif
 ifeq ($(CONFIG_MAC80211_RTL8192CU),y)
 	cat $(TOP)/mac80211-rules/configs/rtl8192cu.config >> $(MAC80211_PATH)/.config_temp
