@@ -387,15 +387,6 @@ static void fixup_s29ns512p_sectors(struct mtd_info *mtd)
 	pr_warning("%s: Bad S29NS512P CFI data; adjust to 512 sectors\n", mtd->name);
 }
 
-static void fixup_quirks(struct mtd_info *mtd)
-{
-	struct map_info *map = mtd->priv;
-	struct cfi_private *cfi = map->fldrv_priv;
-
-	if (cfi->mfr == CFI_MFR_AMD && cfi->id == 0x0c01)
-		cfi->quirks |= CFI_QUIRK_DQ_TRUE_DATA;
-}
-
 /* Used to fix CFI-Tables of chips without Extended Query Tables */
 static struct cfi_fixup cfi_nopri_fixup_table[] = {
 	{ CFI_MFR_SST, 0x234a, fixup_sst39vf }, /* SST39VF1602 */
@@ -469,7 +460,6 @@ static struct cfi_fixup cfi_fixup_table[] = {
 #if !FORCE_WORD_WRITE
 	{ CFI_MFR_ANY, CFI_ID_ANY, fixup_use_write_buffers },
 #endif
-	{ CFI_MFR_ANY, CFI_ID_ANY, fixup_quirks },
 	{ 0, 0, NULL }
 };
 static struct cfi_fixup jedec_fixup_table[] = {
@@ -849,7 +839,7 @@ static int __xipram chip_good(struct map_info *map, unsigned long addr,
 	struct cfi_private *cfi = map->fldrv_priv;
 	map_word *datum = expected;
 
-	if (cfi->quirks & CFI_QUIRK_DQ_TRUE_DATA)
+	if (cfi->mfr == CFI_MFR_AMD && cfi->id == 0x0c01)
 		datum = NULL;
 
 	return chip_ready(map, addr, datum);
@@ -1711,14 +1701,14 @@ static int __xipram do_write_oneword(struct map_info *map, struct flchip *chip,
 			continue;
 		}
 
-		if (time_after(jiffies, timeo) && !chip_ready(map, adr)){
+		if (time_after(jiffies, timeo) && !chip_ready(map, adr, NULL)){
 			xip_enable(map, chip, adr);
 			printk(KERN_WARNING "MTD %s(): software timeout\n", __func__);
 			xip_disable(map, chip, adr);
 			break;
 		}
 
-		if (chip_ready(map, adr))
+		if (chip_ready(map, adr, NULL))
 			break;
 
 		/* Latency issues. Drop the lock, wait a while and retry */
@@ -2181,7 +2171,7 @@ static int __xipram do_erase_oneblock(struct map_info *map, struct flchip *chip,
 	DECLARE_WAITQUEUE(wait, current);
 	int ret = 0;
 	int retry_cnt = 0;
-+	map_word datum = map_word_ff(map);
+	map_word datum = map_word_ff(map);
 
 	adr += chip->start;
 
