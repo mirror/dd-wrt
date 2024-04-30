@@ -23,6 +23,7 @@
 #include <asm/dsp.h>
 #include <asm/watch.h>
 #include <asm/war.h>
+#include <asm/compiler.h>
 
 
 /*
@@ -91,127 +92,84 @@ do {									\
 	__restore_watch();						\
 } while (0)
 
-static inline unsigned long __xchg_u32(volatile int * m, unsigned int val)
-{
-	__u32 retval;
-
-	smp_mb__before_llsc();
-
-	if (kernel_uses_llsc && R10000_LLSC_WAR) {
-		unsigned long dummy;
-
-		__asm__ __volatile__(
-		"	.set	mips3					\n"
-		"1:	ll	%0, %3			# xchg_u32	\n"
-		"	.set	mips0					\n"
-		"	move	%2, %z4					\n"
-		"	.set	mips3					\n"
-		"	sc	%2, %1					\n"
-		"	beqzl	%2, 1b					\n"
-		"	.set	mips0					\n"
-		: "=&r" (retval), "=m" (*m), "=&r" (dummy)
-		: "R" (*m), "Jr" (val)
-		: "memory");
-	} else if (kernel_uses_llsc) {
-		unsigned long dummy;
-
-		do {
-			__asm__ __volatile__(
-			"	.set	mips3				\n"
-			"	ll	%0, %3		# xchg_u32	\n"
-			"	.set	mips0				\n"
-			"	move	%2, %z4				\n"
-			"	.set	mips3				\n"
-			"	sc	%2, %1				\n"
-			"	.set	mips0				\n"
-			: "=&r" (retval), "=m" (*m), "=&r" (dummy)
-			: "R" (*m), "Jr" (val)
-			: "memory");
-		} while (unlikely(!dummy));
-	} else {
-		unsigned long flags;
-
-		raw_local_irq_save(flags);
-		retval = *m;
-		*m = val;
-		raw_local_irq_restore(flags);	/* implies memory barrier  */
-	}
-
-	smp_llsc_mb();
-
-	return retval;
-}
-
-#ifdef CONFIG_64BIT
-static inline __u64 __xchg_u64(volatile __u64 * m, __u64 val)
-{
-	__u64 retval;
-
-	smp_mb__before_llsc();
-
-	if (kernel_uses_llsc && R10000_LLSC_WAR) {
-		unsigned long dummy;
-
-		__asm__ __volatile__(
-		"	.set	mips3					\n"
-		"1:	lld	%0, %3			# xchg_u64	\n"
-		"	move	%2, %z4					\n"
-		"	scd	%2, %1					\n"
-		"	beqzl	%2, 1b					\n"
-		"	.set	mips0					\n"
-		: "=&r" (retval), "=m" (*m), "=&r" (dummy)
-		: "R" (*m), "Jr" (val)
-		: "memory");
-	} else if (kernel_uses_llsc) {
-		unsigned long dummy;
-
-		do {
-			__asm__ __volatile__(
-			"	.set	mips3				\n"
-			"	lld	%0, %3		# xchg_u64	\n"
-			"	move	%2, %z4				\n"
-			"	scd	%2, %1				\n"
-			"	.set	mips0				\n"
-			: "=&r" (retval), "=m" (*m), "=&r" (dummy)
-			: "R" (*m), "Jr" (val)
-			: "memory");
-		} while (unlikely(!dummy));
-	} else {
-		unsigned long flags;
-
-		raw_local_irq_save(flags);
-		retval = *m;
-		*m = val;
-		raw_local_irq_restore(flags);	/* implies memory barrier  */
-	}
-
-	smp_llsc_mb();
-
-	return retval;
-}
+#if R10000_LLSC_WAR
+# define __scbeqz "beqzl"
 #else
-extern __u64 __xchg_u64_unsupported_on_32bit_kernels(volatile __u64 * m, __u64 val);
-#define __xchg_u64 __xchg_u64_unsupported_on_32bit_kernels
+# define __scbeqz "beqz"
 #endif
 
-static inline unsigned long __xchg(unsigned long x, volatile void * ptr, int size)
+extern unsigned long __xchg_called_with_bad_pointer(void)
+	__compiletime_error("Bad argument size for xchg");
+
+
+#define __xchg_asm(ld, st, m, val)					\
+({									\
+	__typeof(*(m)) __ret;						\
+									\
+	if (kernel_uses_llsc) {						\
+		__asm__ __volatile__(					\
+		"	.set	push				\n"	\
+		"	.set	noat				\n"	\
+		"	.set	" MIPS_ISA_ARCH_LEVEL "		\n"	\
+		"1:	" ld "	%0, %2		# __xchg_asm	\n"	\
+		"	.set	mips0				\n"	\
+		"	move	$1, %z3				\n"	\
+		"	.set	" MIPS_ISA_ARCH_LEVEL "		\n"	\
+		"	" st "	$1, %1				\n"	\
+		"\t" __scbeqz "	$1, 1b				\n"	\
+		"	.set	pop				\n"	\
+		: "=&r" (__ret), "=" GCC_OFF12_ASM() (*m)		\
+		: GCC_OFF12_ASM() (*m), "Jr" (val)			\
+		: "memory");						\
+	} else {							\
+		unsigned long __flags;					\
+									\
+		raw_local_irq_save(__flags);				\
+		__ret = *m;						\
+		*m = val;						\
+		raw_local_irq_restore(__flags);				\
+	}								\
+									\
+	__ret;								\
+})
+
+extern unsigned long __xchg_small(volatile void *ptr, unsigned long val,
+				  unsigned int size);
+
+static __always_inline
+unsigned long __xchg(volatile void *ptr, unsigned long x, int size)
 {
 	switch (size) {
-	case 4:
-		return __xchg_u32(ptr, x);
-	case 8:
-		return __xchg_u64(ptr, x);
-	}
+	case 1:
+	case 2:
+		return __xchg_small(ptr, x, size);
 
-	return x;
+	case 4:
+		return __xchg_asm("ll", "sc", (volatile u32 *)ptr, x);
+
+	case 8:
+		if (!IS_ENABLED(CONFIG_64BIT))
+			return __xchg_called_with_bad_pointer();
+
+		return __xchg_asm("lld", "scd", (volatile u64 *)ptr, x);
+
+	default:
+		return __xchg_called_with_bad_pointer();
+	}
 }
 
 #define xchg(ptr, x)							\
 ({									\
-	BUILD_BUG_ON(sizeof(*(ptr)) & ~0xc);				\
+	__typeof__(*(ptr)) __res;					\
 									\
-	((__typeof__(*(ptr)))						\
-		__xchg((unsigned long)(x), (ptr), sizeof(*(ptr))));	\
+	smp_mb__before_llsc();						\
+									\
+	__res = (__typeof__(*(ptr)))					\
+		__xchg((ptr), (unsigned long)(x), sizeof(*(ptr)));	\
+									\
+	smp_llsc_mb();							\
+									\
+	__res;								\
 })
 
 extern void set_handler(unsigned long offset, void *addr, unsigned long len);
