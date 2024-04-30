@@ -4096,7 +4096,7 @@ static void movevap(char *prefix, int source, int target, int bonly)
 			GETENTRYBYIDX(tag, word, 0);
 			GETENTRYBYIDX(port, word, 1);
 			GETENTRYBYIDX(prio, word, 2);
-			GETENTRYBYIDX(type, word, 2);
+			GETENTRYBYIDX(type, word, 3);
 			if (!tag || !port) {
 				break;
 			}
