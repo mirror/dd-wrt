@@ -248,6 +248,7 @@ out:
 struct sk_buff *tcp_gro_lookup(struct list_head *head, struct tcphdr *th)
 {
 	struct tcphdr *th2;
+	struct sk_buff *p;
 
 	list_for_each_entry(p, head, list) {
 		if (!NAPI_GRO_CB(p)->same_flow)
@@ -268,7 +269,6 @@ struct sk_buff *tcp_gro_lookup(struct list_head *head, struct tcphdr *th)
 struct tcphdr *tcp_gro_pull_header(struct sk_buff *skb)
 {
 	unsigned int thlen, hlen, off;
-	struct sk_buff *p;
 	struct tcphdr *th;
 
 	off = skb_gro_offset(skb);
