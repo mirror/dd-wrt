@@ -62,7 +62,6 @@ void start_sfe(void)
 		rmmod("shortcut-fe");
 		writeproc("/proc/ctf", "0");
 		eval("insmod","ecm","front_end_selection=1");
-		sysprintf("echo 1 > /proc/sys/dev/nss/general/redirect");
 		sysprintf("echo 1 > /proc/sys/net/netfilter/nf_conntrack_tcp_no_window_check");
 		dd_loginfo("ecm-nss", "ecm-nss forwarding successfully started\n");
 	} else {

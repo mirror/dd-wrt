@@ -659,6 +659,7 @@ void start_sysinit(void)
 	insmod("l2tp_core");
 	insmod("qca-nss-l2tpv2");
 	insmod("qca-nss-qdisc");
+	sysprintf("echo 1 > /proc/sys/dev/nss/general/redirect");
 	/*
 	 * network drivers 
 	 */
