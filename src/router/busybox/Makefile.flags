@@ -219,7 +219,7 @@ CFLAGS += -DHAVE_NOMESSAGE
 endif
 CFLAGS += -DNEED_PRINTF
 CFLAGS += $(COPTS)
-CFLAGS += $(MIPS16_OPT) 
+CFLAGS += $(MIPS16_OPT) $(THUMB)
 
 #CFLAGS += -flto 
 #LDFLAGS += -flto=jobserver -fuse-linker-plugin
