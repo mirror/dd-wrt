@@ -1,7 +1,7 @@
 
 envtools:
 	make -C uboot defconfig	
-	make -C uboot envtools ARCH="sandbox" TARGET_CFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) -DNEED_PRINTF" 
+	make -C uboot envtools ARCH="sandbox" TARGET_CFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) $(LTO) -DNEED_PRINTF" 
 
 envtools-install:
 	install -d $(INSTALLDIR)/envtools/usr/sbin

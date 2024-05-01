@@ -1,10 +1,10 @@
 
 dhcpv6:
 	CC="$(CC)" \
-	CFLAGS="$(COPTS) $(LTO) $(MIPS16_OPT) $(JFLAGS) -DNEED_PRINTF   -D_GNU_SOURCE -I$(TOP)/shared -DUSE_DHCP6SRV -DNOCONFIG_DEBUG -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-	CPPFLAGS="$(COPTS) $(LTO) $(MIPS16_OPT) $(JFLAGS) -DNEED_PRINTF  -D_GNU_SOURCE -I$(TOP)/shared  -DUSE_DHCP6SRV -DNOCONFIG_DEBUG -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-	CXXFLAGS="$(COPTS) $(LTO) $(MIPS16_OPT) $(JFLAGS) -DNEED_PRINTF  -D_GNU_SOURCE -I$(TOP)/shared  -DUSE_DHCP6SRV -DNOCONFIG_DEBUG -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-	LDFLAGS="$(COPTS) $(MIPS16_OPT) $(JFLAGS) $(LDLTO) -ffunction-sections -fdata-sections -Wl,--gc-sections  -L$(TOP)/libutils/ -lutils -lshutils -L$(TOP)/nvram -lnvram" \
+	CFLAGS="$(COPTS) $(LTO) $(MIPS16_OPT) $(THUMB) $(JFLAGS) -DNEED_PRINTF   -D_GNU_SOURCE -I$(TOP)/shared -DUSE_DHCP6SRV -DNOCONFIG_DEBUG -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+	CPPFLAGS="$(COPTS) $(LTO) $(MIPS16_OPT) $(THUMB) $(JFLAGS) -DNEED_PRINTF  -D_GNU_SOURCE -I$(TOP)/shared  -DUSE_DHCP6SRV -DNOCONFIG_DEBUG -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+	CXXFLAGS="$(COPTS) $(LTO) $(MIPS16_OPT) $(THUMB) $(JFLAGS) -DNEED_PRINTF  -D_GNU_SOURCE -I$(TOP)/shared  -DUSE_DHCP6SRV -DNOCONFIG_DEBUG -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+	LDFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) $(JFLAGS) $(LDLTO) -ffunction-sections -fdata-sections -Wl,--gc-sections  -L$(TOP)/libutils/ -lutils -lshutils -L$(TOP)/nvram -lnvram" \
 	$(MAKE) -C dhcpv6 all
 	
 dhcpv6-install:
@@ -21,6 +21,6 @@ dhcpv6-configure: nvram
 			--host=$(ARCH) \
 			ac_cv_func_setpgrp_void=yes \
 			CC="$(CC)" \
-			CXXFLAGS="$(COPTS) $(MIPS16_OPT) $(JFLAGS) -I$(TOP)/shared -DNEED_PRINTF  -D_GNU_SOURCE -DUSE_DHCP6SRV -DNOCONFIG_DEBUG -ffunction-sections -fdata-sections -Wl,--gc-sections"  \
-			CFLAGS="$(COPTS) $(MIPS16_OPT) $(JFLAGS) -I$(TOP)/shared -DNEED_PRINTF  -D_GNU_SOURCE  -DUSE_DHCP6SRV -DNOCONFIG_DEBUG -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-			LDFLAGS="$(COPTS) $(MIPS16_OPT) $(JFLAGS) -I$(TOP)/shared -ffunction-sections -fdata-sections -Wl,--gc-sections -L$(TOP)/libutils/ -lutils -lshutils -L$(TOP)/nvram -lnvram"
+			CXXFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) $(JFLAGS) -I$(TOP)/shared -DNEED_PRINTF  -D_GNU_SOURCE -DUSE_DHCP6SRV -DNOCONFIG_DEBUG -ffunction-sections -fdata-sections -Wl,--gc-sections"  \
+			CFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) $(JFLAGS) -I$(TOP)/shared -DNEED_PRINTF  -D_GNU_SOURCE  -DUSE_DHCP6SRV -DNOCONFIG_DEBUG -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+			LDFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) $(JFLAGS) -I$(TOP)/shared -ffunction-sections -fdata-sections -Wl,--gc-sections -L$(TOP)/libutils/ -lutils -lshutils -L$(TOP)/nvram -lnvram"

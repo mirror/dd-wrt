@@ -1,10 +1,10 @@
 nocat-configure:
 	rm -f $(TOP)/glib/config.cache
-	cd glib && ./config.sh "$(CC)" "$(COPTS) $(MIPS16_OPT) $(LTO) -std=gnu89 -ffunction-sections -fdata-sections -Wl,--gc-sections" "$(LTOPLUGIN)" ac_cv_host=$(ARCH)-uclibc-linux --target=$(ARCH)-linux --host=$(ARCH)
+	cd glib && ./config.sh "$(CC)" "$(COPTS) $(MIPS16_OPT) $(THUMB) $(LTO) -std=gnu89 -ffunction-sections -fdata-sections -Wl,--gc-sections" "$(LTOPLUGIN)" ac_cv_host=$(ARCH)-uclibc-linux --target=$(ARCH)-linux --host=$(ARCH)
 	cd nocat && ./configure \
 	    --with-remote-splash \
 	    CC="$(CC)" \
-	    CFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) -std=gnu89 -DNEED_PRINTF -I../libghttp -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+	    CFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) $(LTO) -std=gnu89 -DNEED_PRINTF -I../libghttp -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 	    LDCFLAGS="$(LDLTO) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 	    --prefix=/tmp/ \
 	    --with-glib-prefix=$(TOP)/glib-1.2.10-install \

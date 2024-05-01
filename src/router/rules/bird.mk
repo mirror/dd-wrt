@@ -10,7 +10,7 @@ bird-configure:
 	cd bird && libtoolize -ci --force 
 	cd bird && aclocal
 	cd bird && autoreconf -vfi
-	cd bird && ./configure --target=$(ARCH)-linux --host=$(ARCH) --with-protocols=bgp,rip,static CC=$(ARCH)-linux-gcc --prefix=/usr --disable-client --with-sysconfig=sysdep/cf/linux.h --localstatedir=/tmp/bird --sysconfdir=/tmp/bird CFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) -fcommon -std=gnu89 -ffunction-sections -fdata-sections -Wl,--gc-sections" LDFLAGS="$(COPTS) $(MIPS16_OPT) $(LDLTO) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+	cd bird && ./configure --target=$(ARCH)-linux --host=$(ARCH) --with-protocols=bgp,rip,static CC=$(ARCH)-linux-gcc --prefix=/usr --disable-client --with-sysconfig=sysdep/cf/linux.h --localstatedir=/tmp/bird --sysconfdir=/tmp/bird CFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) $(LTO) -fcommon -std=gnu89 -ffunction-sections -fdata-sections -Wl,--gc-sections" LDFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) $(LDLTO) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 	AR_FLAGS="cru $(LTOPLUGIN)" \
 	RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
 

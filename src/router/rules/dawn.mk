@@ -7,7 +7,7 @@ DAWN_CMAKE_OPTIONS+=VERBOSE=0 -DBUILD_LUA=OFF \
 		    -DCMAKE_RANLIB=${GCCRANLIB}
 
 
-DAWN_EXTRA_CFLAGS=-I$(TOP) -I$(STAGING_DIR)/usr/include -L$(STAGING_DIR)/usr/lib  $(MIPS16_OPT) -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections $(LTO)
+DAWN_EXTRA_CFLAGS=-I$(TOP) -I$(STAGING_DIR)/usr/include -L$(STAGING_DIR)/usr/lib  $(MIPS16_OPT) $(THUMB) -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections $(LTO)
 DAWN_EXTRA_LDFLAGS=-ljson-c -L$(TOP)/libubox/  -ffunction-sections -fdata-sections -Wl,--gc-sections $(LDLTO)
 
 dawn-configure: json-c libubox ubus
