@@ -245,9 +245,6 @@ int ip_rt_register_notifier(struct notifier_block *nb);
 int ip_rt_unregister_notifier(struct notifier_block *nb);
 /* QCA NSS ECM support - End */
 
-int ip_rt_register_notifier(struct notifier_block *nb);
-int ip_rt_unregister_notifier(struct notifier_block *nb);
-
 struct in_ifaddr;
 void fib_add_ifaddr(struct in_ifaddr *);
 void fib_del_ifaddr(struct in_ifaddr *, struct in_ifaddr *);
