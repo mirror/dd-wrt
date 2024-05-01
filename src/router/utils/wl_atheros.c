@@ -4,6 +4,7 @@
 #include <shutils.h>
 #include <utils.h>
 #include <bcmnvram.h>
+#include <airbag.h>
 
 struct wifi_info {
 	unsigned char mac[6];
@@ -283,7 +284,6 @@ static void evaluate(char *keyname, char *ifdecl, char *macstr)
 
 	}
 }
-int airbag_init(void);
 #ifdef HAVE_ATH9K
 void special_mac80211_init(void);
 #endif
