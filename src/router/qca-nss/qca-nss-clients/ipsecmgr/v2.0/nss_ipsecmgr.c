@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2017-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2021, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -67,6 +67,15 @@ struct nss_ipsecmgr_drv *ipsecmgr_drv;
 static const struct net_device_ops nss_ipsecmgr_dummy_ndev_ops;
 
 /*
+ * nss_ipsecmgr_dummy_free()
+ *	Setup function for dummy netdevice.
+ */
+static void nss_ipsecmgr_dummy_free(struct net_device *dev)
+{
+	free_netdev(dev);
+}
+
+/*
  * nss_ipsecmgr_dummy_setup()
  *	Setup function for dummy netdevice.
  */
@@ -77,6 +86,11 @@ static void nss_ipsecmgr_dummy_setup(struct net_device *dev)
 	 * transform.
 	 */
 	dev->mtu = ETH_DATA_LEN;
+#if (LINUX_VERSION_CODE <= KERNEL_VERSION(4, 11, 8))
+	dev->destructor = nss_ipsecmgr_dummy_free;
+#else
+	dev->priv_destructor = nss_ipsecmgr_dummy_free;
+#endif
 }
 
 /*
@@ -96,12 +110,9 @@ static void nss_ipsecmgr_rx_notify(void *app_data, struct nss_cmn_msg *ncm)
 static void nss_ipsecmgr_configure(struct work_struct *work)
 {
 	enum nss_ipsec_cmn_msg_type type = NSS_IPSEC_CMN_MSG_TYPE_NODE_CONFIG;
-	struct nss_ipsecmgr_tunnel *tun = netdev_priv(ipsecmgr_drv->dev);
 	uint32_t ifnum = ipsecmgr_drv->ifnum;
 	struct nss_ipsec_cmn_msg nicm = {0};
-	struct nss_ipsecmgr_ctx *redir;
 	nss_tx_status_t status;
-	uint32_t vsi_num = 0;
 
 	/*
 	 * By making sure that cryptoapi is registered,
@@ -139,6 +150,10 @@ static void nss_ipsecmgr_configure(struct work_struct *work)
 	if (ipsecmgr_drv->ipsec_inline) {
 
 #ifdef NSS_IPSECMGR_PPE_SUPPORT
+		struct nss_ipsecmgr_tunnel *tun = netdev_priv(ipsecmgr_drv->dev);
+		struct nss_ipsecmgr_ctx *redir;
+		uint32_t vsi_num = 0;
+
 		redir = nss_ipsecmgr_ctx_alloc(tun,
 						NSS_IPSEC_CMN_CTX_TYPE_REDIR,
 						NSS_DYNAMIC_INTERFACE_TYPE_IPSEC_CMN_REDIRECT,
@@ -198,7 +213,7 @@ static void nss_ipsecmgr_configure(struct work_struct *work)
 static int __init nss_ipsecmgr_init(void)
 {
 	struct nss_ipsecmgr_tunnel *tun;
-	struct net_device *dev;
+	struct net_device *dev = NULL;
 	int status;
 
 	ipsecmgr_drv = vzalloc(sizeof(*ipsecmgr_drv));
@@ -236,7 +251,7 @@ static int __init nss_ipsecmgr_init(void)
 	status = register_netdev(dev);
 	if (status) {
 		nss_ipsecmgr_info("%px: Failed to register dummy netdevice(%px)", ipsecmgr_drv, dev);
-		goto netdev_free;
+		goto free;
 	}
 
 	ipsecmgr_drv->dev = dev;
@@ -254,41 +269,31 @@ static int __init nss_ipsecmgr_init(void)
 	 * Initialize debugfs.
 	 */
 	ipsecmgr_drv->dentry = debugfs_create_dir("qca-nss-ipsecmgr", NULL);
-	if (!ipsecmgr_drv->dentry) {
-		nss_ipsecmgr_warn("%px: Failed to create root debugfs entry", ipsecmgr_drv);
-		nss_ipsec_cmn_notify_unregister(ipsecmgr_drv->nss_ctx, ipsecmgr_drv->ifnum);
-		goto unregister_dev;
+	if (ipsecmgr_drv->dentry) {
+		tun->dentry = debugfs_create_dir(dev->name, ipsecmgr_drv->dentry);
 	}
-
-	/*
-	 * Create debugfs entry for tunnel
-	 */
-	tun->dentry = debugfs_create_dir(dev->name, ipsecmgr_drv->dentry);
 
 	/*
 	 * Configure inline mode and the DMA rings.
 	 */
 	nss_ipsecmgr_configure(&ipsecmgr_drv->cfg_work.work);
 
-	write_lock(&ipsecmgr_drv->lock);
+	write_lock_bh(&ipsecmgr_drv->lock);
 	list_add(&tun->list, &ipsecmgr_drv->tun_db);
 
 	ipsecmgr_drv->max_mtu = dev->mtu;
-	write_unlock(&ipsecmgr_drv->lock);
+	write_unlock_bh(&ipsecmgr_drv->lock);
 
 	nss_ipsecmgr_info("NSS IPsec manager loaded: %s\n", NSS_CLIENT_BUILD_ID);
 	return 0;
 
-unregister_dev:
-	unregister_netdev(ipsecmgr_drv->dev);
-
-netdev_free:
-	free_netdev(ipsecmgr_drv->dev);
-
 free:
+#if (LINUX_VERSION_CODE <= KERNEL_VERSION(4, 11, 8))
+	if (dev)
+		dev->destructor(dev);
+#endif
 	vfree(ipsecmgr_drv);
 	ipsecmgr_drv = NULL;
-
 	return -1;
 }
 

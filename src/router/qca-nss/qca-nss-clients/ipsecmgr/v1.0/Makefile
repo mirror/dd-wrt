@@ -2,7 +2,7 @@
 
 ccflags-y := -I$(obj) -I$(obj)/../..
 ccflags-y += -DNSS_CLIENT_BUILD_ID="$(BUILD_ID)"
-ccflags-y += -Werror
+ccflags-y += -Wall -Werror
 ifeq ($(SoC), fsm9010)
 	ccflags-y += -DNSS_IPSECMGR_PMTU_SUPPORT
 endif

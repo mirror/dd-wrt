@@ -99,7 +99,12 @@ static int nss_ovpnmgr_netdevice_event(struct notifier_block *unused,
 		 */
 		read_unlock_bh(&ovpnmgr_ctx.lock);
 		if (event == NETDEV_UP) {
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 0, 0))
 			dev_open(nss_dev);
+#else
+			dev_open(nss_dev, NULL);
+#endif
+
 		} else {
 			dev_close(nss_dev);
 		}
