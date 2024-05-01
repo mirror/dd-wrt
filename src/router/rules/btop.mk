@@ -7,9 +7,9 @@ BTOP_CMAKE_OPTIONS+=VERBOSE=0 -DBUILD_LUA=OFF -DBTOP_LTO=OFF \
 		    -DCMAKE_RANLIB=${GCCRANLIB}
 
 
-#BTOP_EXTRA_CFLAGS=-I$(TOP) -I$(STAGING_DIR)/usr/include -I$(TOP)/shared -L$(STAGING_DIR)/usr/lib -I$(TOP)/libnl-tiny/include  $(MIPS16_OPT) -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections $(LTO)
+#BTOP_EXTRA_CFLAGS=-I$(TOP) -I$(STAGING_DIR)/usr/include -I$(TOP)/shared -L$(STAGING_DIR)/usr/lib -I$(TOP)/libnl-tiny/include  $(MIPS16_OPT) $(THUMB) -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections $(LTO)
 #BTOP_EXTRA_LDFLAGS=-ljson-c -L$(TOP)/libubox/ -L$(TOP)/libnl-tiny -lnl-tiny  -ffunction-sections -fdata-sections -Wl,--gc-sections $(LDLTO)
-BTOP_EXTRA_CFLAGS=$(MIPS16_OPT) -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections $(LTO)
+BTOP_EXTRA_CFLAGS=$(MIPS16_OPT) $(THUMB) -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections $(LTO)
 BTOP_EXTRA_LDFLAGS=-ffunction-sections -fdata-sections -Wl,--gc-sections $(LDLTO)
 
 btop-configure:
