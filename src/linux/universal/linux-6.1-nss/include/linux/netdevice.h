@@ -1750,6 +1750,9 @@ enum netdev_priv_flags_ext {
 	IFF_EXT_GRE_V4_TAP		= 1<<4,
 	IFF_EXT_GRE_V6_TAP		= 1<<5,
 	IFF_EXT_IFB			= 1<<6,
+	IFF_EXT_MAPT			= 1<<7,
+	IFF_EXT_HW_NO_OFFLOAD		= 1<<8,
+	IFF_EXT_ETH_L2TPV3		= 1<<9,
 };
 
 #define IFF_802_1Q_VLAN			IFF_802_1Q_VLAN

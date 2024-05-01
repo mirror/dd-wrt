@@ -63,6 +63,8 @@ enum {
 #define IPPROTO_MTP		IPPROTO_MTP
   IPPROTO_BEETPH = 94,		/* IP option pseudo header for BEET	*/
 #define IPPROTO_BEETPH		IPPROTO_BEETPH
+  IPPROTO_ETHERIP = 97,
+#define IPPROTO_ETHERIP		IPPROTO_ETHERIP 
   IPPROTO_ENCAP = 98,		/* Encapsulation Header			*/
 #define IPPROTO_ENCAP		IPPROTO_ENCAP
   IPPROTO_PIM = 103,		/* Protocol Independent Multicast	*/

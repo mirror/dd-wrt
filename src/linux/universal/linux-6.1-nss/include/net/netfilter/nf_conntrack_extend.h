@@ -31,6 +31,9 @@ enum nf_ct_ext_id {
 #if IS_ENABLED(CONFIG_NET_ACT_CT)
 	NF_CT_EXT_ACT_CT,
 #endif
+#ifdef CONFIG_NF_CONNTRACK_DSCPREMARK_EXT
+	NF_CT_EXT_DSCPREMARK,
+#endif
 	NF_CT_EXT_NUM,
 };
 
