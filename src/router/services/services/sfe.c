@@ -43,8 +43,7 @@ void start_sfe(void)
 		rmmod("ecm");
 		sysprintf("echo 1 > /sys/fast_classifier/skip_to_bridge_ingress");
 		sysprintf("echo 1 > /proc/sys/net/netfilter/nf_conntrack_tcp_no_window_check");
-
-		dd_loginfo("sfe", "shortcut forwarding engine successfully started\n");
+		dd_loginfo("sfe", "shortcut (SFE) forwarding engine successfully started\n");
 	} else if (nvram_match("sfe", "2")) {
 		rmmod("fast-classifier");
 		rmmod("shortcut-fe-ipv6");
@@ -55,7 +54,7 @@ void start_sfe(void)
 		rmmod("ecm");
 		writeproc("/proc/ctf", "1");
 		sysprintf("echo 0 > /proc/sys/net/netfilter/nf_conntrack_tcp_no_window_check");
-		dd_loginfo("ctf", "fast path forwarding successfully started\n");
+		dd_loginfo("ctf", "fast path (CTF) forwarding successfully started\n");
 	} else if (nvram_match("sfe", "3")) { // ecm nss
 		rmmod("fast-classifier");
 		rmmod("shortcut-fe-ipv6");
@@ -64,7 +63,7 @@ void start_sfe(void)
 		eval("insmod","qca-nss-sfe");
 		eval("insmod","ecm","front_end_selection=1");
 		sysprintf("echo 1 > /proc/sys/net/netfilter/nf_conntrack_tcp_no_window_check");
-		dd_loginfo("ecm-nss", "ecm-nss forwarding successfully started\n");
+		dd_loginfo("ecm-nss", "Enhanced Connection Manager (ECM) forwarding engine successfully started\n");
 	} else if (nvram_match("sfe", "4")) { // ecm sfe
 		rmmod("fast-classifier");
 		rmmod("shortcut-fe-ipv6");
@@ -73,7 +72,7 @@ void start_sfe(void)
 		eval("insmod","qca-nss-sfe");
 		eval("insmod","ecm","front_end_selection=2");
 		sysprintf("echo 1 > /proc/sys/net/netfilter/nf_conntrack_tcp_no_window_check");
-		dd_loginfo("ecm-nss", "ecm-nss forwarding successfully started\n");
+		dd_loginfo("ecm-nss", "shortcut (NSS-SFE) forwarding engine successfully started\n");
 	} else if (nvram_match("sfe", "5")) { // ecm sfe & nss
 		rmmod("fast-classifier");
 		rmmod("shortcut-fe-ipv6");
@@ -82,7 +81,7 @@ void start_sfe(void)
 		eval("insmod","qca-nss-sfe");
 		eval("insmod","ecm","front_end_selection=4");
 		sysprintf("echo 1 > /proc/sys/net/netfilter/nf_conntrack_tcp_no_window_check");
-		dd_loginfo("ecm-nss", "ecm-nss forwarding successfully started\n");
+		dd_loginfo("ecm-nss", "Enhanced Connection Manager (ECM+NSS-SFE) forwarding engine successfully started\n");
 	} else {
 		rmmod("fast-classifier");
 		rmmod("shortcut-fe-ipv6");
