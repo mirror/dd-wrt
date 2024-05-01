@@ -77,6 +77,7 @@ void start_bonding(void)
 			rmmod("qca-nss-vlan");
 			rmmod("bonding");
 			eval("insmod", "bonding", "miimon=1000", "downdelay=200", "updelay=200", mode, count, hash_policy);
+			insmod("qca-nss-vlan");
 //			sysprintf("echo %s > /sys/devices/virtual/net/bond0/bonding/mode",nvram_default_get("bonding_type", "balance-rr"));
 //			sysprintf("echo %s > /sys/devices/virtual/net/bond0/bonding/xmit_hash_policy",nvram_default_get("bonding_policy", "layer2+3"));
 			first = 1;
