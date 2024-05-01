@@ -5185,6 +5185,12 @@ static inline bool netif_is_failover_slave(const struct net_device *dev)
 	return dev->priv_flags & IFF_FAILOVER_SLAVE;
 }
 
+static inline bool netif_is_ifb_dev(const struct net_device *dev)
+{
+	return dev->priv_flags_ext & IFF_EXT_IFB;
+}
+
+
 /* This device needs to keep skb dst for qdisc enqueue or ndo_start_xmit() */
 static inline void netif_keep_dst(struct net_device *dev)
 {
