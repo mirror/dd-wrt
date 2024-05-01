@@ -449,33 +449,6 @@ static struct ctl_table nss_tunipip6_table[] = {
 	{ }
 };
 
-static struct ctl_table nss_tunipip6_root_dir[] = {
-	{
-		.procname		= "ipip6",
-		.mode			= 0555,
-		.child			= nss_tunipip6_table,
-	},
-	{ }
-};
-
-static struct ctl_table nss_tunipip6_nss_root_dir[] = {
-	{
-		.procname		= "nss",
-		.mode			= 0555,
-		.child			= nss_tunipip6_root_dir,
-	},
-	{ }
-};
-
-static struct ctl_table nss_tunipip6_root[] = {
-	{
-		.procname		= "dev",
-		.mode			= 0555,
-		.child			= nss_tunipip6_nss_root_dir,
-	},
-	{ }
-};
-
 static struct ctl_table_header *nss_tunipip6_ctl_header;
 
 /*
@@ -483,7 +456,7 @@ static struct ctl_table_header *nss_tunipip6_ctl_header;
  * 	Register command line interface for tunipip6.
  */
 bool nss_tunipip6_sysctl_register(void) {
-	nss_tunipip6_ctl_header = register_sysctl_table(nss_tunipip6_root);
+	nss_tunipip6_ctl_header = register_sysctl("drv/nss/ipip6", nss_tunipip6_table);
 	if (!nss_tunipip6_ctl_header) {
 		return false;
 	}

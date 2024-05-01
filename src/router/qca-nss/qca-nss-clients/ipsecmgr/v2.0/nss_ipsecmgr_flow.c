@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2017-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2021, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -149,10 +149,10 @@ static bool nss_ipsecmgr_flow_update_db(struct nss_ipsecmgr_flow *flow)
 
 	hash_idx = nss_ipsecmgr_flow_tuple2hash(&flow->state.tuple, NSS_IPSECMGR_FLOW_MAX);
 
-	write_lock(&ipsecmgr_drv->lock);
+	write_lock_bh(&ipsecmgr_drv->lock);
 	sa = nss_ipsecmgr_sa_find(ipsecmgr_drv->sa_db, sa_tuple);
 	if (!sa) {
-		write_unlock(&ipsecmgr_drv->lock);
+		write_unlock_bh(&ipsecmgr_drv->lock);
 		nss_ipsecmgr_trace("%px: failed to find SA during flow update", flow);
 		return false;
 	}
@@ -163,7 +163,7 @@ static bool nss_ipsecmgr_flow_update_db(struct nss_ipsecmgr_flow *flow)
 	 */
 	nss_ipsecmgr_ref_add(&flow->ref, &sa->ref);
 	list_add(&flow->list, &ipsecmgr_drv->flow_db[hash_idx]);
-	write_unlock(&ipsecmgr_drv->lock);
+	write_unlock_bh(&ipsecmgr_drv->lock);
 	return true;
 }
 
@@ -215,7 +215,7 @@ static void nss_ipsecmgr_flow_del_ref(struct nss_ipsecmgr_ref *ref)
 	 * Write lock needs to be held by the caller since flow db is
 	 * getting modified.
 	 */
-	BUG_ON(write_can_lock(&ipsecmgr_drv->lock));
+	nss_ipsecmgr_write_lock_is_held(&ipsecmgr_drv->lock);
 	list_del_init(&flow->list);
 }
 

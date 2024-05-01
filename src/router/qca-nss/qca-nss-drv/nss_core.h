@@ -1,9 +1,12 @@
 /*
  **************************************************************************
- * Copyright (c) 2013-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2013-2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
+ *
  * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
  * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
  * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
@@ -38,8 +41,10 @@
 #include "nss_phys_if.h"
 #include "nss_hlos_if.h"
 #include "nss_oam.h"
+#ifdef NSS_DATA_PLANE_GENERIC_SUPPORT
 #include "nss_data_plane.h"
 #include "nss_gmac_stats.h"
+#endif
 #include "nss_meminfo.h"
 #include "nss_stats.h"
 
@@ -100,31 +105,30 @@
 #endif
 
 /*
+ * DMA Offset helper
+ */
+#define n2h_desc_index_offset(_index) sizeof(struct n2h_descriptor) * (_index)
+#define h2n_desc_index_offset(_index) sizeof(struct h2n_descriptor) * (_index)
+
+#define n2h_desc_index_to_dma(_if_map_addr, _qid, _index) (_if_map_addr)->n2h_desc_if[(_qid)].desc_addr + n2h_desc_index_offset(_index)
+#define h2n_desc_index_to_dma(_if_map_addr, _qid, _index) (_if_map_addr)->h2n_desc_if[(_qid)].desc_addr + h2n_desc_index_offset(_index)
+
+#define h2n_nss_index_offset offsetof(struct nss_if_mem_map, h2n_nss_index)
+#define n2h_nss_index_offset offsetof(struct nss_if_mem_map, n2h_nss_index)
+#define h2n_hlos_index_offset offsetof(struct nss_if_mem_map, h2n_hlos_index)
+#define n2h_hlos_index_offset offsetof(struct nss_if_mem_map, n2h_hlos_index)
+
+#define h2n_nss_index_to_dma(_if_map_addr, _index) (_if_map_addr) + h2n_nss_index_offset + (sizeof(uint32_t) * (_index))
+#define n2h_nss_index_to_dma(_if_map_addr, _index) (_if_map_addr) + n2h_nss_index_offset + (sizeof(uint32_t) * (_index))
+#define h2n_hlos_index_to_dma(_if_map_addr, _index) (_if_map_addr) + h2n_hlos_index_offset + (sizeof(uint32_t) * (_index))
+#define n2h_hlos_index_to_dma(_if_map_addr, _index) (_if_map_addr) + n2h_hlos_index_offset + (sizeof(uint32_t) * (_index))
+
+/*
  * Cache operation
  */
 #define NSS_CORE_DSB() dsb(sy)
-#define NSS_CORE_DMA_CACHE_MAINT(start, size, dir) nss_core_dma_cache_maint(start, size, dir)
-
-/*
- * nss_core_dma_cache_maint()
- *	Perform the appropriate cache op based on direction
- */
-static inline void nss_core_dma_cache_maint(void *start, uint32_t size, int direction)
-{
-	switch (direction) {
-	case DMA_FROM_DEVICE:/* invalidate only */
-		dmac_inv_range(start, start + size);
-		break;
-	case DMA_TO_DEVICE:/* writeback only */
-		dmac_clean_range(start, start + size);
-		break;
-	case DMA_BIDIRECTIONAL:/* writeback and invalidate */
-		dmac_flush_range(start, start + size);
-		break;
-	default:
-		BUG();
-	}
-}
+#define NSS_CORE_DMA_CACHE_MAINT(dev, start, size, dir) BUILD_BUG_ON_MSG(1, \
+	"NSS_CORE_DMA_CACHE_MAINT is deprecated. Fix the code to use correct dma_sync_* API")
 
 #define NSS_DEVICE_IF_START NSS_PHYSICAL_IF_START
 
@@ -186,7 +190,7 @@ static inline void nss_core_dma_cache_maint(void *start, uint32_t size, int dire
 /*
  * NSS maximum IRQ per interrupt instance/core
  */
-#if defined(NSS_HAL_IPQ807x_SUPPORT) || defined(NSS_HAL_IPQ60XX_SUPPORT)
+#if defined(NSS_HAL_IPQ807x_SUPPORT) || defined(NSS_HAL_IPQ60XX_SUPPORT) || defined(NSS_HAL_IPQ95XX_SUPPORT)
 #define NSS_MAX_IRQ_PER_INSTANCE 6
 #define NSS_MAX_IRQ_PER_CORE 10	/* must match with NSS_HAL_N2H_INTR_PURPOSE_MAX */
 #elif defined(NSS_HAL_IPQ50XX_SUPPORT)
@@ -233,6 +237,7 @@ static inline void nss_core_dma_cache_maint(void *start, uint32_t size, int dire
  *
  */
 #define NSS_FREQ_SCALE_NA	0xFAADFAAD	/* Frequency scale not supported */
+#define NSS_FREQ_NA		0x0		/* Instructions Per ms Min */
 
 #define NSS_FREQ_110		110000000	/* Frequency in hz */
 #define NSS_FREQ_110_MIN	0x03000		/* Instructions Per ms Min */
@@ -275,6 +280,14 @@ static inline void nss_core_dma_cache_maint(void *start, uint32_t size, int dire
 #define NSS_FREQ_800		800000000	/* Frequency in hz */
 #define NSS_FREQ_800_MIN	0x07000		/* Instructions Per ms Min */
 #define NSS_FREQ_800_MAX	0x25000		/* Instructions Per ms Max */
+
+#define NSS_FREQ_850		850000000	/* Frequency in hz */
+#define NSS_FREQ_850_MIN	0x07000		/* Instructions Per ms Min */
+#define NSS_FREQ_850_MAX	0x0c000		/* Instructions Per ms Max */
+
+#define NSS_FREQ_1000		1000000000	/* Frequency in hz */
+#define NSS_FREQ_1000_MIN	0x0c000		/* Instructions Per ms Min */
+#define NSS_FREQ_1000_MAX	0x25000		/* Instructions Per ms Max */
 
 #define NSS_FREQ_1497		1497600000	/* Frequency in hz */
 #if defined(NSS_HAL_IPQ60XX_SUPPORT)
@@ -380,6 +393,7 @@ struct hlos_n2h_desc_ring {
 struct hlos_h2n_desc_rings {
 	struct h2n_desc_if_instance desc_ring;	/* Descriptor ring */
 	uint32_t hlos_index;
+	uint32_t nss_index_local;		/* Index number for the next descriptor (NSS owned) */
 	spinlock_t lock;			/* Lock to save from simultaneous access */
 	uint32_t flags;				/* Flags */
 	uint64_t tx_q_full_cnt;			/* Descriptor queue full count */
@@ -477,6 +491,9 @@ struct nss_ctx_instance {
 					/* Service code callbacks */
 	void *service_code_ctx[NSS_MAX_SERVICE_CODE];
 					/* Service code callback contexts */
+	nss_edma_lite_msg_callback_t edma_lite_callback;
+					/* EDMA lite callback */
+	void *edma_lite_ctx;			/* EDMA lite context */
 	spinlock_t decongest_cb_lock;	/* Lock to protect queue decongestion cb table */
 	uint16_t phys_if_mtu[NSS_MAX_PHYSICAL_INTERFACES];
 					/* Current MTU value of physical interface */
@@ -486,12 +503,21 @@ struct nss_ctx_instance {
 					/* Worker thread statistics */
 	struct nss_unaligned_stats unaligned_stats;
 					/* Unaligned emulation performance statistics */
-	struct nss_rx_cb_list nss_rx_interface_handlers[NSS_MAX_CORES][NSS_MAX_NET_INTERFACES];
+	struct nss_rx_cb_list nss_rx_interface_handlers[NSS_MAX_NET_INTERFACES];
 					/* NSS interface callback handlers */
 	struct nss_subsystem_dataplane_register subsys_dp_register[NSS_MAX_NET_INTERFACES];
 					/* Subsystem registration data */
 	uint32_t magic;
 					/* Magic protection */
+};
+
+/*
+ * NSS stats read context
+ */
+struct nss_stats_buff{
+	uint16_t msg_len;		/* Length of message copied */
+	char *msg_base_ptr;		/* base buffer pointer */
+	char *msg_cur_ptr;		/* current buffer pointer */
 };
 
 /*
@@ -559,6 +585,9 @@ struct nss_top_instance {
 	uint8_t mirror_handler_id;
 	uint8_t wmdb_handler_id;
 	uint8_t dma_handler_id;
+	uint8_t udp_st_handler_id;
+	uint8_t edma_lite_handler_id[NSS_MAX_CORES];
+	uint8_t trustsec_rx_handler_id;
 
 	/*
 	 * Data/Message callbacks for various interfaces
@@ -653,8 +682,10 @@ struct nss_top_instance {
 	 */
 	atomic64_t stats_drv[NSS_DRV_STATS_MAX];
 					/* Hlos driver statistics */
+#ifdef NSS_DATA_PLANE_GENERIC_SUPPORT
 	uint64_t stats_gmac[NSS_MAX_PHYSICAL_INTERFACES][NSS_GMAC_STATS_MAX];
 					/* GMAC statistics */
+#endif
 	uint64_t stats_node[NSS_MAX_NET_INTERFACES][NSS_STATS_NODE_MAX];
 					/* IPv4 statistics per interface */
 	bool nss_hal_common_init_done;
@@ -667,8 +698,11 @@ struct nss_top_instance {
 	 */
 	uint64_t last_rx_jiffies;	/* Time of the last RX message from the NA in jiffies */
 	struct nss_hal_ops *hal_ops;	/* nss_hal ops for this target platform */
+#ifdef NSS_DATA_PLANE_GENERIC_SUPPORT
 	struct nss_data_plane_ops *data_plane_ops;
 					/* nss_data_plane ops for this target platform */
+#endif
+	struct nss_stats_buff stats_buff;
 };
 
 #if (NSS_PKT_STATS_ENABLED == 1)
@@ -894,6 +928,12 @@ struct nss_platform_data {
 				/* Does this core handle TLS Tunnel ? */
 	enum nss_feature_enabled mirror_enabled;
 				/* Does this core handle mirror? */
+	enum nss_feature_enabled udp_st_enabled;
+				/* Does this core handle udp st? */
+	enum nss_feature_enabled edma_lite_enabled;
+				/* Does this core handle EDMA lite? */
+	enum nss_feature_enabled trustsec_enabled;
+				/* Does this core handle TrustSec? */
 };
 #endif
 
@@ -944,6 +984,8 @@ extern uint32_t nss_core_unregister_handler(struct nss_ctx_instance *nss_ctx, ui
 extern void nss_core_init_handlers(struct nss_ctx_instance *nss_ctx);
 void nss_core_update_max_ipv4_conn(int conn);
 void nss_core_update_max_ipv6_conn(int conn);
+void nss_core_update_qos_mem_size(int size);
+int nss_core_get_qos_mem_size(void);
 extern void nss_core_register_subsys_dp(struct nss_ctx_instance *nss_ctx, uint32_t if_num,
 					nss_phys_if_rx_callback_t cb,
 					nss_phys_if_rx_ext_data_callback_t ext_cb,
@@ -951,10 +993,11 @@ extern void nss_core_register_subsys_dp(struct nss_ctx_instance *nss_ctx, uint32
 					uint32_t features);
 extern void nss_core_unregister_subsys_dp(struct nss_ctx_instance *nss_ctx, uint32_t if_num);
 void nss_core_set_subsys_dp_type(struct nss_ctx_instance *nss_ctx, struct net_device *ndev, uint32_t if_num, uint32_t type);
+extern bool nss_core_is_mq_enabled(void);
 
 static inline nss_if_rx_msg_callback_t nss_core_get_msg_handler(struct nss_ctx_instance *nss_ctx, uint32_t interface)
 {
-	return nss_ctx->nss_rx_interface_handlers[nss_ctx->id][interface].msg_cb;
+	return nss_ctx->nss_rx_interface_handlers[interface].msg_cb;
 }
 
 static inline uint32_t nss_core_get_max_buf_size(struct nss_ctx_instance *nss_ctx)
@@ -1022,5 +1065,6 @@ extern void nss_ppe_free(void);
  */
 extern nss_tx_status_t nss_n2h_cfg_empty_pool_size(struct nss_ctx_instance *nss_ctx, uint32_t pool_sz);
 extern nss_tx_status_t nss_n2h_paged_buf_pool_init(struct nss_ctx_instance *nss_ctx);
+extern nss_tx_status_t nss_n2h_cfg_qos_mem_size(struct nss_ctx_instance *nss_ctx, uint32_t pool_sz);
 
 #endif /* __NSS_CORE_H */

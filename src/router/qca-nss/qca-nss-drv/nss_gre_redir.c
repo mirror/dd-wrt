@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2014-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2014-2021, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -16,6 +16,7 @@
 
 #include "nss_tx_rx_common.h"
 #include "nss_gre_redir_stats.h"
+#include "nss_gre_redir_strings.h"
 #include "nss_gre_redir_log.h"
 #define NSS_GRE_REDIR_TX_TIMEOUT 3000 /* 3 Seconds */
 
@@ -31,14 +32,9 @@ static struct {
 } nss_gre_redir_pvt;
 
 /*
- * Spinlock to update tunnel stats.
- */
-static DEFINE_SPINLOCK(nss_gre_redir_stats_lock);
-
-/*
  * Array to hold tunnel stats along with if_num
  */
-static struct nss_gre_redir_tunnel_stats tun_stats[NSS_GRE_REDIR_MAX_INTERFACES];
+struct nss_gre_redir_tunnel_stats tun_stats[NSS_GRE_REDIR_MAX_INTERFACES];
 
 /*
  * nss_gre_callback()
@@ -59,7 +55,7 @@ static void nss_gre_redir_msg_sync_callback(void *app_data, struct nss_gre_redir
  * nss_gre_redir_verify_ifnum()
  *	Verify interface type.
  */
-static bool nss_gre_redir_verify_ifnum(uint32_t if_num)
+bool nss_gre_redir_verify_ifnum(uint32_t if_num)
 {
 	uint32_t type;
 
@@ -70,92 +66,6 @@ static bool nss_gre_redir_verify_ifnum(uint32_t if_num)
 			type == NSS_DYNAMIC_INTERFACE_TYPE_GRE_REDIR_OUTER ||
 			type == NSS_DYNAMIC_INTERFACE_TYPE_GRE_REDIR_EXCEPTION_US ||
 			type == NSS_DYNAMIC_INTERFACE_TYPE_GRE_REDIR_EXCEPTION_DS;
-}
-
-/*
- * nss_gre_redir_tunnel_update_stats()
- *	Update gre_redir tunnel stats.
- */
-static void nss_gre_redir_tunnel_update_stats(struct nss_ctx_instance *nss_ctx, int if_num, struct nss_gre_redir_stats_sync_msg *ngss)
-{
-	int i, j;
-	uint32_t type;
-	struct net_device *dev;
-
-	type = nss_dynamic_interface_get_type(nss_ctx, if_num);
-	dev = nss_cmn_get_interface_dev(nss_ctx, if_num);
-	if (!dev) {
-		nss_warning("%px: Unable to find net device for the interface %d\n", nss_ctx, if_num);
-		return;
-	}
-
-	if (!nss_gre_redir_verify_ifnum(if_num)) {
-		nss_warning("%px: Unknown type for interface %d\n", nss_ctx, if_num);
-		return;
-	}
-
-	spin_lock_bh(&nss_gre_redir_stats_lock);
-	for (i = 0; i < NSS_GRE_REDIR_MAX_INTERFACES; i++) {
-		if (tun_stats[i].dev == dev) {
-			break;
-		}
-	}
-
-	if (i == NSS_GRE_REDIR_MAX_INTERFACES) {
-		nss_warning("%px: Unable to find tunnel stats instance for interface %d\n", nss_ctx, if_num);
-		return;
-	}
-
-	nss_assert(tun_stats[i].ref_count);
-	switch (type) {
-	case NSS_DYNAMIC_INTERFACE_TYPE_GRE_REDIR_WIFI_HOST_INNER:
-	case NSS_DYNAMIC_INTERFACE_TYPE_GRE_REDIR_WIFI_OFFL_INNER:
-	case NSS_DYNAMIC_INTERFACE_TYPE_GRE_REDIR_SJACK_INNER:
-		tun_stats[i].node_stats.tx_packets += ngss->node_stats.tx_packets;
-		tun_stats[i].node_stats.tx_bytes += ngss->node_stats.tx_bytes;
-		tun_stats[i].sjack_tx_packets += ngss->sjack_rx_packets;
-		tun_stats[i].encap_sg_alloc_drop += ngss->encap_sg_alloc_drop;
-		tun_stats[i].tx_dropped += nss_cmn_rx_dropped_sum(&(ngss->node_stats));
-		for (j = 0; j < NSS_GRE_REDIR_MAX_RADIO; j++) {
-			tun_stats[i].offl_tx_pkts[j] += ngss->offl_rx_pkts[j];
-		}
-
-		break;
-
-	case NSS_DYNAMIC_INTERFACE_TYPE_GRE_REDIR_OUTER:
-		tun_stats[i].node_stats.rx_packets += ngss->node_stats.rx_packets;
-		tun_stats[i].node_stats.rx_bytes += ngss->node_stats.rx_bytes;
-		tun_stats[i].sjack_rx_packets += ngss->sjack_rx_packets;
-		tun_stats[i].decap_fail_drop += ngss->decap_fail_drop;
-		tun_stats[i].decap_split_drop += ngss->decap_split_drop;
-		tun_stats[i].split_sg_alloc_fail += ngss->split_sg_alloc_fail;
-		tun_stats[i].split_linear_copy_fail += ngss->split_linear_copy_fail;
-		tun_stats[i].split_not_enough_tailroom += ngss->split_not_enough_tailroom;
-		tun_stats[i].decap_eapol_frames += ngss->decap_eapol_frames;
-		tun_stats[i].node_stats.rx_dropped[0] += nss_cmn_rx_dropped_sum(&(ngss->node_stats));
-		for (j = 0; j < NSS_GRE_REDIR_MAX_RADIO; j++) {
-			tun_stats[i].offl_rx_pkts[j] += ngss->offl_rx_pkts[j];
-		}
-
-		break;
-
-	case NSS_DYNAMIC_INTERFACE_TYPE_GRE_REDIR_EXCEPTION_US:
-		tun_stats[i].exception_us_rx += ngss->node_stats.rx_packets;
-		tun_stats[i].exception_us_tx += ngss->node_stats.tx_packets;
-		break;
-
-	case NSS_DYNAMIC_INTERFACE_TYPE_GRE_REDIR_EXCEPTION_DS:
-		tun_stats[i].exception_ds_rx += ngss->node_stats.rx_packets;
-		tun_stats[i].exception_ds_tx += ngss->node_stats.tx_packets;
-		tun_stats[i].exception_ds_invalid_dst_drop += ngss->exception_ds_invalid_dst_drop;
-		tun_stats[i].exception_ds_inv_appid += ngss->exception_ds_inv_appid;
-		tun_stats[i].headroom_unavail += ngss->headroom_unavail;
-		tun_stats[i].tx_completion_success += ngss->tx_completion_success;
-		tun_stats[i].tx_completion_drop += ngss->tx_completion_drop;
-		break;
-	}
-
-	spin_unlock_bh(&nss_gre_redir_stats_lock);
 }
 
 /*
@@ -199,7 +109,7 @@ static void nss_gre_redir_msg_handler(struct nss_ctx_instance *nss_ctx, struct n
 	 */
 	if (ncm->response == NSS_CMN_RESPONSE_NOTIFY) {
 		ncm->cb = (nss_ptr_t)nss_core_get_msg_handler(nss_ctx, ncm->interface);
-		ncm->app_data = (nss_ptr_t)nss_ctx->nss_rx_interface_handlers[nss_ctx->id][ncm->interface].app_data;
+		ncm->app_data = (nss_ptr_t)nss_ctx->nss_rx_interface_handlers[ncm->interface].app_data;
 	}
 
 	/*
@@ -209,7 +119,8 @@ static void nss_gre_redir_msg_handler(struct nss_ctx_instance *nss_ctx, struct n
 
 	switch (ncm->type) {
 	case NSS_GRE_REDIR_RX_STATS_SYNC_MSG:
-		nss_gre_redir_tunnel_update_stats(nss_ctx, ncm->interface, &ngrm->msg.stats_sync);
+		nss_gre_redir_stats_sync(nss_ctx, ncm->interface, &ngrm->msg.stats_sync);
+		nss_gre_redir_stats_notify(nss_ctx, ncm->interface);
 		break;
 	}
 
@@ -541,24 +452,6 @@ nss_tx_status_t nss_gre_redir_configure_outer_node(int ifnum,
 EXPORT_SYMBOL(nss_gre_redir_configure_outer_node);
 
 /*
- * nss_gre_redir_get_stats()
- *	Get gre_redir tunnel stats.
- */
-bool nss_gre_redir_get_stats(int index, struct nss_gre_redir_tunnel_stats *stats)
-{
-	spin_lock_bh(&nss_gre_redir_stats_lock);
-	if (tun_stats[index].ref_count == 0) {
-		spin_unlock_bh(&nss_gre_redir_stats_lock);
-		return false;
-	}
-
-	memcpy(stats, &tun_stats[index], sizeof(struct nss_gre_redir_tunnel_stats));
-	spin_unlock_bh(&nss_gre_redir_stats_lock);
-	return true;
-}
-EXPORT_SYMBOL(nss_gre_redir_get_stats);
-
-/*
  * nss_gre_redir_tx_msg()
  *	Transmit a GRE message to NSS FW.
  */
@@ -775,4 +668,6 @@ void nss_gre_redir_register_handler(void)
 		nss_warning("%px: Not able to register handler for gre_redir base interface with NSS core\n", nss_ctx);
 		return;
 	}
+
+	nss_gre_redir_strings_dentry_create();
 }

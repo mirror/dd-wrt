@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -18,6 +18,7 @@
 
 #include "nss_tx_rx_common.h"
 #include "nss_mirror_stats.h"
+#include "nss_mirror_strings.h"
 #include "nss_mirror_log.h"
 
 #define NSS_MIRROR_TX_TIMEOUT 3000 /* 3 Seconds */
@@ -89,6 +90,7 @@ static void nss_mirror_handler(struct nss_ctx_instance *nss_ctx, struct nss_cmn_
 		 * Debug stats embedded in stats msg.
 		 */
 		nss_mirror_stats_sync(nss_ctx, nmm, ncm->interface);
+		nss_mirror_stats_notify(nss_ctx, ncm->interface);
 		break;
 	}
 
@@ -290,4 +292,5 @@ void nss_mirror_register_handler(void)
 	init_completion(&nss_mirror_pvt.complete);
 
 	nss_mirror_stats_dentry_create();
+	nss_mirror_strings_dentry_create();
 }

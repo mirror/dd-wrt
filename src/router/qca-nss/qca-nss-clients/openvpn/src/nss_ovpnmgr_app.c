@@ -62,7 +62,12 @@ static struct net_device *nss_ovpnmgr_app_find_dev(struct nss_ovpnmgr_route_tupl
 		return dev;
 	}
 
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 6, 0))
 	rt6 = rt6_lookup(&init_net, (const struct in6_addr *)rt->ip_addr, NULL, 0, 0);
+#else
+	rt6 = rt6_lookup(&init_net, (const struct in6_addr *)rt->ip_addr, NULL, 0, 0, 0);
+#endif
+
 	if (!rt6) {
 		return NULL;
 	}

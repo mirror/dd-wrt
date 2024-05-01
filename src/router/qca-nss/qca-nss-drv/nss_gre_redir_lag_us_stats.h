@@ -1,6 +1,6 @@
 /*
  ******************************************************************************
- * Copyright (c) 2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2018, 2021, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -18,23 +18,33 @@
 #define __NSS_GRE_REDIR_LAG_US_STATS_H__
 
 /*
- * GRE redirect LAG upstream statistics
+ * nss_gre_redir_lag_us_pvt_sync_stats
+ *	Hash statistics synchronization context.
  */
-enum nss_gre_redir_lag_us_stats_types {
-	NSS_GRE_REDIR_LAG_US_STATS_AMSDU_PKTS = NSS_STATS_NODE_MAX,
-	NSS_GRE_REDIR_LAG_US_STATS_AMSDU_PKTS_ENQUEUED,
-	NSS_GRE_REDIR_LAG_US_STATS_AMSDU_PKTS_EXCEPTIONED,
-	NSS_GRE_REDIR_LAG_US_STATS_EXCEPTIONED,
-	NSS_GRE_REDIR_LAG_US_STATS_FREED,
-	NSS_GRE_REDIR_LAG_US_STATS_ADD_ATTEMPT,
-	NSS_GRE_REDIR_LAG_US_STATS_ADD_SUCCESS,
-	NSS_GRE_REDIR_LAG_US_STATS_ADD_FAIL_TABLE_FULL,
-	NSS_GRE_REDIR_LAG_US_STATS_ADD_FAIL_EXISTS,
-	NSS_GRE_REDIR_LAG_US_STATS_DEL_ATTEMPT,
-	NSS_GRE_REDIR_LAG_US_STATS_DEL_SUCCESS,
-	NSS_GRE_REDIR_LAG_US_STATS_DEL_FAIL_NOT_FOUND,
-	NSS_GRE_REDIR_LAG_US_STATS_MAX,
+struct nss_gre_redir_lag_us_pvt_sync_stats {
+	struct delayed_work nss_gre_redir_lag_us_work;		/**< Delayed work per LAG US node. */
+	struct nss_gre_redir_lag_us_msg db_sync_msg;		/**< Hash statistics message. */
+	struct nss_gre_redir_lag_us_tunnel_stats tun_stats;	/**< GRE redirect LAG common statistics. */
+	nss_gre_redir_lag_us_msg_callback_t cb;			/**< Callback for hash query message. */
+	void *app_data;						/**< app_data for hash query message. */
+	uint32_t ifnum;						/**< NSS interface number. */
+	bool valid;						/**< Valid flag. */
 };
 
+/*
+ * Common context for stats update.
+ */
+struct nss_gre_redir_lag_us_cmn_ctx {
+	struct workqueue_struct *nss_gre_redir_lag_us_wq;		/**< Work queue. */
+	spinlock_t nss_gre_redir_lag_us_stats_lock;			/**< Spin lock. */
+	struct nss_gre_redir_lag_us_pvt_sync_stats stats_ctx[NSS_GRE_REDIR_LAG_MAX_NODE];
+};
+
+extern void nss_gre_redir_lag_us_stats_notify(struct nss_ctx_instance *nss_ctx, uint32_t if_num);
+extern bool nss_gre_redir_lag_us_get_node_idx(uint32_t ifnum, uint32_t *idx);
+extern bool nss_gre_redir_lag_us_verify_ifnum(uint32_t if_num);
+extern void nss_gre_redir_lag_us_stats_sync(struct nss_ctx_instance *nss_ctx,
+					struct nss_gre_redir_lag_us_cmn_sync_stats_msg *ngss, uint32_t ifnum);
 extern struct dentry *nss_gre_redir_lag_us_stats_dentry_create(void);
+
 #endif

@@ -1,9 +1,12 @@
 /*
  **************************************************************************
- * Copyright (c) 2014-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2014-2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
+ *
  * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
  * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
  * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
@@ -91,6 +94,7 @@ typedef enum nss_capwap_msg_type {
 	NSS_CAPWAP_MSG_TYPE_DTLS,
 	NSS_CAPWAP_MSG_TYPE_FLOW_RULE_ADD,
 	NSS_CAPWAP_MSG_TYPE_FLOW_RULE_DEL,
+	NSS_CAPWAP_MSG_TYPE_UPDATE_VP_NUM,
 	NSS_CAPWAP_MSG_TYPE_MAX,
 } nss_capwap_msg_type_t;
 
@@ -115,6 +119,10 @@ typedef enum nss_capwap_msg_response {
 	NSS_CAPWAP_ERROR_MSG_FLOW_TABLE_FULL,
 	NSS_CAPWAP_ERROR_MSG_FLOW_EXIST,
 	NSS_CAPWAP_ERROR_MSG_FLOW_NOT_EXIST,
+	NSS_CAPWAP_ERROR_MSG_INVALID_INTERFACE,
+	NSS_CAPWAP_ERROR_MSG_UPDATE_VP_NUM_FAILED,
+	NSS_CAPWAP_ERROR_MSG_DELETE_VP_NUM_FAILED,
+	NSS_CAPWAP_ERROR_MSG_INVALID_NEXT_NODE,
 	NSS_CAPWAP_ERROR_MSG_MAX,
 } nss_capwap_msg_response_t;
 
@@ -139,8 +147,8 @@ struct nss_capwap_stats_msg {
 
 	uint32_t rx_frag_timeout_drops;
 			/**< Packets dropped because of a reassembly timeout. */
-	uint32_t rx_queue_full_drops;
-			/**< Packets dropped because the queue is full. */
+	uint32_t rx_n2h_drops;
+			/**< Packets dropped because of error in packet processing. */
 	uint32_t rx_n2h_queue_full_drops;
 			/**< Packets dropped because the NSS-to-host queue is full. */
 	uint32_t rx_csum_drops;
@@ -298,6 +306,22 @@ struct nss_capwap_flow_rule_msg {
 };
 
 /**
+ * nss_capwap_enable_tunnel_msg
+ *	Structure to update sibling interface number.
+ */
+struct nss_capwap_enable_tunnel_msg {
+	uint32_t sibling_if_num; /**< Sibling interface number. */
+};
+
+/**
+ * nss_capwap_update_vp_num_msg
+ *	Structure to update the VP number associated with the tunnel.
+ */
+struct nss_capwap_update_vp_num_msg {
+	 int16_t vp_num; /**< VP number associated with the tunnel. */
+};
+
+/**
  * nss_capwap_msg
  *	Data for sending and receiving CAPWAP messages.
  */
@@ -322,6 +346,10 @@ struct nss_capwap_msg {
 				/**< Flow rule add message. */
 		struct nss_capwap_flow_rule_msg flow_rule_del;
 				/**< Flow rule delete message. */
+		struct nss_capwap_enable_tunnel_msg enable_tunnel;
+				/**< Enable tunnel message. */
+		struct nss_capwap_update_vp_num_msg update_vp_num;
+				/**< Update VP number message. */
 	} msg;			/**< Message payload. */
 };
 
@@ -358,8 +386,8 @@ struct nss_capwap_tunnel_stats {
 
 	uint64_t rx_frag_timeout_drops;
 			/**< Packets dropped because of a reassembly timeout. */
-	uint64_t rx_queue_full_drops;
-			/**< Packets dropped because the queue is full. */
+	uint64_t rx_n2h_drops;
+			/**< Packets dropped because of error in processing the packet. */
 	uint64_t rx_n2h_queue_full_drops;
 			/**< Packets dropped because the NSS-to-host queue is full. */
 	uint64_t rx_csum_drops;
@@ -374,6 +402,7 @@ struct nss_capwap_tunnel_stats {
 	/*
 	 * Tx/encap stats
 	 */
+	uint64_t tx_dropped_inner;	/**<Packets dropped due to inflow queue full. */
 	uint64_t tx_segments;		/**< Number of segments or fragments. */
 	uint64_t tx_queue_full_drops;
 			/**< Packets dropped because the queue is full. */

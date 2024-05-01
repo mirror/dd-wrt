@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2017-2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2018, 2021, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -21,6 +21,8 @@
 
 #ifndef __NSS_PPE_STATS_H
 #define __NSS_PPE_STATS_H
+
+#include <nss_cmn.h>
 
 /*
  * NSS PPE connection statistics
@@ -67,6 +69,16 @@ enum nss_ppe_stats_conn {
 	NSS_PPE_STATS_CE_OPAQUE_INVALID,	/* Create req fail due to invalid opaque in CE */
 	NSS_PPE_STATS_FAIL_FQG_FULL,		/* Create req fail due to flow qos group full */
 	NSS_PPE_STATS_CONN_MAX
+};
+
+/*
+ * NSS PPE SC statistics
+ */
+enum nss_ppe_stats_service_code {
+	NSS_PPE_STATS_SERVICE_CODE_CB_UNREGISTER,
+	NSS_PPE_STATS_SERVICE_CODE_PROCESS_OK,
+	NSS_PPE_STATS_SERVICE_CODE_PROCESS_FAIL,
+	NSS_PPE_STATS_SERVICE_CODE_MAX
 };
 
 /*
@@ -400,7 +412,7 @@ struct nss_ppe_sc_stats_debug {
  * NSS PPE statistics
  */
 struct nss_ppe_stats_debug {
-	uint32_t conn_stats[NSS_PPE_STATS_CONN_MAX];
+	uint64_t conn_stats[NSS_PPE_STATS_CONN_MAX];
 	uint32_t l3_stats[NSS_PPE_STATS_L3_MAX];
 	uint32_t code_stats[NSS_PPE_STATS_CODE_MAX];
 	struct nss_ppe_sc_stats_debug sc_stats[NSS_PPE_SC_MAX];
@@ -414,9 +426,21 @@ struct nss_ppe_stats_debug {
  */
 extern struct nss_ppe_stats_debug nss_ppe_debug_stats;
 
+/**
+ * nss_ppe_stats_notification
+ *	PPE transmission statistics structure.
+ */
+struct nss_ppe_stats_notification {
+	struct nss_ppe_sc_stats_debug ppe_stats_sc[NSS_PPE_SC_MAX];	/* PPE service code stats. */
+	uint64_t ppe_stats_conn[NSS_PPE_STATS_CONN_MAX];		/* PPE connection statistics. */
+	uint32_t core_id;						/* Core ID. */
+	uint32_t if_num;						/* Interface number. */
+};
+
 /*
  * NSS PPE statistics APIs
  */
+extern void nss_ppe_stats_notify(struct nss_ctx_instance *nss_ctx, uint32_t if_num);
 extern void nss_ppe_stats_sync(struct nss_ctx_instance *nss_ctx, struct nss_ppe_sync_stats_msg *stats_msg, uint16_t if_num);
 extern void nss_ppe_stats_dentry_create(void);
 

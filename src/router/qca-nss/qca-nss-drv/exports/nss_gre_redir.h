@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2014-2015, 2017-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2014-2015, 2017-2021, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -90,6 +90,60 @@ enum nss_gre_redir_tunnel_types {
 	NSS_GRE_REDIR_TUNNEL_TYPE_DTUN,		/**< D-tunnel mode. */
 	NSS_GRE_REDIR_TUNNEL_TYPE_SPLIT,	/**< Split mode. */
 	NSS_GRE_REDIR_TUNNEL_TYPE_MAX,		/**< Maximum tunnel type. */
+};
+
+/**
+ * nss_gre_redir_stats_types
+ *	GRE redirect statistics types.
+ */
+enum nss_gre_redir_stats_types {
+	NSS_GRE_REDIR_STATS_TX_DROPS = NSS_STATS_NODE_MAX,
+						/**< Dropped transmit packets. */
+	NSS_GRE_REDIR_STATS_SJACK_RX_PKTS,	/**< SJACK receive packet counter. */
+	NSS_GRE_REDIR_STATS_SJACK_TX_PKTS,	/**< SJACK transmit packet counter. */
+	NSS_GRE_REDIR_STATS_OFFLOAD_RX_PKTS_0,	/**< Offload receive packet counter 0. */
+	NSS_GRE_REDIR_STATS_OFFLOAD_RX_PKTS_1,	/**< Offload receive packet counter 1. */
+	NSS_GRE_REDIR_STATS_OFFLOAD_RX_PKTS_2,	/**< Offload receive packet counter 2. */
+	NSS_GRE_REDIR_STATS_OFFLOAD_RX_PKTS_3,	/**< Offload receive packet counter 3. */
+	NSS_GRE_REDIR_STATS_OFFLOAD_RX_PKTS_4,	/**< Offload receive packet counter 4. */
+	NSS_GRE_REDIR_STATS_OFFLOAD_TX_PKTS_0,	/**< Offload transmit packet counter 0. */
+	NSS_GRE_REDIR_STATS_OFFLOAD_TX_PKTS_1,	/**< Offload transmit packet counter 1. */
+	NSS_GRE_REDIR_STATS_OFFLOAD_TX_PKTS_2,	/**< Offload transmit packet counter 2. */
+	NSS_GRE_REDIR_STATS_OFFLOAD_TX_PKTS_3,	/**< Offload transmit packet counter 3. */
+	NSS_GRE_REDIR_STATS_OFFLOAD_TX_PKTS_4,	/**< Offload transmit packet counter 4. */
+	NSS_GRE_REDIR_STATS_EXCEPTION_US_RX_PKTS,
+						/**< Upstream exception receive packet counter. */
+	NSS_GRE_REDIR_STATS_EXCEPTION_US_TX_PKTS,
+						/**< Upstream exception transmit packet counter. */
+	NSS_GRE_REDIR_STATS_EXCEPTION_DS_RX_PKTS,
+						/**< Downstream exception receive packet counter. */
+	NSS_GRE_REDIR_STATS_EXCEPTION_DS_TX_PKTS,
+						/**< Downstream exception transmit packet counter. */
+	NSS_GRE_REDIR_STATS_ENCAP_SG_ALLOC_DROP,
+						/**< Encapsulation drop counters due to scatter gather buffer allocation failure. */
+	NSS_GRE_REDIR_STATS_DECAP_FAIL_DROP,
+						/**< Decapsulation drop counters due to invalid IP header. */
+	NSS_GRE_REDIR_STATS_DECAP_SPLIT_DROP,
+						/**< Decapsulation drop counters due to split flow processing. */
+	NSS_GRE_REDIR_STATS_SPLIT_SG_ALLOC_FAIL,
+						/**< Split processing fail counter due to scatter gather buffer allocation failure. */
+	NSS_GRE_REDIR_STATS_SPLIT_LINEAR_COPY_FAIL,
+						/**< Split processing fail counter due to linear copy fail. */
+	NSS_GRE_REDIR_STATS_SPLIT_NOT_ENOUGH_TAILROOM,
+						/**< Split processing fail counter due to insufficient tailroom. */
+	NSS_GRE_REDIR_STATS_EXCEPTION_DS_INVALID_DST_DROP,
+						/**< Downstream exception handling fail counter due to invalid destination. */
+	NSS_GRE_REDIR_STATS_DECAP_EAPOL_FRAMES,
+						/**< Decapsulation EAPoL frame counters. */
+	NSS_GRE_REDIR_STATS_EXCEPTION_DS_INV_APPID,
+						/**< Invalid application ID for the transmit completion packets on exception downstream node. */
+	NSS_GRE_REDIR_STATS_HEADROOM_UNAVAILABLE,
+						/**< Packet headroom unavailable to write metadata. */
+	NSS_GRE_REDIR_STATS_TX_COMPLETION_SUCCESS,
+						/**< Host enqueue success count for the transmit completion packets. */
+	NSS_GRE_REDIR_STATS_TX_COMPLETION_DROP,
+						/**< Host enqueue drop count for the transmit completion packets. */
+	NSS_GRE_REDIR_STATS_MAX			/**< Maximum statistics type. */
 };
 
 /**
@@ -247,34 +301,63 @@ struct nss_gre_redir_stats_sync_msg {
 };
 
 /**
+ * nss_gre_redir_tun_stats
+ *	GRE redirect statistics to accumulate all stats values.
+ */
+struct nss_gre_redir_tun_stats {
+	uint64_t rx_packets;		/**< Number of packets received. */
+	uint64_t rx_bytes;		/**< Number of bytes received. */
+	uint64_t tx_packets;		/**< Number of packets transmitted. */
+	uint64_t tx_bytes;		/**< Number of bytes transmitted. */
+	uint64_t rx_dropped[NSS_MAX_NUM_PRI];
+					/**< Packets dropped on receive due to queue full. */
+	uint64_t tx_dropped;		/**< Dropped transmit packets. */
+	uint64_t sjack_rx_packets;	/**< SJACK receive packet counter. */
+	uint64_t sjack_tx_packets;	/**< SJACK transmit packet counter. */
+	uint64_t offl_rx_pkts[NSS_GRE_REDIR_MAX_RADIO];	/**< Offload receive packet counter per radio. */
+	uint64_t offl_tx_pkts[NSS_GRE_REDIR_MAX_RADIO];	/**< Offload transmit packet counter per radio. */
+	uint64_t exception_us_rx;	/**< Upstream exception receive packet counter. */
+	uint64_t exception_us_tx;	/**< Upstream exception transmit packet counter. */
+	uint64_t exception_ds_rx;	/**< Downstream exception receive packet counter. */
+	uint64_t exception_ds_tx;	/**< Downstream exception transmit packet counter. */
+	uint64_t encap_sg_alloc_drop;
+					/**< Encapsulation drop counters due to scatter gather buffer allocation failure. */
+	uint64_t decap_fail_drop;	/**< Decapsulation drop counters due to invalid IP header. */
+	uint64_t decap_split_drop;	/**< Decapsulation drop counters due to split flow processing. */
+	uint64_t split_sg_alloc_fail;
+					/**< Split processing fail counter due to scatter gather buffer allocation failure. */
+	uint64_t split_linear_copy_fail;
+					/**< Split processing fail counter due to linear copy fail. */
+	uint64_t split_not_enough_tailroom;
+					/**< Split processing fail counter due to insufficient tailroom. */
+	uint64_t exception_ds_invalid_dst_drop;
+					/**< Downstream exception handling fail counter due to invalid destination. */
+	uint64_t decap_eapol_frames;	/**< Decapsulation EAPoL frame counters. */
+	uint64_t exception_ds_inv_appid;
+					/**< Invalid application ID for the transmit completion packets on exception downstream node. */
+	uint64_t headroom_unavail;	/**< Packet headroom unavailable to write metadata. */
+	uint64_t tx_completion_success;	/**< Host enqueue success count for the transmit completion packets. */
+	uint64_t tx_completion_drop;	/**< Host enqueue drop count for the transmit completion packets. */
+};
+
+/**
  * nss_gre_redir_tunnel_stats
  *	GRE redirect statistics as seen by the HLOS.
  */
 struct nss_gre_redir_tunnel_stats {
-	struct net_device *dev;				/**< Net device. */
-	struct nss_cmn_node_stats node_stats;		/**< Common node statistics. */
-	uint64_t tx_dropped;				/**< Dropped Tx packets. */
-	uint64_t sjack_rx_packets;			/**< SJACK Rx packet counter. */
-	uint64_t sjack_tx_packets;			/**< SJACK Tx packet counter. */
-	uint64_t offl_rx_pkts[NSS_GRE_REDIR_MAX_RADIO];	/**< Offload Rx packet counter per radio. */
-	uint64_t offl_tx_pkts[NSS_GRE_REDIR_MAX_RADIO];	/**< Offload Tx packet counter per radio. */
-	uint64_t exception_us_rx;			/**< Upstream exception Rx packet counter. */
-	uint64_t exception_us_tx;			/**< Upstream exception Tx packet counter. */
-	uint64_t exception_ds_rx;			/**< Downstream exception Rx packet counter. */
-	uint64_t exception_ds_tx;			/**< Downstream exception Tx packet counter. */
-	uint64_t encap_sg_alloc_drop;			/**< Encapsulation drop counters due to scatter gather buffer allocation failure. */
-	uint64_t decap_fail_drop;			/**< Decapsulation drop counters due to invalid IP header. */
-	uint64_t decap_split_drop;			/**< Decapsulation drop counters due to split flow processing. */
-	uint64_t split_sg_alloc_fail;			/**< Split processing fail counter due to scatter gather buffer allocation failure. */
-	uint64_t split_linear_copy_fail;		/**< Split processing fail counter due to linear copy fail. */
-	uint64_t split_not_enough_tailroom;		/**< Split processing fail counter due to insufficient tailroom. */
-	uint64_t exception_ds_invalid_dst_drop;		/**< Downstream exception handling fail counter due to invalid destination. */
-	uint64_t decap_eapol_frames;			/**< Decapsulation EAPoL frame counters. */
-	uint64_t exception_ds_inv_appid;		/**< Invalid application ID for the Tx completion packets on exception downstream node. */
-	uint64_t headroom_unavail;			/**< Packet headroom unavailable to write metadata. */
-	uint64_t tx_completion_success;			/**< Host enqueue success count for the Tx completion packets. */
-	uint64_t tx_completion_drop;			/**< Host enqueue drop count for the Tx completion packets. */
-	uint32_t ref_count;				/**< Reference count for statistics. */
+	struct net_device *dev;			/**< Net device. */
+	struct nss_gre_redir_tun_stats tstats;	/**< Structure to accumulate all the statistics. */
+	uint32_t ref_count;			/**< Reference count for statistics. */
+};
+
+/**
+ * nss_gre_redir_stats_notification
+ *	GRE redirect transmission statistics structure.
+ */
+struct nss_gre_redir_stats_notification {
+	struct nss_gre_redir_tunnel_stats stats_ctx;	/**< Context transmission statistics. */
+	uint32_t core_id;				/**< Core ID. */
+	uint32_t if_num;				/**< Interface number. */
 };
 
 /**
@@ -466,7 +549,7 @@ extern nss_tx_status_t nss_gre_redir_tx_buf_noreuse(struct nss_ctx_instance *nss
 			uint32_t if_num);
 
 /**
- * nss_gre_redir_get_stats
+ * nss_gre_redir_stats_get
  *	Gets GRE redirect tunnel statistics.
  *
  * @datatypes
@@ -478,7 +561,7 @@ extern nss_tx_status_t nss_gre_redir_tx_buf_noreuse(struct nss_ctx_instance *nss
  * @return
  * TRUE or FALSE.
  */
-extern bool nss_gre_redir_get_stats(int index, struct nss_gre_redir_tunnel_stats *stats);
+extern bool nss_gre_redir_stats_get(int index, struct nss_gre_redir_tunnel_stats *stats);
 
 /**
  * nss_gre_redir_alloc_and_register_node
@@ -593,6 +676,34 @@ extern struct dentry *nss_gre_redir_get_dentry(void);
  * Pointer to the device.
  */
 extern struct device *nss_gre_redir_get_device(void);
+
+/**
+ * nss_gre_redir_stats_unregister_notifier
+ *	Deregisters a statistics notifier.
+ *
+ * @datatypes
+ *	notifier_block
+ *
+ * @param[in] nb Notifier block.
+ *
+ * @return
+ * 0 on success or non-zero on failure.
+ */
+extern int nss_gre_redir_stats_unregister_notifier(struct notifier_block *nb);
+
+/**
+ * nss_gre_redir_stats_register_notifier
+ *	Registers a statistics notifier.
+ *
+ * @datatypes
+ *	notifier_block
+ *
+ * @param[in] nb Notifier block.
+ *
+ * @return
+ * 0 on success or non-zero on failure.
+ */
+extern int nss_gre_redir_stats_register_notifier(struct notifier_block *nb);
 
 /**
  * @}

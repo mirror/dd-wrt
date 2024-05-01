@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2014-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2014-2021, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -53,6 +53,8 @@ enum nss_if_message_types {
 	NSS_IF_SET_IGS_NODE,
 	NSS_IF_CLEAR_IGS_NODE,
 	NSS_IF_RESET_NEXTHOP,
+	NSS_IF_PPE_PORT_CREATE,
+	NSS_IF_PPE_PORT_DESTROY,
 	NSS_IF_MAX_MSG_TYPES = 9999,
 };
 
@@ -198,6 +200,14 @@ struct nss_if_igs_config {
 };
 
 /**
+ * nss_if_ppe_port_create
+ *	Message to create PPE port.
+ */
+struct nss_if_ppe_port_create {
+	int32_t ppe_port_num;	/**< PPE port number returned by NSS. */
+};
+
+/**
  * nss_if_msgs
  *	Information for physical NSS interface command messages.
  */
@@ -230,6 +240,8 @@ union nss_if_msgs {
 			/**< Set nexthop of interface. */
 	struct nss_if_igs_config config_igs;
 			/**< Configure an ingress shaper interface. */
+	struct nss_if_ppe_port_create ppe_port_create;
+			/**< Create a PPE port. */
 };
 
 /**
@@ -309,6 +321,23 @@ extern struct nss_ctx_instance *nss_if_register(uint32_t if_num,
 extern nss_tx_status_t nss_if_tx_buf(struct nss_ctx_instance *nss_ctx, struct sk_buff *os_buf, uint32_t if_num);
 
 /**
+ * nss_if_tx_msg_with_size
+ *	Sends a message to the NSS interface.
+ *
+ * @datatypes
+ * nss_ctx_instance \n
+ * nss_if_msg
+ *
+ * @param[in,out] nss_ctx  Pointer to the NSS context.
+ * @param[in]     nim      Pointer to the NSS interface message.
+ * @param[in]     size     Total message buffer size.
+ *
+ * @return
+ * Status of the Tx operation.
+ */
+nss_tx_status_t nss_if_tx_msg_with_size(struct nss_ctx_instance *nss_ctx, struct nss_if_msg *nim, uint32_t size);
+
+/**
  * nss_if_tx_msg
  *	Sends a message to the NSS interface.
  *
@@ -326,7 +355,7 @@ nss_tx_status_t nss_if_tx_msg(struct nss_ctx_instance *nss_ctx, struct nss_if_ms
 
 /**
  * nss_if_msg_sync
- *	Sends a message to the NSS interface and wait for the response.
+ *	Sends a message to the NSS interface and waits for the response.
  *
  * @datatypes
  * nss_ctx_instance \n
@@ -370,6 +399,70 @@ nss_tx_status_t nss_if_set_nexthop(struct nss_ctx_instance *nss_ctx, uint32_t if
  * Status of the Tx operation.
  */
 nss_tx_status_t nss_if_reset_nexthop(struct nss_ctx_instance *nss_ctx, uint32_t if_num);
+
+/**
+ * nss_if_change_mtu
+ *	Changes the MTU of the interface.
+ *
+ * @datatypes
+ * nss_ctx_instance
+ *
+ * @param[in] nss_ctx  Pointer to the NSS context.
+ * @param[in] if_num   NSS interface number.
+ * @param[in] mtu      New MTU.
+ *
+ * @return
+ * Status of the transmit operation.
+ */
+nss_tx_status_t nss_if_change_mtu(struct nss_ctx_instance *nss_ctx, nss_if_num_t if_num, uint16_t mtu);
+
+/**
+ * nss_if_change_mac_addr
+ *	Changes the MAC address of the interface.
+ *
+ * @datatypes
+ * nss_ctx_instance
+ *
+ * @param[in] nss_ctx  Pointer to the NSS context.
+ * @param[in] if_num   NSS interface number.
+ * @param[in] mac_addr New MAC address.
+ *
+ * @return
+ * Status of the transmit operation.
+ */
+nss_tx_status_t nss_if_change_mac_addr(struct nss_ctx_instance *nss_ctx, nss_if_num_t if_num, uint8_t *mac_addr);
+
+/**
+ * nss_if_vsi_unassign
+ *	Detaches the VSI ID from the given interface.
+ *
+ * @datatypes
+ * nss_ctx_instance
+ *
+ * @param[in] nss_ctx  Pointer to the NSS context.
+ * @param[in] if_num   NSS interface number.
+ * @param[in] vsi      VSI ID.
+ *
+ * @return
+ * Status of the transmit operation.
+ */
+nss_tx_status_t nss_if_vsi_unassign(struct nss_ctx_instance *nss_ctx, nss_if_num_t if_num, uint32_t vsi);
+
+/**
+ * nss_if_vsi_assign
+ *	Attaches the VSI ID to the given interface.
+ *
+ * @datatypes
+ * nss_ctx_instance
+ *
+ * @param[in] nss_ctx  Pointer to the NSS context.
+ * @param[in] if_num   NSS interface number.
+ * @param[in] vsi      VSI ID.
+ *
+ * @return
+ * Status of the transmit operation.
+ */
+nss_tx_status_t nss_if_vsi_assign(struct nss_ctx_instance *nss_ctx, nss_if_num_t if_num, uint32_t vsi);
 
 /**
  * @}

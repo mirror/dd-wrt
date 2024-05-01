@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -18,10 +18,10 @@
 
 #include "nss_tx_rx_common.h"
 #include "nss_tls_log.h"
+#include "nss_tls_stats.h"
+#include "nss_tls_strings.h"
 
 #define NSS_TLS_INTERFACE_MAX_LONG BITS_TO_LONGS(NSS_MAX_NET_INTERFACES)
-#define NSS_TLS_STATS_MAX_LINES (NSS_STATS_NODE_MAX + 32)
-#define NSS_TLS_STATS_SIZE_PER_IF (NSS_STATS_MAX_STR_LENGTH * NSS_TLS_STATS_MAX_LINES)
 #define NSS_TLS_TX_TIMEOUT 3000 /* 3 Seconds */
 
 /*
@@ -33,93 +33,6 @@ static struct nss_tls_pvt {
 	struct nss_tls_msg ntcm;
 	unsigned long if_map[NSS_TLS_INTERFACE_MAX_LONG];
 } tls_pvt;
-
-/*
- * nss_tls_stats_sync()
- *	Update tls node statistics.
- */
-static void nss_tls_stats_sync(struct nss_ctx_instance *nss_ctx, struct nss_cmn_msg *ncm)
-{
-	struct nss_tls_msg *ndcm = (struct nss_tls_msg *)ncm;
-	struct nss_top_instance *nss_top = nss_ctx->nss_top;
-	struct nss_tls_ctx_stats *msg_stats = &ndcm->msg.stats;
-	uint64_t *if_stats;
-	int i;
-
-	spin_lock_bh(&nss_top->stats_lock);
-
-	/*
-	 * Update common node stats,
-	 * Note: TLS only supports a single queue for RX
-	 */
-	if_stats = nss_top->stats_node[ncm->interface];
-	if_stats[NSS_STATS_NODE_RX_PKTS] += msg_stats->pkt.rx_packets;
-	if_stats[NSS_STATS_NODE_RX_BYTES] += msg_stats->pkt.rx_bytes;
-
-	for (i = 0; i < NSS_MAX_NUM_PRI; i++)
-		if_stats[NSS_STATS_NODE_RX_QUEUE_0_DROPPED + i] += msg_stats->pkt.rx_dropped[i];
-
-	if_stats[NSS_STATS_NODE_TX_PKTS] += msg_stats->pkt.tx_packets;
-	if_stats[NSS_STATS_NODE_TX_BYTES] += msg_stats->pkt.tx_bytes;
-
-	spin_unlock_bh(&nss_top->stats_lock);
-}
-
-/*
- * nss_tls_stats_read()
- *	Read tls node statiistics.
- */
-static ssize_t nss_tls_stats_read(struct file *fp, char __user *ubuf, size_t sz, loff_t *ppos)
-{
-	struct nss_ctx_instance *nss_ctx = nss_tls_get_context();
-	enum nss_dynamic_interface_type type;
-	ssize_t bytes_read = 0;
-	size_t len = 0, size;
-	uint32_t if_num;
-	char *buf;
-
-	size = NSS_TLS_STATS_SIZE_PER_IF * bitmap_weight(tls_pvt.if_map, NSS_MAX_NET_INTERFACES);
-
-	buf = kzalloc(size, GFP_KERNEL);
-	if (!buf) {
-		nss_warning("Could not allocate memory for local statistics buffer");
-		return 0;
-	}
-
-	/*
-	 * Common node stats for each TLS dynamic interface.
-	 */
-	for_each_set_bit(if_num, tls_pvt.if_map, NSS_MAX_NET_INTERFACES) {
-		type = nss_dynamic_interface_get_type(nss_ctx, if_num);
-
-		switch (type) {
-		case NSS_DYNAMIC_INTERFACE_TYPE_TLS_INNER:
-			len += scnprintf(buf + len, size - len, "\nInner if_num:%03u", if_num);
-			break;
-
-		case NSS_DYNAMIC_INTERFACE_TYPE_TLS_OUTER:
-			len += scnprintf(buf + len, size - len, "\nOuter if_num:%03u", if_num);
-			break;
-
-		default:
-			len += scnprintf(buf + len, size - len, "\nUnknown(%d) if_num:%03u", type, if_num);
-			break;
-		}
-
-		len += scnprintf(buf + len, size - len, "\n-------------------\n");
-		len = nss_stats_fill_common_stats(if_num, NSS_STATS_SINGLE_INSTANCE, buf, len, size - len, "tls");
-	}
-
-	bytes_read = simple_read_from_buffer(ubuf, sz, ppos, buf, len);
-	kfree(buf);
-
-	return bytes_read;
-}
-
-/*
- * nss_tls_stats_ops
- */
-NSS_STATS_DECLARE_FILE_OPERATIONS(tls)
 
 /*
  * nss_tls_verify_ifnum()
@@ -167,15 +80,17 @@ static void nss_tls_handler(struct nss_ctx_instance *nss_ctx, struct nss_cmn_msg
 		return;
 	}
 
-	if (ncm->type == NSS_TLS_MSG_TYPE_CTX_SYNC)
+	if (ncm->type == NSS_TLS_MSG_TYPE_CTX_SYNC) {
 		nss_tls_stats_sync(nss_ctx, ncm);
+		nss_tls_stats_notify(nss_ctx, ncm->interface);
+	}
 
 	/*
 	 * Update the callback and app_data for NOTIFY messages
 	 */
 	if (ncm->response == NSS_CMN_RESPONSE_NOTIFY) {
 		ncm->cb = (nss_ptr_t)nss_core_get_msg_handler(nss_ctx, ncm->interface);
-		ncm->app_data = (nss_ptr_t)nss_ctx->nss_rx_interface_handlers[nss_ctx->id][ncm->interface].app_data;
+		ncm->app_data = (nss_ptr_t)nss_ctx->nss_rx_interface_handlers[ncm->interface].app_data;
 	}
 
 	/*
@@ -226,6 +141,15 @@ static void nss_tls_sync_resp(void *app_data, struct nss_cmn_msg *ncm)
 	smp_wmb();
 
 	complete(&tls_pvt.complete);
+}
+
+/*
+ * nss_tls_ifmap_get()
+ *	Return TLS active interfaces map.
+ */
+unsigned long *nss_tls_ifmap_get(void)
+{
+	return tls_pvt.if_map;
 }
 
 /*
@@ -546,5 +470,6 @@ void nss_tls_register_handler(void)
 {
 	sema_init(&tls_pvt.sem, 1);
 	init_completion(&tls_pvt.complete);
-	nss_stats_create_dentry("tls", &nss_tls_stats_ops);
+	nss_tls_stats_dentry_create();
+	nss_tls_strings_dentry_create();
 }

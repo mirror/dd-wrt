@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -69,7 +69,7 @@ struct nss_stats_info nss_ppe_vp_stats_rx_str[NSS_PPE_VP_STATS_RX_MAX] = {
  *	PPE VP statistics strings
  */
 struct nss_stats_info nss_ppe_vp_stats_str[NSS_PPE_VP_STATS_MAX] = {
-	{"vp_num"		, NSS_STATS_TYPE_SPECIAL},
+	{"ppe_port_num"		, NSS_STATS_TYPE_SPECIAL},
 	{"nss_if"		, NSS_STATS_TYPE_SPECIAL},
 	{"rx_packets"		, NSS_STATS_TYPE_COMMON},
 	{"rx_bytes"		, NSS_STATS_TYPE_COMMON},
@@ -109,17 +109,10 @@ void nss_ppe_vp_stats_sync(struct nss_ctx_instance *nss_ctx, struct nss_ppe_vp_s
 		count--;
 
 		/*
-		 * If nss interface is changed from previous entry, reset the stats.
-		 */
-		vp_index = stats_msg->vp_stats[count].vp_num - NSS_PPE_VP_START;
-		if (nss_ppe_vp_debug_stats.vp_stats[vp_index].nss_if != stats_msg->vp_stats[count].nss_if) {
-			memset(&nss_ppe_vp_debug_stats.vp_stats[vp_index], 0, sizeof(struct nss_ppe_vp_statistics_debug));
-		}
-
-		/*
 		 * Update stats in global array
 		 */
-		nss_ppe_vp_debug_stats.vp_stats[vp_index].vp_num = stats_msg->vp_stats[count].vp_num;
+		vp_index = stats_msg->vp_stats[count].ppe_port_num - NSS_PPE_VP_START;
+		nss_ppe_vp_debug_stats.vp_stats[vp_index].ppe_port_num = stats_msg->vp_stats[count].ppe_port_num;
 		nss_ppe_vp_debug_stats.vp_stats[vp_index].nss_if = stats_msg->vp_stats[count].nss_if;
 		nss_ppe_vp_debug_stats.vp_stats[vp_index].rx_packets += stats_msg->vp_stats[count].stats.rx_packets;
 		nss_ppe_vp_debug_stats.vp_stats[vp_index].rx_bytes += stats_msg->vp_stats[count].stats.rx_bytes;
@@ -132,8 +125,8 @@ void nss_ppe_vp_stats_sync(struct nss_ctx_instance *nss_ctx, struct nss_ppe_vp_s
 			nss_ppe_vp_debug_stats.vp_stats[vp_index].tx_dropped[i] += stats_msg->vp_stats[count].stats.rx_dropped[i];
 		}
 
-		nss_trace("sync count:%d vp_num %d rx_packets %d tx_packets %d\n",
-				count, stats_msg->vp_stats[count].vp_num,
+		nss_trace("sync count:%d ppe_port_num %d rx_packets %d tx_packets %d\n",
+				count, stats_msg->vp_stats[count].ppe_port_num,
 				stats_msg->vp_stats[count].stats.rx_packets,
 				stats_msg->vp_stats[count].stats.tx_packets);
 	}

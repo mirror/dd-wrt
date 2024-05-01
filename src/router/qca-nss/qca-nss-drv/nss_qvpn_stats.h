@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2019, 2021, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -17,10 +17,8 @@
 #ifndef _NSS_QVPN_STATS_H_
 #define _NSS_QVPN_STATS_H_
 
-/*
- * nss_qvpn_stats_dentry_create
- *	Creates QVPN interface statistics debug entry.
- */
-void nss_qvpn_stats_dentry_create(void);
+extern void nss_qvpn_stats_notify(struct nss_ctx_instance *nss_ctx, uint32_t if_num);
+extern void nss_qvpn_stats_tunnel_sync(struct nss_ctx_instance *nss_ctx, struct nss_cmn_msg *ncm);
+extern void nss_qvpn_stats_dentry_create(void);
 
 #endif /* _NSS_QVPN_STATS_H_ */

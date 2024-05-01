@@ -1,9 +1,12 @@
 /*
  **************************************************************************
  * Copyright (c) 2014-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
+ *
  * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
  * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
  * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
@@ -223,7 +226,7 @@ int nss_dynamic_interface_alloc_node(enum nss_dynamic_interface_type type)
 	core_id = nss_top_main.dynamic_interface_table[type];
 	nss_ctx = (struct nss_ctx_instance *)&nss_top_main.nss[core_id];
 	di_data.if_num = -1;
-	di_data.response = false;
+	di_data.response = -1;
 	init_completion(&di_data.complete);
 
 	nss_dynamic_interface_msg_init(&ndim, NSS_DYNAMIC_INTERFACE, NSS_DYNAMIC_INTERFACE_ALLOC_NODE,
@@ -282,7 +285,7 @@ nss_tx_status_t nss_dynamic_interface_dealloc_node(int if_num, enum nss_dynamic_
 
 	core_id = nss_top_main.dynamic_interface_table[type];
 	nss_ctx = (struct nss_ctx_instance *)&nss_top_main.nss[core_id];
-	di_data.response = false;
+	di_data.response = -1;
 	init_completion(&di_data.complete);
 
 	if (nss_is_dynamic_interface(if_num) == false) {
@@ -320,7 +323,9 @@ nss_tx_status_t nss_dynamic_interface_dealloc_node(int if_num, enum nss_dynamic_
 void nss_dynamic_interface_register_handler(struct nss_ctx_instance *nss_ctx)
 {
 	nss_core_register_handler(nss_ctx, NSS_DYNAMIC_INTERFACE, nss_dynamic_interface_handler, NULL);
-	nss_dynamic_interface_stats_dentry_create();
+	if (nss_ctx->id == NSS_CORE_0) {
+		nss_dynamic_interface_stats_dentry_create();
+	}
 }
 
 /*

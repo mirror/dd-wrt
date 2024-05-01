@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2017-2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2018, 2021 The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -38,6 +38,12 @@
 #define NSS_PROJECT_IRQS_PER_MESSAGE 32
 
 /**
+ *  Maximum possible value of priority after classification
+ *  at an ingress interface.
+ */
+#define NSS_PROJECT_PRI_MQ_MAP_MAX_SIZE 16
+
+/**
  * nss_project_message_types
  *	Project message types.
  */
@@ -46,6 +52,8 @@ enum nss_project_message_types {
 			/**< Message to enable or disable worker thread statistics. */
 	NSS_PROJECT_MSG_WT_STATS_NOTIFY,
 			/**< NSS to HLOS message containing worker thread statistics. */
+	NSS_PROJECT_MSG_SET_QUEUE_PRI_MAP_CFG,
+			/**< Message to configure priority to multi-queue mapping. */
 	NSS_PROJECT_MSG_MAX,
 };
 
@@ -60,6 +68,8 @@ enum nss_project_error_types {
 			/**< The firmware does not support worker thread statistics. */
 	NSS_PROJECT_ERROR_WT_STATS_REDUNDANT_ENABLE,
 			/**< The firmware received a redundant request to enable worker thread statistics. */
+	NSS_PROJECT_ERROR_MQ_NUMBER_INVALID,
+			/**< The firmware received an invalid multi-queue number. */
 	NSS_PROJECT_ERROR_MAX,
 };
 
@@ -111,6 +121,15 @@ struct nss_project_msg_wt_stats_notify {
 };
 
 /**
+ * nss_project_msg_pri_mq_map_cfg
+ * 	NSS priority to multi-queue mapping configuration.
+ */
+struct nss_project_msg_pri_mq_map_cfg {
+	uint8_t pri_mq_map[NSS_PROJECT_PRI_MQ_MAP_MAX_SIZE];
+				/**< Priority to multi-queue mapping array. */
+};
+
+/**
  * nss_project_msg
  *	General message structure for project messages.
  */
@@ -125,6 +144,8 @@ struct nss_project_msg {
 				/**< Enable or disable worker thread statistics. */
 		struct nss_project_msg_wt_stats_notify wt_stats_notify;
 				/**< One-way worker thread statistics message. */
+		struct nss_project_msg_pri_mq_map_cfg pri_mq_map_cfg;
+				/**< Configure priority to multi-queue message. */
 	} msg;			/**< Message payload. */
 };
 
@@ -168,6 +189,17 @@ void nss_project_unregister_sysctl(void);
  * None.
  */
 void nss_project_register_handler(struct nss_ctx_instance *nss_ctx);
+
+/**
+ * nss_project_pri_mq_map_configure
+ * 	Configures priority to multi-queue mapping.
+ *
+ * @param[in] nss_ctx		Pointer to the NSS context.
+ *
+ * @return
+ * Status of the configuration update operation.
+ */
+extern nss_tx_status_t nss_project_pri_mq_map_configure(struct nss_ctx_instance *nss_ctx);
 
 /**
  * @}

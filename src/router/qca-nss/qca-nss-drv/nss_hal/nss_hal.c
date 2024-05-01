@@ -1,9 +1,12 @@
 /*
  **************************************************************************
  * Copyright (c) 2016-2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
+ *
  * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
  * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
  * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
@@ -30,7 +33,12 @@
 #include "nss_arch.h"
 #include "nss_core.h"
 #include "nss_tx_rx_common.h"
+#ifdef NSS_DATA_PLANE_GENERIC_SUPPORT
 #include "nss_data_plane.h"
+#endif
+#ifdef NSS_DATA_PLANE_LITE_SUPPORT
+#include "nss_data_plane_lite.h"
+#endif
 #if (NSS_PM_SUPPORT == 1)
 #include "nss_pm.h"
 #endif
@@ -57,9 +65,9 @@ int nss_hal_firmware_load(struct nss_ctx_instance *nss_ctx, struct platform_devi
 	int rc;
 
 	if (nss_ctx->id == 0) {
-		rc = request_firmware(&nss_fw, NSS_AP0_IMAGE, &(nss_dev->dev));
+		rc = firmware_request_nowarn(&nss_fw, NSS_AP0_IMAGE, &(nss_dev->dev));
 	} else if (nss_ctx->id == 1) {
-		rc = request_firmware(&nss_fw, NSS_AP1_IMAGE, &(nss_dev->dev));
+		rc = firmware_request_nowarn(&nss_fw, NSS_AP1_IMAGE, &(nss_dev->dev));
 	} else {
 		nss_warning("%px: Invalid nss dev: %d\n", nss_ctx, nss_ctx->id);
 		return -EINVAL;
@@ -88,7 +96,6 @@ int nss_hal_firmware_load(struct nss_ctx_instance *nss_ctx, struct platform_devi
 	return 0;
 }
 
-
 /*
  * nss_hal_dt_parse_features()
  */
@@ -99,12 +106,14 @@ void nss_hal_dt_parse_features(struct device_node *np, struct nss_platform_data 
 	 */
 	npd->bridge_enabled = of_property_read_bool(np, "qcom,bridge-enabled");
 	npd->capwap_enabled = of_property_read_bool(np, "qcom,capwap-enabled");
+	npd->clmap_enabled = of_property_read_bool(np, "qcom,clmap-enabled");
 	npd->crypto_enabled = of_property_read_bool(np, "qcom,crypto-enabled");
 	npd->dtls_enabled = of_property_read_bool(np, "qcom,dtls-enabled");
 	npd->gre_enabled = of_property_read_bool(np, "qcom,gre-enabled");
 	npd->gre_redir_enabled = of_property_read_bool(np, "qcom,gre-redir-enabled");
 	npd->gre_tunnel_enabled = of_property_read_bool(np, "qcom,gre_tunnel_enabled");
 	npd->gre_redir_mark_enabled = of_property_read_bool(np, "qcom,gre-redir-mark-enabled");
+	npd->igs_enabled = of_property_read_bool(np, "qcom,igs-enabled");
 	npd->ipsec_enabled = of_property_read_bool(np, "qcom,ipsec-enabled");
 	npd->ipv4_enabled = of_property_read_bool(np, "qcom,ipv4-enabled");
 	npd->ipv4_reasm_enabled = of_property_read_bool(np, "qcom,ipv4-reasm-enabled");
@@ -118,19 +127,25 @@ void nss_hal_dt_parse_features(struct device_node *np, struct nss_platform_data 
 	npd->pptp_enabled = of_property_read_bool(np, "qcom,pptp-enabled");
 	npd->portid_enabled = of_property_read_bool(np, "qcom,portid-enabled");
 	npd->pvxlan_enabled = of_property_read_bool(np, "qcom,pvxlan-enabled");
-	npd->clmap_enabled = of_property_read_bool(np, "qcom,clmap-enabled");
 	npd->qvpn_enabled = of_property_read_bool(np, "qcom,qvpn-enabled");
 	npd->rmnet_rx_enabled = of_property_read_bool(np, "qcom,rmnet_rx-enabled");
 	npd->shaping_enabled = of_property_read_bool(np, "qcom,shaping-enabled");
+	npd->tls_enabled = of_property_read_bool(np, "qcom,tls-enabled");
 	npd->tstamp_enabled = of_property_read_bool(np, "qcom,tstamp-enabled");
 	npd->turbo_frequency = of_property_read_bool(np, "qcom,turbo-frequency");
 	npd->tun6rd_enabled = of_property_read_bool(np, "qcom,tun6rd-enabled");
 	npd->tunipip6_enabled = of_property_read_bool(np, "qcom,tunipip6-enabled");
 	npd->vlan_enabled = of_property_read_bool(np, "qcom,vlan-enabled");
+	npd->vxlan_enabled = of_property_read_bool(np, "qcom,vxlan-enabled");
 	npd->wlanredirect_enabled = of_property_read_bool(np, "qcom,wlanredirect-enabled");
 	npd->wifioffload_enabled = of_property_read_bool(np, "qcom,wlan-dataplane-offload-enabled");
-	npd->igs_enabled = of_property_read_bool(np, "qcom,igs-enabled");
+	npd->match_enabled = of_property_read_bool(np, "qcom,match-enabled");
+	npd->mirror_enabled = of_property_read_bool(np, "qcom,mirror-enabled");
+	npd->udp_st_enabled = of_property_read_bool(np, "qcom,udp-st-enabled");
+	npd->edma_lite_enabled = of_property_read_bool(np, "qcom,edma-lite-enabled");
+	npd->trustsec_enabled = of_property_read_bool(np, "qcom,trustsec-enabled");
 }
+
 /*
  * nss_hal_clean_up_irq()
  */
@@ -351,6 +366,7 @@ int nss_hal_probe(struct platform_device *nss_dev)
 	}
 #endif
 
+#ifdef NSS_DRV_IPV4_ENABLE
 	if (npd->ipv4_enabled == NSS_FEATURE_ENABLED) {
 		nss_top->ipv4_handler_id = nss_dev->id;
 		nss_ipv4_register_handler();
@@ -359,10 +375,15 @@ int nss_hal_probe(struct platform_device *nss_dev)
 		nss_top->edma_handler_id = nss_dev->id;
 		nss_edma_register_handler();
 #endif
+
+#ifdef NSS_DRV_ETH_RX_ENABLE
 		nss_eth_rx_register_handler(nss_ctx);
+#endif
+
 #ifdef NSS_DRV_LAG_ENABLE
 		nss_lag_register_handler();
 #endif
+
 #ifdef NSS_DRV_TRUSTSEC_ENABLE
 		nss_top->trustsec_tx_handler_id = nss_dev->id;
 		nss_trustsec_tx_register_handler();
@@ -373,14 +394,24 @@ int nss_hal_probe(struct platform_device *nss_dev)
 		nss_top->dynamic_interface_table[NSS_DYNAMIC_INTERFACE_TYPE_GENERIC_REDIR_N2H] = nss_dev->id;
 		nss_top->dynamic_interface_table[NSS_DYNAMIC_INTERFACE_TYPE_GENERIC_REDIR_H2N] = nss_dev->id;
 	}
+#endif
 
-#if (NSS_FW_VERSION_CODE > NSS_FW_VERSION(11,3))
+#ifdef NSS_DRV_TRUSTSEC_RX_ENABLE
+	if (npd->trustsec_enabled == NSS_FEATURE_ENABLED) {
+		nss_top->trustsec_rx_handler_id = nss_dev->id;
+		nss_trustsec_rx_register_handler();
+
+		nss_top->trustsec_tx_handler_id = nss_dev->id;
+		nss_trustsec_tx_register_handler();
+	}
+#endif
+
 #ifdef NSS_DRV_CAPWAP_ENABLE
 	if (npd->capwap_enabled == NSS_FEATURE_ENABLED) {
 		nss_top->capwap_handler_id = nss_dev->id;
-		nss_top->dynamic_interface_table[NSS_DYNAMIC_INTERFACE_TYPE_CAPWAP] = nss_dev->id;
+		nss_top->dynamic_interface_table[NSS_DYNAMIC_INTERFACE_TYPE_CAPWAP_OUTER] = nss_dev->id;
+		nss_top->dynamic_interface_table[NSS_DYNAMIC_INTERFACE_TYPE_CAPWAP_HOST_INNER] = nss_dev->id;
 	}
-#endif
 #endif
 
 #ifdef NSS_DRV_IPV4_REASM_ENABLE
@@ -411,7 +442,7 @@ int nss_hal_probe(struct platform_device *nss_dev)
 	 */
 	if (npd->crypto_enabled == NSS_FEATURE_ENABLED) {
 		nss_top->crypto_handler_id = nss_dev->id;
-#if defined(NSS_HAL_IPQ807x_SUPPORT) || defined(NSS_HAL_IPQ60XX_SUPPORT) || defined(NSS_HAL_IPQ50XX_SUPPORT)
+#if defined(NSS_HAL_IPQ807x_SUPPORT) || defined(NSS_HAL_IPQ60XX_SUPPORT) || defined(NSS_HAL_IPQ50XX_SUPPORT) || defined(NSS_HAL_IPQ95XX_SUPPORT)
 		nss_crypto_cmn_register_handler();
 #else
 		nss_top->crypto_enabled = 1;
@@ -483,7 +514,7 @@ int nss_hal_probe(struct platform_device *nss_dev)
 #ifdef NSS_DRV_DTLS_ENABLE
 	if (npd->dtls_enabled == NSS_FEATURE_ENABLED) {
 		nss_top->dtls_handler_id = nss_dev->id;
-#if defined(NSS_HAL_IPQ807x_SUPPORT) || defined(NSS_HAL_IPQ60XX_SUPPORT) || defined(NSS_HAL_IPQ50XX_SUPPORT)
+#if defined(NSS_HAL_IPQ807x_SUPPORT) || defined(NSS_HAL_IPQ60XX_SUPPORT) || defined(NSS_HAL_IPQ50XX_SUPPORT) || defined(NSS_HAL_IPQ95XX_SUPPORT)
 		nss_top->dynamic_interface_table[NSS_DYNAMIC_INTERFACE_TYPE_DTLS_CMN_INNER] = nss_dev->id;
 		nss_top->dynamic_interface_table[NSS_DYNAMIC_INTERFACE_TYPE_DTLS_CMN_OUTER] = nss_dev->id;
 		nss_dtls_cmn_register_handler();
@@ -558,24 +589,35 @@ int nss_hal_probe(struct platform_device *nss_dev)
 	}
 #endif
 
-#ifdef NSS_DRV_WIFI_ENABLE
+#ifdef NSS_DRV_WIFIOFFLOAD_ENABLE
 	if (npd->wifioffload_enabled == NSS_FEATURE_ENABLED) {
 		nss_top->wifi_handler_id = nss_dev->id;
 		nss_top->dynamic_interface_table[NSS_DYNAMIC_INTERFACE_TYPE_VAP] = nss_dev->id;
+#if defined(NSS_HAL_IPQ806x_SUPPORT)
 		nss_wifi_register_handler();
+#endif
 		nss_wifili_register_handler();
-#if (NSS_FW_VERSION_CODE <= NSS_FW_VERSION(11,0))
-		nss_top->dynamic_interface_table[NSS_DYNAMIC_INTERFACE_TYPE_WIFILI] = nss_dev->id;
-#else
+#ifdef NSS_DRV_WIFI_EXT_VDEV_ENABLE
+		nss_wifi_ext_vdev_register_handler();
+#endif
 		nss_top->dynamic_interface_table[NSS_DYNAMIC_INTERFACE_TYPE_WIFILI_INTERNAL] = nss_dev->id;
 		nss_top->dynamic_interface_table[NSS_DYNAMIC_INTERFACE_TYPE_WIFILI_EXTERNAL0] = nss_dev->id;
 		nss_top->dynamic_interface_table[NSS_DYNAMIC_INTERFACE_TYPE_WIFILI_EXTERNAL1] = nss_dev->id;
+		nss_top->dynamic_interface_table[NSS_DYNAMIC_INTERFACE_TYPE_WIFI_EXT_VDEV_WDS] = nss_dev->id;
+		nss_top->dynamic_interface_table[NSS_DYNAMIC_INTERFACE_TYPE_WIFI_EXT_VDEV_VLAN] = nss_dev->id;
+		nss_top->dynamic_interface_table[NSS_DYNAMIC_INTERFACE_TYPE_WIFI_MESH_INNER] = nss_dev->id;
+		nss_top->dynamic_interface_table[NSS_DYNAMIC_INTERFACE_TYPE_WIFI_MESH_OUTER] = nss_dev->id;
+
 		/*
 		 * Register wifi mac database when offload enabled
 		 */
 		nss_top->wmdb_handler_id = nss_dev->id;
 		nss_wifi_mac_db_register_handler();
-#endif
+
+		/*
+		 * Initialize wifili thread scheme database
+		 */
+		nss_wifili_thread_scheme_db_init(nss_dev->id);
 	}
 #endif
 
@@ -662,7 +704,6 @@ int nss_hal_probe(struct platform_device *nss_dev)
 	}
 #endif
 
-#if (NSS_FW_VERSION_CODE > NSS_FW_VERSION(11,1))
 #ifdef NSS_DRV_TLS_ENABLE
 #if defined(NSS_HAL_IPQ807x_SUPPORT) || defined(NSS_HAL_IPQ60XX_SUPPORT)
 	if (npd->tls_enabled == NSS_FEATURE_ENABLED) {
@@ -673,6 +714,7 @@ int nss_hal_probe(struct platform_device *nss_dev)
 	}
 #endif
 #endif
+
 #ifdef NSS_DRV_MIRROR_ENABLE
 	if (npd->mirror_enabled == NSS_FEATURE_ENABLED) {
 		nss_top->mirror_handler_id = nss_dev->id;
@@ -680,7 +722,14 @@ int nss_hal_probe(struct platform_device *nss_dev)
 		nss_mirror_register_handler();
 		nss_info("%d: NSS mirror is enabled", nss_dev->id);
 	}
+
 #endif
+
+#ifdef NSS_DRV_UDP_ST_ENABLE
+	if (npd->udp_st_enabled == NSS_FEATURE_ENABLED) {
+		nss_top->udp_st_handler_id = nss_dev->id;
+		nss_udp_st_register_handler(nss_ctx);
+	}
 #endif
 
 	if (nss_ctx->id == 0) {
@@ -694,8 +743,19 @@ int nss_hal_probe(struct platform_device *nss_dev)
 		nss_freq_init_cpu_usage();
 #endif
 
+#ifdef NSS_DRV_LSO_RX_ENABLE
 		nss_lso_rx_register_handler(nss_ctx);
+#endif
 	}
+
+#ifdef NSS_DRV_EDMA_LITE_ENABLE
+	if (npd->edma_lite_enabled == NSS_FEATURE_ENABLED) {
+		nss_top->edma_lite_handler_id[nss_ctx->id] = nss_ctx->id;
+		nss_edma_lite_register_handler(nss_ctx);
+	} else {
+		nss_top->edma_lite_handler_id[nss_ctx->id] = -1;
+	}
+#endif
 
 	nss_top->frequency_handler_id = nss_dev->id;
 
@@ -794,7 +854,13 @@ int nss_hal_remove(struct platform_device *nss_dev)
 	/*
 	 * nss-drv is exiting, unregister and restore host data plane
 	 */
+#ifdef NSS_DATA_PLANE_GENERIC_SUPPORT
 	nss_top->data_plane_ops->data_plane_unregister();
+#endif
+
+#ifdef NSS_DATA_PLANE_LITE_SUPPORT
+	nss_data_plane_lite_unregister();
+#endif
 
 #if (NSS_FABRIC_SCALING_SUPPORT == 1)
 	fab_scaling_unregister(nss_core0_clk);

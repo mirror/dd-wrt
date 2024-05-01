@@ -1,9 +1,12 @@
 /*
  **************************************************************************
  * Copyright (c) 2017-2018, 2020 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
+ *
  * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
  * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
  * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
@@ -365,22 +368,16 @@ static void nss_vlan_mgr_port_role_event(int32_t port, int portindex)
  * nss_vlan_mgr_bond_configure_ppe()
  *	Configure PPE for bond device
  */
-static int nss_vlan_mgr_bond_configure_ppe(struct nss_vlan_pvt *v, struct net_device *bond_dev)
+static int nss_vlan_mgr_bond_configure_ppe(struct nss_vlan_pvt *v, struct net_device *bond_dev, uint32_t vsi)
 {
-	uint32_t vsi;
 	int ret = 0;
 	struct net_device *slave;
 	int32_t port;
 	int vlan_mgr_bond_port_role = -1;
 
-	if (ppe_vsi_alloc(NSS_VLAN_MGR_SWITCH_ID, &vsi)) {
-		nss_vlan_mgr_warn("%s: failed to allocate VSI for bond vlan device", bond_dev->name);
-		return -1;
-	}
-
 	if (nss_vlan_tx_vsi_attach_msg(v->nss_if, vsi) != NSS_TX_SUCCESS) {
 		nss_vlan_mgr_warn("%s: failed to attach VSI to bond vlan interface\n", bond_dev->name);
-		goto free_vsi;
+		return -1;
 	}
 
 	/*
@@ -393,7 +390,7 @@ static int nss_vlan_mgr_bond_configure_ppe(struct nss_vlan_pvt *v, struct net_de
 		if (!NSS_VLAN_PHY_PORT_CHK(port)) {
 			rcu_read_unlock();
 			nss_vlan_mgr_warn("%s: %d is not valid physical port\n", slave->name, port);
-			goto free_vsi;
+			return -1;
 		}
 
 		/*
@@ -409,7 +406,7 @@ static int nss_vlan_mgr_bond_configure_ppe(struct nss_vlan_pvt *v, struct net_de
 	 * In case the bond interface has no slaves, we do not want to proceed further
 	 */
 	if (vlan_mgr_bond_port_role == -1) {
-		goto free_vsi;
+		return -1;
 	}
 
 	/*
@@ -513,7 +510,6 @@ static int nss_vlan_mgr_bond_configure_ppe(struct nss_vlan_pvt *v, struct net_de
 		ret = NSS_VLAN_PORT_ROLE_CHANGED;
 	}
 
-	v->ppe_vsi = vsi;
 	return ret;
 
 delete_egress_rule:
@@ -545,30 +541,19 @@ detach_vsi:
 		nss_vlan_mgr_warn("%px: Failed to detach vsi %d\n", v, vsi);
 	}
 
-free_vsi:
-	if (ppe_vsi_free(NSS_VLAN_MGR_SWITCH_ID, vsi)) {
-		nss_vlan_mgr_warn("%px: Failed to free VLAN VSI\n", v);
-	}
-
 	return -1;
 }
 /*
  * nss_vlan_mgr_configure_ppe()
  *	Configure PPE for physical devices
  */
-static int nss_vlan_mgr_configure_ppe(struct nss_vlan_pvt *v, struct net_device *dev)
+static int nss_vlan_mgr_configure_ppe(struct nss_vlan_pvt *v, struct net_device *dev, uint32_t vsi)
 {
-	uint32_t vsi;
 	int ret = 0;
-
-	if (ppe_vsi_alloc(NSS_VLAN_MGR_SWITCH_ID, &vsi)) {
-		nss_vlan_mgr_warn("%s: failed to allocate VSI for vlan device", dev->name);
-		return -1;
-	}
 
 	if (nss_vlan_tx_vsi_attach_msg(v->nss_if, vsi) != NSS_TX_SUCCESS) {
 		nss_vlan_mgr_warn("%s: failed to attach VSI to vlan interface\n", dev->name);
-		goto free_vsi;
+		return -1;
 	}
 
 	/*
@@ -652,7 +637,6 @@ static int nss_vlan_mgr_configure_ppe(struct nss_vlan_pvt *v, struct net_device 
 		ret = NSS_VLAN_PORT_ROLE_CHANGED;
 	}
 
-	v->ppe_vsi = vsi;
 	return ret;
 
 delete_egress_rule:
@@ -672,11 +656,6 @@ delete_ingress_rule:
 detach_vsi:
 	if (nss_vlan_tx_vsi_detach_msg(v->nss_if, vsi)) {
 		nss_vlan_mgr_warn("%px: Failed to detach vsi %d\n", v, vsi);
-	}
-
-free_vsi:
-	if (ppe_vsi_free(NSS_VLAN_MGR_SWITCH_ID, vsi)) {
-		nss_vlan_mgr_warn("%px: Failed to free VLAN VSI\n", v);
 	}
 
 	return -1;
@@ -808,7 +787,7 @@ static struct nss_vlan_pvt *nss_vlan_mgr_create_instance(
 	}
 
 	v->mtu = dev->mtu;
-	ether_addr_copy(v->dev_addr, dev->dev_addr);
+	ether_addr_copy(v->dev_addr, (uint8_t *) dev->dev_addr);
 	v->ifindex = dev->ifindex;
 	v->refs = 1;
 
@@ -870,7 +849,8 @@ static void nss_vlan_mgr_instance_free(struct nss_vlan_pvt *v)
 		}
 
 		/*
-		 * Free PPE VSI
+		 * We will always have a VSI since this is allocated in beginning
+		 * of the code.
 		 */
 		if (ppe_vsi_free(NSS_VLAN_MGR_SWITCH_ID, v->ppe_vsi)) {
 			nss_vlan_mgr_warn("%px: Failed to free VLAN VSI\n", v);
@@ -956,14 +936,14 @@ static int nss_vlan_mgr_changeaddr_event(struct netdev_notifier_info *info)
 	}
 	spin_unlock(&vlan_mgr_ctx.lock);
 
-	if (nss_vlan_tx_set_mac_addr_msg(v_pvt->nss_if, dev->dev_addr) != NSS_TX_SUCCESS) {
+	if (nss_vlan_tx_set_mac_addr_msg(v_pvt->nss_if, (uint8_t *) dev->dev_addr) != NSS_TX_SUCCESS) {
 		nss_vlan_mgr_warn("%s: Failed to send change MAC address message to NSS\n", dev->name);
 		nss_vlan_mgr_instance_deref(v_pvt);
 		return NOTIFY_BAD;
 	}
 
 	spin_lock(&vlan_mgr_ctx.lock);
-	ether_addr_copy(v_pvt->dev_addr, dev->dev_addr);
+	ether_addr_copy(v_pvt->dev_addr, (uint8_t *) dev->dev_addr);
 	spin_unlock(&vlan_mgr_ctx.lock);
 	nss_vlan_mgr_trace("%s: MAC changed to %pM, updated NSS\n", dev->name, dev->dev_addr);
 	nss_vlan_mgr_instance_deref(v_pvt);
@@ -979,6 +959,7 @@ static int nss_vlan_mgr_register_event(struct netdev_notifier_info *info)
 	struct nss_vlan_pvt *v;
 	int if_num;
 #ifdef NSS_VLAN_MGR_PPE_SUPPORT
+	uint32_t vsi;
 	int ret;
 #endif
 	uint32_t vlan_tag;
@@ -995,19 +976,25 @@ static int nss_vlan_mgr_register_event(struct netdev_notifier_info *info)
 	if (!v)
 		return NOTIFY_DONE;
 
+	/*
+	 * Allocate the VSI here.
+	 */
+#ifdef NSS_VLAN_MGR_PPE_SUPPORT
+	if (ppe_vsi_alloc(NSS_VLAN_MGR_SWITCH_ID, &vsi)) {
+		nss_vlan_mgr_warn("%s: failed to allocate VSI for vlan device", dev->name);
+		return NOTIFY_DONE;
+	}
+#endif
+
 	if_num = nss_dynamic_interface_alloc_node(NSS_DYNAMIC_INTERFACE_TYPE_VLAN);
 	if (if_num < 0) {
 		nss_vlan_mgr_warn("%s: failed to alloc NSS dynamic interface\n", dev->name);
-		nss_vlan_mgr_instance_free(v);
-		return NOTIFY_DONE;
+		goto vsi_alloc_free;
 	}
 
 	if (!nss_register_vlan_if(if_num, NULL, dev, 0, v)) {
 		nss_vlan_mgr_warn("%s: failed to register NSS dynamic interface", dev->name);
-		if (nss_dynamic_interface_dealloc_node(if_num, NSS_DYNAMIC_INTERFACE_TYPE_VLAN) != NSS_TX_SUCCESS)
-			nss_vlan_mgr_warn("%px: Failed to dealloc vlan dynamic interface\n", v);
-		nss_vlan_mgr_instance_free(v);
-		return NOTIFY_DONE;
+		goto free_dynamic_interface;
 	}
 	v->nss_if = if_num;
 
@@ -1021,26 +1008,25 @@ static int nss_vlan_mgr_register_event(struct netdev_notifier_info *info)
 
 #ifdef NSS_VLAN_MGR_PPE_SUPPORT
 	if (!is_bond_master)
-		ret = nss_vlan_mgr_configure_ppe(v, dev);
+		ret = nss_vlan_mgr_configure_ppe(v, dev, vsi);
 	else
-		ret = nss_vlan_mgr_bond_configure_ppe(v, real_dev);
+		ret = nss_vlan_mgr_bond_configure_ppe(v, real_dev, vsi);
 
 	if (ret < 0) {
-		nss_vlan_mgr_instance_free(v);
-		return NOTIFY_DONE;
+		goto vlan_instance_free;
 	}
+
+	v->ppe_vsi = vsi;
 #endif
 
 	if (nss_vlan_tx_set_mac_addr_msg(v->nss_if, v->dev_addr) != NSS_TX_SUCCESS) {
 		nss_vlan_mgr_warn("%s: failed to set mac_addr msg\n", dev->name);
-		nss_vlan_mgr_instance_free(v);
-		return NOTIFY_DONE;
+		goto vlan_instance_free;
 	}
 
 	if (nss_vlan_tx_set_mtu_msg(v->nss_if, v->mtu) != NSS_TX_SUCCESS) {
 		nss_vlan_mgr_warn("%s: failed to set mtu msg\n", dev->name);
-		nss_vlan_mgr_instance_free(v);
-		return NOTIFY_DONE;
+		goto vlan_instance_free;
 	}
 
 	vlan_tag = (v->tpid << NSS_VLAN_TPID_SHIFT | v->vid);
@@ -1049,8 +1035,7 @@ static int nss_vlan_mgr_register_event(struct netdev_notifier_info *info)
 				(v->parent ? v->parent->nss_if : port_if),
 				port_if) != NSS_TX_SUCCESS) {
 		nss_vlan_mgr_warn("%s: failed to add vlan in nss\n", dev->name);
-		nss_vlan_mgr_instance_free(v);
-		return NOTIFY_DONE;
+		goto vlan_instance_free;
 	}
 
 	spin_lock(&vlan_mgr_ctx.lock);
@@ -1077,6 +1062,21 @@ static int nss_vlan_mgr_register_event(struct netdev_notifier_info *info)
 		}
 	}
 #endif
+	return NOTIFY_DONE;
+
+free_dynamic_interface:
+	if (nss_dynamic_interface_dealloc_node(if_num, NSS_DYNAMIC_INTERFACE_TYPE_VLAN) != NSS_TX_SUCCESS)
+		nss_vlan_mgr_warn("%px: Failed to dealloc vlan dynamic interface\n", v);
+
+vsi_alloc_free:
+#ifdef NSS_VLAN_MGR_PPE_SUPPORT
+	if (ppe_vsi_free(NSS_VLAN_MGR_SWITCH_ID, v->ppe_vsi)) {
+		nss_vlan_mgr_warn("%px: Failed to free VLAN VSI\n", v);
+	}
+#endif
+
+vlan_instance_free:
+	nss_vlan_mgr_instance_free(v);
 	return NOTIFY_DONE;
 }
 
@@ -1544,30 +1544,6 @@ static struct ctl_table nss_vlan_table[] = {
 };
 
 /*
- * nss_vlan sysctl dir
- */
-static struct ctl_table nss_vlan_dir[] = {
-	{
-		.procname		= "vlan_client",
-		.mode			= 0555,
-		.child			= nss_vlan_table,
-	},
-	{ }
-};
-
-/*
- * nss_vlan systel root dir
- */
-static struct ctl_table nss_vlan_root_dir[] = {
-	{
-		.procname		= "nss",
-		.mode			= 0555,
-		.child			= nss_vlan_dir,
-	},
-	{ }
-};
-
-/*
  * nss_vlan_mgr_add_bond_slave()
  *	Add new slave port to bond_vlan
  */
@@ -1906,7 +1882,7 @@ int __init nss_vlan_mgr_init_module(void)
 	vlan_mgr_ctx.stpid = ETH_P_8021Q;
 
 #ifdef NSS_VLAN_MGR_PPE_SUPPORT
-	vlan_mgr_ctx.sys_hdr = register_sysctl_table(nss_vlan_root_dir);
+	vlan_mgr_ctx.sys_hdr = register_sysctl("nss/vlan_client", nss_vlan_table);
 	if (!vlan_mgr_ctx.sys_hdr) {
 		nss_vlan_mgr_warn("Unabled to register sysctl table for vlan manager\n");
 		return -EFAULT;

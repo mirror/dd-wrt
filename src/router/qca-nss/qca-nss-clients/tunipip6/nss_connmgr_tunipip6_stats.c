@@ -132,7 +132,7 @@ static void nss_tunipip6_stats_update(uint64_t *stats, struct nss_tunipip6_stats
 void nss_tunipip6_stats_sync(struct net_device *dev, struct nss_tunipip6_msg *ntm)
 {
 	uint32_t ifnum = ntm->cm.interface;
-	struct nss_tunipip6_stats_sync_msg *stats = &ntm->msg.stats_sync;
+	struct nss_tunipip6_stats_sync_msg *stats = &ntm->msg.stats;
 	struct nss_tunipip6_instance *ntii;
 	struct nss_tunipip6_stats *s;
 
@@ -147,6 +147,7 @@ void nss_tunipip6_stats_sync(struct net_device *dev, struct nss_tunipip6_msg *nt
 	s = &ntii->stats;
 	if (ntii->inner_ifnum == ifnum) {
 		nss_tunipip6_stats_update(s->inner_stats, stats);
+		s->inner_stats[NSS_TUNIPIP6_STATS_CONFIG_ENCAP_TOTAL_FMR] = stats->tun_stats.encap.cfg.total_fmr;
 	} else if (ntii->outer_ifnum == ifnum) {
 		nss_tunipip6_stats_update(s->outer_stats, stats);
 	} else {

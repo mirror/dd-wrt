@@ -210,7 +210,7 @@ nss_tx_status_t nss_vlan_tx_set_mtu_msg(uint32_t vlan_if_num, uint32_t mtu);
  * @return
  * Status of the Tx operation.
  */
-nss_tx_status_t nss_vlan_tx_set_mac_addr_msg(uint32_t vlan_if_num, const uint8_t *addr);
+nss_tx_status_t nss_vlan_tx_set_mac_addr_msg(uint32_t vlan_if_num, uint8_t *addr);
 
 /**
  * nss_vlan_tx_vsi_attach_msg

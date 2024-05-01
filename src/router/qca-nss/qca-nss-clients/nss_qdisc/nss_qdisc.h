@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2014-2018, 2020 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2014-2018, 2020-2021 The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -35,11 +35,16 @@
 #if defined(NSS_QDISC_PPE_SUPPORT)
 #include "nss_ppe.h"
 #endif
+#include "nss_qdisc_stats.h"
+#include "nss_qdisc_htable.h"
 
 #define NSS_QDISC_DEBUG_LEVEL_ERROR 1
 #define NSS_QDISC_DEBUG_LEVEL_WARN 2
 #define NSS_QDISC_DEBUG_LEVEL_INFO 3
 #define NSS_QDISC_DEBUG_LEVEL_TRACE 4
+
+#define NSS_QDISC_COMMAND_TIMEOUT (10*HZ) /* We set 10sec to be the command */
+					   /* timeout value for messages */
 
 /*
  * Debug message for module init and exit
@@ -86,6 +91,9 @@
 #define nss_qdisc_trace(s, ...) pr_info("%s[%d]:" s, __FUNCTION__, __LINE__, ##__VA_ARGS__)
 #endif
 #endif
+
+#define NSS_QDISC_STATS_SYNC_MANY_PERIOD msecs_to_jiffies(1000)
+#define NSS_QDISC_STATS_SYNC_MANY_UDELAY 5000     /* Delay for 5 ms */
 
 /*
  * State values
@@ -135,6 +143,27 @@ struct nss_qdisc;
 
 typedef void (*nss_qdisc_stats_callback_t)(struct nss_qdisc *nq, struct nss_shaper_node_stats_response *response);
 typedef void (*nss_qdisc_configure_callback_t)(struct nss_qdisc *nq, struct nss_shaper_configure *response);
+
+
+/*
+ * Qdisc stats sync info object
+ */
+struct nss_qdisc_stats_wq {
+	struct nss_qdisc *nq;			/* Pointer to root nss_qdisc */
+	struct list_head stats_list;		/* List head stats sync management work */
+	struct nss_if_msg stats_sync_req_msg;	/* FW sync message */
+	struct timer_list stats_get_timer;	/* Timer used to start fresh iter */
+	unsigned long int next_req_time;	/* Time at which next sync iteration starts */
+	unsigned long int stats_request_success;	/* Number of success stats request */
+	unsigned long int stats_request_fail;		/* Number of failed stats request */
+	unsigned long int stats_request_nack;		/* Number of NACK'd stats request */
+	atomic_t pending_stat_work;		/* Pending work queue status */
+	atomic_t pending_stat_resp;		/* Pending statistics response from FW */
+	bool stats_polling_stopped;		/* True when polling is stopped due to qdisc delete */
+	wait_queue_head_t stats_work_waitqueue;	/* Wait queue to wait on work queue processing */
+	wait_queue_head_t stats_resp_waitqueue;	/* Wait queue used to wait on response from the NSS */
+	struct nss_qdisc_htable nqt;		/* Struct to manage hash table of Qdiscs for stats */
+};
 
 struct nss_qdisc {
 	struct Qdisc *qdisc;			/* Handy pointer back to containing qdisc */
@@ -197,6 +226,8 @@ struct nss_qdisc {
 #endif
 	struct timer_list stats_get_timer;	/* Timer used to poll for stats */
 	atomic_t pending_stat_requests;		/* Number of pending stats responses */
+	struct nss_qdisc_stats_wq *stats_wq;	/* Stats info and state work object */
+	struct hlist_node hlist;		/* Hlist node for managing stats hash list */
 	wait_queue_head_t wait_queue;		/* Wait queue used to wait on responses from the NSS */
 	spinlock_t lock;			/* Lock to protect the nss qdisc structure */
 	uint16_t mode;				/* Mode of Qdisc/class */
@@ -429,18 +460,6 @@ extern int nss_qdisc_init(struct Qdisc *sch, struct nss_qdisc *nq, nss_shaper_no
 		void *extack);
 
 /*
- * nss_qdisc_start_basic_stats_polling()
- *	Call to initiate the stats polling timer
- */
-extern void nss_qdisc_start_basic_stats_polling(struct nss_qdisc *nq);
-
-/*
- * nss_qdisc_stop_basic_stats_polling()
- *	Call to stop polling of basic stats
- */
-extern void nss_qdisc_stop_basic_stats_polling(struct nss_qdisc *nq);
-
-/*
  * nss_qdisc_gnet_stats_copy_basic()
  *  Wrapper around gnet_stats_copy_basic()
  */
@@ -486,3 +505,15 @@ extern unsigned long nss_qdisc_tcf_bind(struct Qdisc *sch, unsigned long parent,
  *	Unbind the filter from the qdisc.
  */
 extern void nss_qdisc_tcf_unbind(struct Qdisc *sch, unsigned long arg);
+
+/*
+ * nss_qdisc_get_interface_msg()
+ *	Returns the correct message that needs to be sent down to the NSS interface.
+ */
+extern int nss_qdisc_get_interface_msg(bool is_bridge, uint32_t msg_type);
+
+/*
+ * nss_qdisc_msg_init()
+ *      Initialize the qdisc specific message
+ */
+extern void nss_qdisc_msg_init(struct nss_if_msg *nim, uint16_t if_num, uint32_t msg_type, uint32_t len, nss_if_msg_callback_t cb, void *app_data);

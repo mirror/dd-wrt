@@ -194,6 +194,7 @@ static void nss_tunipip6_encap_exception(struct net_device *dev, struct sk_buff 
 		skb->pkt_type = PACKET_HOST;
 		skb->skb_iif = dev->ifindex;
 		skb->ip_summed = CHECKSUM_NONE;
+		ip_rt_put(rt);
 		netif_receive_skb(skb);
 		return;
 	}
@@ -257,7 +258,7 @@ static void nss_tunipip6_decap_exception(struct net_device *dev, struct sk_buff 
 	struct iphdr *iph;
 	struct rtable *rt;
 	int cpu;
-	int8_t ver = skb->data[0] >> 4;
+	__attribute__((unused)) int8_t ver = skb->data[0] >> 4;
 
 	nss_tunipip6_trace("%px: received - %d bytes name %s ver %x\n",
 			dev, skb->len, dev->name, ver);
@@ -347,17 +348,17 @@ static void nss_tunipip6_update_dev_stats(struct net_device *dev,
 {
 	struct pcpu_sw_netstats stats;
 	enum nss_dynamic_interface_type interface_type;
-	struct nss_tunipip6_stats_sync_msg *sync_stats = (struct nss_tunipip6_stats_sync_msg *)&tnlmsg->msg.stats_sync;
+	struct nss_tunipip6_stats_sync_msg *sync_stats = (struct nss_tunipip6_stats_sync_msg *)&tnlmsg->msg.stats;
 
 	interface_type = nss_dynamic_interface_get_type(nss_tunipip6_get_context(), tnlmsg->cm.interface);
 
 	memset(&stats, 0, sizeof(stats));
 	if (interface_type == NSS_DYNAMIC_INTERFACE_TYPE_TUNIPIP6_INNER) {
-		stats.tx_packets = sync_stats->node_stats.tx_packets;
-		stats.tx_bytes = sync_stats->node_stats.tx_bytes;
+		u64_stats_set(&stats.tx_packets, sync_stats->node_stats.tx_packets);
+		u64_stats_set(&stats.tx_bytes, sync_stats->node_stats.tx_bytes);
 	} else if (interface_type == NSS_DYNAMIC_INTERFACE_TYPE_TUNIPIP6_OUTER) {
-		stats.rx_packets = sync_stats->node_stats.rx_packets;
-		stats.rx_bytes = sync_stats->node_stats.rx_bytes;
+		u64_stats_set(&stats.rx_packets, sync_stats->node_stats.rx_packets);
+		u64_stats_set(&stats.rx_bytes, sync_stats->node_stats.rx_bytes);
 	} else {
 		nss_tunipip6_warning("%px: Invalid interface type received from NSS\n", dev);
 		return;
@@ -380,7 +381,7 @@ void nss_tunipip6_event_receive(void *if_ctx, struct nss_tunipip6_msg *tnlmsg)
 	netdev = (struct net_device *)if_ctx;
 
 	switch (tnlmsg->cm.type) {
-	case NSS_TUNIPIP6_RX_STATS_SYNC:
+	case NSS_TUNIPIP6_STATS_SYNC:
 		/*
 		 * Update netdevice statistics.
 		 */
@@ -626,6 +627,7 @@ configure_tunnel:
 	tnlcreate->ttl_inherit = tnlcfg->ttl_inherit;
 	tnlcreate->tos_inherit = tnlcfg->tos_inherit;
 	tnlcreate->frag_id_update = tnlcfg->frag_id_update;
+	tnlcreate->fmr_max = tnlcfg->fmr_max;
 
 	/*
 	 * Set "draft03" based on "tunnel_type". draft03 should be

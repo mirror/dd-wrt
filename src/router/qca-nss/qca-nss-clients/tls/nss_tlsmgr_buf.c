@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -50,6 +50,15 @@
 #include "nss_tlsmgr_priv.h"
 
 #define NSS_TLSMGR_REC_MAX_SIZE	(sizeof(struct nss_tlsmgr_rec) * NSS_TLSMGR_MDATA_REC_MAX)
+
+/*
+ * nss_tlsmgr_buf_get_rec_start()
+ *	Get record start
+ */
+struct nss_tlsmgr_rec *nss_tlsmgr_buf_get_rec_start(struct nss_tlsmgr_buf *buf)
+{
+	return (struct nss_tlsmgr_rec *)((uint8_t *)buf + sizeof(*buf));
+}
 
 /*
  * nss_tlsmgr_buf_set_rec()
@@ -172,7 +181,7 @@ EXPORT_SYMBOL(nss_tlsmgr_buf_encap);
  */
 nss_tlsmgr_status_t nss_tlsmgr_buf_decap(struct nss_tlsmgr_buf *buf, nss_tlsmgr_data_callback_t cb, void *app_data)
 {
-	struct nss_tlsmgr_tun *tun;
+	struct nss_tlsmgr_tun *tun = buf->tun;
 	struct nss_tlsmgr_ctx *ctx;
 	struct sk_buff *skb;
 	struct nss_tlsmgr_rec *rec;
@@ -207,7 +216,6 @@ nss_tlsmgr_status_t nss_tlsmgr_buf_decap(struct nss_tlsmgr_buf *buf, nss_tlsmgr_
 	skb = buf->skb;
 	skb_pull(skb, mdata_start - skb->data);
 
-	tun = buf->tun;
 	ctx = &tun->ctx_dec;
 
 	return nss_tlsmgr_ctx_tx(ctx, skb, rec);

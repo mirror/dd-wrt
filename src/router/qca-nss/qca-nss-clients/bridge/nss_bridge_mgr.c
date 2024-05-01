@@ -1,9 +1,12 @@
 /*
  **************************************************************************
- * Copyright (c) 2016-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2016-2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
+ *
  * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
  * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
  * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
@@ -47,6 +50,11 @@
 static bool ovs_enabled = false;
 
 static struct nss_bridge_mgr_context br_mgr_ctx;
+
+/*
+ * Module parameter to enable/disable FDB learning.
+ */
+static bool fdb_disabled = false;
 
 /*
  * nss_bridge_mgr_create_instance()
@@ -415,6 +423,37 @@ static int nss_bridge_mgr_del_bond_slave(struct net_device *bond_master,
 }
 
 /*
+ * nss_bridge_mgr_bond_fdb_join()
+ *	Update FDB state when a bond interface joining bridge.
+ */
+static int nss_bridge_mgr_bond_fdb_join(struct nss_bridge_pvt *b_pvt)
+{
+	/*
+	 * If already other bond devices are attached to bridge,
+	 * only increment bond_slave_num,
+	 */
+	spin_lock(&br_mgr_ctx.lock);
+	if (b_pvt->bond_slave_num) {
+		b_pvt->bond_slave_num++;
+		spin_unlock(&br_mgr_ctx.lock);
+		return NOTIFY_DONE;
+	}
+	b_pvt->bond_slave_num = 1;
+	spin_unlock(&br_mgr_ctx.lock);
+
+	/*
+	 * This is the first bond device being attached to bridge. In order to enforce Linux
+	 * bond slave selection in bridge flows involving bond interfaces, we need to disable
+	 * fdb learning on this bridge master to allow flow based bridging.
+	 */
+	if (nss_bridge_mgr_disable_fdb_learning(b_pvt) < 0) {
+		return NOTIFY_BAD;
+	}
+
+	return NOTIFY_DONE;
+}
+
+/*
  * nss_bridge_mgr_bond_master_join()
  *	Add a bond interface to bridge
  */
@@ -447,28 +486,7 @@ static int nss_bridge_mgr_bond_master_join(struct net_device *bond_master,
 		}
 	}
 
-	/*
-	 * If already other bond devices are attached to bridge,
-	 * only increment bond_slave_num,
-	 */
-	spin_lock(&br_mgr_ctx.lock);
-	if (b_pvt->bond_slave_num) {
-		b_pvt->bond_slave_num++;
-		spin_unlock(&br_mgr_ctx.lock);
-		return NOTIFY_DONE;
-	}
-	spin_unlock(&br_mgr_ctx.lock);
-
-	/*
-	 * This is the first bond device being attached to bridge. In order to enforce Linux
-	 * bond slave selection in bridge flows involving bond interfaces, we need to disable
-	 * fdb learning on this bridge master to allow flow based bridging.
-	 */
-	if (!nss_bridge_mgr_disable_fdb_learning(b_pvt)) {
-		spin_lock(&br_mgr_ctx.lock);
-		b_pvt->bond_slave_num = 1;
-		spin_unlock(&br_mgr_ctx.lock);
-
+	if (nss_bridge_mgr_bond_fdb_join(b_pvt) == NOTIFY_DONE) {
 		return NOTIFY_DONE;
 	}
 
@@ -486,6 +504,41 @@ cleanup:
 
 	return NOTIFY_BAD;
 }
+
+/*
+ * nss_bridge_mgr_bond_fdb_leave()
+ *	Update FDB state when a bond interface leaving bridge.
+ */
+static int nss_bridge_mgr_bond_fdb_leave(struct nss_bridge_pvt *b_pvt)
+{
+
+	nss_bridge_mgr_assert(b_pvt->bond_slave_num == 0);
+
+	/*
+	 * If more than one bond devices are attached to bridge,
+	 * only decrement the bond_slave_num
+	 */
+	spin_lock(&br_mgr_ctx.lock);
+	if (b_pvt->bond_slave_num > 1) {
+		b_pvt->bond_slave_num--;
+		spin_unlock(&br_mgr_ctx.lock);
+		return NOTIFY_DONE;
+	}
+	b_pvt->bond_slave_num = 0;
+	spin_unlock(&br_mgr_ctx.lock);
+
+	/*
+	 * The last bond interface is removed from bridge, we can switch back to FDB
+	 * learning mode.
+	 */
+	if (!fdb_disabled && (nss_bridge_mgr_enable_fdb_learning(b_pvt) < 0)) {
+		nss_bridge_mgr_warn("%px: Failed to enable fdb learning. fdb_disabled: %d\n", b_pvt, fdb_disabled);
+		return NOTIFY_BAD;
+	}
+
+	return NOTIFY_DONE;
+}
+
 
 /*
  * nss_bridge_mgr_bond_master_leave()
@@ -516,27 +569,7 @@ static int nss_bridge_mgr_bond_master_leave(struct net_device *bond_master,
 		}
 	}
 
-	/*
-	 * If more than one bond devices are attached to bridge,
-	 * only decrement the bond_slave_num
-	 */
-	spin_lock(&br_mgr_ctx.lock);
-	if (b_pvt->bond_slave_num > 1) {
-		b_pvt->bond_slave_num--;
-		spin_unlock(&br_mgr_ctx.lock);
-		return NOTIFY_DONE;
-	}
-	spin_unlock(&br_mgr_ctx.lock);
-
-	/*
-	 * The last bond interface is removed from bridge, we can switch back to FDB
-	 * learning mode.
-	 */
-	if (!nss_bridge_mgr_enable_fdb_learning(b_pvt)) {
-		spin_lock(&br_mgr_ctx.lock);
-		b_pvt->bond_slave_num = 0;
-		spin_unlock(&br_mgr_ctx.lock);
-
+	if (nss_bridge_mgr_bond_fdb_leave(b_pvt) == NOTIFY_DONE) {
 		return NOTIFY_DONE;
 	}
 
@@ -755,10 +788,6 @@ int nss_bridge_mgr_join_bridge(struct net_device *dev, struct nss_bridge_pvt *br
 		 * This is done by not sending join message to the bridge in NSS.
 		 */
 		if (br_mgr_ctx.wan_if_num == ifnum) {
-			if (!nss_bridge_mgr_l2_exception_acl_enable()) {
-				nss_bridge_mgr_warn("%px: failed to enable ACL\n", br);
-				return -EIO;
-			}
 			br->wan_if_enabled = true;
 			br->wan_if_num = ifnum;
 			nss_bridge_mgr_info("if_num %d is added as WAN interface \n", ifnum);
@@ -807,9 +836,10 @@ int nss_bridge_mgr_join_bridge(struct net_device *dev, struct nss_bridge_pvt *br
 			}
 
 			/*
-			 * Add the bond_master to bridge.
+			 * Update FDB state of the bridge. No need to add individual interfaces of bond to the bridge.
+			 * VLAN interface verifies that all interfaces are physical so, no need to verify again.
 			 */
-			if (nss_bridge_mgr_bond_master_join(real_dev, br) != NOTIFY_DONE) {
+			if (nss_bridge_mgr_bond_fdb_join(br) != NOTIFY_DONE) {
 				nss_bridge_mgr_warn("%px: Slaves of bond interface %s join bridge failed\n", br, real_dev->name);
 				nss_bridge_tx_leave_msg(br->ifnum, dev);
 				nss_vlan_mgr_leave_bridge(dev, br->vsi);
@@ -864,7 +894,6 @@ int nss_bridge_mgr_leave_bridge(struct net_device *dev, struct nss_bridge_pvt *b
 		 * Hence a leave message should also be avaoided.
 		 */
 		if ((br->wan_if_enabled) && (br->wan_if_num == ifnum)) {
-			nss_bridge_mgr_l2_exception_acl_disable();
 			br->wan_if_enabled = false;
 			br->wan_if_num = -1;
 			nss_bridge_mgr_info("if_num %d is added as WAN interface\n", ifnum);
@@ -910,9 +939,10 @@ int nss_bridge_mgr_leave_bridge(struct net_device *dev, struct nss_bridge_pvt *b
 			}
 
 			/*
-			 * Remove the bond_master from bridge.
+			 * Update FDB state of the bridge. No need to add individual interfaces of bond to the bridge.
+			 * VLAN interface verifies that all interfaces are physical so, no need to verify again.
 			 */
-			if (nss_bridge_mgr_bond_master_leave(real_dev, br) != NOTIFY_DONE) {
+			if (nss_bridge_mgr_bond_fdb_leave(br) != NOTIFY_DONE) {
 				nss_bridge_mgr_warn("%px: Slaves of bond interface %s leave bridge failed\n", br, real_dev->name);
 				nss_vlan_mgr_join_bridge(dev, br->vsi);
 				nss_bridge_tx_join_msg(br->ifnum, dev);
@@ -1022,44 +1052,45 @@ int nss_bridge_mgr_register_br(struct net_device *dev)
 
 	b_pvt->dev = dev;
 
-	ifnum = nss_dynamic_interface_alloc_node(NSS_DYNAMIC_INTERFACE_TYPE_BRIDGE);
-	if (ifnum < 0) {
-		nss_bridge_mgr_warn("%px: failed to alloc bridge di\n", b_pvt);
-		nss_bridge_mgr_delete_instance(b_pvt);
-		return -EFAULT;
-	}
-
-	if (!nss_bridge_register(ifnum, dev, NULL, NULL, 0, b_pvt)) {
-		nss_bridge_mgr_warn("%px: failed to register bridge di to NSS\n", b_pvt);
-		goto fail;
-	}
-
 #if defined(NSS_BRIDGE_MGR_PPE_SUPPORT)
 	err = ppe_vsi_alloc(NSS_BRIDGE_MGR_SWITCH_ID, &vsi_id);
 	if (err) {
 		nss_bridge_mgr_warn("%px: failed to alloc bridge vsi, error = %d\n", b_pvt, err);
-		goto fail_1;
+		goto fail;
 	}
 
 	b_pvt->vsi = vsi_id;
+#endif
 
+	ifnum = nss_dynamic_interface_alloc_node(NSS_DYNAMIC_INTERFACE_TYPE_BRIDGE);
+	if (ifnum < 0) {
+		nss_bridge_mgr_warn("%px: failed to alloc bridge di\n", b_pvt);
+		goto fail_1;
+	}
+
+	if (!nss_bridge_register(ifnum, dev, NULL, NULL, 0, b_pvt)) {
+		nss_bridge_mgr_warn("%px: failed to register bridge di to NSS\n", b_pvt);
+		goto fail_2;
+	}
+
+#if defined(NSS_BRIDGE_MGR_PPE_SUPPORT)
 	err = nss_bridge_tx_vsi_assign_msg(ifnum, vsi_id);
 	if (err != NSS_TX_SUCCESS) {
 		nss_bridge_mgr_warn("%px: failed to assign vsi msg, error = %d\n", b_pvt, err);
-		goto fail_2;
+		goto fail_3;
 	}
 #endif
 
-	err = nss_bridge_tx_set_mac_addr_msg(ifnum, dev->dev_addr);
+	err = nss_bridge_tx_set_mac_addr_msg(ifnum, (uint8_t *) dev->dev_addr);
 	if (err != NSS_TX_SUCCESS) {
 		nss_bridge_mgr_warn("%px: failed to set mac_addr msg, error = %d\n", b_pvt, err);
-		goto fail_3;
+		goto fail_4;
 	}
 
 	err = nss_bridge_tx_set_mtu_msg(ifnum, dev->mtu);
 	if (err != NSS_TX_SUCCESS) {
 		nss_bridge_mgr_warn("%px: failed to set mtu msg, error = %d\n", b_pvt, err);
-		goto fail_3;
+		goto fail_4;
 	}
 
 	/*
@@ -1081,31 +1112,35 @@ int nss_bridge_mgr_register_br(struct net_device *dev)
 	 * Disable FDB learning if OVS is enabled for
 	 * all bridges (including Linux bridge).
 	 */
-	if (ovs_enabled) {
+	if (ovs_enabled || fdb_disabled) {
 		nss_bridge_mgr_disable_fdb_learning(b_pvt);
 	}
 #endif
 	return 0;
 
-fail_3:
+fail_4:
 #if defined(NSS_BRIDGE_MGR_PPE_SUPPORT)
 	if (nss_bridge_tx_vsi_unassign_msg(ifnum, vsi_id) != NSS_TX_SUCCESS) {
 		nss_bridge_mgr_warn("%px: failed to unassign vsi\n", b_pvt);
 	}
-
-fail_2:
-	ppe_vsi_free(NSS_BRIDGE_MGR_SWITCH_ID, vsi_id);
-
-fail_1:
+fail_3:
 #endif
+
 	nss_bridge_unregister(ifnum);
 
-fail:
+fail_2:
 	if (nss_dynamic_interface_dealloc_node(ifnum, NSS_DYNAMIC_INTERFACE_TYPE_BRIDGE) != NSS_TX_SUCCESS) {
 		nss_bridge_mgr_warn("%px: failed to dealloc bridge di\n", b_pvt);
 	}
 
+fail_1:
+#if defined(NSS_BRIDGE_MGR_PPE_SUPPORT)
+	ppe_vsi_free(NSS_BRIDGE_MGR_SWITCH_ID, vsi_id);
+fail:
+#endif
+
 	nss_bridge_mgr_delete_instance(b_pvt);
+
 	return -EFAULT;
 }
 
@@ -1175,7 +1210,7 @@ static int nss_bridge_mgr_changemtu_event(struct netdev_notifier_info *info)
 
 	if (nss_bridge_tx_set_mtu_msg(b_pvt->ifnum, dev->mtu) != NSS_TX_SUCCESS) {
 		nss_bridge_mgr_warn("%px: Failed to send change MTU message to NSS\n", b_pvt);
-		return NOTIFY_BAD;
+		return NOTIFY_DONE;
 	}
 
 	spin_lock(&br_mgr_ctx.lock);
@@ -1207,9 +1242,9 @@ static int nss_bridge_mgr_changeaddr_event(struct netdev_notifier_info *info)
 
 	nss_bridge_mgr_trace("%px: MAC changed to %pM, update NSS\n", b_pvt, dev->dev_addr);
 
-	if (nss_bridge_tx_set_mac_addr_msg(b_pvt->ifnum, dev->dev_addr) != NSS_TX_SUCCESS) {
+	if (nss_bridge_tx_set_mac_addr_msg(b_pvt->ifnum, (uint8_t *) dev->dev_addr) != NSS_TX_SUCCESS) {
 		nss_bridge_mgr_warn("%px: Failed to send change MAC address message to NSS\n", b_pvt);
-		return NOTIFY_BAD;
+		return NOTIFY_DONE;
 	}
 
 	spin_lock(&br_mgr_ctx.lock);
@@ -1269,7 +1304,6 @@ static int nss_bridge_mgr_changeupper_event(struct netdev_notifier_info *info)
 		nss_bridge_mgr_trace("%px: Interface %s joining bridge %s\n", b_pvt, dev->name, master_dev->name);
 		if (nss_bridge_mgr_join_bridge(dev, b_pvt)) {
 			nss_bridge_mgr_warn("%px: Interface %s failed to join bridge %s\n", b_pvt, dev->name, master_dev->name);
-			return NOTIFY_BAD;
 		}
 
 		return NOTIFY_DONE;
@@ -1278,7 +1312,6 @@ static int nss_bridge_mgr_changeupper_event(struct netdev_notifier_info *info)
 	nss_bridge_mgr_trace("%px: Interface %s leaving bridge %s\n", b_pvt, dev->name, master_dev->name);
 	if (nss_bridge_mgr_leave_bridge(dev, b_pvt)) {
 		nss_bridge_mgr_warn("%px: Interface %s failed to leave bridge %s\n", b_pvt, dev->name, master_dev->name);
-		return NOTIFY_BAD;
 	}
 
 	return NOTIFY_DONE;
@@ -1336,7 +1369,6 @@ static struct notifier_block nss_bridge_mgr_netdevice_nb __read_mostly = {
 	.notifier_call = nss_bridge_mgr_netdevice_event,
 };
 
-#if defined(NSS_BRIDGE_MGR_PPE_SUPPORT)
 /*
  * nss_bridge_mgr_is_physical_dev()
  *	Check if the device is on physical device.
@@ -1565,25 +1597,6 @@ static struct ctl_table nss_bridge_mgr_table[] = {
 	{ }
 };
 
-static struct ctl_table nss_bridge_mgr_dir[] = {
-	{
-		.procname	= "bridge_mgr",
-		.mode		= 0555,
-		.child		= nss_bridge_mgr_table,
-	},
-	{ }
-};
-
-static struct ctl_table nss_bridge_mgr_root_dir[] = {
-	{
-		.procname	= "nss",
-		.mode		= 0555,
-		.child		= nss_bridge_mgr_dir,
-	},
-	{ }
-};
-#endif
-
 /*
  * nss_bridge_mgr_init_module()
  *	bridge_mgr module init function
@@ -1603,7 +1616,15 @@ int __init nss_bridge_mgr_init_module(void)
 #if defined(NSS_BRIDGE_MGR_PPE_SUPPORT)
 	br_mgr_ctx.wan_if_num = -1;
 	br_fdb_update_register_notify(&nss_bridge_mgr_fdb_update_notifier);
-	br_mgr_ctx.nss_bridge_mgr_header = register_sysctl_table(nss_bridge_mgr_root_dir);
+	br_mgr_ctx.nss_bridge_mgr_header = register_sysctl("nss/bridge_mgr", nss_bridge_mgr_table);
+
+	/*
+	 * Enable ACL rule to enable L2 exception. This is needed if PPE Virtual ports is added to bridge.
+	 *  It is assumed that VP is using flow based bridging, hence L2 exceptions will need to be enabled on PPE bridge.
+	 */
+	if (!nss_bridge_mgr_l2_exception_acl_enable()) {
+		nss_bridge_mgr_warn("Failed to enable ACL\n");
+	}
 #endif
 #if defined (NSS_BRIDGE_MGR_OVS_ENABLE)
 	nss_bridge_mgr_ovs_init();
@@ -1625,6 +1646,12 @@ void __exit nss_bridge_mgr_exit_module(void)
 	if (br_mgr_ctx.nss_bridge_mgr_header) {
 		unregister_sysctl_table(br_mgr_ctx.nss_bridge_mgr_header);
 	}
+
+	/*
+	 * Disable the PPE L2 exceptions which were enabled during module init for PPE virtual ports.
+	 */
+	nss_bridge_mgr_l2_exception_acl_disable();
+
 #endif
 #if defined (NSS_BRIDGE_MGR_OVS_ENABLE)
 	nss_bridge_mgr_ovs_exit();
@@ -1639,3 +1666,6 @@ MODULE_DESCRIPTION("NSS bridge manager");
 
 module_param(ovs_enabled, bool, 0644);
 MODULE_PARM_DESC(ovs_enabled, "OVS bridge is enabled");
+
+module_param(fdb_disabled, bool, 0644);
+MODULE_PARM_DESC(fdb_disabled, "fdb learning is disabled");

@@ -177,7 +177,7 @@ static struct rtnl_link_stats64 *nss_pvxlanmgr_get_tunnel_stats(struct net_devic
 	 * Netdev seems to be incrementing rx_dropped because we don't give IP header.
 	 * So reset it as it's of no use for us.
 	 */
-	atomic_long_set(&dev->rx_dropped, 0);
+	atomic_long_set(&(dev)->stats.__rx_dropped, 0);
 	priv = netdev_priv(dev);
 	memset(stats, 0, sizeof(struct rtnl_link_stats64));
 	memcpy(stats, &priv->stats, sizeof(struct rtnl_link_stats64));
@@ -305,7 +305,7 @@ static void nss_pvxlanmgr_dummy_netdev_setup(struct net_device *dev)
 	dev->priv_destructor = NULL;
 #endif
 
-	memcpy(dev->dev_addr, "\x00\x00\x00\x00\x00\x00", dev->addr_len);
+	memcpy((void *) dev->dev_addr, "\x00\x00\x00\x00\x00\x00", dev->addr_len);
 	memset(dev->broadcast, 0xff, dev->addr_len);
 	memcpy(dev->perm_addr, dev->dev_addr, dev->addr_len);
 }

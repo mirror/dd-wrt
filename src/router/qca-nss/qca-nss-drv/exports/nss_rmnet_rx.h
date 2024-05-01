@@ -18,7 +18,7 @@
 
 /*
  * @file nss_rmnet_rx.h
- *	NSS Virtual interface message Structure and APIs
+ *	NSS RMNET interface message Structure and APIs
  */
 
 #ifndef __NSS_RMNET_RX_H
@@ -58,7 +58,7 @@ enum nss_rmnet_rx_msg_types {
 
 /**
  * nss_rmnet_rx_error_types
- *	Error types for the virtual interface.
+ *	Error types for the RMNET interface.
  */
 enum nss_rmnet_rx_error_types {
 	NSS_RMNET_RX_SUCCESS,				/**< No error. */
@@ -125,19 +125,19 @@ struct nss_rmnet_rx_msg {
 	struct nss_cmn_msg cm;		/**< Common message header. */
 
 	/**
-	 * Payload of a virtual interface message.
+	 * Payload of an RMNET interface message.
 	 */
 	union {
 		struct nss_rmnet_rx_config_msg if_config;
-				/**< Rule for creating a virtual interface. */
+				/**< Rule for creating an RMNET interface. */
 		struct nss_rmnet_rx_stats stats;
-				/**< Virtual interface statistics. */
+				/**< RMNET interface statistics. */
 	} msg;			/**< Message payload. */
 };
 
 /**
  * Callback to transmit interface data received from NSS
- * to the transmit path of the virtual interface.
+ * to the transmit path of the RMNET interface.
  *
  * @datatypes
  * net_device \n
@@ -183,8 +183,8 @@ struct nss_rmnet_rx_handle {
 	int32_t if_num_h2n;			/**< Redirect interface number on host-to-NSS path. */
 	struct net_device *ndev;		/**< Associated network device. */
 	struct nss_rmnet_rx_pvt *pvt;		/**< Private data structure. */
-	uint64_t *stats_n2h;			/**< Virtual interface statistics from NSS-to-host. */
-	uint64_t *stats_h2n;			/**< Virtual interface statistics from host-to-NSS. */
+	uint64_t *stats_n2h;			/**< RMNET interface statistics from NSS-to-host. */
+	uint64_t *stats_h2n;			/**< RMNET interface statistics from host-to-NSS. */
 	atomic_t refcnt;			/**< Reference count. */
 	nss_rmnet_rx_msg_callback_t cb;		/**< Message callback. */
 	void *app_data;		/**< Application data to be passed to the callback. */
@@ -192,12 +192,12 @@ struct nss_rmnet_rx_handle {
 
 /**
  * nss_rmnet_rx_destroy_sync
- *	Destroys the virtual interface synchronously.
+ *	Destroys the RMNET interface synchronously.
  *
  * @datatypes
  * nss_rmnet_rx_handle
  *
- * @param[in,out] handle  Pointer to the virtual interface handle (provided during
+ * @param[in,out] handle  Pointer to the RMNET interface handle (provided during
  *                        dynamic interface allocation).
  *
  * @return
@@ -210,7 +210,7 @@ extern nss_tx_status_t nss_rmnet_rx_destroy_sync(struct nss_rmnet_rx_handle *han
 
 /**
  * nss_rmnet_rx_create_sync_nexthop
- *	Creates a virtual interface synchronously with specified nexthops.
+ *	Creates an RMNET interface synchronously with specified nexthops.
  *
  * @datatypes
  * net_device
@@ -220,19 +220,33 @@ extern nss_tx_status_t nss_rmnet_rx_destroy_sync(struct nss_rmnet_rx_handle *han
  * @param[in] nexthop_h2n  Nexthop interface number of host-to-NSS dynamic interface.
  *
  * @return
- * Pointer to NSS virtual interface handle.
+ * Pointer to the NSS RMNET interface handle.
  */
 extern struct nss_rmnet_rx_handle *nss_rmnet_rx_create_sync_nexthop(struct net_device *netdev, uint32_t nexthop_n2h, uint32_t nexthop_h2n);
 
 /**
+ * nss_rmnet_rx_create
+ *	Creates an RMNET interface synchronously with generic nexthops.
+ *
+ * @datatypes
+ * net_device
+ *
+ * @param[in] netdev       Pointer to the associated network device.
+ *
+ * @return
+ * Pointer to the NSS RMNET interface handle.
+ */
+extern struct nss_rmnet_rx_handle *nss_rmnet_rx_create(struct net_device *netdev);
+
+/**
  * nss_rmnet_rx_tx_buf
- *	Forwards virtual interface packets to the NSS.
+ *	Forwards RMNET interface packets to the NSS.
  *
  * @datatypes
  * nss_rmnet_rx_handle \n
  * sk_buff
  *
- * @param[in,out] handle  Pointer to the virtual interface handle (provided during
+ * @param[in,out] handle  Pointer to the RMNET interface handle (provided during
  *                        registration).
  * @param[in]    skb     Pointer to the data socket buffer.
  *
@@ -244,14 +258,14 @@ extern nss_tx_status_t nss_rmnet_rx_tx_buf(struct nss_rmnet_rx_handle *handle,
 
 /**
  * nss_rmnet_rx_tx_msg
- *	Sends a message to the virtual interface.
+ *	Sends a message to the RMNET interface.
  *
  * @datatypes
  * nss_ctx_instance \n
  * nss_rmnet_rx_msg
  *
  * @param[in] nss_ctx  Pointer to the NSS context (provided during registration).
- * @param[in] nvim     Pointer to the virtual interface message.
+ * @param[in] nvim     Pointer to the RMNET interface message.
  *
  * @return
  * Command Tx status.
@@ -260,12 +274,12 @@ extern nss_tx_status_t nss_rmnet_rx_tx_msg(struct nss_ctx_instance *nss_ctx, str
 
 /**
  * nss_rmnet_rx_xmit_callback_unregister
- *	Deregisters the transmit callback from the virtual interface.
+ *	Deregisters the transmit callback from the RMNET interface.
  *
  * @datatypes
  * nss_rmnet_rx_handle
  *
- * @param[in,out] handle  Pointer to the virtual interface handle.
+ * @param[in,out] handle  Pointer to the RMNET interface handle.
  *
  * @return
  * None.
@@ -274,15 +288,15 @@ extern void nss_rmnet_rx_xmit_callback_unregister(struct nss_rmnet_rx_handle *ha
 
 /**
  * nss_rmnet_rx_xmit_callback_register
- *	Registers a transmit callback to a virtual interface.
+ *	Registers a transmit callback to an RMNET interface.
  *
  * @datatypes
  * nss_rmnet_rx_handle \n
  * nss_rmnet_rx_xmit_callback_t
  *
- * @param[in,out] handle        Pointer to the virtual interface handle (provided during
+ * @param[in,out] handle        Pointer to the RMNET interface handle (provided during
  *                              dynamic interface allocation).
- * @param[in]    cb             Callback handler for virtual data packets.
+ * @param[in]    cb             Callback handler for RMNET data packets.
  *
  * @return
  * None.
@@ -292,12 +306,12 @@ extern void nss_rmnet_rx_xmit_callback_register(struct nss_rmnet_rx_handle *hand
 
 /**
  * nss_rmnet_rx_unregister
- *	Deregisters a virtual interface from the NSS driver.
+ *	Deregisters an RMNET interface from the NSS driver.
  *
  * @datatypes
  * nss_rmnet_rx_handle
  *
- * @param[in,out] handle  Pointer to the virtual interface handle.
+ * @param[in,out] handle  Pointer to the RMNET interface handle.
  *
  * @return
  * None.
@@ -306,16 +320,16 @@ extern void nss_rmnet_rx_unregister(struct nss_rmnet_rx_handle *handle);
 
 /**
  * nss_rmnet_rx_register
- *	Registers a virtual Interface with NSS driver.
+ *	Registers an RMNET Interface with NSS driver.
  *
  * @datatypes
  * nss_rmnet_rx_handle \n
  * nss_rmnet_rx_data_callback_t \n
  * net_device
  *
- * @param[in,out] handle        Pointer to the virtual interface handle (provided during
+ * @param[in,out] handle        Pointer to the RMNET interface handle (provided during
  *                              dynamic interface allocation).
- * @param[in]    data_callback  Callback handler for virtual data packets.
+ * @param[in]    data_callback  Callback handler for RMNET data packets.
  * @param[in]    netdev         Pointer to the associated network device.
  *
  * @return
@@ -349,22 +363,22 @@ extern int32_t nss_rmnet_rx_get_ifnum(struct net_device *dev);
 
 /**
  * nss_rmnet_rx_get_interface_num
- *	Returns the virtual interface number associated with the handle.
+ *	Returns the RMNET interface number associated with the handle.
  *
  * @datatypes
  * nss_rmnet_rx_handle
  *
- * @param[in] handle  Pointer to the virtual interface handle (provided during
+ * @param[in] handle  Pointer to the RMNET interface handle (provided during
 		      dynamic interface allocation).
  *
  * @return
- * Virtual interface number.
+ * RMNET interface number.
  */
 extern int32_t nss_rmnet_rx_get_interface_num(struct nss_rmnet_rx_handle *handle);
 
 /**
  * nss_rmnet_rx_get_context
- *	Gets the virtual interface context.
+ *	Gets the RMNET interface context.
  *
  * @return
  * Pointer to the NSS core context.

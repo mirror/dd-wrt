@@ -1,6 +1,6 @@
 /*
  ******************************************************************************
- * Copyright (c) 2017-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2019, 2021, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -18,41 +18,13 @@
 #define __NSS_GRE_REDIR_STATS_H__
 
 /*
- * GRE REDIR statistics
- */
-enum nss_gre_redir_stats_types {
-	NSS_GRE_REDIR_STATS_TX_PKTS,
-	NSS_GRE_REDIR_STATS_TX_BYTES,
-	NSS_GRE_REDIR_STATS_TX_DROPS,
-	NSS_GRE_REDIR_STATS_RX_PKTS,
-	NSS_GRE_REDIR_STATS_RX_BYTES,
-	NSS_GRE_REDIR_STATS_RX_DROPS,
-	NSS_GRE_REDIR_STATS_SJACK_TX_PKTS,
-	NSS_GRE_REDIR_STATS_SJACK_RX_PKTS,
-	NSS_GRE_REDIR_STATS_OFFLOAD_TX_PKTS,
-	NSS_GRE_REDIR_STATS_OFFLOAD_RX_PKTS,
-	NSS_GRE_REDIR_STATS_EXCEPTION_US_RX_PKTS,
-	NSS_GRE_REDIR_STATS_EXCEPTION_US_TX_PKTS,
-	NSS_GRE_REDIR_STATS_EXCEPTION_DS_RX_PKTS,
-	NSS_GRE_REDIR_STATS_EXCEPTION_DS_TX_PKTS,
-	NSS_GRE_REDIR_STATS_ENCAP_SG_ALLOC_DROP,
-	NSS_GRE_REDIR_STATS_DECAP_FAIL_DROP,
-	NSS_GRE_REDIR_STATS_DECAP_SPLIT_DROP,
-	NSS_GRE_REDIR_STATS_SPLIT_SG_ALLOC_FAIL,
-	NSS_GRE_REDIR_STATS_SPLIT_LINEAR_COPY_FAIL,
-	NSS_GRE_REDIR_STATS_SPLIT_NOT_ENOUGH_TAILROOM,
-	NSS_GRE_REDIR_STATS_EXCEPTION_DS_INVALID_DST_DROP,
-	NSS_GRE_REDIR_STATS_DECAP_EAPOL_FRAMES,
-	NSS_GRE_REDIR_STATS_EXCEPTION_DS_INV_APPID,
-	NSS_GRE_REDIR_STATS_HEADROOM_UNAVAILABLE,
-	NSS_GRE_REDIR_STATS_TX_COMPLETION_SUCCESS,
-	NSS_GRE_REDIR_STATS_TX_COMPLETION_DROP,
-	NSS_GRE_REDIR_STATS_MAX
-};
-
-/*
  * NSS GRE REDIR statistics APIs
  */
+extern spinlock_t nss_gre_redir_stats_lock;
+extern bool nss_gre_redir_verify_ifnum(uint32_t if_num);
+extern void nss_gre_redir_stats_notify(struct nss_ctx_instance *nss_ctx, uint32_t if_num);
+extern void nss_gre_redir_stats_sync(struct nss_ctx_instance *nss_ctx, int if_num,
+					struct nss_gre_redir_stats_sync_msg *ngss);
 extern struct dentry *nss_gre_redir_stats_dentry_create(void);
 
 #endif /* __NSS_GRE_REDIR_STATS_H__ */

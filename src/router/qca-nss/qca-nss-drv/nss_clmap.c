@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2019-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2019-2021, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -23,6 +23,7 @@
 #include "nss_cmn.h"
 #include "nss_tx_rx_common.h"
 #include "nss_clmap_stats.h"
+#include "nss_clmap_strings.h"
 #include "nss_clmap_log.h"
 
 #define NSS_CLMAP_TX_TIMEOUT 3000
@@ -106,6 +107,7 @@ static void nss_clmap_msg_handler(struct nss_ctx_instance *nss_ctx, struct nss_c
 	switch (nclm->cm.type) {
 	case NSS_CLMAP_MSG_TYPE_SYNC_STATS:
 		nss_clmap_stats_sync(nss_ctx, &nclm->msg.stats, ncm->interface);
+		nss_clmap_stats_notify(nss_ctx, ncm->interface);
 		break;
 	}
 
@@ -114,7 +116,7 @@ static void nss_clmap_msg_handler(struct nss_ctx_instance *nss_ctx, struct nss_c
 	 */
 	if (ncm->response == NSS_CMN_RESPONSE_NOTIFY) {
 		ncm->cb = (nss_ptr_t)nss_core_get_msg_handler(nss_ctx, ncm->interface);
-		ncm->app_data = (nss_ptr_t)nss_ctx->nss_rx_interface_handlers[nss_ctx->id][ncm->interface].app_data;
+		ncm->app_data = (nss_ptr_t)nss_ctx->nss_rx_interface_handlers[ncm->interface].app_data;
 	}
 
 	/*
@@ -336,7 +338,9 @@ EXPORT_SYMBOL(nss_clmap_get_ctx);
  */
 void nss_clmap_init()
 {
-	nss_clmap_stats_dentry_create();
 	sema_init(&clmap_pvt.sem, 1);
 	init_completion(&clmap_pvt.complete);
+
+	nss_clmap_stats_dentry_create();
+	nss_clmap_strings_dentry_create();
 }

@@ -92,13 +92,15 @@ extern void nss_dtls_cmn_register_handler(void);
 extern void nss_tls_register_handler(void);
 extern void nss_gre_tunnel_register_handler(void);
 extern void nss_trustsec_tx_register_handler(void);
+extern void nss_trustsec_rx_register_handler(void);
 extern void nss_wifili_register_handler(void);
 extern void nss_ppe_register_handler(void);
 extern void nss_gre_redir_mark_register_handler(void);
 extern void nss_ppe_vp_register_handler(void);
-#if (NSS_FW_VERSION_CODE > NSS_FW_VERSION(11,0))
 extern void nss_wifi_mac_db_register_handler(void);
-#endif
+extern void nss_wifi_ext_vdev_register_handler(void);
+extern void nss_wifili_thread_scheme_db_init(uint8_t core_id);
+extern void nss_wifi_mesh_init(void);
 
 /*
  * nss_if_msg_handler()

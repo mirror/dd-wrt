@@ -1,9 +1,12 @@
 /*
  **************************************************************************
- * Copyright (c) 2013-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2013-2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022, Qualcomm Innovation Center, Inc. All rights reserved.
+ *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
+ *
  * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
  * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
  * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
@@ -65,16 +68,17 @@
 #include "nss_wifi_vdev.h"
 #include "nss_n2h.h"
 #include "nss_rps.h"
-#include "nss_wifi_if.h"
 #include "nss_portid.h"
 #include "nss_oam.h"
 #include "nss_dtls.h"
 #include "nss_dtls_cmn.h"
 #include "nss_tls.h"
 #include "nss_edma.h"
+#include "nss_edma_lite.h"
 #include "nss_bridge.h"
 #include "nss_ppe.h"
 #include "nss_trustsec_tx.h"
+#include "nss_trustsec_rx.h"
 #include "nss_vlan.h"
 #include "nss_igs.h"
 #include "nss_mirror.h"
@@ -99,6 +103,12 @@
 #include "nss_ipv4_reasm.h"
 #include "nss_lso_rx.h"
 #include "nss_wifi_mac_db_if.h"
+#include "nss_wifi_ext_vdev_if.h"
+#include "nss_wifili_if.h"
+#include "nss_ppe_vp.h"
+#include "nss_wifi_mesh.h"
+#include "nss_udp_st.h"
+#include "nss_qrfs.h"
 #endif
 
 #endif /*__KERNEL__ */
@@ -119,11 +129,7 @@
 #define NSS_MAX_PHYSICAL_INTERFACES 8	/**< Maximum number of physical interfaces. */
 #define NSS_MAX_VIRTUAL_INTERFACES 16	/**< Maximum number of virtual interfaces. */
 #define NSS_MAX_TUNNEL_INTERFACES 4	/**< Maximum number of tunnel interfaces. */
-#if (NSS_FW_VERSION_CODE < NSS_FW_VERSION(11,1))
-#define NSS_MAX_SPECIAL_INTERFACES 55	/**< Maximum number of special interfaces. */
-#else
-#define NSS_MAX_SPECIAL_INTERFACES 67	/**< Maximum number of special interfaces. */
-#endif
+#define NSS_MAX_SPECIAL_INTERFACES 72	/**< Maximum number of special interfaces. */
 #define NSS_MAX_WIFI_RADIO_INTERFACES 3	/**< Maximum number of radio interfaces. */
 
 /*
@@ -257,10 +263,6 @@
 		/**< Special interface number for timestamp receive. */
 #define NSS_GRE_REDIR_MARK_INTERFACE (NSS_SPECIAL_IF_START + 56)
 		/**< Special interface number for GRE redirect mark. */
-#if (NSS_FW_VERSION_CODE < NSS_FW_VERSION(11,1))
-#define NSS_RMNET_RX_INTERFACE (NSS_SPECIAL_IF_START + 57)
-		/**< Special interface number for RMNET receive handler. */
-#else
 #define NSS_VXLAN_INTERFACE (NSS_SPECIAL_IF_START + 57)
 		/**< Special interface number for VxLAN handler. */
 #define NSS_RMNET_RX_INTERFACE (NSS_SPECIAL_IF_START + 58)
@@ -277,509 +279,18 @@
 		/**< Special interface number for the Wi-Fi MAC database. */
 #define NSS_DMA_INTERFACE (NSS_SPECIAL_IF_START + 66)
 		/**< Special interface number for the DMA interface. */
-#endif
+#define NSS_WIFI_EXT_VDEV_INTERFACE (NSS_SPECIAL_IF_START + 67)
+		/**< Special interface number for the Wi-Fi extended virtual interface. */
+#define NSS_UDP_ST_INTERFACE (NSS_SPECIAL_IF_START + 68)
+		/**< Special interface number for the UDP speed test interface. */
+#define NSS_EDMA_LITE_INTERFACE (NSS_SPECIAL_IF_START + 69)
+		/**< Special interface number for the EDMA lite interface. */
+#define NSS_PPE_VP_IF_MAP_INTERFACE (NSS_SPECIAL_IF_START + 70)
+		/**< Special interface number for the virtual port map interface. */
+#define NSS_TRUSTSEC_RX_INTERFACE (NSS_SPECIAL_IF_START + 71)
+		/**< Special interface number for the TrustSec RX. */
 
 #ifdef __KERNEL__ /* only kernel will use. */
-
-/**
- * Wireless Multimedia Extention Access Category to TID. @hideinitializer
- */
-#define NSS_WIFILI_WME_AC_TO_TID(_ac) (	\
-		((_ac) == NSS_WIFILI_WME_AC_VO) ? 6 : \
-		(((_ac) == NSS_WIFILI_WME_AC_VI) ? 5 : \
-		(((_ac) == NSS_WIFILI_WME_AC_BK) ? 1 : \
-		0)))
-
-/**
- * Wireless TID to Wireless Extension Multimedia Access Category. @hideinitializer
- */
-#define NSS_WIFILI_TID_TO_WME_AC(_tid) (	\
-		(((_tid) == 0) || ((_tid) == 3)) ? NSS_WIFILI_WME_AC_BE : \
-		((((_tid) == 1) || ((_tid) == 2)) ? NSS_WIFILI_WME_AC_BK : \
-		((((_tid) == 4) || ((_tid) == 5)) ? NSS_WIFILI_WME_AC_VI : \
-		NSS_WIFILI_WME_AC_VO)))
-
-/**
- * Converts the format of an IPv6 address from Linux to NSS. @hideinitializer
- */
-#define IN6_ADDR_TO_IPV6_ADDR(ipv6, in6) \
-	{ \
-		((uint32_t *)ipv6)[0] = in6.in6_u.u6_addr32[0]; \
-		((uint32_t *)ipv6)[1] = in6.in6_u.u6_addr32[1]; \
-		((uint32_t *)ipv6)[2] = in6.in6_u.u6_addr32[2]; \
-		((uint32_t *)ipv6)[3] = in6.in6_u.u6_addr32[3]; \
-	}
-
-/**
- * Converts the format of an IPv6 address from NSS to Linux. @hideinitializer
- */
-#define IPV6_ADDR_TO_IN6_ADDR(in6, ipv6) \
-	{ \
-		in6.in6_u.u6_addr32[0] = ((uint32_t *)ipv6)[0]; \
-		in6.in6_u.u6_addr32[1] = ((uint32_t *)ipv6)[1]; \
-		in6.in6_u.u6_addr32[2] = ((uint32_t *)ipv6)[2]; \
-		in6.in6_u.u6_addr32[3] = ((uint32_t *)ipv6)[3]; \
-	}
-
-/**
- * Format of an IPv6 address (16 * 8 bits).
- */
-#define IPV6_ADDR_OCTAL_FMT "%04x:%04x:%04x:%04x:%04x:%04x:%04x:%04x"
-
-/**
- * Prints an IPv6 address (16 * 8 bits).
- */
-#define IPV6_ADDR_TO_OCTAL(ipv6) ((uint16_t *)ipv6)[0], ((uint16_t *)ipv6)[1], ((uint16_t *)ipv6)[2], ((uint16_t *)ipv6)[3], ((uint16_t *)ipv6)[4], ((uint16_t *)ipv6)[5], ((uint16_t *)ipv6)[6], ((uint16_t *)ipv6)[7]
-
-/*
- * IPv4 rule sync reasons.
- */
-#define NSS_IPV4_SYNC_REASON_STATS 0	/**< Rule for synchronizing statistics. */
-#define NSS_IPV4_SYNC_REASON_FLUSH 1	/**< Rule for flushing a cache entry. */
-#define NSS_IPV4_SYNC_REASON_EVICT 2	/**< Rule for evicting a cache entry. */
-#define NSS_IPV4_SYNC_REASON_DESTROY 3
-		/**< Rule for destroying a cache entry (requested by the host OS). */
-#define NSS_IPV4_SYNC_REASON_PPPOE_DESTROY 4
-		/**< Rule for destroying a cache entry that belongs to a PPPoE session. */
-
-/**
- * nss_ipv4_create
- *	Information for an IPv4 flow or connection create rule.
- *
- * All fields must be passed in host-endian order.
- */
-struct nss_ipv4_create {
-	int32_t src_interface_num;
-				/**< Source interface number (virtual or physical). */
-	int32_t dest_interface_num;
-				/**< Destination interface number (virtual or physical). */
-	int32_t protocol;	/**< L4 protocol (e.g., TCP or UDP). */
-	uint32_t flags;		/**< Flags (if any) associated with this rule. */
-	uint32_t from_mtu;	/**< MTU of the incoming interface. */
-	uint32_t to_mtu;	/**< MTU of the outgoing interface. */
-	uint32_t src_ip;	/**< Source IP address. */
-	int32_t src_port;	/**< Source L4 port (e.g., TCP or UDP port). */
-	uint32_t src_ip_xlate;	/**< Translated source IP address (used with SNAT). */
-	int32_t src_port_xlate;	/**< Translated source L4 port (used with SNAT). */
-	uint32_t dest_ip;	/**< Destination IP address. */
-	int32_t dest_port;	/**< Destination L4 port (e.g., TCP or UDP port). */
-	uint32_t dest_ip_xlate;
-			/**< Translated destination IP address (used with DNAT). */
-	int32_t dest_port_xlate;
-			/**< Translated destination L4 port (used with DNAT). */
-	uint8_t src_mac[ETH_ALEN];
-			/**< Source MAC address. */
-	uint8_t dest_mac[ETH_ALEN];
-			/**< Destination MAC address. */
-	uint8_t src_mac_xlate[ETH_ALEN];
-			/**< Translated source MAC address (post-routing). */
-	uint8_t dest_mac_xlate[ETH_ALEN];
-			/**< Translated destination MAC address (post-routing). */
-	uint8_t flow_window_scale;	/**< Window scaling factor (TCP). */
-	uint32_t flow_max_window;	/**< Maximum window size (TCP). */
-	uint32_t flow_end;		/**< TCP window end. */
-	uint32_t flow_max_end;		/**< TCP window maximum end. */
-	uint32_t flow_pppoe_if_exist;
-			/**< Flow direction: PPPoE interface exist flag. */
-	int32_t flow_pppoe_if_num;
-			/**< Flow direction: PPPoE interface number. */
-	uint16_t ingress_vlan_tag;	/**< Ingress VLAN tag expected for this flow. */
-	uint8_t return_window_scale;
-			/**< Window scaling factor of the return direction (TCP). */
-	uint32_t return_max_window;
-			/**< Maximum window size of the return direction. */
-	uint32_t return_end;
-			/**< Flow end for the return direction. */
-	uint32_t return_max_end;
-			/**< Flow maximum end for the return direction. */
-	uint32_t return_pppoe_if_exist;
-			/**< Return direction: PPPoE interface existence flag. */
-	int32_t return_pppoe_if_num;
-			/**< Return direction: PPPoE interface number. */
-	uint16_t egress_vlan_tag;	/**< Egress VLAN tag expected for this flow. */
-	uint8_t spo_needed;		/**< Indicates whether SPO is required. */
-	uint32_t param_a0;		/**< Custom parameter 0. */
-	uint32_t param_a1;		/**< Custom parameter 1. */
-	uint32_t param_a2;		/**< Custom parameter 2. */
-	uint32_t param_a3;		/**< Custom parameter 3. */
-	uint32_t param_a4;		/**< Custom parameter 4. */
-	uint32_t qos_tag;		/**< Deprecated, will be removed soon. */
-	uint32_t flow_qos_tag;		/**< QoS tag value for the flow direction. */
-	uint32_t return_qos_tag;	/**< QoS tag value for the return direction. */
-	uint8_t dscp_itag;		/**< DSCP marking tag. */
-	uint8_t dscp_imask;		/**< DSCP marking input mask. */
-	uint8_t dscp_omask;		/**< DSCP marking output mask. */
-	uint8_t dscp_oval;		/**< DSCP marking output value. */
-	uint16_t vlan_itag;		/**< VLAN marking tag. */
-	uint16_t vlan_imask;		/**< VLAN marking input mask. */
-	uint16_t vlan_omask;		/**< VLAN marking output mask. */
-	uint16_t vlan_oval;		/**< VLAN marking output value. */
-	uint32_t in_vlan_tag[MAX_VLAN_DEPTH];
-			/**< Ingress VLAN tag expected for this flow. */
-	uint32_t out_vlan_tag[MAX_VLAN_DEPTH];
-			/**< Egress VLAN tag expected for this flow. */
-	uint8_t flow_dscp;		/**< IP DSCP value for the flow direction. */
-	uint8_t return_dscp;		/**< IP DSCP value for the return direction. */
-};
-
-/*
- * IPv4 connection flags (to be used with nss_ipv4_create::flags).
- */
-#define NSS_IPV4_CREATE_FLAG_NO_SEQ_CHECK 0x01
-		/**< Rule for not checking sequence numbers. */
-#define NSS_IPV4_CREATE_FLAG_BRIDGE_FLOW 0x02
-		/**< Rule that indicates pure bridge flow (no routing is involved). */
-#define NSS_IPV4_CREATE_FLAG_ROUTED 0x04	/**< Rule for a routed connection. */
-
-#define NSS_IPV4_CREATE_FLAG_DSCP_MARKING 0x08	/**< Rule for DSCP marking. */
-#define NSS_IPV4_CREATE_FLAG_VLAN_MARKING 0x10	/**< Rule for VLAN marking. */
-#define NSS_IPV4_CREATE_FLAG_QOS_VALID 0x20	/**< Rule for QoS is valid. */
-
-/**
- * nss_ipv4_destroy
- *	Information for an IPv4 flow or connection destroy rule.
- */
-struct nss_ipv4_destroy {
-	int32_t protocol;	/**< L4 protocol ID. */
-	uint32_t src_ip;	/**< Source IP address. */
-	int32_t src_port;	/**< Source L4 port (e.g., TCP or UDP port). */
-	uint32_t dest_ip;	/**< Destination IP address. */
-	int32_t dest_port;	/**< Destination L4 port (e.g., TCP or UDP port). */
-};
-
-/*
- * IPv6 rule sync reasons.
- */
-#define NSS_IPV6_SYNC_REASON_STATS 0	/**< Rule for synchronizing statistics. */
-#define NSS_IPV6_SYNC_REASON_FLUSH 1	/**< Rule for flushing a cache entry. */
-#define NSS_IPV6_SYNC_REASON_EVICT 2	/**< Rule for evicting a cache entry. */
-#define NSS_IPV6_SYNC_REASON_DESTROY 3
-		/**< Rule for destroying a cache entry (requested by the host OS). */
-#define NSS_IPV6_SYNC_REASON_PPPOE_DESTROY 4
-		/**< Rule for destroying a cache entry that belongs to a PPPoE session. */
-
-/**
- * nss_ipv6_create
- *	Information for an IPv6 flow or connection create rule.
- *
- * All fields must be passed in host-endian order.
- */
-struct nss_ipv6_create {
-	int32_t src_interface_num;
-			/**< Source interface number (virtual or physical). */
-	int32_t dest_interface_num;
-			/**< Destination interface number (virtual or physical). */
-	int32_t protocol;	/**< L4 protocol (e.g., TCP or UDP). */
-	uint32_t flags;		/**< Flags (if any) associated with this rule. */
-	uint32_t from_mtu;	/**< MTU of the incoming interface. */
-	uint32_t to_mtu;	/**< MTU of the outgoing interface. */
-	uint32_t src_ip[4];	/**< Source IP address. */
-	int32_t src_port;	/**< Source L4 port (e.g., TCP or UDP port). */
-	uint32_t dest_ip[4];	/**< Destination IP address. */
-	int32_t dest_port;	/**< Destination L4 port (e.g., TCP or UDP port). */
-	uint8_t src_mac[ETH_ALEN];	/**< Source MAC address. */
-	uint8_t dest_mac[ETH_ALEN];	/**< Destination MAC address. */
-	uint8_t flow_window_scale;	/**< Window scaling factor (TCP). */
-	uint32_t flow_max_window;	/**< Maximum window size (TCP). */
-	uint32_t flow_end;		/**< TCP window end. */
-	uint32_t flow_max_end;		/**< TCP window maximum end. */
-	uint32_t flow_pppoe_if_exist;
-			/**< Flow direction: PPPoE interface existence flag. */
-	int32_t flow_pppoe_if_num;
-			/**< Flow direction: PPPoE interface number. */
-	uint16_t ingress_vlan_tag;
-			/**< Ingress VLAN tag expected for this flow. */
-	uint8_t return_window_scale;
-			/**< Window scaling factor (TCP) for the return direction. */
-	uint32_t return_max_window;
-			/**< Maximum window size (TCP) for the return direction. */
-	uint32_t return_end;
-			/**< End for the return direction. */
-	uint32_t return_max_end;
-			/**< Maximum end for the return direction. */
-	uint32_t return_pppoe_if_exist;
-			/**< Return direction: PPPoE interface exist flag. */
-	int32_t return_pppoe_if_num;
-			/**< Return direction: PPPoE interface number. */
-	uint16_t egress_vlan_tag;	/**< Egress VLAN tag expected for this flow. */
-	uint32_t qos_tag;		/**< Deprecated; will be removed soon. */
-	uint32_t flow_qos_tag;		/**< QoS tag value for flow direction. */
-	uint32_t return_qos_tag;	/**< QoS tag value for the return direction. */
-	uint8_t dscp_itag;		/**< DSCP marking tag. */
-	uint8_t dscp_imask;		/**< DSCP marking input mask. */
-	uint8_t dscp_omask;		/**< DSCP marking output mask. */
-	uint8_t dscp_oval;		/**< DSCP marking output value. */
-	uint16_t vlan_itag;		/**< VLAN marking tag. */
-	uint16_t vlan_imask;		/**< VLAN marking input mask. */
-	uint16_t vlan_omask;		/**< VLAN marking output mask. */
-	uint16_t vlan_oval;		/**< VLAN marking output value. */
-	uint32_t in_vlan_tag[MAX_VLAN_DEPTH];
-					/**< Ingress VLAN tag expected for this flow. */
-	uint32_t out_vlan_tag[MAX_VLAN_DEPTH];
-					/**< Egress VLAN tag expected for this flow. */
-	uint8_t flow_dscp;		/**< IP DSCP value for flow direction. */
-	uint8_t return_dscp;		/**< IP DSCP value for the return direction. */
-};
-
-/*
- * IPv6 connection flags (to be used with nss_ipv6_create::flags.
- */
-#define NSS_IPV6_CREATE_FLAG_NO_SEQ_CHECK 0x1
-		/**< Indicates that sequence numbers are not to be checked. */
-#define NSS_IPV6_CREATE_FLAG_BRIDGE_FLOW 0x02
-		/**< Indicates that this is a pure bridge flow (no routing is involved). */
-#define NSS_IPV6_CREATE_FLAG_ROUTED 0x04	/**< Rule is for a routed connection. */
-#define NSS_IPV6_CREATE_FLAG_DSCP_MARKING 0x08	/**< Rule for DSCP marking. */
-#define NSS_IPV6_CREATE_FLAG_VLAN_MARKING 0x10	/**< Rule for VLAN marking. */
-#define NSS_IPV6_CREATE_FLAG_QOS_VALID 0x20	/**< Rule for Valid QoS. */
-
-/**
- * nss_ipv6_destroy
- *	Information for an IPv6 flow or connection destroy rule.
- */
-struct nss_ipv6_destroy {
-	int32_t protocol;	/**< L4 protocol (e.g., TCP or UDP). */
-	uint32_t src_ip[4];	/**< Source IP address. */
-	int32_t src_port;	/**< Source L4 port (e.g., TCP or UDP port). */
-	uint32_t dest_ip[4];	/**< Destination IP address. */
-	int32_t dest_port;	/**< Destination L4 port (e.g., TCP or UDP port). */
-};
-
-/**
- * nss_ipv4_sync
- *	Defines packet statistics for IPv4 and also keeps the connection entry alive.
- *
- * Statistics are bytes and packets seen over a connection.
- *
- * The addresses are NON-NAT addresses (i.e., true endpoint
- * addressing).
- *
- * The source (src) creates the connection.
- */
-struct nss_ipv4_sync {
-	uint32_t index;		/**< Slot ID for cache statistics to host OS. */
-			/*TODO: use an opaque information as host and NSS
-			  may be using a different mechanism to store rules. */
-	int32_t protocol;	/**< L4 protocol (e.g., TCP or UDP). */
-	uint32_t src_ip;	/**< Source IP address. */
-	int32_t src_port;	/**< Source L4 port (e.g., TCP or UDP port). */
-	uint32_t src_ip_xlate;	/**< Translated source IP address (used with SNAT). */
-	int32_t src_port_xlate;	/**< Translated source L4 port (used with SNAT). */
-	uint32_t dest_ip;	/**< Destination IP address. */
-	int32_t dest_port;	/**< Destination L4 port (e.g., TCP or UDP port). */
-	uint32_t dest_ip_xlate;
-			/**< Translated destination IP address (used with DNAT). */
-	int32_t dest_port_xlate;
-			/**< Translated destination L4 port (used with DNAT). */
-	uint32_t flow_max_window;	/**< Maximum window size (TCP). */
-	uint32_t flow_end;		/**< TCP window end. */
-	uint32_t flow_max_end;		/**< TCP window maximum end. */
-	uint32_t flow_rx_packet_count;	/**< Rx packet count for the flow interface. */
-	uint32_t flow_rx_byte_count;	/**< Rx byte count for the flow interface. */
-	uint32_t flow_tx_packet_count;	/**< Tx packet count for the flow interface. */
-	uint32_t flow_tx_byte_count;	/**< Tx byte count for the flow interface. */
-	uint32_t return_max_window;
-			/**< Maximum window size (TCP) for the return direction. */
-	uint32_t return_end;
-			/**< End for the return direction. */
-	uint32_t return_max_end;
-			/**< Maximum end for the return direction. */
-	uint32_t return_rx_packet_count;
-			/**< Rx packet count for the return direction. */
-	uint32_t return_rx_byte_count;
-			/**< Rx byte count for the return direction. */
-	uint32_t return_tx_packet_count;
-			/**< Tx packet count for the return direction. */
-	uint32_t return_tx_byte_count;
-			/**< Tx byte count for the return direction. */
-
-	/**
-	 * Time in Linux jiffies to be added to the current timeout to keep the
-	 * connection alive.
-	 */
-	unsigned long int delta_jiffies;
-
-	uint8_t reason;		/**< Reason for synchronization. */
-	uint32_t param_a0;	/**< Custom parameter 0. */
-	uint32_t param_a1;	/**< Custom parameter 1. */
-	uint32_t param_a2;	/**< Custom parameter 2. */
-	uint32_t param_a3;	/**< Custom parameter 3. */
-	uint32_t param_a4;	/**< Custom parameter 4. */
-
-	uint8_t flags;		/**< Flags indicating the status of the flow. */
-	uint32_t qos_tag;	/**< QoS value of the flow. */
-};
-
-/**
- * nss_ipv4_establish
- *	Defines connection-established message parameters for IPv4.
- */
-struct nss_ipv4_establish {
-	uint32_t index;			/**< Slot ID for cache statistics to host OS. */
-			/*TODO: use an opaque information as host and NSS
-			  may be using a different mechanism to store rules. */
-	uint8_t protocol;		/**< Protocol number. */
-	uint8_t reserved[3];		/**< Padding for word alignment. */
-	int32_t flow_interface;		/**< Flow interface number. */
-	uint32_t flow_mtu;		/**< MTU for the flow interface. */
-	uint32_t flow_ip;		/**< Flow IP address. */
-	uint32_t flow_ip_xlate;		/**< Translated flow IP address. */
-	uint32_t flow_ident;		/**< Flow identifier (e.g., port). */
-	uint32_t flow_ident_xlate;	/**< Translated flow identifier (e.g., port). */
-	uint16_t flow_mac[3];		/**< Source MAC address for the flow direction. */
-	uint32_t flow_pppoe_if_exist;	/**< Flow direction: PPPoE interface existence flag. */
-	int32_t flow_pppoe_if_num;	/**< Flow direction: PPPoE interface number. */
-	uint16_t ingress_vlan_tag;	/**< Ingress VLAN tag. */
-	int32_t return_interface;	/**< Return interface number. */
-	uint32_t return_mtu;		/**< MTU for the return interface. */
-	uint32_t return_ip;		/**< Return IP address. */
-	uint32_t return_ip_xlate;	/**< Translated return IP address. */
-	uint32_t return_ident;		/**< Return identier (e.g., port). */
-	uint32_t return_ident_xlate;	/**< Translated return identifier (e.g., port). */
-	uint16_t return_mac[3];		/**< Source MAC address for the return direction. */
-	uint32_t return_pppoe_if_exist;	/**< Return direction: PPPoE interface existence flag. */
-	int32_t return_pppoe_if_num;	/**< Return direction: PPPoE interface number. */
-	uint16_t egress_vlan_tag;	/**< Egress VLAN tag. */
-	uint8_t flags;			/**< Flags indicating the status of the flow. */
-	uint32_t qos_tag;		/**< QoS value of the flow. */
-};
-
-/**
- * nss_ipv4_cb_reason
- *	Reasons for an IPv4 callback.
- */
-enum nss_ipv4_cb_reason {
-	NSS_IPV4_CB_REASON_ESTABLISH = 0,
-	NSS_IPV4_CB_REASON_SYNC,
-	NSS_IPV4_CB_REASON_ESTABLISH_FAIL,
-};
-
-/**
- * nss_ipv4_cb_params
- *	Message parameters for an IPv4 callback.
- */
-struct nss_ipv4_cb_params {
-	enum nss_ipv4_cb_reason reason;		/**< Reason for the callback. */
-
-	/**
-	 * Message parameters for an IPv4 callback.
-	 */
-	union {
-		struct nss_ipv4_sync sync;
-				/**< Parameters for synchronization. */
-		struct nss_ipv4_establish establish;
-				/**< Parameters for establishing a connection. */
-	} params;		/**< Payload of parameters. */
-};
-
-/**
- * nss_ipv6_sync
- *	Update packet statistics (bytes and packets seen over a connection) and also keep the connection entry alive.
- *
- * The addresses are NON-NAT addresses (i.e., true endpoint addressing).
- *
- * The source (src) creates the connection.
- */
-struct nss_ipv6_sync {
-	uint32_t index;		/**< Slot ID for cache statistics to the host OS. */
-	int32_t protocol;	/**< L4 protocol (e.g., TCP or UDP). */
-	uint32_t src_ip[4];	/**< Source IP address. */
-	int32_t src_port;	/**< Source L4 port (e.g., TCP or UDP port). */
-	uint32_t dest_ip[4];	/**< Destination IP address. */
-	int32_t dest_port;	/**< Destination L4 port (e.g., TCP or UDP port). */
-	uint32_t flow_max_window;	/**< Maximum window size (TCP). */
-	uint32_t flow_end;		/**< TCP window end. */
-	uint32_t flow_max_end;		/**< TCP window maximum end. */
-	uint32_t flow_rx_packet_count;	/**< Rx packet count for the flow interface. */
-	uint32_t flow_rx_byte_count;	/**< Rx byte count for the flow interface. */
-	uint32_t flow_tx_packet_count;	/**< Tx packet count for the flow interface. */
-	uint32_t flow_tx_byte_count;	/**< Tx byte count for the flow interface. */
-	uint32_t return_max_window;
-			/**< Maximum window size (TCP) for the return direction. */
-	uint32_t return_end;
-			/**< End for the return direction. */
-	uint32_t return_max_end;
-			/**< Maximum end for the return direction. */
-	uint32_t return_rx_packet_count;
-			/**< Rx packet count for the return direction. */
-	uint32_t return_rx_byte_count;
-			/**< Rx byte count for the return direction. */
-	uint32_t return_tx_packet_count;
-			/**< Tx packet count for the return direction. */
-	uint32_t return_tx_byte_count;
-			/**< Tx byte count for the return direction. */
-
-	/**
-	 * Time in Linux jiffies to be added to the current timeout to keep the
-	 * connection alive.
-	 */
-	unsigned long int delta_jiffies;
-
-	/**
-	 * Non-zero when the NA has ceased to accelerate the given connection.
-	 */
-	uint8_t final_sync;
-
-	uint8_t evicted;	/**< Non-zero if the connection is evicted. */
-
-	uint8_t flags;		/**< Flags indicating the status of the flow. */
-	uint32_t qos_tag;	/**< QoS value of the flow. */
-};
-
-/**
- * nss_ipv6_establish
- *	Defines connection-established message parameters for IPv6.
- */
-struct nss_ipv6_establish {
-	uint32_t index;		/**< Slot ID for cache statistics to the host OS. */
-	uint8_t protocol;	/**< Protocol number. */
-	int32_t flow_interface;	/**< Flow interface number. */
-	uint32_t flow_mtu;	/**< MTU for the flow interface. */
-	uint32_t flow_ip[4];	/**< Flow IP address. */
-	uint32_t flow_ident;	/**< Flow identifier (e.g., port). */
-	uint16_t flow_mac[3];	/**< Source MAC address for the flow direction. */
-	uint32_t flow_pppoe_if_exist;	/**< Flow direction: PPPoE interface existence flag. */
-	int32_t flow_pppoe_if_num;	/**< Flow direction: PPPoE interface number. */
-	uint16_t ingress_vlan_tag;	/**< Ingress VLAN tag. */
-	int32_t return_interface;	/**< Return interface number. */
-	uint32_t return_mtu;		/**< MTU for the return interface. */
-	uint32_t return_ip[4];		/**< Return IP address. */
-	uint32_t return_ident;		/**< Return identier (e.g., port). */
-	uint16_t return_mac[3];		/**< Source MAC address for the return direction. */
-	uint32_t return_pppoe_if_exist;	/**< Return direction: PPPoE interface existence flag. */
-	int32_t return_pppoe_if_num;	/**< Return direction: PPPoE interface number. */
-	uint16_t egress_vlan_tag;	/**< VLAN tag to be inserted for egress direction. */
-	uint8_t flags;			/**< Flags indicating the status of the flow. */
-	uint32_t qos_tag;		/**< QoS value of the flow. */
-};
-
-/**
- * nss_ipv6_cb_reason
- *	Reasons for an IPv6 callback.
- */
-enum nss_ipv6_cb_reason {
-	NSS_IPV6_CB_REASON_ESTABLISH = 0,
-	NSS_IPV6_CB_REASON_SYNC,
-	NSS_IPV6_CB_REASON_ESTABLISH_FAIL,
-};
-
-/**
- * nss_ipv6_cb_params
- *	Message parameters for an IPv6 callback.
- */
-struct nss_ipv6_cb_params {
-	enum nss_ipv6_cb_reason reason;		/**< Reason for the callback. */
-
-	/**
-	 * Message parameters for an IPv6 callback.
-	 */
-	union {
-		struct nss_ipv6_sync sync;
-				/**< Parameters for synchronization. */
-		struct nss_ipv6_establish establish;
-				/**< Parameters for establishing a connection. */
-	} params;		/**< Callback parameters. */
-};
 
 /*
  * General utilities
@@ -795,16 +306,6 @@ struct nss_ipv6_cb_params {
  * @param[in] msg       Pointer to the message data.
  */
 typedef void (*nss_if_rx_msg_callback_t)(void *app_data, struct nss_cmn_msg *msg);
-
-/**
- * Callback function for IPv4 connection synchronization messages.
- *
- * @datatypes
- * nss_ipv4_cb_params
- *
- * @param[in] nicb  Pointer to the parameter structure for an NSS IPv4 callback.
- */
-typedef void (*nss_ipv4_callback_t)(struct nss_ipv4_cb_params *nicb);
 
 /**
  * nss_get_state

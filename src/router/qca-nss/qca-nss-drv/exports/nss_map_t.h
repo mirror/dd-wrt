@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2016-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2016-2021, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -35,6 +35,20 @@
  * Maximum number of supported MAP-T instances.
  */
 #define NSS_MAX_MAP_T_DYNAMIC_INTERFACES 4
+
+/**
+ * MAP-T metadata flag.
+ */
+#define NSS_MAPT_MDATA_FLAG_DF_BIT  (1 << 0)
+
+/**
+ * nss_map_t_mdata
+ *         MAP-T metadata
+ */
+struct nss_map_t_mdata {
+	uint16_t flags;				/**< Metadata flags. */
+	uint16_t res[6];			/**< Reserved for future use. */
+};
 
 /**
  * nss_map_t_msg_types

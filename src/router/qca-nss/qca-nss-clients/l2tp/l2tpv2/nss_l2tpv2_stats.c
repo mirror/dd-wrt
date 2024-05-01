@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2015, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2015, 2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -21,7 +21,9 @@
  */
 
 #include <linux/types.h>
-#include <linux/netdevice.h>
+#if IS_ENABLED(CONFIG_NF_FLOW_TABLE)
+#include <net/netfilter/nf_flow_table.h>
+#endif
 #include <linux/ppp_channel.h>
 #include <nss_api_if.h>
 #include <nss_dynamic_interface.h>
@@ -92,6 +94,8 @@ void nss_l2tpv2_update_dev_stats(struct net_device *dev, struct nss_l2tpv2_sync_
 
 	dev_hold(dev);
 
+	memset(&l2tp_stats, 0, sizeof(struct l2tp_stats));
+
 	/*
 	 * Get tunnel id
 	 */
@@ -104,37 +108,35 @@ void nss_l2tpv2_update_dev_stats(struct net_device *dev, struct nss_l2tpv2_sync_
 	/*
 	 * Update tunnel & session stats
 	 */
-	tunnel = l2tp_tunnel_get(dev_net(dev), data.l2tpv2.tunnel.tunnel_id);
+#if (LINUX_VERSION_CODE <= KERNEL_VERSION(4, 12, 0))
+	tunnel = l2tp_tunnel_find(dev_net(dev), data.l2tpv2.tunnel.tunnel_id);
 	if (!tunnel) {
 		dev_put(dev);
 		return;
 	}
 	tunnel_hold(tunnel);
 
-	session = l2tp_session_get(dev_net(dev), data.l2tpv2.session.session_id);
+	session = l2tp_session_find(dev_net(dev), tunnel, data.l2tpv2.session.session_id);
 	if (!session) {
 		tunnel_put(tunnel);
 		dev_put(dev);
 		return;
 	}
-
-	memset(&l2tp_stats, 0, sizeof(struct l2tp_stats));
-
 	session_hold(session);
-
-#if (LINUX_VERSION_CODE <= KERNEL_VERSION(3, 8, 0))
-	/* valid session found. Update stats */
-	l2tp_stats.tx_packets = (u64)sync_stats->node_stats.tx_packets;
-	l2tp_stats.tx_bytes = (u64)sync_stats->node_stats.tx_bytes;
-	l2tp_stats.tx_errors = (u64)sync_stats->tx_errors;
-
-	l2tp_stats.rx_packets = (u64)sync_stats->node_stats.rx_packets;
-	l2tp_stats.rx_bytes = (u64)sync_stats->node_stats.rx_bytes;
-	l2tp_stats.rx_errors = (u64)sync_stats->rx_errors;
-
-	l2tp_stats.rx_seq_discards = (u64)sync_stats->rx_seq_discards;
-	l2tp_stats.rx_oos_packets = (u64)sync_stats->rx_oos_packets;
 #else
+	tunnel = l2tp_tunnel_get(dev_net(dev), data.l2tpv2.tunnel.tunnel_id);
+	if (!tunnel) {
+		dev_put(dev);
+		return;
+	}
+	session = l2tp_tunnel_get_session(tunnel, data.l2tpv2.session.session_id);
+	if (!session) {
+		tunnel_put(tunnel);
+		dev_put(dev);
+		return;
+	}
+#endif
+
 	atomic_long_set(&l2tp_stats.tx_packets, (long)sync_stats->node_stats.tx_packets);
 	atomic_long_set(&l2tp_stats.tx_bytes, (long)sync_stats->node_stats.tx_bytes);
 	atomic_long_set(&l2tp_stats.tx_errors, (long)sync_stats->tx_errors);
@@ -146,7 +148,6 @@ void nss_l2tpv2_update_dev_stats(struct net_device *dev, struct nss_l2tpv2_sync_
 	atomic_long_set(&l2tp_stats.rx_seq_discards, (long)sync_stats->rx_seq_discards);
 	atomic_long_set(&l2tp_stats.rx_oos_packets, (long)(sync_stats->rx_oos_packets));
 
-#endif
 	l2tp_stats_update(tunnel, session, &l2tp_stats);
 
 	session_put(session);
