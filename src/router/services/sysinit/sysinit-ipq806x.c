@@ -665,6 +665,7 @@ void start_sysinit(void)
 	insmod("vxlan");
 	insmod("qca-nss-vxlanmgr");
 	insmod("qca-nss-qdisc");
+	insmod("qca-mcs");
 	insmod("nss-ifb");
 	sysprintf("echo 1 > /proc/sys/dev/nss/general/redirect");
 	sysprintf("echo 1 > /proc/sys/dev/nss/rps/enable");
