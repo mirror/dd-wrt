@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2016-2017, 2020, 2021 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2016-2017, 2020 The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -44,7 +44,7 @@ enum nss_trustsec_tx_msg_types {
  *	Error types for the TrustSec Tx interface.
  */
 enum nss_trustsec_tx_error_types {
-	NSS_TRUSTSEC_TX_ERR_NONE,		/** No error. */
+	NSS_TRUSTSEC_TX_ERR_NONE,		/** No error */
 	NSS_TRUSTSEC_TX_ERR_INVAL_SRC_IF,	/** Source interface is invalid. */
 	NSS_TRUSTSEC_TX_ERR_RECONFIGURE_SRC_IF,	/** Source interface is already configured. */
 	NSS_TRUSTSEC_TX_ERR_DEST_IF_NOT_FOUND,	/** Destination interface is not found. */

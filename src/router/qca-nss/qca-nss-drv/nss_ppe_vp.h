@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2020, The Linux Foundation. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -30,8 +30,7 @@
 #define NSS_PPE_VP_MAX_NUM 192
 #define NSS_PPE_VP_START 64
 #define NSS_PPE_VP_NODE_STATS_MAX 32
-#define NSS_PPE_VP_SWITCH_ID 0
-#define NSS_PPE_VP_MAX_CMD_STR 200
+
 
 /*
  * ppe_vp nss debug stats lock
@@ -44,7 +43,7 @@ extern spinlock_t nss_ppe_vp_stats_lock;
  */
 enum nss_ppe_vp_msg_error_type {
 	NSS_PPE_VP_MSG_ERROR_TYPE_UNKNOWN,	/* Unknown message error */
-	PPE_VP_MSG_ERROR_TYPE_INVALID_DI,	/* Invalid dynamic interface type */
+	NSS_PPE_VP_MSG_ERROR_TYPE_INVALID_DI,	/* Invalid dynamic interface type error */
 	NSS_PPE_VP_MSG_ERROR_TYPE_MAX		/* Maximum error type */
 };
 
@@ -53,9 +52,18 @@ enum nss_ppe_vp_msg_error_type {
  *	Message types for Packet Processing Engine (PPE) requests and responses.
  */
 enum nss_ppe_vp_message_types {
+	NSS_PPE_VP_MSG_CONFIG,
 	NSS_PPE_VP_MSG_SYNC_STATS,
-	NSS_PPE_VP_MSG_DESTROY_NOTIFY,
 	NSS_PPE_VP_MSG_MAX,
+};
+
+/*
+ * nss_ppe_vp_config_msg
+ *	Message to enable/disable VP support for a specific dynamic interface type.
+ */
+struct nss_ppe_vp_config_msg {
+	enum nss_dynamic_interface_type type;	/* Interface type */
+	bool vp_enable;				/* VP support enable */
 };
 
 /*
@@ -64,7 +72,7 @@ enum nss_ppe_vp_message_types {
  */
 struct nss_ppe_vp_statistics {
 	uint32_t nss_if;			/* NSS interface number corresponding to VP */
-	nss_ppe_port_t ppe_port_num;			/* VP number */
+	uint32_t vp_num;			/* VP number */
 	uint32_t rx_drop;			/* Rx drops due to VP node inactive */
 	uint32_t tx_drop;			/* Tx drops due to VP node inactive */
 	uint32_t packet_big_err;		/* Number of packets not sent to PPE because packet was too large */
@@ -83,42 +91,21 @@ struct nss_ppe_vp_sync_stats_msg {
 };
 
 /*
- * nss_ppe_vp_destroy_notify_msg
- *	Message received as part of destroy notification from Firmware to Host.
- */
-struct nss_ppe_vp_destroy_notify_msg {
-	nss_ppe_port_t ppe_port_num;			/* VP number */
-};
-
-/*
  * nss_ppe_vp_msg
  *	Message for receiving ppe_vp NSS to host messages.
  */
 struct nss_ppe_vp_msg {
-	struct nss_cmn_msg cm;		/* Common message header. */
+	struct nss_cmn_msg cm;		/**< Common message header. */
 
 	/*
 	 * Payload.
 	 */
 	union {
-		union nss_if_msgs if_msg;
-				/* NSS interface base messages. */
+		struct nss_ppe_vp_config_msg vp_config;
+				/**< Enable/disable VP support for specific type */
 		struct nss_ppe_vp_sync_stats_msg stats;
-				/* Synchronization statistics. */
-		struct nss_ppe_vp_destroy_notify_msg destroy_notify;
-				/* Information for the VP destroyed in Firmware. */
-	} msg;			/* Message payload. */
-};
-
-/*
- * nss_vp_mapping
- *	Structure to maintain the one-to-one mapping between the NSS interface number and VP number.
- */
-struct nss_vp_mapping {
-	nss_if_num_t if_num;	/* NSS interface number. */
-	nss_ppe_port_t ppe_port_num;	/* PPE port number corresponding to the NSS interface number. */
-	uint32_t vsi_id;	/* VSI ID allocated for NSS interface */
-	bool vsi_id_valid;	/* Set to true if vsi_id field has a valid VSI else set to false. */
+				/**< Synchronization statistics. */
+	} msg;			/**< Message payload. */
 };
 
 typedef void (*nss_ppe_vp_msg_callback_t)(void *app_data, struct nss_ppe_vp_msg *msg);

@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2015-2017, 2019-2021 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2015-2017, 2019-2020 The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -35,7 +35,6 @@
 #include <linux/version.h>
 #include <linux/sysctl.h>
 #include <net/route.h>
-#include <linux/refcount.h>
 #include <linux/../../net/l2tp/l2tp_core.h>
 
 #include <nss_api_if.h>
@@ -100,11 +99,8 @@
 
 static DEFINE_HASHTABLE(l2tpv2_session_data_hash_table, HASH_BUCKET_SIZE);
 static int ip_ttl_max = 255;
-
-#if defined(NSS_L2TP_IPSEC_BIND_BY_NETDEV)
 static char l2tpoipsec_config[L2TP_SYSCTL_STR_LEN_MAX];
 static struct ctl_table_header *ctl_tbl_hdr; /* l2tpv2 sysctl */
-#endif
 static struct l2tpmgr_ipsecmgr_cb __rcu ipsecmgr_cb;
 
 /*
@@ -248,23 +244,24 @@ static struct nss_connmgr_l2tpv2_session_data
 	 */
 	data->l2tpv2.session.session_id = session->session_id;
 	data->l2tpv2.session.peer_session_id = session->peer_session_id;
+	data->l2tpv2.session.offset = 0;
 	data->l2tpv2.session.hdr_len = session->hdr_len;
 	data->l2tpv2.session.reorder_timeout = session->reorder_timeout;
 	data->l2tpv2.session.recv_seq = session->recv_seq;
 	data->l2tpv2.session.send_seq = session->send_seq;
 
-	nss_connmgr_l2tpv2_info("sess %u, peer=%u nr=%u ns=%u hdr_len=%u timeout=%x"
+	nss_connmgr_l2tpv2_info("sess %u, peer=%u nr=%u ns=%u off=%u  hdr_len=%u timeout=%x"
 	       " recv_seq=%x send_seq=%x\n",
 	       session->session_id,  session->peer_session_id, session->nr,
-	       session->ns, session->hdr_len,
+	       session->ns, 0, session->hdr_len,
 	       session->reorder_timeout, session->recv_seq,
 	       session->send_seq);
 
-	/*
-	 * tunnel->sock->sk_no_check/sk_no_check_tx is set to true
-	 * if UDP checksum is not needed for the L2TP socket.
-	 */
-	data->l2tpv2.tunnel.udp_csum = !tunnel->sock->sk_no_check_tx;
+#if (LINUX_VERSION_CODE <= KERNEL_VERSION(3, 16, 0))
+	data->l2tpv2.tunnel.udp_csum = tunnel->sock->sk_no_check;
+#else
+	data->l2tpv2.tunnel.udp_csum = tunnel->sock->sk_no_check_tx;
+#endif
 
 	inet = inet_sk(tunnel->sock);
 
@@ -359,6 +356,9 @@ static void nss_connmgr_l2tpv2_exception(struct net_device *dev,
 {
 	const struct iphdr *iph_outer, *iph_inner;
 	struct nss_connmgr_l2tpv2_session_data *ptr;
+#if (LINUX_VERSION_CODE <= KERNEL_VERSION(3, 8, 0))
+	struct hlist_node *node;
+#endif
 	uint16_t *l2tp_hdr;
 	uint16_t l2tp_flags;
 	int l2tp_hdr_len = L2TP_HDR_MIN_LEN;
@@ -374,6 +374,9 @@ static void nss_connmgr_l2tpv2_exception(struct net_device *dev,
 
 	rcu_read_lock();
 	hash_for_each_possible_rcu(l2tpv2_session_data_hash_table, ptr,
+#if (LINUX_VERSION_CODE <= KERNEL_VERSION(3, 8, 0))
+				   node,
+#endif
 				   hash_list, dev->ifindex) {
 		if (ptr->dev == dev) {
 			tunnel_local_ip = ptr->data.ip.v4.saddr.s_addr;
@@ -474,56 +477,6 @@ static void nss_connmgr_l2tpv2_event_receive(void *if_ctx, struct nss_l2tpv2_msg
 		nss_connmgr_l2tpv2_info("Unknown Event from NSS\n");
 		break;
 	}
-}
-
-/*
- * nss_connmgr_l2tpv2_bind_ipsec_by_ipaddr()
- * 	Bind L2TP tunnel with IPsec(xfrm) based on IP Address
- */
-static void nss_connmgr_l2tpv2_bind_ipsec_by_ipaddr(struct nss_ctx_instance *nss_ctx, struct nss_connmgr_l2tpv2_data *l2tpv2_data, uint32_t l2tp_ifnum)
-{
-	struct nss_l2tpv2_msg l2tpv2msg;
-	nss_tx_status_t status;
-	struct nss_l2tpv2_bind_ipsec_if_msg *l2tpv2_bind_ipsec_msg;
-	int32_t ipsec_ifnum = -1;
-	get_ipsec_ifnum_by_ip_addr_callback_t ipsec_cb;
-
-	/*
-	 * Check if the L2TP interface is applied over an IPsec (XFRM) interface by querying the IPsec
-	 * client by using the L2TP tunnel IPv4 source/destination addresses.
-	 */
-	rcu_read_lock();
-	ipsec_cb = rcu_dereference(ipsecmgr_cb.get_ifnum_by_ip_addr);
-	ipsec_ifnum = ipsec_cb ? ipsec_cb(IPVERSION, &l2tpv2_data->ip.v4.saddr.s_addr, &l2tpv2_data->ip.v4.daddr.s_addr) : -1;
-	rcu_read_unlock();
-
-	if (ipsec_ifnum < 0) {
-		nss_connmgr_l2tpv2_info("%px: Invalid IPsec interface no.(0x%x) based on local & remote IP-address\n", nss_ctx, ipsec_ifnum);
-		return;
-	}
-
-	/*
-	 * For, l2tpoipsec, send the command to bind the l2tp session with the IPsec interface.
-	 */
-	memset(&l2tpv2msg, 0, sizeof(struct nss_l2tpv2_msg));
-	nss_l2tpv2_msg_init(&l2tpv2msg, l2tp_ifnum, NSS_L2TPV2_MSG_BIND_IPSEC_IF,
-			sizeof(struct nss_l2tpv2_bind_ipsec_if_msg), (void *)nss_connmgr_l2tpv2_msg_cb, NULL);
-	l2tpv2_bind_ipsec_msg = &l2tpv2msg.msg.bind_ipsec_if_msg;
-	l2tpv2_bind_ipsec_msg->ipsec_ifnum = ipsec_ifnum;
-
-	status = nss_l2tpv2_tx(nss_ctx, &l2tpv2msg);
-	if (status != NSS_TX_SUCCESS) {
-		/*
-		 * TODO: Add retry logic. Currently it sends a warning message to user.
-		 * In case of bind fails, then we don't bring down L2TP tunnel, instead we give a warning log
-		 * to user, as this introduces a potential risk of not having a per packet check for source
-		 * interface number in firmware.
-		 */
-		nss_connmgr_l2tpv2_warning("%px: L2TPv2 interface binding with IPSec interface(0x%x) failed.\n", nss_ctx, ipsec_ifnum);
-		return;
-	}
-
-	nss_connmgr_l2tpv2_info("%px: L2TPv2 interface is bound to IPsec interface with if_num(0x%x)\n", nss_ctx, ipsec_ifnum);
 }
 
 /*
@@ -630,12 +583,7 @@ static int nss_connmgr_l2tpv2_dev_up(struct net_device *dev)
 		return NOTIFY_BAD;
 	}
 
-	nss_connmgr_l2tpv2_info("%px: nss_l2tpv2_tx() CREATE successful\n", nss_ctx);
-
-	/*
-	 * Check if we need to bind the L2TP to an IPsec interface. This is required as per RFC3193
-	 */
-	nss_connmgr_l2tpv2_bind_ipsec_by_ipaddr(nss_ctx, data, if_number);
+	nss_connmgr_l2tpv2_info("%px: nss_l2tpv2_tx() successful\n", nss_ctx);
 
 	return NOTIFY_DONE;
 }
@@ -648,6 +596,9 @@ static int nss_connmgr_l2tpv2_dev_down(struct net_device *dev)
 {
 	struct nss_connmgr_l2tpv2_session_data *ptr;
 	struct hlist_node *tmp;
+#if (LINUX_VERSION_CODE <= KERNEL_VERSION(3, 8, 0))
+	struct hlist_node *node;
+#endif
 	struct nss_l2tpv2_msg  l2tpv2msg;
 	struct nss_l2tpv2_session_destroy_msg *l2tpv2cfg;
 	int if_number;
@@ -671,6 +622,9 @@ static int nss_connmgr_l2tpv2_dev_down(struct net_device *dev)
 	}
 
 	hash_for_each_possible_safe(l2tpv2_session_data_hash_table, ptr,
+#if (LINUX_VERSION_CODE <= KERNEL_VERSION(3, 8, 0))
+				    node,
+#endif
 				    tmp, hash_list, dev->ifindex) {
 		if (ptr->dev == dev) {
 			dev_put(dev);
@@ -713,7 +667,11 @@ static int nss_connmgr_l2tpv2_dev_event(struct notifier_block  *nb,
 		unsigned long event, void  *dev)
 {
 	struct net_device *netdev;
+#if (LINUX_VERSION_CODE <= KERNEL_VERSION(3, 10, 0))
+	netdev = (struct net_device *)dev;
+#else
 	netdev = netdev_notifier_info_to_dev(dev);
+#endif
 
 	switch (event) {
 	case NETDEV_UP:
@@ -736,6 +694,9 @@ static int nss_connmgr_l2tpv2_dev_event(struct notifier_block  *nb,
 int nss_connmgr_l2tpv2_get_data(struct net_device *dev, struct nss_connmgr_l2tpv2_data *data)
 {
 	struct nss_connmgr_l2tpv2_session_data *ptr;
+#if (LINUX_VERSION_CODE <= KERNEL_VERSION(3, 8, 0))
+	struct hlist_node  *node;
+#endif
 	if (!data) {
 		nss_connmgr_l2tpv2_info("nss_connmgr_l2tpv2_data ptr is null\n");
 		return -EINVAL;
@@ -743,6 +704,9 @@ int nss_connmgr_l2tpv2_get_data(struct net_device *dev, struct nss_connmgr_l2tpv
 
 	rcu_read_lock();
 	hash_for_each_possible_rcu(l2tpv2_session_data_hash_table, ptr,
+#if (LINUX_VERSION_CODE <= KERNEL_VERSION(3, 8, 0))
+				   node,
+#endif
 				   hash_list, dev->ifindex) {
 		if (ptr->dev == dev) {
 			memcpy(data, &ptr->data, sizeof(struct nss_connmgr_l2tpv2_data));
@@ -763,9 +727,15 @@ EXPORT_SYMBOL(nss_connmgr_l2tpv2_get_data);
 int nss_connmgr_l2tpv2_does_connmgr_track(const struct net_device *dev)
 {
 	struct nss_connmgr_l2tpv2_session_data *ptr;
+#if (LINUX_VERSION_CODE <= KERNEL_VERSION(3, 8, 0))
+	struct hlist_node  *node;
+#endif
 
 	rcu_read_lock();
 	hash_for_each_possible_rcu(l2tpv2_session_data_hash_table, ptr,
+#if (LINUX_VERSION_CODE <= KERNEL_VERSION(3, 8, 0))
+				   node,
+#endif
 				   hash_list, dev->ifindex) {
 		if (ptr->dev == dev) {
 			rcu_read_unlock();
@@ -779,83 +749,6 @@ int nss_connmgr_l2tpv2_does_connmgr_track(const struct net_device *dev)
 EXPORT_SYMBOL(nss_connmgr_l2tpv2_does_connmgr_track);
 
 /*
- * l2tpmgr_register_ipsecmgr_callback_by_ipaddr()
- *	Register IPSecmgr callback.
- */
-void l2tpmgr_register_ipsecmgr_callback_by_ipaddr(struct l2tpmgr_ipsecmgr_cb *cb)
-{
-	get_ipsec_ifnum_by_ip_addr_callback_t ipsec_get_ifnum_by_ip_addr;
-
-	rcu_read_lock();
-	ipsec_get_ifnum_by_ip_addr = rcu_dereference(ipsecmgr_cb.get_ifnum_by_ip_addr);
-	if (ipsec_get_ifnum_by_ip_addr) {
-		rcu_read_unlock();
-		nss_connmgr_l2tpv2_info("%px: IPSecmgr Callback get_ifnum_by_ip_addr is already registered\n", cb);
-		return;
-	}
-	rcu_read_unlock();
-
-	if (cb->get_ifnum_by_ip_addr == NULL) {
-		nss_connmgr_l2tpv2_warning("%px: IPSecmgr Callback get_ifnum_by_ip_addr is NULL\n", cb);
-		return;
-	}
-
-	rcu_assign_pointer(ipsecmgr_cb.get_ifnum_by_ip_addr, cb->get_ifnum_by_ip_addr);
-	synchronize_rcu();
-}
-EXPORT_SYMBOL(l2tpmgr_register_ipsecmgr_callback_by_ipaddr);
-
-/*
- * l2tpmgr_unregister_ipsecmgr_callback_by_ipaddr
- *	Unregister callback.
- */
-void l2tpmgr_unregister_ipsecmgr_callback_by_ipaddr(void)
-{
-	rcu_assign_pointer(ipsecmgr_cb.get_ifnum_by_ip_addr, NULL);
-	synchronize_rcu();
-}
-EXPORT_SYMBOL(l2tpmgr_unregister_ipsecmgr_callback_by_ipaddr);
-
-#if defined(NSS_L2TP_IPSEC_BIND_BY_NETDEV)
-/*
- * l2tpmgr_register_ipsecmgr_callback_by_netdev()
- *	Register IPSecmgr callback.
- */
-void l2tpmgr_register_ipsecmgr_callback_by_netdev(struct l2tpmgr_ipsecmgr_cb *cb)
-{
-	get_ipsec_ifnum_by_dev_callback_t ipsec_get_ifnum_by_dev;
-
-	rcu_read_lock();
-	ipsec_get_ifnum_by_dev = rcu_dereference(ipsecmgr_cb.get_ifnum_by_dev);
-	if (ipsec_get_ifnum_by_dev) {
-		rcu_read_unlock();
-		nss_connmgr_l2tpv2_info("%px: IPSecmgr Callback get_ifnum_by_dev is already registered\n", cb);
-		return;
-	}
-	rcu_read_unlock();
-
-	if (cb->get_ifnum_by_dev == NULL) {
-		nss_connmgr_l2tpv2_warning("%px: IPSecmgr Callback get_ifnum_by_dev is NULL\n", cb);
-		return;
-	}
-
-	rcu_assign_pointer(ipsecmgr_cb.get_ifnum_by_dev, cb->get_ifnum_by_dev);
-	synchronize_rcu();
-}
-EXPORT_SYMBOL(l2tpmgr_register_ipsecmgr_callback_by_netdev);
-
-/*
- * l2tpmgr_unregister_ipsecmgr_callback_by_netdev
- *	Unregister callback.
- */
-void l2tpmgr_unregister_ipsecmgr_callback_by_netdev(void)
-{
-	rcu_assign_pointer(ipsecmgr_cb.get_ifnum_by_dev, NULL);
-	synchronize_rcu();
-}
-EXPORT_SYMBOL(l2tpmgr_unregister_ipsecmgr_callback_by_netdev);
-
-/*
  * nss_connmgr_l2tpv2_proc_handler()
  *	Read and write handler for sysctl.
  */
@@ -866,14 +759,13 @@ static int nss_connmgr_l2tpv2_proc_handler(struct ctl_table *ctl,
 	char *l2tp_device_name, *ipsec_device_name;
 	char *input_str = l2tpoipsec_config;
 	int32_t l2tp_ifnum, ipsec_ifnum;
-	struct net_device *l2tpdev, *ipsecdev;
+	struct net_device *l2tpdev, *ipsecdev, *ipsectundev;
 	nss_tx_status_t status;
 	struct nss_l2tpv2_msg l2tpv2msg;
-	get_ipsec_ifnum_by_dev_callback_t ipsec_cb;
-	struct nss_l2tpv2_bind_ipsec_if_msg *l2tpv2_bind_ipsec_msg;
+	get_ipsec_tundev_callback_t ipsec_cb;
+	struct nss_l2tpv2_bind_ipsec_if_msg *l2tpv2_bind_ipsec_if;
 	struct nss_ctx_instance *nss_ctx = nss_l2tpv2_get_context();
 	int ret = proc_dostring(ctl, write, buffer, lenp, ppos);
-	struct nss_connmgr_l2tpv2_session_data *ptr;
 
 	if (!write) {
 		nss_connmgr_l2tpv2_info("command to write is echo <l2tp-device-name> <ipsec-device-name> > <filename>\n");
@@ -900,19 +792,6 @@ static int nss_connmgr_l2tpv2_proc_handler(struct ctl_table *ctl,
 		return -EINVAL;
 	}
 
-	rcu_read_lock();
-	hash_for_each_possible_rcu(l2tpv2_session_data_hash_table, ptr,
-				   hash_list, l2tpdev->ifindex) {
-		if (ptr->dev != l2tpdev) {
-			continue;
-		}
-
-		if (ptr->data.l2tpv2.tunnel.udp_csum) {
-			nss_connmgr_l2tpv2_info("Enabling UDP checksum in L2TP packet is not supported for l2tpoipsec flow\n");
-		}
-	}
-	rcu_read_unlock();
-
 	ipsecdev = dev_get_by_name(&init_net, ipsec_device_name);
 	if (!ipsecdev) {
 		nss_connmgr_l2tpv2_info("Cannot find the netdevice associated with %s\n", ipsec_device_name);
@@ -931,7 +810,7 @@ static int nss_connmgr_l2tpv2_proc_handler(struct ctl_table *ctl,
 	}
 
 	rcu_read_lock();
-	ipsec_cb = rcu_dereference(ipsecmgr_cb.get_ifnum_by_dev);
+	ipsec_cb = rcu_dereference(ipsecmgr_cb.cb);
 	if (!ipsec_cb) {
 		rcu_read_unlock();
 		nss_connmgr_l2tpv2_info("Callback to get IPsec tun device not registered");
@@ -940,13 +819,27 @@ static int nss_connmgr_l2tpv2_proc_handler(struct ctl_table *ctl,
 	}
 
 	/*
+	 * Get the dummy netdevice used to register this IPSec
+	 * device with NSS from the ipsecmgr module. This is
+	 * needed for looking up the NSS ifnum for the IPSec
+	 * netdevice.
+	 */
+	ipsectundev = ipsec_cb(ipsecdev);
+	rcu_read_unlock();
+	if (!ipsectundev) {
+		nss_connmgr_l2tpv2_info("Cannot get the device from IPSecmgr for %s\n", ipsec_device_name);
+		ret = -ENODEV;
+		goto exit;
+	}
+
+	/*
 	 * Get NSS ifnum for IPsec interface.
 	 */
-	ipsec_ifnum = ipsec_cb(ipsecdev);
-	rcu_read_unlock();
+	ipsec_ifnum = nss_cmn_get_interface_number_by_dev_and_type(ipsectundev, NSS_DYNAMIC_INTERFACE_TYPE_IPSEC_CMN_INNER);
 	if (ipsec_ifnum == -1) {
 		nss_connmgr_l2tpv2_info("Cannot find the NSS interface associated with %s\n", ipsec_device_name);
 		ret = -ENODEV;
+		dev_put(ipsectundev);
 		goto exit;
 	}
 
@@ -955,19 +848,52 @@ static int nss_connmgr_l2tpv2_proc_handler(struct ctl_table *ctl,
 	 */
 	memset(&l2tpv2msg, 0, sizeof(struct nss_l2tpv2_msg));
 	nss_l2tpv2_msg_init(&l2tpv2msg, l2tp_ifnum, NSS_L2TPV2_MSG_BIND_IPSEC_IF, sizeof(struct nss_l2tpv2_bind_ipsec_if_msg), (void *)nss_connmgr_l2tpv2_msg_cb, NULL);
-	l2tpv2_bind_ipsec_msg = &l2tpv2msg.msg.bind_ipsec_if_msg;
-	l2tpv2_bind_ipsec_msg->ipsec_ifnum = ipsec_ifnum;
+	l2tpv2_bind_ipsec_if = &l2tpv2msg.msg.bind_ipsec_if_msg;
+	l2tpv2_bind_ipsec_if->ipsec_ifnum = ipsec_ifnum;
 	status = nss_l2tpv2_tx(nss_ctx, &l2tpv2msg);
 	if (status != NSS_TX_SUCCESS) {
 		nss_connmgr_l2tpv2_info("%px IPSec interface bind failed\n", nss_ctx);
 		ret = -EAGAIN;
 	}
 
+	dev_put(ipsectundev);
 exit:
 	dev_put(l2tpdev);
 	dev_put(ipsecdev);
 	return ret;
 }
+
+/*
+ * l2tpmgr_register_ipsecmgr_callback()
+ *	Register IPSecmgr callback.
+ */
+void l2tpmgr_register_ipsecmgr_callback(struct l2tpmgr_ipsecmgr_cb *cb)
+{
+	get_ipsec_tundev_callback_t ipsec_cb;
+	rcu_read_lock();
+	ipsec_cb = rcu_dereference(ipsecmgr_cb.cb);
+	if (ipsec_cb) {
+		rcu_read_unlock();
+		nss_connmgr_l2tpv2_info("IPSecmgr Callback is already registered\n");
+		return;
+	}
+
+	rcu_assign_pointer(ipsecmgr_cb.cb, cb->cb);
+	rcu_read_unlock();
+}
+EXPORT_SYMBOL(l2tpmgr_register_ipsecmgr_callback);
+
+/*
+ * l2tpmgr_unregister_ipsecmgr_callback
+ *	Unregister callback.
+ */
+void l2tpmgr_unregister_ipsecmgr_callback(void)
+{
+	rcu_read_lock();
+	rcu_assign_pointer(ipsecmgr_cb.cb, NULL);
+	rcu_read_unlock();
+}
+EXPORT_SYMBOL(l2tpmgr_unregister_ipsecmgr_callback);
 
 /*
  * nss_connmgr_l2tpv2_table
@@ -1006,7 +932,6 @@ static struct ctl_table nss_connmgr_l2tpv2_sysroot[] = {
 	},
 	{ }
 };
-#endif
 
 /*
  * Linux Net device Notifier
@@ -1029,20 +954,18 @@ int __init nss_connmgr_l2tpv2_init_module(void)
 		return 0;
 	}
 #endif
-#if defined(NSS_L2TP_IPSEC_BIND_BY_NETDEV)
-	ctl_tbl_hdr = register_sysctl("dev/nss/l2tpv2", nss_connmgr_l2tpv2_table);
+	ctl_tbl_hdr = register_sysctl_table(nss_connmgr_l2tpv2_sysroot);
 	if (!ctl_tbl_hdr) {
 		nss_connmgr_l2tpv2_info("Unable to register sysctl table for L2TP conn mgr\n");
 		return -EFAULT;
 	}
 
-#endif
 	/*
 	 * Initialize ipsecmgr callback.
 	 */
-	rcu_assign_pointer(ipsecmgr_cb.get_ifnum_by_dev, NULL);
-	rcu_assign_pointer(ipsecmgr_cb.get_ifnum_by_ip_addr, NULL);
-	synchronize_rcu();
+	rcu_read_lock();
+	rcu_assign_pointer(ipsecmgr_cb.cb, NULL);
+	rcu_read_unlock();
 	register_netdevice_notifier(&nss_connmgr_l2tpv2_notifier);
 	return 0;
 }

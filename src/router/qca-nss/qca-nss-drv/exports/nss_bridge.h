@@ -273,7 +273,7 @@ nss_tx_status_t nss_bridge_tx_set_mtu_msg(uint32_t bridge_if_num, uint32_t mtu);
  * @return
  * Status of the Tx operation.
  */
-nss_tx_status_t nss_bridge_tx_set_mac_addr_msg(uint32_t bridge_if_num, uint8_t *addr);
+nss_tx_status_t nss_bridge_tx_set_mac_addr_msg(uint32_t bridge_if_num, const uint8_t *addr);
 
 /**
  * nss_bridge_tx_join_msg

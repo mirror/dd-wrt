@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2018-2020, The Linux Foundation. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -40,12 +40,25 @@ static int nss_data_plane_hal_vsi_unassign(struct nss_dp_data_plane_ctx *dpc, ui
 }
 
 /*
+ * nss_data_plane_hal_get_stats()
+ *	Called by nss-dp to get GMAC stats
+ */
+static void nss_data_plane_hal_get_stats(struct nss_dp_data_plane_ctx *dpc,
+						struct nss_dp_gmac_stats *stats)
+{
+	/*
+	 * EDMA doesn't send extended statistics.
+	 */
+}
+
+/*
  * nss_data_plane_hal_add_dp_ops()
  */
 void nss_data_plane_hal_add_dp_ops(struct nss_dp_data_plane_ops *dp_ops)
 {
 	dp_ops->vsi_assign = nss_data_plane_hal_vsi_assign;
 	dp_ops->vsi_unassign = nss_data_plane_hal_vsi_unassign;
+	dp_ops->get_stats = nss_data_plane_hal_get_stats;
 }
 
 /*
@@ -68,17 +81,6 @@ void nss_data_plane_hal_unregister(struct nss_ctx_instance *nss_ctx)
 {
 	nss_cmn_unregister_service_code(nss_ctx, nss_phy_tstamp_rx_buf,
 					NSS_PTP_EVENT_SERVICE_CODE);
-}
-
-/*
- * nss_data_plane_hal_set_features
- */
-void nss_data_plane_hal_set_features(struct nss_dp_data_plane_ctx *dpc)
-{
-	dpc->dev->features |= NSS_DATA_PLANE_SUPPORTED_FEATURES;
-	dpc->dev->hw_features |= NSS_DATA_PLANE_SUPPORTED_FEATURES;
-	dpc->dev->vlan_features |= NSS_DATA_PLANE_SUPPORTED_FEATURES;
-	dpc->dev->wanted_features |= NSS_DATA_PLANE_SUPPORTED_FEATURES;
 }
 
 /*

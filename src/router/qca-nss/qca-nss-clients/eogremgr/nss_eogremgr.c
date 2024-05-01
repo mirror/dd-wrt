@@ -19,10 +19,10 @@
  *	NSS EOGRE manager
  */
 
+#include <linux/of.h>
 #include <nss_api_if.h>
 #include <nss_cmn.h>
 #include "nss_connmgr_gre_public.h"
-#include <linux/of.h>
 #include "nss_eogremgr.h"
 #include "nss_eogremgr_priv.h"
 
@@ -565,15 +565,12 @@ static void __exit nss_eogremgr_exit_module(void)
  */
 static int __init nss_eogremgr_init_module(void)
 {
-
-#ifdef CONFIG_OF
 	/*
 	 * If the node is not compatible, don't do anything.
 	 */
 	if (!of_find_node_by_name(NULL, "nss-common")) {
 		return 0;
 	}
-#endif
 
 	nss_eogremgr_info("module %s loaded\n", NSS_CLIENT_BUILD_ID);
 

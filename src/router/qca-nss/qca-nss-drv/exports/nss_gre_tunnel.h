@@ -1,6 +1,6 @@
 /*
- ****************************************************************************
- * Copyright (c) 2016-2018, 2020-2021, The Linux Foundation. All rights reserved.
+ **************************************************************************
+ * Copyright (c) 2016-2018,2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -11,7 +11,7 @@
  * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
  * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT
  * OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
- ****************************************************************************
+ **************************************************************************
  */
 
 /**
@@ -98,41 +98,6 @@ enum nss_gre_tunnel_error_types {
 };
 
 /**
- *  nss_gre_tunnel_stats_type
- *	GRE tunnel session debug statistic counters.
- */
-enum nss_gre_tunnel_stats_type {
-	NSS_GRE_TUNNEL_STATS_SESSION_RX_PKTS,			/**< Number of packets received. */
-	NSS_GRE_TUNNEL_STATS_SESSION_TX_PKTS,			/**< Number of packets transmitted. */
-	NSS_GRE_TUNNEL_STATS_SESSION_RX_QUEUE_0_DROPPED,	/**< Dropped receive packets 0. */
-	NSS_GRE_TUNNEL_STATS_SESSION_RX_QUEUE_1_DROPPED,	/**< Dropped receive packets 1. */
-	NSS_GRE_TUNNEL_STATS_SESSION_RX_QUEUE_2_DROPPED,	/**< Dropped receive packets 2. */
-	NSS_GRE_TUNNEL_STATS_SESSION_RX_QUEUE_3_DROPPED,	/**< Dropped receive packets 3. */
-	NSS_GRE_TUNNEL_STATS_SESSION_RX_MALFORMED,		/**< Malformed packet was received. */
-	NSS_GRE_TUNNEL_STATS_SESSION_RX_INVALID_PROT,		/**< Invalid protocol was received. */
-	NSS_GRE_TUNNEL_STATS_SESSION_DECAP_QUEUE_FULL,		/**< Decapsulation queue is full. */
-	NSS_GRE_TUNNEL_STATS_SESSION_RX_SINGLE_REC_DGRAM,	/**< Single fragment was received. */
-	NSS_GRE_TUNNEL_STATS_SESSION_RX_INVALID_REC_DGRAM,	/**< Invalid fragment was received. */
-	NSS_GRE_TUNNEL_STATS_SESSION_BUFFER_ALLOC_FAIL,		/**< Buffer memory allocation failed. */
-	NSS_GRE_TUNNEL_STATS_SESSION_BUFFER_COPY_FAIL,		/**< Buffer memory copy failed. */
-	NSS_GRE_TUNNEL_STATS_SESSION_OUTFLOW_QUEUE_FULL,	/**< Outflow queue is full. */
-	NSS_GRE_TUNNEL_STATS_SESSION_RX_DROPPED_HROOM,	/**< Packets dropped because of insufficent headroom. */
-	NSS_GRE_TUNNEL_STATS_SESSION_RX_CBUFFER_ALLOC_FAIL,	/**< Receive crypto buffer allocation failed. */
-	NSS_GRE_TUNNEL_STATS_SESSION_RX_CENQUEUE_FAIL,		/**< Receive enqueue-to-crypto failed. */
-	NSS_GRE_TUNNEL_STATS_SESSION_RX_DECRYPT_DONE,		/**< Receive decryption is complete. */
-	NSS_GRE_TUNNEL_STATS_SESSION_RX_FORWARD_ENQUEUE_FAIL,	/**< Receive forward enqueue failed. */
-	NSS_GRE_TUNNEL_STATS_SESSION_TX_CBUFFER_ALLOC_FAIL,	/**< Receive crypto buffer allocation failed. */
-	NSS_GRE_TUNNEL_STATS_SESSION_TX_CENQUEUE_FAIL,		/**< Transmit enqueue-to-crypto failed. */
-	NSS_GRE_TUNNEL_STATS_SESSION_RX_DROPPED_TROOM,	/**< Packets dropped because of insufficent tailroom. */
-	NSS_GRE_TUNNEL_STATS_SESSION_TX_FORWARD_ENQUEUE_FAIL,	/**< Transmit forward enqueue failed. */
-	NSS_GRE_TUNNEL_STATS_SESSION_TX_CIPHER_DONE,		/**< Transmit cipher is complete. */
-	NSS_GRE_TUNNEL_STATS_SESSION_CRYPTO_NOSUPP,		/**< Error count for non-supported crypto packets. */
-	NSS_GRE_TUNNEL_STATS_SESSION_RX_DROPPED_MH_VERSION,	/**< Receive drop: bad meta header. */
-	NSS_GRE_TUNNEL_STATS_SESSION_RX_UNALIGNED_PKT,		/**< Counter for unaligned packets. */
-	NSS_GRE_TUNNEL_STATS_SESSION_MAX,			/**< Maximum statistics type. */
-};
-
-/**
  * nss_gre_tunnel_di_to_wlan_id
  *	Dynamic interface to WLAN ID message structure.
  */
@@ -186,36 +151,25 @@ struct nss_gre_tunnel_stats {
 	uint32_t rx_dropped_hroom;
 				/**< Packets dropped because of insufficent headroom. */
 	uint32_t rx_cbuf_alloc_fail;
-				/**< Receive crypto buffer allocation failed. */
-	uint32_t rx_cenqueue_fail;		/**< Receive enqueue-to-crypto failed. */
-	uint32_t rx_decrypt_done;		/**< Receive decryption is complete. */
-	uint32_t rx_forward_enqueue_fail;	/**< Receive forward enqueue failed. */
+				/**< Rx crypto buffer allocation failed. */
+	uint32_t rx_cenqueue_fail;		/**< Rx enqueue-to-crypto failed. */
+	uint32_t rx_decrypt_done;		/**< Rx decryption is complete. */
+	uint32_t rx_forward_enqueue_fail;	/**< Rx forward enqueue failed. */
 	uint32_t tx_cbuf_alloc_fail;
-				/**< Receive crypto buffer allocation failed. */
-	uint32_t tx_cenqueue_fail;		/**< Transmit enqueue-to-crypto failed. */
+				/**< Rx crypto buffer allocation failed. */
+	uint32_t tx_cenqueue_fail;		/**< Tx enqueue-to-crypto failed. */
 	uint32_t rx_dropped_troom;
 				/**< Packets dropped because of insufficent tailroom. */
-	uint32_t tx_forward_enqueue_fail;	/**< Transmit forward enqueue failed. */
-	uint32_t tx_cipher_done;		/**< Transmit cipher is complete. */
+	uint32_t tx_forward_enqueue_fail;	/**< Tx forward enqueue failed. */
+	uint32_t tx_cipher_done;		/**< Tx cipher is complete. */
 	uint32_t crypto_nosupp;
 				/**< Error count for non-supported crypto packets. */
-	uint32_t rx_dropped_mh_ver;		/**< Receive drop: bad meta header. */
+	uint32_t rx_dropped_mh_ver;		/**< Rx drop: bad meta header. */
 	uint32_t rx_unaligned_pkt;		/**< Counter for unaligned packets. */
 #if defined(NSS_HAL_IPQ807x_SUPPORT)
 	uint32_t crypto_resp_error[NSS_CRYPTO_CMN_RESP_ERROR_MAX];
 						/** Crypto response errors. */
 #endif
-};
-
-/**
- * nss_gre_tunnel_stats_notification
- *	GRE tunnel transmission statistics structure.
- */
-struct nss_gre_tunnel_stats_notification {
-	uint64_t stats_ctx[NSS_GRE_TUNNEL_STATS_SESSION_MAX + NSS_CRYPTO_CMN_RESP_ERROR_MAX];
-							/**< Context transmission statistics. */
-	uint32_t core_id;				/**< Core ID. */
-	uint32_t if_num;				/**< Interface number. */
 };
 
 /**
@@ -392,34 +346,6 @@ extern void nss_gre_tunnel_unregister_if(uint32_t if_num);
 extern nss_tx_status_t nss_gre_tunnel_inquiry(
 		struct nss_gre_tunnel_configure *inquiry_info,
 		nss_gre_tunnel_msg_callback_t cb, void *app_data);
-
-/**
- * nss_gre_tunnel_stats_unregister_notifier
- *	Deregisters a statistics notifier.
- *
- * @datatypes
- *	notifier_block
- *
- * @param[in] nb Notifier block.
- *
- * @return
- * 0 on success or non-zero on failure.
- */
-extern int nss_gre_tunnel_stats_unregister_notifier(struct notifier_block *nb);
-
-/**
- * nss_gre_tunnel_stats_register_notifier
- *	Registers a statistics notifier.
- *
- * @datatypes
- *	notifier_block
- *
- * @param[in] nb Notifier block.
- *
- * @return
- * 0 on success or non-zero on failure.
- */
-extern int nss_gre_tunnel_stats_register_notifier(struct notifier_block *nb);
 
 /**
  * @}

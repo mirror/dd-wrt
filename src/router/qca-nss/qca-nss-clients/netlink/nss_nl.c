@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2015-2016,2018-2021 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2015-2016,2018-2020 The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -35,8 +35,6 @@
 #include "nss_nlcmn_if.h"
 #include "nss_nldtls.h"
 #include "nss_nldtls_if.h"
-#include "nss_nlgre_redir_if.h"
-#include "nss_nlgre_redir_family.h"
 #include "nss_nlipsec.h"
 #include "nss_nlipsec_if.h"
 #include "nss_nlipv4.h"
@@ -59,10 +57,6 @@
 #include "nss_nlc2c_tx_if.h"
 #include "nss_nlc2c_rx.h"
 #include "nss_nlc2c_rx_if.h"
-#include "nss_nlipv4_reasm.h"
-#include "nss_nlipv4_reasm_if.h"
-#include "nss_nlipv6_reasm.h"
-#include "nss_nlipv6_reasm_if.h"
 #include "nss_nlwifili.h"
 #include "nss_nlwifili_if.h"
 #include "nss_nllso_rx.h"
@@ -75,10 +69,6 @@
 #include "nss_nll2tpv2_if.h"
 #include "nss_nlpptp.h"
 #include "nss_nlpptp_if.h"
-#include "nss_nludp_st.h"
-#include "nss_nludp_st_if.h"
-#include "nss_nlqrfs.h"
-#include "nss_nlqrfs_if.h"
 
 /*
  * nss_nl.c
@@ -110,48 +100,12 @@ static struct nss_nl_family family_handlers[] = {
 	},
 	{
 		/*
-		 * NSS_NLIPSEC
-		 */
-		.name = NSS_NLIPSEC_FAMILY,		/* ipsec */
-		.entry = NSS_NLIPSEC_INIT,		/* init */
-		.exit = NSS_NLIPSEC_EXIT,		/* exit */
-		.valid = CONFIG_NSS_NLIPSEC		/* 1 or 0 */
-	},
-	{
-		/*
-		 * NSS_NLOAM
-		 */
-		.name = NSS_NLOAM_FAMILY,		/* oam */
-		.entry = NSS_NLOAM_INIT,		/* init */
-		.exit = NSS_NLOAM_EXIT,			/* exit */
-		.valid = CONFIG_NSS_NLOAM		/* 1 or 0 */
-	},
-	{
-		/*
 		 * NSS_NLIPV6
 		 */
 		.name = NSS_NLIPV6_FAMILY,		/* ipv6 */
 		.entry = NSS_NLIPV6_INIT,		/* init */
 		.exit = NSS_NLIPV6_EXIT,		/* exit */
 		.valid = CONFIG_NSS_NLIPV6		/* 1 or 0 */
-	},
-	{
-		/*
-		 * NSS_NLGRE_REDIR
-		 */
-		.name = NSS_NLGRE_REDIR_FAMILY,		/* gre_redir */
-		.entry = NSS_NLGRE_REDIR_FAMILY_INIT,	/* init */
-		.exit = NSS_NLGRE_REDIR_FAMILY_EXIT,	/* exit */
-		.valid = CONFIG_NSS_NLGRE_REDIR_FAMILY	/* 1 or 0 */
-	},
-	{
-		/*
-		 * NSS_NLCAPWAP
-		 */
-		.name = NSS_NLCAPWAP_FAMILY,		/* capwap */
-		.entry = NSS_NLCAPWAP_INIT,		/* init */
-		.exit = NSS_NLCAPWAP_EXIT,		/* exit */
-		.valid = CONFIG_NSS_NLCAPWAP		/* 1 or 0 */
 	},
 	{
 		/*
@@ -173,15 +127,6 @@ static struct nss_nl_family family_handlers[] = {
 	},
 	{
 		/*
-		 * NSS_NLEDMA
-		 */
-		.name = NSS_NLEDMA_FAMILY,		/* edma */
-		.entry = NSS_NLEDMA_INIT,		/* init */
-		.exit = NSS_NLEDMA_EXIT,		/* exit */
-		.valid = CONFIG_NSS_NLEDMA		/* 1 or 0 */
-	},
-	{
-		/*
 		 * NSS_NLDYNAMIC_INTERFACE
 		 */
 		.name = NSS_NLDYNAMIC_INTERFACE_FAMILY,	/* dynamic interface */
@@ -197,42 +142,6 @@ static struct nss_nl_family family_handlers[] = {
 		.entry = NSS_NLN2H_INIT,		/* init */
 		.exit = NSS_NLN2H_EXIT,			/* exit */
 		.valid = CONFIG_NSS_NLN2H		/* 1 or 0 */
-	},
-	{
-		/*
-		 * NSS_NLC2C_TX
-		 */
-		.name = NSS_NLC2C_TX_FAMILY,		/* c2c_tx */
-		.entry = NSS_NLC2C_TX_INIT,		/* init */
-		.exit = NSS_NLC2C_TX_EXIT,		/* exit */
-		.valid = CONFIG_NSS_NLC2C_TX		/* 1 or 0 */
-	},
-	{
-		/*
-		 * NSS_NLC2C_RX
-		 */
-		.name = NSS_NLC2C_RX_FAMILY,		/* c2c_rx */
-		.entry = NSS_NLC2C_RX_INIT,		/* init */
-		.exit = NSS_NLC2C_RX_EXIT,		/* exit */
-		.valid = CONFIG_NSS_NLC2C_RX		/* 1 or 0 */
-	},
-	{
-		/*
-		 * NSS_NLIPV4_REASM
-		 */
-		.name = NSS_NLIPV4_REASM_FAMILY,	/* ipv4_reasm */
-		.entry = NSS_NLIPV4_REASM_INIT,		/* init */
-		.exit = NSS_NLIPV4_REASM_EXIT,		/* exit */
-		.valid = CONFIG_NSS_NLIPV4_REASM	/* 1 or 0 */
-	},
-	{
-		/*
-		 * NSS_NLIPV6_REASM
-		 */
-		.name = NSS_NLIPV6_REASM_FAMILY,	/* ipv6_reasm */
-		.entry = NSS_NLIPV6_REASM_INIT,		/* init */
-		.exit = NSS_NLIPV6_REASM_EXIT,		/* exit */
-		.valid = CONFIG_NSS_NLIPV6_REASM	/* 1 or 0 */
 	},
 	{
 		/*
@@ -252,62 +161,6 @@ static struct nss_nl_family family_handlers[] = {
 		.exit = NSS_NLLSO_RX_EXIT,		/* exit */
 		.valid = CONFIG_NSS_NLLSO_RX		/* 1 or 0 */
 	},
-	{
-		/*
-		 * NSS_NLMAP_T
-		 */
-		.name = NSS_NLMAP_T_FAMILY,		/* map_t */
-		.entry = NSS_NLMAP_T_INIT,		/* init */
-		.exit = NSS_NLMAP_T_EXIT,		/* exit */
-		.valid = CONFIG_NSS_NLMAP_T		/* 1 or 0 */
-	},
-	{
-		/*
-		 * NSS_NLPPPOE
-		 */
-		.name = NSS_NLPPPOE_FAMILY,		/* pppoe */
-		.entry = NSS_NLPPPOE_INIT,		/* init */
-		.exit = NSS_NLPPPOE_EXIT,		/* exit */
-		.valid = CONFIG_NSS_NLPPPOE		/* 1 or 0 */
-	},
-	{
-		/*
-		 * NSS_NLL2TPV2
-		 */
-		.name = NSS_NLL2TPV2_FAMILY,		/* l2tpv2 */
-		.entry = NSS_NLL2TPV2_INIT,		/* init */
-		.exit = NSS_NLL2TPV2_EXIT,		/* exit */
-		.valid = CONFIG_NSS_NLL2TPV2		/* 1 or 0 */
-	},
-	{
-		/*
-		 * NSS_NLPPTP
-		 */
-		.name = NSS_NLPPTP_FAMILY,		/* pptp */
-		.entry = NSS_NLPPTP_INIT,		/* init */
-		.exit = NSS_NLPPTP_EXIT,		/* exit */
-		.valid = CONFIG_NSS_NLPPTP		/* 1 or 0 */
-	},
-	{
-                /*
-                 * NSS_NLUDP_ST
-                 */
-                .name = NSS_NLUDP_ST_FAMILY,             /* udp_st */
-                .entry = NSS_NLUDP_ST_INIT,              /* init */
-                .exit = NSS_NLUDP_ST_EXIT,               /* exit */
-                .valid = CONFIG_NSS_NLUDP_ST             /* 1 or 0 */
-        },
-	{
-                /*
-                 * NSS_NLQRFS
-                 */
-                .name = NSS_NLQRFS_FAMILY,             /* qrfs */
-                .entry = NSS_NLQRFS_INIT,              /* init */
-                .exit = NSS_NLQRFS_EXIT,               /* exit */
-                .valid = CONFIG_NSS_NLQRFS             /* 1 or 0 */
-        },
-
-
 };
 
 #define NSS_NL_FAMILY_HANDLER_SZ ARRAY_SIZE(family_handlers)
@@ -475,11 +328,7 @@ struct nss_nlcmn *nss_nl_get_msg(struct genl_family *family, struct genl_info *i
 	/*
 	 * validate the common message header version & magic
 	 */
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 6, 0))
 	cm = info->userhdr;
-#else
-	cm = genl_info_userhdr(info);
-#endif
 	if (nss_nlcmn_chk_ver(cm, family->version) == false) {
 		nss_nl_error("%d, %s: version mismatch (%d)\n", pid, family->name, cm->version);
 		return NULL;

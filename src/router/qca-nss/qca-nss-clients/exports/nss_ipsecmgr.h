@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2014-2019, 2021 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2014-2019, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -252,10 +252,7 @@ struct nss_ipsecmgr_sa_stats {
 	uint32_t pkt_count;			/**< Number of packets processed. */
 	uint32_t pkt_failed;			/**< Number of packets failed in processing. */
 	uint16_t window_size;			/**< Current size of the window. */
-	uint16_t replay_fail_alarm;		/**< Alarm for consecutive hash fail. */
-	uint32_t fail_replay_win;		/**< Failure in anti-replay; packet outside the window */
-	uint32_t fail_replay_dup;		/**< Failure in anti-replay; duplicate records */
-	uint32_t fail_auth;			/**< Failure in authenticating the data */
+	bool replay_fail_alarm;			/**< Alarm for consecutive hash fail. */
 };
 
 /**
@@ -267,20 +264,6 @@ struct nss_ipsecmgr_event {
 	union {
 		struct nss_ipsecmgr_sa_stats stats; 	/**< Security association statistics. */
 	} data;						/**< Event information. */
-};
-
-/**
- * nss_ipsecmgr_sa_info
- * 	Crypto information for an already created SA.
- */
-struct nss_ipsecmgr_sa_info {
-	uint16_t session_idx;		/**< Crypto Session index */
-	uint16_t hdr_len;		/**< Encap header length */
-	uint16_t trailer_len;		/**< Encap Trailer length */
-	uint8_t blk_len;		/**< Cipher Block length */
-	uint8_t iv_len;			/**< Cipher IV lengh */
-	uint8_t hash_len;		/**< Hash lengh */
-	uint8_t res[3];			/**< Reserved */
 };
 
 /**
@@ -392,20 +375,6 @@ static inline bool nss_ipsecmgr_sa_cmn_init_idx(struct nss_ipsecmgr_sa_cmn *cmn,
 	return true;
 }
 
-/**
- * nss_ipsecmgr_sa_set_transport
- * 	Enable transport mode for an SA thats is getting initialized.
- *
- * @datatypes
- * nss_ipsecmgr_sa_cmn \n
- *
- * @param[in/out] cmn    Pointer to the common IPsec manager SA configuration information.
- */
-static inline void nss_ipsecmgr_sa_set_transport(struct nss_ipsecmgr_sa_cmn *cmn)
-{
-	cmn->transport_mode = true;
-}
-
 #ifdef __KERNEL__ /* only kernel will use. */
 
 /**
@@ -439,7 +408,6 @@ struct nss_ipsecmgr_callback {
 	struct net_device *skb_dev;		/**< Net device to use for Socket Buffer. */
 	nss_ipsecmgr_data_callback_t data_cb;	/**< Data callback function. */
 	nss_ipsecmgr_event_callback_t event_cb;	/**< Event callback function. */
-	nss_ipsecmgr_data_callback_t except_cb; /**< Outer exception callback function. */
 };
 
 /**
@@ -653,36 +621,6 @@ nss_ipsecmgr_status_t nss_ipsecmgr_sa_tx_inner(struct net_device *tun, struct ns
  */
 nss_ipsecmgr_status_t nss_ipsecmgr_sa_tx_outer(struct net_device *tun, struct nss_ipsecmgr_sa_tuple *sa,
                                         struct sk_buff *skb);
-
-/*
- * nss_ipsecmgr_cra_name2algo()
- * 	Get ipsecmgr algo from cra name.
- *
- * @param[in] cra_name  Name of the crypto algo.
- *
- * @return
- * nss_ipsecmgr_algo
- */
-enum nss_ipsecmgr_algo nss_ipsecmgr_cra_name2algo(const char *cra_name);
-
-/*
- * nss_ipsecmgr_sa_get_info()
- * 	Get Crypto information for an already created SA.
- *
- * @datatypes
- * net_device \n
- * nss_ipsecmgr_sa_tuple \n
- * nss_ipsecmgr_sa_info
- *
- * @param[in] tun   Pointer to the network device associated with the tunnel.
- * @param[in] sa    Pointer to the SA tuple for which info is to be retrieved.
- * @param[out] info Pointer to the SA info to fill.
- *
- * @return
- * Success or failure.
- */
-bool nss_ipsecmgr_sa_get_info(struct net_device *tun, struct nss_ipsecmgr_sa_tuple *sa,
-			struct nss_ipsecmgr_sa_info *info);
 
 #endif /* __KERNEL__ */
 #endif /* __NSS_IPSECMGR_H */

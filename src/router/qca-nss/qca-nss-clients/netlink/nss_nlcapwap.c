@@ -1,12 +1,9 @@
 /*
  **************************************************************************
  * Copyright (c) 2015-2016,2018-2020 The Linux Foundation. All rights reserved.
- * Copyright (c) 2022, Qualcomm Innovation Center, Inc. All rights reserved.
- *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
- *
  * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
  * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
  * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
@@ -39,7 +36,6 @@
 #include <nss_dtls_cmn.h>
 #include <nss_nlcmn_if.h>
 #include <nss_nl_if.h>
-#include "nss_crypto_defines.h"
 #include "nss_nl.h"
 #include "nss_nlcapwap_if.h"
 #include "nss_nlcapwap.h"
@@ -162,17 +158,6 @@ struct nss_nlcapwap_hdr {
  */
 static struct nss_nlcapwap_global_ctx global_ctx;
 
-static int nss_nlcapwap_ops_create_tun(struct sk_buff *skb, struct genl_info *info);
-static int nss_nlcapwap_ops_destroy_tun(struct sk_buff *skb, struct genl_info *info);
-static int nss_nlcapwap_ops_update_mtu(struct sk_buff *skb, struct genl_info *info);
-static int nss_nlcapwap_ops_dtls(struct sk_buff *skb, struct genl_info *info);
-static int nss_nlcapwap_ops_perf(struct sk_buff *skb, struct genl_info *info);
-static int nss_nlcapwap_ops_tx_packets(struct sk_buff *skb, struct genl_info *info);
-static int nss_nlcapwap_ops_meta_header(struct sk_buff *skb, struct genl_info *info);
-static int nss_nlcapwap_ops_ip_flow(struct sk_buff *skb, struct genl_info *info);
-static int nss_nlcapwap_ops_keepalive(struct sk_buff *skb, struct genl_info *info);
-static int nss_nlcapwap_ops_get_stats(struct sk_buff *skb, struct genl_info *info);
-
 /*
  * nss_nlcapwap_family_mcgrp
  *	Multicast group for sending message status & events
@@ -182,30 +167,11 @@ static const struct genl_multicast_group nss_nlcapwap_family_mcgrp[] = {
 };
 
 /*
- * nss_nlcapwap_cmd_ops
- *	Operation table called by the generic netlink layer based on the command
- */
-struct genl_ops nss_nlcapwap_cmd_ops[] = {
-	{.cmd = NSS_NLCAPWAP_CMD_TYPE_CREATE_TUN, .doit = nss_nlcapwap_ops_create_tun,},
-	{.cmd = NSS_NLCAPWAP_CMD_TYPE_DESTROY_TUN, .doit = nss_nlcapwap_ops_destroy_tun,},
-	{.cmd = NSS_NLCAPWAP_CMD_TYPE_UPDATE_MTU, .doit = nss_nlcapwap_ops_update_mtu,},
-	{.cmd = NSS_NLCAPWAP_CMD_TYPE_DTLS, .doit = nss_nlcapwap_ops_dtls,},
-	{.cmd = NSS_NLCAPWAP_CMD_TYPE_PERF, .doit = nss_nlcapwap_ops_perf,},
-	{.cmd = NSS_NLCAPWAP_CMD_TYPE_TX_PACKETS, .doit = nss_nlcapwap_ops_tx_packets,},
-	{.cmd = NSS_NLCAPWAP_CMD_TYPE_META_HEADER, .doit = nss_nlcapwap_ops_meta_header,},
-	{.cmd = NSS_NLCAPWAP_CMD_TYPE_IP_FLOW, .doit = nss_nlcapwap_ops_ip_flow,},
-	{.cmd = NSS_NLCAPWAP_CMD_TYPE_KEEPALIVE, .doit = nss_nlcapwap_ops_keepalive,},
-	{.cmd = NSS_STATS_EVENT_NOTIFY, .doit = nss_nlcapwap_ops_get_stats,},
-};
-
-/*
  * nss_nlcapwap_family
  *	Capwap family definition
  */
 struct genl_family nss_nlcapwap_family = {
-#if (LINUX_VERSION_CODE <= KERNEL_VERSION(4, 9, 0))
 	.id = GENL_ID_GENERATE,				/* Auto generate ID */
-#endif
 	.name = NSS_NLCAPWAP_FAMILY,			/* family name string */
 	.hdrsize = sizeof(struct nss_nlcapwap_rule),	/* NSS NETLINK capwap rule */
 	.version = NSS_NL_VER,				/* Set it to NSS_NL_VER version */
@@ -213,10 +179,6 @@ struct genl_family nss_nlcapwap_family = {
 	.netnsok = true,
 	.pre_doit = NULL,
 	.post_doit = NULL,
-	.ops = nss_nlcapwap_cmd_ops,
-	.n_ops = ARRAY_SIZE(nss_nlcapwap_cmd_ops),
-	.mcgrps = nss_nlcapwap_family_mcgrp,
-	.n_mcgrps = ARRAY_SIZE(nss_nlcapwap_family_mcgrp)
 };
 
 /*
@@ -601,7 +563,6 @@ static void nss_nlcapwap_create_tun_ipv4_config(struct nss_nlcapwap_rule *nl_rul
 	}
 
 	capwap_rule->enabled_features = features;
-	capwap_rule->outer_sgt_value = nl_rule->msg.create.rule.outer_sgt_value;
 
 	/*
 	 * Configure IPv4 rule
@@ -1468,6 +1429,23 @@ static ssize_t nss_nlcapwap_tunnel_stats_read(struct file *fp, char __user *ubuf
  */
 static const struct file_operations nss_nlcapwap_stats_ops = {
 	.read = nss_nlcapwap_tunnel_stats_read,
+};
+
+/*
+ * nss_nlcapwap_cmd_ops
+ *	Operation table called by the generic netlink layer based on the command
+ */
+struct genl_ops nss_nlcapwap_cmd_ops[] = {
+	{.cmd = NSS_NLCAPWAP_CMD_TYPE_CREATE_TUN, .doit = nss_nlcapwap_ops_create_tun,},
+	{.cmd = NSS_NLCAPWAP_CMD_TYPE_DESTROY_TUN, .doit = nss_nlcapwap_ops_destroy_tun,},
+	{.cmd = NSS_NLCAPWAP_CMD_TYPE_UPDATE_MTU, .doit = nss_nlcapwap_ops_update_mtu,},
+	{.cmd = NSS_NLCAPWAP_CMD_TYPE_DTLS, .doit = nss_nlcapwap_ops_dtls,},
+	{.cmd = NSS_NLCAPWAP_CMD_TYPE_PERF, .doit = nss_nlcapwap_ops_perf,},
+	{.cmd = NSS_NLCAPWAP_CMD_TYPE_TX_PACKETS, .doit = nss_nlcapwap_ops_tx_packets,},
+	{.cmd = NSS_NLCAPWAP_CMD_TYPE_META_HEADER, .doit = nss_nlcapwap_ops_meta_header,},
+	{.cmd = NSS_NLCAPWAP_CMD_TYPE_IP_FLOW, .doit = nss_nlcapwap_ops_ip_flow,},
+	{.cmd = NSS_NLCAPWAP_CMD_TYPE_KEEPALIVE, .doit = nss_nlcapwap_ops_keepalive,},
+	{.cmd = NSS_STATS_EVENT_NOTIFY, .doit = nss_nlcapwap_ops_get_stats,},
 };
 
 /*

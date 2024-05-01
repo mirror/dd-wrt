@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2019-2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2019-2020, The Linux Foundation. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -17,7 +17,7 @@
  */
 
 /*
- * @file nss_lso_rx.h
+ * nss_lso_rx.h
  *	NSS driver LSO (Large Send Offload) Rx header file.
  */
 

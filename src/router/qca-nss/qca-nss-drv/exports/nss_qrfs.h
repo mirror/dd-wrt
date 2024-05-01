@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2017-2018, 2021 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2018, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -110,7 +110,6 @@ struct nss_qrfs_msg {
 	} msg;			/**< Message payload. */
 };
 
-#ifdef __KERNEL__
 /**
  * Callback function for receiving QRFS messages.
  *
@@ -177,23 +176,6 @@ void nss_qrfs_notify_unregister(int core);
  * Status of the Tx operation.
  */
 nss_tx_status_t nss_qrfs_set_flow_rule(struct sk_buff *skb, uint32_t cpu, uint32_t action);
-/**
- * nss_qrfs_configure_flow_rule
- *	Configures and sends a QRFS message to the NSS core to configure(add/remove) the flow rule.
- *
- * @param[in] dst_addr	Destination IP address.
- * @param[in] src_addr	Source IP address.
- * @param[in] dst_port	Destination port.
- * @param[in] src_port	Source port.
- * @param[in] version	IP version.
- * @param[in] proto	Protocol.
- * @param[in] cpu	CPU number to be offloaded to.
- * @param[in] type	Type of action to perform on the flow table, can be add or delete.
- *
- * @return
- * Status of the Tx operation.
- */
-nss_tx_status_t nss_qrfs_configure_flow_rule(uint32_t *dst_addr, uint32_t *src_addr, uint16_t dst_port, uint16_t src_port, uint32_t version, uint16_t proto, uint16_t cpu, enum nss_qrfs_msg_types type);
 
 /**
  * nss_qrfs_init
@@ -208,5 +190,4 @@ void nss_qrfs_init(void);
  * @}
  */
 
-#endif
 #endif /* __NSS_QRFS_H */

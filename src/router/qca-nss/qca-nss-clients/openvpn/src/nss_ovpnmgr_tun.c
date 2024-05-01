@@ -130,11 +130,7 @@ static void nss_ovpnmgr_tun_ipv6_forward(struct nss_ovpnmgr_tun *tun, struct sk_
 	skb->protocol = htons(ETH_P_IPV6);
 	ip6h = ipv6_hdr(skb);
 
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 6, 0))
 	rt6 = rt6_lookup(dev_net(app->dev), &ip6h->daddr, &ip6h->saddr, 0, 0);
-#else
-	rt6 = rt6_lookup(dev_net(app->dev), &ip6h->daddr, &ip6h->saddr, 0, 0, 0);
-#endif
 	if (!rt6) {
 		nss_ovpnmgr_warn("%px: Failed to find IPv6 route.\n", skb);
 		tun->outer.stats.host_pkt_drop++;
@@ -488,11 +484,7 @@ static void nss_ovpnmgr_tun_dev_setup(struct net_device *dev)
 	dev->header_ops = NULL;
 	dev->netdev_ops = &ovpnmgr_dev_ops;
 	dev->ethtool_ops = NULL;
-#if (LINUX_VERSION_CODE <= KERNEL_VERSION(4, 11, 8))
 	dev->destructor = nss_ovpnmgr_tun_free;
-#else
-	dev->priv_destructor = nss_ovpnmgr_tun_free;
-#endif
 }
 
 /*

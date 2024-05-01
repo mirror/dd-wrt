@@ -1,6 +1,6 @@
 /*
  ******************************************************************************
- * Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2020, The Linux Foundation. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -25,6 +25,20 @@
 extern atomic_t nss_mirror_num_instances;
 
 /*
+ * nss_mirror_stats
+ *	Mirror interface debug statistics.
+ */
+enum nss_mirror_stats {
+	NSS_MIRROR_STATS_PKTS,			/* Number of packets exceptioned to host. */
+	NSS_MIRROR_STATS_BYTES,			/* Number of bytes exceptioned to host. */
+	NSS_MIRROR_STATS_TX_SEND_FAIL,		/* Transmit send failures. */
+	NSS_MIRROR_STATS_DEST_LOOKUP_FAIL,	/* Destination lookup failures. */
+	NSS_MIRROR_STATS_MEM_ALLOC_FAIL,	/* Memory allocation failures. */
+	NSS_MIRROR_STATS_COPY_FAIL,		/* Copy failures. */
+	NSS_MIRROR_STATS_MAX			/* Maximum statistics count. */
+};
+
+/*
  * nss_mirror_stats_debug_instance
  *	Stucture for H2N/N2H mirror interface debug stats.
  */
@@ -34,11 +48,29 @@ struct nss_mirror_stats_debug_instance {
 	uint32_t if_num;			/* Mirror instance NSS interface number */
 };
 
+/*
+ * nss_mirror_stats_sync()
+ *	API to sync statistics for mirror interface.
+ */
 extern void nss_mirror_stats_sync(struct nss_ctx_instance *nss_ctx,
 		 struct nss_mirror_msg *nmm, uint16_t if_num);
+
+/*
+ * nss_mirror_stats_reset()
+ *	API to reset the mirror interface stats.
+ */
 extern void nss_mirror_stats_reset(uint32_t if_num);
+
+/*
+ * nss_mirror_stats_init()
+ *	API to initialize mirror debug instance statistics.
+ */
 extern int nss_mirror_stats_init(uint32_t if_num, struct net_device *netdev);
+
+/*
+ * nss_mirror_stats_dentry_create()
+ *	Create mirror interface statistics debug entry.
+ */
 extern void nss_mirror_stats_dentry_create(void);
-extern void nss_mirror_stats_notify(struct nss_ctx_instance *nss_ctx, uint32_t if_num);
 
 #endif /* __NSS_MIRROR_STATS_H */

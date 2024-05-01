@@ -34,13 +34,7 @@
 #include <crypto/aes.h>
 #include <crypto/authenc.h>
 #include <crypto/des.h>
-#include <linux/version.h>
-#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 11, 0)
 #include <crypto/sha.h>
-#else
-#include <crypto/sha1.h>
-#include <crypto/sha2.h>
-#endif
 #include <crypto/hash.h>
 
 #include <nss_api_if.h>
@@ -86,7 +80,7 @@ int nss_ovpnmgr_route_set_active(struct list_head *rt_list, struct nss_ovpnmgr_r
 	/*
 	 * This API should be called under lock.
 	 */
-	lockdep_assert_held(&ovpnmgr_ctx.lock);
+	BUG_ON(write_can_lock(&ovpnmgr_ctx.lock));
 
 	/*
 	 * Search for route entry with from_addr.

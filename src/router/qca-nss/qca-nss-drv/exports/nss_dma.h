@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2020, The Linux Foundation. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -53,43 +53,6 @@ enum nss_dma_msg_error {
 };
 
 /**
- * nss_dma_stats_types
- *	DMA node statistics.
- */
-enum nss_dma_stats_types {
-	NSS_DMA_STATS_NO_REQ = NSS_STATS_NODE_MAX,
-					/**< Request descriptor not available. */
-	NSS_DMA_STATS_NO_DESC,		/**< DMA descriptors not available. */
-	NSS_DMA_STATS_NEXTHOP,		/**< Failed to retrive next hop. */
-	NSS_DMA_STATS_FAIL_NEXTHOP_QUEUE,
-					/**< Failed to queue next hop. */
-	NSS_DMA_STATS_FAIL_LINEAR_SZ,	/**< Failed to get memory for linearization. */
-	NSS_DMA_STATS_FAIL_LINEAR_ALLOC,/**< Failed to allocate buffer for linearization. */
-	NSS_DMA_STATS_FAIL_LINEAR_NO_SG,/**< Skip linearization due to non-SG packet. */
-	NSS_DMA_STATS_FAIL_SPLIT_SZ,	/**< Failed to spliting buffer into multiple buffers. */
-	NSS_DMA_STATS_FAIL_SPLIT_ALLOC,	/**< Failed to allocate buffer for split. */
-	NSS_DMA_STATS_FAIL_SYNC_ALLOC,	/**< Failed to allocate buffer for sending statistics. */
-	NSS_DMA_STATS_FAIL_CTX_ACTIVE,	/**< Failed to queue as the node is not active. */
-	NSS_DMA_STATS_FAIL_HW_E0,	/**< Failed to process in hardware, error code E0. */
-	NSS_DMA_STATS_FAIL_HW_E1,	/**< Failed to process in hardware, error code E1. */
-	NSS_DMA_STATS_FAIL_HW_E2,	/**< Failed to process in hardware, error code E2. */
-	NSS_DMA_STATS_FAIL_HW_E3,	/**< Failed to process in hardware, error code E3. */
-	NSS_DMA_STATS_FAIL_HW_E4,	/**< Failed to process in hardware, error code E4. */
-	NSS_DMA_STATS_FAIL_HW_E5,	/**< Failed to process in hardware, error code E5. */
-	NSS_DMA_STATS_FAIL_HW_E6,	/**< Failed to process in hardware, error code E6. */
-	NSS_DMA_STATS_FAIL_HW_E7,	/**< Failed to process in hardware, error code E7. */
-	NSS_DMA_STATS_FAIL_HW_E8,	/**< Failed to process in hardware, error code E8. */
-	NSS_DMA_STATS_FAIL_HW_E9,	/**< Failed to process in hardware, error code E9. */
-	NSS_DMA_STATS_FAIL_HW_E10,	/**< Failed to process in hardware, error code E10. */
-	NSS_DMA_STATS_FAIL_HW_E11,	/**< Failed to process in hardware, error code E11. */
-	NSS_DMA_STATS_FAIL_HW_E12,	/**< Failed to process in hardware, error code E12. */
-	NSS_DMA_STATS_FAIL_HW_E13,	/**< Failed to process in hardware, error code E13. */
-	NSS_DMA_STATS_FAIL_HW_E14,	/**< Failed to process in hardware, error code E14. */
-	NSS_DMA_STATS_FAIL_HW_E15,	/**< Failed to process in hardware, error code E15. */
-	NSS_DMA_STATS_MAX,		/**< Maximum message type. */
-};
-
-/**
  * nss_dma_test_type
  *	DMA Test types.
  */
@@ -99,15 +62,6 @@ enum nss_dma_test_type {
 	NSS_DMA_TEST_TYPE_LARGE,		/**< Test large segment size. */
 	NSS_DMA_TEST_TYPE_VERIFY,		/**< Verify contents at receive processing. */
 	NSS_DMA_TEST_TYPE_MAX			/**< Maximum test type. */
-};
-
-/**
- * nss_dma_stats_notification
- *	DMA transmission statistics structure.
- */
-struct nss_dma_stats_notification {
-	uint64_t stats_ctx[NSS_DMA_STATS_MAX];		/**< Context transmission statistics. */
-	uint32_t core_id;				/**< Core ID. */
 };
 
 #ifdef __KERNEL__ /* only kernel will use. */
@@ -174,6 +128,11 @@ struct nss_dma_msg {
 /**
  * nss_dma_register_handler
  *	Registers the DMA message handler.
+ *
+ * @datatypes
+ * nss_ctx_instance
+ *
+ * @param[in] nss_ctx  Pointer to the NSS context.
  *
  * @return
  * None.
@@ -296,34 +255,6 @@ void nss_dma_init(void);
  * Pointer to the NSS core context.
  */
 extern struct nss_ctx_instance *nss_dma_get_context(void);
-
-/**
- * nss_dma_stats_unregister_notifier
- *	Deregisters a statistics notifier.
- *
- * @datatypes
- *	notifier_block
- *
- * @param[in] nb Notifier block.
- *
- * @return
- * 0 on success or non-zero on failure.
- */
-extern int nss_dma_stats_unregister_notifier(struct notifier_block *nb);
-
-/**
- * nss_dma_stats_register_notifier
- *	Registers a statistics notifier.
- *
- * @datatypes
- *	notifier_block
- *
- * @param[in] nb Notifier block.
- *
- * @return
- * 0 on success or non-zero on failure.
- */
-extern int nss_dma_stats_register_notifier(struct notifier_block *nb);
 #endif /*__KERNEL__ */
 
 /**

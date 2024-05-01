@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2019-2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2019-2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -18,7 +18,7 @@
 #include <linux/etherdevice.h>
 #include <linux/netdevice.h>
 #include <nss_api_if.h>
-#include "nss_vxlanmgr_priv.h"
+#include "nss_vxlanmgr.h"
 #include "nss_vxlanmgr_tun_stats.h"
 
 /*
@@ -47,8 +47,6 @@ static int8_t *nss_vxlanmgr_tun_stats_str[NSS_VXLANMGR_TUN_STATS_TYPE_MAX] = {
 	"Except VNI Look-up failed",
 	"Dropped packet malformed",
 	"Dropped next node queue is full",
-	"Except Inner hash calculation failed",
-	"Decap IPSec source interface invalid"
 };
 
 /*
@@ -90,7 +88,7 @@ static int nss_vxlanmgr_tun_stats_show(struct seq_file *m, void __attribute__((u
 	seq_printf(m, "\t\tflow_label = %u\n", tun_ctx->flow_label);
 	seq_printf(m, "\t\tsrc_port_min = %u\n", tun_ctx->src_port_min);
 	seq_printf(m, "\t\tsrc_port_max = %u\n", tun_ctx->src_port_max);
-	seq_printf(m, "\t\tdest_port = %u\n", tun_ctx->dest_port);
+	seq_printf(m, "\t\tdest_port = %u\n", ntohs(tun_ctx->dest_port));
 	seq_printf(m, "\t\ttos = %u\n", tun_ctx->tos);
 	seq_printf(m, "\t\tttl = %u\n", tun_ctx->ttl);
 
@@ -167,16 +165,11 @@ void nss_vxlanmgr_tun_stats_update(uint64_t *stats, struct nss_vxlan_stats_msg *
 		stats_msg->dropped_malformed;
 	stats[NSS_VXLANMGR_TUN_STATS_TYPE_DROP_NEXT_NODE_QUEUE_FULL] +=
 		stats_msg->dropped_next_node_queue_full;
-	stats[NSS_VXLANMGR_TUN_STATS_TYPE_EXCEPT_INNER_HASH] +=
-		stats_msg->except_inner_hash;
-	stats[NSS_VXLANMGR_TUN_STATS_TYPE_DECAP_IPSEC_SRC_INVALID] +=
-		stats_msg->decap_ipsec_src_err;
 }
 
 /*
  * nss_vxlanmgr_tun_macdb_stats_sync()
  *	Sync function for vxlan fdb entries
- *	Note: Reference on the netdevice is expected to be held by the caller at the time this function is called.
  */
 void nss_vxlanmgr_tun_macdb_stats_sync(struct nss_vxlanmgr_tun_ctx *tun_ctx, struct nss_vxlan_msg *nvm)
 {
@@ -187,8 +180,11 @@ void nss_vxlanmgr_tun_macdb_stats_sync(struct nss_vxlanmgr_tun_ctx *tun_ctx, str
 	db_stats = &nvm->msg.db_stats;
 	nentries = db_stats->cnt;
 
+	dev_hold(tun_ctx->dev);
+
 	if (nentries > NSS_VXLAN_MACDB_ENTRIES_PER_MSG) {
 		nss_vxlanmgr_warn("%px: No more than 20 entries allowed per message.\n", tun_ctx->dev);
+		dev_put(tun_ctx->dev);
 		return;
 	}
 
@@ -204,6 +200,7 @@ void nss_vxlanmgr_tun_macdb_stats_sync(struct nss_vxlanmgr_tun_ctx *tun_ctx, str
 			}
 		}
 	}
+	dev_put(tun_ctx->dev);
 }
 
 /*

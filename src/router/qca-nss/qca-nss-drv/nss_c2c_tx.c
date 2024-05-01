@@ -1,12 +1,9 @@
 /*
  **************************************************************************
  * Copyright (c) 2018-2020, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
- *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
- *
  * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
  * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
  * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
@@ -145,8 +142,8 @@ void nss_c2c_tx_register_handler(struct nss_ctx_instance *nss_ctx)
 
 	if (nss_ctx->id == NSS_CORE_0) {
 		nss_c2c_tx_stats_dentry_create();
-		nss_c2c_tx_strings_dentry_create();
 	}
+	nss_c2c_tx_strings_dentry_create();
 }
 EXPORT_SYMBOL(nss_c2c_tx_register_handler);
 
@@ -334,6 +331,33 @@ static struct ctl_table nss_c2c_tx_table[] = {
 	{ }
 };
 
+static struct ctl_table nss_c2c_tx_dir[] = {
+	{
+		.procname		= "c2c_tx",
+		.mode			= 0555,
+		.child			= nss_c2c_tx_table,
+	},
+	{ }
+};
+
+static struct ctl_table nss_c2c_tx_root_dir[] = {
+	{
+		.procname		= "nss",
+		.mode			= 0555,
+		.child			= nss_c2c_tx_dir,
+	},
+	{ }
+};
+
+static struct ctl_table nss_c2c_tx_root[] = {
+	{
+		.procname		= "dev",
+		.mode			= 0555,
+		.child			= nss_c2c_tx_root_dir,
+	},
+	{ }
+};
+
 static struct ctl_table_header *nss_c2c_tx_header;
 
 /*
@@ -351,7 +375,7 @@ void nss_c2c_tx_register_sysctl(void)
 	/*
 	 * Register sysctl table.
 	 */
-	nss_c2c_tx_header = register_sysctl("dev/nss/c2c_tx", nss_c2c_tx_table);
+	nss_c2c_tx_header = register_sysctl_table(nss_c2c_tx_root);
 }
 
 /*

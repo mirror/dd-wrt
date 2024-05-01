@@ -11,4 +11,4 @@ obj-m += qca-nss-portifmgr.o
 qca-nss-portifmgr-objs := nss_portifmgr.o
 
 ccflags-y += -DNSS_PORTIFMGR_DEBUG_LEVEL=2 #-DNSS_PORTIFMGR_REF_AP148
-ccflags-y += -Wall -Werror
+ccflags-y += -Werror

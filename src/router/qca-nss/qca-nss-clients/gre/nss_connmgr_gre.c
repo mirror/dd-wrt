@@ -277,16 +277,16 @@ static struct rtnl_link_stats64 *nss_connmgr_gre_get_dev_stats64(struct net_devi
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(3, 15, 0))
 			start = u64_stats_fetch_begin_bh(&tstats->syncp);
 #else
-			start = u64_stats_fetch_begin(&tstats->syncp);
+			start = u64_stats_fetch_begin_irq(&tstats->syncp);
 #endif
-			rx_packets = u64_stats_read(&tstats->rx_packets);
-			tx_packets = u64_stats_read(&tstats->tx_packets);
-			rx_bytes = u64_stats_read(&tstats->rx_bytes);
-			tx_bytes = u64_stats_read(&tstats->tx_bytes);
+			rx_packets = tstats->rx_packets;
+			tx_packets = tstats->tx_packets;
+			rx_bytes = tstats->rx_bytes;
+			tx_bytes = tstats->tx_bytes;
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(3, 15, 0))
 		} while (u64_stats_fetch_retry_bh(&tstats->syncp, start));
 #else
-		} while (u64_stats_fetch_retry(&tstats->syncp, start));
+		} while (u64_stats_fetch_retry_irq(&tstats->syncp, start));
 #endif
 
 		tot->rx_packets += rx_packets;
@@ -697,11 +697,11 @@ static void nss_connmgr_gre_event_receive(void *if_ctx, struct nss_gre_msg *tnlm
 		tstats = this_cpu_ptr(dev->tstats);
 		u64_stats_update_begin(&tstats->syncp);
 		if (interface_type == NSS_DYNAMIC_INTERFACE_TYPE_GRE_INNER) {
-			u64_stats_add(&tstats->tx_packets, stats->tx_packets);
-			u64_stats_add(&tstats->tx_bytes, stats->tx_bytes);
+			tstats->tx_packets += stats->tx_packets;
+			tstats->tx_bytes += stats->tx_bytes;
 		} else if (interface_type == NSS_DYNAMIC_INTERFACE_TYPE_GRE_OUTER) {
-			u64_stats_add(&tstats->rx_packets, stats->rx_packets);
-			u64_stats_add(&tstats->rx_bytes, stats->rx_bytes);
+			tstats->rx_packets += stats->rx_packets;
+			tstats->rx_bytes += stats->rx_bytes;
 		}
 		u64_stats_update_end(&tstats->syncp);
 		dev->stats.rx_dropped += nss_cmn_rx_dropped_sum(stats);
@@ -1672,7 +1672,7 @@ int nss_connmgr_gre_set_wifi_next_hop(struct net_device *wifi_vdev)
 		return GRE_ERR_NEXT_NODE_UNREG_IN_AE;
 	}
 
-	ctx = nss_wifili_get_context();
+	ctx = nss_wifi_get_context();
 	status = nss_wifi_vdev_set_next_hop(ctx, ifnumber, NSS_GRE_INTERFACE);
 	if (status != NSS_TX_SUCCESS) {
 		nss_connmgr_gre_info("%px: wifi drv api failed to set next hop\n", wifi_vdev);

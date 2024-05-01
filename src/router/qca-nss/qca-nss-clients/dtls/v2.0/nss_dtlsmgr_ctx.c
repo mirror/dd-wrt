@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2017-2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -40,13 +40,7 @@
 #include <crypto/aes.h>
 #include <crypto/authenc.h>
 #include <crypto/des.h>
-#include <linux/version.h>
-#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 11, 0)
 #include <crypto/sha.h>
-#else
-#include <crypto/sha1.h>
-#include <crypto/sha2.h>
-#endif
 #include <crypto/skcipher.h>
 #include <crypto/hash.h>
 
@@ -633,7 +627,7 @@ struct net_device *nss_dtlsmgr_session_create(struct nss_dtlsmgr_config *cfg)
 	 * so that the skb data pointer remains 4 byte aligned when the
 	 * headroom/tailroom is adjusted.
 	 */
-	dev->needed_headroom = ALIGN(ctx->encap.headroom, 4);
+	dev->needed_headroom = ALIGN(ctx->encap.headroom + NSS_DTLSMGR_EDMA_PRE_HDR_SZ, 4);
 	dev->needed_tailroom = ALIGN(ctx->encap.tailroom, 4);
 
 	ctx->app_data = cfg->app_data;
@@ -649,7 +643,7 @@ struct net_device *nss_dtlsmgr_session_create(struct nss_dtlsmgr_config *cfg)
 		ctx->app_data = ctx;
 	}
 
-	error = register_netdev(dev);
+	error = rtnl_is_locked() ? register_netdevice(dev) : register_netdev(dev);
 	if (error < 0) {
 		nss_dtlsmgr_warn("%px: unable register net_device(%s)", ctx, dev->name);
 		goto destroy_decap;
@@ -714,7 +708,7 @@ nss_dtlsmgr_status_t nss_dtlsmgr_session_destroy(struct net_device *dev)
 
 	NSS_DTLSMGR_SET_MAGIC(ctx, 0);
 
-	unregister_netdev(dev);
+	rtnl_is_locked() ? unregister_netdevice(dev) : unregister_netdev(dev);
 
 	return NSS_DTLSMGR_OK;
 }

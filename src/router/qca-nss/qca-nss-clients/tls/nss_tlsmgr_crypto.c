@@ -41,13 +41,7 @@
 #include <crypto/aes.h>
 #include <crypto/authenc.h>
 #include <crypto/des.h>
-#include <linux/version.h>
-#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 11, 0)
 #include <crypto/sha.h>
-#else
-#include <crypto/sha1.h>
-#include <crypto/sha2.h>
-#endif
 #include <crypto/skcipher.h>
 #include <crypto/hash.h>
 #include <crypto/internal/hash.h>

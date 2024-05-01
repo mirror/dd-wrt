@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2014-2017, 2019-2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2014-2017, 2019-2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -88,7 +88,12 @@ static void nss_tbl_destroy(struct Qdisc *sch)
 	/*
 	 * Now we can destroy our child qdisc
 	 */
-	nss_qdisc_put(q->qdisc);
+	 nss_qdisc_put(q->qdisc);
+
+	/*
+	 * Stop the polling of basic stats and destroy qdisc.
+	 */
+	nss_qdisc_stop_basic_stats_polling(&q->nq);
 	nss_qdisc_destroy(&q->nq);
 }
 
@@ -286,6 +291,11 @@ static int nss_tbl_init(struct Qdisc *sch, struct nlattr *opt,
 		nss_qdisc_destroy(&q->nq);
 		return -EINVAL;
 	}
+
+	/*
+	 * Start the stats polling timer
+	 */
+	nss_qdisc_start_basic_stats_polling(&q->nq);
 
 	return 0;
 }

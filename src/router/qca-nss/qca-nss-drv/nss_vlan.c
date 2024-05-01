@@ -246,7 +246,7 @@ EXPORT_SYMBOL(nss_vlan_tx_set_mtu_msg);
  * nss_vlan_tx_set_mac_addr_msg
  *	API to send change mac addr message to NSS FW
  */
-nss_tx_status_t nss_vlan_tx_set_mac_addr_msg(uint32_t vlan_if_num, uint8_t *addr)
+nss_tx_status_t nss_vlan_tx_set_mac_addr_msg(uint32_t vlan_if_num, const uint8_t *addr)
 {
 	struct nss_ctx_instance *nss_ctx = nss_vlan_get_context();
 	struct nss_vlan_msg nvm;

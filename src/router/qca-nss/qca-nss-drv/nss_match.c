@@ -1,6 +1,6 @@
 /*
  ***************************************************************************
- * Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2020, The Linux Foundation. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -23,7 +23,6 @@
 #include "nss_tx_rx_common.h"
 #include "nss_match_log.h"
 #include "nss_match_stats.h"
-#include "nss_match_strings.h"
 
 #define NSS_MATCH_TX_TIMEOUT 1000	/* 1 Seconds */
 
@@ -149,7 +148,6 @@ static void nss_match_handler(struct nss_ctx_instance *nss_ctx, struct nss_cmn_m
 		 * Update common node statistics
 		 */
 		nss_match_stats_sync(nss_ctx, nem);
-		nss_match_stats_notify(nss_ctx, nem->cm.interface);
 	}
 
 	if (ncm->response == NSS_CMN_RESPONSE_NOTIFY) {
@@ -211,36 +209,6 @@ nss_tx_status_t nss_match_msg_tx_sync(struct nss_ctx_instance *nss_ctx, struct n
 EXPORT_SYMBOL(nss_match_msg_tx_sync);
 
 /*
- * nss_match_unregister_instance()
- *	Unregisters match instance.
- */
-bool nss_match_unregister_instance(int if_num)
-{
-	struct nss_ctx_instance *nss_ctx;
-	uint32_t status;
-
-	nss_ctx = nss_match_get_context();
-	NSS_VERIFY_CTX_MAGIC(nss_ctx);
-
-	if (!nss_match_verify_if_num(if_num)) {
-		nss_warning("%px: Incorrect interface number: %d", nss_ctx, if_num);
-		return false;
-	}
-
-	nss_core_unregister_handler(nss_ctx, if_num);
-	status = nss_core_unregister_msg_handler(nss_ctx, if_num);
-	if (status != NSS_CORE_STATUS_SUCCESS) {
-		nss_warning("%px: Not able to unregister handler for interface %d with NSS core\n", nss_ctx, if_num);
-		return false;
-	}
-
-	nss_match_ifnum_delete(if_num);
-
-	return true;
-}
-EXPORT_SYMBOL(nss_match_unregister_instance);
-
-/*
  * nss_match_register_instance()
  *	Registers match instance.
  */
@@ -276,6 +244,36 @@ struct nss_ctx_instance *nss_match_register_instance(int if_num, nss_match_msg_s
 EXPORT_SYMBOL(nss_match_register_instance);
 
 /*
+ * nss_match_unregister_instance()
+ *	Unregisters match instance.
+ */
+bool nss_match_unregister_instance(int if_num)
+{
+	struct nss_ctx_instance *nss_ctx;
+	uint32_t status;
+
+	nss_ctx = nss_match_get_context();
+	NSS_VERIFY_CTX_MAGIC(nss_ctx);
+
+	if (!nss_match_verify_if_num(if_num)) {
+		nss_warning("%px: Incorrect interface number: %d", nss_ctx, if_num);
+		return false;
+	}
+
+	nss_core_unregister_handler(nss_ctx, if_num);
+	status = nss_core_unregister_msg_handler(nss_ctx, if_num);
+	if (status != NSS_CORE_STATUS_SUCCESS) {
+		nss_warning("%px: Not able to unregister handler for interface %d with NSS core\n", nss_ctx, if_num);
+		return false;
+	}
+
+	nss_match_ifnum_delete(if_num);
+
+	return true;
+}
+EXPORT_SYMBOL(nss_match_unregister_instance);
+
+/*
  * nss_match_msg_init()
  *	Initialize match message.
  */
@@ -293,7 +291,6 @@ EXPORT_SYMBOL(nss_match_msg_init);
 void nss_match_init()
 {
 	nss_match_stats_dentry_create();
-	nss_match_strings_dentry_create();
 	sema_init(&match_pvt.sem, 1);
 	init_completion(&match_pvt.complete);
 }

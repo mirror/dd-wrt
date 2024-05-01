@@ -317,7 +317,7 @@ static int nss_mirred_act(struct sk_buff *skb, const struct tc_action *tc_act,
 	 * Update the last use of action.
 	 */
 	tcf_lastuse_update(&act->tcf_tm);
-	bstats_update(this_cpu_ptr(act->common.cpu_bstats), skb);
+	bstats_cpu_update(this_cpu_ptr(act->common.cpu_bstats), skb);
 
 	rcu_read_lock();
 	retval = READ_ONCE(act->tcf_action);

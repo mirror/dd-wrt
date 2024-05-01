@@ -69,11 +69,7 @@ static int nss_connmgr_pppoe_get_session(struct net_device *dev,  struct pppoe_o
 		return -1;
 	}
 
-	if (pppoe_channel_addressing_get(channel[0], addressing)) {
-		nss_connmgr_pppoe_warn("%px: failed to get addressing information\n", dev);
-		ppp_release_channels(channel, 1);
-		return -1;
-	}
+	pppoe_channel_addressing_get(channel[0], addressing);
 
 	dev_put(addressing->dev);
 	ppp_release_channels(channel, 1);

@@ -29,58 +29,14 @@
 
 void *nss_qdisc_ctx;			/* Shaping context for nss_qdisc */
 
+#define NSS_QDISC_COMMAND_TIMEOUT (10*HZ) /* We set 10sec to be the command */
+					   /* timeout value for messages */
+
 /*
  * Defines related to root hash maintenance
  */
 #define NSS_QDISC_ROOT_HASH_SIZE 4
 #define NSS_QDISC_ROOT_HASH_MASK (NSS_QDISC_ROOT_HASH_SIZE - 1)
-
-/*
- * nss_qdisc_get_interface_msg()
- *	Returns the correct message that needs to be sent down to the NSS interface.
- */
-int nss_qdisc_get_interface_msg(bool is_bridge, uint32_t msg_type)
-{
-	/*
-	 * We re-assign the message based on whether this is for the I shaper
-	 * or the B shaper. The is_bridge flag tells if we are on a bridge interface.
-	 */
-	if (is_bridge) {
-		switch (msg_type) {
-		case NSS_QDISC_IF_SHAPER_ASSIGN:
-			return NSS_IF_BSHAPER_ASSIGN;
-		case NSS_QDISC_IF_SHAPER_UNASSIGN:
-			return NSS_IF_BSHAPER_UNASSIGN;
-		case NSS_QDISC_IF_SHAPER_CONFIG:
-			return NSS_IF_BSHAPER_CONFIG;
-		default:
-			nss_qdisc_info("Unknown message type for a bridge - type %d", msg_type);
-			return -1;
-		}
-	} else {
-		switch (msg_type) {
-		case NSS_QDISC_IF_SHAPER_ASSIGN:
-			return NSS_IF_ISHAPER_ASSIGN;
-		case NSS_QDISC_IF_SHAPER_UNASSIGN:
-			return NSS_IF_ISHAPER_UNASSIGN;
-		case NSS_QDISC_IF_SHAPER_CONFIG:
-			return NSS_IF_ISHAPER_CONFIG;
-		default:
-			nss_qdisc_info("Unknown message type for an interface - type %d", msg_type);
-			return -1;
-		}
-	}
-}
-
-/*
- * nss_qdisc_msg_init()
- *      Initialize the qdisc specific message
- */
-void nss_qdisc_msg_init(struct nss_if_msg *nim, uint16_t if_num, uint32_t msg_type, uint32_t len,
-				nss_if_msg_callback_t cb, void *app_data)
-{
-	nss_cmn_msg_init(&nim->cm, if_num, msg_type, len, (void *)cb, app_data);
-}
 
 /*
  * nss_qdisc_interface_is_virtual()
@@ -163,6 +119,53 @@ static int nss_qdisc_ppe_init(struct Qdisc *sch, struct nss_qdisc *nq, nss_shape
 	return 0;
 }
 #endif
+
+/*
+ * nss_qdisc_msg_init()
+ *      Initialize the qdisc specific message
+ */
+static void nss_qdisc_msg_init(struct nss_if_msg *nim, uint16_t if_num, uint32_t msg_type, uint32_t len,
+				nss_if_msg_callback_t cb, void *app_data)
+{
+	nss_cmn_msg_init(&nim->cm, if_num, msg_type, len, (void*)cb, app_data);
+}
+
+/*
+ * nss_qdisc_get_interface_msg()
+ *	Returns the correct message that needs to be sent down to the NSS interface.
+ */
+static inline int nss_qdisc_get_interface_msg(bool is_bridge, uint32_t msg_type)
+{
+	/*
+	 * We re-assign the message based on whether this is for the I shaper
+	 * or the B shaper. The is_bridge flag tells if we are on a bridge interface.
+	 */
+	if (is_bridge) {
+		switch(msg_type) {
+		case NSS_QDISC_IF_SHAPER_ASSIGN:
+			return NSS_IF_BSHAPER_ASSIGN;
+		case NSS_QDISC_IF_SHAPER_UNASSIGN:
+			return NSS_IF_BSHAPER_UNASSIGN;
+		case NSS_QDISC_IF_SHAPER_CONFIG:
+			return NSS_IF_BSHAPER_CONFIG;
+		default:
+			nss_qdisc_info("Unknown message type for a bridge - type %d", msg_type);
+			return -1;
+		}
+	} else {
+		switch(msg_type) {
+		case NSS_QDISC_IF_SHAPER_ASSIGN:
+			return NSS_IF_ISHAPER_ASSIGN;
+		case NSS_QDISC_IF_SHAPER_UNASSIGN:
+			return NSS_IF_ISHAPER_UNASSIGN;
+		case NSS_QDISC_IF_SHAPER_CONFIG:
+			return NSS_IF_ISHAPER_CONFIG;
+		default:
+			nss_qdisc_info("Unknown message type for an interface - type %d", msg_type);
+			return -1;
+		}
+	}
+}
 
 /*
  * nss_qdisc_attach_bshaper_callback()
@@ -609,6 +612,7 @@ static void nss_qdisc_root_cleanup_free_node_callback(void *app_data,
 	nss_qdisc_info("Root qdisc %px (type %d) free SUCCESS - response "
 			"type: %d\n", nq->qdisc, nq->type,
 			nim->msg.shaper_configure.config.response_type);
+
 	nss_qdisc_root_cleanup_shaper_unassign(nq);
 }
 
@@ -1140,16 +1144,15 @@ unsigned int nss_qdisc_drop(struct Qdisc *sch)
 {
 	struct nss_qdisc *nq = qdisc_priv(sch);
 	unsigned int ret;
-	struct sk_buff *to_free = qdisc_peek_head(sch);
 
 	if (!nq->is_virtual) {
-		ret = __qdisc_queue_drop_head(sch, &sch->q, &to_free);
+		ret = __qdisc_queue_drop_head(sch, &sch->q);
 	} else {
 		spin_lock_bh(&nq->bounce_protection_lock);
 		/*
 		 * This function is safe to call within locks
 		 */
-		ret = __qdisc_queue_drop_head(sch, &sch->q, &to_free);
+		ret = __qdisc_queue_drop_head(sch, &sch->q);
 		spin_unlock_bh(&nq->bounce_protection_lock);
 	}
 
@@ -1163,15 +1166,8 @@ unsigned int nss_qdisc_drop(struct Qdisc *sch)
  */
 void nss_qdisc_reset(struct Qdisc *sch)
 {
-	struct nss_qdisc *nq;
+	struct nss_qdisc *nq = qdisc_priv(sch);
 
-	if(!(sch->flags & TCQ_F_NSS)) {
-		qdisc_reset_queue(sch);
-		nss_qdisc_info("Qdisc %px resetting non NSS qdisc\n", sch);
-		return;
-	}
-
-	nq = qdisc_priv(sch);
 	nss_qdisc_info("Qdisc %px (type %d) resetting\n",
 			sch, nq->type);
 
@@ -1307,10 +1303,10 @@ extern int nss_qdisc_enqueue(struct sk_buff *skb, struct Qdisc *sch, struct sk_b
 		return NET_XMIT_SUCCESS;
 	}
 #else
-	if (skb_skip_tc_classify_offload(skb)) {
-		nss_qdisc_mark_and_schedule(nq->qdisc, skb);
-		return NET_XMIT_SUCCESS;
-	}
+//	if (skb_skip_tc_classify_offload(skb)) {
+//		nss_qdisc_mark_and_schedule(nq->qdisc, skb);
+//		return NET_XMIT_SUCCESS;
+//	}
 #endif
 
 	if (!nq->is_virtual) {
@@ -1893,7 +1889,6 @@ int nss_qdisc_configure(struct nss_qdisc *nq,
 	return 0;
 }
 
-
 /*
  * nss_qdisc_register_configure_callback()
  *	Register shaper configure callback, which gets invoked on receiving a response.
@@ -1950,11 +1945,6 @@ void nss_qdisc_destroy(struct nss_qdisc *nq)
 	}
 
 	/*
-	 * Delete node from stats list
-	 */
-	nss_qdisc_stats_qdisc_detach(nq);
-
-	/*
 	 * How we begin to tidy up depends on whether we are root or child
 	 */
 	nq->pending_final_state = NSS_QDISC_STATE_IDLE;
@@ -1971,11 +1961,6 @@ void nss_qdisc_destroy(struct nss_qdisc *nq)
 				"unassign bshapers from its interfaces\n", nq->qdisc, nq->type);
 			nss_qdisc_refresh_bshaper_assignment(nq->qdisc, NSS_QDISC_SCAN_AND_UNASSIGN_BSHAPER);
 		}
-
-		/*
-		 * Stop stats polling
-		 */
-		nss_qdisc_stats_stop_polling(nq);
 
 		/*
 		 * Begin by freeing the root shaper node
@@ -2034,7 +2019,7 @@ int __nss_qdisc_init(struct Qdisc *sch, struct nss_qdisc *nq, nss_shaper_node_ty
 int __nss_qdisc_init(struct Qdisc *sch, struct nss_qdisc *nq, nss_shaper_node_type_t type, uint32_t classid, uint32_t accel_mode,
 		struct netlink_ext_ack *extack)
 {
-	int err;
+//	int err;
 #endif
 	struct Qdisc *root;
 	u32 parent;
@@ -2130,8 +2115,6 @@ int __nss_qdisc_init(struct Qdisc *sch, struct nss_qdisc *nq, nss_shaper_node_ty
 	 */
 	if ((sch->parent == TC_H_ROOT) && (!nq->is_class)) {
 		nss_qdisc_info("Qdisc %px (type %d) is root\n", nq->qdisc, nq->type);
-		nss_qdisc_info("Qdisc %px dev-name %s qdisc_dev(sch)->qdisc %px, qdisc_dev(sch)->qdisc->handle %x\n", qdisc_dev(sch), qdisc_dev(sch)->name, qdisc_dev(sch)->qdisc, qdisc_dev(sch)->qdisc->handle);
-		nss_qdisc_info("Qdisc %px (sch %px) is root, sch->handle %x\n", nq->qdisc, sch, sch->handle);
 		nq->is_root = true;
 		root = sch;
 	} else {
@@ -2146,7 +2129,7 @@ int __nss_qdisc_init(struct Qdisc *sch, struct nss_qdisc *nq, nss_shaper_node_ty
 	 */
 	dev = qdisc_dev(sch);
 
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0))
+#if 0 // (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0))
 	/*
 	 * Currently filter addition is only supported over IFB interfaces.
 	 * Therefore, perform tcf block allocation (which is used for storing
@@ -2189,7 +2172,9 @@ int __nss_qdisc_init(struct Qdisc *sch, struct nss_qdisc *nq, nss_shaper_node_ty
 	 * This is to prevent mixing NSS and PPE qdisc with linux qdisc.
 	 */
 	if ((parent != TC_H_ROOT) && (root->ops->owner != THIS_MODULE)) {
-		nss_qdisc_info("NSS qdisc %px (type %d) used along with non-nss qdiscs,"
+		nss_qdisc_warning("parent (%d) and TC_H_ROOT (%d))", parent, TC_H_ROOT);
+		nss_qdisc_warning("root->ops->owner (%px) and THIS_MODULE (%px))", root->ops->owner , THIS_MODULE);
+		nss_qdisc_warning("NSS qdisc %px (type %d) used along with non-nss qdiscs,"
 			" or the interface is currently down", nq->qdisc, nq->type);
 	}
 
@@ -2289,11 +2274,6 @@ int __nss_qdisc_init(struct Qdisc *sch, struct nss_qdisc *nq, nss_shaper_node_ty
 		 * If state is positive, return success
 		 */
 		if (state > 0) {
-
-			/*
-			 * Qdisc successfully initialized, add it to stats list if its not a class
-			 */
-			nss_qdisc_stats_qdisc_attach(nq);
 			return 0;
 		}
 
@@ -2461,15 +2441,6 @@ int __nss_qdisc_init(struct Qdisc *sch, struct nss_qdisc *nq, nss_shaper_node_ty
 		goto init_fail;
 	}
 #endif
-	/*
-	 * Initialize the stats management only for root node
-	 */
-	if (!nss_qdisc_stats_sync_many_init(nq)) {
-		nss_qdisc_error("Qdisc %px (type %d) stats sync init failed", nq->qdisc, nq->type);
-		nss_shaper_unregister_shaping(nq->nss_shaping_ctx);
-		atomic_set(&nq->state, NSS_QDISC_STATE_INIT_FAILED);
-		goto init_fail;
-	}
 
 	/*
 	 * Create and send the shaper assign message to the NSS interface
@@ -2499,7 +2470,7 @@ int __nss_qdisc_init(struct Qdisc *sch, struct nss_qdisc *nq, nss_shaper_node_ty
 		if (igs_put) {
 			nss_igs_module_put();
 		}
-		nss_qdisc_error("init for qdisc %x timedout!\n", nq->qos_tag);
+	nss_qdisc_error("init for qdisc %x timedout!\n", nq->qos_tag);
 		return -1;
 	}
 
@@ -2508,16 +2479,6 @@ int __nss_qdisc_init(struct Qdisc *sch, struct nss_qdisc *nq, nss_shaper_node_ty
 			nq->qdisc, nq->type, state);
 
 	if (state > 0) {
-
-		/*
-		 * Qdisc successfully initialized add it to stats list if its not a class
-		 */
-		nss_qdisc_stats_qdisc_attach(nq);
-
-		/*
-		 * Root node is successfully configured, start stats polling
-		 */
-		nss_qdisc_stats_start_polling(nq);
 
 		/*
 		 * Return if this is not a root qdisc on a bridge interface.
@@ -2560,14 +2521,6 @@ init_fail:
 	}
 #endif
 
-
-	/*
-	 * Clean up stats sync objects if initialized.
-	 */
-	if (nq->stats_wq) {
-		nss_qdisc_stats_sync_many_exit(nq);
-	}
-
 	/*
 	 * Destroy any virtual interfaces created by us before returning a failure.
 	 */
@@ -2602,6 +2555,210 @@ int nss_qdisc_init(struct Qdisc *sch, struct nss_qdisc *nq, nss_shaper_node_type
 }
 
 /*
+ * nss_qdisc_basic_stats_callback()
+ *	Invoked after getting basic stats
+ */
+static void nss_qdisc_basic_stats_callback(void *app_data,
+				struct nss_if_msg *nim)
+{
+	struct nss_qdisc *nq = (struct nss_qdisc *)app_data;
+	struct Qdisc *qdisc = nq->qdisc;
+	struct gnet_stats_basic_sync *bstats;
+	struct gnet_stats_queue *qstats;
+	struct nss_shaper_node_stats_response *response;
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 13, 0))
+	atomic_t *refcnt;
+#else
+	refcount_t *refcnt;
+#endif
+
+	if (nim->cm.response != NSS_CMN_RESPONSE_ACK) {
+		nss_qdisc_warning("Qdisc %px (type %d): Receive stats FAILED - "
+			"response: type: %d\n", qdisc, nq->type,
+			nim->msg.shaper_configure.config.response_type);
+		atomic_sub(1, &nq->pending_stat_requests);
+		wake_up(&nq->wait_queue);
+		return;
+	}
+
+	response = &nim->msg.shaper_configure.config.msg.shaper_node_stats_get.response;
+
+	/*
+	 * Get the right stats pointers based on whether it is a class
+	 * or a qdisc.
+	 */
+	if (nq->is_class) {
+		bstats = &nq->bstats;
+		qstats = &nq->qstats;
+		refcnt = &nq->refcnt;
+	} else {
+		bstats = &qdisc->bstats;
+		qstats = &qdisc->qstats;
+		refcnt = &qdisc->refcnt;
+		qdisc->q.qlen = response->sn_stats.qlen_packets;
+	}
+
+	/*
+	 * Update qdisc->bstats
+	 */
+	spin_lock_bh(&nq->lock);
+	u64_stats_add(&bstats->bytes, (__u64)response->sn_stats.delta.dequeued_bytes);
+	u64_stats_add(&bstats->packets, response->sn_stats.delta.dequeued_packets);
+
+	/*
+	 * Update qdisc->qstats
+	 */
+	qstats->backlog = response->sn_stats.qlen_bytes;
+
+	qstats->drops += (response->sn_stats.delta.enqueued_packets_dropped +
+				response->sn_stats.delta.dequeued_packets_dropped);
+
+	/*
+	 * Update qdisc->qstats
+	 */
+	qstats->qlen = response->sn_stats.qlen_packets;
+	qstats->requeues = 0;
+	qstats->overlimits += response->sn_stats.delta.queue_overrun;
+	spin_unlock_bh(&nq->lock);
+
+	/*
+	 * Shapers that maintain additional unique statistics will process them
+	 * via a registered callback. So invoke if its been registered.
+	 */
+	if (nq->stats_cb) {
+		nq->stats_cb(nq, response);
+	}
+
+	/*
+	 * All access to nq fields below do not need lock protection. They
+	 * do not get manipulated on different thread contexts.
+	 */
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 13, 0))
+	if (atomic_read(refcnt) == 0) {
+#else
+	if (refcount_read(refcnt) == 0) {
+#endif
+		atomic_sub(1, &nq->pending_stat_requests);
+		wake_up(&nq->wait_queue);
+		return;
+	}
+
+	/*
+	 * Requests for stats again, after 1 sec.
+	 */
+	nq->stats_get_timer.expires += HZ;
+	if (nq->stats_get_timer.expires <= jiffies) {
+		nss_qdisc_info("losing time %lu, jiffies = %lu\n",
+				nq->stats_get_timer.expires, jiffies);
+		nq->stats_get_timer.expires = jiffies + HZ;
+	}
+	add_timer(&nq->stats_get_timer);
+}
+
+/*
+ * nss_qdisc_get_stats_timer_callback()
+ *	Invoked periodically to get updated stats
+ */
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 15, 0))
+static void nss_qdisc_get_stats_timer_callback(unsigned long int data)
+#else
+static void nss_qdisc_get_stats_timer_callback(struct timer_list *tm)
+#endif
+{
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 15, 0))
+	struct nss_qdisc *nq = (struct nss_qdisc *)data;
+#else
+	struct nss_qdisc *nq = from_timer(nq, tm, stats_get_timer);
+#endif
+
+	nss_tx_status_t rc;
+	struct nss_if_msg nim;
+	int msg_type;
+
+	/*
+	 * Create and send the shaper configure message to the NSS interface
+	 */
+	msg_type = nss_qdisc_get_interface_msg(nq->is_bridge, NSS_QDISC_IF_SHAPER_CONFIG);
+	nss_qdisc_msg_init(&nim, nq->nss_interface_number, msg_type, sizeof(struct nss_if_shaper_configure),
+				nss_qdisc_basic_stats_callback,
+				nq);
+	nim.msg.shaper_configure.config.request_type = NSS_SHAPER_CONFIG_TYPE_SHAPER_NODE_BASIC_STATS_GET;
+	nim.msg.shaper_configure.config.msg.shaper_node_stats_get.qos_tag = nq->qos_tag;
+	rc = nss_if_tx_msg(nq->nss_shaping_ctx, &nim);
+
+	/*
+	 * Check if we failed to send the stats request to NSS.
+	 */
+	if (rc != NSS_TX_SUCCESS) {
+		nss_qdisc_info("%px: stats fetch request dropped, causing "
+				"delay in stats fetch\n", nq->qdisc);
+
+		/*
+		 * Schedule the timer once again for re-trying. Since this is a
+		 * re-try we schedule it 100ms from now, instead of a whole second.
+		 */
+		nq->stats_get_timer.expires = jiffies + HZ/10;
+		add_timer(&nq->stats_get_timer);
+	}
+}
+
+/*
+ * nss_qdisc_start_basic_stats_polling()
+ *	Call to initiate the stats polling timer
+ */
+void nss_qdisc_start_basic_stats_polling(struct nss_qdisc *nq)
+{
+	/*
+	 * In case the stats polling timer is already
+	 * initiated, return. This can happen only when
+	 * there is a fallback from PPE to NSS qdisc.
+	 */
+	if (atomic_read(&nq->pending_stat_requests)) {
+		return;
+	}
+
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 15, 0))
+	init_timer(&nq->stats_get_timer);
+	nq->stats_get_timer.function = nss_qdisc_get_stats_timer_callback;
+	nq->stats_get_timer.data = (unsigned long)nq;
+#else
+	timer_setup(&nq->stats_get_timer, nss_qdisc_get_stats_timer_callback, 0);
+#endif
+
+	nq->stats_get_timer.expires = jiffies + HZ;
+	atomic_set(&nq->pending_stat_requests, 1);
+	add_timer(&nq->stats_get_timer);
+}
+
+/*
+ * nss_qdisc_stop_basic_stats_polling()
+ *	Call to stop polling of basic stats
+ */
+void nss_qdisc_stop_basic_stats_polling(struct nss_qdisc *nq)
+{
+	/*
+	 * If the timer was active, then delete timer and return.
+	 */
+	if (del_timer(&nq->stats_get_timer) > 0) {
+		/*
+		 * The timer was still active (counting down) when it was deleted.
+		 * Therefore we are sure that there are no pending stats request
+		 * for which we need to wait for. We can therefore return.
+		 */
+		return;
+	}
+
+	/*
+	 * The timer has already fired, which means we have a pending stat response.
+	 * We will have to wait until we have received the pending response.
+	 */
+	if (!wait_event_timeout(nq->wait_queue, atomic_read(&nq->pending_stat_requests) == 0,
+				NSS_QDISC_COMMAND_TIMEOUT)) {
+		nss_qdisc_error("Stats request command for %x timedout!\n", nq->qos_tag);
+	}
+}
+
+/*
  * nss_qdisc_gnet_stats_copy_basic()
  *  Wrapper around gnet_stats_copy_basic()
  */
@@ -2612,10 +2769,8 @@ int nss_qdisc_gnet_stats_copy_basic(struct Qdisc *sch, struct gnet_dump *d,
 	return gnet_stats_copy_basic(d, b);
 #elif (LINUX_VERSION_CODE < KERNEL_VERSION(4, 8, 0))
 	return gnet_stats_copy_basic(d, NULL, b);
-#elif (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 16, 0))
-	return gnet_stats_copy_basic(d, NULL, b, true);
 #else
-	return gnet_stats_copy_basic(qdisc_root_sleeping_running(sch), d, NULL, b);
+	return gnet_stats_copy_basic(d, NULL, b, false);
 #endif
 }
 
@@ -2879,10 +3034,6 @@ static int __init nss_qdisc_module_init(void)
 		return ret;
 	nss_qdisc_info("nss qdisc device notifiers registered\n");
 
-	if (!nss_qdisc_stats_work_queue_init()) {
-		nss_qdisc_error("Failed to initialized stats workqueue thread\n");
-	}
-
 #if defined(NSS_QDISC_PPE_SUPPORT)
 	nss_ppe_port_res_alloc();
 	nss_qdisc_info("nss ppe qdsic configured");
@@ -2901,8 +3052,6 @@ static void __exit nss_qdisc_module_exit(void)
 		return;
 	}
 #endif
-
-	nss_qdisc_stats_work_queue_exit();
 
 	unregister_qdisc(&nss_pfifo_qdisc_ops);
 	nss_qdisc_info("nsspfifo unregistered\n");

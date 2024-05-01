@@ -23,7 +23,7 @@
 #define _NSS_IGS_H_
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
-#ifdef CONFIG_NET_CLS_ACT
+#if 0 //def CONFIG_NET_CLS_ACT
 #include <net/act_api.h>
 #endif
 #endif
@@ -170,7 +170,7 @@ extern void nss_igs_unregister_if(uint32_t if_num);
 extern bool nss_igs_verify_if_num(uint32_t if_num);
 
 
-#ifdef CONFIG_NET_CLS_ACT
+#if 0 //def CONFIG_NET_CLS_ACT
 /*
  * nss_igs_module_save()
  *	Save the ingress shaping module reference.

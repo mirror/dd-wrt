@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2020, The Linux Foundation. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -35,13 +35,7 @@
 #include <linux/atomic.h>
 #include <linux/tlshdr.h>
 #include <crypto/aes.h>
-#include <linux/version.h>
-#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 11, 0)
 #include <crypto/sha.h>
-#else
-#include <crypto/sha1.h>
-#include <crypto/sha2.h>
-#endif
 
 #include <nss_api_if.h>
 #include <nss_dynamic_interface.h>
@@ -108,7 +102,7 @@ static int nss_tlsmgr_tun_open(struct net_device *dev)
  * nss_tlsmgr_tun_stats64()
  *	TLS manager tunnel device
  */
-static struct rtnl_link_stats64 *nss_tlsmgr_get_tun_stats64(struct net_device *dev, struct rtnl_link_stats64 *stats)
+void nss_tlsmgr_tun_stats64(struct net_device *dev, struct rtnl_link_stats64 *stats)
 {
 	struct nss_tlsmgr_tun *tun = netdev_priv(dev);
 
@@ -119,28 +113,7 @@ static struct rtnl_link_stats64 *nss_tlsmgr_get_tun_stats64(struct net_device *d
 	nss_tlsmgr_ctx_stats_copy(&tun->ctx_dec, stats);
 	read_unlock_bh(&tun->lock);
 
-	return stats;
 }
-
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 6, 0))
-/*
- * nss_tlsmgr_tun_stats64()
- * 	Netdev ops function to retrieve stats for kernel version < 4.6
- */
-static struct rtnl_link_stats64 *nss_tlsmgr_tun_stats64(struct net_device *dev, struct rtnl_link_stats64 *stats)
-{
-	return nss_tlsmgr_get_tun_stats64(dev, stats);
-}
-#else
-/*
- * nss_tlsmgr_tun_stats64()
- * 	Netdev ops function to retrieve stats for kernel version >= 4.6
- */
-static void nss_tlsmgr_tun_stats64(struct net_device *dev, struct rtnl_link_stats64 *stats)
-{
-	nss_tlsmgr_get_tun_stats64(dev, stats);
-}
-#endif
 
 /*
  * nss_tlsmgr_tun_change_mtu()
@@ -185,7 +158,7 @@ static void nss_tlsmgr_tun_setup(struct net_device *dev)
 	/*
 	 * Get the MAC address from the ethernet device
 	 */
-	eth_random_addr((u8 *) dev->dev_addr);
+	random_ether_addr(dev->dev_addr);
 
 	memset(dev->broadcast, 0xff, dev->addr_len);
 	memcpy(dev->perm_addr, dev->dev_addr, dev->addr_len);
@@ -217,22 +190,13 @@ static void nss_tlsmgr_tun_free_work(struct work_struct *work)
 	read_unlock_bh(&tun->lock);
 }
 
-
 /*
  * nss_tlsmgr_notify_event()
  *	TLS manager notification timer handler
  */
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 15, 0))
 static void nss_tlsmgr_notify_event(unsigned long data)
-#else
-static void nss_tlsmgr_notify_event(struct timer_list *tm)
-#endif
 {
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 15, 0))
 	struct nss_tlsmgr_tun *tun = (struct nss_tlsmgr_tun *)data;
-#else
-	struct nss_tlsmgr_tun *tun = from_timer(tun, tm, notify.timer);
-#endif
 	nss_tlsmgr_notify_callback_t cb;
 	struct nss_tlsmgr_stats stats;
 	void *app_data;
@@ -254,17 +218,9 @@ static void nss_tlsmgr_notify_event(struct timer_list *tm)
  * nss_tlsmgr_notify_decongestion()
  *	TLS manager decongestion notification
  */
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 15, 0))
 static void nss_tlsmgr_notify_decongestion(unsigned long data)
-#else
-static void nss_tlsmgr_notify_decongestion(struct timer_list *tm)
-#endif
 {
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 15, 0))
 	struct nss_tlsmgr_tun *tun = (struct nss_tlsmgr_tun *)data;
-#else
-	struct nss_tlsmgr_tun *tun = from_timer(tun, tm, notify.timer);
-#endif
 	nss_tlsmgr_decongest_callback_t cb;
 	void *app_data;
 
@@ -399,7 +355,6 @@ struct net_device *nss_tlsmgr_tun_add(nss_tlsmgr_decongest_callback_t cb, void *
 	/*
 	 * Initialize Event notification and Decongestion timer
 	 */
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 15, 0))
 	init_timer(&tun->notify.timer);
 	tun->notify.timer.function = nss_tlsmgr_notify_event;
 	tun->notify.timer.data = (unsigned long)tun;
@@ -407,10 +362,6 @@ struct net_device *nss_tlsmgr_tun_add(nss_tlsmgr_decongest_callback_t cb, void *
 	init_timer(&tun->decongest.timer);
 	tun->decongest.timer.function = nss_tlsmgr_notify_decongestion;
 	tun->decongest.timer.data = (unsigned long)tun;
-#else
-	timer_setup(&tun->notify.timer, nss_tlsmgr_notify_event, 0);
-	timer_setup(&tun->decongest.timer, nss_tlsmgr_notify_decongestion, 0);
-#endif
 
 	INIT_LIST_HEAD(&tun->free_list);
 	INIT_WORK(&tun->free_work, nss_tlsmgr_tun_free_work);

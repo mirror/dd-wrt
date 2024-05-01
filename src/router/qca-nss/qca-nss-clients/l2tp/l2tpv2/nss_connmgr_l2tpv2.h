@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2015, 2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2015, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -27,21 +27,13 @@
 #include <linux/in.h>
 #include <linux/socket.h>
 #include <linux/types.h>
-#include <linux/version.h>
 
 #define L2TP_V_2 2
 
-#if (LINUX_VERSION_CODE <= KERNEL_VERSION(4, 12, 0))
-#define tunnel_hold(tunnel) atomic_inc(&tunnel->ref_count)
-#define tunnel_put(tunnel)  atomic_dec(&tunnel->ref_count)
-#define session_hold(session) atomic_inc(&session->ref_count)
-#define session_put(session)  atomic_dec(&session->ref_count)
-#else
 #define tunnel_hold(tunnel) refcount_inc(&tunnel->ref_count)
 #define tunnel_put(tunnel)  refcount_dec(&tunnel->ref_count)
 #define session_hold(session) refcount_inc(&session->ref_count)
 #define session_put(session)  refcount_dec(&session->ref_count)
-#endif
 
  /*
   *		----------------------------------------------------------------------------------
@@ -54,6 +46,7 @@
   */
 struct session_info {
 	u32 session_id, peer_session_id;	/* local & remote session id */
+	u16 offset;				/* offset to data */
 	u16 hdr_len;				/* header length */
 	int reorder_timeout;			/* reorder timeout */
 	unsigned send_seq:1;			/* enable tx sequence number ?  */

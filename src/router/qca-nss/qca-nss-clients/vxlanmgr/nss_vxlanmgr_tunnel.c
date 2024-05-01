@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2019-2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2019-2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -27,7 +27,7 @@
 #include <net/route.h>
 #include <net/vxlan.h>
 #include <nss_api_if.h>
-#include "nss_vxlanmgr_priv.h"
+#include "nss_vxlanmgr.h"
 #include "nss_vxlanmgr_tun_stats.h"
 
 /*
@@ -91,23 +91,18 @@ static uint16_t nss_vxlanmgr_tunnel_flags_parse(struct vxlan_dev *priv)
 	uint16_t flags = 0;
 	uint32_t priv_flags = priv->flags;
 
-	if (priv_flags & VXLAN_F_RSC)
-		return flags;
 	if (priv_flags & VXLAN_F_GBP)
 		flags |= NSS_VXLAN_RULE_FLAG_GBP_ENABLED;
-
-	if (priv_flags & VXLAN_F_IPV6) {
+	if (priv_flags & VXLAN_F_IPV6)
 		flags |= NSS_VXLAN_RULE_FLAG_IPV6;
-		if (!(priv_flags & VXLAN_F_UDP_ZERO_CSUM6_TX))
-			flags |= NSS_VXLAN_RULE_FLAG_ENCAP_L4_CSUM_REQUIRED;
-	} else {
+	else if (!(priv_flags & VXLAN_F_IPV6))
 		flags |= NSS_VXLAN_RULE_FLAG_IPV4;
-		if (priv_flags & VXLAN_F_UDP_CSUM)
-			flags |= NSS_VXLAN_RULE_FLAG_ENCAP_L4_CSUM_REQUIRED;
-	}
-
 	if (priv->cfg.tos == 1)
 		flags |= NSS_VXLAN_RULE_FLAG_INHERIT_TOS;
+	if (priv_flags & VXLAN_F_UDP_CSUM)
+		flags |= NSS_VXLAN_RULE_FLAG_ENCAP_L4_CSUM_REQUIRED;
+	else if (!(priv_flags & VXLAN_F_UDP_ZERO_CSUM6_TX))
+		flags |= NSS_VXLAN_RULE_FLAG_ENCAP_L4_CSUM_REQUIRED;
 
 	return (flags | NSS_VXLAN_RULE_FLAG_UDP);
 }
@@ -118,25 +113,18 @@ static uint16_t nss_vxlanmgr_tunnel_flags_parse(struct vxlan_dev *priv)
 	struct vxlan_config *cfg = &priv->cfg;
 	uint32_t priv_flags = cfg->flags;
 
-	if (priv_flags & VXLAN_F_RSC)
-		return flags;
-	if (priv_flags & VXLAN_F_GPE)
-		return flags;
 	if (priv_flags & VXLAN_F_GBP)
 		flags |= NSS_VXLAN_RULE_FLAG_GBP_ENABLED;
-
-	if (priv_flags & VXLAN_F_IPV6) {
+	if (priv_flags & VXLAN_F_IPV6)
 		flags |= NSS_VXLAN_RULE_FLAG_IPV6;
-		if (!(priv_flags & VXLAN_F_UDP_ZERO_CSUM6_TX))
-			flags |= NSS_VXLAN_RULE_FLAG_ENCAP_L4_CSUM_REQUIRED;
-	} else {
+	else if (!(priv_flags & VXLAN_F_IPV6))
 		flags |= NSS_VXLAN_RULE_FLAG_IPV4;
-		if (!(priv_flags & VXLAN_F_UDP_ZERO_CSUM_TX))
-			flags |= NSS_VXLAN_RULE_FLAG_ENCAP_L4_CSUM_REQUIRED;
-	}
-
 	if (cfg->tos == 1)
 		flags |= NSS_VXLAN_RULE_FLAG_INHERIT_TOS;
+	if (priv_flags & VXLAN_F_UDP_ZERO_CSUM_TX)
+		flags |= NSS_VXLAN_RULE_FLAG_ENCAP_L4_CSUM_REQUIRED;
+	else if (!(priv_flags & VXLAN_F_UDP_ZERO_CSUM6_TX))
+		flags |= NSS_VXLAN_RULE_FLAG_ENCAP_L4_CSUM_REQUIRED;
 
 	return (flags | NSS_VXLAN_RULE_FLAG_UDP);
 }
@@ -323,7 +311,6 @@ static nss_tx_status_t nss_vxlanmgr_tunnel_mac_add(struct nss_vxlanmgr_tun_ctx *
 	union vxlan_addr *remote_ip, *src_ip;
 	uint32_t i, inner_ifnum;
 	uint32_t new_src_ip[4] = {0};
-	int32_t ipsec_if_num;
 	nss_tx_status_t status = NSS_TX_FAILURE;
 
 	dev = vfe->dev;
@@ -377,17 +364,6 @@ static nss_tx_status_t nss_vxlanmgr_tunnel_mac_add(struct nss_vxlanmgr_tun_ctx *
 			goto done;
 		}
 		memcpy(mac_add_msg->encap.src_ip, new_src_ip, sizeof(struct in6_addr));
-	}
-
-	/*
-	 * Check if this is a VxLAN over IPsec use case. If so, we need to bind the IPsec interface to the VxLAN.
-	 * When the IPsec interface is deleted in NSS, user is expected to bring the vxlan interface down as well, thereby flushing the MAC entries in NSS.
-	 */
-	ipsec_if_num = nss_vxlanmgr_bind_ipsec_by_ip(src_ip, remote_ip);
-	if (ipsec_if_num > 0) {
-		mac_add_msg->ipsec_if_num = (uint32_t)ipsec_if_num;
-		mac_add_msg->flags = mac_add_msg->flags | NSS_VXLAN_MAC_ENABLE_IPSEC_BIND;
-		nss_vxlanmgr_trace("%px: VxLAN interface is bound to IPsec interface with if_num(0x%x)\n", dev, ipsec_if_num);
 	}
 
 	/*
@@ -460,8 +436,7 @@ static struct notifier_block nss_vxlanmgr_tunnel_fdb_notifier = {
 
 /*
  * nss_vxlanmgr_tunnel_inner_stats()
- *	Update vxlan netdev stats with inner node stats.
- *	Note: Reference on the netdevice is expected to be held by the caller at the time this function is called.
+ *	Update vxlan netdev stats with inner node stats
  */
 static void nss_vxlanmgr_tunnel_inner_stats(struct nss_vxlanmgr_tun_ctx *tun_ctx, struct nss_vxlan_msg *nvm)
 {
@@ -475,6 +450,7 @@ static void nss_vxlanmgr_tunnel_inner_stats(struct nss_vxlanmgr_tun_ctx *tun_ctx
 	stats = &nvm->msg.stats;
 	dev = tun_ctx->dev;
 
+	dev_hold(dev);
 	netdev_stats = (struct net_device_stats *)&dev->stats;
 
 	/*
@@ -493,6 +469,7 @@ static void nss_vxlanmgr_tunnel_inner_stats(struct nss_vxlanmgr_tun_ctx *tun_ctx
 	u64_stats_add(&tstats->tx_bytes, stats->node_stats.tx_bytes);
 	u64_stats_update_end(&tstats->syncp);
 	netdev_stats->tx_dropped += dropped;
+	dev_put(dev);
 }
 
 /*
@@ -526,8 +503,8 @@ static void nss_vxlanmgr_tunnel_outer_stats(struct nss_vxlanmgr_tun_ctx *tun_ctx
 
 	tstats = this_cpu_ptr(dev->tstats);
 	u64_stats_update_begin(&tstats->syncp);
-	u64_stats_add(&tstats->rx_packets, stats->node_stats.tx_packets);
-	u64_stats_add(&tstats->rx_bytes, stats->node_stats.tx_bytes);
+	u64_stats_add(&tstats->rx_packets, stats->node_stats.rx_packets);
+	u64_stats_add(&tstats->rx_bytes, stats->node_stats.rx_bytes);
 	u64_stats_update_end(&tstats->syncp);
 	netdev_stats->rx_dropped += dropped;
 	dev_put(dev);
@@ -537,7 +514,7 @@ static void nss_vxlanmgr_tunnel_outer_stats(struct nss_vxlanmgr_tun_ctx *tun_ctx
  * nss_vxlanmgr_tunnel_fdb_update()
  *	Update vxlan fdb entries
  */
-static void nss_vxlanmgr_tunnel_fdb_update(struct net_device *dev, uint32_t vni, struct nss_vxlan_msg *nvm)
+static void nss_vxlanmgr_tunnel_fdb_update(struct nss_vxlanmgr_tun_ctx *tun_ctx, struct nss_vxlan_msg *nvm)
 {
 	uint8_t *mac;
 	uint16_t i, nentries;
@@ -546,10 +523,13 @@ static void nss_vxlanmgr_tunnel_fdb_update(struct net_device *dev, uint32_t vni,
 
 	db_stats = &nvm->msg.db_stats;
 	nentries = db_stats->cnt;
-	priv = netdev_priv(dev);
+	priv = netdev_priv(tun_ctx->dev);
+
+	dev_hold(tun_ctx->dev);
 
 	if (nentries > NSS_VXLAN_MACDB_ENTRIES_PER_MSG) {
-		nss_vxlanmgr_warn("%px: No more than 20 entries allowed per message.\n", dev);
+		nss_vxlanmgr_warn("%px: No more than 20 entries allowed per message.\n", tun_ctx->dev);
+		dev_put(tun_ctx->dev);
 		return;
 	}
 
@@ -559,10 +539,11 @@ static void nss_vxlanmgr_tunnel_fdb_update(struct net_device *dev, uint32_t vni,
 #if (LINUX_VERSION_CODE <= KERNEL_VERSION(4, 5, 7))
 			vxlan_fdb_update_mac(priv, mac);
 #else
-			vxlan_fdb_update_mac(priv, mac, vni);
+			vxlan_fdb_update_mac(priv, mac, tun_ctx->vni);
 #endif
 		}
 	}
+	dev_put(tun_ctx->dev);
 }
 
 /*
@@ -574,29 +555,20 @@ static void nss_vxlanmgr_tunnel_inner_notifier(void *app_data, struct nss_cmn_ms
 	struct net_device *dev = (struct net_device *)app_data;
 	struct nss_vxlanmgr_tun_ctx *tun_ctx;
 	struct nss_vxlan_msg *nvm;
-	uint32_t vni;
 
 	if (!ncm) {
 	    nss_vxlanmgr_info("%px: NULL msg received.\n", dev);
 	    return;
 	}
 
-	if (!dev) {
-		nss_vxlanmgr_info("%px: NULL device received.\n", dev);
-		return;
-	}
-
 	spin_lock_bh(&vxlan_ctx.tun_lock);
-	dev_hold(dev);
 	tun_ctx = nss_vxlanmgr_tunnel_ctx_dev_get(dev);
 	if (!tun_ctx) {
 		spin_unlock_bh(&vxlan_ctx.tun_lock);
 		nss_vxlanmgr_warn("%px: Invalid tunnel context\n", dev);
-		dev_put(dev);
 		return;
 	}
 
-	vni = tun_ctx->vni;
 	nvm = (struct nss_vxlan_msg *)ncm;
 	switch (nvm->cm.type) {
 	case NSS_VXLAN_MSG_TYPE_STATS_SYNC:
@@ -604,24 +576,14 @@ static void nss_vxlanmgr_tunnel_inner_notifier(void *app_data, struct nss_cmn_ms
 		nss_vxlanmgr_tun_stats_sync(tun_ctx, nvm);
 		break;
 	case NSS_VXLAN_MSG_TYPE_MACDB_STATS:
+		nss_vxlanmgr_tunnel_fdb_update(tun_ctx, nvm);
 		nss_vxlanmgr_tun_macdb_stats_sync(tun_ctx, nvm);
-
-		/*
-		 * Release the lock before updating the Linux FDB entry.
-		 * This will ensure there is no deadlock when a potential
-		 * MAC add event occurs at same time, which needs to hold
-		 * the kernel's hash lock followed by the tunnel ctx lock.
-		 */
-		spin_unlock_bh(&vxlan_ctx.tun_lock);
-
-		nss_vxlanmgr_tunnel_fdb_update(dev, vni, nvm);
-		dev_put(dev);
-		return;
+		break;
 	default:
+		spin_unlock_bh(&vxlan_ctx.tun_lock);
 		nss_vxlanmgr_info("%px: Unknown Event from NSS", dev);
+		return;
 	}
-
-	dev_put(dev);
 	spin_unlock_bh(&vxlan_ctx.tun_lock);
 }
 
@@ -867,7 +829,7 @@ done:
  */
 int nss_vxlanmgr_tunnel_destroy(struct net_device *dev)
 {
-	uint32_t inner_ifnum, outer_ifnum, tun_count;
+	uint32_t inner_ifnum, outer_ifnum;
 	struct nss_vxlanmgr_tun_ctx *tun_ctx;
 	struct nss_vxlan_msg vxlanmsg;
 	nss_tx_status_t ret;
@@ -904,21 +866,16 @@ int nss_vxlanmgr_tunnel_destroy(struct net_device *dev)
 
 	nss_vxlanmgr_tun_stats_deinit(tun_ctx);
 	nss_vxlanmgr_tun_stats_dentry_remove(tun_ctx);
-	dev_put(tun_ctx->dev);
 	kfree(tun_ctx);
 
-	/*
-	 * Unregister fdb notifier chain if
-	 * all vxlan tunnels are destroyed.
-	 */
-	spin_lock_bh(&vxlan_ctx.tun_lock);
-	tun_count = vxlan_ctx.tun_count;
-	spin_unlock_bh(&vxlan_ctx.tun_lock);
-	if (!tun_count) {
+	if (!vxlan_ctx.tun_count) {
+		/*
+		 * Unregister fdb notifier chain if
+		 * all vxlan tunnels are destroyed.
+		 */
 		vxlan_fdb_unregister_notify(&nss_vxlanmgr_tunnel_fdb_notifier);
 	}
-
-	nss_vxlanmgr_info("%px: VxLAN interface count is #%d\n", dev, tun_count);
+	nss_vxlanmgr_info("%px: VxLAN interface count is #%d\n", dev, vxlan_ctx.tun_count);
 
 	memset(&vxlanmsg, 0, sizeof(struct nss_vxlan_msg));
 	ret = nss_vxlanmgr_tunnel_tx_msg_sync(vxlan_ctx.nss_ctx,
@@ -972,7 +929,6 @@ int nss_vxlanmgr_tunnel_create(struct net_device *dev)
 	struct nss_vxlan_rule_msg *vxlan_cfg;
 	struct nss_ctx_instance *nss_ctx;
 	uint32_t inner_ifnum, outer_ifnum;
-	uint16_t parse_flags;
 	nss_tx_status_t ret;
 
 	spin_lock_bh(&vxlan_ctx.tun_lock);
@@ -983,20 +939,7 @@ int nss_vxlanmgr_tunnel_create(struct net_device *dev)
 	}
 	spin_unlock_bh(&vxlan_ctx.tun_lock);
 
-	/*
-	 * The reference to the dev will be released in nss_vxlanmgr_tunnel_destroy()
-	 */
 	dev_hold(dev);
-	priv = netdev_priv(dev);
-	parse_flags = nss_vxlanmgr_tunnel_flags_parse(priv);
-
-	/*
-	 * Check if the tunnel is supported.
-	 */
-	if (!parse_flags) {
-		nss_vxlanmgr_warn("%px: Tunnel offload not supported\n", dev);
-		goto ctx_alloc_fail;
-	}
 
 	tun_ctx = kzalloc(sizeof(struct nss_vxlanmgr_tun_ctx), GFP_ATOMIC);
 	if (!tun_ctx) {
@@ -1045,11 +988,12 @@ int nss_vxlanmgr_tunnel_create(struct net_device *dev)
 	memset(&vxlanmsg, 0, sizeof(struct nss_vxlan_msg));
 	vxlan_cfg = &vxlanmsg.msg.vxlan_create;
 
+	priv = netdev_priv(dev);
 	vxlan_cfg->vni = vxlan_get_vni(priv);
-	vxlan_cfg->tunnel_flags = parse_flags;
+	vxlan_cfg->tunnel_flags = nss_vxlanmgr_tunnel_flags_parse(priv);
 	vxlan_cfg->src_port_min = priv->cfg.port_min;
 	vxlan_cfg->src_port_max = priv->cfg.port_max;
-	vxlan_cfg->dest_port = ntohs(priv->cfg.dst_port);
+	vxlan_cfg->dest_port = priv->cfg.dst_port;
 	vxlan_cfg->tos = priv->cfg.tos;
 	vxlan_cfg->ttl = (priv->cfg.ttl ? priv->cfg.ttl : IPDEFTTL);
 
@@ -1115,6 +1059,7 @@ int nss_vxlanmgr_tunnel_create(struct net_device *dev)
 	spin_unlock_bh(&vxlan_ctx.tun_lock);
 	nss_vxlanmgr_info("%px: VxLAN interface count is #%d\n", dev, vxlan_ctx.tun_count);
 
+	dev_put(dev);
 	return NOTIFY_DONE;
 
 config_fail:

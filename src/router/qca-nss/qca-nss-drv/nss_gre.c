@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2017-2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -17,7 +17,6 @@
 #include "nss_tx_rx_common.h"
 #include "nss_gre_stats.h"
 #include "nss_gre_log.h"
-#include "nss_gre_strings.h"
 
 #define NSS_GRE_TX_TIMEOUT 3000 /* 3 Seconds */
 
@@ -116,13 +115,11 @@ static void nss_gre_msg_handler(struct nss_ctx_instance *nss_ctx, struct nss_cmn
 		/*
 		 * debug stats embedded in stats msg
 		 */
-		nss_gre_stats_session_sync(nss_ctx, &ntm->msg.sstats, ncm->interface);
-		nss_gre_stats_session_notify(nss_ctx, ncm->interface);
+		nss_gre_stats_session_debug_sync(nss_ctx, &ntm->msg.sstats, ncm->interface);
 		break;
 
 	case NSS_GRE_MSG_BASE_STATS:
-		nss_gre_stats_base_sync(nss_ctx, &ntm->msg.bstats);
-		nss_gre_stats_base_notify(nss_ctx);
+		nss_gre_stats_base_debug_sync(nss_ctx, &ntm->msg.bstats);
 		break;
 
 	default:
@@ -407,5 +404,4 @@ void nss_gre_register_handler(void)
 	init_completion(&nss_gre_pvt.complete);
 	nss_core_register_handler(nss_ctx, NSS_GRE_INTERFACE, nss_gre_msg_handler, NULL);
 	nss_gre_stats_dentry_create();
-	nss_gre_strings_dentry_create();
 }

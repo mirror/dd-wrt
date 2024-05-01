@@ -1,12 +1,9 @@
 /*
  **************************************************************************
  * Copyright (c) 2013-2020, The Linux Foundation. All rights reserved.
- * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
- *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
- *
  * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
  * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
  * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
@@ -100,7 +97,7 @@ nss_tx_status_t nss_profiler_if_tx_buf(void *ctx, void *buf, uint32_t len,
 		return NSS_TX_FAILURE_TOO_LARGE;
 	}
 
-	npm = kzalloc(sizeof(*npm), GFP_ATOMIC);
+	npm = kzalloc(sizeof(*npm), GFP_KERNEL);
 	if (!npm) {
 		nss_warning("%px: Failed to allocate memory for message\n", nss_ctx);
 		return NSS_TX_FAILURE;
@@ -139,6 +136,7 @@ void *nss_profiler_alloc_dma(struct nss_ctx_instance *nss_ctx, struct nss_profil
 		NSS_CORE_DSB();
 	}
 	ctrl->consumer[0].ring.kp = kaddr;
+
 	return kaddr;
 }
 EXPORT_SYMBOL(nss_profiler_alloc_dma);
@@ -202,12 +200,11 @@ EXPORT_SYMBOL(nss_profile_dma_deregister_cb);
 struct nss_profile_sdma_ctrl *nss_profile_dma_get_ctrl(struct nss_ctx_instance *nss_ctx)
 {
 	struct nss_profile_sdma_ctrl *ctrl = nss_ctx->meminfo_ctx.sdma_ctrl;
-	int size = offsetof(struct nss_profile_sdma_ctrl, cidx);
 	if (!ctrl) {
 		return ctrl;
 	}
 
-	dma_sync_single_for_cpu(nss_ctx->dev, (dma_addr_t) ctrl, size, DMA_FROM_DEVICE);
+	dmac_inv_range(ctrl, &ctrl->cidx);
 	dsb(sy);
 	return ctrl;
 }

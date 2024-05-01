@@ -17,22 +17,6 @@
 #include "nss_phys_if.h"
 #include <nss_dp_api_if.h>
 
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 5, 0))
-#define NSS_DATA_PLANE_SUPPORTED_FEATURES (NETIF_F_HIGHDMA \
-					| NETIF_F_HW_CSUM \
-					| NETIF_F_RXCSUM \
-					| NETIF_F_SG \
-					| NETIF_F_FRAGLIST \
-					| (NETIF_F_TSO | NETIF_F_TSO6 | NETIF_F_UFO))
-#else
-#define NSS_DATA_PLANE_SUPPORTED_FEATURES (NETIF_F_HIGHDMA \
-					| NETIF_F_HW_CSUM \
-					| NETIF_F_RXCSUM \
-					| NETIF_F_SG \
-					| NETIF_F_FRAGLIST \
-					| (NETIF_F_TSO | NETIF_F_TSO6))
-#endif
-
 /*
  * nss_data_plane_param
  */
@@ -49,6 +33,5 @@ struct nss_data_plane_param {
 void nss_data_plane_hal_add_dp_ops(struct nss_dp_data_plane_ops *dp_ops);
 void nss_data_plane_hal_register(struct nss_ctx_instance *nss_ctx);
 void nss_data_plane_hal_unregister(struct nss_ctx_instance *nss_ctx);
-void nss_data_plane_hal_set_features(struct nss_dp_data_plane_ctx *dpc);
 uint16_t nss_data_plane_hal_get_mtu_sz(uint16_t mtu);
 void nss_data_plane_hal_stats_sync(struct nss_data_plane_param *ndpp, struct nss_phys_if_stats *stats);

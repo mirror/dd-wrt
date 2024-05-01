@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2014-2018, 2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2014-2018, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -16,20 +16,6 @@
 
 #include "nss_tx_rx_common.h"
 #include "nss_tunipip6_log.h"
-#include "nss_tunipip6_stats.h"
-
-#define NSS_TUNIPIP6_TX_TIMEOUT 3000
-
-/*
- * Data structure used to handle sync message.
- */
-static struct nss_tunipip6_pvt {
-	struct semaphore sem;           /* Semaphore structure. */
-	struct completion complete;     /* Completion structure. */
-	int response;                   /* Response from FW. */
-	void *cb;                       /* Original cb for msgs. */
-	void *app_data;                 /* Original app_data for msgs. */
-} tunipip6_pvt;
 
 /*
  * nss_tunipip6_verify_if_num
@@ -71,22 +57,13 @@ static void nss_tunipip6_handler(struct nss_ctx_instance *nss_ctx, struct nss_cm
 	 * Is this a valid request/response packet?
 	 */
 	if (ncm->type >= NSS_TUNIPIP6_MAX) {
-		nss_warning("%px: received invalid message %d for DS-Lite interface", nss_ctx, ncm->type);
+		nss_warning("%p: received invalid message %d for DS-Lite interface", nss_ctx, ncm->type);
 		return;
 	}
 
 	if (nss_cmn_get_msg_len(ncm) > sizeof(struct nss_tunipip6_msg)) {
-		nss_warning("%px: Length of message is greater than required: %d", nss_ctx, nss_cmn_get_msg_len(ncm));
+		nss_warning("%p: Length of message is greater than required: %d", nss_ctx, nss_cmn_get_msg_len(ncm));
 		return;
-	}
-
-	switch (ntm->cm.type) {
-	case NSS_TUNIPIP6_STATS_SYNC:
-		/*
-		 * Sync common node stats.
-		 */
-		nss_tunipip6_stats_sync(nss_ctx, ntm);
-		break;
 	}
 
 	/*
@@ -119,7 +96,7 @@ static void nss_tunipip6_handler(struct nss_ctx_instance *nss_ctx, struct nss_cm
 	 * call ipip6 tunnel callback
 	 */
 	if (!ctx) {
-		 nss_warning("%px: Event received for DS-Lite tunnel interface %d before registration", nss_ctx, ncm->interface);
+		 nss_warning("%p: Event received for DS-Lite tunnel interface %d before registration", nss_ctx, ncm->interface);
 		return;
 	}
 
@@ -143,72 +120,18 @@ nss_tx_status_t nss_tunipip6_tx(struct nss_ctx_instance *nss_ctx, struct nss_tun
 	 * Sanity check the message
 	 */
 	if (!nss_tunipip6_verify_if_num(ncm->interface)) {
-		nss_warning("%px: tx request for another interface: %d", nss_ctx, ncm->interface);
+		nss_warning("%p: tx request for another interface: %d", nss_ctx, ncm->interface);
 		return NSS_TX_FAILURE;
 	}
 
 	if (ncm->type > NSS_TUNIPIP6_MAX) {
-		nss_warning("%px: message type out of range: %d", nss_ctx, ncm->type);
+		nss_warning("%p: message type out of range: %d", nss_ctx, ncm->type);
 		return NSS_TX_FAILURE;
 	}
 
 	return nss_core_send_cmd(nss_ctx, msg, sizeof(*msg), NSS_NBUF_PAYLOAD_SIZE);
 }
 EXPORT_SYMBOL(nss_tunipip6_tx);
-
-/*
- * nss_tunipip6_callback()
- *	Callback to handle the completion of NSS->HLOS messages.
- */
-static void nss_tunipip6_callback(void *app_data, struct nss_tunipip6_msg *nclm)
-{
-	tunipip6_pvt.response = NSS_TX_SUCCESS;
-	tunipip6_pvt.cb = NULL;
-	tunipip6_pvt.app_data = NULL;
-
-	if (nclm->cm.response != NSS_CMN_RESPONSE_ACK) {
-		nss_warning("%px: tunipip6 Error response %d Error: %d\n", app_data, nclm->cm.response, nclm->cm.error);
-		tunipip6_pvt.response = nclm->cm.response;
-	}
-
-	/*
-	 * Write memory barrier.
-	 */
-	smp_wmb();
-	complete(&tunipip6_pvt.complete);
-}
-
-/*
- * nss_tunipip6_tx_sync()
- * 	Transmit a tunipip6 message to NSSFW synchronously.
- */
-nss_tx_status_t nss_tunipip6_tx_sync(struct nss_ctx_instance *nss_ctx, struct nss_tunipip6_msg *msg)
-{
-	nss_tx_status_t status;
-	int ret;
-
-	down(&tunipip6_pvt.sem);
-	msg->cm.cb = (nss_ptr_t)nss_tunipip6_callback;
-	msg->cm.app_data = (nss_ptr_t)NULL;
-
-	status = nss_tunipip6_tx(nss_ctx, msg);
-	if (status != NSS_TX_SUCCESS) {
-		nss_warning("%px: tunipip6_tx_msg failed\n", nss_ctx);
-		up(&tunipip6_pvt.sem);
-		return status;
-	}
-
-	ret = wait_for_completion_timeout(&tunipip6_pvt.complete, msecs_to_jiffies(NSS_TUNIPIP6_TX_TIMEOUT));
-	if (!ret) {
-		nss_warning("%px: tunipip6 tx sync failed due to timeout\n", nss_ctx);
-		tunipip6_pvt.response = NSS_TX_FAILURE;
-	}
-
-	status = tunipip6_pvt.response;
-	up(&tunipip6_pvt.sem);
-	return status;
-}
-EXPORT_SYMBOL(nss_tunipip6_tx_sync);
 
 /*
  * **********************************
@@ -250,7 +173,6 @@ void nss_unregister_tunipip6_if(uint32_t if_num)
 	nss_assert(nss_ctx);
 	nss_assert(nss_tunipip6_verify_if_num(if_num));
 
-	nss_stats_reset_common_stats(if_num);
 	nss_core_unregister_handler(nss_ctx, if_num);
 	nss_core_unregister_subsys_dp(nss_ctx, if_num);
 
@@ -275,9 +197,6 @@ void nss_tunipip6_register_handler()
 	struct nss_ctx_instance *nss_ctx = nss_tunipip6_get_context();
 
 	nss_core_register_handler(nss_ctx, NSS_TUNIPIP6_INTERFACE, nss_tunipip6_handler, NULL);
-	nss_tunipip6_stats_dentry_create();
-	sema_init(&tunipip6_pvt.sem, 1);
-	init_completion(&tunipip6_pvt.complete);
 }
 
 /*

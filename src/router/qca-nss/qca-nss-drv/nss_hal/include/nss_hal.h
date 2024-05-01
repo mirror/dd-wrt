@@ -1,12 +1,9 @@
 /*
  **************************************************************************
  * Copyright (c) 2013, 2016-2020 The Linux Foundation. All rights reserved.
- * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
- *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
- *
  * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
  * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
  * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
@@ -51,9 +48,6 @@ extern struct nss_hal_ops nss_hal_ipq50xx_ops;
 #endif
 #if defined(NSS_HAL_FSM9010_SUPPORT)
 extern struct nss_hal_ops nss_hal_fsm9010_ops;
-#endif
-#if defined(NSS_HAL_IPQ95XX_SUPPORT)
-extern struct nss_hal_ops nss_hal_ipq95xx_ops;
 #endif
 
 #define NSS_HAL_SUPPORTED_INTERRUPTS (NSS_N2H_INTR_EMPTY_BUFFER_QUEUE | \

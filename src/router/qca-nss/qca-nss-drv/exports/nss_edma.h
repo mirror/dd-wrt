@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2016-2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2016-2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -84,7 +84,6 @@ enum nss_edma_stats_rx_t {
 	NSS_EDMA_STATS_RX_DESC,
 	NSS_EDMA_STATS_RX_QOS_ERR,
 	NSS_EDMA_STATS_RX_SRC_PORT_INVALID,
-	NSS_EDMA_STATS_RX_SRC_IF_INVALID,
 	NSS_EDMA_STATS_RX_MAX
 };
 
@@ -144,7 +143,6 @@ struct nss_edma_rx_ring_stats {
 	uint32_t desc_cnt;		/**< Number of descriptors processed. */
 	uint32_t qos_err;		/**< Number of QoS errors. */
 	uint32_t rx_src_port_invalid;	/**< Number of source port invalid errors. */
-	uint32_t rx_src_if_invalid;	/**< Number of source interface invalid errors. */
 };
 
 /**
@@ -330,7 +328,7 @@ extern void nss_edma_notify_unregister(void);
  * nss_edma_get_stats
  *	Sends EDMA statistics to NSS clients.
  *
- * @param[in] stats	EDMA statistics to be sent to netlink.
+ * @param[in] stats	EDMA statistics to be sent to Netlink.
  * @param[in] port_id	EDMA port ID.
  *
  * @return

@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2015-2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2015-2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -151,7 +151,6 @@ static struct nss_platform_data *__nss_hal_of_get_pdata(struct platform_device *
 		goto out;
 	}
 
-	nss_assert(npd->vphys);
 	npd->vmap = ioremap_cache(npd->vphys, resource_size(&res_vphys));
 	if (!npd->vmap) {
 		nss_info_always("%px: nss%d: ioremap() fail for vphys\n", nss_ctx, nss_ctx->id);
@@ -291,7 +290,7 @@ static int __nss_hal_request_irq(struct nss_ctx_instance *nss_ctx, struct nss_pl
 	}
 
 	int_ctx->irq = npd->irq[irq_num];
-	netif_napi_add_weight(&nss_ctx->napi_ndev, &int_ctx->napi, nss_core_handle_napi, 64);
+	netif_napi_add(&nss_ctx->napi_ndev, &int_ctx->napi, nss_core_handle_napi, 64);
 	return 0;
 }
 

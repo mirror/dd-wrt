@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2016-2018, 2020-2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2016-2018, 2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -16,7 +16,6 @@
 
 #include "nss_ppe.h"
 #include "nss_ppe_stats.h"
-#include "nss_ppe_strings.h"
 
 DEFINE_SPINLOCK(nss_ppe_stats_lock);
 
@@ -272,7 +271,6 @@ static void nss_ppe_handler(struct nss_ctx_instance *nss_ctx, struct nss_cmn_msg
 		 * session debug stats embeded in session stats msg
 		 */
 		nss_ppe_stats_sync(nss_ctx, &msg->msg.stats, ncm->interface);
-		nss_ppe_stats_notify(nss_ctx, ncm->interface);
 		return;
 	}
 
@@ -311,7 +309,6 @@ void nss_ppe_register_handler(void)
 
 	if (nss_ppe_debug_stats.valid) {
 		nss_ppe_stats_dentry_create();
-		nss_ppe_strings_dentry_create();
 	}
 }
 

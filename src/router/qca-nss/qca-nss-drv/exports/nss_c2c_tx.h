@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2018-2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2018-2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -72,9 +72,9 @@ enum nss_c2c_tx_test_type {
  */
 enum nss_c2c_tx_stats_types {
 	NSS_C2C_TX_STATS_PBUF_SIMPLE = NSS_STATS_NODE_MAX,
-						/**< Number of received simple pbufs. */
-	NSS_C2C_TX_STATS_PBUF_SG,		/**< Number of scatter-gather pbufs received. */
-	NSS_C2C_TX_STATS_PBUF_RETURNING,	/**< Number of returning scatter-gather pbufs. */
+						/**< Number of received simple pbuf. */
+	NSS_C2C_TX_STATS_PBUF_SG,		/**< Number of scatter-gather pbuf received. */
+	NSS_C2C_TX_STATS_PBUF_RETURNING,	/**< Number of returning scatter-gather pbuf. */
 	NSS_C2C_TX_STATS_MAX,			/**< Maximum message type. */
 };
 
