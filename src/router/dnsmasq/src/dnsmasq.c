@@ -40,7 +40,9 @@ static void fatal_event(struct event_desc *ev, char *msg);
 static int read_event(int fd, struct event_desc *evp, char **msg);
 static void poll_resolv(int force, int do_reload, time_t now);
 static void tcp_init(void);
+#ifndef HAVE_MICRO
 int airbag_init(void);
+#endif
 
 int main (int argc, char **argv)
 {
@@ -78,7 +80,9 @@ int main (int argc, char **argv)
 #ifdef HAVE_TFTP
   int tftp_prefix_missing = 0;
 #endif
+#ifndef HAVE_MICRO
   airbag_init();
+#endif
 #if defined(HAVE_IDN) || defined(HAVE_LIBIDN2) || defined(LOCALEDIR)
   setlocale(LC_ALL, "");
 #endif
