@@ -92,6 +92,8 @@ endif
 endif
 endif
 endif
+ATH9K_CFLAGS += $(THUMB)
+ATH9K_LDFLAGS +=  $(THUMB)
 
 hostapd2: $(TINY) nvram ubus
 	cp shared/nl80211.h hostapd-$(HOSTAPDVERSION)/src/drivers/nl80211_copy.h
