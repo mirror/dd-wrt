@@ -61,7 +61,7 @@ void start_sfe(void)
 		rmmod("shortcut-fe-ipv6");
 		rmmod("shortcut-fe");
 		writeproc("/proc/ctf", "0");
-		eval8"insmod","qca-nss-sfe");
+		eval("insmod","qca-nss-sfe");
 		eval("insmod","ecm","front_end_selection=1");
 		sysprintf("echo 1 > /proc/sys/net/netfilter/nf_conntrack_tcp_no_window_check");
 		dd_loginfo("ecm-nss", "ecm-nss forwarding successfully started\n");
@@ -70,7 +70,7 @@ void start_sfe(void)
 		rmmod("shortcut-fe-ipv6");
 		rmmod("shortcut-fe");
 		writeproc("/proc/ctf", "0");
-		eval8"insmod","qca-nss-sfe");
+		eval("insmod","qca-nss-sfe");
 		eval("insmod","ecm","front_end_selection=2");
 		sysprintf("echo 1 > /proc/sys/net/netfilter/nf_conntrack_tcp_no_window_check");
 		dd_loginfo("ecm-nss", "ecm-nss forwarding successfully started\n");
@@ -79,7 +79,7 @@ void start_sfe(void)
 		rmmod("shortcut-fe-ipv6");
 		rmmod("shortcut-fe");
 		writeproc("/proc/ctf", "0");
-		eval8"insmod","qca-nss-sfe");
+		eval("insmod","qca-nss-sfe");
 		eval("insmod","ecm","front_end_selection=4");
 		sysprintf("echo 1 > /proc/sys/net/netfilter/nf_conntrack_tcp_no_window_check");
 		dd_loginfo("ecm-nss", "ecm-nss forwarding successfully started\n");
@@ -92,6 +92,7 @@ void start_sfe(void)
 		sysprintf("echo 1 > /sys/kernel/debug/ecm/front_end_ipv6_stop");
 	        sysprintf("echo 1 > /sys/kernel/debug/ecm/ecm_db/defunct_all");
 		rmmod("ecm");
+		rmmod("qca-nss-sfe");
 		writeproc("/proc/ctf", "0");
 		sysprintf("echo 0 > /proc/sys/net/netfilter/nf_conntrack_tcp_no_window_check");
 	}
@@ -104,6 +105,11 @@ void stop_sfe(void)
 	rmmod("fast-classifier");
 	rmmod("shortcut-fe-ipv6");
 	rmmod("shortcut-fe");
+	sysprintf("echo 1 > /sys/kernel/debug/ecm/front_end_ipv4_stop");
+	sysprintf("echo 1 > /sys/kernel/debug/ecm/front_end_ipv6_stop");
+	sysprintf("echo 1 > /sys/kernel/debug/ecm/ecm_db/defunct_all");
+	rmmod("ecm");
+	rmmod("qca-nss-sfe");
 	writeproc("/proc/ctf", "0");
 	dd_loginfo("sfe", "shortcut forwarding engine successfully stopped\n");
 	return;
