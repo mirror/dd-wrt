@@ -1,6 +1,6 @@
 quagga-configure: ncurses readline
 	cd quagga && autoreconf --force --install
-	cd quagga && ./configure --host=$(ARCH)-uclibc-linux $(CONFIG_QUAGGA_EXTRA) --localstatedir=/var/run  --libdir=/usr/tmp --enable-opaque-lsa --disable-nhrpd --enable-ospf-te --disable-ospfclient --enable-multipath=32  --enable-ipv6 --prefix=/usr --sysconfdir=/tmp --disable-ospf6d  --enable-vtysh --enable-user=root --enable-group=root --disable-ospfapi --disable-isisd --disable-pimd --disable-nhrpd --enable-pie=no --with-libreadline=$(TOP)/readline CFLAGS="-fno-strict-aliasing -I$(TOP)/ -DNEED_PRINTF -fcommon -Drpl_malloc=malloc -Drpl_realloc=realloc $(COPTS)  $(MIPS16_OPT)" LDFLAGS="-L$(TOP)/readline/shlib -L$(TOP)/ncurses/lib -lncurses" 
+	cd quagga && ./configure --host=$(ARCH)-uclibc-linux $(CONFIG_QUAGGA_EXTRA) --localstatedir=/var/run  --libdir=/usr/tmp --enable-opaque-lsa --disable-nhrpd --enable-ospf-te --disable-ospfclient --enable-multipath=32  --enable-ipv6 --prefix=/usr --sysconfdir=/tmp --disable-ospf6d  --enable-vtysh --enable-user=root --enable-group=root --disable-ospfapi --disable-isisd --disable-pimd --disable-nhrpd --enable-pie=no --with-libreadline=$(TOP)/readline CFLAGS="-fno-strict-aliasing -I$(TOP)/ -DNEED_PRINTF -fcommon -Drpl_malloc=malloc -Drpl_realloc=realloc $(COPTS)  $(MIPS16_OPT) $(THUMB)" LDFLAGS="-L$(TOP)/readline/shlib -L$(TOP)/ncurses/lib -lncurses" 
 	cd quagga && touch *
 
 quagga: ncurses

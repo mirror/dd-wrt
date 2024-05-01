@@ -29,7 +29,7 @@ unbound-configure:
 		--sysconfdir=/etc \
 		--host=$(ARCH)-linux \
 		CC="$(CC)" \
-		CFLAGS="$(COPTS) $(MIPS16_OPT) $(UNBOUND_COPTS) -ffunction-sections -fdata-sections -Wl,--gc-sections -L$(TOP)/openssl" \
+		CFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) $(UNBOUND_COPTS) -ffunction-sections -fdata-sections -Wl,--gc-sections -L$(TOP)/openssl" \
 		LDFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections -L$(TOP)/openssl"
 
 unbound: 

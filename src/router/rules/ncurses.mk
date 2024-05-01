@@ -1,5 +1,5 @@
 ncurses-configure:
-	cd ncurses && ./configure --host=$(ARCH)-linux-uclibc --with-shared CFLAGS="$(COPTS) $(MIPS16_OPT) -DNEED_PRINTF -fPIC" \
+	cd ncurses && ./configure --host=$(ARCH)-linux-uclibc --with-shared CFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) -DNEED_PRINTF -fPIC" \
 		--enable-echo \
 		--libdir=/usr/lib \
 		--enable-const \

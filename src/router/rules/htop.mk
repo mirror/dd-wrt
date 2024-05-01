@@ -5,8 +5,8 @@ htop-configure: ncurses libnl
 	    --prefix=/usr \
 	    --enable-taskstats \
 	    --enable-delayacct \
-	    CFLAGS="$(COPTS) $(MIPS16_OPT)  -ffunction-sections -fdata-sections -Wl,--gc-sections -DNEED_PRINTF $(LTO) -I$(TOP)/ncurses/include " \
-	    LDFLAGS="$(COPTS) $(MIPS16_OPT)  -ffunction-sections -fdata-sections -Wl,--gc-sections $(LDLTO) -L$(TOP)/ncurses/lib" \
+	    CFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB)  -ffunction-sections -fdata-sections -Wl,--gc-sections -DNEED_PRINTF $(LTO) -I$(TOP)/ncurses/include " \
+	    LDFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB)  -ffunction-sections -fdata-sections -Wl,--gc-sections $(LDLTO) -L$(TOP)/ncurses/lib" \
 	    HTOP_NCURSES_CONFIG_SCRIPT="$(TOP)/ncurses/misc/ncurses-config" \
 	    LIBNL3_CFLAGS="-I$(TOP)/libnl/include" \
 	    LIBNL3_LIBS="-L$(TOP)/libnl/lib/.libs -lnl-3" \

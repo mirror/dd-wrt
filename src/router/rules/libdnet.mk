@@ -7,7 +7,7 @@ libdnet-configure:
 		--libdir=$(TOP)/libdnet/src/.libs/ \
 		--disable-shared \
 		--enable-static \
-		CFLAGS="$(COPTS) $(MIPS16_OPT) -fPIC -DNEED_PRINTF -I$(TOP)/iptables-new/include/libipq/" LDFLAGS="-L$(TOP)/iptables-new/libipq/.libs"
+		CFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) -fPIC -DNEED_PRINTF -I$(TOP)/iptables-new/include/libipq/" LDFLAGS="-L$(TOP)/iptables-new/libipq/.libs"
 else
 libdnet-configure:
 	cd libdnet && ./configure \
@@ -17,11 +17,11 @@ libdnet-configure:
 		--libdir=$(TOP)/libdnet/src/.libs/ \
 		--disable-shared \
 		--enable-static \
-		CFLAGS="$(COPTS) $(MIPS16_OPT) -fPIC -DNEED_PRINTF -I$(TOP)/iptables/include/libipq/" LDFLAGS="-L$(TOP)/iptables/libipq"
+		CFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) -fPIC -DNEED_PRINTF -I$(TOP)/iptables/include/libipq/" LDFLAGS="-L$(TOP)/iptables/libipq"
 endif
 
 libdnet:
-	$(MAKE) -C libdnet CFLAGS="$(COPTS) $(MIPS16_OPT) -fPIC -DNEED_PRINTF"
+	$(MAKE) -C libdnet CFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) -fPIC -DNEED_PRINTF"
 
 libdnet-install:
 	@true

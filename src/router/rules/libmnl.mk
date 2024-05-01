@@ -9,7 +9,7 @@ libmnl-install:
 
 libmnl-configure:
 	-cd libmnl && aclocal && autoconf && automake -a && cd ..
-	cd libmnl && ./configure --host=$(ARCH)-linux CFLAGS="$(COPTS) $(MIPS16_OPT)"
+	cd libmnl && ./configure --host=$(ARCH)-linux CFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB)"
 
 libmnl-clean:
 	$(MAKE) -C libmnl clean

@@ -102,7 +102,7 @@ glib20-configure: libffi-configure libffi zlib-configure zlib util-linux-configu
 	echo "strip = '$(STRIP)'" >> $(TOP)/glib20/libglib/cross.txt
 	echo "nm = '$(NM)'" >> $(TOP)/glib20/libglib/cross.txt
 	echo "[built-in options]" >> $(TOP)/glib20/libglib/cross.txt
-	echo "c_args = '$(CFLAGS) $(COPTS) $(MIPS16_OPT) -I$(TOP)/libffi/$(ARCH)-$(SUBARCH)-linux-gnu/include -I$(TOP)/zlib -DNEED_PRINTF'" >> $(TOP)/glib20/libglib/cross.txt
+	echo "c_args = '$(CFLAGS) $(COPTS) $(MIPS16_OPT) $(THUMB) -I$(TOP)/libffi/$(ARCH)-$(SUBARCH)-linux-gnu/include -I$(TOP)/zlib -DNEED_PRINTF'" >> $(TOP)/glib20/libglib/cross.txt
 	echo "c_link_args = '$(LDFLAGS) -L$(TOP)/libffi/$(ARCH)-$(SUBARCH)-linux-gnu/.libs -lffi -L$(TOP)/zlib -lz'" >> $(TOP)/glib20/libglib/cross.txt
 	echo "cpp_args = '$(CFLAGS) -I$(TOP)/libffi/$(ARCH)-$(SUBARCH)-linux-gnu/include -I$(TOP)/zlib  -DNEED_PRINTF'" >> $(TOP)/glib20/libglib/cross.txt
 	echo "cpp_link_args = '$(LDFLAGS) -L$(TOP)/libffi/$(ARCH)-$(SUBARCH)-linux-gnu/.libs -lffi -L$(TOP)/zlib -lz'" >> $(TOP)/glib20/libglib/cross.txt
@@ -136,15 +136,15 @@ endif
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libmount.la
 
 	cd glib20/gettext && ./autogen.sh
-	cd glib20/gettext && ./configure --enable-static --disable-shared --host=$(ARCH)-linux  LDFLAGS="$(COPTS) $(LTO) -std=gnu89 $(MIPS16_OPT) -D_GNU_SOURCE -fPIC -Drpl_malloc=malloc " CFLAGS="$(COPTS)  $(MIPS16_OPT)  -D_GNU_SOURCE -fPIC -Drpl_malloc=malloc" CXXFLAGS="$(COPTS)  $(MIPS16_OPT) -D_GNU_SOURCE -fPIC -Drpl_malloc=malloc"
+	cd glib20/gettext && ./configure --enable-static --disable-shared --host=$(ARCH)-linux  LDFLAGS="$(COPTS) $(LTO) -std=gnu89 $(MIPS16_OPT) $(THUMB) -D_GNU_SOURCE -fPIC -Drpl_malloc=malloc " CFLAGS="$(COPTS)  $(MIPS16_OPT) $(THUMB)  -D_GNU_SOURCE -fPIC -Drpl_malloc=malloc" CXXFLAGS="$(COPTS)  $(MIPS16_OPT) $(THUMB) -D_GNU_SOURCE -fPIC -Drpl_malloc=malloc"
 	make -C glib20/gettext clean all
 	rm -rf $(TOP)/glib20/libglib/build
-	export CPPFLAGS="$(COPTS) $(MIPS16_OPT)  -I$(TOP)/libffi/$(ARCH)-$(SUBARCH)-linux-gnu/include -I$(TOP)/zlib -DNEED_PRINTF" && \
-	export CFLAGS="$(COPTS) $(MIPS16_OPT)  -I$(TOP)/libffi/$(ARCH)-$(SUBARCH)-linux-gnu/include -I$(TOP)/zlib -DNEED_PRINTF" && \
+	export CPPFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB)  -I$(TOP)/libffi/$(ARCH)-$(SUBARCH)-linux-gnu/include -I$(TOP)/zlib -DNEED_PRINTF" && \
+	export CFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB)  -I$(TOP)/libffi/$(ARCH)-$(SUBARCH)-linux-gnu/include -I$(TOP)/zlib -DNEED_PRINTF" && \
 	export LDFLAGS="-L$(TOP)/libffi/$(ARCH)-$(SUBARCH)-linux-gnu/.libs -lffi -L$(TOP)/zlib -lz" && \
 	cd $(TOP)/glib20/libglib && meson setup --buildtype=plain --prefix=/usr --cross-file $(TOP)/glib20/libglib/cross.txt $(GLIB_MESON_ARGS) build
-	export CPPFLAGS="$(COPTS) $(MIPS16_OPT)  -I$(TOP)/libffi/$(ARCH)-$(SUBARCH)-linux-gnu/include -I$(TOP)/zlib -DNEED_PRINTF" && \
-	export CFLAGS="$(COPTS) $(MIPS16_OPT)  -I$(TOP)/libffi/$(ARCH)-$(SUBARCH)-linux-gnu/include -I$(TOP)/zlib -DNEED_PRINTF" && \
+	export CPPFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB)  -I$(TOP)/libffi/$(ARCH)-$(SUBARCH)-linux-gnu/include -I$(TOP)/zlib -DNEED_PRINTF" && \
+	export CFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB)  -I$(TOP)/libffi/$(ARCH)-$(SUBARCH)-linux-gnu/include -I$(TOP)/zlib -DNEED_PRINTF" && \
 	export LDFLAGS="-L$(TOP)/libffi/$(ARCH)-$(SUBARCH)-linux-gnu/.libs -lffi -L$(TOP)/zlib -lz" && \
 	cd $(TOP)/glib20/libglib && ninja -C build
 	export DESTDIR=$(TOP)/_staging && \
@@ -152,12 +152,12 @@ endif
 
 
 	rm -rf $(TOP)/glib20/libglib/build_static
-	export CPPFLAGS="$(COPTS) $(LTO) $(MIPS16_OPT) -I$(TOP)/libffi/$(ARCH)-$(SUBARCH)-linux-gnu/include -I$(TOP)/zlib -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections" && \
-	export CFLAGS="$(COPTS) $(LTO) $(MIPS16_OPT) -I$(TOP)/libffi/$(ARCH)-$(SUBARCH)-linux-gnu/include -I$(TOP)/zlib -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections" && \
+	export CPPFLAGS="$(COPTS) $(LTO) $(MIPS16_OPT) $(THUMB) -I$(TOP)/libffi/$(ARCH)-$(SUBARCH)-linux-gnu/include -I$(TOP)/zlib -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections" && \
+	export CFLAGS="$(COPTS) $(LTO) $(MIPS16_OPT) $(THUMB) -I$(TOP)/libffi/$(ARCH)-$(SUBARCH)-linux-gnu/include -I$(TOP)/zlib -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections" && \
 	export LDFLAGS="-L$(TOP)/libffi/$(ARCH)-$(SUBARCH)-linux-gnu/.libs -lffi -L$(TOP)/zlib -lz -ffunction-sections -fdata-sections -Wl,--gc-sections" && \
 	cd $(TOP)/glib20/libglib && meson setup --buildtype=plain --prefix=/usr --default-library static --cross-file $(TOP)/glib20/libglib/cross.txt $(GLIB_STATIC_MESON_ARGS) build_static
-	export CPPFLAGS="$(COPTS) $(LTO) $(MIPS16_OPT) -I$(TOP)/libffi/$(ARCH)-$(SUBARCH)-linux-gnu/include -I$(TOP)/zlib -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections" && \
-	export CFLAGS="$(COPTS) $(LTO) $(MIPS16_OPT) -I$(TOP)/libffi/$(ARCH)-$(SUBARCH)-linux-gnu/include -I$(TOP)/zlib -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections" && \
+	export CPPFLAGS="$(COPTS) $(LTO) $(MIPS16_OPT) $(THUMB) -I$(TOP)/libffi/$(ARCH)-$(SUBARCH)-linux-gnu/include -I$(TOP)/zlib -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections" && \
+	export CFLAGS="$(COPTS) $(LTO) $(MIPS16_OPT) $(THUMB) -I$(TOP)/libffi/$(ARCH)-$(SUBARCH)-linux-gnu/include -I$(TOP)/zlib -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections" && \
 	export LDFLAGS="-L$(TOP)/libffi/$(ARCH)-$(SUBARCH)-linux-gnu/.libs -lffi -L$(TOP)/zlib -lz -ffunction-sections -fdata-sections -Wl,--gc-sections" && \
 	cd $(TOP)/glib20/libglib && ninja -C build_static
 

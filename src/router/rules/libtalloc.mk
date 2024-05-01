@@ -44,7 +44,7 @@ libtalloc-configure:
 			\nChecking uname release type: \"3.9.0\" \
 			\nChecking uname sysname type: \"Linux\" \
 			\nChecking uname version type: \"3.9.0\" \
-		\n" ; CFLAGS="$(COPTS) $(MIPS16_OPT)" PYTHONHASHSEED=1 CC="ccache $(ARCH)-linux-uclibc-gcc" \
+		\n" ; CFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB)" PYTHONHASHSEED=1 CC="ccache $(ARCH)-linux-uclibc-gcc" \
 		./buildtools/bin/waf configure \
 			--prefix=/usr \
 			--sysconfdir=/etc \
@@ -57,7 +57,7 @@ libtalloc-configure:
 	)
 
 
-#	cd libtalloc && ./configure --hostcc=gcc --prefix=/usr CFLAGS="$(COPTS) $(MIPS16_OPT)"
+#	cd libtalloc && ./configure --hostcc=gcc --prefix=/usr CFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB)"
 
 libtalloc:
 	make -C libtalloc

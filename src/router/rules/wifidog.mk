@@ -3,11 +3,11 @@ wifidog-configure: wolfssl-configure wolfssl
 	cd wifidog && ./autogen.sh
 	mkdir -p wifidog/nossl
 	mkdir -p wifidog/ssl
-	cd wifidog/ssl && ../configure --disable-nls --enable-wolfssl --prefix=/usr --host=$(ARCH)-linux CC="$(CC)" CFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) $(LDLTO) -I$(TOP)/wolfssl -I$(TOP)/wolfssl/minimal -I$(TOP)/wolfssl/standard/wolfssl  -I$(TOP)/wolfssl/wolfssl -L$(TOP)/wolfssl/minimal/src/.libs -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+	cd wifidog/ssl && ../configure --disable-nls --enable-wolfssl --prefix=/usr --host=$(ARCH)-linux CC="$(CC)" CFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) $(LTO) $(LDLTO) -I$(TOP)/wolfssl -I$(TOP)/wolfssl/minimal -I$(TOP)/wolfssl/standard/wolfssl  -I$(TOP)/wolfssl/wolfssl -L$(TOP)/wolfssl/minimal/src/.libs -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 	AR_FLAGS="cru $(LTOPLUGIN)" \
 	RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
 
-	cd wifidog/nossl && ../configure --disable-nls --disable-wolfssl --prefix=/usr --host=$(ARCH)-linux CC="$(CC)" CFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) $(LDLTO) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+	cd wifidog/nossl && ../configure --disable-nls --disable-wolfssl --prefix=/usr --host=$(ARCH)-linux CC="$(CC)" CFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) $(LTO) $(LDLTO) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 	AR_FLAGS="cru $(LTOPLUGIN)" \
 	RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
 

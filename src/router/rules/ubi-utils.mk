@@ -2,7 +2,7 @@ ubi-utils-configure: zlib
 	cd ubi-utils && ./autogen.sh
 	cd ubi-utils && ./configure --prefix=/usr --host=$(ARCH)-linux \
 		CC="$(CC)" \
-		CFLAGS="$(COPTS) $(LTO) $(MIPS16_OPT) -I$(TOP)/lzo/include -L$(TOP)/lzo/src/.libs -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+		CFLAGS="$(COPTS) $(LTO) $(MIPS16_OPT) $(THUMB) -I$(TOP)/lzo/include -L$(TOP)/lzo/src/.libs -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 		LZO_CFLAGS="$(LTO) -I$(TOP)/lzo/include" \
 		LZO_LIBS="$(LDLTO) -L$(TOP)/lzo/src/.libs -llzo2" \
 		ZLIB_CFLAGS=" $(LTO) -I$(TOP)/zlib/include" \

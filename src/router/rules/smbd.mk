@@ -1,7 +1,7 @@
 smbd-configure: libnl
 	cd smbd/tools && ./autogen.sh
 	cd smbd/tools && ./configure --prefix=/usr --host=$(ARCH)-linux --disable-shared --enable-static  --libdir=/usr/lib \
-	    CFLAGS="$(COPTS) $(LTO) $(MIPS16_OPT) -D_GNU_SOURCE -DNEED_PRINTF -Drpl_malloc=malloc -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+	    CFLAGS="$(COPTS) $(LTO) $(MIPS16_OPT) $(THUMB) -D_GNU_SOURCE -DNEED_PRINTF -Drpl_malloc=malloc -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 	    LDFLAGS="$(LDLTO) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 	    LIBNL_CFLAGS="-I$(TOP)/libnl/include" \
 	    LIBNL_LIBS="-L$(TOP)/libnl/lib/.libs -lnl-3 -lnl-genl-3" \
@@ -10,7 +10,7 @@ smbd-configure: libnl
 
 	cd smbd/tools-glib && ./autogen.sh
 	cd smbd/tools-glib && ./configure --prefix=/usr --host=$(ARCH)-linux --disable-shared --enable-static  --libdir=/usr/lib \
-	    CFLAGS="$(COPTS) $(LTO) $(MIPS16_OPT) -D_GNU_SOURCE -DNEED_PRINTF -I$(TOP)/_staging_static/usr/include/glib-2.0 -I$(TOP)/_staging_static/usr/lib/glib-2.0/include -Drpl_malloc=malloc -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+	    CFLAGS="$(COPTS) $(LTO) $(MIPS16_OPT) $(THUMB) -D_GNU_SOURCE -DNEED_PRINTF -I$(TOP)/_staging_static/usr/include/glib-2.0 -I$(TOP)/_staging_static/usr/lib/glib-2.0/include -Drpl_malloc=malloc -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 	    LDFLAGS="-L$(TOP)/_staging_static/usr/lib $(LDLTO) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 	    LIBNL_CFLAGS="-I$(TOP)/libnl/include" \
 	    LIBNL_LIBS="-L$(TOP)/libnl/lib/.libs -lnl-3 -lnl-genl-3" \
@@ -19,7 +19,7 @@ smbd-configure: libnl
 
 	cd smbd/tools-glib.61 && ./autogen.sh
 	cd smbd/tools-glib.61 && ./configure --prefix=/usr --host=$(ARCH)-linux --disable-shared --enable-static  --libdir=/usr/lib \
-	    CFLAGS="$(COPTS) $(LTO) $(MIPS16_OPT) -D_GNU_SOURCE -DNEED_PRINTF -I$(TOP)/_staging_static/usr/include/glib-2.0 -I$(TOP)/_staging_static/usr/lib/glib-2.0/include -Drpl_malloc=malloc -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+	    CFLAGS="$(COPTS) $(LTO) $(MIPS16_OPT) $(THUMB) -D_GNU_SOURCE -DNEED_PRINTF -I$(TOP)/_staging_static/usr/include/glib-2.0 -I$(TOP)/_staging_static/usr/lib/glib-2.0/include -Drpl_malloc=malloc -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 	    LDFLAGS="-L$(TOP)/_staging_static/usr/lib $(LDLTO) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 	    LIBNL_CFLAGS="-I$(TOP)/libnl/include" \
 	    LIBNL_LIBS="-L$(TOP)/libnl/lib/.libs -lnl-3 -lnl-genl-3" \

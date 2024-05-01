@@ -2,16 +2,16 @@ LIBPLIST_PKG_BUILD_DIR=$(TOP)/ipeth/libplist
 
 ipeth-configure: 
 	cd $(TOP)/ipeth/libplist && ./autogen.sh
-	cd $(TOP)/ipeth/libplist && ./configure --host=$(ARCH)-linux --without-cython CFLAGS="$(TARGET_CFLAGS) $(EXTRA_CFLAGS) $(COPTS) $(MIPS16_OPT) -I$(TOP)/ipeth/libplist/include -fPIC  -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-		CXXFLAGS="$(TARGET_CFLAGS) $(EXTRA_CFLAGS) $(COPTS) $(MIPS16_OPT) -I$(TOP)/ipeth/libplist -fPIC  -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+	cd $(TOP)/ipeth/libplist && ./configure --host=$(ARCH)-linux --without-cython CFLAGS="$(TARGET_CFLAGS) $(EXTRA_CFLAGS) $(COPTS) $(MIPS16_OPT) $(THUMB) -I$(TOP)/ipeth/libplist/include -fPIC  -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+		CXXFLAGS="$(TARGET_CFLAGS) $(EXTRA_CFLAGS) $(COPTS) $(MIPS16_OPT) $(THUMB) -I$(TOP)/ipeth/libplist -fPIC  -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 		LDFLAGS="-lm -ffunction-sections -fdata-sections -Wl,--gc-sections"
 
 	cd $(TOP)/ipeth/libplist && make
 
 
 	cd $(TOP)/ipeth/libusbmuxd && ./autogen.sh
-	cd $(TOP)/ipeth/libusbmuxd && ./configure --host=$(ARCH)-linux --without-cython CFLAGS="$(TARGET_CFLAGS) $(EXTRA_CFLAGS) $(COPTS) $(MIPS16_OPT) -I$(TOP)/ipeth/libplist/include -I$(TOP)/usb_modeswitch/libusb/libusb -fPIC  -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-		CXXFLAGS="$(TARGET_CFLAGS) $(EXTRA_CFLAGS) $(COPTS) $(MIPS16_OPT) -I$(TOP)/ipeth/libplist -fPIC  -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+	cd $(TOP)/ipeth/libusbmuxd && ./configure --host=$(ARCH)-linux --without-cython CFLAGS="$(TARGET_CFLAGS) $(EXTRA_CFLAGS) $(COPTS) $(MIPS16_OPT) $(THUMB) -I$(TOP)/ipeth/libplist/include -I$(TOP)/usb_modeswitch/libusb/libusb -fPIC  -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+		CXXFLAGS="$(TARGET_CFLAGS) $(EXTRA_CFLAGS) $(COPTS) $(MIPS16_OPT) $(THUMB) -I$(TOP)/ipeth/libplist -fPIC  -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 		LDFLAGS="-L$(TOP)/ipeth/libplist/src/.libs -lplist-2.0 -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 		libplist_CFLAGS="-I$(TOP)/ipeth/libplist/include" \
 		libplist_LIBS="-L$(TOP)/ipeth/libplist/src/.libs -lplist-2.0" ac_cv_func_malloc_0_nonnull=yes  ac_cv_func_realloc_0_nonnull=yes
@@ -21,7 +21,7 @@ ipeth-configure:
 	cd $(TOP)/ipeth/libimobiledevice && ./autogen.sh
 	cd $(TOP)/ipeth/libimobiledevice && ./configure --without-cython --host=$(ARCH)-linux \
 		ac_cv_sys_file_offset_bits=64 \
-		CFLAGS="$(COPTS) $(MIPS16_OPT)  -ffunction-sections -fdata-sections -Wl,--gc-sections -fPIC -I$(TOP)/ipeth  -Drpl_localtime=localtime -I$(TOP)/openssl/include -Drpl_malloc=malloc -Drpl_realloc=realloc" \
+		CFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB)  -ffunction-sections -fdata-sections -Wl,--gc-sections -fPIC -I$(TOP)/ipeth  -Drpl_localtime=localtime -I$(TOP)/openssl/include -Drpl_malloc=malloc -Drpl_realloc=realloc" \
 		LDFLAGS="-L$(TOP)/ipeth/nettle -L$(TOP)/openssl -L$(TOP)/ipeth/libusbmuxd/src/.libs -lusbmuxd-2.0 -L$(TOP)/ipeth/libplist/src/.libs -lplist-2.0  -L$(TOP)/zlib" \
 		openssl_CFLAGS="-I$(TOP)/openssl/include" \
 		openssl_LIBS="-L$(TOP)/openssl -lssl -lcrypto" \
@@ -37,8 +37,8 @@ ipeth-configure:
 	cd $(TOP)/ipeth/libimobiledevice && make
 
 	cd $(TOP)/ipeth/usbmuxd && ./autogen.sh
-	cd $(TOP)/ipeth/usbmuxd && ./configure --host=$(ARCH)-linux --without-cython CFLAGS="$(TARGET_CFLAGS) $(EXTRA_CFLAGS) $(COPTS) $(MIPS16_OPT) -I$(TOP)/ipeth/libplist/include -I$(TOP)/usb_modeswitch/libusb/libusb -I$(TOP)/ipeth/libimobiledevice/include -fPIC  -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-		CXXFLAGS="$(TARGET_CFLAGS) $(EXTRA_CFLAGS) $(COPTS) $(MIPS16_OPT) -I$(TOP)/ipeth/libplist -fPIC  -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+	cd $(TOP)/ipeth/usbmuxd && ./configure --host=$(ARCH)-linux --without-cython CFLAGS="$(TARGET_CFLAGS) $(EXTRA_CFLAGS) $(COPTS) $(MIPS16_OPT) $(THUMB) -I$(TOP)/ipeth/libplist/include -I$(TOP)/usb_modeswitch/libusb/libusb -I$(TOP)/ipeth/libimobiledevice/include -fPIC  -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+		CXXFLAGS="$(TARGET_CFLAGS) $(EXTRA_CFLAGS) $(COPTS) $(MIPS16_OPT) $(THUMB) -I$(TOP)/ipeth/libplist -fPIC  -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 		LDFLAGS="-L$(TOP)/openssl -lssl -lcrypto -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 		libusbmuxd_CFLAGS="-I$(TOP)/ipeth/libusbmuxd/include" \
 		libusbmuxd_LIBS="$(TOP)/ipeth/libusbmuxd/src/.libs/libusbmuxd-2.0.a" \

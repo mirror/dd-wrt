@@ -1,6 +1,6 @@
 jansson-configure:
 	cd jansson && autoreconf --force --install
-	cd jansson && ./configure --prefix=/usr --libdir=/usr/lib --host=$(ARCH)-linux CC="$(CC)" CFLAGS="$(COPTS) $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections -fPIC" LDFLAGS="-lm"
+	cd jansson && ./configure --prefix=/usr --libdir=/usr/lib --host=$(ARCH)-linux CC="$(CC)" CFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) -ffunction-sections -fdata-sections -Wl,--gc-sections -fPIC" LDFLAGS="-lm"
 
 jansson:
 	$(MAKE) -C jansson

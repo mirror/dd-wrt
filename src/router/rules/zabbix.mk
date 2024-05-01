@@ -2,9 +2,9 @@
 zabbix: zlib
 	install -D zabbix/config/zabbix.webservices httpd/ej_temp/zabbix.webservices
 	CC="$(ARCH)-linux-uclibc-gcc" \
-	CFLAGS="$(COPTS) $(MIPS16_OPT) -I$(TOP)/zlib -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-	CPPFLAGS="$(COPTS) $(MIPS16_OPT) -I$(TOP)/zlib -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-	LDFLAGS="$(COPTS) $(MIPS16_OPT) -L$(TOP)/zlib -lz -fPIC" \
+	CFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) -I$(TOP)/zlib -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+	CPPFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) -I$(TOP)/zlib -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+	LDFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) -L$(TOP)/zlib -lz -fPIC" \
 	$(MAKE) -C zabbix
 
 zabbix-install:
@@ -35,7 +35,7 @@ zabbix-configure: zlib pcre
 	--with-libpcre="$(TOP)/pcre" \
 	--with-libpcre-include="$(TOP)/pcre" \
 	--with-libpcre-lib="$(TOP)/pcre/.libs" \
-	CFLAGS="$(COPTS) $(MIPS16_OPT) -DOLD_LIBC_MODE -L$(TOP)/pcre/.libs  -ffunction-sections -fdata-sections -Wl,--gc-section" \
+	CFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) -DOLD_LIBC_MODE -L$(TOP)/pcre/.libs  -ffunction-sections -fdata-sections -Wl,--gc-section" \
 	LIBPCRE_CFLAGS="-I$(TOP)/pcre" \
 	LIBPCRE_LDFLAGS="-L$(TOP)/pcre/.libs -lpcre"
 	cd zabbix && touch *
