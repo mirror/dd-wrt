@@ -1,9 +1,12 @@
 /*
  **************************************************************************
  * Copyright (c) 2015-2018, 2021, The Linux Foundation.  All rights reserved.
+ * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
+ *
  * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
  * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
  * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
@@ -36,7 +39,7 @@
 
 #define MAC_FMT "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx"
 
-#define RULE_FIELDS 13
+#define RULE_FIELDS 15
 
 /*
  * With feature_flags_support parameter enabled, registrant can provide
@@ -56,6 +59,15 @@ static struct dentry *ecm_pcc_test_dentry;
  * Registration
  */
 struct ecm_classifier_pcc_registrant *ecm_pcc_test_registrant = NULL;
+
+/*
+ * ecm_pcc_test_ap_info
+ *	Descriptor for acl-policer feature.
+ */
+struct ecm_pcc_test_ap_info {
+	int flow_ap_index;
+	int return_ap_index;
+};
 
 /*
  * ecm_pcc_test_mirror_info
@@ -83,6 +95,7 @@ struct ecm_pcc_test_rule {
 	unsigned int ipv;
 	unsigned int feature_flags;
 	struct ecm_pcc_test_mirror_info mirror_info;
+	struct ecm_pcc_test_ap_info ap_info;
 };
 LIST_HEAD(ecm_pcc_test_rules);
 DEFINE_SPINLOCK(ecm_pcc_test_rules_lock);
@@ -107,9 +120,9 @@ static void ecm_pcc_test_registrant_ref(struct ecm_classifier_pcc_registrant *r)
 	 */
 	remain = atomic_inc_return(&r->ref_count);
 	if (remain <= 0)
-		pr_info("REFERENCE COUNT WRAP!\n");
+		pr_debug("REFERENCE COUNT WRAP!\n");
 	else
-		pr_info("ECM PCC Registrant ref: %d\n", remain);
+		pr_debug("ECM PCC Registrant ref: %d\n", remain);
 }
 
 /*
@@ -131,7 +144,7 @@ ecm_pcc_test_registrant_deref(struct ecm_classifier_pcc_registrant *r)
 		/*
 		 * Something still holds a reference
 		 */
-		pr_info("ECM PCC Registrant deref: %d\n", remain);
+		pr_debug("ECM PCC Registrant deref: %d\n", remain);
 		return;
 	}
 
@@ -202,6 +215,16 @@ try_reverse:
 		return rule;
 	}
 	return NULL;
+}
+
+/*
+ * ecm_pcc_test_fill_ap_info()
+ *	Fill policing feature related information.
+ */
+static void ecm_pcc_test_fill_ap_info(struct ecm_pcc_test_rule *rule, struct ecm_classifier_pcc_info *cinfo)
+{
+	cinfo->ap_info.flow_ap_index = rule->ap_info.flow_ap_index;
+	cinfo->ap_info.return_ap_index = rule->ap_info.return_ap_index;
 }
 
 /*
@@ -283,7 +306,7 @@ ecm_pcc_test_get_accel_info_v4(struct ecm_classifier_pcc_registrant *r,
 			src_port, dest_port, &is_reverse);
 	if (!rule) {
 		spin_unlock_bh(&ecm_pcc_test_rules_lock);
-		pr_info("Rule not found\n");
+		pr_debug("Rule not found\n");
 		return ECM_CLASSIFIER_PCC_RESULT_NOT_YET;
 	}
 	accel = rule->accel;
@@ -301,9 +324,13 @@ ecm_pcc_test_get_accel_info_v4(struct ecm_classifier_pcc_registrant *r,
 		}
 	}
 
+	if ((rule->feature_flags & ECM_CLASSIFIER_PCC_FEATURE_ACL) || (rule->feature_flags & ECM_CLASSIFIER_PCC_FEATURE_POLICER)) {
+		ecm_pcc_test_fill_ap_info(rule, cinfo);
+	}
+
 	spin_unlock_bh(&ecm_pcc_test_rules_lock);
 
-	cinfo->feature_flags = feature_flags;
+	cinfo->feature_flags |= feature_flags;
 	return accel;
 }
 
@@ -350,6 +377,10 @@ ecm_pcc_test_get_accel_info_v6(struct ecm_classifier_pcc_registrant *r,
 			spin_unlock_bh(&ecm_pcc_test_rules_lock);
 			return ECM_CLASSIFIER_PCC_RESULT_NOT_YET;
 		}
+	}
+
+	if ((feature_flags & ECM_CLASSIFIER_PCC_FEATURE_ACL) || (feature_flags & ECM_CLASSIFIER_PCC_FEATURE_POLICER))  {
+		ecm_pcc_test_fill_ap_info(rule, cinfo);
 	}
 
 	spin_unlock_bh(&ecm_pcc_test_rules_lock);
@@ -552,7 +583,7 @@ static unsigned int ecm_pcc_test_update_rule(char *name,
 				struct in6_addr *src_addr,
 				struct in6_addr *dest_addr,
 				int src_port, int dest_port, unsigned int feature_flags,
-				char *tuple_mirror_dev, char *tuple_ret_mirror_dev)
+				char *tuple_mirror_dev, char *tuple_ret_mirror_dev, int flow_ap_index, int return_ap_index)
 {
 	unsigned int ipv, o_feature_flags;
 	struct ecm_pcc_test_rule *rule;
@@ -570,9 +601,11 @@ static unsigned int ecm_pcc_test_update_rule(char *name,
 	o_feature_flags = rule->feature_flags;
 	rule->accel = accel;
 	rule->feature_flags = feature_flags;
-	strcpy(rule->name, name);
+	strlcpy(rule->name, name, sizeof(rule->name));
 	strlcpy(rule->mirror_info.tuple_mirror_dev, tuple_mirror_dev, IFNAMSIZ);
 	strlcpy(rule->mirror_info.tuple_ret_mirror_dev, tuple_ret_mirror_dev, IFNAMSIZ);
+	rule->ap_info.flow_ap_index = flow_ap_index;
+	rule->ap_info.return_ap_index = return_ap_index;
 	spin_unlock_bh(&ecm_pcc_test_rules_lock);
 
 	if (feature_flags_support) {
@@ -586,6 +619,12 @@ static unsigned int ecm_pcc_test_update_rule(char *name,
 		 */
 		if ((o_feature_flags & ECM_CLASSIFIER_PCC_FEATURE_MIRROR) ||
 			(feature_flags & ECM_CLASSIFIER_PCC_FEATURE_MIRROR)) {
+			ecm_pcc_test_decel(proto, src_mac, dest_mac,
+					src_addr, dest_addr, src_port, dest_port, ipv);
+			return 1;
+		}
+
+		if ((o_feature_flags & ECM_CLASSIFIER_PCC_FEATURE_ACL) || (o_feature_flags & ECM_CLASSIFIER_PCC_FEATURE_POLICER)) {
 			ecm_pcc_test_decel(proto, src_mac, dest_mac,
 					src_addr, dest_addr, src_port, dest_port, ipv);
 			return 1;
@@ -647,6 +686,12 @@ static unsigned int ecm_pcc_test_delete_rule(char *name,
 					src_addr, dest_addr, src_port, dest_port, ipv);
 			return 1;
 		}
+
+		if ((feature_flags & ECM_CLASSIFIER_PCC_FEATURE_ACL) || (feature_flags & ECM_CLASSIFIER_PCC_FEATURE_POLICER))  {
+			ecm_pcc_test_decel(proto, src_mac, dest_mac,
+					src_addr, dest_addr, src_port, dest_port, ipv);
+			return 1;
+		}
 	}
 
 	if (accel == ECM_CLASSIFIER_PCC_RESULT_DENIED)
@@ -669,14 +714,15 @@ static unsigned int ecm_pcc_test_add_rule(char *name,
 				struct in6_addr *dest_addr,
 				int src_port, int dest_port,
 				unsigned int ipv, unsigned int feature_flags,
-				char *tuple_mirror_dev, char *tuple_ret_mirror_dev)
+				char *tuple_mirror_dev, char *tuple_ret_mirror_dev,
+				int flow_ap_index, int return_ap_index)
 {
 	struct ecm_pcc_test_rule *new_rule;
 	new_rule = kzalloc(sizeof(struct ecm_pcc_test_rule), GFP_ATOMIC);
 	if (!new_rule)
 		return 0;
 
-	strcpy(new_rule->name, name);
+	strlcpy(new_rule->name, name, sizeof(new_rule->name));
 	new_rule->accel = accel;
 	new_rule->proto = proto;
 	new_rule->src_port = src_port;
@@ -689,6 +735,8 @@ static unsigned int ecm_pcc_test_add_rule(char *name,
 	new_rule->feature_flags = feature_flags;
 	strlcpy(new_rule->mirror_info.tuple_mirror_dev, tuple_mirror_dev, IFNAMSIZ);
 	strlcpy(new_rule->mirror_info.tuple_ret_mirror_dev, tuple_ret_mirror_dev, IFNAMSIZ);
+	new_rule->ap_info.flow_ap_index = flow_ap_index;
+	new_rule->ap_info.return_ap_index = return_ap_index;
 	INIT_LIST_HEAD(&new_rule->list);
 
 	spin_lock_bh(&ecm_pcc_test_rules_lock);
@@ -703,6 +751,13 @@ static unsigned int ecm_pcc_test_add_rule(char *name,
 		 * ECM.
 		 */
 		if (feature_flags & ECM_CLASSIFIER_PCC_FEATURE_MIRROR) {
+			return 1;
+		}
+
+		if (feature_flags & ECM_CLASSIFIER_PCC_FEATURE_ACL) {
+			return 1;
+		}
+		if (feature_flags & ECM_CLASSIFIER_PCC_FEATURE_POLICER) {
 			return 1;
 		}
 	}
@@ -742,20 +797,23 @@ static ssize_t ecm_pcc_test_rule_write(struct file *file,
 	struct in6_addr src_addr = IN6ADDR_ANY_INIT;
 	struct in6_addr dest_addr = IN6ADDR_ANY_INIT;
 	unsigned int ipv;
+	int flow_ap_index = 0;
+	int return_ap_index = 0;
 
 	/*
 	 * buf is formed as:
 	 * [0]    [1]                 [2]                           [3]     [4]       [5]        [6]        [7]        [8]         [9]         [10]            [11]               [12]
-	 * <name>/<0=del,1=add,2=upd>/<1=denied, 2=accel_permitted>/<proto>/<src_mac>/<src_addr>/<src_port>/<dest mac>/<dest_addr>/<dest_port>/<feature_flags>/<tuple_mirror_dev>/<tuple_ret_mirror_dev>
+	 * <name>/<0=del,1=add,2=upd>/<1=denied, 2=accel_permitted>/<proto>/<src_mac>/<src_addr>/<src_port>/<dest mac>/<dest_addr>/<dest_port>/<feature_flags>/<tuple_mirror_dev>/<tuple_ret_mirror_dev/flow_ap_index/return_ap_index>
 	 * e.g.:
-	 * echo "my_rule/1/2/6/00:12:12:34:56:78/192.168.1.33/1234/00:12:12:34:56:22/10.10.10.10/80/1/mirror.0/mirror.1" > /sys/kernel/debug/ecm_pcc_test/rule
+	 * echo "my_rule/1/2/6/00:12:12:34:56:78/192.168.1.33/1234/00:12:12:34:56:22/10.10.10.10/80/1/mirror.0/mirror.1/flow_ap_index/return_ap_index" > /sys/kernel/debug/ecm_pcc_test/rule
 	 * cat /sys/kernel/debug/ecm_pcc_test/rule (shows all rules)
+	 * In the above rule, flow_ap_index and return_ap_index are either both represented as ACL indexes or Policer indexes based on the usecase.
 	 */
-	rule_buf = kzalloc(count + 1, GFP_ATOMIC);
+	rule_buf = kzalloc(count + 100, GFP_ATOMIC);
 	if (!rule_buf)
 		return -EINVAL;
 
-	memcpy(rule_buf, user_buf, count);
+	count = simple_write_to_buffer(rule_buf, count, ppos, user_buf, count);
 
 	/*
 	 * Split the buffer into its fields
@@ -764,7 +822,7 @@ static ssize_t ecm_pcc_test_rule_write(struct file *file,
 	field_ptr = rule_buf;
 	fields[field_count] = strsep(&field_ptr, "/");
 	while (fields[field_count] != NULL) {
-		pr_info("Field %d: %s\n", field_count, fields[field_count]);
+		pr_info("Field %d:\n", field_count);
 		field_count++;
 		if (field_count == RULE_FIELDS)
 			break;
@@ -781,7 +839,8 @@ static ssize_t ecm_pcc_test_rule_write(struct file *file,
 	/*
 	 * Convert fields
 	 */
-	strncpy(name, fields[0], sizeof(name));
+	strlcpy(name, fields[0], sizeof(name));
+
 	name[sizeof(name) - 1] = 0;
 	if (sscanf(fields[1], "%u", &oper) != 1)
 		goto sscanf_read_error;
@@ -804,7 +863,6 @@ static ssize_t ecm_pcc_test_rule_write(struct file *file,
 
 	if (sscanf(fields[6], "%d", &src_port) != 1)
 		goto sscanf_read_error;
-
 	src_port = htons(src_port);
 
 	if (sscanf(fields[9], "%d", &dest_port) != 1)
@@ -814,9 +872,27 @@ static ssize_t ecm_pcc_test_rule_write(struct file *file,
 		goto sscanf_read_error;
 	}
 
+	if ((feature_flags & ECM_CLASSIFIER_PCC_FEATURE_ACL) && (feature_flags & ECM_CLASSIFIER_PCC_FEATURE_POLICER)) {
+		pr_info("ACL and POLICER both are enabled\n");
+		kfree(rule_buf);
+		return -EINVAL;
+	}
+
 	strlcpy(tuple_mirror_dev, fields[11], IFNAMSIZ);
 
 	strlcpy(tuple_ret_mirror_dev, fields[12], IFNAMSIZ);
+
+	if (sscanf(fields[13], "%d", &flow_ap_index) != 1)
+		goto sscanf_read_error;
+
+	if (sscanf(fields[14], "%d", &return_ap_index) != 1)
+		goto sscanf_read_error;
+
+	if (flow_ap_index == 0 && return_ap_index == 0) {
+		pr_info("Flow and return AP index both are 0\n");
+		kfree(rule_buf);
+		return -EINVAL;
+	}
 
 	dest_port = htons(dest_port);
 
@@ -847,7 +923,9 @@ static ssize_t ecm_pcc_test_rule_write(struct file *file,
 			"ipv: %u\n"
 			"feature_flags: %0x\n"
 			"tuple_mirror_dev: %s\n"
-			"tuple_ret_mirror_dev: %s\n",
+			"tuple_ret_mirror_dev: %s\n"
+			"acl_index: %d\n"
+			"policer_index: %d\n",
 			name,
 			oper,
 			(int)accel,
@@ -861,8 +939,9 @@ static ssize_t ecm_pcc_test_rule_write(struct file *file,
 			ipv,
 			feature_flags,
 			tuple_mirror_dev,
-			tuple_ret_mirror_dev
-			);
+			tuple_ret_mirror_dev,
+			flow_ap_index,
+			return_ap_index);
 
 	if (oper == 0) {
 		pr_info("Delete\n");
@@ -877,7 +956,8 @@ static ssize_t ecm_pcc_test_rule_write(struct file *file,
 						dest_mac, &src_addr, &dest_addr,
 						src_port, dest_port, ipv,
 						feature_flags, tuple_mirror_dev,
-						tuple_ret_mirror_dev))
+						tuple_ret_mirror_dev, flow_ap_index,
+						return_ap_index))
 			return -EINVAL;
 
 	} else if (oper == 2) {
@@ -885,7 +965,8 @@ static ssize_t ecm_pcc_test_rule_write(struct file *file,
 		if (!ecm_pcc_test_update_rule(name, accel, proto, src_mac,
 						dest_mac, &src_addr, &dest_addr,
 						src_port, dest_port, feature_flags,
-						tuple_mirror_dev, tuple_ret_mirror_dev))
+						tuple_mirror_dev, tuple_ret_mirror_dev,
+						flow_ap_index, return_ap_index))
 			return -EINVAL;
 
 	} else {
@@ -944,6 +1025,16 @@ static int ecm_pcc_test_rule_seq_show(struct seq_file *m, void *v)
 			if (strlen(rule->mirror_info.tuple_ret_mirror_dev)) {
 				seq_printf(m, "mirror_ret_tuple_dev: %s\n",
 						rule->mirror_info.tuple_ret_mirror_dev);
+			}
+		}
+
+		if ((rule->feature_flags & ECM_CLASSIFIER_PCC_FEATURE_ACL) || (rule->feature_flags & ECM_CLASSIFIER_PCC_FEATURE_POLICER)) {
+			if (rule->ap_info.flow_ap_index) {
+				seq_printf(m, "flow_ap_index: %d\n", rule->ap_info.flow_ap_index);
+			}
+
+			if (rule->ap_info.return_ap_index) {
+				seq_printf(m, "return_ap_index: %d\n", rule->ap_info.return_ap_index);
 			}
 		}
 	}

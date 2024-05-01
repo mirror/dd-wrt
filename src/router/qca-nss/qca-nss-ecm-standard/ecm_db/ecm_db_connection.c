@@ -1,7 +1,7 @@
 /*
  **************************************************************************
  * Copyright (c) 2014-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -39,6 +39,7 @@
 #include <linux/in.h>
 #include <linux/udp.h>
 #include <linux/tcp.h>
+#include <linux/netdevice.h>
 #include <linux/netfilter_ipv4.h>
 #include <linux/netfilter_bridge.h>
 #include <net/netfilter/nf_conntrack.h>
@@ -47,6 +48,10 @@
 #include <net/netfilter/nf_conntrack_core.h>
 #include <net/netfilter/ipv4/nf_conntrack_ipv4.h>
 #include <net/netfilter/ipv4/nf_defrag_ipv4.h>
+#ifdef ECM_BRIDGE_VLAN_FILTERING_ENABLE
+#include <linux/if_vlan.h>
+#include <linux/if_bridge.h>
+#endif
 
 /*
  * Debug output levels
@@ -1234,6 +1239,7 @@ int ecm_db_connection_deref(struct ecm_db_connection_instance *ci)
 		_ecm_db_multicast_tuple_instance_deref(ci->ti);
 	}
 #endif
+
 	/*
 	 * Remove from database if inserted
 	 */
@@ -1404,6 +1410,13 @@ int ecm_db_connection_deref(struct ecm_db_connection_instance *ci)
 			li = lin;
 		}
 	}
+
+#ifdef ECM_BRIDGE_VLAN_FILTERING_ENABLE
+	/*
+	 * Delete VLAN Filter
+	 */
+	ecm_db_connection_del_vlan_filter(ci);
+#endif
 
 #ifdef ECM_DB_CTA_TRACK_ENABLE
 	/*
@@ -2525,6 +2538,31 @@ void ecm_db_connection_interfaces_deref(struct ecm_db_iface_instance *interfaces
 EXPORT_SYMBOL(ecm_db_connection_interfaces_deref);
 
 /*
+ * ecm_db_connection_first_iface_dev_get_and_ref()
+ *	Returns the netdev of the first interface in interface heirarchy in the
+ *	specified direction which this connection is established.
+ */
+struct net_device *ecm_db_connection_first_iface_dev_get_and_ref(struct ecm_db_connection_instance *ci,
+								 ecm_db_obj_dir_t dir)
+{
+	int32_t n;
+	struct ecm_db_iface_instance *ii = NULL;
+	struct net_device *dev = NULL;
+	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%px: magic failed\n", ci);
+
+	spin_lock_bh(&ecm_db_lock);
+	n = ci->interface_first[dir];
+	ii = ci->interfaces[dir][n];
+	_ecm_db_iface_ref(ii);
+	spin_unlock_bh(&ecm_db_lock);
+
+	dev = dev_get_by_index(&init_net, ecm_db_iface_interface_identifier_get(ii));
+	ecm_db_iface_deref(ii);
+
+	return dev;
+}
+
+/*
  * ecm_db_connection_interfaces_reset()
  *	Reset the interfaces heirarchy in the specified direction with a new set of interfaces
  *
@@ -2571,6 +2609,600 @@ void ecm_db_connection_interfaces_reset(struct ecm_db_connection_instance *ci,
 	ecm_db_connection_interfaces_deref(old, old_first);
 }
 EXPORT_SYMBOL(ecm_db_connection_interfaces_reset);
+
+#ifdef ECM_BRIDGE_VLAN_FILTERING_ENABLE
+
+/*
+ * ecm_db_connection_fill_vlan_filter()
+ * 	Function does the following:
+ * 	Walks the interface heirarchy, finds associated vlan id with the source_mac_addr,
+ * 	the devices having bridge vlan filter
+ * 	#1: Find the bottom-most interface in the ECM_DB_OBJ_DIR_FROM heirarchy with bridge vlan filter.
+ * 	#2: Get src_mac address.
+ * 	#3: Do fdb lookup in the bridge to get the vlan tag(say x).
+ * 	#4: Assign this vlan tag(x) to all the bridge vlan filter interfaces in that particular dir ECM_DB_OBJ_DIR_XXX.
+ */
+bool ecm_db_connection_fill_vlan_filter(struct ecm_db_connection_instance *ci, struct sk_buff *skb, ecm_db_obj_dir_t dir,
+		uint8_t *src_mac_addr, uint8_t *dest_mac_addr, enum ecm_db_connection_vlan_filter_dir vlan_filter_dir, bool is_routed, uint16_t *vid)
+{
+	int ret;
+	uint32_t i;
+	uint32_t first_index;
+	uint32_t start_index;
+	uint32_t end_index;
+	uint32_t vlan_filter_idx;
+	uint32_t vlan_filter_iface_count = 0;
+	struct bridge_vlan_info vinfo;
+	struct net_device *dev = NULL;
+	struct net_device *prev_dev = NULL;
+	struct net_device *next_dev = NULL;
+	struct net_device *netdev = NULL;
+	struct net_device *bridge = NULL;
+	struct ecm_db_iface_instance *interfaces[ECM_DB_IFACE_HEIRARCHY_MAX];
+	bool walk_dir_fw = true;
+
+	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%px: magic failed\n", ci);
+
+	if (!src_mac_addr) {
+		DEBUG_WARN("%px: Failed: src_mac_addr is NULL\n", ci);
+		return false;
+	}
+
+	/*
+	 * Get the interface heirarchy for this connection instance.
+	 */
+	first_index = ecm_db_connection_interfaces_get_and_ref(ci, interfaces, dir);
+	if (first_index == ECM_DB_IFACE_HEIRARCHY_MAX) {
+		DEBUG_WARN("%px: Failed to get %s interfaces list\n", ci, ecm_db_obj_dir_strings[dir]);
+		return false;
+	}
+
+	/*
+	 * Decide which index to populate in ci.
+	 */
+	if (vlan_filter_dir == ECM_VLAN_FILTER_RULE_FLOW_DIR) {
+		if (dir == ECM_DB_OBJ_DIR_FROM_NAT || dir == ECM_DB_OBJ_DIR_FROM) {
+			vlan_filter_idx = ECM_VLAN_FILTER_RULE_FLOW_INGRESS1;
+			walk_dir_fw = true;
+		} else {
+			vlan_filter_idx = ECM_VLAN_FILTER_RULE_FLOW_EGRESS1;
+			walk_dir_fw = false;
+		}
+	} else {
+		if (dir == ECM_DB_OBJ_DIR_FROM_NAT || dir == ECM_DB_OBJ_DIR_FROM) {
+			vlan_filter_idx = ECM_VLAN_FILTER_RULE_RET_EGRESS1;
+			walk_dir_fw = false;
+		} else {
+			vlan_filter_idx = ECM_VLAN_FILTER_RULE_RET_INGRESS1;
+			walk_dir_fw = true;
+		}
+	}
+
+	/*
+	 * For each interface in heirarchy do:
+	 * 1) Stop at first interface which is a bridge/bridge slave.
+	 * 2) Lookup the corresponding bridge's fdb entry for the mac_addr, and get associated vlan_id.
+	 * 3) Find vlan information(such as associated flags) for this device & vlan_id pair.
+	 * 4) Fill the vlan filter information in connection instance accordingly.
+	 */
+	DEBUG_TRACE("%px: Start to walk interface heirarchy starting from %d index(MAX=%d), src_mac %pM\n",
+			ci, first_index, ECM_DB_IFACE_HEIRARCHY_MAX, src_mac_addr);
+
+	/*
+	 * For FLOW Direction, traverse from first_index to ECM_DB_IFACE_HEIRARCHY_MAX-1.
+	 */
+	if (walk_dir_fw) {
+		start_index = first_index;
+		end_index = ECM_DB_IFACE_HEIRARCHY_MAX - 1;
+		for (i = start_index; i <= end_index; i++) {
+			DEBUG_TRACE("%px: Walk interface heirarchy for i=%d index (MAX=%d)\n", ci, i, ECM_DB_IFACE_HEIRARCHY_MAX);
+			dev = dev_get_by_index(&init_net, ecm_db_iface_interface_identifier_get(interfaces[i]));
+			if (!dev) {
+				DEBUG_WARN("%px: Failed to get net device with %d index\n", ci, i);
+				ecm_db_connection_interfaces_deref(interfaces, first_index);
+				return false;
+			}
+
+			/*
+			 * Continue processing only if dev is bridge/bridge slave.
+			 */
+			rcu_read_lock();
+			ret = br_dev_is_vlan_filter_enabled(dev);
+			if (ret) {
+				DEBUG_WARN("%px: dev is not a vlan filter: with dev=%s, vid=%d ret=%d\n", ci, dev->name, *vid, ret);
+				rcu_read_unlock();
+				dev_put(dev);
+				bridge = NULL;
+				continue;
+			}
+
+			/*
+			 * Get master bridge device.
+			 */
+			if (dev->priv_flags & IFF_BRIDGE_PORT) {
+				bridge = netdev_master_upper_dev_get_rcu(dev);
+				if (!bridge) {
+					DEBUG_WARN("Expected bridge for dev=%s for bridge vlan filtering\n", dev->name);
+					rcu_read_unlock();
+					dev_put(dev);
+					ecm_db_connection_interfaces_deref(interfaces, first_index);
+					return false;
+				}
+				DEBUG_TRACE("Found bridge port dev=%s and master bridge dev=%s for bridge vlan filtering\n", dev->name, bridge->name);
+			} else if (netif_is_bridge_master(dev)) {
+				DEBUG_TRACE("Found bridge dev=%s for bridge vlan filtering\n", dev->name);
+				bridge = dev;
+			}
+			dev_hold(bridge);
+
+			/*
+			 * Look for vlan id information only if we don't have it yet.
+			 * This could have been passed by the caller; OR
+			 * we found this in the last iteration, and we assume that in this direction we will always have this vlan id.
+			 */
+			if (*vid == 0) {
+				/*
+				 * Find src_mac addr in the "bridge" fdb table, to get vlan id.
+				 */
+				netdev = br_fdb_find_vid_by_mac(bridge, src_mac_addr, vid);
+				if (!netdev) {
+					DEBUG_TRACE("skb: %px, VID was not found for src_mac(%pM) on bridge: %px (%s)\n",
+							skb, src_mac_addr, bridge, bridge->name);
+
+					/*
+					 * We didn't get an entry for the src_mac addr in the fdb table.
+					 * For a valid flow, there are only two ways the determined VID could be valid.
+					 */
+					if (is_routed && dev == bridge) {
+						/*
+						 * Case1: This packet must have used PVID configuration on bridge device, if the packet is say, coming from
+						 * WAN to LAN Brige device. And this bridge device would be the first device in this array.
+						 */
+						if (i == start_index) {
+							br_vlan_get_pvid_rcu(dev, vid);
+							DEBUG_TRACE("skb: %px, Fetching PVID from bridge iface: %d\n", skb, *vid);
+						}
+
+						/*
+						 * Case2: This packet must have used VID configuration from VLAN on a bridge device(if any).
+						 */
+						if (i == start_index + 1) {
+							prev_dev = dev_get_by_index(&init_net, ecm_db_iface_interface_identifier_get(interfaces[start_index]));
+							if (!prev_dev) {
+								DEBUG_WARN("%px: Failed to get previous net device with %d index\n", ci, start_index);
+								rcu_read_unlock();
+								goto fail;
+							}
+
+							if (is_vlan_dev(prev_dev)) {
+								*vid = vlan_dev_vlan_id(prev_dev);
+								DEBUG_TRACE("%px: Got VID from bridge VLAN iface(%s) vid: %d \n", ci, prev_dev->name, *vid);
+							}
+
+							dev_put(prev_dev);
+						}
+
+						/*
+						 * Validate if the destination mac is reachable with the obtained VID, via the bridge slave device,
+						 * in the interface heirarchy. We are expecting the entry to be present in FDB table.
+						 */
+						next_dev = dev_get_by_index(&init_net, ecm_db_iface_interface_identifier_get(interfaces[i+1]));
+						if (!next_dev) {
+							DEBUG_WARN("%px: Failed to get next net device(bridge slave) with %d index\n", ci, i+1);
+							rcu_read_unlock();
+							goto fail;
+						}
+
+						if (*vid == 0 || !br_fdb_has_entry(next_dev, dest_mac_addr, *vid)) {
+							dev_put(next_dev);
+							rcu_read_unlock();
+							DEBUG_TRACE("%px: Failed to reach dest mac(%pM) via VLAN tag(%d) on bridge slave device(%s)\n",
+									skb, dest_mac_addr, *vid, next_dev->name);
+							goto fail;
+						}
+
+					}
+				} else {
+					DEBUG_TRACE("%px: src_mac_addr lookup success. vlan tag found for dev:%s, mac:%pM, vid=%d netdev=%s\n",
+							ci, dev->name, src_mac_addr, *vid, netdev->name);
+					dev_put(netdev);
+				}
+			}
+
+			/*
+			 * Get vlan information on the given dev.
+			 */
+			ret = br_vlan_get_info_rcu(dev, *vid, &vinfo);
+			if (ret) {
+				DEBUG_WARN("%px: br_vlan_get_info_rcu() failed. vlan info not found for interface with dev=%s, vid=%d\n", ci, dev->name, *vid);
+				rcu_read_unlock();
+				goto fail;
+			}
+			rcu_read_unlock();
+
+			DEBUG_TRACE("%px: br_vlan_get_info_rcu() success. vlan info found for interface with dev:%s, vid:%d, pvid:%d, untagged:%d\n",
+					ci, dev->name, *vid, !!(vinfo.flags & BRIDGE_VLAN_INFO_PVID), !!(vinfo.flags & BRIDGE_VLAN_INFO_UNTAGGED));
+
+			vlan_filter_iface_count++;
+			if (vlan_filter_iface_count > ECM_VLAN_FILTER_RULE_IFACE_MAX) {
+				DEBUG_WARN("%px: Unexpectedly more than allowed(max=%d) vlan filter dev found in heirarchy.\n",
+						ci, ECM_VLAN_FILTER_RULE_IFACE_MAX);
+				goto fail;
+			}
+
+			if (!ci->vlan_filter_valid) {
+				ci->vlan_filter = (struct ecm_db_connection_vlan_filter *)kzalloc(
+						(sizeof(struct ecm_db_connection_vlan_filter) * ECM_VLAN_FILTER_RULE_MAX), GFP_ATOMIC | __GFP_NOWARN);
+				if (!ci->vlan_filter) {
+					DEBUG_WARN("%px: Connection instance's vlan filter memory allocation failed\n", ci);
+					goto fail;
+				}
+
+				ci->vlan_filter_valid = true;
+			}
+
+			/*
+			 * Fill vlan filter info in connection instance.
+			 * Reference for "ii" has been taken here, and released in ecm_db_connection_del_vlan_filter().
+			 * TODO: Fill vlan_proto from skb? But skb may not be a tagged packet?
+			 */
+			ecm_db_iface_ref(interfaces[i]);
+			ci->vlan_filter[vlan_filter_idx].ii = interfaces[i];
+			ci->vlan_filter[vlan_filter_idx].vlan_tpid = ETH_P_8021Q;
+			ci->vlan_filter[vlan_filter_idx].vlan_tag = vinfo.vid;
+
+			/*
+			 * Set bridge vlan flags.
+			 */
+			ci->vlan_filter[vlan_filter_idx].flags |= ECM_VLAN_FILTER_FLAG_VALID;
+			if (vinfo.flags & BRIDGE_VLAN_INFO_PVID) {
+				ci->vlan_filter[vlan_filter_idx].flags |= ECM_VLAN_FILTER_FLAG_INGRESS_PVID;
+			}
+
+			if (vinfo.flags & BRIDGE_VLAN_INFO_UNTAGGED) {
+				ci->vlan_filter[vlan_filter_idx].flags |= ECM_VLAN_FILTER_FLAG_EGRESS_UNTAGGED;
+			}
+
+			ci->vlan_filter[vlan_filter_idx].is_valid = true;
+			vlan_filter_idx++;
+
+			dev_put(dev);
+			dev_put(bridge);
+		}
+	} else {
+		/*
+		 * For RETURN Direction, traverse from ECM_DB_IFACE_HEIRARCHY_MAX-1 to first_index.
+		 */
+		start_index = ECM_DB_IFACE_HEIRARCHY_MAX - 1;
+		end_index = first_index;
+		for (i = start_index; i >= end_index; i--) {
+			DEBUG_TRACE("%px: Walk interface heirarchy for i=%d index (MAX=%d)\n", ci, i, ECM_DB_IFACE_HEIRARCHY_MAX);
+			dev = dev_get_by_index(&init_net, ecm_db_iface_interface_identifier_get(interfaces[i]));
+			if (!dev) {
+				DEBUG_WARN("%px: Failed to get net device with %d index\n", ci, i);
+				ecm_db_connection_interfaces_deref(interfaces, first_index);
+				return false;
+			}
+
+			/*
+			 * Continue processing only if dev is bridge/bridge slave.
+			 */
+			rcu_read_lock();
+			ret = br_dev_is_vlan_filter_enabled(dev);
+			if (ret) {
+				DEBUG_WARN("%px: dev is not a vlan filter: with dev=%s, vid=%d ret=%d\n", ci, dev->name, *vid, ret);
+				rcu_read_unlock();
+				dev_put(dev);
+				bridge = NULL;
+				continue;
+			}
+
+			/*
+			 * Get master bridge device.
+			 */
+			if (dev->priv_flags & IFF_BRIDGE_PORT) {
+				bridge = netdev_master_upper_dev_get_rcu(dev);
+				if (!bridge) {
+					DEBUG_WARN("Expected bridge for dev=%s for bridge vlan filtering\n", dev->name);
+					rcu_read_unlock();
+					dev_put(dev);
+					ecm_db_connection_interfaces_deref(interfaces, first_index);
+					return false;
+				}
+				DEBUG_TRACE("Found bridge port dev=%s and master bridge dev=%s for bridge vlan filtering\n", dev->name, bridge->name);
+			} else if (netif_is_bridge_master(dev)) {
+				DEBUG_TRACE("Found bridge dev=%s for bridge vlan filtering\n", dev->name);
+				bridge = dev;
+			}
+			dev_hold(bridge);
+
+			/*
+			 * Look for vlan id information only if we don't have it yet.
+			 * This could have been passed by the caller; OR
+			 * we found this in the last iteration, and we assume that in this direction we will always have this vlan id.
+			 */
+			if (*vid == 0) {
+				/*
+				 * Find src_mac addr in the "bridge" fdb table, to get vlan id.
+				 */
+				netdev = br_fdb_find_vid_by_mac(bridge, src_mac_addr, vid);
+				if (!netdev) {
+					DEBUG_TRACE("skb: %px, VID was not found for src_mac(%pM) on bridge: %px (%s)\n",
+							skb, src_mac_addr, bridge, bridge->name);
+
+					/*
+					 * We didn't get an entry for the src_mac addr in the fdb table.
+					 * For a valid flow, there are only two ways the determined VID could be valid.
+					 */
+					if (is_routed && dev == bridge) {
+						/*
+						 * Case1: This packet must have used PVID configuration on bridge device, if the packet is say, coming from
+						 * WAN to LAN Brige device. And this bridge device would be the first device in this array.
+						 */
+						if (i == start_index) {
+							br_vlan_get_pvid_rcu(dev, vid);
+							DEBUG_TRACE("skb: %px, Fetching PVID from bridge iface: %d\n", skb, *vid);
+						}
+
+						/*
+						 * Case2: This packet must have used VID configuration from VLAN on a bridge device(if any).
+						 */
+						if (i == start_index - 1) {
+							prev_dev = dev_get_by_index(&init_net, ecm_db_iface_interface_identifier_get(interfaces[start_index]));
+							if (!prev_dev) {
+								DEBUG_WARN("%px: Failed to get previous net device with %d index\n", ci, start_index);
+								rcu_read_unlock();
+								goto fail;
+							}
+
+							if (is_vlan_dev(prev_dev)) {
+								*vid = vlan_dev_vlan_id(prev_dev);
+								DEBUG_TRACE("%px: Got VID from bridge VLAN iface(%s) vid: %d \n", ci, prev_dev->name, *vid);
+							}
+
+							dev_put(prev_dev);
+						}
+
+						/*
+						 * Validate if the destination mac is reachable with the obtained VID, via the bridge slave device,
+						 * in the interface heirarchy. We are expecting the entry to be present in FDB table.
+						 */
+						next_dev = dev_get_by_index(&init_net, ecm_db_iface_interface_identifier_get(interfaces[i-1]));
+						if (!next_dev) {
+							DEBUG_WARN("%px: Failed to get next net device(bridge slave) with %d index\n", ci, i-1);
+							rcu_read_unlock();
+							goto fail;
+						}
+
+						if (*vid == 0 || !br_fdb_has_entry(next_dev, dest_mac_addr, *vid)) {
+							dev_put(next_dev);
+							rcu_read_unlock();
+							DEBUG_TRACE("%px: Failed to reach dest mac(%pM) via VLAN tag(%d) on bridge slave device(%s)\n",
+									skb, dest_mac_addr, *vid, next_dev->name);
+							goto fail;
+						}
+					}
+				} else {
+					DEBUG_TRACE("%px: src_mac_addr lookup success. vlan tag found for dev:%s, mac:%pM, vid=%d netdev=%s\n",
+							ci, dev->name, src_mac_addr, *vid, netdev->name);
+					dev_put(netdev);
+				}
+			}
+
+			/*
+			 * Get vlan information on the given dev.
+			 */
+			ret = br_vlan_get_info_rcu(dev, *vid, &vinfo);
+			if (ret) {
+				DEBUG_WARN("%px: br_vlan_get_info_rcu() failed. vlan info not found for interface with dev=%s, vid=%d\n", ci, dev->name, *vid);
+				rcu_read_unlock();
+				goto fail;
+			}
+			rcu_read_unlock();
+
+			DEBUG_TRACE("%px: br_vlan_get_info_rcu() success. vlan info found for interface with dev:%s, vid:%d, pvid:%d, untagged:%d\n",
+					ci, dev->name, *vid, !!(vinfo.flags & BRIDGE_VLAN_INFO_PVID), !!(vinfo.flags & BRIDGE_VLAN_INFO_UNTAGGED));
+
+			vlan_filter_iface_count++;
+			if (vlan_filter_iface_count > ECM_VLAN_FILTER_RULE_IFACE_MAX) {
+				DEBUG_WARN("%px: Unexpectedly more than allowed(max=%d) vlan filter dev found in heirarchy.\n",
+						ci, ECM_VLAN_FILTER_RULE_IFACE_MAX);
+				goto fail;
+			}
+
+			if (!ci->vlan_filter_valid) {
+				ci->vlan_filter = (struct ecm_db_connection_vlan_filter *)kzalloc(
+						(sizeof(struct ecm_db_connection_vlan_filter) * ECM_VLAN_FILTER_RULE_MAX), GFP_ATOMIC | __GFP_NOWARN);
+				if (!ci->vlan_filter) {
+					DEBUG_WARN("%px: Connection instance's vlan filter memory allocation failed\n", ci);
+					goto fail;
+				}
+
+				ci->vlan_filter_valid = true;
+			}
+
+			/*
+			 * Fill vlan filter info in connection instance.
+			 * Reference for "ii" has been taken here, and released in ecm_db_connection_del_vlan_filter().
+			 * TODO: Fill vlan_proto from skb? But skb may not be a tagged packet?
+			 */
+			ecm_db_iface_ref(interfaces[i]);
+			ci->vlan_filter[vlan_filter_idx].ii = interfaces[i];
+			ci->vlan_filter[vlan_filter_idx].vlan_tpid = ETH_P_8021Q;
+			ci->vlan_filter[vlan_filter_idx].vlan_tag = vinfo.vid;
+
+			/*
+			 * Set bridge vlan flags.
+			 */
+			ci->vlan_filter[vlan_filter_idx].flags |= ECM_VLAN_FILTER_FLAG_VALID;
+			if (vinfo.flags & BRIDGE_VLAN_INFO_PVID) {
+				ci->vlan_filter[vlan_filter_idx].flags |= ECM_VLAN_FILTER_FLAG_INGRESS_PVID;
+			}
+
+			if (vinfo.flags & BRIDGE_VLAN_INFO_UNTAGGED) {
+				ci->vlan_filter[vlan_filter_idx].flags |= ECM_VLAN_FILTER_FLAG_EGRESS_UNTAGGED;
+			}
+
+			ci->vlan_filter[vlan_filter_idx].is_valid = true;
+			vlan_filter_idx++;
+
+			dev_put(dev);
+			dev_put(bridge);
+		}
+	}
+
+	DEBUG_TRACE("%px: vlan filter processing complete for vid=%d\n", ci, *vid);
+	ecm_db_connection_interfaces_deref(interfaces, first_index);
+
+	return true;
+fail:
+	dev_put(dev);
+	dev_put(bridge);
+	ecm_db_connection_interfaces_deref(interfaces, first_index);
+	return false;
+}
+
+/*
+ * ecm_db_connection_del_vlan_filter()
+ *	Update bridge vlan filter information in the connection instance, by walking the interface heirarchy.
+ */
+bool ecm_db_connection_del_vlan_filter(struct ecm_db_connection_instance *ci)
+{
+	int vlan_filter_idx;
+
+	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%px: magic failed\n", ci);
+
+	if (!ci->vlan_filter_valid) {
+		DEBUG_TRACE("%px: Bridge vlan filter not configured. Nothing to delete.\n", ci);
+		return true;
+	}
+
+	for (vlan_filter_idx = 0; vlan_filter_idx < ECM_VLAN_FILTER_RULE_MAX; vlan_filter_idx++) {
+		DEBUG_TRACE("%px: Bridge vlan filter drop reference for %s is valid=%d\n",
+				ci, ecm_db_connection_vlan_filter_type_strings[vlan_filter_idx], ci->vlan_filter[vlan_filter_idx].is_valid);
+		if (ci->vlan_filter[vlan_filter_idx].is_valid) {
+			DEBUG_TRACE("%px: Bridge vlan filter drop reference for dev=%s\n", ci, ci->vlan_filter[vlan_filter_idx].ii->name);
+			ci->vlan_filter[vlan_filter_idx].is_valid = false;
+
+			/*
+			 * Reference taken during vlan filter add in ecm_db_connection_fill_vlan_filter();
+			 */
+			ecm_db_iface_deref(ci->vlan_filter[vlan_filter_idx].ii);
+			ci->vlan_filter[vlan_filter_idx].ii = NULL;
+		}
+	}
+
+	ci->vlan_filter_valid = false;
+	kfree(ci->vlan_filter);
+	ci->vlan_filter = NULL;
+
+	DEBUG_TRACE("%px: Bridge vlan filter deletion complete\n", ci);
+	return true;
+}
+
+/*
+ * ecm_db_connection_add_vlan_filter()
+ *	Update bridge vlan filter information in the connection instance, by walking the interface heirarchy in:
+ *	1: Flow direction - FROM heirarchy
+ *	2: Flow direction - TO heirarchy
+ *	3: Return direction - TO heirarchy
+ *	4: Return direction - FROM heirarchy
+ */
+bool ecm_db_connection_add_vlan_filter(struct ecm_db_connection_instance *ci,
+					struct ecm_db_node_instance *ni[],
+					struct sk_buff *skb,
+					ecm_db_obj_dir_t from_dir,
+					ecm_db_obj_dir_t to_dir, bool is_routed)
+{
+	uint8_t *src_mac_addr;
+	uint8_t *dest_mac_addr;
+	uint16_t vid_flow = 0;
+	uint16_t vid_ret = 0;
+	bool result = false;
+
+	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%px: magic failed\n", ci);
+
+	ecm_db_node_ref(ni[ECM_DB_OBJ_DIR_FROM]);
+	ecm_db_node_ref(ni[ECM_DB_OBJ_DIR_TO]);
+
+	src_mac_addr = ni[ECM_DB_OBJ_DIR_FROM]->address;
+	dest_mac_addr = ni[ECM_DB_OBJ_DIR_TO]->address;
+
+	if (src_mac_addr == NULL) {
+		DEBUG_TRACE("%px: src_mac_addr is NULL\n", ci);
+		goto fail;
+	}
+
+	if (dest_mac_addr == NULL) {
+		DEBUG_TRACE("%px: dest_mac_addr is NULL\n", ci);
+		goto fail;
+	}
+
+	/*
+	 * VLAN Bridge Filter rules may not be exactly reverse in FLOW and RETURN direction.
+	 * Hence we need to process the complete path(TO & FROM heirarchy) in both(FLOW & RETURN) the directions.
+	 */
+
+	/*
+	 * Flow direction : FROM heirarchy
+	 * We send last param as "0", as we don't any informatiion about
+	 * the vlan tag used for FLOW path.
+	 * TODO: Evaluate integrating VLAN filter configuration during interface heirarchy construction.
+	 */
+	DEBUG_TRACE("%px: Parse the heirarchy for FROM heirarcy in FLOW direction.\n", ci);
+	if (!ecm_db_connection_fill_vlan_filter(ci, skb, from_dir, src_mac_addr, dest_mac_addr,
+				ECM_VLAN_FILTER_RULE_FLOW_DIR, is_routed, &vid_flow)) {
+		DEBUG_WARN("%px: vlan filter info not found for ECM_DB_OBJ_DIR_FROM and ECM_VLAN_FILTER_RULE_FLOW_DIR\n", ci);
+		goto fail;
+	}
+
+	/*
+	 * Flow direction : TO heirarchy
+	 * We use the vlan tag ID(vid) obtained in last walk (FROM direction),
+	 * to fill the other (TO) direction.
+	 */
+	DEBUG_TRACE("%px: Parse the heirarchy for TO heirarcy in FLOW direction.\n", ci);
+	if (!ecm_db_connection_fill_vlan_filter(ci, skb, to_dir, src_mac_addr, dest_mac_addr,
+				ECM_VLAN_FILTER_RULE_FLOW_DIR, is_routed, &vid_flow)) {
+		DEBUG_WARN("%px: vlan filter info not found for ECM_DB_OBJ_DIR_TO and ECM_VLAN_FILTER_RULE_FLOW_DIR\n", ci);
+		goto fail;
+	}
+
+	/*
+	 * Return direction : FROM heirarchy
+	 * We send last param as "0", as we don't any information about
+	 * the vlan tag used for the RETURN path.
+	 */
+	DEBUG_TRACE("%px: Parse the heirarchy for TO heirarcy in RET direction.\n", ci);
+	if (!ecm_db_connection_fill_vlan_filter(ci, skb, to_dir, dest_mac_addr, src_mac_addr,
+				ECM_VLAN_FILTER_RULE_RET_DIR, is_routed, &vid_ret)) {
+		DEBUG_WARN("%px: vlan filter info not found for ECM_DB_OBJ_DIR_TO and ECM_VLAN_FILTER_RULE_RET_DIR\n", ci);
+		goto fail;
+	}
+
+	/*
+	 * Return direction : TO heirarchy
+	 * We use the vlan tag ID(vid) obtained in last walk (FROM direction),
+	 * to fill the other (TO) direction.
+	 */
+	DEBUG_TRACE("%px: Parse the heirarchy for FROM heirarcy in RET direction.\n", ci);
+	if (!ecm_db_connection_fill_vlan_filter(ci, skb, from_dir, dest_mac_addr, src_mac_addr,
+				ECM_VLAN_FILTER_RULE_RET_DIR, is_routed, &vid_ret)) {
+		DEBUG_WARN("%px: vlan filter info not found for ECM_DB_OBJ_DIR_FROM and ECM_VLAN_FILTER_RULE_RET_DIR\n", ci);
+		goto fail;
+	}
+
+	result = true;
+	DEBUG_TRACE("%px: Bridge vlan filter info processed for flow_dir=%d and ret_dir=%d\n", ci, vid_flow, vid_ret);
+
+fail:
+	ecm_db_node_deref(ni[ECM_DB_OBJ_DIR_FROM]);
+	ecm_db_node_deref(ni[ECM_DB_OBJ_DIR_TO]);
+
+	return result;
+
+}
+#endif
 
 /*
  * ecm_db_connection_interfaces_get_count()
@@ -2875,6 +3507,88 @@ void ecm_db_connection_add(struct ecm_db_connection_instance *ci,
 	ecm_db_timer_group_entry_set(&ci->defunct_timer, tg);
 }
 EXPORT_SYMBOL(ecm_db_connection_add);
+
+#ifdef ECM_BRIDGE_VLAN_FILTERING_ENABLE
+/*
+ * ecm_db_connection_heirarchy_state_get()
+ *	Output state for an interface heirarchy list.
+ */
+int ecm_db_connection_vlan_filter_state_get(struct ecm_state_file_instance *sfi, struct ecm_db_connection_vlan_filter *v)
+{
+	int result;
+	struct net_device *dev;
+
+	if (!(v->is_valid)) {
+		DEBUG_WARN("%px: ecm_db_connection_vlan_filter_state_get() VLAN Filter v->is_valid is FALSE\n", v);
+		return 0;
+	}
+
+	dev = dev_get_by_index(&init_net, ecm_db_iface_interface_identifier_get(v->ii));;
+
+	if (!dev) {
+		DEBUG_WARN("%px: VLAN Filter dev not found for ii->ae_interface_num=%d\n", v, ecm_db_iface_interface_identifier_get(v->ii));
+		return -EINVAL;
+	}
+
+	if ((result = ecm_state_write(sfi, "dev_name", "%s", dev->name))) {
+		dev_put(dev);
+		return result;
+	}
+	dev_put(dev);
+
+	if ((result = ecm_state_write(sfi, "tag", "0x%x", v->vlan_tag))) {
+		return result;
+	}
+
+	if ((result = ecm_state_write(sfi, "tpid", "0x%x", v->vlan_tpid))) {
+		return result;
+	}
+
+	if ((result = ecm_state_write(sfi, "flag_pvid", "%d", !!(v->flags & BRIDGE_VLAN_INFO_PVID)))) {
+		return result;
+	}
+
+	if ((result = ecm_state_write(sfi, "flag_untagged", "%d", !!(v->flags & BRIDGE_VLAN_INFO_UNTAGGED)))) {
+		return result;
+	}
+
+	return 0;
+}
+
+/*
+ * ecm_db_connection_instance_state_get()
+ *	Output state for an interface heirarchy list.
+ */
+int ecm_db_connection_instance_vlan_filter_state_get(struct ecm_state_file_instance *sfi, struct ecm_db_connection_instance *ci)
+{
+	int result;
+	int i;
+
+	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%px: magic failed\n", ci);
+
+	if (!ci->vlan_filter_valid) {
+		return 0;
+	}
+
+	for (i=0; i<ECM_VLAN_FILTER_RULE_MAX; i++) {
+		if ((result = ecm_state_prefix_add(sfi, ecm_db_connection_vlan_filter_type_strings[i]))) {
+			DEBUG_WARN("ecm_db_connection_instance_vlan_filter_state_get() : ecm_db_connection_vlan_filter_type_strings[] is invalid it seems. i=%d\n",i);
+			return result;
+		}
+
+		if ((result = ecm_db_connection_vlan_filter_state_get(sfi, &ci->vlan_filter[i]))) {
+			DEBUG_WARN("ecm_db_connection_vlan_filter_state_get has a problem\n");
+			return result;
+		}
+
+		if ((result = ecm_state_prefix_remove(sfi))) {
+			return result;
+		}
+	}
+
+	return 0;
+}
+#endif
 
 /*
  * ecm_db_connection_heirarchy_state_get()
@@ -3274,6 +3988,20 @@ int ecm_db_connection_state_get(struct ecm_state_file_instance *sfi, struct ecm_
 	if ((result = ecm_state_prefix_remove(sfi))) {
 		return result;
 	}
+#ifdef ECM_BRIDGE_VLAN_FILTERING_ENABLE
+	if ((result = ecm_state_prefix_add(sfi, "bridge_vlan_filter"))) {
+		return result;
+	}
+
+	result = ecm_db_connection_instance_vlan_filter_state_get(sfi, ci);
+	if (result) {
+		return result;
+	}
+
+	if ((result = ecm_state_prefix_remove(sfi))) {
+		return result;
+	}
+#endif
 
 	if ((result = ecm_state_prefix_remove(sfi))) {
 		return result;
@@ -3460,6 +4188,7 @@ struct ecm_db_connection_instance *ecm_db_connection_ipv6_from_ct_get_and_ref(st
 		break;
 	case IPPROTO_IPIP:
 	case IPPROTO_GRE:
+	case IPPROTO_L2TP:
 		host1_port = 0;
 		host2_port = 0;
 		break;
@@ -3519,6 +4248,7 @@ struct ecm_db_connection_instance *ecm_db_connection_ipv4_from_ct_get_and_ref(st
 	case IPPROTO_IPV6:
 	case IPPROTO_ESP:
 	case IPPROTO_GRE:
+	case IPPROTO_L2TP:
 		host1_port = 0;
 		host2_port = 0;
 		break;
@@ -3724,6 +4454,75 @@ void ecm_db_front_end_instance_ref_and_set(struct ecm_db_connection_instance *ci
 EXPORT_SYMBOL(ecm_db_front_end_instance_ref_and_set);
 
 /*
+ * ecm_db_netdevs_get_and_hold()
+ *	Get source and the destination net devices for a flow
+ */
+void ecm_db_netdevs_get_and_hold(struct ecm_db_connection_instance *ci, ecm_tracker_sender_type_t sender,
+				struct net_device **src_dev, struct net_device **dest_dev)
+{
+	uint32_t first_index;
+	ecm_db_obj_dir_t dir;
+	struct net_device *dev;
+	struct ecm_db_iface_instance *interfaces[ECM_DB_IFACE_HEIRARCHY_MAX];
+
+	/*
+	 * Obtained destination netdev from ECM's 'to' or 'from' interface list
+	 * according to the type of sender.
+	 */
+	if (sender == ECM_TRACKER_SENDER_TYPE_SRC) {
+		first_index = ecm_db_connection_interfaces_get_and_ref(ci, interfaces, ECM_DB_OBJ_DIR_TO);
+		dir = ECM_DB_OBJ_DIR_TO;
+	} else {
+		first_index = ecm_db_connection_interfaces_get_and_ref(ci, interfaces, ECM_DB_OBJ_DIR_FROM);
+		dir = ECM_DB_OBJ_DIR_FROM;
+	}
+
+	if (likely(first_index != ECM_DB_IFACE_HEIRARCHY_MAX)) {
+		dev = dev_get_by_index(&init_net, ecm_db_iface_interface_identifier_get(interfaces[first_index]));
+		if (!dev) {
+			DEBUG_WARN("%px: Failed to get net device with %d index\n", ci, first_index);
+			ecm_db_connection_interfaces_deref(interfaces, first_index);
+			goto get_source_dev;
+		}
+
+		*dest_dev = dev;
+		ecm_db_connection_interfaces_deref(interfaces, first_index);
+		goto get_source_dev;
+	}
+
+	ecm_db_connection_interfaces_deref(interfaces, first_index);
+	DEBUG_WARN("%px: Failed to get %s interfaces list\n", ci, ecm_db_obj_dir_strings[dir]);
+get_source_dev:
+	/*
+	 * Obtained source netdev form ECM's 'to' or 'from' interface list
+	 * according to the type of sender.
+	 */
+	if (sender == ECM_TRACKER_SENDER_TYPE_SRC) {
+		first_index = ecm_db_connection_interfaces_get_and_ref(ci, interfaces, ECM_DB_OBJ_DIR_FROM);
+		dir = ECM_DB_OBJ_DIR_FROM;
+	} else {
+		first_index = ecm_db_connection_interfaces_get_and_ref(ci, interfaces, ECM_DB_OBJ_DIR_TO);
+		dir = ECM_DB_OBJ_DIR_TO;
+	}
+
+	if (likely(first_index != ECM_DB_IFACE_HEIRARCHY_MAX)) {
+		dev = dev_get_by_index(&init_net, ecm_db_iface_interface_identifier_get(interfaces[first_index]));
+		if (!dev) {
+			DEBUG_WARN("%px: Failed to get net device with %d index\n", ci, first_index);
+			ecm_db_connection_interfaces_deref(interfaces, first_index);
+			return;
+		}
+
+		*src_dev = dev;
+		ecm_db_connection_interfaces_deref(interfaces, first_index);
+		return;
+	}
+
+	ecm_db_connection_interfaces_deref(interfaces, first_index);
+	DEBUG_WARN("%px: Failed to get %s interfaces list\n", ci, ecm_db_obj_dir_strings[dir]);
+}
+
+/*
  * ecm_db_get_connection_counts_simple()
  *	Return total of connections for each simple protocol (tcp, udp, other).  Primarily for use by the luci-bwc service.
  */
@@ -3776,8 +4575,11 @@ static struct file_operations ecm_db_connection_count_simple_fops = {
  */
 bool ecm_db_connection_init(struct dentry *dentry)
 {
-	debugfs_create_u32("connection_count", S_IRUGO, dentry,
-					(u32 *)&ecm_db_connection_count);
+	if (!ecm_debugfs_create_u32("connection_count", S_IRUGO, dentry,
+					(u32 *)&ecm_db_connection_count)) {
+		DEBUG_ERROR("Failed to create ecm db connection count file in debugfs\n");
+		return false;
+	}
 
 	if (!debugfs_create_file("connection_count_simple", S_IRUGO, dentry,
 					NULL, &ecm_db_connection_count_simple_fops)) {

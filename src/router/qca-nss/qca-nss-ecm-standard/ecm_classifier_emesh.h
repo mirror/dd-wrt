@@ -18,4 +18,5 @@
  */
 
 struct ecm_classifier_emesh_sawf_instance;
+bool ecm_classifier_emesh_is_sawf_rule_valid(struct ecm_classifier_emesh_sawf_instance *cemi);
 struct ecm_classifier_emesh_sawf_instance *ecm_classifier_emesh_sawf_instance_alloc(struct ecm_db_connection_instance *ci);

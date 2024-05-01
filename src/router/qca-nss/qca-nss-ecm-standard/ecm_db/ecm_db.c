@@ -242,13 +242,11 @@ static int ecm_db_ipv6_route_table_update_event(struct notifier_block *nb,
 					       unsigned long event,
 					       void *ptr)
 {
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 16, 0))
 	struct fib6_config *cfg = (struct fib6_config *)ptr;
 	struct ecm_db_connection_instance *ci;
-#endif
+
 	DEBUG_TRACE("route table update event v6\n");
 
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 16, 0))
 	if ((event != RTM_DELROUTE) && (event != RTM_NEWROUTE)) {
 		DEBUG_WARN("%px: Unhandled route table event: %lu\n", cfg, event);
 		return NOTIFY_DONE;
@@ -264,13 +262,12 @@ static int ecm_db_ipv6_route_table_update_event(struct notifier_block *nb,
 		ecm_db_connection_defunct_ip_version(6);
 		return NOTIFY_DONE;
 	}
-#endif
+
 	/*
 	 * Disable IPv6 frontend processing until defunct function call is completed.
 	 */
 	ecm_front_end_ipv6_stop(1);
 
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 16, 0))
 	/*
 	 * Iterate all connections
 	 */
@@ -405,12 +402,11 @@ next:
 		ecm_db_connection_deref(ci);
 		ci = cin;
 	}
-#else
+
 	/*
 	 * Re-enable IPv6 frontend processing.
 	 */
 	ecm_front_end_ipv6_stop(0);
-#endif
 	return NOTIFY_DONE;
 }
 

@@ -43,10 +43,32 @@ enum ecm_classifier_mscs_results {
 typedef enum /** @cond */ ecm_classifier_mscs_results /** @endcond */ ecm_classifier_mscs_result_t;
 
 /**
+ * Structure containing params to get MSCS priority.
+ */
+struct ecm_classifier_mscs_get_priority_info {
+	struct net_device *dst_dev;	/**< Destination net dev. */
+	struct net_device *src_dev;	/**< Source net dev. */
+	uint8_t *src_mac;		/**< Source MAC address. */
+	uint8_t *dst_mac;		/**< Destination MAC address. */
+	struct sk_buff *skb;		/**< SKB pointer. */
+};
+
+/**
+ * Structure containing params for SCS rule match info.
+ */
+struct ecm_classifier_mscs_rule_match_info {
+	struct net_device *dst_dev;	/**< Destination net dev. */
+	struct net_device *src_dev;	/**< Source net dev. */
+	uint8_t *src_mac;		/**< Source MAC. */
+	uint8_t *dst_mac;		/**< Destination MAC. */
+	uint32_t rule_id;		/**< Rule ID. */
+};
+
+/**
  * Callback to which MSCS clients will register.
  */
-typedef int (*ecm_classifier_mscs_process_callback_t)(uint8_t src_mac[], uint8_t dst_mac[], struct sk_buff* skb);
-typedef bool (*ecm_classifier_mscs_scs_priority_callback_t)(uint32_t rule_id, uint8_t *dst_mac_addr);
+typedef int (*ecm_classifier_mscs_process_callback_t)(struct ecm_classifier_mscs_get_priority_info *priority_info);
+typedef bool (*ecm_classifier_mscs_scs_priority_callback_t)(struct ecm_classifier_mscs_rule_match_info *rule_match_info);
 
 /**
  * Data structure for MSCS classifier callbacks.

@@ -1,7 +1,7 @@
 /*
  **************************************************************************
  * Copyright (c) 2014-2015, 2019-2021 The Linux Foundation. All rights reserved.
- * Copyright (c) 2022, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2023, Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -20,6 +20,7 @@
 #define ECM_TYPES_H_
 
 #include <linux/printk.h>
+#include <linux/debugfs.h>
 
 /*
  * Common ECM macro to handle the kernel macro name change from kernel version 4.9 and above.
@@ -50,6 +51,7 @@ enum ecm_conn_dir {
  */
 enum ecm_rule_update_type {
 	ECM_RULE_UPDATE_TYPE_CONNMARK,
+	ECM_RULE_UPDATE_TYPE_SAWFMARK,
 	ECM_RULE_UPDATE_TYPE_MAX
 };
 
@@ -256,6 +258,32 @@ static inline void ecm_type_check_ae_ipv6(uint32_t ip6[4]){}
 	}
 
 /*
+ * This macro converts from network order IPv6 address to host order IPv6 address
+ */
+#define ECM_NET_IPV6_ADDR_TO_IP_ADDR(ipaddrt, nin6) \
+	{ \
+		ecm_type_check_ecm_ip_addr(ipaddrt); \
+		ecm_type_check_ae_ipv6(nin6); \
+		ipaddrt[0] = ntohl(nin6[3]); \
+		ipaddrt[1] = ntohl(nin6[2]); \
+		ipaddrt[2] = ntohl(nin6[1]); \
+		ipaddrt[3] = ntohl(nin6[0]); \
+	}
+
+/*
+ * This macro converts from host order IPv6 address to network order IPv6 address
+ */
+#define ECM_IP_ADDR_TO_NET_IPV6_ADDR(nin6, ipaddrt) \
+	{ \
+		ecm_type_check_ae_ipv6(nin6); \
+		ecm_type_check_ecm_ip_addr(ipaddrt); \
+		nin6[0] = htonl(ipaddrt[3]); \
+		nin6[1] = htonl(ipaddrt[2]); \
+		nin6[2] = htonl(ipaddrt[1]); \
+		nin6[3] = htonl(ipaddrt[0]); \
+	}
+
+/*
  * ecm_mac_addr_equal()
  *	Compares two MAC addresses.
  */
@@ -424,6 +452,27 @@ static inline bool ecm_string_to_ip_addr(ip_addr_t addr, char *ip_str)
 	}
 #endif
 	return false;
+}
+
+/*
+ * ecm_debugfs_create_u32()
+ *	Create a debugfs node for unsigned 32-bits config variable.
+ *
+ * debugfs_create_u32 API doesn't have return value in the latest kernel version.
+ * So, a common function is created for all the supported kernel versions.
+ */
+static inline bool ecm_debugfs_create_u32(const char *name, umode_t mode,
+					  struct dentry *parent, u32 *value)
+{
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 1, 0))
+	struct dentry *d = debugfs_create_u32(name, mode, parent, value);
+	if (!d) {
+		return false;
+	}
+#else
+	debugfs_create_u32(name, mode, parent, value);
+#endif
+	return true;
 }
 
 /*

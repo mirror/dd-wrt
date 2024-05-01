@@ -1,7 +1,7 @@
 /*
  **************************************************************************
  * Copyright (c) 2014-2021 The Linux Foundation. All rights reserved.
- * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -108,6 +108,7 @@
 #include "ecm_non_ported_ipv6.h"
 #endif
 #include "ecm_multicast_ipv6.h"
+#include "ecm_stats_v6.h"
 
 /*
  * Locking of the classifier - concurrency control for file global parameters.
@@ -119,6 +120,31 @@ DEFINE_SPINLOCK(ecm_ipv6_lock);			/* Protect against SMP access between netfilte
  * Management thread control
  */
 bool ecm_ipv6_terminate_pending = false;		/* True when the user has signalled we should quit */
+
+/*
+ * ecm_ipv6_dev_has_ipaddr()
+ *	Returns true if dev has an IPv6 address
+ */
+bool ecm_ipv6_dev_has_ipaddr(struct net_device *dev)
+{
+	struct inet6_dev *ip6_inetdev;
+
+	ip6_inetdev = __in6_dev_get(dev);
+	if (!ip6_inetdev) {
+		DEBUG_TRACE("%px: dev->ip6_ptr is NULL for %s\n", dev, dev->name);
+		return false;
+	}
+
+	read_lock_bh(&ip6_inetdev->lock);
+	if (list_empty(&ip6_inetdev->addr_list)) {
+		read_unlock_bh(&ip6_inetdev->lock);
+		DEBUG_TRACE("%px: dev->ip6_ptr->addr_list is empty for %s\n", dev, dev->name);
+		return false;
+	}
+	read_unlock_bh(&ip6_inetdev->lock);
+
+	return true;
+}
 
 /*
  * ecm_ipv6_node_establish_and_ref()
@@ -144,7 +170,7 @@ struct ecm_db_node_instance *ecm_ipv6_node_establish_and_ref(struct ecm_front_en
 	ip_addr_t remote_ip, local_ip;
 #endif
 
-#if defined(ECM_INTERFACE_VXLAN_ENABLE) || defined(ECM_INTERFACE_L2TPV2_ENABLE) || defined(ECM_INTERFACE_PPTP_ENABLE)
+#if defined(ECM_INTERFACE_VXLAN_ENABLE) || defined(ECM_INTERFACE_L2TPV2_ENABLE) || defined(ECM_INTERFACE_PPTP_ENABLE) || defined(ECM_INTERFACE_MAP_T_ENABLE)
 	struct net_device *local_dev;
 #endif
 
@@ -160,14 +186,6 @@ struct ecm_db_node_instance *ecm_ipv6_node_establish_and_ref(struct ecm_front_en
 	struct ip_tunnel *gre4_tunnel;
 	struct ip6_tnl *gre6_tunnel;
 	ip_addr_t local_gre_tun_ip;
-#endif
-
-#if defined(ECM_INTERFACE_L2TPV2_ENABLE) || defined(ECM_INTERFACE_MAP_T_ENABLE)
-#ifdef ECM_INTERFACE_PPPOE_ENABLE
-	struct ppp_channel *ppp_chan[1];
-	struct pppoe_opt addressing;
-	int px_proto;
-#endif
 #endif
 
 	DEBUG_INFO("%px: Establish node for " ECM_IP_ADDR_OCTAL_FMT "\n", feci, ECM_IP_ADDR_TO_OCTAL(addr));
@@ -242,37 +260,21 @@ struct ecm_db_node_instance *ecm_ipv6_node_establish_and_ref(struct ecm_front_en
 
 			DEBUG_TRACE("%px: local_dev found is %s\n", feci, local_dev->name);
 
+			/*
+			 * If the local_dev is a PPP device, we support only PPPoE devices.
+			 */
 			if (local_dev->type == ARPHRD_PPP) {
 #ifndef ECM_INTERFACE_PPPOE_ENABLE
 				DEBUG_TRACE("%px: l2tpv2 over pppoe unsupported\n", feci);
 				dev_put(local_dev);
 				return NULL;
 #else
-				if (ppp_hold_channels(local_dev, ppp_chan, 1) != 1) {
-					DEBUG_WARN("%px: l2tpv2 over netdevice %s unsupported; could not hold ppp channels\n", feci, local_dev->name);
+				if (!ecm_interface_mac_addr_get_pppoe(local_dev, node_addr)) {
+					DEBUG_WARN("%px: Unable to get any PPPoE device MAC address\n", feci);
 					dev_put(local_dev);
 					return NULL;
 				}
 
-				px_proto = ppp_channel_get_protocol(ppp_chan[0]);
-				if (px_proto != PX_PROTO_OE) {
-					DEBUG_WARN("%px: l2tpv2 over PPP protocol %d unsupported\n", feci, px_proto);
-					ppp_release_channels(ppp_chan, 1);
-					dev_put(local_dev);
-					return NULL;
-				}
-
-				if (pppoe_channel_addressing_get(ppp_chan[0], &addressing)) {
-					DEBUG_WARN("%px: failed to get PPPoE addressing info\n", feci);
-					ppp_release_channels(ppp_chan, 1);
-					dev_put(local_dev);
-					return NULL;
-				}
-
-				DEBUG_TRACE("%px: Obtained mac address for %s remote address " ECM_IP_ADDR_OCTAL_FMT "\n", feci, addressing.dev->name, ECM_IP_ADDR_TO_OCTAL(addr));
-				memcpy(node_addr, addressing.dev->dev_addr, ETH_ALEN);
-				dev_put(addressing.dev);
-				ppp_release_channels(ppp_chan, 1);
 				dev_put(local_dev);
 				done = true;
 				break;
@@ -318,6 +320,27 @@ struct ecm_db_node_instance *ecm_ipv6_node_establish_and_ref(struct ecm_front_en
 			}
 
 			DEBUG_TRACE("%px: local_dev found is %s\n", feci, local_dev->name);
+
+			/*
+			 * If the local_dev is a PPP device, we support only PPPoE devices.
+			 */
+			if (local_dev->type == ARPHRD_PPP) {
+#ifndef ECM_INTERFACE_PPPOE_ENABLE
+				DEBUG_TRACE("%px: PPTP over netdevice %s unsupported\n", feci, local_dev->name);
+				dev_put(local_dev);
+				return NULL;
+#else
+				if (!ecm_interface_mac_addr_get_pppoe(local_dev, node_addr)) {
+					DEBUG_WARN("%px: Unable to get any PPPoE device MAC address\n", feci);
+					dev_put(local_dev);
+					return NULL;
+				}
+
+				dev_put(local_dev);
+				done = true;
+				break;
+#endif
+			}
 
 			if (ECM_IP_ADDR_MATCH(local_ip, addr)) {
 				if (unlikely(!ecm_interface_mac_addr_get_no_route(local_dev, local_ip, node_addr))) {
@@ -365,42 +388,31 @@ struct ecm_db_node_instance *ecm_ipv6_node_establish_and_ref(struct ecm_front_en
 				return NULL;
 			}
 
-			if (ip6_inetdev->dev->type != ARPHRD_PPP) {
-				DEBUG_TRACE("%px: obtained mac address for %s MAP-T address " ECM_IP_ADDR_OCTAL_FMT "\n", feci, ip6_inetdev->dev->name, ECM_IP_ADDR_TO_OCTAL(addr));
-				memcpy(node_addr, ip6_inetdev->dev->dev_addr, ETH_ALEN);
+			local_dev = ip6_inetdev->dev;
+
+			/*
+			 * If the local_dev is a PPP device, we support only PPPoE devices.
+			 */
+			if (local_dev->type == ARPHRD_PPP) {
+#ifndef ECM_INTERFACE_PPPOE_ENABLE
+				DEBUG_TRACE("%px: MAP-T over netdevice %s unsupported\n", feci, local_dev->name);
+				return NULL;
+#else
+				if (!ecm_interface_mac_addr_get_pppoe(local_dev, node_addr)) {
+					DEBUG_WARN("%px: Unable to get any PPPoE device MAC address\n", feci);
+					return NULL;
+				}
+
 				done = true;
 				break;
+#endif
 			}
 
-#ifndef ECM_INTERFACE_PPPOE_ENABLE
-			DEBUG_TRACE("%px: MAP-T over netdevice %s unsupported\n", feci, ip6_inetdev->dev->name);
-			return NULL;
-#else
-			if (ppp_hold_channels(ip6_inetdev->dev, ppp_chan, 1) != 1) {
-				DEBUG_WARN("%px: MAP-T over netdevice %s unsupported; could not hold ppp channels\n", feci, ip6_inetdev->dev->name);
-				return NULL;
-			}
-
-			px_proto = ppp_channel_get_protocol(ppp_chan[0]);
-			if (px_proto != PX_PROTO_OE) {
-				DEBUG_WARN("%px: MAP-T over PPP protocol %d unsupported\n", feci, px_proto);
-				ppp_release_channels(ppp_chan, 1);
-				return NULL;
-			}
-
-			if (pppoe_channel_addressing_get(ppp_chan[0], &addressing)) {
-				DEBUG_WARN("%px: failed to get PPPoE addressing info\n", feci);
-				ppp_release_channels(ppp_chan, 1);
-				return NULL;
-			}
-
-			DEBUG_TRACE("%px: Obtained mac address for %s MAP-T address " ECM_IP_ADDR_OCTAL_FMT "\n", feci, addressing.dev->name, ECM_IP_ADDR_TO_OCTAL(addr));
-			memcpy(node_addr, addressing.dev->dev_addr, ETH_ALEN);
-			dev_put(addressing.dev);
-			ppp_release_channels(ppp_chan, 1);
+			DEBUG_TRACE("%px: Obtained mac address for %s MAP-T address " ECM_IP_ADDR_OCTAL_FMT "\n",
+								feci, local_dev->name, ECM_IP_ADDR_TO_OCTAL(addr));
+			memcpy(node_addr, local_dev->dev_addr, ETH_ALEN);
 			done = true;
 			break;
-#endif
 
 #else
 			DEBUG_TRACE("%px: MAP-T interface unsupported\n", feci);
@@ -526,7 +538,7 @@ struct ecm_db_node_instance *ecm_ipv6_node_establish_and_ref(struct ecm_front_en
 					goto done;
 				}
 
-				if (ecm_front_end_is_bridge_port(dev)) {
+				if (!ecm_ipv6_dev_has_ipaddr(dev) && (ecm_front_end_is_bridge_port(dev))) {
 					struct net_device *master;
 					master = ecm_interface_get_and_hold_dev_master(dev);
 					if (!master) {
@@ -786,28 +798,39 @@ struct ecm_db_mapping_instance *ecm_ipv6_mapping_establish_and_ref(ip_addr_t add
  * classifiers permit this operation.
  */
 void ecm_ipv6_connection_regenerate(struct ecm_db_connection_instance *ci, ecm_tracker_sender_type_t sender,
-							struct net_device *out_dev, struct net_device *in_dev, __be16 *layer4hdr,
-							struct sk_buff *skb)
+							struct net_device *out_dev, struct net_device *out_dev_nat,
+							struct net_device *in_dev, struct net_device *in_dev_nat,
+							__be16 *layer4hdr, struct sk_buff *skb)
 {
 	int i;
 	bool reclassify_allowed;
 	int32_t to_list_first;
 	struct ecm_db_iface_instance *to_list[ECM_DB_IFACE_HEIRARCHY_MAX];
+	int32_t to_nat_list_first;
+	struct ecm_db_iface_instance *to_nat_list[ECM_DB_IFACE_HEIRARCHY_MAX];
 	int32_t from_list_first;
 	struct ecm_db_iface_instance *from_list[ECM_DB_IFACE_HEIRARCHY_MAX];
+	int32_t from_nat_list_first;
+	struct ecm_db_iface_instance *from_nat_list[ECM_DB_IFACE_HEIRARCHY_MAX];
 	ip_addr_t ip_src_addr;
 	ip_addr_t ip_dest_addr;
+	ip_addr_t ip_src_addr_nat;
+	ip_addr_t ip_dest_addr_nat;
 	int protocol;
 	bool is_routed;
 	uint8_t src_node_addr[ETH_ALEN];
 	uint8_t dest_node_addr[ETH_ALEN];
+	uint8_t src_node_addr_nat[ETH_ALEN];
+	uint8_t dest_node_addr_nat[ETH_ALEN];
 	int assignment_count;
 	struct ecm_classifier_instance *assignments[ECM_CLASSIFIER_TYPES];
 	struct ecm_front_end_connection_instance *feci;
 	struct ecm_front_end_interface_construct_instance efeici;
-	ecm_db_direction_t ecm_dir;
+	 ecm_db_direction_t ecm_dir;
 	struct ecm_front_end_ovs_params *from_ovs_params = NULL;
 	struct ecm_front_end_ovs_params *to_ovs_params = NULL;
+	struct ecm_front_end_ovs_params *from_nat_ovs_params = NULL;
+	struct ecm_front_end_ovs_params *to_nat_ovs_params = NULL;
 
 	DEBUG_INFO("%px: re-gen needed\n", ci);
 
@@ -824,6 +847,10 @@ void ecm_ipv6_connection_regenerate(struct ecm_db_connection_instance *ci, ecm_t
 		tmp_dev = out_dev;
 		out_dev = in_dev;
 		in_dev = tmp_dev;
+
+		tmp_dev = out_dev_nat;
+		out_dev_nat = in_dev_nat;
+		in_dev_nat = tmp_dev;
 	}
 
 	/*
@@ -841,18 +868,23 @@ void ecm_ipv6_connection_regenerate(struct ecm_db_connection_instance *ci, ecm_t
 	ecm_dir = ecm_db_connection_direction_get(ci);
 
 	ecm_db_connection_address_get(ci, ECM_DB_OBJ_DIR_FROM, ip_src_addr);
+	ecm_db_connection_address_get(ci, ECM_DB_OBJ_DIR_FROM_NAT, ip_src_addr_nat);
 
 	ecm_db_connection_address_get(ci, ECM_DB_OBJ_DIR_TO, ip_dest_addr);
+	ecm_db_connection_address_get(ci, ECM_DB_OBJ_DIR_TO_NAT, ip_dest_addr_nat);
 
 	ecm_db_connection_node_address_get(ci, ECM_DB_OBJ_DIR_FROM, src_node_addr);
+	ecm_db_connection_node_address_get(ci, ECM_DB_OBJ_DIR_FROM_NAT, src_node_addr_nat);
 
 	ecm_db_connection_node_address_get(ci, ECM_DB_OBJ_DIR_TO, dest_node_addr);
+	ecm_db_connection_node_address_get(ci, ECM_DB_OBJ_DIR_TO_NAT, dest_node_addr_nat);
 
 	feci = ecm_db_connection_front_end_get_and_ref(ci);
 
 	if (!ecm_front_end_ipv6_interface_construct_set_and_hold(skb, sender, ecm_dir, is_routed,
 							in_dev, out_dev,
-							ip_src_addr, ip_dest_addr,
+							ip_src_addr, ip_src_addr_nat,
+							ip_dest_addr, ip_dest_addr_nat,
 							&efeici)) {
 
 		DEBUG_WARN("ECM front end ipv6 interface construct set failed for regeneration\n");
@@ -860,11 +892,13 @@ void ecm_ipv6_connection_regenerate(struct ecm_db_connection_instance *ci, ecm_t
 	}
 
 	if ((protocol == IPPROTO_TCP) || (protocol == IPPROTO_UDP)) {
-		int src_port, dest_port;
+		int src_port, src_port_nat, dest_port, dest_port_nat;
 		struct ecm_front_end_ovs_params ovs_params[ECM_DB_OBJ_DIR_MAX];
 
 		src_port = ecm_db_connection_port_get(feci->ci, ECM_DB_OBJ_DIR_FROM);
+		src_port_nat = ecm_db_connection_port_get(feci->ci, ECM_DB_OBJ_DIR_FROM_NAT);
 		dest_port = ecm_db_connection_port_get(feci->ci, ECM_DB_OBJ_DIR_TO);
+		dest_port_nat = ecm_db_connection_port_get(feci->ci, ECM_DB_OBJ_DIR_TO_NAT);
 
 		/*
 		 * For IPv6 there is no NAT address or port numbers,
@@ -872,13 +906,15 @@ void ecm_ipv6_connection_regenerate(struct ecm_db_connection_instance *ci, ecm_t
 		 * from and to host for those fields.
 		 */
 		ecm_front_end_fill_ovs_params(ovs_params,
-				      ip_src_addr, ip_src_addr,
-				      ip_dest_addr, ip_dest_addr,
+				      ip_src_addr, ip_src_addr_nat,
+				      ip_dest_addr, ip_dest_addr_nat,
 				      src_port, src_port,
 				      dest_port, dest_port, ecm_dir);
 
 		from_ovs_params = &ovs_params[ECM_DB_OBJ_DIR_FROM];
 		to_ovs_params = &ovs_params[ECM_DB_OBJ_DIR_TO];
+		from_nat_ovs_params = &ovs_params[ECM_DB_OBJ_DIR_FROM_NAT];
+		to_nat_ovs_params = &ovs_params[ECM_DB_OBJ_DIR_TO_NAT];
 	}
 
 	DEBUG_TRACE("%px: Update the 'from' interface heirarchy list\n", ci);
@@ -891,9 +927,30 @@ void ecm_ipv6_connection_regenerate(struct ecm_db_connection_instance *ci, ecm_t
 	ecm_db_connection_interfaces_reset(ci, from_list, from_list_first, ECM_DB_OBJ_DIR_FROM);
 	ecm_db_connection_interfaces_deref(from_list, from_list_first);
 
+	DEBUG_TRACE("%px: Update the 'from NAT' interface heirarchy list\n", ci);
+	from_nat_list_first = ecm_interface_heirarchy_construct(feci, from_nat_list, efeici.from_nat_dev, efeici.from_nat_other_dev, ip_dest_addr, efeici.from_nat_mac_lookup_ip_addr, ip_src_addr_nat, 6, protocol, in_dev_nat, is_routed, in_dev_nat, src_node_addr_nat, dest_node_addr_nat, layer4hdr, skb, from_nat_ovs_params);
+
+	if (from_nat_list_first == ECM_DB_IFACE_HEIRARCHY_MAX) {
+		ecm_front_end_ipv6_interface_construct_netdev_put(&efeici);
+		goto ecm_ipv6_retry_regen;
+	}
+
+	ecm_db_connection_interfaces_reset(ci, from_nat_list, from_nat_list_first, ECM_DB_OBJ_DIR_FROM_NAT);
+	ecm_db_connection_interfaces_deref(from_nat_list, from_nat_list_first);
+
 	DEBUG_TRACE("%px: Update the 'to' interface heirarchy list\n", ci);
 	to_list_first = ecm_interface_heirarchy_construct(feci, to_list, efeici.to_dev, efeici.to_other_dev, ip_src_addr, efeici.to_mac_lookup_ip_addr, ip_dest_addr, 6, protocol, out_dev, is_routed, in_dev, dest_node_addr, src_node_addr, layer4hdr, skb, to_ovs_params);
 	if (to_list_first == ECM_DB_IFACE_HEIRARCHY_MAX) {
+		ecm_front_end_ipv6_interface_construct_netdev_put(&efeici);
+		goto ecm_ipv6_retry_regen;
+	}
+
+	ecm_db_connection_interfaces_reset(ci, to_list, to_list_first, ECM_DB_OBJ_DIR_TO);
+	ecm_db_connection_interfaces_deref(to_list, to_list_first);
+
+	DEBUG_TRACE("%px: Update the 'to NAT' interface heirarchy list\n", ci);
+	to_nat_list_first = ecm_interface_heirarchy_construct(feci, to_nat_list, efeici.to_nat_dev, efeici.to_nat_other_dev, ip_src_addr, efeici.to_nat_mac_lookup_ip_addr, ip_dest_addr_nat, 6, protocol, out_dev_nat, is_routed, in_dev, dest_node_addr_nat, src_node_addr_nat, layer4hdr, skb, to_nat_ovs_params);
+	if (to_nat_list_first == ECM_DB_IFACE_HEIRARCHY_MAX) {
 		ecm_front_end_ipv6_interface_construct_netdev_put(&efeici);
 		goto ecm_ipv6_retry_regen;
 	}
@@ -982,6 +1039,12 @@ unsigned int ecm_ipv6_ip_process(struct net_device *out_dev, struct net_device *
 	ecm_db_direction_t ecm_dir = ECM_DB_DIRECTION_EGRESS_NAT;
 	ip_addr_t ip_src_addr;
 	ip_addr_t ip_dest_addr;
+	ip_addr_t ip_src_addr_nat;
+	ip_addr_t ip_dest_addr_nat;
+	struct net_device *out_dev_nat;
+	struct net_device *in_dev_nat;
+	uint8_t *src_node_addr_nat;
+	uint8_t *dest_node_addr_nat;
 	uint8_t protonum;
 
 	/*
@@ -989,6 +1052,7 @@ unsigned int ecm_ipv6_ip_process(struct net_device *out_dev, struct net_device *
 	 */
 	if (!ecm_tracker_ip_check_header_and_read(&ip_hdr, skb)) {
 		DEBUG_WARN("Invalid ip header in skb %px\n", skb);
+		ecm_stats_v6_inc(ECM_STATS_V6_EXCEPTION_CMN, ECM_STATS_V6_EXCEPTION_MALFORMED_IP_HEADER);
 		return NF_ACCEPT;
 	}
 
@@ -997,11 +1061,13 @@ unsigned int ecm_ipv6_ip_process(struct net_device *out_dev, struct net_device *
 	 */
 	if (ip_hdr.is_v4) {
 		DEBUG_TRACE("Not an IPv6 packet, skb %px\n", skb);
+		ecm_stats_v6_inc(ECM_STATS_V6_EXCEPTION_CMN, ECM_STATS_V6_EXCEPTION_NON_IPV6_HDR);
 		return NF_ACCEPT;
 	}
 
 	if (ip_hdr.fragmented) {
 		DEBUG_TRACE("skb %px is fragmented\n", skb);
+		ecm_stats_v6_inc(ECM_STATS_V6_EXCEPTION_CMN, ECM_STATS_V6_EXCEPTION_FRAGMENTED_PACKETS);
 		return NF_ACCEPT;
 	}
 
@@ -1023,6 +1089,7 @@ unsigned int ecm_ipv6_ip_process(struct net_device *out_dev, struct net_device *
 		 */
 		if (unlikely(test_bit(IPS_DYING_BIT, &ct->status))) {
 			DEBUG_WARN("%px: ct: %px is in dying state\n", skb, ct);
+			ecm_stats_v6_inc(ECM_STATS_V6_EXCEPTION_CMN, ECM_STATS_V6_EXCEPTION_CONNTRACK_IN_DYING_STATE);
 			return NF_ACCEPT;
 		}
 
@@ -1063,6 +1130,7 @@ unsigned int ecm_ipv6_ip_process(struct net_device *out_dev, struct net_device *
 			}
 #endif
 			DEBUG_TRACE("%px: ct: untracked\n", skb);
+			ecm_stats_v6_inc(ECM_STATS_V6_EXCEPTION_CMN, ECM_STATS_V6_EXCEPTION_UNTRACKED_CONNTRACK);
 			return NF_ACCEPT;
 		}
 
@@ -1073,6 +1141,7 @@ unsigned int ecm_ipv6_ip_process(struct net_device *out_dev, struct net_device *
 		if (nfct_help(ct)) {
 			DEBUG_TRACE("%px: Connection has helper\n", ct);
 			can_accel = false;
+			ecm_stats_v6_inc(ECM_STATS_V6_EXCEPTION_CMN, ECM_STATS_V6_EXCEPTION_CONN_HAS_HELPER);
 		}
 
 		/*
@@ -1110,8 +1179,20 @@ vxlan_done:
 	 */
 	if (ip_hdr.protocol == IPPROTO_GRE) {
 		uint16_t offset = ip_hdr.headers[ECM_TRACKER_IP_PROTOCOL_TYPE_GRE].offset;
-		if (!ecm_front_end_gre_proto_is_accel_allowed(in_dev, out_dev, skb, &orig_tuple, 6, offset)) {
+		if (!ecm_front_end_gre_proto_is_accel_allowed(in_dev, out_dev, skb, &orig_tuple, &reply_tuple, 6, offset)) {
 			DEBUG_WARN("%px: GRE protocol is not allowed\n", skb);
+			ecm_stats_v6_inc(ECM_STATS_V6_EXCEPTION_CMN, ECM_STATS_V6_EXCEPTION_UNSUPPORTED_GRE_PROTOCOL);
+			return NF_ACCEPT;
+		}
+	}
+
+	/*
+	 * Check if we can accelerate L2TPv3 protocol.
+	 */
+	if (ip_hdr.protocol == IPPROTO_L2TP) {
+		if (!ecm_front_end_l2tp_proto_is_accel_allowed(in_dev, out_dev)) {
+			DEBUG_WARN("%px: L2TPv3 protocol is not allowed\n", skb);
+			ecm_stats_v6_inc(ECM_STATS_V6_EXCEPTION_CMN, ECM_STATS_V6_EXCEPTION_UNSUPPORTED_L2TPV3_PROTOCOL);
 			return NF_ACCEPT;
 		}
 	}
@@ -1125,11 +1206,13 @@ vxlan_done:
 #ifdef ECM_MULTICAST_ENABLE
 		if (unlikely(ecm_front_end_ipv6_mc_stopped)) {
 			DEBUG_TRACE("%px: Multicast disabled by ecm_front_end_ipv6_mc_stopped = %d\n", skb, ecm_front_end_ipv6_mc_stopped);
+			ecm_stats_v6_inc(ECM_STATS_V6_EXCEPTION_CMN, ECM_STATS_V6_EXCEPTION_MCAST_STOPPED);
 			return NF_ACCEPT;
 		}
 
 		if (unlikely(!ecm_front_end_is_feature_supported(ECM_FE_FEATURE_MULTICAST))) {
 			DEBUG_TRACE("%px: Multicast ipv6 acceleration is not supported on selected frontend\n", skb);
+			ecm_stats_v6_inc(ECM_STATS_V6_EXCEPTION_CMN, ECM_STATS_V6_EXCEPTION_MCAST_NOT_SUPPORTED);
 			return NF_ACCEPT;
 		}
 
@@ -1137,14 +1220,26 @@ vxlan_done:
 				can_accel, is_routed, skb, &ip_hdr, ct, sender,
 				&orig_tuple, &reply_tuple);
 #else
+		ecm_stats_v6_inc(ECM_STATS_V6_EXCEPTION_CMN, ECM_STATS_V6_EXCEPTION_MCAST_FEATURE_DISABLED);
 		return NF_ACCEPT;
 #endif
 	}
 
 	/*
-	 * Work out if this packet involves routing or not.
+	 * Work out if this packet involves NAT or not.
+	 * If it does involve NAT then work out if this is an ingressing or egressing packet.
 	 */
-	if (is_routed) {
+	if (ipv6_addr_cmp(&orig_tuple.src.u3.in6, &reply_tuple.dst.u3.in6)) {
+		/*
+		 * Egressing NAT
+		 */
+		ecm_dir = ECM_DB_DIRECTION_EGRESS_NAT;
+	} else if (ipv6_addr_cmp(&orig_tuple.dst.u3.in6, &reply_tuple.src.u3.in6)) {
+		/*
+		 * Ingressing NAT
+		 */
+		ecm_dir = ECM_DB_DIRECTION_INGRESS_NAT;
+	} else if (is_routed) {
 		/*
 		 * Non-NAT only supported for IPv6
 		 */
@@ -1156,27 +1251,244 @@ vxlan_done:
 		ecm_dir = ECM_DB_DIRECTION_BRIDGED;
 	}
 
+	/*
+	 * Get IP addressing information.  This same logic is applied when extracting port information too.
+	 * This is tricky to do as what we are after is src and destination addressing that is non-nat but we also need the nat information too.
+	 * INGRESS connections have their conntrack information reversed!
+	 * We have to keep in mind the connection direction AND the packet direction in order to be able to work out what is what.
+	 *
+	 * ip_src_addr and ip_dest_addr MUST always be the NON-NAT endpoint addresses and reflect PACKET direction and not connection direction 'dir'.
+	 *
+	 * Examples 1 through 6 cater for NAT and NON-NAT in the INGRESS or EGRESS cases.
+	 *
+	 * Example 1:
+	 * An 'original' direction packet to an egress connection from one client of br-lan:4AAA::2:12345 to the other client connecting to eth0:5AAA::2:80
+	 * via NAT'ing router mapping eth0:2001:e20:2000:40f::2:33333 looks like:
+	 *	orig_tuple->src == 4AAA::2:12345		This becomes ip_src_addr
+	 *	orig_tuple->dst == 5AAA::2:80		This becomes ip_dest_addr
+	 *	reply_tuple->src == 5AAA::2:80		This becomes ip_dest_addr_nat
+	 *	reply_tuple->dest == 2001:e20:2000:40f::2:33333		This becomes ip_src_addr_nat
+	 *
+	 *	in_dev would be br-lan - i.e. the device of ip_src_addr
+	 *	out_dev would be eth0 - i.e. the device of ip_dest_addr
+	 *	in_dev_nat would be eth0 - i.e. out_dev, the device of ip_src_addr_nat
+	 *	out_dev_nat would be eth0 - i.e. out_dev, the device of ip_dest_addr_nat
+	 *
+	 *	From a node MAC address perspective we are at position X in the following topology:
+	 *	LAN_PC======BR-LAN___ETH0====X====WAN_PC
+	 *
+	 *	src_node_addr refers to node address of of ip_src_addr_nat
+	 *	src_node_addr_nat is set to src_node_addr
+	 *	src_node_addr is then set to NULL as there is no node address available here for ip_src_addr
+	 *
+	 *	dest_node_addr refers to node address of ip_dest_addr
+	 *	dest_node_addr_nat is the node of ip_dest_addr_nat which is the same as dest_node_addr
+	 *
+	 * Example 2:
+	 * However an 'original' direction packet to an ingress connection from eth0:5AAA::2:3321 to a LAN host (e.g. via DMZ) br-lan@4AAA::2:12345 via NAT'ing router mapping eth0:2001:e20:2000:40f::2:12345 looks like:
+	 *	orig_tuple->src == 5AAA::2:3321		This becomes ip_src_addr
+	 *	orig_tuple->dst == 2001:e20:2000:40f::2:12345		This becomes ip_dest_addr_nat
+	 *	reply_tuple->src == 4AAA::2:12345		This becomes ip_dest_addr
+	 *	reply_tuple->dest == 5AAA::2:3321		This becomes ip_src_addr_nat
+	 *
+	 *	in_dev would be eth0 - i.e. the device of ip_src_addr
+	 *	out_dev would be br-lan - i.e. the device of ip_dest_addr
+	 *	in_dev_nat would be eth0 - i.e. in_dev, the device of ip_src_addr_nat
+	 *	out_dev_nat would be eth0 - i.e. in_dev, the device of ip_dest_addr_nat
+	 *
+	 *	From a Node address perspective we are at position X in the following topology:
+	 *	LAN_PC===X===BR-LAN___ETH0========WAN_PC
+	 *
+	 *	src_node_addr refers to node address of br-lan which is not useful
+	 *	src_node_addr_nat AND src_node_addr become NULL
+	 *
+	 *	dest_node_addr refers to node address of ip_dest_addr
+	 *	dest_node_addr_nat is set to NULL
+	 *
+	 * When dealing with reply packets this confuses things even more.  Reply packets to the above two examples are as follows:
+	 *
+	 * Example 3:
+	 * A 'reply' direction packet to the egress connection above:
+	 *	orig_tuple->src == 4AAA::2:12345		This becomes ip_dest_addr
+	 *	orig_tuple->dst == 5AAA::2:80		This becomes ip_src_addr
+	 *	reply_tuple->src == 5AAA::2:80		This becomes ip_src_addr_nat
+	 *	reply_tuple->dest == 2001:e20:2000:40f::2:33333		This becomes ip_dest_addr_nat
+	 *
+	 *	in_dev would be eth0 - i.e. the device of ip_src_addr
+	 *	out_dev would be br-lan - i.e. the device of ip_dest_addr
+	 *	in_dev_nat would be eth0 - i.e. in_dev, the device of ip_src_addr_nat
+	 *	out_dev_nat would be eth0 - i.e. in_dev, the device of ip_dest_addr_nat
+	 *
+	 *	From a Node address perspective we are at position X in the following topology:
+	 *	LAN_PC===X===BR-LAN___ETH0========WAN_PC
+	 *
+	 *	src_node_addr refers to node address of br-lan which is not useful
+	 *	src_node_addr_nat AND src_node_addr become NULL
+	 *
+	 *	dest_node_addr refers to node address of ip_dest_addr
+	 *	dest_node_addr_nat is set to NULL
+	 *
+	 * Example 4:
+	 * A 'reply' direction packet to the ingress connection above:
+	 *	orig_tuple->src == 5AAA::2:3321		This becomes ip_dest_addr
+	 *	orig_tuple->dst == 2001:e20:2000:40f::2:12345		This becomes ip_src_addr_nat
+	 *	reply_tuple->src == 4AAA::2:12345		This becomes ip_src_addr
+	 *	reply_tuple->dest == 5AAA::2:3321		This becomes ip_dest_addr_nat
+	 *
+	 *	in_dev would be br-lan - i.e. the device of ip_src_addr
+	 *	out_dev would be eth0 - i.e. the device of ip_dest_addr
+	 *	in_dev_nat would be eth0 - i.e. out_dev, the device of ip_src_addr_nat
+	 *	out_dev_nat would be eth0 - i.e. out_dev, the device of ip_dest_addr_nat
+	 *
+	 *	From a Node address perspective we are at position X in the following topology:
+	 *	LAN_PC======BR-LAN___ETH0====X====WAN_PC
+	 *
+	 *	src_node_addr refers to node address of ip_src_addr_nat
+	 *	src_node_addr_nat is set to src_node_addr
+	 *	src_node_addr becomes NULL
+	 *
+	 *	dest_node_addr refers to node address of ip_dest_addr
+	 *	dest_node_addr_nat is set to dest_node_addr also.
+	 *
+	 * The following examples are for BRIDGED cases:
+	 *
+	 * Example 5:
+	 * An 'original' direction packet to an bridged connection from eth1:4AAA::2:12345 to eth2:4AAA::10:80 looks like:
+	 *	orig_tuple->src == 4AAA::2:12345		This becomes ip_src_addr
+	 *	orig_tuple->dst == 4AAA::10:80		This becomes ip_dest_addr
+	 *	reply_tuple->src == 4AAA::10:80		This becomes ip_dest_addr_nat
+	 *	reply_tuple->dest == 4AAA::2:12345	This becomes ip_src_addr_nat
+	 *
+	 *	in_dev would be eth1 - i.e. the device of ip_src_addr
+	 *	out_dev would be eth2 - i.e. the device of ip_dest_addr
+	 *	in_dev_nat would be eth1 - i.e. in_dev, the device of ip_src_addr_nat
+	 *	out_dev_nat would be eth2 - i.e. out_dev, the device of ip_dest_addr_nat
+	 *
+	 *	From a Node address perspective we are at position X in the following topology:
+	 *	LAN PC======ETH1___ETH2====X====LAN PC
+	 *
+	 *	src_node_addr refers to node address of ip_src_addr
+	 *	src_node_addr_nat is set to src_node_addr
+	 *
+	 *	dest_node_addr refers to node address of ip_dest_addr
+	 *	dest_node_addr_nat is set to dest_node_addr
+	 *
+	 * Example 6:
+	 * An 'reply' direction packet to the bridged connection above:
+	 *	orig_tuple->src == 4AAA::2:12345		This becomes ip_dest_addr
+	 *	orig_tuple->dst == 4AAA::10:80		This becomes ip_src_addr
+	 *	reply_tuple->src == 4AAA::10:80		This becomes ip_src_addr_nat
+	 *	reply_tuple->dest == 4AAA::2:12345	This becomes ip_dest_addr_nat
+	 *
+	 *	in_dev would be eth2 - i.e. the device of ip_src_addr
+	 *	out_dev would be eth1 - i.e. the device of ip_dest_addr
+	 *	in_dev_nat would be eth2 - i.e. in_dev, the device of ip_src_addr_nat
+	 *	out_dev_nat would be eth1 - i.e. out_dev, the device of ip_dest_addr_nat
+	 *
+	 *	From a Node address perspective we are at position X in the following topology:
+	 *	LAN PC===X===ETH1___ETH2========LAN PC
+	 *
+	 *	src_node_addr refers to node address of ip_src_addr
+	 *	src_node_addr_nat is set to src_node_addr
+	 *
+	 *	dest_node_addr refers to node address of ip_dest_addr
+	 *	dest_node_addr_nat is set to dest_node_addr
+	 */
 	if (sender == ECM_TRACKER_SENDER_TYPE_SRC) {
-		if (ecm_dir == ECM_DB_DIRECTION_NON_NAT) {
+		if (ecm_dir == ECM_DB_DIRECTION_EGRESS_NAT) {
+			/*
+			 * Example 1
+			 */
 			ECM_NIN6_ADDR_TO_IP_ADDR(ip_src_addr, orig_tuple.src.u3.in6);
 			ECM_NIN6_ADDR_TO_IP_ADDR(ip_dest_addr, orig_tuple.dst.u3.in6);
+			ECM_NIN6_ADDR_TO_IP_ADDR(ip_dest_addr_nat, reply_tuple.src.u3.in6);
+			ECM_NIN6_ADDR_TO_IP_ADDR(ip_src_addr_nat, reply_tuple.dst.u3.in6);
+
+			in_dev_nat = out_dev;
+			out_dev_nat = out_dev;
+
+			src_node_addr_nat = src_node_addr;
+			src_node_addr = NULL;
+
+			dest_node_addr_nat = dest_node_addr;
+		} else if (ecm_dir == ECM_DB_DIRECTION_INGRESS_NAT) {
+			/*
+			 * Example 2
+			 */
+			ECM_NIN6_ADDR_TO_IP_ADDR(ip_src_addr, orig_tuple.src.u3.in6);
+			ECM_NIN6_ADDR_TO_IP_ADDR(ip_dest_addr_nat, orig_tuple.dst.u3.in6);
+			ECM_NIN6_ADDR_TO_IP_ADDR(ip_dest_addr, reply_tuple.src.u3.in6);
+			ECM_NIN6_ADDR_TO_IP_ADDR(ip_src_addr_nat, reply_tuple.dst.u3.in6);
+
+			in_dev_nat = in_dev;
+			out_dev_nat = in_dev;
 
 			src_node_addr = NULL;
-		} else if (ecm_dir == ECM_DB_DIRECTION_BRIDGED) {
+			src_node_addr_nat = NULL;
+			dest_node_addr_nat = NULL;
+		} else if ((ecm_dir == ECM_DB_DIRECTION_BRIDGED) || (ecm_dir == ECM_DB_DIRECTION_NON_NAT)) {
+			/*
+			 * Example 5
+			 */
 			ECM_NIN6_ADDR_TO_IP_ADDR(ip_src_addr, orig_tuple.src.u3.in6);
 			ECM_NIN6_ADDR_TO_IP_ADDR(ip_dest_addr, orig_tuple.dst.u3.in6);
+			ECM_NIN6_ADDR_TO_IP_ADDR(ip_dest_addr_nat, reply_tuple.src.u3.in6);
+			ECM_NIN6_ADDR_TO_IP_ADDR(ip_src_addr_nat, reply_tuple.dst.u3.in6);
+
+			in_dev_nat = in_dev;
+			out_dev_nat = out_dev;
+
+			src_node_addr_nat = src_node_addr;
+			dest_node_addr_nat = dest_node_addr;
 		} else {
 			DEBUG_ASSERT(false, "Unhandled ecm_dir: %d\n", ecm_dir);
 		}
 	} else {
-		if (ecm_dir == ECM_DB_DIRECTION_NON_NAT) {
+		if (ecm_dir == ECM_DB_DIRECTION_EGRESS_NAT) {
+			/*
+			 * Example 3
+			 */
 			ECM_NIN6_ADDR_TO_IP_ADDR(ip_dest_addr, orig_tuple.src.u3.in6);
 			ECM_NIN6_ADDR_TO_IP_ADDR(ip_src_addr, orig_tuple.dst.u3.in6);
+			ECM_NIN6_ADDR_TO_IP_ADDR(ip_src_addr_nat, reply_tuple.src.u3.in6);
+			ECM_NIN6_ADDR_TO_IP_ADDR(ip_dest_addr_nat, reply_tuple.dst.u3.in6);
+
+			in_dev_nat  = in_dev;
+			out_dev_nat = in_dev;
 
 			src_node_addr = NULL;
-		} else if (ecm_dir == ECM_DB_DIRECTION_BRIDGED) {
+			src_node_addr_nat = NULL;
+
+			dest_node_addr_nat = NULL;
+		} else if (ecm_dir == ECM_DB_DIRECTION_INGRESS_NAT) {
+			/*
+			 * Example 4
+			 */
+			ECM_NIN6_ADDR_TO_IP_ADDR(ip_dest_addr, orig_tuple.src.u3.in6);
+			ECM_NIN6_ADDR_TO_IP_ADDR(ip_src_addr_nat, orig_tuple.dst.u3.in6);
+			ECM_NIN6_ADDR_TO_IP_ADDR(ip_src_addr, reply_tuple.src.u3.in6);
+			ECM_NIN6_ADDR_TO_IP_ADDR(ip_dest_addr_nat, reply_tuple.dst.u3.in6);
+
+			in_dev_nat = out_dev;
+			out_dev_nat = out_dev;
+
+			src_node_addr_nat = src_node_addr;
+			src_node_addr = NULL;
+			dest_node_addr_nat = dest_node_addr;
+		} else if ((ecm_dir == ECM_DB_DIRECTION_BRIDGED) || (ecm_dir == ECM_DB_DIRECTION_NON_NAT)) {
+			/*
+			 * Example 6
+			 */
 			ECM_NIN6_ADDR_TO_IP_ADDR(ip_dest_addr, orig_tuple.src.u3.in6);
 			ECM_NIN6_ADDR_TO_IP_ADDR(ip_src_addr, orig_tuple.dst.u3.in6);
+			ECM_NIN6_ADDR_TO_IP_ADDR(ip_src_addr_nat, reply_tuple.src.u3.in6);
+			ECM_NIN6_ADDR_TO_IP_ADDR(ip_dest_addr_nat, reply_tuple.dst.u3.in6);
+
+			in_dev_nat  = in_dev;
+			out_dev_nat = out_dev;
+
+			src_node_addr_nat = src_node_addr;
+			dest_node_addr_nat = dest_node_addr;
 		} else {
 			DEBUG_ASSERT(false, "Unhandled ecm_dir: %d\n", ecm_dir);
 		}
@@ -1205,10 +1517,12 @@ vxlan_done:
 	 */
 	if (unlikely(ecm_ip_addr_is_non_unicast(ip_dest_addr))) {
 		DEBUG_TRACE("skb %px non-unicast daddr " ECM_IP_ADDR_OCTAL_FMT "\n", skb, ECM_IP_ADDR_TO_OCTAL(ip_dest_addr));
+		ecm_stats_v6_inc(ECM_STATS_V6_EXCEPTION_CMN,ECM_STATS_V6_EXCEPTION_DEST_IP_NOT_UCAST);
 		return NF_ACCEPT;
 	}
 	if (unlikely(ecm_ip_addr_is_non_unicast(ip_src_addr))) {
 		DEBUG_TRACE("skb %px non-unicast saddr " ECM_IP_ADDR_OCTAL_FMT "\n", skb, ECM_IP_ADDR_TO_OCTAL(ip_src_addr));
+		ecm_stats_v6_inc(ECM_STATS_V6_EXCEPTION_CMN,ECM_STATS_V6_EXCEPTION_SRC_IP_NOT_UCAST);
 		return NF_ACCEPT;
 	}
 
@@ -1217,18 +1531,20 @@ vxlan_done:
 	 * TCP and UDP are the most likliest protocols.
 	 */
 	if (likely(protonum == IPPROTO_TCP) || likely(protonum == IPPROTO_UDP)) {
-		return ecm_ported_ipv6_process(out_dev, in_dev,
-				src_node_addr,
-				dest_node_addr,
+		return ecm_ported_ipv6_process(out_dev, out_dev_nat,
+				in_dev, in_dev_nat,
+				src_node_addr, src_node_addr_nat,
+				dest_node_addr, dest_node_addr_nat,
 				can_accel, is_routed, is_l2_encap, skb,
 				&ip_hdr,
 				ct, sender, ecm_dir,
 				&orig_tuple, &reply_tuple,
-				ip_src_addr, ip_dest_addr, l2_encap_proto);
+				ip_src_addr, ip_dest_addr, ip_src_addr_nat, ip_dest_addr_nat, l2_encap_proto);
 	}
 #ifdef ECM_NON_PORTED_SUPPORT_ENABLE
 	if (unlikely(!ecm_front_end_is_feature_supported(ECM_FE_FEATURE_NON_PORTED))) {
 		DEBUG_TRACE("%px: Non-ported ipv6 acceleration is not supported on the selected frontend\n", skb);
+		ecm_stats_v6_inc(ECM_STATS_V6_EXCEPTION_CMN, ECM_STATS_V6_EXCEPTION_NON_PORTED_NOT_SUPPORTED);
 		return NF_ACCEPT;
 	}
 
@@ -1241,8 +1557,39 @@ vxlan_done:
 			&orig_tuple, &reply_tuple,
 			ip_src_addr, ip_dest_addr, l2_encap_proto);
 #else
+	ecm_stats_v6_inc(ECM_STATS_V6_EXCEPTION_CMN, ECM_STATS_V6_EXCEPTION_NON_PORTED_DISABLED);
 	return NF_ACCEPT;
 #endif
+}
+
+/*
+ * ecm_ipv6_is_bridge_pkt()
+ *	Return true if pkt is from bridge flow.
+ *	If in/out dev is a bridge port and the other dev is a master
+ *	of the same bridge port dev, then consider it a bridge flow packet
+ *	and return true.
+ */
+static bool ecm_ipv6_is_bridge_pkt(struct net_device *in, struct net_device *out)
+{
+	struct net_device *lower = NULL;
+	struct net_device *upper = NULL;
+	struct net_device *bridge = NULL;
+
+	if (in->priv_flags & IFF_BRIDGE_PORT) {
+		lower = in;
+		bridge = out;
+	} else if (out->priv_flags & IFF_BRIDGE_PORT) {
+		lower = out;
+		bridge = in;
+	}
+
+	if (!lower)
+		return false;
+
+	rcu_read_lock();
+	upper = netdev_master_upper_dev_get_rcu(lower);
+	rcu_read_unlock();
+	return upper && (upper == bridge) && !ecm_ipv6_dev_has_ipaddr(lower);
 }
 
 /*
@@ -1261,12 +1608,21 @@ static unsigned int ecm_ipv6_post_routing_hook(void *priv,
 	DEBUG_TRACE("%px: Routing: %s\n", out, out->name);
 
 	/*
+	 * Skip flow with interface marked for don't offload.
+	 */
+	if (out->priv_flags_ext & IFF_EXT_HW_NO_OFFLOAD) {
+		ecm_stats_v6_inc(ECM_STATS_V6_EXCEPTION_CMN, ECM_STATS_V6_EXCEPTION_ROUTE_OUT_IFF_NO_OFFLOAD);
+		return NF_ACCEPT;
+	}
+
+	/*
 	 * If operations have stopped then do not process packets
 	 */
 	spin_lock_bh(&ecm_ipv6_lock);
 	if (unlikely(ecm_front_end_ipv6_stopped)) {
 		spin_unlock_bh(&ecm_ipv6_lock);
 		DEBUG_TRACE("Front end stopped\n");
+		ecm_stats_v6_inc(ECM_STATS_V6_EXCEPTION_CMN, ECM_STATS_V6_EXCEPTION_FRONT_END_STOPPED);
 		return NF_ACCEPT;
 	}
 	spin_unlock_bh(&ecm_ipv6_lock);
@@ -1276,6 +1632,7 @@ static unsigned int ecm_ipv6_post_routing_hook(void *priv,
 	 */
 	if (skb->pkt_type == PACKET_BROADCAST) {
 		DEBUG_TRACE("Broadcast, ignoring: %px\n", skb);
+		ecm_stats_v6_inc(ECM_STATS_V6_EXCEPTION_CMN, ECM_STATS_V6_EXCEPTION_BCAST_PACKET_IGNORED);
 		return NF_ACCEPT;
 	}
 
@@ -1284,6 +1641,7 @@ static unsigned int ecm_ipv6_post_routing_hook(void *priv,
 	 * skip pptp because we don't accelerate them
 	 */
 	if (ecm_interface_is_pptp(skb, out)) {
+		ecm_stats_v6_inc(ECM_STATS_V6_EXCEPTION_CMN, ECM_STATS_V6_EXCEPTION_PPTP_DISABLED);
 		return NF_ACCEPT;
 	}
 #endif
@@ -1293,14 +1651,16 @@ static unsigned int ecm_ipv6_post_routing_hook(void *priv,
 	 * skip l2tpv2 because we don't accelerate them
 	 */
 	if (ecm_interface_is_l2tp_packet_by_version(skb, out, 2)) {
+		ecm_stats_v6_inc(ECM_STATS_V6_EXCEPTION_CMN, ECM_STATS_V6_EXCEPTION_L2TPV2_DISABLED);
 		return NF_ACCEPT;
 	}
 #endif
 
 	/*
-	 * skip l2tpv3 because we don't accelerate them
+	 * skip l2tpv3 over PPP interface because we don't accelerate them
 	 */
 	if (ecm_interface_is_l2tp_packet_by_version(skb, out, 3)) {
+		ecm_stats_v6_inc(ECM_STATS_V6_EXCEPTION_CMN, ECM_STATS_V6_EXCEPTION_L2TPV3_UNSUPPORTED_INTERFACE);
 		return NF_ACCEPT;
 	}
 
@@ -1312,6 +1672,26 @@ static unsigned int ecm_ipv6_post_routing_hook(void *priv,
 		/*
 		 * Locally sourced packets are not processed in ECM.
 		 */
+		ecm_stats_v6_inc(ECM_STATS_V6_EXCEPTION_CMN, ECM_STATS_V6_EXCEPTION_LOCAL_PACKETS_IGNORED);
+		return NF_ACCEPT;
+	}
+
+	/*
+	 * Skip flow with interface marked for don't offload.
+	 */
+	if (in->priv_flags_ext & IFF_EXT_HW_NO_OFFLOAD) {
+		dev_put(in);
+		ecm_stats_v6_inc(ECM_STATS_V6_EXCEPTION_CMN, ECM_STATS_V6_EXCEPTION_ROUTE_IN_IFF_NO_OFFLOAD);
+		return NF_ACCEPT;
+	}
+
+	/*
+	 * Skip bridge flow packet
+	 */
+	if (ecm_ipv6_is_bridge_pkt(in, out)) {
+		DEBUG_TRACE("Bridge flow, ignoring: %px\n", skb);
+		dev_put(in);
+		ecm_stats_v6_inc(ECM_STATS_V6_EXCEPTION_CMN, ECM_STATS_V6_EXCEPTION_BRIDGE_PACKET_WRONG_HOOK);
 		return NF_ACCEPT;
 	}
 
@@ -1321,6 +1701,7 @@ static unsigned int ecm_ipv6_post_routing_hook(void *priv,
 	 */
 	if (netif_is_ovs_master(out) || netif_is_ovs_master(in)) {
 		dev_put(in);
+		ecm_stats_v6_inc(ECM_STATS_V6_EXCEPTION_CMN, ECM_STATS_V6_EXCEPTION_OVS_DISABLED);
 		return NF_ACCEPT;
 	}
 #endif
@@ -1350,6 +1731,7 @@ static unsigned int ecm_ipv6_pppoe_bridge_process(struct net_device *out,
 
 	ppp_proto = ntohs(ppp_proto);
 	if (ppp_proto != PPP_IPV6) {
+		ecm_stats_v6_inc(ECM_STATS_V6_EXCEPTION_CMN, ECM_STATS_V6_EXCEPTION_BRIDGE_PROTO_NOT_PPPOE);
 		return NF_ACCEPT;
 	}
 
@@ -1359,6 +1741,7 @@ static unsigned int ecm_ipv6_pppoe_bridge_process(struct net_device *out,
 
 	if (!ecm_tracker_ip_check_header_and_read(&ip_hdr, skb)) {
 		DEBUG_WARN("Invalid ip header in skb %px\n", skb);
+		ecm_stats_v6_inc(ECM_STATS_V6_EXCEPTION_CMN, ECM_STATS_V6_EXCEPTION_BRIDGE_PPPOE_MALFORMED_HEADER);
 		goto skip_ipv6_process;
 	}
 
@@ -1367,6 +1750,7 @@ static unsigned int ecm_ipv6_pppoe_bridge_process(struct net_device *out,
 	 */
 	if (ecm_ip_addr_is_multicast(ip_hdr.dest_addr)) {
 		DEBUG_WARN("Multicast acceleration is not support in PPPoE bridge %px\n", skb);
+		ecm_stats_v6_inc(ECM_STATS_V6_EXCEPTION_CMN, ECM_STATS_V6_EXCEPTION_BRIDGE_PPPOE_MCAST_ACCEL_NOT_SUPPORTED);
 		goto skip_ipv6_process;
 	}
 
@@ -1376,6 +1760,49 @@ static unsigned int ecm_ipv6_pppoe_bridge_process(struct net_device *out,
 skip_ipv6_process:
 	ecm_front_end_push_l2_encap_header(skb, encap_header_len);
 	skb->protocol = htons(ETH_P_PPP_SES);
+
+	return result;
+}
+
+/*
+ * ecm_ipv6_vlan_bridge_process()
+ *	Called for vlan packets that are going
+ *	out to one of the bridge physical interfaces.
+ */
+static unsigned int ecm_ipv6_vlan_bridge_process(struct net_device *out,
+						     struct net_device *in,
+						     struct ethhdr *skb_eth_hdr,
+						     bool can_accel,
+						     struct sk_buff *skb)
+{
+	unsigned int result = NF_ACCEPT;
+	struct vlan_ethhdr *skb_vlan_hdr = vlan_eth_hdr(skb);
+	uint32_t encap_header_len = 0;
+
+	encap_header_len = ecm_front_end_l2_encap_header_len(ntohs(skb->protocol));
+	ecm_front_end_pull_l2_encap_header(skb, encap_header_len);
+	skb->protocol = skb_vlan_hdr->h_vlan_encapsulated_proto;
+
+	if (ntohs(skb->protocol) == ETH_P_PPP_SES) {
+
+		/*
+		 * Check if PPPoE bridge acceleration is disabled.
+		 */
+		if (ecm_front_end_ppppoe_br_accel_disabled()) {
+			DEBUG_TRACE("skb: %px, PPPoE bridge flow acceleration is disabled\n", skb);
+			goto skip_ipv6_vlan_process;
+		}
+
+		result = ecm_ipv6_pppoe_bridge_process((struct net_device *)out, in, skb_eth_hdr, can_accel, skb);
+		goto skip_ipv6_vlan_process;
+	}
+
+	result = ecm_ipv6_ip_process(out, in, skb_eth_hdr->h_source,
+					 skb_eth_hdr->h_dest, can_accel,
+					 false, true, skb, ETH_P_8021Q);
+skip_ipv6_vlan_process:
+	ecm_front_end_push_l2_encap_header(skb, encap_header_len);
+	skb->protocol = htons(ETH_P_8021Q);
 
 	return result;
 }
@@ -1398,8 +1825,18 @@ static unsigned int ecm_ipv6_bridge_post_routing_hook(void *priv,
 	struct net_device *in;
 	bool can_accel = true;
 	unsigned int result = NF_ACCEPT;
+	struct net_device *dest_dev __maybe_unused;
+	uint16_t vid __maybe_unused;
 
 	DEBUG_TRACE("%px: IPv6 CMN Bridge: %s\n", out, out->name);
+
+	/*
+	 * Skip flow with interface marked for don't offload.
+	 */
+	if (out->priv_flags_ext & IFF_EXT_HW_NO_OFFLOAD) {
+		ecm_stats_v6_inc(ECM_STATS_V6_EXCEPTION_CMN, ECM_STATS_V6_EXCEPTION_BRIDGE_OUT_IFF_NO_OFFLOAD);
+		return NF_ACCEPT;
+	}
 
 	/*
 	 * If operations have stopped then do not process packets
@@ -1408,6 +1845,7 @@ static unsigned int ecm_ipv6_bridge_post_routing_hook(void *priv,
 	if (unlikely(ecm_front_end_ipv6_stopped)) {
 		spin_unlock_bh(&ecm_ipv6_lock);
 		DEBUG_TRACE("Front end stopped\n");
+		ecm_stats_v6_inc(ECM_STATS_V6_EXCEPTION_CMN, ECM_STATS_V6_EXCEPTION_BRIDGE_FRONT_END_STOPPED);
 		return NF_ACCEPT;
 	}
 	spin_unlock_bh(&ecm_ipv6_lock);
@@ -1417,6 +1855,7 @@ static unsigned int ecm_ipv6_bridge_post_routing_hook(void *priv,
 	 */
 	if (skb->pkt_type == PACKET_BROADCAST) {
 		DEBUG_TRACE("Broadcast, ignoring: %px\n", skb);
+		ecm_stats_v6_inc(ECM_STATS_V6_EXCEPTION_CMN, ECM_STATS_V6_EXCEPTION_BRIDGE_BCAST_PACKET_IGNORED);
 		return NF_ACCEPT;
 	}
 
@@ -1424,6 +1863,7 @@ static unsigned int ecm_ipv6_bridge_post_routing_hook(void *priv,
 	 * skip l2tp/pptp because we don't accelerate them
 	 */
 	if (ecm_interface_is_l2tp_pptp(skb, out)) {
+		ecm_stats_v6_inc(ECM_STATS_V6_EXCEPTION_CMN, ECM_STATS_V6_EXCEPTION_BRIDGE_PPTP_ACCEL_FAIL);
 		return NF_ACCEPT;
 	}
 
@@ -1433,12 +1873,26 @@ static unsigned int ecm_ipv6_bridge_post_routing_hook(void *priv,
 	skb_eth_hdr = eth_hdr(skb);
 	if (!skb_eth_hdr) {
 		DEBUG_TRACE("%px: Not Eth\n", skb);
+		ecm_stats_v6_inc(ECM_STATS_V6_EXCEPTION_CMN, ECM_STATS_V6_EXCEPTION_BRIDGE_MALFORMED_IP_HEADER);
 		return NF_ACCEPT;
 	}
 	eth_type = ntohs(skb_eth_hdr->h_proto);
-	if (unlikely((eth_type != 0x86DD) && (eth_type != ETH_P_PPP_SES))) {
-		DEBUG_TRACE("%px: Not IP/PPPoE session\n", skb);
+	if (unlikely((eth_type != ETH_P_IPV6) && (eth_type != ETH_P_PPP_SES) && (eth_type != ETH_P_8021Q))) {
+		DEBUG_TRACE("%px: Not IP/PPPoE/VLAN session\n", skb);
+		ecm_stats_v6_inc(ECM_STATS_V6_EXCEPTION_CMN, ECM_STATS_V6_EXCEPTION_BRIDGE_NOT_IP_PPPOE_PACKETS);
 		return NF_ACCEPT;
+	}
+
+	if (eth_type == ETH_P_8021Q) {
+		struct vlan_ethhdr *skb_vlan_hdr;
+		uint16_t vlan_encap_proto;
+		skb_vlan_hdr = vlan_eth_hdr(skb);
+		vlan_encap_proto = ntohs(skb_vlan_hdr->h_vlan_encapsulated_proto);
+		if (unlikely((vlan_encap_proto != ETH_P_IPV6) && (vlan_encap_proto != ETH_P_PPP_SES))) {
+			DEBUG_TRACE("%px: Not IP/PPPoE session: %d\n", skb, vlan_encap_proto);
+			ecm_stats_v6_inc(ECM_STATS_V6_EXCEPTION_CMN, ECM_STATS_V6_EXCEPTION_BRIDGE_NOT_IP_PPPOE_PACKETS);
+			return NF_ACCEPT;
+		}
 	}
 
 	/*
@@ -1457,6 +1911,7 @@ static unsigned int ecm_ipv6_bridge_post_routing_hook(void *priv,
 	bridge = ecm_interface_get_and_hold_dev_master((struct net_device *)out);
 	if (!bridge) {
 		DEBUG_WARN("Expected a master for bridge port %s\n", out->name);
+		ecm_stats_v6_inc(ECM_STATS_V6_EXCEPTION_CMN, ECM_STATS_V6_EXCEPTION_BRIDGE_MASTER_NOT_FOUND);
 		return NF_ACCEPT;
 	}
 
@@ -1466,9 +1921,21 @@ static unsigned int ecm_ipv6_bridge_post_routing_hook(void *priv,
 		 * Case 1.
 		 */
 		DEBUG_TRACE("Local traffic: %px, ignoring traffic to bridge: %px (%s) \n", skb, bridge, bridge->name);
+		ecm_stats_v6_inc(ECM_STATS_V6_EXCEPTION_CMN, ECM_STATS_V6_EXCEPTION_BRIDGE_LOCAL_PACKETS_IGNORED);
 		dev_put(bridge);
 		return NF_ACCEPT;
 	}
+
+	/*
+	 * Skip flow with interface marked for don't offload.
+	 */
+	if (in->priv_flags_ext & IFF_EXT_HW_NO_OFFLOAD) {
+		dev_put(bridge);
+		dev_put(in);
+		ecm_stats_v6_inc(ECM_STATS_V6_EXCEPTION_CMN, ECM_STATS_V6_EXCEPTION_BRIDGE_IN_IFF_NO_OFFLOAD);
+		return NF_ACCEPT;
+	}
+
 	dev_put(in);
 
 	/*
@@ -1487,6 +1954,7 @@ static unsigned int ecm_ipv6_bridge_post_routing_hook(void *priv,
 	if (!in) {
 		DEBUG_TRACE("skb: %px, no in device for bridge: %px (%s)\n", skb, bridge, bridge->name);
 		dev_put(bridge);
+		ecm_stats_v6_inc(ECM_STATS_V6_EXCEPTION_CMN, ECM_STATS_V6_EXCEPTION_BRIDGE_PORT_NOT_FOUND);
 		return NF_ACCEPT;
 	}
 
@@ -1501,6 +1969,7 @@ static unsigned int ecm_ipv6_bridge_post_routing_hook(void *priv,
 					"the packet, hairpin not enabled"
 					"on port %px (%s)\n", skb, bridge,
 					bridge->name, out, out->name);
+			ecm_stats_v6_inc(ECM_STATS_V6_EXCEPTION_CMN, ECM_STATS_V6_EXCEPTION_BRIDGE_HAIRPIN_NOT_ENABLED);
 			goto skip_ipv6_bridge_flow;
 		}
 		DEBUG_TRACE("skb: %px, bridge: %px (%s), hairpin enabled on port"
@@ -1512,24 +1981,43 @@ static unsigned int ecm_ipv6_bridge_post_routing_hook(void *priv,
 	 */
 	if (!ecm_mac_addr_equal(skb_eth_hdr->h_source, bridge->dev_addr)) {
 		DEBUG_TRACE("skb: %px, Ignoring routed packet to bridge: %px (%s)\n", skb, bridge, bridge->name);
+		ecm_stats_v6_inc(ECM_STATS_V6_EXCEPTION_CMN, ECM_STATS_V6_EXCEPTION_ROUTED_PACKET_WRONG_HOOK);
 		goto skip_ipv6_bridge_flow;
 	}
 
 	if (!is_multicast_ether_addr(skb_eth_hdr->h_dest)) {
 		/*
-		 * Process the packet, if we have this mac address in the fdb table.
-		 * TODO: For the kernel versions later than 3.6.x, the API needs vlan id.
-		 *	 For now, we are passing 0, but this needs to be handled later.
+		 * Process the packet, if we have this destination mac address in the fdb table.
 		 */
+#ifdef ECM_BRIDGE_VLAN_FILTERING_ENABLE
+		rcu_read_lock();
+		dest_dev = br_fdb_find_vid_by_mac(bridge, skb_eth_hdr->h_dest, &vid);
+		if (!dest_dev) {
+			DEBUG_TRACE("skb: %px, br_fdb_find_vid_by_mac() returned NULL dest_dev for dest_mac(%pM) %px (%s) vid=%d\n",
+					skb, skb_eth_hdr->h_dest, bridge, bridge->name, vid);
+			rcu_read_unlock();
+			ecm_stats_v6_inc(ECM_STATS_V6_EXCEPTION_CMN, ECM_STATS_V6_EXCEPTION_BRIDGE_DEST_MAC_NOT_FOUND);
+			goto skip_ipv6_bridge_flow;
+		}
+		dev_put(dest_dev);
+		rcu_read_unlock();
+#else
 		if (!br_fdb_has_entry((struct net_device *)out, skb_eth_hdr->h_dest, 0)) {
 			DEBUG_WARN("skb: %px, No fdb entry for this mac address %pM in the bridge: %px (%s)\n",
 					skb, skb_eth_hdr->h_dest, bridge, bridge->name);
+			ecm_stats_v6_inc(ECM_STATS_V6_EXCEPTION_CMN, ECM_STATS_V6_EXCEPTION_BRIDGE_MAC_ENTRY_NOT_FOUND);
 			goto skip_ipv6_bridge_flow;
 		}
+#endif
 	}
 
 	DEBUG_TRACE("Bridge process skb: %px, bridge: %px (%s), In: %px (%s), Out: %px (%s)\n",
 			skb, bridge, bridge->name, in, in->name, out, out->name);
+
+	if (unlikely(eth_type == ETH_P_8021Q)) {
+		result = ecm_ipv6_vlan_bridge_process((struct net_device *)out, in, skb_eth_hdr, can_accel, skb);
+		goto skip_ipv6_bridge_flow;
+	}
 
 	if (unlikely(eth_type == ETH_P_PPP_SES)) {
 
@@ -1538,6 +2026,7 @@ static unsigned int ecm_ipv6_bridge_post_routing_hook(void *priv,
 		 */
 		if (ecm_front_end_ppppoe_br_accel_disabled()) {
 			DEBUG_TRACE("skb: %px, PPPoE bridge flow acceleration is disabled\n", skb);
+			ecm_stats_v6_inc(ECM_STATS_V6_EXCEPTION_CMN, ECM_STATS_V6_EXCEPTION_BRIDGE_PPPOE_ACCEL_DISABLED);
 			goto skip_ipv6_bridge_flow;
 		}
 

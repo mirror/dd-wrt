@@ -1313,7 +1313,7 @@ process_packet:
 		ecm_db_multicast_connection_deref(tuple_instance);
 	}
 
-#if 0 //defined(CONFIG_NET_CLS_ACT) && defined(ECM_CLASSIFIER_DSCP_IGS) && defined(ECM_FRONT_END_NSS_ENABLE)
+#if defined(CONFIG_NET_CLS_ACT) && defined(ECM_CLASSIFIER_DSCP_IGS) && defined(ECM_FRONT_END_NSS_ENABLE)
 	/*
 	 * Check if IGS feature is enabled or not.
 	 */
@@ -1591,7 +1591,7 @@ process_packet:
 	if (prevalent_pr.accel_mode == ECM_CLASSIFIER_ACCELERATION_MODE_ACCEL) {
 		struct ecm_front_end_connection_instance *feci;
 		feci = ecm_db_connection_front_end_get_and_ref(ci);
-		feci->accelerate(feci, &prevalent_pr, false, NULL, NULL);
+		feci->accelerate(feci, &prevalent_pr, false, NULL, skb);
 		ecm_front_end_connection_deref(feci);
 	}
 	ecm_db_connection_deref(ci);

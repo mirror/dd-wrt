@@ -760,14 +760,26 @@ int ecm_classifier_default_init(struct dentry *dentry)
 		return -1;
 	}
 
-	debugfs_create_u32("enabled", S_IRUGO | S_IWUSR, ecm_classifier_default_dentry,
-					(u32 *)&ecm_classifier_default_enabled);
+	if (!ecm_debugfs_create_u32("enabled", S_IRUGO | S_IWUSR, ecm_classifier_default_dentry,
+					(u32 *)&ecm_classifier_default_enabled)) {
+		DEBUG_ERROR("Failed to create ecm deafult classifier enabled file in debugfs\n");
+		debugfs_remove_recursive(ecm_classifier_default_dentry);
+		return -1;
+	}
 
-	debugfs_create_u32("accel_mode", S_IRUGO | S_IWUSR, ecm_classifier_default_dentry,
-					(u32 *)&ecm_classifier_default_accel_mode);
+	if (!ecm_debugfs_create_u32("accel_mode", S_IRUGO | S_IWUSR, ecm_classifier_default_dentry,
+					(u32 *)&ecm_classifier_default_accel_mode)) {
+		DEBUG_ERROR("Failed to create ecm deafult classifier accel_mode file in debugfs\n");
+		debugfs_remove_recursive(ecm_classifier_default_dentry);
+		return -1;
+	}
 
-	debugfs_create_u32("accel_delay_pkts", S_IRUGO | S_IWUSR, ecm_classifier_default_dentry,
-					(u32 *)&ecm_classifier_accel_delay_pkts);
+	if (!ecm_debugfs_create_u32("accel_delay_pkts", S_IRUGO | S_IWUSR, ecm_classifier_default_dentry,
+					(u32 *)&ecm_classifier_accel_delay_pkts)) {
+		DEBUG_ERROR("Failed to create accel delay packet counts in debugfs\n");
+		debugfs_remove_recursive(ecm_classifier_default_dentry);
+		return -1;
+	}
 
 	return 0;
 }

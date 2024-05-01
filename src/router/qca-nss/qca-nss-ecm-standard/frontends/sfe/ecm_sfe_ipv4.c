@@ -247,9 +247,10 @@ static void ecm_sfe_ipv4_process_one_conn_sync_msg(struct sfe_ipv4_conn_sync *sy
 
 	/*
 	 * GRE connections such as PPTP-GRE are stored into the db using a 3 tuple based hash.
-	 * So we ignore the port information here when trying to lookup the connection
+	 * L2TPv3 over IP connection also uses a 3 tuple based hash.
+	 * So we ignore the port information here when trying to lookup the connection.
 	 */
-	if (sync->protocol == IPPROTO_GRE) {
+	if (sync->protocol == IPPROTO_GRE || sync->protocol == IPPROTO_L2TP) {
 		flow_ident = 0;
 		return_ident_xlate = 0;
 	}
@@ -306,26 +307,50 @@ static void ecm_sfe_ipv4_process_one_conn_sync_msg(struct sfe_ipv4_conn_sync *sy
 				ci, sync->flow_rx_packet_count, sync->flow_rx_byte_count, sync->return_rx_packet_count, sync->return_rx_byte_count);
 		DEBUG_TRACE("%px: flow_tx_packet_count: %u, flow_tx_byte_count: %u, return_tx_packet_count: %u, return_tx_byte_count: %u\n",
 				ci, sync->flow_tx_packet_count, sync->flow_tx_byte_count, sync->return_tx_packet_count, sync->return_tx_byte_count);
-		/*
-		 * The amount of data *sent* by the ECM connection 'from' side is the amount the SFE has *received* in the 'flow' direction.
-		 */
-		ecm_db_connection_data_totals_update(ci, true, sync->flow_rx_byte_count, sync->flow_rx_packet_count);
 
-		/*
-		 * The amount of data *sent* by the ECM connection 'to' side is the amount the SFE has *received* in the 'return' direction.
-		 */
-		ecm_db_connection_data_totals_update(ci, false, sync->return_rx_byte_count, sync->return_rx_packet_count);
+#ifdef ECM_MULTICAST_ENABLE
+		if (ecm_ip_addr_is_multicast(return_ip)) {
+			/*
+			 * The amount of data *sent* by the ECM multicast connection 'from' side is the amount the SFE has *received* in the 'flow' direction.
+			 */
+			ecm_db_multicast_connection_data_totals_update(ci, true, sync->flow_rx_byte_count, sync->flow_rx_packet_count);
+			ecm_db_multicast_connection_data_totals_update(ci, false, sync->return_rx_byte_count, sync->return_rx_packet_count);
+			ecm_db_multicast_connection_interface_heirarchy_stats_update(ci, sync->flow_rx_byte_count, sync->flow_rx_packet_count);
+
+			/*
+			 * Update interface statistics
+			 */
+			ecm_interface_multicast_stats_update(ci, sync->flow_tx_packet_count, sync->flow_tx_byte_count, sync->flow_rx_packet_count, sync->flow_rx_byte_count,
+										sync->return_tx_packet_count, sync->return_tx_byte_count, sync->return_rx_packet_count, sync->return_rx_byte_count);
+			/*
+			 * Update IP multicast routing cache stats
+			 */
+			ipmr_mfc_stats_update(&init_net, htonl(flow_ip[0]), htonl(return_ip[0]), sync->flow_rx_packet_count,
+										 sync->flow_rx_byte_count, sync->flow_rx_packet_count, sync->flow_rx_byte_count);
+		} else
+#endif
+		{
+			/*
+			 * The amount of data *sent* by the ECM connection 'from' side is the amount the SFE has *received* in the 'flow' direction.
+			 */
+			ecm_db_connection_data_totals_update(ci, true, sync->flow_rx_byte_count, sync->flow_rx_packet_count);
+
+			/*
+			 * The amount of data *sent* by the ECM connection 'to' side is the amount the SFE has *received* in the 'return' direction.
+			 */
+			ecm_db_connection_data_totals_update(ci, false, sync->return_rx_byte_count, sync->return_rx_packet_count);
+
+			/*
+			 * Update interface statistics
+			 */
+			ecm_interface_stats_update(ci, sync->flow_tx_packet_count, sync->flow_tx_byte_count, sync->flow_rx_packet_count, sync->flow_rx_byte_count,
+							sync->return_tx_packet_count, sync->return_tx_byte_count, sync->return_rx_packet_count, sync->return_rx_byte_count);
+		}
 
 		/*
 		 * As packets have been accelerated we have seen some action.
 		 */
 		ecm_front_end_connection_action_seen(feci);
-
-		/*
-		 * Update interface stats
-		 */
-		ecm_interface_stats_update(ci, sync->flow_tx_packet_count, sync->flow_tx_byte_count, sync->flow_rx_packet_count,
-				sync->flow_rx_byte_count, sync->return_tx_packet_count, sync->return_tx_byte_count, sync->return_rx_packet_count, sync->return_rx_byte_count);
 	}
 
 	switch(sync->reason) {
@@ -926,27 +951,48 @@ int ecm_sfe_ipv4_init(struct dentry *dentry)
 	}
 
 #ifdef CONFIG_XFRM
-	debugfs_create_u32("reject_acceleration_for_ipsec", S_IRUGO | S_IWUSR, ecm_sfe_ipv4_dentry,
-					(u32 *)&ecm_sfe_ipv4_reject_acceleration_for_ipsec);
+	if (!ecm_debugfs_create_u32("reject_acceleration_for_ipsec", S_IRUGO | S_IWUSR, ecm_sfe_ipv4_dentry,
+					(u32 *)&ecm_sfe_ipv4_reject_acceleration_for_ipsec)) {
+		DEBUG_ERROR("Failed to create ecm sfe ipv4 reject_acceleration_for_ipsec file in debugfs\n");
+		goto task_cleanup;
+	}
 #endif
 
-	debugfs_create_u32("no_action_limit_default", S_IRUGO | S_IWUSR, ecm_sfe_ipv4_dentry,
-					(u32 *)&ecm_sfe_ipv4_no_action_limit_default);
+	if (!ecm_debugfs_create_u32("no_action_limit_default", S_IRUGO | S_IWUSR, ecm_sfe_ipv4_dentry,
+					(u32 *)&ecm_sfe_ipv4_no_action_limit_default)) {
+		DEBUG_ERROR("Failed to create ecm sfe ipv4 no_action_limit_default file in debugfs\n");
+		goto task_cleanup;
+	}
 
-	debugfs_create_u32("driver_fail_limit_default", S_IRUGO | S_IWUSR, ecm_sfe_ipv4_dentry,
-					(u32 *)&ecm_sfe_ipv4_driver_fail_limit_default);
+	if (!ecm_debugfs_create_u32("driver_fail_limit_default", S_IRUGO | S_IWUSR, ecm_sfe_ipv4_dentry,
+					(u32 *)&ecm_sfe_ipv4_driver_fail_limit_default)) {
+		DEBUG_ERROR("Failed to create ecm sfe ipv4 driver_fail_limit_default file in debugfs\n");
+		goto task_cleanup;
+	}
 
-	debugfs_create_u32("nack_limit_default", S_IRUGO | S_IWUSR, ecm_sfe_ipv4_dentry,
-					(u32 *)&ecm_sfe_ipv4_nack_limit_default);
+	if (!ecm_debugfs_create_u32("nack_limit_default", S_IRUGO | S_IWUSR, ecm_sfe_ipv4_dentry,
+					(u32 *)&ecm_sfe_ipv4_nack_limit_default)) {
+		DEBUG_ERROR("Failed to create ecm sfe ipv4 nack_limit_default file in debugfs\n");
+		goto task_cleanup;
+	}
 
-	debugfs_create_u32("accelerated_count", S_IRUGO, ecm_sfe_ipv4_dentry,
-					(u32 *)&ecm_sfe_ipv4_accelerated_count);
+	if (!ecm_debugfs_create_u32("accelerated_count", S_IRUGO, ecm_sfe_ipv4_dentry,
+					(u32 *)&ecm_sfe_ipv4_accelerated_count)) {
+		DEBUG_ERROR("Failed to create ecm sfe ipv4 accelerated_count file in debugfs\n");
+		goto task_cleanup;
+	}
 
-	debugfs_create_u32("pending_accel_count", S_IRUGO, ecm_sfe_ipv4_dentry,
-					(u32 *)&ecm_sfe_ipv4_pending_accel_count);
+	if (!ecm_debugfs_create_u32("pending_accel_count", S_IRUGO, ecm_sfe_ipv4_dentry,
+					(u32 *)&ecm_sfe_ipv4_pending_accel_count)) {
+		DEBUG_ERROR("Failed to create ecm sfe ipv4 pending_accel_count file in debugfs\n");
+		goto task_cleanup;
+	}
 
-	debugfs_create_u32("pending_decel_count", S_IRUGO, ecm_sfe_ipv4_dentry,
-					(u32 *)&ecm_sfe_ipv4_pending_decel_count);
+	if (!ecm_debugfs_create_u32("pending_decel_count", S_IRUGO, ecm_sfe_ipv4_dentry,
+					(u32 *)&ecm_sfe_ipv4_pending_decel_count)) {
+		DEBUG_ERROR("Failed to create ecm sfe ipv4 pending_decel_count file in debugfs\n");
+		goto task_cleanup;
+	}
 
 	if (!debugfs_create_file("accel_limit_mode", S_IRUGO | S_IWUSR, ecm_sfe_ipv4_dentry,
 					NULL, &ecm_sfe_ipv4_accel_limit_mode_fops)) {

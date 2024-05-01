@@ -1,7 +1,7 @@
 /*
  **************************************************************************
  * Copyright (c) 2015-2021 The Linux Foundation. All rights reserved.
- * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -220,6 +220,7 @@ static void ecm_sfe_ipv6_process_one_conn_sync_msg(struct sfe_ipv6_conn_sync *sy
 	int aci_index;
 	int assignment_count;
 	ip_addr_t flow_ip;
+	ip_addr_t return_ip_xlate;
 	ip_addr_t return_ip;
 	struct in6_addr group6 __attribute__((unused));
 	struct in6_addr origin6 __attribute__((unused));
@@ -229,6 +230,7 @@ static void ecm_sfe_ipv6_process_one_conn_sync_msg(struct sfe_ipv6_conn_sync *sy
 
 	ECM_SFE_IPV6_ADDR_TO_IP_ADDR(flow_ip, sync->flow_ip);
 	ECM_SFE_IPV6_ADDR_TO_IP_ADDR(return_ip, sync->return_ip);
+	ECM_SFE_IPV6_ADDR_TO_IP_ADDR(return_ip_xlate, sync->return_ip_xlate);
 
 	/*
 	 * Look up ecm connection with a view to synchronising the connection, classifier and data tracker.
@@ -242,9 +244,9 @@ static void ecm_sfe_ipv6_process_one_conn_sync_msg(struct sfe_ipv6_conn_sync *sy
 			sync,
 			(int)sync->protocol,
 			ECM_IP_ADDR_TO_OCTAL(flow_ip), (int)sync->flow_ident,
-			ECM_IP_ADDR_TO_OCTAL(return_ip), (int)sync->return_ident);
+			ECM_IP_ADDR_TO_OCTAL(return_ip_xlate), (int)sync->return_ident_xlate);
 
-	ci = ecm_db_connection_find_and_ref(flow_ip, return_ip, sync->protocol, (int)ntohs(sync->flow_ident), (int)ntohs(sync->return_ident));
+	ci = ecm_db_connection_find_and_ref(flow_ip, return_ip_xlate, sync->protocol, (int)ntohs(sync->flow_ident), (int)ntohs(sync->return_ident_xlate));
 	if (!ci) {
 		DEBUG_TRACE("%px: SFE Sync: no connection\n", sync);
 		goto sync_conntrack;
@@ -295,27 +297,54 @@ static void ecm_sfe_ipv6_process_one_conn_sync_msg(struct sfe_ipv6_conn_sync *sy
 				ci, sync->flow_rx_packet_count, sync->flow_rx_byte_count, sync->return_rx_packet_count, sync->return_rx_byte_count);
 		DEBUG_TRACE("%px: flow_tx_packet_count: %u, flow_tx_byte_count: %u, return_tx_packet_count: %u, return_tx_byte_count: %u\n",
 				ci, sync->flow_tx_packet_count, sync->flow_tx_byte_count, sync->return_tx_packet_count, sync->return_tx_byte_count);
-		/*
-		 * The amount of data *sent* by the ECM connection 'from' side is the amount the SFE has *received* in the 'flow' direction.
-		 */
-		ecm_db_connection_data_totals_update(ci, true, sync->flow_rx_byte_count, sync->flow_rx_packet_count);
 
-		/*
-		 * The amount of data *sent* by the ECM connection 'to' side is the amount the SFE has *received* in the 'return' direction.
-		 */
-		ecm_db_connection_data_totals_update(ci, false, sync->return_rx_byte_count, sync->return_rx_packet_count);
+#ifdef ECM_MULTICAST_ENABLE
+		if (ecm_ip_addr_is_multicast(return_ip)) {
+			/*
+			 * The amount of data *sent* by the ECM multicast connection 'from' side is the amount the NSS has *received* in the 'flow' direction.
+			 */
+			ecm_db_multicast_connection_data_totals_update(ci, true, sync->flow_rx_byte_count, sync->flow_rx_packet_count);
+			ecm_db_multicast_connection_data_totals_update(ci, true, sync->return_rx_byte_count, sync->return_rx_packet_count);
+			ecm_db_multicast_connection_interface_heirarchy_stats_update(ci, sync->flow_rx_byte_count, sync->flow_rx_packet_count);
+
+			/*
+			 * Update interface statistics
+			 */
+			ecm_interface_multicast_stats_update(ci, sync->flow_tx_packet_count, sync->flow_tx_byte_count, sync->flow_rx_packet_count, sync->flow_rx_byte_count,
+										sync->return_tx_packet_count, sync->return_tx_byte_count, sync->return_rx_packet_count, sync->return_rx_byte_count);
+
+			ECM_IP_ADDR_TO_NIN6_ADDR(origin6, flow_ip);
+			ECM_IP_ADDR_TO_NIN6_ADDR(group6, return_ip);
+
+			/*
+			 * Update IP multicast routing cache stats
+			 */
+			ip6mr_mfc_stats_update(&init_net, &origin6, &group6, sync->flow_rx_packet_count,
+								 sync->flow_rx_byte_count, sync->flow_rx_packet_count, sync->flow_rx_byte_count);
+		} else
+#endif
+		{
+			/*
+			 * The amount of data *sent* by the ECM connection 'from' side is the amount the SFE has *received* in the 'flow' direction.
+			 */
+			ecm_db_connection_data_totals_update(ci, true, sync->flow_rx_byte_count, sync->flow_rx_packet_count);
+
+			/*
+			 * The amount of data *sent* by the ECM connection 'to' side is the amount the SFE has *received* in the 'return' direction.
+			 */
+			ecm_db_connection_data_totals_update(ci, false, sync->return_rx_byte_count, sync->return_rx_packet_count);
+
+			/*
+			 * Update interface statistics
+			 */
+			ecm_interface_stats_update(ci, sync->flow_tx_packet_count, sync->flow_tx_byte_count, sync->flow_rx_packet_count, sync->flow_rx_byte_count,
+						sync->return_tx_packet_count, sync->return_tx_byte_count, sync->return_rx_packet_count, sync->return_rx_byte_count);
+		}
 
 		/*
 		 * As packets have been accelerated we have seen some action.
 		 */
 		ecm_front_end_connection_action_seen(feci);
-
-		/*
-		 * Update interface stats.
-		 * This will update interface enabled for SFE frontend
-		 */
-		ecm_interface_stats_update(ci, sync->flow_tx_packet_count, sync->flow_tx_byte_count, sync->flow_rx_packet_count,
-				sync->flow_rx_byte_count, sync->return_tx_packet_count, sync->return_tx_byte_count, sync->return_rx_packet_count, sync->return_rx_byte_count);
 	}
 
 	switch(sync->reason) {
@@ -918,27 +947,48 @@ int ecm_sfe_ipv6_init(struct dentry *dentry)
 	}
 
 #ifdef CONFIG_XFRM
-	debugfs_create_u32("reject_acceleration_for_ipsec", S_IRUGO | S_IWUSR, ecm_sfe_ipv6_dentry,
-					(u32 *)&ecm_sfe_ipv6_reject_acceleration_for_ipsec);
+	if (!ecm_debugfs_create_u32("reject_acceleration_for_ipsec", S_IRUGO | S_IWUSR, ecm_sfe_ipv6_dentry,
+					(u32 *)&ecm_sfe_ipv6_reject_acceleration_for_ipsec)) {
+		DEBUG_ERROR("Failed to create ecm sfe ipv6 reject_acceleration_for_ipsec file in debugfs\n");
+		goto task_cleanup;
+	}
 #endif
 
-	debugfs_create_u32("no_action_limit_default", S_IRUGO | S_IWUSR, ecm_sfe_ipv6_dentry,
-					(u32 *)&ecm_sfe_ipv6_no_action_limit_default);
+	if (!ecm_debugfs_create_u32("no_action_limit_default", S_IRUGO | S_IWUSR, ecm_sfe_ipv6_dentry,
+					(u32 *)&ecm_sfe_ipv6_no_action_limit_default)) {
+		DEBUG_ERROR("Failed to create ecm sfe ipv6 no_action_limit_default file in debugfs\n");
+		goto task_cleanup;
+	}
 
-	debugfs_create_u32("driver_fail_limit_default", S_IRUGO | S_IWUSR, ecm_sfe_ipv6_dentry,
-					(u32 *)&ecm_sfe_ipv6_driver_fail_limit_default);
+	if (!ecm_debugfs_create_u32("driver_fail_limit_default", S_IRUGO | S_IWUSR, ecm_sfe_ipv6_dentry,
+					(u32 *)&ecm_sfe_ipv6_driver_fail_limit_default)) {
+		DEBUG_ERROR("Failed to create ecm sfe ipv6 driver_fail_limit_default file in debugfs\n");
+		goto task_cleanup;
+	}
 
-	debugfs_create_u32("nack_limit_default", S_IRUGO | S_IWUSR, ecm_sfe_ipv6_dentry,
-					(u32 *)&ecm_sfe_ipv6_nack_limit_default);
+	if (!ecm_debugfs_create_u32("nack_limit_default", S_IRUGO | S_IWUSR, ecm_sfe_ipv6_dentry,
+					(u32 *)&ecm_sfe_ipv6_nack_limit_default)) {
+		DEBUG_ERROR("Failed to create ecm sfe ipv6 nack_limit_default file in debugfs\n");
+		goto task_cleanup;
+	}
 
-	debugfs_create_u32("accelerated_count", S_IRUGO, ecm_sfe_ipv6_dentry,
-					(u32 *)&ecm_sfe_ipv6_accelerated_count);
+	if (!ecm_debugfs_create_u32("accelerated_count", S_IRUGO, ecm_sfe_ipv6_dentry,
+					(u32 *)&ecm_sfe_ipv6_accelerated_count)) {
+		DEBUG_ERROR("Failed to create ecm sfe ipv6 accelerated_count file in debugfs\n");
+		goto task_cleanup;
+	}
 
-	debugfs_create_u32("pending_accel_count", S_IRUGO, ecm_sfe_ipv6_dentry,
-					(u32 *)&ecm_sfe_ipv6_pending_accel_count);
+	if (!ecm_debugfs_create_u32("pending_accel_count", S_IRUGO, ecm_sfe_ipv6_dentry,
+					(u32 *)&ecm_sfe_ipv6_pending_accel_count)) {
+		DEBUG_ERROR("Failed to create ecm sfe ipv6 pending_accel_count file in debugfs\n");
+		goto task_cleanup;
+	}
 
-	debugfs_create_u32("pending_decel_count", S_IRUGO, ecm_sfe_ipv6_dentry,
-					(u32 *)&ecm_sfe_ipv6_pending_decel_count);
+	if (!ecm_debugfs_create_u32("pending_decel_count", S_IRUGO, ecm_sfe_ipv6_dentry,
+					(u32 *)&ecm_sfe_ipv6_pending_decel_count)) {
+		DEBUG_ERROR("Failed to create ecm sfe ipv6 pending_decel_count file in debugfs\n");
+		goto task_cleanup;
+	}
 
 	if (!debugfs_create_file("accel_limit_mode", S_IRUGO | S_IWUSR, ecm_sfe_ipv6_dentry,
 					NULL, &ecm_sfe_ipv6_accel_limit_mode_fops)) {

@@ -1,7 +1,7 @@
 /*
  **************************************************************************
  * Copyright (c) 2014-2021 The Linux Foundation. All rights reserved.
- * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -140,18 +140,22 @@ static int ecm_multicast_ipv6_interface_heirarchy_construct(struct ecm_front_end
  * classifiers permit this operation.
  */
 static void ecm_multicast_ipv6_connection_regenerate(struct ecm_db_connection_instance *ci, ecm_tracker_sender_type_t sender,
-							struct net_device *out_dev, struct net_device *in_dev)
+							struct net_device *out_dev, struct net_device *in_dev, struct net_device *in_dev_nat)
 {
 	int i;
 	bool reclassify_allowed;
 	struct ecm_db_iface_instance *from_list[ECM_DB_IFACE_HEIRARCHY_MAX];
 	int32_t from_list_first;
+	struct ecm_db_iface_instance *from_nat_list[ECM_DB_IFACE_HEIRARCHY_MAX];
+	int32_t from_nat_list_first;
 	ip_addr_t ip_src_addr;
 	ip_addr_t ip_dest_addr;
+	ip_addr_t ip_src_addr_nat;
 	int protocol;
 	bool is_routed;
 	uint8_t src_node_addr[ETH_ALEN];
 	uint8_t dest_node_addr[ETH_ALEN];
+	uint8_t src_node_addr_nat[ETH_ALEN];
 	int assignment_count;
 	struct ecm_classifier_instance *assignments[ECM_CLASSIFIER_TYPES];
 	struct ecm_front_end_connection_instance *feci;
@@ -171,9 +175,11 @@ static void ecm_multicast_ipv6_connection_regenerate(struct ecm_db_connection_in
 	is_routed = ecm_db_connection_is_routed_get(ci);
 
 	ecm_db_connection_address_get(ci, ECM_DB_OBJ_DIR_FROM, ip_src_addr);
+	ecm_db_connection_address_get(ci, ECM_DB_OBJ_DIR_FROM_NAT, ip_src_addr_nat);
 	ecm_db_connection_address_get(ci, ECM_DB_OBJ_DIR_TO, ip_dest_addr);
 	ecm_db_connection_node_address_get(ci, ECM_DB_OBJ_DIR_FROM, src_node_addr);
 	ecm_db_connection_node_address_get(ci, ECM_DB_OBJ_DIR_TO, dest_node_addr);
+	ecm_db_connection_node_address_get(ci, ECM_DB_OBJ_DIR_FROM_NAT, src_node_addr_nat);
 
 	port = (__be16)(ecm_db_connection_port_get(ci, ECM_DB_OBJ_DIR_FROM));
 	layer4hdr[0] = htons(port);
@@ -190,6 +196,16 @@ static void ecm_multicast_ipv6_connection_regenerate(struct ecm_db_connection_in
 
 	ecm_db_connection_interfaces_reset(ci, from_list, from_list_first, ECM_DB_OBJ_DIR_FROM);
 	ecm_db_connection_interfaces_deref(from_list, from_list_first);
+
+	DEBUG_TRACE("%px: Update the 'from NAT' interface heirarchy list\n", ci);
+	from_nat_list_first = ecm_interface_multicast_from_heirarchy_construct(feci, from_nat_list, ip_dest_addr, ip_src_addr_nat, 4, protocol, in_dev_nat, is_routed, in_dev_nat, src_node_addr_nat, dest_node_addr, layer4hdr, NULL);
+	if (from_nat_list_first == ECM_DB_IFACE_HEIRARCHY_MAX) {
+		goto ecm_multicast_ipv6_retry_regen;
+	}
+
+	ecm_db_connection_interfaces_reset(ci, from_nat_list, from_nat_list_first, ECM_DB_OBJ_DIR_FROM_NAT);
+	ecm_db_connection_interfaces_deref(from_nat_list, from_nat_list_first);
+
 
 	ecm_front_end_connection_deref(feci);
 
@@ -376,7 +392,7 @@ static struct ecm_db_node_instance *ecm_multicast_ipv6_node_establish_and_ref(st
 					ECM_IP_ADDR_COPY(addr, gw_addr);
 				}
 
-				if (ecm_front_end_is_bridge_port(dev)) {
+				if (!ecm_ipv6_dev_has_ipaddr(dev) && ecm_front_end_is_bridge_port(dev)) {
 					struct net_device *master;
 					master = ecm_interface_get_and_hold_dev_master(dev);
 					if (!master) {
@@ -486,6 +502,8 @@ unsigned int ecm_multicast_ipv6_connection_process(struct net_device *out_dev,
 	struct ecm_db_multicast_tuple_instance *tuple_instance;
 	int src_port;
 	int dest_port;
+	int src_port_nat = 0;
+	struct net_device *in_dev_nat = NULL;
 	struct ecm_db_connection_instance *ci;
 	ecm_db_direction_t ecm_dir = ECM_DB_DIRECTION_NON_NAT;
 	ip_addr_t match_addr;
@@ -497,12 +515,14 @@ unsigned int ecm_multicast_ipv6_connection_process(struct net_device *out_dev,
 	struct ecm_classifier_process_response prevalent_pr;
 	ip_addr_t ip_src_addr;
 	ip_addr_t ip_dest_addr;
+	ip_addr_t ip_src_addr_nat;
 	uint32_t mc_dest_if[ECM_DB_MULTICAST_IF_MAX];
 	bool br_dev_found_in_mfc = false;
 	int protocol = (int)orig_tuple->dst.protonum;
 	__be16 *layer4hdr = NULL;
 	struct net_device *out_dev_master = NULL;
 	struct net_device *l3_br_dev = NULL;
+	ip_addr_t from_nat_mac_lookup;
 
 	if (protocol != IPPROTO_UDP) {
 		DEBUG_WARN("Invalid Protocol %d in skb %px\n", protocol, skb);
@@ -550,9 +570,12 @@ unsigned int ecm_multicast_ipv6_connection_process(struct net_device *out_dev,
 	 */
 	src_port = ntohs(orig_tuple->src.u.udp.port);
 	dest_port = ntohs(orig_tuple->dst.u.udp.port);
+	src_port_nat = ntohs(reply_tuple->dst.u.udp.port);
 
 	ECM_NIN6_ADDR_TO_IP_ADDR(ip_src_addr, orig_tuple->src.u3.in6);
 	ECM_NIN6_ADDR_TO_IP_ADDR(ip_dest_addr, orig_tuple->dst.u3.in6);
+	ECM_NIN6_ADDR_TO_IP_ADDR(ip_src_addr_nat, reply_tuple->dst.u3.in6);
+	ECM_IP_ADDR_COPY(from_nat_mac_lookup, ip_src_addr_nat);
 
 	/*
 	 * Query MFC/Bridge Snooper to access the destination interface list.
@@ -560,8 +583,12 @@ unsigned int ecm_multicast_ipv6_connection_process(struct net_device *out_dev,
 	ECM_IP_ADDR_TO_NIN6_ADDR(origin6, ip_src_addr);
 	ECM_IP_ADDR_TO_NIN6_ADDR(group6, ip_dest_addr);
 
-	memset(mc_dest_if, 0, sizeof(mc_dest_if));
+	/*
+	 * Initialize in_dev_nat to default in_dev.
+	 */
+	in_dev_nat = in_dev;
 
+	memset(mc_dest_if, 0, sizeof(mc_dest_if));
 	mc_if_cnt =  ip6mr_find_mfc_entry(&init_net, &origin6, &group6, ECM_DB_MULTICAST_IF_MAX, mc_dest_if);
 
 	/*
@@ -661,6 +688,27 @@ unsigned int ecm_multicast_ipv6_connection_process(struct net_device *out_dev,
 	}
 
 process_packet:
+	/*
+	 * Work out if this packet involves NAT or not.
+	 * If it does involve NAT then work out if this is an ingressing or egressing packet.
+	 */
+	if (!ECM_IP_ADDR_MATCH(ip_src_addr, ip_src_addr_nat)) {
+		struct in6_addr nat_dev_saddr, nat_dev_daddr;
+		ip_addr_t ip_nat_dev_saddr;
+
+		/*
+		 * Egressing NAT
+		 * ip_src_addr_nat could be dummy address, we will get ipv6 address of out_dev
+		 * and map it to from_nat_mac_lookup
+		 */
+		in_dev_nat = out_dev;
+
+		ECM_IP_ADDR_TO_NIN6_ADDR(nat_dev_daddr, ip_dest_addr);
+		ipv6_dev_get_saddr(dev_net(in_dev_nat), in_dev_nat, &nat_dev_daddr, 0, &nat_dev_saddr);
+		ECM_NIN6_ADDR_TO_IP_ADDR(ip_nat_dev_saddr, nat_dev_saddr);
+		ECM_IP_ADDR_COPY(from_nat_mac_lookup, ip_nat_dev_saddr);
+	}
+
 	DEBUG_TRACE("UDP src: " ECM_IP_ADDR_OCTAL_FMT ":%d, dest: " ECM_IP_ADDR_OCTAL_FMT ":%d\n",
 			ECM_IP_ADDR_TO_OCTAL(ip_src_addr), src_port, ECM_IP_ADDR_TO_OCTAL(ip_dest_addr), dest_port);
 
@@ -682,7 +730,9 @@ process_packet:
 		struct ecm_db_iface_instance *to_list;
 		struct ecm_db_iface_instance *to_list_single;
 		struct ecm_db_iface_instance *to_list_temp[ECM_DB_IFACE_HEIRARCHY_MAX];
+		struct ecm_db_iface_instance *from_nat_list[ECM_DB_IFACE_HEIRARCHY_MAX];
 		ecm_classifier_type_t classifier_type;
+		int32_t from_nat_list_first;
 		int32_t *to_list_first;
 		int32_t *to_first;
 		int32_t from_list_first;
@@ -746,10 +796,16 @@ process_packet:
 #ifdef ECM_FRONT_END_NSS_ENABLE
 		case ECM_AE_CLASSIFIER_RESULT_NSS:
 		case ECM_AE_CLASSIFIER_RESULT_DONT_CARE:
+			if (ecm_dir == ECM_DB_DIRECTION_EGRESS_NAT) {
+				goto done;
+			}
 			feci = ecm_nss_multicast_ipv6_connection_instance_alloc(can_accel, &nci);
 			break;
 
 		case ECM_AE_CLASSIFIER_RESULT_NONE:
+			if (ecm_dir == ECM_DB_DIRECTION_EGRESS_NAT) {
+				goto done;
+			}
 			feci = ecm_nss_multicast_ipv6_connection_instance_alloc(false, &nci);
 			break;
 #else
@@ -818,7 +874,6 @@ process_packet:
 			DEBUG_WARN("Failed to establish source node\n");
 			goto done;
 		}
-		ni[ECM_DB_OBJ_DIR_FROM_NAT] = ni[ECM_DB_OBJ_DIR_FROM];
 
 		DEBUG_TRACE("%px: Create source mapping\n", nci);
 		mi[ECM_DB_OBJ_DIR_FROM] = ecm_ipv6_mapping_establish_and_ref(ip_src_addr, src_port);
@@ -830,7 +885,6 @@ process_packet:
 			DEBUG_WARN("Failed to establish src mapping\n");
 			goto done;
 		}
-		mi[ECM_DB_OBJ_DIR_FROM_NAT] = mi[ECM_DB_OBJ_DIR_FROM];
 
 		DEBUG_TRACE("%px: Create the 'to' interface heirarchy list\n", nci);
 
@@ -940,6 +994,58 @@ process_packet:
 		}
 		mi[ECM_DB_OBJ_DIR_TO_NAT] = mi[ECM_DB_OBJ_DIR_TO];
 
+		DEBUG_TRACE("%px: Create the 'from NAT' interface heirarchy list\n", nci);
+		from_nat_list_first = ecm_interface_multicast_from_heirarchy_construct(feci, from_nat_list, ip_dest_addr, from_nat_mac_lookup, 6, protocol, in_dev_nat, is_routed, in_dev_nat, src_node_addr, dest_node_addr, layer4hdr, skb);
+		if (from_nat_list_first == ECM_DB_IFACE_HEIRARCHY_MAX) {
+			ecm_db_node_deref(ni[ECM_DB_OBJ_DIR_FROM]);
+			ecm_db_node_deref(ni[ECM_DB_OBJ_DIR_TO]);
+			ecm_db_mapping_deref(mi[ECM_DB_OBJ_DIR_TO]);
+			ecm_db_mapping_deref(mi[ECM_DB_OBJ_DIR_FROM]);
+			ecm_front_end_connection_deref(feci);
+			ecm_db_connection_deref(nci);
+			ecm_db_multicast_tuple_instance_deref(tuple_instance);
+			kfree(to_list);
+			kfree(to_list_first);
+			DEBUG_WARN("Failed to obtain 'from NAT' heirarchy list\n");
+			goto done;
+		}
+		ecm_db_connection_interfaces_reset(nci, from_nat_list, from_nat_list_first, ECM_DB_OBJ_DIR_FROM_NAT);
+
+		ni[ECM_DB_OBJ_DIR_FROM_NAT] = ecm_multicast_ipv6_node_establish_and_ref(feci, in_dev_nat, from_nat_mac_lookup, from_nat_list, from_nat_list_first, src_node_addr, skb);
+		ecm_db_connection_interfaces_deref(from_nat_list, from_nat_list_first);
+		if (!ni[ECM_DB_OBJ_DIR_FROM_NAT]) {
+			ecm_db_node_deref(ni[ECM_DB_OBJ_DIR_FROM]);
+			ecm_db_node_deref(ni[ECM_DB_OBJ_DIR_TO]);
+			ecm_db_mapping_deref(mi[ECM_DB_OBJ_DIR_FROM]);
+			ecm_db_mapping_deref(mi[ECM_DB_OBJ_DIR_TO]);
+			ecm_front_end_connection_deref(feci);
+			ecm_db_connection_deref(nci);
+			ecm_db_multicast_tuple_instance_deref(tuple_instance);
+			kfree(to_list);
+			kfree(to_list_first);
+			DEBUG_WARN("Failed to obtain 'from NAT' node\n");
+			goto done;
+		}
+
+		DEBUG_TRACE("%px: Create from NAT mapping\n", nci);
+		mi[ECM_DB_OBJ_DIR_FROM_NAT] = ecm_ipv6_mapping_establish_and_ref(ip_src_addr_nat, src_port_nat);
+
+		if (!mi[ECM_DB_OBJ_DIR_FROM_NAT]) {
+			ecm_db_node_deref(ni[ECM_DB_OBJ_DIR_FROM]);
+			ecm_db_node_deref(ni[ECM_DB_OBJ_DIR_TO]);
+			ecm_db_node_deref(ni[ECM_DB_OBJ_DIR_FROM_NAT]);
+			ecm_db_mapping_deref(mi[ECM_DB_OBJ_DIR_TO]);
+			ecm_db_mapping_deref(mi[ECM_DB_OBJ_DIR_FROM]);
+			ecm_db_mapping_deref(mi[ECM_DB_OBJ_DIR_FROM_NAT]);
+			ecm_front_end_connection_deref(feci);
+			ecm_db_connection_deref(nci);
+			ecm_db_multicast_tuple_instance_deref(tuple_instance);
+			kfree(to_list);
+			kfree(to_list_first);
+			DEBUG_WARN("Failed to establish from nat mapping\n");
+			goto done;
+		}
+
 		/*
 		 * Every connection also needs a default classifier
 		 */
@@ -949,6 +1055,8 @@ process_packet:
 			ecm_db_node_deref(ni[ECM_DB_OBJ_DIR_TO]);
 			ecm_db_mapping_deref(mi[ECM_DB_OBJ_DIR_FROM]);
 			ecm_db_node_deref(ni[ECM_DB_OBJ_DIR_FROM]);
+			ecm_db_mapping_deref(mi[ECM_DB_OBJ_DIR_FROM_NAT]);
+			ecm_db_node_deref(ni[ECM_DB_OBJ_DIR_FROM_NAT]);
 			ecm_front_end_connection_deref(feci);
 			ecm_db_connection_deref(nci);
 			ecm_db_multicast_tuple_instance_deref(tuple_instance);
@@ -973,6 +1081,8 @@ process_packet:
 				ecm_db_node_deref(ni[ECM_DB_OBJ_DIR_TO]);
 				ecm_db_mapping_deref(mi[ECM_DB_OBJ_DIR_FROM]);
 				ecm_db_node_deref(ni[ECM_DB_OBJ_DIR_FROM]);
+				ecm_db_mapping_deref(mi[ECM_DB_OBJ_DIR_FROM_NAT]);
+				ecm_db_node_deref(ni[ECM_DB_OBJ_DIR_FROM_NAT]);
 				ecm_front_end_connection_deref(feci);
 				ecm_db_connection_deref(nci);
 				ecm_db_multicast_tuple_instance_deref(tuple_instance);
@@ -1053,6 +1163,8 @@ process_packet:
 		ecm_db_node_deref(ni[ECM_DB_OBJ_DIR_TO]);
 		ecm_db_mapping_deref(mi[ECM_DB_OBJ_DIR_FROM]);
 		ecm_db_node_deref(ni[ECM_DB_OBJ_DIR_FROM]);
+		ecm_db_mapping_deref(mi[ECM_DB_OBJ_DIR_FROM_NAT]);
+		ecm_db_node_deref(ni[ECM_DB_OBJ_DIR_FROM_NAT]);
 		ecm_front_end_connection_deref(feci);
 		kfree(to_list);
 		kfree(to_list_first);
@@ -1165,7 +1277,7 @@ process_packet:
 		ecm_db_multicast_connection_deref(tuple_instance);
 	}
 
-#if 0 //defined(CONFIG_NET_CLS_ACT) && defined(ECM_CLASSIFIER_DSCP_IGS) && defined(ECM_FRONT_END_NSS_ENABLE)
+#if defined(CONFIG_NET_CLS_ACT) && defined(ECM_CLASSIFIER_DSCP_IGS) && defined(ECM_FRONT_END_NSS_ENABLE)
 	/*
 	 * Check if IGS feature is enabled or not.
 	 */
@@ -1205,7 +1317,7 @@ process_packet:
 	 * Do we need to action generation change?
 	 */
 	if (unlikely(ecm_db_connection_regeneration_required_check(ci))) {
-		ecm_multicast_ipv6_connection_regenerate(ci, sender, out_dev, in_dev);
+		ecm_multicast_ipv6_connection_regenerate(ci, sender, out_dev, in_dev, in_dev_nat);
 	}
 
 	/*
@@ -1451,7 +1563,7 @@ process_packet:
 		struct ecm_front_end_connection_instance *feci;
 		DEBUG_TRACE("%px: accel\n", ci);
 		feci = ecm_db_connection_front_end_get_and_ref(ci);
-		feci->accelerate(feci, &prevalent_pr, false, NULL, NULL);
+		feci->accelerate(feci, &prevalent_pr, false, NULL, skb);
 		ecm_front_end_connection_deref(feci);
 	}
 	ecm_db_connection_deref(ci);

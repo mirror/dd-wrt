@@ -1,7 +1,7 @@
 /*
  **************************************************************************
  * Copyright (c) 2014-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -29,6 +29,72 @@
 
 typedef uint32_t ecm_db_connection_hash_t;
 typedef uint32_t ecm_db_connection_serial_hash_t;
+
+#ifdef ECM_BRIDGE_VLAN_FILTERING_ENABLE
+
+#define ECM_VLAN_FILTER_RULE_IFACE_MAX 2		/* Indicates max two bridge interfaces can be found in ingress/egress in one direction */
+
+/*
+ * Bit definitions for 'flags' field of 'ecm_db_connection_vlan_filter' structure
+ */
+#define ECM_VLAN_FILTER_FLAG_VALID		(1<<0)	/* Indicates VLAN Filter is valid */
+#define ECM_VLAN_FILTER_FLAG_INGRESS_PVID 	(1<<1)  /* VLAN filter is PVID; add vlan tag to untagged pkts at ingress */
+#define ECM_VLAN_FILTER_FLAG_EGRESS_UNTAGGED 	(1<<2)	/* VLAN filter is UNTAGGED; strip this vlan tag(if present) at egress */
+
+/*
+ * Name associated with each of the indexes for 'vlan_filter' field for each of the 'ecm_db_connection_vlan_filter' structure.
+ */
+static char *ecm_db_connection_vlan_filter_type_strings[] __attribute__((unused))= {
+	"flow_dir_ingress1",
+	"flow_dir_ingress2",
+	"flow_dir_egress1",
+	"flow_dir_egress2",
+	"ret_dir_ingress1",
+	"ret_dir_ingress2",
+	"ret_dir_egress1",
+	"ret_dir_egress2"
+};
+
+/*
+ * ECM db connection vlan filter type based on
+ * direction and ingress/egress dev.
+ */
+enum ecm_db_connection_vlan_filter_type {
+	ECM_VLAN_FILTER_RULE_FLOW_INGRESS1 = 0,	/* First interface in flow direction in From heirarchy */
+	ECM_VLAN_FILTER_RULE_FLOW_INGRESS2,	/* Second interface in flow direction in From heirarchy */
+	ECM_VLAN_FILTER_RULE_FLOW_EGRESS1,	/* First interface in flow direction in To heirarchy */
+	ECM_VLAN_FILTER_RULE_FLOW_EGRESS2,	/* Second interface in flow direction in To heirarchy */
+	ECM_VLAN_FILTER_RULE_RET_INGRESS1 = 4,	/* First interface in return direction in To heirarchy */
+	ECM_VLAN_FILTER_RULE_RET_INGRESS2,	/* Second interface in return direction in To heirarchy */
+	ECM_VLAN_FILTER_RULE_RET_EGRESS1,	/* First interface in return direction in From heirarchy */
+	ECM_VLAN_FILTER_RULE_RET_EGRESS2,	/* Second interface in return direction in From heirarchy */
+	ECM_VLAN_FILTER_RULE_MAX,		/* Maximum number of VLAN Filter rule interfaces */
+};
+
+/*
+ * ECM db connection vlan filter rule direction.
+ */
+enum ecm_db_connection_vlan_filter_dir {
+	ECM_VLAN_FILTER_RULE_FLOW_DIR = ECM_VLAN_FILTER_RULE_FLOW_INGRESS1,	/* Start index of From direction vlan filter rule */
+	ECM_VLAN_FILTER_RULE_RET_DIR = ECM_VLAN_FILTER_RULE_RET_INGRESS1,	/* Start index of To direction vlan filter rule */
+	ECM_VLAN_FITLER_RULE_DIR_MAX = ECM_VLAN_FILTER_RULE_MAX,		/* Maximum value */
+};
+
+/*
+ * struct ecm_db_connection_vlan_filter
+ */
+struct ecm_db_connection_vlan_filter {
+	struct ecm_db_iface_instance *ii;	/* Interface instance */
+	uint16_t vlan_tpid;			/* VLAN protocol indentifier */
+	uint16_t vlan_tag;			/* VLAN Tag */
+	u8 flags;				/* VLAN Filter associated flags (eg: PVID, UNTAGGED) */
+	u8 is_valid;				/* Indicates if this vlan filter rule is valid */
+};
+
+bool ecm_db_connection_del_vlan_filter(struct ecm_db_connection_instance *ci);
+bool ecm_db_connection_add_vlan_filter(struct ecm_db_connection_instance *ci, struct ecm_db_node_instance *ni[], struct sk_buff *skb,
+		ecm_db_obj_dir_t from_dir, ecm_db_obj_dir_t to_dir, bool is_routed);
+#endif
 
 /*
  * Events triggering a connection defunct.
@@ -166,6 +232,12 @@ struct ecm_db_connection_instance {
 	struct ecm_db_multicast_tuple_instance *ti; 		/* Multicast Connection instance */
 	bool to_mcast_interfaces_set;				/* Flag to indicate if the destination interface list is currently empty or not */
 #endif
+
+#ifdef ECM_BRIDGE_VLAN_FILTERING_ENABLE
+	struct ecm_db_connection_vlan_filter *vlan_filter;	/* Stores bridge vlan filter information */
+	bool vlan_filter_valid;					/* True indicates bridge vlan fitler is valid for this connection instance */
+#endif
+
 	/*
 	 * Time values in seconds
 	 */
@@ -344,7 +416,8 @@ int32_t ecm_db_connection_interfaces_get_count(struct ecm_db_connection_instance
 int32_t ecm_db_connection_interfaces_get_and_ref(struct ecm_db_connection_instance *ci,
 						 struct ecm_db_iface_instance *interfaces[],
 						 ecm_db_obj_dir_t dir);
-
+struct net_device *ecm_db_connection_first_iface_dev_get_and_ref(struct ecm_db_connection_instance *ci,
+								 ecm_db_obj_dir_t dir);
 void ecm_db_connection_classifier_assign(struct ecm_db_connection_instance *ci,
 					 struct ecm_classifier_instance *new_ca);
 int ecm_db_connection_classifier_assignments_get_and_ref(struct ecm_db_connection_instance *ci,
@@ -401,6 +474,8 @@ bool ecm_db_connection_decel_v6(struct in6_addr *src_ip, int src_port,
 				struct in6_addr *dest_ip, int dest_port, int protocol);
 void ecm_db_front_end_instance_ref_and_set(struct ecm_db_connection_instance *ci,
 					   struct ecm_front_end_connection_instance *feci);
+void ecm_db_netdevs_get_and_hold(struct ecm_db_connection_instance *ci, ecm_tracker_sender_type_t sender,
+				struct net_device **src_dev, struct net_device **dest_dev);
 
 void ecm_db_connection_flag_set(struct ecm_db_connection_instance *ci, uint32_t flag);
 

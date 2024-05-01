@@ -2265,8 +2265,12 @@ int ecm_classifier_ovs_init(struct dentry *dentry)
 		return -1;
 	}
 
-	debugfs_create_u32("enabled", S_IRUGO | S_IWUSR, ecm_classifier_ovs_dentry,
-					(u32 *)&ecm_classifier_ovs_enabled);
+	if (!ecm_debugfs_create_u32("enabled", S_IRUGO | S_IWUSR, ecm_classifier_ovs_dentry,
+					(u32 *)&ecm_classifier_ovs_enabled)) {
+		DEBUG_ERROR("Failed to create ovs enabled file in debugfs\n");
+		debugfs_remove_recursive(ecm_classifier_ovs_dentry);
+		return -1;
+	}
 
 	return 0;
 }

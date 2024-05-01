@@ -1,6 +1,6 @@
 ##########################################################################
-# Copyright (c) 2014-2016, 2018-2021, The Linux Foundation. All rights reserved.
-# Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+# Copyright (c) 2014-2016, 2018-2021 The Linux Foundation. All rights reserved.
+# Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
 #
 # Permission to use, copy, modify, and/or distribute this software for
 # any purpose with or without fee is hereby granted, provided that the
@@ -17,11 +17,9 @@
 # ###################################################
 # Makefile for the QCA NSS ECM
 # ###################################################
-
 ifeq ($(ECM_FRONT_END_SFE_ENABLE), y)
 obj-m += examples/ecm_sfe_l2.o
 endif
-obj-m +=examples/ecm_ae_select.o
 
 obj-m += ecm.o
 ifeq ($(BUILD_ECM_WIFI_PLUGIN),y)
@@ -41,11 +39,15 @@ endif
 ifeq ($(EXAMPLES_BUILD_OVS),y)
 obj-m += examples/ecm_ovs.o
 endif
+ifeq ($(EXAMPLES_BUILD_AE),y)
+obj-m +=examples/ecm_ae_select.o
+endif
 
 ecm-y := \
 	 frontends/cmn/ecm_ae_classifier.o \
 	 frontends/cmn/ecm_ipv4.o \
 	 frontends/cmn/ecm_ported_ipv4.o \
+	 frontends/cmn/ecm_stats_v4.o \
 	 ecm_tracker_udp.o \
 	 ecm_tracker_tcp.o \
 	 ecm_tracker_datagram.o \
@@ -70,6 +72,7 @@ ecm-y := \
 ecm-$(ECM_IPV6_ENABLE) += frontends/ecm_front_end_ipv6.o
 ecm-$(ECM_IPV6_ENABLE) += frontends/cmn/ecm_ipv6.o
 ecm-$(ECM_IPV6_ENABLE) += frontends/cmn/ecm_ported_ipv6.o
+ecm-$(ECM_IPV6_ENABLE) += frontends/cmn/ecm_stats_v6.o
 ecm-$(ECM_NON_PORTED_SUPPORT_ENABLE) += frontends/cmn/ecm_non_ported_ipv4.o
 ifeq ($(ECM_NON_PORTED_SUPPORT_ENABLE), y)
 ecm-$(ECM_IPV6_ENABLE) += frontends/cmn/ecm_non_ported_ipv6.o
@@ -109,6 +112,11 @@ ecm-$(ECM_FRONT_END_PPE_ENABLE) += frontends/ppe/ecm_ppe_ported_ipv4.o
 ccflags-$(ECM_FRONT_END_PPE_ENABLE) += -DECM_FRONT_END_PPE_ENABLE
 
 # #############################################################################
+# Define ECM_FRONT_END_PPE_QOS_ENABLE=y in order to enable PPE QoS
+# #############################################################################
+ccflags-$(ECM_FRONT_END_PPE_QOS_ENABLE) += -DECM_FRONT_END_PPE_QOS_ENABLE
+
+# #############################################################################
 # Define ECM_FRONT_END_CONN_LIMIT_ENABLE=y in order to limit accelerated
 # connections for low-memory profiles.
 # #############################################################################
@@ -141,6 +149,12 @@ ccflags-$(ECM_INTERFACE_L2TPV2_PPTP_ENABLE) += -DECM_INTERFACE_L2TPV2_PPTP_ENABL
 # to enable support for l2tpv2 acceleration.
 # #############################################################################
 ccflags-$(ECM_INTERFACE_L2TPV2_ENABLE) += -DECM_INTERFACE_L2TPV2_ENABLE
+
+# #############################################################################
+# Define ECM_INTERFACE_L2TPV3_ENABLE=y in order
+# to enable support for L2TPV3 interface.
+# #############################################################################
+ccflags-$(ECM_INTERFACE_L2TPV3_ENABLE) += -DECM_INTERFACE_L2TPV3_ENABLE
 
 # #############################################################################
 # Define ECM_INTERFACE_PPTP_ENABLE=y in order
@@ -321,22 +335,12 @@ ccflags-$(ECM_CLASSIFIER_NL_ENABLE) += -DECM_CLASSIFIER_NL_ENABLE
 # #############################################################################
 # Define ECM_CLASSIFIER_DSCP_ENABLE=y in order to enable DSCP classifier.
 # #############################################################################
-ECM_CLASSIFIER_DSCP_ENABLE=n
-#ifndef $(ECM_CLASSIFIER_DSCP_ENABLE)
-#	ECM_CLASSIFIER_DSCP_ENABLE=y
-#endif
-#ecm-$(ECM_CLASSIFIER_DSCP_ENABLE) += ecm_classifier_dscp.o
-#ccflags-$(ECM_CLASSIFIER_DSCP_ENABLE) += -DECM_CLASSIFIER_DSCP_ENABLE
+ifndef $(ECM_CLASSIFIER_DSCP_ENABLE)
+	ECM_CLASSIFIER_DSCP_ENABLE=y
+endif
+ecm-$(ECM_CLASSIFIER_DSCP_ENABLE) += ecm_classifier_dscp.o
+ccflags-$(ECM_CLASSIFIER_DSCP_ENABLE) += -DECM_CLASSIFIER_DSCP_ENABLE
 ccflags-$(ECM_CLASSIFIER_DSCP_IGS) += -DECM_CLASSIFIER_DSCP_IGS
-
-# #############################################################################
-# Define ECM_CLASSIFIER_PCC_ENABLE=y in order to enable
-# the Parental Controls subsystem classifier in ECM. Currently disabled until
-# customers require it / if they need to integrate their Parental Controls with it.
-# #############################################################################
-ECM_CLASSIFIER_PCC_ENABLE=n
-ecm-$(ECM_CLASSIFIER_PCC_ENABLE) += ecm_classifier_pcc.o
-ccflags-$(ECM_CLASSIFIER_PCC_ENABLE) += -DECM_CLASSIFIER_PCC_ENABLE
 
 # #############################################################################
 # Define ECM_CLASSIFIER_HYFI_ENABLE=y in order to enable
@@ -348,6 +352,17 @@ ecm-$(ECM_CLASSIFIER_HYFI_ENABLE) += ecm_classifier_hyfi.o
 ccflags-$(ECM_CLASSIFIER_HYFI_ENABLE) += -DECM_CLASSIFIER_HYFI_ENABLE
 
 # #############################################################################
+# Define ECM_CLASSIFIER_PCC_ENABLE=y in order to enable
+# the Parental Controls subsystem classifier in ECM. Currently disabled until
+# customers require it / if they need to integrate their Parental Controls with it.
+# #############################################################################
+#ifndef $(ECM_CLASSIFIER_PCC_ENABLE)
+#	ECM_CLASSIFIER_PCC_ENABLE=y
+#endif
+ecm-$(ECM_CLASSIFIER_PCC_ENABLE) += ecm_classifier_pcc.o
+ccflags-$(ECM_CLASSIFIER_PCC_ENABLE) += -DECM_CLASSIFIER_PCC_ENABLE
+
+# #############################################################################
 # Define ECM_CLASSIFIER_EMESH_ENABLE=y in order to enable E-Mesh classifier.
 # #############################################################################
 ecm-$(ECM_CLASSIFIER_EMESH_ENABLE) += ecm_classifier_emesh.o
@@ -357,6 +372,10 @@ ccflags-$(ECM_CLASSIFIER_EMESH_ENABLE) += -DECM_CLASSIFIER_EMESH_ENABLE
 # Define ECM_NON_PORTED_SUPPORT_ENABLE=y in order to enable non-ported protocol.
 # #############################################################################
 
+# #############################################################################
+# Define ECM_MHT_ENABLE=y in order to enable MHT related features.
+# #############################################################################
+ccflags-$(ECM_MHT_ENABLE) += -DECM_MHT_ENABLE
 
 ifeq ($(ECM_FRONT_END_NSS_ENABLE), y)
 ecm-$(ECM_NON_PORTED_SUPPORT_ENABLE) += frontends/nss/ecm_nss_non_ported_ipv4.o
@@ -442,6 +461,17 @@ ccflags-$(ECM_BAND_STEERING_ENABLE) += -DECM_BAND_STEERING_ENABLE
 ccflags-$(ECM_INTERFACE_OVPN_ENABLE) += -DECM_INTERFACE_OVPN_ENABLE
 
 # #############################################################################
+# Define ECM_BRIDGE_VLAN_FILTERING_ENABLE=y in order
+# to enable support for bridge VLAN filter acceleration.
+# #############################################################################
+ccflags-$(ECM_BRIDGE_VLAN_FILTERING_ENABLE) += -DECM_BRIDGE_VLAN_FILTERING_ENABLE
+
+# #############################################################################
+# Define ECM_FRONT_END_FSE_ENABLE=y in order to enable FSE rule push from ECM frontend.
+# #############################################################################
+ccflags-$(ECM_FRONT_END_FSE_ENABLE) += -DECM_FRONT_END_FSE_ENABLE
+
+# #############################################################################
 # Debug flags, set these to = 0 if you want to disable all debugging for that
 # file.
 # By turning off debugs you gain maximum ECM performance.
@@ -505,11 +535,19 @@ ccflags-y += -DECM_STATE_DEBUG_LEVEL=1
 ccflags-y += -DECM_OPENWRT_SUPPORT=1
 ccflags-y += -DECM_NOTIFIER_DEBUG_LEVEL=1
 ccflags-y += -DECM_AE_CLASSIFIER_DEBUG_LEVEL=1
+ccflags-y += -DECM_STATS_DEBUG_LEVEL=1
 
 ccflags-y += -I$(obj)/ -I$(obj)/ecm_db -I$(obj)/frontends/include -I$(obj)/frontends/nss -I$(obj)/frontends/sfe -I$(obj)/frontends/cmn -I$(obj)/exports
 
 ifeq ($(ECM_FRONT_END_PPE_ENABLE), y)
 	ccflags-y += -I$(obj)/frontends/ppe
+ifeq ($(SoC),$(filter $(SoC), ipq53xx_32 ipq53xx))
+# #############################################################################
+# Define ECM_PPE_SOURCE_INTERFACE_CHECK_ENABLE=y in order
+# to enable support for source interface check in PPE.
+# #############################################################################
+ccflags-y += -DECM_PPE_SOURCE_INTERFACE_CHECK_ENABLE=1
+endif
 endif
 
 ccflags-y += -Wall -Werror

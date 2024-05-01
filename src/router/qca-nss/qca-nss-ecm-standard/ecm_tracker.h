@@ -1,9 +1,12 @@
 /*
  **************************************************************************
  * Copyright (c) 2014-2015, The Linux Foundation.  All rights reserved.
+ * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
+ *
  * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
  * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
  * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
@@ -100,6 +103,7 @@ enum ecm_tracker_ip_protocol_types {
 	ECM_TRACKER_IP_PROTOCOL_TYPE_UDP,
 	ECM_TRACKER_IP_PROTOCOL_TYPE_TCP,
 	ECM_TRACKER_IP_PROTOCOL_TYPE_GRE,
+	ECM_TRACKER_IP_PROTOCOL_TYPE_L2TPV3,
 #ifdef ECM_IPV6_ENABLE
 	ECM_TRACKER_IP_PROTOCOL_TYPE_IPV6_ROUTING,
 	ECM_TRACKER_IP_PROTOCOL_TYPE_IPV6_FRAGMENT,
@@ -108,6 +112,7 @@ enum ecm_tracker_ip_protocol_types {
 	ECM_TRACKER_IP_PROTOCOL_TYPE_IPV6_DO,
 	ECM_TRACKER_IP_PROTOCOL_TYPE_IPV6_HBH,		/* IPv6 hop-by-hop header */
 #endif
+	ECM_TRACKER_IP_PROTOCOL_TYPE_ETHERIP,
 	ECM_TRACKER_IP_PROTOCOL_TYPE_COUNT		/* Must be last, do not use */
 };
 typedef enum ecm_tracker_ip_protocol_types ecm_tracker_ip_protocol_type_t;

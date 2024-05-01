@@ -17,7 +17,7 @@
  */
 
 extern int ecm_interface_src_check;	/* Source interface check flag */
-#if 0 // defined(CONFIG_NET_CLS_ACT) && defined(ECM_CLASSIFIER_DSCP_IGS)
+#if defined(CONFIG_NET_CLS_ACT) && defined(ECM_CLASSIFIER_DSCP_IGS)
 extern int ecm_interface_igs_enabled;	/* IGS enabled check flag */
 #endif
 
@@ -53,13 +53,13 @@ extern struct net_device *bond_get_tx_dev(struct sk_buff *skb, uint8_t *src_mac,
 					  void *dst, uint16_t protocol,
 					  struct net_device *bond_dev,
 					  __be16 *layer4hdr);
+bool ecm_interface_mac_addr_get_pppoe(struct net_device *local_dev, uint8_t *node_addr);
 bool ecm_interface_mac_addr_get_no_route(struct net_device *dev, ip_addr_t ip_addr, uint8_t *mac_addr);
 bool ecm_interface_mac_addr_get(ip_addr_t addr, uint8_t *mac_addr, bool *on_link, ip_addr_t gw_addr);
 bool ecm_interface_find_route_by_addr(ip_addr_t addr, struct ecm_interface_route *ecm_rt);
 void ecm_interface_route_release(struct ecm_interface_route *rt);
 #ifdef ECM_IPV6_ENABLE
 struct neighbour *ecm_interface_ipv6_neigh_get(struct ecm_front_end_connection_instance *feci, ecm_db_obj_dir_t dir, ip_addr_t addr);
-struct net_device *ecm_interface_ipv6_dev_find_and_hold(struct net *net, struct in6_addr *addr, int strict);
 void ecm_interface_send_neighbour_solicitation(struct net_device *dev, ip_addr_t addr);
 #endif
 void ecm_interface_send_arp_request(struct net_device *dest_dev, ip_addr_t dest_addr, bool on_link, ip_addr_t gw_addr);
@@ -124,3 +124,8 @@ void ecm_interface_node_connections_defunct(uint8_t *mac, int ip_version);
 void ecm_interface_node_connections_defunct_by_type(uint8_t *mac, int ip_version, ecm_db_connection_defunct_type_t type);
 bool ecm_interface_tunnel_mtu_update(ip_addr_t saddr, ip_addr_t daddr, ecm_db_iface_type_t type, int32_t *mtu);
 struct net_device *ecm_interface_get_and_hold_ipsec_tun_netdev(struct net_device *dev, struct sk_buff *skb, int32_t *interface_type);
+#ifdef ECM_BRIDGE_VLAN_FILTERING_ENABLE
+void ecm_interface_vlan_filter_stats_update(struct ecm_db_connection_instance *ci, ecm_db_obj_dir_t dir,
+						uint32_t tx_packets, uint32_t tx_bytes,
+						uint32_t rx_packets, uint32_t rx_bytes);
+#endif

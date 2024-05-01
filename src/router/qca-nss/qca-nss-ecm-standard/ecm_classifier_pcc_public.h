@@ -1,7 +1,7 @@
 /*
  **************************************************************************
  * Copyright (c) 2015, 2021, The Linux Foundation.  All rights reserved.
- * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -48,6 +48,17 @@ typedef enum /** @cond */ ecm_classifier_pcc_results /** @endcond */ ecm_classif
 enum ecm_classifier_pcc_feature_flags {
 	ECM_CLASSIFIER_PCC_FEATURE_NONE,
 	ECM_CLASSIFIER_PCC_FEATURE_MIRROR = 0x1,	/**< Set by the registrant if mirroring is needed on the connection. */
+	ECM_CLASSIFIER_PCC_FEATURE_ACL = 0x2,		/**< Set by the registrant if ACL is needed on the connection. */
+	ECM_CLASSIFIER_PCC_FEATURE_POLICER = 0x4,	/**< Set by the registrant if POLICER is needed on the connection. */
+};
+
+/**
+ * ecm_classifier_pcc_ap_info
+ *	Policer or ACL ID to be used with the rule during post-flow processing stage
+ */
+struct ecm_classifier_pcc_ap_info {
+	uint16_t flow_ap_index;			/**< Flow Policer/ACL ID */
+	uint16_t return_ap_index;		/**< Return Policer/ACL ID */
 };
 
 /**
@@ -63,7 +74,8 @@ struct ecm_classifier_pcc_mirror_info {
  */
 struct ecm_classifier_pcc_info {
 	uint32_t feature_flags;				/**< Bitmap of requested features (ecm_classifier_pcc_feature_ids). */
-	struct ecm_classifier_pcc_mirror_info mirror;	/**< Mirror netdevice information to be used for mirroring an offloaded flow. */
+	struct ecm_classifier_pcc_mirror_info mirror;		/**< Mirror netdevice information to be used for mirroring an offloaded flow. */
+	struct ecm_classifier_pcc_ap_info ap_info;	/**< Policer or ACL ID. */
 };
 
 struct ecm_classifier_pcc_registrant;

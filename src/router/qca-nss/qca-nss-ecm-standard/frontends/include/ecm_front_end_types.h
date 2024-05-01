@@ -78,6 +78,12 @@ enum ecm_front_end_engine_flag {
 						/* If a front end supports PPE VP datapath */
 	ECM_FRONT_END_ENGINE_FLAG_AE_PRECEDENCE = 0x00000008,
 						/* If the front end enforces AE precedence selection */
+	ECM_FRONT_END_ENGINE_FLAG_SAWF_CHANGE_AE_TYPE = 0x00000010,
+						/* If the front end enforces change in ae */
+	ECM_FRONT_END_ENGINE_FLAG_SAWF_CHANGE_AE_TYPE_DONE = 0x00000020,
+						/* If the change in ae enforced by front end is done */
+	ECM_FRONT_END_ENGINE_FLAG_AE_SELECTOR_ENABLED = 0x00000040,
+						/* If hybrid classifier is enabled and deciding ae selection */
 	ECM_FRONT_END_ENGINE_FLAG_MAX
 						/* Maximum front end engine flags */
 };
@@ -277,6 +283,7 @@ struct ecm_front_end_connection_instance {
 	ecm_front_end_connection_update_rule_t update_rule;			/* Updates the frontend specific data */
 
 	enum ecm_front_end_engine accel_engine;					/* Acceleration engine type */
+	enum ecm_front_end_engine next_accel_engine;					/* Acceleration engine type */
 	uint8_t ported_accelerated_count_index;                 		/* Index value of accelerated count array (UDP or TCP) */
 
 	struct ecm_front_end_common_fe_info fe_info;          /* Front end information */
@@ -295,9 +302,15 @@ struct ecm_front_end_connection_instance {
 	bool can_accel;						/* RO: True when the connection can be accelerated */
 	bool is_defunct;					/* True if the connection has become defunct */
 	bool destroy_fail_handle_pending;			/* Set while handling the connection destroy failure */
+#ifdef ECM_FRONT_END_FSE_ENABLE
+	bool fse_configure;					/* Flag to indicate if the connection is configured in Wi-Fi FSE block */
+#endif
 	ecm_front_end_acceleration_mode_t accel_mode;		/* Indicates the type of acceleration being applied to a connection, if any. */
 	spinlock_t lock;					/* Lock for structure data */
 	int refs;						/* Integer to trap we never go negative */
+#ifdef ECM_MHT_ENABLE
+	uint32_t mht_port_query_count;				/* Counts the number of retry done to get destination mac's port id. */
+#endif
 #if (DEBUG_LEVEL > 0)
 	uint16_t magic;
 #endif
@@ -329,11 +342,41 @@ struct ecm_front_end_ovs_params {
 	int dest_port;
 };
 
+
+/**
+ * Message used to update frontend's SAWF meta
+ * Ports and IPs are in network order.
+ */
+struct ecm_front_end_flowsawf_msg {
+	/*
+	 * ifli message coming from userspace
+	 */
+	uint32_t flow_service_class_id;
+	uint32_t return_service_class_id;
+	uint16_t flow_src_port;
+	uint16_t flow_dest_port;
+	uint32_t flow_src_ip[4];
+	uint32_t flow_dest_ip[4];
+	uint16_t return_src_port;
+	uint16_t return_dest_port;
+	uint32_t return_src_ip[4];
+	uint32_t return_dest_ip[4];
+	uint8_t ip_version;
+	uint8_t protocol;
+
+	/*
+	 * SAWF meta
+	 */
+	uint32_t flow_mark;
+	uint32_t return_mark;
+};
+
 extern void ecm_front_end_ipv6_interface_construct_netdev_put(struct ecm_front_end_interface_construct_instance *efeici);
 extern void ecm_front_end_ipv6_interface_construct_netdev_hold(struct ecm_front_end_interface_construct_instance *efeici);
 extern bool ecm_front_end_ipv6_interface_construct_set_and_hold(struct sk_buff *skb, ecm_tracker_sender_type_t sender, ecm_db_direction_t ecm_dir, bool is_routed,
 							struct net_device *in_dev, struct net_device *out_dev,
-							ip_addr_t ip_src_addr, ip_addr_t ip_dest_addr,
+							ip_addr_t ip_src_addr, ip_addr_t ip_src_addr_nat,
+							ip_addr_t ip_dest_addr, ip_addr_t ip_dest_addr_nat,
 							struct ecm_front_end_interface_construct_instance *efeici);
 
 extern void ecm_front_end_ipv4_interface_construct_netdev_put(struct ecm_front_end_interface_construct_instance *efeici);
@@ -383,9 +426,9 @@ static inline enum ecm_front_end_type ecm_front_end_type_get(void)
  */
 static inline enum ecm_front_end_type ecm_front_end_type_select(void)
 {
+	extern int front_end_selection;
 
 #ifdef ECM_FRONT_END_NSS_ENABLE
-	extern int front_end_selection;
 	bool nss_supported = false;
 #ifdef CONFIG_OF
 	nss_supported = of_machine_is_compatible("qcom,ipq8064") ||
@@ -404,9 +447,14 @@ static inline enum ecm_front_end_type ecm_front_end_type_select(void)
 #endif
 
 #if defined(ECM_FRONT_END_PPE_ENABLE) && defined(ECM_FRONT_END_SFE_ENABLE)
+	/*
+	 * TODO: Remove the devsoc machine compatibility check after SOD.
+	 */
 	if ((front_end_selection == ECM_FRONT_END_TYPE_PPE_SFE)
 		|| ((front_end_selection == ECM_FRONT_END_TYPE_AUTO) && of_machine_is_compatible("qcom,ipq9574"))
-		|| ((front_end_selection == ECM_FRONT_END_TYPE_AUTO) && of_machine_is_compatible("qcom,ipq5332"))) {
+		|| ((front_end_selection == ECM_FRONT_END_TYPE_AUTO) && of_machine_is_compatible("qcom,ipq5332"))
+		|| ((front_end_selection == ECM_FRONT_END_TYPE_AUTO) && of_machine_is_compatible("qcom,devsoc"))
+		|| ((front_end_selection == ECM_FRONT_END_TYPE_AUTO) && of_machine_is_compatible("qcom,ipq5424"))) {
 		return ECM_FRONT_END_TYPE_PPE_SFE;
 	}
 #endif
@@ -438,7 +486,7 @@ static inline enum ecm_front_end_type ecm_front_end_type_select(void)
  *	Sets the precedence array based on the selected frontend mode.
  *
  * If any new combination of AEs or a single AE is added to the system, this function
- * must be updated for the new frontend modes.
+ * must be updated for the new ae types.
  */
 static inline bool ecm_front_end_set_ae_precendence_array(enum ecm_front_end_type type)
 {

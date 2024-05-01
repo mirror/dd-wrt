@@ -1,7 +1,7 @@
 /*
  ***************************************************************************
  * Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2023, Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -23,15 +23,21 @@
 #include <linux/module.h>
 #include <linux/skbuff.h>
 
+#ifdef ECM_WIFI_PLUGIN_OPEN_PROFILE_ENABLE
+#include <ath_sawf.h>
+#else
 #include <qca_mscs_if.h>
 #include <qca_mesh_latency_if.h>
 #include <qca_sawf_if.h>
-#include <ecm_classifier_mscs_public.h>
-#include <ecm_classifier_emesh_public.h>
-
+#include <qca_fse_if.h>
 #ifdef ECM_CLASSIFIER_MSCS_SCS_ENABLE
 #include <qca_scs_if.h>
 #endif
+#endif
+
+#include <ecm_classifier_mscs_public.h>
+#include <ecm_classifier_emesh_public.h>
+#include <ecm_front_end_common_public.h>
 
 #if defined(CONFIG_DYNAMIC_DEBUG)
 
@@ -65,11 +71,13 @@
 #endif
 #endif
 
-/*
- * ecm_wifi_plugin_mscs_register()
- *	API to register mscs callbacks.
- */
-extern int ecm_wifi_plugin_mscs_register(void);
+#ifdef ECM_WIFI_PLUGIN_OPEN_PROFILE_ENABLE
+#define ECM_WIFI_PLUGIN_SAWF_TAG 0xAA
+#define ECM_WIFI_PLUGIN_SAWF_TAG_SHIFT 8
+#define ECM_WIFI_PLUGIN_SAWF_SERVICE_CLASS_MASK 0xFF
+#define ECM_WIFI_PLUGIN_SAWF_SERVICE_CLASS_SHIFT 16
+#define ECM_WIFI_PLUGIN_SAWF_MSDUQ_MASK 0xFFFF
+#endif
 
 /*
  * ecm_wifi_plugin_emesh_register()
@@ -78,13 +86,33 @@ extern int ecm_wifi_plugin_mscs_register(void);
 extern int ecm_wifi_plugin_emesh_register(void);
 
 /*
+ * ecm_wifi_plugin_emesh_unregister()
+ *	API to unregister the emesh callbacks.
+ */
+extern void ecm_wifi_plugin_emesh_unregister(void);
+
+#ifndef ECM_WIFI_PLUGIN_OPEN_PROFILE_ENABLE
+/*
+ * ecm_wifi_plugin_mscs_register()
+ *	API to register mscs callbacks.
+ */
+extern int ecm_wifi_plugin_mscs_register(void);
+
+/*
  * ecm_wifi_plugin_mscs_unregister()
  *	API to unregister the mscs callbacks.
  */
 extern void ecm_wifi_plugin_mscs_unregister(void);
 
 /*
- * ecm_wifi_plugin_emesh_unregister()
- *	API to unregister the emesh callbacks.
+ * ecm_wifi_plugin_fse_cb_register()
+ *	API to register FSE (Flow Search Engine) programming callbacks.
  */
-extern void ecm_wifi_plugin_emesh_unregister(void);
+extern int ecm_wifi_plugin_fse_cb_register(void);
+
+/*
+ * ecm_wifi_plugin_fse_cb_unregister()
+ *	API to unregister FSE (Flow Search Engine) programming callbacks.
+ */
+extern void ecm_wifi_plugin_fse_cb_unregister(void);
+#endif

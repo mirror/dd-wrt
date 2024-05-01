@@ -142,8 +142,9 @@ static struct dentry *ecm_ppe_ipv4_dentry;
 /*
  * Workqueue for the connection sync
  */
-struct workqueue_struct *ecm_ppe_ipv4_workqueue;
-struct delayed_work ecm_ppe_ipv4_work;
+static struct workqueue_struct *ecm_ppe_ipv4_workqueue;
+static struct delayed_work ecm_ppe_ipv4_work;
+static struct ppe_drv_v4_conn_sync_many ecm_ppe_ipv4_sync_req_msg;
 static unsigned long int ecm_ppe_ipv4_stats_request_success = 0;	/* Number of success stats request */
 static unsigned long int ecm_ppe_ipv4_stats_request_fail = 0;		/* Number of failed stats request */
 static unsigned long int ecm_ppe_ipv4_stats_request_nack = 0;		/* Number of NACK'd stats request */
@@ -547,7 +548,6 @@ static void ecm_ppe_ipv4_stats_sync_req_work(struct work_struct *work)
 	/*
 	 * Prepare a ppe_ipv4_msg with CONN_STATS_SYNC_MANY request
 	 */
-	struct ppe_drv_v4_conn_sync_many *cn_sync;
 	int i;
 
 	spin_lock_bh(&ecm_ppe_ipv4_lock);
@@ -558,28 +558,21 @@ static void ecm_ppe_ipv4_stats_sync_req_work(struct work_struct *work)
 	}
 	spin_unlock_bh(&ecm_ppe_ipv4_lock);
 
-	cn_sync = vzalloc(sizeof(struct ppe_drv_v4_conn_sync) * ECM_PPE_IPV4_STATS_SYNC_COUNT);
-	if (!cn_sync) {
-		DEBUG_WARN("Memory allocation failed for ppe_drv_v4_conn_sync_many\n");
-		goto reschedule;
-	}
-
-	ppe_drv_v4_conn_sync_many(cn_sync, ECM_PPE_IPV4_STATS_SYNC_COUNT);
+	memset(ecm_ppe_ipv4_sync_req_msg.conn_sync, 0, sizeof(struct ppe_drv_v4_conn_sync) * ECM_PPE_IPV4_STATS_SYNC_COUNT);
+	ecm_ppe_ipv4_sync_req_msg.count = 0;
+	ppe_drv_v4_conn_sync_many(&ecm_ppe_ipv4_sync_req_msg, ECM_PPE_IPV4_STATS_SYNC_COUNT);
 
 	/*
 	 * If ECM is terminating, don't process this last stats
 	 */
 	if (ecm_ipv4_terminate_pending) {
 		DEBUG_TRACE("ecm_ipv4_terminate_pending\n");
-		vfree(cn_sync);
 		return;
 	}
 
-	for (i = 0; i < cn_sync->count; i++) {
-		ecm_ppe_ipv4_process_one_conn_sync_msg(&cn_sync->conn_sync[i]);
+	for (i = 0; i < ecm_ppe_ipv4_sync_req_msg.count; i++) {
+		ecm_ppe_ipv4_process_one_conn_sync_msg(&ecm_ppe_ipv4_sync_req_msg.conn_sync[i]);
 	}
-
-	vfree(cn_sync);
 
 reschedule:
 	DEBUG_TRACE("ECM: rescheduling sync stats work\n");
@@ -770,8 +763,15 @@ static struct file_operations ecm_ppe_ipv4_stats_request_counter_fops = {
  */
 static bool ecm_ppe_ipv4_sync_queue_init(void)
 {
+	ecm_ppe_ipv4_sync_req_msg.conn_sync = vzalloc(sizeof(struct ppe_drv_v4_conn_sync) * ECM_PPE_IPV4_STATS_SYNC_COUNT);
+	if (!ecm_ppe_ipv4_sync_req_msg.conn_sync) {
+		DEBUG_WARN("Memory allocation failed for ppe_drv_v4_conn_sync_many\n");
+		return false;
+	}
+
 	ecm_ppe_ipv4_workqueue = create_singlethread_workqueue("ecm_ppe_ipv4_workqueue");
 	if (!ecm_ppe_ipv4_workqueue) {
+		vfree(ecm_ppe_ipv4_sync_req_msg.conn_sync);
 		return false;
 	}
 
@@ -792,6 +792,7 @@ static void ecm_ppe_ipv4_sync_queue_exit(void)
 	 */
 	cancel_delayed_work_sync(&ecm_ppe_ipv4_work);
 	destroy_workqueue(ecm_ppe_ipv4_workqueue);
+	vfree(ecm_ppe_ipv4_sync_req_msg.conn_sync);
 }
 
 /*
@@ -812,37 +813,37 @@ int ecm_ppe_ipv4_init(struct dentry *dentry)
 		return -1;
 	}
 
-	if (!debugfs_create_u32("no_action_limit_default", S_IRUGO | S_IWUSR, ecm_ppe_ipv4_dentry,
+	if (!ecm_debugfs_create_u32("no_action_limit_default", S_IRUGO | S_IWUSR, ecm_ppe_ipv4_dentry,
 					(u32 *)&ecm_ppe_ipv4_no_action_limit_default)) {
 		DEBUG_ERROR("Failed to create ecm ppe ipv4 no_action_limit_default file in debugfs\n");
 		goto task_cleanup_1;
 	}
 
-	if (!debugfs_create_u32("driver_fail_limit_default", S_IRUGO | S_IWUSR, ecm_ppe_ipv4_dentry,
+	if (!ecm_debugfs_create_u32("driver_fail_limit_default", S_IRUGO | S_IWUSR, ecm_ppe_ipv4_dentry,
 					(u32 *)&ecm_ppe_ipv4_driver_fail_limit_default)) {
 		DEBUG_ERROR("Failed to create ecm ppe ipv4 driver_fail_limit_default file in debugfs\n");
 		goto task_cleanup_1;
 	}
 
-	if (!debugfs_create_u32("nack_limit_default", S_IRUGO | S_IWUSR, ecm_ppe_ipv4_dentry,
+	if (!ecm_debugfs_create_u32("nack_limit_default", S_IRUGO | S_IWUSR, ecm_ppe_ipv4_dentry,
 					(u32 *)&ecm_ppe_ipv4_nack_limit_default)) {
 		DEBUG_ERROR("Failed to create ecm ppe ipv4 nack_limit_default file in debugfs\n");
 		goto task_cleanup_1;
 	}
 
-	if (!debugfs_create_u32("accelerated_count", S_IRUGO, ecm_ppe_ipv4_dentry,
+	if (!ecm_debugfs_create_u32("accelerated_count", S_IRUGO, ecm_ppe_ipv4_dentry,
 					(u32 *)&ecm_ppe_ipv4_accelerated_count)) {
 		DEBUG_ERROR("Failed to create ecm ppe ipv4 accelerated_count file in debugfs\n");
 		goto task_cleanup_1;
 	}
 
-	if (!debugfs_create_u32("pending_accel_count", S_IRUGO, ecm_ppe_ipv4_dentry,
+	if (!ecm_debugfs_create_u32("pending_accel_count", S_IRUGO, ecm_ppe_ipv4_dentry,
 					(u32 *)&ecm_ppe_ipv4_pending_accel_count)) {
 		DEBUG_ERROR("Failed to create ecm ppe ipv4 pending_accel_count file in debugfs\n");
 		goto task_cleanup_1;
 	}
 
-	if (!debugfs_create_u32("pending_decel_count", S_IRUGO, ecm_ppe_ipv4_dentry,
+	if (!ecm_debugfs_create_u32("pending_decel_count", S_IRUGO, ecm_ppe_ipv4_dentry,
 					(u32 *)&ecm_ppe_ipv4_pending_decel_count)) {
 		DEBUG_ERROR("Failed to create ecm ppe ipv4 pending_decel_count file in debugfs\n");
 		goto task_cleanup_1;
@@ -877,7 +878,7 @@ int ecm_ppe_ipv4_init(struct dentry *dentry)
 		goto task_cleanup_1;
 	}
 
-	if (!debugfs_create_u32("vlan_passthrough_set", S_IRUGO | S_IWUSR, ecm_ppe_ipv4_dentry,
+	if (!ecm_debugfs_create_u32("vlan_passthrough_set", S_IRUGO | S_IWUSR, ecm_ppe_ipv4_dentry,
 					(u32 *)&ecm_ppe_ipv4_vlan_passthrough_enable)) {
 		DEBUG_ERROR("Failed to create ecm ppe ipv4 vlan passthrough file in debugfs\n");
 		goto task_cleanup_1;

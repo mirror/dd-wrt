@@ -1,7 +1,7 @@
 /*
  **************************************************************************
  * Copyright (c) 2016-2017, 2019-2021 The Linux Foundation. All rights reserved.
- * Copyright (c) 2022, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2023, Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -89,7 +89,6 @@
  * Locking of the classifier - concurrency control
  */
 static DEFINE_SPINLOCK(ecm_conntrack_notifier_lock __attribute__((unused)));	/* Protect against SMP access between netfilter, events and private threaded function. */
-static DEFINE_MUTEX(ecm_conntrack_notifier_mtx);    /* Protect against race conditions during nf_conntrack notifier registration/unregistration events */
 
 /*
  * Debugfs dentry object.
@@ -428,41 +427,54 @@ int ecm_conntrack_notifier_init(struct dentry *dentry)
 	int result __attribute__((unused));
 	DEBUG_INFO("ECM Conntrack Notifier init\n");
 
-   mutex_lock(&ecm_conntrack_notifier_mtx);
-
-   ecm_conntrack_notifier_dentry = debugfs_create_dir("ecm_conntrack_notifier", dentry);
+	ecm_conntrack_notifier_dentry = debugfs_create_dir("ecm_conntrack_notifier", dentry);
 	if (!ecm_conntrack_notifier_dentry) {
 		DEBUG_ERROR("Failed to create ecm conntrack notifier directory in debugfs\n");
 		return -1;
 	}
 
-	debugfs_create_u32("stop", S_IRUGO | S_IWUSR, ecm_conntrack_notifier_dentry,
-					(u32 *)&ecm_conntrack_notifier_stopped);
+	if (!ecm_debugfs_create_u32("stop", S_IRUGO | S_IWUSR, ecm_conntrack_notifier_dentry,
+					(u32 *)&ecm_conntrack_notifier_stopped)) {
+		DEBUG_ERROR("Failed to create ecm conntrack notifier stopped file in debugfs\n");
+		debugfs_remove_recursive(ecm_conntrack_notifier_dentry);
+		return -1;
+	}
 
 #ifdef CONFIG_NF_CONNTRACK_EVENTS
 	/*
 	 * Eventing subsystem is available so we register a notifier hook to get fast notifications of expired connections
 	 */
-#ifdef CONFIG_NF_CONNTRACK_CHAIN_EVENTS
-	result = nf_conntrack_register_notifier(&init_net, &ecm_conntrack_notifier);
-#else
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 15, 0))
-	result = nf_conntrack_register_notifier(&init_net, &ecm_conntrack_notifier);
-#else
-	nf_conntrack_register_notifier(&init_net, &ecm_conntrack_notifier);
-#endif
-#endif
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 15, 0))
+   result = nf_conntrack_register_notifier(&init_net, &ecm_conntrack_notifier);
 	if (result < 0) {
 		DEBUG_ERROR("Can't register nf notifier hook.\n");
 		debugfs_remove_recursive(ecm_conntrack_notifier_dentry);
-		mutex_unlock(&ecm_conntrack_notifier_mtx);
-       return result;
+		return result;
+	}
+#else
+   nf_conntrack_register_notifier(&init_net, &ecm_conntrack_notifier);
+#endif
+
+	/*
+	 * Hold netns reference to keep the basic conntrack alive and
+	 * track conntrack even when firewall stopped.
+	 */
+	result = nf_ct_netns_get(&init_net, NFPROTO_IPV4);
+	if (result < 0) {
+		DEBUG_ERROR("Can't hold ipv4 netns.\n");
+		debugfs_remove_recursive(ecm_conntrack_notifier_dentry);
+		return result;
+	}
+#ifdef ECM_IPV6_ENABLE
+	result = nf_ct_netns_get(&init_net, NFPROTO_IPV6);
+	if (result < 0) {
+		DEBUG_ERROR("Can't hold ipv6 netns.\n");
+		nf_ct_netns_put(&init_net, NFPROTO_IPV4);
+		debugfs_remove_recursive(ecm_conntrack_notifier_dentry);
+		return result;
 	}
 #endif
 #endif
-
-   mutex_unlock(&ecm_conntrack_notifier_mtx);
 
 	return 0;
 }
@@ -475,7 +487,15 @@ void ecm_conntrack_notifier_exit(void)
 {
 	DEBUG_INFO("ECM Conntrack Notifier exit\n");
 
-   mutex_lock(&ecm_conntrack_notifier_mtx);
+#ifdef CONFIG_NF_CONNTRACK_EVENTS
+	/*
+	 * Release netns reference.
+	 */
+	nf_ct_netns_put(&init_net, NFPROTO_IPV4);
+#ifdef ECM_IPV6_ENABLE
+	nf_ct_netns_put(&init_net, NFPROTO_IPV6);
+#endif
+#endif
 
 #ifdef CONFIG_NF_CONNTRACK_CHAIN_EVENTS
 	nf_conntrack_unregister_notifier(&init_net, &ecm_conntrack_notifier);
@@ -492,7 +512,5 @@ void ecm_conntrack_notifier_exit(void)
 	if (ecm_conntrack_notifier_dentry) {
 		debugfs_remove_recursive(ecm_conntrack_notifier_dentry);
 	}
-
-   mutex_unlock(&ecm_conntrack_notifier_mtx);
 }
 EXPORT_SYMBOL(ecm_conntrack_notifier_exit);

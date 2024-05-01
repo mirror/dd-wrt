@@ -1,7 +1,7 @@
 /*
  **************************************************************************
  * Copyright (c) 2015-2016, 2019-2021, The Linux Foundation.  All rights reserved.
- * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -30,6 +30,13 @@
 #ifdef ECM_FRONT_END_SFE_ENABLE
 #include <sfe_api.h>
 #endif
+#ifdef ECM_FRONT_END_PPE_QOS_ENABLE
+#include <ppe_drv.h>
+#include <ppe_drv_qos.h>
+#endif
+#ifdef ECM_FRONT_END_FSE_ENABLE
+#include "ecm_front_end_common_public.h"
+#endif
 
 #define ECM_FRONT_END_SYSCTL_PATH "/net/ecm"
 
@@ -40,11 +47,32 @@
  */
 extern unsigned int ecm_front_end_conn_limit;
 
+#ifdef ECM_FRONT_END_FSE_ENABLE
+/*
+ * ECM front end FSE callbacks ops.
+ */
+extern struct ecm_front_end_fse_callbacks *ecm_fe_fse_cb;
+#endif
+
 /*
  * Flag to enable/disable Wi-FI FSE block programming through PPE driver
  */
 #ifdef ECM_FRONT_END_PPE_ENABLE
 extern unsigned int ecm_front_end_ppe_fse_enable;
+#endif
+
+/*
+ * Flag to enable/disable Wi-Fi FSE block programming from ECM SFE frontend.
+ */
+#ifdef ECM_FRONT_END_SFE_ENABLE
+extern unsigned int ecm_sfe_fse_enable;
+#endif
+
+/*
+ * Flag to enable/disable MHT related features from ECM SFE frontend.
+ */
+#ifdef ECM_MHT_ENABLE
+extern unsigned int ecm_sfe_mht_enable;
 #endif
 
 /*
@@ -56,6 +84,8 @@ static inline uint32_t ecm_front_end_l2_encap_header_len(uint16_t protocol)
 	switch (protocol) {
 	case ETH_P_PPP_SES:
 		return PPPOE_SES_HLEN;
+	case ETH_P_8021Q:
+		return VLAN_HLEN;
 	default:
 		return 0;
 	}
@@ -304,22 +334,26 @@ static inline bool ecm_front_end_destroy_failure_handle(struct ecm_front_end_con
 static inline bool ecm_front_end_ppppoe_br_accel_disabled(void)
 {
 	enum ecm_front_end_type fe_type;
-	bool ret = true;
+	bool ret = false;
 
 	fe_type = ecm_front_end_type_get();
 	switch (fe_type) {
 #ifdef ECM_FRONT_END_NSS_ENABLE
+#ifdef ECM_INTERFACE_PPPOE_ENABLE
 	case ECM_FRONT_END_TYPE_NSS:
 		ret = (nss_pppoe_get_br_accel_mode() == NSS_PPPOE_BR_ACCEL_MODE_DIS);
 		break;
 #endif
+#endif
 #ifdef ECM_FRONT_END_SFE_ENABLE
+#ifdef ECM_INTERFACE_PPPOE_ENABLE
 	case ECM_FRONT_END_TYPE_SFE:
 		ret = (sfe_pppoe_get_br_accel_mode() == SFE_PPPOE_BR_ACCEL_MODE_DISABLED);
 		break;
 #endif
+#endif
 	default:
-		DEBUG_WARN("front end type: %d is not supported\n", fe_type);
+		DEBUG_TRACE("front end type: %d\n", fe_type);
 		break;
 	}
 
@@ -339,14 +373,18 @@ static inline bool ecm_front_end_ppppoe_br_accel_3tuple(void)
 	fe_type = ecm_front_end_type_get();
 	switch (fe_type) {
 #ifdef ECM_FRONT_END_NSS_ENABLE
+#ifdef ECM_INTERFACE_PPPOE_ENABLE
 	case ECM_FRONT_END_TYPE_NSS:
 		ret = (nss_pppoe_get_br_accel_mode() == NSS_PPPOE_BR_ACCEL_MODE_EN_3T);
 		break;
 #endif
+#endif
 #ifdef ECM_FRONT_END_SFE_ENABLE
+#ifdef ECM_INTERFACE_PPPOE_ENABLE
 	case ECM_FRONT_END_TYPE_SFE:
 		ret = (sfe_pppoe_get_br_accel_mode() == SFE_PPPOE_BR_ACCEL_MODE_EN_3T);
 		break;
+#endif
 #endif
 	default:
 		DEBUG_WARN("front end type: %d is not supported\n", fe_type);
@@ -360,6 +398,8 @@ extern void ecm_front_end_bond_notifier_stop(int num);
 extern int ecm_front_end_bond_notifier_init(struct dentry *dentry);
 extern void ecm_front_end_bond_notifier_exit(void);
 
+bool ecm_front_end_l2tp_proto_is_accel_allowed(struct net_device *indev, struct net_device *outdev);
+
 #ifdef ECM_STATE_OUTPUT_ENABLE
 extern int ecm_front_end_common_connection_state_get(struct ecm_front_end_connection_instance *feci,
 						    struct ecm_state_file_instance *sfi,
@@ -368,7 +408,8 @@ extern int ecm_front_end_common_connection_state_get(struct ecm_front_end_connec
 extern bool ecm_front_end_gre_proto_is_accel_allowed(struct net_device *indev,
 						      struct net_device *outdev,
 						      struct sk_buff *skb,
-						      struct nf_conntrack_tuple *tuple,
+						      struct nf_conntrack_tuple *orig_tuple,
+						      struct nf_conntrack_tuple *reply_tuple,
 						      int ip_version, uint16_t offset);
 extern uint64_t ecm_front_end_get_slow_packet_count(struct ecm_front_end_connection_instance *feci);
 #ifdef ECM_CLASSIFIER_DSCP_ENABLE
@@ -387,13 +428,28 @@ void ecm_front_end_common_sysctl_unregister(void);
 int ecm_sfe_sysctl_tbl_init(void);
 void ecm_sfe_sysctl_tbl_exit(void);
 bool ecm_front_end_feature_check(struct sk_buff *skb, struct ecm_tracker_ip_header *ip_hdr);
+bool ecm_front_end_is_xfrm_flow(struct sk_buff *skb, struct ecm_tracker_ip_header *ip_hdr, bool *inner);
 
 ecm_front_end_acceleration_mode_t ecm_front_end_connection_accel_state_get(struct ecm_front_end_connection_instance *feci);
 void ecm_front_end_connection_action_seen(struct ecm_front_end_connection_instance *feci);
 void ecm_front_end_connection_ref(struct ecm_front_end_connection_instance *feci);
 int ecm_front_end_connection_deref(struct ecm_front_end_connection_instance *feci);
 
+bool ecm_front_end_connection_limit_reached(enum ecm_front_end_engine ae_type, int ip_version);
 bool ecm_front_end_connection_check_and_switch_to_next_ae(struct ecm_front_end_connection_instance *feci);
 void ecm_front_end_common_set_stats_bitmap(struct ecm_front_end_connection_instance *feci, ecm_db_obj_dir_t dir, uint8_t bit);
 uint32_t ecm_front_end_common_get_stats_bitmap(struct ecm_front_end_connection_instance *feci, ecm_db_obj_dir_t dir);
+bool ecm_front_end_check_udp_denied_ports(uint16_t src_port, uint16_t dest_port);
+bool ecm_front_end_check_tcp_denied_ports(uint16_t src_port, uint16_t dest_port);
+bool ecm_front_end_common_intf_qdisc_check(int32_t interface_num, bool *is_ppeq);
+bool ecm_front_end_common_intf_ingress_qdisc_check(int32_t interface_num);
+#ifdef ECM_FRONT_END_FSE_ENABLE
+bool ecm_front_end_fse_info_get(struct ecm_front_end_connection_instance *feci, struct ecm_front_end_fse_info *fse_info);
+#endif /* ECM_FRONT_END_FSE_ENABLE */
+
+bool ecm_front_end_is_ae_type_feature_supported (ecm_ae_classifier_result_t ae_type, struct sk_buff *skb,
+									struct ecm_tracker_ip_header *iph);
+enum ecm_front_end_engine ecm_front_end_ae_type_to_supported_ae_engine(uint32_t *flags,
+									ecm_ae_classifier_result_t ae_type);
+ecm_ae_classifier_result_t ecm_front_end_accel_engine_to_ae_type(enum ecm_front_end_engine accel_engine);
 #endif  /* __ECM_FRONT_END_COMMON_H */

@@ -70,7 +70,6 @@
 #include "ecm_tracker_tcp.h"
 #include "ecm_classifier_nl.h"
 #include "ecm_db.h"
-#include "ecm_front_end_common.h"
 #include "ecm_front_end_ipv4.h"
 #ifdef ECM_IPV6_ENABLE
 #include "ecm_front_end_ipv6.h"
@@ -145,55 +144,12 @@ static struct genl_multicast_group ecm_cl_nl_genl_mcgrp[] = {
 	},
 };
 
-/*
- * Generic Netlink attr checking policies
- */
-static struct nla_policy
-ecm_cl_nl_genl_policy[ECM_CL_NL_GENL_ATTR_COUNT] = {
-	[ECM_CL_NL_GENL_ATTR_TUPLE] = {
-		.type = NLA_UNSPEC,
-		.len = sizeof(struct ecm_cl_nl_genl_attr_tuple), },
-};
-
-static int ecm_classifier_nl_genl_msg_ACCEL(struct sk_buff *skb, struct genl_info *info);
-static int ecm_classifier_nl_genl_msg_DUMP(struct sk_buff *skb, struct netlink_callback *cb);
-
-/*
- * Generic Netlink message-to-handler mapping
- */
-static struct genl_ops ecm_cl_nl_genl_ops[] = {
-	{
-		.cmd = ECM_CL_NL_GENL_CMD_ACCEL,
-		.flags = 0,
-		.policy = ecm_cl_nl_genl_policy,
-		.doit = ecm_classifier_nl_genl_msg_ACCEL,
-		.dumpit = NULL,
-	},
-	{
-		.cmd = ECM_CL_NL_GENL_CMD_ACCEL_OK,
-		.flags = 0,
-		.policy = ecm_cl_nl_genl_policy,
-		.doit = NULL,
-		.dumpit = ecm_classifier_nl_genl_msg_DUMP,
-	},
-	{
-		.cmd = ECM_CL_NL_GENL_CMD_CONNECTION_CLOSED,
-		.flags = 0,
-		.policy = ecm_cl_nl_genl_policy,
-		.doit = NULL,
-		.dumpit = ecm_classifier_nl_genl_msg_DUMP,
-	},
-};
-
 static struct genl_family ecm_cl_nl_genl_family = {
+	.id = GENL_ID_GENERATE,
 	.hdrsize = 0,
 	.name = ECM_CL_NL_GENL_NAME,
 	.version = ECM_CL_NL_GENL_VERSION,
 	.maxattr = ECM_CL_NL_GENL_ATTR_MAX,
-	.ops = ecm_cl_nl_genl_ops,
-	.n_ops = ARRAY_SIZE(ecm_cl_nl_genl_ops),
-	.mcgrps = ecm_cl_nl_genl_mcgrp,
-	.n_mcgrps = ARRAY_SIZE(ecm_cl_nl_genl_mcgrp),
 };
 
 /*
@@ -257,7 +213,12 @@ ecm_classifier_nl_send_genl_msg(enum ECM_CL_NL_GENL_CMD cmd,
 		return ret;
 	}
 
-	genlmsg_end(skb, msg_head);
+	ret = genlmsg_end(skb, msg_head);
+	if (ret < 0) {
+		DEBUG_WARN("failed to finalize genl msg: %d\n", ret);
+		nlmsg_free(skb);
+		return ret;
+	}
 
 	/* genlmsg_multicast frees the skb in both success and error cases */
 	ret = genlmsg_multicast(&ecm_cl_nl_genl_family,
@@ -1405,14 +1366,49 @@ static struct file_operations ecm_classifier_nl_cmd_fops = {
 	.write = ecm_classifier_nl_set_command,
 };
 
+/*
+ * Generic Netlink attr checking policies
+ */
+static struct nla_policy
+ecm_cl_nl_genl_policy[ECM_CL_NL_GENL_ATTR_COUNT] = {
+	[ECM_CL_NL_GENL_ATTR_TUPLE] = {
+		.type = NLA_UNSPEC,
+		.len = sizeof(struct ecm_cl_nl_genl_attr_tuple), },
+};
+
+/*
+ * Generic Netlink message-to-handler mapping
+ */
+static struct genl_ops ecm_cl_nl_genl_ops[] = {
+	{
+		.cmd = ECM_CL_NL_GENL_CMD_ACCEL,
+		.flags = 0,
+		.policy = ecm_cl_nl_genl_policy,
+		.doit = ecm_classifier_nl_genl_msg_ACCEL,
+		.dumpit = NULL,
+	},
+	{
+		.cmd = ECM_CL_NL_GENL_CMD_ACCEL_OK,
+		.flags = 0,
+		.policy = ecm_cl_nl_genl_policy,
+		.doit = NULL,
+		.dumpit = ecm_classifier_nl_genl_msg_DUMP,
+	},
+	{
+		.cmd = ECM_CL_NL_GENL_CMD_CONNECTION_CLOSED,
+		.flags = 0,
+		.policy = ecm_cl_nl_genl_policy,
+		.doit = NULL,
+		.dumpit = ecm_classifier_nl_genl_msg_DUMP,
+	},
+};
+
 static int ecm_classifier_nl_register_genl(void)
 {
-	int result;
-   result = genl_register_family(&ecm_cl_nl_genl_family);
-	if(result!=0){
-		DEBUG_ERROR("failed to register genl family: %d\n", result);
-	}
-	return result;
+
+	return genl_register_family_with_ops_groups(&ecm_cl_nl_genl_family,
+						      ecm_cl_nl_genl_ops,
+						      ecm_cl_nl_genl_mcgrp);
 }
 
 static void ecm_classifier_nl_unregister_genl(void)

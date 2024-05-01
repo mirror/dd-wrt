@@ -727,6 +727,13 @@ static void ecm_nss_non_ported_ipv6_connection_accelerate(struct ecm_front_end_c
 
 			nircm->conn_rule.flow_interface_num = ecm_nss_common_ipsec_get_ifnum(from_nss_iface_id);
 			nircm->nexthop_rule.flow_nexthop = ecm_nss_common_ipsec_get_ifnum(nircm->nexthop_rule.flow_nexthop);
+
+			/*
+			 * Override the MTU size in the decap direction, this will apply to IPsec->WAN rule
+			 */
+			if (IP6CB(skb)->flags & IP6SKB_XFRM_TRANSFORMED) {
+				nircm->conn_rule.flow_mtu = ECM_DB_IFACE_MTU_MAX;
+			}
 #else
 			rule_invalid = true;
 			DEBUG_TRACE("%px: IPSEC - unsupported\n", feci);
@@ -1650,14 +1657,18 @@ struct ecm_front_end_connection_instance *ecm_nss_non_ported_ipv6_connection_ins
 
 	return feci;
 }
+EXPORT_SYMBOL(ecm_nss_non_ported_ipv6_connection_instance_alloc);
 
 /*
  * ecm_nss_non_ported_ipv6_debugfs_init()
  */
 bool ecm_nss_non_ported_ipv6_debugfs_init(struct dentry *dentry)
 {
-	debugfs_create_u32("non_ported_accelerated_count", S_IRUGO, dentry,
-					(u32 *)&ecm_nss_non_ported_ipv6_accelerated_count);
+	if (!ecm_debugfs_create_u32("non_ported_accelerated_count", S_IRUGO, dentry,
+					(u32 *)&ecm_nss_non_ported_ipv6_accelerated_count)) {
+		DEBUG_ERROR("Failed to create ecm nss ipv6 non_ported_accelerated_count file in debugfs\n");
+		return false;
+	}
 
 	return true;
 }

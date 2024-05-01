@@ -1,7 +1,7 @@
 /*
  **************************************************************************
  * Copyright (c) 2014-2015, 2018-2021 The Linux Foundation. All rights reserved.
- * Copyright (c) 2022, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2023, Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -113,9 +113,15 @@ typedef enum ecm_classifier_acceleration_modes ecm_classifier_acceleration_mode_
 
 #ifdef ECM_CLASSIFIER_PCC_ENABLE
 #define ECM_CLASSIFIER_PROCESS_ACTION_MIRROR_ENABLED 0x00004000	/* Contains mirror dynamic interface number */
+#define ECM_CLASSIFIER_PROCESS_ACTION_ACL_ENABLED 0x00008000	/* Contains mirror dynamic interface number */
+#define ECM_CLASSIFIER_PROCESS_ACTION_POLICER_ENABLED 0x00010000	/* Contains mirror dynamic interface number */
 #endif
 
-#define ECM_CLASSIFIER_PROCESS_ACTION_MARK 0x00008000	/* Contains flow & return skb mark */
+#define ECM_CLASSIFIER_PROCESS_ACTION_MARK 0x00020000	/* Contains flow & return skb mark */
+
+#ifdef ECM_CLASSIFIER_EMESH_ENABLE
+#define ECM_CLASSIFIER_PROCESS_ACTION_EMESH_SAWF_LEGACY_SCS_TAG	0x00040000	/* Mark the E-MESH SAWF legacy scs tag */
+#endif
 
 /*
  * struct ecm_classifier_process_response
@@ -154,10 +160,23 @@ struct ecm_classifier_process_response {
 #ifdef ECM_CLASSIFIER_PCC_ENABLE
 	int flow_mirror_ifindex;			/* Flow mirror device index value */
 	int return_mirror_ifindex;			/* Return mirror device index value */
+	union {
+		struct {
+			uint32_t flow_acl_id;           /**< ACL rule ID in flow direction. */
+			uint32_t return_acl_id;         /**< ACL rule ID in return direction. */
+		} acl;
+
+		struct {
+			uint32_t flow_policer_id;        /**< POLICER ID in flow direction. */
+			uint32_t return_policer_id;      /**< POLICER ID in return direction. */
+		} policer;
+	} rule_id;
 #endif
 #ifdef ECM_CLASSIFIER_EMESH_ENABLE
 	uint32_t flow_sawf_metadata;			/* Flow SAWF metadata value */
 	uint32_t return_sawf_metadata;			/* Return SAWF metadata value */
+	uint8_t flow_service_class;			/* Flow service class ID */
+	uint8_t return_service_class;			/* Return service class ID */
 	uint8_t flow_vlan_pcp;				/* Flow VLAN pcp remark value */
 	uint8_t return_vlan_pcp;			/* Return VLAN pcp remark value */
 #endif
@@ -218,6 +237,7 @@ typedef int (*ecm_classifier_state_get_callback_t)(struct ecm_classifier_instanc
 											/* Get state output.  Returns 0 upon success. */
 #endif
 
+typedef void (*ecm_classifier_notify_create_t)(struct ecm_classifier_instance *ci, void *arg);
 typedef void (*ecm_classifier_update_t)(struct ecm_classifier_instance *ci, enum ecm_rule_update_type type, void *arg);
 
 /*
@@ -253,6 +273,7 @@ struct ecm_classifier_instance {
 	ecm_classifier_state_get_callback_t state_get;
 							/* Return its state */
 #endif
+	ecm_classifier_notify_create_t notify_create;	/* Notify connection create to classifier instance */
 	ecm_classifier_update_t update;			/* Updates the classifier instance */
 
 	ecm_classifier_ref_method_t ref;

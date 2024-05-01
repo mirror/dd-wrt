@@ -1,6 +1,8 @@
 /*
  **************************************************************************
  * Copyright (c) 2014-2015, 2018, 2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -84,6 +86,8 @@ static bool ecm_tracker_ip_header_helper_udp(struct ecm_tracker_ip_protocols *et
 static bool ecm_tracker_ip_header_helper_icmp(struct ecm_tracker_ip_protocols *etip, struct ecm_tracker_ip_protocol_header *etiph, struct ecm_tracker_ip_header *ip_hdr, struct sk_buff *skb, uint8_t protocol, ecm_tracker_ip_protocol_type_t ecm_ip_protocol, uint32_t offset, uint32_t remain, int16_t *next_hdr);
 static bool ecm_tracker_ip_header_helper_unknown(struct ecm_tracker_ip_protocols *etip, struct ecm_tracker_ip_protocol_header *etiph, struct ecm_tracker_ip_header *ip_hdr, struct sk_buff *skb, uint8_t protocol, ecm_tracker_ip_protocol_type_t ecm_ip_protocol, uint32_t offset, uint32_t remain, int16_t *next_hdr);
 static bool ecm_tracker_ip_header_helper_gre(struct ecm_tracker_ip_protocols *etip, struct ecm_tracker_ip_protocol_header *etiph, struct ecm_tracker_ip_header *ip_hdr, struct sk_buff *skb, uint8_t protocol, ecm_tracker_ip_protocol_type_t ecm_ip_protocol, uint32_t offset, uint32_t remain, int16_t *next_hdr);
+static bool ecm_tracker_ip_header_helper_etherip(struct ecm_tracker_ip_protocols *etip, struct ecm_tracker_ip_protocol_header *etiph, struct ecm_tracker_ip_header *ip_hdr, struct sk_buff *skb, uint8_t protocol, ecm_tracker_ip_protocol_type_t ecm_ip_protocol, uint32_t offset, uint32_t remain, int16_t *next_hdr);
+static bool ecm_tracker_ip_header_helper_l2tpv3(struct ecm_tracker_ip_protocols *etip, struct ecm_tracker_ip_protocol_header *etiph, struct ecm_tracker_ip_header *ip_hdr, struct sk_buff *skb, uint8_t protocol, ecm_tracker_ip_protocol_type_t ecm_ip_protocol, uint32_t offset, uint32_t remain, int16_t *next_hdr);
 #ifdef ECM_IPV6_ENABLE
 static bool ecm_tracker_ip_header_helper_ipv6_generic(struct ecm_tracker_ip_protocols *etip, struct ecm_tracker_ip_protocol_header *etiph, struct ecm_tracker_ip_header *ip_hdr, struct sk_buff *skb, uint8_t protocol, ecm_tracker_ip_protocol_type_t ecm_ip_protocol, uint32_t offset, uint32_t remain, int16_t *next_hdr);
 static bool ecm_tracker_ip_header_helper_ipv6_fragment(struct ecm_tracker_ip_protocols *etip, struct ecm_tracker_ip_protocol_header *etiph, struct ecm_tracker_ip_header *ip_hdr, struct sk_buff *skb, uint8_t protocol, ecm_tracker_ip_protocol_type_t ecm_ip_protocol, uint32_t offset, uint32_t remain, int16_t *next_hdr);
@@ -222,7 +226,7 @@ static struct ecm_tracker_ip_protocols {
 	{94, ECM_TRACKER_IP_PROTOCOL_TYPE_UNKNOWN, "94", ecm_tracker_ip_header_helper_unknown},
 	{95, ECM_TRACKER_IP_PROTOCOL_TYPE_UNKNOWN, "95", ecm_tracker_ip_header_helper_unknown},
 	{96, ECM_TRACKER_IP_PROTOCOL_TYPE_UNKNOWN, "96", ecm_tracker_ip_header_helper_unknown},
-	{97, ECM_TRACKER_IP_PROTOCOL_TYPE_UNKNOWN, "97", ecm_tracker_ip_header_helper_unknown},
+	{97, ECM_TRACKER_IP_PROTOCOL_TYPE_ETHERIP, "etherip", ecm_tracker_ip_header_helper_etherip},
 	{98, ECM_TRACKER_IP_PROTOCOL_TYPE_UNKNOWN, "98", ecm_tracker_ip_header_helper_unknown},
 	{99, ECM_TRACKER_IP_PROTOCOL_TYPE_UNKNOWN, "99", ecm_tracker_ip_header_helper_unknown},
 	{100, ECM_TRACKER_IP_PROTOCOL_TYPE_UNKNOWN, "100", ecm_tracker_ip_header_helper_unknown},
@@ -240,7 +244,7 @@ static struct ecm_tracker_ip_protocols {
 	{112, ECM_TRACKER_IP_PROTOCOL_TYPE_UNKNOWN, "112", ecm_tracker_ip_header_helper_unknown},
 	{113, ECM_TRACKER_IP_PROTOCOL_TYPE_UNKNOWN, "113", ecm_tracker_ip_header_helper_unknown},
 	{114, ECM_TRACKER_IP_PROTOCOL_TYPE_UNKNOWN, "114", ecm_tracker_ip_header_helper_unknown},
-	{115, ECM_TRACKER_IP_PROTOCOL_TYPE_UNKNOWN, "115", ecm_tracker_ip_header_helper_unknown},
+	{115, ECM_TRACKER_IP_PROTOCOL_TYPE_L2TPV3, "115", ecm_tracker_ip_header_helper_l2tpv3},
 	{116, ECM_TRACKER_IP_PROTOCOL_TYPE_UNKNOWN, "116", ecm_tracker_ip_header_helper_unknown},
 	{117, ECM_TRACKER_IP_PROTOCOL_TYPE_UNKNOWN, "117", ecm_tracker_ip_header_helper_unknown},
 	{118, ECM_TRACKER_IP_PROTOCOL_TYPE_UNKNOWN, "118", ecm_tracker_ip_header_helper_unknown},
@@ -946,6 +950,48 @@ static bool ecm_tracker_ip_header_helper_gre(struct ecm_tracker_ip_protocols *et
 }
 
 /*
+ * ecm_tracker_ip_header_helper_l2tpv3()
+ *	Interpret a L2TPv3 header
+ */
+static bool ecm_tracker_ip_header_helper_l2tpv3(struct ecm_tracker_ip_protocols *etip, struct ecm_tracker_ip_protocol_header *etiph, struct ecm_tracker_ip_header *ip_hdr,
+						struct sk_buff *skb, uint8_t protocol, ecm_tracker_ip_protocol_type_t ecm_ip_protocol, uint32_t offset, uint32_t remain, int16_t *next_hdr)
+{
+	uint16_t hdr_size;
+
+	DEBUG_ASSERT((protocol == IPPROTO_L2TP) && (ecm_ip_protocol == ECM_TRACKER_IP_PROTOCOL_TYPE_L2TPV3), "Bad protocol: %u or ecm_ip_protocol: %d", protocol, ecm_ip_protocol);
+
+	if (remain < 4) {
+		return false;
+	}
+
+	/*
+	 * Consider 32 bit session ID in l2tpv3 header
+	 */
+	hdr_size = 4;
+
+	if (remain < hdr_size) {
+		DEBUG_WARN("L2TP packet: %px packet remain: %u too small for tcp header: %u\n", skb, remain, hdr_size);
+		return false;
+	}
+	if (unlikely(ip_hdr->total_length < (offset + hdr_size))) {
+		DEBUG_WARN("L2TP packet %px too short (total_length: %u, require: %u)\n", skb, ip_hdr->total_length, offset + hdr_size);
+		return false;
+	}
+
+	etiph->protocol_number = protocol;
+	etiph->header_size = hdr_size;
+	etiph->size = remain;
+	etiph->offset = offset;
+
+	/*
+	 * There is no header following a L2TP header
+	 */
+	*next_hdr = -1;
+
+	return true;
+}
+
+/*
  * ecm_tracker_ip_header_helper_udp()
  *	Interpret a UDP header
  */
@@ -967,6 +1013,33 @@ static bool ecm_tracker_ip_header_helper_udp(struct ecm_tracker_ip_protocols *et
 
 	/*
 	 * There is no header following a UDP header
+	 */
+	*next_hdr = -1;
+	return true;
+}
+
+/*
+ * ecm_tracker_ip_header_helper_etherip()
+ *	Interpret an Etherip header
+ */
+static bool ecm_tracker_ip_header_helper_etherip(struct ecm_tracker_ip_protocols *etip, struct ecm_tracker_ip_protocol_header *etiph, struct ecm_tracker_ip_header *ip_hdr,
+						struct sk_buff *skb, uint8_t protocol, ecm_tracker_ip_protocol_type_t ecm_ip_protocol, uint32_t offset, uint32_t remain, int16_t *next_hdr)
+{
+	DEBUG_ASSERT((protocol == IPPROTO_ETHERIP) && (ecm_ip_protocol == ECM_TRACKER_IP_PROTOCOL_TYPE_ETHERIP), "Bad protocol: %u or ecm_ip_protocol: %d", protocol, ecm_ip_protocol);
+
+	DEBUG_TRACE("etherip helper skb: %px, protocol: %u, ecm_ip_proto: %d, offset: %u, remain: %u\n", skb, protocol, ecm_ip_protocol, offset, remain);
+	if (remain < 16) {
+		DEBUG_TRACE("not enough Etherip header: %u\n", remain);
+		return false;
+	}
+
+	etiph->protocol_number = protocol;
+	etiph->header_size = 16;
+	etiph->size = remain;
+	etiph->offset = offset;
+
+	/*
+	 * There is no header following an Etherip header
 	 */
 	*next_hdr = -1;
 	return true;

@@ -19,6 +19,7 @@
 #include <ppe_drv.h>
 #include <ppe_drv_v4.h>
 #include <ppe_drv_v6.h>
+#include <ppe_vp_public.h>
 
 extern int ecm_ppe_ipv4_no_action_limit_default;		/* Default no-action limit. */
 extern int ecm_ppe_ipv4_driver_fail_limit_default;		/* Default driver fail limit. */

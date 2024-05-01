@@ -107,6 +107,7 @@
 #include "ecm_ipv4.h"
 #include "ecm_ae_classifier_public.h"
 #include "ecm_ae_classifier.h"
+#include "ecm_stats_v4.h"
 
 /*
  * ecm_non_ported_ipv4_is_protocol_supported()
@@ -121,6 +122,9 @@ static inline bool ecm_non_ported_ipv4_is_protocol_supported(int protocol)
 	case IPPROTO_GRE:
 #endif
 	case IPPROTO_RAW:
+#ifdef ECM_INTERFACE_L2TPV3_ENABLE
+	case IPPROTO_L2TP:
+#endif
 		return true;
 	}
 	return false;
@@ -192,6 +196,7 @@ unsigned int ecm_non_ported_ipv4_process(struct net_device *out_dev, struct net_
 
 	if(!ecm_non_ported_ipv4_is_protocol_supported(protocol)) {
 		DEBUG_TRACE("Unsupported non-ported protocol: %d, do not process.\n", protocol);
+		ecm_stats_v4_inc(ECM_STATS_V4_EXCEPTION_NON_PORTED, ECM_STATS_V4_EXCEPTION_NON_PORTED_PROTOCOL_UNSUPPORTED);
 		return NF_ACCEPT;
 	}
 
@@ -233,6 +238,7 @@ unsigned int ecm_non_ported_ipv4_process(struct net_device *out_dev, struct net_
 		if (ecm_ipv4_terminate_pending) {
 			spin_unlock_bh(&ecm_ipv4_lock);
 			DEBUG_WARN("Terminating\n");
+			ecm_stats_v4_inc(ECM_STATS_V4_EXCEPTION_NON_PORTED, ECM_STATS_V4_EXCEPTION_NON_PORTED_ECM_IN_TERMINATING_STATE);
 
 			/*
 			 * As we are terminating we just allow the packet to pass - it's no longer our concern
@@ -279,6 +285,7 @@ unsigned int ecm_non_ported_ipv4_process(struct net_device *out_dev, struct net_
 		case ECM_AE_CLASSIFIER_RESULT_NSS:
 			if (!ecm_nss_feature_check(skb, ip_hdr)) {
 				DEBUG_WARN("Unsupported feature found for NSS acceleration\n");
+				ecm_stats_v4_inc(ECM_STATS_V4_EXCEPTION_NON_PORTED, ECM_STATS_V4_EXCEPTION_NON_PORTED_NSS_ACCEL_NOT_SUPPORTED);
 				return NF_ACCEPT;
 			}
 
@@ -294,6 +301,7 @@ unsigned int ecm_non_ported_ipv4_process(struct net_device *out_dev, struct net_
 		case ECM_AE_CLASSIFIER_RESULT_PPE_DS:
 			if (!ecm_ppe_feature_check(skb, ip_hdr)) {
 				DEBUG_WARN("Unsupported feature found for PPE acceleration\n");
+				ecm_stats_v4_inc(ECM_STATS_V4_EXCEPTION_NON_PORTED, ECM_STATS_V4_EXCEPTION_NON_PORTED_PPE_DS_ACCEL_NOT_SUPPORTED);
 				return NF_ACCEPT;
 			}
 
@@ -304,6 +312,7 @@ unsigned int ecm_non_ported_ipv4_process(struct net_device *out_dev, struct net_
 		case ECM_AE_CLASSIFIER_RESULT_PPE_VP:
 			if (!ecm_ppe_feature_check(skb, ip_hdr)) {
 				DEBUG_WARN("Unsupported feature found for PPE acceleration\n");
+				ecm_stats_v4_inc(ECM_STATS_V4_EXCEPTION_NON_PORTED, ECM_STATS_V4_EXCEPTION_NON_PORTED_PPE_VP_ACCEL_NOT_SUPPORTED);
 				return NF_ACCEPT;
 			}
 
@@ -314,6 +323,7 @@ unsigned int ecm_non_ported_ipv4_process(struct net_device *out_dev, struct net_
 		case ECM_AE_CLASSIFIER_RESULT_PPE:
 			if (!ecm_ppe_feature_check(skb, ip_hdr)) {
 				DEBUG_WARN("Unsupported feature found for PPE acceleration\n");
+				ecm_stats_v4_inc(ECM_STATS_V4_EXCEPTION_NON_PORTED, ECM_STATS_V4_EXCEPTION_NON_PORTED_PPE_ACCEL_NOT_SUPPORTED);
 				return NF_ACCEPT;
 			}
 
@@ -321,6 +331,7 @@ unsigned int ecm_non_ported_ipv4_process(struct net_device *out_dev, struct net_
 			goto feci_alloc_check;
 #endif
 		case ECM_AE_CLASSIFIER_RESULT_NOT_YET:
+			ecm_stats_v4_inc(ECM_STATS_V4_EXCEPTION_NON_PORTED, ECM_STATS_V4_EXCEPTION_NON_PORTED_AE_NOT_ASSIGNED);
 			return NF_ACCEPT;
 
 		case ECM_AE_CLASSIFIER_RESULT_NONE:
@@ -340,6 +351,7 @@ unsigned int ecm_non_ported_ipv4_process(struct net_device *out_dev, struct net_
 
 		default:
 			DEBUG_WARN("unexpected ae_result: %d\n", ae_result);
+			ecm_stats_v4_inc(ECM_STATS_V4_EXCEPTION_NON_PORTED, ECM_STATS_V4_EXCEPTION_NON_PORTED_UNKNOWN_AE_TYPE);
 			return NF_ACCEPT;
 		}
 
@@ -347,6 +359,7 @@ precedence_alloc:
 		for (i = 0; i <= ECM_AE_PRECEDENCE_MAX; i++) {
 			if (ae_precedence[i].ae_type == ECM_FRONT_END_ENGINE_MAX) {
 				DEBUG_WARN("None of the AE types in the precedence array could allocate the front end instance\n");
+				ecm_stats_v4_inc(ECM_STATS_V4_EXCEPTION_NON_PORTED, ECM_STATS_V4_EXCEPTION_NON_PORTED_PRECEDENCE_ALLOC_FAIL);
 				return NF_ACCEPT;
 			}
 
@@ -372,6 +385,7 @@ precedence_alloc:
 
 feci_alloc_check:
 		if (!feci) {
+			ecm_stats_v4_inc(ECM_STATS_V4_EXCEPTION_NON_PORTED, ECM_STATS_V4_EXCEPTION_NON_PORTED_FRONTEND_ALLOC_FAIL);
 			DEBUG_WARN("Failed to allocate front end\n");
 			return NF_ACCEPT;
 		}
@@ -383,6 +397,7 @@ feci_alloc_done:
 							ip_dest_addr, ip_dest_addr_nat,
 							&efeici)) {
 			DEBUG_WARN("ECM front end ipv4 interface construct set failed for routed traffic\n");
+			ecm_stats_v4_inc(ECM_STATS_V4_EXCEPTION_NON_PORTED, ECM_STATS_V4_EXCEPTION_NON_PORTED_FRONTEND_CONSTRUCTION_FAIL);
 			goto fail_1;
 		}
 
@@ -396,6 +411,7 @@ feci_alloc_done:
 		from_list_first = ecm_interface_heirarchy_construct(feci, from_list, efeici.from_dev, efeici.from_other_dev, ip_dest_addr, efeici.from_mac_lookup_ip_addr, ip_src_addr, 4, protocol, in_dev, is_routed, in_dev, src_node_addr, dest_node_addr, NULL, skb, NULL);
 		if (from_list_first == ECM_DB_IFACE_HEIRARCHY_MAX) {
 			DEBUG_WARN("Failed to obtain 'from' heirarchy list\n");
+			ecm_stats_v4_inc(ECM_STATS_V4_EXCEPTION_NON_PORTED, ECM_STATS_V4_EXCEPTION_NON_PORTED_FROM_HIERARCHY_CREATION_FAIL);
 			goto fail_2;
 		}
 		ecm_db_connection_interfaces_reset(nci, from_list, from_list_first, ECM_DB_OBJ_DIR_FROM);
@@ -405,6 +421,7 @@ feci_alloc_done:
 		ecm_db_connection_interfaces_deref(from_list, from_list_first);
 		if (!ni[ECM_DB_OBJ_DIR_FROM]) {
 			DEBUG_WARN("Failed to establish source node\n");
+			ecm_stats_v4_inc(ECM_STATS_V4_EXCEPTION_NON_PORTED, ECM_STATS_V4_EXCEPTION_NON_PORTED_FROM_NODE_FAIL);
 			goto fail_2;
 		}
 
@@ -412,6 +429,7 @@ feci_alloc_done:
 		mi[ECM_DB_OBJ_DIR_FROM] = ecm_ipv4_mapping_establish_and_ref(ip_src_addr, src_port);
 		if (!mi[ECM_DB_OBJ_DIR_FROM]) {
 			DEBUG_WARN("Failed to establish src mapping\n");
+			ecm_stats_v4_inc(ECM_STATS_V4_EXCEPTION_NON_PORTED, ECM_STATS_V4_EXCEPTION_NON_PORTED_FROM_MAPPING_FAIL);
 			goto fail_3;
 		}
 
@@ -419,6 +437,7 @@ feci_alloc_done:
 		to_list_first = ecm_interface_heirarchy_construct(feci, to_list, efeici.to_dev, efeici.to_other_dev, ip_src_addr, efeici.to_mac_lookup_ip_addr, ip_dest_addr, 4, protocol, out_dev, is_routed, in_dev, dest_node_addr, src_node_addr, NULL, skb, NULL);
 		if (to_list_first == ECM_DB_IFACE_HEIRARCHY_MAX) {
 			DEBUG_WARN("Failed to obtain 'to' heirarchy list\n");
+			ecm_stats_v4_inc(ECM_STATS_V4_EXCEPTION_NON_PORTED, ECM_STATS_V4_EXCEPTION_NON_PORTED_TO_HIERARCHY_CREATION_FAIL);
 			goto fail_4;
 		}
 		ecm_db_connection_interfaces_reset(nci, to_list, to_list_first, ECM_DB_OBJ_DIR_TO);
@@ -428,6 +447,7 @@ feci_alloc_done:
 		ecm_db_connection_interfaces_deref(to_list, to_list_first);
 		if (!ni[ECM_DB_OBJ_DIR_TO]) {
 			DEBUG_WARN("Failed to establish dest node\n");
+			ecm_stats_v4_inc(ECM_STATS_V4_EXCEPTION_NON_PORTED, ECM_STATS_V4_EXCEPTION_NON_PORTED_TO_NODE_FAIL);
 			goto fail_4;
 		}
 
@@ -435,6 +455,7 @@ feci_alloc_done:
 		mi[ECM_DB_OBJ_DIR_TO] = ecm_ipv4_mapping_establish_and_ref(ip_dest_addr, dest_port);
 		if (!mi[ECM_DB_OBJ_DIR_TO]) {
 			DEBUG_WARN("Failed to establish dest mapping\n");
+			ecm_stats_v4_inc(ECM_STATS_V4_EXCEPTION_NON_PORTED, ECM_STATS_V4_EXCEPTION_NON_PORTED_TO_MAPPING_FAIL);
 			goto fail_5;
 		}
 
@@ -457,6 +478,7 @@ feci_alloc_done:
 
 		if (from_nat_list_first == ECM_DB_IFACE_HEIRARCHY_MAX) {
 			DEBUG_WARN("Failed to obtain 'from NAT' heirarchy list\n");
+			ecm_stats_v4_inc(ECM_STATS_V4_EXCEPTION_NON_PORTED, ECM_STATS_V4_EXCEPTION_NON_PORTED_FROM_NAT_HIERARCHY_CREATION_FAIL);
 			goto fail_6;
 		}
 		ecm_db_connection_interfaces_reset(nci, from_nat_list, from_nat_list_first, ECM_DB_OBJ_DIR_FROM_NAT);
@@ -466,12 +488,14 @@ feci_alloc_done:
 		ecm_db_connection_interfaces_deref(from_nat_list, from_nat_list_first);
 		if (!ni[ECM_DB_OBJ_DIR_FROM_NAT]) {
 			DEBUG_WARN("Failed to establish source nat node\n");
+			ecm_stats_v4_inc(ECM_STATS_V4_EXCEPTION_NON_PORTED, ECM_STATS_V4_EXCEPTION_NON_PORTED_FROM_NAT_NODE_FAIL);
 			goto fail_6;
 		}
 
 		mi[ECM_DB_OBJ_DIR_FROM_NAT] = ecm_ipv4_mapping_establish_and_ref(ip_src_addr_nat, src_port_nat);
 		if (!mi[ECM_DB_OBJ_DIR_FROM_NAT]) {
 			DEBUG_WARN("Failed to establish src nat mapping\n");
+			ecm_stats_v4_inc(ECM_STATS_V4_EXCEPTION_NON_PORTED, ECM_STATS_V4_EXCEPTION_NON_PORTED_FROM_NAT_MAPPING_FAIL);
 			goto fail_7;
 		}
 
@@ -479,6 +503,7 @@ feci_alloc_done:
 		to_nat_list_first = ecm_interface_heirarchy_construct(feci, to_nat_list, efeici.to_nat_dev, efeici.to_nat_other_dev, ip_src_addr, efeici.to_nat_mac_lookup_ip_addr, ip_dest_addr_nat, 4, protocol, out_dev_nat, is_routed, in_dev, dest_node_addr_nat, src_node_addr_nat, NULL, skb, NULL);
 		if (to_nat_list_first == ECM_DB_IFACE_HEIRARCHY_MAX) {
 			DEBUG_WARN("Failed to obtain 'to NAT' heirarchy list\n");
+			ecm_stats_v4_inc(ECM_STATS_V4_EXCEPTION_NON_PORTED, ECM_STATS_V4_EXCEPTION_NON_PORTED_TO_NAT_HIERARCHY_CREATION_FAIL);
 			goto fail_8;
 		}
 		ecm_db_connection_interfaces_reset(nci, to_nat_list, to_nat_list_first, ECM_DB_OBJ_DIR_TO_NAT);
@@ -489,12 +514,14 @@ feci_alloc_done:
 		ecm_db_connection_interfaces_deref(to_nat_list, to_nat_list_first);
 		if (!ni[ECM_DB_OBJ_DIR_TO_NAT]) {
 			DEBUG_WARN("Failed to establish dest nat node\n");
+			ecm_stats_v4_inc(ECM_STATS_V4_EXCEPTION_NON_PORTED, ECM_STATS_V4_EXCEPTION_NON_PORTED_TO_NAT_NODE_FAIL);
 			goto fail_8;
 		}
 
 		mi[ECM_DB_OBJ_DIR_TO_NAT] = ecm_ipv4_mapping_establish_and_ref(ip_dest_addr_nat, dest_port_nat);
 		if (!mi[ECM_DB_OBJ_DIR_TO_NAT]) {
 			DEBUG_WARN("Failed to establish dest mapping\n");
+			ecm_stats_v4_inc(ECM_STATS_V4_EXCEPTION_NON_PORTED, ECM_STATS_V4_EXCEPTION_NON_PORTED_TO_NAT_MAPPING_FAIL);
 			goto fail_9;
 		}
 
@@ -504,6 +531,7 @@ feci_alloc_done:
 		dci = ecm_classifier_default_instance_alloc(nci, protocol, ecm_dir, src_port, dest_port);
 		if (!dci) {
 			DEBUG_WARN("Failed to allocate default classifier\n");
+			ecm_stats_v4_inc(ECM_STATS_V4_EXCEPTION_NON_PORTED, ECM_STATS_V4_EXCEPTION_NON_PORTED_DEFAULT_CLASSIFIER_ALLOC_FAIL);
 			goto fail_10;
 		}
 		ecm_db_connection_classifier_assign(nci, (struct ecm_classifier_instance *)dci);
@@ -518,6 +546,7 @@ feci_alloc_done:
 				aci->deref(aci);
 			} else {
 				DEBUG_WARN("Failed to allocate classifiers assignments\n");
+				ecm_stats_v4_inc(ECM_STATS_V4_EXCEPTION_NON_PORTED, ECM_STATS_V4_EXCEPTION_NON_PORTED_CLASSIFIER_ASSIGN_FAIL);
 				goto fail_11;
 			}
 		}
@@ -625,7 +654,7 @@ done:
 		DEBUG_TRACE("%px: new AE type: %d\n", ci, ci->feci->accel_engine);
 	}
 
-#if 0 //defined(CONFIG_NET_CLS_ACT) && defined(ECM_CLASSIFIER_DSCP_IGS) && defined(ECM_FRONT_END_NSS_ENABLE)
+#if defined(CONFIG_NET_CLS_ACT) && defined(ECM_CLASSIFIER_DSCP_IGS) && defined(ECM_FRONT_END_NSS_ENABLE)
 	/*
 	 * Check if IGS feature is enabled or not.
 	 */
@@ -636,6 +665,7 @@ done:
 				DEBUG_WARN("%px: Non-ported IPv4 IGS acceleration denied\n", ci);
 				ecm_front_end_connection_deref(feci);
 				ecm_db_connection_deref(ci);
+				ecm_stats_v4_inc(ECM_STATS_V4_EXCEPTION_NON_PORTED, ECM_STATS_V4_EXCEPTION_NON_PORTED_IGS_ACCEL_DENIED);
 				return NF_ACCEPT;
 			}
 		}
@@ -648,6 +678,7 @@ done:
 	 */
 	if (!ecm_db_connection_defunct_timer_touch(ci)) {
 		ecm_db_connection_deref(ci);
+		ecm_stats_v4_inc(ECM_STATS_V4_EXCEPTION_NON_PORTED, ECM_STATS_V4_EXCEPTION_NON_PORTED_DB_CONN_TIMER_EXPIRED);
 		return NF_ACCEPT;
 	}
 
@@ -829,7 +860,32 @@ done:
 			prevalent_pr.process_actions |= ECM_CLASSIFIER_PROCESS_ACTION_EMESH_SP_FLOW;
 		}
 #endif
+
+#ifdef ECM_CLASSIFIER_PCC_ENABLE
+		if (aci_pr.process_actions & ECM_CLASSIFIER_PROCESS_ACTION_ACL_ENABLED) {
+			DEBUG_TRACE("%px: aci: %px, type: %d, flow: %d"
+					" return: %d\n",
+					ci, aci, aci->type_get(aci),
+					aci_pr.rule_id.acl.flow_acl_id,
+					aci_pr.rule_id.acl.return_acl_id);
+			prevalent_pr.rule_id.acl.flow_acl_id = aci_pr.rule_id.acl.flow_acl_id;
+			prevalent_pr.rule_id.acl.return_acl_id = aci_pr.rule_id.acl.return_acl_id;
+			prevalent_pr.process_actions |= ECM_CLASSIFIER_PROCESS_ACTION_ACL_ENABLED;
+		}
+
+		if (aci_pr.process_actions & ECM_CLASSIFIER_PROCESS_ACTION_POLICER_ENABLED) {
+			DEBUG_TRACE("%px: aci: %px, type: %d, flow: %d"
+					" return: %d\n",
+					ci, aci, aci->type_get(aci),
+					aci_pr.rule_id.policer.flow_policer_id,
+					aci_pr.rule_id.policer.return_policer_id);
+			prevalent_pr.rule_id.policer.flow_policer_id = aci_pr.rule_id.policer.flow_policer_id;
+			prevalent_pr.rule_id.policer.return_policer_id = aci_pr.rule_id.policer.return_policer_id;
+			prevalent_pr.process_actions |= ECM_CLASSIFIER_PROCESS_ACTION_POLICER_ENABLED;
+		}
+#endif
 	}
+
 	ecm_db_connection_assignments_release(assignment_count, assignments);
 
 	/*
@@ -847,6 +903,7 @@ done:
 		DEBUG_TRACE("%px: drop: %px\n", ci, skb);
 		ecm_db_connection_data_totals_update_dropped(ci, (sender == ECM_TRACKER_SENDER_TYPE_SRC)? true : false, skb->len, 1);
 		ecm_db_connection_deref(ci);
+		ecm_stats_v4_inc(ECM_STATS_V4_EXCEPTION_NON_PORTED, ECM_STATS_V4_EXCEPTION_NON_PORTED_DROP_BY_CLASSIFIER);
 		return NF_ACCEPT;
 	}
 	ecm_db_connection_data_totals_update(ci, (sender == ECM_TRACKER_SENDER_TYPE_SRC)? true : false, skb->len, 1);

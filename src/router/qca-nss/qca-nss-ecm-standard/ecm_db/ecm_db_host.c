@@ -770,9 +770,11 @@ EXPORT_SYMBOL(ecm_db_host_alloc);
  */
 bool ecm_db_host_init(struct dentry *dentry)
 {
-
-	debugfs_create_u32("host_count", S_IRUGO, dentry,
-					(u32 *)&ecm_db_host_count);
+	if (!ecm_debugfs_create_u32("host_count", S_IRUGO, dentry,
+					(u32 *)&ecm_db_host_count)) {
+		DEBUG_ERROR("Failed to create ecm db host count file in debugfs\n");
+		return false;;
+	}
 
 	ecm_db_host_table = vzalloc(sizeof(struct ecm_db_host_instance *) * ECM_DB_HOST_HASH_SLOTS);
 	if (!ecm_db_host_table) {

@@ -205,6 +205,9 @@ static void ecm_ppe_non_ported_ipv4_connection_accelerate(struct ecm_front_end_c
 	uint8_t dest_mac_xlate[ETH_ALEN];
 	ecm_db_direction_t ecm_dir;
 	ecm_front_end_acceleration_mode_t result_mode;
+#ifdef ECM_FRONT_END_PPE_QOS_ENABLE
+	bool is_ppeq = false;
+#endif
 
 	DEBUG_CHECK_MAGIC(feci, ECM_FRONT_END_CONNECTION_INSTANCE_MAGIC, "%px: magic failed", feci);
 
@@ -324,7 +327,7 @@ static void ecm_ppe_non_ported_ipv4_connection_accelerate(struct ecm_front_end_c
 	rule_invalid = false;
 	for (list_index = from_ifaces_first; !rule_invalid && (list_index < ECM_DB_IFACE_HEIRARCHY_MAX); list_index++) {
 		struct ecm_db_iface_instance *ii;
-		uint32_t iface_id, ae_iface_id;
+		int32_t iface_id, ae_iface_id;
 		ecm_db_iface_type_t ii_type;
 		char *ii_name;
 #ifdef ECM_INTERFACE_VLAN_ENABLE
@@ -340,7 +343,8 @@ static void ecm_ppe_non_ported_ipv4_connection_accelerate(struct ecm_front_end_c
 		ii_type = ecm_db_iface_type_get(ii);
 		ii_name = ecm_db_interface_type_to_string(ii_type);
 		iface_id = ecm_db_iface_interface_identifier_get(ii);
-		ae_iface_id = ecm_ppe_common_get_ae_iface_id_by_netdev_id(ecm_db_iface_interface_identifier_get(ii));
+		ae_iface_id = ecm_ppe_common_get_ae_iface_id_by_netdev_id(iface_id);
+
 		DEBUG_TRACE("%px: list_index: %d, ii: %px(%d), type: %d (%s), ae_iface_id(%d)\n",
 				feci, list_index, ii, iface_id, ii_type, ii_name, ae_iface_id);
 
@@ -351,6 +355,24 @@ static void ecm_ppe_non_ported_ipv4_connection_accelerate(struct ecm_front_end_c
 			ecm_db_connection_interfaces_deref(to_ifaces, to_ifaces_first);
 			goto non_ported_accel_bad_rule;
 		}
+
+		if (ecm_front_end_common_intf_ingress_qdisc_check(iface_id)) {
+			DEBUG_TRACE("%px: PPE doesn't support ingress qdisc for this flow:(%d) type:%d(%s) interface",
+					feci, iface_id, ii_type, ii_name);
+			ecm_db_connection_interfaces_deref(from_ifaces, from_ifaces_first);
+			ecm_db_connection_interfaces_deref(to_ifaces, to_ifaces_first);
+			goto non_ported_accel_bad_rule;
+		}
+
+#ifdef ECM_FRONT_END_PPE_QOS_ENABLE
+		if (ecm_front_end_common_intf_qdisc_check(iface_id, &is_ppeq) && !is_ppeq) {
+			DEBUG_TRACE("%px: PPE doesn't support qdisc for this flow:(%d) type:%d(%s) interface",
+					feci, iface_id, ii_type, ii_name);
+			ecm_db_connection_interfaces_deref(from_ifaces, from_ifaces_first);
+			ecm_db_connection_interfaces_deref(to_ifaces, to_ifaces_first);
+			goto non_ported_accel_bad_rule;
+		}
+#endif
 
 		/*
 		 * Extract information from this interface type if it is applicable to the rule.
@@ -463,7 +485,10 @@ static void ecm_ppe_non_ported_ipv4_connection_accelerate(struct ecm_front_end_c
 			break;
 
 		case ECM_DB_IFACE_TYPE_VLAN:
+		{
 #ifdef ECM_INTERFACE_VLAN_ENABLE
+			int32_t port_id;
+
 			DEBUG_TRACE("%px: VLAN\n", feci);
 			if (interface_type_counts[ii_type] > 1) {
 				/*
@@ -487,6 +512,16 @@ static void ecm_ppe_non_ported_ipv4_connection_accelerate(struct ecm_front_end_c
 			}
 
 			/*
+			 * In case of vlan as VP port we need to specify port
+			 * corresponding to vlan port and not the ultimate physical port.
+			 */
+			port_id = ecm_ppe_common_get_port_id_by_netdev_id(iface_id);
+
+			if ((port_id != PPE_DRV_PORT_ID_INVALID) && ppe_vp_get_netdev_by_port_num(port_id)) {
+				pd4rc->conn_rule.rx_if = ae_iface_id;
+			}
+
+			/*
 			 * Primary or secondary (QinQ) VLAN?
 			 */
 			if (interface_type_counts[ii_type] == 0) {
@@ -494,6 +529,7 @@ static void ecm_ppe_non_ported_ipv4_connection_accelerate(struct ecm_front_end_c
 			} else {
 				pd4rc->vlan_rule.secondary_vlan.ingress_vlan_tag = vlan_value;
 			}
+
 			pd4rc->valid_flags |= PPE_DRV_V4_VALID_FLAG_VLAN;
 
 			/*
@@ -506,9 +542,19 @@ static void ecm_ppe_non_ported_ipv4_connection_accelerate(struct ecm_front_end_c
 			DEBUG_TRACE("%px: VLAN - unsupported\n", feci);
 #endif
 			break;
+		}
 
 		case ECM_DB_IFACE_TYPE_IPSEC_TUNNEL:
-#ifndef ECM_INTERFACE_IPSEC_ENABLE
+#ifdef ECM_INTERFACE_IPSEC_ENABLE
+			DEBUG_TRACE("%px: IPSEC\n", feci);
+
+			/*
+			 * Override the MTU size in the decap direction, this will apply to IPsec->WAN rule
+			 */
+			if (IPCB(skb)->flags & IPSKB_XFRM_TRANSFORMED) {
+				pd4rc->conn_rule.flow_mtu = ECM_DB_IFACE_MTU_MAX;
+			}
+#else
 			rule_invalid = true;
 			DEBUG_TRACE("%px: IPSEC - unsupported\n", feci);
 #endif
@@ -539,7 +585,7 @@ static void ecm_ppe_non_ported_ipv4_connection_accelerate(struct ecm_front_end_c
 	rule_invalid = false;
 	for (list_index = to_ifaces_first; !rule_invalid && (list_index < ECM_DB_IFACE_HEIRARCHY_MAX); list_index++) {
 		struct ecm_db_iface_instance *ii;
-		uint32_t iface_id, ae_iface_id;
+		int32_t iface_id, ae_iface_id;
 		ecm_db_iface_type_t ii_type;
 		char *ii_name;
 #ifdef ECM_INTERFACE_VLAN_ENABLE
@@ -551,7 +597,8 @@ static void ecm_ppe_non_ported_ipv4_connection_accelerate(struct ecm_front_end_c
 		ii_type = ecm_db_iface_type_get(ii);
 		ii_name = ecm_db_interface_type_to_string(ii_type);
 		iface_id = ecm_db_iface_interface_identifier_get(ii);
-		ae_iface_id = ecm_ppe_common_get_ae_iface_id_by_netdev_id(ecm_db_iface_interface_identifier_get(ii));
+		ae_iface_id = ecm_ppe_common_get_ae_iface_id_by_netdev_id(iface_id);
+
 		DEBUG_TRACE("%px: list_index: %d, ii: %px(%d), type: %d (%s), ae_iface_id(%d)\n",
 				feci, list_index, ii, iface_id, ii_type, ii_name, ae_iface_id);
 
@@ -562,6 +609,24 @@ static void ecm_ppe_non_ported_ipv4_connection_accelerate(struct ecm_front_end_c
 			ecm_db_connection_interfaces_deref(to_ifaces, to_ifaces_first);
 			goto non_ported_accel_bad_rule;
 		}
+
+		if (ecm_front_end_common_intf_ingress_qdisc_check(iface_id)) {
+			DEBUG_TRACE("%px: PPE doesn't support ingress qdisc for this flow:(%d) type:%d(%s) interface",
+					feci, iface_id, ii_type, ii_name);
+			ecm_db_connection_interfaces_deref(from_ifaces, from_ifaces_first);
+			ecm_db_connection_interfaces_deref(to_ifaces, to_ifaces_first);
+			goto non_ported_accel_bad_rule;
+		}
+
+#ifdef ECM_FRONT_END_PPE_QOS_ENABLE
+		if (ecm_front_end_common_intf_qdisc_check(iface_id, &is_ppeq) && !is_ppeq) {
+			DEBUG_TRACE("%px: PPE doesn't support qdisc for this flow:(%d) type:%d(%s) interface",
+					feci, iface_id, ii_type, ii_name);
+			ecm_db_connection_interfaces_deref(from_ifaces, from_ifaces_first);
+			ecm_db_connection_interfaces_deref(to_ifaces, to_ifaces_first);
+			goto non_ported_accel_bad_rule;
+		}
+#endif
 
 		/*
 		 * Extract information from this interface type if it is applicable to the rule.
@@ -647,7 +712,10 @@ static void ecm_ppe_non_ported_ipv4_connection_accelerate(struct ecm_front_end_c
 			break;
 
 		case ECM_DB_IFACE_TYPE_VLAN:
+		{
 #ifdef ECM_INTERFACE_VLAN_ENABLE
+			int32_t port_id;
+
 			DEBUG_TRACE("%px: VLAN\n", feci);
 			if (interface_type_counts[ii_type] > 1) {
 				/*
@@ -671,6 +739,16 @@ static void ecm_ppe_non_ported_ipv4_connection_accelerate(struct ecm_front_end_c
 			}
 
 			/*
+			 * In case of vlan as VP port we need to specify port
+			 * corresponding to vlan port and not the ultimate physical port.
+			 */
+			port_id = ecm_ppe_common_get_port_id_by_netdev_id(iface_id);
+
+			if ((port_id != PPE_DRV_PORT_ID_INVALID) && ppe_vp_get_netdev_by_port_num(port_id)) {
+				pd4rc->conn_rule.tx_if = ae_iface_id;
+			}
+
+			/*
 			 * Primary or secondary (QinQ) VLAN?
 			 */
 			if (interface_type_counts[ii_type] == 0) {
@@ -678,7 +756,9 @@ static void ecm_ppe_non_ported_ipv4_connection_accelerate(struct ecm_front_end_c
 			} else {
 				pd4rc->vlan_rule.secondary_vlan.egress_vlan_tag = vlan_value;
 			}
+
 			pd4rc->valid_flags |= PPE_DRV_V4_VALID_FLAG_VLAN;
+
 			memcpy(to_ppe_iface_address, vlan_info.address, ETH_ALEN);
 
 			DEBUG_TRACE("%px: vlan tag: %x\n", feci, vlan_value);
@@ -687,6 +767,7 @@ static void ecm_ppe_non_ported_ipv4_connection_accelerate(struct ecm_front_end_c
 			DEBUG_TRACE("%px: VLAN - unsupported\n", feci);
 #endif
 			break;
+		}
 
 		case ECM_DB_IFACE_TYPE_IPSEC_TUNNEL:
 #ifndef ECM_INTERFACE_IPSEC_ENABLE
@@ -711,6 +792,21 @@ static void ecm_ppe_non_ported_ipv4_connection_accelerate(struct ecm_front_end_c
 		ecm_db_connection_interfaces_deref(to_ifaces, to_ifaces_first);
 		goto non_ported_accel_bad_rule;
 	}
+
+	/*
+	 * Check if the PPE offload is enabled for the rule's Tx/Rx interfaces or not
+	 */
+	if (!ppe_drv_iface_check_flow_offload_enabled(pd4rc->conn_rule.rx_if,
+						pd4rc->conn_rule.tx_if)) {
+		DEBUG_TRACE("%px: PPE offload is disabled for rx if: %d, tx: %d\n",
+				feci, pd4rc->conn_rule.rx_if, pd4rc->conn_rule.tx_if);
+		ecm_db_connection_interfaces_deref(from_ifaces, from_ifaces_first);
+		ecm_db_connection_interfaces_deref(to_ifaces, to_ifaces_first);
+		goto non_ported_accel_bad_rule;
+	}
+
+	DEBUG_TRACE("%px: PPE offload is enabled for rx if: %d, tx: %d\n",
+			feci, pd4rc->conn_rule.rx_if, pd4rc->conn_rule.tx_if);
 
 	/*
 	 * Set up the flow and return qos tags
@@ -762,6 +858,37 @@ static void ecm_ppe_non_ported_ipv4_connection_accelerate(struct ecm_front_end_c
 		pd4rc->vlan_rule.secondary_vlan.egress_vlan_tag = pr->egress_vlan_tag[1];
 	}
 #endif
+
+	/*
+	 * Policer/ACL info
+	 */
+	if (pr->process_actions & ECM_CLASSIFIER_PROCESS_ACTION_ACL_ENABLED) {
+			pd4rc->valid_flags |= PPE_DRV_V4_VALID_FLAG_ACL_POLICER;
+			pd4rc->ap_rule.type = PPE_DRV_RULE_TYPE_FLOW_ACL;
+
+			if (pr->rule_id.acl.flow_acl_id) {
+				pd4rc->ap_rule.rule_id.acl.flow_acl_id = pr->rule_id.acl.flow_acl_id;
+				pd4rc->ap_rule.rule_id.acl.flags |= PPE_DRV_VALID_FLAG_FLOW_ACL;
+			}
+
+			if (pr->rule_id.acl.return_acl_id) {
+				pd4rc->ap_rule.rule_id.acl.return_acl_id = pr->rule_id.acl.return_acl_id;
+				pd4rc->ap_rule.rule_id.acl.flags |= PPE_DRV_VALID_FLAG_RETURN_ACL;
+			}
+	} else if (pr->process_actions & ECM_CLASSIFIER_PROCESS_ACTION_POLICER_ENABLED) {
+			pd4rc->valid_flags |= PPE_DRV_V4_VALID_FLAG_ACL_POLICER;
+			pd4rc->ap_rule.type = PPE_DRV_RULE_TYPE_FLOW_POLICER;
+
+			if (pr->rule_id.policer.flow_policer_id) {
+				pd4rc->ap_rule.rule_id.policer.flow_policer_id = pr->rule_id.policer.flow_policer_id;
+				pd4rc->ap_rule.rule_id.policer.flags |= PPE_DRV_VALID_FLAG_FLOW_POLICER;
+			}
+
+			if (pr->rule_id.policer.return_policer_id) {
+				pd4rc->ap_rule.rule_id.policer.return_policer_id = pr->rule_id.policer.return_policer_id;
+				pd4rc->ap_rule.rule_id.policer.flags |= PPE_DRV_VALID_FLAG_RETURN_POLICER;
+			}
+	}
 
 	/*
 	 * Set protocol
@@ -829,6 +956,12 @@ static void ecm_ppe_non_ported_ipv4_connection_accelerate(struct ecm_front_end_c
 		memcpy(dest_mac_xlate, (uint8_t *)pd4rc->conn_rule.return_mac, ETH_ALEN);
 	}
 
+#ifdef ECM_PPE_SOURCE_INTERFACE_CHECK_ENABLE
+	if (ecm_interface_src_check) {
+		pd4rc->rule_flags |= PPE_DRV_V4_RULE_FLAG_SRC_INTERFACE_CHECK;
+		DEBUG_INFO("%px: Source interface check is enabled\n", feci);
+	}
+#endif
 	/*
 	 * Refer to the Example 2 and 3 in ecm_ppe_ipv4_ip_process() function for egress
 	 * and ingress NAT'ed cases. In these cases, the destination node is the one which has the
@@ -1459,7 +1592,7 @@ struct ecm_front_end_connection_instance *ecm_ppe_non_ported_ipv4_connection_ins
  */
 bool ecm_ppe_non_ported_ipv4_debugfs_init(struct dentry *dentry)
 {
-	if (!debugfs_create_u32("non_ported_accelerated_count", S_IRUGO, dentry,
+	if (!ecm_debugfs_create_u32("non_ported_accelerated_count", S_IRUGO, dentry,
 					(u32 *)&ecm_ppe_non_ported_ipv4_accelerated_count)) {
 		DEBUG_ERROR("Failed to create ecm ppe ipv4 non_ported_accelerated_count file in debugfs\n");
 		return false;

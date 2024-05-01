@@ -753,8 +753,12 @@ int ecm_classifier_mark_init(struct dentry *dentry)
 		return -1;
 	}
 
-	debugfs_create_u32("enabled", S_IRUGO | S_IWUSR, ecm_classifier_mark_dentry,
-					(u32 *)&ecm_classifier_mark_enabled);
+	if (!ecm_debugfs_create_u32("enabled", S_IRUGO | S_IWUSR, ecm_classifier_mark_dentry,
+					(u32 *)&ecm_classifier_mark_enabled)) {
+		DEBUG_ERROR("Failed to create mark enabled file in debugfs\n");
+		debugfs_remove_recursive(ecm_classifier_mark_dentry);
+		return -1;
+	}
 
 	return 0;
 }

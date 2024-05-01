@@ -2619,8 +2619,11 @@ find_next_tuple:
  */
 bool ecm_nss_multicast_ipv4_debugfs_init(struct dentry *dentry)
 {
-	debugfs_create_u32("multicast_accelerated_count", S_IRUGO, dentry,
-						&ecm_nss_multicast_ipv4_accelerated_count);
+	if (!ecm_debugfs_create_u32("multicast_accelerated_count", S_IRUGO, dentry,
+						&ecm_nss_multicast_ipv4_accelerated_count)) {
+		DEBUG_ERROR("Failed to create ecm nss ipv4 multicast_accelerated_count file in debugfs\n");
+		return false;
+	}
 
 	return true;
 }
@@ -2639,8 +2642,11 @@ void ecm_nss_multicast_ipv4_stop(int num)
  */
 int ecm_nss_multicast_ipv4_init(struct dentry *dentry)
 {
-	debugfs_create_u32("ecm_nss_multicast_ipv4_stop", S_IRUGO | S_IWUSR, dentry,
-					(u32 *)&ecm_front_end_ipv4_mc_stopped);
+	if (!ecm_debugfs_create_u32("ecm_nss_multicast_ipv4_stop", S_IRUGO | S_IWUSR, dentry,
+					(u32 *)&ecm_front_end_ipv4_mc_stopped)) {
+		DEBUG_ERROR("Failed to create ecm front end ipv4 mc stop file in debugfs\n");
+		return -1;
+	}
 
 	/*
 	 * Register multicast update callback to MCS snooper

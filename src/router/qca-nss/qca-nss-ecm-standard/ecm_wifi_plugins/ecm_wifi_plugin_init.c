@@ -1,7 +1,7 @@
 /*
  **************************************************************************
  * Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2023, Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -33,17 +33,25 @@ int __init ecm_wifi_plugin_init_module(void)
 {
 	int ret = 0;
 
-	ret = ecm_wifi_plugin_mscs_register();
-	if (ret) {
-		ecm_wifi_plugin_warning("MSCS callback registration failed\n");
-		return ret;
-	}
-
 	ret = ecm_wifi_plugin_emesh_register();
 	if (ret) {
 		ecm_wifi_plugin_warning("EMESH callback registration failed\n");
 		return ret;
 	}
+
+#ifndef ECM_WIFI_PLUGIN_OPEN_PROFILE_ENABLE
+	ret = ecm_wifi_plugin_fse_cb_register();
+	if (ret) {
+		ecm_wifi_plugin_warning("FSE callback registration failed\n");
+		return ret;
+	}
+
+	ret = ecm_wifi_plugin_mscs_register();
+	if (ret) {
+		ecm_wifi_plugin_warning("MSCS callback registration failed\n");
+		return ret;
+	}
+#endif
 
 	ecm_wifi_plugin_info("ECM_WIFI_PLUGIN module loaded");
 	return 0;
@@ -55,8 +63,11 @@ int __init ecm_wifi_plugin_init_module(void)
  */
 static void __exit ecm_wifi_plugin_exit_module(void)
 {
-	ecm_wifi_plugin_mscs_unregister();
 	ecm_wifi_plugin_emesh_unregister();
+#ifndef ECM_WIFI_PLUGIN_OPEN_PROFILE_ENABLE
+	ecm_wifi_plugin_mscs_unregister();
+	ecm_wifi_plugin_fse_cb_unregister();
+#endif
 	ecm_wifi_plugin_info("ECM_WIFI_PLUGIN unloaded\n");
 }
 

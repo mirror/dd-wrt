@@ -241,7 +241,7 @@ int ecm_bond_notifier_init(struct dentry *dentry)
 		return -1;
 	}
 
-	if (!debugfs_create_u32("stop", S_IRUGO | S_IWUSR, ecm_bond_notifier_dentry,
+	if (!ecm_debugfs_create_u32("stop", S_IRUGO | S_IWUSR, ecm_bond_notifier_dentry,
 					(u32 *)&ecm_bond_notifier_stopped)) {
 		DEBUG_ERROR("Failed to create ecm bond notifier stopped file in debugfs\n");
 		debugfs_remove_recursive(ecm_bond_notifier_dentry);

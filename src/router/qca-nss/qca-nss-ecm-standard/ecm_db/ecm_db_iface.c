@@ -3706,8 +3706,11 @@ EXPORT_SYMBOL(ecm_db_iface_alloc);
  */
 bool ecm_db_iface_init(struct dentry *dentry)
 {
-	debugfs_create_u32("iface_count", S_IRUGO, dentry,
-					(u32 *)&ecm_db_iface_count);
+	if (!ecm_debugfs_create_u32("iface_count", S_IRUGO, dentry,
+					(u32 *)&ecm_db_iface_count)) {
+		DEBUG_ERROR("Failed to create ecm db iface count file in debugfs\n");
+		return false;
+	}
 
 	return true;
 }

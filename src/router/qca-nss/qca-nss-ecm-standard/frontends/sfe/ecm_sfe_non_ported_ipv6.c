@@ -223,6 +223,15 @@ static void ecm_sfe_non_ported_ipv6_connection_callback(void *app_data, struct s
 		_ecm_sfe_ipv6_accel_pending_clear(feci, ECM_FRONT_END_ACCELERATION_MODE_DECEL);
 		spin_unlock_bh(&ecm_sfe_ipv6_lock);
 
+		/*
+		 * If there was a defunct attempt while handling the flush event, set the accel mode
+		 * to defunct fail. Then either conntrack timeout or ECM database connection timeout
+		 * will handle the destroy later.
+		 */
+		if (feci->is_defunct) {
+			feci->accel_mode = ECM_FRONT_END_ACCELERATION_MODE_FAIL_DEFUNCT;
+		}
+
 		spin_unlock_bh(&feci->lock);
 
 		/*
@@ -338,7 +347,7 @@ static void ecm_sfe_non_ported_ipv6_connection_accelerate(struct ecm_front_end_c
 	ip_addr_t src_ip;
 	ip_addr_t dest_ip;
 	ecm_front_end_acceleration_mode_t result_mode;
-#if defined(ECM_INTERFACE_GRE_TAP_ENABLE) || defined(ECM_INTERFACE_GRE_TUN_ENABLE)
+#if defined(ECM_INTERFACE_GRE_TAP_ENABLE) || defined(ECM_INTERFACE_GRE_TUN_ENABLE) || defined(ECM_INTERFACE_L2TPV3_ENABLE)
 	struct net_device *dev;
 #endif
 
@@ -472,7 +481,7 @@ static void ecm_sfe_non_ported_ipv6_connection_accelerate(struct ecm_front_end_c
 		uint32_t vlan_value = 0;
 		struct net_device *vlan_in_dev = NULL;
 #endif
-#if defined(ECM_INTERFACE_GRE_TAP_ENABLE) || defined(ECM_INTERFACE_GRE_TUN_ENABLE)
+#if defined(ECM_INTERFACE_GRE_TAP_ENABLE) || defined(ECM_INTERFACE_GRE_TUN_ENABLE) || defined(ECM_INTERFACE_L2TPV3_ENABLE)
 		ip_addr_t saddr;
 		ip_addr_t daddr;
 #endif
@@ -541,20 +550,23 @@ static void ecm_sfe_non_ported_ipv6_connection_accelerate(struct ecm_front_end_c
 				break;
 			}
 
-#ifdef ECM_INTERFACE_GRE_TAP_ENABLE
+#if defined(ECM_INTERFACE_GRE_TAP_ENABLE) || defined(ECM_INTERFACE_L2TPV3_ENABLE)
 			dev = dev_get_by_index(&init_net, ecm_db_iface_interface_identifier_get(ii));
 			if (dev) {
-				if (dev->priv_flags_ext & IFF_EXT_GRE_V6_TAP) {
+				if ((dev->priv_flags_ext & IFF_EXT_GRE_V4_TAP) || (dev->priv_flags_ext & IFF_EXT_ETH_L2TPV3)) {
+					int db_iface_type;
 					ecm_db_connection_address_get(feci->ci, ECM_DB_OBJ_DIR_FROM, saddr);
 					ecm_db_connection_address_get(feci->ci, ECM_DB_OBJ_DIR_TO, daddr);
-					if (!ecm_interface_tunnel_mtu_update(saddr, daddr, ECM_DB_IFACE_TYPE_GRE_TAP, &(nircm->conn_rule.flow_mtu))) {
+					db_iface_type = (dev->priv_flags_ext & IFF_EXT_GRE_V4_TAP) ? ECM_DB_IFACE_TYPE_GRE_TAP : ECM_DB_IFACE_TYPE_L2TPV3;
+					if (!ecm_interface_tunnel_mtu_update(saddr, daddr, db_iface_type, &(nircm->conn_rule.flow_mtu))) {
 						rule_invalid = true;
-						DEBUG_WARN("%px: Unable to get mtu value for the GRE TAP interface\n", feci);
+						DEBUG_WARN("%px: Unable to get mtu value for the %s interface\n", feci, dev->name);
 					}
 				}
 				dev_put(dev);
 			}
 #endif
+
 			/*
 			 * Can only handle one MAC, the first outermost mac.
 			 */
@@ -988,6 +1000,15 @@ static void ecm_sfe_non_ported_ipv6_connection_accelerate(struct ecm_front_end_c
 		if (is_l2_encap) {
 			nircm->rule_flags |= SFE_RULE_CREATE_FLAG_L2_ENCAP;
 		}
+
+		/*
+		 * Bridge vlan passthrough
+		 */
+		if (!(nircm->valid_flags & SFE_RULE_CREATE_VLAN_VALID)) {
+			if (skb_vlan_tag_present(skb)) {
+				nircm->rule_flags |= SFE_RULE_CREATE_FLAG_BRIDGE_VLAN_PASSTHROUGH;
+			}
+		}
 	}
 
 	if (ecm_interface_src_check || ecm_db_connection_is_pppoe_bridged_get(feci->ci)) {
@@ -1025,6 +1046,22 @@ static void ecm_sfe_non_ported_ipv6_connection_accelerate(struct ecm_front_end_c
 		nircm->valid_flags |= SFE_RULE_CREATE_MARK_VALID;
 	}
 #endif
+
+#ifdef ECM_MHT_ENABLE
+	/*
+	 * Check if mht feature is enabled or not.
+	 * If yes, add port id to rule mark.
+	 * otherwise try with the next packet until reach to a MAX retry count
+	 */
+	if (ecm_sfe_mht_enable && (!ecm_sfe_common_get_mht_port_id(feci, from_sfe_iface, to_sfe_iface,
+								   &nircm->valid_flags, &nircm->mark_rule))) {
+		ecm_db_connection_interfaces_deref(from_ifaces, from_ifaces_first);
+		ecm_db_connection_interfaces_deref(to_ifaces, to_ifaces_first);
+		ecm_sfe_ipv6_accel_pending_clear(feci, ECM_FRONT_END_ACCELERATION_MODE_DECEL);
+		kfree(nim);
+		return;
+	}
+#endif
 	/*
 	 * Set protocol
 	 */
@@ -1032,21 +1069,27 @@ static void ecm_sfe_non_ported_ipv6_connection_accelerate(struct ecm_front_end_c
 
 	/*
 	 * The flow_ip is where the connection established from
+	 * NAT is not supported for tunnel flows, so flow_ip and flow_ip_xlate will be same
 	 */
 	ecm_db_connection_address_get(feci->ci, ECM_DB_OBJ_DIR_FROM, src_ip);
 	ECM_IP_ADDR_TO_SFE_IPV6_ADDR(nircm->tuple.flow_ip, src_ip);
+	ECM_IP_ADDR_TO_SFE_IPV6_ADDR(nircm->conn_rule.flow_ip_xlate, src_ip);
 
 	/*
 	 * The return_ip is where the connection is established to
+	 * NAT is not supported for tunnel flows, so return_ip and return_ip_xlate will be same
 	 */
 	ecm_db_connection_address_get(feci->ci, ECM_DB_OBJ_DIR_TO, dest_ip);
 	ECM_IP_ADDR_TO_SFE_IPV6_ADDR(nircm->tuple.return_ip, dest_ip);
+	ECM_IP_ADDR_TO_SFE_IPV6_ADDR(nircm->conn_rule.return_ip_xlate, dest_ip);
 
 	/*
 	 * Same approach as above for port information
 	 */
 	nircm->tuple.flow_ident = htons(ecm_db_connection_port_get(feci->ci, ECM_DB_OBJ_DIR_FROM));
+	nircm->conn_rule.flow_ident_xlate = nircm->tuple.flow_ident;
 	nircm->tuple.return_ident = htons(ecm_db_connection_port_get(feci->ci, ECM_DB_OBJ_DIR_TO_NAT));
+	nircm->conn_rule.return_ident_xlate =  nircm->tuple.return_ident;
 
 	/*
 	 * Get mac addresses.
@@ -1726,8 +1769,11 @@ struct ecm_front_end_connection_instance *ecm_sfe_non_ported_ipv6_connection_ins
  */
 bool ecm_sfe_non_ported_ipv6_debugfs_init(struct dentry *dentry)
 {
-	debugfs_create_u32("non_ported_accelerated_count", S_IRUGO, dentry,
-					(u32 *)&ecm_sfe_non_ported_ipv6_accelerated_count);
+	if (!ecm_debugfs_create_u32("non_ported_accelerated_count", S_IRUGO, dentry,
+					(u32 *)&ecm_sfe_non_ported_ipv6_accelerated_count)) {
+		DEBUG_ERROR("Failed to create ecm sfe ipv6 non_ported_accelerated_count file in debugfs\n");
+		return false;
+	}
 
 	return true;
 }

@@ -1,6 +1,7 @@
 /*
  **************************************************************************
  * Copyright (c) 2015, 2018, 2021 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -14,12 +15,13 @@
  **************************************************************************
  */
 
-extern unsigned int ecm_ported_ipv6_process(struct net_device *out_dev,
-							struct net_device *in_dev,
-							uint8_t *src_node_addr,
-							uint8_t *dest_node_addr,
+extern unsigned int ecm_ported_ipv6_process(struct net_device *out_dev, struct net_device *out_dev_nat,
+							struct net_device *in_dev, struct net_device *in_dev_nat,
+							uint8_t *src_node_addr, uint8_t *src_node_addr_nat,
+							uint8_t *dest_node_addr, uint8_t *dest_node_addr_nat,
 							bool can_accel, bool is_routed, bool is_l2_encap, struct sk_buff *skb,
 							struct ecm_tracker_ip_header *iph,
 							struct nf_conn *ct, ecm_tracker_sender_type_t sender, ecm_db_direction_t ecm_dir,
 							struct nf_conntrack_tuple *orig_tuple, struct nf_conntrack_tuple *reply_tuple,
-							ip_addr_t ip_src_addr, ip_addr_t ip_dest_addr, uint16_t l2_encap_proto);
+							ip_addr_t ip_src_addr, ip_addr_t ip_dest_addr,
+							ip_addr_t ip_src_addr_nat, ip_addr_t ip_dest_addr_nat, uint16_t l2_encap_proto);

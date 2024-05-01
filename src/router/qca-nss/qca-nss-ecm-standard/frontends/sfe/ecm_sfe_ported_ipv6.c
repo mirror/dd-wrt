@@ -92,6 +92,7 @@
 static int ecm_sfe_ported_ipv6_accelerated_count[ECM_FRONT_END_PORTED_PROTO_MAX] = {0};
 						/* Array of Number of TCP and UDP connections currently offloaded */
 
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 13, 0))
 /*
  * Expose what should be a static flag in the TCP connection tracker.
  */
@@ -99,6 +100,7 @@ static int ecm_sfe_ported_ipv6_accelerated_count[ECM_FRONT_END_PORTED_PROTO_MAX]
 extern int nf_ct_tcp_no_window_check;
 #endif
 extern int nf_ct_tcp_be_liberal;
+#endif
 
 /*
  * ecm_sfe_ported_ipv6_connection_callback()
@@ -227,6 +229,15 @@ static void ecm_sfe_ported_ipv6_connection_callback(void *app_data, struct sfe_i
 		_ecm_sfe_ipv6_accel_pending_clear(feci, ECM_FRONT_END_ACCELERATION_MODE_DECEL);
 		spin_unlock_bh(&ecm_sfe_ipv6_lock);
 
+		/*
+		 * If there was a defunct attempt while handling the flush event, set the accel mode
+		 * to defunct fail. Then either conntrack timeout or ECM database connection timeout
+		 * will handle the destroy later.
+		 */
+		if (feci->is_defunct) {
+			feci->accel_mode = ECM_FRONT_END_ACCELERATION_MODE_FAIL_DEFUNCT;
+		}
+
 		spin_unlock_bh(&feci->lock);
 
 		/*
@@ -260,6 +271,9 @@ static void ecm_sfe_ported_ipv6_connection_callback(void *app_data, struct sfe_i
 	ecm_sfe_ipv6_accelerated_count++;		/* General running counter */
 
 	if (!_ecm_sfe_ipv6_accel_pending_clear(feci, ECM_FRONT_END_ACCELERATION_MODE_ACCEL)) {
+		int assignment_count;
+		int aci_index;
+		struct ecm_classifier_instance *assignments[ECM_CLASSIFIER_TYPES];
 		/*
 		 * Increment the no-action counter, this is reset if offload action is seen
 		 */
@@ -267,6 +281,58 @@ static void ecm_sfe_ported_ipv6_connection_callback(void *app_data, struct sfe_i
 
 		spin_unlock_bh(&ecm_sfe_ipv6_lock);
 		spin_unlock_bh(&feci->lock);
+
+		/*
+		 * Get the assigned classifiers and call their create notify callbacks. If they are interested in this type of
+		 * create, they will handle the event.
+		 */
+		assignment_count = ecm_db_connection_classifier_assignments_get_and_ref(feci->ci, assignments);
+		for (aci_index = 0; aci_index < assignment_count; ++aci_index) {
+			struct ecm_classifier_instance *aci;
+			aci = assignments[aci_index];
+			if (aci->notify_create) {
+				aci->notify_create(aci, NULL);
+			}
+		}
+		ecm_db_connection_assignments_release(assignment_count, assignments);
+
+#ifdef ECM_FRONT_END_FSE_ENABLE
+		spin_lock_bh(&feci->lock);
+		/*
+		 * Check if FSE flow rule programming is enabled or not.
+		 * If yes, call the Wi-Fi registered callback to add a rule in
+		 * FSE block with relevant information.
+		 */
+		if (ecm_sfe_fse_enable && !feci->fse_configure) {
+			struct ecm_front_end_fse_info fse_info = {0};
+			struct ecm_front_end_fse_callbacks *fse_ops;
+			bool status = false;
+
+			if (ecm_front_end_fse_info_get(feci, &fse_info)) {
+				spin_unlock_bh(&feci->lock);
+
+				/*
+				 * Invoke FSE wlan callback for rule creation.
+				 */
+				rcu_read_lock_bh();
+				fse_ops = rcu_dereference(ecm_fe_fse_cb);
+				if (fse_ops)
+					status = fse_ops->create_fse_rule(&fse_info);
+				rcu_read_unlock_bh();
+
+				/*
+				 * In case of a successful rule addition in FSE,
+				 * set fse_configure flag in feci.
+				 * Retake the feci lock here which was released for
+				 * invoking the callback.
+				 */
+				spin_lock_bh(&feci->lock);
+				if (status)
+					feci->fse_configure = true;
+			}
+		}
+		spin_unlock_bh(&feci->lock);
+#endif
 
 		/*
 		 * Release the connection.
@@ -337,13 +403,18 @@ static void ecm_sfe_ported_ipv6_connection_accelerate(struct ecm_front_end_conne
 	int32_t list_index;
 	int32_t interface_type_counts[ECM_DB_IFACE_TYPE_COUNT];
 	bool rule_invalid;
+#ifdef ECM_FRONT_END_PPE_QOS_ENABLE
+	bool is_ppeq = false;
+#endif
 	ip_addr_t src_ip;
 	ip_addr_t dest_ip;
+	ip_addr_t src_nat_ip;
+	ip_addr_t dest_nat_ip;
+	ecm_db_direction_t ecm_dir;
 	struct ecm_classifier_instance *aci;
 	struct ecm_classifier_rule_create ecrc;
+	uint8_t dest_mac_xlate[ETH_ALEN];
 	ecm_front_end_acceleration_mode_t result_mode;
-	struct net *net = nf_ct_net(ct);
-	struct nf_tcp_net *tn = nf_tcp_pernet(net);
 	uint32_t l2_accel_bits = (ECM_SFE_COMMON_FLOW_L2_ACCEL_ALLOWED | ECM_SFE_COMMON_RETURN_L2_ACCEL_ALLOWED);
 	ecm_sfe_common_l2_accel_check_callback_t l2_accel_check;
 
@@ -752,7 +823,7 @@ static void ecm_sfe_ported_ipv6_connection_accelerate(struct ecm_front_end_conne
 			 * where source port is set to zero.
 			 */
 			if (!vxlan_info.if_type) {
-				nircm->rule_flags |= SFE_RULE_CREATE_NO_SRC_IDENT;
+				nircm->rule_flags |= SFE_RULE_CREATE_FLAG_NO_SRC_IDENT;
 			}
 #else
 			rule_invalid = true;
@@ -855,7 +926,7 @@ static void ecm_sfe_ported_ipv6_connection_accelerate(struct ecm_front_end_conne
 
 			ecm_db_iface_ovs_bridge_address_get(ii, to_sfe_iface_address);
 			if (is_valid_ether_addr(to_sfe_iface_address)) {
-				ether_addr_copy((uint8_t *)nircm->src_mac_rule.flow_src_mac, to_sfe_iface_address);
+				ether_addr_copy((uint8_t *)nircm->src_mac_rule.return_src_mac, to_sfe_iface_address);
 				nircm->src_mac_rule.mac_valid_flags |= SFE_SRC_MAC_RETURN_VALID;
 				nircm->valid_flags |= SFE_RULE_CREATE_SRC_MAC_VALID;
 			}
@@ -910,7 +981,7 @@ static void ecm_sfe_ported_ipv6_connection_accelerate(struct ecm_front_end_conne
 				break;
 			}
 
-			feci->set_stats_bitmap(feci, ECM_DB_OBJ_DIR_FROM, ECM_DB_IFACE_TYPE_PPPOE);
+			feci->set_stats_bitmap(feci, ECM_DB_OBJ_DIR_TO, ECM_DB_IFACE_TYPE_PPPOE);
 
 			/*
 			 * Copy pppoe session info to the creation structure.
@@ -1076,6 +1147,15 @@ static void ecm_sfe_ported_ipv6_connection_accelerate(struct ecm_front_end_conne
 		if (is_l2_encap) {
 			nircm->rule_flags |= SFE_RULE_CREATE_FLAG_L2_ENCAP;
 		}
+
+		/*
+		 * Bridge vlan passthrough
+		 */
+		if (!(nircm->valid_flags & SFE_RULE_CREATE_VLAN_VALID)) {
+			if (skb_vlan_tag_present(skb)) {
+				nircm->rule_flags |= SFE_RULE_CREATE_FLAG_BRIDGE_VLAN_PASSTHROUGH;
+			}
+		}
 	}
 
 	if (ecm_interface_src_check) {
@@ -1107,8 +1187,37 @@ static void ecm_sfe_ported_ipv6_connection_accelerate(struct ecm_front_end_conne
 	if (pr->process_actions & ECM_CLASSIFIER_PROCESS_ACTION_QOS_TAG) {
 		nircm->qos_rule.flow_qos_tag = (uint32_t)pr->flow_qos_tag;
 		nircm->qos_rule.return_qos_tag = (uint32_t)pr->return_qos_tag;
+
+#ifdef ECM_FRONT_END_PPE_QOS_ENABLE
+		if (ecm_front_end_common_intf_qdisc_check(to_sfe_iface_id, &is_ppeq)
+				&& is_ppeq) {
+			nircm->qos_rule.flow_int_pri = ppe_drv_qos_int_pri_get(dev_get_by_index(&init_net, to_sfe_iface_id),
+				       pr->flow_qos_tag);
+		}
+
+		if (ecm_front_end_common_intf_qdisc_check(from_sfe_iface_id, &is_ppeq)
+				&& is_ppeq) {
+			nircm->qos_rule.return_int_pri = ppe_drv_qos_int_pri_get(dev_get_by_index(&init_net, from_sfe_iface_id),
+					pr->return_qos_tag);
+		}
+#endif
+
 		nircm->valid_flags |= SFE_RULE_CREATE_QOS_VALID;
 	}
+
+#ifdef ECM_BRIDGE_VLAN_FILTERING_ENABLE
+	if (feci->ci->vlan_filter_valid) {
+		ecm_sfe_common_ipv6_vlan_filter_set(feci->ci, nircm);
+	}
+
+	/*
+	 * if bridge vlan filtering is enabled
+	 * disable the vlan passthrough
+	 */
+	if (nircm->valid_flags & SFE_RULE_CREATE_VLAN_FILTER_VALID) {
+		nircm->rule_flags &= ~SFE_RULE_CREATE_FLAG_BRIDGE_VLAN_PASSTHROUGH;
+	}
+#endif
 
 #if defined ECM_CLASSIFIER_DSCP_ENABLE || defined ECM_CLASSIFIER_EMESH_ENABLE
 	/*
@@ -1137,7 +1246,9 @@ static void ecm_sfe_ported_ipv6_connection_accelerate(struct ecm_front_end_conne
 	 */
 	if (pr->process_actions & ECM_CLASSIFIER_PROCESS_ACTION_EMESH_SAWF_TAG) {
 		nircm->sawf_rule.flow_mark = pr->flow_sawf_metadata;
+		nircm->sawf_rule.flow_svc_id = pr->flow_service_class;
 		nircm->sawf_rule.return_mark = pr->return_sawf_metadata;
+		nircm->sawf_rule.return_svc_id = pr->return_service_class;
 	}
 
 	/*
@@ -1177,6 +1288,21 @@ static void ecm_sfe_ported_ipv6_connection_accelerate(struct ecm_front_end_conne
 	}
 #endif
 
+#ifdef ECM_MHT_ENABLE
+	/*
+	 * Check if mht feature is enabled or not.
+	 * If yes, add port id to rule mark.
+	 * otherwise try with the next packet until reach to a MAX retry count
+	 */
+	if (ecm_sfe_mht_enable && (!ecm_sfe_common_get_mht_port_id(feci, from_sfe_iface, to_sfe_iface,
+								   &nircm->valid_flags, &nircm->mark_rule))) {
+		ecm_db_connection_interfaces_deref(from_ifaces, from_ifaces_first);
+		ecm_db_connection_interfaces_deref(to_ifaces, to_ifaces_first);
+		ecm_sfe_ipv6_accel_pending_clear(feci, ECM_FRONT_END_ACCELERATION_MODE_DECEL);
+		kfree(nim);
+		return;
+	}
+#endif
 	protocol = ecm_db_connection_protocol_get(feci->ci);
 
 	/*
@@ -1191,16 +1317,37 @@ static void ecm_sfe_ported_ipv6_connection_accelerate(struct ecm_front_end_conne
 	ECM_IP_ADDR_TO_SFE_IPV6_ADDR(nircm->tuple.flow_ip, src_ip);
 
 	/*
-	 * The dest_ip is where the connection is established to
+	 * The return_ip is where the connection is established to, however, in the case of ingress
+	 * the return_ip would be the NAT'ed version.
+	 * Getting the NAT'ed version here works for ingress or egress packets, for egress
+	 * the NAT'ed version would be the same as the normal address
 	 */
-	ecm_db_connection_address_get(feci->ci, ECM_DB_OBJ_DIR_TO, dest_ip);
+	ecm_db_connection_address_get(feci->ci, ECM_DB_OBJ_DIR_TO_NAT, dest_ip);
 	ECM_IP_ADDR_TO_SFE_IPV6_ADDR(nircm->tuple.return_ip, dest_ip);
+
+	/*
+	 * When the packet is forwarded to the next interface get the address the source IP of the
+	 * packet should be translated to.  For egress this is the NAT'ed from address.
+	 * This also works for ingress as the NAT'ed version of the WAN host would be the same as non-NAT'ed
+	 */
+	ecm_db_connection_address_get(feci->ci, ECM_DB_OBJ_DIR_FROM_NAT, src_nat_ip);
+	ECM_IP_ADDR_TO_SFE_IPV6_ADDR(nircm->conn_rule.flow_ip_xlate, src_nat_ip);
+
+	/*
+	 * The destination address is what the destination IP is translated to as it is forwarded to the next interface.
+	 * For egress this would yield the normal wan host and for ingress this would correctly NAT back to the LAN host
+	 */
+	ecm_db_connection_address_get(feci->ci, ECM_DB_OBJ_DIR_TO, dest_nat_ip);
+	ECM_IP_ADDR_TO_SFE_IPV6_ADDR(nircm->conn_rule.return_ip_xlate, dest_nat_ip);
+
 
 	/*
 	 * Same approach as above for port information
 	 */
 	nircm->tuple.flow_ident = htons(ecm_db_connection_port_get(feci->ci, ECM_DB_OBJ_DIR_FROM));
 	nircm->tuple.return_ident = htons(ecm_db_connection_port_get(feci->ci, ECM_DB_OBJ_DIR_TO));
+	nircm->conn_rule.flow_ident_xlate = htons(ecm_db_connection_port_get(feci->ci, ECM_DB_OBJ_DIR_FROM_NAT));
+	nircm->conn_rule.return_ident_xlate = htons(ecm_db_connection_port_get(feci->ci, ECM_DB_OBJ_DIR_TO));
 
 	/*
 	 * Get mac addresses.
@@ -1215,6 +1362,31 @@ static void ecm_sfe_ported_ipv6_connection_accelerate(struct ecm_front_end_conne
 	 * Essentially it is the MAC of node associated with create.dest_ip and this is "to nat" side.
 	 */
 	ecm_db_connection_node_address_get(feci->ci, ECM_DB_OBJ_DIR_TO, (uint8_t *)nircm->conn_rule.return_mac);
+
+	/*
+	 * The dest_mac_xlate is the mac address to replace the pkt.dst_mac when a packet is sent to->from
+	 * For bridged connections this does not change.
+	 * For routed connections this is the mac of the 'to' node side of the connection.
+	 */
+	if (ecm_db_connection_is_routed_get(feci->ci)) {
+		ecm_db_connection_node_address_get(feci->ci, ECM_DB_OBJ_DIR_TO, dest_mac_xlate);
+	} else {
+		/*
+		 * Bridge flows preserve the MAC addressing
+		 */
+		memcpy(dest_mac_xlate, (uint8_t *)nircm->conn_rule.return_mac, ETH_ALEN);
+	}
+
+	/*
+	 * Refer to the Example 2 and 3 in ecm_sfe_ipv4_ip_process() function for egress
+	 * and ingress NAT'ed cases. In these cases, the destination node is the one which has the
+	 * ip_dest_addr. So, above we get the mac address of this host and use that mac address
+	 * for the destination node address in NAT'ed cases.
+	 */
+	ecm_dir = ecm_db_connection_direction_get(feci->ci);
+	if ((ecm_dir == ECM_DB_DIRECTION_INGRESS_NAT) || (ecm_dir == ECM_DB_DIRECTION_EGRESS_NAT)) {
+		memcpy(nircm->conn_rule.return_mac, dest_mac_xlate, ETH_ALEN);
+	}
 
 	/*
 	 * Get MTU information
@@ -1236,7 +1408,14 @@ static void ecm_sfe_ported_ipv6_connection_accelerate(struct ecm_front_end_conne
 		} else {
 			int flow_dir;
 			int return_dir;
-
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 13, 0))
+			uint32_t tcp_be_liberal = nf_ct_tcp_be_liberal;
+			uint32_t tcp_no_window_check = nf_ct_tcp_no_window_check;
+#else
+			struct nf_tcp_net *tn = nf_tcp_pernet(nf_ct_net(ct));
+			uint32_t tcp_be_liberal = tn->tcp_be_liberal;
+			uint32_t tcp_no_window_check = tn->tcp_no_window_check;
+#endif
 			ecm_front_end_flow_and_return_directions_get(ct, src_ip, 6, &flow_dir, &return_dir);
 
 			DEBUG_TRACE("%px: TCP Accel Get window data from ct %px for conn %px\n", feci, ct, feci->ci);
@@ -1250,13 +1429,9 @@ static void ecm_sfe_ported_ipv6_connection_accelerate(struct ecm_front_end_conne
 			nircm->tcp_rule.return_end = ct->proto.tcp.seen[return_dir].td_end;
 			nircm->tcp_rule.return_max_end = ct->proto.tcp.seen[return_dir].td_maxend;
 #ifdef ECM_OPENWRT_SUPPORT
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0))
-			if (tn->tcp_be_liberal || tn->tcp_no_window_check
+			if (tcp_be_liberal || tcp_no_window_check
 #else
-			if (tn->tcp_be_liberal || nf_ct_tcp_no_window_check
-#endif
-#else
-			if (tn->tcp_be_liberal
+			if (tcp_be_liberal
 #endif
 					|| (ct->proto.tcp.seen[flow_dir].flags & IP_CT_TCP_FLAG_BE_LIBERAL)
 					|| (ct->proto.tcp.seen[return_dir].flags & IP_CT_TCP_FLAG_BE_LIBERAL)) {
@@ -1317,6 +1492,8 @@ static void ecm_sfe_ported_ipv6_connection_accelerate(struct ecm_front_end_conne
 			"to_mtu: %u\n"
 			"from_ip: " ECM_IP_ADDR_OCTAL_FMT ":%d\n"
 			"to_ip: " ECM_IP_ADDR_OCTAL_FMT ":%d\n"
+			"from_ip_xlate: " ECM_IP_ADDR_OCTAL_FMT ":%d\n"
+			"to_ip_xlate: " ECM_IP_ADDR_OCTAL_FMT ":%d\n"
 			"from_mac: %pM\n"
 			"to_mac: %pM\n"
 			"from_src_mac: %pM\n"
@@ -1330,6 +1507,12 @@ static void ecm_sfe_ported_ipv6_connection_accelerate(struct ecm_front_end_conne
 			"secondary_ingress_vlan_tag: %x\n"
 			"secondary_egress_vlan_tag: %x\n"
 			"flags: rule=%x valid=%x src_mac_valid=%x\n"
+#ifdef ECM_BRIDGE_VLAN_FILTERING_ENABLE
+			"flow_vlan_filter_ingress_vlan_tag: %x, flags: %x\n"
+			"flow_vlan_filter_egress_vlan_tag: %x, flags: %x\n"
+			"return_vlan_filter_ingress_vlan_tag: %x, flags: %x\n"
+			"return_vlan_filter_egress_vlan_tag: %x, flags: %x\n"
+#endif
 			"return_pppoe_session_id: %u\n"
 			"return_pppoe_remote_mac: %pM\n"
 			"flow_pppoe_session_id: %u\n"
@@ -1347,6 +1530,8 @@ static void ecm_sfe_ported_ipv6_connection_accelerate(struct ecm_front_end_conne
 			nircm->conn_rule.return_mtu,
 			ECM_IP_ADDR_TO_OCTAL(src_ip), ntohs(nircm->tuple.flow_ident),
 			ECM_IP_ADDR_TO_OCTAL(dest_ip), ntohs(nircm->tuple.return_ident),
+			ECM_IP_ADDR_TO_OCTAL(src_nat_ip), ntohs(nircm->conn_rule.flow_ident_xlate),
+			ECM_IP_ADDR_TO_OCTAL(dest_nat_ip), ntohs(nircm->conn_rule.return_ident_xlate),
 			nircm->conn_rule.flow_mac,
 			nircm->conn_rule.return_mac,
 			nircm->src_mac_rule.flow_src_mac,
@@ -1362,6 +1547,12 @@ static void ecm_sfe_ported_ipv6_connection_accelerate(struct ecm_front_end_conne
 			nircm->rule_flags,
 			nircm->valid_flags,
 			nircm->src_mac_rule.mac_valid_flags,
+#ifdef ECM_BRIDGE_VLAN_FILTERING_ENABLE
+			nircm->flow_vlan_filter_rule.ingress_vlan_tag, nircm->flow_vlan_filter_rule.ingress_flags,
+			nircm->flow_vlan_filter_rule.egress_vlan_tag, nircm->flow_vlan_filter_rule.egress_flags,
+			nircm->return_vlan_filter_rule.ingress_vlan_tag, nircm->return_vlan_filter_rule.ingress_flags,
+			nircm->return_vlan_filter_rule.egress_vlan_tag, nircm->return_vlan_filter_rule.egress_flags,
+#endif
 			nircm->pppoe_rule.return_pppoe_session_id,
 			nircm->pppoe_rule.return_pppoe_remote_mac,
 			nircm->pppoe_rule.flow_pppoe_session_id,
@@ -1600,6 +1791,42 @@ static void ecm_sfe_ported_ipv6_connection_destroy_callback(void *app_data, stru
 	DEBUG_ASSERT(ecm_sfe_ipv6_accelerated_count >= 0, "Bad accel counter\n");
 	spin_unlock_bh(&ecm_sfe_ipv6_lock);
 
+#ifdef ECM_FRONT_END_FSE_ENABLE
+	/*
+	 * After removing SFE entry, check if this connection has a
+	 * valid entry in FSE block. If yes, destroy that entry.
+	 */
+	spin_lock_bh(&feci->lock);
+	if (feci->fse_configure) {
+		struct ecm_front_end_fse_info fse_info = {0};
+		struct ecm_front_end_fse_callbacks *fse_ops;
+		bool status = false;
+
+		if (ecm_front_end_fse_info_get(feci, &fse_info)) {
+			spin_unlock_bh(&feci->lock);
+
+			/*
+			 * Invoke FSE wlan callback for rule deletion.
+			 */
+			rcu_read_lock_bh();
+			fse_ops = rcu_dereference(ecm_fe_fse_cb);
+			if (fse_ops)
+				status = fse_ops->destroy_fse_rule(&fse_info);
+			rcu_read_unlock_bh();
+
+			/*
+			 * In case of a successful rule deletion in FSE,
+			 * reset fse_configure flag in feci.
+			 * Retake the lock which was released for
+			 * invoking the callback.
+			 */
+			spin_lock_bh(&feci->lock);
+			if (status)
+				feci->fse_configure = false;
+		}
+	}
+	spin_unlock_bh(&feci->lock);
+#endif
 	/*
 	 * Release the connections.
 	 */
@@ -1651,10 +1878,10 @@ static bool ecm_sfe_ported_ipv6_connection_decelerate_msg_send(struct ecm_front_
 	 */
 	ecm_db_connection_address_get(feci->ci, ECM_DB_OBJ_DIR_FROM, src_ip);
 	ECM_IP_ADDR_TO_SFE_IPV6_ADDR(nirdm->tuple.flow_ip, src_ip);
-	ecm_db_connection_address_get(feci->ci, ECM_DB_OBJ_DIR_TO, dest_ip);
+	ecm_db_connection_address_get(feci->ci, ECM_DB_OBJ_DIR_TO_NAT, dest_ip);
 	ECM_IP_ADDR_TO_SFE_IPV6_ADDR(nirdm->tuple.return_ip, dest_ip);
 	nirdm->tuple.flow_ident = htons(ecm_db_connection_port_get(feci->ci, ECM_DB_OBJ_DIR_FROM));
-	nirdm->tuple.return_ident = htons(ecm_db_connection_port_get(feci->ci, ECM_DB_OBJ_DIR_TO));
+	nirdm->tuple.return_ident = htons(ecm_db_connection_port_get(feci->ci, ECM_DB_OBJ_DIR_TO_NAT));
 
 	DEBUG_INFO("%px: Ported Connection %px decelerate\n"
 			"protocol: %d\n"
@@ -1848,6 +2075,43 @@ static void ecm_sfe_ported_ipv6_connection_accel_ceased(struct ecm_front_end_con
 	ecm_sfe_ipv6_accelerated_count--;		/* General running counter */
 	DEBUG_ASSERT(ecm_sfe_ipv6_accelerated_count >= 0, "Bad accel counter\n");
 	spin_unlock_bh(&ecm_sfe_ipv6_lock);
+
+#ifdef ECM_FRONT_END_FSE_ENABLE
+	/*
+	 * After removing SFE entry, check if this connection has a
+	 * valid entry in FSE block. If yes, destroy that entry.
+	 */
+	spin_lock_bh(&feci->lock);
+	if (feci->fse_configure) {
+		struct ecm_front_end_fse_info fse_info = {0};
+		struct ecm_front_end_fse_callbacks *fse_ops;
+		bool status = false;
+
+		if (ecm_front_end_fse_info_get(feci, &fse_info)) {
+			spin_unlock_bh(&feci->lock);
+
+			/*
+			 * Invoke FSE wlan callback for rule deletion.
+			 */
+			rcu_read_lock_bh();
+			fse_ops = rcu_dereference(ecm_fe_fse_cb);
+			if (fse_ops)
+				status = fse_ops->destroy_fse_rule(&fse_info);
+			rcu_read_unlock_bh();
+
+			/*
+			 * In case of a successful rule deletion in FSE,
+			 * reset fse_configure flag in feci.
+			 * Retake the lock which was released for
+			 * invoking the callback.
+			 */
+			spin_lock_bh(&feci->lock);
+			if (status)
+				feci->fse_configure = false;
+		}
+	}
+	spin_unlock_bh(&feci->lock);
+#endif
 }
 
 #ifdef ECM_STATE_OUTPUT_ENABLE
@@ -1890,6 +2154,7 @@ void ecm_sfe_ported_ipv6_connection_set(struct ecm_front_end_connection_instance
 	feci->get_stats_bitmap = ecm_front_end_common_get_stats_bitmap;
 	feci->set_stats_bitmap = ecm_front_end_common_set_stats_bitmap;
 	feci->fe_info.front_end_flags = flags;
+	feci->next_accel_engine = ECM_FRONT_END_ENGINE_SFE;
 
 	/*
 	 * Just in case this function is called while switching AE to SFE
@@ -1979,11 +2244,17 @@ struct ecm_front_end_connection_instance *ecm_sfe_ported_ipv6_connection_instanc
  */
 bool ecm_sfe_ported_ipv6_debugfs_init(struct dentry *dentry)
 {
-	debugfs_create_u32("udp_accelerated_count", S_IRUGO, dentry,
-						&ecm_sfe_ported_ipv6_accelerated_count[ECM_FRONT_END_PORTED_PROTO_UDP]);
+	if (!ecm_debugfs_create_u32("udp_accelerated_count", S_IRUGO, dentry,
+				    &ecm_sfe_ported_ipv6_accelerated_count[ECM_FRONT_END_PORTED_PROTO_UDP])) {
+		DEBUG_ERROR("Failed to create ecm sfe ipv6 udp_accelerated_count file in debugfs\n");
+		return false;
+	}
 
-	debugfs_create_u32("tcp_accelerated_count", S_IRUGO, dentry,
-					&ecm_sfe_ported_ipv6_accelerated_count[ECM_FRONT_END_PORTED_PROTO_TCP]);
+	if (!ecm_debugfs_create_u32("tcp_accelerated_count", S_IRUGO, dentry,
+					&ecm_sfe_ported_ipv6_accelerated_count[ECM_FRONT_END_PORTED_PROTO_TCP])) {
+		DEBUG_ERROR("Failed to create ecm sfe ipv6 tcp_accelerated_count file in debugfs\n");
+		return false;
+	}
 
 	return true;
 }

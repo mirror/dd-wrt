@@ -1,7 +1,7 @@
 /*
  **************************************************************************
  * Copyright (c) 2015-2016, 2020-2021 The Linux Foundation. All rights reserved.
- * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -51,7 +51,7 @@
 #include "ecm_front_end_ipv4.h"
 #include "ecm_interface.h"
 #include "ecm_ipv4.h"
-
+#include "ecm_stats_v4.h"
 /*
  * General operational control
  */
@@ -383,8 +383,27 @@ void ecm_front_end_ipv4_stop(int num)
  */
 int ecm_front_end_ipv4_init(struct dentry *dentry)
 {
-	debugfs_create_u32("front_end_ipv4_stop", S_IRUGO | S_IWUSR, dentry,
-			   (u32 *)&ecm_front_end_ipv4_stopped);
+	struct dentry *ecm_stats_dentry;
+
+	if (!ecm_debugfs_create_u32("front_end_ipv4_stop", S_IRUGO | S_IWUSR, dentry,
+					(u32 *)&ecm_front_end_ipv4_stopped)) {
+		DEBUG_ERROR("Failed to create ecm front end ipv4 stop file in debugfs\n");
+		return -1;
+	}
+
+	ecm_stats_dentry = debugfs_lookup("stats", dentry);
+	if (!ecm_stats_dentry) {
+		DEBUG_ERROR("Stats dentry not created\n");
+		return -1;
+	}
+
+	if (ecm_stats_v4_debugfs_init(ecm_stats_dentry)) {
+		DEBUG_ERROR("Failed to create v4 stats file in ecm\n");
+		/*
+		 * Cleanup will be taken care by the calling function.
+		 */
+		return -1;
+	}
 
 	return ecm_ipv4_init(dentry);
 }

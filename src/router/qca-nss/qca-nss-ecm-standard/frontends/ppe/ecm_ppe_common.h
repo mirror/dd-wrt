@@ -23,8 +23,13 @@
 #include <ppe_drv.h>
 #include <ppe_drv_v4.h>
 #include <ppe_drv_v6.h>
+#include <ppe_drv_port.h>
 
 #include <net/xfrm.h>
+
+#ifdef ECM_INTERFACE_VXLAN_ENABLE
+#include <nss_ppe_vxlanmgr.h>
+#endif
 
 /*
  * This macro converts ECM ip_addr_t to PPE IPv6 address
@@ -75,6 +80,28 @@ static inline int32_t ecm_ppe_common_get_ae_iface_id_by_netdev_id(int32_t ifinde
 }
 
 /*
+ * ecm_ppe_common_get_port_id_by_netdev_id()
+ *	Gets the PPE port id from the netdevice interface index.
+ */
+static inline int32_t ecm_ppe_common_get_port_id_by_netdev_id(int32_t ifindex)
+{
+	struct net_device *dev;
+	int32_t port_id;
+
+	dev = dev_get_by_index(&init_net, ifindex);
+	if (!dev) {
+		DEBUG_WARN("unable to find net device with %d ifindex\n", ifindex);
+		return PPE_DRV_PORT_ID_INVALID;
+	}
+
+	port_id = ppe_drv_port_num_from_dev(dev);
+
+	dev_put(dev);
+
+	return port_id;
+}
+
+/*
  * ecm_ppe_common_get_interface_type()
  * 	PPE doesn't support the concept of "type" for interfaces.
  */
@@ -117,69 +144,6 @@ static inline void ecm_ppe_common_connection_regenerate(struct ecm_front_end_con
 }
 
 /*
- * ecm_ppe_feature_check()
- *	Check some specific features for PPE acceleration
- */
-static inline bool ecm_ppe_feature_check(struct sk_buff *skb, struct ecm_tracker_ip_header *ip_hdr)
-{
-	/*
-	 * Check if this is xfrm flow and can be accelerated via PPE.
-	 */
-#ifdef CONFIG_XFRM
-	if (!dev_net(skb->dev)->xfrm.policy_count[XFRM_POLICY_OUT]) {
-		goto not_xfrm;
-	}
-
-	/*
-	 * Packet seen after output transformation. We use the IPCB(skb) to check
-	 * for this condition. No custom code should mangle the IPCB: skb->cb area,
-	 * while the packet is traversing through the INET layer.
-	 *
-	 * Accelerate outer flow through PPE.
-	 */
-	if (ip_hdr->is_v4) {
-		if ((IPCB(skb)->flags & IPSKB_XFRM_TRANSFORMED)) {
-			DEBUG_TRACE("%px: Packet has undergone xfrm transformation\n", skb);
-			return true;
-		}
-	} else if (IP6CB(skb)->flags & IP6SKB_XFRM_TRANSFORMED) {
-		DEBUG_TRACE("%px: Packet has undergone xfrm transformation\n", skb);
-		return true;
-	}
-
-	if (ip_hdr->protocol == IPPROTO_ESP) {
-		DEBUG_TRACE("%px: ESP Passthrough packet\n", skb);
-		goto not_xfrm;
-	}
-
-	/*
-	 * skb's sp is set for decapsulated packet.
-	 * Dont accelerate inner flow.
-	 */
-	if (secpath_exists(skb)) {
-		DEBUG_TRACE("%px: Packet has undergone xfrm decapsulation((%d)\n", skb, ip_hdr->protocol);
-		return false;
-	}
-
-	/*
-	 * dst->xfrm is valid for lan to wan plain packet
-	 */
-	if (skb_dst(skb) && skb_dst(skb)->xfrm) {
-		DEBUG_TRACE("%px: Plain text packet destined for xfrm(%d)\n", skb, ip_hdr->protocol);
-		return false;
-	}
-
-not_xfrm:
-#endif
-
-	/*
-	 * TODO: Should we add some features to be rejected in PPE frontend?
-	 */
-
-	return true;
-}
-
-/*
  * ecm_ppe_common_dummy_get_stats_bitmap()
  */
 static inline uint32_t ecm_ppe_common_dummy_get_stats_bitmap(struct ecm_front_end_connection_instance *feci, ecm_db_obj_dir_t dir)
@@ -195,5 +159,11 @@ static inline void ecm_ppe_common_dummy_set_stats_bitmap(struct ecm_front_end_co
 
 }
 
+bool ecm_ppe_feature_check(struct sk_buff *skb, struct ecm_tracker_ip_header *ip_hdr);
 bool ecm_ppe_ipv6_is_conn_limit_reached(void);
 bool ecm_ppe_ipv4_is_conn_limit_reached(void);
+
+#ifdef ECM_INTERFACE_VXLAN_ENABLE
+int ecm_ppe_ported_get_vxlan_ppe_dev_index(struct ecm_front_end_connection_instance *feci, struct ecm_db_iface_instance *ii,
+											ecm_db_obj_dir_t dir, enum nss_ppe_vxlanmgr_vp_creation *vp_status);
+#endif

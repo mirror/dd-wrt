@@ -1,7 +1,7 @@
 /*
  **************************************************************************
  * Copyright (c) 2014-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -58,6 +58,9 @@
 #include <net/netfilter/ipv4/nf_conntrack_ipv4.h>
 #include <net/netfilter/ipv4/nf_defrag_ipv4.h>
 #include <net/vxlan.h>
+#ifdef ECM_INTERFACE_BOND_ENABLE
+#include <net/bonding.h>
+#endif
 #ifdef ECM_INTERFACE_VLAN_ENABLE
 #include <linux/../../net/8021q/vlan.h>
 #include <linux/if_vlan.h>
@@ -1117,6 +1120,26 @@ static void ecm_sfe_multicast_ipv4_connection_accelerate(struct ecm_front_end_co
 			DEBUG_TRACE("%px: Bridge - mac: %pM\n", feci, from_sfe_iface_address);
 
 			break;
+
+		case ECM_DB_IFACE_TYPE_MACVLAN:
+#ifdef ECM_INTERFACE_MACVLAN_ENABLE
+			if (ecm_sfe_common_is_l2_iface_supported(ECM_DB_IFACE_TYPE_MACVLAN, list_index, from_ifaces_first) && (l2_accel_bits & ECM_SFE_COMMON_FLOW_L2_ACCEL_ALLOWED)) {
+				create->rule_flags |= SFE_RULE_CREATE_FLAG_USE_FLOW_BOTTOM_INTERFACE;
+				feci->set_stats_bitmap(feci, ECM_DB_OBJ_DIR_FROM, ECM_DB_IFACE_TYPE_MACVLAN);
+			}
+
+			ecm_db_iface_macvlan_address_get(ii, from_sfe_iface_address);
+			ether_addr_copy((uint8_t *)create->src_mac_rule.flow_src_mac, from_sfe_iface_address);
+			create->src_mac_rule.mac_valid_flags |= SFE_SRC_MAC_FLOW_VALID;
+			create->valid_flags |= SFE_RULE_CREATE_SRC_MAC_VALID;
+
+			DEBUG_TRACE("%px: Macvlan - mac: %pM\n", feci, from_sfe_iface_address);
+#else
+			rule_invalid = true;
+			DEBUG_TRACE("%px: MACVLAN - unsupported\n", feci);
+#endif
+			break;
+
 		case ECM_DB_IFACE_TYPE_VLAN:
 #ifdef ECM_INTERFACE_VLAN_ENABLE
 			if (interface_type_counts[ii_type] > 1) {
@@ -1351,6 +1374,60 @@ static void ecm_sfe_multicast_ipv4_connection_accelerate(struct ecm_front_end_co
 			        }
 				DEBUG_TRACE("%px: Ethernet - mac: %pM, mtu %d\n", feci, to_sfe_iface_address, to_mtu);
 				break;
+
+			case ECM_DB_IFACE_TYPE_LAG:
+			{
+#ifdef ECM_INTERFACE_BOND_ENABLE
+				struct net_device *dev;
+				DEBUG_TRACE("%px: LAG : %s\n", feci, dev->name);
+				if (interface_type_counts[ii_type] != 0) {
+
+					/*
+					 * Ignore additional mac addresses, these are usually as a result of address propagation
+					 * from bridges down to ports etc.
+					 */
+					DEBUG_TRACE("%px: LAG - ignore additional\n", feci);
+					rule_invalid = true;
+					break;
+				}
+				dev = dev_get_by_index(&init_net, ecm_db_iface_interface_identifier_get(ii));
+				if (!dev) {
+					DEBUG_TRACE("%px: LAG device is not present\n", feci);
+					rule_invalid = true;
+					break;
+				}
+
+				/*
+				 * Multicast offload supported only for MLO LAG devices.
+				 * Destination interface is MLO bond device itself.
+				 */
+				if (!bond_is_mlo_device(dev)) {
+					DEBUG_TRACE("%px: LAG device is not MLO device: %s\n", feci, dev->name);
+					dev_put(dev);
+					rule_invalid = true;
+					break;
+				}
+
+				/*
+				 * Can only handle one MAC, the first outermost mac.
+				 */
+				ecm_db_iface_lag_address_get(ii, to_sfe_iface_address);
+				to_mtu = (uint32_t)ecm_db_connection_iface_mtu_get(feci->ci, ECM_DB_OBJ_DIR_TO);
+				to_sfe_iface_id = ecm_db_iface_ae_interface_identifier_get(ii);
+				if (to_sfe_iface_id < 0) {
+					DEBUG_TRACE("%px: to_sfe_iface_id: %d\n", feci, to_sfe_iface_id);
+					dev_put(dev);
+					rule_invalid = true;
+					break;
+			        }
+				DEBUG_TRACE("%px: LAG - mac: %pM, mtu %d\n", feci, to_sfe_iface_address, to_mtu);
+				dev_put(dev);
+#else
+				DEBUG_TRACE("%px: LAG not supported\n", feci);
+				rule_invalid = true;
+#endif
+				break;
+			}
 			case ECM_DB_IFACE_TYPE_PPPOE:
 #ifdef ECM_INTERFACE_PPPOE_ENABLE
 				/*
@@ -1463,6 +1540,7 @@ static void ecm_sfe_multicast_ipv4_connection_accelerate(struct ecm_front_end_co
 			DEBUG_WARN("%px: to/dest Rule invalid\n", feci);
 			ecm_db_multicast_connection_to_interfaces_deref_all(to_ifaces, to_ifaces_first);
 			kfree(nim);
+			ecm_sfe_ipv4_accel_pending_clear(feci, ECM_FRONT_END_ACCELERATION_MODE_FAIL_RULE);
 			return;
 		}
 
@@ -1581,6 +1659,15 @@ static void ecm_sfe_multicast_ipv4_connection_accelerate(struct ecm_front_end_co
 
 	ecm_db_connection_node_address_get(feci->ci, ECM_DB_OBJ_DIR_TO, dest_mac);
 	memcpy(create->dest_mac, dest_mac, ETH_ALEN);
+
+	/*
+	 * Bridge vlan passthrough
+	 */
+	if ((create->rule_flags & SFE_RULE_CREATE_FLAG_BRIDGE_FLOW) && (!(create->valid_flags & SFE_RULE_CREATE_VLAN_VALID))) {
+		if (skb_vlan_tag_present(skb)) {
+			create->rule_flags |= SFE_RULE_CREATE_FLAG_BRIDGE_VLAN_PASSTHROUGH;
+		}
+	}
 
 	/*
 	 * Set protocol
@@ -2345,12 +2432,11 @@ process_packet:
 			 * No updates to this multicast flow. Move on to the next
 			 * flow for the same group
 			 */
+			ecm_front_end_connection_deref(feci);
 			goto find_next_tuple;
 		}
 
 		DEBUG_TRACE("BRIDGE UPDATE callback ===> leave_cnt %d, join_cnt %d\n", mc_update.if_leave_cnt, mc_update.if_join_cnt);
-
-		feci = ecm_db_connection_front_end_get_and_ref(ci);
 
 		/*
 		 * Do we have any new interfaces that have joined?
@@ -2571,8 +2657,8 @@ struct ecm_front_end_connection_instance *ecm_sfe_multicast_ipv4_connection_inst
 	feci->multicast_update = ecm_sfe_multicast_ipv4_bridge_update_connections;
 	feci->defunct = ecm_sfe_multicast_ipv4_connection_defunct_callback;
 
-	feci->get_stats_bitmap = ecm_sfe_common_dummy_get_stats_bitmap;
-	feci->set_stats_bitmap = ecm_sfe_common_dummy_set_stats_bitmap;
+	feci->get_stats_bitmap = ecm_front_end_common_get_stats_bitmap;
+	feci->set_stats_bitmap = ecm_front_end_common_set_stats_bitmap;
 
 	return feci;
 }
@@ -2923,11 +3009,8 @@ find_next_tuple:
  */
 bool ecm_sfe_multicast_ipv4_debugfs_init(struct dentry *dentry)
 {
-	struct dentry *multicast_dentry;
-
-	multicast_dentry = debugfs_create_u32("multicast_accelerated_count", S_IRUGO, dentry,
-						&ecm_sfe_multicast_ipv4_accelerated_count);
-	if (!multicast_dentry) {
+	if (!ecm_debugfs_create_u32("multicast_accelerated_count", S_IRUGO, dentry,
+					&ecm_sfe_multicast_ipv4_accelerated_count)) {
 		DEBUG_ERROR("Failed to create ecm sfe ipv4 multicast_accelerated_count file in debugfs\n");
 		return false;
 	}
@@ -2949,7 +3032,7 @@ void ecm_sfe_multicast_ipv4_stop(int num)
  */
 int ecm_sfe_multicast_ipv4_init(struct dentry *dentry)
 {
-	if (!debugfs_create_u32("ecm_sfe_multicast_ipv4_stop", S_IRUGO | S_IWUSR, dentry,
+	if (!ecm_debugfs_create_u32("ecm_sfe_multicast_ipv4_stop", S_IRUGO | S_IWUSR, dentry,
 					(u32 *)&ecm_front_end_ipv4_mc_stopped)) {
 		DEBUG_ERROR("Failed to create ecm sfe front end ipv4 mc stop file in debugfs\n");
 		return -1;

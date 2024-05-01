@@ -230,7 +230,7 @@ static inline int32_t ecm_nss_common_ipsec_get_ifnum(int32_t ifnum)
 }
 #endif
 
-#if 0 //defined(CONFIG_NET_CLS_ACT) && defined(ECM_CLASSIFIER_DSCP_IGS)
+#if defined(CONFIG_NET_CLS_ACT) && defined(ECM_CLASSIFIER_DSCP_IGS)
 /*
  * ecm_nss_common_igs_acceleration_is_allowed()
  *	Return true, if flow acceleration is allowed for an IGS interface.
@@ -277,8 +277,10 @@ static inline bool ecm_nss_common_igs_acceleration_is_allowed(struct ecm_front_e
 		 */
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 15, 0))
 		if (likely(!(to_dev->ingress_cl_list))) {
-#else
+#elif (LINUX_VERSION_CODE < KERNEL_VERSION(6, 6, 0))
 		if (likely(!(to_dev->miniq_ingress))) {
+#else
+		if (likely(!(to_dev->tcx_ingress))) {
 #endif
 			dev_put(to_dev);
 			continue;
@@ -310,7 +312,6 @@ static inline bool ecm_nss_common_igs_acceleration_is_allowed(struct ecm_front_e
 }
 #endif
 
-#if (NSS_FW_VERSION_CODE > NSS_FW_VERSION(11,1))
 #ifdef ECM_CLASSIFIER_PCC_ENABLE
 /*
  * ecm_nss_common_fill_mirror_info()
@@ -363,7 +364,6 @@ static inline bool ecm_nss_common_fill_mirror_info(struct ecm_classifier_process
 
 	return true;
 }
-#endif
 #endif
 
 bool ecm_nss_ipv6_is_conn_limit_reached(void);

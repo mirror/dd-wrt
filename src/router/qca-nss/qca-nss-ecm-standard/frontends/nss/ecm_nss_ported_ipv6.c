@@ -100,14 +100,16 @@
 static int ecm_nss_ported_ipv6_accelerated_count[ECM_FRONT_END_PORTED_PROTO_MAX] = {0};
 						/* Array of Number of TCP and UDP connections currently offloaded */
 
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 13, 0))
 /*
  * Expose what should be a static flag in the TCP connection tracker.
  */
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 12, 0))
 #ifdef ECM_OPENWRT_SUPPORT
 extern int nf_ct_tcp_no_window_check;
 #endif
+extern int nf_ct_tcp_be_liberal;
 #endif
+
 /*
  * ecm_nss_ported_ipv6_connection_callback()
  *	Callback for handling create ack/nack calls.
@@ -348,8 +350,6 @@ static void ecm_nss_ported_ipv6_connection_accelerate(struct ecm_front_end_conne
 	ip_addr_t src_ip;
 	ip_addr_t dest_ip;
 	ecm_front_end_acceleration_mode_t result_mode;
-	struct net *net = nf_ct_net(ct);
-	struct nf_tcp_net *tn = nf_tcp_pernet(net);
 
 	DEBUG_CHECK_MAGIC(feci, ECM_FRONT_END_CONNECTION_INSTANCE_MAGIC, "%px: magic failed", feci);
 
@@ -1014,7 +1014,6 @@ static void ecm_nss_ported_ipv6_connection_accelerate(struct ecm_front_end_conne
 	}
 #endif
 
-#if (NSS_FW_VERSION_CODE > NSS_FW_VERSION(11,1))
 #ifdef ECM_CLASSIFIER_PCC_ENABLE
 	/*
 	 * Set up the interfaces for mirroring.
@@ -1038,7 +1037,6 @@ static void ecm_nss_ported_ipv6_connection_accelerate(struct ecm_front_end_conne
 
 		nircm->valid_flags |= NSS_IPV6_RULE_CREATE_MIRROR_VALID;
 	}
-#endif
 #endif
 
 	if (ecm_nss_ipv6_vlan_passthrough_enable && !ecm_db_connection_is_routed_get(feci->ci) &&
@@ -1129,7 +1127,14 @@ static void ecm_nss_ported_ipv6_connection_accelerate(struct ecm_front_end_conne
 		} else {
 			int flow_dir;
 			int return_dir;
-
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 13, 0))
+			uint32_t tcp_be_liberal = nf_ct_tcp_be_liberal;
+			uint32_t tcp_no_window_check = nf_ct_tcp_no_window_check;
+#else
+			struct nf_tcp_net *tn = nf_tcp_pernet(nf_ct_net(ct));
+			uint32_t tcp_be_liberal = tn->tcp_be_liberal;
+			uint32_t tcp_no_window_check = tn->tcp_no_window_check;
+#endif
 			ecm_front_end_flow_and_return_directions_get(ct, src_ip, 6, &flow_dir, &return_dir);
 
 			DEBUG_TRACE("%px: TCP Accel Get window data from ct %px for conn %px\n", feci, ct, feci->ci);
@@ -1143,13 +1148,9 @@ static void ecm_nss_ported_ipv6_connection_accelerate(struct ecm_front_end_conne
 			nircm->tcp_rule.return_end = ct->proto.tcp.seen[return_dir].td_end;
 			nircm->tcp_rule.return_max_end = ct->proto.tcp.seen[return_dir].td_maxend;
 #ifdef ECM_OPENWRT_SUPPORT
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0))
-			if (tn->tcp_be_liberal || tn->tcp_no_window_check
+			if (tcp_be_liberal || tcp_no_window_check
 #else
-			if (tn->tcp_be_liberal || nf_ct_tcp_no_window_check
-#endif
-#else
-			if (tn->tcp_be_liberal
+			if (tcp_be_liberal
 #endif
 					|| (ct->proto.tcp.seen[flow_dir].flags & IP_CT_TCP_FLAG_BE_LIBERAL)
 					|| (ct->proto.tcp.seen[return_dir].flags & IP_CT_TCP_FLAG_BE_LIBERAL)) {
@@ -1811,17 +1812,24 @@ struct ecm_front_end_connection_instance *ecm_nss_ported_ipv6_connection_instanc
 
 	return feci;
 }
+EXPORT_SYMBOL(ecm_nss_ported_ipv6_connection_instance_alloc);
 
 /*
  * ecm_nss_ported_ipv6_debugfs_init()
  */
 bool ecm_nss_ported_ipv6_debugfs_init(struct dentry *dentry)
 {
-	debugfs_create_u32("udp_accelerated_count", S_IRUGO, dentry,
-						&ecm_nss_ported_ipv6_accelerated_count[ECM_FRONT_END_PORTED_PROTO_UDP]);
+	if (!ecm_debugfs_create_u32("udp_accelerated_count", S_IRUGO, dentry,
+				    &ecm_nss_ported_ipv6_accelerated_count[ECM_FRONT_END_PORTED_PROTO_UDP])) {
+		DEBUG_ERROR("Failed to create ecm nss ipv6 udp_accelerated_count file in debugfs\n");
+		return false;
+	}
 
-	debugfs_create_u32("tcp_accelerated_count", S_IRUGO, dentry,
-					&ecm_nss_ported_ipv6_accelerated_count[ECM_FRONT_END_PORTED_PROTO_TCP]);
+	if (!ecm_debugfs_create_u32("tcp_accelerated_count", S_IRUGO, dentry,
+					&ecm_nss_ported_ipv6_accelerated_count[ECM_FRONT_END_PORTED_PROTO_TCP])) {
+		DEBUG_ERROR("Failed to create ecm nss ipv6 tcp_accelerated_count file in debugfs\n");
+		return false;
+	}
 
 	return true;
 }

@@ -1,7 +1,7 @@
 /*
  **************************************************************************
  * Copyright (c) 2014-2016, 2018, 2020-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -120,9 +120,10 @@ extern void ecm_classifier_mscs_exit(void);
  */
 static int __init ecm_init(void)
 {
-	int ret;
+	int ret = -1;
+	struct dentry *ecm_stats_dentry;
 
-	printk(KERN_INFO "ECM init ( QSDK 12.1.r5_CS1 2022-11-25 1c401a1 )\n");
+	printk(KERN_INFO "ECM init\n");
 
 	selected_front_end = ecm_front_end_type_select();
 	if (selected_front_end == ECM_FRONT_END_TYPE_MAX) {
@@ -141,6 +142,17 @@ static int __init ecm_init(void)
 		return -1;
 	}
 
+	ecm_stats_dentry = debugfs_create_dir("stats", ecm_dentry);
+	if (!ecm_stats_dentry) {
+		DEBUG_ERROR("Failed to create stats dir in ecm\n");
+		goto err_db;
+	}
+
+#ifdef ECM_FRONT_END_PPE_ENABLE
+	if (ecm_front_end_ppe_fse_enable) {
+		ppe_drv_fse_feature_enable();
+	}
+#endif
 	ret = ecm_db_init(ecm_dentry);
 	if (0 != ret) {
 		goto err_db;
@@ -241,12 +253,6 @@ static int __init ecm_init(void)
 		goto err_state;
 	}
 #endif
-
-#ifdef ECM_FRONT_END_PPE_ENABLE
-	if (ecm_front_end_ppe_fse_enable) {
-		ppe_drv_fse_feature_enable();
-	}
-#endif
 	ecm_front_end_common_sysctl_register();
 
 	printk(KERN_INFO "ECM init complete\n");
@@ -305,6 +311,11 @@ err_cls_mscs:
 err_cls_default:
 	ecm_db_exit();
 err_db:
+#ifdef ECM_FRONT_END_PPE_ENABLE
+	if (ecm_front_end_ppe_fse_enable) {
+		ppe_drv_fse_feature_disable();
+	}
+#endif
 	debugfs_remove_recursive(ecm_dentry);
 
 	printk(KERN_INFO "ECM init failed: %d\n", ret);

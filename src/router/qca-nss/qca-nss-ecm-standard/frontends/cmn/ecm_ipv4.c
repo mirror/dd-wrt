@@ -1,7 +1,7 @@
 /*
  **************************************************************************
  * Copyright (c) 2014-2021 The Linux Foundation.  All rights reserved.
- * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -102,6 +102,7 @@
 #include "ecm_non_ported_ipv4.h"
 #endif
 #include "ecm_multicast_ipv4.h"
+#include "ecm_stats_v4.h"
 
 /*
  * Locking of the classifier - concurrency control for file global parameters.
@@ -113,6 +114,34 @@ DEFINE_SPINLOCK(ecm_ipv4_lock);			/* Protect against SMP access between netfilte
  * Management thread control
  */
 bool ecm_ipv4_terminate_pending = false;		/* True when the user has signalled we should quit */
+
+/*
+ * ecm_ipv4_dev_has_ipaddr()
+ *	Returns true if dev has an IPv4 address
+ */
+bool ecm_ipv4_dev_has_ipaddr(struct net_device *dev)
+{
+	struct in_device *in_dev;
+	const struct in_ifaddr *ifa;
+
+	rcu_read_lock();
+	in_dev = __in_dev_get_rcu(dev);
+	if (!in_dev) {
+		rcu_read_unlock();
+		DEBUG_TRACE("%s: dev->ip_ptr is NULL\n", dev->name);
+		return false;
+	}
+
+	ifa = rcu_dereference(in_dev->ifa_list);
+	if (!ifa) {
+		rcu_read_unlock();
+		DEBUG_TRACE("%s: dev->ip_ptr->ifa_list is NULL\n", dev->name);
+		return false;
+	}
+	rcu_read_unlock();
+
+	return true;
+}
 
 /*
  * ecm_ipv4_node_establish_and_ref()
@@ -222,41 +251,21 @@ struct ecm_db_node_instance *ecm_ipv4_node_establish_and_ref(struct ecm_front_en
 
 			DEBUG_TRACE("%px: local_dev found is %s\n", feci, local_dev->name);
 
+			/*
+			 * If the local_dev is a PPP device, we support only PPPoE devices.
+			 */
 			if (local_dev->type == ARPHRD_PPP) {
 #ifndef ECM_INTERFACE_PPPOE_ENABLE
 				DEBUG_TRACE("%px: l2tp over netdevice %s unsupported\n", feci, local_dev->name);
 				dev_put(local_dev);
 				return NULL;
 #else
-				struct ppp_channel *ppp_chan[1];
-				struct pppoe_opt addressing;
-				int px_proto;
-
-				if (ppp_hold_channels(local_dev, ppp_chan, 1) != 1) {
-					DEBUG_WARN("%px: l2tpv2 over netdevice %s unsupported; could not hold ppp channels\n", feci, local_dev->name);
+				if (!ecm_interface_mac_addr_get_pppoe(local_dev, node_addr)) {
+					DEBUG_WARN("%px: Unable to get any PPPoE device MAC address\n", feci);
 					dev_put(local_dev);
 					return NULL;
 				}
 
-				px_proto = ppp_channel_get_protocol(ppp_chan[0]);
-				if (px_proto != PX_PROTO_OE) {
-					DEBUG_WARN("%px: l2tpv2 over PPP protocol %d unsupported\n", feci, px_proto);
-					ppp_release_channels(ppp_chan, 1);
-					dev_put(local_dev);
-					return NULL;
-				}
-
-				if (pppoe_channel_addressing_get(ppp_chan[0], &addressing)) {
-					DEBUG_WARN("%px: failed to get PPPoE addressing info\n", feci);
-					ppp_release_channels(ppp_chan, 1);
-					dev_put(local_dev);
-					return NULL;
-				}
-
-				DEBUG_TRACE("%px: Obtained mac address for %s remote address " ECM_IP_ADDR_OCTAL_FMT "\n", feci, addressing.dev->name, ECM_IP_ADDR_TO_OCTAL(addr));
-				memcpy(node_addr, addressing.dev->dev_addr, ETH_ALEN);
-				dev_put(addressing.dev);
-				ppp_release_channels(ppp_chan, 1);
 				dev_put(local_dev);
 				done = true;
 				break;
@@ -281,10 +290,29 @@ struct ecm_db_node_instance *ecm_ipv4_node_establish_and_ref(struct ecm_front_en
 				}
 
 			} else {
+				/*
+				 * Try to get the host mac address from the
+				 * neigbour list.
+				 */
 				if (unlikely(!ecm_interface_mac_addr_get_no_route(local_dev, remote_ip, node_addr))) {
-					DEBUG_WARN("%px: failed to obtain node address for host " ECM_IP_ADDR_DOT_FMT "\n", feci, ECM_IP_ADDR_TO_DOT(remote_ip));
-					dev_put(local_dev);
-					return NULL;
+					ip_addr_t gw_addr = ECM_IP_ADDR_NULL;
+
+					/*
+					 * If the host is behind a route device, use the gateway's mac
+					 * address instead.
+					 */
+					if (ecm_interface_find_gateway(remote_ip, gw_addr)) {
+						DEBUG_TRACE("%px: Have a gw address " ECM_IP_ADDR_DOT_FMT "\n", feci, ECM_IP_ADDR_TO_DOT(gw_addr));
+						if (!ecm_interface_mac_addr_get_no_route(local_dev, gw_addr, node_addr)) {
+							DEBUG_TRACE("%px: Failed to find the mac address for gateway\n", feci);
+							dev_put(local_dev);
+							return NULL;
+						}
+					} else {
+						DEBUG_WARN("%px: failed to obtain node address for host " ECM_IP_ADDR_DOT_FMT "\n", feci, ECM_IP_ADDR_TO_DOT(remote_ip));
+						dev_put(local_dev);
+						return NULL;
+					}
 				}
 			}
 
@@ -311,6 +339,27 @@ struct ecm_db_node_instance *ecm_ipv4_node_establish_and_ref(struct ecm_front_en
 			}
 
 			DEBUG_TRACE("%px: local_dev found is %s\n", feci, local_dev->name);
+
+			/*
+			 * If the local_dev is a PPP device, we support only PPPoE devices.
+			 */
+			if (local_dev->type == ARPHRD_PPP) {
+#ifndef ECM_INTERFACE_PPPOE_ENABLE
+				DEBUG_TRACE("%px: PPTP over netdevice %s unsupported\n", feci, local_dev->name);
+				dev_put(local_dev);
+				return NULL;
+#else
+				if (!ecm_interface_mac_addr_get_pppoe(local_dev, node_addr)) {
+					DEBUG_WARN("%px: Unable to get any PPPoE device MAC address\n", feci);
+					dev_put(local_dev);
+					return NULL;
+				}
+
+				dev_put(local_dev);
+				done = true;
+				break;
+#endif
+			}
 
 			if (ECM_IP_ADDR_MATCH(local_ip, addr)) {
 				if (unlikely(!ecm_interface_mac_addr_get_no_route(local_dev, local_ip, node_addr))) {
@@ -452,8 +501,10 @@ struct ecm_db_node_instance *ecm_ipv4_node_establish_and_ref(struct ecm_front_en
 #endif
 			/*
 			 * If dev is a bridge port, we should use the bridge device for the MAC lookup and ARP request.
+			 * For brouting case where dev is a bridge port and also is a routing interface (so dev has an
+			 * IP address), we should use dev itself for the MAC lookup and ARP request.
 			 */
-			if (ecm_front_end_is_bridge_port(dev)) {
+			if (ecm_front_end_is_bridge_port(dev) && !ecm_ipv4_dev_has_ipaddr(dev)) {
 				DEBUG_TRACE("%s is a bridge port\n", dev->name);
 				mac_dev = ecm_interface_get_and_hold_dev_master(dev);
 				if(!mac_dev) {
@@ -1000,6 +1051,7 @@ unsigned int ecm_ipv4_ip_process(struct net_device *out_dev, struct net_device *
 	 */
 	if (!ecm_tracker_ip_check_header_and_read(&ip_hdr, skb)) {
 		DEBUG_WARN("Invalid ip header in skb %px\n", skb);
+		ecm_stats_v4_inc(ECM_STATS_V4_EXCEPTION_CMN, ECM_STATS_V4_EXCEPTION_MALFORMED_IP_HEADER);
 		return NF_ACCEPT;
 	}
 
@@ -1008,11 +1060,13 @@ unsigned int ecm_ipv4_ip_process(struct net_device *out_dev, struct net_device *
 	 */
 	if (!ip_hdr.is_v4) {
 		DEBUG_TRACE("Not an IPv4 packet, skb %px\n", skb);
+		ecm_stats_v4_inc(ECM_STATS_V4_EXCEPTION_CMN, ECM_STATS_V4_EXCEPTION_NON_IPV4_HDR);
 		return NF_ACCEPT;
 	}
 
 	if (ip_hdr.fragmented) {
 		DEBUG_TRACE("skb %px is fragmented\n", skb);
+		ecm_stats_v4_inc(ECM_STATS_V4_EXCEPTION_CMN, ECM_STATS_V4_EXCEPTION_FRAGMENTED_PACKETS);
 		return NF_ACCEPT;
 	}
 
@@ -1034,6 +1088,7 @@ unsigned int ecm_ipv4_ip_process(struct net_device *out_dev, struct net_device *
 		 */
 		if (unlikely(test_bit(IPS_DYING_BIT, &ct->status))) {
 			DEBUG_WARN("%px: ct: %px is in dying state\n", skb, ct);
+			ecm_stats_v4_inc(ECM_STATS_V4_EXCEPTION_CMN, ECM_STATS_V4_EXCEPTION_CONNTRACK_IN_DYING_STATE);
 			return NF_ACCEPT;
 		}
 
@@ -1074,6 +1129,7 @@ unsigned int ecm_ipv4_ip_process(struct net_device *out_dev, struct net_device *
 			}
 #endif
 			DEBUG_TRACE("%px: ct: untracked\n", skb);
+			ecm_stats_v4_inc(ECM_STATS_V4_EXCEPTION_CMN, ECM_STATS_V4_EXCEPTION_UNTRACKED_CONNTRACK);
 			return NF_ACCEPT;
 		}
 
@@ -1084,6 +1140,7 @@ unsigned int ecm_ipv4_ip_process(struct net_device *out_dev, struct net_device *
 		if (nfct_help(ct)) {
 			DEBUG_TRACE("%px: Connection has helper\n", ct);
 			can_accel = false;
+			ecm_stats_v4_inc(ECM_STATS_V4_EXCEPTION_CMN, ECM_STATS_V4_EXCEPTION_CONN_HAS_HELPER);
 		}
 
 		/*
@@ -1121,8 +1178,20 @@ vxlan_done:
 	 */
 	if (ip_hdr.protocol == IPPROTO_GRE) {
 		uint16_t offset = ip_hdr.headers[ECM_TRACKER_IP_PROTOCOL_TYPE_GRE].offset;
-		if (!ecm_front_end_gre_proto_is_accel_allowed(in_dev, out_dev, skb, &orig_tuple, 4, offset)) {
+		if (!ecm_front_end_gre_proto_is_accel_allowed(in_dev, out_dev, skb, &orig_tuple, &reply_tuple, 4, offset)) {
 			DEBUG_WARN("%px: GRE protocol is not allowed\n", skb);
+			ecm_stats_v4_inc(ECM_STATS_V4_EXCEPTION_CMN, ECM_STATS_V4_EXCEPTION_UNSUPPORTED_GRE_PROTOCOL);
+			return NF_ACCEPT;
+		}
+	}
+
+	/*
+	 * Check if we can accelerate L2TPv3 protocol.
+	 */
+	if (ip_hdr.protocol == IPPROTO_L2TP) {
+		if (!ecm_front_end_l2tp_proto_is_accel_allowed(in_dev, out_dev)) {
+			DEBUG_WARN("%px: L2TPv3 protocol is not allowed\n", skb);
+			ecm_stats_v4_inc(ECM_STATS_V4_EXCEPTION_CMN, ECM_STATS_V4_EXCEPTION_UNSUPPORTED_L2TPV3_PROTOCOL);
 			return NF_ACCEPT;
 		}
 	}
@@ -1135,11 +1204,13 @@ vxlan_done:
 #ifdef ECM_MULTICAST_ENABLE
 		if (unlikely(ecm_front_end_ipv4_mc_stopped)) {
 			DEBUG_TRACE("%px: Multicast disabled by ecm_front_end_ipv4_mc_stopped = %d\n", skb, ecm_front_end_ipv4_mc_stopped);
+			ecm_stats_v4_inc(ECM_STATS_V4_EXCEPTION_CMN, ECM_STATS_V4_EXCEPTION_MCAST_STOPPED);
 			return NF_ACCEPT;
 		}
 
 		if (unlikely(!ecm_front_end_is_feature_supported(ECM_FE_FEATURE_MULTICAST))) {
 			DEBUG_TRACE("%px: Multicast ipv4 acceleration is not supported on the selected frontend\n", skb);
+			ecm_stats_v4_inc(ECM_STATS_V4_EXCEPTION_CMN, ECM_STATS_V4_EXCEPTION_MCAST_NOT_SUPPORTED);
 			return NF_ACCEPT;
 		}
 
@@ -1148,6 +1219,7 @@ vxlan_done:
 									can_accel, is_routed, skb, &ip_hdr, ct, sender,
 									&orig_tuple, &reply_tuple);
 #else
+		ecm_stats_v4_inc(ECM_STATS_V4_EXCEPTION_CMN, ECM_STATS_V4_EXCEPTION_MCAST_FEATURE_DISABLED);
 		return NF_ACCEPT;
 #endif
 	}
@@ -1189,6 +1261,7 @@ vxlan_done:
 	 */
 	if (!is_routed && (ecm_dir != ECM_DB_DIRECTION_BRIDGED)) {
 		DEBUG_TRACE("Packet comes from bridge post routing hook but ecm_dir is not bridge\n");
+		ecm_stats_v4_inc(ECM_STATS_V4_EXCEPTION_CMN, ECM_STATS_V4_EXCEPTION_BRIDGE_ECM_DIR_MISMATCH);
 		return NF_ACCEPT;
 	}
 
@@ -1351,7 +1424,7 @@ vxlan_done:
 	 *	dest_node_addr_nat is set to dest_node_addr
 	 */
 	if (sender == ECM_TRACKER_SENDER_TYPE_SRC) {
-		if ((ecm_dir == ECM_DB_DIRECTION_EGRESS_NAT) || (ecm_dir == ECM_DB_DIRECTION_NON_NAT)) {
+		if (ecm_dir == ECM_DB_DIRECTION_EGRESS_NAT) {
 			/*
 			 * Example 1
 			 */
@@ -1383,7 +1456,7 @@ vxlan_done:
 			src_node_addr_nat = NULL;
 
 			dest_node_addr_nat = NULL;
-		} else if (ecm_dir == ECM_DB_DIRECTION_BRIDGED) {
+		} else if ((ecm_dir == ECM_DB_DIRECTION_BRIDGED) || (ecm_dir == ECM_DB_DIRECTION_NON_NAT)) {
 			/*
 			 * Example 5
 			 */
@@ -1402,7 +1475,7 @@ vxlan_done:
 			DEBUG_ASSERT(false, "Unhandled ecm_dir: %d\n", ecm_dir);
 		}
 	} else {
-		if ((ecm_dir == ECM_DB_DIRECTION_EGRESS_NAT) || (ecm_dir == ECM_DB_DIRECTION_NON_NAT)) {
+		if (ecm_dir == ECM_DB_DIRECTION_EGRESS_NAT) {
 			/*
 			 * Example 3
 			 */
@@ -1434,7 +1507,7 @@ vxlan_done:
 			src_node_addr = NULL;
 
 			dest_node_addr_nat = dest_node_addr;
-		} else if (ecm_dir == ECM_DB_DIRECTION_BRIDGED) {
+		} else if ((ecm_dir == ECM_DB_DIRECTION_BRIDGED) || (ecm_dir == ECM_DB_DIRECTION_NON_NAT)) {
 			/*
 			 * Example 6
 			 */
@@ -1460,10 +1533,12 @@ vxlan_done:
 	 */
 	if (unlikely(ecm_ip_addr_is_non_unicast(ip_dest_addr))) {
 		DEBUG_TRACE("skb %px non-unicast daddr " ECM_IP_ADDR_DOT_FMT "\n", skb, ECM_IP_ADDR_TO_DOT(ip_dest_addr));
+		ecm_stats_v4_inc(ECM_STATS_V4_EXCEPTION_CMN, ECM_STATS_V4_EXCEPTION_DEST_IP_NOT_UCAST);
 		return NF_ACCEPT;
 	}
 	if (unlikely(ecm_ip_addr_is_non_unicast(ip_src_addr))) {
 		DEBUG_TRACE("skb %px non-unicast saddr " ECM_IP_ADDR_DOT_FMT "\n", skb, ECM_IP_ADDR_TO_DOT(ip_src_addr));
+		ecm_stats_v4_inc(ECM_STATS_V4_EXCEPTION_CMN, ECM_STATS_V4_EXCEPTION_SRC_IP_NOT_UCAST);
 		return NF_ACCEPT;
 	}
 
@@ -1485,6 +1560,7 @@ vxlan_done:
 #ifdef ECM_NON_PORTED_SUPPORT_ENABLE
 	if (unlikely(!ecm_front_end_is_feature_supported(ECM_FE_FEATURE_NON_PORTED))) {
 		DEBUG_TRACE("%px: Non-ported ipv4 acceleration is not supported on the selected frontend\n", skb);
+		ecm_stats_v4_inc(ECM_STATS_V4_EXCEPTION_CMN, ECM_STATS_V4_EXCEPTION_NON_PORTED_NOT_SUPPORTED);
 		return NF_ACCEPT;
 	}
 
@@ -1498,6 +1574,7 @@ vxlan_done:
 				&orig_tuple, &reply_tuple,
 				ip_src_addr, ip_dest_addr, ip_src_addr_nat, ip_dest_addr_nat, l2_encap_proto);
 #else
+	ecm_stats_v4_inc(ECM_STATS_V4_EXCEPTION_CMN, ECM_STATS_V4_EXCEPTION_NON_PORTED_DISABLED);
 	return NF_ACCEPT;
 #endif
 }
@@ -1530,7 +1607,7 @@ static bool ecm_ipv4_is_bridge_pkt(struct net_device *in,
 	rcu_read_lock();
 	upper = netdev_master_upper_dev_get_rcu(lower);
 	rcu_read_unlock();
-	return upper && (upper == bridge);
+	return upper && (upper == bridge) && !ecm_ipv4_dev_has_ipaddr(lower);
 }
 
 /*
@@ -1546,7 +1623,15 @@ static unsigned int ecm_ipv4_post_routing_hook(void *priv,
 	bool can_accel = true;
 	unsigned int result;
 
-	DEBUG_TRACE("%px: IPv4 CMN Routing: %s\n", out, out->name);
+	DEBUG_TRACE("%px: IPv4 CMN Routing: %s skb=%px\n", out, out->name, skb);
+
+	/*
+	 * Skip flow with out interface marked for don't offload.
+	 */
+	if (out->priv_flags_ext & IFF_EXT_HW_NO_OFFLOAD) {
+		ecm_stats_v4_inc(ECM_STATS_V4_EXCEPTION_CMN, ECM_STATS_V4_EXCEPTION_ROUTE_OUT_IFF_NO_OFFLOAD);
+		return NF_ACCEPT;
+	}
 
 	/*
 	 * If operations have stopped then do not process packets
@@ -1555,6 +1640,7 @@ static unsigned int ecm_ipv4_post_routing_hook(void *priv,
 	if (unlikely(ecm_front_end_ipv4_stopped)) {
 		spin_unlock_bh(&ecm_ipv4_lock);
 		DEBUG_TRACE("Front end stopped\n");
+		ecm_stats_v4_inc(ECM_STATS_V4_EXCEPTION_CMN, ECM_STATS_V4_EXCEPTION_FRONT_END_STOPPED);
 		return NF_ACCEPT;
 	}
 	spin_unlock_bh(&ecm_ipv4_lock);
@@ -1564,6 +1650,7 @@ static unsigned int ecm_ipv4_post_routing_hook(void *priv,
 	 */
 	if (skb->pkt_type == PACKET_BROADCAST) {
 		DEBUG_TRACE("Broadcast, ignoring: %px\n", skb);
+		ecm_stats_v4_inc(ECM_STATS_V4_EXCEPTION_CMN, ECM_STATS_V4_EXCEPTION_BCAST_PACKET_IGNORED);
 		return NF_ACCEPT;
 	}
 
@@ -1572,6 +1659,7 @@ static unsigned int ecm_ipv4_post_routing_hook(void *priv,
 	 * skip pptp because we don't accelerate them
 	 */
 	if (ecm_interface_is_pptp(skb, out)) {
+		ecm_stats_v4_inc(ECM_STATS_V4_EXCEPTION_CMN, ECM_STATS_V4_EXCEPTION_PPTP_DISABLED);
 		return NF_ACCEPT;
 	}
 #endif
@@ -1581,14 +1669,16 @@ static unsigned int ecm_ipv4_post_routing_hook(void *priv,
 	 * skip l2tpv2 because we don't accelerate them
 	 */
 	if (ecm_interface_is_l2tp_packet_by_version(skb, out, 2)) {
+		ecm_stats_v4_inc(ECM_STATS_V4_EXCEPTION_CMN, ECM_STATS_V4_EXCEPTION_L2TPV2_DISABLED);
 		return NF_ACCEPT;
 	}
 #endif
 
 	/*
-	 * skip l2tpv3 because we don't accelerate them
+	 * skip l2tpv3 over PPP interface because we don't accelerate them
 	 */
 	if (ecm_interface_is_l2tp_packet_by_version(skb, out, 3)) {
+		ecm_stats_v4_inc(ECM_STATS_V4_EXCEPTION_CMN, ECM_STATS_V4_EXCEPTION_L2TPV3_UNSUPPORTED_INTERFACE);
 		return NF_ACCEPT;
 	}
 
@@ -1600,6 +1690,16 @@ static unsigned int ecm_ipv4_post_routing_hook(void *priv,
 		/*
 		 * Locally sourced packets are not processed in ECM.
 		 */
+		ecm_stats_v4_inc(ECM_STATS_V4_EXCEPTION_CMN, ECM_STATS_V4_EXCEPTION_LOCAL_PACKETS_IGNORED);
+		return NF_ACCEPT;
+	}
+
+	/*
+	 * Skip flow with source interface marked for don't offload.
+	 */
+	if (in->priv_flags_ext & IFF_EXT_HW_NO_OFFLOAD) {
+		dev_put(in);
+		ecm_stats_v4_inc(ECM_STATS_V4_EXCEPTION_CMN, ECM_STATS_V4_EXCEPTION_ROUTE_IN_IFF_NO_OFFLOAD);
 		return NF_ACCEPT;
 	}
 
@@ -1609,6 +1709,7 @@ static unsigned int ecm_ipv4_post_routing_hook(void *priv,
 	if (ecm_ipv4_is_bridge_pkt(in, out)) {
 		DEBUG_TRACE("Bridge flow, ignoring: %px\n", skb);
 		dev_put(in);
+		ecm_stats_v4_inc(ECM_STATS_V4_EXCEPTION_CMN, ECM_STATS_V4_EXCEPTION_BRIDGE_PACKET_WRONG_HOOK);
 		return NF_ACCEPT;
 	}
 #ifndef ECM_INTERFACE_OVS_BRIDGE_ENABLE
@@ -1617,6 +1718,7 @@ static unsigned int ecm_ipv4_post_routing_hook(void *priv,
 	 */
 	if (netif_is_ovs_master(out) || netif_is_ovs_master(in)) {
 		dev_put(in);
+		ecm_stats_v4_inc(ECM_STATS_V4_EXCEPTION_CMN, ECM_STATS_V4_EXCEPTION_OVS_DISABLED);
 		return NF_ACCEPT;
 	}
 #endif
@@ -1647,6 +1749,7 @@ static unsigned int ecm_ipv4_pppoe_bridge_process(struct net_device *out,
 
 	ppp_proto = ntohs(ppp_proto);
 	if (ppp_proto != PPP_IP) {
+		ecm_stats_v4_inc(ECM_STATS_V4_EXCEPTION_CMN, ECM_STATS_V4_EXCEPTION_BRIDGE_PROTO_NOT_PPPOE);
 		return NF_ACCEPT;
 	}
 
@@ -1656,6 +1759,7 @@ static unsigned int ecm_ipv4_pppoe_bridge_process(struct net_device *out,
 
 	if (!ecm_tracker_ip_check_header_and_read(&ip_hdr, skb)) {
 		DEBUG_WARN("Invalid ip header in skb %px\n", skb);
+		ecm_stats_v4_inc(ECM_STATS_V4_EXCEPTION_CMN, ECM_STATS_V4_EXCEPTION_BRIDGE_PPPOE_MALFORMED_HEADER);
 		goto skip_ipv4_process;
 	}
 
@@ -1664,6 +1768,7 @@ static unsigned int ecm_ipv4_pppoe_bridge_process(struct net_device *out,
 	 */
 	if (ecm_ip_addr_is_multicast(ip_hdr.dest_addr)) {
 		DEBUG_WARN("Multicast acceleration is not support in PPPoE bridge %px\n", skb);
+		ecm_stats_v4_inc(ECM_STATS_V4_EXCEPTION_CMN, ECM_STATS_V4_EXCEPTION_BRIDGE_PPPOE_MCAST_ACCEL_NOT_SUPPORTED);
 		goto skip_ipv4_process;
 	}
 
@@ -1673,6 +1778,49 @@ static unsigned int ecm_ipv4_pppoe_bridge_process(struct net_device *out,
 skip_ipv4_process:
 	ecm_front_end_push_l2_encap_header(skb, encap_header_len);
 	skb->protocol = htons(ETH_P_PPP_SES);
+
+	return result;
+}
+
+/*
+ * ecm_ipv4_vlan_bridge_process()
+ *	called for double vlan packets that are going
+ *	out to one of the bridge physical interfaces.
+ */
+static unsigned int ecm_ipv4_vlan_bridge_process(struct net_device *out,
+						     struct net_device *in,
+						     struct ethhdr *skb_eth_hdr,
+						     bool can_accel,
+						     struct sk_buff *skb)
+{
+	unsigned int result = NF_ACCEPT;
+	struct vlan_ethhdr *skb_vlan_hdr = vlan_eth_hdr(skb);
+	uint32_t encap_header_len = 0;
+
+	encap_header_len = ecm_front_end_l2_encap_header_len(ntohs(skb->protocol));
+	ecm_front_end_pull_l2_encap_header(skb, encap_header_len);
+	skb->protocol = skb_vlan_hdr->h_vlan_encapsulated_proto;
+
+	if (ntohs(skb->protocol) == ETH_P_PPP_SES) {
+
+		/*
+		 * Check if PPPoE bridge acceleration is disabled.
+		 */
+		if (ecm_front_end_ppppoe_br_accel_disabled()) {
+			DEBUG_TRACE("skb: %px, PPPoE bridge flow acceleration is disabled\n", skb);
+			goto skip_ipv4_vlan_process;
+		}
+
+		result = ecm_ipv4_pppoe_bridge_process((struct net_device *)out, in, skb_eth_hdr, can_accel, skb);
+		goto skip_ipv4_vlan_process;
+	}
+
+	result = ecm_ipv4_ip_process(out, in, skb_eth_hdr->h_source,
+					 skb_eth_hdr->h_dest, can_accel,
+					 false, true, skb, ETH_P_8021Q);
+skip_ipv4_vlan_process:
+	ecm_front_end_push_l2_encap_header(skb, encap_header_len);
+	skb->protocol = htons(ETH_P_8021Q);
 
 	return result;
 }
@@ -1695,8 +1843,18 @@ static unsigned int ecm_ipv4_bridge_post_routing_hook(void *priv,
 	struct net_device *in;
 	bool can_accel = true;
 	unsigned int result = NF_ACCEPT;
+	struct net_device *dest_dev __maybe_unused;
+	uint16_t vid __maybe_unused;
 
-	DEBUG_TRACE("%px: IPv4 CMN Bridge: %s\n", out, out->name);
+	DEBUG_TRACE("%px: IPv4 CMN Bridge: %s skb=%px\n", out, out->name, skb);
+
+	/*
+	 * Skip flow with out interface marked for don't offload.
+	 */
+	if (out->priv_flags_ext & IFF_EXT_HW_NO_OFFLOAD) {
+		ecm_stats_v4_inc(ECM_STATS_V4_EXCEPTION_CMN, ECM_STATS_V4_EXCEPTION_BRIDGE_OUT_IFF_NO_OFFLOAD);
+		return NF_ACCEPT;
+	}
 
 	/*
 	 * If operations have stopped then do not process packets
@@ -1705,6 +1863,7 @@ static unsigned int ecm_ipv4_bridge_post_routing_hook(void *priv,
 	if (unlikely(ecm_front_end_ipv4_stopped)) {
 		spin_unlock_bh(&ecm_ipv4_lock);
 		DEBUG_TRACE("Front end stopped\n");
+		ecm_stats_v4_inc(ECM_STATS_V4_EXCEPTION_CMN, ECM_STATS_V4_EXCEPTION_BRIDGE_FRONT_END_STOPPED);
 		return NF_ACCEPT;
 	}
 	spin_unlock_bh(&ecm_ipv4_lock);
@@ -1714,6 +1873,7 @@ static unsigned int ecm_ipv4_bridge_post_routing_hook(void *priv,
 	 */
 	if (skb->pkt_type == PACKET_BROADCAST) {
 		DEBUG_TRACE("Broadcast, ignoring: %px\n", skb);
+		ecm_stats_v4_inc(ECM_STATS_V4_EXCEPTION_CMN, ECM_STATS_V4_EXCEPTION_BRIDGE_BCAST_PACKET_IGNORED);
 		return NF_ACCEPT;
 	}
 
@@ -1721,6 +1881,7 @@ static unsigned int ecm_ipv4_bridge_post_routing_hook(void *priv,
 	 * skip l2tp/pptp because we don't accelerate them
 	 */
 	if (ecm_interface_is_l2tp_pptp(skb, out)) {
+		ecm_stats_v4_inc(ECM_STATS_V4_EXCEPTION_CMN, ECM_STATS_V4_EXCEPTION_BRIDGE_PPTP_ACCEL_FAIL);
 		return NF_ACCEPT;
 	}
 
@@ -1730,12 +1891,26 @@ static unsigned int ecm_ipv4_bridge_post_routing_hook(void *priv,
 	skb_eth_hdr = eth_hdr(skb);
 	if (!skb_eth_hdr) {
 		DEBUG_TRACE("%px: Not Eth\n", skb);
+		ecm_stats_v4_inc(ECM_STATS_V4_EXCEPTION_CMN, ECM_STATS_V4_EXCEPTION_BRIDGE_MALFORMED_IP_HEADER);
 		return NF_ACCEPT;
 	}
 	eth_type = ntohs(skb_eth_hdr->h_proto);
-	if (unlikely((eth_type != 0x0800) && (eth_type != ETH_P_PPP_SES))) {
-		DEBUG_TRACE("%px: Not IP/PPPoE session: %d\n", skb, eth_type);
+	if (unlikely((eth_type != ETH_P_IP) && (eth_type != ETH_P_PPP_SES) && (eth_type != ETH_P_8021Q))) {
+		DEBUG_TRACE("%px: Not IP/PPPoE/VLAN session: %d\n", skb, eth_type);
+		ecm_stats_v4_inc(ECM_STATS_V4_EXCEPTION_CMN, ECM_STATS_V4_EXCEPTION_BRIDGE_NOT_IP_PPPOE_PACKETS);
 		return NF_ACCEPT;
+	}
+
+	if (eth_type == ETH_P_8021Q) {
+		struct vlan_ethhdr *skb_vlan_hdr;
+		uint16_t vlan_encap_proto;
+		skb_vlan_hdr = vlan_eth_hdr(skb);
+		vlan_encap_proto = ntohs(skb_vlan_hdr->h_vlan_encapsulated_proto);
+		if (unlikely((vlan_encap_proto != ETH_P_IP) && (vlan_encap_proto != ETH_P_PPP_SES))) {
+			DEBUG_TRACE("%px: Not IP/PPPoE session: %d\n", skb, vlan_encap_proto);
+			ecm_stats_v4_inc(ECM_STATS_V4_EXCEPTION_CMN, ECM_STATS_V4_EXCEPTION_BRIDGE_NOT_IP_PPPOE_PACKETS);
+			return NF_ACCEPT;
+		}
 	}
 
 	/*
@@ -1754,6 +1929,7 @@ static unsigned int ecm_ipv4_bridge_post_routing_hook(void *priv,
 	bridge = ecm_interface_get_and_hold_dev_master((struct net_device *)out);
 	if (!bridge) {
 		DEBUG_WARN("Expected bridge\n");
+		ecm_stats_v4_inc(ECM_STATS_V4_EXCEPTION_CMN, ECM_STATS_V4_EXCEPTION_BRIDGE_MASTER_NOT_FOUND);
 		return NF_ACCEPT;
 	}
 
@@ -1764,8 +1940,20 @@ static unsigned int ecm_ipv4_bridge_post_routing_hook(void *priv,
 		 */
 		DEBUG_TRACE("Local traffic: %px, ignoring traffic to bridge: %px (%s) \n", skb, bridge, bridge->name);
 		dev_put(bridge);
+		ecm_stats_v4_inc(ECM_STATS_V4_EXCEPTION_CMN, ECM_STATS_V4_EXCEPTION_BRIDGE_LOCAL_PACKETS_IGNORED);
 		return NF_ACCEPT;
 	}
+
+	/*
+	 * Skip flow with interface marked for don't offload.
+	 */
+	if (in->priv_flags_ext & IFF_EXT_HW_NO_OFFLOAD) {
+		dev_put(bridge);
+		dev_put(in);
+		ecm_stats_v4_inc(ECM_STATS_V4_EXCEPTION_CMN, ECM_STATS_V4_EXCEPTION_BRIDGE_IN_IFF_NO_OFFLOAD);
+		return NF_ACCEPT;
+	}
+
 	dev_put(in);
 
 	/*
@@ -1784,6 +1972,7 @@ static unsigned int ecm_ipv4_bridge_post_routing_hook(void *priv,
 	if (!in) {
 		DEBUG_TRACE("skb: %px, no in device for bridge: %px (%s)\n", skb, bridge, bridge->name);
 		dev_put(bridge);
+		ecm_stats_v4_inc(ECM_STATS_V4_EXCEPTION_CMN, ECM_STATS_V4_EXCEPTION_BRIDGE_PORT_NOT_FOUND);
 		return NF_ACCEPT;
 	}
 
@@ -1798,6 +1987,7 @@ static unsigned int ecm_ipv4_bridge_post_routing_hook(void *priv,
 					"the packet, hairpin not enabled"
 					"on port %px (%s)\n", skb, bridge,
 					bridge->name, out, out->name);
+			ecm_stats_v4_inc(ECM_STATS_V4_EXCEPTION_CMN, ECM_STATS_V4_EXCEPTION_BRIDGE_HAIRPIN_NOT_ENABLED);
 			goto skip_ipv4_bridge_flow;
 		}
 		DEBUG_TRACE("skb: %px, bridge: %px (%s), hairpin enabled on port"
@@ -1809,23 +1999,46 @@ static unsigned int ecm_ipv4_bridge_post_routing_hook(void *priv,
 	 */
 	if (!ecm_mac_addr_equal(skb_eth_hdr->h_source, bridge->dev_addr)) {
 		DEBUG_TRACE("skb: %px, Ignoring routed packet to bridge: %px (%s)\n", skb, bridge, bridge->name);
+		ecm_stats_v4_inc(ECM_STATS_V4_EXCEPTION_CMN, ECM_STATS_V4_EXCEPTION_ROUTED_PACKET_WRONG_HOOK);
 		goto skip_ipv4_bridge_flow;
 	}
 
 	if (!is_multicast_ether_addr(skb_eth_hdr->h_dest)) {
 		/*
-		 * Process the packet, if we have this mac address in the fdb table.
-		 * TODO: For the kernel versions later than 3.6.x, the API needs vlan id.
-		 *	 For now, we are passing 0, but this needs to be handled later.
+		 * Process the packet, if we have this destination mac address in the fdb table.
 		 */
+#ifdef ECM_BRIDGE_VLAN_FILTERING_ENABLE
+		/*
+		 * TODO: Enhance br_fdb_has_entry() to make it VLAN filter aware.
+		 */
+		rcu_read_lock();
+		dest_dev = br_fdb_find_vid_by_mac(bridge, skb_eth_hdr->h_dest, &vid);
+		if (!dest_dev) {
+			DEBUG_TRACE("skb: %px, br_fdb_find_vid_by_mac() returned NULL dest_dev for dest_mac(%pM) %px (%s) vid=%d\n",
+					skb, skb_eth_hdr->h_dest, bridge, bridge->name, vid);
+			rcu_read_unlock();
+			ecm_stats_v4_inc(ECM_STATS_V4_EXCEPTION_CMN, ECM_STATS_V4_EXCEPTION_BRIDGE_DEST_MAC_NOT_FOUND);
+			goto skip_ipv4_bridge_flow;
+		}
+		dev_put(dest_dev);
+		rcu_read_unlock();
+#else
 		if (!br_fdb_has_entry((struct net_device *)out, skb_eth_hdr->h_dest, 0)) {
 			DEBUG_WARN("skb: %px, No fdb entry for this mac address %pM in the bridge: %px (%s)\n",
 					skb, skb_eth_hdr->h_dest, bridge, bridge->name);
+			ecm_stats_v4_inc(ECM_STATS_V4_EXCEPTION_CMN, ECM_STATS_V4_EXCEPTION_BRIDGE_MAC_ENTRY_NOT_FOUND);
 			goto skip_ipv4_bridge_flow;
 		}
+#endif
 	}
+
 	DEBUG_TRACE("CMN Bridge process skb: %px, bridge: %px (%s), In: %px (%s), Out: %px (%s)\n",
 			skb, bridge, bridge->name, in, in->name, out, out->name);
+
+	if (unlikely(eth_type == ETH_P_8021Q)) {
+		result = ecm_ipv4_vlan_bridge_process((struct net_device *)out, in, skb_eth_hdr, can_accel, skb);
+		goto skip_ipv4_bridge_flow;
+	}
 
 	if (unlikely(eth_type == ETH_P_PPP_SES)) {
 
@@ -1834,6 +2047,7 @@ static unsigned int ecm_ipv4_bridge_post_routing_hook(void *priv,
 		 */
 		if (ecm_front_end_ppppoe_br_accel_disabled()) {
 			DEBUG_TRACE("skb: %px, PPPoE bridge flow acceleration is disabled\n", skb);
+			ecm_stats_v4_inc(ECM_STATS_V4_EXCEPTION_CMN, ECM_STATS_V4_EXCEPTION_BRIDGE_PPPOE_ACCEL_DISABLED);
 			goto skip_ipv4_bridge_flow;
 		}
 
