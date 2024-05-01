@@ -13,7 +13,7 @@ MANDIR = $(INSTALLDIR)/share/man/man8
 
 SPARSE_VERSION := $(shell sparse --version 2>/dev/null)
 
-override CFLAGS += -D_GNU_SOURCE -Wall -Wno-address-of-packed-member -fno-strict-aliasing -I$(CURDIR)/../include $(COPTS) $(MIPS16_OPT) -ffunction-sections -fdata-sections $(LTO) -DNEED_PRINTF
+override CFLAGS += -D_GNU_SOURCE -Wall -Wno-address-of-packed-member -fno-strict-aliasing -I$(CURDIR)/../include $(COPTS) $(MIPS16_OPT) $(THUMB) -ffunction-sections -fdata-sections $(LTO) -DNEED_PRINTF
 
 apfsck: $(OBJS) $(LIBRARY)
 	@echo '  Linking...'
