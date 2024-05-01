@@ -4,7 +4,7 @@ PKG_INSTALL:=1
 UBOX_PKG_BUILD_DIR=$(TOP)/libubox
 UBOX_CMAKE_OPTIONS=-DBUILD_LUA=off
 UBOX_STAGING_DIR=$(TOP)/_staging
-UBOX_EXTRA_CFLAGS=-I$(TOP)/_staging/usr/include -I$(TOP)/_staging/usr/include/json-c $(COPTS) $(MIPS16_OPT) 
+UBOX_EXTRA_CFLAGS=-I$(TOP)/_staging/usr/include -I$(TOP)/_staging/usr/include/json-c $(COPTS) $(MIPS16_OPT) $(THUMB)
 UBOX_EXTRA_LDFLAGS=-L$(TOP)/_staging/usr/lib
 
 MAKE_FLAGS+=VERBOSE=0

@@ -7,7 +7,7 @@ UBUS_CMAKE_OPTIONS+=VERBOSE=0 -DBUILD_LUA=OFF \
 		    -DCMAKE_RANLIB=$(GCCRANLIB)
 
 
-UBUS_EXTRA_CFLAGS=-I$(TOP) -I$(STAGING_DIR)/usr/include -L$(STAGING_DIR)/usr/lib  $(MIPS16_OPT) -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections $(LTOAUTO)
+UBUS_EXTRA_CFLAGS=-I$(TOP) -I$(STAGING_DIR)/usr/include -L$(STAGING_DIR)/usr/lib  $(MIPS16_OPT) $(THUMB) -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections $(LTOAUTO)
 UBUS_EXTRA_LDFLAGS=-L$(TOP)/libubox/  -ffunction-sections -fdata-sections -Wl,--gc-sections -fuse-ld=bfd -flto=auto -fuse-linker-plugin $(LDLTOAUTO)
 
 ubus-configure: 

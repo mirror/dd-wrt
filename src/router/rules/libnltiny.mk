@@ -1,5 +1,5 @@
 libnltiny:
-	$(MAKE) CFLAGS="$(COPTS) $(MIPS16_OPT) -fPIC" -C libnl-tiny 
+	$(MAKE) CFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) -fPIC" -C libnl-tiny 
 
 
 libnltiny-clean:
