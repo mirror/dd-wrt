@@ -160,10 +160,10 @@ endif
 	$(kernelfeatures)
 	make -C $(LINUXDIR) oldconfig
 	if ! grep -q "CONFIG_EMBEDDED_RAMDISK=y" $(LINUXDIR)/.config ; then \
-	    $(MAKE) -C $(LINUXDIR) MAKE=make bzImage MAKE=make CROSS_COMPILE="ccache i486-linux-uclibc-" ; \
+	    $(MAKE) -C $(LINUXDIR) MAKE=make bzImage MAKE=make CROSS_COMPILE="ccache i386-linux-uclibc-" ; \
 	fi
 	if grep -q "CONFIG_MODULES=y" $(LINUXDIR)/.config ; then \
-	    $(MAKE) -C $(LINUXDIR) MAKE=make modules MAKE=make CROSS_COMPILE="ccache i486-linux-uclibc-" ; \
+	    $(MAKE) -C $(LINUXDIR) MAKE=make modules MAKE=make CROSS_COMPILE="ccache i386-linux-uclibc-" ; \
 	fi
 	rm -rf $(TARGETDIR)/lib/modules
 	$(MAKE) -C $(LINUXDIR) modules_install MAKE=make DEPMOD=/bin/true INSTALL_MOD_PATH=$(TARGETDIR)
@@ -173,8 +173,8 @@ endif
 	-$(MAKE) -f Makefile.x86 ath9k
 	-$(MAKE) -f Makefile.x86 ath9k-install
 	-$(MAKE) -f Makefile.x86 libutils
-#	-$(MAKE) -f Makefile.x86 madwifi
-#	-$(MAKE) -f Makefile.x86 madwifi-install
+	-$(MAKE) -f Makefile.x86 madwifi
+	-$(MAKE) -f Makefile.x86 madwifi-install
 	-$(MAKE) -f Makefile.x86 batman-adv
 	-$(MAKE) -f Makefile.x86 batman-adv-install
 	-$(MAKE) -f Makefile.x86 ndpi-netfilter
@@ -249,8 +249,8 @@ endif
 	) >> $(LINUXDIR)/symtab.h
 	rm -f $(LINUXDIR)/vmlinux
 	if ! grep -q "CONFIG_EMBEDDED_RAMDISK=y" $(LINUXDIR)/.config ; then \
-	    #$(MAKE) -j 4 -C $(LINUXDIR) bzImage MAKE=make EXTRA_LDSFLAGS="-I$(LINUXDIR) -include symtab.h" CROSS_COMPILE="ccache i486-linux-uclibc-" ; \
-	    $(MAKE) -C $(LINUXDIR) bzImage MAKE=make EXTRA_LDSFLAGS="-I$(LINUXDIR)" CROSS_COMPILE="ccache i486-linux-uclibc-" ; \
+	    #$(MAKE) -j 4 -C $(LINUXDIR) bzImage MAKE=make EXTRA_LDSFLAGS="-I$(LINUXDIR) -include symtab.h" CROSS_COMPILE="ccache i386-linux-uclibc-" ; \
+	    $(MAKE) -C $(LINUXDIR) bzImage MAKE=make EXTRA_LDSFLAGS="-I$(LINUXDIR)" CROSS_COMPILE="ccache i386-linux-uclibc-" ; \
 	fi
 	
 #	cat $(LINUXDIR)/vmlinus | lzma e -si -so -eos -lc1 -lp2 -pb2 > lzma-loader/rb500/vmlinux.lzma
