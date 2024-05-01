@@ -56,12 +56,31 @@ void start_sfe(void)
 		writeproc("/proc/ctf", "1");
 		sysprintf("echo 0 > /proc/sys/net/netfilter/nf_conntrack_tcp_no_window_check");
 		dd_loginfo("ctf", "fast path forwarding successfully started\n");
-	} else if (nvram_match("sfe", "3")) {
+	} else if (nvram_match("sfe", "3")) { // ecm nss
 		rmmod("fast-classifier");
 		rmmod("shortcut-fe-ipv6");
 		rmmod("shortcut-fe");
 		writeproc("/proc/ctf", "0");
+		eval8"insmod","qca-nss-sfe");
 		eval("insmod","ecm","front_end_selection=1");
+		sysprintf("echo 1 > /proc/sys/net/netfilter/nf_conntrack_tcp_no_window_check");
+		dd_loginfo("ecm-nss", "ecm-nss forwarding successfully started\n");
+	} else if (nvram_match("sfe", "4")) { // ecm sfe
+		rmmod("fast-classifier");
+		rmmod("shortcut-fe-ipv6");
+		rmmod("shortcut-fe");
+		writeproc("/proc/ctf", "0");
+		eval8"insmod","qca-nss-sfe");
+		eval("insmod","ecm","front_end_selection=2");
+		sysprintf("echo 1 > /proc/sys/net/netfilter/nf_conntrack_tcp_no_window_check");
+		dd_loginfo("ecm-nss", "ecm-nss forwarding successfully started\n");
+	} else if (nvram_match("sfe", "5")) { // ecm sfe & nss
+		rmmod("fast-classifier");
+		rmmod("shortcut-fe-ipv6");
+		rmmod("shortcut-fe");
+		writeproc("/proc/ctf", "0");
+		eval8"insmod","qca-nss-sfe");
+		eval("insmod","ecm","front_end_selection=4");
 		sysprintf("echo 1 > /proc/sys/net/netfilter/nf_conntrack_tcp_no_window_check");
 		dd_loginfo("ecm-nss", "ecm-nss forwarding successfully started\n");
 	} else {
