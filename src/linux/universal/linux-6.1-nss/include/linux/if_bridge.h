@@ -251,5 +251,8 @@ typedef struct net_bridge_port *br_get_dst_hook_t(
 		struct sk_buff **skb);
 extern br_get_dst_hook_t __rcu *br_get_dst_hook;
 /* QCA NSS ECM support - End */
+typedef int (br_multicast_handle_hook_t)(const struct net_bridge_port *src,
+		struct sk_buff *skb);
+extern br_multicast_handle_hook_t __rcu *br_multicast_handle_hook;
 
 #endif

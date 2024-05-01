@@ -30,6 +30,11 @@ br_netif_receive_skb(struct net *net, struct sock *sk, struct sk_buff *skb)
 	br_drop_fake_rtable(skb);
 	return netif_receive_skb(skb);
 }
+EXPORT_SYMBOL_GPL(br_pass_frame_up);
+
+/* Hook for external Multicast handler */
+br_multicast_handle_hook_t __rcu *br_multicast_handle_hook __read_mostly;
+EXPORT_SYMBOL_GPL(br_multicast_handle_hook);
 
 int br_pass_frame_up(struct sk_buff *skb, bool promisc)
 {
@@ -72,7 +77,6 @@ int br_pass_frame_up(struct sk_buff *skb, bool promisc)
 		       dev_net(indev), NULL, skb, indev, NULL,
 		       br_netif_receive_skb);
 }
-EXPORT_SYMBOL(br_pass_frame_up);
 
 /* note: already called with rcu_read_lock */
 int br_handle_frame_finish(struct net *net, struct sock *sk, struct sk_buff *skb)
@@ -87,6 +91,7 @@ int br_handle_frame_finish(struct net *net, struct sock *sk, struct sk_buff *skb
 	struct net_bridge_vlan *vlan;
 	struct net_bridge *br;
 	bool promisc;
+	br_multicast_handle_hook_t *multicast_handle_hook;
 	u16 vid = 0;
 	u8 state;
 
@@ -169,6 +174,10 @@ int br_handle_frame_finish(struct net *net, struct sock *sk, struct sk_buff *skb
 
 	switch (pkt_type) {
 	case BR_PKT_MULTICAST:
+		multicast_handle_hook = rcu_dereference(br_multicast_handle_hook);
+		if (!__br_get(multicast_handle_hook, true, p, skb))
+			goto out;
+
 		mdst = br_mdb_get(brmctx, skb, vid);
 		if ((mdst || BR_INPUT_SKB_CB_MROUTERS_ONLY(skb)) &&
 		    br_multicast_querier_exists(brmctx, eth_hdr(skb), mdst)) {

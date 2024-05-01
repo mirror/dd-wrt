@@ -239,6 +239,23 @@ static void fdb_notify(struct net_bridge *br,
 	if (swdev_notify)
 		br_switchdev_fdb_notify(br, fdb, type);
 
+	if (fdb->dst) {
+		int event;
+		struct br_fdb_event fdb_event;
+
+		if (type == RTM_NEWNEIGH)
+			event = BR_FDB_EVENT_ADD;
+		else
+			event = BR_FDB_EVENT_DEL;
+
+		fdb_event.dev = fdb->dst->dev;
+		ether_addr_copy(fdb_event.addr, fdb->key.addr.addr);
+		fdb_event.is_local = test_bit(BR_FDB_LOCAL, &fdb->flags);
+		atomic_notifier_call_chain(&br_fdb_notifier_list,
+					   event,
+					   (void *)&fdb_event);
+	}
+
 	skb = nlmsg_new(fdb_nlmsg_size(), GFP_ATOMIC);
 	if (skb == NULL)
 		goto errout;
@@ -316,6 +333,8 @@ struct net_bridge_fdb_entry *br_fdb_find_rcu(struct net_bridge *br,
 {
 	return fdb_find_rcu(&br->fdb_hash_tbl, addr, vid);
 }
+
+EXPORT_SYMBOL(br_fdb_find_rcu);
 
 /* When a static FDB entry is added, the mac address from the entry is
  * added to the bridge private HW address list and all required ports

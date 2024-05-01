@@ -216,6 +216,9 @@ int rt6_register_notifier(struct notifier_block *nb);
 int rt6_unregister_notifier(struct notifier_block *nb);
 /* QCA NSS ECM support - End */
 
+int rt6_register_notifier(struct notifier_block *nb);
+int rt6_unregister_notifier(struct notifier_block *nb);
+
 static inline const struct rt6_info *skb_rt6_info(const struct sk_buff *skb)
 {
 	const struct dst_entry *dst = skb_dst(skb);
