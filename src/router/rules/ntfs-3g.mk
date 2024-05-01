@@ -1,10 +1,10 @@
 
 ntfs-3g:
 	CC="$(CC)" \
-	CFLAGS="$(COPTS)  $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-	CPPFLAGS="$(COPTS) $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-	CXXFLAGS="$(COPTS) $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-	LDFLAGS="$(COPTS) $(MIPS16_OPT) -fPIC -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+	CFLAGS="$(COPTS)  $(MIPS16_OPT) $(THUMB) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+	CPPFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+	CXXFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+	LDFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) -fPIC -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 	$(MAKE) -C ntfs-3g/fuse
 	$(MAKE) -C ntfs-3g all
 
@@ -27,9 +27,9 @@ ntfs-3g-configure:
 			--target=$(ARCH)-linux \
 			--host=$(ARCH) \
 			CC="$(CC)" \
-			CXXFLAGS="$(COPTS) $(LTO) $(MIPS16_OPT)   -ffunction-sections -fdata-sections -Wl,--gc-sections"  \
-			CFLAGS="$(COPTS) $(LTO) $(MIPS16_OPT)   -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-			LDFLAGS="$(COPTS) $(LDLTO) $(MIPS16_OPT) -fPIC -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+			CXXFLAGS="$(COPTS) $(LTO) $(MIPS16_OPT) $(THUMB)   -ffunction-sections -fdata-sections -Wl,--gc-sections"  \
+			CFLAGS="$(COPTS) $(LTO) $(MIPS16_OPT) $(THUMB)   -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+			LDFLAGS="$(COPTS) $(LDLTO) $(MIPS16_OPT) $(THUMB) -fPIC -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 			AR_FLAGS="cru $(LTOPLUGIN)" \
 			RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
 	make -C ntfs-3g/fuse
@@ -42,8 +42,8 @@ ntfs-3g-configure:
 			CC="$(CC)" \
 			FUSE_MODULE_CFLAGS="-D_FILE_OFFSET_BITS=64 -I$(TOP)/ntfs-3g/fuse/include" \
 			FUSE_MODULE_LIBS="-pthread -L$(TOP)/ntfs-3g/fuse/lib/.libs -lfuse -lrt -ldl" \
-			CXXFLAGS="$(COPTS) $(LTO) $(MIPS16_OPT)   -ffunction-sections -fdata-sections -Wl,--gc-sections"  \
-			CFLAGS="$(COPTS) $(LTO) $(MIPS16_OPT)   -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-			LDFLAGS="$(COPTS) $(LDLTO) $(MIPS16_OPT) -fPIC -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+			CXXFLAGS="$(COPTS) $(LTO) $(MIPS16_OPT) $(THUMB)   -ffunction-sections -fdata-sections -Wl,--gc-sections"  \
+			CFLAGS="$(COPTS) $(LTO) $(MIPS16_OPT) $(THUMB)   -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+			LDFLAGS="$(COPTS) $(LDLTO) $(MIPS16_OPT) $(THUMB) -fPIC -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 			AR_FLAGS="cru $(LTOPLUGIN)" \
 			RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"

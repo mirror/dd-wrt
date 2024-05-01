@@ -10,7 +10,7 @@ irqbalance-configure: libffi-configure glib20-configure libnl glib20
 		CC="$(CC)" \
 		GLIB2_CFLAGS="-I$(TOP)/_staging_static/usr/include/glib-2.0 -I$(TOP)/_staging_static/usr/lib/glib-2.0/include -L$(INSTALLDIR)/util-linux/usr/lib" \
 		GLIB2_LIBS="-L$(TOP)/_staging_static/usr/lib -lglib-2.0" \
-		CFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) -DNEED_PRINTF" \
+		CFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) $(THUMB) -DNEED_PRINTF" \
 		LDFLAGS="$(LDLTO)" \
 		LIBNL3_CFLAGS="-I$(TOP)/libnl/include" \
 		LIBNL3_LIBS="-L$(TOP)/libnl/lib/.libs -lnl-3  -lnl-genl-3" \
