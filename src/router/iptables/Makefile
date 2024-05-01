@@ -32,7 +32,7 @@ RELEASE_DIR:=/tmp
 #ifeq ($(shell [ -f /usr/include/netinet/ip6.h ] && echo YES), YES)
 #DO_IPV6:=1
 #endif
-COPTS += $(MIPS16_OPT) 
+COPTS += $(MIPS16_OPT) $(THUMB) 
 COPT_FLAGS:=$(COPTS) $(LTO) -ffunction-sections -fdata-sections -Wl,--gc-sections -fPIC -D_GNU_SOURCE -DIPTCSTATIC=
 ifneq ($(CONFIG_DIST),"micro")
 ifneq ($(CONFIG_DIST),"micro-special")
