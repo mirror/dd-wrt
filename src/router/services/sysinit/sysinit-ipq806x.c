@@ -660,13 +660,14 @@ void start_sysinit(void)
 	insmod("qca-nss-l2tpv2");
 	insmod("pptp");
 	insmod("qca-nss-pptp");
-	insmod("bonding");
+	eval("insmod", "bonding", "miimon=1000", "downdelay=200", "updelay=200");
 	insmod("qca-nss-vlan");
 	insmod("vxlan");
 	insmod("qca-nss-vxlanmgr");
 	insmod("qca-nss-qdisc");
 	insmod("nss-ifb");
 	sysprintf("echo 1 > /proc/sys/dev/nss/general/redirect");
+	sysprintf("echo 1 > /proc/sys/dev/nss/rps/enable");
 	/*
 	 * network drivers 
 	 */
