@@ -403,6 +403,8 @@ addEvent(window, "unload", function() {
 										<option value="0" <% nvs("sfe", "0"); %>><% tran("share.disable"); %></option>
 										<option value="1" <% nvs("sfe", "1"); %>>SFE</option>
 										<option value="3" <% nvs("sfe", "3"); %>>NSS-ECM</option>
+										<option value="4" <% nvs("sfe", "4"); %>>NSS-SFE</option>
+										<option value="5" <% nvs("sfe", "5"); %>>NSS-ECM-SFE</option>
 									</select>
 								</div>
 								<% ifndef("NSS", "-->"); %>
