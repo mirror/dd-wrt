@@ -33,8 +33,8 @@ MINI_DLNA_PATH=$(shell pwd)
 
 CFLAGS += $(COPTS) -ffunction-sections -fdata-sections -Wl,--gc-sections
 
-CFLAGS += $(MIPS16_OPT) -fPIC
-COPTS += $(MIPS16_OPT) -fPIC
+CFLAGS += $(MIPS16_OPT) $(THUMB) -fPIC
+COPTS += $(MIPS16_OPT) $(THUMB) -fPIC
 
 # [FIXME] added by Michael Jiang.
 # The below variables  should be modified when you use different platform.
@@ -96,7 +96,7 @@ ffmpeg:
 		--disable-protocols $(FFMPEG_CONFIGURE_PROTOCOLS) \
 		--disable-asm --disable-altivec \
 		--disable-postproc --disable-avfilter \
-		--extra-cflags="$(COPTS) $(MIPS16_OPT) -ffunction-sections -fdata-sections  -D_GNU_SOURCE -I$(TOP)/zlib $(LTO)" \
+		--extra-cflags="$(COPTS) $(MIPS16_OPT) $(THUMB) -ffunction-sections -fdata-sections  -D_GNU_SOURCE -I$(TOP)/zlib $(LTO)" \
 		--extra-ldflags="-ffunction-sections -fdata-sections -Wl,--gc-sections  $(LDLTO)" \
 		--extra-libs="-L$(TOP)/zlib -lz" \
 		--enable-zlib --disable-debug --prefix=''); \
@@ -104,12 +104,12 @@ ffmpeg:
 
 libogg:
 	if [ ! -f ./libogg-1.3.5/Makefile ];then \
-	cd libogg-1.3.5 && aclocal && libtoolize && ./autogen.sh && (./configure --host=$(HOST) --disable-shared  CC="ccache $(CROSS_COMPILE)gcc"  CFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO)  -ffunction-sections -fdata-sections -Wl,--gc-sections" AR_FLAGS="cru $(LTOPLUGIN)" RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"); \
+	cd libogg-1.3.5 && aclocal && libtoolize && ./autogen.sh && (./configure --host=$(HOST) --disable-shared  CC="ccache $(CROSS_COMPILE)gcc"  CFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) $(LTO)  -ffunction-sections -fdata-sections -Wl,--gc-sections" AR_FLAGS="cru $(LTOPLUGIN)" RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"); \
 	fi
 
 libexif:
 	if [ ! -f ./libexif-0.6.24/Makefile ];then \
-	cd libexif-0.6.24 && (./configure --host=$(HOST) --disable-shared  CC="ccache $(CROSS_COMPILE)gcc"  CFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO)  -ffunction-sections -fdata-sections -Wl,--gc-sections" AR_FLAGS="cru $(LTOPLUGIN)" RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"); \
+	cd libexif-0.6.24 && (./configure --host=$(HOST) --disable-shared  CC="ccache $(CROSS_COMPILE)gcc"  CFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) $(LTO)  -ffunction-sections -fdata-sections -Wl,--gc-sections" AR_FLAGS="cru $(LTOPLUGIN)" RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"); \
 	fi
 
 libjpeg:
@@ -119,9 +119,9 @@ libjpeg:
 	echo "$(ARCH)-linux-uclibc-gcc-ranlib \$$@" > libjpeg-turbo-2.1.4/$(ARCH)-linux-uclibc-gcc-ranlib; \
 	chmod 777 libjpeg-turbo-2.1.4/$(ARCH)-linux-uclibc-gcc-ranlib; \
 	(cd libjpeg-turbo-2.1.4; \
-		CFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-		LDFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-		CXXFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+		CFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) $(LTO) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+		LDFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) $(LTO) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+		CXXFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) $(LTO) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 		AR_FLAGS="cru $(LTOPLUGIN)" \
 		RANLIB="$(ARCH)-linux-gcc-ranlib" \
 		AR="$(ARCH)-linux-gcc-ar" \
@@ -142,9 +142,9 @@ libjpeg:
 			-DCMAKE_RANLIB="$(ARCH)-linux-uclibc-gcc-ranlib" \
 			-DCMAKE_C_COMPILER_RANLIB="$(ARCH)-linux-uclibc-gcc-ranlib" \
 			-DCMAKE_CXX_COMPILER=$(CROSS_COMPILE)g++ \
-			-DCMAKE_EXE_LINKER_FLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-			-DCMAKE_MODULE_LINKER_FLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-			-DCMAKE_SHARED_LINKER_FLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+			-DCMAKE_EXE_LINKER_FLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) $(LTO) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+			-DCMAKE_MODULE_LINKER_FLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) $(LTO) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+			-DCMAKE_SHARED_LINKER_FLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) $(LTO) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 			-DCMAKE_FIND_ROOT_PATH=$(TOP)/minidlna/libjpeg-turbo-2.1.4 \
 			-DCMAKE_FIND_ROOT_PATH_MODE_PROGRAM=BOTH \
 			-DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=ONLY \
@@ -163,7 +163,7 @@ sqlite3:
 	aclocal; \
 	automake --add-missing; \
 	autoreconf -fi; \
-	(./configure --host=$(HOST) --disable-shared  CC="ccache $(CROSS_COMPILE)gcc" CFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) -DSQLITE_OMIT_DEPRECATED -DSQLITE_OMIT_FLOATING_POINT -ffunction-sections -fdata-sections -Wl,--gc-sections -DSQLITE_OMIT_TRIGGERS" AR_FLAGS="cru $(LTOPLUGIN)" RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)" \
+	(./configure --host=$(HOST) --disable-shared  CC="ccache $(CROSS_COMPILE)gcc" CFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) $(LTO) -DSQLITE_OMIT_DEPRECATED -DSQLITE_OMIT_FLOATING_POINT -ffunction-sections -fdata-sections -Wl,--gc-sections -DSQLITE_OMIT_TRIGGERS" AR_FLAGS="cru $(LTOPLUGIN)" RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)" \
 				--enable-threadsafe --enable-dynamic-extensions=no ); \
 	fi
 
@@ -174,7 +174,7 @@ libvorbis:
 				MINI_DLNA_PATH=$(MINI_DLNA_PATH)				
 	if [ ! -f ./libvorbis-1.3.7/Makefile ];then \
 	cd libvorbis-1.3.7 && (./configure --host=$(HOST) --disable-shared  CC="ccache $(CROSS_COMPILE)gcc" \
-					CFLAGS="$(COPTS) $(MIPS16_OPT) -I$(MINI_DLNA_PATH)/libogg-1.3.5/include/  -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+					CFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) -I$(MINI_DLNA_PATH)/libogg-1.3.5/include/  -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 					LDFLAGS="-L$(MINI_DLNA_PATH)/libogg-1.3.5/src/.libs/ $(LDLTO)" \
 					AR_FLAGS="cru $(LTOPLUGIN)" RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)" \
 					); \
@@ -182,9 +182,9 @@ libvorbis:
 flac:
 	if [ ! -f ./flac-1.4.2/Makefile ];then \
 	cd flac-1.4.2 && ./autogen.sh && (./configure --disable-shared --host=$(HOST) --disable-altivec  CC="ccache $(CROSS_COMPILE)gcc" \
-				CFLAGS="$(COPTS) $(MIPS16_OPT) -I$(MINI_DLNA_PATH)/libogg-1.3.5/include/  -ffunction-sections -fdata-sections -Wl,--gc-sections $(LTO)" \
-				CPPFLAGS="$(COPTS) $(MIPS16_OPT) -I$(MINI_DLNA_PATH)/libogg-1.3.5/include/  -ffunction-sections -fdata-sections -Wl,--gc-sections $(LTO)" \
-				CXXFLAGS="$(COPTS) $(MIPS16_OPT) -I$(MINI_DLNA_PATH)/libogg-1.3.5/include/  -ffunction-sections -fdata-sections -Wl,--gc-sections $(LTO)" \
+				CFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) -I$(MINI_DLNA_PATH)/libogg-1.3.5/include/  -ffunction-sections -fdata-sections -Wl,--gc-sections $(LTO)" \
+				CPPFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) -I$(MINI_DLNA_PATH)/libogg-1.3.5/include/  -ffunction-sections -fdata-sections -Wl,--gc-sections $(LTO)" \
+				CXXFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) -I$(MINI_DLNA_PATH)/libogg-1.3.5/include/  -ffunction-sections -fdata-sections -Wl,--gc-sections $(LTO)" \
 				LDFLAGS="-L$(MINI_DLNA_PATH)/libogg-1.3.5/src/.libs/ $(LDLTO)" \
 				AR_FLAGS="cru $(LTOPLUGIN)" RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)" \
 				); \
@@ -197,7 +197,7 @@ libid3tag:
 	automake --add-missing; \
 	autoreconf -fi; \
 	(./configure --disable-shared --disable-dependency-tracking --host=$(HOST)  CC="ccache $(CROSS_COMPILE)gcc" \
-				CPPFLAGS="$(COPTS) $(MIPS16_OPT)  -I$(TOP)/zlib/  -ffunction-sections -fdata-sections -Wl,--gc-sections $(LTO)" \
+				CPPFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB)  -I$(TOP)/zlib/  -ffunction-sections -fdata-sections -Wl,--gc-sections $(LTO)" \
 				LDFLAGS="-L$(TOP)/zlib/ $(LDLTO)" \
 				AR_FLAGS="cru $(LTOPLUGIN)" RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)" \
 				); \
