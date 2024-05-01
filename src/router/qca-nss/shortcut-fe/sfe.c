@@ -2629,8 +2629,8 @@ int sfe_init_if(void)
 	/*
 	 * Hook the receive path in the network stack.
 	 */
-	BUG_ON(athrs_fast_nat_recv);
-	RCU_INIT_POINTER(athrs_fast_nat_recv, sfe_recv);
+	BUG_ON(fast_nat_recv);
+	RCU_INIT_POINTER(fast_nat_recv, sfe_recv);
 
 	return 0;
 exit2:
@@ -2649,7 +2649,7 @@ void sfe_exit_if(void)
 	/*
 	 * Unregister our receive callback.
 	 */
-	RCU_INIT_POINTER(athrs_fast_nat_recv, NULL);
+	RCU_INIT_POINTER(fast_nat_recv, NULL);
 
 	sfe_pppoe_mgr_exit();
 

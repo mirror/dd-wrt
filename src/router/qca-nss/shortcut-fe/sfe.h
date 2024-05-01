@@ -138,7 +138,7 @@ extern struct sfe_fls sfe_fls_info;
 /*
  * Expose the hook for the receive processing.
  */
-extern int (*athrs_fast_nat_recv)(struct sk_buff *skb);
+extern int (*fast_nat_recv)(struct sk_buff *skb);
 
 /*
  * Expose what should be a static flag in the TCP connection tracker.
