@@ -384,3 +384,22 @@ extern int ebt_printstyle_mac;
 # define ARRAY_SIZE(x)	(sizeof(x) / sizeof((x)[0]))
 #endif
 #endif /* EBTABLES_U_H */
+extern void _802_3_init();
+extern void _nat_init();
+extern void _arp_init();
+extern void _arpreply_init();
+extern void _ip_init();
+extern void _standard_init();
+extern void _log_init();
+extern void _redirect_init();
+extern void _vlan_init();
+extern void _mark_m_init();
+extern void _mark_init();
+extern void _pkttype_init();
+extern void _stp_init();
+extern void _among_init();
+extern void _limit_init();
+extern void _ulog_init();
+extern void _t_filter_init();
+extern void _t_nat_init();
+extern void _t_broute_init();

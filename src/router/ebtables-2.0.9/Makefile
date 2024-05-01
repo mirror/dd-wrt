@@ -21,7 +21,7 @@ CFLAGS += -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections
 LDFLAGS = -ffunction-sections -fdata-sections -Wl,--gc-sections
 include $(TOP)/.config
 
-CFLAGS += $(MIPS16_OPT) 
+CFLAGS += $(MIPS16_OPT) $(THUMB) 
 
 CFLAGS_SH_LIB:=-fPIC
 
