@@ -9,6 +9,12 @@ export DNSMASQ_MAKEFLAGS += -DHAVE_IPSET
 endif
 
 DNSMASQ_COPTS += $(MIPS16_OPT) -DNO_AUTH $(LTO) -std=gnu99
+ifeq ($(CONFIG_DIST),"micro")
+DNSMASQ_COPTS += -DHAVE_MICRO -DNO_TFTP
+endif
+ifeq ($(CONFIG_DIST),"micro-special")
+DNSMASQ_COPTS += -DHAVE_MICRO -DNO_TFTP
+endif
 ifeq ($(ARCH),armeb)
 DNSMASQ_COPTS += -DNEED_PRINTF
 endif
