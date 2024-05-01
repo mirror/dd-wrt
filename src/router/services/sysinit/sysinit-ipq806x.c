@@ -658,7 +658,14 @@ void start_sysinit(void)
 	insmod("ip6_udp_tunnel");
 	insmod("l2tp_core");
 	insmod("qca-nss-l2tpv2");
+	insmod("pptp");
+	insmod("qca-nss-pptp");
+	insmod("bonding");
+	insmod("qca-nss-vlan");
+	insmod("vxlan");
+	insmod("qca-nss-vxlanmgr");
 	insmod("qca-nss-qdisc");
+	insmod("nss-ifb");
 	sysprintf("echo 1 > /proc/sys/dev/nss/general/redirect");
 	/*
 	 * network drivers 
