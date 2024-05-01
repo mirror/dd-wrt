@@ -47,8 +47,8 @@ CFLAGS += -DHAVE_WHRHPGN
 endif
 endif
 
-CFLAGS += $(MIPS16_OPT) $(LTO)
-LDFLAGS += $(MIPS16_OPT) $(LDLTO) -ffunction-sections -fdata-sections -Wl,--gc-sections
+CFLAGS += $(MIPS16_OPT) $(THUMB) $(LTO)
+LDFLAGS += $(MIPS16_OPT) $(THUMB) $(LDLTO) -ffunction-sections -fdata-sections -Wl,--gc-sections
 
 all: upnp
 
