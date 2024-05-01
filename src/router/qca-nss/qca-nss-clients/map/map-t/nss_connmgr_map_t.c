@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2016-2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2016-2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -424,15 +424,12 @@ static void nss_connmgr_map_t_decap_exception(struct net_device *dev,
 	struct ipv6hdr ip6_hdr_r;
 	uint8_t next_hdr, hop_limit, tclass, l4_proto;
 	int total_len;
-	uint32_t identifier = 0;
+	uint32_t identifier;
 	bool df_bit = false;
 	uint16_t skip_sz = 0;
-	struct nss_map_t_mdata *mdata;
 
-	mdata = (struct nss_map_t_mdata *)skb->data;
-
-	/* discard meta data header */
-	skb_pull(skb, sizeof(struct nss_map_t_mdata));
+	/* discard L2 header */
+	skb_pull(skb, sizeof(struct ethhdr));
 	skb_reset_mac_header(skb);
 
 	skb_reset_network_header(skb);
@@ -462,12 +459,7 @@ static void nss_connmgr_map_t_decap_exception(struct net_device *dev,
 	tclass = nss_connmgr_map_t_ipv6_get_tclass(ip6_hdr);
 
 	if (likely(next_hdr != NEXTHDR_FRAGMENT)) {
-
-		/*
-		 * Set DF bit
-		 */
-		df_bit = !!(mdata->flags & NSS_MAPT_MDATA_FLAG_DF_BIT);
-
+		df_bit = true;
 		l4_proto = next_hdr;
 	} else {
 		struct frag_hdr tmp_fh, *fh;
@@ -504,16 +496,8 @@ static void nss_connmgr_map_t_decap_exception(struct net_device *dev,
 	ip4_hdr->tos = tclass;
 	if (unlikely(df_bit)) {
 		ip4_hdr->frag_off = htons(IP_DF);
-	}
-
-	if (unlikely(identifier)) {
-		ip4_hdr->id = htons(identifier & 0xffff);
 	} else {
-		/*
-		 * Generate the new identifier value and set it
-		 * in the IPv4 Identification field.
-		 */
-		__ip_select_ident(dev_net(dev), ip4_hdr, 1);
+		ip4_hdr->id = htons(identifier & 0xffff);
 	}
 
 	skb->pkt_type = PACKET_HOST;
@@ -531,7 +515,7 @@ static void nss_connmgr_map_t_decap_exception(struct net_device *dev,
 /*
  * nss_connmgr_map_t_encap_exception()
  *	Exception handler registered to NSS for handling map_t ipv4 pkts
- * Send the translated ipv4 packets to the stack directly.
+ *	Translates ipv4 packet back to ipv6 and send to nat46 device directly.
  */
 static void nss_connmgr_map_t_encap_exception(struct net_device *dev,
 			struct sk_buff *skb,
@@ -539,32 +523,147 @@ static void nss_connmgr_map_t_encap_exception(struct net_device *dev,
 
 {
 	struct iphdr *ip4_hdr;
+	struct ipv6hdr *ip6_hdr;
+	uint8_t v6saddr[16], v6daddr[16];
+	struct tcphdr *tcph = NULL;
+	struct udphdr *udph = NULL;
+	struct iphdr ip4_hdr_r;
+	__be16 sport, dport;
+	uint8_t nexthdr, hop_limit, tos;
+	int payload_len;
+	bool df_bit = false;
+	uint16_t append_hdr_sz = 0;
+	uint16_t identifier;
+	uint32_t l4_csum;
+	uint16_t csum;
 
+	/* discard L2 header */
 	skb_pull(skb, sizeof(struct ethhdr));
 	skb_reset_mac_header(skb);
+
 	skb_reset_network_header(skb);
 
 	ip4_hdr = ip_hdr(skb);
-	skb_set_transport_header(skb, ip4_hdr->ihl * 4);
+	skb_set_transport_header(skb, ip4_hdr->ihl*4);
+
+	if (ip4_hdr->protocol == IPPROTO_TCP) {
+		tcph = tcp_hdr(skb);
+		l4_csum = tcph->check;
+		sport = tcph->source;
+		dport = tcph->dest;
+	} else if (ip4_hdr->protocol == IPPROTO_UDP) {
+		udph = udp_hdr(skb);
+		l4_csum = udph->check;
+		sport = udph->source;
+		dport = udph->dest;
+	} else {
+		nss_connmgr_map_t_warning("%px: Unsupported protocol, free it up\n", dev);
+		dev_kfree_skb_any(skb);
+		return;
+	}
 
 	/*
-	 * IP Header checksum is not generated yet, calculate it now.
+	 * Undo the checksum of the IPv4 source and destinationIPv4 address.
 	 */
-	ip4_hdr->check = 0;
-	ip4_hdr->check = ip_fast_csum((unsigned char *)ip4_hdr, ip4_hdr->ihl);
+	csum = ip_compute_csum(&ip4_hdr->saddr, 2 * sizeof(ip4_hdr->saddr));
+	l4_csum += ((~csum) & 0xFFFF);
 
-	skb->protocol = htons(ETH_P_IP);
+	/*
+	 * IPv6 packet is xlated to ipv4 packet by acceleration engine. But there is no ipv4 rule.
+	 * Call xlate_4_to_6() [ which is exported by nat46.ko ] to find original ipv6 src and ipv6 dest address.
+	 * These functions is designed for packets from lan to wan. Since this packet is from wan, need to call
+	 * this function with parameters reversed. ipv4_hdr_r is used for reversing ip addresses.
+	 */
+	ip4_hdr_r.daddr = ip4_hdr->saddr;
+	ip4_hdr_r.saddr = ip4_hdr->daddr;
+
+	if (unlikely(!xlate_4_to_6(dev, &ip4_hdr_r, dport, sport, v6saddr, v6daddr))) { /* exception happened after packet got xlated */
+		nss_connmgr_map_t_warning("%px: Martian ipv4 packet !!..free it. (saddr = 0x%x daddr = 0x%x sport = %d dport = %d)\n", dev,\
+					  ip4_hdr->saddr, ip4_hdr->daddr, sport, dport);
+		dev_kfree_skb_any(skb);
+		return;
+	}
+
+	nexthdr = ip4_hdr->protocol;
+	payload_len = ntohs(ip4_hdr->tot_len) - sizeof(struct iphdr);
+	hop_limit = ip4_hdr->ttl;
+	tos = ip4_hdr->tos;
+	identifier = ntohs(ip4_hdr->id);
+
+	if (ip4_hdr->frag_off & htons(IP_DF)) {
+		df_bit = true;
+	}  else if (map_t_flags & MAPT_FLAG_ADD_DUMMY_HDR) {
+		append_hdr_sz = sizeof(struct frag_hdr);
+	}
+
+	if (!pskb_may_pull(skb, sizeof(struct ipv6hdr) + append_hdr_sz - sizeof(struct iphdr))) {
+		nss_connmgr_map_t_warning("%px: Not enough headroom for ipv6 packet...Freeing the packet\n", dev);
+		dev_kfree_skb_any(skb);
+		return;
+	}
+
+	skb_push(skb, sizeof(struct ipv6hdr) + append_hdr_sz - sizeof(struct iphdr));
+	skb_reset_network_header(skb);
+	skb_reset_mac_header(skb);
+
+	skb->protocol = htons(ETH_P_IPV6);
+
+	ip6_hdr = ipv6_hdr(skb);
+	memset(ip6_hdr, 0, sizeof(struct ipv6hdr));
+
+	ip6_hdr->version = 6;
+	ip6_hdr->payload_len = htons(payload_len + append_hdr_sz);
+	ip6_hdr->hop_limit = hop_limit;
+
+	nss_connmgr_map_t_ipv6_set_tclass(ip6_hdr, tos);
+	memcpy(&ip6_hdr->daddr, v6saddr, sizeof(struct in6_addr));
+	memcpy(&ip6_hdr->saddr, v6daddr, sizeof(struct in6_addr));
+
+	if (unlikely(df_bit) || !(map_t_flags & MAPT_FLAG_ADD_DUMMY_HDR))  {
+		ip6_hdr->nexthdr = nexthdr;
+	} else {
+		struct frag_hdr tmp_fh, *fh;
+		const __be32 *fh_addr = skb_header_pointer(skb, sizeof(struct ipv6hdr), sizeof(struct frag_hdr), &tmp_fh);
+		if (!fh_addr) {
+			nss_connmgr_map_t_warning("%px: Not able to offset to frag header\n", dev);
+			dev_kfree_skb_any(skb);
+			return;
+		}
+		fh = (struct frag_hdr *)fh_addr;
+		memset(fh, 0, sizeof(struct frag_hdr));
+		fh->identification = htonl(identifier);
+		fh->nexthdr = nexthdr;
+		ip6_hdr->nexthdr = NEXTHDR_FRAGMENT;
+	}
+
+	skb_set_transport_header(skb, sizeof(struct ipv6hdr) + append_hdr_sz);
+
+	/*
+	 * Add the checksum of the IPv6 source and destination address.
+	 */
+	l4_csum += ip_compute_csum(ip6_hdr->saddr.s6_addr16, 2 * sizeof(ip6_hdr->saddr));
+
+	/*
+	 * Fold the 32 bits checksum to 16 bits
+	 */
+	l4_csum = (l4_csum & 0x0000FFFF) + (l4_csum >> 16);
+	l4_csum = (l4_csum & 0x0000FFFF) + (l4_csum >> 16);
+
+	if (nexthdr == IPPROTO_TCP) {
+		tcph->check = (uint16_t)l4_csum;
+	} else {
+		udph->check = (uint16_t)l4_csum;
+	}
+
 	skb->pkt_type = PACKET_HOST;
 	skb->skb_iif = dev->ifindex;
 	skb->ip_summed = CHECKSUM_NONE;
 	skb->dev = dev;
 
-	nss_connmgr_map_t_trace("%px: ipv4 packet exceptioned after v6/v4xlat src=%pI4 dest=%pI4 proto=%d\n",
-			dev, &ip4_hdr->saddr, &ip4_hdr->daddr, ip4_hdr->protocol);
-	/*
-	 * Go through Linux network stack.
-	 */
-	netif_receive_skb(skb);
+	nss_connmgr_map_t_trace("%px: ipv4 packet exceptioned after v6 ---> v4 xlate, created original ipv6 packet\n", dev);
+	nss_connmgr_map_t_trace("%p: Calculted ipv6 params: src_addr=%pI6, dest_addr=%pI6, payload_len=%d, checksum=%x\n", dev, v6saddr, v6daddr, payload_len, l4_csum);
+
+	dev_queue_xmit(skb);
 	return;
 }
 

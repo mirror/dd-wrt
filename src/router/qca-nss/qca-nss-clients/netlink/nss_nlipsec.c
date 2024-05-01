@@ -1,12 +1,9 @@
 /*
  **************************************************************************
- * Copyright (c) 2015-2016,2018-2021 The Linux Foundation. All rights reserved.
- * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
- *
+ * Copyright (c) 2015-2016,2018-2020 The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
- *
  * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
  * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
  * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
@@ -52,8 +49,8 @@ static int nss_nlipsec_op_create_tunnel(struct sk_buff *skb, struct genl_info *i
 static int nss_nlipsec_op_destroy_tunnel(struct sk_buff *skb, struct genl_info *info);
 static int nss_nlipsec_op_add_sa(struct sk_buff *skb, struct genl_info *info);
 static int nss_nlipsec_op_delete_sa(struct sk_buff *skb, struct genl_info *info);
-static int nss_nlipsec_op_add_flow(struct sk_buff *skb, struct genl_info *info);
-static int nss_nlipsec_op_delete_flow(struct sk_buff *skb, struct genl_info *info);
+// static int nss_nlipsec_op_add_flow(struct sk_buff *skb, struct genl_info *info);
+// static int nss_nlipsec_op_delete_flow(struct sk_buff *skb, struct genl_info *info);
 
 /*
  * Hold netdevice references
@@ -111,14 +108,14 @@ static struct genl_ops nss_nlipsec_ops[] = {
 		.cmd = NSS_NLIPSEC_CMD_DEL_SA,
 		.doit = nss_nlipsec_op_delete_sa,
 	},
-	{ /* Add flow */
-		.cmd = NSS_NLIPSEC_CMD_ADD_FLOW,
-		.doit = nss_nlipsec_op_add_flow,
-	},
-	{ /* Delete flow */
-		.cmd = NSS_NLIPSEC_CMD_DEL_FLOW,
-		.doit = nss_nlipsec_op_delete_flow,
-	},
+	// { /* Add flow */
+	// 	.cmd = NSS_NLIPSEC_CMD_ADD_FLOW,
+	// 	.doit = nss_nlipsec_op_add_flow,
+	// },
+	// { /* Delete flow */
+	// 	.cmd = NSS_NLIPSEC_CMD_DEL_FLOW,
+	// 	.doit = nss_nlipsec_op_delete_flow,
+	// },
 };
 
 /*
@@ -329,7 +326,7 @@ int nss_nlipsec_get_mtu(struct net_device *dev, uint8_t ip_ver, uint8_t proto, u
 static int nss_nlipsec_op_create_tunnel(struct sk_buff *skb, struct genl_info *info)
 {
 	struct nss_nlipsec_rule *nl_rule;
-	struct nss_ipsecmgr_callback cb = {0};
+	struct nss_ipsecmgr_callback cb;
 	struct nss_nlcmn *nl_cm;
 	struct net_device *dev;
 	struct sk_buff *resp;
@@ -511,8 +508,6 @@ static struct nss_nlipsec_rule *nss_nlipsec_get_rule(struct genl_info *info, enu
 		dev_put(*dev);
 		return NULL;
 	}
-
-	dev_put(*dev);
 	return nl_rule;
 }
 
@@ -552,7 +547,7 @@ static int nss_nlipsec_op_add_sa(struct sk_buff *skb, struct genl_info *info)
 	sa_data->cmn.keys.auth_key = sa_rule->auth_key;
 	sa_data->cmn.keys.nonce = sa_rule->nonce;
 
-	error = nss_ipsecmgr_sa_add_sync(dev, &sa_rule->tuple, sa_data, &if_num);
+	error = nss_ipsecmgr_sa_add(dev, &sa_rule->tuple, sa_data, &if_num);
 	if (error) {
 		nss_nl_error("%d: Failed to add SA for net device(%s), error:%d\n", pid, nl_rule->ifname, error);
 		goto free_dev;
@@ -630,72 +625,73 @@ static int nss_nlipsec_op_delete_sa(struct sk_buff *skb, struct genl_info *info)
  * nss_nlipsec_op_add_flow()
  *	Add a flow
  */
-static int nss_nlipsec_op_add_flow(struct sk_buff *skb, struct genl_info *info)
-{
-	struct nss_ipsecmgr_flow_tuple *flow_tuple;
-	struct nss_ipsecmgr_sa_tuple *sa_tuple;
-	struct nss_nlipsec_rule *nl_rule;
-	struct net_device *dev;
-	uint32_t pid;
-	int error = 0;
-
-	nl_rule = nss_nlipsec_get_rule(info, NSS_NLIPSEC_CMD_ADD_FLOW, &dev);
-	if (!nl_rule) {
-		nss_nl_error("Failed to extract SA data\n");
-		return -EINVAL;
-	}
-
-	pid = nl_rule->cm.pid;
-	nss_nl_error("%d: device(%s)", pid, dev->name);
-
-	flow_tuple = &nl_rule->rule.flow.tuple;
-	sa_tuple = &nl_rule->rule.flow.sa;
-
-	error = nss_ipsecmgr_flow_add_sync(dev, flow_tuple, sa_tuple);
-	if (error) {
-		nss_nl_error("%d: Failed to add subnet for net_device(%s)", pid, nl_rule->ifname);
-	}
-
-	/*
-	 *  dev_put for dev_get done on nss_nlipsec_get_rule
-	 */
-	dev_put(dev);
-	return error;
-}
+// static int nss_nlipsec_op_add_flow(struct sk_buff *skb, struct genl_info *info)
+// {
+// 	struct nss_ipsecmgr_flow_tuple *flow_tuple;
+// 	struct nss_ipsecmgr_sa_tuple *sa_tuple;
+// 	struct nss_nlipsec_rule *nl_rule;
+// 	struct net_device *dev;
+// 	uint32_t pid;
+// 	int error = 0;
+//
+// 	nl_rule = nss_nlipsec_get_rule(info, NSS_NLIPSEC_CMD_ADD_FLOW, &dev);
+// 	if (!nl_rule) {
+// 		nss_nl_error("Failed to extract SA data\n");
+// 		return -EINVAL;
+// 	}
+//
+// 	pid = nl_rule->cm.pid;
+// 	nss_nl_error("%d: device(%s)", pid, dev->name);
+//
+// 	flow_tuple = &nl_rule->rule.flow.tuple;
+// 	sa_tuple = &nl_rule->rule.flow.sa;
+//
+// 	//struct nss_ipsecmgr_ref *nss_ipsecmgr_flow_alloc(struct nss_ipsecmgr_priv *priv, struct nss_ipsecmgr_key *key)
+// 	error = nss_ipsecmgr_flow_add_sync(dev, flow_tuple, sa_tuple);
+// 	if (error) {
+// 		nss_nl_error("%d: Failed to add subnet for net_device(%s)", pid, nl_rule->ifname);
+// 	}
+//
+// 	/*
+// 	 *  dev_put for dev_get done on nss_nlipsec_get_rule
+// 	 */
+// 	dev_put(dev);
+// 	return error;
+// }
 
 /*
  * nss_nlipsec_op_delete_flow()
  *	Delete a flow
  */
-static int nss_nlipsec_op_delete_flow(struct sk_buff *skb, struct genl_info *info)
-{
-	struct nss_ipsecmgr_flow_tuple *flow_tuple;
-	struct nss_ipsecmgr_sa_tuple *sa_tuple;
-	struct nss_nlipsec_rule *nl_rule;
-	struct net_device *dev;
-	uint32_t pid;
-	int error = 0;
-
-	nl_rule = nss_nlipsec_get_rule(info, NSS_NLIPSEC_CMD_DEL_FLOW, &dev);
-	if (!nl_rule) {
-		nss_nl_error("Failed to extract SA data\n");
-		return -EINVAL;
-	}
-
-	pid = nl_rule->cm.pid;
-	nss_nl_error("%d: device(%s)", pid, dev->name);
-
-	flow_tuple = &nl_rule->rule.flow.tuple;
-	sa_tuple = &nl_rule->rule.flow.sa;
-
-	nss_ipsecmgr_flow_del(dev, flow_tuple, sa_tuple);
-
-	/*
-	 *  dev_put for dev_get done on nss_nlipsec_get_rule
-	 */
-	dev_put(dev);
-	return error;
-}
+// static int nss_nlipsec_op_delete_flow(struct sk_buff *skb, struct genl_info *info)
+// {
+// 	struct nss_ipsecmgr_flow_tuple *flow_tuple;
+// 	struct nss_ipsecmgr_sa_tuple *sa_tuple;
+// 	struct nss_nlipsec_rule *nl_rule;
+// 	struct net_device *dev;
+// 	uint32_t pid;
+// 	int error = 0;
+//
+// 	nl_rule = nss_nlipsec_get_rule(info, NSS_NLIPSEC_CMD_DEL_FLOW, &dev);
+// 	if (!nl_rule) {
+// 		nss_nl_error("Failed to extract SA data\n");
+// 		return -EINVAL;
+// 	}
+//
+// 	pid = nl_rule->cm.pid;
+// 	nss_nl_error("%d: device(%s)", pid, dev->name);
+//
+// 	flow_tuple = &nl_rule->rule.flow.tuple;
+// 	sa_tuple = &nl_rule->rule.flow.sa;
+//
+// 	nss_ipsecmgr_flow_del(dev, flow_tuple, sa_tuple);
+//
+// 	/*
+// 	 *  dev_put for dev_get done on nss_nlipsec_get_rule
+// 	 */
+// 	dev_put(dev);
+// 	return error;
+// }
 
 /*
  * nss_nlipsec_init()

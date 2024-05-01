@@ -98,12 +98,9 @@ static int nss_connmgr_gre_v4_get_mac_address(uint32_t src_ip, uint32_t dest_ip,
 		neigh = neigh_lookup(&arp_tbl, (const void *)&raddr,  rt->dst.dev);
 	}
 
-	if (neigh) {
-		if (!(neigh->nud_state & NUD_VALID) || !is_valid_ether_addr(neigh->ha)) {
-			nss_connmgr_gre_info("neigh lookup failed for %pI4, state=%x, neigh->ha=%pM\n", &raddr, neigh->nud_state, neigh->ha);
-			neigh_release(neigh);
-			neigh = NULL;
-		}
+	if (neigh && !is_valid_ether_addr(neigh->ha)) {
+		neigh_release(neigh);
+		neigh = NULL;
 	}
 
 	/*
@@ -120,13 +117,6 @@ static int nss_connmgr_gre_v4_get_mac_address(uint32_t src_ip, uint32_t dest_ip,
 		neigh_event_send(neigh, NULL);
 
 		msleep(2000);
-	}
-
-	if (!(neigh->nud_state & NUD_VALID) || !is_valid_ether_addr(neigh->ha)) {
-		ip_rt_put(rt);
-		nss_connmgr_gre_warning("invalid neigh state (%x) or invalid MAC(%pM) for %pI4\n", neigh->nud_state, neigh->ha,  &raddr);
-		neigh_release(neigh);
-		return GRE_ERR_NEIGH_CREATE;
 	}
 
 	if (neigh->dev->type == ARPHRD_LOOPBACK) {

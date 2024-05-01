@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2016-2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2016-2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -18,6 +18,22 @@
 #include "nss_core.h"
 #include "nss_tx_rx_common.h"
 #include "nss_data_plane_hal.h"
+
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 5, 0))
+#define NSS_DATA_PLANE_SUPPORTED_FEATURES (NETIF_F_HIGHDMA \
+					| NETIF_F_HW_CSUM \
+					| NETIF_F_RXCSUM \
+					| NETIF_F_SG \
+					| NETIF_F_FRAGLIST \
+					| (NETIF_F_TSO | NETIF_F_TSO6 | NETIF_F_UFO))
+#else
+#define NSS_DATA_PLANE_SUPPORTED_FEATURES (NETIF_F_HIGHDMA \
+					| NETIF_F_HW_CSUM \
+					| NETIF_F_RXCSUM \
+					| NETIF_F_SG \
+					| NETIF_F_FRAGLIST \
+					| (NETIF_F_TSO | NETIF_F_TSO6))
+#endif
 
 /*
  * nss_data_plane_param
@@ -101,6 +117,12 @@ static int __nss_data_plane_mac_addr(struct nss_dp_data_plane_ctx *dpc, uint8_t 
 static int __nss_data_plane_change_mtu(struct nss_dp_data_plane_ctx *dpc, uint32_t mtu)
 {
 	struct nss_data_plane_param *dp = (struct nss_data_plane_param *)dpc;
+
+	if (mtu > NSS_DP_MAX_MTU_SIZE) {
+		nss_warning("%px: MTU exceeds MAX size %d\n", dp, mtu);
+		return NSS_DP_FAILURE;
+	}
+
 	return nss_phys_if_change_mtu(dp->nss_ctx, mtu, dp->if_num);
 }
 
@@ -160,9 +182,8 @@ static netdev_tx_t __nss_data_plane_buf(struct nss_dp_data_plane_ctx *dpc, struc
 		goto drop;
 	}
 
-	if (skb->len > NSS_DATA_PLANE_MAX_PACKET_LEN) {
-		nss_warning("skb->len ( %u ) > Maximum packet length ( %u ) \n",
-				skb->len, NSS_DATA_PLANE_MAX_PACKET_LEN);
+	if (skb->len > NSS_DP_MAX_PACKET_LEN) {
+		nss_warning("skb->len ( %u ) > Maximum packet length ( %u ) \n", skb->len, NSS_DP_MAX_PACKET_LEN);
 		goto drop;
 	}
 
@@ -207,7 +228,10 @@ drop:
  */
 static void __nss_data_plane_set_features(struct nss_dp_data_plane_ctx *dpc)
 {
-	nss_data_plane_hal_set_features(dpc);
+	dpc->dev->features |= NSS_DATA_PLANE_SUPPORTED_FEATURES;
+	dpc->dev->hw_features |= NSS_DATA_PLANE_SUPPORTED_FEATURES;
+	dpc->dev->vlan_features |= NSS_DATA_PLANE_SUPPORTED_FEATURES;
+	dpc->dev->wanted_features |= NSS_DATA_PLANE_SUPPORTED_FEATURES;
 }
 
 /*

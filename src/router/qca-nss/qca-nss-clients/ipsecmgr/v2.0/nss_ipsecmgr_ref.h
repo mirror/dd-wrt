@@ -1,6 +1,6 @@
 /*
  * ********************************************************************************
- * Copyright (c) 2016-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2016-2019, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
  * copyright notice and this permission notice appear in all copies.
@@ -41,12 +41,6 @@ struct nss_ipsecmgr_ref {
 	nss_ipsecmgr_ref_method_t free;		/* free function */
 	nss_ipsecmgr_ref_method_t del;		/* unlink function */
 };
-
-/* Check if the reference tree is empty */
-static inline bool nss_ipsecmgr_ref_is_empty(struct nss_ipsecmgr_ref *ref)
-{
-	return list_empty(&ref->head);
-}
 
 /* functions to operate on reference object */
 extern ssize_t nss_ipsecmgr_ref_print_len(struct nss_ipsecmgr_ref *ref);

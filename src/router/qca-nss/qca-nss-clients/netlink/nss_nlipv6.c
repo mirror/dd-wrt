@@ -353,17 +353,6 @@ static int nss_nlipv6_verify_conn_rule(struct nss_ipv6_rule_create_msg *msg, str
 							tuple->return_ident, tuple->flow_ident);
 		break;
 
-	case NSS_NL_IFTYPE_TUNNEL_GRE:
-		conn->flow_interface_num = nss_nlgre_redir_cmd_get_ifnum(flow_dev, tuple->protocol);
-		if (conn->flow_interface_num < 0 ) {
-			nss_nl_error("%px: Failed to get flow interface number (dev:%s, type:%d)\n",
-			flow_dev, flow_dev->name, flow_iftype);
-			return -EINVAL;
-		}
-
-		conn->flow_mtu = nss_nlgre_redir_cmd_get_mtu(flow_dev, NSS_GRE_REDIR_IP_HDR_TYPE_IPV6, conn->flow_interface_num);
-		break;
-
 	case NSS_NL_IFTYPE_VLAN:
 		conn->flow_interface_num = nss_cmn_get_interface_number_by_dev(vlan_dev_real_dev(flow_dev));
 		if (conn->flow_interface_num < 0 ) {
@@ -409,17 +398,6 @@ static int nss_nlipv6_verify_conn_rule(struct nss_ipv6_rule_create_msg *msg, str
 
 		conn->return_mtu = nss_nlipsec_get_mtu(return_dev, 6, tuple->protocol,
 							tuple->return_ident, tuple->flow_ident);
-		break;
-
-	case NSS_NL_IFTYPE_TUNNEL_GRE:
-		conn->return_interface_num = nss_nlgre_redir_cmd_get_ifnum(return_dev, tuple->protocol);
-		if (conn->return_interface_num < 0 ) {
-			nss_nl_error("%px: Failed to get return interface number (dev:%s, type:%d)\n",
-			return_dev, return_dev->name, return_iftype);
-			return -EINVAL;
-		}
-
-		conn->return_mtu = nss_nlgre_redir_cmd_get_mtu(return_dev, NSS_GRE_REDIR_IP_HDR_TYPE_IPV6, conn->return_interface_num);
 		break;
 
 	case NSS_NL_IFTYPE_VLAN:
@@ -624,27 +602,6 @@ static int nss_nlipv6_verify_vlan_rule(struct nss_ipv6_rule_create_msg *msg, str
 }
 
 /*
- * nss_nlipv6_verify_identifier()
- *	verify and override identifier rule entries
- */
-static int nss_nlipv6_verify_identifier(struct nss_ipv6_rule_create_msg *msg)
-{
-	struct nss_ipv6_identifier_rule *identifier = &msg->identifier;
-	const size_t rule_sz = sizeof(struct nss_ipv6_identifier_rule);
-	uint16_t valid;
-
-	/*
-	 * if identifier is not valid, set identifier rule to 0
-	 */
-	valid = msg->valid_flags & NSS_IPV6_RULE_CREATE_IDENTIFIER_VALID;
-	if (!valid) {
-		memset(identifier, 0, rule_sz);
-	}
-
-	return 0;
-}
-
-/*
  * nss_nlipv6_process_notify()
  *	process notification messages from NSS
  */
@@ -817,15 +774,6 @@ static int nss_nlipv6_ops_create_rule(struct sk_buff *skb, struct genl_info *inf
 	}
 
 	/*
-	 * check identifier
-	 */
-	error = nss_nlipv6_verify_identifier(&nim->msg.rule_create);
-	if (error < 0) {
-		nss_nl_error("%d:invalid identifier rule information passed\n", pid);
-		goto done;
-	}
-
-	/*
 	 * copy the NL message for response
 	 */
 	resp = nss_nl_copy_msg(skb);
@@ -855,10 +803,6 @@ static int nss_nlipv6_ops_create_rule(struct sk_buff *skb, struct genl_info *inf
 	 * Push Rule to NSS
 	 */
 	tx_status = nss_ipv6_tx_sync(gbl_ctx.nss, nim);
-
-        /* TODO: Handle the case where firmware has received the response
-	 * and there is a failure in firmware.
-	 */
 	if (tx_status != NSS_TX_SUCCESS) {
 		nss_nl_error("%d:unable to send IPV6 rule create, status(%d)\n", pid, tx_status);
 		error = -EBUSY;
@@ -938,10 +882,6 @@ static int nss_nlipv6_ops_destroy_rule(struct sk_buff *skb, struct genl_info *in
 	 * Push rule to NSS
 	 */
 	tx_status = nss_ipv6_tx_sync(gbl_ctx.nss, nim);
-
-        /* TODO: Handle the case where firmware has received the response
-	 * and there is a failure in firmware.
-	 */
 	if (tx_status != NSS_TX_SUCCESS) {
 		nss_nl_error("%d:unable to send IPV6 rule delete, status(%d)\n", pid, tx_status);
 		return -EBUSY;

@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2019-2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2019-2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -15,7 +15,6 @@
  */
 
 #include "nss_tx_rx_common.h"
-#include "nss_gre_redir_mark_strings.h"
 #include "nss_gre_redir_mark_stats.h"
 #include "nss_gre_redir_mark_log.h"
 #define NSS_GRE_REDIR_MARK_TX_TIMEOUT 3000 /* 3 Seconds */
@@ -30,6 +29,16 @@ static struct {
 } nss_gre_redir_mark_pvt;
 
 /*
+ * Spinlock to update GRE redir mark stats.
+ */
+static DEFINE_SPINLOCK(nss_gre_redir_mark_stats_lock);
+
+/*
+ * Global GRE redir mark stats structure.
+ */
+static struct nss_gre_redir_mark_stats gre_mark_stats;
+
+/*
  * nss_gre_redir_mark_msg_sync_callback()
  *	Callback to handle the completion of HLOS-->NSS messages.
  */
@@ -42,6 +51,54 @@ static void nss_gre_redir_mark_msg_sync_callback(void *app_data, struct nss_gre_
 	}
 
 	complete(&nss_gre_redir_mark_pvt.complete);
+}
+
+/*
+ * nss_gre_redir_mark_stats_sync()
+ *	Update GRE redir mark stats.
+ */
+static void nss_gre_redir_mark_stats_sync(struct nss_ctx_instance *nss_ctx, int if_num, struct nss_gre_redir_mark_stats_sync_msg *ngss)
+{
+	struct net_device *dev;
+	dev = nss_cmn_get_interface_dev(nss_ctx, if_num);
+	if (!dev) {
+		nss_warning("%px: Unable to find net device for the interface %d\n", nss_ctx, if_num);
+		return;
+	}
+
+	if (if_num != NSS_GRE_REDIR_MARK_INTERFACE) {
+		nss_warning("%px: Unknown type for interface %d\n", nss_ctx, if_num);
+		return;
+	}
+
+	/*
+	 * Update the stats in exclusive mode to prevent the read from the process
+	 * context through debug fs.
+	 */
+	spin_lock_bh(&nss_gre_redir_mark_stats_lock);
+
+	/*
+	 * Update the common node stats
+	 */
+	gre_mark_stats.stats[NSS_GRE_REDIR_MARK_STATS_TX_PKTS] += ngss->node_stats.tx_packets;
+	gre_mark_stats.stats[NSS_GRE_REDIR_MARK_STATS_TX_BYTES] += ngss->node_stats.tx_bytes;
+	gre_mark_stats.stats[NSS_GRE_REDIR_MARK_STATS_RX_PKTS] += ngss->node_stats.rx_packets;
+	gre_mark_stats.stats[NSS_GRE_REDIR_MARK_STATS_RX_BYTES] += ngss->node_stats.rx_bytes;
+	gre_mark_stats.stats[NSS_GRE_REDIR_MARK_STATS_RX_DROPS] += nss_cmn_rx_dropped_sum(&(ngss->node_stats));
+
+	/*
+	 * Update the GRE redir mark specific stats
+	 */
+	gre_mark_stats.stats[NSS_GRE_REDIR_MARK_STATS_HLOS_MAGIC_FAILED] += ngss->hlos_magic_fail;
+	gre_mark_stats.stats[NSS_GRE_REDIR_MARK_STATS_INV_DST_IF_DROPS] += ngss->invalid_dst_drop;
+	gre_mark_stats.stats[NSS_GRE_REDIR_MARK_STATS_DST_IF_ENQUEUE] += ngss->dst_enqueue_success;
+	gre_mark_stats.stats[NSS_GRE_REDIR_MARK_STATS_DST_IF_ENQUEUE_DROPS] += ngss->dst_enqueue_drop;
+	gre_mark_stats.stats[NSS_GRE_REDIR_MARK_STATS_INV_APPID] += ngss->inv_appid;
+	gre_mark_stats.stats[NSS_GRE_REDIR_MARK_STATS_HEADROOM_UNAVAILABLE] += ngss->headroom_unavail;
+	gre_mark_stats.stats[NSS_GRE_REDIR_MARK_STATS_TX_COMPLETION_SUCCESS] += ngss->tx_completion_success;
+	gre_mark_stats.stats[NSS_GRE_REDIR_MARK_STATS_TX_COMPLETION_DROPS] += ngss->tx_completion_drop;
+
+	spin_unlock_bh(&nss_gre_redir_mark_stats_lock);
 }
 
 /*
@@ -80,7 +137,6 @@ static void nss_gre_redir_mark_handler(struct nss_ctx_instance *nss_ctx, struct 
 
 	if (ncm->type == NSS_GRE_REDIR_MARK_STATS_SYNC_MSG) {
 		nss_gre_redir_mark_stats_sync(nss_ctx, ncm->interface, &ngrm->msg.stats_sync);
-		nss_gre_redir_mark_stats_notify(nss_ctx, ncm->interface);
 	}
 
 	/*
@@ -103,6 +159,28 @@ static void nss_gre_redir_mark_handler(struct nss_ctx_instance *nss_ctx, struct 
 
 	cb((void *)ncm->app_data, ncm);
 }
+
+/*
+ * nss_gre_redir_mark_get_stats()
+ *	Get gre_redir tunnel stats.
+ */
+bool nss_gre_redir_mark_get_stats(void *stats_mem)
+{
+	struct nss_gre_redir_mark_stats *stats = (struct nss_gre_redir_mark_stats *)stats_mem;
+	if (!stats) {
+		nss_warning("No memory to copy GRE redir mark stats");
+		return false;
+	}
+
+	/*
+	 * Copy the GRE redir mark stats in the memory.
+	 */
+	spin_lock_bh(&nss_gre_redir_mark_stats_lock);
+	memcpy(stats, &gre_mark_stats, sizeof(struct nss_gre_redir_mark_stats));
+	spin_unlock_bh(&nss_gre_redir_mark_stats_lock);
+	return true;
+}
+EXPORT_SYMBOL(nss_gre_redir_mark_get_stats);
 
 /*
  * nss_gre_redir_mark_reg_cb()
@@ -262,7 +340,7 @@ bool nss_gre_redir_mark_unregister_if(uint32_t if_num)
 		return false;
 	}
 
-	nss_ctx->nss_rx_interface_handlers[if_num].msg_cb = NULL;
+	nss_ctx->nss_rx_interface_handlers[nss_ctx->id][if_num].msg_cb = NULL;
 	return true;
 }
 EXPORT_SYMBOL(nss_gre_redir_mark_unregister_if);
@@ -326,7 +404,6 @@ void nss_gre_redir_mark_register_handler(void)
 		return;
 	}
 
-	nss_gre_redir_mark_strings_dentry_create();
 	sema_init(&nss_gre_redir_mark_pvt.sem, 1);
 	init_completion(&nss_gre_redir_mark_pvt.complete);
 

@@ -19,19 +19,7 @@
 #include "nss_core.h"
 #include "nss_wifi_mac_db_if.h"
 
-/*
- * Compile time assertion.
- */
-#define NSS_WIFI_MAC_DB_COMPILE_TIME_ASSERT(assertion_name, predicate) \
-    typedef char assertion_name[(predicate) ? 1 : -1]
-
 #define NSS_WIFI_MAC_DB_TX_TIMEOUT 1000 /* Millisecond to jiffies*/
-
-/*
- * Validate the Wi-Fi MAC database message size not exceeding buffer size.
- */
-NSS_WIFI_MAC_DB_COMPILE_TIME_ASSERT(NSS_WIFI_MAC_DB_MAX_BUF_MSG,
-		(sizeof(struct nss_wifi_mac_db_msg) < NSS_NBUF_PAYLOAD_SIZE));
 
 /*
  * nss_wifi_mac_db_get_context()

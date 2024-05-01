@@ -61,10 +61,8 @@ struct nss_capwapmgr_response {
  */
 struct nss_capwapmgr_tunnel {
 	struct net_device *dtls_dev;		/**< DTLS netdevice */
-	uint32_t if_num_inner;			/**< Interface number of the INNER CAPWAP node */
-	uint32_t if_num_outer;			/**< Interface number of the OUTER CAPWAP node */
+	uint32_t if_num;			/**< Interface number of NSS */
 	uint32_t tunnel_state;			/**< Tunnel state */
-	uint16_t type_flags;            /**< Tunnel Type to determine header size */
 	union {
 		struct nss_ipv4_create v4;	/**< IPv4 rule structure */
 		struct nss_ipv6_create v6;	/**< IPv6 rule struture */
@@ -224,7 +222,7 @@ nss_capwapmgr_status_t nss_capwapmgr_update_dest_mac_addr(struct net_device *dev
  *
  * @return nss_capwapmgr_status_t
  */
-extern nss_capwapmgr_status_t nss_capwapmgr_update_src_interface(struct net_device *dev, uint8_t tunnel_id, uint32_t src_interface_num);
+extern nss_capwapmgr_status_t nss_capwapmgr_update_src_interface(struct net_device *dev, uint8_t tunnel_id, int32_t src_interface_num);
 
 /**
  * @brief Delete a DSCP prioritization rule that was created.

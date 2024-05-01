@@ -84,17 +84,16 @@ fail:
 }
 
 /*
- * nss_clmapmgr_get_dev_stats64()
+ * nss_clmapmgr_dev_stats64()
  *	Netdev ops function to retrieve stats.
  */
-static struct rtnl_link_stats64 *nss_clmapmgr_get_dev_stats64(struct net_device *dev,
+void nss_clmapmgr_dev_stats64(struct net_device *dev,
 						struct rtnl_link_stats64 *stats)
 {
 	struct nss_clmapmgr_priv_t *priv;
 
 	if (!stats) {
 		nss_clmapmgr_warning("%px: invalid rtnl structure\n", dev);
-		return stats;
 	}
 
 	dev_hold(dev);
@@ -103,36 +102,13 @@ static struct rtnl_link_stats64 *nss_clmapmgr_get_dev_stats64(struct net_device 
 	 * Netdev seems to be incrementing rx_dropped because we don't give IP header.
 	 * So reset it as it's of no use for us.
 	 */
-	atomic_long_set(&(dev)->stats.__rx_dropped, 0);
+	atomic_long_set(&dev->rx_dropped, 0);
 	priv = netdev_priv(dev);
 	memset(stats, 0, sizeof(struct rtnl_link_stats64));
 	memcpy(stats, &priv->stats, sizeof(struct rtnl_link_stats64));
 	dev_put(dev);
 
-	return stats;
 }
-
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 6, 0))
-/*
- * nss_clmapmgr_dev_stats64()
- *	Netdev ops function to retrieve stats for kernel version < 4.6
- */
-static struct rtnl_link_stats64 *nss_clmapmgr_dev_stats64(struct net_device *dev,
-						struct rtnl_link_stats64 *tot)
-{
-	return nss_clmapmgr_get_dev_stats64(dev, tot);
-}
-#else
-/*
- * nss_clmapmgr_dev_stats64()
- *	Netdev ops function to retrieve stats for kernel version >= 4.6
- */
-static void nss_clmapmgr_dev_stats64(struct net_device *dev,
-				struct rtnl_link_stats64 *tot)
-{
-	nss_clmapmgr_get_dev_stats64(dev, tot);
-}
-#endif
 
 /*
  * nss_clmapmgr_dev_init()

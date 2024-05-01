@@ -1294,25 +1294,15 @@ void netap_profile_release_resource(void)
 		remove_proc_entry("rate", pdir);
 		remove_proc_entry("data", pdir);
 		remove_proc_entry("data1", pdir);
-		proc_remove(pdir);
-		pdir = NULL;
 	}
-
-	if (node[0]->ctx) {
-		nss_profile_dma_deregister_cb(node[0]->ctx, 0);
-		if (node[1] && node[1]->ctx) {
-			nss_profile_dma_deregister_cb(node[1]->ctx, 0);
-			nss_profiler_release_dma(node[1]->ctx);
-			/*
-			 * node[1] memory is part of node[0] allocation; same as the ccl.
-			 */
-			node[1] = NULL;
-		}
-		nss_profiler_release_dma(node[0]->ctx);
-	}
+	nss_profile_dma_deregister_cb(node[0]->ctx, 0);
+	nss_profile_dma_deregister_cb(node[1]->ctx, 0);
+	nss_profiler_release_dma(node[1]->ctx);
+	nss_profiler_release_dma(node[0]->ctx);
 	kfree(node[0]->ccl);
 	kfree(node[0]);
 	node[0] = NULL;
+
 }
 
 /*

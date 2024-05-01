@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2020, The Linux Foundation. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -41,6 +41,13 @@ struct nss_tlsmgr_buf {
 
 void nss_tlsmgr_buf_rx(struct nss_tlsmgr_buf *buf, nss_tlsmgr_status_t status);
 
-struct nss_tlsmgr_rec *nss_tlsmgr_buf_get_rec_start(struct nss_tlsmgr_buf *buf);
+/*
+ * nss_tlsmgr_buf_get_rec_start()
+ *	Get record start
+ */
+static struct nss_tlsmgr_rec *nss_tlsmgr_buf_get_rec_start(struct nss_tlsmgr_buf *buf)
+{
+	return (struct nss_tlsmgr_rec *)((uint8_t *)buf + sizeof(*buf));
+}
 
 #endif /* !__NSS_TLSMGR_BUF_H_ */

@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2017-2021 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -413,65 +413,6 @@ nss_tx_status_t nss_qrfs_set_flow_rule(struct sk_buff *skb, uint32_t cpu, uint32
 	return NSS_TX_SUCCESS;
 }
 EXPORT_SYMBOL(nss_qrfs_set_flow_rule);
-
-/*
- * nss_qrfs_configure_flow_rule()
- *	Configures a QRFS flow rule to NSS firmware
- */
-nss_tx_status_t nss_qrfs_configure_flow_rule(uint32_t *dst_addr, uint32_t *src_addr, uint16_t dst_port, uint16_t src_port, uint32_t version, uint16_t proto, uint16_t cpu, enum nss_qrfs_msg_types type) {
-
-        struct nss_qrfs_msg nqm;
-        struct nss_qrfs_flow_rule_msg *nqfrm;
-        nss_tx_status_t status;
-        struct nss_ctx_instance *nss_ctx = NULL;
-	nss_qrfs_msg_callback_t cb = NULL;
-        int i;
-
-
-	memset(&nqm, 0, sizeof(struct nss_qrfs_msg));
-	nss_qrfs_msg_init(&nqm, NSS_QRFS_INTERFACE, type,
-			sizeof(struct nss_qrfs_flow_rule_msg), cb, (void *)nss_ctx);
-	if (type == NSS_QRFS_MSG_FLOW_ADD) {
-                nqfrm = &nqm.msg.flow_add;
-		cb = nss_qrfs_flow_add_msg_callback;
-	} else if (type == NSS_QRFS_MSG_FLOW_DELETE) {
-                nqfrm = &nqm.msg.flow_delete;
-		cb = nss_qrfs_flow_delete_msg_callback;
-	} else {
-		nss_warning("QRFS configure rule failed, not supported message type.\n");
-		return NSS_TX_FAILURE_BAD_PARAM;
-	}
-
-
-	nqfrm->protocol = proto;
-	nqfrm->ip_version = version;
-
-	if (version == 4) {
-		nqfrm->src_addr[0] = src_addr[0];
-		nqfrm->dst_addr[0] = dst_addr[0];
-	} else {
-		memcpy(nqfrm->src_addr, src_addr, sizeof(uint32_t) * 4);
-		memcpy(nqfrm->dst_addr, dst_addr, sizeof(uint32_t) * 4);
-	}
-
-	nqfrm->src_port = src_port;
-        nqfrm->dst_port = dst_port;
-        nqfrm->cpu = cpu;
-	nqfrm->if_num = 0;
-
-        for(i = 0; i < NSS_CORE_MAX; i++) {
-                nss_ctx = nss_qrfs_get_ctx(i);
-                status = nss_qrfs_tx_msg(nss_ctx, &nqm);
-
-		if (status) {
-			nss_warning("%px: QRFS configure rule failed, error code: %d\n", nss_ctx, status);
-			return NSS_TX_FAILURE;
-		}
-        }
-
-	return NSS_TX_SUCCESS;
-}
-EXPORT_SYMBOL(nss_qrfs_configure_flow_rule);
 
 /*
  * nss_qrfs_register_handler()

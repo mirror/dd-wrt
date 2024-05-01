@@ -1,6 +1,6 @@
 /*
  * ********************************************************************************
- * Copyright (c) 2018-2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2018-2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
  * copyright notice and this permission notice appear in all copies.
@@ -92,7 +92,6 @@ static const struct nss_ipsecmgr_print ipsecmgr_print_ctx_stats[] = {
 	{"\texceptioned", NSS_IPSECMGR_PRINT_DWORD},
 	{"\tlinearized", NSS_IPSECMGR_PRINT_DWORD},
 	{"\tredirected", NSS_IPSECMGR_PRINT_DWORD},
-	{"\tdropped", NSS_IPSECMGR_PRINT_DWORD},
 	{"\tfail_sa", NSS_IPSECMGR_PRINT_DWORD},
 	{"\tfail_flow", NSS_IPSECMGR_PRINT_DWORD},
 	{"\tfail_stats", NSS_IPSECMGR_PRINT_DWORD},
@@ -100,9 +99,6 @@ static const struct nss_ipsecmgr_print ipsecmgr_print_ctx_stats[] = {
 	{"\tfail_transform", NSS_IPSECMGR_PRINT_DWORD},
 	{"\tfail_linearized", NSS_IPSECMGR_PRINT_DWORD},
 	{"\tfail_mdata_ver", NSS_IPSECMGR_PRINT_DWORD},
-	{"\tfail_ctx_active", NSS_IPSECMGR_PRINT_DWORD},
-	{"\tfail_pbuf_crypto", NSS_IPSECMGR_PRINT_DWORD},
-	{"\tfail_queue_crypto", NSS_IPSECMGR_PRINT_DWORD},
 };
 
 /*
@@ -552,8 +548,8 @@ void nss_ipsecmgr_ctx_rx_redir(struct net_device *dev, struct sk_buff *skb,
 	 * If, data callback is available then send the packet to the
 	 * callback function
 	 */
-	if (tun->cb.except_cb) {
-		tun->cb.except_cb(tun->cb.app_data, skb);
+	if (tun->cb.data_cb) {
+		tun->cb.data_cb(tun->cb.app_data, skb);
 		ctx->hstats.redir_cb++;
 		return;
 	}
@@ -609,11 +605,6 @@ void nss_ipsecmgr_ctx_rx_outer(struct net_device *dev, struct sk_buff *skb,
 		}
 
 		skb_set_transport_header(skb, sizeof(*iph));
-		if (tun->cb.except_cb) {
-			tun->cb.except_cb(tun->cb.app_data, skb);
-			ctx->hstats.outer_cb++;
-			return;
-		}
 		nss_ipsecmgr_ctx_route_ipv4(skb, ctx);
 		return;
 	}
@@ -631,11 +622,6 @@ void nss_ipsecmgr_ctx_rx_outer(struct net_device *dev, struct sk_buff *skb,
 		}
 
 		skb_set_transport_header(skb, sizeof(*ip6h));
-		if (tun->cb.except_cb) {
-			tun->cb.except_cb(tun->cb.app_data, skb);
-			ctx->hstats.outer_cb++;
-			return;
-		}
 		nss_ipsecmgr_ctx_route_ipv6(skb, ctx);
 		return;
 	}
@@ -731,7 +717,6 @@ void nss_ipsecmgr_ctx_rx_stats(void *app_data, struct nss_cmn_msg *ncm)
 		struct nss_ipsecmgr_sa *sa;
 		void *app_data;
 
-		event.type = NSS_IPSECMGR_EVENT_SA_STATS;
 		write_lock(&ipsecmgr_drv->lock);
 
 		sa = nss_ipsecmgr_sa_find(sa_db, &sync->sa_tuple);
@@ -874,30 +859,13 @@ struct nss_ipsecmgr_ctx *nss_ipsecmgr_ctx_find_by_sa(struct nss_ipsecmgr_tunnel 
 }
 
 /*
- * nss_ipsecmgr_ctx_attach()
- *	Attach context to the database
- */
-void nss_ipsecmgr_ctx_attach(struct list_head *db, struct nss_ipsecmgr_ctx *ctx)
-{
-	struct nss_ipsecmgr_tunnel *tun = ctx->tun;
-
-	list_add(&ctx->list, db);
-
-	/*
-	 * Add ctx->ref to tun->ref
-	 */
-	write_lock_bh(&ipsecmgr_drv->lock);
-	nss_ipsecmgr_ref_add(&ctx->ref, &tun->ref);
-	write_unlock_bh(&ipsecmgr_drv->lock);
-}
-
-/*
  * nss_ipsecmgr_ctx_config()
  * 	Configure context
  */
 bool nss_ipsecmgr_ctx_config(struct nss_ipsecmgr_ctx *ctx)
 {
 	enum nss_ipsec_cmn_msg_type msg_type = NSS_IPSEC_CMN_MSG_TYPE_CTX_CONFIG;
+	struct nss_ipsecmgr_tunnel *tun = ctx->tun;
 	struct nss_ipsec_cmn_ctx *ctx_msg;
 	struct nss_ipsec_cmn_msg nicm;
 	nss_tx_status_t status;
@@ -907,7 +875,6 @@ bool nss_ipsecmgr_ctx_config(struct nss_ipsecmgr_ctx *ctx)
 	ctx_msg = &nicm.msg.ctx;
 	ctx_msg->type = ctx->state.type;
 	ctx_msg->except_ifnum = ctx->state.except_ifnum;
-	ctx_msg->sibling_ifnum = ctx->state.sibling_ifnum;
 
 	status = nss_ipsec_cmn_tx_msg_sync(ctx->nss_ctx, ctx->ifnum, msg_type, sizeof(*ctx_msg), &nicm);
 	if (status != NSS_TX_SUCCESS) {
@@ -915,6 +882,10 @@ bool nss_ipsecmgr_ctx_config(struct nss_ipsecmgr_ctx *ctx)
 				ctx, ctx->state.type, status, nicm.cm.error);
 		return false;
 	}
+
+	write_lock_bh(&ipsecmgr_drv->lock);
+	nss_ipsecmgr_ref_add(&ctx->ref, &tun->ref);
+	write_unlock_bh(&ipsecmgr_drv->lock);
 
 	return true;
 }
@@ -941,7 +912,6 @@ struct nss_ipsecmgr_ctx *nss_ipsecmgr_ctx_alloc(struct nss_ipsecmgr_tunnel *tun,
 						uint32_t features)
 {
 	struct nss_ipsecmgr_ctx *ctx;
-	int32_t ifnum;
 
 	ctx = kzalloc(sizeof(*ctx), in_atomic() ? GFP_ATOMIC : GFP_KERNEL);
 	if (!ctx) {
@@ -955,14 +925,13 @@ struct nss_ipsecmgr_ctx *nss_ipsecmgr_ctx_alloc(struct nss_ipsecmgr_tunnel *tun,
 	ctx->state.type = ctx_type;
 	ctx->state.di_type = di_type;
 
-	ifnum = nss_dynamic_interface_alloc_node(di_type);
-	if (ifnum < 0) {
+	ctx->ifnum = nss_dynamic_interface_alloc_node(di_type);
+	if (ctx->ifnum < 0) {
 		nss_ipsecmgr_warn("%px: failed to allocate dynamic interface(%d)", tun, di_type);
 		kfree(ctx);
 		return NULL;
 	}
 
-	ctx->ifnum = ifnum;
 	ctx->state.stats_len = ctx->state.print_len = nss_ipsecmgr_ctx_stats_size();
 	nss_ipsecmgr_ref_init(&ctx->ref, nss_ipsecmgr_ctx_del_ref, nss_ipsecmgr_ctx_free_ref);
 	nss_ipsecmgr_ref_init_print(&ctx->ref, nss_ipsecmgr_ctx_print_len, nss_ipsecmgr_ctx_print);

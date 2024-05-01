@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2017-2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2019, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -21,43 +21,62 @@
  */
 
 #include "nss_tx_rx_common.h"
-#include "nss_gre.h"
 #include "nss_gre_stats.h"
-#include "nss_gre_strings.h"
-
-/*
- * Declare atomic notifier data structure for statistics.
- */
-ATOMIC_NOTIFIER_HEAD(nss_gre_stats_notifier);
 
 /*
  * Data structures to store GRE nss debug stats
  */
 static DEFINE_SPINLOCK(nss_gre_stats_lock);
-static struct nss_gre_stats_session session_stats[NSS_GRE_MAX_DEBUG_SESSION_STATS];
-static struct nss_gre_stats_base base_stats;
+static struct nss_gre_stats_session_debug session_debug_stats[NSS_GRE_MAX_DEBUG_SESSION_STATS];
+static struct nss_gre_stats_base_debug base_debug_stats;
+
+/*
+ * nss_gre_stats_base_debug_str
+ *	GRE debug statistics strings for base types
+ */
+struct nss_stats_info nss_gre_stats_base_debug_str[NSS_GRE_STATS_BASE_DEBUG_MAX] = {
+	{"base_rx_pkts"				,NSS_STATS_TYPE_COMMON},
+	{"base_rx_drops"			,NSS_STATS_TYPE_DROP},
+	{"base_exp_eth_hdr_missing"		,NSS_STATS_TYPE_EXCEPTION},
+	{"base_exp_eth_type_non_ip"		,NSS_STATS_TYPE_EXCEPTION},
+	{"base_exp_ip_unknown_protocol"		,NSS_STATS_TYPE_EXCEPTION},
+	{"base_exp_ip_header_incomplete"	,NSS_STATS_TYPE_EXCEPTION},
+	{"base_exp_ip_bad_total_length"		,NSS_STATS_TYPE_EXCEPTION},
+	{"base_exp_ip_bad_checksum"		,NSS_STATS_TYPE_EXCEPTION},
+	{"base_exp_ip_datagram_incomplete"	,NSS_STATS_TYPE_EXCEPTION},
+	{"base_exp_ip_fragment"			,NSS_STATS_TYPE_EXCEPTION},
+	{"base_exp_ip_options_incomplete"	,NSS_STATS_TYPE_EXCEPTION},
+	{"base_exp_ip_with_options"		,NSS_STATS_TYPE_EXCEPTION},
+	{"base_exp_ipv6_unknown_protocol"	,NSS_STATS_TYPE_EXCEPTION},
+	{"base_exp_ipv6_header_incomplete"	,NSS_STATS_TYPE_EXCEPTION},
+	{"base_exp_unknown_session"		,NSS_STATS_TYPE_EXCEPTION},
+	{"base_exp_node_inactive"		,NSS_STATS_TYPE_EXCEPTION}
+};
+
+/*
+ * nss_gre_stats_session_debug_str
+ *	GRE debug statistics strings for sessions
+ */
+struct nss_stats_info nss_gre_stats_session_debug_str[NSS_GRE_STATS_SESSION_DEBUG_MAX] = {
+	{"session_pbuf_alloc_fail"		, NSS_STATS_TYPE_ERROR},
+	{"session_decap_forward_enqueue_fail"	, NSS_STATS_TYPE_DROP},
+	{"session_encap_forward_enqueue_fail"	, NSS_STATS_TYPE_DROP},
+	{"session_decap_tx_forwarded"		, NSS_STATS_TYPE_SPECIAL},
+	{"session_encap_rx_received"		, NSS_STATS_TYPE_SPECIAL},
+	{"session_encap_rx_drops"		, NSS_STATS_TYPE_DROP},
+	{"session_encap_rx_linear_fail"		, NSS_STATS_TYPE_DROP},
+	{"session_exp_rx_key_error"		, NSS_STATS_TYPE_EXCEPTION},
+	{"session_exp_rx_seq_error"		, NSS_STATS_TYPE_EXCEPTION},
+	{"session_exp_rx_cs_error"		, NSS_STATS_TYPE_EXCEPTION},
+	{"session_exp_rx_flag_mismatch"		, NSS_STATS_TYPE_EXCEPTION},
+	{"session_exp_rx_malformed"		, NSS_STATS_TYPE_EXCEPTION},
+	{"session_exp_rx_invalid_protocol"	, NSS_STATS_TYPE_EXCEPTION},
+	{"session_exp_rx_no_headroom"		, NSS_STATS_TYPE_EXCEPTION}
+};
 
 /*
  * GRE statistics APIs
  */
-
-/*
- * nss_gre_stats_session_unregister()
- *	Unregister debug statistic for GRE session.
- */
-void nss_gre_stats_session_unregister(uint32_t if_num)
-{
-	int i;
-
-	spin_lock_bh(&nss_gre_stats_lock);
-	for (i = 0; i < NSS_GRE_MAX_DEBUG_SESSION_STATS; i++) {
-		if (session_stats[i].if_num == if_num) {
-			memset(&session_stats[i], 0, sizeof(struct nss_gre_stats_session));
-			break;
-		}
-	}
-	spin_unlock_bh(&nss_gre_stats_lock);
-}
 
 /*
  * nss_gre_stats_session_register()
@@ -69,10 +88,10 @@ void nss_gre_stats_session_register(uint32_t if_num, struct net_device *netdev)
 
 	spin_lock_bh(&nss_gre_stats_lock);
 	for (i = 0; i < NSS_GRE_MAX_DEBUG_SESSION_STATS; i++) {
-		if (!session_stats[i].valid) {
-			session_stats[i].valid = true;
-			session_stats[i].if_num = if_num;
-			session_stats[i].if_index = netdev->ifindex;
+		if (!session_debug_stats[i].valid) {
+			session_debug_stats[i].valid = true;
+			session_debug_stats[i].if_num = if_num;
+			session_debug_stats[i].if_index = netdev->ifindex;
 			break;
 		}
 	}
@@ -80,25 +99,43 @@ void nss_gre_stats_session_register(uint32_t if_num, struct net_device *netdev)
 }
 
 /*
- * nss_gre_stats_session_sync()
+ * nss_gre_stats_session_unregister()
+ *	Unregister debug statistic for GRE session.
+ */
+void nss_gre_stats_session_unregister(uint32_t if_num)
+{
+	int i;
+
+	spin_lock_bh(&nss_gre_stats_lock);
+	for (i = 0; i < NSS_GRE_MAX_DEBUG_SESSION_STATS; i++) {
+		if (session_debug_stats[i].if_num == if_num) {
+			memset(&session_debug_stats[i], 0, sizeof(struct nss_gre_stats_session_debug));
+			break;
+		}
+	}
+	spin_unlock_bh(&nss_gre_stats_lock);
+}
+
+/*
+ * nss_gre_stats_session_debug_sync()
  *	debug statistics sync for GRE session.
  */
-void nss_gre_stats_session_sync(struct nss_ctx_instance *nss_ctx, struct nss_gre_session_stats_msg *sstats, uint16_t if_num)
+void nss_gre_stats_session_debug_sync(struct nss_ctx_instance *nss_ctx, struct nss_gre_session_stats_msg *sstats, uint16_t if_num)
 {
 	int i, j;
 	enum nss_dynamic_interface_type interface_type = nss_dynamic_interface_get_type(nss_ctx, if_num);
 
 	spin_lock_bh(&nss_gre_stats_lock);
 	for (i = 0; i < NSS_GRE_MAX_DEBUG_SESSION_STATS; i++) {
-		if (session_stats[i].if_num == if_num) {
-			for (j = 0; j < NSS_GRE_SESSION_DEBUG_MAX; j++) {
-				session_stats[i].stats[j] += sstats->stats[j];
+		if (session_debug_stats[i].if_num == if_num) {
+			for (j = 0; j < NSS_GRE_STATS_SESSION_DEBUG_MAX; j++) {
+				session_debug_stats[i].stats[j] += sstats->stats[j];
 			}
 
 			if (interface_type == NSS_DYNAMIC_INTERFACE_TYPE_GRE_INNER) {
-				session_stats[i].stats[NSS_GRE_SESSION_ENCAP_RX_RECEIVED] += sstats->node_stats.rx_packets;
+				session_debug_stats[i].stats[NSS_GRE_STATS_SESSION_ENCAP_RX_RECEIVED] += sstats->node_stats.rx_packets;
 			} else if (interface_type == NSS_DYNAMIC_INTERFACE_TYPE_GRE_OUTER) {
-				session_stats[i].stats[NSS_GRE_SESSION_DECAP_TX_FORWARDED] += sstats->node_stats.tx_packets;
+				session_debug_stats[i].stats[NSS_GRE_STATS_SESSION_DECAP_TX_FORWARDED] += sstats->node_stats.tx_packets;
 			}
 			break;
 		}
@@ -107,38 +144,38 @@ void nss_gre_stats_session_sync(struct nss_ctx_instance *nss_ctx, struct nss_gre
 }
 
 /*
- * nss_gre_stats_base_sync()
+ * nss_gre_stats_base_debug_sync()
  *	Debug statistics sync for GRE base node.
  */
-void nss_gre_stats_base_sync(struct nss_ctx_instance *nss_ctx, struct nss_gre_base_stats_msg *bstats)
+void nss_gre_stats_base_debug_sync(struct nss_ctx_instance *nss_ctx, struct nss_gre_base_stats_msg *bstats)
 {
 	int i;
 
 	spin_lock_bh(&nss_gre_stats_lock);
-	for (i = 0; i < NSS_GRE_BASE_DEBUG_MAX; i++) {
-		base_stats.stats[i] += bstats->stats[i];
+	for (i = 0; i < NSS_GRE_STATS_BASE_DEBUG_MAX; i++) {
+		base_debug_stats.stats[i] += bstats->stats[i];
 	}
 	spin_unlock_bh(&nss_gre_stats_lock);
 }
 
 /*
- * nss_gre_stats_session_get()
+ * nss_gre_stats_session_debug_get()
  *	Get GRE session debug statistics.
  */
-static void nss_gre_stats_session_get(void *stats_mem, int size)
+static void nss_gre_stats_session_debug_get(void *stats_mem, int size)
 {
-	struct nss_gre_stats_session *stats = (struct nss_gre_stats_session *)stats_mem;
+	struct nss_gre_stats_session_debug *stats = (struct nss_gre_stats_session_debug *)stats_mem;
 	int i;
 
-	if (!stats || (size < (sizeof(struct nss_gre_stats_session) * NSS_GRE_MAX_DEBUG_SESSION_STATS)))  {
+	if (!stats || (size < (sizeof(struct nss_gre_stats_session_debug) * NSS_GRE_MAX_DEBUG_SESSION_STATS)))  {
 		nss_warning("No memory to copy gre stats");
 		return;
 	}
 
 	spin_lock_bh(&nss_gre_stats_lock);
 	for (i = 0; i < NSS_GRE_MAX_DEBUG_SESSION_STATS; i++) {
-		if (session_stats[i].valid) {
-			memcpy(stats, &session_stats[i], sizeof(struct nss_gre_stats_session));
+		if (session_debug_stats[i].valid) {
+			memcpy(stats, &session_debug_stats[i], sizeof(struct nss_gre_stats_session_debug));
 			stats++;
 		}
 	}
@@ -146,25 +183,25 @@ static void nss_gre_stats_session_get(void *stats_mem, int size)
 }
 
 /*
- * nss_gre_stats_base_get()
+ * nss_gre_stats_base_debug_get()
  *	Get GRE debug base statistics.
  */
-static void nss_gre_stats_base_get(void *stats_mem, int size)
+static void nss_gre_stats_base_debug_get(void *stats_mem, int size)
 {
-	struct nss_gre_stats_base *stats = (struct nss_gre_stats_base *)stats_mem;
+	struct nss_gre_stats_base_debug *stats = (struct nss_gre_stats_base_debug *)stats_mem;
 
 	if (!stats) {
 		nss_warning("No memory to copy GRE base stats\n");
 		return;
 	}
 
-	if (size < sizeof(struct nss_gre_stats_base)) {
+	if (size < sizeof(struct nss_gre_stats_base_debug)) {
 		nss_warning("Not enough memory to copy GRE base stats\n");
 		return;
 	}
 
 	spin_lock_bh(&nss_gre_stats_lock);
-	memcpy(stats, &base_stats, sizeof(struct nss_gre_stats_base));
+	memcpy(stats, &base_debug_stats, sizeof(struct nss_gre_stats_base_debug));
 	spin_unlock_bh(&nss_gre_stats_lock);
 }
 
@@ -176,15 +213,15 @@ static ssize_t nss_gre_stats_read(struct file *fp, char __user *ubuf, size_t sz,
 {
 	uint32_t max_output_lines = 2 /* header & footer for base debug stats */
 		+ 2 /* header & footer for session debug stats */
-		+ NSS_GRE_BASE_DEBUG_MAX  /* Base debug */
-		+ NSS_GRE_MAX_DEBUG_SESSION_STATS * (NSS_GRE_SESSION_DEBUG_MAX + 2) /*session stats */
+		+ NSS_GRE_STATS_BASE_DEBUG_MAX  /* Base debug */
+		+ NSS_GRE_MAX_DEBUG_SESSION_STATS * (NSS_GRE_STATS_SESSION_DEBUG_MAX + 2) /*session stats */
 		+ 2;
 	size_t size_al = NSS_STATS_MAX_STR_LENGTH * max_output_lines;
 	size_t size_wr = 0;
 	ssize_t bytes_read = 0;
 	struct net_device *dev;
-	struct nss_gre_stats_session *sstats;
-	struct nss_gre_stats_base *bstats;
+	struct nss_gre_stats_session_debug *sstats;
+	struct nss_gre_stats_base_debug *bstats;
 	int id;
 
 	char *lbuf = kzalloc(size_al, GFP_KERNEL);
@@ -193,14 +230,14 @@ static ssize_t nss_gre_stats_read(struct file *fp, char __user *ubuf, size_t sz,
 		return 0;
 	}
 
-	bstats = kzalloc(sizeof(struct nss_gre_stats_base), GFP_KERNEL);
+	bstats = kzalloc(sizeof(struct nss_gre_stats_base_debug), GFP_KERNEL);
 	if (unlikely(!bstats)) {
 		nss_warning("Could not allocate memory for base debug statistics buffer");
 		kfree(lbuf);
 		return 0;
 	}
 
-	sstats = kzalloc(sizeof(struct nss_gre_stats_session) * NSS_GRE_MAX_DEBUG_SESSION_STATS, GFP_KERNEL);
+	sstats = kzalloc(sizeof(struct nss_gre_stats_session_debug) * NSS_GRE_MAX_DEBUG_SESSION_STATS, GFP_KERNEL);
 	if (unlikely(!sstats)) {
 		nss_warning("Could not allocate memory for base debug statistics buffer");
 		kfree(lbuf);
@@ -213,18 +250,18 @@ static ssize_t nss_gre_stats_read(struct file *fp, char __user *ubuf, size_t sz,
 	/*
 	 * Get all base stats
 	 */
-	nss_gre_stats_base_get((void *)bstats, sizeof(struct nss_gre_stats_base));
+	nss_gre_stats_base_debug_get((void *)bstats, sizeof(struct nss_gre_stats_base_debug));
 
 	size_wr += nss_stats_print("gre", NULL, NSS_STATS_SINGLE_INSTANCE
-					, nss_gre_strings_base_stats
+					, nss_gre_stats_base_debug_str
 					, bstats->stats
-					, NSS_GRE_BASE_DEBUG_MAX
+					, NSS_GRE_STATS_BASE_DEBUG_MAX
 					, lbuf, size_wr, size_al);
 
 	/*
 	 * Get all session stats
 	 */
-	nss_gre_stats_session_get(sstats, sizeof(struct nss_gre_stats_session) * NSS_GRE_MAX_DEBUG_SESSION_STATS);
+	nss_gre_stats_session_debug_get(sstats, sizeof(struct nss_gre_stats_session_debug) * NSS_GRE_MAX_DEBUG_SESSION_STATS);
 
 	for (id = 0; id < NSS_GRE_MAX_DEBUG_SESSION_STATS; id++) {
 
@@ -243,9 +280,9 @@ static ssize_t nss_gre_stats_read(struct file *fp, char __user *ubuf, size_t sz,
 					     (sstats + id)->if_num);
 		}
 		size_wr += nss_stats_print("gre_session", NULL, id
-						, nss_gre_strings_session_stats
+						, nss_gre_stats_session_debug_str
 						, (sstats + id)->stats
-						, NSS_GRE_SESSION_DEBUG_MAX
+						, NSS_GRE_STATS_SESSION_DEBUG_MAX
 						, lbuf, size_wr, size_al);
 		size_wr += scnprintf(lbuf + size_wr, size_al - size_wr, "\n");
 	}
@@ -272,67 +309,3 @@ void nss_gre_stats_dentry_create(void)
 	nss_stats_create_dentry("gre", &nss_gre_stats_ops);
 }
 
-/*
- * nss_gre_stats_base_notify()
- *	Sends notifications to all the registered modules.
- *
- * Leverage NSS-FW statistics timing to update Netlink.
- */
-void nss_gre_stats_base_notify(struct nss_ctx_instance *nss_ctx)
-{
-	struct nss_gre_base_stats_notification gre_stats;
-
-	spin_lock_bh(&nss_gre_stats_lock);
-	gre_stats.core_id = nss_ctx->id;
-	memcpy(gre_stats.stats_base_ctx, base_stats.stats, sizeof(gre_stats.stats_base_ctx));
-	spin_unlock_bh(&nss_gre_stats_lock);
-
-	atomic_notifier_call_chain(&nss_gre_stats_notifier, NSS_STATS_EVENT_NOTIFY, &gre_stats);
-}
-
-/*
- * nss_gre_stats_session_notify()
- *	Sends notifications to all the registered modules.
- *
- * Leverage NSS-FW statistics timing to update Netlink.
- */
-void nss_gre_stats_session_notify(struct nss_ctx_instance *nss_ctx, uint32_t if_num)
-{
-	struct nss_gre_session_stats_notification gre_stats;
-	int i;
-
-	spin_lock_bh(&nss_gre_stats_lock);
-	for (i = 0; i < NSS_GRE_MAX_DEBUG_SESSION_STATS; i++) {
-		if (session_stats[i].if_num != if_num) {
-			continue;
-		}
-
-		memcpy(gre_stats.stats_session_ctx, session_stats[i].stats, sizeof(gre_stats.stats_session_ctx));
-		gre_stats.core_id = nss_ctx->id;
-		gre_stats.if_num = if_num;
-		spin_unlock_bh(&nss_gre_stats_lock);
-		atomic_notifier_call_chain(&nss_gre_stats_notifier, NSS_STATS_EVENT_NOTIFY, &gre_stats);
-		return;
-	}
-	spin_unlock_bh(&nss_gre_stats_lock);
-}
-
-/*
- * nss_gre_stats_unregister_notifier()
- *	Deregisters statistics notifier.
- */
-int nss_gre_stats_unregister_notifier(struct notifier_block *nb)
-{
-	return atomic_notifier_chain_unregister(&nss_gre_stats_notifier, nb);
-}
-EXPORT_SYMBOL(nss_gre_stats_unregister_notifier);
-
-/*
- * nss_gre_stats_register_notifier()
- *	Registers statistics notifier.
- */
-int nss_gre_stats_register_notifier(struct notifier_block *nb)
-{
-	return atomic_notifier_chain_register(&nss_gre_stats_notifier, nb);
-}
-EXPORT_SYMBOL(nss_gre_stats_register_notifier);

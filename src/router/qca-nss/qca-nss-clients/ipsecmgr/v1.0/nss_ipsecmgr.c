@@ -445,7 +445,7 @@ static void nss_ipsecmgr_tunnel_setup(struct net_device *dev)
 	/*
 	 * get the MAC address from the ethernet device
 	 */
-	eth_random_addr((u8 *) dev->dev_addr);
+	random_ether_addr(dev->dev_addr);
 
 	memset(dev->broadcast, 0xff, dev->addr_len);
 	memcpy(dev->perm_addr, dev->dev_addr, dev->addr_len);

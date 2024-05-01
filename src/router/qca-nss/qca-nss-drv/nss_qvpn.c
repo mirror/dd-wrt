@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2019-2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2019-2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -16,11 +16,9 @@
 
 #include "nss_tx_rx_common.h"
 #include "nss_qvpn_stats.h"
-#include "nss_qvpn_strings.h"
 #include "nss_qvpn_log.h"
 
 #define NSS_QVPN_TX_TIMEOUT 1000	/* 1 Second */
-#define NSS_QVPN_INTERFACE_MAX_LONG BITS_TO_LONGS(NSS_MAX_NET_INTERFACES)	/**< QVPN interface mapping bits. */
 
 /*
  * Private data structure
@@ -48,6 +46,36 @@ static bool nss_qvpn_verify_if_num(uint32_t if_num)
 	}
 
 	return true;
+}
+
+/*
+ * nss_qvpn_tunnel_stats_sync
+ *	Update qvpn interface statistics.
+ */
+static void nss_qvpn_tunnel_stats_sync(struct nss_ctx_instance *nss_ctx, struct nss_cmn_msg *ncm)
+{
+	struct nss_qvpn_msg *ndcm = (struct nss_qvpn_msg *)ncm;
+	struct nss_top_instance *nss_top = nss_ctx->nss_top;
+	struct nss_qvpn_stats_sync_msg  *msg_stats = &ndcm->msg.stats;
+	uint64_t *if_stats;
+
+	spin_lock_bh(&nss_top->stats_lock);
+
+	/*
+	 * Update common node stats
+	 */
+	if_stats = nss_top->stats_node[ncm->interface];
+	if_stats[NSS_STATS_NODE_RX_PKTS] += msg_stats->node_stats.rx_packets;
+	if_stats[NSS_STATS_NODE_RX_BYTES] += msg_stats->node_stats.rx_bytes;
+	if_stats[NSS_STATS_NODE_RX_QUEUE_0_DROPPED] += msg_stats->node_stats.rx_dropped[0];
+	if_stats[NSS_STATS_NODE_RX_QUEUE_1_DROPPED] += msg_stats->node_stats.rx_dropped[1];
+	if_stats[NSS_STATS_NODE_RX_QUEUE_2_DROPPED] += msg_stats->node_stats.rx_dropped[2];
+	if_stats[NSS_STATS_NODE_RX_QUEUE_3_DROPPED] += msg_stats->node_stats.rx_dropped[3];
+
+	if_stats[NSS_STATS_NODE_TX_PKTS] += msg_stats->node_stats.tx_packets;
+	if_stats[NSS_STATS_NODE_TX_BYTES] += msg_stats->node_stats.tx_bytes;
+
+	spin_unlock_bh(&nss_top->stats_lock);
 }
 
 /*
@@ -86,8 +114,7 @@ static void nss_qvpn_handler(struct nss_ctx_instance *nss_ctx, struct nss_cmn_ms
 	nss_qvpn_log_rx_msg((struct nss_qvpn_msg *)ncm);
 
 	if (ncm->type == NSS_QVPN_MSG_TYPE_SYNC_STATS) {
-		nss_qvpn_stats_tunnel_sync(nss_ctx, ncm);
-		nss_qvpn_stats_notify(nss_ctx, ncm->interface);
+		nss_qvpn_tunnel_stats_sync(nss_ctx, ncm);
 	}
 
 	/*
@@ -96,7 +123,7 @@ static void nss_qvpn_handler(struct nss_ctx_instance *nss_ctx, struct nss_cmn_ms
 	 */
 	if (ncm->response == NSS_CMN_RESPONSE_NOTIFY) {
 		ncm->cb = (nss_ptr_t)nss_core_get_msg_handler(nss_ctx, ncm->interface);
-		ncm->app_data = (nss_ptr_t)nss_ctx->nss_rx_interface_handlers[ncm->interface].app_data;
+		ncm->app_data = (nss_ptr_t)nss_ctx->nss_rx_interface_handlers[nss_ctx->id][ncm->interface].app_data;
 	}
 
 	/*
@@ -340,5 +367,4 @@ void nss_qvpn_register_handler(void)
 	sema_init(&qvpn_pvt.sem, 1);
 	init_completion(&qvpn_pvt.complete);
 	nss_qvpn_stats_dentry_create();
-	nss_qvpn_strings_dentry_create();
 }

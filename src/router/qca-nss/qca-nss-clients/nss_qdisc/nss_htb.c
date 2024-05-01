@@ -1,13 +1,9 @@
 /*
  **************************************************************************
- * Copyright (c) 2014-2017, 2019-2021, The Linux Foundation. All rights reserved.
- *
- * Copyright (c) 2022, Qualcomm Innovation Center, Inc. All rights reserved.
- *
+ * Copyright (c) 2014-2017, 2019-2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
- *
  * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
  * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
  * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
@@ -282,7 +278,7 @@ static int nss_htb_ppe_change_class(struct Qdisc *sch, struct nss_htb_class_data
  */
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 16, 0))
 static int nss_htb_change_class(struct Qdisc *sch, u32 classid, u32 parentid,
-		  struct nlattr **tca, unsigned long *arg, struct netlink_ext_ack *extack)
+		  struct nlattr **tca, unsigned long *arg)
 {
 	struct netlink_ext_ack *extack = NULL;
 #else
@@ -413,6 +409,11 @@ static int nss_htb_change_class(struct Qdisc *sch, u32 classid, u32 parentid,
 		 */
 		qdisc_class_hash_grow(sch, &q->clhash);
 
+		/*
+		 * Start the stats polling timer
+		 */
+		nss_qdisc_start_basic_stats_polling(&cl->nq);
+
 		nss_qdisc_trace("class %x successfully allocated and initialized\n", classid);
 	}
 
@@ -502,6 +503,11 @@ static void nss_htb_destroy_class(struct Qdisc *sch, struct nss_htb_class_data *
 	 nss_qdisc_put(cl->qdisc);
 
 	/*
+	 * Stop the stats polling timer and free class
+	 */
+	nss_qdisc_stop_basic_stats_polling(&cl->nq);
+
+	/*
 	 * Destroy the shaper in NSS
 	 */
 	nss_qdisc_destroy(&cl->nq);
@@ -528,12 +534,10 @@ static int nss_htb_delete_class(struct Qdisc *sch, unsigned long arg)
 	int refcnt;
 
 	/*
-	 * If the class still has child nodes or qdiscs, then we do not
+	 * If the class still has child nodes, then we do not
 	 * support deleting it.
 	 */
-	if ((cl->children) || (cl->qdisc != &noop_qdisc)) {
-		nss_qdisc_warning("Cannot delete htb class %x with child nodes "
-				  "or qdisc attached\n", cl->nq.qos_tag);
+	if (cl->children) {
 		return -EBUSY;
 	}
 
@@ -564,21 +568,16 @@ static int nss_htb_delete_class(struct Qdisc *sch, unsigned long arg)
 	}
 
 	sch_tree_lock(sch);
+	qdisc_reset(cl->qdisc);
 	qdisc_class_hash_remove(&q->clhash, &cl->sch_common);
 
 	/*
 	 * If we are root class, we dont have to update our parent.
 	 * We simply deduct refcnt and return.
-	 * For 5.4 and above kernels, calling nss_htb_destroy_class
-	 * explicitly as there is no put_class which would have called
-	 * nss_htb_destroy_class when refcnt becomes zero.
 	 */
 	if (!cl->parent) {
 		refcnt = nss_qdisc_atomic_sub_return(&cl->nq);
 		sch_tree_unlock(sch);
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 14, 0))
-		nss_htb_destroy_class(sch, cl);
-#endif
 		return 0;
 	}
 
@@ -597,14 +596,6 @@ static int nss_htb_delete_class(struct Qdisc *sch, unsigned long arg)
 	refcnt = nss_qdisc_atomic_sub_return(&cl->nq);
 	sch_tree_unlock(sch);
 
-	/*
-	 * For 5.4 and above kernels, calling nss_htb_destroy_class
-	 * explicitly as there is no put_class which would have called
-	 * nss_htb_destroy_class when refcnt becomes zero.
-	 */
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 14, 0))
-	nss_htb_destroy_class(sch, cl);
-#endif
 	return 0;
 }
 
@@ -907,11 +898,6 @@ static int nss_htb_change_qdisc(struct Qdisc *sch, struct nlattr *opt,
  */
 static void nss_htb_reset_class(struct nss_htb_class_data *cl)
 {
-	if (cl->qdisc == &noop_qdisc) {
-		nss_qdisc_trace("Class %x has no child qdisc to reset\n", cl->nq.qos_tag);
-		return;
-	}
-
 	nss_qdisc_reset(cl->qdisc);
 	nss_qdisc_trace("htb class %x reset\n", cl->nq.qos_tag);
 }
@@ -995,6 +981,11 @@ static void nss_htb_destroy_qdisc(struct Qdisc *sch)
 	qdisc_class_hash_destroy(&q->clhash);
 
 	/*
+	 * Stop the polling of basic stats
+	 */
+	nss_qdisc_stop_basic_stats_polling(&q->nq);
+
+	/*
 	 * Now we can go ahead and destroy the qdisc.
 	 * Note: We dont have to detach ourself from our parent because this
 	 *	 will be taken care of by the graft call.
@@ -1069,6 +1060,11 @@ static int nss_htb_init_qdisc(struct Qdisc *sch, struct nlattr *opt,
 		nss_qdisc_destroy(&q->nq);
 		return -EINVAL;
 	}
+
+	/*
+	 * Start the stats polling timer
+	 */
+	nss_qdisc_start_basic_stats_polling(&q->nq);
 
 	return 0;
 }

@@ -38,7 +38,7 @@ static ssize_t nss_n2h_stats_read(struct file *fp, char __user *ubuf, size_t sz,
 	 * Max output lines = #stats + few blank lines for banner printing +
 	 * Number of Extra outputlines for future reference to add new stats
 	 */
-	uint32_t max_output_lines = (NSS_N2H_STATS_MAX + 3) * NSS_MAX_CORES + NSS_STATS_EXTRA_OUTPUT_LINES;
+	uint32_t max_output_lines = (NSS_N2H_STATS_MAX + 3) * 2 + 5;
 	size_t size_al = NSS_STATS_MAX_STR_LENGTH * max_output_lines;
 	size_t size_wr = 0;
 	ssize_t bytes_read = 0;

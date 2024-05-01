@@ -480,7 +480,7 @@ static int nss_mirror_ctl_parse_enable_ingress_pmc_cmd(char *buffer)
 	type = nss_dynamic_interface_get_type(nss_ctx, if_num);
 
 	if (type == NSS_DYNAMIC_INTERFACE_TYPE_VAP) {
-		status = nss_wifi_vdev_set_next_hop(nss_wifili_get_context(), if_num, mirror_if_num);
+		status = nss_wifi_vdev_set_next_hop(nss_wifi_get_context(), if_num, mirror_if_num);
 	} else if (if_num < NSS_MAX_PHYSICAL_INTERFACES) {
 		status = nss_phys_if_set_nexthop(nss_ctx, if_num, mirror_if_num);
 	} else {
@@ -919,12 +919,48 @@ static struct ctl_table nss_mirror_table[] = {
 };
 
 /*
+ * nss mirror dir
+ */
+static struct ctl_table nss_mirror_root_dir[] = {
+	{
+		.procname		= "mirror",
+		.mode			= 0555,
+		.child			= nss_mirror_table,
+	},
+	{ }
+};
+
+/*
+ * nss mirror sysctl nss root dir
+ */
+static struct ctl_table nss_mirror_nss_root_dir[] = {
+	{
+		.procname		= "nss",
+		.mode			= 0555,
+		.child			= nss_mirror_root_dir,
+	},
+	{ }
+};
+
+/*
+ * nss mirror sysctl root dir
+ */
+static struct ctl_table nss_mirror_root[] = {
+	{
+		.procname		= "dev",
+		.mode			= 0555,
+		.child			= nss_mirror_nss_root_dir,
+	},
+	{ }
+};
+
+/*
  * nss_mirror_ctl_register()
  *	Register command line interface for mirror.
  */
 int nss_mirror_ctl_register(void)
 {
-	nss_mirror_ctl_header = register_sysctl("dev/nss/mirror", nss_mirror_table);
+	nss_mirror_ctl_header = register_sysctl_table(nss_mirror_root);
 	if (!nss_mirror_ctl_header) {
 		nss_mirror_warn("Creating sysctl directory table header for mirror failed\n");
 		return -1;

@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2017,2019-2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017,2019-2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -60,7 +60,7 @@ static ssize_t nss_map_t_stats_read(struct file *fp, char __user *ubuf, size_t s
 	for (id = 0; id < NSS_MAX_MAP_T_DYNAMIC_INTERFACES; id++) {
 
 			if (!map_t_instance_stats[id].valid) {
-				continue;
+				break;
 			}
 
 			dev = dev_get_by_index(&init_net, map_t_instance_stats[id].if_index);

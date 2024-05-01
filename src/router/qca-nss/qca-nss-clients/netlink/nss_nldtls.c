@@ -1,12 +1,9 @@
 /*
  **************************************************************************
- * Copyright (c) 2015-2016,2018-2021 The Linux Foundation. All rights reserved.
- * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
- *
+ * Copyright (c) 2015-2016,2018-2020 The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
- *
  * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
  * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
  * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
@@ -449,7 +446,7 @@ static void nss_nldtls_data_callback(void *app_data, struct sk_buff *skb)
  * nss_nldtls_create_session()
  *	Create a DTLS session through dtlsmgr driver API.
  */
-static struct net_device *nss_nldtls_create_session(struct nss_nldtls_rule *nl_rule)
+static struct net_device *nss_nldtls_create_session(struct nss_nldtls_rule *nl_rule, uint32_t flags)
 {
 	struct nss_nldtls_tun_ctx *dtls_tun_data;
 	struct nss_dtlsmgr_config dcfg;
@@ -466,7 +463,7 @@ static struct net_device *nss_nldtls_create_session(struct nss_nldtls_rule *nl_r
 
 	memset(&dcfg, 0, sizeof(struct nss_dtlsmgr_config));
 	algo = nl_rule->msg.create.encap.cfg.crypto.algo;
-	dcfg.flags = nl_rule->msg.create.flags | NSS_DTLSMGR_ENCAP_METADATA;
+	dcfg.flags = flags | (NSS_DTLSMGR_ENCAP_METADATA | NSS_DTLSMGR_HDR_CAPWAP);
 	if (algo == NSS_DTLSMGR_ALGO_AES_GCM)
 		dcfg.flags |= NSS_DTLSMGR_CIPHER_MODE_GCM;
 
@@ -608,19 +605,13 @@ static int nss_nldtls_create_ipv4_rule_entry(struct net_device *dtls_dev, struct
 	ipv4.dest_port = nl_rule->msg.create.encap.cfg.sport;
 	ipv4.dest_port_xlate = nl_rule->msg.create.encap.cfg.sport;
 
-	if (nl_rule->msg.create.flags & NSS_DTLSMGR_HDR_UDPLITE)
-		ipv4.protocol = IPPROTO_UDPLITE;
-	else
-		ipv4.protocol = IPPROTO_UDP;
-
+	ipv4.protocol = IPPROTO_UDP;
 	ipv4.in_vlan_tag[0] = NSS_NLDTLS_VLAN_INVALID;
 	ipv4.out_vlan_tag[0] = NSS_NLDTLS_VLAN_INVALID;
 	ipv4.in_vlan_tag[1] = NSS_NLDTLS_VLAN_INVALID;
 	ipv4.out_vlan_tag[1] = NSS_NLDTLS_VLAN_INVALID;
 
 	memcpy(&ipv4.src_mac[0], &nl_rule->msg.create.gmac_ifmac[0], sizeof(ipv4.src_mac));
-
-	dev_put(ndev);
 
 	/*
 	 * Create an ipv4 rule entry
@@ -663,11 +654,7 @@ static int nss_nldtls_create_ipv6_rule_entry(struct net_device *dtls_dev, struct
 	 */
 	memcpy(ipv6.src_ip, nl_rule->msg.create.encap.cfg.dip, sizeof(ipv6.src_ip));
 	memcpy(ipv6.dest_ip, nl_rule->msg.create.encap.cfg.sip, sizeof(ipv6.dest_ip));
-
-	if (nl_rule->msg.create.flags & NSS_DTLSMGR_HDR_UDPLITE)
-		ipv6.protocol = IPPROTO_UDPLITE;
-	else
-		ipv6.protocol = IPPROTO_UDP;
+	ipv6.protocol = IPPROTO_UDP;
 
 	ipv6.in_vlan_tag[0] = NSS_NLDTLS_VLAN_INVALID;
 	ipv6.in_vlan_tag[1] = NSS_NLDTLS_VLAN_INVALID;
@@ -675,8 +662,6 @@ static int nss_nldtls_create_ipv6_rule_entry(struct net_device *dtls_dev, struct
 	ipv6.out_vlan_tag[0] = NSS_NLDTLS_VLAN_INVALID;
 
 	memcpy(&ipv6.src_mac[0], &nl_rule->msg.create.gmac_ifmac[0], sizeof(ipv6.src_mac));
-
-	dev_put(ndev);
 
 	/*
 	 * Create an ipv6 rule entry
@@ -744,7 +729,7 @@ static int nss_nldtls_ops_create_tun(struct sk_buff *skb, struct genl_info *info
 	 * Create tunnel based on ip version
 	 */
 	if (nl_rule->msg.create.ip_version == NSS_NLDTLS_IP_VERS_4) {
-		dtls_dev = nss_nldtls_create_session(nl_rule);
+		dtls_dev = nss_nldtls_create_session(nl_rule, NSS_NLDTLS_IPV4_SESSION);
 		if (!dtls_dev) {
 			nss_nl_error("%px: Unable to create dtls session for v4\n", skb);
 			return -EINVAL;
@@ -763,7 +748,7 @@ static int nss_nldtls_ops_create_tun(struct sk_buff *skb, struct genl_info *info
 		atomic_inc(&gbl_ctx.num_tun);
 		nss_nl_info("%px: Successfully created ipv4 dtls tunnel\n", skb);
 	} else {
-		dtls_dev = nss_nldtls_create_session(nl_rule);
+		dtls_dev = nss_nldtls_create_session(nl_rule, NSS_DTLSMGR_HDR_IPV6);
 		if (!dtls_dev) {
 			nss_nl_error("%px: Unable to create dtls session for v6\n", skb);
 			return -EINVAL;
@@ -886,7 +871,6 @@ static int nss_nldtls_ops_update_config(struct sk_buff *skb, struct genl_info *i
 	key_len = nl_rule->msg.update_config.config_update.crypto.cipher_key.len;
 	if (key_len > NSS_NLDTLS_CIPHER_KEY_MAX) {
 		nss_nl_error("Invalid cipher length: %u\n", key_len);
-		dev_put(dev);
 		return -EINVAL;
 	}
 
@@ -894,7 +878,6 @@ static int nss_nldtls_ops_update_config(struct sk_buff *skb, struct genl_info *i
 	key_len = nl_rule->msg.update_config.config_update.crypto.auth_key.len;
 	if (key_len > NSS_NLDTLS_AUTH_KEY_MAX) {
 		nss_nl_error("Invalid authentication length: %u\n", key_len);
-		dev_put(dev);
 		return -EINVAL;
 	}
 
@@ -902,7 +885,6 @@ static int nss_nldtls_ops_update_config(struct sk_buff *skb, struct genl_info *i
 	key_len = nl_rule->msg.update_config.config_update.crypto.nonce.len;
 	if (key_len > NSS_NLDTLS_NONCE_SIZE_MAX) {
 		nss_nl_error("Invalid nonce length: %u\n", key_len);
-		dev_put(dev);
 		return -EINVAL;
 	}
 

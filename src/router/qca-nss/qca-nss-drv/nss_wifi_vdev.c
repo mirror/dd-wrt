@@ -199,15 +199,7 @@ EXPORT_SYMBOL(nss_wifi_vdev_tx_msg_ext);
  */
 nss_tx_status_t nss_wifi_vdev_tx_buf(struct nss_ctx_instance *nss_ctx, struct sk_buff *os_buf, uint32_t if_num)
 {
-	enum nss_dynamic_interface_type if_type;
-
 	BUG_ON(((if_num < NSS_DYNAMIC_IF_START) || (if_num >= (NSS_DYNAMIC_IF_START + NSS_MAX_DYNAMIC_INTERFACES))));
-
-	if_type = nss_dynamic_interface_get_type(nss_ctx, if_num);
-	if (if_type != NSS_DYNAMIC_INTERFACE_TYPE_VAP) {
-		nss_warning("%px: non vap %d packet tx not allowed", nss_ctx, if_num);
-		return NSS_TX_FAILURE_NOT_SUPPORTED;
-	}
 
 	return nss_core_send_packet(nss_ctx, os_buf, if_num, H2N_BIT_FLAG_BUFFER_REUSABLE);
 }

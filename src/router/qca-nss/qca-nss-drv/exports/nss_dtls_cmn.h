@@ -1,12 +1,9 @@
 /*
  **************************************************************************
- * Copyright (c) 2017-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022, Qualcomm Innovation Center, Inc. All rights reserved.
- *
+ * Copyright (c) 2017-2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
- *
  * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
  * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
  * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
@@ -52,7 +49,6 @@ enum nss_dtls_cmn_msg_type {
 	NSS_DTLS_CMN_MSG_TYPE_DECONFIGURE,	/**< Deconfigure context. */
 	NSS_DTLS_CMN_MSG_TYPE_SYNC_STATS,	/**< Synchronize statistics. */
 	NSS_DTLS_CMN_MSG_TYPE_NODE_STATS,	/**< Node statistics. */
-	NSS_DTLS_CMN_MSG_TYPE_UPDATE_VP,	/**< Update node to vp ifnum mapping. */
 	NSS_DTLS_CMN_MSG_MAX
 };
 
@@ -75,88 +71,7 @@ enum nss_dtls_cmn_error {
 	NSS_DTLS_CMN_ERROR_ALREADY_CONFIGURED,
 	NSS_DTLS_CMN_ERROR_FAIL_NOMEM,
 	NSS_DTLS_CMN_ERROR_FAIL_COPY_NONCE,
-	NSS_DTLS_CMN_ERROR_FAIL_UPDATE_VP,
-	NSS_DTLS_CMN_ERROR_FAIL_DESTROY_VP,
 	NSS_DTLS_CMN_ERROR_MAX,
-};
-
-/**
- * nss_dtls_cmn_ctx_stats_types
- *	DTLS common context statistics types.
- */
-enum nss_dtls_cmn_ctx_stats_types {
-	NSS_DTLS_CMN_STATS_RX_SINGLE_REC = NSS_STATS_NODE_MAX,
-						/**< Received single DTLS record datagrams. */
-	NSS_DTLS_CMN_STATS_RX_MULTI_REC,	/**< Received multiple DTLS record datagrams. */
-	NSS_DTLS_CMN_STATS_FAIL_CRYPTO_RESOURCE,/**< Failure in crypto resource allocation. */
-	NSS_DTLS_CMN_STATS_FAIL_CRYPTO_ENQUEUE,	/**< Failure due to full queue in crypto or hardware. */
-	NSS_DTLS_CMN_STATS_FAIL_HEADROOM,	/**< Failure in headroom check. */
-	NSS_DTLS_CMN_STATS_FAIL_TAILROOM,	/**< Failure in tailroom check. */
-	NSS_DTLS_CMN_STATS_FAIL_VER,		/**< Failure in DTLS version check. */
-	NSS_DTLS_CMN_STATS_FAIL_EPOCH,		/**< Failure in DTLS epoch check. */
-	NSS_DTLS_CMN_STATS_FAIL_DTLS_RECORD,	/**< Failure in reading DTLS record. */
-	NSS_DTLS_CMN_STATS_FAIL_CAPWAP,		/**< Failure in CAPWAP classification. */
-	NSS_DTLS_CMN_STATS_FAIL_REPLAY,		/**< Failure in anti-replay check. */
-	NSS_DTLS_CMN_STATS_FAIL_REPLAY_DUP,	/**< Failure in anti-replay; duplicate records. */
-	NSS_DTLS_CMN_STATS_FAIL_REPLAY_WIN,	/**< Failure in anti-replay; packet outside the window. */
-	NSS_DTLS_CMN_STATS_FAIL_QUEUE,		/**< Failure due to full queue in DTLS. */
-	NSS_DTLS_CMN_STATS_FAIL_QUEUE_NEXTHOP,	/**< Failure due to full queue in next hop. */
-	NSS_DTLS_CMN_STATS_FAIL_PBUF_ALLOC,	/**< Failure in pbuf allocation. */
-	NSS_DTLS_CMN_STATS_FAIL_PBUF_LINEAR,	/**< Failure in pbuf linearization. */
-	NSS_DTLS_CMN_STATS_FAIL_PBUF_STATS,	/**< Failure in pbuf allocation for statistics. */
-	NSS_DTLS_CMN_STATS_FAIL_PBUF_ALIGN,	/**< Failure in pbuf alignment. */
-	NSS_DTLS_CMN_STATS_FAIL_CTX_ACTIVE,	/**< Failure in enqueue due to inactive context. */
-	NSS_DTLS_CMN_STATS_FAIL_HWCTX_ACTIVE,	/**< Failure in enqueue due to inactive hardware context. */
-	NSS_DTLS_CMN_STATS_FAIL_CIPHER,		/**< Failure in decrypting the data. */
-	NSS_DTLS_CMN_STATS_FAIL_AUTH,		/**< Failure in authenticating the data. */
-	NSS_DTLS_CMN_STATS_FAIL_SEQ_OVF,	/**< Failure due to sequence number overflow. */
-	NSS_DTLS_CMN_STATS_FAIL_BLK_LEN,	/**< Failure in decapsulation due to bad cipher length. */
-	NSS_DTLS_CMN_STATS_FAIL_HASH_LEN,	/**< Failure in decapsulation due to bad hash length. */
-	NSS_DTLS_CMN_STATS_LEN_ERROR,		/**< Length error. */
-	NSS_DTLS_CMN_STATS_TOKEN_ERROR,		/**< Token error, unknown token command or instruction. */
-	NSS_DTLS_CMN_STATS_BYPASS_ERROR,	/**< Token contains too much bypass data. */
-	NSS_DTLS_CMN_STATS_CONFIG_ERROR,	/**< Invalid command, algorithm, or mode combination. */
-	NSS_DTLS_CMN_STATS_ALGO_ERROR,		/**< Unsupported algorithm. */
-	NSS_DTLS_CMN_STATS_HASH_OVF_ERROR,	/**< Hash input overflow. */
-	NSS_DTLS_CMN_STATS_TTL_ERROR,		/**< TTL or HOP-Limit underflow. */
-	NSS_DTLS_CMN_STATS_CSUM_ERROR,		/**< Checksum error. */
-	NSS_DTLS_CMN_STATS_TIMEOUT_ERROR,	/**< Data timed out. */
-	NSS_DTLS_CMN_STATS_CLE_ERROR_0,		/**< Classification failure 0. */
-	NSS_DTLS_CMN_STATS_CLE_ERROR_1,		/**< Classification failure 1. */
-	NSS_DTLS_CMN_STATS_CLE_ERROR_2,		/**< Classification failure 2. */
-	NSS_DTLS_CMN_STATS_CLE_ERROR_3,		/**< Classification failure 3. */
-	NSS_DTLS_CMN_STATS_CLE_ERROR_4,		/**< Classification failure 4. */
-	NSS_DTLS_CMN_STATS_CLE_ERROR_5,		/**< Classification failure 5. */
-	NSS_DTLS_CMN_STATS_CLE_ERROR_6,		/**< Classification failure 6. */
-	NSS_DTLS_CMN_STATS_CLE_ERROR_7,		/**< Classification failure 7. */
-	NSS_DTLS_CMN_STATS_CLE_ERROR_8,		/**< Classification failure 8. */
-	NSS_DTLS_CMN_STATS_CLE_ERROR_9,		/**< Classification failure 9. */
-	NSS_DTLS_CMN_STATS_CLE_ERROR_10,	/**< Classification failure 10. */
-	NSS_DTLS_CMN_STATS_CLE_ERROR_11,	/**< Classification failure 11. */
-	NSS_DTLS_CMN_STATS_CLE_ERROR_12,	/**< Classification failure 12. */
-	NSS_DTLS_CMN_STATS_CLE_ERROR_13,	/**< Classification failure 13. */
-	NSS_DTLS_CMN_STATS_CLE_ERROR_14,	/**< Classification failure 14. */
-	NSS_DTLS_CMN_STATS_CLE_ERROR_15,	/**< Classification failure 15. */
-	NSS_DTLS_CMN_STATS_CLE_ERROR_16,	/**< Classification failure 16. */
-	NSS_DTLS_CMN_STATS_CLE_ERROR_17,	/**< Classification failure 17. */
-	NSS_DTLS_CMN_STATS_CLE_ERROR_18,	/**< Classification failure 18. */
-	NSS_DTLS_CMN_STATS_CLE_ERROR_19,	/**< Classification failure 19. */
-	NSS_DTLS_CMN_STATS_CLE_ERROR_20,	/**< Classification failure 20. */
-	NSS_DTLS_CMN_STATS_CLE_ERROR_21,	/**< Classification failure 21. */
-	NSS_DTLS_CMN_STATS_CLE_ERROR_22,	/**< Classification failure 22. */
-	NSS_DTLS_CMN_STATS_CLE_ERROR_23,	/**< Classification failure 23. */
-	NSS_DTLS_CMN_STATS_CLE_ERROR_24,	/**< Classification failure 24. */
-	NSS_DTLS_CMN_STATS_CLE_ERROR_25,	/**< Classification failure 25. */
-	NSS_DTLS_CMN_STATS_CLE_ERROR_26,	/**< Classification failure 26. */
-	NSS_DTLS_CMN_STATS_CLE_ERROR_27,	/**< Classification failure 27. */
-	NSS_DTLS_CMN_STATS_CLE_ERROR_28,	/**< Classification failure 28. */
-	NSS_DTLS_CMN_STATS_CLE_ERROR_29,	/**< Classification failure 29. */
-	NSS_DTLS_CMN_STATS_CLE_ERROR_30,	/**< Classification failure 30. */
-	NSS_DTLS_CMN_STATS_CLE_ERROR_31,	/**< Classification failure 31. */
-	NSS_DTLS_CMN_STATS_SEQ_LOW,		/**< Lower 32 bits of current transmit sequence number. */
-	NSS_DTLS_CMN_STATS_SEQ_HIGH,		/**< Upper 16 bits of current transmit sequence number. */
-	NSS_DTLS_CMN_STATS_EPOCH,		/**< Current epoch value. */
-	NSS_DTLS_CMN_CTX_STATS_MAX,		/**< Maximum message type. */
 };
 
 /**
@@ -269,24 +184,6 @@ struct nss_dtls_cmn_ctx_config_dtls {
 };
 
 /**
- * nss_dtls_cmn_stats_notification
- *	DTLS common transmission statistics structure.
- */
-struct nss_dtls_cmn_stats_notification {
-	uint64_t stats_ctx[NSS_DTLS_CMN_CTX_STATS_MAX];		/**< Context transmission statistics. */
-	uint32_t core_id;					/**< Core ID. */
-	uint32_t if_num;					/**< Interface number. */
-};
-
-/**
- * nss_dtls_cmn_update_vp_num_msg
- *	Update mapping between dtls node to vp number.
- */
-struct nss_dtls_cmn_update_vp_num {
-	int16_t vp_num;						/**< VP number associated with the tunnel. */
-};
-
-/**
  * nss_dtls_cmn_msg
  *	Data for sending and receiving DTLS messages.
  */
@@ -301,7 +198,6 @@ struct nss_dtls_cmn_msg {
 		struct nss_dtls_cmn_ctx_config_dtls dtls_cfg;	/**< Cipher update information. */
 		struct nss_dtls_cmn_ctx_stats stats;		/**< Session statistics. */
 		struct nss_dtls_cmn_node_stats node_stats;	/**< Node statistics. */
-		struct nss_dtls_cmn_update_vp_num update_vp;	/**< Update the VP number and Pnode mapping. */
 	} msg;			/**< Message payload for DTLS session messages exchanged with NSS core. */
 };
 
@@ -385,20 +281,6 @@ extern nss_tx_status_t nss_dtls_cmn_tx_msg_sync(struct nss_ctx_instance *nss_ctx
 						struct nss_dtls_cmn_msg *ndcm, enum nss_dtls_cmn_error *resp);
 
 /**
- * nss_dtls_cmn_unregister_if
- *	Deregisters a DTLS session interface from the NSS.
- *
- * @param[in] if_num  NSS interface number.
- *
- * @return
- * None.
- *
- * @dependencies
- * The DTLS session interface must have been previously registered.
- */
-extern void nss_dtls_cmn_unregister_if(uint32_t if_num);
-
-/**
  * nss_dtls_cmn_register_if
  *	Registers a DTLS session interface with the NSS for sending and receiving
  *	messages.
@@ -427,19 +309,22 @@ extern struct nss_ctx_instance *nss_dtls_cmn_register_if(uint32_t if_num,
 							 void *app_ctx);
 
 /**
- * nss_dtls_cmn_notify_unregister
- *	Deregisters an event callback.
+ * nss_dtls_cmn_unregister_if
+ *	Deregisters a DTLS session interface from the NSS.
  *
- * @param[in] ifnum  NSS interface number.
+ * @param[in] if_num  NSS interface number.
  *
  * @return
  * None.
+ *
+ * @dependencies
+ * The DTLS session interface must have been previously registered.
  */
-extern void nss_dtls_cmn_notify_unregister(uint32_t ifnum);
+extern void nss_dtls_cmn_unregister_if(uint32_t if_num);
 
 /**
  * nss_dtls_cmn_notify_register
- *	Registers an event callback to handle notification from DTLS firmware package.
+ *	Register an event callback to handle notification from DTLS firmware package.
  *
  * @param[in] ifnum     NSS interface number.
  * @param[in] ev_cb     Callback for DTLS tunnel message.
@@ -450,6 +335,17 @@ extern void nss_dtls_cmn_notify_unregister(uint32_t ifnum);
  */
 extern struct nss_ctx_instance *nss_dtls_cmn_notify_register(uint32_t ifnum, nss_dtls_cmn_msg_callback_t ev_cb,
 							     void *app_data);
+
+/**
+ * nss_dtls_cmn_notify_unregister
+ *	Unregister an event callback.
+ *
+ * @param[in] ifnum  NSS interface number.
+ *
+ * @return
+ * None.
+ */
+extern void nss_dtls_cmn_notify_unregister(uint32_t ifnum);
 
 /**
  * nss_dtls_cmn_msg_init
@@ -490,34 +386,6 @@ extern struct nss_ctx_instance *nss_dtls_cmn_get_context(void);
  * Interface number with the core ID.
  */
 extern int32_t nss_dtls_cmn_get_ifnum(int32_t if_num);
-
-/**
- * nss_dtls_cmn_stats_unregister_notifier
- *	Deregisters a statistics notifier.
- *
- * @datatypes
- *	notifier_block
- *
- * @param[in] nb Notifier block.
- *
- * @return
- * 0 on success or non-zero on failure.
- */
-extern int nss_dtls_cmn_stats_unregister_notifier(struct notifier_block *nb);
-
-/**
- * nss_dtls_cmn_stats_register_notifier
- *	Registers a statistics notifier.
- *
- * @datatypes
- *	notifier_block
- *
- * @param[in] nb Notifier block.
- *
- * @return
- * 0 on success or non-zero on failure.
- */
-extern int nss_dtls_cmn_stats_register_notifier(struct notifier_block *nb);
 
 /**
  * @}

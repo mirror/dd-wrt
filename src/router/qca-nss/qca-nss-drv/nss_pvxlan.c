@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2019-2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2019-2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -80,22 +80,22 @@ static bool nss_pvxlan_hdl_instance_free(struct nss_ctx_instance *nss_ctx, uint3
 {
 	struct nss_pvxlan_handle *h;
 
-	spin_lock_bh(&nss_pvxlan_spinlock);
+	spin_lock(&nss_pvxlan_spinlock);
 	h = nss_pvxlan_hdl[if_num - NSS_DYNAMIC_IF_START];
 	if (!h) {
-		spin_unlock_bh(&nss_pvxlan_spinlock);
+		spin_unlock(&nss_pvxlan_spinlock);
 		nss_warning("%px: Instance does not exist: %d", nss_ctx, if_num);
 		return false;
 	}
 
 	if (h->if_num != if_num) {
-		spin_unlock_bh(&nss_pvxlan_spinlock);
+		spin_unlock(&nss_pvxlan_spinlock);
 		nss_warning("%px: Not correct if_num: %d", nss_ctx, if_num);
 		return false;
 	}
 
 	nss_pvxlan_hdl[if_num - NSS_DYNAMIC_IF_START] = NULL;
-	spin_unlock_bh(&nss_pvxlan_spinlock);
+	spin_unlock(&nss_pvxlan_spinlock);
 	kfree(h);
 	return true;
 }
@@ -119,9 +119,9 @@ static bool nss_pvxlan_hdl_instance_alloc(struct nss_ctx_instance *nss_ctx, uint
 	}
 	h->if_num = if_num;
 
-	spin_lock_bh(&nss_pvxlan_spinlock);
+	spin_lock(&nss_pvxlan_spinlock);
 	if (nss_pvxlan_hdl[if_num - NSS_DYNAMIC_IF_START] != NULL) {
-		spin_unlock_bh(&nss_pvxlan_spinlock);
+		spin_unlock(&nss_pvxlan_spinlock);
 		kfree(h);
 		nss_warning("%px: The handle has been taken by another thread :%d", nss_ctx, if_num);
 		return false;
@@ -130,7 +130,7 @@ static bool nss_pvxlan_hdl_instance_alloc(struct nss_ctx_instance *nss_ctx, uint
 	h->msg_callback = notify_cb;
 	h->app_data = app_data;
 	nss_pvxlan_hdl[if_num - NSS_DYNAMIC_IF_START] = h;
-	spin_unlock_bh(&nss_pvxlan_spinlock);
+	spin_unlock(&nss_pvxlan_spinlock);
 
 	return true;
 }
@@ -201,13 +201,13 @@ static void nss_pvxlan_msg_handler(struct nss_ctx_instance *nss_ctx, struct nss_
 	 */
 	if (ncm->response == NSS_CMN_RESPONSE_NOTIFY) {
 		uint32_t if_num = ncm->interface - NSS_DYNAMIC_IF_START;
-		spin_lock_bh(&nss_pvxlan_spinlock);
+		spin_lock(&nss_pvxlan_spinlock);
 		h = nss_pvxlan_hdl[if_num];
 		if (h) {
 			ncm->cb = (nss_ptr_t)h->msg_callback;
 			ncm->app_data = (nss_ptr_t)h->app_data;
 		}
-		spin_unlock_bh(&nss_pvxlan_spinlock);
+		spin_unlock(&nss_pvxlan_spinlock);
 
 	}
 

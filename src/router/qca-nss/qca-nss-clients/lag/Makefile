@@ -7,7 +7,7 @@ endif
 ccflags-y := -I$(obj) -I$(obj)/..
 ccflags-y += -DNSS_CLIENT_BUILD_ID="$(BUILD_ID)"
 ccflags-y += -DNSS_LAG_MGR_DEBUG_LEVEL=0
-ccflags-y += -Wall -Werror
+ccflags-y += -Werror
 
 obj-m += qca-nss-lag-mgr.o
 qca-nss-lag-mgr-objs := nss_lag.o

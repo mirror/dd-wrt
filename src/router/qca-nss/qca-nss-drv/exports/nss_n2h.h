@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2014-2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2014-2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -62,7 +62,6 @@ struct nss_n2h_cfg_pvt {
 	struct nss_n2h_payload_info empty_buf_pool_info;	/**< Empty buffer pool information. */
 	struct nss_n2h_payload_info empty_paged_buf_pool_info;	/**< Paged buffer pool information. */
 	int wifi_pool;						/**< Size of the empty Wi-Fi buffer pool. */
-	int shaper_pool;					/**< Size of the empty shaper pool. */
 	int response;						/**< Response from the firmware. */
 };
 
@@ -74,40 +73,43 @@ struct nss_n2h_cfg_pvt {
  */
 enum nss_n2h_stats_types {
 	NSS_N2H_STATS_QUEUE_DROPPED = NSS_STATS_NODE_MAX,
-		/**< Number of packets dropped because the exception queue is too full. */
-	NSS_N2H_STATS_TOTAL_TICKS,	/**< Total clock ticks spend inside the N2H. */
-	NSS_N2H_STATS_WORST_CASE_TICKS,	/**< Worst case iteration of the exception path in ticks. */
-	NSS_N2H_STATS_ITERATIONS,	/**< Number of iterations around the N2H. */
-	NSS_N2H_STATS_PBUF_OCM_TOTAL_COUNT,	/**< Number of pbuf OCM total count. */
-	NSS_N2H_STATS_PBUF_OCM_FREE_COUNT,	/**< Number of pbuf OCM free count. */
+					/* Number of packets dropped because the exception queue is too full */
+	NSS_N2H_STATS_TOTAL_TICKS,	/* Total clock ticks spend inside the N2H */
+	NSS_N2H_STATS_WORST_CASE_TICKS,	/* Worst case iteration of the exception path in ticks */
+	NSS_N2H_STATS_ITERATIONS,	/* Number of iterations around the N2H */
+
 	NSS_N2H_STATS_PBUF_OCM_ALLOC_FAILS_WITH_PAYLOAD,
-					/**< Number of pbuf OCM allocations that have failed with payload. */
+						/* Number of pbuf ocm allocations that have failed with payload */
+	NSS_N2H_STATS_PBUF_OCM_FREE_COUNT,	/* Number of pbuf ocm free count */
+	NSS_N2H_STATS_PBUF_OCM_TOTAL_COUNT,	/* Number of pbuf ocm total count */
 	NSS_N2H_STATS_PBUF_OCM_ALLOC_FAILS_NO_PAYLOAD,
-					/**< Number of pbuf OCM allocations that have failed without payload. */
-	NSS_N2H_STATS_PBUF_DEFAULT_TOTAL_COUNT,	/**< Number of pbuf default total count. */
-	NSS_N2H_STATS_PBUF_DEFAULT_FREE_COUNT,	/**< Number of pbuf default free count. */
+						/* Number of pbuf ocm allocations that have failed without payload */
+
 	NSS_N2H_STATS_PBUF_DEFAULT_ALLOC_FAILS_WITH_PAYLOAD,
-					/**< Number of pbuf default allocations that have failed with payload. */
+						/* Number of pbuf default allocations that have failed with payload */
+
+	NSS_N2H_STATS_PBUF_DEFAULT_FREE_COUNT,	/* Number of pbuf default free count */
+	NSS_N2H_STATS_PBUF_DEFAULT_TOTAL_COUNT,	/* Number of pbuf default total count */
 	NSS_N2H_STATS_PBUF_DEFAULT_ALLOC_FAILS_NO_PAYLOAD,
-	/**< Number of pbuf default allocations that have failed without payload. */
+						/* Number of pbuf default allocations that have failed without payload */
 
-	NSS_N2H_STATS_PAYLOAD_ALLOC_FAILS,	/**< Number of pbuf allocations that have failed because there were no free payloads. */
-	NSS_N2H_STATS_PAYLOAD_FREE_COUNT,	/**< Number of free payloads that exist. */
+	NSS_N2H_STATS_PAYLOAD_ALLOC_FAILS,	/* Number of pbuf allocations that have failed because there were no free payloads */
+	NSS_N2H_STATS_PAYLOAD_FREE_COUNT,	/* Number of free payloads that exist */
 
-	NSS_N2H_STATS_H2N_CONTROL_PACKETS,	/**< Control packets received from HLOS. */
-	NSS_N2H_STATS_H2N_CONTROL_BYTES,	/**< Control bytes received from HLOS. */
-	NSS_N2H_STATS_N2H_CONTROL_PACKETS,	/**< Control packets sent to HLOS. */
-	NSS_N2H_STATS_N2H_CONTROL_BYTES,	/**< Control bytes sent to HLOS. */
+	NSS_N2H_STATS_H2N_CONTROL_PACKETS,	/* Control packets received from HLOS */
+	NSS_N2H_STATS_H2N_CONTROL_BYTES,	/* Control bytes received from HLOS */
+	NSS_N2H_STATS_N2H_CONTROL_PACKETS,	/* Control packets sent to HLOS */
+	NSS_N2H_STATS_N2H_CONTROL_BYTES,	/* Control bytes sent to HLOS */
 
-	NSS_N2H_STATS_H2N_DATA_PACKETS,		/**< Data packets received from HLOS. */
-	NSS_N2H_STATS_H2N_DATA_BYTES,		/**< Data bytes received from HLOS. */
-	NSS_N2H_STATS_N2H_DATA_PACKETS,		/**< Data packets sent to HLOS. */
-	NSS_N2H_STATS_N2H_DATA_BYTES,		/**< Data bytes sent to HLOS. */
-	NSS_N2H_STATS_N2H_TOT_PAYLOADS,		/**< Number of payloads in NSS. */
-	NSS_N2H_STATS_N2H_INTERFACE_INVALID,	/**< Number of bad interface access. */
-	NSS_N2H_STATS_ENQUEUE_RETRIES,		/**< Number of enqueue retries by N2H. */
+	NSS_N2H_STATS_H2N_DATA_PACKETS,		/* Data packets received from HLOS */
+	NSS_N2H_STATS_H2N_DATA_BYTES,		/* Data bytes received from HLOS */
+	NSS_N2H_STATS_N2H_DATA_PACKETS,		/* Data packets sent to HLOS */
+	NSS_N2H_STATS_N2H_DATA_BYTES,		/* Data bytes sent to HLOS */
+	NSS_N2H_STATS_N2H_TOT_PAYLOADS,		/* No. of payloads in NSS */
+	NSS_N2H_STATS_N2H_INTERFACE_INVALID,	/* No. of bad interface access */
+	NSS_N2H_STATS_ENQUEUE_RETRIES,		/* No. of enqueue retries by N2H */
 
-	NSS_N2H_STATS_MAX,			/**< Maximum message type. */
+	NSS_N2H_STATS_MAX,
 };
 
 /**
@@ -133,7 +135,6 @@ enum nss_n2h_metadata_types {
 	NSS_TX_METADATA_TYPE_N2H_QUEUE_LIMIT_CFG,
 	NSS_TX_METADATA_TYPE_N2H_PAGED_BUFFER_POOL_INIT,
 	NSS_TX_METADATA_TYPE_N2H_HOST_BACK_PRESSURE_CFG,
-	NSS_TX_METADATA_TYPE_N2H_SHAPER_POOL_CFG,
 	NSS_METADATA_TYPE_N2H_MAX,
 };
 
@@ -362,24 +363,6 @@ struct nss_n2h_host_back_pressure {
 };
 
 /**
- * nss_n2h_shaper_mem_cfg_msg
- *	Shaper memory configuration message.
- */
-struct nss_n2h_shaper_mem_cfg_msg {
-	uint32_t mem_blk_size;	/**< Size of the memory block. */
-	uint32_t num_blks;		/**< Number of memory blocks. */
-
-	uint32_t pool_addr[MAX_PAGES_PER_MSG];
-			/**< Buffer addresses. */
-	nss_ptr_t pool_vaddr[MAX_PAGES_PER_MSG];
-			/**< Virtual addresses of the buffers. */
-#ifndef __LP64__
-	uint32_t padding[MAX_PAGES_PER_MSG];
-			/**< Padding that fits up to 64 bits. Do not reuse. */
-#endif
-};
-
-/**
  * nss_n2h_msg
  *	Data for sending and receiving N2H messages.
  */
@@ -426,8 +409,6 @@ struct nss_n2h_msg {
 				/**< Paged buffer pool initialization. */
 		struct nss_n2h_host_back_pressure host_bp_cfg;
 				/**< Host back pressure configuration. */
-		struct nss_n2h_shaper_mem_cfg_msg shaper_mem_cfg;
-				/**< Shaper memory configuration. */
 	} msg;			/**< Message payload. */
 };
 

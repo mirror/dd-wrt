@@ -323,7 +323,6 @@ error:
 nss_pm_interface_status_t nss_pm_set_perf_level(void *handle, nss_pm_perf_level_t lvl)
 {
 #if ((NSS_DT_SUPPORT == 1) && (NSS_FREQ_SCALE_SUPPORT == 1))
-#if !defined(NSS_HAL_IPQ807x_SUPPORT)
 	nss_freq_scales_t index;
 
 	switch (lvl) {
@@ -336,9 +335,10 @@ nss_pm_interface_status_t nss_pm_set_perf_level(void *handle, nss_pm_perf_level_
 		break;
 
 	default:
-		index = (nss_freq_scales_t)NSS_PM_PERF_LEVEL_IDLE;
+		index = NSS_PM_PERF_LEVEL_IDLE;
 	}
 
+#if !defined(NSS_HAL_IPQ807x_SUPPORT)
 	nss_freq_sched_change(index, false);
 #endif
 

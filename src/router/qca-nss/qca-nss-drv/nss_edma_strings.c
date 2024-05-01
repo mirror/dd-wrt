@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -78,8 +78,7 @@ struct nss_stats_info nss_edma_strings_stats_rx[NSS_EDMA_STATS_RX_MAX] = {
 	{"rx_csum_err"		, NSS_STATS_TYPE_ERROR},
 	{"desc_cnt"		, NSS_STATS_TYPE_SPECIAL},
 	{"qos_err"		, NSS_STATS_TYPE_DROP},
-	{"rx_src_port_invalid"	, NSS_STATS_TYPE_DROP},
-	{"rx_src_interface_invalid"	, NSS_STATS_TYPE_DROP}
+	{"rx_src_port_invalid"	, NSS_STATS_TYPE_DROP}
 };
 
 /*

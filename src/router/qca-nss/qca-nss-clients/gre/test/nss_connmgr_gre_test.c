@@ -223,7 +223,7 @@ static int nss_connmgr_gre_test_show_proc(struct seq_file *filp, void *data)
  */
 static int nss_connmgr_gre_test_open_proc(struct inode *inode, struct file *filp)
 {
-	return single_open(filp, nss_connmgr_gre_test_show_proc, pde_data(inode));
+	return single_open(filp, nss_connmgr_gre_test_show_proc, PDE_DATA(inode));
 }
 
 /*

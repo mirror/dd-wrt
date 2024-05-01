@@ -36,13 +36,7 @@
 #include <net/protocol.h>
 #include <net/route.h>
 #include <crypto/aes.h>
-#include <linux/version.h>
-#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 11, 0)
 #include <crypto/sha.h>
-#else
-#include <crypto/sha1.h>
-#include <crypto/sha2.h>
-#endif
 
 #include <nss_api_if.h>
 #include <nss_dynamic_interface.h>
@@ -355,7 +349,7 @@ static netdev_tx_t nss_dtlsmgr_ctx_dev_tx(struct sk_buff *skb, struct net_device
 	stats = &encap->stats;
 
 	nhead = dev->needed_headroom;
-	ntail = dev->needed_tailroom + nhead; /* Firmware uses tailroom for header add */
+	ntail = dev->needed_tailroom;
 
 	/*
 	 * Check if skb is shared; unshare in case it is shared
@@ -532,7 +526,7 @@ void nss_dtlsmgr_ctx_dev_setup(struct net_device *dev)
 #else
 	dev->priv_destructor = nss_dtlsmgr_ctx_dev_free;
 #endif
-	memcpy((void *) dev->dev_addr, "\xaa\xbb\xcc\xdd\xee\xff", dev->addr_len);
+	memcpy(dev->dev_addr, "\xaa\xbb\xcc\xdd\xee\xff", dev->addr_len);
 	memset(dev->broadcast, 0xff, dev->addr_len);
 	memcpy(dev->perm_addr, dev->dev_addr, dev->addr_len);
 }

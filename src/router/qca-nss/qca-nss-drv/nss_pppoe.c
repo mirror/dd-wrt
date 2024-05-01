@@ -353,6 +353,33 @@ static struct ctl_table nss_pppoe_table[] = {
 	{ }
 };
 
+static struct ctl_table nss_pppoe_dir[] = {
+	{
+		.procname		= "pppoe",
+		.mode			= 0555,
+		.child			= nss_pppoe_table,
+	},
+	{ }
+};
+
+static struct ctl_table nss_pppoe_root_dir[] = {
+	{
+		.procname		= "nss",
+		.mode			= 0555,
+		.child			= nss_pppoe_dir,
+	},
+	{ }
+};
+
+static struct ctl_table nss_pppoe_root[] = {
+	{
+		.procname		= "dev",
+		.mode			= 0555,
+		.child			= nss_pppoe_root_dir,
+	},
+	{ }
+};
+
 static struct ctl_table_header *nss_pppoe_header;
 
 /*
@@ -364,7 +391,7 @@ void nss_pppoe_register_sysctl(void)
 	/*
 	 * Register sysctl table.
 	 */
-	nss_pppoe_header = register_sysctl("dev/nss/pppoe", nss_pppoe_table);
+	nss_pppoe_header = register_sysctl_table(nss_pppoe_root);
 }
 
 /*

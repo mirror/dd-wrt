@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2020, 2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2020, The Linux Foundation. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -25,18 +25,6 @@
 
 #define NSS_WIFI_MAC_DB_ENTRY_IF_LOCAL 0x1
 
- /**
- * @addtogroup nss_wifi_mac_db_if_subsystem
- * @{
- */
-
-/*
- * MAX Wi-Fi MAC database entries sent in group
- * is chosen considering the entry size and
- * maximum entries a smallest buffer could accomodate.
- */
-#define NSS_WIFI_MAC_DB_GROUP_ENTRIES_MAX 48
-
 /**
  * nss_wifi_mac_db_msg_types
  *	Wi-Fi MAC database messages.
@@ -47,9 +35,6 @@ enum nss_wifi_mac_db_msg_types {
 	NSS_WIFI_MAC_DB_DEL_ENTRY_MSG,		/**< Wi-Fi MAC database delete entry message. */
 	NSS_WIFI_MAC_DB_UPDATE_ENTRY_MSG,	/**< Wi-Fi MAC database update entry message. */
 	NSS_WIFI_MAC_DB_DEINIT_MSG,		/**< Wi-Fi MAC database deinitialization message. */
-	NSS_WIFI_MAC_DB_GROUP_ENTRIES_ADD_MSG,	/**< Wi-Fi MAC database group entries add message. */
-	NSS_WIFI_MAC_DB_ENTRY_ACTIVITY_MSG,	/**< Wi-Fi MAC database entry activity message. */
-	NSS_WIFI_MAC_DB_CREATE_ENTRY_MSG,	/**< Wi-Fi MAC database entry create message. */
 	NSS_WIFI_MAC_DB_MAX_MSG
 };
 
@@ -77,100 +62,16 @@ enum nss_wifi_mac_db_if_opmode {
 };
 
 /**
- * nss_wifi_mac_db_err_types
- * Wi-Fi MAC database errors.
- */
-enum nss_wifi_mac_db_err_types {
-	NSS_WIFI_MAC_DB_ERROR_NONE,
-		/**< Wi-Fi MAC database error none. */
-	NSS_WIFI_MAC_DB_ERROR_ENTRY_ALLOC_FAIL,
-		/**< Error used to report a Wi-Fi MAC database entry pool allocation failure. */
-	NSS_WIFI_MAC_DB_ERROR_MAC_EXISTS,
-		/**< Error used to report that a Wi-Fi MAC database entry already exists. */
-	NSS_WIFI_MAC_DB_ERROR_MAC_TABLE_FULL,
-		/**< Error used to report that a Wi-Fi MAC table is full. */
-	NSS_WIFI_MAC_DB_ERROR_MAC_ENTRY_ALLOC_FAILED,
-		/**< Error used to report a Wi-Fi MAC database entry allocation failure. */
-	NSS_WIFI_MAC_DB_ERROR_ENTRY_NOT_FOUND,
-		/**< Error used to report that a Wi-Fi MAC database entry is not present. */
-	NSS_WIFI_MAC_DB_ERROR_MAC_ENTRY_UNHASHED,
-		/**< Error used to report that a Wi-Fi MAC database entry is unhashed. */
-	NSS_WIFI_MAC_DB_ERROR_MAC_ENTRY_DELETE_FAILED,
-		/**< Error used to report a Wi-Fi MAC database entry delete failure. */
-	NSS_WIFI_MAC_DB_ERROR_INVALID_NUM_ENTRIES_FAIL,
-		/**< Error used to report the number of invalid Wi-Fi MAC database entries. */
-	NSS_WIFI_MAC_DB_ERROR_NOT_ALLOCATED_FAIL,
-		/**< Error used to report that a Wi-Fi MAC database is not allocated. */
-	NSS_WIFI_MAC_DB_ERROR_INV_IF_RECVD_FAIL,
-		/**< Error used to report that a Wi-Fi MAC database entry interface is invalid. */
-	NSS_WIFI_MAC_DB_ERROR_INVALID_EVENT,
-		/**< Error used to report that a Wi-Fi MAC database event is invalid. */
-	NSS_WIFI_MAC_DB_ERROR_PN_INVALID,
-		/**< Error used to report that a Wi-Fi MAC database entry pnode is invalid. */
-	NSS_WIFI_MAC_DB_ERROR_PHY_PN_INVALID,
-		/**< Error used to report that a Wi-Fi MAC database entry radio pnode is invalid. */
-	NSS_WIFI_MAC_DB_ERROR_ENTRY_POOL_INVALID,
-		/**< Error used to report that a Wi-Fi MAC database entry pool is invalid. */
-	NSS_WIFI_MAC_DB_ERROR_ENTRY_POOL_ALREADY_ALLOCATED,
-		/**< Error used to report that a Wi-Fi MAC database entry pool exists. */
-	NSS_WIFI_MAC_DB_ERROR_GROUP_ENTRY_ADD_FAIL,
-		/**< Error used to report that a Wi-Fi MAC database group entry add failure. */
-	NSS_WIFI_MAC_DB_ERROR_MAX,
-		/**< Wi-Fi MAC database error maximum. */
-};
-
-/**
- * nss_wifi_mac_db_entry_create_msg
- * 	Wi-Fi MAC database entry create message.
- */
-struct nss_wifi_mac_db_entry_create_msg {
-	uint8_t mac_addr[ETH_ALEN];			/**< MAC address. */
-	uint16_t reserved;				/**< Reserved bytes. */
-	int32_t nss_if;					/**< NSS interface number. */
-};
-
-/**
- * nss_wifi_mac_db_entry_activity_info
- * 	Wi-Fi MAC database entry activity information.
- */
-struct nss_wifi_mac_db_entry_activity_info {
-	uint8_t mac_addr[ETH_ALEN];			/**< MAC address. */
-	uint16_t reserved;				/**< Reserved bytes. */
-	int32_t nss_if;					/**< NSS interface number. */
-};
-
-/**
- * nss_wifi_mac_db_entry_activity_info_msg
- * 	Wi-Fi MAC database entry activity information message.
- */
-struct nss_wifi_mac_db_entry_activity_info_msg {
-	uint32_t nentries;		/**< Number of entries. */
-	struct nss_wifi_mac_db_entry_activity_info info[1];
-					/**< Wi-Fi MAC database entry activity information. */
-};
-
-/**
  * nss_wifi_mac_db_entry_info_msg
  *	Wi-Fi MAC database entry information.
  */
 struct nss_wifi_mac_db_entry_info_msg {
-	uint8_t mac_addr[ETH_ALEN];	/**< MAC address. */
+	uint8_t mac_addr[6];		/**< MAC address. */
 	uint16_t flag;			/**< Flag information about NSS interface. */
 	int32_t nss_if;		    	/**< NSS interface number. */
 	uint32_t iftype;		/**< NSS interface type. */
 	uint32_t opmode;		/**< NSS interface operation mode. */
 	uint32_t wiphy_ifnum;		/**< NSS interface for wireless physical device. */
-};
-
-/**
- * nss_wifi_mac_db_entry_group_info_msg
- *	Wi-Fi MAC database group of entries information.
- */
-struct nss_wifi_mac_db_entry_group_info_msg {
-	uint32_t num_entries;
-		/**< Number of entries in group information message. */
-	struct nss_wifi_mac_db_entry_info_msg entry[NSS_WIFI_MAC_DB_GROUP_ENTRIES_MAX];
-		/**< Wi-Fi MAC database information specific message. */
 };
 
 /**
@@ -186,12 +87,6 @@ struct nss_wifi_mac_db_msg {
 	union {
 		struct nss_wifi_mac_db_entry_info_msg nmfdbeimsg;
 				/**< Wi-Fi MAC database information specific message. */
-		struct nss_wifi_mac_db_entry_group_info_msg nmfdbegimsg;
-				/**< Wi-Fi MAC database information specific message. */
-		struct nss_wifi_mac_db_entry_activity_info_msg nmfdbeact_imsg;
-				/**< Wi-Fi MAC database entry activity information message. */
-		struct nss_wifi_mac_db_entry_create_msg nmfdbecmsg;
-				/**< Wi-Fi MAC database entry create message. */
 	} msg;			/**< Message payload. */
 };
 
@@ -280,9 +175,4 @@ struct nss_ctx_instance *nss_register_wifi_mac_db_if(uint32_t if_num, nss_wifi_m
  */
 void nss_unregister_wifi_mac_db_if(uint32_t if_num);
 struct nss_ctx_instance *nss_wifi_mac_db_get_context(void);
-
-/**
- * @}
- */
-
 #endif /* __NSS_WIFI_MAC_DB_H */
