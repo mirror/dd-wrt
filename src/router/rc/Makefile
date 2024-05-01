@@ -26,7 +26,7 @@ CFLAGS  += $(COPTS)
 LDFLAGS	+= -L$(TOP)/nvram -I$(LINUXDIR) -L$(INSTALLDIR)/nvram/usr/lib -lnvram -L$(TOP)/libutils -lutils -ldl
 CFLAGS += $(LTO) -I$(LINUXDIR) -I$(TOP)/libutils/include -D_GNU_SOURCE
 CFLAGS += -ffunction-sections -fdata-sections -Wl,--gc-sections
-CFLAGS += $(MIPS16_OPT) $(LERROR)
+CFLAGS += $(MIPS16_OPT) $(THUMB) $(LERROR)
 
 cc-option = $(shell if $(CC) $(1) -S -o /dev/null -xc /dev/null \
              > /dev/null 2>&1; then echo "$(1)"; else echo "$(2)"; fi ;)

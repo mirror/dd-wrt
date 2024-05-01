@@ -94,7 +94,7 @@ cc-option = $(shell if $(CC) $(1) -S -o /dev/null -xc /dev/null \
 COPTS +=$(call cc-option,-Werror=return-local-addr,)
 
 
-CFLAGS += $(MIPS16_OPT) -g3
+CFLAGS += $(MIPS16_OPT) -g3 $(THUMB)
 
 #CFLAGS	+= -g -DDEBUG
 CFLAGS	+= -D_GNU_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 -Iinclude
@@ -193,7 +193,7 @@ ifeq ($(CONFIG_MT76),y)
 CFLAGS += -DHAVE_MT76
 endif
 ifeq ($(CONFIG_ATH9K),y)
-ATH9KCFLAGS+= $(COPTS) $(MIPS16_OPT) -D_GNU_SOURCE -DHAVE_ATH9K -I. -I$(TOP)/shared -I../httpd -I$(SRCBASE)/include.v24 -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include -I$(TOP)/libnl-tiny/include -I$(SRCBASE)/
+ATH9KCFLAGS+= $(COPTS) $(MIPS16_OPT) $(THUMB) -D_GNU_SOURCE -DHAVE_ATH9K -I. -I$(TOP)/shared -I../httpd -I$(SRCBASE)/include.v24 -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include -I$(TOP)/libnl-tiny/include -I$(SRCBASE)/
 ATH9KCFLAGS	+= -g3 -fPIC $(call cc-option,-Werror=return-local-addr)
 ATH9KOBJS += libwireless/wl_ath9k.o libwireless/mac80211info.o libwireless/mac80211regulatory.o libwireless/mac80211autochannel.o
 ATH9KLDFLAGS += -L$(TOP)/libnl-tiny -lnl-tiny
@@ -1661,19 +1661,19 @@ clean:
 
 libwireless/wl_ath9k.o:
 	@echo "[CC] $@"
-	@$(CC) -shared -c -Iinclude $(ATH9KCFLAGS) $(MIPS16_OPT) -o libwireless/wl_ath9k.o libwireless/wl_ath9k.c
+	@$(CC) -shared -c -Iinclude $(ATH9KCFLAGS) $(MIPS16_OPT) $(THUMB) -o libwireless/wl_ath9k.o libwireless/wl_ath9k.c
 
 libwireless/mac80211info.o:
 	@echo "[CC] $@"
-	@$(CC) -shared -c -Iinclude $(ATH9KCFLAGS) $(MIPS16_OPT) -o libwireless/mac80211info.o libwireless/mac80211info.c
+	@$(CC) -shared -c -Iinclude $(ATH9KCFLAGS) $(MIPS16_OPT) $(THUMB) -o libwireless/mac80211info.o libwireless/mac80211info.c
 
 libwireless/mac80211regulatory.o:
 	@echo "[CC] $@"
-	@$(CC) -shared -c -Iinclude $(ATH9KCFLAGS) $(MIPS16_OPT) -o libwireless/mac80211regulatory.o libwireless/mac80211regulatory.c
+	@$(CC) -shared -c -Iinclude $(ATH9KCFLAGS) $(MIPS16_OPT) $(THUMB) -o libwireless/mac80211regulatory.o libwireless/mac80211regulatory.c
 
 libwireless/mac80211autochannel.o:
 	@echo "[CC] $@"
-	@$(CC) -shared -c -Iinclude $(ATH9KCFLAGS) $(MIPS16_OPT) -o libwireless/mac80211autochannel.o libwireless/mac80211autochannel.c
+	@$(CC) -shared -c -Iinclude $(ATH9KCFLAGS) $(MIPS16_OPT) $(THUMB) -o libwireless/mac80211autochannel.o libwireless/mac80211autochannel.c
 
 %.o : %.c
 	@echo "[CC] $@"
@@ -1708,7 +1708,7 @@ libdisc.so: $(DISCOBJS)
 
 mchillispot.o: $(TOP)/private/telkom/mchillispot.c
 	@echo "[CC] $@"
-	@$(CC) -DNEED_PRINTF -I$(TOP)/jansson/src $(ATH9KCFLAGS) $(MIPS16_OPT) -c -o $@ $^
+	@$(CC) -DNEED_PRINTF -I$(TOP)/jansson/src $(ATH9KCFLAGS) $(MIPS16_OPT) $(THUMB) -c -o $@ $^
 
 libshutils.a: $(SHOBJS)
 	$(AR) cr $@ $^
