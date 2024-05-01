@@ -176,8 +176,8 @@ endif
 	-$(MAKE) -f Makefile.x64 ath9k
 	-$(MAKE) -f Makefile.x64 ath9k-install
 	-$(MAKE) -f Makefile.x64 libutils
-#	-$(MAKE) -f Makefile.x64 madwifi
-#	-$(MAKE) -f Makefile.x64 madwifi-install
+	-$(MAKE) -f Makefile.x64 madwifi
+	-$(MAKE) -f Makefile.x64 madwifi-install
 	-$(MAKE) -f Makefile.x64 batman-adv
 	-$(MAKE) -f Makefile.x64 batman-adv-install
 	-$(MAKE) -f Makefile.x64 ndpi-netfilter
