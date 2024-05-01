@@ -1,0 +1,170 @@
+--- a/include/linux/if_bridge.h
++++ b/include/linux/if_bridge.h
+@@ -106,6 +106,17 @@ extern void brioctl_set(int (*ioctl_hook
+ typedef int br_should_route_hook_t(struct sk_buff *skb);
+ extern br_should_route_hook_t __rcu *br_should_route_hook;
+ 
++typedef struct net_bridge_port *br_get_dst_hook_t(const struct net_bridge_port *src,
++		struct sk_buff **skb);
++extern br_get_dst_hook_t __rcu *br_get_dst_hook;
++
++typedef int (br_multicast_handle_hook_t)(const struct net_bridge_port *src,
++		struct sk_buff *skb);
++extern br_multicast_handle_hook_t __rcu *br_multicast_handle_hook;
++
++typedef void (br_notify_hook_t)(int group, int event, const void *ptr);
++extern br_notify_hook_t __rcu *br_notify_hook;
++
+ #endif
+ 
+ #endif
+--- a/net/bridge/br.c
++++ b/net/bridge/br.c
+@@ -100,6 +100,10 @@ static void __exit br_deinit(void)
+ 	br_fdb_fini();
+ }
+ 
++/* Hook for bridge event notifications */
++br_notify_hook_t __rcu *br_notify_hook __read_mostly;
++EXPORT_SYMBOL_GPL(br_notify_hook);
++
+ module_init(br_init)
+ module_exit(br_deinit)
+ MODULE_LICENSE("GPL");
+--- a/net/bridge/br_device.c
++++ b/net/bridge/br_device.c
+@@ -52,6 +52,10 @@ netdev_tx_t br_dev_xmit(struct sk_buff *
+ 	if (is_broadcast_ether_addr(dest))
+ 		br_flood_deliver(br, skb);
+ 	else if (is_multicast_ether_addr(dest)) {
++		br_multicast_handle_hook_t *multicast_handle_hook = rcu_dereference(br_multicast_handle_hook);
++		if (!__br_get(multicast_handle_hook, true, NULL, skb))
++			goto out;
++
+ 		if (unlikely(netpoll_tx_running(dev))) {
+ 			br_flood_deliver(br, skb);
+ 			goto out;
+--- a/net/bridge/br_fdb.c
++++ b/net/bridge/br_fdb.c
+@@ -246,6 +246,7 @@ struct net_bridge_fdb_entry *__br_fdb_ge
+ 
+ 	return NULL;
+ }
++EXPORT_SYMBOL_GPL(__br_fdb_get);
+ 
+ #if IS_ENABLED(CONFIG_ATM_LANE)
+ /* Interface used by ATM LANE hook to test
+@@ -527,6 +528,7 @@ static void fdb_notify(struct net_bridge
+ 		kfree_skb(skb);
+ 		goto errout;
+ 	}
++	__br_notify(RTNLGRP_NEIGH, type, fdb);
+ 	rtnl_notify(skb, net, 0, RTNLGRP_NEIGH, NULL, GFP_ATOMIC);
+ 	return;
+ errout:
+--- a/net/bridge/br_forward.c
++++ b/net/bridge/br_forward.c
+@@ -273,3 +273,6 @@ void br_multicast_forward(struct net_bri
+ 	br_multicast_flood(mdst, skb, skb2, __br_forward);
+ }
+ #endif
++
++EXPORT_SYMBOL_GPL(br_deliver);
++EXPORT_SYMBOL_GPL(br_forward);
+--- a/net/bridge/br_input.c
++++ b/net/bridge/br_input.c
+@@ -26,6 +26,14 @@ const u8 br_group_address[ETH_ALEN] = {
+ br_should_route_hook_t __rcu *br_should_route_hook __read_mostly;
+ EXPORT_SYMBOL(br_should_route_hook);
+ 
++/* Hook for external Multicast handler */
++br_multicast_handle_hook_t __rcu *br_multicast_handle_hook __read_mostly;
++EXPORT_SYMBOL_GPL(br_multicast_handle_hook);
++
++/* Hook for external forwarding logic */
++br_get_dst_hook_t __rcu *br_get_dst_hook __read_mostly;
++EXPORT_SYMBOL_GPL(br_get_dst_hook);
++
+ static int br_pass_frame_up(struct sk_buff *skb)
+ {
+ 	struct net_device *indev, *brdev = BR_INPUT_SKB_CB(skb)->brdev;
+@@ -53,6 +61,8 @@ int br_handle_frame_finish(struct sk_buf
+ 	struct net_bridge_fdb_entry *dst;
+ 	struct net_bridge_mdb_entry *mdst;
+ 	struct sk_buff *skb2;
++	struct net_bridge_port *pdst = NULL;
++	br_get_dst_hook_t *get_dst_hook = rcu_dereference(br_get_dst_hook);
+ 
+ 	if (!p || p->state == BR_STATE_DISABLED)
+ 		goto drop;
+@@ -85,6 +95,10 @@ int br_handle_frame_finish(struct sk_buf
+ 	} else if (is_broadcast_ether_addr(dest))
+ 		skb2 = skb;
+ 	else if (is_multicast_ether_addr(dest)) {
++		br_multicast_handle_hook_t *multicast_handle_hook = rcu_dereference(br_multicast_handle_hook);
++		if (!__br_get(multicast_handle_hook, true, p, skb))
++			goto out;
++
+ 		mdst = br_mdb_get(br, skb);
+ 		if (mdst || BR_INPUT_SKB_CB_MROUTERS_ONLY(skb)) {
+ 			if ((mdst && mdst->mglist) ||
+@@ -98,6 +112,8 @@ int br_handle_frame_finish(struct sk_buf
+ 			skb2 = skb;
+ 
+ 		br->dev->stats.multicast++;
++	} else if ((pdst = __br_get(get_dst_hook, NULL, p, &skb))) {
++		if (!skb) goto out;
+ 	} else if ((p->flags & BR_ISOLATE_MODE) ||
+ 		   ((dst = __br_fdb_get(br, dest)) && dst->is_local)) {
+ 		skb2 = skb;
+@@ -108,8 +124,12 @@ int br_handle_frame_finish(struct sk_buf
+ 	if (skb) {
+ 		if (dst) {
+ 			dst->used = jiffies;
+-			br_forward(dst->dst, skb, skb2);
+-		} else
++			pdst = dst->dst;
++		}
++
++		if (pdst)
++			br_forward(pdst, skb, skb2);
++		else
+ 			br_flood_forward(br, skb, skb2);
+ 	}
+ 
+--- a/net/bridge/br_netlink.c
++++ b/net/bridge/br_netlink.c
+@@ -104,6 +104,7 @@ void br_ifinfo_notify(int event, struct
+ 		kfree_skb(skb);
+ 		goto errout;
+ 	}
++	__br_notify(RTNLGRP_LINK, event, port);
+ 	rtnl_notify(skb, net, 0, RTNLGRP_LINK, NULL, GFP_ATOMIC);
+ 	return;
+ errout:
+--- a/net/bridge/br_private.h
++++ b/net/bridge/br_private.h
+@@ -18,6 +18,7 @@
+ #include <linux/netpoll.h>
+ #include <linux/u64_stats_sync.h>
+ #include <net/route.h>
++#include <linux/export.h>
+ 
+ #define BR_HASH_BITS 8
+ #define BR_HASH_SIZE (1 << BR_HASH_BITS)
+@@ -575,4 +576,15 @@ extern void br_sysfs_delbr(struct net_de
+ #define br_sysfs_delbr(dev)	do { } while(0)
+ #endif /* CONFIG_SYSFS */
+ 
++#define __br_get( __hook, __default, __args ... ) \
++		(__hook ? (__hook( __args )) : (__default))
++
++static inline void __br_notify(int group, int type, const void *data)
++{
++	br_notify_hook_t *notify_hook = rcu_dereference(br_notify_hook);
++
++	if (notify_hook)
++		notify_hook(group, type, data);
++}
++
+ #endif

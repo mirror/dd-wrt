@@ -18,6 +18,7 @@ NSS_CRYPTO_DIR:=v1.0
 KERNEL_FLAGS = "-I$(TOP)/qca-nss/qca-nss-drv/exports -I$(TOP)/qca-nss/qca-nss-gmac/ipq806x/exports -I$(TOP)/qca-nss/qca-nss-crypto/v1.0/include -I$(TOP)/qca-nss/shortcut-fe/exports"
 
 all:
+	$(MAKE) -C $(KDIR) M=$(PWD)/qca-nss-mcs modules MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS=$(KERNEL_FLAGS) CONFIG_SUPPORT_MLD=y
 	$(MAKE) -C $(KDIR) M=$(PWD)/shortcut-fe modules MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS=$(KERNEL_FLAGS)
 	$(MAKE) -C $(KDIR) M=$(PWD)/nss-ifb modules MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS=$(KERNEL_FLAGS)
 	$(MAKE) -C $(KDIR) M=$(PWD)/qca-nss-cfi modules MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS=$(KERNEL_FLAGS) SoC="ipq806x" \
@@ -34,6 +35,7 @@ all:
 	$(MAKE) -C $(KDIR) M=$(PWD)/qca-nss-gmac modules MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS) -DCONFIG_NSS_DEBUG_LEVEL=4 -I$(PKG_BUILD_DIR)/nss_hal/include -I$(PKG_BUILD_DIR)/nss_hal/$(BOARD)" SoC="ipq806x"
 
 install:
+	$(MAKE) -C $(KDIR) M=$(PWD)/qca-nss-mcs modules_install MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS=$(KERNEL_FLAGS) INSTALL_MOD_PATH=$(INSTALLDIR) CONFIG_SUPPORT_MLD=y
 	$(MAKE) -C $(KDIR) M=$(PWD)/shortcut-fe modules_install MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS=$(KERNEL_FLAGS) INSTALL_MOD_PATH=$(INSTALLDIR)
 	$(MAKE) -C $(KDIR) M=$(PWD)/nss-ifb modules_install MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS=$(KERNEL_FLAGS) INSTALL_MOD_PATH=$(INSTALLDIR)
 	$(MAKE) -C $(KDIR) M=$(PWD)/qca-nss-cfi modules_install MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS=$(KERNEL_FLAGS) SoC="ipq806x" \
@@ -57,6 +59,7 @@ install:
 	cp firmware/* $(INSTALLDIR)/lib/firmware
 
 clean:
+	$(MAKE) -C $(KDIR) M=$(PWD)/qca-nss-mcs clean MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS=$(KERNEL_FLAGS) INSTALL_MOD_PATH=$(INSTALLDIR) CONFIG_SUPPORT_MLD=y
 	$(MAKE) -C $(KDIR) M=$(PWD)/shortcut-fe clean MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS=$(KERNEL_FLAGS) INSTALL_MOD_PATH=$(INSTALLDIR)
 	$(MAKE) -C $(KDIR) M=$(PWD)/nss-ifb clean MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS=$(KERNEL_FLAGS) INSTALL_MOD_PATH=$(INSTALLDIR)
 	$(MAKE) -C $(KDIR) M=$(PWD)/qca-nss-cfi clean MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS=$(KERNEL_FLAGS) SoC="ipq806x" \
