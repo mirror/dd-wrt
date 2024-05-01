@@ -1,4 +1,4 @@
-DROPBEAR_OPTS = $(MIPS16_OPT) $(LTO) -DDISABLE_X11FWD
+DROPBEAR_OPTS = $(MIPS16_OPT) $(LTO) -DDISABLE_X11FWD $(THUMB)
 
 dropbear-configure: nvram libutils-configure libutils zlib-configure zlib
 	cd dropbear && ./configure \

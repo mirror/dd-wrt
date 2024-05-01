@@ -38,7 +38,7 @@ endif
 
 nginx-configure:
 	cd nginx && CC=gcc;CFLAGS=-O2 && ./configure --with-http_v2_module --with-threads --with-http_ssl_module --with-http_mp4_module --add-module=../nginx-rtmp-module
-	cp nginx/Makefile.use nginx/objs/Makefile
+#	cp nginx/Makefile.use nginx/objs/Makefile
 
 nginx-clean:
 	find $(TOP)/nginx/objs -name *.o -delete

@@ -23,7 +23,7 @@ freeradius3-configure: libtalloc openssl libpcap
 	ac_cv_lib_collectdclient_lcc_connect=no \
 	ac_cv_lib_execinfo_backtrace_symbols=no \
 	ac_cv_host=$(ARCH)-uclibc-linux \
-	./configure  --target=$(ARCH)-linux --host=$(ARCH) CFLAGS="$(COPTS) $(MIPS16_OPT) -fPIC -I$(TOP)/openssl/include -D_GNU_SOURCE" CPPFLAGS="$(COPTS) $(MIPS16_OPT) -D_GNU_SOURCE -fPIC -I$(TOP)/openssl/include " LDFLAGS="$(COPTS) $(MIPS16_OPT) -L$(TOP)/openssl -L$(TOP)/libpcap -lpcap -lm" --enable-shared \
+	./configure  --target=$(ARCH)-linux --host=$(ARCH) CFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) -fPIC -I$(TOP)/openssl/include -D_GNU_SOURCE" CPPFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) -D_GNU_SOURCE -fPIC -I$(TOP)/openssl/include " LDFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) -L$(TOP)/openssl -L$(TOP)/libpcap -lpcap -lm" --enable-shared \
 	--program-prefix="" \
 	--program-suffix="" \
 	--prefix=/usr \
