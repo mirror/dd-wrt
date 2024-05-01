@@ -356,9 +356,9 @@ ccflags-$(ECM_CLASSIFIER_HYFI_ENABLE) += -DECM_CLASSIFIER_HYFI_ENABLE
 # the Parental Controls subsystem classifier in ECM. Currently disabled until
 # customers require it / if they need to integrate their Parental Controls with it.
 # #############################################################################
-#ifndef $(ECM_CLASSIFIER_PCC_ENABLE)
-#	ECM_CLASSIFIER_PCC_ENABLE=y
-#endif
+ifndef $(ECM_CLASSIFIER_PCC_ENABLE)
+	ECM_CLASSIFIER_PCC_ENABLE=y
+endif
 ecm-$(ECM_CLASSIFIER_PCC_ENABLE) += ecm_classifier_pcc.o
 ccflags-$(ECM_CLASSIFIER_PCC_ENABLE) += -DECM_CLASSIFIER_PCC_ENABLE
 
